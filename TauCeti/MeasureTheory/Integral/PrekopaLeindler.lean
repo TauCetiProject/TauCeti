@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Analysis.Convex.LogConcave
 -- Proof-only: weighted AM-GM, the minimum below a geometric mean, the layer-cake formula in
 -- `ℝ≥0∞` and one-dimensional Brunn–Minkowski.
-import Mathlib.Analysis.MeanInequalities
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Real
@@ -280,23 +280,6 @@ theorem mul_lintegral_add_mul_lintegral_le {f g h : ℝ → ℝ≥0∞} (hf : AE
   exact (le_lintegral_add _ _).trans <| lintegral_mono fun t ↦
     mul_volume_add_mul_volume_lt_le hf hg hfg hc hd hmin _
 
-/-- Scaling the factors of `a ^ p * b ^ q` by `F⁻¹` and `G⁻¹` scales it by `(F ^ p * G ^ q)⁻¹`,
-for finite `F` and `G` and nonnegative exponents. -/
-private theorem inv_mul_rpow_mul_inv_mul_rpow {p q : ℝ} (hp : 0 ≤ p) (hq : 0 ≤ q)
-    {F G : ℝ≥0∞} (hF : F ≠ ∞) (hG : G ≠ ∞) (a b : ℝ≥0∞) :
-    (F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q) := by
-  rw [ENNReal.mul_rpow_of_nonneg _ _ hp, ENNReal.mul_rpow_of_nonneg _ _ hq, ENNReal.inv_rpow,
-    ENNReal.inv_rpow, ENNReal.mul_inv (.inr (ENNReal.rpow_ne_top_of_nonneg hq hG))
-      (.inl (ENNReal.rpow_ne_top_of_nonneg hp hF))]
-  ring
-
-/-- The weighted AM-GM inequality in `ℝ≥0∞` for the real weights `1 - θ` and `θ`. -/
-private theorem geom_mean_le_arith_mean2_weighted_ofReal {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1)
-    (a b : ℝ≥0∞) : a ^ (1 - θ) * b ^ θ ≤ ENNReal.ofReal (1 - θ) * a + ENNReal.ofReal θ * b := by
-  have h := ENNReal.geom_mean_le_arith_mean2_weighted (1 - θ).toNNReal θ.toNNReal a b <| by
-    rw [← Real.toNNReal_add (sub_nonneg.2 hθ₁) hθ₀, sub_add_cancel, Real.toNNReal_one]
-  rwa [Real.coe_toNNReal _ (sub_nonneg.2 hθ₁), Real.coe_toNNReal _ hθ₀] at h
-
 /-- The one-dimensional Prékopa–Leindler inequality at an interior weight, for `f` and `g` with
 finite suprema. -/
 private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
@@ -319,7 +302,7 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
     (ENNReal.rpow_ne_top_of_nonneg hθ₀.le hG)
   have hscale (a b : ℝ≥0∞) :
       (F⁻¹ * a) ^ (1 - θ) * (G⁻¹ * b) ^ θ = K⁻¹ * (a ^ (1 - θ) * b ^ θ) :=
-    inv_mul_rpow_mul_inv_mul_rpow h1θ.le hθ₀.le hF hG a b
+    ENNReal.inv_mul_rpow_mul_inv_mul_rpow h1θ.le hθ₀.le hF hG a b
   have hsup : ⨆ x, F⁻¹ * f x = ⨆ y, G⁻¹ * g y := by
     rw [← ENNReal.mul_iSup, ← ENNReal.mul_iSup, ENNReal.inv_mul_cancel hF0 hF,
       ENNReal.inv_mul_cancel hG0 hG]
@@ -332,7 +315,7 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
   rw [lintegral_const_mul _ hf, lintegral_const_mul _ hg, lintegral_const_mul _ hh] at key
   rw [← ENNReal.mul_le_mul_iff_right (ENNReal.inv_ne_zero.2 hKtop) (ENNReal.inv_ne_top.2 hK0),
     ← hscale]
-  exact (geom_mean_le_arith_mean2_weighted_ofReal hθ₀.le hθ₁.le _ _).trans key
+  exact (ENNReal.geom_mean_le_arith_mean2_weighted_ofReal hθ₀.le hθ₁.le _ _).trans key
 
 /-- The **Prékopa–Leindler inequality** on `ℝ`: Lebesgue measure has the Prékopa–Leindler
 property at every weight `0 ≤ θ ≤ 1`. -/
