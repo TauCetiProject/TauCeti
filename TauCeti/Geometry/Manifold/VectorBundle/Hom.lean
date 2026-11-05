@@ -45,6 +45,9 @@ Finally, a family of fibrewise linear maps with finite-dimensional model source 
 section of the hom bundle exactly when the map of total spaces it induces is `C^n`
 (`TauCeti.contMDiff_hom_bundle_iff`, with a pointwise version
 `TauCeti.contMDiffAt_hom_bundle_iff`); this needs neither bundle to be a `C^n` vector bundle.
+The same holds for families depending on a parameter in a manifold `P`, as sections along the
+projection `P × B → B` and maps `P × TotalSpace F₁ E₁ → TotalSpace F₂ E₂`
+(`TauCeti.contMDiff_hom_bundle_prod_iff`, `TauCeti.contMDiffAt_hom_bundle_prod_iff`).
 Combined with fibrewise inversion, a `C^n` family of fibrewise linear equivalences therefore
 induces a `C^n` diffeomorphism of total spaces, `TauCeti.bundleDiffeomorph`, whose inverse is
 automatically `C^n`. Over the model `𝓘(ℂ, EB)` with `n = ∞`, these are the holomorphic bundle
@@ -324,6 +327,69 @@ variable {𝕜 B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] {n : WithTop 
   [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
   [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+  {EP : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] {HP : Type*} [TopologicalSpace HP]
+  {IP : ModelWithCorners 𝕜 EP HP} {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
+
+/-- For a finite-dimensional model source, a family of fibrewise linear maps depending on a
+parameter in a manifold `P`, that is a Hom-bundle section along the projection `P × B → B`, is
+`C^n` at `(p, x)` exactly when the induced map `P × TotalSpace F₁ E₁ → TotalSpace F₂ E₂` is `C^n`
+at every point `(p, v)` with `v` in the fibre over `x`. The target need not have finite rank. -/
+theorem contMDiffAt_hom_bundle_prod_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
+    (ϕ : ∀ q : P × B, E₁ q.2 →L[𝕜] E₂ q.2) (q : P × B) :
+    ContMDiffAt (IP.prod IB) (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+        (fun y : P × B ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) y.2
+          (ϕ y)) q ↔
+      ∀ v : E₁ q.2, ContMDiffAt (IP.prod (IB.prod 𝓘(𝕜, F₁))) (IB.prod 𝓘(𝕜, F₂)) n
+        (fun p : P × TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.2.proj (ϕ (p.1, p.2.proj) p.2.2))
+        (q.1, ⟨q.2, v⟩) := by
+  constructor
+  · intro hϕ v
+    have h : ContMDiffAt (IP.prod (IB.prod 𝓘(𝕜, F₁))) (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+        (fun p : P × TotalSpace F₁ E₁ ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+          (E := fun y ↦ E₁ y →L[𝕜] E₂ y) p.2.proj (ϕ (p.1, p.2.proj))) (q.1, ⟨q.2, v⟩) :=
+      hϕ.comp (x := (q.1, (⟨q.2, v⟩ : TotalSpace F₁ E₁)))
+        (contMDiffAt_fst.prodMk ((contMDiffAt_proj E₁).comp _ contMDiffAt_snd))
+    exact h.clm_bundle_apply contMDiffAt_snd
+  · intro hϕ
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_snd, contMDiffAt_clm_apply.2 fun w ↦ ?_⟩
+    let e₁ := trivializationAt F₁ E₁ q.2
+    let e₂ := trivializationAt F₂ E₂ q.2
+    have h₁ : q.2 ∈ e₁.baseSet := mem_baseSet_trivializationAt F₁ E₁ q.2
+    have h₂ : q.2 ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ q.2
+    -- The section `y ↦ e₁.symm y w` is `C^n` near `q.2`: read in `e₁`, it is constant.
+    have hs : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁)) n
+        (fun y ↦ TotalSpace.mk' F₁ y (e₁.symm y w)) q.2 := by
+      rw [contMDiffAt_section]
+      refine (contMDiffAt_const (c := w)).congr_of_eventuallyEq ?_
+      filter_upwards [e₁.open_baseSet.mem_nhds h₁] with y hy
+      exact congr(Prod.snd $(e₁.apply_mk_symm hy w))
+    -- Applying the total-space map to this section, with the parameter, and reading the result
+    -- in `e₂` gives the coordinate expression of `ϕ` applied to `w`.
+    have ht := (contMDiffAt_totalSpace.1 ((hϕ (e₁.symm q.2 w)).comp q
+      (contMDiffAt_fst.prodMk (hs.comp q contMDiffAt_snd)))).2
+    refine ht.congr_of_eventuallyEq ?_
+    filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
+      (e₁.open_baseSet.mem_nhds h₁), continuous_snd.continuousAt.preimage_mem_nhds
+      (e₂.open_baseSet.mem_nhds h₂)] with y hy₁ hy₂
+    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
+    rw [e₁.symmL_apply hy₁, Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₂]
+    -- `TotalSpace.mk'` is the total-space constructor; the second component of
+    -- `e₂` applied to this point is precisely its fibre coordinate.
+    rfl
+
+/-- For a finite-dimensional model source, a family of fibrewise linear maps depending on a
+parameter in a manifold `P` is a `C^n` Hom-bundle section along the projection `P × B → B`
+exactly when the induced map `P × TotalSpace F₁ E₁ → TotalSpace F₂ E₂` is `C^n`. -/
+theorem contMDiff_hom_bundle_prod_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
+    (ϕ : ∀ q : P × B, E₁ q.2 →L[𝕜] E₂ q.2) :
+    ContMDiff (IP.prod IB) (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+        (fun y : P × B ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) y.2
+          (ϕ y)) ↔
+      ContMDiff (IP.prod (IB.prod 𝓘(𝕜, F₁))) (IB.prod 𝓘(𝕜, F₂)) n
+        (fun p : P × TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.2.proj (ϕ (p.1, p.2.proj) p.2.2)) :=
+  ⟨fun hϕ p ↦ (contMDiffAt_hom_bundle_prod_iff ϕ (p.1, p.2.proj)).1 (hϕ _) p.2.2,
+    fun hϕ q ↦ (contMDiffAt_hom_bundle_prod_iff ϕ q).2 fun v ↦ hϕ (q.1, ⟨q.2, v⟩)⟩
 
 /-- For a finite-dimensional model source, a family of fibrewise linear maps is a Hom-bundle
 section which is `C^n` at `x` exactly when the induced map of total spaces is `C^n` at every
@@ -334,37 +400,14 @@ theorem contMDiffAt_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 
         (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y) y (ϕ y)) x ↔
       ∀ v : E₁ x, ContMDiffAt (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
         (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ⟨x, v⟩ := by
-  constructor
-  · intro hϕ v
-    have h : ContMDiffAt (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
-        (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
-          (E := fun y ↦ E₁ y →L[𝕜] E₂ y) p.proj (ϕ p.proj)) ⟨x, v⟩ :=
-      hϕ.comp (x := (⟨x, v⟩ : TotalSpace F₁ E₁)) (contMDiffAt_proj E₁)
-    exact h.clm_bundle_apply contMDiffAt_id
-  · intro hϕ
-    rw [contMDiffAt_hom_bundle]
-    refine ⟨contMDiffAt_id, contMDiffAt_clm_apply.2 fun w ↦ ?_⟩
-    let e₁ := trivializationAt F₁ E₁ x
-    let e₂ := trivializationAt F₂ E₂ x
-    have h₁ : x ∈ e₁.baseSet := mem_baseSet_trivializationAt F₁ E₁ x
-    have h₂ : x ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ x
-    -- The section `y ↦ e₁.symm y w` is `C^n` near `x`: read in `e₁`, it is constant.
-    have hs : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁)) n
-        (fun y ↦ TotalSpace.mk' F₁ y (e₁.symm y w)) x := by
-      rw [contMDiffAt_section]
-      refine (contMDiffAt_const (c := w)).congr_of_eventuallyEq ?_
-      filter_upwards [e₁.open_baseSet.mem_nhds h₁] with y hy
-      exact congr(Prod.snd $(e₁.apply_mk_symm hy w))
-    -- Applying the total-space map to this section and reading the result in `e₂` gives the
-    -- coordinate expression of `ϕ` applied to `w`.
-    have ht := (contMDiffAt_totalSpace.1 ((hϕ (e₁.symm x w)).comp x hs)).2
-    refine ht.congr_of_eventuallyEq ?_
-    filter_upwards [e₁.open_baseSet.mem_nhds h₁, e₂.open_baseSet.mem_nhds h₂] with y hy₁ hy₂
-    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
-    rw [e₁.symmL_apply hy₁, Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₂]
-    -- `TotalSpace.mk'` is the total-space constructor; the second component of
-    -- `e₂` applied to this point is precisely its fibre coordinate.
-    rfl
+  -- This is the case of a family that does not depend on its parameter, taken in `B` itself.
+  have h := contMDiffAt_hom_bundle_prod_iff (IB := IB) (IP := IB) (n := n) (F₁ := F₁) (F₂ := F₂)
+    (fun q : B × B ↦ ϕ q.2) (x, x)
+  refine ⟨fun hϕ v ↦ ?_, fun hϕ ↦ ?_⟩
+  · exact (h.1 (hϕ.comp (x, x) contMDiffAt_snd) v).comp (x := (⟨x, v⟩ : TotalSpace F₁ E₁))
+      (contMDiffAt_const.prodMk contMDiffAt_id)
+  · exact (h.2 fun v ↦ (hϕ v).comp (x := ((x, ⟨x, v⟩) : B × TotalSpace F₁ E₁)) contMDiffAt_snd).comp
+      x (contMDiffAt_const.prodMk contMDiffAt_id)
 
 /-- For a finite-dimensional model source, a family of fibrewise linear maps is a `C^n` section
 of the Hom bundle exactly when the induced map of total spaces is `C^n`. This is the `C^n`

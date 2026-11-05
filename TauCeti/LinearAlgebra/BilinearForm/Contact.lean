@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -27,8 +28,8 @@ contact together whenever `f` vanishes nowhere.
 
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
 even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`). A subspace of
-`ker a` on which `B` vanishes has at most half the dimension of `ker a`
-(`Module.Dual.IsContact.two_mul_finrank_add_one_le`): this bounds the dimension of isotropic and
+`ker a` on which `B` vanishes has at most half the dimension of `ker a`, so `2 dim W + 1 ≤ dim V`
+(`Module.Dual.IsContact.two_mul_finrank_add_one_le`). This is the dimension bound for isotropic and
 Legendrian submanifolds of a contact manifold.
 
 Contact covectors arise on hyperplanes transverse to a vector. If `B` is nondegenerate and
@@ -168,21 +169,20 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
 
-/-- **Isotropic subspaces of a contact hyperplane.** If `a` is contact for `B`, a subspace `W` of
-`ker a` on which `B` vanishes has `2 dim W + 1 ≤ dim V`: on a space of dimension `2 n + 1`, such a
-subspace has dimension at most `n`. -/
+/-- **Isotropic subspaces of a contact hyperplane.** If `a` is contact for `B`, then a subspace `W`
+of `ker a` on which `B` vanishes identically satisfies `2 dim W + 1 ≤ dim V`. No symmetry
+assumption on `B` is needed. -/
 theorem IsContact.two_mul_finrank_add_one_le [FiniteDimensional K V] (h : a.IsContact B)
-    {W : Submodule K V} (hW : W ≤ LinearMap.ker a) (hBW : ∀ v ∈ W, ∀ w ∈ W, B v w = 0) :
+    {W : Submodule K V} (hWa : W ≤ LinearMap.ker a) (hWB : ∀ v ∈ W, ∀ w ∈ W, B v w = 0) :
     2 * finrank K W + 1 ≤ finrank K V := by
-  -- Read `W` inside `ker a`, where `B` is nondegenerate and `W` lies in its own orthogonal.
-  set W' := W.comap (LinearMap.ker a).subtype
-  have hW' : finrank K W' = finrank K W := (Submodule.comapSubtypeEquivOfLe hW).finrank_eq
-  have hle : W' ≤ (B.restrict (LinearMap.ker a)).orthogonal W' := fun v hv ↦
-    LinearMap.BilinForm.mem_orthogonal_iff.2 fun w hw ↦ hBW w hw v hv
-  have horth := LinearMap.BilinForm.finrank_orthogonal h.nondegenerate_restrict W'
-  have hWker := Submodule.finrank_mono hle
+  -- `W`, read inside `ker a`, is contained in its orthogonal for the nondegenerate restriction.
+  have hle : W.comap (LinearMap.ker a).subtype ≤
+      (B.restrict (LinearMap.ker a)).orthogonal (W.comap (LinearMap.ker a).subtype) :=
+    fun v hv ↦ LinearMap.BilinForm.mem_orthogonal_iff.2 fun w hw ↦ hWB w hw v hv
+  have hW := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal
+    h.nondegenerate_restrict hle
+  rw [(Submodule.comapSubtypeEquivOfLe hWa).finrank_eq] at hW
   have hker := finrank_ker_add_one_of_ne_zero h.ne_zero
-  have hW'le := Submodule.finrank_le W'
   omega
 
 /-! ### Hyperplanes transverse to a vector -/

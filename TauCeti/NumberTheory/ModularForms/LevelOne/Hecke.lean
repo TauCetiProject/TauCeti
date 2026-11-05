@@ -11,9 +11,6 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.Rat.Slash
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.QExpansion
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.QExpansion
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
-import Mathlib.NumberTheory.ModularForms.Bounds
-import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 
 /-!
 # The Hecke operators `Tₙ` at level one
@@ -81,9 +78,6 @@ cusp forms.
 * `TauCeti.qExpansion_coeff_one_heckeTLevelOne`, `TauCeti.qExpansion_coeff_one_heckeTCuspLevelOne`:
   `a₁(Tₙ f) = aₙ(f)`; `TauCeti.qExpansion_coeff_zero_heckeTLevelOne`:
   `a₀(Tₙ f) = (∑_{d ∣ n} d^(k-1)) a₀(f)`.
-* `TauCeti.eq_zero_of_forall_heckeTCuspLevelOne_eq_sigma_smul`: no nonzero cusp form has the
-  Hecke eigenvalues `σ_{k-1}(n)` of the Eisenstein series of weight `k`, since the coefficients
-  `aₙ = σ_{k-1}(n) a₁` of such a form would violate Hecke's bound `aₙ = O(n^(k/2))`.
 
 ## References
 
@@ -362,69 +356,5 @@ theorem qExpansion_coeff_zero_heckeTLevelOne (f : ModularForm 𝒮ℒ k) :
       (∑ d ∈ n.divisors, (d : ℂ) ^ (k - 1)) * (qExpansion 1 f).coeff 0 := by
   rw [qExpansion_coeff_heckeTLevelOne]
   simp [Finset.sum_mul]
-
-/-! ### The Eisenstein eigenvalues do not occur on cusp forms -/
-
-open Filter Asymptotics
-open scoped ArithmeticFunction.sigma
-
-variable {k} in
-/-- **No nonzero cusp form of level one has the Hecke eigenvalues of an Eisenstein series.** If a
-cusp form `f` of weight `k = w + 2` on `SL(2, ℤ)` satisfies `Tₙ f = σ_{w+1}(n) f` for every
-`n ≥ 1`, then `f = 0`. The coefficients of such a form would be `aₙ(f) = σ_{k-1}(n) a₁(f)`, of size
-at least `n^(k-1) |a₁(f)|`, while Hecke's bound `aₙ(f) = O(n^(k/2))` holds for every cusp form. -/
-theorem eq_zero_of_forall_heckeTCuspLevelOne_eq_sigma_smul {w : ℕ} (hk : k = w + 2)
-    {f : CuspForm 𝒮ℒ k}
-    (hf : ∀ (n : ℕ) [NeZero n], heckeTCuspLevelOne k n f = (σ (w + 1) n : ℂ) • f) : f = 0 := by
-  -- in weight two there are no nonzero cusp forms
-  rcases Nat.eq_zero_or_pos w with rfl | hw
-  · have : Subsingleton (CuspForm 𝒮ℒ k) :=
-      rank_zero_iff.1 (CuspForm.rank_eq_zero_of_weight_lt_twelve (by omega))
-    exact Subsingleton.elim f 0
-  -- the coefficients are `aₙ(f) = σ_{w+1}(n) a₁(f)`
-  have hcoeff (n : ℕ) (hn : 0 < n) :
-      (qExpansion 1 f).coeff n = σ (w + 1) n * (qExpansion 1 f).coeff 1 := by
-    have : NeZero n := ⟨hn.ne'⟩
-    rw [← qExpansion_coeff_one_heckeTCuspLevelOne k n f, hf n]
-    simp only [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL,
-      PowerSeries.coeff_smul, smul_eq_mul]
-  -- so it suffices to show `a₁(f) = 0`
-  suffices h1 : (qExpansion 1 f).coeff 1 = 0 by
-    refine CuspForm.qExpansion_injective one_pos one_mem_strictPeriods_SL
-      (PowerSeries.ext fun n ↦ ?_)
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp [CuspFormClass.qExpansion_coeff_zero f one_pos one_mem_strictPeriods_SL,
-        qExpansion_zero]
-    · simp [hcoeff n hn, h1, qExpansion_zero]
-  by_contra h1
-  -- `n^(2w+2) = O(aₙ(f)²)`, since `n^(w+1) ≤ σ_{w+1}(n)`
-  have hlow : (fun n : ℕ ↦ (n : ℝ) ^ (2 * w + 2)) =O[atTop]
-      fun n ↦ (qExpansion 1 f).coeff n ^ 2 := by
-    refine IsBigO.of_bound (‖(qExpansion 1 f).coeff 1‖ ^ 2)⁻¹ (Eventually.of_forall fun n ↦ ?_)
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · rw [Nat.cast_zero, zero_pow (by omega), norm_zero]
-      positivity
-    have hσ : (n : ℝ) ^ (w + 1) ≤ σ (w + 1) n := by
-      rw [ArithmeticFunction.sigma_apply]
-      exact_mod_cast Finset.single_le_sum (fun d _ ↦ Nat.zero_le (d ^ (w + 1)))
-        (Nat.mem_divisors_self n hn.ne')
-    have ha : 0 < ‖(qExpansion 1 f).coeff 1‖ := norm_pos_iff.2 h1
-    rw [hcoeff n hn, Real.norm_of_nonneg (by positivity), norm_pow, norm_mul, Complex.norm_natCast,
-      mul_pow, mul_comm _ (_ ^ 2), inv_mul_cancel_left₀ (by positivity),
-      show 2 * w + 2 = (w + 1) * 2 by ring, pow_mul]
-    exact pow_le_pow_left₀ (by positivity) hσ 2
-  -- Hecke's bound gives `aₙ(f)² = O(n^(w+2))`
-  have hup : (fun n ↦ (qExpansion 1 f).coeff n ^ 2) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (w + 2) := by
-    have hb := (CuspFormClass.qExpansion_isBigO f).pow 2
-    rw [Subgroup.strictWidthInfty_SL2Z] at hb
-    refine hb.congr_right fun n ↦ ?_
-    rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul n.cast_nonneg, hk]
-    push_cast
-    ring_nf
-  have hlo : (fun n : ℕ ↦ (n : ℝ) ^ (w + 2)) =o[atTop] fun n ↦ (n : ℝ) ^ (2 * w + 2) :=
-    (isLittleO_pow_pow_atTop_of_lt (by omega)).comp_tendsto
-      tendsto_natCast_atTop_atTop
-  exact hlo.not_isBigO ((eventually_gt_atTop 0).frequently.mono fun n hn ↦
-    pow_ne_zero _ (Nat.cast_ne_zero.2 hn.ne')) (hlow.trans hup)
 
 end TauCeti

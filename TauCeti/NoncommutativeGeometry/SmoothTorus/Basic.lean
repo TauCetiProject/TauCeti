@@ -82,9 +82,23 @@ namespace SmoothNoncommutativeTorus
 def weight (x : ℤ × ℤ) : ℝ :=
   (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|)
 
+/-- The product formula for the rapid-decay weight. -/
+theorem weight_def (x : ℤ × ℤ) :
+    weight x = (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) := (rfl)
+
 theorem one_le_weight (x : ℤ × ℤ) : 1 ≤ weight x :=
   one_le_mul_of_one_le_of_one_le (le_add_of_nonneg_right (abs_nonneg _))
     (le_add_of_nonneg_right (abs_nonneg _))
+
+/-- The absolute value of the first coordinate is bounded by the rapid-decay weight. -/
+theorem abs_fst_le_weight (x : ℤ × ℤ) : |(x.1 : ℝ)| ≤ weight x := by
+  rw [weight_def]
+  nlinarith [abs_nonneg (x.1 : ℝ), abs_nonneg (x.2 : ℝ)]
+
+/-- The absolute value of the second coordinate is bounded by the rapid-decay weight. -/
+theorem abs_snd_le_weight (x : ℤ × ℤ) : |(x.2 : ℝ)| ≤ weight x := by
+  rw [weight_def]
+  nlinarith [abs_nonneg (x.1 : ℝ), abs_nonneg (x.2 : ℝ)]
 
 theorem weight_pos (x : ℤ × ℤ) : 0 < weight x :=
   zero_lt_one.trans_le (one_le_weight x)
