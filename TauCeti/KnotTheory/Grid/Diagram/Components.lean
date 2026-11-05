@@ -37,6 +37,8 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.componentCycleType`: the multiset of component sizes.
 * `TauCeti.GridDiagram.componentCount`: the number of represented link components.
 * `TauCeti.GridDiagram.IsKnot`: the represented link has exactly one component.
+* `TauCeti.GridDiagram.IsKnot.traversal`: the columns of a knot grid in the order in which the
+  traversal from a given column reaches them.
 
 ## References
 
@@ -219,6 +221,55 @@ theorem isKnot_of_two (G : GridDiagram 2) : G.IsKnot := by
   apply Equiv.Perm.IsSwap.isCycle
   rw [← Equiv.Perm.card_support_eq_two, support_componentPerm,
     Finset.card_univ, Fintype.card_fin]
+
+/-! ### Traversing a knot -/
+
+/-- The component permutation of a knot grid is a single cycle through all columns. -/
+theorem IsKnot.isCycleOn_componentPerm {G : GridDiagram n} (hG : G.IsKnot) :
+    G.componentPerm.IsCycleOn Set.univ := by
+  have h := (G.isKnot_iff_componentPerm_isCycle.mp hG).isCycleOn
+  rwa [Set.eq_univ_of_forall (s := {c | G.componentPerm c ≠ c}) G.componentPerm_apply_ne_self] at h
+
+/-- The **traversal** of a knot grid from the column `c₀`: step `t` reaches the column
+`componentPerm ^ t c₀`, after `t` horizontal and `t` vertical segments. The component permutation
+of a knot is a single cycle through all `n` columns, so the first `n` steps reach every column
+exactly once. -/
+noncomputable def IsKnot.traversal {G : GridDiagram n} (hG : G.IsKnot) (c₀ : Fin n) :
+    Fin n ≃ Fin n :=
+  Equiv.ofBijective (fun t ↦ (G.componentPerm ^ (t : ℕ)) c₀) <|
+    Finite.injective_iff_bijective.1 fun s t h ↦ Fin.ext <|
+      (Finset.coe_univ (α := Fin n) ▸ hG.isCycleOn_componentPerm).injOn_pow_apply
+        (Finset.mem_univ c₀) (by simp) (by simp) h
+
+@[simp]
+theorem IsKnot.traversal_apply {G : GridDiagram n} (hG : G.IsKnot) (c₀ t : Fin n) :
+    hG.traversal c₀ t = (G.componentPerm ^ (t : ℕ)) c₀ :=
+  (rfl)
+
+/-- The traversal from `c₀` starts at `c₀`. -/
+@[simp]
+theorem IsKnot.val_traversal_symm_self {G : GridDiagram n} (hG : G.IsKnot) (c₀ : Fin n) :
+    ((hG.traversal c₀).symm c₀ : ℕ) = 0 := by
+  have h : c₀ = hG.traversal c₀ ⟨0, c₀.pos⟩ := by simp
+  rw [(Equiv.symm_apply_eq _).2 h]
+
+/-- Each step of the traversal follows the component permutation: the column after `c` is reached
+one step after `c`, unless it is the starting column `c₀`, which the traversal returns to after
+`n` steps. -/
+theorem IsKnot.val_traversal_symm_componentPerm {G : GridDiagram n} (hG : G.IsKnot)
+    {c₀ c : Fin n} (hc : G.componentPerm c ≠ c₀) :
+    ((hG.traversal c₀).symm (G.componentPerm c) : ℕ) = (hG.traversal c₀).symm c + 1 := by
+  set t := (hG.traversal c₀).symm c
+  have ht : (G.componentPerm ^ (t : ℕ)) c₀ = c := (hG.traversal c₀).apply_symm_apply c
+  have hstep : (G.componentPerm ^ ((t : ℕ) + 1)) c₀ = G.componentPerm c := by
+    rw [pow_succ', Equiv.Perm.mul_apply, ht]
+  have hlt : (t : ℕ) + 1 < n := by
+    refine (Nat.add_one_le_of_lt t.isLt).lt_of_ne fun h ↦ hc ?_
+    rw [← hstep, h]
+    have hcyc := Finset.coe_univ (α := Fin n) ▸ hG.isCycleOn_componentPerm
+    simpa using hcyc.pow_card_apply (Finset.mem_univ c₀)
+  have hnext : G.componentPerm c = hG.traversal c₀ ⟨t + 1, hlt⟩ := by simp [hstep]
+  rw [(Equiv.symm_apply_eq _).2 hnext]
 
 /-! ### Naturality under grid symmetries -/
 

@@ -191,6 +191,33 @@ theorem neg_modelOrientation (o : OrientationLift I M ι) :
 @[simp]
 theorem neg_sign (o : OrientationLift I M ι) (α) (x) : (-o).sign α x = o.sign α x := (rfl)
 
+/-- Reindex the model orientation of a lift along an equivalence of index types, keeping its chart
+signs. -/
+def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
+    OrientationLift I M ι' where
+  modelOrientation := _root_.Orientation.reindex ℝ E e o.modelOrientation
+  card_eq := (Fintype.card_congr e).symm.trans o.card_eq
+  sign := o.sign
+  locallyConstant_sign := o.locallyConstant_sign
+  compatible := o.compatible
+
+@[simp]
+theorem reindex_modelOrientation {ι' : Type*} [Fintype ι'] (e : ι ≃ ι')
+    (o : OrientationLift I M ι) :
+    (o.reindex e).modelOrientation = _root_.Orientation.reindex ℝ E e o.modelOrientation := (rfl)
+
+@[simp]
+theorem reindex_sign {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) (α)
+    (x) : (o.reindex e).sign α x = o.sign α x := (rfl)
+
+/-- Reindexing commutes with the diagonal flip. -/
+@[simp]
+theorem reindex_flip {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
+    o.flip.reindex e = (o.reindex e).flip := by
+  ext α x
+  · simp only [reindex_modelOrientation, flip_modelOrientation, _root_.Orientation.reindex_neg]
+  · simp only [reindex_sign, flip_sign]
+
 open Classical in
 /-- A total chart sign with the fixed value `1` off the chart source. Only the source-indexed
 signs are part of the lift. -/
@@ -368,6 +395,18 @@ theorem orientationAt_neg (o : OrientationLift I M ι) (x : M) :
   simp only [chartOrientation, _root_.Orientation.intCast_units_smul_eq_ite,
     neg_sign, neg_modelOrientation]
   split_ifs <;> rfl
+
+/-- Reindexing a lift reindexes every induced tangent orientation. -/
+@[simp]
+theorem orientationAt_reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι')
+    (o : OrientationLift I M ι) (x : M) :
+    (o.reindex e).orientationAt x =
+      _root_.Orientation.reindex ℝ (TangentSpace I x) e (o.orientationAt x) := by
+  rw [orientationAt_eq, orientationAt_eq, chartOrientation_eq_ite, chartOrientation_eq_ite]
+  simp only [reindex_sign, reindex_modelOrientation]
+  split_ifs
+  · rfl
+  · exact (_root_.Orientation.reindex_neg e o.modelOrientation).symm
 
 open Classical in
 /-- Every orientation of the tangent bundle gives a source-indexed lift, after choosing a

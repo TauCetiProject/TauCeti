@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.TrialityD4
 `TauCeti.D4Triality.invariantRoot` gives the twelve signed invariant root vectors of the
 pinned D₄ triality. Its six positive-root orbit vectors and six negative-root orbit vectors
 are fixed and linearly independent over the integers. Their root coordinates are explicit,
-and their Cartan coordinates vanish. They permit bracket calculations in the fixed Lie
-algebra without choosing representatives of abstract orbit quotients.
+and their Cartan coordinates vanish. `TauCeti.D4Triality.invariantRoot_eq` expands each vector
+as a singleton or a signed three-term sum, without repeating fixed roots. They permit bracket
+calculations in the fixed Lie algebra without choosing representatives of abstract orbit quotients.
 
 The construction uses the complete numbered root enumeration of
 `TauCeti.LinearAlgebra.Matrix.NormTwoShell.TrialityD4` and
@@ -40,6 +41,22 @@ noncomputable def invariantRoot (negative : Bool) (o : Fin 6) :
     ShellLieAlgebra (CartanMatrix.D 4) :=
   ∑ i : Fin 12 with orbit i = o,
     orbitCoeff i • ShellLieAlgebra.root (CartanMatrix.D 4) (root negative i)
+
+/-- Each invariant root vector is a distinct signed orbit sum. Singleton orbits contribute
+one section root vector, not three times that vector. -/
+theorem invariantRoot_eq (negative : Bool) (o : Fin 6) :
+    invariantRoot negative o =
+      let i := representative o
+      if orbitLength o = 1 then ShellLieAlgebra.root (CartanMatrix.D 4) (root negative i)
+      else
+        ShellLieAlgebra.root (CartanMatrix.D 4) (root negative i) +
+          rootSign i • ShellLieAlgebra.root (CartanMatrix.D 4) (root negative (next i)) +
+          (rootSign i * rootSign (next i)) •
+            ShellLieAlgebra.root (CartanMatrix.D 4) (root negative (next (next i))) := by
+  rw [invariantRoot, Finset.sum_filter]
+  fin_cases o <;>
+    norm_num [orbitLength, representative, orbit, orbitCoeff, rootSign,
+      next, Fin.sum_univ_succ, Units.smul_def] <;> abel
 
 /-- Each displayed signed orbit vector is fixed by the actual pinned triality. -/
 @[simp]

@@ -24,6 +24,11 @@ simplices of `K` and every simplex of `K` lies in a cell
 (`Geometry.SimplicialComplex.exists_subdivision`). The complex is locally finite, by the
 criterion `Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`.
 
+The subdivision may be required to use a prescribed point `p i` of the intrinsic interior of each
+cell `P i` as a vertex: every simplex of `K` then lies in a cell `P i` and has `p i` as a vertex.
+Taking the cells to be the simplices of a simplicial complex and `p` their centroids subdivides
+the complex from the centroids of its simplices, as in the barycentric subdivision.
+
 The file also defines the subdivision relation between complexes: `K'` is a subdivision of `K`
 (`Geometry.SimplicialComplex.IsSubdivision K' K`) when both have the same underlying space and
 every simplex of `K'` lies in a simplex of `K`. It is reflexive and transitive.
@@ -38,8 +43,8 @@ The proof is by induction on the dimension of the cells. A cell contained in the
 another one has strictly smaller dimension
 (`TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`).
 Once the cells of dimension `< n` are triangulated, the frontier of each `n`-dimensional cell is a
-subcomplex, and each such cell is triangulated by coning its frontier to a point of its intrinsic
-interior. These cones are glued to the complex built so far
+subcomplex, and each such cell is triangulated by coning its frontier to its prescribed point.
+These cones are glued to the complex built so far
 (`Geometry.SimplicialComplex.exists_extension_of_intrinsicFrontier_subset_space`); two distinct
 `n`-dimensional cells meet only inside `|L|` and smaller cells, so the cones meet properly.
 
@@ -56,7 +61,7 @@ dimension these common cells are smaller. So this need not be assumed.
 
 * `Geometry.SimplicialComplex.exists_extension_of_intrinsicFrontier_subset_space`: a complex `L`
   extends over a family of compact convex cells attached to `L` along subcomplexes covering their
-  intrinsic frontiers.
+  intrinsic frontiers, by coning each cell to a prescribed point.
 * `Geometry.SimplicialComplex.exists_subdivision_extending`: the relative subdivision of a family
   of compact convex cells, extending a prescribed triangulation `L`.
 * `Geometry.SimplicialComplex.exists_subdivision`: a locally finite simplicial subdivision of a
@@ -108,17 +113,18 @@ end IsSubdivision
 
 variable {E ι J : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- **Attaching compact convex cells to a simplicial complex.** Let `C j` be nonempty compact
-convex sets whose intrinsic interiors avoid `|L|`, each meeting `L` in a subcomplex covering its
-intrinsic frontier, and any two of which meet only inside `|L|`. Then `L` extends to a complex
-`K` with `|K| = |L| ∪ ⋃ j, C j`. Every simplex of `K` is a simplex of `L` or lies in a single
-`C j`; each `C j` is
+omit [FiniteDimensional ℝ E] in
+/-- **Attaching compact convex cells to a simplicial complex.** Let `C j` be compact convex sets
+with prescribed points `p j` of their intrinsic interiors, whose intrinsic interiors avoid `|L|`,
+each meeting `L` in a subcomplex covering its intrinsic frontier, and any two of which meet only
+inside `|L|`. Then `L` extends to a complex `K` with `|K| = |L| ∪ ⋃ j, C j`. Every simplex of `K`
+is a simplex of `L` or lies in a single `C j` and has `p j` as a vertex; each `C j` is
 triangulated by the simplices of `K` it contains, finitely many when `L` has finitely many
 simplices in `C j`; and `K` has the same simplices as `L` with all their vertices in any set
 avoiding the intrinsic interiors of the cells. -/
 theorem exists_extension_of_intrinsicFrontier_subset_space (L : SimplicialComplex ℝ E)
     (C : J → Set E) (hCc : ∀ j, IsCompact (C j)) (hCv : ∀ j, Convex ℝ (C j))
-    (hCne : ∀ j, (C j).Nonempty)
+    (p : J → E) (hp : ∀ j, p j ∈ intrinsicInterior ℝ (C j))
     (hfr : ∀ j, intrinsicFrontier ℝ (C j) ⊆ (L.restrict (C j)).space)
     (hint : ∀ j, Disjoint (intrinsicInterior ℝ (C j)) L.space)
     (hCC : Pairwise fun j k => C j ∩ C k ⊆ L.space) :
@@ -127,9 +133,8 @@ theorem exists_extension_of_intrinsicFrontier_subset_space (L : SimplicialComple
         K.restrict B = L.restrict B) ∧
       (∀ j, (K.restrict (C j)).space = C j ∧
         ((L.restrict (C j)).faces.Finite → (K.restrict (C j)).faces.Finite)) ∧
-      ∀ s ∈ K.faces, s ∈ L.faces ∨ ∃ j, (s : Set E) ⊆ C j := by
+      ∀ s ∈ K.faces, s ∈ L.faces ∨ ∃ j, p j ∈ s ∧ (s : Set E) ⊆ C j := by
   classical
-  choose p hp using fun j => (hCne j).intrinsicInterior (hCv j)
   have hpC : ∀ j, p j ∈ C j := fun j => intrinsicInterior_subset (hp j)
   -- a point of `C j` in `|L|` lies in the intrinsic frontier of `C j`
   have hCL : ∀ j, C j ∩ L.space ⊆ intrinsicFrontier ℝ (C j) := fun j x ⟨hxC, hxL⟩ => by
@@ -202,7 +207,9 @@ theorem exists_extension_of_intrinsicFrontier_subset_space (L : SimplicialComple
   · obtain ⟨a, hs⟩ := (mem_glue_faces hcompat).1 hs
     rcases a with _ | j
     · exact .inl hs
-    · exact .inr ⟨j, hTC j hs⟩
+    by_cases hps : p j ∈ s
+    · exact .inr ⟨j, hps, hTC j hs⟩
+    · exact .inl (hTL j hs hps)
 
 section Cells
 
@@ -211,7 +218,8 @@ variable {P : ι → Set E}
 /-- The inductive step of `exists_subdivision_extending`: a subdivision of the cells of
 dimension `< n` extends to one of the cells of dimension `≤ n`. -/
 private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
-    (hPc : ∀ i, IsCompact (P i)) (hPv : ∀ i, Convex ℝ (P i)) (hPne : ∀ i, (P i).Nonempty)
+    (hPc : ∀ i, IsCompact (P i)) (hPv : ∀ i, Convex ℝ (P i)) {p : ι → E}
+    (hp : ∀ i, p i ∈ intrinsicInterior ℝ (P i))
     (hPlf : LocallyFinite P)
     (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
     (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ L.space ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
@@ -222,13 +230,14 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
     (hKP : ∀ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n →
       (K.restrict (P k)).space = P k ∧ (K.restrict (P k)).faces.Finite)
     (hKf : ∀ s ∈ K.faces, s ∈ L.faces ∨
-      ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n ∧ (s : Set E) ⊆ P k) :
+      ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n ∧ p k ∈ s ∧ (s : Set E) ⊆ P k) :
     ∃ K' : SimplicialComplex ℝ E, K'.restrict L.space = L ∧
       K'.space = L.space ∪ ⋃ (k) (_ : Module.finrank ℝ (vectorSpan ℝ (P k)) < n + 1), P k ∧
       (∀ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n + 1 →
         (K'.restrict (P k)).space = P k ∧ (K'.restrict (P k)).faces.Finite) ∧
       ∀ s ∈ K'.faces, s ∈ L.faces ∨
-        ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n + 1 ∧ (s : Set E) ⊆ P k := by
+        ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n + 1 ∧ p k ∈ s ∧ (s : Set E) ⊆ P k := by
+  have hPne : ∀ i, (P i).Nonempty := fun i => ⟨p i, intrinsicInterior_subset (hp i)⟩
   have hmeet {i j : ι} {x : E} (hxi : x ∈ intrinsicInterior ℝ (P i)) (hxj : x ∈ P j) :
       i = j ∨ Module.finrank ℝ (vectorSpan ℝ (P i)) < Module.finrank ℝ (vectorSpan ℝ (P j)) :=
     TauCeti.eq_or_finrank_lt_of_mem_intrinsicInterior hPv hPne hri hfr hLi hxi hxj
@@ -244,7 +253,7 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
   -- `exists_extension_of_intrinsicFrontier_subset_space`
   obtain ⟨K', hK's, hK'B, hK'C, hK'f⟩ := exists_extension_of_intrinsicFrontier_subset_space K
     (fun j : {i // Module.finrank ℝ (vectorSpan ℝ (P i)) = n} => P j) (fun j => hPc j)
-    (fun j => hPv j) (fun j => hPne j)
+    (fun j => hPv j) (fun j => p j) (fun j => hp j)
     (fun ⟨i, hi⟩ x hx => by
       rcases hfr i hx with hxL | hx'
       · exact space_mono (hLK i) (hL i ⟨intrinsicFrontier_subset (hPc i).isClosed hx, hxL⟩)
@@ -288,29 +297,30 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
     -- a face of `K` in `P k` is a face of `L` or lies in a smaller cell meeting `P k`
     intro s hs
     obtain ⟨hs, hsP⟩ := mem_restrict_faces.1 hs
-    rcases hKf s hs with hsL | ⟨m, hm, hsm⟩
+    rcases hKf s hs with hsL | ⟨m, hm, -, hsm⟩
     · exact .inl (mem_restrict_faces.2 ⟨hsL, hsP⟩)
     · obtain ⟨y, hy⟩ := K.nonempty_of_mem_faces hs
       exact .inr (Set.mem_biUnion (x := m) ⟨⟨y, hsm hy, hsP hy⟩, hm⟩
         (mem_restrict_faces.2 ⟨hs, hsm⟩))
-  · rcases hK'f s hs with hsK | ⟨⟨i, hi⟩, hsi⟩
-    · rcases hKf s hsK with h | ⟨k, hk, hsk⟩
+  · rcases hK'f s hs with hsK | ⟨⟨i, hi⟩, hpi, hsi⟩
+    · rcases hKf s hsK with h | ⟨k, hk, hpk, hsk⟩
       · exact .inl h
-      · exact .inr ⟨k, by omega, hsk⟩
-    · exact .inr ⟨i, by omega, hsi⟩
+      · exact .inr ⟨k, by omega, hpk, hsk⟩
+    · exact .inr ⟨i, by omega, hpi, hsi⟩
 
 end Cells
 
 /-- **Relative simplicial subdivision of a family of compact convex cells.** Let `P i` be a
-locally finite family of nonempty compact convex sets with pairwise disjoint intrinsic interiors,
-and let `L` be a simplicial complex meeting every cell in a finite subcomplex and avoiding the
-intrinsic interiors of all cells. Suppose the intrinsic frontier of each cell is covered by `|L|`
-and the other cells contained in it. Then there is a simplicial complex `K` with
-`|K| = |L| ∪ ⋃ i, P i` which contains `L`, has no other simplex with all its vertices in `|L|`,
-triangulates every cell by finitely many of its simplices, and all of whose simplices outside `L`
-lie in a single cell. -/
+locally finite family of compact convex sets with pairwise disjoint intrinsic interiors, with
+prescribed points `p i` of their intrinsic interiors, and let `L` be a simplicial complex meeting
+every cell in a finite subcomplex and avoiding the intrinsic interiors of all cells. Suppose the
+intrinsic frontier of each cell is covered by `|L|` and the other cells contained in it. Then
+there is a simplicial complex `K` with `|K| = |L| ∪ ⋃ i, P i` which contains `L`, has no other
+simplex with all its vertices in `|L|`, triangulates every cell by finitely many of its simplices,
+and each of whose simplices outside `L` lies in a single cell `P i` and has `p i` as a vertex. -/
 theorem exists_subdivision_extending (L : SimplicialComplex ℝ E) (P : ι → Set E)
-    (hPc : ∀ i, IsCompact (P i)) (hPv : ∀ i, Convex ℝ (P i)) (hPne : ∀ i, (P i).Nonempty)
+    (hPc : ∀ i, IsCompact (P i)) (hPv : ∀ i, Convex ℝ (P i)) (p : ι → E)
+    (hp : ∀ i, p i ∈ intrinsicInterior ℝ (P i))
     (hPlf : LocallyFinite P)
     (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
     (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ L.space ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
@@ -319,14 +329,14 @@ theorem exists_subdivision_extending (L : SimplicialComplex ℝ E) (P : ι → S
     (hLfin : ∀ i, (L.restrict (P i)).faces.Finite) :
     ∃ K : SimplicialComplex ℝ E, K.restrict L.space = L ∧ K.space = L.space ∪ ⋃ i, P i ∧
       (∀ i, (K.restrict (P i)).space = P i ∧ (K.restrict (P i)).faces.Finite) ∧
-      ∀ s ∈ K.faces, s ∈ L.faces ∨ ∃ i, (s : Set E) ⊆ P i := by
+      ∀ s ∈ K.faces, s ∈ L.faces ∨ ∃ i, p i ∈ s ∧ (s : Set E) ⊆ P i := by
   -- subdivide the cells of dimension `< n`, by induction on `n`
   have key : ∀ n : ℕ, ∃ K : SimplicialComplex ℝ E, K.restrict L.space = L ∧
       K.space = L.space ∪ ⋃ (k) (_ : Module.finrank ℝ (vectorSpan ℝ (P k)) < n), P k ∧
       (∀ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n →
         (K.restrict (P k)).space = P k ∧ (K.restrict (P k)).faces.Finite) ∧
       ∀ s ∈ K.faces, s ∈ L.faces ∨
-        ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n ∧ (s : Set E) ⊆ P k := by
+        ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n ∧ p k ∈ s ∧ (s : Set E) ⊆ P k := by
     intro n
     induction n with
     | zero =>
@@ -334,7 +344,7 @@ theorem exists_subdivision_extending (L : SimplicialComplex ℝ E) (P : ι → S
         fun s hs => .inl hs⟩
     | succ n ih =>
       obtain ⟨K, hKL, hKs, hKP, hKf⟩ := ih
-      exact exists_subdivision_lt_succ hPc hPv hPne hPlf hri hfr hL hLi hLfin hKL hKs hKP hKf
+      exact exists_subdivision_lt_succ hPc hPv hp hPlf hri hfr hL hLi hLfin hKL hKs hKP hKf
   -- every cell has dimension at most that of `E`
   have hδE : ∀ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < Module.finrank ℝ E + 1 := fun k =>
     Nat.lt_succ_of_le (Submodule.finrank_le _)
@@ -345,28 +355,29 @@ theorem exists_subdivision_extending (L : SimplicialComplex ℝ E) (P : ι → S
   simp only [hδE, iUnion_true]
 
 /-- **Simplicial subdivision of a family of compact convex cells.** Let `P i` be a locally finite
-family of nonempty compact convex sets with pairwise disjoint intrinsic interiors, such that the
-intrinsic frontier of each cell is covered by the other cells contained in it; for instance,
-compact convex polytopes each proper face of which is a union of lower-dimensional cells of the
-family. Then there is a locally finite simplicial complex `K` with `|K| = ⋃ i, P i` which
-triangulates every cell by finitely many of its simplices, and every simplex of which lies in a
-single cell. -/
+family of compact convex sets with pairwise disjoint intrinsic interiors, such that the intrinsic
+frontier of each cell is covered by the other cells contained in it; for instance, compact convex
+polytopes each proper face of which is a union of lower-dimensional cells of the family. Let `p i`
+be a point of the intrinsic interior of `P i`. Then there is a locally finite simplicial complex
+`K` with `|K| = ⋃ i, P i` which triangulates every cell by finitely many of its simplices, and each
+simplex of which lies in a single cell `P i` and has `p i` as a vertex. -/
 theorem exists_subdivision (P : ι → Set E) (hPc : ∀ i, IsCompact (P i))
-    (hPv : ∀ i, Convex ℝ (P i)) (hPne : ∀ i, (P i).Nonempty) (hPlf : LocallyFinite P)
+    (hPv : ∀ i, Convex ℝ (P i)) (p : ι → E) (hp : ∀ i, p i ∈ intrinsicInterior ℝ (P i))
+    (hPlf : LocallyFinite P)
     (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
     (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j) :
     ∃ K : SimplicialComplex ℝ E, K.space = ⋃ i, P i ∧
       (∀ i, (K.restrict (P i)).space = P i ∧ (K.restrict (P i)).faces.Finite) ∧
-      (∀ s ∈ K.faces, ∃ i, (s : Set E) ⊆ P i) ∧
+      (∀ s ∈ K.faces, ∃ i, p i ∈ s ∧ (s : Set E) ⊆ P i) ∧
       LocallyFinite fun σ : K.faces => convexHull ℝ (σ : Set E) := by
-  obtain ⟨K, -, hKs, hKP, hKf⟩ := exists_subdivision_extending ⊥ P hPc hPv hPne hPlf hri
+  obtain ⟨K, -, hKs, hKP, hKf⟩ := exists_subdivision_extending ⊥ P hPc hPv p hp hPlf hri
     (by simpa [space_bot] using hfr) (by simp [space_bot]) (by simp [space_bot])
     (fun _ => Set.finite_empty.subset fun _ hs => (mem_restrict_faces.1 hs).1)
-  have hKf' : ∀ s ∈ K.faces, ∃ i, (s : Set E) ⊆ P i := fun s hs =>
+  have hKf' : ∀ s ∈ K.faces, ∃ i, p i ∈ s ∧ (s : Set E) ⊆ P i := fun s hs =>
     (hKf s hs).resolve_left (Set.notMem_empty s)
   refine ⟨K, by simpa [space_bot] using hKs, hKP, hKf',
     locallyFinite_convexHull_of_finite_restrict hPv hPlf (L := ⊥) ?_ (fun i => (hKP i).2)
-      fun s hs => .inr (hKf' s hs)⟩
+      fun s hs => .inr ((hKf' s hs).imp fun _ => And.right)⟩
   intro x
   exact ⟨univ, Filter.univ_mem, Set.finite_empty.subset fun σ _ => (Set.notMem_empty σ.1 σ.2).elim⟩
 

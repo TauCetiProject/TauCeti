@@ -379,6 +379,16 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 6 → Aˣ) :
   rw [weightTorusPoints]
   rfl
 
+/-- A weight-torus point scales each coordinate vector by its weight character. -/
+@[simp↓]
+theorem weightTorusPoints_mulVec_single (A : Type v) [CommRing A]
+    (s : Fin 6 → Aˣ) (k : Fin 54) (x : A) :
+    ((weightTorusPoints A s : Matrix.GeneralLinearGroup (Fin 54) A) :
+        Matrix (Fin 54) (Fin 54) A) *ᵥ Pi.single k x =
+      Pi.single k ((torusCharacter s (matrixWeight k) : A) * x) := by
+  rw [coe_weightTorusPoints, kostantTorusMatrix_apply, diagGL_coe,
+    Matrix.diagonal_mulVec_single]
+
 /-! ## The pinning equation -/
 
 /-- **Conjugation by the doubled minuscule weight torus acts on each numbered root subgroup through
