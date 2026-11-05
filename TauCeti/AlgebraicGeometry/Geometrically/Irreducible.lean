@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Irreducible
+public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.Spectrum.Prime.Homeomorph
 public import TauCeti.RingTheory.TensorProduct.IsDomain
@@ -185,6 +186,52 @@ theorem bijOn_preimage_irreducibleComponents_of_isSepClosed {K M : Type u} [Fiel
     rwa [g.irreducibleComponentsEquiv_symm_apply_coe] at this
   · dsimp only
     rw [← g.irreducibleComponentsEquiv_symm_apply_coe g.isOpenMap, e.symm_apply_apply]
+
+/-! ### Images and dense opens
+
+Geometric irreducibility implies geometric connectedness and descends along dominant morphisms
+over a field. These results apply to dense charts and the connectedness of abelian varieties.
+-/
+
+/-- Every geometrically irreducible morphism is geometrically connected. -/
+instance (priority := low) GeometricallyIrreducible.geometricallyConnected
+    {source target : Scheme.{u}} (morphism : source ⟶ target)
+    [GeometricallyIrreducible morphism] : GeometricallyConnected morphism := by
+  refine ⟨fun field _ point fiber first second square ↦ ?_⟩
+  have : IrreducibleSpace fiber :=
+    GeometricallyIrreducible.geometrically_irreducibleSpace point first second square
+  infer_instance
+
+/-- Base-changing the source of a geometrically irreducible composite to a field gives an
+irreducible scheme. -/
+lemma GeometricallyIrreducible.irreducibleSpace_pullback_of_comp
+    {source target base fiber : Scheme.{u}} (f : source ⟶ target) (g : target ⟶ base)
+    [GeometricallyIrreducible (f ≫ g)] {field : Type u} [Field field]
+    {point : Spec (.of field) ⟶ base} {first : fiber ⟶ target}
+    {second : fiber ⟶ Spec (.of field)} (square : IsPullback first second g point) :
+    IrreducibleSpace (pullback f first : Scheme.{u}) :=
+  GeometricallyIrreducible.geometrically_irreducibleSpace _ _ _
+    ((IsPullback.of_hasPullback f first).paste_vert square)
+
+/-- Geometric irreducibility of a composite over a field descends along a dominant morphism. -/
+lemma GeometricallyIrreducible.of_comp_isDominant {field : Type u} [Field field]
+    {source target : Scheme.{u}} (morphism : source ⟶ target) [IsDominant morphism]
+    (structureMap : target ⟶ Spec (.of field))
+    [GeometricallyIrreducible (morphism ≫ structureMap)] :
+    GeometricallyIrreducible structureMap := by
+  refine ⟨fun extensionField _ point fiber first second square ↦ ?_⟩
+  have : IrreducibleSpace (pullback morphism first : Scheme.{u}) :=
+    GeometricallyIrreducible.irreducibleSpace_pullback_of_comp morphism structureMap square
+  have : UniversallyOpen first := MorphismProperty.of_isPullback square.flip inferInstance
+  have denseImage : Dense (Set.range (pullback.snd morphism first)) := by
+    rw [Scheme.Pullback.range_snd]
+    exact morphism.denseRange.preimage first.isOpenMap
+  have irreducibleImage : IsIrreducible (Set.range (pullback.snd morphism first)) := by
+    simpa only [Set.image_univ] using
+      (IrreducibleSpace.isIrreducible_univ (pullback morphism first : Scheme.{u})).image
+        (pullback.snd morphism first) (pullback.snd morphism first).continuous.continuousOn
+  apply (irreducibleSpace_def fiber).mpr
+  simpa only [denseImage.closure_eq, Set.top_eq_univ] using irreducibleImage.closure
 
 end AlgebraicGeometry
 
