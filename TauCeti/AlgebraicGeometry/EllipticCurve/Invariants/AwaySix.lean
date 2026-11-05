@@ -61,35 +61,26 @@ theorem algebraicIndependent_map_c₄_c₆ :
     · intro i
       cases i <;> simp [W, a]
   have h48 : (48 : R) * (⅟(2 : R) ^ 4 * ⅟(3 : R)) = 1 := by
-    calc
-      _ = (2 * ⅟(2 : R)) ^ 4 * (3 * ⅟(3 : R)) := by ring
-      _ = 1 := by simp
+    let := TauCeti.invertibleOfEqTwoPowMulThreePow
+      (by norm_num : (48 : R) = 2 ^ 4 * 3 ^ 1)
+    simpa only [TauCeti.invOf_eq_invOf_two_pow_mul_invOf_three_pow
+      (by norm_num : (48 : R) = 2 ^ 4 * 3 ^ 1), pow_one] using mul_invOf_self (48 : R)
   have h864 : (864 : R) * (⅟(2 : R) ^ 5 * ⅟(3 : R) ^ 3) = 1 := by
-    calc
-      _ = (2 * ⅟(2 : R)) ^ 5 * (3 * ⅟(3 : R)) ^ 3 := by ring
-      _ = 1 := by simp
-  have h₄ : aeval a (MvPolynomial.map (Int.castRingHom R) curve.c₄) = X 0 := by
-    have hW := RingHom.congr_fun ha curve.c₄
-    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] at hW
-    rw [hW, W.specialize_c₄, c₄_of_isShortNF]
-    simp only [W, shortCurve_a₄, a, map_mul, map_pow]
-    have h := congrArg (C : R →+* MvPolynomial (Fin 2) R) h48
-    simp only [map_mul, map_pow, map_ofNat, map_one] at h
-    linear_combination X (0 : Fin 2) * h
-  have h₆ : aeval a (MvPolynomial.map (Int.castRingHom R) curve.c₆) = X 1 := by
-    have hW := RingHom.congr_fun ha curve.c₆
-    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] at hW
-    rw [hW, W.specialize_c₆, c₆_of_isShortNF]
-    simp only [W, shortCurve_a₆, a, map_mul, map_pow]
-    have h := congrArg (C : R →+* MvPolynomial (Fin 2) R) h864
-    simp only [map_mul, map_pow, map_ofNat, map_one] at h
-    linear_combination X (1 : Fin 2) * h
+    let := TauCeti.invertibleOfEqTwoPowMulThreePow
+      (by norm_num : (864 : R) = 2 ^ 5 * 3 ^ 3)
+    simpa only [TauCeti.invOf_eq_invOf_two_pow_mul_invOf_three_pow
+      (by norm_num : (864 : R) = 2 ^ 5 * 3 ^ 3)] using mul_invOf_self (864 : R)
+  have hspecialize := RingHom.congr_fun ha
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] at hspecialize
   have h : aeval a ∘ ![MvPolynomial.map (Int.castRingHom R) curve.c₄,
       MvPolynomial.map (Int.castRingHom R) curve.c₆] = X := by
     funext i
-    fin_cases i
-    · exact h₄
-    · exact h₆
+    fin_cases i <;>
+      simp only [Function.comp_apply, Matrix.cons_val_zero', Matrix.cons_val_succ',
+        hspecialize, W.specialize_c₄, W.specialize_c₆, c₄_of_isShortNF, c₆_of_isShortNF,
+        W, shortCurve_a₄, shortCurve_a₆, a] <;>
+      simp only [neg_mul, mul_neg, neg_neg, ← mul_assoc, ← map_ofNat C, ← map_mul,
+        h48, h864, map_one, one_mul, Fin.mk_zero, Fin.mk_one]
   apply AlgebraicIndependent.of_comp (aeval a)
   rw [h]
   exact algebraicIndependent_X (Fin 2) R
