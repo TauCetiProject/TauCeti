@@ -31,9 +31,10 @@ where `dim D` is the dimension of the closed subgroup cut out by `D`, whose coor
 Only the rational points of the stabilizer are prescribed, so `D` may be any closed subgroup with
 the right rational points, reduced or not: the Krull dimension sees only the underlying space.
 
-The orbit map `G → O` onto the projective orbit scheme is flat, so the dimension formula for flat
-morphisms (`AlgebraicGeometry.Scheme.Hom.coheight_eq_coheight_add_coheight_preimage`) applies at
-the identity. The three codimensions are identified as follows.
+The orbit map `G → O` onto the projective orbit scheme is flat, hence generalizing, so the
+dimension formula for generalizing morphisms
+(`AlgebraicGeometry.Scheme.Hom.coheight_eq_coheight_add_coheight_preimage`) applies at the
+identity. The three codimensions are identified as follows.
 
 * The identity of `G` has codimension `dim G`, since translations make every closed point of `G`
   look alike.
@@ -150,7 +151,7 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq
   have := Algebra.FiniteType.isNoetherianRing k H
   let f := toProjectiveOrbit (H := H) m hm
   let x₀ := Bialgebra.augmentationPoint k H
-  have hB := f.coheight_eq_coheight_add_coheight_preimage x₀
+  have hB := f.coheight_eq_coheight_add_coheight_preimage (Flat.generalizingMap f) x₀
   -- The identity has codimension `dim G`.
   have h₁ : (coheight x₀ : WithBot ℕ∞) = ringKrullDim H := by
     rw [← idealHeight_eq_coheight, HopfAlgebra.ringKrullDim_eq_height_augmentation (k := k)]
