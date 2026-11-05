@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.RingTheory.RingHom.Flat
 import TauCeti.RingTheory.Perfect.Basic
 
 /-!
@@ -31,6 +32,8 @@ and `i > 0`, to quotients of perfect rings by radical ideals.
   `p ^ n`-th powers in the base for a common exponent `n`.
 * `Module.Flat.of_isPerfectClosure`: a perfect closure of a flat algebra over a perfect ring is
   flat.
+* `RingHom.Flat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is flat
+  over it.
 * `RingHom.Flat.perfectClosureOf_comp`: the colimit perfection of a flat algebra over a perfect
   ring is flat.
 * `TauCeti.flat_perfectClosureOf_comp_C`: the perfect polynomial algebra
@@ -116,6 +119,55 @@ theorem of_isPerfectClosure [Module.Flat A K] : Module.Flat A L := by
     exact ha i
 
 end Module.Flat
+
+section FlatFrobenius
+
+variable {K L : Type*} [CommRing K] [CommRing L] (i : K →+* L) (p : ℕ) [ExpChar K p]
+  [ExpChar L p] [PerfectRing L p] [IsPerfectClosure i p]
+
+/-- **A perfect closure is flat when Frobenius is.** If the Frobenius endomorphism of a ring `K` of
+exponential characteristic `p` is flat, then every perfect closure `i : K →+* L` is flat, for
+instance `K → PerfectClosure K p`. -/
+theorem RingHom.Flat.of_isPerfectClosure (hF : (frobenius K p).Flat) : i.Flat := by
+  have hFm (m : ℕ) : (iterateFrobenius K p m).Flat := by
+    induction m with
+    | zero => simpa using RingHom.Flat.id K
+    | succ m ih =>
+      rw [iterateFrobenius_add, iterateFrobenius_one]
+      exact hF.comp ih
+  -- We use the equational criterion for flatness. A relation `∑ fⱼ zⱼ = 0` in `L` becomes, after
+  -- raising it to a power `p ^ N`, a relation `∑ fⱼ ^ p ^ N yⱼ = 0` in `K`, where `yⱼ` maps to a
+  -- power of `zⱼ`. Flatness of the `N`-th power of Frobenius makes this relation trivial, and the
+  -- `p ^ N`-th roots in `L` of the generators of that trivialization trivialize the original one.
+  algebraize [i]
+  refine Module.Flat.of_forall_isTrivialRelation fun {l f z} hfz ↦ ?_
+  simp_rw [Algebra.smul_def, RingHom.algebraMap_toAlgebra] at hfz
+  obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem_of_finite i p z
+  -- The `p ^ n`-th power of the relation is the image of `∑ fⱼ ^ p ^ n yⱼ`, which is therefore
+  -- `p`-nilpotent.
+  have hker : ∑ j, f j ^ p ^ n * y j ∈ pNilradical K p := by
+    refine IsPRadical.ker_le i p ?_
+    rw [RingHom.mem_ker, map_sum]
+    simp_rw [map_mul, map_pow, hy, ← mul_pow, ← sum_pow_char_pow, hfz,
+      zero_pow (expChar_pow_pos L p n).ne']
+  obtain ⟨k, hk⟩ := mem_pNilradical.1 hker
+  have hrel : ∑ j, iterateFrobenius K p (n + k) (f j) * y j ^ p ^ k = 0 := by
+    rw [← hk, sum_pow_char_pow]
+    simp_rw [iterateFrobenius_def, mul_pow, ← pow_mul, ← pow_add]
+  obtain ⟨m, a, w, hyw, ha⟩ := RingHom.Flat.exists_eq_sum_of_sum_mul_eq_zero (hFm (n + k)) hrel
+  refine ⟨m, a, fun s ↦ (iterateFrobeniusEquiv L p (n + k)).symm (i (w s)), fun j ↦ ?_, ha⟩
+  have hroot (x : L) : (iterateFrobeniusEquiv L p (n + k)).symm x ^ p ^ (n + k) = x := by
+    rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
+  apply (iterateFrobeniusEquiv L p (n + k)).injective
+  calc iterateFrobeniusEquiv L p (n + k) (z j) = i (y j ^ p ^ k) := by
+        rw [iterateFrobeniusEquiv_def, map_pow, hy, ← pow_mul, ← pow_add]
+    _ = ∑ s, i (a j s) ^ p ^ (n + k) * i (w s) := by
+        simp [hyw, iterateFrobenius_def]
+    _ = _ := by
+        simp_rw [iterateFrobeniusEquiv_def, Algebra.smul_def, RingHom.algebraMap_toAlgebra,
+          sum_pow_char_pow, mul_pow, hroot]
+
+end FlatFrobenius
 
 section PerfectClosure
 

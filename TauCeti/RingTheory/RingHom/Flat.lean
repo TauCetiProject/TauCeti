@@ -5,10 +5,17 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
 
 /-!
-# Transporting local flatness across ring isomorphisms
+# Flat ring homomorphisms
+
+The equational criterion for a flat ring homomorphism `g : R →+* S`: every relation
+`∑ g (fⱼ) xⱼ = 0` in `S` is trivial. This is Mathlib's
+`Module.Flat.isTrivialRelation_of_sum_smul_eq_zero` stated without the algebra structure that `g`
+induces, so that it also applies to ring endomorphisms such as Frobenius, where that structure
+would clash with the action of a ring on itself.
 
 A commutative square whose horizontal maps are isomorphisms transports flatness after
 localizing the target at corresponding primes. This lets symmetry arguments reduce
@@ -20,6 +27,18 @@ public section
 namespace RingHom
 
 variable {R S R' S' : Type*} [CommRing R] [CommRing S] [CommRing R'] [CommRing S']
+
+/-- **Equational criterion for a flat ring homomorphism.** If `g : R →+* S` is flat, every relation
+`∑ g (fⱼ) xⱼ = 0` in `S` is trivial: there are `aⱼₛ ∈ R` and `wₛ ∈ S` such that
+`xⱼ = ∑ₛ g (aⱼₛ) wₛ` for every `j` and `∑ⱼ fⱼ aⱼₛ = 0` for every `s`. -/
+theorem Flat.exists_eq_sum_of_sum_mul_eq_zero {g : R →+* S} (hg : g.Flat) {ι : Type*}
+    [Fintype ι] {f : ι → R} {x : ι → S} (h : ∑ j, g (f j) * x j = 0) :
+    ∃ (k : ℕ) (a : ι → Fin k → R) (w : Fin k → S),
+      (∀ j, x j = ∑ s, g (a j s) * w s) ∧ ∀ s, ∑ j, f j * a j s = 0 := by
+  algebraize [g]
+  obtain ⟨k, a, w, hxw, ha⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero (f := f) (x := x)
+    (by simpa only [Algebra.smul_def, algebraMap_toAlgebra] using h)
+  exact ⟨k, a, w, fun j ↦ by simpa only [Algebra.smul_def, algebraMap_toAlgebra] using hxw j, ha⟩
 
 /-- A square of ring maps with isomorphic source and target preserves flatness after
 localizing the target at corresponding prime ideals. -/

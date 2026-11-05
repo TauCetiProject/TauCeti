@@ -29,6 +29,8 @@ a ring of characteristic `p`, leads to a bound over the colimit.
 
 * `ModuleCat.hasProjectiveDimensionLT_succ_of_isColimit`: the colimit of a sequence of modules of
   projective dimension `< n` has projective dimension `< n + 1`.
+* `ModuleCat.hasProjectiveDimensionLT_succ_quotient_iSup`: the same bound for the quotient by the
+  union of an increasing sequence of submodules.
 
 ## References
 
@@ -60,5 +62,38 @@ theorem hasProjectiveDimensionLT_succ_of_isColimit [Small.{v} R] {c : Cocone F} 
   rw [← telescopeShortComplex_X₃ F c]
   exact hS.hasProjectiveDimensionLT_X₃ n (telescopeShortComplex_X₁ F c ▸ hsum n le_rfl)
     (telescopeShortComplex_X₂ F c ▸ hsum (n + 1) n.le_succ)
+
+/-- If `N₀ ≤ N₁ ≤ ⋯` are submodules of `M` and every quotient `M ⧸ Nₖ` has projective dimension
+`< n`, then `M ⧸ ⨆ₖ Nₖ` has projective dimension `< n + 1`, since it is the colimit of the
+quotients `M ⧸ Nₖ`. -/
+theorem hasProjectiveDimensionLT_succ_quotient_iSup [Small.{v} R] {M : Type v} [AddCommGroup M]
+    [Module R M] {N : ℕ → Submodule R M} (hN : Monotone N) (n : ℕ)
+    (h : ∀ k, HasProjectiveDimensionLT (of R (M ⧸ N k)) n) :
+    HasProjectiveDimensionLT (of R (M ⧸ ⨆ k, N k)) (n + 1) := by
+  let G : ℕ ⥤ ModuleCat.{v} R :=
+    { obj k := of R (M ⧸ N k)
+      map {k l} hkl := ofHom (Submodule.factor (hN hkl.le))
+      map_id _ := by ext; rfl
+      map_comp _ _ := by ext; rfl }
+  -- Each `M ⧸ Nₖ → M ⧸ ⨆ₖ Nₖ` factors through the stages, so the colimit of the stages is
+  -- the quotient by the union.
+  have hw (s : Cocone G) (k : ℕ) (x : M) :
+      (s.ι.app 0).hom (Submodule.Quotient.mk x) = (s.ι.app k).hom (Submodule.Quotient.mk x) := by
+    rw [← s.w (homOfLE (Nat.zero_le k))]
+    simp [G]
+  let c : Cocone G :=
+    { pt := of R (M ⧸ ⨆ k, N k)
+      ι := { app k := ofHom (Submodule.factor (le_iSup N k)) } }
+  have hc : IsColimit c :=
+    { desc s := ofHom ((⨆ k, N k).liftQ ((s.ι.app 0).hom ∘ₗ (N 0).mkQ) <| iSup_le fun k x hx ↦ by
+        rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.mkQ_apply, hw s k,
+          (Submodule.Quotient.mk_eq_zero _).2 hx, map_zero])
+      fac s k := by
+        ext x
+        exact hw s k x
+      uniq s m hm := by
+        ext x
+        exact congr($(hm 0).hom (Submodule.Quotient.mk x)) }
+  exact hasProjectiveDimensionLT_succ_of_isColimit G hc n h
 
 end ModuleCat
