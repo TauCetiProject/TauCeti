@@ -906,3 +906,108 @@ theorem finite_quotientMk_comp_stalkPrecomp_fst {x₀ : E} {w₀ : ℂ}
 end FiniteDimensional
 
 end TauCeti.holomorphicStructureSheaf
+
+namespace TauCeti
+
+open holomorphicStructureSheaf
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- The coefficient germs of a function-level Weierstrass polynomial form a distinguished
+polynomial over the base stalk. -/
+private theorem isDistinguishedAt_monicOfCoeff_of_toFilterGerm_eq {x₀ : E} {d : ℕ}
+    {c : Fin d → E → ℂ} (hc0 : ∀ i, c i x₀ = 0)
+    {s : Fin d → (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀}
+    (hs : ∀ i, toFilterGerm 𝓘(ℂ, E) E x₀ (𝓝 x₀) le_rfl (s i) = c i) :
+    (Polynomial.monicOfCoeff s).IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) :=
+  (isDistinguishedAt_monicOfCoeff_iff s).2 fun i ↦
+    (eval_eq_of_toFilterGerm_eq (hs i)).trans (hc0 i)
+
+/-- **Uniqueness of the local Weierstrass preparation of a holomorphic function.** Two
+factorizations `P_c (w - w₀) * u = P_{c'} (w - w₀) * u'` near `(x₀, w₀)`, where `P_c` is the monic
+polynomial `TauCeti.Polynomial.monicOfCoeff` with lower coefficients `c i x` vanishing at `x₀`
+and `u`, `u'` do not vanish at `(x₀, w₀)`, have the same coefficient germs at `x₀` and the same
+unit germ at `(x₀, w₀)`. -/
+theorem eventuallyEq_of_weierstrassPreparation {x₀ : E} {w₀ : ℂ} {d : ℕ}
+    {c c' : Fin d → E → ℂ} {u u' : E × ℂ → ℂ}
+    (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hu : AnalyticAt ℂ u (x₀, w₀)) (hu0 : u (x₀, w₀) ≠ 0)
+    (hc' : ∀ i, AnalyticAt ℂ (c' i) x₀) (hc'0 : ∀ i, c' i x₀ = 0)
+    (hu' : AnalyticAt ℂ u' (x₀, w₀)) (hu'0 : u' (x₀, w₀) ≠ 0)
+    (h : (fun p : E × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * u p)
+      =ᶠ[𝓝 (x₀, w₀)]
+        fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c' i p.1)).eval (p.2 - w₀) * u' p) :
+    (∀ i, c i =ᶠ[𝓝 x₀] c' i) ∧ u =ᶠ[𝓝 (x₀, w₀)] u' := by
+  choose s hs using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hc i)
+  choose s' hs' using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hc' i)
+  obtain ⟨v, hv⟩ := exists_toFilterGerm_eq_of_analyticAt hu
+  obtain ⟨v', hv'⟩ := exists_toFilterGerm_eq_of_analyticAt hu'
+  have hunit {u : E × ℂ → ℂ} (hu0 : u (x₀, w₀) ≠ 0)
+      {v : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
+      (hv : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl v = u) : IsUnit v :=
+    (isUnit_stalk_iff 𝓘(ℂ, E × ℂ) (E × ℂ) v).2 ((eval_eq_of_toFilterGerm_eq hv).symm ▸ hu0)
+  have hfac : evalVertical x₀ w₀ (Polynomial.monicOfCoeff s) * v =
+      evalVertical x₀ w₀ (Polynomial.monicOfCoeff s') * v' :=
+    toFilterGerm_nhds_injective (x₀, w₀) <| by
+      rw [map_mul, map_mul, toFilterGerm_evalVertical_monicOfCoeff fun i ↦ hs i _ le_rfl,
+        toFilterGerm_evalVertical_monicOfCoeff fun i ↦ hs' i _ le_rfl, hv _ le_rfl,
+        hv' _ le_rfl, ← Germ.coe_mul, ← Germ.coe_mul, Germ.coe_eq]
+      exact h
+  obtain ⟨hss', hvv'⟩ := weierstrassPreparation_unique
+    (isDistinguishedAt_monicOfCoeff_of_toFilterGerm_eq hc0 fun i ↦ hs i _ le_rfl)
+    (hunit hu0 (hv _ le_rfl)) rfl
+    (isDistinguishedAt_monicOfCoeff_of_toFilterGerm_eq hc'0 fun i ↦ hs' i _ le_rfl)
+    (hunit hu'0 (hv' _ le_rfl)) hfac
+  rw [Polynomial.monicOfCoeff_inj] at hss'
+  refine ⟨fun i ↦ Germ.coe_eq.1 ?_, Germ.coe_eq.1 ?_⟩
+  · rw [← hs i _ le_rfl, ← hs' i _ le_rfl, hss']
+  · rw [← hv _ le_rfl, ← hv' _ le_rfl, hvv']
+
+/-- **Uniqueness of the local Weierstrass division of a holomorphic function.** Two divisions
+`P_c (w - w₀) * q + ∑ i, r i x * (w - w₀) ^ i = P_c (w - w₀) * q' + ∑ i, r' i x * (w - w₀) ^ i`
+near `(x₀, w₀)` by the Weierstrass polynomial `P_c = TauCeti.Polynomial.monicOfCoeff c`, with
+coefficients `c i x` vanishing at `x₀`, have the same quotient germ at `(x₀, w₀)` and the same
+remainder coefficient germs at `x₀`. -/
+theorem eventuallyEq_of_weierstrassDivision {x₀ : E} {w₀ : ℂ} {d : ℕ} {c : Fin d → E → ℂ}
+    {q q' : E × ℂ → ℂ} {r r' : Fin d → E → ℂ}
+    (hc : ∀ i, AnalyticAt ℂ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0)
+    (hq : AnalyticAt ℂ q (x₀, w₀)) (hr : ∀ i, AnalyticAt ℂ (r i) x₀)
+    (hq' : AnalyticAt ℂ q' (x₀, w₀)) (hr' : ∀ i, AnalyticAt ℂ (r' i) x₀)
+    (h : (fun p : E × ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q p +
+        ∑ i : Fin d, r i p.1 * (p.2 - w₀) ^ (i : ℕ)) =ᶠ[𝓝 (x₀, w₀)]
+      fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - w₀) * q' p +
+        ∑ i : Fin d, r' i p.1 * (p.2 - w₀) ^ (i : ℕ)) :
+    q =ᶠ[𝓝 (x₀, w₀)] q' ∧ ∀ i, r i =ᶠ[𝓝 x₀] r' i := by
+  choose s hs using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hc i)
+  obtain ⟨v, hv⟩ := exists_toFilterGerm_eq_of_analyticAt hq
+  obtain ⟨v', hv'⟩ := exists_toFilterGerm_eq_of_analyticAt hq'
+  choose a ha using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hr i)
+  choose a' ha' using fun i ↦ exists_toFilterGerm_eq_of_analyticAt (hr' i)
+  have hdeg (a : Fin d → (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀) :
+      (∑ i : Fin d, Polynomial.monomial (i : ℕ) (a i)).degree <
+        (Polynomial.monicOfCoeff s).natDegree := by
+    rw [Polynomial.natDegree_monicOfCoeff]
+    simpa only [C_mul_X_pow_eq_monomial] using Polynomial.degree_sum_fin_lt a
+  have hdiv : evalVertical x₀ w₀ (Polynomial.monicOfCoeff s) * v +
+        evalVertical x₀ w₀ (∑ i : Fin d, Polynomial.monomial (i : ℕ) (a i)) =
+      evalVertical x₀ w₀ (Polynomial.monicOfCoeff s) * v' +
+        evalVertical x₀ w₀ (∑ i : Fin d, Polynomial.monomial (i : ℕ) (a' i)) :=
+    toFilterGerm_nhds_injective (x₀, w₀) <| by
+      rw [map_add, map_mul, map_add, map_mul,
+        toFilterGerm_evalVertical_monicOfCoeff fun i ↦ hs i _ le_rfl, hv _ le_rfl, hv' _ le_rfl,
+        toFilterGerm_evalVertical_sum_monomial fun i ↦ ha i _ le_rfl,
+        toFilterGerm_evalVertical_sum_monomial fun i ↦ ha' i _ le_rfl, ← Germ.coe_mul,
+        ← Germ.coe_add, ← Germ.coe_mul, ← Germ.coe_add, Germ.coe_eq]
+      exact h
+  obtain ⟨hvv', haa'⟩ := weierstrassDivision_unique_of_isDistinguishedAt
+    (isDistinguishedAt_monicOfCoeff_of_toFilterGerm_eq hc0 fun i ↦ hs i _ le_rfl) (hdeg a) rfl
+    (hdeg a') hdiv
+  refine ⟨Germ.coe_eq.1 ?_, fun i ↦ Germ.coe_eq.1 ?_⟩
+  · rw [← hv _ le_rfl, ← hv' _ le_rfl, hvv']
+  · have hai : a i = a' i := by
+      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Fin.val_eq_val] using
+        congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
+    rw [← ha i _ le_rfl, ← ha' i _ le_rfl, hai]
+
+end TauCeti
