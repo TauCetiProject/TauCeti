@@ -70,4 +70,23 @@ theorem isUnit_periodMulMatrix_iff (z : QuadraticAlgebra R a b) :
     IsUnit z.periodMulMatrix ↔ IsUnit z := by
   rw [Matrix.isUnit_iff_isUnit_det, det_periodMulMatrix, isUnit_iff_norm_isUnit]
 
+/-- The bottom row recovers the element, so the period representation is faithful. -/
+theorem periodMulMatrix_injective :
+    Function.Injective (periodMulMatrix : QuadraticAlgebra R a b → Matrix (Fin 2) (Fin 2) R) := by
+  intro z w h
+  have him := congrArg (fun M => M 1 0) h
+  have hre := congrArg (fun M => M 1 1) h
+  simp only [periodMulMatrix_eq, of_apply, cons_val_one, cons_val_zero] at him hre
+  exact QuadraticAlgebra.ext hre him
+
+/-- Changing coefficients commutes with the period representation. In particular this identifies
+reduction of integral multiplication matrices with multiplication in the residue algebra. -/
+@[simp]
+theorem periodMulMatrix_mapRingHom {S : Type*} [CommRing S] (f : R →+* S)
+    (z : QuadraticAlgebra R a b) :
+    (mapRingHom f a b z).periodMulMatrix = z.periodMulMatrix.map f := by
+  rw [periodMulMatrix_eq, periodMulMatrix_eq]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [mapRingHom]
+
 end QuadraticAlgebra
