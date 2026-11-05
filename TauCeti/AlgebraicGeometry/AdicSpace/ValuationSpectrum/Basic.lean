@@ -354,6 +354,13 @@ instance instIsPrimeSupp (v : Spv A) : v.supp.IsPrime :=
   let := v.toValuativeRel
   inferInstanceAs (ValuativeRel.supp A).IsPrime
 
+/-- A positive power of `x` lies in the support of `v` exactly when `x` does, since the support is
+prime. -/
+lemma vle_pow_zero_iff (v : Spv A) (x : A) {n : ℕ} (hn : n ≠ 0) :
+    v.toValuativeRel.vle (x ^ n) 0 ↔ v.toValuativeRel.vle x 0 := by
+  rw [← mem_supp_iff, ← mem_supp_iff]
+  exact Ideal.IsPrime.pow_mem_iff_mem inferInstance n (Nat.pos_of_ne_zero hn)
+
 /-- `(ofValuation v).vle x y ↔ v x ≤ v y`. -/
 @[simp]
 lemma vle_ofValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]

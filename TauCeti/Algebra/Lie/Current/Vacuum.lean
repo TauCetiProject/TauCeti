@@ -208,8 +208,7 @@ theorem ncoeff_currentField_vacuum_eq_zero (x : L) {n : ℤ} (hn : 0 ≤ n) :
         (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0)) x)[[n]])
         (vacuum Φ hΦ hΦs a) = 0 := by
   rw [ncoeff_currentField, envelopingAction_apply]
-  exact envelopingι_smul_vacuum (tmul_mem_orderSubmodule R L 0
-    (HahnSeries.orderTop_single_le.trans' (by exact_mod_cast hn)) x)
+  exact envelopingι_smul_vacuum (single_tmul_mem_orderSubmodule R L hn 1 x)
 
 end Vacuum
 

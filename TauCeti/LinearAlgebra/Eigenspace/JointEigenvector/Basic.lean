@@ -51,6 +51,9 @@ components of `M_k(Γ₁(N))`.
   independent (with no further hypotheses), exhaust the space when semisimple, and
   decompose every invariant submodule — with the character-indexed forms (`…_unitHom…`)
   for group representations.
+* `iInf_eigenspace_eq_of_iSup_eq_top`, `iInf_eigenspace_eq_bot_of_iSup_eq_top`: if spanning
+  summands carry pairwise distinct joint scalars of any family of endomorphisms, every summand is
+  a joint eigenspace, and every other joint eigenspace is zero.
 * `MonoidHom.finite_nonzeroJointWeights`, `MonoidHom.natCard_nonzeroJointWeights_le_finrank`:
   a representation on a finite module over a domain has finitely many nonzero joint weights,
   with their number bounded by its rank.
@@ -234,6 +237,30 @@ functions, are supremum-independent — no commutation and no semisimplicity. -/
 lemma iSupIndep_iInf_eigenspace {ι : Type*} (f : ι → Module.End K V) :
     iSupIndep fun χ : ι → K ↦ ⨅ i, (f i).eigenspace (χ i) :=
   iSupIndep.iInf (fun i ↦ (f i).eigenspace) fun i ↦ (f i).eigenspaces_iSupIndep
+
+/-- **Summands of a spanning family with distinct joint scalars are joint eigenspaces.** If the
+`W j` span `V`, every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
+`g j`, and `g` is injective, then the joint eigenspace of `f` for `g k` is exactly `W k`. This is
+the joint form of `Module.End.eigenspace_eq_of_iSup_eq_top`: the scalars of a single operator
+need not separate the summands, only those of the whole family. -/
+theorem iInf_eigenspace_eq_of_iSup_eq_top {ι κ : Type*} (f : ι → Module.End K V)
+    {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
+    (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g) (k : κ) :
+    ⨅ i, (f i).eigenspace (g k i) = W k :=
+  (congrFun (((iSupIndep_iInf_eigenspace f).comp hg).le_iff_eq_of_iSup_eq_top htop |>.mp hW)
+    k).symm
+
+/-- **Joint eigenvalues outside a spanning family of joint eigenspaces do not occur.** If the
+`W j` span `V` and every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
+`g j`, then the joint eigenspace of `f` for any eigenvalue function `χ` that is not some `g j`
+is zero. -/
+theorem iInf_eigenspace_eq_bot_of_iSup_eq_top {ι κ : Type*} (f : ι → Module.End K V)
+    {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
+    (htop : ⨆ j, W j = ⊤) {χ : ι → K} (hχ : χ ∉ Set.range g) :
+    ⨅ i, (f i).eigenspace (χ i) = ⊥ := by
+  have hle : ⊤ ≤ ⨆ (c) (_ : c ≠ χ), ⨅ i, (f i).eigenspace (c i) :=
+    htop ▸ iSup_le fun j ↦ (hW j).trans (le_iSup₂_of_le (g j) (fun h ↦ hχ ⟨j, h⟩) le_rfl)
+  exact disjoint_top.mp ((iSupIndep_iInf_eigenspace f χ).mono_right hle)
 
 variable [MulOne G] {ρ : G →* Module.End K V}
 
