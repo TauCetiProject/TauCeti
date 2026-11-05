@@ -117,6 +117,52 @@ theorem norm_coordinateDeriv_le (α : List (Fin n)) {f : CoordinateSpace n → A
   refine ((iteratedFDeriv ℝ α.length f x).le_opNorm _).trans (le_of_eq ?_)
   simp
 
+/-- The coordinate derivative along the word `[r 0, …, r (k - 1)]` of a `C^k` function is its
+`k`-th Fréchet derivative evaluated on the standard basis vectors `e_{r 0}, …, e_{r (k - 1)}`. -/
+theorem coordinateDeriv_ofFn_eq_iteratedFDeriv {k : ℕ} (r : Fin k → Fin n)
+    {f : CoordinateSpace n → A} (hf : ContDiff ℝ k f) (x : CoordinateSpace n) :
+    coordinateDeriv (List.ofFn r) f x =
+      iteratedFDeriv ℝ k f x fun i => EuclideanSpace.single (r i) 1 := by
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ k f) x :=
+      (hf.differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self _)) x
+    rw [List.ofFn_succ, coordinateDeriv_cons,
+      funext (ih (fun i => r i.succ) (hf.of_le (by exact_mod_cast Nat.le_succ _))),
+      fderiv_continuousMultilinear_apply_const_apply hd]
+    exact (iteratedFDeriv_succ_apply_left (𝕜 := ℝ) (f := f) (x := x) (n := k)
+      fun i => EuclideanSpace.single (r i) 1).symm
+
+/-- A continuous multilinear map on `ℝⁿ` has norm at most the sum of the norms of its values on
+tuples of standard basis vectors. -/
+theorem _root_.ContinuousMultilinearMap.norm_le_sum_single {k : ℕ}
+    (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n) A) :
+    ‖M‖ ≤ ∑ r : Fin k → Fin n, ‖M fun i => EuclideanSpace.single (r i) 1‖ := by
+  classical
+  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
+  have hv : v = fun i => ∑ j, v i j • EuclideanSpace.single j (1 : ℝ) := by
+    funext i
+    simpa [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply] using
+      ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr (v i)).symm
+  rw [hv, M.map_sum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
+  rw [M.map_smul_univ, norm_smul, mul_comm]
+  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+  rw [norm_prod]
+  gcongr with i
+  calc ‖v i (r i)‖ ≤ ‖v i‖ := PiLp.norm_apply_le (v i) (r i)
+    _ = ‖∑ j, v i j • EuclideanSpace.single j (1 : ℝ)‖ := by rw [← congrFun hv i]
+
+/-- Conversely to `TauCeti.norm_coordinateDeriv_le`, the `k`-th Fréchet derivative of a `C^k`
+function is bounded by the sum of the norms of its coordinate derivatives along the words of
+length `k`. -/
+theorem norm_iteratedFDeriv_le_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ k f) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k f x‖ ≤ ∑ r : Fin k → Fin n, ‖coordinateDeriv (List.ofFn r) f x‖ := by
+  simp only [coordinateDeriv_ofFn_eq_iteratedFDeriv _ hf]
+  exact (iteratedFDeriv ℝ k f x).norm_le_sum_single
+
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
     coordinateDeriv α (f + g) = coordinateDeriv α f + coordinateDeriv α g := by
