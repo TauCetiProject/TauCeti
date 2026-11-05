@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Birational.Irreducible
-public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Normal
+public import TauCeti.AlgebraicGeometry.Morphisms.Integral.Normal
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
 public import TauCeti.AlgebraicGeometry.Restrict
 
