@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Ordered.Basic
+public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.Data.Finset.Inversions
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.LinearAlgebra.Finsupp.Supported
@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Data.Finset.Sort
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The ordered Čech complex is homotopy equivalent to the Čech complex
@@ -152,136 +152,9 @@ private lemma bdry_bdry (n : ℕ) (x : Chain ι (n + 2)) : bdry n (bdry (n + 1) 
     rw [← mul_one k, ← smul_eq_mul, ← Finsupp.smul_single, map_zsmul, map_zsmul,
       bdry_bdry_single, smul_zero]
 
-/-! ### Inversions and sorting -/
-
 section LinearOrder
 
 variable [LinearOrder ι]
-
-/-- The inversion sign `(-1) ^ #(univ.inversions b)` of a tuple. -/
-private def tupleSign {m : ℕ} (b : Fin m → ι) : ℤ := (-1) ^ #(univ.inversions b)
-
-private lemma card_univ_inversions {m : ℕ} (b : Fin m → ι) :
-    #(univ.inversions b) = ∑ i, ∑ j, if i < j ∧ b j < b i then 1 else 0 := by
-  rw [inversions_univ, card_filter, ← univ_product_univ, sum_product]
-
-/-- Removing the entry at `k` removes the inversions involving `k`. -/
-private lemma card_univ_inversions_eq (b : Fin (n + 1) → ι) (k : Fin (n + 1)) :
-    #(univ.inversions b) = #(univ.inversions (b ∘ k.succAbove)) +
-      (∑ j, if k < j ∧ b j < b k then 1 else 0) + ∑ i, if i < k ∧ b k < b i then 1 else 0 := by
-  have h₁ : (∑ i, if i < k ∧ b k < b i then 1 else 0) =
-      ∑ i, if k.succAbove i < k ∧ b k < b (k.succAbove i) then 1 else 0 := by
-    rw [Fin.sum_univ_succAbove _ k]
-    simp
-  simp only [card_univ_inversions, Fin.sum_univ_succAbove _ k, lt_self_iff_false, false_and,
-    ite_false, zero_add, Finset.sum_add_distrib, Function.comp_apply,
-    Fin.succAbove_lt_succAbove_iff]
-  omega
-
-/-- The parity of the inversions of a tuple and of the tuple with its entry at `k` removed differ
-by the position `k`, the number of entries smaller than `b k`, and the number of earlier entries
-equal to `b k`. -/
-private lemma card_univ_inversions_add (b : Fin (n + 1) → ι) (k : Fin (n + 1)) :
-    #(univ.inversions b) + 2 * #{i | i < k ∧ b i < b k} + #{i | i < k ∧ b i = b k} =
-      #(univ.inversions (b ∘ k.succAbove)) + #{i | b i < b k} + k := by
-  have hk : (k : ℕ) = #{i | i < k ∧ b i < b k} + #{i | i < k ∧ b i = b k} +
-      ∑ i, if i < k ∧ b k < b i then 1 else 0 := by
-    have : #{i : Fin (n + 1) | i < (k : ℕ)} = k := by
-      rw [Fin.card_filter_val_lt]
-      omega
-    rw [← this, Finset.card_filter, Finset.card_filter, Finset.card_filter,
-      ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rcases lt_trichotomy (b i) (b k) with h | h | h
-    · simp [h, h.ne, h.not_gt]
-    · simp [h]
-    · simp [h, h.ne', h.not_gt]
-  have hL : #{i | b i < b k} = #{i | i < k ∧ b i < b k} +
-      ∑ j, if k < j ∧ b j < b k then 1 else 0 := by
-    rw [Finset.card_filter, Finset.card_filter, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rcases lt_trichotomy i k with h | rfl | h
-    · simp [h, h.not_gt]
-    · simp
-    · simp [h, h.not_gt]
-  rw [card_univ_inversions_eq b k]
-  omega
-
-/-- The sign of a tuple compared with the sign of the tuple with its entry at `k` removed. -/
-private lemma tupleSign_mul (b : Fin (n + 1) → ι) (k : Fin (n + 1)) :
-    tupleSign b * (-1) ^ #{i | i < k ∧ b i = b k} =
-      (-1) ^ (#{i | b i < b k} + (k : ℕ)) * tupleSign (b ∘ k.succAbove) := by
-  have h := congrArg ((-1 : ℤ) ^ ·) (card_univ_inversions_add b k)
-  simp only [pow_add, pow_mul, neg_one_sq, one_pow, mul_one] at h
-  rw [tupleSign, tupleSign, h]
-  ring
-
-/-- The increasing rearrangement `b ∘ Tuple.sort b` of a tuple. -/
-private abbrev sortTuple {m : ℕ} (b : Fin m → ι) : Fin m → ι := b ∘ Tuple.sort b
-
-private lemma strictMono_sortTuple {m : ℕ} {b : Fin m → ι} (hb : Function.Injective b) :
-    StrictMono (sortTuple b) :=
-  (Tuple.monotone_sort b).strictMono_of_injective (hb.comp (Tuple.sort b).injective)
-
-private lemma range_sortTuple {m : ℕ} (b : Fin m → ι) : Set.range (sortTuple b) = Set.range b :=
-  (Tuple.sort b).surjective.range_comp b
-
-/-- The increasing rearrangement of an injective tuple depends only on its range. -/
-private lemma sortTuple_eq_sortTuple {m : ℕ} {b b' : Fin m → ι} (hb : Function.Injective b)
-    (hb' : Function.Injective b') (h : Set.range b = Set.range b') : sortTuple b = sortTuple b' :=
-  ((strictMono_sortTuple hb).range_inj_of_wellFoundedLT (strictMono_sortTuple hb')).1 <| by
-    rw [range_sortTuple, range_sortTuple, h]
-
-private lemma sortTuple_eq_self {m : ℕ} {b : Fin m → ι} (hb : StrictMono b) : sortTuple b = b :=
-  ((strictMono_sortTuple hb.injective).range_inj_of_wellFoundedLT hb).1 (range_sortTuple b)
-
-/-- The increasing rearrangement of an injective tuple is the increasing enumeration of its set of
-entries. -/
-private lemma sortTuple_eq_orderEmbOfFin {m : ℕ} {b : Fin m → ι} (hb : Function.Injective b) :
-    sortTuple b = (univ.image b).orderEmbOfFin (by rw [card_image_of_injective _ hb, card_fin]) :=
-  orderEmbOfFin_unique _ (fun _ ↦ mem_image_of_mem _ (mem_univ _)) (strictMono_sortTuple hb)
-
-/-- The position of the entry `b k` in the increasing rearrangement of an injective tuple `b`:
-the number of entries smaller than `b k`. -/
-private def sortPos (b : Fin (n + 1) → ι) (k : Fin (n + 1)) : Fin (n + 1) :=
-  ⟨#{i | b i < b k}, by
-    refine (card_lt_card (filter_ssubset.2 ⟨k, mem_univ _, lt_irrefl (b k)⟩)).trans_eq ?_
-    rw [card_univ, Fintype.card_fin]⟩
-
-private lemma sortTuple_sortPos (b : Fin (n + 1) → ι) (hb : Function.Injective b)
-    (k : Fin (n + 1)) : sortTuple b (sortPos b k) = b k := by
-  obtain ⟨m, hm⟩ : b k ∈ Set.range (sortTuple b) := by
-    rw [range_sortTuple]
-    exact ⟨k, rfl⟩
-  have h := card_filter_lt_orderEmbOfFin (univ.image b)
-    (by rw [card_image_of_injective _ hb, card_fin]) m
-  rw [← sortTuple_eq_orderEmbOfFin hb] at h
-  rw [hm, filter_image, card_image_of_injective _ hb] at h
-  rw [← hm]
-  congr 1
-  exact Fin.ext h
-
-/-- Removing the entry at `k` from an injective tuple removes the entry at `sortPos b k` from its
-increasing rearrangement. -/
-private lemma sortTuple_comp_succAbove (b : Fin (n + 1) → ι) (hb : Function.Injective b)
-    (k : Fin (n + 1)) :
-    sortTuple (b ∘ k.succAbove) = sortTuple b ∘ (sortPos b k).succAbove := by
-  rw [sortTuple_eq_orderEmbOfFin (hb.comp Fin.succAbove_right_injective)]
-  refine (orderEmbOfFin_unique _ (fun x ↦ ?_)
-    ((strictMono_sortTuple hb).comp (Fin.strictMono_succAbove _))).symm
-  obtain ⟨i, hi⟩ : sortTuple b ((sortPos b k).succAbove x) ∈ Set.range b := by
-    rw [← range_sortTuple b]
-    exact ⟨_, rfl⟩
-  have hik : i ≠ k := by
-    rintro rfl
-    rw [← sortTuple_sortPos b hb i] at hi
-    exact Fin.succAbove_ne _ _ ((strictMono_sortTuple hb).injective hi).symm
-  obtain ⟨z, rfl⟩ := Fin.exists_succAbove_eq hik
-  exact mem_image.2 ⟨z, mem_univ _, hi⟩
-
-private lemma sortPos_injective (b : Fin (n + 1) → ι) (hb : Function.Injective b) :
-    Function.Injective (sortPos b) := fun k k' h ↦
-  hb ((sortTuple_sortPos b hb k).symm.trans ((congrArg _ h).trans (sortTuple_sortPos b hb k')))
 
 /-! ### Alternation -/
 
@@ -289,101 +162,63 @@ private lemma sortPos_injective (b : Fin (n + 1) → ι) (hb : Function.Injectiv
 times the sign of the rearrangement, and a tuple with a repeated entry goes to zero. -/
 private def alt (n : ℕ) : Chain ι n →ₗ[ℤ] Chain ι n :=
   Finsupp.linearCombination ℤ fun b ↦
-    if Function.Injective b then tupleSign b • Finsupp.single (sortTuple b) 1 else 0
+    if Function.Injective b then
+      (-1 : ℤ) ^ #(univ.inversions b) • Finsupp.single (b ∘ Tuple.sort b) 1
+    else 0
 
 private lemma alt_single_of_injective {b : Fin (n + 1) → ι} (hb : Function.Injective b) :
-    alt n (Finsupp.single b 1) = tupleSign b • Finsupp.single (sortTuple b) 1 := by
+    alt n (Finsupp.single b 1) =
+      (-1 : ℤ) ^ #(univ.inversions b) • Finsupp.single (b ∘ Tuple.sort b) 1 := by
   simp [alt, hb]
 
 private lemma alt_single_of_not_injective {b : Fin (n + 1) → ι} (hb : ¬Function.Injective b) :
     alt n (Finsupp.single b 1) = 0 := by
   simp [alt, hb]
 
-omit [LinearOrder ι] in
-private lemma eq_of_injective_comp_succAbove {b : Fin (n + 1) → ι} {q : Fin (n + 1)}
-    (hq : Function.Injective (b ∘ q.succAbove)) {i j : Fin (n + 1)} (hi : i ≠ q) (hj : j ≠ q)
-    (h : b i = b j) : i = j := by
-  obtain ⟨i, rfl⟩ := Fin.exists_succAbove_eq hi
-  obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq hj
-  exact congrArg _ (hq h)
-
-omit [LinearOrder ι] in
-/-- If `b p = b q`, removing the entry at `p` leaves an injective tuple exactly when removing the
-entry at `q` does. -/
-private lemma injective_comp_succAbove_of_eq {b : Fin (n + 1) → ι} {p q : Fin (n + 1)}
-    (hpq : p ≠ q) (h : b p = b q) (hp : Function.Injective (b ∘ p.succAbove)) :
-    Function.Injective (b ∘ q.succAbove) := by
-  intro x y hxy
-  have key (z : Fin (n + 1)) (hz : z ≠ q) :
-      (if z = p then q else z) ≠ p ∧ b (if z = p then q else z) = b z := by
-    split_ifs with hzp
-    · exact ⟨hpq.symm, hzp ▸ h.symm⟩
-    · exact ⟨hzp, rfl⟩
-  have hx := key _ (Fin.succAbove_ne q x)
-  have hy := key _ (Fin.succAbove_ne q y)
-  have := eq_of_injective_comp_succAbove hp hx.1 hy.1 (hx.2.trans (hxy.trans hy.2.symm))
-  refine Fin.succAbove_right_injective (p := q) ?_
-  split_ifs at this with h₁ h₂ h₂
-  · exact h₁.trans h₂.symm
-  · exact absurd this.symm (Fin.succAbove_ne q y)
-  · exact absurd this (Fin.succAbove_ne q x)
-  · exact this
-
-omit [LinearOrder ι] in
-private lemma range_comp_succAbove_of_eq {b : Fin (n + 1) → ι} {p q : Fin (n + 1)}
-    (hpq : p ≠ q) (h : b p = b q) : Set.range (b ∘ p.succAbove) = Set.range b := by
-  refine (Set.range_comp_subset_range _ _).antisymm ?_
-  rintro _ ⟨i, rfl⟩
-  by_cases hi : i = p
-  · obtain ⟨z, hz⟩ := Fin.exists_succAbove_eq hpq.symm
-    exact ⟨z, by simp [hz, hi, h]⟩
-  · obtain ⟨z, hz⟩ := Fin.exists_succAbove_eq hi
-    exact ⟨z, by simp [hz]⟩
-
 /-- The terms of the boundary of an injective tuple, after alternation, are the terms of the
 boundary of its increasing rearrangement. -/
 private lemma alt_bdry_single_of_injective {b : Fin (n + 2) → ι} (hb : Function.Injective b) :
     alt n (bdry n (Finsupp.single b 1)) = bdry n (alt (n + 1) (Finsupp.single b 1)) := by
   rw [alt_single_of_injective hb, map_zsmul, bdry_single, bdry_single, map_sum, Finset.smul_sum]
-  refine Fintype.sum_bijective (sortPos b) (sortPos_injective b hb).bijective_of_finite _ _
-    fun k ↦ ?_
+  refine Fintype.sum_bijective (Tuple.sort b).symm (Tuple.sort b).symm.bijective _ _ fun k ↦ ?_
   have hb' : Function.Injective (b ∘ k.succAbove) := hb.comp Fin.succAbove_right_injective
   have hE : #{i | i < k ∧ b i = b k} = 0 := by
     rw [card_eq_zero, filter_eq_empty_iff]
     exact fun i _ ⟨hi, h⟩ ↦ hi.ne (hb h)
-  have h := tupleSign_mul b k
+  have h := neg_one_pow_card_univ_inversions_comp_succAbove (R := ℤ) b k
   rw [hE, pow_zero, mul_one, pow_add] at h
-  rw [map_zsmul, alt_single_of_injective hb', sortTuple_comp_succAbove b hb k, smul_smul,
+  rw [map_zsmul, alt_single_of_injective hb', Tuple.comp_succAbove_comp_sort hb k, smul_smul,
     smul_smul]
   congr 1
-  have hpos : (sortPos b k : ℕ) = #{i | b i < b k} := rfl
   have hL : ((-1 : ℤ) ^ #{i | b i < b k}) ^ 2 = 1 := by rw [← pow_mul, mul_comm, pow_mul]; simp
-  rw [hpos]
+  rw [Tuple.val_sort_symm_apply hb]
   linear_combination (-(-1 : ℤ) ^ #{i | b i < b k}) * h -
-    ((-1) ^ (k : ℕ) * tupleSign (b ∘ k.succAbove)) * hL
+    ((-1) ^ (k : ℕ) * (-1) ^ #(univ.inversions (b ∘ k.succAbove))) * hL
 
 /-- The coefficients of the two surviving terms of the boundary of a tuple with exactly one
 repeated pair of entries `b p = b q`, `p < q`, cancel. -/
-private lemma neg_one_pow_mul_tupleSign_add {b : Fin (n + 1) → ι} {p q : Fin (n + 1)}
+private lemma neg_one_pow_mul_neg_one_pow_card_inversions_add {b : Fin (n + 1) → ι}
+    {p q : Fin (n + 1)}
     (hlt : p < q) (h : b p = b q) (hq : Function.Injective (b ∘ q.succAbove)) :
-    (-1 : ℤ) ^ (p : ℕ) * tupleSign (b ∘ p.succAbove) +
-      (-1) ^ (q : ℕ) * tupleSign (b ∘ q.succAbove) = 0 := by
+    (-1 : ℤ) ^ (p : ℕ) * (-1) ^ #(univ.inversions (b ∘ p.succAbove)) +
+      (-1) ^ (q : ℕ) * (-1) ^ #(univ.inversions (b ∘ q.succAbove)) = 0 := by
   have hEp : #{i | i < p ∧ b i = b p} = 0 := by
     rw [card_eq_zero, filter_eq_empty_iff]
-    exact fun i _ ⟨hi, hbi⟩ ↦ hi.ne (eq_of_injective_comp_succAbove hq (hi.trans hlt).ne hlt.ne hbi)
+    exact fun i _ ⟨hi, hbi⟩ ↦
+      hi.ne (Fin.eq_of_injective_comp_succAbove hq (hi.trans hlt).ne hlt.ne hbi)
   have hEq : #{i | i < q ∧ b i = b q} = 1 := by
     refine card_eq_one.2 ⟨p, ext fun i ↦ ?_⟩
     simp only [mem_filter, mem_univ, true_and, mem_singleton]
-    exact ⟨fun ⟨hi, hbi⟩ ↦ eq_of_injective_comp_succAbove hq hi.ne hlt.ne (hbi.trans h.symm),
+    exact ⟨fun ⟨hi, hbi⟩ ↦ Fin.eq_of_injective_comp_succAbove hq hi.ne hlt.ne (hbi.trans h.symm),
       by rintro rfl; exact ⟨hlt, h⟩⟩
-  have hp' := tupleSign_mul b p
-  have hq' := tupleSign_mul b q
+  have hp' := neg_one_pow_card_univ_inversions_comp_succAbove (R := ℤ) b p
+  have hq' := neg_one_pow_card_univ_inversions_comp_succAbove (R := ℤ) b q
   rw [hEp, pow_zero, mul_one, pow_add] at hp'
   rw [hEq, pow_one, ← h, pow_add] at hq'
   have ha : ((-1 : ℤ) ^ #{i | b i < b p}) ^ 2 = 1 := by rw [← pow_mul, mul_comm, pow_mul]; simp
   linear_combination (-(-1 : ℤ) ^ #{i | b i < b p}) * hp' + (-(-1 : ℤ) ^ #{i | b i < b p}) * hq' -
-    ((-1 : ℤ) ^ (p : ℕ) * tupleSign (b ∘ p.succAbove) +
-      (-1) ^ (q : ℕ) * tupleSign (b ∘ q.succAbove)) * ha
+    ((-1 : ℤ) ^ (p : ℕ) * (-1) ^ #(univ.inversions (b ∘ p.succAbove)) +
+      (-1) ^ (q : ℕ) * (-1) ^ #(univ.inversions (b ∘ q.succAbove))) * ha
 
 /-- For a tuple with a repeated entry `b p = b q`, the alternation of its boundary vanishes: only
 the terms removing `p` or `q` can survive, and they cancel. -/
@@ -395,13 +230,14 @@ private lemma alt_bdry_single_of_not_injective {b : Fin (n + 2) → ι}
   rw [bdry_single, map_sum, Fintype.sum_eq_add p q hpq fun k hk ↦ ?_]
   · simp only [map_zsmul]
     by_cases hp : Function.Injective (b ∘ p.succAbove)
-    · have hq := injective_comp_succAbove_of_eq hpq h hp
+    · have hq := Fin.injective_comp_succAbove_of_eq hpq h hp
       rw [alt_single_of_injective hp, alt_single_of_injective hq,
-        sortTuple_eq_sortTuple hq hp ((range_comp_succAbove_of_eq hpq.symm h.symm).trans
-          (range_comp_succAbove_of_eq hpq h).symm), smul_smul, smul_smul, ← add_smul,
-        neg_one_pow_mul_tupleSign_add hlt h hq, zero_smul]
+        Tuple.comp_sort_eq_comp_sort_of_range_eq hq hp
+          ((Fin.range_comp_succAbove_of_eq hpq.symm h.symm).trans
+            (Fin.range_comp_succAbove_of_eq hpq h).symm), smul_smul, smul_smul, ← add_smul,
+        neg_one_pow_mul_neg_one_pow_card_inversions_add hlt h hq, zero_smul]
     · have hq : ¬Function.Injective (b ∘ q.succAbove) := fun hq ↦
-        hp (injective_comp_succAbove_of_eq hpq.symm h.symm hq)
+        hp (Fin.injective_comp_succAbove_of_eq hpq.symm h.symm hq)
       rw [alt_single_of_not_injective hp, alt_single_of_not_injective hq, smul_zero, smul_zero,
         add_zero]
   · rw [map_zsmul, alt_single_of_not_injective, smul_zero]
@@ -431,7 +267,8 @@ private lemma alt_zero (x : Chain ι 0) : alt 0 x = x := by
   | single b k =>
     have hb : StrictMono b := fun i j h ↦ absurd (Fin.ext (by omega)) h.ne
     rw [← mul_one k, ← smul_eq_mul, ← Finsupp.smul_single, map_zsmul,
-      alt_single_of_injective hb.injective, sortTuple_eq_self hb, tupleSign,
+      alt_single_of_injective hb.injective, Tuple.sort_eq_refl_iff_monotone.2 hb.monotone,
+      Equiv.coe_refl, Function.comp_id,
       inversions_eq_empty_of_monotone hb.monotone, card_empty, pow_zero, one_smul]
 
 /-! ### The cone and the homotopy -/
@@ -523,23 +360,6 @@ private lemma bdry_homotopy_succ (n : ℕ) :
 
 /-! ### Entries of tuples -/
 
-omit [LinearOrder ι] in
-/-- A linear map of chains sending every tuple with entries in `s` to a chain on tuples with
-entries in `t` sends every chain on tuples with entries in `s` to such a chain. -/
-private lemma map_mem_supported {m k : ℕ} {L : Chain ι m →ₗ[ℤ] Chain ι k} {s t : Set ι}
-    (hL : ∀ a : Fin (m + 1) → ι, Set.range a ⊆ s →
-      L (Finsupp.single a 1) ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ t})
-    {x : Chain ι m} (hx : x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}) :
-    L x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ t} := by
-  rw [Finsupp.supported_eq_span_single] at hx
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨a, ha, rfl⟩ := hy
-    exact hL a ha
-  | zero => simp
-  | add x y _ _ hx hy => rw [map_add]; exact add_mem hx hy
-  | smul k x _ hx => rw [map_zsmul]; exact Submodule.smul_mem _ k hx
-
 /-- A linear map of chains which sends every tuple `b` to a chain on tuples whose entries are
 entries of `b`. -/
 private def RangeRespecting {m k : ℕ} (L : Chain ι m →ₗ[ℤ] Chain ι k) : Prop :=
@@ -551,8 +371,11 @@ private lemma RangeRespecting.map_mem {m k : ℕ} {L : Chain ι m →ₗ[ℤ] Ch
     (hL : RangeRespecting L) {s : Set ι} {x : Chain ι m}
     (hx : x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}) :
     L x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s} :=
-  map_mem_supported (fun a ha ↦ Finsupp.supported_mono (fun _ hc ↦ Set.Subset.trans hc ha) (hL a))
-    hx
+  (Submodule.span_le (p := (Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}).comap L)).2
+    (by
+      rintro _ ⟨a, ha, rfl⟩
+      exact Finsupp.supported_mono (fun _ hc ↦ Set.Subset.trans hc ha) (hL a))
+    (Finsupp.supported_eq_span_single ℤ _ ▸ hx)
 
 omit [LinearOrder ι] in
 private lemma rangeRespecting_bdry (n : ℕ) : RangeRespecting (bdry (ι := ι) n) := fun b ↦ by
@@ -563,7 +386,7 @@ private lemma rangeRespecting_bdry (n : ℕ) : RangeRespecting (bdry (ι := ι) 
 private lemma rangeRespecting_alt (n : ℕ) : RangeRespecting (alt (ι := ι) n) := fun b ↦ by
   by_cases hb : Function.Injective b
   · rw [alt_single_of_injective hb]
-    exact Submodule.smul_mem _ _ (Finsupp.single_mem_supported ℤ 1 (range_sortTuple b).le)
+    exact Submodule.smul_mem _ _ (Finsupp.single_mem_supported ℤ 1 (Tuple.range_comp_sort b).le)
   · rw [alt_single_of_not_injective hb]
     exact zero_mem _
 
@@ -571,11 +394,14 @@ omit [LinearOrder ι] in
 private lemma cone_mem_supported {v : ι} {s : Set ι} (hv : v ∈ s) {x : Chain ι n}
     (hx : x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}) :
     cone v n x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s} :=
-  map_mem_supported (fun a ha ↦ by
-    rw [cone_single]
-    refine Finsupp.single_mem_supported ℤ 1 ?_
-    rw [Set.mem_ofPred_eq, Fin.range_cons]
-    exact Set.insert_subset hv ha) hx
+  (Submodule.span_le (p := (Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}).comap (cone v n))).2
+    (by
+      rintro _ ⟨a, ha, rfl⟩
+      rw [SetLike.mem_coe, Submodule.mem_comap, cone_single]
+      refine Finsupp.single_mem_supported ℤ 1 ?_
+      rw [Set.mem_ofPred_eq, Fin.range_cons]
+      exact Set.insert_subset hv ha)
+    (Finsupp.supported_eq_span_single ℤ _ ▸ hx)
 
 private lemma rangeRespecting_homotopy : ∀ n, RangeRespecting (homotopy (ι := ι) n)
   | 0 => fun _ ↦ by simp [homotopy]
@@ -720,15 +546,18 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {A : Type u'} [Cate
 private def fromStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     ((strictMonoCechComplexFunctor U).obj P).X n ⟶ cechX U P n :=
   Pi.lift fun b ↦ if hb : Function.Injective b then
-    tupleSign b • (strictMonoCechComplexπ U P ⟨sortTuple b, strictMono_sortTuple hb⟩ ≫
-      P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b j)) (Tuple.sort b j)).op) else 0
+    (-1 : ℤ) ^ #(univ.inversions b) •
+      (strictMonoCechComplexπ U P ⟨b ∘ Tuple.sort b, Tuple.strictMono_comp_sort hb⟩ ≫
+        P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b j)) (Tuple.sort b j)).op) else 0
 
 @[reassoc]
 private lemma fromStrictMonoCechX_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (b : Fin (n + 1) → ι) :
     fromStrictMonoCechX U P n ≫ Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) b =
       if hb : Function.Injective b then
-      tupleSign b • (strictMonoCechComplexπ U P ⟨sortTuple b, strictMono_sortTuple hb⟩ ≫
-        P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b j)) (Tuple.sort b j)).op) else 0 :=
+        (-1 : ℤ) ^ #(univ.inversions b) •
+          (strictMonoCechComplexπ U P ⟨b ∘ Tuple.sort b, Tuple.strictMono_comp_sort hb⟩ ≫
+            P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b j)) (Tuple.sort b j)).op)
+      else 0 :=
   Pi.lift_comp_π _ _
 
 /-- The restriction of Čech cochains to the strictly increasing tuples, with source the product
@@ -748,7 +577,10 @@ private lemma toStrictMonoCechX_comp_fromStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n 
     by_cases hb : Function.Injective b
     · simp only [hb, ↓reduceDIte]
       rw [alt_single_of_injective hb, map_zsmul,
-        evalChain_single U P (range_sortTuple b).le, one_smul, Preadditive.comp_zsmul,
+        evalChain_single U P (Tuple.range_comp_sort b).le, one_smul, Preadditive.comp_zsmul,
+        -- the goal writes the restriction as `toStrictMonoCechX` and its projection through
+        -- `cechX`, local abbreviations which `rw` does not unfold to match the projection lemma;
+        -- the `show` restates `toStrictMonoCechComplex_app_f_π_assoc` in these terms
         show toStrictMonoCechX U P n ≫ _ ≫ _ =
           Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) _ ≫ _ from
           toStrictMonoCechComplex_app_f_π_assoc U P n _ _,
@@ -780,6 +612,9 @@ private lemma fromStrictMonoCechX_naturality {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q
       fromStrictMonoCechX U P n ≫ cechMapX U α n :=
   Pi.hom_ext _ _ fun b ↦ by
     rw [Category.assoc, Category.assoc, fromStrictMonoCechX_π,
+      -- the goal writes the map as `cechMapX` and its projections through `cechX`, local
+      -- abbreviations which `rw` does not unfold to match the projection lemma; the `show`
+      -- restates `cechComplexFunctor_map_f_π` in these terms
       show cechMapX U α n ≫ Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ U (a j)))) b =
         Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) b ≫ _ from
         cechComplexFunctor_map_f_π U P α n b,
@@ -795,10 +630,14 @@ private lemma fromStrictMonoCechX_comp_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n 
   rw [← cancel_epi (toStrictMonoCechX U P n), ← Category.assoc,
     toStrictMonoCechX_comp_fromStrictMonoCechX, Category.comp_id]
   ext a
+  -- as in `toStrictMonoCechX_comp_fromStrictMonoCechX`, the `show` restates
+  -- `toStrictMonoCechComplex_app_f_π` through the local abbreviations `toStrictMonoCechX` and
+  -- `cechX` of the goal, which `rw` does not unfold
   rw [Category.assoc, show toStrictMonoCechX U P n ≫ _ =
       Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.1 from
       toStrictMonoCechComplex_app_f_π U P n a,
-    dualMap_π, alt_single_of_injective a.2.injective, sortTuple_eq_self a.2, tupleSign,
+    dualMap_π, alt_single_of_injective a.2.injective,
+    Tuple.sort_eq_refl_iff_monotone.2 a.2.monotone, Equiv.coe_refl, Function.comp_id,
     inversions_eq_empty_of_monotone a.2.monotone, card_empty, pow_zero, one_smul,
     evalChain_single U P subset_rfl, one_smul, Subsingleton.elim (tupleRestrict U _) (𝟙 _), op_id,
     P.map_id, Category.comp_id]
@@ -831,14 +670,10 @@ increasing rearrangement `b ∘ Tuple.sort b`, restricted along the reindexing
 theorem fromStrictMonoCechComplex_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) {b : Fin (n + 1) → ι}
     (hb : Function.Injective b) :
     ((fromStrictMonoCechComplex U).app P).f n ≫ Pi.π _ b =
-      (-1 : ℤ) ^ #(univ.inversions b) • (strictMonoCechComplexπ U P
-        ⟨b ∘ Tuple.sort b, (Tuple.monotone_sort b).strictMono_of_injective
-          (hb.comp (Tuple.sort b).injective)⟩ ≫
-        P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b j)) (Tuple.sort b j)).op) :=
-  (fromStrictMonoCechX_π U P n b).trans <| by
-    simp only [hb, ↓reduceDIte]
-    -- `tupleSign b` and `sortTuple b` are the inversion sign and `b ∘ Tuple.sort b`
-    rfl
+      (-1 : ℤ) ^ #(univ.inversions b) •
+        (strictMonoCechComplexπ U P ⟨b ∘ Tuple.sort b, Tuple.strictMono_comp_sort hb⟩ ≫
+          P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (b j)) (Tuple.sort b j)).op) :=
+  (fromStrictMonoCechX_π U P n b).trans (by simp only [hb, ↓reduceDIte])
 
 /-- The factor of the alternating extension at a tuple with a repeated entry vanishes. -/
 @[reassoc]
