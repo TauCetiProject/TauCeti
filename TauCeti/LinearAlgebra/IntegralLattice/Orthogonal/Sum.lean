@@ -93,7 +93,6 @@ theorem orthogonalSum_form (L : IntegralLattice V) (M : IntegralLattice W) :
   (rfl)
 
 /-- The quadratic map of an orthogonal sum is the product of the component quadratic maps. -/
-@[simp]
 theorem orthogonalSum_form_toQuadraticMap (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).form.toQuadraticMap =
       L.form.toQuadraticMap.prod M.form.toQuadraticMap := by
