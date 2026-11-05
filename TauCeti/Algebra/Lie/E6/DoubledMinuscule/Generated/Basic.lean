@@ -90,17 +90,14 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 54 ⟶ generatedCoordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54) (generatedDefiningIdeal A)
 
-/-- In the quotient presentation of the generated coordinate algebra, its coordinate map is
-the quotient morphism. -/
-theorem generatedCoordinateMap_comp_eqToIso_hom :
-    generatedCoordinateMap A ≫ (eqToIso (generatedCoordinateHopfAlgebra_def A)).hom =
+/-- The named coordinate morphism is the quotient map under the quotient presentation. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_eqToHom :
+    generatedCoordinateMap A ≫ eqToHom (generatedCoordinateHopfAlgebra_def A) =
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
         (generatedDefiningIdeal A) := by
-  -- The named quotient and its map reduce in their defining module; this equation exports
-  -- that presentation without exposing either definition to importing modules.
-  change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
-      (generatedDefiningIdeal A) ≫ 𝟙 _ = _
-  simp
+  -- The named algebra and coordinate map are defined by this quotient and its projection.
+  rfl
 
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=

@@ -156,8 +156,8 @@ section Galois
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] (W : WeierstrassCurve K) [W.IsElliptic] [IsMinimal 𝒪[K] W]
+  [DecidableEq (AlgebraicClosure K)]
 
-open scoped Classical in
 /-- **An unramified Tate module forces good reduction** (Néron, Ogg, Shafarevich; Silverman AEC
 VII.7.1). Let `W` be an elliptic curve over a nonarchimedean local field `K`, given by a minimal
 equation, and let `ℓ` be a prime different from the residue characteristic of `K`. If the inertia
@@ -167,6 +167,11 @@ theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [F
     (hℓ : (ℓ : 𝓀[K]) ≠ 0)
     (h : ∀ σ ∈ inertiaSubgroup K, W.tateModuleGaloisRepresentation ℓ σ = 1) :
     W.HasGoodReduction 𝒪[K] := by
+  -- The division fields and their torsion counts below are stated with the classical decidable
+  -- equality on `K^{alg}`; decidable equality is unique, so we may replace ours by it.
+  obtain rfl : ‹DecidableEq (AlgebraicClosure K)› = fun a b ↦ Classical.propDecidable (a = b) :=
+    Subsingleton.elim _ _
+  classical
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   -- Tate's algorithm stops at some symbol `s` on the integral model of `C • W`, for a change of
   -- variables `C` over `𝒪[K]`.
@@ -214,7 +219,6 @@ theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [F
   exact (Nat.lt_pow_self (Fact.out : ℓ.Prime).one_lt).not_ge
     (le_componentCount_of_natCard_torsionBy_eq (L := M) hϖ hs hs₀ hn hcard)
 
-open scoped Classical in
 /-- **The criterion of Néron, Ogg and Shafarevich** (Silverman AEC VII.7.1). Let `W` be an elliptic
 curve over a nonarchimedean local field `K`, given by a minimal equation, and let `ℓ` be a prime
 different from the residue characteristic of `K`. Then `W` has good reduction exactly when the

@@ -29,4 +29,12 @@ theorem quotient_mk_obj (F : ComposableArrows C n) (i : Fin (n + 1)) :
   exact Quotient.sound (s := isIsomorphicSetoid C)
     ⟨asIso (F.map (homOfLE (Fin.zero_le i)))⟩
 
+
+omit [IsGroupoid C] in
+/-- The composable arrows `mk₁ f` and `mk₁ f'` are equal exactly when `f` and `f'` are equal
+as arrows. -/
+lemma mk₁_eq_mk₁_iff {X₀ X₁ Y₀ Y₁ : C} {f : X₀ ⟶ X₁} {f' : Y₀ ⟶ Y₁} :
+    mk₁ f = mk₁ f' ↔ Arrow.mk f = Arrow.mk f' :=
+  arrowEquiv.apply_eq_iff_eq.symm
+
 end CategoryTheory.ComposableArrows

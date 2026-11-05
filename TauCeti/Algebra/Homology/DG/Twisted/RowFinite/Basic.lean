@@ -153,20 +153,6 @@ theorem ext {m₁ m₂ : RowFiniteTwistingCocycle 𝒜 d P ind}
   funext x
   exact Finsupp.ext (h x)
 
-omit [GradedAlgebra 𝒜] in
-/-- The zero matrix is a row-finite twisting cocycle: both sides of the twisting equation
-vanish. -/
-instance : Zero (RowFiniteTwistingCocycle 𝒜 d P ind) where
-  zero :=
-    { m := 0
-      mem_graded := fun _ _ ↦ Submodule.zero_mem _
-      twisting := fun _ ↦ by simp }
-
-omit [GradedAlgebra 𝒜] in
-@[simp]
-theorem zero_m (x : P) : (0 : RowFiniteTwistingCocycle 𝒜 d P ind).m x = 0 :=
-  rfl
-
 end RowFiniteTwistingCocycle
 
 section SignedMap

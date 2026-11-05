@@ -156,17 +156,6 @@ theorem coefficientDifferential_single (x : P) {q : ℤ} {α : M} (hα : α ∈ 
   rw [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
   simp
 
-/-- The zero cocycle has only the coefficient differential, applied coordinatewise. -/
-@[simp]
-theorem zero_coefficientDifferential :
-    (0 : RowFiniteTwistingCocycle 𝒜 dA P ind).coefficientDifferential hM =
-      Finsupp.mapRange.linearMap dM := by
-  refine Finsupp.lhom_ext fun x α ↦ ?_
-  induction α using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | homogeneous α => simp [coefficientDifferential_single _ hM x α.2]
-  | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]
-
 /-- The coefficient differential squares to zero by the balanced tensor differential law. -/
 @[simp]
 theorem coefficientDifferential_sq_zero (f : P →₀ M) :
@@ -328,6 +317,20 @@ theorem quasiIso_coefficientCochainComplexMap_iff (f : DGRightModuleHom hM hN) :
 
 end CoefficientMap
 
+/-- Identify a term of the coefficient complex with the finite-support vectors of total
+degree `n`. -/
+def coefficientCochainComplexXEquiv (n : ℤ) :
+    (m.coefficientCochainComplex hM).X n ≃ₗ[R] rowFiniteTotalGrading ℳ ind n :=
+  gradedCochainComplexXEquiv n
+
+/-- Under `coefficientCochainComplexXEquiv`, the complex differential is the coefficient
+differential. -/
+theorem coefficientCochainComplexXEquiv_d (n : ℤ) (x : (m.coefficientCochainComplex hM).X n) :
+    (m.coefficientCochainComplexXEquiv hM (n + 1)
+        (((m.coefficientCochainComplex hM).d n (n + 1)).hom x) : P →₀ M) =
+      m.coefficientDifferential hM (m.coefficientCochainComplexXEquiv hM n x) :=
+  gradedCochainComplexXEquiv_d n x
+
 /-- For finite `P`, the finite-support/function equivalence intertwines the coefficient
 differential with the original finite twisted differential. -/
 theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀ M) :
@@ -349,19 +352,6 @@ theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀
     | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]
 
 /-! ### Morphisms and homotopies of coefficient complexes -/
-
-/-- The degree-`n` term of the coefficient complex is the finite-support total-degree piece. -/
-def coefficientCochainComplexXEquiv (n : ℤ) :
-    (m.coefficientCochainComplex hM).X n ≃ₗ[R] rowFiniteTotalGrading ℳ ind n :=
-  gradedCochainComplexXEquiv n
-
-/-- Under `coefficientCochainComplexXEquiv`, the complex differential is the coefficient
-differential. -/
-theorem coefficientCochainComplexXEquiv_d (n : ℤ) (x : (m.coefficientCochainComplex hM).X n) :
-    (m.coefficientCochainComplexXEquiv hM (n + 1)
-        (((m.coefficientCochainComplex hM).d n (n + 1)).hom x) : P →₀ M) =
-      m.coefficientDifferential hM (m.coefficientCochainComplexXEquiv hM n x) :=
-  gradedCochainComplexXEquiv_d n x
 
 variable {Q : Type uP} {indQ : Q → ℤ} {m} {mQ : RowFiniteTwistingCocycle 𝒜 dA Q indQ}
 
