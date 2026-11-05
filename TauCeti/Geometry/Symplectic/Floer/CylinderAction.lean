@@ -113,20 +113,13 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
       rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, H t (u (b, t))) -
         ∫ t in 0..1, H t (u (a, t)) := by
   have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
+  have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
   have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   -- The symplectic area density is the integrand of the rectangle integral.
   let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea (z : ℝ × ℝ) :
-      area z = mpullback 𝓘(ℝ, ℝ × ℝ) I u ω.1 z ![(1, 0), (0, 1)] := by
-    simp only [area, mpullback_apply, SmoothBundleForm.eval₂_apply]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
-  have harea_cont : Continuous area :=
-    ((ω.isSmoothForm.of_le (by simp)).continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun z ↦
-      (harea z).symm
+  have harea_cont : Continuous area := ω.continuous_eval₂_mfderiv hu
   -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
   have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
     contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
@@ -142,24 +135,11 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   have hE : Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) :=
     (harea_cont.add hdK).congr fun z ↦ (hpt z).symm
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) isOpen_univ
-    hu.contMDiffOn contMDiffOn_const hKt.contMDiffOn (Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩)
-    (subset_univ _) (hE.continuousOn.integrableOn_compact isCompact_Icc)
+    hu.contMDiffOn contMDiffOn_const hKt.contMDiffOn hab' (subset_univ _)
+    (hE.continuousOn.integrableOn_compact isCompact_Icc)
     (by simp [hamiltonianCurvature_cylindrical])
-  simp only [hamiltonianCurvature_cylindrical, intervalIntegral.integral_zero, integral_zero,
-    ← hR] at h
-  rw [h]
-  -- Fubini identifies the integral of the area density with the rectangle integral.
-  have hint : IntegrableOn area (Icc a b ×ˢ Icc 0 1) (volume.prod volume) := by
-    rw [← Measure.volume_eq_prod]
-    exact harea_cont.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-  rw [Measure.volume_eq_prod, setIntegral_prod _ hint, rectangleIntegral_def,
-    intervalIntegral.integral_of_le hab, ← integral_Icc_eq_integral_Ioc]
-  have hfub : ∫ s in Icc a b, ∫ t in Icc (0 : ℝ) 1, area (s, t) =
-      ∫ s in Icc a b, ∫ t in (0 : ℝ)..1, mpullback 𝓘(ℝ, ℝ × ℝ) I u ω.1 (s, t) ![(1, 0), (0, 1)] :=
-    setIntegral_congr_fun measurableSet_Icc fun s _ ↦ by
-      rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc]
-      simp only [harea]
-  rw [hfub]
+  simp only [hamiltonianCurvature_cylindrical, intervalIntegral.integral_zero, integral_zero] at h
+  rw [hR, h, ω.setIntegral_eval₂_eq_rectangleIntegral hu hab']
   ring
 
 /-- **The energy of a Floer cylinder is the drop of the contractible action.** Let `ω` be a

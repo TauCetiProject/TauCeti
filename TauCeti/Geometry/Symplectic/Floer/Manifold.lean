@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
 # The Floer energy identity for manifold targets
@@ -35,7 +38,9 @@ Integrating the identity over a rectangle `[a₁, b₁] × [a₂, b₂]` of the 
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`). The exterior derivative
 `d(K(u))` is a function on the domain alone, so the divergence theorem applies to it whatever
 the target. The integrability of the energy density and of `R_K(u)` is assumed, and that of the
-area density follows.
+area density follows. For a `C¹` map the area density is continuous, and by Fubini its integral is
+the integral `TauCeti.rectangleIntegral` of the form over the map
+(`SmoothTwoForm.setIntegral_eval₂_eq_rectangleIntegral`).
 
 A punctured domain carries no global coordinate, so these objects must also be compared across
 changes of domain coordinates `φ`. For the pulled-back datum `φ^*K`
@@ -61,6 +66,8 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
+* `SmoothTwoForm.setIntegral_eval₂_eq_rectangleIntegral`: the integral of the area density over a
+  rectangle is the rectangle integral of the form.
 * `SmoothTwoForm.perturbedMFDeriv_perturbationPullback`,
   `SmoothTwoForm.floerEnergyDensity_perturbationPullback`,
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
@@ -116,17 +123,7 @@ theorem hamiltonianCurvature_zero_left (ω : SmoothTwoForm I M) (Kt : ℝ × ℝ
 theorem hamiltonianCurvature_cylindrical (ω : SmoothTwoForm I M) (H : ℝ → M → ℝ) (z : ℝ × ℝ)
     (x : M) : ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
   rw [hamiltonianCurvature_zero_left]
-  by_cases hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2
-  · have h : HasFDerivAt (fun w : ℝ × ℝ ↦ H w.2 x)
-        ((fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-      hH.hasFDerivAt.comp z hasFDerivAt_snd
-    simp [h.fderiv, stdComplexLineReal]
-  · -- A function of `t` alone is differentiable on the plane only if it is differentiable in `t`.
-    have hH' : ¬DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z := by
-      intro h
-      have h' : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) (z.1, z.2) := h
-      exact hH (h'.comp z.2 ((differentiableAt_const z.1).prodMk differentiableAt_id))
-    simp [fderiv_zero_of_not_differentiableAt hH']
+  exact fderiv_comp_snd_stdComplexLineReal (fun t ↦ H t x) z
 
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
@@ -468,6 +465,36 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
   rw [setIntegral_congr_fun measurableSet_Icc hpt, integral_sub hsum hR,
     integral_add harea hderiv, stdComplexLineReal_eq, stdComplexLineImag_eq,
     integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+
+/-- The symplectic area density `ω(∂_s u, ∂_t u)` of a `C¹` map of the plane is continuous. -/
+theorem continuous_eval₂_mfderiv (ω : SmoothTwoForm I M) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
+    Continuous fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) := by
+  refine ((ω.isSmoothForm.of_le (by simp)).continuous_mpullback_apply hu
+    ![(1, 0), (0, 1)]).congr fun z ↦ ?_
+  rw [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  refine (mpullback_apply u ω.1 z _).trans ?_
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
+/-- The integral of the symplectic area density `ω(∂_s u, ∂_t u)` of a `C¹` map over a rectangle
+is the integral `TauCeti.rectangleIntegral` of `ω` over the map on that rectangle. -/
+theorem setIntegral_eval₂_eq_rectangleIntegral (ω : SmoothTwoForm I M)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ × ℝ} (hab : a ≤ b) :
+    ∫ z in Icc a b, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) =
+      rectangleIntegral ω.1 u a b := by
+  have hint := (ω.continuous_eval₂_mfderiv hu).continuousOn.integrableOn_compact
+    (μ := volume) (isCompact_Icc (a := a) (b := b))
+  -- Fubini, on the rectangle written as a product of intervals.
+  rw [Icc_prod_eq, Measure.volume_eq_prod] at hint ⊢
+  rw [setIntegral_prod _ hint, rectangleIntegral_eq, intervalIntegral.integral_of_le hab.1,
+    ← integral_Icc_eq_integral_Ioc]
+  refine setIntegral_congr_fun measurableSet_Icc fun s _ ↦ ?_
+  rw [intervalIntegral.integral_of_le hab.2, ← integral_Icc_eq_integral_Ioc]
+  simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 end Integral
 
