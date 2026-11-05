@@ -12,7 +12,7 @@ import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Convolution.Young
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Convolution with the Bessel weight `(1 + ‖ξ‖ ^ 2) ^ (s / 2)`

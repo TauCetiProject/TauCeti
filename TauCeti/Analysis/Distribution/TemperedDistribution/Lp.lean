@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Fourier.Continuous
 
 /-!
 # `Lᵖ` functions as tempered distributions
@@ -137,11 +138,7 @@ theorem ae_eq_fourierInv_of_fourier_eq {p : ENNReal} [Fact (1 ≤ p)]
     {u : Lp F p (volume : Measure E)} {v : Lp F 1 (volume : Measure E)}
     (h : 𝓕 (u : 𝓢'(E, F)) = v) :
     u =ᵐ[volume] 𝓕⁻ (v : E → F) := by
-  have hcont : Continuous (𝓕⁻ (v : E → F)) := by
-    rw [Real.fourierInv_eq_fourier_comp_neg]
-    exact VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
-      (by simpa only [innerₗ_apply_apply] using continuous_inner)
-      (L1.integrable_coeFn v).comp_neg
+  have hcont : Continuous (𝓕⁻ (v : E → F)) := (L1.integrable_coeFn v).continuous_fourierInv
   have hu : (u : 𝓢'(E, F)) = 𝓕⁻ (v : 𝓢'(E, F)) := by
     rw [← h]
     exact (FourierTransform.fourierInv_fourier_eq _).symm

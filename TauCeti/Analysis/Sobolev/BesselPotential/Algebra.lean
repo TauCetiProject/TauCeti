@@ -23,14 +23,15 @@ function is an `Lᵖ` function, since the first factor is bounded by the Sobolev
 (`TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`).
 
 This is the basic input for nonlinear analysis on the scale `H^s`, `s > n / 2`: polynomial
-expressions in the fields of a gauge theory map `H^s` to itself, and the maps `1 + h`,
-`h ∈ H^s`, are closed under multiplication, so that they can form a gauge group.
+expressions without constant term in `H^s` fields stay in `H^s`, and the functions `1 + h`,
+`h ∈ H^s`, are closed under multiplication, which is the closure step towards a gauge group.
 
 ## The Fourier argument
 
 Write `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`. A function `u ∈ L²` lies in `H^s` exactly when
 `⟨ξ⟩ ^ s 𝓕u ∈ L²`, and for `s > n / 2` Cauchy–Schwarz against `⟨ξ⟩ ^ (-s) ∈ L²` makes `𝓕u` an
-`L¹` function `v` (`TemperedDistribution.MemSobolev.fourier_memL1`). So `u = 𝓕⁻ v` almost
+`L¹` function `v` (`TemperedDistribution.MemSobolev.fourier_memL1`), with `⟨ξ⟩ ^ s v ∈ L²`
+(`TemperedDistribution.MemSobolev.fourier_memL1_and_memLp`). So `u = 𝓕⁻ v` almost
 everywhere and the product of two such functions is
 
 `u₁ u₂ = 𝓕⁻ v₁ · 𝓕⁻ v₂ = 𝓕⁻ (v₁ ⋆ v₂)`
@@ -48,8 +49,6 @@ convolution estimate is `TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution`, in
 
 ## Main declarations
 
-* `TemperedDistribution.MemSobolev.fourier_memL1_and_memLp`: for `s > n / 2`, the Fourier
-  transform of `u ∈ H^s` is an `L¹` function `v` with `⟨ξ⟩ ^ s v ∈ L²`.
 * `TemperedDistribution.MemSobolev.memLp_mul`: the product of an `H^s` function, `s > n / 2`,
   with an `Lᵖ` function is an `Lᵖ` function.
 * `TemperedDistribution.MemSobolev.mul`: the product of two `H^s` functions, `s > n / 2`, lies in
@@ -75,25 +74,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E]
 
 namespace TemperedDistribution
-
-/-- **The Fourier transform of an `H^s` function, `s > n / 2`.** For `s > dim E / 2` the Fourier
-transform of a Sobolev function `f ∈ H^s` is an `L¹` function `v` for which
-`(1 + ‖ξ‖ ^ 2) ^ (s / 2) v` is square integrable. -/
-theorem MemSobolev.fourier_memL1_and_memLp {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : 𝓢'(E, ℂ)}
-    (hf : MemSobolev s 2 f) :
-    ∃ v : Lp ℂ 1 (volume : Measure E), 𝓕 f = (v : 𝓢'(E, ℂ)) ∧
-      MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
-  obtain ⟨v, hv⟩ := hf.fourier_memL1 hs
-  obtain ⟨U, hU⟩ := memSobolev_iff_exists_smulLeftCLM_fourier.1 hf
-  refine ⟨v, hv, (Lp.memLp U).ae_eq ?_⟩
-  -- The `L²` function `U` represents the weight times `v`, by comparing their pairings.
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hwc : Continuous fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := hwg.1.continuous
-  refine Lp.ae_eq_of_toTemperedDistribution_apply_eq U ?_ fun φ => ?_
-  · refine locallyIntegrable_iff.2 fun K hK => ?_
-    exact (L1.integrable_coeFn v).integrableOn.continuousOn_mul hwc.continuousOn hK
-  · rw [← hU, hv, Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-    simp only [smul_eq_mul]
 
 /-- **The product of an `H^s` function, `s > n / 2`, with an `Lᵖ` function is in `Lᵖ`**, since
 the first factor is bounded by the Sobolev embedding. -/

@@ -85,9 +85,6 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 * `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: the uniform strict power mean inequality.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
-* `TauCeti.one_add_norm_add_sq_rpow_le`: the same subadditivity for the Japanese bracket,
-  `(1 + ‖x + y‖ ^ 2) ^ (s / 2) ≤ 2 ^ s ((1 + ‖x‖ ^ 2) ^ (s / 2) + (1 + ‖y‖ ^ 2) ^ (s / 2))` for
-  `0 ≤ s`; it splits the Bessel weight of a convolution between its two factors.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
 -/
 
@@ -345,35 +342,6 @@ theorem one_add_norm_add_rpow_le {E : Type*} [SeminormedAddGroup E] {s : ℝ} (h
           exact le_add_of_nonneg_left (Real.rpow_nonneg hx s)
         · rw [max_eq_left h]
           exact le_add_of_nonneg_right (Real.rpow_nonneg hy s)
-
-/-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
-`(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,
-`(1 + ‖x + y‖ ^ 2) ^ (s / 2) ≤ 2 ^ s ((1 + ‖x‖ ^ 2) ^ (s / 2) + (1 + ‖y‖ ^ 2) ^ (s / 2))`. -/
-theorem one_add_norm_add_sq_rpow_le {E : Type*} [SeminormedAddGroup E] {s : ℝ} (hs : 0 ≤ s)
-    (x y : E) :
-    (1 + ‖x + y‖ ^ 2) ^ (s / 2) ≤
-      2 ^ s * ((1 + ‖x‖ ^ 2) ^ (s / 2) + (1 + ‖y‖ ^ 2) ^ (s / 2)) := by
-  -- `1 + ‖x + y‖ ^ 2` is at most four times the larger of `1 + ‖x‖ ^ 2` and `1 + ‖y‖ ^ 2`.
-  set a := 1 + ‖x‖ ^ 2
-  set b := 1 + ‖y‖ ^ 2
-  have ha : 0 ≤ a := by positivity
-  have hb : 0 ≤ b := by positivity
-  have hs2 : 0 ≤ s / 2 := by positivity
-  have hle : 1 + ‖x + y‖ ^ 2 ≤ 4 * max a b := by
-    have hxy : ‖x + y‖ ^ 2 ≤ (‖x‖ + ‖y‖) ^ 2 :=
-      pow_le_pow_left₀ (norm_nonneg _) (norm_add_le x y) 2
-    nlinarith [le_max_left a b, le_max_right a b, sq_nonneg (‖x‖ - ‖y‖)]
-  have h4 : (4 : ℝ) ^ (s / 2) = 2 ^ s := by
-    rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_mul (by norm_num)]
-    ring_nf
-  calc (1 + ‖x + y‖ ^ 2) ^ (s / 2) ≤ (4 * max a b) ^ (s / 2) :=
-        Real.rpow_le_rpow (by positivity) hle hs2
-    _ = 2 ^ s * max (a ^ (s / 2)) (b ^ (s / 2)) := by
-      rw [Real.mul_rpow (by norm_num) (le_max_of_le_left ha), h4,
-        (Real.monotoneOn_rpow_Ici_of_exponent_nonneg hs2).map_max ha hb]
-    _ ≤ 2 ^ s * (a ^ (s / 2) + b ^ (s / 2)) := by
-      gcongr
-      exact max_le_add_of_nonneg (by positivity) (by positivity)
 
 /-- The weight `1 + ‖x‖` is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`. -/
 theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
