@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Power
 
 /-!
 # The rotated disc as a complex manifold
@@ -29,6 +32,10 @@ on which the rotations lift.
 * `TauCeti.rootsOfUnityBall.contMDiff_val`: the inclusion of the disc into `ℂ` is holomorphic.
 * `TauCeti.rootsOfUnityBall.instContMDiffConstSMul`: the rotations act on the disc by `C^n` maps,
   that is, by biholomorphisms.
+* `TauCeti.isLocalDiffeomorph_coe_rootsOfUnityBall`: the inclusion of the disc into `ℂ` is a local
+  biholomorphism.
+* `TauCeti.isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall`: the coordinate `u ↦ u ^ m` of the
+  quotient by the rotations is a local biholomorphism away from the centre.
 -/
 
 public section
@@ -72,5 +79,25 @@ theorem contMDiff_val : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBal
   contMDiff_subtype_val (U := opens m r)
 
 end rootsOfUnityBall
+
+/-- The inclusion of the rotated disc into `ℂ` is a local biholomorphism. -/
+theorem isLocalDiffeomorph_coe_rootsOfUnityBall :
+    IsLocalDiffeomorph 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
+  isLocalDiffeomorph_subtype_val (U := rootsOfUnityBall.opens m r)
+
+/-- The coordinate `u ↦ u ^ m` of the quotient of the rotated disc is holomorphic. -/
+theorem contMDiff_coe_pow_rootsOfUnityBall :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m :=
+  (contDiff_id.pow m).contMDiff.comp isLocalDiffeomorph_coe_rootsOfUnityBall.contMDiff
+
+/-- **The quotient coordinate is a local biholomorphism off the centre.** For `1 ≤ n`, the map
+`u ↦ u ^ m` from the rotated disc to `ℂ` is a `C^n` local diffeomorphism at every point other
+than the centre. At the centre it vanishes to order `m` (Mathlib's
+`analyticOrderAt_centeredMonomial`), so for `m ≥ 2` it is not a local biholomorphism there. -/
+theorem isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall (hn : 1 ≤ n)
+    {u : rootsOfUnityBall m r} (hu : (u : ℂ) ≠ 0) :
+    IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n (fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m) u :=
+  IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ)) (P := ℂ) (isLocalDiffeomorph_coe_rootsOfUnityBall u)
+    (isLocalDiffeomorphAt_pow hn (NeZero.ne m) hu)
 
 end TauCeti
