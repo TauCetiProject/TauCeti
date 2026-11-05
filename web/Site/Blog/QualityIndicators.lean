@@ -41,15 +41,15 @@ private def mathlibDuplicates : Html := resultsTable "Results already available 
   ]
 
 private def repeatedProofs : Html := resultsTable "Repeated proof machinery in a file"
-  #["Library", "Opus", "Sonnet"] #[
-    #[{{"Mathlib"}}, {{"—"}}, {{"60/372 · "<strong>"16.1%"</strong>" [12.7%, 20.2%]"}}],
-    #[{{"Tau Ceti"}}, {{"—"}}, {{"64/372 · "<strong>"17.2%"</strong>" [13.7%, 21.4%]"}}],
-    #[{{"Formal Frontier"}}, {{"—"}}, {{"128/372 · "<strong>"34.4%"</strong>" [29.8%, 39.4%]"}}],
-    #[{{"Lean Pool"}}, {{"—"}}, {{"180/372 · "<strong>"48.4%"</strong>" [43.4%, 53.5%]"}}],
-    #[{{"Anthropic FLT"}}, {{"—"}}, {{"189/372 · "<strong>"50.8%"</strong>" [45.7%, 55.9%]"}}],
-    #[{{"OpenAI Math"}}, {{"—"}}, {{"154/372 · "<strong>"41.4%"</strong>" [36.5%, 46.5%]"}}],
-    #[{{"AxiomMath CFSG"}}, {{"—"}}, {{"162/300 · "<strong>"54.0%"</strong>" [48.3%, 59.6%]"}}],
-    #[{{"AxiomMath Stacks"}}, {{"161/372 · "<strong>"43.3%"</strong>" [38.3%, 48.4%]"}}, {{"—"}}]
+  #["Library", "Sonnet"] #[
+    #[{{"Mathlib"}}, {{"60/372 · "<strong>"16.1%"</strong>" [12.7%, 20.2%]"}}],
+    #[{{"Tau Ceti"}}, {{"64/372 · "<strong>"17.2%"</strong>" [13.7%, 21.4%]"}}],
+    #[{{"Formal Frontier"}}, {{"128/372 · "<strong>"34.4%"</strong>" [29.8%, 39.4%]"}}],
+    #[{{"Lean Pool"}}, {{"180/372 · "<strong>"48.4%"</strong>" [43.4%, 53.5%]"}}],
+    #[{{"Anthropic FLT"}}, {{"189/372 · "<strong>"50.8%"</strong>" [45.7%, 55.9%]"}}],
+    #[{{"OpenAI Math"}}, {{"154/372 · "<strong>"41.4%"</strong>" [36.5%, 46.5%]"}}],
+    #[{{"AxiomMath CFSG"}}, {{"162/300 · "<strong>"54.0%"</strong>" [48.3%, 59.6%]"}}],
+    #[{{"AxiomMath Stacks"}}, {{"118/372 · "<strong>"31.7%"</strong>" [27.2%, 36.6%]"}}]
   ]
 
 end Site.Blog.QualityIndicators
@@ -112,7 +112,7 @@ Sample files uniformly at random, and ask whether there are parts of proofs that
 :::blob repeatedProofs
 :::
 
-Mathlib and Tau Ceti have the lowest duplication rates, Formal Frontier is in the middle, and the other libraries have higher rates.
+Mathlib and Tau Ceti have the lowest duplication rates, AxiomMath Stacks and Formal Frontier are in the middle, and the other libraries have higher rates.
 
 We started testing other models, and did a few second passes to check the flags, but lots of work remains.
 All the results, prompts and other details are available in the [lean-quality-indicators repository](https://github.com/RemyDegenne/lean-quality-indicators).
