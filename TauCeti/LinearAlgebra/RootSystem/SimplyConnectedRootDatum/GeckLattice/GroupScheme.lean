@@ -525,6 +525,22 @@ noncomputable def geckRootSubgroupPoints (i : Fin t.rank ⊕ Fin t.rank)
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i A
 
+/-- A parametrized Geck root-subgroup point homomorphism is the corresponding Kostant toral-closure
+homomorphism, transported across `geckPoints_eq_kostantToralPointsSubgroup`. -/
+theorem geckRootSubgroupPoints_def (i : Fin t.rank ⊕ Fin t.rank)
+    (A : Type v) [CommRing A] :
+    t.geckRootSubgroupPoints ht i A =
+      (MulEquiv.subgroupCongr
+          (t.geckPoints_eq_kostantToralPointsSubgroup ht A).symm).toMonoidHom.comp
+        (TauCeti.UniversalEnvelopingAlgebra.kostantToralRootSubgroupPoints
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+          (t.isNilpotent_geckRepresentation_rootGenerator ht)
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i A) := by
+  ext
+  rfl
+
 /-- A parametrized Geck root-subgroup point has the represented root-subgroup matrix as its
 underlying general-linear element. -/
 @[simp]
@@ -550,6 +566,21 @@ noncomputable def geckWeightTorusPoints (A : Type v) [CommRing A] :
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A
+
+/-- The represented Geck weight-torus point homomorphism is the corresponding Kostant toral-closure
+homomorphism, transported across `geckPoints_eq_kostantToralPointsSubgroup`. -/
+theorem geckWeightTorusPoints_def (A : Type v) [CommRing A] :
+    t.geckWeightTorusPoints ht A =
+      (MulEquiv.subgroupCongr
+          (t.geckPoints_eq_kostantToralPointsSubgroup ht A).symm).toMonoidHom.comp
+        (TauCeti.UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+          (t.isNilpotent_geckRepresentation_rootGenerator ht)
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A) := by
+  ext
+  rfl
 
 /-- A represented Geck weight-torus point has the weight-torus matrix as its underlying
 general-linear element. -/

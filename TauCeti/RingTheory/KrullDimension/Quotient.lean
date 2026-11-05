@@ -19,7 +19,8 @@ import TauCeti.Topology.KrullDimension.ClosedCover
 
 For an ideal `I` of a commutative ring `R`, the quotient map `R → R ⧸ I` identifies
 `Spec (R ⧸ I)` homeomorphically with the closed subset `V(I)` of `Spec R`. So the topological Krull
-dimension of `V(I)` is the Krull dimension of `R ⧸ I`.
+dimension of `V(I)` is the Krull dimension of `R ⧸ I`. Likewise, for `g ∈ R` with image `g'`, the
+spectrum of `(R ⧸ I)[1/g']` embeds into `V(I) ∩ D(g)`, which bounds its Krull dimension.
 Quotienting by the nilradical preserves the entire prime spectrum, hence its Krull dimension and
 the height of each prime ideal. Conversely, quotients by nonzero principal ideals bound the Krull
 dimension from above: the second prime of a chain contains a nonzero element, and the rest of the
@@ -52,6 +53,8 @@ sets `V(q)` with `q ≤ p`, so the local Krull dimension of `Spec R` at `p` is a
 
 * `Ideal.topologicalKrullDim_zeroLocus`: the closed subset `V(I)` of `Spec R` has the Krull
   dimension of `R ⧸ I`.
+* `Ideal.ringKrullDim_localization_away_quotient_le`: the localization `(R ⧸ I)[1/g']` has Krull
+  dimension at most that of any subset of `Spec R` containing `V(I) ∩ D(g)`.
 * `TauCeti.isPureDimensional_primeSpectrum_iff`: the spectrum is pure-dimensional exactly when
   every minimal-prime quotient has the prescribed dimension.
 * `TauCeti.ringKrullDim_quotient_nilradical`: reduction preserves Krull dimension.
@@ -96,6 +99,24 @@ theorem topologicalKrullDim_zeroLocus (I : Ideal R) :
   rw [← topologicalKrullDim_eq_ringKrullDim]
   exact ((hi.isEmbedding.toHomeomorph).trans (Homeomorph.setCongr hrange)).symm.isHomeomorph
     |>.topologicalKrullDim_eq
+
+/-- For an ideal `I` of `R` and `g ∈ R` with image `g'` in `R ⧸ I`, the spectrum of `(R ⧸ I)[1/g']`
+embeds into `Spec R` inside `V(I) ∩ D(g)`, so its Krull dimension is at most that of any set
+containing `V(I) ∩ D(g)`. -/
+theorem ringKrullDim_localization_away_quotient_le (I : Ideal R) (g : R)
+    {S : Set (PrimeSpectrum R)} (hS : zeroLocus (I : Set R) ∩ basicOpen g ⊆ S) :
+    ringKrullDim (Localization.Away (Quotient.mk I g)) ≤ topologicalKrullDim S := by
+  set g' := Quotient.mk I g
+  let i := PrimeSpectrum.comap (Quotient.mk I)
+  let j := PrimeSpectrum.comap (algebraMap (R ⧸ I) (Localization.Away g'))
+  -- A prime of `(R ⧸ I)[1/g']` contains `I` and misses the unit `g'`.
+  have hsub (y : PrimeSpectrum (Localization.Away g')) : i (j y) ∈ S :=
+    hS ⟨fun a ha ↦ by simp [i, j, Quotient.eq_zero_iff_mem.mpr ha], fun h ↦
+      y.2.ne_top (eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g'))⟩
+  rw [← topologicalKrullDim_eq_ringKrullDim]
+  exact (((isClosedEmbedding_comap_of_surjective _ _ Quotient.mk_surjective).isEmbedding.comp
+    (localization_away_isOpenEmbedding _ g').isEmbedding).isInducing.codRestrict
+      hsub).topologicalKrullDim_le
 
 end Ideal
 
