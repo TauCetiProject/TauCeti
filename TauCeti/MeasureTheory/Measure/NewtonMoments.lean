@@ -13,7 +13,7 @@ import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Dirac
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 import TauCeti.MeasureTheory.Measure.Prokhorov
 import TauCeti.Probability.Moments.CompactDeterminacy
 import TauCeti.Topology.Compactness.Compact

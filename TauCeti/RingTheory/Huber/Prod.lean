@@ -31,10 +31,6 @@ product `K × K♭` is such a Tate ring: it contains no field, and `p = (p, 0)` 
 * `TauCeti.Huber.isUniform_prod_iff`: `A × B` is uniform exactly when `A` and `B` are, with the
   instance `TauCeti.Huber.IsUniform.instProd`.
 * `TauCeti.Huber.IsTateRing.instProd`: a product of Tate rings is a Tate ring.
-
-## References
-
-* P. Scholze, *Étale cohomology of diamonds*, Example 3.4.
 -/
 
 public section
@@ -127,9 +123,9 @@ section Tate
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [CommRing B]
   [TopologicalSpace B] [IsTopologicalRing B]
 
-/-- **A product of Tate rings is a Tate ring**: if `A₀ ⊆ A` and `B₀ ⊆ B` are open bounded subrings
-and `ϖ_A`, `ϖ_B` are pseudouniformisers, then `A₀ × B₀` is an open bounded subring of `A × B` and
-`(ϖ_A, ϖ_B)` is a pseudouniformiser (Scholze, *Étale cohomology of diamonds*, Example 3.4). -/
+/-- **A product of Tate rings is a Tate ring**, directly from the componentwise characterisations:
+if `A₀ ⊆ A` and `B₀ ⊆ B` are open bounded subrings and `ϖ_A`, `ϖ_B` are pseudouniformisers, then
+`A₀ × B₀` is an open bounded subring of `A × B` and `(ϖ_A, ϖ_B)` is a pseudouniformiser. -/
 instance IsTateRing.instProd [IsTateRing A] [IsTateRing B] : IsTateRing (A × B) := by
   obtain ⟨⟨A₀, hA₀, hbA⟩, ϖ, hϖ⟩ := isTateRing_iff_exists_isOpen_isBounded.mp ‹IsTateRing A›
   obtain ⟨⟨B₀, hB₀, hbB⟩, ϖ', hϖ'⟩ := isTateRing_iff_exists_isOpen_isBounded.mp ‹IsTateRing B›

@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.Weights.Faithful
+import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
 /-!
 # The full-weight module of the pinned rational Lie algebra
@@ -152,6 +153,7 @@ instance instIsFaithfulScModule : IsFaithful ℚ (t.lieAlgebra ht) (t.scModule h
     rw [← (t.fundamentalWeight ht).sum_repr f]
     simp only [LinearMap.sum_apply, LinearMap.smul_apply, hϖ, smul_zero, Finset.sum_const_zero]
   exact isFaithful_of_isFaithful_cartanSubalgebra (H := t.cartanSubalgebra ht)
+
 
 end
 
