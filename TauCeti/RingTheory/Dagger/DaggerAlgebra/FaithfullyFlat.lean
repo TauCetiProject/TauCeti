@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
 public import TauCeti.RingTheory.Dagger.FaithfullyFlat
+import TauCeti.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.RingTheory.RingHom.Quotient
 
 /-!
@@ -41,19 +42,16 @@ theorem faithfullyFlat_toCompletion : (toCompletion K A).toRingHom.FaithfullyFla
     ((RingHom.ker (presentation K A)).map
       (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K))
     (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K).toRingHom Ideal.le_comap_map
-  -- Compose flatness and surjectivity on spectra to allow different universes for A and K.
   have he : e.toRingHom.FaithfullyFlat := RingHom.FaithfullyFlat.of_bijective e.bijective
+  -- `Ideal.map` uses the same underlying function for an algebra hom and its ring hom;
+  -- the coercion equalities are `AlgHom.toRingHom_eq_coe` and `Ideal.map_coe`.
   have hq : q.FaithfullyFlat := h
-  have hcomp : (q.comp e.toRingHom).FaithfullyFlat := by
-    refine RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mpr
-      ⟨he.flat.comp hq.flat, ?_⟩
-    exact (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp he).2.comp
-      (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hq).2
   have hmap : (toCompletion K A).toRingHom = q.comp e.toRingHom := by
     ext a
     obtain ⟨f, rfl⟩ := presentation_surjective K A a
     simp [q, e]
-  rwa [hmap]
+  rw [hmap]
+  exact he.comp hq
 
 /-- A dagger algebra embeds in its affinoid completion, including when it has nilpotents. -/
 theorem toCompletion_injective : Function.Injective (toCompletion K A) :=
