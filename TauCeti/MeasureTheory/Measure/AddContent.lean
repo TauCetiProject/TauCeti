@@ -33,6 +33,9 @@ unlike measures, they cannot be replaced by countably additive set functions on 
   ordered values is bounded by its total mass, so an `ℝ≥0∞`-valued one is finite when its total
   mass is. A content on all subsets takes complements to differences with the total mass, for
   values in an additive group, or for `ℝ≥0∞` values at sets of finite content.
+* `MeasureTheory.addContent_eq_natCard_div_natCard`: on a finite type with a transitive scalar
+  action, for instance a finite group acting on itself by left multiplication, an invariant content
+  of total mass one on all subsets is normalized counting, `m s = |s| / |α|`.
 * `MeasureTheory.AddContent.map` pushes a content forward along a map, with identity and
   composition laws. Pushforward along an equivariant map preserves invariance under a group
   action, and invariance of a content on all subsets is invariance under pushforward by every
@@ -142,6 +145,35 @@ theorem addContent_compl_of_ne_top (hs : m s ≠ ∞) : m sᶜ = m univ - m s :=
   rw [← union_compl_self s,
     addContent_union isSetRing_univ (mem_univ _) (mem_univ _) disjoint_compl_right,
     ENNReal.add_sub_cancel_left hs]
+
+/-- On a finite type with a transitive scalar action, the only invariant finitely additive
+probability on all subsets is normalized counting, `m s = |s| / |α|`. No group or action laws are
+needed. In particular this applies to the left regular action of a finite group on itself. -/
+theorem addContent_eq_natCard_div_natCard {Γ : Type*} [SMul Γ α]
+    [MulAction.IsPretransitive Γ α] [Finite α] (h₁ : m univ = 1)
+    (hm : ∀ (c : Γ) (s : Set α), m (c • s) = m s) (s : Set α) :
+    m s = Nat.card s / Nat.card α := by
+  classical
+  have := Fintype.ofFinite α
+  obtain ⟨x₀⟩ : Nonempty α := by
+    by_contra h
+    simp [univ_eq_empty_iff.2 (not_nonempty_iff.1 h)] at h₁
+  -- Transitivity makes all singletons equally likely.
+  have hsingleton (x : α) : m {x} = m {x₀} := by
+    obtain ⟨c, rfl⟩ := MulAction.exists_smul_eq Γ x₀ x
+    rw [← smul_set_singleton, hm]
+  -- Finite additivity writes every set as the sum over its points.
+  have hsum (t : Set α) : m t = Nat.card t * m {x₀} := by
+    have ht : t = ⋃ x ∈ t.toFinset, ({x} : Set α) := by simp
+    nth_rw 1 [ht]
+    rw [addContent_biUnion_eq isSetRing_univ (fun _ _ ↦ mem_univ _)
+      (fun x _ y _ hxy ↦ disjoint_singleton.2 hxy)]
+    simp [hsingleton]
+  have hx₀ : m {x₀} = (Nat.card α : ℝ≥0∞)⁻¹ := by
+    have h := hsum univ
+    rw [h₁, Nat.card_univ] at h
+    exact ENNReal.eq_inv_of_mul_eq_one_left (by rw [mul_comm, ← h])
+  rw [hsum, hx₀, div_eq_mul_inv]
 
 end Univ
 

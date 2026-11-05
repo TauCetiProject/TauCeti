@@ -87,7 +87,8 @@ noncomputable section
 
 namespace TauCeti.WeierstrassHopfAlgebroid
 
-open MvPolynomial WeierstrassCurve TauCeti.WeierstrassChange TauCeti.WeierstrassChange.ChangeRing
+open MvPolynomial _root_.WeierstrassCurve TauCeti.WeierstrassChange
+open TauCeti.WeierstrassChange.ChangeRing
 
 variable {R : Type*} [CommRing R]
 

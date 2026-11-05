@@ -53,6 +53,8 @@ This file records general-purpose facts about open subsets of schemes.
   `V i`.
 * `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
   intersections of affine opens are affine.
+* `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
+  if its preimage in every chart of an open cover contains a dense subset.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -315,6 +317,16 @@ public instance instNonemptyTop {X : Scheme.{u}} [Nonempty X] :
     Nonempty ((⊤ : X.Opens) : Type u) :=
   let ⟨x⟩ := ‹Nonempty X›
   ⟨⟨x, trivial⟩⟩
+
+/-- Let `𝒰` be an open cover of `X`. A subset `U` of `X` is dense if its preimage in every chart
+of `𝒰` contains a dense subset. -/
+public theorem _root_.AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset
+    {X : Scheme.{u}} {U : Set X} (𝒰 : X.OpenCover) {s : ∀ i, Set (𝒰.X i)}
+    (hs : ∀ i, Dense (s i)) (hsU : ∀ i, s i ⊆ 𝒰.f i ⁻¹' U) : Dense U := by
+  refine dense_iff_inter_open.mpr fun V hV ⟨x, hxV⟩ ↦ ?_
+  obtain ⟨i, y, rfl⟩ := 𝒰.exists_eq x
+  obtain ⟨z, hzV, hzs⟩ := (hs i).inter_open_nonempty _ (hV.preimage (𝒰.f i).continuous) ⟨y, hxV⟩
+  exact ⟨_, hzV, hsU i hzs⟩
 
 end Scheme
 
