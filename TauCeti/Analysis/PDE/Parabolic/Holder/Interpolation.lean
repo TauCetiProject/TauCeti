@@ -150,9 +150,8 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
   -- At a common position the parabolic `α`-seminorm controls the temporal `α / 2`-seminorm.
   have hH : HolderOnWith (nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _))
       (α / 2) (timeExtension hab.le (timeDerivL f) x) (Icc a b) := fun s hs s' hs' ↦ by
-    have h := (timeDerivL f).memHolder.holderWith (slabMk x ⟨s, hs⟩) (slabMk x ⟨s', hs'⟩)
-    rw [edist_slabMk_same_space_rpow] at h
-    simpa [timeExtension_def, projIcc_of_mem hab.le hs, projIcc_of_mem hab.le hs'] using h
+    simpa [timeExtension_def, projIcc_of_mem hab.le hs, projIcc_of_mem hab.le hs'] using
+      holderWith_timeSlice (timeDerivL f).memHolder.holderWith x ⟨s, hs⟩ ⟨s', hs'⟩
   have hderiv : ∀ s ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
       (timeExtension hab.le (timeDerivL f) x s) (Icc a b) s := fun s hs ↦ by
     simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩

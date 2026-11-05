@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Holder
 import TauCeti.Analysis.Holder.Interpolation
+import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
 
 /-!
 # Regularity of the gradient of the Duhamel potential in space and time
@@ -93,7 +94,8 @@ theorem exists_holderOnWith_fderiv_heatDuhamelPotential (hα : 0 < α) (hα₂ :
   have hgM : ∀ y, ‖(u - v) y‖ ≤ K * d := fun y => by
     have htime : HolderOnWith K (α / 2) (fun r => heatDuhamelPotential f r y) (Icc 0 T) :=
       fun r hr r' hr' => by
-        simpa [K, edist_slabMk_same_space_rpow] using hval (slabMk y ⟨r, hr⟩) (slabMk y ⟨r', hr'⟩)
+        simpa only [time_slabMk, space_slabMk, Subtype.edist_mk_mk] using
+          holderWith_timeSlice hval y ⟨r, hr⟩ ⟨r', hr'⟩
     simpa only [Pi.sub_apply, ← dist_eq_norm, hd] using htime.dist_le ht hs
   -- The Hessian of `u - v` is bounded by the temporal Hölder estimate of the Hessian.
   have hlip : LipschitzWith (C * H * d) (fderiv ℝ (u - v)) :=

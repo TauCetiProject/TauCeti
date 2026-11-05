@@ -41,6 +41,8 @@ seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the othe
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_le_timeEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.memHolder_timeSlice_of_timeEHolderNorm_lt_top`: each time slice is
   controlled by the temporal seminorm.
+* `TauCeti.ParabolicSpaceTime.holderWith_timeSlice`: each time slice of a parabolically
+  `α`-Hölder function is `α / 2`-Hölder with the same constant.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_div_two_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm`: the
@@ -113,6 +115,14 @@ theorem eHolderNorm_le_timeEHolderNorm (γ : ℝ≥0) (v : slab (E := E) a b →
 theorem memHolder_timeSlice_of_timeEHolderNorm_lt_top {γ : ℝ≥0} {v : slab (E := E) a b → F}
     (h : timeEHolderNorm γ v < ∞) (x : E) : MemHolder γ fun t : Icc a b => v (slabMk x t) :=
   eHolderNorm_lt_top.1 ((eHolderNorm_le_timeEHolderNorm γ v x).trans_lt h)
+
+/-- At a fixed position, a parabolically `α`-Hölder function on a slab is `α / 2`-Hölder in time,
+with the same constant: the parabolic distance between `(x, t)` and `(x, s)` is `√|t - s|`. -/
+theorem holderWith_timeSlice [PseudoEMetricSpace E] {C α : ℝ≥0} {v : slab (E := E) a b → F}
+    (hv : HolderWith C α v) (x : E) : HolderWith C (α / 2) fun t : Icc a b => v (slabMk x t) :=
+  fun t s => by
+    rw [← edist_slabMk_same_space_rpow x t s]
+    exact hv (slabMk x t) (slabMk x s)
 
 variable [MetricSpace E]
 
