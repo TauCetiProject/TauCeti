@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -49,7 +49,6 @@ positive definite `g`. Its Hamiltonian is `H(p) = ½ p(g_x⁻¹ p) + V(x)` for a
 * `TauCeti.IsHyperregularLagrangian`: regular Lagrangians with bijective Legendre map.
 * `TauCeti.IsHyperregularLagrangian.legendreDiffeomorph`: the Legendre diffeomorphism `TM ≃ T*M`.
 * `TauCeti.IsHyperregularLagrangian.hamiltonian`: the Hamiltonian `H = E_L ∘ FL⁻¹`.
-* `TauCeti.IsRegularLagrangian.isSymplectic_cartanTwoForm`: `ω_L` is symplectic.
 * `TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`: the Legendre map
   conjugates the Lagrangian and Hamiltonian flows.
 
@@ -146,13 +145,6 @@ variable {𝕜 E H : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace �
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [BoundarylessManifold I.tangent (TangentBundle I M)] {L : TangentBundle I M → 𝕜}
 
-/-- The Legendre map of a smooth regular Lagrangian on a boundaryless manifold is a smooth local
-diffeomorphism. -/
-theorem IsRegularLagrangian.isLocalDiffeomorph_legendreMap
-    (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) ∞ L) (hreg : IsRegularLagrangian L) :
-    IsLocalDiffeomorph I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ (legendreMap L) :=
-  (isLocalDiffeomorph_legendreMap_iff hL le_rfl (by simp)).2 hreg
-
 namespace IsHyperregularLagrangian
 
 variable (h : IsHyperregularLagrangian L) (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) ∞ L)
@@ -224,17 +216,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] [BoundarylessManifold I.tangent (TangentBundle I M)]
   {L : TangentBundle I M → ℝ}
-
-/-- **The Cartan two-form of a regular Lagrangian is symplectic.** For a smooth regular real
-Lagrangian on a boundaryless manifold, the Legendre map is a local diffeomorphism, so it pulls the
-canonical symplectic form `ω` of `T*M` back to a symplectic form `ω_L = FL^*ω` on `TM`. -/
-theorem IsRegularLagrangian.isSymplectic_cartanTwoForm (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (hreg : IsRegularLagrangian L) : (cartanTwoForm L hL).IsSymplectic := by
-  have hω := CotangentBundle.isSymplectic_symplecticForm (I := I) (M := M)
-  rw [← mpullback_legendreMap_symplecticForm hL]
-  exact ⟨hω.isClosed.mpullback _ _,
-    hω.isNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph
-      (hreg.isLocalDiffeomorph_legendreMap hL)⟩
 
 variable [FiniteDimensional ℝ E]
 
@@ -316,12 +297,7 @@ theorem isHyperregularLagrangian_mechanicalLagrangian_iff (hg : ∀ x v w, g x v
   refine ⟨fun h ↦ h.isRegularLagrangian, fun hreg ↦ ⟨hreg, ?_⟩⟩
   have hinv := (isRegularLagrangian_mechanicalLagrangian_iff hg V).1 hreg
   rw [funext (legendreMap_mechanicalLagrangian hg V)]
-  refine ⟨?_, fun p ↦ ⟨TotalSpace.mk' E p.proj ((g p.proj).inverse p.2), ?_⟩⟩
-  · rintro ⟨x, a⟩ ⟨y, b⟩ hab
-    simp only [TotalSpace.mk.injEq] at hab
-    obtain ⟨rfl, hab⟩ := hab
-    rw [(hinv x).bijective.1 (eq_of_heq hab)]
-  · exact TotalSpace.ext rfl (heq_of_eq ((hinv p.proj).self_apply_inverse p.2))
+  exact bijective_totalSpace_map_iff.2 fun x ↦ (hinv x).bijective
 
 /-- **A mechanical Lagrangian with positive definite kinetic form is hyperregular**, on a
 finite-dimensional manifold. -/
