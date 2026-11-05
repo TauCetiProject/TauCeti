@@ -238,8 +238,10 @@ lemma MulAction.orbitRelQuotientMapOfLE_bot_eq_iff (H : Subgroup G)
 
 /-- In a cancellative action, two translates have the same subgroup-orbit quotient class
 exactly when the translators differ on the right by an element of the subgroup. This holds
-for an arbitrary subgroup; the normal-subgroup criterion
-`orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq` follows from it. -/
+for an arbitrary subgroup; the normalizer criterion
+`orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer` specializes it to the normalizer
+acting freely, and `orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq` rephrases that
+in `N(H) / H`. -/
 lemma MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem [IsCancelSMul G X] (H : Subgroup G)
     (x : X) (g k : G) : (Quotient.mk'' (g • x) : MulAction.orbitRel.Quotient H X) =
         Quotient.mk'' (k • x) ↔
@@ -273,18 +275,11 @@ lemma MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer
     (Quotient.mk'' ((g : G) • x) : MulAction.orbitRel.Quotient H X) =
         Quotient.mk'' ((k : G) • x) ↔
       (g : G) * (k : G)⁻¹ ∈ H := by
-  constructor
-  · intro h
-    rw [Quotient.eq'', MulAction.orbitRel_apply] at h
-    obtain ⟨l, hl⟩ := h
-    have hmul : (⟨l, H.le_normalizer l.2⟩ * k : Subgroup.normalizer (H : Set G)) • x =
-        g • x := by
-      simpa [Subgroup.smul_def, smul_smul] using hl
-    have hg := congrArg Subtype.val (IsCancelSMul.right_cancel _ _ x hmul)
-    simp [← hg]
-  · intro hg
-    rw [Quotient.eq'', MulAction.orbitRel_apply]
-    exact ⟨⟨g * k⁻¹, hg⟩, by simp [Subgroup.smul_def, smul_smul]⟩
+  have h := MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem
+    (Subgroup.subgroupOf H (Subgroup.normalizer (H : Set G))) x g k
+  rw [Quotient.eq'', MulAction.orbitRel_subgroupOf, inf_eq_left.mpr H.le_normalizer,
+    Subgroup.mem_subgroupOf, ← Quotient.eq''] at h
+  simpa [Subgroup.smul_def] using h
 
 /-- In an action whose normalizer of `H` acts freely, equality of the `H`-orbit classes of two
 translates by elements `g`, `k` of the normalizer is equality of the corresponding inverse
