@@ -63,21 +63,21 @@ theorem hochschildBimoduleCoface_curryLeft_flipMultilinear
         φ.curryLeft.flipMultilinear a x = φ (hochschildFace i (Fin.cons x a)) := by
   induction i using Fin.cases with
   | zero =>
-    rw [hochschildBimoduleCoface_zero_apply, dualAction_apply_apply,
+    conv_rhs => rw [← Fin.castSucc_zero (n := n + 1), hochschildFace_castSucc]
+    simp only [hochschildBimoduleCoface_zero_apply, dualAction_apply_apply,
       flip_apply, ContinuousLinearMap.mul_apply', flipMultilinear_apply_apply,
-      curryLeft_apply, ← Fin.castSucc_zero (n := n + 1), hochschildFace_castSucc,
-      Fin.castSucc_zero (n := n + 1), Fin.contractNth_zero_cons]
+      curryLeft_apply, Fin.castSucc_zero, Fin.contractNth_zero_cons]
   | succ i =>
     induction i using Fin.lastCases with
     | last =>
-      rw [Fin.succ_last, hochschildBimoduleCoface_last_apply,
-        dualAction_apply_apply, ContinuousLinearMap.mul_apply', flipMultilinear_apply_apply,
-        curryLeft_apply, hochschildFace_last, ← Fin.succ_last, Fin.cons_succ, Fin.cons_zero]
-      simp only [Fin.init_def, Fin.cons_succ]
+      simp only [Fin.succ_last]
+      simp only [hochschildBimoduleCoface_last_apply, dualAction_apply_apply,
+        ContinuousLinearMap.mul_apply', flipMultilinear_apply_apply, curryLeft_apply,
+        hochschildFace_last, Fin.cons_last, Fin.cons_succ, Fin.cons_zero, Fin.init_def]
     | cast j =>
-      rw [hochschildBimoduleCoface_castSucc_succ_apply, flipMultilinear_apply_apply,
-        curryLeft_apply, Fin.succ_castSucc, hochschildFace_castSucc,
-        ← Fin.succ_castSucc, Fin.contractNth_succ_cons]
+      conv_rhs => rw [Fin.succ_castSucc, hochschildFace_castSucc, ← Fin.succ_castSucc]
+      simp only [hochschildBimoduleCoface_castSucc_succ_apply, flipMultilinear_apply_apply,
+        curryLeft_apply, Fin.contractNth_succ_cons]
 
 /-- Currying the initial variable intertwines the continuous scalar Hochschild differential
 and the bounded Hochschild differential with continuous-dual coefficients. -/
