@@ -31,10 +31,13 @@ restriction of `p` over `skeletonLT C k` is again a Serre fibration. Hence the p
   (`TauCeti.TopCat.isZero_singularHomology_preimage_skeletonLT`). The case `k = i + 2` is
   `Hₘ(Eᵢ₊₁, Eᵢ; R) = 0`, and the case `k = ⊤` is `Hₘ(p⁻¹(C), Eᵢ; R) = 0`.
 
-This is the vanishing that places the first page `Hₚ₊q(Eₚ, Eₚ₋₁)` of the spectral sequence of
-the filtration `(Eᵢ)` in nonnegative fibre degrees `q ≥ 0`, so that the spectral sequence is a
-first-quadrant one: the Serre spectral sequence of `p` over the CW complex `C`. No finiteness,
-dimension, or connectivity assumption is made on `C`, on `E`, or on the fibres of `p`.
+The filtration starts at `E₋₁ = p⁻¹(skeletonLT C 0) = p⁻¹(D)`. This is the vanishing that places
+the first page `Hₚ₊q(Eₚ, Eₚ₋₁)` of the spectral sequence of the relative skeletal filtration
+`E₋₁ ⊆ E₀ ⊆ E₁ ⊆ ⋯` in nonnegative fibre degrees `q ≥ 0`, so that the spectral sequence is a
+first-quadrant one. For an absolute CW complex (`D = ∅`, so `E₋₁` is empty) it is the Serre
+spectral sequence of `p` over `C`; for general `D` the initial stage `p⁻¹(D)` can have arbitrary
+topology. No finiteness, dimension, or connectivity assumption is made on `C`, on `E`, or on the
+fibres of `p`.
 
 ## Main results
 
