@@ -277,13 +277,11 @@ noncomputable def unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semi
   val := single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1
   inv := single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1
   val_inv := by
-    rw [single_mul_single_of_mem_normalizer R hnorm,
-      show (⟨x, hx⟩ : Δ) * ⟨x⁻¹, hxi⟩ = 1 from Subtype.ext (mul_inv_cancel x)]
-    exact (one_def R).symm
+    rw [single_mul_single_of_mem_normalizer R hnorm, one_def R, HeckeCoset.one_def]
+    exact congrArg (single R · 1) (HeckeCoset.mk_congr_val (by simp))
   inv_val := by
-    rw [single_mul_single_of_mem_normalizer_right R hnorm,
-      show (⟨x⁻¹, hxi⟩ : Δ) * ⟨x, hx⟩ = 1 from Subtype.ext (inv_mul_cancel x)]
-    exact (one_def R).symm
+    rw [single_mul_single_of_mem_normalizer_right R hnorm, one_def R, HeckeCoset.one_def]
+    exact congrArg (single R · 1) (HeckeCoset.mk_congr_val (by simp))
 
 /-- The underlying Hecke-ring element of `unitOfMemNormalizer` is the basis element `[ΓxΓ]`. -/
 @[simp]

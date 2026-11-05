@@ -61,6 +61,8 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
   fundamental-domain statement needs: the group that acts
   faithfully on `ℍ` is a *quotient*, so the homomorphism reaching it is deliberately non-injective,
   and the kernel is absorbed by the denominator instead.
+* `DoubleCoset.decompQuotientEquivOfInf`: bijection `DecompQuotient H H g ≃ DecompQuotient H' H' g`
+  for `g ∈ P` when `H = H' ⊓ P` meets every left coset of `H' ∩ g H' g⁻¹` in `H'`.
 * `HeckeCosetModule.single`: the basis element `b • [D]` of the Hecke coset module, with
   `single_apply`, `sum_single_index`, `smul_single_one`, `single_add`, `induction_linear`,
   and the `Module R` instance `HeckeCosetModule.instModule`.
@@ -83,7 +85,9 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
 
 ## Main results
 
-* `HeckeCoset.eq_iff`: `mk H₁ H₂ g = mk H₁ H₂ h ↔ H₁gH₂ = H₁hH₂`.
+* `HeckeCoset.eq_iff`: `mk H₁ H₂ g = mk H₁ H₂ h ↔ H₁gH₂ = H₁hH₂`, with `HeckeCoset.mk_congr_val`
+  when `g` and `h` have the same underlying element of `G` and `HeckeCoset.rep_map_mem_doubleCoset`
+  for chosen representatives of mapped cosets.
 * `HeckeCoset.toSet_injective`: a double coset is determined by its underlying set.
 * `DoubleCoset.doubleCoset_eq_iUnion_rightCosets` and
   `DoubleCoset.op_mul_out_inv_smul_injective`: Shimura's decomposition `Γ₁gΓ₂ = ⊔ᵥ Γ₁(gτᵥ⁻¹)`
@@ -254,6 +258,11 @@ lemma mk_eq_mk_of_mem {g₁ g₂ : Δ} (h : (g₁ : G) ∈ doubleCoset (g₂ : G
     mk H₁ H₂ g₁ = mk H₁ H₂ g₂ :=
   eq_iff.mpr (doubleCoset_eq_of_mem h)
 
+/-- Two elements of `Δ` with equal underlying group elements define the same `HeckeCoset`,
+irrespective of how their `Δ`-memberships are bundled. -/
+lemma mk_congr_val {g₁ g₂ : Δ} (h : (g₁ : G) = (g₂ : G)) : mk H₁ H₂ g₁ = mk H₁ H₂ g₂ :=
+  congrArg (mk H₁ H₂) (Subtype.ext h)
+
 section Map
 
 variable {Δ' : Submonoid G} {H₁' H₂' : Subgroup G}
@@ -296,7 +305,18 @@ variable {Δ'' : Submonoid G} {H₁'' H₂'' : Subgroup G}
 /-- `HeckeCoset.map` preserves the identity double coset. -/
 @[simp] lemma map_one {H H' : Subgroup G} (hΔ : Δ ≤ Δ') (hH : H ≤ H') :
     map hΔ hH hH (1 : HeckeCoset Δ H H) = (1 : HeckeCoset Δ' H' H') := by
-  rw [one_def, one_def, map_mk]; rfl
+  rw [one_def, one_def, map_mk]
+  exact mk_congr_val (by simp)
+
+/-- The chosen representative of `D.map hΔ h₁ h₂` lies in the `(H₁', H₂')`-double coset of
+`D.rep`. -/
+theorem rep_map_mem_doubleCoset (hΔ : Δ ≤ Δ') (h₁ : H₁ ≤ H₁') (h₂ : H₂ ≤ H₂')
+    (D : HeckeCoset Δ H₁ H₂) :
+    (((D.map hΔ h₁ h₂).rep : Δ') : G) ∈ doubleCoset (D.rep : G) H₁' H₂' := by
+  have hmap : D.map hΔ h₁ h₂ = mk H₁' H₂' (Submonoid.inclusion hΔ D.rep) := by
+    conv_lhs => rw [← mk_rep D, map_mk]
+  simpa only [hmap, Submonoid.coe_inclusion] using
+    rep_mk_mem_doubleCoset (H₁ := H₁') (H₂ := H₂') (Submonoid.inclusion hΔ D.rep)
 
 end Map
 
@@ -563,6 +583,42 @@ theorem decompQuotientEquivMapOfKerInfLe_mk {G' : Type*} [Group G'] (φ : G →*
   subst hd
   unfold decompQuotientEquivMapOfKerInfLe
   exact TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe_mk _ _ _ _ _
+
+open scoped Pointwise in
+/-- When `H = H' ⊓ P`, `g ∈ P`, and `H` meets every left coset of `H' ∩ g H' g⁻¹` in `H'`,
+inclusion `H ≤ H'` induces a bijection `DecompQuotient H H g ≃ DecompQuotient H' H' g`. -/
+noncomputable def decompQuotientEquivOfInf {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g : G}
+    (hgP : g ∈ P) (hstab : ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct g • H') :
+    DecompQuotient H H g ≃ DecompQuotient H' H' g :=
+  have hsub : (ConjAct.toConjAct g • H).subgroupOf H =
+      ((ConjAct.toConjAct g • H').subgroupOf H').comap
+        (Subgroup.inclusion (hHP ▸ inf_le_left)) := by
+    have hmem_iff (w : G) : w ∈ H ↔ w ∈ H' ∧ w ∈ P := by rw [hHP, Subgroup.mem_inf]
+    ext x
+    have hxP : (x : G) ∈ P := ((hmem_iff (x : G)).mp x.2).2
+    simp only [Subgroup.mem_subgroupOf, Subgroup.mem_comap, Subgroup.coe_inclusion,
+      Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
+      ConjAct.ofConjAct_toConjAct, inv_inv]
+    rw [hmem_iff]
+    exact and_iff_left (P.mul_mem (P.mul_mem (P.inv_mem hgP) hxP) hgP)
+  (Subgroup.quotientEquivOfEq hsub).trans
+    (TauCeti.QuotientGroup.congrComapOfSurjectiveMk (Subgroup.inclusion (hHP ▸ inf_le_left))
+      ((ConjAct.toConjAct g • H').subgroupOf H') fun q ↦ by
+        induction q using QuotientGroup.induction_on with
+        | _ u =>
+          obtain ⟨x, hxH, hxu⟩ := hstab (u : G) u.2
+          exact ⟨⟨x, hxH⟩, QuotientGroup.eq.mpr (by
+            simpa [Subgroup.mem_subgroupOf] using hxu)⟩)
+
+open scoped Pointwise in
+/-- `decompQuotientEquivOfInf` sends the coset of `x : H` to the coset of `x` in `H'`. -/
+@[simp]
+theorem decompQuotientEquivOfInf_mk {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g : G}
+    (hgP : g ∈ P) (hstab : ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct g • H') (x : H) :
+    decompQuotientEquivOfInf hHP hgP hstab (QuotientGroup.mk x) =
+      QuotientGroup.mk (Subgroup.inclusion (hHP ▸ inf_le_left) x) := by
+  rw [decompQuotientEquivOfInf, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk]
+  exact TauCeti.QuotientGroup.congrComapOfSurjectiveMk_mk _ _ _ x
 
 /-- Equality of classes in `DecompQuotient H₁ H₂ g` gives the conjugation relation between their
 representatives: `u₁⁻¹ u₂` lies in the stabilizer indexing the decomposition, so conjugating it

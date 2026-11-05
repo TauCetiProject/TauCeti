@@ -17,8 +17,7 @@ belongs to `H`. Nothing here is arithmetic: the arguments hold over any commutat
 ring) and any finite index type.
 
 The arithmetic consumers — `SL_n(ℤ)`, `GL_n(ℤ)`, and the congruence subgroups inside them —
-specialise these in `TauCeti.NumberTheory.HeckeRing.GLn.Basic` and
-`TauCeti.NumberTheory.HeckeRing.GLn.Rational`.
+specialise these in `TauCeti.NumberTheory.HeckeRing.GLn.Basic`.
 
 ## Main results
 

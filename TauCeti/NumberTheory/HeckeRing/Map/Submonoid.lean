@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import TauCeti.NumberTheory.HeckeRing.Associativity
 public import TauCeti.NumberTheory.HeckeRing.Multiplicity.Equiv
 
+import TauCeti.NumberTheory.HeckeRing.LinearExtension
+
 /-!
 # Enlarging the ambient submonoid of a Hecke coset module
 
@@ -35,12 +37,6 @@ integral Hecke ring (such as `H(SL_n(ℤ), M_n^+(ℤ))`) into its rational count
   `HeckeCoset.mem_range_map_of_le_iff`: keeping the subgroups fixed preserves the underlying
   double coset in `G`, so `HeckeCoset.map hΔ le_rfl le_rfl` is injective with range the double
   cosets whose representatives lie in `Δ₁`.
-* `HeckeCoset.rep_map_mem_doubleCoset`, `HeckeCoset.multiplicity_map_rep`: chosen representatives
-  of mapped cosets lie in the target double cosets of the source representatives, leaving Shimura's
-  multiplicities unchanged.
-* `HeckeCosetModule.map_mul_of_structureConstants`: any `R`-linear maps acting on basis elements via
-  `HeckeCoset.map` intertwine `HeckeCosetModule.mul` whenever they preserve `structureConstants` on
-  chosen representatives.
 * `HeckeCosetModule.mapSubmonoid`: the injective `R`-linear map
   `HeckeCosetModule Δ₁ H₁ H₂ R →ₗ[R] HeckeCosetModule Δ₂ H₁ H₂ R` induced by `Δ₁ ≤ Δ₂`.
 * `HeckeCosetModule.mapSubmonoid_mul`: `mapSubmonoid` intertwines the bimodule convolution product
@@ -83,33 +79,12 @@ theorem map_injective_of_le (hΔ : Δ₁ ≤ Δ₂) :
 theorem mem_range_map_of_le_iff [IsHeckeTriple Δ₁ H₁ H₂] (hΔ : Δ₁ ≤ Δ₂)
     {E : HeckeCoset Δ₂ H₁ H₂} :
     E ∈ Set.range (HeckeCoset.map hΔ (le_refl H₁) (le_refl H₂)) ↔ (E.rep : G) ∈ Δ₁ := by
-  refine ⟨?_, fun hE ↦ ⟨mk H₁ H₂ ⟨(E.rep : G), hE⟩, by rw [map_mk]; exact mk_rep E⟩⟩
+  refine ⟨?_, fun hE ↦ ⟨mk H₁ H₂ ⟨(E.rep : G), hE⟩,
+    by rw [map_mk, mk_congr_val (Submonoid.coe_inclusion hΔ _), mk_rep]⟩⟩
   rintro ⟨D, rfl⟩
   have hmem : ((D.map hΔ le_rfl le_rfl).rep : G) ∈ doubleCoset (D.rep : G) H₁ H₂ := by
     rw [← toSet_eq_doubleCoset_rep, ← toSet_map_of_le hΔ]; exact rep_mem _
   exact IsHeckeTriple.mem_of_mem_doubleCoset D.rep.2 hmem
-
-/-- The chosen representative of `D.map hΔ h₁ h₂` lies in the `(H₁', H₂')`-double coset of
-`D.rep`. -/
-theorem rep_map_mem_doubleCoset {H₁' H₂' : Subgroup G}
-    (hΔ : Δ₁ ≤ Δ₂) (h₁ : H₁ ≤ H₁') (h₂ : H₂ ≤ H₂') (D : HeckeCoset Δ₁ H₁ H₂) :
-    (((D.map hΔ h₁ h₂).rep : Δ₂) : G) ∈ doubleCoset (D.rep : G) H₁' H₂' := by
-  have hmap : D.map hΔ h₁ h₂ = mk H₁' H₂' (Submonoid.inclusion hΔ D.rep) := by
-    conv_lhs => rw [← mk_rep D, map_mk]
-  simpa only [hmap, Submonoid.coe_inclusion] using
-    rep_mk_mem_doubleCoset (H₁ := H₁') (H₂ := H₂') (Submonoid.inclusion hΔ D.rep)
-
-/-- Replacing the chosen representatives of mapped Hecke cosets by the source representatives
-leaves Shimura's `(H₁', H₂', H₃')`-multiplicity unchanged. -/
-theorem multiplicity_map_rep {H₃ H₁' H₂' H₃' : Subgroup G}
-    (hΔ : Δ₁ ≤ Δ₂) (h₁ : H₁ ≤ H₁') (h₂ : H₂ ≤ H₂') (h₃ : H₃ ≤ H₃')
-    (D₁ : HeckeCoset Δ₁ H₁ H₂) (D₂ : HeckeCoset Δ₁ H₂ H₃) (D : HeckeCoset Δ₁ H₁ H₃) :
-    multiplicity H₁' H₂' H₃' ((D₁.map hΔ h₁ h₂).rep : G) ((D₂.map hΔ h₂ h₃).rep : G)
-        ((D.map hΔ h₁ h₃).rep : G) =
-      multiplicity H₁' H₂' H₃' (D₁.rep : G) (D₂.rep : G) (D.rep : G) := by
-  rw [multiplicity_doubleCoset_congr_first H₁' H₂' H₃' _ _ (rep_map_mem_doubleCoset hΔ h₁ h₂ D₁),
-    multiplicity_doubleCoset_congr_second H₁' H₂' H₃' _ _ (rep_map_mem_doubleCoset hΔ h₂ h₃ D₂),
-    multiplicity_doubleCoset_congr _ _ (rep_map_mem_doubleCoset hΔ h₁ h₃ D)]
 
 end HeckeCoset
 
@@ -118,38 +93,7 @@ namespace HeckeCosetModule
 open scoped HeckeCosetModule
 
 variable {G : Type*} [Group G] {Δ₁ Δ₂ Δ₃ : Submonoid G} {H₁ H₂ H₃ H : Subgroup G}
-
-section LinearMap
-
 variable (R : Type*) [Semiring R]
-
-/-- `R`-linear maps between Hecke coset modules that send basis elements along `HeckeCoset.map`
-intertwine the bimodule convolution product `HeckeCosetModule.mul` whenever they map
-`structureConstants` at chosen representatives to `structureConstants` at the mapped
-representatives. -/
-theorem map_mul_of_structureConstants {H₁' H₂' H₃' : Subgroup G}
-    [IsHeckeTriple Δ₁ H₁ H₂] [IsHeckeTriple Δ₁ H₂ H₃]
-    [IsHeckeTriple Δ₂ H₁' H₂'] [IsHeckeTriple Δ₂ H₂' H₃']
-    (hΔ : Δ₁ ≤ Δ₂) (h₁ : H₁ ≤ H₁') (h₂ : H₂ ≤ H₂') (h₃ : H₃ ≤ H₃')
-    (L₁₂ : HeckeCosetModule Δ₁ H₁ H₂ R →ₗ[R] HeckeCosetModule Δ₂ H₁' H₂' R)
-    (L₂₃ : HeckeCosetModule Δ₁ H₂ H₃ R →ₗ[R] HeckeCosetModule Δ₂ H₂' H₃' R)
-    (L₁₃ : HeckeCosetModule Δ₁ H₁ H₃ R →ₗ[R] HeckeCosetModule Δ₂ H₁' H₃' R)
-    (hL₁₂ : ∀ D a, L₁₂ (single R D a) = single R (D.map hΔ h₁ h₂) a)
-    (hL₂₃ : ∀ D b, L₂₃ (single R D b) = single R (D.map hΔ h₂ h₃) b)
-    (hSC : ∀ (D₁ : HeckeCoset Δ₁ H₁ H₂) (D₂ : HeckeCoset Δ₁ H₂ H₃),
-      L₁₃ (structureConstants R H₁ H₂ H₃ D₁.rep D₂.rep) =
-        structureConstants R H₁' H₂' H₃' (D₁.map hΔ h₁ h₂).rep (D₂.map hΔ h₂ h₃).rep)
-    (f : HeckeCosetModule Δ₁ H₁ H₂ R) (g : HeckeCosetModule Δ₁ H₂ H₃ R) :
-    L₁₃ (mul R f g) = mul R (L₁₂ f) (L₂₃ g) := by
-  induction f using HeckeCosetModule.induction_linear with
-  | h0 => simp [zero_mul]
-  | hadd _ _ ih₁ ih₂ => simp only [add_mul, map_add, ih₁, ih₂]
-  | hsingle D₁ a =>
-    induction g using HeckeCosetModule.induction_linear with
-    | h0 => simp [mul_zero]
-    | hadd _ _ ih₁ ih₂ => simp only [mul_add, map_add, ih₁, ih₂]
-    | hsingle D₂ b =>
-      rw [mul_single_single, map_smul, map_smul, hSC D₁ D₂, hL₁₂, hL₂₃, mul_single_single]
 
 /-- Push finitely supported double-coset combinations forward along a submonoid inclusion
 `Δ₁ ≤ Δ₂` with the subgroups `H₁, H₂` held fixed. -/
@@ -188,24 +132,24 @@ theorem mapSubmonoid_injective (hΔ : Δ₁ ≤ Δ₂) :
 @[simp]
 theorem mapSubmonoid_id :
     mapSubmonoid R (H₁ := H₁) (H₂ := H₂) (le_refl Δ₁) = LinearMap.id := by
-  rw [mapSubmonoid, show HeckeCoset.map (le_refl Δ₁) (le_refl H₁) (le_refl H₂) = _root_.id from
-    funext HeckeCoset.map_id]
+  have hmap : HeckeCoset.map (le_refl Δ₁) (le_refl H₁) (le_refl H₂) = _root_.id :=
+    funext HeckeCoset.map_id
+  rw [mapSubmonoid, hmap]
   exact Finsupp.lmapDomain_id R R
 
 /-- `mapSubmonoid` is functorial along a chain `Δ₁ ≤ Δ₂ ≤ Δ₃`. -/
 theorem mapSubmonoid_comp (h₁₂ : Δ₁ ≤ Δ₂) (h₂₃ : Δ₂ ≤ Δ₃) :
     (mapSubmonoid R (H₁ := H₁) (H₂ := H₂) h₂₃).comp (mapSubmonoid R h₁₂) =
       mapSubmonoid R (h₁₂.trans h₂₃) := by
-  rw [mapSubmonoid, mapSubmonoid, mapSubmonoid,
-    show HeckeCoset.map (h₁₂.trans h₂₃) (le_refl H₁) (le_refl H₂) =
-        HeckeCoset.map h₂₃ le_rfl le_rfl ∘ HeckeCoset.map h₁₂ le_rfl le_rfl from
-      funext fun D ↦ (HeckeCoset.map_map h₁₂ le_rfl le_rfl h₂₃ le_rfl le_rfl D).symm]
+  have hmap : HeckeCoset.map (h₁₂.trans h₂₃) (le_refl H₁) (le_refl H₂) =
+      HeckeCoset.map h₂₃ le_rfl le_rfl ∘ HeckeCoset.map h₁₂ le_rfl le_rfl :=
+    funext fun D ↦ (HeckeCoset.map_map h₁₂ le_rfl le_rfl h₂₃ le_rfl le_rfl D).symm
+  rw [mapSubmonoid, mapSubmonoid, mapSubmonoid, hmap]
   exact (Finsupp.lmapDomain_comp R R _ _).symm
 
 /-- `mapSubmonoid` preserves the multiplicative identity of a Hecke ring. -/
 @[simp]
-theorem mapSubmonoid_one (hΔ : Δ₁ ≤ Δ₂) :
-    mapSubmonoid R hΔ (1 : 𝕋 Δ₁ H R) = (1 : 𝕋 Δ₂ H R) := by
+theorem mapSubmonoid_one (hΔ : Δ₁ ≤ Δ₂) : mapSubmonoid R hΔ (1 : 𝕋 Δ₁ H R) = (1 : 𝕋 Δ₂ H R) := by
   rw [one_def, one_def, mapSubmonoid_single, HeckeCoset.map_one]
 
 /-- Pushing the structure constants at `(D₁, D₂)` along `Δ₁ ≤ Δ₂` yields the structure constants
@@ -255,11 +199,10 @@ noncomputable def mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple �
   map_add' := map_add _
 
 /-- `mapSubmonoidRingHom` coerces to `mapSubmonoid`. -/
-@[simp]
-theorem coe_mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
-    (hΔ : Δ₁ ≤ Δ₂) :
-    ⇑(mapSubmonoidRingHom R (H := H) hΔ) = mapSubmonoid R hΔ :=
-  (rfl)
+-- Deliberately not `@[simp]`: rewriting `⇑(mapSubmonoidRingHom …)` to a `LinearMap` prevents
+-- generic ring-homomorphism simp lemmas (`map_mul`, `map_one`) from firing.
+theorem coe_mapSubmonoidRingHom [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H] (hΔ : Δ₁ ≤ Δ₂) :
+    ⇑(mapSubmonoidRingHom R (H := H) hΔ) = mapSubmonoid R hΔ := (rfl)
 
 /-- `mapSubmonoidRingHom` sends a basis element `single R D b` to the mapped basis element. -/
 @[simp]
@@ -270,8 +213,7 @@ theorem mapSubmonoidRingHom_single [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ�
 
 /-- `mapSubmonoidRingHom` is injective. -/
 theorem mapSubmonoidRingHom_injective [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ H H]
-    (hΔ : Δ₁ ≤ Δ₂) :
-    Function.Injective (mapSubmonoidRingHom R (H := H) hΔ) :=
+    (hΔ : Δ₁ ≤ Δ₂) : Function.Injective (mapSubmonoidRingHom R (H := H) hΔ) :=
   mapSubmonoid_injective R hΔ
 
 /-- `mapSubmonoidRingHom` along `Δ₁ ≤ Δ₁` is the identity ring homomorphism. -/
@@ -286,8 +228,6 @@ theorem mapSubmonoidRingHom_comp [IsHeckeTriple Δ₁ H H] [IsHeckeTriple Δ₂ 
     (mapSubmonoidRingHom R (H := H) h₂₃).comp (mapSubmonoidRingHom R h₁₂) =
       mapSubmonoidRingHom R (h₁₂.trans h₂₃) :=
   RingHom.ext fun f ↦ DFunLike.congr_fun (mapSubmonoid_comp R h₁₂ h₂₃) f
-
-end LinearMap
 
 end HeckeCosetModule
 

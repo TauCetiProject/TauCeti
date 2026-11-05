@@ -7,28 +7,34 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.Associativity
 
+import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.NumberTheory.HeckeRing.StabConjugation
 
 /-!
-# Transporting Hecke multiplicities along group equivalences
+# Transporting Hecke multiplicities along group equivalences and inclusions
 
 The double-coset multiplicity is unchanged when the ambient group, its three subgroups, and
-the three elements are transported along a group equivalence. This is the naturality needed
-when a concrete Hecke action presents the structure constants after applying an automorphism of
-the ambient group.
+the three elements are transported along a group equivalence, when representatives are varied
+within their double cosets (including along `HeckeCoset.map`), or when a subgroup `H'` is
+intersected with an ambient subgroup `P` containing the representatives and meeting all
+stabilizer cosets.
 
 ## Main results
 
 * `DoubleCoset.multiplicity_map_equiv`: transport of Shimura's multiplicity along a group
   equivalence.
 * `DoubleCoset.multiplicity_doubleCoset_congr_first` and
-  `DoubleCoset.multiplicity_doubleCoset_congr_second`: invariance in the first and second inputs.
+  `DoubleCoset.multiplicity_doubleCoset_congr_second`: invariance in the first and second inputs,
+  with `HeckeCoset.multiplicity_map_rep` for chosen representatives of mapped cosets.
+* `DoubleCoset.multiplicity_eq_of_inf`: equality of Shimura's multiplicities for `H = H' ⊓ P` and
+  `H'` on elements of `P`.
 -/
 
 public section
 
 open Subgroup
+open scoped Pointwise
 
 namespace DoubleCoset
 
@@ -193,6 +199,75 @@ theorem multiplicity_doubleCoset_congr_first (H₁ H₂ H₃ : Subgroup G)
     ((((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃))
   rw [hprod]
 
+/-- When `H = H' ⊓ P` and `H` meets all relevant stabilizer cosets in `H'`, Shimura's multiplicity
+for `H'` agrees with that for `H` on elements `g, h, d ∈ P`. -/
+theorem multiplicity_eq_of_inf {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g h d : G}
+    (hgP : g ∈ P) (hhP : h ∈ P) (hdP : d ∈ P)
+    (hstab_g : ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct g • H')
+    (hstab_h : ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct h • H') :
+    multiplicity H' H' H' g h d = multiplicity H H H g h d := by
+  have hmem_iff (w : G) : w ∈ H ↔ w ∈ H' ∧ w ∈ P := by rw [hHP, Subgroup.mem_inf]
+  have hle : H ≤ H' := hHP ▸ inf_le_left
+  have hleP : H ≤ P := hHP ▸ inf_le_right
+  let eg := decompQuotientEquivOfInf hHP hgP hstab_g
+  let eh := decompQuotientEquivOfInf hHP hhP hstab_h
+  have heg (i : DecompQuotient H H g) :
+      (QuotientGroup.mk (eg i).out : DecompQuotient H' H' g) =
+        QuotientGroup.mk (Subgroup.inclusion hle i.out) := by
+    rw [QuotientGroup.out_eq', ← QuotientGroup.out_eq' i, decompQuotientEquivOfInf_mk]
+    simp only [QuotientGroup.out_eq']
+  let c : DecompQuotient H H g → H' := fun i ↦
+    ⟨g⁻¹ * (((eg i).out : G)⁻¹ * (i.out : G)) * g, conj_mem_of_mk_eq g (heg i)⟩
+  -- Passing from `(i.out : G) * g` to `((eg i).out : G) * g` introduces the factor `c i ∈ H'`,
+  -- which is absorbed by shearing the second quotient `DecompQuotient H' H' h`.
+  let epairs : DecompQuotient H H g × DecompQuotient H H h ≃
+      DecompQuotient H' H' g × DecompQuotient H' H' h :=
+    (Equiv.prodShear (Equiv.refl _) fun i ↦ eh.trans (MulAction.toPerm (c i))).trans
+      (Equiv.prodCongr eg (Equiv.refl _))
+  symm
+  rw [multiplicity_def, multiplicity_def]
+  refine Nat.card_congr (Equiv.subtypeEquiv epairs fun ⟨i, j⟩ ↦ ?_)
+  set q : DecompQuotient H' H' h := c i • eh j with hq_def
+  have hq : (QuotientGroup.mk q.out : DecompQuotient H' H' h) =
+      QuotientGroup.mk (c i * Subgroup.inclusion hle j.out) := by
+    conv_lhs => rw [QuotientGroup.out_eq', hq_def, ← QuotientGroup.out_eq' j]
+    rw [decompQuotientEquivOfInf_mk, MulAction.Quotient.smul_mk, smul_eq_mul]
+  have hprodH' : (((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H') =
+      ((i.out : G) * g * ((j.out : G) * h) : G ⧸ H') :=
+    QuotientGroup.eq.mpr (by
+      convert conj_mem_of_mk_eq h hq using 1
+      simp only [c, Subgroup.coe_mul, Subgroup.coe_inclusion]; group)
+  have hzP : ((i.out : G) * g * ((j.out : G) * h))⁻¹ * d ∈ P :=
+    P.mul_mem (P.inv_mem (P.mul_mem (P.mul_mem (hleP i.out.2) hgP)
+      (P.mul_mem (hleP j.out.2) hhP))) hdP
+  -- Unfold only the pair equivalence `epairs` so its second component is the named quotient `q`
+  -- without unfolding `eg` or `q`, and expose the defining fibre equations.
+  dsimp only [epairs, Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.prodShear_apply,
+    Equiv.refl_apply, MulAction.toPerm_apply]
+  change (((i.out : G) * g * ((j.out : G) * h) : G ⧸ H) = (d : G ⧸ H)) ↔
+    ((((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H') = (d : G ⧸ H'))
+  rw [hprodH', QuotientGroup.eq, QuotientGroup.eq, hmem_iff]
+  exact and_iff_left hzP
+
 end DoubleCoset
+
+namespace HeckeCoset
+
+/-- Replacing the chosen representatives of mapped Hecke cosets by the source representatives
+leaves Shimura's `(H₁', H₂', H₃')`-multiplicity unchanged. -/
+theorem multiplicity_map_rep {G : Type*} [Group G] {Δ₁ Δ₂ : Submonoid G}
+    {H₁ H₂ H₃ H₁' H₂' H₃' : Subgroup G}
+    (hΔ : Δ₁ ≤ Δ₂) (h₁ : H₁ ≤ H₁') (h₂ : H₂ ≤ H₂') (h₃ : H₃ ≤ H₃')
+    (D₁ : HeckeCoset Δ₁ H₁ H₂) (D₂ : HeckeCoset Δ₁ H₂ H₃) (D : HeckeCoset Δ₁ H₁ H₃) :
+    DoubleCoset.multiplicity H₁' H₂' H₃' ((D₁.map hΔ h₁ h₂).rep : G) ((D₂.map hΔ h₂ h₃).rep : G)
+        ((D.map hΔ h₁ h₃).rep : G) =
+      DoubleCoset.multiplicity H₁' H₂' H₃' (D₁.rep : G) (D₂.rep : G) (D.rep : G) := by
+  rw [DoubleCoset.multiplicity_doubleCoset_congr_first H₁' H₂' H₃' _ _
+        (rep_map_mem_doubleCoset hΔ h₁ h₂ D₁),
+    DoubleCoset.multiplicity_doubleCoset_congr_second H₁' H₂' H₃' _ _
+        (rep_map_mem_doubleCoset hΔ h₂ h₃ D₂),
+    DoubleCoset.multiplicity_doubleCoset_congr _ _ (rep_map_mem_doubleCoset hΔ h₁ h₃ D)]
+
+end HeckeCoset
 
 end
