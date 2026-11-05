@@ -12,7 +12,6 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Hamiltonian data on the capped pair of pants
@@ -22,9 +21,10 @@ Piunikhin–Salamon–Schwarz (PSS) plane to each of the three ends of a pair of
 a sphere with three poles, which in the coordinate `w` of `ℂ` are `0`, `1` and `∞`, the punctures
 of the pair of pants `S = ℂ ∖ {0, 1}`. On the end `q`, in its cylinder coordinates `(s, t)` and
 with signed longitudinal coordinate `σ = ±s`, the perturbation datum is the product datum
-`β(σ - 1) H_q(t) dt` up to the neck, then `H_q(t) dt` along a neck of length `L`, and then it is
-switched off again towards the pole by the datum `β(L + 3 - σ) H_q(t) dt` of a PSS plane. Here
-`β` is the smooth transition from `0` on `(-∞, 0]` to `1` on `[1, ∞)`.
+`β(σ - 1) H_q(t) dt` up to the neck, then, for `L ≥ 0`, `H_q(t) dt` along a neck of length `L`,
+and then it is switched off again towards the pole by the datum `β(L + 3 - σ) H_q(t) dt` of a PSS
+plane. Here `β` is the smooth transition from `0` on `(-∞, 0]` to `1` on `[1, ∞)`. For `L < 0`
+the two transitions overlap and there is no neck.
 
 This file constructs these data, scaled by a factor `a`, as
 `TauCeti.Floer.cappedPerturbation a L H`, with the end profile
@@ -39,14 +39,14 @@ is the single-neck model of the same deformation.
 * The datum vanishes outside the compact truncation `S_{L + 3}` of the pair of pants
   (`TauCeti.Floer.cappedPerturbation_eq_zero_of_notMem_truncation`), hence near the three poles
   (`TauCeti.Floer.eventually_cappedPerturbation_eq_zero_of_eq_zero_or_eq_one`,
-  `TauCeti.Floer.eventually_cocompact_cappedPerturbation_eq_zero`): it extends by zero to the
-  closed sphere, and every domain of the family is a smooth closed sphere.
+  `TauCeti.Floer.eventually_cocompact_cappedPerturbation_eq_zero`), so it extends by zero across
+  the three poles of the capped sphere.
 * It is smooth on `ℂ × M`, jointly with the parameters `a` and `L`
   (`TauCeti.Floer.contMDiff_cappedPerturbation`); the family `K_R` is smooth in `R`
   (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
-  (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). It is `a H_q(t) dt` on the
-  neck `2 ≤ σ ≤ L + 2`, and `a` times the pair-of-pants datum
+  (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). For `L ≥ 0` it is
+  `a H_q(t) dt` on the neck `2 ≤ σ ≤ L + 2`, and `a` times the pair-of-pants datum
   `TauCeti.Floer.pairOfPantsPerturbation` on the truncation `S_{L + 2}`
   (`TauCeti.Floer.cappedPerturbation_eq_smul_pairOfPantsPerturbation`). Beyond the neck it is the
   datum for `L = 0` translated by `L` along the end
@@ -88,8 +88,9 @@ namespace TauCeti.Floer
 /-! ### The profile on an end -/
 
 /-- The profile of the capped perturbation along an end with neck length `L`, as a function of
-the signed longitudinal coordinate `σ = ±s`: it rises from `0` to `1` on `[1, 2]`, equals `1` on
-the neck `[2, L + 2]`, and falls back to `0` on `[L + 2, L + 3]`. -/
+the signed longitudinal coordinate `σ = ±s`. For `L ≥ 0` it rises from `0` to `1` on `[1, 2]`,
+equals `1` on the neck `[2, L + 2]`, and falls back to `0` on `[L + 2, L + 3]`. For `L < 0` the
+two transitions overlap, and the profile has no neck. -/
 def cappedEndProfile (L σ : ℝ) : ℝ :=
   smoothTransition (σ - 1) * smoothTransition (L + 3 - σ)
 
@@ -121,7 +122,7 @@ theorem cappedEndProfile_of_mem_Icc (hσ : σ ∈ Icc 2 (L + 2)) : cappedEndProf
     smoothTransition.one_of_one_le (show 1 ≤ L + 3 - σ by linarith [hσ.2])]
 
 /-- The profile vanishes where `|σ| ≥ |L| + 3`. -/
-theorem cappedEndProfile_of_abs_le (hσ : |L| + 3 ≤ |σ|) : cappedEndProfile L σ = 0 := by
+theorem cappedEndProfile_of_le_abs (hσ : |L| + 3 ≤ |σ|) : cappedEndProfile L σ = 0 := by
   rcases le_total 0 σ with h | h
   · rw [abs_of_nonneg h] at hσ
     exact cappedEndProfile_of_ge (by linarith [le_abs_self L])
@@ -135,7 +136,7 @@ theorem one_lt_and_lt_of_cappedEndProfile_ne_zero (h : cappedEndProfile L σ ≠
 
 /-- Beyond the neck, the profile with neck length `L ≥ 0` is the profile with neck length `0`
 translated by `L`. -/
-theorem cappedEndProfile_add_self (hL : 0 ≤ L) (hσ : 2 ≤ σ) :
+theorem cappedEndProfile_add_eq_cappedEndProfile_zero (hL : 0 ≤ L) (hσ : 2 ≤ σ) :
     cappedEndProfile L (σ + L) = cappedEndProfile 0 σ := by
   rw [cappedEndProfile_of_two_le (by linarith), cappedEndProfile_of_two_le hσ]
   ring_nf
@@ -178,9 +179,10 @@ theorem abs_deriv_cappedEndProfile_le (L σ : ℝ) :
 variable {M : Type*}
 
 /-- The Hamiltonian perturbation one-form on the three-pole sphere obtained by capping the three
-ends of the pair of pants with PSS planes along necks of length `L`, scaled by `a`. At `w ∈ ℂ`
-and `x ∈ M` it is `∑ q, a P_L(±s_q(w)) H_q(t_q(w), x) dt_q`, where `(s_q, t_q)` are the coordinates
-of the end `q` and `P_L = TauCeti.Floer.cappedEndProfile L`. -/
+ends of the pair of pants with PSS planes along necks of length `L ≥ 0`, scaled by `a`. At
+`w ∈ ℂ` and `x ∈ M` it is `∑ q, a P_L(±s_q(w)) H_q(t_q(w), x) dt_q`, where `(s_q, t_q)` are the
+coordinates of the end `q` and `P_L = TauCeti.Floer.cappedEndProfile L`. The definition makes
+sense for every `L`, but for `L < 0` the profile has no neck. -/
 def cappedPerturbation (a L : ℝ) (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) : ℂ →L[ℝ] ℝ :=
   ∑ q, (a * cappedEndProfile L (q.endSign * (q.endCoord w).re) * H q (q.endCoord w).im x) •
     q.endAngularForm w
@@ -293,7 +295,8 @@ theorem cappedPerturbation_cylindricalEndLift_add_endSign_mul {q : Puncture}
     rw [Complex.add_re, Complex.ofReal_re, mul_add, ← mul_assoc, hs, one_mul]
   rw [cappedPerturbation_cylindricalEndLift_of_pos hH (by rw [hre]; linarith),
     cappedPerturbation_cylindricalEndLift_of_pos hH (by linarith), hre,
-    cappedEndProfile_add_self hL hz, Complex.add_im, Complex.ofReal_im, add_zero]
+    cappedEndProfile_add_eq_cappedEndProfile_zero hL hz, Complex.add_im, Complex.ofReal_im,
+    add_zero]
 
 /-- **The datum is the pair-of-pants datum up to the necks.** At points where the signed
 longitudinal coordinate of every end is at most `L + 2`, such as the points of the truncation
@@ -323,11 +326,9 @@ theorem perturbationPullback_endChart_cappedPerturbation {q : Puncture}
     perturbationPullback q.endChart
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
-      v.2 * (a * cappedEndProfile L (q.endSign * z.1) * H q z.2 x) := by
-  rw [perturbationPullback_endChart (cappedPerturbation a L H)]
-  beta_reduce
-  rw [cappedPerturbation_cylindricalEndLift_of_pos hH (by simpa using hz)]
-  simp
+      v.2 * (a * cappedEndProfile L (q.endSign * z.1) * H q z.2 x) :=
+  perturbationPullback_endChart_of_eq (P := fun σ ↦ a * cappedEndProfile L σ)
+    (fun _ hz' x v ↦ cappedPerturbation_cylindricalEndLift_of_pos hH hz' x v) hz v x
 
 /-! ### Smoothness -/
 
@@ -335,24 +336,6 @@ section Smooth
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-
-/-- Near the center of an end, the longitudinal coordinate of the end is arbitrarily large. -/
-private theorem eventually_le_re_endCoord (q : Puncture) (T : ℝ) :
-    ∀ᶠ w in 𝓝 q.endCenter, w = q.endCenter ∨ T ≤ (q.endCoord w).re := by
-  have hb : 0 < ‖q.endScale‖ := norm_pos_iff.2 q.endScale_ne_zero
-  filter_upwards [Metric.ball_mem_nhds q.endCenter
-    (mul_pos hb (Real.exp_pos (-(2 * π * T))))] with w hw
-  by_cases hwc : w = q.endCenter
-  · exact Or.inl hwc
-  refine Or.inr ?_
-  have hpos : 0 < ‖(w - q.endCenter) / q.endScale‖ :=
-    norm_pos_iff.2 (div_ne_zero (sub_ne_zero.2 hwc) q.endScale_ne_zero)
-  have hlt : ‖(w - q.endCenter) / q.endScale‖ < Real.exp (-(2 * π * T)) := by
-    rw [norm_div, div_lt_iff₀ hb, mul_comm]
-    simpa [dist_eq_norm] using hw
-  have hlog := (Real.log_lt_iff_lt_exp hpos).2 hlt
-  rw [re_endCoord, le_div_iff₀ (by positivity)]
-  linarith
 
 /-- Near the center of the end `q`, the term of the end `q` in the capped perturbation vanishes,
 locally uniformly in the neck length. -/
@@ -362,11 +345,15 @@ private theorem eventually_cappedEndProfile_eq_zero (q : Puncture) (L₀ : ℝ) 
   have hL : ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀), |p.2| < |L₀| + 1 :=
     (continuous_abs.comp continuous_snd).continuousAt.eventually
       (gt_mem_nhds (by simp))
-  filter_upwards [hL, (eventually_le_re_endCoord q (|L₀| + 4)).prod_inl_nhds L₀] with p hp hw
+  -- Near the center of the end, its longitudinal coordinate is large.
+  have hc : ∀ᶠ w in 𝓝 q.endCenter, w = q.endCenter ∨ |L₀| + 4 ≤ (q.endCoord w).re :=
+    (eventually_nhdsWithin_iff.1 (q.tendsto_re_endCoord_nhdsNE.eventually_ge_atTop _)).mono
+      fun _ hw ↦ or_iff_not_imp_left.2 hw
+  filter_upwards [hL, hc.prod_inl_nhds L₀] with p hp hw
   rcases hw with hw | hw
   · rw [hw, re_endCoord_endCenter, mul_zero]
     exact cappedEndProfile_of_le_one zero_le_one
-  · refine cappedEndProfile_of_abs_le ?_
+  · refine cappedEndProfile_of_le_abs ?_
     rw [abs_mul, abs_endSign, one_mul]
     linarith [le_abs_self (q.endCoord p.1).re]
 
@@ -507,22 +494,6 @@ private theorem contDiff_cappedPerturbation_prod (hH : ∀ q, Periodic (H q) 1)
     exact (contMDiff_cappedPerturbation (n := 1) hH hHs').comp hι
   exact h.contDiff
 
-/-- The components of the datum in real coordinates are differentiable in the domain point. -/
-private theorem differentiableAt_cappedPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (z : ℝ × ℝ) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun z' ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z') x v) z :=
-  ((((contDiff_cappedPerturbation_prod hH hHs a L).differentiable one_ne_zero) _).comp z
-    (Complex.equivRealProdCLM.symm.differentiableAt.prodMk (differentiableAt_const x))).clm_apply
-    (differentiableAt_const v)
-
-/-- The components of the datum are differentiable in the target point. -/
-private theorem differentiableAt_cappedPerturbation_target (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (w : ℂ) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun y ↦ cappedPerturbation a L H w y v) x :=
-  ((((contDiff_cappedPerturbation_prod hH hHs a L).differentiable one_ne_zero) _).comp x
-    ((differentiableAt_const w).prodMk differentiableAt_id)).clm_apply (differentiableAt_const v)
-
 /-- **The curvature in the coordinates of an end.** On the part `±s > 0` of the end `q`, the
 curvature of the pulled-back datum `a P_L(±s) H_q(t) dt` is `±a P_L'(±s) H_q(t)`. -/
 theorem hamiltonianCurvature_perturbationPullback_endChart_cappedPerturbation
@@ -539,61 +510,11 @@ theorem hamiltonianCurvature_perturbationPullback_endChart_cappedPerturbation
           (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
           stdComplexLineImag) z x =
       q.endSign * a * deriv (cappedEndProfile L) (q.endSign * z.1) * H q z.2 x := by
-  have hU : {w : ℝ × ℝ | 0 < q.endSign * w.1} ∈ 𝓝 z :=
-    (isOpen_lt continuous_const (continuous_const.mul continuous_fst)).mem_nhds hz
-  have hs : perturbationPullback q.endChart
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      stdComplexLineReal =ᶠ[𝓝 z] fun _ _ ↦ 0 := by
-    filter_upwards [hU] with w hw
-    funext y
-    rw [perturbationPullback_endChart_cappedPerturbation hH hw, stdComplexLineReal_snd, zero_mul]
-  have ht : perturbationPullback q.endChart
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      stdComplexLineImag =ᶠ[𝓝 z]
-        fun w y ↦ a * cappedEndProfile L (q.endSign * w.1) * H q w.2 y := by
-    filter_upwards [hU] with w hw
-    funext y
-    rw [perturbationPullback_endChart_cappedPerturbation hH hw, stdComplexLineImag_snd, one_mul]
-  have hP : HasDerivAt (cappedEndProfile L) (deriv (cappedEndProfile L) (q.endSign * z.1))
-      (q.endSign * z.1) :=
-    (hasDerivAt_cappedEndProfile L _).differentiableAt.hasDerivAt
-  have hβ : HasDerivAt (fun s ↦ a * cappedEndProfile L (q.endSign * s))
-      (a * (deriv (cappedEndProfile L) (q.endSign * z.1) * q.endSign)) z.1 :=
-    ((hP.comp z.1 ((hasDerivAt_id' z.1).const_mul q.endSign)).congr_deriv (by ring)).const_mul a
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht,
-    ω.hamiltonianCurvature_continuation (β := fun s ↦ a * cappedEndProfile L (q.endSign * s))
-      hβ.differentiableAt hHx, hβ.deriv]
+  rw [ω.hamiltonianCurvature_perturbationPullback_endChart_of_eq
+    (P := fun σ ↦ a * cappedEndProfile L σ)
+    (fun _ hz' x v ↦ cappedPerturbation_cylindricalEndLift_of_pos hH hz' x v) hz
+    ((hasDerivAt_cappedEndProfile L _).differentiableAt.const_mul a) hHx, deriv_const_mul_field']
   ring
-
-/-- **The curvature is supported on the ends.** At a point of `S` where the signed longitudinal
-coordinate of every end is less than `1`, the datum vanishes nearby, and so does its curvature. -/
-private theorem hamiltonianCurvature_cappedPerturbation_eq_zero [FiniteDimensional ℝ V]
-    (ω : SymplecticForm V) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
-    (h : ∀ q : Puncture, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < 1)
-    (x : V) :
-    ω.hamiltonianCurvature
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z x = 0 := by
-  have hev : ∀ᶠ z' in 𝓝 z, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re < 1 := by
-    refine Filter.eventually_all.2 fun q ↦ ?_
-    have hc : ContinuousAt
-        (fun z' ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re) z :=
-      continuousAt_const.mul
-        (((q.contDiffAt_re_endCoord (ne_endCenter hz q) (n := 0)).continuousAt).comp
-          Complex.equivRealProdCLM.symm.continuous.continuousAt)
-    exact hc.eventually (gt_mem_nhds (h q))
-  have hK : ∀ᶠ z' in 𝓝 z, ∀ y,
-      cappedPerturbation a L H (Complex.equivRealProdCLM.symm z') y = 0 :=
-    hev.mono fun z' hz' y ↦ cappedPerturbation_eq_zero_of_forall_le (fun q ↦ (hz' q).le) y
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
-    (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y])
-    (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
-  simp
 
 /-- The curvature of the datum over the image of the strip of the end `q` is at most `2 |a| B_q`
 for a bound `B_q` of the Hamiltonian of that end: each of the two transition collars contributes
@@ -606,63 +527,36 @@ private theorem setLIntegral_image_endChart_cappedPerturbation_le [FiniteDimensi
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (2 * |a|) * ENNReal.ofReal (B q) := by
-  have hB₀ : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
   have hψ (s : ℝ) : 0 ≤ deriv smoothTransition s := smoothTransition.monotone.deriv_nonneg
   -- The total variation of the profile along the end, as a function of `s`.
   set f₁ : ℝ → ENNReal := fun s ↦ ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1))
     with hf₁
   set f₂ : ℝ → ENNReal := fun s ↦ ENNReal.ofReal (deriv smoothTransition (L + 3 - q.endSign * s))
     with hf₂
-  have hc : Continuous (deriv smoothTransition) :=
-    (smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
   have hm₁ : Measurable f₁ :=
-    (ENNReal.continuous_ofReal.comp (hc.comp (by fun_prop))).measurable
-  have hm₂ : Measurable f₂ :=
-    (ENNReal.continuous_ofReal.comp (hc.comp (by fun_prop))).measurable
-  have hint : ∫⁻ s, (f₁ s + f₂ s) = 2 := by
-    rw [lintegral_add_left hm₁, hf₁, hf₂,
-      lintegral_ofReal_deriv_smoothTransition_endSign_mul_sub,
-      lintegral_ofReal_deriv_smoothTransition_sub_endSign_mul, one_add_one_eq_two]
-  rw [ω.lintegral_enorm_hamiltonianCurvature_image (measurableSet_endStrip q) (injOn_endChart q)
-    (fun w _ ↦ (contDiff_endChart q).contDiffAt)
-    (fun w _ ↦ differentiableAt_cappedPerturbation_domain hH hHs _ _ 1)
-    (fun w _ ↦ differentiableAt_cappedPerturbation_domain hH hHs _ _ _)
-    (fun w _ ↦ differentiableAt_cappedPerturbation_target hH hHs _ _ 1)
-    (fun w _ ↦ differentiableAt_cappedPerturbation_target hH hHs _ _ _)]
-  calc _ ≤ ∫⁻ z in q.endStrip, ENNReal.ofReal (|a| * B q) * (f₁ z.1 + f₂ z.1) := by
-        refine setLIntegral_mono' (measurableSet_endStrip q) fun z hz ↦ ?_
-        have hHx : DifferentiableAt ℝ (fun t ↦ H q t (u (q.endChart z))) z.2 :=
-          DifferentiableAt.comp (g := uncurry (H q)) (f := fun t : ℝ ↦ (t, u (q.endChart z)))
-            z.2 ((hHs q).differentiable one_ne_zero _)
-            (differentiableAt_id.prodMk (differentiableAt_const _))
-        rw [hamiltonianCurvature_perturbationPullback_endChart_cappedPerturbation ω (hH q)
-          (endSign_mul_pos_of_mem_endStrip hz) hHx, Real.enorm_eq_ofReal_abs, hf₁, hf₂]
-        beta_reduce
-        rw [← ENNReal.ofReal_add (hψ _) (hψ _), ← ENNReal.ofReal_mul (by positivity)]
-        refine ENNReal.ofReal_le_ofReal ?_
-        rw [abs_mul, abs_mul, abs_mul, abs_endSign, one_mul]
-        calc |a| * |deriv (cappedEndProfile L) (q.endSign * z.1)| * |H q z.2 (u (q.endChart z))|
-            ≤ |a| * (deriv smoothTransition (q.endSign * z.1 - 1) +
-                deriv smoothTransition (L + 3 - q.endSign * z.1)) * B q :=
-              mul_le_mul (mul_le_mul_of_nonneg_left (abs_deriv_cappedEndProfile_le _ _)
-                (abs_nonneg a)) (hB _ _ _) (abs_nonneg _)
-                (mul_nonneg (abs_nonneg a) (add_nonneg (hψ _) (hψ _)))
-          _ = _ := by ring
-    _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s}, ENNReal.ofReal (|a| * B q) * (f₁ s + f₂ s) := by
-        have hvol : volume (Ico (-1 / 2 : ℝ) (1 / 2)) = 1 := by
-          rw [Real.volume_Ico]
-          norm_num
-        rw [Measure.volume_eq_prod, endStrip_def,
-          setLIntegral_prod (fun z : ℝ × ℝ ↦ ENNReal.ofReal (|a| * B q) * (f₁ z.1 + f₂ z.1))
-            (((hm₁.add hm₂).comp measurable_fst).const_mul _).aemeasurable]
-        simp only [setLIntegral_const, hvol, mul_one]
-    _ ≤ ∫⁻ s, ENNReal.ofReal (|a| * B q) * (f₁ s + f₂ s) := setLIntegral_le_lintegral _ _
-    _ = ENNReal.ofReal (|a| * B q) * 2 := by
-        rw [lintegral_const_mul (f := fun s ↦ f₁ s + f₂ s) _ (hm₁.add hm₂), hint]
-    _ = ENNReal.ofReal (2 * |a|) * ENNReal.ofReal (B q) := by
-        rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_ofNat 2,
-          ← ENNReal.ofReal_mul (by positivity)]
-        ring_nf
+    (ENNReal.continuous_ofReal.comp
+      (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
+        (by fun_prop))).measurable
+  have hint : ∫⁻ s, ‖deriv (fun σ ↦ a * cappedEndProfile L σ) (q.endSign * s)‖ₑ ≤
+      ENNReal.ofReal (2 * |a|) := by
+    calc _ ≤ ∫⁻ s, ENNReal.ofReal |a| * (f₁ s + f₂ s) := by
+          refine lintegral_mono fun s ↦ ?_
+          rw [deriv_const_mul_field', enorm_mul, Real.enorm_eq_ofReal_abs a, hf₁, hf₂,
+            ← ENNReal.ofReal_add (hψ _) (hψ _), Real.enorm_eq_ofReal_abs]
+          gcongr
+          exact abs_deriv_cappedEndProfile_le _ _
+      _ = ENNReal.ofReal |a| * 2 := by
+          rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_add_left hm₁, hf₁, hf₂,
+            lintegral_ofReal_deriv_smoothTransition_endSign_mul_sub,
+            lintegral_ofReal_deriv_smoothTransition_sub_endSign_mul, one_add_one_eq_two]
+      _ = _ := by
+          rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (abs_nonneg a), mul_comm]
+  exact (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le
+    (P := fun σ ↦ a * cappedEndProfile L σ)
+    (fun _ _ _ ↦ (contDiff_cappedPerturbation_prod hH hHs a L).contDiffAt)
+    (fun _ hz x v ↦ cappedPerturbation_cylindricalEndLift_of_pos (hH q) hz x v)
+    (fun σ ↦ (hasDerivAt_cappedEndProfile L σ).differentiableAt.const_mul a) (hHs q) (hB q)
+    u).trans (by gcongr)
 
 /-- **The integrated curvature of the capped perturbation.** Let `K` be the capped perturbation
 with scaling factor `a` and neck length `L`, built from period-one `C¹` Hamiltonians `H_q` with
@@ -677,41 +571,10 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le [FiniteDimens
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (2 * |a|) * ∑ q, ENNReal.ofReal (B q) := by
-  set N : Set (ℝ × ℝ) := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1}
-  have hN : volume N = 0 := by
-    rw [Measure.volume_eq_prod]
-    exact (Set.toFinite N).measure_zero _
-  -- Off the two punctures, the curvature is supported in the images of the strips of the ends.
-  have hsupp : support (fun z ↦ ‖ω.hamiltonianCurvature
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)‖ₑ) ⊆ (⋃ q : Puncture, q.endChart '' q.endStrip) ∪ N := by
-    intro z hz
-    by_cases h₀ : Complex.equivRealProdCLM.symm z = 0
-    · exact Or.inr (Or.inl ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
-        (congrArg _ h₀)))
-    by_cases h₁ : Complex.equivRealProdCLM.symm z = 1
-    · exact Or.inr (Or.inr ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
-        (congrArg _ h₁)))
-    by_cases hq : ∃ q : Puncture,
-        1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-    · obtain ⟨q, hq⟩ := hq
-      exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart (ne_endCenter ⟨h₀, h₁⟩ q) hq⟩)
-    · simp only [not_exists, not_lt] at hq
-      refine absurd ?_ hz
-      simp [hamiltonianCurvature_cappedPerturbation_eq_zero ω ⟨h₀, h₁⟩
-        (fun q ↦ (hq q).trans_lt (by norm_num))]
-  calc _ = ∫⁻ z in (⋃ q : Puncture, q.endChart '' q.endStrip) ∪ N, ‖ω.hamiltonianCurvature
-          (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          z (u z)‖ₑ := (setLIntegral_eq_of_support_subset hsupp).symm
-    _ ≤ _ := lintegral_union_le _ _ _
-    _ = _ := by rw [setLIntegral_measure_zero _ _ hN, add_zero]
-    _ ≤ _ := lintegral_iUnion_le _ _
-    _ = _ := tsum_fintype _
-    _ ≤ _ := Finset.sum_le_sum fun q _ ↦
-      setLIntegral_image_endChart_cappedPerturbation_le ω hH hHs hB u q
-    _ = _ := (Finset.mul_sum _ _ _).symm
+  rw [Finset.mul_sum]
+  exact (ω.lintegral_enorm_hamiltonianCurvature_le_sum_endStrip
+    (fun w hw y ↦ cappedPerturbation_eq_zero_of_forall_le hw y) u).trans
+    (Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_cappedPerturbation_le ω hH hHs hB u q)
 
 /-- **The curvature bound is uniform over the comparison family.** For every `R ≥ 0` the
 integrated curvature of `K_R` along any map is at most `2 (B₀ + B₁ + B_∞)`. -/
@@ -731,8 +594,8 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le
   exact ENNReal.ofReal_le_ofReal (by linarith [hρ.2])
 
 /-- The integral of the curvature of `K_R`, `R ≥ 0`, along any map and over any set has absolute
-value at most `2 (B₀ + B₁ + B_∞)`. By the energy identity this bounds the difference between the
-Floer energy and the symplectic area uniformly over the comparison family. -/
+value at most `2 (B₀ + B₁ + B_∞)`. This is the curvature term that an energy identity for the
+comparison family would need to bound uniformly over the family. -/
 theorem abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le
     [FiniteDimensional ℝ V] (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)

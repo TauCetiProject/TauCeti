@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
+import TauCeti.MeasureTheory.OptimalTransport.Coupling
 
 /-!
 # The Rényi entropy functional
@@ -57,9 +58,19 @@ As `N → ∞` the Rényi entropies recover the Boltzmann entropy `Ent_m(μ)`
 nonzero singular part makes `Ent_m(μ) = ⊤`, and the left side tends to `⊤` through the term
 `N μˢ(X)`.
 
+The right-hand side of `CD(K, N)` and `CD*(K, N)` is the *distorted Rényi entropy*
+
+`T_β^{(t)}(q | m) = -∫ [β^{(1-t)}(d(x₀, x₁)) ρ₀(x₀)^{-1/N} + β^{(t)}(d(x₀, x₁)) ρ₁(x₁)^{-1/N}] dq`
+
+of a plan `q` on `X × X` whose marginals have densities `ρ₀`, `ρ₁` with respect to `m`, for a
+family `β^{(s)}(θ)` of distortion coefficients (`TauCeti.distortedRenyiEntropy`). At time `0`,
+below the critical distance, it is the Rényi entropy of the first marginal
+(`TauCeti.distortedRenyiEntropy_zero`).
+
 ## Main definitions
 
 * `TauCeti.renyiEntropy N m μ`: the Rényi entropy `S_N(μ | m)`, as an extended real.
+* `TauCeti.distortedRenyiEntropy β N m q t`: the distorted Rényi entropy `T_β^{(t)}(q | m)`.
 
 ## Main results
 
@@ -75,6 +86,9 @@ nonzero singular part makes `Ent_m(μ) = ⊤`, and the left side tends to `⊤` 
 * `TauCeti.renyiEntropy_smul_restrict`: the entropy of a uniform law.
 * `TauCeti.tendsto_mul_renyiEntropy_add_measureReal_univ_nhds_boltzmannEntropy`: the Boltzmann
   entropy as the limit of the Rényi entropies.
+* `TauCeti.distortedRenyiEntropy_anti`, `TauCeti.distortedRenyiEntropy_zero`: the distorted Rényi
+  entropy decreases in the coefficients, and at time `0` it is the Rényi entropy of the first
+  marginal.
 
 ## References
 
@@ -299,6 +313,19 @@ theorem renyiEntropy_smul_restrict [SigmaFinite m] (hN : 0 < N) {A : Set X} (hA 
   rw [h, lintegral_indicator_const hA, ENNReal.inv_rpow, ENNReal.rpow_neg, inv_inv,
     mul_right_comm, ENNReal.inv_mul_cancel h₀ h₁, one_mul]
 
+open ProbabilityTheory in
+/-- The uniform law `m[|A]` on a measurable set has finite Rényi entropy: it is `-m(A)^{1/N}` when
+`0 < m(A) < ∞`, and `m[|A] = 0` otherwise. -/
+theorem renyiEntropy_cond_ne_bot [SigmaFinite m] (hN : 0 < N) {A : Set X} (hA : MeasurableSet A) :
+    renyiEntropy N m m[|A] ≠ ⊥ := by
+  by_cases h : m A = ∞ ∨ m A = 0
+  · rw [cond_eq_zero.2 h, renyiEntropy_zero_measure]
+    exact EReal.zero_ne_bot
+  rw [not_or] at h
+  rw [ProbabilityTheory.cond, renyiEntropy_smul_restrict hN hA h.2 h.1, Ne, EReal.neg_eq_bot_iff,
+    EReal.coe_ennreal_eq_top_iff]
+  exact ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN.le) h.1
+
 /-! ### The Boltzmann entropy as the limit `N → ∞` -/
 
 /-- The integrand `U_N(r) = N (r - r · r^{-1/N})` of `N (S_N(μ | m) + μ(X))`, which is
@@ -508,5 +535,70 @@ theorem tendsto_mul_renyiEntropy_add_measureReal_univ_nhds_boltzmannEntropy [IsF
       _ ≤ _ := by
         rw [hcoe]
         exact add_le_add_left (EReal.sub_le_sub (EReal.coe_ennreal_nonneg _) le_rfl) _
+
+/-! ### The distorted Rényi entropy -/
+
+section DistortedRenyiEntropy
+
+variable [PseudoMetricSpace X] {β β' : ℝ → ℝ → ℝ≥0∞} {t : ℝ} {q : Measure (X × X)}
+
+/-- The *distorted Rényi entropy* `T_β^{(t)}(q | m)` of a plan `q` on `X × X` relative to a
+reference measure `m`, for a family `β s θ = β^{(s)}(θ)` of distortion coefficients indexed by a
+time `s` and a distance `θ`:
+
+`T_β^{(t)}(q | m) = -∫ [β^{(1-t)}(d(x₀, x₁)) ρ₀(x₀)^{-1/N} + β^{(t)}(d(x₀, x₁)) ρ₁(x₁)^{-1/N}] dq`,
+
+where `ρ₀` and `ρ₁` are the densities with respect to `m` of the two marginals of `q`. With
+`β = τ_{K,N}` it is the right-hand side of the condition `CD(K, N)`, with `β = σ_{K,N}` that of
+`CD*(K, N)`. The integral is in `[0, ∞]`, so the value lies in `[-∞, 0]`. -/
+def distortedRenyiEntropy (β : ℝ → ℝ → ℝ≥0∞) (N : ℝ) (m : Measure X) (q : Measure (X × X))
+    (t : ℝ) : EReal :=
+  -((∫⁻ z, (β (1 - t) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
+    β t (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹)) ∂q : ℝ≥0∞) : EReal)
+
+/-- The distorted Rényi entropy, unfolded. -/
+theorem distortedRenyiEntropy_def :
+    distortedRenyiEntropy β N m q t =
+      -((∫⁻ z, (β (1 - t) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
+        β t (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹)) ∂q : ℝ≥0∞) : EReal) :=
+  (rfl)
+
+/-- Larger distortion coefficients give a smaller distorted Rényi entropy. -/
+theorem distortedRenyiEntropy_anti (h : ∀ θ, β (1 - t) θ ≤ β' (1 - t) θ)
+    (h' : ∀ θ, β t θ ≤ β' t θ) :
+    distortedRenyiEntropy β' N m q t ≤ distortedRenyiEntropy β N m q t := by
+  rw [distortedRenyiEntropy_def, distortedRenyiEntropy_def, EReal.neg_le_neg_iff,
+    EReal.coe_ennreal_le_coe_ennreal_iff]
+  gcongr with z
+  exacts [h _, h' _]
+
+/-- **The distorted Rényi entropy at time `0`.** If `q`-almost every pair is below the critical
+distance, in the sense that `β^{(1)} = 1` and `β^{(0)} = 0` there, and the first marginal of `q` is
+absolutely continuous with respect to `m`, then `T_β^{(0)}(q | m) = S_N(q.fst | m)` is the Rényi
+entropy of that marginal. So the curvature-dimension inequalities hold with equality at time `0`.
+-/
+theorem distortedRenyiEntropy_zero [q.fst.HaveLebesgueDecomposition m] (hN : 0 < N) (hq : q.fst ≪ m)
+    (h₁ : ∀ᵐ z ∂q, β 1 (dist z.1 z.2) = 1) (h₀ : ∀ᵐ z ∂q, β 0 (dist z.1 z.2) = 0) :
+    distortedRenyiEntropy β N m q 0 = renyiEntropy N m q.fst := by
+  have hρ : Measurable fun x ↦ q.fst.rnDeriv m x ^ (-N⁻¹) :=
+    (Measure.measurable_rnDeriv _ _).pow_const _
+  have hcoupling : IsCoupling q q.fst q.snd := ⟨rfl, rfl⟩
+  rw [distortedRenyiEntropy_def, renyiEntropy_eq_neg_lintegral hN,
+    lintegral_rnDeriv_mul hq hρ.aemeasurable, ← hcoupling.lintegral_comp_fst hρ.aemeasurable]
+  congr 2
+  refine lintegral_congr_ae ?_
+  filter_upwards [h₁, h₀] with z hz₁ hz₀
+  rw [sub_zero, hz₁, hz₀, one_mul, zero_mul, add_zero]
+
+/-- If the integrand of `T_β^{(t)}(q | m)` is infinite `q`-almost everywhere and `q ≠ 0`, the
+distorted Rényi entropy is `-∞`. -/
+theorem distortedRenyiEntropy_eq_bot_of_ae (hq : q ≠ 0)
+    (h : ∀ᵐ z ∂q, β (1 - t) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
+      β t (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹) = ⊤) :
+    distortedRenyiEntropy β N m q t = ⊥ := by
+  rw [distortedRenyiEntropy_def, lintegral_congr_ae h, lintegral_const,
+    ENNReal.top_mul (Measure.measure_univ_ne_zero.2 hq), EReal.coe_ennreal_top, EReal.neg_top]
+
+end DistortedRenyiEntropy
 
 end TauCeti

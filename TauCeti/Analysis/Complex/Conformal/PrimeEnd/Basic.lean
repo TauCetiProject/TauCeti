@@ -112,11 +112,11 @@ theorem _root_.IsPreconnected.subset_nullChainDomain {S : Set ℂ} (hS : IsPreco
 /-- If the part of `C (n + 1)` inside `U` is preconnected and misses `C n`, then the domain cut off
 by `C n` is the connected component of `U \ C n` containing any point of `C (n + 1)` inside `U`. -/
 theorem nullChainDomain_eq_connectedComponentIn_of_isPreconnected
-    (hC : IsPreconnected (C (n + 1) ∩ U)) (hdisj : Disjoint (C n) (C (n + 1))) {z : ℂ}
+    (hC : IsPreconnected (C (n + 1) ∩ U)) (hdisj : Disjoint (C n) (C (n + 1) ∩ U)) {z : ℂ}
     (hz : z ∈ C (n + 1) ∩ U) :
     nullChainDomain U C n = connectedComponentIn (U \ C n) z := by
   have hsub : C (n + 1) ∩ U ⊆ connectedComponentIn (U \ C n) z :=
-    hC.subset_connectedComponentIn hz fun w hw => ⟨hw.2, disjoint_right.mp hdisj hw.1⟩
+    hC.subset_connectedComponentIn hz fun w hw => ⟨hw.2, disjoint_right.mp hdisj hw⟩
   refine Subset.antisymm (fun q hq => ?_) fun q hq =>
     mem_nullChainDomain_iff.mpr ⟨z, hz.1, hq⟩
   obtain ⟨w, hw, hqw⟩ := mem_nullChainDomain_iff.mp hq
@@ -245,7 +245,8 @@ theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) {z : ℂ}
     (hz : z ∈ C (n + 1) ∩ U) :
     nullChainDomain U C n = connectedComponentIn (U \ C n) z :=
   nullChainDomain_eq_connectedComponentIn_of_isPreconnected
-    (hC.isConnected_inter (n + 1)).isPreconnected (hC.disjoint_succ n) hz
+    (hC.isConnected_inter (n + 1)).isPreconnected
+    ((hC.disjoint_succ n).mono_right inter_subset_left) hz
 
 /-- Every domain cut off by a null chain is nonempty. -/
 theorem nonempty_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
@@ -325,9 +326,9 @@ theorem nullChainDomain_succ_subset_of_separatesIn (hUo : IsOpen U) (hUc : IsPre
   obtain ⟨b, hb⟩ := (hconn (n + 2)).nonempty
   obtain ⟨z, hz⟩ := (hconn 0).nonempty
   rw [nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 2)).isPreconnected
-      (hdisj (n + 1)) hb,
+      ((hdisj (n + 1)).mono_right inter_subset_left) hb,
     nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 1)).isPreconnected
-      (hdisj n) ha]
+      ((hdisj n).mono_right inter_subset_left) ha]
   obtain ⟨hzU, hbU, hzb⟩ := hsep' n hz hb
   -- First, the domain `D` cut off by `C (n + 1)` misses `C n`.
   have hDC : connectedComponentIn (U \ C (n + 1)) b ⊆ U \ C n := by
