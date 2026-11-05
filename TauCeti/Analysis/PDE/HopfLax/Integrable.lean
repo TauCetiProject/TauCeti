@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
-public import TauCeti.Analysis.PDE.HopfLax
+public import TauCeti.Analysis.PDE.HopfLax.Basic
 
 /-!
 # Integrability of the Hopf–Lax value
