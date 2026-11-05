@@ -42,8 +42,9 @@ vanishes on trace-class and finite-rank operators. When `ω` is dilation invaria
 * `TauCeti.complexDixmierTrace`: Jordan–Cartesian extension of `Tr_ω` to `E →L[ℂ] E`.
 * `TauCeti.linearDixmierTrace`, `TauCeti.linearDixmierTraceCLM`: the `ℂ`-linear and continuous
   `ℂ`-linear Dixmier trace on `L^(1,∞)` for dilation-invariant `ω`.
-* `TauCeti.complexDixmierTrace_comp_comm`: `Tr_ω(A T) = Tr_ω(T A)` for bounded `A` and
-  `T ∈ L^(1,∞)`.
+* `TauCeti.complexDixmierTrace_comp_comm`,
+  `TauCeti.complexDixmierTrace_comp_nonneg_of_isPositive`: traciality `Tr_ω(A T) = Tr_ω(T A)` and
+  positivity of `B ↦ Tr_ω(B T)` for `T ≥ 0` in `L^(1,∞)`.
 * `TauCeti.norm_complexDixmierTrace_comp_comp_le`,
   `TauCeti.norm_complexDixmierTrace_le_dixmierTrace`,
   `TauCeti.norm_complexDixmierTrace_le_toReal_gauge_logarithmic`: sharp ideal and norm bounds.
@@ -263,7 +264,7 @@ theorem complexDixmierTrace_adjoint (ω : GeneralizedLimit) (T : E →L[ℂ] E) 
 /-- **Unitary invariance under linear isometric equivalences.** Conjugating `T : E →L[ℂ] E` by a
 linear isometric equivalence `e : E ≃ₗᵢ[ℂ] F` preserves `TauCeti.complexDixmierTrace`. -/
 @[simp]
-theorem complexDixmierTrace_conj_linearIsometryEquiv (ω : GeneralizedLimit) (e : E ≃ₗᵢ[ℂ] F)
+theorem complexDixmierTrace_conjStarAlgEquiv (ω : GeneralizedLimit) (e : E ≃ₗᵢ[ℂ] F)
     (T : E →L[ℂ] E) : complexDixmierTrace ω (e.conjStarAlgEquiv T) = complexDixmierTrace ω T := by
   have hdix (X : E →L[ℂ] E) : dixmierTrace ω (e.conjStarAlgEquiv X) = dixmierTrace ω X :=
     dixmierTrace_comp_linearIsometryEquiv ω X e.symm e
@@ -283,7 +284,7 @@ theorem complexDixmierTrace_unitary_conj (ω : GeneralizedLimit) (u : unitary (E
     (T : E →L[ℂ] E) :
     complexDixmierTrace ω ((u : E →L[ℂ] E) ∘L T ∘L star (u : E →L[ℂ] E)) =
       complexDixmierTrace ω T :=
-  complexDixmierTrace_conj_linearIsometryEquiv ω (Unitary.linearIsometryEquiv u) T
+  complexDixmierTrace_conjStarAlgEquiv ω (Unitary.linearIsometryEquiv u) T
 
 /-- **Unitary traciality.** `Tr_ω(U T) = Tr_ω(T U)` for every unitary operator `U` and every
 bounded operator `T`. -/
@@ -347,12 +348,11 @@ theorem complexDixmierTrace_real_smul (ω : GeneralizedLimit) (r : ℝ) (T : E �
 theorem complexDixmierTrace_I_smul (ω : GeneralizedLimit) (T : E →L[ℂ] E) :
     complexDixmierTrace ω (Complex.I • T) = Complex.I * complexDixmierTrace ω T := by
   by_cases hTm : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule
-  · rw [complexDixmierTrace_of_mem ω (Submodule.smul_mem _ _ hTm),
-      complexDixmierTrace_of_mem ω hTm]
+  · rw [complexDixmierTrace_of_mem ω (Submodule.smul_mem _ _ hTm), complexDixmierTrace_of_mem ω hTm]
     simp only [realPart_I_smul, imaginaryPart_I_smul, AddSubgroup.coe_neg, CFC.posPart_neg,
       CFC.negPart_neg, mul_add, ← mul_assoc, Complex.I_mul_I]; push_cast; ring
-  · rw [complexDixmierTrace_of_notMem ω
-        (fun h ↦ hTm (by simpa [smul_smul] using Submodule.smul_mem _ (-Complex.I) h)),
+  · rw [complexDixmierTrace_of_notMem ω (fun h ↦
+      hTm (by simpa [smul_smul] using Submodule.smul_mem _ (-Complex.I) h)),
       complexDixmierTrace_of_notMem ω hTm, mul_zero]
 
 private theorem signedDixmierTrace_selfAdjoint_add {ω : GeneralizedLimit}
@@ -366,8 +366,7 @@ private theorem signedDixmierTrace_selfAdjoint_add {ω : GeneralizedLimit}
     have hsum : (A + B)⁺ - (A + B)⁻ = (A⁺ - A⁻) + (B⁺ - B⁻) := by
       rw [CFC.posPart_sub_negPart (A + B) (hA.add hB), CFC.posPart_sub_negPart A hA,
         CFC.posPart_sub_negPart B hB]
-    calc (A + B)⁺ + (A⁻ + B⁻)
-        = ((A + B)⁺ - (A + B)⁻) + (A + B)⁻ + (A⁻ + B⁻) := by abel
+    calc (A + B)⁺ + (A⁻ + B⁻) = ((A + B)⁺ - (A + B)⁻) + (A + B)⁻ + (A⁻ + B⁻) := by abel
       _ = ((A⁺ - A⁻) + (B⁺ - B⁻)) + (A + B)⁻ + (A⁻ + B⁻) := by rw [hsum]
       _ = (A + B)⁻ + (A⁺ + B⁺) := by abel
   have hadd3 {X Y Z : E →L[ℂ] E} (hX : 0 ≤ X) (hY : 0 ≤ Y) (hZ : 0 ≤ Z)
@@ -377,8 +376,8 @@ private theorem signedDixmierTrace_selfAdjoint_add {ω : GeneralizedLimit}
       dixmierTrace ω (X + (Y + Z)) = dixmierTrace ω X + (dixmierTrace ω Y + dixmierTrace ω Z) := by
     rw [dixmierTrace_add_of_isPositive hω (nonneg_iff_isPositive.1 hX)
         (nonneg_iff_isPositive.1 (add_nonneg hY hZ)) hXm (Submodule.add_mem _ hYm hZm),
-      dixmierTrace_add_of_isPositive hω (nonneg_iff_isPositive.1 hY)
-        (nonneg_iff_isPositive.1 hZ) hYm hZm]
+      dixmierTrace_add_of_isPositive hω (nonneg_iff_isPositive.1 hY) (nonneg_iff_isPositive.1 hZ)
+        hYm hZm]
   have heq := congrArg (dixmierTrace ω) hid
   rw [hadd3 (CFC.posPart_nonneg _) (CFC.negPart_nonneg _) (CFC.negPart_nonneg _)
       (posPart_mem_finiteSubmodule hABm) (negPart_mem_finiteSubmodule hAm)
@@ -442,16 +441,15 @@ theorem complexDixmierTrace_smul {ω : GeneralizedLimit} (hω : ω.IsDilationInv
         (Submodule.smul_mem _ _ (Complex.coe_smul c.im T ▸ Submodule.smul_mem _ _ hTm)),
       complexDixmierTrace_I_smul, complexDixmierTrace_real_smul, complexDixmierTrace_real_smul]
     (conv_rhs => rw [← Complex.re_add_im c]); ring
-  · rw [complexDixmierTrace_of_notMem ω
-        (fun h ↦ hTm (by simpa [hc] using Submodule.smul_mem _ c⁻¹ h)),
+  · rw [complexDixmierTrace_of_notMem ω (fun h ↦
+      hTm (by simpa [hc] using Submodule.smul_mem _ c⁻¹ h)),
       complexDixmierTrace_of_notMem ω hTm, mul_zero]
 
 /-- **The linear Dixmier trace on `L^(1,∞)`.** For a dilation-invariant generalized limit `ω`,
 `TauCeti.complexDixmierTrace` restricts to a `ℂ`-linear functional on the logarithmic ideal
 `((logarithmic ℂ).operatorGauge E E).finiteSubmodule`. -/
-noncomputable def linearDixmierTrace (E : Type*)
-    [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
-    {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant) :
+noncomputable def linearDixmierTrace (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+    [CompleteSpace E] {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant) :
     ((logarithmic ℂ).operatorGauge E E).finiteSubmodule →ₗ[ℂ] ℂ where
   toFun T := complexDixmierTrace ω T.1
   map_add' S T := complexDixmierTrace_add hω S.2 T.2
@@ -469,8 +467,7 @@ theorem linearDixmierTrace_apply {ω : GeneralizedLimit} (hω : ω.IsDilationInv
 /-- **Traciality of the Dixmier trace.** When `ω` is dilation invariant, `Tr_ω(A T) = Tr_ω(T A)`
 for every bounded operator `A : E →L[ℂ] E` and every `T` in `L^(1,∞)`. -/
 theorem complexDixmierTrace_comp_comm {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant)
-    (A : E →L[ℂ] E) {T : E →L[ℂ] E}
-    (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
+    (A : E →L[ℂ] E) {T : E →L[ℂ] E} (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
     complexDixmierTrace ω (A ∘L T) = complexDixmierTrace ω (T ∘L A) := by
   -- Span `E →L[ℂ] E` by four unitaries and apply unitary traciality to each summand.
   obtain ⟨u, c, rfl, -⟩ := CStarAlgebra.exists_sum_four_unitary A
@@ -478,14 +475,12 @@ theorem complexDixmierTrace_comp_comm {ω : GeneralizedLimit} (hω : ω.IsDilati
     simp_rw [← mul_def, Finset.sum_mul, smul_mul_assoc]
   have hR : T ∘L (∑ i, c i • (u i : E →L[ℂ] E)) = ∑ i, c i • (T ∘L (u i : E →L[ℂ] E)) := by
     simp_rw [← mul_def, Finset.mul_sum, mul_smul_comm]
-  rw [hL, hR,
-    complexDixmierTrace_sum hω Finset.univ (fun i _ ↦
+  rw [hL, hR, complexDixmierTrace_sum hω Finset.univ (fun i _ ↦
       Submodule.smul_mem _ _ ((logarithmic ℂ).comp_left_mem_finiteSubmodule _ hT)),
     complexDixmierTrace_sum hω Finset.univ (fun i _ ↦
       Submodule.smul_mem _ _ ((logarithmic ℂ).comp_right_mem_finiteSubmodule hT _))]
   exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [complexDixmierTrace_smul hω, complexDixmierTrace_smul hω,
-      complexDixmierTrace_unitary_comp_comm]
+    simp [complexDixmierTrace_smul hω, complexDixmierTrace_unitary_comp_comm]
 
 /-- A commutator `A T - T A` with `T ∈ L^(1,∞)` has vanishing Dixmier trace for every
 dilation-invariant `ω`. -/
@@ -497,11 +492,28 @@ theorem complexDixmierTrace_comp_sub_comp_eq_zero {ω : GeneralizedLimit}
       ((logarithmic ℂ).comp_right_mem_finiteSubmodule hT A),
     complexDixmierTrace_comp_comm hω A hT, sub_self]
 
+open ComplexOrder in
+/-- The product `B T` of a positive bounded operator `B` and a positive operator `T ∈ L^(1,∞)` has
+nonnegative complex Dixmier trace for every dilation-invariant `ω`. -/
+theorem complexDixmierTrace_comp_nonneg_of_isPositive {ω : GeneralizedLimit}
+    (hω : ω.IsDilationInvariant) {B T : E →L[ℂ] E} (hB : B.IsPositive) (hT : T.IsPositive)
+    (hTm : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
+    0 ≤ complexDixmierTrace ω (B ∘L T) := by
+  -- Write `B = √B √B` and cycle `√B` by traciality so `Tr_ω(B T) = Tr_ω(√B T √B) ≥ 0`.
+  set R := CFC.sqrt B
+  have hRadj : adjoint R = R := (CFC.sqrt_nonneg B).isSelfAdjoint.star_eq
+  have hRmul : R ∘L R = B := CFC.sqrt_mul_sqrt_self B (nonneg_iff_isPositive.2 hB)
+  have hRpos : (R ∘L T ∘L R).IsPositive := by simpa [hRadj] using hT.conj_adjoint R
+  rw [← hRmul, comp_assoc,
+    complexDixmierTrace_comp_comm hω R ((logarithmic ℂ).comp_left_mem_finiteSubmodule R hTm),
+    comp_assoc, complexDixmierTrace_of_isPositive ω hRpos]
+  exact RCLike.nonneg_iff.2 ⟨by simpa using dixmierTrace_nonneg ω _, by simp⟩
+
 private theorem norm_complexDixmierTrace_comp_left_le_of_isPositive {ω : GeneralizedLimit}
     (hω : ω.IsDilationInvariant) (A : E →L[ℂ] E) {T : E →L[ℂ] E} (hTpos : T.IsPositive)
     (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
     ‖complexDixmierTrace ω (A ∘L T)‖ ≤ ‖A‖ * dixmierTrace ω T := by
-  -- `B ↦ Tr_ω(B T)` is positive since `Tr_ω(B T) = Tr_ω(√B T √B) ≥ 0` for `B ≥ 0`, hence
+  -- `B ↦ Tr_ω(B T)` is positive by `complexDixmierTrace_comp_nonneg_of_isPositive`, hence
   -- automatically continuous on `E →L[ℂ] E` with `‖ψ‖ = ψ 1 = Tr_ω(T)`.
   open ComplexOrder in
   let ψ₀ : (E →L[ℂ] E) →ₚ[ℂ] ℂ := PositiveLinearMap.mk₀
@@ -512,17 +524,14 @@ private theorem norm_complexDixmierTrace_comp_left_le_of_isPositive {ω : Genera
           ((logarithmic ℂ).comp_left_mem_finiteSubmodule B₂ hT)]
       map_smul' := fun c B ↦ by simp [smul_comp, complexDixmierTrace_smul hω] }
     fun B hB ↦ by
-      set R := CFC.sqrt B
-      have hRadj : adjoint R = R := (CFC.sqrt_nonneg B).isSelfAdjoint.star_eq
-      have hRmul : R ∘L R = B := CFC.sqrt_mul_sqrt_self B hB
-      have hRpos : (R ∘L T ∘L R).IsPositive := by simpa [hRadj] using hTpos.conj_adjoint R
-      change 0 ≤ complexDixmierTrace ω (B ∘L T)
-      rw [← hRmul, comp_assoc,
-        complexDixmierTrace_comp_comm hω R ((logarithmic ℂ).comp_left_mem_finiteSubmodule R hT),
-        comp_assoc, complexDixmierTrace_of_isPositive ω hRpos]
-      exact RCLike.nonneg_iff.2 ⟨by simpa using dixmierTrace_nonneg ω _, by simp⟩
+      simp only [LinearMap.coe_mk, AddHom.coe_mk]
+      exact complexDixmierTrace_comp_nonneg_of_isPositive hω (nonneg_iff_isPositive.1 hB) hTpos hT
   let ψ : (E →L[ℂ] E) →P[ℂ] ℂ := .ofClass ψ₀
-  have hψ (X : E →L[ℂ] E) : (ψ : (E →L[ℂ] E) →L[ℂ] ℂ) X = complexDixmierTrace ω (X ∘L T) := rfl
+  -- `PositiveLinearMap.mk₀` has no `@[simp]` application lemma in Mathlib, so unfold it via `simp`.
+  have hψ (X : E →L[ℂ] E) : (ψ : (E →L[ℂ] E) →L[ℂ] ℂ) X = complexDixmierTrace ω (X ∘L T) := by
+    simp only [ψ, ψ₀, PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+      PositiveContinuousLinearMap.coe_ofClass, ← PositiveLinearMap.coe_toLinearMap,
+      PositiveLinearMap.mk₀, LinearMap.coe_mk, AddHom.coe_mk]
   have hop : ‖(ψ : (E →L[ℂ] E) →L[ℂ] ℂ)‖ = dixmierTrace ω T := Complex.ofReal_inj.1 <| by
     rw [ψ.ofReal_opNorm_eq_map_one, ← PositiveContinuousLinearMap.coe_toContinuousLinearMap, hψ,
       one_def, id_comp, complexDixmierTrace_of_isPositive ω hTpos]
@@ -539,12 +548,10 @@ theorem norm_complexDixmierTrace_comp_comp_le {ω : GeneralizedLimit} (hω : ω.
     (by rw [adjoint_modulus, modulus_comp_modulus])
   have hmod : T.modulus ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule :=
     (modulus_mem_finiteSubmodule_iff T).2 hT
-  have hAW : A ∘L W ∘L T.modulus ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule :=
-    (logarithmic ℂ).comp_left_mem_finiteSubmodule (A ∘L W) hmod
-  have hrew : A ∘L T ∘L B = (A ∘L W ∘L T.modulus) ∘L B := by
-    nth_rw 1 [← hWT]; simp only [comp_assoc]
-  have hassoc : B ∘L (A ∘L W ∘L T.modulus) = (B ∘L A ∘L W) ∘L T.modulus := by simp only [comp_assoc]
-  rw [hrew, ← complexDixmierTrace_comp_comm hω B hAW, hassoc]
+  have hrew : A ∘L T ∘L B = (A ∘L W ∘L T.modulus) ∘L B := by nth_rw 1 [← hWT]; simp [comp_assoc]
+  have hassoc : B ∘L (A ∘L W ∘L T.modulus) = (B ∘L A ∘L W) ∘L T.modulus := by simp [comp_assoc]
+  rw [hrew, ← complexDixmierTrace_comp_comm hω B ((logarithmic ℂ).comp_left_mem_finiteSubmodule A
+    ((logarithmic ℂ).comp_left_mem_finiteSubmodule W hmod)), hassoc]
   have hBAW : ‖B ∘L A ∘L W‖ ≤ ‖B‖ * ‖A‖ := (B.opNorm_comp_le _).trans <|
     mul_le_mul_of_nonneg_left ((A.opNorm_comp_le W).trans
       (mul_le_of_le_one_right (norm_nonneg A) hW)) (norm_nonneg B)
@@ -554,18 +561,15 @@ theorem norm_complexDixmierTrace_comp_comp_le {ω : GeneralizedLimit} (hω : ω.
 
 /-- Left ideal bound `‖Tr_ω(A T)‖ ≤ ‖A‖ Tr_ω(|T|)` for dilation-invariant `ω` and `T ∈ L^(1,∞)`. -/
 theorem norm_complexDixmierTrace_comp_left_le {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant)
-    (A : E →L[ℂ] E) {T : E →L[ℂ] E}
-    (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
-    ‖complexDixmierTrace ω (A ∘L T)‖ ≤ ‖A‖ * dixmierTrace ω T := by
-  rw [← comp_id (A ∘L T)]
-  exact (norm_complexDixmierTrace_comp_comp_le hω A (.id ℂ E) hT).trans
+    (A : E →L[ℂ] E) {T : E →L[ℂ] E} (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
+    ‖complexDixmierTrace ω (A ∘L T)‖ ≤ ‖A‖ * dixmierTrace ω T :=
+  comp_id (A ∘L T) ▸ (norm_complexDixmierTrace_comp_comp_le hω A (.id ℂ E) hT).trans
     (mul_le_of_le_one_right (mul_nonneg (norm_nonneg A) (dixmierTrace_nonneg ω T)) norm_id_le)
 
 /-- Right ideal bound `‖Tr_ω(T B)‖ ≤ Tr_ω(|T|) ‖B‖` for dilation-invariant `ω` and
 `T ∈ L^(1,∞)`. -/
 theorem norm_complexDixmierTrace_comp_right_le {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant)
-    {T : E →L[ℂ] E} (B : E →L[ℂ] E)
-    (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
+    {T : E →L[ℂ] E} (B : E →L[ℂ] E) (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
     ‖complexDixmierTrace ω (T ∘L B)‖ ≤ dixmierTrace ω T * ‖B‖ := by
   nth_rw 1 [← id_comp T]
   exact (norm_complexDixmierTrace_comp_comp_le hω (.id ℂ E) B hT).trans (mul_le_mul_of_nonneg_right
@@ -593,9 +597,8 @@ theorem norm_complexDixmierTrace_le_toReal_gauge_logarithmic {ω : GeneralizedLi
 /-- **The continuous linear Dixmier trace on the normed carrier of `L^(1,∞)`.** When `ω` is
 dilation invariant, `TauCeti.complexDixmierTrace` defines a bounded linear functional of norm at
 most `1` on `((logarithmic ℂ).operatorGauge E E).Carrier`. -/
-noncomputable def linearDixmierTraceCLM (E : Type*)
-    [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
-    {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant) :
+noncomputable def linearDixmierTraceCLM (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+    [CompleteSpace E] {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant) :
     ((logarithmic ℂ).operatorGauge E E).Carrier →L[ℂ] ℂ :=
   LinearMap.mkContinuous
     { toFun := fun T ↦ complexDixmierTrace ω T.toContinuousLinearMap

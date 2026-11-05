@@ -26,12 +26,13 @@ trace class and `L^(1,∞)`), and prove that ordinary convergence of the logarit
 limit, and for arbitrary operators when the logarithmic means tend to `0`, covering trace-class and
 finite-rank operators).
 
-On `ℓ²(ℕ, ℂ)` we construct the three benchmark diagonal phenomena for Dixmier traces: the positive
-harmonic diagonal operator `diag((j + 1)⁻¹)` in `L^(1,∞)` is Dixmier measurable with trace `1`, yet
-is both the operator-norm limit and the Loewner least upper bound of positive finite-rank
-truncations of trace `0`; `diag(((j + 1) log(j + 2))⁻¹)` is positive in `L^(1,∞) \ L¹` with
-vanishing Dixmier trace; and there exists a positive diagonal operator in `L^(1,∞)` that is not
-Dixmier measurable.
+On `ℓ²(ℕ, ℂ)` we construct the positive harmonic diagonal operator `diag((j + 1)⁻¹)`
+(`TauCeti.harmonicDiagonalCLM`), which lies in `L^(1,∞)` and is Dixmier measurable with trace `1`,
+and establish the three benchmark singularity and non-uniqueness phenomena for Dixmier traces: a
+monotone sequence of positive operators of trace `0` converging in operator norm to, and having as
+Loewner least upper bound, a positive Dixmier-measurable operator in `L^(1,∞)` of trace `1`; a
+positive Dixmier-measurable operator in `L^(1,∞) \ L¹` with vanishing Dixmier trace; and a positive
+operator in `L^(1,∞)` that is not Dixmier measurable.
 
 ## Main declarations
 
@@ -43,8 +44,9 @@ Dixmier measurable.
   `TauCeti.isDixmierMeasurable_of_tendsto_kyFanLogMean_zero`: ordinary convergence of logarithmic
   means implies Dixmier measurability.
 * `TauCeti.harmonicDiagonalCLM`, `TauCeti.kyFanGauge_harmonicDiagonalCLM`,
+  `TauCeti.tendsto_kyFanLogMean_harmonicDiagonalCLM`,
   `TauCeti.exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne`: the harmonic diagonal
-  model, its Ky Fan prefix gauges, and singularity / Loewner non-normality of `Tr_ω`.
+  model, its Ky Fan gauges and logarithmic-mean limit, and singularity / non-normality of `Tr_ω`.
 * `TauCeti.exists_isPositive_mem_logarithmic_notMem_traceClass_complexDixmierTrace_eq_zero`:
   positive operator in `L^(1,∞) \ L¹` with vanishing Dixmier trace.
 * `TauCeti.exists_isPositive_mem_logarithmic_not_isDixmierMeasurable`: positive operator in
@@ -73,8 +75,7 @@ open ContinuousLinearMap OperatorIdealFamily
 
 section Measurable
 
-variable {E F : Type*}
-  [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
 /-- An operator `T : E →L[ℂ] E` is **Dixmier measurable** when it belongs to the logarithmic ideal
@@ -248,19 +249,15 @@ theorem isDixmierMeasurable_of_parts {T : E →L[ℂ] E}
 
 /-- Conjugation by a linear isometric equivalence preserves Dixmier measurability. -/
 @[simp]
-theorem _root_.LinearIsometryEquiv.isDixmierMeasurable_conj_linearIsometryEquiv_iff
-    (e : E ≃ₗᵢ[ℂ] F) (T : E →L[ℂ] E) :
-    IsDixmierMeasurable (e.conjStarAlgEquiv T) ↔ IsDixmierMeasurable T := by
-  simp only [IsDixmierMeasurable, e.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff,
-    complexDixmierTrace_conj_linearIsometryEquiv]
+theorem _root_.LinearIsometryEquiv.isDixmierMeasurable_conjStarAlgEquiv_iff (e : E ≃ₗᵢ[ℂ] F)
+    (T : E →L[ℂ] E) : IsDixmierMeasurable (e.conjStarAlgEquiv T) ↔ IsDixmierMeasurable T := by
+  simp [IsDixmierMeasurable, e.conjStarAlgEquiv_mem_finiteSubmodule_logarithmic_iff]
 
 /-- Unitary conjugation preserves Dixmier measurability. -/
 @[simp]
-theorem _root_.Unitary.isDixmierMeasurable_unitary_conj_iff
-    (u : unitary (E →L[ℂ] E)) (T : E →L[ℂ] E) :
-    IsDixmierMeasurable ((u : E →L[ℂ] E) ∘L T ∘L star (u : E →L[ℂ] E)) ↔
-      IsDixmierMeasurable T :=
-  (Unitary.linearIsometryEquiv u).isDixmierMeasurable_conj_linearIsometryEquiv_iff T
+theorem _root_.Unitary.isDixmierMeasurable_conj_iff (u : unitary (E →L[ℂ] E)) (T : E →L[ℂ] E) :
+    IsDixmierMeasurable ((u : E →L[ℂ] E) ∘L T ∘L star (u : E →L[ℂ] E)) ↔ IsDixmierMeasurable T :=
+  (Unitary.linearIsometryEquiv u).isDixmierMeasurable_conjStarAlgEquiv_iff T
 
 /-- The `ℂ`-submodule of Dixmier-measurable operators in `E →L[ℂ] E`. -/
 def dixmierMeasurableSubmodule (E : Type*)
@@ -293,11 +290,6 @@ end Measurable
 
 section DiagonalModels
 
-private theorem sum_range_succ_inv_le_one_add_log (N : ℕ) :
-    ∑ j ∈ Finset.range (N + 1), ((j : ℝ) + 1)⁻¹ ≤ 1 + Real.log ((N : ℝ) + 2) := by
-  simpa [harmonic] using (harmonic_le_one_add_log (N + 1)).trans
-    (add_le_add_right (Real.log_le_log (by positivity) (by push_cast; linarith)) 1)
-
 /-! #### 1. The harmonic diagonal model and non-normality -/
 
 private theorem harmonicEntry_antitone : Antitone fun j : ℕ ↦ ((j : ℝ≥0) + 1)⁻¹ :=
@@ -325,28 +317,26 @@ theorem kyFanGauge_harmonicDiagonalCLM (k : ℕ) :
 theorem isPositive_harmonicDiagonalCLM : harmonicDiagonalCLM.IsPositive :=
   lp.isPositive_diagonalCLM_ofAntitone harmonicEntry_antitone
 
+/-- The logarithmic Ky Fan means of `TauCeti.harmonicDiagonalCLM` converge to `1`. -/
+theorem tendsto_kyFanLogMean_harmonicDiagonalCLM :
+    Tendsto harmonicDiagonalCLM.kyFanLogMean atTop (𝓝 1) :=
+  tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by simp [harmonicDiagonalCLM, harmonicSeq]
+
 /-- Every generalized limit assigns real Dixmier trace `1` to `TauCeti.harmonicDiagonalCLM`. -/
 @[simp]
 theorem dixmierTrace_harmonicDiagonalCLM (ω : GeneralizedLimit) :
     dixmierTrace ω harmonicDiagonalCLM = 1 :=
-  dixmierTrace_diagonalCLM_eq_one ω harmonicSeq fun j ↦ by
-    simpa [harmonicSeq] using lp.norm_ofAntitone_apply ℂ harmonicEntry_antitone j
+  dixmierTrace_eq_of_tendsto ω tendsto_kyFanLogMean_harmonicDiagonalCLM
+
+/-- The harmonic diagonal operator is Dixmier measurable. -/
+theorem isDixmierMeasurable_harmonicDiagonalCLM : IsDixmierMeasurable harmonicDiagonalCLM :=
+  isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean isPositive_harmonicDiagonalCLM
+    tendsto_kyFanLogMean_harmonicDiagonalCLM
 
 /-- The harmonic diagonal operator belongs to the logarithmic ideal `L^(1,∞)`. -/
 theorem harmonicDiagonalCLM_mem_logarithmic :
-    harmonicDiagonalCLM ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule := by
-  refine (mem_finiteSubmodule_logarithmic_iff_bddAbove _).2 ⟨1 + (Real.log 2)⁻¹, ?_⟩
-  rintro _ ⟨N, rfl⟩
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-  have hlogN : Real.log 2 ≤ Real.log ((N : ℝ) + 2) := Real.log_le_log two_pos (by linarith)
-  calc harmonicDiagonalCLM.kyFanLogMean N
-      ≤ (1 + Real.log ((N : ℝ) + 2)) / Real.log ((N : ℝ) + 2) := by
-        rw [kyFanLogMean_def, kyFanGauge_harmonicDiagonalCLM]; push_cast
-        exact div_le_div_of_nonneg_right (sum_range_succ_inv_le_one_add_log N)
-          (hlog2.trans_le hlogN).le
-    _ = (Real.log ((N : ℝ) + 2))⁻¹ + 1 := by
-        rw [add_div, one_div, div_self (hlog2.trans_le hlogN).ne']
-    _ ≤ 1 + (Real.log 2)⁻¹ := by linarith [inv_anti₀ hlog2 hlogN]
+    harmonicDiagonalCLM ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule :=
+  isDixmierMeasurable_harmonicDiagonalCLM.mem_finiteSubmodule
 
 /-- Every generalized limit assigns complex Dixmier trace `1` to `TauCeti.harmonicDiagonalCLM`. -/
 @[simp]
@@ -355,15 +345,10 @@ theorem complexDixmierTrace_harmonicDiagonalCLM (ω : GeneralizedLimit) :
   rw [complexDixmierTrace_of_isPositive ω isPositive_harmonicDiagonalCLM,
     dixmierTrace_harmonicDiagonalCLM, Complex.ofReal_one]
 
-/-- The harmonic diagonal operator is Dixmier measurable. -/
-theorem isDixmierMeasurable_harmonicDiagonalCLM : IsDixmierMeasurable harmonicDiagonalCLM :=
-  ⟨harmonicDiagonalCLM_mem_logarithmic, fun _ _ _ _ ↦ by simp⟩
-
-/-- **Singularity and non-normality of the Dixmier trace.** The positive finite-rank coordinate
-truncations `Sₙ` of `TauCeti.harmonicDiagonalCLM` form a monotone sequence of positive operators in
-`L^(1,∞)` converging to `harmonicDiagonalCLM` in operator norm and having `harmonicDiagonalCLM` as
-their least upper bound in the Loewner order, yet `Tr_ω(Sₙ) = 0` for every `n` and `ω` while
-`Tr_ω(harmonicDiagonalCLM) = 1`. -/
+/-- **Singularity and non-normality of the Dixmier trace.** On `ℓ²(ℕ, ℂ)` there exist a monotone
+sequence `S` of positive operators and a positive Dixmier-measurable operator `T` in `L^(1,∞)` such
+that `S` converges to `T` in operator norm and has `T` as its least upper bound in the Loewner
+order, yet `Tr_ω(Sₙ) = 0` for every `n` and `ω` while `Tr_ω(T) = 1`. -/
 theorem exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne :
     ∃ (S : ℕ → ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) (T : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)),
       T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule ∧
@@ -371,6 +356,7 @@ theorem exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne :
       Monotone S ∧ Tendsto S atTop (𝓝 T) ∧ IsLUB (Set.range S) T ∧
       (∀ n (ω : GeneralizedLimit), complexDixmierTrace ω (S n) = 0) ∧
       (∀ ω : GeneralizedLimit, complexDixmierTrace ω T = 1) := by
+  -- Witnessed by `harmonicDiagonalCLM` and its finite-rank coordinate truncations.
   open ComplexOrder in
   have hd_nonneg : ∀ j, 0 ≤ harmonicSeq j := lp.ofAntitone_apply_nonneg ℂ harmonicEntry_antitone
   have hd_tendsto : Tendsto (fun j ↦ ‖harmonicSeq j‖) atTop (𝓝 0) := by
@@ -412,12 +398,10 @@ private theorem not_summable_invMulLogSeq : ¬ Summable invMulLogSeq := fun hsum
   have hdom : Summable (fun k : ℕ ↦ (2⁻¹ : ℝ) * (((k + 2 : ℕ) : ℝ))⁻¹) := by
     refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun k ↦ ?_) hshift
     set m := k + 1
-    have hm2 : 2 ≤ 2 ^ m := by
-      simpa using Nat.pow_le_pow_right (by positivity : 0 < 2) (Nat.succ_pos k)
+    have hm2 : 2 ≤ 2 ^ m := by simpa using Nat.pow_le_pow_right zero_lt_two (Nat.succ_pos k)
     have hpow2 : (((2 ^ m : ℕ) : ℝ) + 2) ≤ (2 : ℝ) ^ (m + 1) := by
       exact_mod_cast (by rw [pow_succ (a := 2) (n := m)]; omega : 2 ^ m + 2 ≤ 2 ^ (m + 1))
-    have hlog2 : Real.log 2 ≤ 1 := by
-      linarith [Real.log_le_sub_one_of_pos (by positivity : (0 : ℝ) < 2)]
+    have hlog2 : Real.log 2 ≤ 1 := by linarith [Real.log_le_sub_one_of_pos zero_lt_two]
     have hlog_le : Real.log (((2 ^ m : ℕ) : ℝ) + 2) ≤ ((k + 2 : ℕ) : ℝ) :=
       (Real.log_le_log (by positivity) hpow2).trans <| by
         rw [Real.log_pow]
@@ -428,9 +412,8 @@ private theorem not_summable_invMulLogSeq : ¬ Summable invMulLogSeq := fun hsum
         (Real.log_natCast_add_pos one_lt_two (2 ^ m)).le (by positivity)
     have hinv := inv_anti₀
       (mul_pos (by positivity) (Real.log_natCast_add_pos one_lt_two (2 ^ m))) hdenom
-    refine (le_of_eq ?_).trans (mul_le_mul_of_nonneg_left hinv (by positivity))
     have h2m : (2 : ℝ) ^ m ≠ 0 := by positivity
-    field_simp [h2m]
+    exact (le_of_eq (by field_simp [h2m])).trans (mul_le_mul_of_nonneg_left hinv (by positivity))
   exact Real.not_summable_natCast_inv <| (summable_nat_add_iff 2).1 <|
     (hdom.mul_left 2).congr fun k ↦ by rw [← mul_assoc, mul_inv_cancel₀ two_ne_zero, one_mul]
 
@@ -452,8 +435,9 @@ private theorem sum_Ico_invMulLogSeq_le (K N : ℕ) :
         rw [← Finset.mul_sum]
         exact mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
           (fun j hj ↦ Finset.mem_range.2 (Finset.mem_Ico.1 hj).2) fun _ _ _ ↦ by positivity) hδpos
-    _ ≤ (Real.log ((K : ℝ) + 2))⁻¹ * (1 + Real.log ((N : ℝ) + 2)) :=
-        mul_le_mul_of_nonneg_left (sum_range_succ_inv_le_one_add_log N) hδpos
+    _ ≤ (Real.log ((K : ℝ) + 2))⁻¹ * (1 + Real.log ((N : ℝ) + 2)) := mul_le_mul_of_nonneg_left (by
+        simpa [harmonic] using
+          (harmonic_le_one_add_log (N + 1)).trans (by gcongr; push_cast; linarith)) hδpos
 
 private theorem tendsto_kyFanLogMean_invMulLogSeq :
     Tendsto (lp.diagonalCLM (p := 2) (lp.ofAntitone ℂ invMulLogNNSeq_antitone)).kyFanLogMean
@@ -482,8 +466,7 @@ private theorem tendsto_kyFanLogMean_invMulLogSeq :
     rw [kyFanLogMean_def, hKsum, ← Finset.sum_range_add_sum_Ico _ hNK, div_le_iff₀ hlogN, add_mul,
       div_mul_cancel₀ _ hlogN.ne']
     linarith [sum_Ico_invMulLogSeq_le K N]
-  have hδlt : δ < ε / 2 := hK
-  linarith
+  have hδlt : δ < ε / 2 := hK; linarith
 
 /-- **A positive operator in `L^(1,∞) \ L¹` with vanishing Dixmier trace.** On `ℓ²(ℕ, ℂ)` there
 exists a positive Dixmier-measurable operator in `L^(1,∞)` that is not trace class yet satisfies
@@ -632,8 +615,7 @@ private theorem oscDiag_kyFanLogMean_le_one_third {S r k : ℕ} (hk : 0 < k) (hk
   rw [kyFanLogMean_def, div_le_iff₀ hlogq]; linarith
 
 private theorem lacunaryStage_eq_of_mem_Ico {m j : ℕ}
-    (hj : j ∈ Finset.Ico (lacunaryScale m) (lacunaryScale (m + 1))) :
-    lacunaryStage j = m := by
+    (hj : j ∈ Finset.Ico (lacunaryScale m) (lacunaryScale (m + 1))) : lacunaryStage j = m := by
   obtain ⟨hj1, hj2⟩ := Finset.mem_Ico.1 hj
   refine le_antisymm (Nat.lt_add_one_iff.1 ?_)
     (lacunaryStage_lacunaryScale m ▸ lacunaryStage_mono hj1)
@@ -657,8 +639,7 @@ private theorem sum_Ico_oscSeq_eq_harmonic_sub {r q : ℕ} (hBq : lacunaryScale 
     Finset.sum_congr rfl fun j hj ↦ oscSeq_eq_inv_of_mem_Ico <|
       Finset.mem_Ico.2 ⟨(Finset.mem_Ico.1 hj).1, (Finset.mem_Ico.1 hj).2.trans_le hqB⟩
   have hsplit := Finset.sum_range_add_sum_Ico (fun j : ℕ ↦ ((j : ℝ) + 1)⁻¹) hBq
-  have hharm (m : ℕ) : (harmonic m : ℝ) = ∑ j ∈ Finset.range m, ((j : ℝ) + 1)⁻¹ := by
-    simp [harmonic]
+  have hharm (m) : (harmonic m : ℝ) = ∑ j ∈ .range m, ((j : ℝ) + 1)⁻¹ := by simp [harmonic]
   rw [hcongr, hharm, hharm]; linarith
 
 private theorem one_half_le_oscDiag_kyFanLogMean {S r k : ℕ} (hk : 0 < k) (hkS : k ≤ S)
@@ -672,7 +653,7 @@ private theorem one_half_le_oscDiag_kyFanLogMean {S r k : ℕ} (hk : 0 < k) (hkS
   -- Locate `q` inside the even block `[lacunaryScale (2 * r), lacunaryScale (2 * r + 1)]`, with
   -- `log (q + 1) ≥ 7 Y` dominating the preceding prefix bound `1 + Y`.
   have hBq : lacunaryScale (2 * r) ≤ q :=
-    (Nat.pow_le_pow_right (by positivity : 0 < 2) (by omega : 8 ^ (2 * r) ≤ 7 * 8 ^ (2 * r))).trans
+    (Nat.pow_le_pow_right zero_lt_two (by omega : 8 ^ (2 * r) ≤ 7 * 8 ^ (2 * r))).trans
       (pow_seven_mul_le_lacunaryScale_div (m := 2 * r) hk hkS hS)
   have hlogq1_ge : 7 * Y ≤ Real.log ((q : ℝ) + 1) :=
     seven_mul_le_log_lacunaryScale_div (m := 2 * r) zero_le_one hk hkS hS
@@ -682,37 +663,30 @@ private theorem one_half_le_oscDiag_kyFanLogMean {S r k : ℕ} (hk : 0 < k) (hkS
   -- Lower-bound `K_(q+1)(T)` by the harmonic block `[lacunaryScale (2 * r), q)`, which contributes
   -- `H_q - H_(lacunaryScale (2 * r)) ≥ log (q + 1) - (1 + Y)`.
   have hIco_eq := sum_Ico_oscSeq_eq_harmonic_sub hBq (Nat.div_le_self _ _)
-  have hharm_low : Real.log ((q : ℝ) + 1) ≤ (harmonic q : ℝ) := by
-    simpa using log_add_one_le_harmonic q
+  have hharm_low : Real.log ((q : ℝ) + 1) ≤ harmonic q := by simpa using log_add_one_le_harmonic q
   have hharm_up := harmonic_lacunaryScale_le (2 * r)
   have hgauge_ge : Real.log ((q : ℝ) + 1) - (1 + Y) ≤ (T.kyFanGauge (q + 1) : ℝ) := by
     have hKsum : (T.kyFanGauge (q + 1) : ℝ) = ∑ j ∈ Finset.range (q + 1), oscSeq j := by simp [hT]
     rw [hKsum]
-    refine (by linarith : Real.log ((q : ℝ) + 1) - (1 + Y) ≤
-      ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, oscSeq j).trans ?_
-    exact Finset.sum_le_sum_of_subset_of_nonneg
-      (fun j hj ↦ Finset.mem_range.2 ((Finset.mem_Ico.1 hj).2.trans_le (Nat.le_succ q)))
-      fun _ _ _ ↦ oscSeq_nonneg _
+    exact (by linarith : Real.log ((q : ℝ) + 1) - (1 + Y) ≤
+      ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, oscSeq j).trans
+      (Finset.sum_le_sum_of_subset_of_nonneg
+        (fun j hj ↦ Finset.mem_range.2 ((Finset.mem_Ico.1 hj).2.trans_le (Nat.le_succ q)))
+        fun _ _ _ ↦ oscSeq_nonneg _)
   rw [kyFanLogMean_def, le_div_iff₀ hlogq]; linarith [Real.log_pos one_lt_two]
 
 /-- **Non-uniqueness of the Dixmier trace (`ω`-dependence).** On `ℓ²(ℕ, ℂ)` there exists a
-positive diagonal operator in `L^(1,∞)` that is not Dixmier measurable: two dilation-invariant
-generalized limits assign it strictly different Dixmier traces. -/
+positive operator in `L^(1,∞)` that is not Dixmier measurable: two dilation-invariant generalized
+limits assign it strictly different Dixmier traces. -/
 theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
     ∃ T : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ), T.IsPositive ∧
       T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule ∧
       ¬ IsDixmierMeasurable T := by
   set T := lp.diagonalCLM (p := 2) (lp.ofAntitone ℂ oscNNSeq_antitone) with hT
   have hpos : T.IsPositive := lp.isPositive_diagonalCLM_ofAntitone oscNNSeq_antitone
-  have hmem : T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule := by
-    obtain ⟨C, hC⟩ := (mem_finiteSubmodule_logarithmic_iff_bddAbove harmonicDiagonalCLM).1
-      harmonicDiagonalCLM_mem_logarithmic
-    refine (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 ⟨C, Set.forall_mem_range.2 fun N ↦ ?_⟩
-    refine le_trans ?_ (hC ⟨N, rfl⟩)
-    have hKsum : (T.kyFanGauge (N + 1) : ℝ) = ∑ j ∈ Finset.range (N + 1), oscSeq j := by simp [hT]
-    rw [kyFanLogMean_def, kyFanLogMean_def, hKsum, kyFanGauge_harmonicDiagonalCLM]; push_cast
-    exact div_le_div_of_nonneg_right (Finset.sum_le_sum fun j _ ↦ oscSeq_le_inv j)
-      (Real.log_natCast_add_pos one_lt_two N).le
+  have hmem : T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule :=
+    mem_finiteSubmodule_of_forall_kyFanGauge_le harmonicDiagonalCLM_mem_logarithmic fun k ↦ by
+      simpa [hT] using Finset.sum_le_sum fun j _ ↦ (by exact_mod_cast oscSeq_le_inv j)
   obtain ⟨g, hg⟩ := exists_coe_eq_kyFanLogMean hmem
   have hlin (b : ℕ) : Tendsto (fun r : ℕ ↦ 2 * r + b) atTop atTop :=
     tendsto_atTop_atTop.2 fun M ↦ ⟨M, fun r hr ↦ by omega⟩
@@ -723,17 +697,15 @@ theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
       (Real.log_pos one_lt_two)
   obtain ⟨ω₁, hω₁, hle⟩ := GeneralizedLimit.exists_isDilationInvariant_apply_le (g := g)
     (c := 1 / 3) fun S _ ↦ Filter.frequently_atTop.2 fun M ↦ by
-      obtain ⟨r, hM, hS, hZ⟩ :=
-        ((lacunaryScale_strictMono.tendsto_atTop.eventually_ge_atTop M).and
-          (((hpow 1).eventually_ge_atTop S).and ((hreal 1).eventually_ge_atTop 2))).exists
+      obtain ⟨r, hM, hS, hZ⟩ := ((lacunaryScale_strictMono.tendsto_atTop.eventually_ge_atTop M).and
+        (((hpow 1).eventually_ge_atTop S).and ((hreal 1).eventually_ge_atTop 2))).exists
       exact ⟨lacunaryScale (2 * r + 2), hM.trans (lacunaryScale_mono (by omega)),
         fun k hk hkS ↦ (congrFun hg _).trans_le (oscDiag_kyFanLogMean_le_one_third hk hkS hS hZ)⟩
   obtain ⟨ω₂, hω₂, hge⟩ := GeneralizedLimit.exists_isDilationInvariant_le_apply (g := g)
     (c := 1 / 2) fun S _ ↦ Filter.frequently_atTop.2 fun M ↦ by
-      obtain ⟨r, hM, hS, hY⟩ :=
-        ((lacunaryScale_strictMono.tendsto_atTop.eventually_ge_atTop M).and
-          (((hpow 0).eventually_ge_atTop S).and
-            ((hreal 0).eventually_ge_atTop (1 + Real.log 2)))).exists
+      obtain ⟨r, hM, hS, hY⟩ := ((lacunaryScale_strictMono.tendsto_atTop.eventually_ge_atTop M).and
+        (((hpow 0).eventually_ge_atTop S).and
+          ((hreal 0).eventually_ge_atTop (1 + Real.log 2)))).exists
       simp only [add_zero] at hS hY
       exact ⟨lacunaryScale (2 * r + 1), hM.trans (lacunaryScale_mono (by omega)),
         fun k hk hkS ↦ (one_half_le_oscDiag_kyFanLogMean hk hkS hS hY).trans_eq

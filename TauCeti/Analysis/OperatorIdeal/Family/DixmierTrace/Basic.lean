@@ -54,8 +54,9 @@ superadditivity `K_N(S) + K_N(T) ≤ K_(2N)(S + T)` of the Ky Fan sums of positi
 * `TauCeti.dixmierTrace_le_of_forall_kyFanGauge_le`, `TauCeti.dixmierTrace_comp_comp_le`:
   monotonicity under Ky Fan domination and the two-sided ideal bound.
 * `TauCeti.dixmierTrace_eq_zero_of_mem_traceClass`: `Tr_ω` vanishes on trace-class operators.
-* `TauCeti.dixmierTrace_eq_one_of_singularValue_eq`: approximation numbers `1 / (j + 1)` give
-  Dixmier trace `1`.
+* `TauCeti.tendsto_kyFanLogMean_of_singularValue_eq`,
+  `TauCeti.dixmierTrace_eq_one_of_singularValue_eq`: approximation numbers `1 / (j + 1)` give
+  logarithmic means tending to `1` and Dixmier trace `1`.
 * `TauCeti.dixmierTrace_diagonalCLM_eq_one`: a diagonal operator on `ℓ²` whose coefficients have
   modulus `1 / (j + 1)` has Dixmier trace `1`.
 
@@ -254,11 +255,12 @@ theorem dixmierTrace_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.r
     (T.nuclearENorm_ne_top_iff_summable).1 (T.nuclearENorm_ne_top_of_rank_le hT)
 
 /-- **The harmonic model.** An operator with approximation numbers `aⱼ(T) = 1 / (j + 1)` has
-Dixmier trace `1` for every generalized limit `ω`: its Ky Fan sums are the harmonic numbers, which
-grow like `log N`. -/
-theorem dixmierTrace_eq_one_of_singularValue_eq {T : E →L[𝕜] F}
-    (hT : ∀ j, T.singularValue j = ((j : ℝ≥0) + 1)⁻¹) : dixmierTrace ω T = 1 := by
-  refine dixmierTrace_eq_of_tendsto ω ?_
+logarithmic Ky Fan means converging to `1`: its Ky Fan sums are the harmonic numbers, which grow
+like `log N`. -/
+theorem tendsto_kyFanLogMean_of_singularValue_eq {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {T : E →L[𝕜] F} (hT : ∀ j, T.singularValue j = ((j : ℝ≥0) + 1)⁻¹) :
+    Tendsto T.kyFanLogMean atTop (𝓝 1) := by
   have hpos (N : ℕ) : 0 < Real.log (N + 2) := Real.log_natCast_add_pos one_lt_two N
   have hK (N : ℕ) : (T.kyFanGauge (N + 1) : ℝ) = harmonic (N + 1) := by
     simp [kyFanGauge_def, hT, harmonic]
@@ -277,6 +279,12 @@ theorem dixmierTrace_eq_one_of_singularValue_eq {T : E →L[𝕜] F}
     rw [kyFanLogMean_def, hK, div_le_iff₀ (hpos N)]
     calc (harmonic (N + 1) : ℝ) ≤ 1 + Real.log (N + 2) := hH
       _ = _ := by rw [add_mul, one_mul, inv_mul_cancel₀ (hpos N).ne', add_comm]
+
+/-- An operator with approximation numbers `aⱼ(T) = 1 / (j + 1)` has Dixmier trace `1` for every
+generalized limit `ω`. -/
+theorem dixmierTrace_eq_one_of_singularValue_eq {T : E →L[𝕜] F}
+    (hT : ∀ j, T.singularValue j = ((j : ℝ≥0) + 1)⁻¹) : dixmierTrace ω T = 1 :=
+  dixmierTrace_eq_of_tendsto ω (tendsto_kyFanLogMean_of_singularValue_eq hT)
 
 /-- **A Dixmier trace equal to `1`.** On `ℓ²(ℕ, 𝕜)`, a diagonal operator whose coefficients have
 modulus `1 / (j + 1)` has Dixmier trace `1` for every generalized limit `ω`. -/
