@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+import TauCeti.Data.ZMod.Count
 
 /-!
 # Generalized Bernoulli numbers
@@ -41,7 +42,9 @@ terms used in Eisenstein series with character.
   character, while `DirichletCharacter.generalizedBernoulli_zero_one` evaluates the trivial one.
 * `DirichletCharacter.generalizedBernoulli_one_of_ne_one` and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_ne_one` give the two useful forms
-  of `B₁,χ` for a nontrivial character.
+  of `B₁,χ` for a nontrivial character, and
+  `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_dvd` computes it from the
+  representatives modulo any multiple of the modulus.
 * `DirichletCharacter.generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg` gives `Bₖ,χ = 0` when
   `k ≠ 1` and the parities of `χ` and `k` differ.
 
@@ -178,6 +181,35 @@ theorem natCast_mul_generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [← map_natCast (algebraMap ℚ R) N, mul_left_comm, ← map_mul,
     mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr (NeZero.ne N)), map_natCast]
+
+/-- **`B₁,χ` from the representatives modulo a multiple of the modulus.** For a nontrivial
+character `χ ≠ 1` modulo `N ∣ M`, the sum of `χ(a mod N) a` over the representatives `0 ≤ a < M`
+is `M B₁,χ`: each block of `N` consecutive representatives contributes `N B₁,χ`, since the shift
+by a multiple of `N` contributes `∑_a χ(a) = 0`, which uses `χ ≠ 1`. At `M = N` this is
+`natCast_mul_generalizedBernoulli_one_of_ne_one`. -/
+theorem natCast_mul_generalizedBernoulli_one_of_dvd [IsDomain R] [NeZero N] {M : ℕ} [NeZero M]
+    (hNM : N ∣ M) {χ : DirichletCharacter R N} (hχ : χ ≠ 1) :
+    (M : R) * χ.generalizedBernoulli 1 = ∑ a : ZMod M, χ (a.val : ZMod N) * (a.val : R) := by
+  have hB : (N : R) * χ.generalizedBernoulli 1 = ∑ i ∈ Finset.range N, χ i * (i : R) := by
+    rw [natCast_mul_generalizedBernoulli_one_of_ne_one hχ,
+      ← ZMod.sum_val_eq_sum_range (fun i ↦ χ i * (i : R))]
+    simp
+  have hsum : ∑ i ∈ Finset.range N, χ i = 0 := by
+    rw [← ZMod.sum_val_eq_sum_range (fun i ↦ χ i)]
+    simpa using MulChar.sum_eq_zero_of_ne_one hχ
+  rw [ZMod.sum_val_eq_sum_range (fun i ↦ χ i * (i : R))]
+  obtain ⟨L, rfl⟩ := hNM
+  have key (k : ℕ) : ∑ i ∈ Finset.range (N * k), χ i * (i : R) =
+      (N * k : ℕ) * χ.generalizedBernoulli 1 := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [Nat.mul_succ, Finset.sum_range_add, ih]
+      simp only [Nat.cast_add, Nat.cast_mul, ZMod.natCast_self, zero_mul, zero_add, mul_add,
+        Finset.sum_add_distrib, ← hB]
+      rw [← Finset.sum_mul, hsum]
+      ring
+  exact (key L).symm
 
 /-- The generalized Bernoulli number `Bₖ,χ` vanishes when `k ≠ 1` and
 `χ (-1) = -(-1) ^ k`. -/
