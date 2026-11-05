@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import TauCeti.Geometry.Diffeomorphism.Group
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
@@ -20,6 +21,10 @@ orientation must agree with the target orientation (or its opposite). These pred
 input for pullback orientations and orientation-sensitive integration. A local diffeomorphism at a
 point either preserves or reverses orientations there
 (`IsLocalDiffeomorphAt.isOrientationPreservingAt_or_isOrientationReversingAt`).
+The inverse of a diffeomorphism preserves orientation wherever the diffeomorphism does
+(`IsOrientationPreservingAt.diffeomorph_symm`), so a diffeomorphism of `M` preserving an
+orientation everywhere has all its integer powers orientation preserving
+(`isOrientationPreservingAt_zpow`).
 
 For orientation lifts with a common model orientation, the chart signs of the lifts compensate the
 sign of the coordinate Jacobian of an orientation-preserving map.
@@ -310,6 +315,31 @@ theorem IsOrientationPreservingAt.of_comp [IsManifold I 1 M] [IsManifold I' 1 M'
       Function.comp_apply, ← h',
       ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
       Equiv.symm_apply_apply]
+
+/-- The inverse of a `C^n` diffeomorphism `e`, `n ≠ 0`, preserves orientations at `y` when `e`
+preserves them at `e.symm y`. -/
+theorem IsOrientationPreservingAt.diffeomorph_symm [IsManifold I 1 M] [IsManifold I' 1 M']
+    {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι} {n : WithTop ℕ∞}
+    {e : M ≃ₘ^n⟮I, I'⟯ M'} {y : M'} (h : IsOrientationPreservingAt o o' e (e.symm y))
+    (hn : n ≠ 0) : IsOrientationPreservingAt o' o e.symm y := by
+  refine h.of_comp ?_ (e.symm.mdifferentiable hn y)
+  have hid : ⇑e ∘ ⇑e.symm = id := funext e.apply_symm_apply
+  rw [hid]
+  exact isOrientationPreservingAt_id o' y
+
+/-- If a `C^n` diffeomorphism `φ` of `M`, `n ≠ 0`, preserves an orientation `o` at every point,
+then so does each of its integer powers `φ ^ k`. -/
+theorem isOrientationPreservingAt_zpow [IsManifold I 1 M] {o : Manifold.Orientation I M ι}
+    {n : WithTop ℕ∞} {φ : M ≃ₘ^n⟮I, I⟯ M} (h : ∀ x, IsOrientationPreservingAt o o φ x)
+    (hn : n ≠ 0) (k : ℤ) (x : M) : IsOrientationPreservingAt o o ⇑(φ ^ k) x := by
+  induction k using Int.induction_on generalizing x with
+  | zero => exact isOrientationPreservingAt_id o x
+  | succ k ih =>
+    rw [zpow_add_one, Diffeomorph.coe_mul]
+    exact (ih (φ x)).comp (h x)
+  | pred k ih =>
+    rw [zpow_sub_one, Diffeomorph.coe_mul, Diffeomorph.coe_inv]
+    exact (ih _).comp ((h _).diffeomorph_symm hn)
 
 /-- The composition of two orientation-reversing maps preserves orientations at a point. -/
 theorem IsOrientationReversingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
