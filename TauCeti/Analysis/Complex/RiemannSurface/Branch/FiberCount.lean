@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
 /-!
 # Counting the points removed above branch values
 
-For a finite holomorphic map `f` from a compact connected Riemann surface to a connected
+For a finite holomorphic map `f` from a compact Riemann surface to a connected
 Riemann surface, the preimage of a finite set `S` has `degree f * S.ncard` points counted
 with multiplicity. Its ordinary cardinality is smaller by the sum of `e_x - 1` over that
 preimage, where `e_x` is the local multiplicity. If `S` contains all branch values, this

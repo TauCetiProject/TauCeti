@@ -8,6 +8,7 @@ module
 import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalDegree
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Order.Lattice.Nat
@@ -155,16 +156,6 @@ theorem ext {f g : FiniteHolomorphicMap X Y} (h : ∀ x, f x = g x) : f = g := b
   exact funext h
 
 end FiniteHolomorphicMap
-
-/-- A finite set is a neighbourhood of no point of a complex-charted space, since neighbourhoods of
-points of `ℂ` are infinite. -/
-theorem notMem_nhds_of_finite {S : Set X} (hS : S.Finite) (x : X) : S ∉ 𝓝 x := fun h ↦ by
-  have h1 : (chartAt ℂ x) '' (S ∩ (chartAt ℂ x).source) ∈ 𝓝 (chartAt ℂ x x) := by
-    rw [← (chartAt ℂ x).map_nhds_eq (mem_chart_source ℂ x)]
-    exact Filter.image_mem_map
-      (Filter.inter_mem h ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x)))
-  exact (infinite_of_mem_nhds _ h1)
-    ((hS.subset (Set.inter_subset_left (t := (chartAt ℂ x).source))).image (chartAt ℂ x))
 
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
@@ -350,12 +341,14 @@ variable (f : FiniteHolomorphicMap X Y)
 
 omit [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] in
 /-- A finite holomorphic map is constant near no point: a map which is constant near `x` has a
-finite fibre containing a neighbourhood of `x`, which is impossible by
-`TauCeti.RiemannSurface.notMem_nhds_of_finite`. -/
+finite fibre containing a neighbourhood of `x`, which is impossible because neighbourhoods of
+points of a charted space modelled on `ℂ` are infinite. -/
 theorem FiniteHolomorphicMap.not_eventuallyConst (x : X) : ¬ EventuallyConst f (𝓝 x) := fun hx ↦ by
   have : Nonempty Y := ⟨f x⟩
   obtain ⟨c, hc⟩ := Filter.eventuallyConst_iff_exists_eventuallyEq.1 hx
-  exact notMem_nhds_of_finite (f.finite_fiber c) x hc
+  have := ChartedSpace.t1Space ℂ X
+  have := (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
+  exact infinite_of_mem_nhds x hc (f.finite_fiber c)
 
 /-- The local multiplicity of a finite holomorphic map is positive at every point. -/
 theorem localMultiplicity_pos (x : X) : 0 < localMultiplicity f x :=

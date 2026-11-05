@@ -14,7 +14,7 @@ import TauCeti.Data.Set.Restrict
 /-!
 # Euler characteristics of branched covers
 
-Let `f : X → Y` be a finite holomorphic map from a compact connected Riemann surface to a
+Let `f : X → Y` be a finite holomorphic map from a compact Riemann surface to a
 connected Riemann surface, and let `S ⊆ Y` contain every branch value of `f`. Deleting `S` from
 the target and `f⁻¹(S)` from the source leaves a covering map whose fibres all have `degree f`
 points. Finite-cover multiplicativity of the Euler characteristic therefore gives
