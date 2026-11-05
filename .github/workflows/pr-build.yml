@@ -151,14 +151,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@63371a5390ae3a53b257a8715d2beaff3c14176f
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+          tools-ref: 63371a5390ae3a53b257a8715d2beaff3c14176f
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@63371a5390ae3a53b257a8715d2beaff3c14176f
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1072,6 +1072,21 @@ jobs:
           LAKE_CACHE_MAX_REVS: ${{ env.TOOLCHAIN_CHANGED == '1' && '1' || '1000' }}
         run: bash gate/scripts/lake-cache-get.sh pr
 
+      # A Bors/queue staging candidate is usually the exact tip the queue's repair worker built
+      # green on its host (under the same bwrap sandbox) and published to the repair cache
+      # ([services.repair_cache] in tauceti.toml). Fetch those outputs for this exact head, on top
+      # of the base cache, so the offline build below reuses them. Lake still checks every trace
+      # and recompiles what differs, and the audits and lints run as for any build, so the verdict
+      # is this job's. No outputs for the head is the normal case for an unrepaired candidate: the
+      # trusted script logs it and leaves the base cache exactly as the step above restored it, as
+      # it does for a fetch that never completes. Anonymous reads; no token, no PR code.
+      - name: Fetch the repair worker's outputs for the exact staging head (network, no token; no PR code)
+        id: repair_cache
+        if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' && github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+        env:
+          STAGING_HEAD: ${{ steps.pr.outputs.sha }}
+        run: bash gate/scripts/repair-cache-get.sh pr "$STAGING_HEAD"
+
       - name: Save verified Lake archive records before candidate code runs
         if: ${{ env.INFRA != '1' && env.STAGE_LAKE_CACHE == '1' }}
         # gate/ is mounted read-only below. Candidate builds overwrite the live
@@ -1238,7 +1253,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@63371a5390ae3a53b257a8715d2beaff3c14176f
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1381,6 +1396,13 @@ jobs:
           else
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           fi
+          # Say whether the build started from the repair worker's outputs (staging only; the
+          # fetch step above sets these). Every description stays well under GitHub's 140.
+          case "${REPAIR_OUTPUTS_STATE:-}" in
+            used) desc="$desc; reused ${REPAIR_OUTPUTS_REUSED:-0} repair outputs" ;;
+            absent) desc="$desc; no repair outputs" ;;
+            failed) desc="$desc; repair outputs incomplete, not used" ;;
+          esac
           {
             echo "build-state=$state"
             echo "build-description=$desc"
@@ -1593,14 +1615,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@63371a5390ae3a53b257a8715d2beaff3c14176f
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+          tools-ref: 63371a5390ae3a53b257a8715d2beaff3c14176f
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@63371a5390ae3a53b257a8715d2beaff3c14176f
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
