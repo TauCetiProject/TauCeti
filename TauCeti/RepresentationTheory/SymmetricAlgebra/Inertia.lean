@@ -222,6 +222,15 @@ theorem dual_symmetricAlgebra_mem_inertia_span_singleton_ι_iff {ℓ : Module.Du
   rw [symmetricAlgebra_mem_inertia_span_singleton_ι_iff,
     forall_sub_dual_apply_mem_span_singleton_iff]
 
+/-- Membership in the inertia group of a linear form means fixing its kernel pointwise. -/
+theorem mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule
+    {ℓ : Module.Dual K V} {g : G} :
+    letI := ρ.dual.symmetricAlgebraMulSemiringAction
+    g ∈ (Ideal.span {ι K (Module.Dual K V) ℓ}).inertia G ↔
+      LinearMap.ker ℓ ≤ (ρ g).fixedSubmodule := by
+  simpa only [LinearMap.fixedSubmodule_eq_ker, Module.End.one_eq_id] using
+    (dual_symmetricAlgebra_mem_inertia_span_singleton_ι_iff (ρ := ρ) (ℓ := ℓ) (g := g))
+
 /-- Let `P` be a height-one prime of the polynomial functions `Sym(V*)` on `V`, and let `g` lie in
 its inertia group and act nontrivially on `V`. Then `P` is spanned by a nonzero linear form `ℓ`,
 and `g` is a pseudoreflection fixing exactly the hyperplane `ker ℓ`. -/
