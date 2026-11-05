@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Sites.SheafCohomology.ExactSequences
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.MayerVietoris
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
+public import TauCeti.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
@@ -42,9 +43,6 @@ formalised here.) In degree zero it is restriction of global sections:
   connecting homomorphisms of a short exact sequence and its image under `pb`.
 * `CategoryTheory.Sheaf.H.equiv₀_pullback_sheafPullback`: for a morphism of sites, the pullback
   in degree zero is restriction of global sections along the unit of `u^* ⊣ u_*`.
-* `CategoryTheory.Functor.sheafPullback_additive`, `preservesFiniteColimits_sheafPullback`: the
-  pullback of abelian sheaves along a continuous functor is additive and right exact, as a left
-  adjoint.
 
 ## Cohomology over objects and Mayer-Vietoris sequences
 
@@ -163,28 +161,6 @@ end
 end General
 
 end CategoryTheory.Sheaf.H
-
-namespace CategoryTheory.Functor
-
-variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
-  {D : Type*} [Category* D] {K : GrothendieckTopology D}
-  (u : C ⥤ D) [u.IsContinuous J K]
-  [(u.sheafPushforwardContinuous AddCommGrpCat.{w} J K).IsRightAdjoint]
-
-/-- The pullback of abelian sheaves along a continuous functor is additive, as a left adjoint. -/
-instance sheafPullback_additive : (u.sheafPullback AddCommGrpCat.{w} J K).Additive :=
-  haveI : (u.sheafPushforwardContinuous AddCommGrpCat.{w} J K).Additive :=
-    Functor.additive_of_preserves_binary_products _
-  (u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).left_adjoint_additive
-
-/-- The pullback of abelian sheaves along a continuous functor preserves finite colimits, as a
-left adjoint. -/
-instance preservesFiniteColimits_sheafPullback :
-    PreservesFiniteColimits (u.sheafPullback AddCommGrpCat.{w} J K) :=
-  letI := (u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).leftAdjoint_preservesColimits.{0, 0}
-  inferInstance
-
-end CategoryTheory.Functor
 
 namespace CategoryTheory.Sheaf.H
 

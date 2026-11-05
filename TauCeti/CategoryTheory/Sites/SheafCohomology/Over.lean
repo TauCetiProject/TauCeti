@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import Mathlib.CategoryTheory.Sites.Over
-public import Mathlib.CategoryTheory.Sites.Pullback
+public import TauCeti.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 
@@ -78,9 +78,6 @@ variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (U : C)
   [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint]
   [PreservesFiniteColimits (J.overPullback AddCommGrpCat.{v} U)]
   [PreservesFiniteLimits ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J)]
-
-local instance : ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J).Additive :=
-  Functor.additive_of_preserves_binary_products _
 
 /-- Under an exact restriction adjunction, cohomology at `U` agrees with cohomology at the
 terminal object of the localized site, naturally in the coefficient sheaf. -/
