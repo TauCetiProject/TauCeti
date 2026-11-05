@@ -177,8 +177,9 @@ vertex over it with the sign `-(-1) ^ #{a ∈ S | a.castSucc < c}`
 def khovanovBracketMappingConeIso :
     mappingCone (NatTrans.cubeComplexMap (D.resolveCrossingSaddle c hD R j)) ≅
       (D.khovanovBracket hD R j)⟦(1 : ℤ)⟧ :=
-  mappingCone.mapIso (NatIso.cubeComplexMap (D.resolveCrossingFaceZeroIso c hD R j))
-      (NatIso.cubeComplexMap (D.resolveCrossingFaceOneIso c hD R j))
+  mappingCone.mapIso (φ₂ := NatTrans.cubeComplexMap ((D.resolutionCube hD R j).cubeFaceMapAt c))
+      ((cubeComplexFunctor _ _).mapIso (D.resolveCrossingFaceZeroIso c hD R j))
+      ((cubeComplexFunctor _ _).mapIso (D.resolveCrossingFaceOneIso c hD R j))
       (by simp [resolveCrossingSaddle, ← NatTrans.cubeComplexMap_comp]) ≪≫
     (D.resolutionCube hD R j).cubeComplexMappingConeIsoAt c ≪≫
     (CategoryTheory.shiftFunctor _ (1 : ℤ)).mapIso (eqToIso (D.khovanovBracket_apply hD R j).symm)
@@ -201,8 +202,8 @@ theorem inl_v_khovanovBracketMappingConeIso_hom_f (p : ℤ)
           eqToHom (show (D.resolutionCube hD R j).cubeComplex.X (p + 1) =
             ((D.khovanovBracket hD R j)⟦(1 : ℤ)⟧).X p by
             rw [CochainComplex.shiftFunctor_obj_X', khovanovBracket_apply]) := by
-  simp [khovanovBracketMappingConeIso, resolveCrossingFaceZeroIso, eqToHom_map,
-    Functor.eqToHom_comp_cubeComplexι_assoc]
+  dsimp only [khovanovBracketMappingConeIso, cubeComplexFunctor, Functor.mapIso]
+  simp [resolveCrossingFaceZeroIso, eqToHom_map, Functor.eqToHom_comp_cubeComplexι_assoc]
 
 /-- The isomorphism `TauCeti.PDCode.khovanovBracketMappingConeIso` sends a vertex `S` of `⟦D_B⟧`,
 placed in the mapping cone by `mappingCone.inr`, to the vertex over `S` in `⟦D⟧`, by the
@@ -223,8 +224,8 @@ theorem inr_f_khovanovBracketMappingConeIso_hom_f (p : ℤ)
             eqToHom (show (D.resolutionCube hD R j).cubeComplex.X (p + 1) =
               ((D.khovanovBracket hD R j)⟦(1 : ℤ)⟧).X p by
               rw [CochainComplex.shiftFunctor_obj_X', khovanovBracket_apply])) := by
-  simp [khovanovBracketMappingConeIso, resolveCrossingFaceOneIso, eqToHom_map,
-    Functor.eqToHom_comp_cubeComplexι_assoc]
+  dsimp only [khovanovBracketMappingConeIso, cubeComplexFunctor, Functor.mapIso]
+  simp [resolveCrossingFaceOneIso, eqToHom_map, Functor.eqToHom_comp_cubeComplexι_assoc]
 
 /-! ### The skein triangle -/
 

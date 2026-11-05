@@ -565,10 +565,12 @@ same vertex of `F` with the sign `-(-1) ^ #{a ∈ S | a.castSucc < c}`
 preceding `c`. -/
 def cubeComplexMappingConeIsoAt :
     mappingCone (NatTrans.cubeComplexMap (F.cubeFaceMapAt c)) ≅ F.cubeComplex⟦(1 : ℤ)⟧ :=
-  mappingCone.mapIso (NatIso.cubeComplexMap (F.cubeFrontFaceZeroIso c).symm)
-      (NatIso.cubeComplexMap (F.cubeFrontFaceOneIso c).symm)
+  mappingCone.mapIso (φ₂ := NatTrans.cubeComplexMap (F.cubeFront c).cubeFaceMap)
+      ((cubeComplexFunctor C _).mapIso (F.cubeFrontFaceZeroIso c).symm)
+      ((cubeComplexFunctor C _).mapIso (F.cubeFrontFaceOneIso c).symm)
       (by
-        simp only [NatIso.cubeComplexMap_hom, Iso.symm_hom, ← NatTrans.cubeComplexMap_comp,
+        simp only [Functor.mapIso_hom, cubeComplexFunctor_map, Iso.symm_hom,
+          ← NatTrans.cubeComplexMap_comp,
           F.cubeFrontFaceZeroIso_inv_comp_cubeFaceMap c]) ≪≫
     (F.cubeFront c).cubeComplexMappingConeIso ≪≫
     (shiftFunctor _ (1 : ℤ)).mapIso
@@ -632,8 +634,8 @@ lemma inl_v_cubeComplexMappingConeIsoAt_hom_f (p : ℤ)
         (mappingCone.inl (NatTrans.cubeComplexMap (F.cubeFaceMapAt c))).v (p + 1) p (by omega) ≫
           (F.cubeComplexMappingConeIsoAt c).hom.f p =
       F.cubeComplexι ⟨S.1.map c.succAboveEmb, by rw [card_map, S.2]⟩ := by
-  simp only [cubeComplexMappingConeIsoAt, Iso.trans_hom, mappingCone.mapIso_hom,
-    Functor.mapIso_hom, Iso.symm_hom, NatIso.cubeComplexMap_hom, HomologicalComplex.comp_f,
+  dsimp only [cubeComplexMappingConeIsoAt, cubeComplexFunctor, Functor.mapIso]
+  simp only [Iso.trans_hom, mappingCone.mapIso_hom, Iso.symm_hom, HomologicalComplex.comp_f,
     CochainComplex.shiftFunctor_map_f', mappingCone.inl_v_map_f_assoc,
     NatTrans.ι_cubeComplexMap_f_assoc,
     inl_v_cubeComplexMappingConeIso_hom_f_assoc,
@@ -654,8 +656,8 @@ lemma inr_f_cubeComplexMappingConeIsoAt_hom_f (p : ℤ) (S : {S : Finset (Fin n)
           rw [card_insert_of_notMem (by simp [Fin.succAbove_ne]), card_map]
           push_cast
           omega⟩) := by
-  simp only [cubeComplexMappingConeIsoAt, Iso.trans_hom, mappingCone.mapIso_hom,
-    Functor.mapIso_hom, Iso.symm_hom, NatIso.cubeComplexMap_hom, HomologicalComplex.comp_f,
+  dsimp only [cubeComplexMappingConeIsoAt, cubeComplexFunctor, Functor.mapIso]
+  simp only [Iso.trans_hom, mappingCone.mapIso_hom, Iso.symm_hom, HomologicalComplex.comp_f,
     CochainComplex.shiftFunctor_map_f', mappingCone.inr_f_map_f_assoc,
     NatTrans.ι_cubeComplexMap_f_assoc, inr_f_cubeComplexMappingConeIso_hom_f_assoc,
     Preadditive.neg_comp, F.cubeComplexι_cubeComplexReindexIso_frontEquiv_inv_f c _ _
