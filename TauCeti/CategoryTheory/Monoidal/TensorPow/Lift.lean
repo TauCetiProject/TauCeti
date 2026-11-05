@@ -77,7 +77,7 @@ theorem tensorPowAddIso_hom_tensorPowLift (f : X ⟶ M) (m n : ℕ) :
     simp [whisker_exchange_assoc]
 
 /-- Iterated multiplication commutes with a morphism of monoid objects. -/
-@[reassoc]
+@[simp, reassoc]
 theorem tensorPowLift_comp (f : X ⟶ M) (g : M ⟶ N) [IsMonHom g] (n : ℕ) :
     tensorPowLift f n ≫ g = tensorPowLift (f ≫ g) n := by
   induction n with
@@ -86,7 +86,7 @@ theorem tensorPowLift_comp (f : X ⟶ M) (g : M ⟶ N) [IsMonHom g] (n : ℕ) :
     simp [tensorPowLift_succ, ih]
 
 /-- Iterated multiplication is natural in the generators. -/
-@[reassoc]
+@[simp, reassoc]
 theorem tensorPowMap_tensorPowLift (g : X ⟶ Y) (f : Y ⟶ M) (n : ℕ) :
     tensorPowMap g n ≫ tensorPowLift f n = tensorPowLift (g ≫ f) n := by
   induction n with
