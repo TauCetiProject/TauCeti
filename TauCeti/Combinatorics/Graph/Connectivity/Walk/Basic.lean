@@ -259,6 +259,20 @@ theorem not_nil_cons {e : β} {h : G.IsLink e x y} {p : G.Walk y z} :
 theorem length_eq_zero_iff {p : G.Walk x y} : p.length = 0 ↔ p.Nil := by
   cases p <;> simp
 
+/-- An edge-labelled walk is determined by its starting vertex and its edge sequence. -/
+@[ext]
+theorem ext_edges {p q : G.Walk x y} (h : p.edges = q.edges) : p = q := by
+  induction p with
+  | nil =>
+    cases q <;> simp_all
+  | @cons x z y e he p ih =>
+    cases q with
+    | nil => simp at h
+    | @cons _ w _ f hf q =>
+      obtain ⟨rfl, htail⟩ := List.cons.inj h
+      obtain rfl := he.right_unique hf
+      exact congrArg (cons e he) (ih htail)
+
 @[simp]
 theorem edges_eq_nil {p : G.Walk x y} : p.edges = [] ↔ p.Nil := by
   cases p <;> simp
@@ -308,6 +322,15 @@ theorem mem_support_of_isLink_of_mem_edges (p : G.Walk x y) {a b : α} {e : β}
         · simp [ha]
         · simp [ha]
       · simp [ih he]
+
+/-- If a walk uses only edges of another walk and starts in its support, it ends there too. -/
+theorem end_mem_support_of_edges_subset {a b : α} (r : G.Walk a b) (q : G.Walk x y)
+    (h : r.edges ⊆ q.edges) (ha : a ∈ q.support) : b ∈ q.support := by
+  induction r with
+  | nil => exact ha
+  | cons e he r ih =>
+      exact ih (fun f hf ↦ h (by simp [hf]))
+        (q.mem_support_of_isLink_of_mem_edges he.symm (h (by simp)))
 
 /-- A walk with no repeated vertices also has no repeated edge identities. -/
 theorem edges_nodup_of_support_nodup (p : G.Walk x y) (hp : p.support.Nodup) :

@@ -243,8 +243,8 @@ theorem continuous_factorSetToGroupExtensionEquiv_symm [ContinuousMul E] [Contin
   have hleft : ∀ y : E, S.inl ((factorSetToGroupExtensionEquiv σ hσ hact).symm y).left =
       y * (σ (S.rightHom y))⁻¹ := fun y => by
     have hy : factorSetToGroupExtensionEquiv σ hσ hact
-        ((factorSetToGroupExtensionEquiv σ hσ hact).symm y) = y := by
-      simpa using (factorSetToGroupExtensionEquiv σ hσ hact).toMulEquiv.apply_symm_apply y
+        ((factorSetToGroupExtensionEquiv σ hσ hact).symm y) = y :=
+      (factorSetToGroupExtensionEquiv σ hσ hact).apply_symm_apply y
     rw [factorSetToGroupExtensionEquiv_apply, hright] at hy
     exact eq_mul_inv_of_mul_eq hy
   refine FactorSet.Extension.isInducing_leftRight.continuous_iff.2 ?_
