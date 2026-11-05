@@ -191,10 +191,7 @@ theorem isContMDiffRiemannianBundle_normalRiemannianMetric
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun _ => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
-  let g := f.normalContMDiffRiemannianMetric hn hm hdim
-  have hg : g.toRiemannianMetric = f.normalRiemannianMetric hn :=
-    f.toRiemannianMetric_normalContMDiffRiemannianMetric hn hm hdim
-  refine ⟨g.inner, g.contMDiff, fun x v w => ?_⟩
-  exact congrArg (fun a : RiemannianMetric ν => a.inner x v w) hg.symm
+  rw [← f.toRiemannianMetric_normalContMDiffRiemannianMetric hn hm hdim]
+  exact Bundle.instIsContMDiffRiemannianBundle (f.normalContMDiffRiemannianMetric hn hm hdim)
 
 end TauCeti.SmoothEmbedding
