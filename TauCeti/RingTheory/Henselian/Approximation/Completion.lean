@@ -148,6 +148,19 @@ def transition (t : R) (I : Ideal R) {m n : ℕ} (h : m ≤ n) :
 theorem transition_residueMap (t : R) (I : Ideal R) {m n : ℕ} (h : m ≤ n) (a : R) :
     transition t I h (residueMap t I n a) = residueMap t I m a := (rfl)
 
+/-- Reduction at the same level is the identity. -/
+@[simp]
+theorem transition_refl (t : R) (I : Ideal R) (n : ℕ) :
+    transition t I (le_refl n) = RingHom.id _ :=
+  Ideal.Quotient.factor_eq
+
+/-- Successive reductions agree with direct reduction. -/
+@[simp]
+theorem transition_transition (t : R) (I : Ideal R) {k m n : ℕ}
+    (h₁ : k ≤ m) (h₂ : m ≤ n) (x : Residue t I n) :
+    transition t I h₁ (transition t I h₂ x) = transition t I (h₁.trans h₂) x :=
+  Ideal.Quotient.factor_comp_apply _ _ x
+
 /-- Compatible residues form a subring of the product of the discrete residue rings. -/
 def completionSubring (t : R) (I : Ideal R) : Subring (∀ n, Residue t I n) where
   carrier := {x | ∀ (m n : ℕ) (h : m ≤ n), transition t I h (x n) = x m}
@@ -169,6 +182,10 @@ abbrev completion (t : R) (I : Ideal R) := ↥(completionSubring t I)
 /-- Evaluation at a residue coordinate of the completion. -/
 def eval (t : R) (I : Ideal R) (n : ℕ) : completion t I →+* Residue t I n :=
   (Pi.evalRingHom _ n).comp (completionSubring t I).subtype
+
+/-- Evaluation returns the corresponding coordinate of the compatible family. -/
+theorem eval_apply (t : R) (I : Ideal R) (n : ℕ) (x : completion t I) :
+    eval t I n x = (x : ∀ n, Residue t I n) n := (rfl)
 
 /-- Coordinates of a completed element are compatible with reduction. -/
 @[simp]
