@@ -15,6 +15,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
@@ -651,16 +652,10 @@ theorem IsMorse.sum_range_neg_one_pow_mul_criticalCount_neg (hf : IsMorse I f) :
     ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I (-f) i).toNat =
       (-1) ^ Module.finrank ℝ E * ∑ i ∈ Finset.range (Module.finrank ℝ E + 1),
         (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
-  rw [Finset.mul_sum, ← Finset.sum_range_reflect]
+  rw [← Finset.sum_range_reflect, ← sum_range_neg_one_pow_sub_mul]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have hi : i ≤ Module.finrank ℝ E := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  obtain ⟨j, hj⟩ := Nat.exists_eq_add_of_le hi
-  -- The reflected index `m - i` is `j`, and reflecting it back gives `i`.
-  have hrefl : Module.finrank ℝ E + 1 - 1 - i = j := by omega
-  have hback : Module.finrank ℝ E - j = i := by omega
-  rw [hrefl, hf.criticalCount_neg (by omega), hback, hj, pow_add]
-  have hii : ((-1 : ℤ) ^ i) * (-1) ^ i = 1 := by rw [← pow_add, Even.neg_one_pow ⟨i, rfl⟩]
-  linear_combination (-(-1 : ℤ) ^ j * ((criticalCount I f i).toNat : ℤ)) * hii
+  rw [Nat.add_sub_cancel, hf.criticalCount_neg (Nat.sub_le _ _),
+    Nat.sub_sub_self (Finset.mem_range_succ_iff.1 hi)]
 
 end FiniteDimensional
 
