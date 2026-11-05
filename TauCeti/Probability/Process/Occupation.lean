@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Probability.Process.SuccessorArray
 public import TauCeti.Probability.Process.PathLaw.Shift
-public import Mathlib.Analysis.SpecificLimits.Basic
-public import Mathlib.Analysis.Normed.Group.Real
-public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Dynamics.BirkhoffSum.NormedSpace
 
 /-!
 # Finite shifts of occupation frequencies
@@ -40,24 +38,21 @@ theorem tendsto_visitCount_shift_iterate_div_iff (x : ℕ → α) (y : α) (k : 
     have hd : Tendsto (fun n =>
         (visitCount (shift α z) y n : ℝ) / n - (visitCount z y n : ℝ) / n)
         atTop (𝓝 0) := by
-      refine squeeze_zero_norm (f := fun n =>
-        (visitCount (shift α z) y n : ℝ) / n - (visitCount z y n : ℝ) / n) (fun n => ?_)
-        (tendsto_const_nhds.div_atTop tendsto_natCast_atTop_atTop :
-          Tendsto (fun n : ℕ => (1 : ℝ) / n) atTop (𝓝 0))
-      have hc : visitCount (shift α z) y n + (if z 0 = y then 1 else 0) =
-          visitCount z y n + (if z n = y then 1 else 0) := by
-        simpa only [visitCount_def, shift_apply] using
-          occCount_succ_add_zero_eq_visitCount_add_last z y n
-      have he : (visitCount (shift α z) y n : ℝ) - visitCount z y n =
-          (if z n = y then 1 else 0) - (if z 0 = y then 1 else 0) := by
-        have hcR := congrArg (fun m : ℕ => (m : ℝ)) hc
-        push_cast at hcR
-        split_ifs at hcR ⊢ <;> linarith
-      rw [← sub_div, Real.norm_eq_abs, abs_div, he,
-        abs_of_nonneg (Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
-      have hb : |(if z n = y then (1 : ℝ) else 0) - (if z 0 = y then 1 else 0)| ≤ 1 := by
+      have hb : Bornology.IsBounded (Set.range (fun w : ℕ → α =>
+          if w 0 = y then (1 : ℝ) else 0)) := by
+        refine (Metric.isBounded_Icc (0 : ℝ) 1).subset ?_
+        rintro _ ⟨w, rfl⟩
+        dsimp only
         split_ifs <;> norm_num
-      exact div_le_div_of_nonneg_right hb (Nat.cast_nonneg n)
+      have havg (w : ℕ → α) (n : ℕ) :
+          birkhoffAverage ℝ (shift α) (fun v => if v 0 = y then (1 : ℝ) else 0) n w =
+            (visitCount w y n : ℝ) / n := by
+        rw [visitCount_eq_count, Nat.count_eq_card_filter_range, Finset.card_filter]
+        simp only [birkhoffAverage, birkhoffSum, shift_iterate_apply, zero_add,
+          Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero, smul_eq_mul,
+          div_eq_inv_mul]
+      simpa only [havg] using
+        tendsto_birkhoffAverage_apply_sub_birkhoffAverage' ℝ hb (shift α) z
     constructor
     · intro h
       simpa only [sub_zero, sub_sub_cancel] using h.sub hd
