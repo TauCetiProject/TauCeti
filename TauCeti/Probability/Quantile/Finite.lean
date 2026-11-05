@@ -71,22 +71,22 @@ theorem quantile_map_finite_eq_iff (μ : Measure I) [IsProbabilityMeasure μ] (l
         · intro hi
           exact Finset.le_max' labelsBelow (label i) (by simp [labelsBelow, hi])
       have hlevel : u ≤ cdf (μ.map label) y := by
-        rw [cdf_map _ label (measurable_of_finite label), hpreimage]
+        rw [cdf_map _ label (measurable_of_finite label).aemeasurable, hpreimage]
         exact hleft
       have hquantile_le : (μ.map label).quantile u ≤ y :=
         (quantile_le_iff _ hu.1 hu.2).2 hlevel
       exact (not_lt_of_ge hquantile_le) hylt
     · have hlevel := le_cdf_quantile (μ.map label) hu.2
-      rwa [cdf_map _ label (measurable_of_finite label)] at hlevel
+      rwa [cdf_map _ label (measurable_of_finite label).aemeasurable] at hlevel
   · rintro ⟨hleft, hright⟩
     apply le_antisymm
-    · rw [quantile_le_iff _ hu.1 hu.2, cdf_map _ label (measurable_of_finite label)]
+    · rw [quantile_le_iff _ hu.1 hu.2, cdf_map _ label (measurable_of_finite label).aemeasurable]
       exact hright
     · by_contra! hquantile_lt
       have hcdf := le_cdf_quantile (μ.map label) hu.2
       have hmono : cdf (μ.map label) ((μ.map label).quantile u) ≤
           μ.real (label ⁻¹' Iio x) := by
-        rw [cdf_map _ label (measurable_of_finite label)]
+        rw [cdf_map _ label (measurable_of_finite label).aemeasurable]
         exact measureReal_mono fun i hi ↦ hi.trans_lt hquantile_lt
       exact (not_lt_of_ge (hcdf.trans hmono)) hleft
 
