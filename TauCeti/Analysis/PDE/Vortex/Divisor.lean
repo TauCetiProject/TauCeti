@@ -20,7 +20,7 @@ has it (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`).
 
 Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, the
 section factors near every point as `(w - z) ^ n z * v w` with `v` of class `Cᵏ` at `z` and
-nonzero there (`TauCeti.Vortex.exists_contDiffAt_section_eq_pow_mul`). The topological argument
+nonzero there (`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_mul`). The topological argument
 principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end framing forces the
 multiplicities to add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
 with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
