@@ -32,8 +32,8 @@ so the norm from `V` to `U` of `z` is represented on the total resolution by the
 diagonal tensor.
 
 The main theorem `TauCeti.coeffMap_smoothTensorInducedDiagonalClass_transitivity` states that
-transporting the norm from `V` to `G` of `z` along the transitivity isomorphism
-`Ind⊗_{V}^{G} A ≅ Ind⊗_{U}^{G} Ind⊗_{V}^{U} A` (`TauCeti.smoothTensorInducedTransitivityIso`) gives
+transporting the norm from `V` to `G` of `z` along the inverse of the transitivity isomorphism
+`Ind⊗_{U}^{G} Ind⊗_{V}^{U} A ≅ Ind⊗_{V}^{G} A` (`TauCeti.smoothTensorInducedTransitivityIso`) gives
 the norm from `U` to `G` of `y`, in the degree `[G : U] ([U : V] n) = [G : V] n`. Regrouping the
 tensor factors, restricting each factor and applying the comparison in each factor is a morphism of
 degree zero from the tensor-induced resolution for `V` to the one for `U`. It commutes with the
@@ -293,14 +293,15 @@ private theorem transitivityHom_differential (A : SmoothDiscreteTopRep.{0, v, v}
       fun _ ↦ hρρ).symm _)).trans ?_
   exact (LinearMap.congr_fun (PiTensorProduct.slotSum_comp_map (fun _ ↦ κ) fun _ ↦ hκ) _).symm
 
+omit [CompactSpace (V.subgroupOf U)] in
 /-- **Transitivity of the norm of a cocycle.** Let `V ≤ U ≤ G` be compact open subgroups of finite
 index and `z` a `V`-invariant cocycle of degree `n` of the total resolution of `A`, in which every
 element is its own additive inverse. Let `y` be the cocycle of the total resolution of the
 intermediate coefficients `Ind⊗_V^U A` representing the norm from `V` to `U` of `z`
 (`TauCeti.gradedCohomologyClass_smoothTensorInducedGradedResolutionComparison`): the image under
 the comparison of the diagonal tensor of the restriction of `z` to `V.subgroupOf U`. Then the norm
-from `V` to `G` of `z`, transported along the transitivity isomorphism
-`Ind⊗_V^G A ≅ Ind⊗_U^G Ind⊗_V^U A`, is the norm from `U` to `G` of `y`, after transporting the
+from `V` to `G` of `z`, transported along the inverse of the transitivity isomorphism
+`Ind⊗_U^G Ind⊗_V^U A ≅ Ind⊗_V^G A`, is the norm from `U` to `G` of `y`, after transporting the
 degree `[G : U] ([U : V] n)` to `[G : V] n`. -/
 theorem coeffMap_smoothTensorInducedDiagonalClass_transitivity
     (A : SmoothDiscreteTopRep.{0, v, v} R V) (hA : ∀ a : A.obj.V, a + a = 0) {n : ℕ}
@@ -312,11 +313,13 @@ theorem coeffMap_smoothTensorInducedDiagonalClass_transitivity
       (Fintype.card (U ⧸ V.subgroupOf U) * n : ℕ))
     (hyinv : ∀ u, (smoothTensorInducedSubgroupOf hVU t hV A).obj.gradedResolutionTopRep.ρ u y = y)
     (hdy : (smoothTensorInducedSubgroupOf hVU t hV A).obj.gradedResolutionDifferential y = 0)
-    (hyz : y = (smoothTensorInducedGradedResolutionComparison (V.subgroupOf U)
-      (U.subgroupOf_isOpen V hV) t (smoothResSubgroupOf hVU A) hA).hom.hom
-        (PiTensorProduct.tprod R fun _ : U ⧸ V.subgroupOf U ↦
-          (smoothGradedResolutionResMap (Subgroup.subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)
-            (Subgroup.continuous_subgroupOfEquivOfLe hVU) A).hom.hom z)) :
+    (hyz : letI : CompactSpace (V.subgroupOf U) :=
+        (Subgroup.subgroupOfContinuousMulEquivOfLe hVU).symm.toHomeomorph.compactSpace
+      y = (smoothTensorInducedGradedResolutionComparison (V.subgroupOf U)
+        (U.subgroupOf_isOpen V hV) t (smoothResSubgroupOf hVU A) hA).hom.hom
+          (PiTensorProduct.tprod R fun _ : U ⧸ V.subgroupOf U ↦
+            (smoothGradedResolutionResMap (Subgroup.subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)
+              (Subgroup.continuous_subgroupOfEquivOfLe hVU) A).hom.hom z)) :
     letI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
     TauCeti.ContinuousCohomology.coeffMap
         (smoothTensorInducedTransitivityIso hVU s t hU hV A).inv.hom
@@ -330,6 +333,8 @@ theorem coeffMap_smoothTensorInducedDiagonalClass_transitivity
           (smoothTensorInducedSubgroupOf hVU t hV A)
           (smoothTensorInducedSubgroupOf_add_self hVU t hV A hA) y hy hyinv hdy) := by
   let _ : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
+  have : CompactSpace (V.subgroupOf U) :=
+    (Subgroup.subgroupOfContinuousMulEquivOfLe hVU).symm.toHomeomorph.compactSpace
   let _ : LinearOrder (G ⧸ V) := LinearOrder.lift' _ (Fintype.equivFin (G ⧸ V)).injective
   let _ : LinearOrder (G ⧸ U) := LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U)).injective
   have : LocallyCompactSpace G :=
