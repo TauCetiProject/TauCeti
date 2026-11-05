@@ -37,7 +37,8 @@ The model is assumed boundaryless throughout, so that chart images of open sets 
 ## Main results
 
 * `ModelWithCorners.analyticOnNhd_extendCoordChange`,
-  `ModelWithCorners.analyticAt_extendCoordChange` and `TauCeti.analyticOnNhd_ext_coord_change`:
+  `ModelWithCorners.analyticAt_extendCoordChange`, `TauCeti.analyticOnNhd_ext_coord_change`, and
+  `OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans`:
   changes of coordinates in a `C^ω` atlas are analytic.
 * `ContMDiffAt.analyticAt_extend_comp_extend_symm`, `ContMDiffAt.analyticAt_writtenInExtChartAt`,
   `TauCeti.contMDiffAt_omega_iff_of_mem_maximalAtlas` and `TauCeti.contMDiffAt_omega_iff`: `C^ω`
@@ -98,6 +99,21 @@ theorem TauCeti.analyticOnNhd_ext_coord_change [IsManifold I ω M] (x x' : M) :
     AnalyticOnNhd 𝕜 (extChartAt I x ∘ (extChartAt I x').symm)
       ((extChartAt I x').symm ≫ extChartAt I x).source :=
   I.analyticOnNhd_extendCoordChange (chart_mem_maximalAtlas x') (chart_mem_maximalAtlas x)
+
+/-- For a boundaryless model, the transition map between two maximal `C^ω`-atlas charts
+`c₁, c₂`, read in `E` and moved to `F` by homeomorphisms `Ψ₁, Ψ₂` with `Ψ₁.symm` and `Ψ₂` of class
+`C^ω`, is analytic on its open source. -/
+theorem OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans
+    {c₁ c₂ : OpenPartialHomeomorph M H} (hc₁ : c₁ ∈ maximalAtlas I ω M)
+    (hc₂ : c₂ ∈ maximalAtlas I ω M) {Ψ₁ Ψ₂ : E ≃ₜ F}
+    (hΨ₁ : ContDiff 𝕜 ω Ψ₁.symm) (hΨ₂ : ContDiff 𝕜 ω Ψ₂) :
+    AnalyticOnNhd 𝕜 ((c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂))
+      ((c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂)).source := by
+  set T := (c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂)
+  exact T.open_source.analyticOn_iff_analyticOnNhd.1 <|
+    (contDiffOn_omega_iff_analyticOn T.open_source.uniqueDiffOn).1 <|
+      (OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂).congr
+        fun _ _ ↦ rfl
 
 /-! ### `C^ω` maps in charts -/
 

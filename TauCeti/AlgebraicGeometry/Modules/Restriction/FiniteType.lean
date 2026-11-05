@@ -8,12 +8,15 @@ module
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteType
+public import TauCeti.AlgebraicGeometry.Modules.FiniteType
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 /-!
 # Restriction criteria for modules of finite type on schemes
 
-The inverse of the equivalence between modules on an open subscheme and modules on its slice
-site preserves finite type. Consequently, finite type can be checked on restrictions to any open
+The restriction of a module of finite type along an open immersion is of finite type, and the
+inverse of the equivalence between modules on an open subscheme and modules on its slice site
+preserves finite type. Consequently, finite type can be checked on restrictions to any open
 cover, or to all affine opens. This is the finite-type analogue of
 `TauCeti.AlgebraicGeometry.isQuasicoherent_of_isQuasicoherent_restrict`.
 -/
@@ -25,6 +28,13 @@ open CategoryTheory AlgebraicGeometry
 universe u
 
 namespace TauCeti.AlgebraicGeometry
+
+/-- The restriction of a module of finite type along an open immersion is of finite type: it is
+isomorphic to the pullback, which is of finite type. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict {X U : Scheme.{u}}
+    (j : U ⟶ X) [IsOpenImmersion j] (M : X.Modules) [M.IsFiniteType] :
+    (M.restrict j).IsFiniteType :=
+  Scheme.Modules.isFiniteType_of_epi ((Scheme.Modules.restrictFunctorIsoPullback j).inv.app M)
 
 /-- The inverse open-subscheme equivalence sends modules of finite type to modules of finite
 type on the slice site. -/
