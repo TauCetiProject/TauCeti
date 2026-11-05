@@ -106,8 +106,7 @@ theorem character_resFDRep_indFDRep_sign_stabilizer_perm_fin_three (x : H) :
           ((doubleCosetMk_stabilizer_eq_one_iff a).mpr h))
       exact (DoubleCoset.out_eq' D).symm.trans
         (Quotient.sound' (doubleCoset_rel_stabilizer_of_ne_of_ne a hmem hswap))
-  have h₀ : D₀.out ∈ H :=
-    (doubleCosetMk_eq_mk_one_iff_mem H _).mp (DoubleCoset.out_eq' D₀)
+  have h₀ : D₀.out ∈ H := (H).doubleCoset_out_mk_one_mem
   have h₁ : D₁.out ∉ H := fun h => hne
     ((DoubleCoset.out_eq' D₁).symm.trans
       ((doubleCosetMk_eq_mk_one_iff_mem H _).mpr h)).symm

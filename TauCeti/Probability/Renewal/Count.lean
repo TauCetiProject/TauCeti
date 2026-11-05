@@ -102,6 +102,21 @@ lemma renewalCountNat_eq_iff {ω : Ω}
   rw [← Nat.cast_inj (R := ℝ≥0∞), natCast_renewalCountNat hω]
   exact renewalCount_eq_natCast_iff
 
+/-- Deterministic positive increments give the usual floor count, including an arrival
+exactly at time `t` and excluding the artificial arrival at zero. -/
+@[simp]
+theorem renewalCountNat_const {a : ℝ≥0} (ha : 0 < a) (t : ℝ≥0) (ω : Ω) :
+    renewalCountNat (fun (_ : ℕ) (_ : Ω) ↦ a) t ω = ⌊t / a⌋₊ := by
+  have harr (n : ℕ) : arrival (fun (_ : ℕ) (_ : Ω) ↦ a) n ω = (n : ℝ≥0) * a := by
+    simp [arrival_def]
+  have hlim : Tendsto (fun n ↦ arrival (fun (_ : ℕ) (_ : Ω) ↦ a) n ω) atTop atTop := by
+    simpa only [harr] using Tendsto.atTop_mul_const ha
+      (tendsto_natCast_atTop_atTop (R := ℝ≥0))
+  apply (renewalCountNat_eq_iff hlim).2
+  simp only [harr]
+  exact ⟨(le_div_iff₀ ha).mp (Nat.floor_le (by positivity)),
+    (div_lt_iff₀ ha).mp (by exact_mod_cast Nat.lt_floor_add_one (t / a))⟩
+
 /-- The arrival indexed by the count has already occurred. -/
 lemma arrival_renewalCountNat_le {ω : Ω}
     (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop) (t : ℝ≥0) :

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Categorical
+public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Moments.Covariance
 import Mathlib.Probability.Distributions.Gaussian.Fernique
