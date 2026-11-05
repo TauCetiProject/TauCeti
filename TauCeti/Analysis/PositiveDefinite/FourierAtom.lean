@@ -26,8 +26,7 @@ It uses Mathlib's `2π` Fourier convention.
 * `TauCeti.posSemidef_fourierAtom`: the subtraction kernel attached to a
   Fourier atom is positive definite.
 * `TauCeti.continuous_fourierAtom`: Fourier atoms are continuous in the spatial variable.
-* `TauCeti.contDiff_fourierChar_neg_inner`, `TauCeti.contDiff_fourierAtom`: Fourier atoms are
-  smooth in the spatial variable.
+* `TauCeti.contDiff_fourierChar_neg_inner`: Fourier atoms are smooth in the spatial variable.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -135,10 +134,6 @@ theorem contDiff_fourierChar_neg_inner (q : W) :
     ((Complex.ofRealCLM.contDiff.comp
       (contDiff_const.mul (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).neg)).mul
         contDiff_const)
-
-/-- Fourier atoms are smooth in the spatial variable. -/
-theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) := by
-  simpa only [← funext (fourierAtom_eq_fourierChar q)] using contDiff_fourierChar_neg_inner q
 
 end ContDiff
 
