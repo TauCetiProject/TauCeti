@@ -52,13 +52,7 @@ theorem curryLeft_curryLeft_eq_neg {N : Type*} [AddCommGroup N] [Module R N]
   ext r
   simp only [curryLeft_apply_apply, neg_apply]
   rw [← f.map_swap (Matrix.vecCons y (Matrix.vecCons x r)) (zero_ne_one' (Fin (n + 2)))]
-  congr 1
-  ext i
-  refine Fin.cases ?_ (fun j ↦ Fin.cases ?_ (fun k ↦ ?_) j) i
-  · simp
-  · simp
-  · rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) (succ_succ_ne_one k)]
-    simp
+  rw [Matrix.cons_cons_comp_swap_zero_one]
 
 /-- A linear family `g` of alternating maps in `n + 1` arguments, each vanishing when its first
 argument equals the parameter, assembles into an alternating map in `n + 2` arguments whose first

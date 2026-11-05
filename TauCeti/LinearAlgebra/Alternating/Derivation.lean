@@ -19,9 +19,10 @@ opposite order (`LinearMap.alternatingDerivation_alternatingDerivation_sub`), th
 linear maps of coefficients, and inserting a first argument `x` splits off the term in which `f`
 hits `x` (`LinearMap.curryLeft_alternatingDerivation`).
 
-For a Lie algebra acting on `M` and on `N`, these derivations give the action of the Lie algebra
-on the arguments of alternating maps from `M` to `N`; for `M = L` this is the Lie derivative of
-Chevalley–Eilenberg cochains.
+For a Lie algebra acting on `M` and on `N`, these derivations supply the contribution of the
+arguments to the action of the Lie algebra on alternating maps from `M` to `N`: the action of `x`
+is the action on values minus `alternatingDerivation` of the action of `x` on `M`. For `M = L`
+with the adjoint action this is the Lie derivative of Chevalley–Eilenberg cochains.
 
 ## Implementation notes
 
