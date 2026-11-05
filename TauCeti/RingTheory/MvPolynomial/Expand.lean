@@ -255,6 +255,7 @@ theorem basisExpand_apply (β : σ →₀ Fin n) :
 /-- The coordinate at `β` of a polynomial `f` in `basisExpand` has, at `d`, the coefficient of `f`
 at `n • d + β`. The `letI` names the module structure along `expand n`; instance search would
 otherwise pick multiplication, under which `basisExpand` does not typecheck. -/
+@[simp]
 theorem _root_.MvPolynomial.coeff_basisExpand_repr (f : MvPolynomial σ R) (β : σ →₀ Fin n)
     (d : σ →₀ ℕ) :
     letI : Module (MvPolynomial σ R) (MvPolynomial σ R) :=
