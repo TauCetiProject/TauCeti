@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
-public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
@@ -34,10 +31,7 @@ result is the canonical linear graph shear.
 For a function of a scalar first variable, the partial derivatives along the coordinate lines
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
 one order higher for the first derivative, and a function whose partial derivative in the first
-variable vanishes everywhere is constant along every horizontal line. Near a point where such a
-function is `C^(n+1)`, its partial derivative in the first variable along a vertical line is `C^n`,
-and, by the symmetry of second derivatives, the derivative of that partial derivative in the
-second variable is the mixed second derivative in the directions `(1, 0)` and `(0, 1)`.
+variable vanishes everywhere is constant along every horizontal line.
 
 ## Main declarations
 
@@ -56,11 +50,8 @@ second variable is the mixed second derivative in the directions `(1, 0)` and `(
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
-* `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of a
-  function of a scalar variable are its derivative applied to `(1, 0)` and `(0, 1)`.
-* `TauCeti.contDiffAt_deriv_slice_left`: the partial derivative in the first variable of a
-  `C^(n+1)` function is `C^n`.
-* `TauCeti.deriv_deriv_slice_left`: **symmetry of the mixed partial derivatives**.
+* `TauCeti.hasDerivAt_slice_right`: the partial derivative of a function in a scalar second
+  variable is its derivative applied to `(0, 1)`.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
@@ -69,8 +60,6 @@ second variable is the mixed second derivative in the directions `(1, 0)` and `(
 -/
 
 public section
-
-open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -211,31 +200,6 @@ theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
     HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
   (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
 
-/-- Where `u` is differentiable, its partial derivative in the first variable is its derivative
-applied to `(1, 0)`. -/
-theorem hasDerivAt_slice_left {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 u (s, b)) :
-    HasDerivAt (fun s ↦ u (s, b)) (fderiv 𝕜 u (s, b) (1, 0)) s :=
-  hu.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
-
-/-- Near a point where `u` is `C¹`, the partial derivative of `u` in the first variable along the
-vertical line through `a` is `y ↦ fderiv 𝕜 u (a, y) (1, 0)`. -/
-theorem deriv_slice_left_eventuallyEq {a : 𝕜} {b : F} (hu : ContDiffAt 𝕜 1 u (a, b)) :
-    (fun y ↦ deriv (fun s ↦ u (s, y)) a) =ᶠ[𝓝 b] fun y ↦ fderiv 𝕜 u (a, y) (1, 0) := by
-  have h : ∀ᶠ y in 𝓝 b, ContDiffAt 𝕜 1 u (a, y) :=
-    (Continuous.prodMk_right a).continuousAt.eventually (hu.eventually (by simp))
-  filter_upwards [h] with y hy
-  exact (hasDerivAt_slice_left (hy.differentiableAt one_ne_zero)).deriv
-
-/-- If `u` is `C^(n+1)` at `(a, b)`, then its partial derivative in the first variable along the
-vertical line through `a` is `C^n` at `b`. -/
-theorem contDiffAt_deriv_slice_left {n : ℕ∞ω} {a : 𝕜} {b : F}
-    (hu : ContDiffAt 𝕜 (n + 1) u (a, b)) :
-    ContDiffAt 𝕜 n (fun y ↦ deriv (fun s ↦ u (s, y)) a) b := by
-  refine ContDiffAt.congr_of_eventuallyEq ?_
-    (deriv_slice_left_eventuallyEq (hu.of_le le_add_self))
-  exact ((hu.fderiv_right le_rfl).comp b (contDiff_prodMk_right a).contDiffAt).clm_apply
-    contDiffAt_const
-
 /-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(1, 0)`. -/
 theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (s, b))
@@ -262,21 +226,6 @@ theorem hasDerivAt_fderiv_apply_snd {u : E × 𝕜 → G} {a : E} {t : 𝕜}
   simpa [Function.comp_def] using
     (hu.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt t
       (hasDerivAt_prodMk_right a t)
-
-/-- **Symmetry of the mixed partial derivatives.** Near a point where `u` is `C²` (`C^ω` over a
-field other than `ℝ` or `ℂ`), the derivative in the second variable of the partial derivative of
-`u` in the first variable is the second derivative of `u` in the directions `(1, 0)` and
-`(0, 1)`. -/
-theorem deriv_deriv_slice_left {n : ℕ∞ω} {u : 𝕜 × 𝕜 → G} {a t : 𝕜}
-    (hu : ContDiffAt 𝕜 n u (a, t)) (hn : minSmoothness 𝕜 2 ≤ n) :
-    deriv (fun r ↦ deriv (fun s ↦ u (s, r)) a) t =
-      fderiv 𝕜 (fderiv 𝕜 u) (a, t) (1, 0) (0, 1) := by
-  have h2 : ContDiffAt 𝕜 2 u (a, t) := hu.of_le (le_minSmoothness.trans hn)
-  have hD : DifferentiableAt 𝕜 (fderiv 𝕜 u) (a, t) :=
-    (h2.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
-  have h := hasDerivAt_fderiv_apply_snd hD ((1 : 𝕜), (0 : 𝕜))
-  rw [(h.congr_of_eventuallyEq (deriv_slice_left_eventuallyEq (h2.of_le one_le_two))).deriv,
-    hu.isSymmSndFDerivAt hn]
 
 /-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
 everywhere is constant along every horizontal line. -/

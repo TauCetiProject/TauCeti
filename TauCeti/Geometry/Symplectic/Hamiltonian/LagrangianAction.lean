@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -213,13 +214,15 @@ theorem hasDerivAt_lagrangianAction
   have hD : DifferentiableAt ℝ (fderiv ℝ (uncurry Q)) (0, t) :=
     (hQt.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
   have hpath : HasDerivAt (fun s : ℝ ↦ (s, t)) ((1 : ℝ), (0 : ℝ)) 0 := hasDerivAt_prodMk_left 0 t
+  have hη : HasDerivAt (fun s ↦ Q s t) (fderiv ℝ (uncurry Q) (0, t) (1, 0)) 0 := by
+    simpa only [timeFDeriv_apply, uncurry_apply_pair] using
+      hasDerivAt_parameterCurve (hQt.differentiableAt two_ne_zero)
   have hcurve : HasDerivAt (fun s ↦ ι (s, t))
       ((0 : ℝ), (fderiv ℝ (uncurry Q) (0, t) (1, 0),
         fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1))) 0 := by
     have hΦ := hasDerivAt_fderiv_apply_fst hD ((0 : ℝ), (1 : ℝ))
     rw [hι]
-    exact HasDerivAt.prodMk (hasDerivAt_const 0 t) (HasDerivAt.prodMk
-      (hasDerivAt_slice_left (hQt.differentiableAt two_ne_zero)) hΦ)
+    exact HasDerivAt.prodMk (hasDerivAt_const 0 t) (HasDerivAt.prodMk hη hΦ)
   have hLd : DifferentiableAt ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t)) :=
     (hL t ht).differentiableAt one_ne_zero
   have hGs : HasDerivAt (fun s ↦ (uncurry L ∘ ι) (s, t))
@@ -233,8 +236,6 @@ theorem hasDerivAt_lagrangianAction
   have hslice : fderiv ℝ (L t) (Q 0 t, deriv (Q 0) t) =
       (fderiv ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t))).comp (inr ℝ ℝ (E × E)) :=
     fderiv_slice_right hLd
-  have hη : HasDerivAt (fun s ↦ Q s t) (fderiv ℝ (uncurry Q) (0, t) (1, 0)) 0 :=
-    hasDerivAt_slice_left (hQt.differentiableAt two_ne_zero)
   have hη' : deriv (fun r ↦ deriv (fun s ↦ Q s r) 0) t =
       fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1) :=
     deriv_deriv_slice_left hQt (by simp)
