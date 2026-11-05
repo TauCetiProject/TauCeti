@@ -50,10 +50,15 @@ comparison between different presentations is made here.
   node, with `TauCeti.DynkinType.root_geckWeylRootIndex` identifying the root.
 * `TauCeti.DynkinType.geckWeightTorusPoints_conj_geckWeylRootSubgroupPoints`: the weight torus
   rescales the parameter of `x_{l,i}` through the root at `geckWeylRootIndex l i`.
-* `TauCeti.DynkinType.geckWeylRootSubgroupPoints_nil` and
-  `TauCeti.DynkinType.geckWeylRootSubgroupPoints_singleton_self`: the empty word gives the raising
-  subgroup at node `i`, and the word `[i]` gives the lowering subgroup at node `i` with negated
-  parameter, at the root `-α_i` by `TauCeti.DynkinType.root_geckWeylRootIndex_singleton_self`.
+* `TauCeti.DynkinType.geckWeylRootSubgroupPoints_nil`,
+  `TauCeti.DynkinType.geckWeylRootSubgroupPoints_singleton_self`, and
+  `TauCeti.DynkinType.geckWeylRootSubgroupPoints_append_singleton_self`: the empty word gives the
+  raising subgroup at node `i`, the word `[i]` gives the lowering subgroup at node `i` with negated
+  parameter (at the root `-α_i` by `TauCeti.DynkinType.root_geckWeylRootIndex_singleton_self`), and
+  `l ++ [i]` conjugates that lowering subgroup to the opposite root
+  (`TauCeti.DynkinType.root_geckWeylRootIndex_append_singleton_self`).
+* `TauCeti.DynkinType.geckWeylWordTorusAction_mulSingle`: a Weyl word `l` maps `Pi.mulSingle i u`
+  to the coroot torus point at `geckWeylRootIndex l i`.
 * `TauCeti.DynkinType.geckWeylRootSubgroupPoints_injective` and
   `TauCeti.DynkinType.map_geckWeylRootSubgroupPoints`: each `x_{l,i}` is injective and natural in
   the value ring.
@@ -105,6 +110,16 @@ theorem torusCharacter_geckWeylTorusAction_inv_root_simpleIndex (l : List (Fin t
       torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
   rw [torusCharacter_geckWeylTorusAction, inv_inv, root_geckWeylRootIndex]
 
+/-- **Weyl-word transport of a simple-coroot torus point.** Acting on `Pi.mulSingle i u` by a Weyl
+word `l` yields the cocharacter torus point of the coroot at `geckWeylRootIndex l i`; in
+particular, it depends on `(l, i)` only through the attached root index. -/
+theorem geckWeylWordTorusAction_mulSingle (l : List (Fin t.rank)) (i : Fin t.rank)
+    (A : Type v) [CommRing A] (u : Aˣ) :
+    t.geckWeylWordTorusAction ht l A (Pi.mulSingle i u) =
+      fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot (t.geckWeylRootIndex ht l i) k) := by
+  rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, geckWeylRootIndex]
+  exact t.geckWeylTorusAction_mulSingle ht (t.geckWeylWordProd ht l) i A u
+
 /-- The empty word attaches the simple root itself. -/
 @[simp]
 theorem geckWeylRootIndex_nil (i : Fin t.rank) :
@@ -127,6 +142,14 @@ theorem root_geckWeylRootIndex_singleton_self (i : Fin t.rank) :
   rw [root_geckWeylRootIndex, geckWeylWordProd_cons, geckWeylWordProd_nil, mul_one,
     RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
     RootPairing.reflection_apply_self]
+
+/-- Appending `[i]` to a Weyl word `l` negates the root attached at node `i`. -/
+@[simp]
+theorem root_geckWeylRootIndex_append_singleton_self (l : List (Fin t.rank)) (i : Fin t.rank) :
+    (t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht (l ++ [i]) i) =
+      -(t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i) := by
+  rw [root_geckWeylRootIndex, geckWeylWordProd_append, mul_smul, ← root_geckWeylRootIndex,
+    root_geckWeylRootIndex_singleton_self, smul_neg, ← root_geckWeylRootIndex]
 
 /-- **Every root is attached to some word and node**: each root index of the pinned simply
 connected root datum is `w α_i` for a Weyl word spelling `w` and a Bourbaki node `i`. -/
@@ -220,6 +243,26 @@ theorem geckWeylRootSubgroupPoints_singleton_self (i : Fin t.rank) (A : Type v) 
       t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-u)) := by
   rw [geckWeylRootSubgroupPoints_cons, geckWeylRootSubgroupPoints_nil,
     geckSimpleWeylPoint_conj_geckRootSubgroupPoints]
+
+/-- Appending `[i]` to a Weyl word `l` conjugates the lowering root subgroup at node `i` with
+negated parameter. -/
+theorem geckWeylRootSubgroupPoints_append_singleton_self (l : List (Fin t.rank))
+    (i : Fin t.rank) (A : Type v) [CommRing A] (b : A) :
+    t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd b) =
+      t.geckWeylWordPoint ht l A *
+        t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-b)) *
+        (t.geckWeylWordPoint ht l A)⁻¹ := by
+  calc
+    t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd b)
+      = t.geckWeylWordPoint ht l A *
+          t.geckWeylRootSubgroupPoints ht [i] i A (Multiplicative.ofAdd b) *
+          (t.geckWeylWordPoint ht l A)⁻¹ := by
+        simp only [geckWeylRootSubgroupPoints_apply, geckWeylWordPoint_append]
+        group
+    _ = t.geckWeylWordPoint ht l A *
+          t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-b)) *
+          (t.geckWeylWordPoint ht l A)⁻¹ := by
+        rw [geckWeylRootSubgroupPoints_singleton_self]
 
 /-- Each root subgroup attached to a word is injective on parameters. -/
 theorem geckWeylRootSubgroupPoints_injective (l : List (Fin t.rank)) (i : Fin t.rank)

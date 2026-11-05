@@ -47,7 +47,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.realPointsEquiv`: that map as a `ℂ`-linear isomorphism, for involutive `K`.
 * `TauCeti.tmulConj`: the conjugation `c ⊗ₜ w ↦ conj c ⊗ₜ w` of a complexification `ℂ ⊗[ℝ] W`.
 * `TauCeti.realPart` and `TauCeti.imaginaryPart`: the two real coordinates of a vector of a
-  complexification; `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it, and
+  complexification, bundled as `TauCeti.complexificationLinearEquivProd`;
+  `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it, and
   `TauCeti.complexification_ext` says the two coordinates determine the vector.
 
 ## Main statements
@@ -478,6 +479,38 @@ theorem imaginaryPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
   obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
   simp [TensorProduct.smul_tmul', add_comm]
 
+/-- Real-linear isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℝ] W × W` given by `(realPart, imaginaryPart)`. -/
+noncomputable def complexificationLinearEquivProd : ℂ ⊗[ℝ] W ≃ₗ[ℝ] W × W where
+  toFun u := (realPart W u, imaginaryPart W u)
+  map_add' u v := by ext <;> simp
+  map_smul' r u := by ext <;> simp
+  invFun p := 1 ⊗ₜ[ℝ] p.1 + Complex.I ⊗ₜ[ℝ] p.2
+  left_inv := one_tmul_realPart_add_I_tmul_imaginaryPart W
+  right_inv p := by ext <;> simp
+
+variable {W}
+
+@[simp] theorem complexificationLinearEquivProd_apply (u : ℂ ⊗[ℝ] W) :
+    complexificationLinearEquivProd W u = (realPart W u, imaginaryPart W u) := (rfl)
+
+@[simp] theorem complexificationLinearEquivProd_symm_apply (p : W × W) :
+    (complexificationLinearEquivProd W).symm p = 1 ⊗ₜ[ℝ] p.1 + Complex.I ⊗ₜ[ℝ] p.2 := (rfl)
+
+/-- Complex conjugation preserves the real part of `u : ℂ ⊗[ℝ] W`. -/
+@[simp] theorem realPart_tmulConj (u : ℂ ⊗[ℝ] W) : realPart W (tmulConj W u) = realPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u; simp [TensorProduct.neg_tmul]
+
+/-- Complex conjugation negates the imaginary part of `u : ℂ ⊗[ℝ] W`. -/
+@[simp] theorem imaginaryPart_tmulConj (u : ℂ ⊗[ℝ] W) :
+    imaginaryPart W (tmulConj W u) = -imaginaryPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u; simp [TensorProduct.neg_tmul]
+
+/-- Coordinate decomposition of `tmulConj W u` into `1 ⊗ₜ realPart W u - I ⊗ₜ imaginaryPart W u`. -/
+theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
+    tmulConj W u = 1 ⊗ₜ[ℝ] realPart W u - Complex.I ⊗ₜ[ℝ] imaginaryPart W u := by
+  simpa [sub_eq_add_neg, TensorProduct.tmul_neg] using
+    (one_tmul_realPart_add_I_tmul_imaginaryPart W (tmulConj W u)).symm
+
 end Complexification
 
 /-- **The conjugation of a complexification commutes with every base-changed map**, because
@@ -488,5 +521,17 @@ theorem tmulConj_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddC
   induction u with
   | tmul c w => simp
   | add u₁ u₂ h₁ h₂ => rw [map_add, map_add, map_add, map_add, h₁, h₂]
+
+/-- Base change commutes with `realPart`. -/
+@[simp] theorem realPart_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W']
+    [Module ℝ W'] (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) :
+    realPart W' (f.baseChange ℂ u) = f (realPart W u) := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u; simp
+
+/-- Base change commutes with `imaginaryPart`. -/
+@[simp] theorem imaginaryPart_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W]
+    [AddCommGroup W'] [Module ℝ W'] (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) :
+    imaginaryPart W' (f.baseChange ℂ u) = f (imaginaryPart W u) := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u; simp
 
 end TauCeti

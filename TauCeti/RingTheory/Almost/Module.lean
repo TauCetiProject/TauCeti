@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Images
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
 public import Mathlib.CategoryTheory.Localization.Linear
 public import TauCeti.RingTheory.Almost.Firm
@@ -39,6 +40,8 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.lift`: the factorisation through `toAlmost S` of an exact functor killing
   almost zero modules.
 * `TauCeti.Almost.Module.classicalEquiv`: for the classical setup, `ModuleCat V ≌ Module S`.
+* `TauCeti.Almost.Module.firmEquiv`: the equivalence `Module S ≌ S.Firm`, with comparison
+  `TauCeti.Almost.Module.toAlmostCompFirmIso` on almostifications.
 
 ## Main results
 
@@ -47,7 +50,8 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.instAbelian`: the category of almost modules is abelian.
 * `TauCeti.Almost.Module.isZero_toAlmost_obj_iff`: `M^a` is zero iff `M` is almost zero.
 * `TauCeti.Almost.Module.isIso_toAlmost_map_iff`: `f^a` is an isomorphism iff `f` is an almost
-  isomorphism.
+  isomorphism; `mono_toAlmost_map_iff` and `epi_toAlmost_map_iff` treat monomorphisms and
+  epimorphisms, and `toAlmost_map_eq_zero_iff` zero morphisms.
 * `TauCeti.Almost.Module.isZero_of_ideal_eq_bot`: for the zero setup `(V, 0)` every almost module is
   zero.
 
@@ -62,7 +66,7 @@ public section
 
 universe u
 
-open CategoryTheory Limits
+open CategoryTheory Limits TensorProduct
 
 namespace TauCeti.Almost
 
@@ -132,10 +136,40 @@ theorem isIso_toAlmost_map_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
   rw [ObjectProperty.SerreClassLocalization.isIso_map_iff (toAlmost S) S.almostZero,
     S.isAlmostIso_iff_isoModSerre]
 
+/-- `f^a` is a monomorphism iff the kernel of `f` is almost zero. -/
+@[simp]
+theorem mono_toAlmost_map_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
+    Mono ((toAlmost S).map f) ↔ S.IsAlmostZero (LinearMap.ker f.hom) := by
+  rw [ObjectProperty.SerreClassLocalization.mono_map_iff (toAlmost S) S.almostZero,
+    ObjectProperty.monoModSerre_iff, S.almostZero.prop_iff_of_iso (ModuleCat.kernelIsoKer f),
+    S.almostZero_iff]
+
+/-- `f^a` is an epimorphism iff the cokernel of `f` is almost zero. -/
+@[simp]
+theorem epi_toAlmost_map_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
+    Epi ((toAlmost S).map f) ↔ S.IsAlmostZero (N ⧸ LinearMap.range f.hom) := by
+  rw [ObjectProperty.SerreClassLocalization.epi_map_iff (toAlmost S) S.almostZero,
+    ObjectProperty.epiModSerre_iff,
+    S.almostZero.prop_iff_of_iso (ModuleCat.cokernelIsoRangeQuotient f), S.almostZero_iff]
+
+/-- `f^a` is zero iff the range of `f` is almost zero. -/
+@[simp]
+theorem toAlmost_map_eq_zero_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
+    (toAlmost S).map f = 0 ↔ S.IsAlmostZero (LinearMap.range f.hom) := by
+  rw [ObjectProperty.SerreClassLocalization.map_eq_zero_iff (toAlmost S) S.almostZero,
+    S.almostZero.prop_iff_of_iso (Abelian.imageIsoImage f ≪≫ ModuleCat.imageIsoRange f),
+    S.almostZero_iff]
+
 /-- The inclusion `m ⊆ V` becomes an isomorphism of almost modules. -/
 instance isIso_toAlmost_map_subtype :
     IsIso ((toAlmost S).map (ModuleCat.ofHom S.ideal.subtype)) :=
   (isIso_toAlmost_map_iff S _).mpr S.isAlmostIso_subtype
+
+/-- The action map is inverted by almostification. -/
+instance isIso_toAlmost_map_tildeAct (M : ModuleCat.{u} V) :
+    IsIso ((toAlmost S).map (ModuleCat.ofHom (S.tildeAct M) :
+      ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M)) :=
+  (isIso_toAlmost_map_iff S _).mpr (S.isAlmostIso_tildeAct M)
 
 /-- For the zero setup `(V, 0)`, every almost module is zero. -/
 theorem isZero_of_ideal_eq_bot (hS : S.ideal = ⊥) (X : Module S) : IsZero X := by
@@ -185,6 +219,27 @@ noncomputable def liftUniq (G : Module S ⥤ D) (e : toAlmost S ⋙ G ≅ F) : G
   Localization.liftNatIso (toAlmost S) S.almostZero.isoModSerre F F G _ (Iso.refl F)
 
 end lift
+
+/-! ### The firm-module model -/
+
+/-- The equivalence between the Serre quotient of modules and the firm-module model. -/
+noncomputable def firmEquiv : Module S ≌ S.Firm :=
+  Localization.uniq (toAlmost S) S.firm S.almostZero.isoModSerre
+
+/-- The firm representative of an almostification is its firmification. -/
+noncomputable def toAlmostCompFirmIso : toAlmost S ⋙ (firmEquiv S).functor ≅ S.firm :=
+  Localization.compUniqFunctor (toAlmost S) S.firm S.almostZero.isoModSerre
+
+noncomputable instance :
+    Localization.Lifting (toAlmost S) S.almostZero.isoModSerre S.firm (firmEquiv S).functor :=
+  ⟨toAlmostCompFirmIso S⟩
+
+instance : (firmEquiv S).functor.Linear V :=
+  (Localization.functor_linear_iff (toAlmost S) S.almostZero.isoModSerre V S.firm
+    (firmEquiv S).functor).mp inferInstance
+
+instance : (firmEquiv S).functor.Additive :=
+  Functor.additive_of_preserves_binary_products _
 
 /-! ### The classical setup -/
 

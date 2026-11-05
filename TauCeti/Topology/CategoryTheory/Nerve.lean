@@ -38,6 +38,8 @@ maps `TauCeti.topologicalNerveMap Φ` of topological nerves and `TauCeti.fatClas
 of fat classifying spaces, by applying `Φ` to strings of composable arrows. A family of functors
 `Φ s`, `s ∈ [0, 1]`, depending continuously on `s` and the total arrow induces a homotopy
 `TauCeti.fatClassifyingSpaceHomotopy` from the map induced by `Φ 0` to that induced by `Φ 1`.
+If `Φ` is an embedding on total arrows, it induces levelwise embeddings
+(`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`).
 
 ## References
 
@@ -101,6 +103,18 @@ theorem continuous_uncurry_mapComposableArrows_obj {T : Type*} [TopologicalSpace
   continuous_iff.2 fun i j hij ↦ by
     simpa only [totalArrow_mapComposableArrows_obj, Function.comp_def] using
       hΦ.comp (continuous_fst.prodMk ((continuous_totalArrow i j hij).comp continuous_snd))
+
+/-- A functor that is an embedding on total arrows is an embedding on strings of composable
+arrows. -/
+theorem isEmbedding_mapComposableArrows_obj {Φ : C ⥤ D} (hΦ : IsEmbedding Φ.toPrefunctor.mapTotal) :
+    IsEmbedding (Φ.mapComposableArrows n).obj := by
+  refine ⟨⟨?_⟩, fun F G h ↦ ext_of_totalArrow fun i j hij ↦ hΦ.injective ?_⟩
+  · simp only [instTopologicalSpace, induced_iInf, induced_compose]
+    refine iInf_congr fun i ↦ iInf_congr fun j ↦ iInf_congr fun hij ↦ ?_
+    rw [hΦ.eq_induced, induced_compose]
+    simp only [Function.comp_def, totalArrow_mapComposableArrows_obj]
+  · simpa only [totalArrow_mapComposableArrows_obj] using
+      congrArg (fun F ↦ totalArrow F i j hij) h
 
 end CategoryTheory.ComposableArrows
 
@@ -166,6 +180,13 @@ theorem topologicalNerveMap_app_apply (Φ : C ⥤ D) (hΦ : Continuous Φ.toPref
     (topologicalNerveMap Φ hΦ).app Δ F = (Φ.mapComposableArrows _).obj F :=
   (rfl)
 
+/-- The underlying function of a component of the map of topological nerves induced by a functor
+applies the functor to strings. -/
+theorem coe_topologicalNerveMap_app (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal)
+    (Δ : SimplexCategoryᵒᵖ) :
+    ⇑((topologicalNerveMap Φ hΦ).app Δ) = (Φ.mapComposableArrows Δ.unop.len).obj :=
+  (rfl)
+
 variable (C) in
 @[simp]
 theorem topologicalNerveMap_id :
@@ -186,6 +207,13 @@ fat realization of the induced map of topological nerves. -/
 def fatClassifyingSpaceMap (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
     fatClassifyingSpace C ⟶ fatClassifyingSpace D :=
   fatRealization.map (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ))
+
+/-- The map of fat classifying spaces induced by a functor is the fat realization of the induced
+map of topological nerves, restricted to the semi-simplicial part. -/
+theorem fatClassifyingSpaceMap_eq (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
+    fatClassifyingSpaceMap Φ hΦ =
+      fatRealization.map (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ)) :=
+  (rfl)
 
 /-- The map of fat classifying spaces induced by a functor applies the functor to the string of
 composable arrows of each simplex. This is not a `simp` lemma: `simp` rewrites the dependent type

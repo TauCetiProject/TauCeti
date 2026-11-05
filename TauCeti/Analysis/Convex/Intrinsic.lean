@@ -34,10 +34,13 @@ If `s` has the same affine span as `t` and contains the part of `t` in an open s
 intrinsic interior points of `t` in `U` are intrinsic interior points of `s`
 (`TauCeti.intrinsicInterior_inter_subset_of_affineSpan_eq`). From an intrinsic interior point,
 every small move along the affine span stays in the set
-(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). The intrinsic frontier of a closed
-set consists of its points outside its intrinsic interior (`IsClosed.sdiff_intrinsicInterior`).
-These are the tools for computing intrinsic interiors and frontiers of concrete cells, such as the
-bands of `TauCeti/Analysis/Convex/RegionBetween.lean`.
+(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). Consequently an affine function
+which is nonnegative on a set and vanishes at one of its intrinsic interior points vanishes on the
+whole set (`TauCeti.eq_zero_of_nonneg_of_mem_intrinsicInterior`). The intrinsic frontier of a
+closed set consists of its points outside its intrinsic interior
+(`IsClosed.sdiff_intrinsicInterior`). These are the tools for computing intrinsic interiors and
+frontiers of concrete cells, such as the bands of `TauCeti/Analysis/Convex/RegionBetween.lean`,
+and the cells of a hyperplane arrangement.
 
 Read in the ambient space, `x` is an intrinsic interior point of `s` when it lies in the affine
 span of `s` and the points of that span near `x` lie in `s`
@@ -347,6 +350,23 @@ theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicIn
   have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
   simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
+
+/-- An affine function which is nonnegative on a set `C` and vanishes at an intrinsic interior
+point `c` of `C` vanishes on all of `C`. -/
+theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg : ∀ y ∈ C, 0 ≤ g y)
+    (hc : c ∈ intrinsicInterior ℝ C) (hgc : g c = 0) {y : E} (hy : y ∈ C) : g y = 0 := by
+  -- Push `c` slightly away from `y` inside `C`; there `g` takes the value `-ε * g y`.
+  have hv : c - y ∈ (affineSpan ℝ C).direction := by
+    rw [direction_affineSpan]
+    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hc) hy
+  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hc hv).filter_mono
+    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
+  have hgε : g (c + ε • (c - y)) = g c + ε * (g c - g y) := by
+    rw [add_comm c, ← vadd_eq_add, AffineMap.map_vadd, map_smul, ← vsub_eq_sub,
+      AffineMap.linear_apply_vsub, vadd_eq_add, smul_eq_mul, vsub_eq_sub, add_comm]
+  have h := hg _ hε
+  rw [hgε, hgc] at h
+  nlinarith [hg y hy, mem_Ioi.1 hεpos]
 
 /-- A subset `u` of a convex set `s` meeting the intrinsic interior of `s` has its intrinsic
 interior inside that of `s`. -/

@@ -9,11 +9,12 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
-# Arrows of simplices of the nerve and the images of its degeneracies
+# Arrows and faces of simplices of the nerve, and the images of its degeneracies
 
 An `n`-simplex of the nerve `CategoryTheory.nerve C` of a category is a string
 `F : ComposableArrows C n` of composable arrows. For positions `i ≤ j` its arrow from the `i`-th
-to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij`; the simplicial
+to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij`, and the string is
+determined by these arrows (`CategoryTheory.ComposableArrows.ext_of_totalArrow`); the simplicial
 operators of the nerve reindex these arrows
 (`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`), prepending an arrow with
 `CategoryTheory.ComposableArrows.precomp` shifts them
@@ -26,6 +27,11 @@ An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exact
 `CategoryTheory.nerve.range_σ_eq_preimage`). This generalizes, and adapts the proof of, Mathlib's
 `PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories.
 
+A `3`-simplex of the nerve is a sequence of three composable morphisms `ComposableArrows.mk₃ f g h`.
+Its faces are the `2`-simplices obtained by dropping a vertex, whose arrows are composites of
+consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of the faces of
+`2`-simplices (`CategoryTheory.nerve.δ₀_mk₂_eq`, …).
+
 ## Main declarations
 
 * `CategoryTheory.ComposableArrows.totalArrow`: the arrow of a string between two positions.
@@ -33,11 +39,13 @@ An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exact
   `i`-th degeneracy of its `i`-th face.
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
   strings whose `i`-th arrow is an identity.
+* `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
+  `3`-simplex of the nerve given by three composable morphisms.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory Simplicial
 
 universe v u
 
@@ -119,6 +127,17 @@ theorem totalArrow_mapComposableArrows_obj {D : Type*} [Category D] (Φ : C ⥤ 
   rw [totalArrow_def, totalArrow_def]
   rfl
 
+/-- A string of composable arrows is determined by its arrows. -/
+theorem ext_of_totalArrow {F G : ComposableArrows C n}
+    (h : ∀ i j (hij : i ≤ j), F.totalArrow i j hij = G.totalArrow i j hij) : F = G := by
+  refine Functor.hext (fun i ↦ congrArg Quiver.Total.left (h i i le_rfl)) fun i j g ↦ ?_
+  -- Morphisms in the poset `Fin (n + 1)` are unique, so `g` is the morphism `homOfLE g.le` that
+  -- `totalArrow` uses, and the hypothesis `h i j g.le` applies to it.
+  rw [show g = homOfLE g.le from Subsingleton.elim _ _]
+  have := h i j g.le
+  simp only [totalArrow, Quiver.Total.mk.injEq] at this
+  exact this.2.2
+
 end CategoryTheory.ComposableArrows
 
 namespace CategoryTheory.nerve
@@ -195,5 +214,38 @@ theorem range_σ_eq_preimage {n : ℕ} (i : Fin (n + 1)) :
       (fun s : ComposableArrows C (n + 1) ↦ s.totalArrow i.castSucc i.succ i.castSucc_le_succ) ⁻¹'
         Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C) :=
   Set.ext fun s ↦ mem_range_σ_iff s i
+
+section Faces
+
+variable {X₀ X₁ X₂ X₃ : C} (f : X₀ ⟶ X₁) (g : X₁ ⟶ X₂) (h : X₂ ⟶ X₃)
+
+/-! The arrows of each face of `mk₃ f g h` are, by definition of `mk₃`, composites of consecutive
+arrows among `f`, `g` and `h`, so the faces are determined by `ComposableArrows.ext₂_of_arrow`. -/
+
+/-- The face of `mk₃ f g h` opposite to the vertex `0`. -/
+@[simp]
+theorem δ₀_mk₃_eq :
+    (nerve C).δ 0 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ g h :=
+  ComposableArrows.ext₂_of_arrow rfl rfl
+
+/-- The face of `mk₃ f g h` opposite to the vertex `1`. -/
+@[simp]
+theorem δ₁_mk₃_eq :
+    (nerve C).δ 1 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ (f ≫ g) h :=
+  ComposableArrows.ext₂_of_arrow rfl rfl
+
+/-- The face of `mk₃ f g h` opposite to the vertex `2`. -/
+@[simp]
+theorem δ₂_mk₃_eq :
+    (nerve C).δ 2 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ f (g ≫ h) :=
+  ComposableArrows.ext₂_of_arrow rfl rfl
+
+/-- The face of `mk₃ f g h` opposite to the vertex `3`. -/
+@[simp]
+theorem δ₃_mk₃_eq :
+    (nerve C).δ 3 (ComposableArrows.mk₃ f g h) = ComposableArrows.mk₂ f g :=
+  ComposableArrows.ext₂_of_arrow rfl rfl
+
+end Faces
 
 end CategoryTheory.nerve
