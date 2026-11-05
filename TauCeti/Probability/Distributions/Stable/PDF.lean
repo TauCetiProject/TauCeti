@@ -204,7 +204,7 @@ theorem integrable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
   · exact (integrable_zero ℝ ℝ volume).congr
       (ae_of_all _ fun x ↦ (stablePDFReal_zero_scale α β m x).symm)
   · exact Probability.integrable_of_eq_withDensity
-      (stableMeasure_eq_withDensity α β hs m)
+      (stableMeasure_eq_withDensity_ofReal α β hs m)
       (measurable_stablePDFReal α β s m).aemeasurable
       (.of_forall fun x ↦ stablePDFReal_nonneg α β s m x)
 
