@@ -252,9 +252,15 @@ def resInclusionHom (A : Rep.{uV} R G) {K L : Subgroup G} (h : K ≤ L) :
     res K.subtype A ⟶ res (Subgroup.inclusion h) (res L.subtype A) :=
   𝟙 (res K.subtype A)
 
+/-- `resInclusionHom A h` acts on vectors as the identity. The coercion is stated at
+`IntertwiningMap (A.ρ.comp K.subtype) ((A.ρ.comp L.subtype).comp (Subgroup.inclusion h))`, `simp`'s
+normal form of the coercion of a morphism between the two restrictions, so that `simp` can use
+this lemma. -/
 @[simp]
-theorem resInclusionHom_hom_apply (A : Rep.{uV} R G) {K L : Subgroup G} (h : K ≤ L) (a : A) :
-    (resInclusionHom A h).hom a = a := by
+theorem resInclusionHom_hom_apply (A : Rep.{uV} R G) {K L : Subgroup G} (h : K ≤ L) (v : A.V) :
+    @DFunLike.coe (Representation.IntertwiningMap (A.ρ.comp K.subtype)
+      ((A.ρ.comp L.subtype).comp (Subgroup.inclusion h))) _ _ _ (resInclusionHom A h).hom v =
+        v := by
   simp only [resInclusionHom]
   rfl
 
