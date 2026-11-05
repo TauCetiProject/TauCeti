@@ -59,6 +59,22 @@ theorem simpleWeylPoint_def (i : Fin 2) (A : Type v) [CommRing A] [Algebra (ZMod
         rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) :=
   (rfl)
 
+/-- The rank-one word `x_{-αⱼ}(1) x_{αⱼ}(-1) x_{-αⱼ}(1)` in the prime-field carrier. -/
+noncomputable def rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A]
+    [Algebra (ZMod 3) A] : points A :=
+  rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
+    rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
+      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1)
+
+/-- The rank-one word is the indicated product of three numbered simple-root points. -/
+theorem rankOneWordPoints_def (j : Fin 2) (A : Type v) [CommRing A]
+    [Algebra (ZMod 3) A] :
+    rankOneWordPoints j A =
+      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
+        rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
+          rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) :=
+  (rfl)
+
 /-- The generated carrier's representative and the integral carrier's representative are the
 same invertible matrix. This asserts no equality of their group schemes. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
+public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Weyl
 
 /-!
 # Negative nonsimple short-root subgroups of the integral G₂ toral closure

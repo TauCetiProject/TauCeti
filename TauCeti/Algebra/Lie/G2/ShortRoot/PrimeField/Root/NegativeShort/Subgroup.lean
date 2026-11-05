@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PointsFunctor
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Weyl
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.NegativeShort
 
 /-!

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Space
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Weyl
 
 /-!
 # Negative nonsimple long-root spaces of the short-root G₂ carrier

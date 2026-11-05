@@ -64,6 +64,24 @@ theorem simpleWeylPoint_def (i : Fin 2) (A : Type v) [CommRing A] :
         rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) :=
   (rfl)
 
+/-- The rank-one word `x_{-αⱼ}(1) x_{αⱼ}(-1) x_{-αⱼ}(1)` in the integral toral closure. -/
+noncomputable def rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A] : points A :=
+  rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
+    rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
+      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1)
+
+/-- The rank-one word is the generic Kostant toral Weyl representative in the weight basis. -/
+theorem coe_rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A] :
+    (rankOneWordPoints j A : Matrix.GeneralLinearGroup (Fin 7) A) =
+      (UniversalEnvelopingAlgebra.kostantToralWeylPoint
+        (serreRootGenerator CartanMatrix.G₂)
+        (serreH ℚ CartanMatrix.G₂) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis weight
+        (.inr j) (.inl j) A : Matrix.GeneralLinearGroup (Fin 7) A) := by
+  simp only [rankOneWordPoints, UniversalEnvelopingAlgebra.kostantToralWeylPoint_def,
+    Subgroup.coe_mul, coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix,
+    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints]
+
 /-- The simple representative exchanges the positive and negative root subgroups at its node,
 negating the root parameter. -/
 @[simp]
