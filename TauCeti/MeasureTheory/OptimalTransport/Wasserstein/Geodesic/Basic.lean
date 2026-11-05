@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.CurveAction.Geodesic
 public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+import TauCeti.MeasureTheory.Function.LpSeminorm.EDist
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Superposition
 
@@ -458,14 +459,6 @@ theorem isGeodesicSegment_iff_isDisplacementInterpolation (hp1 : 1 < p) (hp : p 
 end WassersteinSpace
 
 end Polish
-
-/-- Under any law `π` on pairs of points of a seminormed group, the displacement `x - y` and the
-ground distance `edist x y` have the same `L^p` seminorm. -/
-theorem eLpNorm_sub_eq_eLpNorm_edist {E : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E]
-    [OpensMeasurableSpace E] [SecondCountableTopology E] (p : ℝ≥0∞) (π : Measure (E × E)) :
-    eLpNorm (fun z : E × E ↦ z.1 - z.2) p π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
-  eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-    (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
 
 section Normed
 
