@@ -67,7 +67,7 @@ private def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
 `t ↦ f (t * p)` of `f : AddCircle p → X`, `0 < p`. A homotopy of `γ` to the constant loop relative
 to its endpoints descends to a free null-homotopy of `f`; conversely, a free null-homotopy of `f`
 collapses the loop `t ↦ t * p` of the circle, and with it `γ`. -/
-theorem nullhomotopic_iff_homotopic_refl [Fact (0 < p)] {f : C(AddCircle p, X)} {x : X}
+theorem nullhomotopic_iff_homotopic_refl [Fact (0 < p)] (f : C(AddCircle p, X)) {x : X}
     (γ : Path x x) (hγ : ∀ t : I, γ t = f (AddCircle.ofUnitInterval p t)) :
     f.Nullhomotopic ↔ γ.Homotopic (Path.refl x) := by
   have hx : f 0 = x := by rw [← γ.source, hγ, AddCircle.ofUnitInterval_zero]
@@ -103,7 +103,7 @@ theorem nullhomotopic_iff_homotopic_refl [Fact (0 < p)] {f : C(AddCircle p, X)} 
 /-- **Every map from a circle into a simply connected space is null-homotopic.** -/
 theorem nullhomotopic_addCircle_of_simplyConnectedSpace [Fact (0 < p)] [SimplyConnectedSpace X]
     (f : C(AddCircle p, X)) : f.Nullhomotopic :=
-  (nullhomotopic_iff_homotopic_refl (toLoop f) fun _ ↦ rfl).2
+  (f.nullhomotopic_iff_homotopic_refl (toLoop f) fun _ ↦ rfl).2
     (SimplyConnectedSpace.paths_homotopic _ _)
 
 /-- **Constant-speed reparametrization of a null-homotopic loop.** If the loop

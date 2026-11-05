@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Capacity.Monotonicity
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Dynamics.Flow.PeriodicLimit
+import TauCeti.Dynamics.Flow.Periodic.Limit
 import TauCeti.Geometry.Manifold.Flow.Complete
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
-import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.LocallyContractible
 import TauCeti.Geometry.Symplectic.Hamiltonian.Characteristic
 
@@ -18,11 +18,13 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Characteristic
 # Contractible almost existence from a finite relative capacity
 
 Let `σ` be a nondegenerate two-form on a finite-dimensional boundaryless Hausdorff manifold `M` and
-`F : M → ℝ` a smooth function. This file completes the Hofer–Zehnder–Struwe argument: finiteness
-of the relative `π₁`-sensitive Hofer–Zehnder capacity `c°_HZ({F < b}, Z)`, for `Z ⊆ {F ≤ a}`,
-gives a closed characteristic, contractible in `M`, on almost every regular level of `F` in
-`(a, b)` (`TauCeti.SmoothTwoForm.IsNondegenerate.ae_hasContractibleClosedCharacteristic`). Hence
-every level in `(a, b)` has the contractible almost existence property in `M`
+`F : M → ℝ` a smooth function whose sublevel sets `{F ≤ s}` are compact for `s < b` and which
+attains every value in `(a, b)`. This file completes the Hofer–Zehnder–Struwe argument: under these
+hypotheses, finiteness of the relative `π₁`-sensitive Hofer–Zehnder capacity `c°_HZ({F < b}, Z)`,
+for `Z ⊆ {F ≤ a}`, gives a closed characteristic, contractible in `M`, on almost every regular
+level of `F` in `(a, b)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.ae_hasContractibleClosedCharacteristic`). Hence every
+level in `(a, b)` has the contractible almost existence property in `M`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence`).
 
 The monotonicity argument
@@ -35,8 +37,8 @@ compact for some `b > s`, then the level `s` itself carries one. The Hamiltonian
 cut off outside `{F < b}`, generates a global flow, and the closed characteristics on the nearby
 levels are periodic orbits of this flow. By compactness, their base points and periods converge
 along an ultrafilter, and the general facts about limits of periodic orbits of a flow
-(`TauCeti.Dynamics.Flow.PeriodicLimit`) show that the limit is a periodic orbit on the level `s`
-with contractible loop. Its period is positive because `X_F` does not vanish on a regular level,
+(`TauCeti.Dynamics.Flow.Periodic.Limit`) show that the limit is a periodic orbit on the level
+`s` with contractible loop. Its period is positive because `X_F` does not vanish on a regular level,
 while periodic orbits whose periods tend to `0` accumulate only at rest points.
 
 ## Main results
@@ -44,11 +46,12 @@ while periodic orbits whose periods tend to `0` accumulate only at rest points.
 * `IsNondegenerate.hasContractibleClosedCharacteristicOfPeriodLE_of_frequently`: closed
   characteristics of bounded period on levels accumulating at a regular level `s` give one
   on the level `s`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.ae_hasContractibleClosedCharacteristic`: finite relative
-  capacity gives closed characteristics on almost every regular level.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence`: finite relative capacity
-  gives the contractible almost existence property, the relative form of
-  Barraud–Damian–Humilière–Oancea, Proposition 6.3.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.ae_hasContractibleClosedCharacteristic`: if the
+  sublevel sets `{F ≤ s}`, `s < b`, are compact and `F` attains every value in `(a, b)`, finite
+  relative capacity gives closed characteristics on almost every regular level in `(a, b)`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence`: under the same
+  hypotheses, finite relative capacity gives the contractible almost existence property on every
+  level in `(a, b)`, the relative form of Barraud–Damian–Humilière–Oancea, Proposition 6.3.
 
 ## References
 

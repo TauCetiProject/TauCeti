@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
-import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -35,7 +34,7 @@ only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, 
 field pointing out of a domain `{f ≤ c}` along its boundary are shown never to re-enter it.
 
 Finally, an integral curve along which the vector field vanishes does not move at all: it is a
-constant curve. Conversely, a constant curve is an integral curve exactly at a zero of the field.
+constant curve.
 
 ## Main declarations
 
@@ -48,8 +47,6 @@ constant curve. Conversely, a constant curve is an integral curve exactly at a z
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
   vanishes is constant.
-* `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
-  field.
 -/
 
 public section
@@ -101,16 +98,6 @@ theorem apply_eq_of_forall_eq_zero [IsManifold I 1 M] (hγ : IsMIntegralCurve γ
       rfl) t s
 
 end IsMIntegralCurve
-
-/-- **Constant integral curves are the zeros of the field.** The constant curve at `x` is an
-integral curve of `v` exactly when `v x = 0`. -/
-theorem isMIntegralCurve_const_iff {x : M} : IsMIntegralCurve (fun _ ↦ x) v ↔ v x = 0 := by
-  refine ⟨fun h ↦ ?_, isMIntegralCurve_const⟩
-  -- The derivative of the constant curve is `0`, and evaluating `1 ↦ v x` at `1` gives `v x`.
-  have h₀ := (h 0).mfderiv
-  rw [mfderiv_const] at h₀
-  have h₁ : v x = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (v x) 1 := by simp
-  exact h₁.trans (ContinuousLinearMap.ext_iff.1 h₀ (1 : ℝ)).symm
 
 namespace IsMIntegralCurveOn
 

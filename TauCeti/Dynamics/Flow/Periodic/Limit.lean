@@ -114,7 +114,7 @@ private def orbitLoop {τ : ℝ} {y : X} (hy : ϕ τ y = y) : Path y y where
 private theorem nullhomotopic_iff_orbitLoop {τ : ℝ} [Fact (0 < τ)] {y : X} (hy : ϕ τ y = y)
     {g : C(AddCircle τ, X)} (hg : ∀ t : ℝ, g t = ϕ t y) :
     g.Nullhomotopic ↔ (ϕ.orbitLoop hy).Homotopic (Path.refl y) :=
-  ContinuousMap.nullhomotopic_iff_homotopic_refl _ fun θ ↦ by
+  g.nullhomotopic_iff_homotopic_refl _ fun θ ↦ by
     simp [orbitLoop, orbitSegment, hg]
 
 /-- **Limits of contractible periodic orbits are contractible.** Let `X` be locally path-connected
