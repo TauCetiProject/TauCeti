@@ -15,8 +15,9 @@ import TauCeti.MeasureTheory.Measure.LocallyNull
 # Parametric transversality in finite dimensions: the exceptional parameters are null
 
 Let `f : E × Λ → F` be a parametrized equation between finite-dimensional real normed spaces and
-`U ⊆ E × Λ` any set. A parameter `l` is *regular on `U`* at the level `c` when the
-fixed-parameter linearization of `x ↦ f (x, l)` is surjective at every solution `x` with
+`U ⊆ E × Λ` any set. A parameter `l` is *regular on `U`* at the level `c`
+(`TauCeti.IsRegularParameterOn`, in `TauCeti.Analysis.Fredholm.LevelSet.GlobalParametric`) when
+the fixed-parameter linearization of `x ↦ f (x, l)` is surjective at every solution `x` with
 `(x, l) ∈ U`. This file proves that the parameters which are not regular on `U` form a set of
 additive Haar measure zero in `Λ`, provided the total linearization is surjective at every solution
 in `U` and `f` is sufficiently smooth there. The regular parameters are then dense.
@@ -48,16 +49,14 @@ parameters are the projection to `Λ` of the non-regular solutions in `U`, a Lin
 set whose projection is null near each of its points has null projection.
 
 The regularity threshold is the one of the Morse--Sard theorem in Tau Ceti, `(dim)² + 1` with
-`dim` the dimension of the source of the parameter map, which is the kernel of the *total*
-linearization. It is imposed pointwise along the level set inside `U`. This is coarser than
-Sard's sharp threshold, and it differs from the threshold `(dim ker D₁)² + 1` of the Sard--Smale
-route, which is in terms of the kernel of the *fixed-parameter* linearization.
+`dim = dim E + dim Λ − dim F` the dimension of the source of the parameter map: the kernel of the
+*total* linearization, which has this dimension at every solution by rank--nullity since the
+total linearization is surjective there. This is coarser than Sard's sharp threshold, and it
+differs from the threshold `(dim ker D₁)² + 1` of the Sard--Smale route, which is in terms of the
+kernel of the *fixed-parameter* linearization.
 
 ## Main results
 
-* `TauCeti.IsRegularParameterOn f U c l`: the fixed-parameter linearization is surjective at every
-  solution in `U` with parameter `l`; `TauCeti.isRegularParameterOn_univ` identifies the case
-  `U = univ` with `TauCeti.IsRegularParameter`.
 * `TauCeti.exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_zero`: the local
   theorem, near one solution.
 * `TauCeti.addHaar_setOf_not_isRegularParameterOn_eq_zero`,
@@ -85,44 +84,6 @@ variable {E Λ F : Type*}
   [NormedAddCommGroup Λ] [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 
-/-- A parameter `l` is regular on the set `U` for the level equation `f (x, l) = c` when its
-fixed-parameter linearization is surjective at every solution `x` with `(x, l) ∈ U`.
-
-This is `TauCeti.IsRegularParameter` with the solutions restricted to `U`; the two agree for
-`U = univ` (`TauCeti.isRegularParameterOn_univ`). As there, surjectivity of the total derivative
-on `E × Λ` is a separate hypothesis of the transversality theorems. -/
-def IsRegularParameterOn (f : E × Λ → F) (U : Set (E × Λ)) (c : F) (l : Λ) : Prop :=
-  ∀ x, (x, l) ∈ U → f (x, l) = c →
-    Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ))
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
-/-- A parameter is regular on `U` exactly when the fixed-parameter derivatives are surjective at
-all solutions of the level equation in `U`. -/
-theorem isRegularParameterOn_iff {f : E × Λ → F} {U : Set (E × Λ)} {c : F} {l : Λ} :
-    IsRegularParameterOn f U c l ↔ ∀ x, (x, l) ∈ U → f (x, l) = c →
-      Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ)) :=
-  (Iff.rfl)
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
-/-- Regularity on the whole space is regularity. -/
-@[simp]
-theorem isRegularParameterOn_univ {f : E × Λ → F} {c : F} {l : Λ} :
-    IsRegularParameterOn f univ c l ↔ IsRegularParameter f c l := by
-  rw [isRegularParameter_iff]
-  exact ⟨fun h x hx ↦ h x (mem_univ _) hx, fun h x _ hx ↦ h x hx⟩
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
-/-- Regularity on a set is inherited by its subsets. -/
-theorem IsRegularParameterOn.mono {f : E × Λ → F} {U V : Set (E × Λ)} {c : F} {l : Λ}
-    (hUV : U ⊆ V) (h : IsRegularParameterOn f V c l) : IsRegularParameterOn f U c l :=
-  fun x hx hfx ↦ h x (hUV hx) hfx
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
-/-- A regular parameter is regular on every set. -/
-theorem IsRegularParameter.isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F}
-    {l : Λ} (h : IsRegularParameter f c l) : IsRegularParameterOn f U c l :=
-  (isRegularParameterOn_univ.2 h).mono (subset_univ U)
-
 variable [MeasurableSpace Λ] [BorelSpace Λ] (ν : Measure Λ) [IsAddHaarMeasure ν]
 
 /-- **Local parametric transversality, measure form.** Near a solution `(x, l)` of a
@@ -130,21 +91,29 @@ parametrized equation whose total linearization is surjective, the parameters ca
 solution at which the fixed-parameter linearization fails to be surjective form a set of additive
 Haar measure zero.
 
-The smoothness order must meet the Morse--Sard threshold `(dim)² + 1` for the kernel of the total
-linearization, the source of the local parameter map. -/
+The smoothness order must meet the Morse--Sard threshold `(dim)² + 1` for
+`dim = dim E + dim Λ − dim F`, the dimension of the kernel of the total linearization, which is
+the source of the local parameter map. -/
 theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_zero
     {f : E × Λ → F} {c : F} {n : ℕ∞ω} {x : E} {l : Λ}
     (hcont : ContDiffAt ℝ n f (x, l)) (htotal : Surjective (fderiv ℝ f (x, l)))
     (hxl : f (x, l) = c)
-    (hn : ((finrank ℝ (fderiv ℝ f (x, l)).ker * finrank ℝ (fderiv ℝ f (x, l)).ker + 1 : ℕ) :
-      ℕ∞ω) ≤ n) :
+    (hn : ((finrank ℝ E + finrank ℝ Λ - finrank ℝ F) * (finrank ℝ E + finrank ℝ Λ - finrank ℝ F)
+      + 1 : ℕ) ≤ n) :
     ∃ Q ∈ 𝓝 (x, l), ν {l' | ∃ x', (x', l') ∈ Q ∧ f (x', l') = c ∧
       ¬ Surjective ((fderiv ℝ f (x', l')).comp (ContinuousLinearMap.inl ℝ E Λ))} = 0 := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   have : CompleteSpace Λ := FiniteDimensional.complete ℝ Λ
   have : CompleteSpace F := FiniteDimensional.complete ℝ F
   set T := fderiv ℝ f (x, l)
-  set k : ℕ := finrank ℝ T.ker * finrank ℝ T.ker + 1 with hkdef
+  set k : ℕ := (finrank ℝ E + finrank ℝ Λ - finrank ℝ F) *
+    (finrank ℝ E + finrank ℝ Λ - finrank ℝ F) + 1 with hkdef
+  -- By rank--nullity, the kernel of the surjective total linearization has dimension
+  -- `dim E + dim Λ − dim F`.
+  have hrank : finrank ℝ T.ker = finrank ℝ E + finrank ℝ Λ - finrank ℝ F := by
+    have h := LinearMap.finrank_range_add_finrank_ker (T : E × Λ →ₗ[ℝ] F)
+    rw [LinearMap.range_eq_top.mpr htotal, finrank_top, Module.finrank_prod] at h
+    omega
   have hk0 : ((k : ℕ∞ω)) ≠ 0 := by simp [hkdef]
   have hkω : ((k : ℕ∞ω)) ≠ ∞ := by simp
   have hn0 : n ≠ 0 := fun h ↦ hk0 (le_antisymm (h ▸ hn) bot_le)
@@ -166,7 +135,7 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
     eventually_nhds_iff.1 ((hgC.of_le hn).eventually hkω)
   have hkV : ((finrank ℝ (D₁.coprod D₂).ker * finrank ℝ (D₁.coprod D₂).ker + 1 : ℕ) : ℕ∞ω) ≤
       (k : ℕ∞ω) := by
-    rw [hcop, hkdef]
+    rw [hcop, hrank, hkdef]
   have hnull : ν (g '' (V ∩ {y | ¬ Surjective (fderiv ℝ g y)})) = 0 :=
     TauCeti.addHaar_image_criticalPoints_eq_zero ν (fun y hy ↦ hVC y hy) hkV
   -- Near the chart origin, criticality of the parameter map is failure of regularity; pull both
@@ -188,15 +157,15 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
 between finite-dimensional real normed spaces, the parameters that are not regular on a set `U`
 form a set of additive Haar measure zero, provided the total linearization is surjective at
 every solution in `U` and the smoothness order meets the Morse--Sard threshold `(dim)² + 1` for
-the kernel of the total linearization there.
+`dim = dim E + dim Λ − dim F`, the dimension of the universal level set there.
 
 The hypotheses are imposed only along the level set `f⁻¹(c)` inside `U`. -/
 theorem addHaar_setOf_not_isRegularParameterOn_eq_zero {f : E × Λ → F} {U : Set (E × Λ)}
     {c : F} {n : ℕ∞ω}
     (hcont : ∀ z ∈ U, f z = c → ContDiffAt ℝ n f z)
     (htotal : ∀ z ∈ U, f z = c → Surjective (fderiv ℝ f z))
-    (hn : ∀ z ∈ U, f z = c →
-      ((finrank ℝ (fderiv ℝ f z).ker * finrank ℝ (fderiv ℝ f z).ker + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    (hn : ((finrank ℝ E + finrank ℝ Λ - finrank ℝ F) * (finrank ℝ E + finrank ℝ Λ - finrank ℝ F)
+      + 1 : ℕ) ≤ n) :
     ν {l | ¬ IsRegularParameterOn f U c l} = 0 := by
   -- The exceptional parameters are the projection of the non-regular solutions in `U`.
   have hset : {l | ¬ IsRegularParameterOn f U c l} = Prod.snd '' {z : E × Λ | z ∈ U ∧ f z = c ∧
@@ -209,13 +178,13 @@ theorem addHaar_setOf_not_isRegularParameterOn_eq_zero {f : E × Λ → F} {U : 
       obtain ⟨x, hxU, hxc, hxbad⟩ := hl
       exact ⟨(x, l), ⟨hxU, hxc, hxbad⟩, rfl⟩
     · rintro ⟨⟨x, l'⟩, ⟨hxU, hxc, hxbad⟩, rfl⟩
-      exact fun h ↦ hxbad (h x hxU hxc)
+      exact fun h ↦ hxbad (isRegularParameterOn_iff.1 h x hxU hxc)
   rw [hset]
   refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _) ?_
   rintro ⟨x, l⟩ ⟨hzU, hzc, -⟩
   obtain ⟨Q, hQ, hQnull⟩ :=
     exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_zero ν
-      (hcont _ hzU hzc) (htotal _ hzU hzc) hzc (hn _ hzU hzc)
+      (hcont _ hzU hzc) (htotal _ hzU hzc) hzc hn
   refine ⟨Q ∩ _, inter_mem (mem_nhdsWithin_of_mem_nhds hQ) self_mem_nhdsWithin,
     measure_mono_null ?_ hQnull⟩
   rintro _ ⟨⟨x', l'⟩, ⟨hx'Q, -, hx'c, hx'bad⟩, rfl⟩
@@ -225,8 +194,8 @@ theorem addHaar_setOf_not_isRegularParameterOn_eq_zero {f : E × Λ → F} {U : 
 theorem ae_isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F} {n : ℕ∞ω}
     (hcont : ∀ z ∈ U, f z = c → ContDiffAt ℝ n f z)
     (htotal : ∀ z ∈ U, f z = c → Surjective (fderiv ℝ f z))
-    (hn : ∀ z ∈ U, f z = c →
-      ((finrank ℝ (fderiv ℝ f z).ker * finrank ℝ (fderiv ℝ f z).ker + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    (hn : ((finrank ℝ E + finrank ℝ Λ - finrank ℝ F) * (finrank ℝ E + finrank ℝ Λ - finrank ℝ F)
+      + 1 : ℕ) ≤ n) :
     ∀ᵐ l ∂ν, IsRegularParameterOn f U c l :=
   ae_iff.2 (addHaar_setOf_not_isRegularParameterOn_eq_zero ν hcont htotal hn)
 
@@ -236,8 +205,8 @@ structure on `Λ`. -/
 theorem dense_setOf_isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F}
     {n : ℕ∞ω} (hcont : ∀ z ∈ U, f z = c → ContDiffAt ℝ n f z)
     (htotal : ∀ z ∈ U, f z = c → Surjective (fderiv ℝ f z))
-    (hn : ∀ z ∈ U, f z = c →
-      ((finrank ℝ (fderiv ℝ f z).ker * finrank ℝ (fderiv ℝ f z).ker + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    (hn : ((finrank ℝ E + finrank ℝ Λ - finrank ℝ F) * (finrank ℝ E + finrank ℝ Λ - finrank ℝ F)
+      + 1 : ℕ) ≤ n) :
     Dense {l | IsRegularParameterOn f U c l} := by
   borelize Λ
   exact Measure.dense_of_ae (μ := (addHaar : Measure Λ))

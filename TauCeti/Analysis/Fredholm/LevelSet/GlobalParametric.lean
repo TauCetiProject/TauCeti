@@ -72,6 +72,44 @@ theorem isRegularParameter_iff {f : E × Λ → F} {c : F} {l : Λ} :
       Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ)) :=
   (Iff.rfl)
 
+/-- A parameter `l` is regular on the set `U` for the level equation `f (x, l) = c` when its
+fixed-parameter linearization is surjective at every solution `x` with `(x, l) ∈ U`.
+
+This is `TauCeti.IsRegularParameter` with the solutions restricted to `U`; the two agree for
+`U = univ` (`TauCeti.isRegularParameterOn_univ`). It is the form in which the finite-dimensional
+parametric transversality theorem of `TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional` is
+stated, whose universal equations are smooth and transverse only on a subset of their domain. -/
+def IsRegularParameterOn (f : E × Λ → F) (U : Set (E × Λ)) (c : F) (l : Λ) : Prop :=
+  ∀ x, (x, l) ∈ U → f (x, l) = c →
+    Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ))
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A parameter is regular on `U` exactly when the fixed-parameter derivatives are surjective at
+all solutions of the level equation in `U`. -/
+theorem isRegularParameterOn_iff {f : E × Λ → F} {U : Set (E × Λ)} {c : F} {l : Λ} :
+    IsRegularParameterOn f U c l ↔ ∀ x, (x, l) ∈ U → f (x, l) = c →
+      Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ)) :=
+  (Iff.rfl)
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- Regularity on the whole space is regularity. -/
+@[simp]
+theorem isRegularParameterOn_univ {f : E × Λ → F} {c : F} {l : Λ} :
+    IsRegularParameterOn f univ c l ↔ IsRegularParameter f c l :=
+  ⟨fun h x hx ↦ h x (mem_univ _) hx, fun h x _ hx ↦ h x hx⟩
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- Regularity on a set is inherited by its subsets. -/
+theorem IsRegularParameterOn.mono {f : E × Λ → F} {U V : Set (E × Λ)} {c : F} {l : Λ}
+    (hUV : U ⊆ V) (h : IsRegularParameterOn f V c l) : IsRegularParameterOn f U c l :=
+  fun x hx hfx ↦ h x (hUV hx) hfx
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A regular parameter is regular on every set. -/
+theorem IsRegularParameter.isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F}
+    {l : Λ} (h : IsRegularParameter f c l) : IsRegularParameterOn f U c l :=
+  (isRegularParameterOn_univ.2 h).mono (subset_univ U)
+
 /-- **Global parametric transversality.** The non-regular parameters of a sufficiently smooth
 universal Fredholm equation form a meagre set.
 
