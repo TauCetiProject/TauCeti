@@ -36,9 +36,11 @@ transitions reduce a family in `∏ₙ Aₙ`, modulo the image of the shift, to 
 * `TauCeti.ModuleTower.IsMittagLeffler`: the Mittag-Leffler condition on a tower of modules.
 * `TauCeti.ModuleTower.isMittagLeffler_iff_ranges`: it holds exactly when, for every `n`, the
   images `range (Aₖ → Aₙ)` are eventually constant.
-* `TauCeti.ModuleTower.isMittagLeffler_of_eventually_surjective`,
+* `TauCeti.ModuleTower.isMittagLeffler_of_surjective_of_le`,
+  `TauCeti.ModuleTower.isMittagLeffler_of_surjective`,
   `TauCeti.ModuleTower.isMittagLeffler_of_isArtinian`: towers with eventually surjective
-  transitions, and towers of Artinian modules, are Mittag-Leffler.
+  transitions, towers with surjective transitions, and towers of Artinian modules, are
+  Mittag-Leffler.
 * `TauCeti.ModuleTower.shift_surjective_of_isMittagLeffler`,
   `TauCeti.ModuleTower.subsingleton_limOne_of_isMittagLeffler`: Mittag-Leffler towers have
   surjective shift map, hence vanishing `lim¹`.
@@ -103,18 +105,18 @@ theorem isMittagLeffler_iff_ranges : F.IsMittagLeffler ↔
 /-- **Towers whose transitions are eventually surjective are Mittag-Leffler**: it suffices that
 `F.transition n` is surjective for all `n ≥ N`. For `N = 0` this covers towers with surjective
 transitions. -/
-theorem isMittagLeffler_of_eventually_surjective (N : ℕ)
+theorem isMittagLeffler_of_surjective_of_le (N : ℕ)
     (h : ∀ n, N ≤ n → Function.Surjective (F.transition n)) : F.IsMittagLeffler := by
-  have hs {m k : ℕ} (hNm : N ≤ m) (hmk : m ≤ k) : Function.Surjective (F.transitionOfLE hmk) := by
-    induction k, hmk using Nat.le_induction with
-    | base => simpa using Function.surjective_id
-    | succ k hmk ih =>
-      rw [← F.transitionOfLE_comp_transitionOfLE hmk (Nat.le_succ k), transitionOfLE_succ,
-        LinearMap.coe_comp]
-      exact ih.comp (h k (hNm.trans hmk))
   refine (F.isMittagLeffler_iff_ranges).2 fun n ↦ ⟨max n N, le_max_left n N, fun k hk ↦ ?_⟩
   rw [← F.transitionOfLE_comp_transitionOfLE (le_max_left n N) hk, LinearMap.range_comp,
-    LinearMap.range_eq_top.2 (hs (le_max_right n N) hk), Submodule.map_top]
+    LinearMap.range_eq_top.2
+      (F.transitionOfLE_surjective (fun i hi ↦ h i ((le_max_right n N).trans hi)) hk),
+    Submodule.map_top]
+
+/-- **Towers with surjective transitions are Mittag-Leffler.** -/
+theorem isMittagLeffler_of_surjective (h : ∀ n, Function.Surjective (F.transition n)) :
+    F.IsMittagLeffler :=
+  F.isMittagLeffler_of_surjective_of_le 0 fun n _ ↦ h n
 
 /-- **Towers of Artinian modules are Mittag-Leffler**: the images of the composite transitions
 `Aₖ → Aₙ` form a descending chain of submodules of `Aₙ`, which stabilises. This covers towers of
