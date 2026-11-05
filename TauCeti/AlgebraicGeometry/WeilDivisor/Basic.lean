@@ -23,9 +23,10 @@ part of this file.
 
 The API here records the free-abelian-group operations: point divisors, effectivity, pushforward of
 formal sums along a map of point sets, and both the unweighted degree and the weighted degree used
-for curves over a field. It also packages the degree-zero subgroups, which are the targets of the
-degree-corrected divisors and of the restricted pushforwards. When the points form a `T1` space, a
-divisor vanishes on a punctured neighbourhood of every point, since its support is finite.
+for curves over a field. It also packages the degree-zero subgroups of `WeilDivisor X`, which are
+the codomains of the degree-corrected representatives and of the restricted pushforwards. When the
+points form a `T1` space, a divisor vanishes on a punctured neighbourhood of every point, since its
+support is finite.
 
 ## Main definitions
 
@@ -34,8 +35,11 @@ divisor vanishes on a punctured neighbourhood of every point, since its support 
 * `pushforward`, `pullback`: change of the point set along a map, respectively an injective map.
 * `degree`, `weightedDegree`, `degreeZeroSubgroup`, `weightedDegreeZeroSubgroup`: the degrees and
   their kernels.
-* `pointDifference`, `weightedPointBaseDifference`, `weightedAbelJacobiDegreeZeroDivisor`:
-  divisors of degree zero built from points.
+* `pointDifference`, `weightedPointBaseDifference`: the divisors `[x] - [y]` and
+  `[x] - w x • [x₀]`. The first has degree zero; the second has weighted degree zero when
+  `w x₀ = 1`.
+* `weightedAbelJacobiDegreeZeroDivisor`: the degree-corrected representative of a divisor, valued
+  in `weightedDegreeZeroSubgroup w` (not in `WeilDivisor X`), for a base point with `w x₀ = 1`.
 * `pushforwardDegreeZero`, `pushforwardWeightedDegreeZero`: pushforward restricted to the
   degree-zero subgroups.
 
