@@ -293,7 +293,7 @@ theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
   exact prod_congr rfl fun B _ => mu_bot_top B
 
 /-- The Kreweras complement identifies an upper Möbius interval with a lower one. -/
-theorem mu_top_eq_mu_bot_kreweras {n : ℕ}
+theorem mu_top_eq_mu_bot_kreweras {𝕜 : Type*} [Ring 𝕜] {n : ℕ}
     (π : NoncrossingPartition (univ : Finset (Fin n))) :
     mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
   have h := OrderIso.mu_map (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
