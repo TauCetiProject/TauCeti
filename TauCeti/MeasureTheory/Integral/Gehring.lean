@@ -7,11 +7,13 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.MeasureTheory.Covering.Vitali
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.MeasureTheory.Covering.DensityTheorem
+import TauCeti.MeasureTheory.Covering.Vitali
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.Haar.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -23,12 +25,14 @@ and `b ≥ 0`. **Gehring's lemma** says that the reverse Hölder inequality
 `⨍_{B(y, ρ)} g ^ q ≤ b (⨍_{B(y, 2ρ)} g) ^ q + ⨍_{B(y, 2ρ)} h ^ q`,
 
 assumed on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`, improves itself: there is `δ₀ > 0` such that for
-`0 < δ ≤ δ₀` the function `g` lies in `L^{q + δ}` of the half ball, with
+`0 < δ ≤ δ₀`
 
 `⨍_{B(x₀, R/2)} g ^ (q + δ) ≤ C ((⨍_{B(x₀, R)} g ^ q) ^ ((q + δ) / q) + ⨍_{B(x₀, R)} h ^ (q + δ))`
 
 (`TauCeti.exists_setLAverage_rpow_add_le`). The gain `δ₀` and the constant `C` do not depend on
-`g`, `h`, the centre `x₀` or the radius `R`, and no integrability of `g` or `h` is assumed.
+`g`, `h`, the centre `x₀` or the radius `R`. No integrability of `g` or `h` is assumed, and the
+averages are extended-valued: when `g ^ q` and `h ^ (q + δ)` have finite integrals over
+`B(x₀, R)`, the right-hand side is finite, so `g` lies in `L^{q + δ}` of the half ball.
 
 The lemma is the source of higher integrability in elliptic regularity. For a weak solution of a
 divergence-form equation with bounded measurable coefficients, Caccioppoli's inequality combined
@@ -156,35 +160,6 @@ private theorem withDensity_setOf_lt (ν : Measure α) (F : α → ℝ≥0∞) {
   rw [withDensity_apply _ (measurableSet_lt measurable_const hf),
     lintegral_indicator (measurableSet_lt measurable_const hf)]
 
-/-- Truncating `a / ε` at `k` costs at most the factor `ε⁻¹` compared with truncating `a`, when
-`ε ≤ 1`. -/
-private theorem min_mul_inv_rpow_le (a : ℝ≥0∞) (k : ℝ≥0) {ε : ℝ≥0∞} (hε1 : ε ≤ 1) {p : ℝ}
-    (hp : 0 ≤ p) : min (a * ε⁻¹) k ^ p ≤ ε⁻¹ ^ p * min a k ^ p := by
-  rw [← ENNReal.mul_rpow_of_nonneg _ _ hp]
-  refine ENNReal.rpow_le_rpow ?_ hp
-  have h1 : 1 ≤ ε⁻¹ := ENNReal.one_le_inv.2 hε1
-  rcases le_total a k with hak | hak
-  · rw [min_eq_left hak, mul_comm]
-    exact min_le_left _ _
-  · rw [min_eq_right hak]
-    exact (min_le_right _ _).trans (le_mul_of_one_le_left zero_le h1)
-
-/-- For `q ≥ 1` and `δ ≥ 0`, `a · min(a, k) ^ (q - 1 + δ) ≤ a ^ q · min(a, k) ^ δ`. -/
-private theorem mul_min_rpow_le (a : ℝ≥0∞) (k : ℝ≥0) {q δ : ℝ} (hq : 1 ≤ q) (hδ : 0 ≤ δ) :
-    a * min a k ^ (q + δ - 1) ≤ a ^ q * min a k ^ δ := by
-  have hq1 : 0 ≤ q - 1 := by linarith
-  calc a * min a k ^ (q + δ - 1) = a * (min a k ^ (q - 1) * min a k ^ δ) := by
-        rw [← ENNReal.rpow_add_of_nonneg _ _ hq1 hδ]
-        ring_nf
-    _ ≤ a * (a ^ (q - 1) * min a k ^ δ) := by
-        gcongr
-        exact min_le_left _ _
-    _ = a ^ q * min a k ^ δ := by
-        rw [← mul_assoc]
-        congr 1
-        conv_rhs => rw [← add_sub_cancel 1 q]
-        rw [ENNReal.rpow_add_of_nonneg _ _ zero_le_one hq1, ENNReal.rpow_one]
-
 /-- The arithmetic of the thresholds in Gehring's lemma. For `q > 1`, `b ≥ 0` and a dimension `d`
 there is a height ratio `ε ∈ (0, 1]` with `b ε + ε ^ q ≤ 1 / 2`, and a gain `δ₀ > 0` such that for
 `0 < δ ≤ δ₀` the absorption coefficient `2 · 4 ^ d · b · δ / (q + δ - 1) · ε ^ (1 - q - δ)` is at
@@ -255,21 +230,6 @@ private theorem rpow_inv_rpow_eq {d : ℕ} {q δ R a u : ℝ} (hR : 0 ≤ R) (ha
     ← Real.rpow_mul h16, Real.div_rpow (by positivity) hu.le, Real.rpow_neg hu.le]
   field_simp
 
-/-- A nonempty set of positive reals that is bounded above contains an element `ρ` such that
-every element of the set is less than `2 ρ`. -/
-private theorem exists_mem_forall_mem_lt_two_mul {S : Set ℝ} (hS : S.Nonempty) (hbdd : BddAbove S)
-    (hpos : ∀ ρ ∈ S, 0 < ρ) : ∃ ρ ∈ S, ∀ ρ' ∈ S, ρ' < 2 * ρ := by
-  obtain ⟨ρ₁, hρ₁⟩ := hS
-  have hσ : 0 < sSup S := (hpos ρ₁ hρ₁).trans_le (le_csSup hbdd hρ₁)
-  obtain ⟨ρ, hρS, hρ⟩ := exists_lt_of_lt_csSup ⟨ρ₁, hρ₁⟩ (half_lt_self hσ)
-  exact ⟨ρ, hρS, fun ρ' hρ' => by linarith [le_csSup hbdd hρ']⟩
-
-/-- The distribution function `t ↦ m {f > t}` is measurable, being antitone. -/
-private theorem measurable_measure_ofReal_lt (m : Measure α) (f : α → ℝ≥0∞) :
-    Measurable fun t : ℝ => m {x | ENNReal.ofReal t < f x} :=
-  Antitone.measurable fun _ _ htt' =>
-    measure_mono fun _ hx => lt_of_le_of_lt (ENNReal.ofReal_le_ofReal htt') hx
-
 /-- The layer cake formula for a constant height `t₀`, truncated at `k`: integrating
 `δ t ^ (δ - 1)` over `0 < t < min(t₀, k)` gives at most `t₀ ^ δ`. -/
 private theorem ofReal_mul_setLIntegral_measure_lt_const_le (m : Measure α) {t₀ : ℝ} (ht₀ : 0 ≤ t₀)
@@ -329,9 +289,9 @@ private theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : 
         calc g x * min (g x * ε⁻¹) k ^ (q + δ - 1)
             ≤ g x * (ε⁻¹ ^ (q + δ - 1) * min (g x) k ^ (q + δ - 1)) := by
               gcongr
-              exact min_mul_inv_rpow_le _ _ hε1 hp.le
+              exact ENNReal.min_mul_inv_rpow_le _ _ hε1 hp.le
           _ = ε⁻¹ ^ (q + δ - 1) * (g x * min (g x) k ^ (q + δ - 1)) := by ring
-          _ ≤ _ := mul_le_mul_right (mul_min_rpow_le _ _ hq.le hδ.le) _
+          _ ≤ _ := mul_le_mul_right (ENNReal.mul_min_rpow_le _ _ hq.le hδ.le) _
     _ = _ := by ring
 
 /-- The layer cake formula for `h / ε` with respect to the weight `h ^ q`, truncated at `k`:
@@ -351,34 +311,12 @@ private theorem ofReal_mul_setLIntegral_withDensity_rpow_lt_le (m : Measure α) 
   simp only [Pi.mul_apply]
   calc h x ^ q * min (h x * ε⁻¹) k ^ δ ≤ h x ^ q * (ε⁻¹ ^ δ * h x ^ δ) := by
         gcongr
-        refine (min_mul_inv_rpow_le _ _ hε1 hδ.le).trans ?_
+        refine (ENNReal.min_mul_inv_rpow_le _ _ hε1 hδ.le).trans ?_
         gcongr
         exact min_le_left _ _
     _ = ε⁻¹ ^ δ * h x ^ (q + δ) := by
         rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
         ring
-
-/-- **Removing the truncation.** As `k → ∞`, the integrals of `g ^ q min(g, k) ^ δ` increase to the
-integral of `g ^ (q + δ)`. -/
-private theorem tendsto_lintegral_mul_min_rpow (m : Measure α) {g : α → ℝ≥0∞} (hg : Measurable g)
-    {q δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) :
-    Tendsto (fun k : ℕ => ∫⁻ x, g x ^ q * min (g x) (k : ℝ≥0) ^ δ ∂m) atTop
-      (𝓝 (∫⁻ x, g x ^ (q + δ) ∂m)) := by
-  refine lintegral_tendsto_of_tendsto_of_monotone
-    (fun k => ((hg.pow_const q).mul ((hg.min measurable_const).pow_const δ)).aemeasurable)
-    (ae_of_all _ fun x k k' hkk' => ?_) (ae_of_all _ fun x => ?_)
-  · dsimp only
-    gcongr
-  · have hmin : Tendsto (fun k : ℕ => min (g x) ((k : ℝ≥0) : ℝ≥0∞)) atTop (𝓝 (g x)) := by
-      simpa using tendsto_const_nhds.min ENNReal.tendsto_nat_nhds_top
-    have hpow := (ENNReal.continuous_rpow_const (y := δ)).tendsto (g x) |>.comp hmin
-    rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
-    refine ENNReal.Tendsto.const_mul hpow ?_
-    by_cases hgx : g x = ∞
-    · left
-      simp [hgx, hδ]
-    · right
-      exact ENNReal.rpow_ne_top_of_nonneg hq hgx
 
 end General
 
@@ -386,66 +324,6 @@ section Euclidean
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-
-/-- Scaling the radius of a ball by `c > 0` multiplies its Haar measure by `c ^ dim E`. -/
-private theorem addHaar_ball_mul_eq (μ : Measure E) [μ.IsAddHaarMeasure] (y : E) {c : ℝ}
-    (hc : 0 < c) (ρ : ℝ) :
-    μ (ball y (c * ρ)) = ENNReal.ofReal (c ^ finrank ℝ E) * μ (ball y ρ) := by
-  rw [Measure.addHaar_ball_mul_of_pos μ y hc ρ, Measure.addHaar_ball_center μ y ρ]
-
-/-- The average over a ball `B(x, ρ) ⊆ B(x₀, R)` is at most `(R / ρ) ^ dim E` times the average over
-`B(x₀, R)`. -/
-private theorem setLAverage_ball_le (g : E → ℝ≥0∞) {x x₀ : E} {ρ R : ℝ} (hρ : 0 < ρ)
-    (hsub : ball x ρ ⊆ ball x₀ R) :
-    ⨍⁻ y in ball x ρ, g y ∂μ ≤
-      ENNReal.ofReal ((R / ρ) ^ finrank ℝ E) * ⨍⁻ y in ball x₀ R, g y ∂μ := by
-  have hR : 0 < R := by
-    have := hsub (mem_ball_self hρ)
-    exact dist_nonneg.trans_lt (mem_ball.1 this)
-  refine (setLAverage_le_div_mul_setLAverage_of_subset hsub measure_ball_lt_top.ne).trans_eq ?_
-  congr 1
-  have hball : μ (ball x₀ R) = ENNReal.ofReal ((R / ρ) ^ finrank ℝ E) * μ (ball x ρ) := by
-    conv_lhs => rw [← div_mul_cancel₀ R hρ.ne']
-    rw [addHaar_ball_mul_eq μ x₀ (div_pos hR hρ), Measure.addHaar_ball_center μ x₀,
-      Measure.addHaar_ball_center μ x]
-  rw [hball, ENNReal.mul_div_cancel_right (measure_ball_pos μ x hρ).ne' measure_ball_lt_top.ne]
-
-omit [μ.IsAddHaarMeasure] in
-/-- **Summing over a Vitali subfamily.** Let every centre `x ∈ X` carry a radius `0 < ρ x ≤ ρm`
-with `B(x, 2 ρ x) ⊆ S`, and suppose the integral of `G` over each enlarged ball `B(x, 8 ρ x)` is at
-most `c (β ∫_{B(x, 2 ρ x)} F₁ + ∫_{B(x, 2 ρ x)} F₂)`. Then `X` lies in a measurable set `U` on
-which the integral of `G` is at most `c (β ∫_S F₁ + ∫_S F₂)`. -/
-private theorem exists_superset_setLIntegral_le {X S : Set E} {ρ : E → ℝ} {ρm : ℝ}
-    (hρ : ∀ x ∈ X, 0 < ρ x ∧ ρ x ≤ ρm) (hS : ∀ x ∈ X, ball x (2 * ρ x) ⊆ S)
-    {G F₁ F₂ : E → ℝ≥0∞} {c β : ℝ≥0∞}
-    (hball : ∀ x ∈ X, ∫⁻ y in ball x (4 * (2 * ρ x)), G y ∂μ ≤
-      c * (β * ∫⁻ y in ball x (2 * ρ x), F₁ y ∂μ + ∫⁻ y in ball x (2 * ρ x), F₂ y ∂μ)) :
-    ∃ U, MeasurableSet U ∧ X ⊆ U ∧
-      ∫⁻ y in U, G y ∂μ ≤ c * (β * ∫⁻ y in S, F₁ y ∂μ + ∫⁻ y in S, F₂ y ∂μ) := by
-  -- A disjoint subfamily whose `4`-fold enlargements cover the balls `B(x, 2 ρ x)`.
-  obtain ⟨u, huX, hudisj, hucov⟩ := Vitali.exists_disjoint_subfamily_covering_enlargement_ball X
-    id (fun x => 2 * ρ x) (2 * ρm) (fun a ha => by linarith [(hρ a ha).2]) 4 (by norm_num)
-  have hucount : u.Countable := hudisj.countable_of_isOpen (fun _ _ => isOpen_ball)
-    (fun a ha => nonempty_ball.2 (by linarith [(hρ a (huX ha)).1]))
-  have : Countable u := hucount.to_subtype
-  refine ⟨⋃ a : u, ball (a : E) (4 * (2 * ρ a)),
-    (isOpen_iUnion fun _ => isOpen_ball).measurableSet, fun x hx => ?_, ?_⟩
-  · obtain ⟨c, hcu, hc⟩ := hucov x hx
-    exact mem_iUnion.2 ⟨⟨c, hcu⟩, hc (mem_ball_self (by linarith [(hρ x hx).1]))⟩
-  have hdisj : Pairwise (Function.onFun Disjoint fun a : u => ball (a : E) (2 * ρ a)) :=
-    fun a a' haa' => hudisj a.2 a'.2 (Subtype.coe_injective.ne haa')
-  have hUS : (⋃ a : u, ball (a : E) (2 * ρ a)) ⊆ S := iUnion_subset fun a => hS a (huX a.2)
-  have hsum : ∀ F : E → ℝ≥0∞, ∑' a : u, ∫⁻ y in ball (a : E) (2 * ρ a), F y ∂μ ≤
-      ∫⁻ y in S, F y ∂μ := fun F => by
-    rw [← lintegral_iUnion (fun _ => measurableSet_ball) hdisj]
-    exact lintegral_mono_set hUS
-  calc _ ≤ ∑' a : u, ∫⁻ y in ball (a : E) (4 * (2 * ρ a)), G y ∂μ := lintegral_iUnion_le _ _
-    _ ≤ ∑' a : u, c * (β * ∫⁻ y in ball (a : E) (2 * ρ a), F₁ y ∂μ +
-          ∫⁻ y in ball (a : E) (2 * ρ a), F₂ y ∂μ) := tsum_le_tsum fun a => hball a (huX a.2)
-    _ = c * (β * ∑' a : u, ∫⁻ y in ball (a : E) (2 * ρ a), F₁ y ∂μ +
-          ∑' a : u, ∫⁻ y in ball (a : E) (2 * ρ a), F₂ y ∂μ) := by
-        rw [ENNReal.tsum_mul_left, tsum_add, ENNReal.tsum_mul_left]
-    _ ≤ _ := by gcongr <;> exact hsum _
 
 /-- **The level-set estimate behind Gehring's lemma.** Let `r < s ≤ R` and let `g` satisfy
 the reverse Hölder inequality on every ball `B(y, ρ)` with `B(y, 2ρ) ⊆ B(x₀, R)`. At every height
@@ -496,8 +374,10 @@ private theorem setLIntegral_indicator_rpow_le {q : ℝ} (hq : 1 < q) {b ε : �
   have hstop : ∀ x ∈ ball x₀ r, (S x).Nonempty → ∃ ρ ∈ S x, ∀ ρ', 2 * ρ ≤ ρ' → ρ' ≤ 8 * ρm →
       ⨍⁻ y in ball x ρ', G y ∂μ ≤ t ^ q := by
     intro x hx hne
-    obtain ⟨ρ, hρS, hmax⟩ := exists_mem_forall_mem_lt_two_mul hne ⟨ρm, fun ρ hρ => hρ.2.1⟩
-      fun ρ hρ => hρ.1
+    have hbdd : BddAbove (S x) := ⟨ρm, fun ρ hρ => hρ.2.1⟩
+    have hσ : 0 < sSup (S x) := hne.some_mem.1.trans_le (le_csSup hbdd hne.some_mem)
+    obtain ⟨ρ, hρS, hρ⟩ := exists_lt_of_lt_csSup hne (half_lt_self hσ)
+    have hmax : ∀ ρ' ∈ S x, ρ' < 2 * ρ := fun ρ' hρ' => by linarith [le_csSup hbdd hρ']
     refine ⟨ρ, hρS, fun ρ' h1 h2 => ?_⟩
     rcases le_or_gt ρ' ρm with h3 | h3
     · by_contra hcon
@@ -545,7 +425,8 @@ private theorem setLIntegral_indicator_rpow_le {q : ℝ} (hq : 1 < q) {b ε : �
       (hRH a (ρ a) hS.1 ((hsub a ha.1 _ (by linarith [hS.2.1])).trans hsubR))
     calc _ ≤ t ^ q * μ (ball a (4 * (2 * ρ a))) := hint
       _ = ENNReal.ofReal (4 ^ finrank ℝ E) * (μ (ball a (2 * ρ a)) * t ^ q) := by
-          rw [addHaar_ball_mul_eq μ _ (by norm_num : (0 : ℝ) < 4)]
+          rw [Measure.addHaar_ball_mul_of_pos μ _ (by norm_num : (0 : ℝ) < 4),
+            ← Measure.addHaar_ball_center μ a]
           ring
       _ ≤ ENNReal.ofReal (4 ^ finrank ℝ E) * (2 * _) := mul_le_mul_right hstopb _
       _ = _ := by ring
@@ -816,7 +697,7 @@ private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 <
   have hB₀eq : μ (ball x₀ R) = ENNReal.ofReal (2 ^ d * mr) := by
     rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_toReal hmtop]
     conv_lhs => rw [show R = 2 * (R / 2) by ring]
-    rw [addHaar_ball_mul_eq μ x₀ two_pos (R / 2)]
+    rw [Measure.addHaar_ball_mul_of_pos μ x₀ two_pos (R / 2), ← Measure.addHaar_ball_center μ x₀]
   set a := (⨍⁻ x in ball x₀ R, g x ^ q ∂μ).toReal
   have ha : 0 ≤ a := ENNReal.toReal_nonneg
   have hav : ⨍⁻ x in ball x₀ R, g x ^ q ∂μ = ENNReal.ofReal a := by
@@ -869,13 +750,13 @@ and suppose that `g` satisfies the reverse Hölder inequality
 
 `⨍_{B(y, ρ)} g ^ q ≤ b (⨍_{B(y, 2ρ)} g) ^ q + ⨍_{B(y, 2ρ)} h ^ q`
 
-on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`. Then `g` is integrable to the higher power `q + δ` on
-the half ball, with
+on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`. Then
 
 `⨍_{B(x₀, R/2)} g ^ (q + δ) ≤ C ((⨍_{B(x₀, R)} g ^ q) ^ ((q + δ) / q) + ⨍_{B(x₀, R)} h ^ (q + δ))`.
 
-No integrability is assumed: if `g ^ q` or `h ^ (q + δ)` is not integrable on `B(x₀, R)`, the
-right-hand side is infinite. -/
+No integrability is assumed and the averages are extended-valued. If the integrals of `g ^ q` and
+`h ^ (q + δ)` over `B(x₀, R)` are finite, the right-hand side is finite, so `g` is integrable to the
+higher power `q + δ` on the half ball; otherwise the right-hand side is infinite. -/
 theorem exists_setLAverage_rpow_add_le {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
     ∃ δ₀ : ℝ, 0 < δ₀ ∧ ∀ δ, 0 < δ → δ ≤ δ₀ → ∃ C : ℝ≥0, ∀ {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
       AEMeasurable g (μ.restrict (ball x₀ R)) →
