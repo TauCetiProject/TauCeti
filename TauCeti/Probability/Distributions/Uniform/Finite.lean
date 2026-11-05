@@ -119,7 +119,7 @@ multiplicity. -/
 theorem cdf_map_uniformOn_univ [Fintype α] [Nonempty α] (label : α → ℝ) (x : ℝ) :
     cdf ((uniformOn (Set.univ : Set α)).map label) x =
       ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
-  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  rw [Measure.cdf_map _ label (measurable_of_finite label).aemeasurable]
   have hpreimage : label ⁻¹' Set.Iic x =
       (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
     ext i

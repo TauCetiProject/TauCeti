@@ -30,6 +30,8 @@ for set and probability integrals.
   function's integral by the integral of its pointwise positive part.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
   integral one) total extended mass one.
+* `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
+  `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
 ## Exponentials
 
@@ -109,7 +111,7 @@ noncomputable section
 
 open MeasureTheory Filter TopologicalSpace
 
-open scoped ENNReal Function Topology
+open scoped ENNReal NNReal Function Topology
 
 /-- Integration commutes with a continuous additive map between real Banach spaces. -/
 theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
@@ -269,6 +271,14 @@ theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure 
     ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
     ENNReal.ofReal_one]
+
+/-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
+`ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor
+integrability is required: when the function is not integrable, both sides vanish. -/
+theorem toReal_lintegral_coe_eq_integral {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {f : Ω → ℝ≥0} (hf : AEMeasurable f μ) :
+    (∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal = ∫ ω, (f ω : ℝ) ∂μ := by
+  simpa using (integral_toReal hf.coe_nnreal_ennreal (.of_forall fun _ ↦ ENNReal.coe_lt_top)).symm
 
 /-- **`L¹` convergence in Bochner form is `eLpNorm _ 1` convergence.** If `∫ ‖f i - g‖ → 0` along
 `l` and the differences `f i - g` are eventually integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/
