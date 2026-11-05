@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Complex.Pseudoconvex.Strong
 public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 
-import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
@@ -21,10 +20,12 @@ in the strong `C²` Whitney topology
 dense in the strong `C^∞` Whitney topology with prescribed `C⁰` error and relative to an open
 neighbourhood of any closed set where the function is already Morse
 (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`,
-`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`). Combining both shows that any smooth proper
-bounded-below strongly `q`-pseudoconvex exhaustion can be perturbed within `C⁰` distance `1` (and
-away from an already-Morse closed set) to a proper bounded-below strongly `q`-pseudoconvex Morse
-exhaustion whose critical points all have real Morse index at most `n + q`
+`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`). Combining both gives relative Morse
+approximation preserving strong `q`-pseudoconvexity and the critical index bound `n + q`
+(`ContMDiffMap.exists_isMorse_sub_compl_isManifoldStronglyPseudoconvexAt`), and shows that any
+smooth proper bounded-below strongly `q`-pseudoconvex exhaustion can be perturbed within `C⁰`
+distance `1` (and away from an already-Morse closed set) to a proper bounded-below strongly
+`q`-pseudoconvex Morse exhaustion whose critical points all have real Morse index at most `n + q`
 (`ContMDiffMap.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt`).
 
 Combining this Morse approximation with
@@ -40,7 +41,7 @@ any module over a ring, such as `ℤ`).
 
 ## Main results
 
-* `ContMDiffMap.exists_isMorse_mem_ball_sub_compl_isManifoldStronglyPseudoconvexAt`,
+* `ContMDiffMap.exists_isMorse_sub_compl_isManifoldStronglyPseudoconvexAt`,
   `ContMDiffMap.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt`: relative and
   proper Morse approximation preserving strong `q`-pseudoconvexity and the index bound `n + q`.
 * `TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`,
@@ -71,13 +72,18 @@ namespace TauCeti
 variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M] [T2Space M]
 
+local instance : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
+
+local instance : IsManifold 𝓘(ℝ, E) ∞ M :=
+  IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
+
 /-- **Relative Morse approximation preserving strong `q`-pseudoconvexity.** Let `f` be a smooth
 everywhere strongly `q`-pseudoconvex function on a Hausdorff sigma-compact complex manifold `M` of
 complex dimension `n`, already Morse on an open neighbourhood `V` of a closed set `C`. For every
 continuous positive tolerance `ε`, there is a smooth Morse function `g` with `|g - f| < ε`
 everywhere, agreeing with `f` near `C`, which remains everywhere strongly `q`-pseudoconvex and has
 Morse index at most `n + q` at every critical point. -/
-theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl_isManifoldStronglyPseudoconvexAt
+theorem _root_.ContMDiffMap.exists_isMorse_sub_compl_isManifoldStronglyPseudoconvexAt
     [SigmaCompactSpace M] (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (q : ℕ)
     (hf : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
     {ε : M → ℝ} (hε : Continuous ε) (hε₀ : ∀ x, 0 < ε x)
@@ -87,15 +93,11 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl_isManifoldStrongly
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ ∧
       (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
       ∀ x ∈ criticalPoints 𝓘(ℝ, E) g, manifoldMorseIndex 𝓘(ℝ, E) g x ≤ finrank ℂ E + q := by
-  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
-  have : IsManifold 𝓘(ℝ, E) ∞ M :=
-    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   obtain ⟨c, -, hc⟩ :=
     exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by norm_cast) q f hf
   obtain ⟨g, hg, hgm, hgε, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c hε hε₀ hC hV hCV hfV
-  refine ⟨g, hgm, hgε, hgs, fun x ↦ hc g hg x, fun x hx ↦ ?_⟩
-  exact (hc g hg x).manifoldMorseIndex_le (g.contMDiff x |>.of_le (by norm_cast))
-    (mem_criticalPoints.1 hx)
+  exact ⟨g, hgm, hgε, hgs, hc g hg, fun x hx ↦
+    (hc g hg x).manifoldMorseIndex_le_of_mem_criticalPoints (g.contMDiff x) hx⟩
 
 /-- **Proper Morse exhaustion approximation preserving strong `q`-pseudoconvexity.** Every smooth
 proper bounded-below everywhere strongly `q`-pseudoconvex function `f` on `M`, already Morse on an
@@ -113,17 +115,13 @@ theorem _root_.ContMDiffMap.exists_isMorse_isProperMap_bddBelow_isManifoldStrong
       (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
       ∀ x ∈ criticalPoints 𝓘(ℝ, E) g, manifoldMorseIndex 𝓘(ℝ, E) g x ≤ finrank ℂ E + q := by
   have : SigmaCompactSpace M := hp.sigmaCompactSpace
-  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
-  have : IsManifold 𝓘(ℝ, E) ∞ M :=
-    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   obtain ⟨c, -, hc⟩ :=
     exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by norm_cast) q f hf
   obtain ⟨g, hg, hgm, hgp, hgf, hgs⟩ := f.exists_isMorse_isProperMap_mem_ball c hp hC hV hCV hfV
   obtain ⟨b, hb⟩ := hbdd
-  refine ⟨g, hgm, hgp, ⟨b - 1, forall_mem_range.2 fun x ↦ by
-    linarith [(abs_lt.1 (hgf x)).1, hb (mem_range_self x)]⟩, hgf, hgs, fun x ↦ hc g hg x,
-    fun x hx ↦ (hc g hg x).manifoldMorseIndex_le (g.contMDiff x |>.of_le (by norm_cast))
-      (mem_criticalPoints.1 hx)⟩
+  exact ⟨g, hgm, hgp, ⟨b - 1, forall_mem_range.2 fun x ↦ by
+    linarith [(abs_lt.1 (hgf x)).1, hb (mem_range_self x)]⟩, hgf, hgs, hc g hg, fun x hx ↦
+    (hc g hg x).manifoldMorseIndex_le_of_mem_criticalPoints (g.contMDiff x) hx⟩
 
 /-- **Homology vanishing on manifolds with a smooth strongly `q`-pseudoconvex exhaustion.** If `M`
 carries a smooth proper bounded-below everywhere strongly `q`-pseudoconvex function `f : M → ℝ`
@@ -135,9 +133,6 @@ theorem isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvex
     [HasColimitsOfShape ℕ 𝒜] [HasExactColimitsOfShape ℕ 𝒜] (R : 𝒜) {n : ℕ}
     (hn : finrank ℂ E + q < n) :
     IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) := by
-  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
-  have : IsManifold 𝓘(ℝ, E) ∞ M :=
-    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
   obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
     F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd

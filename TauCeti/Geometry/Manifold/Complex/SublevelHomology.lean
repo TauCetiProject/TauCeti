@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 public import TauCeti.Geometry.Manifold.Morse.Cell.Band
-public import TauCeti.Geometry.Manifold.Morse.SquaredDistance
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 public import TauCeti.Topology.Maps.Proper.Metric
 
@@ -115,8 +113,8 @@ theorem IsMorse.exists_isZero_singularHomology_sublevelPair_of_isManifoldStrongl
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   exact hf.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le
-    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le (hf.contMDiff x |>.of_le (by norm_cast))
-      (mem_criticalPoints.1 hx.1)) hδ hcompact
+    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx.1)
+    hδ hcompact
 
 /-- **Relative homology across a critical level of squared distance along a holomorphic
 immersion.** Let `i` be a holomorphic immersion of a complex manifold of complex dimension `n` into
@@ -180,8 +178,7 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_isManifoldStronglyPseudo
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   exact hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb
-    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le (hf.contMDiff x |>.of_le (by norm_cast))
-      (mem_criticalPoints.1 hx.1)) R hk
+    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx.1) R hk
 
 /-- **A manifold with a strongly `q`-pseudoconvex Morse exhaustion has no homology above degree
 `n + q`.** Let `f` be a proper real Morse function, bounded below, on a complex manifold of complex
@@ -198,8 +195,7 @@ theorem IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   exact hf.isZero_singularHomology_of_manifoldMorseIndex_le hp hbdd
-    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le (hf.contMDiff x |>.of_le (by norm_cast))
-      (mem_criticalPoints.1 hx)) R hk
+    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le_of_mem_criticalPoints (hf.contMDiff x) hx) R hk
 
 /-- **Andreotti–Frankel theorem for proper holomorphic immersions.** If a complex manifold `M` of
 complex dimension `n` admits a smooth proper holomorphic immersion into a proper complex inner
