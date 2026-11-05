@@ -192,6 +192,21 @@ theorem integral_deriv_mul_sub (c a : ℝ) : ∫ y, deriv smoothTransition (c * 
     integral_sub_right_eq_self (deriv smoothTransition), integral_deriv, abs_inv, smul_eq_mul,
     mul_one]
 
+/-- The smooth transition function `ψ`, composed with an affine map `y ↦ c y - a`, `c ≠ 0`, has
+total variation `|c|⁻¹`: `∫_ℝ ψ'(c y - a) dy = |c|⁻¹` as a lower Lebesgue integral. -/
+theorem lintegral_ofReal_deriv_mul_sub {c : ℝ} (hc : c ≠ 0) (a : ℝ) :
+    ∫⁻ y, ENNReal.ofReal (deriv smoothTransition (c * y - a)) = ENNReal.ofReal |c|⁻¹ := by
+  rw [← ofReal_integral_eq_lintegral_ofReal
+      ((integrable_deriv.comp_sub_right a).comp_mul_left' hc)
+      (.of_forall fun _ => smoothTransition.monotone.deriv_nonneg),
+    integral_deriv_mul_sub]
+
+/-- The smooth transition function `ψ`, composed with an affine map `y ↦ a - c y`, `c ≠ 0`, has
+total variation `|c|⁻¹`: `∫_ℝ ψ'(a - c y) dy = |c|⁻¹` as a lower Lebesgue integral. -/
+theorem lintegral_ofReal_deriv_sub_mul {c : ℝ} (hc : c ≠ 0) (a : ℝ) :
+    ∫⁻ y, ENNReal.ofReal (deriv smoothTransition (a - c * y)) = ENNReal.ofReal |c|⁻¹ := by
+  simpa [sub_eq_neg_add, add_comm] using lintegral_ofReal_deriv_mul_sub (neg_ne_zero.2 hc) (-a)
+
 /-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition
 function `ψ`, for `c ≠ 0`, recovers `|c|⁻¹` times its limit `a₀` along the direction of `c` as
 `T → ∞`: the weight has integral `|c|⁻¹` and is supported where `c y ≥ T`. -/

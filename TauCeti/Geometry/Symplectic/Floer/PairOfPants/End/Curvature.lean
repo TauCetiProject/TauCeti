@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
-public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
@@ -33,10 +31,7 @@ the ends to one-variable integrals along the ends.
   curvature is at most `B ∫ |P'(±s)| ds`
   (`TauCeti.SymplecticForm.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le`).
 * An integral over the strip of an end of a function of `s` alone is an integral over the
-  half-line `±s > 1/2` (`TauCeti.Floer.setLIntegral_endStrip_fst`), and a cutoff `β(±s - c)` or
-  `β(c - ±s)` along an end, for the smooth transition `β`, has total variation one
-  (`TauCeti.ThricePuncturedSphere.Puncture.lintegral_ofReal_deriv_smoothTransition_endSign_mul_sub`,
-  `TauCeti.ThricePuncturedSphere.Puncture.lintegral_ofReal_deriv_smoothTransition_sub_endSign_mul`).
+  half-line `±s > 1/2` (`TauCeti.Floer.setLIntegral_endStrip_fst`).
 
 ## References
 
@@ -49,37 +44,6 @@ public noncomputable section
 
 open Set Real Function MeasureTheory
 open scoped Topology ENNReal
-
-namespace TauCeti.ThricePuncturedSphere.Puncture
-
-/-- A cutoff `β(±s - c)` rising along the end `q` has total increase one. -/
-theorem lintegral_ofReal_deriv_smoothTransition_endSign_mul_sub (q : Puncture) (c : ℝ) :
-    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - c)) = 1 := by
-  have h₁ : ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (s - c)) = 1 := by
-    rw [lintegral_sub_right_eq_self (fun s ↦ ENNReal.ofReal (deriv smoothTransition s)) c,
-      ← ofReal_integral_eq_lintegral_ofReal smoothTransition.integrable_deriv
-        (ae_of_all _ fun _ ↦ smoothTransition.monotone.deriv_nonneg),
-      smoothTransition.integral_deriv, ENNReal.ofReal_one]
-  cases q
-  · simpa using h₁
-  · simpa using h₁
-  · convert smoothTransition.lintegral_ofReal_mul_deriv (-c) one_pos using 4 with s
-    simp only [endSign_inf, one_mul]
-    ring_nf
-
-/-- A cutoff `β(c - ±s)` falling along the end `q` has total decrease one. -/
-theorem lintegral_ofReal_deriv_smoothTransition_sub_endSign_mul (q : Puncture) (c : ℝ) :
-    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (c - q.endSign * s)) = 1 := by
-  have h₁ : ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (c - s)) = 1 := by
-    simpa using smoothTransition.lintegral_ofReal_mul_deriv c one_pos
-  cases q
-  · simpa using h₁
-  · simpa using h₁
-  · convert lintegral_ofReal_deriv_smoothTransition_endSign_mul_sub zero (-c) using 4 with s
-    simp only [endSign_inf, endSign_zero]
-    ring_nf
-
-end TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.Floer
 
@@ -241,17 +205,17 @@ theorem hamiltonianCurvature_perturbationPullback_endChart_of_eq (ω : Symplecti
   ring
 
 /-- **The integrated curvature over an end strip.** Let `K` be a perturbation one-form on `ℂ`
-which is `C¹` on `S` jointly with the target point and which, pulled back along the end lift of
-`q`, is `P(±s) h(t) dt` on the part `±s > 0` of the end, with `|h| ≤ B`. Then for every map `u`
-into the target, the integral of `|R_K(z, u(z))|` over the image of the strip of `q` is at most
-`B` times the total variation `∫ |P'(±s)| ds` of the profile `P`. -/
+which is differentiable on `S` jointly with the target point and which, pulled back along the end
+lift of `q`, is `P(±s) h(t) dt` on the part `±s > 0` of the end, with `|h| ≤ B`. Then for every
+map `u` into the target, the integral of `|R_K(z, u(z))|` over the image of the strip of `q` is at
+most `B` times the total variation `∫ |P'(±s)| ds` of the profile `P`. -/
 theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : SymplecticForm V)
     {q : Puncture} {P : ℝ → ℝ} {h : ℝ → V → ℝ}
-    (hKd : ∀ w : ℂ, w ≠ 0 ∧ w ≠ 1 → ∀ x, ContDiffAt ℝ 1 (fun p : ℂ × V ↦ K p.1 p.2) (w, x))
+    (hKd : ∀ w : ℂ, w ≠ 0 ∧ w ≠ 1 → ∀ x, DifferentiableAt ℝ (fun p : ℂ × V ↦ K p.1 p.2) (w, x))
     (hK : ∀ z : ℂ, 0 < q.endSign * z.re → ∀ x v,
       K (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
         v.im * (P (q.endSign * z.re) * h z.im x))
-    (hP : Differentiable ℝ P) (hh : ContDiff ℝ 1 (uncurry h)) {B : ℝ} (hB : ∀ t x, |h t x| ≤ B)
+    (hP : Differentiable ℝ P) (hh : Differentiable ℝ (uncurry h)) {B : ℝ} (hB : ∀ t x, |h t x| ≤ B)
     (u : ℝ × ℝ → V) :
     ∫⁻ z in endChart q '' endStrip q,
         ‖ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
@@ -264,12 +228,11 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : Symplect
   have hdom {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) (x : V) (v : ℂ) :
       DifferentiableAt ℝ (fun z' ↦ K (Complex.equivRealProdCLM.symm z') x v) z := by
-    have hK' := (hKd _ hz x).differentiableAt one_ne_zero
-    exact (hK'.comp z (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
+    exact ((hKd _ hz x).comp z (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
       (differentiableAt_const x))).clm_apply (differentiableAt_const v)
   have htgt {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) (v : ℂ) :
       DifferentiableAt ℝ (fun y ↦ K w y v) x :=
-    (((hKd w hw x).differentiableAt one_ne_zero).comp x
+    ((hKd w hw x).comp x
       ((differentiableAt_const w).prodMk differentiableAt_id)).clm_apply (differentiableAt_const v)
   have hm : Measurable fun s ↦ ‖deriv P (q.endSign * s)‖ₑ * ENNReal.ofReal B :=
     ((measurable_deriv P).comp (measurable_const.mul measurable_id)).enorm.mul_const _
@@ -280,7 +243,7 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : Symplect
         refine setLIntegral_mono' (measurableSet_endStrip q) fun z hz ↦ ?_
         have hhx : DifferentiableAt ℝ (fun t ↦ h t (u (endChart q z))) z.2 :=
           DifferentiableAt.comp (g := uncurry h) (f := fun t : ℝ ↦ (t, u (endChart q z)))
-            z.2 (hh.differentiable one_ne_zero _)
+            z.2 (hh _)
             (differentiableAt_id.prodMk (differentiableAt_const _))
         rw [ω.hamiltonianCurvature_perturbationPullback_endChart_of_eq hK
           (endSign_mul_pos_of_mem_endStrip hz) (hP _) hhx, enorm_mul, enorm_mul,

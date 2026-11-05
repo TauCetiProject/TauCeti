@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndCurvature
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
@@ -168,13 +168,15 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         z (u z)‖ₑ ≤ ENNReal.ofReal (B q) := by
   have hβ : ∫⁻ s, ‖deriv (fun σ ↦ smoothTransition (σ - 1)) (q.endSign * s)‖ₑ = 1 := by
     simp_rw [deriv_comp_sub_const, Real.enorm_eq_ofReal smoothTransition.monotone.deriv_nonneg]
-    exact lintegral_ofReal_deriv_smoothTransition_endSign_mul_sub q 1
+    rw [smoothTransition.lintegral_ofReal_deriv_mul_sub q.endSign_ne_zero, abs_endSign, inv_one,
+      ENNReal.ofReal_one]
   refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le
     (P := fun σ ↦ smoothTransition (σ - 1))
-    (fun w hw x ↦ contDiffAt_pairOfPantsPerturbation_prod hH hHs hw x)
+    (fun w hw x ↦ (contDiffAt_pairOfPantsPerturbation_prod hH hHs hw x).differentiableAt
+      one_ne_zero)
     (fun z hz x v ↦ pairOfPantsPerturbation_cylindricalEndLift_of_pos (hH q) hz x v)
     (fun σ ↦ (smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _ |>.comp σ
-      (differentiableAt_id.sub_const 1)) (hHs q) (hB q) u).trans_eq ?_
+      (differentiableAt_id.sub_const 1)) ((hHs q).differentiable one_ne_zero) (hB q) u).trans_eq ?_
   rw [hβ, one_mul]
 
 /-- **The integrated curvature of the pair-of-pants perturbation.** Let `K` be the pair-of-pants
