@@ -70,26 +70,6 @@ theorem finite_smul_add_inter {d : ℕ} {S : Set E}
       ((isCompact_Icc.image_of_continuousOn (hf i).continuousOn).isBounded)).subset hcov).smul₀ c
   · exact hB
 
-omit [NormedSpace ℝ E] in
-/-- A cover of `X` by finitely many sets of diameter at most `ρ` bounds the number of points of a
-discrete subgroup in `X` by the number of sets times the number of points of the subgroup in the
-closed ball of radius `ρ`. -/
-private theorem ncard_inter_le_card_mul {ι : Type*} [Fintype ι] (L : AddSubgroup E)
-    [DiscreteTopology L] {X : Set E} (P : ι → Set E) {ρ : ℝ} (hcov : X ⊆ ⋃ p, P p)
-    (hdist : ∀ p, ∀ u ∈ P p, ∀ v ∈ P p, dist u v ≤ ρ) :
-    (X ∩ (L : Set E)).ncard ≤ Fintype.card ι * (closedBall (0 : E) ρ ∩ (L : Set E)).ncard := by
-  calc (X ∩ (L : Set E)).ncard
-      ≤ (⋃ p, P p ∩ (L : Set E)).ncard := by
-        refine Set.ncard_le_ncard ?_ (Set.finite_iUnion fun p ↦
-          L.finite_inter (Metric.isBounded_iff.2 ⟨ρ, fun _ hu _ hv ↦ hdist p _ hu _ hv⟩))
-        rw [← Set.iUnion_inter]
-        exact Set.inter_subset_inter_left _ hcov
-    _ ≤ ∑ p, (P p ∩ (L : Set E)).ncard := Set.ncard_iUnion_le_of_fintype _
-    _ ≤ ∑ _p : ι, (closedBall (0 : E) ρ ∩ (L : Set E)).ncard :=
-        Finset.sum_le_sum fun p _ ↦
-          AddSubgroup.ncard_inter_le_ncard_closedBall_inter L (hdist p)
-    _ = _ := by simp
-
 omit [ProperSpace E] in
 /-- Dilating a set `T` of diameter at most `C / m` by `c` with `c * C / m ≤ 1` and adding a set of
 points within `r` of the origin gives a set of diameter at most `1 + 2 * r`. -/
@@ -159,7 +139,7 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
     obtain ⟨k, hk⟩ := mem_iUnion.1 (hTcov i hi)
     exact mem_iUnion.2 ⟨(i, k), Set.mem_add.2
       ⟨c • s, Set.smul_mem_smul_set hk, b, hb, rfl⟩⟩
-  have hcount := ncard_inter_le_card_mul L _ hPcov fun p ↦
+  have hcount := L.ncard_inter_le_card_mul_ncard_closedBall_inter _ hPcov fun p ↦
     dist_smul_add_le (one_pos.trans_le hc).le hcm (hTdist p.1 p.2) hrB
   simp only [Fintype.card_prod, Fintype.card_fin, Fintype.card_pi, Finset.prod_const,
     Finset.card_univ] at hcount
