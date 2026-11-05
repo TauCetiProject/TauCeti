@@ -39,16 +39,6 @@ universe u v
 variable {k : Type u} {G : Type v} [Field k] [Group G]
   {N : Subgroup G} [N.Normal] (A : FDRep k N)
 
-/-- Gauging a Clifford section multiplies its multiplicity operator on the right
-by the inverse gauge unit. -/
-theorem cliffordMultiplicityRepresentation_gauge (W : FDRep k (inertia A))
-    (s : (groupExtension A).Section) (b : Quotient A → (End A)ˣ) (q : Quotient A)
-    (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
-    cliffordMultiplicityRepresentation A W (s.gauge b q) f =
-      op (↑(b q)⁻¹ : End A) • cliffordMultiplicityRepresentation A W (s q) f := by
-  rw [GroupExtension.Section.gauge_apply, groupExtension_inl, map_mul, mul_apply_eq_comp,
-    inl_apply, cliffordMultiplicityRepresentation_mk_kernelLift]
-
 variable (s t : (groupExtension A).Section) (hs : s 1 = 1) (ht : t 1 = 1)
 
 /-- The multiplicity algebras of two normalized Clifford sections are isomorphic.
@@ -131,13 +121,15 @@ private noncomputable def multiplicitySectionIsoApp (W : FDRep k (inertia A)) :
       right_inv _ := rfl
       map_add' _ _ := rfl
       map_smul' a f := by
-        exact (CrossedSystem.SemilinearAction.module_smul
-          (cliffordMultiplicitySemilinearAction A t ht W) a f).trans
-          ((congrArg (fun F => F a f)
-            (cliffordMultiplicitySemilinearAction_toAlgHom_section A s t hs ht W)).trans
-            ((CrossedSystem.SemilinearAction.module_smul
-              (cliffordMultiplicitySemilinearAction A s hs W) _ _).symm.trans
-              (ModuleCat.restrictScalars.smul_def (E).toRingHom (M := (Cs).obj W) a f).symm)) }
+        refine (CrossedSystem.SemilinearAction.module_smul
+          (cliffordMultiplicitySemilinearAction A t ht W) a f).trans ?_
+        -- Compare the algebra actions, then interpret the result in the restricted module.
+        refine (congrArg (fun F => F a f)
+          (cliffordMultiplicitySemilinearAction_toAlgHom_section A s t hs ht W)).trans ?_
+        refine (CrossedSystem.SemilinearAction.module_smul
+          (cliffordMultiplicitySemilinearAction A s hs W) _ _).symm.trans ?_
+        exact (ModuleCat.restrictScalars.smul_def
+          (E).toRingHom (M := (Cs).obj W) a f).symm }
   exact e.toModuleIso
 
 /-- Changing the normalized Clifford section leaves the multiplicity functor naturally
