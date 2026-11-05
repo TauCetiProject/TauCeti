@@ -209,31 +209,6 @@ theorem norm_smul_resolvent_apply_sub_self_le {A : X →ₗ.[ℝ] X} {lambda M :
     _ ≤ M / lambda * ‖A x‖ := by gcongr
     _ = M * ‖A x‖ / lambda := by ring
 
-/-- On `D(A)`, `lambda R(lambda, A) x` tends to `x` as `lambda -> +∞` under the resolvent bound
-`‖R(lambda, A)‖ ≤ M / lambda`. Density of the domain is not needed for this domain-restricted
-form. -/
-theorem tendsto_smul_resolvent_apply_atTop_of_mem {A : X →ₗ.[ℝ] X} {M : ℝ}
-    (hres : ∀ lambda : ℝ, 0 < lambda → lambda ∈ LinearPMap.resolventSet A)
-    (hbound : ∀ lambda : ℝ, 0 < lambda → ‖LinearPMap.resolvent A lambda‖ ≤ M / lambda)
-    (x : A.domain) :
-    Filter.Tendsto (fun lambda : ℝ => lambda • LinearPMap.resolvent A lambda (x : X))
-      Filter.atTop (nhds (x : X)) := by
-  rw [Metric.tendsto_atTop]
-  intro epsilon hepsilon
-  have hquotient : Filter.Tendsto (fun lambda : ℝ => M * ‖A x‖ / lambda)
-      Filter.atTop (nhds 0) :=
-    tendsto_const_nhds.div_atTop Filter.tendsto_id
-  rw [Metric.tendsto_atTop] at hquotient
-  obtain ⟨N, hN⟩ := hquotient epsilon hepsilon
-  refine ⟨max N 1, fun lambda hlambda => ?_⟩
-  have hlambda_pos : 0 < lambda := lt_of_lt_of_le zero_lt_one (le_trans (le_max_right _ _) hlambda)
-  rw [dist_eq_norm]
-  refine (norm_smul_resolvent_apply_sub_self_le (hres lambda hlambda_pos)
-    (hbound lambda hlambda_pos) x).trans_lt ?_
-  have hquotient_lt := hN lambda (le_trans (le_max_left _ _) hlambda)
-  rw [Real.dist_eq, sub_zero] at hquotient_lt
-  exact lt_of_le_of_lt (le_abs_self _) hquotient_lt
-
 /-- Under the resolvent bound `‖R(lambda, A)‖ ≤ M / lambda` at a positive `lambda`, the scaled
 resolvent `lambda R(lambda, A)` has norm at most `M`. -/
 theorem norm_smul_resolvent_le {A : X →ₗ.[ℝ] X} {lambda M : ℝ} (hlambda : 0 < lambda)

@@ -102,6 +102,26 @@ theorem yosidaApproximation_apply_eq_smul_resolvent_apply {A : X →ₗ.[𝕜] X
   rw [yosidaApproximation_apply_eq_smul_apply_resolvent hlambda]
   exact congrArg (lambda • ·) (LinearPMap.resolvent_apply_comm hlambda x).symm
 
+/-- On the domain, normalized resolvents converge to the identity whenever the resolvent
+norm tends to zero along a family of resolvent points. -/
+theorem tendsto_smul_resolvent_apply_of_mem {ι : Type*} {l : Filter ι} {z : ι → 𝕜}
+    {A : X →ₗ.[𝕜] X}
+    (hres : ∀ᶠ i in l, z i ∈ A.resolventSet)
+    (hzero : Filter.Tendsto (fun i => ‖A.resolvent (z i)‖) l (nhds 0))
+    (x : A.domain) :
+    Filter.Tendsto (fun i => z i • A.resolvent (z i) (x : X)) l (nhds (x : X)) := by
+  have hRzero : Filter.Tendsto (fun i => A.resolvent (z i) (A x)) l (nhds 0) := by
+    apply squeeze_zero_norm' (Filter.Eventually.of_forall fun i =>
+      ContinuousLinearMap.le_opNorm (A.resolvent (z i)) (A x))
+    simpa using hzero.mul_const ‖A x‖
+  have heq : (fun i => (x : X) + A.resolvent (z i) (A x)) =ᶠ[l]
+      (fun i => z i • A.resolvent (z i) (x : X)) := by
+    filter_upwards [hres] with i hi
+    rw [(LinearPMap.resolvent_apply_comm hi x).trans
+      (LinearPMap.apply_resolvent hi (x : X))]
+    abel
+  simpa only [add_zero] using (tendsto_const_nhds.add hRzero).congr' heq
+
 /-- Uniformly bounded normalized resolvents converge strongly to the identity if their
 resolvents tend to zero in operator norm and the operator has dense domain. -/
 theorem tendsto_smul_resolvent_apply {ι : Type*} {l : Filter ι} {z : ι → 𝕜}
@@ -114,18 +134,8 @@ theorem tendsto_smul_resolvent_apply {ι : Type*} {l : Filter ι} {z : ι → �
   apply ContinuousLinearMap.tendsto_apply_of_dense (g := (1 : X →L[𝕜] X))
     hdense hbound _ x
   intro y hy
-  have hRzero : Filter.Tendsto (fun i => A.resolvent (z i) (A ⟨y, hy⟩)) l (nhds 0) := by
-    apply squeeze_zero_norm' (Filter.Eventually.of_forall fun i =>
-      ContinuousLinearMap.le_opNorm (A.resolvent (z i)) (A ⟨y, hy⟩))
-    simpa using hzero.mul_const ‖A ⟨y, hy⟩‖
-  have heq : (fun i => y + A.resolvent (z i) (A ⟨y, hy⟩)) =ᶠ[l]
-      (fun i => z i • A.resolvent (z i) y) := by
-    filter_upwards [hres] with i hi
-    rw [(LinearPMap.resolvent_apply_comm hi ⟨y, hy⟩).trans
-      (LinearPMap.apply_resolvent hi y)]
-    abel
-  simpa only [add_zero, _root_.smul_apply, one_apply_eq_self] using
-    (tendsto_const_nhds.add hRzero).congr' heq
+  simpa only [_root_.smul_apply, one_apply_eq_self] using
+    tendsto_smul_resolvent_apply_of_mem hres hzero ⟨y, hy⟩
 
 /-- Convergence of normalized resolvents at `A x` gives convergence of Yosida approximations
 on the domain of `A`. -/

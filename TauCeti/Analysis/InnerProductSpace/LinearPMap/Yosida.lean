@@ -47,6 +47,11 @@ variable (A : H →ₗ.[ℂ] H)
 noncomputable def imaginaryYosidaApproximation (r : ℝ) : H →L[ℂ] H :=
   LinearPMap.yosidaApproximation A (I * r)
 
+/-- The imaginary-shift approximation is the generic Yosida approximation at `ir`. -/
+theorem imaginaryYosidaApproximation_eq_yosidaApproximation (r : ℝ) :
+    A.imaginaryYosidaApproximation r = A.yosidaApproximation (I * r) := by
+  rw [imaginaryYosidaApproximation]
+
 /-- The average of the positive- and negative-shift approximations; self-adjoint when `A` is
 (see `IsSelfAdjoint.isSelfAdjoint_symmetricYosidaApproximation`). -/
 noncomputable def symmetricYosidaApproximation (r : ℝ) : H →L[ℂ] H :=
@@ -55,7 +60,8 @@ noncomputable def symmetricYosidaApproximation (r : ℝ) : H →L[ℂ] H :=
 /-- The formula for the imaginary-shift approximation. -/
 theorem imaginaryYosidaApproximation_def (r : ℝ) :
     A.imaginaryYosidaApproximation r = -((r : ℂ) ^ 2 • A.resolvent (I * r)) - (I * r) • 1 := by
-  rw [imaginaryYosidaApproximation, LinearPMap.yosidaApproximation_def]
+  rw [imaginaryYosidaApproximation_eq_yosidaApproximation,
+    LinearPMap.yosidaApproximation_def]
   simp [mul_pow]
 
 /-- The symmetric approximation is the average of the two opposite shifts. -/
@@ -96,7 +102,7 @@ theorem _root_.IsSelfAdjoint.norm_imaginaryYosidaApproximation_le
     (hA : IsSelfAdjoint A) (r : ℝ) : ‖A.imaginaryYosidaApproximation r‖ ≤ 2 * |r| := by
   have hres := hA.norm_smul_resolvent_I_mul_le_one r
   rw [norm_smul] at hres
-  simpa [imaginaryYosidaApproximation] using
+  simpa [imaginaryYosidaApproximation_eq_yosidaApproximation] using
     (LinearPMap.norm_yosidaApproximation_le hres)
 
 /-- The approximations at opposite imaginary shifts are adjoints of one another. -/
