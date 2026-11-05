@@ -25,8 +25,10 @@ namespace TauCeti
 
 variable {n k : ℕ}
 
+-- Simplify fiber predicates before simp expands membership in the image.
+
 /-- The fiber of a section over any ambient base point is finite, even outside the base. -/
-theorem finite_setOf_cons_mem_image_cylinder_sectionSet {α : Type*} {C : Set (Fin n → α)}
+@[simp↓] theorem finite_setOf_cons_mem_image_cylinder_sectionSet {α : Type*} {C : Set (Fin n → α)}
     (θ : Fin k → C → α) (i : Fin k) (x : Fin n → α) :
     {t : α | Fin.cons t x ∈ cylinder C '' sectionSet θ i}.Finite := by
   by_cases hx : x ∈ C
@@ -44,7 +46,7 @@ theorem finite_setOf_cons_mem_image_cylinder_sectionSet {α : Type*} {C : Set (F
     exact finite_empty
 
 /-- A sector has an infinite fiber exactly over its base. This includes unbounded sectors. -/
-theorem infinite_setOf_cons_mem_image_cylinder_sectorSet_iff {α : Type*} [LinearOrder α]
+@[simp↓] theorem infinite_setOf_cons_mem_image_cylinder_sectorSet_iff {α : Type*} [LinearOrder α]
     [DenselyOrdered α] [NoMinOrder α] [NoMaxOrder α] [Nonempty α]
     {C : Set (Fin n → α)} {θ : Fin k → C → α}
     (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) (x : Fin n → α) :
