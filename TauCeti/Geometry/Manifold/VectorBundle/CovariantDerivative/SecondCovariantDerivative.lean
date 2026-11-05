@@ -35,7 +35,8 @@ torsion, is `CovariantDerivative.secondCovariantDerivative_sub_swap`, in the cur
   the second slot, `∇²σ(u, Y) = ∇_u (∇_Y σ) - ∇_{∇ᵀ_u Y} σ`.
 * `CovariantDerivative.eq_secondCovariantDerivative_iff`: this value characterizes `∇²σ`.
 * `CovariantDerivative.covariantDerivative_covariantDerivative_smul_section`: the Leibniz rule for
-  the iterated covariant derivative of a function multiple of a section.
+  the iterated covariant derivative of a function multiple of a section, for a `C^k` connection
+  with `1 ≤ k`.
 
 ## References
 
@@ -65,28 +66,31 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, ContinuousSMul 𝕜 (V x)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
-/-- **Second covariant derivative of a function multiple.** For a vector field `X`, a smooth
-vector field `Y`, a smooth function `f` and a smooth section `σ`,
+/-- **Second covariant derivative of a function multiple.** For a `C^k` connection with `1 ≤ k`,
+a vector field `X`, a `C^k` vector field `Y`, a `C^(k + 1)` function `f` and a `C^(k + 1)` section
+`σ`,
 `∇_X ∇_Y (f σ) = f ∇_X ∇_Y σ + (X f) ∇_Y σ + (Y f) ∇_X σ + (X (Y f)) σ`. -/
-theorem covariantDerivative_covariantDerivative_smul_section
-    (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
+theorem covariantDerivative_covariantDerivative_smul_section {k : ℕ∞ω} (hk : 1 ≤ k)
+    (cov : _root_.CovariantDerivative I F V) [ContMDiffCovariantDerivative cov k]
     {f : M → 𝕜} {X Y : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
-    (hf : ContMDiff I 𝓘(𝕜) ∞ f) (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+    (hf : ContMDiff I 𝓘(𝕜) (k + 1) f) (hY : CMDiff k (T% Y)) (hσ : CMDiff (k + 1) (T% σ))
+    (x : M) :
     cov (fun y ↦ cov (f • σ) y (Y y)) x (X x) =
       f x • cov (fun y ↦ cov σ y (Y y)) x (X x) + d% f x (X x) • cov σ x (Y x) +
         (d% f x (Y x) • cov σ x (X x) + d% (fun y ↦ d% f y (Y y)) x (X x) • σ x) := by
-  have hfd : MDiff f := hf.mdifferentiable (by simp)
-  have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
+  have hk0 : k ≠ 0 := (zero_lt_one.trans_le hk).ne'
+  have hk1 : k + 1 ≠ 0 := (zero_lt_one.trans_le (hk.trans le_self_add)).ne'
+  have hfd : MDiff f := hf.mdifferentiable hk1
+  have hσd : MDiff (T% σ) := hσ.mdifferentiable hk1
   have hYσ := cov.contMDiff_apply hY hσ
-  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
-  have hgY : ContMDiff I 𝓘(𝕜) ∞ fun y ↦ d% f y (Y y) :=
-    (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hY
-  have hgYd : MDiff fun y ↦ d% f y (Y y) := hgY.mdifferentiable (by simp)
+  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable hk0
+  have hgY : ContMDiff I 𝓘(𝕜) k fun y ↦ d% f y (Y y) :=
+    (_root_.ContMDiff.contMDiff_mvfderiv_apply hf le_rfl).comp hY
+  have hgYd : MDiff fun y ↦ d% f y (Y y) := hgY.mdifferentiable hk0
   have hfYσd : MDiff (T% (f • fun y ↦ cov σ y (Y y))) :=
-    (hf.smul_section hYσ).mdifferentiable (by simp)
+    ((hf.of_le (le_self_add)).smul_section hYσ).mdifferentiable hk0
   have hgYσd : MDiff (T% ((fun y ↦ d% f y (Y y)) • σ)) :=
-    (hgY.smul_section hσ).mdifferentiable (by simp)
+    (hgY.smul_section (hσ.of_le le_self_add)).mdifferentiable hk0
   rw [covariantDerivative_smul_section_vectorField cov hfd hσd,
     cov.isCovariantDerivativeOnUniv.add (hfYσd x) (hgYσd x),
     cov.isCovariantDerivativeOnUniv.leibniz (hYσd x) (hfd x),

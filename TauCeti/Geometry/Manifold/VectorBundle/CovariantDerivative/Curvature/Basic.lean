@@ -375,8 +375,10 @@ theorem curvatureOperator_smul_section
   have hcomm := mvfderiv_mlieBracket (f := f) (V := X) (W := Y) (x := x)
     (hf.contMDiffAt) (by simp) (hXd x) (hYd x)
   rw [curvatureOperator_apply, curvatureOperator_apply,
-    covariantDerivative_covariantDerivative_smul_section cov (X := X) hf hY hσ x,
-    covariantDerivative_covariantDerivative_smul_section cov (X := Y) hf hX hσ x,
+    covariantDerivative_covariantDerivative_smul_section (k := ∞) (by simp) cov (X := X)
+      (by simpa using hf) hY (by simpa using hσ) x,
+    covariantDerivative_covariantDerivative_smul_section (k := ∞) (by simp) cov (X := Y)
+      (by simpa using hf) hX (by simpa using hσ) x,
     cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hfd x)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
   rw [hcomm]
