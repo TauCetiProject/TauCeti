@@ -154,7 +154,8 @@ theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsMa
   have hcomp : inTangentCoordinates I I (fun _ : G ↦ x) (fun g : G ↦ g • x)
       (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) ∘ Subtype.val =
         (tangentRepresentation hd : stabilizer G x → _) :=
-    funext fun g ↦ Manifold.inTangentCoordinates_eq_self_of_eq _ _ _ rfl (g.2.trans g₀.2.symm)
+    funext fun g ↦ (Manifold.inTangentCoordinates_eq_self_of_eq (x₀ := (g₀ : G)) (x := g) _ _ _
+      rfl (g.2.trans g₀.2.symm)).trans (tangentRepresentation_apply hd g).symm
   rw [← hcomp]
   exact h.comp continuous_subtype_val.continuousAt
 
