@@ -89,11 +89,24 @@ theorem regularNorm_unitary_mul {a : CliffordAlgebra Q} (ha : star a * a = 1)
     (x : CliffordAlgebra Q) : regularNorm Q (a * x) = regularNorm Q x := by
   simp only [regularNorm, regularBilinForm_unitary_mul Q ha]
 
+/-- The left regular Spin action preserves the scalar-part norm. -/
+@[simp]
+theorem regularNorm_spin_mul (g : spinGroup Q) (x : CliffordAlgebra Q) :
+    regularNorm Q ((g : CliffordAlgebra Q) * x) = regularNorm Q x :=
+  regularNorm_unitary_mul Q (spinGroup.coe_star_mul_self g) x
+
 /-- Quadratic isometries preserve the model norm used in Clifford bundles. -/
+@[simp]
 theorem regularNorm_map {W : Type*} [AddCommGroup W] [Module ℝ W]
     {Q' : QuadraticForm ℝ W} (f : Q →qᵢ Q')
     (x : CliffordAlgebra Q) : regularNorm Q' (map f x) = regularNorm Q x := by
   simp only [regularNorm, regularBilinForm_map]
+
+/-- Quadratic isometry equivalences preserve the scalar-part norm. -/
+theorem regularNorm_equivOfIsometry {W : Type*} [AddCommGroup W] [Module ℝ W]
+    {Q' : QuadraticForm ℝ W} (f : Q.IsometryEquiv Q') (x : CliffordAlgebra Q) :
+    regularNorm Q' (equivOfIsometry f x) = regularNorm Q x :=
+  regularNorm_map Q f.toIsometry x
 
 /-- Left vector multiplication has its exact Euclidean norm scaling factor. -/
 theorem regularNorm_ι_mul (hQ : ∀ v, Q v ≤ 0) (v : V) (x : CliffordAlgebra Q) :
@@ -132,12 +145,22 @@ theorem regularNorm_eq_zero_iff (x : CliffordAlgebra Q) : regularNorm Q x = 0 �
   rw [regularNorm, Real.sqrt_eq_zero (regularBilinForm_self_nonneg Q
     (fun v ↦ neg_nonneg.mp (hQ.nonneg v)) x), regularBilinForm_self_eq_zero_iff Q hQ]
 
+/-- The scalar-part norm agrees with the norm induced by the regular inner product core. -/
+theorem regularNorm_eq_norm_core (x : CliffordAlgebra Q) :
+    letI := InnerProductSpace.Core.toNormedAddCommGroup
+      (cd := regularInnerProductCore Q hQ)
+    regularNorm Q x = ‖x‖ := by
+  simpa only [regularNorm_def, RCLike.re_to_real, InnerProductSpace.Core.toPreInner',
+    regularInnerProductCore_inner] using
+    (InnerProductSpace.Core.norm_eq_sqrt_re_inner
+      (c := (regularInnerProductCore Q hQ).toCore) x).symm
+
 /-- The intrinsic scalar-part norm satisfies the triangle inequality. -/
 theorem regularNorm_add_le (x y : CliffordAlgebra Q) :
     regularNorm Q (x + y) ≤ regularNorm Q x + regularNorm Q y := by
-  let : InnerProductSpace.Core ℝ (CliffordAlgebra Q) := regularInnerProductCore Q hQ
-  let : NormedAddCommGroup (CliffordAlgebra Q) :=
-    InnerProductSpace.Core.toNormedAddCommGroup (𝕜 := ℝ)
+  let := InnerProductSpace.Core.toNormedAddCommGroup
+    (cd := regularInnerProductCore Q hQ)
+  simp only [regularNorm_eq_norm_core Q hQ]
   exact norm_add_le x y
 
 /-- Clifford multiplication is uniformly bounded for the intrinsic Euclidean norm.
@@ -147,18 +170,15 @@ theorem exists_regularNorm_mul_le :
     ∃ C : ℝ, 0 < C ∧ ∀ x y : CliffordAlgebra Q,
       regularNorm Q (x * y) ≤ C * regularNorm Q x * regularNorm Q y := by
   -- These instances use the scalar-part metric, not any ambient algebra norm.
-  let : InnerProductSpace.Core ℝ (CliffordAlgebra Q) := regularInnerProductCore Q hQ
-  let : NormedAddCommGroup (CliffordAlgebra Q) :=
-    InnerProductSpace.Core.toNormedAddCommGroup (𝕜 := ℝ)
+  let := InnerProductSpace.Core.toNormedAddCommGroup
+    (cd := regularInnerProductCore Q hQ)
   let : InnerProductSpace ℝ (CliffordAlgebra Q) :=
     InnerProductSpace.ofCore (regularInnerProductCore Q hQ).toCore
-  -- The core norm and the named norm have the same square-root definition.
-  have hn (x : CliffordAlgebra Q) : ‖x‖ = regularNorm Q x := rfl
   let m : CliffordAlgebra Q →ₗ[ℝ] CliffordAlgebra Q →L[ℝ] CliffordAlgebra Q :=
     LinearMap.toContinuousLinearMap.toLinearMap.comp (LinearMap.mul ℝ (CliffordAlgebra Q))
   let f := m.toContinuousLinearMap
   refine ⟨max ‖f‖ 1, lt_of_lt_of_le zero_lt_one (le_max_right _ _), fun x y ↦ ?_⟩
-  rw [← hn, ← hn, ← hn]
+  simp only [regularNorm_eq_norm_core Q hQ]
   exact (f.le_opNorm₂ x y).trans
     (mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg x)) (norm_nonneg y))
