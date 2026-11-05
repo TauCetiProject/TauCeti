@@ -10,11 +10,9 @@ public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.MeasureTheory.Group.Integral
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
-import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
-import TauCeti.MeasureTheory.Constructions.UnitInterval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -166,40 +164,6 @@ section Estimate
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → ℝ}
 
 /-! ### The translation estimate -/
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For `g ∈ 𝓓(V, ℝ)`, the function `Φ y = ∫₀¹ g (y - t h) dt` is a test function on `Ω`, as soon
-as the segments `x + [0, 1] h` starting in `V` lie in `Ω`. -/
-private theorem exists_testFunction_eq_intervalIntegral
-    (hVΩ : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Ω) (g : 𝓓(V, ℝ)) :
-    ∃ Φ : 𝓓(Ω, ℝ), ∀ y, Φ y = ∫ t in (0 : ℝ)..1, g (y - t • h) := by
-  set Φ : E → ℝ := fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) with hΦ_def
-  have hΦs : ContDiff ℝ ∞ Φ := by
-    rw [← contDiffOn_univ]
-    refine (contDiffOn_integral_smul_of_contDiffOn (n := (⊤ : ℕ∞))
-      (F := fun p : E × ℝ => g (p.1 - p.2 • h)) (μ := (volume : Measure unitInterval))
-      (integrable_const (1 : ℝ)) continuous_subtype_val isOpen_univ
-      (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const))).contDiffOn
-      isOpen_univ fun _ _ _ => mem_univ _).congr fun y _ => ?_
-    simp [hΦ_def, intervalIntegral_eq_integral_unitInterval]
-  -- `Φ` vanishes off the compact set `C ⊆ Ω` swept out by `tsupport g` along `[0, 1] h`.
-  set C : Set E := (fun p : E × ℝ => p.1 + p.2 • h) '' (tsupport g ×ˢ Icc 0 1)
-  have hCc : IsCompact C :=
-    (g.hasCompactSupport.isCompact.prod isCompact_Icc).image (by fun_prop)
-  have hCΩ : C ⊆ Ω := by
-    rintro _ ⟨⟨x, t⟩, ⟨hx, ht⟩, rfl⟩
-    exact hVΩ t ht (g.tsupport_subset hx)
-  have hΦC (y : E) (hy : y ∉ C) : Φ y = 0 := by
-    refine (intervalIntegral.integral_congr (g := fun _ => (0 : ℝ)) fun t ht => ?_).trans
-      (by simp)
-    rw [uIcc_of_le zero_le_one] at ht
-    exact image_eq_zero_of_notMem_tsupport fun hmem =>
-      hy ⟨(y - t • h, t), ⟨hmem, ht⟩, by simp⟩
-  have hsupp : support Φ ⊆ C := fun y hy => by
-    by_contra hyC
-    exact hy (hΦC y hyC)
-  exact ⟨⟨Φ, hΦs, HasCompactSupport.intro hCc hΦC,
-    (closure_minimal hsupp hCc.isClosed).trans hCΩ⟩, fun _ => rfl⟩
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- A difference of translates of a scalar test function is a directional derivative: for
