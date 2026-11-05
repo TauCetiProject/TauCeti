@@ -93,7 +93,7 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradien
           (preciseRepresentative volume
             (W1p.gradient d : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))))
           S := by
-  obtain ⟨C, hC, hgrad⟩ := exists_holderOnWith_preciseRepresentative_gradient hα hα1 (n := n)
+  obtain ⟨C, hC, hgrad⟩ := exists_holderOnWith_preciseRepresentative_gradient hα hα1 1 (n := n)
   refine ⟨C, hC, fun {Omega V u f K S R} hf hu hV hVΩ hfK hR hSV e => ?_⟩
   have hA : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)),
       1 * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) ξ) :=
@@ -114,7 +114,11 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradien
   have hG : HolderOnWith (‖e‖₊ * K) α (fun x => -f x • e) (thickening R S) := by
     simpa [Function.comp_def] using
       (ContinuousLinearMap.toSpanSingleton ℝ (-e)).lipschitzWith.holderWith.comp_holderOnWith hfK
-  simpa using hgrad hG hdG hR hSV
+  have hone : HolderOnWith 0 α (fun _ : EuclideanSpace ℝ (Fin (n + 1)) =>
+      matrixBilinearForm (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) (thickening R S) :=
+    HolderWith.const.holderOnWith _
+  have h := hgrad (uniformlyEllipticOn_const_one_one _) (by rw [one_mul]) hone hG hdG hR hSV
+  simpa [Real.zero_rpow (by positivity : (((n : ℝ) + 1) / 2 + α) / α ≠ 0)] using h
 
 end PDE
 

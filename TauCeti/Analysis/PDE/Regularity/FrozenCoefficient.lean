@@ -38,8 +38,8 @@ problem on concentric balls
 (`TauCeti.PDE.setIntegral_ball_norm_sub_setAverage_sq_le_of_sum_smul_fderiv_fderiv_eq_zero`), the
 coefficient term plays the role of the perturbation `ε` in the iteration lemma
 `TauCeti.exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add` and the data term that of its
-inhomogeneity. For `a = 1` and `A = 1` the coefficient term vanishes and the estimate is the one
-behind `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient`.
+inhomogeneity. This is how `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient`
+obtains the interior Hölder estimate for the gradient.
 
 The coefficient oscillation is measured in the operator norm of the attached bilinear forms
 `TauCeti.PDE.matrixBilinearForm`, as in the Lipschitz hypothesis of whole-space `H²` regularity.
