@@ -30,6 +30,11 @@ of `S`. For a proper action of a discrete group, a slice at `x` for the stabiliz
 local isotropy model of the quotient `[X/G]` near the orbit of `x`. Labels acting trivially are
 kept, so the identification retains ineffective isotropy.
 
+For a monoid `M` and an `M`-invariant subset `U`, `CategoryTheory.ActionCategory.restrict U` is
+the inclusion `M ⋉ U ⥤ M ⋉ X` keeping every label; it is fully faithful, so `M ⋉ U` is the
+full subcategory of `M ⋉ X` on the points of `U`. When `U` is open, this is the restriction of a
+topological action groupoid to a saturated open set of objects.
+
 ## Main declarations
 
 * `CategoryTheory.ActionCategory.map`: the functor induced by an equivariant map.
@@ -38,6 +43,10 @@ kept, so the identification retains ineffective isotropy.
 * `CategoryTheory.ActionCategory.faithful_map`: it is faithful along an injective homomorphism.
 * `CategoryTheory.ActionCategory.full_map_iff`: it is full exactly when arrows between image
   points lift.
+* `CategoryTheory.ActionCategory.restrict`: the full inclusion of the action category on an
+  invariant subset.
+* `CategoryTheory.ActionCategory.restrictLift`: a functor whose objects lie in the invariant subset
+  factors through that inclusion.
 * `CategoryTheory.ActionCategory.inclusion`: the inclusion of the action category of a subgroup
   on an invariant subset.
 * `CategoryTheory.ActionCategory.full_inclusion_iff`: the inclusion is full exactly for a slice.
@@ -119,6 +128,73 @@ theorem full_map_iff : (map φ f).Full ↔
 
 end Map
 
+section Restrict
+
+variable {M : Type*} [Monoid M] {X : Type*} [MulAction M X]
+
+/-- The inclusion `M ⋉ U ⥤ M ⋉ X` of the action category on an invariant subset `U`. It sends a
+point of `U` to itself and keeps each label, so it identifies `M ⋉ U` with the full subcategory
+of `M ⋉ X` on the points of `U`. -/
+def restrict (U : SubMulAction M X) : ActionCategory M U ⥤ ActionCategory M X :=
+  map (MonoidHom.id M) { toFun := Subtype.val, map_smul' := fun _ _ => rfl }
+
+variable (U : SubMulAction M X)
+
+/-- The restriction inclusion is the functor induced by the inclusion of `U`, keeping labels. -/
+theorem restrict_eq_map :
+    restrict U = map (MonoidHom.id M) { toFun := Subtype.val, map_smul' := fun _ _ => rfl } :=
+  (rfl)
+
+/-- The point underlying the image of an object under the restriction inclusion is its point. -/
+@[simp]
+theorem back_restrict_obj (a : ActionCategory M U) : ((restrict U).obj a).back = (a.back : X) :=
+  (rfl)
+
+/-- The restriction inclusion keeps the label of each arrow. -/
+@[simp]
+theorem restrict_map_hom {a b : ActionCategory M U} (g : a ⟶ b) :
+    ((restrict U).map g).hom = g.hom := (rfl)
+
+/-- The restriction inclusion is faithful. -/
+instance faithful_restrict : (restrict U).Faithful :=
+  faithful_map _ _ fun _ _ h => h
+
+/-- The restriction inclusion is full: every arrow between points of `U` lies in `M ⋉ U`. -/
+instance full_restrict : (restrict U).Full :=
+  (full_map_iff _ _).2 fun _ _ m h => ⟨m, rfl, Subtype.ext h⟩
+
+/-- A functor into `M ⋉ X` all of whose objects lie in the invariant subset `U` factors through
+`M ⋉ U`: this lifts it along the restriction inclusion. -/
+def restrictLift {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
+    (hF : ∀ j, (F.obj j).back ∈ U) : J ⥤ ActionCategory M U where
+  obj j := objEquiv M U ⟨(F.obj j).back, hF j⟩
+  map g := Functor.Elements.homMk (F.map g).hom (Subtype.ext (F.map g).map_val)
+  map_id j := Functor.Elements.hom_ext
+    ((congrArg Functor.Elements.Hom.hom (F.map_id j)).trans (ActionCategory.id_hom _))
+  map_comp g g' := Functor.Elements.hom_ext
+    ((congrArg Functor.Elements.Hom.hom (F.map_comp g g')).trans (ActionCategory.comp_hom _ _))
+
+/-- The lift of a functor along the restriction inclusion sends an object to the point of `U`
+underlying its image. -/
+@[simp]
+theorem back_restrictLift_obj {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
+    (hF : ∀ j, (F.obj j).back ∈ U) (j : J) :
+    ((restrictLift U F hF).obj j).back = ⟨(F.obj j).back, hF j⟩ := (rfl)
+
+/-- The lift of a functor along the restriction inclusion keeps the label of each arrow. -/
+@[simp]
+theorem restrictLift_map_hom {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
+    (hF : ∀ j, (F.obj j).back ∈ U) {j j' : J} (g : j ⟶ j') :
+    ((restrictLift U F hF).map g).hom = (F.map g).hom := (rfl)
+
+/-- The lift of a functor along the restriction inclusion recovers the functor. -/
+@[simp]
+theorem restrictLift_comp_restrict {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
+    (hF : ∀ j, (F.obj j).back ∈ U) : restrictLift U F hF ⋙ restrict U = F :=
+  (rfl)
+
+end Restrict
+
 section Inclusion
 
 variable {G : Type*} [Group G] {X : Type*} [MulAction G X] {H : Subgroup G}
@@ -129,6 +205,11 @@ def inclusion (S : SubMulAction H X) : ActionCategory H S ⥤ ActionCategory G X
   map H.subtype { toFun := Subtype.val, map_smul' := fun _ _ => rfl }
 
 variable (S : SubMulAction H X)
+
+/-- The inclusion is the functor induced by the inclusion of `S` along the inclusion of `H`. -/
+theorem inclusion_eq_map :
+    inclusion S = map H.subtype { toFun := Subtype.val, map_smul' := fun _ _ => rfl } :=
+  (rfl)
 
 /-- The inclusion sends a point of the invariant subset to itself. -/
 @[simp]
@@ -178,7 +259,8 @@ theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈
     Set.range (inclusion S).toPrefunctor.mapTotal = {f | f.left.back ∈ S ∧ f.right.back ∈ S} := by
   ext ⟨l, r, g⟩
   refine ⟨?_, fun hf => ?_⟩
-  · rintro ⟨f, hf⟩
+  · rintro ⟨⟨a, b, f⟩, hf⟩
+    rw [Prefunctor.mapTotal_mk] at hf
     cases hf
     simp
   · have := (full_inclusion_iff S).mpr hS
