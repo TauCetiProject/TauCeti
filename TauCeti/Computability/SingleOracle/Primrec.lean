@@ -34,11 +34,15 @@ binary code of the finite stage `A_s`.
   successful runs are primitive recursive.
 * `TauCeti.Oracle.Single.Code.primrec_evaln`: bounded evaluation is primitive recursive, uniformly
   in a parameter on which the oracle answers depend primitive recursively.
+* `TauCeti.Oracle.Single.Code.primrec_stageUse`: the stage use is primitive recursive, uniformly
+  in the same way.
 * `TauCeti.Oracle.Single.Code.primrec_evaln_list`: bounded evaluation against a finite oracle
   string is primitive recursive in the string.
 * `TauCeti.Oracle.Single.Code.primrec_evaln_equivBitIndices`: bounded evaluation against a finite
   set, answering `1` on the set and `0` outside it, is primitive recursive in the binary code of
   the set.
+* `TauCeti.Oracle.Single.Code.primrec₂_setAnswers_equivBitIndices`: the answers of a finite set
+  are primitive recursive in its binary code.
 
 ## References
 
@@ -312,6 +316,16 @@ theorem primrec_evaln {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
     Primrec₂.right).of_eq fun p => ?_
   exact getElem?_evalnTable_bind (σ := σ p.1) _ _ _
 
+/-- The stage use is primitive recursive, uniformly in a parameter `a` on which the answers `σ a`
+depend primitive recursively, and in the fuel, the program and the argument. -/
+theorem primrec_stageUse {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
+    Primrec fun p : α × ℕ × Code × ℕ => stageUse (σ p.1) p.2.1 p.2.2.1 p.2.2.2 :=
+  (option_getD.comp (option_map (primrec_evaln hσ) (Halt.primrec_use.comp snd).to₂)
+    (const 0)).of_eq fun p => by
+    cases h : evaln (σ p.1) p.2.1 p.2.2.1 p.2.2.2 with
+    | none => simp [stageUse_eq_zero_of_evaln_eq_none h]
+    | some d => simp [stageUse_eq_of_evaln_eq_some h]
+
 /-- Bounded evaluation against a finite oracle string `l`, which answers `l[z]?` at `z`, is
 primitive recursive in the string, the fuel, the program and the input. -/
 theorem primrec_evaln_list :
@@ -326,5 +340,11 @@ theorem primrec_evaln_equivBitIndices :
       evaln (fun z => some (if z ∈ Finset.equivBitIndices p.1 then 1 else 0))
         p.2.1 p.2.2.1 p.2.2.2 :=
   primrec_evaln <| (option_some.comp (Primrec.ite mem_equivBitIndices (const 1) (const 0))).to₂
+
+/-- The answers of a finite set given by its binary code `m`, `1` on `Finset.equivBitIndices m`
+and `0` outside it, are primitive recursive in the code and the address. -/
+theorem primrec₂_setAnswers_equivBitIndices :
+    Primrec₂ fun m z => setAnswers (Finset.equivBitIndices m : Set ℕ) z :=
+  (option_some.comp indicator_equivBitIndices).of_eq fun _ => by simp
 
 end TauCeti.Oracle.Single.Code

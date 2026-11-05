@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.QuadraticDiscriminant
 
 /-!
@@ -38,8 +39,8 @@ of determinant `n` by the Hurwitz class numbers `H(4 n - t²)`.
 * `TauCeti.BinaryQuadraticForm.discrim_ofMatrix`: the discriminant of `Q_M` is
   `tr(M)² - 4 det M`.
 * `TauCeti.BinaryQuadraticForm.ofMatrix_conj`: `Q_{γ M γ⁻¹} = γ • Q_M` for `γ ∈ SL(2, R)`.
-* `TauCeti.BinaryQuadraticForm.ofMatrix_inj_of_trace_eq`: an integer `2 × 2` matrix is determined
-  by its trace and its form `Q_M`.
+* `TauCeti.BinaryQuadraticForm.ofMatrix_inj_of_trace_eq`: when `2` is not a zero divisor, a
+  `2 × 2` matrix is determined by its trace and its form `Q_M`.
 
 ## References
 
@@ -113,15 +114,21 @@ theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
     smul_b, smul_c, cons_val', cons_val_zero, cons_val_one]
   refine ⟨?_, ?_, ?_⟩ <;> ring
 
-/-- Over `ℤ`, a `2 × 2` matrix is determined by its trace and its form `Q_M`. -/
-theorem ofMatrix_inj_of_trace_eq {M N : Matrix (Fin 2) (Fin 2) ℤ} (h : M.trace = N.trace) :
-    ofMatrix M = ofMatrix N ↔ M = N := by
+/-- When `2` is not a zero divisor in `R`, for instance over `ℤ`, `ℤ_p` or a field of
+characteristic other than two, a `2 × 2` matrix is determined by its trace and its form `Q_M`. -/
+theorem ofMatrix_inj_of_trace_eq (h2 : IsLeftRegular (2 : R)) {M N : Matrix (Fin 2) (Fin 2) R}
+    (h : M.trace = N.trace) : ofMatrix M = ofMatrix N ↔ M = N := by
   refine ⟨fun hMN ↦ ?_, congrArg ofMatrix⟩
-  -- the form gives `c`, `b` and `d - a`, and the trace gives `a + d`
+  -- the form gives `c`, `b` and `d - a`, and the trace gives `a + d`, hence `2 a`
   simp only [BinaryQuadraticForm.ext_iff, ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_inj] at hMN
   rw [trace_fin_two, trace_fin_two] at h
+  obtain ⟨h₁₀, h₁₁, h₀₁⟩ := hMN
+  have h₂ : 2 * M 0 0 = 2 * N 0 0 := by linear_combination h - h₁₁
+  have h₀₀ : M 0 0 = N 0 0 := h2 h₂
+  have h₁₁' : M 1 1 = N 1 1 := by linear_combination h₁₁ + h₀₀
   ext i j
-  fin_cases i <;> fin_cases j <;> lia
+  fin_cases i <;> fin_cases j
+  exacts [h₀₀, h₀₁, h₁₀, h₁₁']
 
 /-- If an integral form has discriminant `t² - 4 n`, then `t` and its middle coefficient have the
 same parity. -/

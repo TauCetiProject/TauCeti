@@ -148,6 +148,16 @@ theorem realHasse_def (w : {w : InfinitePlace K // w.IsReal}) :
     I.realHasse w = (-1) ^ (I.realNegativeIndex w).choose 2 :=
   (rfl)
 
+/-- In rank two, the real Hasse sign is nontrivial exactly when the positive index is zero. -/
+theorem realHasse_ne_one_iff_realPositiveIndex_eq_zero_of_rank_eq_two
+    (hn : I.rank = 2) (w : {w : InfinitePlace K // w.IsReal}) :
+    I.realHasse w ≠ 1 ↔ I.realPositiveIndex w = 0 := by
+  by_cases h : I.realPositiveIndex w = 0
+  · norm_num [realHasse_def, realNegativeIndex_def, hn, h]
+  · have hq : 2 - I.realPositiveIndex w ≤ 1 := by omega
+    interval_cases hneg : 2 - I.realPositiveIndex w <;>
+      simp [realHasse_def, realNegativeIndex_def, hn, hneg, h]
+
 open scoped Classical in
 /-- **The Hasse product** of a system: the product of its Hasse signs over all finite places and
 all real places. The finite factor is a `finprod`; it is the product of the Hasse signs when they

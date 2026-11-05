@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
+public import TauCeti.RingTheory.Perfectoid.Field
 public import TauCeti.RingTheory.Perfectoid.IsAlgClosed
 import TauCeti.NumberTheory.Padics.Complex.Basic
 
@@ -24,6 +25,7 @@ roots.
 * `TauCeti.Perfectoid.isPseudoUniformizer_natCast_padicComplex`: `p` is a pseudouniformiser of
   `ℂ_p`.
 * `TauCeti.Perfectoid.isPerfectoidTateRing_padicComplex`: `ℂ_p` is a perfectoid Tate ring.
+* `TauCeti.Perfectoid.isPerfectoidField_padicComplex`: hence `ℂ_p` is a perfectoid field.
 * `TauCeti.Perfectoid.not_pow_dvd_padic`: no pseudouniformiser `ϖ` of `ℚ_p` has `ϖ ^ p ∣ p` in
   `ℤ_p`.
 * `TauCeti.Perfectoid.not_isPerfectoidTateRing_padic`: `ℚ_p` is not perfectoid.
@@ -54,6 +56,10 @@ theorem isPseudoUniformizer_natCast_padicComplex : IsPseudoUniformizer (p : ℂ_
 `‖p‖ = p⁻¹ < 1`. -/
 instance isPerfectoidTateRing_padicComplex : IsPerfectoidTateRing p ℂ_[p] :=
   isPerfectoidTateRing_of_isAlgClosed (PadicComplex.norm_p_lt_one p)
+
+/-- **`ℂ_p` is a perfectoid field.** -/
+instance isPerfectoidField_padicComplex : IsPerfectoidField p ℂ_[p] :=
+  isPerfectoidField_iff_isPerfectoidTateRing.mpr inferInstance
 
 /-- **No pseudouniformiser `ϖ` of `ℚ_p` has `ϖ ^ p ∣ p` in `ℤ_p`**: a pseudouniformiser has
 `‖ϖ‖ ≤ p⁻¹`, so `‖ϖ ^ p‖ < ‖p‖` (Scholze, *Étale cohomology of diamonds*, Remark 3.3). -/

@@ -37,6 +37,10 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
+* `TemperedDistribution.sobolevSubmodule`: `H^{s,p}` as a complex submodule of tempered
+  distributions.
+* `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
+  lies in `H^{s,p}`, as a real submodule of `Lᵖ`.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -110,6 +114,50 @@ theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
     (hf : MemSobolev s p f) : MemSobolev s p (c • f) := by
   rw [← smul_one_smul ℂ c f]
   exact hf.smul _
+
+/-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
+in every Bessel-potential space `H^{s,p}`. -/
+theorem memSobolev_of_ae_eq_of_hasCompactSupport {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {u : E → F} (hu : ContDiff ℝ (⊤ : ℕ∞) u) (hc : HasCompactSupport u)
+    {v : Lp F p (volume : Measure E)} (hv : v =ᵐ[volume] u) : MemSobolev s p (v : 𝓢'(E, F)) := by
+  have hv' : v = (hc.toSchwartzMap hu).toLp p := by
+    refine Lp.ext (hv.trans ?_)
+    filter_upwards [(hc.toSchwartzMap hu).coeFn_toLp p] with x hx
+    simp [hx]
+  rw [hv', Lp.toTemperedDistribution_toLp_eq (p := p)]
+  exact (hc.toSchwartzMap hu).memSobolev
+
+variable (E F) in
+/-- The tempered distributions in the Bessel-potential space `H^{s,p}`, as a complex submodule of
+`𝓢'(E, F)`. This is the image in `𝓢'(E, F)` of Mathlib's bundled `BesselPotentialSpace`. -/
+def sobolevSubmodule (s : ℝ) (p : ENNReal) [Fact (1 ≤ p)] : Submodule ℂ 𝓢'(E, F) where
+  carrier := {f | MemSobolev s p f}
+  add_mem' := MemSobolev.add
+  zero_mem' := memSobolev_fun_zero E F s p
+  smul_mem' c _ h := h.smul c
+
+/-- Membership in `sobolevSubmodule` is `MemSobolev`. -/
+@[simp]
+theorem mem_sobolevSubmodule {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)] {f : 𝓢'(E, F)} :
+    f ∈ sobolevSubmodule E F s p ↔ MemSobolev s p f :=
+  Iff.rfl
+
+variable (E) in
+/-- The real `Lᵖ` functions whose complexified tempered distribution lies in the
+Bessel-potential space `H^{s,p}`, as a real submodule of `Lᵖ`. -/
+noncomputable def realSobolevSubmodule (s : ℝ) (p : ENNReal) [Fact (1 ≤ p)] :
+    Submodule ℝ (Lp ℝ p (volume : Measure E)) :=
+  ((sobolevSubmodule E ℂ s p).restrictScalars ℝ).comap
+    (((Lp.toTemperedDistributionCLM ℂ (volume : Measure E) p).restrictScalars ℝ).toLinearMap ∘ₗ
+      Complex.ofRealCLM.compLpₗ (p := p) (μ := (volume : Measure E)))
+
+/-- A real `Lᵖ` function lies in `realSobolevSubmodule` exactly when its complexification lies
+in `H^{s,p}`. -/
+theorem mem_realSobolevSubmodule {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {u : Lp ℝ p (volume : Measure E)} :
+    u ∈ realSobolevSubmodule E s p ↔
+      MemSobolev s p (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) :=
+  Iff.rfl
 
 end normed
 

@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Conormal
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Conormal.Subbundle
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 
 /-!
-# The Liouville form vanishes on conormal covectors
+# The Liouville form on conormal covectors and the conormal Lagrangian subbundle
 
 Let `i : Q → M` be a map and let `ψ : X → T*M` take values in the conormal set
 `TauCeti.CotangentBundle.conormal J I i`, through a map `g : X → Q`: the covector `ψ x` lies over
@@ -23,21 +24,53 @@ and `i` is differentiable at every `g x`. Then `ψ` pulls the Liouville form `λ
 Consequently such a smooth `ψ` is isotropic for the canonical symplectic form `ω = -dλ`
 (`TauCeti.CotangentBundle.isIsotropicMap_of_conormal`). When `ψ` has injective differentials and
 its source has the dimension of `M`, it is an exact Lagrangian map with primitive `0`
-(`TauCeti.CotangentBundle.isExactLagrangianMap_of_conormal`). The intended example is the inclusion
-of the conormal bundle `N*Q` of an embedded submanifold, with `g` its bundle projection; its
-dimension is that of `M` by `TauCeti.CotangentBundle.finrank_add_finrank_conormalSpace`.
+(`TauCeti.CotangentBundle.isExactLagrangianMap_of_conormal`).
+
+Specialising `ψ` to the canonical inclusion `TauCeti.CotangentBundle.conormalInclusion` of the
+conormal vector subbundle (`TauCeti.CotangentBundle.conormalFiberBundle`) over `Q` into `T*M`:
+
+* `conormalInclusion` pulls both the Liouville one-form `λ` and the canonical symplectic form `ω`
+  back to `0`, and is an isotropic map into `T*M` for any smooth map `i : Q → M` with injective
+  differentials (`TauCeti.CotangentBundle.mpullback_conormalInclusion_liouvilleForm`,
+  `TauCeti.CotangentBundle.mpullback_conormalInclusion_symplecticForm`,
+  `TauCeti.CotangentBundle.isIsotropicMap_conormalInclusion`);
+* when `Q` is boundaryless and `i : Q → M` is a smooth embedding into a finite-dimensional manifold
+  `M` (`dim Q + k = dim M`), `conormalInclusion` has source of dimension `dim M`
+  (`TauCeti.CotangentBundle.finrank_conormalBundleModel`) and is a smooth embedding
+  (`TauCeti.CotangentBundle.isSmoothEmbedding_conormalInclusion`), hence is both an exact Lagrangian
+  map with primitive `0` (`TauCeti.CotangentBundle.isExactLagrangianMap_conormalInclusion`) and a
+  Lagrangian embedding (`TauCeti.CotangentBundle.isLagrangianEmbedding_conormalInclusion`). Empty
+  submanifolds `Q` are included without imposing a finite-dimensionality hypothesis on the model of
+  `Q`.
+
+## Main declarations
+
+* `TauCeti.CotangentBundle.mpullback_liouvilleForm_eq_zero_of_conormal`,
+  `TauCeti.CotangentBundle.isIsotropicMap_of_conormal`,
+  `TauCeti.CotangentBundle.isExactLagrangianMap_of_conormal`: vanishing of `ψ^*λ`, isotropy, and
+  exactness for general maps factoring through conormal covectors.
+* `TauCeti.CotangentBundle.mpullback_conormalInclusion_liouvilleForm`,
+  `TauCeti.CotangentBundle.mpullback_conormalInclusion_symplecticForm`,
+  `TauCeti.CotangentBundle.isIsotropicMap_conormalInclusion`: the canonical inclusion of the
+  conormal bundle pulls `λ` and `ω` back to `0` and is isotropic.
+* `TauCeti.CotangentBundle.isExactLagrangianMap_conormalInclusion`,
+  `TauCeti.CotangentBundle.isLagrangianEmbedding_conormalInclusion`: for a smooth embedding `i` of
+  a boundaryless manifold `Q`, the conormal bundle is an exact Lagrangian embedding in `T*M` with
+  primitive `0`.
 
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
   Springer, 2001, Section 3.3.
+* D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
+  Example 3.2.4 and Proposition 3.4.2.
 -/
 
 public section
 
 noncomputable section
 
-open Bundle Module
+open Bundle Manifold Module
 open scoped Manifold ContDiff
 
 namespace TauCeti.CotangentBundle
@@ -120,5 +153,113 @@ theorem isExactLagrangianMap_of_conormal [FiniteDimensional ℝ E]
   rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, hdim, two_mul]
 
 end Symplectic
+
+/-! ### The conormal vector subbundle as an exact Lagrangian embedding -/
+
+section ConormalBundle
+
+variable [IsManifold I ∞ M] [IsManifold J ∞ Q] [FiniteDimensional ℝ E] {k : ℕ}
+
+/-- **The Liouville form vanishes on the conormal bundle.** For a smooth map `i : Q → M` with
+injective differentials and `finrank ℝ F + k = finrank ℝ E`, the canonical inclusion of the
+conormal bundle into `T*M` pulls the Liouville one-form `λ` back to `0`. -/
+theorem mpullback_conormalInclusion_liouvilleForm (hi : ContMDiff J I ∞ i)
+    (hinj : ∀ q, Function.Injective (mfderiv J I i q)) (hk : finrank ℝ F + k = finrank ℝ E) :
+    letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+    letI := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
+    letI := conormalContMDiffVectorBundle (n := ∞) hi (by simp) hinj hk
+    SmoothForm.mpullback (conormalInclusion (Fin k → ℝ) J I i)
+      (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk) (liouvilleForm I M) = 0 := by
+  let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+  let := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
+  let := conormalContMDiffVectorBundle (n := ∞) hi (by simp) hinj hk
+  apply Subtype.ext
+  rw [SmoothForm.coe_mpullback, ZeroMemClass.coe_zero]
+  exact mpullback_liouvilleForm_eq_zero_of_conormal
+    (conormalInclusion_proj (Fin k → ℝ) J I i)
+    ((contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk).mdifferentiable (by simp))
+    ((Bundle.contMDiff_proj (n := ∞) (fun q ↦ conormalSpace J I i q)).mdifferentiable (by simp))
+    (fun z ↦ (hi z.proj).mdifferentiableAt (by simp))
+    (conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i)
+
+/-- **The canonical symplectic form vanishes on the conormal bundle.** For a smooth map `i : Q → M`
+with injective differentials and `finrank ℝ F + k = finrank ℝ E`, the canonical inclusion of the
+conormal bundle into `T*M` pulls `ω = -dλ` back to `0`. -/
+theorem mpullback_conormalInclusion_symplecticForm (hi : ContMDiff J I ∞ i)
+    (hinj : ∀ q, Function.Injective (mfderiv J I i q)) (hk : finrank ℝ F + k = finrank ℝ E) :
+    letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+    letI := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
+    letI := conormalContMDiffVectorBundle (n := ∞) hi (by simp) hinj hk
+    SmoothForm.mpullback (conormalInclusion (Fin k → ℝ) J I i)
+      (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk) (symplecticForm I M) = 0 := by
+  let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+  let := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
+  let := conormalContMDiffVectorBundle (n := ∞) hi (by simp) hinj hk
+  rw [symplecticForm_eq_neg_mextDerivₗ, map_neg, ← SmoothForm.mextDerivₗ_mpullback,
+    mpullback_conormalInclusion_liouvilleForm hi hinj hk, map_zero, neg_zero]
+
+/-- **The conormal bundle is isotropic in `T*M`.** For any smooth map `i : Q → M` with injective
+differentials and `finrank ℝ F + k = finrank ℝ E`, the canonical inclusion of the conormal bundle
+into `T*M` is an isotropic map for the canonical symplectic form. -/
+theorem isIsotropicMap_conormalInclusion (hi : ContMDiff J I ∞ i)
+    (hinj : ∀ q, Function.Injective (mfderiv J I i q)) (hk : finrank ℝ F + k = finrank ℝ E) :
+    letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsIsotropicMap
+      (J.prod 𝓘(ℝ, Fin k → ℝ)) (conormalInclusion (Fin k → ℝ) J I i) := by
+  let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+  let := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
+  let := conormalContMDiffVectorBundle (n := ∞) hi (by simp) hinj hk
+  exact isIsotropicMap_of_conormal
+    (conormalInclusion_proj (Fin k → ℝ) J I i)
+    (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk)
+    ((Bundle.contMDiff_proj (n := ∞) (fun q ↦ conormalSpace J I i q)).mdifferentiable (by simp))
+    (fun z ↦ (hi z.proj).mdifferentiableAt (by simp))
+    (conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i)
+
+/-- **The conormal bundle of an embedded submanifold is an exact Lagrangian in `T*M`.** For a
+smooth embedding `i : Q → M` of a boundaryless manifold `Q` into a finite-dimensional manifold `M`
+with `finrank ℝ F + k = finrank ℝ E`, the canonical inclusion of the conormal bundle into `T*M` is
+an exact Lagrangian map for the Liouville primitive `λ` of `ω = -dλ`, with primitive `0`. -/
+theorem isExactLagrangianMap_conormalInclusion [J.Boundaryless] (hi : IsSmoothEmbedding J I ∞ i)
+    (hk : finrank ℝ F + k = finrank ℝ E) :
+    letI := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
+      (hi.isImmersion.mfderiv_injective (by simp)) hk
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap
+      (J.prod 𝓘(ℝ, Fin k → ℝ)) (liouvilleForm I M) (conormalInclusion (Fin k → ℝ) J I i) 0 := by
+  have hinj := hi.isImmersion.mfderiv_injective (by simp)
+  let := conormalFiberBundle (n := ∞) hi.contMDiff (by simp) hinj hk
+  let := conormalVectorBundle (n := ∞) hi.contMDiff (by simp) hinj hk
+  let := conormalContMDiffVectorBundle (n := ∞) hi.contMDiff (by simp) hinj hk
+  have hemb := isSmoothEmbedding_conormalInclusion (n := ∞) hi (by simp) hk
+  by_cases hQ : Nonempty Q
+  · obtain ⟨q₀⟩ := hQ
+    have : FiniteDimensional ℝ F :=
+      FiniteDimensional.of_injective (mfderiv J I i q₀).toLinearMap (hinj q₀)
+    exact isExactLagrangianMap_of_conormal
+      (conormalInclusion_proj (Fin k → ℝ) J I i) hemb.contMDiff
+      (hemb.isImmersion.mfderiv_injective (by simp)) (finrank_conormalBundleModel hk)
+      ((Bundle.contMDiff_proj (n := ∞) (fun q ↦ conormalSpace J I i q)).mdifferentiable (by simp))
+      (fun z ↦ (hi.contMDiff z.proj).mdifferentiableAt (by simp))
+      (conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i)
+  · refine ⟨SmoothTwoForm.IsNondegenerate.isLagrangianMap_iff_forall.mpr fun z ↦ (hQ ⟨z.proj⟩).elim,
+      contMDiff_const, funext fun z ↦ (hQ ⟨z.proj⟩).elim⟩
+
+/-- **The conormal bundle of an embedded submanifold is a Lagrangian embedding in `T*M`.** For a
+smooth embedding `i : Q → M` of a boundaryless manifold `Q` into a finite-dimensional manifold `M`
+with `finrank ℝ F + k = finrank ℝ E`, the canonical inclusion of the conormal bundle into `T*M` is
+a smooth Lagrangian embedding. -/
+theorem isLagrangianEmbedding_conormalInclusion [J.Boundaryless] (hi : IsSmoothEmbedding J I ∞ i)
+    (hk : finrank ℝ F + k = finrank ℝ E) :
+    letI := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
+      (hi.isImmersion.mfderiv_injective (by simp)) hk
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsLagrangianEmbedding
+      (J.prod 𝓘(ℝ, Fin k → ℝ)) (conormalInclusion (Fin k → ℝ) J I i) := by
+  let := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
+    (hi.isImmersion.mfderiv_injective (by simp)) hk
+  exact (SmoothTwoForm.IsNondegenerate.isLagrangianEmbedding_iff_of_isSmoothEmbedding
+    (isSmoothEmbedding_conormalInclusion (n := ∞) hi (by simp) hk)).mpr
+    (isExactLagrangianMap_conormalInclusion hi hk).isLagrangianMap
+
+end ConormalBundle
 
 end TauCeti.CotangentBundle

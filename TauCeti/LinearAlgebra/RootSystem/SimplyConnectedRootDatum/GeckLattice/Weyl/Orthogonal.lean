@@ -45,7 +45,7 @@ theorem commute_geckSimpleWeylPoint_geckSimpleRaisingPoints (i j : Fin t.rank)
   have hne : i ≠ j := by
     rintro rfl
     simp at hij
-  rw [geckSimpleWeylPoint_def]
+  rw [geckSimpleWeylPoint_eq_mul]
   exact ((t.commute_geckSimpleRaisingPoints ht i j hij A _ u).mul_left
     (t.commute_geckSimpleLowering_raisingPoints ht i j hne A _ u)).mul_left
       (t.commute_geckSimpleRaisingPoints ht i j hij A _ u)
@@ -58,7 +58,7 @@ theorem commute_geckSimpleWeylPoint_geckSimpleLoweringPoints (i j : Fin t.rank)
   have hne : i ≠ j := by
     rintro rfl
     simp at hij
-  rw [geckSimpleWeylPoint_def]
+  rw [geckSimpleWeylPoint_eq_mul]
   exact ((t.commute_geckSimpleRaising_loweringPoints ht i j hne A _ u).mul_left
     (t.commute_geckSimpleLoweringPoints ht i j hij A _ u)).mul_left
       (t.commute_geckSimpleRaising_loweringPoints ht i j hne A _ u)
@@ -68,7 +68,7 @@ at orthogonal Bourbaki nodes commute over every commutative ring. -/
 theorem commute_geckSimpleWeylPoint (i j : Fin t.rank)
     (hij : t.cartanMatrix i j = 0) (A : Type v) [CommRing A] :
     Commute (t.geckSimpleWeylPoint ht i A) (t.geckSimpleWeylPoint ht j A) := by
-  rw [geckSimpleWeylPoint_def t ht j]
+  rw [geckSimpleWeylPoint_eq_mul t ht j]
   exact ((t.commute_geckSimpleWeylPoint_geckSimpleRaisingPoints ht i j hij A _).mul_right
     (t.commute_geckSimpleWeylPoint_geckSimpleLoweringPoints ht i j hij A _)).mul_right
       (t.commute_geckSimpleWeylPoint_geckSimpleRaisingPoints ht i j hij A _)
