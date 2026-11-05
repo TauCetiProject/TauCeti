@@ -75,19 +75,13 @@ theorem homogeneousCyclotomic_def (n : ℕ) (a b : R) :
       MvPolynomial.eval ![a, b] ((cyclotomic n R).homogenize n.totient) :=
   (rfl)
 
-/-- Over `R` itself, evaluation of a polynomial in two variables is `R`-algebra evaluation, the
-form in which the homogenization lemmas are stated. -/
-private theorem eval_eq_aeval (x : Fin 2 → R) (P : MvPolynomial (Fin 2) R) :
-    MvPolynomial.eval x P = MvPolynomial.aeval x P :=
-  rfl
-
 /-- `Φ_n(a, b)` is the sum of the terms `c_k a ^ k b ^ l` over `k + l = φ(n)`, where `c_k` are
 the coefficients of `Φ_n`. -/
 theorem homogeneousCyclotomic_eq_sum (n : ℕ) (a b : R) :
     homogeneousCyclotomic n a b =
       ∑ kl ∈ Finset.antidiagonal n.totient,
         (cyclotomic n R).coeff kl.1 * (a ^ kl.1 * b ^ kl.2) := by
-  rw [homogeneousCyclotomic_def, eval_eq_aeval, aeval_homogenize_eq_sum]
+  rw [homogeneousCyclotomic_def, ← MvPolynomial.aeval_eq_eval, aeval_homogenize_eq_sum]
   simp
 
 /-! ### Evaluation and transport -/
@@ -96,7 +90,7 @@ theorem homogeneousCyclotomic_eq_sum (n : ℕ) (a b : R) :
 @[simp]
 theorem homogeneousCyclotomic_one_right (n : ℕ) (a : R) :
     homogeneousCyclotomic n a 1 = (cyclotomic n R).eval a := by
-  rw [homogeneousCyclotomic_def, eval_eq_aeval,
+  rw [homogeneousCyclotomic_def, ← MvPolynomial.aeval_eq_eval,
     aeval_homogenize_of_eq_one natDegree_cyclotomic_le _ rfl]
   simp
 
@@ -188,14 +182,15 @@ palindromic. -/
 theorem homogeneousCyclotomic_comm {n : ℕ} (hn : n ≠ 1) (a b : R) :
     homogeneousCyclotomic n b a = homogeneousCyclotomic n a b := by
   rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← reflect_cyclotomic hn,
-    eval_eq_aeval, aeval_homogenize_reflect, reflect_cyclotomic hn, eval_eq_aeval]
+    ← MvPolynomial.aeval_eq_eval, aeval_homogenize_reflect, reflect_cyclotomic hn,
+    ← MvPolynomial.aeval_eq_eval]
 
 /-- `Φ_n(a, 0) = a ^ φ(n)`: only the leading monomial survives. -/
 @[simp]
 theorem homogeneousCyclotomic_zero_right (n : ℕ) (a : R) :
     homogeneousCyclotomic n a 0 = a ^ n.totient := by
   nontriviality R
-  rw [homogeneousCyclotomic_def, eval_eq_aeval,
+  rw [homogeneousCyclotomic_def, ← MvPolynomial.aeval_eq_eval,
     aeval_homogenize_of_eq_zero _ _ _ rfl, ← natDegree_cyclotomic n R,
     (cyclotomic.monic n R).coeff_natDegree]
   simp
