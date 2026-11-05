@@ -210,10 +210,11 @@ private theorem exists_separating_functional (hp : p ≠ ∞) {T : E →L[𝕜] 
     ContinuousMap.isOpen_uniformlyPositive ((convex_Ici 0).linear_image Φ) hdisj
   have hu : u ≤ 0 := (hLQ 0 ⟨0, Set.self_mem_Ici, map_zero Φ⟩).trans_eq (map_zero L)
   refine ⟨L, (hLP 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩).trans_le hu,
-    fun h hh ↦ L.toLinearMap.apply_nonpos_of_forall_uniformlyPositive_lt hu hLP hh, fun x ↦ ?_⟩
+    fun h hh ↦ L.toLinearMap.apply_nonpos_of_forall_uniformlyPositive_lt hLP hh, fun x ↦ ?_⟩
   -- `L` is bounded below on the cone `Q`, so it is nonnegative on each generator `g x`.
-  have hgx := LinearMap.apply_single_nonneg_of_forall_le (L.toLinearMap ∘ₗ Φ)
-    (fun w hw ↦ hLQ _ ⟨w, hw, rfl⟩) x
+  have hgx := LinearMap.apply_nonneg_of_forall_le (L.toLinearMap ∘ₗ Φ)
+    (fun w hw ↦ hLQ _ ⟨w, hw, rfl⟩) (w := Finsupp.single x 1)
+    (Finsupp.single_nonneg.2 zero_le_one)
   simpa only [Φ, g, LinearMap.coe_comp, coe_coe, Function.comp_apply,
     Finsupp.linearCombination_single, one_smul, map_sub, map_smul, smul_eq_mul,
     sub_nonneg] using hgx
@@ -230,10 +231,12 @@ theorem exists_isProbabilityMeasure_of_summingENorm_le_ofReal [MeasurableSpace (
         ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
   obtain ⟨L, hL1, hLpos, hLx⟩ := exists_separating_functional hp hC hT
-  obtain ⟨ν, hν, hreg, hνL⟩ := L.toLinearMap.exists_isProbabilityMeasure_integral_eq_div hL1 hLpos
+  -- `-L` is a positive functional, and `(-L) h / (-L) 1 = L h / L 1`.
+  obtain ⟨ν, hν, hreg, hνL⟩ := (-L.toLinearMap).exists_isProbabilityMeasure_integral_eq_div
+    (neg_pos.2 hL1) fun h hh ↦ neg_nonneg.2 (hLpos h hh)
   refine ⟨ν, hν, hreg, fun x ↦ ?_⟩
   have hI : ∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν = L (WeakDual.evalRpow 1 p x) / L 1 := by
-    simpa using hνL (WeakDual.evalRpow 1 p x)
+    simpa [neg_div_neg_eq] using hνL (WeakDual.evalRpow 1 p x)
   rw [Real.le_mul_rpow_one_div_iff (norm_nonneg _) hC (integral_nonneg fun _ ↦ by positivity) hq,
     hI, mul_div_assoc', le_div_iff_of_neg hL1]
   exact hLx x
