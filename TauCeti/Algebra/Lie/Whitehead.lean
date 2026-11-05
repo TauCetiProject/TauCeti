@@ -50,8 +50,6 @@ section `x ↦ (x, g x)`, and the section being a Lie homomorphism says exactly 
 
 ## Main results
 
-* `TauCeti.finite_of_isKilling`, in `TauCeti/Algebra/Lie/Killing/Basic.lean`: nondegeneracy of the
-  Killing form forces finite dimension, so `L` needs no separate finiteness hypothesis.
 * `LieDerivation.IsKilling.exists_eq_inner`: every Lie derivation into a finite-dimensional module
   is inner (Whitehead's first lemma).
 * `LieModule.Cohomology.exists_eq_lie_of_d₁₂_eq_zero`: the cochain form of the first lemma.
