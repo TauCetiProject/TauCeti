@@ -296,7 +296,7 @@ theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
 theorem mu_top_eq_mu_bot_kreweras {n : ℕ}
     (π : NoncrossingPartition (univ : Finset (Fin n))) :
     mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
-  have h := OrderIso.mu_apply (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
+  have h := OrderIso.mu_map (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
   simpa only [krewerasOrderIso_apply, kreweras_top, mu_toDual] using h.symm
 
 end TauCeti.NoncrossingPartition

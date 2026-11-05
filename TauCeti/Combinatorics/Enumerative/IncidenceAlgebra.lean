@@ -10,7 +10,7 @@ public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 /-!
 # Order invariance, converse Möbius inversion and Weisner's theorem
 
-The Möbius function is invariant under order isomorphisms (`OrderIso.mu_apply`).
+The Möbius function is invariant under order isomorphisms (`OrderIso.mu_map`).
 
 Mathlib's `IncidenceAlgebra.moebius_inversion_bot` recovers `f` from its lower sums
 `g x = ∑_{y ≤ x} f y` as `f x = ∑_{y ≤ x} μ(y, x) g y`. This file proves the converse direction:
@@ -47,7 +47,7 @@ variable {𝕜 α β : Type*} [AddCommGroup 𝕜] [One 𝕜]
 
 /-- The Möbius function is invariant under order isomorphisms. -/
 @[simp]
-theorem mu_apply (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b := by
+theorem mu_map (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b := by
   induction hn : #(Icc a b) using Nat.strong_induction_on generalizing b with
   | _ n ih =>
     by_cases hab : a = b
