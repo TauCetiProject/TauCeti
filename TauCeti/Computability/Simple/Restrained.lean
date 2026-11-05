@@ -50,7 +50,9 @@ The main results, valid for every restraint function:
   binary codes of the stages, and the constructed set is c.e.
   (`TauCeti.RestrainedSimple.rePred_mem_stageLimit_stage`);
 * when every restraint is eventually bounded along the construction, every positive requirement is
-  met and the constructed set is simple (`TauCeti.RestrainedSimple.simple_stageLimit_stage`).
+  met (`TauCeti.RestrainedSimple.inter_stageLimit_stage_nonempty`); if the restraints are moreover
+  primitive recursive as above, the constructed set is simple
+  (`TauCeti.RestrainedSimple.simple_stageLimit_stage`).
 
 Bounding the restraints is the task of the negative requirements, and uses the particular
 restraint function: for the low simple set it follows from preservation of the diagonal
