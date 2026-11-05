@@ -216,6 +216,12 @@ theorem degreeOneEquiv_coe_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentS
     (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) v = φ.1 x ![v] := by
   rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply_vec]
 
+/-- A smooth one-form takes the value `-φ(v)` on the negated tangent vector `-v`. -/
+@[simp]
+theorem apply_vec_neg (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
+    φ.1 x ![-v] = -φ.1 x ![v] := by
+  rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec]
+
 /-- The section of a smooth one-form, read as a linear map, vanishes at `x` exactly when the form
 vanishes at `x`. -/
 theorem degreeOneEquiv_coe_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :

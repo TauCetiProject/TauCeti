@@ -110,16 +110,14 @@ private theorem eval₂_sub_mvfderiv_exp_mul {p : ℝ × M} (hf : MDifferentiabl
             (mvfderiv I f p.2 (α.reebVectorField p.2) *
                 α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] -
               mvfderiv I f p.2 (Manifold.tangentSpaceProdEquiv p v).2))) := by
-  -- The form `α` and the two-form `dα` are linear in the slot filled by `-X`.
-  have hα : α.1 p.2 ![-X p.2] = -α.1 p.2 ![X p.2] := by
-    rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec]
+  -- The two-form `dα` is linear in the slot filled by `-X`.
   have hdα (w : TangentSpace I p.2) :
       (mextDerivₗ I 1 α).eval₂ p.2 (-X p.2) w = -mextDeriv α.1 p.2 ![X p.2, w] := by
-    rw [← bilinFormAt_apply, map_neg, LinearMap.neg_apply, bilinFormAt_apply,
-      SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+    rw [SmoothBundleForm.eval₂_neg_left, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
   rw [eval₂_mextDerivₗ_symplectization,
     (Real.hasDerivAt_exp p.1).mvfderiv_comp_fst_mul_comp_snd_apply hf]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, Manifold.tangentSpaceProdEquiv_apply, hα, hdα]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, Manifold.tangentSpaceProdEquiv_apply,
+    apply_vec_neg, hdα]
   ring
 
 /-- **Hamiltonian vector fields of homogeneous functions.** For a differentiable function `f` on
@@ -254,15 +252,12 @@ theorem poissonBracket_symplectization {p : ℝ × M} (hf : MDifferentiableAt I 
       (-α.contactHamiltonianVectorField g p.2) =
         mextDeriv α.1 p.2
           ![α.contactHamiltonianVectorField f p.2, α.contactHamiltonianVectorField g p.2] := by
-    rw [← bilinFormAt_apply]
-    simp only [map_neg, LinearMap.neg_apply, neg_neg]
-    rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
-  have hneg (k : M → ℝ) : α.1 p.2 ![-α.contactHamiltonianVectorField k p.2] = -k p.2 := by
-    rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec,
-      hα.apply_contactHamiltonianVectorField]
+    rw [SmoothBundleForm.eval₂_neg_left, SmoothBundleForm.eval₂_neg_right, neg_neg,
+      SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
   rw [SmoothTwoForm.poissonBracket_def, hα.hamiltonianVectorField_symplectization_apply hf,
     hα.hamiltonianVectorField_symplectization_apply hg, eval₂_mextDerivₗ_symplectization]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, hneg, hdα]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_vec_neg,
+    hα.apply_contactHamiltonianVectorField, hdα]
   ring
 
 /-- **The primitive recovers a homogeneous Hamiltonian.** On the symplectization of a contact form,
@@ -275,8 +270,7 @@ theorem symplectization_apply_hamiltonianVectorField {p : ℝ × M}
           (fun p ↦ Real.exp p.1 * f p.2) p] =
       -(Real.exp p.1 * f p.2) := by
   rw [symplectization_apply, Manifold.tangentSpaceProdEquiv_apply,
-    hα.hamiltonianVectorField_symplectization_snd hf,
-    ← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec,
+    hα.hamiltonianVectorField_symplectization_snd hf, apply_vec_neg,
     hα.apply_contactHamiltonianVectorField, mul_neg]
 
 end IsContactForm
