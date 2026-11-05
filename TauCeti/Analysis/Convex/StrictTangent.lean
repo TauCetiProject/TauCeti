@@ -25,9 +25,11 @@ open Set
 
 /-- An injective affine change of variables preserves strict convexity on the preimage. -/
 theorem StrictConvexOn.comp_affineMap_of_injective
-    {E F : Type*} [AddCommGroup E] [Module ℝ E] [AddCommGroup F] [Module ℝ F]
-    {S : Set E} {v : E → ℝ} (hv : StrictConvexOn ℝ S v) (A : F →ᵃ[ℝ] E)
-    (hA : Function.Injective A) : StrictConvexOn ℝ (A ⁻¹' S) (v ∘ A) := by
+    {𝕜 E F β : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [AddCommGroup F] [Module 𝕜 F]
+    [AddCommMonoid β] [PartialOrder β] [SMul 𝕜 β]
+    {S : Set E} {v : E → β} (hv : StrictConvexOn 𝕜 S v) (A : F →ᵃ[𝕜] E)
+    (hA : Function.Injective A) : StrictConvexOn 𝕜 (A ⁻¹' S) (v ∘ A) := by
   refine ⟨hv.1.affine_preimage A, fun a ha b hb hab p q hp hq hpq => ?_⟩
   simp only [Function.comp_apply, Convex.combo_affine_apply hpq]
   exact hv.2 ha hb (fun h => hab (hA h)) hp hq hpq

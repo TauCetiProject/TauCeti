@@ -103,7 +103,7 @@ def supportingTangentSet (S : Set E) (u : E → ℝ) : Set E :=
   {x ∈ S | ∀ y ∈ closure S, u x + fderiv ℝ u x (y - x) ≤ u y}
 
 /-- Membership means that the point lies in `S` and its tangent supports `u` on the closure. -/
-theorem mem_supportingTangentSet {S : Set E} {u : E → ℝ} {x : E} :
+@[simp] theorem mem_supportingTangentSet {S : Set E} {u : E → ℝ} {x : E} :
     x ∈ supportingTangentSet S u ↔
       x ∈ S ∧ ∀ y ∈ closure S, u x + fderiv ℝ u x (y - x) ≤ u y := by
   rw [supportingTangentSet]
@@ -142,6 +142,6 @@ theorem exists_ofReal_pow_mul_measure_image_gradient_le_measure_image_gradient_s
   refine ⟨x, mem_supportingTangentSet.mpr ⟨hx, ?_⟩, hgrad⟩
   intro y hy
   rw [hderiv]
-  exact hsupp y hy
+  simpa only [smul_apply, smul_eq_mul] using hsupp y hy
 
 end TauCeti
