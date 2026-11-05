@@ -52,7 +52,7 @@ arbitrary monoidal categories.
 * A. Joyal and R. Street, *The geometry of tensor calculus I*, Adv. Math. 88 (1991).
 -/
 
-@[expose] public section
+public section
 
 universe u v u' v'
 
@@ -89,7 +89,7 @@ namespace FreeMonoidal
 variable {S}
 
 /-- The object of the free monoidal category given by a single generating object. -/
-def of (a : S.Obj) : S.FreeMonoidal := ⟨.of a⟩
+@[expose] def of (a : S.Obj) : S.FreeMonoidal := ⟨.of a⟩
 
 /-- Formal composites, tensor products and whiskerings of identities, associators, unitors
 and coupons. The morphisms of the free monoidal category on `S` are a quotient of these. -/
@@ -218,7 +218,8 @@ instance : MonoidalCategory S.FreeMonoidal where
 abbrev homMk {X Y : S.FreeMonoidal} (f : Hom X.as Y.as) : X ⟶ Y := ⟦f⟧
 
 /-- The generating morphism given by a coupon, from its source word to its target word. -/
-def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeMonoidal) ⟶ ⟨S.tgt g⟩ := homMk (Hom.coupon g)
+@[expose] def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeMonoidal) ⟶ ⟨S.tgt g⟩ :=
+  homMk (Hom.coupon g)
 
 @[simp]
 theorem homMk_id (X : S.FreeMonoidal) : homMk (Hom.id X.as) = 𝟙 X := rfl
@@ -321,6 +322,7 @@ variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] (fo : S.Obj → D)
 
 /-- The interpretation of a formal morphism, given interpretations of the generating objects
 and coupons. Auxiliary definition for `FreeMonoidal.lift`. -/
+@[expose]
 def liftMapAux : ∀ {X Y : FreeMonoidalCategory S.Obj}, Hom X Y → (projectObj fo X ⟶ projectObj fo Y)
   | _, _, Hom.id _ => 𝟙 _
   | _, _, Hom.α_hom _ _ _ => (α_ _ _ _).hom
@@ -369,7 +371,7 @@ theorem liftMapAux_sound {X Y : FreeMonoidalCategory S.Obj} {f g : Hom X Y} (h :
 /-- The functor out of the free monoidal category on `S` determined by the images `fo` of the
 generating objects and `fc` of the coupons. It is strong monoidal, with identity tensorator and
 unit comparison. -/
-def lift : S.FreeMonoidal ⥤ D where
+@[expose] def lift : S.FreeMonoidal ⥤ D where
   obj X := projectObj fo X.as
   map {X Y} := Quotient.lift (liftMapAux fo fc) fun _ _ h ↦ liftMapAux_sound fo fc h
   map_comp := by rintro _ _ _ ⟨_⟩ ⟨_⟩; rfl
@@ -512,17 +514,23 @@ def wordIso : ∀ X : FreeMonoidalCategory S.Obj, F.obj ⟨X⟩ ≅ G.obj ⟨X�
       Functor.Monoidal.μIso G ⟨X⟩ ⟨Y⟩
 
 @[simp]
-theorem wordIso_of (a : S.Obj) : wordIso F G e (of a).as = e a := rfl
+theorem wordIso_of (a : S.Obj) : wordIso F G e (of a).as = e a := by rfl
 
 @[simp]
-theorem wordIso_tensorUnit_hom : (wordIso F G e (𝟙_ S.FreeMonoidal).as).hom = η F ≫ ε G := rfl
+theorem wordIso_tensorUnit_hom : (wordIso F G e (𝟙_ S.FreeMonoidal).as).hom = η F ≫ ε G := by rfl
 
 @[simp]
 theorem wordIso_tensor_hom (X Y : S.FreeMonoidal) :
     (wordIso F G e (X ⊗ Y).as).hom =
-      δ F X Y ≫ ((wordIso F G e X.as).hom ⊗ₘ (wordIso F G e Y.as).hom) ≫ μ G X Y := rfl
+      δ F X Y ≫ ((wordIso F G e X.as).hom ⊗ₘ (wordIso F G e Y.as).hom) ≫ μ G X Y := by rfl
 
 variable {F G e}
+
+/- Composites with tensors of morphisms are folded into a single tensor of composites, so that
+the tensorators cancel inside each tensor factor. -/
+attribute [local simp] whiskerLeft_comp_tensorHom whiskerLeft_comp_tensorHom_assoc
+  whiskerRight_comp_tensorHom whiskerRight_comp_tensorHom_assoc tensorHom_comp_whiskerLeft
+  tensorHom_comp_whiskerLeft_assoc tensorHom_comp_whiskerRight tensorHom_comp_whiskerRight_assoc
 
 /-- The isomorphisms `wordIso F G e` are natural as soon as they are natural with respect to
 the coupons. -/
@@ -533,38 +541,33 @@ theorem map_comp_wordIso_hom
     F.map f ≫ (wordIso F G e Y.as).hom = (wordIso F G e X.as).hom ≫ G.map f := by
   induction f using Hom.inductionOn with
   | id X => simp
+  -- Structural cases: cancel the tensorators of `F` on the left and those of `G` on the right;
+  -- `simp` then reduces both sides to the naturality of the structural isomorphism. In the
+  -- unitor cases a second `simp` splits the remaining tensor once the tensorators are cancelled.
   | α_hom X Y Z =>
-    simp only [wordIso_tensor_hom, Functor.Monoidal.map_associator, Category.assoc,
-      Functor.Monoidal.μ_δ_assoc, Functor.Monoidal.μ_δ, whiskerLeft_comp_tensorHom_assoc,
-      tensorHom_comp_whiskerRight_assoc, Category.comp_id]
-    rw [← tensorHom_comp_whiskerLeft_assoc, ← whiskerRight_comp_tensorHom_assoc,
-      associator_naturality_assoc]
+    rw [← cancel_epi (μ F X Y ▷ F.obj Z ≫ μ F (X ⊗ Y) Z),
+      ← cancel_mono (δ G X (Y ⊗ Z) ≫ G.obj X ◁ δ G Y Z)]
+    simp [← Functor.OplaxMonoidal.associativity]
   | α_inv X Y Z =>
-    simp only [wordIso_tensor_hom, Functor.Monoidal.map_associator_inv, Category.assoc,
-      Functor.Monoidal.μ_δ_assoc, Functor.Monoidal.μ_δ, whiskerRight_comp_tensorHom_assoc,
-      tensorHom_comp_whiskerLeft_assoc, Category.comp_id]
-    rw [← tensorHom_comp_whiskerRight_assoc, ← whiskerLeft_comp_tensorHom_assoc,
-      associator_inv_naturality_assoc]
+    rw [← cancel_epi (F.obj X ◁ μ F Y Z ≫ μ F X (Y ⊗ Z)),
+      ← cancel_mono (δ G (X ⊗ Y) Z ≫ δ G X Y ▷ G.obj Z)]
+    simp [← Functor.OplaxMonoidal.associativity_inv]
   | l_hom X =>
-    simp only [wordIso_tensor_hom, wordIso_tensorUnit_hom, Functor.Monoidal.map_leftUnitor,
-      Category.assoc, Functor.Monoidal.μ_δ_assoc, tensorHom_comp_whiskerRight_assoc,
-      Functor.Monoidal.ε_η, Category.comp_id]
-    rw [tensorHom_def_assoc, leftUnitor_naturality]
+    rw [← cancel_epi (ε F ▷ F.obj X ≫ μ F (𝟙_ _) X)]
+    simp
+    simp [tensorHom_def']
   | l_inv X =>
-    simp only [wordIso_tensor_hom, wordIso_tensorUnit_hom, Functor.Monoidal.map_leftUnitor_inv,
-      Category.assoc, Functor.Monoidal.μ_δ_assoc, whiskerRight_comp_tensorHom_assoc,
-      Functor.Monoidal.ε_η_assoc]
-    rw [tensorHom_def'_assoc, ← leftUnitor_inv_naturality_assoc]
+    rw [← cancel_mono (δ G (𝟙_ _) X ≫ η G ▷ G.obj X)]
+    simp
+    simp [MonoidalCategory.tensorHom_def, ← Functor.OplaxMonoidal.left_unitality]
   | ρ_hom X =>
-    simp only [wordIso_tensor_hom, wordIso_tensorUnit_hom, Functor.Monoidal.map_rightUnitor,
-      Category.assoc, Functor.Monoidal.μ_δ_assoc, tensorHom_comp_whiskerLeft_assoc,
-      Functor.Monoidal.ε_η, Category.comp_id]
-    rw [tensorHom_def'_assoc, rightUnitor_naturality]
+    rw [← cancel_epi (F.obj X ◁ ε F ≫ μ F X (𝟙_ _))]
+    simp
+    simp [MonoidalCategory.tensorHom_def]
   | ρ_inv X =>
-    simp only [wordIso_tensor_hom, wordIso_tensorUnit_hom, Functor.Monoidal.map_rightUnitor_inv,
-      Category.assoc, Functor.Monoidal.μ_δ_assoc, whiskerLeft_comp_tensorHom_assoc,
-      Functor.Monoidal.ε_η_assoc]
-    rw [tensorHom_def_assoc, ← rightUnitor_inv_naturality_assoc]
+    rw [← cancel_mono (δ G X (𝟙_ _) ≫ G.obj X ◁ η G)]
+    simp
+    simp [tensorHom_def', ← Functor.OplaxMonoidal.right_unitality]
   | coupon g => exact he g
   | comp f g hf hg =>
     rw [Functor.map_comp, Functor.map_comp, Category.assoc, hg, reassoc_of% hf]
@@ -591,10 +594,10 @@ variable (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e (S.tgt g)).hom =
 
 @[simp]
 theorem monoidalNatIso_hom_app (X : S.FreeMonoidal) :
-    (monoidalNatIso he).hom.app X = (wordIso F G e X.as).hom := rfl
+    (monoidalNatIso he).hom.app X = (wordIso F G e X.as).hom := by rfl
 
 theorem monoidalNatIso_hom_app_of (a : S.Obj) :
-    (monoidalNatIso he).hom.app (of a) = (e a).hom := rfl
+    (monoidalNatIso he).hom.app (of a) = (e a).hom := by rfl
 
 instance : NatTrans.IsMonoidal (monoidalNatIso he).hom where
   unit := by
