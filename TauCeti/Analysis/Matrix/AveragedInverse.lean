@@ -15,11 +15,15 @@ import Mathlib.Analysis.Matrix.Normed
 import TauCeti.Analysis.Holder.Integral
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Topology.Instances.Matrix
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Matrix.Holder
 import TauCeti.Analysis.Matrix.PosDef
 
 /-!
-# Hölder bounds and ellipticity for segment-averaged inverses
+# Segment-averaged inverse matrices
+
+`Matrix.segmentAveragedInverse A B` integrates `((1-t) A + t B)⁻¹` entrywise over `[0, 1]`.
+Its API gives the self and endpoint-swap identities, symmetry for symmetric endpoints,
+positive definiteness for positive-definite endpoints, and the quadratic-form integral formula.
 
 The coefficients of a log-determinant difference equation are the integral of the inverse of
 the segment joining two Hessians. Continuous positive definite fields on compact sets give uniform
@@ -38,7 +42,10 @@ open scoped NNReal ENNReal Matrix.Norms.Elementwise ComplexOrder
 
 namespace Matrix
 
-/-- The integral of the inverse of the segment from `A` to `B`, taken entry by entry. -/
+/-- The entrywise integral `∫₀¹ ((1 - t) • A + t • B)⁻¹ dt`.
+The matrix inverse is zero at singular matrices, and an entry integral is zero if it is not
+integrable. Positive-definite endpoints ensure an invertible segment and integrable entries,
+so in that case this is the usual averaged inverse. -/
 def segmentAveragedInverse {ι : Type*} [Fintype ι] [DecidableEq ι]
     (A B : Matrix ι ι ℝ) : Matrix ι ι ℝ :=
   Matrix.of fun i j => ∫ t in (0 : ℝ)..1, ((1 - t) • A + t • B)⁻¹ i j
