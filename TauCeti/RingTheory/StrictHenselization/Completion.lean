@@ -40,9 +40,8 @@ variable (R Ω : Type u) [CommRing R] [IsLocalRing R] [Field Ω] [Algebra R Ω]
 generated. This does not require Noetherianity of the pointed colimit. -/
 @[stacks 06LJ "(a), strict henselization"]
 theorem isNoetherianRing_adicCompletion_of_fg (hR : (maximalIdeal R).FG) :
-    IsNoetherianRing (AdicCompletion (maximalIdeal (algebra R Ω)) (algebra R Ω)) := by
-  let := Ideal.Quotient.field (maximalIdeal (algebra R Ω))
-  exact Ideal.isNoetherianRing_adicCompletion_of_fg _ (maximalIdeal_fg R Ω hR)
+    IsNoetherianRing (AdicCompletion (maximalIdeal (algebra R Ω)) (algebra R Ω)) :=
+  IsLocalRing.isNoetherianRing_adicCompletion_of_fg (maximalIdeal_fg R Ω hR)
 
 /-- Over a Noetherian local base, the completed pointed étale colimit is Noetherian. -/
 instance isNoetherianRing_adicCompletion [IsNoetherianRing R] :
