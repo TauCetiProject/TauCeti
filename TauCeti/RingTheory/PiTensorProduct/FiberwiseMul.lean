@@ -38,6 +38,8 @@ Frobenius algebra acting on tensor products indexed by finite sets of circles.
   tensor is the pure tensor of the products over the fibres.
 * `PiTensorProduct.toLinearMap_fiberwiseMul_equiv`: along a bijection it is
   `PiTensorProduct.reindex`.
+* `PiTensorProduct.reindex_fiberwiseMul`: it commutes with reindexing along a commuting square of
+  index maps.
 * `PiTensorProduct.fiberwiseMul_sum_map`: multiplication on a disjoint union is the tensor
   product of the multiplications on its two summands.
 * `PiTensorProduct.fiberwiseMul_fiberwiseMul_surjInv`: along a surjection it has a right inverse,
@@ -138,6 +140,19 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
   funext j
   rw [Finset.prod_eq_single (e.symm j) (fun i hij hi ↦ ?_) (by simp)]
   exact absurd (e.eq_symm_apply.mpr (Finset.mem_filter.mp hij).2) hi
+
+/-- `PiTensorProduct.fiberwiseMul` is natural in the index map: reindexing along bijections of the
+source and target carries multiplication along `f` to multiplication along `f'` when the square
+`eτ ∘ f = f' ∘ eσ` commutes. -/
+theorem reindex_fiberwiseMul {σ' τ' : Type*} [Fintype σ'] [Finite τ] [DecidableEq τ']
+    (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'}
+    (h : eτ ∘ f = f' ∘ eσ) (x : ⨂[R] _ : σ, B) :
+    reindex R (fun _ ↦ B) eτ (fiberwiseMul (R := R) (A := fun _ ↦ B) f x) =
+      fiberwiseMul (A := fun _ ↦ B) f' (reindex R (fun _ ↦ B) eσ x) := by
+  classical
+  have := Fintype.ofFinite τ
+  simp only [← LinearEquiv.coe_coe, ← toLinearMap_fiberwiseMul_equiv, AlgHom.toLinearMap_apply]
+  rw [← AlgHom.comp_apply, fiberwiseMul_comp, ← AlgHom.comp_apply, fiberwiseMul_comp, h]
 
 /-- Multiplication along a disjoint union of index maps acts separately on its two tensor
 factors, through the native sum-indexed tensor equivalence. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.SSetPair
 public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
 /-!
@@ -32,13 +33,16 @@ initial vertices of simplices, such as twisted chains, needs to lift the combina
 
 It also provides the constructor `SSet.Homotopy.mk'` of a homotopy from a morphism on the
 cylinder `X ⊗ Δ[1]` with prescribed ends, identifies these ends with the faces of
-`X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` (`SSet.whiskerLeft_stdSimplex_δ_one`) and records that they are disjoint
-(`SSet.range_ι₀_inf_range_ι₁`). Homotopies can be precomposed and postcomposed with maps
-(`SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`), and they correspond under the
-tensor-hom adjunction (`SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`). Through this adjunction,
-the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` of maps are the maps `X ⟶ Z`
-(`SSet.ihomObj₀Equiv`), and its edges between two such vertices are the homotopies between them
-(`SSet.ihomEdgeEquiv`).
+`X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` (`SSet.whiskerLeft_stdSimplex_δ_one`), records that they are disjoint
+(`SSet.range_ι₀_inf_range_ι₁`), and names the edge `{v} × Δ[1]` of the cylinder over a vertex `v`
+(`SSet.verticalEdge`), along which a homotopy moves the image of `v`; its endpoints are
+`(v, 0)` and `(v, 1)` (`SSet.δ_one_verticalEdge` and `SSet.δ_zero_verticalEdge`). Homotopies can
+be precomposed and postcomposed with maps (`SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`),
+and they correspond under the tensor-hom adjunction (`SSet.Homotopy.curry`,
+`SSet.Homotopy.uncurry`). Through this adjunction, the vertices of the simplicial set
+`Fun(X, Z) = (ihom X).obj Z` of maps are the maps `X ⟶ Z` (`SSet.ihomObj₀Equiv`, from
+`TauCeti/AlgebraicTopology/SimplicialSet/InternalHom.lean`), and its edges
+between two such vertices are the homotopies between them (`SSet.ihomEdgeEquiv`).
 -/
 
 @[expose] public section
@@ -253,39 +257,19 @@ open MonoidalClosed
 
 variable {X Z : SSet.{w}}
 
-variable (X Z) in
-/-- The vertices of the simplicial set `Fun(X, Z)` of maps are the maps `X ⟶ Z`: a vertex `v`
-corresponds to the map evaluating at `v`, and a map `f` to the vertex adjoint to
-`X ⊗ Δ[0] ⟶ X ⟶ Z`. It is the composite of `SSet.unitHomEquiv` with
-`MonoidalClosed.curryHomEquiv'`. -/
-@[no_expose]
-noncomputable def ihomObj₀Equiv : ((ihom X).obj Z) _⦋0⦌ ≃ (X ⟶ Z) :=
-  ((ihom X).obj Z).unitHomEquiv.symm.trans curryHomEquiv'.symm
-
 /-- The map corresponding to a vertex of `Fun(X, Z)` evaluates at that vertex. -/
 lemma ihomObj₀Equiv_apply (v : ((ihom X).obj Z) _⦋0⦌) :
     ihomObj₀Equiv X Z v = lift (𝟙 X) (const v) ≫ (ihom.ev X).app Z := by
-  have h : (ρ_ X).inv ≫ X ◁ ((ihom X).obj Z).unitHomEquiv.symm v = lift (𝟙 X) (const v) := by
-    ext : 1
-    · simp
-    · ext
-      rfl
-  rw [ihomObj₀Equiv, Equiv.trans_apply, curryHomEquiv'_symm_apply, uncurry', uncurry_eq,
-    reassoc_of% h]
+  obtain ⟨f, rfl⟩ := (ihomObj₀Equiv X Z).symm.surjective v
+  rw [Equiv.apply_symm_apply, const_ihomObj₀Equiv_symm,
+    ← Category.id_comp (curry (fst X X ≫ f)), lift_curry_ihom_ev_app, lift_fst_assoc,
+    Category.id_comp]
 
 /-- The vertex of `Fun(X, Z)` corresponding to a map `f : X ⟶ Z` is adjoint to
 `X ⊗ Δ[0] ⟶ X ⟶ Z`. -/
 lemma yonedaEquiv_symm_ihomObj₀Equiv_symm (f : X ⟶ Z) :
     yonedaEquiv.symm ((ihomObj₀Equiv X Z).symm f) = curry (fst X Δ[0] ≫ f) := by
-  suffices (ihomObj₀Equiv X Z).symm f = yonedaEquiv (curry (fst X Δ[0] ≫ f)) by
-    rw [this, Equiv.symm_apply_apply]
-  have h : (const (yonedaEquiv (curry (fst X Δ[0] ≫ f))) : X ⟶ (ihom X).obj Z) =
-      stdSimplex.isTerminalObj₀.from X ≫ curry (fst X Δ[0] ≫ f) := by
-    conv_rhs => rw [← yonedaEquiv.symm_apply_apply (curry (fst X Δ[0] ≫ f)),
-      yonedaEquiv_symm_zero]
-    exact (comp_const _ _).symm
-  rw [Equiv.symm_apply_eq, ihomObj₀Equiv_apply, h, lift_curry_ihom_ev_app, lift_fst_assoc,
-    Category.id_comp]
+  rw [← ihomObjEquiv_ihomObj₀Equiv_symm, ihomObjEquiv_apply, curry_uncurry]
 
 /-- Precomposition `Fun(Y, Z) ⟶ Fun(X, Z)` with `f : X ⟶ Y` acts on vertices by precomposition. -/
 @[simp]
@@ -374,3 +358,37 @@ structure Homotopy {P P' : SSetPair.{w}} (f g : P ⟶ P') where
   w : P.hom ▷ Δ[1] ≫ right.h = left.h ≫ P'.hom
 
 end SSetPair
+
+end
+
+public section
+
+open CategoryTheory MonoidalCategory
+
+open scoped Simplicial
+
+namespace SSet
+
+variable {X : SSet.{w}}
+
+/-- The edge `{v} × Δ[1]` of the cylinder `X ⊗ Δ[1]` over a vertex `v` of `X`, from `(v, 0)` to
+`(v, 1)`. -/
+noncomputable def verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1] : SSet.{w}) _⦋1⦌ :=
+  (X.σ 0 v, stdSimplex.edge 1 0 1 (by decide))
+
+/-- The component of `verticalEdge v` in `X` is the degenerate edge at `v`. -/
+lemma verticalEdge_fst (v : X _⦋0⦌) : (verticalEdge v).1 = X.σ 0 v := (rfl)
+
+/-- The component of `verticalEdge v` in `Δ[1]` is the edge from `0` to `1`. -/
+lemma verticalEdge_snd (v : X _⦋0⦌) :
+    (verticalEdge v).2 = stdSimplex.edge 1 0 1 (by decide) := (rfl)
+
+/-- The vertical edge over `v` starts at `(v, 0)`. -/
+lemma δ_one_verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1]).δ 1 (verticalEdge v) = ι₀.app _ v :=
+  Prod.ext (δ_comp_σ_succ_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
+
+/-- The vertical edge over `v` ends at `(v, 1)`. -/
+lemma δ_zero_verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1]).δ 0 (verticalEdge v) = ι₁.app _ v :=
+  Prod.ext (δ_comp_σ_self_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
+
+end SSet

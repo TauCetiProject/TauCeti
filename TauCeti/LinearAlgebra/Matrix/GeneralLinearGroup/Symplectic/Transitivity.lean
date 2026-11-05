@@ -78,6 +78,15 @@ theorem exists_mulVec_eq {x y : Fin (m + m) → K} (hx : x ≠ 0) (hy : y ≠ 0)
   obtain ⟨v, w, a, b, h⟩ := exists_symplecticTransvection_mul_mulVec_eq hx hy
   exact ⟨symplecticTransvection v a * symplecticTransvection w b, h⟩
 
+/-- A symplectic matrix sending `x` to `y` sends the projective point of `x` to that of `y`. -/
+theorem smul_mk_eq_mk_of_mulVec_eq {g : GLSymplecticFin m K} {x y : Fin (m + m) → K}
+    (hx : x ≠ 0) (hy : y ≠ 0)
+    (h : ((g : GL (Fin (m + m)) K) : Matrix (Fin (m + m)) (Fin (m + m)) K) *ᵥ x = y) :
+    g • Projectivization.mk K x hx = Projectivization.mk K y hy := by
+  rw [Subgroup.smul_def, Projectivization.smul_mk]
+  apply (Projectivization.mk_eq_mk_iff K _ _ _ _).mpr
+  exact ⟨1, by simp [Units.smul_def, Matrix.smul_eq_mulVec, h]⟩
+
 /-- The symplectic group acts transitively on projective points, in every rank and over every
 field. In rank zero the projective space is empty. -/
 instance : MulAction.IsPretransitive (GLSymplecticFin m K) (ℙ K (Fin (m + m) → K)) where
@@ -87,9 +96,6 @@ instance : MulAction.IsPretransitive (GLSymplecticFin m K) (ℙ K (Fin (m + m) �
     induction q using Projectivization.ind with
     | h y hy =>
     obtain ⟨g, hg⟩ := exists_mulVec_eq hx hy
-    refine ⟨g, ?_⟩
-    rw [Subgroup.smul_def, Projectivization.smul_mk]
-    apply (Projectivization.mk_eq_mk_iff K _ _ _ _).mpr
-    exact ⟨1, by simp [Units.smul_def, Matrix.smul_eq_mulVec, hg]⟩
+    exact ⟨g, smul_mk_eq_mk_of_mulVec_eq hx hy hg⟩
 
 end TauCeti.GLSymplecticFin

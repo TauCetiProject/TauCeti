@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.GroupTheory.Index
+import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # Counting residues by a condition on their reduction
@@ -27,10 +28,16 @@ product of the individual counts. This is the Chinese remainder theorem `ZMod.pr
 counting form. In particular the number of roots modulo `n` of an integer polynomial is the product
 of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.equivPi`.
 
+Sums over the residues modulo `n` of a function of the least nonnegative representative are sums
+over `range n`; summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
+become sums over the residues modulo `m`.
+
 ## Main results
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
+* `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_ite_dvd_val`: summing over the representatives that are multiples of `n / m`.
 * `ZMod.card_filter_forall_natCast_val`: counting independent conditions on coprime factors.
 * `ZMod.natCard_aeval_eq_zero_eq_prod_primeFactors`: the number of roots of an integer polynomial
   modulo `n` is multiplicative over the prime-power factorization of `n`.
@@ -104,6 +111,38 @@ theorem sum_comp_natCast_val {M : Type*} [AddCommMonoid M] [NeZero m] [NeZero n]
     exact Nat.eq_div_of_mul_eq_right (NeZero.ne m) h
   rw [Finset.sum_comp, Finset.image_univ_of_surjective hsurj, Finset.smul_sum]
   exact Finset.sum_congr rfl fun y _ ↦ by rw [hfib]
+
+/-- **Summing over the representatives.** A function of the least nonnegative representative
+summed over the residues modulo `n` is its sum over `range n`. -/
+theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M) :
+    ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
+  rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
+  simp
+
+/-- **Summing over the multiples of `n / m`.** For `m ∣ n`, the representatives modulo `n` that
+are multiples of `n / m` are the `(n / m) y` with `y < m`, so a function of the quotient summed
+over them is its sum over the residues modulo `m`. -/
+theorem sum_ite_dvd_val {M : Type*} [AddCommMonoid M] [NeZero m] [NeZero n] (hmn : m ∣ n)
+    (f : ℕ → M) :
+    ∑ x : ZMod n, (if n / m ∣ x.val then f (x.val / (n / m)) else 0) = ∑ y : ZMod m, f y.val := by
+  obtain ⟨L, rfl⟩ := hmn
+  have hL : 0 < L := Nat.pos_of_ne_zero fun h ↦ NeZero.ne (m * L) (by rw [h, mul_zero])
+  rw [Nat.mul_div_cancel_left _ (NeZero.pos m),
+    sum_val_eq_sum_range (fun i ↦ if L ∣ i then f (i / L) else 0), sum_val_eq_sum_range f]
+  -- the block `[k L, (k + 1) L)` contains the single multiple `k L` of `L`
+  have key (k : ℕ) :
+      ∑ i ∈ range (k * L), (if L ∣ i then f (i / L) else 0) = ∑ q ∈ range k, f q := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      have hblock :
+          ∑ x ∈ range L, (if L ∣ k * L + x then f ((k * L + x) / L) else 0) = f k := by
+        rw [sum_eq_single_of_mem 0 (mem_range.mpr hL) fun x hx hx0 ↦ ite_eq_right_iff.mpr
+          fun h ↦ absurd ((Nat.dvd_add_right (dvd_mul_left L k)).mp h)
+            (Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero hx0) (mem_range.mp hx))]
+        simp [hL.ne']
+      rw [Nat.succ_mul, sum_range_add, sum_range_succ, ih, hblock]
+  exact key m
 
 /-- **All residues but zero have a representative the modulus does not divide.** A representative
 is smaller than the modulus, so the modulus divides it exactly when it vanishes. -/

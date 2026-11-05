@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.NumberTheory.NumberField.ProductFormula
 import TauCeti.Algebra.Module.ZLattice.Basic
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
 import TauCeti.RingTheory.DedekindDomain.PseudoBasis
@@ -234,15 +235,8 @@ theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
     dsimp only
     rw [hmat, Matrix.det_mul, map_mul, mul_comm]
     gcongr
-    rw [Matrix.det_apply]
-    obtain ⟨σ, -, hσ⟩ := IsNonarchimedean.finset_image_add_of_nonempty _
-      (fun y z ↦ FinitePlace.add_le v y z) (Finset.univ_nonempty (α := Equiv.Perm ι))
-    refine hσ.trans ?_
-    have hsign : ∀ y : K, v (Equiv.Perm.sign σ • y) = v y := fun y ↦ by
-      rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h]
-    rw [hsign, map_prod]
-    gcongr with i
-    exact hle i ((hΛ _).1 (hx (σ i) (Set.mem_univ _)) i)
+    exact Matrix.abv_det_le_prod_of_le' _ v.add_le fun k i ↦
+      hle i ((hΛ _).1 (hx k (Set.mem_univ _)) i)
 
 /-- **The largest local determinant of an `𝓞 K`-module.** For a finitely generated `𝓞 K`-module
 `Λ` spanning `ι → K` and a finite place `v`, the values of `v` on the determinants of `card ι`

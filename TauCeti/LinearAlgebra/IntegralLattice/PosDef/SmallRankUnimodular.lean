@@ -63,7 +63,7 @@ classification follows from the splitting `L ≅ I_k ⊕ L₀`.
 * `TauCeti.IntegralLattice.IsPosDef.exists_integralNorm_eq_two_of_isUnimodular`: in rank between
   two and nine there is a vector of norm two.
 * `TauCeti.IntegralLattice.IsPosDef.exists_integralForm_eq_zero_of_integralNorm_eq_two`: in rank
-  between two and nine a vector of norm two is orthogonal to a nonzero vector of norm at most two.
+  at most nine a vector of norm two is orthogonal to a nonzero vector of norm at most two.
 * `TauCeti.IntegralLattice.IsPosDef.subsingleton_of_vectorsOfNorm_one_eq_empty_of_finrank_le_seven`:
   without vectors of norm one, a lattice of rank at most seven is zero.
 * `IsPosDef.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty`: without vectors
@@ -92,19 +92,6 @@ universe u
 
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] {L : IntegralLattice V}
 
-/-- A vector of a unimodular lattice that is not twice a lattice vector pairs oddly with some
-lattice vector. -/
-private theorem exists_isCoprime_integralForm_two (hU : L.IsUnimodular) {v : L}
-    (hv : ∀ y : L, v ≠ (2 : ℤ) • y) : ∃ w : L, IsCoprime (L.integralForm v w) 2 := by
-  have : L.IsNondegenerate := ⟨hU.nondegenerate⟩
-  by_contra! h
-  have hmem := L.inv_smul_mem_carrier_of_forall_dvd (p := 2)
-    (by rw [L.isUnimodular_iff_discriminant_eq_one.1 hU]; norm_num) fun w ↦
-      even_iff_two_dvd.1 (Int.not_odd_iff_even.1 fun ho ↦ h w (Int.isCoprime_two_right.2 ho))
-  refine hv ⟨_, hmem⟩ (Subtype.ext ?_)
-  simp only [SetLike.val_smul, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_ofNat, Nat.cast_ofNat,
-    smul_inv_smul₀ (two_ne_zero (α := ℚ))]
-
 namespace IsPosDef
 
 /-- Hermite's inequality for a lattice of determinant at most `d`: the minimum lies below every
@@ -123,12 +110,12 @@ private theorem minimum_lt_of_four_pow_mul_lt (hL : L.IsPosDef) {d : ℤ} (hd : 
     gcongr
   omega
 
-/-- Let `N` be positive definite of rank between two and nine and determinant four, and `x` a
-vector of norm two pairing evenly with `N`. Splitting off `x` leaves a complement of rank `n - 1`
-and determinant two, whose minimum is at most two by Hermite's inequality, so `x` is orthogonal to
-a nonzero vector of norm at most two. -/
+/-- Let `N` be positive definite of rank at most nine and determinant four, and `x` a vector of
+norm two pairing evenly with `N`. Splitting off `x` leaves a complement of rank `n - 1` and
+determinant two, hence nonzero. By Hermite's inequality its minimum is at most two, so `x` is
+orthogonal to a nonzero vector of norm at most two. -/
 private theorem exists_integralForm_eq_zero_of_determinant_eq_four {N : IntegralLattice V}
-    (hN : N.IsPosDef) (hdet : N.determinant = 4) (h2 : 2 ≤ finrank ℤ N) (h9 : finrank ℤ N ≤ 9)
+    (hN : N.IsPosDef) (hdet : N.determinant = 4) (h9 : finrank ℤ N ≤ 9)
     {x : N} (hx : N.integralForm x x = 2) (hdvd : ∀ y, 2 ∣ N.integralForm x y) :
     ∃ t : N, t ≠ 0 ∧ N.integralForm x t = 0 ∧ N.integralNorm t ≤ 2 := by
   -- The complement `T` of `x` has rank `n - 1` and determinant two.
@@ -139,8 +126,13 @@ private theorem exists_integralForm_eq_zero_of_determinant_eq_four {N : Integral
   rw [hx, hdet] at hdetT
   rw [(ofIntegralForm.carrierEquiv _ (N.isSymm_integralForm.restrict T)).finrank_eq] at hrankT
   have hT := hN.isPosDef_ofIntegralForm_restrict T
-  have : Nontrivial (ofIntegralForm _ (N.isSymm_integralForm.restrict T)) :=
-    Module.nontrivial_of_finrank_pos (R := ℤ) (by omega)
+  -- `T` is nonzero, since the zero lattice has determinant one.
+  have : Nontrivial (ofIntegralForm _ (N.isSymm_integralForm.restrict T)) := by
+    refine not_subsingleton_iff_nontrivial.1 fun _ ↦ ?_
+    rw [determinant_eq_gramDet _ (Basis.empty _ : Basis Empty ℤ _), gramDet_def,
+      Matrix.det_isEmpty] at hdetT
+    omega
+  have hpos : 0 < finrank ℤ (ofIntegralForm _ (N.isSymm_integralForm.restrict T)) := finrank_pos
   -- Hermite's inequality in rank `n - 1 ≤ 8` and determinant two bounds the minimum of `T` by two.
   have hlt := hT.minimum_lt_of_four_pow_mul_lt (d := 2) (by omega) (k := 3) <| by
     generalize finrank ℤ (ofIntegralForm _ (N.isSymm_integralForm.restrict T)) = m at *
@@ -243,12 +235,14 @@ theorem exists_integralNorm_eq_two_of_isUnimodular (h2 : 2 ≤ finrank ℤ L)
   rw [integralNorm_apply, integralForm_inclusion _ _ L.evenSublattice_form, ← integralNorm_apply]
   omega
 
-/-- **In a positive definite unimodular lattice of rank between two and nine, every vector of
-norm two is orthogonal to a nonzero vector of norm at most two.** -/
-theorem exists_integralForm_eq_zero_of_integralNorm_eq_two (h2 : 2 ≤ finrank ℤ L)
-    (h9 : finrank ℤ L ≤ 9) {r : L} (hr : L.integralNorm r = 2) :
+/-- **In a positive definite unimodular lattice of rank at most nine, every vector of norm two is
+orthogonal to a nonzero vector of norm at most two.** -/
+theorem exists_integralForm_eq_zero_of_integralNorm_eq_two (h9 : finrank ℤ L ≤ 9) {r : L}
+    (hr : L.integralNorm r = 2) :
     ∃ s : L, s ≠ 0 ∧ L.integralForm r s = 0 ∧ L.integralNorm s ≤ 2 := by
-  obtain ⟨w, hw⟩ := exists_isCoprime_integralForm_two hU (v := r) fun y hy ↦ by
+  have : L.IsNondegenerate := ⟨hU.nondegenerate⟩
+  obtain ⟨w, hw⟩ := L.exists_isCoprime_integralForm Nat.prime_two (v := r)
+    (L.isUnimodular_iff_discriminant_eq_one.1 hU ▸ Nat.coprime_one_right 2) fun y hy ↦ by
     rw [hy, integralNorm_zsmul] at hr
     omega
   -- The vectors pairing evenly with `r` form a sublattice `N` of index two, so of determinant 4.
@@ -267,7 +261,7 @@ theorem exists_integralForm_eq_zero_of_integralNorm_eq_two (h2 : 2 ≤ finrank �
   have hrank : finrank ℤ N = finrank ℤ L := by rw [finrank_carrier N, finrank_carrier L]
   -- Inside `N`, the vector `r` is orthogonal to a nonzero vector of norm at most two.
   obtain ⟨t, ht0, hrt, ht⟩ := exists_integralForm_eq_zero_of_determinant_eq_four
-    (by rwa [IsPosDef, hNform]) hdetN (by omega) (by omega) (x := r')
+    (by rwa [IsPosDef, hNform]) hdetN (by omega) (x := r')
     (by rw [hBN, ← integralNorm_apply]; exact hr) fun y ↦ by
       rw [hBN]
       exact (L.coe_mem_neighborKernel_iff 2 r _).1 ((restrictFull_carrier ..).le y.2)
@@ -288,7 +282,9 @@ private theorem exists_isNeighbor_finrank_unitNormComplement_add_two_le
   have h4 : L.integralNorm (r + s) = 4 := by rw [integralNorm_add, hr, hs, hrs]; norm_num
   have hv : (2 : ℤ) ^ 2 ∣ L.integralNorm (r + s) := by rw [h4]; norm_num
   -- `r + s` is not twice a lattice vector, which would have norm one.
-  obtain ⟨w, hw⟩ := exists_isCoprime_integralForm_two hU (v := r + s) fun y hy ↦ by
+  have : L.IsNondegenerate := ⟨hU.nondegenerate⟩
+  obtain ⟨w, hw⟩ := L.exists_isCoprime_integralForm Nat.prime_two (v := r + s)
+    (L.isUnimodular_iff_discriminant_eq_one.1 hU ▸ Nat.coprime_one_right 2) fun y hy ↦ by
     rw [hy, integralNorm_zsmul] at h4
     simpa [h1] using (L.mem_vectorsOfNorm_intCast (n := 1) (x := y)).2 (by omega)
   set M := L.neighbor 2 (r + s) hv
@@ -324,7 +320,7 @@ private theorem exists_isNeighbor_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
   have h6 := hL.six_le_finrank_of_vectorsOfNorm_one_eq_empty hU h1
   obtain ⟨r, hr⟩ := hL.exists_integralNorm_eq_two_of_isUnimodular hU (by omega) hn
   obtain ⟨s, hs0, hrs, hs⟩ :=
-    hL.exists_integralForm_eq_zero_of_integralNorm_eq_two hU (by omega) hn hr
+    hL.exists_integralForm_eq_zero_of_integralNorm_eq_two hU hn hr
   have hs1 : L.integralNorm s ≠ 1 := fun h ↦ by
     simpa [h1] using (L.mem_vectorsOfNorm_one_iff (x := s)).2 (by rwa [← integralNorm_apply])
   have hpos := hL.posDef_integralNorm s hs0
