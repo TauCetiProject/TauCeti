@@ -125,8 +125,7 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
     { (rootsOfUnity (n i) k).subtype.comp (Pi.evalMonoidHom _ i) with
       map_smul' _ _ := rfl }
   have hev (i : ι) (a : M) : ev i a = (a i : kˣ) := rfl
-  let χ (i : ι) : Additive (equivariantCharacterSubgroup G M kˣ) :=
-    Additive.ofMul ((equivariantCharacterEquiv G M kˣ).symm (ev i))
+  let χ (i : ι) := Additive.ofMul ((equivariantCharacterEquiv G M kˣ).symm (ev i))
   have hχ (i : ι) : α.characterTransgression (χ i) = x i := by
     rw [FactorSet.characterTransgression_apply]
     have heq : α.map (equivariantCharacterEquiv G M kˣ (χ i).toMul) = β i := by
