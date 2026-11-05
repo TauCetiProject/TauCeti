@@ -8,11 +8,10 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.LinearAlgebra.Dual.Lemmas
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
@@ -41,10 +40,10 @@ once: multiplying a point by an element of `mixedSpace K` of norm at most `1` at
 place keeps it in the body (`TauCeti.NumberField.mul_mem_approxBody`). When the forms at the places
 of `S₀` are linearly independent the module is finitely generated
 (`TauCeti.NumberField.fg_approxModule`), and for `Q ≠ 0` it spans `ι → K`
-(`TauCeti.NumberField.span_approxModule_eq_top`). By
-`Submodule.discreteTopology_mixedImage_iff` and `Submodule.isZLattice_mixedImage` its mixed image
-is then a full lattice in `ι → mixedSpace K`, so
-an approximation domain is the set of points of a lattice in a convex body.
+(`TauCeti.NumberField.span_approxModule_eq_top`). Its mixed image is therefore discrete
+(`TauCeti.NumberField.discreteTopology_mixedImage_approxModule`) and, for `Q ≠ 0`, a full lattice
+in `ι → mixedSpace K` (`TauCeti.NumberField.isZLattice_mixedImage_approxModule`), so an
+approximation domain is the set of points of a lattice in a convex body.
 
 With independent forms at every relevant place, a domain of nonnegative level contains only
 finitely many points (`TauCeti.NumberField.finite_approxDomain`). More uniformly, the union over
@@ -442,5 +441,25 @@ theorem finite_biUnion_approxDomain {S₀ : Finset (FinitePlace K)}
   intro x hx
   rcases mem_iUnion₂.mp hx with ⟨Q, hQ, hx⟩
   exact approxDomain_subset_abs hQ₁ hQ hx
+
+/-- When the forms at `S₀` are linearly independent, the mixed image of `approxModule S₀ L c Q` is
+discrete in `ι → mixedSpace K`. -/
+theorem discreteTopology_mixedImage_approxModule
+    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hL : ∀ v ∈ S₀, LinearIndependent K (L v.1)) (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) :
+    DiscreteTopology (approxModule S₀ L c Q).mixedImage :=
+  Submodule.discreteTopology_mixedImage_iff.mpr (fg_approxModule hL c Q)
+
+open scoped Classical in
+/-- When the forms at `S₀` are linearly independent and `Q ≠ 0`, the mixed image of
+`approxModule S₀ L c Q` is a full `ℤ`-lattice in `ι → mixedSpace K`. -/
+theorem isZLattice_mixedImage_approxModule [Fintype ι]
+    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hL : ∀ v ∈ S₀, LinearIndependent K (L v.1)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
+    (hQ : Q ≠ 0) :
+    haveI := discreteTopology_mixedImage_approxModule hL c Q
+    IsZLattice ℝ (approxModule S₀ L c Q).mixedImage :=
+  letI := discreteTopology_mixedImage_approxModule hL c Q
+  Submodule.isZLattice_mixedImage (span_approxModule_eq_top S₀ L c hQ)
 
 end TauCeti.NumberField
