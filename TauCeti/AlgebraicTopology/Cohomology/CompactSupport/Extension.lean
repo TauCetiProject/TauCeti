@@ -123,25 +123,63 @@ lemma singularCohomologyComplCompactsMapIso_hom {f : U ⟶ X} (hf : IsOpenEmbedd
         (TopPair.ofSubsetMap f (mapsTo_compl_compacts_map hf.injective K)) n :=
   (rfl)
 
+/-- The excision isomorphisms are natural in the compact set: for `K ⊆ L` they commute with the
+restrictions `Hⁿ(X, X ∖ f(K)) ⟶ Hⁿ(X, X ∖ f(L))` and `Hⁿ(U, U ∖ K) ⟶ Hⁿ(U, U ∖ L)`. -/
+@[reassoc]
+lemma singularCohomologyComplCompactsMapIso_hom_naturality {f : U ⟶ X} (hf : IsOpenEmbedding f)
+    {K L : Compacts U} (h : K ≤ L) (n : ℕ) :
+    TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X)
+        (mapsTo_id_compl_compacts (Compacts.map_mono f f.hom.continuous h))) n ≫
+      (singularCohomologyComplCompactsMapIso R k M hf L n).hom =
+    (singularCohomologyComplCompactsMapIso R k M hf K n).hom ≫
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 U) (mapsTo_id_compl_compacts h)) n := by
+  simp only [singularCohomologyComplCompactsMapIso_hom, ← TopPair.singularCohomologyMap_comp]
+  rw [ofSubsetMap_id_comp_ofSubsetMap_compl_compacts_map hf.injective h]
+
+/-- The inverse excision isomorphisms are natural in the compact set. -/
+@[reassoc]
+lemma singularCohomologyComplCompactsMapIso_inv_naturality {f : U ⟶ X} (hf : IsOpenEmbedding f)
+    {K L : Compacts U} (h : K ≤ L) (n : ℕ) :
+    TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 U) (mapsTo_id_compl_compacts h)) n ≫
+      (singularCohomologyComplCompactsMapIso R k M hf L n).inv =
+    (singularCohomologyComplCompactsMapIso R k M hf K n).inv ≫
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X)
+        (mapsTo_id_compl_compacts (Compacts.map_mono f f.hom.continuous h))) n := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+    singularCohomologyComplCompactsMapIso_hom_naturality hf h n]
+
+/-- The excision isomorphism of a composite of open embeddings `f : U ⟶ Y` and `g : Y ⟶ X` is the
+composite of the excision isomorphisms of `g` along `f(K)` and of `f` along `K`, after the
+restriction from `g(f(K))` to the equal compact set `(g ∘ f)(K)`. -/
+@[reassoc]
+lemma singularCohomologyComplCompactsMapIso_hom_comp [T2Space Y] {f : U ⟶ Y} {g : Y ⟶ X}
+    (hf : IsOpenEmbedding f) (hg : IsOpenEmbedding g) (hfg : IsOpenEmbedding (f ≫ g))
+    (K : Compacts U) (hle : K.map (f ≫ g) (f ≫ g).hom.continuous ≤
+      (K.map f f.hom.continuous).map g g.hom.continuous) (n : ℕ) :
+    TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hle)) n ≫
+        (singularCohomologyComplCompactsMapIso R k M hg (K.map f f.hom.continuous) n).hom ≫
+          (singularCohomologyComplCompactsMapIso R k M hf K n).hom =
+      (singularCohomologyComplCompactsMapIso R k M hfg K n).hom := by
+  simp only [singularCohomologyComplCompactsMapIso_hom, ← TopPair.singularCohomologyMap_comp]
+  rw [← TopPair.ofSubsetMap_comp, TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _
+    (mapsTo_compl_compacts_map hfg.injective K) (Category.comp_id _)]
+  exact fun x hx ↦
+    mapsTo_compl_compacts_map hg.injective _ (mapsTo_compl_compacts_map hf.injective K hx)
+
 /-- The **extension** `f_! : Hⁿ_c(U) ⟶ Hⁿ_c(X)` of compactly supported classes along an open
 embedding `f : U ⟶ X` into a Hausdorff space. A class of `Hⁿ(U, U ∖ K)` is carried to
 `Hⁿ(X, X ∖ f(K))` by the inverse of the excision isomorphism
-`TopCat.singularCohomologyComplCompactsMapIso`, extending a cochain that vanishes off `K` by
-zero. -/
+`TopCat.singularCohomologyComplCompactsMapIso`: on cohomology classes, this is the extension by
+zero of a class supported in `K`. -/
 def compactSupportCohomologyExtend {f : U ⟶ X} (hf : IsOpenEmbedding f) (n : ℕ) :
     U.compactSupportCohomology R k M n ⟶ X.compactSupportCohomology R k M n :=
   compactSupportCohomologyDesc
     (fun K ↦ (singularCohomologyComplCompactsMapIso R k M hf K n).inv ≫
       compactSupportCohomologyι n (K.map f f.hom.continuous))
     (fun K L h ↦ by
-      rw [← singularCohomologyMap_comp_compactSupportCohomologyι n
-          (Compacts.map_mono f f.hom.continuous h), ← Category.assoc, ← Category.assoc]
-      congr 1
-      rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-        singularCohomologyComplCompactsMapIso_hom, singularCohomologyComplCompactsMapIso_hom,
-        ← TopPair.singularCohomologyMap_comp,
-        ← TopPair.singularCohomologyMap_comp,
-        ofSubsetMap_id_comp_ofSubsetMap_compl_compacts_map hf.injective h])
+      rw [singularCohomologyComplCompactsMapIso_inv_naturality_assoc hf h n,
+        singularCohomologyMap_comp_compactSupportCohomologyι n
+          (Compacts.map_mono f f.hom.continuous h)])
 
 /-- On `Hⁿ(U, U ∖ K)`, the extension along an open embedding `f` is the inverse of excision
 followed by the map into `Hⁿ_c(X)` from `Hⁿ(X, X ∖ f(K))`. -/
@@ -192,17 +230,10 @@ lemma compactSupportCohomologyExtend_comp [T2Space Y] {f : U ⟶ Y} {g : Y ⟶ X
       (K.map f f.hom.continuous).map g g.hom.continuous := fun x hx ↦ by
     obtain ⟨y, hy, rfl⟩ := hx
     exact ⟨f y, ⟨y, hy, rfl⟩, rfl⟩
-  rw [compactSupportCohomologyι_comp_extend, compactSupportCohomologyι_comp_extend_assoc,
-    compactSupportCohomologyι_comp_extend, Iso.inv_comp_eq,
-    ← singularCohomologyMap_comp_compactSupportCohomologyι n hle,
-    singularCohomologyComplCompactsMapIso_hom, ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [Iso.eq_comp_inv, Iso.eq_comp_inv, Category.assoc, singularCohomologyComplCompactsMapIso_hom,
-    singularCohomologyComplCompactsMapIso_hom, ← TopPair.singularCohomologyMap_comp,
-    ← TopPair.singularCohomologyMap_comp, ← TopPair.ofSubsetMap_comp,
-    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_compl_compacts_map hfg.injective K)
-      (Category.comp_id _)]
-  exact fun x hx ↦
-    mapsTo_compl_compacts_map hg.injective _ (mapsTo_compl_compacts_map hf.injective K hx)
+  have hcomp := singularCohomologyComplCompactsMapIso_hom_comp (R := R) (k := k) (M := M)
+    hf hg hfg K hle n
+  simp only [compactSupportCohomologyι_comp_extend, compactSupportCohomologyι_comp_extend_assoc,
+    ← singularCohomologyMap_comp_compactSupportCohomologyι n hle, ← hcomp, Iso.inv_comp_eq,
+    Category.assoc, Iso.hom_inv_id_assoc]
 
 end TopCat
