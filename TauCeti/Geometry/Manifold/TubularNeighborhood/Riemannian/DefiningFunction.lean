@@ -109,10 +109,6 @@ theorem exists_regular_definingFunction_normalExp
       · norm_num [ContMDiffMap.const, Set.eq_empty_of_isEmpty]
   | inr hM =>
     let := hM
-    have : T2Space M := f.isEmbedding.t2Space
-    have : SecondCountableTopology M := f.isEmbedding.isInducing.secondCountableTopology
-    have : LocallyCompactSpace H := I.locallyCompactSpace
-    have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
     have : LocallyCompactSpace G := J.locallyCompactSpace
     have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace G N
     have : MetrizableSpace N := Manifold.metrizableSpace J N
