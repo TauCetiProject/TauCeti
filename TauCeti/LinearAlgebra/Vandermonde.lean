@@ -148,6 +148,72 @@ private theorem det_vandermonde_eq_det_descPochhammer {R : Type*} [CommRing R] [
     (fun j => descPochhammer R (j : ℕ)) (fun j => descPochhammer_natDegree (j : ℕ))
     (fun j => monic_descPochhammer (j : ℕ))
 
+/-- The bidiagonal matrix with `-1` on the diagonal and `1` on the superdiagonal: multiplying a
+matrix on the left by it subtracts each row from its successor, with the sign reversed. -/
+private theorem det_of_superdiagonal_sub_diagonal (n : ℕ) :
+    (Matrix.of fun i k : Fin (n + 1) =>
+      (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0)).det
+      = (-1 : ℤ) ^ (n + 1) := by
+  rw [Matrix.det_of_isUpperTriangular]
+  · simp
+  · intro i k hki
+    have hk : (k : ℕ) < (i : ℕ) := hki
+    have h2 : ¬ (k = i) := by rintro rfl; omega
+    simp [h2, show ¬ ((k : ℕ) = (i : ℕ) + 1) by omega]
+
+/-- Expanding along a constant column `1`: if the first column of a square matrix is constant
+equal to `1`, its determinant is the determinant of the matrix of consecutive row differences of
+the remaining columns. -/
+theorem _root_.Matrix.det_eq_det_of_col_zero_eq_one {R : Type*} [CommRing R] {n : ℕ}
+    (N : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (hN : ∀ i, N i 0 = 1) :
+    N.det = (Matrix.of fun i j : Fin n => N i.succ j.succ - N i.castSucc j.succ).det := by
+  classical
+  -- `E` subtracts each row of `N` from its successor, so `E * N` has a single nonzero entry in its
+  -- first column, in the last row.
+  set E : Matrix (Fin (n + 1)) (Fin (n + 1)) R :=
+    (Matrix.of fun i k : Fin (n + 1) =>
+      (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0)).map
+      (Int.castRingHom R) with hE
+  have hEdet : E.det = (-1 : R) ^ (n + 1) := by
+    rw [hE, ← RingHom.mapMatrix_apply, ← RingHom.map_det, det_of_superdiagonal_sub_diagonal]
+    simp
+  have hEN : ∀ i j, (E * N) i j
+      = (∑ k : Fin (n + 1), if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - N i j := by
+    intro i j
+    have hterm : ∀ k, E i k * N k j
+        = (if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - (if k = i then N k j else 0) := by
+      intro k
+      simp only [hE, Matrix.map_apply, Matrix.of_apply, eq_intCast]
+      split_ifs <;> simp
+    rw [Matrix.mul_apply, Finset.sum_congr rfl fun k _ => hterm k, Finset.sum_sub_distrib]
+    simp
+  have hcast : ∀ (i : Fin n) (j : Fin (n + 1)),
+      (E * N) i.castSucc j = N i.succ j - N i.castSucc j := by
+    intro i j
+    rw [hEN]
+    simp only [Fin.val_castSucc, ← Fin.val_succ, Fin.val_inj, Finset.sum_ite_eq',
+      Finset.mem_univ, ↓reduceIte]
+  have hlast : (E * N) (Fin.last n) 0 = -1 := by
+    rw [hEN, hN]
+    simp [show ∀ k : Fin (n + 1), ¬ ((k : ℕ) = n + 1) from fun k => by omega]
+  have hdet : (E * N).det
+      = (-1 : R) ^ (n + 1) * (Matrix.of fun i j : Fin n =>
+          N i.succ j.succ - N i.castSucc j.succ).det := by
+    rw [Matrix.det_succ_column_zero, Finset.sum_eq_single (Fin.last n)]
+    · rw [hlast, Fin.val_last]
+      have : ((E * N).submatrix (Fin.last n).succAbove Fin.succ)
+          = Matrix.of fun i j : Fin n => N i.succ j.succ - N i.castSucc j.succ := by
+        ext i j
+        simp [Fin.succAbove_last, hcast]
+      rw [this]
+      ring
+    · intro i _ hi
+      obtain ⟨i, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
+      simp [hcast, hN]
+    · simp
+  rw [Matrix.det_mul, hEdet] at hdet
+  exact (isUnit_neg_one.pow (n + 1)).mul_right_inj.mp hdet
+
 /-- **The row reduction.**  The `n × n` matrix of differences of falling factorials at the
 consecutive nodes `xᵢ`, `xᵢ₊₁` has the same determinant as the `(n+1) × (n+1)` Vandermonde matrix
 of the nodes themselves: it is obtained from the falling-factorial form of the latter by
@@ -157,86 +223,9 @@ private theorem det_descPochhammer_sub_eq_det_vandermonde {n : ℕ} (x : Fin (n 
         (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
           - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc)).det
       = (Matrix.vandermonde x).det := by
-  classical
-  -- `N` is the Vandermonde matrix of `x` in the falling-factorial basis, and `E` is the bidiagonal
-  -- matrix subtracting each row of `N` from its predecessor.
-  let N : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
-    Matrix.of fun i j => (descPochhammer ℤ (j : ℕ)).eval (x i)
-  let E : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ := Matrix.of fun i k =>
-    (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0)
-  have hN : ∀ i j, N i j = (descPochhammer ℤ (j : ℕ)).eval (x i) := fun _ _ => rfl
-  have hE : ∀ i k, E i k
-      = (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0) :=
-    fun _ _ => rfl
-  have hEN : ∀ i j : Fin (n + 1),
-      (E * N) i j
-        = (∑ k : Fin (n + 1), if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - N i j := by
-    intro i j
-    rw [Matrix.mul_apply]
-    have hterm : ∀ k : Fin (n + 1), E i k * N k j
-        = (if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - (if k = i then N k j else 0) := by
-      intro k
-      rw [hE]
-      split_ifs <;> ring
-    rw [Finset.sum_congr rfl fun k _ => hterm k, Finset.sum_sub_distrib]
-    congr 1
-    simp
-  have hEupper : E.IsUpperTriangular := by
-    intro i k hki
-    have hk : (k : ℕ) < (i : ℕ) := hki
-    have h1 : ¬ ((k : ℕ) = (i : ℕ) + 1) := by omega
-    have h2 : ¬ (k = i) := by rintro rfl; omega
-    rw [hE]
-    simp [h1, h2]
-  have hEdet : E.det = (-1 : ℤ) ^ (n + 1) := by
-    rw [Matrix.det_of_isUpperTriangular hEupper]
-    have hdiag : ∀ i : Fin (n + 1), E i i = -1 := by
-      intro i
-      rw [hE]
-      simp
-    rw [Finset.prod_congr rfl fun i _ => hdiag i]
-    simp
-  -- The column `j = 0` of `N` is constant equal to `1`, so `E * N` has a single nonzero entry
-  -- there, in its last row.
-  have hcol : ∀ i : Fin (n + 1), N i 0 = 1 := by
-    intro i
-    rw [hN]
-    simp
-  have hcastSucc : ∀ (i : Fin n) (j : Fin (n + 1)),
-      (E * N) i.castSucc j = N i.succ j - N i.castSucc j := by
-    intro i j
-    rw [hEN]
-    simp only [Fin.val_castSucc, ← Fin.val_succ, Fin.val_inj, Finset.sum_ite_eq',
-      Finset.mem_univ, ↓reduceIte]
-  have hlast : (E * N) (Fin.last n) 0 = -1 := by
-    rw [hEN, hcol]
-    have hne : ∀ k : Fin (n + 1), ¬ ((k : ℕ) = n + 1) := fun k => by omega
-    simp [hne]
-  have hsubmat : (E * N).submatrix (Fin.last n).succAbove Fin.succ
-      = Matrix.of fun i j : Fin n =>
-          (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
-            - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc) := by
-    ext i j
-    rw [Matrix.submatrix_apply, Fin.succAbove_last, hcastSucc, hN, hN]
-    simp
-  have hdetEN : (E * N).det = (-1 : ℤ) ^ (n + 1) *
-      (Matrix.of fun i j : Fin n =>
-        (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
-          - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc)).det := by
-    rw [Matrix.det_succ_column_zero, Finset.sum_eq_single (Fin.last n)]
-    · rw [hlast, hsubmat, Fin.val_last]
-      ring
-    · intro i _ hi
-      obtain ⟨i, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
-      rw [hcastSucc]
-      simp only [hcol]
-      ring
-    · simp
-  -- Both readings of `det (E * N)` carry the same sign, which therefore cancels.
-  have hdetN : N.det = (Matrix.vandermonde x).det :=
-    (det_vandermonde_eq_det_descPochhammer (n + 1) x).symm
-  rw [Matrix.det_mul, hEdet, hdetN] at hdetEN
-  exact (((isUnit_neg_one (α := ℤ)).pow (n + 1)).mul_right_inj.mp hdetEN).symm
+  rw [det_vandermonde_eq_det_descPochhammer (n + 1) x,
+    Matrix.det_eq_det_of_col_zero_eq_one _ (fun i => by simp)]
+  simp
 
 /-- **Summing Vandermonde determinants over a box of nested intervals.**  For integers
 `x₀ ≤ x₁ ≤ ⋯ ≤ xₙ`, the Vandermonde determinant of `y`, summed over all integer vectors with
