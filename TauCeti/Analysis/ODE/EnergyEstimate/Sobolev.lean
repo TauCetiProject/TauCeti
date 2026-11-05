@@ -40,8 +40,6 @@ injective. This applies in particular to a constant invertible symmetric coeffic
 
 * `TauCeti.WeakDerivStep.mul_norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_of_forall_contDiff`: an
   estimate on compactly supported `C¹` paths extends to `W^{1,2}(ℝ, E)`.
-* `TauCeti.WeakDerivStep.isCompactOperator_smul_restrictBaseL`: restriction to a bounded interval
-  is compact.
 * `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq`:
   for a family with a uniform spectral gap `α` and `⟪v, A' v⟫ ≤ β ‖v‖²`, the estimate
   `‖u'‖² + (α² - β) ‖u‖² ≤ ‖D_A u‖²` without compact error.
@@ -214,15 +212,5 @@ theorem ker_trajectoryOperator_eq_bot
   rw [← norm_le_zero_iff, ← sq_le_sq₀ (norm_nonneg u) le_rfl,
     norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, hprev, hweak]
   simp
-
-/-- Restriction of `W^{1,2}(ℝ, E)` paths to a bounded interval, scaled by a constant, is
-compact. -/
-theorem isCompactOperator_smul_restrictBaseL (K R : ℝ) :
-    IsCompactOperator (K • restrictBaseL
-      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
-      (V := ⟨Ioo (-R) R, isOpen_Ioo⟩) le_top) := by
-  rw [FunLike.coe_smul]
-  exact (isCompactOperator_restrictBaseL _ (by norm_num)
-    (Metric.isBounded_Ioo (-R) R).isCompact_closure (by simp)).smul K
 
 end TauCeti.WeakDerivStep
