@@ -49,6 +49,12 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
 * `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for
   `0 < ‖q‖ < 1` and `w ≠ 0`.
+* `TauCeti.qTheta_one`, `TauCeti.differentiableOn_qTheta`, `TauCeti.hasDerivAt_qTheta_one`:
+  `θ_q(1) = 0`, and for `‖q‖ < 1` the theta product is holomorphic on `ℂ \ {0}` with derivative
+  `-(∏_{n ≥ 1} (1 - qⁿ))²` at `w = 1`.
+* `TauCeti.qTheta_eq_mul_tprod_mul_tprod`: `θ_q(w)` is `1 - w` times its two half products.
+* `TauCeti.differentiable_qTheta_exp`, `TauCeti.hasDerivAt_qTheta_exp_zero`: for `‖q‖ < 1`,
+  `z ↦ θ_q(e^{2π i z})` is entire, with derivative `-2π i (∏_{n ≥ 1} (1 - qⁿ))²` at `z = 0`.
 * `TauCeti.qTheta_neg_one`, `TauCeti.qTheta_sq_self`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` and
   `θ_{s²}(s) = (∏_{n ≥ 0} (1 - s^{2n+1}))²`.
 * `TauCeti.qTheta_pow_three_self_mul`, `TauCeti.qTheta_mul_tprod_of_sq_add_add_one_eq_zero`:
@@ -107,6 +113,11 @@ theorem qTheta_def (q w : 𝕜) :
     qTheta q w = (1 - w) * ∏' n : ℕ, (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
   (rfl)
 
+/-- The theta product vanishes at `w = 1`. -/
+@[simp]
+theorem qTheta_one (q : 𝕜) : qTheta q 1 = 0 := by
+  simp [qTheta_def]
+
 variable [CompleteSpace 𝕜]
 
 /-- For `‖q‖ < 1` the product `∏_{n ≥ 1} (1 - qⁿ w)` converges. -/
@@ -156,6 +167,13 @@ converges. -/
 theorem multipliable_qTheta {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
   (multipliable_one_sub_pow_mul hq w).mul (multipliable_one_sub_pow_mul hq w⁻¹)
+
+/-- For `‖q‖ < 1` the theta product `θ_q(w)` is `1 - w` times its two half products
+`∏_{n ≥ 1} (1 - qⁿ w)` and `∏_{n ≥ 1} (1 - qⁿ w⁻¹)`. -/
+theorem qTheta_eq_mul_tprod_mul_tprod {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    qTheta q w = (1 - w) *
+      ((∏' n : ℕ, (1 - q ^ (n + 1) * w)) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹)) := by
+  rw [qTheta_def, (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)]
 
 /-- For `‖q‖ < 1` the theta product is bounded by
 `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))`. -/
@@ -423,5 +441,63 @@ theorem differentiableOn_tprod_one_sub_pow_mul (hU : IsOpen U) (hq : Differentia
       simpa [Finset.prod_fn] using DifferentiableOn.finsetProd fun _ _ ↦ by fun_prop) hU
 
 end LocallyUniform
+
+section Holomorphic
+
+variable {q : ℂ}
+
+/-- The product of the two half products of `θ_q(w)` is holomorphic on `ℂ \ {0}`. -/
+private theorem differentiableOn_tprod_mul_tprod (hq : ‖q‖ < 1) :
+    DifferentiableOn ℂ (fun w : ℂ ↦
+      (∏' n : ℕ, (1 - q ^ (n + 1) * w)) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹)) {0}ᶜ :=
+  (differentiableOn_tprod_one_sub_pow_mul (q := fun _ ↦ q) isOpen_compl_singleton
+    (differentiableOn_const q) (fun _ _ ↦ hq) differentiableOn_id).mul
+    (differentiableOn_tprod_one_sub_pow_mul (q := fun _ ↦ q) isOpen_compl_singleton
+      (differentiableOn_const q) (fun _ _ ↦ hq) (differentiableOn_inv.mono fun _ h ↦ h))
+
+/-- For `‖q‖ < 1` the theta product `w ↦ θ_q(w)` is holomorphic on `ℂ \ {0}`. -/
+theorem differentiableOn_qTheta (hq : ‖q‖ < 1) : DifferentiableOn ℂ (qTheta q) {0}ᶜ := by
+  rw [show qTheta q = _ from funext (qTheta_eq_mul_tprod_mul_tprod hq)]
+  exact (differentiableOn_const 1 |>.sub differentiableOn_id).mul
+    (differentiableOn_tprod_mul_tprod hq)
+
+/-- For `‖q‖ < 1` the theta product has a simple zero at `w = 1`: its derivative there is
+`-(∏_{n ≥ 1} (1 - qⁿ))²`. -/
+theorem hasDerivAt_qTheta_one (hq : ‖q‖ < 1) :
+    HasDerivAt (qTheta q) (-(∏' n : ℕ, (1 - q ^ (n + 1))) ^ 2) 1 := by
+  have h := ((hasDerivAt_id (1 : ℂ)).const_sub 1).mul
+    (((differentiableOn_tprod_mul_tprod hq).differentiableAt
+      (isOpen_compl_singleton.mem_nhds one_ne_zero)).hasDerivAt)
+  rw [show qTheta q = _ from funext (qTheta_eq_mul_tprod_mul_tprod hq)]
+  convert h using 1
+  · funext w
+    simp
+  · simp [sq]
+
+open Complex in
+open scoped Real in
+/-- For `‖q‖ < 1`, `z ↦ θ_q(e^{2π i z})` is an entire function. -/
+theorem differentiable_qTheta_exp (hq : ‖q‖ < 1) :
+    Differentiable ℂ fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)) := fun z ↦
+  ((differentiableOn_qTheta hq).differentiableAt
+    (isOpen_compl_singleton.mem_nhds (exp_ne_zero _))).comp (f := fun z ↦ cexp (2 * π * I * z)) z
+    (by fun_prop)
+
+open Complex in
+open scoped Real in
+/-- For `‖q‖ < 1` the derivative of `z ↦ θ_q(e^{2π i z})` at `z = 0` is
+`-2π i (∏_{n ≥ 1} (1 - qⁿ))²`. -/
+theorem hasDerivAt_qTheta_exp_zero (hq : ‖q‖ < 1) :
+    HasDerivAt (fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)))
+      (-(2 * π * I) * (∏' n : ℕ, (1 - q ^ (n + 1))) ^ 2) 0 := by
+  have h := (hasDerivAt_qTheta_one hq).comp_of_eq (0 : ℂ)
+    ((hasDerivAt_id (0 : ℂ)).const_mul (2 * π * I)).cexp (by simp)
+  convert h using 1
+  · funext z
+    simp
+  · simp only [id, mul_zero, Complex.exp_zero, mul_one]
+    ring
+
+end Holomorphic
 
 end TauCeti
