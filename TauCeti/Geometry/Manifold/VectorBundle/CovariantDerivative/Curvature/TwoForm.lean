@@ -143,20 +143,15 @@ theorem isSmoothForm_curvatureFormEndomorphism {α : RoughForm I M ℝ 2}
   intro x v
   let e := trivializationAt E (TangentSpace I) x
   let b := Module.finBasis ℝ E
-  let D (i : Fin (finrank ℝ E)) (y : M) : TangentSpace I y :=
-    ∑ j, Riemannian.Tensor.chartInvGramMatrix (I := I) x y i j • e.symmL ℝ y (b j)
+  let D := Riemannian.Tensor.chartDualFrame (I := I) x
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x
   have hbase := e.open_baseSet.mem_nhds hx
   have hframe (w : E) : CMDiffAt ∞ (T% (fun y ↦ e.symmL ℝ y w)) x :=
     (e.contMDiffAt_symmL hx).clm_bundle_apply (by
       rw [contMDiffAt_section]
       simpa using (contMDiffAt_const (I := I) (c := w) (n := ∞) (x := x)))
-  -- The inverse metric makes the metric dual frame smooth, without choosing orthonormal
-  -- frames smoothly as the point varies.
-  have hD (i : Fin (finrank ℝ E)) : CMDiffAt ∞ (T% (D i)) x := by
-    exact ContMDiffAt.sum_section fun j _ ↦
-      ((Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞)
-        x i j).contMDiffAt hbase).smul_section (hframe (b j))
+  have hD (i : Fin (finrank ℝ E)) : CMDiffAt ∞ (T% (D i)) x :=
+    Riemannian.Tensor.contMDiffAt_chartDualFrame (n := ∞) x hx i
   -- Cache the iterated operator fibres to keep typeclass search within its default budget.
   let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
   let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
@@ -198,17 +193,12 @@ theorem isSmoothForm_curvatureFormEndomorphism {α : RoughForm I M ℝ 2}
   let B := e.basisAt b hy
   have hB : ⇑B = e.symmL ℝ y ∘ b :=
     funext (TauCeti.Manifold.basisAt_apply b hy)
-  have hG : Matrix.gram ℝ B = Riemannian.Tensor.chartGramMatrix (I := I) x y := by
-    simpa [B, b, e] using
-      Riemannian.Tensor.gram_basisAt_finBasis_reindex (I := I) (Equiv.refl _) x hy
   have hdual (i) :
       LinearMap.BilinForm.dualBasis (innerₗ (TangentSpace I y)) nondegenerate_inner B i =
-        D i y := by
-    rw [B.dualBasis_innerₗ_eq_sum, hG, ← Riemannian.Tensor.chartInvGramMatrix_def, hB]
-    rfl
+        D i y :=
+    Riemannian.Tensor.dualBasis_basisAt_eq_chartDualFrame x hy i
   rw [cov.curvatureFormEndomorphism_apply_eq_sum hcov y B]
-  simp only [hdual, hB, Function.comp_apply, Function.comp_assoc]
-  rfl
+  simp only [hdual, hB, Function.comp_def, e]
 
 /-- The curvature endomorphism is a smooth section of the native endomorphism bundle of
 real two-forms. No additional exterior-power bundle or topology is installed. -/
