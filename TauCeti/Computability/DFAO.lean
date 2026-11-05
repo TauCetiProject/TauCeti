@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.DFA
-public import Mathlib.Data.Set.Finite.Range
-public import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.ZMod.Defs
 
 /-!
@@ -269,6 +267,23 @@ theorem evalFrom_comap {α' : Type x} (f : α' → α) (s : σ) (w : List α') :
 theorem eval_comap {α' : Type x} (f : α' → α) (w : List α') :
     (M.comap f).eval w = M.eval (w.map f) := by
   simp [eval_eq_evalFrom]
+
+/-- Changing the input alphabet along the identity leaves the automaton unchanged. -/
+@[simp]
+theorem comap_id : M.comap id = M :=
+  (rfl)
+
+/-- Successive changes of input alphabet compose the letter maps. -/
+@[simp]
+theorem comap_comap {α' : Type x} {α'' : Type z} (f : α' → α) (g : α'' → α') :
+    (M.comap f).comap g = M.comap (f ∘ g) :=
+  (rfl)
+
+/-- Selecting accepting outputs commutes with changing the input alphabet. -/
+@[simp]
+theorem toDFA_comap {α' : Type x} (f : α' → α) (S : Set Δ) :
+    (M.comap f).toDFA S = (M.toDFA S).comap f :=
+  (rfl)
 
 /-! ### Reversing the reading order -/
 

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.AutomaticSequence.BoundedDigits
+import Mathlib.Data.Set.Finite.Range
+import Mathlib.Basic.Finite.Prod
+import TauCeti.Data.Nat.Digits
 
 /-!
 # Most-significant-first automatic sequences
@@ -71,18 +74,11 @@ theorem isAutomatic_iff_exists_dfao_output_eval_eq_ofDigits_reverse (hk : 2 ≤ 
   · rintro ⟨σ, _, M, hM⟩
     apply isAutomatic_iff_exists_dfao_reverse.mpr
     refine ⟨σ, inferInstance, M.comap (Fin.castLE hd), fun n ↦ ?_⟩
-    have hdigits : ((Nat.digits k n).map (Fin.ofNat k)).map Fin.val = Nat.digits k n := by
-      calc
-        _ = (Nat.digits k n).map id := by
-          simp only [List.map_map]
-          exact List.map_congr_left fun j hj ↦ Nat.mod_eq_of_lt (Nat.digits_lt_base hk hj)
-        _ = _ := List.map_id _
     rw [DFAO.comap_output, DFAO.eval_comap, hM]
-    congr 1
-    simp only [List.map_reverse, List.reverse_reverse, List.map_map, Function.comp_def,
-      Fin.val_castLE]
-    simpa only [List.map_map, Function.comp_def] using
-      (congrArg (Nat.ofDigits k) hdigits).trans (Nat.ofDigits_digits k n) |>.symm
+    simp only [List.map_reverse, List.reverse_reverse]
+    rw [List.map_map]
+    simp only [Function.comp_def, Fin.val_castLE]
+    rw [Nat.map_val_map_ofNat_digits hk, Nat.ofDigits_digits]
 
 /-! ### Checks -/
 
