@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
 # Weight-parabolic subgroup schemes of the general linear group
@@ -319,5 +320,13 @@ theorem mem_weightParabolicPoints_iff {A : Type v} [CommRing A] [Algebra R A]
     mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular]
   simp only [MulEquiv.apply_symm_apply, Matrix.BlockTriangular, Function.comp_apply,
     OrderDual.toDual_lt_toDual]
+
+/-- Inclusion of defining ideals reverses the inclusion of matrix point subgroups. -/
+theorem weightParabolicPoints_le_of_definingHopfIdeal_le (w' : Fin N → ℤ)
+    (h : weightParabolicDefiningHopfIdeal R w' ≤ weightParabolicDefiningHopfIdeal R w)
+    {A : Type v} [CommRing A] [Algebra R A] :
+    weightParabolicPoints R w A ≤ weightParabolicPoints R w' A := by
+  rw [weightParabolicPoints, weightParabolicPoints]
+  exact Subgroup.map_mono (CommHopfAlgCat.quotientPointsSubgroup_le_of_le _ h _)
 
 end TauCeti.GeneralLinear
