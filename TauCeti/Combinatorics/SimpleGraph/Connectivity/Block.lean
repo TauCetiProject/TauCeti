@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
 
 import Mathlib.Order.Preorder.Finite
 import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
@@ -29,6 +30,11 @@ distinct blocks is a cut vertex.
 Conversely, in a finite graph a cut vertex lies in two distinct blocks, giving
 `SimpleGraph.isCutVertex_iff_exists_isBlock_ne`; a vertex that is not a cut vertex lies in exactly
 one block. These are the incidences of the block--cut forest.
+
+For blocks with at least three vertices, the defining condition is equivalent to maximal
+2-vertex-connectivity. This identifies the large blocks with the maximal induced subgraphs that
+are 2-vertex-connected, while retaining bridge blocks and isolated vertices in the general block
+definition.
 
 The definition and the cut-vertex characterization follow R. Diestel, *Graph Theory*, 5th ed.,
 Graduate Texts in Mathematics 173, Springer, 2017, Section 3.1, with isolated vertices included as
@@ -324,5 +330,32 @@ theorem not_isCutVertex_iff_existsUnique_isBlock_mem [Finite V] :
     refine ⟨B, ⟨hB, hvB⟩, fun C ⟨hC, hvC⟩ ↦ by_contra fun hCB ↦ h ⟨C, B, hC, hB, hCB, hvC, hvB⟩⟩
   · rintro ⟨B, -, huniq⟩ ⟨C, D, hC, hD, hCD, hvC, hvD⟩
     exact hCD ((huniq C ⟨hC, hvC⟩).trans (huniq D ⟨hD, hvD⟩).symm)
+
+/-! ### Blocks and 2-vertex-connectivity -/
+
+/-- A block containing at least three vertices induces a 2-vertex-connected graph. -/
+theorem IsBlock.isVertexConnected_two (hB : G.IsBlock B) (hcard : 3 ≤ B.encard) :
+    (G.induce B).IsVertexConnected 2 := by
+  rw [isVertexConnected_two_iff, ENat.card_coe_set_eq]
+  exact ⟨hcard, hB.connected, hB.not_isCutVertex⟩
+
+/-- The blocks with at least three vertices are exactly the maximal vertex sets inducing
+2-vertex-connected subgraphs. -/
+theorem isBlock_and_three_le_encard_iff_maximal_isVertexConnected_two :
+    G.IsBlock B ∧ 3 ≤ B.encard ↔ Maximal (fun C ↦ (G.induce C).IsVertexConnected 2) B := by
+  rw [maximal_subset_iff]
+  constructor
+  · rintro ⟨hB, hcard⟩
+    refine ⟨hB.isVertexConnected_two hcard, fun C hC hBC ↦ ?_⟩
+    have hC' := isVertexConnected_two_iff.mp hC
+    exact hB.eq_of_subset hC'.2.1 hC'.2.2 hBC
+  · rintro ⟨hB, hmax⟩
+    have hB' := isVertexConnected_two_iff.mp hB
+    refine ⟨isBlock_iff.mpr ⟨hB'.2.1, hB'.2.2, fun {C} hconn hcut hBC ↦ ?_⟩, ?_⟩
+    · apply hmax
+      · rw [isVertexConnected_two_iff, ENat.card_coe_set_eq]
+        exact ⟨hB'.1.trans (Set.encard_le_encard hBC), hconn, hcut⟩
+      · exact hBC
+    · simpa using hB'.1
 
 end SimpleGraph

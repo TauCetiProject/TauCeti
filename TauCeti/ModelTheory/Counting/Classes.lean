@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
+import TauCeti.SetTheory.Descriptive.Silver
 
 /-!
 # Classes of countable models
@@ -37,11 +38,13 @@ universe (`TauCeti.classOf_surjective`). So `CountableModelClasses φ` is the se
 classes of countable models of `φ`, presented as a type in the universe of the relation symbols,
 and no statement has to count a proper class of structures.
 
-In a language with countably many relation symbols there are at most continuum many countable
-models. A perfect set of pairwise non-isomorphic models, at the tier `ℕ` or at some finite tier,
-gives exactly continuum many (`TauCeti.HasPerfectlyManyCountableModels.countableModelCount_eq`).
-These are the two alternatives between which Morley's theorem and Vaught's conjecture place the
-count.
+In a language with countably many relation symbols of each arity there are at most continuum many
+countable models. A perfect set of pairwise non-isomorphic models, at the tier `ℕ` or at some
+finite tier, gives exactly continuum many
+(`TauCeti.HasPerfectlyManyCountableModels.countableModelCount_eq`). On a finite carrier no
+back-and-forth stratification is needed: isomorphism already has closed, hence Borel, graph, so
+Silver's theorem relative to the Borel model class gives countably many models up to isomorphism
+or a perfect set of pairwise non-isomorphic ones.
 
 ## Main results
 
@@ -59,17 +62,30 @@ count.
 * `TauCeti.countableModelCount_le_continuum`: at most continuum many countable models.
 * `TauCeti.HasPerfectlyManyCountableModels.countableModelCount_eq`: a perfect set of pairwise
   non-isomorphic models gives continuum many.
+* `TauCeti.RelationalConfiguration.countable_quotient_isoSetoidOn_or_hasPerfectAntichainOn` and
+  `TauCeti.RelationalConfiguration.mk_quotient_isoSetoidOn_le_aleph0_or_eq_continuum`: on a finite
+  carrier, the models of `φ` are countably many up to isomorphism or contain a nonempty perfect
+  set of pairwise non-isomorphic ones (hence `≤ ℵ₀` or `= 𝔠`).
+* `TauCeti.forall_countable_quotient_isoSetoidOn_fin_or_exists_hasPerfectAntichainOn`,
+  `TauCeti.sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_exists_hasPerfectAntichainOn`,
+  `TauCeti.sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_hasPerfectlyManyCountableModels`, and
+  `TauCeti.sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_eq_continuum`: the dichotomy summed across
+  all finite tiers `Fin n`.
 
 ## References
 
 * M. Morley, *The number of countable models*, J. Symbolic Logic 35 (1970), 14–18.
+* J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
+  relations*, Annals of Mathematical Logic 18 (1980), 1–28.
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, the chapter
   on the space of countable models.
 
-The tiered presentation of the classes follows `AllCodedIsoClasses` and `isoSetoidOn` in Cameron
-Freer's `cameronfreer/infinitary-logic` (`InfinitaryLogic/Descriptive/FiniteCarrier.lean`,
-checkpoint `518a366`, Apache-2.0), whose bridges are for models in `Type`; here they work in every
-universe.
+The tiered presentation of the classes and the finite-carrier dichotomy follow `AllCodedIsoClasses`,
+`isoSetoidOn`, and `counting_fin_models_dichotomy` in Cameron Freer's
+`cameronfreer/infinitary-logic` (`InfinitaryLogic/Descriptive/FiniteCarrier.lean`, checkpoint
+`518a366`, Apache-2.0); there the bridges are for models in `Type` and the finite-carrier dichotomy
+is cardinal-only, whereas here the bridges work in every universe and both witnessed and cardinal
+forms are proved.
 -/
 
 public section
@@ -115,6 +131,50 @@ the models of a sentence have at most continuum many isomorphism classes. -/
 theorem mk_quotient_isoSetoidOn_le_continuum [∀ n, Countable (L.Relations n)] (V : Type w)
     [Countable V] (φ : L.SentenceInf ι) : #(Quotient (isoSetoidOn V φ)) ≤ 𝔠 :=
   mk_quotient_le.trans (mk_subtype_le _ |>.trans (mk_le_continuum L V))
+
+/-- On a finite carrier, restricted isomorphism on the model class of `φ` has closed graph in the
+square of the model class. -/
+theorem isClosed_setOf_isoSetoidOn {V : Type w} [Finite V] (φ : L.SentenceInf ι) :
+    IsClosed {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
+  isClosed_setOf_isoSetoid.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
+
+/-- On a finite carrier, in a language with countably many relation symbols of each arity,
+restricted isomorphism on the model class of `φ` has Borel graph. -/
+theorem measurableSet_setOf_isoSetoidOn [∀ n, Countable (L.Relations n)] {V : Type w} [Finite V]
+    (φ : L.SentenceInf ι) :
+    MeasurableSet {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
+  measurableSet_setOf_isoSetoid.preimage (measurable_subtype_coe.prodMap measurable_subtype_coe)
+
+/-- **Finite-carrier dichotomy (Cantor form).** On a finite carrier, in a language with countably
+many relation symbols of each arity, the models of an infinitary sentence with countable branching
+have countably many isomorphism classes or carry a Cantor antichain of pairwise non-isomorphic
+models. -/
+theorem countable_quotient_isoSetoidOn_or_hasCantorAntichainOn [∀ n, Countable (L.Relations n)]
+    [Countable ι] (V : Type w) [Finite V] (φ : L.SentenceInf ι) :
+    Countable (Quotient (isoSetoidOn V φ)) ∨
+      (isoSetoid L V).HasCantorAntichainOn (modelsOf φ) :=
+  Setoid.countable_or_hasCantorAntichainOn_of_measurableSet (measurableSet_modelsOf φ)
+    (isoSetoid L V) (isoSetoidOn V φ) (fun _ _ h => h) (measurableSet_setOf_isoSetoidOn φ)
+
+/-- **Finite-carrier dichotomy (perfect-set form).** On a finite carrier, in a language with
+countably many relation symbols of each arity, the models of an infinitary sentence with countable
+branching have countably many isomorphism classes or contain a nonempty perfect set of pairwise
+non-isomorphic models. -/
+theorem countable_quotient_isoSetoidOn_or_hasPerfectAntichainOn [∀ n, Countable (L.Relations n)]
+    [Countable ι] (V : Type w) [Finite V] (φ : L.SentenceInf ι) :
+    Countable (Quotient (isoSetoidOn V φ)) ∨
+      (isoSetoid L V).HasPerfectAntichainOn (modelsOf φ) :=
+  (countable_quotient_isoSetoidOn_or_hasCantorAntichainOn V φ).imp_right
+    Setoid.HasCantorAntichainOn.hasPerfectAntichainOn
+
+/-- **Finite-carrier dichotomy (cardinal form).** On a finite carrier, in a language with countably
+many relation symbols of each arity, the models of an infinitary sentence with countable branching
+have either at most `ℵ₀` or exactly `𝔠` isomorphism classes. -/
+theorem mk_quotient_isoSetoidOn_le_aleph0_or_eq_continuum [∀ n, Countable (L.Relations n)]
+    [Countable ι] (V : Type w) [Finite V] (φ : L.SentenceInf ι) :
+    #(Quotient (isoSetoidOn V φ)) ≤ ℵ₀ ∨ #(Quotient (isoSetoidOn V φ)) = 𝔠 :=
+  Setoid.mk_quotient_le_aleph0_or_eq_continuum (isoSetoidOn V φ)
+    (measurableSet_setOf_isoSetoidOn φ)
 
 end RelationalConfiguration
 
@@ -372,5 +432,77 @@ theorem HasPerfectlyManyCountableModels.countableModelCount_eq [∀ n, Countable
       (mk_quotient_isoSetoidOn_nat_le_countableModelCount φ)
   · exact h.hasCantorAntichainOn.continuum_le_mk_quotient_comap.trans
       (mk_quotient_isoSetoidOn_fin_le_countableModelCount φ n)
+
+/-! ### The finite-tier dichotomy -/
+
+/-- Across all finite carriers `Fin n`, either every finite tier has countably many models up to
+isomorphism, or some finite tier contains a nonempty perfect set of pairwise non-isomorphic
+models. -/
+theorem forall_countable_quotient_isoSetoidOn_fin_or_exists_hasPerfectAntichainOn
+    [∀ k, Countable (L.Relations k)] [Countable ι] (φ : L.SentenceInf ι) :
+    (∀ n, Countable (Quotient (isoSetoidOn (Fin n) φ))) ∨
+      ∃ n, (isoSetoid L (Fin n)).HasPerfectAntichainOn (modelsOf φ) := by
+  by_cases h : ∀ n, Countable (Quotient (isoSetoidOn (Fin n) φ))
+  · exact .inl h
+  · obtain ⟨n, hn⟩ := not_forall.1 h
+    exact .inr ⟨n, (countable_quotient_isoSetoidOn_or_hasPerfectAntichainOn (Fin n) φ).resolve_left
+      hn⟩
+
+/-- A sentence without perfectly many countable models has countably many models up to isomorphism
+on every finite carrier `Fin n`. -/
+theorem countable_quotient_isoSetoidOn_fin_of_not_hasPerfectlyManyCountableModels
+    [∀ k, Countable (L.Relations k)] [Countable ι] {φ : L.SentenceInf ι}
+    (h : ¬ HasPerfectlyManyCountableModels φ) (n : ℕ) :
+    Countable (Quotient (isoSetoidOn (Fin n) φ)) :=
+  (countable_quotient_isoSetoidOn_or_hasPerfectAntichainOn (Fin n) φ).resolve_right fun hfin =>
+    h (.of_fin hfin)
+
+/-- Across all finite carriers `Fin n`, the finite tiers together contribute at most countably many
+isomorphism classes of models, or some finite tier contains a nonempty perfect set of pairwise
+non-isomorphic models. -/
+theorem sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_exists_hasPerfectAntichainOn
+    [∀ k, Countable (L.Relations k)] [Countable ι] (φ : L.SentenceInf ι) :
+    (sum fun n => #(Quotient (isoSetoidOn (Fin n) φ))) ≤ ℵ₀ ∨
+      ∃ n, (isoSetoid L (Fin n)).HasPerfectAntichainOn (modelsOf φ) := by
+  refine (forall_countable_quotient_isoSetoidOn_fin_or_exists_hasPerfectAntichainOn φ).imp_left
+    fun h => ?_
+  exact (sum_le_sum _ (fun _ => ℵ₀) fun n => mk_le_aleph0_iff.2 (h n)).trans_eq (by simp)
+
+/-- The finite tiers together contribute at most countably many isomorphism classes of models, or
+`φ` has perfectly many countable models. -/
+theorem sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_hasPerfectlyManyCountableModels
+    [∀ k, Countable (L.Relations k)] [Countable ι] (φ : L.SentenceInf ι) :
+    (sum fun n => #(Quotient (isoSetoidOn (Fin n) φ))) ≤ ℵ₀ ∨
+      HasPerfectlyManyCountableModels φ :=
+  (sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_exists_hasPerfectAntichainOn φ).imp_right
+    fun ⟨_, hn⟩ => .of_fin hn
+
+/-- If each finite carrier `Fin n` has either at most `ℵ₀` or `𝔠` models of `φ` up to isomorphism,
+then the finite tiers together contribute either at most `ℵ₀` or `𝔠` isomorphism classes of models.
+No countability assumption on the language or on the branching index `ι` is required. -/
+theorem sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_eq_continuum_of_dichotomy
+    {φ : L.SentenceInf ι}
+    (hfin : ∀ n, #(Quotient (isoSetoidOn (Fin n) φ)) ≤ ℵ₀ ∨
+      #(Quotient (isoSetoidOn (Fin n) φ)) = 𝔠) :
+    (sum fun n => #(Quotient (isoSetoidOn (Fin n) φ))) ≤ ℵ₀ ∨
+      (sum fun n => #(Quotient (isoSetoidOn (Fin n) φ))) = 𝔠 := by
+  by_cases h : ∀ n, #(Quotient (isoSetoidOn (Fin n) φ)) ≤ ℵ₀
+  · exact .inl <| (sum_le_sum _ (fun _ => ℵ₀) h).trans_eq (by simp)
+  · obtain ⟨n, hn⟩ := not_forall.1 h
+    have hnc : #(Quotient (isoSetoidOn (Fin n) φ)) = 𝔠 := (hfin n).resolve_left hn
+    refine .inr <| ((sum_le_sum _ (fun _ => 𝔠) fun k =>
+      (hfin k).elim (fun hk => hk.trans aleph0_le_continuum) le_of_eq).trans_eq ?_).antisymm ?_
+    · simp [aleph0_mul_continuum]
+    · exact hnc.symm.trans_le (le_sum (fun k => #(Quotient (isoSetoidOn (Fin k) φ))) n)
+
+/-- Across all finite carriers `Fin n`, in a language with countably many relation symbols of each
+arity, an infinitary sentence with countable branching has either at most `ℵ₀` or `𝔠` finite models
+up to isomorphism. -/
+theorem sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_eq_continuum
+    [∀ k, Countable (L.Relations k)] [Countable ι] (φ : L.SentenceInf ι) :
+    (sum fun n => #(Quotient (isoSetoidOn (Fin n) φ))) ≤ ℵ₀ ∨
+      (sum fun n => #(Quotient (isoSetoidOn (Fin n) φ))) = 𝔠 :=
+  sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_eq_continuum_of_dichotomy fun n =>
+    mk_quotient_isoSetoidOn_le_aleph0_or_eq_continuum (Fin n) φ
 
 end TauCeti
