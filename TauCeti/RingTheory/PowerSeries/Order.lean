@@ -23,11 +23,16 @@ An injective map of coefficient semirings preserves the order of a power series:
 nonzero coefficients to nonzero coefficients. Mathlib records only the inequality
 `PowerSeries.le_order_map`.
 
+Power series constructed degree by degree are limits of approximations whose consecutive terms
+agree in more and more low degrees; `PowerSeries.exists_forall_le_order_sub` supplies the limit.
+
 ## Main results
 
 * `PowerSeries.eq_zero_of_self_eq_mul_self`: `constantCoeff g = 0` and `f = g * f` give `f = 0`.
 * `PowerSeries.eq_zero_of_self_eq_self_mul`: the same for `f = f * g`.
 * `PowerSeries.order_map_of_injective`: injective coefficient maps preserve orders.
+* `PowerSeries.exists_forall_le_order_sub`: a sequence whose consecutive terms agree below degree
+  `n` has a limit agreeing with its `n`-th term below degree `n`.
 
 ## Provenance
 
@@ -85,5 +90,32 @@ theorem order_map_of_injective {S : Type*} [Semiring S] {φ : R →+* S}
   calc (map φ f).order ≤ f.order.toNat :=
         order_le _ (by simpa [coeff_map] using (map_ne_zero_iff φ hφ).mpr (coeff_order hf))
     _ = f.order := ENat.natCast_toNat (order_eq_top.not.mpr hf)
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+/-- **Limits of `X`-adic Cauchy sequences.** If consecutive terms of a sequence of power series
+agree below degree `n`, then there is a power series agreeing with its `n`-th term below degree `n`
+for every `n`. -/
+theorem exists_forall_le_order_sub {f : ℕ → R⟦X⟧}
+    (hf : ∀ n : ℕ, (n : ℕ∞) ≤ (f (n + 1) - f n).order) :
+    ∃ g : R⟦X⟧, ∀ n : ℕ, (n : ℕ∞) ≤ (g - f n).order := by
+  -- later terms agree with the `n`-th one below degree `n`
+  have hstab (n k : ℕ) : (n : ℕ∞) ≤ (f (n + k) - f n).order := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [show f (n + (k + 1)) - f n = (f (n + k + 1) - f (n + k)) + (f (n + k) - f n) by
+        rw [← add_assoc]; abel]
+      exact (le_min ((hf (n + k)).trans' (by exact_mod_cast Nat.le_add_right n k)) ih).trans
+        (min_order_le_order_add _ _)
+  refine ⟨mk fun m ↦ coeff m (f (m + 1)), fun n ↦ nat_le_order _ _ fun i hi ↦ ?_⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hi
+  have h := coeff_of_lt_order i ((hstab (i + 1) k).trans_lt' (by exact_mod_cast i.lt_succ_self))
+  rw [map_sub, sub_eq_zero] at h
+  rw [map_sub, coeff_mk, show i + k + 1 = i + 1 + k by omega, h, sub_self]
+
+end Ring
 
 end PowerSeries

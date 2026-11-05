@@ -33,7 +33,7 @@ complex structure `J` (`TauCeti.SymplecticForm.exists_compatible_forall_isComple
 underlying statement holds for any representation by maps commuting with an almost complex
 structure `J` tamed by `ω`: its invariants are `J`-stable, and a `J`-stable subspace `L` is
 symplectic, because a vector `v ∈ L ∩ L^ω` has `ω (v, J v) = 0`
-(`TauCeti.SymplecticForm.Tames.isSymplectic`,
+(`TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`,
 `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`).
 
 ## Main definitions
@@ -78,9 +78,10 @@ structure tamed by `ω` form a symplectic subspace. -/
 theorem Tames.isSymplectic_invariants {G : Type*} [Group G] (hJ : ω.Tames J)
     {ρ : Representation ℝ G V} (hρ : ∀ g, IsComplexLinearMap J J (ρ g)) :
     ω.IsSymplectic ρ.invariants :=
-  hJ.isSymplectic fun v hv ↦ (Representation.mem_invariants ρ _).2 fun g ↦ by
-    rw [(isComplexLinearMap_iff_apply J J (ρ g)).1 (hρ g) v,
-      (Representation.mem_invariants ρ v).1 hv g]
+  hJ.isSymplectic_of_mem_invtSubmodule <| (Module.End.mem_invtSubmodule _).2 fun v hv ↦
+    (Representation.mem_invariants ρ _).2 fun g ↦ by
+      rw [(isComplexLinearMap_iff_apply J J (ρ g)).1 (hρ g) v,
+        (Representation.mem_invariants ρ v).1 hv g]
 
 end Tames
 

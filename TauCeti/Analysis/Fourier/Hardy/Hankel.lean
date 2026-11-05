@@ -112,7 +112,7 @@ theorem adjoint_hankel (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
 of the adjoint Hankel operator of the conjugate left symbol with the right Hankel operator. -/
 theorem toeplitz_comp_sub_toeplitz
     (a b : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
-    toeplitz a ∘L toeplitz b - toeplitz (a • b : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) =
+    toeplitz a ∘L toeplitz b - toeplitz (a * b) =
       -(ContinuousLinearMap.adjoint (hankel (star a)) ∘L hankel b) := by
   ext f : 1
   apply Subtype.ext
@@ -162,7 +162,7 @@ theorem toeplitz_comp_of_analytic
     (a b : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     (hb : ∀ n : ℤ, n < 0 → fourierCoeff b n = 0) :
     toeplitz a ∘L toeplitz b =
-      toeplitz (a • b : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) := by
+      toeplitz (a * b) := by
   have h := toeplitz_comp_sub_toeplitz a b
   rw [(hankel_eq_zero_iff b).mpr hb, ContinuousLinearMap.comp_zero] at h
   ext f : 1
@@ -176,7 +176,7 @@ theorem toeplitz_comp_of_coanalytic
     (ha : ∀ n : ℤ, n < 0 →
       fourierCoeff (star a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) n = 0) :
     toeplitz a ∘L toeplitz b =
-      toeplitz (a • b : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) := by
+      toeplitz (a * b) := by
   have h := toeplitz_comp_sub_toeplitz a b
   rw [(hankel_eq_zero_iff (star a)).mpr ha,
     ContinuousLinearMap.adjoint.map_zero, ContinuousLinearMap.zero_comp] at h
