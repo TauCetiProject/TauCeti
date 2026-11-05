@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Calculus.MeanValue
@@ -21,8 +21,6 @@ circles about `z₀` shrink to points as their radius tends to `0`.
 
 ## Main results
 
-* `DifferentiableAt.hasDerivAt_comp_circleMap`, `DifferentiableAt.deriv_comp_circleMap`: the
-  velocity of `θ ↦ u(z₀ + ρ e^{iθ})` is `du` applied to the velocity `iρ e^{iθ}` of the circle.
 * `TauCeti.diam_image_sphere_le_of_norm_fderiv_le`: if `‖du‖ ≤ M` on the circle of radius `ρ`
   about `z₀`, then the image of that circle has diameter at most `2π ρ M`.
 * `TauCeti.tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto`: if `u` is differentiable near
@@ -32,27 +30,12 @@ circles about `z₀` shrink to points as their radius tends to `0`.
 
 public section
 
+namespace TauCeti
+
 open Complex Metric Set Filter Topology
 open scoped Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {u : ℂ → E} {z₀ : ℂ}
-
-/-- A map `u` differentiable at `circleMap z₀ ρ θ` has derivative `du(iρ e^{iθ})` along the
-circle at `θ`: its differential applied to the velocity of the circle. -/
-theorem DifferentiableAt.hasDerivAt_comp_circleMap {ρ θ : ℝ}
-    (hu : DifferentiableAt ℝ u (circleMap z₀ ρ θ)) :
-    HasDerivAt (fun θ ↦ u (circleMap z₀ ρ θ))
-      (fderiv ℝ u (circleMap z₀ ρ θ) (circleMap 0 ρ θ * I)) θ :=
-  hu.hasFDerivAt.comp_hasDerivAt θ (hasDerivAt_circleMap z₀ ρ θ)
-
-/-- The derivative of a map along a circle is its differential applied to the circle's velocity. -/
-theorem DifferentiableAt.deriv_comp_circleMap {ρ θ : ℝ}
-    (hu : DifferentiableAt ℝ u (circleMap z₀ ρ θ)) :
-    deriv (fun θ ↦ u (circleMap z₀ ρ θ)) θ =
-      fderiv ℝ u (circleMap z₀ ρ θ) (circleMap 0 ρ θ * I) :=
-  hu.hasDerivAt_comp_circleMap.deriv
-
-namespace TauCeti
 
 /-- If `u : ℂ → E` is differentiable on the circle of radius `ρ ≥ 0` about `z₀`, with
 `‖du‖ ≤ M` there, then the image of that circle has diameter at most `2π ρ M`. -/
@@ -66,8 +49,8 @@ theorem diam_image_sphere_le_of_norm_fderiv_le {ρ M : ℝ} (hρ : 0 ≤ ρ)
   have hlip (θ φ : ℝ) :
       ‖u (circleMap z₀ ρ φ) - u (circleMap z₀ ρ θ)‖ ≤ ρ * M * ‖φ - θ‖ := by
     refine convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u ∘ circleMap z₀ ρ)
-      (fun x _ ↦ (hu _ (hcmem x)).hasDerivAt_comp_circleMap.hasDerivWithinAt) (fun x _ ↦ ?_)
-      (mem_univ θ) (mem_univ φ)
+      (fun x _ ↦ ((hu _ (hcmem x)).hasFDerivAt.comp_hasDerivAt x
+        (hasDerivAt_circleMap z₀ ρ x)).hasDerivWithinAt) (fun x _ ↦ ?_) (mem_univ θ) (mem_univ φ)
     refine ((fderiv ℝ u _).le_opNorm _).trans ?_
     rw [norm_mul, Complex.norm_I, mul_one, norm_circleMap_zero, abs_of_nonneg hρ, mul_comm]
     exact mul_le_mul_of_nonneg_left (hM _ (hcmem x)) hρ

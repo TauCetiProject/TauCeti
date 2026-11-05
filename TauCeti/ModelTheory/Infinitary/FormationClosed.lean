@@ -334,24 +334,16 @@ from the set, the atomic formulas and `⊥` at every arity, and at each stage ad
 universal quantifications and relabellings of members of the previous stage, closing under
 components. -/
 
-/-- The members of a set of tagged formulas at arity `n`. -/
-private def level (X : Set (Σ n, L.BoundedFormulaω Empty n)) (n : ℕ) :
-    Set (L.BoundedFormulaω Empty n) :=
-  {φ | ⟨n, φ⟩ ∈ X}
-
-private theorem level_countable {X : Set (Σ n, L.BoundedFormulaω Empty n)} (hX : X.Countable)
-    (n : ℕ) : (level X n).Countable :=
-  hX.preimage sigma_mk_injective
-
 /-- One stage of formation: the implications, universal quantifications and relabellings of
 members of `X`, together with `X`, closed under components. -/
 private def formationStep (X : Set (Σ n, L.BoundedFormulaω Empty n)) : Fragment L :=
   generated (X ∪
     (⋃ n, Set.image2 (fun φ ψ => (⟨n, φ.imp ψ⟩ : Σ n, L.BoundedFormulaω Empty n))
-      (level X n) (level X n)) ∪
-    (⋃ n, (fun φ => (⟨n, φ.all⟩ : Σ n, L.BoundedFormulaω Empty n)) '' level X (n + 1)) ∪
+      (Sigma.mk n ⁻¹' X) (Sigma.mk n ⁻¹' X)) ∪
+    (⋃ n, (fun φ => (⟨n, φ.all⟩ : Σ n, L.BoundedFormulaω Empty n)) ''
+      (Sigma.mk (n + 1) ⁻¹' X)) ∪
     ⋃ m, ⋃ k, ⋃ f : Fin m → Fin k,
-      (fun φ => (⟨k, φ.mapBound f⟩ : Σ n, L.BoundedFormulaω Empty n)) '' level X m)
+      (fun φ => (⟨k, φ.mapBound f⟩ : Σ n, L.BoundedFormulaω Empty n)) '' (Sigma.mk m ⁻¹' X))
 
 private theorem subset_formationStep (X : Set (Σ n, L.BoundedFormulaω Empty n)) :
     X ⊆ formationStep X :=
@@ -361,10 +353,12 @@ private theorem formationStep_countable {X : Set (Σ n, L.BoundedFormulaω Empty
     (hX : X.Countable) :
     ((formationStep X : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)).Countable :=
   generated_countable (((hX.union (Set.countable_iUnion fun n =>
-    (level_countable hX n).image2 (level_countable hX n) _)).union
-      (Set.countable_iUnion fun n => (level_countable hX (n + 1)).image _)).union
+    (hX.preimage (sigma_mk_injective (i := n))).image2
+      (hX.preimage sigma_mk_injective) _)).union
+      (Set.countable_iUnion fun n =>
+        (hX.preimage (sigma_mk_injective (i := n + 1))).image _)).union
         (Set.countable_iUnion fun m => Set.countable_iUnion fun _ => Set.countable_iUnion fun _ =>
-          (level_countable hX m).image _))
+          (hX.preimage (sigma_mk_injective (i := m))).image _))
 
 /-- The stages of the formation closure of `S`. -/
 private def formationStage (S : Set (Σ n, L.BoundedFormulaω Empty n)) :

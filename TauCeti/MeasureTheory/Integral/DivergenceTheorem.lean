@@ -10,7 +10,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Geometry.Symplectic.Liouville.Linear
 
 /-!
-# Green's formula for bilinear pairings on rectangles, annuli and discs with round holes
+# Green's formula for bilinear pairings on rectangles and annuli
 
 Let `u : ℝ × ℝ → V` be a `C²` map near a closed rectangle `R = [a₁, b₁] × [a₂, b₂]` and let `B` be
 a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of `u` in the directions
@@ -21,9 +21,8 @@ a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of 
 where the right-hand side is the integral over the positively oriented boundary of `R`, written
 out as four interval integrals. This is Green's theorem for the pullback along `u` of the one-form
 `x ↦ B x`, whose exterior derivative is the constant two-form `(v, w) ↦ B v w - B w v`.
-The formulas below are `TauCeti.integral_extDeriv_prod_Icc`, `TauCeti.integral_extDeriv_annulus`
-and `TauCeti.integral_extDeriv_closedBall_diff_iUnion_ball` applied to the pullback along `u` of
-the one-form `x ↦ B x`.
+Both formulas below are `TauCeti.integral_extDeriv_prod_Icc` and
+`TauCeti.integral_extDeriv_annulus` applied to the pullback along `u` of the one-form `x ↦ B x`.
 
 For a compactly supported map on the whole plane the boundary terms are absent and the integral
 vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is the formula that
@@ -39,9 +38,6 @@ At zero inner radius the inner boundary integral vanishes, giving Green's formul
   `Set.Icc a b` for points `a ≤ b` of `ℝ × ℝ`.
 * `ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus`: the corresponding formula on a
   translated annulus of nonnegative inner radius, with outer minus inner circle boundary terms.
-* `ContinuousLinearMap.integral_bilinear_fderiv_sub_closedBall_diff_iUnion_ball`: the formula on a
-  closed disc with finitely many disjoint round holes, with the outer circle term minus the sum of
-  the inner circle terms.
 -/
 
 public section
@@ -123,35 +119,6 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
     (fun z hz ↦ contDiffAt_bilinearPullbackOneForm B (hu z hz))
   have hmeas : MeasurableSet {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
     measurability
-  rw [setIntegral_congr_fun hmeas
-    (fun z hz ↦ extDeriv_bilinearPullbackOneForm_apply B (hu z hz) _ _)] at h
-  simpa [bilinearPullbackOneForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    Function.comp_def, smul_smul] using h
-
-/-- **Green's formula on a closed disc with finitely many round holes.** Let the closed discs
-`closedBall (c i) (ρ i)` be pairwise disjoint and contained in `ball z₀ r`. For a `C²` map near
-the region `closedBall z₀ r \ ⋃ i, ball (c i) (ρ i)`, the integral of the alternating part of a
-bilinear pairing of its derivatives equals the outer circle integral of `B u du` minus the sum of
-the inner circle integrals, all circles parametrized counterclockwise. -/
-theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_closedBall_diff_iUnion_ball
-    (B : V →L[ℝ] V →L[ℝ] W) {u : ℂ → V} {ι : Type*} [Fintype ι] {z₀ : ℂ} {r : ℝ}
-    {c : ι → ℂ} {ρ : ι → ℝ} (hr : 0 ≤ r) (hρ : ∀ i, 0 < ρ i)
-    (hsub : ∀ i, Metric.closedBall (c i) (ρ i) ⊆ Metric.ball z₀ r)
-    (hdisj : Pairwise fun i j ↦
-      Disjoint (Metric.closedBall (c i) (ρ i)) (Metric.closedBall (c j) (ρ j)))
-    (hu : ∀ z ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i), ContDiffAt ℝ 2 u z) :
-    ∫ z in Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i),
-      (B (fderiv ℝ u z 1) (fderiv ℝ u z I) -
-        B (fderiv ℝ u z I) (fderiv ℝ u z 1)) =
-      (∫ θ in -π..π, B (u (circleMap z₀ r θ))
-        (fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I))) -
-      ∑ i, ∫ θ in -π..π, B (u (circleMap (c i) (ρ i) θ))
-        (fderiv ℝ u (circleMap (c i) (ρ i) θ) (circleMap 0 (ρ i) θ * I)) := by
-  have h := integral_extDeriv_closedBall_diff_iUnion_ball hr hρ hsub hdisj
-    (fun z hz ↦ contDiffAt_bilinearPullbackOneForm B (hu z hz))
-  have hmeas : MeasurableSet (Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i)) :=
-    Metric.isClosed_closedBall.measurableSet.diff
-      (MeasurableSet.iUnion fun i ↦ Metric.isOpen_ball.measurableSet)
   rw [setIntegral_congr_fun hmeas
     (fun z hz ↦ extDeriv_bilinearPullbackOneForm_apply B (hu z hz) _ _)] at h
   simpa [bilinearPullbackOneForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,

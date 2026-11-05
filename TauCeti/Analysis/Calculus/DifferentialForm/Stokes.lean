@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
+import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -14,21 +15,18 @@ import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.Topology.MetricSpace.ClosedBallDiffBalls
 
 /-!
-# Stokes' formula for one-forms on rectangles, annuli and discs with round holes
+# Stokes' formula for one-forms on rectangles and annuli
 
 The integral of the exterior derivative of a vector-valued real one-form over a rectangle or
 closed annulus is its positively oriented boundary integral. Zero inner radius gives the disc
 formula. Only C¹ regularity near the region of integration is required; in the annular
-case no regularity on the missing inner disc is needed. The same holds for a closed disc with
-finitely many disjoint round holes (`TauCeti.integral_extDeriv_closedBall_diff_iUnion_ball`), the
-shape of a truncated punctured sphere. On a rectangle the formula is stated both
+case no regularity on the missing inner disc is needed. On a rectangle the formula is stated both
 for the set integral over `Icc a b` (`TauCeti.integral_extDeriv_prod_Icc`) and for the iterated
-integral over oriented intervals (`TauCeti.integral2_extDeriv`).
+integral over oriented intervals (`TauCeti.integral2_extDeriv`). For a scalar one-form
+`f_s ds + f_t dt` it is Green's theorem `TauCeti.integral_fderiv_sub_fderiv_Icc`, written in
+terms of the partial derivatives `∂_s f_t - ∂_t f_s`.
 
 One dimension up, the integral of a closed two-form over the boundary of a cube vanishes: its
 integrals over the top and bottom faces differ by the signed integrals over the four side faces
@@ -56,8 +54,8 @@ pullback gives the annulus formula: the seam edges cancel, and the radial Jacobi
 
 public section
 
-open MeasureTheory Set Complex Filter
-open scoped Real Topology
+open MeasureTheory Set Complex
+open scoped Real
 
 namespace TauCeti
 
@@ -101,6 +99,43 @@ theorem integral_extDeriv_prod_Icc
   simp only [f, g, intervalIntegral.integral_neg] at h
   rw [h]
   abel
+
+section Green
+
+variable {U : Set (ℝ × ℝ)} {fs ft : ℝ × ℝ → ℝ} {a b : ℝ × ℝ}
+
+/-- The exterior derivative `∂_s f_t - ∂_t f_s` of a one-form `f_s ds + f_t dt` that is `C¹` over
+an open neighbourhood of a rectangle is integrable over the rectangle. -/
+theorem integrableOn_fderiv_sub_fderiv_Icc (hU : IsOpen U) (hfs : ContDiffOn ℝ 1 fs U)
+    (hft : ContDiffOn ℝ 1 ft U) (habU : Icc a b ⊆ U) :
+    IntegrableOn (fun z ↦ fderiv ℝ ft z (1, 0) - fderiv ℝ fs z (0, 1)) (Icc a b) :=
+  ((((hft.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).sub
+    ((hfs.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const)).mono
+      habU).integrableOn_compact isCompact_Icc
+
+/-- **Green's theorem on a rectangle.** For a one-form `f_s ds + f_t dt` that is `C¹` over an
+open neighbourhood of a rectangle `[a₁, b₁] × [a₂, b₂]`, the integral of its exterior derivative
+`∂_s f_t - ∂_t f_s` over the rectangle is its integral over the positively oriented boundary. -/
+theorem integral_fderiv_sub_fderiv_Icc (hU : IsOpen U) (hfs : ContDiffOn ℝ 1 fs U)
+    (hft : ContDiffOn ℝ 1 ft U) (hab : a ≤ b) (habU : Icc a b ⊆ U) :
+    ∫ z in Icc a b, (fderiv ℝ ft z (1, 0) - fderiv ℝ fs z (0, 1)) =
+      (∫ s in a.1..b.1, fs (s, a.2)) + (∫ t in a.2..b.2, ft (b.1, t)) -
+        (∫ s in a.1..b.1, fs (s, b.2)) - ∫ t in a.2..b.2, ft (a.1, t) := by
+  -- Stokes' formula for the one-form `f_s dx + f_t dy`.
+  have hω (z) (hz : z ∈ Icc a b) :
+      ContDiffAt ℝ 1 (fun z ↦ fs z • Prod.realPlaneDx z + ft z • Prod.realPlaneDy z) z :=
+    ((hfs.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDx.contDiffAt).add
+      ((hft.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDy.contDiffAt)
+  have h := integral_extDeriv_prod_Icc hab hω
+  rw [setIntegral_congr_fun measurableSet_Icc fun z hz ↦
+    extDeriv_apply_pair_of_differentiableAt ((hω z hz).differentiableAt one_ne_zero) _ _] at h
+  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+    Prod.realPlaneDx_apply, Prod.realPlaneDy_apply, smul_eq_mul, mul_zero, mul_one, add_zero,
+    zero_add] at h
+  rw [h]
+  ring
+
+end Green
 
 /-- Stokes' formula on a rectangle, as an iterated integral over oriented intervals, for a one-form
 that is C¹ near the closed rectangle. The corners may come in either order. -/
@@ -315,78 +350,5 @@ theorem integral_extDeriv_closedBall
     exact (ω z₀).map_coord_zero 0 rfl
   rw [hz, intervalIntegral.integral_zero, sub_zero] at h
   exact h
-
-/-- **Stokes' formula on a closed disc with finitely many round holes.** Let the closed discs
-`closedBall (c i) (ρ i)` be pairwise disjoint and contained in the open disc `ball z₀ r`. For a
-one-form which is C¹ near the region `closedBall z₀ r \ ⋃ i, ball (c i) (ρ i)`, the integral of
-its exterior derivative over the region is the outer circle integral minus the sum of the inner
-circle integrals, all circles being parametrized counterclockwise. No regularity inside the holes
-is needed. -/
-theorem integral_extDeriv_closedBall_diff_iUnion_ball {ι : Type*} [Fintype ι]
-    {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F} {z₀ : ℂ} {r : ℝ} {c : ι → ℂ} {ρ : ι → ℝ}
-    (hr : 0 ≤ r) (hρ : ∀ i, 0 < ρ i)
-    (hsub : ∀ i, Metric.closedBall (c i) (ρ i) ⊆ Metric.ball z₀ r)
-    (hdisj : Pairwise fun i j ↦
-      Disjoint (Metric.closedBall (c i) (ρ i)) (Metric.closedBall (c j) (ρ j)))
-    (hω : ∀ z ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i), ContDiffAt ℝ 1 ω z) :
-    (∫ z in Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i), extDeriv ω z ![1, I]) =
-      (∫ θ in -π..π, ω (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I)) -
-        ∑ i, ∫ θ in -π..π, ω (circleMap (c i) (ρ i) θ) (fun _ ↦ circleMap 0 (ρ i) θ * I) := by
-  -- Replace `ω` by a globally `C¹` form `α` which agrees with `ω` near the region. Then apply
-  -- the disc formula to `α` on the outer disc and on each closed hole, and subtract.
-  set D := Metric.closedBall z₀ r
-  set Ω := D \ ⋃ i, Metric.ball (c i) (ρ i)
-  have hballD (i : ι) : Metric.ball (c i) (ρ i) ⊆ D :=
-    Metric.ball_subset_closedBall.trans ((hsub i).trans Metric.ball_subset_closedBall)
-  have hΩc : IsCompact Ω :=
-    (isCompact_closedBall z₀ r).diff (isOpen_iUnion fun i ↦ Metric.isOpen_ball)
-  have hU : IsOpen {z | ContDiffAt ℝ 1 ω z} :=
-    isOpen_iff_mem_nhds.2 fun z hz ↦ ContDiffAt.eventually hz (by simp)
-  obtain ⟨α, hαc, -, -, hα_eq⟩ :=
-    ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact (n := 1)
-      (fun z hz ↦ (hz : ContDiffAt ℝ 1 ω z).contDiffWithinAt) hΩc hU hω
-  have hα : ∀ z ∈ D, ContDiffAt ℝ 1 α z := fun z _ ↦ hαc.contDiffAt
-  -- Stokes on the closed disc and on the closed holes, for `α`.
-  have hcont : ContinuousOn (fun z ↦ extDeriv α z ![1, I]) D := fun z hz ↦
-    (continuousAt_extDeriv_apply (hα z hz) _).continuousWithinAt
-  have hint : IntegrableOn (fun z ↦ extDeriv α z ![1, I]) D :=
-    hcont.integrableOn_compact (isCompact_closedBall z₀ r)
-  have hD := integral_extDeriv_closedBall hr hα
-  have hH (i : ι) := integral_extDeriv_closedBall (hρ i).le fun z hz ↦
-    hα z (Metric.ball_subset_closedBall (hsub i hz))
-  -- Split the disc into the region and the open holes.
-  have hsplit : (∫ z in D, extDeriv α z ![1, I]) =
-      (∫ z in Ω, extDeriv α z ![1, I]) +
-        ∑ i, ∫ z in Metric.closedBall (c i) (ρ i), extDeriv α z ![1, I] := by
-    have hDU : D = Ω ∪ ⋃ i, Metric.ball (c i) (ρ i) :=
-      (sdiff_union_of_subset (iUnion_subset hballD)).symm
-    conv_lhs => rw [hDU]
-    rw [setIntegral_union disjoint_sdiff_left (MeasurableSet.iUnion fun i ↦ measurableSet_ball)
-      (hint.mono_set sdiff_subset) (hint.mono_set (iUnion_subset hballD)),
-      integral_iUnion_fintype (fun i ↦ measurableSet_ball)
-        (fun i j hij ↦ ((hdisj hij).mono Metric.ball_subset_closedBall
-          Metric.ball_subset_closedBall))
-        fun i ↦ hint.mono_set (hballD i)]
-    congr 1
-    refine Finset.sum_congr rfl fun i _ ↦ setIntegral_congr_set ?_
-    refine ae_eq_set.2 ⟨by simp [sdiff_eq_empty.2 Metric.ball_subset_closedBall], ?_⟩
-    rw [Metric.closedBall_sdiff_ball]
-    exact Measure.addHaar_sphere volume _ _
-  have hΩ : (∫ z in Ω, extDeriv α z ![1, I]) = ∫ z in Ω, extDeriv ω z ![1, I] :=
-    setIntegral_congr_fun hΩc.isClosed.measurableSet fun z hz ↦ by
-      rw [(hα_eq z hz).extDeriv_eq]
-  have hcirc (z₁ : ℂ) (s : ℝ) (hs : ∀ θ, circleMap z₁ s θ ∈ Ω) :
-      (∫ θ in -π..π, α (circleMap z₁ s θ) (fun _ ↦ circleMap 0 s θ * I)) =
-        ∫ θ in -π..π, ω (circleMap z₁ s θ) (fun _ ↦ circleMap 0 s θ * I) := by
-    congr 1
-    funext θ
-    rw [(hα_eq _ (hs θ)).eq_of_nhds]
-  rw [hcirc z₀ r fun θ ↦
-    sphere_subset_closedBall_diff_iUnion_ball hsub (circleMap_mem_sphere z₀ hr θ)] at hD
-  have hH' (i : ι) := (hH i).trans (hcirc (c i) (ρ i) fun θ ↦
-    sphere_subset_closedBall_diff_iUnion_ball_of_disjoint hsub hdisj i
-      (circleMap_mem_sphere (c i) (hρ i).le θ))
-  rw [← hD, hsplit, hΩ, Finset.sum_congr rfl fun i _ ↦ hH' i]
-  abel
 
 end TauCeti

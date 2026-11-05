@@ -46,6 +46,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
 * `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
   `Algebra.TensorProduct.map f (AlgHom.id R S)`.
+* `AlgHom.lTensor_rTensor_comm`: scalar extension of an algebra map commutes with changing the
+  coefficient algebra.
 * `LinearMap.tensorProduct_tmul`, `LinearMap.tensorProductEnd_tmul`: the extension of linear maps
   and of endomorphisms sends `a ⊗ f` to `a • f.baseChange A`.
 * `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
@@ -116,6 +118,21 @@ theorem LinearMap.tensorProductEnd_tmul {R A M : Type*} [CommSemiring R] [CommSe
     [Algebra R A] [AddCommMonoid M] [Module R M] (a : A) (f : Module.End R M) :
     LinearMap.tensorProductEnd R A M (a ⊗ₜ f) = a • f.baseChange A :=
   LinearMap.tensorProduct_tmul a f
+
+/-- Extension of scalars of an algebra map commutes with changing the coefficient algebra. -/
+theorem AlgHom.lTensor_rTensor_comm {R B C D E : Type*} [CommSemiring R]
+    [CommSemiring B] [Algebra R B] [CommSemiring C] [Algebra R C]
+    [Semiring D] [Algebra R D] [Semiring E] [Algebra R E]
+    (φ : D →ₐ[R] E) (ρ : B →ₐ[R] C) (x : B ⊗[R] D) :
+    Algebra.TensorProduct.lTensor (S := C) C φ (Algebra.TensorProduct.rTensor D ρ x) =
+      Algebra.TensorProduct.rTensor E ρ (Algebra.TensorProduct.lTensor (S := B) B φ x) := by
+  have h : (Algebra.TensorProduct.map (AlgHom.id R C) φ).comp
+        (Algebra.TensorProduct.rTensor D ρ) =
+      (Algebra.TensorProduct.rTensor E ρ).comp (Algebra.TensorProduct.map (AlgHom.id R B) φ) := by
+    simp only [Algebra.TensorProduct.rTensor, ← Algebra.TensorProduct.map_comp,
+      AlgHom.id_comp, AlgHom.comp_id]
+  -- Restricting the scalar ring of the left tensor maps does not change their functions.
+  exact congr($h x)
 
 namespace Algebra.TensorProduct
 

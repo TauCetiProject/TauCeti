@@ -7,67 +7,68 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Geometry.Symplectic.Area.ThricePuncturedSphere
+import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
-# The action form of the energy identity on the truncated pair of pants
+# The energy of a pair of pants in terms of the actions of its ends
 
-The energy identity for pairs of pants reads
-`E = A_{H_0}(x_0) + A_{H_1}(x_1) - A_{H_∞}(x_∞) + ω(A) - ∫ R_K`, where `A_{H_q}(x_q)` is the action
-of the asymptotic orbit at the end `q` with its cap; `0` and `1` are the input ends and `∞` is the
-output end. For a symplectic vector space target
-every loop has the unique cap class of the cone over it, the class `A` vanishes, and the action is
-`A_H(x) = a(x) + ∫₀¹ H(t, x(t)) dt` with the loop area `a(x) = ½ ∫₀¹ ω(x, x') dt`
-(`TauCeti.SymplecticForm.hamiltonianAction`). This file proves this form of the identity on the
-truncation `S_R` of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`, where every signed longitudinal
-end coordinate is at most `R`.
+Let `K` be the pair-of-pants perturbation `TauCeti.Floer.pairOfPantsPerturbation` of period-one
+Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, with values in a symplectic vector space
+`(V, ω)`, and let `u` be a map which is `C²` on `S`. For a truncation `S_R` of `S`
+(`TauCeti.ThricePuncturedSphere.truncation`), write `ℓ_q(R)` for the loop
+`t ↦ u(φ_q(±R + i t))` along the boundary circle `±s = R` of the end `q`, where `φ_q` is the end
+lift `Puncture.cylindricalEndLift`. This file rewrites the energy identity of
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature` with Hamiltonian actions
+`A_H(x) = a(x) + ∫₀¹ H(t, x(t)) dt` (`TauCeti.SymplecticForm.hamiltonianAction`):
 
-The truncation is the closed disc of radius `2 exp (2πR)` about `0` with the open discs of radius
-`exp (-2πR) / 2` about `0` and `1` removed
-(`TauCeti.ThricePuncturedSphere.truncation_eq_closedBall_diff`). Its three boundary circles are
-the loops `x_q^R(t) = u(φ_q(±R + i t))` of a map `u` along the three ends, where `φ_q` is the end
-lift of `q` (`TauCeti.ThricePuncturedSphere.Puncture.cylindricalEndLift_zero_endSign_mul_add`
-and its analogues at `1` and `∞`). Stokes' formula on a disc with holes
-(`TauCeti.SymplecticForm.integral_fderiv_apply_closedBall_diff_iUnion_ball`) therefore computes the
-symplectic area of a `C²` map `u` on `S` as the signed sum of loop areas
+`∫_{S_R} E = A_{H_0}(ℓ_0(R)) + A_{H_1}(ℓ_1(R)) - A_{H_∞}(ℓ_∞(R)) - ∫_S R_K(u)`
 
-`∫_{S_R} u^*ω = a(x_0^R) + a(x_1^R) - a(x_∞^R)`
-
-(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_truncation_eq_sum_loopArea`). The signs
-record that the loops at the input ends `0` and `1` run clockwise around their holes, which is
-the boundary orientation of `S_R`, while the loop at the output end `∞` runs clockwise around the
-outer circle, against it.
-
-Combined with the energy identity on the truncation
-(`TauCeti.SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`), for
-`R ≥ 2`, where the perturbation is `H_q(t) dt` along the boundary circles, this gives
-
-`∫_{S_R} E = A_{H_0}(x_0^R) + A_{H_1}(x_1^R) - A_{H_∞}(x_∞^R) - ∫_{S_R} R_K(u)`
-
-(`SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_sub`). With
-the curvature bound `∫ |R_K| ≤ B₀ + B₁ + B_∞` for Hamiltonians bounded by `B_q`, the energy differs
-from this signed sum of actions by at most `B₀ + B₁ + B_∞`, uniformly in `R`
+for `R ≥ 2`
+(`integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`).
+The symplectic area over `S_R` becomes the signed sum of the loop areas of the boundary circles by
+Stokes' formula `TauCeti.SymplecticForm.integral_fderiv_apply_truncation`, and the curvature
+integral over `S_R` is the curvature integral over all of `S`, because the curvature vanishes on
+the cylindrical parts `±s > 2` of the ends
+(`SymplecticForm.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt`); no bound on
+the Hamiltonians is needed for this. If `|H_q| ≤ B_q`, then `|∫_S R_K| ≤ B_0 + B_1 + B_∞`, so
+the energy over `S_R` differs from the signed sum of the actions by at most `B_0 + B_1 + B_∞`,
+uniformly in `R`
 (`SymplecticForm.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_sum_le`).
-For a solution of the Floer equation with tame almost complex structures the energy is
-nonnegative, so the output action is bounded by the input actions:
+For a solution of the Floer equation on `S_R` with tame almost complex structures the energy over
+`S_R` is nonnegative, which gives the action bound
+`A_{H_∞}(ℓ_∞(R)) ≤ A_{H_0}(ℓ_0(R)) + A_{H_1}(ℓ_1(R)) + B_0 + B_1 + B_∞` for every `R ≥ 2`
+(`SymplecticForm.hamiltonianAction_inf_le_of_isComplexLinearMap`).
 
-`A_{H_∞}(x_∞^R) ≤ A_{H_0}(x_0^R) + A_{H_1}(x_1^R) + B₀ + B₁ + B_∞`
+For a solution of the Floer equation `(du - X_K)^{0,1} = 0` with tame almost complex structures
+the energy density is nonnegative. If the actions of the three end loops converge to limits `a_q`
+as `R → ∞`, then the energy of the solution over all of `S` is
 
-(`TauCeti.SymplecticForm.hamiltonianAction_inf_le_of_isComplexLinearMap`). This is the action
-estimate behind the lower support bound of pair-of-pants coefficients, here for a target whose
-caps are unique.
+`E(u) = a_0 + a_1 - a_∞ - ∫_S R_K(u)`
+
+(`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`). This is the energy
+identity `E = A₁ + A₂ - A₀ + ω(A) - ∫ R_K` of the pair-of-pants product for a vector space
+target, on which every sphere has zero area. If `|H_q| ≤ B_q`, the curvature bound gives the
+energy bound `E(u) ≤ a_0 + a_1 - a_∞ + B_0 + B_1 + B_∞`
+(`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_le`) and the action bound
+`a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞` for the output, the limit of the action bounds on the
+truncations (`SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction`): the potential bound
+under which the counts of such solutions form a supported product kernel
+(`TauCeti.NovikovModule.kernelProduct`).
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 8.1, on the
-  energy identity and action estimates for Floer solutions.
+  energy identity for Hamiltonian perturbations.
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
   ETH Zürich (1995), on the energy estimate for the pair-of-pants product.
 -/
 
 public section
 
-open Set Real Function MeasureTheory TauCeti.ThricePuncturedSphere
+open Set Real Function MeasureTheory Filter TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
+open scoped Topology
 
 namespace TauCeti
 
@@ -75,99 +76,59 @@ namespace SymplecticForm
 
 open Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {H : Puncture → ℝ → V → ℝ}
 
-/-- **The symplectic area of the truncated pair of pants.** Let `u` be `C²` on the
-thrice-punctured sphere `S = ℂ ∖ {0, 1}`, in the real coordinates `ℝ × ℝ ≃ ℂ`. For `R > 0`, the
-symplectic area of `u` over the truncation `S_R` is the signed sum of the loop areas of its loops
-`x_q^R(t) = u(φ_q(±R + i t))` along the boundary circles of the three ends:
+/-- The truncations, in real coordinates, are measurable. -/
+private theorem measurableSet_truncation (R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  ((isCompact_truncation R).isClosed.preimage
+    Complex.equivRealProdCLM.symm.continuous).measurableSet
 
-`∫_{S_R} u^*ω = a(x_0^R) + a(x_1^R) - a(x_∞^R)`,
-
-with the sign `+` on the input ends `0` and `1` and `-` on the output end `∞`. -/
-theorem integral_symplecticForm_fderiv_truncation_eq_sum_loopArea [FiniteDimensional ℝ V]
-    (ω : SymplecticForm V) {u : ℝ × ℝ → V}
+/-- Stokes' formula `TauCeti.SymplecticForm.integral_fderiv_apply_truncation` in the real
+coordinates `ℝ × ℝ ≃ ℂ` of the energy identity. -/
+private theorem integral_symplecticForm_fderiv_truncation (ω : SymplecticForm V) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1})
-    {R : ℝ} (hR : 0 < R) :
+      Complex.equivRealProdCLM.symm z ≠ 1}) {R : ℝ} (hR : 1 ≤ R) :
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R,
         ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) =
       ∑ q : Puncture, q.endSign * ω.loopArea (fun t ↦ u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) := by
-  set e := Complex.equivRealProdCLM
-  set v : ℂ → V := u ∘ e with hv_def
-  set r := 2 * Real.exp (2 * π * R)
-  set ρ := Real.exp (-(2 * π * R)) / 2
-  set c : Fin 2 → ℂ := ![0, 1]
-  -- `v` is `C²` on `S`.
-  have hopen : IsOpen {z : ℝ × ℝ | e.symm z ≠ 0 ∧ e.symm z ≠ 1} :=
-    (isOpen_ne.inter isOpen_ne).preimage e.symm.continuous
-  have hv {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) : ContDiffAt ℝ 2 v w :=
-    (hu.contDiffAt (hopen.mem_nhds (by simpa using hw))).comp w e.contDiff.contDiffAt
-  -- Stokes' formula on the disc with two holes.
-  have hρ : 0 < ρ := by positivity
-  have hρ_lt : ρ < 1 / 2 := by
-    have : Real.exp (-(2 * π * R)) < 1 := Real.exp_lt_one_iff.2 (by nlinarith [pi_pos])
-    simp only [ρ]
-    linarith
-  have hr : 2 ≤ r := by
-    have : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by positivity)
-    simp only [r]
-    linarith
-  have hc (i : Fin 2) : ‖c i‖ ≤ 1 := by fin_cases i <;> simp [c]
-  have hsub (i : Fin 2) : Metric.closedBall (c i) ρ ⊆ Metric.ball 0 r := by
-    intro w hw
-    rw [Metric.mem_closedBall, dist_eq_norm] at hw
-    rw [Metric.mem_ball, dist_zero_right]
-    calc ‖w‖ = ‖(w - c i) + c i‖ := by rw [sub_add_cancel]
-      _ ≤ ‖w - c i‖ + ‖c i‖ := norm_add_le _ _
-      _ < r := by linarith [hc i]
-  have hdisj : Pairwise fun i j : Fin 2 ↦
-      Disjoint (Metric.closedBall (c i) ρ) (Metric.closedBall (c j) ρ) := by
-    intro i j hij
-    refine Metric.closedBall_disjoint_closedBall ?_
-    fin_cases i <;> fin_cases j <;> simp_all [c, dist_eq_norm] <;> linarith
-  have htrunc : truncation R = Metric.closedBall 0 r \ ⋃ i, Metric.ball (c i) ρ := by
-    rw [truncation_eq_closedBall_diff]
-    simp [c, r, ρ, Set.ext_iff, Fin.exists_fin_two]
-  have hvS : ∀ w ∈ Metric.closedBall 0 r \ ⋃ i, Metric.ball (c i) ρ, ContDiffAt ℝ 2 v w := by
-    intro w hw
-    rw [← htrunc] at hw
-    exact hv ⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩
-  have hstokes := ω.integral_fderiv_apply_closedBall_diff_iUnion_ball (by positivity)
-    (fun _ ↦ hρ) hsub hdisj hvS
-  -- The boundary circles are the loops of the three ends.
-  have hloop (c₀ : ℂ) (s θ₀ : ℝ) := ω.loopArea_comp_sub_two_pi_mul
-    (γ := fun θ ↦ v (circleMap c₀ s θ)) ((periodic_circleMap c₀ s).comp v) θ₀
-  have hx₀ : (fun t : ℝ ↦ u (e (zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I)))) =
-      fun t ↦ v (circleMap 0 ρ (0 - 2 * π * t)) := by
-    funext t
-    rw [cylindricalEndLift_zero_endSign_mul_add, hv_def, comp_apply, zero_sub]
-  have hx₁ : (fun t : ℝ ↦ u (e (one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I)))) =
-      fun t ↦ v (circleMap 1 ρ (π - 2 * π * t)) := by
-    funext t
-    rw [cylindricalEndLift_one_endSign_mul_add, hv_def, comp_apply]
-  have hx_inf : (fun t : ℝ ↦ u (e (inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I)))) =
-      fun t ↦ v (circleMap 0 r (0 - 2 * π * t)) := by
-    funext t
-    rw [cylindricalEndLift_inf_endSign_mul_add, hv_def, comp_apply, zero_sub]
-  rw [ω.integral_symplecticForm_fderiv_preimage_equivRealProd, ← hv_def, htrunc, hstokes,
-    Fin.sum_univ_two, Puncture.sum_univ, hx₀, hx₁, hx_inf, hloop, hloop, hloop]
-  simp only [c, Matrix.cons_val_zero, Matrix.cons_val_one, endSign_zero, endSign_one, endSign_inf]
-  ring
+  have hv : ContDiffOn ℝ 2 (u ∘ Complex.equivRealProdCLM) {w : ℂ | w ≠ 0 ∧ w ≠ 1} :=
+    hu.comp Complex.equivRealProdCLM.contDiff.contDiffOn fun w hw ↦ by
+      rw [mem_ofPred_eq, ContinuousLinearEquiv.symm_apply_apply]
+      exact hw
+  have h := ω.integral_fderiv_apply_truncation hv hR
+  simp only [Function.comp_apply] at h
+  rw [← h]
+  have h₁ : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
+    rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
+  have hI : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
+    rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
+  simp only [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, h₁, hI]
+  have hpre : Complex.measurableEquivRealProd ⁻¹'
+      (Complex.equivRealProdCLM.symm ⁻¹' truncation R) = truncation R := by
+    ext w
+    simp [Complex.measurableEquivRealProd]
+  rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+    Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre]
+  rfl
 
-variable [FiniteDimensional ℝ V] {H : Puncture → ℝ → V → ℝ}
-
-/-- **The energy identity on the truncated pair of pants, in action form.** Let `K` be the
+/-- **The energy identity on the truncated pair of pants, in terms of actions.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of
-`S = ℂ ∖ {0, 1}`, and let `u` be `C²` on `S`. For `R ≥ 2` the Floer energy of `u` over the
-truncation `S_R` is the signed sum of the actions of its loops `x_q^R(t) = u(φ_q(±R + i t))`,
-minus the integrated curvature:
+`S = ℂ ∖ {0, 1}`, with components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate
+`z = s + i t` of `ℂ`, and let `u` be a map which is `C²` on `S`. For `R ≥ 2`, the Floer energy of
+`u` over the truncation `S_R` is the signed sum of the Hamiltonian actions of the loops
+`ℓ_q(t) = u(φ_q(±R + i t))` along its three boundary circles, minus the integrated curvature over
+`S`:
 
-`∫_{S_R} E = A_{H_0}(x_0^R) + A_{H_1}(x_1^R) - A_{H_∞}(x_∞^R) - ∫_{S_R} R_K(u)`. -/
-theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_sub
-    (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
+`∫_{S_R} E = ∑ q, ±A_{H_q}(ℓ_q) - ∫_S R_K(u)`,
+
+with the sign `+` on the input ends `0` and `1` and `-` on the output end `∞`. -/
+theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1})
     {R : ℝ} (hR : 2 ≤ R) :
@@ -175,21 +136,171 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_su
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z =
-      (∑ q : Puncture, q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
-        (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) -
-        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.hamiltonianCurvature
+      (∑ q, q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+          (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) -
+        ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+            Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  rw [ω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs (hu.of_le one_le_two)
-    (by linarith), smoothTransition.one_of_one_le (by linarith), one_mul,
-    ω.integral_symplecticForm_fderiv_truncation_eq_sum_loopArea hu (by linarith)]
+  -- The curvature vanishes on `S` outside `S_R`, which contains the collars of the ends.
+  have hcurv : ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) =
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) := by
+    refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+      ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
+        (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).measurableSet
+      (fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩) fun z hz ↦ ?_
+    obtain ⟨q, hq⟩ : ∃ q : Puncture,
+        R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+      by_contra! h
+      exact hz.2 (mem_truncation.2 ⟨hz.1.1, hz.1.2, h⟩)
+    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz.1
+      (by linarith) _
+  rw [hcurv, integral_floerEnergyDensity_pairOfPantsPerturbation_truncation ω hH hHs
+      (hu.of_le one_le_two) (by linarith : (1 : ℝ) ≤ R),
+    integral_symplecticForm_fderiv_truncation ω hu (by linarith),
+    smoothTransition.one_of_one_le (by linarith : (1 : ℝ) ≤ R - 1), one_mul]
   simp only [hamiltonianAction_def, mul_add, Finset.sum_add_distrib]
 
-/-- **The action bound on the truncated pair of pants.** If the end Hamiltonians are bounded,
-`|H_q| ≤ B_q`, then for every `R ≥ 2` the Floer energy over the truncation `S_R` differs from the
-signed sum `A_{H_0}(x_0^R) + A_{H_1}(x_1^R) - A_{H_∞}(x_∞^R)` of the actions of the boundary loops
-by at most `B₀ + B₁ + B_∞`, uniformly in `R`. -/
+/-- Under convergence of the actions of the end loops, the energy over the truncations `S_(n+2)`
+converges to the signed sum of the limiting actions minus the integrated curvature. -/
+private theorem tendsto_integral_floerEnergyDensity_truncation (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {a : Puncture → ℝ}
+    (ha : ∀ q, Tendsto (fun R ↦ ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) atTop (𝓝 (a q))) :
+    Tendsto (fun n : ℕ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (n + 2),
+        ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) atTop
+      (𝓝 ((∑ q, q.endSign * a q) -
+        ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+            Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z))) := by
+  have hn : Tendsto (fun n : ℕ ↦ (n : ℝ) + 2) atTop atTop :=
+    tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
+  have hsum : Tendsto (fun n : ℕ ↦ ∑ q, q.endSign * ω.hamiltonianAction (H q)
+      (fun t ↦ u (Complex.equivRealProdCLM
+        (q.cylindricalEndLift (↑(q.endSign * ((n : ℝ) + 2)) + ↑t * Complex.I))))) atTop
+      (𝓝 (∑ q, q.endSign * a q)) := by
+    refine tendsto_finsetSum _ fun q _ ↦ ?_
+    exact ((ha q).comp hn).const_mul _
+  refine (hsum.sub_const _).congr fun n ↦ ?_
+  rw [integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
+    ω hH hHs hu (by linarith [n.cast_nonneg (α := ℝ)])]
+
+/-- **The energy of a pair of pants.** Let `K` be the pair-of-pants perturbation of period-one
+`C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, and let `u` be a map which is `C²`
+on `S` and solves the Floer equation `(du - X_K)^{0,1} = 0` there for almost complex structures
+`J(z)` tamed by `ω`. If the actions of the loops `ℓ_q(t) = u(φ_q(±R + i t))` along the circles
+`±s = R` of the ends converge to `a_q` as `R → ∞`, then the energy of `u` is
+
+`E(u) = a_0 + a_1 - a_∞ - ∫_S R_K(u)`. -/
+theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J z) (ω.perturbedFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a : Puncture → ℝ}
+    (ha : ∀ q, Tendsto (fun R ↦ ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) atTop (𝓝 (a q))) :
+    ∫⁻ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) =
+      ENNReal.ofReal ((∑ q, q.endSign * a q) -
+        ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+            Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z)) := by
+  -- Exhaust `S` by the truncations `S_(n+2)`.
+  set T : ℕ → Set (ℝ × ℝ) := fun n ↦ Complex.equivRealProdCLM.symm ⁻¹' truncation (n + 2)
+  have hTS (n : ℕ) : T n ⊆ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1} :=
+    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+  have hmono : Monotone T := fun m n hmn z hz ↦ by
+    obtain ⟨h₀, h₁, h⟩ := mem_truncation.1 hz
+    exact mem_truncation.2 ⟨h₀, h₁, fun q ↦ (h q).trans (by gcongr)⟩
+  have hunion : ⋃ n, T n = {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1} := by
+    refine (iUnion_subset hTS).antisymm fun z hz ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge
+      (∑ q : Puncture, |q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re|)
+    refine mem_iUnion.2 ⟨n, mem_truncation.2 ⟨hz.1, hz.2, fun q ↦ ?_⟩⟩
+    have := Finset.single_le_sum (f := fun q : Puncture ↦
+      |q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re|)
+      (fun q _ ↦ abs_nonneg _) (Finset.mem_univ q)
+    linarith [le_abs_self (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re)]
+  -- On each truncation the energy is the integral of a nonnegative integrable function.
+  have hE (n : ℕ) : ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z) = ENNReal.ofReal (∫ z in T n, ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z) :=
+    (ofReal_integral_eq_lintegral_ofReal
+      (integrableOn_truncation_pairOfPantsPerturbation ω hH hHs (hu.of_le one_le_two) _).1
+      (ae_restrict_of_forall_mem (measurableSet_truncation _) fun z hz ↦
+        ω.floerEnergyDensity_nonneg (hJ z (hTS n hz)) (hfloer z (hTS n hz)))).symm
+  have hlim : Tendsto (fun n ↦ ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z)) atTop (𝓝 (∫⁻ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z))) := by
+    rw [← hunion, setLIntegral_iUnion_of_directed _ hmono.directed_le]
+    exact tendsto_atTop_iSup fun m n hmn ↦
+      lintegral_mono' (Measure.restrict_mono (hmono hmn) le_rfl) le_rfl
+  refine tendsto_nhds_unique hlim ?_
+  simp only [hE]
+  exact (ENNReal.continuous_ofReal.tendsto _).comp
+    (tendsto_integral_floerEnergyDensity_truncation ω hH hHs hu ha)
+
+/-- The integrated curvature of the pair-of-pants perturbation over `S` is at most
+`B_0 + B_1 + B_∞` in absolute value, if `|H_q| ≤ B_q`. -/
+private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → V) :
+    |∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)| ≤ ∑ q, B q := by
+  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
+  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
+    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
+  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u))
+
+/-- **The energy and the actions on a truncated pair of pants.** If the end Hamiltonians are
+bounded, `|H_q| ≤ B_q`, then for every `R ≥ 2` the Floer energy of `u` over the truncation `S_R`
+differs from the signed sum `A_{H_0}(ℓ_0) + A_{H_1}(ℓ_1) - A_{H_∞}(ℓ_∞)` of the actions of its
+boundary loops by at most `B_0 + B_1 + B_∞`, uniformly in `R`. -/
 theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_sum_le
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
@@ -200,24 +311,22 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_s
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z) -
-      ∑ q : Puncture, q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+      ∑ q, q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))| ≤ ∑ q, B q := by
-  have h := ω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_le hH hHs hB
-    (hu.of_le one_le_two) (by linarith : (1 : ℝ) ≤ R)
-  rw [smoothTransition.one_of_one_le (by linarith), one_mul,
-    ω.integral_symplecticForm_fderiv_truncation_eq_sum_loopArea hu (by linarith)] at h
-  simp only [hamiltonianAction_def, mul_add, Finset.sum_add_distrib]
-  convert h using 2
-  ring
+  rw [integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
+    ω hH hHs hu hR, sub_sub_cancel_left, abs_neg]
+  exact abs_integral_hamiltonianCurvature_le ω hH hHs hB u
 
-/-- **The output action of a Floer pair of pants is bounded by its input actions.** Let `u` be
-`C²` on `S = ℂ ∖ {0, 1}` and solve the Floer equation `(du - X_K)^{0,1} = 0` on the truncation
-`S_R`, `R ≥ 2`, for the pair-of-pants perturbation `K` of Hamiltonians bounded by `|H_q| ≤ B_q`
-and almost complex structures `J z` tamed by `ω`. Since the energy is nonnegative, the action of
-its loop at the output end is at most the sum of the actions of its loops at the input ends, up to
-the curvature constant:
+/-- **The action bound on a truncated pair of pants.** Let `u` be `C²` on `S = ℂ ∖ {0, 1}` and
+solve the Floer equation `(du - X_K)^{0,1} = 0` on the truncation `S_R`, `R ≥ 2`, for the
+pair-of-pants perturbation `K` of Hamiltonians bounded by `|H_q| ≤ B_q` and almost complex
+structures `J(z)` tamed by `ω`. Since the energy over `S_R` is nonnegative, the action of the
+boundary loop at the output end is at most the sum of the actions of the boundary loops at the
+input ends plus `B_0 + B_1 + B_∞`:
 
-`A_{H_∞}(x_∞^R) ≤ A_{H_0}(x_0^R) + A_{H_1}(x_1^R) + B₀ + B₁ + B_∞`. -/
+`A_{H_∞}(ℓ_∞) ≤ A_{H_0}(ℓ_0) + A_{H_1}(ℓ_1) + B_0 + B_1 + B_∞`.
+
+No convergence of the actions as `R → ∞` is assumed. -/
 theorem hamiltonianAction_inf_le_of_isComplexLinearMap (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
@@ -237,17 +346,81 @@ theorem hamiltonianAction_inf_le_of_isComplexLinearMap (ω : SymplecticForm V)
           (zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I)))) +
         ω.hamiltonianAction (H one) (fun t ↦ u (Complex.equivRealProdCLM
           (one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I)))) + ∑ q, B q := by
-  have hT : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet
-  have hE := setIntegral_nonneg (μ := volume) hT fun z hz ↦
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_truncation R) fun z hz ↦
     ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have h := (abs_le.1
-    (ω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_sum_le
-      hH hHs hB hu hR)).2
-  rw [Puncture.sum_univ] at h
-  simp only [endSign_zero, endSign_one, endSign_inf] at h ⊢
+    (abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_sum_le
+      ω hH hHs hB hu hR)).2
+  simp only [sum_univ, endSign_zero, endSign_one, endSign_inf] at h ⊢
   linarith
+
+/-- **The energy bound for a pair of pants.** Under the hypotheses of
+`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
+`|H_q| ≤ B_q`, then the energy of `u` is at most `a_0 + a_1 - a_∞ + B_0 + B_1 + B_∞`. -/
+theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J z) (ω.perturbedFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a : Puncture → ℝ}
+    (ha : ∀ q, Tendsto (fun R ↦ ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) atTop (𝓝 (a q))) :
+    ∫⁻ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) ≤
+      ENNReal.ofReal ((∑ q, q.endSign * a q) + ∑ q, B q) := by
+  rw [lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq ω hH hHs hu hJ hfloer ha]
+  refine ENNReal.ofReal_le_ofReal ?_
+  linarith [neg_abs_le (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)), abs_integral_hamiltonianCurvature_le ω hH hHs hB u]
+
+/-- **The action bound for a pair of pants.** Under the hypotheses of
+`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
+`|H_q| ≤ B_q`, then the limiting action of the output end is at most the sum of the limiting
+actions of the input ends plus `B_0 + B_1 + B_∞`:
+
+`a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞`. -/
+theorem le_add_add_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J z) (ω.perturbedFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a : Puncture → ℝ}
+    (ha : ∀ q, Tendsto (fun R ↦ ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) atTop (𝓝 (a q))) :
+    a inf ≤ a zero + a one + ∑ q, B q := by
+  -- The action bound holds on every truncation `S_R` with `R ≥ 2`; pass to the limit.
+  have hS {R : ℝ} {z : ℝ × ℝ} (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R) :
+      z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1} :=
+    ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+  refine le_of_tendsto_of_tendsto (ha inf) (((ha zero).add (ha one)).add_const _)
+    ((eventually_ge_atTop 2).mono fun R hR ↦ ?_)
+  exact hamiltonianAction_inf_le_of_isComplexLinearMap ω hH hHs hB hu hR
+    (fun z hz ↦ hJ z (hS hz)) fun z hz ↦ hfloer z (hS hz)
 
 end SymplecticForm
 
