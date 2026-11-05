@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
+import TauCeti.Analysis.Normed.Module.WeakDual.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.LinearAlgebra.Finsupp.LSum
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Compact
@@ -76,40 +77,6 @@ private theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
     ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E)‖ ≤ 1 :=
   mem_closedBall_zero_iff.mp f.2
 
-/-- A functional in the dual unit ball satisfies `‖f x‖ ≤ ‖x‖`. -/
-private theorem norm_apply_le_of_mem_dualBall (f : dualBall 𝕜 E) (x : E) :
-    ‖(f : WeakDual 𝕜 E) x‖ ≤ ‖x‖ := by
-  simpa using ((WeakDual.toStrongDual (f : WeakDual 𝕜 E)).le_opNorm x).trans
-    (mul_le_of_le_one_left (norm_nonneg x) (norm_le_one_of_mem_dualBall f))
-
-omit [Fact (1 ≤ p)] in
-/-- For a finite measure on the dual unit ball, each function `f ↦ ‖f x‖ ^ p` is integrable. -/
-private theorem _root_.MeasureTheory.Measure.integrable_norm_apply_rpow
-    [MeasurableSpace (WeakDual 𝕜 E)] [OpensMeasurableSpace (WeakDual 𝕜 E)]
-    (ν : Measure (dualBall 𝕜 E)) [IsFiniteMeasure ν] (x : E) :
-    Integrable (fun f : dualBall 𝕜 E ↦ ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) ν := by
-  have h : Integrable (fun f ↦ WeakDual.evalRpow 1 p x f) ν :=
-    Integrable.of_bound (WeakDual.evalRpow 1 p x).continuous.aestronglyMeasurable
-      (‖x‖ ^ p.toReal) (ae_of_all _ fun f ↦ by
-        simpa only [WeakDual.evalRpow_apply, Real.norm_eq_abs,
-          abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)] using
-            Real.rpow_le_rpow (norm_nonneg _) (norm_apply_le_of_mem_dualBall f x)
-              ENNReal.toReal_nonneg)
-  simpa only [WeakDual.evalRpow_apply] using h
-
-/-- At each point `f` of the dual unit ball, `∑ᵢ ‖f (xᵢ)‖ ^ p` is at most the `p`-th power of the
-weak `p`-norm of `x`. -/
-private theorem sum_norm_apply_rpow_le {ι : Type*} [Fintype ι] (hp : p ≠ ∞) (x : ι → E)
-    (f : dualBall 𝕜 E) :
-    ∑ i, ‖(f : WeakDual 𝕜 E) (x i)‖ ^ p.toReal ≤ weakLpNorm (𝕜 := 𝕜) p x ^ p.toReal := by
-  have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
-  have h := (norm_eval_le_weakLpNorm p x (WeakDual.toStrongDual (f : WeakDual 𝕜 E))).trans
-    (mul_le_of_le_one_right (apply_nonneg _ _) (norm_le_one_of_mem_dualBall f))
-  rw [PiLp.norm_eq_sum hq, one_div,
-    Real.rpow_inv_le_iff_of_pos (Finset.sum_nonneg fun _ _ ↦ by positivity) (apply_nonneg _ _)
-      hq] at h
-  simpa using h
-
 /-- **Pietsch domination**, the easy direction: if `‖T x‖ ≤ C (∫ |f x|ᵖ dν(f))^(1/p)` for a
 probability measure `ν` on the dual unit ball, then `πₚ(T) ≤ C`. -/
 theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual 𝕜 E)]
@@ -121,7 +88,7 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
       ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal)) :
     T.summingENorm p ≤ ENNReal.ofReal C := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
-  have hint := ν.integrable_norm_apply_rpow (p := p)
+  have hint := ν.integrable_norm_apply_rpow p
   rw [summingENorm_le_ofReal_iff hC]
   intro n x
   set W := weakLpNorm (𝕜 := 𝕜) p x
@@ -137,7 +104,10 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
         rw [integral_finsetSum _ fun i _ ↦ hint (x i), Finset.mul_sum]
       _ ≤ C ^ p.toReal * ∫ _, W ^ p.toReal ∂ν :=
         mul_le_mul_of_nonneg_left (integral_mono (integrable_finsetSum _ fun i _ ↦ hint (x i))
-          (integrable_const _) (sum_norm_apply_rpow_le hp x)) (by positivity)
+          (integrable_const _) fun f ↦ (sum_norm_eval_rpow_le_weakLpNorm p hp x _).trans <|
+            Real.rpow_le_rpow (mul_nonneg hW (norm_nonneg _))
+              (mul_le_of_le_one_right hW (norm_le_one_of_mem_dualBall f)) hq.le)
+          (by positivity)
       _ = (C * W) ^ p.toReal := by simp [Real.mul_rpow hC hW]
   rw [PiLp.norm_eq_sum hq, one_div, Real.rpow_inv_le_iff_of_pos
     (Finset.sum_nonneg fun _ _ ↦ by positivity) (by positivity) hq]
@@ -240,7 +210,7 @@ private theorem exists_separating_functional (hp : p ≠ ∞) {T : E →L[𝕜] 
     ContinuousMap.isOpen_uniformlyPositive ((convex_Ici 0).linear_image Φ) hdisj
   have hu : u ≤ 0 := (hLQ 0 ⟨0, Set.self_mem_Ici, map_zero Φ⟩).trans_eq (map_zero L)
   refine ⟨L, (hLP 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩).trans_le hu,
-    fun h hh ↦ apply_nonpos_of_forall_uniformlyPositive_lt L hu hLP hh, fun x ↦ ?_⟩
+    fun h hh ↦ L.toLinearMap.apply_nonpos_of_forall_uniformlyPositive_lt hu hLP hh, fun x ↦ ?_⟩
   -- `L` is bounded below on the cone `Q`, so it is nonnegative on each generator `g x`.
   have hgx := LinearMap.apply_single_nonneg_of_forall_le (L.toLinearMap ∘ₗ Φ)
     (fun w hw ↦ hLQ _ ⟨w, hw, rfl⟩) x
@@ -260,7 +230,7 @@ theorem exists_isProbabilityMeasure_of_summingENorm_le_ofReal [MeasurableSpace (
         ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
   obtain ⟨L, hL1, hLpos, hLx⟩ := exists_separating_functional hp hC hT
-  obtain ⟨ν, hν, hreg, hνL⟩ := exists_isProbabilityMeasure_integral_eq_div L hL1 hLpos
+  obtain ⟨ν, hν, hreg, hνL⟩ := L.toLinearMap.exists_isProbabilityMeasure_integral_eq_div hL1 hLpos
   refine ⟨ν, hν, hreg, fun x ↦ ?_⟩
   have hI : ∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν = L (WeakDual.evalRpow 1 p x) / L 1 := by
     simpa using hνL (WeakDual.evalRpow 1 p x)
