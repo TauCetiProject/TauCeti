@@ -35,6 +35,13 @@ polynomial `p` has no squared linear factor.
 This factorisation is the starting point of Liouville- and Roth-type lower bounds for binary forms
 at integer points.
 
+The file also records the value of the homogenization of degree `n` at a point `(a, b)`: the sum
+of the terms `p_k a ^ k b ^ (n - k)`, which is `p(a / b) b ^ n` when `b ≠ 0` and
+`natDegree p ≤ n`. Substituting linear
+polynomials `a X + b` and `c X + d` for the two variables, this is the action
+`p ↦ (c X + d) ^ n p((a X + b) / (c X + d))` of a Möbius transformation on polynomials of degree at
+most `n`.
+
 Homogenization also turns integral normalization into a change of variables. If `p` has degree
 `d ≥ 1` and leading coefficient `a`, and `F` and `G` are the homogenizations of `p` and of the
 monic polynomial `p.integralNormalization`, then `G(a x, y) = a ^ (d - 1) F(x, y)`. Over a domain,
@@ -64,6 +71,9 @@ roots of `F(X, 1)` multiplied by `a`.
 * `Polynomial.bijOn_eval_homogenize_integralNormalization`: over a domain, `(x, y) ↦ (a x, y)` is
   a bijection from the solutions of `F(x, y) = m` onto those of `G(x', y) = a ^ (d - 1) m` with
   `a ∣ x'`.
+* `Polynomial.aeval_homogenize_eq_sum`, `Polynomial.aeval_homogenize`: the value of the
+  homogenization of degree `n` at `(a, b)`, as a sum of terms and, for `b ≠ 0` in a semifield
+  algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
@@ -260,6 +270,29 @@ theorem bijOn_eval_homogenize_integralNormalization [IsDomain S] {p : S[X]}
     exact mul_left_cancel₀ (pow_ne_zero _ ha) hG
 
 end IntegralNormalization
+
+section Evaluation
+
+variable {S : Type*} [CommSemiring S]
+
+/-- The value of the homogenization of degree `n` of `p` at `(a, b)` is the sum of the terms
+`p_k a ^ k b ^ l` over `k + l = n`. -/
+theorem aeval_homogenize_eq_sum {A : Type*} [CommSemiring A] [Algebra S A] (p : S[X]) (n : ℕ)
+    (a b : A) :
+    MvPolynomial.aeval ![a, b] (p.homogenize n) =
+      ∑ kl ∈ Finset.antidiagonal n, algebraMap S A (p.coeff kl.1) * (a ^ kl.1 * b ^ kl.2) := by
+  simp [homogenize, MvPolynomial.aeval_monomial, Finsupp.prod_fintype, Fin.prod_univ_two]
+
+/-- For `natDegree p ≤ n` and `x 1 ≠ 0`, the homogenization of degree `n` of `p` takes the value
+`p(x 0 / x 1) x 1 ^ n` at `x`, in any semifield that is an algebra over the coefficients. This is
+`Polynomial.eval_homogenize` with the coefficients mapped into the semifield. -/
+theorem aeval_homogenize {K : Type*} [Semifield K] [Algebra S K] {p : S[X]} {n : ℕ}
+    (hn : p.natDegree ≤ n) (x : Fin 2 → K) (hx : x 1 ≠ 0) :
+    MvPolynomial.aeval x (p.homogenize n) = aeval (x 0 / x 1) p * x 1 ^ n := by
+  rw [MvPolynomial.aeval_def, ← MvPolynomial.eval_map, ← homogenize_map,
+    eval_homogenize (natDegree_map_le.trans hn) x hx, eval_map_algebraMap]
+
+end Evaluation
 
 end Polynomial
 

@@ -6,19 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
+import TauCeti.RingTheory.Length
 
 /-!
-# Vanishing of the order of vanishing
+# Invariance and vanishing of the order of vanishing
 
 For a Noetherian domain `R` of Krull dimension at most one with fraction field `K`, Mathlib's
 `Ring.ordFrac R : K →*₀ ℤᵐ⁰` extends the order of vanishing `Ring.ord R x = length (R ⧸ (x))` to
-the fraction field. This file records that the order of a nonzero element of `R` is trivial
+the fraction field. This file records that the order of vanishing is transported by ring
+isomorphisms, and that the order of a nonzero element of `R` is trivial
 exactly when that element is a unit: `R ⧸ (x)` is the zero ring exactly when `(x)` is the unit
 ideal. Mathlib has the forward direction, `Ring.ordFrac_of_isUnit`; the converse is what reads
 "`f` has order zero at a codimension-one point" as "`f` is a unit at that point".
 
 ## Main results
 
+* `TauCeti.Ring.ord_ringEquiv` and `TauCeti.Ring.ordFrac_map_of_ringEquiv`: the order of vanishing
+  is invariant under ring isomorphisms, also on fraction fields;
 * `TauCeti.Ring.ord_eq_zero_iff`: `Ring.ord R x = 0` exactly when `x` is a unit;
 * `TauCeti.Ring.isUnit_iff_ordFrac_one`: `x` is a unit exactly when `Ring.ordFrac R x = 1`; this
   extends Mathlib's `Ring.isUnit_iff_ordFrac_one_of_isDiscreteValuationRing` to Noetherian domains
@@ -30,6 +34,58 @@ public section
 namespace TauCeti
 
 namespace Ring
+
+open scoped nonZeroDivisors
+
+section RingEquiv
+
+variable {R R' : Type*} [CommRing R] [CommRing R']
+
+/-- The order of vanishing is invariant under ring isomorphisms: `σ : R ≃+* R'` induces a
+`σ`-semilinear bijection `R ⧸ (x) → R' ⧸ (σ x)`, hence an isomorphism of the lattices of
+submodules, which have the same length. -/
+@[simp]
+theorem ord_ringEquiv (σ : R ≃+* R') (x : R) : Ring.ord R' (σ x) = Ring.ord R x := by
+  let e := Ideal.quotientEquiv (Ideal.span {x}) (Ideal.span {σ x}) σ (by simp [Ideal.map_span])
+  let f : (R ⧸ Ideal.span {x}) →ₛₗ[(σ : R →+* R')] (R' ⧸ Ideal.span {σ x}) :=
+    { toFun := e
+      map_add' := map_add e
+      map_smul' := fun r q ↦ by
+        induction q using Submodule.Quotient.induction_on
+        simp [e, Algebra.smul_def] }
+  rw [Ring.ord, Ring.ord, f.length_eq_of_bijective e.bijective]
+
+/-- The order of vanishing, as a homomorphism to `ℤᵐ⁰`, is invariant under ring isomorphisms. -/
+@[simp]
+theorem ordMonoidWithZeroHom_ringEquiv [Nontrivial R] [Nontrivial R'] (σ : R ≃+* R') (x : R) :
+    Ring.ordMonoidWithZeroHom R' (σ x) = Ring.ordMonoidWithZeroHom R x := by
+  have hmem : σ x ∈ R'⁰ ↔ x ∈ R⁰ := by
+    rw [← MulEquivClass.map_nonZeroDivisors σ, Submonoid.mem_map_iff_mem σ.injective]
+  by_cases hx : x ∈ R⁰
+  · rw [Ring.ordMonoidWithZeroHom_eq_ord hx, Ring.ordMonoidWithZeroHom_eq_ord (hmem.mpr hx),
+      ord_ringEquiv]
+  · rw [Ring.ordMonoidWithZeroHom_eq_zero hx, Ring.ordMonoidWithZeroHom_eq_zero (hmem.not.mpr hx)]
+
+variable [IsDomain R] [IsNoetherianRing R] [Ring.KrullDimLE 1 R]
+  [IsDomain R'] [IsNoetherianRing R'] [Ring.KrullDimLE 1 R']
+  {K K' : Type*} [Field K] [Field K'] [Algebra R K] [IsFractionRing R K] [Algebra R' K']
+  [IsFractionRing R' K']
+
+/-- The order of vanishing on fraction fields is invariant under ring isomorphisms: if
+`σ : R ≃+* R'` and `τ : K →+* K'` are compatible with the inclusions into the fraction fields, then
+`ordFrac R' (τ k) = ordFrac R k`. -/
+theorem ordFrac_map_of_ringEquiv (σ : R ≃+* R') (τ : K →+* K')
+    (h : ∀ a, τ (algebraMap R K a) = algebraMap R' K' (σ a)) (k : K) :
+    Ring.ordFrac R' (τ k) = Ring.ordFrac R k := by
+  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := R) k
+  have hb0 : b ≠ 0 := nonZeroDivisors.ne_zero hb
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  rw [map_div₀, h, h, map_div₀, map_div₀, Ring.ordFrac_eq_ord _ ha, Ring.ordFrac_eq_ord _ hb0,
+    Ring.ordFrac_eq_ord _ (by simpa using ha), Ring.ordFrac_eq_ord _ (by simpa using hb0),
+    ordMonoidWithZeroHom_ringEquiv, ordMonoidWithZeroHom_ringEquiv]
+
+end RingEquiv
 
 variable {R : Type*} [CommRing R]
 

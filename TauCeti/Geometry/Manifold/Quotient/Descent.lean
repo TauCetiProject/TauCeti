@@ -113,11 +113,11 @@ theorem isSubmersionOfComplement_orbitRelQuotientMap {F : Type*} [NormedAddCommG
   induction x using Quotient.inductionOn with
   | h x =>
     -- Through the orbit projections, the induced map is the orbit projection of `N'` after `φ`.
-    refine isSubmersionAtOfComplement_of_comp_isLocalDiffeomorphAt
-      (isLocalDiffeomorph_quotientMk (I := I) (n := n) (G := G) x) ?_
+    refine ((isLocalDiffeomorph_quotientMk (I := I) (n := n) (G := G)
+      x).isSubmersionAtOfComplement_comp_iff).1 ?_
     rw [MulActionHom.orbitRelQuotientMap_comp_mk]
-    exact isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp
-      (isLocalDiffeomorph_quotientMk (I := I') (n := n) (G := K) (φ x)) (hφ.isSubmersionAt x)
+    exact (isLocalDiffeomorph_quotientMk (I := I') (n := n) (G := K)
+      (φ x)).comp_isSubmersionAtOfComplement (hφ.isSubmersionAt x)
 
 /-- For free properly discontinuous actions by `C^n` maps on `C^n` manifolds, a `C^n` submersion
 carrying one action to the other along `σ` induces a `C^n` submersion of orbit spaces. -/
