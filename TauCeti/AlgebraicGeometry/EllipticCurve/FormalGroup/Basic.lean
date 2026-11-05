@@ -49,7 +49,7 @@ public section
 
 namespace WeierstrassCurve
 
-open MvPowerSeries
+open MvPowerSeries TauCeti
 
 variable {R : Type*} [CommRing R]
 
