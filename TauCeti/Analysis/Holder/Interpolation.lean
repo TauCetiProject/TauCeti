@@ -57,6 +57,8 @@ linear approximation error by the difference of the Hessians.
   Hölder derivative.
 * `HolderOnWith.norm_apply_le_of_hasFDerivWithinAt`: the resulting bound on a directional
   derivative.
+* `HolderOnWith.norm_le_of_hasFDerivWithinAt_ball`: the local interpolation inequality on a
+  ball, also applicable to differences of two functions.
 * `HolderWith.norm_le_of_hasFDerivAt`, `HolderWith.norm_fderiv_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le`: the interpolation inequality on the whole
   space.
@@ -123,6 +125,35 @@ theorem norm_apply_le_of_hasFDerivWithinAt {s : Set E} {g : E → F} {g' : E →
     _ ≤ ‖g (x + w) - g x‖ + ‖g (x + w) - g x - g' x w‖ := norm_sub_le _ _
     _ ≤ ‖g (x + w)‖ + ‖g x‖ + H * ‖w‖ ^ (1 + (α : ℝ)) := by
       linarith [norm_sub_le (g (x + w)) (g x)]
+
+/-- **Local interpolation inequality.** On a ball of radius `ε`, a function bounded by `M`
+whose derivative is `(H, α)`-Hölder has derivative norm at the centre at most
+`4 M / ε + H ε^α`. Applying the estimate to a difference compares derivatives using only
+uniform function errors and Hölder derivative bounds. -/
+theorem norm_le_of_hasFDerivWithinAt_ball {g : E → F} {g' : E → E →L[ℝ] F}
+    {H α : ℝ≥0} {x : E} {ε M : ℝ} (hH : HolderOnWith H α g' (Metric.ball x ε))
+    (hg : ∀ y ∈ Metric.ball x ε, HasFDerivWithinAt g (g' y) (Metric.ball x ε) y)
+    (hM : ∀ y ∈ Metric.ball x ε, ‖g y‖ ≤ M) (hε : 0 < ε) :
+    ‖g' x‖ ≤ 4 * M / ε + H * ε ^ (α : ℝ) := by
+  have hx : x ∈ Metric.ball x ε := Metric.mem_ball_self hε
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x hx)
+  refine ContinuousLinearMap.opNorm_le_of_shell (𝕜 := ℝ) (c := (2 : ℝ)) hε
+    (by positivity) (by norm_num) fun w hwlo hwhi => ?_
+  rw [Real.norm_two] at hwlo
+  have hxw : x + w ∈ Metric.ball x ε := by
+    simpa only [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left] using hwhi
+  have hseg := (convex_ball x ε).segment_subset hx hxw
+  have hT := hH.norm_apply_le_of_hasFDerivWithinAt hg hseg
+  rw [Real.rpow_add' (norm_nonneg w) (by positivity), Real.rpow_one] at hT
+  have hpow : ‖w‖ ^ (α : ℝ) ≤ ε ^ (α : ℝ) :=
+    Real.rpow_le_rpow (norm_nonneg w) hwhi.le α.coe_nonneg
+  have hrem : H * (‖w‖ * ‖w‖ ^ (α : ℝ)) ≤ H * ε ^ (α : ℝ) * ‖w‖ := by
+    nlinarith [mul_le_mul_of_nonneg_left hpow
+      (mul_nonneg H.coe_nonneg (norm_nonneg w))]
+  have herr : 2 * M ≤ (4 * M / ε) * ‖w‖ := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hε]
+    nlinarith
+  nlinarith [hM (x + w) hxw, hM x hx]
 
 /-- **Interpolation inequality on an interval.** Let `f` have derivative `f'` within `[a, b]`,
 with `f'` `β`-Hölder with constant `H` on `[a, b]` and `‖f‖ ≤ M` there. Then for every step
