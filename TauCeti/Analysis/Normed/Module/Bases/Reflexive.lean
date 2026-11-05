@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Bases
 public import TauCeti.Analysis.Normed.Module.Bases.Basic
 public import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import Mathlib.Analysis.Normed.Group.Quotient
