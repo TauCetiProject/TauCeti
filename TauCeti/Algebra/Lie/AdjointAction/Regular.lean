@@ -265,6 +265,14 @@ theorem finrank_ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
     finrank K (ker (ad K L' (e x))) = finrank K (ker (ad K L x)) := by
   rw [ker_ad_apply, LinearEquiv.finrank_map_eq]
 
+/-- The adjoint endomorphisms of corresponding elements under a Lie algebra isomorphism
+have ranges of the same dimension, even for infinite-dimensional Lie algebras. -/
+@[simp]
+theorem finrank_range_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
+    finrank K (range (ad K L' (e x))) = finrank K (range (ad K L x)) := by
+  rw [← conj_ad_apply, LinearEquiv.conj_apply, LinearEquiv.range_comp,
+    LinearMap.range_comp, LinearEquiv.finrank_map_eq]
+
 /-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
 so the two have the same cardinal dimension, up to universe lifting. -/
 theorem lift_rank_ker_ad_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
