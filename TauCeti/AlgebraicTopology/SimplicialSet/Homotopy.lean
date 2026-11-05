@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.SSetPair
+public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
 
 /-!
 # Homotopies of morphisms of pairs of simplicial sets
@@ -29,19 +30,34 @@ of the initial vertex `x₀` of `x`.  These are what a construction transporting
 initial vertices of simplices, such as twisted chains, needs to lift the combinatorial homotopy.
 
 It also provides the constructor `SSet.Homotopy.mk'` of a homotopy from a morphism on the
-cylinder `X ⊗ Δ[1]` with prescribed ends, and records that these two ends are disjoint
-(`SSet.range_ι₀_inf_range_ι₁`).
+cylinder `X ⊗ Δ[1]` with prescribed ends, identifies these ends with the faces of
+`X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` (`SSet.whiskerLeft_stdSimplex_δ_one`) and records that they are disjoint
+(`SSet.range_ι₀_inf_range_ι₁`). Homotopies can be precomposed and postcomposed with maps
+(`SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`), and they correspond under the
+tensor-hom adjunction (`SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`).
 -/
 
 @[expose] public section
 
-open CategoryTheory MonoidalCategory Opposite
+open CategoryTheory MonoidalCategory CartesianMonoidalCategory Opposite
 
 open scoped Simplicial
 
 universe w
 
 namespace SSet
+
+/-- The face `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` omitting the vertex `1` is the end `X ⊗ {0}` of the cylinder,
+after the projection `X ⊗ Δ[0] ⟶ X`. -/
+lemma whiskerLeft_stdSimplex_δ_one (X : SSet.{w}) :
+    X ◁ stdSimplex.δ (1 : Fin 2) = fst X Δ[0] ≫ ι₀ := by
+  ext : 1 <;> simp [ι₀, stdSimplex.δ_one_eq_const]
+
+/-- The face `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` omitting the vertex `0` is the end `X ⊗ {1}` of the cylinder,
+after the projection `X ⊗ Δ[0] ⟶ X`. -/
+lemma whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
+    X ◁ stdSimplex.δ (0 : Fin 2) = fst X Δ[0] ≫ ι₁ := by
+  ext : 1 <;> simp [ι₁, stdSimplex.δ_zero_eq_const]
 
 /-- The two ends `X ⊗ {0}` and `X ⊗ {1}` of the cylinder `X ⊗ Δ[1]` are disjoint. -/
 lemma range_ι₀_inf_range_ι₁ {X : SSet.{w}} :
@@ -70,6 +86,66 @@ def mk' (h : X ⊗ Δ[1] ⟶ Y) (h₀ : ι₀ ≫ h = f) (h₁ : ι₁ ≫ h = g
   rel := by
     ext _ ⟨⟨_, hx⟩, _⟩
     simp at hx
+
+/-- Precomposing a homotopy from `f` to `g` with `e : W ⟶ X` gives a homotopy from `e ≫ f` to
+`e ≫ g`. This is the absolute case of `SSet.RelativeMorphism.Homotopy.precomp`. -/
+noncomputable def precomp {W : SSet.{w}} (H : SSet.Homotopy f g) (e : W ⟶ X) :
+    SSet.Homotopy (e ≫ f) (e ≫ g) :=
+  RelativeMorphism.Homotopy.precomp H (RelativeMorphism.botEquiv.symm e)
+    (Subcomplex.isInitialBot.hom_ext _ _)
+
+/-- The precomposite of a homotopy `H` with `e` is `e ▷ Δ[1] ≫ H.h`. -/
+@[simp]
+lemma precomp_h {W : SSet.{w}} (H : SSet.Homotopy f g) (e : W ⟶ X) :
+    (H.precomp e).h = e ▷ Δ[1] ≫ H.h :=
+  rfl
+
+/-- Postcomposing a homotopy from `f` to `g` with `e : Y ⟶ Z` gives a homotopy from `f ≫ e` to
+`g ≫ e`. This is the absolute case of `SSet.RelativeMorphism.Homotopy.postcomp`. -/
+noncomputable def postcomp {Z : SSet.{w}} (H : SSet.Homotopy f g) (e : Y ⟶ Z) :
+    SSet.Homotopy (f ≫ e) (g ≫ e) :=
+  RelativeMorphism.Homotopy.postcomp H (RelativeMorphism.botEquiv.symm e)
+    (Subcomplex.isInitialBot.hom_ext _ _)
+
+/-- The postcomposite of a homotopy `H` with `e` is `H.h ≫ e`. -/
+@[simp]
+lemma postcomp_h {Z : SSet.{w}} (H : SSet.Homotopy f g) (e : Y ⟶ Z) :
+    (H.postcomp e).h = H.h ≫ e :=
+  rfl
+
+/-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
+inclusion of `A ⊗ (X ⊗ {0})` to that of `(A ⊗ X) ⊗ {0}`. -/
+@[reassoc (attr := simp)]
+lemma whiskerLeft_ι₀_associator_inv (A X : SSet.{w}) :
+    A ◁ ι₀ ≫ (α_ A X Δ[1]).inv = ι₀ := by
+  ext : 1 <;> [ext : 1; skip] <;> simp [ι₀]
+
+/-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
+inclusion of `A ⊗ (X ⊗ {1})` to that of `(A ⊗ X) ⊗ {1}`. -/
+@[reassoc (attr := simp)]
+lemma whiskerLeft_ι₁_associator_inv (A X : SSet.{w}) :
+    A ◁ ι₁ ≫ (α_ A X Δ[1]).inv = ι₁ := by
+  ext : 1 <;> [ext : 1; skip] <;> simp [ι₁]
+
+/-- A homotopy between maps `A ⊗ X ⟶ Y` curries to a homotopy between the adjoint maps
+`X ⟶ Fun(A, Y)`. -/
+@[simps! h]
+noncomputable def curry {A : SSet.{w}} {f g : A ⊗ X ⟶ Y} (H : SSet.Homotopy f g) :
+    SSet.Homotopy (MonoidalClosed.curry f) (MonoidalClosed.curry g) :=
+  mk' (MonoidalClosed.curry ((α_ A X Δ[1]).inv ≫ H.h))
+    (by rw [← MonoidalClosed.curry_natural_left, whiskerLeft_ι₀_associator_inv_assoc, H.h₀])
+    (by rw [← MonoidalClosed.curry_natural_left, whiskerLeft_ι₁_associator_inv_assoc, H.h₁])
+
+/-- A homotopy between maps `X ⟶ Fun(A, Y)` uncurries to a homotopy between the adjoint maps
+`A ⊗ X ⟶ Y`. -/
+@[simps! h]
+noncomputable def uncurry {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.Homotopy f g) :
+    SSet.Homotopy (MonoidalClosed.uncurry f) (MonoidalClosed.uncurry g) :=
+  mk' ((α_ A X Δ[1]).hom ≫ MonoidalClosed.uncurry H.h)
+    (by rw [← whiskerLeft_ι₀_associator_inv, Category.assoc, Iso.inv_hom_id_assoc,
+      ← MonoidalClosed.uncurry_natural_left, H.h₀])
+    (by rw [← whiskerLeft_ι₁_associator_inv, Category.assoc, Iso.inv_hom_id_assoc,
+      ← MonoidalClosed.uncurry_natural_left, H.h₁])
 
 /-- The combinatorial homotopy extracted from a simplicial homotopy sends an `n`-simplex `x` to
 the value of the homotopy at the pair formed by the `i`-th degeneracy of `x` and the `n + 1`-simplex

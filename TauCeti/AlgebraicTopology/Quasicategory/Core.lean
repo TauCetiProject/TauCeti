@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.CompStruct
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
+public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import TauCeti.CategoryTheory.Core
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 
@@ -38,7 +39,9 @@ not proved here. For the nerve of a category `C`, the core is the nerve of the g
 * `SSet.Edge.CompStruct.isEquivalence₀₂`, `isEquivalence₀₁`, `isEquivalence₁₂`: equivalences in
   a quasicategory satisfy two-out-of-three.
 * `SSet.Edge.isEquivalence_of_kanComplex`: every edge of a Kan complex is an equivalence. Hence
-  every Kan complex contained in `X` lies in its core (`SSet.le_core_of_kanComplex`).
+  every Kan complex contained in `X` lies in its core (`SSet.le_core_of_kanComplex`), and two
+  vertices of a Kan complex lie in the same connected component exactly when an edge joins them
+  (`SSet.π₀.mk_eq_mk_iff_nonempty_edge`).
 * `SSet.le_core_iff`: the core is the largest subcomplex all of whose edges are equivalences.
 * `SSet.hasLiftingProperty_horn_ι_core_ι`: the inclusion of the core of a quasicategory is an
   inner fibration, so `SSet.core.quasicategory`: the core of a quasicategory is a quasicategory.
@@ -216,6 +219,18 @@ lemma isEquivalence_mk'_map_of_eq {n : SimplexCategoryᵒᵖ} (s : X.obj n) (f :
   exact isEquivalence_id _
 
 end Edge
+
+/-- In a Kan complex, two vertices lie in the same connected component exactly when there is an
+edge between them: edges compose, and they can be reversed since they are equivalences. -/
+lemma π₀.mk_eq_mk_iff_nonempty_edge [KanComplex X] (x₀ x₁ : X _⦋0⦌) :
+    π₀.mk x₀ = π₀.mk x₁ ↔ Nonempty (Edge x₀ x₁) := by
+  refine ⟨fun h ↦ ?_, fun ⟨e⟩ ↦ π₀.sound e⟩
+  rw [π₀.mk_eq_mk_iff] at h
+  induction h with
+  | rel _ _ h => exact h
+  | refl x => exact ⟨Edge.id x⟩
+  | symm _ _ _ ih => exact ⟨(Edge.isEquivalence_of_kanComplex ih.some).invStruct.inv⟩
+  | trans _ _ _ _ _ ih₁ ih₂ => exact ⟨ih₁.some.comp ih₂.some⟩
 
 open Edge
 
