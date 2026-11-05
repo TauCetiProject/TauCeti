@@ -78,7 +78,9 @@ theorem lowerFormBoundOn_of_restriction_spectrum_subset_Ici
     isSelfAdjoint_iff_isSymmetric.mpr (hA.restrict_invariant hU)
   apply (lowerFormBoundOn_iff A U c).2
   intro x hx
-  exact le_re_inner_of_spectrum_subset_Ici (A.restrict hU) hres hσ (⟨x, hx⟩ : U)
+  simpa only [Submodule.coe_inner, ContinuousLinearMap.coe_restrict_apply,
+    ← Submodule.norm_coe, Subtype.coe_mk] using
+    le_re_inner_of_spectrum_subset_Ici (A.restrict hU) hres hσ (⟨x, hx⟩ : U)
 
 /-- A spectral upper half-line for the restriction of a symmetric operator gives an upper
 quadratic-form bound on the invariant subspace. -/
@@ -93,6 +95,8 @@ theorem upperFormBoundOn_of_restriction_spectrum_subset_Iic
     isSelfAdjoint_iff_isSymmetric.mpr (hA.restrict_invariant hU)
   apply (upperFormBoundOn_iff A U c).2
   intro x hx
-  exact re_inner_le_of_spectrum_subset_Iic (A.restrict hU) hres hσ (⟨x, hx⟩ : U)
+  simpa only [Submodule.coe_inner, ContinuousLinearMap.coe_restrict_apply,
+    ← Submodule.norm_coe, Subtype.coe_mk] using
+    re_inner_le_of_spectrum_subset_Iic (A.restrict hU) hres hσ (⟨x, hx⟩ : U)
 
 end ContinuousLinearMap
