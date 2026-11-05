@@ -8,7 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.PointedStabilizer
 public import TauCeti.FieldTheory.FunctionField.Belyi.SinglePole
 public import TauCeti.FieldTheory.FunctionField.Belyi.FieldOfModuli
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.MinpolyDescent
+public import TauCeti.FieldTheory.RatFunc.Galois
+public import TauCeti.FieldTheory.Minpoly.Lifts
 public import TauCeti.FieldTheory.Galois.FiniteIndex
 
 /-!
@@ -124,18 +125,9 @@ theorem minpoly_mem_lifts_of_normalized
     minpoly (RatFunc k) z ∈
       Polynomial.lifts (algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k)) := by
   let S : Set (k ≃+* k) := AlgEquiv.toRingEquiv '' (X.pointedStabilizer P : Set (k ≃ₐ[ℚ] k))
-  refine @RatFunc.mem_lifts_of_forall_map_mapRingEquiv_eq
-    (X.pointedFieldOfModuli P) k _ _ _ _ ?_ hX S ?_ (minpoly (RatFunc k) z) ?_
-  · -- Use the coefficient algebra structures, not the competing subtype algebra structures.
-    let : Algebra (X.pointedFieldOfModuli P) k[X] := Polynomial.algebraOfAlgebra
-    let : Algebra (X.pointedFieldOfModuli P) (RatFunc k) :=
-      _root_.RatFunc.instAlgebraOfPolynomial k (X.pointedFieldOfModuli P)
-    apply IsScalarTower.of_algebraMap_eq
-      (R := X.pointedFieldOfModuli P) (S := RatFunc (X.pointedFieldOfModuli P)) (A := RatFunc k)
-    intro c
-    simpa only [_root_.RatFunc.algebraMap_apply (R := X.pointedFieldOfModuli P),
-      Polynomial.algebraMap_apply, map_one, div_one, Algebra.algebraMap_self_apply,
-      _root_.RatFunc.algebraMap_C, IntermediateField.algebraMap_apply] using (hC c).symm
+  have := RatFunc.isScalarTower_of_algebraMap_C hC
+  refine RatFunc.mem_lifts_of_forall_map_mapRingEquiv_eq
+    (F := X.pointedFieldOfModuli P) (K := k) hX (S := S) ?_ ?_
   · intro c hc
     refine ⟨⟨c, (X.mem_pointedFieldOfModuli_iff P c).mpr fun g hg ↦ ?_⟩, rfl⟩
     exact hc _ ⟨g, hg, rfl⟩
