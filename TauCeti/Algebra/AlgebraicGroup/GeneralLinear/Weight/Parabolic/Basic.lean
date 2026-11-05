@@ -165,11 +165,11 @@ theorem weightParabolicDefiningHopfIdeal_toIdeal (w : Fin N → α) :
 
 /-- A morphism out of the coordinate algebra of `GL_N` kills the weight-parabolic defining Hopf
 ideal as soon as it kills every forbidden matrix coordinate. -/
-theorem weightParabolicDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [Semiring A] [Algebra R A]
-    (w : Fin N → α) (f : coordinateHopfAlgebra R N →ₐ[R] A)
+theorem weightParabolicDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [Semiring A]
+    (w : Fin N → α) (f : coordinateHopfAlgebra R N →+* A)
     (hf : ∀ i j, w i < w j → f (coordinateHopfAlgebraAlgEquiv R N
       (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :
-    (weightParabolicDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f.toRingHom := by
+    (weightParabolicDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f := by
   rw [weightParabolicDefiningHopfIdeal_toIdeal, Ideal.span_le]
   intro x hx
   obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R w x).mp hx
@@ -296,9 +296,10 @@ theorem mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular (w : Fin N
       (weightParabolicDefiningHopfIdeal_toIdeal R w).symm ▸
         Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij))
   · intro h x hx
-    refine RingHom.mem_ker.mp (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R w g.ofConv
-      (fun i j hij ↦ ?_) (HopfIdeal.mem_toIdeal.mpr hx))
-    rw [← pointToGeneralLinear_apply, ← pointsMulEquiv_apply]
+    refine RingHom.mem_ker.mp (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R w
+      g.ofConv.toRingHom (fun i j hij ↦ ?_) (HopfIdeal.mem_toIdeal.mpr hx))
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      ← pointToGeneralLinear_apply, ← pointsMulEquiv_apply]
     exact h hij
 
 variable (w : Fin N → α)

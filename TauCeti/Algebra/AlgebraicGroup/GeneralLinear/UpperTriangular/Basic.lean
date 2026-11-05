@@ -162,18 +162,18 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
 
 section Points
 
-variable {A : Type w} [CommRing A] [Algebra R A]
-
 /-- A morphism out of the coordinate algebra of `GL_n` kills the upper-triangular defining Hopf
 ideal as soon as it kills every matrix coordinate strictly below the diagonal. -/
-theorem definingHopfIdeal_toIdeal_le_ker
+theorem definingHopfIdeal_toIdeal_le_ker {A : Type w} [Semiring A] [Algebra R A]
     (f : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] A)
     (hf : ∀ i j, j < i → f (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
       (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))) = 0) :
     (definingHopfIdeal R n).toIdeal ≤ RingHom.ker f.toRingHom := by
   rw [definingHopfIdeal]
-  exact GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (weights n) f
+  exact GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (weights n) f.toRingHom
     fun i j h ↦ hf i j ((weights_lt_weights_iff n i j).mp h)
+
+variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- A morphism out of the coordinate algebra of `GL_n` whose tautological matrix point is upper
 triangular kills the upper-triangular defining Hopf ideal. -/
