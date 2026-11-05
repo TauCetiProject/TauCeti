@@ -49,8 +49,7 @@ example :
   have hf : (X () ^ 2 - C 7 : MvPolynomial Unit ℤ) ≠ 0 := by
     intro h
     have he := congrArg (eval fun _ : Unit => (0 : ℤ)) h
-    norm_num only [map_sub, map_pow, eval_X, eval_C, map_zero, zero_pow,
-      ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_sub] at he
+    norm_num [map_ofNat] at he
   rw [elkikJacobianIdeal_unique_of_mem_nonZeroDivisors _
     (mem_nonZeroDivisors_iff_ne_zero.mpr hf)]
   simp only [map_sub, pderiv_C]
