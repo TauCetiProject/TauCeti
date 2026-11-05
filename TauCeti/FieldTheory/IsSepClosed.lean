@@ -54,6 +54,7 @@ its conclusion, so instance search could not find it.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
+* `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
 -/
 
 public section
@@ -72,6 +73,13 @@ algebra map is injective. -/
 instance SeparableClosure.neZero_two {K : Type*} [Field K] [NeZero (2 : K)] :
     NeZero (2 : SeparableClosure K) := by
   simpa using NeZero.of_faithfulSMul K (SeparableClosure K) 2
+
+/-- Separable closedness transfers along a ring isomorphism of fields. -/
+theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed k]
+    (e : k ≃+* K) : IsSepClosed K where
+  splits_of_separable p hp := by
+    simpa [Polynomial.map_map] using
+      IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
 
 namespace TauCeti
 

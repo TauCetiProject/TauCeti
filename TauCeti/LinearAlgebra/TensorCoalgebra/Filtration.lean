@@ -302,6 +302,26 @@ theorem lengthProj_apply_eq_zero_of_mem_filtration {n : {n : ℕ // 0 < n}} {k :
     rw [LinearMap.mem_ker, lengthProj_of_of_ne R M fun h ↦ by subst h; omega]
   exact h hz
 
+/-- A reduced tensor word lies in the `n`-th filtration step exactly when all its components
+of length greater than `n` vanish. -/
+theorem mem_filtration_iff (n : ℕ) (z : ReducedTensorWords R M) :
+    z ∈ filtration R M n ↔ ∀ k : {k : ℕ // 0 < k}, n < k.1 → component R M k z = 0 := by
+  classical
+  constructor
+  · intro hz k hk
+    have h := congrArg (component R M k)
+      (lengthProj_apply_eq_zero_of_mem_filtration R M hk hz)
+    simpa only [lengthProj_apply, component_of, map_zero] using h
+  · intro hz
+    have hsum : ∑ k ∈ z.support, of R M k (z k) = z := by
+      simpa only [of_def, DirectSum.lof_eq_of] using DirectSum.sum_support_of z
+    rw [← hsum]
+    refine Submodule.sum_mem _ fun k _ ↦ ?_
+    by_cases hk : k.1 ≤ n
+    · exact of_mem_filtration R M hk _
+    · rw [apply_eq_component, hz k (by omega), map_zero]
+      exact Submodule.zero_mem _
+
 /-- A linear map vanishing on the words of length at most `n` sees a word of length at most
 `n + 1` only through its component of length `n + 1`. -/
 theorem apply_lengthProj_of_mem_filtration {N : Type*} [AddCommMonoid N] [Module R N]
