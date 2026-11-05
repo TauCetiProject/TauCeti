@@ -265,6 +265,20 @@ theorem contMDiff_stiefelProj [FiniteDimensional ℝ E] {n : ℕ} [Fact (finrank
   (((contDiff_apply ℝ (fun _ ↦ E) i).contMDiff).comp
     (contMDiff_coe_stiefel E k)).codRestrict_sphere _
 
+variable {E} in
+/-- **Orthonormal pairs are unit tangent vectors of the sphere.** For a point `x` of the unit
+sphere, `(x, w)` is an orthonormal pair exactly when `w` is a unit vector tangent to the sphere at
+`x`, that is, in the range of the differential of the inclusion of the sphere at `x`. So
+`TauCeti.stiefel E 2` is the unit tangent bundle of the unit sphere of `E` for the metric induced
+by the inner product of `E`. -/
+theorem mem_stiefel_two_iff_mem_range_mvfderiv {n : ℕ}
+    [Fact (finrank ℝ E = n + 1)] (x : Metric.sphere (0 : E) 1) (w : E) :
+    ![(x : E), w] ∈ stiefel E 2 ↔
+      w ∈ (mvfderiv (𝓡 n) ((↑) : Metric.sphere (0 : E) 1 → E) x).range ∧ ‖w‖ = 1 := by
+  rw [mem_stiefel_two_iff, range_mvfderiv_subtypeVal,
+    Submodule.mem_orthogonal_singleton_iff_inner_right]
+  simp [norm_eq_of_mem_sphere x, and_comm]
+
 end
 
 end TauCeti
