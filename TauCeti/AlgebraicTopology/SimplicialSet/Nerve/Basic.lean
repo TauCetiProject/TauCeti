@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.Combinatorics.Quiver.Subquiver
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # Arrows of simplices of the nerve and the images of its degeneracies
@@ -15,9 +16,11 @@ An `n`-simplex of the nerve `CategoryTheory.nerve C` of a category is a string
 `F : ComposableArrows C n` of composable arrows. For positions `i ≤ j` its arrow from the `i`-th
 to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij`; the simplicial
 operators of the nerve reindex these arrows
-(`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`), and prepending an arrow with
+(`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`), prepending an arrow with
 `CategoryTheory.ComposableArrows.precomp` shifts them
-(`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`).
+(`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`), and applying a functor to the
+string maps its arrows along the functor
+(`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`).
 
 An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its
 `i`-th arrow is an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
@@ -107,6 +110,15 @@ theorem totalArrow_whiskerLeft {m : ℕ} (F : ComposableArrows C m)
   -- Morphisms in the poset `Fin (m + 1)` are unique, so `Φ` sends `homOfLE hij` to `homOfLE _`.
   have h : Φ.map (homOfLE hij) = homOfLE (Φ.monotone hij) := Subsingleton.elim _ _
   simp only [totalArrow, whiskerLeft, Functor.comp_obj, Functor.comp_map, h]
+
+/-- An arrow of the image of a string under a functor is the image of the arrow of the string. -/
+@[simp]
+theorem totalArrow_mapComposableArrows_obj {D : Type*} [Category D] (Φ : C ⥤ D)
+    (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
+    ((Φ.mapComposableArrows n).obj F).totalArrow i j hij =
+      Φ.toPrefunctor.mapTotal (F.totalArrow i j hij) := by
+  rw [totalArrow_def, totalArrow_def]
+  rfl
 
 end CategoryTheory.ComposableArrows
 

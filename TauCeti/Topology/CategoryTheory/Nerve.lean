@@ -56,15 +56,6 @@ namespace CategoryTheory.ComposableArrows
 
 variable {C : Type u} [Category.{v} C] {n : ℕ}
 
-/-- An arrow of the image of a string under a functor is the image of the arrow of the string. -/
-@[simp]
-theorem totalArrow_mapComposableArrows_obj {D : Type*} [Category D] (Φ : C ⥤ D)
-    (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    ((Φ.mapComposableArrows n).obj F).totalArrow i j hij =
-      Φ.toPrefunctor.mapTotal (F.totalArrow i j hij) := by
-  rw [totalArrow_def, totalArrow_def]
-  rfl
-
 variable [TopologicalSpace (Quiver.Total C)]
 
 /-- The topology on strings of `n` composable arrows: the coarsest topology making each arrow of
