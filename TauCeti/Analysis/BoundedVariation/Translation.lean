@@ -9,7 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.MeasureTheory.Group.Integral
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -168,14 +168,11 @@ variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasur
 /-! ### The translation estimate -/
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A difference of translates of a scalar test function is a directional derivative: for
-`g ∈ 𝓓(V, ℝ)`, the function `Φ y = ∫₀¹ g (y - t h) dt` is a test function on `Ω` with
-`∂_h Φ y = g y - g (y - h)`, as soon as the segments `x + [0, 1] h` starting in `V` lie in `Ω`.
-It is bounded by one if `g` is, and nonnegative if `g` is. -/
-private theorem exists_lineDeriv_eq_sub
+/-- For `g ∈ 𝓓(V, ℝ)`, the function `Φ y = ∫₀¹ g (y - t h) dt` is a test function on `Ω`, as soon
+as the segments `x + [0, 1] h` starting in `V` lie in `Ω`. -/
+private theorem exists_testFunction_eq_intervalIntegral
     (hVΩ : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Ω) (g : 𝓓(V, ℝ)) :
-    ∃ Φ : 𝓓(Ω, ℝ), ((∀ x, ‖g x‖ ≤ 1) → ∀ y, ‖Φ y‖ ≤ 1) ∧ ((∀ x, 0 ≤ g x) → ∀ y, 0 ≤ Φ y) ∧
-      ∀ y, lineDeriv ℝ (Φ : E → ℝ) y h = g y - g (y - h) := by
+    ∃ Φ : 𝓓(Ω, ℝ), ∀ y, Φ y = ∫ t in (0 : ℝ)..1, g (y - t • h) := by
   set Φ : E → ℝ := fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) with hΦ_def
   have hΦs : ContDiff ℝ ∞ Φ := by
     rw [← contDiffOn_univ]
@@ -201,40 +198,27 @@ private theorem exists_lineDeriv_eq_sub
   have hsupp : support Φ ⊆ C := fun y hy => by
     by_contra hyC
     exact hy (hΦC y hyC)
-  let Ψ : 𝓓(Ω, ℝ) := ⟨Φ, hΦs, HasCompactSupport.intro hCc hΦC,
-    (closure_minimal hsupp hCc.isClosed).trans hCΩ⟩
-  have hΨ : (Ψ : E → ℝ) = Φ := rfl
-  refine ⟨Ψ, fun hg y => ?_, fun hg y => ?_, fun y => ?_⟩
+  exact ⟨⟨Φ, hΦs, HasCompactSupport.intro hCc hΦC,
+    (closure_minimal hsupp hCc.isClosed).trans hCΩ⟩, fun _ => rfl⟩
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A difference of translates of a scalar test function is a directional derivative: for
+`g ∈ 𝓓(V, ℝ)`, the function `Φ y = ∫₀¹ g (y - t h) dt` is a test function on `Ω` with
+`∂_h Φ y = g y - g (y - h)`, as soon as the segments `x + [0, 1] h` starting in `V` lie in `Ω`.
+It is bounded by one if `g` is, and nonnegative if `g` is. -/
+private theorem exists_lineDeriv_eq_sub
+    (hVΩ : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Ω) (g : 𝓓(V, ℝ)) :
+    ∃ Φ : 𝓓(Ω, ℝ), ((∀ x, ‖g x‖ ≤ 1) → ∀ y, ‖Φ y‖ ≤ 1) ∧ ((∀ x, 0 ≤ g x) → ∀ y, 0 ≤ Φ y) ∧
+      ∀ y, lineDeriv ℝ (Φ : E → ℝ) y h = g y - g (y - h) := by
+  obtain ⟨Φ, hΦ⟩ := exists_testFunction_eq_intervalIntegral hVΩ g
+  have hΦ' : (Φ : E → ℝ) = fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) := funext hΦ
+  refine ⟨Φ, fun hg y => ?_, fun hg y => ?_, fun y => ?_⟩
   · -- `|Φ y| ≤ 1` since `|g| ≤ 1`.
-    simpa [hΨ] using intervalIntegral.norm_integral_le_of_norm_le_const
+    simpa [hΦ] using intervalIntegral.norm_integral_le_of_norm_le_const
       (f := fun t => g (y - t • h)) (a := 0) (b := 1) (C := 1) fun t _ => hg _
-  · exact intervalIntegral.integral_nonneg zero_le_one fun t _ => hg _
-  · -- `s ↦ Φ (y + s h)` differentiates by the fundamental theorem of calculus, as
-    -- `Φ (y + s h) = ∫_{-s}^{1-s} g (y - t h) dt`.
-    set f : ℝ → ℝ := fun t => g (y - t • h)
-    have hf : Continuous f := g.continuous.comp (by fun_prop)
-    have hline : (fun s : ℝ => Φ (y + s • h)) =
-        fun s => (∫ t in (0 : ℝ)..1 - s, f t) - ∫ t in (0 : ℝ)..-s, f t := by
-      funext s
-      rw [intervalIntegral.integral_interval_sub_left (hf.intervalIntegrable _ _)
-        (hf.intervalIntegrable _ _), hΦ_def]
-      have hshift := intervalIntegral.integral_comp_sub_right f s (a := 0) (b := 1)
-      rw [zero_sub, sub_eq_add_neg 1 s, ← sub_eq_add_neg] at hshift
-      rw [← hshift]
-      refine intervalIntegral.integral_congr fun t _ => ?_
-      simp only [f, sub_smul]
-      congr 1
-      abel
-    -- `HasLineDerivAt` is by definition the derivative at `0` of `s ↦ Φ (y + s • h)`.
-    have hlin : HasLineDerivAt ℝ Φ (f 0 - f 1) y h := by
-      unfold HasLineDerivAt
-      rw [hline]
-      have h1 := ((hf.integral_hasStrictDerivAt 0 (1 - 0)).hasDerivAt.comp 0
-        ((hasDerivAt_id 0).const_sub 1))
-      have h2 := ((hf.integral_hasStrictDerivAt 0 (-0)).hasDerivAt.comp 0 (hasDerivAt_id 0).neg)
-      exact (h1.sub h2).congr_deriv (by simp only [sub_zero, neg_zero, mul_neg, mul_one]; ring)
-    rw [hΨ, hlin.lineDeriv]
-    simp [f]
+  · simpa [hΦ] using intervalIntegral.integral_nonneg zero_le_one fun t _ => hg (y - t • h)
+  · rw [hΦ']
+    exact (TauCeti.hasLineDerivAt_intervalIntegral_comp_sub g.continuous y).lineDeriv
 
 omit [FiniteDimensional ℝ E] in
 /-- Pairing the difference `u (· + h) - u` with a test function `g` on `V` amounts to pairing `u`
