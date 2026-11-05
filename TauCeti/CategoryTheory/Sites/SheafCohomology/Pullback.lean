@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.ExactSequences
+public import Mathlib.CategoryTheory.Sites.SheafCohomology.MayerVietoris
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
 # Pullback of sheaf cohomology
@@ -39,6 +41,31 @@ formalised here.) In degree zero it is restriction of global sections:
   connecting homomorphisms of a short exact sequence and its image under `pb`.
 * `CategoryTheory.Sheaf.H.equiv₀_pullback_sheafPullback`: for a morphism of sites, the pullback
   in degree zero is restriction of global sections along the unit of `u^* ⊣ u_*`.
+
+## Cohomology over objects and Mayer-Vietoris sequences
+
+The same construction applies to the cohomology `Hⁿ(U, G) = Ext^n(ℤ[U], G)` over an object `U` of
+the site, where `ℤ[U]` is the free abelian sheaf on `U`. Now the comparison is a natural
+transformation `c : ℤ[u(-)] ⟶ pb ℤ[-]` along a functor `u : C ⥤ D`; for a continuous functor `u`
+with pullback `u^*` it is `CategoryTheory.Functor.freeYonedaSheafToSheafPullback`. Given a
+morphism `ψ : V ⟶ u(U)`, a class over `U` is sent by `pb` and precomposition with
+`ℤ[V] ⟶ ℤ[u(U)] ⟶ pb ℤ[U]` to a class over `V`. These maps commute with restriction on both
+sides, and they map the Mayer-Vietoris sequence of a Mayer-Vietoris square `S` in `C` to that of a
+Mayer-Vietoris square `S'` in `D` equipped with a morphism of squares from `S'` to the image of `S`
+under `u`. For the inverse image along a continuous map, this compares the Mayer-Vietoris
+sequences of two open subsets and of their preimages. Such comparisons drive Mayer-Vietoris
+inductions over the affine opens of a quasi-compact quasi-separated scheme, transporting a
+statement about the cohomology of quasi-coherent sheaves from affine opens to the whole scheme.
+
+* `CategoryTheory.Sheaf.H'.pullback`: the pullback `Hⁿ(U, G) ⟶ Hⁿ(V, pb G)` along `ψ`.
+* `CategoryTheory.Sheaf.H'.pullback_comp_map`, `map_comp_pullback`: compatibility with
+  restriction.
+* `CategoryTheory.Sheaf.H'.toBiprod_comp_pullback`, `fromBiprod_comp_pullback`,
+  `δ_comp_pullback`, and `mayerVietorisSequencePullback`: the morphism between the
+  Mayer-Vietoris sequences.
+* `CategoryTheory.Sheaf.H'.cohomologyZeroSectionsEquiv_pullback_sheafPullback`: for a morphism
+  of sites, the pullback in degree zero is the unit of `u^* ⊣ u_*` on sections over `U`,
+  followed by restriction along `ψ`.
 -/
 
 public section
@@ -187,3 +214,288 @@ lemma equiv₀_pullback_sheafPullback {T : C} (hT : IsTerminal T) (huT : IsTermi
   rfl
 
 end CategoryTheory.Sheaf.H
+
+namespace CategoryTheory.Sheaf.H'
+
+open TauCeti TauCeti.CategoryTheory
+
+universe v u₁ u₂
+
+variable {C : Type u₁} [Category.{v} C] {J : GrothendieckTopology C}
+  {D : Type u₂} [Category.{v} D] {K : GrothendieckTopology D}
+  [HasSheafify J AddCommGrpCat.{v}] [HasSheafify K AddCommGrpCat.{v}]
+  (pb : Sheaf J AddCommGrpCat.{v} ⥤ Sheaf K AddCommGrpCat.{v}) [pb.Additive]
+  {u : C ⥤ D} (c : u ⋙ freeYonedaSheafFunctor K ⟶ freeYonedaSheafFunctor J ⋙ pb)
+
+noncomputable section
+
+section Comparison
+
+omit [pb.Additive] in
+@[reassoc]
+private lemma map_comp_app_comp_map {U₁ U₂ : C} {V : D} (ψ : V ⟶ u.obj U₁) (i : U₁ ⟶ U₂) :
+    (freeYonedaSheafFunctor K).map ψ ≫ c.app U₁ ≫ pb.map ((freeYonedaSheafFunctor J).map i) =
+      (freeYonedaSheafFunctor K).map (ψ ≫ u.map i) ≫ c.app U₂ := by
+  rw [Functor.map_comp, Category.assoc]
+  exact congrArg _ (c.naturality i).symm
+
+omit [pb.Additive] in
+private lemma map_comp_app_comp_map_of_comm {U₁ U₂ : C} {V₁ V₂ : D} (ψ₁ : V₁ ⟶ u.obj U₁)
+    (ψ₂ : V₂ ⟶ u.obj U₂) (i : U₁ ⟶ U₂) (j : V₁ ⟶ V₂) (h : j ≫ ψ₂ = ψ₁ ≫ u.map i) :
+    ((freeYonedaSheafFunctor K).map ψ₁ ≫ c.app U₁) ≫ pb.map ((freeYonedaSheafFunctor J).map i) =
+      (freeYonedaSheafFunctor K).map j ≫ (freeYonedaSheafFunctor K).map ψ₂ ≫ c.app U₂ := by
+  rw [Category.assoc, map_comp_app_comp_map, ← h, Functor.map_comp, Category.assoc]
+
+/-- The square relating the first maps of the short complexes of free sheaves of two
+Mayer-Vietoris squares, in terms of the squares relating their components. -/
+private lemma comp_map_biprod_lift {A₁ A₂ A₃ : Sheaf K AddCommGrpCat.{v}}
+    {B₁ B₂ B₃ : Sheaf J AddCommGrpCat.{v}} {a₁ : A₁ ⟶ pb.obj B₁} {a₂ : A₂ ⟶ pb.obj B₂}
+    {a₃ : A₃ ⟶ pb.obj B₃} {x : B₁ ⟶ B₂} {x' : B₁ ⟶ B₃} {y : A₁ ⟶ A₂} {y' : A₁ ⟶ A₃}
+    (h : a₁ ≫ pb.map x = y ≫ a₂) (h' : a₁ ≫ pb.map x' = y' ≫ a₃) :
+    a₁ ≫ pb.map (biprod.lift x (-x')) =
+      biprod.lift y (-y') ≫ biprod.desc (a₂ ≫ pb.map biprod.inl) (a₃ ≫ pb.map biprod.inr) := by
+  rw [biprod.lift_desc, biprod.lift_eq, Functor.map_add, Functor.map_comp, Functor.map_comp,
+    Functor.map_neg, Preadditive.comp_add, Preadditive.neg_comp, Preadditive.neg_comp,
+    Preadditive.comp_neg, ← Category.assoc, h, ← Category.assoc, h', Category.assoc,
+    Category.assoc]
+
+omit [pb.Additive] in
+/-- The square relating the second maps of the short complexes of free sheaves of two
+Mayer-Vietoris squares, in terms of the squares relating their components. -/
+private lemma biprod_desc_comp_map {A₂ A₃ A₄ : Sheaf K AddCommGrpCat.{v}}
+    {B₂ B₃ B₄ : Sheaf J AddCommGrpCat.{v}} {a₂ : A₂ ⟶ pb.obj B₂} {a₃ : A₃ ⟶ pb.obj B₃}
+    {a₄ : A₄ ⟶ pb.obj B₄} {z : B₂ ⟶ B₄} {z' : B₃ ⟶ B₄} {w : A₂ ⟶ A₄} {w' : A₃ ⟶ A₄}
+    (h : a₂ ≫ pb.map z = w ≫ a₄) (h' : a₃ ≫ pb.map z' = w' ≫ a₄) :
+    biprod.desc (a₂ ≫ pb.map biprod.inl) (a₃ ≫ pb.map biprod.inr) ≫ pb.map (biprod.desc z z') =
+      biprod.desc w w' ≫ a₄ := by
+  apply biprod.hom_ext'
+  · rw [biprod.inl_desc_assoc, biprod.inl_desc_assoc, Category.assoc, ← Functor.map_comp,
+      biprod.inl_desc, h]
+  · rw [biprod.inr_desc_assoc, biprod.inr_desc_assoc, Category.assoc, ← Functor.map_comp,
+      biprod.inr_desc, h']
+
+/-- The short complex `ℤ[S'.X₁] ⟶ ℤ[S'.X₂] ⊞ ℤ[S'.X₃] ⟶ ℤ[S'.X₄]` of a Mayer-Vietoris square `S'`
+maps to the image under `pb` of that of `S`, through `ψ` and `c`. -/
+private def shortComplexMap [HasWeakSheafify J (Type v)] [HasWeakSheafify K (Type v)]
+    (S : J.MayerVietorisSquare) (S' : K.MayerVietorisSquare)
+    (ψ : S'.toSquare ⟶ S.toSquare.map u) :
+    S'.shortComplex ⟶ S.shortComplex.map pb where
+  τ₁ := (freeYonedaSheafFunctor K).map ψ.τ₁ ≫ c.app S.X₁
+  τ₂ := biprod.desc (((freeYonedaSheafFunctor K).map ψ.τ₂ ≫ c.app S.X₂) ≫ pb.map biprod.inl)
+      (((freeYonedaSheafFunctor K).map ψ.τ₃ ≫ c.app S.X₃) ≫ pb.map biprod.inr)
+  τ₃ := (freeYonedaSheafFunctor K).map ψ.τ₄ ≫ c.app S.X₄
+  comm₁₂ := comp_map_biprod_lift pb
+    (map_comp_app_comp_map_of_comm pb c ψ.τ₁ ψ.τ₂ S.f₁₂ S'.f₁₂ ψ.comm₁₂)
+    (map_comp_app_comp_map_of_comm pb c ψ.τ₁ ψ.τ₃ S.f₁₃ S'.f₁₃ ψ.comm₁₃)
+  comm₂₃ := biprod_desc_comp_map pb
+    (map_comp_app_comp_map_of_comm pb c ψ.τ₂ ψ.τ₄ S.f₂₄ S'.f₂₄ ψ.comm₂₄)
+    (map_comp_app_comp_map_of_comm pb c ψ.τ₃ ψ.τ₄ S.f₃₄ S'.f₃₄ ψ.comm₃₄)
+
+end Comparison
+
+variable [HasExt.{w} (Sheaf J AddCommGrpCat.{v})] [HasExt.{w} (Sheaf K AddCommGrpCat.{v})]
+  [PreservesFiniteLimits pb] [PreservesFiniteColimits pb]
+
+/-- The pullback `Hⁿ(U, G) ⟶ Hⁿ(V, pb G)` of the cohomology over an object `U` of `C` along an exact
+additive functor `pb` and a natural comparison `c : ℤ[u(-)] ⟶ pb ℤ[-]` of free abelian sheaves,
+for a morphism `ψ : V ⟶ u(U)` in `D`: a class in `Ext^n(ℤ[U], G)` is sent to its image under
+`pb`, precomposed with `ℤ[V] ⟶ ℤ[u(U)] ⟶ pb ℤ[U]`. -/
+def pullback (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V : D} (ψ : V ⟶ u.obj U) :
+    G.H' n U ⟶ (pb.obj G).H' n V :=
+  AddCommGrpCat.ofHom (((Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).precomp _
+    (zero_add n)).comp (pb.mapExtAddHom _ G n))
+
+/-- The defining formula of `pullback`. -/
+lemma pullback_apply (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V : D}
+    (ψ : V ⟶ u.obj U) (x : G.H' n U) :
+    pullback pb c G n ψ x = (Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
+      (Ext.mapExactFunctor pb x) (zero_add n) :=
+  (rfl)
+
+/-- Restricting the pullback along `j : V' ⟶ V` is pulling back along `j ≫ ψ`. -/
+@[reassoc]
+lemma pullback_comp_map (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V V' : D}
+    (ψ : V ⟶ u.obj U) (j : V' ⟶ V) :
+    pullback pb c G n ψ ≫ ((pb.obj G).cohomologyPresheaf n).map j.op =
+      pullback pb c G n (j ≫ ψ) := by
+  refine AddCommGrpCat.ext fun (x : Ext ((freeYonedaSheafFunctor J).obj U) G n) ↦ ?_
+  -- The groups `H'` are by definition `Ext` groups out of free sheaves, and the restriction maps
+  -- are precompositions with the induced maps of free sheaves.
+  change (Ext.mk₀ ((freeYonedaSheafFunctor K).map j)).comp
+      ((Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp (x.mapExactFunctor pb)
+        (zero_add n)) (zero_add n) =
+    (Ext.mk₀ ((freeYonedaSheafFunctor K).map (j ≫ ψ) ≫ c.app U)).comp (x.mapExactFunctor pb)
+      (zero_add n)
+  rw [Ext.mk₀_comp_mk₀_assoc, Functor.map_comp, Category.assoc]
+
+/-- Pulling back after restricting along `i : U₁ ⟶ U₂` is pulling back along `ψ ≫ u(i)`. -/
+@[reassoc]
+lemma map_comp_pullback (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U₁ U₂ : C} {V : D}
+    (i : U₁ ⟶ U₂) (ψ : V ⟶ u.obj U₁) :
+    (G.cohomologyPresheaf n).map i.op ≫ pullback pb c G n ψ =
+      pullback pb c G n (ψ ≫ u.map i) := by
+  refine AddCommGrpCat.ext fun (x : Ext ((freeYonedaSheafFunctor J).obj U₂) G n) ↦ ?_
+  -- As in `pullback_comp_map`, the restriction map is precomposition of `Ext` classes.
+  change (Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U₁)).comp
+      (((Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp x (zero_add n)).mapExactFunctor pb)
+        (zero_add n) =
+    (Ext.mk₀ ((freeYonedaSheafFunctor K).map (ψ ≫ u.map i) ≫ c.app U₂)).comp
+      (x.mapExactFunctor pb) (zero_add n)
+  rw [Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀, Ext.mk₀_comp_mk₀_assoc, Category.assoc,
+    map_comp_app_comp_map]
+
+section MayerVietoris
+
+variable [HasWeakSheafify J (Type v)] [HasWeakSheafify K (Type v)]
+  (S : J.MayerVietorisSquare) (S' : K.MayerVietorisSquare) (ψ : S'.toSquare ⟶ S.toSquare.map u)
+
+/-- The pullback commutes with the first maps of the Mayer-Vietoris sequences of `S` and `S'`,
+the sums of the restriction maps. -/
+@[reassoc]
+lemma toBiprod_comp_pullback (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) :
+    S.toBiprod G n ≫ biprod.map (pullback pb c G n ψ.τ₂) (pullback pb c G n ψ.τ₃) =
+      pullback pb c G n ψ.τ₄ ≫ S'.toBiprod (pb.obj G) n := by
+  obtain ⟨ψ₁, ψ₂, ψ₃, ψ₄, -, -, h₂, h₃⟩ := ψ
+  -- The components of `ψ` land in the objects of `S.toSquare.map u`, which are the images under
+  -- `u` of those of `S` only after unfolding `Square.map`.
+  change S'.X₂ ⟶ u.obj S.X₂ at ψ₂
+  change S'.X₃ ⟶ u.obj S.X₃ at ψ₃
+  change S'.X₄ ⟶ u.obj S.X₄ at ψ₄
+  change S'.f₂₄ ≫ ψ₄ = ψ₂ ≫ u.map S.f₂₄ at h₂
+  change S'.f₃₄ ≫ ψ₄ = ψ₃ ≫ u.map S.f₃₄ at h₃
+  dsimp only
+  apply biprod.hom_ext
+  · simp only [GrothendieckTopology.MayerVietorisSquare.toBiprod, Category.assoc, biprod.map_fst,
+      biprod.lift_fst, biprod.lift_fst_assoc]
+    rw [map_comp_pullback, pullback_comp_map, h₂]
+  · simp only [GrothendieckTopology.MayerVietorisSquare.toBiprod, Category.assoc, biprod.map_snd,
+      biprod.lift_snd, biprod.lift_snd_assoc]
+    rw [map_comp_pullback, pullback_comp_map, h₃]
+
+/-- The pullback commutes with the middle maps of the Mayer-Vietoris sequences of `S` and `S'`,
+the differences of the restriction maps. -/
+@[reassoc]
+lemma fromBiprod_comp_pullback (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) :
+    S.fromBiprod G n ≫ pullback pb c G n ψ.τ₁ =
+      biprod.map (pullback pb c G n ψ.τ₂) (pullback pb c G n ψ.τ₃) ≫
+        S'.fromBiprod (pb.obj G) n := by
+  obtain ⟨ψ₁, ψ₂, ψ₃, ψ₄, h₂, h₃, -, -⟩ := ψ
+  -- As in `toBiprod_comp_pullback`, read the components of `ψ` on the objects of `S`.
+  change S'.X₁ ⟶ u.obj S.X₁ at ψ₁
+  change S'.X₂ ⟶ u.obj S.X₂ at ψ₂
+  change S'.X₃ ⟶ u.obj S.X₃ at ψ₃
+  change S'.f₁₂ ≫ ψ₂ = ψ₁ ≫ u.map S.f₁₂ at h₂
+  change S'.f₁₃ ≫ ψ₃ = ψ₁ ≫ u.map S.f₁₃ at h₃
+  dsimp only
+  apply biprod.hom_ext'
+  · simp only [GrothendieckTopology.MayerVietorisSquare.fromBiprod, biprod.inl_desc_assoc,
+      biprod.inl_map_assoc, biprod.inl_desc]
+    rw [map_comp_pullback, pullback_comp_map, h₂]
+  · simp only [GrothendieckTopology.MayerVietorisSquare.fromBiprod, biprod.inr_desc_assoc,
+      biprod.inr_map_assoc, biprod.inr_desc, Preadditive.neg_comp, Preadditive.comp_neg]
+    rw [map_comp_pullback, pullback_comp_map, h₃]
+
+/-- The pullback commutes with the connecting maps of the Mayer-Vietoris sequences of `S` and
+`S'`. -/
+@[reassoc]
+lemma δ_comp_pullback (G : Sheaf J AddCommGrpCat.{v}) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    S.δ G n₀ n₁ h ≫ pullback pb c G n₁ ψ.τ₄ =
+      pullback pb c G n₀ ψ.τ₁ ≫ S'.δ (pb.obj G) n₀ n₁ h := by
+  let φ := shortComplexMap pb c S S' ψ
+  have hS := S.shortComplex_shortExact
+  have hS' := S'.shortComplex_shortExact
+  refine AddCommGrpCat.ext fun (x : Ext S.shortComplex.X₁ G n₀) ↦ ?_
+  -- The connecting maps are precomposition with the extension classes of the short exact
+  -- sequences of free sheaves, and `pullback` is precomposition after applying `pb`; the
+  -- extension classes are compatible along the morphism `φ` of short exact sequences.
+  change (Ext.mk₀ φ.τ₃).comp ((hS.extClass.comp x (by lia)).mapExactFunctor pb) (zero_add n₁) =
+    hS'.extClass.comp ((Ext.mk₀ φ.τ₁).comp (x.mapExactFunctor pb) (zero_add n₀)) (by lia)
+  rw [Ext.mapExactFunctor_comp, Ext.mapExactFunctor_extClass,
+    ← Ext.comp_assoc _ _ _ (zero_add 1) (show 1 + n₀ = n₁ by lia) (show 0 + 1 + n₀ = n₁ by lia),
+    ← hS'.extClass_naturality (hS.map_of_exact pb) φ,
+    Ext.comp_assoc _ _ _ (add_zero 1) (zero_add n₀) (show 1 + 0 + n₀ = n₁ by lia)]
+
+/-- The pullback as a morphism from the Mayer-Vietoris sequence of `G` for `S` to the
+Mayer-Vietoris sequence of `pb G` for `S'`. -/
+def mayerVietorisSequencePullback (G : Sheaf J AddCommGrpCat.{v}) (n₀ n₁ : ℕ)
+    (h : n₀ + 1 = n₁) :
+    S.sequence G n₀ n₁ h ⟶ S'.sequence (pb.obj G) n₀ n₁ h :=
+  ComposableArrows.homMk₅ (pullback pb c G n₀ ψ.τ₄)
+    (biprod.map (pullback pb c G n₀ ψ.τ₂) (pullback pb c G n₀ ψ.τ₃))
+    (pullback pb c G n₀ ψ.τ₁) (pullback pb c G n₁ ψ.τ₄)
+    (biprod.map (pullback pb c G n₁ ψ.τ₂) (pullback pb c G n₁ ψ.τ₃))
+    (pullback pb c G n₁ ψ.τ₁)
+    (toBiprod_comp_pullback pb c S S' ψ G n₀)
+    (fromBiprod_comp_pullback pb c S S' ψ G n₀)
+    (δ_comp_pullback pb c S S' ψ G n₀ n₁ h)
+    (toBiprod_comp_pullback pb c S S' ψ G n₁)
+    (fromBiprod_comp_pullback pb c S S' ψ G n₁)
+
+end MayerVietoris
+
+end
+
+end CategoryTheory.Sheaf.H'
+
+namespace CategoryTheory.Sheaf.H'
+
+open TauCeti TauCeti.CategoryTheory
+
+universe v u₁ u₂
+
+variable {C : Type u₁} [Category.{v} C] {J : GrothendieckTopology C}
+  {D : Type u₂} [Category.{v} D] {K : GrothendieckTopology D}
+  [HasSheafify J AddCommGrpCat.{v}] [HasSheafify K AddCommGrpCat.{v}]
+  [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] [HasExt.{v} (Sheaf K AddCommGrpCat.{v})]
+  (u : C ⥤ D) [u.IsContinuous J K]
+  [(u.sheafPushforwardContinuous AddCommGrpCat.{v} J K).IsRightAdjoint]
+  [PreservesFiniteLimits (u.sheafPullback AddCommGrpCat.{v} J K)]
+
+local instance : (u.sheafPullback AddCommGrpCat.{v} J K).Additive :=
+  Functor.additive_of_preserves_binary_products _
+
+local instance : PreservesFiniteColimits (u.sheafPullback AddCommGrpCat.{v} J K) :=
+  letI := (u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).leftAdjoint_preservesColimits.{0, 0}
+  inferInstance
+
+/-- For a morphism of sites `u`, the pullback in degree zero, read on sections, is the unit
+`G(U) ⟶ (u^* G)(u(U))` of the adjunction `u^* ⊣ u_*` followed by restriction along
+`ψ : V ⟶ u(U)`. -/
+lemma cohomologyZeroSectionsEquiv_pullback_sheafPullback (G : Sheaf J AddCommGrpCat.{v})
+    {U : C} {V : D} (ψ : V ⟶ u.obj U) (x : G.H' 0 U) :
+    cohomologyZeroSectionsEquiv _ V (pullback (u.sheafPullback AddCommGrpCat.{v} J K)
+        (u.freeYonedaSheafToSheafPullback J K) G 0 ψ x) =
+      ((u.sheafPullback AddCommGrpCat.{v} J K).obj G).obj.map ψ.op
+        (((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app G).hom.app (op U)
+          (cohomologyZeroSectionsEquiv G U x)) := by
+  let pb := u.sheafPullback AddCommGrpCat.{v} J K
+  let g : (freeYonedaSheafFunctor J).obj U ⟶ G := Ext.addEquiv₀ (X := _) x
+  -- In degree zero, `pullback` composes the morphism `g` representing `x` with `pb` and with the
+  -- comparison of free sheaves.
+  have h₁ : Ext.addEquiv₀ (X := (freeYonedaSheafFunctor K).obj V)
+      (pullback pb (u.freeYonedaSheafToSheafPullback J K) G 0 ψ x) =
+      (freeYonedaSheafFunctor K).map ψ ≫ (u.freeYonedaSheafToSheafPullback J K).app U ≫
+        pb.map g :=
+    (ext_addEquiv₀_mk₀_comp _ _).trans (by
+      rw [Category.assoc]
+      exact congrArg _ (congrArg _ ((congrArg Ext.homEquiv₀
+        (congrFun (Ext.mapExactFunctor₀ pb _ _) x)).trans (Equiv.apply_symm_apply _ _))))
+  -- The unit of `u^* ⊣ u_*` is natural, so it carries the canonical section of `ℤ[U]`, pushed
+  -- forward along `g`, to the image under `u^* g` of its value on the canonical section.
+  have h₂ := congrArg (fun φ ↦ φ.hom.app (op U)
+    (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _)))
+    ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.naturality g)
+  dsimp only [Functor.id_obj, Functor.id_map, Functor.comp_map] at h₂
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply] at h₂
+  have h₃ := freeYonedaSheafSectionsEquiv_naturality_right J
+    (𝟙 ((freeYonedaSheafFunctor J).obj U)) g
+  rw [Category.id_comp] at h₃
+  rw [← h₃] at h₂
+  rw [cohomologyZeroSectionsEquiv_apply, h₁, freeYonedaSheafSectionsEquiv_naturality_left,
+    freeYonedaSheafSectionsEquiv_naturality_right,
+    Functor.freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app,
+    cohomologyZeroSectionsEquiv_apply]
+  exact congrArg _ h₂.symm
+
+end CategoryTheory.Sheaf.H'

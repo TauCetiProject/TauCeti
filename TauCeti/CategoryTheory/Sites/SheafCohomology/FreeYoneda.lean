@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.Adjunctions
 public import Mathlib.Algebra.Category.Grp.Abelian
 public import Mathlib.CategoryTheory.Adjunction.Additive
 public import Mathlib.CategoryTheory.Sites.Abelian
+public import Mathlib.CategoryTheory.Sites.Pullback
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import TauCeti.Algebra.Homology.Ext.Basic
 
@@ -40,7 +41,12 @@ naturally both in the object of the site and in the coefficient sheaf.
   `CategoryTheory.Sheaf.cohomologyPresheaf_zero_map_surjective`, transferring surjectivity of a
   restriction map of sections to degree-zero cohomology;
 * `TauCeti.CategoryTheory.mono_freeYonedaSheafFunctor_map`, saying that a monomorphism of site
-  objects induces a monomorphism between the corresponding free abelian sheaves.
+  objects induces a monomorphism between the corresponding free abelian sheaves;
+* `CategoryTheory.Functor.freeYonedaSheafToSheafPullback`, the comparison `ℤ[u(U)] ⟶ u^* ℤ[U]`
+  between free abelian sheaves along a continuous functor `u`, natural in `U` and an
+  isomorphism, and
+  `CategoryTheory.Functor.freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app`, its
+  description as the image of the canonical section of `ℤ[U]` under the unit of `u^* ⊣ u_*`.
 
 The equivalence composes the sheafification adjunction, the free-forgetful adjunction for abelian
 groups, and the Yoneda equivalence. This is the same model of the free abelian sheaf used
@@ -64,7 +70,12 @@ noncomputable section
 variable [HasSheafify J AddCommGrpCat.{v}]
 
 /-- The sheafification of the free abelian presheaf on `yoneda.obj U`, functorial in `U`. This is
-the source-object functor used in Mathlib's definition of `Sheaf.H'`. -/
+the source-object functor used in Mathlib's definition of `Sheaf.H'`.
+
+The body is exposed because Mathlib states `Sheaf.cohomologyPresheafFunctor` and the short complex
+`GrothendieckTopology.MayerVietorisSquare.shortComplex` with this composite unfolded, and maps
+built from this functor must match them definitionally. -/
+@[expose]
 noncomputable def freeYonedaSheafFunctor :
     C ⥤ _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v} :=
   yoneda ⋙ (Functor.whiskeringRight _ _ _).obj AddCommGrpCat.free ⋙
@@ -196,6 +207,15 @@ def cohomologyZeroSectionsEquiv (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat
     F.H' 0 U ≃+ F.obj.obj (op U) :=
   Abelian.Ext.addEquiv₀.trans (freeYonedaSheafSectionsEquiv J U F)
 
+/-- The degree-zero identification with sections sends a class to the section corresponding to
+the morphism out of the free abelian sheaf on `U` that the class represents. -/
+lemma cohomologyZeroSectionsEquiv_apply (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})
+    (U : C) (x : F.H' 0 U) :
+    cohomologyZeroSectionsEquiv F U x =
+      freeYonedaSheafSectionsEquiv J U F
+        (Abelian.Ext.addEquiv₀ (X := (freeYonedaSheafFunctor J).obj U) x) :=
+  (rfl)
+
 /-- The degree-zero identification with sections commutes with restriction. -/
 @[simp]
 lemma cohomologyZeroSectionsEquiv_naturality_left
@@ -260,3 +280,95 @@ instance mono_freeYonedaSheafFunctor_map {U V : C} (i : U ⟶ V) [Mono i] :
 end CategoryTheory
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+open TauCeti.CategoryTheory
+
+universe u₁ u₂
+
+variable {C : Type u₁} [Category.{v} C] (J : GrothendieckTopology C)
+  {D : Type u₂} [Category.{v} D] (K : GrothendieckTopology D)
+  [HasSheafify J AddCommGrpCat.{v}] [HasSheafify K AddCommGrpCat.{v}]
+  (u : C ⥤ D) [u.IsContinuous J K]
+  [(u.sheafPushforwardContinuous AddCommGrpCat.{v} J K).IsRightAdjoint]
+
+noncomputable section
+
+/-- The section of `u^* ℤ[U]` over `u(U)` given by the unit of `u^* ⊣ u_*` on the canonical
+section of `ℤ[U]` over `U`. -/
+private def freeYonedaSheafPullbackSection (U : C) :
+    ((u.sheafPullback AddCommGrpCat.{v} J K).obj ((freeYonedaSheafFunctor J).obj U)).obj.obj
+      (op (u.obj U)) :=
+  ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app
+    ((freeYonedaSheafFunctor J).obj U)).hom.app (op U)
+      (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _))
+
+/-- The comparison `ℤ[u(U)] ⟶ u^* ℤ[U]` from the free abelian sheaf on `u(U)` to the pullback
+along a continuous functor `u` of the free abelian sheaf on `U`, natural in `U`. It corresponds to
+the section of `u^* ℤ[U]` over `u(U)` that the unit of `u^* ⊣ u_*` assigns to the canonical
+section of `ℤ[U]` over `U`
+(`Functor.freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app`). -/
+def freeYonedaSheafToSheafPullback :
+    u ⋙ freeYonedaSheafFunctor K ⟶
+      freeYonedaSheafFunctor J ⋙ u.sheafPullback AddCommGrpCat.{v} J K where
+  app U := (freeYonedaSheafSectionsEquiv K (u.obj U) _).symm
+    (freeYonedaSheafPullbackSection J K u U)
+  naturality U U' i := by
+    apply (freeYonedaSheafSectionsEquiv K (u.obj U) _).injective
+    dsimp only [Functor.comp_map, Functor.comp_obj]
+    rw [freeYonedaSheafSectionsEquiv_naturality_left, freeYonedaSheafSectionsEquiv_naturality_right,
+      AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
+    -- Both sides are images of the canonical section of `ℤ[U']`: restrict it along `i` and apply
+    -- the unit, or apply the unit and restrict along `u(i)`.
+    have h₁ := congrArg (fun φ ↦ φ.hom.app (op U)
+      (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _)))
+      ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.naturality
+        ((freeYonedaSheafFunctor J).map i))
+    have h₂ : ((freeYonedaSheafFunctor J).map i).hom.app (op U)
+        (freeYonedaSheafSectionsEquiv J U _ (𝟙 _)) =
+        ((freeYonedaSheafFunctor J).obj U').obj.map i.op
+          (freeYonedaSheafSectionsEquiv J U' _ (𝟙 _)) := by
+      rw [← freeYonedaSheafSectionsEquiv_naturality_right,
+        ← freeYonedaSheafSectionsEquiv_naturality_left, Category.id_comp, Category.comp_id]
+    dsimp only [Functor.id_obj, Functor.id_map, Functor.comp_map] at h₁
+    simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+      ConcreteCategory.comp_apply, h₂, NatTrans.naturality_apply] at h₁
+    exact h₁
+
+/-- Under `freeYonedaSheafSectionsEquiv`, the comparison `ℤ[u(U)] ⟶ u^* ℤ[U]` is the section of
+`u^* ℤ[U]` over `u(U)` that the unit of `u^* ⊣ u_*` assigns to the canonical section of `ℤ[U]`. -/
+lemma freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app (U : C) :
+    freeYonedaSheafSectionsEquiv K (u.obj U) _ ((u.freeYonedaSheafToSheafPullback J K).app U) =
+      ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app
+        ((freeYonedaSheafFunctor J).obj U)).hom.app (op U)
+          (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _)) :=
+  AddEquiv.apply_symm_apply _ _
+
+/-- The comparison `ℤ[u(U)] ⟶ u^* ℤ[U]` is an isomorphism: maps out of both sheaves into an abelian
+sheaf `G` on `(D, K)` correspond to sections of `G` over `u(U)`. -/
+instance (U : C) : IsIso ((u.freeYonedaSheafToSheafPullback J K).app U) := by
+  rw [isIso_iff_coyoneda_map_bijective]
+  intro G
+  let adj := u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K
+  -- Read on sections over `u(U)`, precomposition with the comparison is the adjunction
+  -- bijection followed by evaluation on the canonical section of `ℤ[U]`.
+  have : (freeYonedaSheafSectionsEquiv K (u.obj U) G) ∘
+      (fun g ↦ (u.freeYonedaSheafToSheafPullback J K).app U ≫ g) =
+      (freeYonedaSheafSectionsEquiv J U
+        ((u.sheafPushforwardContinuous AddCommGrpCat.{v} J K).obj G)) ∘ adj.homEquiv _ _ := by
+    ext g
+    dsimp only [Function.comp_apply]
+    rw [freeYonedaSheafSectionsEquiv_naturality_right,
+      freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app, Adjunction.homEquiv_unit,
+      ← Category.id_comp (adj.unit.app _ ≫ _), freeYonedaSheafSectionsEquiv_naturality_right]
+    rfl
+  exact (Function.Bijective.of_comp_iff' (freeYonedaSheafSectionsEquiv K (u.obj U) G).bijective
+    _).1 (this ▸ (freeYonedaSheafSectionsEquiv J U _).bijective.comp (adj.homEquiv _ _).bijective)
+
+instance : IsIso (u.freeYonedaSheafToSheafPullback J K) :=
+  NatIso.isIso_of_isIso_app _
+
+end
+
+end CategoryTheory.Functor

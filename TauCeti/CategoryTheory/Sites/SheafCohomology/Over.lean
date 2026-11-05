@@ -50,26 +50,13 @@ variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (U : C)
   [HasSheafify J AddCommGrpCat.{v}] [HasSheafify (J.over U) AddCommGrpCat.{v}]
   [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint]
 
-private def extendedSectionsCorepresentation (V : Over U) :
-    ((sheafSections J AddCommGrpCat.{v}).obj (op V.left) ⋙ forget AddCommGrpCat).CorepresentableBy
-      (((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J).obj
-        ((freeYonedaSheafFunctor (J.over U)).obj V)) where
-  homEquiv :=
-    ((Over.forget U).sheafAdjunctionContinuous AddCommGrpCat.{v} (J.over U) J).homEquiv _ _ |>.trans
-      (freeYonedaSheafSectionsEquiv (J.over U) V _).toEquiv
-  homEquiv_comp g f := by
-    let adj := (Over.forget U).sheafAdjunctionContinuous AddCommGrpCat.{v} (J.over U) J
-    exact (congrArg (freeYonedaSheafSectionsEquiv (J.over U) V _)
-      (adj.homEquiv_naturality_right f g)).trans
-      (freeYonedaSheafSectionsEquiv_naturality_right (J.over U) _
-        ((J.overPullback AddCommGrpCat.{v} U).map g))
-
 /-- Extension to the ambient site sends the free abelian sheaf on `V : Over U` to the free
-abelian sheaf on `V.left`. -/
+abelian sheaf on `V.left`: the inverse of the comparison
+`CategoryTheory.Functor.freeYonedaSheafToSheafPullback` for the forgetful functor. -/
 def sheafPullbackFreeYonedaIso (V : Over U) :
     ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J).obj
       ((freeYonedaSheafFunctor (J.over U)).obj V) ≅ (freeYonedaSheafFunctor J).obj V.left :=
-  (extendedSectionsCorepresentation J U V).uniqueUpToIso (freeYonedaSheafCorepresentableBy J V.left)
+  (asIso (((Over.forget U).freeYonedaSheafToSheafPullback (J.over U) J).app V)).symm
 
 end
 
