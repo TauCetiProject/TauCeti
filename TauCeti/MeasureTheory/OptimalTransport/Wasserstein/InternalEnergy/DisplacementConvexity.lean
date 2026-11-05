@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 import TauCeti.Analysis.Convex.McCannCondition
+import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 import TauCeti.MeasureTheory.OptimalTransport.Brenier
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 
@@ -241,7 +242,7 @@ theorem internalEnergy_map_gradient (hU0 : U 0 = 0) (hf : Convex ℝ {p : E × �
   have hsing (ε : ℝ) : (ε * recessionConstant U).toENNReal * (μ.map G).singularPart ρ univ =
       ∫⁻ x in Z₀, ENNReal.ofReal (ε * (L * (μ.rnDeriv ρ x).toReal)) ∂ρ := by
     rw [hσ]
-    exact toENNReal_mul_measure_eq_setLIntegral_ofReal_mul_rnDeriv hμ hZ₀m hL ε
+    exact Measure.toENNReal_mul_measure_eq_setLIntegral_ofReal_mul_rnDeriv hμ hZ₀m hL ε
   -- The absolutely continuous part, by the change of variables along the gradient.
   have hac (ε : ℝ) : ∫⁻ y, ENNReal.ofReal (ε * U ((μ.map G).rnDeriv ρ y).toReal) ∂ρ =
       ∫⁻ x, ENNReal.ofReal (ε * D.indicator (fun x =>

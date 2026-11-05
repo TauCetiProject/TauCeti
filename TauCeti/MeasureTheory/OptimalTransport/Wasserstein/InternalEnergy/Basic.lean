@@ -197,27 +197,6 @@ theorem internalEnergy_eq_potentialEnergy_of_lintegral_eq {W : X → ℝ}
   · simp only [h, ↓reduceIte, potentialEnergy_eq_top_iff.2 h]
   · simp only [h, ↓reduceIte, potentialEnergy_of_lintegral_ne_top h]
 
-/-- For `μ ≪ m` σ-finite, a measurable set `Z` and a real `L` which is the extended real `c`
-unless `μ Z = 0`, the singular contribution `(ε c)⁺ μ(Z)` is the integral over `Z` of the positive
-part of `ε L dμ/dm`. -/
-theorem toENNReal_mul_measure_eq_setLIntegral_ofReal_mul_rnDeriv [SigmaFinite μ] [SigmaFinite m]
-    (hμ : μ ≪ m) {Z : Set X} (hZ : MeasurableSet Z) {c : EReal} {L : ℝ}
-    (hL : c = L ∨ μ Z = 0) (ε : ℝ) :
-    (ε * c).toENNReal * μ Z =
-      ∫⁻ x in Z, ENNReal.ofReal (ε * (L * (μ.rnDeriv m x).toReal)) ∂m := by
-  rcases hL with hL | hL
-  · rw [hL, ← EReal.coe_mul, EReal.real_coe_toENNReal, ← Measure.setLIntegral_rnDeriv hμ Z,
-      ← lintegral_const_mul _ (Measure.measurable_rnDeriv _ _)]
-    refine setLIntegral_congr_fun_ae hZ ((Measure.rnDeriv_ne_top μ m).mono fun x hx _ => ?_)
-    rw [← mul_assoc, ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx]
-  · rw [hL, mul_zero]
-    have h0 := Measure.setLIntegral_rnDeriv hμ Z
-    rw [hL, setLIntegral_eq_zero_iff hZ (Measure.measurable_rnDeriv _ _)] at h0
-    symm
-    rw [setLIntegral_eq_zero_iff hZ (by fun_prop)]
-    filter_upwards [h0] with x hx hxZ
-    simp [hx hxZ]
-
 /-- The internal energy of the zero measure is `0` when `U 0 = 0`. -/
 @[simp]
 theorem internalEnergy_zero_measure (hU : U 0 = 0) (m : Measure X) :
