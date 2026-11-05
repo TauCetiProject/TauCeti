@@ -216,6 +216,18 @@ variable {R} {m n p : ℕ}
   rw [apply_symm_apply] at h
   exact h.symm
 
+@[simp] theorem kroneckerLid_symm_apply (v : Fin n → R) (j : Fin n) :
+    (kroneckerLid R n).symm v (finProdFinEquiv (0, j)) = v j := by
+  have h := kroneckerLid_apply ((kroneckerLid R n).symm v) j
+  rw [apply_symm_apply] at h
+  exact h.symm
+
+@[simp] theorem kroneckerRid_symm_apply (v : Fin n → R) (i : Fin n) :
+    (kroneckerRid R n).symm v (finProdFinEquiv (i, 0)) = v i := by
+  have h := kroneckerRid_apply ((kroneckerRid R n).symm v) i
+  rw [apply_symm_apply] at h
+  exact h.symm
+
 /-- Swapping Kronecker coordinates twice is the identity. -/
 @[simp] theorem kroneckerComm_symm (m n : ℕ) :
     (kroneckerComm R m n).symm = kroneckerComm R n m := by
