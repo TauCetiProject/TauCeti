@@ -43,6 +43,9 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
   `lean/Pcf/Stacks/Common/EtaleNormal.lean`, where it is
   `Pcf.Stacks.isIntegrallyClosedIn_of_isLocalization`.
+* `TauCeti.IsLocalization.exists_mul_eq_mul_of_isIntegral_mk'`: an element of a localization of
+  `R` at nonzerodivisors which is integral over `R` lies in `R_q` for every prime `q` with `R_q`
+  an integrally closed domain.
 -/
 
 public section
@@ -257,6 +260,46 @@ theorem IsLocalization.isIntegrallyClosedIn (M : Submonoid R) [IsLocalization M 
     exact e'.symm
 
 end IsIntegrallyClosedIn
+
+section IsIntegral
+
+open scoped nonZeroDivisors
+
+variable {B : Type*} [CommRing B] {T : Submonoid B} {E : Type*} [CommRing E] [Algebra B E]
+  [IsLocalization T E]
+
+/-- Let `q` be a prime of `B` with `B_q` an integrally closed domain, and `x / t` an element of a
+localization of `B` at nonzerodivisors which is integral over `B`. Then `x / t` lies in `B_q`:
+there are `b, u, w ∈ B` with `u, w ∉ q` and `w b t = w u x`. -/
+theorem IsLocalization.exists_mul_eq_mul_of_isIntegral_mk' (hT : T ≤ B⁰) (x : B) (t : T)
+    (hx : IsIntegral B (IsLocalization.mk' E x t)) (q : Ideal B) [q.IsPrime]
+    [IsDomain (Localization.AtPrime q)] [IsIntegrallyClosed (Localization.AtPrime q)] :
+    ∃ b u w : B, u ∉ q ∧ w ∉ q ∧ w * (b * t) = w * (u * x) := by
+  let Bq := Localization.AtPrime q
+  let K := FractionRing Bq
+  -- Elements of `T` stay nonzero in the domain `B_q`, so they become units in its fraction field.
+  have hunit (s : T) : IsUnit (algebraMap B K s) := by
+    rw [IsScalarTower.algebraMap_apply B Bq K, isUnit_iff_ne_zero,
+      map_ne_zero_iff _ (IsFractionRing.injective Bq K)]
+    intro h
+    obtain ⟨c, hc⟩ := (IsLocalization.map_eq_zero_iff q.primeCompl Bq _).mp h
+    exact c.2 (by rw [(mem_nonZeroDivisors_iff_right.mp (hT s.2)) c hc]; exact q.zero_mem)
+  let φ : E →ₐ[B] K := IsLocalization.liftAlgHom (M := T) (f := Algebra.ofId B K) hunit
+  -- The image of `x / t` in the fraction field of `B_q` is integral, hence lies in `B_q`.
+  obtain ⟨y, hy⟩ := (IsIntegrallyClosed.isIntegral_iff (R := Bq) (K := K)).mp
+    ((hx.map φ).tower_top (A := Bq))
+  obtain ⟨⟨b, u⟩, rfl⟩ := IsLocalization.mk'_surjective q.primeCompl y
+  have hxt : φ (IsLocalization.mk' E x t) * algebraMap B K t = algebraMap B K x := by
+    rw [← φ.commutes, ← map_mul, IsLocalization.mk'_spec, φ.commutes]
+  rw [← hy, IsScalarTower.algebraMap_apply B Bq K, IsScalarTower.algebraMap_apply B Bq K,
+    ← map_mul, (IsFractionRing.injective Bq K).eq_iff] at hxt
+  have hbt : algebraMap B Bq (b * t) = algebraMap B Bq (u * x) := by
+    rw [map_mul, map_mul, ← hxt, ← mul_assoc, mul_comm (algebraMap B Bq u),
+      IsLocalization.mk'_spec_mk]
+  obtain ⟨w, hw⟩ := (IsLocalization.eq_iff_exists q.primeCompl Bq).mp hbt
+  exact ⟨b, u, w, u.2, w.2, hw⟩
+
+end IsIntegral
 
 end TauCeti
 
