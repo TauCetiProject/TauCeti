@@ -81,6 +81,20 @@ private theorem Iio_eq_setOf_val_lt {n : ℕ} (j : Fin n) :
     Set.Iio j = {l : Fin n | l.val < j.val} :=
   Set.ext fun _ ↦ Fin.lt_def
 
+/-- **Partial pivoting at one place**: a nonzero vector has a row `r₀` maximizing
+`v (L r y) / ν r`, and the value there is positive. -/
+private theorem exists_pivot {ρ : Type*} [Finite ρ] (v : AbsoluteValue K ℝ)
+    (L : ρ → Module.Dual K V) (hL : ∀ z, (∀ r, L r z = 0) → z = 0) {ν : ρ → ℝ}
+    (hν : ∀ r, 0 < ν r) {y : V} (hy : y ≠ 0) :
+    ∃ r₀, 0 < v (L r₀ y) ∧ ∀ r, v (L r y) / ν r ≤ v (L r₀ y) / ν r₀ := by
+  obtain ⟨r₁, hr₁⟩ : ∃ r, L r y ≠ 0 := by
+    by_contra! h
+    exact hy (hL _ h)
+  have : Nonempty ρ := ⟨r₁⟩
+  obtain ⟨r₀, hr₀⟩ := Finite.exists_max fun r ↦ v (L r y) / ν r
+  exact ⟨r₀, (div_pos_iff_of_pos_right (hν r₀)).mp
+    ((div_pos (v.pos hr₁) (hν r₁)).trans_le (hr₀ r₁)), hr₀⟩
+
 /-- **Elimination with partial pivoting at one place.** If the forms `L r` separate the points of
 `V` and `x 0, …, x (n - 1)` are independent in the triangular sense, then there are vectors
 `z j ∈ x j + span (x l, l < j)` and rows `π j` with `L (π i) (z j) = 0` for `i < j` and
@@ -97,16 +111,7 @@ private theorem exists_triangular {ρ : Type*} [Finite ρ] (v : AbsoluteValue K 
       fun j ↦ j.elim0⟩
   | n + 1, x, hx, M, hM => by
     -- Pivot: the row maximizing `v (L r (x 0)) / ν r`, where `L r (x 0) ≠ 0`.
-    have hx0 : x 0 ≠ 0 := fun h ↦ hx 0 (h ▸ zero_mem _)
-    obtain ⟨r₁, hr₁⟩ : ∃ r, L r (x 0) ≠ 0 := by
-      by_contra! h
-      exact hx0 (hL _ h)
-    have : Nonempty ρ := ⟨r₁⟩
-    obtain ⟨r₀, hr₀⟩ := Finite.exists_max fun r ↦ v (L r (x 0)) / ν r
-    have hpos : 0 < v (L r₀ (x 0)) := by
-      have h₁ : 0 < v (L r₁ (x 0)) / ν r₁ := div_pos (v.pos hr₁) (hν r₁)
-      have h₂ := (h₁.trans_le (hr₀ r₁))
-      exact (div_pos_iff_of_pos_right (hν r₀)).mp h₂
+    obtain ⟨r₀, hpos, hr₀⟩ := exists_pivot v L hL hν (y := x 0) fun h ↦ hx 0 (h ▸ zero_mem _)
     have hp : L r₀ (x 0) ≠ 0 := fun h ↦ by simp [h] at hpos
     -- Eliminate the pivot row from the later vectors.
     set t : Fin n → K := fun j ↦ L r₀ (x j.succ) / L r₀ (x 0) with ht
@@ -132,39 +137,31 @@ private theorem exists_triangular {ρ : Type*} [Finite ρ] (v : AbsoluteValue K 
       exists_triangular v hc hv L hL hν n x' hx'ind (fun j ↦ c * M j.succ) hM'
     -- The later vectors vanish in the pivot row.
     have hz'r₀ (j : Fin n) : L r₀ (z' j) = 0 := by
-      have hker : span K (x' '' Set.Iio j) ≤ LinearMap.ker (L r₀) := by
-        rw [span_le]
-        rintro _ ⟨l, -, rfl⟩
-        exact hx'r₀ l
-      have := hker (hz' j)
-      rw [LinearMap.mem_ker, map_sub, hx'r₀, sub_zero] at this
-      exact this
-    refine ⟨Fin.cons (x 0) z', Fin.cons r₀ π', fun j ↦ ?_, fun i j hij ↦ ?_, fun j ↦ ?_,
-      fun j r ↦ ?_⟩
-    · cases j using Fin.cases with
-      | zero => simp
-      | succ j =>
-        have hmem := sub_mem (hspan j (hz' j))
+      have := (span_le (p := LinearMap.ker (L r₀))).mpr (by rintro _ ⟨l, -, rfl⟩; exact hx'r₀ l)
+        (hz' j)
+      rwa [LinearMap.mem_ker, map_sub, hx'r₀, sub_zero] at this
+    refine ⟨Fin.cons (x 0) z', Fin.cons r₀ π', Fin.cases (by simp) fun j ↦ ?sub, fun i j hij ↦ ?tri,
+      Fin.cases (by simpa using hp) fun j ↦ by simpa using hpiv' j,
+      Fin.cases (fun r ↦ ?bd₀) fun j r ↦ ?bd⟩
+    case sub =>
+      have hmem := sub_mem (hspan j (hz' j))
           (smul_mem _ (t j) (subset_span ⟨0, Fin.succ_pos j, rfl⟩))
-        simp only [hx', sub_sub, sub_add_cancel] at hmem
-        simpa only [Fin.cons_succ] using hmem
-    · cases j using Fin.cases with
+      simp only [hx', sub_sub, sub_add_cancel] at hmem
+      simpa only [Fin.cons_succ] using hmem
+    case tri =>
+      cases j using Fin.cases with
       | zero => exact absurd hij (Fin.not_lt_zero i)
       | succ j =>
         cases i using Fin.cases with
         | zero => simpa using hz'r₀ j
         | succ i => simpa using hzero' i j (Fin.succ_lt_succ_iff.mp hij)
-    · cases j using Fin.cases with
-      | zero => simpa using hp
-      | succ j => simpa using hpiv' j
-    · cases j using Fin.cases with
-      | zero =>
-        have h₀ : 0 ≤ ν r * M 0 := (v.nonneg _).trans (hM 0 r)
-        simpa using (hM 0 r).trans (le_mul_of_one_le_left h₀ (one_le_pow₀ hc))
-      | succ j =>
-        simp only [Fin.cons_succ]
-        calc v (L r (z' j)) ≤ c ^ n * (ν r * (c * M j.succ)) := hbd' j r
-          _ = c ^ (n + 1) * (ν r * M j.succ) := by ring
+    case bd₀ =>
+      have h₀ : 0 ≤ ν r * M 0 := (v.nonneg _).trans (hM 0 r)
+      simpa using (hM 0 r).trans (le_mul_of_one_le_left h₀ (one_le_pow₀ hc))
+    case bd =>
+      simp only [Fin.cons_succ]
+      calc v (L r (z' j)) ≤ c ^ n * (ν r * (c * M j.succ)) := hbd' j r
+        _ = c ^ (n + 1) * (ν r * M j.succ) := by ring
 
 /-- **Gluing by simultaneous approximation.** Let `z v j ∈ x j + span (x l, l < j)` for every
 absolute value `v`. A target `w v` in the span of the `z v l` with `l < s` is matched, at all
@@ -281,6 +278,16 @@ private theorem apply_add_sum_le {m : ℕ} {v : AbsoluteValue K ℝ} {c : ℝ} (
         rw [hB]
         ring
 
+/-- The pivot rows of a triangular family are distinct. -/
+private theorem injective_of_triangular {m : ℕ} {ρ : Type*} {L : ρ → Module.Dual K V}
+    {z : Fin m → V} {π : Fin m → ρ} (h₀ : ∀ i j, i < j → L (π i) (z j) = 0)
+    (hp : ∀ j, L (π j) (z j) ≠ 0) : Function.Injective π := by
+  intro i j hij
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with h | h
+  · exact hp j (hij ▸ h₀ i j h)
+  · exact hp i (hij.symm ▸ h₀ j i h)
+
 /-- **Evertse's lemma** (Evertse; Bombieri–Gubler, Lemma 7.5.29), for a field `K` with a set `T`
 of absolute values at which a subset `R` approximates every family of targets simultaneously,
 `v (ξ + γ v) ≤ A v`. Let `x 0, …, x (m - 1)` be linearly independent in `V`, and at each `v ∈ T`
@@ -307,19 +314,7 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
           ν v (π v i) * min (μ v i) (μ v j) := by
   classical
   have hxI (j : Fin m) : x j ∉ span K (x '' Set.Iio j) := hx.notMem_span_image (lt_irrefl j)
-  -- The growth factor of one addition at `v`: `1` if `v` is nonarchimedean, `2` otherwise.
-  set c : AbsoluteValue K ℝ → ℝ := fun v ↦ if IsNonarchimedean v then 1 else 2 with hc_def
-  have hc (v : AbsoluteValue K ℝ) : 1 ≤ c v := by
-    simp only [hc_def]
-    split_ifs <;> norm_num
-  have hc₂ (v : AbsoluteValue K ℝ) : c v ≤ 2 := by
-    simp only [hc_def]
-    split_ifs <;> norm_num
-  have hcv (v : AbsoluteValue K ℝ) (a b : K) : v (a + b) ≤ c v * max (v a) (v b) := by
-    by_cases h : IsNonarchimedean v
-    · simpa [hc_def, h] using h a b
-    · simp only [hc_def, h, ↓reduceIte]
-      linarith [v.add_le a b, le_max_left (v a) (v b), le_max_right (v a) (v b)]
+  obtain ⟨c, hc, hc₂, hcv, hc₁⟩ := exists_forall_apply_add_le_mul_max (R := K)
   -- Step 1: an exactly triangular family at each place of `T`.
   have hloc (v : AbsoluteValue K ℝ) : ∃ (z : Fin m → V) (π : Fin m → Fin m),
       (∀ j, z j - x j ∈ span K (x '' Set.Iio j)) ∧ (v ∈ T →
@@ -331,13 +326,8 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
       exact ⟨z, π, h₁, fun _ ↦ ⟨h₂, h₃, h₄⟩⟩
     · exact ⟨x, id, fun j ↦ by simp, fun h ↦ absurd h hv⟩
   choose z π hzx hz using hloc
-  have hπ (v : AbsoluteValue K ℝ) (hv : v ∈ T) : Function.Injective (π v) := by
-    intro i j hij
-    obtain ⟨h₀, hp, -⟩ := hz v hv
-    by_contra hne
-    rcases lt_or_gt_of_ne hne with h | h
-    · exact hp j (hij ▸ h₀ i j h)
-    · exact hp i (hij.symm ▸ h₀ j i h)
+  have hπ (v : AbsoluteValue K ℝ) (hv : v ∈ T) : Function.Injective (π v) :=
+    injective_of_triangular (hz v hv).1 (hz v hv).2.1
   set σ : AbsoluteValue K ℝ → Equiv.Perm (Fin m) := fun v ↦
     if hv : v ∈ T then Equiv.ofBijective (π v) (Finite.injective_iff_bijective.mp (hπ v hv))
     else 1 with hσ_def
@@ -369,8 +359,7 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
       have := (hν v hv (σ v i)).le
       positivity
     rw [mul_assoc, mul_assoc]
-    gcongr
-    exact hc₂ v
-  · simpa [hc_def, hna, max_eq_left hA] using key v hv i j
+    exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (zero_le_one.trans (hc v)) (hc₂ v) _) h₀
+  · simpa [hc₁ v hna, max_eq_left hA] using key v hv i j
 
 end AbsoluteValue

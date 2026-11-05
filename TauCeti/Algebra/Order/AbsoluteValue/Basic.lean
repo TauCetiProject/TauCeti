@@ -7,11 +7,14 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
+public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Finset.Card
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
 
 /-!
 # Sums under a weakened triangle inequality
@@ -76,5 +79,21 @@ theorem apply_sub_div_mul_le {K F : Type*} [DivisionRing K] [Field F] [LinearOrd
     _ ≤ c * (s * M) := by
         rw [map_neg_eq_map]
         exact mul_le_mul_of_nonneg_left (max_le ha hsub) hc
+
+/-- **The growth factor of one addition**: a choice of constant `c v ∈ [1, 2]` with
+`v (a + b) ≤ c v * max (v a) (v b)`, namely `1` at a nonarchimedean absolute value and `2`
+otherwise. -/
+theorem exists_forall_apply_add_le_mul_max {R : Type*} [Semiring R] :
+    ∃ c : AbsoluteValue R ℝ → ℝ, (∀ v, 1 ≤ c v) ∧
+    (∀ v, c v ≤ 2) ∧ (∀ (v : AbsoluteValue R ℝ) a b, v (a + b) ≤ c v * max (v a) (v b)) ∧
+    ∀ v : AbsoluteValue R ℝ, IsNonarchimedean v → c v = 1 := by
+  classical
+  refine ⟨fun v ↦ if IsNonarchimedean v then 1 else 2,
+    fun v ↦ by dsimp only; split_ifs <;> norm_num, fun v ↦ by dsimp only; split_ifs <;> norm_num,
+    fun v a b ↦ ?_, fun v h ↦ by simp [h]⟩
+  by_cases h : IsNonarchimedean v
+  · simpa [h] using h a b
+  · simp only [h, ↓reduceIte]
+    linarith [v.add_le a b, le_max_left (v a) (v b), le_max_right (v a) (v b)]
 
 end AbsoluteValue
