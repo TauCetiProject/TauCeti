@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.PowerBounded
-public import TauCeti.RingTheory.Affinoid.LaurentFraction
+public import TauCeti.RingTheory.Affinoid.LaurentFraction.Basic
 public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
 
 import TauCeti.RingTheory.Affinoid.QuotientNorm
