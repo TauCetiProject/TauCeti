@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Subsequence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
 
