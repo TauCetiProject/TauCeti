@@ -186,8 +186,9 @@ end ModelWithCorners.IsInteriorPoint
 
 namespace IsCompact
 
-/-- A compact set of interior points has a finite cover by interiors of embedded smooth
-simplices. The simplex at each selected point lies in its prescribed neighbourhood. No
+/-- A compact set of interior points has a finite cover by interiors of closed embeddings of
+top-dimensional simplices which are `Cⁿ` immersions of the simplex. The simplex at each
+selected point lies in its prescribed neighbourhood. No
 compatibility between different simplices is assumed or asserted. This supplies the finite
 local cover used before fitting simplices together in a smooth triangulation. -/
 theorem exists_finite_isSimplexImmersion_cover [FiniteDimensional ℝ E] [T2Space M]
