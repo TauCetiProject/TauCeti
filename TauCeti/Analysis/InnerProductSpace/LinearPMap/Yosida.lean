@@ -6,7 +6,7 @@ Authors: Jon Crall, Claude Opus 5, Adam Bornemann
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
-public import TauCeti.Analysis.Semigroups.Generation.Yosida.Basic
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Yosida
 public import Mathlib.Analysis.Normed.Group.Bounded
 
 /-!
@@ -45,7 +45,7 @@ variable (A : H →ₗ.[ℂ] H)
 
 /-- The imaginary-shift Yosida approximation `-r² R(ir) - ir I`. -/
 noncomputable def imaginaryYosidaApproximation (r : ℝ) : H →L[ℂ] H :=
-  TauCeti.Semigroups.yosidaApproximation A (I * r)
+  LinearPMap.yosidaApproximation A (I * r)
 
 /-- The average of the positive- and negative-shift approximations; self-adjoint when `A` is
 (see `IsSelfAdjoint.isSelfAdjoint_symmetricYosidaApproximation`). -/
@@ -55,7 +55,7 @@ noncomputable def symmetricYosidaApproximation (r : ℝ) : H →L[ℂ] H :=
 /-- The formula for the imaginary-shift approximation. -/
 theorem imaginaryYosidaApproximation_def (r : ℝ) :
     A.imaginaryYosidaApproximation r = -((r : ℂ) ^ 2 • A.resolvent (I * r)) - (I * r) • 1 := by
-  rw [imaginaryYosidaApproximation, TauCeti.Semigroups.yosidaApproximation_def]
+  rw [imaginaryYosidaApproximation, LinearPMap.yosidaApproximation_def]
   simp [mul_pow]
 
 /-- The symmetric approximation is the average of the two opposite shifts. -/
@@ -97,7 +97,7 @@ theorem _root_.IsSelfAdjoint.norm_imaginaryYosidaApproximation_le
   have hres := hA.norm_smul_resolvent_I_mul_le_one r
   rw [norm_smul] at hres
   simpa [imaginaryYosidaApproximation] using
-    (TauCeti.Semigroups.norm_yosidaApproximation_le hres)
+    (LinearPMap.norm_yosidaApproximation_le hres)
 
 /-- The approximations at opposite imaginary shifts are adjoints of one another. -/
 theorem _root_.IsSelfAdjoint.adjoint_imaginaryYosidaApproximation
@@ -132,7 +132,7 @@ theorem _root_.IsSelfAdjoint.commute_symmetricYosidaApproximation
   refine Commute.smul_left ?_ _ |>.smul_right _
   have hcomm (u v : ℝ) (hu : u ≠ 0) (hv : v ≠ 0) :
       Commute (A.imaginaryYosidaApproximation u) (A.imaginaryYosidaApproximation v) :=
-    TauCeti.Semigroups.yosidaApproximation_comm
+    LinearPMap.yosidaApproximation_comm
       (hA.mem_resolventSet_I_mul hu) (hA.mem_resolventSet_I_mul hv)
   exact (hcomm r s hr hs).add_left (hcomm (-r) s (neg_ne_zero.mpr hr) hs) |>.add_right
     ((hcomm r (-s) hr (neg_ne_zero.mpr hs)).add_left
@@ -144,7 +144,7 @@ theorem _root_.IsSelfAdjoint.tendsto_smul_resolvent_I_mul_apply
     Tendsto (fun r : ℝ => (I * (r : ℂ)) • A.resolvent (I * r) x) (cocompact ℝ) (𝓝 x) := by
   have hn : ∀ᶠ r : ℝ in cocompact ℝ, r ≠ 0 :=
     by simpa using (isCompact_singleton (x := (0 : ℝ))).compl_mem_cocompact
-  apply TauCeti.Semigroups.tendsto_smul_resolvent_apply
+  apply LinearPMap.tendsto_smul_resolvent_apply
     (hn.mono fun _ hr => hA.mem_resolventSet_I_mul hr) _
     (.of_forall (hA.norm_smul_resolvent_I_mul_le_one)) hA.dense_domain x
   apply squeeze_zero' (.of_forall fun _ => norm_nonneg _) _
@@ -157,7 +157,7 @@ for both positive and negative shifts escaping to infinity. -/
 theorem _root_.IsSelfAdjoint.tendsto_imaginaryYosidaApproximation_apply
     (hA : IsSelfAdjoint A) (x : A.domain) :
     Tendsto (fun r : ℝ => A.imaginaryYosidaApproximation r x) (cocompact ℝ) (𝓝 (A x)) := by
-  apply TauCeti.Semigroups.tendsto_yosidaApproximation_apply _ x
+  apply LinearPMap.tendsto_yosidaApproximation_apply _ x
     (hA.tendsto_smul_resolvent_I_mul_apply (A x))
   filter_upwards [(isCompact_singleton (x := (0 : ℝ))).compl_mem_cocompact] with r hr
   exact hA.mem_resolventSet_I_mul (by simpa using hr)
