@@ -34,7 +34,7 @@ and `Tᵢ`, the path `θ ↦ φ^{θ T_s}(w_s(θ))`, where `w_s` runs in the char
 
 This is the compactness step of the Hofer–Zehnder–Struwe almost existence theorem: closed
 characteristics of bounded period on levels converging to a regular level produce a closed
-characteristic on that level, in the same free homotopy class.
+characteristic on that level, contractible whenever the approximating ones are.
 
 ## Main results
 
