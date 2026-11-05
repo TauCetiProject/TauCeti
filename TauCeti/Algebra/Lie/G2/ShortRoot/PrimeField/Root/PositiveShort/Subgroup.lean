@@ -28,7 +28,7 @@ parameter normalizations.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IX.
 
 The rank-one words follow the negative-long-root construction in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.NegativeLong`.
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.NegativeLong.Basic`.
 -/
 
 public section

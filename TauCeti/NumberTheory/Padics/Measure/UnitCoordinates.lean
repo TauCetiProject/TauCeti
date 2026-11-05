@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
+public import TauCeti.NumberTheory.Padics.Measure.JointFiniteProjection
 public import TauCeti.NumberTheory.Padics.CongruenceQuotients
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.ContinuousMap.LocallyConstant
@@ -32,6 +32,8 @@ The reconstruction API is in `TauCeti`. The measure lemmas
 `AbstractMeasure.finiteProjection_unitsToZModPow_ext` and
 `AbstractMeasure.mapDomain_finiteProjection_unitsToZModPow` prove uniqueness and compatibility,
 respectively; `TauCeti.ofUnitCoordinates_finiteProjection` reconstructs a measure.
+`AbstractMeasure.jointUnitCoordinates` records these coefficients modulo every power of the prime;
+its joint coordinates also determine the measure.
 
 ## References
 
@@ -82,6 +84,39 @@ theorem mapDomain_finiteProjection_unitsToZModPow {R : Type*} [TopologicalSpace 
     simp [t]
   simpa only [ht, t, ContinuousMap.equivFnOfDiscrete_symm_apply] using
     (finiteProjection_comp (↑(PadicInt.unitsToZModPow (p := p) n)) t μ).symm
+
+/-- Joint coordinates record finite unit coefficients at independent coefficient precision
+`r` and group depth `n`. Each target ring has its discrete topology. -/
+def jointUnitCoordinates : D(ℤ_[p]ˣ, ℤ_[p]) →+
+    ∀ r n : ℕ, (ZMod (p ^ n))ˣ → ZMod (p ^ r) where
+  toFun μ r n a := jointFiniteProjection r (↑(PadicInt.unitsToZModPow (p := p) n)) μ a
+  map_zero' := by ext r n a; simp
+  map_add' μ ν := by ext r n a; simp
+
+/-- A joint unit coordinate is the coefficient of the corresponding joint finite projection. -/
+theorem jointUnitCoordinates_apply_eq_jointFiniteProjection (μ : D(ℤ_[p]ˣ, ℤ_[p]))
+    (r n : ℕ) (a : (ZMod (p ^ n))ˣ) :
+    jointUnitCoordinates μ r n a =
+      jointFiniteProjection r (↑(PadicInt.unitsToZModPow (p := p) n)) μ a := (rfl)
+
+@[simp]
+theorem jointUnitCoordinates_apply (μ : D(ℤ_[p]ˣ, ℤ_[p])) (r n : ℕ)
+    (a : (ZMod (p ^ n))ˣ) :
+    jointUnitCoordinates μ r n a = PadicInt.toZModPow r
+      (finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ a) := by
+  simp [jointUnitCoordinates_apply_eq_jointFiniteProjection, finiteProjection_apply]
+
+/-- Joint finite unit coordinates separate integral measures. -/
+theorem jointUnitCoordinates_injective :
+    Function.Injective (jointUnitCoordinates (p := p)) := by
+  intro μ ν h
+  apply finiteProjection_unitsToZModPow_ext
+  intro n
+  apply Finsupp.ext
+  intro a
+  apply PadicInt.ext_of_toZModPow.mp
+  intro r
+  simpa only [jointUnitCoordinates_apply] using congrArg (fun c ↦ c r n a) h
 
 end AbstractMeasure
 

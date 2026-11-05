@@ -1083,7 +1083,7 @@ private theorem two_mul_natCard_conjClasses_monomialGroup
       2 ^ (Fintype.card I + 1) + Nat.card (Subgroup.center (monomialGroup Q b)) := by
   have := Finite.of_equiv _ (monomialGroupEquiv hb hQ)
   rw [← natCard_monomialGroup hb hQ]
-  refine TauCeti.ConjClasses.two_mul_natCard_eq_of_forall_noncenter fun C hC ↦ ?_
+  refine ConjClasses.two_mul_natCard_eq_of_forall_noncenter fun C hC ↦ ?_
   obtain ⟨u, rfl⟩ := C.exists_rep
   exact natCard_carrier_monomialGroup_of_notMem_center b
     (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij))

@@ -81,6 +81,7 @@ noncomputable section
 
 open scoped TensorProduct LaurentSeries VertexOperator
 open Finset
+open LieAlgebra.ofTwoCocycle (centralElement)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 
@@ -99,8 +100,7 @@ include hσ
 private theorem exists_forall_apply_single_tmul_eq_zero (m : M) :
     ∃ N : ℤ, ∀ x : L, ∀ n, N ≤ n → σ (HahnSeries.single n 1 ⊗ₜ x) m = 0 := by
   obtain ⟨N, hN⟩ := isSmooth_iff.1 hσ m
-  exact ⟨N, fun x n hn ↦ hN _ (tmul_mem_orderSubmodule R L N
-    ((HahnSeries.orderTop_single_le).trans' (by exact_mod_cast hn)) x)⟩
+  exact ⟨N, fun x n hn ↦ hN _ (single_tmul_mem_orderSubmodule R L hn 1 x)⟩
 
 /-- The coefficients `z^k ↦ σ(x_{-k-1})` of a current field have support bounded below at each
 vector. -/
@@ -182,10 +182,13 @@ section Enveloping
 
 variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-local notation "UK" => UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "UK" => UniversalEnvelopingAlgebra.CentralQuotient R (centralElement c) a
 
-variable [Module (UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
-  [IsScalarTower R (UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
+variable [Module (UniversalEnvelopingAlgebra.CentralQuotient R
+    (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a) M]
+  [IsScalarTower R (UniversalEnvelopingAlgebra.CentralQuotient R
+    (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a) M]
 
 /-- The action of the currents on a module over `U(ĝ) / (ι K - a)` is smooth exactly when the
 module is smooth for the left ideals `I_N` of high-order currents. -/

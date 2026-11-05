@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Nash.OfSemialgebraic
+public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Topology
 import TauCeti.Geometry.RealAlgebraic.CAD.Existence
 import TauCeti.Geometry.RealAlgebraic.Stack.Selection
@@ -18,7 +19,8 @@ import TauCeti.Topology.Constructions.SumProd
 
 A continuous real function satisfying one nonzero polynomial relation on an open semialgebraic
 domain has a semialgebraic graph. Consequently a function is a Nash germ precisely when it is
-analytic and has a semialgebraic graph on some open semialgebraic neighbourhood.
+analytic and has a semialgebraic graph on some open semialgebraic neighbourhood. The same holds
+for a map between finite-dimensional coordinate spaces, read coordinatewise.
 
 On the locus where the specialized polynomial is nonzero, a CAD adapted to its Collins
 projection and to the domain gives finitely many connected base cells. A continuous root chooses
@@ -183,5 +185,21 @@ theorem exists_isSemialgebraicOn_of_forall_isNashAt {σ ι : Type*} [Fintype σ]
   refine ⟨⋂ i, U i, isOpen_iInter_of_finite hUo, mem_iInter.mpr hxU,
     .iInter hU, fun i ↦ ?_⟩
   exact (hG i).mono (.iInter hU) (iInter_subset U i)
+
+/-- **The local Nash graph criterion for maps.** The coordinates of a map between
+finite-dimensional coordinate spaces are Nash germs at `x` exactly when the map is analytic at `x`
+and its graph is semialgebraic on some open semialgebraic neighbourhood of `x`. -/
+theorem forall_isNashAt_apply_iff_exists_isSemialgebraicOn {σ τ : Type*} [Fintype σ] [Fintype τ]
+    {g : (σ → ℝ) → (τ → ℝ)} {x : σ → ℝ} :
+    (∀ i, IsNashAt (fun y ↦ g y i) x) ↔
+      AnalyticAt ℝ g x ∧ ∃ U, IsOpen U ∧ x ∈ U ∧ IsSemialgebraicOn g U := by
+  constructor
+  · intro hg
+    obtain ⟨U, hUo, hxU, hU, hgU⟩ := exists_isSemialgebraicOn_of_forall_isNashAt hg
+    exact ⟨AnalyticAt.pi fun i ↦ (hg i).analyticAt, U, hUo, hxU, .pi hU hgU⟩
+  · rintro ⟨hga, U, hUo, hxU, hgU⟩ i
+    obtain ⟨hU, hgU⟩ := isSemialgebraicOn_pi_iff.mp hgU
+    exact isNashAt_iff_exists_isSemialgebraicOn.mpr
+      ⟨analyticAt_pi_iff.mp hga i, U, hUo, hxU, hU, hgU i⟩
 
 end TauCeti

@@ -106,6 +106,26 @@ theorem norm_coe_tmul_le (x : E) (y : F) :
   simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
     TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) x y
 
+/-- The canonical bounded bilinear map into the completed projective tensor product. -/
+noncomputable def tmulL : E →L[𝕜] F →L[𝕜] CompletedProjectiveTensor 𝕜 E F :=
+  (ContinuousLinearMap.compL 𝕜 F (ProjectiveTensor 𝕜 E F)
+    (CompletedProjectiveTensor 𝕜 E F) Completion.toComplL).comp
+      (ProjectiveTensor.tmulL 𝕜 E F)
+
+/-- The canonical bilinear map sends a pair to its completed pure tensor. -/
+@[simp]
+theorem tmulL_apply (x : E) (y : F) :
+    tmulL x y = ((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F) := by
+  simp [tmulL]
+
+/-- The canonical bilinear map into the completed projective tensor product is contractive. -/
+theorem norm_tmulL_le : ‖tmulL (𝕜 := 𝕜) (E := E) (F := F)‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro x
+  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+  intro y
+  simpa using norm_coe_tmul_le x y
+
 /-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between completed projective tensor products
 induced by bounded operators `f` and `g`. -/
 noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
@@ -139,6 +159,30 @@ theorem mapL_id :
 theorem mapL_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') (g₂ : F' →L[𝕜] F'') (g₁ : F →L[𝕜] F') :
     mapL (f₂ ∘L f₁) (g₂ ∘L g₁) = mapL f₂ g₂ ∘L mapL f₁ g₁ :=
   continuousLinearMap_ext fun _ _ ↦ by simp
+
+/-- The induced operator is additive in the left operator. -/
+theorem mapL_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (f₁ + f₂) g = mapL f₁ g + mapL f₂ g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.add_tmul, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is additive in the right operator. -/
+theorem mapL_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
+    mapL f (g₁ + g₂) = mapL f g₁ + mapL f g₂ :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_add, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is homogeneous in the left operator. -/
+theorem mapL_smul_left (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (a • f) g = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [← TensorProduct.smul_tmul', ProjectiveTensor.mk_smul, Completion.coe_smul]
+
+/-- The induced operator is homogeneous in the right operator. -/
+theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f (a • g) = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_smul, ProjectiveTensor.mk_smul, Completion.coe_smul]
 
 variable (𝕜 E F) in
 /-- The contraction from the completed projective to the completed injective tensor product: the

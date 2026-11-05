@@ -202,10 +202,8 @@ topology, of smooth functions which are Morse on `K`. -/
 theorem dense_setOf_isMorseOn {K : Set M} (hK : IsCompact K) :
     Dense {f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ | IsMorseOn I f K} := by
   refine dense_iff_inter_open.2 fun 𝒰 h𝒰 ⟨f, hf⟩ ↦ ?_
-  have hfempty : IsMorseOn I f ∅ :=
-    isMorseOn_iff_criticalPoints.2 ⟨f.contMDiff.contMDiffOn, by simp⟩
   obtain ⟨g, hg, hgm, -, -⟩ := f.exists_isMorseOn_union_hasCompactSupport_sub hK
-    isOpen_univ (subset_univ _) isCompact_empty hfempty (h𝒰.mem_nhds hf)
+    isOpen_univ (subset_univ _) isCompact_empty isMorseOn_empty (h𝒰.mem_nhds hf)
   exact ⟨g, hg, by simpa using hgm⟩
 
 /-- **Morse functions are dense** in the smooth functions on a compact boundaryless
