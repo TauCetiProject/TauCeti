@@ -59,6 +59,8 @@ linear approximation error by the difference of the Hessians.
   derivative.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_ball`: the local interpolation inequality on a
   ball, also applicable to differences of two functions.
+* `HolderOnWith.norm_fderiv_sub_fderiv_le_of_norm_sub_le_ball`: comparison of two derivatives
+  from uniform function error and possibly different Hölder constants.
 * `HolderWith.norm_le_of_hasFDerivAt`, `HolderWith.norm_fderiv_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le`: the interpolation inequality on the whole
   space.
@@ -154,6 +156,22 @@ theorem norm_le_of_hasFDerivWithinAt_ball {g : E → F} {g' : E → E →L[ℝ] 
     rw [div_mul_eq_mul_div, le_div_iff₀ hε]
     nlinarith
   nlinarith [hM (x + w) hxw, hM x hx]
+
+/-- **Derivative comparison on a ball.** If two differentiable functions differ by at most `M`
+on a ball of radius `ε`, and their derivatives have Hölder constants `H` and `K` with a common
+exponent `α`, their derivatives at the centre differ by at most `4 M / ε + (H + K) ε^α`.
+Neither completeness nor a positive exponent is required. -/
+theorem norm_fderiv_sub_fderiv_le_of_norm_sub_le_ball {g f : E → F} {H K α : ℝ≥0}
+    {x : E} {ε M : ℝ} (hH : HolderOnWith H α (fderiv ℝ g) (Metric.ball x ε))
+    (hK : HolderOnWith K α (fderiv ℝ f) (Metric.ball x ε))
+    (hg : DifferentiableOn ℝ g (Metric.ball x ε))
+    (hf : DifferentiableOn ℝ f (Metric.ball x ε))
+    (hM : ∀ y ∈ Metric.ball x ε, ‖g y - f y‖ ≤ M) (hε : 0 < ε) :
+    ‖fderiv ℝ g x - fderiv ℝ f x‖ ≤ 4 * M / ε + (H + K) * ε ^ (α : ℝ) :=
+  (hH.sub hK).norm_le_of_hasFDerivWithinAt_ball
+    (fun y hy => (((hg y hy).differentiableAt (Metric.isOpen_ball.mem_nhds hy)).hasFDerivAt.sub
+      ((hf y hy).differentiableAt (Metric.isOpen_ball.mem_nhds hy)).hasFDerivAt).hasFDerivWithinAt)
+    hM hε
 
 /-- **Interpolation inequality on an interval.** Let `f` have derivative `f'` within `[a, b]`,
 with `f'` `β`-Hölder with constant `H` on `[a, b]` and `‖f‖ ≤ M` there. Then for every step

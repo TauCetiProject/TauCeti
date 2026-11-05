@@ -80,10 +80,6 @@ private theorem cauchySeq_fderiv_of_tendstoLocallyUniformlyOn
   obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 hunif η hη)
   refine ⟨N, fun m hm l hl => ?_⟩
   have hb : ball x δ ⊆ U := ball_subset_closedBall.trans (hsub.trans hrU)
-  -- Apply the local interpolation estimate to the difference of the two approximants.
-  have hH : HolderOnWith (K + K) α
-      (fun y => fderiv ℝ (v m) y - fderiv ℝ (v l) y) (ball x δ) :=
-    ((hhol m).sub (hhol l)).mono hb
   have herr (y : E) (hy : y ∈ ball x δ) : ‖v m y - v l y‖ ≤ 2 * η := by
     rw [← dist_eq_norm]
     calc
@@ -93,14 +89,10 @@ private theorem cauchySeq_fderiv_of_tendstoLocallyUniformlyOn
         (by simpa only [dist_comm] using (hN m hm y (ball_subset_closedBall hy)).le)
         (hN l hl y (ball_subset_closedBall hy)).le
       _ = 2 * η := (two_mul η).symm
-  have hop := hH.norm_le_of_hasFDerivWithinAt_ball
-    (g := fun y => v m y - v l y)
-    (fun y hy => (((hv m y (hb hy)).differentiableAt (hU.mem_nhds (hb hy))).hasFDerivAt.sub
-      ((hv l y (hb hy)).differentiableAt (hU.mem_nhds (hb hy))).hasFDerivAt).hasFDerivWithinAt)
-    herr hδ0
+  have hop := ((hhol m).mono hb).norm_fderiv_sub_fderiv_le_of_norm_sub_le_ball
+    ((hhol l).mono hb) ((hv m).mono hb) ((hv l).mono hb) herr hδ0
   have hop' : ‖fderiv ℝ (v m) x - fderiv ℝ (v l) x‖ ≤
       2 * (K : ℝ) * δ ^ (α : ℝ) + 8 * η / δ := by
-    simp only [NNReal.coe_add] at hop
     calc
       _ ≤ 4 * (2 * η) / δ + ((K : ℝ) + (K : ℝ)) * δ ^ (α : ℝ) := hop
       _ = _ := by ring
@@ -121,10 +113,8 @@ private theorem hasFDerivAt_of_tendsto_fderiv_of_tendstoLocallyUniformlyOn
   obtain ⟨r, hr0, hrU⟩ := Metric.isOpen_iff.1 hU x hx
   have hαreal : 0 < (α : ℝ) := by exact_mod_cast hα
   have hgauge : Tendsto (fun y : E => (K : ℝ) * ‖y - x‖ ^ (α : ℝ)) (𝓝 x) (𝓝 0) := by
-    have hnorm : Tendsto (fun y : E => ‖y - x‖) (𝓝 x) (𝓝 0) := by
-      have hc : Continuous (fun y : E => ‖y - x‖) := by fun_prop
-      simpa only [sub_self, norm_zero] using hc.tendsto x
-    simpa only [mul_zero] using (hnorm.rpow_const_nhds_zero hαreal).const_mul (K : ℝ)
+    simpa only [mul_zero] using
+      ((tendsto_norm_sub_self x).rpow_const_nhds_zero hαreal).const_mul (K : ℝ)
   refine HasFDerivAt.of_isLittleO (Asymptotics.isLittleO_iff.2 fun c hc => ?_)
   filter_upwards [ball_mem_nhds x hr0, hgauge.eventually (gt_mem_nhds hc)] with y hy hyc
   have happ : Tendsto (fun m => fderiv ℝ (v m) x (y - x)) atTop (𝓝 (A (y - x))) :=
@@ -133,6 +123,11 @@ private theorem hasFDerivAt_of_tendsto_fderiv_of_tendstoLocallyUniformlyOn
   have hTaylor := le_of_tendsto' hlim.norm
     (fun m => norm_sub_fderiv_le_of_holderOnWith hU (hv m) (hhol m) hrU hy)
   exact hTaylor.trans (mul_le_mul_of_nonneg_right hyc.le (norm_nonneg _))
+
+omit [FiniteDimensional ℝ E] in
+private theorem differentiableOn_fderiv_of_contDiffOn_two {u : E → F}
+    (hu : ContDiffOn ℝ 2 u U) (hU : IsOpen U) : DifferentiableOn ℝ (fderiv ℝ u) U :=
+  (hu.fderiv_of_isOpen hU (m := 1) (by norm_num)).differentiableOn one_ne_zero
 
 variable [CompleteSpace F]
 
@@ -190,7 +185,7 @@ theorem contDiffOn_two_and_holderOnWith_fderiv_fderiv_of_tendstoLocallyUniformly
     (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (fderiv ℝ (v m))) U) :
     ContDiffOn ℝ 2 f U ∧ HolderOnWith K α (fderiv ℝ (fderiv ℝ f)) U := by
   have hv' (m : ℕ) : DifferentiableOn ℝ (fderiv ℝ (v m)) U :=
-    ((hv m).fderiv_of_isOpen hU (m := 1) (by norm_num)).differentiableOn one_ne_zero
+    differentiableOn_fderiv_of_contDiffOn_two (hv m) hU
   obtain ⟨hC, hK⟩ := contDiffOn_one_and_holderOnWith_fderiv_of_tendstoLocallyUniformlyOn
     hα hU hv' hD hhol
   exact ⟨(contDiffOn_succ_iff_fderiv_of_isOpen (n := 1) hU).2 ⟨hf, by simp, hC⟩, hK⟩
@@ -204,7 +199,7 @@ theorem norm_fderiv_fderiv_le_of_tendstoLocallyUniformlyOn_fderiv_of_holderOnWit
     (hbound : ∀ m, ∀ x ∈ U, ‖fderiv ℝ (fderiv ℝ (v m)) x‖ ≤ M) {x : E} (hx : x ∈ U) :
     ‖fderiv ℝ (fderiv ℝ f) x‖ ≤ M := by
   exact norm_fderiv_le_of_tendstoLocallyUniformlyOn_of_holderOnWith hα hU
-    (fun m => ((hv m).fderiv_of_isOpen hU (m := 1) (by norm_num)).differentiableOn one_ne_zero)
+    (fun m => differentiableOn_fderiv_of_contDiffOn_two (hv m) hU)
     hD hhol hbound hx
 
 end FirstDerivative
