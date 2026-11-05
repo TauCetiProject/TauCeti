@@ -1,14 +1,18 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.RingTheory.Ideal.Maps
+
+import TauCeti.RingTheory.Ideal.Quotient.Defs
+import TauCeti.Topology.Discrete
 
 /-!
 # Powers of the ideal defining an adic topology
@@ -59,6 +63,9 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   ideal.
 * `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
   the same radical, and a finitely generated radical is the largest ideal of definition.
+* `Ideal.adicTopology_eq_iInf_induced`, `Ideal.adicTopology_eq_iInf_induced_pow`, and
+  `IsAdic.eq_iInf_induced` : `I.adicTopology` (and any `I`-adic topology) is the initial topology
+  induced by the quotient maps `R → R ⧸ I ^ (n + 1)` (or `R → R ⧸ I ^ n`) into discrete rings.
 
 ## Provenance
 
@@ -71,7 +78,9 @@ which is the reading taken here.
 
 The ideal-of-definition criterion and the results about radicals additionally follow
 A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.1.4–7.1.7.
-The open-quotient transport theorem follows Ch. 0, (7.3.5).
+The open-quotient transport theorem follows Ch. 0, (7.3.5), and the initial-topology
+characterization via discrete quotients follows N. Bourbaki, *Commutative Algebra*, Ch. III, §2,
+no. 6.
 -/
 
 public section
@@ -313,3 +322,61 @@ theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Idea
   letI := I.adicTopology
   -- for the `I`-adic topology, `IsAdic I` is `rfl` by the definition of `IsAdic`
   IsAdic.of_radical_eq (I := I) rfl hIfg hJfg h
+
+section InitialTopology
+
+open Filter Topology
+
+namespace Ideal
+
+variable {R : Type*} [CommRing R]
+
+/-- The `I`-adic topology on a commutative ring `R` is the initial topology induced by the quotient
+maps `R → R ⧸ I ^ (n + 1)` into the discrete rings `R ⧸ I ^ (n + 1)`. -/
+theorem adicTopology_eq_iInf_induced (I : Ideal R) :
+    I.adicTopology =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ (n + 1))) ⊥ := by
+  refine TopologicalSpace.ext_nhds fun x ↦ ?_
+  rw [nhds_iInf]
+  simp only [TauCeti.nhds_induced_bot, Ideal.Quotient.preimage_mk_singleton]
+  refine le_antisymm ?_ ?_
+  · exact le_iInf fun n ↦ le_principal_iff.mpr
+      ((I.hasBasis_nhds_adic x).mem_of_mem (i := n + 1) trivial)
+  · exact (I.hasBasis_nhds_adic x).ge_iff.mpr fun n _ ↦
+      mem_iInf_of_mem n (mem_principal.mpr (Set.image_mono (Ideal.pow_le_pow_right n.le_succ)))
+
+/-- The `I`-adic topology on a commutative ring `R` is the initial topology induced by the quotient
+maps `R → R ⧸ I ^ n` into the discrete rings `R ⧸ I ^ n`. -/
+theorem adicTopology_eq_iInf_induced_pow (I : Ideal R) :
+    I.adicTopology =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ n)) ⊥ := by
+  rw [adicTopology_eq_iInf_induced]
+  refine le_antisymm (le_iInf fun n ↦ ?_) (le_iInf fun n ↦ iInf_le _ (n + 1))
+  cases n with
+  | zero =>
+    have hsub : Subsingleton (R ⧸ I ^ 0) :=
+      ⟨fun a b ↦ Quotient.inductionOn₂' a b fun _ _ ↦ Ideal.Quotient.eq.mpr (by simp [pow_zero])⟩
+    have htop : TopologicalSpace.induced (Ideal.Quotient.mk (I ^ 0)) ⊥ = ⊤ := by
+      refine TopologicalSpace.ext_nhds fun x ↦ ?_
+      have hpre : Ideal.Quotient.mk (I ^ 0) ⁻¹' {Ideal.Quotient.mk (I ^ 0) x} = Set.univ :=
+        Set.eq_univ_of_forall fun _ ↦ Subsingleton.elim _ _
+      rw [TauCeti.nhds_induced_bot, hpre, principal_univ, nhds_top]
+    exact htop ▸ le_top
+  | succ n => exact iInf_le _ n
+
+end Ideal
+
+namespace IsAdic
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
+
+/-- If an ideal `I` defines the topology of `R`, then the topology of `R` is the initial topology
+induced by the quotient maps `R → R ⧸ I ^ (n + 1)` into discrete rings. -/
+theorem eq_iInf_induced (hI : IsAdic I) :
+    ‹TopologicalSpace R› =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ (n + 1))) ⊥ :=
+  hI.trans (Ideal.adicTopology_eq_iInf_induced I)
+
+end IsAdic
+
+end InitialTopology

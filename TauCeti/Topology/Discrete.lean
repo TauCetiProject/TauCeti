@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, The Tau Ceti contributors
 -/
 module
 
@@ -21,6 +21,11 @@ surjection onto a discrete space (`TauCeti.exists_continuous_lift`), and an inje
 discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); these give
 surjectivity and the descent of cocycle conditions for continuous cochains of discrete modules
 in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`.
+
+For explicit pullbacks of the discrete topology `⊥`, an injective map pulls `⊥` back to `⊥`
+(`TauCeti.induced_bot_of_injective`), and the neighbourhood filter at `x` in
+`TopologicalSpace.induced g ⊥` is the principal filter of the fibre `g ⁻¹' {g x}`
+(`TauCeti.nhds_induced_bot`).
 
 A family eventually contained in a subset and converging to one of its points witnesses
 nondiscreteness when it is frequently unequal to that point (`Filter.Tendsto.not_isDiscrete`).
@@ -61,6 +66,23 @@ theorem continuous_of_injective_comp {X A B : Type*} [TopologicalSpace X] [Topol
     [TopologicalSpace B] [DiscreteTopology B] {f : A → B} (hf : Function.Injective f) {a : X → A}
     (h : Continuous fun x => f (a x)) : Continuous a :=
   (IsLocallyConstant.desc a f ((IsLocallyConstant.iff_continuous _).2 h) hf).continuous
+
+/-- An injective map pulls the discrete topology `⊥` back to `⊥`. -/
+theorem induced_bot_of_injective {X Y : Type*} {e : X → Y} (he : Function.Injective e) :
+    TopologicalSpace.induced e ⊥ = ⊥ := by
+  let _ : TopologicalSpace Y := ⊥
+  have := discreteTopology_bot Y
+  let _ : TopologicalSpace X := TopologicalSpace.induced e ⊥
+  exact (Topology.IsEmbedding.discreteTopology ⟨⟨rfl⟩, he⟩).eq_bot
+
+/-- In the topology induced from the discrete topology `⊥` along `g : X → Y`, the neighbourhood
+filter of `x` is the principal filter of the fibre `g ⁻¹' {g x}`. -/
+theorem nhds_induced_bot {X Y : Type*} (g : X → Y) (x : X) :
+    @nhds X (TopologicalSpace.induced g ⊥) x = Filter.principal (g ⁻¹' {g x}) := by
+  let _ : TopologicalSpace Y := ⊥
+  have := discreteTopology_bot Y
+  rw [nhds_induced, nhds_discrete]
+  exact Filter.comap_pure
 
 end TauCeti
 
