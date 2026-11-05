@@ -294,6 +294,14 @@ theorem isDominantIntegral_iff {lam : Dual K H} :
       ∀ i ∈ b.support, ∃ n : ℕ, lam ((IsKilling.rootSystem H).coroot i) = (n : K) :=
   Iff.rfl
 
+/-- The defining condition on a dominant integral weight, in the root-pairing formulation used by
+the general root-system results: the coroot functional of every simple root takes a natural value
+on it. -/
+theorem isDominantIntegral_iff_forall_coroot' {lam : Dual K H} :
+    IsDominantIntegral b lam ↔
+      ∀ i ∈ b.support, ∃ n : ℕ, (IsKilling.rootSystem H).coroot' i lam = (n : K) := by
+  simp only [rootSystem_coroot'_apply, isDominantIntegral_iff]
+
 /-- The zero weight is dominant integral. -/
 theorem isDominantIntegral_zero : IsDominantIntegral b (0 : Dual K H) :=
   fun _ _ => ⟨0, by simp⟩

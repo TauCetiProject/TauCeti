@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
+import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
 /-!
 # Thickenings of schemes
@@ -37,6 +38,10 @@ module of homomorphisms into `I`.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_iff`: for a surjective ring map
   `φ : R ⟶ S`, `Spec S ⟶ Spec R` is a first-order thickening if and only if the kernel of `φ` has
   square zero.
+* `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_quotient_factor_iff` and
+  `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_quotient_factor_pow_succ`: for ideals
+  `J ≤ I`, `Spec (R ⧸ I) ⟶ Spec (R ⧸ J)` is a first-order thickening if and only if `I ^ 2 ≤ J`,
+  which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
 * Thickenings contain the isomorphisms and are stable under composition and base change;
   first-order thickenings contain the isomorphisms, respect isomorphisms and are stable under base
   change.
@@ -210,6 +215,26 @@ theorem SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) (hφ : Function.Surje
       Scheme.IdealSheafData.ofIdealTop_eq_bot_iff, Ideal.map_eq_bot_iff_of_injective
         (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv).1]
   exact ⟨fun h ↦ hker.1 h.ker_mul_self, fun h ↦ ⟨hker.2 h⟩⟩
+
+/-- For ideals `J ≤ I` of a commutative ring `R`, the closed immersion
+`Spec (R ⧸ I) ⟶ Spec (R ⧸ J)` induced by `Ideal.Quotient.factor h` is a first-order thickening if
+and only if `I ^ 2 ≤ J`. -/
+theorem SpecMap_quotient_factor_iff {R : Type u} [CommRing R] {I J : Ideal R} (h : J ≤ I) :
+    IsFirstOrderThickening (Spec.map (CommRingCat.ofHom (Ideal.Quotient.factor h))) ↔
+      I ^ 2 ≤ J := by
+  rw [SpecMap_iff _ (Ideal.Quotient.factor_surjective h), CommRingCat.hom_ofHom,
+    Ideal.Quotient.factor_ker, ← Ideal.map_mul, ← pow_two, Ideal.map_eq_bot_iff_le_ker,
+    Ideal.mk_ker]
+
+/-- For any ideal `I` of a commutative ring `R` and any `n : ℕ`, the closed immersion
+`Spec (R ⧸ I ^ (n + 1)) ⟶ Spec (R ⧸ I ^ (n + 2))` between successive positive ideal-power
+quotients is a first-order thickening. -/
+theorem SpecMap_quotient_factor_pow_succ {R : Type u} [CommRing R] {I : Ideal R} {n : ℕ}
+    (h : I ^ (n + 2) ≤ I ^ (n + 1)) :
+    IsFirstOrderThickening (Spec.map (CommRingCat.ofHom (Ideal.Quotient.factor h))) :=
+  (SpecMap_quotient_factor_iff h).mpr <| by
+    rw [← pow_mul]
+    exact Ideal.pow_le_pow_right (by omega)
 
 end IsFirstOrderThickening
 

@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.Convex.StdSimplex
 public import Mathlib.Probability.ProbabilityMassFunction.Integrals
+public import Mathlib.Topology.Sion
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
-public import TauCeti.Topology.Sion
+import TauCeti.Analysis.Convex.AffineOn
 
 /-!
 # Kantorovich duality on finite spaces
@@ -436,8 +437,8 @@ private theorem lagrangian_eq (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ)
 private theorem lagrangian_affine_left (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ)
     (f f' : ι × κ → ℝ) (p : (ι → ℝ) × (κ → ℝ)) (a b : ℝ) (hab : a + b = 1) :
     lagrangian c μ ν (a • f + b • f') p
-      = a * lagrangian c μ ν f p + b * lagrangian c μ ν f' p := by
-  simp only [lagrangian]
+      = a • lagrangian c μ ν f p + b • lagrangian c μ ν f' p := by
+  simp only [lagrangian, smul_eq_mul]
   have hterm : ∀ q,
       (c q - p.1 q.1 - p.2 q.2) * ((a • f + b • f') q)
         = a * ((c q - p.1 q.1 - p.2 q.2) * f q)
@@ -453,7 +454,7 @@ private theorem lagrangian_affine_left (c : ι × κ → ℝ) (μ : PMF ι) (ν 
 private theorem lagrangian_affine_right (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ) (f : ι × κ → ℝ)
     (p p' : (ι → ℝ) × (κ → ℝ)) (a b : ℝ) (hab : a + b = 1) :
     lagrangian c μ ν f (a • p + b • p')
-      = a * lagrangian c μ ν f p + b * lagrangian c μ ν f p' := by
+      = a • lagrangian c μ ν f p + b • lagrangian c μ ν f p' := by
   rw [lagrangian_eq, lagrangian_eq, lagrangian_eq]
   simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, Pi.add_apply,
     Pi.smul_apply, smul_eq_mul]
@@ -580,16 +581,16 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
       (hfx := fun f _ ↦ ?_) (hfx' := fun f _ ↦ ?_)
     · exact (continuous_coe_real_ereal.comp
         (continuous_lagrangian_left c μ ν p)).lowerSemicontinuous.lowerSemicontinuousOn _
-    · exact ConvexOn.quasiconvexOn_ereal_coe
-        (Convex.convexOn_and_concaveOn_of_affine
-          (g := fun f ↦ lagrangian c μ ν f p) convex_stdSimplexSet
-          (fun x _ y _ a b _ _ hab ↦ lagrangian_affine_left c μ ν x y p a b hab)).1
+    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun f ↦ lagrangian c μ ν f p)
+        convex_stdSimplexSet).2 fun x _ y _ a b _ _ hab ↦
+          lagrangian_affine_left c μ ν x y p a b hab).1.quasiconvexOn.monotone_comp
+        (g := Real.toEReal) EReal.coe_strictMono.monotone
     · exact (continuous_coe_real_ereal.comp
         (continuous_lagrangian_right c μ ν f)).upperSemicontinuous.upperSemicontinuousOn _
-    · exact ConcaveOn.quasiconcaveOn_ereal_coe
-        (Convex.convexOn_and_concaveOn_of_affine
-          (g := fun p ↦ lagrangian c μ ν f p) convex_univ
-          (fun x _ y _ a b _ _ hab ↦ lagrangian_affine_right c μ ν f x y a b hab)).2
+    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun p ↦ lagrangian c μ ν f p)
+        convex_univ).2 fun x _ y _ a b _ _ hab ↦
+          lagrangian_affine_right c μ ν f x y a b hab).2.quasiconcaveOn.monotone_comp
+        (g := Real.toEReal) EReal.coe_strictMono.monotone
   simp only [iSup_univ] at key
   have h1 : ((A.cost c : ℝ) : EReal) ≤ ⨅ f ∈ stdSimplexSet,
       ⨆ p : (ι → ℝ) × (κ → ℝ), ((lagrangian c μ ν f p : ℝ) : EReal) := by
