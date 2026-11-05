@@ -150,21 +150,12 @@ theorem finiteProjectiveModules_le_finiteModules :
     finiteProjectiveModules R ≤ ModuleCat.isFG R := fun _ h =>
   (ModuleCat.isFG_iff _).mpr (finiteProjectiveModules_iff.mp h).1
 
-instance : (ModuleCat.isFG.{v} R).IsClosedUnderIsomorphisms where
-  of_iso {M N} e h := by
-    have : Module.Finite R M := (ModuleCat.isFG_iff M).mp h
-    exact (ModuleCat.isFG_iff N).mpr (Module.Finite.equiv e.toLinearEquiv)
-
 instance : (finiteProjectiveModules R).IsClosedUnderIsomorphisms where
   of_iso {M N} e h := by
     have : Module.Finite R M := (finiteProjectiveModules_iff.mp h).1
     have : Module.Projective R M := (finiteProjectiveModules_iff.mp h).2
     exact finiteProjectiveModules_iff.mpr
       ⟨Module.Finite.equiv e.toLinearEquiv, Module.Projective.of_equiv e.toLinearEquiv⟩
-
-instance : (ModuleCat.isFG.{v} R).ContainsZero where
-  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
-    (ModuleCat.isFG_iff _).mpr inferInstance⟩
 
 instance : (finiteProjectiveModules R).ContainsZero where
   exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
@@ -206,9 +197,6 @@ theorem finiteProjectiveModules_le_isProjective :
 theorem finiteProjectiveModules_le_categoryTheory_isProjective :
     finiteProjectiveModules R ≤ CategoryTheory.isProjective (ModuleCat.{u} R) := fun M hM ↦
   (ExactStructure.abelian_isProjective_iff M).mp (finiteProjectiveModules_le_isProjective R M hM)
-
-instance : (ModuleCat.isFG.{v} R).IsClosedUnderBinaryProducts :=
-  (isExtensionClosed_finiteModules R).isClosedUnderBinaryProducts
 
 instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts := by
   refine ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN => ?_
