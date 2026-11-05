@@ -101,7 +101,7 @@ theorem framingNumber_unknotSolidTorus :
     -- `singularHomologyMap` is an abbreviation for the induced map on homology.
     rw [IsSolidTorusNeighborhood.boundaryHomologyMap_def]
     rfl
-  rw [IsSolidTorusNeighborhood.framingNumber_eq_iff, zero_smul, hmap,
+  rw [IsSolidTorusNeighborhood.framingNumber_eq_zero_iff, hmap,
     FramedBoundaryTorus.ofHomeomorph_basis_one,
     FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, ← singularHomologyMap_comp,
     singularHomologyMap_torusClass]
