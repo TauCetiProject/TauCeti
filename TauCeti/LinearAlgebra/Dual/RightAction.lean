@@ -22,7 +22,7 @@ On the other side, a semiring `A` with a `k`-module structure commuting with lef
 acts on the right of the dual of its left regular module by
 `(ψ · c) b = ψ (c * b)`, which Mathlib writes as the domain action `DomMulAct.mk c • ψ`. A map
 `A → Module.Dual k A` that is equivariant for the right `A`-actions is determined by its value at
-`1`; this is `TauCeti.dualLinearMap_apply_apply`.
+`1`; this is `TauCeti.apply_apply_eq_apply_one_mul`.
 
 ## Main definitions
 
@@ -31,7 +31,7 @@ acts on the right of the dual of its left regular module by
 
 ## Main results
 
-* `TauCeti.dualLinearMap_apply_apply`: a map from `A` to its dual that is equivariant for the
+* `TauCeti.apply_apply_eq_apply_one_mul`: a map from `A` to its dual that is equivariant for the
   right `A`-actions is determined by its value at `1`; additivity is not assumed.
 
 ## Implementation notes
@@ -80,7 +80,7 @@ variable {k} [Module k A] [SMulCommClass k A A]
 /-- A map from `A` to its dual that is equivariant for the right `A`-actions, using the action
 `DomMulAct.mk c • ψ = ψ (c * ·)` on the dual, is determined by its value at `1`. The map need not
 be additive. -/
-theorem dualLinearMap_apply_apply {e : A → Module.Dual k A}
+theorem apply_apply_eq_apply_one_mul {e : A → Module.Dual k A}
     (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
   simpa using LinearMap.congr_fun (he 1 a) b
 
