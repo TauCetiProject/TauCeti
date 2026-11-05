@@ -51,6 +51,9 @@ map `ι` for `ω` with primitive `h` lifts to the isotropic map `(ι, h)`, which
 Legendrian immersion when `ι` is an immersion and a Legendrian embedding when `ι` is an embedding
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianImmersion_contactization`,
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianEmbedding_contactization`).
+Conversely, for maps of half the dimension with injective differentials, `ι` is exact Lagrangian
+with primitive `h` as soon as its lift is horizontal
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_isHorizontalMap_contactization`).
 
 ## Main definitions
 
@@ -68,6 +71,8 @@ Legendrian immersion when `ι` is an immersion and a Legendrian embedding when `
   `ι^* θ = dh`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianImmersion_contactization`:
   the Legendrian lift of an exact Lagrangian immersion.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_isHorizontalMap_contactization`:
+  a half-dimensional map is exact Lagrangian exactly when its lift is horizontal.
 * `TauCeti.CotangentBundle.isContactForm_contactization_liouvilleForm`: the one-jet space of a
   manifold is a contact manifold.
 
@@ -77,6 +82,8 @@ Legendrian immersion when `ι` is an immersion and a Legendrian embedding when `
   Chapter 2 (contact manifolds, including the space of one-jets).
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
   Section 3.5 (contact structures).
+* V. I. Arnold, *Mathematical Methods of Classical Mechanics*, second edition, Appendix 4
+  (Legendrian lifts of exact Lagrangian submanifolds).
 -/
 
 public section
@@ -322,6 +329,19 @@ theorem IsExactLagrangianMap.isHorizontalMap_contactization (hL : hσ.IsExactLag
   rw [SmoothForm.isHorizontalMap_contactization_iff θ hι hL.contMDiff_primitive,
     SmoothForm.coe_mpullback]
   exact hL.mpullback_eq
+
+/-- **Projections of horizontal lifts are exact Lagrangian.** Let `σ = -dθ`. A smooth map
+`ι : L → W` with injective differentials from a manifold of half the dimension is an exact
+Lagrangian map with smooth primitive `h` exactly when its lift `x ↦ (ι x, h x)` is horizontal for
+the kernel of the contactization form `dz - θ`. -/
+theorem isExactLagrangianMap_iff_isHorizontalMap_contactization [FiniteDimensional ℝ E]
+    (hθ : σ = -mextDerivₗ I 1 θ) (hι : ContMDiff J I ∞ ι) (hh : ContMDiff J 𝓘(ℝ) ∞ h)
+    (hinj : ∀ x, Function.Injective (mfderiv J I ι x)) (hdim : 2 * finrank ℝ E' = finrank ℝ E) :
+    hσ.IsExactLagrangianMap J θ ι h ↔
+      IsHorizontalMap J θ.contactization.kerDistribution (fun x ↦ (ι x, h x)) := by
+  rw [isExactLagrangianMap_iff_of_finrank hθ hι hinj hdim,
+    SmoothForm.isHorizontalMap_contactization_iff θ hι hh, SmoothForm.coe_mpullback,
+    and_iff_right hh]
 
 variable [CompleteSpace E] [FiniteDimensional ℝ E] [I.Boundaryless] [J.Boundaryless]
 

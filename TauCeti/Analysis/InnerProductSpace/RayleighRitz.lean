@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Compression
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 
@@ -31,6 +32,10 @@ The residual form of the Davis–Kahan `sin Θ` theorem,
 Ritz residual as its residual when `M` is the compression; the angles between the trial subspace
 and a second subspace are read off the trial map by
 `Submodule.principalSines_range_eq_singularValues` and its companions.
+
+
+The compression `ContinuousLinearMap.compression A X` itself is defined in
+`TauCeti.Analysis.InnerProductSpace.Compression`.
 
 ## Main results
 

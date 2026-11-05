@@ -15,7 +15,10 @@ import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 A continuous bilinear map `B : E →L[ℝ] F →L[ℝ] G` acts pointwise on bounded Hölder functions.
 The resulting bilinear map has norm at most `‖B‖`, and exactly `‖B‖` on a nonempty domain.
 This supplies multiplication and scalar multiplication in Hölder spaces with the usual
-supremum-plus-Hölder norm, without replacing the existing space or its norm.
+supremum-plus-Hölder norm, without replacing the existing space or its norm. When the second
+factor vanishes off a set on which the first is small, the first factor enters the norm of the
+product only through that bound and its Hölder seminorm
+(`ContinuousLinearMap.norm_compHolder₂_apply_le_of_eq_zero`).
 
 The construction generalizes the scalar-multiplication operator `boundedHolderSpaceSmu` in
 [DifferentialGeometry, Holder/Bilinear.lean](https://github.com/qinz1yang/differential-geometry/blob/7a48598d35109aa99d1cc678e2724c213cdf4ff3/DifferentialGeometry/Analysis/Schauder/Holder/Bilinear.lean).
@@ -135,6 +138,44 @@ theorem norm_id_compHolder₂_apply_le (f : HolderSpace α X (F →L[ℝ] G)) (g
     ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] G)).compHolder₂ f g‖ ≤ ‖f‖ * ‖g‖ :=
   (norm_compHolder₂_apply_le _ f g).trans (mul_le_mul_of_nonneg_right
     (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.norm_id_le) (norm_nonneg g))
+
+/-- If `g` vanishes off a set `s` on which `‖f‖ ≤ δ`, then `f` enters the norm of the product only
+through `δ` and its Hölder seminorm: `‖B (f, g)‖ ≤ ‖B‖ (δ ‖g‖ + [f]_α ‖g‖_∞)`. This is the
+estimate for freezing a coefficient field on the support of a localized function. -/
+theorem norm_compHolder₂_apply_le_of_eq_zero (B : E →L[ℝ] F →L[ℝ] G) (f : HolderSpace α X E)
+    (g : HolderSpace α X F) {s : Set X} {δ : ℝ≥0} (hf : ∀ x ∈ s, ‖f x‖ ≤ δ)
+    (hg : ∀ x ∉ s, g x = 0) :
+    ‖B.compHolder₂ f g‖ ≤
+      ‖B‖ * (δ * ‖g‖ + nnHolderNorm α (f : X → E) * ‖g.toBoundedContinuousFunction‖) := by
+  have hgM : ∀ x, ‖g x‖ ≤ ‖g.toBoundedContinuousFunction‖₊ := fun x ↦ by
+    simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x
+  have hsup : ‖(B.compHolder₂ f g).toBoundedContinuousFunction‖ ≤
+      ‖B‖ * δ * ‖g.toBoundedContinuousFunction‖ := by
+    refine (BoundedContinuousFunction.norm_le (by positivity)).mpr fun x ↦ ?_
+    rw [HolderSpace.toBoundedContinuousFunction_apply, compHolder₂_apply]
+    by_cases hx : x ∈ s
+    · exact (B.le_opNorm₂ _ _).trans (by gcongr; exacts [hf x hx, hgM x])
+    · rw [hg x hx, map_zero, norm_zero]
+      positivity
+  have hsemi : (nnHolderNorm α ((B.compHolder₂ f g).toBoundedContinuousFunction : X → G) : ℝ) ≤
+      ‖B‖ * (δ * nnHolderNorm α (g : X → F) +
+        ‖g.toBoundedContinuousFunction‖ * nnHolderNorm α (f : X → E)) := by
+    have heq : ((B.compHolder₂ f g).toBoundedContinuousFunction : X → G) =
+        fun x ↦ B (f x) (g x) := by
+      funext x
+      rw [HolderSpace.toBoundedContinuousFunction_apply, compHolder₂_apply]
+    rw [heq]
+    have h := B.holderWith_comp₂_of_eq_zero (f.memHolder.holderWith.holderOnWith s)
+      g.memHolder.holderWith (Mf := δ) (Mg := ‖g.toBoundedContinuousFunction‖₊)
+      (fun x hx ↦ by simpa using hf x hx) (fun x _ ↦ by simpa using hgM x)
+      (fun x hx ↦ by simpa using hg x hx)
+    exact_mod_cast (by simpa using h.nnholderNorm_le :
+      nnHolderNorm α (fun x ↦ B (f x) (g x)) ≤
+        ‖B‖₊ * (δ * nnHolderNorm α (g : X → F) +
+          ‖g.toBoundedContinuousFunction‖₊ * nnHolderNorm α (f : X → E)))
+  rw [HolderSpace.norm_def, HolderSpace.norm_def g]
+  simp only [HolderSpace.coe_toBoundedContinuousFunction] at hsemi ⊢
+  linarith
 
 /-- On a nonempty domain, pointwise lifting preserves the bilinear operator norm. -/
 @[simp]
