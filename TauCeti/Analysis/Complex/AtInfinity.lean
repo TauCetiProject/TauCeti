@@ -12,6 +12,7 @@ import Mathlib.Topology.Bornology.BoundedOperation
 /-!
 # Complex limits at infinity
 
+For any `c : ℂ`, the reciprocal `((t : ℂ) * c)⁻¹` tends to zero as `t → ∞`.
 If `z * ψ z` has a finite limit along a filter approaching infinity, then `ψ z` tends to zero.
 If `ζ` tends to infinity, then so does the normalized coordinate `(ζ - c) / b`, for `b ≠ 0`; in
 particular so does `(q + g⁻¹ - c) / b` when `g` tends to `0` without vanishing. The unit
@@ -22,6 +23,15 @@ direction `z / |z|` is asymptotically invariant under a fixed translation: the r
 public section
 
 open Bornology Complex Filter Topology
+
+namespace Complex
+
+/-- For any `c : ℂ`, the reciprocal `((t : ℂ) * c)⁻¹` tends to `0` as `t → +∞`. -/
+theorem tendsto_inv_ofReal_mul_atTop_zero (c : ℂ) :
+    Tendsto (fun t : ℝ => ((t : ℂ) * c)⁻¹) atTop (𝓝 0) := by
+  simpa using tendsto_inv_atTop_zero.ofReal.const_mul c⁻¹
+
+end Complex
 
 namespace TauCeti
 
