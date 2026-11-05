@@ -236,8 +236,21 @@ def cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
       NormalizedCubicalChain.ofCube P.snd k
         (P.liftSnd (SingularCube.face i 1 c) (face_mem_range_map hc i (.inr rfl))))
 
+/-- The boundary of a relative cube is the signed sum `∑ᵢ (-1)ⁱ (cᵢ⁰ - cᵢ¹)` of its faces, lifted
+to the subspace. -/
+theorem cubicalBoundaryChainOfCube_def {m : ℕ} (c : SingularCube P.fst (m + 1))
+    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
+    cubicalBoundaryChainOfCube k c hc =
+      ∑ i : Fin (m + 1), (-1 : k) ^ (i : ℕ) •
+        (NormalizedCubicalChain.ofCube P.snd k (P.liftSnd (SingularCube.face i 0 c) fun x ↦ by
+            rw [SingularCube.face_apply]; exact hc ⟨i, by simp⟩) -
+          NormalizedCubicalChain.ofCube P.snd k (P.liftSnd (SingularCube.face i 1 c) fun x ↦ by
+            rw [SingularCube.face_apply]; exact hc ⟨i, by simp⟩)) :=
+  (rfl)
+
 /-- The boundary of a relative cube, read in the subspace, is carried to the boundary of the cube
 by the inclusion of the subspace. -/
+@[simp]
 theorem map_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
     (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
     NormalizedCubicalChain.map k P.map.hom m (cubicalBoundaryChainOfCube k c hc) =
@@ -248,6 +261,7 @@ theorem map_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1)
     NormalizedCubicalChain.map_ofCube, h]
 
 /-- The boundary of a relative cube, read in the subspace, is a cycle. -/
+@[simp]
 theorem boundary_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 2))
     (hc : Set.MapsTo c (Cube.boundary (Fin (m + 2))) (Set.range P.map)) :
     NormalizedCubicalChain.boundary P.snd k m (cubicalBoundaryChainOfCube k c hc) = 0 := by
@@ -260,6 +274,7 @@ theorem boundary_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m
 
 /-- The boundary of a relative cube, read in the subspace, is killed by every differential of the
 normalized cubical chain complex of the subspace. -/
+@[simp]
 theorem d_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
     (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) (j : ℕ) :
     ((normalizedCubicalChainComplex k).obj P.snd).d m j (cubicalBoundaryChainOfCube k c hc) =
