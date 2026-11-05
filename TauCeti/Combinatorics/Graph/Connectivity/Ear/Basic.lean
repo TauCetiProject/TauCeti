@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
+public import TauCeti.Combinatorics.Graph.Connectivity.Component
 
 import TauCeti.Data.Fin.Basic
 
@@ -103,6 +103,12 @@ theorem toWalk_closed {s : α} (hHG : H ≤ G) (walk : G.Walk s s) (isCycle : wa
     (Ear.closed hHG walk isCycle base_mem internal_new edges_new).toWalk = ⟨s, s, walk⟩ := by
   rw [toWalk]
 
+/-- The starting vertex of an ear belongs to its base graph. -/
+theorem toWalk_fst_mem (e : G.Ear H) : e.toWalk.1 ∈ V(H) := by
+  cases e with
+  | «open» _ _ _ start_mem => exact start_mem
+  | «closed» _ _ _ base_mem => exact base_mem
+
 /-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
 @[ext]
 theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWalk) :
@@ -118,6 +124,10 @@ theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWa
 /-- The graph traced by an ear. -/
 def toGraph (e : G.Ear H) : Graph α β :=
   G.walkGraph e.toWalk.2.2
+
+/-- The graph traced by an ear is connected. -/
+theorem connected_toGraph (e : G.Ear H) : e.toGraph.Connected :=
+  e.toWalk.2.2.connected_walkGraph
 
 @[simp]
 theorem toGraph_open {s t : α} (hHG : H ≤ G) (walk : G.Walk s t) (isPath : walk.IsPath)

@@ -297,6 +297,13 @@ theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
   exact (Walk.cons_isCycle_iff ..).mpr
     ⟨q.bypass_isPath, fun hm ↦ hq e (q.edges_bypass_subset_edges hm) rfl⟩
 
+/-- An edge on a cycle in a subgraph is not a bridge in the containing graph. -/
+theorem Walk.IsCycle.not_isBridge_of_le {K : Graph α β} (hKG : K ≤ G)
+    {p : K.Walk x x} (hp : p.IsCycle) (he : e ∈ p.edges) : ¬ G.IsBridge e := by
+  intro hbridge
+  exact hbridge.notMem_edges_of_isCycle (hp.mapLe hKG) (by
+    simpa only [Walk.edges_mapLe_eq_edges] using he)
+
 /-- No edge of the graph traced by a cycle is a bridge. -/
 theorem Walk.IsCycle.not_isBridge_walkGraph {p : G.Walk x x} (hp : p.IsCycle)
     (e : β) : ¬ (G.walkGraph p).IsBridge e := by
@@ -305,8 +312,8 @@ theorem Walk.IsCycle.not_isBridge_walkGraph {p : G.Walk x x} (hp : p.IsCycle)
   let q := p.transfer (p.walkGraph_le_of_pos hpos) fun f hf ↦
     (p.mem_edgeSet_walkGraph f).mpr hf
   have hq : q.IsCycle := (Walk.isCycle_transfer (p.walkGraph_le_of_pos hpos) p _).mpr hp
-  exact he.notMem_edges_of_isCycle hq (by
-    simpa only [q, Walk.edges_transfer] using (p.mem_edgeSet_walkGraph e).mp he.mem_edgeSet)
+  exact hq.not_isBridge_of_le le_rfl (by
+    simpa only [q, Walk.edges_transfer] using (p.mem_edgeSet_walkGraph e).mp he.mem_edgeSet) he
 
 /-- Deleting all bridges leaves a graph without bridges. -/
 theorem not_isBridge_deleteEdges_bridgeSet (G : Graph α β) (e : β) :

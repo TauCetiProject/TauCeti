@@ -34,17 +34,6 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} {G H : Graph α β}
 
-namespace Walk
-
-/-- The graph traced by a cycle is `2`-edge-connected. -/
-theorem IsCycle.isEdgeConnected_two_walkGraph {x : α} {p : G.Walk x x} (hp : p.IsCycle) :
-    (G.walkGraph p).IsEdgeConnected 2 := by
-  rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge (by
-    exact ⟨x, by simp⟩)]
-  exact ⟨p.connected_walkGraph, hp.not_isBridge_walkGraph⟩
-
-end Walk
-
 namespace EarStart
 
 /-- Every permitted initial graph for an ear decomposition is `2`-edge-connected. -/
@@ -63,49 +52,28 @@ variable (ear : G.Ear H)
 /-- Adjoining an ear to a connected graph preserves connectedness. -/
 theorem connected_add (hH : H.Connected) : ear.add.Connected := by
   rw [connected_iff_forall_reachable]
-  cases ear with
-  | @«open» hHG s t p hp hs ht hst hinter hedges =>
-      refine ⟨⟨s, by simp [vertexSet_add, hs]⟩, fun x y hx hy ↦ ?_⟩
-      have toBase : ∀ {z}, z ∈ V((Ear.open hHG p hp hs ht hst hinter hedges).add) →
-          (Ear.open hHG p hp hs ht hst hinter hedges).add.Reachable z s := by
-        intro z hz
-        simp only [vertexSet_add, Ear.toGraph_open, Walk.vertexSet_walkGraph, Set.mem_union,
-          Set.mem_ofPred_eq] at hz
-        rcases hz with hz | hz
-        · exact (hH.reachable hz hs).mono
-            (Ear.open hHG p hp hs ht hst hinter hedges).base_le_add
-        · apply Reachable.mono (Ear.open hHG p hp hs ht hst hinter hedges).toGraph_le_add
-          simpa only [Ear.toGraph_open] using
-            p.reachable_walkGraph_of_mem_support
-              hz p.start_mem_support
-      exact (toBase hx).trans (toBase hy).symm
-  | @«closed» hHG s p hp hs hinter hedges =>
-      refine ⟨⟨s, by simp [vertexSet_add, hs]⟩, fun x y hx hy ↦ ?_⟩
-      have toBase : ∀ {z}, z ∈ V((Ear.closed hHG p hp hs hinter hedges).add) →
-          (Ear.closed hHG p hp hs hinter hedges).add.Reachable z s := by
-        intro z hz
-        simp only [vertexSet_add, Ear.toGraph_closed, Walk.vertexSet_walkGraph, Set.mem_union,
-          Set.mem_ofPred_eq] at hz
-        rcases hz with hz | hz
-        · exact (hH.reachable hz hs).mono
-            (Ear.closed hHG p hp hs hinter hedges).base_le_add
-        · apply Reachable.mono (Ear.closed hHG p hp hs hinter hedges).toGraph_le_add
-          simpa only [Ear.toGraph_closed] using
-            p.reachable_walkGraph_of_mem_support
-              hz p.start_mem_support
-      exact (toBase hx).trans (toBase hy).symm
+  refine ⟨⟨ear.toWalk.1, by
+    simp only [vertexSet_add, Set.mem_union]
+    exact Or.inl ear.toWalk_fst_mem⟩, fun x y hx hy ↦ ?_⟩
+  have toBase : ∀ {z}, z ∈ V(ear.add) → ear.add.Reachable z ear.toWalk.1 := by
+    intro z hz
+    simp only [vertexSet_add, Set.mem_union] at hz
+    rcases hz with hz | hz
+    · exact (hH.reachable hz ear.toWalk_fst_mem).mono ear.base_le_add
+    · apply Reachable.mono ear.toGraph_le_add
+      exact ear.connected_toGraph.reachable hz (by
+        simpa only [Ear.vertexSet_toGraph, Set.mem_ofPred_eq] using
+          ear.toWalk.2.2.start_mem_support)
+  exact (toBase hx).trans (toBase hy).symm
 
-/-- Adjoining an ear to a connected graph without bridges produces no bridge. -/
-theorem not_isBridge_add (hH : H.Connected) (hbridge : ∀ e, ¬ H.IsBridge e) (e : β) :
-    ¬ ear.add.IsBridge e := by
-  intro he
-  have heAdd := he.mem_edgeSet
-  rw [edgeSet_add] at heAdd
-  rcases heAdd with heH | heEar
-  · exact hbridge e (he.anti_of_mem ear.base_le_add heH)
+/-- Every edge in the graph traced by an ear lies on a cycle after adjoining the ear to a
+connected base graph. -/
+theorem exists_isCycle_add_of_mem_edgeSet_toGraph (hH : H.Connected) {e : β}
+    (he : e ∈ E(ear.toGraph)) :
+    ∃ x, ∃ p : ear.add.Walk x x, p.IsCycle ∧ e ∈ p.edges := by
   cases ear with
   | @«open» hHG s t p hp hs ht hst hinter hedges =>
-      rw [Ear.toGraph_open] at heEar
+      rw [Ear.toGraph_open] at he
       obtain ⟨q, hq⟩ := (hH.reachable ht hs).exists_isPath
       let qG := q.mapLe hHG
       have hqG : qG.IsPath := (Walk.isPath_mapLe hHG q).mpr hq
@@ -141,22 +109,31 @@ theorem not_isBridge_add (hH : H.Connected) (hbridge : ∀ e, ¬ H.IsBridge e) (
               simpa only [qG, Walk.edges_mapLe_eq_edges] using hfq))
       have hc : c.IsCycle := (Walk.isCycle_transfer
         (Ear.open hHG p hp hs ht hst hinter hedges).add_le (p.append qG) _).mpr hcycle
-      exact he.notMem_edges_of_isCycle hc (by
-        have heP : e ∈ p.edges := by
-          simpa only [Ear.toGraph_open] using (p.mem_edgeSet_walkGraph e).mp heEar
+      have heP : e ∈ p.edges := (p.mem_edgeSet_walkGraph e).mp he
+      exact ⟨s, c, hc, by
         simp only [c, Walk.edges_transfer, Walk.edges_append, List.mem_append]
-        exact Or.inl heP)
+        exact Or.inl heP⟩
   | @«closed» hHG s p hp hs hinter hedges =>
-      rw [Ear.toGraph_closed] at heEar
+      rw [Ear.toGraph_closed] at he
       let c := p.transfer (Ear.closed hHG p hp hs hinter hedges).add_le fun f hf ↦ by
         rw [edgeSet_add]
         exact Or.inr (by
           simpa only [Ear.toGraph_closed] using (p.mem_edgeSet_walkGraph f).mpr hf)
       have hc : c.IsCycle := (Walk.isCycle_transfer
         (Ear.closed hHG p hp hs hinter hedges).add_le p _).mpr hp
-      exact he.notMem_edges_of_isCycle hc (by
-        simpa only [c, Walk.edges_transfer] using (show e ∈ p.edges from by
-          simpa only [Ear.toGraph_closed] using (p.mem_edgeSet_walkGraph e).mp heEar))
+      exact ⟨s, c, hc, by
+        simpa only [c, Walk.edges_transfer] using (p.mem_edgeSet_walkGraph e).mp he⟩
+
+/-- Adjoining an ear to a connected graph without bridges produces no bridge. -/
+theorem not_isBridge_add (hH : H.Connected) (hbridge : ∀ e, ¬ H.IsBridge e) (e : β) :
+    ¬ ear.add.IsBridge e := by
+  intro he
+  have heAdd := he.mem_edgeSet
+  rw [edgeSet_add] at heAdd
+  rcases heAdd with heH | heEar
+  · exact hbridge e (he.anti_of_mem ear.base_le_add heH)
+  obtain ⟨x, p, hp, hep⟩ := ear.exists_isCycle_add_of_mem_edgeSet_toGraph hH heEar
+  exact hp.not_isBridge_of_le le_rfl hep he
 
 /-- Adjoining an ear preserves `2`-edge-connectivity. -/
 theorem isEdgeConnected_two_add (hH : H.IsEdgeConnected 2) : ear.add.IsEdgeConnected 2 := by
