@@ -45,7 +45,8 @@ degree is the height `#S` itself, and the terms are finite biproducts.
   biproducts with summand inclusions `Functor.cubeComplexι` and projections
   `Functor.cubeComplexπ`, and its differential is characterised on summands by
   `Functor.ι_cubeComplex_d`.
-* `CategoryTheory.NatTrans.cubeComplexMap α`: the cochain map induced by a map of cubes.
+* `CategoryTheory.NatTrans.cubeComplexMap α`: the cochain map induced by a map of cubes, and
+  `CategoryTheory.NatIso.cubeComplexMap e` the isomorphism induced by an isomorphism of cubes.
 * `CategoryTheory.cubeComplexFunctor C ι`: the totalization as an additive functor of the cube.
 
 ## Main results
@@ -411,6 +412,29 @@ lemma cubeComplexMap_add (α β : F ⟶ G) :
   simp [Preadditive.add_comp]
 
 end NatTrans
+
+namespace NatIso
+
+variable {F G : Finset ι ⥤ C}
+
+/-- The isomorphism of cube complexes induced by an isomorphism of cubes, acting vertex by vertex
+by the components of `e`. It is the image of `e` under `cubeComplexFunctor C ι`, stated between
+the cube complexes themselves. -/
+def cubeComplexMap (e : F ≅ G) : F.cubeComplex ≅ G.cubeComplex where
+  hom := NatTrans.cubeComplexMap e.hom
+  inv := NatTrans.cubeComplexMap e.inv
+  hom_inv_id := by rw [← NatTrans.cubeComplexMap_comp, e.hom_inv_id, NatTrans.cubeComplexMap_id]
+  inv_hom_id := by rw [← NatTrans.cubeComplexMap_comp, e.inv_hom_id, NatTrans.cubeComplexMap_id]
+
+@[simp]
+lemma cubeComplexMap_hom (e : F ≅ G) : (cubeComplexMap e).hom = NatTrans.cubeComplexMap e.hom :=
+  (rfl)
+
+@[simp]
+lemma cubeComplexMap_inv (e : F ≅ G) : (cubeComplexMap e).inv = NatTrans.cubeComplexMap e.inv :=
+  (rfl)
+
+end NatIso
 
 variable (C ι) in
 /-- The cube complex `Functor.cubeComplex` as a functor of the cube. -/
