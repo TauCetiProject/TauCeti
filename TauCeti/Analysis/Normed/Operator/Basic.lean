@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Basic facts about bounded operators
 
-For continuous semilinear maps from a seminormed space to a normed space, zero operator norm
-forces the map to vanish. The corresponding normed group structure is available as an explicit
-construction, including for strong duals of seminormed spaces.
+A semilinear map into a normed space with bounded values vanishes
+(`LinearMap.eq_zero_of_forall_norm_apply_le`). For continuous semilinear maps from a seminormed
+space to a normed space, zero operator norm forces the map to vanish. The corresponding normed
+group structure is available as an explicit construction, including for strong duals of
+seminormed spaces.
 
 This file also records a shared uniform-bound lemma for continuous linear maps between seminormed
 spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `T i` are eventually
@@ -22,12 +25,21 @@ In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`.
 
+A left inverse `S` of `T` modulo an error term gives the estimate
+`‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
+
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`), an invertible operator `A` on a normed space
-cancels against its inverse (`ContinuousLinearMap.ringInverse_apply_apply`,
-`ContinuousLinearMap.apply_ringInverse_apply`) and is bounded below by `‖A⁻¹‖⁻¹`
-(`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`), and conversely a lower bound
-`‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
+(`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
+perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), an invertible
+
+(`ContinuousLinearMap.injective_of_forall_norm_le`), and invertible if it is also surjective
+(`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
+same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
+operator `A` on a normed space cancels against its inverse
+(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
+and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
+and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
@@ -47,6 +59,25 @@ public section
 
 open scoped Topology
 open Filter
+
+namespace LinearMap
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NormedField 𝕜₂] [AddCommGroup E]
+  [Module 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+
+/-- A semilinear map with bounded values is zero: scaling a vector with nonzero image by a scalar
+of large norm makes its image arbitrarily large. -/
+theorem eq_zero_of_forall_norm_apply_le {f : E →ₛₗ[σ] F} {C : ℝ} (h : ∀ x, ‖f x‖ ≤ C) :
+    f = 0 := by
+  ext x
+  by_contra hx
+  have hpos : 0 < ‖f x‖ := norm_pos_iff.2 hx
+  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 (C / ‖f x‖)
+  have := h (c • x)
+  rw [map_smulₛₗ, norm_smul, RingHomIsometric.norm_map] at this
+  exact ((le_div_iff₀ hpos).2 this).not_gt hc
+
+end LinearMap
 
 namespace ContinuousLinearMap
 
@@ -101,6 +132,17 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
   simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
 
+/-- The a priori estimate attached to a left inverse modulo an error term: since
+`x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
+`(S ∘ T - 1) x`. When `S ∘ T - 1` is compact this is the compact-error estimate behind the
+semi-Fredholm property. -/
+theorem norm_le_opNorm_mul_norm_add_norm_comp_sub_one (T : X →L[𝕜] Y) (S : Y →L[𝕜] X) (x : X) :
+    ‖x‖ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by
+  have hx : x = S (T x) - (S.comp T - 1 : X →L[𝕜] X) x := by simp
+  calc ‖x‖ = ‖S (T x) - (S.comp T - 1 : X →L[𝕜] X) x‖ := congrArg _ hx
+    _ ≤ ‖S (T x)‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := norm_sub_le _ _
+    _ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by gcongr; exact S.le_opNorm _
+
 section Inverse
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -110,6 +152,38 @@ theorem injective_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F] [Norm
     {f : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : Function.Injective f := by
   refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
   simpa [hx] using h x
+
+/-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays nonzero at `x ≠ 0` under a perturbation `w`
+with `‖w‖ ≤ ε ‖x‖`, provided `M ε < 1`. -/
+theorem apply_add_ne_zero_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : E →L[𝕜] F} {M ε : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) (hMε : M * ε < 1)
+    {x : E} (hx : x ≠ 0) {w : F} (hw : ‖w‖ ≤ ε * ‖x‖) : f x + w ≠ 0 := by
+  intro hsum
+  have hfx : ‖f x‖ ≤ ε * ‖x‖ := by rwa [eq_neg_of_add_eq_zero_left hsum, norm_neg]
+  have hpos : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
+  nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM.le]
+
+/-- A surjective continuous linear map that is bounded below, `‖x‖ ≤ C * ‖L x‖`, is invertible.
+Neither space needs to be complete. -/
+theorem isInvertible_of_surjective_of_forall_norm_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {L : E →L[𝕜] F} {C : ℝ}
+    (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖) : L.IsInvertible := by
+  let e := LinearEquiv.ofBijective (L : E →ₗ[𝕜] F) ⟨injective_of_forall_norm_le hC, hL⟩
+  have he : ∀ x, e x = L x := fun x ↦ LinearEquiv.ofBijective_apply _ x
+  -- `toContinuousLinearEquivOfBounds` has no coercion lemma; it applies as `e` by definition.
+  refine ⟨e.toContinuousLinearEquivOfBounds ‖L‖ C L.le_opNorm fun y ↦ ?_, ext he⟩
+  calc ‖e.symm y‖ ≤ C * ‖e (e.symm y)‖ := hC (e.symm y)
+    _ = C * ‖y‖ := by rw [e.apply_symm_apply]
+
+/-- The inverse of a surjective continuous linear map with `‖x‖ ≤ C * ‖L x‖` satisfies
+`‖L⁻¹ y‖ ≤ C * ‖y‖`. -/
+theorem norm_inverse_apply_le_of_forall_norm_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {L : E →L[𝕜] F} {C : ℝ}
+    (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖) (y : F) :
+    ‖L.inverse y‖ ≤ C * ‖y‖ := by
+  simpa [(isInvertible_of_surjective_of_forall_norm_le hL hC).self_apply_inverse]
+    using hC (L.inverse y)
 
 /-- The inverse of an invertible operator undoes the operator. -/
 @[simp]

@@ -13,11 +13,12 @@ import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.RingTheory.Norm.Projective
 
 /-!
-# Generators of an extension of finite free group schemes
+# Generators of an extension of finite flat group schemes
 
-Let `1 → G₁ → G → G₂ → 1` be a short exact sequence of affine group schemes over `Spec R` which
-are finite and free over `R`. In coordinate Hopf algebras it is a pair of morphisms
-`p : O(G₂) ⟶ O(G)` and `i : O(G) ⟶ O(G₁)` with `TauCeti.CommHopfAlgCat.IsShortExact p i`. Let
+Let `1 → G₁ → G → G₂ → 1` be a short exact sequence of affine group schemes over `Spec R`, with
+`G₁` and `G₂` finite flat over `R` and `G` finite over `R`. In coordinate Hopf algebras it is a pair
+of morphisms `p : O(G₂) ⟶ O(G)` and `i : O(G) ⟶ O(G₁)` with
+`TauCeti.CommHopfAlgCat.IsShortExact p i`. Let
 `1 → A₁ → A → A₂ → 1` be a short exact sequence of finite groups, given by `j : A₁ →* A` and
 `q : A →* A₂`, and let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)` and `φ₂ : A₂ →* G₂(R)` be compatible
 homomorphisms to the points. This file proves Katz–Mazur 1.11.3: if `φ₁` is an `A₁`-generator of
@@ -45,7 +46,9 @@ translates of `b` by the points `φ₁ a₁`. Taking
 values at `φ a` for one `a` above each element of `A₂` gives the product of `b` over all the points
 `φ (a * j a₁)`, that is over all of `A`. Since a full set of sections is defined by this identity
 after every base change, the argument is run after an arbitrary base change `R → T`, using
-`TauCeti.CommHopfAlgCat.IsShortExact.baseChange`.
+`TauCeti.CommHopfAlgCat.IsShortExact.baseChange`. Localizing `T` at its maximal ideals makes the
+finite flat coordinate algebras free, so the result does not require global bases. In fact only
+the finiteness of `G` and the finite flatness of `G₁` and `G₂` are needed in the statement.
 
 ## References
 
@@ -135,21 +138,35 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
     ((MonoidHom.ofInjective hj).trans (MulEquiv.subgroupCongr hjq.symm)).toEquiv _ _ fun _ ↦ rfl
 
 /-- **Generators of an extension** (Katz–Mazur 1.11.3). Let `p : O(G₂) ⟶ O(G)` and
-`i : O(G) ⟶ O(G₁)` be a short exact sequence `1 → G₁ → G → G₂ → 1` of finite free affine group
-schemes over `R`, and let `j : A₁ →* A` and `q : A →* A₂` be a short exact sequence of finite
-groups. Let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)` and `φ₂ : A₂ →* G₂(R)` be compatible with these
+`i : O(G) ⟶ O(G₁)` be a short exact sequence `1 → G₁ → G → G₂ → 1` of affine group schemes over
+`R`, with `G₁` and `G₂` finite flat over `R` and `G` finite over `R`, and let `j : A₁ →* A` and
+`q : A →* A₂` be a short exact sequence of finite groups. Let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)`
+and `φ₂ : A₂ →* G₂(R)` be compatible with these
 maps: `i ∘ φ₁ = φ ∘ j` and `p ∘ φ = φ₂ ∘ q` on points. If `φ₁` is an `A₁`-generator of `G₁` and
 `φ₂` is an `A₂`-generator of `G₂`, then `φ` is an `A`-generator of `G`. -/
-theorem IsAGenerator.of_isShortExact [Module.Free R Q] [Module.Finite R Q]
-    [Module.Finite R G] [Module.Free R N] [Module.Finite R N]
+theorem IsAGenerator.of_isShortExact [Module.Flat R Q] [Module.Finite R Q]
+    [Module.Finite R G] [Module.Flat R N] [Module.Finite R N]
     (h : IsShortExact p i) (hj : Function.Injective j) (hq : Function.Surjective q)
     (hjq : q.ker = j.range) (h₁ : (BialgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
     (h₂ : (BialgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
     (hφ₂ : IsAGenerator φ₂) : IsAGenerator φ := by
   refine isAGenerator_iff.mpr <| isFullSetOfSections_iff.mpr fun T _ _ _ f ↦ ?_
-  have h₁T := BialgHom.mapDomain_comp_pointsBaseChange_comp T i.hom h₁
-  have h₂T := BialgHom.mapDomain_comp_pointsBaseChange_comp T p.hom h₂
-  simpa [AlgHom.ofConv_pointsBaseChange] using norm_eq_prod_of_isShortExact (h.baseChange T) hj
-    hq hjq h₁T h₂T (hφ₁.baseChange T) (hφ₂.baseChange T) f
+  -- The norm identity is an equality in the test ring, so check it at every maximal ideal.
+  refine Module.eq_of_localization_maximal (fun P _ ↦ Localization.AtPrime P)
+    (fun P _ ↦ (Algebra.linearMap T (Localization.AtPrime P))) _ _ fun P _ ↦ ?_
+  let L := Localization.AtPrime P
+  have : Module.Free L (L ⊗[R] Q) := Module.free_of_flat_of_isLocalRing
+  have : Module.Free L (L ⊗[R] N) := Module.free_of_flat_of_isLocalRing
+  let e := Algebra.TensorProduct.cancelBaseChange R T L L G
+  have : Module.Free L (L ⊗[R] G) := Module.Free.of_equiv e.toLinearEquiv
+  have h₁L := BialgHom.mapDomain_comp_pointsBaseChange_comp L i.hom h₁
+  have h₂L := BialgHom.mapDomain_comp_pointsBaseChange_comp L p.hom h₂
+  have hnorm := norm_eq_prod_of_isShortExact (h.baseChange L) hj hq hjq h₁L h₂L
+    (hφ₁.baseChange L) (hφ₂.baseChange L) (e (1 ⊗ₜ[T] f))
+  rw [Algebra.linearMap_apply, Algebra.linearMap_apply, ← Algebra.norm_baseChange_tmul,
+    ← Algebra.norm_eq_of_algEquiv e, hnorm, map_prod]
+  refine Finset.prod_congr rfl fun a _ ↦ ?_
+  simp only [MonoidHom.comp_apply, AlgHom.ofConv_pointsBaseChange, e,
+    ← AlgHom.sectionBaseChange_sectionBaseChange, AlgHom.sectionBaseChange_tmul, one_mul, L]
 
 end TauCeti

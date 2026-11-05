@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
+public import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
@@ -35,8 +36,15 @@ direction `w`; its derivative involves the second derivative of `u`.
   the constant `B.flip + B`.
 * `ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply`: the derivative of
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
+* `ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply`: `y ↦ B (u y) (∂_w u y)` is `C^n` at a
+  point where `u` is `C^(n+1)`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
+* `ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp`: the iterated derivatives of a family
+  of bilinear maps, read along `u` and pulled back along `u`, are those of the family, taken in
+  the directions of the images under `u` and pulled back along `u`.
+* `ContinuousLinearMap.apply_self_fderiv_eq_of_eventuallyEq`: a local map fixing zero and
+  preserving quadratic functions has a derivative preserving those quadratic functions.
 * `ContinuousAt.hasFDerivAt_clm_apply_zero`: evaluating a family `A q` of continuous linear maps,
   continuous at `p`, on a vector `x` is differentiable at `(0, p)`, with no differentiability in
   `q`. For instance, the tube `(u, t) ↦ γ t + A t u` around a curve `γ`, built from a merely
@@ -106,6 +114,13 @@ theorem _root_.ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply (B : F →L
   B.hasFDerivAt_of_bilinear (hu.differentiableAt (by norm_num)).hasFDerivAt
     (hu.hasFDerivAt_fderiv_apply le_rfl w)
 
+/-- If `u` is `C^(n+1)` at `z`, then `y ↦ B (u y) (∂_w u y)` is `C^n` at `z`. -/
+theorem _root_.ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply (B : F →L[𝕜] F →L[𝕜] G)
+    {u : E → F} {z : E} (hu : ContDiffAt 𝕜 (n + 1) u z) (w : E) :
+    ContDiffAt 𝕜 n (fun y ↦ B (u y) (fderiv 𝕜 u y w)) z :=
+  (B.contDiff.contDiffAt.comp z (hu.of_le le_self_add)).clm_apply
+    ((hu.fderiv_right le_rfl).clm_apply contDiffAt_const)
+
 /-- The pullback `(v, w) ↦ B (L v) (L w)` of a continuous bilinear map `B` along a continuous linear
 map `L` is `C^n` as a function of the pair `(B, L)`. -/
 theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
@@ -119,6 +134,33 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
   rw [h]
   exact ((ContinuousLinearMap.compL 𝕜 E F G).flip.contDiff.comp contDiff_snd).clm_comp
     (contDiff_fst.clm_comp contDiff_snd)
+
+noncomputable section PullbackBilin
+
+-- Cache the canonical operator-space instances: searching for the structure on nested operator
+-- spaces otherwise fails.
+private local instance : NormedAddCommGroup (E →L[𝕜] G) := ContinuousLinearMap.toNormedAddCommGroup
+private local instance : NormedSpace 𝕜 (E →L[𝕜] G) := ContinuousLinearMap.toNormedSpace
+private local instance : NormedAddCommGroup (F →L[𝕜] G) := ContinuousLinearMap.toNormedAddCommGroup
+private local instance : NormedSpace 𝕜 (F →L[𝕜] G) := ContinuousLinearMap.toNormedSpace
+
+/-- The iterated derivatives of a family `B` of bilinear maps, read along a continuous linear map
+`u` and pulled back along `u`, are those of `B` at the image point, taken in the directions of the
+images under `u` and pulled back along `u`. -/
+theorem _root_.ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp
+    {B : F → F →L[𝕜] F →L[𝕜] G} {U : Set F} (hU : IsOpen U) (hB : ContDiffOn 𝕜 n B U)
+    (u : E →L[𝕜] F) {z : E} (hz : u z ∈ U) {m : ℕ} (hm : m ≤ n) :
+    iteratedFDeriv 𝕜 m (ContinuousLinearMap.pullbackBilinL u ∘ (B ∘ u)) z =
+      (ContinuousLinearMap.pullbackBilinL u).compContinuousMultilinearMap
+        ((iteratedFDeriv 𝕜 m B (u z)).compContinuousLinearMap fun _ ↦ u) := by
+  have hU' : IsOpen (u ⁻¹' U) := hU.preimage u.continuous
+  have hBu : ContDiffAt 𝕜 n (B ∘ u) z :=
+    (hB.contDiffAt (hU.mem_nhds hz)).comp z u.contDiff.contDiffAt
+  rw [(ContinuousLinearMap.pullbackBilinL u).iteratedFDeriv_comp_left hBu hm,
+    ← iteratedFDerivWithin_of_isOpen m hU' hz, ← iteratedFDerivWithin_of_isOpen m hU hz,
+    u.iteratedFDerivWithin_comp_right hB hU.uniqueDiffOn hU'.uniqueDiffOn hz hm]
+
+end PullbackBilin
 
 /-- If a family `A` of continuous linear maps is continuous at `p`, then `(x, q) ↦ A q x` is
 differentiable at `(0, p)`, with derivative `(x, q) ↦ A p x`. No differentiability in `q` is
@@ -151,5 +193,33 @@ theorem _root_.ContinuousAt.hasFDerivAt_clm_apply_zero {P : Type*} [NormedAddCom
     exact h.trans_isBigO (Asymptotics.isBigO_norm_left.2 (Asymptotics.isBigO_refl _ _))
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The derivative at the origin of a local map preserving quadratic functions also preserves
+those quadratic functions. Only differentiability at the origin is required; the bilinear forms
+need not be symmetric or nondegenerate. -/
+theorem apply_self_fderiv_eq_of_eventuallyEq (B : F →L[ℝ] F →L[ℝ] ℝ)
+    (C : E →L[ℝ] E →L[ℝ] ℝ) {φ : E → F} (hφ : DifferentiableAt ℝ φ 0) (hφ0 : φ 0 = 0)
+    (h : (fun y ↦ B (φ y) (φ y)) =ᶠ[nhds 0] (fun y ↦ C y y)) (v : E) :
+    B (fderiv ℝ φ 0 v) (fderiv ℝ φ 0 v) = C v v := by
+  -- Rescale along the ray through v; quadratic homogeneity removes the scale.
+  have hlim := hφ.hasFDerivAt.lim_real v
+  simp only [zero_add, hφ0, sub_zero] at hlim
+  have hquad := (B.continuous₂.tendsto _).comp (hlim.prodMk_nhds hlim)
+  have hnear : Filter.Tendsto (fun t : ℝ ↦ t⁻¹ • v) Filter.atTop (nhds 0) := by
+    simpa using (tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const v
+  have heq : (fun t : ℝ ↦ B (t • φ (t⁻¹ • v)) (t • φ (t⁻¹ • v)))
+      =ᶠ[Filter.atTop] (fun _ ↦ C v v) := by
+    filter_upwards [hnear.eventually h, Filter.eventually_ne_atTop 0] with t ht ht0
+    simp only [map_smul, smul_apply, smul_smul]
+    rw [ht]
+    simp [mul_assoc, ht0]
+  exact tendsto_nhds_unique hquad (tendsto_const_nhds.congr' heq.symm)
+
+end ContinuousLinearMap
 
 end

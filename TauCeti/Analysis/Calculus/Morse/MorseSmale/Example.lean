@@ -516,7 +516,7 @@ theorem exists_isManifold_cosAddHalfSq_saddle_min (hp : fderiv ℝ cosAddHalfSq 
         (Subtype.val : ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q) →
           EuclideanSpace ℝ (Fin 2)) := by
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet
-    contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
+    le_rfl contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
     (isNondegenerateCriticalPoint_cosAddHalfSq hq) ?_
   rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hpc,
     morseIndex_cosAddHalfSq_of_cos_eq_neg_one hqc]
@@ -536,7 +536,7 @@ theorem exists_isManifold_cosAddHalfSq_saddle_min_level (hp : fderiv ℝ cosAddH
         (Subtype.val : ↥(Flow.unstableSet Φ p ∩ Flow.stableSet Φ q ∩
           {x | cosAddHalfSq x = c}) → EuclideanSpace ℝ (Fin 2)) := by
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet_level
-    contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
+    le_rfl contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq hp)
     (isNondegenerateCriticalPoint_cosAddHalfSq hq) ?_
   rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one hpc,
     morseIndex_cosAddHalfSq_of_cos_eq_neg_one hqc]

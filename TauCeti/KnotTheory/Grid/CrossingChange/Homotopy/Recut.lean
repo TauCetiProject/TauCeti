@@ -510,6 +510,44 @@ theorem existsUnique_crossingChangeUnpairedHexagonComposite_of_toRectangleDecomp
     ((G.mem_crossingChangeUnpairedHexagonComposites C t F').mp hF'.1).1 hF
     (hF'.2.1.trans hFD.symm)
 
+/-- Let `D` be a decomposition into two empty rectangles with exactly one common side, which
+underlies no hexagon composite. If its recut underlies a counted composite of weight `w` and the
+annulus squares carry no `X`-marking, then exactly one unpaired composite recuts `D`, and every
+unpaired composite recutting `D` has weight `w`. -/
+theorem existsUnique_crossingChangeUnpairedHexagonComposite_isRecut
+    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x z : GridState n}
+    {D : GridRectangleDecomposition x z} (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
+    (hD : ∀ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F.toRectangleDecomposition ≠ D) {w : MvPolynomial (Fin n) R}
+    (hF : ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧
+        F.toRectangleDecomposition = D.recut hone hfirst hsecond ∧
+          G.crossingChangeHexagonCompositeWeight C t R F = w) :
+    (∃! F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeUnpairedHexagonComposites C t x z ∧
+        D.IsRecut F.toRectangleDecomposition) ∧
+      ∀ F ∈ G.crossingChangeUnpairedHexagonComposites C t x z,
+        D.IsRecut F.toRectangleDecomposition →
+          G.crossingChangeHexagonCompositeWeight C t R F = w := by
+  obtain ⟨F, hF, hFD, hFw⟩ := hF
+  have hrecut := D.isRecut_recut hone hfirst hsecond
+  -- A decomposition recuts `D` exactly when it is the canonical recut of `D`.
+  have hisRecut (E : GridRectangleDecomposition x z) :
+      D.IsRecut E ↔ E = D.recut hone hfirst hsecond :=
+    ⟨fun h => (D.existsUnique_isRecut hone hfirst hsecond).unique h hrecut, fun h => h ▸ hrecut⟩
+  have hunique : ∀ F' : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F' ∈ G.crossingChangeUnpairedHexagonComposites C t x z ∧
+        D.IsRecut F'.toRectangleDecomposition → F' = F := fun F' hF' =>
+    injOn_toRectangleDecomposition_crossingChangeHexagonCompositeDecompositions hX x z
+      ((G.mem_crossingChangeUnpairedHexagonComposites C t F').mp hF'.1).1 hF
+      (((hisRecut _).mp hF'.2).trans hFD.symm)
+  -- The only recut of the recut of `D` is `D`, which underlies no composite.
+  refine ⟨⟨F, ⟨mem_crossingChangeUnpairedHexagonComposites_of_toRectangleDecomposition_eq
+    (D.hasOneCommonSide_recut hone hfirst hsecond) hrecut.isEmpty_first hrecut.isEmpty_second
+    (fun E _ hE => hD E (hE.trans (D.recut_recut hone hfirst hsecond))) hF hFD,
+    (hisRecut _).mpr hFD⟩, hunique⟩, fun F' hF' hF'D => hunique F' ⟨hF', hF'D⟩ ▸ hFw⟩
+
 variable [CharP R 2]
 
 open scoped Classical in

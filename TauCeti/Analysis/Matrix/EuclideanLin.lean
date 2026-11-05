@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # The map of a matrix on Euclidean space
@@ -31,11 +32,21 @@ inverse is the map of the inverse matrix. That is the form a substitution needs:
 inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
 
 A square matrix is unitary exactly when its continuous linear map preserves the inner product.
+The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
+matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
+diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
 
 ## Main results
 
 * `Matrix.inner_toEuclideanLin_toEuclideanLin` — the quadratic form of `B` at `A x` is the
   quadratic form of `Aᴴ * B * A` at `x`;
+* `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the quadratic form of `A` at a vector extended
+  by zero is the quadratic form of the principal submatrix at the original vector;
+
+* `Matrix.re_inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)` is
+  `x ↦ ∑ᵢ |xᵢ|² wᵢ`;
+* `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
+  form of `A` on an orthonormal basis are the diagonal entries of a unitary conjugate `U A Uᴴ`;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
@@ -62,6 +73,53 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
       ⟪x, (Aᴴ * B * A).toEuclideanLin x⟫_𝕜 := by
   rw [← LinearMap.adjoint_inner_right, ← toEuclideanLin_conjTranspose_eq_adjoint]
   simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
+
+/-- The quadratic form of `A` at a vector extended by zero along `f` is the quadratic form of the
+principal submatrix `A.submatrix f f` at the original vector. -/
+theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι ↪ κ)
+    (x : EuclideanSpace 𝕜 ι) :
+    ⟪A.toEuclideanLin (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x),
+        LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x⟫_𝕜 =
+      ⟪(A.submatrix f f).toEuclideanLin x, x⟫_𝕜 := by
+  have hmul : ∀ b, (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp) b =
+      ∑ c, A b (f c) * x c := fun b => by
+    simpa [mulVec, dotProduct] using LinearIsometry.sum_mul_piLpExtendByZero f x (A b)
+  simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply]
+  conv_lhs => enter [2, b]; rw [mul_comm]
+  rw [LinearIsometry.sum_mul_piLpExtendByZero f x (fun b => (starRingEnd 𝕜)
+    (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp b))]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [mul_comm, hmul (f a)]
+  simp [mulVec, dotProduct]
+
+/-- The quadratic form of the diagonal operator `diag(w)` on Euclidean space is
+`x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
+theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : EuclideanSpace 𝕜 ι) :
+    RCLike.re ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ∑ i, ‖x i‖ ^ 2 * w i := by
+  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, map_sum, RCLike.inner_apply',
+    map_mul, RCLike.conj_ofReal]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [mul_assoc, RCLike.conj_mul]
+  norm_cast
+  simp [mul_comm]
+
+/-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives a unitary matrix `U`, whose rows are
+the conjugates of the vectors `e k`, such that the diagonal entries of `U A Uᴴ` are the values
+`⟪e k, A (e k)⟫` of the quadratic form of `A` on the basis vectors. -/
+theorem exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner (A : Matrix ι ι 𝕜)
+    (e : OrthonormalBasis ι 𝕜 (EuclideanSpace 𝕜 ι)) :
+    ∃ U ∈ unitaryGroup ι 𝕜, ∀ k, (U * A * star U) k k = ⟪e k, toEuclideanLin A (e k)⟫_𝕜 := by
+  refine ⟨star ((EuclideanSpace.basisFun ι 𝕜).toBasis.toMatrix e.toBasis),
+    Unitary.star_mem ((EuclideanSpace.basisFun ι 𝕜).toMatrix_orthonormalBasis_mem_unitary e),
+    fun k ↦ ?_⟩
+  simp only [star_star, Matrix.mul_apply, Matrix.star_apply, Module.Basis.toMatrix_apply,
+    OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_toBasis, PiLp.basisFun_repr,
+    toLpLin_apply, PiLp.inner_apply, RCLike.inner_apply', mulVec, dotProduct, Finset.sum_mul,
+    Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [RCLike.star_def]
+  ring
 
 omit [Fintype κ] [DecidableEq κ] in
 /-- The rank of a matrix is the dimension of the range of the linear map it induces on Euclidean
