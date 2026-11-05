@@ -74,24 +74,23 @@ private theorem laplacian_neumannBarrier (z : ℂ) : Δ neumannBarrier z = 1 := 
   have hφ : neumannBarrier =
       (fun w : ℂ ↦ ((w - I / 2) ^ 2).re) + fun w : ℂ ↦ (4⁻¹ : ℝ) • ‖w‖ ^ 2 := by
     ext w; simp [neumannBarrier]
-  rw [hφ, hre.1.laplacian_add (hsq.const_smul _), hre.2.self_of_nhds,
-    show (fun w : ℂ ↦ (4⁻¹ : ℝ) • ‖w‖ ^ 2) = (4⁻¹ : ℝ) • fun w : ℂ ↦ ‖w‖ ^ 2 from rfl,
+  rw [hφ, hre.1.laplacian_add (hsq.const_smul _), hre.2.self_of_nhds, ← Pi.smul_def,
     laplacian_smul _ hsq, laplacian_norm_sq]
   norm_num [Complex.finrank_real_complex]
 
 private theorem fderiv_neumannBarrier_I (z : ℂ) :
     fderiv ℝ neumannBarrier z I = 1 - 3 / 2 * z.im := by
   have hpow := (hasDerivAt_pow 2 (z - I / 2)).comp z ((hasDerivAt_id z).sub_const (I / 2))
-  have hre : HasFDerivAt (fun w : ℂ ↦ ((w - I / 2) ^ 2).re)
-      (reCLM.comp ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ)
-        ((2 : ℕ) * (z - I / 2) ^ (2 - 1) * 1)).restrictScalars ℝ)) z :=
-    reCLM.hasFDerivAt.comp z (hpow.hasFDerivAt.restrictScalars ℝ)
-  have hn : HasFDerivAt (fun w : ℂ ↦ ‖w‖ ^ 2) (2 • innerSL ℝ z) z :=
-    (hasStrictFDerivAt_norm_sq z).hasFDerivAt
-  have hsq := hn.const_mul (4⁻¹ : ℝ)
+  have hre := reCLM.hasFDerivAt.comp z (hpow.hasFDerivAt.restrictScalars ℝ)
+  have hsq := (hasStrictFDerivAt_norm_sq z).hasFDerivAt.const_mul (4⁻¹ : ℝ)
   have hφ : HasFDerivAt neumannBarrier _ z := hre.add hsq
   rw [hφ.fderiv]
-  simp [Complex.inner]
+  simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, mul_one, add_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, reCLM_apply, mul_re, I_re, re_ofNat,
+    sub_re, div_ofNat_re, zero_div, sub_zero, im_ofNat, sub_im, div_ofNat_im, I_im, one_div,
+    zero_mul, mul_im, add_zero, one_mul, zero_sub, smul_apply, coe_innerSL_apply, Complex.inner,
+    conj_re, conj_im, mul_neg, sub_neg_eq_add, zero_add, nsmul_eq_mul]
   ring
 
 /-- **The weak maximum principle on a rectangle with Neumann conditions on two sides.** Let `f`
@@ -141,29 +140,26 @@ theorem le_of_laplacian_nonneg_of_neumann_of_le_sides {a b m : ℝ} {f : ℂ →
     refine ⟨hre₁.lt_of_ne fun h ↦ ?_, hre₂.lt_of_ne fun h ↦ ?_⟩ <;>
       exact (hsides z₁ ⟨⟨hre₁, hre₂⟩, him₁, him₂⟩ (by tauto)).not_gt hfz₁
   have hz₁Q : z₁ ∈ Q := ⟨⟨hre₁, hre₂⟩, him₁, him₂⟩
-  have hder (h : z₁.im = 0 ∨ z₁.im = 1) :
-      HasFDerivWithinAt g (f' z₁ + ε • fderiv ℝ neumannBarrier z₁) Q z₁ :=
-    (hderiv z₁ hz₁Q h hfz₁).add
+  -- At a maximizer on a horizontal side, the derivative of `f + ε φ` is nonpositive in every
+  -- direction `v` with `z₁ + v ∈ Q`, by convexity of `Q` (`s ×ℂ t` is `re ⁻¹' s ∩ im ⁻¹' t`).
+  have hQconv : Convex ℝ Q := ((convex_Icc a b).is_linear_preimage ⟨add_re, smul_re⟩).inter
+    ((convex_Icc 0 1).is_linear_preimage ⟨add_im, smul_im⟩)
+  have hfermat (h : z₁.im = 0 ∨ z₁.im = 1) {v : ℂ} (hv : z₁ + v ∈ Q) :
+      (f' z₁ + ε • fderiv ℝ neumannBarrier z₁) v ≤ 0 :=
+    hmax.isLocalMaxOn.hasFDerivWithinAt_nonpos ((hderiv z₁ hz₁Q h hfz₁).add
       ((contDiff_neumannBarrier.differentiable (by norm_num) z₁).hasFDerivAt.const_mul
-        ε).hasFDerivWithinAt
+        ε).hasFDerivWithinAt)
+      (mem_posTangentConeAt_of_segment_subset (hQconv.segment_subset hz₁Q hv))
   rcases him₁.eq_or_lt with h0 | h0
   · -- On the line `t = 0` the derivative of `f + ε φ` into the rectangle is `ε > 0`.
-    have hcone : I ∈ posTangentConeAt Q z₁ := by
-      refine mem_posTangentConeAt_of_frequently_mem (Eventually.frequently ?_)
-      filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with t ht
-      refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> simp <;> linarith [ht.1, ht.2]
-    have := hmax.isLocalMaxOn.hasFDerivWithinAt_nonpos (hder (.inl h0.symm)) hcone
+    have := hfermat (.inl h0.symm) (v := I) ⟨by simpa using ⟨hre₁, hre₂⟩, by simp [← h0]⟩
     rw [add_apply, smul_apply,
       hneumann z₁ hz₁Q (.inl h0.symm) hfz₁, fderiv_neumannBarrier_I, ← h0] at this
     norm_num at this
     linarith
   rcases him₂.eq_or_lt with h1 | h1
   · -- On the line `t = 1` the derivative of `f + ε φ` into the rectangle is `ε / 2 > 0`.
-    have hcone : -I ∈ posTangentConeAt Q z₁ := by
-      refine mem_posTangentConeAt_of_frequently_mem (Eventually.frequently ?_)
-      filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with t ht
-      refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> simp <;> linarith [ht.1, ht.2]
-    have := hmax.isLocalMaxOn.hasFDerivWithinAt_nonpos (hder (.inr h1)) hcone
+    have := hfermat (.inr h1) (v := -I) ⟨by simpa using ⟨hre₁, hre₂⟩, by simp [h1]⟩
     rw [map_neg, add_apply, smul_apply,
       hneumann z₁ hz₁Q (.inr h1) hfz₁, fderiv_neumannBarrier_I, h1] at this
     norm_num at this
@@ -176,9 +172,9 @@ theorem le_of_laplacian_nonneg_of_neumann_of_le_sides {a b m : ℝ} {f : ℂ →
     have hcdφ : ContDiffAt ℝ 2 (fun w ↦ ε * neumannBarrier w) z₁ :=
       (contDiff_const.mul contDiff_neumannBarrier).contDiffAt
     have hpos : 0 < Δ g z₁ := by
+      have hadd : g = f + fun w ↦ ε * neumannBarrier w := by ext; simp [hg]
       have hsmul : (fun w ↦ ε * neumannBarrier w) = ε • neumannBarrier := by ext; simp
-      rw [hg, show (fun w ↦ f w + ε * neumannBarrier w) =
-          f + fun w ↦ ε * neumannBarrier w from rfl, hcdf.laplacian_add hcdφ, hsmul,
+      rw [hadd, hcdf.laplacian_add hcdφ, hsmul,
         laplacian_smul _ contDiff_neumannBarrier.contDiffAt, laplacian_neumannBarrier]
       have := hlap z₁ hre.1 hre.2 h0 h1 hfz₁
       simp only [smul_eq_mul, mul_one]
