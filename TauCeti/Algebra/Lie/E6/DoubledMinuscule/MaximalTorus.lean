@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.CrossProduct
-public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.TorusCentralizer
+public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.TorusCentralizer.Basic
 public import TauCeti.Algebra.Lie.E6.Minuscule.SeedCoordinates
 
 /-!
