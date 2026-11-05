@@ -248,7 +248,7 @@ the fixed function `gaussianPDFReal 0 1`, whose positivity and measurability are
 rather than left to the caller; by proof irrelevance this still applies to
 `TauCeti.weightL2Isometry` built from any other proofs of those two side conditions. -/
 theorem weightL2Isometry_gaussianHermiteHilbertBasis (n : ℕ) :
-    weightL2Isometry volume (fun x : ℝ => gaussianPDFReal 0 1 x)
+    weightL2Isometry 𝕜 volume (fun x : ℝ => gaussianPDFReal 0 1 x)
         (Filter.Eventually.of_forall fun x => gaussianPDFReal_pos 0 1 x one_ne_zero) (by fun_prop)
         (cast (congrArg (fun m : Measure ℝ => (Lp 𝕜 2 m : Type _))
           (by rw [gaussianReal_of_var_ne_zero 0 one_ne_zero, gaussianPDF_def]))
@@ -256,7 +256,7 @@ theorem weightL2Isometry_gaussianHermiteHilbertBasis (n : ℕ) :
       =ᵐ[volume] fun x : ℝ => (Real.sqrt (Real.sqrt 2))⁻¹
         • (algebraMap ℝ 𝕜) (hermiteFunction n (x / Real.sqrt 2)) := by
   -- The isometry is multiplication by `√w`, and the transport does not move representatives.
-  refine (weightL2Isometry_apply (𝕜 := 𝕜) volume (fun x : ℝ => gaussianPDFReal 0 1 x)
+  refine (coeFn_weightL2Isometry 𝕜 volume (fun x : ℝ => gaussianPDFReal 0 1 x)
     _ _ _).trans ?_
   have hγ : (gaussianReal 0 1 : Measure ℝ)
       = volume.withDensity fun x => ENNReal.ofReal (gaussianPDFReal 0 1 x) := by

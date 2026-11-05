@@ -198,7 +198,7 @@ noncomputable def hilbertBasisOfOrthogonalSystem {μ : Measure α}
       (Submodule.span 𝕜 (Set.range (bareNormalizedLp (𝕜 := 𝕜) f w c hmem)))ᗮ = ⊥) :
     HilbertBasis ℕ 𝕜 (Lp 𝕜 2 μ) :=
   (hilbertBasisOfWeightedMeasure f w c (hwpos.mono fun _ hx => hx.le) hwm hc horth hmem
-    hcomplete).mapₗᵢ (weightL2Isometry μ w hwpos hwm)
+    hcomplete).mapₗᵢ (weightL2Isometry 𝕜 μ w hwpos hwm)
 
 /-- Element-level characterization of the `√w`-envelope basis: the `weightL2Isometry`-image of the
 weighted-measure basis vector. -/
@@ -209,7 +209,7 @@ theorem coe_hilbertBasisOfOrthogonalSystem {μ : Measure α}
       (μ.withDensity (fun x => ENNReal.ofReal (w x)))) (hcomplete :
       (Submodule.span 𝕜 (Set.range (bareNormalizedLp (𝕜 := 𝕜) f w c hmem)))ᗮ = ⊥) (n : ℕ) :
     hilbertBasisOfOrthogonalSystem f w c hwpos hwm hc horth hmem hcomplete n
-      = weightL2Isometry μ w hwpos hwm (bareNormalizedLp (𝕜 := 𝕜) f w c hmem n) := by
+      = weightL2Isometry 𝕜 μ w hwpos hwm (bareNormalizedLp (𝕜 := 𝕜) f w c hmem n) := by
   rw [hilbertBasisOfOrthogonalSystem, HilbertBasis.mapₗᵢ_apply,
     coe_hilbertBasisOfWeightedMeasure f w c (hwpos.mono fun _ hx => hx.le) hwm hc horth hmem
       hcomplete]
@@ -236,7 +236,7 @@ theorem coeFn_hilbertBasisOfOrthogonalSystem {μ : Measure α}
       simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
       exact hx
   rw [coe_hilbertBasisOfOrthogonalSystem f w c hwpos hwm hc horth hmem hcomplete n]
-  filter_upwards [weightL2Isometry_apply (𝕜 := 𝕜) μ w hwpos hwm
+  filter_upwards [coeFn_weightL2Isometry 𝕜 μ w hwpos hwm
       (bareNormalizedLp (𝕜 := 𝕜) f w c hmem n),
     (coeFn_bareNormalizedLp (𝕜 := 𝕜) f w c hmem n).filter_mono hac.ae_le] with x hx hbare
   rw [hx, hbare, Algebra.smul_def, ← map_mul]

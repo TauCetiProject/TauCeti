@@ -129,7 +129,7 @@ positivity and measurability of the joint density are supplied here rather than 
 by proof irrelevance the statement still applies to `TauCeti.weightL2Isometry` built from any other
 proofs of those two side conditions. -/
 theorem weightL2Isometry_gaussianHermitePiBasis (a : ι → ℕ) :
-    weightL2Isometry (Measure.pi fun _ : ι => (volume : Measure ℝ))
+    weightL2Isometry 𝕜 (Measure.pi fun _ : ι => (volume : Measure ℝ))
         (fun x : ι → ℝ => ∏ i, gaussianPDFReal 0 1 (x i))
         (Filter.Eventually.of_forall (prod_gaussianPDFReal_pos ι))
         (measurable_prod_gaussianPDFReal ι).aemeasurable
@@ -139,7 +139,7 @@ theorem weightL2Isometry_gaussianHermitePiBasis (a : ι → ℕ) :
         fun x => ∏ i, (algebraMap ℝ 𝕜)
           ((Real.sqrt (Real.sqrt 2))⁻¹ * hermiteFunction (a i) (x i / Real.sqrt 2)) := by
   -- The isometry is multiplication by `√w`, and the transport does not move representatives.
-  refine (weightL2Isometry_apply (𝕜 := 𝕜) (Measure.pi fun _ : ι => (volume : Measure ℝ))
+  refine (coeFn_weightL2Isometry 𝕜 (Measure.pi fun _ : ι => (volume : Measure ℝ))
     (fun x : ι → ℝ => ∏ i, gaussianPDFReal 0 1 (x i)) _ _ _).trans ?_
   refine Filter.EventuallyEq.trans ?_
     (sqrt_prod_gaussianPDFReal_smul_gaussianHermitePiBasis 𝕜 ι a)

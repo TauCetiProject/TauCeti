@@ -67,7 +67,7 @@ embedding, because the weight is almost everywhere positive on `(-1, 1]`. -/
 noncomputable def chebyshevWeightL2Isometry :
     Lp 𝕜 2 (measureT : Measure ℝ) ≃ₗᵢ[𝕜] Lp 𝕜 2 (volume.restrict (Set.Ioc (-1 : ℝ) 1)) :=
   (castLpₗᵢ (𝕜 := 𝕜) chebyshevMeasureT_eq_withDensity).trans
-    (weightL2Isometry (volume.restrict (Set.Ioc (-1 : ℝ) 1)) (fun x => √(1 - x ^ 2)⁻¹)
+    (weightL2Isometry 𝕜 (volume.restrict (Set.Ioc (-1 : ℝ) 1)) (fun x => √(1 - x ^ 2)⁻¹)
       ae_zero_lt_chebyshevWeight measurable_chebyshevWeight.aemeasurable)
 
 /-- The forward isometry multiplies a representative by `√w = (1-x²)^{-1/4}`. Without this pin the
@@ -76,11 +76,11 @@ theorem chebyshevWeightL2Isometry_apply (f : Lp 𝕜 2 (measureT : Measure ℝ))
     ⇑(chebyshevWeightL2Isometry 𝕜 f) =ᵐ[volume.restrict (Set.Ioc (-1 : ℝ) 1)]
       fun x => √(√(1 - x ^ 2)⁻¹) • (f : ℝ → 𝕜) x := by
   have happ : chebyshevWeightL2Isometry 𝕜 f
-      = weightL2Isometry (volume.restrict (Set.Ioc (-1 : ℝ) 1)) (fun x => √(1 - x ^ 2)⁻¹)
+      = weightL2Isometry 𝕜 (volume.restrict (Set.Ioc (-1 : ℝ) 1)) (fun x => √(1 - x ^ 2)⁻¹)
           ae_zero_lt_chebyshevWeight measurable_chebyshevWeight.aemeasurable
           (castLpₗᵢ (𝕜 := 𝕜) chebyshevMeasureT_eq_withDensity f) := rfl
   rw [happ]
-  refine (weightL2Isometry_apply _ _ _ _ _).trans (Filter.Eventually.of_forall fun x => ?_)
+  refine (coeFn_weightL2Isometry 𝕜 _ _ _ _ _).trans (Filter.Eventually.of_forall fun x => ?_)
   simp only [coeFn_castLpₗᵢ]
 
 /-- The inverse isometry divides a representative by `√w`. -/
@@ -89,11 +89,11 @@ theorem chebyshevWeightL2Isometry_symm_apply (g : Lp 𝕜 2 (volume.restrict (Se
       fun x => (√(√(1 - x ^ 2)⁻¹))⁻¹ • (g : ℝ → 𝕜) x := by
   have hsymm : (chebyshevWeightL2Isometry 𝕜).symm g
       = (castLpₗᵢ (𝕜 := 𝕜) chebyshevMeasureT_eq_withDensity).symm
-          ((weightL2Isometry (volume.restrict (Set.Ioc (-1 : ℝ) 1)) (fun x => √(1 - x ^ 2)⁻¹)
+          ((weightL2Isometry 𝕜 (volume.restrict (Set.Ioc (-1 : ℝ) 1)) (fun x => √(1 - x ^ 2)⁻¹)
             ae_zero_lt_chebyshevWeight measurable_chebyshevWeight.aemeasurable).symm g) := rfl
   rw [hsymm, castLpₗᵢ_symm]
   refine Filter.EventuallyEq.trans (Filter.Eventually.of_forall fun x => ?_)
-    (weightL2Isometry_symm_apply _ _ ae_zero_lt_chebyshevWeight
+    (coeFn_weightL2Isometry_symm 𝕜 _ _ ae_zero_lt_chebyshevWeight
       measurable_chebyshevWeight.aemeasurable g)
   simp only [coeFn_castLpₗᵢ]
 
