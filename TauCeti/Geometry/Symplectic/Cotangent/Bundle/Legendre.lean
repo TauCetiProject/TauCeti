@@ -66,7 +66,8 @@ The basic example is the Lagrangian `L(v) = ½ g(v, v) - V(x)` of a mechanical s
 energy given by a fibrewise symmetric bilinear form `g`, such as the `inner` field of a Riemannian
 metric (`TauCeti.mechanicalLagrangian`). Its Legendre map is `v ↦ g(v, ·)`, the index-lowering map
 of `g`, and its energy is the total energy `½ g(v, v) + V(x)`
-(`TauCeti.legendreMap_mechanicalLagrangian_snd`, `TauCeti.lagrangianEnergy_mechanicalLagrangian`).
+(`TauCeti.legendreMap_mechanicalLagrangian`, `TauCeti.legendreMap_mechanicalLagrangian_snd`,
+`TauCeti.lagrangianEnergy_mechanicalLagrangian`).
 Its fibre Hessian is `g` itself (`TauCeti.fiberHessian_mechanicalLagrangian`), so it is regular
 exactly when each `g x` is invertible as a map from `T_x M` onto its continuous dual
 (`TauCeti.isRegularLagrangian_mechanicalLagrangian_iff`). On a finite-dimensional manifold this
@@ -595,6 +596,14 @@ theorem legendreMap_mechanicalLagrangian_snd
   have hB : B u y = B y u := hg v.proj u y
   simp [hB]
   ring
+
+/-- The Legendre map of a mechanical Lagrangian, for symmetric `g`, sends a tangent vector `v` at
+`x` to the covector `g(v, ·)` at `x`. -/
+theorem legendreMap_mechanicalLagrangian
+    {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) (v : TangentBundle I M) :
+    legendreMap (mechanicalLagrangian g V) v = TotalSpace.mk' (E →L[ℝ] ℝ) v.proj (g v.proj v.2) :=
+  TotalSpace.ext rfl (heq_of_eq (legendreMap_mechanicalLagrangian_snd hg V v))
 
 /-- **The energy of a mechanical Lagrangian** is the total energy `½ g(v, v) + V(x)`, kinetic plus
 potential. -/
