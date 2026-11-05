@@ -153,7 +153,7 @@ theorem contMDiff_ofProd_symm (m : ℕ∞ω) :
   contMDiff_id
 
 /-- The identification of `ℝ × M` with the cover, as a `C^m` diffeomorphism for every `m`. -/
-@[expose] def ofProdDiffeomorph (m : ℕ∞ω) : (ℝ × M) ≃ₘ^m⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod I⟯ Cover φ where
+def ofProdDiffeomorph (m : ℕ∞ω) : (ℝ × M) ≃ₘ^m⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod I⟯ Cover φ where
   toEquiv := ofProd φ
   contMDiff_toFun := contMDiff_ofProd φ m
   contMDiff_invFun := contMDiff_ofProd_symm φ m

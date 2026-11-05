@@ -75,9 +75,13 @@ private theorem isOrientationPreservingAt_ofProd_symm (z : Cover φ) :
 omit [T2Space M] [LocallyCompactSpace M] in
 private theorem isOrientationPreservingAt_ofProd (p : ℝ × M) :
     IsOrientationPreservingAt (Manifold.Orientation.real.prod o) (coverOrientation φ o)
-      (ofProd φ) p :=
-  (isOrientationPreservingAt_ofProd_symm φ o _).diffeomorph_symm
-    (e := (ofProdDiffeomorph φ 1).symm) one_ne_zero
+      (ofProd φ) p := by
+  have h : IsOrientationPreservingAt (coverOrientation φ o) (Manifold.Orientation.real.prod o)
+      (ofProdDiffeomorph φ 1).symm (ofProdDiffeomorph φ 1 p) := by
+    rw [coe_ofProdDiffeomorph_symm]
+    exact isOrientationPreservingAt_ofProd_symm φ o _
+  rw [← coe_ofProdDiffeomorph φ 1]
+  exact h.diffeomorph_symm (e := (ofProdDiffeomorph φ 1).symm) one_ne_zero
 
 variable {φ o} (hφ : ∀ x, IsOrientationPreservingAt o o φ x)
 include hφ
