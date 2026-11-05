@@ -107,11 +107,9 @@ theorem map_minpoly_eq_of_mem_pointedStabilizer {g : k ≃ₐ[ℚ] k}
       minpoly (RatFunc k) z := by
   obtain ⟨τ, hτ, hτP⟩ := mem_pointedStabilizer_iff.mp hg
   have hplace : Place.equivOfRingEquiv (g : k ≃+* k) τ
-      (apply_algebraMap_eq_of_mapRingEquiv (g : k ≃+* k) τ hτ) P = P := by
-    apply Place.ext
-    apply Valuation.ext
-    intro w
-    rw [Place.valuation_equivOfRingEquiv, ← hτP, RingEquiv.apply_symm_apply]
+      (apply_algebraMap_eq_of_mapRingEquiv (g : k ≃+* k) τ hτ) P = P :=
+    (smul_eq_self_iff_valuation_apply_eq
+      (p := ⟨(τ, g), mem_semilinearAut_iff.mpr hτ⟩)).mpr hτP
   exact X.isAlgebraicBelyiPair.map_minpoly_eq_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero
     hq₀ hq₁ hPa hP hm hpole hgap (by simp) hτ hplace hz h₁ h₀
 
