@@ -60,11 +60,8 @@ variable (R : Type u) [CommRing R]
 theorem generatedWeightTorusCoordinateMap_surjective :
     Function.Surjective (generatedWeightTorusCoordinateMap R).hom := by
   apply Function.Surjective.of_comp (g := (generatedCoordinateMap R).hom)
-  have hcomp := congrArg _root_.CommHopfAlgCat.Hom.hom
-    (generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap R)
-  rw [_root_.CommHopfAlgCat.hom_comp,
-    GeneralLinear.hom_weightTorusBaseChangeCoordinateMap] at hcomp
-  rw [← BialgHom.coe_comp, hcomp, GeneralLinear.weightTorusCoordinateBialgHom_def]
+  rw [← BialgHom.coe_comp, hom_generatedWeightTorusCoordinateMap_comp_generatedCoordinateMap,
+    GeneralLinear.weightTorusCoordinateBialgHom_def]
   exact DiagonalizableGroup.surjective_diagonalCoordinateMap _ _
     (SplitTorus.closure_range_weightCharacter_eq_top _ span_range_d4TripledWeight_eq_top)
 
@@ -132,14 +129,10 @@ theorem pointsMulEquiv_mapPointsFunctor_generatedWeightTorusCoordinateMap
           ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedWeightTorusCoordinateMap R)).app A q)) =
       (weightTorusPoints A (SplitTorus.pointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin 24) A) := by
-  have hcomp : (generatedWeightTorusCoordinateMap R).hom.comp (generatedCoordinateMap R).hom =
-      GeneralLinear.weightTorusCoordinateBialgHom (S := R) d4TripledWeight := by
-    rw [← _root_.CommHopfAlgCat.hom_comp,
-      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
-      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
   have hp := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
     (generatedCoordinateMap R ≫ generatedWeightTorusCoordinateMap R) A q
-  simp only [_root_.CommHopfAlgCat.hom_comp, hcomp] at hp
+  rw [_root_.CommHopfAlgCat.hom_comp,
+    hom_generatedWeightTorusCoordinateMap_comp_generatedCoordinateMap] at hp
   have he := (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply
     (generatedCoordinateMap R) (generatedWeightTorusCoordinateMap R) A q).symm.trans hp
   apply Units.ext
@@ -177,6 +170,21 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal (A : CommAlgCat.{v} 
     · rfl
     · rw [MulEquiv.apply_symm_apply]
       rfl
+
+/-- The carrier inclusion sends the generated weight torus onto the integral carrier's
+weight torus over every value algebra. -/
+theorem map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal
+    (A : CommAlgCat.{v} R) :
+    (CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra R)
+        (weightTorusDefiningIdeal R) A).map (carrierPointsHom R A) =
+      (weightTorusPoints A).range := by
+  apply Subgroup.map_injective (points A).subtype_injective
+  have hcomp : (points A).subtype.comp (carrierPointsHom R A) =
+      (GeneralLinear.pointsMulEquiv 24).toMonoidHom.comp
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap R)).app A).hom :=
+    MonoidHom.ext (coe_carrierPointsHom R A)
+  rw [Subgroup.map_map, hcomp]
+  exact map_quotientPointsSubgroup_weightTorusDefiningIdeal R A
 
 variable (K : Type max u w) [CommRing K] [Algebra R K] [Module.Free R K]
 
