@@ -25,10 +25,12 @@ pair of members of the family is.
 
 ## Main results
 
-* `TauCeti.isGradedEulerAdmissible_of_finite_of_forall_simple`: admissibility against a fixed
-  target can be tested on finite-dimensional simple sources.
-* `TauCeti.isGradedEulerAdmissible_of_finite_of_forall_simple_right`: admissibility from a fixed
-  source can be tested on finite-dimensional simple targets.
+* `TauCeti.isGradedEulerAdmissible_of_finite_of_forall_simple` and
+  `TauCeti.isSlicewiseEulerAdmissible_of_finite_of_forall_simple`: graded and slicewise
+  admissibility against a fixed target can be tested on finite-dimensional simple sources.
+* `TauCeti.isGradedEulerAdmissible_of_finite_of_forall_simple_right` and
+  `TauCeti.isSlicewiseEulerAdmissible_of_finite_of_forall_simple_right`: graded and slicewise
+  admissibility from a fixed source can be tested on finite-dimensional simple targets.
 * `TauCeti.isGradedEulerAdmissibleOn_gradedFiniteModules_iff`: every pair of finite graded modules
   is graded Euler-admissible exactly when every pair drawn from an exhaustive family of graded
   simples is.
@@ -81,6 +83,33 @@ theorem isGradedEulerAdmissible_of_finite_of_forall_simple_right
     IsGradedEulerAdmissible.{w} k e X Y := by
   exact Y.finite_induction (fun M ↦ IsGradedEulerAdmissible.{w} k e X M)
     (fun _ hM ↦ IsGradedEulerAdmissible.of_isZero_right k e hM) h
+    (fun hS h₁ h₃ ↦ h₁.of_shortExact₂ hS h₃)
+
+/-- Slicewise Euler-admissibility against every finite-dimensional simple source implies slicewise
+Euler-admissibility against all finite-dimensional graded sources, for any chosen internal-shift
+autoequivalence. -/
+theorem isSlicewiseEulerAdmissible_of_finite_of_forall_simple
+    (e : GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} 𝒜) (Y : GradedModuleCat.{v} 𝒜)
+    (h : ∀ S : GradedModuleCat.{v} 𝒜, Module.Finite k S → Simple S →
+      IsSlicewiseEulerAdmissible.{w} k e S Y)
+    (X : GradedModuleCat.{v} 𝒜) [Module.Finite k X] :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  X.finite_induction (fun M ↦ IsSlicewiseEulerAdmissible.{w} k e M Y)
+    (fun _ hM ↦ IsSlicewiseEulerAdmissible.of_isZero_left k e hM) h
+    (fun hS h₁ h₃ ↦ h₁.of_shortExact₂' hS h₃)
+
+/-- Slicewise Euler-admissibility from a fixed source against every finite-dimensional simple
+target implies slicewise Euler-admissibility against all finite-dimensional graded targets, for any
+chosen internal-shift autoequivalence. This is the target counterpart of
+`TauCeti.isSlicewiseEulerAdmissible_of_finite_of_forall_simple`. -/
+theorem isSlicewiseEulerAdmissible_of_finite_of_forall_simple_right
+    (e : GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} 𝒜) (X : GradedModuleCat.{v} 𝒜)
+    (h : ∀ T : GradedModuleCat.{v} 𝒜, Module.Finite k T → Simple T →
+      IsSlicewiseEulerAdmissible.{w} k e X T)
+    (Y : GradedModuleCat.{v} 𝒜) [Module.Finite k Y] :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  Y.finite_induction (fun M ↦ IsSlicewiseEulerAdmissible.{w} k e X M)
+    (fun _ hM ↦ IsSlicewiseEulerAdmissible.of_isZero_right k e hM) h
     (fun hS h₁ h₃ ↦ h₁.of_shortExact₂ hS h₃)
 
 end Simple

@@ -44,6 +44,8 @@ the polynomial.
 * `TauCeti.IsGradedExtBoundedBy` and `TauCeti.IsGradedExtBounded`: a uniform cohomological
   vanishing bound across all internal degrees.
 * `TauCeti.IsGradedEulerAdmissible`: the two support conditions together.
+* `TauCeti.IsSlicewiseEulerAdmissible`: ordinary Euler-admissibility against every fixed target
+  shift `Y{j}`, without requiring finite internal support or a uniform cohomological bound.
 * `TauCeti.IsGradedEulerAdmissibleOn`: every pair in two object properties is graded
   Euler-admissible.
 * `TauCeti.gradedExtDimension`: the target-shift graded dimension in one cohomological degree.
@@ -51,11 +53,14 @@ the polynomial.
 
 ## Main results
 
-* `TauCeti.IsGradedEulerAdmissible.isEulerAdmissible`: a graded Euler-admissible pair is
+* `TauCeti.IsGradedEulerAdmissible.isEulerAdmissible` and
+  `TauCeti.IsGradedEulerAdmissible.isSlicewiseEulerAdmissible`: a graded Euler-admissible pair is
   ordinarily Euler-admissible against every fixed target shift.
-* `TauCeti.IsGradedEulerAdmissible.of_shortExact₂` and
-  `TauCeti.IsGradedEulerAdmissible.of_shortExact₂'`: graded Euler-admissibility is closed under
-  extensions in the second and the first variable.
+* `TauCeti.IsGradedEulerAdmissible.of_shortExact₂`,
+  `TauCeti.IsGradedEulerAdmissible.of_shortExact₂'`,
+  `TauCeti.IsSlicewiseEulerAdmissible.of_shortExact₂`, and
+  `TauCeti.IsSlicewiseEulerAdmissible.of_shortExact₂'`: graded and slicewise Euler-admissibility
+  are closed under extensions in the second and the first variable.
 * `TauCeti.gradedExtEuler_of_iso`: the q-Euler characteristic depends only on the isomorphism
   classes of the two objects.
 * `TauCeti.IsGradedEulerAdmissible.congr` and `TauCeti.gradedExtEuler_congr`: admissibility and
@@ -119,6 +124,14 @@ structure IsGradedEulerAdmissible (X Y : C) : Prop where
   internallyFinite : IsGradedExtInternallyFinite.{w} k e X Y
   /-- Uniform eventual vanishing in the cohomological degree. -/
   bounded : IsGradedExtBounded.{w} e X Y
+
+/-- A pair is **slicewise Euler-admissible** when it is ordinarily Euler-admissible against every
+fixed target shift `Y{j}`, with finite-dimensional `Ext` groups and a cohomological vanishing bound
+that may depend on `j`. Unlike `TauCeti.IsGradedEulerAdmissible`, neither finite internal support in
+a fixed cohomological degree nor a uniform cohomological bound across all shifts is required. -/
+structure IsSlicewiseEulerAdmissible (X Y : C) : Prop where
+  /-- Ordinary Euler-admissibility against each target shift `Y{j}`. -/
+  isEulerAdmissible (j : ℤ) : IsEulerAdmissible.{w} k X ((e ^ j).functor.obj Y)
 
 namespace IsGradedExtBoundedBy
 
@@ -218,6 +231,12 @@ theorem IsGradedEulerAdmissible.isEulerAdmissible {X Y : C}
     ⟨h.bounded.exists_bound.choose,
       h.bounded.exists_bound.choose_spec.isExtBoundedBy j⟩⟩
 
+/-- A graded Euler-admissible pair is slicewise Euler-admissible. -/
+theorem IsGradedEulerAdmissible.isSlicewiseEulerAdmissible {X Y : C}
+    (h : IsGradedEulerAdmissible.{w} k e X Y) :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  ⟨h.isEulerAdmissible⟩
+
 /-! ### Closure under extensions -/
 
 variable {S : ShortComplex C}
@@ -279,6 +298,21 @@ theorem IsGradedEulerAdmissible.of_shortExact₂' (hS : S.ShortExact) {Y : C}
   obtain ⟨N₃, hN₃⟩ := h₃.bounded.exists_bound
   exact ⟨h₁.internallyFinite.of_shortExact₂' hS h₃.internallyFinite,
     (hN₁.of_shortExact₂' hS hN₃).isGradedExtBounded⟩
+
+/-- Slicewise Euler-admissibility is closed under extensions in the second variable. -/
+theorem IsSlicewiseEulerAdmissible.of_shortExact₂ (hS : S.ShortExact) {X : C}
+    (h₁ : IsSlicewiseEulerAdmissible.{w} k e X S.X₁)
+    (h₃ : IsSlicewiseEulerAdmissible.{w} k e X S.X₃) :
+    IsSlicewiseEulerAdmissible.{w} k e X S.X₂ :=
+  ⟨fun j ↦ (h₁.isEulerAdmissible j).of_shortExact₂ (hS.map_of_exact (e ^ j).functor)
+    (h₃.isEulerAdmissible j)⟩
+
+/-- Slicewise Euler-admissibility is closed under extensions in the first variable. -/
+theorem IsSlicewiseEulerAdmissible.of_shortExact₂' (hS : S.ShortExact) {Y : C}
+    (h₁ : IsSlicewiseEulerAdmissible.{w} k e S.X₁ Y)
+    (h₃ : IsSlicewiseEulerAdmissible.{w} k e S.X₃ Y) :
+    IsSlicewiseEulerAdmissible.{w} k e S.X₂ Y :=
+  ⟨fun j ↦ (h₁.isEulerAdmissible j).of_shortExact₂' hS (h₃.isEulerAdmissible j)⟩
 
 end Admissibility
 
@@ -428,6 +462,12 @@ theorem IsGradedEulerAdmissible.of_iso (h : IsGradedEulerAdmissible.{w} k e X Y)
     (i : X ≅ X') (j : Y ≅ Y') : IsGradedEulerAdmissible.{w} k e X' Y' :=
   ⟨IsGradedExtInternallyFinite.of_iso k h.internallyFinite i j, h.bounded.of_iso i j⟩
 
+variable {k} in
+/-- Slicewise Euler-admissibility depends only on the isomorphism classes of the two objects. -/
+theorem IsSlicewiseEulerAdmissible.of_iso (h : IsSlicewiseEulerAdmissible.{w} k e X Y)
+    (i : X ≅ X') (j : Y ≅ Y') : IsSlicewiseEulerAdmissible.{w} k e X' Y' :=
+  ⟨fun d ↦ (h.isEulerAdmissible d).of_iso i ((e ^ d).functor.mapIso j)⟩
+
 /-- The graded Ext dimension in one cohomological degree is invariant under isomorphisms of the
 two objects. -/
 theorem gradedExtDimension_of_iso
@@ -500,6 +540,14 @@ theorem IsGradedEulerAdmissible.congr (h : IsGradedEulerAdmissible.{w} k e X Y)
     IsGradedEulerAdmissible.{w'} k e' X' Y' :=
   ⟨h.internallyFinite.congr k φ, h.bounded.congr (.of_forall fun n j ↦ ⟨(φ n j).toEquiv⟩)⟩
 
+variable {k} in
+/-- Slicewise Euler-admissibility transports along linear equivalences of the bigraded `Ext`
+groups, including between pairs in different graded categories. -/
+theorem IsSlicewiseEulerAdmissible.congr (h : IsSlicewiseEulerAdmissible.{w} k e X Y)
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j) :
+    IsSlicewiseEulerAdmissible.{w'} k e' X' Y' :=
+  ⟨fun j ↦ (h.isEulerAdmissible j).congr fun n ↦ φ n j⟩
+
 /-- Linear equivalences of the bigraded `Ext` groups preserve the q-Euler characteristic,
 including when the pairs lie in different graded categories. -/
 theorem gradedExtEuler_congr
@@ -543,6 +591,16 @@ theorem IsGradedEulerAdmissible.of_isZero_right {X Y : C} (hY : Limits.IsZero Y)
     ⟨0, ⟨fun n _ j ↦ hsub n j⟩⟩⟩
   have := hsub n j
   infer_instance
+
+/-- A pair whose first entry is zero is slicewise Euler-admissible. -/
+theorem IsSlicewiseEulerAdmissible.of_isZero_left {X Y : C} (hX : Limits.IsZero X) :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  (IsGradedEulerAdmissible.of_isZero_left k e hX).isSlicewiseEulerAdmissible
+
+/-- A pair whose second entry is zero is slicewise Euler-admissible. -/
+theorem IsSlicewiseEulerAdmissible.of_isZero_right {X Y : C} (hY : Limits.IsZero Y) :
+    IsSlicewiseEulerAdmissible.{w} k e X Y :=
+  (IsGradedEulerAdmissible.of_isZero_right k e hY).isSlicewiseEulerAdmissible
 
 end Zero
 

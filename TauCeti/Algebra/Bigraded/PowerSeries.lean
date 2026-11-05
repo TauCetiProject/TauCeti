@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
+public import TauCeti.Data.Finsupp.Order
 
 /-!
 # Euler characteristics of unbounded bigraded formal power series
@@ -289,7 +290,6 @@ theorem eulerPowerSeries_eq_maslovEulerPowerSeries_iff {P : PowerSeries (Laurent
     (hl : ∀ (n : ℕ) (a : ℤ), a < n → (PowerSeries.coeff n P).coeff a = 0) :
     eulerPowerSeries hP = maslovEulerPowerSeries P ↔
       ∀ (n : ℕ) (a : ℤ), (n : ℤ) ≠ a → (PowerSeries.coeff n P).coeff a = 0 := by
-  classical
   constructor
   · intro heq n
     -- Strong induction on the Maslov degree `n` inductively eliminates lower-degree
@@ -303,23 +303,8 @@ theorem eulerPowerSeries_eq_maslovEulerPowerSeries_iff {P : PowerSeries (Laurent
           rw [Finset.mem_range] at hm
           rw [ih m hm n (by omega), mul_zero]),
         zero_add, coeff_maslovEulerPowerSeries, laurentEval_one_eq_sum] at hcoeff
-      -- Multiply by `(-1) ^ n` to cancel the common sign in Maslov degree `n`.
-      have hsum : (PowerSeries.coeff n P).coeff (n : ℤ) =
-          (PowerSeries.coeff n P).coeff.sum fun _ c ↦ c := by
-        have hmul := congrArg ((-1 : R) ^ n * ·) hcoeff
-        simpa only [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul] using hmul
-      let S := (PowerSeries.coeff n P).coeff.support ∪ {(n : ℤ)}
-      have hS : (PowerSeries.coeff n P).coeff.sum (fun _ c ↦ c) =
-          ∑ b ∈ S, (PowerSeries.coeff n P).coeff b :=
-        Finsupp.sum_of_support_subset _ Finset.subset_union_left _ (fun _ _ ↦ rfl)
-      rw [hS, ← Finset.add_sum_erase S _ (Finset.mem_union_right _ (Finset.mem_singleton_self _))]
-        at hsum
-      have herase : ∑ b ∈ S.erase (n : ℤ), (PowerSeries.coeff n P).coeff b = 0 :=
-        add_left_cancel (hsum.symm.trans (add_zero _).symm)
-      rw [Finset.sum_eq_zero_iff_of_nonneg (fun b _ ↦ hnonneg n b)] at herase
-      by_cases hmem : a ∈ (PowerSeries.coeff n P).coeff.support
-      · exact herase a (Finset.mem_erase.mpr ⟨hna.symm, Finset.mem_union_left _ hmem⟩)
-      · exact Finsupp.notMem_support_iff.mp hmem
+      exact Finsupp.eq_zero_of_sum_eq_apply_of_nonneg (Finsupp.le_def.2 (hnonneg n))
+        (((IsUnit.neg isUnit_one).pow n).mul_left_cancel hcoeff).symm hna.symm
   · intro hdiag
     ext a
     rw [coeff_eulerPowerSeries_of_lowerTriangular hP hl a,

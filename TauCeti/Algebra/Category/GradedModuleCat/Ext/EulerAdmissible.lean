@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Ext.Finite
-public import TauCeti.Algebra.Category.GradedModuleCat.FiniteLength
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.MinimalResolution
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Converse
-public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.FiniteLength
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare.Euler
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
 
 /-!
 # Slicewise Euler-admissibility of finite graded modules without finite global dimension
@@ -320,53 +318,19 @@ theorem isEulerAdmissibleOn_gradedFiniteModules_of_simple_shiftPow
     (hbase : ∀ i m (j : ℤ),
       IsEulerAdmissible.{uA} k (S i).obj (((GradedModuleCat.shift 𝒜) ^ j).functor.obj (S m).obj)) :
     IsEulerAdmissibleOn.{uA} k (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜) := by
-  let e := GradedModuleCat.shift 𝒜
-  let P (X Y : GradedModuleCat.{uA} 𝒜) : Prop :=
-    ∀ j : ℤ, IsEulerAdmissible.{uA} k X ((e ^ j).functor.obj Y)
-  have hiso {X X' Y Y' : GradedModuleCat.{uA} 𝒜} (hXY : P X Y)
-      (iX : X ≅ X') (iY : Y ≅ Y') : P X' Y' :=
-    fun j ↦ (hXY j).of_iso iX ((e ^ j).functor.mapIso iY)
-  have hshiftSource {X Y : GradedModuleCat.{uA} 𝒜} (hXY : P X Y) : P (e.functor.obj X) Y :=
-    fun j ↦ (hXY (j - 1)).congr fun n ↦ (gradedExtShiftSourceEquiv k e X Y n j).symm
-  have hshiftSourceInv {X Y : GradedModuleCat.{uA} 𝒜} (hXY : P X Y) : P (e.inverse.obj X) Y :=
-    fun j ↦ (hXY (j + 1)).congr fun n ↦ (gradedExtShiftSourceInverseEquiv k e X Y n j).symm
-  have hshiftTarget {X Y : GradedModuleCat.{uA} 𝒜} (hXY : P X Y) : P X (e.functor.obj Y) :=
-    fun j ↦ (hXY (j + 1)).congr fun n ↦ (gradedExtShiftTargetEquiv k e X Y n j).symm
-  have hshiftTargetInv {X Y : GradedModuleCat.{uA} 𝒜} (hXY : P X Y) : P X (e.inverse.obj Y) :=
-    fun j ↦ (hXY (j - 1)).congr fun n ↦ (gradedExtShiftTargetInverseEquiv k e X Y n j).symm
-  have hshift {X Y : GradedModuleCat.{uA} 𝒜} (hXY : P X Y) (d : ℤ) : P (X.shiftObj d) Y := by
-    induction d using Int.induction_on with
-    | zero =>
-      exact hiso hXY ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app X).symm (Iso.refl Y)
-    | succ n ih =>
-      exact hiso (hshiftSource ih) ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app X) (Iso.refl Y)
-    | pred n ih =>
-      exact hiso (hshiftSourceInv ih)
-        ((GradedModuleCat.shiftFunctorAddIso 𝒜 (-(n : ℤ)) (-1)).app X) (Iso.refl Y)
-  have hshiftRight {X Y : GradedModuleCat.{uA} 𝒜} (hXY : P X Y) (d : ℤ) : P X (Y.shiftObj d) := by
-    induction d using Int.induction_on with
-    | zero =>
-      exact hiso hXY (Iso.refl X) ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app Y).symm
-    | succ n ih =>
-      exact hiso (hshiftTarget ih) (Iso.refl X) ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app Y)
-    | pred n ih =>
-      exact hiso (hshiftTargetInv ih) (Iso.refl X)
-        ((GradedModuleCat.shiftFunctorAddIso 𝒜 (-(n : ℤ)) (-1)).app Y)
-  have hall : ∀ {X Y : GradedModuleCat.{uA} 𝒜},
-      gradedFiniteModules 𝒜 X → gradedFiniteModules 𝒜 Y → P X Y := by
-    intro X Y hX hY
-    refine hS.prop_on_pairs P @hiso @hshift @hshiftRight ?_ ?_ hbase hX hY
-    · intro Z hZ W hW j
-      let _ := hW
-      exact isEulerAdmissible_of_finite_of_forall_simple _ (fun T hTf hTs ↦ hZ T hTf hTs j) W
-    · intro Z hZ W hW j
-      let _ := hW
-      exact W.finite_induction (fun M ↦ IsEulerAdmissible.{uA} k Z ((e ^ j).functor.obj M))
-        (fun _ hM ↦ IsEulerAdmissible.of_isZero_right k ((e ^ j).functor.map_isZero hM))
-        (fun T hTf hTs ↦ hZ T hTf hTs j)
-        (fun hC h₁ h₃ ↦ h₁.of_shortExact₂ (hC.map_of_exact (e ^ j).functor) h₃)
   refine ⟨fun X Y hX hY ↦ ?_⟩
-  exact (hall hX hY 0).of_iso (Iso.refl X)
+  have hall : IsSlicewiseEulerAdmissible.{uA} k (GradedModuleCat.shift 𝒜) X Y := by
+    refine hS.prop_on_pairs
+      (IsSlicewiseEulerAdmissible.{uA} k (GradedModuleCat.shift 𝒜))
+      (fun h i j ↦ h.of_iso i j) (fun h d ↦ h.shiftObj d)
+      (fun h d ↦ h.shiftObjTarget d) ?_ ?_ (fun i m ↦ ⟨hbase i m⟩) hX hY
+    · intro Z hZ W hW
+      have := hW
+      exact isSlicewiseEulerAdmissible_of_finite_of_forall_simple _ Z hZ W
+    · intro Z hZ W hW
+      have := hW
+      exact isSlicewiseEulerAdmissible_of_finite_of_forall_simple_right _ Z hZ W
+  exact (hall.isEulerAdmissible 0).of_iso (Iso.refl X)
     (((GradedModuleCat.shiftPowIso 𝒜 0).app Y) ≪≫ (GradedModuleCat.shiftFunctorZeroIso 𝒜).app Y)
 
 /-- **Every pair of finite graded modules is ordinarily Euler-admissible in `GradedModuleCat 𝒜`**,
