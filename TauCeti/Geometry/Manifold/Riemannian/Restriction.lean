@@ -34,6 +34,9 @@ pullback along the inclusion, whose differential is invertible also at the bound
 * `TauCeti.Manifold.instRiemannianBundleOpen`,
   `TauCeti.Manifold.instIsContinuousRiemannianBundleOpen`, and
   `TauCeti.Manifold.instIsContMDiffRiemannianBundleOpen`: the corresponding scoped instances.
+* `Bundle.ContMDiffRiemannianMetric.riemannianBundle_restrictOpenTangentSpace_eq`: restricting the
+  ambient `RiemannianBundle` of a bundled metric `g` to an open submanifold agrees with installing
+  `g.restrictOpenTangentSpace`.
 * `TauCeti.Manifold.pathELength_subtypeVal_comp`: the length of a curve in an open submanifold
   equals the length of its composition with the inclusion into the ambient manifold.
 * `TopologicalSpace.Opens.riemannianEDist_le_riemannianEDist_subtype`: restriction to an open
@@ -295,6 +298,17 @@ theorem enorm_tangentSpace_open
   simp only [enorm, nnnorm, norm_tangentSpace_open]
 
 end Manifold
+
+/-- Installing a bundled `C^n` Riemannian metric `g` as the ambient `RiemannianBundle` instance and
+restricting to an open submanifold `U` gives the same `RiemannianBundle` instance on `U` as
+installing `g.restrictOpenTangentSpace U`. -/
+theorem _root_.Bundle.ContMDiffRiemannianMetric.riemannianBundle_restrictOpenTangentSpace_eq
+    {n : ℕ∞ω} [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      TauCeti.Manifold.instRiemannianBundleOpen (I := I) U) =
+      ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩ := by
+  rfl
 
 end TauCeti
 
