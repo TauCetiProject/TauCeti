@@ -18,9 +18,12 @@ pseudo-gradient field adapted to `f`. At a critical point `x` of index `1`, the 
 `W^u(x)` is `x` together with two disjoint orbits. Likewise, at a critical point of index `n - 1`,
 the stable manifold `W^s(x)` is `x` together with two disjoint orbits.
 
-This is the geometric input for the Morse complex in its lowest and highest degrees: the boundary
-of an index-one critical point counts the two ends of its unstable manifold, and every critical
-point of index `n - 1` is reached by exactly two trajectories from the critical points of index `n`.
+This is the geometric input for the Morse complex in its lowest and highest degrees. When `X` also
+satisfies the Morse–Smale condition, each of the two orbits ends at, respectively starts from, a
+critical point of index `0`, respectively `n`. So the boundary of an index-one critical point
+counts the two ends of its unstable manifold, and every critical point of index `n - 1` is reached
+by exactly two trajectories from the critical points of index `n`. The decompositions themselves
+hold for every adapted pseudo-gradient.
 
 The proof reads the stable manifold through its parametrization by the stable subspace `L` of a
 Morse chart (`TauCeti.IsAdaptedPseudoGradient.exists_stableParam`), which carries the scaling

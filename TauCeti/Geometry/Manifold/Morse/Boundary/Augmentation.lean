@@ -130,42 +130,6 @@ variable [FiniteDimensional ℝ E] [T2Space M] {X : (x : M) → TangentSpace �
 
 namespace IsAdaptedPseudoGradient
 
-/-- **Trajectories read off a decomposition of a stable set.** Suppose that, apart from `q` itself,
-the stable set of a critical point `q` is covered by the orbits of points `y i`, where `y i` flows
-from a point `a i ≠ q` to `q` and crosses the middle level between `a i` and `q` at time `τ i`.
-Then the trajectories from a point `p ≠ q` to `q` are the crossings of the orbits starting at
-`p`. -/
-theorem morseTrajectorySlice_eq_image_of_stableSet_subset (hX : IsAdaptedPseudoGradient f X)
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {ι : Type*} {p q : M} {a y : ι → M} {τ : ι → ℝ}
-    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) (hpq : p ≠ q)
-    (hW : hX.flow.stableSet q ⊆ insert q (⋃ i, hX.flow.orbit (y i)))
-    (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q) (haq : ∀ i, a i ≠ q)
-    (hτ : ∀ i, f (hX.flow (τ i) (y i)) = (f (a i) + f q) / 2) :
-    hX.morseTrajectorySlice p q = (fun i ↦ hX.flow (τ i) (y i)) '' {i | a i = p} := by
-  ext w
-  simp only [mem_morseTrajectorySlice, mem_image, mem_ofPred_eq]
-  constructor
-  · rintro ⟨hwu, hws, hwc⟩
-    -- The rest point `q` lies in no unstable set but its own, so `w` lies on some orbit `y i`.
-    have hwq : w ≠ q := by
-      rintro rfl
-      exact Flow.disjoint_unstableSet hpq |>.ne_of_mem hwu
-        (Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hq)) rfl
-    obtain ⟨i, t, rfl⟩ : ∃ i t, hX.flow t (y i) = w := by
-      simpa [hwq, Flow.mem_orbit_iff] using hW hws
-    have hai : a i = p := by
-      by_contra hne
-      exact Flow.disjoint_unstableSet hne |>.ne_of_mem
-        ((Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1) hwu rfl
-    -- The orbit of `y i` crosses the middle level only once.
-    obtain ⟨s, -, hs⟩ :=
-      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf (haq i) (hy i)
-    refine ⟨i, hai, ?_⟩
-    rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hai]))]
-  · rintro ⟨i, rfl, rfl⟩
-    exact ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1,
-      (Flow.apply_mem_stableSet_iff _ _).2 (hy i).2, hτ i⟩
-
 namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
