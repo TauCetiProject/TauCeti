@@ -72,6 +72,7 @@ theorem renewalArrivalMeasure_Iic (ω : Ω) (t : ℝ≥0) :
     Set.indicator_apply]
 
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
+@[simp]
 theorem lintegral_renewalArrivalMeasure (ω : Ω) (f : ℝ≥0 → ℝ≥0∞) :
     ∫⁻ x, f x ∂renewalArrivalMeasure T ω = ∑' n, f (arrival T (n + 1) ω) := by
   simp [renewalArrivalMeasure_def, lintegral_sum_measure]
@@ -116,12 +117,10 @@ theorem renewalArrivalMeasure_Ioc {ω : Ω} (hT : 0 < T 0 ω) (t : ℝ≥0) :
   rw [heq, measure_sdiff_null (renewalArrivalMeasure_singleton_zero T hT),
     renewalArrivalMeasure_Iic]
 
-/-- Strictly positive increments give singleton masses at most one: there are no coincident
-arrivals. No nonexplosion assumption is needed for this assertion. -/
-theorem renewalArrivalMeasure_singleton_le_one {ω : Ω} (hT : ∀ n, 0 < T n ω)
+/-- Positive increments after the first give singleton masses at most one: there are no
+coincident arrivals. The first increment may vanish, and no nonexplosion assumption is needed. -/
+theorem renewalArrivalMeasure_singleton_le_one {ω : Ω} (hT : ∀ n, 0 < T (n + 1) ω)
     (x : ℝ≥0) : renewalArrivalMeasure T ω {x} ≤ 1 := by
-  have hstrict : StrictMono (fun n => arrival T n ω) :=
-    strictMono_nat_of_lt_succ fun n => by simpa [arrival_succ] using hT n
   rw [renewalArrivalMeasure_def, Measure.sum_apply _ (measurableSet_singleton x)]
   by_cases hx : ∃ n, arrival T (n + 1) ω = x
   · obtain ⟨n, rfl⟩ := hx
@@ -130,11 +129,17 @@ theorem renewalArrivalMeasure_singleton_le_one {ω : Ω} (hT : ∀ n, 0 < T n ω
     · intro m hmn
       rw [Measure.dirac_apply]
       exact Set.indicator_of_notMem (by
-        simpa using fun h => hmn (Nat.add_right_cancel (hstrict.injective h))) _
+        simpa using fun h => hmn ((strictMono_arrival_succ T hT).injective h)) _
   · have hn : ∀ n, arrival T (n + 1) ω ≠ x := by simpa using hx
     simp [hn]
 
 variable {T} [MeasurableSpace Ω]
+
+private lemma measurable_dirac_arrival_apply (hT : ∀ n, Measurable (T n))
+    {s : Set ℝ≥0} (hs : MeasurableSet s) (n : ℕ) :
+    Measurable fun ω => Measure.dirac (arrival T (n + 1) ω) s :=
+  (Measure.measurable_coe hs).comp
+    (Measure.measurable_dirac.comp (measurable_arrival hT (n + 1)))
 
 /-- Measurable increments give a random measure for the evaluation σ-algebra on measures. -/
 @[fun_prop]
@@ -142,8 +147,7 @@ theorem measurable_renewalArrivalMeasure (hT : ∀ n, Measurable (T n)) :
     Measurable (renewalArrivalMeasure T) := by
   refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
   simp only [renewalArrivalMeasure_def, Measure.sum_apply _ hs]
-  exact Measurable.tsum fun n => (Measure.measurable_coe hs).comp
-    (Measure.measurable_dirac.comp (measurable_arrival hT (n + 1)))
+  exact Measurable.tsum (measurable_dirac_arrival_apply hT hs)
 
 variable {P : Measure Ω}
 
@@ -183,8 +187,7 @@ theorem bind_renewalArrivalMeasure (hT : ∀ n, Measurable (T n))
     Measure.conv_renewalMeasure, Measure.sum_apply _ hs]
   simp only [renewalArrivalMeasure_def, Measure.sum_apply _ hs]
   rw [lintegral_tsum (f := fun n ω => (Measure.dirac (arrival T (n + 1) ω)) s)
-    fun n => ((Measure.measurable_coe hs).comp
-      (Measure.measurable_dirac.comp (measurable_arrival hT (n + 1)))).aemeasurable]
+    fun n => (measurable_dirac_arrival_apply hT hs n).aemeasurable]
   refine tsum_congr fun n => ?_
   rw [← (hasLaw_arrival hindep hid (n + 1)).map_eq,
     Measure.map_apply (measurable_arrival hT _) hs]
