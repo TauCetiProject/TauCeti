@@ -276,8 +276,11 @@ theorem exists_congruence_of_symmetric_family
     filter_upwards [hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E)),
       hten.eventually (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)]
       with v h1 h2 w w'
-    nth_rw 1 [← h2 (hCadj v)]
-    rw [adj_spec, ← mul_apply_eq_comp, h1, hB₀symm, hCapply, hsymm]
+    set R := sqrtNearOne (E →L[ℝ] E) (C v)
+    -- `R` is self-adjoint for `B₀` since `C v` is, `R * R = C v`, and `B₀ (C v ·) = B v`.
+    calc B₀ (R w) (R w') = B₀ (adj R w) (R w') := by rw [h2 (hCadj v)]
+      _ = B₀ w ((R * R) w') := by rw [adj_spec, mul_apply_eq_comp]
+      _ = B v w w' := by rw [h1, hB₀symm, hCapply, hsymm]
   obtain ⟨W, hWsub, hWopen, haW⟩ := mem_nhds_iff.1 hspec
   refine ⟨fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v),
     W ∩ C ⁻¹' {a | AnalyticAt ℝ (sqrtNearOne (E →L[ℝ] E)) a},
@@ -285,6 +288,7 @@ theorem exists_congruence_of_symmetric_family
     ⟨haW, by simpa [hCa] using analyticAt_sqrtNearOne⟩, by simp [hCa],
     fun v hv ↦ (hv.2.contDiffAt.comp v hCsmooth.contDiffAt).contDiffWithinAt,
     fun v hv ↦ hWsub hv.1⟩
+
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
 /-- **Congruence with a varying reference form.** A jointly `C^n` symmetric family `B (b, v)`
@@ -409,9 +413,7 @@ theorem IsNondegenerateCriticalPoint.exists_morse_chart (hf : ContDiff ℝ (n + 
     (hΦsmoothOn y hy).contDiffAt (hVopen.mem_nhds hy)
   have hΦderiv : HasFDerivAt (φ ∘ fun y : E ↦ y - x)
       (ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) x := by
-    have hsub : HasFDerivAt (fun y : E ↦ y - x) (ContinuousLinearMap.id ℝ E) x := by
-      simpa using (hasFDerivAt_id (𝕜 := ℝ) x).sub_const x
-    simpa using HasFDerivAt.comp x (by simpa using hφderiv) hsub
+    simpa using HasFDerivAt.comp x (by simpa using hφderiv) (hasFDerivAt_sub_const (𝕜 := ℝ) x)
   have hgood : {y | y ∈ V ∧ ∃ e : E ≃L[ℝ] E,
       (e : E →L[ℝ] E) = fderiv ℝ (φ ∘ fun y : E ↦ y - x) y} ∈ 𝓝 x := by
     have ht := ((hΦsmoothAt hxV).continuousAt_fderiv hn').tendsto
@@ -419,15 +421,21 @@ theorem IsNondegenerateCriticalPoint.exists_morse_chart (hf : ContDiff ℝ (n + 
     exact Filter.inter_mem (hVopen.mem_nhds hxV)
       (ht.eventually (ContinuousLinearEquiv.refl ℝ E).nhds)
   obtain ⟨W, hWsub, hWopen, hxW⟩ := mem_nhds_iff.1 hgood
-  let ψ := ((hΦsmoothAt hxV).toOpenPartialHomeomorph _ hΦderiv hn').restrOpen W hWopen
-  refine ⟨ψ, ⟨(hΦsmoothAt hxV).mem_toOpenPartialHomeomorph_source hΦderiv hn', hxW⟩,
-    by simp [ψ, hφ0], hΦsmoothOn.mono fun z hz ↦ (hWsub hz.2).1, fun z hz ↦ ?_,
-    fun y hy ↦ by simpa [ψ] using hφeq (y - x) (hWsub hy.2).1⟩
-  obtain ⟨hyV, e, he⟩ := hWsub (ψ.map_target hz).2
-  refine (ψ.contDiffAt_symm hz (f₀' := e) ?_ (hΦsmoothAt hyV)).contDiffWithinAt
-  rw [he]
-  exact ((hΦsmoothAt hyV).differentiableAt hn').hasFDerivAt
-
+  let p := (hΦsmoothAt hxV).toOpenPartialHomeomorph _ hΦderiv hn'
+  let ψ := p.restrOpen W hWopen
+  have hψsrc : ψ.source = p.source ∩ W := p.restrOpen_source W hWopen
+  have hψ : ⇑ψ = φ ∘ fun y : E ↦ y - x := by
+    rw [OpenPartialHomeomorph.coe_restrOpen, ContDiffAt.toOpenPartialHomeomorph_coe]
+  refine ⟨ψ, hψsrc ▸ ⟨(hΦsmoothAt hxV).mem_toOpenPartialHomeomorph_source hΦderiv hn', hxW⟩,
+    by simp [hψ, hφ0], ?_, fun z hz ↦ ?_, ?_⟩
+  · rw [hψ, hψsrc]
+    exact hΦsmoothOn.mono fun z hz ↦ (hWsub hz.2).1
+  · obtain ⟨hyV, e, he⟩ := hWsub (hψsrc ▸ ψ.map_target hz).2
+    refine (ψ.contDiffAt_symm hz (f₀' := e) ?_ (hψ ▸ hΦsmoothAt hyV)).contDiffWithinAt
+    rw [hψ, he]
+    exact ((hΦsmoothAt hyV).differentiableAt hn').hasFDerivAt
+  · rw [hψsrc, hψ]
+    exact fun y hy ↦ by simpa using hφeq (y - x) (hWsub hy.2).1
 
 end MorseLemma
 
