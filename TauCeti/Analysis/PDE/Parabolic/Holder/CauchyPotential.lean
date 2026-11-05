@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.CauchyPotential
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import TauCeti.Analysis.Holder.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -281,5 +281,22 @@ theorem spatialTrace_heatCauchyPotentialL_left (hb : 0 < b) (g : CkHolderSpace 2
     (heatCauchyPotentialL hb le_rfl g).spatialTrace ⟨0, left_mem_Icc.2 hb.le⟩ = g := by
   ext x
   simp
+
+/-- The Cauchy heat potential is annihilated by the scalar Euclidean heat operator, including
+at both endpoints of the time slab. -/
+theorem ParabolicC2HolderSpace.euclideanParabolicOperatorL_heatCauchyPotentialL
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (hα : α ≤ 1) {T : ℝ} (hT : 0 < T)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
+      (heatCauchyPotentialL hT le_rfl g) = 0 := by
+  ext p
+  rw [euclideanParabolicOperatorL_apply,
+    timeDerivL_heatCauchyPotentialL_eq_laplacian,
+    laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
+  simp only [(heatCauchyPotentialL hT le_rfl g).iteratedFDeriv_two_apply,
+    slabMk_space_slabTime, HolderSpace.const_apply, HolderSpace.zero_apply, Pi.zero_apply,
+    zero_mul, Finset.sum_const_zero, add_zero, EuclideanSpace.basisFun_apply,
+    Matrix.one_apply, ite_mul, one_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true,
+    Matrix.cons_val_zero, Matrix.cons_val_one, sub_self]
 
 end TauCeti
