@@ -17,8 +17,10 @@ including the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), the horseshoe step `TauCeti.exists_surjective_ker_exact`,
 the short exact sequence of kernels `TauCeti.exact_ker_comp` attached to a surjection and a
 further map, the exact sequence `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
-(`Submodule.exists_exact_codRestrict_mkQ`), the isomorphisms on kernels and cokernels induced by
-a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
+(`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence
+`0 → ker f → M → range f → 0` of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the
+isomorphisms on kernels and cokernels induced by a
+map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the dimension of the homology of a
 complex of finite-dimensional vector spaces in terms of the two cokernels
@@ -216,6 +218,12 @@ theorem _root_.Submodule.exists_exact_codRestrict_mkQ {X : Type*} [AddCommGroup 
     exact ⟨⟨g, hg⟩, by ext; simp⟩
   · rw [hf, mem_ker, ← Subtype.coe_inj]
     simp [Submodule.Quotient.mk_eq_zero]
+
+/-- A linear map `f : M → M₂` gives the short exact sequence `0 → ker f → M → range f → 0`, by
+the inclusion of the kernel and the corestriction `f.rangeRestrict`. -/
+theorem _root_.LinearMap.exact_subtype_rangeRestrict (f : M →ₗ[R] M₂) :
+    Function.Exact (ker f).subtype f.rangeRestrict := by
+  rw [exact_iff, ker_rangeRestrict, Submodule.range_subtype]
 
 end ShortExact
 
