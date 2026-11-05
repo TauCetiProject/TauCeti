@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Stabilization
 public import TauCeti.Topology.VectorBundle.Kernel
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
-import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
@@ -21,9 +19,9 @@ bundle. If `A` is `C^n`, its inclusion into `X × E` is `C^n` as well. A map int
 this bundle is `C^n` exactly when its base and underlying domain vector are `C^n`.
 In particular, this characterizes smooth sections without unfolding kernel charts.
 
-No finite-dimensionality is needed. Applying this construction to a finite
-stabilization of a Fredholm family gives smooth finite-rank kernel bundles,
-whose determinant lines are the local models for the Fredholm determinant bundle.
+No finite-dimensionality is needed. These bundles supply the smooth structure
+for finite-rank stabilized Fredholm kernels, whose determinant lines are the
+local models for the Fredholm determinant bundle.
 
 ## References
 
@@ -80,7 +78,7 @@ variable (hA : ContMDiff I 𝓘(𝕜, E →L[𝕜] F) n A)
 include hA h in
 /-- The bounded inverse kernel parametrization has the regularity of the
 operator family, including for Banach-manifold parameter spaces. -/
-theorem contMDiff_kerSection :
+theorem _root_.ContinuousLinearMap.contMDiff_kerSection :
     ContMDiff I 𝓘(𝕜, G →L[𝕜] E) n (fun x ↦ (A x).kerSection q) := by
   intro x
   exact (ContinuousLinearMap.contDiffAt_kerSection (n := n) (h x)).comp_contMDiffAt
@@ -106,7 +104,8 @@ theorem contMDiffWithinAt_kernel_iff
   constructor
   · rintro ⟨hb, hv⟩
     refine ⟨hb, ?_⟩
-    have hs := (((contMDiff_kerSection hA h) (f y).proj).comp_contMDiffWithinAt y hb).clm_apply hv
+    have hs := (((ContinuousLinearMap.contMDiff_kerSection hA h) (f y).proj).comp_contMDiffWithinAt
+      y hb).clm_apply hv
     exact hs.congr (fun z _ ↦
       (ContinuousLinearMap.kerSection_apply_of_mem_ker (h (f z).proj) (f z).2.property).symm)
       (ContinuousLinearMap.kerSection_apply_of_mem_ker (h (f y).proj) (f y).2.property).symm
@@ -156,54 +155,3 @@ theorem contMDiff_kernel_section_iff {v : ∀ x, (A x).ker} :
   exact and_iff_right contMDiff_id
 
 end TauCeti
-
-namespace ContinuousLinearMap
-
-variable {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-  {EX HX : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX]
-  [TopologicalSpace HX] {I : ModelWithCorners 𝕜 EX HX}
-  [TopologicalSpace X] [ChartedSpace HX X]
-  {n : ℕ∞ω} {T : X → E →L[𝕜] F} {x₀ : X}
-
-/-- A `C^n` family Fredholm at one point has a finite target stabilizer on an
-open neighbourhood, with a `C^n` finite-rank kernel bundle and `C^n` inclusion
-into the ambient product. The topology and charts are the native split-kernel
-ones. No constant-rank hypothesis on the unstabilized kernels is required. -/
-theorem IsFredholm.exists_stabilization_contMDiff_kernel_vectorBundle
-    (hT₀ : IsFredholm (T x₀)) (hT : ContMDiff I 𝓘(𝕜, E →L[𝕜] F) n T) :
-    ∃ S : Submodule 𝕜 F, ∃ hS : FiniteDimensional 𝕜 S,
-      letI := hS
-      letI := FiniteDimensional.complete 𝕜 S
-      ∃ _ : FiniteDimensional 𝕜 ((T x₀).coprod S.subtypeL).ker,
-        ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
-          ∃ U : TopologicalSpace.Opens X, x₀ ∈ U ∧
-            ∃ h : ∀ x : U, (((T x).coprod S.subtypeL).prod q).IsInvertible,
-              ∃ hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
-                  (fun x : U ↦ (T x).coprod S.subtypeL),
-                letI := TauCeti.kernelFiberBundle hA.continuous h
-                letI := TauCeti.kernelVectorBundle hA.continuous h
-                ContMDiffVectorBundle n ((T x₀).coprod S.subtypeL).ker
-                    (fun x : U ↦ ((T x).coprod S.subtypeL).ker) I ∧
-                  ContMDiff (I.prod 𝓘(𝕜, ((T x₀).coprod S.subtypeL).ker))
-                    (I.prod 𝓘(𝕜, E × S)) n
-                    (fun p : TotalSpace ((T x₀).coprod S.subtypeL).ker
-                      (fun x : U ↦ ((T x).coprod S.subtypeL).ker) ↦
-                        (p.proj, (p.2 : E × S))) := by
-  obtain ⟨S, hS, q, U, hU, hx₀, hinv⟩ :=
-    hT₀.exists_stabilization_kernel_coordinates hT.continuous.continuousAt
-  let := hS
-  let := FiniteDimensional.complete 𝕜 S
-  let V : TopologicalSpace.Opens X := ⟨U, hU⟩
-  have hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
-      (fun x : V ↦ (T x).coprod S.subtypeL) := by
-    simp_rw [← comp_fst_add_comp_snd]
-    exact ((hT.comp contMDiff_subtype_val).clm_comp contMDiff_const).add
-      contMDiff_const
-  exact ⟨S, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
-    q, V, hx₀, fun x ↦ hinv x x.property, hA,
-    TauCeti.kernelContMDiffVectorBundle hA.continuous _,
-    TauCeti.contMDiff_kernel_inclusion hA _⟩
-
-end ContinuousLinearMap
