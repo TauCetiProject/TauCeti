@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 import Mathlib.Algebra.Order.Hom.Lattice
+import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Finite places of number fields
@@ -51,6 +52,14 @@ finite-place absolute values of the coordinates of a nonzero finite tuple is `1`
 finitely many finite places, and `NumberField.FinitePlace.hasFiniteMulSupport_max_one` and
 `NumberField.FinitePlace.hasFiniteMulSupport_min_one` record the same for the absolute value of an
 element truncated from below or above at `1`.
+
+An algebraic integer is at most `1` at every finite place, `NumberField.FinitePlace.apply_le_one`,
+and `NumberField.FinitePlace.exists_ne_zero_forall_apply_le` produces a nonzero algebraic integer
+which is as small as prescribed at finitely many finite places. Its form
+`NumberField.FinitePlace.exists_ne_zero_forall_mul_apply_le` clears prescribed bounds `R v` at
+those places: `v d * R v ≤ 1`. These follow Ralf Stephan's
+`DiophantineApproximation/FinitePlaceValues.lean` in `rwst/Subspace-Theorems`, snapshot
+`c26d909dc48cf7fe` (Apache 2.0).
 -/
 
 public section
@@ -164,6 +173,42 @@ support. -/
 theorem hasFiniteMulSupport_min_one {x : K} (hx : x ≠ 0) :
     Function.HasFiniteMulSupport fun v : FinitePlace K ↦ min 1 (v x) :=
   Function.HasFiniteMulSupport.fun_comp (FinitePlace.hasFiniteMulSupport hx) (min_self 1)
+
+/-- An algebraic integer has absolute value at most `1` at every finite place. -/
+theorem apply_le_one (v : FinitePlace K) (x : 𝓞 K) : v (x : K) ≤ 1 :=
+  norm_embedding_eq v x ▸ norm_le_one K v.maximalIdeal x
+
+/-- Some nonzero algebraic integer is as small as prescribed at every place of a finite set of
+finite places. -/
+theorem exists_ne_zero_forall_apply_le (T : Finset (FinitePlace K)) {ε : FinitePlace K → ℝ}
+    (hε : ∀ v ∈ T, 0 < ε v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) ≤ ε v := by
+  -- A nonzero element of every prime of `T`; their product `t` is less than `1` on `T`.
+  choose p hp hp0 using fun v : FinitePlace K ↦
+    Submodule.exists_mem_ne_zero_of_ne_bot v.maximalIdeal.ne_bot
+  set t : 𝓞 K := ∏ w ∈ T, p w
+  have ht (v : FinitePlace K) (hv : v ∈ T) : v (t : K) < 1 := by
+    rw [← norm_embedding_eq, norm_lt_one_iff_mem]
+    obtain ⟨c, hc⟩ : p v ∣ t := Finset.dvd_prod_of_mem p hv
+    rw [hc]
+    exact Ideal.mul_mem_right _ _ (hp v)
+  have hpow (v : FinitePlace K) (hv : v ∈ T) :
+      ∀ᶠ m : ℕ in Filter.atTop, v ((t ^ m : 𝓞 K) : K) ≤ ε v := by
+    simp_rw [map_pow]
+    exact (tendsto_pow_atTop_nhds_zero_of_lt_one (apply_nonneg v _) (ht v hv)).eventually
+      (ge_mem_nhds (hε v hv))
+  obtain ⟨m, hm⟩ := ((Filter.eventually_all_finset T).2 hpow).exists
+  exact ⟨t ^ m, pow_ne_zero m (Finset.prod_ne_zero_iff.2 fun w _ ↦ hp0 w), hm⟩
+
+/-- Some nonzero algebraic integer clears prescribed nonnegative bounds at every place of a finite
+set of finite places: `v d * R v ≤ 1` there. -/
+theorem exists_ne_zero_forall_mul_apply_le (T : Finset (FinitePlace K)) {R : FinitePlace K → ℝ}
+    (hR : ∀ v ∈ T, 0 ≤ R v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) * R v ≤ 1 := by
+  obtain ⟨d, hd0, hd⟩ := exists_ne_zero_forall_apply_le T (ε := fun v ↦ (1 + R v)⁻¹)
+    fun v hv ↦ by have := hR v hv; positivity
+  refine ⟨d, hd0, fun v hv ↦ ?_⟩
+  have h1 : 0 < 1 + R v := by linarith [hR v hv]
+  calc v (d : K) * R v ≤ (1 + R v)⁻¹ * R v := by gcongr; exacts [hR v hv, hd v hv]
+    _ ≤ 1 := by rw [inv_mul_le_iff₀ h1]; linarith
 
 end NumberField.FinitePlace
 

@@ -107,8 +107,8 @@ theorem mem_adjointWeightSpace_geckWeightTorus_iff (α : Multiplicative (Fin t.r
             (Derivation.cotangentLinearEquiv (B := ℤ) x)) a b = 0 :=
   HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus (t.geckDefiningIdeal ht)
     (t.geckWeightFin ht) (t.geckWeightTorusIntegralCoordinateMap ht).hom
-    (by rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-      mkQuotient_comp_geckWeightTorusIntegralCoordinateMap]) α x
+    (by rw [geckWeightTorusIntegralCoordinateMap_hom_comp_mkBialgHom,
+      GeneralLinear.hom_weightTorusCoordinateMap]) α x
 
 /-- A normalized Geck root differential, viewed in the cotangent dual of the integral carrier, has
 its prescribed signed simple-root character. -/

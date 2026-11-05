@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Weyl
+public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Weyl.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.ClosedGenerators
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Weyl.RootSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation

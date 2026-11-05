@@ -157,6 +157,62 @@ theorem basisTw_repr_apply (x : TypeAHeckeAlgebra R q n) :
         regularRep_Tw_apply_single_one]
   exact (LinearMap.congr_fun h x).trans (evalOne_apply cs x)
 
+open scoped Classical in
+/-- The coefficient of `T_w` after left multiplication by a simple generator. -/
+theorem basisTw_repr_T_mul (i : Fin (n - 1)) (x : TypeAHeckeAlgebra R q n) (w : W) :
+    (basisTw q cs).repr (T q i * x) w =
+      (if cs.IsLeftDescent w i then ((q : R) - ↑q⁻¹) * (basisTw q cs).repr x w else 0) +
+        (basisTw q cs).repr x (cs.simple i * w) := by
+  classical
+  let b := basisTw q cs
+  have h : (b.coord w).comp (LinearMap.mulLeft R (T q i)) =
+      (if cs.IsLeftDescent w i then ((q : R) - ↑q⁻¹) • b.coord w else 0) +
+        b.coord (cs.simple i * w) := by
+    apply b.ext
+    intro v
+    have heq : cs.simple i * v = w ↔ v = cs.simple i * w := by
+      constructor
+      · intro hv; rw [← hv, cs.simple_mul_simple_cancel_left]
+      · intro hv; rw [hv, cs.simple_mul_simple_cancel_left]
+    simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, b, coe_basisTw]
+    by_cases hv : cs.IsLeftDescent v i
+    · rw [T_mul_Tw_of_isLeftDescent cs hv]
+      by_cases hw : cs.IsLeftDescent w i <;>
+        simp [hw, ← coe_basisTw] <;> grind
+    · rw [T_mul_Tw_of_not_isLeftDescent cs hv]
+      by_cases hw : cs.IsLeftDescent w i <;>
+        simp [hw, ← coe_basisTw] <;> grind
+  by_cases hw : cs.IsLeftDescent w i <;>
+    simpa [b, hw] using LinearMap.congr_fun h x
+
+open scoped Classical in
+/-- The coefficient of `T_w` after right multiplication by a simple generator. -/
+theorem basisTw_repr_mul_T (x : TypeAHeckeAlgebra R q n) (i : Fin (n - 1)) (w : W) :
+    (basisTw q cs).repr (x * T q i) w =
+      (if cs.IsRightDescent w i then ((q : R) - ↑q⁻¹) * (basisTw q cs).repr x w else 0) +
+        (basisTw q cs).repr x (w * cs.simple i) := by
+  classical
+  let b := basisTw q cs
+  have h : (b.coord w).comp (LinearMap.mulRight R (T q i)) =
+      (if cs.IsRightDescent w i then ((q : R) - ↑q⁻¹) • b.coord w else 0) +
+        b.coord (w * cs.simple i) := by
+    apply b.ext
+    intro v
+    have heq : v * cs.simple i = w ↔ v = w * cs.simple i := by
+      constructor
+      · intro hv; rw [← hv, cs.simple_mul_simple_cancel_right]
+      · intro hv; rw [hv, cs.simple_mul_simple_cancel_right]
+    simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, b, coe_basisTw]
+    by_cases hv : cs.IsRightDescent v i
+    · rw [Tw_mul_T_of_isRightDescent cs hv]
+      by_cases hw : cs.IsRightDescent w i <;>
+        simp [hw, ← coe_basisTw] <;> grind
+    · rw [Tw_mul_T_of_not_isRightDescent cs hv]
+      by_cases hw : cs.IsRightDescent w i <;>
+        simp [hw, ← coe_basisTw] <;> grind
+  by_cases hw : cs.IsRightDescent w i <;>
+    simpa [b, hw] using LinearMap.congr_fun h x
+
 /-- **The regular representation is faithful.** -/
 theorem regularRep_injective :
     Function.Injective (regularRep q cs : TypeAHeckeAlgebra R q n → Module.End R (W →₀ R)) :=

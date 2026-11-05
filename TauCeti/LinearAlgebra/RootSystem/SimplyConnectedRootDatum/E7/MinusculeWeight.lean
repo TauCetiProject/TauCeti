@@ -25,6 +25,11 @@ weights span the complete character lattice. The spanning statement is the input
 weight torus in the eventual integral minuscule carrier be a closed immersion, rather than seeing
 only the index-two root lattice of the adjoint representation.
 
+The table is closed under negation, and it carries an alternating sign, normalized to `1` at
+`ϖ₇`, which reverses along every nontrivial simple reflection and between a weight and its
+negative. The sign supplies the entries of the invariant alternating form of the minuscule
+carrier.
+
 ## Main declarations
 
 * `TauCeti.DynkinType.e7MinusculeWeight`: the fifty-six weights in fundamental coordinates.
@@ -37,6 +42,12 @@ only the index-two root lattice of the adjoint representation.
 * `TauCeti.DynkinType.range_e7MinusculeWeight`: the table is exactly the Weyl orbit of `ϖ₇`.
 * `TauCeti.DynkinType.span_range_e7MinusculeWeight_eq_top`: the weights span the character
   lattice.
+* `TauCeti.DynkinType.e7MinusculeSign`: the alternating sign on the weight graph, normalized to
+  `1` at `ϖ₇`, with `e7MinusculeSign_reflection` reversing it along nontrivial simple
+  reflections.
+* `TauCeti.DynkinType.exists_e7MinusculeWeight_eq_neg`: the table is closed under negation, and
+  `TauCeti.DynkinType.e7MinusculeSign_eq_neg_of_weight_eq_neg`: opposite weights have opposite
+  signs.
 
 ## References
 
@@ -385,5 +396,43 @@ theorem span_range_e7MinusculeWeight_eq_top :
   · change Pi.single (6 : Fin 7) 1 ∈ S
     rw [show Pi.single (6 : Fin 7) 1 = e7MinusculeWeight 0 by decide +kernel]
     exact h 0
+
+/-! ## Signs on opposite weights -/
+
+/-- The sign changes along the parent tree. A weight index supplies enough fuel because every
+parent has smaller index. -/
+private def e7MinusculeSignAux : ℕ → Fin 56 → ℤ
+  | 0, _ => 1
+  | n + 1, a => if h : a = 0 then 1 else -e7MinusculeSignAux n
+      (e7MinusculeParent (a.pred h))
+
+/-- The alternating sign on the minuscule weight graph, normalized to `1` at `ϖ₇`. -/
+def e7MinusculeSign (a : Fin 56) : ℤ := e7MinusculeSignAux a.val a
+
+@[simp]
+theorem e7MinusculeSign_zero : e7MinusculeSign 0 = 1 := by
+  decide +kernel
+
+@[simp]
+theorem e7MinusculeSign_mul_self (a : Fin 56) :
+    e7MinusculeSign a * e7MinusculeSign a = 1 := by
+  decide +kernel +revert
+
+/-- A nontrivial simple reflection reverses the sign. -/
+theorem e7MinusculeSign_reflection (i : Fin 7) (a : Fin 56)
+    (h : e7MinusculeWeight a i ≠ 0) :
+    e7MinusculeSign (e7MinusculeReflection i a) = -e7MinusculeSign a := by
+  decide +kernel +revert
+
+/-- The minuscule weight table is closed under negation. -/
+theorem exists_e7MinusculeWeight_eq_neg (a : Fin 56) :
+    ∃ b, e7MinusculeWeight b = -e7MinusculeWeight a := by
+  decide +kernel +revert
+
+/-- Opposite weights have opposite signs. -/
+theorem e7MinusculeSign_eq_neg_of_weight_eq_neg (a b : Fin 56)
+    (h : e7MinusculeWeight b = -e7MinusculeWeight a) :
+    e7MinusculeSign b = -e7MinusculeSign a := by
+  decide +kernel +revert
 
 end TauCeti.DynkinType

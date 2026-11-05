@@ -27,7 +27,7 @@ is the differential of a cocharacter `λ : 𝔾ₘ → G`, the eigenspace `L(j)`
 `Ad ∘ λ` of weight `j`, so `Ad (λ s)` acts on `L(j)` by `s ^ j`. Since the `L(j)` span `L`,
 `Ad (λ s)` is the grading automorphism at `s`. This is how the adjoint action of the cocharacter
 attached to an `sl₂` triple enters the geometry of nilpotent orbits, for instance in the
-contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice`).
+contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice.Basic`).
 
 ## Main definitions
 
