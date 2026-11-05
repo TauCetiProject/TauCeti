@@ -28,7 +28,7 @@ points are the points whose coordinates are critical points of the summands.
 * `TauCeti.hasFDerivAt_sum_comp_eval`, `TauCeti.fderiv_sum_comp_eval`: the derivative of a
   separated sum.
 * `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
-  which the summands are twice continuously differentiable.
+  which the summands are continuously differentiable.
 * `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
 -/
 
@@ -89,9 +89,9 @@ theorem fderiv_sum_comp_eval_eq_zero_iff (hφ : ∀ i, DifferentiableAt ℝ (φ 
   refine ⟨fun h i ↦ ?_, fun h ↦ by simp [h]⟩
   simpa [Pi.single_apply] using DFunLike.congr_fun h (Pi.single i 1)
 
-/-- Near a point at which every summand is twice continuously differentiable, the derivative of a
+/-- Near a point at which every summand is continuously differentiable, the derivative of a
 separated sum is given by the formula of `TauCeti.fderiv_sum_comp_eval`. -/
-theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i)) :
+theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt ℝ 1 (φ i) (y i)) :
     fderiv ℝ (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) =ᶠ[𝓝 y]
       fun z ↦ ∑ i, deriv (φ i) (z i) • (proj i : (ι → ℝ) →L[ℝ] ℝ) := by
   have hdiff : ∀ i, ∀ᶠ z : ι → ℝ in 𝓝 y, DifferentiableAt ℝ (φ i) (z i) := fun i ↦

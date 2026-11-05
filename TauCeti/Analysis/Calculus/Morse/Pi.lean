@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.Pi
 public import TauCeti.Analysis.Calculus.Morse.Index
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # Nondegenerate critical points of separated sums of functions of one variable
@@ -24,12 +25,14 @@ This is the calculus behind the standard Morse function `∑ i, cos (2π xᵢ / 
 binary analogue for two arbitrary summands is `TauCeti.Analysis.Calculus.Morse.Prod`.
 
 The first-derivative calculus of separated sums, including their critical points
-`TauCeti.fderiv_sum_comp_eval_eq_zero_iff`, is in `TauCeti.Analysis.Calculus.FDeriv.Pi`.
+`TauCeti.fderiv_sum_comp_eval_eq_zero_iff`, is in `TauCeti.Analysis.Calculus.FDeriv.Pi`; the
+diagonal second derivative `TauCeti.fderiv_fderiv_sum_comp_eval_apply` is in
+`TauCeti.Analysis.Calculus.SecondDerivative`.
 
 ## Main declarations
 
-* `TauCeti.fderiv_fderiv_sum_comp_eval_apply`, `TauCeti.hessianQuadraticForm_sum_comp_eval`: its
-  second derivative is diagonal, and its Hessian quadratic form is a weighted sum of squares.
+* `TauCeti.hessianQuadraticForm_sum_comp_eval`: its Hessian quadratic form is a weighted sum of
+  squares.
 * `TauCeti.isNondegenerateCriticalPoint_sum_comp_eval_iff`: its nondegenerate critical points.
 * `TauCeti.morseIndex_sum_comp_eval`: its Morse index counts the negative second derivatives.
 
@@ -41,31 +44,9 @@ The first-derivative calculus of separated sums, including their critical points
 
 public section
 
-open Filter Topology ContinuousLinearMap
-
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] {φ : ι → ℝ → ℝ} {y : ι → ℝ}
-
-/-- **The second derivative of a separated sum is diagonal**: at a point at which every summand is
-twice continuously differentiable, it sends `v` and `w` to `∑ i, φ i'' (y i) * v i * w i`. -/
-theorem fderiv_fderiv_sum_comp_eval_apply (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i))
-    (v w : ι → ℝ) :
-    fderiv ℝ (fderiv ℝ (fun z : ι → ℝ ↦ ∑ i, φ i (z i))) y v w =
-      ∑ i, deriv (deriv (φ i)) (y i) * v i * w i := by
-  have hd : HasFDerivAt (fun z : ι → ℝ ↦ ∑ i, deriv (φ i) (z i) • (proj i : (ι → ℝ) →L[ℝ] ℝ))
-      (∑ i, (deriv (deriv (φ i)) (y i) • (proj i : (ι → ℝ) →L[ℝ] ℝ)).smulRight
-        (proj i : (ι → ℝ) →L[ℝ] ℝ)) y := by
-    refine HasFDerivAt.fun_sum fun i _ ↦ ?_
-    have h := ((hφ i).derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero
-    have h' : HasFDerivAt (fun z : ι → ℝ ↦ deriv (φ i) (z i))
-        (deriv (deriv (φ i)) (y i) • (proj i : (ι → ℝ) →L[ℝ] ℝ)) y :=
-      -- The inner function is named, since unification cannot split the composite itself.
-      HasDerivAt.comp_hasFDerivAt (f := fun z : ι → ℝ ↦ z i) y h.hasDerivAt
-        (hasFDerivAt_apply i y)
-    exact h'.smul_const (proj i : (ι → ℝ) →L[ℝ] ℝ)
-  rw [(fderiv_sum_comp_eval_eventuallyEq hφ).fderiv_eq, hd.fderiv]
-  simp [mul_comm, mul_left_comm]
 
 /-- **The Hessian of a separated sum is a weighted sum of squares**, with weights the second
 derivatives of the summands. -/
@@ -91,16 +72,18 @@ theorem isNondegenerateCriticalPoint_sum_comp_eval_iff
   rw [isNondegenerateCriticalPoint_iff_separatingLeft,
     fderiv_sum_comp_eval_eq_zero_iff fun i ↦ (hφ i).differentiableAt (by simp)]
   simp only [hcont, true_and, forall_and]
-  refine and_congr_right fun _ ↦ ⟨fun h i hi ↦ ?_, fun h v hv ↦ funext fun i ↦ ?_⟩
+  refine and_congr_right fun _ ↦ ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
   · -- A vanishing weight makes the corresponding basis vector isotropic for every vector.
     have := h (Pi.single i 1) fun w ↦ by
       simp [fderiv_fderiv_sum_comp_eval_apply hφ, Pi.single_apply, hi]
     simpa using congrFun this i
-  · -- Pairing with the `i`-th basis vector reads off `φ i'' (y i) * v i`.
-    have := hv (Pi.single i 1)
-    simp only [toBilinForm_apply, fderiv_fderiv_sum_comp_eval_apply hφ, Pi.single_apply,
-      mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true] at this
-    simpa [h i] using this
+  · -- With nonzero weights the diagonal Hessian form is nondegenerate, and its associated bilinear
+    -- form is the second derivative.
+    have hQ := QuadraticMap.nondegenerate_weightedSumSquares (R := ℝ)
+      fun i ↦ isRegular_iff_ne_zero.2 (h i)
+    rw [← hessianQuadraticForm_sum_comp_eval hφ, ← QuadraticMap.nondegenerate_associated_iff,
+      associated_hessianQuadraticForm hcont] at hQ
+    exact hQ.1
 
 /-- **The Morse index of a separated sum** at a point at which every summand is twice continuously
 differentiable is the number of summands whose second derivative is negative there. -/
