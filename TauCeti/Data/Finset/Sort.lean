@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Data.List.Chain
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
 # Sorting finsets
@@ -32,6 +33,8 @@ sorted list of the image in reversed order; in particular, sorting the points of
 
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
+
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
 -/
 
 public section
@@ -181,6 +184,22 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
       rw [hBC, hBC']
       simpa using List.isRotated_append (l := C.sort.map (finRotate (n + 1))) (l' := [0])
     · rw [hsort hB]
+
+/-- Exactly `i` elements of `s` lie below the `i`-th smallest element `s.orderEmbOfFin h i`. -/
+@[simp]
+theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (i : Fin k) :
+    #{x ∈ s | x < s.orderEmbOfFin h i} = i := by
+  have : {x ∈ s | x < s.orderEmbOfFin h i} = (Iio i).map (s.orderEmbOfFin h).toEmbedding := by
+    ext x
+    simp only [mem_filter, mem_map, mem_Iio, RelEmbedding.coe_toEmbedding]
+    constructor
+    · rintro ⟨hx, hlt⟩
+      obtain ⟨j, rfl⟩ : x ∈ Set.range (s.orderEmbOfFin h) := by
+        rwa [range_orderEmbOfFin]
+      exact ⟨j, (s.orderEmbOfFin h).lt_iff_lt.1 hlt, rfl⟩
+    · rintro ⟨j, hj, rfl⟩
+      exact ⟨s.orderEmbOfFin_mem h j, (s.orderEmbOfFin h).lt_iff_lt.2 hj⟩
+  rw [this, card_map, Fin.card_Iio]
 
 end LinearOrder
 

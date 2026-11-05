@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
+public import Mathlib.Data.Finset.Sort
 
 /-!
 # Complements on standard simplices
@@ -19,12 +20,19 @@ simplices are nerves of finite linear orders, hence quasicategories. These facts
 maps from horns and simplices to `Δ[n]`, for instance to `Δ[1]` when splitting a simplex into
 an initial and a final segment.
 
+An injective `m`-simplex of `Δ[n]` is the increasing enumeration of its set of vertices, and the
+faces of the increasing enumeration of a set `J` enumerate the sets `J` with one element removed.
+
 ## Main results
 
 * `SSet.stdSimplex.hom_app_apply`: the vertices of the image of a simplex under a map of standard
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
+* `SSet.stdSimplex.δ_objMk_orderEmbOfFin`: the faces of the increasing enumeration of a set of
+  vertices.
+* `SSet.stdSimplex.objMk_orderEmbOfFin_image`: an injective simplex is the increasing enumeration
+  of its set of vertices.
 * `SSet.stdSimplex.subcomplex_hom_app_apply`: the vertices of the image of a simplex under a map
   from a subcomplex of a standard simplex to a standard simplex.
 * `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
@@ -39,7 +47,7 @@ an initial and a final segment.
 
 public section
 
-open CategoryTheory Opposite Simplicial
+open CategoryTheory Finset Opposite Simplicial
 
 universe u
 
@@ -58,6 +66,40 @@ vertices are `e`. -/
 lemma const_app_apply {X : SSet.{u}} {n d : ℕ} (e : Fin (n + 1)) (x : X _⦋d⦌)
     (j : Fin (d + 1)) : (SSet.const (stdSimplex.const n e _) : X ⟶ Δ[n]).app _ x j = e :=
   (rfl)
+
+/-- The vertex map `asOrderHom x` of a simplex `x` of `Δ[n]` evaluates like `x` itself: both are
+the vertex function of the morphism `objEquiv x : ⦋d⦌ ⟶ ⦋n⦌` of the simplex category. -/
+@[simp]
+lemma coe_asOrderHom {n d : ℕ} (x : (Δ[n] : SSet.{u}) _⦋d⦌) : ⇑(asOrderHom x) = ⇑x :=
+  rfl
+
+/-- The `i`-th face of the simplex of `Δ[n]` enumerating a set `J` of vertices in increasing order
+enumerates `J` with its `i`-th smallest element removed. -/
+lemma δ_objMk_orderEmbOfFin {n m : ℕ} (J : Finset (Fin (n + 1))) (h : #J = m + 2)
+    (i : Fin (m + 2)) :
+    (Δ[n] : SSet.{u}).δ i (objMk (m := op ⦋m + 1⦌) (J.orderEmbOfFin h).toOrderHom) =
+      objMk (m := op ⦋m⦌) ((J.erase (J.orderEmbOfFin h i)).orderEmbOfFin
+        (by rw [card_erase_of_mem (J.orderEmbOfFin_mem h i), h]; rfl)).toOrderHom := by
+  refine ext _ _ fun k ↦ ?_
+  rw [δ_apply, objMk_apply, objMk_apply]
+  exact congrFun (orderEmbOfFin_unique
+    (by rw [card_erase_of_mem (J.orderEmbOfFin_mem h i), h]; rfl)
+    (f := fun k ↦ J.orderEmbOfFin h (i.succAbove k))
+    (fun k ↦ mem_erase.2 ⟨fun hk ↦ i.succAbove_ne k ((J.orderEmbOfFin h).injective hk),
+      J.orderEmbOfFin_mem h _⟩)
+    ((J.orderEmbOfFin h).strictMono.comp (Fin.strictMono_succAbove i))) k
+
+/-- A simplex `x` of `Δ[n]` whose vertices are pairwise distinct, that is whose set of vertices has
+`m + 1` elements, enumerates its set of vertices in increasing order. -/
+lemma objMk_orderEmbOfFin_image {n m : ℕ} (x : (Δ[n] : SSet.{u}) _⦋m⦌)
+    (h : #(univ.image x) = m + 1) :
+    objMk (m := op ⦋m⦌) ((univ.image x).orderEmbOfFin h).toOrderHom = x := by
+  have hx : Function.Injective x :=
+    Set.injOn_univ.1 (by simpa using card_image_iff.1 (h.trans (by simp)))
+  refine ext _ _ fun k ↦ ?_
+  rw [objMk_apply]
+  exact (congrFun (orderEmbOfFin_unique h (f := x) (fun k ↦ mem_image_of_mem _ (mem_univ k))
+    ((monotone_apply x).strictMono_of_injective hx)) k).symm
 
 /-- The top simplex of `Δ[n]`, corresponding to its identity map, has `j` as its `j`-th vertex. -/
 @[simp]
