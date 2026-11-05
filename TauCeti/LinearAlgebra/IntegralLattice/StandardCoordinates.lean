@@ -39,12 +39,11 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff`: the carrier is `ℤⁿ`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_iff`: the dual carrier consists of
   the vectors whose row combinations against `G` are integers.
-* `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_weight_basisFun`,
-  `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_weight_self` and
+* `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_apply_weight` and
   `TauCeti.IntegralLattice.weight_mem_ofGramMatrix_basisFun_dualCarrier`: if the row combinations
-  of `G` against a rational vector `x` are `δ_{i, i₀}`, then `x` pairs to `δ_{i, i₀}` with the
-  coordinate vectors, has self-pairing `x i₀`, and is dual-integral. The hypothesis holds for
-  `x = c / d` when `G c = d • e_{i₀}` over `ℤ` (`sum_gram_mul_div_eq`).
+  of `G` against a rational vector `x` are `δ_{i, i₀}`, then `y` pairs with `x` to `y i₀` for every
+  `y`, and `x` is dual-integral. The hypothesis holds for `x = c / d` when `G c = d • e_{i₀}` over
+  `ℤ` (`sum_gram_mul_div_eq`).
 
 ## References
 
@@ -210,18 +209,10 @@ variable [DecidableEq ι] (x : ι → ℚ) (i₀ : ι)
   (hx : ∀ i, ∑ j, ((G i j : ℤ) : ℚ) * x j = if i = i₀ then 1 else 0)
 include hx
 
-/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` pairs to `δ_{i, i₀}` with
-the standard coordinate vectors. -/
-theorem form_ofGramMatrix_basisFun_weight_basisFun (i : ι) :
-    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i) =
-      if i = i₀ then 1 else 0 := by
-  rw [form_ofGramMatrix_basisFun_right]
-  exact hx i
-
-/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, the self-pairing of `x` is
-`x i₀`. -/
-theorem form_ofGramMatrix_basisFun_weight_self :
-    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x x = x i₀ := by
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` is the dual vector of the
+`i₀`-th coordinate: `y` pairs with `x` to `y i₀`. -/
+theorem form_ofGramMatrix_basisFun_apply_weight (y : ι → ℚ) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form y x = y i₀ := by
   rw [form_ofGramMatrix_basisFun_apply]
   simp_rw [hx]
   simp

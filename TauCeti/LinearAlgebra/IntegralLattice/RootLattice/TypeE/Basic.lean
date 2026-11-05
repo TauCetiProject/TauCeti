@@ -211,17 +211,16 @@ others.** -/
 @[simp]
 theorem form_typeE₆MinusculeWeight_typeE₆SimpleRoot (i : Fin 6) :
     typeE₆RootLattice.form typeE₆MinusculeWeight (typeE₆SimpleRoot i) = if i = 0 then 1 else 0 := by
-  rw [typeE₆SimpleRoot, typeE₆RootLattice]
-  exact form_ofGramMatrix_basisFun_weight_basisFun _ _ _ 0
-    sum_cartanMatrixE₆_mul_minusculeWeight i
+  rw [typeE₆SimpleRoot, typeE₆RootLattice, form_ofGramMatrix_basisFun_right]
+  exact sum_cartanMatrixE₆_mul_minusculeWeight i
 
 /-- **The self-pairing of the minuscule weight `ϖ₁` of type `E₆` is `4/3`.** -/
 @[simp]
 theorem form_typeE₆MinusculeWeight_self :
     typeE₆RootLattice.form typeE₆MinusculeWeight typeE₆MinusculeWeight = 4 / 3 := by
   rw [typeE₆RootLattice]
-  refine (form_ofGramMatrix_basisFun_weight_self _ _ _ 0
-    sum_cartanMatrixE₆_mul_minusculeWeight).trans ?_
+  refine (form_ofGramMatrix_basisFun_apply_weight _ _ _ 0
+    sum_cartanMatrixE₆_mul_minusculeWeight _).trans ?_
   have hcoeff : typeE₆WeightCoeff 0 = 4 := by decide
   rw [typeE₆MinusculeWeight_eq_div]
   beta_reduce
@@ -493,17 +492,16 @@ others.** -/
 @[simp]
 theorem form_typeE₇MinusculeWeight_typeE₇SimpleRoot (i : Fin 7) :
     typeE₇RootLattice.form typeE₇MinusculeWeight (typeE₇SimpleRoot i) = if i = 6 then 1 else 0 := by
-  rw [typeE₇SimpleRoot, typeE₇RootLattice]
-  exact form_ofGramMatrix_basisFun_weight_basisFun _ _ _ 6
-    sum_cartanMatrixE₇_mul_minusculeWeight i
+  rw [typeE₇SimpleRoot, typeE₇RootLattice, form_ofGramMatrix_basisFun_right]
+  exact sum_cartanMatrixE₇_mul_minusculeWeight i
 
 /-- **The self-pairing of the minuscule weight `ϖ₇` of type `E₇` is `3/2`.** -/
 @[simp]
 theorem form_typeE₇MinusculeWeight_self :
     typeE₇RootLattice.form typeE₇MinusculeWeight typeE₇MinusculeWeight = 3 / 2 := by
   rw [typeE₇RootLattice]
-  refine (form_ofGramMatrix_basisFun_weight_self _ _ _ 6
-    sum_cartanMatrixE₇_mul_minusculeWeight).trans ?_
+  refine (form_ofGramMatrix_basisFun_apply_weight _ _ _ 6
+    sum_cartanMatrixE₇_mul_minusculeWeight _).trans ?_
   have hcoeff : typeE₇WeightCoeff 6 = 3 := by decide
   rw [typeE₇MinusculeWeight_eq_div]
   beta_reduce
