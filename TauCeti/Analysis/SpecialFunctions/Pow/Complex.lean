@@ -50,14 +50,16 @@ integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.cpow_mul_inv` -- multiplying a principal power by the inverse of its base lowers the
-  exponent by one, including at the base `0`.
+* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
+  lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   `r ≤ 0` along the positive real axis.
-* `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
-  continuous in the real variable `t > 0`.
-* `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
+* `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
+  `TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
+  `(0, ∞)` and `[0, ∞)`.
+* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half` -- multiplying
+  `w ^ (-1/2)` by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 -/
@@ -233,6 +235,14 @@ theorem cpow_mul_inv {s : ℂ} (hs : s ≠ 1) (w : ℂ) : w ^ s * w⁻¹ = w ^ (
   · rw [inv_zero, mul_zero, zero_cpow (sub_ne_zero.mpr hs)]
   · rw [cpow_sub _ _ hw, cpow_one, div_eq_mul_inv]
 
+/-- Multiplying a principal power by its base raises the exponent by one:
+`w ^ (s + 1) = w ^ s * w`. Away from `s + 1 = 0` this also holds at `w = 0`, where both sides
+vanish. -/
+theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^ s * w := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · rw [zero_cpow hs, mul_zero]
+  · rw [cpow_add _ _ hw, cpow_one]
+
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/
 theorem exists_norm_ofReal_add_cpow_le_mul_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {r : ℝ}
@@ -281,6 +291,23 @@ theorem continuousOn_ofReal_add_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (s
   ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
     (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
 
+/-- For `x ∈ slitPlane` and any complex exponent `s`, the principal power `(t + x) ^ s` is
+continuous in the real variable `t ≥ 0`. -/
+theorem continuousOn_ofReal_add_cpow_Ici {x : ℂ} (hx : x ∈ slitPlane) (s : ℂ) :
+    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun _ ht =>
+  ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
+    (ofReal_add_mem_slitPlane hx ht)).continuousWithinAt
+
+/-- For `x ∈ slitPlane ∪ {0}` and a complex exponent `s` with `0 < s.re`, the principal power
+`(t + x) ^ s` is continuous in the real variable `t ≥ 0`. -/
+theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℂ}
+    (hs : 0 < s.re) : ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun t ht => by
+  have hmem : 0 ≤ ((t : ℂ) + x).re ∨ ((t : ℂ) + x).im ≠ 0 :=
+    (mem_slitPlane_union_zero_iff.mp hx).imp
+      (fun h => by simp only [Complex.add_re, Complex.ofReal_re]; linarith [ht.out]) (by simp)
+  exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
+    (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
+
 end TauCeti
 
 namespace Complex
@@ -291,6 +318,12 @@ theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) 
   · simp
   · rw [← cpow_add _ _ hw]
     norm_num [cpow_neg_one]
+
+/-- Multiplying the principal power `w ^ (-1/2)` by `w` gives `w ^ (1/2)`, including at
+`w = 0`. -/
+theorem cpow_neg_half_mul_eq_cpow_half (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w = w ^ (1 / 2 : ℂ) := by
+  rw [← TauCeti.cpow_add_one' (by norm_num)]
+  norm_num
 
 /-- For any complex `x` and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number `t`
 tends to `∞`. -/
