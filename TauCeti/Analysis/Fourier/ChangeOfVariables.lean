@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Linear change of variables for the Fourier transform
@@ -15,7 +16,9 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 Precomposing a function by a continuous real linear automorphism rescales its Fourier transform
 by the inverse absolute determinant and precomposes it by the adjoint of the inverse. This is the
 change of coordinates needed to transport Fourier identities from the standard integer lattice
-to an arbitrary full lattice.
+to an arbitrary full lattice. For a dilation `x ↦ c • x` it reads
+`𝓕 (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕 f (c⁻¹ • y)` in dimension `n`, so that dilating a function does not
+change the `L¹` norm of its Fourier transform.
 
 The Jacobian factor comes from Mathlib's
 `MeasureTheory.Measure.map_linearMap_addHaar_eq_smul_addHaar`. The formulas use the total Bochner
@@ -26,11 +29,14 @@ complex normed space, including Schwartz functions by coercion.
 
 * `ContinuousLinearEquiv.fourier_comp`: change of variables for the Fourier transform.
 * `ContinuousLinearEquiv.fourierInv_comp`: the corresponding inverse-transform formula.
+* `TauCeti.fourier_comp_smul`, `TauCeti.fourierInv_comp_smul`: the dilation formulas.
+* `TauCeti.integral_norm_fourierInv_comp_smul`: dilation preserves the `L¹` norm of the inverse
+  Fourier transform.
 -/
 
 public section
 
-open MeasureTheory
+open MeasureTheory Module
 open scoped FourierTransform RealInnerProductSpace
 
 namespace TauCeti
@@ -64,5 +70,29 @@ theorem _root_.ContinuousLinearEquiv.fourierInv_comp (A : E ≃L[ℝ] E) (f : E 
     𝓕⁻ (f ∘ A) y = |A.toLinearEquiv.toLinearMap.det|⁻¹ •
       𝓕⁻ f (ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y) := by
   simp only [Real.fourierInv_eq_fourier_neg, A.fourier_comp, map_neg]
+
+/-- **Fourier transform of a dilation**: `𝓕 (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕 f (c⁻¹ • y)`, where
+`n` is the dimension. -/
+theorem fourier_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) (y : E) :
+    𝓕 (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕 f (c⁻¹ • y) := by
+  have hinner (x : E) : ⟪x, y⟫ = ⟪c • x, c⁻¹ • y⟫ := by
+    rw [real_inner_smul_left, real_inner_smul_right, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
+  simp only [Real.fourier_eq]
+  simp_rw [hinner]
+  rw [Measure.integral_comp_smul volume (fun x ↦ 𝐞 (-⟪x, c⁻¹ • y⟫) • f x), abs_inv]
+
+/-- **Inverse Fourier transform of a dilation**:
+`𝓕⁻ (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕⁻ f (c⁻¹ • y)`, where `n` is the dimension. -/
+theorem fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) (y : E) :
+    𝓕⁻ (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕⁻ f (c⁻¹ • y) := by
+  simp only [Real.fourierInv_eq_fourier_neg, fourier_comp_smul f hc, smul_neg]
+
+/-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
+`∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
+theorem integral_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
+    ∫ y, ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
+  simp_rw [fourierInv_comp_smul f hc, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs]
+  rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖𝓕⁻ f y‖), smul_eq_mul,
+    ← mul_assoc, inv_mul_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hc)), one_mul]
 
 end TauCeti
