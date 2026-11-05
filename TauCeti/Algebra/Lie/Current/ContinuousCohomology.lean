@@ -207,32 +207,6 @@ theorem residueClass_zero (h0 : (0 : LinearMap.BilinForm R L).lieInvariant L)
     (h0s : (0 : LinearMap.BilinForm R L).IsSymm) : residueClass R L 0 h0 h0s = 0 := by
   simpa using residueClass_smul (0 : R) h0 h0s (by simpa using h0) (by simp)
 
-/-- The brackets of `X⁻¹ ⊗ x` with `X ⊗ y` and of `1 ⊗ x` with `1 ⊗ y` agree. -/
-private lemma lie_single_neg_one_eq_lie_single_zero (x y : L) :
-    ⁅(HahnSeries.single (-1) 1 ⊗ₜ x : currentAlgebra R L),
-        (HahnSeries.single 1 1 ⊗ₜ y : currentAlgebra R L)⁆ =
-      ⁅(HahnSeries.single 0 1 ⊗ₜ x : currentAlgebra R L),
-        (HahnSeries.single 0 1 ⊗ₜ y : currentAlgebra R L)⁆ := by
-  simp [_root_.LieAlgebra.ExtendScalars.bracket_tmul, HahnSeries.single_mul_single]
-
-/-- The residue pairing of `X⁻¹ ⊗ x` with `X ⊗ y` exceeds that of `1 ⊗ x` with `1 ⊗ y` by
-`Φ(x, y)`. -/
-private lemma residuePairing_single_neg_one_sub (Φ : LinearMap.BilinForm R L) (x y : L) :
-    residuePairing R L Φ (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y) -
-      residuePairing R L Φ (HahnSeries.single 0 1 ⊗ₜ x) (HahnSeries.single 0 1 ⊗ₜ y) = Φ x y := by
-  simp [residuePairing_tmul, LaurentSeries.residuePairing_single]
-
-/-- **A trivial-coefficient coboundary cannot equal a residue cocycle.** If `-F [u, v]` is
-`Res(u, v) • z` for all currents `u, v`, then `Φ(x, y) • z = 0`: the coboundary takes equal values
-on `(X⁻¹ ⊗ x, X ⊗ y)` and `(1 ⊗ x, 1 ⊗ y)`, whose brackets agree, while the residue cocycle takes
-the values `Φ(x, y) • z` and `0` there. -/
-private lemma smul_eq_zero_of_neg_apply_lie_eq {Z : Type*} [AddCommGroup Z] [Module R Z]
-    (Φ : LinearMap.BilinForm R L) (F : currentAlgebra R L → Z) (z : Z)
-    (hF : ∀ u v, -F ⁅u, v⁆ = residuePairing R L Φ u v • z) (x y : L) : Φ x y • z = 0 := by
-  have h₁ := hF (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y)
-  rw [lie_single_neg_one_eq_lie_single_zero, hF] at h₁
-  rw [← residuePairing_single_neg_one_sub, sub_smul, ← h₁, sub_self]
-
 /-- **A continuous class determines its form.** Over every commutative ring, two invariant
 symmetric forms have the same residue class exactly when they are equal. -/
 @[simp]
