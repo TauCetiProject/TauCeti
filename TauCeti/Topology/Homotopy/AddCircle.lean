@@ -30,6 +30,8 @@ Null-homotopy of a loop does not depend on its constant speed: a null-homotopic 
 
 ## Main declarations
 
+* `ContinuousMap.toLoop`: a continuous map `f : C(AddCircle p, X)` read as a based loop at `f 0`
+  via `AddCircle.ofUnitInterval p`.
 * `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`: every continuous map from a
   circle `AddCircle p` with `0 < p` into a simply connected space is null-homotopic.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
@@ -47,11 +49,18 @@ namespace ContinuousMap
 
 variable {p : ℝ} {X : Type*} [TopologicalSpace X]
 
-/-- A map from the circle read as a based loop at the image of `0`. -/
-private def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
+/-- A continuous map from the circle `AddCircle p` read as a based loop at `f 0` via
+`AddCircle.ofUnitInterval p`. -/
+def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
   toContinuousMap := f.comp (AddCircle.ofUnitInterval p)
   source' := by simp
   target' := by simp [AddCircle.coe_period]
+
+/-- Evaluation of `f.toLoop` at `t ∈ [0, 1]`. -/
+@[simp]
+theorem toLoop_apply (f : C(AddCircle p, X)) (t : I) :
+    f.toLoop t = f (((t : ℝ) * p : ℝ) : AddCircle p) := by
+  simp [toLoop]
 
 /-- **Every map from a circle into a simply connected space is null-homotopic.** -/
 theorem nullhomotopic_addCircle_of_simplyConnectedSpace [Fact (0 < p)] [SimplyConnectedSpace X]

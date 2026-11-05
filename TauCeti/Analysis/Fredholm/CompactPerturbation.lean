@@ -37,6 +37,8 @@ forces the values at `c = 0` and `c = 1` to agree.
 
 * `TauCeti.isFredholm_one_sub` and `TauCeti.isFredholm_one_add`: `1 - K` and `1 + K` are Fredholm
   for `K` compact.
+* `ContinuousLinearMap.IsFredholm.of_isCompactOperator_comp_sub_one`: Atkinson sufficiency — if
+  `S₁.comp T - 1` and `T.comp S₂ - 1` are compact then `T` is Fredholm.
 * `ContinuousLinearMap.IsFredholm.add_of_isCompactOperator`: a compact perturbation of a Fredholm
   operator is Fredholm.
 * `ContinuousLinearMap.index_add_of_isCompactOperator`: a compact perturbation leaves the
@@ -79,6 +81,24 @@ theorem isFredholm_one_add {K : E →L[𝕜] E} (hK : IsCompactOperator K) :
 
 variable {T C : E →L[𝕜] F}
 
+/-- **Atkinson sufficiency.** Over Banach spaces over an `IsRCLikeNormedField`, if `T` admits
+left and right inverses `S₁, S₂` modulo compact operators (`S₁.comp T - 1` and `T.comp S₂ - 1`
+compact), then `T` is Fredholm. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.of_isCompactOperator_comp_sub_one
+    {S₁ S₂ : F →L[𝕜] E}
+    (h₁ : IsCompactOperator (S₁.comp T - 1 : E →L[𝕜] E))
+    (h₂ : IsCompactOperator (T.comp S₂ - 1 : F →L[𝕜] F)) :
+    ContinuousLinearMap.IsFredholm T := by
+  have hcomp₁ : ContinuousLinearMap.IsFredholm (S₁.comp T) := by
+    have hrw : S₁.comp T = 1 + (S₁.comp T - 1) := by abel
+    rw [hrw]
+    exact isFredholm_one_add h₁
+  have hcomp₂ : ContinuousLinearMap.IsFredholm (T.comp S₂) := by
+    have hrw : T.comp S₂ = 1 + (T.comp S₂ - 1) := by abel
+    rw [hrw]
+    exact isFredholm_one_add h₂
+  exact .of_comp_left_right hcomp₁ hcomp₂
+
 /-- A compact perturbation of a Fredholm operator between Banach spaces is Fredholm.
 
 The proof is Atkinson's argument: a quasi-inverse `S` of `T` turns `T + C` into a compact
@@ -109,24 +129,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.add_of_isCompactOperator
       abel
     rw [hrw]
     exact (isFredholm_one_add (hC.comp_clm S :)).add_hasFiniteRange hright
-  refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker _ ?_ ?_
-  · -- The kernel of `T + C` sits inside that of `S ∘ (T + C)`.
-    have hker : LinearMap.ker ((T + C : E →L[𝕜] F) : E →ₗ[𝕜] F)
-        ≤ LinearMap.ker ((S.comp (T + C) : E →L[𝕜] E) : E →ₗ[𝕜] E) := by
-      intro x hx
-      rw [LinearMap.mem_ker] at hx ⊢
-      simpa only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, map_zero] using
-        congrArg S hx
-    have := ((isFredholm_iff_finite_ker_coker _).mp hcomp₁).1
-    exact Submodule.finiteDimensional_of_le hker
-  · -- The range of `T + C` contains that of `(T + C) ∘ S`.
-    have hrange : LinearMap.range (((T + C).comp S : F →L[𝕜] F) : F →ₗ[𝕜] F)
-        ≤ LinearMap.range ((T + C : E →L[𝕜] F) : E →ₗ[𝕜] F) := by
-      rintro y ⟨z, rfl⟩
-      exact ⟨S z, rfl⟩
-    have := ((isFredholm_iff_finite_ker_coker _).mp hcomp₂).2
-    exact FiniteDimensional.of_surjective (Submodule.factor hrange)
-      (Submodule.factor_surjective hrange)
+  exact .of_comp_left_right hcomp₁ hcomp₂
 
 
 /-- A compact perturbation leaves the Fredholm index unchanged.

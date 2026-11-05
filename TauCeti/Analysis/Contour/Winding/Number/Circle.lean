@@ -9,6 +9,9 @@ public import TauCeti.Analysis.Contour.Curve.Reparam
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 
+import TauCeti.Analysis.Contour.Winding.Number.Reparam
+import TauCeti.Analysis.Contour.Winding.Number.Scale
+
 /-!
 # The generalized winding number of a circle: `1` at the centre, `0` outside
 
@@ -55,6 +58,8 @@ across the whole disc, so its circle integral vanishes.
   `TauCeti.Contour.windingNumber_circleMap_center_eq_half` (`n_c(semicircle) = ½`, over `[0, π]`).
 * `TauCeti.Contour.windingNumber_circleMap_eq_zero_of_lt_dist` — `n_w(circle) = 0` for `w` outside
   the disc.
+* `TauCeti.Contour.windingNumber_const_mul_exp` — for `c ≠ 0` and `k : ℤ`, the harmonic loop
+  `t ↦ c * exp(2πikt)` on `[0, 1]` has winding number `k` about `0`.
 
 ## Provenance
 
@@ -283,6 +288,37 @@ theorem windingNumber_circleMap_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR : 0
       (fun h => absurd (mem_closedBall.mp h) (not_le.mpr hw))
   rw [windingNumber_circleMap_eq_circleIntegral havoid,
     circleIntegral_sub_inv_eq_zero_of_lt_dist hR hw, mul_zero]
+
+/-- For `c ≠ 0` and `k : ℤ`, the harmonic loop `t ↦ c * exp(2πikt)` on `[0, 1]` has generalized
+winding number `k` about `0`. -/
+theorem windingNumber_const_mul_exp {c : ℂ} (hc : c ≠ 0) (k : ℤ) :
+    windingNumber (fun t : ℝ => c * Complex.exp (2 * Real.pi * Complex.I * k * t)) 0 1 0 = k := by
+  have hcurve :
+      (fun t : ℝ => c * Complex.exp (2 * Real.pi * Complex.I * k * t)) =
+        fun t : ℝ => c * (circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0) t := by
+    ext t
+    simp only [Function.comp_apply, circleMap, zero_add, Complex.ofReal_one, one_mul]
+    congr 2
+    push_cast
+    ring
+  have hderiv : Continuous (deriv (circleMap 0 1)) := by
+    rw [funext (deriv_circleMap 0 1)]
+    exact (continuous_circleMap 0 1).mul continuous_const
+  have hscale :
+      windingNumber
+          (fun t : ℝ => c * (circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0) t) 0 1 0 =
+        windingNumber (circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0) 0 1 0 := by
+    simpa only [mul_zero] using
+      windingNumber_const_mul (γ := circleMap 0 1 ∘ fun s : ℝ => (2 * Real.pi * k) * s + 0)
+        (a := 0) (b := 1) (z₀ := 0) hc
+  rw [hcurve, hscale,
+    windingNumber_comp_mul_add (fun u _ => differentiable_circleMap 0 1 u) hderiv.continuousOn
+      (fun _ _ => circleMap_ne_center one_ne_zero),
+    windingNumber_circleMap_center one_ne_zero]
+  have hpi : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
+  push_cast
+  field_simp
+  ring
 
 end TauCeti.Contour
 
