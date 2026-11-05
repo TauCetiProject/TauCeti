@@ -61,6 +61,68 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] {n : WithTop ℕ∞}
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   [TopologicalSpace B] [ChartedSpace HB B]
 
+section WhitneyCoords
+
+variable {A A' D D' E : FiniteRankBundleCore 𝕜 B}
+
+-- Type `splitCoords` directly with `(whitneySum A D).rank` so `rw` and `simp` never encounter an
+-- `implicit`-transparency mismatch between `(whitneySum A D).rank` and `A.rank + D.rank`.
+private def whitneyCoords (A D : FiniteRankBundleCore 𝕜 B) :
+    (Fin (whitneySum A D).rank → 𝕜) ≃L[𝕜] (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜) :=
+  splitCoords (𝕜 := 𝕜) A.rank D.rank
+
+private theorem whitneyCoords_coordChange (A D : FiniteRankBundleCore 𝕜 B) (i j x : B)
+    (v : Fin (whitneySum A D).rank → 𝕜) :
+    whitneyCoords A D ((whitneySum A D).core.coordChange i j x v) =
+      (A.core.coordChange i j x (whitneyCoords A D v).1,
+        D.core.coordChange i j x (whitneyCoords A D v).2) :=
+  splitCoords_coordChange_whitneySum A D i j x v
+
+private theorem coordChange_whitneyCoords_symm (A D : FiniteRankBundleCore 𝕜 B) (i j x : B)
+    (u : Fin A.rank → 𝕜) (w : Fin D.rank → 𝕜) :
+    (whitneySum A D).core.coordChange i j x ((whitneyCoords A D).symm (u, w)) =
+      (whitneyCoords A D).symm (A.core.coordChange i j x u, D.core.coordChange i j x w) :=
+  coordChange_whitneySum_splitCoords_symm A D i j x u w
+
+private theorem fiberMap_whitneyFst_eq (A D : FiniteRankBundleCore 𝕜 B) (x : B)
+    (v : Fin (whitneySum A D).rank → 𝕜) :
+    (whitneyFst A D).fiberMap x v = (whitneyCoords A D v).1 :=
+  DFunLike.congr_fun (fiberMap_whitneyFst A D x) v
+
+private theorem fiberMap_whitneySnd_eq (A D : FiniteRankBundleCore 𝕜 B) (x : B)
+    (v : Fin (whitneySum A D).rank → 𝕜) :
+    (whitneySnd A D).fiberMap x v = (whitneyCoords A D v).2 :=
+  DFunLike.congr_fun (fiberMap_whitneySnd A D x) v
+
+private theorem fiberMap_whitneyInl_eq (A D : FiniteRankBundleCore 𝕜 B) (x : B)
+    (u : Fin A.rank → 𝕜) :
+    (whitneyInl A D).fiberMap x u = (whitneyCoords A D).symm (u, 0) :=
+  DFunLike.congr_fun (fiberMap_whitneyInl A D x) u
+
+private theorem fiberMap_whitneyInr_eq (A D : FiniteRankBundleCore 𝕜 B) (x : B)
+    (w : Fin D.rank → 𝕜) :
+    (whitneyInr A D).fiberMap x w = (whitneyCoords A D).symm (0, w) :=
+  DFunLike.congr_fun (fiberMap_whitneyInr A D x) w
+
+private theorem fiberMap_whitneyLift_eq (f : E ⟶ A) (g : E ⟶ D) (x : B) (v : Fin E.rank → 𝕜) :
+    (whitneyLift f g).fiberMap x v = (whitneyCoords A D).symm (f.fiberMap x v, g.fiberMap x v) :=
+  DFunLike.congr_fun (fiberMap_whitneyLift f g x) v
+
+private theorem fiberMap_whitneyDesc_eq (f : A ⟶ E) (g : D ⟶ E) (x : B)
+    (v : Fin (whitneySum A D).rank → 𝕜) :
+    (whitneyDesc f g).fiberMap x v =
+      f.fiberMap x (whitneyCoords A D v).1 + g.fiberMap x (whitneyCoords A D v).2 :=
+  fiberMap_whitneyDesc_apply f g x v
+
+private theorem fiberMap_whitneyMap_eq (f : A ⟶ A') (g : D ⟶ D') (x : B)
+    (v : Fin (whitneySum A D).rank → 𝕜) :
+    (whitneyMap f g).fiberMap x v =
+      (whitneyCoords A' D').symm
+        (f.fiberMap x (whitneyCoords A D v).1, g.fiberMap x (whitneyCoords A D v).2) :=
+  DFunLike.congr_fun (fiberMap_whitneyMap f g x) v
+
+end WhitneyCoords
+
 section ChartRegularity
 
 variable {A A' D D' E : FiniteRankBundleCore 𝕜 B}
@@ -81,10 +143,8 @@ instance isContMDiff_whitneySum (A D : FiniteRankBundleCore 𝕜 B)
         (D.core.coordChange i j)
         ((whitneySum A D).core.baseSet i ∩ (whitneySum A D).core.baseSet j) :=
       (D.core.contMDiffOn_coordChange IB i j).mono fun _ h ↦ ⟨h.1.2, h.2.2⟩
-    let S : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜) :=
-      (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-    let S' : ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
-      (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap
+    let S := (whitneyCoords A D).toContinuousLinearMap
+    let S' := (whitneyCoords A D).symm.toContinuousLinearMap
     exact (contMDiffOn_const (c := S')).clm_comp
       ((hA.clm_prodMap hD).clm_comp (contMDiffOn_const (c := S)))
 
@@ -94,21 +154,13 @@ theorem contMDiffOn_inChartCoordinates_whitneyFst (A D : FiniteRankBundleCore �
     ContMDiffOn IB 𝓘(𝕜, (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) n
       (fun x ↦ (whitneySum A D).core.inChartCoordinates A.core i j x
         ((whitneyFst A D).fiberMap x))
-      ((whitneySum A D).core.baseSet i ∩ A.core.baseSet j) := by
-  have hA : ContMDiffOn IB 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) n
-      (A.core.coordChange i j) ((whitneySum A D).core.baseSet i ∩ A.core.baseSet j) :=
-    (A.core.contMDiffOn_coordChange IB i j).mono fun _ h ↦ ⟨h.1.1, h.2⟩
-  let P : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) :=
-    (ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
-      (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  refine (hA.clm_comp (contMDiffOn_const (c := P))).congr fun x hx ↦ ?_
-  apply ContinuousLinearMap.ext
-  intro v
-  rw [inChartCoordinates_core_apply (whitneySum A D) A,
-    DFunLike.congr_fun (fiberMap_whitneyFst A D x) _]
-  exact (congrArg (A.core.coordChange x j x)
-    (congrArg Prod.fst (splitCoords_coordChange_whitneySum A D i x x v))).trans
-    (A.core.coordChange_comp i x j x ⟨⟨hx.1.1, A.mem_baseSet_self x⟩, hx.2⟩ _)
+      ((whitneySum A D).core.baseSet i ∩ A.core.baseSet j) :=
+  contMDiffOn_inChartCoordinates_of_coordChange_comp (whitneyFst A D) inter_subset_left
+    ((ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+      (whitneyCoords A D).toContinuousLinearMap)
+    fun x _ v ↦ by
+      rw [fiberMap_whitneyFst_eq, whitneyCoords_coordChange]
+      simp
 
 /-- When `D` is a `C^n` core, the chart operators of `whitneySnd A D` are `C^n`. -/
 theorem contMDiffOn_inChartCoordinates_whitneySnd (A D : FiniteRankBundleCore 𝕜 B)
@@ -116,21 +168,13 @@ theorem contMDiffOn_inChartCoordinates_whitneySnd (A D : FiniteRankBundleCore �
     ContMDiffOn IB 𝓘(𝕜, (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
       (fun x ↦ (whitneySum A D).core.inChartCoordinates D.core i j x
         ((whitneySnd A D).fiberMap x))
-      ((whitneySum A D).core.baseSet i ∩ D.core.baseSet j) := by
-  have hD : ContMDiffOn IB 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
-      (D.core.coordChange i j) ((whitneySum A D).core.baseSet i ∩ D.core.baseSet j) :=
-    (D.core.contMDiffOn_coordChange IB i j).mono fun _ h ↦ ⟨h.1.2, h.2⟩
-  let P : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜) :=
-    (ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
-      (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  refine (hD.clm_comp (contMDiffOn_const (c := P))).congr fun x hx ↦ ?_
-  apply ContinuousLinearMap.ext
-  intro v
-  rw [inChartCoordinates_core_apply (whitneySum A D) D,
-    DFunLike.congr_fun (fiberMap_whitneySnd A D x) _]
-  exact (congrArg (D.core.coordChange x j x)
-    (congrArg Prod.snd (splitCoords_coordChange_whitneySum A D i x x v))).trans
-    (D.core.coordChange_comp i x j x ⟨⟨hx.1.2, D.mem_baseSet_self x⟩, hx.2⟩ _)
+      ((whitneySum A D).core.baseSet i ∩ D.core.baseSet j) :=
+  contMDiffOn_inChartCoordinates_of_coordChange_comp (whitneySnd A D) inter_subset_right
+    ((ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+      (whitneyCoords A D).toContinuousLinearMap)
+    fun x _ v ↦ by
+      rw [fiberMap_whitneySnd_eq, whitneyCoords_coordChange]
+      simp
 
 /-- When `A` is a `C^n` core, the chart operators of `whitneyInl A D` are `C^n`. -/
 theorem contMDiffOn_inChartCoordinates_whitneyInl (A D : FiniteRankBundleCore 𝕜 B)
@@ -138,29 +182,13 @@ theorem contMDiffOn_inChartCoordinates_whitneyInl (A D : FiniteRankBundleCore �
     ContMDiffOn IB 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜)) n
       (fun x ↦ A.core.inChartCoordinates (whitneySum A D).core i j x
         ((whitneyInl A D).fiberMap x))
-      (A.core.baseSet i ∩ (whitneySum A D).core.baseSet j) := by
-  have hA : ContMDiffOn IB 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) n
-      (A.core.coordChange i j) (A.core.baseSet i ∩ (whitneySum A D).core.baseSet j) :=
-    (A.core.contMDiffOn_coordChange IB i j).mono fun _ h ↦ ⟨h.1, h.2.1⟩
-  let J : (Fin A.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
-      (ContinuousLinearMap.inl 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜))
-  refine ((contMDiffOn_const (c := J)).clm_comp hA).congr fun x hx ↦ ?_
-  apply ContinuousLinearMap.ext
-  intro u
-  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
-  have h1 : A.core.inChartCoordinates (whitneySum A D).core i j x
-      ((whitneyInl A D).fiberMap x) u =
-      (whitneySum A D).core.coordChange x j x
-        ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm (A.core.coordChange i x x u, 0)) := by
-    rw [inChartCoordinates_core_apply A (whitneySum A D)]
-    exact congrArg ((whitneySum A D).core.coordChange x j x)
-      (DFunLike.congr_fun (fiberMap_whitneyInl A D x) (A.core.coordChange i x x u))
-  exact (congrArg (splitCoords (𝕜 := 𝕜) A.rank D.rank) h1).trans <|
-    (splitCoords_coordChange_whitneySum A D x j x _).trans <| by
-      simp only [ContinuousLinearEquiv.apply_symm_apply, map_zero]
-      rw [A.core.coordChange_comp i x j x ⟨⟨hx.1, A.mem_baseSet_self x⟩, hx.2.1⟩]
-      exact ((splitCoords (𝕜 := 𝕜) A.rank D.rank).apply_symm_apply _).symm
+      (A.core.baseSet i ∩ (whitneySum A D).core.baseSet j) :=
+  contMDiffOn_inChartCoordinates_of_comp_coordChange (whitneyInl A D) inter_subset_left
+    ((whitneyCoords A D).symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.inl 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)))
+    fun x _ u ↦ by
+      rw [fiberMap_whitneyInl_eq, coordChange_whitneyCoords_symm]
+      simp
 
 /-- When `D` is a `C^n` core, the chart operators of `whitneyInr A D` are `C^n`. -/
 theorem contMDiffOn_inChartCoordinates_whitneyInr (A D : FiniteRankBundleCore 𝕜 B)
@@ -168,137 +196,88 @@ theorem contMDiffOn_inChartCoordinates_whitneyInr (A D : FiniteRankBundleCore �
     ContMDiffOn IB 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜)) n
       (fun x ↦ D.core.inChartCoordinates (whitneySum A D).core i j x
         ((whitneyInr A D).fiberMap x))
-      (D.core.baseSet i ∩ (whitneySum A D).core.baseSet j) := by
-  have hD : ContMDiffOn IB 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
-      (D.core.coordChange i j) (D.core.baseSet i ∩ (whitneySum A D).core.baseSet j) :=
-    (D.core.contMDiffOn_coordChange IB i j).mono fun _ h ↦ ⟨h.1, h.2.2⟩
-  let J : (Fin D.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
-      (ContinuousLinearMap.inr 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜))
-  refine ((contMDiffOn_const (c := J)).clm_comp hD).congr fun x hx ↦ ?_
-  apply ContinuousLinearMap.ext
-  intro w
-  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
-  have h1 : D.core.inChartCoordinates (whitneySum A D).core i j x
-      ((whitneyInr A D).fiberMap x) w =
-      (whitneySum A D).core.coordChange x j x
-        ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm (0, D.core.coordChange i x x w)) := by
-    rw [inChartCoordinates_core_apply D (whitneySum A D)]
-    exact congrArg ((whitneySum A D).core.coordChange x j x)
-      (DFunLike.congr_fun (fiberMap_whitneyInr A D x) (D.core.coordChange i x x w))
-  exact (congrArg (splitCoords (𝕜 := 𝕜) A.rank D.rank) h1).trans <|
-    (splitCoords_coordChange_whitneySum A D x j x _).trans <| by
-      simp only [ContinuousLinearEquiv.apply_symm_apply, map_zero]
-      rw [D.core.coordChange_comp i x j x ⟨⟨hx.1, D.mem_baseSet_self x⟩, hx.2.2⟩]
-      exact ((splitCoords (𝕜 := 𝕜) A.rank D.rank).apply_symm_apply _).symm
+      (D.core.baseSet i ∩ (whitneySum A D).core.baseSet j) :=
+  contMDiffOn_inChartCoordinates_of_comp_coordChange (whitneyInr A D) inter_subset_right
+    ((whitneyCoords A D).symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.inr 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)))
+    fun x _ w ↦ by
+      rw [fiberMap_whitneyInr_eq, coordChange_whitneyCoords_symm]
+      simp
 
-/-- Pairing two morphisms with `C^n` chart operators into a Whitney sum yields `C^n` chart
-operators. -/
-theorem contMDiffOn_inChartCoordinates_whitneyLift {f : E ⟶ A} {g : E ⟶ D}
-    (hf : ∀ i j, ContMDiffOn IB 𝓘(𝕜, (Fin E.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) n
+/-- Pairing two morphisms with `C^n` `(i, j)` chart operators into a Whitney sum yields a `C^n`
+`(i, j)` chart operator. -/
+theorem contMDiffOn_inChartCoordinates_whitneyLift {f : E ⟶ A} {g : E ⟶ D} {i j : B}
+    (hf : ContMDiffOn IB 𝓘(𝕜, (Fin E.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) n
       (fun x ↦ E.core.inChartCoordinates A.core i j x (f.fiberMap x))
       (E.core.baseSet i ∩ A.core.baseSet j))
-    (hg : ∀ i j, ContMDiffOn IB 𝓘(𝕜, (Fin E.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
+    (hg : ContMDiffOn IB 𝓘(𝕜, (Fin E.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
       (fun x ↦ E.core.inChartCoordinates D.core i j x (g.fiberMap x))
-      (E.core.baseSet i ∩ D.core.baseSet j))
-    (i j : B) :
+      (E.core.baseSet i ∩ D.core.baseSet j)) :
     ContMDiffOn IB 𝓘(𝕜, (Fin E.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜)) n
       (fun x ↦ E.core.inChartCoordinates (whitneySum A D).core i j x
         ((whitneyLift f g).fiberMap x))
       (E.core.baseSet i ∩ (whitneySum A D).core.baseSet j) := by
   let U := E.core.baseSet i ∩ (whitneySum A D).core.baseSet j
-  have hf' := (hf i j).mono fun x (h : x ∈ U) ↦ ⟨h.1, h.2.1⟩
-  have hg' := (hg i j).mono fun x (h : x ∈ U) ↦ ⟨h.1, h.2.2⟩
+  have hf' := hf.mono fun x (h : x ∈ U) ↦ ⟨h.1, h.2.1⟩
+  have hg' := hg.mono fun x (h : x ∈ U) ↦ ⟨h.1, h.2.2⟩
   let Δ : (Fin E.rank → 𝕜) →L[𝕜] (Fin E.rank → 𝕜) × (Fin E.rank → 𝕜) :=
     (ContinuousLinearMap.id 𝕜 _).prod (ContinuousLinearMap.id 𝕜 _)
-  let S' : ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap
+  let S' := (whitneyCoords A D).symm.toContinuousLinearMap
   refine ((contMDiffOn_const (c := S')).clm_comp
     ((hf'.clm_prodMap hg').clm_comp (contMDiffOn_const (c := Δ)))).congr fun x _ ↦ ?_
-  apply ContinuousLinearMap.ext
-  intro v
-  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
-  rw [inChartCoordinates_core_apply E (whitneySum A D)]
-  refine Eq.symm (Eq.trans ((splitCoords (𝕜 := 𝕜) A.rank D.rank).apply_symm_apply _)
-    (Eq.symm ((splitCoords_coordChange_whitneySum A D x j x _).trans ?_)))
-  have hv := splitCoords_fiberMap_whitneyLift f g x (E.core.coordChange i x x v)
-  refine Prod.ext ((congrArg (fun p ↦ A.core.coordChange x j x p.1) hv).trans ?_)
-    ((congrArg (fun p ↦ D.core.coordChange x j x p.2) hv).trans ?_)
-  · simp [inChartCoordinates_core_apply E A, Δ]
-  · simp [inChartCoordinates_core_apply E D, Δ]
+  ext v : 1
+  rw [inChartCoordinates_core_apply E (whitneySum A D), fiberMap_whitneyLift_eq]
+  simp [S', Δ, coordChange_whitneyCoords_symm, A.indexAt_eq, D.indexAt_eq, E.indexAt_eq]
 
-/-- Copairing two morphisms with `C^n` chart operators out of a Whitney sum yields `C^n` chart
-operators. -/
-theorem contMDiffOn_inChartCoordinates_whitneyDesc {f : A ⟶ E} {g : D ⟶ E}
-    (hf : ∀ i j, ContMDiffOn IB 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin E.rank → 𝕜)) n
+/-- Copairing two morphisms with `C^n` `(i, j)` chart operators out of a Whitney sum yields a `C^n`
+`(i, j)` chart operator. -/
+theorem contMDiffOn_inChartCoordinates_whitneyDesc {f : A ⟶ E} {g : D ⟶ E} {i j : B}
+    (hf : ContMDiffOn IB 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin E.rank → 𝕜)) n
       (fun x ↦ A.core.inChartCoordinates E.core i j x (f.fiberMap x))
       (A.core.baseSet i ∩ E.core.baseSet j))
-    (hg : ∀ i j, ContMDiffOn IB 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin E.rank → 𝕜)) n
+    (hg : ContMDiffOn IB 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin E.rank → 𝕜)) n
       (fun x ↦ D.core.inChartCoordinates E.core i j x (g.fiberMap x))
-      (D.core.baseSet i ∩ E.core.baseSet j))
-    (i j : B) :
+      (D.core.baseSet i ∩ E.core.baseSet j)) :
     ContMDiffOn IB 𝓘(𝕜, (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin E.rank → 𝕜)) n
       (fun x ↦ (whitneySum A D).core.inChartCoordinates E.core i j x
         ((whitneyDesc f g).fiberMap x))
       ((whitneySum A D).core.baseSet i ∩ E.core.baseSet j) := by
   let U := (whitneySum A D).core.baseSet i ∩ E.core.baseSet j
-  have hf' := (hf i j).mono fun x (h : x ∈ U) ↦ ⟨h.1.1, h.2⟩
-  have hg' := (hg i j).mono fun x (h : x ∈ U) ↦ ⟨h.1.2, h.2⟩
-  let S : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
+  have hf' := hf.mono fun x (h : x ∈ U) ↦ ⟨h.1.1, h.2⟩
+  have hg' := hg.mono fun x (h : x ∈ U) ↦ ⟨h.1.2, h.2⟩
+  let S := (whitneyCoords A D).toContinuousLinearMap
   let C' : ((Fin E.rank → 𝕜) × (Fin E.rank → 𝕜)) →L[𝕜] (Fin E.rank → 𝕜) :=
     (ContinuousLinearMap.id 𝕜 _).coprod (ContinuousLinearMap.id 𝕜 _)
   refine ((contMDiffOn_const (c := C')).clm_comp
     ((hf'.clm_prodMap hg').clm_comp (contMDiffOn_const (c := S)))).congr fun x _ ↦ ?_
-  apply ContinuousLinearMap.ext
-  intro v
-  rw [inChartCoordinates_core_apply (whitneySum A D) E]
-  have hv := splitCoords_coordChange_whitneySum A D i x x v
-  refine (congrArg (E.core.coordChange x j x) (fiberMap_whitneyDesc_apply f g x _)).trans ?_
-  rw [map_add]
-  exact congrArg₂ (· + ·)
-    ((congrArg (fun p ↦ E.core.coordChange x j x (f.fiberMap x p.1)) hv).trans
-      (inChartCoordinates_core_apply A E i j x (f.fiberMap x) _).symm)
-    ((congrArg (fun p ↦ E.core.coordChange x j x (g.fiberMap x p.2)) hv).trans
-      (inChartCoordinates_core_apply D E i j x (g.fiberMap x) _).symm)
+  ext v : 1
+  rw [inChartCoordinates_core_apply (whitneySum A D) E, fiberMap_whitneyDesc_eq]
+  simp [S, C', whitneyCoords_coordChange, A.indexAt_eq, D.indexAt_eq, E.indexAt_eq]
 
-/-- Direct sums of morphisms with `C^n` chart operators have `C^n` chart operators. -/
-theorem contMDiffOn_inChartCoordinates_whitneyMap {f : A ⟶ A'} {g : D ⟶ D'}
-    (hf : ∀ i j, ContMDiffOn IB 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin A'.rank → 𝕜)) n
+/-- Direct sums of morphisms with `C^n` `(i, j)` chart operators have a `C^n` `(i, j)` chart
+operator. -/
+theorem contMDiffOn_inChartCoordinates_whitneyMap {f : A ⟶ A'} {g : D ⟶ D'} {i j : B}
+    (hf : ContMDiffOn IB 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin A'.rank → 𝕜)) n
       (fun x ↦ A.core.inChartCoordinates A'.core i j x (f.fiberMap x))
       (A.core.baseSet i ∩ A'.core.baseSet j))
-    (hg : ∀ i j, ContMDiffOn IB 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin D'.rank → 𝕜)) n
+    (hg : ContMDiffOn IB 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin D'.rank → 𝕜)) n
       (fun x ↦ D.core.inChartCoordinates D'.core i j x (g.fiberMap x))
-      (D.core.baseSet i ∩ D'.core.baseSet j))
-    (i j : B) :
+      (D.core.baseSet i ∩ D'.core.baseSet j)) :
     ContMDiffOn IB 𝓘(𝕜, (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin (whitneySum A' D').rank → 𝕜)) n
       (fun x ↦ (whitneySum A D).core.inChartCoordinates (whitneySum A' D').core i j x
         ((whitneyMap f g).fiberMap x))
       ((whitneySum A D).core.baseSet i ∩ (whitneySum A' D').core.baseSet j) := by
   let U := (whitneySum A D).core.baseSet i ∩ (whitneySum A' D').core.baseSet j
-  have hf' := (hf i j).mono fun x (h : x ∈ U) ↦ ⟨h.1.1, h.2.1⟩
-  have hg' := (hg i j).mono fun x (h : x ∈ U) ↦ ⟨h.1.2, h.2.2⟩
-  let S : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  let S' : ((Fin A'.rank → 𝕜) × (Fin D'.rank → 𝕜)) →L[𝕜] (Fin (whitneySum A' D').rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A'.rank D'.rank).symm.toContinuousLinearMap
+  have hf' := hf.mono fun x (h : x ∈ U) ↦ ⟨h.1.1, h.2.1⟩
+  have hg' := hg.mono fun x (h : x ∈ U) ↦ ⟨h.1.2, h.2.2⟩
+  let S := (whitneyCoords A D).toContinuousLinearMap
+  let S' := (whitneyCoords A' D').symm.toContinuousLinearMap
   refine ((contMDiffOn_const (c := S')).clm_comp
     ((hf'.clm_prodMap hg').clm_comp (contMDiffOn_const (c := S)))).congr fun x _ ↦ ?_
-  apply ContinuousLinearMap.ext
-  intro v
-  apply (splitCoords (𝕜 := 𝕜) A'.rank D'.rank).injective
-  rw [inChartCoordinates_core_apply (whitneySum A D) (whitneySum A' D')]
-  refine Eq.symm (Eq.trans ((splitCoords (𝕜 := 𝕜) A'.rank D'.rank).apply_symm_apply _)
-    (Eq.symm ((splitCoords_coordChange_whitneySum A' D' x j x _).trans ?_)))
-  have hw := splitCoords_fiberMap_whitneyMap f g x ((whitneySum A D).core.coordChange i x x v)
-  have hv := splitCoords_coordChange_whitneySum A D i x x v
-  exact Prod.ext
-    ((congrArg (fun p ↦ A'.core.coordChange x j x p.1) hw).trans
-      ((congrArg (fun p ↦ A'.core.coordChange x j x (f.fiberMap x p.1)) hv).trans
-        (inChartCoordinates_core_apply A A' i j x (f.fiberMap x) _).symm))
-    ((congrArg (fun p ↦ D'.core.coordChange x j x p.2) hw).trans
-      ((congrArg (fun p ↦ D'.core.coordChange x j x (g.fiberMap x p.2)) hv).trans
-        (inChartCoordinates_core_apply D D' i j x (g.fiberMap x) _).symm))
+  ext v : 1
+  rw [inChartCoordinates_core_apply (whitneySum A D) (whitneySum A' D'), fiberMap_whitneyMap_eq]
+  simp [S, S', whitneyCoords_coordChange, coordChange_whitneyCoords_symm, Prod.map_apply',
+    A.indexAt_eq, A'.indexAt_eq, D.indexAt_eq, D'.indexAt_eq]
 
 end ChartRegularity
 
@@ -310,104 +289,49 @@ variable {A A' D D' C E : FiniteRankBundleCore 𝕜 B}
 assumption on the cores or completeness of `𝕜`. -/
 theorem contMDiff_totalSpaceMap_whitneyFst (A D : FiniteRankBundleCore 𝕜 B) :
     ContMDiff (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) (IB.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
-      (whitneyFst A D).totalSpaceMap := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [CoordinateHom.totalSpaceMap_proj]
-  refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  let P : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) :=
-    (ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
-      (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  refine (P.contDiff.comp_contMDiffAt
-    (contMDiffAt_localTriv_snd (whitneySum A D) p₀)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall ?_)
-  rintro ⟨x, v⟩
-  dsimp only [Function.comp_apply]
-  rw [A.trivializationAt_core]
-  simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, A.indexAt_eq,
-    (whitneySum A D).indexAt_eq]
-  exact (congrArg (A.core.coordChange x p₀.proj x)
-    (DFunLike.congr_fun (fiberMap_whitneyFst A D x) v)).trans
-    (congrArg Prod.fst (splitCoords_coordChange_whitneySum A D x p₀.proj x v)).symm
+      (whitneyFst A D).totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_coordChange (whitneyFst A D)
+    ((ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+      (whitneyCoords A D).toContinuousLinearMap)
+    fun x b v ↦ by
+      rw [fiberMap_whitneyFst_eq]
+      simp [whitneyCoords_coordChange]
 
 /-- The second projection of a Whitney sum glues to a `C^n` map of total spaces, without any `C^n`
 assumption on the cores or completeness of `𝕜`. -/
 theorem contMDiff_totalSpaceMap_whitneySnd (A D : FiniteRankBundleCore 𝕜 B) :
     ContMDiff (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) (IB.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
-      (whitneySnd A D).totalSpaceMap := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [CoordinateHom.totalSpaceMap_proj]
-  refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  let P : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜) :=
-    (ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
-      (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  refine (P.contDiff.comp_contMDiffAt
-    (contMDiffAt_localTriv_snd (whitneySum A D) p₀)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall ?_)
-  rintro ⟨x, v⟩
-  dsimp only [Function.comp_apply]
-  rw [D.trivializationAt_core]
-  simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, D.indexAt_eq,
-    (whitneySum A D).indexAt_eq]
-  exact (congrArg (D.core.coordChange x p₀.proj x)
-    (DFunLike.congr_fun (fiberMap_whitneySnd A D x) v)).trans
-    (congrArg Prod.snd (splitCoords_coordChange_whitneySum A D x p₀.proj x v)).symm
+      (whitneySnd A D).totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_coordChange (whitneySnd A D)
+    ((ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+      (whitneyCoords A D).toContinuousLinearMap)
+    fun x b v ↦ by
+      rw [fiberMap_whitneySnd_eq]
+      simp [whitneyCoords_coordChange]
 
 /-- The first inclusion into a Whitney sum glues to a `C^n` map of total spaces, without any `C^n`
 assumption on the cores or completeness of `𝕜`. -/
 theorem contMDiff_totalSpaceMap_whitneyInl (A D : FiniteRankBundleCore 𝕜 B) :
     ContMDiff (IB.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) n
-      (whitneyInl A D).totalSpaceMap := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [CoordinateHom.totalSpaceMap_proj]
-  refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  let J : (Fin A.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
-      (ContinuousLinearMap.inl 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜))
-  refine (J.contDiff.comp_contMDiffAt
-    (contMDiffAt_localTriv_snd A p₀)).congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
-  rintro ⟨x, u⟩
-  dsimp only [Function.comp_apply]
-  rw [(whitneySum A D).trivializationAt_core]
-  simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, A.indexAt_eq,
-    (whitneySum A D).indexAt_eq]
-  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
-  have hu :=
-    (whitneySumFiberEquiv_apply A D x _).symm.trans (whitneySumFiberEquiv_whitneyInl A D x u)
-  refine Eq.symm (Eq.trans ((splitCoords (𝕜 := 𝕜) A.rank D.rank).apply_symm_apply _)
-    (Eq.symm ((splitCoords_coordChange_whitneySum A D x p₀.proj x _).trans ?_)))
-  exact Prod.ext (congrArg (fun p ↦ A.core.coordChange x p₀.proj x p.1) hu)
-    ((congrArg (fun p ↦ D.core.coordChange x p₀.proj x p.2) hu).trans (map_zero _))
+      (whitneyInl A D).totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_coordChange (whitneyInl A D)
+    ((whitneyCoords A D).symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.inl 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)))
+    fun x b u ↦ by
+      rw [fiberMap_whitneyInl_eq, coordChange_whitneyCoords_symm]
+      simp
 
 /-- The second inclusion into a Whitney sum glues to a `C^n` map of total spaces, without any `C^n`
 assumption on the cores or completeness of `𝕜`. -/
 theorem contMDiff_totalSpaceMap_whitneyInr (A D : FiniteRankBundleCore 𝕜 B) :
     ContMDiff (IB.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) n
-      (whitneyInr A D).totalSpaceMap := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [CoordinateHom.totalSpaceMap_proj]
-  refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  let J : (Fin D.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
-      (ContinuousLinearMap.inr 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜))
-  refine (J.contDiff.comp_contMDiffAt
-    (contMDiffAt_localTriv_snd D p₀)).congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
-  rintro ⟨x, w⟩
-  dsimp only [Function.comp_apply]
-  rw [(whitneySum A D).trivializationAt_core]
-  simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, D.indexAt_eq,
-    (whitneySum A D).indexAt_eq]
-  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
-  have hw :=
-    (whitneySumFiberEquiv_apply A D x _).symm.trans (whitneySumFiberEquiv_whitneyInr A D x w)
-  refine Eq.symm (Eq.trans ((splitCoords (𝕜 := 𝕜) A.rank D.rank).apply_symm_apply _)
-    (Eq.symm ((splitCoords_coordChange_whitneySum A D x p₀.proj x _).trans ?_)))
-  exact Prod.ext
-    ((congrArg (fun p ↦ A.core.coordChange x p₀.proj x p.1) hw).trans (map_zero _))
-    (congrArg (fun p ↦ D.core.coordChange x p₀.proj x p.2) hw)
+      (whitneyInr A D).totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_coordChange (whitneyInr A D)
+    ((whitneyCoords A D).symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.inr 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)))
+    fun x b w ↦ by
+      rw [fiberMap_whitneyInr_eq, coordChange_whitneyCoords_symm]
+      simp
 
 /-- The pairing `whitneyLift f g` glues to a `C^n` total-space map if and only if both `f` and `g`
 do. -/
@@ -698,21 +622,11 @@ cores or completeness of `𝕜`. -/
 theorem contMDiff_whitneySumTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     ContMDiff (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜))
       (IB.prod 𝓘(𝕜, (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜))) n
-      (whitneySumTotalSpaceHomeomorph A D) := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [whitneySumTotalSpaceHomeomorph_apply]
-  refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  let S : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜) :=
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  refine (S.contDiff.comp_contMDiffAt
-    (contMDiffAt_localTriv_snd (whitneySum A D) p₀)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun p ↦ ?_)
-  dsimp only [Function.comp_apply]
-  exact (congrArg (fun e : Trivialization _ (π _ (A.core.Fiber ×ᵇ D.core.Fiber)) ↦
-      (e ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩).2)
-    (prod_trivializationAt_eq A D p₀.proj)).trans
-    (localTriv_prod_whitneySumFiberEquiv A D p₀.proj p)
+      (whitneySumTotalSpaceHomeomorph A D) :=
+  (whitneySum A D).contMDiff_of_localTriv_snd (whitneySumTotalSpaceHomeomorph A D)
+    (fun p ↦ by simp) (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap fun b p ↦ by
+      rw [prod_trivializationAt_eq, whitneySumTotalSpaceHomeomorph_apply]
+      exact localTriv_prod_whitneySumFiberEquiv A D b p
 
 /-- The inverse of `whitneySumTotalSpaceHomeomorph` is `C^n` on total spaces without any `C^n`
 assumption on the cores or completeness of `𝕜`. -/
@@ -728,25 +642,10 @@ theorem contMDiff_whitneySumTotalSpaceHomeomorph_symm (A D : FiniteRankBundleCor
     (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap
   refine (S'.contDiff.comp_contMDiffAt
     (p₀.contMDiffAt_trivializationAt_snd (IB := IB) (n := n))).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall ?_)
-  rintro ⟨y, w⟩
+      (Filter.Eventually.of_forall fun q ↦ ?_)
   dsimp only [Function.comp_apply]
-  rw [(whitneySum A D).trivializationAt_core]
-  let q' : (whitneySum A D).core.TotalSpace := ⟨y, (whitneySumFiberEquiv A D y).symm w⟩
-  have hq := localTriv_prod_whitneySumFiberEquiv A D p₀.proj q'
-  have hq' : (⟨y, whitneySumFiberEquiv A D y q'.2⟩ :
-      TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)) =
-      ⟨y, w⟩ := by
-    simp only [q', ContinuousLinearEquiv.apply_symm_apply]
-  rw [hq'] at hq
-  have htriv :
-      (trivializationAt ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)
-        p₀.proj ⟨y, w⟩).2 =
-        (((A.core.localTriv p₀.proj).prod (D.core.localTriv p₀.proj)) ⟨y, w⟩).2 :=
-    congrArg (fun e : Trivialization _ (π _ (A.core.Fiber ×ᵇ D.core.Fiber)) ↦ (e ⟨y, w⟩).2)
-      (prod_trivializationAt_eq A D p₀.proj)
-  exact ((congrArg S' (htriv.trans hq)).trans
-    ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm_apply_apply _)).symm
+  rw [(whitneySum A D).trivializationAt_core, prod_trivializationAt_eq]
+  exact localTriv_whitneySumFiberEquiv_symm A D p₀.proj q
 
 /-- The reconstructed total space of the Whitney sum is `C^n`-diffeomorphic (and, over `𝓘(ℂ, EB)`
 with `n = ∞`, biholomorphic) to the total space of Mathlib's native direct-sum vector bundle

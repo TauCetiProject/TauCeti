@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Descent
 import TauCeti.Data.Bundle
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
 # `C^n` cocycle morphisms and `C^n` bundle equivalences
@@ -113,8 +114,10 @@ namespace CoordinateHom
 theorem contMDiffOn_inChartCoordinates_id [Z.IsContMDiff IB n] (i j : ι) :
     ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n (fun x ↦ Z.inChartCoordinates Z i j x ((id Z).fiberMap x))
       (Z.baseSet i ∩ Z.baseSet j) :=
-  (Z.contMDiffOn_coordChange IB i j).congr fun x hx ↦
-    ((id Z).operator_eq i j ⟨x, hx⟩).symm.trans (by rw [operator_id]; rfl)
+  (Z.contMDiffOn_coordChange IB i j).congr fun x hx ↦ by
+    ext v
+    simp only [fiberMap_id, inChartCoordinates_apply, ContinuousLinearMap.id_apply]
+    exact Z.coordChange_comp i (Z.indexAt x) j x ⟨⟨hx.1, Z.mem_baseSet_at x⟩, hx.2⟩ v
 
 /-- The chart operators of the zero cocycle morphism are `C^n`. -/
 theorem contMDiffOn_inChartCoordinates_zero (i : ι) (j : κ) :
@@ -153,9 +156,7 @@ theorem contMDiffOn_inChartCoordinates_neg {a : CoordinateHom Z W} {i : ι} {j :
   · ext v
     simp [inChartCoordinates_apply]
 
-/-- Composition of cocycle morphisms preserves `C^n` regularity of chart operators. Near each base
-point of `Z.baseSet i ∩ V.baseSet k`, the composite factors through the preferred intermediate
-chart of `W` at that point. -/
+/-- Composition of cocycle morphisms preserves `C^n` regularity of chart operators. -/
 theorem contMDiffOn_inChartCoordinates_comp {H ν : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
     {V : VectorBundleCore 𝕜 B H ν} {b : CoordinateHom W V} {a : CoordinateHom Z W}
     (hb : ∀ j k, ContMDiffOn IB 𝓘(𝕜, G →L[𝕜] H) n
@@ -167,6 +168,7 @@ theorem contMDiffOn_inChartCoordinates_comp {H ν : Type*} [NormedAddCommGroup H
       (fun x ↦ Z.inChartCoordinates V i k x ((b.comp a).fiberMap x))
       (Z.baseSet i ∩ V.baseSet k) := by
   intro x₀ hx₀
+  -- Near each base point, factor the composite through the preferred intermediate chart of `W`.
   let j := W.indexAt x₀
   let U := (Z.baseSet i ∩ W.baseSet j) ∩ (W.baseSet j ∩ V.baseSet k)
   have hUopen : IsOpen U :=
@@ -212,20 +214,11 @@ theorem contMDiff_totalSpaceMap_add {a b : CoordinateHom Z W}
     (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap)
     (hb : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n b.totalSpaceMap) :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (a + b).totalSpaceMap := by
-  intro p₀
-  have ha₀ := (Bundle.contMDiffAt_totalSpace.1 (ha p₀)).2
-  have hb₀ := (Bundle.contMDiffAt_totalSpace.1 (hb p₀)).2
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [totalSpaceMap_proj] at ha₀ hb₀ ⊢
-  refine ⟨(contMDiff_proj Z.Fiber).contMDiffAt, ?_⟩
-  refine (contDiff_add.comp_contMDiffAt (ha₀.prodMk_space hb₀)).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall ?_)
-  rintro ⟨x, v⟩
-  dsimp only [Function.comp_apply]
-  rw [W.trivializationAt, ← W.localTrivAt_def]
-  simp only [totalSpaceMap_mk, localTriv_apply, fiberMap_add]
-  exact map_add (W.coordChange (W.indexAt x) (W.indexAt p₀.proj) x)
-    (a.fiberMap x v) (b.fiberMap x v)
+  rw [totalSpaceMap_def] at ha hb ⊢
+  refine (ha.add_sectionAlong hb).congr fun p ↦ ?_
+  rw [fiberMap_add]
+  -- Addition on `F →L[𝕜] G` applied to `p.2 : Z.Fiber p.proj` is addition on `W.Fiber p.proj`.
+  rfl
 
 /-- Negation of a cocycle morphism preserves `C^n` regularity of its glued total-space map. -/
 theorem contMDiff_totalSpaceMap_neg {a : CoordinateHom Z W}

@@ -103,6 +103,18 @@ theorem splitCoords_coordChange_whitneySum (A D : FiniteRankBundleCore 𝕜 B)
         D.core.coordChange i j x (splitCoords (𝕜 := 𝕜) A.rank D.rank v).2) :=
   (splitCoords (𝕜 := 𝕜) A.rank D.rank).apply_symm_apply _
 
+/-- Applying the Whitney-sum transition to a block-split vector applies the two summand transitions
+to the blocks. -/
+theorem coordChange_whitneySum_splitCoords_symm (A D : FiniteRankBundleCore 𝕜 B)
+    (i j x : B) (u : Fin A.rank → 𝕜) (w : Fin D.rank → 𝕜) :
+    (whitneySum A D).core.coordChange i j x
+      ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm (u, w)) =
+      (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm
+        (A.core.coordChange i j x u, D.core.coordChange i j x w) := by
+  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
+  rw [splitCoords_coordChange_whitneySum]
+  simp only [ContinuousLinearEquiv.apply_symm_apply]
+
 /-- Projection of the Whitney sum onto its first bundle. -/
 def whitneyFst (A D : FiniteRankBundleCore 𝕜 B) : whitneySum A D ⟶ A where
   operator i j :=
@@ -397,7 +409,7 @@ theorem eq_whitneyLift (h : E ⟶ whitneySum A D) :
       simp only [whitneyLift, Preadditive.comp_add, Category.assoc]
 
 /-- Morphisms into a Whitney sum are determined by their two projections. -/
-theorem whitneySum_hom_ext_right {h₁ h₂ : E ⟶ whitneySum A D}
+theorem whitneySum_hom_ext {h₁ h₂ : E ⟶ whitneySum A D}
     (hfst : h₁ ≫ whitneyFst A D = h₂ ≫ whitneyFst A D)
     (hsnd : h₁ ≫ whitneySnd A D = h₂ ≫ whitneySnd A D) : h₁ = h₂ := by
   rw [eq_whitneyLift h₁, eq_whitneyLift h₂, hfst, hsnd]
@@ -467,7 +479,7 @@ theorem eq_whitneyDesc (h : whitneySum A D ⟶ E) :
       simp only [whitneyDesc, Preadditive.add_comp, Category.assoc]
 
 /-- Morphisms out of a Whitney sum are determined by their restrictions to the two summands. -/
-theorem whitneySum_hom_ext_left {h₁ h₂ : whitneySum A D ⟶ E}
+theorem whitneySum_hom_ext' {h₁ h₂ : whitneySum A D ⟶ E}
     (hinl : whitneyInl A D ≫ h₁ = whitneyInl A D ≫ h₂)
     (hinr : whitneyInr A D ≫ h₁ = whitneyInr A D ≫ h₂) : h₁ = h₂ := by
   rw [eq_whitneyDesc h₁, eq_whitneyDesc h₂, hinl, hinr]
@@ -526,12 +538,12 @@ theorem whitneyMap_snd (f : A ⟶ A') (g : D ⟶ D') :
 @[reassoc (attr := simp)]
 theorem whitneyInl_map (f : A ⟶ A') (g : D ⟶ D') :
     whitneyInl A D ≫ whitneyMap f g = f ≫ whitneyInl A' D' :=
-  whitneySum_hom_ext_right (by simp) (by simp)
+  whitneySum_hom_ext (by simp) (by simp)
 
 @[reassoc (attr := simp)]
 theorem whitneyInr_map (f : A ⟶ A') (g : D ⟶ D') :
     whitneyInr A D ≫ whitneyMap f g = g ≫ whitneyInr A' D' :=
-  whitneySum_hom_ext_right (by simp) (by simp)
+  whitneySum_hom_ext (by simp) (by simp)
 
 @[simp]
 theorem whitneyMap_id (A D : FiniteRankBundleCore 𝕜 B) :
@@ -541,12 +553,12 @@ theorem whitneyMap_id (A D : FiniteRankBundleCore 𝕜 B) :
 @[simp]
 theorem whitneyMap_zero (A A' D D' : FiniteRankBundleCore 𝕜 B) :
     whitneyMap (0 : A ⟶ A') (0 : D ⟶ D') = 0 :=
-  whitneySum_hom_ext_right (by simp) (by simp)
+  whitneySum_hom_ext (by simp) (by simp)
 
 @[simp]
 theorem whitneyMap_comp (f₁ : A ⟶ A') (f₂ : A' ⟶ A'') (g₁ : D ⟶ D') (g₂ : D' ⟶ D'') :
     whitneyMap (f₁ ≫ f₂) (g₁ ≫ g₂) = whitneyMap f₁ g₁ ≫ whitneyMap f₂ g₂ :=
-  whitneySum_hom_ext_right (by simp) (by simp)
+  whitneySum_hom_ext (by simp) (by simp)
 
 @[simp]
 theorem fiberMap_whitneyMap (f : A ⟶ A') (g : D ⟶ D') (x : B) :
@@ -600,8 +612,8 @@ section Coherence
 def whitneyCommIso (A D : FiniteRankBundleCore 𝕜 B) : whitneySum A D ≅ whitneySum D A where
   hom := whitneyLift (whitneySnd A D) (whitneyFst A D)
   inv := whitneyLift (whitneySnd D A) (whitneyFst D A)
-  hom_inv_id := whitneySum_hom_ext_right (by simp) (by simp)
-  inv_hom_id := whitneySum_hom_ext_right (by simp) (by simp)
+  hom_inv_id := whitneySum_hom_ext (by simp) (by simp)
+  inv_hom_id := whitneySum_hom_ext (by simp) (by simp)
 
 @[simp]
 theorem whitneyCommIso_hom (A D : FiniteRankBundleCore 𝕜 B) :
@@ -616,7 +628,7 @@ theorem whitneyMap_commIso_hom {A A' D D' : FiniteRankBundleCore 𝕜 B}
     (f : A ⟶ A') (g : D ⟶ D') :
     whitneyMap f g ≫ (whitneyCommIso A' D').hom =
       (whitneyCommIso A D).hom ≫ whitneyMap g f :=
-  whitneySum_hom_ext_right (by simp) (by simp)
+  whitneySum_hom_ext (by simp) (by simp)
 
 /-- Associativity isomorphism regrouping a threefold Whitney sum. -/
 def whitneyAssocIso (A D C : FiniteRankBundleCore 𝕜 B) :
@@ -625,8 +637,8 @@ def whitneyAssocIso (A D C : FiniteRankBundleCore 𝕜 B) :
     (whitneyLift (whitneyFst _ _ ≫ whitneySnd A D) (whitneySnd _ _))
   inv := whitneyLift (whitneyLift (whitneyFst _ _) (whitneySnd _ _ ≫ whitneyFst D C))
     (whitneySnd _ _ ≫ whitneySnd D C)
-  hom_inv_id := whitneySum_hom_ext_right (whitneySum_hom_ext_right (by simp) (by simp)) (by simp)
-  inv_hom_id := whitneySum_hom_ext_right (by simp) (whitneySum_hom_ext_right (by simp) (by simp))
+  hom_inv_id := whitneySum_hom_ext (whitneySum_hom_ext (by simp) (by simp)) (by simp)
+  inv_hom_id := whitneySum_hom_ext (by simp) (whitneySum_hom_ext (by simp) (by simp))
 
 @[simp]
 theorem whitneyAssocIso_hom (A D C : FiniteRankBundleCore 𝕜 B) :
@@ -645,14 +657,14 @@ theorem whitneyMap_assocIso_hom {A A' D D' C C' : FiniteRankBundleCore 𝕜 B}
     (f : A ⟶ A') (g : D ⟶ D') (h : C ⟶ C') :
     whitneyMap (whitneyMap f g) h ≫ (whitneyAssocIso A' D' C').hom =
       (whitneyAssocIso A D C).hom ≫ whitneyMap f (whitneyMap g h) :=
-  whitneySum_hom_ext_right (by simp) (whitneySum_hom_ext_right (by simp) (by simp))
+  whitneySum_hom_ext (by simp) (whitneySum_hom_ext (by simp) (by simp))
 
 /-- Left unit isomorphism for Whitney sum with the trivial rank-zero core. -/
 def whitneyZeroLeftIso (A : FiniteRankBundleCore 𝕜 B) :
     whitneySum (trivial 𝕜 B 0) A ≅ A where
   hom := whitneySnd (trivial 𝕜 B 0) A
   inv := whitneyInr (trivial 𝕜 B 0) A
-  hom_inv_id := whitneySum_hom_ext_left (isZero_trivial_zero.eq_of_src _ _) (by simp)
+  hom_inv_id := whitneySum_hom_ext' (isZero_trivial_zero.eq_of_src _ _) (by simp)
   inv_hom_id := whitneyInr_snd (trivial 𝕜 B 0) A
 
 @[simp]
@@ -674,7 +686,7 @@ def whitneyZeroRightIso (A : FiniteRankBundleCore 𝕜 B) :
     whitneySum A (trivial 𝕜 B 0) ≅ A where
   hom := whitneyFst A (trivial 𝕜 B 0)
   inv := whitneyInl A (trivial 𝕜 B 0)
-  hom_inv_id := whitneySum_hom_ext_left (by simp) (isZero_trivial_zero.eq_of_src _ _)
+  hom_inv_id := whitneySum_hom_ext' (by simp) (isZero_trivial_zero.eq_of_src _ _)
   inv_hom_id := whitneyInl_fst A (trivial 𝕜 B 0)
 
 @[simp]
@@ -748,8 +760,7 @@ theorem whitneySumFiberEquiv_fiberMap_whitneyMap {A A' D D' : FiniteRankBundleCo
 
 /-- In matching local trivializations at `i`, `whitneySumFiberEquiv` intertwines the Whitney-sum
 core chart with Mathlib's product trivialization `(A.core.localTriv i).prod (D.core.localTriv i)`.
-No base-set membership hypothesis is needed because both sides evaluate core transition maps at
-`p.proj`. -/
+This holds for every `p`, with no base-set hypothesis. -/
 theorem localTriv_prod_whitneySumFiberEquiv (A D : FiniteRankBundleCore 𝕜 B) (i : B)
     (p : (whitneySum A D).core.TotalSpace) :
     (((A.core.localTriv i).prod (D.core.localTriv i))
@@ -759,17 +770,19 @@ theorem localTriv_prod_whitneySumFiberEquiv (A D : FiniteRankBundleCore 𝕜 B) 
     A.indexAt_eq, D.indexAt_eq, (whitneySum A D).indexAt_eq, whitneySumFiberEquiv_apply]
   exact (splitCoords_coordChange_whitneySum A D p.proj i p.proj p.2).symm
 
-private def whitneySumTotalEquiv (A D : FiniteRankBundleCore 𝕜 B) :
-    (whitneySum A D).core.TotalSpace ≃
-      TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber) where
-  toFun p := ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩
-  invFun p := ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩
-  left_inv p := by
-    dsimp only
-    rw [ContinuousLinearEquiv.symm_apply_apply]
-  right_inv p := by
-    dsimp only
-    rw [ContinuousLinearEquiv.apply_symm_apply]
+/-- In matching local trivializations at `i`, `(whitneySumFiberEquiv A D q.proj).symm` intertwines
+Mathlib's product trivialization `(A.core.localTriv i).prod (D.core.localTriv i)` with the
+Whitney-sum core chart. This holds for every `q`, with no base-set hypothesis. -/
+theorem localTriv_whitneySumFiberEquiv_symm (A D : FiniteRankBundleCore 𝕜 B) (i : B)
+    (q : TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)) :
+    ((whitneySum A D).core.localTriv i
+      ⟨q.proj, (whitneySumFiberEquiv A D q.proj).symm q.2⟩).2 =
+      (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm
+        ((((A.core.localTriv i).prod (D.core.localTriv i)) q).2) := by
+  rcases q with ⟨y, w⟩
+  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
+  rw [ContinuousLinearEquiv.apply_symm_apply, ← localTriv_prod_whitneySumFiberEquiv A D i]
+  simp only [ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The reconstructed total space of the Whitney sum is homeomorphic to Mathlib's native
 direct-sum bundle `A.core.Fiber ×ᵇ D.core.Fiber`, over the identity of the base and by
@@ -777,14 +790,18 @@ direct-sum bundle `A.core.Fiber ×ᵇ D.core.Fiber`, over the identity of the ba
 def whitneySumTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     (whitneySum A D).core.TotalSpace ≃ₜ
       TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber) where
-  toEquiv := whitneySumTotalEquiv A D
+  toFun p := ⟨p.proj, whitneySumFiberEquiv A D p.proj p.2⟩
+  invFun p := ⟨p.proj, (whitneySumFiberEquiv A D p.proj).symm p.2⟩
+  left_inv p := by simp
+  right_inv p := by simp
   continuous_toFun := by
     rw [(FiberBundle.Prod.isInducing_diag (Fin A.rank → 𝕜) A.core.Fiber
       (Fin D.rank → 𝕜) D.core.Fiber).continuous_iff]
     refine (((whitneyFst A D).continuous_totalSpaceMap).prodMk
       ((whitneySnd A D).continuous_totalSpaceMap)).congr ?_
     rintro ⟨x, v⟩
-    ext : 1 <;> simp [whitneySumTotalEquiv, whitneySumFiberEquiv_apply] <;> rfl
+    simp only [Function.comp_apply, CoordinateHom.totalSpaceMap_mk, fst_whitneySumFiberEquiv,
+      snd_whitneySumFiberEquiv]
   continuous_invFun := by
     refine continuous_iff_continuousAt.2 fun p => ?_
     rw [FiberBundle.continuousAt_totalSpace]
@@ -794,20 +811,10 @@ def whitneySumTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     have hp : p ∈ e.source := e.mem_source.2 ⟨A.mem_baseSet_self p.proj, D.mem_baseSet_self p.proj⟩
     have hc := ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.continuous.continuousAt.comp
       ((e.continuousOn.continuousAt (e.open_source.mem_nhds hp)).snd))
-    refine hc.congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
-    rintro ⟨y, w⟩
-    dsimp only [Function.comp_apply, VectorBundleCore.trivializationAt, localTrivAt,
-      whitneySumTotalEquiv, Equiv.coe_fn_symm_mk]
-    rw [(whitneySum A D).indexAt_eq]
-    let q' : (whitneySum A D).core.TotalSpace := ⟨y, (whitneySumFiberEquiv A D y).symm w⟩
-    have hq := localTriv_prod_whitneySumFiberEquiv A D p.proj q'
-    have hq' : (⟨y, whitneySumFiberEquiv A D y q'.2⟩ :
-        TotalSpace ((Fin A.rank → 𝕜) × (Fin D.rank → 𝕜)) (A.core.Fiber ×ᵇ D.core.Fiber)) =
-        ⟨y, w⟩ := by
-      simp only [q', ContinuousLinearEquiv.apply_symm_apply]
-    rw [hq'] at hq
-    exact ((congrArg (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm hq).trans
-      ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm_apply_apply _)).symm
+    refine hc.congr_of_eventuallyEq (Filter.Eventually.of_forall fun q => ?_)
+    dsimp only [Function.comp_apply]
+    rw [(whitneySum A D).trivializationAt_core]
+    exact localTriv_whitneySumFiberEquiv_symm A D p.proj q
 
 @[simp]
 theorem whitneySumTotalSpaceHomeomorph_apply (A D : FiniteRankBundleCore 𝕜 B)
@@ -827,10 +834,11 @@ theorem whitneySumTotalSpaceHomeomorph_naturality {A A' D D' : FiniteRankBundleC
     whitneySumTotalSpaceHomeomorph A' D' ((whitneyMap f g).totalSpaceMap p) =
       ⟨p.proj, (f.fiberMap p.proj (whitneySumTotalSpaceHomeomorph A D p).2.1,
         g.fiberMap p.proj (whitneySumTotalSpaceHomeomorph A D p).2.2)⟩ := by
+  rw [whitneySumTotalSpaceHomeomorph_apply A D p]
   rcases p with ⟨x, v⟩
-  rw [CoordinateHom.totalSpaceMap_mk, whitneySumTotalSpaceHomeomorph_apply,
-    whitneySumFiberEquiv_fiberMap_whitneyMap]
-  rfl
+  rw [CoordinateHom.totalSpaceMap_mk, whitneySumTotalSpaceHomeomorph_apply]
+  exact congrArg (TotalSpace.mk' ((Fin A'.rank → 𝕜) × (Fin D'.rank → 𝕜)) x)
+    (whitneySumFiberEquiv_fiberMap_whitneyMap f g x v)
 
 end MathlibProd
 
