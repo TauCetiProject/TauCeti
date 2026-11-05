@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Kernels and ranges in continuous families of constant rank
