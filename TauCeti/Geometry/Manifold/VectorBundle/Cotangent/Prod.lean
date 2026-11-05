@@ -177,6 +177,22 @@ theorem proj_prodDiffeomorph_snd (z : CotangentBundle (I.prod J) (M × N)) :
     (prodDiffeomorph I J M N z).2.proj = z.proj.2 :=
   (rfl)
 
+/-- The first component of `prodDiffeomorph z` is the restriction of `z` along the horizontal slice
+through `z.proj`. -/
+theorem prodDiffeomorph_fst (z : CotangentBundle (I.prod J) (M × N)) :
+    (prodDiffeomorph I J M N z).1 =
+      TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj.1
+        (z.2 ∘L mfderiv I (I.prod J) (fun x : M ↦ (x, z.proj.2)) z.proj.1) :=
+  (rfl)
+
+/-- The second component of `prodDiffeomorph z` is the restriction of `z` along the vertical slice
+through `z.proj`. -/
+theorem prodDiffeomorph_snd (z : CotangentBundle (I.prod J) (M × N)) :
+    (prodDiffeomorph I J M N z).2 =
+      TotalSpace.mk' (F →L[𝕜] 𝕜) z.proj.2
+        (z.2 ∘L mfderiv J (I.prod J) (fun y : N ↦ (z.proj.1, y)) z.proj.2) :=
+  (rfl)
+
 /-- The first component of `prodDiffeomorph z` evaluates a tangent vector `v` of `M` as `z`
 evaluates its image under the differential of the slice inclusion `x ↦ (x, y)`. -/
 @[simp]
@@ -219,5 +235,26 @@ theorem snd_apply_eq_prodDiffeomorph_add (z : CotangentBundle (I.prod J) (M × N
     z.2 v = (prodDiffeomorph I J M N z).1.2 (mfderiv (I.prod J) I Prod.fst z.proj v) +
       (prodDiffeomorph I J M N z).2.2 (mfderiv (I.prod J) J Prod.snd z.proj v) :=
   snd_apply_eq_toProd_add z v
+
+/-- `prodDiffeomorph` sends the zero covector at `p = (x, y)` to the pair of zero covectors at `x`
+and `y`. -/
+@[simp]
+theorem prodDiffeomorph_zeroSection (p : M × N) :
+    prodDiffeomorph I J M N
+        (zeroSection (E × F →L[𝕜] 𝕜) (fun z : M × N ↦ TangentSpace (I.prod J) z →L[𝕜] 𝕜) p) =
+      (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) p.1,
+        zeroSection (F →L[𝕜] 𝕜) (fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) p.2) :=
+  Prod.ext (ext rfl fun _ ↦ rfl) (ext rfl fun _ ↦ rfl)
+
+/-- The inverse of `prodDiffeomorph` combines the zero covectors at `x` and `y` into the zero
+covector at `(x, y)`. -/
+@[simp]
+theorem prodDiffeomorph_symm_zeroSection (x : M) (y : N) :
+    (prodDiffeomorph I J M N).symm
+        (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x,
+          zeroSection (F →L[𝕜] 𝕜) (fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) y) =
+      zeroSection (E × F →L[𝕜] 𝕜) (fun z : M × N ↦ TangentSpace (I.prod J) z →L[𝕜] 𝕜) (x, y) :=
+  EquivLike.injective (prodDiffeomorph I J M N) (by
+    rw [Diffeomorph.apply_symm_apply, prodDiffeomorph_zeroSection])
 
 end TauCeti.CotangentBundle

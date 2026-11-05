@@ -11,7 +11,7 @@ public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import Mathlib.GroupTheory.GroupAction.Hom
 
 /-!
-# Equivariant maps to the point, constant equivariant maps, and existence of equivariant maps
+# Elementary equivariant maps and the existence of equivariant maps
 
 Two elementary equivariant maps which `Mathlib/GroupTheory/GroupAction/Hom.lean` leaves
 unrecorded: the unique equivariant map to the one-point space `PUnit`, and the constant equivariant
@@ -26,8 +26,8 @@ stabilizer, and extend along the orbit.
 
 * `MulActionHom.toPUnit`: the equivariant map from any space to the point.
 * `MulActionHom.constOfMemFixedPoints`: the constant equivariant map at a fixed point.
-* `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map `X →[G] Y` exists exactly
-  when every stabilizer in `X` is contained in some stabilizer in `Y`.
+* `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
+  stabilizer of `X` is contained in a stabilizer of `Y`.
 -/
 
 public section
@@ -67,6 +67,8 @@ theorem coe_constOfMemFixedPoints {y : Y} (hy : y ∈ fixedPoints N Y) :
 end MulActionHom
 
 namespace TauCeti
+
+open MulAction
 
 variable {G X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
 

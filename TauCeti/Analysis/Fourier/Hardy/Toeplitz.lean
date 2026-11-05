@@ -15,6 +15,8 @@ compression `P M_a |H²` of the multiplication operator `M_a` on circle `L²` to
 space `H²`, where `P` is the orthogonal projection onto `H²`. This file bundles the symbol map
 `a ↦ T_a` as a bounded complex-linear map `TauCeti.toeplitz` and proves its basic properties:
 
+* `TauCeti.toeplitz_apply_eq_zero_iff`: `T_a f = 0` exactly when `a f` lies in the orthogonal
+  complement of Hardy space;
 * `TauCeti.inner_hardyBasis_toeplitz_hardyBasis`: in the Hardy basis `e₀, e₁, …` the matrix
   entry `(i, j)` of `T_a` is the Fourier coefficient `â(i - j)`;
 * `TauCeti.adjoint_toeplitz`: the adjoint of `T_a` is the Toeplitz operator of the complex
@@ -91,6 +93,16 @@ theorem coe_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (
       hardySubmodule.starProjection (a • (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) := by
   rw [toeplitz_apply, Submodule.starProjection_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Lp.multiplicationOperator_apply]
+
+/-- A Hardy function `f` lies in the kernel of the Toeplitz operator `T_a` exactly when the
+product `a f` lies in the orthogonal complement of Hardy space, that is, when `a f` has only
+negative Fourier modes. -/
+theorem toeplitz_apply_eq_zero_iff (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
+    (f : HardySpace) :
+    toeplitz a f = 0 ↔
+      a • (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) ∈ hardySubmoduleᗮ := by
+  simp only [toeplitz_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+    Lp.multiplicationOperator_apply, Submodule.orthogonalProjectionOnto_eq_zero_iff]
 
 /-- Compressing to Hardy space does not change inner products against Hardy functions. -/
 theorem inner_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))

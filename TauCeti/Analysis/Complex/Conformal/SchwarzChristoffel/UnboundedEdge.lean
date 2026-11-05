@@ -102,10 +102,9 @@ theorem schwarzChristoffelBoundary_injOn_Ici (a e : ι → ℝ) (z₀ : UpperHal
   have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.1
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
-    fun {q} hq => by
-      simpa using
-        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
-          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
+    fun hq =>
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ
+        (by norm_num) hp (fun i _ hi => ha i hi) hq
   intro x hx y hy hxy
   rcases lt_trichotomy x y with h | h | h
   · exact schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree hy) hp (hsum hy)
@@ -128,10 +127,9 @@ theorem schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   let u : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
-    fun {q} hq ↦ by
-      simpa using
-        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
-          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
+    fun hq ↦
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ
+        (by norm_num) hp (fun i _ hi ↦ ha i hi) hq
   have hformula : ∀ {x : ℝ}, x ∈ Ici p →
       B x - B p = ((‖B x - B p‖ : ℝ) : ℂ) * u :=
     fun hx => schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_le a e z₀ hp ha hx
@@ -166,10 +164,9 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
   have hfree : ∀ {q : ℝ}, q ∈ Ici p → ∀ i, e i ≠ 0 → a i ∉ Ioo p q :=
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.1
   have hsum : ∀ {q : ℝ}, q ∈ Ici p → -1 < ∑ i with a i = q, e i :=
-    fun {q} hq => by
-      simpa using
-        (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
-          (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq)
+    fun hq =>
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ
+        (by norm_num) hp (fun i _ hi => ha i hi) hq
   have hcont : ContinuousOn B (Ici p) :=
     continuousOn_schwarzChristoffelBoundary_Ici a e z₀ hp ha
   have hformula : ∀ {x : ℝ}, x ∈ Ici p →
@@ -271,10 +268,9 @@ theorem schwarzChristoffelBoundary_lt_vertexAtInfinity (a e : ι → ℝ) (z₀ 
     schwarzChristoffelBoundary a e z₀ p < schwarzChristoffelVertexAtInfinity a e z₀ := by
   refine lt_of_le_of_ne ?_
     (schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le a e z₀ hp ha hS)
-  have hsum : ∀ {q : ℝ}, p ≤ q → -1 < ∑ i with a i = q, e i := fun hq ↦ by
-    simpa using
-      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (β := ℝ) (a := a) (e := e)
-        (p := p) (c := -1) Finset.univ (by norm_num) (by simpa using hp) (by simpa using ha) hq
+  have hsum : ∀ {q : ℝ}, p ≤ q → -1 < ∑ i with a i = q, e i := fun hq ↦
+    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ
+      (by norm_num) hp (fun i _ hi ↦ ha i hi) hq
   have hangle : schwarzChristoffelEdgeAngle a e p = 0 := by
     rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_filter, Finset.sum_eq_zero,
       mul_zero]
@@ -304,7 +300,7 @@ theorem continuousOn_schwarzChristoffelBoundary_Iic (a e : ι → ℝ) (z₀ : U
     ContinuousOn (schwarzChristoffelBoundary a e z₀) (Iic p) := by
   apply continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one
   intro x hx
-  exact Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+  exact Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
     Finset.univ (by norm_num) hp (fun i _ hi => ha i hi) hx
 
 /-- On a left outer edge, distance from the finite endpoint parametrizes the boundary map
@@ -319,7 +315,7 @@ theorem schwarzChristoffelBoundary_sub_eq_norm_mul_of_forall_ge
   rcases hx.eq_or_lt with rfl | hxp
   · simp
   have hsum : -1 < ∑ i with a i = x, e i :=
-    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
       Finset.univ (by norm_num) hp (fun i _ hi => ha i hi) hx
   have hangle : schwarzChristoffelEdgeAngle a e x = Real.pi * ∑ i, e i := by
     rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_filter]
@@ -344,7 +340,7 @@ theorem schwarzChristoffelBoundary_injOn_Iic (a e : ι → ℝ) (z₀ : UpperHal
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.2
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
     fun {_} hq =>
-      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
         Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
   intro x hx y hy hxy
   rcases lt_trichotomy x y with h | h | h
@@ -369,7 +365,7 @@ theorem schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul
   let u : ℂ := Complex.exp ((Real.pi * ∑ i, e i) * Complex.I)
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
     fun {_} hq ↦
-      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
         Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
   have hformula : ∀ {x : ℝ}, x ∈ Iic p →
       B p - B x = ((‖B p - B x‖ : ℝ) : ℂ) * u :=
@@ -406,7 +402,7 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
     fun _ i hei hi => (not_lt_of_ge (ha i hei)) hi.2
   have hsum : ∀ {q : ℝ}, q ∈ Iic p → -1 < ∑ i with a i = q, e i :=
     fun {_} hq =>
-      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+      Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
         Finset.univ (by norm_num) hp (by intro i _ hei; exact ha i hei) hq
   have hcont : ContinuousOn B (Iic p) :=
     continuousOn_schwarzChristoffelBoundary_Iic a e z₀ hp ha
@@ -518,7 +514,7 @@ theorem schwarzChristoffelVertexAtInfinity_lt_boundary (a e : ι → ℝ)
   refine lt_of_le_of_ne ?_
     (schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge a e z₀ hp ha hS).symm
   have hsum' : ∀ {q : ℝ}, q ≤ p → -1 < ∑ i with a i = q, e i := fun hq ↦
-    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
       Finset.univ (by norm_num) hp (fun i _ hei ↦ ha i hei) hq
   -- To the left of `p` the edge direction is `exp (-2πi) = 1`.
   have hangle : ∀ {x : ℝ}, x < p →
