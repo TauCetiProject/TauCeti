@@ -37,6 +37,8 @@ in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
 * `TauCeti.isSmoothForm_mlogDeriv`: `dlog u` is a `C^n` form for a nowhere-vanishing `C^(n+1)`
   function `u`.
 * `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is closed for a nowhere-vanishing `C²` function `u`.
+* `TauCeti.mlogDeriv_eq_zero_iff`: where `u` does not vanish, `dlog u` vanishes exactly when `du`
+  does; `TauCeti.mlogDeriv_const`: constants have vanishing logarithmic derivative.
 * `TauCeti.re_mlogDeriv_apply_eq_zero`: functions of modulus one have imaginary logarithmic
   derivatives.
 * `TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`: an imaginary logarithmic derivative forces
@@ -105,6 +107,24 @@ theorem mlogDeriv_exp {g : M → ℂ} {x : M} (hg : MDifferentiableAt I 𝓘(ℝ
     mlogDeriv I (fun y ↦ exp (g y)) x = mextDeriv (RoughForm.ofFunction I g) x :=
   mlogDeriv_eq_of_eventuallyEq_mul_exp one_ne_zero hg
     (Eventually.of_forall fun _ ↦ (one_mul _).symm)
+
+/-- The logarithmic derivative of a constant function vanishes. -/
+@[simp]
+theorem mlogDeriv_const (c : ℂ) : mlogDeriv I (fun _ : M ↦ c) = 0 := by
+  funext x
+  ext v
+  simp [mvfderiv_eq_zero_iff.mpr (mfderiv_const ..)]
+
+/-- Where `u` does not vanish, `dlog u` vanishes exactly when the differential of `u` does. -/
+theorem mlogDeriv_eq_zero_iff {u : M → ℂ} {x : M} (hx : u x ≠ 0) :
+    mlogDeriv I u x = 0 ↔ mfderiv I 𝓘(ℝ, ℂ) u x = 0 := by
+  rw [← mvfderiv_eq_zero_iff]
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun t ↦ ?_, fun h ↦ ?_⟩
+  · have h' := congrArg (fun φ ↦ φ fun _ ↦ t) h
+    simp only [mlogDeriv_apply] at h'
+    simpa using (mul_eq_zero.mp h').resolve_left (inv_ne_zero hx)
+  · ext v
+    simp [h]
 
 /-- **The logarithmic derivative turns products into sums.** -/
 theorem mlogDeriv_mul {u v : M → ℂ} {x : M} (hu : MDifferentiableAt I 𝓘(ℝ, ℂ) u x)
