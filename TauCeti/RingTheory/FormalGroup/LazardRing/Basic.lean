@@ -84,7 +84,7 @@ classifying a commutative formal group law over `A` is graded exactly when the c
   formal group law has degree `2 (i + j - 1)`.
 * `TauCeti.LazardRing.lift_mem_iff`: the homomorphism classifying `F` is graded exactly when the
   coefficients of `F` are homogeneous of the matching degrees, for a target graded over any
-  commutative monoid receiving the degrees of `L`, such as `ℤ`.
+  additive monoid receiving the degrees of `L`, such as `ℤ`.
 
 ## References
 
@@ -430,14 +430,14 @@ theorem coeff_formalGroup_mem_grading (d : Fin 2 →₀ ℕ) :
 variable {σ : Type*} [SetLike σ A] [AddSubgroupClass σ A]
 
 /-- **The graded universal property of the Lazard ring**, pointwise: let `A` be graded by `𝒜`
-over a commutative monoid `ι` receiving the degrees of `L` along `e : ℕ →+ ι` (for instance
+over an additive monoid `ι` receiving the degrees of `L` along `e : ℕ →+ ι` (for instance
 `ι = ℕ` with `e = id`, or `ι = ℤ` with `e` the inclusion or its negative). The homomorphism
 `L →+* A` classifying a commutative formal group law `F` over `A` maps each `Lₙ` into `𝒜 (e n)`
 exactly when the coefficient of every monomial `X^(d 0) Y^(d 1)` in `F` lies in
 `𝒜 (e (2 (d 0 + d 1 - 1)))`. Since the coefficients of `X` and `Y` are `1` and those of the other
 monomials `Xⁿ` and `Yⁿ` vanish, this says that the coefficient `aᵢⱼ` of `F` lies in
 `𝒜 (e (2 (i + j - 1)))` for all `i, j ≥ 1`. -/
-theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike.GradedMonoid 𝒜]
+theorem lift_mem_iff {ι : Type*} [AddMonoid ι] {𝒜 : ι → σ} [SetLike.GradedMonoid 𝒜]
     (e : ℕ →+ ι) (F : {F : FormalGroup A // F.IsComm}) :
     (∀ ⦃n : ℕ⦄ ⦃x : LazardRing⦄, x ∈ grading n → lift F x ∈ 𝒜 (e n)) ↔
       ∀ d : Fin 2 →₀ ℕ, coeff d F.1.toPowerSeries ∈ 𝒜 (e (2 * (d.degree - 1))) := by
@@ -445,8 +445,12 @@ theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike
   · rw [← map_lift F, FormalGroup.map_toPowerSeries, coeff_map]
     exact h (coeff_formalGroup_mem_grading d)
   · obtain ⟨p, hp, rfl⟩ := mem_grading_iff.1 hx
+    -- Pull the grading back along `e`, so that it is indexed by the commutative monoid `ℕ`.
+    have : SetLike.GradedMonoid (𝒜 ∘ e) :=
+      { one_mem := by simpa using SetLike.GradedOne.one_mem (A := 𝒜)
+        mul_mem := fun _ _ _ _ ha hb ↦ by simpa using SetLike.GradedMul.mul_mem (A := 𝒜) ha hb }
     rw [← RingHom.comp_apply]
-    apply (MvPolynomial.WeightedHomogeneousSubmodule.map_mem_iff degree 𝒜 e
+    apply (MvPolynomial.WeightedHomogeneousSubmodule.map_mem_iff degree (𝒜 ∘ e) (.id ℕ)
       ((lift F).comp mk)).mpr ?_ hp
     rintro ⟨i, j⟩
     rw [RingHom.comp_apply, lift_mk_X]
