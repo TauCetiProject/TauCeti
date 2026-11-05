@@ -239,6 +239,11 @@ theorem sectionsEquiv_dolbeaultDbar_app (V : Opens (TopCat.of U))
         (smoothSheafModule.sectionsEquiv 𝓘(ℝ, ℂ) ℂ ℂ V s).1 0 : U → ℂ) 0) ((y : U) : ℂ) 1 :=
   congrFun (secE_dbarLinear U V s) y
 
+private lemma secE_dolbeaultDbar_app (V : Opens (TopCat.of U))
+    (s : (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op V)) :
+    (secE U V ((dolbeaultDbar U).app (op V) s)).1 = dbarFun (secE U V s).1 :=
+  secE_dbarLinear U V s
+
 /-- The inclusion of the holomorphic sections over `V` into the smooth sections. -/
 private def inclLinear (V : Opens (TopCat.of U)) :
     (holomorphicStructureSheafModules 𝓘(ℂ) U).obj.obj (op V) →ₗ[ℂ]
@@ -289,8 +294,9 @@ def dolbeaultSequence : ShortComplex ((Opens (TopCat.of U))ᵒᵖ ⥤ ModuleCat.
     ext V s
     induction V using Opposite.rec with | op V
     refine smoothSheafModule.ext fun y ↦ ?_
-    change (secE U V (dbarLinear U V (inclLinear U V s))).1 y = (secE U V 0).1 y
-    rw [secE_dbarLinear, secE_inclLinear, map_zero,
+    rw [NatTrans.comp_app, ConcreteCategory.comp_apply, secE_dolbeaultDbar_app,
+      sectionsEquiv_dolbeaultInclusion_app, NatTrans.app_zero, ModuleCat.hom_zero,
+      LinearMap.zero_apply, map_zero,
       dbarFun_eq_zero (holomorphicStructureSheafModules.contMDiff s)]
     rfl
 
@@ -303,6 +309,39 @@ instance : Mono (dolbeaultSequence U).f := by
     exact holomorphicStructureSheafModules.ext (congrFun
       ((secE_inclLinear U V s).symm.trans (h'.trans (secE_inclLinear U V t))))
   exact NatTrans.mono_of_mono_app _
+
+/-- The first object of the Dolbeault sequence is the structure sheaf. -/
+@[simp]
+theorem dolbeaultSequence_X₁ :
+    (dolbeaultSequence U).X₁ = (holomorphicStructureSheafModules 𝓘(ℂ) U).obj := (rfl)
+
+/-- The middle object of the Dolbeault sequence is the sheaf of smooth functions. -/
+@[simp]
+theorem dolbeaultSequence_X₂ :
+    (dolbeaultSequence U).X₂ = (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj := (rfl)
+
+/-- The last object of the Dolbeault sequence is the sheaf of smooth functions. -/
+@[simp]
+theorem dolbeaultSequence_X₃ :
+    (dolbeaultSequence U).X₃ = (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj := (rfl)
+
+/-- The first map of the Dolbeault sequence is the inclusion of holomorphic functions, up to the
+identifications `dolbeaultSequence_X₁` and `dolbeaultSequence_X₂` of its objects. -/
+@[simp]
+theorem dolbeaultSequence_f :
+    (dolbeaultSequence U).f = eqToHom (dolbeaultSequence_X₁ U) ≫ dolbeaultInclusion U ≫
+      eqToHom (dolbeaultSequence_X₂ U).symm := by
+  -- the objects agree definitionally, so both `eqToHom`s are identities
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- The second map of the Dolbeault sequence is the Cauchy-Riemann operator, up to the
+identifications `dolbeaultSequence_X₂` and `dolbeaultSequence_X₃` of its objects. -/
+@[simp]
+theorem dolbeaultSequence_g :
+    (dolbeaultSequence U).g = eqToHom (dolbeaultSequence_X₂ U) ≫ dolbeaultDbar U ≫
+      eqToHom (dolbeaultSequence_X₃ U).symm := by
+  -- the objects agree definitionally, so both `eqToHom`s are identities
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- **Exactness of the Dolbeault sequence.** A smooth function on an open set of the complex plane
 is holomorphic exactly when its Wirtinger derivative `\bar∂ f` vanishes. -/
@@ -318,8 +357,8 @@ theorem dolbeaultSequence_exact : (dolbeaultSequence U).Exact := by
   refine ⟨holomorphicStructureSheafModules.ofContMDiff (secE U V s).1
     (contMDiff_of_dbarFun_eq_zero (mem_smoothSections_iff.1 (secE U V s).2) hs'),
     smoothSheafModule.ext fun y ↦ ?_⟩
-  change (secE U V (inclLinear U V _)).1 y = _
-  rw [secE_inclLinear, holomorphicStructureSheafModules.ofContMDiff_apply]
+  exact (congrFun (sectionsEquiv_dolbeaultInclusion_app U V _) y).trans
+    (holomorphicStructureSheafModules.ofContMDiff_apply _ _ y)
 
 end Sequence
 
