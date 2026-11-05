@@ -42,7 +42,7 @@ contractible in `M` of period at most `K`
 The bound `K` does not depend on `δ`, which is what allows passing to the limit `δ → 0` to obtain a
 closed characteristic on the level `F⁻¹(s)` itself when `s` is a regular value
 (`IsNondegenerate.hasContractibleClosedCharacteristicOfPeriodLE_of_frequently`, in
-`TauCeti.Geometry.Symplectic.Capacity.AlmostExistence`).
+`TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence`).
 
 ## Main results
 

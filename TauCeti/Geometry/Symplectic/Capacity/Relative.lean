@@ -62,8 +62,8 @@ relative capacity gives closed characteristics, contractible in `W`, on almost e
 ## Main results
 
 * `TauCeti.SmoothTwoForm.relContractibleHZCapacity_mono`: monotonicity in the pair.
-* `TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity_univ`: for a nonempty
-  open `Z`, the relative capacity is at most the capacity of the manifold.
+* `TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity`: when `Z` has
+  nonempty interior, `c°_HZ(V, Z) ≤ c°_HZ(V)`.
 * `TauCeti.SmoothTwoForm.exists_isRelContractibleHZAdmissible_lt_iSup`: a finite capacity is
   approximated by the maxima of admissible Hamiltonians.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.relContractibleHZCapacity_smul`: conformality.
@@ -157,24 +157,25 @@ theorem relContractibleHZCapacity_mono {V' Z' : Set M} (hV : V' ⊆ V) (hZ : Z �
   relContractibleHZCapacity_le_iff.2 fun _ hF ↦
     (hF.mono hV hZ).ofReal_iSup_le_relContractibleHZCapacity
 
-/-- A `(V, Z)`-admissible Hamiltonian is `HZ°`-admissible for the whole manifold as soon as `Z` is
-a nonempty open set: it attains its maximum on `Z`, and its loops contractible in `univ` are those
+/-- A `(V, Z)`-admissible Hamiltonian is `HZ°`-admissible for `V` as soon as `Z` has nonempty
+interior: it attains its maximum on the interior of `Z`, and its loops contractible in `V` are
 contractible in `M`. -/
-theorem IsRelContractibleHZAdmissible.isContractibleHZAdmissible_univ
-    (hF : σ.IsRelContractibleHZAdmissible V Z F) (hZ : IsOpen Z) (hZne : Z.Nonempty) :
-    σ.IsContractibleHZAdmissible univ F where
-  toIsHZNormalized := hF.toIsHZNormalized.mono (subset_univ V)
-  exists_isOpen_isMaxOn := ⟨Z, hZ, hZne, hF.isMaxOn⟩
+theorem IsRelContractibleHZAdmissible.isContractibleHZAdmissible
+    (hF : σ.IsRelContractibleHZAdmissible V Z F) (hZ : (interior Z).Nonempty) :
+    σ.IsContractibleHZAdmissible V F where
+  toIsHZNormalized := hF.toIsHZNormalized
+  exists_isOpen_isMaxOn :=
+    ⟨interior Z, isOpen_interior, hZ, fun z hz ↦ hF.isMaxOn z (interior_subset hz)⟩
   eq_of_isMIntegralCurve T γ hT hT1 hγ hper := fun ⟨g, hg, hgγ⟩ ↦
     hF.eq_of_isMIntegralCurve T γ hT hT1 hγ hper
-      ⟨(⟨Subtype.val, continuous_subtype_val⟩ : C(univ, M)).comp g, hg.comp_right _, hgγ⟩
+      ⟨(⟨Subtype.val, continuous_subtype_val⟩ : C(V, M)).comp g, hg.comp_right _, hgγ⟩
 
-/-- **The relative capacity is bounded by the capacity of the manifold.** If `Z` is a nonempty open
-set, then `c°_HZ(V, Z) ≤ c°_HZ(M)`. -/
-theorem relContractibleHZCapacity_le_contractibleHZCapacity_univ (hZ : IsOpen Z)
-    (hZne : Z.Nonempty) : σ.relContractibleHZCapacity V Z ≤ σ.contractibleHZCapacity univ :=
+/-- **The relative capacity is bounded by the absolute one.** If `Z` has nonempty interior, then
+`c°_HZ(V, Z) ≤ c°_HZ(V)`. -/
+theorem relContractibleHZCapacity_le_contractibleHZCapacity (hZ : (interior Z).Nonempty) :
+    σ.relContractibleHZCapacity V Z ≤ σ.contractibleHZCapacity V :=
   relContractibleHZCapacity_le_iff.2 fun _ hF ↦
-    (hF.isContractibleHZAdmissible_univ hZ hZne).ofReal_iSup_le_contractibleHZCapacity
+    (hF.isContractibleHZAdmissible hZ).ofReal_iSup_le_contractibleHZCapacity
 
 /-- The zero Hamiltonian is `(V, Z)`-admissible as soon as `V` contains a nonempty open set: its
 Hamiltonian vector field vanishes, so its periodic orbits are constant. In particular the
