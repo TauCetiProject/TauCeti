@@ -128,19 +128,12 @@ its centre. -/
 theorem norm_restrict_taylorHom_le (ha : ‖a‖ < R₀) (r s : Set.Ioo (0 : ℝ) R₀)
     (hrs : (r : ℝ) ≤ s) (has : ‖a‖ ≤ s) (f : OnOpenDisc.subring R R₀) :
     ‖restrict r (taylorHom ha f)‖ ≤ ‖restrict s f‖ := by
-  refine (norm_le_iff (norm_nonneg _)).2 fun n ↦ ?_
-  simp only [coe_restrict, coe_taylorHom]
-  calc
-    ‖coeff n (taylor a (f : R⟦X⟧))‖ * (r : ℝ) ^ n ≤
-        ‖coeff n (taylor a (f : R⟦X⟧))‖ * (s : ℝ) ^ n := by
-          gcongr
-          exact r.2.1.le
-    _ ≤ (f : R⟦X⟧).gaussNorm norm s := by
-      have hf := hasGaussNorm_of_isRestricted (restrict s f).2
-      rw [coe_restrict] at hf
-      simpa only [coeff_taylor] using
-        norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm s.2.1 hf has n
-    _ = ‖restrict s f‖ := by rw [norm_eq_gaussNorm, coe_restrict]
+  have hf := hasGaussNorm_of_isRestricted (restrict s f).2
+  have htf := hasGaussNorm_of_isRestricted (restrict s (taylorHom ha f)).2
+  simp only [coe_restrict, coe_taylorHom] at hf htf
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_taylorHom]
+  exact (gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) r.2.1.le hrs htf).trans
+    (gaussNorm_taylor_le s.2.1 hf has)
 
 /-- Translation is continuous for all smaller-radius Gauss norms. -/
 theorem continuous_taylorHom (ha : ‖a‖ < R₀) : Continuous (taylorHom ha) := by
