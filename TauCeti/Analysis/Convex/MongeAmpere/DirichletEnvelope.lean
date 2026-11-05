@@ -66,6 +66,13 @@ theorem dirichletSubsolutionEnvelope_apply (x : E) :
       sSup ((fun w => w x) '' dirichletSubsolutions μ ν Ω) := by
   rw [dirichletSubsolutionEnvelope]
 
+/-- The envelope of an empty subsolution class is the zero function, by the real supremum
+convention. -/
+theorem dirichletSubsolutionEnvelope_of_eq_empty (h : dirichletSubsolutions μ ν Ω = ∅) :
+    dirichletSubsolutionEnvelope μ ν Ω = 0 := by
+  funext x
+  simp only [dirichletSubsolutionEnvelope_apply, h, image_empty, Real.sSup_empty, Pi.zero_apply]
+
 /-- For a nonempty subsolution class, any common upper bound also bounds its envelope. -/
 theorem dirichletSubsolutionEnvelope_le {x : E} {c : ℝ}
     (hne : (dirichletSubsolutions μ ν Ω).Nonempty)
@@ -156,10 +163,7 @@ theorem convexOn_dirichletSubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex �
     ConvexOn ℝ (closure Ω) (dirichletSubsolutionEnvelope μ ν Ω) := by
   classical
   obtain hempty | hne := (dirichletSubsolutions μ ν Ω).eq_empty_or_nonempty
-  · have hzero : dirichletSubsolutionEnvelope μ ν Ω = fun _ => 0 := by
-      funext x
-      simp only [dirichletSubsolutionEnvelope_apply, hempty, image_empty, Real.sSup_empty]
-    rw [hzero]
+  · rw [dirichletSubsolutionEnvelope_of_eq_empty μ ν hempty]
     exact convexOn_const 0 hΩc.closure
   · refine ⟨hΩc.closure, ?_⟩
     intro x hx y hy a b ha hbb hab
