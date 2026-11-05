@@ -42,6 +42,7 @@ noncomputable def sigmaRetraction (i : ι) (z : Z i) : C((Σ j, Z j), Z i) where
 theorem sigmaRetraction_sigmaMk (i : ι) (z w : Z i) : sigmaRetraction i z ⟨i, w⟩ = w := by
   simp [sigmaRetraction]
 
+@[simp]
 theorem sigmaRetraction_apply_of_ne {i j : ι} (z : Z i) (w : Z j) (h : j ≠ i) :
     sigmaRetraction i z ⟨j, w⟩ = z := by
   simp [sigmaRetraction, h]
