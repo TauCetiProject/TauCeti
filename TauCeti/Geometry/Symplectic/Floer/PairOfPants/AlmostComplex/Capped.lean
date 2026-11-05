@@ -19,7 +19,8 @@ a sphere with three poles, which in the coordinate `w` of `ℂ` are `0`, `1` and
 of the pair of pants `S = ℂ ∖ {0, 1}`. A one-parameter family of Floer problems on this sphere
 starts at the unperturbed problem for a domain-independent compatible structure `J₀` and ends
 at broken configurations with three long necks. This file constructs the almost complex
-structures of that family, by the same Cayley-chart method as the pair-of-pants structure
+structures of that family as instances of the end-weighted structure
+`TauCeti.Floer.endWeightedAlmostComplex`, like the pair-of-pants structure
 `TauCeti.Floer.pairOfPantsAlmostComplex`.
 
 Fix an `ω`-compatible base structure `J₀` and period-one families `J_q(t, x)` of `ω`-tame
@@ -100,8 +101,8 @@ private theorem one_lt_and_lt_of_weight_ne_zero
     1 < q.endSign * (q.endCoord w).re ∧ q.endSign * (q.endCoord w).re < L + 3 := by
   refine ⟨lt_of_not_ge fun h' => h ?_, lt_of_not_ge fun h' => h ?_⟩
   · rw [smoothTransition.zero_of_nonpos (by linarith), zero_mul]
-  · rw [smoothTransition.zero_of_nonpos
-      (show L + 3 - q.endSign * (q.endCoord w).re ≤ 0 by linarith), mul_zero]
+  · have h₂ : L + 3 - q.endSign * (q.endCoord w).re ≤ 0 := by linarith
+    rw [smoothTransition.zero_of_nonpos h₂, mul_zero]
 
 /-- Where the weight of some end is nonzero, the point lies in the truncation `S_{L + 3}`. -/
 private theorem mem_truncation_of_weight_ne_zero
@@ -135,36 +136,24 @@ section Algebraic
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
 
-omit [FiniteDimensional ℝ V] in
-/-- The cutoff-weighted Cayley coordinate of the capped structure lies in every convex set
-containing `0` and the Cayley transforms of all the end structures. -/
-private theorem smul_sum_smul_cayley_mem {s : Set (Module.End ℝ V)} (hs : Convex ℝ s)
-    (h0 : (0 : Module.End ℝ V) ∈ s) {J : Puncture → ℝ → M → AlmostComplexStructure V}
-    (hJ : ∀ q t x, J₀.cayley (J q t x) ∈ s) (r L : ℝ) (w : ℂ) (x : M) :
-    smoothTransition r • ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
-        smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) •
-      J₀.cayley (J q (q.endCoord w).im x) ∈ s :=
-  hs.smul_mem_of_zero_mem h0
-    (sum_smul_cayley_mem hs h0 hJ (fun _ => weight_mem_Icc)
-      (fun _ hq => zero_lt_one.trans (one_lt_and_lt_of_weight_ne_zero hq).1) x)
-    ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩
-
 /-- The domain-dependent almost complex structure on the pair of pants capped by three PSS
 planes along necks of length `L`, moved along the segment from `J₀` by the cutoff `β(r)`. It is
 given by families `J q t x` of `ω`-tame structures on the three ends, relative to an
-`ω`-compatible base structure `J₀`. At `w ∈ ℂ` and `x ∈ M` it is the inverse Cayley transform,
-relative to `J₀`, of
+`ω`-compatible base structure `J₀`. It is the end-weighted structure
+`TauCeti.Floer.endWeightedAlmostComplex` with the weights `β(r) β(σ_q - 1) β(L + 3 - σ_q)`, so at
+`w ∈ ℂ` and `x ∈ M` it is the inverse Cayley transform, relative to `J₀`, of
 `β(r) • ∑ q, β(σ_q - 1) β(L + 3 - σ_q) • cayley (J q (t_q(w)) x)`, where `(s_q, t_q)` are the
 coordinates of the end `q`, `σ_q = ±s_q(w)` and `β` is the smooth transition function. -/
 def cappedAlmostComplex (h₀ : ω.Compatible J₀)
     (J : Puncture → ℝ → M → AlmostComplexStructure V) (hJ : ∀ q t x, ω.Tames (J q t x))
     (r L : ℝ) (w : ℂ) (x : M) : AlmostComplexStructure V :=
-  h₀.cayleyEquiv.symm
-    ⟨smoothTransition r • ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
-        smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) •
-      J₀.cayley (J q (q.endCoord w).im x),
-      smul_sum_smul_cayley_mem h₀.tames.convex_cayleyBall h₀.tames.zero_mem_cayleyBall
-        (fun q t x => h₀.cayley_mem_cayleyBall (hJ q t x)) r L w x⟩
+  endWeightedAlmostComplex h₀ J hJ
+    (fun q w => smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
+      smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)))
+    (fun _ _ => unitInterval.mul_mem ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩
+      weight_mem_Icc)
+    (fun _ _ hq => zero_lt_one.trans (one_lt_and_lt_of_weight_ne_zero (right_ne_zero_of_mul hq)).1)
+    w x
 
 variable {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
   {r L : ℝ}
@@ -172,7 +161,7 @@ variable {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t
 /-- The capped structure is tamed by `ω`. -/
 theorem tames_cappedAlmostComplex (h₀ : ω.Compatible J₀) (r L : ℝ) (w : ℂ) (x : M) :
     ω.Tames (cappedAlmostComplex h₀ J hJ r L w x) :=
-  (h₀.cayleyEquiv.symm _).2
+  tames_endWeightedAlmostComplex h₀ w x
 
 /-- The Cayley transform of the capped structure, relative to `J₀`, is
 `β(r) • ∑ q, β(σ_q - 1) β(L + 3 - σ_q) • cayley (J q (t_q(w)) x)`. This characterizes the
@@ -181,19 +170,15 @@ structure, since the Cayley transform is injective on tame structures. -/
 theorem cayley_cappedAlmostComplex (h₀ : ω.Compatible J₀) (r L : ℝ) (w : ℂ) (x : M) :
     J₀.cayley (cappedAlmostComplex h₀ J hJ r L w x) =
       smoothTransition r • ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
-          smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) •
+        smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) •
         J₀.cayley (J q (q.endCoord w).im x) := by
-  rw [cappedAlmostComplex, ← h₀.cayleyEquiv_apply_coe, Equiv.apply_symm_apply]
+  simp only [cappedAlmostComplex, cayley_endWeightedAlmostComplex, Finset.smul_sum, smul_smul]
 
 /-- The capped structure is `ω`-compatible when the structures on the ends are. -/
 theorem compatible_cappedAlmostComplex (h₀ : ω.Compatible J₀)
     (hJc : ∀ q t x, ω.Compatible (J q t x)) (r L : ℝ) (w : ℂ) (x : M) :
-    ω.Compatible (cappedAlmostComplex h₀ J hJ r L w x) := by
-  refine (h₀.cayley_mem_compatibleCayleyBall_iff (tames_cappedAlmostComplex h₀ r L w x)).mp ?_
-  rw [cayley_cappedAlmostComplex]
-  exact smul_sum_smul_cayley_mem h₀.tames.convex_compatibleCayleyBall
-    h₀.tames.zero_mem_compatibleCayleyBall
-    (fun q t x => (h₀.cayley_mem_compatibleCayleyBall_iff (hJ q t x)).mpr (hJc q t x)) r L w x
+    ω.Compatible (cappedAlmostComplex h₀ J hJ r L w x) :=
+  compatible_endWeightedAlmostComplex h₀ hJc w x
 
 /-- For `r ≤ 0` the capped structure is the domain-independent base structure `J₀`. -/
 theorem cappedAlmostComplex_of_nonpos (h₀ : ω.Compatible J₀) (hr : r ≤ 0) (L : ℝ) (w : ℂ)
@@ -250,16 +235,8 @@ theorem cayley_cappedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Compatib
         smoothTransition (L + 3 - q.endSign * z.re))) • J₀.cayley (J q z.im x) := by
   obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
   have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
-  rw [cayley_cappedAlmostComplex, Finset.sum_eq_single q, smul_smul]
-  · have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
-    have hp : J q (z.im + k) = J q z.im := by simpa using hJp.int_mul k z.im
-    rw [hre, him, hp]
-  · -- The weights of the other ends vanish, since distinct ends are disjoint.
-    intro r' _ hr'
-    have h := endSign_mul_re_endCoord_nonpos (Ne.symm hr') (w := q.cylindricalEndLift z)
-      (by rwa [hre])
-    rw [smoothTransition.zero_of_nonpos (by linarith), zero_mul, zero_smul]
-  · simp
+  rw [cappedAlmostComplex,
+    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz, hre]
 
 /-- **The neck.** If `J q` has period one in `t` and `r ≥ 1`, then on the part
 `2 ≤ ±s ≤ L + 2` of the end `q`, the capped structure at the point with end coordinates
@@ -286,12 +263,13 @@ theorem cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (h₀ : ω.Compat
     rcases q.endSign_eq_one_or_eq_neg_one with h | h <;> rw [h] <;> norm_num
   have hre : q.endSign * (z + ↑(q.endSign * L)).re = q.endSign * z.re + L := by
     rw [Complex.add_re, Complex.ofReal_re, mul_add, ← mul_assoc, hs, one_mul]
+  have h₁ : 1 ≤ q.endSign * z.re - 1 := by linarith
+  have h₁L : 1 ≤ q.endSign * z.re + L - 1 := by linarith
   refine h₀.eq_of_cayley_eq (tames_cappedAlmostComplex h₀ r L _ x)
     (tames_cappedAlmostComplex h₀ r 0 _ x) ?_
   rw [cayley_cappedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp r L (by rw [hre]; linarith),
     cayley_cappedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp r 0 (by linarith), hre,
-    smoothTransition.one_of_one_le (show 1 ≤ q.endSign * z.re + L - 1 by linarith),
-    smoothTransition.one_of_one_le (show 1 ≤ q.endSign * z.re - 1 by linarith),
+    smoothTransition.one_of_one_le h₁L, smoothTransition.one_of_one_le h₁,
     Complex.add_im, Complex.ofReal_im, add_zero]
   ring_nf
 
@@ -306,8 +284,8 @@ theorem cappedAlmostComplex_eq_pairOfPantsAlmostComplex (h₀ : ω.Compatible J�
   rw [cayley_cappedAlmostComplex, cayley_pairOfPantsAlmostComplex,
     smoothTransition.one_of_one_le hr, one_smul]
   refine Finset.sum_congr rfl fun q _ => ?_
-  rw [smoothTransition.one_of_one_le (show 1 ≤ L + 3 - q.endSign * (q.endCoord w).re by
-    linarith [hw q]), mul_one]
+  have hq : 1 ≤ L + 3 - q.endSign * (q.endCoord w).re := by linarith [hw q]
+  rw [smoothTransition.one_of_one_le hq, mul_one]
 
 end Algebraic
 
@@ -416,38 +394,16 @@ theorem contMDiff_cappedAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞}
       (fun p : ℂ × ((ℝ × ℝ) × M) => LinearMap.toContinuousLinearMap
         (cappedAlmostComplex h₀ J hJ p.2.1.1 p.2.1.2 p.1 p.2.2).toLinearMap) := by
   rintro ⟨w, ⟨r, L⟩, x⟩
-  -- The Cayley transform `C` of the capped structure is the cutoff-weighted sum of the Cayley
-  -- transforms of the end structures, and the structure is the inverse Cayley chart applied
-  -- to `C`.
-  set C : ℂ × ((ℝ × ℝ) × M) → V →L[ℝ] V := fun p =>
-    smoothTransition p.2.1.1 • ∑ q,
-      (smoothTransition (q.endSign * (q.endCoord p.1).re - 1) *
-        smoothTransition (p.2.1.2 + 3 - q.endSign * (q.endCoord p.1).re)) •
-      LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord p.1).im p.2.2)) with hC_def
-  have hC (p : ℂ × ((ℝ × ℝ) × M)) : (C p).toLinearMap =
-      smoothTransition p.2.1.1 • ∑ q,
-        (smoothTransition (q.endSign * (q.endCoord p.1).re - 1) *
-          smoothTransition (p.2.1.2 + 3 - q.endSign * (q.endCoord p.1).re)) •
-        J₀.cayley (J q (q.endCoord p.1).im p.2.2) := by
-    simp [hC_def]
-  have hCb (p : ℂ × ((ℝ × ℝ) × M)) : (C p).toLinearMap ∈ ω.cayleyBall J₀ := by
-    rw [hC, ← cayley_cappedAlmostComplex (hJ := hJ) h₀]
-    exact h₀.cayley_mem_cayleyBall (tames_cappedAlmostComplex h₀ _ _ _ _)
-  have hJC : (fun p : ℂ × ((ℝ × ℝ) × M) =>
-      (cappedAlmostComplex h₀ J hJ p.2.1.1 p.2.1.2 p.1 p.2.2).toLinearMap.toContinuousLinearMap) =
-      fun p => LinearMap.toContinuousLinearMap
-        (h₀.cayleyEquiv.symm ⟨(C p).toLinearMap, hCb p⟩).val.toLinearMap := by
-    simp only [cappedAlmostComplex, hC]
-  have hCs : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, V →L[ℝ] V) n C
-      (w, (r, L), x) := by
-    have hr : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n
-        (fun p : ℂ × ((ℝ × ℝ) × M) => smoothTransition p.2.1.1) (w, (r, L), x) :=
-      (smoothTransition.contDiff.comp contDiff_fst).contMDiff.contMDiffAt.comp _
-        (contMDiffAt_fst.comp _ contMDiffAt_snd)
-    refine hr.smul (contMDiffAt_finsetSum fun q _ => ?_)
-    exact contMDiffAt_weight_smul_cayley h₀ hJ hJp hJs q w r L x
-  rw [hJC]
-  exact h₀.contMDiffAt_cayleyEquiv_symm hCb hCs
+  refine contMDiffAt_endWeightedAlmostComplex h₀ (w := Prod.fst)
+    (x := fun p : ℂ × ((ℝ × ℝ) × M) => p.2.2) ?_
+  -- Each term of the Cayley transform is `β(r)` times the smooth term of its end.
+  have hr : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n
+      (fun p : ℂ × ((ℝ × ℝ) × M) => smoothTransition p.2.1.1) (w, (r, L), x) :=
+    (smoothTransition.contDiff.comp contDiff_fst).contMDiff.contMDiffAt.comp _
+      (contMDiffAt_fst.comp _ contMDiffAt_snd)
+  refine contMDiffAt_finsetSum fun q _ => ?_
+  exact (hr.smul (contMDiffAt_weight_smul_cayley h₀ hJ hJp hJs q w r L x)).congr_of_eventuallyEq
+    (.of_forall fun _ => mul_smul _ _ _)
 
 end Smooth
 
