@@ -54,13 +54,14 @@ theorem ContMDiffAt.mlieBracket_mem_ker_mfderiv
     (hVker : ∀ᶠ y in 𝓝 x, V y ∈ (mfderiv I J f y).ker)
     (hWker : ∀ᶠ y in 𝓝 x, W y ∈ (mfderiv I J f y).ker) :
     mlieBracket I V W x ∈ (mfderiv I J f x).ker := by
-  have h1 : (1 : ℕ∞ω) ≤ minSmoothness 𝕜 2 :=
-    (by norm_num : (1 : ℕ∞ω) ≤ 2).trans le_minSmoothness
-  have : IsManifold J 1 N := .of_le h1
+  have : IsManifold J 2 N := .of_le (le_minSmoothness (𝕜 := 𝕜))
   have hzero : MDifferentiableAt J J.tangent (T% (0 : Π y : N, TangentSpace J y)) (f x) :=
-    (Bundle.contMDiff_zeroSection 𝕜 (TangentSpace J) (n := 1)).mdifferentiableAt one_ne_zero
+    (Bundle.contMDiff_zeroSection 𝕜 (TangentSpace J) (n := 2)).mdifferentiableAt two_ne_zero
   have h := TauCeti.mfderiv_mlieBracket_of_eventually_related hf hn hV hW hzero hzero
-    hVker hWker
+    (hVker.mono fun y hy ↦ by
+      simpa only [Pi.zero_apply, ContinuousLinearMap.coe_coe] using LinearMap.mem_ker.mp hy)
+    (hWker.mono fun y hy ↦ by
+      simpa only [Pi.zero_apply, ContinuousLinearMap.coe_coe] using LinearMap.mem_ker.mp hy)
   simpa only [mlieBracket_self, Pi.zero_apply, LinearMap.mem_ker,
     ContinuousLinearMap.coe_coe] using h
 
