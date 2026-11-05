@@ -25,14 +25,19 @@ therefore a chart around `x₀` in which `ω` is the constant form `ω(x₀)`. C
 basis of the constant nondegenerate form `ω(x₀)` is a separate linear step, which turns these
 coordinates into the classical ones with `ω = ∑ dxᵢ ∧ dyᵢ`.
 
-The proof is Moser's deformation argument. The Poincaré lemma on a ball around `x₀` gives a
-one-form `α` with `dα = ω - ω(x₀)` and `α(x₀) = 0`. Along the straight-line family
-`ωₜ = (1 - t) ω(x₀) + t ω`, which is nondegenerate near `x₀` for all `t ∈ [0, 1]`, the Moser
-field `Xₜ` is defined by `ι_{Xₜ} ωₜ = -α` (`TauCeti.exists_contDiffOn_moserField`). It vanishes at
-`x₀`, so its time-dependent flow `ψₜ` exists near `x₀` up to time one
-(`TauCeti.exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn`), and Moser's identity
-(`TauCeti.compContinuousLinearMap_fderiv_eq_of_curryLeft_eq_neg`) gives `ψ₁^* ω = ψ₀^* ω(x₀) =
-ω(x₀)` near `x₀`.
+The proof is Moser's deformation argument, which this file states in its local form
+(`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq`). Let
+`ω₀`, `ω₁` be closed two-forms near `x₀` which agree and are nondegenerate at `x₀`, and let `α` be
+a one-form with `dα = ω₁ - ω₀` and `α(x₀) = 0`. Along the straight-line family
+`ωₜ = (1 - t) ω₀ + t ω₁`, which is nondegenerate near `x₀` for all `t ∈ [0, 1]`, the Moser field
+`Xₜ` is defined by `ι_{Xₜ} ωₜ = -α` (`TauCeti.exists_contDiffOn_moserField`). It vanishes wherever
+`α` does, in particular at `x₀`, so its time-dependent flow `ψₜ` exists near `x₀` up to time one and
+fixes the zeros of `α` (`TauCeti.exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn`), and
+Moser's identity (`TauCeti.compContinuousLinearMap_fderiv_eq_of_curryLeft_eq_neg`) gives
+`ψ₁^* ω₁ = ψ₀^* ω₀ = ω₀` near `x₀`. For Darboux's theorem, `ω₀` is the constant form `ω(x₀)`,
+`ω₁ = ω`, and the Poincaré lemma on a ball around `x₀` supplies `α`. Choosing `α` to vanish along
+a submanifold instead gives the relative Darboux theorem, in
+`TauCeti.Geometry.Symplectic.Darboux.Relative`.
 
 Forms are Mathlib's continuous alternating maps, `V [⋀^Fin 2]→L[ℝ] ℝ`, with Mathlib's exterior
 derivative `extDeriv`, and the pullback of `ω` along `ψ` at `x` is
@@ -55,24 +60,22 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- **The Moser data of a closed two-form.** For a closed `C^r` two-form `ω` (`r ≥ 1`) on an
-open set `W`, nondegenerate at `x₀ ∈ W`, there are a one-form `α` with `dα = ω - ω(x₀)` near
-`x₀`, an open neighbourhood `U ⊆ W` of `x₀`, an open set of times `T ⊇ [0, 1]` and a jointly `C^r`
-field `X` on `T × U`, vanishing at `x₀`, with `ι_{X(t, y)} ((1 - t) ω(x₀) + t ω(y)) = -α(y)`. -/
-private theorem exists_moserData {ω : V → V [⋀^Fin 2]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞}
-    (hr : 1 ≤ r) (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hω : ContDiffOn ℝ r ω W)
-    (hdω : ∀ x ∈ W, extDeriv ω x = 0) (hnd : ∀ v, (∀ w, ω x₀ ![v, w] = 0) → v = 0) :
-    ∃ (α : V → V [⋀^Fin 1]→L[ℝ] ℝ) (T : Set ℝ) (U : Set V) (X : ℝ × V → V),
-      IsOpen T ∧ IsOpen U ∧ Icc 0 1 ⊆ T ∧ x₀ ∈ U ∧ U ⊆ W ∧ ContDiffOn ℝ r X (T ×ˢ U) ∧
-      (∀ t ∈ T, X (t, x₀) = 0) ∧ (∀ y ∈ U, extDeriv α y = ω y - ω x₀) ∧
-      ∀ p ∈ T ×ˢ U, ((1 - p.1) • ω x₀ + p.1 • ω p.2).curryLeft (X p) = -α p.2 := by
-  -- A primitive of `ω - ω x₀` on a ball, vanishing at `x₀` (the Poincaré lemma).
-  obtain ⟨ρ, hρ, hρW⟩ := Metric.isOpen_iff.1 hW x₀ hx₀
-  have hηc : ∀ y ∈ ball x₀ ρ, extDeriv (fun x ↦ ω x - ω x₀) y = 0 := fun y hy ↦ by
-    simpa only [extDeriv, fderiv_sub_const] using hdω y (hρW hy)
-  obtain ⟨α, hα, hα₀, hdα⟩ :=
-    ((convex_ball x₀ ρ).starConvex (mem_ball_self hρ)).exists_contDiffOn_forall_extDeriv_eq
-      isOpen_ball hr ((hω.mono hρW).sub contDiffOn_const) hηc
+/-- **Moser's lemma**, local form. Let `ω₀`, `ω₁` be closed `C^r` two-forms (`r ≥ 1`) on an open
+subset `W` of a finite-dimensional real normed space, with `ω₁ - ω₀ = dα` on `W` for a `C^r`
+one-form `α` vanishing at `x₀ ∈ W`. If `ω₀` and `ω₁` agree at `x₀` and are nondegenerate there,
+then some `C^r` diffeomorphism `ψ` of the space pulls `ω₁` back to `ω₀` on a neighbourhood of `x₀`.
+Moreover `ψ` fixes, near `x₀`, every point at which `α` vanishes; in particular `ψ x₀ = x₀`. -/
+theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq
+    {ω₀ ω₁ : V → V [⋀^Fin 2]→L[ℝ] ℝ} {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V}
+    {r : ℕ∞} (hr : 1 ≤ r) (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hω₀ : ContDiffOn ℝ r ω₀ W)
+    (hω₁ : ContDiffOn ℝ r ω₁ W) (hα : ContDiffOn ℝ r α W) (hdω₀ : ∀ x ∈ W, extDeriv ω₀ x = 0)
+    (hdω₁ : ∀ x ∈ W, extDeriv ω₁ x = 0) (hdα : ∀ x ∈ W, extDeriv α x = ω₁ x - ω₀ x)
+    (hα₀ : α x₀ = 0) (heq : ω₁ x₀ = ω₀ x₀) (hnd : ∀ v, (∀ w, ω₀ x₀ ![v, w] = 0) → v = 0) :
+    ∃ ψ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V, (∀ᶠ x in 𝓝 x₀, α x = 0 → ψ x = x) ∧
+      ∀ᶠ x in 𝓝 x₀, (ω₁ (ψ x)).compContinuousLinearMap (fderiv ℝ ψ x) = ω₀ x := by
+  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
+    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+    exact (lt_of_lt_of_le zero_lt_one this).ne'
   -- The forms as bilinear maps, as the Moser field equation takes them.
   let e : (V [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] V →L[ℝ] ℝ :=
     (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
@@ -84,30 +87,58 @@ private theorem exists_moserData {ω : V → V [⋀^Fin 2]→L[ℝ] ℝ} {W : Se
     congr 1
     funext i
     rw [Subsingleton.elim i 0]
-  let B : V → V →L[ℝ] V →L[ℝ] ℝ := fun y ↦ ContinuousAlternatingMap.flatL ℝ V ℝ (ω y)
-  have hL : (B x₀).IsInvertible := ContinuousLinearMap.isInvertible_of_injective <|
-    (injective_iff_map_eq_zero (B x₀)).2 fun v hv ↦
+  let B₀ : V → V →L[ℝ] V →L[ℝ] ℝ := fun y ↦ ContinuousAlternatingMap.flatL ℝ V ℝ (ω₀ y)
+  let B₁ : V → V →L[ℝ] V →L[ℝ] ℝ := fun y ↦ ContinuousAlternatingMap.flatL ℝ V ℝ (ω₁ y)
+  have hL : (B₀ x₀).IsInvertible := ContinuousLinearMap.isInvertible_of_injective <|
+    (injective_iff_map_eq_zero (B₀ x₀)).2 fun v hv ↦
       hnd v fun w ↦ by rw [← ContinuousAlternatingMap.flatL_apply_apply, hv]; rfl
-  have hB : ContDiffOn ℝ r B (ball x₀ ρ) := by
-    -- The source and target are given explicitly, so that their normed instances are used.
-    have hc := ContinuousLinearMap.contDiff (𝕜 := ℝ) (n := r) (E := V [⋀^Fin 2]→L[ℝ] ℝ)
-      (F := V →L[ℝ] V →L[ℝ] ℝ) (ContinuousAlternatingMap.flatL ℝ V ℝ)
-    exact hc.comp_contDiffOn (hω.mono hρW)
-  obtain ⟨T, U, X, hT, hU, hTI, hxU, hUB, hX, hXeq⟩ := exists_contDiffOn_moserField hL
-    isOpen_ball (mem_ball_self hρ) hB rfl (e.contDiff.comp_contDiffOn hα)
-  refine ⟨α, T, U, X, hT, hU, hTI, hxU, hUB.trans hρW, hX,
-    fun t ht ↦ ((hXeq (t, x₀) ⟨ht, hxU⟩ 0).1 fun w ↦ by simp [hα₀]).symm,
-    fun y hy ↦ hdα y (hUB hy), fun p hp ↦ ?_⟩
+  -- The source and target of `flatL` are given explicitly, so that their normed instances are used.
+  have hflat := ContinuousLinearMap.contDiff (𝕜 := ℝ) (n := r) (E := V [⋀^Fin 2]→L[ℝ] ℝ)
+    (F := V →L[ℝ] V →L[ℝ] ℝ) (ContinuousAlternatingMap.flatL ℝ V ℝ)
+  obtain ⟨T, U, X, hT, hU, hTI, hxU, hUW, hX, hXeq⟩ := exists_contDiffOn_moserField hL hW hx₀
+    (hflat.comp_contDiffOn hω₀) (hflat.comp_contDiffOn hω₁) rfl (congrArg _ heq)
+    (e.contDiff.comp_contDiffOn hα)
+  -- The Moser field vanishes wherever `α` does.
+  have hXα (t : ℝ) (ht : t ∈ T) (y : V) (hy : y ∈ U) (hαy : α y = 0) : X (t, y) = 0 :=
+    ((hXeq (t, y) ⟨ht, hy⟩ 0).1 fun w ↦ by simp [hαy]).symm
   -- Read the bilinear Moser equation back as an equation of one-forms.
-  have hp' := (hXeq p hp (X p)).2 rfl
-  ext m
-  have hm : m = ![m 0] := by
-    funext i
-    rw [Subsingleton.elim i 0]
-    rfl
-  rw [hm, ContinuousAlternatingMap.curryLeft_apply_apply, ContinuousAlternatingMap.neg_apply,
-    ← he (α p.2) ![m 0]]
-  simpa [B] using hp' (m 0)
+  have hXω (p : ℝ × V) (hp : p ∈ T ×ˢ U) :
+      ((1 - p.1) • ω₀ p.2 + p.1 • ω₁ p.2).curryLeft (X p) = -α p.2 := by
+    have hp' := (hXeq p hp (X p)).2 rfl
+    ext m
+    have hm : m = ![m 0] := by
+      funext i
+      rw [Subsingleton.elim i 0]
+      rfl
+    rw [hm, ContinuousAlternatingMap.curryLeft_apply_apply, ContinuousAlternatingMap.neg_apply,
+      ← he (α p.2) ![m 0]]
+    simpa [B₀, B₁] using hp' (m 0)
+  -- The time-dependent flow of the Moser field.
+  obtain ⟨ψ, ψ', hψ, hψ', hψl, hψr, hψ0, hψfix, hev⟩ :=
+    exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn (X := fun t y ↦ X (t, y)) hr hT hU
+      hTI hxU hX fun t ht ↦ hXα t ht x₀ hxU hα₀
+  refine ⟨⟨⟨ψ 1, ψ', hψl, hψr⟩, hψ.contMDiff, hψ'.contMDiff⟩, ?_, ?_⟩
+  · filter_upwards [hU.mem_nhds hxU] with y hy hαy
+    exact hψfix y (fun t ht ↦ hXα t ht y hy hαy) 1
+  -- Moser's identity along the flow: `ψ₁^* ω₁ = ψ₀^* ω₀ = ω₀`.
+  filter_upwards [hev] with x hx
+  have hmem (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : ψ t x ∈ U := (hx t ht).1
+  have h := compContinuousLinearMap_fderiv_eq_of_curryLeft_eq_neg (ω₀ := ω₀) (ω₁ := ω₁)
+    (α := α) (ψ := ψ) (X := fun t y ↦ X (t, y)) (x := x)
+    (fun t ht ↦ (hω₀.differentiableOn hr0).differentiableAt (hW.mem_nhds (hUW (hmem t ht))))
+    (fun t ht ↦ (hω₁.differentiableOn hr0).differentiableAt (hW.mem_nhds (hUW (hmem t ht))))
+    (fun t ht ↦ hdω₀ _ (hUW (hmem t ht))) (fun t ht ↦ hdω₁ _ (hUW (hmem t ht)))
+    (fun t ht ↦ hdα _ (hUW (hmem t ht)))
+    (fun t ht ↦ Filter.mem_of_superset (hU.mem_nhds (hmem t ht)) fun y hy ↦
+      hXω (t, y) ⟨hTI ht, hy⟩)
+    (fun t ht ↦ ((hX.differentiableOn hr0).differentiableAt
+      ((hT.prod hU).mem_nhds ⟨hTI ht, hmem t ht⟩)).comp (ψ t x)
+        ((differentiableAt_const t).prodMk differentiableAt_id))
+    (fun t ht ↦ (hx t ht).2.1) (fun t ht ↦ (hx t ht).2.2)
+  rw [hψ0, fderiv_id] at h
+  refine h.trans ?_
+  ext v
+  simp
 
 /-- **Darboux's theorem.** A closed `C^r` two-form `ω` (`r ≥ 1`) on an open subset of a
 finite-dimensional real normed space, nondegenerate at `x₀`, is constant in suitable coordinates
@@ -119,36 +150,21 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq
     (hnd : ∀ v, (∀ w, ω x₀ ![v, w] = 0) → v = 0) :
     ∃ ψ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V, ψ x₀ = x₀ ∧
       ∀ᶠ x in 𝓝 x₀, (ω (ψ x)).compContinuousLinearMap (fderiv ℝ ψ x) = ω x₀ := by
-  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
-    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
-    exact (lt_of_lt_of_le zero_lt_one this).ne'
-  obtain ⟨α, T, U, X, hT, hU, hTI, hxU, hUW, hX, hX₀, hdα, hXeq⟩ :=
-    exists_moserData hr hW hx₀ hω hdω hnd
-  -- The time-dependent flow of the Moser field.
-  obtain ⟨ψ, ψ', hψ, hψ', hψl, hψr, hψ0, hψx₀, hev⟩ :=
-    exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn (X := fun t y ↦ X (t, y)) hr hT hU
-      hTI hxU hX hX₀
-  refine ⟨⟨⟨ψ 1, ψ', hψl, hψr⟩, hψ.contMDiff, hψ'.contMDiff⟩, hψx₀ 1, ?_⟩
-  -- Moser's identity along the flow: `ψ₁^* ω = ψ₀^* ω(x₀) = ω(x₀)`.
-  filter_upwards [hev] with x hx
-  have hmem (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : ψ t x ∈ U := (hx t ht).1
-  have h := compContinuousLinearMap_fderiv_eq_of_curryLeft_eq_neg (ω₀ := fun _ ↦ ω x₀) (ω₁ := ω)
-    (α := α) (ψ := ψ) (X := fun t y ↦ X (t, y)) (x := x)
-    (fun t _ ↦ differentiableAt_const _)
-    (fun t ht ↦ (hω.differentiableOn hr0).differentiableAt (hW.mem_nhds (hUW (hmem t ht))))
-    (fun t _ ↦ by
-      rw [extDeriv, fderiv_const_apply,
-        ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply, map_zero])
-    (fun t ht ↦ hdω _ (hUW (hmem t ht))) (fun t ht ↦ hdα _ (hmem t ht))
-    (fun t ht ↦ Filter.mem_of_superset (hU.mem_nhds (hmem t ht)) fun y hy ↦
-      hXeq (t, y) ⟨hTI ht, hy⟩)
-    (fun t ht ↦ ((hX.differentiableOn hr0).differentiableAt
-      ((hT.prod hU).mem_nhds ⟨hTI ht, hmem t ht⟩)).comp (ψ t x)
-        ((differentiableAt_const t).prodMk differentiableAt_id))
-    (fun t ht ↦ (hx t ht).2.1) (fun t ht ↦ (hx t ht).2.2)
-  rw [hψ0, fderiv_id] at h
-  refine h.trans ?_
-  ext v
-  simp
+  -- A primitive of `ω - ω x₀` on a ball, vanishing at `x₀` (the Poincaré lemma).
+  obtain ⟨ρ, hρ, hρW⟩ := Metric.isOpen_iff.1 hW x₀ hx₀
+  have hηc : ∀ y ∈ ball x₀ ρ, extDeriv (fun x ↦ ω x - ω x₀) y = 0 := fun y hy ↦ by
+    simpa only [extDeriv, fderiv_sub_const] using hdω y (hρW hy)
+  obtain ⟨α, hα, hα₀, hdα⟩ :=
+    ((convex_ball x₀ ρ).starConvex (mem_ball_self hρ)).exists_contDiffOn_forall_extDeriv_eq
+      isOpen_ball hr ((hω.mono hρW).sub contDiffOn_const) hηc
+  -- Moser's lemma for the constant form `ω x₀` and `ω`.
+  obtain ⟨ψ, hfix, hψ⟩ :=
+    exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq
+      (ω₀ := fun _ ↦ ω x₀) hr isOpen_ball (mem_ball_self hρ) contDiffOn_const (hω.mono hρW) hα
+      (fun x _ ↦ by
+        rw [extDeriv, fderiv_const_apply,
+          ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply, map_zero])
+      (fun x hx ↦ hdω x (hρW hx)) hdα hα₀ rfl hnd
+  exact ⟨ψ, hfix.self_of_nhds hα₀, hψ⟩
 
 end TauCeti

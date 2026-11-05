@@ -16,6 +16,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Pushout
+import TauCeti.AlgebraicTopology.NotSimplyConnected
 import TauCeti.CategoryTheory.Groupoid.SingleObj
 import TauCeti.Topology.Connected.PathConnected
 
@@ -506,14 +507,10 @@ theorem simplyConnectedSpace_of_interior_union
     obtain ⟨g', rfl⟩ := hsurj g
     obtain ⟨h', rfl⟩ := hsurj h
     rw [himage_one, himage_one]
-  refine simply_connected_iff_loops_nullhomotopic.mpr ⟨inferInstance, fun x γ ↦ ?_⟩
-  let e := FundamentalGroup.fundamentalGroupMulEquivOfPath
-    (PathConnectedSpace.somePath z x)
-  have hxsub : Subsingleton (FundamentalGroup X x) :=
+  have hxsub (x : X) : Subsingleton (FundamentalGroup X x) :=
+    let e := FundamentalGroup.fundamentalGroupMulEquivOfPath (PathConnectedSpace.somePath z x)
     ⟨fun a b ↦ e.symm.injective (hzsub.elim (e.symm a) (e.symm b))⟩
-  exact Quotient.eq.mp (congrArg End.asHom (hxsub.elim
-    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))
-    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)))))
+  exact simplyConnectedSpace_iff_forall_subsingleton_fundamentalGroup.2 ⟨inferInstance, hxsub⟩
 
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 

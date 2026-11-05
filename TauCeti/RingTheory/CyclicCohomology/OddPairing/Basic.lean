@@ -46,6 +46,7 @@ cochain `ψ` the alternating sum of these terms telescopes, so `(bψ)(x₀, …,
 * `TauCeti.cyclicCohomology.oddPairing_matrixExtension_of_val_eq_fromBlocks_one`: the pairing is
   unchanged by stabilization `u ↦ u ⊕ 1`.
 * `Equiv.oddPairing_reindexGL`: the pairing is unchanged by relabelling the matrix indices.
+* `TauCeti.cyclicCohomology.oddPairing_map`: naturality of the pairing for algebra homomorphisms.
 
 ## References
 
@@ -132,6 +133,22 @@ theorem oddPairing_one (m : ℕ) :
     oddPairing (1 : Aˣ) m = (0 : cyclicCohomology ℂ A M (2 * m + 1) →ₗ[ℂ] M) := by
   ext φ
   simp [← Pi.zero_def]
+
+/-- **Naturality of the odd pairing**: the image of an invertible `u` under an algebra
+homomorphism `f : A →ₐ[ℂ] B` pairs with a class of `B` as `u` pairs with the pullback of the class
+along `f`. -/
+theorem oddPairing_map {B : Type _} [Ring B] [Algebra ℂ B] (f : A →ₐ[ℂ] B) (u : Aˣ) (m : ℕ)
+    (c : cyclicCohomology ℂ B M (2 * m + 1)) :
+    oddPairing (Units.map (f : A →* B) u) m c =
+      oddPairing u m (map M (f : A →ₙₐ[ℂ] B) (2 * m + 1) c) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective ℂ B M (2 * m + 1) c
+  simp only [map_mk, oddPairing_mk, coe_cyclicCochainsMap_apply,
+    MultilinearMap.compLinearMap_apply]
+  -- The pulled-back cochain applies `f` through its underlying linear map.
+  have hf (x : A) : ((f : A →ₙₐ[ℂ] B) : A →ₗ[ℂ] B) x = f x := (rfl)
+  congr 2
+  funext k
+  split_ifs <;> simp [hf]
 
 /-- **Connes' odd pairing** of an invertible matrix `u` with cyclic cohomology: on the class of a
 cyclic cocycle `φ` of degree `n = 2m + 1`, it is

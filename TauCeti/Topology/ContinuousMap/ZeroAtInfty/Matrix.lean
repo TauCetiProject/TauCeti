@@ -270,6 +270,46 @@ theorem matrixCoeff_mul (u v : C₀(J, R) →L[R] C₀(J, R)) (i j : J) :
     (u * v).matrixCoeff i j = ∑' k, u.matrixCoeff i k * v.matrixCoeff k j :=
   u.matrixCoeff_comp v i j
 
+/-- If the rows of `w` outside a finite set `F` vanish, the block of `w ^ k` on `F` is the
+`k`-th power of the block of `w` on `F`. -/
+theorem submatrix_matrixCoeff_pow {w : C₀(J, R) →L[R] C₀(J, R)} {F : Finset J}
+    (hw : ∀ i ∉ F, ∀ j, w.matrixCoeff i j = 0) (k : ℕ) :
+    (w ^ k).matrixCoeff.submatrix (Subtype.val : F → J) (Subtype.val : F → J) =
+      w.matrixCoeff.submatrix (Subtype.val : F → J) (Subtype.val : F → J) ^ k := by
+  induction k with
+  | zero =>
+    ext x y
+    simp [Matrix.one_apply]
+  | succ k ih =>
+    ext x y
+    rw [pow_succ, pow_succ, Matrix.submatrix_apply, matrixCoeff_mul, Matrix.mul_apply, ← ih,
+      tsum_eq_sum (s := F) fun l hl ↦ by simp [hw l hl], ← Finset.sum_coe_sort F]
+    simp
+
+/-- For a finite set `S` of output coordinates and any polynomial `Q`, the block on `S` of the
+matrix of `Q(π_S ∘ u)` is `Q(A)`, where `A` is the block of `u` on `S`: the rows of `π_S ∘ u`
+outside `S` vanish, so the products of matrices only involve indices in `S`. -/
+theorem submatrix_matrixCoeff_aeval_indicatorCLM_comp (S : Finset J)
+    (u : C₀(J, R) →L[R] C₀(J, R)) (Q : Polynomial R) :
+    (Polynomial.aeval ((indicatorCLM R (S : Set J)).comp u) Q).matrixCoeff.submatrix
+        (Subtype.val : S → J) (Subtype.val : S → J) =
+      Polynomial.aeval (u.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J)) Q := by
+  set w := (indicatorCLM R (S : Set J)).comp u
+  -- the rows of `w` outside `S` vanish, and its block on `S` is that of `u`
+  have hw : ∀ i ∉ S, ∀ j, w.matrixCoeff i j = 0 := fun i hi _ ↦ by simp [w, matrixCoeff_apply, hi]
+  have hblock : w.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J) =
+      u.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J) := by
+    ext i i'
+    simp [w, matrixCoeff_apply]
+  induction Q using Polynomial.induction_on' with
+  | add p q hp hq =>
+    rw [map_add, map_add, matrixCoeff_add, Matrix.submatrix_add, Pi.add_apply, Pi.add_apply, hp,
+      hq]
+  | monomial j a =>
+    rw [Polynomial.aeval_monomial, Polynomial.aeval_monomial, ← Algebra.smul_def,
+      ← Algebra.smul_def, matrixCoeff_smul, Matrix.submatrix_smul, Pi.smul_apply, Pi.smul_apply,
+      submatrix_matrixCoeff_pow hw, hblock]
+
 end NormedCommRing
 
 end ContinuousLinearMap

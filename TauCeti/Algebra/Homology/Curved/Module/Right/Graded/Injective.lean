@@ -178,9 +178,9 @@ private theorem extend_cochain {p : ℤ}
     (hS.map_of_exact (forgetDifferential (h := h))).mono_f
   obtain ⟨b, hb, hba⟩ := GradedModuleCat.exists_isHomogeneous_comp_eq_of_mono
     (toGradedModuleCat I) ((forgetDifferential (h := h)).map f) (p := p) a.1
-    ((mem_dgRightModuleCochains_iff_isHomogeneous a.1).1 a.2)
+    ((isHomogeneous_toGradedModuleCat_iff a.1).2 a.2)
   refine ⟨⟨b, ?_⟩, fun x ↦ congrArg (fun l ↦ l x) hba⟩
-  exact (mem_dgRightModuleCochains_iff_isHomogeneous b).2 hb
+  exact (isHomogeneous_toGradedModuleCat_iff b).1 hb
 
 /-- Maps from a short-exact totalization to a graded-injective module are null-homotopic. -/
 private theorem totalization_map_eq_zero

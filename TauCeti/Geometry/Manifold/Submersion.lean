@@ -23,6 +23,8 @@ complement `F` at every point (`Manifold.isSubmersionOfComplement_iff`). Mathlib
 forward direction, `Manifold.IsSubmersionOfComplement.isSubmersionAt`, and does not expose the
 definition, so the converse is needed to build global submersions from pointwise local normal
 forms, for instance with `Manifold.IsSubmersionAtOfComplement.mk_of_continuousAt`.
+The first projection of a product of manifolds is a submersion, with the second model space
+as complement (`Manifold.isSubmersionOfComplement_fst`).
 
 This file also differentiates the normal form of a `C^n` submersion `f : M → N`, `n ≠ 0`: around
 every point `x` there are charts `φ` of `M` and `ψ` of `N` and a continuous linear equivalence
@@ -64,6 +66,8 @@ public section
 
 namespace Manifold
 
+open scoped Manifold
+
 section Pointwise
 
 variable {𝕜 E E' F H G M N : Type*} [NontriviallyNormedField 𝕜] {n : WithTop ℕ∞}
@@ -77,6 +81,25 @@ at every point. -/
 theorem isSubmersionOfComplement_iff :
     IsSubmersionOfComplement F I J n f ↔ ∀ x, IsSubmersionAtOfComplement F I J n f x :=
   Iff.rfl
+
+/-- The first projection of a product of manifolds is a submersion, with the second model
+space as complement. No nonemptiness assumption on either factor is needed. -/
+theorem isSubmersionOfComplement_fst [IsManifold I n M] [IsManifold J n N] :
+    IsSubmersionOfComplement E' (I.prod J) I n (@Prod.fst M N) := by
+  refine isSubmersionOfComplement_iff.mpr fun p ↦ ?_
+  refine .mk_of_continuousAt continuous_fst.continuousAt
+    (ContinuousLinearEquiv.refl 𝕜 (E × E')) (chartAt (ModelProd H G) p) (chartAt H p.1)
+    (mem_chart_source _ p) (mem_chart_source _ p.1) (IsManifold.chart_mem_maximalAtlas p)
+    (IsManifold.chart_mem_maximalAtlas p.1) ?_
+  intro y hy
+  rw [← extChartAt, ← extChartAt] at *
+  rw [extChartAt_prod] at hy ⊢
+  exact (extChartAt I p.1).right_inv hy.1
+
+/-- The first projection of a product of manifolds is a submersion. -/
+theorem isSubmersion_fst [IsManifold I n M] [IsManifold J n N] :
+    IsSubmersion (I.prod J) I n (@Prod.fst M N) :=
+  isSubmersionOfComplement_fst.isSubmersion
 
 end Pointwise
 
