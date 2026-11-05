@@ -105,11 +105,7 @@ theorem eq_unitizationActionL (Φ : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E �
     (hM : ∀ a : A, Φ (toLp 1 (a : Unitization 𝕜 A)) = M a) :
     Φ = M.unitizationActionL := by
   ext u x
-  have hu : u = (ofLp u).fst • 1 + toLp 1 ((ofLp u).snd : Unitization 𝕜 A) := by
-    simpa [← Unitization.algebraMap_eq_inl, Algebra.algebraMap_eq_smul_one] using
-      (congrArg (unitizationAlgEquiv 𝕜).symm
-        (Unitization.inl_fst_add_inr_snd_eq (ofLp u))).symm
-  rw [hu, map_add, map_smul, h1, hM]
+  rw [Φ.unitization_apply_eq_fst_smul_add u, h1, hM]
   simp
 
 /-- A bounded linear map intertwines the unitized actions exactly when it intertwines
