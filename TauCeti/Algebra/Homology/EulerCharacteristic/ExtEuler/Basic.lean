@@ -216,6 +216,13 @@ summand a genuine dimension, and a vanishing bound for `N`. -/
 noncomputable def truncatedExtEuler (X Y : C) (N : ℕ) : ℤ :=
   ∑ n ∈ Finset.range N, (-1) ^ n * (Module.finrank k (Ext.{w} X Y n) : ℤ)
 
+/-- The truncated Ext-Euler characteristic is the alternating sum of the `Ext` dimensions below
+`N`. -/
+theorem truncatedExtEuler_def (X Y : C) (N : ℕ) :
+    truncatedExtEuler.{w} k X Y N =
+      ∑ n ∈ Finset.range N, (-1) ^ n * (Module.finrank k (Ext.{w} X Y n) : ℤ) := by
+  rw [truncatedExtEuler]
+
 /-- The empty truncation of the alternating sum is zero. -/
 @[simp]
 theorem truncatedExtEuler_zero (X Y : C) : truncatedExtEuler.{w} k X Y 0 = 0 :=

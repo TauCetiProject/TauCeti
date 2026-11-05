@@ -8,20 +8,41 @@ module
 public import Mathlib.Data.Finsupp.Order
 
 /-!
-# Decompositions of finitely supported functions on linear orders
+# Order decompositions and vanishing criteria for finitely supported functions
 
-A finitely supported function splits into its coordinates below a chosen index, its value at
-that index, and its coordinates above it.
+If a nonnegative finitely supported function into an ordered cancellative additive monoid has total
+sum equal to its value at a single index, then all off-index values vanish
+(`Finsupp.eq_zero_of_sum_eq_apply_of_nonneg`).
 
-A natural-valued finitely supported function with an index below `l` in its support splits as
-`single i 1 + g`, where `i < l` and every index in the support of `g` is at least `i`.
-This decomposition supports induction on ordered monomials by removing one occurrence of
-their least variable.
+On a linearly ordered index type, a finitely supported function splits into its coordinates below a
+chosen index, its value at that index, and its coordinates above it. A natural-valued finitely
+supported function with an index below `l` in its support splits as `single i 1 + g`, where `i < l`
+and every index in the support of `g` is at least `i`. This decomposition supports induction on
+ordered monomials by removing one occurrence of their least variable.
 -/
 
 public section
 
 namespace Finsupp
+
+/-- If a finitely supported function into an ordered cancellative additive commutative monoid is
+nonnegative and its sum equals its value at `a`, then it vanishes away from `a`. -/
+theorem eq_zero_of_sum_eq_apply_of_nonneg {ι M : Type*} [AddCommMonoid M] [PartialOrder M]
+    [IsOrderedCancelAddMonoid M] {f : ι →₀ M} (hf : 0 ≤ f) {a b : ι}
+    (hsum : (f.sum fun _ c ↦ c) = f a) (hba : b ≠ a) : f b = 0 := by
+  classical
+  have hle : f a + f b ≤ f a + 0 :=
+    calc f a + f b
+        ≤ ∑ k ∈ insert a (insert b f.support), f k :=
+          Finset.add_le_sum (fun i _ ↦ hf i) (Finset.mem_insert_self _ _)
+            (Finset.mem_insert_of_mem (Finset.mem_insert_self _ _)) hba.symm
+      _ = f.sum fun _ c ↦ c :=
+          (sum_of_support_subset f
+            (s := insert a (insert b f.support))
+            (fun _ h ↦ Finset.mem_insert_of_mem (Finset.mem_insert_of_mem h))
+            (fun _ c ↦ c) (fun _ _ ↦ rfl)).symm
+      _ = f a + 0 := by rw [hsum, add_zero]
+  exact le_antisymm (le_of_add_le_add_left hle) (hf b)
 
 variable {ι : Type*} [LinearOrder ι]
 

@@ -16,7 +16,8 @@ the pieces `(M{d})ₚ = M_{p-d}` enter graded Ext and Euler characteristics, whi
 an autoequivalence. No finiteness or projectivity assumptions are required. After forgetting the
 grading, every power of the shift becomes the identity functor on underlying modules
 (`TauCeti.GradedModuleCat.shiftPowCompToModuleCatIso`), identifying the underlying module of
-`M{d}` with that of `M`.
+`M{d}` with that of `M`. Properties preserved by isomorphisms, `shift 𝒜`, and its inverse
+propagate to all explicit shifts `M{d}` via `TauCeti.GradedModuleCat.shiftObj_induction`.
 
 ## References
 
@@ -139,5 +140,19 @@ theorem shiftPowCompToModuleCatIso_inv_app_hom (j : ℤ) (M : GradedModuleCat.{v
     shiftFunctorCompToModuleCatIso_inv_app_hom]
   -- As above, `LinearMap.comp_id` does not match the identity on the shifted carrier.
   rfl
+
+variable {𝒜} in
+/-- An isomorphism-invariant property of graded modules preserved by `shift 𝒜` and its inverse
+holds on every explicit internal shift `X.shiftObj d` of an object satisfying it. -/
+theorem shiftObj_induction (X : GradedModuleCat.{v} 𝒜)
+    (P : GradedModuleCat.{v} 𝒜 → Prop)
+    (hiso : ∀ ⦃M M' : GradedModuleCat.{v} 𝒜⦄, P M → (M ≅ M') → P M')
+    (hfwd : ∀ ⦃M : GradedModuleCat.{v} 𝒜⦄, P M → P ((shift 𝒜).functor.obj M))
+    (hinv : ∀ ⦃M : GradedModuleCat.{v} 𝒜⦄, P M → P ((shift 𝒜).inverse.obj M))
+    (hX : P X) (d : ℤ) : P (X.shiftObj d) := by
+  induction d using Int.induction_on with
+  | zero => exact hiso hX ((shiftFunctorZeroIso 𝒜).app X).symm
+  | succ n ih => exact hiso (hfwd ih) ((shiftFunctorAddIso 𝒜 n 1).app X)
+  | pred n ih => exact hiso (hinv ih) ((shiftFunctorAddIso 𝒜 (-(n : ℤ)) (-1)).app X)
 
 end TauCeti.GradedModuleCat
