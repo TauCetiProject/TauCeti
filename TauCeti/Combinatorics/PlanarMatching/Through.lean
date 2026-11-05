@@ -129,8 +129,8 @@ theorem castAdd_bottomHalf_apply (D : TLDiagram n m) (i : Fin n)
   D.bottomPartner_of_lt i h
 
 /-- There are no more through strands than bottom points. -/
-theorem through_le_bottom (D : TLDiagram n m) : D.through ≤ n := by
-  exact (Finset.card_filter_le _ _).trans_eq (Fintype.card_fin n)
+theorem through_le_bottom (D : TLDiagram n m) : D.through ≤ n :=
+  D.bottomHalf.le
 
 /-- Counting through endpoints in the full cyclic boundary instead of just its bottom row. -/
 private theorem through_eq_card_boundary (D : TLDiagram n m) :
@@ -220,8 +220,8 @@ theorem topHalf_apply_eq_self_iff (D : TLDiagram n m) (j : Fin m) :
   omega
 
 /-- There are no more through strands than top points. -/
-theorem through_le_top (D : TLDiagram n m) : D.through ≤ m := by
-  simpa only [through_verticalReflect] using (verticalReflect n m D).through_le_bottom
+theorem through_le_top (D : TLDiagram n m) : D.through ≤ m :=
+  D.topHalf.le
 
 /-- The bottom points not lying on through strands come in pairs. -/
 theorem even_bottom_sub_through (D : TLDiagram n m) : Even (n - D.through) :=
