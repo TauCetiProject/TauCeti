@@ -19,7 +19,7 @@ countability or generation hypothesis is part of the definition.
 A mean `m` on `UCB G` pushes forward along a continuous homomorphism `φ : G →ₜ* H` to the mean
 `f ↦ m (f ∘ φ)` on `UCB H`. Since `(L_(φ g) f) ∘ φ = L_g (f ∘ φ)`, the pushforward of a
 left-invariant mean is invariant under translation by the range of `φ`, and, by continuity of
-`k ↦ m (f ∘ φ) ∘ L_k`, by its closure. So the pushforward along a homomorphism with dense range is
+`k ↦ m ((L_k f) ∘ φ)`, by its closure. So the pushforward along a homomorphism with dense range is
 left invariant. Hence amenability passes to the target of a continuous homomorphism with dense
 range, in particular to images under surjective continuous homomorphisms, and is invariant under
 isomorphisms of topological groups.
@@ -118,10 +118,11 @@ theorem IsLeftInvariant.map_apply_leftTranslation {m : Mean G} (hm : m.IsLeftInv
   rw [map_apply, map_apply, UCB.compRightAlgHom_leftTranslation, hm]
 
 /-- The pushforward of a left-invariant mean along a continuous homomorphism with dense range is
-left invariant: it is invariant under translation by the range, and `k ↦ m.map φ (L_k f)` is
-continuous. -/
+left invariant. -/
 theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ* H}
     (hφ : DenseRange φ) : (m.map φ).IsLeftInvariant := by
+  -- the pushforward is invariant under translation by the range, and
+  -- `k ↦ m.map φ (L_k f)` is continuous
   intro h f
   have hc : Continuous fun k : H => m.map φ (UCB.leftTranslation k f) :=
     (map_continuous (m.map φ)).comp (UCB.continuous_leftTranslation_apply f)
