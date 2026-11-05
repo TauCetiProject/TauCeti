@@ -24,8 +24,8 @@ algebra, `TauCeti.exists_indecomposable_iso_biproduct` and
 `TauCeti.exists_equiv_iso_of_iso_biproduct`, read through the dictionary
 `TauCeti.quiverRepEquivalence : QuiverRep k Q ≌ ModuleCat (pathAlgebra k Q)`. Three properties of
 that dictionary carry it across: both of its directions are additive, by
-`CategoryTheory.Equivalence.functor_additive` and `CategoryTheory.Equivalence.inverse_additive`, so
-they carry finite biproducts to finite biproducts; both are fully faithful, so they carry
+`CategoryTheory.Functor.additive_of_isEquivalence`, so they carry finite biproducts to finite
+biproducts; both are fully faithful, so they carry
 indecomposable objects to indecomposable objects
 (`CategoryTheory.Functor.indecomposable_obj_of_map_bijective`); and a
 pointwise finite-dimensional representation of a finite quiver goes to a module that is
