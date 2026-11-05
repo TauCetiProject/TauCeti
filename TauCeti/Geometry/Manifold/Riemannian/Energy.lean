@@ -32,7 +32,7 @@ geodesic segments is in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantS
 * `TauCeti.Manifold.energy_add_adjacent`: the energy is additive over adjacent parameter
   intervals.
 * `TauCeti.Manifold.energy_congr`: energy depends only on the open-interval restriction.
-* `TauCeti.Manifold.sum_energy_eq`: energy is additive over finite partitions.
+* `TauCeti.Manifold.sum_energy_adjacent_intervals`: energy is additive over finite partitions.
 * `TauCeti.Manifold.energy_eq_integral_curveVelocityWithin`: the energy computed from the velocity
   within any parameter set containing the interval.
 
@@ -124,27 +124,29 @@ theorem energy_congr {γ δ : ℝ → M} {a b : ℝ} (h : EqOn γ δ (uIoo a b))
 
 /-- Energy is additive over any finite partition on which the squared speed is integrable.
 The partition need not be strict or increasing. -/
-theorem sum_energy_eq (γ : ℝ → M) {n : ℕ} (τ : Fin (n + 1) → ℝ)
+theorem sum_energy_adjacent_intervals (γ : ℝ → M) {n : ℕ} (τ : Fin (n + 1) → ℝ)
     (hint : ∀ i : Fin n, IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2)
       MeasureTheory.volume (τ i.castSucc) (τ i.succ)) :
     ∑ i : Fin n, energy I γ (τ i.castSucc) (τ i.succ) =
       energy I γ (τ 0) (τ (Fin.last n)) := by
-  suffices h : IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2)
-      MeasureTheory.volume (τ 0) (τ (Fin.last n)) ∧
-      ∑ i : Fin n, energy I γ (τ i.castSucc) (τ i.succ) =
-        energy I γ (τ 0) (τ (Fin.last n)) from h.2
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have hint' (i : Fin n) : IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2)
-        MeasureTheory.volume (τ i.castSucc.castSucc) (τ i.succ.castSucc) := by
-      simpa only [Fin.succ_castSucc] using hint i.castSucc
-    obtain ⟨hwhole, hsum⟩ := ih (fun i ↦ τ i.castSucc) hint'
-    refine ⟨hwhole.trans (hint (Fin.last n)), ?_⟩
-    rw [Fin.sum_univ_castSucc]
-    simp only [Fin.succ_castSucc]
-    rw [hsum]
-    exact energy_add_adjacent γ hwhole (hint (Fin.last n))
+  let a (k : ℕ) := τ (Fin.ofNat (n + 1) k)
+  have ha (i : Fin (n + 1)) : a i = τ i := by
+    simp [a, Fin.ofNat_eq_cast]
+  simp_rw [energy_def]
+  rw [← Finset.sum_div]
+  congr 1
+  have hint' (k : ℕ) (hk : k < n) : IntervalIntegrable
+      (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) MeasureTheory.volume (a k) (a (k + 1)) := by
+    simpa only [← ha (⟨k, hk⟩ : Fin n).castSucc, ← ha (⟨k, hk⟩ : Fin n).succ,
+      Fin.val_castSucc, Fin.val_succ, Fin.val_mk] using hint ⟨k, hk⟩
+  have h0 : a 0 = τ 0 := by simpa only [Fin.val_zero] using ha 0
+  have hn : a n = τ (Fin.last n) := by simpa only [Fin.val_last] using ha (Fin.last n)
+  have hsum := intervalIntegral.sum_integral_adjacent_intervals hint'
+  rw [← Fin.sum_univ_eq_sum_range, h0, hn] at hsum
+  rw [← hsum]
+  apply Finset.sum_congr rfl
+  intro i _
+  simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
 
 /-- On any parameter set `s` containing the interval between `a` and `b`, the energy may be
 computed from the velocity within `s`.  The two velocities agree on the open interval, so no

@@ -11,8 +11,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 # First variation of energy for curves with corners
 
 A continuous piecewise smooth variation is represented by a family `F` and finitely many smooth
-extensions `G i`, one on each closed interval of a strict partition. The extensions agree with
-`F` on their respective pieces for all variation parameters near zero. Consequently adjacent
+extensions `G i`, one on each closed interval of a nondecreasing partition. The extensions agree
+with `F` on their respective pieces for all variation parameters near zero. Consequently adjacent
 extensions agree at every moving vertex, while their longitudinal velocities may differ.
 
 The energy is the existing `TauCeti.Manifold.energy` of the assembled curve. It is locally the
@@ -59,7 +59,7 @@ variable [IsManifold I 1 M]
 energies of its smooth extensions. Matching is required on each closed piece, so the same
 hypotheses also identify the moving vertices of adjacent pieces. -/
 theorem eventually_energy_eq_sum_of_piecewise {n : ℕ} (τ : Fin (n + 1) → ℝ)
-    (hτ : StrictMono τ) {F : ℝ → ℝ → M} {G : Fin n → ℝ → ℝ → M}
+    (hτ : Monotone τ) {F : ℝ → ℝ → M} {G : Fin n → ℝ → ℝ → M}
     (hG : ∀ i t, t ∈ Icc (τ i.castSucc) (τ i.succ) →
       ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 1 (fun z : ℝ × ℝ ↦ G i z.1 z.2) (0, t))
     (hFG : ∀ᶠ s in 𝓝 0, ∀ i : Fin n,
@@ -69,7 +69,7 @@ theorem eventually_energy_eq_sum_of_piecewise {n : ℕ} (τ : Fin (n + 1) → �
   have hint (i : Fin n) : ∀ᶠ s in 𝓝 0,
       IntervalIntegrable (fun t ↦ ‖curveVelocity I (G i s) t‖ ^ 2) volume
         (τ i.castSucc) (τ i.succ) := by
-    have hi := (hτ (Fin.castSucc_lt_succ (i := i))).le
+    have hi := hτ (Fin.castSucc_le_succ i)
     obtain ⟨U, V, hUo, hVo, h0U, hV, hUV⟩ :=
       TauCeti.exists_isOpen_prod_contMDiffOn
         (K := uIcc (τ i.castSucc) (τ i.succ)) isCompact_uIcc (by simp)
@@ -84,7 +84,7 @@ theorem eventually_energy_eq_sum_of_piecewise {n : ℕ} (τ : Fin (n + 1) → �
     exact ((hn.pow 2).mono hV).intervalIntegrable
   have hsub (i : Fin n) : uIoo (τ i.castSucc) (τ i.succ) ⊆
       Icc (τ i.castSucc) (τ i.succ) := by
-    rw [uIoo_of_le (hτ (Fin.castSucc_lt_succ (i := i))).le]
+    rw [uIoo_of_le (hτ (Fin.castSucc_le_succ i))]
     exact Ioo_subset_Icc_self
   filter_upwards [hFG, Filter.eventually_all.mpr hint] with s hs hint
   have hnorm (i : Fin n) : EqOn (fun t ↦ ‖curveVelocity I (F s) t‖ ^ 2)
@@ -97,7 +97,7 @@ theorem eventually_energy_eq_sum_of_piecewise {n : ℕ} (τ : Fin (n + 1) → �
   have hintF (i : Fin n) : IntervalIntegrable (fun t ↦ ‖curveVelocity I (F s) t‖ ^ 2)
       volume (τ i.castSucc) (τ i.succ) :=
     (intervalIntegrable_congr_uIoo (hnorm i)).2 (hint i)
-  rw [← sum_energy_eq (F s) τ hintF]
+  rw [← sum_energy_adjacent_intervals (F s) τ hintF]
   exact Finset.sum_congr rfl fun i _ ↦ energy_congr ((hs i).mono (hsub i))
 
 end EnergySum
@@ -111,7 +111,7 @@ corner terms. At an interior vertex the scalar jump is the pairing with the inco
 minus the pairing with the outgoing velocity. The two smooth extensions give the same moving
 vertex by `hFG`; their tangent velocities along the pieces need not agree. -/
 theorem hasDerivAt_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
-    (hτ : StrictMono τ) {F : ℝ → ℝ → M} {G : Fin (n + 1) → ℝ → ℝ → M}
+    (hτ : Monotone τ) {F : ℝ → ℝ → M} {G : Fin (n + 1) → ℝ → ℝ → M}
     (hG : ∀ i t, t ∈ Icc (τ i.castSucc) (τ i.succ) →
       ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ G i z.1 z.2) (0, t))
     (hFG : ∀ᶠ s in 𝓝 0, ∀ i : Fin (n + 1),
@@ -128,7 +128,7 @@ theorem hasDerivAt_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
   have hd := HasDerivAt.fun_sum (u := Finset.univ) (fun i _ ↦
     hasDerivAt_energy (I := I) (F := G i)
       (a := τ i.castSucc) (b := τ i.succ) (fun t ht ↦
-      hG i t (by simpa only [uIcc_of_le (hτ (Fin.castSucc_lt_succ (i := i))).le] using ht)))
+      hG i t (by simpa only [uIcc_of_le (hτ (Fin.castSucc_le_succ i))] using ht)))
   let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)
   have heq := eventually_energy_eq_sum_of_piecewise τ hτ
@@ -147,7 +147,7 @@ theorem hasDerivAt_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
 /-- For stationary outer endpoints the first variation consists of the interior velocity-jump
 terms and the bulk acceleration integrals. No stationarity is imposed on interior vertices. -/
 theorem hasDerivAt_energy_piecewise_of_fixed_endpoints {n : ℕ} (τ : Fin (n + 2) → ℝ)
-    (hτ : StrictMono τ) {F : ℝ → ℝ → M} {G : Fin (n + 1) → ℝ → ℝ → M}
+    (hτ : Monotone τ) {F : ℝ → ℝ → M} {G : Fin (n + 1) → ℝ → ℝ → M}
     (hG : ∀ i t, t ∈ Icc (τ i.castSucc) (τ i.succ) →
       ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ G i z.1 z.2) (0, t))
     (hFG : ∀ᶠ s in 𝓝 0, ∀ i : Fin (n + 1),
@@ -162,10 +162,10 @@ theorem hasDerivAt_energy_piecewise_of_fixed_endpoints {n : ℕ} (τ : Fin (n + 
           inner ℝ (variationField I (G i) t)
             (acceleration (leviCivitaConnection I M) (G i 0) t)) 0 := by
   have hleft : τ 0 ∈ Icc (τ (0 : Fin (n + 1)).castSucc) (τ (0 : Fin (n + 1)).succ) :=
-    ⟨le_rfl, hτ.monotone (Fin.zero_le _)⟩
+    ⟨le_rfl, hτ (Fin.zero_le _)⟩
   have hright : τ (Fin.last (n + 1)) ∈
       Icc (τ (Fin.last n).castSucc) (τ (Fin.last n).succ) :=
-    ⟨hτ.monotone (Fin.le_last _), le_rfl⟩
+    ⟨hτ (Fin.le_last _), le_rfl⟩
   have haG : ∀ᶠ s in 𝓝 0, G 0 s (τ 0) = G 0 0 (τ 0) := by
     filter_upwards [hFG, ha] with s hs hs0
     rw [← hs 0 hleft, hs0, hFG.self_of_nhds 0 hleft]
