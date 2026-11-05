@@ -1,0 +1,192 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
+public import TauCeti.RingTheory.Semisimple.Schur
+
+/-!
+# Intertwiners and Schur scalars between signed ladder modules
+
+At a generic quantum parameter `q`, the signed ladder modules `L_m^ε` of `U_q(sl₂)` are pairwise
+non-isomorphic simple modules with endomorphism algebra `ℂ`. In calculations with parameterized
+families of ladder modules (such as iterated Clebsch–Gordan channels), source and target weights or
+signs often agree only propositionally. This file provides the parameter-transport isomorphism
+`LadderModule.congr` and the Schur scalar `LadderModule.homScalar` on `L_m^ε →ₗ[UqSl2 q] L_n^δ`.
+
+## Main definitions
+
+* `TauCeti.UqSl2.LadderModule.congr`: the `UqSl2 q`-linear isomorphism `L_m^ε ≃ₗ[UqSl2 q] L_n^δ`
+  attached to `m = n` and `ε = δ`, sending `v_k` to `v_k`.
+* `TauCeti.UqSl2.LadderModule.homScalar`: the `ℂ`-linear Schur scalar functional
+  `(L_m^ε →ₗ[UqSl2 q] L_n^δ) →ₗ[ℂ] ℂ`, defined as the `v₀`-coordinate of `φ v₀`.
+
+## Main results
+
+* `TauCeti.UqSl2.LadderModule.hom_eq_zero_of_ne`: Schur vanishing for distinct weights or signs.
+* `TauCeti.UqSl2.LadderModule.apply_vec_eq_homScalar_smul`: `φ v_k = homScalar φ • v_k` for all `k`.
+* `TauCeti.UqSl2.LadderModule.eq_homScalar_smul_congr`: when `m = n` and `ε = δ`, every intertwiner
+  equals `homScalar φ • (congr hm hε).toLinearMap`.
+* `TauCeti.UqSl2.LadderModule.homScalar_injective` and `homScalar_comp`: `homScalar` is injective
+  and multiplicative under composition.
+
+## References
+
+* C. Kassel, *Quantum Groups*, Graduate Texts in Mathematics 155, Section VI.3.
+-/
+
+public noncomputable section
+
+open Module
+
+namespace TauCeti.UqSl2.LadderModule
+
+variable {q : ℂ} [Fact (q ≠ 0)] {m n p : ℕ} {ε δ ζ : ℤˣ}
+
+/-! ### Parameter congruence of ladder modules -/
+
+/-- Equal highest weights and equal signs induce a canonical `UqSl2 q`-linear isomorphism
+`L_m^ε ≃ₗ[UqSl2 q] L_n^δ` preserving every ladder vector `v_j`. -/
+def congr (hm : m = n) (hε : ε = δ) : LadderModule q m ε ≃ₗ[UqSl2 q] LadderModule q n δ :=
+  LinearEquiv.cast (R := UqSl2 q) (M := fun p : ℕ × ℤˣ => LadderModule q p.1 p.2)
+    (Prod.ext hm hε : (m, ε) = (n, δ))
+
+/-- `congr` preserves the integer-indexed ladder vectors `v_j`. -/
+@[simp] theorem congr_vec (hm : m = n) (hε : ε = δ) (j : ℤ) :
+    congr (q := q) hm hε (vec q m ε j) = vec q n δ j := by subst hm hε; simp [congr]
+
+/-- `congr` reindexes the ladder basis along `finCongr`. -/
+@[simp] theorem congr_basis (hm : m = n) (hε : ε = δ) (i : Fin (m + 1)) :
+    congr (q := q) hm hε (basis q m ε i) = basis q n δ (finCongr (congrArg (· + 1) hm) i) := by
+  subst hm hε; simp [congr]
+
+/-- Inverting `congr` reverses the parameter equalities. -/
+@[simp] theorem congr_symm (hm : m = n) (hε : ε = δ) :
+    (congr (q := q) hm hε).symm = congr hm.symm hε.symm :=
+  LinearEquiv.ext fun _ => by simp [congr]
+
+/-- `congr` with reflexive equalities is the identity equivalence. -/
+@[simp] theorem congr_refl :
+    congr (q := q) (rfl : m = m) (rfl : ε = ε) = LinearEquiv.refl (UqSl2 q) (LadderModule q m ε) :=
+  LinearEquiv.ext fun _ => by simp [congr]
+
+/-- `congr` composes along transitivity of parameter equalities. -/
+@[simp] theorem congr_trans (hm₁ : m = n) (hε₁ : ε = δ) (hm₂ : n = p) (hε₂ : δ = ζ) :
+    (congr (q := q) hm₁ hε₁).trans (congr hm₂ hε₂) = congr (hm₁.trans hm₂) (hε₁.trans hε₂) :=
+  LinearEquiv.ext fun _ => by simp [congr]
+
+/-! ### Schur vanishing and the Schur scalar -/
+
+/-- At a generic parameter, every `UqSl2 q`-linear map between ladder modules with different
+highest weights or different signs is zero. -/
+theorem hom_eq_zero_of_ne (hq : IsGenericQuantumParameter q) (h : m ≠ n ∨ ε ≠ δ)
+    (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : φ = 0 := by
+  have := isSimpleModule (m := m) (ε := ε) hq
+  have := isSimpleModule (m := n) (ε := δ) hq
+  apply hom_eq_zero_of_isEmpty_linearEquiv
+  rw [← not_nonempty_iff, nonempty_linearEquiv_iff hq]; tauto
+
+/-- At a generic parameter, intertwiners between distinct highest weights vanish. -/
+theorem hom_eq_zero_of_weight_ne (hq : IsGenericQuantumParameter q) (hm : m ≠ n)
+    (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : φ = 0 :=
+  hom_eq_zero_of_ne hq (.inl hm) φ
+
+/-- At a generic parameter, intertwiners between distinct signs vanish. -/
+theorem hom_eq_zero_of_sign_ne (hq : IsGenericQuantumParameter q) (hε : ε ≠ δ)
+    (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : φ = 0 :=
+  hom_eq_zero_of_ne hq (.inr hε) φ
+
+/-- The `ℂ`-linear Schur scalar functional `(L_m^ε →ₗ[UqSl2 q] L_n^δ) →ₗ[ℂ] ℂ`, defined as the
+`v₀`-coordinate of `φ v₀` in the ladder basis of `L_n^δ`. -/
+def homScalar : (LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) →ₗ[ℂ] ℂ where
+  toFun φ := (basis q n δ).repr (φ (vec q m ε 0)) 0
+  map_add' φ ψ := by simp
+  map_smul' c φ := by simp
+
+/-- `homScalar φ` extracts the `v₀`-coordinate of `φ v₀` in the ladder basis. -/
+theorem homScalar_apply (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
+    homScalar φ = (basis q n δ).repr (φ (vec q m ε 0)) 0 := (rfl)
+
+/-- The identity intertwiner has Schur scalar `1`. -/
+@[simp] theorem homScalar_id :
+    homScalar (LinearMap.id : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m ε) = 1 := by
+  simp [homScalar_apply]
+
+/-- The parameter-transport isomorphism `congr` has Schur scalar `1`. -/
+@[simp] theorem homScalar_congr (hm : m = n) (hε : ε = δ) :
+    homScalar (congr (q := q) hm hε).toLinearMap = 1 := by simp [homScalar_apply]
+
+/-- On endomorphisms of `L_m^ε`, `homScalar` agrees with `endAlgEquivSelfOfIsSimpleModule`. -/
+theorem homScalar_eq_endAlgEquivSelfOfIsSimpleModule (hq : IsGenericQuantumParameter q)
+    (φ : Module.End (UqSl2 q) (LadderModule q m ε)) :
+    homScalar φ =
+      have := isSimpleModule (m := m) (ε := ε) hq
+      endAlgEquivSelfOfIsSimpleModule (k := ℂ) φ := by
+  have := isSimpleModule (m := m) (ε := ε) hq
+  rw [homScalar_apply, ← endAlgEquivSelfOfIsSimpleModule_smul (k := ℂ) φ (vec q m ε 0),
+    map_smul, Finsupp.smul_apply, basis_repr_vec]; simp
+
+/-- At a generic parameter, every `UqSl2 q`-endomorphism of `L_m^ε` acts by `homScalar φ`. -/
+theorem end_apply_eq_homScalar_smul (hq : IsGenericQuantumParameter q)
+    (φ : Module.End (UqSl2 q) (LadderModule q m ε)) (x : LadderModule q m ε) :
+    φ x = homScalar φ • x := by
+  have := isSimpleModule (m := m) (ε := ε) hq
+  rw [homScalar_eq_endAlgEquivSelfOfIsSimpleModule hq φ, endAlgEquivSelfOfIsSimpleModule_smul]
+
+/-- At a generic parameter, when `m = n` and `ε = δ`, every `φ : L_m^ε →ₗ[UqSl2 q] L_n^δ` acts as
+`homScalar φ • congr hm hε x`. -/
+theorem apply_eq_homScalar_smul_congr (hq : IsGenericQuantumParameter q)
+    (hm : m = n) (hε : ε = δ) (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ)
+    (x : LadderModule q m ε) : φ x = homScalar φ • congr hm hε x := by
+  subst hm hε; rw [congr_refl]; exact end_apply_eq_homScalar_smul hq φ x
+
+/-- At a generic parameter, when `m = n` and `ε = δ`, every `φ : L_m^ε →ₗ[UqSl2 q] L_n^δ` equals
+`homScalar φ • (congr hm hε).toLinearMap`. -/
+theorem eq_homScalar_smul_congr (hq : IsGenericQuantumParameter q)
+    (hm : m = n) (hε : ε = δ) (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
+    φ = homScalar φ • (congr hm hε).toLinearMap :=
+  LinearMap.ext (apply_eq_homScalar_smul_congr hq hm hε φ)
+
+/-- At a generic parameter, the Schur scalar vanishes whenever the weights or signs differ. -/
+theorem homScalar_eq_zero_of_ne (hq : IsGenericQuantumParameter q) (h : m ≠ n ∨ ε ≠ δ)
+    (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : homScalar φ = 0 := by
+  rw [hom_eq_zero_of_ne hq h φ, map_zero]
+
+/-- At a generic parameter, every `φ : L_m^ε →ₗ[UqSl2 q] L_n^δ` acts on ladder vectors by
+`φ v_k = homScalar φ • v_k` for every integer `k`. -/
+theorem apply_vec_eq_homScalar_smul (hq : IsGenericQuantumParameter q)
+    (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) (k : ℤ) :
+    φ (vec q m ε k) = homScalar φ • vec q n δ k := by
+  by_cases h : m = n ∧ ε = δ
+  · rw [apply_eq_homScalar_smul_congr hq h.1 h.2, congr_vec]
+  · rw [hom_eq_zero_of_ne hq (by tauto) φ, map_zero, LinearMap.zero_apply, zero_smul]
+
+/-- At a generic parameter, intertwiners between signed ladder modules are determined by their
+Schur scalar. -/
+theorem homScalar_injective (hq : IsGenericQuantumParameter q) :
+    Function.Injective (homScalar (q := q) (m := m) (ε := ε) (n := n) (δ := δ)) := fun _ _ h =>
+  hom_ext hq <| by rw [apply_vec_eq_homScalar_smul hq, apply_vec_eq_homScalar_smul hq, h]
+
+/-- At a generic parameter, an intertwiner vanishes iff its Schur scalar vanishes. -/
+@[simp] theorem homScalar_eq_zero_iff (hq : IsGenericQuantumParameter q)
+    {φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ} : homScalar φ = 0 ↔ φ = 0 :=
+  map_eq_zero_iff homScalar (homScalar_injective hq)
+
+/-- If `φ v₀ = c • v₀`, then `homScalar φ = c`. -/
+theorem homScalar_eq_of_apply_vec_zero
+    {φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ} {c : ℂ}
+    (h : φ (vec q m ε 0) = c • vec q n δ 0) : homScalar φ = c := by simp [homScalar_apply, h]
+
+/-- At a generic parameter, `homScalar` is multiplicative under composition of intertwiners. -/
+@[simp] theorem homScalar_comp (hq : IsGenericQuantumParameter q)
+    (ψ : LadderModule q n δ →ₗ[UqSl2 q] LadderModule q p ζ)
+    (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
+    homScalar (ψ.comp φ) = homScalar ψ * homScalar φ :=
+  homScalar_eq_of_apply_vec_zero <| by
+    rw [LinearMap.comp_apply, apply_vec_eq_homScalar_smul hq φ,
+      LinearMapClass.map_smul_of_tower, apply_vec_eq_homScalar_smul hq ψ, smul_smul, mul_comm]
+
+end TauCeti.UqSl2.LadderModule
