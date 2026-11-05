@@ -27,7 +27,7 @@ file connects the local analytic Weierstrass preparation and division theorems o
 Mathlib's formal power series Weierstrass API (`PowerSeries.IsWeierstrassFactorization`,
 `PowerSeries.IsWeierstrassDivision`) and deduces uniqueness, polynomial divisibility reflection,
 polynomial quotient isomorphisms, and flatness and finiteness of local hypersurface quotients over
-the base stalk.
+the base stalk. The uniqueness statements are also restated for functions rather than germs.
 
 ## Main definitions
 
@@ -60,6 +60,11 @@ the base stalk.
   preparation and division in `𝒪_{E × ℂ, (x₀, w₀)}` (without `FiniteDimensional ℂ E`, deduced from
   maximal-ideal Hausdorffness via `PowerSeries.IsWeierstrassFactorization.elim` and
   `PowerSeries.IsWeierstrassDivision.elim`).
+* `TauCeti.eventuallyEq_of_weierstrassPreparation`, `TauCeti.eventuallyEq_of_weierstrassDivision`:
+  the same uniqueness for functions, stated without stalks: two Weierstrass preparations of a
+  holomorphic function near `(x₀, w₀)` have the same coefficient and unit germs, and two divisions
+  by the same Weierstrass polynomial have the same quotient and remainder germs. They are deduced
+  from `weierstrassPreparation_unique` and `weierstrassDivision_unique_of_isDistinguishedAt`.
 * `TauCeti.holomorphicStructureSheaf.evalVertical_dvd_iff_of_isDistinguishedAt`: divisibility by a
   distinguished polynomial `P` in `(𝒪_{E, x₀})[X]` agrees with divisibility by
   `evalVertical x₀ w₀ P` in `𝒪_{E × ℂ, (x₀, w₀)}`.
