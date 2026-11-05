@@ -105,6 +105,10 @@ def endScale : Puncture → ℂ
 theorem endScale_ne_zero (q : Puncture) : q.endScale ≠ 0 := by
   cases q <;> norm_num
 
+/-- The ends at the finite punctures have scale of norm `1 / 2`. -/
+theorem norm_endScale {q : Puncture} (hq : q ≠ inf) : ‖q.endScale‖ = 1 / 2 := by
+  cases q <;> simp_all
+
 /-- The ends other than the one at `∞` are positive. -/
 theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
   cases q <;> simp_all
@@ -443,6 +447,25 @@ theorem truncation_eq (R : ℝ) :
     refine ⟨hw₀, hw₁, fun q => ?_⟩
     cases q
     exacts [(h₀ hw₀).2 ha, (h₁ hw₁).2 hb, (h₂ hw₀).2 hc]
+
+/-- For `R ≥ 0`, the points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in
+the open disc `‖w‖ < 2 exp (2π)`: they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`. -/
+theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} (hR : 0 ≤ R) :
+    Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ truncation R ⊆
+      Metric.ball 0 (2 * Real.exp (2 * π)) := by
+  rintro w ⟨hwD, hwT⟩
+  have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have h1 : 1 ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
+  rw [truncation_eq] at hwT
+  have hnorm := norm_sub_norm_le w 1
+  rw [norm_one] at hnorm
+  rw [mem_ball_zero_iff]
+  by_cases h₀ : Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖
+  · have h₁ : ‖w - 1‖ < Real.exp (-(2 * π * R)) / 2 := by
+      by_contra! h
+      exact hwT ⟨⟨h₀, h⟩, hwD⟩
+    linarith
+  · linarith
 
 /-- The truncation of the thrice-punctured sphere is compact. -/
 theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
