@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
 public import TauCeti.Topology.FiberBundle.Principal
@@ -30,7 +31,12 @@ is `C^n` when multiplication of `G` is (`ContMDiff.totalSpaceMk_smul`), and the 
 points over a common base point when `G` is a `C^n` Lie group (`ContMDiff.division`). As for
 continuity in `TauCeti.Topology.FiberBundle.Principal`, both are stated for families of points
 `⟨f x, p x⟩` of the total space over a varying base point `f x`, so that no cast between fibres is
-needed; none of them uses smoothness of the coordinate changes. Consequently the equivariant
+needed; none of them uses smoothness of the coordinate changes. Directly on
+`ManifoldTotalSpace G P`, the fibrewise right action `(x, g) ↦ op g • x` is jointly `C^n`
+(`TauCeti.PrincipalBundle.contMDiff_op_smul`), providing a
+`ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P)` instance
+(`TauCeti.PrincipalBundle.instContMDiffConstSMul`) and `C^n` orbit maps `g ↦ op g • x`
+(`TauCeti.PrincipalBundle.contMDiff_orbit`). Consequently the equivariant
 trivialization `TauCeti.PrincipalBundle.trivializationOfSection` determined by a `C^n` local
 section is `C^n` with `C^n` inverse (`TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection`
 and `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`).
@@ -49,7 +55,9 @@ which is its dimension when that model space is finite-dimensional
 
 * `TauCeti.PrincipalBundle.contMDiffFiberBundle_iff`: a principal bundle is a `C^n` fibre bundle
   if and only if its transition functions `b ↦ e.coordChange e' b 1` are `C^n`.
-* `ContMDiff.totalSpaceMk_smul`: the right action of a principal bundle is `C^n`.
+* `ContMDiff.totalSpaceMk_smul`, `TauCeti.PrincipalBundle.contMDiff_op_smul`,
+  `TauCeti.PrincipalBundle.instContMDiffConstSMul`: joint and pointwise `C^n` smoothness of the
+  right action of a principal bundle.
 * `ContMDiff.division`: the division map of a principal bundle is `C^n`.
 * `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection` and
   `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`: a `C^n` local section
@@ -156,6 +164,52 @@ theorem ContMDiff.totalSpaceMk_smul [ContMDiffMul IG n G]
     (hg : ContMDiff IM IG n g) :
     ContMDiff IM (IB.prod IG) n fun x ↦ ManifoldTotalSpace.homeomorph G P ⟨f x, op (g x) • p x⟩ :=
   fun x ↦ (hp x).totalSpaceMk_smul (hg x)
+
+namespace TauCeti.PrincipalBundle
+
+section SmoothAction
+
+variable [ContMDiffMul IG n G]
+
+/-- **The right action on the charted total space of a principal bundle is jointly `C^n` whenever
+group multiplication is `C^n`.** -/
+theorem contMDiff_op_smul :
+    ContMDiff ((IB.prod IG).prod IG) (IB.prod IG) n
+      (fun p : ManifoldTotalSpace G P × G ↦ op p.2 • p.1) := by
+  have hp : ContMDiff ((IB.prod IG).prod IG) (IB.prod IG) n
+      (fun p : ManifoldTotalSpace G P × G ↦
+        ManifoldTotalSpace.homeomorph G P
+          ⟨((ManifoldTotalSpace.homeomorph G P).symm p.1).proj,
+            ((ManifoldTotalSpace.homeomorph G P).symm p.1).2⟩) :=
+    contMDiff_fst.congr fun p ↦ by simp only [TotalSpace.eta, Homeomorph.apply_symm_apply]
+  exact (hp.totalSpaceMk_smul contMDiff_snd).congr fun ⟨x, g⟩ ↦ by
+    obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
+    rw [ManifoldTotalSpace.smul_homeomorph, Homeomorph.symm_apply_apply]
+
+/-- Each element of `Gᵐᵒᵖ` acts on `ManifoldTotalSpace G P` by a `C^n` map (`ContMDiffConstSMul`),
+so right translation by any `g : G` is `C^n` (packaged as a diffeomorphism by
+`Diffeomorph.constSmul` in `TauCeti.Geometry.Manifold.Algebra.SMul`). -/
+instance instContMDiffConstSMul :
+    ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P) where
+  contMDiff_const_smul γ := by
+    have h := (contMDiff_op_smul (n := n) (G := G) (P := P) (IB := IB) (IG := IG)).comp
+      (contMDiff_id.prodMk (contMDiff_const (c := unop γ)))
+    exact h.congr fun x ↦ by simp
+
+/-- Every right orbit map `g ↦ op g • x` on `ManifoldTotalSpace G P` is `C^n`. -/
+theorem contMDiff_orbit (x : ManifoldTotalSpace G P) :
+    ContMDiff IG (IB.prod IG) n (fun g : G ↦ op g • x) :=
+  contMDiff_op_smul.comp (contMDiff_const.prodMk contMDiff_id)
+
+/-- When `n ≠ 0`, every right orbit map `g ↦ op g • x` on `ManifoldTotalSpace G P` is differentiable
+at every `g : G`. -/
+theorem mdifferentiableAt_orbit (hn : n ≠ 0) (x : ManifoldTotalSpace G P) (g : G) :
+    MDifferentiableAt IG (IB.prod IG) (fun h : G ↦ op h • x) g :=
+  ((contMDiff_orbit (n := n) x) g).mdifferentiableAt hn
+
+end SmoothAction
+
+end TauCeti.PrincipalBundle
 
 /-- **The division map of a principal bundle is `C^n`**, for the charts through the fibre: for two
 `C^n` families of points `⟨f x, p x⟩` and `⟨f x, q x⟩` of the total space over a common base
