@@ -29,7 +29,7 @@ equation is equivalent to the standard positive matrices `geometricMean S⁻¹ʳ
 the identity (`Matrix.PosDef.sum_smul_geometricMean_ringInverse_eq_one_iff`).
 
 This file proves that a positive-definite solution exists as soon as one matrix `C j₀` with a
-positive weight is positive definite (`Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`).
+positive weight is positive definite (`TauCeti.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`).
 The weights need not sum to `1`, and the other matrices may be singular.
 
 The solution is a fixed point of the *Bures map* `F S = ∑ j, w j • √(√S * C j * √S)` on an
@@ -44,7 +44,7 @@ positive definite because `α > 0`.
 
 ## Main statements
 
-* `Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`: the fixed-point equation has a
+* `TauCeti.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`: the fixed-point equation has a
   positive-definite solution when some positively weighted `C j₀` is positive definite.
 
 ## References
@@ -67,6 +67,12 @@ variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] {J : Type*} [Fintype J]
   {w : J → ℝ≥0} {C : J → Matrix n n 𝕜} {S : Matrix n n 𝕜}
 
 open scoped Classical in
+/-- Conjugating the scalar `c` by `√S` gives `c • S`. -/
+private theorem sqrt_mul_algebraMap_mul_sqrt (hS : 0 ≤ S) (c : ℝ) :
+    CFC.sqrt S * algebraMap ℝ _ c * CFC.sqrt S = c • S := by
+  rw [← Algebra.commutes, mul_assoc, CFC.sqrt_mul_sqrt_self S hS, ← Algebra.smul_def]
+
+open scoped Classical in
 /-- **The upper bound.** If `C j ≤ c j • 1` and `0 ≤ S ≤ β • 1`, then the Bures map at `S` is at
 most `(∑ j, w j * √(c j)) * √β`. -/
 private theorem sum_smul_sqrt_le {c : J → ℝ} (hc : ∀ j, 0 ≤ c j)
@@ -79,8 +85,7 @@ private theorem sum_smul_sqrt_le {c : J → ℝ} (hc : ∀ j, 0 ≤ c j)
     refine CFC.sqrt_le_algebraMap ?_
     -- Conjugating `C j ≤ c j` by `√S` gives `√S * C j * √S ≤ c j • S`.
     have h := star_left_conjugate_le_conjugate (hCc j) (CFC.sqrt S)
-    rw [(CFC.sqrt_nonneg S).isSelfAdjoint.star_eq, ← Algebra.commutes,
-      mul_assoc (algebraMap ℝ _ (c j)), CFC.sqrt_mul_sqrt_self S hS, ← Algebra.smul_def] at h
+    rw [(CFC.sqrt_nonneg S).isSelfAdjoint.star_eq, sqrt_mul_algebraMap_mul_sqrt hS] at h
     rw [map_mul, ← Algebra.smul_def]
     exact h.trans (smul_le_smul_of_nonneg_left hSβ (hc j))
   calc ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S)
@@ -100,8 +105,7 @@ private theorem algebraMap_le_sum_smul_sqrt (j₀ : J) {κ α : ℝ} (hκ : 0 �
     refine CFC.algebraMap_le_sqrt ?_
     -- Conjugating `κ ≤ C j₀` by `√S` gives `κ • S ≤ √S * C j₀ * √S`.
     have h := star_left_conjugate_le_conjugate hCκ (CFC.sqrt S)
-    rw [(CFC.sqrt_nonneg S).isSelfAdjoint.star_eq, ← Algebra.commutes,
-      mul_assoc (algebraMap ℝ _ κ), CFC.sqrt_mul_sqrt_self S hS, ← Algebra.smul_def] at h
+    rw [(CFC.sqrt_nonneg S).isSelfAdjoint.star_eq, sqrt_mul_algebraMap_mul_sqrt hS] at h
     rw [map_mul, ← Algebra.smul_def]
     exact (smul_le_smul_of_nonneg_left hSα hκ).trans h
   calc algebraMap ℝ (Matrix n n 𝕜) ((w j₀ : ℝ) * √(κ * α))
@@ -127,6 +131,14 @@ private theorem continuousOn_sum_smul_sqrt (hC : ∀ j, (C j).PosSemidef) :
   refine continuousOn_finsetSum _ fun j _ ↦ (continuous_const_smul _).comp_continuousOn ?_
   exact hsqrt.comp ((hsqrt.mul continuousOn_const).mul hsqrt) fun S _ ↦
     conjugate_nonneg_of_nonneg (hC j).nonneg (CFC.sqrt_nonneg S)
+
+end Matrix
+
+namespace TauCeti
+
+open Matrix
+
+variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] {J : Type*} [Fintype J] {C : J → Matrix n n 𝕜}
 
 open scoped Classical ContinuousFunctionalCalculus in
 /-- **Existence of a positive-definite solution of the Bures–Wasserstein fixed-point equation.**
@@ -155,17 +167,14 @@ theorem exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt (w : J → ℝ≥0)
   have hα : 0 < α := by positivity
   have hαβ : α ≤ β := le_max_right _ _
   have hσ : σ ≤ √β := Real.le_sqrt_of_sq_le (le_max_left _ _)
-  have hmono {a b : ℝ} (h : a ≤ b) : algebraMap ℝ (Matrix n n 𝕜) a ≤ algebraMap ℝ _ b := by
-    rw [← sub_nonneg, ← map_sub]
-    exact algebraMap_nonneg _ (sub_nonneg.2 h)
   set K := Set.Icc (algebraMap ℝ (Matrix n n 𝕜) α) (algebraMap ℝ _ β)
   have hK0 {S : Matrix n n 𝕜} (hS : S ∈ K) : 0 ≤ S :=
     (algebraMap_nonneg _ hα.le).trans hS.1
   have hmaps : Set.MapsTo
       (fun S ↦ ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S)) K K := by
-    refine fun S hS ↦ ⟨le_trans (hmono (le_of_eq ?_))
+    refine fun S hS ↦ ⟨le_trans (algebraMap_mono (Matrix n n 𝕜) (le_of_eq ?_))
       (algebraMap_le_sum_smul_sqrt j₀ hκ.le hCκ (hK0 hS) hS.1),
-      (sum_smul_sqrt_le hc hCc (hK0 hS) hS.2).trans (hmono ?_)⟩
+      (sum_smul_sqrt_le hc hCc (hK0 hS) hS.2).trans (algebraMap_mono (Matrix n n 𝕜) ?_)⟩
     · rw [show κ * α = ((w j₀ : ℝ) * κ) ^ 2 by ring, Real.sqrt_sq (by positivity), hαdef]
       ring
     · calc σ * √β ≤ √β * √β := by gcongr
@@ -176,12 +185,12 @@ theorem exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt (w : J → ℝ≥0)
       (fun S ↦ ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S)) S := by
     open scoped Matrix.Norms.L2Operator in
     let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-    exact TauCeti.brouwerFixedPoint_compactConvex_continuousOn isCompact_Icc (convex_Icc _ _)
-      ⟨_, Set.left_mem_Icc.2 (hmono hαβ)⟩ ((continuousOn_sum_smul_sqrt hC).mono fun S ↦ hK0)
-      hmaps
+    exact brouwerFixedPoint_compactConvex_continuousOn isCompact_Icc (convex_Icc _ _)
+      ⟨_, Set.left_mem_Icc.2 (algebraMap_mono (Matrix n n 𝕜) hαβ)⟩
+      ((continuousOn_sum_smul_sqrt hC).mono fun S ↦ hK0) hmaps
   refine ⟨S, isStrictlyPositive_iff_posDef.1 ?_, hSF.symm⟩
   have hSa := (hK0 hSK).isSelfAdjoint
   exact (StarOrderedRing.isStrictlyPositive_iff_spectrum_pos S hSa).2 fun x hx ↦
     hα.trans_le ((algebraMap_le_iff_le_spectrum (ha := hSa)).1 hSK.1 x hx)
 
-end Matrix
+end TauCeti

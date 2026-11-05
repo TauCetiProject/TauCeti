@@ -46,7 +46,7 @@ lower bound. Singular covariances `C j` are allowed: the pseudoinverse `(A j)⁺
 range of `A j`, which carries the centred `j`th coordinate almost surely.
 
 When an input with positive weight has a positive-definite covariance, the fixed-point equation
-does have a positive-definite solution (`Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`),
+does have a positive-definite solution (`TauCeti.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt`),
 so the barycenter of the Gaussian laws `N(m j, C j)` exists, is unique, and is the Gaussian law with
 mean `mbar` and that covariance. Two positive-definite solutions give the same barycenter, hence
 the same covariance, so the solution is unique as well.
@@ -297,7 +297,7 @@ theorem Probability.exists_posDef_frechetBarycenters_sum_smul_dirac_multivariate
       S = ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S) ∧
       frechetBarycenters 2 (∑ j, w j • Measure.dirac (gaussianWassersteinLaw (m j) (C j))) =
         {gaussianWassersteinLaw (∑ j, (w j : ℝ) • m j) S} := by
-  obtain ⟨S, hS, hfix⟩ := Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt w hC hj₀ hCj₀
+  obtain ⟨S, hS, hfix⟩ := exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt w hC hj₀ hCj₀
   exact ⟨S, hS, hfix,
     frechetBarycenters_sum_smul_dirac_multivariateGaussian hw m hC hj₀ hCj₀ hS hfix⟩
 
@@ -315,7 +315,7 @@ theorem existsUnique_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt (hw : ∑ j, w j 
     ∃! S : Matrix ι ι ℝ, S.PosDef ∧
       S = ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S) := by
   classical
-  obtain ⟨S, hS, hfix⟩ := Matrix.exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt w hC hj₀ hCj₀
+  obtain ⟨S, hS, hfix⟩ := exists_posDef_eq_sum_smul_sqrt_sqrt_mul_mul_sqrt w hC hj₀ hCj₀
   refine ⟨S, ⟨hS, hfix⟩, fun T ⟨hT, hfixT⟩ ↦ ?_⟩
   -- Both Gaussian laws are the unique barycenter, so their covariances agree.
   have h := Set.singleton_eq_singleton_iff.1
