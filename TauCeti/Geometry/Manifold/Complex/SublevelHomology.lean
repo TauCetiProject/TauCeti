@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.Morse.SquaredDistance
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 public import TauCeti.Topology.Maps.Proper.Metric
 
+import TauCeti.Topology.Maps.Proper.Basic
+
 /-!
 # Homology of pseudoconvex Morse functions and of affine complete intersections
 
@@ -37,11 +39,13 @@ statements show that a manifold with a proper, bounded below, strongly `q`-pseud
 function has no homology above degree `n + q`
 (`TauCeti.IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt`); the extension to
 arbitrary smooth strongly `q`-pseudoconvex exhaustions via Morse approximation is carried out in
-`TauCeti/Geometry/Manifold/Complex/ExhaustionHomology.lean`. For a closed
-holomorphic embedding into a finite-dimensional complex inner product space, the squared distance
-from almost every point is such a function with `q = 0`, so a closed complex submanifold of complex
-dimension `n` has no homology above degree `n`
-(`TauCeti.isZero_singularHomology_of_isClosedEmbedding`). This applies in particular to a smooth
+`TauCeti/Geometry/Manifold/Complex/ExhaustionHomology.lean`. For a proper holomorphic immersion into
+a proper complex inner product space (and in particular a closed holomorphic embedding into a
+finite-dimensional complex inner product space), the squared distance from almost every point is
+such a function with `q = 0`, so a complex `n`-manifold admitting a proper holomorphic immersion has
+no homology above degree `n`
+(`TauCeti.isZero_singularHomology_of_isProperMap_holomorphic_immersion`,
+`TauCeti.isZero_singularHomology_of_isClosedEmbedding`). This applies in particular to a smooth
 affine complete intersection (`TauCeti.isZero_singularHomology_affineZeroLocus`). These are the
 homological forms of the theorem of Andreotti and Frankel, in Milnor's Morse-theoretic proof, that
 a closed complex submanifold of `ℂᴺ` of complex dimension `n` has the homotopy type of a CW complex
@@ -63,6 +67,9 @@ dimension at most `n + q`.
 * `TauCeti.IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt`: a manifold with a
   proper, bounded below, strongly `q`-pseudoconvex Morse function has no homology above degree
   `n + q`.
+* `TauCeti.isZero_singularHomology_of_isProperMap_holomorphic_immersion`: Andreotti–Frankel
+  homology vanishing above the complex dimension along a proper holomorphic immersion into a proper
+  complex inner product space.
 * `TauCeti.isZero_singularHomology_of_isClosedEmbedding`: a closed complex submanifold of a
   finite-dimensional complex inner product space has no homology above its complex dimension.
 * `TauCeti.isZero_singularHomology_affineZeroLocus`: a smooth affine complete intersection has no
@@ -194,6 +201,28 @@ theorem IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt
     (fun x hx ↦ (hq x hx).manifoldMorseIndex_le (hf.contMDiff x |>.of_le (by norm_cast))
       (mem_criticalPoints.1 hx)) R hk
 
+/-- **Andreotti–Frankel theorem for proper holomorphic immersions.** If a complex manifold `M` of
+complex dimension `n` admits a smooth proper holomorphic immersion into a proper complex inner
+product space `F`, then `Hₖ(M; R) = 0` for `k > n` and every coefficient object `R` of an abelian
+category with coproducts and exact sequential colimits. -/
+theorem isZero_singularHomology_of_isProperMap_holomorphic_immersion {A : Type v} [Category.{w} A]
+    [Abelian A] [HasCoproducts.{u} A] [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A]
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F]
+    {i : M → F} (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
+    (hinj : ∀ x, Function.Injective (mvfderiv 𝓘(ℂ, E) i x)) (hip : IsProperMap i)
+    (R : A) {k : ℕ} (hk : finrank ℂ E < k) :
+    IsZero (((singularHomologyFunctor A k).obj R).obj (TopCat.of M)) := by
+  have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
+  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
+  have : SigmaCompactSpace M := hip.sigmaCompactSpace
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact E M
+  have : IsManifold 𝓘(ℝ, E) ∞ M :=
+    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
+  obtain ⟨a, ha, hidx⟩ := exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj
+  exact ha.isZero_singularHomology_of_manifoldMorseIndex_le
+    ((isProperMap_norm_sq_sub_comp_iff hi.continuous a).2 hip)
+    ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩ hidx R hk
+
 /-- **A closed complex submanifold of a complex inner product space has no homology above its
 complex dimension.** Let `i` be a holomorphic immersion of a complex manifold of complex
 dimension `n` into a finite-dimensional complex inner product space, which is a closed embedding.
@@ -206,13 +235,9 @@ theorem isZero_singularHomology_of_isClosedEmbedding {A : Type v} [Category.{w} 
     (hinj : ∀ x, Function.Injective (mvfderiv 𝓘(ℂ, E) i x)) (hclosed : IsClosedEmbedding i)
     (R : A) {k : ℕ} (hk : finrank ℂ E < k) :
     IsZero (((singularHomologyFunctor A k).obj R).obj (TopCat.of M)) := by
-  have : SecondCountableTopology M := hclosed.isEmbedding.secondCountableTopology
-  have : IsManifold 𝓘(ℝ, E) ∞ M :=
-    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
-  obtain ⟨a, ha, hidx⟩ := exists_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le hi
-    fun x ↦ injective_mvfderiv_iff.1 (hinj x)
-  exact ha.isZero_singularHomology_of_manifoldMorseIndex_le
-    (isProperMap_norm_sq_sub_comp hclosed a) ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩ hidx R hk
+  have : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
+  exact isZero_singularHomology_of_isProperMap_holomorphic_immersion hi hinj hclosed.isProperMap
+    R hk
 
 /-- **A smooth affine complete intersection has no homology above its complex dimension.** Let
 `X ⊆ ℂ^σ` be the common zero set of a polynomial family `p : ι → ℂ[X_σ]` whose Jacobian is

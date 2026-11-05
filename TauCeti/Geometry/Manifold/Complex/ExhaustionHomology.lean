@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.Pseudoconvex.Strong
-public import TauCeti.Geometry.Manifold.Complex.SublevelHomology
+public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 
+import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
@@ -19,7 +20,8 @@ in the strong `C²` Whitney topology
 (`TauCeti.exists_strongCkControl_isManifoldStronglyPseudoconvexAt`), while Morse functions are
 dense in the strong `C^∞` Whitney topology with prescribed `C⁰` error and relative to an open
 neighbourhood of any closed set where the function is already Morse
-(`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). Combining both shows that any smooth proper
+(`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`,
+`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`). Combining both shows that any smooth proper
 bounded-below strongly `q`-pseudoconvex exhaustion can be perturbed within `C⁰` distance `1` (and
 away from an already-Morse closed set) to a proper bounded-below strongly `q`-pseudoconvex Morse
 exhaustion whose critical points all have real Morse index at most `n + q`
@@ -30,17 +32,11 @@ Combining this Morse approximation with
 vanishing `Hₖ(M; R) = 0` for `k > n + q` on any complex manifold carrying an arbitrary smooth
 proper bounded-below everywhere strongly `q`-pseudoconvex exhaustion, without assuming the
 exhaustion is Morse
-(`TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`), with
+(`TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`, and for
+strictly plurisubharmonic exhaustions
+`TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`), with
 coefficients in any abelian category with coproducts and exact sequential colimits (in particular
 any module over a ring, such as `ℤ`).
-
-Specializing to `q = 0`
-(`TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`) and
-applying the squared distance `‖i x - 0‖²` along a smooth proper holomorphic immersion into a
-proper complex inner product space gives the homological Andreotti–Frankel theorem for proper
-holomorphic immersions (`TauCeti.isZero_singularHomology_of_isProperMap_holomorphic_immersion`),
-complementing the closed-embedding and affine complete intersection theorems in
-`TauCeti/Geometry/Manifold/Complex/SublevelHomology.lean`.
 
 ## Main results
 
@@ -51,8 +47,6 @@ complementing the closed-embedding and affine complete intersection theorems in
   `TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`:
   vanishing of `Hₖ(M; R)` above degree `n + q` (and above `n` in the strictly plurisubharmonic
   case) for smooth non-Morse exhaustions.
-* `TauCeti.isZero_singularHomology_of_isProperMap_holomorphic_immersion`: Andreotti–Frankel
-  homology vanishing above the complex dimension along a proper holomorphic immersion.
 
 ## References
 
@@ -67,14 +61,12 @@ public section
 
 noncomputable section
 
-open AlgebraicTopology CategoryTheory ContMDiffMap Function Limits Module Set Topology
+open AlgebraicTopology CategoryTheory ContMDiffMap Limits Module Set Topology
 open scoped ContDiff Manifold
 
 universe u v w
 
 namespace TauCeti
-
-section Pseudoconvex
 
 variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M] [T2Space M]
@@ -121,16 +113,17 @@ theorem _root_.ContMDiffMap.exists_isMorse_isProperMap_bddBelow_isManifoldStrong
       (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
       ∀ x ∈ criticalPoints 𝓘(ℝ, E) g, manifoldMorseIndex 𝓘(ℝ, E) g x ≤ finrank ℂ E + q := by
   have : SigmaCompactSpace M := hp.sigmaCompactSpace
-  obtain ⟨g, hgm, hgf, hgs, hgq, hgidx⟩ :=
-    f.exists_isMorse_mem_ball_sub_compl_isManifoldStronglyPseudoconvexAt q hf
-      continuous_const (fun _ ↦ one_pos) hC hV hCV hfV
-  have hgp : IsProperMap g := hp.of_dist_le g.contMDiff.continuous (C := 1) fun x ↦ by
-    rw [Real.dist_eq, abs_sub_comm]
-    exact (hgf x).le
+  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
+  have : IsManifold 𝓘(ℝ, E) ∞ M :=
+    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
+  obtain ⟨c, -, hc⟩ :=
+    exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by norm_cast) q f hf
+  obtain ⟨g, hg, hgm, hgp, hgf, hgs⟩ := f.exists_isMorse_isProperMap_mem_ball c hp hC hV hCV hfV
   obtain ⟨b, hb⟩ := hbdd
-  refine ⟨g, hgm, hgp, ⟨b - 1, ?_⟩, hgf, hgs, hgq, hgidx⟩
-  rintro _ ⟨x, rfl⟩
-  linarith [(abs_lt.1 (hgf x)).1, hb (mem_range_self x)]
+  refine ⟨g, hgm, hgp, ⟨b - 1, forall_mem_range.2 fun x ↦ by
+    linarith [(abs_lt.1 (hgf x)).1, hb (mem_range_self x)]⟩, hgf, hgs, fun x ↦ hc g hg x,
+    fun x hx ↦ (hc g hg x).manifoldMorseIndex_le (g.contMDiff x |>.of_le (by norm_cast))
+      (mem_criticalPoints.1 hx)⟩
 
 /-- **Homology vanishing on manifolds with a smooth strongly `q`-pseudoconvex exhaustion.** If `M`
 carries a smooth proper bounded-below everywhere strongly `q`-pseudoconvex function `f : M → ℝ`
@@ -163,41 +156,5 @@ theorem isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharm
     IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) :=
   isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp hbdd
     (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) R (by omega)
-
-end Pseudoconvex
-
-/-! ### Andreotti–Frankel homology vanishing along proper immersions -/
-
-section AndreottiFrankel
-
-variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M] [T2Space M]
-
-/-- **Andreotti–Frankel theorem for proper holomorphic immersions.** If a complex manifold `M` of
-complex dimension `n` admits a smooth proper holomorphic immersion into a proper complex inner
-product space `F`, then `Hₖ(M; R) = 0` for `k > n` and every coefficient object `R` of an abelian
-category with coproducts and exact sequential colimits. -/
-theorem isZero_singularHomology_of_isProperMap_holomorphic_immersion {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F]
-    {i : M → F} (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
-    (hinj : ∀ x, Injective (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) i x)) (hip : IsProperMap i)
-    {𝒜 : Type v} [Category.{w} 𝒜] [Abelian 𝒜] [HasCoproducts.{u} 𝒜]
-    [HasColimitsOfShape ℕ 𝒜] [HasExactColimitsOfShape ℕ 𝒜] (R : 𝒜) {n : ℕ}
-    (hn : finrank ℂ E < n) :
-    IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) := by
-  have hiR : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ i := by simpa using hi.restrictScalars ℝ
-  have hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ (fun x ↦ ‖i x - 0‖ ^ 2) :=
-    ((contDiff_norm_sq ℂ).restrict_scalars ℝ).contMDiff.comp (hiR.sub contMDiff_const)
-  have hp : IsProperMap (fun x ↦ ‖i x - 0‖ ^ 2) :=
-    (isProperMap_norm_sq_sub_comp_iff hi.continuous 0).2 hip
-  have hbdd : BddBelow (range fun x ↦ ‖i x - 0‖ ^ 2) :=
-    ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩
-  have hpsh (x : M) : IsManifoldStrictlyPlurisubharmonicAt E (fun y ↦ ‖i y - 0‖ ^ 2) x :=
-    (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff (hi.of_le (by norm_cast) x)).2
-      (injective_mvfderiv_iff.2 (hinj x))
-  exact isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt
-    hf hp hbdd hpsh R hn
-
-end AndreottiFrankel
 
 end TauCeti
