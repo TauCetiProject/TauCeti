@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.DGNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
-import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 
 /-!
@@ -21,14 +20,14 @@ spaces into `Y`. In particular an object whose incoming Hom complexes vanish, su
 complex in a dg category of cochain complexes, is a terminal vertex; this gives the terminal half of
 the zero objects of the `∞`-categories presented by dg categories of complexes.
 
-The proof works with maps `∂Δ[n + 1] ⟶ N_dg(C)` directly. Their faces glue to coherences on all
-proper subsets of the vertices (`TauCeti.DGNerve.exists_coherences_of_faces`), and the map extends
-to `Δ[n + 1]` exactly when the right-hand side of the dg nerve equation for the one missing
-coherence, a cycle of degree `1 - n` in `Hom_C(X 0, X (n + 1))`, is a boundary
-(`TauCeti.DGNerve.Coherences.exists_simplex_iff_of_boundary`). For the converse, a cycle `z` of
-degree `-m` in `Hom_C(X, Y)` is the obstruction to filling the sphere with vertices
-`X, Y, …, Y` whose coherences vanish except for the identities among the vertices `Y` and `z`
-itself, placed on the face opposite to the vertex `1`.
+A map `∂Δ[n + 1] ⟶ N_dg(C)` amounts to coherences on all proper subsets of the vertices
+satisfying the dg nerve equation (`TauCeti.DGNerve.exists_coherences_of_faces` and
+`TauCeti.DGNerve.Coherences.boundaryFace`). It extends to `Δ[n + 1]` exactly when the obstruction,
+the right-hand side of the dg nerve equation for the one missing coherence, a cycle of degree
+`1 - n` in `Hom_C(X 0, X (n + 1))`, is a boundary
+(`TauCeti.DGNerve.Coherences.exists_simplex_iff_of_boundary`). Every cycle `z` of degree `-m` in
+`Hom_C(X, Y)` arises up to the sign `(-1) ^ (m + 1)` as such an obstruction, for a map out of
+`∂Δ[m + 2]` with vertices `X, Y, …, Y`.
 
 ## Main results
 
@@ -54,16 +53,6 @@ open DGNerve
 universe w v u
 
 variable {R : Type v} [CommRing R] {C : Type u} [DGCategory R C]
-
-/-- A Hom complex is exact in degree `p + 1` exactly when every cycle of degree `p + 1` is a
-boundary. -/
-private lemma exactAt_iff_forall_exists_dgDifferential_eq {X Y : C} {p : ℤ} :
-    (dgHomComplex R X Y).ExactAt (p + 1) ↔ ∀ z : DGHom R (p + 1) X Y,
-      dgDifferential R (p + 1) z = 0 → ∃ g : DGHom R p X Y, dgDifferential R p g = z := by
-  rw [HomologicalComplex.exactAt_iff' _ p (p + 1) (p + 1 + 1) (by simp) (by simp),
-    ShortComplex.moduleCat_exact_iff]
-  -- The maps of the short complex `sc'` are the differentials, by definition.
-  rfl
 
 namespace dgNerve
 
@@ -141,7 +130,7 @@ private theorem isTerminalVertex_of_exactAt {Y : C}
   have hexact := h (Simplex.obj (R := R) (σ₀.app _ (boundaryVertex m 0)) 0) _
     (by omega : -(m + 1 : ℕ) + 1 ≤ (0 : ℤ))
   rw [← hY, obj_yonedaEquiv_ι_comp, Fin.succAbove_zero, Fin.succ_last] at hexact
-  obtain ⟨g, hg⟩ := exactAt_iff_forall_exists_dgDifferential_eq.1 hexact _
+  obtain ⟨g, hg⟩ := (exactAt_iff_forall_exists_dgDifferential_eq R).1 hexact _
     (f.dgDifferential_boundary_eq_zero heq' hd)
   obtain ⟨x, hxobj, hxcoh⟩ := (f.exists_simplex_iff_of_boundary hself' heq' hd).2 ⟨g, hg⟩
   let x' : (dgNerve R C) _⦋m + 2⦌ := x
@@ -367,77 +356,6 @@ section Faces
 
 variable {m : ℕ} {V : Fin (m + 3) → C}
 
-/-- The face opposite to the vertex `l` of coherences satisfying the dg nerve equation for every
-coherence missing some vertex. -/
-private noncomputable def faceOf (f : Coherences R V)
-    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (V i))
-    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
-      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
-    (l : Fin (m + 3)) : Simplex R C (m + 1) where
-  obj := V ∘ l.succAbove
-  coh := f.comap (Fin.strictMono_succAbove l)
-  coh_self i := by
-    rw [Coherences.comap_apply f _ le_rfl (empty_subset _) (by simp) le_rfl (by simp) (by simp)]
-    exact (Coherences.congr _ (image_empty _)).trans (hself _)
-  dgDifferential_coh i j S d hij hS hd := by
-    have he := Fin.strictMono_succAbove l
-    have hsub : S.image l.succAbove ⊆ Ioo (l.succAbove i) (l.succAbove j) := by
-      rw [← coe_subset, coe_image, coe_Ioo]
-      exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans he.image_Ioo_subset
-    have hd' : d + #(S.image l.succAbove) = 0 := by
-      rwa [card_image_of_injective _ he.injective]
-    rw [Coherences.comap_apply f he hij hS hd (he.monotone hij) hsub hd',
-      boundary_comap f he hij hS hd (he.monotone hij) hsub hd']
-    exact heq _ _ _ _ _ _ _ ⟨l, (Fin.succAbove_ne l i).symm, (Fin.succAbove_ne l j).symm,
-      by simp [Fin.succAbove_ne]⟩
-
-/-- The faces `TauCeti.dgNerve.faceOf` agree on their common faces. -/
-private lemma faceOf_map_δ (f : Coherences R V)
-    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (V i))
-    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
-      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
-    {a b : Fin (m + 3)} (hab : a < b) :
-    (faceOf f hself heq a).map (SimplexCategory.δ (b.pred (Fin.ne_zero_of_lt hab))).toOrderHom =
-      (faceOf f hself heq b).map
-        (SimplexCategory.δ (a.castPred (Fin.ne_last_of_lt hab))).toOrderHom := by
-  set a' := a.castPred (Fin.ne_last_of_lt hab)
-  set b' := b.pred (Fin.ne_zero_of_lt hab)
-  -- The first simplicial identity, evaluated at a vertex.
-  have hδδ : ∀ w, a.succAbove (b'.succAbove w) = b.succAbove (a'.succAbove w) := fun w ↦ by
-    have := congrArg (fun f : SimplexCategory.mk m ⟶ SimplexCategory.mk (m + 2) ↦ f.toOrderHom w)
-      (SimplexCategory.δ_comp_δ' (i := a') (j := b) (by simpa [a'] using hab))
-    simpa [SimplexCategory.δ, a', b'] using this.symm
-  have hsub : ∀ {n : ℕ} (k : Fin (n + 2)) {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))},
-      S ⊆ Ioo i j → S.image k.succAbove ⊆ Ioo (k.succAbove i) (k.succAbove j) := by
-    intro n k i j S hS
-    rw [← coe_subset, coe_image, coe_Ioo]
-    exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans
-      (Fin.strictMono_succAbove k).image_Ioo_subset
-  -- A coherence of the face of `faceOf f l` opposite to `k` is a coherence of `f`.
-  have hcoh : ∀ (l : Fin (m + 3)) (k : Fin (m + 2)) {i j S d hij hS hd},
-      ((faceOf f hself heq l).map (SimplexCategory.δ k).toOrderHom).coh i j S d hij hS hd ≍
-        f (l.succAbove (k.succAbove i)) (l.succAbove (k.succAbove j))
-          ((S.image k.succAbove).image l.succAbove) d
-          ((Fin.strictMono_succAbove l).monotone ((Fin.strictMono_succAbove k).monotone hij))
-          (hsub l (hsub k hS)) (by
-            rwa [card_image_of_injective _ (Fin.strictMono_succAbove l).injective,
-              card_image_of_injective _ (Fin.strictMono_succAbove k).injective]) := by
-    intro l k i j S d hij hS hd
-    rw [Simplex.map_coh_of_strictMono (α := (SimplexCategory.δ k).toOrderHom) _
-      (Fin.strictMono_succAbove k) hij hS hd (hsub k hS)]
-    exact heq_of_eq (Coherences.comap_apply _ _ _ _ _ _ _ _)
-  have hf : ∀ {i i' j j' : Fin (m + 3)} {S S' : Finset (Fin (m + 3))} {d : ℤ} {h₁ : i ≤ j}
-      {h₂ : S ⊆ Ioo i j} {h₃ : d + #S = 0} {h₁' : i' ≤ j'} {h₂' : S' ⊆ Ioo i' j'}
-      {h₃' : d + #S' = 0}, i = i' → j = j' → S = S' →
-        f i j S d h₁ h₂ h₃ ≍ f i' j' S' d h₁' h₂' h₃' := by
-    rintro _ _ _ _ _ _ _ _ _ _ _ _ _ rfl rfl rfl
-    rfl
-  refine Simplex.ext (funext fun w ↦ ?_) fun i j S d hij hS hd ↦ ?_
-  · simpa [faceOf, SimplexCategory.δ, a', b'] using congrArg V (hδδ w)
-  · refine (hcoh a b').trans (HEq.trans (hf (hδδ i) (hδδ j) ?_) (hcoh b a').symm)
-    rw [image_image, image_image]
-    exact image_congr fun w _ ↦ hδδ w
-
 /-- **Spheres fill at a terminal vertex**: coherences satisfying the dg nerve equation for every
 coherence missing some vertex, ending at a terminal vertex, are the coherences on the boundary of a
 simplex. -/
@@ -448,27 +366,30 @@ private lemma exists_simplex_of_isTerminalVertex (f : Coherences R V)
     (hV : (dgNerve R C).IsTerminalVertex ((dgNerveEquiv R C).symm (V (Fin.last (m + 2))))) :
     ∃ x : Simplex R C (m + 2), x.obj = V ∧ ∀ i j S d hij hS hd,
       (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) → x.coh i j S d hij hS hd ≍ f i j S d hij hS hd := by
-  let y : Fin (m + 3) → (dgNerve R C) _⦋m + 1⦌ := faceOf f hself heq
+  let y : Fin (m + 3) → (dgNerve R C) _⦋m + 1⦌ := f.boundaryFace hself heq
   have hy : boundary.IsCompatible fun l ↦ SSet.yonedaEquiv.symm (y l) := by
     rw [boundary.isCompatible_iff]
     intro a b hab
     rw [stdSimplex.δ_comp_yonedaEquiv_symm, stdSimplex.δ_comp_yonedaEquiv_symm, dgNerve_δ,
-      dgNerve_δ, faceOf_map_δ f hself heq hab]
+      dgNerve_δ, f.boundaryFace_map_δ hself heq hab]
   have hι : ∀ l, SSet.yonedaEquiv (boundary.ι l ≫ hy.desc) = y l := fun l ↦ by
     rw [hy.ι_desc, Equiv.apply_symm_apply]
   obtain ⟨σ, hσ⟩ := (SSet.isTerminalVertex_iff _).1 hV hy.desc (by
     rw [hι]
     refine Simplex.ext_zero ?_
     rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj, dgNerve_map_apply, Simplex.map_obj]
+    simp only [Coherences.boundaryFace_obj, Function.comp_apply]
     exact congrArg V (by simp))
   let x : Simplex R C (m + 2) := SSet.yonedaEquiv σ
-  have hx : ∀ l, faceOf f hself heq l = x.map (SimplexCategory.δ l).toOrderHom := fun l ↦
+  have hx : ∀ l, f.boundaryFace hself heq l = x.map (SimplexCategory.δ l).toOrderHom := fun l ↦
     (hι l).symm.trans ((boundary.eq_ι_comp_iff _ _).1 hσ l)
   -- The objects of `x` are those of its faces.
   have hxobj : x.obj = V := funext fun i ↦ by
     obtain ⟨l, hl⟩ := exists_ne i
     obtain ⟨p, rfl⟩ := Fin.exists_succAbove_eq hl.symm
-    exact (congrFun (congrArg Simplex.obj (hx l)) p).symm
+    have h := congrFun (congrArg Simplex.obj (hx l)) p
+    rw [Coherences.boundaryFace_obj] at h
+    exact h.symm
   refine ⟨x, hxobj, ?_⟩
   -- A coherence missing the vertex `l` is a coherence of the face opposite to `l`.
   rintro i j S d hij hS hd ⟨l, hli, hlj, hlS⟩
@@ -487,7 +408,7 @@ private lemma exists_simplex_of_isTerminalVertex (f : Coherences R V)
   refine (heq_of_eq (x.map_coh_of_strictMono (α := (SimplexCategory.δ l).toOrderHom) he hij'
     hS' hd' hS)).symm.trans ?_
   exact (congr_arg_heq (fun s : Simplex R C (m + 1) ↦ s.coh i' j' S' d hij' hS' hd')
-    (hx l)).symm.trans (heq_of_eq (Coherences.comap_apply _ _ _ _ _ _ _ _))
+    (hx l)).symm.trans (Coherences.boundaryFace_coh _ _ _ _ _ _ _ _ _ _)
 
 end Faces
 
@@ -496,7 +417,7 @@ private lemma exactAt_of_isTerminalVertex {Y : C}
     (hY : (dgNerve R C).IsTerminalVertex ((dgNerveEquiv R C).symm Y)) (X : C) {d : ℤ}
     (hd : d ≤ 0) : (dgHomComplex R X Y).ExactAt d := by
   obtain ⟨m, rfl⟩ : ∃ m : ℕ, d = -(m + 1 : ℕ) + 1 := ⟨(-d).toNat, by omega⟩
-  refine exactAt_iff_forall_exists_dgDifferential_eq.2 fun z hz ↦ ?_
+  refine (exactAt_iff_forall_exists_dgDifferential_eq R).2 fun z hz ↦ ?_
   have hd : (-(m + 1 : ℕ) : ℤ) + #(Ioo 0 (Fin.last (m + 2))) = 0 := by simp
   have heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
       dgDifferential R d (sphereCoh z i j S d hij hS hd) =

@@ -38,6 +38,8 @@ ordered pairs of interior vertices, using the Leibniz rule and associativity.
   nerve equation on the boundary, the obstruction to filling is a cycle.
 * `TauCeti.DGNerve.Coherences.exists_simplex_iff_of_boundary`: such coherences are those of a
   simplex if and only if this cycle is a boundary.
+* `TauCeti.DGNerve.Coherences.boundaryFace` and `TauCeti.DGNerve.Coherences.boundaryFace_map_δ`:
+  the faces of such coherences, which agree on their common faces.
 
 ## References
 
@@ -801,6 +803,20 @@ private noncomputable def boundaryExtension (f : Coherences R Y)
       rw [cap_top, hg, boundary_eq_bd f.get f (fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm),
         bd_top_congr fun _ _ _ _ h ↦ cap_of_isBoundaryFace _ _ h]
 
+/-- The filling simplex agrees with the given coherences on the boundary. -/
+private lemma boundaryExtension_coh (f : Coherences R Y)
+    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+    {d : ℤ} (hd : d + #(Ioo 0 (Fin.last (n + 1))) = 0) (g : DGHom R d (Y 0) (Y (Fin.last (n + 1))))
+    (hg : dgDifferential R d g = boundary R f 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) d
+      (Fin.zero_le _) subset_rfl hd)
+    {i j : Fin (n + 2)} {S : Finset (Fin (n + 2))} {p : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j)
+    (hp : p + #S = 0) (h : IsBoundaryFace i j S) :
+    (boundaryExtension f hself heq hd g hg).coh i j S p hij hS hp = f i j S p hij hS hp := by
+  dsimp only [boundaryExtension]
+  rw [cap_of_isBoundaryFace _ _ h, f.get_eq hij hS hp]
+
 /-- **Boundary filling for coherences**: normalized coherences satisfying the dg nerve equation on
 the boundary `∂Δ[n + 1]`, that is, for every coherence missing some vertex, are the coherences on
 the boundary of an `(n + 1)`-simplex if and only if the right-hand side of the equation for the
@@ -828,11 +844,115 @@ theorem Coherences.exists_simplex_iff_of_boundary (f : Coherences R Y)
     · exact eq_of_heq (hx _ _ _ _ _ _ _ (isBoundaryFace_iff.1 hB))
     · rfl
   · rintro ⟨g, hg⟩
-    refine ⟨boundaryExtension f hself heq hd g hg, rfl, fun i j S p hij hS hp hl ↦ heq_of_eq ?_⟩
-    change cap f.get g i j S p = _
-    rw [cap_of_isBoundaryFace _ _ (isBoundaryFace_iff.2 hl), f.get_eq hij hS hp]
+    exact ⟨boundaryExtension f hself heq hd g hg, rfl, fun i j S p hij hS hp hl ↦
+      heq_of_eq (boundaryExtension_coh f hself heq hd g hg hij hS hp (isBoundaryFace_iff.2 hl))⟩
 
 end Boundary
+
+/-! ### Faces of coherences on a boundary -/
+
+section Faces
+
+variable {Y : Fin (n + 3) → C}
+
+/-- The face opposite to the vertex `l` of normalized coherences satisfying the dg nerve equation
+on the boundary `∂Δ[n + 2]`, that is, for every coherence missing some vertex: the
+`(n + 1)`-simplex on the objects `Y ∘ l.succAbove` whose coherences are pulled back along
+`l.succAbove`. -/
+noncomputable def Coherences.boundaryFace (f : Coherences R Y)
+    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+    (l : Fin (n + 3)) : Simplex R C (n + 1) where
+  obj := Y ∘ l.succAbove
+  coh := f.comap (Fin.strictMono_succAbove l)
+  coh_self i := by
+    rw [Coherences.comap_apply f _ le_rfl (empty_subset _) (by simp) le_rfl (by simp) (by simp)]
+    exact (Coherences.congr _ (image_empty _)).trans (hself _)
+  dgDifferential_coh i j S d hij hS hd := by
+    have he := Fin.strictMono_succAbove l
+    have hsub : S.image l.succAbove ⊆ Ioo (l.succAbove i) (l.succAbove j) := by
+      rw [← coe_subset, coe_image, coe_Ioo]
+      exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans he.image_Ioo_subset
+    have hd' : d + #(S.image l.succAbove) = 0 := by
+      rwa [card_image_of_injective _ he.injective]
+    rw [Coherences.comap_apply f he hij hS hd (he.monotone hij) hsub hd',
+      boundary_comap f he hij hS hd (he.monotone hij) hsub hd']
+    exact heq _ _ _ _ _ _ _ ⟨l, (Fin.succAbove_ne l i).symm, (Fin.succAbove_ne l j).symm,
+      by simp [Fin.succAbove_ne]⟩
+
+section
+
+variable (f : Coherences R Y)
+  (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+  (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+    dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+
+/-- The objects of the face opposite to `l` are those at the vertices other than `l`. -/
+@[simp]
+theorem Coherences.boundaryFace_obj (l : Fin (n + 3)) :
+    (f.boundaryFace hself heq l).obj = Y ∘ l.succAbove :=
+  (rfl)
+
+/-- The coherence of the face opposite to `l` indexed by `i`, `S` and `j` is the coherence of `f`
+indexed by their images under `l.succAbove`. -/
+theorem Coherences.boundaryFace_coh (l : Fin (n + 3)) {i j : Fin (n + 2)}
+    {S : Finset (Fin (n + 2))} {d : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0)
+    (h₁ : l.succAbove i ≤ l.succAbove j)
+    (h₂ : S.image l.succAbove ⊆ Ioo (l.succAbove i) (l.succAbove j))
+    (h₃ : d + #(S.image l.succAbove) = 0) :
+    (f.boundaryFace hself heq l).coh i j S d hij hS hd ≍
+      f (l.succAbove i) (l.succAbove j) (S.image l.succAbove) d h₁ h₂ h₃ :=
+  heq_of_eq (Coherences.comap_apply f _ hij hS hd h₁ h₂ h₃)
+
+/-- The faces `TauCeti.DGNerve.Coherences.boundaryFace` agree on their common faces, so they form
+a map out of the boundary `∂Δ[n + 2]`. -/
+theorem Coherences.boundaryFace_map_δ {a b : Fin (n + 3)} (hab : a < b) :
+    (f.boundaryFace hself heq a).map
+        (SimplexCategory.δ (b.pred (Fin.ne_zero_of_lt hab))).toOrderHom =
+      (f.boundaryFace hself heq b).map
+        (SimplexCategory.δ (a.castPred (Fin.ne_last_of_lt hab))).toOrderHom := by
+  set a' := a.castPred (Fin.ne_last_of_lt hab)
+  set b' := b.pred (Fin.ne_zero_of_lt hab)
+  -- The first simplicial identity, evaluated at a vertex.
+  have hδδ : ∀ w, a.succAbove (b'.succAbove w) = b.succAbove (a'.succAbove w) := fun w ↦ by
+    have := congrArg (fun f : SimplexCategory.mk n ⟶ SimplexCategory.mk (n + 2) ↦ f.toOrderHom w)
+      (SimplexCategory.δ_comp_δ' (i := a') (j := b) (by simpa [a'] using hab))
+    simpa [SimplexCategory.δ, a', b'] using this.symm
+  have hsub : ∀ {n : ℕ} (k : Fin (n + 2)) {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))},
+      S ⊆ Ioo i j → S.image k.succAbove ⊆ Ioo (k.succAbove i) (k.succAbove j) := by
+    intro n k i j S hS
+    rw [← coe_subset, coe_image, coe_Ioo]
+    exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans
+      (Fin.strictMono_succAbove k).image_Ioo_subset
+  -- A coherence of the face of `f.boundaryFace hself heq l` opposite to `k` is a coherence of `f`.
+  have hcoh : ∀ (l : Fin (n + 3)) (k : Fin (n + 2)) {i j S d hij hS hd},
+      ((f.boundaryFace hself heq l).map (SimplexCategory.δ k).toOrderHom).coh i j S d hij hS hd ≍
+        f (l.succAbove (k.succAbove i)) (l.succAbove (k.succAbove j))
+          ((S.image k.succAbove).image l.succAbove) d
+          ((Fin.strictMono_succAbove l).monotone ((Fin.strictMono_succAbove k).monotone hij))
+          (hsub l (hsub k hS)) (by
+            rwa [card_image_of_injective _ (Fin.strictMono_succAbove l).injective,
+              card_image_of_injective _ (Fin.strictMono_succAbove k).injective]) := by
+    intro l k i j S d hij hS hd
+    rw [Simplex.map_coh_of_strictMono (α := (SimplexCategory.δ k).toOrderHom) _
+      (Fin.strictMono_succAbove k) hij hS hd (hsub k hS)]
+    exact Coherences.boundaryFace_coh _ _ _ _ _ _ _ _ _ _
+  have hf : ∀ {i i' j j' : Fin (n + 3)} {S S' : Finset (Fin (n + 3))} {d : ℤ} {h₁ : i ≤ j}
+      {h₂ : S ⊆ Ioo i j} {h₃ : d + #S = 0} {h₁' : i' ≤ j'} {h₂' : S' ⊆ Ioo i' j'}
+      {h₃' : d + #S' = 0}, i = i' → j = j' → S = S' →
+        f i j S d h₁ h₂ h₃ ≍ f i' j' S' d h₁' h₂' h₃' := by
+    rintro _ _ _ _ _ _ _ _ _ _ _ _ _ rfl rfl rfl
+    rfl
+  refine Simplex.ext (funext fun w ↦ ?_) fun i j S d hij hS hd ↦ ?_
+  · simpa [SimplexCategory.δ, a', b'] using congrArg Y (hδδ w)
+  · refine (hcoh a b').trans (HEq.trans (hf (hδδ i) (hδδ j) ?_) (hcoh b a').symm)
+    rw [image_image, image_image]
+    exact image_congr fun w _ ↦ hδδ w
+
+end
+
+end Faces
 
 end DGNerve
 
