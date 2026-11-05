@@ -125,6 +125,29 @@ private theorem graph_intertwine_iff {i : B →L[ℝ] B} (hi : ∀ a, i (i a) = 
       rw [show L (i a) - (α p a + j p (L a)) = -((-L (i a)) + j p (L a) + α p a) by abel,
         hnia, neg_zero])
 
+/-- On self-modelled normed spaces, `IsComplexLinearMap` between `almostComplexStructureAt` values
+is pointwise intertwining of `toEndomorphism` on the model spaces (bridging `TangentSpace 𝓘(ℝ, E) x`
+and `E`, where `rw` cannot match `.toLinearMap` at `implicit` transparency). -/
+private theorem isComplexLinearMap_almostComplexStructureAt_model_iff
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+    (J₁ : SmoothAlmostComplexStructure 𝓘(ℝ, B) B)
+    (J₂ : SmoothAlmostComplexStructure 𝓘(ℝ, W) W)
+    (b : B) (w : W) (L : B →L[ℝ] W) :
+    IsComplexLinearMap (J₁.almostComplexStructureAt b) (J₂.almostComplexStructureAt w)
+        L.toLinearMap ↔
+      ∀ a : B, L ((J₁.toEndomorphism b : B →L[ℝ] B) a) =
+        (J₂.toEndomorphism w : W →L[ℝ] W) (L a) := by
+  let K₁ : AlmostComplexStructure B := J₁.almostComplexStructureAt b
+  let K₂ : AlmostComplexStructure W := J₂.almostComplexStructureAt w
+  have hK₁ : K₁.toLinearMap = (J₁.toEndomorphism b : B →L[ℝ] B).toLinearMap :=
+    J₁.almostComplexStructureAt_toLinearMap b
+  have hK₂ : K₂.toLinearMap = (J₂.toEndomorphism w : W →L[ℝ] W).toLinearMap :=
+    J₂.almostComplexStructureAt_toLinearMap w
+  -- Replace `TangentSpace`-typed structures with `K₁, K₂` so `simp` sees model-space types.
+  change IsComplexLinearMap K₁ K₂ L.toLinearMap ↔ _
+  simp only [isComplexLinearMap_iff_apply, hK₁, hK₂, ContinuousLinearMap.coe_coe]
+  rfl
+
 /-- Within a set `s` of unique differentiability at `b`, the graph `x ↦ (x, σ x)` is
 `(i, J)`-pseudoholomorphic within `s` at `b` if and only if `σ` is differentiable within `s` at `b`
 and `sectionTermWithin i α j σ s b a = 0` for all `a`. -/
@@ -152,23 +175,13 @@ theorem isPseudoholomorphicWithinAt_graph_iff
     refine ⟨hsnd.differentiableWithinAt, ?_⟩
     simp only [sectionTermWithin_def]
     refine (graph_intertwine_iff hi α j (b, σ b) (fderivWithin ℝ σ s b)).1 fun a ↦ ?_
-    have ha := (isComplexLinearMap_iff_apply _ _ _).1 hlin a
-    simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-      ContinuousLinearMap.coe_coe] at ha
-    change u' ((SmoothAlmostComplexStructure.const i hi).toEndomorphism b a) =
-      (J.toEndomorphism (b, σ b) : (B × V) →L[ℝ] B × V) (u' a) at ha
+    have ha := (isComplexLinearMap_almostComplexStructureAt_model_iff _ _ _ _ _).1 hlin a
     rwa [SmoothAlmostComplexStructure.const_toEndomorphism_apply, hJ, hu_eq] at ha
   · rintro ⟨hσ, hsec⟩
     refine (isJHolomorphicWithinAt_iff _ _ _ _ _).2
       ⟨(ContinuousLinearMap.id ℝ B).prod (fderivWithin ℝ σ s b),
         (hasFDerivWithinAt_id b s).prodMk hσ.hasFDerivWithinAt,
-        (isComplexLinearMap_iff_apply _ _ _).2 fun a ↦ ?_⟩
-    simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-      ContinuousLinearMap.coe_coe]
-    change ((ContinuousLinearMap.id ℝ B).prod (fderivWithin ℝ σ s b))
-        ((SmoothAlmostComplexStructure.const i hi).toEndomorphism b a) =
-      (J.toEndomorphism (b, σ b) : (B × V) →L[ℝ] B × V)
-        (((ContinuousLinearMap.id ℝ B).prod (fderivWithin ℝ σ s b)) a)
+        (isComplexLinearMap_almostComplexStructureAt_model_iff _ _ _ _ _).2 fun a ↦ ?_⟩
     rw [SmoothAlmostComplexStructure.const_toEndomorphism_apply, hJ]
     exact (graph_intertwine_iff hi α j (b, σ b) (fderivWithin ℝ σ s b)).2
       (fun c ↦ by simpa only [sectionTermWithin_def] using hsec c) a
@@ -232,14 +245,8 @@ theorem isPseudoholomorphicAt_ofComplexManifold_graph_iff
         ∀ a, sectionTerm (Complex.I • ContinuousLinearMap.id ℝ C) α j σ b a = 0 := by
   have hi (a : C) : (Complex.I • ContinuousLinearMap.id ℝ C)
       ((Complex.I • ContinuousLinearMap.id ℝ C) a) = -a := by simp [smul_smul, Complex.I_mul_I]
-  have heq : SmoothAlmostComplexStructure.ofComplexManifold C C =
-      SmoothAlmostComplexStructure.const (Complex.I • ContinuousLinearMap.id ℝ C) hi := by
-    apply SmoothAlmostComplexStructure.toEndomorphism_injective; ext x v
-    let v' : C := v
-    exact (congrArg (· v')
-      (SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold (E := C) x)).trans
-      (congrArg (· v') (SmoothAlmostComplexStructure.const_toEndomorphism_apply _ hi x)).symm
-  rw [heq]; exact isPseudoholomorphicAt_graph_iff J _ hi α j hJ
+  rw [SmoothAlmostComplexStructure.ofComplexManifold_self_eq_const hi]
+  exact isPseudoholomorphicAt_graph_iff J _ hi α j hJ
 
 /-! ### Split families and constant sections -/
 
@@ -251,11 +258,12 @@ theorem isPseudoholomorphicAt_graph_iff_isComplexLinear_of_connection_eq_zero
     (α : B × V → B →L[ℝ] V) (j : B × V → V →L[ℝ] V) {σ : B → V} {b : B}
     (hJ : (J.toEndomorphism (b, σ b) : (B × V) →L[ℝ] B × V) =
       blockEndomorphism i α j (b, σ b))
-    (hj : ∀ v, j (b, σ b) (j (b, σ b) v) = -v)
     (hα : α (b, σ b) = 0) :
     IsPseudoholomorphicAt (SmoothAlmostComplexStructure.const i hi) J (fun x ↦ (x, σ x)) b ↔
       DifferentiableAt ℝ σ b ∧
         IsComplexLinear i.toLinearMap (j (b, σ b)).toLinearMap (fderiv ℝ σ b).toLinearMap := by
+  have hj : ∀ v, j (b, σ b) (j (b, σ b) v) = -v :=
+    ((blockEndomorphism_comp_self_eq_neg_id_iff i α j (b, σ b)).1 (hJ ▸ J.square_neg _)).2.1
   rw [isPseudoholomorphicAt_graph_iff J i hi α j hJ]
   refine and_congr_right fun _ ↦ ?_
   rw [isComplexLinear_iff_complexAntilinearPart_eq_zero (LinearMap.ext hj) _, LinearMap.ext_iff]

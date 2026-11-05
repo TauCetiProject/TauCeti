@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.Family.Nijenhuis
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
-public import TauCeti.LinearAlgebra.Complex.LinearPart
 
 /-!
 # Block almost complex structures in a product trivialization
@@ -27,7 +26,7 @@ This file builds both directions of that correspondence on arbitrary real normed
 
 * `blockEndomorphism_comp_self_eq_neg_id_iff` characterizes when `blockEndomorphism i α j p`
   squares to `-1` in terms of `i² = -1`, `j(p)² = -1`, and `α(p)(i a) + j(p)(α(p) a) = 0`
-  (equivalently `IsComplexAntilinear`, `isComplexAntilinear_iff_apply_add_apply_eq_zero`);
+  (equivalently `IsComplexAntilinear`, `TauCeti.isComplexAntilinear_iff_apply_add_apply_eq_zero`);
 * `blockAlmostComplexStructure` bundles smooth `α` and `j` satisfying these identities into a
   `SmoothAlmostComplexStructure 𝓘(ℝ, B × V) (B × V)` whose projection `Prod.fst` is
   pseudoholomorphic (`isPseudoholomorphic_fst_blockAlmostComplexStructure`);
@@ -101,31 +100,6 @@ theorem blockEndomorphism_comp_self_eq_neg_id_iff (i : B →L[ℝ] B) (α : B ×
   · rintro ⟨hi, hj, hαj⟩
     ext w <;> simp [hi, hj, hαj]
 
-/-- Anticommutation `α(i a) + j(α a) = 0` is equivalent to `(i, j)`-complex antilinearity of `α`. -/
-theorem isComplexAntilinear_iff_apply_add_apply_eq_zero (i : B →L[ℝ] B) (α : B →L[ℝ] V)
-    (j : V →L[ℝ] V) :
-    IsComplexAntilinear i.toLinearMap j.toLinearMap α.toLinearMap ↔
-      ∀ a, α (i a) + j (α a) = 0 := by
-  constructor
-  · intro h a
-    have ha := h.apply a
-    simp only [ContinuousLinearMap.coe_coe] at ha
-    rw [ha, neg_add_cancel]
-  · intro h
-    refine isComplexAntilinear_of_apply fun a ↦ ?_
-    simp only [ContinuousLinearMap.coe_coe]
-    exact eq_neg_of_add_eq_zero_left (h a)
-
-/-- Expressing `blockEndomorphism` via `inl` and `inr` exposes its smoothness in `(α, j)`. -/
-theorem blockEndomorphism_eq_inl_add_inr (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V)
-    (j : B × V → V →L[ℝ] V) (p : B × V) :
-    blockEndomorphism i α j p =
-      (ContinuousLinearMap.inl ℝ B V).comp (i.comp (ContinuousLinearMap.fst ℝ B V)) +
-        (ContinuousLinearMap.inr ℝ B V).comp
-          ((α p).comp (ContinuousLinearMap.fst ℝ B V) +
-            (j p).comp (ContinuousLinearMap.snd ℝ B V)) := by
-  ext w <;> simp [blockEndomorphism_apply]
-
 theorem contDiffWithinAt_blockEndomorphism {n : ℕ∞ω} {s : Set (B × V)} {p : B × V}
     (i : B →L[ℝ] B) {α : B × V → B →L[ℝ] V} {j : B × V → V →L[ℝ] V}
     (hα : ContDiffWithinAt ℝ n α s p) (hj : ContDiffWithinAt ℝ n j s p) :
@@ -147,28 +121,6 @@ theorem contDiff_blockEndomorphism {n : ℕ∞ω}
     ContDiff ℝ n (blockEndomorphism i α j) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_blockEndomorphism i hα.contDiffAt hj.contDiffAt
 
-theorem differentiableAt_blockEndomorphism {p : B × V}
-    (i : B →L[ℝ] B) {α : B × V → B →L[ℝ] V} {j : B × V → V →L[ℝ] V}
-    (hα : DifferentiableAt ℝ α p) (hj : DifferentiableAt ℝ j p) :
-    DifferentiableAt ℝ (blockEndomorphism i α j) p := by
-  rw [funext (blockEndomorphism_eq_inl_add_inr i α j)]
-  exact (differentiableAt_const _).add ((differentiableAt_const _).clm_comp
-    ((hα.clm_comp (differentiableAt_const _)).add (hj.clm_comp (differentiableAt_const _))))
-
-/-- Fréchet derivative of `blockEndomorphism i α j`: the constant base block differentiates to `0`,
-while the vertical block differentiates to `fderiv ℝ α q h w.1 + fderiv ℝ j q h w.2`. -/
-theorem fderiv_blockEndomorphism_apply (i : B →L[ℝ] B) {α : B × V → B →L[ℝ] V}
-    {j : B × V → V →L[ℝ] V} {q : B × V}
-    (hα : DifferentiableAt ℝ α q) (hj : DifferentiableAt ℝ j q) (h w : B × V) :
-    fderiv ℝ (blockEndomorphism i α j) q h w = (0, fderiv ℝ α q h w.1 + fderiv ℝ j q h w.2) := by
-  have h1 := (differentiableAt_blockEndomorphism i hα hj).hasFDerivAt.clm_apply
-    (hasFDerivAt_const w q)
-  have hd := ((hasFDerivAt_const (i w.1) q).prodMk
-    ((hα.hasFDerivAt.clm_apply (hasFDerivAt_const w.1 q)).add
-      (hj.hasFDerivAt.clm_apply (hasFDerivAt_const w.2 q)))).congr_of_eventuallyEq
-    (Filter.EventuallyEq.of_eq (funext fun r ↦ blockEndomorphism_apply i α j r w))
-  simpa using congrArg (fun D : (B × V) →L[ℝ] B × V ↦ D h) (h1.unique hd)
-
 /-! ### Smooth block almost complex structures and projection characterization -/
 
 /-- Construct a `SmoothAlmostComplexStructure` on `B × V` from a constant base complex structure
@@ -184,9 +136,9 @@ def blockAlmostComplexStructure (i : B →L[ℝ] B) (α : B × V → B →L[ℝ]
       simpa [inCoordinates_tangent_bundle_core_model_space] using
         (contDiff_blockEndomorphism i hα hj).contDiffAt.contMDiffAt⟩⟩
   square_neg p := by
-    change (blockEndomorphism i α j p).comp (blockEndomorphism i α j p) =
-      -ContinuousLinearMap.id ℝ (B × V)
-    exact (blockEndomorphism_comp_self_eq_neg_id_iff i α j p).2 ⟨hi, hj_sq p, hαj p⟩
+    ext w
+    exact congrArg (fun L : (B × V) →L[ℝ] B × V ↦ L w)
+      ((blockEndomorphism_comp_self_eq_neg_id_iff i α j p).2 ⟨hi, hj_sq p, hαj p⟩)
 
 @[simp]
 theorem blockAlmostComplexStructure_toEndomorphism (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V)
@@ -215,8 +167,8 @@ theorem isPseudoholomorphic_fst_blockAlmostComplexStructure (i : B →L[ℝ] B)
   refine isPseudoholomorphic_iff.2 fun p ↦ isPseudoholomorphicAt_of_hasMFDerivAt
     (ContinuousLinearMap.fst ℝ B V).hasFDerivAt.hasMFDerivAt fun w ↦ ?_
   let w' : B × V := w
-  exact (congrArg Prod.fst (blockEndomorphism_apply i α j p w')).trans
-    (congrArg (· w'.1) (SmoothAlmostComplexStructure.const_toEndomorphism_apply i hi p.1)).symm
+  exact (congrArg Prod.fst (blockAlmostComplexStructure_apply i α j hα hj hi hj_sq hαj p w')).trans
+    (SmoothAlmostComplexStructure.const_apply i hi p.1 w'.1).symm
 
 /-- The off-diagonal connection block `a ↦ (J(p)(a, 0)).2` of a smooth almost complex structure on
 `B × V`. -/
@@ -246,7 +198,9 @@ theorem connectionBlock_blockAlmostComplexStructure (i : B →L[ℝ] B) (α : B 
     (hi : ∀ a, i (i a) = -a) (hj_sq : ∀ p v, j p (j p v) = -v)
     (hαj : ∀ p a, α p (i a) + j p (α p a) = 0) :
     connectionBlock (blockAlmostComplexStructure i α j hα hj hi hj_sq hαj) = α := by
-  ext p a; change (blockEndomorphism i α j p (a, 0)).2 = α p a; simp [blockEndomorphism_apply]
+  ext p a
+  rw [connectionBlock_apply, blockAlmostComplexStructure_apply]
+  simp
 
 @[simp]
 theorem fiberBlock_blockAlmostComplexStructure (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V)
@@ -254,27 +208,17 @@ theorem fiberBlock_blockAlmostComplexStructure (i : B →L[ℝ] B) (α : B × V 
     (hi : ∀ a, i (i a) = -a) (hj_sq : ∀ p v, j p (j p v) = -v)
     (hαj : ∀ p a, α p (i a) + j p (α p a) = 0) :
     fiberBlock (blockAlmostComplexStructure i α j hα hj hi hj_sq hαj) = j := by
-  ext p v; change (blockEndomorphism i α j p (0, v)).2 = j p v; simp [blockEndomorphism_apply]
-
-/-- On a self-modelled normed space, the endomorphism field of a `SmoothAlmostComplexStructure` is
-smooth in the normed-space sense. -/
-theorem contDiff_toEndomorphism {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (J : SmoothAlmostComplexStructure 𝓘(ℝ, E) E) :
-    ContDiff ℝ (E := E) (F := E →L[ℝ] E) ∞ (fun x ↦ J.toEndomorphism x) := by
-  refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
-  have h2 : ContDiffAt ℝ ∞ (fun x₁ ↦ ContinuousLinearMap.inCoordinates E (TangentSpace 𝓘(ℝ, E))
-      E (TangentSpace 𝓘(ℝ, E)) x x₁ x x₁ (J.toEndomorphism x₁)) x :=
-    contMDiffAt_iff_contDiffAt.1 ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff x)).2
-  exact (funext fun x₁ ↦ inCoordinates_tangent_bundle_core_model_space (I := 𝓘(ℝ, E))
-    (I' := 𝓘(ℝ, E)) x x₁ x x₁ (J.toEndomorphism x₁)) ▸ h2
+  ext p v
+  rw [fiberBlock_apply, blockAlmostComplexStructure_apply]
+  simp
 
 theorem contDiff_connectionBlock (J : SmoothAlmostComplexStructure 𝓘(ℝ, B × V) (B × V)) :
     ContDiff ℝ ∞ (connectionBlock J) :=
-  contDiff_const.clm_comp ((contDiff_toEndomorphism J).clm_comp contDiff_const)
+  contDiff_const.clm_comp (J.contDiff_toEndomorphism.clm_comp contDiff_const)
 
 theorem contDiff_fiberBlock (J : SmoothAlmostComplexStructure 𝓘(ℝ, B × V) (B × V)) :
     ContDiff ℝ ∞ (fiberBlock J) :=
-  contDiff_const.clm_comp ((contDiff_toEndomorphism J).clm_comp contDiff_const)
+  contDiff_const.clm_comp (J.contDiff_toEndomorphism.clm_comp contDiff_const)
 
 /-- The projection `Prod.fst : B × V → B` is pseudoholomorphic at `p` from `J` to the constant
 structure `i` if and only if `(J p w).1 = i w.1` for every `w`. -/
@@ -286,14 +230,18 @@ theorem isPseudoholomorphicAt_fst_iff (J : SmoothAlmostComplexStructure 𝓘(ℝ
     (ContinuousLinearMap.fst ℝ B V).hasFDerivAt.hasMFDerivAt
   constructor
   · intro h w
-    have hcomm := h.mfderiv_apply_commute w
-    rw [hfst.mfderiv] at hcomm
-    change (J p w).1 = (SmoothAlmostComplexStructure.const i hi).toEndomorphism p.1 w.1 at hcomm
-    rwa [SmoothAlmostComplexStructure.const_toEndomorphism_apply] at hcomm
+    have hc : (J p w).1 = SmoothAlmostComplexStructure.const i hi p.1 w.1 := by
+      -- `hfst.mfderiv` identifies `mfderiv ... Prod.fst p` on `TangentSpace` with
+      -- `ContinuousLinearMap.fst ℝ B V`, which acts as `Prod.fst` on the model space `B × V`.
+      have hcomm := h.mfderiv_apply_commute w
+      rw [hfst.mfderiv] at hcomm
+      exact hcomm
+    exact hc.trans (SmoothAlmostComplexStructure.const_apply i hi p.1 w.1)
   · intro h
     refine isPseudoholomorphicAt_of_hasMFDerivAt hfst fun w ↦ ?_
-    change (J p w).1 = (SmoothAlmostComplexStructure.const i hi).toEndomorphism p.1 w.1
-    rw [SmoothAlmostComplexStructure.const_toEndomorphism_apply]; exact h w
+    let w' : B × V := w
+    -- As above, on self-modelled spaces `ContinuousLinearMap.fst` on `TangentSpace` is `Prod.fst`.
+    exact (h w').trans (SmoothAlmostComplexStructure.const_apply i hi p.1 w'.1).symm
 
 /-- A smooth almost complex structure `J` on `B × V` agrees at `p` with
 `blockEndomorphism i (connectionBlock J) (fiberBlock J) p` if and only if `Prod.fst` is
@@ -305,6 +253,8 @@ theorem isPseudoholomorphicAt_fst_iff_toEndomorphism_eq_blockEndomorphism
       (J.toEndomorphism p : (B × V) →L[ℝ] B × V) =
         blockEndomorphism i (connectionBlock J) (fiberBlock J) p := by
   rw [isPseudoholomorphicAt_fst_iff]
+  -- Read `J p` on the self-modelled tangent space `TangentSpace 𝓘(ℝ, B × V) p` as the model-space
+  -- endomorphism `K : (B × V) →L[ℝ] B × V` so `ContinuousLinearMap.ext` uses `B × V` instances.
   let K : (B × V) →L[ℝ] B × V := J.toEndomorphism p
   change (∀ w : B × V, (K w).1 = i w.1) ↔
     K = blockEndomorphism i (connectionBlock J) (fiberBlock J) p

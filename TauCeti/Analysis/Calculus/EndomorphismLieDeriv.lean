@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.VectorField
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 
 /-!
 # The Lie derivative of endomorphism fields on normed spaces
@@ -333,9 +334,8 @@ theorem lieDerivEndomorphism_lieBracket {n : ℕ∞ω} (hn : minSmoothness 𝕜 
   have h1n : (1 : ℕ∞ω) ≤ n := (one_le_two.trans le_minSmoothness).trans hn
   have h11n : (1 + 1 : ℕ∞ω) ≤ n := (by norm_cast : (1 + 1 : ℕ∞ω) = 2).trans_le
     (le_minSmoothness.trans hn)
-  have hAx : DifferentiableAt 𝕜 A x := (hA.of_le h1n).differentiableAt one_ne_zero
-  have hA_ev : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 A y :=
-    ((hA.of_le h1n).eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
+  have hAx : DifferentiableAt 𝕜 A x := (hA.of_le h1n).differentiableAt_one
+  have hA_ev : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 A y := hA.eventually_differentiableAt h1n
   have hLA (Z : E → E) (hZ : ContDiffAt 𝕜 n Z x) :
       DifferentiableAt 𝕜 (lieDerivEndomorphism Z A) x :=
     (contDiffAt_lieDerivEndomorphism hZ hA h11n).differentiableAt one_ne_zero

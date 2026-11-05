@@ -39,6 +39,8 @@ structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorph
 * `TauCeti.SmoothAlmostComplexStructure.neg`: the negative of a smooth almost complex structure.
 * `TauCeti.SmoothAlmostComplexStructure.const`: a continuous endomorphism of a real normed space
   squaring to `-1` gives the constant smooth almost complex structure on that model manifold.
+* `TauCeti.SmoothAlmostComplexStructure.contDiff_toEndomorphism`: on a self-modelled normed space,
+  the endomorphism section is `C^∞` in the normed-space sense.
 * `TauCeti.AlmostComplexStructure.constSmooth`: a pointwise almost complex structure on a
   finite-dimensional real normed space gives the constant smooth almost complex structure on that
   model manifold.
@@ -231,6 +233,26 @@ lemma const_toEndomorphism_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace
     (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v) (x : V) :
     (const Jc hJc).toEndomorphism x = Jc :=
   (rfl)
+
+/-- Evaluating a constant smooth almost complex structure applies its defining endomorphism. -/
+-- This is not a `simp` lemma: `simp` already rewrites the left-hand side through
+-- `const_toEndomorphism_apply`.
+lemma const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v) (x v : V) :
+    const Jc hJc x v = Jc v :=
+  congrArg (fun A : V →L[ℝ] V ↦ A v) (const_toEndomorphism_apply Jc hJc x)
+
+/-- On a self-modelled normed space, the endomorphism field of a `SmoothAlmostComplexStructure` is
+smooth in the normed-space sense. -/
+theorem contDiff_toEndomorphism {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) :
+    ContDiff ℝ (E := V) (F := V →L[ℝ] V) ∞ (fun x ↦ J.toEndomorphism x) := by
+  refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
+  have h : ContDiffAt ℝ ∞ (fun x₁ ↦ ContinuousLinearMap.inCoordinates V (TangentSpace 𝓘(ℝ, V))
+      V (TangentSpace 𝓘(ℝ, V)) x x₁ x x₁ (J.toEndomorphism x₁)) x :=
+    contMDiffAt_iff_contDiffAt.1 ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff x)).2
+  exact (funext fun x₁ ↦ inCoordinates_tangent_bundle_core_model_space (I := 𝓘(ℝ, V))
+    (I' := 𝓘(ℝ, V)) x x₁ x x₁ (J.toEndomorphism x₁)) ▸ h
 
 end SmoothAlmostComplexStructure
 
