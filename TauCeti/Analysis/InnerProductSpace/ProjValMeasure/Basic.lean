@@ -24,6 +24,7 @@ public import Mathlib.MeasureTheory.Measure.Filter
 public import Mathlib.MeasureTheory.Measure.OuterMeasure
 public import Mathlib.MeasureTheory.Measure.Sum
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import TauCeti.MeasureTheory.Measure.DisjointUnion
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
@@ -418,34 +419,12 @@ private theorem norm_sq_partialSum_sub (P : ProjValMeasure X H) {f : ℕ → Set
     (hf : ∀ n, MeasurableSet (f n)) (hdisj : Pairwise (Disjoint on f)) (ξ : H) (n : ℕ) :
     ‖partialSum P f hf n ξ - P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ‖ ^ 2 =
       (P.diag ξ (⋃ k, f k) - ∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal := by
-  have hUle : ∑ k ∈ Finset.range n, P.diag ξ (f k) ≤ P.diag ξ (⋃ k, f k) := by
-    rw [measure_iUnion₀ hdisj.aedisjoint fun k => (hf k).nullMeasurableSet, tsum_eq_iSup_sum]
-    exact le_iSup (fun s : Finset ℕ => ∑ k ∈ s, P.diag ξ (f k)) (Finset.range n)
+  have hUle := sum_measure_le_measure_iUnion (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
+    hdisj (Finset.range n)
   rw [ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption _ _
     (partialSum_selfAdjoint P hf n) (partialSum_idem P hf hdisj n) (partialSum_mul_univ P hf n) ξ,
     P.norm_sq_proj_apply, norm_sq_partialSum P hf hdisj ξ n,
     ENNReal.toReal_sub_of_le hUle (measure_ne_top (μ := P.diag ξ) (s := ⋃ k, f k))]
-
-/-- The uncovered mass of a disjoint union tends to zero, by countable additivity of the
-diagonal measure. -/
-private theorem tendsto_uncovered_mass (P : ProjValMeasure X H) {f : ℕ → Set X}
-    (hf : ∀ n, MeasurableSet (f n)) (hdisj : Pairwise (Disjoint on f)) (ξ : H) :
-    Tendsto (fun n : ℕ =>
-      (P.diag ξ (⋃ k, f k) - ∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal) atTop (𝓝 0) := by
-  have hUfin : P.diag ξ (⋃ k, f k) ≠ ⊤ := measure_ne_top (μ := P.diag ξ) (s := ⋃ k, f k)
-  have hUeq : P.diag ξ (⋃ k, f k) = ∑' k, P.diag ξ (f k) :=
-    measure_iUnion₀ hdisj.aedisjoint fun k => (hf k).nullMeasurableSet
-  have hUle (n : ℕ) : ∑ k ∈ Finset.range n, P.diag ξ (f k) ≤ P.diag ξ (⋃ k, f k) := by
-    rw [hUeq, tsum_eq_iSup_sum]
-    exact le_iSup (fun s : Finset ℕ => ∑ k ∈ s, P.diag ξ (f k)) (Finset.range n)
-  have hT : Tendsto (fun n : ℕ => (∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal) atTop
-      (𝓝 (P.diag ξ (⋃ k, f k)).toReal) := by
-    rw [hUeq]
-    exact (ENNReal.continuousAt_toReal (hUeq ▸ hUfin)).tendsto.comp
-      (ENNReal.tendsto_nat_tsum fun k => P.diag ξ (f k))
-  have h0 := (tendsto_const_nhds (x := (P.diag ξ (⋃ k, f k)).toReal)).sub hT
-  rw [sub_self] at h0
-  exact h0.congr fun n => (ENNReal.toReal_sub_of_le (hUle n) hUfin).symm
 
 /-- For pairwise disjoint measurable sets, the finite sums of their projections,
 applied to any vector, converge to the projection of their union applied to that vector. -/
@@ -454,11 +433,15 @@ theorem tendsto_sum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ 
     Tendsto (fun n => (∑ k < n, P.proj (f k) (hf k) : H →L[ℂ] H) ξ) Filter.atTop
         (𝓝 (P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ)) := by
   refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
-  have hsq := (tendsto_uncovered_mass P hf hdisj ξ).sqrt
-  rw [Real.sqrt_zero] at hsq
+  -- The uncovered mass of the union tends to zero, by countable additivity of `P.diag ξ`.
+  have hmass := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (tendsto_measure_iUnion_sub_sum_range (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
+      hdisj (measure_ne_top _ _))
+  have hsq := (hmass.sqrt : Tendsto _ _ (𝓝 (Real.sqrt (ENNReal.toReal 0))))
+  rw [ENNReal.toReal_zero, Real.sqrt_zero] at hsq
   refine hsq.congr fun n => ?_
-  rw [← norm_sq_partialSum_sub P hf hdisj ξ n, Real.sqrt_sq (norm_nonneg _)]
-  rfl
+  simp only [Function.comp_apply]
+  rw [← norm_sq_partialSum_sub P hf hdisj ξ n, Real.sqrt_sq (norm_nonneg _), partialSum]
 
 /-- **Unconditional** strong countable additivity: disjoint measurable-set
 projections form a summable family of vectors, and their sum is the projection
