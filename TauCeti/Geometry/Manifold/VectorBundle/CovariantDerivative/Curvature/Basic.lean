@@ -8,7 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -38,9 +40,6 @@ of a connection on the tangent bundle.
   `CovariantDerivative.curvatureOperator_smul_second`, and
   `CovariantDerivative.curvatureOperator_smul_section`: curvature is linear over smooth
   functions in each argument.
-* `CovariantDerivative.covariantDerivative_smul_section_vectorField` and
-  `CovariantDerivative.covariantDerivative_covariantDerivative_smul_section`: the Leibniz rule for
-  the first and second covariant derivative of a function multiple of a section.
 * `CovariantDerivative.curvatureOperator_congr`: on finite-rank smooth bundles over
   finite-dimensional Hausdorff manifolds, curvature at a point depends only on the values of
   its three inputs there.
@@ -316,23 +315,6 @@ theorem curvatureOperator_neg_section
   rw [← curvatureOperator_add_section hX hY hσ.neg_section hσ, neg_add_cancel,
     curvatureOperator_zero_section]
 
-omit [CompleteSpace E] [IsManifold I ∞ M] [VectorBundle ℝ F V]
-  [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞] in
-/-- **Leibniz rule along a vector field.** The covariant derivative of `f • σ` along a vector
-field `Z` is `f` times the covariant derivative of `σ` along `Z`, plus the derivative of `f` along
-`Z` times `σ`, for a differentiable function `f` and a differentiable section `σ`. -/
-theorem covariantDerivative_smul_section_vectorField {Z : Π x : M, TangentSpace I x}
-    (hf : MDiff f) (hσ : MDiff (T% σ)) :
-    (fun y ↦ cov (f • σ) y (Z y)) =
-      f • (fun y ↦ cov σ y (Z y)) + (fun y ↦ d% f y (Z y)) • σ := by
-  funext y
-  have h := cov.isCovariantDerivativeOnUniv.leibniz (hσ y) (hf y)
-  -- `h` is an equality of continuous linear maps; expose its value at `Z y` through the
-  -- pointwise `Pi` operations before rewriting by it.
-  change cov (f • σ) y (Z y) = f y • cov σ y (Z y) + d% f y (Z y) • σ y
-  rw [h]
-  simp [add_apply, ContinuousLinearMap.smulRight_apply]
-
 /-- Curvature is linear over smooth functions in its first vector-field argument. -/
 @[simp]
 theorem curvatureOperator_smul_first
@@ -374,33 +356,6 @@ theorem curvatureOperator_smul_second
     curvatureOperator_smul_first hf hY hσ, curvatureOperator_antisymm cov Y X σ]
   simp
 
-omit [CompleteSpace E] in
-/-- **Second covariant derivative of a function multiple.** For a vector field `X`, a smooth
-vector field `Y`, a smooth function `f` and a smooth section `σ`,
-`∇_X ∇_Y (f σ) = f ∇_X ∇_Y σ + (X f) ∇_Y σ + (Y f) ∇_X σ + (X (Y f)) σ`. -/
-theorem covariantDerivative_covariantDerivative_smul_section
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) (x : M) :
-    cov (fun y ↦ cov (f • σ) y (Y y)) x (X x) =
-      f x • cov (fun y ↦ cov σ y (Y y)) x (X x) + d% f x (X x) • cov σ x (Y x) +
-        (d% f x (Y x) • cov σ x (X x) + d% (fun y ↦ d% f y (Y y)) x (X x) • σ x) := by
-  have hfd : MDiff f := hf.mdifferentiable (by simp)
-  have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
-  have hYσ := cov.contMDiff_apply hY hσ
-  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
-  have hgY : ContMDiff I 𝓘(ℝ) ∞ fun y ↦ d% f y (Y y) :=
-    (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hY
-  have hgYd : MDiff fun y ↦ d% f y (Y y) := hgY.mdifferentiable (by simp)
-  have hfYσd : MDiff (T% (f • fun y ↦ cov σ y (Y y))) :=
-    (hf.smul_section hYσ).mdifferentiable (by simp)
-  have hgYσd : MDiff (T% ((fun y ↦ d% f y (Y y)) • σ)) :=
-    (hgY.smul_section hσ).mdifferentiable (by simp)
-  rw [covariantDerivative_smul_section_vectorField hfd hσd,
-    cov.isCovariantDerivativeOnUniv.add (hfYσd x) (hgYσd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hYσd x) (hfd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgYd x)]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-
 /-- Curvature is linear over smooth functions in its section argument. -/
 @[simp]
 theorem curvatureOperator_smul_section
@@ -420,8 +375,8 @@ theorem curvatureOperator_smul_section
   have hcomm := mvfderiv_mlieBracket (f := f) (V := X) (W := Y) (x := x)
     (hf.contMDiffAt) (by simp) (hXd x) (hYd x)
   rw [curvatureOperator_apply, curvatureOperator_apply,
-    covariantDerivative_covariantDerivative_smul_section (X := X) hf hY hσ x,
-    covariantDerivative_covariantDerivative_smul_section (X := Y) hf hX hσ x,
+    covariantDerivative_covariantDerivative_smul_section cov (X := X) hf hY hσ x,
+    covariantDerivative_covariantDerivative_smul_section cov (X := Y) hf hX hσ x,
     cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hfd x)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
   rw [hcomm]
