@@ -8,8 +8,6 @@ module
 public import TauCeti.RingTheory.MvPolynomial.BlockHomogenize.Taylor
 public import TauCeti.RingTheory.MvPolynomial.WeightedIndex
 
-import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
-
 /-!
 # Weighted indices of block homogenizations
 
@@ -40,8 +38,6 @@ When `f : MvPolynomial S R` has block degrees `e.mapDomain b h ≤ d h` on its s
 
 ## Main results
 
-* `MvPolynomial.hasseDeriv_sumElim_blockHomogenize_eq_zero_of_lt`: if `d h < κ h + t_h(β)` in some
-  block `h`, then `∂^(κ ⊕ β) (blockHomogenize b d f) = 0`.
 * `MvPolynomial.weightedIndex_blockHomogenize_le`: over a commutative semiring, block homogenization
   does not increase `weightedIndex` on `d`-bounded polynomials.
 * `MvPolynomial.weightedIndex_blockHomogenize`, `MvPolynomial.weightedIndex_aeval_one_X`: over a
@@ -49,10 +45,9 @@ When `f : MvPolynomial S R` has block degrees `e.mapDomain b h ≤ d h` on its s
 * `MvPolynomial.forall_eval_one_hasseDeriv_sumElim_blockHomogenize_eq_zero_iff`: equivalence of
   homogeneous jet vanishing at `(1, a)` and affine jet vanishing at `a` below any threshold
   `T : ℝ≥0∞`.
-* `MvPolynomial.ofReal_le_weightedIndex_comp_of_eval_hasseDeriv_eq_zero`,
-  `MvPolynomial.ofReal_le_weightedIndex_blockHomogenize_of_eval_hasseDeriv_eq_zero`,
-  `MvPolynomial.le_sum_mapDomain_div_of_le_weightedIndex_comp`: real-valued index bounds in terms of
-  the block ratios `∑ h, t_h(γ) / d h`.
+* `MvPolynomial.ofReal_le_weightedIndex_blockHomogenize_of_eval_hasseDeriv_eq_zero`: real-valued
+  lower bound on the homogeneous `weightedIndex` of `blockHomogenize b d f` in terms of the block
+  ratios `∑ h, t_h(γ) / d h`.
 
 ## References
 
@@ -71,17 +66,6 @@ section CommSemiring
 
 variable {R B S : Type*} [CommSemiring R] [Fintype B] (b : S → B) (d : B → ℕ)
 
-/-- Since `blockHomogenize b d f` has degree `d h` in block `h`, any Hasse derivative `∂^(κ ⊕ β)`
-whose order `κ h + t_h(β)` in block `h` exceeds `d h` vanishes identically. -/
-theorem hasseDeriv_sumElim_blockHomogenize_eq_zero_of_lt (f : MvPolynomial S R)
-    {κ : B →₀ ℕ} {β : S →₀ ℕ} {h : B} (hlt : d h < κ h + β.mapDomain b h) :
-    hasseDeriv (κ.sumElim β) (blockHomogenize b d f) = 0 := by
-  classical
-  by_contra hne
-  have hle := (isWeightedHomogeneous_blockHomogenize b d f h).weight_le_of_hasseDeriv_ne_zero hne
-  rw [Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply] at hle
-  exact hle.not_gt hlt
-
 /-- Over any commutative semiring, the homogeneous `weightedIndex` of `blockHomogenize b d f` at
 `(1, a)` is at most the affine `weightedIndex` of `f` at `a` whenever `f` is `d`-bounded. -/
 theorem weightedIndex_blockHomogenize_le (a : S → R) {f : MvPolynomial S R}
@@ -94,39 +78,6 @@ theorem weightedIndex_blockHomogenize_le (a : S → R) {f : MvPolynomial S R}
     rwa [eval_one_hasseDeriv_zero_sumElim_blockHomogenize b d a β hf]
   refine (weightedIndex_le hjet).trans_eq ?_
   rw [Finsupp.weight_inv_natCast_sumElim, zero_add, ← Finsupp.weight_inv_natCast_comp]
-
-/-- A nonzero affine jet `∂^γ f (a)` of a `d`-bounded polynomial at a point where the block-weighted
-index is at least `ENNReal.ofReal t` satisfies `t_h(γ) ≤ d h` for every block `h` and
-`t ≤ ∑ h, t_h(γ) / d h` in `ℝ`. -/
-theorem le_sum_mapDomain_div_of_le_weightedIndex_comp {f : MvPolynomial S R}
-    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {a : S → R} {t : ℝ}
-    (ht : ENNReal.ofReal t ≤ weightedIndex (d ∘ b) a f) {γ : S →₀ ℕ}
-    (hγ : eval a (hasseDeriv γ f) ≠ 0) :
-    (∀ h, γ.mapDomain b h ≤ d h) ∧ t ≤ ∑ h, (γ.mapDomain b h : ℝ) / d h := by
-  have hγd : ∀ h, γ.mapDomain b h ≤ d h :=
-    mapDomain_le_of_hasseDeriv_ne_zero b d hf (fun hz ↦ hγ (by simp [hz]))
-  refine ⟨hγd, ?_⟩
-  have hw : γ.weight (fun j ↦ (((d ∘ b) j : ℕ) : ℝ≥0∞)⁻¹) =
-      ENNReal.ofReal (∑ h, (γ.mapDomain b h : ℝ) / d h) := by
-    rw [Finsupp.weight_inv_natCast_comp, Finsupp.weight_inv_natCast_eq_ofReal_sum_div hγd]
-  exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun h _ ↦ by positivity)).1
-    (ht.trans ((weightedIndex_le hγ).trans_eq hw))
-
-/-- For a `d`-bounded polynomial `f`, the affine block-weighted index `weightedIndex (d ∘ b) a f` is
-at least `ENNReal.ofReal t` once `(∂^γ f)(a) = 0` for every `γ` with `t_h(γ) ≤ d h` and real block
-weight `∑ h, t_h(γ) / d h < t`. -/
-theorem ofReal_le_weightedIndex_comp_of_eval_hasseDeriv_eq_zero {f : MvPolynomial S R}
-    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {a : S → R} {t : ℝ}
-    (hvan : ∀ γ : S →₀ ℕ, (∀ h, γ.mapDomain b h ≤ d h) →
-      ∑ h, (γ.mapDomain b h : ℝ) / d h < t → eval a (hasseDeriv γ f) = 0) :
-    ENNReal.ofReal t ≤ weightedIndex (d ∘ b) a f := by
-  refine le_weightedIndex_of_forall fun γ hγ ↦ le_of_not_gt fun hlt ↦ hγ ?_
-  by_cases hγd : ∀ h, γ.mapDomain b h ≤ d h
-  · rw [Finsupp.weight_inv_natCast_comp, Finsupp.weight_inv_natCast_eq_ofReal_sum_div hγd] at hlt
-    exact hvan γ hγd (ENNReal.ofReal_lt_ofReal_iff'.1 hlt).1
-  · push Not at hγd
-    obtain ⟨h, hh⟩ := hγd
-    rw [hasseDeriv_eq_zero_of_lt_mapDomain b d hf hh, map_zero]
 
 end CommSemiring
 

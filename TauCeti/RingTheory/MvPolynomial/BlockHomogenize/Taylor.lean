@@ -10,6 +10,8 @@ public import TauCeti.Data.Finsupp.Sum
 public import TauCeti.RingTheory.MvPolynomial.BlockHomogenize.Basic
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 
+import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
+
 /-!
 # Taylor expansions and Hasse jets of block homogenizations
 
@@ -34,6 +36,8 @@ dehomogenizing `∂^(0 ⊕ β) H_d(f)` at `X_h = 1` recovers `∂^β f` over any
 
 ## Main results
 
+* `MvPolynomial.hasseDeriv_sumElim_blockHomogenize_eq_zero_of_lt`: if `d h < κ h + t_h(β)` in some
+  block `h`, then `∂^(κ ⊕ β) (blockHomogenize b d f) = 0`.
 * `MvPolynomial.eval_one_blockHomogenize`,
   `MvPolynomial.eval₂_hasseDeriv_zero_sumElim_blockHomogenize_of_eq_one`,
   `MvPolynomial.aeval_hasseDeriv_zero_sumElim_blockHomogenize_one_X`,
@@ -66,6 +70,17 @@ open Finsupp
 section CommSemiring
 
 variable {R B S : Type*} [CommSemiring R] [Fintype B] (b : S → B) (d : B → ℕ)
+
+/-- Since `blockHomogenize b d f` has degree `d h` in block `h`, any Hasse derivative `∂^(κ ⊕ β)`
+whose order `κ h + t_h(β)` in block `h` exceeds `d h` vanishes identically. -/
+theorem hasseDeriv_sumElim_blockHomogenize_eq_zero_of_lt (f : MvPolynomial S R)
+    {κ : B →₀ ℕ} {β : S →₀ ℕ} {h : B} (hlt : d h < κ h + β.mapDomain b h) :
+    hasseDeriv (κ.sumElim β) (blockHomogenize b d f) = 0 := by
+  classical
+  by_contra hne
+  have hle := (isWeightedHomogeneous_blockHomogenize b d f h).weight_le_of_hasseDeriv_ne_zero hne
+  rw [Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply] at hle
+  exact hle.not_gt hlt
 
 /-- At the chart point `(1, a)`, `blockHomogenize b d f` evaluates to `f(a)` for any `d`-bounded
 polynomial `f`. -/
