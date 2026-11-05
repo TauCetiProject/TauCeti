@@ -149,12 +149,10 @@ theorem not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension [IsAlgClosed
       compute_degree!
     obtain ⟨w, hw⟩ := IsAlgClosed.exists_root
       (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)) (by rw [hdeg]; decide)
-    rw [IsRoot, eval_sub, eval_add, eval_pow, eval_mul, eval_C, eval_X, eval_C,
+    simp only [IsRoot, eval_sub, eval_add, eval_pow, eval_mul, eval_C, eval_X,
       sub_eq_zero] at hw
     refine ⟨e w, ?_⟩
-    have := congrArg e hw
-    rwa [map_add, map_pow, map_mul, AlgEquiv.commutes, AlgEquiv.apply_symm_apply, sq,
-      ← Algebra.smul_def] at this
+    simpa [sq, Algebra.smul_def] using congrArg e hw
   · exact false_of_forall_isSquare_of_ne_two h2 hs hfield hsq
 
 section Converse
