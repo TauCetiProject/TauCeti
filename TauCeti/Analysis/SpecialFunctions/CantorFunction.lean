@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Analysis.Real.OfDigits
 public import TauCeti.MeasureTheory.Measure.Lebesgue.CantorSet
+
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # The Cantor–Lebesgue function
@@ -54,7 +57,6 @@ Lebesgue-null Cantor set, hence mutually singular with Lebesgue measure.
 public section
 
 open Real Set MeasureTheory Filter Topology
-open scoped ENNReal
 
 namespace TauCeti
 

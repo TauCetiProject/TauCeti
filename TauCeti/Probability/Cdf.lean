@@ -29,6 +29,11 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 
 * `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
 * `MeasureTheory.Measure.cdf_map` computes the cdf of a measurable pushforward;
+* `MeasureTheory.Measure.memLp_cdf_comp` proves `Lᵖ` membership of a cdf composed with an
+  a.e. measurable function on a finite measure space;
+* `MeasureTheory.Measure.cdf_map` computes the cdf of an almost-everywhere measurable pushforward;
+* `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
+  law's cdf at a point by vanishing singleton mass;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
@@ -87,6 +92,7 @@ atomless standard-Borel space with the unit interval proved as Theorem A.7 in S.
 public section
 
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
+open scoped ENNReal
 
 namespace ProbabilityTheory
 
@@ -118,12 +124,22 @@ end ProbabilityTheory
 
 namespace MeasureTheory.Measure
 
-/-- The cdf of a measurable pushforward is the real mass of the preimage of the corresponding
-closed ray. -/
+/-- A cdf composed with an a.e. measurable function belongs to every `Lᵖ` on a finite measure
+space, since its values lie in `[0, 1]`. -/
+theorem memLp_cdf_comp (ν : Measure ℝ) {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} (hf : AEMeasurable f μ) (p : ℝ≥0∞) :
+    MemLp (cdf ν ∘ f) p μ := by
+  refine MemLp.of_bound ((monotone_cdf ν).measurable.comp_aemeasurable hf).aestronglyMeasurable
+    1 (ae_of_all _ fun x => ?_)
+  rw [Function.comp_apply, Real.norm_of_nonneg (cdf_nonneg _ _)]
+  exact cdf_le_one _ _
+
+/-- The cdf of an almost-everywhere measurable pushforward is the real mass of the preimage of the
+corresponding closed ray. -/
 theorem cdf_map {I : Type*} [MeasurableSpace I] (μ : Measure I) [IsProbabilityMeasure μ]
-    (label : I → ℝ) (hlabel : Measurable label) (x : ℝ) :
+    (label : I → ℝ) (hlabel : AEMeasurable label μ) (x : ℝ) :
     cdf (μ.map label) x = μ.real (label ⁻¹' Iic x) := by
-  rw [cdf_eq_real, map_measureReal_apply hlabel measurableSet_Iic]
+  rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hlabel measurableSet_Iic]
 
 /-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
 theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
@@ -242,21 +258,24 @@ theorem exists_nat_le_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u �
   have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
   simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
 
+/-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
+if and only if `ν` assigns mass zero to `{x}`. -/
+theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    ContinuousAt (cdf ν) x ↔ ν {x} = 0 := by
+  have hsing : ν {x} = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) :=
+    calc
+      ν {x} = (cdf ν).measure {x} := by rw [measure_cdf]
+      _ = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) := StieltjesFunction.measure_singleton _ _
+  have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
+  rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, ((cdf ν).right_continuous x).rightLim_eq,
+    hsing, ENNReal.ofReal_eq_zero, sub_nonpos]
+  exact ⟨fun h ↦ h.symm.le, le_antisymm hle⟩
+
 /-- **CDF continuity from null singletons.** The cumulative distribution function of a
 probability measure on `ℝ` is continuous when every singleton has measure zero. -/
 theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NullSingletonClass ν] : Continuous (cdf ν) := by
-  have hleft : ∀ x, leftLim (cdf ν) x = cdf ν x := by
-    intro x
-    have hsing : (cdf ν).measure {x} = 0 := by rw [measure_cdf]; exact measure_singleton x
-    rw [StieltjesFunction.measure_singleton] at hsing
-    have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
-    have hz : cdf ν x - leftLim (cdf ν) x ≤ 0 := ENNReal.ofReal_eq_zero.mp hsing
-    exact le_antisymm hle (by linarith)
-  rw [continuous_iff_continuousAt]
-  intro x
-  rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
-    ((cdf ν).right_continuous x).rightLim_eq]
+    [NullSingletonClass ν] : Continuous (cdf ν) :=
+  continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/

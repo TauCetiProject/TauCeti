@@ -40,6 +40,11 @@ the autonomous Hamiltonian vector field.
 * `TauCeti.SymplecticForm.apply_fderiv_timeDependentHamiltonianFlow_of_contDiff_suspension`: the
   same under a `C¹` suspended field and `C²` fixed-time Hamiltonians.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow_const`: recovery of the autonomous flow.
+* `TauCeti.SymplecticForm.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField`: a
+  time-dependent function `F` changes along a solution at the rate `∂_t F + {F_t, H_t}`; in
+  particular (`..._self`) the energy changes at the rate `∂_t H`.
+* `TauCeti.SymplecticForm.forall_apply_timeDependentHamiltonianFlow_eq_iff`: a differentiable
+  `F` is conserved by the evolution exactly when `∂_t F + {F_t, H_t} = 0`.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of time-dependent
 Hamiltonian vector fields and flows.
@@ -246,6 +251,56 @@ theorem timeDependentHamiltonianFlow_const (omega : SymplecticForm V) (H : V →
     (omega.lipschitzWith_timeDependentHamiltonianSuspension_const H hX)
       (y := fun u ↦ omega.hamiltonianFlow H hX (u - s) x)
       (fun u ↦ (omega.hasDerivAt_hamiltonianFlow H hX x (u - s)).comp_sub_const u s) s t
+
+/-- **The derivative of a time-dependent function along a solution.** If `x` solves the
+nonautonomous equation `x' = X_{H_t}(x)` at `t` and `F` is differentiable at `(t, x t)`, then
+`d/dt F(t, x(t)) = ∂_t F(t, x(t)) + {F_t, H_t}(x(t))`. -/
+theorem hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField (omega : SymplecticForm V)
+    {F H : ℝ → V → ℝ} {x : ℝ → V} {t : ℝ} (hF : DifferentiableAt ℝ (uncurry F) (t, x t))
+    (hx : HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) :
+    HasDerivAt (fun s ↦ F s (x s))
+      (timeFDeriv (uncurry F) t (x t) + omega.poissonBracket (F t) (H t) (x t)) t := by
+  have hspatial : spatialFDeriv (uncurry F) (x t) t = fderiv ℝ (F t) (x t) :=
+    (fderiv_timeSlice hF).symm
+  rw [poissonBracket_eq_fderiv, ← hspatial]
+  exact hasDerivAt_comp_prodMk (F := uncurry F) hF hx
+
+/-- **The energy changes at the rate `∂_t H`.** Along a solution `x` of the nonautonomous
+equation `x' = X_{H_t}(x)`, `d/dt H(t, x(t)) = ∂_t H(t, x(t))`. -/
+theorem hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField_self (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {x : ℝ → V} {t : ℝ}
+    (hH : DifferentiableAt ℝ (uncurry H) (t, x t))
+    (hx : HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) :
+    HasDerivAt (fun s ↦ H s (x s)) (timeFDeriv (uncurry H) t (x t)) t := by
+  simpa using omega.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField hH hx
+
+/-- **Conserved quantities of a time-dependent Hamiltonian.** For a time-dependent Hamiltonian
+whose suspended vector field is Lipschitz, a differentiable time-dependent function `F` is constant
+along its evolution, `F(t, Φ_{s,t} x) = F(s, x)`, exactly when `∂_t F + {F_t, H_t} = 0`. -/
+theorem forall_apply_timeDependentHamiltonianFlow_eq_iff (omega : SymplecticForm V)
+    {F H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    (hF : Differentiable ℝ (uncurry F)) :
+    (∀ s t x, F t (omega.timeDependentHamiltonianFlow H hX s t x) = F s x) ↔
+      ∀ t x, timeFDeriv (uncurry F) t x + omega.poissonBracket (F t) (H t) x = 0 := by
+  have hderiv : ∀ s t x, HasDerivAt (fun u ↦ F u (omega.timeDependentHamiltonianFlow H hX s u x))
+      (timeFDeriv (uncurry F) t (omega.timeDependentHamiltonianFlow H hX s t x) +
+        omega.poissonBracket (F t) (H t) (omega.timeDependentHamiltonianFlow H hX s t x)) t :=
+    fun s t x ↦ omega.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField (hF _)
+      (omega.hasDerivAt_timeDependentHamiltonianFlow H hX s t x)
+  constructor
+  · intro h t x
+    -- The function `u ↦ F(u, Φ_{t,u} x)` is constant, so its derivative at `u = t` vanishes.
+    have hconst : (fun u ↦ F u (omega.timeDependentHamiltonianFlow H hX t u x)) = fun _ ↦ F t x :=
+      funext fun u ↦ h t u x
+    have h0 := hderiv t t x
+    rw [hconst, timeDependentHamiltonianFlow_self] at h0
+    exact h0.unique (hasDerivAt_const t (F t x))
+  · intro h s t x
+    have hzero : ∀ u,
+        HasDerivAt (fun u ↦ F u (omega.timeDependentHamiltonianFlow H hX s u x)) 0 u :=
+      fun u ↦ (h u _) ▸ hderiv s u x
+    rw [is_const_of_deriv_eq_zero (fun u ↦ (hzero u).differentiableAt)
+      (fun u ↦ (hzero u).deriv) t s, timeDependentHamiltonianFlow_self]
 
 end TauCeti.SymplecticForm
 

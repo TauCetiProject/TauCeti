@@ -72,6 +72,15 @@ theorem eq_hamiltonianVectorField_iff (ω : SymplecticForm V) (H : V → ℝ) (x
     ext v
     exact (h v).trans (ω.apply_hamiltonianVectorField H x v).symm
 
+/-- The Hamiltonian vector field vanishes at `x` exactly when the derivative `fderiv ℝ H x` does.
+Where `H` is differentiable these are the critical points of `H`; since `fderiv` is `0` where `H`
+is not differentiable, the field also vanishes at every such point. -/
+@[simp]
+theorem hamiltonianVectorField_eq_zero_iff (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField H x = 0 ↔ fderiv ℝ H x = 0 := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  simp [ContinuousLinearMap.ext_iff, eq_comm]
+
 /-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
 @[simp]
 theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) (x : V) :
@@ -183,6 +192,21 @@ theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [Norm
       fun _ hz ↦ fderiv_slice_right (f := Function.uncurry K) <|
         (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
           ((hU.prod isOpen_univ).mem_nhds (hmem hz))
+
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
+space, the Hamiltonian vector field `X_{K z}(x)` is continuous jointly in the parameter `z ∈ U` and
+the point `x`. -/
+theorem continuousOn_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {U : Set W} (hU : IsOpen U)
+    (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
+    ContinuousOn (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) (U ×ˢ Set.univ) := by
+  -- View `(z, x) ↦ K z` as a family over the parameter space `W × V`, evaluated at `x`.
+  have hK' : ContDiffOn ℝ 1 (Function.uncurry fun p : W × V ↦ K p.1)
+      ((U ×ˢ Set.univ) ×ˢ Set.univ) :=
+    hK.comp (contDiff_fst.fst.prodMk contDiff_snd).contDiffOn
+      fun _ hq ↦ ⟨hq.1.1, Set.mem_univ _⟩
+  exact ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (hU.prod isOpen_univ)
+    continuousOn_snd hK'
 
 section PoissonBracket
 

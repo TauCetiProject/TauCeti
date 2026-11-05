@@ -249,9 +249,7 @@ theorem wishartGramMeasure_eq_map_sqrt (ν : ℕ) (hS : S.PosSemidef) :
       (wishartGramMeasure ν 1).map (Matrix.symmetricCongruenceLinearMap (CFC.sqrt S)) := by
   rw [map_symmetricCongruenceLinearMap_wishartGramMeasure ν _ Matrix.PosSemidef.one]
   refine congrArg _ ?_
-  rw [Matrix.mul_one, ← Matrix.conjTranspose_eq_transpose_of_trivial,
-    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian.eq,
-    CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  rw [Matrix.mul_one, hS.sqrt_mul_transpose_sqrt]
 
 /-! ### Support, rank and singularity -/
 

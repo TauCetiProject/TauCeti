@@ -9,12 +9,16 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
+import TauCeti.Analysis.Complex.Circle
+
 /-!
 # The sphere as the actual smooth boundary of the closed ball
 
 The standard sphere manifold and the intrinsic boundary manifold of the closed ball are
 canonically analytically diffeomorphic. Both directions are the same ambient point; their
 smoothness follows from the actual inclusion maps and the boundary smoothness criterion.
+In particular the unit circle `Circle` is homeomorphic to the boundary of the closed unit disc
+of `ℂ` (`TauCeti.circleHomeomorphBoundaryClosedBall`).
 -/
 
 public section
@@ -66,5 +70,26 @@ theorem sphereDiffeomorphBoundaryClosedBall_apply_coe (x : sphere (0 : E) 1) :
 theorem sphereDiffeomorphBoundaryClosedBall_symm_apply_coe
     (x : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
     ((sphereDiffeomorphBoundaryClosedBall (n := n)).symm x).val = x.val.val := (rfl)
+
+/-- The unit circle `Circle` is homeomorphic to the actual intrinsic boundary of the closed unit
+disc of `ℂ`. The map preserves the underlying complex number. -/
+def circleHomeomorphBoundaryClosedBall :
+    Circle ≃ₜ (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1) :=
+  have : Fact (Module.finrank ℝ ℂ = 1 + 1) := finrank_real_complex_fact'
+  Circle.homeomorphSphere.trans (sphereDiffeomorphBoundaryClosedBall (n := 1)).toHomeomorph
+
+/-- The identification of the circle with the boundary of the disc preserves the complex
+number. -/
+@[simp]
+theorem circleHomeomorphBoundaryClosedBall_apply_coe (z : Circle) :
+    ((circleHomeomorphBoundaryClosedBall z).val : ℂ) = z := by
+  simp [circleHomeomorphBoundaryClosedBall]
+
+/-- The inverse identification preserves the complex number of the boundary point. -/
+@[simp]
+theorem circleHomeomorphBoundaryClosedBall_symm_apply_coe
+    (x : (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1)) :
+    ((circleHomeomorphBoundaryClosedBall.symm x : Circle) : ℂ) = x.val.val := by
+  simp [circleHomeomorphBoundaryClosedBall]
 
 end TauCeti
