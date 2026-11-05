@@ -31,7 +31,8 @@ family evaluated along a continuous map, the Hamiltonian vector fields vary cont
 
 The Poisson bracket `{F, G} = ω(X_F, X_G)` of two Hamiltonians is the symplectic pairing of their
 Hamiltonian vector fields. With the contraction convention it is `dF(X_G) = -dG(X_F)`; it is
-antisymmetric and vanishes when either argument is constant.
+antisymmetric, vanishes when either argument is constant, and is linear in each argument on
+Hamiltonians differentiable at the point.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of Hamiltonian
 vector fields and their flows. The construction uses `SymplecticForm` contraction duality.
@@ -288,6 +289,34 @@ theorem poissonBracket_neg_left (ω : SymplecticForm V) (F G : V → ℝ) (x : V
 theorem poissonBracket_neg_right (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
     ω.poissonBracket F (-G) x = -ω.poissonBracket F G x := by
   simp [poissonBracket_def]
+
+/-- The Poisson bracket is subtractive in its first argument on Hamiltonians differentiable at
+the point. -/
+theorem poissonBracket_sub_left (ω : SymplecticForm V) {F F' : V → ℝ} (G : V → ℝ) {x : V}
+    (hF : DifferentiableAt ℝ F x) (hF' : DifferentiableAt ℝ F' x) :
+    ω.poissonBracket (F - F') G x = ω.poissonBracket F G x - ω.poissonBracket F' G x := by
+  simp only [poissonBracket_eq_fderiv, fderiv_sub hF hF', sub_apply]
+
+/-- The Poisson bracket is subtractive in its second argument on Hamiltonians differentiable at
+the point. -/
+theorem poissonBracket_sub_right (ω : SymplecticForm V) (F : V → ℝ) {G G' : V → ℝ} {x : V}
+    (hG : DifferentiableAt ℝ G x) (hG' : DifferentiableAt ℝ G' x) :
+    ω.poissonBracket F (G - G') x = ω.poissonBracket F G x - ω.poissonBracket F G' x := by
+  simp only [poissonBracket_eq_fderiv, ω.hamiltonianVectorField_sub hG hG', map_sub]
+
+/-- The Poisson bracket is additive in its first argument on finite sums of Hamiltonians
+differentiable at the point: `{∑ Fᵢ, G} = ∑ {Fᵢ, G}`. -/
+theorem poissonBracket_fun_sum_left (ω : SymplecticForm V) {ι : Type*} {s : Finset ι}
+    {F : ι → V → ℝ} (G : V → ℝ) {x : V} (hF : ∀ i ∈ s, DifferentiableAt ℝ (F i) x) :
+    ω.poissonBracket (fun y ↦ ∑ i ∈ s, F i y) G x = ∑ i ∈ s, ω.poissonBracket (F i) G x := by
+  simp only [poissonBracket_eq_fderiv, fderiv_fun_sum hF, sum_apply]
+
+/-- The Poisson bracket is additive in its second argument on finite sums of Hamiltonians
+differentiable at the point: `{F, ∑ Gᵢ} = ∑ {F, Gᵢ}`. -/
+theorem poissonBracket_fun_sum_right (ω : SymplecticForm V) {ι : Type*} {s : Finset ι}
+    (F : V → ℝ) {G : ι → V → ℝ} {x : V} (hG : ∀ i ∈ s, DifferentiableAt ℝ (G i) x) :
+    ω.poissonBracket F (fun y ↦ ∑ i ∈ s, G i y) x = ∑ i ∈ s, ω.poissonBracket F (G i) x := by
+  simp only [poissonBracket_eq_fderiv, ω.hamiltonianVectorField_fun_sum hG, map_sum]
 
 end PoissonBracket
 

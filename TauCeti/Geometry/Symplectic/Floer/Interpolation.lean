@@ -82,37 +82,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ι : Type*} {s : Finset ι} {Ks Kt : ι → ℝ × ℝ → V → ℝ}
 
-/-- The Poisson bracket of the combinations `∑ cᵢ Fᵢ` and `∑ cⱼ Gⱼ` of Hamiltonians
-differentiable at the point is `∑ᵢ ∑ⱼ cᵢ cⱼ dFᵢ(X_{Gⱼ})`. -/
-private theorem poissonBracket_sum_mul (ω : SymplecticForm V) (c : ι → ℝ) {F G : ι → V → ℝ}
-    {x : V} (hF : ∀ i ∈ s, DifferentiableAt ℝ (F i) x)
-    (hG : ∀ i ∈ s, DifferentiableAt ℝ (G i) x) :
-    ω.poissonBracket (fun y ↦ ∑ i ∈ s, c i * F i y) (fun y ↦ ∑ i ∈ s, c i * G i y) x =
-      ∑ i ∈ s, ∑ j ∈ s, c i * c j * fderiv ℝ (F i) x (ω.hamiltonianVectorField (G j) x) := by
-  rw [poissonBracket_eq_fderiv,
-    ω.hamiltonianVectorField_fun_sum (F := fun i y ↦ c i * G i y)
-      fun i hi ↦ (hG i hi).const_mul (c i),
-    fderiv_fun_sum (A := fun i y ↦ c i * F i y) fun i hi ↦ (hF i hi).const_mul (c i)]
-  simp only [hamiltonianVectorField_const_mul, map_sum, map_smul, smul_eq_mul, sum_apply,
-    Finset.mul_sum]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i hi ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [fderiv_const_mul (hF i hi), smul_apply, smul_eq_mul]
-  ring
-
-/-- The Poisson bracket of two differences of Hamiltonians differentiable at the point, expanded
-bilinearly. -/
-private theorem poissonBracket_sub_sub (ω : SymplecticForm V) {F F' G G' : V → ℝ} {x : V}
-    (hF : DifferentiableAt ℝ F x) (hF' : DifferentiableAt ℝ F' x)
-    (hG : DifferentiableAt ℝ G x) (hG' : DifferentiableAt ℝ G' x) :
-    ω.poissonBracket (F - F') (G - G') x =
-      fderiv ℝ F x (ω.hamiltonianVectorField G x) - fderiv ℝ F x (ω.hamiltonianVectorField G' x) -
-        fderiv ℝ F' x (ω.hamiltonianVectorField G x) +
-        fderiv ℝ F' x (ω.hamiltonianVectorField G' x) := by
-  rw [poissonBracket_eq_fderiv, ω.hamiltonianVectorField_sub hG hG', fderiv_sub hF hF']
-  simp only [sub_apply, map_sub]
-  ring
-
 /-- **Curvature of a convex combination of perturbation data.** Let `βᵢ` be weights on the domain
 summing to `1` at `z`. The curvature of the combination `∑ βᵢ Kⁱ` of the perturbations
 `Kⁱ = Kⁱ_s ds + Kⁱ_t dt` is
@@ -134,19 +103,31 @@ theorem hamiltonianCurvature_sum_mul (ω : SymplecticForm V) {β : ι → ℝ ×
           ω.poissonBracket (Ks i z - Ks j z) (Kt i z - Kt j z) x) / 2 +
         ∑ i ∈ s, (fderiv ℝ (β i) z stdComplexLineReal * Kt i z x -
           fderiv ℝ (β i) z stdComplexLineImag * Ks i z x) := by
-  -- The Poisson bracket terms, in terms of `Bᵢⱼ = dKⁱ_s(X_{Kʲ_t})`: the bracket of the
-  -- combination is `∑ᵢ ∑ⱼ βᵢ βⱼ Bᵢⱼ`, and its defect from `∑ βᵢ Bᵢᵢ` is the variance term.
+  -- The Poisson bracket terms, in terms of `Bᵢⱼ = {Kⁱ_s, Kʲ_t}`: the bracket of the combination is
+  -- `∑ᵢ ∑ⱼ βᵢ βⱼ Bᵢⱼ`, and its defect from `∑ βᵢ Bᵢᵢ` is the variance term.
   have hvar := Finset.sum_sum_mul_sub_sub_add_eq s hsum
-    (fun i j ↦ fderiv ℝ (Ks i z) x (ω.hamiltonianVectorField (Kt j z) x))
+    (fun i j ↦ ω.poissonBracket (Ks i z) (Kt j z) x)
+  have hcomb : ω.poissonBracket (fun y ↦ ∑ i ∈ s, β i z * Ks i z y)
+      (fun y ↦ ∑ i ∈ s, β i z * Kt i z y) x =
+        ∑ i ∈ s, ∑ j ∈ s, β i z * β j z * ω.poissonBracket (Ks i z) (Kt j z) x := by
+    rw [ω.poissonBracket_fun_sum_left (F := fun i y ↦ β i z * Ks i z y) _
+      fun i hi ↦ (hKs' i hi).const_mul _]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [poissonBracket_const_mul_left, ω.poissonBracket_fun_sum_right
+      (G := fun j y ↦ β j z * Kt j z y) _ fun j hj ↦ (hKt' j hj).const_mul _, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [poissonBracket_const_mul_right]
+    ring
   have hbracket : ∑ i ∈ s, ∑ j ∈ s, β i z * β j z *
       ω.poissonBracket (Ks i z - Ks j z) (Kt i z - Kt j z) x =
         ∑ i ∈ s, ∑ j ∈ s, β i z * β j z *
-          (fderiv ℝ (Ks i z) x (ω.hamiltonianVectorField (Kt i z) x) -
-            fderiv ℝ (Ks i z) x (ω.hamiltonianVectorField (Kt j z) x) -
-            fderiv ℝ (Ks j z) x (ω.hamiltonianVectorField (Kt i z) x) +
-            fderiv ℝ (Ks j z) x (ω.hamiltonianVectorField (Kt j z) x)) :=
+          (ω.poissonBracket (Ks i z) (Kt i z) x - ω.poissonBracket (Ks i z) (Kt j z) x -
+            ω.poissonBracket (Ks j z) (Kt i z) x + ω.poissonBracket (Ks j z) (Kt j z) x) :=
     Finset.sum_congr rfl fun i hi ↦ Finset.sum_congr rfl fun j hj ↦ by
-      rw [ω.poissonBracket_sub_sub (hKs' i hi) (hKs' j hj) (hKt' i hi) (hKt' j hj)]
+      rw [ω.poissonBracket_sub_left _ (hKs' i hi) (hKs' j hj),
+        ω.poissonBracket_sub_right _ (hKt' i hi) (hKt' j hj),
+        ω.poissonBracket_sub_right _ (hKt' i hi) (hKt' j hj)]
+      ring
   -- The derivative of each component of the combination, by the product rule.
   have hderiv (K : ι → ℝ × ℝ → V → ℝ) (hK : ∀ i ∈ s, DifferentiableAt ℝ (fun w ↦ K i w x) z)
       (v : ℝ × ℝ) :
@@ -158,10 +139,8 @@ theorem hamiltonianCurvature_sum_mul (ω : SymplecticForm V) {β : ι → ℝ ×
     rw [fderiv_fun_mul (hβ i hi) (hK i hi)]
     simp only [add_apply, smul_apply, smul_eq_mul]
     ring
-  rw [hamiltonianCurvature_def, hderiv Ks hKs, hderiv Kt hKt,
-    ω.poissonBracket_sum_mul (fun i ↦ β i z) hKs' hKt', hbracket, hvar]
-  simp only [hamiltonianCurvature_def, poissonBracket_eq_fderiv, mul_sub, Finset.sum_sub_distrib,
-    Finset.sum_add_distrib]
+  rw [hamiltonianCurvature_def, hderiv Ks hKs, hderiv Kt hKt, hcomb, hbracket, hvar]
+  simp only [hamiltonianCurvature_def, mul_sub, Finset.sum_sub_distrib, Finset.sum_add_distrib]
   ring
 
 /-- **Curvature of an interpolation between two perturbation data.** For a weight `β` on the
@@ -252,39 +231,30 @@ theorem abs_hamiltonianCurvature_sum_const_mul_le (ω : SymplecticForm V) {c : �
       _ = P := by
           simp only [← Finset.sum_mul, ← Finset.mul_sum, hc, mul_one, one_mul]
 
-/-- **Uniform integrated curvature bound over the simplex.** Let the data be differentiable at
-the points `(z, u z)` with `z` in a measurable set `D` of the domain, and let `M` and `P` bound
-the curvatures `|R_{Kⁱ}|` and the Poisson brackets of the differences
-`|{Kⁱ_s - Kʲ_s, Kⁱ_t - Kʲ_t}|` along the map `u` over `D`. Then for all nonnegative constant
-weights `cᵢ` with `∑ cᵢ = 1`, the integrated curvature of `∑ cᵢ Kⁱ` along `u` over `D` is at most
-`∫ (M + P / 2)`. -/
+/-- **Uniform integrated curvature bound over the simplex.** Let the data be differentiable in
+the domain variable at the points `z` of a measurable set `D` of the domain, and in the target
+variable at `u z`. Let `M` and `P` bound the curvatures `|R_{Kⁱ}|` and the Poisson brackets of the
+differences `|{Kⁱ_s - Kʲ_s, Kⁱ_t - Kʲ_t}|` along the map `u` over `D`. Then for all nonnegative
+constant weights `cᵢ` with `∑ cᵢ = 1`, the integrated curvature of `∑ cᵢ Kⁱ` along `u` over `D` is
+at most `∫ (M + P / 2)`. -/
 theorem integral_abs_hamiltonianCurvature_sum_const_mul_le (ω : SymplecticForm V) {c : ι → ℝ}
     (hc₀ : ∀ i ∈ s, 0 ≤ c i) (hc : ∑ i ∈ s, c i = 1) (u : ℝ × ℝ → V) {D : Set (ℝ × ℝ)}
     (hD : MeasurableSet D)
-    (hKs : ∀ z ∈ D, ∀ i ∈ s, DifferentiableAt ℝ (uncurry (Ks i)) (z, u z))
-    (hKt : ∀ z ∈ D, ∀ i ∈ s, DifferentiableAt ℝ (uncurry (Kt i)) (z, u z))
+    (hKs : ∀ z ∈ D, ∀ i ∈ s, DifferentiableAt ℝ (fun w ↦ Ks i w (u z)) z)
+    (hKt : ∀ z ∈ D, ∀ i ∈ s, DifferentiableAt ℝ (fun w ↦ Kt i w (u z)) z)
+    (hKs' : ∀ z ∈ D, ∀ i ∈ s, DifferentiableAt ℝ (Ks i z) (u z))
+    (hKt' : ∀ z ∈ D, ∀ i ∈ s, DifferentiableAt ℝ (Kt i z) (u z))
     {M P : ℝ × ℝ → ℝ}
     (hM : ∀ z ∈ D, ∀ i ∈ s, |ω.hamiltonianCurvature (Ks i) (Kt i) z (u z)| ≤ M z)
     (hP : ∀ z ∈ D, ∀ i ∈ s, ∀ j ∈ s,
       |ω.poissonBracket (Ks i z - Ks j z) (Kt i z - Kt j z) (u z)| ≤ P z)
     (hMi : IntegrableOn M D) (hPi : IntegrableOn P D) :
     ∫ z in D, |ω.hamiltonianCurvature (fun w y ↦ ∑ i ∈ s, c i * Ks i w y)
-        (fun w y ↦ ∑ i ∈ s, c i * Kt i w y) z (u z)| ≤ ∫ z in D, (M z + P z / 2) := by
-  -- Joint differentiability gives differentiability in each variable separately.
-  have hleft {K : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) :
-      DifferentiableAt ℝ (fun w ↦ K w (u z)) z := by
-    have h := hK.hasFDerivAt.comp z (hasFDerivAt_prodMk_left (𝕜 := ℝ) z (u z))
-    exact h.differentiableAt
-  have hright {K : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) :
-      DifferentiableAt ℝ (K z) (u z) := by
-    have h := hK.hasFDerivAt.comp (u z) (hasFDerivAt_prodMk_right (𝕜 := ℝ) z (u z))
-    exact h.differentiableAt
-  exact integral_mono_of_nonneg (ae_of_all _ fun _ ↦ abs_nonneg _) (hMi.add (hPi.div_const 2))
+        (fun w y ↦ ∑ i ∈ s, c i * Kt i w y) z (u z)| ≤ ∫ z in D, (M z + P z / 2) :=
+  integral_mono_of_nonneg (ae_of_all _ fun _ ↦ abs_nonneg _) (hMi.add (hPi.div_const 2))
     (ae_restrict_of_forall_mem hD fun z hz ↦
-      ω.abs_hamiltonianCurvature_sum_const_mul_le hc₀ hc
-        (fun i hi ↦ hleft (hKs z hz i hi)) (fun i hi ↦ hleft (hKt z hz i hi))
-        (fun i hi ↦ hright (hKs z hz i hi)) (fun i hi ↦ hright (hKt z hz i hi))
-        (hM z hz) (hP z hz))
+      ω.abs_hamiltonianCurvature_sum_const_mul_le hc₀ hc (hKs z hz) (hKt z hz) (hKs' z hz)
+        (hKt' z hz) (hM z hz) (hP z hz))
 
 /-- **Uniform energy estimate over the simplex.** Let the map `u` and the data `Kⁱ` be `C¹` over
 an open neighbourhood `U` of the rectangle `[a₁, b₁] × [a₂, b₂]`, and let `M` and `P` bound the
@@ -319,11 +289,21 @@ theorem abs_integral_floerEnergyDensity_sum_const_mul_sub_le (ω : SymplecticFor
       (hz : z ∈ Icc a b) : DifferentiableAt ℝ (uncurry K) (z, u z) :=
     (hK.differentiableOn one_ne_zero _ ⟨habU hz, mem_univ _⟩).differentiableAt
       ((hU.prod isOpen_univ).mem_nhds ⟨habU hz, mem_univ _⟩)
+  -- Joint differentiability gives differentiability in each variable separately.
+  have hleft {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) {z : ℝ × ℝ}
+      (hz : z ∈ Icc a b) : DifferentiableAt ℝ (fun w ↦ K w (u z)) z := by
+    have h := (hdiff hK hz).hasFDerivAt.comp z (hasFDerivAt_prodMk_left (𝕜 := ℝ) z (u z))
+    exact h.differentiableAt
+  have hright {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) {z : ℝ × ℝ}
+      (hz : z ∈ Icc a b) : DifferentiableAt ℝ (K z) (u z) := by
+    have h := (hdiff hK hz).hasFDerivAt.comp (u z) (hasFDerivAt_prodMk_right (𝕜 := ℝ) z (u z))
+    exact h.differentiableAt
   rw [ω.integral_floerEnergyDensity hU hu (hcomb hKs) (hcomb hKt) hab habU,
     show ∀ A B I : ℝ, A + B - I - (A + B) = -I by intros; ring, abs_neg]
   exact abs_integral_le_integral_abs.trans
     (ω.integral_abs_hamiltonianCurvature_sum_const_mul_le hc₀ hc u measurableSet_Icc
-      (fun z hz i hi ↦ hdiff (hKs i hi) hz) (fun z hz i hi ↦ hdiff (hKt i hi) hz) hM hP hMi hPi)
+      (fun z hz i hi ↦ hleft (hKs i hi) hz) (fun z hz i hi ↦ hleft (hKt i hi) hz)
+      (fun z hz i hi ↦ hright (hKs i hi) hz) (fun z hz i hi ↦ hright (hKt i hi) hz) hM hP hMi hPi)
 
 /-- **Combinations of agreeing data.** If the data `Kⁱ` all agree with `K⁰` near `z` and the
 weights `βᵢ` sum to `1` near `z`, then `∑ βᵢ Kⁱ` has the curvature of `K⁰` at `z`. In particular
