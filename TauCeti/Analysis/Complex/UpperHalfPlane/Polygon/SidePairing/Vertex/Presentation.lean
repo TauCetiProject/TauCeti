@@ -125,15 +125,16 @@ def relatorQuotientAtEquiv {s : Set (Fin n)}
 theorem relatorQuotientAtEquiv_mk {s : Set (Fin n)}
     (hs : ∀ j, (P.vertex j).isLeft → ∃ i ∈ s, i ∈ σ.cycle j)
     (w : FreeGroup (Fin n)) :
-    σ.relatorQuotientAtEquiv hs (PresentedGroup.mk _ w) = PresentedGroup.mk _ w :=
-  QuotientGroup.quotientMulEquivOfEq_mk _ w
+    σ.relatorQuotientAtEquiv hs (PresentedGroup.mk _ w) = PresentedGroup.mk _ w := by
+  -- PresentedGroup.mk bundles QuotientGroup.mk; use the raw quotient lemma definitionally.
+  exact QuotientGroup.quotientMulEquivOfEq_mk _ w
 
 /-- The presentation reduction preserves the side generators. -/
 @[simp]
 theorem relatorQuotientAtEquiv_of {s : Set (Fin n)}
     (hs : ∀ j, (P.vertex j).isLeft → ∃ i ∈ s, i ∈ σ.cycle j) (i : Fin n) :
     σ.relatorQuotientAtEquiv hs (PresentedGroup.of i) = PresentedGroup.of i := by
-  exact σ.relatorQuotientAtEquiv_mk hs (FreeGroup.of i)
+  simpa only [PresentedGroup.of] using σ.relatorQuotientAtEquiv_mk hs (FreeGroup.of i)
 
 /-- The inverse presentation reduction also preserves every side word. -/
 @[simp]
@@ -149,7 +150,7 @@ theorem relatorQuotientAtEquiv_symm_mk {s : Set (Fin n)}
 theorem relatorQuotientAtEquiv_symm_of {s : Set (Fin n)}
     (hs : ∀ j, (P.vertex j).isLeft → ∃ i ∈ s, i ∈ σ.cycle j) (i : Fin n) :
     (σ.relatorQuotientAtEquiv hs).symm (PresentedGroup.of i) = PresentedGroup.of i := by
-  exact σ.relatorQuotientAtEquiv_symm_mk hs (FreeGroup.of i)
+  simpa only [PresentedGroup.of] using σ.relatorQuotientAtEquiv_symm_mk hs (FreeGroup.of i)
 
 /-- For a locally finite fundamental polygon, one finite-vertex relation per cycle, together
 with the side relations, presents the acting group. -/
