@@ -68,7 +68,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   coefficient ring are dense.
 * `MvPowerSeries.isRestricted_renameEquiv_iff`: renaming the variables along an equivalence
   reindexes the polyradii, and `MvPowerSeries.IsRestricted.renameAlgEquiv` is the resulting
-  algebra isomorphism of restricted-series subrings.
+  algebra isomorphism of restricted-series subrings; `MvPowerSeries.IsRestricted.renameAlgEquivOfEq`
+  takes source polyradii only propositionally equal to the reindexed ones.
 * `MvPowerSeries.mk_monomial_eq_algebraMap_mul_prod`: a restricted monomial `r Xᵗ` is the constant
   `r` times the product of the variables.
 * The restricted-series subring is an algebra over every algebra `S` of coefficients, through the
@@ -688,6 +689,26 @@ theorem IsRestricted.norm_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ) [∀ i
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm,
     gaussNorm, gaussNorm, coe_renameAlgEquiv, ← (Finsupp.equivCongrLeft e).iSup_comp]
   exact congrArg iSup (weightedCoeff_renameEquiv e c (f : MvPowerSeries σ R)).symm
+
+/-- `IsRestricted.renameAlgEquiv` with source polyradii `a` given by an equation `c ∘ e = a`, for
+radii that are only propositionally equal to `c ∘ e`. -/
+noncomputable def IsRestricted.renameAlgEquivOfEq (e : σ ≃ τ) (c : τ → ℝ) {a : σ → ℝ}
+    (h : c ∘ e = a) : IsRestricted.subring (R := R) a ≃ₐ[R] IsRestricted.subring (R := R) c := by
+  subst h; exact renameAlgEquiv e c
+
+/-- `IsRestricted.renameAlgEquivOfEq` is `MvPowerSeries.renameEquiv` on the underlying series. -/
+@[simp]
+theorem IsRestricted.coe_renameAlgEquivOfEq (e : σ ≃ τ) (c : τ → ℝ) {a : σ → ℝ}
+    (h : c ∘ e = a) (f : IsRestricted.subring (R := R) a) :
+    (renameAlgEquivOfEq e c h f : MvPowerSeries τ R) = renameEquiv R e f := by
+  subst h; rfl
+
+/-- `IsRestricted.renameAlgEquivOfEq` preserves the Gauss norm. -/
+@[simp]
+theorem IsRestricted.norm_renameAlgEquivOfEq (e : σ ≃ τ) (c : τ → ℝ) [∀ i, Fact (0 < c i)]
+    {a : σ → ℝ} [∀ i, Fact (0 < a i)] (h : c ∘ e = a) (f : IsRestricted.subring (R := R) a) :
+    ‖renameAlgEquivOfEq e c h f‖ = ‖f‖ := by
+  subst h; exact norm_renameAlgEquiv e c f
 
 end Rename
 
