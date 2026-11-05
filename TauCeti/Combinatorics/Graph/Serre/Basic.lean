@@ -174,6 +174,19 @@ def Preconnected : Prop := Quiver.IsStronglyConnected Γ.V
 theorem preconnected_iff : Γ.Preconnected ↔ ∀ a b, Nonempty (Γ.Path a b) :=
   Quiver.isStronglyConnected_iff Γ.V
 
+/-- A Serre graph is preconnected as soon as one vertex is joined by a path to every vertex:
+paths can be reversed. -/
+theorem preconnected_of_forall_nonempty_path (a : Γ.V) (h : ∀ b, Nonempty (Γ.Path a b)) :
+    Γ.Preconnected :=
+  (preconnected_iff Γ).2 fun b c => ⟨(h b).some.reverse.comp (h c).some⟩
+
+/-- In a Serre graph all of whose darts are loops, a path never leaves its starting vertex. -/
+theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : Γ.V}
+    (p : Γ.Path a b) : a = b := by
+  induction p with
+  | nil => rfl
+  | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
+
 /-- A Serre graph is connected when it is nonempty and path-connected. -/
 def Connected : Prop := Nonempty Γ.V ∧ Γ.Preconnected
 
@@ -362,6 +375,29 @@ abbrev point : SerreGraph.{u, v} where
   rev_rev := by intro e; exact e.elim
   rev_ne := by intro e; exact e.elim
 
+/-- A rose has a single vertex. -/
+instance (α : Type w) : Unique (rose α).V := inferInstanceAs (Unique PUnit)
+
+/-- The darts of a rose, being pairs of a petal and a direction, have decidable equality when
+the petals do. -/
+instance (α : Type w) [DecidableEq α] : DecidableEq (rose α).E :=
+  inferInstanceAs (DecidableEq (α × Bool))
+
+/-- The geometric edges of a rose are its petals. -/
+def roseGeomEdgeEquiv (α : Type w) : (rose α).GeomEdge ≃ α where
+  toFun := GeomEdge.lift (rose α) Prod.fst fun _ => rfl
+  invFun a := (rose α).toGeomEdge (a, true)
+  left_inv x := by
+    obtain ⟨⟨a, b⟩, rfl⟩ := (rose α).toGeomEdge_surjective x
+    refine ((rose α).toGeomEdge_eq_toGeomEdge_iff).2 ?_
+    cases b
+    · exact .inr rfl
+    · exact .inl rfl
+  right_inv _ := rfl
+
+@[simp] theorem roseGeomEdgeEquiv_toGeomEdge (α : Type w) (e : α × Bool) :
+    roseGeomEdgeEquiv α ((rose α).toGeomEdge e) = e.1 := (rfl)
+
 /-- Every rose is connected, including the rose without petals. -/
 theorem rose_connected (α : Type*) : (rose α).Connected := by
   rw [(rose α).connected_iff]
@@ -395,6 +431,22 @@ vertex `b` to the vertex `!b`. -/
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
 @[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
+
+/-- The vertices of the segment are the Booleans. -/
+def segmentVEquiv : segment.V ≃ Bool := Equiv.refl Bool
+
+/-- The darts of the segment, being Booleans, have decidable equality. -/
+instance : DecidableEq segment.E := inferInstanceAs (DecidableEq Bool)
+
+/-- The segment has a single geometric edge. -/
+instance : Unique segment.GeomEdge where
+  default := segment.toGeomEdge true
+  uniq x := by
+    obtain ⟨b, rfl⟩ := segment.toGeomEdge_surjective x
+    refine (segment.toGeomEdge_eq_toGeomEdge_iff).2 ?_
+    cases b
+    · exact .inr rfl
+    · exact .inl rfl
 
 end SerreGraph
 

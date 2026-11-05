@@ -28,6 +28,7 @@ in the slot `f i`, and the vectors so obtained are those whose coordinates outsi
 `f` vanish. In particular, extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k`
 coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the slots `j < k`; the
 vectors so obtained are those whose coordinates `j ≥ k` vanish.
+The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 
 ## Source
 
@@ -204,5 +205,25 @@ theorem range_piLpExtendByZero_castLEEmb (hk : k ≤ n) :
     Set.range (piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk)) =
       {y : PiLp p fun _ : Fin n ↦ E | ∀ j : Fin n, k ≤ j.val → y j = 0} := by
   simp [range_piLpExtendByZero, Fin.range_castLE]
+
+end LinearIsometry
+
+namespace LinearIsometry
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 : Type*} [NormedRing 𝕜]
+  {ι ι' : Type*} [Fintype ι] [Fintype ι']
+
+/-- A finite sum paired with a vector extended by zero along an embedding reduces to the sum over
+the original coordinates. -/
+theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ 𝕜) (h : ι' → 𝕜) :
+    ∑ b, h b * piLpExtendByZero p 𝕜 𝕜 f x b = ∑ a, h (f a) * x a := by
+  rw [← Finset.sum_extend_zero_of_injective (t := Finset.univ) (fun a ↦ h (f a) * x a)
+    f.injective fun _ => Finset.mem_univ _]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  by_cases hb : b ∈ Set.range f
+  · obtain ⟨a, rfl⟩ := hb
+    simp [f.injective.extend_apply]
+  · simp [Function.extend_apply' _ _ _ (by simpa using hb),
+      piLpExtendByZero_apply_eq_zero hb]
 
 end LinearIsometry

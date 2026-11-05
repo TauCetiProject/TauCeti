@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Potential
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import Mathlib.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Topology.DiscreteSubset
 
 /-!
 # The scalar similarity principle
@@ -21,7 +21,13 @@ nowhere-zero `Cᵏ` integrating factor depending on the point. On a preconnected
 a nonzero solution has isolated zeros and factors near each point as a nonnegative
 integral power of the complex coordinate times a factor `Cᵏ` at the point and nonzero
 there. For a solution on the plane that is nonzero outside a compact set, the zero set
-is finite. No curvature equation or analyticity of the coefficient is needed.
+is finite, by the general finiteness criterion for local power factorizations
+`TauCeti.finite_setOfPred_eq_zero_of_eventually_eq_pow_mul`. No curvature equation or
+analyticity of the coefficient is needed.
+
+there. The exponent of such a factorization is unique, already among factors that are only
+continuous at the point. For a solution on the plane that is nonzero outside a compact set,
+the zero set is finite. No curvature equation or analyticity of the coefficient is needed.
 
 The integrating factor comes from the Cauchy transform; the holomorphic zero
 factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
@@ -142,19 +148,35 @@ theorem finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : �
     (hn : 1 ≤ k) (ha : ContDiff ℝ k a) (hf : Differentiable ℝ f)
     (heq : ∀ w, conjWirtingerDeriv f w 1 = a w * f w)
     (htail : ∀ᶠ w in cocompact ℂ, f w ≠ 0) : {w | f w = 0}.Finite := by
-  have hne : ∃ w, f w ≠ 0 := htail.exists
-  have hdis : IsDiscrete {w | f w = 0} := by
-    apply isDiscrete_iff_nhdsNE.mpr
-    intro z _
-    rw [← disjoint_iff, Filter.disjoint_principal_right]
-    exact eventually_ne_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
+  have hne : ∃ w ∈ univ, f w ≠ 0 := by simpa using htail.exists
+  choose n v hvc hv0 hvf using fun z ↦
+    exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
       ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w) (mem_univ z)
       (not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
-        isPreconnected_univ ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w)
-        (by simpa using hne) (mem_univ z))
-  obtain ⟨K, hK, hsub⟩ := Filter.mem_cocompact'.mp htail
-  simp only [Set.compl_ofPred, not_not] at hsub
-  exact (hK.of_isClosed_subset (isClosed_eq hf.continuous continuous_const)
-    (by simpa using hsub)).finite hdis
+        isPreconnected_univ ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w) hne (mem_univ z))
+  exact finite_setOfPred_eq_zero_of_eventually_eq_pow_mul
+    (fun z ↦ ⟨v z, (hvc z).continuousAt, hv0 z, hvf z⟩) htail
+
+/-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
+`z`, is unique. -/
+theorem eq_of_eventually_sub_pow_mul_eq {z : ℂ} {m n : ℕ} {u v : ℂ → ℂ}
+    (hu : ContinuousAt u z) (hu₀ : u z ≠ 0) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, (w - z) ^ m * u w = (w - z) ^ n * v w) : m = n := by
+  wlog hmn : m < n generalizing m n u v
+  · rcases (not_lt.mp hmn).eq_or_lt with h' | h'
+    · exact h'.symm
+    · exact (this hv hv₀ hu hu₀ (h.mono fun w hw ↦ hw.symm) h').symm
+  exfalso
+  -- Off `z`, cancelling `(w - z) ^ m` gives `u w = (w - z) ^ (n - m) * v w`, which tends to `0`.
+  have hlim : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 (u z)) := by
+    refine (hu.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with w hw hwz
+    apply mul_left_cancel₀ (pow_ne_zero m (sub_ne_zero.mpr hwz))
+    rw [hw, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hmn.le]
+  have h0 : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 0) := by
+    have hc : ContinuousAt (fun w ↦ (w - z) ^ (n - m) * v w) z :=
+      ((continuousAt_id.sub continuousAt_const).pow _).mul hv
+    simpa [zero_pow (Nat.sub_ne_zero_of_lt hmn)] using hc.tendsto.mono_left nhdsWithin_le_nhds
+  exact hu₀ (tendsto_nhds_unique hlim h0)
 
 end TauCeti

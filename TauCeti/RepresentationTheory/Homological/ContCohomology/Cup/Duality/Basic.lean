@@ -455,6 +455,13 @@ noncomputable def dualityMap1 : H1 G M →+ H1 G (InternalHom G M N) →+ H2 G N
   explicitCup11 G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
     continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G))
 
+/-- Tate's degree-one duality map is the explicit cup along the opposite evaluation pairing. -/
+theorem dualityMap1_eq_explicitCup11 :
+    dualityMap1 G M N =
+      explicitCup11 G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
+        continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G)) :=
+  (rfl)
+
 /-- On cocycles, `α₀` evaluates the cocycle at the invariant element. -/
 @[simp]
 theorem dualityMap0_mk (m : H0 G M) (b : Z2 G (InternalHom G M N)) :

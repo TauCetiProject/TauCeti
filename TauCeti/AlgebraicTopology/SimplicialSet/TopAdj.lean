@@ -46,6 +46,13 @@ lemma toSSet_map_app_toSSetObj₀Equiv_symm {X Y : TopCat.{u}} (f : X ⟶ Y) (x 
     (TopCat.toSSet.map f).app (Opposite.op ⦋0⦌) (TopCat.toSSetObj₀Equiv.symm x) =
       TopCat.toSSetObj₀Equiv.symm (f x) := rfl
 
+/-- The point of the image of a singular vertex is the image of its point. -/
+@[simp]
+lemma toSSetObj₀Equiv_toSSet_map_app {X Y : TopCat.{u}} (f : X ⟶ Y)
+    (p : (TopCat.toSSet.obj X) _⦋0⦌) :
+    TopCat.toSSetObj₀Equiv ((TopCat.toSSet.map f).app (Opposite.op ⦋0⦌) p) =
+      f (TopCat.toSSetObj₀Equiv p) := rfl
+
 /-- The map of singular simplicial sets induced by a continuous map acts on singular simplices
 by postcomposition. -/
 @[simp]
