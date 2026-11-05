@@ -11,8 +11,8 @@ public import TauCeti.Geometry.Neuromanifold.Polynomial.Constructors
 /-!
 # Jointly polynomial convolutional networks
 
-A fixed valid-convolution architecture with polynomial hidden activations has a realization
-jointly polynomial in its filters, shared biases, and inputs. `ConvolutionSpec.parameterEquiv`
+A fixed `ConvolutionSpec` with polynomial hidden activations has a jointly polynomial
+realization in its filters, shared biases, and inputs. `ConvolutionSpec.parameterEquiv`
 flattens precisely these parameters, not the entries of the associated dense matrices.
 `ConvolutionSpec.polynomialRealize` supplies the polynomial tuple, whose evaluation agrees
 with convolutional realization. The bias-free tuple substitutes zero for every bias and
@@ -108,14 +108,6 @@ theorem polynomialRealization_polynomialRealize (A : ConvolutionSpec K L)
   funext p x a
   rw [polynomialRealization_apply, polynomialRealize_def, Function.comp_apply, realize_def]
   exact A.eval_polynomialPrefix q hq p x (Fin.last L) a
-
-/-- The polynomial specification realizes its joint tuple through parameter reconstruction. -/
-theorem polynomialRealization_polynomial (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
-    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
-    (q : Fin (L - 1) → Polynomial K) :
-    polynomialRealization ((polynomial d k s h q).polynomialRealize q) =
-      (polynomial d k s h q).realize ∘ (polynomial d k s h q).parameterEquiv :=
-  polynomialRealization_polynomialRealize _ q (MLPSpec.polynomial_activation d q)
 
 /-- Polynomial coordinates do not alter the set of realized functions. -/
 theorem realizedFunctions_polynomialRealize (A : ConvolutionSpec K L)

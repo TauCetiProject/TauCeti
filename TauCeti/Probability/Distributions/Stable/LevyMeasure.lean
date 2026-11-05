@@ -18,7 +18,8 @@ For `0 < α < 2` and `|β| ≤ 1`, the stable Lévy measure has density proporti
 negative half-lines. It has no atom at zero. Parameters outside this non-Gaussian range
 give the zero measure.
 
-Restricting to either tail gives a multiple of a Pareto law or its reflection. In particular,
+Restricting to either tail gives a multiple of a Pareto law or its reflection, and at full
+skewness `|β| = 1` the measure lives on a single half-line. In particular,
 removing a positive neighbourhood of zero leaves positive finite mass, and conditioning on
 that set gives a probability jump law for compound Poisson approximations.
 
@@ -118,6 +119,12 @@ theorem measurable_stableLevyDensity :
   exact Measurable.ite (by measurability)
     ((hcoeff.mul hsign).mul (by fun_prop)) measurable_const
 
+/-- For fixed shapes, the Lévy density is measurable in the jump size. -/
+@[fun_prop]
+theorem measurable_stableLevyDensity_apply (α β : ℝ) : Measurable (stableLevyDensity α β) :=
+  measurable_stableLevyDensity.comp
+    (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+
 /-- The full totalized Lévy measure family is Giry measurable. -/
 @[fun_prop]
 theorem measurable_stableLevyMeasure :
@@ -215,6 +222,26 @@ theorem stableLevyMeasure_Iio (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0
   have := isProbabilityMeasure_paretoMeasure hε hα.1
   simpa [Measure.map_apply measurable_neg] using congrArg (fun μ : Measure ℝ ↦ μ univ)
     (stableLevyMeasure_restrict_Iio hα hβ hε)
+
+/-- At full skewness the stable Lévy measure lives on one half-line: if `β * t ≤ 0`, then
+`t * x ≤ 0` for almost every jump `x`. -/
+theorem ae_mul_nonpos_stableLevyMeasure {t : ℝ} (hβ : |β| = 1) (ht : β * t ≤ 0) :
+    ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0 := by
+  -- The density vanishes wherever `0 < t * x`, since there the skewness weight is zero.
+  have hzero (x : ℝ) (hx : 0 < t * x) : stableLevyDensity α β x = 0 := by
+    have hx0 : x ≠ 0 := by rintro rfl; simp at hx
+    by_cases hα : α ∈ Ioo 0 2
+    · rw [stableLevyDensity_of_ne_zero hα hβ.le hx0]
+      rcases (abs_eq zero_le_one).mp hβ with rfl | rfl
+      · have hx0 : ¬ 0 < x := fun h ↦ by nlinarith
+        simp [hx0]
+      · have hx0 : 0 < x := by nlinarith
+        simp [hx0]
+    · exact stableLevyDensity_eq_zero_of_not (fun h ↦ hα ⟨h.1, h.2.1⟩) x
+  rw [stableLevyMeasure_def,
+    ae_withDensity_iff (measurable_stableLevyDensity_apply α β).ennreal_ofReal]
+  refine ae_of_all _ fun x hx ↦ not_lt.mp fun h ↦ hx ?_
+  rw [hzero x h, ENNReal.ofReal_zero]
 
 /-- Removing a positive neighbourhood of zero leaves finite mass independent of skewness. -/
 theorem stableLevyMeasure_abs_gt (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
@@ -331,9 +358,7 @@ theorem integrable_stableLevyDensity_smul_iff {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (α β : ℝ) {g : ℝ → E} :
     Integrable g (stableLevyMeasure α β) ↔
       Integrable (fun x ↦ stableLevyDensity α β x • g x) := by
-  have hd : Measurable (stableLevyDensity α β) :=
-    measurable_stableLevyDensity.comp
-      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  have hd := measurable_stableLevyDensity_apply α β
   rw [stableLevyMeasure_def, integrable_withDensity_iff_integrable_smul' hd.ennreal_ofReal
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [ENNReal.toReal_ofReal (stableLevyDensity_nonneg _ _ _)]
@@ -347,9 +372,7 @@ theorem integral_stableLevyMeasure_eq {E : Type*} [NormedAddCommGroup E] [Normed
           (∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g x) +
         (Gamma (1 + α) * sin (π * α / 2) / π * (1 - β)) •
           ∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g (-x) := by
-  have hd : Measurable (stableLevyDensity α β) :=
-    measurable_stableLevyDensity.comp
-      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  have hd := measurable_stableLevyDensity_apply α β
   have hint := (integrable_stableLevyDensity_smul_iff α β).mp hg
   rw [stableLevyMeasure_def, integral_withDensity_eq_integral_toReal_smul hd.ennreal_ofReal
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]

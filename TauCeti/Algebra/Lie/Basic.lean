@@ -40,6 +40,10 @@ This file supplies general constructions for Lie modules that are missing from M
   the Lie subalgebra it generates.
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
   of the Lie action on `v`.
+* `TauCeti.lieAnnihilator_eq_top_iff` and `TauCeti.lieAnnihilator_eq_top`: the annihilator of
+  `v` is all of `L` exactly when every element annihilates `v`, in particular in a trivial module.
+* `TauCeti.instIsTrivialDual`: the dual of a trivial Lie module is trivial, so for an abelian
+  Lie algebra the annihilator of every element of the dual is the whole algebra.
 * `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
 * `LieSubalgebra.apply_mem_of_mem`: every element of a Lie subalgebra `L` of `𝔤𝔩(V)` preserves
   each `L`-submodule of `V`.
@@ -287,6 +291,14 @@ theorem _root_.LieSubmodule.lie_iSup {ι : Type*} (I : LieIdeal R L)
 
 variable [LieModule R L M]
 
+/-- The dual of a trivial Lie module is trivial: `⁅x, f⁆ m = - f ⁅x, m⁆ = 0`. For an abelian Lie
+algebra this makes the coadjoint module `Module.Dual R L` trivial. -/
+instance instIsTrivialDual [LieModule.IsTrivial L M] :
+    LieModule.IsTrivial L (Module.Dual R M) where
+  trivial x f := by
+    ext m
+    simp [trivial_lie_zero]
+
 section Annihilator
 
 variable (R L)
@@ -313,6 +325,18 @@ def lieAnnihilator (v : M) : LieSubalgebra R L where
 theorem mem_lieAnnihilator {v : M} {x : L} :
     x ∈ lieAnnihilator R L v ↔ ⁅x, v⁆ = 0 :=
   Iff.rfl
+
+/-- The annihilator of a vector is the whole Lie algebra exactly when every element of `L`
+annihilates the vector. -/
+theorem lieAnnihilator_eq_top_iff {v : M} :
+    lieAnnihilator R L v = ⊤ ↔ ∀ x : L, ⁅x, v⁆ = 0 :=
+  ⟨fun h x ↦ (mem_lieAnnihilator R L).1 (h ▸ LieSubalgebra.mem_top x),
+    fun h ↦ eq_top_iff.2 fun x _ ↦ (mem_lieAnnihilator R L).2 (h x)⟩
+
+/-- In a trivial Lie module, the annihilator of every vector is the whole Lie algebra. -/
+@[simp]
+theorem lieAnnihilator_eq_top [LieModule.IsTrivial L M] (v : M) : lieAnnihilator R L v = ⊤ :=
+  (lieAnnihilator_eq_top_iff R L).2 fun x ↦ trivial_lie_zero L M x v
 
 /-- **A vector annihilated by a set of Lie elements is annihilated by the Lie subalgebra that set
 generates.** The annihilator is a Lie subalgebra, so the universal property of `lieSpan` promotes

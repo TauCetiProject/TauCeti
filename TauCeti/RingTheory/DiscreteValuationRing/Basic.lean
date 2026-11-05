@@ -55,6 +55,13 @@ namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
 
+/-- Any multiple of the `n`-th power of a uniformizer lies in the `n`-th power of the maximal
+ideal. -/
+theorem mul_pow_mem_maximalIdeal_pow {ϖ : S} (hϖ : Irreducible ϖ) (n : ℕ) (c : S) :
+    c * ϖ ^ n ∈ maximalIdeal S ^ n :=
+  (maximalIdeal S ^ n).mul_mem_left c
+    (Ideal.pow_mem_pow ((mem_maximalIdeal ϖ).2 hϖ.not_isUnit) n)
+
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
 theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}
