@@ -45,9 +45,16 @@ This file gives the basic structure of `V`.
   `σ̂`-semilinear, `σ · (u v) = σ̂(u) (σ · v)`, and these two properties determine it
   (`TauCeti.CurrentAlgebra.eq_vacuumCoordinateAction`). This works at every central value,
   including the critical level.
+* **PBW identification.** Over a field, `y ↦ y |0⟩` is a linear isomorphism from the enveloping
+  algebra `U(t⁻¹ L[t⁻¹])` of the negative currents
+  (`TauCeti.CurrentAlgebra.negativeLieSubalgebra`) onto `V`
+  (`TauCeti.CurrentAlgebra.vacuumPBWEquiv`), intertwining left multiplication with the action on
+  `V`. So `V` is a free `U(t⁻¹ L[t⁻¹])`-module of rank one on `|0⟩`, and every basis of
+  `U(t⁻¹ L[t⁻¹])`, such as an ordered PBW basis `Module.Basis.pbwBasis`, is carried to a basis of
+  `V`. This holds at every central value, including the critical level and `a = 0`.
 
-No finiteness of `L` is used, and except for the coordinate action the base ring is an arbitrary
-commutative ring.
+No finiteness of `L` is used, and except for the coordinate action and the PBW identification the
+base ring is an arbitrary commutative ring.
 
 ## Main definitions
 
@@ -58,6 +65,7 @@ commutative ring.
 * `TauCeti.CurrentAlgebra.vacuumHomEquiv`: the universal property of the vacuum module.
 * `TauCeti.CurrentAlgebra.vacuumCoordinateAction`: the action of the automorphisms of `K⟦X⟧` on
   the vacuum module.
+* `TauCeti.CurrentAlgebra.vacuumPBWEquiv`: the PBW identification `U(t⁻¹ L[t⁻¹]) ≃ V`.
 
 ## Main results
 
@@ -70,6 +78,8 @@ commutative ring.
 * `TauCeti.CurrentAlgebra.vacuumCoordinateAction_smul`: the coordinate action is semilinear along
   the lift to `U`.
 * `TauCeti.CurrentAlgebra.eq_vacuumCoordinateAction`: it is the unique such map fixing the vacuum.
+* `TauCeti.CurrentAlgebra.vacuumPBWEquiv_mul`: the PBW identification intertwines left
+  multiplication on `U(t⁻¹ L[t⁻¹])` with the action on the vacuum module.
 
 ## References
 
@@ -320,5 +330,61 @@ theorem eq_vacuumCoordinateAction (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧)
   rw [hf, hf₀, vacuumCoordinateAction_smul_vacuum]
 
 end Coordinate
+
+section PBW
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+variable (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
+
+local notation "c" => twoCocycleOfBilinear K L Φ hΦ hΦs
+local notation "UK" => CentralQuotient K (centralElement c) a
+local notation "Uneg" => UniversalEnvelopingAlgebra K (negativeLieSubalgebra Φ hΦ hΦs)
+
+/-- **The PBW identification of the vacuum module.** Over a field, `y ↦ y |0⟩` is a linear
+isomorphism from the enveloping algebra `U(t⁻¹ L[t⁻¹])` of the negative currents onto the vacuum
+module, for every form `Φ` and every central value `a`, including the critical level and `a = 0`.
+It intertwines left multiplication on `U(t⁻¹ L[t⁻¹])` with the action on the vacuum module
+(`TauCeti.CurrentAlgebra.vacuumPBWEquiv_mul`), so the vacuum module is a free module of rank one
+over `U(t⁻¹ L[t⁻¹])` on the vacuum. -/
+def vacuumPBWEquiv : Uneg ≃ₗ[K] VacuumModule Φ hΦ hΦs a :=
+  LinearEquiv.ofBijective
+    ((LinearMap.toSpanSingleton UK _ (vacuum Φ hΦ hΦs a)).restrictScalars K ∘ₗ
+      (negativeEnvelopingHom Φ hΦ hΦs a).toLinearMap)
+    ⟨(injective_iff_map_eq_zero _).2 fun y hy ↦ by
+      simpa using smul_vacuum_eq_zero_iff.1 hy,
+    fun v ↦ by
+      obtain ⟨u, rfl⟩ := exists_smul_vacuum_eq v
+      obtain ⟨y, hy⟩ := exists_sub_negativeEnvelopingHom_mem_orderLeftIdeal Φ hΦ hΦs a u
+      refine ⟨y, ?_⟩
+      rw [← smul_vacuum_eq_zero_iff, sub_smul, sub_eq_zero] at hy
+      simp [hy]⟩
+
+variable {Φ hΦ hΦs a}
+
+/-- The PBW identification sends `y` to `y |0⟩`. -/
+@[simp]
+theorem vacuumPBWEquiv_apply (y : Uneg) :
+    vacuumPBWEquiv Φ hΦ hΦs a y = negativeEnvelopingHom Φ hΦ hΦs a y • vacuum Φ hΦ hΦs a :=
+  (rfl)
+
+/-- The inverse of the PBW identification sends `y |0⟩` back to `y`. -/
+@[simp]
+theorem vacuumPBWEquiv_symm_smul_vacuum (y : Uneg) :
+    (vacuumPBWEquiv Φ hΦ hΦs a).symm (negativeEnvelopingHom Φ hΦ hΦs a y • vacuum Φ hΦ hΦs a) =
+      y :=
+  (LinearEquiv.symm_apply_eq _).2 (vacuumPBWEquiv_apply y).symm
+
+/-- The PBW identification sends `1` to the vacuum. -/
+theorem vacuumPBWEquiv_one : vacuumPBWEquiv Φ hΦ hΦs a 1 = vacuum Φ hΦ hΦs a := by
+  simp
+
+/-- The PBW identification intertwines left multiplication on `U(t⁻¹ L[t⁻¹])` with the action on
+the vacuum module. -/
+theorem vacuumPBWEquiv_mul (y y' : Uneg) :
+    vacuumPBWEquiv Φ hΦ hΦs a (y * y') =
+      negativeEnvelopingHom Φ hΦ hΦs a y • vacuumPBWEquiv Φ hΦ hΦs a y' := by
+  simp [mul_smul]
+
+end PBW
 
 end TauCeti.CurrentAlgebra

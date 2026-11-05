@@ -41,6 +41,12 @@ current whose difference from the original lies in `orderSubmodule R L N`, and i
 `orderSubmodule R L N`. A linear map on polynomial currents killing all modes `t^n ⊗ x` with
 `n ≥ N` therefore extends to formal currents by composing with truncation below `N`.
 
+The polynomial currents of order below `N`, spanned by the modes `t^m ⊗ x` with `m < N`, form the
+submodule `truncSubmodule R L N`. It is the range of truncation below `N` and a complement of
+`orderSubmodule R L N`, over every commutative ring. The bracket of polynomial currents of orders
+below `M` and `N` has order below `M + N - 1`; for `N = 0` this makes the negative currents
+`t⁻¹ L[t⁻¹]` a Lie subalgebra.
+
 ## References
 
 * V. Kac, *Infinite-Dimensional Lie Algebras*, Chapter 7 (current algebras).
@@ -242,6 +248,32 @@ def trunc (N : ℤ) : currentAlgebra R L →ₗ[R] R[T;T⁻¹] ⊗[R] L :=
 theorem trunc_tmul (N : ℤ) (f : R⸨X⸩) (x : L) :
     trunc R L N (f ⊗ₜ x) = _root_.LaurentSeries.trunc N f ⊗ₜ x := (rfl)
 
+/-- Polynomial currents of order below `N`, spanned by the modes `t^m ⊗ x` with `m < N`. For
+`N = 0` these are the negative currents `t⁻¹ L[t⁻¹]`. -/
+def truncSubmodule (N : ℤ) : Submodule R (currentAlgebra R L) :=
+  Submodule.span R {u | ∃ m < N, ∃ x : L, u = HahnSeries.single m (1 : R) ⊗ₜ x}
+
+/-- The polynomial currents of order below `N` are spanned by the modes `t^m ⊗ x` with `m < N`. -/
+theorem truncSubmodule_def (N : ℤ) : truncSubmodule R L N =
+    Submodule.span R {u | ∃ m < N, ∃ x : L, u = HahnSeries.single m (1 : R) ⊗ₜ x} :=
+  (rfl)
+
+/-- A monomial current `r t^m ⊗ x` with `m < N` has order below `N`. -/
+theorem single_tmul_mem_truncSubmodule {m N : ℤ} (h : m < N) (r : R) (x : L) :
+    HahnSeries.single m r ⊗ₜ[R] x ∈ truncSubmodule R L N := by
+  have hr : HahnSeries.single m r = r • HahnSeries.single m (1 : R) := by
+    ext n
+    by_cases hn : n = m <;> simp [hn]
+  rw [hr, TensorProduct.smul_tmul]
+  exact Submodule.subset_span ⟨m, h, r • x, rfl⟩
+
+/-- Increasing the bound makes the submodule of polynomial currents of order below it larger. -/
+theorem truncSubmodule_mono : Monotone (truncSubmodule R L) := by
+  intro M N hMN
+  refine Submodule.span_le.mpr ?_
+  rintro _ ⟨m, hm, x, rfl⟩
+  exact single_tmul_mem_truncSubmodule R L (hm.trans_le hMN) 1 x
+
 end Module
 
 section Lie
@@ -262,6 +294,20 @@ theorem lie_mem_orderSubmodule {M N : ℤ} {u v : currentAlgebra R L}
   rw [LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LieAlgebra.ExtendScalars.bracket_tmul]
   simpa only [TensorProduct.smul_tmul', smul_eq_mul] using
     smul_mem_orderSubmodule R L hf (tmul_mem_orderSubmodule R L N hg ⁅x, y⁆)
+
+/-- The bracket of polynomial currents of orders below `M` and `N` has order below `M + N - 1`. -/
+theorem lie_mem_truncSubmodule {M N : ℤ} {u v : currentAlgebra R L}
+    (hu : u ∈ truncSubmodule R L M) (hv : v ∈ truncSubmodule R L N) :
+    ⁅u, v⁆ ∈ truncSubmodule R L (M + N - 1) := by
+  -- `LieAlgebra.ad` needs a Lie ring on endomorphisms; see `lie_mem_orderSubmodule`.
+  let : LieRing (Module.End R (currentAlgebra R L)) := LieRing.ofAssociativeRing
+  refine LinearMap.BilinMap.apply_apply_mem_of_mem_span
+    (truncSubmodule R L (M + N - 1)) _ _ (LieAlgebra.ad R (currentAlgebra R L)).toLinearMap
+    ?_ u v hu hv
+  rintro _ ⟨m, hm, x, rfl⟩ _ ⟨n, hn, y, rfl⟩
+  rw [LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LieAlgebra.ExtendScalars.bracket_tmul,
+    HahnSeries.single_mul_single, mul_one]
+  exact single_tmul_mem_truncSubmodule R L (by omega) 1 _
 
 /-- **Currents of a perfect Lie algebra are sums of brackets of higher-order currents.** If `L` is
 perfect, every current of order at least `M + N` is a linear combination of brackets of currents
@@ -394,6 +440,54 @@ theorem trunc_eq_zero_of_mem_orderSubmodule {N : ℤ} {u : currentAlgebra R L}
     ext n
     rw [toFinsupp_trunc, map_zero, Finsupp.zero_apply, ite_eq_right_iff]
     exact coeff_eq_zero_of_mem_orderSubmodule R L hu
+
+/-- Truncation below `N` lands in the polynomial currents of order below `N`. -/
+theorem ofLoop_trunc_mem_truncSubmodule (N : ℤ) (u : currentAlgebra R L) :
+    ofLoop R L (trunc R L N u) ∈ truncSubmodule R L N := by
+  induction u using TensorProduct.inductionOn with
+  | tmul f x =>
+    rw [trunc_tmul, ofLoop_tmul, _root_.LaurentSeries.trunc_eq_sum_Ico, map_sum,
+      TensorProduct.sum_tmul]
+    refine Submodule.sum_mem _ fun j hj ↦ ?_
+    rw [LaurentPolynomial.toLaurentSeries_single]
+    exact single_tmul_mem_truncSubmodule R L (Finset.mem_Ico.mp hj).2 _ x
+  | add u v hu hv => simpa only [map_add] using add_mem hu hv
+
+/-- Truncation below `N` fixes the polynomial currents of order below `N`. -/
+theorem ofLoop_trunc_of_mem_truncSubmodule {N : ℤ} {u : currentAlgebra R L}
+    (hu : u ∈ truncSubmodule R L N) : ofLoop R L (trunc R L N u) = u := by
+  induction hu using Submodule.span_induction with
+  | mem u hu =>
+    obtain ⟨m, hm, x, rfl⟩ := hu
+    rw [trunc_tmul, ofLoop_tmul]
+    congr 1
+    ext n
+    rw [LaurentPolynomial.coeff_toLaurentSeries, _root_.LaurentSeries.coeff_trunc,
+      HahnSeries.coeff_single]
+    split_ifs <;> first | rfl | omega
+  | zero => simp
+  | add u v _ _ hu hv => rw [map_add, map_add, hu, hv]
+  | smul r u _ hu => rw [map_smul, map_smul, hu]
+
+/-- **The polynomial currents of order below `N` are the range of truncation below `N`:** a current
+lies in `truncSubmodule R L N` exactly when truncation below `N` fixes it. -/
+theorem mem_truncSubmodule_iff {N : ℤ} {u : currentAlgebra R L} :
+    u ∈ truncSubmodule R L N ↔ ofLoop R L (trunc R L N u) = u :=
+  ⟨ofLoop_trunc_of_mem_truncSubmodule R L, fun h ↦ h ▸ ofLoop_trunc_mem_truncSubmodule R L N u⟩
+
+/-- **The polynomial currents of order below `N` complement the currents of order at least `N`.**
+Every current is uniquely its truncation below `N` plus a current of order at least `N`, over
+every commutative ring. -/
+theorem isCompl_truncSubmodule_orderSubmodule (N : ℤ) :
+    IsCompl (truncSubmodule R L N) (orderSubmodule R L N) := by
+  refine ⟨Submodule.disjoint_def.mpr fun u hu hu' ↦ ?_, codisjoint_iff.mpr ?_⟩
+  · rw [← ofLoop_trunc_of_mem_truncSubmodule R L hu, trunc_eq_zero_of_mem_orderSubmodule R L hu',
+      map_zero]
+  · refine eq_top_iff.mpr fun u _ ↦ ?_
+    rw [← add_sub_cancel (ofLoop R L (trunc R L N u)) u]
+    refine Submodule.add_mem_sup (ofLoop_trunc_mem_truncSubmodule R L N u) ?_
+    rw [← neg_sub]
+    exact neg_mem (ofLoop_trunc_sub_mem_orderSubmodule R L N u)
 
 /-- A linear map on polynomial currents which vanishes on all modes `t^n ⊗ x` with `n ≥ N` is
 unchanged by first truncating polynomial currents below `N`. -/
