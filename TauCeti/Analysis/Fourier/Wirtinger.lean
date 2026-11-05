@@ -127,7 +127,7 @@ private theorem integral_norm_sq_le_and_eq_iff_of_fourierCoeffOn_zero (hab : a <
     rw [← hGnorm, ← hGenergy.tsum_eq] at heq'
     intro n hn₁ hn₂
     exact (hGc n).symm.trans
-      (fourierCoeff_eq_zero_of_integral_norm_sq_eq_tsum_frequency_sq G hGzero hGenergy.summable
+      (Lp.fourierCoeff_eq_zero_of_integral_norm_sq_eq_tsum_frequency_sq G hGzero hGenergy.summable
         heq' hn₁ hn₂)
   · -- Otherwise the two series agree term by term.
     intro hc
@@ -312,7 +312,8 @@ theorem norm_integral_apply_apply_le {V G : Type*} [NormedAddCommGroup V]
     hbound.mono_fun' (B.aestronglyMeasurable_comp₂
       (((hfc.sub continuousOn_const).mono uIoc_subset_uIcc).aestronglyMeasurable
         measurableSet_uIoc) hf'ii.def'.aestronglyMeasurable) (Filter.Eventually.of_forall hpt)
-  have hrewrite := B.intervalIntegral_apply_apply_eq_sub_const hf hfab hf'ii m hint
+  have hrewrite := B.intervalIntegral_apply_apply_eq_sub_const hfc
+    (fun x hx => hf x (Ioo_subset_Icc_self hx)) hfab hf'ii m hint
   rw [hrewrite]
   refine (norm_integral_le_of_norm_le hab.le (Filter.Eventually.of_forall fun x _ => hpt x)
     hbound).trans ?_

@@ -190,6 +190,14 @@ theorem integral_norm_sq_eq_tsum_frequency_sq_fourierCoeff_iff
       simp [hn, hp]
     simp [hc]
 
+end TauCeti
+
+namespace MeasureTheory.Lp
+
+open TauCeti
+
+variable {T : ℝ} [Fact (0 < T)]
+
 /-- If an `L²` class on the circle has vanishing zeroth Fourier coefficient, summable
 `n² ‖ĝ n‖²`, and squared norm equal to `∑ n² ‖ĝ n‖²`, then every Fourier coefficient of frequency
 other than `±1` vanishes. -/
@@ -204,4 +212,4 @@ theorem fourierCoeff_eq_zero_of_integral_norm_sq_eq_tsum_frequency_sq
   rw [hf, fourierCoeff_first_harmonics]
   simp [hn₁, hn₂]
 
-end TauCeti
+end MeasureTheory.Lp
