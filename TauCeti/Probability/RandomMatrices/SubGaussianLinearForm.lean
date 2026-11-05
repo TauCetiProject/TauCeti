@@ -21,6 +21,7 @@ used in the operator-norm tail bound for random matrices.
 public section
 
 open MeasureTheory ProbabilityTheory
+open scoped NNReal
 
 namespace TauCeti
 
@@ -38,8 +39,8 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
   let a2 : ι → ℝ≥0 := fun i ↦ ⟨(a i) ^ 2, sq_nonneg (a i)⟩
   let S : Ω → ℝ := fun ω ↦ ∑ i, Y i ω
   have hY_indep : iIndepFun Y μ := by
-    simpa only [Y, Function.comp_apply] using
-      h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
+    change iIndepFun (fun i ω ↦ a i * X i ω) μ
+    exact h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
   have hY : ∀ i, HasSubgaussianMGF (Y i) (a2 i * c) μ := by
     intro i
     simpa [Y, a2] using (hX i).const_mul (a i)
