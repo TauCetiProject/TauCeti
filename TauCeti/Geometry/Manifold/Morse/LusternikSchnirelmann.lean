@@ -31,6 +31,13 @@ manifold is locally contractible, `U` can be taken to be a union of one categori
 critical point, so the count grows by at most the number of critical points in the band
 (`TauCeti.exists_lsCategoryCount_sublevel_le_add`).
 
+Both sides of the bound are additive over the connected components of `M`
+(`TauCeti.lsCategoryCount_univ_eq_sum_connectedComponents` and
+`TauCeti.totalCriticalCount_eq_sum_connectedComponents`), so the theorem for `M` is the sum of the
+theorems for its components. In dimension zero the bound is an equality: `M` is discrete, every
+point is critical, and both sides count the points of `M`
+(`TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`).
+
 ## Main declarations
 
 * `TauCeti.lsCategoryCount_sublevel_le_of_band`: the count of `{f ≤ b}` is at most that of
@@ -41,6 +48,8 @@ critical point, so the count grows by at most the number of critical points in t
   critical points in `{f ≤ t}`.
 * `TauCeti.lsCategoryCount_univ_le_totalCriticalCount`: the Lusternik–Schnirelmann theorem on a
   compact manifold.
+* `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`: equality in dimension
+  zero.
 
 ## References
 
@@ -78,6 +87,16 @@ private theorem exists_pos_criticalPoints_inter_band_subset {b c : ℝ} (hcb : c
   refine hηW ?_ ⟨⟨x, ⟨hx, (by linarith : f x ≤ b)⟩, rfl⟩, hxc⟩
   rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
   constructor <;> linarith
+
+/-- **The Lusternik–Schnirelmann theorem in dimension zero.** On a manifold modelled on a
+zero-dimensional space, compact or not, the Lusternik–Schnirelmann count of `M` equals the number
+of critical points of any function `f`: `M` is discrete and every point is critical, so both are
+the number of points of `M`. -/
+theorem lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton [Subsingleton E] :
+    lsCategoryCount M univ = totalCriticalCount I f := by
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, criticalPoints_eq_univ_of_subsingleton]
 
 variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I ∞ M]
 
