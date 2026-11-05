@@ -233,10 +233,9 @@ theorem cayley_cappedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Compatib
     J₀.cayley (cappedAlmostComplex h₀ J hJ r L (q.cylindricalEndLift z) x) =
       (smoothTransition r * (smoothTransition (q.endSign * z.re - 1) *
         smoothTransition (L + 3 - q.endSign * z.re))) • J₀.cayley (J q z.im x) := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-  have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
   rw [cappedAlmostComplex,
-    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz, hre]
+    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz,
+    re_endCoord_cylindricalEndLift]
 
 /-- **The neck.** If `J q` has period one in `t` and `r ≥ 1`, then on the part
 `2 ≤ ±s ≤ L + 2` of the end `q`, the capped structure at the point with end coordinates

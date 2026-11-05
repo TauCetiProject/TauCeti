@@ -156,7 +156,6 @@ theorem cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Com
     J₀.cayley (endWeightedAlmostComplex h₀ J hJ c hc hc₀ (q.cylindricalEndLift z) x) =
       c q (q.cylindricalEndLift z) • J₀.cayley (J q z.im x) := by
   obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-  have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
   rw [cayley_endWeightedAlmostComplex, Finset.sum_eq_single q]
   · have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
     have hp : J q (z.im + k) = J q z.im := by simpa using hJp.int_mul k z.im
@@ -164,7 +163,8 @@ theorem cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Com
   · -- The weights of the other ends vanish, since distinct ends are disjoint.
     intro r _ hr
     by_contra h
-    exact (endSign_mul_re_endCoord_nonpos (Ne.symm hr) (by rwa [hre])).not_gt
+    exact (endSign_mul_re_endCoord_nonpos (Ne.symm hr)
+      (by rwa [re_endCoord_cylindricalEndLift])).not_gt
       (hc₀ r _ fun h' => h (by rw [h', zero_smul]))
   · simp
 
@@ -214,10 +214,9 @@ theorem cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Com
     (hJp : Function.Periodic (J q) 1) {z : ℂ} (hz : 0 < q.endSign * z.re) (x : M) :
     J₀.cayley (pairOfPantsAlmostComplex h₀ J hJ (q.cylindricalEndLift z) x) =
       smoothTransition (q.endSign * z.re - 1) • J₀.cayley (J q z.im x) := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-  have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
   rw [pairOfPantsAlmostComplex,
-    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz, hre]
+    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz,
+    re_endCoord_cylindricalEndLift]
 
 /-- **The structure is `J q t` far out on each end.** If `J q` has period one in `t`, then on the
 part `±s ≥ 2` of the end `q`, the pair-of-pants structure at the point with end coordinates
