@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Enumerative.Catalan.Basic
 public import Mathlib.Data.Finset.Max
+public import TauCeti.Data.Finset.Basic
 public import TauCeti.Combinatorics.NoncrossingPartition.Basic
 public import TauCeti.Order.Partition.Pairing
 import Mathlib.Algebra.BigOperators.Fin
@@ -506,12 +507,8 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
       ((P.restrict (filter_subset (· < x) s)).restrict (filter_subset (m < ·) _)).IsPairing) ∧
       (P.restrict (filter_subset (x < ·) s)).IsPairing := by
   have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
-  have hbetween {a : α} (ha : a ∈ {y ∈ {y ∈ s | y < x} | m < y}) (ham : a ∉ P.part m) :=
-    part_restrict_between hP hm hxm hmax ha ham
-  have hafter {a : α} (ha : a ∈ {y ∈ s | x < y}) := part_restrict_after hP hm hxm hmax ha
-  have hpair := part_eq_pair_iff hms hxm hmax hmx
   rw [Finpartition.isPairing_iff_part, Finpartition.isPairing_iff_part,
-    Finpartition.isPairing_iff_part, ← hpair]
+    Finpartition.isPairing_iff_part, ← part_eq_pair_iff hms hxm hmax hmx]
   constructor
   · intro h
     have hm2 : P.part m = {m, x} :=
@@ -523,9 +520,9 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
       rintro (rfl | rfl)
       exacts [lt_irrefl _ (mem_filter.1 ha).2, lt_irrefl _ (mem_filter.1 (mem_filter.1 ha).1).2]
     refine ⟨⟨hm2, fun a ha => ?_⟩, fun a ha => ?_⟩
-    · rw [hbetween ha (hnot ha)]
+    · rw [part_restrict_between hP hm hxm hmax ha (hnot ha)]
       exact h a (mem_filter.1 (mem_filter.1 ha).1).1
-    · rw [hafter ha]
+    · rw [part_restrict_after hP hm hxm hmax ha]
       exact h a (mem_filter.1 ha).1
   · rintro ⟨⟨hm2, hM⟩, hR⟩ a ha
     by_cases ham : a ∈ P.part m
@@ -534,9 +531,9 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
     · have hav : a ∈ {y ∈ {y ∈ s | y < x} | m < y} :=
         mem_filter.2 ⟨mem_filter.2 ⟨ha, hax⟩,
           (hm a ha).lt_of_ne fun h => ham (h ▸ P.mem_part_self.2 hms)⟩
-      rw [← hbetween hav ham]
+      rw [← part_restrict_between hP hm hxm hmax hav ham]
       exact hM a hav
-    · rw [← hafter (mem_filter.2 ⟨ha, hxa⟩)]
+    · rw [← part_restrict_after hP hm hxm hmax (mem_filter.2 ⟨ha, hxa⟩)]
       exact hR a (mem_filter.2 ⟨ha, hxa⟩)
 
 /-- The last position of the part of the first position `m` is `m` itself exactly when that part
@@ -632,13 +629,6 @@ private theorem card_isPairing_eq_one (hs : s = ∅) :
   rw [Finpartition.parts_eq_empty_iff.2 hs] at hB
   exact absurd hB (notMem_empty B)
 
-/-- Removing the first position of a nonempty finite set leaves the positions after it. -/
-private theorem filter_min'_lt_eq_erase (hs : s.Nonempty) :
-    {x ∈ s | s.min' hs < x} = s.erase (s.min' hs) := by
-  ext y
-  simp only [mem_filter, mem_erase]
-  exact ⟨fun h => ⟨h.2.ne', h.1⟩, fun h => ⟨h.2, (s.min'_le y h.2).lt_of_ne' h.1⟩⟩
-
 /-- The number of noncrossing pairings of a set smaller than `2 * k + 1`, given the Catalan count
 for all smaller sizes, depends only on its size. -/
 private theorem card_isPairing_eq_ite {k : ℕ}
@@ -668,9 +658,6 @@ theorem card_isPairing_eq_catalan {n : ℕ} (hn : #s = 2 * n) :
   have hs : s.Nonempty := card_pos.1 (by omega)
   -- The number of noncrossing pairings of a smaller set depends only on its size.
   let g (i : ℕ) : ℕ := if Even i then catalan (i / 2) else 0
-  have hg {t : Finset α} (ht : #t < 2 * k + 1) :
-      Fintype.card {P : NoncrossingPartition t // P.1.IsPairing} = g #t :=
-    card_isPairing_eq_ite ih ht
   -- Reindex the recurrence by the positions after the first position `m`.
   set w := {x ∈ s | s.min' hs < x} with hw_def
   have hw : #w = 2 * k + 1 := by
@@ -690,7 +677,8 @@ theorem card_isPairing_eq_catalan {n : ℕ} (hn : #s = 2 * n) :
       exact filter_congr fun y _ => ⟨fun h => ⟨hmx.trans h, h⟩, And.right⟩
     have hv : {y ∈ s | s.min' hs < y ∧ y < x} = {y ∈ w | y < x} := by
       rw [hw_def, filter_filter]
-    rw [hu, hv, hg (hlt hx (p := (· < x)) (lt_irrefl x)), hg (hlt hx (p := (x < ·)) (lt_irrefl x))]
+    rw [hu, hv, card_isPairing_eq_ite ih (hlt hx (p := (· < x)) (lt_irrefl x)),
+      card_isPairing_eq_ite ih (hlt hx (p := (x < ·)) (lt_irrefl x))]
   -- Only the even sizes contribute.
   have hodd : ∑ j ∈ range k, g (2 * j + 1) * g (2 * k - (2 * j + 1)) = 0 :=
     sum_eq_zero fun j _ => by simp only [g, Nat.not_even_two_mul_add_one, ↓reduceIte, zero_mul]

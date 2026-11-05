@@ -53,6 +53,8 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.Nonempty.exists_subset_Ioi_insert_eq` writes a nonempty finset of a linear order as its
   minimum inserted into a finset above it, and `Finset.min'_insert_of_subset_Ioi` recovers that
   minimum.
+* `Finset.filter_min'_lt_eq_erase` identifies the elements above the minimum with the erasure of
+  the minimum.
 * `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
   a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
@@ -594,6 +596,11 @@ theorem min'_insert_of_subset_Ioi {α : Type*} [LinearOrder α] [LocallyFiniteOr
     rcases mem_insert.1 hy with rfl | hy
     · exact le_rfl
     · exact (mem_Ioi.1 (hs hy)).le)
+
+/-- Removing the minimum of a nonempty finset leaves the elements strictly above it. -/
+theorem filter_min'_lt_eq_erase {α : Type*} [LinearOrder α] {s : Finset α} (hs : s.Nonempty) :
+    {x ∈ s | s.min' hs < x} = s.erase (s.min' hs) :=
+  (filter_congr fun y hy ↦ ⟨LT.lt.ne', (s.min'_le y hy).lt_of_ne'⟩).trans (filter_ne' s _)
 
 /-- A nonempty finset of a linear order is an element `a` inserted into a finset above `a`. -/
 theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
