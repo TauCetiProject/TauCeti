@@ -326,10 +326,10 @@ theorem exists_constantCompositum_eq_top_nonempty_algHom {E : Type*} [Field E] [
   -- The residue fields embed into `k'`, since `f` splits in `k'`.
   refine ⟨F', k', inferInstance, inferInstance,
     Algebra.isSeparable_of_separable_splitting_field k k' hfsep, h, fun R hR ↦ ?_, fun Q hQ ↦ ?_⟩
-  · exact nonempty_algHom_of_minpoly_dvd (hα ⟨R, hR⟩) (hαsep ⟨R, hR⟩).isIntegral hfsep.ne_zero
+  · exact nonempty_algHom_of_minpoly_dvd (hα ⟨R, hR⟩) hfsep.ne_zero
       (Finset.dvd_prod_of_mem _ (Finset.mem_union_left _
         (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
-  · exact nonempty_algHom_of_minpoly_dvd (hβ ⟨Q, hQ⟩) (hβsep ⟨Q, hQ⟩).isIntegral hfsep.ne_zero
+  · exact nonempty_algHom_of_minpoly_dvd (hβ ⟨Q, hQ⟩) hfsep.ne_zero
       (Finset.dvd_prod_of_mem _ (Finset.mem_union_right _
         (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
 

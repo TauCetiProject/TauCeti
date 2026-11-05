@@ -16,7 +16,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.Pullback.Carrier
 import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
-import TauCeti.RingTheory.DiscreteValuationRing.UnramifiedBaseChange
+import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 
 /-!
 # Unramified and tamely ramified covers in codimension one

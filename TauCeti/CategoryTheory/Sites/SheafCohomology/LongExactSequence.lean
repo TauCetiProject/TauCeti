@@ -198,8 +198,7 @@ theorem subsingleton_X₁_one (V : C) (hg : Function.Surjective (S.g.hom.app (op
   rw [AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply, Ext.mk₀_comp_mk₀,
     ← Ext.mk₀_addEquiv₀_apply x₃]
   congr 1
-  apply (freeYonedaSheafSectionsEquiv J V S.X₃).injective
-  rw [freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply, ht]
+  rw [freeYonedaSheafSectionsEquiv_symm_naturality_right, ht, AddEquiv.symm_apply_apply]
 
 /-- If `H¹(V, F₁)` vanishes, then the sequence of sections `0 ⟶ F₁(V) ⟶ F₂(V) ⟶ F₃(V) ⟶ 0` is
 short exact. -/

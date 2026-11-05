@@ -133,6 +133,11 @@ theorem single_pow (q : ℚ) (a : K) (n : ℕ) : single K q a ^ n = single K (n 
   apply Subtype.ext
   simp [HahnSeries.single_pow, nsmul_eq_mul]
 
+/-- The inverse of a monomial `a t ^ q` is the monomial `a⁻¹ t ^ (-q)`. -/
+@[simp]
+theorem inv_single (q : ℚ) (a : K) : (single K q a)⁻¹ = single K (-q) a⁻¹ :=
+  Subtype.ext <| by rw [IntermediateField.coe_inv, coe_single, coe_single, HahnSeries.inv_single]
+
 /-- Multiplying a monomial by a constant multiplies its coefficient. -/
 @[simp]
 theorem algebraMap_mul_single (c : K) (q : ℚ) (a : K) :
@@ -189,6 +194,13 @@ embeddings into the Puiseux field. -/
 theorem levelEmbedding_expand (n d : ℕ+) (f : K⸨X⸩) :
     levelEmbedding K (n * d) (expand K d f) = levelEmbedding K n f :=
   Subtype.ext (ramifiedEmbedding_expand n d f)
+
+/-- `levelEmbedding_expand` for a level `m` divisible by `n`: the transition map
+`X ↦ X ^ (m / n)` from level `n` to level `m` commutes with the level embeddings. -/
+@[simp]
+theorem levelEmbedding_expand_divExact {n m : ℕ+} (h : n ∣ m) (f : K⸨X⸩) :
+    levelEmbedding K m (expand K (m.divExact n) f) = levelEmbedding K n f := by
+  rw [← levelEmbedding_expand n (m.divExact n) f, PNat.mul_div_exact h]
 
 /-- `levelEmbedding_expand` as an equality of algebra maps. -/
 theorem levelEmbedding_comp_expand (n d : ℕ+) :

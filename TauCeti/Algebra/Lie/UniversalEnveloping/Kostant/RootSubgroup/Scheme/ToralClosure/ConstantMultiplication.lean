@@ -18,16 +18,18 @@ be the Hopf ideal cutting out the subgroup scheme of `GLₙ` whose points are th
 matrices multiplicative for that product.
 
 The toral Kostant carrier is the smallest closed subgroup scheme of `GLₙ` containing the
-represented root subgroups and the represented weight torus, so it lies inside that subgroup
+represented root subgroups and the represented weight torus, so it lies inside this subgroup
 scheme as soon as its generators do. Since the defining ideal of the carrier is the largest Hopf
 ideal killed by the root-subgroup and weight-torus coordinate maps, the containment of Hopf
 ideals reduces to evaluating the defining relations on the generic matrix of each generating
-coordinate map — equivalently, to checking multiplicativity of the divided-power exponential
-matrices and of the weight-diagonal matrices over every commutative ring. On points this says
-that every matrix point of the carrier is multiplicative for the product.
+coordinate map — equivalently, to checking multiplicativity for the
+divided-power exponential matrices and the weight-diagonal matrices over every commutative ring.
+On points, the constant-multiplication containment says that every matrix point of the carrier is
+multiplicative for the product.
 
-Only the containment is proved. Nothing here asserts that the carrier exhausts the points of the
-constant-multiplication subgroup scheme, or that either group scheme is reductive or smooth.
+Only the containments are proved. Nothing here asserts that the carrier exhausts the points of the
+constant-multiplication subgroup scheme, or that any group scheme in sight is
+reductive or smooth.
 
 ## Main results
 
@@ -46,9 +48,9 @@ In the namespace `TauCeti.UniversalEnvelopingAlgebra`:
   generating the Chevalley group.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 
-The reduction of a containment of Hopf ideals to the generating coordinate maps is the one
-carried out for a constant bilinear form in `TauCeti.SpStd`; the statements below package it once
-for an arbitrary constant multiplication and an arbitrary toral Kostant carrier.
+The statements below package the reduction of a containment of Hopf ideals to the generating
+coordinate maps once, for an arbitrary constant multiplication and an arbitrary
+toral Kostant carrier.
 -/
 
 public section

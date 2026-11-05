@@ -49,6 +49,8 @@ family with upper barriers.
 * `TauCeti.SubharmonicOn.sub_harmonicOnNhd`: subtracting a harmonic function preserves
   subharmonicity.
 * `TauCeti.SubharmonicOn.le_of_le_frontier`: the comparison principle on a bounded open set.
+* `TauCeti.eqOn_closure_of_laplacian_eq_of_eqOn_frontier`: uniqueness for Poisson's equation on a
+  bounded open set.
 * `TauCeti.SubharmonicOn.le_of_le_sphere`: the comparison principle on a ball.
 * `TauCeti.SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg`: the comparison principle
   between a subharmonic and a superharmonic function on a bounded open set.
@@ -182,6 +184,32 @@ theorem SubharmonicOn.le_of_le_frontier (hU : IsOpen U) (hUb : Bornology.IsBound
       (hw.continuousOn.continuousAt (hU.mem_nhds hzU)).eventually (lt_mem_nhds hzm)] with y hyU hy
     exact ⟨subset_closure hyU, hy.le⟩
   exact (disjoint_left.1 disjoint_interior_frontier (mem_interior_iff_mem_nhds.2 hnhds)) hz
+
+open Laplacian in
+/-- **Uniqueness for Poisson's equation on a bounded open set.** Let `U` be a bounded open set and
+let `u`, `v` be of class `C²` on `U` and continuous on `closure U`. If `Δu = Δv` on `U` and
+`u = v` on `frontier U`, then `u = v` on `closure U`. Unlike
+`TauCeti.eqOn_of_laplacian_eqOn_of_eqOn_frontier`, nothing is assumed at points of
+`interior (closure U)` outside `U`. -/
+theorem eqOn_closure_of_laplacian_eq_of_eqOn_frontier (hU : IsOpen U)
+    (hUb : Bornology.IsBounded U) (hu : ContDiffOn ℝ 2 u U) (hv : ContDiffOn ℝ 2 v U)
+    (huc : ContinuousOn u (closure U)) (hvc : ContinuousOn v (closure U))
+    (hΔ : ∀ x ∈ U, Δ u x = Δ v x) (hfr : EqOn u v (frontier U)) : EqOn u v (closure U) := by
+  -- The difference `u - v` is harmonic on `U`, so the comparison principle against the zero
+  -- function applies to `u - v` and to `v - u`.
+  have hh : HarmonicOnNhd (u - v) U := fun x hx ↦ by
+    refine ⟨(hu.contDiffAt (hU.mem_nhds hx)).sub (hv.contDiffAt (hU.mem_nhds hx)), ?_⟩
+    filter_upwards [hU.mem_nhds hx] with y hy
+    rw [(hu.contDiffAt (hU.mem_nhds hy)).laplacian_sub (hv.contDiffAt (hU.mem_nhds hy)),
+      hΔ y hy, sub_self, Pi.zero_apply]
+  have h0 : HarmonicOnNhd (fun _ : E ↦ (0 : ℝ)) U := fun _ _ ↦ harmonicAt_const 0
+  intro x hx
+  have h₁ := hh.subharmonicOn.le_of_le_frontier hU hUb (huc.sub hvc) h0 continuousOn_const
+    (fun y hy ↦ by simp [hfr hy]) x hx
+  have h₂ := hh.neg.subharmonicOn.le_of_le_frontier hU hUb (huc.sub hvc).neg h0
+    continuousOn_const (fun y hy ↦ by simp [hfr hy]) x hx
+  simp only [Pi.sub_apply, Pi.neg_apply] at h₁ h₂
+  linarith
 
 /-- **The comparison principle on a ball.** A function subharmonic on `ball c r` and continuous
 on `closedBall c r` lies below every function harmonic on `ball c r` and continuous on

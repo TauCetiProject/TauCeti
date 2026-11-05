@@ -58,7 +58,6 @@ in every characteristic. The defining Hopf ideal represents the radical as a clo
 theorem isCentral_solvableRadicalDefiningIdeal (hH : reductiveCommHopfAlgProperty k H) :
     (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H).IsCentral := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact HopfIdeal.IsNormal.isCentral_of_multiplicativeType
     (FiniteTypeCommHopfAlgCat.isNormal_solvableRadicalDefiningIdeal H)
     hH.geometricallyConnected (hH.torus_solvableRadical.multiplicativeType k _)

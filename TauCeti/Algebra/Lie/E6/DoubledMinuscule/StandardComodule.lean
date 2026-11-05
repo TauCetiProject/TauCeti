@@ -175,6 +175,15 @@ theorem points_mulVec_mem
 noncomputable abbrev minusculeCharacter (a : Fin 54) : Multiplicative (Fin 6 →₀ ℤ) :=
   SplitTorus.weightCharacter (matrixWeight a)
 
+/-- The fifty-four doubled minuscule coordinates have distinct integral torus characters. -/
+theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
+  intro a b h
+  apply matrixIndexEquiv.symm.injective
+  apply DynkinType.e6DoubledMinusculeWeight_injective
+  funext i
+  simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter, matrixWeight_apply] using
+    congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
+
 /-- Restriction of the standard comodule to the weight torus gives its fifty-four weight lines,
 over every commutative ring. -/
 theorem torusCorestrict_eq_ofWeights :

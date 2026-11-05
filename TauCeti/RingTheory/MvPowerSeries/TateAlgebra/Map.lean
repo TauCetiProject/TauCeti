@@ -40,6 +40,8 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 * `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
 * `MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to their
   coefficientwise images.
+* `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`: `restrictedMap` commutes with the
+  iteration `R{X/c, Y/d} ≅ R{Y/d}{X/c}`.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
 * `TauCeti.MvPowerSeries.norm_restrictedMap` and `TauCeti.MvPowerSeries.isometry_restrictedMap`:
   a norm-preserving `φ` induces an isometry for the Gauss norms.
@@ -230,6 +232,18 @@ theorem restrictedMap_polynomialToRestricted (p : MvPolynomial σ R) :
     restrictedMap φ hφ (TauCeti.MvPowerSeries.polynomialToRestricted c p) =
       TauCeti.MvPowerSeries.polynomialToRestricted c (MvPolynomial.map φ p) :=
   Subtype.ext (by ext t; simp [coe_restrictedMap, MvPolynomial.coeff_map])
+
+/-- Iteration commutes with bounded coefficient maps: the iterated series of the coefficientwise
+image of `f` under `φ : R →+* S` is the image of the iterated series of `f` under the
+coefficientwise map `R{Y/d} →+* S{Y/d}` induced by `φ`. -/
+theorem coe_restrictedSumEquiv_restrictedMap {τ : Type*} {d : τ → ℝ} [∀ i, Fact (0 < c i)]
+    [∀ j, Fact (0 < d j)] (f : IsRestricted.subring (R := R) (Sum.elim c d)) :
+    (restrictedSumEquiv (restrictedMap φ hφ f) :
+        MvPowerSeries σ (IsRestricted.subring (R := S) d)) =
+      map (restrictedMap φ hφ)
+        (restrictedSumEquiv f : MvPowerSeries σ (IsRestricted.subring (R := R) d)) := by
+  refine MvPowerSeries.ext fun a ↦ Subtype.ext <| MvPowerSeries.ext fun b ↦ ?_
+  simp [coeff_map]
 
 end Algebra
 

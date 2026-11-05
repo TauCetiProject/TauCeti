@@ -177,7 +177,7 @@ theorem range_derivationCompLieHom_weightTorusCoordinateMap_eq_span :
 
 /-- The numbered coroot differentials are linearly independent, also over nonreduced algebras. -/
 theorem linearIndependent_corootVector : LinearIndependent B (corootVector B) := by
-  convert SplitTorus.linearIndependent_derivationComp_cocharacter (B := B)
+  convert SplitTorus.linearIndependent_derivationCompLieHom_cocharacter (B := B)
     weightTorusCoordinateMap.hom
     (derivationCompLieHom_injective_of_surjective _ weightTorusCoordinateMap_surjective) using 1
   funext i

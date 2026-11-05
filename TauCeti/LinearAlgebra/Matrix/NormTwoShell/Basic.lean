@@ -43,6 +43,9 @@ The file develops the elementary theory of `Φ` in three layers of hypotheses.
 These are the facts about the root set that the integral Chevalley lattice of a simply laced
 diagram is built on: its root vectors are indexed by `Φ`, and its bracket on root vectors is
 nonzero exactly in the cases `a + b ∈ Φ` and `a = -b` isolated here.
+The nonzero height also gives a single integral vector separating all shell vectors by the
+pairing, invariant under a specified diagram permutation. Mathlib's `Matrix.cramer` constructs
+it, and `Matrix.mulVec_cramer` identifies its root pairings with determinant times height.
 
 ## Main definitions
 
@@ -63,6 +66,8 @@ nonzero exactly in the cases `a + b ∈ Φ` and `a = -b` isolated here.
 * `Matrix.PosDef.finite_normTwoShell`: the shell of a positive definite matrix is finite.
 * `Matrix.PosDef.nonneg_or_nonpos_of_mem_normTwoShell`: with nonpositive off-diagonal entries,
   every vector of `Φ` is nonnegative or nonpositive.
+* `Matrix.PosDef.exists_invariant_pairing_ne_zero`: an invariant integral vector pairs
+  nontrivially with every shell vector.
 * `Matrix.PosDef.exists_sub_single_mem_normTwoShell`: a positive root that is not simple has a
   simple root whose subtraction leaves a positive root.
 * `Matrix.PosDef.normTwoShell_nonneg_induction`: the height induction principle for positive roots.
@@ -232,6 +237,41 @@ theorem nonneg_or_nonpos_of_mem_normTwoShell (hB : B.PosDef) (hev : ∀ i, Even 
   rw [← posPart_sub_negPart a, hB.isHermitian.isSymm.sub_dotProduct_mulVec_sub] at hnorm
   omega
 
+/-- A norm-two vector has nonzero total simple-root coordinate: its coordinates have one sign
+and do not all vanish. -/
+theorem sum_ne_zero_of_mem_normTwoShell (hB : B.PosDef) (hev : ∀ i, Even (B i i))
+    (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (ha : a ∈ B.normTwoShell) :
+    ∑ i, a i ≠ 0 := by
+  intro hsum
+  apply ne_zero_of_mem_normTwoShell ha
+  rcases hB.nonneg_or_nonpos_of_mem_normTwoShell hev hoff ha with hpos | hneg
+  · exact funext fun i ↦
+      (Finset.sum_eq_zero_iff_of_nonneg (fun j _ ↦ hpos j)).mp hsum i (Finset.mem_univ i)
+  · exact funext fun i ↦
+      (Finset.sum_eq_zero_iff_of_nonpos (fun j _ ↦ hneg j)).mp hsum i (Finset.mem_univ i)
+
+/-- A permutation preserving the Gram matrix fixes an integral vector pairing nontrivially with
+every norm-two vector. -/
+theorem exists_invariant_pairing_ne_zero (hB : B.PosDef) (hev : ∀ i, Even (B i i))
+    (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B) :
+    ∃ h : I → ℤ, h ∘ σ.symm = h ∧
+      ∀ a : B.normTwoShell, h ⬝ᵥ B *ᵥ (a : I → ℤ) ≠ 0 := by
+  classical
+  let h := B.cramer (fun _ ↦ 1)
+  refine ⟨h, ?_, ?_⟩
+  · have hc := cramer_reindex σ B (fun _ ↦ (1 : ℤ))
+    rw [hσ] at hc
+    simpa only [h, Function.comp_def] using hc.symm
+  · intro a
+    have hpair : h ⬝ᵥ B *ᵥ (a : I → ℤ) = B.det * ∑ i, (a : I → ℤ) i := by
+      rw [hB.isHermitian.isSymm.dotProduct_mulVec_comm]
+      dsimp only [h]
+      rw [mulVec_cramer]
+      simp [dotProduct, Finset.sum_mul, mul_comm]
+    rw [hpair]
+    exact mul_ne_zero hB.det_pos.ne'
+      (hB.sum_ne_zero_of_mem_normTwoShell hev hoff a.property)
+
 /-- **A positive root that is not simple has a simple root whose subtraction leaves a positive
 root.** For a positive definite Gram matrix with diagonal `2` and nonpositive off-diagonal entries,
 a nonnegative vector `a` of the norm-two shell other than every coordinate vector pairs to `1` with
@@ -338,6 +378,22 @@ theorem coe_normTwoShellCongr_symm_apply (he : B.reindex e e = B') (b : B'.normT
   simp [normTwoShellCongr]
 
 end Reindex
+
+/-- Pairing with an invariant lattice vector is constant along a root orbit. -/
+theorem dotProduct_mulVec_pow_normTwoShellCongr (B : Matrix I I ℤ) (σ : Equiv.Perm I)
+    (hσ : B.reindex σ σ = B) (h : I → ℤ) (hh : h ∘ σ.symm = h)
+    (a : B.normTwoShell) (r : ℕ) :
+    h ⬝ᵥ B *ᵥ (((normTwoShellCongr hσ ^ r) a : B.normTwoShell) : I → ℤ) =
+      h ⬝ᵥ B *ᵥ (a : I → ℤ) := by
+  have step (b : B.normTwoShell) :
+      h ⬝ᵥ B *ᵥ ((normTwoShellCongr hσ b : B.normTwoShell) : I → ℤ) =
+        h ⬝ᵥ B *ᵥ (b : I → ℤ) := by
+    rw [coe_normTwoShellCongr_apply]
+    simpa only [hσ, hh] using comp_equiv_symm_dotProduct_reindex_mulVec σ B h (b : I → ℤ)
+  induction r with
+  | zero => rfl
+  | succ r ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply, step, ih]
 
 section Isometry
 

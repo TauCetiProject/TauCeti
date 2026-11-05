@@ -163,6 +163,12 @@ theorem thomPairOverMap_fst_apply {W W' : Set B} (h : W ⊆ W') (v : π F E ⁻�
   (rfl)
 
 @[simp]
+theorem thomPairOverMap_snd_apply {W W' : Set B} (h : W ⊆ W')
+    (v : (thomPairOver F E W).snd) :
+    TopPair.Hom.snd (thomPairOverMap F E h) v = ⟨v.1, h v.2.1, v.2.2⟩ :=
+  (rfl)
+
+@[simp]
 theorem thomPairOverMap_self {W : Set B} : thomPairOverMap F E (subset_refl W) = 𝟙 _ :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
 
@@ -224,6 +230,17 @@ theorem fiberThomPairOverMap_comp_thomPairOverUnivIso_hom (b : B) :
     fiberThomPairOverMap F E (mem_univ b) ≫ (thomPairOverUnivIso F E).hom =
       fiberThomPairMap F E b :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ (fiberThomPairMap_fst_apply F E b x).symm)
+
+/-- The fibre inclusion over `b` into the Thom pair `(E, E₀)`, followed by the inclusion of the
+pair over the whole base into the pair over a set `W'` covering the base, is the fibre inclusion
+into the pair over any `W ⊆ W'` containing `b`, followed by the inclusion of the pair over `W`
+into the pair over `W'`. -/
+theorem fiberThomPairMap_comp_thomPairOverUnivIso_inv_comp_thomPairOverMap {W W' : Set B}
+    (h : univ ⊆ W') (h' : W ⊆ W') {b : B} (hb : b ∈ W) :
+    fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E h =
+      fiberThomPairOverMap F E hb ≫ thomPairOverMap F E h' := by
+  rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
+    fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 

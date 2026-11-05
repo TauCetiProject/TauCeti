@@ -37,7 +37,8 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
   its components along `v = 1` and `v = i`; `TauCeti.Floer.pairOfPantsEndComponent_of_pos`
   computes them on the part `±s > 0` of the end.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
-  in the parts `±s > 1` of the three ends, so it vanishes off the ends.
+  in the parts `±s > 1` of the three ends, so it vanishes off the ends;
+  `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_le` states this in end coordinates.
 
 The angular coordinate `t` of an end is defined only modulo `1`, which is why the Hamiltonians are
 required to have period one: smoothness across the ray where the angular coordinate jumps is
@@ -100,6 +101,15 @@ theorem exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero {w : ℂ} {
     fun hc => hq (by simp [hc])
   obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
   exact ⟨q, q.endCoord w, h₁, q.cylindricalEndLift_endCoord hw⟩
+
+/-- The perturbation vanishes at every point where the signed longitudinal coordinate of every
+end is at most `1`. -/
+theorem pairOfPantsPerturbation_eq_zero_of_forall_le {w : ℂ}
+    (h : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ 1) (x : M) :
+    pairOfPantsPerturbation H w x = 0 := by
+  rw [pairOfPantsPerturbation_def]
+  refine Finset.sum_eq_zero fun q _ => ?_
+  rw [smoothTransition.zero_of_nonpos (by linarith [h q]), zero_mul, zero_smul]
 
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the
 parts `±s > 0` of distinct ends are disjoint. -/

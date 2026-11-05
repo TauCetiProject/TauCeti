@@ -82,6 +82,19 @@ theorem coindResAdjunction_counit_app_hom_apply (A : Rep.{max w u v} k G)
 
 end Subgroup
 
+namespace Rep
+
+universe u v t
+
+/-- The finite-index induction–coinduction comparison is the native map on each vector. -/
+theorem indCoindIso_hom_hom_apply {k : Type u} {G : Type v} [CommRing k] [Group G]
+    {S : Subgroup G} [DecidableRel (QuotientGroup.rightRel S)] [S.FiniteIndex]
+    (A : Rep.{max t u} k S) (a : ind S.subtype A) :
+    (indCoindIso A).hom.hom a = indToCoind A a :=
+  LinearMap.congr_fun (indCoindIso_hom_hom_toLinearMap A) a
+
+end Rep
+
 namespace TauCeti
 
 open _root_.Rep

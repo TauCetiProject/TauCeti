@@ -40,6 +40,8 @@ All in the namespace `TauCeti.PDCode`:
 * `cubeState S`: the state with the `B`-smoothing exactly at the crossings of `S`.
 * `resolutionCube D hD R j`: the degree-`j` quantum component of the cube of resolutions of the
   planar code `D`, a functor `Finset (Fin n) ⥤ ModuleCat R`.
+* `resolutionCubeObjCongr`: reindexing the circle tensors along a bijection of resolved circles,
+  as a linear equivalence of vertices of cubes of resolutions with pieces of the same degree.
 * `khovanovBracket D hD R`: the unnormalized Khovanov complex, as a graded object of cochain
   complexes indexed by the quantum degree.
 
@@ -99,6 +101,12 @@ theorem cubeState_eq_false_iff {S : Finset (Fin n)} {i : Fin n} :
 @[simp]
 theorem cubeState_eq_true_iff {S : Finset (Fin n)} {i : Fin n} :
     cubeState S i = true ↔ i ∉ S := by
+  simp [cubeState]
+
+/-- The state of the complementary vertex `Sᶜ` is the complementary state: it exchanges the
+`A`- and `B`-smoothings at every crossing. -/
+@[simp]
+theorem cubeState_compl (S : Finset (Fin n)) (i : Fin n) : cubeState Sᶜ i = !cubeState S i := by
   simp [cubeState]
 
 /-- The set of `B`-smoothings of the state of the vertex `S` is `S`. -/
@@ -323,6 +331,32 @@ theorem coe_resolutionCubeVertexEquiv (S : Finset (Fin n)) (x : (D.resolutionCub
     (D.resolutionCubeVertexEquiv hD R j S x : Khovanov.CircleTensor R _) =
       D.resolutionCubeι hD R j S x :=
   (rfl)
+
+/-- Reindexing the circle tensors along a bijection `e` of resolved circles, as a linear
+equivalence from the vertex `S` of the degree-`j` cube of resolutions of `D` to the vertex `S'`
+of the degree-`j'` cube of resolutions of `D'`, whose pieces have the same degree
+`j - |S| = j' - |S'|`. It is characterized by
+`TauCeti.PDCode.resolutionCubeι_resolutionCubeObjCongr`. -/
+def resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' : D'.IsPlanar) {j' : ℤ}
+    {S : Finset (Fin n)} {S' : Finset (Fin m)}
+    (e : D.ResolvedCircle (cubeState S) ≃ D'.ResolvedCircle (cubeState S'))
+    (h : j - #S = j' - #S') :
+    (D.resolutionCube hD R j).obj S ≃ₗ[R] (D'.resolutionCube hD' R j').obj S' :=
+  (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j S)).trans <|
+    ((PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e).ofSubmodules _ _ (by
+      rw [range_resolutionCubeι, range_resolutionCubeι,
+        Khovanov.map_reindex_circleQuantumGrading_piece, h])).trans
+      (LinearEquiv.ofInjective _ (D'.resolutionCubeι_injective hD' R j' S')).symm
+
+/-- `TauCeti.PDCode.resolutionCubeObjCongr` reindexes the circle tensor along the bijection of
+resolved circles. -/
+theorem resolutionCubeι_resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' : D'.IsPlanar)
+    {j' : ℤ} {S : Finset (Fin n)} {S' : Finset (Fin m)}
+    (e : D.ResolvedCircle (cubeState S) ≃ D'.ResolvedCircle (cubeState S'))
+    (h : j - #S = j' - #S') (x : (D.resolutionCube hD R j).obj S) :
+    (D'.resolutionCubeι hD' R j' S').hom (D.resolutionCubeObjCongr hD R j hD' e h x) =
+      PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e ((D.resolutionCubeι hD R j S).hom x) := by
+  simp [resolutionCubeObjCongr]
 
 private theorem resolutionCube_map_homOfLE_insert {S : Finset (Fin n)} {a : Fin n} (ha : a ∉ S) :
     (D.resolutionCube hD R j).map (homOfLE (subset_insert a S)) =
