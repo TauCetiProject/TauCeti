@@ -103,6 +103,12 @@ lemma arrival_add (m k : ℕ) (ω : Ω) :
 lemma monotone_arrival (ω : Ω) : Monotone fun n ↦ arrival T n ω :=
   monotone_nat_of_le_succ fun n ↦ by simp [arrival_succ]
 
+/-- Positive increments after the first give strictly increasing positive-index arrivals.
+The first increment may vanish. -/
+lemma strictMono_arrival_succ {ω : Ω} (hT : ∀ n, 0 < T (n + 1) ω) :
+    StrictMono fun n ↦ arrival T (n + 1) ω :=
+  strictMono_nat_of_lt_succ fun n ↦ by simpa [arrival_succ] using hT n
+
 /-- The `n`-th arrival time is measurable as soon as the increments `T 0, …, T (n - 1)` are. -/
 lemma measurable_arrival_of_lt {_ : MeasurableSpace Ω} {T : ℕ → Ω → ℝ≥0} {n : ℕ}
     (hT : ∀ i < n, Measurable (T i)) : Measurable (arrival T n) := by
