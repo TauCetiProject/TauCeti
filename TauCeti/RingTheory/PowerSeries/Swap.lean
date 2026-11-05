@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Basic
+public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 
 /-!
@@ -28,6 +28,10 @@ as a ring homomorphism. It is an involution.
 * `PowerSeries.swap_C`, `PowerSeries.swap_map_C`, `PowerSeries.swap_X`: `swap` exchanges the
   power series in the inner variable `u`, embedded as constants, with those in the outer variable
   `v`, embedded through `map C`.
+* `PowerSeries.coeff_constantCoeff_swap`: setting the outer variable of `swap G` to zero sets the
+  inner variable of `G` to zero.
+* `PowerSeries.coeff_swap_derivative`: after exchanging the variables, the derivative in the outer
+  variable becomes the derivative of each coefficient in the inner variable.
 * `Polynomial.coeff_coeff_swapPowerSeries`: the coefficient of `Xⁱ` in the `tᵏ`-coefficient of
   `swapPowerSeries Q` is the `tᵏ`-coefficient of the coefficient of `Xⁱ` in `Q`.
 * `Polynomial.swapPowerSeries_C`, `Polynomial.swapPowerSeries_X`: the values of
@@ -93,6 +97,23 @@ theorem swap_map_C (f : R⟦X⟧) : swap (map C f) = C f := by
 @[simp]
 theorem swap_X : swap (X : R⟦X⟧⟦X⟧) = C X := by
   rw [← map_X (C (R := R)), swap_map_C]
+
+/-- Setting the outer variable `v` of `swap G` to zero sets the inner variable `u` of `G` to zero:
+the coefficient of `uᵃ` in the constant coefficient of `swap G` is the constant coefficient of the
+coefficient of `vᵃ` in `G`. -/
+@[simp]
+theorem coeff_constantCoeff_swap (G : R⟦X⟧⟦X⟧) (a : ℕ) :
+    coeff a (constantCoeff (swap G)) = constantCoeff (coeff a G) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_coeff_swap, coeff_zero_eq_constantCoeff_apply]
+
+/-- **Exchanging the variables turns the outer derivative into the inner one**: the coefficient of
+`vᴺ` in `swap (d G / dv)` is the derivative in `u` of the coefficient of `vᴺ` in `swap G`. -/
+@[simp]
+theorem coeff_swap_derivative {R : Type*} [CommSemiring R] (G : R⟦X⟧⟦X⟧) (N : ℕ) :
+    coeff N (swap (d⁄dX G)) = d⁄dX (coeff N (swap G)) := by
+  refine PowerSeries.ext fun a ↦ ?_
+  rw [coeff_coeff_swap, coeff_derivative, coeff_derivative, coeff_coeff_swap,
+    ← map_natCast (C (R := R)), ← map_one (C (R := R)), ← map_add, coeff_mul_C]
 
 end PowerSeries
 

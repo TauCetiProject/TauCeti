@@ -54,20 +54,6 @@ namespace HomotopyGroup
 
 open TauCeti
 
-/-- The Hurewicz homomorphism with integer coefficients, evaluated at `1 : ℤ`. -/
-private def hurewiczIntHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
-    Additive (HomotopyGroup (Fin (n + 1)) X x) →+
-      ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
-        (TopCat.of X) where
-  toFun a := (hurewiczHom (ModuleCat.of ℤ ℤ) n a).hom 1
-  map_zero' := by simp
-  map_add' a b := by simp
-
-private lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
-    (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
-    hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
-  congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
-
 /-- The cubical Hurewicz class of a generalized loop `p`, read in simplicial singular homology, is
 the image of that of the tautological loop `TauCeti.sphereGenLoop (n + 2)` under
 `(GenLoop.toSphere p)_*`. -/
@@ -189,6 +175,6 @@ def hurewiczAddEquiv (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X 
 theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
-  AddEquiv.ofBijective_apply _ _ _
+  (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
 
 end HomotopyGroup
