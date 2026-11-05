@@ -26,12 +26,12 @@ open Polynomial
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] {ι : Type*} [Finite ι]
-  {B : ι → Type*} [∀ i, CommRing (B i)] [∀ i, Algebra R (B i)]
 
 /-- A tuple in a finite product of algebras is integral if and only if every coordinate is
 integral. A common monic equation is the product of the coordinate equations. -/
 @[simp]
-theorem isIntegral_pi_iff {x : ∀ i, B i} : IsIntegral R x ↔ ∀ i, IsIntegral R (x i) := by
+theorem isIntegral_pi_iff {B : ι → Type*} [∀ i, Ring (B i)] [∀ i, Algebra R (B i)]
+    {x : ∀ i, B i} : IsIntegral R x ↔ ∀ i, IsIntegral R (x i) := by
   classical
   let := Fintype.ofFinite ι
   refine ⟨fun hx i ↦ hx.map (Pi.evalAlgHom R B i), fun hx ↦ ?_⟩
@@ -39,10 +39,10 @@ theorem isIntegral_pi_iff {x : ∀ i, B i} : IsIntegral R x ↔ ∀ i, IsIntegra
   refine ⟨∏ i, p i, monic_prod_of_monic _ _ (fun i _ ↦ hp i), ?_⟩
   ext i
   exact (aeval_algHom_apply (Pi.evalAlgHom R B i) x _).symm.trans (by
-    rw [map_prod]
-    exact Finset.prod_eq_zero (Finset.mem_univ i) (hroot i))
+    rw [Fintype.prod_eq_mul_prod_compl i, aeval_mul]
+    exact mul_eq_zero_of_left (hroot i) _)
 
-variable (R B)
+variable (R) (B : ι → Type*) [∀ i, CommRing (B i)] [∀ i, Algebra R (B i)]
 
 /-- Integral closure commutes with finite products, by taking coordinates of integral tuples. -/
 def integralClosurePiAlgEquiv :
