@@ -323,6 +323,7 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coor
       coordinateDeriv [j] (fun η => a.coefficient (x, η)) ξ := (rfl)
 
 /-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
+@[simp]
 theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
     (x ξ : CoordinateSpace n) :
     mixedDeriv α β (frequencyDeriv j a).coefficient x ξ =
@@ -360,6 +361,7 @@ theorem coefficient_spatialDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coordi
       coordinateDeriv [j] (fun y => a.coefficient (y, ξ)) x := (rfl)
 
 /-- The mixed derivatives of `∂_{x_j} a` are those of `a` with one more position derivative. -/
+@[simp]
 theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
     (x ξ : CoordinateSpace n) :
     mixedDeriv α β (spatialDeriv j a).coefficient x ξ =

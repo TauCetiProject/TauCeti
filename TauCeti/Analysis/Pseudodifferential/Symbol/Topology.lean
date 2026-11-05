@@ -44,8 +44,9 @@ The main results are:
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
 
-The constant symbol `T` has seminorm `‖T‖` without derivatives and `0` with any derivative
-(`TauCeti.Symbol.seminorm_const_nil_nil`, `TauCeti.Symbol.seminorm_const_eq_zero`).
+On a nonempty compact set, the constant symbol `T` has seminorm `‖T‖` without derivatives; with
+any derivative its seminorms vanish (`TauCeti.Symbol.seminorm_const_nil_nil`,
+`TauCeti.Symbol.seminorm_const_eq_zero`).
 
 The seminorms are set up following Mathlib's seminorms of the Schwartz space
 (`SchwartzMap.seminorm`).
@@ -213,6 +214,7 @@ theorem seminorm_spatialDeriv (j : Fin n) (K : Compacts (CoordinateSpace n))
     exact le_seminorm K α β (spatialDeriv j a) hx ξ
 
 /-- On a nonempty compact set, the constant symbol `T` has seminorm `‖T‖` without derivatives. -/
+@[simp]
 theorem seminorm_const_nil_nil {K : Compacts (CoordinateSpace n)}
     (hK : (K : Set (CoordinateSpace n)).Nonempty)
     (T : V →L[ℂ] W) : Symbol.seminorm K [] [] (const T : Symbol n V W 0) = ‖T‖ := by
@@ -221,6 +223,7 @@ theorem seminorm_const_nil_nil {K : Compacts (CoordinateSpace n)}
   simpa using norm_coefficient_le_seminorm K (const T : Symbol n V W 0) hx 0
 
 /-- Every seminorm of the constant symbol `T` involving a derivative vanishes. -/
+@[simp]
 theorem seminorm_const_eq_zero {α β : List (Fin n)} (h : α ≠ [] ∨ β ≠ [])
     (K : Compacts (CoordinateSpace n)) (T : V →L[ℂ] W) :
     Symbol.seminorm K α β (const T : Symbol n V W 0) = 0 := by
