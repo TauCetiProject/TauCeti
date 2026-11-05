@@ -57,6 +57,9 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
 * `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
+* `Real.smoothTransition.integral_deriv_mul_sub`: `∫_ℝ ψ'(c y - a) dy = |c|⁻¹`.
+* `Real.smoothTransition.tendsto_integral_deriv_mul_sub_mul`: `∫_ℝ ψ'(c y - T) a y dy` tends to
+  `|c|⁻¹ a₀` as `T → ∞` when `a (c⁻¹ σ) → a₀` as `σ → ∞`.
 * `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
   integrable on `closedBall a c⁻¹` is integrable.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
@@ -181,6 +184,53 @@ theorem integral_mul_deriv_mul_sub (a : ℝ) {c : ℝ} (hc : 0 < c) :
   rw [integral_const_mul, integral_sub_right_eq_self (fun z => deriv smoothTransition (c * z)),
     Measure.integral_comp_mul_left, integral_deriv, abs_of_pos (inv_pos.2 hc)]
   simp [hc.ne']
+
+/-- The derivative of the smooth transition function `ψ`, composed with an affine map
+`y ↦ c y - a`, has integral `|c|⁻¹`: `∫_ℝ ψ'(c y - a) dy = |c|⁻¹`. -/
+theorem integral_deriv_mul_sub (c a : ℝ) : ∫ y, deriv smoothTransition (c * y - a) = |c|⁻¹ := by
+  rw [Measure.integral_comp_mul_left (fun y => deriv smoothTransition (y - a)),
+    integral_sub_right_eq_self (deriv smoothTransition), integral_deriv, abs_inv, smul_eq_mul,
+    mul_one]
+
+/-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition
+function `ψ`, for `c ≠ 0`, recovers `|c|⁻¹` times its limit `a₀` along the direction of `c` as
+`T → ∞`: the weight has integral `|c|⁻¹` and is supported where `c y ≥ T`. -/
+theorem tendsto_integral_deriv_mul_sub_mul {c : ℝ} (hc : c ≠ 0) {a : ℝ → ℝ} {a₀ : ℝ}
+    (ha : Tendsto (fun σ => a (c⁻¹ * σ)) atTop (𝓝 a₀))
+    (hint : ∀ᶠ T in atTop, Integrable fun y => deriv smoothTransition (c * y - T) * a y) :
+    Tendsto (fun T => ∫ y, deriv smoothTransition (c * y - T) * a y) atTop
+      (𝓝 (|c|⁻¹ * a₀)) := by
+  have hc' : 0 < |c| := abs_pos.2 hc
+  have hβ (T : ℝ) : Integrable fun y => deriv smoothTransition (c * y - T) :=
+    (integrable_deriv.comp_sub_right T).comp_mul_left' hc
+  have hβ0 (y : ℝ) : 0 ≤ deriv smoothTransition y := smoothTransition.monotone.deriv_nonneg
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨R, hR⟩ := eventually_atTop.1 (Metric.tendsto_nhds.1 ha (|c| * ε / 2) (by positivity))
+  filter_upwards [hint, eventually_ge_atTop R] with T hT hTR
+  have hdiff : (∫ y, deriv smoothTransition (c * y - T) * a y) - |c|⁻¹ * a₀ =
+      ∫ y, deriv smoothTransition (c * y - T) * (a y - a₀) := by
+    simp only [mul_sub]
+    rw [integral_sub hT ((hβ T).mul_const a₀), integral_mul_const, integral_deriv_mul_sub]
+  -- Where `ψ'(c y - T) ≠ 0`, we have `c y ≥ T ≥ R`, so `a y` is close to `a₀`.
+  have hpt (y : ℝ) : ‖deriv smoothTransition (c * y - T) * (a y - a₀)‖ ≤
+      deriv smoothTransition (c * y - T) * (|c| * ε / 2) := by
+    rw [norm_mul, Real.norm_of_nonneg (hβ0 _)]
+    by_cases hy : c * y - T < 0
+    · simp [deriv_of_neg hy]
+    · refine mul_le_mul_of_nonneg_left ?_ (hβ0 _)
+      have h := hR (c * y) (by linarith)
+      rw [← mul_assoc, inv_mul_cancel₀ hc, one_mul, Real.dist_eq, ← Real.norm_eq_abs] at h
+      exact h.le
+  calc dist (∫ y, deriv smoothTransition (c * y - T) * a y) (|c|⁻¹ * a₀)
+      = ‖∫ y, deriv smoothTransition (c * y - T) * (a y - a₀)‖ := by
+        rw [Real.dist_eq, hdiff, Real.norm_eq_abs]
+    _ ≤ ∫ y, deriv smoothTransition (c * y - T) * (|c| * ε / 2) :=
+        norm_integral_le_of_norm_le ((hβ T).mul_const _) (ae_of_all _ hpt)
+    _ < ε := by
+        rw [integral_mul_const, integral_deriv_mul_sub, ← mul_div_assoc,
+          inv_mul_cancel_left₀ hc'.ne']
+        linarith
 
 /-- The rescaled derivative `y ↦ ψ'(c (y - a))` of the smooth transition function `ψ` vanishes
 outside `closedBall a c⁻¹`; it is supported in `[a, a + c⁻¹]`. -/

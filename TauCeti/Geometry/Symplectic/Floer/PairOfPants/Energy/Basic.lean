@@ -107,13 +107,6 @@ theorem hamiltonianCurvature_pairOfPantsEndComponent_eq_zero (ω : SymplecticFor
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht']
   exact ω.hamiltonianCurvature_cylindrical (fun t x ↦ c * H q t x) z x
 
-/-- The derivative `s ↦ β'(±s - 1)` of the cutoff of an end has total integral one. -/
-private theorem integral_deriv_smoothTransition_endSign_mul_sub_one (q : Puncture) :
-    ∫ s, deriv smoothTransition (q.endSign * s - 1) = 1 := by
-  rw [Measure.integral_comp_mul_left (fun y ↦ deriv smoothTransition (y - 1)),
-    integral_sub_right_eq_self (deriv smoothTransition), smoothTransition.integral_deriv,
-    abs_inv, abs_endSign, inv_one, one_smul]
-
 /-- **Uniform curvature bound on an end.** Let `h` bound the Hamiltonian `H_q` of the end `q` on
 `[a₂, b₂]`, uniformly on the target. Over any rectangle `[a₁, b₁] × [a₂, b₂]` in the part
 `±s > 0` of the end, the integrated curvature of the pair-of-pants perturbation along any map `u`
@@ -162,7 +155,8 @@ theorem integral_abs_hamiltonianCurvature_pairOfPantsEndComponent_le (ω : Sympl
         exact setIntegral_prod_mul β' h _ _
     _ ≤ 1 * ∫ t in Icc a.2 b.2, h t := by
         refine mul_le_mul_of_nonneg_right ?_ hh0
-        rw [← integral_deriv_smoothTransition_endSign_mul_sub_one q]
+        rw [← show ∫ s, deriv smoothTransition (q.endSign * s - 1) = 1 by
+          rw [smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one]]
         exact setIntegral_le_integral hβ'i (.of_forall hβ'0)
     _ = ∫ t in Icc a.2 b.2, h t := one_mul _
 

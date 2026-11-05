@@ -11,6 +11,9 @@ public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -65,6 +68,10 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
+* `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
+  density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
+  `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
+  that are not rectangles.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff`: the coordinate form of the Floer
   equation.
 * `SymplecticForm.hamiltonianCurvature_zero_left`,
@@ -390,6 +397,40 @@ theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
       h.apply_stdComplexLineImag, ← mul_pow]
     exact pow_le_pow_left₀ (norm_nonneg _) (hJM a) 2
   nlinarith [hJc a, mul_le_mul_of_nonneg_left hM hc, sq_nonneg M, sq_nonneg ‖a‖]
+
+/-- **The energy density plus the curvature is exact.** For a `C²` map `u` into a symplectic
+vector space and a perturbation `K = K_s ds + K_t dt`, the Floer energy density plus the
+curvature `R_K(u)` is the exterior derivative `∂_s α_t - ∂_t α_s` of the one-form
+`α = K(u) + λ(u)`, where `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`. -/
+theorem floerEnergyDensity_add_hamiltonianCurvature_eq (ω : SymplecticForm V)
+    (hu : ContDiffAt ℝ 2 u z) (hKs : DifferentiableAt ℝ (uncurry Ks) (z, u z))
+    (hKt : DifferentiableAt ℝ (uncurry Kt) (z, u z)) :
+    ω.floerEnergyDensity Ks Kt u z + ω.hamiltonianCurvature Ks Kt z (u z) =
+      fderiv ℝ (fun w ↦ Kt w (u w) + 1 / 2 * ω (u w) (fderiv ℝ u w stdComplexLineImag)) z
+          stdComplexLineReal -
+        fderiv ℝ (fun w ↦ Ks w (u w) + 1 / 2 * ω (u w) (fderiv ℝ u w stdComplexLineReal)) z
+          stdComplexLineImag := by
+  have hu₁ : DifferentiableAt ℝ u z := hu.differentiableAt (by norm_num)
+  have hgraph {K : ℝ × ℝ → V → ℝ} (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) :
+      DifferentiableAt ℝ (fun w ↦ K w (u w)) z :=
+    hK.comp (f := fun w ↦ (w, u w)) z (differentiableAt_id.prodMk hu₁)
+  -- The derivative of `w ↦ ω(u w, ∂_v u w)` in the direction `e`.
+  have hL (v : ℝ × ℝ) : HasFDerivAt (fun w ↦ ω (u w) (fderiv ℝ u w v)) _ z :=
+    ω.toBilinForm.toContinuousBilinearMap.hasFDerivAt_bilinear_fderiv_apply hu v
+  have hL' (v e : ℝ × ℝ) : fderiv ℝ (fun w ↦ ω (u w) (fderiv ℝ u w v)) z e =
+      ω (fderiv ℝ u z e) (fderiv ℝ u z v) + ω (u z) (fderiv ℝ (fderiv ℝ u) z e v) := by
+    rw [(hL v).fderiv]
+    simp [add_comm]
+  have hsymm : fderiv ℝ (fderiv ℝ u) z stdComplexLineReal stdComplexLineImag =
+      fderiv ℝ (fderiv ℝ u) z stdComplexLineImag stdComplexLineReal :=
+    hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) _ _
+  rw [fderiv_fun_add (hgraph hKt) ((hL _).differentiableAt.const_mul _),
+    fderiv_fun_add (hgraph hKs) ((hL _).differentiableAt.const_mul _),
+    fderiv_const_mul (hL _).differentiableAt, fderiv_const_mul (hL _).differentiableAt]
+  simp only [add_apply, smul_apply, smul_eq_mul, hL', hsymm]
+  rw [ω.floerEnergyDensity_eq hu₁ hKs hKt]
+  linear_combination (-1 / 2 : ℝ) *
+    ω.neg_eq (fderiv ℝ u z stdComplexLineImag) (fderiv ℝ u z stdComplexLineReal)
 
 end Density
 
