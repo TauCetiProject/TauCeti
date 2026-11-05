@@ -100,6 +100,22 @@ theorem renewalConv_zero_measure (h : ℝ≥0 → ℝ) (t : ℝ≥0) : renewalCo
 theorem renewalConv_zero_left (μ : Measure ℝ≥0) (t : ℝ≥0) : renewalConv 0 μ t = 0 := by
   simp [renewalConv_def]
 
+/-- At time zero only the atom at zero contributes to the convolution. -/
+@[simp]
+theorem renewalConv_apply_zero (h : ℝ≥0 → ℝ) (μ : Measure ℝ≥0) :
+    renewalConv h μ 0 = μ.real {0} * h 0 := by
+  have hz : Iic (0 : ℝ≥0) = {0} := by ext s; simp
+  simp [renewalConv_def, hz, measureReal_def]
+
+/-- A solution of the renewal equation has its initial value determined by the forcing and
+by the atom at zero. No regularity of the solution is needed for this boundary identity. -/
+theorem apply_zero_of_eq_add_renewalConv (hgeq : g = h + renewalConv g μ)
+    (hμ : μ.real {0} ≠ 1) : g 0 = h 0 / (1 - μ.real {0}) := by
+  have hz := congrFun hgeq 0
+  simp only [Pi.add_apply, renewalConv_apply_zero] at hz
+  apply (eq_div_iff (sub_ne_zero.mpr (Ne.symm hμ))).2
+  linarith
+
 /-- Convolution with the point mass at zero is the identity. -/
 @[simp]
 theorem renewalConv_dirac_zero (h : ℝ≥0 → ℝ) (t : ℝ≥0) :
@@ -297,6 +313,16 @@ theorem renewalConv_renewalMeasure_eq_add [SFinite μ] (hh : Measurable h)
   conv_lhs => rw [Measure.renewalMeasure_eq_dirac_add_conv]
   rw [renewalConv_add_measure (integrableOn_Iic_sub hh hC (by simp))
     (integrableOn_Iic_sub hh hC hconv), renewalConv_dirac_zero]
+
+/-- The solution is the forcing plus its convolution with the positive-arrival measure
+`F ∗ U`, that is, with the renewal measure after removing the artificial arrival at zero. -/
+theorem renewalConv_renewalMeasure_eq_add_conv [SFinite μ] (hh : Measurable h)
+    (hC : ∀ s ≤ t, |h s| ≤ C) :
+    renewalConv h μ.renewalMeasure t = h t + renewalConv h (μ ∗ μ.renewalMeasure) t := by
+  have := Measure.isLocallyFiniteMeasure_of_renewalMeasure μ
+  rw [renewalConv_renewalMeasure_eq_add hh hC,
+    renewalConv_renewalConv hh hC measure_Iic_lt_top.ne measure_Iic_lt_top.ne,
+    Measure.conv_comm]
 
 /-- **The homogeneous renewal equation has only the trivial solution.** If the renewal measure of
 `F` is locally finite and `d` is measurable, bounded on each `[0, t]`, and satisfies `d = d ∗ F`,
