@@ -101,6 +101,93 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {u : E → F} {R : ℝ}
 
+/-- A test function `ψ` supported in `(0, R)` is supported in some `(0, R')` with `R' < R`. -/
+lemma exists_lt_tsupport_subset_Ioo (hR : 0 < R) {ψ : ℝ → ℝ}
+    (hψs : tsupport ψ ⊆ Ioo 0 R) : ∃ R', 0 < R' ∧ R' < R ∧ tsupport ψ ⊆ Ioo 0 R' := by
+  have hball : Ioo (0 : ℝ) R = ball (R / 2) (R / 2) := by
+    rw [Real.ball_eq_Ioo]
+    congr 1 <;> ring
+  obtain ⟨r, hr, hψr⟩ :=
+    exists_pos_lt_subset_ball (half_pos hR) (isClosed_tsupport ψ) (hball ▸ hψs)
+  rw [Real.ball_eq_Ioo] at hψr
+  exact ⟨R / 2 + r, by linarith [hr.1], by linarith [hr.2],
+    hψr.trans (Ioo_subset_Ioo (by linarith [hr.2]) le_rfl)⟩
+
+/-- The radial profile `t ↦ ψ (√t) / (√t) ^ n` of a smooth `ψ` supported in `(0, ∞)` is
+smooth. -/
+lemma contDiff_div_sqrt_pow {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψs : tsupport ψ ⊆ Ioi 0) (n : ℕ) : ContDiff ℝ ∞ fun t ↦ ψ (√t) / (√t) ^ n := by
+  rw [contDiff_iff_contDiffAt]
+  intro t
+  by_cases ht : √t ∈ tsupport ψ
+  · have ht0 : 0 < t := Real.sqrt_pos.mp (hψs ht)
+    exact ((hψ.contDiffAt.comp t (Real.contDiffAt_sqrt ht0.ne')).div
+      ((Real.contDiffAt_sqrt ht0.ne').pow _) (pow_ne_zero _ (Real.sqrt_pos.mpr ht0).ne'))
+  · have hev : ∀ᶠ s in 𝓝 t, ψ (√s) / (√s) ^ n = 0 := by
+      have : ∀ᶠ s in 𝓝 t, √s ∉ tsupport ψ :=
+        Real.continuous_sqrt.continuousAt.preimage_mem_nhds
+          ((isClosed_tsupport ψ).isOpen_compl.mem_nhds ht)
+      filter_upwards [this] with s hs
+      simp [image_eq_zero_of_notMem_tsupport hs]
+    exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq hev
+
+/-- If `ψ r = r ^ n * σ (r ^ 2)` for `r > 0`, then at `s > 0` the radial Laplacian weight
+`s ^ (n - 1) (4 s² σ' (s²) + 2 n σ (s²))` is `2 ψ' s`. -/
+private lemma pow_mul_add_eq_two_mul_deriv {n : ℕ} (hn : n ≠ 0) {σ ψ : ℝ → ℝ}
+    (hσ : Differentiable ℝ σ) (hψ : ∀ r, 0 < r → ψ r = r ^ n * σ (r ^ 2)) {s : ℝ} (hs : 0 < s) :
+    s ^ (n - 1) * (4 * s ^ 2 * deriv σ (s ^ 2) + 2 * (n : ℝ) * σ (s ^ 2)) = 2 * deriv ψ s := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+  have hψeq : ψ =ᶠ[𝓝 s] fun r ↦ r ^ (m + 1) * σ (r ^ 2) :=
+    eventually_of_mem (Ioi_mem_nhds hs) hψ
+  have hd : HasDerivAt (fun r ↦ r ^ (m + 1) * σ (r ^ 2))
+      (((m + 1 : ℕ) : ℝ) * s ^ (m + 1 - 1) * σ (s ^ 2) +
+        s ^ (m + 1) * (deriv σ (s ^ 2) * ((2 : ℕ) * s ^ (2 - 1)))) s :=
+    (hasDerivAt_pow _ s).mul ((hσ _).hasDerivAt.comp s (hasDerivAt_pow 2 s))
+  rw [hψeq.deriv_eq, hd.deriv]
+  simp only [Nat.add_sub_cancel, Nat.cast_add, Nat.cast_one]
+  ring
+
+/-- Every test function `ψ` on `(0, R)` is `s ↦ s ^ n ρ' (s ^ 2)` on `(0, ∞)` for a smooth `ρ`
+vanishing on `[R' ^ 2, ∞)` for some `R' < R`, and nonpositive when `ψ` is nonnegative: `ρ` is
+the primitive of `t ↦ ψ (√t) / (√t) ^ n` vanishing at `R' ^ 2`. -/
+private lemma exists_contDiff_eq_pow_mul_deriv (n : ℕ) (hR : 0 < R) {ψ : ℝ → ℝ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψs : tsupport ψ ⊆ Ioo 0 R) :
+    ∃ R', 0 < R' ∧ R' < R ∧ ∃ ρ : ℝ → ℝ, ContDiff ℝ ∞ ρ ∧ (∀ t, R' ^ 2 ≤ t → ρ t = 0) ∧
+      ((∀ s, 0 ≤ ψ s) → ∀ t, ρ t ≤ 0) ∧ ∀ s, 0 < s → ψ s = s ^ n * deriv ρ (s ^ 2) := by
+  obtain ⟨R', hR'0, hR'R, hψs'⟩ := exists_lt_tsupport_subset_Ioo hR hψs
+  set σ : ℝ → ℝ := fun t ↦ ψ (√t) / (√t) ^ n with hσ_def
+  have hσ0 : ∀ t, R' ^ 2 ≤ t → σ t = 0 := by
+    intro t ht
+    have : R' ≤ √t := by
+      rw [← Real.sqrt_sq hR'0.le]
+      exact Real.sqrt_le_sqrt ht
+    simp [hσ_def, image_eq_zero_of_notMem_tsupport fun h ↦ (hψs' h).2.not_ge this]
+  have hσ : ContDiff ℝ ∞ σ := contDiff_div_sqrt_pow hψ (hψs'.trans Ioo_subset_Ioi_self) n
+  have hσc : Continuous σ := hσ.continuous
+  set ρ : ℝ → ℝ := fun t ↦ ∫ s in R' ^ 2..t, σ s with hρ_def
+  have hρderiv : ∀ t, HasDerivAt ρ (σ t) t := fun t ↦
+    intervalIntegral.integral_hasDerivAt_right (hσc.intervalIntegrable _ _)
+      (hσc.stronglyMeasurableAtFilter _ _) hσc.continuousAt
+  have hρ' : deriv ρ = σ := funext fun t ↦ (hρderiv t).deriv
+  have hρ0 : ∀ t, R' ^ 2 ≤ t → ρ t = 0 := by
+    intro t ht
+    simp only [hρ_def]
+    refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun s hs ↦ ?_).trans
+      intervalIntegral.integral_zero
+    rw [uIcc_of_le ht] at hs
+    exact hσ0 s hs.1
+  refine ⟨R', hR'0, hR'R, ρ, contDiff_infty_iff_deriv.mpr
+    ⟨fun t ↦ (hρderiv t).differentiableAt, hρ' ▸ hσ⟩, hρ0, fun hψn t ↦ ?_, fun s hs ↦ ?_⟩
+  · rcases le_total t (R' ^ 2) with ht | ht
+    · simp only [hρ_def]
+      rw [intervalIntegral.integral_symm, neg_nonpos]
+      exact intervalIntegral.integral_nonneg ht fun s _ ↦
+        div_nonneg (hψn _) (pow_nonneg (Real.sqrt_nonneg _) _)
+    · exact (hρ0 _ ht).le
+  · rw [hρ', hσ_def]
+    simp only [Real.sqrt_sq hs.le]
+    rw [mul_div_cancel₀ _ (pow_ne_zero _ hs.ne')]
+
 /-- The distributional derivative of the sphere integrals `Φ s = ∫ θ, u (s • θ) ∂μ.toSphere` of a
 `C²` function on `ball 0 R` is computed by the Laplacian: for every test function `ψ` on `(0, R)`
 there is a radial `χ`, vanishing outside the ball and nonpositive when `ψ` is nonnegative, with
@@ -111,57 +198,10 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
     ∃ χ : E → ℝ, (∀ x ∉ ball (0 : E) R, χ x = 0) ∧ ((∀ s, 0 ≤ ψ s) → ∀ x, χ x ≤ 0) ∧
       ∫ x, χ x • Δ u x ∂μ =
         (2 : ℝ) • ∫ s, deriv ψ s • ∫ θ : sphere (0 : E) 1, u (s • (θ : E)) ∂μ.toSphere := by
-  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (Module.finrank_pos (R := ℝ) (M := E)).ne'
-  -- A radius `R' < R` with `tsupport ψ ⊆ (0, R')`.
-  obtain ⟨R', hR'0, hR'R, hψs'⟩ : ∃ R', 0 < R' ∧ R' < R ∧ tsupport ψ ⊆ Ioo 0 R' := by
-    have hball : Ioo (0 : ℝ) R = ball (R / 2) (R / 2) := by
-      rw [Real.ball_eq_Ioo]
-      congr 1 <;> ring
-    obtain ⟨r, hr, hψr⟩ :=
-      exists_pos_lt_subset_ball (half_pos hR) (isClosed_tsupport ψ) (hball ▸ hψs)
-    rw [Real.ball_eq_Ioo] at hψr
-    exact ⟨R / 2 + r, by linarith [hr.1], by linarith [hr.2],
-      hψr.trans (Ioo_subset_Ioo (by linarith [hr.2]) le_rfl)⟩
-  have hψ0 : ∀ r, r ∉ Ioo (0 : ℝ) R' → ψ r = 0 := fun r hr ↦
-    image_eq_zero_of_notMem_tsupport fun h ↦ hr (hψs' h)
-  -- The radial profile `σ`, chosen so that `ψ s = s ^ n * σ (s ^ 2)` for `s > 0`.
-  set σ : ℝ → ℝ := fun t ↦ ψ (√t) / (√t) ^ Module.finrank ℝ E with hσ_def
-  have hσ0 : ∀ t, R' ^ 2 ≤ t → σ t = 0 := by
-    intro t ht
-    have : R' ≤ √t := by
-      rw [← Real.sqrt_sq hR'0.le]
-      exact Real.sqrt_le_sqrt ht
-    simp [hσ_def, hψ0 (√t) fun h ↦ h.2.not_ge this]
-  have hσ : ContDiff ℝ ∞ σ := by
-    rw [contDiff_iff_contDiffAt]
-    intro t
-    by_cases ht : √t ∈ tsupport ψ
-    · have ht0 : 0 < t := Real.sqrt_pos.mp (hψs' ht).1
-      exact ((hψ.contDiffAt.comp t (Real.contDiffAt_sqrt ht0.ne')).div
-        ((Real.contDiffAt_sqrt ht0.ne').pow _) (pow_ne_zero _ (Real.sqrt_pos.mpr ht0).ne'))
-    · have hev : ∀ᶠ s in 𝓝 t, σ s = 0 := by
-        have : ∀ᶠ s in 𝓝 t, √s ∉ tsupport ψ :=
-          Real.continuous_sqrt.continuousAt.preimage_mem_nhds
-            ((isClosed_tsupport ψ).isOpen_compl.mem_nhds ht)
-        filter_upwards [this] with s hs
-        simp [hσ_def, image_eq_zero_of_notMem_tsupport hs]
-      exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq hev
-  have hσc : Continuous σ := hσ.continuous
-  -- Its primitive `ρ`, vanishing beyond `R' ^ 2`.
-  set ρ : ℝ → ℝ := fun t ↦ ∫ s in R' ^ 2..t, σ s with hρ_def
-  have hρderiv : ∀ t, HasDerivAt ρ (σ t) t := fun t ↦
-    intervalIntegral.integral_hasDerivAt_right (hσc.intervalIntegrable _ _)
-      (hσc.stronglyMeasurableAtFilter _ _) hσc.continuousAt
-  have hρ' : deriv ρ = σ := funext fun t ↦ (hρderiv t).deriv
-  have hρ : ContDiff ℝ ∞ ρ :=
-    contDiff_infty_iff_deriv.mpr ⟨fun t ↦ (hρderiv t).differentiableAt, hρ' ▸ hσ⟩
-  have hρ0 : ∀ t, R' ^ 2 ≤ t → ρ t = 0 := by
-    intro t ht
-    simp only [hρ_def]
-    refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun s hs ↦ ?_).trans
-      intervalIntegral.integral_zero
-    rw [uIcc_of_le ht] at hs
-    exact hσ0 s hs.1
+  -- `ψ s = s ^ n ρ' (s ^ 2)` for a smooth `ρ` vanishing beyond `R' ^ 2`, with `R' < R`.
+  obtain ⟨R', hR'0, hR'R, ρ, hρ, hρ0, hρn, hψρ⟩ :=
+    exists_contDiff_eq_pow_mul_deriv (Module.finrank ℝ E) hR hψ hψs
+  have hσ : ContDiff ℝ ∞ (deriv ρ) := (contDiff_infty_iff_deriv.1 hρ).2
   -- The radial test function `χ x = ρ (‖x‖ ^ 2)` on the ball, supported in `closedBall 0 R'`.
   set Ω : Opens E := ⟨ball (0 : E) R, isOpen_ball⟩ with _
   have hχ_supp : tsupport (fun x : E ↦ ρ (‖x‖ ^ 2)) ⊆ closedBall (0 : E) R' := by
@@ -174,28 +214,18 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
   let χ : 𝓓(Ω, ℝ) := ⟨fun x ↦ ρ (‖x‖ ^ 2), hρ.comp (contDiff_norm_sq ℝ),
     (isCompact_closedBall _ _).of_isClosed_subset (isClosed_tsupport _) hχ_supp, hχΩ⟩
   have hχ : (χ : E → ℝ) = fun x ↦ ρ (‖x‖ ^ 2) := rfl
-  refine ⟨χ, fun x hx ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hx (hχΩ h), fun hψn x ↦ ?_, ?_⟩
-  · -- For `ψ ≥ 0` the profile `σ` is nonnegative, so its primitive `ρ` is nonpositive below
-    -- `R' ^ 2`, and zero above.
-    rw [hχ]
-    rcases le_total (‖x‖ ^ 2) (R' ^ 2) with ht | ht
-    · simp only [hρ_def]
-      rw [intervalIntegral.integral_symm, neg_nonpos]
-      exact intervalIntegral.integral_nonneg ht fun s _ ↦
-        div_nonneg (hψn _) (pow_nonneg (Real.sqrt_nonneg _) _)
-    · exact (hρ0 _ ht).le
-  have hΔ : Δ (χ : E → ℝ) = fun x ↦
-      4 * ‖x‖ ^ 2 * deriv σ (‖x‖ ^ 2) + 2 * (Module.finrank ℝ E : ℝ) * σ (‖x‖ ^ 2) := by
+  refine ⟨χ, fun x hx ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hx (hχΩ h),
+    fun hψn x ↦ hρn hψn _, ?_⟩
+  have hΔ : Δ (χ : E → ℝ) = fun x ↦ 4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
+      2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
     funext x
-    rw [hχ, (hρ.of_le (by simp)).laplacian_comp_norm_sq, hρ']
+    rw [hχ, (hρ.of_le (by simp)).laplacian_comp_norm_sq]
   -- Green's identity against `χ`, in polar coordinates.
   -- `Ω` is the ball, as a set.
   have hu' : ContDiffOn ℝ 2 u Ω := hu
   rw [← hu'.integral_laplacian_smul_eq_integral_smul_laplacian (μ := μ) χ]
-  have hΔcont : Continuous (Δ (χ : E → ℝ)) := by
-    rw [hΔ]
-    have hσ' : Continuous (deriv σ) := hσ.continuous_deriv (by simp)
-    fun_prop
+  have hΔcont : Continuous (Δ (χ : E → ℝ)) :=
+    ((hρ.comp (contDiff_norm_sq ℝ)).of_le (by simp)).continuous_laplacian
   have hf_cont : Continuous fun x ↦ Δ (χ : E → ℝ) x • u x :=
     (hΔcont.continuousOn.smul hu'.continuousOn).continuous_of_tsupport_subset Ω.isOpen
       ((tsupport_smul_subset_left _ _).trans
@@ -213,33 +243,14 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
     have hs : 0 < s := hs
     have hnorm : ∀ θ : sphere (0 : E) 1, ‖s • (θ : E)‖ = s := fun θ ↦ by
       rw [norm_smul, norm_eq_of_mem_sphere θ, mul_one, Real.norm_of_nonneg hs.le]
-    have hΔs : ∀ θ : sphere (0 : E) 1, Δ (χ : E → ℝ) (s • (θ : E)) =
-        4 * s ^ 2 * deriv σ (s ^ 2) + 2 * (Module.finrank ℝ E : ℝ) * σ (s ^ 2) := fun θ ↦ by
-      simp only [hΔ, hnorm]
-    simp_rw [hΔs]
-    rw [MeasureTheory.integral_smul, smul_smul]
-    congr 1
-    have hψeq : ψ =ᶠ[𝓝 s] fun r ↦ r ^ Module.finrank ℝ E * σ (r ^ 2) := by
-      filter_upwards [Ioi_mem_nhds hs] with r hr
-      have hr : 0 < r := hr
-      simp only [hσ_def, Real.sqrt_sq hr.le]
-      rw [mul_div_cancel₀ _ (pow_ne_zero _ hr.ne')]
-    have hd : HasDerivAt (fun r ↦ r ^ Module.finrank ℝ E * σ (r ^ 2))
-        ((Module.finrank ℝ E : ℝ) * s ^ (Module.finrank ℝ E - 1) * σ (s ^ 2) +
-          s ^ Module.finrank ℝ E * (deriv σ (s ^ 2) * ((2 : ℕ) * s ^ (2 - 1)))) s :=
-      (hasDerivAt_pow _ s).mul ((hσ.differentiable (by simp) _).hasDerivAt.comp s
-        (hasDerivAt_pow 2 s))
-    rw [hψeq.deriv_eq, hd.deriv, hm]
-    simp only [Nat.add_sub_cancel, Nat.cast_add, Nat.cast_one]
-    ring
+    simp_rw [hΔ, hnorm]
+    rw [MeasureTheory.integral_smul, smul_smul, pow_mul_add_eq_two_mul_deriv
+      Module.finrank_pos.ne' (hσ.differentiable (by simp)) hψρ hs]
   rw [setIntegral_congr_fun measurableSet_Ioi hinner,
     setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦ ?_]
   · simp_rw [mul_smul]
     rw [MeasureTheory.integral_smul]
-  · have : deriv ψ s = 0 := by
-      by_contra h
-      exact hs (hψs' (support_deriv_subset h)).1
-    simp [this]
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hs (hψs (tsupport_deriv_subset h)).1]
 
 /-- The mean-value property on spheres about the origin. -/
 private lemma integral_toSphere_eq_of_harmonicOnNhd_zero
