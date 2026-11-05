@@ -139,6 +139,46 @@ private theorem norm_sum_inner_cfc_add_inner_cfc_le_kyFanSum {p : ℕ} {A : E �
       (g := fun ν ↦ -Real.sin (ν * τ))
       (fun ν _ ↦ by rw [neg_sq, add_comm, Real.sin_sq_add_cos_sq]) x).le) hu hv
 
+/-- The real Haagerup–Zsidó kernel times a scaled sine is integrable. -/
+private theorem integrable_realKernel_mul_mul_sin (c : 𝕜) (a δ : ℝ) :
+    Integrable fun t ↦ (realKernel t : 𝕜) * (c * (Real.sin (a * (t / δ)) : 𝕜)) := by
+  have hr : Integrable fun t ↦ Real.sin (a * (t / δ)) * realKernel t :=
+    integrable_realKernel.bdd_mul (c := 1) (by fun_prop)
+      (.of_forall fun t ↦ by simpa using Real.abs_sin_le_one _)
+  refine (hr.ofReal (𝕜 := 𝕜)).const_mul c |>.congr (.of_forall fun t ↦ ?_)
+  push_cast
+  ring
+
+/-- The real Haagerup–Zsidó kernel inverts every frequency `a` with `δ ≤ |a|`:
+`∫ r(t) c sin (a t / δ) dt = c δ / a`. -/
+private theorem integral_realKernel_mul_mul_sin (c : 𝕜) {a δ : ℝ} (hδ : 0 < δ) (ha : δ ≤ |a|) :
+    ∫ t, (realKernel t : 𝕜) * (c * (Real.sin (a * (t / δ)) : 𝕜)) = c * ((δ * a⁻¹ : ℝ) : 𝕜) := by
+  have h1 : 1 ≤ |a / δ| := by
+    rw [abs_div, abs_of_pos hδ, one_le_div hδ]
+    exact ha
+  have hinv : ∫ t, realKernel t * Real.sin (a * (t / δ)) = δ * a⁻¹ :=
+    calc _ = ∫ t, realKernel t * Real.sin (a / δ * t) :=
+          integral_congr_ae (.of_forall fun t ↦ by ring_nf)
+      _ = δ * a⁻¹ := by rw [integral_realKernel_mul_sin h1, inv_div, div_eq_mul_inv]
+  rw [← hinv, ← integral_ofReal, ← integral_const_mul]
+  exact integral_congr_ae (.of_forall fun t ↦ by push_cast; ring)
+
+/-- The eigenbasis coefficients of `X` are those of `A X - X B` divided by the eigenvalue
+differences. -/
+private theorem inner_eigenvectorBasis_apply_eq_inv_mul {n m : ℕ}
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
+    (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m) (X : F →L[𝕜] E) (i : Fin n) (j : Fin m)
+    (hij : hA.eigenvalues hn i - hB.eigenvalues hm j ≠ 0) :
+    ⟪hA.eigenvectorBasis hn i, X (hB.eigenvectorBasis hm j)⟫_𝕜 =
+      ((hA.eigenvalues hn i - hB.eigenvalues hm j)⁻¹ : ℝ) *
+        ⟪hA.eigenvectorBasis hn i,
+          ((A.sylvester B X : F →L[𝕜] E) : F →ₗ[𝕜] E) (hB.eigenvectorBasis hm j)⟫_𝕜 := by
+  have hij' : ((hA.eigenvalues hn i - hB.eigenvalues hm j : ℝ) : 𝕜) ≠ 0 :=
+    RCLike.ofReal_ne_zero.mpr hij
+  rw [coe_coe, inner_sylvester_apply_eigenvectorBasis hA hB hn hm X i j]
+  push_cast at hij' ⊢
+  field_simp
+
 /-- **The integral representation of the Sylvester solution.** If every eigenvalue of `A` is at
 distance at least `δ > 0` from every eigenvalue of `B`, then for families `(uₗ)` and `(vₗ)` the
 coefficient sum `∑ₗ ⟪uₗ, X vₗ⟫` is `δ⁻¹` times the integral, against the real Haagerup–Zsidó
@@ -163,39 +203,12 @@ private theorem sum_inner_eq_inv_mul_integral_realKernel_mul {p : ℕ}
   have hgap (i j) : δ ≤ |α i - β j| :=
     h.le_abs_sub (by simpa using hA.hasEigenvalue_eigenvalues rfl i)
       (by simpa using hB.hasEigenvalue_eigenvalues rfl j)
-  -- The real Haagerup–Zsidó kernel inverts every eigenvalue difference:
-  -- `∫ r(t) sin ((αᵢ - βⱼ) t / δ) dt = δ / (αᵢ - βⱼ)`.
-  have hinv (i j) :
-      ∫ t, realKernel t * Real.sin ((α i - β j) * (t / δ)) = δ * (α i - β j)⁻¹ := by
-    have h1 : 1 ≤ |(α i - β j) / δ| := by
-      rw [abs_div, abs_of_pos hδ, one_le_div hδ]
-      exact hgap i j
-    calc _ = ∫ t, realKernel t * Real.sin ((α i - β j) / δ * t) :=
-          integral_congr_ae (.of_forall fun t ↦ by ring_nf)
-      _ = δ * (α i - β j)⁻¹ := by rw [integral_realKernel_mul_sin h1, inv_div, div_eq_mul_inv]
-  -- The eigenbasis coefficients of `X` are those of `C` divided by the eigenvalue differences.
-  have hX (i j) : ⟪e i, X (f j)⟫_𝕜 = ((α i - β j)⁻¹ : ℝ) * ⟪e i, C (f j)⟫_𝕜 := by
-    have hij : (α i : 𝕜) - β j ≠ 0 := by exact_mod_cast abs_pos.mp (hδ.trans_le (hgap i j))
-    rw [hC, coe_coe, inner_sylvester_apply_eigenvectorBasis hA hB rfl rfl X i j]
-    push_cast
-    field_simp
-    ring
+  have hij (i j) : α i - β j ≠ 0 := abs_pos.mp (hδ.trans_le (hgap i j))
   -- Integrate the expanded sums term by term.
   set c : Fin p → Fin (finrank 𝕜 E) → Fin (finrank 𝕜 F) → 𝕜 :=
     fun l i j ↦ ⟪u l, e i⟫_𝕜 * ⟪e i, C (f j)⟫_𝕜 * ⟪f j, v l⟫_𝕜
-  have hint (l i j) : Integrable fun t ↦
-      (realKernel t : 𝕜) * (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) := by
-    have hr : Integrable fun t ↦ Real.sin ((α i - β j) * (t / δ)) * realKernel t :=
-      integrable_realKernel.bdd_mul (c := 1) (by fun_prop)
-        (.of_forall fun t ↦ by simpa using Real.abs_sin_le_one _)
-    refine (hr.ofReal (𝕜 := 𝕜)).const_mul (c l i j) |>.congr (.of_forall fun t ↦ ?_)
-    push_cast
-    ring
-  have hterm (l i j) :
-      ∫ t, (realKernel t : 𝕜) * (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) =
-        c l i j * ((δ * (α i - β j)⁻¹ : ℝ) : 𝕜) := by
-    rw [← hinv i j, ← integral_ofReal, ← integral_const_mul]
-    exact integral_congr_ae (.of_forall fun t ↦ by push_cast; ring)
+  have hint (l i j) := integrable_realKernel_mul_mul_sin (𝕜 := 𝕜) (c l i j) (α i - β j) δ
+  have hterm (l i j) := integral_realKernel_mul_mul_sin (c l i j) hδ (hgap i j)
   simp only [mul_sum]
   rw [integral_finsetSum _ fun l _ ↦ integrable_finsetSum _ fun i _ ↦
     integrable_finsetSum _ fun j _ ↦ hint l i j, mul_sum]
@@ -206,10 +219,12 @@ private theorem sum_inner_eq_inv_mul_integral_realKernel_mul {p : ℕ}
   rw [integral_finsetSum _ fun j _ ↦ hint l i j, mul_sum]
   refine sum_congr rfl fun j _ ↦ ?_
   have hδ' : (δ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hδ.ne'
-  rw [hterm, coe_coe, hX]
+  rw [hterm, coe_coe, inner_eigenvectorBasis_apply_eq_inv_mul hA hB rfl rfl X i j (hij i j)]
   simp only [c]
   push_cast
   field_simp
+  rw [hC, coe_coe]
+  ring
 
 /-- **The simultaneous Ky Fan estimate for the Sylvester equation.** Let `A` and `B` be symmetric
 operators on finite-dimensional inner product spaces. If every eigenvalue of `A` is at distance at
