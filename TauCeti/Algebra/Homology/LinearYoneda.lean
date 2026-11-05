@@ -319,6 +319,21 @@ lemma homologyMap_linearYonedaFunctor_map_homologyπ_apply {X' : ChainComplex C 
           ((linearYonedaFunctor k Y).map f.op) i a) :=
   ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ i) a
 
+/-- The map on cohomology `H(Hom(-, Y))` induced by a composite of chain maps `f : X'' ⟶ X'` and
+`g : X' ⟶ X` is the composite of the induced maps, evaluated at a class. -/
+lemma homologyMap_linearYonedaFunctor_map_comp_apply {X' X'' : ChainComplex C α} (f : X'' ⟶ X')
+    (g : X' ⟶ X) (i : α) (a : (X.linearYonedaObj k Y).homology i) :
+    HomologicalComplex.homologyMap (K := X.linearYonedaObj k Y) (L := X''.linearYonedaObj k Y)
+        ((linearYonedaFunctor k Y).map (f ≫ g).op) i a =
+      HomologicalComplex.homologyMap (K := X'.linearYonedaObj k Y) (L := X''.linearYonedaObj k Y)
+        ((linearYonedaFunctor k Y).map f.op) i
+        (HomologicalComplex.homologyMap (K := X.linearYonedaObj k Y)
+          (L := X'.linearYonedaObj k Y) ((linearYonedaFunctor k Y).map g.op) i a) := by
+  rw [op_comp, Functor.map_comp]
+  exact ConcreteCategory.congr_hom (HomologicalComplex.homologyMap_comp
+    (K := X.linearYonedaObj k Y) (L := X'.linearYonedaObj k Y) (M := X''.linearYonedaObj k Y)
+    ((linearYonedaFunctor k Y).map g.op) ((linearYonedaFunctor k Y).map f.op) i) a
+
 /-- The map on cocycles `Z(Hom(X, Y)) ⟶ Z(Hom(X', Y))` induced by a chain map `f : X' ⟶ X` is
 precomposition with `f`. -/
 lemma iCycles_cyclesMap_linearYonedaFunctor_map_apply {X' : ChainComplex C α} (f : X' ⟶ X)
