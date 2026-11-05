@@ -117,16 +117,18 @@ private theorem crossingCoveredSquares_eq_sdiff_union
 /-- The squares a crossing-change hexagon cuts away lie in its underlying rectangle. -/
 private theorem crossingCutSquares_subset (P : GridCommutationHexagonBetween a s s' x y) :
     P.crossingCutSquares ⊆ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
-  intro p hp
+  rintro ⟨c, r⟩ hp
   cases P with
   | inl P =>
     simp only [crossingCutSquares, Sum.elim_inl, Finset.mem_product, Finset.mem_singleton] at hp
-    rw [toGridRectangleBetween_inl, P.mem_toGridRectangle_coveredSquares, hp.1]
-    exact ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hp.2⟩
+    obtain ⟨rfl, hr⟩ := hp
+    rw [toGridRectangleBetween_inl]
+    exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hr
   | inr P =>
     simp only [crossingCutSquares, Sum.elim_inr, Finset.mem_product, Finset.mem_singleton] at hp
-    rw [toGridRectangleBetween_inr, P.mem_toGridRectangle_coveredSquares, hp.1]
-    exact ⟨Grid.left_mem_cIco P.right_ne.symm, P.insert_cIco_subset_cIco_bottom_top hp.2⟩
+    obtain ⟨rfl, hr⟩ := hp
+    rw [toGridRectangleBetween_inr]
+    exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hr
 
 /-- The squares a crossing-change hexagon adds lie outside its underlying rectangle. -/
 private theorem disjoint_crossingAddedSquares (P : GridCommutationHexagonBetween a s s' x y) :

@@ -135,16 +135,6 @@ theorem insert_cIco_subset_cIco_bottom_top (P : GridHexagonBetween a s s' x y) :
     insert s' (Grid.cIco s s') ⊆ Grid.cIco P.bottom P.top :=
   Grid.insert_cIco_subset_cIco P.lower_mem P.upper_mem
 
-/-- The rectangle underlying a hexagon covers every square of column `a` in the rows of the bigon
-it cuts away. -/
-theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridHexagonBetween a s s' x y)
-    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
-    (a, r) ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, P.right_eq]
-  exact ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hr⟩
-
 /-- A hexagon is determined by its initial side. -/
 theorem left_injective :
     Function.Injective fun P : GridHexagonBetween a s s' x y => P.left := by
@@ -236,6 +226,14 @@ theorem mem_toGridRectangle_coveredSquares (P : GridHexagonBetween a s s' x y)
   rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
     GridRectangleBetween.top_def, P.right_eq]
 
+/-- The rectangle underlying a hexagon covers every square of column `a` in the rows of the bigon
+it cuts away. -/
+theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridHexagonBetween a s s' x y)
+    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
+    (a, r) ∈ P.toGridRectangle.coveredSquares :=
+  (P.mem_toGridRectangle_coveredSquares _).mpr
+    ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hr⟩
+
 /-- A hexagon carries no `X`-marking exactly when its underlying rectangle carries none outside
 column `a`. -/
 theorem disjoint_coveredSquares_XSet_iff (P : GridHexagonBetween a s s' x y) (G : GridDiagram n) :
@@ -319,16 +317,6 @@ theorem right_ne (P : GridInitialHexagonBetween a s s' x y) : P.right ≠ finRot
 theorem insert_cIco_subset_cIco_bottom_top (P : GridInitialHexagonBetween a s s' x y) :
     insert s' (Grid.cIco s s') ⊆ Grid.cIco P.bottom P.top :=
   Grid.insert_cIco_subset_cIco P.lower_mem P.upper_mem
-
-/-- The rectangle underlying a hexagon turning on its initial side covers every square of the
-column after `a` in the rows of the bigon it cuts away. -/
-theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridInitialHexagonBetween a s s' x y)
-    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
-    (finRotate n a, r) ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, P.left_eq]
-  exact ⟨Grid.left_mem_cIco P.right_ne.symm, P.insert_cIco_subset_cIco_bottom_top hr⟩
 
 /-- A hexagon turning on its initial side is determined by its underlying rectangle. -/
 theorem toGridRectangleBetween_injective :
@@ -416,6 +404,14 @@ theorem mem_toGridRectangle_coveredSquares (P : GridInitialHexagonBetween a s s'
       p.1 ∈ Grid.cIco (finRotate n a) P.right ∧ p.2 ∈ Grid.cIco P.bottom P.top := by
   rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
     GridRectangleBetween.top_def, P.left_eq]
+
+/-- The rectangle underlying a hexagon turning on its initial side covers every square of the
+column after `a` in the rows of the bigon it cuts away. -/
+theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridInitialHexagonBetween a s s' x y)
+    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
+    (finRotate n a, r) ∈ P.toGridRectangle.coveredSquares :=
+  (P.mem_toGridRectangle_coveredSquares _).mpr
+    ⟨Grid.left_mem_cIco P.right_ne.symm, P.insert_cIco_subset_cIco_bottom_top hr⟩
 
 /-- A hexagon turning on its initial side carries no `X`-marking exactly when its underlying
 rectangle carries none outside column `finRotate n a`. -/
