@@ -69,7 +69,7 @@ theorem stellarSubdivisionInverseLinearMap_left_inv (ha : a ∈ σ)
     by_cases hiv : i = v
     · subst i
       by_cases hv : v ∈ σ
-      · simp [hv]
+      · simp only [hv, ↓reduceIte]
         field_simp
         ring
       · simp [hv, hc]
