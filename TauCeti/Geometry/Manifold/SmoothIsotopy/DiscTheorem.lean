@@ -72,7 +72,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 if `f` and `g` both have centre `p`, map into the preimage of a Euclidean ball about `chartAt E p p`
 that lies in the target of the chart, and their derivatives read in the chart have determinants of
 positive product, then they are smoothly isotopic relative to the centre. -/
-theorem exists_smoothIsotopy_of_mapsTo_chart {p : M} {r : ℝ} (hr : 0 < r)
+private theorem exists_smoothIsotopy_of_mapsTo_chart {p : M} {r : ℝ} (hr : 0 < r)
     (hball : Euclidean.ball (chartAt E p p) r ⊆ (chartAt E p).target)
     (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hf0 : f 0 = p) (hg0 : g 0 = p)
     (hf : ∀ x, f x ∈ (chartAt E p).source ∩ chartAt E p ⁻¹' Euclidean.ball (chartAt E p p) r)
@@ -96,8 +96,8 @@ theorem exists_smoothIsotopy_of_mapsTo_chart {p : M} {r : ℝ} (hr : 0 < r)
     (fun x => by simp [hF, φ.left_inv (hf x).1])
     (fun x => by simp [hG, φ.left_inv (hg x).1])
   refine ⟨L', fun t => ?_⟩
-  rw [show L' (t, 0) = φ.symm (L (t, 0)) from SmoothIsotopy.postcomp_apply .., hL0,
-    φ.left_inv (mem_chart_source E p)]
+  have hL' : L' (t, 0) = φ.symm (L (t, 0)) := SmoothIsotopy.postcomp_apply ..
+  rw [hL', hL0, φ.left_inv (mem_chart_source E p)]
 
 /-- **The disc theorem in a manifold.** Two smooth embeddings of `E` into a boundaryless manifold
 modelled on `E`, with the same centre `f 0 = g 0` and derivatives at `0` of the same orientation,
