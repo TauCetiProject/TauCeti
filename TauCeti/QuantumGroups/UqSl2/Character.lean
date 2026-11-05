@@ -49,8 +49,9 @@ formal character of a comodule over a monoid algebra, in
 
 * `Module.Basis.uqSl2FormalCharacter_eq_sum`: the character is the sum of the weights of a basis
   of weight vectors.
-* `TauCeti.UqSl2.formalCharacter_congr` and `TauCeti.UqSl2.formalCharacter_pi`: invariance under
-  isomorphism and additivity over finite products.
+* `TauCeti.UqSl2.formalCharacter_congr`, `TauCeti.UqSl2.formalCharacter_pi` and
+  `TauCeti.UqSl2.formalCharacter_prod`: invariance under isomorphism and additivity over finite
+  products.
 * `TauCeti.UqSl2.formalCharacter_tensor_of_isWeightModule` and
   `TauCeti.UqSl2.formalCharacter_tensor`: the character of a tensor product of weight modules,
   in particular of any two finite-dimensional modules at a generic parameter, is the product of
@@ -140,6 +141,25 @@ theorem formalCharacter_pi {ι : Type*} [Fintype ι] {N : ι → Type*} [∀ i, 
       right_inv _ := rfl }
   rw [e.finrank_eq, Module.finrank_pi_fintype, Nat.cast_sum]
 
+/-- **The character adds over binary products.** -/
+theorem formalCharacter_prod :
+    formalCharacter q (V × W) = formalCharacter q V + formalCharacter q W := by
+  refine MonoidAlgebra.coeff_injective (Finsupp.ext fun μ ↦ ?_)
+  rw [MonoidAlgebra.coeff_add, Finsupp.add_apply]
+  simp only [formalCharacter_coeff]
+  -- The weight space of the product is the product of the weight spaces.
+  let e : weightSpace q (V × W) μ ≃ₗ[ℂ] weightSpace q V μ × weightSpace q W μ :=
+    { toFun x :=
+        (⟨x.1.1, mem_weightSpace_iff.mpr (congrArg Prod.fst (mem_weightSpace_iff.mp x.2))⟩,
+          ⟨x.1.2, mem_weightSpace_iff.mpr (congrArg Prod.snd (mem_weightSpace_iff.mp x.2))⟩)
+      invFun y := ⟨(y.1.1, y.2.1), mem_weightSpace_iff.mpr
+        (Prod.ext (mem_weightSpace_iff.mp y.1.2) (mem_weightSpace_iff.mp y.2.2))⟩
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  rw [e.finrank_eq, Module.finrank_prod, Nat.cast_add]
+
 /-- **The character is multiplicative on weight modules.** If `K` acts diagonalizably on `V`
 and on `W`, the character of `V ⊗ W`, with `UqSl2 q` acting through the coproduct, is the
 product of the characters. -/
@@ -208,7 +228,7 @@ private theorem formalCharacter_ladderModule_coeff_units_mul_zpow (hq : IsGeneri
 
 /-- At a generic parameter, the coefficients of `ch L_n^δ` at `ε q^m` and `ε q^(m+2)` differ
 by one when `L_n^δ = L_m^ε`, and agree otherwise. -/
-private theorem formalCharacter_ladderModule_coeff_sub (hq : IsGenericQuantumParameter q) (n m : ℕ)
+theorem formalCharacter_ladderModule_coeff_sub (hq : IsGenericQuantumParameter q) (n m : ℕ)
     (δ ε : ℤˣ) :
     (formalCharacter q (LadderModule q n δ)).coeff (ε * q ^ m) -
         (formalCharacter q (LadderModule q n δ)).coeff (ε * q ^ (m + 2)) =
@@ -243,20 +263,9 @@ theorem finrank_linearMap_ladderModule_eq_formalCharacter_coeff_sub
     (finrank ℂ (LadderModule q m ε →ₗ[UqSl2 q] V) : ℤ) =
       (formalCharacter q V).coeff (ε * q ^ m) - (formalCharacter q V).coeff (ε * q ^ (m + 2)) := by
   classical
-  have := isSemisimpleModule_of_finiteDimensional hq (V := V)
-  have : Module.Finite (UqSl2 q) V := Module.Finite.of_restrictScalars_finite ℂ _ _
-  obtain ⟨n, S, e, hS⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp (UqSl2 q) V
-  -- Each simple summand is finite-dimensional, hence isomorphic to a signed ladder module.
-  have h (i : Fin n) : ∃ (m : ℕ) (ε : ℤˣ), Nonempty (LadderModule q m ε ≃ₗ[UqSl2 q] S i) := by
-    have := hS i
-    have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) (S i)
-    exact exists_linearEquiv_ladderModule hq
-  choose m' ε' e' using h
+  obtain ⟨n, m', ε', ⟨e''⟩⟩ := exists_linearEquiv_pi_ladderModule hq (V := V)
   have := LadderModule.isSimpleModule hq (q := q) (m := m) (ε := ε)
   have (i : Fin n) := LadderModule.isSimpleModule hq (q := q) (m := m' i) (ε := ε' i)
-  let e'' : V ≃ₗ[UqSl2 q] ∀ i, LadderModule q (m' i) (ε' i) :=
-    e.trans (DFinsupp.linearEquivFunOnFintype.trans
-      (LinearEquiv.piCongrRight fun i ↦ (e' i).some.symm))
   rw [finrank_linearMap_eq_natCard_of_linearEquiv_pi (k := ℂ) e'', formalCharacter_congr e'',
     formalCharacter_pi, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, Finsupp.finsetSum_apply,
     ← Finset.sum_sub_distrib]

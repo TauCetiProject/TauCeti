@@ -32,6 +32,8 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
   scalars and the scalars have no zero divisors.
 * `MonoidAlgebra.ker_sumCoords_basis_eq_span`: its kernel is spanned by differences of
   basis vectors from a fixed one.
+* `MonoidAlgebra.span_single_one_eq_span_single_one_iff`: distinct basis vectors `single i 1`
+  over a nontrivial semiring span distinct lines.
 -/
 
 public section
@@ -119,3 +121,13 @@ theorem MonoidAlgebra.ker_sumCoords_basis_eq_span (x₀ : X) :
     simp
 
 end Span
+
+/-- Over a nontrivial semiring, the basis vectors `single i 1` and `single j 1` of a monoid
+algebra span the same line exactly when `i = j`. -/
+@[simp]
+theorem MonoidAlgebra.span_single_one_eq_span_single_one_iff {R : Type*} [Semiring R]
+    [Nontrivial R] {ι : Type*} {i j : ι} :
+    R ∙ MonoidAlgebra.single i (1 : R) = R ∙ MonoidAlgebra.single j (1 : R) ↔ i = j := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have hi := h.le (Submodule.mem_span_singleton_self (MonoidAlgebra.single i (1 : R)))
+  simpa using (MonoidAlgebra.single_mem_span_single (s := {j})).mp (by simpa using hi)

@@ -20,8 +20,9 @@ Evaluation reuses the MLP prefix evaluator through the structured convolution ma
 The prefix recursion is expressed as a filter sum, and the comparison with dense evaluation
 retains the complete parameter product without claiming that different filters realize
 different functions. These realization maps instantiate the neuromanifold and fibre API
-directly. Empty chains realize the identity, and one-layer chains are the existing valid
-convolution constructors.
+directly. Empty chains realize the identity, one-layer chains are the existing valid
+convolution constructors, and dropping layer `0` of `A : ConvolutionSpec K (L + 1)` gives
+`A.tail : ConvolutionSpec K L` over `A.toMLPSpec.tail`.
 
 The convention follows Vahid Shahverdi, *Algebraic Complexity and Neurovariety of Linear
 Convolutional Networks*, [arXiv:2401.16613v1](https://arxiv.org/abs/2401.16613v1), §2.1,
@@ -236,6 +237,12 @@ theorem realizeWeights_eq_mlp (A : ConvolutionSpec K L) :
     A.realizeWeights w = id := by
   simp [realizeWeights_def]
 
+/-- Setting the shared bias to zero at layer `i` turns `affineConvolution` into bias-free
+`convolution`. -/
+theorem affineConvolution_zeroBias (A : ConvolutionSpec K L) (w : A.Weights) (i : Fin L) :
+    affineConvolution (A.length_eq i) (A.zeroBias w i) = convolution (A.length_eq i) (w i) := by
+  rw [zeroBias_apply, affineConvolution_zero_bias]
+
 /-- The bias-free output head applies just its convolution filter to the hidden prefix. -/
 theorem realizeWeights_succ (A : ConvolutionSpec K (L + 1)) (w : A.Weights)
     (x : Fin (A.width 0) → K) :
@@ -249,6 +256,78 @@ theorem realizeWeights_succ (A : ConvolutionSpec K (L + 1)) (w : A.Weights)
   simp [realizeWeights_def]
 
 end Evaluation
+
+/-! ### Dropping the first layer -/
+
+/-- The convolutional specification obtained from `A : ConvolutionSpec K (L + 1)` by dropping
+layer `0`: its underlying MLP specification is `A.toMLPSpec.tail`, and its filter lengths and
+strides are shifted up by one layer. Its body is exposed so that `A.tail.Parameters` and
+`A.tail.Weights` are definitionally the tails of `A.Parameters` and `A.Weights`. -/
+@[expose] def tail (A : ConvolutionSpec K (L + 1)) : ConvolutionSpec K L where
+  toMLPSpec := A.toMLPSpec.tail
+  filterLength i := A.filterLength i.succ
+  stride i := A.stride i.succ
+  length_eq i := A.length_eq i.succ
+
+/-- The underlying MLP specification of `A.tail` is `A.toMLPSpec.tail`. -/
+@[simp]
+theorem toMLPSpec_tail (A : ConvolutionSpec K (L + 1)) :
+    A.tail.toMLPSpec = A.toMLPSpec.tail := (rfl)
+
+/-- The filter lengths of `A.tail` are those of `A` shifted up by one layer. -/
+@[simp]
+theorem tail_filterLength (A : ConvolutionSpec K (L + 1)) (i : Fin L) :
+    A.tail.filterLength i = A.filterLength i.succ := (rfl)
+
+/-- The strides of `A.tail` are those of `A` shifted up by one layer. -/
+@[simp]
+theorem tail_stride (A : ConvolutionSpec K (L + 1)) (i : Fin L) :
+    A.tail.stride i = A.stride i.succ := (rfl)
+
+/-- Taking the tail of convolutional parameters commutes with the zero-bias inclusion. -/
+@[simp]
+theorem tail_zeroBias [Zero K] (A : ConvolutionSpec K (L + 1)) (w : A.Weights) :
+    Fin.tail (A.zeroBias w) = A.tail.zeroBias (Fin.tail w) := (rfl)
+
+/-- Consing a first filter commutes with the zero-bias inclusion. -/
+@[simp]
+theorem zeroBias_cons [Zero K] (A : ConvolutionSpec K (L + 1))
+    (w₀ : Fin (A.filterLength 0) → K) (w : A.tail.Weights) :
+    A.zeroBias (Fin.cons w₀ w) = Fin.cons (w₀, 0) (A.tail.zeroBias w) := by
+  funext i
+  -- At `0` and `i.succ`, `Fin.cons` (`Fin.cases`) and `zeroBias` reduce definitionally.
+  cases i using Fin.cases <;> rfl
+
+/-- Taking the tail commutes with forming structured convolution matrices. -/
+@[simp]
+theorem tail_denseWeights [AddCommMonoid K] (A : ConvolutionSpec K (L + 1)) (w : A.Weights) :
+    Fin.tail (A.denseWeights w) = A.tail.denseWeights (Fin.tail w) := (rfl)
+
+/-- Consing a first filter commutes with forming structured convolution matrices. -/
+@[simp]
+theorem denseWeights_cons [AddCommMonoid K] (A : ConvolutionSpec K (L + 1))
+    (w₀ : Fin (A.filterLength 0) → K) (w : A.tail.Weights) :
+    A.denseWeights (Fin.cons w₀ w) =
+      Fin.cons (convolutionMatrix (A.length_eq 0) w₀) (A.tail.denseWeights w) := by
+  funext i
+  -- At `0` and `i.succ`, `Fin.cons` (`Fin.cases`) and `denseWeights` reduce definitionally.
+  cases i using Fin.cases <;> rfl
+
+/-- Taking the tail commutes with forming structured affine parameters. -/
+@[simp]
+theorem tail_denseParameters [AddCommMonoid K] (A : ConvolutionSpec K (L + 1)) (p : A.Parameters) :
+    Fin.tail (A.denseParameters p) = A.tail.denseParameters (Fin.tail p) := (rfl)
+
+/-- Consing first-layer affine parameters commutes with forming structured affine parameters. -/
+@[simp]
+theorem denseParameters_cons [AddCommMonoid K] (A : ConvolutionSpec K (L + 1))
+    (p₀ : (Fin (A.filterLength 0) → K) × K) (p : A.tail.Parameters) :
+    A.denseParameters (Fin.cons p₀ p) =
+      Fin.cons (convolutionMatrix (A.length_eq 0) p₀.1, fun _ => p₀.2)
+        (A.tail.denseParameters p) := by
+  funext i
+  -- At `0` and `i.succ`, `Fin.cons` (`Fin.cases`) and `denseParameters` reduce definitionally.
+  cases i using Fin.cases <;> rfl
 
 end ConvolutionSpec
 

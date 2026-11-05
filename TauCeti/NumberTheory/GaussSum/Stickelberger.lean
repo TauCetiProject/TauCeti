@@ -41,6 +41,11 @@ field; the statements here only use the congruence data above.
 
 The congruence determines the prime factorisation of Gauss sums, which is the input to
 Stickelberger's theorem on the annihilation of class groups and to the Gross–Koblitz formula.
+For `m ∣ q - 1` and the character `χ = ω^{-(q - 1) / m}` of order `m`, the digit sum of
+`(q - 1) / m * t` with `0 ≤ t < m` is `(p - 1) / m · ∑_{i < f} (p ^ i t mod m)`, where `q = p ^ f`
+(`Nat.sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits_div_mul`). So, normalised by `v(p) = 1`, the
+power `g(χ ^ t, ψ) ^ m` has valuation `∑_{i < f} (p ^ i t mod m)`: these are the exponents of
+Stickelberger's relation `(g(χ, ψ) ^ m) = P ^ (∑ t σ_t⁻¹)` in the `m`-th cyclotomic field.
 
 ## Main results
 
@@ -50,6 +55,8 @@ Stickelberger's theorem on the annihilation of class groups and to the Gross–K
   `v(g(ω⁻ᵃ, ψ)) = s`.
 * `TauCeti.intValuation_gaussSum_inv_pow_pow_sub_one`: under the same hypotheses,
   `(p - 1) v(g(ω⁻ᵃ, ψ)) = s v(p)`.
+* `TauCeti.intValuation_gaussSum_inv_pow_div_mul_pow`: under the same hypotheses, for `m ∣ q - 1`
+  and every `t`, `v(g(ω^{-(q - 1) / m · t}, ψ) ^ m) = (∑_{i < f} (p ^ i t mod m)) v(p)`.
 
 ## Implementation notes
 
@@ -66,6 +73,7 @@ tracked, so no multinomial congruence is needed.
 
 * K. Conrad, *Jacobi sums and Stickelberger's congruence*, Theorem 1.
 * L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., §6.2.
+* S. A. Katre, *Gauss–Jacobi sums and Stickelberger's theorem*, §3.
 -/
 
 public section
@@ -338,6 +346,21 @@ theorem intValuation_gaussSum_inv_pow {p : ℕ} [Fact p.Prime] {F : Type*} [Fiel
   rwa [add_sub_cancel, map_mul, hh, one_mul, Valuation.map_neg, hπs] at this
 
 open IsDedekindDomain in
+/-- Under the hypotheses of `intValuation_gaussSum_inv_pow`, `ζ` is a primitive `p`-th root of
+unity, so `p` is associated to `(ζ - 1) ^ (p - 1)` and has valuation `exp(-(p - 1))`. -/
+private theorem intValuation_natCast_eq_exp {p : ℕ} [Fact p.Prime] {F : Type*} [Field F]
+    [Finite F] [Algebra (ZMod p) F] {R : Type*} [CommRing R] [IsDedekindDomain R]
+    {v : HeightOneSpectrum R} {ζ : R} {ψ : AddChar F R}
+    (hψ : ∀ x, ψ x = ζ ^ (Algebra.trace (ZMod p) F x).val)
+    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) :
+    v.intValuation (p : R) = WithZero.exp (-((p - 1 : ℕ) : ℤ)) := by
+  have hζ1 : ζ ≠ 1 := fun h ↦ by simpa [h] using hζ.symm
+  have hζp : IsPrimitiveRoot ζ p :=
+    IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime (zeta_pow_eq_one hψ) hζ1)
+  rw [hζp.valuation_natCast_eq_valuation_sub_one_pow v.intValuation v.intValuation_le_one, hζ,
+    ← WithZero.exp_nsmul, smul_neg, nsmul_one]
+
+open IsDedekindDomain in
 /-- **The Gauss sum valuation normalised at `p`.** Under the hypotheses of
 `intValuation_gaussSum_inv_pow`, `ζ` is a primitive `p`-th root of unity, and
 `v(g(ω⁻ᵃ, ψ)) ^ (p - 1) = v(p) ^ s`: for the valuation normalised by `v(p) = 1`, the Gauss sum
@@ -350,17 +373,50 @@ theorem intValuation_gaussSum_inv_pow_pow_sub_one {p : ℕ} [Fact p.Prime] {F : 
     (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {a : ℕ} (ha : a < Fintype.card F - 1) :
     v.intValuation (gaussSum (ω⁻¹ ^ a) ψ) ^ (p - 1) =
       v.intValuation (p : R) ^ (Nat.digits p a).sum := by
-  have hζ1 : ζ ≠ 1 := fun h ↦ by simpa [h] using hζ.symm
-  have hζp : IsPrimitiveRoot ζ p :=
-    IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime (zeta_pow_eq_one hψ) hζ1)
-  obtain ⟨u, hu⟩ := hζp.associated_sub_one_pow_prime
-  have hu1 : v.intValuation (u : R) = 1 := by
-    rw [HeightOneSpectrum.intValuation_eq_one_iff_mem_primeCompl, Ideal.mem_primeCompl_iff]
-    exact fun h ↦ v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h u.isUnit)
-  rw [← hu, map_mul, hu1, mul_one, map_pow, hζ, intValuation_gaussSum_inv_pow hω hψ hζ ha]
+  rw [intValuation_natCast_eq_exp hψ hζ, intValuation_gaussSum_inv_pow hω hψ hζ ha]
   -- Both sides are `exp (-(s (p - 1)))`.
-  simp only [← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul, mul_one]
-  push_cast
-  ring_nf
+  simp only [← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul, mul_comm]
+
+open IsDedekindDomain in
+/-- **The valuation of the `m`-th power of a Gauss sum of order dividing `m`.** Let `q = p ^ f` be
+the size of `F` and `m ∣ q - 1`, so that `χ = ω^{-(q - 1) / m}` is a character of order `m`. Under
+the hypotheses of `intValuation_gaussSum_inv_pow`, for every `t`,
+`v(g(χ ^ t, ψ) ^ m) = v(p) ^ (∑_{i < f} (p ^ i t % m))`: for the valuation normalised by
+`v(p) = 1`, the Gauss sum power `g(χ ^ t, ψ) ^ m` has valuation `∑_{i < f} (p ^ i t mod m)`. -/
+theorem intValuation_gaussSum_inv_pow_div_mul_pow {p : ℕ} [Fact p.Prime] {F : Type*} [Field F]
+    [Fintype F] [Algebra (ZMod p) F] {R : Type*} [CommRing R] [IsDedekindDomain R]
+    {v : HeightOneSpectrum R} {f : F →+* R ⧸ v.asIdeal} {ω : MulChar F R} {ζ : R}
+    {ψ : AddChar F R} (hω : ∀ x, Ideal.Quotient.mk v.asIdeal (ω x) = f x)
+    (hψ : ∀ x, ψ x = ζ ^ (Algebra.trace (ZMod p) F x).val)
+    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {m : ℕ}
+    (hm : m ∣ Fintype.card F - 1) (t : ℕ) :
+    v.intValuation (gaussSum (ω⁻¹ ^ ((Fintype.card F - 1) / m * t)) ψ ^ m) =
+      v.intValuation (p : R) ^ ∑ i ∈ range (Module.finrank (ZMod p) F), p ^ i * t % m := by
+  classical
+  have hq : 1 < Fintype.card F := Fintype.one_lt_card
+  have hm0 : 0 < m := Nat.pos_of_dvd_of_pos hm (by omega)
+  -- Only the residue of `t` modulo `m` matters on either side, since `ω ^ (q - 1) = 1`.
+  have hχ : ω⁻¹ ^ ((Fintype.card F - 1) / m * t) =
+      ω⁻¹ ^ ((Fintype.card F - 1) / m * (t % m)) := by
+    have h1 : ω⁻¹ ^ (Fintype.card F - 1) = 1 := by
+      rw [← Fintype.card_units]
+      exact MulChar.pow_card_eq_one _
+    conv_lhs => rw [← Nat.mod_add_div t m]
+    rw [mul_add, ← mul_assoc, Nat.div_mul_cancel hm, pow_add, pow_mul (ω⁻¹) (Fintype.card F - 1),
+      h1, one_pow, mul_one]
+  rw [hχ, sum_congr rfl fun i _ ↦ (Nat.mul_mod_mod (p ^ i) t m).symm]
+  have ht : t % m < m := Nat.mod_lt _ hm0
+  generalize t % m = t at ht
+  have hcard : Fintype.card F = p ^ Module.finrank (ZMod p) F := by
+    rw [Module.card_eq_pow_finrank (K := ZMod p), ZMod.card]
+  have ha : (Fintype.card F - 1) / m * t < Fintype.card F - 1 := by
+    exact (Nat.mul_lt_mul_of_pos_left ht (Nat.div_pos (Nat.le_of_dvd (by omega) hm) hm0)).trans_eq
+      (Nat.div_mul_cancel hm)
+  -- The digit sum `s` of `(q - 1) / m * t` satisfies `m s = (p - 1) ∑_{i < f} (p ^ i t % m)`.
+  have key := Nat.sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits_div_mul (hcard ▸ hm) ht
+  rw [← hcard] at key
+  rw [map_pow, intValuation_gaussSum_inv_pow hω hψ hζ ha, intValuation_natCast_eq_exp hψ hζ]
+  simp only [← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul]
+  rw [← Nat.cast_mul, ← Nat.cast_mul, mul_comm _ (p - 1), key]
 
 end TauCeti

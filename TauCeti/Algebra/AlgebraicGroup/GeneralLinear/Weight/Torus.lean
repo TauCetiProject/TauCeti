@@ -584,6 +584,28 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap [Fintype κ]
   funext i
   exact diagonalTorusCoordinates_pointsMap_weightCharacterMap wt A p i
 
+/-- On algebra-valued points, the base-changed weight-torus coordinate morphism gives the
+prescribed diagonal characters, even when the extension ring lives in a larger universe. -/
+theorem pointsMulEquiv_mapPointsFunctor_weightTorusBaseChangeCoordinateMap [Fintype κ]
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (wt : Fin N → κ → ℤ) (A : CommAlgCat.{w} K)
+    (p : HopfAlgebra.points
+      (R := K) (H := MonoidAlgebra K (SplitTorus.characterGroup κ)) A) :
+    pointsMulEquiv N
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
+          (weightTorusBaseChangeCoordinateMap R K wt)).app A p) =
+      diagGL fun i => torusCharacter (SplitTorus.pointsMulEquiv p) (wt i) := by
+  -- The categorical point formula requires the base ring and torus index in one universe.
+  -- Pass through the direct bialgebra map to allow the larger universe of `K`.
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hom_weightTorusBaseChangeCoordinateMap]
+  apply Units.ext
+  rw [pointsMulEquiv_apply, weightTorusCoordinateBialgHom_def,
+    DiagonalizableGroup.pointToGeneralLinear_comp_diagonalCoordinateMap, diagGL_coe]
+  congr 1
+  funext i
+  exact congrArg (fun s : Aˣ ↦ (s : A))
+    (SplitTorus.charOfPoint_weightCharacter p (wt i))
+
 /-- A represented weight torus has determinant one when the sum of its weights is zero. -/
 theorem weightTorusCoordinateMap_determinantGroupLike [Finite κ]
     (wt : Fin N → κ → ℤ) (hwt : ∑ i, wt i = 0) :
