@@ -41,9 +41,10 @@ Cartan matrix computable from that matrix alone.
   the vectors whose row combinations against `G` are integers.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_weight_basisFun`,
   `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_weight_self` and
-  `TauCeti.IntegralLattice.weight_mem_ofGramMatrix_basisFun_dualCarrier`: if `G c = d • e_{i₀}`
-  over `ℤ`, the vector `c / d` pairs to `δ_{i, i₀}` with the coordinate vectors, has self-pairing
-  `c i₀ / d`, and is dual-integral.
+  `TauCeti.IntegralLattice.weight_mem_ofGramMatrix_basisFun_dualCarrier`: if the row combinations
+  of `G` against a rational vector `x` are `δ_{i, i₀}`, then `x` pairs to `δ_{i, i₀}` with the
+  coordinate vectors, has self-pairing `x i₀`, and is dual-integral. The hypothesis holds for
+  `x = c / d` when `G c = d • e_{i₀}` over `ℤ` (`sum_gram_mul_div_eq`).
 
 ## References
 
@@ -201,32 +202,37 @@ theorem sum_gram_mul_div_eq (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d 
   rw [hsum, hcast]
   split_ifs <;> simp [hd']
 
-/-- If `G c = d • e_{i₀}` over `ℤ`, the vector `c / d` pairs to `δ_{i, i₀}` with the standard
-coordinate vectors. -/
-theorem form_ofGramMatrix_basisFun_weight_basisFun
-    (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) (i : ι) :
-    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form (fun j ↦ (c j : ℚ) / d) (Pi.basisFun ℚ ι i) =
+end Weight
+
+section Weight
+
+variable [DecidableEq ι] (x : ι → ℚ) (i₀ : ι)
+  (hx : ∀ i, ∑ j, ((G i j : ℤ) : ℚ) * x j = if i = i₀ then 1 else 0)
+include hx
+
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` pairs to `δ_{i, i₀}` with
+the standard coordinate vectors. -/
+theorem form_ofGramMatrix_basisFun_weight_basisFun (i : ι) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i) =
       if i = i₀ then 1 else 0 := by
   rw [form_ofGramMatrix_basisFun_right]
-  exact sum_gram_mul_div_eq G c d hd i₀ h i
+  exact hx i
 
-/-- If `G c = d • e_{i₀}` over `ℤ`, the self-pairing of `c / d` is `c i₀ / d`. -/
-theorem form_ofGramMatrix_basisFun_weight_self
-    (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) :
-    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form (fun j ↦ (c j : ℚ) / d) (fun j ↦ (c j : ℚ) / d) =
-      (c i₀ : ℚ) / d := by
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, the self-pairing of `x` is
+`x i₀`. -/
+theorem form_ofGramMatrix_basisFun_weight_self :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x x = x i₀ := by
   rw [form_ofGramMatrix_basisFun_apply]
-  simp_rw [sum_gram_mul_div_eq G c d hd i₀ h]
+  simp_rw [hx]
   simp
 
-/-- If `G c = d • e_{i₀}` over `ℤ`, the vector `c / d` lies in the dual of the Gram-matrix
-lattice. -/
-theorem weight_mem_ofGramMatrix_basisFun_dualCarrier
-    (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) :
-    (fun j ↦ (c j : ℚ) / d) ∈ (ofGramMatrix (Pi.basisFun ℚ ι) G hG).dualCarrier := by
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` lies in the dual of the
+Gram-matrix lattice. -/
+theorem weight_mem_ofGramMatrix_basisFun_dualCarrier :
+    x ∈ (ofGramMatrix (Pi.basisFun ℚ ι) G hG).dualCarrier := by
   rw [mem_ofGramMatrix_basisFun_dualCarrier_iff]
   intro i
-  rw [sum_gram_mul_div_eq G c d hd i₀ h]
+  rw [hx i]
   exact ⟨if i = i₀ then 1 else 0, by split_ifs <;> simp⟩
 
 end Weight
