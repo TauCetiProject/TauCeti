@@ -10,6 +10,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.LocallyContractible
 public import Mathlib.Topology.Sets.Opens
+public import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Lusternik–Schnirelmann categorical covers
@@ -60,6 +61,10 @@ components, this lets the critical-point bound be computed one component at a ti
 * `TauCeti.lsCategoryCount_eq_sum_inter`: additivity over finitely many pairwise disjoint clopen
   sets, and `TauCeti.lsCategoryCount_sigma`, `TauCeti.lsCategoryCount_univ_sigma`: the count of a
   finite disjoint union is the sum of the counts of its summands.
+* `TauCeti.lsCategoryCount_preimage_subtypeVal`: a clopen subspace computes the counts of its
+  subsets as the ambient space does, and `TauCeti.lsCategoryCount_eq_sum_preimage_subtypeVal`,
+  `TauCeti.lsCategoryCount_univ_eq_sum_connectedComponents`: the count is the sum of the counts in
+  the subspaces of a finite clopen partition, for instance the connected components.
 * `TauCeti.lsCategoryCount_univ_of_contractibleSpace` and
   `TauCeti.lsCategoryCount_eq_encard`: a contractible space has count `1`, and in a discrete space
   the count of a set is its cardinality.
@@ -529,6 +534,50 @@ theorem lsCategoryCount_univ_sigma [Fintype ι] :
   simp [lsCategoryCount_sigma]
 
 end Sigma
+
+section Clopen
+
+/-- On a clopen set `C`, the Lusternik–Schnirelmann count of a subset `A ⊆ C` is the same whether
+it is computed in the subspace `C` or in `X`. -/
+theorem lsCategoryCount_preimage_subtypeVal {C : Set X} (hC : IsClopen C) (hA : A ⊆ C) :
+    lsCategoryCount C (Subtype.val ⁻¹' A) = lsCategoryCount X A := by
+  refine le_antisymm ?_ ?_
+  · obtain rfl | ⟨y, hy⟩ := A.eq_empty_or_nonempty
+    · simp
+    classical
+    -- Collapsing the complement of `C` to `y` gives a retraction of `X` onto `C`.
+    have hmem (x : X) : (if x ∈ C then x else y) ∈ C := by split_ifs with h; exacts [h, hA hy]
+    let r : C(X, C) := ⟨fun x ↦ ⟨_, hmem x⟩,
+      (continuous_id'.if (by simp [hC.frontier_eq]) continuous_const).subtype_mk hmem⟩
+    have hr : r.comp ⟨Subtype.val, continuous_subtype_val⟩ = ContinuousMap.id C :=
+      ContinuousMap.ext fun x ↦ Subtype.ext (by simp [r, x.2])
+    exact lsCategoryCount_le_of_mapsTo _ r (by rw [hr]) (mapsTo_preimage _ _)
+  · simpa [image_preimage_eq_of_subset (hA.trans Subtype.range_coe.superset)] using
+      hC.isOpen.isOpenEmbedding_subtypeVal.lsCategoryCount_image_le (Subtype.val ⁻¹' A)
+
+/-- **Additivity over a finite clopen partition.** If finitely many pairwise disjoint clopen sets
+`C i` cover `A`, the Lusternik–Schnirelmann count of `A` is the sum of the counts of its parts,
+each computed in the subspace `C i`. -/
+theorem lsCategoryCount_eq_sum_preimage_subtypeVal {ι : Type*} [Fintype ι] {C : ι → Set X}
+    (hC : ∀ i, IsClopen (C i)) (hd : Pairwise (Disjoint on C)) (hA : A ⊆ ⋃ i, C i) :
+    lsCategoryCount X A = ∑ i, lsCategoryCount (C i) (Subtype.val ⁻¹' A) := by
+  rw [lsCategoryCount_eq_sum_inter hC hd hA]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← lsCategoryCount_preimage_subtypeVal (hC i) inter_subset_right, preimage_inter,
+    Subtype.coe_preimage_self, inter_univ]
+
+/-- **The component sum formula.** The Lusternik–Schnirelmann count of a locally connected space
+with finitely many connected components is the sum of the counts of its components. -/
+theorem lsCategoryCount_univ_eq_sum_connectedComponents [LocallyConnectedSpace X]
+    [Fintype (ConnectedComponents X)] :
+    lsCategoryCount X univ = ∑ C : ConnectedComponents X, lsCategoryCount C.opens univ := by
+  have h := lsCategoryCount_eq_sum_preimage_subtypeVal (X := X) (A := univ)
+    (C := fun C : ConnectedComponents X ↦ (C.opens : Set X)) ConnectedComponents.isClopen_opens
+    (fun _ _ h ↦ Opens.coe_disjoint.mpr (ConnectedComponents.pairwise_disjoint_opens h))
+    (fun x _ ↦ mem_iUnion.mpr ⟨ConnectedComponents.mk x, ConnectedComponents.mem_opens.mpr rfl⟩)
+  simpa using h
+
+end Clopen
 
 end TauCeti
 
