@@ -20,6 +20,10 @@ fields: for a prime `Q` of `R' ⊗[R] S` over `P`, the map `κ(Q ∩ S) → κ(Q
 This is how an étale neighbourhood `(R', P)` of `p` with trivial residue field extension, as
 produced by Mathlib's `Algebra.exists_etale_isIdempotentElem_forall_liesOver_eq` (Stacks 00UJ),
 also preserves the residue field at the point of `S` it isolates.
+
+For an ideal `I` contained in a prime `P` of an `A`-algebra `W`, the diagonal point of
+`(W ⧸ I) ⊗[A] W` over `P`, sending `s ⊗ w` to `s(P) w(P)` in `κ(P)`, is the `W`-algebra map of
+`Ideal.ResidueField.exists_algHom_tensorProduct_eq_lmul'`.
 -/
 
 public section
@@ -76,3 +80,27 @@ theorem Ideal.ResidueField.bijective_map_includeRight (p : Ideal R) [p.IsPrime] 
   obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective b
   simp only [Ideal.algebraMap_quotient_residueField_mk]
   exact div_mem (key a) (key b)
+
+open Algebra.TensorProduct in
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- The diagonal point of `(W ⧸ I) ⊗[A] W` over a prime `P ⊇ I`: the `W`-algebra map to `κ(P)`
+sending `s ⊗ w` to `s(P) w(P)`. It factors through multiplication on `(W ⧸ I) ⊗[A] (W ⧸ I)`. -/
+theorem Ideal.ResidueField.exists_algHom_tensorProduct_eq_lmul' (A : Type*) {W : Type*}
+    [CommRing A] [CommRing W] [Algebra A W] (I P : Ideal W) [P.IsPrime] (hIP : I ≤ P) :
+    ∃ ψ : (W ⧸ I) ⊗[A] W →ₐ[W] P.ResidueField, ∀ z,
+      ψ z = Ideal.Quotient.liftₐ I (IsScalarTower.toAlgHom A W P.ResidueField)
+        (fun _ hw ↦ Ideal.algebraMap_residueField_eq_zero.mpr (hIP hw))
+        (lmul' A (Algebra.TensorProduct.map (AlgHom.id A (W ⧸ I)) (Ideal.Quotient.mkₐ A I)
+          z)) := by
+  let φW : W →ₐ[A] P.ResidueField := IsScalarTower.toAlgHom A W P.ResidueField
+  let φS : W ⧸ I →ₐ[A] P.ResidueField := Ideal.Quotient.liftₐ I φW fun _ hw ↦
+    Ideal.algebraMap_residueField_eq_zero.mpr (hIP hw)
+  refine ⟨{ productMap φS φW with
+    commutes' w := (productMap_apply_tmul φS φW 1 w).trans (by rw [map_one, one_mul]; rfl) },
+    fun z ↦ ?_⟩
+  induction z using TensorProduct.inductionOn with
+  | tmul s w =>
+    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
+    rw [Algebra.TensorProduct.map_tmul, lmul'_apply_tmul, map_mul]
+    exact productMap_apply_tmul φS φW _ w
+  | add z z' hz hz' => simp only [map_add, hz, hz']

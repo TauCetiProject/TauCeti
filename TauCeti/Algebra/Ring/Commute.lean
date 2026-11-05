@@ -5,15 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Algebra.Ring.Commute
 
 /-!
-# Commutation with `1 - a • u`
+# Commutation with `1 - a • u` and with finite sums
 
 An element of a ring commuting with `u` also commutes with `1 - a • u`, for any scalar `a` acting
 compatibly with the multiplication. For an operator `u`, `1 - a • u` is the operator whose
 generalised kernel at a zero `a` of the Fredholm determinant of `u` carries the Riesz projector.
+
+Each member of a pairwise commuting finite family commutes with the family's sum, so it preserves
+the eigenvalue equations of that sum.
+
+## Main results
+
+* `Commute.one_sub_smul_left`, `Commute.one_sub_smul_right`: commutation with `1 - a • u`.
+* `Finset.sum_smul_smul_eq_smul_smul`: if the sum of a pairwise commuting family scales `x` by
+  `μ`, it scales `p a • x` by `μ` for each member `p a`. The vector `p a • x` may be zero.
 -/
 
 public section
@@ -31,3 +41,18 @@ theorem one_sub_smul_right (h : Commute x u) (a : R) : Commute x (1 - a • u) :
   (h.symm.one_sub_smul_left a).symm
 
 end Commute
+
+namespace Finset
+
+/-- If the sum of a pairwise commuting family scales `x` by `μ`, it also scales `p a • x` by `μ`
+for each member `p a` of the family, since `p a` commutes with the sum. -/
+theorem sum_smul_smul_eq_smul_smul {K A M ι : Type*} [Semiring A] [MulAction A M] [SMul K M]
+    [SMulCommClass A K M] (s : Finset ι) (p : ι → A)
+    (hcomm : (s : Set ι).Pairwise fun i j => Commute (p i) (p j)) {a : ι} (ha : a ∈ s)
+    {x : M} {μ : K} (heigen : (∑ i ∈ s, p i) • x = μ • x) :
+    (∑ i ∈ s, p i) • p a • x = μ • p a • x := by
+  have hsumcomm : Commute (∑ i ∈ s, p i) (p a) := .sum_left _ _ _ fun i hi =>
+    (eq_or_ne i a).elim (fun hia => hia ▸ .refl _) (hcomm hi ha)
+  rw [smul_smul, hsumcomm.eq, mul_smul, heigen, smul_comm]
+
+end Finset

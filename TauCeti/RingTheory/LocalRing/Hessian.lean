@@ -61,6 +61,9 @@ characteristic; the coordinates `s, t` need only lie in `𝔪` for this.
 * `TauCeti.residue_hessian_sum_mul_mul`: modulo `𝔪`, the Hessian of `Σ Qₖₗ xₖ xₗ` is `Q + Qᵀ`.
 * `TauCeti.isUnit_det_hessian_iff_isUnit_discrim`: the Hessian of `a s² + b s t + c t²` has unit
   determinant exactly when `b² - 4ac` is a unit.
+* `TauCeti.exists_eq_unit_mul_quadratic_of_isUnit_discrim`: over a local ring, a binary quadratic
+  form with unit discriminant is, after a change of generators, a unit multiple of
+  `a' x² + b' x y + y²`, with `b'² - 4a'` a unit.
 
 ## References
 
@@ -270,5 +273,44 @@ theorem isUnit_det_hessian_iff_isUnit_discrim {x : Fin 2 → P} {D : Fin 2 → D
   simp only [← residue_ne_zero_iff_isUnit, Matrix.det_fin_two, discrim, map_sub, map_mul, h00, h01,
     h10, h11, map_add, map_pow, map_ofNat]
   exact ⟨fun h hc ↦ h (by linear_combination -hc), fun h hc ↦ h (by linear_combination -hc)⟩
+
+/-- **Normal form of a binary quadratic form with unit discriminant.** Over a local ring, if
+`b² - 4ac` is a unit, then after replacing the generators `u, v` of the ideal `(u, v)` by suitable
+generators `x, y`, the form `a u² + b u v + c v²` becomes `e (a' x² + b' x y + y²)` for a unit `e`,
+with `b'² - 4a'` a unit. -/
+theorem exists_eq_unit_mul_quadratic_of_isUnit_discrim {u v a b c : P}
+    (hd : IsUnit (discrim a b c)) :
+    ∃ x y a' b' e : P, IsUnit e ∧ Ideal.span {x, y} = Ideal.span {u, v} ∧
+      a * u ^ 2 + b * u * v + c * v ^ 2 = e * (a' * x ^ 2 + b' * x * y + y ^ 2) ∧
+      IsUnit (discrim a' b' 1) := by
+  suffices h : ∃ x y a₁ b₁ c₁ : P, IsUnit c₁ ∧ Ideal.span {x, y} = Ideal.span {u, v} ∧
+      a * u ^ 2 + b * u * v + c * v ^ 2 = a₁ * x ^ 2 + b₁ * x * y + c₁ * y ^ 2 ∧
+      discrim a₁ b₁ c₁ = discrim a b c by
+    obtain ⟨x, y, a₁, b₁, _, ⟨e, rfl⟩, hxy, hf, hdisc⟩ := h
+    refine ⟨x, y, a₁ * ↑e⁻¹, b₁ * ↑e⁻¹, e, e.isUnit, hxy, ?_, ?_⟩
+    · rw [hf]
+      linear_combination (-(a₁ * x ^ 2 + b₁ * x * y)) * e.mul_inv
+    · have : discrim (a₁ * ↑e⁻¹) (b₁ * ↑e⁻¹) 1 = discrim a b c * ↑e⁻¹ ^ 2 := by
+        rw [← hdisc]
+        unfold discrim
+        linear_combination (4 * a₁ * ↑e⁻¹) * e.mul_inv
+      rw [this]
+      exact hd.mul (e⁻¹.isUnit.pow 2)
+  by_cases hc : IsUnit c
+  · exact ⟨u, v, a, b, c, hc, rfl, rfl, rfl⟩
+  by_cases ha : IsUnit a
+  · exact ⟨v, u, c, b, a, ha, Set.pair_comm _ _ ▸ rfl, by ring, by unfold discrim; ring⟩
+  -- Both `a` and `c` lie in `𝔪`, so `b` is a unit; the shear `u ↦ u + v` makes `a - b + c` the
+  -- new coefficient of the square of the second coordinate.
+  have ha' : a ∈ maximalIdeal P := (mem_maximalIdeal a).mpr ha
+  have hc' : c ∈ maximalIdeal P := (mem_maximalIdeal c).mpr hc
+  unfold discrim at hd
+  have hb : b ∉ maximalIdeal P := fun hb ↦ (mem_maximalIdeal _).mp
+    (sub_mem (pow_two b ▸ Ideal.mul_mem_left _ b hb)
+      (Ideal.mul_mem_right c _ (Ideal.mul_mem_left _ 4 ha'))) hd
+  refine ⟨u + v, v, a, b - 2 * a, a - b + c, ?_, ?_, by ring, by unfold discrim; ring⟩
+  · by_contra h
+    exact hb (by simpa using sub_mem (add_mem ha' hc') ((mem_maximalIdeal _).mpr h))
+  · exact Ideal.span_pair_add_right (x := u) (y := v)
 
 end TauCeti

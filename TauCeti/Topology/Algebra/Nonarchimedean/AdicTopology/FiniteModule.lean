@@ -69,7 +69,7 @@ theorem adicModuleTopology_eq_moduleTopology (hI : IsAdic I) [Module.Finite R M]
   apply IsTopologicalAddGroup.ext
   · infer_instance
   · infer_instance
-  exact (I.hasBasis_nhds_zero_adicModuleTopology M).eq_of_same_basis
+  exact (I.hasBasis_nhds_zero_adicModule (M := M)).eq_of_same_basis
     (hI.hasBasis_nhds_zero_pow_smul (M := M))
 
 /-- Any surjection from a finite free module presents the adic topology on its target as

@@ -75,7 +75,7 @@ statement that the symmetric group sits inside the Brauer algebra as the diagram
   action of the orthogonal group. The corresponding statement for the crossing `s` is the
   restriction along `TauCeti.orthogonalGroupToGL` of the general-linear
   `commute_permTensorAction_tensorPowerRep`, in
-  `TauCeti.RepresentationTheory.ClassicalGroups.TensorPower`.
+  `TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic`.
 
 ## References
 

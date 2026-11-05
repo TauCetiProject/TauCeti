@@ -463,6 +463,22 @@ theorem baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap
     (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) A
     (definingIdeal_def n hn) k
 
+/-- Each transported numbered root-subgroup coordinate map is surjective over every
+commutative base ring. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective (k : Fin n ⊕ Fin n) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap n hn A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap n hn A k]
+  exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
+    (H := CommHopfAlgCat.quotient
+      (GeneralLinear.coordinateHopfAlgebra ℤ (dimension n)) (definingIdeal n hn))
+    (L := AdditiveGroup.coordinateHopfAlgebra ℤ)
+    (H' := CommHopfAlgCat.quotient
+      (GeneralLinear.coordinateHopfAlgebra A (dimension n)) (baseChangeDefiningIdeal n hn A))
+    (L' := AdditiveGroup.coordinateHopfAlgebra A)
+    (rootSubgroupIntegralCoordinateMap n hn k)
+    (rootSubgroupIntegralCoordinateMap_surjective n hn k)
+    (baseChangeCoordinateIso n hn A) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A)
+
 /-- On points, the transported factored coordinate map is the named numbered root subgroup. -/
 @[simp]
 theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap
