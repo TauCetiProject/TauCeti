@@ -6,22 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Tight
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 
 /-!
-# Tightness of a finite family of finite measures
+# Basic tightness criteria for measures
 
 Mathlib's `MeasureTheory.isTightMeasureSet_singleton` says that a single finite measure on a
 complete second-countable pseudo-metrizable space is tight, and `IsTightMeasureSet.union` says
 that tightness survives a binary union. Together they give tightness of any *finite* set of
 finite measures, which is the form the Prokhorov extraction arguments need in order to discard
 the finitely many exceptional members of a family for which a uniform tail bound is unavailable.
+For real probability measures, a uniform bound on the second moment also gives tightness by
+Markov's inequality.
 
 ## Main declarations
 
 * `TauCeti.isTightMeasureSet_of_finite`: a finite set of finite measures is tight.
 * `TauCeti.isTightMeasureSet_range_of_finite`: a family of finite measures indexed by a finite type
-  has tight range.
+  has tight range;
+* `TauCeti.isTightProbabilityMeasureSet_of_integral_sq_le`: a set of real probability measures
+  with uniformly bounded second moments is tight.
 
 ## References
 
@@ -31,7 +37,8 @@ the finitely many exceptional members of a family for which a uniform tail bound
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -55,6 +62,37 @@ theorem isTightMeasureSet_of_finite {S : Set (Measure α)} (hS : S.Finite)
 theorem isTightMeasureSet_range_of_finite {ι : Type*} [Finite ι] (μ : ι → Measure α)
     (hfin : ∀ i, IsFiniteMeasure (μ i)) : IsTightMeasureSet (range μ) :=
   isTightMeasureSet_of_finite (finite_range μ) (by rintro ν ⟨i, rfl⟩; exact hfin i)
+
+/-- A set of probability measures on `ℝ` with uniformly bounded second moment is tight. -/
+theorem isTightProbabilityMeasureSet_of_integral_sq_le
+    {S : Set (ProbabilityMeasure ℝ)} {B : ℝ}
+    (hS : ∀ ρ ∈ S, Integrable (fun x : ℝ => x ^ 2) (ρ : Measure ℝ) ∧
+      ∫ x, x ^ 2 ∂(ρ : Measure ℝ) ≤ B) :
+    IsTightMeasureSet ((fun ρ : ProbabilityMeasure ℝ => (ρ : Measure ℝ)) '' S) := by
+  refine isTightMeasureSet_iff_exists_isCompact_measure_compl_le.2 fun ε hε => ?_
+  rcases eq_or_ne ε ⊤ with rfl | hεtop
+  · exact ⟨∅, isCompact_empty, fun _ _ => le_top⟩
+  have hε' : 0 < ε.toReal := ENNReal.toReal_pos hε.ne' hεtop
+  have hlim : Tendsto (fun R : ℝ => B / R ^ 2) atTop (𝓝 0) :=
+    tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
+  obtain ⟨R, hR1, hR0⟩ := ((hlim.eventually (gt_mem_nhds hε')).and (eventually_gt_atTop 0)).exists
+  refine ⟨Icc (-R) R, isCompact_Icc, fun ρ hρ => ?_⟩
+  obtain ⟨ρ, hρ, rfl⟩ := hρ
+  obtain ⟨hint, hB⟩ := hS ρ hρ
+  have hmarkov := mul_meas_ge_le_integral_of_nonneg (μ := ρ) (f := fun x : ℝ => x ^ 2)
+    (ae_of_all _ fun x => sq_nonneg x) hint (R ^ 2)
+  have hsub : (Icc (-R) R)ᶜ ⊆ {x : ℝ | R ^ 2 ≤ x ^ 2} := fun x hx => by
+    simp only [mem_compl_iff, mem_Icc, not_and_or, not_le] at hx
+    simp only [mem_ofPred_eq]
+    rcases hx with hx | hx <;> nlinarith
+  have hreal : (ρ : Measure ℝ).real (Icc (-R) R)ᶜ ≤ B / R ^ 2 := by
+    rw [le_div_iff₀ (by positivity)]
+    nlinarith [measureReal_mono (μ := (ρ : Measure ℝ)) hsub,
+      measureReal_nonneg (μ := (ρ : Measure ℝ)) (s := (Icc (-R) R)ᶜ),
+      sq_nonneg R]
+  refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hε'.le).2 ?_ |>.trans_eq
+    (ENNReal.ofReal_toReal hεtop)
+  exact hreal.trans hR1.le
 
 end TauCeti
 
