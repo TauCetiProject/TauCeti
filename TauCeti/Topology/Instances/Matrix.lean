@@ -7,12 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.Topology.Algebra.IsOpenUnits
+public import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Topological properties of matrices
@@ -47,6 +49,9 @@ for the subspace topology, already for `n = 1`.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
+
+The entrywise inverse modulus and Hölder estimates are adapted from the
+[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
 
 ## References
 
@@ -176,3 +181,81 @@ theorem continuous_oneKroneckerStarAlgHom :
     (oneKroneckerStarAlgHom_apply B).symm
 
 end Matrix
+
+section InverseHolder
+
+open Set
+open scoped NNReal
+
+variable {ι X : Type*} [Fintype ι] [DecidableEq ι] [PseudoMetricSpace X]
+
+/--
+**Entrywise modulus of the inverse.** For invertible `A`, `B` whose inverse entries are bounded by
+`L ≥ 0` and whose
+entrywise difference is bounded by `d ≥ 0`, `|A⁻¹ᵢⱼ − B⁻¹ᵢⱼ| ≤ n² L² d` with `n = card ι`, from
+`A⁻¹ − B⁻¹ = A⁻¹ (B − A) B⁻¹`. -/
+theorem Matrix.abs_inv_sub_inv_apply_le {A B : Matrix ι ι ℝ} {L d : ℝ}
+    (hA : IsUnit A) (hB : IsUnit B)
+    (hL : 0 ≤ L) (hd : 0 ≤ d) (ha : ∀ i j, |A⁻¹ i j| ≤ L) (hb : ∀ i j, |B⁻¹ i j| ≤ L)
+    (hab : ∀ i j, |A i j - B i j| ≤ d) (i j : ι) :
+    |A⁻¹ i j - B⁻¹ i j| ≤ (Fintype.card ι : ℝ) ^ 2 * L ^ 2 * d := by
+  classical
+  have hi : A⁻¹ - B⁻¹ = A⁻¹ * (B - A) * B⁻¹ := Matrix.inv_sub_inv ⟨fun _ => hB, fun _ => hA⟩
+  calc
+    |A⁻¹ i j - B⁻¹ i j| = |∑ k : ι, ∑ l : ι, A⁻¹ i l * (B l k - A l k) * B⁻¹ k j| := by
+      rw [← Matrix.sub_apply, hi]
+      simp only [Matrix.mul_apply, Matrix.sub_apply, Finset.sum_mul]
+    _ ≤ ∑ k : ι, ∑ l : ι, |A⁻¹ i l * (B l k - A l k) * B⁻¹ k j| := by
+      exact
+        (Finset.abs_sum_le_sum_abs _ _).trans
+          (Finset.sum_le_sum fun _ _ => Finset.abs_sum_le_sum_abs _ _)
+    _ ≤ ∑ _k : ι, ∑ _l : ι, L * d * L := by
+      apply Finset.sum_le_sum
+      intro k _
+      apply Finset.sum_le_sum
+      intro l _
+      rw [abs_mul, abs_mul, abs_sub_comm (B l k) (A l k)]
+      exact
+        mul_le_mul (mul_le_mul (ha i l) (hab l k) (abs_nonneg _) hL) (hb k j) (abs_nonneg _)
+          (mul_nonneg hL hd)
+    _ = _ := by
+      simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+      ring
+
+/--
+If a field `P` of invertible matrices has `(C, r)`-Hölder entries and inverse entries bounded by
+`L`, every entry of
+`P⁻¹` is `(n² L² C, r)`-Hölder; the constant is fixed before the entries and the points. -/
+theorem holderWith_matrix_inv_entries {X : Type*} [PseudoMetricSpace X] (P : X → Matrix ι ι ℝ)
+    (C r L : ℝ≥0) (hP : ∀ x, IsUnit (P x)) (hb : ∀ x i j, |(P x)⁻¹ i j| ≤ L)
+    (hc : ∀ i j, HolderWith C r (fun x => P x i j)) (i j : ι) :
+    HolderWith ((Fintype.card ι : ℝ≥0) ^ 2 * L ^ 2 * C) r (fun x => (P x)⁻¹ i j) := by
+  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le ?_)
+  intro x _ y _
+  have h :=
+    Matrix.abs_inv_sub_inv_apply_le (hP x) (hP y) L.coe_nonneg
+      (mul_nonneg C.coe_nonneg (Real.rpow_nonneg dist_nonneg _)) (hb x) (hb y)
+      (fun a b => by simpa only [Real.dist_eq] using (hc a b).dist_le x y) i j
+  simpa only [Real.dist_eq, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_natCast, mul_assoc] using
+    h
+
+omit [Fintype ι] [DecidableEq ι] in
+/--
+For `t ∈ [0, 1]`, the entries of `(1 − t) P + t Q` are `(C, r)`-Hölder when those of `P` and `Q`
+are. -/
+theorem holderWith_one_sub_smul_add_smul_matrix_entries (P Q : X → Matrix ι ι ℝ) (C r : ℝ≥0)
+    (hP : ∀ i j, HolderWith C r (fun x => P x i j))
+    (hQ : ∀ i j, HolderWith C r (fun x => Q x i j)) {t : ℝ} (ht : t ∈ Icc 0 1) (i j : ι) :
+    HolderWith C r (fun x => ((1 - t) • P x + t • Q x) i j) := by
+  have h := ((hP i j).smul (1 - t)).add ((hQ i j).smul t)
+  have heq : C * ‖1 - t‖₊ + C * ‖t‖₊ = C := by
+    apply NNReal.coe_injective
+    simp only [NNReal.coe_add, NNReal.coe_mul, coe_nnnorm, Real.norm_eq_abs,
+      abs_of_nonneg (sub_nonneg.mpr ht.2), abs_of_nonneg ht.1]
+    ring
+  rw [heq] at h
+  convert h using 1
+  funext x
+  simp only [Matrix.add_apply, Matrix.smul_apply, Pi.add_apply, Pi.smul_apply]
+
+end InverseHolder

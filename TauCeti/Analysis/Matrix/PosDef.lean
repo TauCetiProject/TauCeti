@@ -87,3 +87,10 @@ theorem measurableSet_setOfPred_posDef {ι : Type*} [Finite ι] :
     isOpen_setOfPred_dotProduct_mulVec_pos.measurableSet
 
 end TauCeti
+
+/-- Every real convex combination of positive-definite matrices is positive definite. -/
+theorem Matrix.PosDef.one_sub_smul_add_smul {ι R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [AddLeftMono R] [Algebra ℝ R] [StarModule ℝ R] [PosSMulStrictMono ℝ R]
+    {A B : Matrix ι ι R} (hA : A.PosDef) (hB : B.PosDef) {t : ℝ} (ht : t ∈ Set.Icc 0 1) :
+    ((1 - t) • A + t • B).PosDef :=
+  TauCeti.convex_setOfPred_posDef hA hB (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
