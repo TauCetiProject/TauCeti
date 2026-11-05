@@ -269,6 +269,21 @@ theorem _root_.PartialDiffeomorph.trans_mem_maximalAtlas {N' : Type*} [Topologic
     Φ.contMDiffOn_invFun.comp ((contMDiffOn_symm_of_mem_maximalAtlas he).mono inter_subset_left)
       fun _ hy ↦ hy.2⟩
 
+/-- A smooth open partial homeomorphism to the vector model, with smooth inverse, gives a
+maximal-atlas chart for a boundaryless model with corners by postcomposing with `I.symm`.
+Extending this chart by `I` recovers the original map. -/
+theorem _root_.OpenPartialHomeomorph.trans_modelWithCorners_symm_mem_maximalAtlas
+    [I.Boundaryless] [IsManifold I n M] (e : OpenPartialHomeomorph M E)
+    (he : ContMDiffOn I 𝓘(𝕂, E) n e e.source)
+    (he' : ContMDiffOn 𝓘(𝕂, E) I n e.symm e.target) :
+    e.transHomeomorph I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
+  have hIsymm : ContMDiff 𝓘(𝕂, E) I n I.symm := by
+    rw [← contMDiffOn_univ, ← I.range_eq_univ]
+    exact I.contMDiffOn_symm
+  apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
+  · exact hIsymm.comp_contMDiffOn he
+  · exact he'.comp I.contMDiff.contMDiffOn (fun _ hy ↦ hy)
+
 /-- A chart `e` of the maximal `C^n` atlas of `N'` at `f x` pulls back along a `C^n` local
 diffeomorphism `f` at `x` to a chart of the maximal `C^n` atlas of `M` at `x`, which agrees with
 `e ∘ f` near `x`. -/

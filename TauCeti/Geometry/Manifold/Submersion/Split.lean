@@ -87,6 +87,40 @@ theorem isDiffSubmersionAt_iff_isRegularPoint [CompleteSpace 𝕜] [FiniteDimens
   exact ⟨ContinuousLinearMap.HasRightInverse.surjective,
     ContinuousLinearMap.HasRightInverse.of_surjective_of_finiteDimensional⟩
 
+/-- Combining target-chart coordinates with a linear projection, then undoing a linear
+equivalence whose components are the differential and that projection, gives the identity
+derivative at the centre. No finite-dimensionality or boundarylessness assumption is needed. -/
+theorem mfderiv_symm_comp_extChartAt_prod
+    [IsManifold I 1 M] [IsManifold J 1 N] (hf : MDifferentiableAt I J f x)
+    (L : E ≃L[𝕜] F × E') (P : E →L[𝕜] E')
+    (hL : (L : E →L[𝕜] F × E') = (mfderiv I J f x : E →L[𝕜] F).prod P) :
+    mfderiv I 𝓘(𝕜, E)
+      (fun y ↦ L.symm (extChartAt J (f x) (f y), P (extChartAt I x y))) x =
+      ContinuousLinearMap.id 𝕜 E := by
+  let D : E →L[𝕜] F := mfderiv I J f x
+  let c := extChartAt J (f x)
+  let e := extChartAt I x
+  have hc : MDifferentiableAt J 𝓘(𝕜, F) c (f x) :=
+    mdifferentiableAt_extChartAt (mem_chart_source _ _)
+  have he : MDifferentiableAt I 𝓘(𝕜, E) e x :=
+    mdifferentiableAt_extChartAt (mem_chart_source _ _)
+  let q : M → F × E' := fun y ↦ (c (f y), P (e y))
+  have hq := (hc.comp x hf).prodMk_space (P.mdifferentiableAt.comp x he)
+  -- The product self-model and the product of self-models give the same differential.
+  -- `erw` identifies the chart-centre tangent spaces with their model spaces.
+  have hpair : mfderiv I 𝓘(𝕜, F × E') q x = D.prod P := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    dsimp only [q]
+    erw [mfderiv_prodMk (hc.comp x hf) (P.mdifferentiableAt.comp x he),
+      mfderiv_comp x hc hf, mfderiv_comp x P.mdifferentiableAt he]
+    simp only [c, e, mfderiv_extChartAt_self, mfderiv_eq_fderiv, P.fderiv]
+    rfl
+  -- The normed-space tangent identifications are identities on vectors.
+  erw [mfderiv_comp x L.symm.mdifferentiableAt hq]
+  erw [hpair, mfderiv_eq_fderiv, L.symm.fderiv, ← hL]
+  ext v
+  exact L.symm_apply_apply v
+
 end Differential
 
 section NormalForm
@@ -123,29 +157,9 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
   let c := extChartAt J (f x)
   let e := extChartAt I x
   let g : M → E := fun y ↦ L.symm (c (f y), P (e y))
-  have hc : ContMDiffAt J 𝓘(ℝ, F) n c (f x) := contMDiffAt_extChartAt
-  have he : ContMDiffAt I 𝓘(ℝ, E) n e x := contMDiffAt_extChartAt
-  let q : M → F × D.ker := fun y ↦ (c (f y), P (e y))
-  have hq := (hc.comp x hf).prodMk_space (P.contMDiff.contMDiffAt.comp x he)
-  -- The product self-model and the product of self-models give the same differential.
-  -- `erw` identifies the chart-centre tangent spaces with their model spaces.
-  have hpair : mfderiv I 𝓘(ℝ, F × D.ker) q x = D.prod P := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    dsimp only [q]
-    erw [mfderiv_prodMk ((hc.comp x hf).mdifferentiableAt hn0)
-      ((P.contMDiff.contMDiffAt.comp x he).mdifferentiableAt hn0),
-      mfderiv_comp x (hc.mdifferentiableAt hn0) (hf.mdifferentiableAt hn0),
-      mfderiv_comp x P.mdifferentiableAt (he.mdifferentiableAt hn0)]
-    simp only [c, e, mfderiv_extChartAt_self, mfderiv_eq_fderiv, P.fderiv]
-    rfl
-  -- Undoing `L` makes the derivative the identity. The normed-space tangent identifications
-  -- in `mfderiv_eq_fderiv` are identities on vectors, as used in the final extensionality step.
-  have hderiv : mfderiv I 𝓘(ℝ, E) g x = ContinuousLinearMap.id ℝ E := by
-    dsimp only [g]
-    erw [mfderiv_comp x L.symm.mdifferentiableAt (hq.mdifferentiableAt hn0)]
-    erw [hpair, mfderiv_eq_fderiv, L.symm.fderiv, ← D.coe_implicitCoordEquiv hD hker]
-    ext v
-    exact L.symm_apply_apply v
+  have hderiv : mfderiv I 𝓘(ℝ, E) g x = ContinuousLinearMap.id ℝ E :=
+    mfderiv_symm_comp_extChartAt_prod (hf.mdifferentiableAt hn0) L P
+      (D.coe_implicitCoordEquiv hD hker)
   let W := (U ∩ f ⁻¹' (chartAt G (f x)).source) ∩ (chartAt H x).source
   have hW : IsOpen W := (hfU.continuousOn.isOpen_inter_preimage hU
     (chartAt G (f x)).open_source).inter (chartAt H x).open_source
@@ -166,14 +180,9 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
     hf.continuousAt.preimage_mem_nhds (chart_source_mem_nhds G (f x))
   let φ₀ := Φ.toOpenPartialHomeomorph.restrOpen V hV
   let φ := φ₀.transHomeomorph I.toHomeomorph.symm
-  have hIsymm : ContMDiff 𝓘(ℝ, E) I n I.symm := by
-    rw [← contMDiffOn_univ, ← I.range_eq_univ]
-    exact I.contMDiffOn_symm
-  have hφ : φ ∈ IsManifold.maximalAtlas I n M := by
-    apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
-    · exact hIsymm.comp_contMDiffOn (Φ.contMDiffOn.mono inter_subset_left)
-    · exact (Φ.symm.contMDiffOn.mono inter_subset_left).comp I.contMDiff.contMDiffOn
-        (fun y hy ↦ hy)
+  have hφ : φ ∈ IsManifold.maximalAtlas I n M :=
+    φ₀.trans_modelWithCorners_symm_mem_maximalAtlas
+      (Φ.contMDiffOn.mono inter_subset_left) (Φ.symm.contMDiffOn.mono inter_subset_left)
   -- A fixed standard complement lets the pointwise constructions assemble globally.
   have hdim : Module.finrank ℝ D.ker = Module.finrank ℝ E - Module.finrank ℝ F := by
     have hd := D.toLinearMap.finrank_range_add_finrank_ker
