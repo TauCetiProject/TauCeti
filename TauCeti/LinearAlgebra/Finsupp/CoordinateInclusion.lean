@@ -12,9 +12,9 @@ public import TauCeti.LinearAlgebra.ExtendByZero
 /-!
 # Inclusion of finite coordinate spaces into finitely supported functions
 
-The coordinate inclusion `Finsupp.coordinateInclusion` embeds `Fin n → 𝕜` into `ℕ →₀ 𝕜`,
-with range the functions supported on `Set.Iio n`. It commutes with extension by zero
-between finite coordinate spaces.
+For a semiring `R`, the coordinate inclusion `Finsupp.coordinateInclusion` embeds `Fin n → R`
+into `ℕ →₀ R`, with range the functions supported on `Set.Iio n`. It commutes with extension by
+zero between finite coordinate spaces.
 These maps realize finite coordinate stages inside the countable coordinate space.
 -/
 
@@ -24,48 +24,48 @@ namespace Finsupp
 
 open Set
 
-variable {𝕜 : Type*} [Field 𝕜]
+variable {R : Type*} [Semiring R]
 
-/-- The coordinate inclusion `𝕜^n → ℕ →₀ 𝕜`, sending the `i`-th coordinate vector to the
+/-- The coordinate inclusion `R^n → ℕ →₀ R`, sending the `i`-th coordinate vector to the
 `i`-th coordinate vector. -/
-noncomputable def coordinateInclusion (n : ℕ) : (Fin n → 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜) :=
-  Finsupp.lmapDomain 𝕜 𝕜 Fin.val ∘ₗ (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin n)).symm.toLinearMap
+noncomputable def coordinateInclusion (n : ℕ) : (Fin n → R) →ₗ[R] (ℕ →₀ R) :=
+  Finsupp.lmapDomain R R Fin.val ∘ₗ (Finsupp.linearEquivFunOnFinite R R (Fin n)).symm.toLinearMap
 
 @[simp]
-theorem coordinateInclusion_single (n : ℕ) (i : Fin n) (a : 𝕜) :
+theorem coordinateInclusion_single (n : ℕ) (i : Fin n) (a : R) :
     coordinateInclusion n (Pi.single i a) = Finsupp.single (i : ℕ) a := by
   simp [coordinateInclusion]
 
 @[simp]
-theorem coordinateInclusion_apply_val {n : ℕ} (v : Fin n → 𝕜) (i : Fin n) :
+theorem coordinateInclusion_apply_val {n : ℕ} (v : Fin n → R) (i : Fin n) :
     coordinateInclusion n v i = v i := by
   simp [coordinateInclusion, Finsupp.mapDomain_apply_of_injective Fin.val_injective]
 
-theorem coordinateInclusion_apply_of_le {n : ℕ} (v : Fin n → 𝕜) {i : ℕ} (hi : n ≤ i) :
+theorem coordinateInclusion_apply_of_le {n : ℕ} (v : Fin n → R) {i : ℕ} (hi : n ≤ i) :
     coordinateInclusion n v i = 0 := by
   simp only [coordinateInclusion, LinearMap.coe_comp, Function.comp_apply,
     Finsupp.lmapDomain_apply]
   exact Finsupp.mapDomain_of_notMem_range _ _ (by simpa [Fin.range_val] using hi)
 
 theorem coordinateInclusion_injective (n : ℕ) :
-    Function.Injective (coordinateInclusion (𝕜 := 𝕜) n) :=
+    Function.Injective (coordinateInclusion (R := R) n) :=
   (Finsupp.mapDomain_injective Fin.val_injective).comp
-    (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin n)).symm.injective
+    (Finsupp.linearEquivFunOnFinite R R (Fin n)).symm.injective
 
-/-- The image of the coordinate inclusion of `𝕜^n` consists of the finitely supported functions
+/-- The image of the coordinate inclusion of `R^n` consists of the finitely supported functions
 vanishing from coordinate `n` on. -/
 theorem range_coordinateInclusion (n : ℕ) :
-    LinearMap.range (coordinateInclusion (𝕜 := 𝕜) n) = Finsupp.supported 𝕜 𝕜 (Iio n) := by
+    LinearMap.range (coordinateInclusion (R := R) n) = Finsupp.supported R R (Iio n) := by
   simpa [coordinateInclusion, LinearMap.range_comp, Fin.range_val] using
-    Finsupp.lmapDomain_supported 𝕜 𝕜 (Fin.val : Fin n → ℕ) univ
+    Finsupp.lmapDomain_supported R R (Fin.val : Fin n → ℕ) univ
 
-/-- The coordinate inclusions are compatible with the inclusions `𝕜^m → 𝕜^n` onto the first
+/-- The coordinate inclusions are compatible with the inclusions `R^m → R^n` onto the first
 coordinates. -/
 @[simp]
 theorem coordinateInclusion_comp_extendByZero_castLE {m n : ℕ} (h : m ≤ n) :
-    coordinateInclusion (𝕜 := 𝕜) n ∘ₗ Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h) =
+    coordinateInclusion (R := R) n ∘ₗ Function.ExtendByZero.linearMap R R (Fin.castLE h) =
       coordinateInclusion m := by
   refine LinearMap.pi_ext fun i a ↦ ?_
-  simp [Function.ExtendByZero.linearMap_single 𝕜 (Fin.castLE_injective h)]
+  simp [Function.ExtendByZero.linearMap_single R (Fin.castLE_injective h)]
 
 end Finsupp
