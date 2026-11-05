@@ -108,7 +108,7 @@ theorem measureReal_exists_two_le_of_hasLaw {ι Ω : Type*} [Fintype ι] [Measur
 
 /-- With rate `a / n` in each of `n` cells, the probability of any multiple occurrence
 vanishes as the subdivision is refined. The counts need not be independent. -/
-theorem tendsto_measureReal_exists_two_div_of_hasLaw {Ω : Type*} [MeasurableSpace Ω]
+theorem tendsto_measureReal_exists_two_le_of_hasLaw {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} (a : ℝ≥0) {X : (n : ℕ) → Fin n → Ω → ℕ}
     (hX : ∀ n i, HasLaw (X n i) (poissonMeasure (a / n)) P) :
     Tendsto (fun n => P.real {ω | ∃ i, 2 ≤ X n i ω}) atTop (𝓝 0) := by
