@@ -347,7 +347,7 @@ private theorem exists_nhds_contMDiffOn_field_of_mem {W : C → Set M}
 
 /-- Near a point of the regular core `D` that is outside the neighbourhoods `A c`, a constant
 field in a chart is a local candidate for the pseudo-gradient. -/
-private theorem exists_nhds_contMDiffOn_chartConstField
+private theorem exists_nhds_contMDiffOn_field_of_mem_of_notMem_iUnion
     (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hAclosed : IsClosed (⋃ c, A c))
     (hDreg : D ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ) {y₀ : M} (hy₀D : y₀ ∈ D) (hy₀A : y₀ ∉ ⋃ c, A c) :
     ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
@@ -365,7 +365,8 @@ private theorem exists_nhds_contMDiffOn_chartConstField
 omit [FiniteDimensional ℝ E] in
 /-- Away from the regular core `D` and the neighbourhoods `A c`, the zero field is a local
 candidate for the pseudo-gradient. -/
-private theorem exists_nhds_contMDiffOn_zero (hDc : IsClosed D) (hAclosed : IsClosed (⋃ c, A c))
+private theorem exists_nhds_contMDiffOn_field_of_notMem_of_notMem_iUnion
+    (hDc : IsClosed D) (hAclosed : IsClosed (⋃ c, A c))
     {y₀ : M} (hy₀D : y₀ ∉ D) (hy₀A : y₀ ∉ ⋃ c, A c) :
     ∃ V ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y,
       ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
@@ -413,8 +414,8 @@ private theorem exists_contMDiff_field_lt_zero_and_eq_field [T2Space M] [SigmaCo
     · obtain ⟨c, hc⟩ := mem_iUnion.1 hA
       exact exists_nhds_contMDiffOn_field_of_mem hCcrit hW hWdisj hAsub hDreg hc
     · by_cases hy₀D : y₀ ∈ D
-      · exact exists_nhds_contMDiffOn_chartConstField hf hAclosed hDreg hy₀D hA
-      · exact exists_nhds_contMDiffOn_zero hDc hAclosed hy₀D hA
+      · exact exists_nhds_contMDiffOn_field_of_mem_of_notMem_iUnion hf hAclosed hDreg hy₀D hA
+      · exact exists_nhds_contMDiffOn_field_of_notMem_of_notMem_iUnion hDc hAclosed hy₀D hA
   obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local 𝓘(ℝ, E)
     (n := (⊤ : ℕ∞)) (TangentSpace 𝓘(ℝ, E)) t ht hloc
   exact ⟨s, s.contMDiff, hs⟩
