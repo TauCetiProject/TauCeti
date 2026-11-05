@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.RingTheory.Invariant.Basic
+public import TauCeti.AlgebraicGeometry.Quotient.Affine
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
 import Mathlib.RingTheory.RingHom.Injective
 import TauCeti.AlgebraicGeometry.Morphisms.Epi
@@ -36,8 +37,9 @@ action of `G` on `Spec_X(A)`.
 Over every affine open `U` of `X`, the projection is the affine invariant quotient
 `Spec Γ(A.X, U) ⟶ Spec Γ(A.X, U)ᴳ` (`CommMon.SubalgebraPresheaf.isPullback_relativeSpecπ`).
 Since `G` is finite, `Γ(A.X, U)` is integral over its invariants, so the projection is integral
-and surjective, and it is finite when `Spec_X(A)` is of finite type over `X`. No flatness of the
-projection is asserted: for actions which are not free it can fail.
+and surjective, and it is finite when `Spec_X(A)` is of finite type over `X`. Without freeness,
+flatness of the projection can fail; for free actions the projection is finite étale
+(`TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative.Fppf`).
 
 The construction needs no hypothesis on `X`, and in particular the quotient of a scheme affine
 over a non-affine base is obtained without choosing a global invariant affine cover: the
@@ -50,8 +52,7 @@ morphism `f : Spec_X(A) ⟶ Z` to an arbitrary scheme `Z` factors uniquely throu
 `TauCeti.AffineInvariantQuotient.existsUnique_desc_of_finite`. The stalk maps of the projection are
 injective, because they are on each affine chart, so the projection stays an epimorphism after base
 change to every open subscheme of `Spec_X(A)/G`; hence the local descents agree on overlaps and glue
-(`AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`). The étaleness of the projection for
-free actions is not proved in this file.
+(`AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`).
 
 The points of the quotient with values in a field are the orbits of `G` on such points of
 `Spec_X(A)`: a point of `Spec_X(A)` with values in a field lies over a single affine open `U` of
@@ -75,6 +76,8 @@ a presheaf of subalgebras, which also gives the relative spectrum of an equalize
 * `CommMon.invariantSubalgebraPresheaf ρ`: the presheaf of invariant subalgebras, whose relative
   spectrum is the relative invariant quotient `Spec_X(A)/G` and whose `relativeSpecπ` is the
   quotient projection.
+* `CommMon.quotientIsoSpecInvariantSections ρ U`: the identification of the affine invariant
+  quotient of `Γ(A.X, U)` with the spectrum of the invariant sections over `U`.
 * `CommMon.invariantQuotientDesc f hf`: the morphism `Spec_X(A)/G ⟶ Z` induced by a `G`-invariant
   morphism `f : Spec_X(A) ⟶ Z`.
 
@@ -85,6 +88,8 @@ a presheaf of subalgebras, which also gives the relative spectrum of an equalize
   (`CommMon.isCoequifibered_invariantSubalgebraPresheaf`).
 * `CommMon.relativeSpecMap_invariantSubalgebraPresheaf_relativeSpecπ`: the projection is
   `G`-invariant.
+* `CommMon.isPullback_projection_relativeSpecπ`: over an affine open `U` of `X`, the projection
+  restricts to the affine invariant quotient projection of `Γ(A.X, U)`.
 * `CommMon.isIntegral_invariantSections`: the sections are integral over the invariant sections.
 * The projection is integral and surjective, and
   `CommMon.isFinite_invariantSubalgebraPresheaf_relativeSpecπ`: it is finite when `Spec_X(A)` is
@@ -175,34 +180,6 @@ lemma invariantSections_eq_fixedPoints (U : X.Opens) :
   ext x
   simp [FixedPoints.mem_subalgebra]
 
-open TauCeti.AffineInvariantQuotient in
-/-- The spectrum of the invariant sections over `U` is the affine invariant quotient of the
-sections, through the identification of the invariant sections with the fixed subalgebra. -/
-private def chartIso (U : X.Opens) :
-    letI := sectionsMulSemiringAction ρ U
-    quotient Γ(A.X, U) G ≅ Spec (CommRingCat.of (invariantSections ρ U)) :=
-  letI := sectionsMulSemiringAction ρ U
-  haveI := smulCommClass_sectionsMulSemiringAction ρ U
-  Scheme.Spec.mapIso
-    (Subalgebra.equivOfEq _ _
-      (invariantSections_eq_fixedPoints ρ U)).toRingEquiv.toCommRingCatIso.op
-
-variable {ρ} in
-open TauCeti.AffineInvariantQuotient in
-/-- `Spec` of the inclusion of the invariant sections over `U` is the affine invariant quotient
-projection of the sections over `U`, up to `chartIso`. -/
-private lemma specMap_invariantSections (U : X.Opens) :
-    letI := sectionsMulSemiringAction ρ U
-    Spec.map (CommRingCat.ofHom (algebraMap (invariantSections ρ U) Γ(A.X, U))) =
-      projection Γ(A.X, U) G ≫ (chartIso ρ U).hom := by
-  let := sectionsMulSemiringAction ρ U
-  have := smulCommClass_sectionsMulSemiringAction ρ U
-  rw [projection_def]
-  exact Spec.map_comp
-    (Subalgebra.equivOfEq _ _
-      (invariantSections_eq_fixedPoints ρ U)).toRingEquiv.toCommRingCatIso.hom
-    (CommRingCat.ofHom (algebraMap (FixedPoints.subalgebra Γ(X, U) Γ(A.X, U) G) Γ(A.X, U)))
-
 /-- Restriction of sections preserves invariant sections. -/
 lemma restrictSections_mem_invariantSections {U V : X.Opens} (i : V ⟶ U) {x : Γ(A.X, U)}
     (hx : x ∈ invariantSections ρ U) : A.restrictSections i x ∈ invariantSections ρ V := by
@@ -219,6 +196,38 @@ def invariantSubalgebraPresheaf : A.SubalgebraPresheaf where
 lemma invariantSubalgebraPresheaf_sections (U : X.Opens) :
     (invariantSubalgebraPresheaf ρ).sections U = invariantSections ρ U :=
   (rfl)
+
+open TauCeti.AffineInvariantQuotient in
+/-- The spectrum of the invariant sections over `U`, the chart of the quotient over `U`, is the
+affine invariant quotient of the sections, through the identification of the invariant sections
+with the fixed subalgebra. -/
+def quotientIsoSpecInvariantSections (U : X.Opens) :
+    letI := sectionsMulSemiringAction ρ U
+    quotient Γ(A.X, U) G ≅ Spec (CommRingCat.of ((invariantSubalgebraPresheaf ρ).sections U)) :=
+  letI := sectionsMulSemiringAction ρ U
+  haveI := smulCommClass_sectionsMulSemiringAction ρ U
+  Scheme.Spec.mapIso
+    (Subalgebra.equivOfEq _ _
+      ((invariantSubalgebraPresheaf_sections ρ U).trans
+        (invariantSections_eq_fixedPoints ρ U))).toRingEquiv.toCommRingCatIso.op
+
+variable {ρ} in
+open TauCeti.AffineInvariantQuotient in
+/-- `Spec` of the inclusion of the invariant sections over `U` is the affine invariant quotient
+projection of the sections over `U`, up to `quotientIsoSpecInvariantSections`. -/
+lemma specMap_invariantSections (U : X.Opens) :
+    letI := sectionsMulSemiringAction ρ U
+    Spec.map (CommRingCat.ofHom
+        (algebraMap ((invariantSubalgebraPresheaf ρ).sections U) Γ(A.X, U))) =
+      projection Γ(A.X, U) G ≫ (quotientIsoSpecInvariantSections ρ U).hom := by
+  let := sectionsMulSemiringAction ρ U
+  have := smulCommClass_sectionsMulSemiringAction ρ U
+  rw [projection_def]
+  exact Spec.map_comp
+    (Subalgebra.equivOfEq _ _
+      ((invariantSubalgebraPresheaf_sections ρ U).trans
+        (invariantSections_eq_fixedPoints ρ U))).toRingEquiv.toCommRingCatIso.hom
+    (CommRingCat.ofHom (algebraMap (FixedPoints.subalgebra Γ(X, U) Γ(A.X, U) G) Γ(A.X, U)))
 
 /-- Over the basic open `X.basicOpen r` of an affine open `U`, the invariant sections of `A` are
 the localization away from `r` of those over `U`. This is the counterpart of
@@ -310,9 +319,9 @@ variable {ρ}
 open TauCeti.AffineInvariantQuotient in
 /-- Over an affine open `U` of `X`, the quotient projection is the affine invariant quotient
 projection of the sections over `U`. -/
-private lemma isPullback_projection (U : X.AffineZariskiSite) :
+lemma isPullback_projection_relativeSpecπ (U : X.AffineZariskiSite) :
     letI := sectionsMulSemiringAction ρ U.toOpens
-    IsPullback (projection Γ(A.X, U.toOpens) G ≫ (chartIso ρ U.toOpens).hom)
+    IsPullback (projection Γ(A.X, U.toOpens) G ≫ (quotientIsoSpecInvariantSections ρ U.toOpens).hom)
       (A.relativeSpecCover.f U) ((invariantSubalgebraPresheaf ρ).relativeSpecCover.f U)
       (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
   have h := (invariantSubalgebraPresheaf ρ).isPullback_relativeSpecπ U
@@ -324,7 +333,7 @@ omit [Finite G] in
 open TauCeti.AffineInvariantQuotient in
 /-- On an affine chart, the action of `g` on `Spec_X(A)` is the action on the spectrum of the
 sections. -/
-private lemma specComap_relativeSpecCover_f (U : X.AffineZariskiSite) (g : G) :
+lemma specComap_relativeSpecCover_f (U : X.AffineZariskiSite) (g : G) :
     letI := sectionsMulSemiringAction ρ U.toOpens
     specComap Γ(A.X, U.toOpens) G g ≫ A.relativeSpecCover.f U =
       A.relativeSpecCover.f U ≫ relativeSpecMap (ρ g).asIso.hom := by
@@ -353,7 +362,7 @@ theorem exists_comp_relativeSpecMap_eq {K : Type u} [Field K]
   -- Rebind the charts over `U` at their explicit sources, as in
   -- `SubalgebraPresheaf.relativeSpecπ_relativeSpecToBase`.
   let ι : Spec (CommRingCat.of Γ(A.X, U.toOpens)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιQ : Spec (CommRingCat.of (invariantSections ρ U.toOpens)) ⟶
+  let ιQ : Spec (CommRingCat.of ((invariantSubalgebraPresheaf ρ).sections U.toOpens)) ⟶
       (invariantSubalgebraPresheaf ρ).relativeSpec :=
     (invariantSubalgebraPresheaf ρ).relativeSpecCover.f U
   have : IsOpenImmersion ι := A.isOpenImmersion_relativeSpecCover_f U
@@ -370,15 +379,16 @@ theorem exists_comp_relativeSpecMap_eq {K : Type u} [Field K]
   let y₂ := IsOpenImmersion.lift ι x₂ (hrange x₂ (hbase ▸ hmem))
   let := sectionsMulSemiringAction ρ U.toOpens
   -- The chart points have the same image in the affine invariant quotient of `Γ(A.X, U)`.
-  have hw : (projection Γ(A.X, U.toOpens) G ≫ (chartIso ρ U.toOpens).hom) ≫ ιQ =
-      ι ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ :=
-    (isPullback_projection (ρ := ρ) U).w
+  have hw :
+      (projection Γ(A.X, U.toOpens) G ≫ (quotientIsoSpecInvariantSections ρ U.toOpens).hom) ≫ ιQ =
+        ι ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ :=
+    (isPullback_projection_relativeSpecπ (ρ := ρ) U).w
   have key (y : Spec (CommRingCat.of K) ⟶ Spec (CommRingCat.of Γ(A.X, U.toOpens))) :
-      y ≫ projection Γ(A.X, U.toOpens) G ≫ (chartIso ρ U.toOpens).hom ≫ ιQ =
+      y ≫ projection Γ(A.X, U.toOpens) G ≫ (quotientIsoSpecInvariantSections ρ U.toOpens).hom ≫ ιQ =
         y ≫ ι ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
     rw [← hw, Category.assoc]
   have hy : y₁ ≫ projection Γ(A.X, U.toOpens) G = y₂ ≫ projection Γ(A.X, U.toOpens) G := by
-    refine (cancel_mono ((chartIso ρ U.toOpens).hom ≫ ιQ)).mp ?_
+    refine (cancel_mono ((quotientIsoSpecInvariantSections ρ U.toOpens).hom ≫ ιQ)).mp ?_
     rw [Category.assoc, Category.assoc, key, key, IsOpenImmersion.lift_fac_assoc,
       IsOpenImmersion.lift_fac_assoc, h]
   obtain ⟨g, hg⟩ := exists_comp_specComap_eq Γ(A.X, U.toOpens) G hy
@@ -399,7 +409,7 @@ theorem stalkMap_invariantSubalgebraPresheaf_relativeSpecπ_injective (x : A.rel
     (stalkwise fun f ↦ Function.Injective f)).mpr (fun U ↦ ?_) x
   let := sectionsMulSemiringAction ρ U.toOpens
   have := smulCommClass_sectionsMulSemiringAction ρ U.toOpens
-  rw [invariantSubalgebraPresheaf_sections, specMap_invariantSections]
+  rw [specMap_invariantSections]
   exact MorphismProperty.RespectsIso.postcomp _ _ _
     (TauCeti.AffineInvariantQuotient.stalkMap_projection_injective _ G)
 
@@ -421,17 +431,18 @@ private theorem exists_relativeSpecπ_comp_eq {Z : Scheme.{u}} (f : A.relativeSp
           pullback.snd _ _ ≫ u := by
     let := sectionsMulSemiringAction ρ U.toOpens
     have := smulCommClass_sectionsMulSemiringAction ρ U.toOpens
-    have hpb := (isPullback_projection (ρ := ρ) U).flip
+    have hpb := (isPullback_projection_relativeSpecπ (ρ := ρ) U).flip
     have hfU (g : G) : specComap Γ(A.X, U.toOpens) G g ≫ A.relativeSpecCover.f U ≫ f =
         A.relativeSpecCover.f U ≫ f :=
       (Category.assoc _ _ _).symm.trans <|
         (congrArg (· ≫ f) (specComap_relativeSpecCover_f (ρ := ρ) U g)).trans <|
           (Category.assoc _ _ _).trans (congrArg _ (hf g))
-    refine ⟨(chartIso ρ U.toOpens).inv ≫ descOfFinite _ hfU, ?_⟩
+    refine ⟨(quotientIsoSpecInvariantSections ρ U.toOpens).inv ≫ descOfFinite _ hfU, ?_⟩
     refine (cancel_epi hpb.isoPullback.hom).mp ?_
     have e1 := congrArg (· ≫ f) hpb.isoPullback_hom_fst
-    have e2 := congrArg (· ≫ (chartIso ρ U.toOpens).inv ≫ descOfFinite _ hfU)
-      hpb.isoPullback_hom_snd
+    have e2 :=
+      congrArg (· ≫ (quotientIsoSpecInvariantSections ρ U.toOpens).inv ≫ descOfFinite _ hfU)
+        hpb.isoPullback_hom_snd
     simp only [Category.assoc, Iso.hom_inv_id_assoc] at e1 e2
     exact e1.trans ((projection_descOfFinite _ hfU).symm.trans e2.symm)
   choose u hu using hloc
