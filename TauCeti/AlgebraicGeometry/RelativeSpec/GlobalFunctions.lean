@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.RelativeSpec.Affine
-public import TauCeti.AlgebraicGeometry.Modules.Algebra.RegularFunctions
+public import TauCeti.AlgebraicGeometry.RelativeSpec.Unit
 
 /-!
-# Global functions on relative spectra over affine schemes
+# Global functions on relative spectra
 
-For a quasicoherent algebra on an affine scheme, the global functions on its relative
-spectrum recover the global sections of the algebra, compatibly with the algebra structure
-over the base. This is the affine normalization of the algebra-side unit in the
-relative-Spec equivalence.
+For a quasi-coherent algebra `A` on a scheme `X`, the global functions on its relative spectrum
+recover the global sections of `A`, compatibly with the algebra structure over the global
+functions on the base: this is the global component of the algebra-side unit
+`CategoryTheory.CommMon.relativeSpecPushforwardIso`. Over an affine base, it is the
+normalization `Spec_X A ≅ Spec Γ(A)` followed by the global-functions isomorphism for `Spec`.
 
 ## References
 
@@ -31,74 +31,34 @@ universe u
 
 noncomputable section
 
-variable {X : Scheme.{u}} [IsAffine X] (A : CommMon X.Modules) [A.X.IsQuasicoherent]
+variable {X : Scheme.{u}} (A : CommMon X.Modules) [A.X.IsQuasicoherent]
 
--- The underlying ring map is the composite of global functions along the affine
--- normalization and the usual global-functions isomorphism for `Spec`.
-private def relativeSpecGlobalSectionsRingEquiv :
-    Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, ⊤) ≃+* Γ(A.X, ⊤) := by
-  haveI : IsIso A.relativeSpecIsoSpec.inv.appTop :=
-    inferInstanceAs (IsIso (A.relativeSpecIsoSpec.inv.app ⊤))
-  exact (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv ⊤).trans
-    ((asIso A.relativeSpecIsoSpec.inv.appTop).commRingCatIsoToRingEquiv.trans
-      (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).commRingCatIsoToRingEquiv)
-
-private theorem relativeSpecGlobalSectionsRingEquiv_apply
-    (s : Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, ⊤)) :
-    A.relativeSpecGlobalSectionsRingEquiv s =
-      (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom
-        (A.relativeSpecIsoSpec.inv.appTop
-          (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv ⊤ s)) := by
-  simp only [relativeSpecGlobalSectionsRingEquiv]
-  rfl
-
--- Normalize the structure morphism on global sections once, including the
--- section-presheaf object wrapper, so ΓSpec naturality applies to the algebra map.
-private theorem relativeSpecGlobalSections_baseMap :
-    A.relativeSpecToBase.appTop ≫ A.relativeSpecIsoSpec.inv.appTop =
-      X.isoSpec.inv.appTop ≫
-        (Spec.map (CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)))).appTop := by
-  have h := congrArg Scheme.Hom.appTop A.relativeSpecIsoSpec_inv_relativeSpecToBase
-  rw [Scheme.Hom.comp_appTop, Scheme.Hom.comp_appTop] at h
-  -- The two presentations carry definitionally equal section-ring instances;
-  -- record that identification here rather than repeating it in the main proof.
-  convert h using 1
-  simp only [CommMon.toSectionsPresheaf_app]
-  rfl
-
-/-- The affine global-function comparison respects the algebra structures over the
-global functions on the base. -/
+/-- The global functions on the relative spectrum of `A` are the global sections of `A`, as
+algebras over the global functions on the base: the global component of the isomorphism
+`p_* 𝒪 ≅ A`. -/
 def relativeSpecGlobalSectionsAlgEquiv :
     Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, ⊤) ≃ₐ[Γ(X, ⊤)] Γ(A.X, ⊤) :=
-  AlgEquiv.ofRingEquiv (f := A.relativeSpecGlobalSectionsRingEquiv) (by
-    intro r
-    have hx : X.isoSpec.inv.appTop ≫ (Scheme.ΓSpecIso Γ(X, ⊤)).hom = 𝟙 _ := by
-      have hx' := congrArg Scheme.Hom.appTop X.isoSpec.hom_inv_id
-      rw [Scheme.Hom.comp_appTop] at hx'
-      simpa only [Scheme.isoSpec, asIso_hom, Scheme.toSpecΓ_appTop,
-        Scheme.Hom.id_appTop] using hx'
-    have h'' := congrArg (· ≫
-      (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom) A.relativeSpecGlobalSections_baseMap
-    simp only [Category.assoc] at h''
-    rw [Scheme.ΓSpecIso_naturality (R := Γ(X, ⊤))
-      (CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)))] at h''
-    simp only [← Category.assoc] at h''
-    rw [hx, Category.id_comp] at h''
-    rw [relativeSpecGlobalSectionsRingEquiv_apply,
-      Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply,
-      Scheme.Hom.pushforwardStructureAlgebra_algebraMap]
-    exact congrArg (fun f : Γ(X, ⊤) ⟶ CommRingCat.of Γ(A.X, ⊤) => f r) h'')
+  CommMon.sectionsAlgEquiv A.relativeSpecPushforwardIso ⊤
 
-/-- The affine comparison evaluates a global function through the normalization
-`Spec_X A ≅ Spec Γ(A)` and the global-functions isomorphism for `Spec`. -/
+/-- Over an affine base, the global-function comparison evaluates a global function through the
+normalization `Spec_X A ≅ Spec Γ(A)` and the global-functions isomorphism for `Spec`. -/
 @[simp]
-theorem relativeSpecGlobalSectionsAlgEquiv_apply
+theorem relativeSpecGlobalSectionsAlgEquiv_apply [IsAffine X]
     (s : Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, ⊤)) :
     A.relativeSpecGlobalSectionsAlgEquiv s =
       (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom
         (A.relativeSpecIsoSpec.inv.appTop
           (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv ⊤ s)) := by
-  exact A.relativeSpecGlobalSectionsRingEquiv_apply s
+  rw [relativeSpecGlobalSectionsAlgEquiv, CommMon.sectionsAlgEquiv_apply]
+  refine (A.sectionsAlgHom_relativeSpecPushforwardIso_hom_apply ⟨⊤, isAffineOpen_top X⟩ s).trans
+    ((A.relativeSpecCoverFunctionAlgebraSectionsRingEquiv_apply ⟨⊤, isAffineOpen_top X⟩ s).trans
+      ?_)
+  have h : (A.relativeSpecCover.f ⟨⊤, isAffineOpen_top X⟩).appLE _ ⊤
+      (A.top_le_preimage_relativeSpecToBase ⟨⊤, isAffineOpen_top X⟩) =
+      (A.relativeSpecCover.f ⟨⊤, isAffineOpen_top X⟩).appTop :=
+    Scheme.Hom.appLE_eq_app _
+  rw [relativeSpecIsoSpec_inv]
+  exact congrArg _ (ConcreteCategory.congr_hom h _)
 
 end
 
