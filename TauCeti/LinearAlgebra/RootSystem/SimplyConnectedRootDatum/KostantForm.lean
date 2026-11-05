@@ -288,7 +288,7 @@ theorem geckRepresentation_ι_injective :
     Function.Injective fun x : t.lieAlgebra ht =>
       t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
   rw [geckRepresentation_def]
-  exact UniversalEnvelopingAlgebra.representation_ι_matrix_injective (t.lieAlgebra ht)
+  exact LieSubalgebra.representation_ι_matrix_injective (t.lieAlgebra ht)
 
 /-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
 of endomorphisms of the Geck module. -/
