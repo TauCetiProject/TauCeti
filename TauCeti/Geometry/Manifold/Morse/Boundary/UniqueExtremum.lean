@@ -43,8 +43,6 @@ are the two trajectories, and each crosses an intermediate level exactly once
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `exists_mem_stableSet_ne`: below the top index, the stable manifold of a critical point is not
-  reduced to that point.
 * `ncard_unstableSet_inter_stableSet_inter_level_eq_two`: if the stable manifold of a critical
   point `q` of index `n - 1` lies, away from `q`, in the unstable manifold of `p`, then each
   intermediate level meets `W^u(p) ∩ W^s(q)` in exactly two points.
@@ -80,19 +78,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
-
-/-- **Below the top index, the stable manifold is not a point.** If the Morse index of a critical
-point `q` is less than the dimension, some point other than `q` flows into `q`. -/
-theorem exists_mem_stableSet_ne (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {q : M}
-    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f q < Module.finrank ℝ E) :
-    ∃ y ∈ hX.flow.stableSet q, y ≠ q := by
-  obtain ⟨φ, δ, hemb, hrange, h0, -, -⟩ := hX.exists_stableParam hf hq
-  have hL := φ.finrank_stableSubspace_add_manifoldMorseIndex
-  obtain ⟨u, hu⟩ : ∃ u : φ.stableSubspace, u ≠ 0 :=
-    (Module.finrank_pos_iff_exists_ne_zero (R := ℝ) (M := φ.stableSubspace)).1 (by omega)
-  exact ⟨hX.stableParam φ δ u, hrange ▸ mem_range_self u,
-    fun h ↦ hu (hemb.isEmbedding.injective (h.trans h0.symm))⟩
 
 /-- **Two trajectories into a critical point of index `n - 1`.** Let `q` be a critical point of
 index `n - 1`, so that `W^s(q)` is a line, and suppose that every point of `W^s(q)` other than `q`

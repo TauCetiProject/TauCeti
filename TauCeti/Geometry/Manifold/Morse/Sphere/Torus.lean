@@ -40,8 +40,6 @@ transports the Morse data along Mathlib's `modelWithCornersSelf_prod`. These dif
 * `TauCeti.torusProdChartedSpace` and `TauCeti.isManifold_torusProdChartedSpace`: the product
   charts of `S¹ × S¹` on the normed space `EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)`,
   and their smooth compatibility. They are local instances in this file.
-* `TauCeti.isMorse_modelWithCornersSelf_sphereHeight_comp_fst_add_comp_snd`: the sum of the two
-  height functions is Morse for these charts.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_sphereHeight_comp_fst_add_comp_snd`:
   its mod-two Morse boundary vanishes.
 
@@ -82,32 +80,6 @@ theorem isManifold_torusProdChartedSpace :
 
 attribute [local instance] isManifold_torusProdChartedSpace
 
-/-- The sum of two height functions is a Morse function on the torus, for the product charts read
-on `EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)`. -/
-theorem isMorse_modelWithCornersSelf_sphereHeight_comp_fst_add_comp_snd (v : sphere (0 : E) 1)
-    (w : sphere (0 : E') 1) :
-    IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) := by
-  rw [modelWithCornersSelf_prod]
-  exact isMorse_sphereHeight_comp_fst_add_comp_snd v w
-
-/-- The critical points of the sum of two height functions on the torus are the pairs of poles. -/
-private theorem mfderiv_torus_eq_zero_iff (v x : sphere (0 : E) 1) (w y : sphere (0 : E') 1) :
-    mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ)
-        (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) (x, y) = 0 ↔
-      (x = v ∨ x = -v) ∧ (y = w ∨ y = -w) := by
-  rw [← mvfderiv_eq_zero_iff, modelWithCornersSelf_prod]
-  exact mvfderiv_sphereHeight_comp_fst_add_comp_snd_eq_zero_iff v x w y
-
-/-- The Morse index of the sum of two height functions on the torus is the sum of the indices. -/
-private theorem manifoldMorseIndex_torus (v x : sphere (0 : E) 1) (w y : sphere (0 : E') 1) :
-    manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-        (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) (x, y) =
-      manifoldMorseIndex (𝓡 1) (sphereHeight v) x +
-        manifoldMorseIndex (𝓡 1) (sphereHeight w) y := by
-  rw [modelWithCornersSelf_prod]
-  exact manifoldMorseIndex_sphereHeight_comp_fst_add_comp_snd v x w y
-
 namespace IsAdaptedPseudoGradient.IsMorseSmale
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {v : sphere (0 : E) 1}
@@ -117,7 +89,9 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {v : sphere (0 : E
 
 /-- **The mod-two Morse boundary of the standard Morse function on the torus is zero.** For every
 Morse–Smale pseudo-gradient adapted to the sum of two height functions on `S¹ × S¹`, the mod-two
-Morse complex is the free `ZMod 2`-module on the four pairs of poles with zero differential. -/
+Morse complex is the free `ZMod 2`-module on the four pairs of poles with zero differential. The
+Morse hypothesis `hf` follows from `TauCeti.isMorse_sphereHeight_comp_fst_add_comp_snd` by
+rewriting along `modelWithCornersSelf_prod`. -/
 @[simp]
 theorem morseBoundary_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
@@ -131,8 +105,10 @@ theorem morseBoundary_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
         (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) z = k) :
       (k = 2 → z = (v, w)) ∧ (k = 0 → z = (-v, -w)) := by
     obtain ⟨x, y⟩ := z
-    rw [manifoldMorseIndex_torus] at hk
-    rcases (mfderiv_torus_eq_zero_iff v x w y).1 hz with ⟨rfl | rfl, rfl | rfl⟩ <;>
+    rw [← mvfderiv_eq_zero_iff, modelWithCornersSelf_prod,
+      mvfderiv_sphereHeight_comp_fst_add_comp_snd_eq_zero_iff] at hz
+    rw [modelWithCornersSelf_prod, manifoldMorseIndex_sphereHeight_comp_fst_add_comp_snd] at hk
+    rcases hz with ⟨rfl | rfl, rfl | rfl⟩ <;>
       simp only [manifoldMorseIndex_sphereHeight_self,
         manifoldMorseIndex_sphereHeight_neg] at hk <;>
       subst hk <;> simp
