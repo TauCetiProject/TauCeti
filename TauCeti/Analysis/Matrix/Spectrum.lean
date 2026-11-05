@@ -36,7 +36,8 @@ are compared.
 
 Eigen-coordinates also bound the pseudo-inverse of `B` along eigenvectors of a matrix below it in
 the Loewner order: if `0 ≤ A ≤ B` and `u` is a unit eigenvector of `A` with eigenvalue `a > 0`,
-then `a ⟪u, B⁻¹ u⟫ ≤ 1`. Positivity of `B - A` at `B⁻¹ u` and of `A` at `u - a B⁻¹ u` give this.
+then `a ⟪u, B⁻¹ u⟫ ≤ 1`. This bound underlies the trace inequality `Tr (A log A) ≤ Tr (A log B)`
+for `0 ≤ A ≤ B`.
 
 ## Main results
 

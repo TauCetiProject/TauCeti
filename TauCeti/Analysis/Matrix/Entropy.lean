@@ -46,21 +46,15 @@ density matrices may be singular, so we compare `ρ` with `σ_A ⊗ₖ σ_B`, wh
 replace the zero eigenvalues of `ρ_A` and `ρ_B` by `t > 0`. This leaves `Tr (ρ_A log σ_A) = -S(ρ_A)`
 unchanged, and the error in the traces vanishes as `t → 0`.
 
-A consequence of the operator monotonicity of the logarithm is the trace inequality
-`Tr (A log A) ≤ Tr (A log B)` when `0 ≤ A ≤ B`, that is when `A` and `B - A` are positive
-semidefinite, or equivalently `D(A ‖ B) ≤ 0`. The trace formula reduces it to
-`log a ≤ ∑ⱼ wⱼ log bⱼ` for each eigenvalue `a > 0` of `A`, with eigenvector `u` and overlaps
-`wⱼ = ‖⟪u, vⱼ⟫‖²` with the eigenvectors of `B`. By `log x ≤ x - 1` this follows from the bound
-`a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse `B⁻¹`, which positivity of `B - A` and of `A` gives at
-the vectors `B⁻¹ u` and `u - a B⁻¹ u` (`Matrix.PosSemidef.eigenvalues_mul_sum_inv_mul_le_one`).
-
-Applied to the summands of a sum this bounds the entropy of the sum: `S(A + B) ≤ S(A) + S(B)` for
-positive semidefinite `A` and `B`, and hence `S(∑ᵢ pᵢ ρᵢ) ≤ ∑ᵢ pᵢ S(ρᵢ) - ∑ᵢ pᵢ log pᵢ` for density
-matrices `ρᵢ` and a probability vector `p`. Klein's inequality for the summands relative to the
-mixture gives the matching lower bound, the **concavity** of the entropy:
-`∑ᵢ pᵢ S(ρᵢ) ≤ S(∑ᵢ pᵢ ρᵢ)`. Together these mixture bounds control the entropy of a mixture by the
-entropies of its components up to the Shannon entropy of the weights, as needed for the affinity
-of the mean entropy of quantum spin systems.
+If `0 ≤ A ≤ B`, that is `A` and `B - A` are positive semidefinite, then
+`Tr (A log A) ≤ Tr (A log B)`, or equivalently `D(A ‖ B) ≤ 0`; this trace inequality is a
+consequence of the operator monotonicity of the logarithm. It bounds the entropy of a sum:
+`S(A + B) ≤ S(A) + S(B)` for positive semidefinite `A` and `B`, and hence the upper mixture bound
+`S(∑ᵢ pᵢ ρᵢ) ≤ ∑ᵢ pᵢ S(ρᵢ) - ∑ᵢ pᵢ log pᵢ` for density matrices `ρᵢ` and a probability vector `p`.
+The matching lower bound is the **concavity** of the entropy: `∑ᵢ pᵢ S(ρᵢ) ≤ S(∑ᵢ pᵢ ρᵢ)`.
+Together these mixture bounds control the entropy of a mixture by the entropies of its components
+up to the Shannon entropy of the weights, as needed for the affinity of the mean entropy of quantum
+spin systems.
 
 ## Main results
 
@@ -390,7 +384,8 @@ theorem PosSemidef.re_trace_mul_cfc_log_le {A B : Matrix n n 𝕜} (hA : A.PosSe
   obtain ha | ha := (hA.eigenvalues_nonneg i).eq_or_lt
   · simp [a, ← ha]
   rw [← Finset.sum_sub_distrib]
-  -- Bound each term by `log x ≤ x - 1`; the bounds sum to `a (a ∑ⱼ bⱼ⁻¹ wⱼ - 1) ≤ 0`.
+  -- Bound each term by `log x ≤ x - 1`; the bounds sum to `a (a ∑ⱼ bⱼ⁻¹ wⱼ - 1)`, which is
+  -- nonpositive by the inverse bound `a ⟪u, B⁻¹ u⟫ ≤ 1` for the eigenvector `u` of `a`.
   calc ∑ j, (a * Real.log a * 1 * w j - a * Real.log (hB.1.eigenvalues j) * w j)
       ≤ ∑ j, a * (a * (hB.1.eigenvalues j)⁻¹ - 1) * w j := by
         refine Finset.sum_le_sum fun j _ ↦ ?_
