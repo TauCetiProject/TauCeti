@@ -144,6 +144,7 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   simp
 
 /-- The Hamiltonian vector field of the linear function `ω(a, ·)` is the constant `a`. -/
+@[simp]
 theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
     ω.hamiltonianVectorField (fun y ↦ ω a y) x = a := by
   -- The function `ω(a, ·)` is the continuous linear map `ω.toBilinForm.toContinuousBilinearMap a`.
