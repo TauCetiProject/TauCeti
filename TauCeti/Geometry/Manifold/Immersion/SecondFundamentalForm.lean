@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Euclidean
+public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 
 /-!
 # The second fundamental form of a map from a manifold into an inner product space
@@ -29,10 +29,7 @@ hypotheses. When `I` is boundaryless:
   in any chart of the `C²` maximal atlas containing `x`, and pulls back along any `C²` map whose
   differential at the base point is surjective (in particular, along any local diffeomorphism or
   diffeomorphism): the second-order term of a coordinate transition is tangent to the image of `Di`
-  and is killed by the orthogonal projection onto the normal space;
-* for a `TauCeti.SmoothEmbedding` into a real Hilbert space, `manifoldSecondFundamentalForm` agrees
-  under `TauCeti.SmoothEmbedding.normalSpaceOrthogonalEquiv` with the intrinsic quotient normal
-  class of the coordinate second derivative.
+  and is killed by the orthogonal projection onto the normal space.
 
 ## Main definitions
 
@@ -56,8 +53,6 @@ hypotheses. When `I` is boundaryless:
 * `ContMDiffAt.manifoldSecondFundamentalForm_comp` and
   `Diffeomorph.manifoldSecondFundamentalForm_comp`: invariance under reparametrisation of the
   source.
-* `TauCeti.SmoothEmbedding.coe_normalSpaceOrthogonalEquiv_sndFDeriv`: compatibility with the
-  quotient normal bundle of a smooth embedding.
 
 ## References
 
@@ -296,7 +291,7 @@ end Boundaryless
 
 end General
 
-/-! ### Real manifolds: `TauCeti.normalSubspace` and smooth embeddings -/
+/-! ### Real manifolds: `TauCeti.normalSubspace` -/
 
 section Real
 
@@ -321,20 +316,6 @@ theorem inner_manifoldSecondFundamentalForm_apply_of_mem_normalSubspace {i : M �
         (tangentSpaceCastModel I x v) (tangentSpaceCastModel I x w)⟫_ℝ := by
   rw [← orthogonal_range_mvfderiv_eq_normalSubspace] at hν
   exact inner_manifoldSecondFundamentalForm_apply_of_mem_orthogonal hν v w
-
-/-- For a smooth embedding `f : M → V` into a real Hilbert space, `manifoldSecondFundamentalForm`
-is the orthogonal representative (`TauCeti.SmoothEmbedding.normalSpaceOrthogonalEquiv`) of the
-intrinsic normal class of the coordinate second derivative. -/
-theorem SmoothEmbedding.coe_normalSpaceOrthogonalEquiv_sndFDeriv [CompleteSpace V] {n : ℕ∞ω}
-    (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (x : M) (hn : n ≠ 0) (v w : TangentSpace I x) :
-    (f.normalSpaceOrthogonalEquiv x hn
-      (f.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm
-        (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)
-          (tangentSpaceCastModel I x v) (tangentSpaceCastModel I x w)))) : V) =
-      manifoldSecondFundamentalForm I f x v w := by
-  rw [f.normalSpaceOrthogonalEquiv_normalClass, ← Submodule.starProjection_apply,
-    manifoldSecondFundamentalForm_apply]
-  simp only [orthogonal_range_mvfderiv_eq_normalSubspace]
 
 end Real
 
