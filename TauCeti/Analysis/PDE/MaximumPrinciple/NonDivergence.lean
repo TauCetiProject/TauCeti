@@ -61,6 +61,11 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 
 ## Main declarations
 
+* `TauCeti.PDE.posSemidef_neg_fderiv_fderiv`: where the second derivative of a `C²` function is
+  nonpositive on the diagonal, for instance at a local maximum, the negated Hessian matrix is
+  positive semidefinite.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos`: where the second derivative of a `C²` function is
+  nonpositive on the diagonal, the principal part of an elliptic operator is nonpositive.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos_of_isLocalMax`: at a local maximum of a `C²` function,
   the principal part of an elliptic operator is nonpositive.
 * `TauCeti.PDE.not_isLocalMax_of_sum_mul_fderiv_fderiv_add_fderiv_pos`: a strict subsolution of
@@ -106,14 +111,13 @@ open Matrix RealInnerProductSpace
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- **The principal part at a local maximum.** If the matrix `A` has nonnegative quadratic form
-and `f` is `C²` at a local maximum `x`, then `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be
-symmetric. -/
-theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
-    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1) ≤ 0 := by
+/-- **The negated Hessian matrix.** If `f` is `C²` at `x` and its second derivative there is
+nonpositive on the diagonal, `D²f(x)(w, w) ≤ 0` for every `w`, as at a local maximum, then the
+negated Hessian matrix `(-∂ᵢ∂ⱼf(x))ᵢⱼ` is positive semidefinite. -/
+theorem posSemidef_neg_fderiv_fderiv {f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι}
+    (hf : ContDiffAt ℝ 2 f x) (hneg : ∀ w, fderiv ℝ (fderiv ℝ f) x w w ≤ 0) :
+    (Matrix.of fun i j ↦ -fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)).PosSemidef := by
   let H := fderiv ℝ (fderiv ℝ f) x
   -- The Hessian in coordinates.
   have hH (v w : EuclideanSpace ℝ ι) :
@@ -124,22 +128,34 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
       _root_.sum_apply, _root_.smul_apply, smul_eq_mul, Finset.mul_sum]
     exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
       by ring)
+  refine .of_dotProduct_mulVec_nonneg ?_ fun v ↦ ?_
+  · ext i j
+    simpa using hf.isSymmSndFDerivAt (by simp) (EuclideanSpace.single j 1)
+      (EuclideanSpace.single i 1)
+  · have h := hneg (WithLp.toLp 2 v)
+    rw [hH] at h
+    have : star v ⬝ᵥ ((Matrix.of fun i j ↦ -H (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1)) *ᵥ v) = -∑ i, ∑ j, v i * v j *
+        H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+      simp only [dotProduct, mulVec, star_trivial, of_apply, Finset.mul_sum,
+        ← Finset.sum_neg_distrib]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+    linarith
+
+/-- **The principal part at a point of nonpositive Hessian.** If the matrix `A` has nonnegative
+quadratic form, `f` is `C²` at `x` and `D²f(x)(w, w) ≤ 0` for every `w`, then
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be symmetric. -/
+theorem sum_mul_fderiv_fderiv_nonpos {A : Matrix ι ι ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x)
+    (hneg : ∀ w, fderiv ℝ (fderiv ℝ f) x w w ≤ 0) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) ≤ 0 := by
+  let H := fderiv ℝ (fderiv ℝ f) x
   -- The negated Hessian matrix is positive semidefinite, hence a sum of rank-one matrices.
   let M : Matrix ι ι ℝ :=
     Matrix.of fun i j ↦ -H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  have hM : M.PosSemidef := by
-    refine .of_dotProduct_mulVec_nonneg ?_ fun v ↦ ?_
-    · ext i j
-      simpa [M] using hf.isSymmSndFDerivAt (by simp) (EuclideanSpace.single j 1)
-        (EuclideanSpace.single i 1)
-    · have h := fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax (WithLp.toLp 2 v)
-      rw [hH] at h
-      have : star v ⬝ᵥ (M *ᵥ v) = -∑ i, ∑ j, v i * v j *
-          H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-        simp only [M, dotProduct, mulVec, star_trivial, of_apply, Finset.mul_sum,
-          ← Finset.sum_neg_distrib]
-        exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-      linarith
+  have hM : M.PosSemidef := posSemidef_neg_fderiv_fderiv hf hneg
   obtain ⟨m, v, hv⟩ := Matrix.posSemidef_iff_eq_sum_vecMulVec.mp hM
   have hMv (i j : ι) : H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
       -∑ k, v k i * v k j := by
@@ -159,6 +175,16 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
             Finset.sum_congr rfl fun _ _ ↦ by ring
   rw [key, neg_nonpos]
   exact Finset.sum_nonneg fun k _ ↦ by simpa using hA (WithLp.toLp 2 (v k))
+
+/-- **The principal part at a local maximum.** If the matrix `A` has nonnegative quadratic form
+and `f` is `C²` at a local maximum `x`, then `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be
+symmetric. -/
+theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) ≤ 0 :=
+  sum_mul_fderiv_fderiv_nonpos hA hf (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax)
 
 /-- **Strict interior obstruction.** If `A` has nonnegative quadratic form, `f` is `C²` at `x`
 and `0 < ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) + ∂_v f(x)`, then `f` has no local maximum at `x`. The direction `v` is
