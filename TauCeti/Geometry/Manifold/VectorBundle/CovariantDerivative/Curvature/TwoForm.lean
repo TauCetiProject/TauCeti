@@ -65,6 +65,13 @@ def curvatureFormEndomorphism (x : M) :
   LinearMap.toContinuousLinearMap ((alternatingFormEquiv (TangentSpace I x) 2).conj
     (cov.curvatureEndomorphism hcov x))
 
+/-- The two-form curvature operator acts by musical conjugation of the bivector operator. -/
+theorem curvatureFormEndomorphism_apply (x : M)
+    (α : TangentSpace I x [⋀^Fin 2]→L[ℝ] ℝ) :
+    cov.curvatureFormEndomorphism hcov x α =
+      alternatingFormEquiv (TangentSpace I x) 2 (cov.curvatureEndomorphism hcov x
+        ((alternatingFormEquiv (TangentSpace I x) 2).symm α)) := (rfl)
+
 /-- The musical identification intertwines the two curvature endomorphisms. -/
 @[simp]
 theorem curvatureFormEndomorphism_alternatingFormEquiv (x : M)
