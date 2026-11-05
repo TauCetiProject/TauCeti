@@ -115,6 +115,6 @@ theorem legendreK_eq_one_add_mul_legendreK {k : ℝ} (hk : k ^ 2 < 1) :
   rw [← legendreK_two_mul_sqrt_div_one_add h₀ h₁]
   -- The ascending transformation of `k₁` returns the modulus `|k|`, and `K` is even.
   rw [two_mul_sqrt_div_one_add_eq_abs hk.le]
-  rcases abs_choice k with h | h <;> simp [h]
+  exact (legendreK_abs k).symm
 
 end TauCeti.Real

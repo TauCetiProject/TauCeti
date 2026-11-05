@@ -122,7 +122,7 @@ private theorem agm_secondKind_step {a b : ℝ≥0} (ha : 0 < a) (hb : 0 < b) (n
 /-- The weighted squared differences of the AGM means sum to
 `(a² + b²)/2 - a² E(√(1 - (b/a)²))/K(√(1 - (b/a)²))`.
 Mathlib's index zero is already one AGM step. In particular, the series is summable. -/
-theorem hasSum_agmSequences_secondKind {a b : ℝ≥0} (hb : 0 < b) (hba : b ≤ a) :
+theorem hasSum_agmSequences_legendreEc_div_legendreK {a b : ℝ≥0} (hb : 0 < b) (hba : b ≤ a) :
     HasSum (fun n ↦ (2 : ℝ) ^ n *
       (((NNReal.agmSequences a b n).2 : ℝ) ^ 2 -
         ((NNReal.agmSequences a b n).1 : ℝ) ^ 2))
@@ -174,7 +174,7 @@ theorem hasSum_legendreEc_agm {k : ℝ} (hk : k ^ 2 < 1) :
   have hba : b ≤ 1 := by
     rw [← NNReal.coe_le_coe, hbval, NNReal.coe_one]
     exact sqrt_le_one.2 (by nlinarith)
-  have h := hasSum_agmSequences_secondKind hb hba
+  have h := hasSum_agmSequences_legendreEc_div_legendreK hb hba
   simp only [NNReal.coe_one, hbval, one_pow, div_one,
     sq_sqrt (sub_pos.2 hk).le, sub_sub_cancel, sqrt_sq_eq_abs,
     legendreEc_abs, legendreK_abs, one_mul] at h
