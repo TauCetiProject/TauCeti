@@ -42,6 +42,8 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
   `Δ[n]` to its identity.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
+* `SSet.stdSimplex.range_δ_eq_horn_one`: the image of `stdSimplex.δ i : Δ[0] ⟶ Δ[1]` is the horn
+  `Λ[1, i.rev]`.
 * `SSet.fstStdSimplexZeroIso`: the projection `K ⊗ Δ[0] ⟶ K` is an isomorphism.
 
 * `SSet.boundary.isConnected`: the boundary `∂Δ[n + 2]` is connected.
@@ -218,6 +220,16 @@ lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀E
   rw [stdSimplex.obj₀Equiv_symm_apply]
   -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
   exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
+
+/-- The image of the face map `stdSimplex.δ i : Δ[0] ⟶ Δ[1]`, the vertex `i.rev` of `Δ[1]`, is the
+horn `Λ[1, i.rev]`. -/
+lemma stdSimplex.range_δ_eq_horn_one (i : Fin 2) :
+    Subcomplex.range (stdSimplex.δ.{u} i) = Λ[1, i.rev] := by
+  rw [stdSimplex.range_δ]
+  ext ⟨d⟩ x
+  induction d using SimplexCategory.rec with | _ d
+  rw [mem_horn_iff_notMem_range, stdSimplex.mem_face_iff]
+  fin_cases i <;> simp [Fin.exists_fin_two, Set.mem_range]
 
 /-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism, `Δ[0]` being terminal. -/
 def fstStdSimplexZeroIso (K : SSet.{u}) : K ⊗ Δ[0] ≅ K where
