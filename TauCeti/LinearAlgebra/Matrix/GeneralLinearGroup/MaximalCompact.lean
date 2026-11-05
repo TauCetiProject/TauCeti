@@ -58,6 +58,10 @@ averaged form makes every element of `K` an isometry. The matrix of that automor
   conjugate into the unitary subgroup.
 * `Matrix.GeneralLinearGroup.maximal_isCompact_iff`: the maximal compact subgroups are exactly the
   conjugates of the unitary subgroup.
+* `Matrix.GeneralLinearGroup.eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem` and
+  `Matrix.GeneralLinearGroup.maximal_isCompact_unitarySubgroup_subgroupOf`: the same maximality
+  inside any closed subgroup `G` containing the unitary polar factors of its elements: the unitary
+  elements of `G` form a maximal compact subgroup of `G`.
 
 ## References
 
@@ -81,14 +85,9 @@ decomposition `g = P V`, then `g` is unitary. -/
 theorem mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem {K : Subgroup (GL ι 𝕜)}
     (hK : IsCompact (K : Set (GL ι 𝕜))) {g : GL ι 𝕜} (hg : g ∈ K)
     (hV : Unitary.toUnits (Units.polarUnitary g) ∈ K) : g ∈ unitarySubgroup (GL ι 𝕜) := by
-  let V := Units.polarUnitary g
-  let P := g * (Unitary.toUnits V)⁻¹
-  have hP : (P : Matrix ι ι 𝕜) = CFC.sqrt ((g : Matrix ι ι 𝕜) * star (g : Matrix ι ι 𝕜)) := by
-    apply (Unitary.mul_left_inj V).mp
-    rw [Units.sqrt_mul_star_mul_polarUnitary]
-    exact congrArg Units.val (inv_mul_cancel_right g (Unitary.toUnits V))
-  have hPone : P = 1 :=
-    (hP.symm ▸ (posDef_sqrt_mul_star g).posSemidef).eq_one_of_mem_isCompact_subgroup
+  have hPone : g * (Unitary.toUnits (Units.polarUnitary g))⁻¹ = 1 :=
+    ((coe_mul_inv_toUnits_polarUnitary g).symm ▸
+      (posDef_sqrt_mul_star g).posSemidef).eq_one_of_mem_isCompact_subgroup
       hK (K.mul_mem hg (K.inv_mem hV))
   rw [mul_inv_eq_one.mp hPone]
   simp
@@ -161,5 +160,52 @@ theorem maximal_isCompact_iff {K : Subgroup (GL ι 𝕜)} :
   Subgroup.maximal_isCompact_iff_exists_eq_conj_smul
     ⟨isCompact_unitarySubgroup, fun _ hL hle ↦ (eq_unitarySubgroup_of_isCompact_of_le hL hle).le⟩
     fun _ ↦ exists_conj_smul_le_unitarySubgroup
+
+/-! ### Subgroups stable under the polar decomposition -/
+
+section PolarStable
+
+open scoped MatrixOrder
+
+/-- **Maximal compactness in a polar-stable subgroup.** Let `G` be a subgroup of `GL ι 𝕜` that
+contains the unitary polar factor of each of its elements. Then a compact subgroup of `G`
+containing the unitary elements of `G` consists of unitary elements. -/
+theorem eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem {G K : Subgroup (GL ι 𝕜)}
+    (hG : ∀ g ∈ G, Unitary.toUnits (Units.polarUnitary g) ∈ G)
+    (hK : IsCompact (K : Set (GL ι 𝕜))) (hKG : K ≤ G)
+    (hUK : G ⊓ unitarySubgroup (GL ι 𝕜) ≤ K) :
+    K = G ⊓ unitarySubgroup (GL ι 𝕜) :=
+  le_antisymm (fun g hg ↦ ⟨hKG hg, mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem hK hg
+    (hUK ⟨hG g (hKG hg), by simp⟩)⟩) hUK
+
+/-- **The unitary elements form a maximal compact subgroup of a closed polar-stable subgroup.**
+Let `G` be a closed subgroup of `GL ι 𝕜` that contains the unitary polar factor of each of its
+elements. Then its unitary elements form a maximal compact subgroup of `G`, with the inherited
+topology. -/
+theorem maximal_isCompact_unitarySubgroup_subgroupOf {G : Subgroup (GL ι 𝕜)}
+    (hG : ∀ g ∈ G, Unitary.toUnits (Units.polarUnitary g) ∈ G)
+    (hGc : IsClosed (G : Set (GL ι 𝕜))) :
+    Maximal (fun K : Subgroup G ↦ IsCompact (K : Set G))
+      ((unitarySubgroup (GL ι 𝕜)).subgroupOf G) := by
+  have hcompact : IsCompact (((unitarySubgroup (GL ι 𝕜)).subgroupOf G) : Set G) := by
+    have h : IsCompact
+        (↑(((unitarySubgroup (GL ι 𝕜)).subgroupOf G).map G.subtype) : Set (GL ι 𝕜)) := by
+      rw [Subgroup.subgroupOf_map_subtype, inf_comm, Subgroup.coe_inf]
+      exact isCompact_unitarySubgroup.inter_left hGc
+    rw [Subgroup.coe_map] at h
+    exact Subtype.isCompact_iff.mpr h
+  refine ⟨hcompact, fun K hK hUK ↦ ?_⟩
+  have hmap : K.map G.subtype = G ⊓ unitarySubgroup (GL ι 𝕜) := by
+    apply eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem hG
+    · exact hK.image continuous_subtype_val
+    · exact Subgroup.map_subtype_le K
+    · simpa only [Subgroup.subgroupOf_map_subtype, inf_comm] using
+        Subgroup.map_mono (f := G.subtype) hUK
+  intro g hg
+  have hgmem : (g : GL ι 𝕜) ∈ K.map G.subtype := ⟨g, hg, rfl⟩
+  rw [hmap] at hgmem
+  exact hgmem.2
+
+end PolarStable
 
 end Matrix.GeneralLinearGroup
