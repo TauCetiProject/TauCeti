@@ -120,6 +120,26 @@ theorem fromSpecQuotient_globalSections (hJ : IsAdic J) :
   -- identification. Use the component description before composing with their comparison.
   exact (congrArg (· ≫ (quotientSheafGlobalSectionsIso hJ).hom) h).trans (by simp)
 
+-- This comparison isolates the transport of the bundled Spec sheaf map along the
+-- equality of the quotient inclusions. The inclusion `i` is the restriction supplied
+-- by presheafed-space extensionality in the naturality proof below.
+omit [IsTopologicalRing A] [IsAdicRing A] in
+private theorem specQuotientMap_c_app (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤ K)
+    (U : Opens (carrier A))
+    (i : (Opens.map (quotientInclusion hK)).obj U ⟶
+      (Opens.map (Spec.topMap (CommRingCat.ofHom (Ideal.Quotient.factor hJK)))).obj
+        ((Opens.map (quotientInclusion hJ)).obj U)) :
+    (Spec.locallyRingedSpaceMap (CommRingCat.ofHom (Ideal.Quotient.factor hJK))).c.app
+        (op ((Opens.map (quotientInclusion hJ)).obj U)) ≫
+      (Spec.locallyRingedSpaceObj (CommRingCat.of (A ⧸ K))).presheaf.map i.op =
+        (quotientTransition hJ hK hJK).hom.app (op U) := by
+  -- Reduce the bundled map here: rewriting its whole `toHom` would also change
+  -- the type of the restriction `i` and gives an ill-typed rewrite motive.
+  dsimp only [Spec.locallyRingedSpaceMap, Spec.sheafedSpaceMap]
+  erw [Spec.locallyRingedSpaceObj_presheaf_map, quotientTransition_hom_app]
+  exact CommRingCat.hom_ext (StructureSheaf.map_comp_comap (Ideal.Quotient.factor hJK)
+    ((Opens.map (quotientInclusion hJ)).obj U) (fun _ ↦ id) i)
+
 /-- The quotient thickenings form a compatible system: reducing further and then including
 in the formal spectrum is the same as the direct quotient inclusion. -/
 @[reassoc (attr := simp)]
@@ -127,28 +147,19 @@ theorem fromSpecQuotient_naturality (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤
     Spec.locallyRingedSpaceMap (CommRingCat.ofHom (Ideal.Quotient.factor hJK)) ≫
       fromSpecQuotient hJ = fromSpecQuotient hK := by
   apply LocallyRingedSpace.Hom.ext'
+  rw [LocallyRingedSpace.comp_toHom, fromSpecQuotient_toHom, fromSpecQuotient_toHom]
   refine PresheafedSpace.Hom.ext _ _ ?_ ?_
   · apply ConcreteCategory.hom_ext
     intro q
     exact (quotientInclusion_apply hJ _).trans
       ((homeomorphSpecQuotient_symm_comap_factor hJ hK hJK q).trans
         (quotientInclusion_apply hK q).symm)
-  · -- Equality of the base maps transports sections by a restriction. Composing that
-    -- restriction with the scheme's comap gives exactly `quotientTransition`.
-    ext U s
-    erw [NatTrans.comp_app, Functor.whiskerRight_app]
-    erw [PresheafedSpace.comp_c_app]
-    dsimp only [fromSpecQuotient]
-    dsimp only [Spec.locallyRingedSpaceMap, Spec.sheafedSpaceMap]
-    erw [Spec.locallyRingedSpaceObj_presheaf_map]
-    dsimp only [CommRingCat.hom_ofHom]
-    erw [CommRingCat.hom_comp, CommRingCat.hom_comp, ← RingHom.comp_assoc]
-    erw [StructureSheaf.map_comp_comap]
-    have h := congrArg (fun η ↦ η.hom.app (op U))
+  · apply NatTrans.ext
+    funext U
+    erw [NatTrans.comp_app, Functor.whiskerRight_app, PresheafedSpace.comp_c_app]
+    erw [Category.assoc, specQuotientMap_c_app hJ hK hJK]
+    exact congrArg (fun η ↦ η.hom.app U)
       (toQuotientSheaf_comp_quotientTransition (IsAdicRing.ideal_spec A).2.1 hJ hK hJK)
-    erw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-      quotientTransition_hom_app] at h
-    exact ConcreteCategory.congr_hom h s
 
 /-- An ideal-of-definition quotient embeds as a subobject of the formal spectrum. -/
 instance fromSpecQuotient_mono (hJ : IsAdic J) : Mono (fromSpecQuotient hJ) := by
