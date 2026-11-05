@@ -44,15 +44,15 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- Globalize a local smooth defining function without changing its germ on the closed
 nonpositive locus. Its strict negative and zero loci are also preserved, and it is positive
 outside the original domain. Closedness is required in the ambient manifold. -/
-theorem exists_contMDiffMap_definingFunction {U : Set M} (hU : IsOpen U) {f : M → ℝ}
-    (hf : ContMDiffOn I 𝓘(ℝ) ∞ f U) (hs : IsClosed {x | x ∈ U ∧ f x ≤ 0}) :
-    ∃ g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯,
+theorem exists_contMDiffMap_definingFunction {n : ℕ∞} {U : Set M} (hU : IsOpen U) {f : M → ℝ}
+    (hf : ContMDiffOn I 𝓘(ℝ) n f U) (hs : IsClosed {x | x ∈ U ∧ f x ≤ 0}) :
+    ∃ g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯,
       (∀ x ∈ U, f x ≤ 0 → (g : M → ℝ) =ᶠ[𝓝 x] f) ∧
       (∀ x, g x ≤ 0 ↔ x ∈ U ∧ f x ≤ 0) ∧
       (∀ x, g x < 0 ↔ x ∈ U ∧ f x < 0) ∧
       (∀ x, g x = 0 ↔ x ∈ U ∧ f x = 0) := by
   obtain ⟨β, hβ0, hβ1, hβ⟩ := exists_contMDiffMap_zero_one_nhds_of_isClosed I
-    (n := ⊤) hU.isClosed_compl hs (by
+    (n := n) hU.isClosed_compl hs (by
       exact disjoint_left.mpr fun x hx hx' => hx hx'.1)
   have hsupport : tsupport β ⊆ U := by
     intro x hx
@@ -60,12 +60,12 @@ theorem exists_contMDiffMap_definingFunction {U : Set M} (hU : IsOpen U) {f : M 
     have hz : ∀ᶠ y in 𝓝 x, β y = 0 :=
       hβ0.filter_mono (nhds_le_nhdsSet h)
     exact (notMem_tsupport_iff_eventuallyEq.mpr hz) hx
-  have hprod : ContMDiff I 𝓘(ℝ) ∞ (fun x => β x * f x) := by
+  have hprod : ContMDiff I 𝓘(ℝ) n (fun x => β x * f x) := by
     apply contMDiff_of_tsupport
     intro x hx
     have hxU := hsupport (tsupport_mul_subset_left hx)
     exact β.contMDiff.contMDiffAt.mul (hf.contMDiffAt (hU.mem_nhds hxU))
-  let g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ :=
+  let g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ :=
     ⟨fun x => β x * f x + (1 - β x), hprod.add (contMDiff_const.sub β.contMDiff)⟩
   have hgerm (x : M) (hx : x ∈ U ∧ f x ≤ 0) : (g : M → ℝ) =ᶠ[𝓝 x] f := by
     filter_upwards [hβ1.filter_mono (nhds_le_nhdsSet hx)] with y hy
@@ -96,10 +96,11 @@ theorem exists_contMDiffMap_definingFunction {U : Set M} (hU : IsOpen U) {f : M 
 /-- If the local defining function has no critical point on its zero locus, its globalization
 has zero as a regular value. In particular the construction preserves the regular hypersurface,
 the closed domain, and its strict negative locus simultaneously. -/
-theorem exists_contMDiffMap_regular_definingFunction {U : Set M} (hU : IsOpen U) {f : M → ℝ}
-    (hf : ContMDiffOn I 𝓘(ℝ) ∞ f U) (hs : IsClosed {x | x ∈ U ∧ f x ≤ 0})
+theorem exists_contMDiffMap_regular_definingFunction {n : ℕ∞} {U : Set M}
+    (hU : IsOpen U) {f : M → ℝ}
+    (hf : ContMDiffOn I 𝓘(ℝ) n f U) (hs : IsClosed {x | x ∈ U ∧ f x ≤ 0})
     (hreg : ∀ x ∈ U, f x = 0 → IsRegularPoint I 𝓘(ℝ) f x) :
-    ∃ g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, IsRegularValue I 𝓘(ℝ) g 0 ∧
+    ∃ g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯, IsRegularValue I 𝓘(ℝ) g 0 ∧
       (∀ x ∈ U, f x ≤ 0 → (g : M → ℝ) =ᶠ[𝓝 x] f) ∧
       (∀ x, g x ≤ 0 ↔ x ∈ U ∧ f x ≤ 0) ∧
       (∀ x, g x < 0 ↔ x ∈ U ∧ f x < 0) ∧

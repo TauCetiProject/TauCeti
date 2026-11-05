@@ -84,14 +84,7 @@ theorem exists_isClosedEmbedding_normalExp_disc
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
-  let g := f.normalContMDiffRiemannianMetric (m := ∞) hn (by simp) hdim
-  let : IsContinuousRiemannianBundle P ν := by
-    have hg : g.toContinuousRiemannianMetric.toRiemannianMetric =
-        f.normalRiemannianMetric hn :=
-      f.toRiemannianMetric_normalContMDiffRiemannianMetric (m := ∞) hn (by simp) hdim
-    have h := Bundle.instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
-    rw [hg] at h
-    exact h
+  let := f.isContinuousRiemannianBundle_normalRiemannianMetric (m := ∞) hn (by simp) hdim
   have : T2Space M := f.isEmbedding.t2Space
   cases isEmpty_or_nonempty M with
   | inl hM =>
