@@ -110,7 +110,7 @@ theorem renewalConv_zero_left (μ : Measure ℝ≥0) (t : ℝ≥0) : renewalConv
 /-- At time zero only the atom at zero contributes to the convolution. -/
 @[simp]
 theorem renewalConv_apply_zero (h : ℝ≥0 → ℝ) (μ : Measure ℝ≥0) :
-    renewalConv h μ 0 = μ.real {0} * h 0 := by
+    renewalConv h μ 0 = μ.real (Iic 0) * h 0 := by
   -- Specialize the bottom-interval lemma to zero before rewriting under the measure.
   simp [renewalConv_def, show Iic (0 : ℝ≥0) = {0} from Iic_bot, measureReal_def]
 
@@ -119,7 +119,9 @@ by the atom at zero. No regularity of the solution is needed for this boundary i
 theorem apply_zero_of_eq_add_renewalConv (hgeq : g = h + renewalConv g μ)
     (hμ : μ.real {0} ≠ 1) : g 0 = h 0 / (1 - μ.real {0}) := by
   have hz := congrFun hgeq 0
-  simp only [Pi.add_apply, renewalConv_apply_zero] at hz
+  -- Specialize the bottom-interval lemma to zero before rewriting under the measure.
+  simp only [Pi.add_apply, renewalConv_apply_zero,
+    show Iic (0 : ℝ≥0) = {0} from Iic_bot] at hz
   apply (eq_div_iff (sub_ne_zero.mpr (Ne.symm hμ))).2
   linarith
 
