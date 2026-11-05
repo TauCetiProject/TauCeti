@@ -61,9 +61,6 @@ maximal atlas.
   maximal-atlas chart is a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
   along a local diffeomorphism to a maximal-atlas chart.
-* `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eqOn_extend_symm`,
-  `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_comp_eqOn`: charts in which a map composed with a
-  local diffeomorphism, on the source or on the target, reads as the map itself does.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
@@ -285,68 +282,6 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq {N' : T
     ⟨hxΦ, by simpa [← hfΦ hxΦ] using hfx⟩, ?_⟩
   filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
   simp [hfΦ hy]
-
-/-- A chart `e` of the maximal `C^n` atlas of `N'` at `f x` pulls back along a `C^n` local
-diffeomorphism `f` at `x` to a chart `e'` of the maximal `C^n` atlas of `M` at `x`, whose extended
-target lies in that of `e` and on which `f` carries the inverse of `e'` to the inverse of `e`. So a
-map `g ∘ f` read in `e'` is `g` read in `e`. -/
-theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eqOn_extend_symm {N' : Type*}
-    [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] {f : M → N'}
-    {x : M} (hf : IsLocalDiffeomorphAt I I n f x) {e : OpenPartialHomeomorph N' H}
-    (he : e ∈ IsManifold.maximalAtlas I n N') (hfx : f x ∈ e.source) :
-    ∃ e' ∈ IsManifold.maximalAtlas I n M, x ∈ e'.source ∧
-      (e'.extend I).target ⊆ (e.extend I).target ∧
-      EqOn (f ∘ (e'.extend I).symm) (e.extend I).symm (e'.extend I).target := by
-  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
-  refine ⟨Φ.toOpenPartialHomeomorph.trans e, Φ.trans_mem_maximalAtlas he,
-    ⟨hxΦ, by simpa [← hfΦ hxΦ] using hfx⟩, fun u hu => ?_, fun u hu => ?_⟩ <;>
-  simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.trans_target,
-    mem_inter_iff, mem_preimage] at hu
-  · rw [OpenPartialHomeomorph.extend_target]
-    exact ⟨hu.1.1, hu.2⟩
-  · -- The inverse of the extended pulled-back chart is `Φ⁻¹ ∘ e⁻¹ ∘ I⁻¹`, which `f = Φ` cancels.
-    simp only [OpenPartialHomeomorph.extend_coe_symm, OpenPartialHomeomorph.coe_trans_symm,
-      Function.comp_apply]
-    rw [hfΦ (Φ.toOpenPartialHomeomorph.map_target hu.1.2)]
-    exact Φ.toOpenPartialHomeomorph.right_inv hu.1.2
-
-/-- Charts in which `k ∘ f` reads as `f` does, for a `C^n` local diffeomorphism `k` at `f x`: given
-charts `φ` at `x` and `ψ` at `f x` of the maximal `C^n` atlases, `φ` restricts to a chart `φ'` at
-`x` and `ψ` pulls back along a local inverse of `k` to a chart `ψ'` at `k (f x)`, such that `k ∘ f`
-read in `φ'` and `ψ'` agrees with `f` read in `φ` and `ψ`. -/
-theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_comp_eqOn {P : Type*}
-    [TopologicalSpace P] [ChartedSpace G P] [IsManifold J n P] {f : M → N} {k : N → P} {x : M}
-    (hk : IsLocalDiffeomorphAt J J n k (f x)) (hf : ContinuousAt f x)
-    {φ : OpenPartialHomeomorph M H} (hφ : φ ∈ IsManifold.maximalAtlas I n M) (hx : x ∈ φ.source)
-    {ψ : OpenPartialHomeomorph N G} (hψ : ψ ∈ IsManifold.maximalAtlas J n N)
-    (hfx : f x ∈ ψ.source) :
-    ∃ φ' ∈ IsManifold.maximalAtlas I n M, ∃ ψ' ∈ IsManifold.maximalAtlas J n P,
-      x ∈ φ'.source ∧ k (f x) ∈ ψ'.source ∧ (φ'.extend I).target ⊆ (φ.extend I).target ∧
-      EqOn (ψ'.extend J ∘ (k ∘ f) ∘ (φ'.extend I).symm) (ψ.extend J ∘ f ∘ (φ.extend I).symm)
-        (φ'.extend I).target := by
-  obtain ⟨Θ, hxΘ, hkΘ⟩ := hk
-  -- The points mapped into the source of `Θ` form a neighbourhood `W` of `x`.
-  set W := interior (f ⁻¹' Θ.source)
-  have hxW : x ∈ W := mem_interior_iff_mem_nhds.2
-    (hf.preimage_mem_nhds (Θ.open_source.mem_nhds hxΘ))
-  refine ⟨φ.restr W, restr_mem_maximalAtlas _ hφ isOpen_interior,
-    Θ.symm.toOpenPartialHomeomorph.trans ψ, Θ.symm.trans_mem_maximalAtlas hψ,
-    ⟨hx, by rwa [interior_interior]⟩, ?_, fun u hu => ?_, fun u hu => ?_⟩
-  · simp only [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage]
-    refine ⟨by rw [hkΘ hxΘ]; exact Θ.toPartialEquiv.map_source hxΘ, ?_⟩
-    simpa [hkΘ hxΘ, Θ.toPartialEquiv.left_inv hxΘ] using hfx
-  all_goals simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.restr_target,
-    mem_inter_iff, mem_preimage] at hu
-  · rw [OpenPartialHomeomorph.extend_target]
-    exact ⟨hu.1.1, hu.2⟩
-  · -- On the restricted chart `f` lands in the source of `Θ`, where `Θ⁻¹` cancels `k = Θ`.
-    have hfy : f (φ.symm (I.symm u)) ∈ Θ.source :=
-      (interior_subset.trans interior_subset : interior W ⊆ _) hu.1.2
-    simp only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
-      OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.restr_symm_apply,
-      Function.comp_apply]
-    rw [hkΘ hfy]
-    exact congrArg (fun z ↦ J (ψ z)) (Θ.left_inv hfy)
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/

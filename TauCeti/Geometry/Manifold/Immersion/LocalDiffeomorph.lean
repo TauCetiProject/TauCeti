@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
@@ -97,11 +98,34 @@ theorem isImmersionAtOfComplement_comp_isLocalDiffeomorphAt [IsManifold I n M']
     {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x)
     (h : IsImmersionAtOfComplement F I J n f (g x)) :
     IsImmersionAtOfComplement F I J n (f ∘ g) x := by
-  obtain ⟨φ, hφ, hxφ, hφt, hgφ⟩ :=
-    hg.exists_mem_maximalAtlas_eqOn_extend_symm h.domChart_mem_maximalAtlas h.mem_domChart_source
-  exact .mk_of_continuousAt (h.continuousAt.comp hg.contMDiffAt.continuousAt) h.equiv φ h.codChart
-    hxφ h.mem_codChart_source hφ h.codChart_mem_maximalAtlas fun u hu =>
-      (congrArg (h.codChart.extend J ∘ f) (hgφ hu)).trans (h.writtenInCharts (hφt hu))
+  have hcont : ContinuousAt (f ∘ g) x := h.continuousAt.comp hg.contMDiffAt.continuousAt
+  obtain ⟨Φ, hxΦ, hgΦ⟩ := hg
+  have hψ := h.domChart_mem_maximalAtlas
+  refine IsImmersionAtOfComplement.mk_of_continuousAt hcont h.equiv
+    (Φ.toOpenPartialHomeomorph.trans h.domChart) h.codChart ?_ h.mem_codChart_source ?_
+    h.codChart_mem_maximalAtlas fun u hu => ?_
+  · refine ⟨hxΦ, ?_⟩
+    simpa [← hgΦ hxΦ] using h.mem_domChart_source
+  · refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
+    · exact (contMDiffOn_of_mem_maximalAtlas hψ).comp (Φ.contMDiffOn.mono inter_subset_left)
+        fun y hy => hy.2
+    · exact Φ.symm.contMDiffOn.comp ((contMDiffOn_symm_of_mem_maximalAtlas hψ).mono
+        inter_subset_left) fun y hy => hy.2
+  · -- Reading `f ∘ g` through the pulled-back chart reinstates `Φ⁻¹`, which `g = Φ` cancels.
+    simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.trans_target,
+      mem_inter_iff, mem_preimage] at hu
+    obtain ⟨⟨hu₁, hu₂⟩, hu₃⟩ := hu
+    have hu' : u ∈ (h.domChart.extend I).target := by
+      rw [OpenPartialHomeomorph.extend_target]
+      exact ⟨hu₁, hu₃⟩
+    have hgΦ' : g (Φ.symm (h.domChart.symm (I.symm u))) = h.domChart.symm (I.symm u) := by
+      rw [hgΦ (Φ.symm.toPartialEquiv.map_source hu₂)]
+      exact Φ.toPartialEquiv.right_inv hu₂
+    -- Unfold the extended pulled-back chart: its inverse is `Φ⁻¹ ∘ ψ⁻¹ ∘ I⁻¹`.
+    calc _ = h.codChart.extend J (f (g (Φ.symm.toPartialEquiv (h.domChart.symm (I.symm u))))) :=
+          rfl
+      _ = h.codChart.extend J (f (h.domChart.symm (I.symm u))) := by rw [hgΦ']
+      _ = _ := h.writtenInCharts hu'
 
 /-- Precomposing with a local diffeomorphism of the source preserves being an immersion at a
 point. -/
@@ -165,11 +189,42 @@ theorem isImmersionAtOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P]
     {k : N → P} {x : M} (hk : IsLocalDiffeomorphAt J J n k (f x))
     (h : IsImmersionAtOfComplement F I J n f x) :
     IsImmersionAtOfComplement F I J n (k ∘ f) x := by
-  obtain ⟨φ, hφ, ψ, hψ, hxφ, hψx, hφt, hfφ⟩ := hk.exists_mem_maximalAtlas_comp_eqOn h.continuousAt
-    h.domChart_mem_maximalAtlas h.mem_domChart_source h.codChart_mem_maximalAtlas
-    h.mem_codChart_source
-  exact .mk_of_continuousAt (hk.contMDiffAt.continuousAt.comp h.continuousAt) h.equiv φ ψ hxφ hψx
-    hφ hψ fun u hu => (hfφ hu).trans (h.writtenInCharts (hφt hu))
+  have hcont : ContinuousAt (k ∘ f) x := hk.contMDiffAt.continuousAt.comp h.continuousAt
+  obtain ⟨Θ, hxΘ, hkΘ⟩ := hk
+  -- The points mapped into the source of `Θ` form a neighbourhood `W` of `x`.
+  set W := interior (f ⁻¹' Θ.source)
+  have hxW : x ∈ W := mem_interior_iff_mem_nhds.2
+    (h.continuousAt.preimage_mem_nhds (Θ.open_source.mem_nhds hxΘ))
+  have hχ := h.codChart_mem_maximalAtlas
+  refine IsImmersionAtOfComplement.mk_of_continuousAt hcont h.equiv (h.domChart.restr W)
+    (Θ.symm.toOpenPartialHomeomorph.trans h.codChart) ?_ ?_
+    (restr_mem_maximalAtlas _ h.domChart_mem_maximalAtlas isOpen_interior) ?_ fun u hu => ?_
+  · exact ⟨h.mem_domChart_source, by rwa [interior_interior]⟩
+  · simp only [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage, Function.comp_apply]
+    refine ⟨by rw [hkΘ hxΘ]; exact Θ.toPartialEquiv.map_source hxΘ, ?_⟩
+    rw [hkΘ hxΘ]
+    simpa [hkΘ hxΘ, Θ.toPartialEquiv.left_inv hxΘ] using h.mem_codChart_source
+  · refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
+    · exact (contMDiffOn_of_mem_maximalAtlas hχ).comp (Θ.symm.contMDiffOn.mono inter_subset_left)
+        fun y hy => hy.2
+    · exact Θ.contMDiffOn.comp ((contMDiffOn_symm_of_mem_maximalAtlas hχ).mono
+        inter_subset_left) fun y hy => hy.2
+  · -- On the shrunken chart `f` lands in the source of `Θ`, where `Θ⁻¹` cancels `k = Θ`.
+    simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.restr_target,
+      mem_inter_iff, mem_preimage] at hu
+    obtain ⟨⟨hu₁, hu₂⟩, hu₃⟩ := hu
+    have hu' : u ∈ (h.domChart.extend I).target := by
+      rw [OpenPartialHomeomorph.extend_target]
+      exact ⟨hu₁, hu₃⟩
+    have hW : interior W ⊆ f ⁻¹' Θ.source := interior_subset.trans interior_subset
+    have hfy : f (h.domChart.symm (I.symm u)) ∈ Θ.source := hW hu₂
+    -- Unfold the extended charts: the restricted chart has the same inverse as `ψ`, and the
+    -- pulled-back chart is `χ ∘ Θ⁻¹`.
+    calc _ = h.codChart.extend J (Θ.toPartialEquiv.symm (k (f (h.domChart.symm (I.symm u))))) :=
+          rfl
+      _ = h.codChart.extend J (f (h.domChart.symm (I.symm u))) := by
+          rw [hkΘ hfy, Θ.toPartialEquiv.left_inv hfy]
+      _ = _ := h.writtenInCharts hu'
 
 /-- Postcomposing with a local diffeomorphism of the target preserves being an immersion at a
 point. -/
