@@ -177,10 +177,11 @@ theorem map_coeff_one_rootSubgroupPointsAt (B : Type*) [CommRing B] [Algebra R B
         (HopfIdeal.quotientLieHom J (rootDerivationAt B k)) := by
   let l := (F4ShortRoot.rootSubgroupPresentation k).1
   let i := (F4ShortRoot.rootSubgroupPresentation k).2
-  have hW := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
-    (weylWordPoint l B)
-  have hWinv := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
-    ((weylWordPoint l B)⁻¹)
+  have hW := congrArg Units.val (coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    (weylWordPoint l B))
+  have hWinv := congrArg Units.val (coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    ((weylWordPoint l B)⁻¹))
+  simp only [Matrix.GeneralLinearGroup.val_map_apply, AlgHom.coe_toRingHom] at hW hWinv
   simp only [map_inv, pointsMap_weylWordPoint, Subgroup.coe_inv,
     funext (@Polynomial.CAlgHom_apply (ZMod 2) B _ _ _)] at hW hWinv
   rw [rootSubgroupPointsAt_def, weylRootSubgroupPoints_apply]

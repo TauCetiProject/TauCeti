@@ -268,17 +268,6 @@ theorem coe_pointsMap {A : Type v} {B : Type w} [CommRing A] [CommRing B] [Algeb
   exact TauCeti.GeneralLinear.coe_mapHopfIdealPointsSubgroupCongr 26 definingIdeal
     (points_eq_hopfIdealPointsSubgroup A) (points_eq_hopfIdealPointsSubgroup B) f g
 
-/-- The matrix underlying an induced carrier point is obtained by mapping entries. -/
--- Not `@[simp]`: `coe_pointsMap` and `GeneralLinearGroup.val_map_apply` already simplify it.
-theorem coe_coe_pointsMap {A : Type v} {B : Type w} [CommRing A] [CommRing B]
-    [Algebra (ZMod 2) A] [Algebra (ZMod 2) B] (f : A →ₐ[ZMod 2] B) (g : points A) :
-    ((pointsMap f g : _root_.Matrix.GeneralLinearGroup (Fin 26) B) :
-        _root_.Matrix (Fin 26) (Fin 26) B) =
-      ((g : _root_.Matrix.GeneralLinearGroup (Fin 26) A) :
-        _root_.Matrix (Fin 26) (Fin 26) A).map f := by
-  simp only [coe_pointsMap, _root_.Matrix.GeneralLinearGroup.val_map_apply,
-    AlgHom.coe_toRingHom]
-
 /-- The identity algebra homomorphism induces the identity on carrier points. -/
 @[simp]
 theorem pointsMap_id {A : Type v} [CommRing A] [Algebra (ZMod 2) A] :
