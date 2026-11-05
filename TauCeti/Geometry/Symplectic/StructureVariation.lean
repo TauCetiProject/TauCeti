@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
-public import Mathlib.Analysis.Calculus.MeanValue
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Analysis.SpecialFunctions.Exponential
+public import TauCeti.Analysis.SpecialFunctions.Exponential.BilinForm
 public import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
@@ -161,24 +162,11 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 namespace AlmostComplexStructure
 
-/-- The complex structure `exp(B) J exp(-B)`: the conjugate of `J` by the linear automorphism
+/-- The complex structure `exp(B) J exp(-B)`: the transport of `J` along the linear automorphism
 `exp B` of `V`. -/
 def expConj (J : AlmostComplexStructure V) (B : V →L[ℝ] V) :
-    AlmostComplexStructure V where
-  toLinearMap := (exp B * LinearMap.toContinuousLinearMap J.toLinearMap * exp (-B)).toLinearMap
-  square_neg := by
-    set j := LinearMap.toContinuousLinearMap J.toLinearMap
-    have hjj : j * j = -1 := J.toContinuousLinearMap_mul_self
-    have hB : exp (-B) * exp B = 1 := by
-      rw [← exp_add_of_commute (Commute.refl B).neg_left, neg_add_cancel, exp_zero]
-    have h : exp B * j * exp (-B) * (exp B * j * exp (-B)) = -(exp B * exp (-B)) := by
-      calc exp B * j * exp (-B) * (exp B * j * exp (-B))
-          = exp B * j * (exp (-B) * exp B) * j * exp (-B) := by simp only [mul_assoc]
-        _ = exp B * (j * j) * exp (-B) := by rw [hB, mul_one, mul_assoc (exp B)]
-        _ = -(exp B * exp (-B)) := by rw [hjj, mul_neg_one, neg_mul]
-    rw [← exp_add_of_commute (Commute.refl B).neg_right, add_neg_cancel, exp_zero] at h
-    rw [← Module.End.mul_eq_comp, ← ContinuousLinearMap.toLinearMap_mul, h]
-    simp [Module.End.one_eq_id]
+    AlmostComplexStructure V :=
+  J.transport B.expEquiv.toLinearEquiv
 
 @[simp]
 theorem expConj_toLinearMap (J : AlmostComplexStructure V) (B : V →L[ℝ] V) :
@@ -240,27 +228,6 @@ theorem hasDerivAt_tangentPath {J : AlmostComplexStructure V} {Y : V →L[ℝ] V
 
 end AlmostComplexStructure
 
-/-- The exponential of an endomorphism that is skew-adjoint for a real bilinear form `β`
-preserves `β`. For a symplectic form this says that the exponential of an infinitesimally
-symplectic endomorphism is symplectic. -/
-theorem _root_.LinearMap.IsSkewAdjoint.apply_exp_apply_exp {β : LinearMap.BilinForm ℝ V}
-    {B : V →L[ℝ] V} (hB : β.IsSkewAdjoint B) (v w : V) :
-    β (exp B v) (exp B w) = β v w := by
-  let βc := β.toContinuousBilinearMap
-  have hβc (v w : V) : βc v w = β v w := LinearMap.toContinuousBilinearMap_apply _ _ _
-  have hB0 (a b : V) : β (B a) b + β a (B b) = 0 := by
-    have := hB a b
-    rw [Pi.neg_apply, map_neg] at this
-    linarith
-  let f : ℝ → ℝ := fun t => βc (exp (t • B) v) (exp (t • B) w)
-  have hexp (t : ℝ) (u : V) : HasDerivAt (fun s : ℝ => exp (s • B) u) (B (exp (t • B) u)) t := by
-    simpa using (hasDerivAt_exp_smul_const' B t).clm_apply (hasDerivAt_const t u)
-  have hf (t : ℝ) : HasDerivAt f 0 t := by
-    have := βc.hasDerivAt_of_bilinear (fun _ => hexp t v) (fun _ => hexp t w)
-    rwa [hβc, hβc, add_comm, hB0] at this
-  have := is_const_of_deriv_eq_zero (fun t => (hf t).differentiableAt) (fun t => (hf t).deriv) 1 0
-  simpa [f, hβc] using this
-
 namespace AlmostComplexStructure
 
 /-- The tangent path is smooth in time, structure and tangent vector jointly: for families
@@ -302,28 +269,18 @@ namespace SymplecticForm
 
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
+/-- The exponential of an infinitesimally symplectic endomorphism is a linear
+symplectomorphism. -/
+theorem isSymplectomorphism_expEquiv {B : V →L[ℝ] V} (hB : ω.toBilinForm.IsSkewAdjoint B) :
+    IsSymplectomorphism ω ω B.expEquiv.toLinearEquiv :=
+  isSymplectomorphism_iff.2 fun v w => hB.apply_exp_apply_exp v w
+
 /-- Conjugating an `ω`-compatible structure by the exponential of an infinitesimally symplectic
 endomorphism gives an `ω`-compatible structure. -/
 theorem Compatible.expConj (hJ : ω.Compatible J) {B : V →L[ℝ] V}
     (hB : ω.toBilinForm.IsSkewAdjoint B) : ω.Compatible (J.expConj B) := by
-  have hB' : ω.toBilinForm.IsSkewAdjoint ⇑(-B) := fun v w => by
-    have := hB v w
-    simp only [FunLike.coe_neg, Pi.neg_apply, map_neg, LinearMap.neg_apply, neg_neg] at this ⊢
-    linarith
-  have hee (v : V) : exp B (exp (-B) v) = v := by
-    have h : exp B * exp (-B) = 1 := by
-      rw [← exp_add_of_commute (Commute.refl B).neg_right, add_neg_cancel, exp_zero]
-    simpa using congrArg (fun A : V →L[ℝ] V => A v) h
-  refine Compatible.of_tames ((ω.invariant_iff _).2 fun v w => ?_) fun v hv => ?_
-  · have h := hJ.invariant_apply (exp (-B) v) (exp (-B) w)
-    dsimp only at h ⊢
-    rw [AlmostComplexStructure.expConj_apply, AlmostComplexStructure.expConj_apply,
-      hB.apply_exp_apply_exp, h, hB'.apply_exp_apply_exp]
-  · have hv' : exp (-B) v ≠ 0 := fun h => hv (by rw [← hee v, h, map_zero])
-    have h := hJ.tames _ hv'
-    dsimp only at h ⊢
-    rw [← hB.apply_exp_apply_exp, hee] at h
-    rwa [AlmostComplexStructure.expConj_apply]
+  have h := hJ.transport B.expEquiv.toLinearEquiv
+  rwa [isSymplectomorphism_iff_transport_eq.1 (isSymplectomorphism_expEquiv hB)] at h
 
 /-- The tangent path of an `ω`-compatible structure in a direction satisfying the compatible
 tangent condition consists of `ω`-compatible structures. -/
