@@ -15,12 +15,12 @@ A probability law has characteristic function equal to one at a frequency precis
 its phase is almost surely an integer multiple of `2π`. This concerns equality to one,
 not merely modulus one: the latter also allows translated lattices.
 
-The inner-product-space statement identifies the frequencies fixed by convolution with a
-probability measure. On the real line, its phase condition describes an unshifted lattice.
+The inner-product-space statement identifies the frequencies `t` with `charFun μ t = 1`.
+On the real line, its phase condition describes an unshifted lattice.
 For a probability law on `ℝ≥0`, the characteristic function of its real pushforward equals
 one at `2π/a` exactly when the law is concentrated on `a ℕ`, for `a > 0`. Consequently,
-nonlattice laws are precisely those for which zero is the only such frequency. These
-criteria require no moment assumption and permit an atom at zero.
+laws not concentrated on any such unshifted lattice are precisely those for which zero is
+the only such frequency. These criteria require no moment assumption and permit an atom at zero.
 
 See W. Feller, *An Introduction to Probability Theory and Its Applications*, volume II,
 second edition (1971), Chapter XI, for the renewal-theoretic use of the lattice obstruction.
@@ -56,7 +56,7 @@ theorem charFun_eq_one_iff (t : E) :
   · intro h
     exact integral_eq_const h
 
-/-- The frequencies fixed by a probability law are those whose inner-product phases
+/-- The frequencies `t` with `charFun μ t = 1` are those whose inner-product phases
 are almost surely integer multiples of `2π`. -/
 theorem charFun_eq_one_iff_ae_inner_mem_int_mul (t : E) :
     charFun μ t = 1 ↔ ∀ᵐ x ∂μ, ∃ n : ℤ, ⟪x, t⟫ = n * (2 * Real.pi) := by
@@ -104,8 +104,8 @@ theorem charFun_map_coe_eq_one_iff (a : ℝ≥0) (ha : 0 < a) :
     push_cast
     field_simp
 
-/-- A nonnegative probability law has a nonzero frequency fixed by its characteristic
-function exactly when it is concentrated on an unshifted lattice of positive span. -/
+/-- A nonnegative probability law has a nonzero frequency where its characteristic function
+equals one exactly when it is concentrated on an unshifted lattice of positive span. -/
 theorem exists_ne_zero_charFun_map_coe_eq_one_iff :
     (∃ t : ℝ, t ≠ 0 ∧ charFun (μ.map NNReal.toReal) t = 1) ↔
       ∃ a : ℝ≥0, 0 < a ∧ μ (range (fun n : ℕ => (n : ℝ≥0) * a))ᶜ = 0 := by
@@ -128,8 +128,8 @@ theorem exists_ne_zero_charFun_map_coe_eq_one_iff :
     exact ⟨2 * Real.pi / a, ne_of_gt (by positivity),
       (charFun_map_coe_eq_one_iff μ a ha).mpr h⟩
 
-/-- The spectral nonlattice criterion: no positive-span lattice carries the law if and only
-if the characteristic function differs from one at every nonzero frequency. -/
+/-- No unshifted lattice `a ℕ` with `a > 0` carries the law if and only if the characteristic
+function differs from one at every nonzero frequency. -/
 theorem forall_ne_zero_charFun_map_coe_ne_one_iff :
     (∀ t : ℝ, t ≠ 0 → charFun (μ.map NNReal.toReal) t ≠ 1) ↔
       ∀ a : ℝ≥0, 0 < a → μ (range (fun n : ℕ => (n : ℝ≥0) * a))ᶜ ≠ 0 := by
