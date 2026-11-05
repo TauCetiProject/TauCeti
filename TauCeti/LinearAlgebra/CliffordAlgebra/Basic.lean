@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.Tactic.NoncommRing
+import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
 # Basic Clifford algebra API
@@ -166,21 +167,23 @@ end Exterior
 variable {K : Type u} [Field K] [Module K M] [FiniteDimensional K M]
   [Invertible (2 : K)]
 
+omit [Invertible (2 : K)] in
 /-- A Clifford element annihilated by every left contraction is a scalar. -/
 theorem exists_eq_algebraMap_of_contractLeft_eq_zero (Q : QuadraticForm K M)
     (x : CliffordAlgebra Q) (hx : ∀ d : Module.Dual K M, contractLeft d x = 0) :
     ∃ r : K, x = algebraMap K (CliffordAlgebra Q) r := by
   let b := Module.finBasis K M
-  let y : ExteriorAlgebra K M := equivExterior Q x
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := K) (M := M) (N := K) (-Q)
+  have h : B.toQuadraticMap = (0 : QuadraticForm K M) - Q := by rw [hB]; simp
+  let y : ExteriorAlgebra K M := changeForm h x
   have hycontract (d : Module.Dual K M) :
       contractLeft (Q := (0 : QuadraticForm K M)) d y = 0 := by
-    dsimp only [y, equivExterior, changeFormEquiv_apply]
-    rw [changeFormEquiv_apply]
-    rw [← changeForm_contractLeft changeForm.associated_neg_proof d x, hx, map_zero]
+    dsimp only [y]
+    rw [← changeForm_contractLeft h d x, hx, map_zero]
   let r := b.ExteriorAlgebra.repr y ∅
   refine ⟨r, ?_⟩
-  apply (equivExterior Q).injective
-  simpa only [y, r, equivExterior_algebraMap] using
+  apply (changeFormEquiv h).injective
+  simpa only [y, r, changeFormEquiv_apply, changeForm_algebraMap] using
     eq_algebraMap_of_all_contractLeft_eq_zero b y hycontract
 
 /-- A Clifford element that graded-commutes with every generating vector is a scalar. Here
