@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
+public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.AlgebraicGeometry.ResidueDegree
 
@@ -46,6 +47,16 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
   residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
   between schemes and rings, for instance for étale neighbourhoods built from algebras.
+* `AlgebraicGeometry.Scheme.residueField_hom_ext`: on a quasi-affine scheme, a ring map out of the
+  residue field `κ(x)` is determined by its values on global functions evaluated at `x`.
+* `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal`: the point of `Spec Γ(X, ⊤)` under `x` is the
+  prime ideal of global functions vanishing at `x`.
+
+The residue field map `f.residueFieldMap x` has source `κ(f x)`. When `f x` is known to equal a
+point `y` only propositionally, for instance when `f` is an automorphism fixing `x`, it is
+composed with `Scheme.residueFieldCongr` to give a map `κ(y) ⟶ κ(x)`. The lemmas
+`Scheme.Hom.residueFieldCongr_inv_residueFieldMap_comp` and its companions compute such composites
+without the casts that a direct rewrite of `f x` to `y` would produce.
 
 A morphism surjective on stalks induces isomorphisms of residue fields. In a fibre product,
 if one of the two points has unchanged residue field over the base, the pair has a unique lift
@@ -80,6 +91,90 @@ theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN :
   rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
     (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
   exact (map_ne_zero _).mpr hN
+
+section residueFieldCongr
+
+variable {X Y Z : Scheme.{u}}
+
+/-- The residue field map of a composite, with sources identified along `f x = y` and `g y = z`,
+is the composite of the residue field maps. -/
+theorem Scheme.Hom.residueFieldCongr_inv_residueFieldMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) {x : X}
+    {y : Y} {z : Z} (hf : f x = y) (hg : g y = z) (hfg : (f ≫ g) x = z) :
+    (Z.residueFieldCongr hfg).inv ≫ (f ≫ g).residueFieldMap x =
+      ((Z.residueFieldCongr hg).inv ≫ g.residueFieldMap y) ≫
+        (Y.residueFieldCongr hf).inv ≫ f.residueFieldMap x := by
+  subst hf hg
+  simp
+
+/-- Equal morphisms have equal residue field maps, with sources identified along `f x = y`. -/
+theorem Scheme.Hom.residueFieldCongr_inv_residueFieldMap_congr {f f' : X ⟶ Y} (e : f = f')
+    {x : X} {y : Y} (h : f x = y) (h' : f' x = y) :
+    (Y.residueFieldCongr h).inv ≫ f.residueFieldMap x =
+      (Y.residueFieldCongr h').inv ≫ f'.residueFieldMap x := by
+  subst e
+  rfl
+
+/-- The residue field map of the identity, with source identified along `x = x'`, is the
+identification `κ(x') ≅ κ(x)`. -/
+theorem Scheme.residueFieldCongr_inv_residueFieldMap_id {x x' : X} (h : (𝟙 X : X ⟶ X) x = x') :
+    (X.residueFieldCongr h).inv ≫ (𝟙 X : X ⟶ X).residueFieldMap x =
+      (X.residueFieldCongr (h.symm : x' = x)).hom := by
+  subst h
+  simp
+
+/-- The residue field map at `x`, with source identified along `f x = y`, sends the value at `y`
+of a global function `a` to the value at `x` of its pullback `f^*(a)`. -/
+theorem Scheme.Hom.residueFieldCongr_inv_residueFieldMap_Γevaluation (f : X ⟶ Y) {x : X} {y : Y}
+    (h : f x = y) (a : Γ(Y, ⊤)) :
+    ((Y.residueFieldCongr h).inv ≫ f.residueFieldMap x) (Y.Γevaluation y a) =
+      X.Γevaluation x (f.appTop a) := by
+  subst h
+  simp [Scheme.Γevaluation_naturality_apply]
+
+end residueFieldCongr
+
+/-- The point of `Spec Γ(X, ⊤)` under `x` is the prime ideal of global functions vanishing at
+`x`. -/
+theorem Scheme.toSpecΓ_apply_asIdeal (X : Scheme.{u}) (x : X) :
+    (X.toSpecΓ x).asIdeal = RingHom.ker (X.Γevaluation x).hom := by
+  ext a
+  -- A global function lies in this prime iff `x` is not in its basic open, iff its value at `x`
+  -- vanishes.
+  have h : x ∈ X.basicOpen a ↔ a ∉ (X.toSpecΓ x).asIdeal := by
+    rw [← X.toSpecΓ_preimage_basicOpen a]
+    exact PrimeSpectrum.mem_basicOpen a (X.toSpecΓ x)
+  rw [RingHom.mem_ker]
+  exact (not_not.symm.trans h.not.symm).trans
+    (X.evaluation_eq_zero_iff_notMem_basicOpen x trivial a).symm
+
+/-- A ring map out of a residue field of `Spec R` is determined by its values on the elements
+of `R`. -/
+theorem Spec.residueField_hom_ext {R : CommRingCat.{u}} {p : Spec R} {K : CommRingCat.{u}}
+    {α β : (Spec R).residueField p ⟶ K}
+    (h : (Spec R).Γevaluation p ≫ α = (Spec R).Γevaluation p ≫ β) : α = β := by
+  rw [← cancel_epi (Scheme.Spec.residueFieldIso R p).inv]
+  -- The residue field is `p.asIdeal.ResidueField`, whose ring maps are determined on `R`.
+  have h' := congr((Scheme.ΓSpecIso R).inv ≫ $h)
+  ext1
+  have := p.isPrime
+  refine Ideal.ResidueField.ringHom_ext (I := p.asIdeal) ?_
+  ext a
+  have e : (Scheme.Spec.residueFieldIso R p).inv (algebraMap R _ a) =
+      (Spec R).Γevaluation p ((Scheme.ΓSpecIso R).inv a) :=
+    congr($(Scheme.Spec.algebraMap_residueFieldIso_inv R p).hom a)
+  simpa [e] using congr($(h').hom a)
+
+/-- On a quasi-affine scheme, a ring map out of the residue field `κ(x)` is determined by its
+values on global functions evaluated at `x`. -/
+theorem Scheme.residueField_hom_ext {X : Scheme.{u}} [X.IsQuasiAffine] {x : X}
+    {K : CommRingCat.{u}} {α β : X.residueField x ⟶ K}
+    (h : X.Γevaluation x ≫ α = X.Γevaluation x ≫ β) : α = β := by
+  -- `X ⟶ Spec Γ(X, ⊤)` is an open immersion, so it induces an isomorphism of residue fields.
+  have h₁ := Scheme.Γevaluation_naturality X.toSpecΓ x
+  rw [Scheme.toSpecΓ_appTop] at h₁
+  rw [← cancel_epi (X.toSpecΓ.residueFieldMap x)]
+  refine Spec.residueField_hom_ext ?_
+  rw [reassoc_of% h₁, reassoc_of% h₁, h]
 
 /-- The geometric point of `X` over `x`: the morphism `Spec κ(x)ᵃˡᵍ ⟶ X` from the spectrum of an
 algebraic closure of the residue field at `x`, through `X.fromSpecResidueField x`. -/

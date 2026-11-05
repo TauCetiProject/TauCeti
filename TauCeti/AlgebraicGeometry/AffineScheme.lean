@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
+public import Mathlib.RingTheory.Ideal.Pointwise
 import TauCeti.RingTheory.Localization.Tower
 
 /-!
@@ -49,6 +50,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
   morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
 * `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
   affine opens of `S'` lying over affine opens of `S` form a basis.
+* `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
+  `Γ(X, ⊤)` at the point `σ g x` is the translate by `g` of the prime ideal at `x`.
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
@@ -182,6 +185,22 @@ theorem Scheme.globalSectionsMulSemiringAction_smul_def {X : Scheme.{u}} {G : Ty
     letI := Scheme.globalSectionsMulSemiringAction σ
     g • a = (σ g⁻¹).asIso.hom.appTop a :=
   (rfl)
+
+open Pointwise in
+/-- For the action of `G` on global functions by `g • a = (σ g⁻¹)^*(a)`, the point of
+`Spec Γ(X, ⊤)` under `σ g x` has prime ideal the translate by `g` of that of `x`: a function
+vanishes at `σ g x` exactly when its translate by `g⁻¹` vanishes at `x`. -/
+theorem Scheme.toSpecΓ_apply_asIdeal_eq_smul {X : Scheme.{u}} {G : Type*} [Group G]
+    (σ : G →* Aut X) (g : G) (x : X) :
+    letI := Scheme.globalSectionsMulSemiringAction σ
+    (X.toSpecΓ ((σ g).asIso.hom x)).asIdeal = g • (X.toSpecΓ x).asIdeal := by
+  let _ := Scheme.globalSectionsMulSemiringAction σ
+  have h := congr($(Scheme.toSpecΓ_naturality (σ g).asIso.hom) x)
+  rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply] at h
+  ext a
+  have hc := PrimeSpectrum.comap_asIdeal (σ g).asIso.hom.appTop.hom (X.toSpecΓ x)
+  rw [h, Spec.map_apply, hc, Ideal.mem_comap, Ideal.mem_pointwise_smul_iff_inv_smul_mem,
+    Scheme.globalSectionsMulSemiringAction_smul_def, inv_inv]
 
 /-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
 from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an
