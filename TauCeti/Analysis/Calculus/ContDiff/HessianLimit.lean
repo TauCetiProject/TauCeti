@@ -40,7 +40,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 omit [FiniteDimensional ℝ E] in
 private theorem norm_sub_fderiv_le_of_holderOnWith
-    (hα : 0 < α) (hU : IsOpen U) {u : E → F} (hu : DifferentiableOn ℝ u U)
+    (hU : IsOpen U) {u : E → F} (hu : DifferentiableOn ℝ u U)
     (hhol : HolderOnWith K α (fderiv ℝ u) U)
     {x y : E} {r : ℝ} (hr : ball x r ⊆ U) (hy : y ∈ ball x r) :
     ‖u y - u x - fderiv ℝ u x (y - x)‖ ≤ (K : ℝ) * ‖y - x‖ ^ (α : ℝ) * ‖y - x‖ := by
@@ -131,7 +131,7 @@ private theorem hasFDerivAt_of_tendsto_fderiv_of_tendstoLocallyUniformlyOn
     ((ContinuousLinearMap.apply ℝ F (y - x)).continuous.tendsto A).comp hA
   have hlim := ((hD.tendsto_at (hrU hy)).sub (hD.tendsto_at hx)).sub happ
   have hTaylor := le_of_tendsto' hlim.norm
-    (fun m => norm_sub_fderiv_le_of_holderOnWith hα hU (hv m) (hhol m) hrU hy)
+    (fun m => norm_sub_fderiv_le_of_holderOnWith hU (hv m) (hhol m) hrU hy)
   exact hTaylor.trans (mul_le_mul_of_nonneg_right hyc.le (norm_nonneg _))
 
 variable [CompleteSpace F]
