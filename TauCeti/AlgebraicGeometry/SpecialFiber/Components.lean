@@ -237,7 +237,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.finite_setOf_base_eq_closedPoint
 /-- **The divisor of a uniformizer is supported on the special fibre.** The principal divisor of
 the pullback of a nonzero element `π` of the maximal ideal is supported exactly on the
 codimension-one points of the special fibre, the generic points of its irreducible components.
-Together with `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isEffective_principalDivisor_ofMul_mk0`
+Together with `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.principalDivisor_ofMul_mk0_nonneg`
 this is the decomposition `div_X(π) = ∑ᵢ mᵢ [Cᵢ]` with positive coefficients `mᵢ`; when `R` is a
 discrete valuation ring and `π` is a uniformizer, these are the multiplicities of the components
 of the special fibre. -/

@@ -102,11 +102,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.principalDivisor_eq_sum_specialFiber
       (toBase.specialFiberMultiplicity π x : ℤ) • WeilDivisor.ofPoint x := by
     rw [WeilDivisor.eq_sum_coeff_smul_ofPoint D, hsupport]
     refine Finset.sum_congr rfl fun x hx ↦ ?_
-    have hEff : WeilDivisor.IsEffective D :=
-      SchemeWeilDivisor.isEffective_principalDivisor_ofMul_mk0
+    have hEff : 0 ≤ D :=
+      SchemeWeilDivisor.principalDivisor_ofMul_mk0_nonneg
         (toBase.germToFunctionField_appTop_ne_zero hη hπ hπ0)
-    have hpos : 0 ≤ WeilDivisor.coeff D x :=
-      (WeilDivisor.isEffective_iff D).mp hEff x
+    have hpos : 0 ≤ WeilDivisor.coeff D x := WeilDivisor.coeff_nonneg hEff x
     have hord : WeilDivisor.coeff D x = X.ord
         (X.germToFunctionField ⊤
           (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x := by
