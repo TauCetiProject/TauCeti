@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-public import TauCeti.Topology.Algebra.Algebra
+public import TauCeti.Topology.Algebra.Algebra.Basic
 public import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
