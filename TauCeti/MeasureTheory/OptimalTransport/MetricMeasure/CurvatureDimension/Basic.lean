@@ -128,13 +128,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
           rw [wassersteinEDist_dirac_left measurable_edist]
           exact eLpNorm_le_of_ae_enorm_bound (by fun_prop) hbound
       _ = ENNReal.ofReal r := by simp
-  have hmom : HasFiniteMoment p m[|s] :=
-    (hasFiniteMoment_iff_exists_wassersteinEDist_dirac_ne_top measurable_edist _).2
-      ⟨x, ne_top_of_le_ne_top ENNReal.ofReal_ne_top hW⟩
-  have hcoe : ((WassersteinSpace.mk (p := p) ⟨m[|s], hprob⟩ hmom : ProbabilityMeasure X) :
-      Measure X) = m[|s] :=
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
-      (ProbabilityMeasure.coe_mk _ _)
+  obtain ⟨μ, hμ, -⟩ := WassersteinSpace.exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
   -- The entropy is `c log c * m s`, the integral of a constant over `s`.
   have hV : (fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ) *
       Real.log (s.indicator (fun _ ↦ c) y : ℝ≥0)) =
@@ -145,7 +139,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
     rw [hdens, boltzmannEntropy_withDensity (measurable_const.indicator hs).aemeasurable, hV,
       potentialEnergy_of_integrable ((integrableOn_const hstop).integrable_indicator hs)]
     exact ⟨_, rfl⟩
-  refine ⟨.mk ⟨m[|s], hprob⟩ hmom, ?_, ?_, by rwa [hcoe]⟩ <;> rw [hcoe, hE]
+  refine ⟨μ, ?_, ?_, by rwa [hμ]⟩ <;> rw [hμ, hE]
   exacts [EReal.coe_ne_top E, EReal.coe_ne_bot E]
 
 end FiniteEntropy

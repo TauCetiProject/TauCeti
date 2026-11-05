@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.DiracProba
+public import Mathlib.MeasureTheory.Measure.Support
+public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
@@ -425,6 +427,33 @@ theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] {a b : ℝ≥0∞} 
     ((hasFiniteMoment μ).smul_measure ha).add_measure ((hasFiniteMoment ν).smul_measure hb)
   exact ⟨mk ((μ : ProbabilityMeasure X).convexComb hab ν)
     (by rwa [ProbabilityMeasure.toMeasure_convexComb]), by simp⟩
+
+open ProbabilityTheory in
+/-- **Uniform laws on bounded sets lie in `P_p(X)`.** The normalised restriction `m[|s]` of a
+measure `m` to a bounded measurable set `s` of positive, finite measure is a law of `P_p(X)`. It
+is carried by `s`, so it has bounded support and is absolutely continuous with respect to `m`. -/
+theorem exists_coe_eq_cond [OpensMeasurableSpace X] {m : Measure X} {s : Set X}
+    (hs : MeasurableSet s) (hb : Bornology.IsBounded s) (h₀ : m s ≠ 0) (hfin : m s ≠ ∞) :
+    ∃ μ : WassersteinSpace p X, ((μ : ProbabilityMeasure X) : Measure X) = m[|s] ∧
+      Bornology.IsBounded ((μ : ProbabilityMeasure X) : Measure X).support ∧
+      ((μ : ProbabilityMeasure X) : Measure X) ≪ m := by
+  obtain ⟨x, -⟩ := nonempty_of_measure_ne_zero h₀
+  obtain ⟨r, hr⟩ := (Metric.isBounded_iff_subset_closedBall x).1 hb
+  have hprob : IsProbabilityMeasure m[|s] := cond_isProbabilityMeasure_of_finite h₀ hfin
+  have hae : ∀ᵐ y ∂m[|s], y ∈ Metric.closedBall x r :=
+    (ae_cond_mem hs).mono fun _ hy ↦ hr hy
+  -- The law is carried by `Metric.closedBall x r`, so its distance from `x` is bounded by `r`.
+  have hmom : HasFiniteMoment p m[|s] :=
+    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
+      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
+      (hae.mono fun y hy ↦ by
+        rw [enorm_eq_self, edist_comm, edist_dist]
+        exact ENNReal.ofReal_le_ofReal (Metric.mem_closedBall.1 hy))⟩
+  have hcoe : ((mk (p := p) ⟨_, hprob⟩ hmom : ProbabilityMeasure X) : Measure X) = m[|s] :=
+    (congrArg ProbabilityMeasure.toMeasure (coe_mk _ _)).trans (ProbabilityMeasure.coe_mk _ _)
+  refine ⟨mk ⟨_, hprob⟩ hmom, hcoe, ?_, ?_⟩ <;> rw [hcoe]
+  exacts [Metric.isBounded_closedBall.subset
+    (Measure.support_subset_of_isClosed Metric.isClosed_closedBall hae), cond_absolutelyContinuous]
 
 /-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
 point of `P_p(X)`. -/
