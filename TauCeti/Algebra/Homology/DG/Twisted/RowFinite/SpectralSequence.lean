@@ -19,8 +19,13 @@ generators of a fixed index.
 The generator set may be infinite, with unbounded indices, so the filtration need not be finite.
 It is exhaustive in every degree, hence so is the induced filtration of the abutment `H^n`. It
 vanishes below a lower bound for the indices, hence so does the filtration of the abutment.
-The convergence results of `TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive` apply
-to it through `TauCeti.RowFiniteTwistingCocycle.exists_mem_range_indexSubobject_arrow_f`.
+Exhaustiveness (`TauCeti.RowFiniteTwistingCocycle.exists_mem_range_indexSubobject_arrow_f`)
+supplies the exhaustiveness hypotheses of the convergence results of
+`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive`. Strong convergence and the
+comparison theorem there also need vanishing hypotheses that arbitrary coefficients and
+unbounded indices do not provide: the cohomology of the graded pieces `F_{i+1} / F_i` must vanish
+in the relevant degrees for all large `i`, and that of the stages `F_i` for all small `i` (for
+instance when the stages are zero below a lower bound for the indices).
 
 ## Main definitions
 
@@ -39,6 +44,12 @@ to it through `TauCeti.RowFiniteTwistingCocycle.exists_mem_range_indexSubobject_
   abutment vanishes below all generator indices.
 
 ## Implementation notes
+
+This module adapts the finite construction of `TauCeti.Algebra.Homology.DG.Twisted.FirstPage`
+to row-finite cocycles: `indexFiltrationFunctorObjIso`, `indexCokernelIso` and
+`indexSpectralSequenceFirstPageXIso` follow `TwistingCocycle.twistedIndexFiltrationFunctorObjIso`,
+`TwistingCocycle.twistedIndexCokernelIso` and `TwistingCocycle.indexSpectralSequenceFirstPageXIso`
+there.
 
 The pages are numbered as in Mathlib's `CochainComplex.spectralSequence`: the first page `E₁` is
 `page 2`, and its object at `(p, q)` is the cohomology in total degree `p + q` of the graded

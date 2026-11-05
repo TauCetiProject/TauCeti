@@ -16,7 +16,8 @@ Filter the finite-support free module by the indices of its generators. Unlike a
 coefficient modules, this filtration is exhaustive even for an infinite generator set with
 unbounded indices. If the twisting rows strictly lower generator indices, the twisting part of
 the differential lowers the filtration. The successive quotient is therefore the finite-support
-module on generators of one index, with the coefficient differential alone.
+module on generators of one index, with the coefficient differential alone. Intersecting a
+stage with the total grading gives its degree-`n` part (`TauCeti.rowFiniteIndexGrading`).
 
 The quotient equivalence and its differential comparison are explicit. If generator indices
 are bounded below (as for nonnegative-dimensional cells), the filtration starts at zero. These
@@ -120,6 +121,38 @@ theorem rowFiniteIndexProjection_mem_grading (𝒜 : ℤ → Submodule R A) {p n
     (mem_rowFiniteTotalGrading_iff 𝒜 ind).mp hf x.val
 
 end Filtration
+
+section Grading
+
+variable {R : Type uR} {A : Type uA} {P : Type uP}
+  [Semiring R] [AddCommMonoid A] [Module R A] (ℳ : ℤ → Submodule R A) (ind : P → ℤ)
+
+/-- Finite-support vectors of total degree `n` supported on generators of index at most `p`:
+the degree-`n` part of the `p`-th stage of the index filtration. -/
+noncomputable def rowFiniteIndexGrading (p n : ℤ) : Submodule R (P →₀ A) :=
+  rowFiniteIndexFiltration ind p ⊓ rowFiniteTotalGrading ℳ ind n
+
+variable {ℳ ind}
+
+@[simp]
+theorem mem_rowFiniteIndexGrading_iff {p n : ℤ} {f : P →₀ A} :
+    f ∈ rowFiniteIndexGrading ℳ ind p n ↔
+      f ∈ rowFiniteIndexFiltration (R := R) ind p ∧ f ∈ rowFiniteTotalGrading ℳ ind n :=
+  Submodule.mem_inf
+
+theorem rowFiniteIndexGrading_mono {p q n : ℤ} (hpq : p ≤ q) :
+    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteIndexGrading ℳ ind q n :=
+  inf_le_inf_right _ (rowFiniteIndexFiltration_mono ind hpq)
+
+theorem rowFiniteIndexGrading_le_rowFiniteIndexFiltration (p n : ℤ) :
+    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteIndexFiltration ind p :=
+  inf_le_left
+
+theorem rowFiniteIndexGrading_le_rowFiniteTotalGrading (p n : ℤ) :
+    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteTotalGrading ℳ ind n :=
+  inf_le_right
+
+end Grading
 
 section Quotient
 

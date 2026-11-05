@@ -33,7 +33,6 @@ sequence of a twisted complex over an infinite cell structure.
 
 ## Main definitions
 
-* `TauCeti.rowFiniteIndexGrading`: the degree-`n` part of the `p`-th filtration stage.
 * `TauCeti.RowFiniteTwistingCocycle.indexCochainComplex`: the stage `F_p` as a cochain complex.
 * `TauCeti.RowFiniteTwistingCocycle.indexSubobject`: the stages as subobjects of the
   coefficient complex.
@@ -51,6 +50,16 @@ sequence of a twisted complex over an infinite cell structure.
 * `TauCeti.RowFiniteTwistingCocycle.shortExact_indexCochainComplexMap_proj`: the sequence
   `F_p ⟶ F_{p+1} ⟶ M ⊗ ⟨P_{p+1}⟩` is short exact.
 
+## Implementation notes
+
+This module adapts the finite construction of `TauCeti.Algebra.Homology.DG.Twisted.Filtration`
+to finite-support vectors on an arbitrary generator set. `indexCochainComplex`,
+`indexCochainComplexMap`, `indexCochainComplexι`, `indexSubobject`, `indexCochainComplexProj`
+and `shortExact_indexCochainComplexMap_proj` follow `TwistingCocycle.twistedIndexCochainComplex`,
+`TwistingCocycle.twistedIndexCochainComplexMap`, `TwistingCocycle.twistedIndexCochainComplexι`,
+`TwistingCocycle.twistedIndexSubobject`, `TwistingCocycle.twistedIndexCochainComplexProj` and
+`TwistingCocycle.twistedIndexShortComplex_shortExact` there.
+
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
@@ -66,38 +75,6 @@ open CategoryTheory Limits MulOpposite
 namespace TauCeti
 
 universe uR uA uM uP
-
-section Grading
-
-variable {R : Type uR} {M : Type uM} {P : Type uP}
-  [Semiring R] [AddCommMonoid M] [Module R M] (ℳ : ℤ → Submodule R M) (ind : P → ℤ)
-
-/-- Finite-support vectors of total degree `n` supported on generators of index at most `p`:
-the degree-`n` part of the `p`-th stage of the index filtration. -/
-def rowFiniteIndexGrading (p n : ℤ) : Submodule R (P →₀ M) :=
-  rowFiniteIndexFiltration ind p ⊓ rowFiniteTotalGrading ℳ ind n
-
-variable {ℳ ind}
-
-@[simp]
-theorem mem_rowFiniteIndexGrading_iff {p n : ℤ} {f : P →₀ M} :
-    f ∈ rowFiniteIndexGrading ℳ ind p n ↔
-      f ∈ rowFiniteIndexFiltration (R := R) ind p ∧ f ∈ rowFiniteTotalGrading ℳ ind n :=
-  Submodule.mem_inf
-
-theorem rowFiniteIndexGrading_mono {p q n : ℤ} (hpq : p ≤ q) :
-    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteIndexGrading ℳ ind q n :=
-  inf_le_inf_right _ (rowFiniteIndexFiltration_mono ind hpq)
-
-theorem rowFiniteIndexGrading_le_rowFiniteIndexFiltration (p n : ℤ) :
-    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteIndexFiltration ind p :=
-  inf_le_left
-
-theorem rowFiniteIndexGrading_le_rowFiniteTotalGrading (p n : ℤ) :
-    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteTotalGrading ℳ ind n :=
-  inf_le_right
-
-end Grading
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
   [CommRing R] [Ring A] [Algebra R A]
@@ -310,12 +287,14 @@ some stage, without a bound on the generator indices. -/
 theorem exists_mem_range_indexSubobject_arrow_f (n : ℤ)
     (f : (m.coefficientCochainComplex hM).X n) :
     ∃ p, f ∈ LinearMap.range ((m.indexSubobject hm hM p).arrow.f n).hom := by
-  classical
-  obtain ⟨p, hp⟩ :=
-    ((m.coefficientCochainComplexXEquiv hM n f : P →₀ M).support.image ind).exists_le
-  refine ⟨p, (m.mem_range_indexSubobject_arrow_f_iff hm hM p n f).mpr fun x hx ↦ ?_⟩
-  by_contra h
-  exact absurd (hp _ (Finset.mem_image_of_mem ind (Finsupp.mem_support_iff.mpr h))) (not_le.mpr hx)
+  have hf : (m.coefficientCochainComplexXEquiv hM n f : P →₀ M) ∈
+      ⨆ p, rowFiniteIndexFiltration (R := R) ind p := by
+    rw [iSup_rowFiniteIndexFiltration_eq_top]
+    exact Submodule.mem_top
+  obtain ⟨p, hp⟩ := (Submodule.mem_iSup_of_directed _
+    (rowFiniteIndexFiltration_mono (R := R) (A := M) ind).directed_le).mp hf
+  exact ⟨p, (m.mem_range_indexSubobject_arrow_f_iff hm hM p n f).mpr
+    ((mem_rowFiniteIndexFiltration_iff ind).mp hp)⟩
 
 /-- Below all generator indices the index filtration vanishes. -/
 theorem indexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) :
@@ -433,13 +412,15 @@ theorem exists_indexCochainComplexMap_f_eq (p n : ℤ)
     (coefficientCochainComplexXEquiv _ hM n t : {x // ind x = p + 1} →₀ M)) hg
   simp only [indexCochainComplexProj_f_apply, map_zero, ZeroMemClass.coe_zero] at hg'
   have hmem := mem_rowFiniteIndexGrading_iff.mp (m.indexCochainComplexXEquiv hm hM (p + 1) n g).2
+  have hker : (⟨_, hmem.1⟩ : rowFiniteIndexFiltration (R := R) ind (p + 1)) ∈
+      LinearMap.ker (rowFiniteIndexProjection ind (p + 1)) := by
+    rw [LinearMap.mem_ker]
+    ext x
+    simpa using DFunLike.congr_fun hg' x
+  rw [ker_rowFiniteIndexProjection, Submodule.mem_comap, add_sub_cancel_right] at hker
   have hp : (m.indexCochainComplexXEquiv hm hM (p + 1) n g : P →₀ M) ∈
-      rowFiniteIndexGrading ℳ ind p n := by
-    refine mem_rowFiniteIndexGrading_iff.mpr ⟨(mem_rowFiniteIndexFiltration_iff ind).mpr
-      fun x hx ↦ ?_, hmem.2⟩
-    rcases (show ind x = p + 1 ∨ p + 1 < ind x by omega) with hx' | hx'
-    · simpa using DFunLike.congr_fun hg' ⟨x, hx'⟩
-    · exact (mem_rowFiniteIndexFiltration_iff ind).mp hmem.1 x hx'
+      rowFiniteIndexGrading ℳ ind p n :=
+    mem_rowFiniteIndexGrading_iff.mpr ⟨hker, hmem.2⟩
   exact ⟨(m.indexCochainComplexXEquiv hm hM p n).symm ⟨_, hp⟩,
     (m.indexCochainComplexXEquiv hm hM (p + 1) n).injective (Subtype.ext (by simp))⟩
 
