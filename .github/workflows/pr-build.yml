@@ -151,14 +151,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@af17a368e29ff57a9511576539c265cbac0439c1
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: af17a368e29ff57a9511576539c265cbac0439c1
+          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@af17a368e29ff57a9511576539c265cbac0439c1
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1070,6 +1070,10 @@ jobs:
           # at the merge base and the head, and leaves it unset whenever it could not read them,
           # so unknown falls through to the walk rather than to the single lookup.
           LAKE_CACHE_MAX_REVS: ${{ env.TOOLCHAIN_CHANGED == '1' && '1' || '1000' }}
+          # Ask for the base revision's outputs exactly before walking. A large staging batch
+          # can sit more than LAKE_CACHE_MAX_REVS first-parent commits above its base, so the
+          # walk alone misses main's published outputs; only a miss here falls back to the walk.
+          LAKE_CACHE_BASE_REV: ${{ steps.pr.outputs.base_sha }}
         run: bash gate/scripts/lake-cache-get.sh pr
 
       # A Bors/queue staging candidate is usually a tip the queue's repair worker built green on
@@ -1261,7 +1265,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@af17a368e29ff57a9511576539c265cbac0439c1
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1623,14 +1627,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@af17a368e29ff57a9511576539c265cbac0439c1
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: af17a368e29ff57a9511576539c265cbac0439c1
+          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@af17a368e29ff57a9511576539c265cbac0439c1
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
