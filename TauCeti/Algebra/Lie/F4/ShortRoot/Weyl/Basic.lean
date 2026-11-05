@@ -107,25 +107,15 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 4) (A : Type v) [CommRi
 
 -- Specialize the named diagram's rank to four before rewriting weights of the concrete
 -- Serre generators. These two transports serve both the square and conjugation relations.
-private theorem lie_cartanGen_raising (i q : Fin 4) :
-    ⁅cartanGen q, rootGen (.inl i)⁆ = ((CartanMatrix.F₄ i q : ℤ) : ℚ) • rootGen (.inl i) := by
-  have hpos : rootWeight (.inl i) q = CartanMatrix.F₄ i q := by
-    simpa only [rank_F4, cartanMatrix_F4] using
-      F4.rootGeneratorWeight_inl (ht := valid_F4) i q
-  rw [← hpos]
-  exact lie_cartanGenerator_rootGenerator (.inl i) q
+private theorem rootWeight_raising (i q : Fin 4) :
+    rootWeight (.inl i) q = CartanMatrix.F₄ i q := by
+  simpa only [rank_F4, cartanMatrix_F4] using
+    F4.rootGeneratorWeight_inl (ht := valid_F4) i q
 
-private theorem lie_cartanGen_lowering (i q : Fin 4) :
-    ⁅cartanGen q, rootGen (.inr i)⁆ = -(((CartanMatrix.F₄ i q : ℤ) : ℚ) • rootGen (.inr i)) := by
-  have hneg : rootWeight (.inr i) q = -CartanMatrix.F₄ i q := by
-    simpa only [rank_F4, cartanMatrix_F4] using
-      F4.rootGeneratorWeight_inr (ht := valid_F4) i q
-  calc
-    ⁅cartanGen q, rootGen (.inr i)⁆ =
-        ((rootWeight (.inr i) q : ℤ) : ℚ) • rootGen (.inr i) :=
-      lie_cartanGenerator_rootGenerator (.inr i) q
-    _ = -((CartanMatrix.F₄ i q : ℤ) : ℚ) • rootGen (.inr i) := by rw [hneg, Int.cast_neg]
-    _ = _ := neg_smul _ _
+private theorem rootWeight_lowering (i q : Fin 4) :
+    rootWeight (.inr i) q = -CartanMatrix.F₄ i q := by
+  simpa only [rank_F4, cartanMatrix_F4] using
+    F4.rootGeneratorWeight_inr (ht := valid_F4) i q
 
 /-- The square of a pinned Weyl representative is the simple coroot evaluated at `-1`.
 This need not be the identity over a general commutative ring. -/
@@ -135,8 +125,17 @@ theorem simpleWeylPoint_sq (i : Fin 4) (A : Type v) [CommRing A] :
   have h := kostantToralWeylPoint_sq (α := fun q ↦ CartanMatrix.F₄ i q)
     rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
     isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight
-    (isSl2Triple_rep_serreRootGenerator i) (lie_cartanGen_raising i)
-    (lie_cartanGen_lowering i) isCartanWeightVector_latticeBasis A
+    (isSl2Triple_rep_serreRootGenerator i)
+    (fun q ↦ by
+      rw [← rootWeight_raising i q]
+      exact lie_cartanGenerator_rootGenerator (.inl i) q)
+    (fun q ↦ by
+      calc
+        ⁅cartanGen q, rootGen (.inr i)⁆ =
+            (rootWeight (.inr i) q : ℚ) • rootGen (.inr i) :=
+          lie_cartanGenerator_rootGenerator (.inr i) q
+        _ = _ := by rw [rootWeight_lowering, Int.cast_neg, neg_smul])
+    isCartanWeightVector_latticeBasis A
   apply Subtype.ext
   simpa only [Subgroup.coe_pow, coe_simpleWeylPoint,
     coe_weightTorusPoints, coe_kostantToralWeightTorusPoints] using congrArg Subtype.val h
@@ -150,15 +149,17 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 4) (A : Type v) [CommRin
       weightTorusPoints A (F4.geckSimpleReflectionTorusPoint valid_F4 i A s) := by
   rw [F4.geckSimpleReflectionTorusPoint_def valid_F4 i A,
     F4.root_simpleIndex valid_F4 i]
+  -- Normalize F4.rank to 4 inside the reflection's Fintype/DecidableEq instance
+  -- arguments as well, matching the instances used by the concrete carrier.
   dsimp (config := { instances := true }) only [rank]
   simp only [cartanMatrix_F4]
-  have h := kostantToralWeylPoint_conj_weightTorusPoints
+  have h := kostantToralWeylPoint_conj_weightTorusPoints_of_rootWeight
     (i := Sum.inl i) (j := Sum.inr i) (c := i)
     (α := fun j : Fin 4 ↦ CartanMatrix.F₄ i j)
     rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
     isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight
-    (isSl2Triple_rep_serreRootGenerator i)
-    (lie_cartanGen_raising i) (lie_cartanGen_lowering i)
+    (isSl2Triple_rep_serreRootGenerator i) rootWeight
+    lie_cartanGenerator_rootGenerator (rootWeight_raising i) (rootWeight_lowering i)
     isCartanWeightVector_latticeBasis A s
   apply Subtype.ext
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint,

@@ -8,12 +8,26 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Preserving
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Orientability of product manifolds
 
 The preferred transition derivative of a product is block diagonal. Products of source signs
 therefore give an orientation lift of the product, including manifolds with boundary and corners.
+
+Exchanging the factors, `Prod.swap : M × M' → M' × M`, compares the product orientation of `M`
+and `M'` with that of `M'` and `M`. Its derivative exchanges the components of tangent vectors, so
+by the linear sign rule `Orientation.map_prodComm_prod` it preserves orientation at every point
+when the product `m * n` of the dimensions is even, and reverses it when `m * n` is odd
+(`TauCeti.Manifold.Orientation.isOrientationPreservingAt_swap_prod`,
+`TauCeti.Manifold.Orientation.isOrientationReversingAt_swap_prod`). The two products are indexed by
+`Fin (m + n)` and `Fin (n + m)`, identified by `TauCeti.Manifold.Orientation.reindex`.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 15 (product orientations).
 -/
 
 public section
@@ -184,6 +198,51 @@ theorem prod_neg_right (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fi
 theorem prod_neg_neg (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin n)) :
     (-o).prod (-o') = o.prod o' := by
   rw [prod_neg_left, prod_neg_right, neg_neg]
+
+/-- The derivative of `Prod.swap : M × M' → M' × M` at `x`, as a continuous linear equivalence
+of tangent spaces. -/
+private def mfderivSwapEquiv (x : M × M') :
+    TangentSpace (I.prod I') x ≃L[ℝ] TangentSpace (I'.prod I) (Prod.swap x) :=
+  ContinuousLinearEquiv.prodComm ℝ (TangentSpace I x.1) (TangentSpace I' x.2)
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
+private theorem coe_mfderivSwapEquiv (x : M × M') :
+    (mfderivSwapEquiv (I := I) (I' := I') x :
+      TangentSpace (I.prod I') x →L[ℝ] TangentSpace (I'.prod I) (Prod.swap x)) =
+      mfderiv (I.prod I') (I'.prod I) Prod.swap x := by
+  rw [TauCeti.mfderiv_swap]
+  -- `ContinuousLinearEquiv.prodComm` is the map `v ↦ (v.2, v.1)`, which is `snd.prod fst`; the
+  -- tangent spaces of the products are the products of the tangent spaces.
+  rfl
+
+/-- Exchanging the factors carries the product of the tangent orientations of `o` and `o'` at `x`
+to `(-1) ^ (m * n)` times the product of those of `o'` and `o` at `Prod.swap x`. -/
+private theorem map_mfderivSwapEquiv_orientationAt_prod (o : Orientation I M (Fin m))
+    (o' : Orientation I' M' (Fin n)) (x : M × M') :
+    _root_.Orientation.map (Fin (m + n)) (mfderivSwapEquiv (I := I) (I' := I') x).toLinearEquiv
+        ((o.prod o').orientationAt x) =
+      (-1 : ℝˣ) ^ (m * n) • ((o'.prod o).reindex (finCongr (add_comm n m))).orientationAt
+        (Prod.swap x) := by
+  rw [orientationAt_reindex, orientationAt_prod, orientationAt_prod]
+  exact _root_.Orientation.map_prodComm_prod _ _ _ _
+
+/-- If the product `m * n` of the dimensions is even, exchanging the factors of `M × M'` preserves
+the product orientations at every point. -/
+theorem isOrientationPreservingAt_swap_prod (o : Orientation I M (Fin m))
+    (o' : Orientation I' M' (Fin n)) (h : Even (m * n)) (x : M × M') :
+    IsOrientationPreservingAt (o.prod o') ((o'.prod o).reindex (finCongr (add_comm n m)))
+      Prod.swap x := by
+  rw [isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ _ (coe_mfderivSwapEquiv x),
+    map_mfderivSwapEquiv_orientationAt_prod, h.neg_one_pow, one_smul]
+
+/-- If the product `m * n` of the dimensions is odd, exchanging the factors of `M × M'` reverses
+the product orientations at every point. -/
+theorem isOrientationReversingAt_swap_prod (o : Orientation I M (Fin m))
+    (o' : Orientation I' M' (Fin n)) (h : Odd (m * n)) (x : M × M') :
+    IsOrientationReversingAt (o.prod o') ((o'.prod o).reindex (finCongr (add_comm n m)))
+      Prod.swap x := by
+  rw [isOrientationReversingAt_iff_of_coe_eq _ _ _ _ _ (coe_mfderivSwapEquiv x),
+    map_mfderivSwapEquiv_orientationAt_prod, h.neg_one_pow, Module.Ray.neg_units_smul, one_smul]
 
 end TauCeti.Manifold.Orientation
 
