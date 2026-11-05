@@ -19,8 +19,8 @@ values in graded-injective differential modules.
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
-* The Tau Ceti contributors, homogeneous lifting for graded-projectives
-  (https://github.com/TauCetiProject/TauCeti/pull/26109): the extension argument is its dual.
+* The Tau Ceti contributors, `TauCeti.Algebra.Category.GradedModuleCat.Projective`:
+  the extension argument is dual to its homogeneous lifting for graded-projectives.
 -/
 
 public section

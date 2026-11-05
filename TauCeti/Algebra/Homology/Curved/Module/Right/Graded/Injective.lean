@@ -30,9 +30,9 @@ Closure under triangles and coproducts then gives the result for all coacyclic o
   correspondence*, Mem. Amer. Math. Soc. **212** (2011), no. 996, Section 3.5.
 * L. Positselski, *Differential graded Koszul duality: an introductory survey*, Bull. Lond. Math.
   Soc. **55** (2023), 1553–1640, Section 7.6 and Theorem 7.9(a).
-* The Tau Ceti contributors, graded-projective curved-module formalization
-  (https://github.com/TauCetiProject/TauCeti/pull/26109), for the dual grading-shift and
-  orthogonal-localization pattern. The totalization contraction here is constructed directly.
+* The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective`,
+  for the dual grading-shift and orthogonal-localization pattern. The totalization contraction
+  here is constructed directly.
 -/
 
 public section
