@@ -224,6 +224,12 @@ theorem clebschGordanInclusion_vec_zero (hq : IsGenericQuantumParameter q)
       clebschGordanVector q m ε n δ j :=
   lift_vec_zero ..
 
+/-- At `j = 0`, the Clebsch–Gordan inclusion sends `v₀` to `v₀ ⊗ v₀`. -/
+theorem clebschGordanInclusion_zero_vec_zero (hq : IsGenericQuantumParameter q) :
+    clebschGordanInclusion (m := m) (n := n) (ε := ε) (δ := δ) hq 0
+      (vec q (m + n) (ε * δ) 0) = tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 0) :=
+  (clebschGordanInclusion_vec_zero hq 0).trans (by simp [clebschGordanVector_def])
+
 /-- The Clebsch–Gordan inclusion sends `v_k` to the normalized lowering string
 `F^k w_j / ([1]_q ⋯ [k]_q)`. -/
 theorem clebschGordanInclusion_vec (hq : IsGenericQuantumParameter q) (j : Fin (min m n + 1))

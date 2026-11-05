@@ -108,12 +108,7 @@ theorem isClebschGordanTriple_iff_exists_fin (a b c : ℕ) :
 theorem sum_range_eq_sum_fin_sub_two_mul {M : Type*} [AddCommMonoid M] (a b : ℕ)
     (f : ℕ → M) (hf : ∀ c, ¬ IsClebschGordanTriple a b c → f c = 0) :
     ∑ c ∈ Finset.range (a + b + 1), f c = ∑ j : Fin (min a b + 1), f (a + b - 2 * (j : ℕ)) := by
-  have hfilter : ∑ c ∈ Finset.range (a + b + 1), f c =
-      ∑ c ∈ (Finset.range (a + b + 1)).filter (IsClebschGordanTriple a b), f c := by
-    rw [Finset.sum_filter]
-    exact Finset.sum_congr rfl fun c _ => by
-      by_cases h : IsClebschGordanTriple a b c <;> simp [h, hf]
-  rw [hfilter]
+  rw [← Finset.sum_filter_of_ne (p := IsClebschGordanTriple a b) fun c _ => Not.imp_symm (hf c)]
   refine (Finset.sum_nbij (fun j : Fin (min a b + 1) => a + b - 2 * (j : ℕ))
     (fun j _ => by
       have := j.isLt; simp only [Finset.mem_filter, Finset.mem_range]
@@ -182,7 +177,7 @@ theorem clebschGordanWeightProjection_comp_inclusion_of_ne (hq : IsGenericQuantu
     {a b c c' : ℕ} (ε δ : ℤˣ) (hne : c ≠ c') :
     (clebschGordanWeightProjection hq a ε b δ c).comp
       (clebschGordanWeightInclusion hq a ε b δ c') = 0 :=
-  hom_eq_zero_of_ne_left hq hne.symm _
+  hom_eq_zero_of_weight_ne hq hne.symm _
 
 /-- Combined orthogonality formula for weight-indexed binary Clebsch–Gordan maps. -/
 theorem clebschGordanWeightProjection_comp_inclusion (hq : IsGenericQuantumParameter q)

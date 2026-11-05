@@ -90,12 +90,12 @@ theorem hom_eq_zero_of_ne (hq : IsGenericQuantumParameter q) (h : m ≠ n ∨ ε
   rw [← not_nonempty_iff, nonempty_linearEquiv_iff hq]; tauto
 
 /-- At a generic parameter, intertwiners between distinct highest weights vanish. -/
-theorem hom_eq_zero_of_ne_left (hq : IsGenericQuantumParameter q) (hm : m ≠ n)
+theorem hom_eq_zero_of_weight_ne (hq : IsGenericQuantumParameter q) (hm : m ≠ n)
     (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : φ = 0 :=
   hom_eq_zero_of_ne hq (.inl hm) φ
 
 /-- At a generic parameter, intertwiners between distinct signs vanish. -/
-theorem hom_eq_zero_of_ne_right (hq : IsGenericQuantumParameter q) (hε : ε ≠ δ)
+theorem hom_eq_zero_of_sign_ne (hq : IsGenericQuantumParameter q) (hε : ε ≠ δ)
     (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : φ = 0 :=
   hom_eq_zero_of_ne hq (.inr hε) φ
 
@@ -120,7 +120,7 @@ theorem homScalar_apply (φ : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q
     homScalar (congr (q := q) hm hε).toLinearMap = 1 := by simp [homScalar_apply]
 
 /-- On endomorphisms of `L_m^ε`, `homScalar` agrees with `endAlgEquivSelfOfIsSimpleModule`. -/
-theorem homScalar_end (hq : IsGenericQuantumParameter q)
+theorem homScalar_eq_endAlgEquivSelfOfIsSimpleModule (hq : IsGenericQuantumParameter q)
     (φ : Module.End (UqSl2 q) (LadderModule q m ε)) :
     homScalar φ =
       have := isSimpleModule (m := m) (ε := ε) hq
@@ -134,7 +134,7 @@ theorem end_apply_eq_homScalar_smul (hq : IsGenericQuantumParameter q)
     (φ : Module.End (UqSl2 q) (LadderModule q m ε)) (x : LadderModule q m ε) :
     φ x = homScalar φ • x := by
   have := isSimpleModule (m := m) (ε := ε) hq
-  rw [homScalar_end hq φ, endAlgEquivSelfOfIsSimpleModule_smul]
+  rw [homScalar_eq_endAlgEquivSelfOfIsSimpleModule hq φ, endAlgEquivSelfOfIsSimpleModule_smul]
 
 /-- At a generic parameter, when `m = n` and `ε = δ`, every `φ : L_m^ε →ₗ[UqSl2 q] L_n^δ` acts as
 `homScalar φ • congr hm hε x`. -/

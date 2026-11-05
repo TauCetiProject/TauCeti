@@ -6,27 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.LinearMap.BigOperators
-public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.Channel
+public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.Recoupling
 public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.Weight
 
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
-# Quantum `6j` symbols and change-of-decomposition matrices
+# Quantum `6j` symbols, coupled `F`-ladder bases, and change-of-decomposition matrices
 
-Building on `ClebschGordan.Channel` and `ClebschGordan.Weight`, this file defines the weight-indexed
-quantum `6j` change-of-decomposition symbols and square fixed-total-weight `6j` matrices on triple
-tensor products of signed `U_q(sl₂)` ladder modules, proves operator reassociation and two-sided
-invertibility, and evaluates all four `2 × 2` spin-`1/2` entries on `L_1^ε ⊗ L_1^δ ⊗ L_1^ζ`.
+Building on `ClebschGordan.Recoupling` and `ClebschGordan.Weight`, this file defines the
+weight-indexed quantum `6j` change-of-decomposition symbols and square fixed-total-weight `6j`
+matrices on triple tensor products of signed `U_q(sl₂)` ladder modules, constructs the coupled
+normalized `F`-ladder bases in which the matrix of `BialgebraModule.assoc` is block-diagonal with
+diagonal entries `sixJSymbol`, proves operator reassociation and two-sided invertibility, and
+evaluates all four `2 × 2` spin-`1/2` entries on `L_1^ε ⊗ L_1^δ ⊗ L_1^ζ`.
 
 ## Main definitions
 
 * `TauCeti.UqSl2.sixJSymbol`, `TauCeti.UqSl2.sixJSymbolSymm`: quantum `6j` change-of-decomposition
   scalars and their inverses in the normalized `α₀ = 1` / `F`-ladder convention.
+* `TauCeti.UqSl2.clebschGordanLeftBasis`, `TauCeti.UqSl2.clebschGordanRightBasis`: coupled
+  normalized `F`-ladder bases of `(L_m^ε ⊗ L_n^δ) ⊗ L_p^ζ` and `L_m^ε ⊗ (L_n^δ ⊗ L_p^ζ)`.
 * `TauCeti.UqSl2.sixJMatrix`, `TauCeti.UqSl2.sixJMatrixSymm`: fixed-total-weight `6j` matrices.
 
 ## Main results
 
+* `TauCeti.UqSl2.toMatrix_assoc_clebschGordanBasis`,
+  `TauCeti.UqSl2.toMatrix_assoc_symm_clebschGordanBasis`: matrix of `BialgebraModule.assoc` and
+  `assoc.symm` in the coupled normalized `F`-ladder bases.
 * `TauCeti.UqSl2.assoc_comp_clebschGordanWeightInclusion`: operator reassociation of a left-coupled
   channel as a `sixJSymbol`-linear combination of right-coupled channels.
 * `TauCeti.UqSl2.sixJMatrixSymm_mul_sixJMatrix`, `TauCeti.UqSl2.sixJMatrix_mul_sixJMatrixSymm`:
@@ -68,7 +75,7 @@ private theorem eq_homScalar_weightProjection_smul_weightInclusion
         LinearMap.comp_smul]
     · intro d' _ hne
       rw [LinearMap.comp_assoc,
-        hom_eq_zero_of_ne_left hq hne.symm ((clebschGordanWeightProjection hq a ε b δ d').comp f),
+        hom_eq_zero_of_weight_ne hq hne.symm ((clebschGordanWeightProjection hq a ε b δ d').comp f),
         LinearMap.comp_zero]
     · exact fun h => (h hd).elim
   · have hnot : ¬ IsClebschGordanTriple a b d := fun htr =>
@@ -78,7 +85,7 @@ private theorem eq_homScalar_weightProjection_smul_weightInclusion
     refine Finset.sum_eq_zero fun d' hd' => ?_
     have hne : d' ≠ d := fun h => hd (h ▸ hd')
     rw [LinearMap.comp_assoc,
-      hom_eq_zero_of_ne_left hq hne.symm ((clebschGordanWeightProjection hq a ε b δ d').comp f),
+      hom_eq_zero_of_weight_ne hq hne.symm ((clebschGordanWeightProjection hq a ε b δ d').comp f),
       LinearMap.comp_zero]
 
 /-- Weight-indexed recoupling intertwiner `L_d^((εδ)ζ) →ₗ[UqSl2 q] L_d^(ε(δζ))` from left
@@ -146,47 +153,167 @@ theorem sixJSymbolSymm_eq_zero_of_not_isClebschGordanTriple (hq : IsGenericQuant
   · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq δ ζ h₃]
   · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq ε (δ * ζ) h₄]
 
-/-- On matching `Fin` channel indices, `sixJSymbol` coincides with `sixJChannel`. -/
-theorem sixJSymbol_eq_sixJChannel (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {a b c d : ℕ}
-    (i : Fin (min a b + 1)) (j : Fin (min (a + b - 2 * (i : ℕ)) c + 1))
-    (r : Fin (min b c + 1)) (s : Fin (min a (b + c - 2 * (r : ℕ)) + 1))
-    (hd₁ : a + b - 2 * (i : ℕ) + c - 2 * (j : ℕ) = d)
-    (hd₂ : a + (b + c - 2 * (r : ℕ)) - 2 * (s : ℕ) = d) :
-    sixJSymbol hq ε δ ζ a b c d (a + b - 2 * (i : ℕ)) (b + c - 2 * (r : ℕ)) =
-      sixJChannel hq ε δ ζ i j r s := by
-  rw [sixJSymbol, sixJRecouplingHom,
-    clebschGordanWeightProjection_congr_right hq a ε (b + c - 2 * (r : ℕ)) (δ * ζ) hd₂,
-    clebschGordanWeightInclusion_congr_right hq (a + b - 2 * (i : ℕ)) (ε * δ) c ζ hd₁,
-    clebschGordanWeightProjection_sub_two_mul, clebschGordanWeightProjection_sub_two_mul,
-    clebschGordanWeightInclusion_sub_two_mul, clebschGordanWeightInclusion_sub_two_mul,
-    LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, one_mul]
-  simp only [← LinearMap.comp_assoc]
-  rw [homScalar_comp hq, homScalar_congr, mul_one, homScalar_apply]
-  have h := (clebschGordanRecouplingEquiv_single_apply (ε := ε) (δ := δ) (ζ := ζ)
-    hq i j r s (vec q _ ((ε * δ) * ζ) 0)).symm
-  rw [← clebschGordanRecouplingHom_apply, clebschGordanRecouplingHom_vec] at h
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, h]; simp
+/-! ### Coupled normalized `F`-ladder bases -/
 
-/-- On matching `Fin` channel indices, `sixJSymbolSymm` coincides with `sixJChannelSymm`. -/
-theorem sixJSymbolSymm_eq_sixJChannelSymm (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
-    {a b c d : ℕ} (r : Fin (min b c + 1)) (s : Fin (min a (b + c - 2 * (r : ℕ)) + 1))
-    (i : Fin (min a b + 1)) (j : Fin (min (a + b - 2 * (i : ℕ)) c + 1))
-    (hd₁ : a + b - 2 * (i : ℕ) + c - 2 * (j : ℕ) = d)
-    (hd₂ : a + (b + c - 2 * (r : ℕ)) - 2 * (s : ℕ) = d) :
-    sixJSymbolSymm hq ε δ ζ a b c d (b + c - 2 * (r : ℕ)) (a + b - 2 * (i : ℕ)) =
-      sixJChannelSymm hq ε δ ζ r s i j := by
-  rw [sixJSymbolSymm, sixJRecouplingSymmHom,
-    clebschGordanWeightProjection_congr_right hq (a + b - 2 * (i : ℕ)) (ε * δ) c ζ hd₁,
-    clebschGordanWeightInclusion_congr_right hq a ε (b + c - 2 * (r : ℕ)) (δ * ζ) hd₂,
-    clebschGordanWeightProjection_sub_two_mul, clebschGordanWeightProjection_sub_two_mul,
-    clebschGordanWeightInclusion_sub_two_mul, clebschGordanWeightInclusion_sub_two_mul,
-    LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, one_mul]
-  simp only [← LinearMap.comp_assoc]
-  rw [homScalar_comp hq, homScalar_congr, mul_one, homScalar_apply]
-  have h := (clebschGordanRecouplingEquiv_symm_single_apply (ε := ε) (δ := δ) (ζ := ζ)
-    hq i j r s (vec q _ (ε * (δ * ζ)) 0)).symm
-  rw [← clebschGordanRecouplingSymmHom_apply, clebschGordanRecouplingSymmHom_vec] at h
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, h]; simp
+/-- Index type for the coupled normalized `F`-ladder basis of `(L_m^ε ⊗ L_n^δ) ⊗ L_p^ζ`. -/
+abbrev ClebschGordanLeftBasisIndex (m n p : ℕ) : Type :=
+  Σ i : Fin (min m n + 1),
+    Σ j : Fin (min (m + n - 2 * (i : ℕ)) p + 1), Fin (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) + 1)
+
+/-- Index type for the coupled normalized `F`-ladder basis of `L_m^ε ⊗ (L_n^δ ⊗ L_p^ζ)`. -/
+abbrev ClebschGordanRightBasisIndex (m n p : ℕ) : Type :=
+  Σ r : Fin (min n p + 1),
+    Σ s : Fin (min m (n + p - 2 * (r : ℕ)) + 1), Fin (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) + 1)
+
+/-- The coupled normalized `F`-ladder basis of `(L_m^ε ⊗ L_n^δ) ⊗ L_p^ζ`. -/
+def clebschGordanLeftBasis (hq : IsGenericQuantumParameter q) (m n p : ℕ) (ε δ ζ : ℤˣ) :
+    Basis (ClebschGordanLeftBasisIndex m n p) ℂ
+      (Tensor ℂ (UqSl2 q) (Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ))
+        (LadderModule q p ζ)) :=
+  (Pi.basis fun i : Fin (min m n + 1) =>
+    Pi.basis fun j : Fin (min (m + n - 2 * (i : ℕ)) p + 1) =>
+      basis q (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ)) ((ε * δ) * ζ)).map
+    ((clebschGordanLeftEquiv hq).restrictScalars ℂ)
+
+/-- The coupled normalized `F`-ladder basis of `L_m^ε ⊗ (L_n^δ ⊗ L_p^ζ)`. -/
+def clebschGordanRightBasis (hq : IsGenericQuantumParameter q) (m n p : ℕ) (ε δ ζ : ℤˣ) :
+    Basis (ClebschGordanRightBasisIndex m n p) ℂ
+      (Tensor ℂ (UqSl2 q) (LadderModule q m ε)
+        (Tensor ℂ (UqSl2 q) (LadderModule q n δ) (LadderModule q p ζ))) :=
+  (Pi.basis fun r : Fin (min n p + 1) =>
+    Pi.basis fun s : Fin (min m (n + p - 2 * (r : ℕ)) + 1) =>
+      basis q (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ)) (ε * (δ * ζ))).map
+    ((clebschGordanRightEquiv hq).restrictScalars ℂ)
+
+/-- Explicit formula for the left-coupled normalized `F`-ladder basis elements. -/
+@[simp] theorem clebschGordanLeftBasis_apply (hq : IsGenericQuantumParameter q)
+    {m n p : ℕ} (ε δ ζ : ℤˣ)
+    (i : Fin (min m n + 1)) (j : Fin (min (m + n - 2 * (i : ℕ)) p + 1))
+    (k : Fin (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) + 1)) :
+    clebschGordanLeftBasis hq m n p ε δ ζ ⟨i, j, k⟩ =
+      tensorMap ℂ (UqSl2 q) (clebschGordanInclusion hq i) LinearMap.id
+        (clebschGordanInclusion hq j (vec q _ ((ε * δ) * ζ) k)) := by
+  simp [clebschGordanLeftBasis, Pi.basis_apply, vec_coe]
+
+/-- Explicit formula for the right-coupled normalized `F`-ladder basis elements. -/
+@[simp] theorem clebschGordanRightBasis_apply (hq : IsGenericQuantumParameter q)
+    {m n p : ℕ} (ε δ ζ : ℤˣ)
+    (r : Fin (min n p + 1)) (s : Fin (min m (n + p - 2 * (r : ℕ)) + 1))
+    (l : Fin (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) + 1)) :
+    clebschGordanRightBasis hq m n p ε δ ζ ⟨r, s, l⟩ =
+      tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq r)
+        (clebschGordanInclusion hq s (vec q _ (ε * (δ * ζ)) l)) := by
+  simp [clebschGordanRightBasis, Pi.basis_apply, vec_coe]
+
+private theorem toMatrix_coupledBasis_apply (hq : IsGenericQuantumParameter q)
+    {I₁ : Type} [Fintype I₁] [DecidableEq I₁] {J₁ : I₁ → Type} [∀ i, Fintype (J₁ i)]
+    [∀ i, DecidableEq (J₁ i)] {w₁ : (i : I₁) → J₁ i → ℕ} {η₁ : ℤˣ}
+    {I₂ : Type} [Fintype I₂] {J₂ : I₂ → Type} [∀ r, Fintype (J₂ r)]
+    {w₂ : (r : I₂) → J₂ r → ℕ} {η₂ : ℤˣ}
+    {M₁ M₂ : Type*} [AddCommGroup M₁] [Module ℂ M₁] [Module (UqSl2 q) M₁]
+    [IsScalarTower ℂ (UqSl2 q) M₁] [AddCommGroup M₂] [Module ℂ M₂] [Module (UqSl2 q) M₂]
+    [IsScalarTower ℂ (UqSl2 q) M₂]
+    (e₁ : (∀ i, ∀ j, LadderModule q (w₁ i j) η₁) ≃ₗ[UqSl2 q] M₁)
+    (e₂ : (∀ r, ∀ s, LadderModule q (w₂ r s) η₂) ≃ₗ[UqSl2 q] M₂)
+    (f : M₁ →ₗ[UqSl2 q] M₂)
+    (r : I₂) (s : J₂ r) (l : Fin (w₂ r s + 1))
+    (i : I₁) (j : J₁ i) (k : Fin (w₁ i j + 1)) :
+    LinearMap.toMatrix
+        ((Pi.basis fun i => Pi.basis fun j => basis q (w₁ i j) η₁).map (e₁.restrictScalars ℂ))
+        ((Pi.basis fun r => Pi.basis fun s => basis q (w₂ r s) η₂).map (e₂.restrictScalars ℂ))
+        (f.restrictScalars ℂ) ⟨r, s, l⟩ ⟨i, j, k⟩ =
+      if (l : ℕ) = (k : ℕ) then
+        homScalar ((LinearMap.proj s).comp <| (LinearMap.proj r).comp <|
+          e₂.symm.toLinearMap.comp <| f.comp <| e₁.toLinearMap.comp <|
+            (LinearMap.single _ _ i).comp (LinearMap.single _ _ j))
+      else 0 := by
+  rw [LinearMap.toMatrix_apply]
+  simp only [Basis.map_repr, Basis.map_apply, LinearEquiv.restrictScalars_apply,
+    LinearMap.restrictScalars_apply, Pi.basis_apply, ← vec_coe]
+  set φ : LadderModule q (w₁ i j) η₁ →ₗ[UqSl2 q] LadderModule q (w₂ r s) η₂ :=
+    (LinearMap.proj s).comp <| (LinearMap.proj r).comp <|
+      e₂.symm.toLinearMap.comp <| f.comp <| e₁.toLinearMap.comp <|
+        (LinearMap.single _ _ i).comp (LinearMap.single _ _ j)
+  change (basis q (w₂ r s) η₂).repr (φ (vec q (w₁ i j) η₁ k)) l = _
+  rw [apply_vec_eq_homScalar_smul hq φ, map_smul, Finsupp.smul_apply, basis_repr_vec, smul_eq_mul]
+  norm_cast; simp [mul_ite]
+
+/-- Matrix of the coproduct tensor associator in the coupled normalized `F`-ladder bases: entries
+are block-diagonal in total highest weight and `F`-ladder index, with diagonal entries given by
+`sixJSymbol`. -/
+theorem toMatrix_assoc_clebschGordanBasis (hq : IsGenericQuantumParameter q)
+    {m n p : ℕ} (ε δ ζ : ℤˣ)
+    (r : Fin (min n p + 1)) (s : Fin (min m (n + p - 2 * (r : ℕ)) + 1))
+    (l : Fin (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) + 1))
+    (i : Fin (min m n + 1)) (j : Fin (min (m + n - 2 * (i : ℕ)) p + 1))
+    (k : Fin (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) + 1)) :
+    LinearMap.toMatrix (clebschGordanLeftBasis hq m n p ε δ ζ)
+        (clebschGordanRightBasis hq m n p ε δ ζ)
+        ((assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
+          (LadderModule q p ζ)).toLinearMap.restrictScalars ℂ) ⟨r, s, l⟩ ⟨i, j, k⟩ =
+      if m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) ∧
+          (l : ℕ) = (k : ℕ) then
+        sixJSymbol hq ε δ ζ m n p (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ))
+          (m + n - 2 * (i : ℕ)) (n + p - 2 * (r : ℕ))
+      else 0 := by
+  rw [clebschGordanLeftBasis, clebschGordanRightBasis, toMatrix_coupledBasis_apply hq]
+  have hφ : ((LinearMap.proj s).comp <| (LinearMap.proj r).comp <|
+      (clebschGordanRightEquiv hq).symm.toLinearMap.comp <|
+        (assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
+          (LadderModule q p ζ)).toLinearMap.comp <|
+          (clebschGordanLeftEquiv hq).toLinearMap.comp <|
+            (LinearMap.single _ _ i).comp (LinearMap.single _ _ j)) =
+      (clebschGordanProjection hq s).comp
+        ((tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanProjection hq r)).comp
+          ((assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
+              (LadderModule q p ζ)).toLinearMap.comp
+            ((tensorMap ℂ (UqSl2 q) (clebschGordanInclusion hq i) LinearMap.id).comp
+              (clebschGordanInclusion hq j)))) := by ext x; simp
+  rw [hφ]
+  by_cases hd : m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ)
+  · rw [sixJSymbol, sixJRecouplingHom,
+      clebschGordanWeightProjection_congr_right hq m ε (n + p - 2 * (r : ℕ)) (δ * ζ) hd]
+    simp [hd, LinearMap.comp_assoc, homScalar_comp hq]
+  · simp [hd, homScalar_eq_zero_of_ne hq (.inl (Ne.symm hd))]
+
+/-- Matrix of `assoc.symm` in the coupled normalized `F`-ladder bases: entries are block-diagonal
+in total highest weight and `F`-ladder index, with diagonal entries given by `sixJSymbolSymm`. -/
+theorem toMatrix_assoc_symm_clebschGordanBasis (hq : IsGenericQuantumParameter q)
+    {m n p : ℕ} (ε δ ζ : ℤˣ)
+    (i : Fin (min m n + 1)) (j : Fin (min (m + n - 2 * (i : ℕ)) p + 1))
+    (k : Fin (m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) + 1))
+    (r : Fin (min n p + 1)) (s : Fin (min m (n + p - 2 * (r : ℕ)) + 1))
+    (l : Fin (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) + 1)) :
+    LinearMap.toMatrix (clebschGordanRightBasis hq m n p ε δ ζ)
+        (clebschGordanLeftBasis hq m n p ε δ ζ)
+        ((assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
+          (LadderModule q p ζ)).symm.toLinearMap.restrictScalars ℂ) ⟨i, j, k⟩ ⟨r, s, l⟩ =
+      if m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) = m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) ∧
+          (k : ℕ) = (l : ℕ) then
+        sixJSymbolSymm hq ε δ ζ m n p (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ))
+          (n + p - 2 * (r : ℕ)) (m + n - 2 * (i : ℕ))
+      else 0 := by
+  rw [clebschGordanRightBasis, clebschGordanLeftBasis, toMatrix_coupledBasis_apply hq]
+  have hφ : ((LinearMap.proj j).comp <| (LinearMap.proj i).comp <|
+      (clebschGordanLeftEquiv hq).symm.toLinearMap.comp <|
+        (assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
+          (LadderModule q p ζ)).symm.toLinearMap.comp <|
+          (clebschGordanRightEquiv hq).toLinearMap.comp <|
+            (LinearMap.single _ _ r).comp (LinearMap.single _ _ s)) =
+      (clebschGordanProjection hq j).comp
+        ((tensorMap ℂ (UqSl2 q) (clebschGordanProjection hq i) LinearMap.id).comp
+          ((assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
+              (LadderModule q p ζ)).symm.toLinearMap.comp
+            ((tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq r)).comp
+              (clebschGordanInclusion hq s)))) := by ext x; simp
+  rw [hφ]
+  by_cases hd : m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) = m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ)
+  · rw [sixJSymbolSymm, sixJRecouplingSymmHom,
+      clebschGordanWeightProjection_congr_right hq (m + n - 2 * (i : ℕ)) (ε * δ) p ζ hd]
+    simp [hd, LinearMap.comp_assoc, homScalar_comp hq]
+  · simp [hd, homScalar_eq_zero_of_ne hq (.inl (Ne.symm hd))]
+
+/-! ### Operator reassociation and fixed-total-weight `6j` matrices -/
 
 /-- Operator reassociation of a left-coupled binary Clebsch–Gordan channel into a linear
 combination of right-coupled channels weighted by `sixJSymbol`. -/
@@ -387,9 +514,7 @@ theorem sum_sixJLeftIndex_eq_sum_range {M : Type*} [AddCommMonoid M] (a b c d : 
     (hf : ∀ u, ¬ (IsClebschGordanTriple a b u ∧ IsClebschGordanTriple u c d) → f u = 0) :
     (∑ u : SixJLeftIndex a b c d, f u.1) = ∑ u ∈ Finset.range (a + b + 1), f u := by
   rw [← Finset.sum_subtype _ (fun _ => mem_filter_range_isClebschGordanTriple_and) f,
-    Finset.sum_filter]
-  exact Finset.sum_congr rfl fun u _ => by
-    by_cases hu : IsClebschGordanTriple a b u ∧ IsClebschGordanTriple u c d <;> simp [hu, hf]
+    Finset.sum_filter_of_ne fun u _ => Not.imp_symm (hf u)]
 
 /-- Summing over `SixJRightIndex a b c d` agrees with summing over `Finset.range (b + c + 1)` for
 any function vanishing outside admissible right intermediate weights. -/
@@ -397,9 +522,7 @@ theorem sum_sixJRightIndex_eq_sum_range {M : Type*} [AddCommMonoid M] (a b c d :
     (hf : ∀ v, ¬ (IsClebschGordanTriple b c v ∧ IsClebschGordanTriple a v d) → f v = 0) :
     (∑ v : SixJRightIndex a b c d, f v.1) = ∑ v ∈ Finset.range (b + c + 1), f v := by
   rw [← Finset.sum_subtype _ (fun _ => mem_filter_range_isClebschGordanTriple_and) f,
-    Finset.sum_filter]
-  exact Finset.sum_congr rfl fun v _ => by
-    by_cases hv : IsClebschGordanTriple b c v ∧ IsClebschGordanTriple a v d <;> simp [hv, hf]
+    Finset.sum_filter_of_ne fun v _ => Not.imp_symm (hf v)]
 
 /-- The fixed-total-weight quantum `6j` change-of-decomposition matrix, with rows indexed by right
 intermediate weights `v` and columns indexed by left intermediate weights `u`. -/
@@ -457,6 +580,10 @@ def sixJMatrixSymm (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (a b c 
 /-- The numbers of admissible left and right intermediate weights at total weight `d` coincide. -/
 theorem card_sixJLeftIndex_eq_card_sixJRightIndex (a b c d : ℕ) :
     Fintype.card (SixJLeftIndex a b c d) = Fintype.card (SixJRightIndex a b c d) := by
+  -- Specialize `U_q(sl₂)` to the generic parameter `q = 2` with trivial signs: `sixJMatrix` and
+  -- `sixJMatrixSymm` then form a mutually inverse pair of matrices between the `ℂ`-vector spaces on
+  -- the two index types, so the resulting `LinearEquiv` equates their `finrank`s and hence the
+  -- index cardinalities.
   have : Fact ((2 : ℂ) ≠ 0) := ⟨by norm_num⟩
   have hq2 : IsGenericQuantumParameter (2 : ℂ) :=
     isGenericQuantumParameter_iff.mpr ⟨by norm_num, fun n hn hpow => by
@@ -492,11 +619,11 @@ private theorem tripleRightCoord_tmul (ε δ ζ : ℤˣ) (i j k : Fin 2) (a b c 
 private def rightVecZero (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) :=
   tensorMap ℂ (UqSl2 q) (LinearMap.id : LadderModule q 1 ε →ₗ[UqSl2 q] _)
     (clebschGordanInclusion hq (⟨1, by omega⟩ : Fin (min 1 1 + 1)))
-    (clebschGordanInclusion hq (⟨0, by omega⟩ : Fin (min 1 0 + 1)) (vec q 1 (ε * (δ * ζ)) 0))
+    (clebschGordanInclusion hq (0 : Fin (min 1 0 + 1)) (vec q 1 (ε * (δ * ζ)) 0))
 
 private def rightVecTwo (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) :=
   tensorMap ℂ (UqSl2 q) (LinearMap.id : LadderModule q 1 ε →ₗ[UqSl2 q] _)
-    (clebschGordanInclusion hq (⟨0, by omega⟩ : Fin (min 1 1 + 1)))
+    (clebschGordanInclusion hq (0 : Fin (min 1 1 + 1)))
     (clebschGordanInclusion hq (⟨1, by omega⟩ : Fin (min 1 2 + 1)) (vec q 1 (ε * (δ * ζ)) 0))
 
 private theorem assoc_spinHalf_vec_zero (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (u : ℕ) :
@@ -512,44 +639,44 @@ private theorem assoc_spinHalf_vec_zero (hq : IsGenericQuantumParameter q) (ε �
       have := h.even_add_sub; simp at this
   rw [hv1, zero_smul, add_zero]
   have h01 := clebschGordanWeightInclusion_sub_two_mul hq 1 δ 1 ζ ⟨1, by omega⟩
-  have h00 := clebschGordanWeightInclusion_sub_two_mul hq 1 ε 0 (δ * ζ) ⟨0, by omega⟩
-  have h20 := clebschGordanWeightInclusion_sub_two_mul hq 1 δ 1 ζ ⟨0, by omega⟩
+  have h00 := clebschGordanWeightInclusion_sub_two_mul hq 1 ε 0 (δ * ζ) 0
+  have h20 := clebschGordanWeightInclusion_sub_two_mul hq 1 δ 1 ζ 0
   have h21 := clebschGordanWeightInclusion_sub_two_mul hq 1 ε 2 (δ * ζ) ⟨1, by omega⟩
+  simp only [Fin.val_zero] at h00 h20
   simp only [rightVecZero, rightVecTwo]
-  dsimp only at h01 h00 h20 h21; rw [h01, h00, h20, h21]
+  dsimp only at h01 h00 h20 h21 ⊢; rw [h01, h00, h20, h21]
+
+private theorem clebschGordanInclusion_one_vec_zero (hq : IsGenericQuantumParameter q)
+    {m n : ℕ} (ε δ : ℤˣ) (h : 1 < min m n + 1) :
+    clebschGordanInclusion hq (⟨1, h⟩ : Fin (min m n + 1)) (vec q (m + n - 2) (ε * δ) 0) =
+      tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 1) +
+        (-(δ : ℂ) * q ^ (m : ℤ) * quantumInteger q n / quantumInteger q m) •
+          tmul ℂ (UqSl2 q) (vec q m ε 1) (vec q n δ 0) := by
+  refine (clebschGordanInclusion_vec_zero hq ⟨1, h⟩).trans ?_
+  dsimp only
+  rw [clebschGordanVector_def, Finset.sum_range_succ, Finset.sum_range_one]
+  simp [clebschGordanCoeff_succ]
 
 private theorem spinHalfAlt_vec_zero (hq : IsGenericQuantumParameter q) (ε₁ ε₂ : ℤˣ) :
     clebschGordanInclusion hq (⟨1, by omega⟩ : Fin (min 1 1 + 1)) (vec q 0 (ε₁ * ε₂) 0) =
       tmul ℂ (UqSl2 q) (vec q 1 ε₁ 0) (vec q 1 ε₂ 1) +
         (-(ε₂ : ℂ) * q) • tmul ℂ (UqSl2 q) (vec q 1 ε₁ 1) (vec q 1 ε₂ 0) := by
-  refine (clebschGordanInclusion_vec_zero (m := 1) (n := 1) (ε := ε₁) (δ := ε₂) hq
-    ⟨1, by omega⟩).trans ?_
-  rw [clebschGordanVector_def, Finset.sum_range_succ, Finset.sum_range_one]
-  simp [clebschGordanCoeff_succ, quantumInteger_one hq.sub_inv_ne_zero]
-
-private theorem spinHalfSym_vec_zero (hq : IsGenericQuantumParameter q) (ε₁ ε₂ : ℤˣ) :
-    clebschGordanInclusion hq (⟨0, by omega⟩ : Fin (min 1 1 + 1)) (vec q 2 (ε₁ * ε₂) 0) =
-      tmul ℂ (UqSl2 q) (vec q 1 ε₁ 0) (vec q 1 ε₂ 0) :=
-  (clebschGordanInclusion_vec_zero (m := 1) (n := 1) (ε := ε₁) (δ := ε₂) hq
-    ⟨0, by omega⟩).trans (by simp [clebschGordanVector_def])
+  simpa [quantumInteger_one hq.sub_inv_ne_zero] using
+    clebschGordanInclusion_one_vec_zero hq ε₁ ε₂ (m := 1) (n := 1) (by omega)
 
 private theorem spinHalfSym_vec_one (hq : IsGenericQuantumParameter q) (ε₁ ε₂ : ℤˣ) :
-    clebschGordanInclusion hq (⟨0, by omega⟩ : Fin (min 1 1 + 1)) (vec q 2 (ε₁ * ε₂) 1) =
+    clebschGordanInclusion hq (0 : Fin (min 1 1 + 1)) (vec q 2 (ε₁ * ε₂) 1) =
       ((ε₂ : ℂ) * q⁻¹) • tmul ℂ (UqSl2 q) (vec q 1 ε₁ 1) (vec q 1 ε₂ 0) +
         tmul ℂ (UqSl2 q) (vec q 1 ε₁ 0) (vec q 1 ε₂ 1) := by
-  refine (clebschGordanInclusion_vec (m := 1) (n := 1) (ε := ε₁) (δ := ε₂) hq
-    ⟨0, by omega⟩ 1).trans ?_
-  rw [Finset.prod_range_one, clebschGordanVector_def, Finset.sum_range_one]
+  refine (clebschGordanInclusion_vec (m := 1) (n := 1) (ε := ε₁) (δ := ε₂) hq 0 1).trans ?_
+  rw [Finset.prod_range_one, clebschGordanVector_def, Fin.val_zero, Finset.sum_range_one]
   simp [quantumInteger_one hq.sub_inv_ne_zero, f_smul_tmul, f_smul_vec, kInv_smul_vec]
 
 private theorem rightVecZero_coords (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) :
     tripleRightCoord q ε δ ζ 0 0 1 (rightVecZero hq ε δ ζ) = 1 ∧
       tripleRightCoord q ε δ ζ 1 0 0 (rightVecZero hq ε δ ζ) = 0 := by
-  have hin : clebschGordanInclusion hq (⟨0, by omega⟩ : Fin (min 1 0 + 1))
-      (vec q 1 (ε * (δ * ζ)) 0) = tmul ℂ (UqSl2 q) (vec q 1 ε 0) (vec q 0 (δ * ζ) 0) :=
-    (clebschGordanInclusion_vec_zero (m := 1) (n := 0) (ε := ε) (δ := δ * ζ) hq
-      ⟨0, by omega⟩).trans (by simp [clebschGordanVector_def])
-  rw [rightVecZero, hin, tensorMap_tmul, LinearMap.id_apply, spinHalfAlt_vec_zero]
+  rw [rightVecZero, clebschGordanInclusion_zero_vec_zero, tensorMap_tmul, LinearMap.id_apply,
+    spinHalfAlt_vec_zero]
   simp only [tmul_add, tmul_smul, map_add, map_smul, tripleRightCoord_tmul, smul_eq_mul]
   norm_num
 
@@ -562,15 +689,11 @@ private theorem rightVecTwo_coords (hq : IsGenericQuantumParameter q) (ε δ ζ 
       tmul ℂ (UqSl2 q) (vec q 1 ε 0) (vec q 2 (δ * ζ) 1) +
         (-(δ : ℂ) * (ζ : ℂ) * q * quantumInteger q 2) •
           tmul ℂ (UqSl2 q) (vec q 1 ε 1) (vec q 2 (δ * ζ) 0) := by
-    refine (clebschGordanInclusion_vec_zero (m := 1) (n := 2) (ε := ε) (δ := δ * ζ) hq
-      ⟨1, by omega⟩).trans ?_
-    rw [clebschGordanVector_def, Finset.sum_range_succ, Finset.sum_range_one]
-    simp only [clebschGordanCoeff_zero, clebschGordanCoeff_succ, one_smul, Nat.cast_zero,
-      sub_zero, Nat.cast_one, sub_self]
-    congr 2; norm_num [quantumInteger_one hq.sub_inv_ne_zero]
+    simpa [quantumInteger_one hq.sub_inv_ne_zero, mul_assoc] using
+      clebschGordanInclusion_one_vec_zero hq ε (δ * ζ) (m := 1) (n := 2) (by omega)
   simp only [rightVecTwo, hin, map_add, LinearMap.map_smul_of_tower, tensorMap_tmul,
     LinearMap.id_apply]
-  rw [spinHalfSym_vec_one, spinHalfSym_vec_zero]
+  rw [spinHalfSym_vec_one, clebschGordanInclusion_zero_vec_zero]
   simp only [tmul_add, tmul_smul, map_add, map_smul, tripleRightCoord_tmul, smul_eq_mul]
   constructor <;> norm_num
 
@@ -582,13 +705,11 @@ private theorem spinHalf_zero_eq (hq : IsGenericQuantumParameter q) (ε δ ζ : 
         sixJSymbol hq ε δ ζ 1 1 1 1 0 2 • rightVecTwo hq ε δ ζ := by
   have hexp := assoc_spinHalf_vec_zero hq ε δ ζ 0
   have h01 := clebschGordanWeightInclusion_sub_two_mul hq 1 ε 1 δ ⟨1, by omega⟩
-  have h00 := clebschGordanWeightInclusion_sub_two_mul hq 0 (ε * δ) 1 ζ ⟨0, by omega⟩
-  have hin : clebschGordanInclusion hq (⟨0, by omega⟩ : Fin (min 0 1 + 1))
-      (vec q 1 ((ε * δ) * ζ) 0) = tmul ℂ (UqSl2 q) (vec q 0 (ε * δ) 0) (vec q 1 ζ 0) :=
-    (clebschGordanInclusion_vec_zero (m := 0) (n := 1) (ε := ε * δ) (δ := ζ) hq
-      ⟨0, by omega⟩).trans (by simp [clebschGordanVector_def])
+  have h00 := clebschGordanWeightInclusion_sub_two_mul hq 0 (ε * δ) 1 ζ 0
+  simp only [Fin.val_zero] at h00
   dsimp only at h01 h00
-  rw [h01, h00, hin, tensorMap_tmul, LinearMap.id_apply, spinHalfAlt_vec_zero] at hexp
+  rw [h01, h00, clebschGordanInclusion_zero_vec_zero, tensorMap_tmul, LinearMap.id_apply,
+    spinHalfAlt_vec_zero] at hexp
   simpa only [add_tmul, ← smul_tmul', map_add, LinearMapClass.map_smul_of_tower (S := UqSl2 q),
     assoc_tmul] using hexp
 
@@ -601,23 +722,20 @@ private theorem spinHalf_two_eq (hq : IsGenericQuantumParameter q) (ε δ ζ : �
       sixJSymbol hq ε δ ζ 1 1 1 1 2 0 • rightVecZero hq ε δ ζ +
         sixJSymbol hq ε δ ζ 1 1 1 1 2 2 • rightVecTwo hq ε δ ζ := by
   have hexp := assoc_spinHalf_vec_zero hq ε δ ζ 2
-  have h20 := clebschGordanWeightInclusion_sub_two_mul hq 1 ε 1 δ ⟨0, by omega⟩
+  have h20 := clebschGordanWeightInclusion_sub_two_mul hq 1 ε 1 δ 0
   have h21 := clebschGordanWeightInclusion_sub_two_mul hq 2 (ε * δ) 1 ζ ⟨1, by omega⟩
   have hin : clebschGordanInclusion hq (⟨1, by omega⟩ : Fin (min 2 1 + 1))
       (vec q 1 ((ε * δ) * ζ) 0) =
       tmul ℂ (UqSl2 q) (vec q 2 (ε * δ) 0) (vec q 1 ζ 1) +
         (-(ζ : ℂ) * q ^ 2 / quantumInteger q 2) •
           tmul ℂ (UqSl2 q) (vec q 2 (ε * δ) 1) (vec q 1 ζ 0) := by
-    refine (clebschGordanInclusion_vec_zero (m := 2) (n := 1) (ε := ε * δ) (δ := ζ) hq
-      ⟨1, by omega⟩).trans ?_
-    rw [clebschGordanVector_def, Finset.sum_range_succ, Finset.sum_range_one]
-    simp only [clebschGordanCoeff_zero, clebschGordanCoeff_succ, one_smul, Nat.cast_zero,
-      sub_zero, Nat.cast_one, sub_self]
-    congr 2; norm_num [quantumInteger_one hq.sub_inv_ne_zero]
+    simpa [quantumInteger_one hq.sub_inv_ne_zero] using
+      clebschGordanInclusion_one_vec_zero hq (ε * δ) ζ (m := 2) (n := 1) (by omega)
+  simp only [Fin.val_zero] at h20
   dsimp only at h20 h21
   simp only [h20, h21, hin, map_add, LinearMap.map_smul_of_tower, tensorMap_tmul,
     LinearMap.id_apply] at hexp
-  rw [spinHalfSym_vec_zero, spinHalfSym_vec_one] at hexp
+  rw [clebschGordanInclusion_zero_vec_zero, spinHalfSym_vec_one] at hexp
   simpa only [add_tmul, ← smul_tmul', map_add, LinearMapClass.map_smul_of_tower (S := UqSl2 q),
     assoc_tmul] using hexp
 

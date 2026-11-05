@@ -289,6 +289,16 @@ private theorem homScalar_quadrupleRight_of_triples (hq : IsGenericQuantumParame
   · simp [h, show ¬ (r = r' ∧ s = s' ∧ IsClebschGordanTriple c d r ∧
       IsClebschGordanTriple b r s ∧ IsClebschGordanTriple a s e) by tauto]
 
+private theorem homScalar_comp_sum_smul_comp_congr {ι M : Type*} [AddCommMonoid M]
+    [Module ℂ M] [Module (UqSl2 q) M] [IsScalarTower ℂ (UqSl2 q) M]
+    (hq : IsGenericQuantumParameter q) {e : ℕ} {η₁ η₂ η₃ : ℤˣ} (hη : η₁ = η₂)
+    (P : M →ₗ[UqSl2 q] LadderModule q e η₃) (s : Finset ι) (c : ι → ℂ)
+    (X : ι → LadderModule q e η₂ →ₗ[UqSl2 q] M) :
+    homScalar (P.comp (∑ i ∈ s, c i • ((X i).comp (LadderModule.congr rfl hη).toLinearMap))) =
+      ∑ i ∈ s, c i * homScalar (P.comp (X i)) := by
+  simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
+    ← LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, mul_one]
+
 private theorem homScalar_two_step (hq : IsGenericQuantumParameter q)
     (ε δ ζ θ : ℤˣ) {a b c d e p q' r s : ℕ}
     (htri : IsClebschGordanTriple c d r ∧ IsClebschGordanTriple b r s ∧
@@ -300,24 +310,17 @@ private theorem homScalar_two_step (hq : IsGenericQuantumParameter q)
             (LadderModule q c ζ) (LadderModule q d θ)).toLinearMap.comp
           (quadrupleLeftInclusion hq ε δ ζ θ a b c d p q' e)))) =
       sixJSymbol hq ε δ (ζ * θ) a b r e p s * sixJSymbol hq (ε * δ) ζ θ p c d e q' r := by
-  rw [← LinearMap.comp_assoc, edge_one_five]
-  simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
-    ← LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, mul_one]
+  rw [← LinearMap.comp_assoc, edge_one_five, homScalar_comp_sum_smul_comp_congr hq]
   rw [Finset.sum_eq_single r]
-  · rw [LinearMap.comp_assoc, edge_five_four]
-    simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
-      ← LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, mul_one,
-      homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri]
+  · rw [LinearMap.comp_assoc, edge_five_four, homScalar_comp_sum_smul_comp_congr hq]
+    simp only [homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri]
     rw [Finset.sum_eq_single s]
     · simp [mul_comm]
     · intro s' _ hne; simp [Ne.symm hne]
     · exact fun h => (h (Finset.mem_range.mpr (Nat.lt_succ_of_le htri.2.1.le_add))).elim
   · intro r' _ hne
-    rw [LinearMap.comp_assoc, edge_five_four]
-    simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
-      ← LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, mul_one,
-      homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri, Ne.symm hne, false_and, ↓reduceIte,
-      mul_zero, Finset.sum_const_zero]
+    rw [LinearMap.comp_assoc, edge_five_four, homScalar_comp_sum_smul_comp_congr hq]
+    simp [homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri, Ne.symm hne]
   · exact fun h => (h (Finset.mem_range.mpr (Nat.lt_succ_of_le htri.1.le_add))).elim
 
 private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
@@ -339,13 +342,10 @@ private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
         sixJSymbol hq δ ζ θ b c d s t r *
           sixJSymbol hq ε (δ * ζ) θ a t d e q' s *
           sixJSymbol hq ε δ ζ a b c q' p t := by
-  rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc, edge_one_two]
-  simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
-    ← LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, mul_one]
+  rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc, edge_one_two,
+    homScalar_comp_sum_smul_comp_congr hq]
   refine Finset.sum_congr rfl fun t _ => ?_
-  rw [LinearMap.comp_assoc, edge_two_three]
-  simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
-    ← LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, mul_one]
+  rw [LinearMap.comp_assoc, edge_two_three, homScalar_comp_sum_smul_comp_congr hq]
   have hinner : ∀ s' ∈ Finset.range (t + d + 1),
       sixJSymbol hq ε (δ * ζ) θ a t d e q' s' *
         homScalar (((quadrupleRightProjection hq ε δ ζ θ a b c d r s e).comp
@@ -356,10 +356,8 @@ private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
       if s = s' then sixJSymbol hq ε (δ * ζ) θ a t d e q' s * sixJSymbol hq δ ζ θ b c d s t r
       else 0 := by
     intro s' _
-    rw [LinearMap.comp_assoc, edge_three_four]
-    simp only [LinearMap.comp_finsetSum, LinearMap.comp_smul, map_sum, map_smul, smul_eq_mul,
-      ← LinearMap.comp_assoc, homScalar_comp hq, homScalar_congr, mul_one,
-      homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri]
+    rw [LinearMap.comp_assoc, edge_three_four, homScalar_comp_sum_smul_comp_congr hq]
+    simp only [homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri]
     rw [Finset.sum_eq_single r]
     · rcases eq_or_ne s s' with rfl | hs; · simp
       · simp [hs]
