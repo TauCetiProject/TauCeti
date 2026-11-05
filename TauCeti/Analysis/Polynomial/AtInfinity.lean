@@ -20,9 +20,10 @@ import TauCeti.MeasureTheory.Integral.Asymptotics
 A monic complex polynomial `P` of degree `m` satisfies `P z / z ^ m → 1` as `z → ∞` in the
 cocompact filter of `ℂ`, which is uniform in the argument of `z`. For every complex polynomial,
 `‖P'‖² / (1 + ‖P‖²)²` is integrable on the plane, and when `P` is nonconstant `(1 + ‖P‖²)⁻¹` is
-square integrable; both decay like `‖z‖ ^ (-4)` or faster at infinity. These functions are the
-density of the pullback of the Fubini–Study area form by `P` and the defect of the squared
-modulus `‖P‖² / (1 + ‖P‖²)` from `1`.
+square integrable: the first function and the square of the second decay like `‖z‖ ^ (-4)` or
+faster at infinity, while `(1 + ‖P‖²)⁻¹` itself decays only like `‖z‖ ^ (-2)` when `P` has
+degree one. These functions are the density of the pullback of the Fubini–Study area form by
+`P` and the defect of the squared modulus `‖P‖² / (1 + ‖P‖²)` from `1`.
 
 The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_monomial`.
 
