@@ -302,13 +302,22 @@ end Hom₂
 
 /-- Normalization on a category of morphisms of lifts. A compatible modification is sent to
 the identity-component modification between the induced coherent transport comparisons. -/
--- Expose the object assignment so modification components have the prescribed endpoints.
-@[expose, simps obj map]
 noncomputable def transportFunctor (L L' : EquivariantGroupoidLift Γ actions) :
     L.Hom L' ⥤ (L.transportPseudofunctor ⟶ L'.transportPseudofunctor) where
   obj φ := φ.transportHom
   map Θ := eqToHom Θ.transportHom_eq
   map_id φ := by simp
   map_comp Θ Ξ := by simp
+
+@[simp]
+lemma transportFunctor_obj (L L' : EquivariantGroupoidLift Γ actions) (φ : L.Hom L') :
+    (transportFunctor L L').obj φ = φ.transportHom := (rfl)
+
+@[simp]
+lemma transportFunctor_map (L L' : EquivariantGroupoidLift Γ actions)
+    {φ ψ : L.Hom L'} (Θ : φ ⟶ ψ) :
+    (transportFunctor L L').map Θ =
+      eqToHom ((transportFunctor_obj L L' φ).trans
+        (Θ.transportHom_eq.trans (transportFunctor_obj L L' ψ).symm)) := (rfl)
 
 end TauCeti.EquivariantGroupoidLift.Hom
