@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Analysis.Complex.Exponential
 import TauCeti.Analysis.SpecialFunctions.Log.DivLeIff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -447,20 +448,14 @@ theorem truncation_eq_closedBall_diff (R : ℝ) :
     dist_eq_norm, sub_zero, not_or, not_lt]
   tauto
 
-private theorem exp_neg_two_pi_mul_ofReal_add_mul_I (a t : ℝ) :
-    Complex.exp (-(2 * (π : ℂ)) * (↑a + ↑t * Complex.I)) =
-      ↑(Real.exp (-(2 * π * a))) * Complex.exp (↑(-(2 * π * t)) * Complex.I) := by
-  rw [Complex.ofReal_exp, ← Complex.exp_add]
-  push_cast
-  ring_nf
-
 /-- The boundary loop of the truncation at the end `0` is the circle of radius `exp (-2πR) / 2`
 about `0`, traversed clockwise once in unit time from angle `0`. -/
 theorem Puncture.cylindricalEndLift_zero_endSign_mul_add (R t : ℝ) :
     zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I) =
       circleMap 0 (Real.exp (-(2 * π * R)) / 2) (-(2 * π * t)) := by
   simp only [cylindricalEndLift_zero, endSign_zero, one_mul, circleMap,
-    exp_neg_two_pi_mul_ofReal_add_mul_I]
+    ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, ← Complex.ofReal_neg,
+    Complex.exp_ofReal_mul_ofReal_add_ofReal_mul_I, neg_mul]
   push_cast
   ring
 
@@ -476,7 +471,8 @@ theorem Puncture.cylindricalEndLift_one_endSign_mul_add (R t : ℝ) :
       Complex.exp_add, Complex.exp_pi_mul_I]
     ring
   simp only [cylindricalEndLift_one, endSign_one, one_mul, circleMap,
-    exp_neg_two_pi_mul_ofReal_add_mul_I, hπ]
+    ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, ← Complex.ofReal_neg,
+    Complex.exp_ofReal_mul_ofReal_add_ofReal_mul_I, neg_mul, hπ]
   push_cast
   ring
 
@@ -485,8 +481,9 @@ about `0`, traversed clockwise once in unit time from angle `0`. -/
 theorem Puncture.cylindricalEndLift_inf_endSign_mul_add (R t : ℝ) :
     inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I) =
       circleMap 0 (2 * Real.exp (2 * π * R)) (-(2 * π * t)) := by
-  simp only [cylindricalEndLift_inf, endSign_inf, neg_one_mul, circleMap,
-    exp_neg_two_pi_mul_ofReal_add_mul_I]
+  simp only [cylindricalEndLift_inf, endSign_inf, circleMap,
+    ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, ← Complex.ofReal_neg,
+    Complex.exp_ofReal_mul_ofReal_add_ofReal_mul_I, neg_mul]
   push_cast
   ring_nf
 
