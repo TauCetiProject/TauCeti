@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Symbol
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
 # Kohn–Nirenberg quantization on Schwartz functions
@@ -183,18 +184,6 @@ theorem integrable_quantizeSchwartzValue_integrand
   ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
     (aestronglyMeasurable_integrand hmeas f) (ae_of_all _ (norm_integrand_le_pow_neg hC f))
 
-/-- The weighted norm `⟨2πζ⟩ ^ m ‖f ζ‖` of a Schwartz function is integrable. -/
-private lemma integrable_rpow_mul_norm (m : ℝ) (f : 𝓢(E, V)) :
-    Integrable (fun ζ : E ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖f ζ‖) :=
-  ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
-    ((((continuous_const.add ((continuous_const_smul _).norm.pow 2)).rpow_const
-      fun ζ ↦ Or.inl (by positivity : (1 : ℝ) + ‖(2 * π) • ζ‖ ^ 2 ≠ 0)).mul
-        f.continuous.norm).aestronglyMeasurable)
-    (ae_of_all _ fun ζ ↦ by
-      rw [Real.norm_of_nonneg (by positivity)]
-      exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℂ) (2 * π) m
-        (volume : Measure E).integrablePower ζ)
-
 /-- **Pointwise bound.** If `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` at the point `x`, then
 `‖Op(a) u (x)‖ ≤ C ∫ ⟨2πζ⟩ ^ m ‖𝓕 u ζ‖ dζ`. -/
 theorem norm_quantizeSchwartzValue_le (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -202,7 +191,8 @@ theorem norm_quantizeSchwartzValue_le (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 +
     ‖quantizeSchwartzValue a u x‖ ≤
       C * ∫ ζ, (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ := by
   rw [quantizeSchwartzValue_def, ← integral_const_mul]
-  exact norm_integral_le_of_norm_le ((integrable_rpow_mul_norm m (𝓕 u)).const_mul C)
+  exact norm_integral_le_of_norm_le
+    (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m).const_mul C)
     (ae_of_all _ (norm_integrand_le hC (𝓕 u)))
 
 private lemma integral_integrand_add (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
@@ -317,14 +307,6 @@ open ContinuousLinearMap
 
 variable {a : E × E → V →L[ℂ] W} {m : ℝ}
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- One power of `‖ξ‖` costs one order of the weight: `⟨ξ⟩ ^ m ‖ξ‖ ≤ ⟨ξ⟩ ^ (m + 1)`. -/
-private lemma rpow_weight_mul_norm_le (ξ : E) (m : ℝ) :
-    (1 + ‖ξ‖ ^ 2) ^ (m / 2) * ‖ξ‖ ≤ (1 + ‖ξ‖ ^ 2) ^ ((m + 1) / 2) := by
-  rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
-  gcongr
-  exact Real.le_sqrt_of_sq_le (by linarith)
-
 /-- The derivative in the position `x` of the quantization integrand
 `x ↦ 𝐞 ⟪ζ, x⟫ • a (x, 2πζ) (f ζ)`. -/
 private def integrandFDeriv (a : E × E → V →L[ℂ] W) (f : 𝓢(E, V)) (x ζ : E) : E →L[ℝ] W :=
@@ -394,7 +376,7 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
         ≤ ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x‖ * ‖h‖ * ‖f ζ‖ := by gcongr; exact le_opNorm _ _
       _ ≤ C' * w ^ (m / 2) * ‖h‖ * ‖f ζ‖ := by gcongr; exact hC' _
       _ = C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ := by ring
-  have hw₁ := rpow_weight_mul_norm_le ((2 * π) • ζ) m
+  have hw₁ := one_add_norm_sq_rpow_mul_norm_le ((2 * π) • ζ) m
   have hw₂ : w ^ (m / 2) ≤ w ^ ((m + 1) / 2) :=
     Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖(2 * π) • ζ‖]) (by linarith)
   rw [← hw] at hw₁
@@ -440,7 +422,7 @@ private lemma hasFDerivAt_integral_integrand (ha : ContDiff ℝ 1 a)
     (continuous_integrandFDeriv ha f x₀).aestronglyMeasurable
     (ae_of_all _ fun ζ x hx ↦ norm_integrandFDeriv_le
       (hC x (Metric.ball_subset_closedBall hx)) (hC' x (Metric.ball_subset_closedBall hx)) f ζ)
-    ((integrable_rpow_mul_norm (m + 1) f).const_mul _)
+    ((f.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m + 1)).const_mul _)
     (ae_of_all _ fun ζ x _ ↦ hasFDerivAt_integrand ha f ζ x)
 
 /-- **Differentiability.** For a `C¹` coefficient whose values and position derivatives have growth
@@ -481,7 +463,7 @@ theorem fderiv_quantizeSchwartzValue_apply (ha : ContDiff ℝ 1 a)
       gcongr
       exact hC'x x rfl ξ)
   have hint : Integrable (integrandFDeriv a (𝓕 u) x) :=
-    ((integrable_rpow_mul_norm (m + 1) (𝓕 u)).const_mul _).mono'
+    (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m + 1)).const_mul _).mono'
       (continuous_integrandFDeriv ha (𝓕 u) x).aestronglyMeasurable
       (ae_of_all _ (norm_integrandFDeriv_le (hCx x rfl) (hC'x x rfl) (𝓕 u)))
   have hint₁ := integrable_quantizeSchwartzValue_integrand hmeas (hCx x rfl) (𝓕 (∂_{h} u))
@@ -504,36 +486,6 @@ namespace Symbol
 open scoped ContDiff
 
 variable {n : ℕ} {m : ℝ}
-
-/-- A symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in the position. -/
-private lemma exists_bound_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
-    (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨C, hC, hCK⟩ := a.exists_bound K hK [] []
-  exact ⟨C, hC, fun x hx ξ ↦ by simpa [mixedDeriv_nil_nil] using hCK x hx ξ⟩
-
-private lemma fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n)
-    (x ξ : CoordinateSpace n) :
-    fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) =
-      (spatialDeriv j a).coefficient (x, ξ) := by
-  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
-
-/-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
-the position. -/
-private lemma exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
-    (hK : IsCompact K) :
-    ∃ C, ∀ x ∈ K, ∀ ξ,
-      ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  choose C hC0 hC using fun j ↦ (spatialDeriv j a).exists_bound_coefficient K hK
-  obtain ⟨D, -, hD⟩ :=
-    (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.exists_opNorm_le (F := V →L[ℂ] W)
-  refine ⟨D * ∑ j, C j, fun x hx ξ ↦ ?_⟩
-  rw [mul_assoc]
-  refine hD (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (by positivity)) fun j ↦ ?_
-  rw [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, fderiv_coefficient_single]
-  refine (hC j x hx ξ).trans ?_
-  gcongr
-  exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
 
 private lemma contDiff_one_coefficient (a : Symbol n V W m) : ContDiff ℝ 1 a.coefficient :=
   a.contDiff_coefficient.of_le (by simp)
