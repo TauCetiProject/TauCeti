@@ -22,7 +22,6 @@ import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Scheme.Place.Proper
 import TauCeti.FieldTheory.FunctionField.Consequences.SeparablePlace
-import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
@@ -33,8 +32,8 @@ its codimension-one points are discrete valuation rings, and suppose that `k` is
 in the function field `k(X)`. If `X` has genus zero, `dim_k H¹(X, 𝒪_X) = 0`, and carries a divisor
 of degree one, for instance the prime divisor of a `k`-rational point, then **`X` is the projective
 line**: there is an isomorphism `X ≅ ℙ¹_k` over `k`. For a `k`-rational point the hypothesis on `k`
-is automatic: the place of the point has degree one, and a place of degree one forces `k` to be
-integrally closed in `k(X)` (`TauCeti.Place.isIntegrallyClosedIn_of_degree_eq_one`).
+is automatic: a rational point forces `k` to be integrally closed in `k(X)`
+(`AlgebraicGeometry.Scheme.isIntegrallyClosedIn_functionField_of_section`).
 
 This is the geometric form of Stichtenoth's Proposition 1.6.3. The genus of `X` is the genus of
 `k(X)` (`TauCeti.AlgebraicGeometry.SchemeWeilDivisor.genus_eq_genus_functionField`), and a divisor
@@ -182,18 +181,15 @@ theorem exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one
 
 /-- **A curve of genus zero with a rational point is the projective line.** Let `X` be a regular
 proper curve over `k`. If `dim_k H¹(X, 𝒪_X) = 0` and `X` has a `k`-rational point, then `X` is
-isomorphic to `ℙ¹_k` over `k`. No hypothesis on the constants is needed: the place of the rational
-point has degree one, so `k` is integrally closed in `k(X)`
-(`TauCeti.Place.isIntegrallyClosedIn_of_degree_eq_one`). -/
+isomorphic to `ℙ¹_k` over `k`. No hypothesis on the constants is needed: the rational point forces
+`k` to be integrally closed in `k(X)` (`Scheme.isIntegrallyClosedIn_functionField_of_section`). -/
 theorem exists_iso_projectiveLine_of_genus_eq_zero_of_section
     (hg : finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) = 0)
     {s : Spec (.of k) ⟶ X} (hs : s ≫ (X ↘ Spec (.of k)) = 𝟙 _) :
     ∃ e : X ≅ projectiveLine k, e.hom.IsOver (Spec (.of k)) := by
   let x₀ : CodimensionOnePoint X := ⟨_, IsCurveOver.coheight_section_eq_one k hs⟩
-  have hk : IsIntegrallyClosedIn k X.functionField :=
-    (X.toPlace (k := k) (x₀ : X)).isIntegrallyClosedIn_of_degree_eq_one (by
-      rw [toPlace_degree_eq_residueDegree]; exact residueDegree_eq_one_of_section hs _)
-  exact X.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one hk hg
+  exact X.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one
+    (X.isIntegrallyClosedIn_functionField_of_section hs (x := x₀) rfl) hg
     (relativeDegree_ofPoint_of_section hs (x₀ := x₀) rfl)
 
 end AlgebraicGeometry.Scheme
