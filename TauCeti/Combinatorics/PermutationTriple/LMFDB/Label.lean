@@ -140,6 +140,15 @@ orbit identifier is a nonempty string of lowercase letters. -/
   split <;> simp_all [-parsePassportLabel_eq_some_iff, Option.map_eq_some_iff]
   grind
 
+/-- A string is recovered from the pieces of its split at a character by joining them with that
+character. -/
+private theorem toList_eq_intercalate_of_splitOn_eq {s : String} {c : Char} {parts : List String}
+    (h : (s.toList.splitOn c).map String.ofList = parts) :
+    s.toList = [c].intercalate (parts.map String.toList) := by
+  rw [← h, List.map_map, Function.comp_def]
+  simp only [String.toList_ofList, List.map_id']
+  exact (List.intercalate_splitOn c).symm
+
 /-- **The grammar of map labels.** A map label is a passport label, a hyphen, and a nonempty
 string of lowercase letters identifying the orbit; it parses to the parsed passport label together
 with that identifier. -/
@@ -150,18 +159,14 @@ theorem parseMapLabel_eq_some_iff_append {n : ℕ} {s orbit : String} {L : Passp
   rw [parseMapLabel_eq_some_iff]
   constructor
   · rintro ⟨group, partitions, hs, hne, hlow, hL⟩
-    have hsplit := congrArg (List.map String.toList) hs
-    simp only [List.map_map, Function.comp_def, String.toList_ofList, List.map_id'] at hsplit
     refine ⟨group ++ "-" ++ partitions, String.ext ?_, hne, hlow, hL⟩
-    rw [← List.intercalate_splitOn (xs := s.toList) '-', hsplit]
+    rw [toList_eq_intercalate_of_splitOn_eq hs]
     simp
   · rintro ⟨p, rfl, hne, hlow, hL⟩
     obtain ⟨group, partitions, -, -, -, hp, -⟩ := parsePassportLabel_eq_some_iff.mp hL
-    have hsplit := congrArg (List.map String.toList) hp
-    simp only [List.map_map, Function.comp_def, String.toList_ofList, List.map_id'] at hsplit
     have hgp : group ++ "-" ++ partitions = p := by
       refine String.ext ?_
-      rw [← List.intercalate_splitOn (xs := p.toList) '-', hsplit]
+      rw [toList_eq_intercalate_of_splitOn_eq hp]
       simp
     have hmem : '-' ∉ orbit.toList := fun h => absurd (hlow '-' h).1 (by decide)
     have happ : (p ++ "-" ++ orbit).toList = p.toList ++ '-' :: orbit.toList := by simp

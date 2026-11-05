@@ -112,11 +112,8 @@ theorem hasLabel_iff_hasPassport (hr : r.HasValidLabel)
     (hL : parseMapLabel n r.label = some (L, orbit)) {p : PassportRecord n}
     {t : ConnectedTriple n} (hp : p.IsValidAt t) (hpl : p.HasValidLabel)
     (hplabel : r.plabel = p.plabel) (P : PassportSpec n) :
-    P.HasLabel L ↔ PassportSpec.HasPassport t P := by
-  have hpL : parsePassportLabel n p.plabel = some L :=
-    hplabel ▸ hr.parsePassportLabel_plabel hL
-  refine ⟨fun hP => (hP.hasPassport_iff t).mpr ?_, hp.hasLabel_of_hasValidLabel hpl hpL⟩
-  exact hp.hasLabel_of_hasValidLabel hpl hpL t.hasPassport_passportOf
+    P.HasLabel L ↔ PassportSpec.HasPassport t P :=
+  hp.hasLabel_iff_hasPassport hpl (hplabel ▸ hr.parsePassportLabel_plabel hL) P
 
 end HasValidLabel
 
