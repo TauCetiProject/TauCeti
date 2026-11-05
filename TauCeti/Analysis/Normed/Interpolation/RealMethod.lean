@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import TauCeti.Analysis.Normed.Interpolation.KFunctional
+public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 
 /-!
@@ -97,18 +97,6 @@ private theorem enorm_rpow_neg_mul_min_exp_rpow (θ : ℝ) {r : ℝ} (hr : 0 ≤
       min_eq_left (Real.one_le_exp (le_of_not_ge hs)), mul_one]
     simp only [← Real.exp_mul]
     ring_nf
-
-private theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :
-    ∫⁻ s in Iic 0, ENNReal.ofReal (Real.exp (a * s)) = ENNReal.ofReal a⁻¹ := by
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Iic ha 0)
-    (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Iic ha]
-  simp
-
-private theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
-    ∫⁻ s in Ioi 0, ENNReal.ofReal (Real.exp (-a * s)) = ENNReal.ofReal a⁻¹ := by
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
-    (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
-  simp
 
 /-- For finite `q ≠ 0` and `0 < θ < 1`, `c_{θ,q} = (θ (1 - θ) q) ^ (-1 / q)`. -/
 theorem kMethodConst_eq {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞) :
@@ -549,13 +537,6 @@ theorem kMethodENorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X�
 
 namespace KMethodSpace
 
-private theorem exists_pos_mul_bound {E F : Type*} [SeminormedAddCommGroup E]
-    [SeminormedAddCommGroup F] {f : E → F} (h : ∃ M, ∀ x, ‖f x‖ ≤ M * ‖x‖) :
-    ∃ M > 0, ∀ x, ‖f x‖ ≤ M * ‖x‖ :=
-  let ⟨M, hM⟩ := h
-  ⟨max M 1, lt_max_of_lt_right one_pos,
-    fun x => (hM x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg x))⟩
-
 section
 
 variable [T1Space V] [T1Space W] [Fact (1 ≤ q)] (T : C.SumSpace →ₗ[𝕜] D.SumSpace)
@@ -566,8 +547,8 @@ include hT₀ hT₁ hb₀ hb₁
 
 omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
 private theorem map_toSumₗ_mem (u : C.KMethodSpace θ q) : T (toSumₗ u) ∈ D.kMethod θ q := by
-  obtain ⟨M₀, hM₀, h₀⟩ := exists_pos_mul_bound hb₀
-  obtain ⟨M₁, hM₁, h₁⟩ := exists_pos_mul_bound hb₁
+  obtain ⟨M₀, hM₀, h₀⟩ := exists_pos_bound_of_bound _ hb₀.choose_spec
+  obtain ⟨M₁, hM₁, h₁⟩ := exists_pos_bound_of_bound _ hb₁.choose_spec
   exact (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ _).trans_lt
     (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (kMethodENorm_toSumₗ_lt_top u))
 
@@ -584,14 +565,15 @@ sum spaces that restricts to bounded maps `T₀ : X₀ → Y₀` and `T₁ : X�
 `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` for positive `M₀`, `M₁`, it multiplies the norm by at most
 `M₀ ^ (1 - θ) * M₁ ^ θ` (`KMethodSpace.norm_map_le`). -/
 def map : C.KMethodSpace θ q →L[𝕜] D.KMethodSpace θ q :=
+  have h₀ := exists_pos_bound_of_bound _ hb₀.choose_spec
+  have h₁ := exists_pos_bound_of_bound _ hb₁.choose_spec
   LinearMap.mkContinuous
     { toFun u := mk (T (toSumₗ u)) (map_toSumₗ_mem T hT₀ hT₁ hb₀ hb₁ u)
       map_add' u v := by ext; simp
       map_smul' c u := by ext; simp }
-    ((exists_pos_mul_bound hb₀).choose ^ (1 - θ) * (exists_pos_mul_bound hb₁).choose ^ θ)
-    (norm_mk_map_toSumₗ_le T hT₀ hT₁ hb₀ hb₁ (exists_pos_mul_bound hb₀).choose_spec.1
-      (exists_pos_mul_bound hb₁).choose_spec.1 (exists_pos_mul_bound hb₀).choose_spec.2
-      (exists_pos_mul_bound hb₁).choose_spec.2)
+    (h₀.choose ^ (1 - θ) * h₁.choose ^ θ)
+    (norm_mk_map_toSumₗ_le T hT₀ hT₁ hb₀ hb₁ h₀.choose_spec.1 h₁.choose_spec.1 h₀.choose_spec.2
+      h₁.choose_spec.2)
 
 @[simp]
 theorem toSumₗ_map (u : C.KMethodSpace θ q) :
