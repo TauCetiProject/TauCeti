@@ -112,12 +112,12 @@ theorem continuous_timeExtension (hab : a ≤ b) {f : slab (E := E) a b → F}
   simpa only [timeExtension_def, Function.comp_def] using hf.comp (continuous_slabMk.comp
     (continuous_snd.prodMk ((continuous_projIcc (h := hab)).comp continuous_fst)))
 
-omit [NormedSpace ℝ E] in
-/-- Clamping time preserves the uniform bound supplied by the bounded Hölder norm. -/
-theorem norm_timeExtension_le (hab : a ≤ b) (f : HolderSpace α (slab (E := E) a b) F)
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- Clamping time preserves the supremum bound of a bounded continuous slab map. -/
+theorem norm_timeExtension_le (hab : a ≤ b) (f : slab (E := E) a b →ᵇ F)
     (s : ℝ) (x : E) : ‖timeExtension hab f x s‖ ≤ ‖f‖ := by
   rw [timeExtension_def]
-  exact f.norm_apply_le _
+  exact f.norm_coe_le_norm _
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
 /-- Every spatial slice of a clamped Hölder extension has the same Hölder constant. -/
