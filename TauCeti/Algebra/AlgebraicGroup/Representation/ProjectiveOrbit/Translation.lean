@@ -126,17 +126,6 @@ theorem rightTranslationAlgEquiv_comp_orbitCoordinates
   ext φ
   simp
 
-/-- Acting by a base-valued point preserves unimodularity of vectors. -/
-@[simp]
-theorem isUnimodular_basePointsRepresentation_iff
-    (g : WithConv (H →ₐ[R] R)) (m : M) :
-    Module.IsUnimodular R (basePointsRepresentation (H := H) M g m) ↔
-      Module.IsUnimodular R m := by
-  simpa [Representation.asGroupHom_apply] using
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
-      (Representation.asGroupHom
-        (basePointsRepresentation (R := R) (H := H) M) g)).isUnimodular_apply_iff (m := m)
-
 end Coordinates
 
 section Scheme
@@ -260,6 +249,33 @@ theorem projectivePointTranslation_inv_preimage_basicOpen
 
 variable [Module.Finite R M] [Module.Projective R M]
 
+/-- Precomposing the projective orbit morphism with `Spec.map` of an algebra endomorphism replaces
+the orbit coordinate map by its composition with that endomorphism. -/
+private theorem specMap_comp_projectiveOrbitMap (φ : H →ₐ[R] H)
+    (m : M) (hm : Module.IsUnimodular R m) :
+    Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ projectiveOrbitMap (H := H) m hm =
+      Proj.fromOfGlobalSections
+        (SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M))
+        ((Scheme.ΓSpecIso (.of H)).inv.hom.comp (φ.comp (orbitCoordinates (H := H) m)).toRingHom)
+        (by
+          rw [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, ← Ideal.map_map, ← Ideal.map_map]
+          simp only [← AlgHom.toRingHom_eq_coe, map_irrelevant_orbitCoordinates hm,
+            Ideal.map_top]) := by
+  rw [projectiveOrbitMap_def, Proj.fromOfGlobalSections_naturality]
+  congr 1
+  rw [← RingHom.comp_assoc, ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality,
+    CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_assoc]
+  simp only [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom]
+
+/-- Precomposing the projective orbit map with `PrimeSpectrum.comap` of an algebra automorphism
+leaves its topological image unchanged. -/
+private theorem range_projectiveOrbitMap_comp_comap (φ : H ≃ₐ[R] H)
+    (m : M) (hm : Module.IsUnimodular R m) :
+    Set.range (projectiveOrbitMap (H := H) m hm ∘
+        PrimeSpectrum.comap (R := H) (S := H) φ.toRingEquiv) =
+      Set.range (projectiveOrbitMap (H := H) m hm) :=
+  (PrimeSpectrum.comapEquiv φ.toRingEquiv.symm).surjective.range_comp _
+
 /-- Left translation intertwines the orbit morphism with projective translation,
 including the maps on structure sheaves. -/
 @[reassoc]
@@ -268,21 +284,11 @@ theorem projectiveOrbitMap_leftTranslation (g : WithConv (H →ₐ[R] R))
     Spec.map (CommRingCat.ofHom (HopfAlgebra.leftTranslationAlgEquiv g).toAlgHom.toRingHom) ≫
         projectiveOrbitMap (H := H) m hm =
       projectiveOrbitMap (H := H) m hm ≫ (projectivePointTranslation (M := M) g).hom := by
-  rw [projectivePointTranslation_hom, projectiveOrbitMap_def,
-    Proj.fromOfGlobalSections_naturality, Proj.fromOfGlobalSections_map]
+  rw [specMap_comp_projectiveOrbitMap (HopfAlgebra.leftTranslationAlgEquiv g).toAlgHom m hm,
+    projectivePointTranslation_hom, projectiveOrbitMap_def, Proj.fromOfGlobalSections_map]
   congr 1
-  apply RingHom.ext
-  intro s
-  have hnat := congrArg CommRingCat.Hom.hom
-    (Scheme.ΓSpecIso_inv_naturality
-      (CommRingCat.ofHom (HopfAlgebra.leftTranslationAlgEquiv g).toAlgHom.toRingHom))
-  have hnat' := DFunLike.congr_fun hnat (orbitCoordinates (H := H) m s)
-  have hcoord := AlgHom.congr_fun (leftTranslationAlgEquiv_comp_orbitCoordinates g m) s
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply,
-    AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.comp_apply,
-    AlgEquiv.toAlgHom_apply, GradedRingHom.coe_toRingHom,
-    SymmetricAlgebra.gradedMap_apply] at hnat' hcoord ⊢
-  rw [← hnat', hcoord]
+  rw [leftTranslationAlgEquiv_comp_orbitCoordinates, RingHom.comp_assoc]
+  simp only [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, SymmetricAlgebra.gradedMap_toRingHom]
 
 /-- Left translation on the full source spectrum intertwines the underlying orbit map
 with projective translation, including at nonclosed points. -/
@@ -303,16 +309,10 @@ theorem image_projectivePointTranslation_range_projectiveOrbitMap
     (projectivePointTranslation (M := M) g).hom ''
         Set.range (projectiveOrbitMap (H := H) m hm) =
       Set.range (projectiveOrbitMap (H := H) m hm) := by
-  rw [← Set.range_comp]
-  have heq : (projectivePointTranslation (M := M) g).hom ∘
-      projectiveOrbitMap (H := H) m hm =
-    projectiveOrbitMap (H := H) m hm ∘
-      PrimeSpectrum.comap (HopfAlgebra.leftTranslationAlgEquiv g).toRingEquiv := by
-    funext x
-    exact (projectiveOrbitMap_leftTranslation_apply g m hm x).symm
-  rw [heq]
-  exact (PrimeSpectrum.comapEquiv
-    (HopfAlgebra.leftTranslationAlgEquiv g).toRingEquiv.symm).surjective.range_comp _
+  rw [← Set.range_comp, ← range_projectiveOrbitMap_comp_comap
+    (HopfAlgebra.leftTranslationAlgEquiv g) m hm]
+  exact congrArg Set.range
+    (funext fun x ↦ (projectiveOrbitMap_leftTranslation_apply g m hm x).symm)
 
 /-- Right translation on the source group scheme replaces the chosen unimodular vector in the
 projective orbit morphism by its image under the base-point representation. -/
@@ -324,19 +324,10 @@ theorem projectiveOrbitMap_rightTranslation (g : WithConv (H →ₐ[R] R))
         projectiveOrbitMap (H := H) m hm =
       projectiveOrbitMap (H := H) (basePointsRepresentation M g m)
         ((isUnimodular_basePointsRepresentation_iff g m).mpr hm) := by
-  rw [projectiveOrbitMap_def, projectiveOrbitMap_def, Proj.fromOfGlobalSections_naturality]
+  rw [specMap_comp_projectiveOrbitMap (HopfAlgebra.rightTranslationAlgEquiv g).toAlgHom m hm,
+    projectiveOrbitMap_def]
   congr 1
-  apply RingHom.ext
-  intro s
-  have hnat := congrArg CommRingCat.Hom.hom
-    (Scheme.ΓSpecIso_inv_naturality
-      (CommRingCat.ofHom (HopfAlgebra.rightTranslationAlgEquiv g).toAlgHom.toRingHom))
-  have hnat' := DFunLike.congr_fun hnat (orbitCoordinates (H := H) m s)
-  have hcoord := AlgHom.congr_fun (rightTranslationAlgEquiv_comp_orbitCoordinates g m) s
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply,
-    AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.comp_apply,
-    AlgEquiv.toAlgHom_apply] at hnat' hcoord ⊢
-  rw [← hnat', hcoord]
+  rw [rightTranslationAlgEquiv_comp_orbitCoordinates]
 
 /-- Right translation on the prime spectrum evaluates the projective orbit map of `m` as that of
 `g • m`, including at nonclosed points. -/
@@ -358,15 +349,9 @@ theorem range_projectiveOrbitMap_basePointsRepresentation
     Set.range (projectiveOrbitMap (H := H) (basePointsRepresentation M g m)
         ((isUnimodular_basePointsRepresentation_iff g m).mpr hm)) =
       Set.range (projectiveOrbitMap (H := H) m hm) := by
-  have heq : ⇑(projectiveOrbitMap (H := H) (basePointsRepresentation M g m)
-      ((isUnimodular_basePointsRepresentation_iff g m).mpr hm)) =
-    ⇑(projectiveOrbitMap (H := H) m hm) ∘
-      PrimeSpectrum.comap (HopfAlgebra.rightTranslationAlgEquiv g).toRingEquiv := by
-    funext x
-    exact (projectiveOrbitMap_rightTranslation_apply g m hm x).symm
-  rw [heq]
-  exact (PrimeSpectrum.comapEquiv
-    (HopfAlgebra.rightTranslationAlgEquiv g).toRingEquiv.symm).surjective.range_comp _
+  rw [← range_projectiveOrbitMap_comp_comap (HopfAlgebra.rightTranslationAlgEquiv g) m hm]
+  exact congrArg Set.range
+    (funext fun x ↦ (projectiveOrbitMap_rightTranslation_apply g m hm x).symm)
 
 /-- Two unimodular vectors whose cyclic spans are linked by a base-valued point have identical
 topological projective orbit images, including nonclosed points. -/
