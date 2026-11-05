@@ -122,35 +122,35 @@ def sixJSymbolSymm (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (a b c 
 
 /-- Selection rule for `sixJSymbol`: it vanishes unless all four binary couplings are admissible
 Clebsch–Gordan triples. -/
-theorem sixJSymbol_eq_zero_of_not_isClebschGordanTriple (hq : IsGenericQuantumParameter q)
+@[simp] theorem sixJSymbol_eq_zero_of_not_isClebschGordanTriple (hq : IsGenericQuantumParameter q)
     (ε δ ζ : ℤˣ) {a b c d u v : ℕ}
     (h : ¬ (IsClebschGordanTriple a b u ∧ IsClebschGordanTriple u c d ∧
       IsClebschGordanTriple b c v ∧ IsClebschGordanTriple a v d)) :
     sixJSymbol hq ε δ ζ a b c d u v = 0 := by
   rw [sixJSymbol, sixJRecouplingHom]
   rcases not_and_or.mp h with h₁ | h
-  · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq ε δ h₁]
+  · simp [h₁]
   rcases not_and_or.mp h with h₂ | h
-  · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq (ε * δ) ζ h₂]
+  · simp [h₂]
   rcases not_and_or.mp h with h₃ | h₄
-  · simp [clebschGordanWeightProjection_eq_zero_of_not_isClebschGordanTriple hq δ ζ h₃]
-  · simp [clebschGordanWeightProjection_eq_zero_of_not_isClebschGordanTriple hq ε (δ * ζ) h₄]
+  · simp [h₃]
+  · simp [h₄]
 
 /-- Selection rule for `sixJSymbolSymm`: it vanishes unless all four binary couplings are
 admissible Clebsch–Gordan triples. -/
-theorem sixJSymbolSymm_eq_zero_of_not_isClebschGordanTriple (hq : IsGenericQuantumParameter q)
-    (ε δ ζ : ℤˣ) {a b c d v u : ℕ}
+@[simp] theorem sixJSymbolSymm_eq_zero_of_not_isClebschGordanTriple
+    (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {a b c d v u : ℕ}
     (h : ¬ (IsClebschGordanTriple a b u ∧ IsClebschGordanTriple u c d ∧
       IsClebschGordanTriple b c v ∧ IsClebschGordanTriple a v d)) :
     sixJSymbolSymm hq ε δ ζ a b c d v u = 0 := by
   rw [sixJSymbolSymm, sixJRecouplingSymmHom]
   rcases not_and_or.mp h with h₁ | h
-  · simp [clebschGordanWeightProjection_eq_zero_of_not_isClebschGordanTriple hq ε δ h₁]
+  · simp [h₁]
   rcases not_and_or.mp h with h₂ | h
-  · simp [clebschGordanWeightProjection_eq_zero_of_not_isClebschGordanTriple hq (ε * δ) ζ h₂]
+  · simp [h₂]
   rcases not_and_or.mp h with h₃ | h₄
-  · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq δ ζ h₃]
-  · simp [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq ε (δ * ζ) h₄]
+  · simp [h₃]
+  · simp [h₄]
 
 /-! ### Coupled normalized `F`-ladder bases -/
 
@@ -450,9 +450,9 @@ theorem sum_sixJSymbolSymm_mul_sixJSymbol (hq : IsGenericQuantumParameter q)
         LinearMap.id_comp, true_and]
       by_cases h₂ : IsClebschGordanTriple u' c d <;>
         simp [clebschGordanWeightProjection_comp_inclusion, h₂]
-    · simp [clebschGordanWeightProjection_comp_inclusion, h₁,
-        show ¬(u = u' ∧ IsClebschGordanTriple a b u ∧ IsClebschGordanTriple u c d) by
-          rintro ⟨rfl, hab, _⟩; exact h₁ ⟨rfl, hab⟩]
+    · have hnot : ¬ (u = u' ∧ IsClebschGordanTriple a b u ∧ IsClebschGordanTriple u c d) := by
+        rintro ⟨rfl, hab, _⟩; exact h₁ ⟨rfl, hab⟩
+      simp [clebschGordanWeightProjection_comp_inclusion, h₁, hnot]
 
 /-- Right orthogonality relation between `sixJSymbol` and `sixJSymbolSymm`. -/
 theorem sum_sixJSymbol_mul_sixJSymbolSymm (hq : IsGenericQuantumParameter q)
@@ -497,9 +497,9 @@ theorem sum_sixJSymbol_mul_sixJSymbolSymm (hq : IsGenericQuantumParameter q)
         LinearMap.id_comp, true_and]
       by_cases h₂ : IsClebschGordanTriple a v' d <;>
         simp [clebschGordanWeightProjection_comp_inclusion, h₂]
-    · simp [clebschGordanWeightProjection_comp_inclusion, h₁,
-        show ¬(v = v' ∧ IsClebschGordanTriple b c v ∧ IsClebschGordanTriple a v d) by
-          rintro ⟨rfl, hbc, _⟩; exact h₁ ⟨rfl, hbc⟩]
+    · have hnot : ¬ (v = v' ∧ IsClebschGordanTriple b c v ∧ IsClebschGordanTriple a v d) := by
+        rintro ⟨rfl, hbc, _⟩; exact h₁ ⟨rfl, hbc⟩
+      simp [clebschGordanWeightProjection_comp_inclusion, h₁, hnot]
 
 /-- Admissible left intermediate weights `u` for `(L_a^ε ⊗ L_b^δ) ⊗ L_c^ζ` at total weight `d`. -/
 abbrev SixJLeftIndex (a b c d : ℕ) : Type :=
@@ -570,7 +570,8 @@ def sixJMatrixSymm (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (a b c 
   simp only [Matrix.of_apply, hsum, sum_sixJSymbolSymm_mul_sixJSymbol]
   rcases eq_or_ne u' u with rfl | huu
   · simp [u'.2.1, u'.2.2]
-  · simp [huu, show u.1 ≠ u'.1 from fun h => huu (Subtype.ext h.symm)]
+  · have hval : u.1 ≠ u'.1 := Subtype.coe_ne_coe.mpr huu.symm
+    simp [huu, hval]
 
 /-- `sixJMatrixSymm` is a right inverse of `sixJMatrix`. -/
 @[simp] theorem sixJMatrix_mul_sixJMatrixSymm (hq : IsGenericQuantumParameter q)
@@ -586,7 +587,8 @@ def sixJMatrixSymm (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) (a b c 
   simp only [Matrix.of_apply, hsum, sum_sixJSymbol_mul_sixJSymbolSymm]
   rcases eq_or_ne v' v with rfl | hvv
   · simp [v'.2.1, v'.2.2]
-  · simp [hvv, show v.1 ≠ v'.1 from fun h => hvv (Subtype.ext h.symm)]
+  · have hval : v.1 ≠ v'.1 := Subtype.coe_ne_coe.mpr hvv.symm
+    simp [hvv, hval]
 
 /-- The numbers of admissible left and right intermediate weights at total weight `d` coincide. -/
 theorem card_sixJLeftIndex_eq_card_sixJRightIndex (a b c d : ℕ) :

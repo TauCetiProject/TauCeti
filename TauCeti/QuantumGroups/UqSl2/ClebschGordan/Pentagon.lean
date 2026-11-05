@@ -286,8 +286,9 @@ private theorem homScalar_quadrupleRight_of_triples (hq : IsGenericQuantumParame
   rw [quadrupleRightProjection_comp_inclusion]
   by_cases h : r = r' ∧ s = s'
   · rcases h with ⟨rfl, rfl⟩; simp [htri.1, htri.2.1, htri.2.2]
-  · simp [h, show ¬ (r = r' ∧ s = s' ∧ IsClebschGordanTriple c d r ∧
-      IsClebschGordanTriple b r s ∧ IsClebschGordanTriple a s e) by tauto]
+  · have hnot : ¬ (r = r' ∧ s = s' ∧ IsClebschGordanTriple c d r ∧
+        IsClebschGordanTriple b r s ∧ IsClebschGordanTriple a s e) := by tauto
+    simp [h, hnot]
 
 private theorem homScalar_comp_sum_smul_comp_congr {ι M : Type*} [AddCommMonoid M]
     [Module ℂ M] [Module (UqSl2 q) M] [IsScalarTower ℂ (UqSl2 q) M]
@@ -372,7 +373,9 @@ private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
   · have hnot : ¬ IsClebschGordanTriple t d s := fun htr => hs_mem htr.mem_range
     rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq δ ζ θ (fun h => hnot h.2.1),
       zero_mul, zero_mul,
-      Finset.sum_eq_zero fun s' hs' => by simp [show s ≠ s' from fun h => hs_mem (h ▸ hs')],
+      Finset.sum_eq_zero fun s' hs' => by
+        have hne : s ≠ s' := fun h => hs_mem (h ▸ hs')
+        simp [hne],
       mul_zero]
 
 /-- **The quantum Biedenharn–Elliott pentagon identity** for the `U_q(sl₂)` `6j` symbols on

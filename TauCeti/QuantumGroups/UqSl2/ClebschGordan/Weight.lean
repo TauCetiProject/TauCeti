@@ -91,6 +91,16 @@ def clebschGordanTripleEquiv (a b : ℕ) :
   left_inv c := by obtain ⟨_, _, _, _, _⟩ := c.2; ext; dsimp only; omega
   right_inv j := by have := j.isLt; ext; dsimp only; omega
 
+/-- `clebschGordanTripleEquiv` sends an admissible weight `c` to lowering step `(a + b - c) / 2`. -/
+@[simp] theorem val_clebschGordanTripleEquiv_apply {a b : ℕ}
+    (c : { c : ℕ // IsClebschGordanTriple a b c }) :
+    (clebschGordanTripleEquiv a b c : ℕ) = (a + b - (c : ℕ)) / 2 := (rfl)
+
+/-- `(clebschGordanTripleEquiv a b).symm` sends lowering step `j` to admissible weight
+`a + b - 2 * j`. -/
+@[simp] theorem val_clebschGordanTripleEquiv_symm_apply {a b : ℕ} (j : Fin (min a b + 1)) :
+    ((clebschGordanTripleEquiv a b).symm j : ℕ) = a + b - 2 * (j : ℕ) := (rfl)
+
 /-- Recovery of `c = a + b - 2 * j` from `j = clebschGordanTripleEquiv a b ⟨c, h⟩`. -/
 theorem IsClebschGordanTriple.eq_sub_two_mul_clebschGordanTripleEquiv {a b c : ℕ}
     (h : IsClebschGordanTriple a b c) :
@@ -148,12 +158,12 @@ def clebschGordanWeightProjection (hq : IsGenericQuantumParameter q)
   else 0
 
 /-- `clebschGordanWeightInclusion` vanishes outside admissible Clebsch–Gordan triples. -/
-theorem clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple
+@[simp] theorem clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple
     (hq : IsGenericQuantumParameter q) {a b c : ℕ} (ε δ : ℤˣ) (h : ¬ IsClebschGordanTriple a b c) :
     clebschGordanWeightInclusion hq a ε b δ c = 0 := by simp [clebschGordanWeightInclusion, h]
 
 /-- `clebschGordanWeightProjection` vanishes outside admissible Clebsch–Gordan triples. -/
-theorem clebschGordanWeightProjection_eq_zero_of_not_isClebschGordanTriple
+@[simp] theorem clebschGordanWeightProjection_eq_zero_of_not_isClebschGordanTriple
     (hq : IsGenericQuantumParameter q) {a b c : ℕ} (ε δ : ℤˣ) (h : ¬ IsClebschGordanTriple a b c) :
     clebschGordanWeightProjection hq a ε b δ c = 0 := by simp [clebschGordanWeightProjection, h]
 
