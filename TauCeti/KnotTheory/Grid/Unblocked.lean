@@ -527,13 +527,37 @@ theorem OColumns_eq_empty_iff (r : GridRectangle n) :
 
 variable (R : Type*) [CommSemiring R]
 
-/-- The weight of a toroidal rectangle in the unblocked differential: the squarefree monomial
-`∏ V_c` over the columns whose `O`-marking the rectangle covers.
+/-- The squarefree monomial `∏ V_c` over the columns whose `O`-marking lies in a given set of
+squares.
 
-An embedded rectangle covers each marked square at most once, so every exponent is `0` or `1`,
-and the Heegaard Floer weight `V₀^{O₀(r)} ⋯ V_{n-1}^{O_{n-1}(r)}` reduces to this product. -/
+An embedded domain (a rectangle, a hexagon, an annulus) covers each marked square at most once, so
+every exponent of its Heegaard Floer weight `V₀^{O₀(D)} ⋯ V_{n-1}^{O_{n-1}(D)}` is `0` or `1`, and
+the weight is this monomial of the squares the domain covers. -/
+noncomputable def squaresMonomial (S : Finset (Fin n × Fin n)) : MvPolynomial (Fin n) R :=
+  ∏ c ∈ G.OColumnsOfSquares S, MvPolynomial.X c
+
+/-- The monomial of a set of squares is the product of the variables of its `O`-columns. -/
+theorem squaresMonomial_def (S : Finset (Fin n × Fin n)) :
+    G.squaresMonomial R S = ∏ c ∈ G.OColumnsOfSquares S, MvPolynomial.X c :=
+  (rfl)
+
+/-- The monomial of a set of squares, written with an explicit exponent vector. -/
+theorem squaresMonomial_eq_monomial (S : Finset (Fin n × Fin n)) :
+    G.squaresMonomial R S = monomial (∑ c ∈ G.OColumnsOfSquares S, Finsupp.single c 1) 1 := by
+  rw [squaresMonomial, monomial_sum_one]
+  simp only [← X_pow_eq_monomial, pow_one]
+
+/-- The monomial of a set of squares is the product, over the squares, of the variable of the
+square's column at the `O`-marked squares and of `1` elsewhere. -/
+theorem squaresMonomial_eq_prod_ite (S : Finset (Fin n × Fin n)) :
+    G.squaresMonomial R S = ∏ p ∈ S, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
+  (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X S).symm
+
+/-- The weight of a toroidal rectangle in the unblocked differential: the squarefree monomial
+`∏ V_c` over the columns whose `O`-marking the rectangle covers, `GridDiagram.squaresMonomial` of
+the squares it covers. -/
 noncomputable def OMonomial (r : GridRectangle n) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumns r, MvPolynomial.X c
+  G.squaresMonomial R r.coveredSquares
 
 /-- The rectangle monomial of a column-swapped diagram renames the variables of the original
 monomial by the same swap, provided the rectangle either covers both columns or covers
@@ -542,25 +566,21 @@ theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) 
     (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
     (G.swapColumns a b).OMonomial R r =
       MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) := by
-  unfold OMonomial
-  rw [G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
+  unfold OMonomial squaresMonomial
+  rw [← OColumns, ← OColumns, G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
   simp only [MvPolynomial.rename_X, Finset.prod_image (Equiv.swap a b).injective.injOn]
 
 /-- The weight of a rectangle covering no `O`-marking is `1`. -/
 theorem OMonomial_eq_one_of_disjoint {r : GridRectangle n}
     (h : Disjoint r.coveredSquares G.OSet) :
     G.OMonomial R r = 1 := by
-  rw [OMonomial, (G.OColumns_eq_empty_iff r).mpr h, Finset.prod_empty]
+  rw [OMonomial, squaresMonomial, ← OColumns, (G.OColumns_eq_empty_iff r).mpr h,
+    Finset.prod_empty]
 
 /-- The weight of a rectangle, written as a monomial with an explicit exponent vector. -/
 theorem OMonomial_eq_monomial (r : GridRectangle n) :
-    G.OMonomial R r = monomial (∑ c ∈ G.OColumns r, Finsupp.single c 1) (1 : R) := by
-  rw [OMonomial]
-  generalize G.OColumns r = s
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s ha ih =>
-    rw [Finset.prod_cons, Finset.sum_cons, ih, monomial_single_add, pow_one]
+    G.OMonomial R r = monomial (∑ c ∈ G.OColumns r, Finsupp.single c 1) (1 : R) :=
+  G.squaresMonomial_eq_monomial R _
 
 /-- Every monomial of a sum of rectangle weights is the weight of one of the summed rectangles. -/
 theorem exists_mem_of_mem_support_sum_OMonomial {x y : GridState n}
@@ -587,8 +607,8 @@ weights. That is what the recutting arguments for `∂⁻ ∘ ∂⁻ = 0` need. 
 theorem OMonomial_eq_prod_coveredSquares (r : GridRectangle n) :
     G.OMonomial R r =
       ∏ p ∈ r.coveredSquares,
-        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
-  rw [OMonomial, OColumns, G.prod_ite_OSet_eq_prod_OColumnsOfSquares]
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) :=
+  G.squaresMonomial_eq_prod_ite R _
 
 /-- The weight of a rectangle has total degree the number of `O`-markings the rectangle covers.
 

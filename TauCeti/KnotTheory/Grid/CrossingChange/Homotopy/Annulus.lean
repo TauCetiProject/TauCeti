@@ -96,14 +96,14 @@ theorem mem_crossingChangeAnnulusSquares (p : Fin n × Fin n) :
 /-- The weight of every domain returning to its source in the crossing change homotopy equation:
 the product of the variables of the `O`-markings in `crossingChangeAnnulusSquares`. -/
 noncomputable def crossingChangeAnnulusWeight : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares (crossingChangeAnnulusSquares C t), MvPolynomial.X c
+  G.squaresMonomial R (crossingChangeAnnulusSquares C t)
 
 /-- The annulus weight is the product of the variables of the `O`-markings in the annulus
 squares. -/
 theorem crossingChangeAnnulusWeight_def :
     G.crossingChangeAnnulusWeight R C t =
       ∏ c ∈ G.OColumnsOfSquares (crossingChangeAnnulusSquares C t), MvPolynomial.X c :=
-  (rfl)
+  G.squaresMonomial_def R _
 
 /-! ### Domains carrying the markings of the annulus squares -/
 
