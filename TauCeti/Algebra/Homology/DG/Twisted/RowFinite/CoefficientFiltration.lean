@@ -41,8 +41,8 @@ sequence of a twisted complex over an infinite cell structure.
 
 ## Main results
 
-* `TauCeti.RowFiniteTwistingCocycle.coefficientDifferential_sub_mem_rowFiniteIndexFiltration`:
-  the twisting part of the differential strictly lowers the index filtration.
+* `TauCeti.RowFiniteTwistingCocycle.subtypeDomain_coefficientDifferential`: on the generators of
+  index `p`, the differential of a vector of `F_p` is that of the zero cocycle.
 * `TauCeti.RowFiniteTwistingCocycle.exists_mem_range_indexSubobject_arrow_f`: the filtration is
   exhaustive in every degree.
 * `TauCeti.RowFiniteTwistingCocycle.indexSubobject_eq_bot`: the filtration vanishes below all
@@ -96,44 +96,6 @@ section Differential
 
 include hm
 
-/-- The twisting part of the coefficient differential strictly lowers the index filtration. -/
-theorem coefficientDifferential_sub_mem_rowFiniteIndexFiltration {p : ℤ} {f : P →₀ M}
-    (hf : f ∈ rowFiniteIndexFiltration (R := R) ind p) :
-    m.coefficientDifferential hM f - Finsupp.mapRange.linearMap dM f ∈
-      rowFiniteIndexFiltration (R := R) ind (p - 1) := by
-  classical
-  -- Reduce to elementary vectors `single x α` with `ind x ≤ p` and `α` homogeneous.
-  have key : ∀ x, ind x ≤ p → ∀ α : M, m.coefficientDifferential hM (Finsupp.single x α) -
-      Finsupp.mapRange.linearMap dM (Finsupp.single x α) ∈
-        rowFiniteIndexFiltration (R := R) ind (p - 1) := by
-    intro x hx α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous q α =>
-      rw [m.coefficientDifferential_single hM x α.2, Finsupp.mapRange.linearMap_apply,
-        Finsupp.mapRange_single, add_sub_cancel_left, Units.smul_def]
-      refine zsmul_mem (Submodule.finsuppSum_mem _ _ _ _ fun y hy ↦ ?_) _
-      have hyx : ind y < ind x := lt_of_not_ge fun h ↦ hy (hm x y h)
-      exact (mem_rowFiniteIndexFiltration_iff ind).mpr fun z hz ↦
-        Finsupp.single_eq_of_ne (by rintro rfl; omega)
-    | add α β hα hβ =>
-      simpa only [Finsupp.single_add, map_add, add_sub_add_comm] using add_mem hα hβ
-  rw [← LinearMap.sub_apply, ← Finsupp.sum_single f, map_finsuppSum]
-  refine Submodule.finsuppSum_mem _ _ _ _ fun x hx ↦ key x ?_ _
-  by_contra h
-  exact hx ((mem_rowFiniteIndexFiltration_iff ind).mp hf x (lt_of_not_ge h))
-
-/-- The coefficient differential preserves every stage of the index filtration. -/
-theorem coefficientDifferential_mem_rowFiniteIndexFiltration {p : ℤ} {f : P →₀ M}
-    (hf : f ∈ rowFiniteIndexFiltration (R := R) ind p) :
-    m.coefficientDifferential hM f ∈ rowFiniteIndexFiltration (R := R) ind p := by
-  have hcoeff : Finsupp.mapRange.linearMap dM f ∈ rowFiniteIndexFiltration (R := R) ind p :=
-    (mem_rowFiniteIndexFiltration_iff ind).mpr fun x hx ↦ by
-      simp [(mem_rowFiniteIndexFiltration_iff ind).mp hf x hx]
-  have h := rowFiniteIndexFiltration_mono (R := R) (A := M) ind (by omega : p - 1 ≤ p)
-    (m.coefficientDifferential_sub_mem_rowFiniteIndexFiltration hm hM hf)
-  simpa only [sub_add_cancel] using add_mem h hcoeff
-
 /-- On the generators of index `p`, the differential of a vector of `F_p` is the coefficient
 differential of its restriction: the twisted differential of the zero cocycle. -/
 theorem subtypeDomain_coefficientDifferential {p : ℤ} {f : P →₀ M}
@@ -143,7 +105,7 @@ theorem subtypeDomain_coefficientDifferential {p : ℤ} {f : P →₀ M}
         hM (f.subtypeDomain fun x ↦ ind x = p) := by
   ext x
   have h := (mem_rowFiniteIndexFiltration_iff ind).mp
-    (m.coefficientDifferential_sub_mem_rowFiniteIndexFiltration hm hM hf) x.val (by omega)
+    (m.coefficientDifferential_sub_mem_indexFiltration hM hm hf) x.val (by omega)
   simpa [sub_eq_zero] using h
 
 end Differential
@@ -159,7 +121,7 @@ theorem coefficientDifferential_mem_rowFiniteIndexGrading {p n : ℤ} {f : P →
     (hf : f ∈ rowFiniteIndexGrading ℳ ind p n) :
     m.coefficientDifferential hM f ∈ rowFiniteIndexGrading ℳ ind p (n + 1) :=
   mem_rowFiniteIndexGrading_iff.mpr
-    ⟨m.coefficientDifferential_mem_rowFiniteIndexFiltration hm hM
+    ⟨m.coefficientDifferential_mem_indexFiltration hM hm
         (mem_rowFiniteIndexGrading_iff.mp hf).1,
       (m.isHomogeneous_coefficientDifferential hM).map_mem (mem_rowFiniteIndexGrading_iff.mp hf).2⟩
 

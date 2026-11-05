@@ -302,7 +302,7 @@ theorem swap_smul_tabloid_ne (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : 
 antisymmetrization of `{t}` has just two terms, with opposite signs. -/
 theorem polytabloid_eq_single_sub_single (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
     (t : YoungTableau μ) :
-    polytabloid t = MonoidAlgebra.single (tabloid t) (1 : ℚ) -
+    polytabloid (R := ℚ) t = MonoidAlgebra.single (tabloid t) (1 : ℚ) -
       MonoidAlgebra.single
         (Equiv.swap (firstColumnLabel h1 t) (secondRowLabel h1 t) • tabloid t) (1 : ℚ) := by
   classical
@@ -320,12 +320,12 @@ theorem polytabloid_eq_single_sub_single (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 
     simp [hne]
   rcases eq_or_ne X (Equiv.swap (firstColumnLabel h1 t) (secondRowLabel h1 t) • tabloid t) with
     rfl | hX'
-  · have hcoeff : (polytabloid t).coeff
+  · have hcoeff : (polytabloid (R := ℚ) t).coeff
         (Equiv.swap (firstColumnLabel h1 t) (secondRowLabel h1 t) • tabloid t) = -1 := by
       simpa [hab] using polytabloid_coeff_smul_tabloid t ⟨_, hswap⟩
     rw [hcoeff]
     simp [Ne.symm hne]
-  · have hzero : (polytabloid t).coeff X = 0 := by
+  · have hzero : (polytabloid (R := ℚ) t).coeff X = 0 := by
       refine polytabloid_coeff_eq_zero_of_forall_ne t fun q hq => ?_
       rcases (mem_colSubgroup_iff h1 h2 t).mp hq with rfl | rfl
       · simpa using Ne.symm hX
@@ -364,7 +364,7 @@ variable {μ : YoungDiagram}
 tabloids. -/
 theorem polytabloid_mem_augmentationSubrepresentation (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
     (t : YoungTableau μ) :
-    polytabloid t ∈ augmentationSubrepresentation ℚ (Equiv.Perm (Fin μ.card))
+    polytabloid (R := ℚ) t ∈ augmentationSubrepresentation ℚ (Equiv.Perm (Fin μ.card))
       (Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)) := by
   rw [polytabloid_eq_single_sub_single h1 h2 t]
   exact single_sub_single_mem_augmentationSubrepresentation _ _
@@ -375,7 +375,8 @@ relabelled, without moving that label, so that the top of its first column carri
 the second. -/
 theorem single_sub_single_mem_spechtSubrepresentation (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0)
     (X Y : Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)) :
-    (MonoidAlgebra.single X (1 : ℚ) - MonoidAlgebra.single Y 1) ∈ spechtSubrepresentation μ := by
+    (MonoidAlgebra.single X (1 : ℚ) - MonoidAlgebra.single Y 1) ∈ spechtSubrepresentation (R :=
+      ℚ) μ := by
   rcases eq_or_ne X Y with rfl | hXY
   · rw [sub_self]
     exact Submodule.zero_mem _
@@ -413,7 +414,7 @@ subrepresentation of a permutation module, this is the identification `S^μ = st
 read on the tabloids; `TauCeti.labelTabloidEquiv` names the tabloids by the labels. -/
 theorem spechtSubrepresentation_eq_augmentationSubrepresentation (h1 : μ.rowLen 1 = 1)
     (h2 : μ.rowLen 2 = 0) :
-    spechtSubrepresentation μ =
+    spechtSubrepresentation (R := ℚ) μ =
       augmentationSubrepresentation ℚ (Equiv.Perm (Fin μ.card))
         (Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)) := by
   refine Subrepresentation.toSubmodule_injective (le_antisymm ?_ ?_)
@@ -516,7 +517,7 @@ theorem labelTabloidEquiv_symm_tabloid (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 
 /-- **The Young permutation module of a shape `(m, 1)` is the permutation module on the labels.** -/
 noncomputable def labelTabloidRepresentationEquiv (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
     (Representation.ofMulAction ℚ (Equiv.Perm (Fin μ.card)) (Fin μ.card)).Equiv
-      (permutationModule (shapePartition μ)).ρ :=
+      (permutationModule (R := ℚ) (shapePartition μ)).ρ :=
   ofMulActionEquivCongr ℚ (labelTabloidEquiv h1 h2) fun g k => by
     rw [labelTabloidEquiv_apply, labelTabloidEquiv_apply]
     exact labelTabloid_smul h1 h2 g k
@@ -533,18 +534,18 @@ subrepresentation of the labels onto the Specht module of the shape. -/
 private theorem map_augmentationSubrepresentation (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
     Submodule.map
         ((labelTabloidRepresentationEquiv h1 h2).toLinearEquiv :
-          MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (shapePartition μ)).V)
+          MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (R := ℚ) (shapePartition μ)).V)
         (augmentationSubrepresentation ℚ (Equiv.Perm (Fin μ.card)) (Fin μ.card)).toSubmodule =
-      (spechtSubrepresentation μ).toSubmodule := by
+      (spechtSubrepresentation (R := ℚ) μ).toSubmodule := by
   have hsingle : ∀ (k : Fin μ.card) (r : ℚ),
       ((labelTabloidRepresentationEquiv h1 h2).toLinearEquiv :
-          MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (shapePartition μ)).V)
+          MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (R := ℚ) (shapePartition μ)).V)
         (MonoidAlgebra.single k r) = MonoidAlgebra.single (labelTabloid h1 k) r :=
     fun k r => labelTabloidRepresentationEquiv_apply_single h1 h2 k r
   have hsum : (MonoidAlgebra.basis
         (Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)) ℚ).sumCoords ∘ₗ
         ((labelTabloidRepresentationEquiv h1 h2).toLinearEquiv :
-          MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (shapePartition μ)).V) =
+          MonoidAlgebra ℚ (Fin μ.card) →ₗ[ℚ] (permutationModule (R := ℚ) (shapePartition μ)).V) =
       (MonoidAlgebra.basis (Fin μ.card) ℚ).sumCoords :=
     Module.Basis.ext (MonoidAlgebra.basis (Fin μ.card) ℚ) fun k => by
       rw [LinearMap.comp_apply, MonoidAlgebra.basis_apply, hsingle]
@@ -566,7 +567,8 @@ This is the third of the named small irreducibles of `Sₙ`, beside the trivial 
 `TauCeti.RepresentationTheory.Symmetric.Specht.Extremes`. -/
 noncomputable def standardRepresentationEquivSpechtSubrepresentation (h1 : μ.rowLen 1 = 1)
     (h2 : μ.rowLen 2 = 0) :
-    (standardRepresentation ℚ (Fin μ.card)).Equiv (spechtSubrepresentation μ).toRepresentation :=
+    (standardRepresentation ℚ (Fin μ.card)).Equiv (spechtSubrepresentation (R := ℚ)
+      μ).toRepresentation :=
   Representation.Equiv.mk
     (LinearEquiv.ofSubmodules (labelTabloidRepresentationEquiv h1 h2).toLinearEquiv _ _
       (map_augmentationSubrepresentation h1 h2))
@@ -584,7 +586,7 @@ theorem coe_standardRepresentationEquivSpechtSubrepresentation_apply (h1 : μ.ro
     (h2 : μ.rowLen 2 = 0)
     (v : (augmentationSubrepresentation ℚ (Equiv.Perm (Fin μ.card)) (Fin μ.card)).toSubmodule) :
     (standardRepresentationEquivSpechtSubrepresentation h1 h2 v :
-        (permutationModule (shapePartition μ)).V) =
+        (permutationModule (R := ℚ) (shapePartition μ)).V) =
       labelTabloidRepresentationEquiv h1 h2 (v : MonoidAlgebra ℚ (Fin μ.card)) :=
   -- `(rfl)`, not `rfl`: the body of the equivalence is not `@[expose]`d.
   (rfl)
@@ -596,7 +598,7 @@ partition-indexed `TauCeti.spechtModule`, which relabels the symmetric group alo
 private noncomputable def standardRepresentationEquivSpechtSubrepresentationOfCard {N : ℕ}
     (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (hN : μ.card = N) :
     (standardRepresentation ℚ (Fin N)).Equiv
-      ((spechtSubrepresentation μ).toRepresentation.comp
+      ((spechtSubrepresentation (R := ℚ) μ).toRepresentation.comp
         (finCongr hN.symm).permCongrHom.toMonoidHom) := by
   subst hN
   exact standardRepresentationEquivSpechtSubrepresentation h1 h2
@@ -605,7 +607,7 @@ private theorem coe_standardRepresentationEquivSpechtSubrepresentationOfCard_app
     (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (hN : μ.card = N)
     (v : (augmentationSubrepresentation ℚ (Equiv.Perm (Fin N)) (Fin N)).toSubmodule) :
     (standardRepresentationEquivSpechtSubrepresentationOfCard h1 h2 hN v :
-        (permutationModule (shapePartition μ)).V) =
+        (permutationModule (R := ℚ) (shapePartition μ)).V) =
       labelTabloidRepresentationEquiv h1 h2
         (MonoidAlgebra.mapDomainLinearEquiv ℚ ℚ (finCongr hN.symm)
           (v : MonoidAlgebra ℚ (Fin N))) := by
@@ -622,7 +624,7 @@ private theorem coe_standardRepresentationEquivSpechtSubrepresentationOfCard_app
 the standard representation of the symmetric group on `μ.card` labels has dimension
 `μ.card - 1`. -/
 theorem finrank_spechtSubrepresentation_of_rowLen (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) :
-    Module.finrank ℚ (spechtSubrepresentation μ).toSubmodule = μ.card - 1 := by
+    Module.finrank ℚ (spechtSubrepresentation (R := ℚ) μ).toSubmodule = μ.card - 1 := by
   rw [← (standardRepresentationEquivSpechtSubrepresentation h1 h2).toLinearEquiv.finrank_eq,
     finrank_augmentationSubrepresentation, Fintype.card_fin]
 
@@ -636,7 +638,7 @@ theorem finrank_spechtSubrepresentation_of_rowLen (h1 : μ.rowLen 1 = 1) (h2 : �
 is the `(n+1)`-dimensional standard representation of `S_{n+2}`. -/
 @[simp↓]
 theorem finrank_spechtModule_singletonSecondRow (n : ℕ) :
-    Module.finrank ℚ (spechtModule (Nat.Partition.singletonSecondRow n)) = n + 1 := by
+    Module.finrank ℚ (spechtModule (R := ℚ) (Nat.Partition.singletonSecondRow n)) = n + 1 := by
   exact (finrank_spechtSubrepresentation_of_rowLen
     (YoungDiagram.rowLen_ofPartition_singletonSecondRow_one n)
     (YoungDiagram.rowLen_ofPartition_singletonSecondRow_two n)).trans
@@ -649,7 +651,7 @@ symmetric group on the labels of the diagram identified with `S_{n+2}` along
 `YoungDiagram.card_ofPartition`, the relabelling `TauCeti.spechtModule` is defined by. -/
 noncomputable def standardRepresentationEquivSpechtModuleSingletonSecondRow (n : ℕ) :
     (standardRepresentation ℚ (Fin (n + 2))).Equiv
-      (spechtModule (Nat.Partition.singletonSecondRow n)).ρ :=
+      (spechtModule (R := ℚ) (Nat.Partition.singletonSecondRow n)).ρ :=
   standardRepresentationEquivSpechtSubrepresentationOfCard
     (YoungDiagram.rowLen_ofPartition_singletonSecondRow_one n)
     (YoungDiagram.rowLen_ofPartition_singletonSecondRow_two n)
@@ -661,7 +663,7 @@ tabloids, read on the labels of the diagram along `YoungDiagram.card_ofPartition
 theorem coe_standardRepresentationEquivSpechtModuleSingletonSecondRow_apply (n : ℕ)
     (v : (augmentationSubrepresentation ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2))).toSubmodule) :
     (standardRepresentationEquivSpechtModuleSingletonSecondRow n v :
-        (permutationModule
+        (permutationModule (R := ℚ)
           (shapePartition (YoungDiagram.ofPartition (Nat.Partition.singletonSecondRow n)))).V) =
       labelTabloidRepresentationEquiv (YoungDiagram.rowLen_ofPartition_singletonSecondRow_one n)
         (YoungDiagram.rowLen_ofPartition_singletonSecondRow_two n)

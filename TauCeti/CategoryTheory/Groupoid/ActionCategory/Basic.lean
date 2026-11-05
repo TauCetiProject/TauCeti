@@ -73,6 +73,10 @@ section Arrows
 
 variable {M : Type*} [Monoid M] {X : Type*} [MulAction M X]
 
+/-- Objects of the action category are determined by their underlying points. -/
+theorem back_injective : Function.Injective (ActionCategory.back : ActionCategory M X → X) :=
+  (objEquiv M X).symm.injective
+
 /-- An arrow of the action category goes from a point to its translate by the arrow's label. -/
 theorem hom_smul {x y : X} (f : objEquiv M X x ⟶ objEquiv M X y) :
     (f.hom : M) • x = y :=
@@ -247,6 +251,15 @@ theorem isIsomorphic_iff_orbitRel {x y : X} :
     IsIsomorphic (objEquiv G X x) (objEquiv G X y) ↔ orbitRel G X x y := by
   rw [Groupoid.isIsomorphic_iff_nonempty_hom, nonempty_hom_iff, (orbitRel G X).comm',
     orbitRel_apply, mem_orbit_iff]
+
+/-- If a functor out of the action groupoid is full, two points lie in the same orbit exactly
+when the images of the corresponding objects are isomorphic. -/
+theorem orbitRel_iff_isIsomorphic_obj_of_full {C : Type*} [Category C]
+    (F : ActionCategory G X ⥤ C) [F.Full] {x y : X} :
+    orbitRel G X x y ↔ IsIsomorphic (F.obj (objEquiv G X x)) (F.obj (objEquiv G X y)) := by
+  rw [← isIsomorphic_iff_orbitRel]
+  exact ⟨fun ⟨e⟩ => ⟨F.mapIso e⟩, fun ⟨e⟩ => (Groupoid.isIsomorphic_iff_nonempty_hom).mpr
+    ⟨F.preimage e.hom⟩⟩
 
 variable (G X)
 
