@@ -47,7 +47,7 @@ radius `r` with `‖a‖ ≤ r < R₀`.
 
 * P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §I.4.
 * The coefficient construction is `PowerSeries.taylor` in
-  `TauCeti.RingTheory.PowerSeries.Entire.Taylor`.
+  `TauCeti.RingTheory.PowerSeries.Taylor`.
 -/
 
 public section

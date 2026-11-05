@@ -179,6 +179,16 @@ theorem coe_kostantToralRootSubgroupPoints (i : I) (A : Type v) [CommRing A]
   rw [kostantToralRootSubgroupPoints]
   rfl
 
+/-- The matrix image of the root parametrization is the canonical toral-closure root point. -/
+theorem matrix_kostantRootSubgroupParam (A : Type v) [CommRing A] (i : I)
+    (u : Multiplicative A) :
+    Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom
+        (kostantRootSubgroupParam e h ρ M hM i (hnil i) (CommAlgCat.of ℤ A) u) =
+      (kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A u :
+        Matrix.GeneralLinearGroup (Fin n) A) := by
+  rw [coe_kostantToralRootSubgroupPoints, kostantRootSubgroupParam_apply]
+  simp only [kostantRootSubgroupMatrix_def, MonoidHom.comp_apply]
+
 /-- The canonical weight-torus homomorphism into the matrix-valued points of the toral Kostant
 closure. -/
 noncomputable def kostantToralWeightTorusPoints (A : Type v) [CommRing A] :

@@ -44,6 +44,8 @@ root system is reduced and irreducible, and in particular show it does not depen
 * `RootPairing.Base.forall_root_sub_mem_posRootCone_iff`: the highest root is the only root
   lying above every root.
 * `RootPairing.Base.height_lt_height_highestRoot`: every other root has strictly smaller height.
+* `RootPairing.Base.indexEquiv_highestRoot`: an automorphism of the root system permuting the
+  simple roots fixes the highest root.
 * `RootPairing.Base.neg_height_highestRoot_lt_height`: every root other than `-θ` has height
   strictly greater than `-ht(θ)`.
 * `RootPairing.Base.exists_root_highestRoot_eq_sum_nat`: the coefficients of the highest root in
@@ -297,6 +299,14 @@ theorem height_lt_height_highestRoot {j : ι} (hj : j ≠ b.highestRoot) :
   refine (sub_eq_zero.mp (TauCeti.eq_zero_of_mem_posRootCone_of_heightLinearMap_eq_zero P b
     (b.root_highestRoot_sub_mem_posRootCone j) ?_)).symm
   simp [h]
+
+/-- **An automorphism permuting the simple roots fixes the highest root**: it preserves heights,
+and `θ` is the only root of maximal height. -/
+theorem indexEquiv_highestRoot [P.IsRootSystem] (u : P.Aut)
+    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) :
+    u.indexEquiv b.highestRoot = b.highestRoot := by
+  by_contra h
+  exact (b.height_lt_height_highestRoot h).ne (b.height_indexEquiv u hu _)
 
 /-- **Every root other than the negative of the highest root has height strictly greater than
 `-ht(θ)`.** -/
