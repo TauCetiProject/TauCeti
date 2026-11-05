@@ -93,7 +93,7 @@ theorem weightCoordChangeEquiv_one : weightCoordChangeEquiv p R 1 = Equiv.refl _
   simp [coe_weightCoordChangeEquiv_apply]
 
 /-- Successive changes of generator multiply their `p`-adic exponents. -/
-theorem weightCoordChangeEquiv_mul (u v : ℤ_[p]ˣ)
+theorem weightCoordChangeEquiv_mul_apply (u v : ℤ_[p]ˣ)
     (t : {t : R // Tendsto (t ^ ·) atTop (𝓝 0)}) :
     weightCoordChangeEquiv p R (u * v) t =
       weightCoordChangeEquiv p R v (weightCoordChangeEquiv p R u t) := by
@@ -109,7 +109,7 @@ theorem weightCoordChangeEquiv_symm (u : ℤ_[p]ˣ) :
   rfl
 
 @[simp]
-theorem weightCoordChangeEquiv_zero (u : ℤ_[p]ˣ)
+theorem weightCoordChangeEquiv_apply_zero (u : ℤ_[p]ˣ)
     (h0 : Tendsto ((0 : R) ^ ·) atTop (𝓝 0)) :
     weightCoordChangeEquiv p R u ⟨0, h0⟩ = ⟨0, h0⟩ := by
   have h := PadicInt.eq_addChar_of_value_at_one (p := p) h0 (κ := 0) continuous_const (by simp)
