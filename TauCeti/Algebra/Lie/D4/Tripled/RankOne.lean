@@ -83,7 +83,7 @@ variable (K : Type*) [Field K] (i : Fin 4)
 
 /- The containment and image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`. -/
 private theorem sl2BlockSL_mem_points (g : SL(2, K)) : weightTable.sl2BlockSL i g ∈ points K := by
-  apply weightTable.sl2BlockSL_mem_of_transvection_mem i _ _ g
+  apply (weightTable.sl2BlockSL i).apply_mem_of_sl2_transvection_mem _ _ g
   · intro t
     rw [sl2BlockSL_upper_transvection]
     exact (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t)).property
@@ -144,7 +144,7 @@ theorem range_rankOnePoints :
   apply Subgroup.map_injective (points K).subtype_injective
   have h : (points K).subtype.comp (rankOnePoints K i) = weightTable.sl2BlockSL i :=
     MonoidHom.ext (coe_rankOnePoints K i)
-  rw [MonoidHom.map_range, h, weightTable.range_sl2BlockSL, MonoidHom.map_closure,
+  rw [MonoidHom.map_range, h, MonoidHom.range_eq_closure_sl2_transvection, MonoidHom.map_closure,
     Set.image_union, ← Set.range_comp, ← Set.range_comp]
   simp only [sl2BlockSL_upper_transvection, sl2BlockSL_lower_transvection]
   apply congrArg Subgroup.closure
