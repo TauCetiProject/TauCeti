@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.ClosedRange
-public import TauCeti.Analysis.ODE.EnergyEstimate.Adjoint
 public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Analysis.InnerProductSpace.Adjoint

@@ -214,8 +214,10 @@ theorem index_trajectoryOperator_hessianOperator
     (trajectoryOperator (p := 2) AL).index = (morseIndex f p : ℤ) - morseIndex f q := by
   obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop⟩ :=
     trajectory_hypotheses hγ hf hp hq hbot htop
-  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA hsym hα hminus
-      hplus hAbot hAtop AL hAL,
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA
+      (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hAbot (.of_forall hsym))
+      (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hAtop (.of_forall hsym)) hα
+      hminus hplus hAbot hAtop AL hAL,
     hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace,
     hq.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
 

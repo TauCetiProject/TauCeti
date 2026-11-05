@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+import TauCeti.Analysis.InnerProductSpace.Coercive
 
 /-!
 # Lyapunov forms of bounded operators
@@ -35,8 +36,6 @@ which needs the spectral splitting of `A`, is not proved here.
 * `ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`: a symmetric operator bounded below has a
   Lyapunov form; `ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric` applies this to a
   limit of symmetric operators.
-* `ContinuousLinearMap.abs_inner_apply_le` and `ContinuousLinearMap.abs_inner_apply_apply_le`: the
-  quadratic forms `⟪T v, v⟫` and `⟪S (A v), v⟫` are bounded by `‖T‖ ‖v‖²` and `‖S‖ ‖A‖ ‖v‖²`.
 * `ContinuousLinearMap.HasLyapunovForm.exists_eventually_nhds`: one Lyapunov form serves every
   operator close enough to `A`; `ContinuousLinearMap.isOpen_setOf_hasLyapunovForm` is the
   corresponding openness statement.
@@ -91,28 +90,6 @@ theorem hasLyapunovForm_of_tendsto_of_isSymmetric {ι : Type*} {l : Filter ι} [
   hasLyapunovForm_of_isSymmetric (isClosed_setOf_isSymmetric.mem_of_tendsto hlim (.of_forall hF))
     hα hgap
 
-/-- The quadratic form of a bounded operator `T` is bounded by `‖T‖ ‖v‖²`. -/
-theorem abs_inner_apply_le (T : E →L[ℝ] E) (v : E) : |⟪T v, v⟫_ℝ| ≤ ‖T‖ * ‖v‖ ^ 2 :=
-  calc |⟪T v, v⟫_ℝ| ≤ ‖T v‖ * ‖v‖ := abs_real_inner_le_norm _ _
-    _ ≤ ‖T‖ * ‖v‖ * ‖v‖ := by gcongr; exact T.le_opNorm v
-    _ = ‖T‖ * ‖v‖ ^ 2 := by ring
-
-/-- The quadratic form of `S` against `A` is bounded by `‖S‖ ‖A‖ ‖v‖²`. -/
-theorem abs_inner_apply_apply_le (S A : E →L[ℝ] E) (v : E) :
-    |⟪S (A v), v⟫_ℝ| ≤ ‖S‖ * ‖A‖ * ‖v‖ ^ 2 :=
-  ((S.comp A).abs_inner_apply_le v).trans
-    (mul_le_mul_of_nonneg_right (S.opNorm_comp_le A) (sq_nonneg _))
-
-/-- The quadratic form of `S` against `B` differs from that against `A` by at most
-`‖S‖ ‖B - A‖ ‖v‖²`. -/
-private theorem inner_apply_apply_sub_le (S B : E →L[ℝ] E) (v : E) :
-    ⟪S (A v), v⟫_ℝ - ⟪S (B v), v⟫_ℝ ≤ ‖S‖ * ‖B - A‖ * ‖v‖ ^ 2 := by
-  have h : ⟪S (A v), v⟫_ℝ - ⟪S (B v), v⟫_ℝ = -⟪S ((B - A) v), v⟫_ℝ := by
-    simp only [sub_apply, map_sub, inner_sub_left]
-    ring
-  rw [h, neg_le]
-  exact neg_le_of_abs_le (S.abs_inner_apply_apply_le (B - A) v)
-
 /-- **A Lyapunov form survives small perturbations.** If `A` has a Lyapunov form, then a single
 symmetric `S` and a single constant `c > 0` satisfy `c ‖v‖² ≤ ⟪S (B v), v⟫` for every `B`
 close enough to `A`. -/
@@ -129,7 +106,7 @@ theorem HasLyapunovForm.exists_eventually_nhds (h : A.HasLyapunovForm) :
           gcongr
           linarith
       _ = c / 2 := by field_simp
-  have := inner_apply_apply_sub_le S B v (A := A)
+  have := inner_apply_apply_sub_le S A B v
   nlinarith [hcS v, sq_nonneg ‖v‖]
 
 /-- The operators with a Lyapunov form are an open set. -/

@@ -18,20 +18,22 @@ import Mathlib.MeasureTheory.Integral.ExpDecay
 /-!
 # The index of the trajectory operator
 
-Let `A : ℝ → End(E)` be a continuous family of symmetric operators on a finite-dimensional real
-inner product space `E`, with invertible limits `A±` at `±∞`. The limits have Lyapunov forms
-(`ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric`), so the trajectory operator
+Let `A : ℝ → End(E)` be a continuous family of operators on a finite-dimensional real inner
+product space `E`, with limits `A±` at `±∞` that have Lyapunov forms
+(`ContinuousLinearMap.HasLyapunovForm`), so that the trajectory operator
 `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)` is Fredholm
-(`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`). This file proves:
+(`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`). Invertible symmetric
+limits have Lyapunov forms (`ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`). This file
+proves:
 
 * the index of `D_A` depends only on the limits `A±`: two such families with the same limits give
   operators of the same index;
-* the index vanishes when the two limits agree;
+* the index vanishes when the two limits agree and are invertible and symmetric;
 * the index is the dimension of the space of square-integrable solutions of `v' = -A v` minus that
   of `v' = A v`, and this holds for every continuous symmetric `A` for which `D_A` has closed range;
-* the index is `n⁻(A⁻) - n⁻(A⁺)`, where `n⁻(B)` is the number of negative eigenvalues of `B`
-  counted with multiplicity, that is, the dimension of the sum of its eigenspaces at negative
-  eigenvalues.
+* for invertible symmetric limits, the index is `n⁻(A⁻) - n⁻(A⁺)`, where `n⁻(B)` is the number
+  of negative eigenvalues of `B` counted with multiplicity, that is, the dimension of the sum of its
+  eigenspaces at negative eigenvalues.
 
 For the first statement, the affine family `(1 - t) A + t B` has the same limits as `A` and `B` for
 every real `t`, so each of its trajectory operators is Fredholm. The trajectory operator depends
@@ -93,14 +95,12 @@ namespace TauCeti.WeakDerivStep
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- For two continuous families of symmetric operators with the same invertible limits, the affine
-combination `(1 - t) A + t B` is again such a family, for every real `t`, so its trajectory
+/-- For two continuous families of operators with the same limits, which have Lyapunov forms, the
+affine combination `(1 - t) A + t B` is again such a family, for every real `t`, so its trajectory
 operator is Fredholm. -/
 private theorem isFredholm_trajectoryOperator_one_sub_smul_add_smul {A B : ℝ → E →L[ℝ] E}
-    (hA : Continuous A) (hAsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    (hB : Continuous B) (hBsym : ∀ s, (B s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus : E →L[ℝ] E}
+    (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
     (hAbot : Tendsto A atBot (𝓝 Aminus)) (hAtop : Tendsto A atTop (𝓝 Aplus))
     (hBbot : Tendsto B atBot (𝓝 Aminus)) (hBtop : Tendsto B atTop (𝓝 Aplus))
     (AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
@@ -109,10 +109,6 @@ private theorem isFredholm_trajectoryOperator_one_sub_smul_add_smul {A B : ℝ �
     (trajectoryOperator (p := 2) ((1 - t) • AL + t • BL)).IsFredholm := by
   set C : ℝ → E →L[ℝ] E := fun s ↦ (1 - t) • A s + t • B s
   have hC : Continuous C := (hA.const_smul (1 - t)).add (hB.const_smul t)
-  have hCsym : ∀ s, (C s).toLinearMap.IsSymmetric := fun s x y ↦ by
-    simp only [C, ContinuousLinearMap.coe_coe, add_apply,
-      smul_apply, inner_add_left, inner_add_right, real_inner_smul_left,
-      real_inner_smul_right, (hAsym s).apply_clm, (hBsym s).apply_clm]
   -- The combination of two families tending to the same limit tends to that limit.
   have hlim : ∀ {l : Filter ℝ} {L : E →L[ℝ] E} {F G : ℝ → E →L[ℝ] E},
       Tendsto F l (𝓝 L) → Tendsto G l (𝓝 L) →
@@ -121,23 +117,18 @@ private theorem isFredholm_trajectoryOperator_one_sub_smul_add_smul {A B : ℝ �
       (hF.const_smul (1 - t)).add (hG.const_smul t)
   have hCbot := hlim hAbot hBbot
   have hCtop := hlim hAtop hBtop
-  refine isFredholm_trajectoryOperator_of_hasLyapunovForm hC
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hCsym hCbot hα hminus)
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hCsym hCtop hα hplus) hCbot
-    hCtop _ ?_
+  refine isFredholm_trajectoryOperator_of_hasLyapunovForm hC hminus hplus hCbot hCtop _ ?_
   filter_upwards [Lp.coeFn_add ((1 - t) • AL) (t • BL), Lp.coeFn_smul (1 - t) AL,
     Lp.coeFn_smul t BL, hAL, hBL] with s hs h1 h2 hAs hBs
   simp only [hs, Pi.add_apply, h1, h2, Pi.smul_apply, hAs, hBs, C]
 
 /-- **The index of the trajectory operator depends only on the limits.** Let `A` and `B` be
-continuous families of symmetric operators on a finite-dimensional real inner product space with
-the same invertible limits `A±` at `±∞`. Then the trajectory operators `u ↦ u' + A u` and
+continuous families of operators on a finite-dimensional real inner product space with the same
+limits `A±` at `±∞`, which have Lyapunov forms. Then the trajectory operators `u ↦ u' + A u` and
 `u ↦ u' + B u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` have the same Fredholm index. -/
 theorem index_trajectoryOperator_eq_of_tendsto {A B : ℝ → E →L[ℝ] E}
-    (hA : Continuous A) (hAsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    (hB : Continuous B) (hBsym : ∀ s, (B s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus : E →L[ℝ] E}
+    (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
     (hAbot : Tendsto A atBot (𝓝 Aminus)) (hAtop : Tendsto A atTop (𝓝 Aplus))
     (hBbot : Tendsto B atBot (𝓝 Aminus)) (hBtop : Tendsto B atTop (𝓝 Aplus))
     (AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
@@ -148,8 +139,8 @@ theorem index_trajectoryOperator_eq_of_tendsto {A B : ℝ → E →L[ℝ] E}
     (lipschitzWith_trajectoryOperator (F := E) (mu := volume) (Omega := ⊤) (p := 2)).continuous.comp
       (by fun_prop)
   simpa using Continuous.index_eq_of_preconnectedSpace hcont
-    (isFredholm_trajectoryOperator_one_sub_smul_add_smul hA hAsym hB hBsym hα hminus hplus hAbot
-      hAtop hBbot hBtop AL BL hAL hBL) 0 1
+    (isFredholm_trajectoryOperator_one_sub_smul_add_smul hA hB hminus hplus hAbot hAtop hBbot
+      hBtop AL BL hAL hBL) 0 1
 
 /-- A constant coefficient gives index zero. For a symmetric operator `A₀` on a
 finite-dimensional real inner product space with `α ‖v‖ ≤ ‖A₀ v‖` for some `α > 0`, the trajectory
@@ -172,23 +163,22 @@ private theorem index_trajectoryOperator_const {A₀ : E →L[ℝ] E}
     hnker]
   simp
 
-/-- **Equal limits give index zero.** Let `A` be a continuous family of symmetric operators on a
-finite-dimensional real inner product space with the same invertible limit `A₀` at `-∞` and at
-`+∞`. Then the trajectory operator
-`u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` has index zero. -/
+/-- **Equal limits give index zero.** Let `A` be a continuous family of operators on a
+finite-dimensional real inner product space with the same invertible symmetric limit `A₀` at `-∞`
+and at `+∞`. Then the trajectory operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` has
+index zero. -/
 theorem index_trajectoryOperator_eq_zero_of_tendsto {A : ℝ → E →L[ℝ] E}
-    (hA : Continuous A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {A₀ : E →L[ℝ] E} {α : ℝ}
+    (hA : Continuous A) {A₀ : E →L[ℝ] E} (hsym₀ : (A₀ : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ}
     (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A₀ v‖)
     (hbot : Tendsto A atBot (𝓝 A₀)) (htop : Tendsto A atTop (𝓝 A₀))
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).index = 0 := by
-  have hsym₀ : (A₀ : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
+  have hLF := ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsym₀ hα hgap
   let A₀L := (memLp_top_const (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) A₀).toLp
   have hA₀L : A₀L =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀ := MemLp.coeFn_toLp _
-  rw [index_trajectoryOperator_eq_of_tendsto hA hsym continuous_const (fun _ ↦ hsym₀) hα hgap
-    hgap hbot htop tendsto_const_nhds tendsto_const_nhds AL A₀L hAL hA₀L]
+  rw [index_trajectoryOperator_eq_of_tendsto hA continuous_const hLF hLF hbot htop
+    tendsto_const_nhds tendsto_const_nhds AL A₀L hAL hA₀L]
   exact index_trajectoryOperator_const hsym₀ hα hgap A₀L hA₀L
 
 variable {A : ℝ → E →L[ℝ] E}
@@ -534,14 +524,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {A : ℝ → E →L[ℝ] E}
 
 /-- **The index of the trajectory operator is a difference of Morse indices.** Let `A` be a
-continuous family of symmetric operators on a finite-dimensional real inner product space with
-invertible limits `A±` at `±∞`. Then the index of the
+continuous family of operators on a finite-dimensional real inner product space with invertible
+symmetric limits `A±` at `±∞`. Then the index of the
 trajectory operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the number of negative
 eigenvalues of `A⁻` minus the number of negative eigenvalues of `A⁺`, counted with multiplicity:
 the dimensions of the sums of their eigenspaces at negative eigenvalues. -/
 theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-    (hA : Continuous A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E} (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)
     (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
@@ -549,10 +539,6 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) := by
-  have hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym)
-  have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
   have hker {B : E →L[ℝ] E} (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) : LinearMap.ker (B : E →ₗ[ℝ] E) = ⊥ :=
     LinearMap.ker_eq_bot'.2 fun v hv ↦ by
       have h := hB v
@@ -567,8 +553,10 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   have hMsym := isSymmetric_modelCoefficient hsymminus hsymplus
   have hMbot : Tendsto M atBot (𝓝 Aminus) := tendsto_modelCoefficient_atBot
   have hMtop : Tendsto M atTop (𝓝 Aplus) := tendsto_modelCoefficient_atTop
-  rw [index_trajectoryOperator_eq_of_tendsto hA hsym continuous_modelCoefficient hMsym hα hminus
-      hplus hbot htop hMbot hMtop AL ML hAL hML,
+  rw [index_trajectoryOperator_eq_of_tendsto hA continuous_modelCoefficient
+      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymminus hα hminus)
+      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymplus hα hplus) hbot htop hMbot hMtop
+      AL ML hAL hML,
     index_trajectoryOperator_eq_finrank_sub_finrank continuous_modelCoefficient hMsym hα hminus
       hplus hMbot hMtop ML hML,
     neg_modelCoefficient, squareIntegrableSolutions_modelCoefficient hsymminus hsymplus]
