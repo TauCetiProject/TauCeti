@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
+public import TauCeti.Analysis.Normed.Algebra.Unitization
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -19,7 +19,9 @@ and characterizes intertwining maps and left associativity by iff statements. Fo
 left actions, `ContinuousLinearMap.unitizationAction` is the algebra-homomorphism form of the
 same extension, with an explicit comparison lemma. The approximate-identity lemmas show that
 the points where a left approximate identity converges are invariant under `A⁺`, and that
-each unitized orbit lies in the closure of the original orbit at such a point.
+each unitized orbit lies in the closure of the original orbit at such a point. Composing a
+bounded derivation with the nonunital coordinate projection extends its Leibniz rule to
+unital bimodule actions.
 
 ## Main declarations
 
@@ -194,5 +196,22 @@ lemma unitizationAction_apply_mem_closure (L : A →L[𝕜] E →L[𝕜] E)
       (𝓝 (unitizationAction L hL u x)) := by
     simpa using (hlx.const_smul (ofLp u).fst).add_const (L (ofLp u).snd x)
   exact mem_closure_of_tendsto this (.of_forall fun e ↦ ⟨_, rfl⟩)
+
+/-- Composing a bounded derivation with the nonunital coordinate projection extends its
+Leibniz rule to unital actions of the ℓ¹ unitization. -/
+theorem comp_unitizationSndL_mul (D : A →L[𝕜] E)
+    (L R : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E)
+    (h1L : ∀ x, L 1 x = x) (h1R : ∀ x, R 1 x = x)
+    (hD : ∀ a b, D (a * b) =
+      L (WithLp.toLp 1 (a : Unitization 𝕜 A)) (D b) +
+      R (WithLp.toLp 1 (b : Unitization 𝕜 A)) (D a))
+    (u v : WithLp 1 (Unitization 𝕜 A)) :
+    (D ∘L WithLp.unitizationSndL 𝕜 A) (u * v) =
+      L u ((D ∘L WithLp.unitizationSndL 𝕜 A) v) +
+      R v ((D ∘L WithLp.unitizationSndL 𝕜 A) u) := by
+  rw [L.unitization_apply_eq_fst_smul_add u, R.unitization_apply_eq_fst_smul_add v]
+  simp only [comp_apply, WithLp.unitizationSndL_apply, WithLp.unitization_mul,
+    Unitization.snd_mul, map_add, map_smul, hD, add_apply, smul_apply, h1L, h1R]
+  abel
 
 end ContinuousLinearMap

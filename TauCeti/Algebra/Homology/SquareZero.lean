@@ -35,6 +35,8 @@ elements of `M`, on which such structure is defined. The image is represented in
 * `LinearMap.homologyIso`: for `d ∘ d = 0`, Mathlib's homology of the short complex with both maps
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a chain map `f` with `f ∘ d = e ∘ f`.
+* `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a linear equivalence `f`
+  with `f ∘ d = e ∘ f`.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of such a chain map.
 * `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
   `κ →₀ S`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S`.
@@ -478,6 +480,34 @@ theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ 
 end SumMappingCone
 
 end LinearMap
+
+namespace LinearEquiv
+
+variable {S M M' : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup M'] [Module S M']
+  {d : M →ₗ[S] M} {e : M' →ₗ[S] M'}
+
+/-- A linear equivalence `f` with `f ∘ d = e ∘ f` induces an equivalence of the homologies of the
+square-zero endomorphisms `d` and `e`. -/
+noncomputable def homologyEquiv (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) : d.homology hd ≃ₗ[S] e.homology he :=
+  have hf' : f.symm.toLinearMap ∘ₗ e = d ∘ₗ f.symm.toLinearMap := by
+    ext m'
+    apply f.injective
+    simpa using (congr($hf (f.symm m'))).symm
+  LinearEquiv.ofLinearMap (LinearMap.homologyMap f.toLinearMap hd he hf)
+    (LinearMap.homologyMap f.symm.toLinearMap he hd hf')
+    (by ext z; simp) (by ext z; simp)
+
+/-- The equivalence of homologies sends the class of a cycle `z` to the class of `f z`. -/
+@[simp]
+theorem homologyEquiv_mk (f : M ≃ₗ[S] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap) (z : LinearMap.ker d) :
+    f.homologyEquiv hd he hf (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk
+        ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.2⟩ :=
+  LinearMap.homologyMap_mk f.toLinearMap hd he hf z
+
+end LinearEquiv
 
 /-! ### Quasi-isomorphisms of one-object complexes -/
 

@@ -9,6 +9,9 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
 public import TauCeti.GroupTheory.ProperPower
+public import Mathlib.LinearAlgebra.Matrix.Notation
+-- Private: `fin_cases` is used only inside proofs.
+import Mathlib.Tactic.FinCases
 
 /-!
 # The Heisenberg group over a ring
@@ -33,6 +36,9 @@ group.
 * `TauCeti.HeisenbergGroup.zAxis`: the central subgroup of elements `(0, 0, z)`.
 * `TauCeti.HeisenbergGroup.map`: the homomorphism induced by a ring homomorphism, with
   `map_id` and `map_comp`.
+* `TauCeti.HeisenbergGroup.toMatrix`: the unipotent upper triangular matrix
+  `!![1, x, z; 0, 1, y; 0, 0, 1]` of `(x, y, z)`, an injective monoid homomorphism
+  (`TauCeti.HeisenbergGroup.toMatrix_injective`).
 
 ## Main results
 
@@ -192,6 +198,32 @@ theorem map_surjective {S : Type*} [Ring S] {f : R →+* S} (hf : Function.Surje
   obtain ⟨y, hy⟩ := hf b.y
   obtain ⟨z, hz⟩ := hf b.z
   exact ⟨⟨x, y, z⟩, by ext <;> simp [hx, hy, hz]⟩
+
+/-- The **unipotent upper triangular matrix** `!![1, x, z; 0, 1, y; 0, 0, 1]` of `(x, y, z)`. The
+group law of the Heisenberg group is the matrix product, so this is a monoid homomorphism. -/
+def toMatrix : HeisenbergGroup R →* Matrix (Fin 3) (Fin 3) R where
+  toFun a := !![1, a.x, a.z; 0, 1, a.y; 0, 0, 1]
+  map_one' := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  map_mul' a b := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_three] <;> abel
+
+theorem toMatrix_apply (a : HeisenbergGroup R) :
+    toMatrix a = !![1, a.x, a.z; 0, 1, a.y; 0, 0, 1] := (rfl)
+
+/-- A group element is determined by its matrix. -/
+theorem toMatrix_injective : Function.Injective (toMatrix : HeisenbergGroup R → _) := by
+  intro a b h
+  have h01 := congrFun (congrFun h 0) 1
+  have h12 := congrFun (congrFun h 1) 2
+  have h02 := congrFun (congrFun h 0) 2
+  simp only [toMatrix_apply] at h01 h12 h02
+  ext
+  · simpa using h01
+  · simpa using h12
+  · simpa using h02
 
 section CharP
 

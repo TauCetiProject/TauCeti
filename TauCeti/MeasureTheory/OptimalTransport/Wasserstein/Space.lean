@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.DiracProba
+public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
@@ -66,7 +67,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal ProbabilityTheory
 
 namespace TauCeti
 
@@ -425,6 +426,24 @@ theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] {a b : ℝ≥0∞} 
     ((hasFiniteMoment μ).smul_measure ha).add_measure ((hasFiniteMoment ν).smul_measure hb)
   exact ⟨mk ((μ : ProbabilityMeasure X).convexComb hab ν)
     (by rwa [ProbabilityMeasure.toMeasure_convexComb]), by simp⟩
+
+/-- The normalised restriction `m[|s]` of a measure `m` to a bounded measurable set `s` of
+positive, finite `m`-measure is a law of finite `p`-moment, for every exponent `p`. -/
+theorem exists_coe_eq_cond [OpensMeasurableSpace X] {m : Measure X} {s : Set X}
+    (hs : MeasurableSet s) (hbdd : Bornology.IsBounded s) (hs0 : m s ≠ 0) (hstop : m s ≠ ∞) :
+    ∃ μ : WassersteinSpace p X, ((μ : ProbabilityMeasure X) : Measure X) = m[|s] := by
+  have hprob : IsProbabilityMeasure m[|s] :=
+    ProbabilityTheory.cond_isProbabilityMeasure_of_finite hs0 hstop
+  obtain ⟨x, -⟩ := nonempty_of_measure_ne_zero hs0
+  obtain ⟨R, hR⟩ := hbdd.subset_closedBall x
+  have hmom : HasFiniteMoment p m[|s] :=
+    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal R)
+      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
+      ((ProbabilityTheory.ae_cond_mem hs).mono fun y hy ↦ by
+        rw [enorm_eq_self, edist_dist]
+        exact ENNReal.ofReal_le_ofReal (Metric.mem_closedBall'.1 (hR hy)))⟩
+  exact ⟨mk ⟨_, hprob⟩ hmom,
+    (congrArg ProbabilityMeasure.toMeasure (coe_mk _ _)).trans (ProbabilityMeasure.coe_mk _ _)⟩
 
 /-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
 point of `P_p(X)`. -/

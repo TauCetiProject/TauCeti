@@ -95,6 +95,12 @@ theorem twistedDivisorSum_apply (e : ℕ) (psi : DirichletCharacter R u)
     ← phi.apply_eq_toArithmeticFunction_apply hd_pos.ne']
   simp [hd_pos.ne', mul_assoc]
 
+/-- At exponent zero the two characters may be exchanged. -/
+theorem twistedDivisorSum_zero_comm (psi : DirichletCharacter R u)
+    (phi : DirichletCharacter R v) : twistedDivisorSum 0 psi phi = twistedDivisorSum 0 phi psi := by
+  simp only [twistedDivisorSum, pow_zero_eq_zeta, pmul_zeta]
+  exact mul_comm _ _
+
 /-- Twisted divisor sums are multiplicative arithmetic functions. -/
 @[arith_mult]
 theorem isMultiplicative_twistedDivisorSum (e : ℕ) (psi : DirichletCharacter R u)
