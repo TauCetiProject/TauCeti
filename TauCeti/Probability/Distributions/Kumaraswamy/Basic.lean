@@ -284,7 +284,7 @@ theorem map_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
     exact kumaraswamyPDF_eq_jacobian_mul_betaPDF ha hb hx
   rw [kumaraswamyMeasure_eq_withDensity_restrict_Ioo, withDensity_congr_ae hweight,
-    TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo (by fun_prop)
+    TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo
       (fun x hx ↦ (Real.hasDerivAt_rpow_const (Or.inl hx.1.ne')).hasDerivWithinAt)
       ((Real.rpow_left_injOn ha.ne').mono fun x hx ↦ le_of_lt hx.1),
     Real.image_rpow_Ioo_zero_one ha, ← betaMeasure_eq_withDensity_restrict_Ioo]
