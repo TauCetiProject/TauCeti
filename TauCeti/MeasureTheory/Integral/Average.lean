@@ -59,6 +59,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   average over it is at most the integral of the extended norm over it.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
+* `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
+  `TauCeti.setLAverage_enorm_add_sub_le`: the mean oscillation is infinite off integrability on a
+  set of finite measure, ignores constants and is subadditive.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
 * `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset`: the average of a nonnegative function
@@ -212,6 +215,70 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
         rw [setLAverage_eq μ (fun x => ‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ) s,
           lintegral_add_right _ measurable_const, setLIntegral_const,
           ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, ← setLAverage_eq, two_mul]
+
+omit [NormedSpace ℝ F] [CompleteSpace F] in
+/-- On a set of finite measure, the average of `‖f - b‖ₑ` is infinite for an `f` that is a.e.
+strongly measurable but not integrable there, whatever the constant `b`. -/
+theorem setLAverage_enorm_sub_const_eq_top (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hs : μ s ≠ ∞)
+    (hfs : ¬IntegrableOn f s μ) (b : F) :
+    ⨍⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hint : ∫⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
+    by_contra h
+    have hsub : IntegrableOn (fun y => f y - b) s μ :=
+      ⟨hf.sub aestronglyMeasurable_const,
+        hasFiniteIntegral_iff_enorm.2 (lt_top_iff_ne_top.2 h)⟩
+    simp_rw [sub_eq_add_neg] at hsub
+    exact hfs (integrable_add_const_iff.1 hsub)
+  rw [setLAverage_eq, hint, ENNReal.top_div_of_ne_top hs]
+
+/-- The mean oscillation of `f + b` on a set is that of `f`, for a constant `b`. -/
+theorem setLAverage_enorm_add_const_sub (hf : AEStronglyMeasurable f (μ.restrict s)) (b : F) :
+    ⨍⁻ y in s, ‖f y + b - ⨍ z in s, (f z + b) ∂μ‖ₑ ∂μ =
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 htop
+  by_cases hfs : IntegrableOn f s μ
+  · have havg : ⨍ z in s, (f z + b) ∂μ = ⨍ z in s, f z ∂μ + b := by
+      have h := average_add hfs (integrable_const b)
+      simp only [Pi.add_apply] at h
+      rw [h, setAverage_const h0 htop]
+    simp_rw [havg, add_sub_add_right_eq_sub]
+  · have hfbs : ¬IntegrableOn (fun y => f y + b) s μ := fun h =>
+      hfs (integrable_add_const_iff.1 h)
+    rw [setLAverage_enorm_sub_const_eq_top hf htop hfs,
+      setLAverage_enorm_sub_const_eq_top (f := fun y => f y + b)
+        (hf.add aestronglyMeasurable_const) htop hfbs]
+
+omit [CompleteSpace F] in
+/-- The mean oscillation of `f + g` on a set is at most the sum of those of `f` and `g`. -/
+theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hg : AEStronglyMeasurable g (μ.restrict s)) :
+    ⨍⁻ y in s, ‖f y + g y - ⨍ z in s, (f z + g z) ∂μ‖ₑ ∂μ ≤
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ + ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
+  rcases eq_or_ne (μ s) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  -- Off integrability, one of the oscillations on the right is already infinite.
+  by_cases hfs : IntegrableOn f s μ
+  swap
+  · simp [setLAverage_enorm_sub_const_eq_top hf htop hfs]
+  by_cases hgs : IntegrableOn g s μ
+  swap
+  · simp [setLAverage_enorm_sub_const_eq_top hg htop hgs]
+  have havg : ⨍ z in s, (f z + g z) ∂μ = ⨍ z in s, f z ∂μ + ⨍ z in s, g z ∂μ :=
+    average_add hfs hgs
+  rw [havg, setLAverage_eq, setLAverage_eq, setLAverage_eq, ← ENNReal.add_div]
+  gcongr
+  calc ∫⁻ y in s, ‖f y + g y - (⨍ z in s, f z ∂μ + ⨍ z in s, g z ∂μ)‖ₑ ∂μ
+      ≤ ∫⁻ y in s, (‖f y - ⨍ z in s, f z ∂μ‖ₑ + ‖g y - ⨍ z in s, g z ∂μ‖ₑ) ∂μ :=
+        lintegral_mono fun y => by
+          rw [add_sub_add_comm]
+          exact enorm_add_le _ _
+    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).enorm _
 
 end Oscillation
 
