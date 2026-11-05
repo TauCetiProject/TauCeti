@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Data.List.Splittings
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -33,6 +34,13 @@ mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives
 smooth `a`, local in the position, and for smooth `a` the order of the two kinds of derivatives
 does not matter (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
 
+Both satisfy the general Leibniz rule for a continuous bilinear map `B`: the derivative of
+`x ↦ B (f x) (g x)` along a word `α` is the sum, over the splittings `(s, t)` of `α` into two
+complementary subwords (`List.splittings`), of `B (∂^s f x) (∂^t g x)`
+(`ContinuousLinearMap.coordinateDeriv_of_bilinear`,
+`ContinuousLinearMap.mixedDeriv_of_bilinear`). This is what gives the product estimates of the
+symbol calculus.
+
 ## Main declarations
 
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
@@ -42,6 +50,8 @@ does not matter (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
+* `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
+  the Leibniz rules.
 -/
 
 public section
@@ -149,6 +159,36 @@ theorem coordinateDeriv_zero (α : List (Fin n)) :
   | cons j js ih =>
     funext x
     rw [coordinateDeriv_cons, ih, fderiv_zero, Pi.zero_apply, Pi.zero_apply, zero_apply]
+
+/-- Coordinate derivatives of a finite sum of `C^k` functions, along a word of length `k`, are the
+sum of the coordinate derivatives. -/
+theorem coordinateDeriv_sum {ι : Type*} {s : Finset ι} (α : List (Fin n))
+    {f : ι → CoordinateSpace n → A} (hf : ∀ i ∈ s, ContDiff ℝ α.length (f i)) :
+    coordinateDeriv α (∑ i ∈ s, f i) = ∑ i ∈ s, coordinateDeriv α (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    have hs : ∀ j ∈ s, ContDiff ℝ α.length (f j) := fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    have hsum : ContDiff ℝ α.length (∑ j ∈ s, f j) := by
+      convert ContDiff.sum hs using 1
+      exact Finset.sum_fn s f
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      coordinateDeriv_add α (hf i (Finset.mem_insert_self i s)) hsum, ih hs]
+
+/-- Coordinate derivatives of a finite sum, indexed by a list, of `C^k` functions, along a word of
+length `k`, are the sum of the coordinate derivatives. -/
+theorem coordinateDeriv_list_sum {ι : Type*} {L : List ι} (α : List (Fin n))
+    {f : ι → CoordinateSpace n → A} (hf : ∀ i ∈ L, ContDiff ℝ α.length (f i))
+    (x : CoordinateSpace n) :
+    coordinateDeriv α (fun y => (L.map fun i => f i y).sum) x =
+      (L.map fun i => coordinateDeriv α (f i) x).sum := by
+  have h : (fun y => (L.map fun i => f i y).sum) = ∑ k : Fin L.length, f L[k.1] := by
+    funext y
+    rw [Finset.sum_apply]
+    exact (Fin.sum_univ_fun_getElem L fun i => f i y).symm
+  rw [h, coordinateDeriv_sum α fun k _ => hf _ (List.getElem_mem k.2), Finset.sum_apply]
+  exact Fin.sum_univ_fun_getElem L fun i => coordinateDeriv α (f i) x
 
 /-- Coordinate derivatives at a point only depend on the germ of the function there. -/
 theorem _root_.Filter.EventuallyEq.coordinateDeriv {f g : CoordinateSpace n → A}
@@ -370,5 +410,65 @@ theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace �
   exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
 
 end Linear
+
+section Leibniz
+
+variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H]
+
+/-- The first-order product rule for a coordinate derivative of `x ↦ B (f x) (g x)`. -/
+private theorem fderiv_bilinear_single (B : F →L[ℝ] G →L[ℝ] H) {f : CoordinateSpace n → F}
+    {g : CoordinateSpace n → G} (hf : ContDiff ℝ ∞ f) (hg : ContDiff ℝ ∞ g) (j : Fin n)
+    (x : CoordinateSpace n) :
+    fderiv ℝ (fun y => B (f y) (g y)) x (EuclideanSpace.single j 1) =
+      B (f x) (coordinateDeriv [j] g x) + B (coordinateDeriv [j] f x) (g x) := by
+  rw [B.fderiv_of_bilinear (hf.differentiable (by simp) x) (hg.differentiable (by simp) x)]
+  simp [coordinateDeriv_cons]
+
+/-- The **Leibniz rule** for coordinate derivatives: for a continuous bilinear map `B` and smooth
+`f` and `g`, the derivative of `x ↦ B (f x) (g x)` along the word `α` is the sum, over the
+splittings `(s, t)` of `α`, of `B (∂^s f x) (∂^t g x)`. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_of_bilinear (B : F →L[ℝ] G →L[ℝ] H)
+    {f : CoordinateSpace n → F} {g : CoordinateSpace n → G} (hf : ContDiff ℝ ∞ f)
+    (hg : ContDiff ℝ ∞ g) (α : List (Fin n)) (x : CoordinateSpace n) :
+    coordinateDeriv α (fun y => B (f y) (g y)) x =
+      (α.splittings.map fun p => B (coordinateDeriv p.1 f x) (coordinateDeriv p.2 g x)).sum := by
+  induction α generalizing x with
+  | nil => simp
+  | cons j js ih =>
+    have hterm : ∀ p ∈ js.splittings, ContDiff ℝ ([j] : List (Fin n)).length
+        fun y => B (coordinateDeriv p.1 f y) (coordinateDeriv p.2 g y) := fun p _ =>
+      (B.isBoundedBilinearMap.contDiff.comp ((hf.coordinateDeriv p.1).prodMk
+        (hg.coordinateDeriv p.2))).of_le (by simp)
+    rw [← List.singleton_append, coordinateDeriv_append, funext ih,
+      coordinateDeriv_list_sum _ hterm]
+    simp only [coordinateDeriv_cons, coordinateDeriv_nil, fderiv_bilinear_single B
+      (hf.coordinateDeriv _) (hg.coordinateDeriv _), List.sum_map_add, List.singleton_append,
+      List.splittings_cons, List.map_append, List.map_map, List.sum_append, Function.comp_def,
+      add_comm]
+
+/-- The **Leibniz rule** for mixed derivatives: for a continuous bilinear map `B` and smooth `a`
+and `b`, the mixed derivative `∂_x^α ∂_ξ^β` of `p ↦ B (a p) (b p)` is the sum, over the
+splittings `(s, s')` of `α` and `(t, t')` of `β`, of `B (∂_x^s ∂_ξ^t a) (∂_x^s' ∂_ξ^t' b)`. -/
+theorem _root_.ContinuousLinearMap.mixedDeriv_of_bilinear (B : F →L[ℝ] G →L[ℝ] H)
+    {a : CoordinateSpace n × CoordinateSpace n → F} {b : CoordinateSpace n × CoordinateSpace n → G}
+    (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => B (a p) (b p)) x ξ =
+      (β.splittings.map fun t => (α.splittings.map fun s =>
+        B (mixedDeriv s.1 t.1 a x ξ) (mixedDeriv s.2 t.2 b x ξ)).sum).sum := by
+  have hinner : (fun y => coordinateDeriv β (fun η => B (a (y, η)) (b (y, η))) ξ) =
+      fun y => (β.splittings.map fun t => B (coordinateDeriv t.1 (fun η => a (y, η)) ξ)
+        (coordinateDeriv t.2 (fun η => b (y, η)) ξ)).sum :=
+    funext fun y => B.coordinateDeriv_of_bilinear (ha.comp (contDiff_prodMk_right y))
+      (hb.comp (contDiff_prodMk_right y)) β ξ
+  rw [mixedDeriv_def, hinner, coordinateDeriv_list_sum _ fun t _ =>
+    (B.isBoundedBilinearMap.contDiff.comp ((contDiff_coordinateDeriv_slice ha t.1 ξ).prodMk
+      (contDiff_coordinateDeriv_slice hb t.2 ξ))).of_le (by simp)]
+  congr 1
+  refine List.map_congr_left fun t _ => ?_
+  exact B.coordinateDeriv_of_bilinear (contDiff_coordinateDeriv_slice ha t.1 ξ)
+    (contDiff_coordinateDeriv_slice hb t.2 ξ) α x
+
+end Leibniz
 
 end TauCeti

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 
 /-!
@@ -31,7 +32,19 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
-  (`TauCeti.Symbol.const`).
+  (`TauCeti.Symbol.const`);
+* `TauCeti.Symbol.comp`: the pointwise composition `b(x, ξ) ∘ a(x, ξ)` (for matrices, the matrix
+  product) of symbols of orders `m'` and `m` has order `m' + m`. By the Leibniz rule
+  `ContinuousLinearMap.mixedDeriv_of_bilinear`, `∂_x^α ∂_ξ^β (b ∘ a)` is a sum of terms
+  `∂_x^{α₁} ∂_ξ^{β₁} b ∘ ∂_x^{α₂} ∂_ξ^{β₂} a`, each of size
+  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`.
+
+A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of every order. Smoothing
+symbols are closed under the operations above, and they form a two-sided ideal under composition
+(`TauCeti.Symbol.IsSmoothing.comp_right`, `TauCeti.Symbol.IsSmoothing.comp_left`). A smooth
+coefficient vanishing at all large frequencies is smoothing
+(`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`), while in positive dimension a nonzero
+constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -461,6 +474,327 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp [coordinateDeriv_const T hα]
 
 end Spatial
+
+section Comp
+
+variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
+
+/-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
+`D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
+derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. -/
+private theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
+    {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
+    (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
+    (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
+    (hD : ∀ s t, ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
+    (α β : List (Fin n)) :
+    ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
+      (β.splittings.map fun t => (α.splittings.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
+        (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+  -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
+  have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).mixedDeriv_of_bilinear
+    hb ha α β x ξ
+  simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+    ContinuousLinearMap.compL_apply] at h
+  rw [h, ← List.sum_map_mul_right]
+  refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
+  rw [List.map_map]
+  refine List.sum_le_sum fun t ht => ?_
+  refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
+  rw [List.map_map, ← List.sum_map_mul_right]
+  refine List.sum_le_sum fun s _ => ?_
+  have hw : (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2) := by
+    rw [← Real.rpow_add (by positivity), ← List.length_add_length_of_mem_splittings ht]
+    push_cast
+    ring_nf
+  calc ‖(mixedDeriv s.1 t.1 b x ξ).comp (mixedDeriv s.2 t.2 a x ξ)‖
+      ≤ ‖mixedDeriv s.1 t.1 b x ξ‖ * ‖mixedDeriv s.2 t.2 a x ξ‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ (C s.1 t.1 * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2)) *
+        (D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2)) :=
+        mul_le_mul (hC _ _) (hD _ _) (norm_nonneg _) ((norm_nonneg _).trans (hC _ _))
+    _ = C s.1 t.1 * D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+        rw [hw]
+        ring
+
+private theorem nonneg_sum_splittings {C D : List (Fin n) → List (Fin n) → ℝ}
+    (hC : ∀ s t, 0 ≤ C s t) (hD : ∀ s t, 0 ≤ D s t) (α β : List (Fin n)) :
+    0 ≤ (β.splittings.map fun t => (α.splittings.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum :=
+  List.sum_nonneg fun _ h => by
+    obtain ⟨t, -, rfl⟩ := List.mem_map.1 h
+    exact List.sum_nonneg fun _ h' => by
+      obtain ⟨s, -, rfl⟩ := List.mem_map.1 h'
+      exact mul_nonneg (hC _ _) (hD _ _)
+
+/-- The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of symbols of orders `m'` and `m` is a
+symbol of order `m' + m`. For matrix-valued symbols this is the matrix product. -/
+def comp (b : Symbol n W U m') (a : Symbol n V W m) : Symbol n V U (m' + m) where
+  coefficient p := (b.coefficient p).comp (a.coefficient p)
+  contDiff_coefficient :=
+    -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
+    (((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).isBoundedBilinearMap.contDiff
+      (n := ∞)).comp (b.contDiff_coefficient.prodMk a.contDiff_coefficient)
+  exists_bound K hK α β := by
+    choose C hC0 hC using fun s t => b.exists_bound K hK s t
+    choose D hD0 hD using fun s t => a.exists_bound K hK s t
+    exact ⟨_, nonneg_sum_splittings hC0 hD0 α β, fun x hx ξ => norm_mixedDeriv_comp_le
+      b.contDiff_coefficient a.contDiff_coefficient (fun s t => hC s t x hx ξ)
+      (fun s t => hD s t x hx ξ) α β⟩
+
+@[simp]
+theorem coefficient_comp (b : Symbol n W U m') (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) := (rfl)
+
+theorem comp_add (b : Symbol n W U m') (a₁ a₂ : Symbol n V W m) :
+    b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
+  ext1
+  funext p
+  simp [ContinuousLinearMap.comp_add]
+
+theorem add_comp (b₁ b₂ : Symbol n W U m') (a : Symbol n V W m) :
+    (b₁ + b₂).comp a = b₁.comp a + b₂.comp a := by
+  ext1
+  funext p
+  simp [ContinuousLinearMap.add_comp]
+
+theorem comp_smul (c : ℂ) (b : Symbol n W U m') (a : Symbol n V W m) :
+    b.comp (c • a) = c • b.comp a := by
+  ext1
+  funext p
+  simp
+
+theorem smul_comp (c : ℂ) (b : Symbol n W U m') (a : Symbol n V W m) :
+    (c • b).comp a = c • b.comp a := by
+  ext1
+  funext p
+  simp [ContinuousLinearMap.smul_comp]
+
+@[simp]
+theorem comp_zero (b : Symbol n W U m') : b.comp (0 : Symbol n V W m) = 0 := by
+  ext1
+  funext p
+  simp
+
+@[simp]
+theorem zero_comp (a : Symbol n V W m) : (0 : Symbol n W U m').comp a = 0 := by
+  ext1
+  funext p
+  simp
+
+theorem comp_neg (b : Symbol n W U m') (a : Symbol n V W m) : b.comp (-a) = -b.comp a := by
+  ext1
+  funext p
+  simp
+
+theorem neg_comp (b : Symbol n W U m') (a : Symbol n V W m) : (-b).comp a = -b.comp a := by
+  ext1
+  funext p
+  simp
+
+theorem comp_sub (b : Symbol n W U m') (a₁ a₂ : Symbol n V W m) :
+    b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ := by
+  ext1
+  funext p
+  simp [ContinuousLinearMap.comp_sub]
+
+theorem sub_comp (b₁ b₂ : Symbol n W U m') (a : Symbol n V W m) :
+    (b₁ - b₂).comp a = b₁.comp a - b₂.comp a := by
+  ext1
+  funext p
+  simp [ContinuousLinearMap.sub_comp]
+
+/-- Composing after raising the order of the outer symbol raises the order of the composition. -/
+theorem inclusion_comp (h : m' ≤ m'') (b : Symbol n W U m') (a : Symbol n V W m) :
+    (inclusion h b).comp a = inclusion (by linarith) (b.comp a) :=
+  (rfl)
+
+/-- Composing after raising the order of the inner symbol raises the order of the composition. -/
+theorem comp_inclusion (h : m ≤ m'') (b : Symbol n W U m') (a : Symbol n V W m) :
+    b.comp (inclusion h a) = inclusion (by linarith) (b.comp a) :=
+  (rfl)
+
+/-- Composition of symbols is associative, up to the identification of the orders
+`(m'' + m') + m = m'' + (m' + m)`. -/
+theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] (c : Symbol n U U' m'')
+    (b : Symbol n W U m') (a : Symbol n V W m) :
+    (c.comp b).comp a = inclusion (add_assoc m'' m' m).ge (c.comp (b.comp a)) :=
+  (rfl)
+
+theorem IsUniform.comp {b : Symbol n W U m'} {a : Symbol n V W m} (hb : b.IsUniform)
+    (ha : a.IsUniform) : (b.comp a).IsUniform := by
+  intro α β
+  choose C hC0 hC using hb
+  choose D hD0 hD using ha
+  exact ⟨_, nonneg_sum_splittings hC0 hD0 α β, fun x ξ => norm_mixedDeriv_comp_le
+    b.contDiff_coefficient a.contDiff_coefficient (fun s t => hC s t x ξ)
+    (fun s t => hD s t x ξ) α β⟩
+
+/-- Composing a symbol with compact spatial support on the right with another symbol keeps compact
+spatial support. -/
+theorem HasCompactSpatialSupport.comp_right {b : Symbol n W U m'}
+    (hb : b.HasCompactSpatialSupport) (a : Symbol n V W m) :
+    (b.comp a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKb⟩ := hb
+  exact ⟨K, hK, fun x hx ξ => by simp [hKb x hx ξ]⟩
+
+/-- Composing a symbol with compact spatial support on the left with another symbol keeps compact
+spatial support. -/
+theorem HasCompactSpatialSupport.comp_left {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (b : Symbol n W U m') :
+    (b.comp a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
+
+end Comp
+
+section Smoothing
+
+/-- A symbol is *smoothing*, or of order `-∞`, if its coefficient is a symbol of every real order:
+the smoothing symbols are the intersection of all the classes `S^m_{1,0}`. -/
+def IsSmoothing (a : Symbol n V W m) : Prop :=
+  ∀ m' : ℝ, ∃ b : Symbol n V W m', b.coefficient = a.coefficient
+
+/-- A symbol is smoothing exactly when its coefficient satisfies the symbol estimates of every real
+order. -/
+theorem isSmoothing_iff {a : Symbol n V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : Symbol n V W m', b.coefficient = a.coefficient :=
+  Iff.rfl
+
+theorem isSmoothing_iff_forall_exists_bound {a : Symbol n V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+  refine ⟨fun h m' K hK α β => ?_, fun h m' => ⟨⟨a.coefficient, a.contDiff_coefficient, h m'⟩, rfl⟩⟩
+  obtain ⟨b, hb⟩ := h m'
+  exact hb ▸ b.exists_bound K hK α β
+
+theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing :=
+  fun _ => ⟨0, rfl⟩
+
+theorem IsSmoothing.add {a b : Symbol n V W m} (ha : a.IsSmoothing) (hb : b.IsSmoothing) :
+    (a + b).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  obtain ⟨b', hb'⟩ := hb m'
+  exact ⟨a' + b', by simp [ha', hb']⟩
+
+theorem IsSmoothing.smul {a : Symbol n V W m} (ha : a.IsSmoothing) (c : ℂ) :
+    (c • a).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  exact ⟨c • a', by simp [ha']⟩
+
+theorem IsSmoothing.neg {a : Symbol n V W m} (ha : a.IsSmoothing) : (-a).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  exact ⟨-a', by simp [ha']⟩
+
+theorem IsSmoothing.sub {a b : Symbol n V W m} (ha : a.IsSmoothing) (hb : b.IsSmoothing) :
+    (a - b).IsSmoothing := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
+theorem IsSmoothing.inclusion {a : Symbol n V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
+    (inclusion h a).IsSmoothing :=
+  fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
+
+theorem IsSmoothing.frequencyDeriv {a : Symbol n V W m} (ha : a.IsSmoothing) (j : Fin n) :
+    (frequencyDeriv j a).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha (m' + 1)
+  refine ⟨Symbol.inclusion (by linarith) (Symbol.frequencyDeriv j a'), ?_⟩
+  funext ⟨x, ξ⟩
+  simp [ha']
+
+theorem IsSmoothing.spatialDeriv {a : Symbol n V W m} (ha : a.IsSmoothing) (j : Fin n) :
+    (spatialDeriv j a).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  refine ⟨Symbol.spatialDeriv j a', ?_⟩
+  funext ⟨x, ξ⟩
+  simp [ha']
+
+variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
+
+/-- Smoothing symbols form a right ideal under composition: a smoothing symbol composed on the
+right with any symbol is smoothing. -/
+theorem IsSmoothing.comp_right {b : Symbol n W U m'} (hb : b.IsSmoothing) (a : Symbol n V W m) :
+    (b.comp a).IsSmoothing := fun m'' => by
+  obtain ⟨b', hb'⟩ := hb (m'' - m)
+  exact ⟨Symbol.inclusion (by linarith) (b'.comp a), funext fun p => by simp [hb']⟩
+
+/-- Smoothing symbols form a left ideal under composition: any symbol composed on the right with a
+smoothing symbol is smoothing. -/
+theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Symbol n W U m') :
+    (b.comp a).IsSmoothing := fun m'' => by
+  obtain ⟨a', ha'⟩ := ha (m'' - m')
+  exact ⟨Symbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
+
+/-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
+of two cut-off expansions, is a symbol of every order `m`. -/
+def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) : Symbol n V W m where
+  coefficient := f
+  contDiff_coefficient := hf
+  exists_bound K hK α β := by
+    -- At frequencies of norm `> R` every mixed derivative vanishes; on the compact set
+    -- `K ×ˢ closedBall 0 R` the continuous quotient of the derivative by the weight is bounded.
+    have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+        (1 + ‖p.2‖ ^ 2) ^ ((m - β.length) / 2) :=
+      (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
+        Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
+    have hKR := hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)
+    obtain ⟨M, hM⟩ := hKR.exists_bound_of_continuousOn ((hf.mixedDeriv α β).continuous.norm.div hw
+      fun p => (rpow_weight_pos p.2 _).ne').continuousOn
+    refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
+    rcases le_or_gt ‖ξ‖ R with hξ | hξ
+    · have h := (le_abs_self _).trans ((hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩).trans
+        (le_max_left M 0))
+      rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
+      exact h
+    · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) = 0 := by
+        funext y
+        have hy : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
+          Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
+            fun η hη => hR y η (le_of_lt hη)
+        rw [(hy.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
+        rfl
+      rw [mixedDeriv_def, hzero, coordinateDeriv_zero, Pi.zero_apply, norm_zero]
+      exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+
+@[simp]
+theorem coefficient_ofBoundedFrequencySupport
+    (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) (R : ℝ)
+    (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) :
+    (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).coefficient = f := (rfl)
+
+/-- A symbol vanishing at all large frequencies is smoothing. -/
+theorem isSmoothing_ofBoundedFrequencySupport
+    (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) (R : ℝ)
+    (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) :
+    (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
+  fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
+
+/-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
+`-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
+theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
+    (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨b, hb⟩ := h (-2)
+    obtain ⟨C, hC0, hC⟩ := b.exists_bound {0} isCompact_singleton [] []
+    by_contra hT
+    have hT' : 0 < ‖T‖ := norm_pos_iff.2 hT
+    -- At a frequency with `‖ξ‖ ^ 2 = C / ‖T‖` the order `-2` bound fails.
+    let ξ : CoordinateSpace n := EuclideanSpace.single ⟨0, Nat.pos_of_ne_zero hn⟩ √(C / ‖T‖)
+    have hξ : ‖ξ‖ ^ 2 = C / ‖T‖ := by
+      rw [PiLp.norm_single, Real.norm_eq_abs, sq_abs, Real.sq_sqrt (by positivity)]
+    have h := hC 0 rfl ξ
+    rw [mixedDeriv_nil_nil, hb, coefficient_const, List.length_nil, Nat.cast_zero, sub_zero, hξ,
+      show (-2 : ℝ) / 2 = -1 by norm_num, Real.rpow_neg_one, ← div_eq_mul_inv,
+      le_div_iff₀ (by positivity)] at h
+    have : ‖T‖ * (1 + C / ‖T‖) = ‖T‖ + C := by field_simp
+    linarith
+  · subst h
+    exact fun _ => ⟨0, by funext p; simp⟩
+
+end Smoothing
 
 end Symbol
 
