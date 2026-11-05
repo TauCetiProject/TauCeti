@@ -48,6 +48,11 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0} {m : ℝ}
 
+private theorem stableMeasure_eq_withDensity_ofReal (α β : ℝ) (hs : 0 < s) (m : ℝ) :
+    stableMeasure α β s m =
+      volume.withDensity fun x ↦ ENNReal.ofReal (stablePDFReal α β s m x) := by
+  rw [stableMeasure_eq_withDensity α β hs, funext (stablePDF_eq_ofReal α β s m)]
+
 /-- The cdf of a positive-scale stable law is the integral of its Fourier-inversion density over
 the left half-line. -/
 theorem cdf_stableMeasure_eq_integral (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s)
