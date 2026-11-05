@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -60,6 +59,11 @@ velocity `deriv q`, so stationary curves feed it directly.
 
 No finite dimensionality of `E` is needed, and the endpoints `a` and `b` may come in either order.
 When `a = b` every curve that is `C^n` at `a` is stationary and the open interval is empty.
+
+The structure of the variation computation, and of the stationarity predicate carrying the
+regularity of the curve as a field, follows the Riemannian first variation of energy
+`TauCeti.Manifold.hasDerivAt_energy` and `TauCeti.Manifold.IsEnergyCritical` in
+`TauCeti.Geometry.Manifold.Riemannian.FirstVariation`.
 
 ## Main definitions
 
@@ -121,57 +125,6 @@ theorem lagrangianAction_add_lagrangianAction {L : ℝ → E × E → ℝ} {q : 
     lagrangianAction L q a b + lagrangianAction L q b c = lagrangianAction L q a c :=
   intervalIntegral.integral_add_adjacent_intervals hab hbc
 
-/-! ### Partial derivatives of a variation -/
-
-section Variation
-
-variable {Q : ℝ → ℝ → E}
-
-/-- Where the uncurried family is differentiable, the velocity of the curve `Q s` is the partial
-derivative of the family in the curve parameter. -/
-private theorem hasDerivAt_apply_of_differentiableAt {s r : ℝ}
-    (hQ : DifferentiableAt ℝ (uncurry Q) (s, r)) :
-    HasDerivAt (Q s) (fderiv ℝ (uncurry Q) (s, r) (0, 1)) r :=
-  hQ.hasFDerivAt.comp_hasDerivAt r (hasDerivAt_prodMk_right s r)
-
-/-- Where the uncurried family is differentiable, the transverse velocity `s ↦ Q s r` is the
-partial derivative of the family in the variation parameter. -/
-private theorem hasDerivAt_apply_left_of_differentiableAt {s r : ℝ}
-    (hQ : DifferentiableAt ℝ (uncurry Q) (s, r)) :
-    HasDerivAt (fun s ↦ Q s r) (fderiv ℝ (uncurry Q) (s, r) (1, 0)) s := by
-  have h := hQ.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s r)
-  exact h
-
-/-- Near a point `(0, t)` where the family is `C²`, the variation field is the partial derivative
-of the family in the variation parameter along `{0} × ℝ`. -/
-private theorem variationField_eventuallyEq {t : ℝ} (hQ : ContDiffAt ℝ 2 (uncurry Q) (0, t)) :
-    (fun r ↦ deriv (fun s ↦ Q s r) 0) =ᶠ[𝓝 t]
-      fun r ↦ fderiv ℝ (uncurry Q) (0, r) (1, 0) := by
-  have h : ∀ᶠ r in 𝓝 t, ContDiffAt ℝ 2 (uncurry Q) (0, r) :=
-    (Continuous.prodMk_right (0 : ℝ)).continuousAt.eventually (hQ.eventually (by simp))
-  filter_upwards [h] with r hr
-  exact (hasDerivAt_apply_left_of_differentiableAt (hr.differentiableAt two_ne_zero)).deriv
-
-/-- The variation field of a family that is `C²` at `(0, t)` is `C¹` at `t`. -/
-private theorem contDiffAt_variationField {t : ℝ} (hQ : ContDiffAt ℝ 2 (uncurry Q) (0, t)) :
-    ContDiffAt ℝ 1 (fun r ↦ deriv (fun s ↦ Q s r) 0) t := by
-  refine ContDiffAt.congr_of_eventuallyEq ?_ (variationField_eventuallyEq hQ)
-  exact ((hQ.fderiv_right (m := 1) le_rfl).comp t
-    (contDiff_prodMk_right (0 : ℝ)).contDiffAt).clm_apply contDiffAt_const
-
-/-- **Symmetry of the mixed partial derivatives.** The derivative of the variation field is the
-derivative in the variation parameter of the velocity of the curves of the family. -/
-private theorem deriv_variationField {t : ℝ} (hQ : ContDiffAt ℝ 2 (uncurry Q) (0, t)) :
-    deriv (fun r ↦ deriv (fun s ↦ Q s r) 0) t =
-      fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1) := by
-  have hD : DifferentiableAt ℝ (fderiv ℝ (uncurry Q)) (0, t) :=
-    (hQ.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
-  have h := hasDerivAt_fderiv_apply_snd hD ((1 : ℝ), (0 : ℝ))
-  rw [(h.congr_of_eventuallyEq (variationField_eventuallyEq hQ)).deriv,
-    hQ.isSymmSndFDerivAt (by simp)]
-
-end Variation
-
 /-! ### The momentum and the force along a curve -/
 
 section Curve
@@ -196,18 +149,6 @@ private theorem continuousAt_force (hq : ContDiffAt ℝ 2 q t)
   exact (hL.of_le one_le_two).comp (t, q t) (contDiffAt_fst.prodMk (contDiffAt_snd.prodMk
     ((hq.derivWithin le_rfl).comp _ contDiffAt_fst)))
 
-/-- Where `L t` is differentiable, its derivative splits into the force and the momentum. -/
-private theorem fderiv_apply_eq_add (hL : DifferentiableAt ℝ (uncurry L) (t, (q t, deriv q t)))
-    (w : E × E) :
-    fderiv ℝ (L t) (q t, deriv q t) w =
-      fderiv ℝ (fun y ↦ L t (y, deriv q t)) (q t) w.1 +
-        fderiv ℝ (fun u ↦ L t (q t, u)) (deriv q t) w.2 := by
-  have hLt : DifferentiableAt ℝ (L t) (q t, deriv q t) :=
-    hL.comp (q t, deriv q t) ((differentiableAt_const t).prodMk differentiableAt_id)
-  rw [fderiv_slice_left hLt, fderiv_slice_right hLt]
-  simp only [coe_comp, Function.comp_apply, inl_apply, inr_apply, ← map_add, Prod.mk_add_mk,
-    add_zero, zero_add]
-
 end Curve
 
 /-! ### The first variation of the action -/
@@ -230,8 +171,10 @@ theorem hasDerivAt_lagrangianAction
   obtain ⟨ι, hι⟩ : ∃ ι : ℝ × ℝ → ℝ × (E × E),
       ι = fun z ↦ (z.2, (uncurry Q z, fderiv ℝ (uncurry Q) z (0, 1))) := ⟨_, rfl⟩
   have hιapp : ∀ {s t : ℝ}, DifferentiableAt ℝ (uncurry Q) (s, t) →
-      ι (s, t) = (t, (Q s t, deriv (Q s) t)) := fun h ↦ by
-    simp only [hι, (hasDerivAt_apply_of_differentiableAt h).deriv, uncurry_apply_pair]
+      ι (s, t) = (t, (Q s t, deriv (Q s) t)) := fun {s t} h ↦ by
+    have hQs : HasDerivAt (Q s) (fderiv ℝ (uncurry Q) (s, t) (0, 1)) t :=
+      hasDerivAt_slice_right h
+    simp only [hι, hQs.deriv, uncurry_apply_pair]
   have hιt : ∀ t ∈ uIcc a b, ι (0, t) = (t, (Q 0 t, deriv (Q 0) t)) := fun t ht ↦
     hιapp ((hQ t ht).differentiableAt two_ne_zero)
   have hG : ∀ t ∈ uIcc a b, ContDiffAt ℝ 1 (uncurry L ∘ ι) (0, t) := by
@@ -272,7 +215,7 @@ theorem hasDerivAt_lagrangianAction
     have hΦ := hasDerivAt_fderiv_apply_fst hD ((0 : ℝ), (1 : ℝ))
     rw [hι]
     exact HasDerivAt.prodMk (hasDerivAt_const 0 t) (HasDerivAt.prodMk
-      (hasDerivAt_apply_left_of_differentiableAt (hQt.differentiableAt two_ne_zero)) hΦ)
+      (hasDerivAt_slice_left (hQt.differentiableAt two_ne_zero)) hΦ)
   have hLd : DifferentiableAt ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t)) :=
     (hL t ht).differentiableAt one_ne_zero
   have hGs : HasDerivAt (fun s ↦ (uncurry L ∘ ι) (s, t))
@@ -286,9 +229,12 @@ theorem hasDerivAt_lagrangianAction
   have hslice : fderiv ℝ (L t) (Q 0 t, deriv (Q 0) t) =
       (fderiv ℝ (uncurry L) (t, (Q 0 t, deriv (Q 0) t))).comp (inr ℝ ℝ (E × E)) :=
     fderiv_slice_right hLd
-  rw [hGs'.unique hGs, hslice, hιt t ht, (hasDerivAt_apply_left_of_differentiableAt
-    (hQt.differentiableAt two_ne_zero)).deriv, deriv_variationField hQt, coe_comp,
-    Function.comp_apply, inr_apply]
+  have hη : HasDerivAt (fun s ↦ Q s t) (fderiv ℝ (uncurry Q) (0, t) (1, 0)) 0 :=
+    hasDerivAt_slice_left (hQt.differentiableAt two_ne_zero)
+  have hη' : deriv (fun r ↦ deriv (fun s ↦ Q s r) 0) t =
+      fderiv ℝ (fderiv ℝ (uncurry Q)) (0, t) (1, 0) (0, 1) :=
+    deriv_deriv_slice_left hQt (by simp)
+  rw [hGs'.unique hGs, hslice, hιt t ht, hη.deriv, hη', coe_comp, Function.comp_apply, inr_apply]
 
 /-- **The first variation formula, with the endpoint boundary term.** Let the uncurried family
 `(s, t) ↦ Q s t` be `C²` at every point of `{0} × [a, b]`, and let `L` be jointly `C²` along the
@@ -314,7 +260,7 @@ theorem hasDerivAt_lagrangianAction_of_contDiffAt_two
       ContDiffAt ℝ 1 (fun r ↦ fderiv ℝ (fun u ↦ L r (Q 0 r, u)) (deriv (Q 0) r)) t :=
     fun t ht ↦ contDiffAt_momentum (hq t ht) (hL t ht)
   have hη : ∀ t ∈ uIcc a b, ContDiffAt ℝ 1 (fun r ↦ deriv (fun s ↦ Q s r) 0) t :=
-    fun t ht ↦ contDiffAt_variationField (hQ t ht)
+    fun t ht ↦ contDiffAt_deriv_slice_left (n := 1) (hQ t ht)
   -- The product `p(t)(η(t))` has derivative `p'(t)(η(t)) + p(t)(η'(t))`, which is continuous.
   have hFTC : ∀ t ∈ uIcc a b, HasDerivAt
       (fun r ↦ fderiv ℝ (fun u ↦ L r (Q 0 r, u)) (deriv (Q 0) r) (deriv (fun s ↦ Q s r) 0))
@@ -352,7 +298,10 @@ theorem hasDerivAt_lagrangianAction_of_contDiffAt_two
     intervalIntegral.integral_add hint₁ hint₂,
     intervalIntegral.integral_eq_sub_of_hasDerivAt hFTC hint₂]
   · ring
-  · simp only [fderiv_apply_eq_add ((hL t ht).differentiableAt two_ne_zero), sub_apply]
+  · have hLt : DifferentiableAt ℝ (L t) (Q 0 t, deriv (Q 0) t) :=
+      ((hL t ht).differentiableAt two_ne_zero).comp (Q 0 t, deriv (Q 0) t)
+        ((differentiableAt_const t).prodMk differentiableAt_id)
+    simp only [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hLt, sub_apply]
     ring
 
 /-- **The first variation formula for a variation with fixed endpoints.** For a `C²` variation `Q`
