@@ -17,8 +17,8 @@ The determinant is monotone on the positive-semidefinite cone. Hadamard--Fischer
 bounds a block determinant by the product of its diagonal-block determinants.
 The overlapping-block version is the local Gram determinant inequality used
 when comparing the Euclidean volumes of an intersection and a sum of subspaces.
-All statements include singular matrices and empty blocks, over either real or
-complex scalars.
+The monotonicity and block statements include singular matrices and empty blocks,
+over either real or complex scalars.
 
 For real positive-semidefinite `n × n` matrices, the inequality of arithmetic and
 geometric means for the eigenvalues gives `det A ≤ (tr A / n) ^ n`, and its mixed

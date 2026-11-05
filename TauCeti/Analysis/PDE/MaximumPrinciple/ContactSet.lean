@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.Analysis.Calculus.Morse.Linearization
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -26,8 +25,8 @@ be continuous on `closure Ω` and `C²` in `Ω`, let `m` bound `u` on `frontier 
 Every vector `p` with `‖p‖ diam Ω < u x - m` is the gradient of `u` at a point of the upper
 contact set: on the frontier `u` lies below the affine function through `(x, u x)` with slope
 `p`, so `p` supports `u` from above at some point of `Ω`
-(`TauCeti.exists_forall_add_inner_le_of_forall_frontier`, applied to `-u`), where the gradient is
-`p`. The gradient is `C¹` with derivative the Hessian operator, so the
+(`TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le`, applied to `-u`), where the
+gradient is `p`. The gradient is `C¹` with derivative the Hessian operator, so the
 change-of-variables inequality bounds the measure of the gradient image, and
 
 `μ (ball 0 ((u x - m) / diam Ω)) ≤ ∫⁻ y in upperContactSet u Ω, |det D²u(y)| ∂μ`
@@ -84,15 +83,6 @@ theorem mem_upperContactSet :
 
 theorem upperContactSet_subset : upperContactSet u Ω ⊆ Ω := fun _ hy => hy.1
 
-/-- At a point of the upper contact set, `u` minus the linear part of a supporting affine function
-has a local maximum, provided `Ω` is a neighbourhood of the point. -/
-theorem isLocalMax_sub_inner_of_forall_le (hΩ : Ω ∈ 𝓝 y)
-    (hp : ∀ x ∈ Ω, u x ≤ u y + ⟪p, x - y⟫) : IsLocalMax (fun x => u x - ⟪p, x⟫) y := by
-  filter_upwards [hΩ] with x hx
-  have := hp x hx
-  rw [inner_sub_right] at this
-  linarith
-
 /-- **The Hessian on the upper contact set.** At a point of the upper contact set of a function
 that is `C²` on an open set, the second derivative is nonpositive on the diagonal:
 `D²u(y)(w, w) ≤ 0`. -/
@@ -109,16 +99,6 @@ theorem fderiv_fderiv_self_nonpos_of_mem_upperContactSet (hΩ : IsOpen Ω)
   exact (hu.contDiffAt (hΩ.mem_nhds hz)).differentiableAt two_ne_zero
 
 variable [CompleteSpace E]
-
-/-- A supporting slope at a point of differentiability in the interior of `Ω` is the gradient. -/
-theorem eq_gradient_of_forall_le (hΩ : Ω ∈ 𝓝 y) (hu : DifferentiableAt ℝ u y)
-    (hp : ∀ x ∈ Ω, u x ≤ u y + ⟪p, x - y⟫) : p = ∇ u y := by
-  have h0 := (isLocalMax_sub_inner_of_forall_le hΩ hp).hasFDerivAt_eq_zero
-    (hu.hasFDerivAt.sub (innerSL ℝ p).hasFDerivAt)
-  rw [sub_eq_zero] at h0
-  rw [gradient, h0, eq_comm, LinearIsometryEquiv.symm_apply_eq]
-  ext z
-  simp
 
 /-- On an open set where `u` is differentiable, the supporting slope at a point of the upper
 contact set is the gradient of `u`. -/
@@ -168,18 +148,13 @@ theorem ball_subset_image_gradient_upperContactSet {m : ℝ} (hΩb : Bornology.I
   have hpd : ‖p‖ * diam Ω < u x - m := (lt_div_iff₀ hd).1 hp
   -- On the frontier, `u` lies below the affine function through `(x, u x)` with slope `p`, so
   -- `p` supports `u` from above at some point of `Ω`.
-  obtain ⟨y, hyΩ, hy⟩ := exists_forall_add_inner_le_of_forall_frontier (u := fun z => -u z)
-    hΩb.isCompact_closure hcont.neg hx (p := -p) fun z hz => by
-      have hxz : |⟪z - x, p⟫| ≤ ‖p‖ * diam Ω := by
-        refine (abs_real_inner_le_norm _ _).trans ?_
-        rw [mul_comm, ← dist_eq_norm, ← Metric.diam_closure Ω]
-        exact mul_le_mul_of_nonneg_left (dist_le_diam_of_mem hΩb.closure
-          (frontier_subset_closure hz) (subset_closure hx)) (norm_nonneg p)
-      rw [inner_neg_right]
-      linarith [neg_abs_le ⟪z - x, p⟫, hm z hz]
+  obtain ⟨y, hyΩ, hy⟩ := exists_forall_add_inner_add_le_of_forall_frontier_le
+    (u := fun z => -u z) (w := fun _ => -m) hΩb.isCompact_closure hcont.neg continuousOn_const
+    (fun z hz => neg_le_neg (hm z hz)) hx (p := 0) (q := -p) (by simp)
+    (by rw [norm_neg]; linarith)
   have hsupp (z : E) (hz : z ∈ Ω) : u z ≤ u y + ⟪p, z - y⟫ := by
     have := hy z hz
-    rw [inner_neg_right, real_inner_comm] at this
+    rw [zero_add, inner_neg_right, real_inner_comm] at this
     linarith
   exact ⟨y, ⟨hyΩ, p, hsupp⟩, (eq_gradient_of_forall_le (hΩ.mem_nhds hyΩ)
     (hdiff.differentiableAt (hΩ.mem_nhds hyΩ)) hsupp).symm⟩

@@ -102,15 +102,14 @@ theorem abs_det_hessianOperator_mul_det_le_of_mem_upperContactSet (hΩ : IsOpen 
       (fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy)
   have hsymm (i j : ι) : M j i = M i j := by simpa using hM.isHermitian.apply i j
   -- In the standard basis the Hessian operator has matrix `-M`.
-  set b := EuclideanSpace.basisFun ι ℝ
-  have hmat :
-      LinearMap.toMatrix b.toBasis b.toBasis (hessianOperator u y).toLinearMap = -M := by
+  have hmat : (Matrix.of fun i j => fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single j 1)
+      (EuclideanSpace.single i 1)) = -M := by
     ext i j
-    rw [OrthonormalBasis.toMatrix_hessianOperator_apply, Matrix.neg_apply, ← hsymm]
-    simp [M, H, b]
+    rw [Matrix.neg_apply, ← hsymm]
+    simp [M, H]
   have hdet : |(hessianOperator u y).det| = M.det := by
-    rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix b.toBasis, hmat, det_neg, abs_mul,
-      abs_pow, abs_neg, abs_one, one_pow, one_mul, abs_of_nonneg hM.det_nonneg]
+    simp [(EuclideanSpace.basisFun ι ℝ).det_hessianOperator, hmat, det_neg, abs_mul,
+      abs_of_nonneg hM.det_nonneg]
   have htr : (A * M).trace = -∑ i, ∑ j, A i j * H (EuclideanSpace.single i 1)
       (EuclideanSpace.single j 1) := by
     simp only [trace, diag_apply, ← Finset.sum_neg_distrib, ← mul_neg]
@@ -160,15 +159,15 @@ private theorem setLIntegral_upperContactSet_eq_mul_eLpNorm_pow [Nonempty ι] (h
   set n := Fintype.card ι
   set g := fun y => (f y)⁻ / (a y).det ^ (n : ℝ)⁻¹
   have hn : n ≠ 0 := Fintype.card_ne_zero
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n)
-    hg.aestronglyMeasurable, ENNReal.toReal_natCast, ← ENNReal.rpow_natCast,
-    ← ENNReal.rpow_mul, one_div, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), ENNReal.rpow_one,
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  have h := eLpNorm_nnreal_pow_eq_lintegral (p := (n : NNReal)) (Nat.cast_ne_zero.2 hn)
+    (by simpa using hg.aestronglyMeasurable)
+  simp only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] at h
+  rw [h, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine setLIntegral_congr_fun (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num)))
     fun y hy => ?_
   have hdet := (ha y hy).det_pos
   have hgy : 0 ≤ g y := div_nonneg (negPart_nonneg _) (Real.rpow_nonneg hdet.le _)
-  rw [Real.enorm_eq_ofReal hgy, ENNReal.rpow_natCast, ← ENNReal.ofReal_pow hgy,
+  rw [Real.enorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   simp only [g, div_pow, Real.rpow_inv_natCast_pow hdet.le hn]
