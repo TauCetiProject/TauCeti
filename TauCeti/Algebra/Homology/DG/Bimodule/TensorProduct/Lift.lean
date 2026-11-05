@@ -45,12 +45,14 @@ attribute [local instance 100] leftModule rightModule leftIsScalarTower rightIsS
   outerSMulCommClass
 attribute [local instance] tensorGradedOuterLeft tensorGradedOuterRight
 
-local instance : SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece
+local instance tensorLiftGradedSMulRight :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece
     (InternalGrading.ofDecomposition M.grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance : SetLike.GradedSMul ℬ (InternalGrading.ofDecomposition N.grading).piece := by
+local instance tensorLiftGradedSMulLeft :
+    SetLike.GradedSMul ℬ (InternalGrading.ofDecomposition N.grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
