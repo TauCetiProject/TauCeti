@@ -21,8 +21,10 @@ charts, as required for quotient-bundle coordinate changes.
 as the inverse of its coordinate expression, which reduces smoothness of fibrewise inverses
 to smoothness of inversion of continuous linear maps.
 `ContinuousLinearMap.isInvertible_inCoordinates_iff` reads invertibility of a fibre map
-off its coordinate expression, and `ContinuousLinearMap.inCoordinates_comp` reads a composite
-of fibre maps as the composite of their coordinate expressions.
+off its coordinate expression, `ContinuousLinearMap.inCoordinates_comp` reads a composite
+of fibre maps as the composite of their coordinate expressions, and
+`ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
+identity map and scalar multiples in a compatible target vector-bundle structure.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
@@ -192,6 +194,26 @@ theorem map_range_inCoordinates_coordChangeL [RingHomSurjective σ] {x₀ x₁ x
   erw [hS]
   rw [Submodule.map_top]
   rfl
+
+/-- In a preferred trivialization whose base set contains `x`, the identity on `V x` reads as the
+identity on the model fibre `F`. -/
+theorem inCoordinates_id {x₀ x : B} (hx : x ∈ (trivializationAt F V x₀).baseSet) :
+    inCoordinates F V F V x₀ x x₀ x (.id 𝕜 (V x)) = .id 𝕜 F := by
+  ext v
+  simp [inCoordinates_eq hx hx]
+
+/-- In a target trivialization whose base set contains `y`, `inCoordinates` commutes with scalar
+multiplication by any `c : 𝕜''` from a compatible `VectorBundle 𝕜'' F' W` structure. -/
+theorem inCoordinates_smul {𝕜'' : Type*} [NontriviallyNormedField 𝕜'']
+    [NormedSpace 𝕜'' F'] [∀ y, Module 𝕜'' (W y)] [VectorBundle 𝕜'' F' W]
+    [SMulCommClass 𝕜' 𝕜'' F'] {x₀ x : B} {y₀ y : B'}
+    [SMulCommClass 𝕜' 𝕜'' (W y)] [ContinuousConstSMul 𝕜'' (W y)]
+    (c : 𝕜'') (ϕ : V x →SL[σ] W y) (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
+    inCoordinates F V F' W x₀ x y₀ y (c • ϕ) = c • inCoordinates F V F' W x₀ x y₀ y ϕ := by
+  ext v
+  simp only [inCoordinates, comp_apply, smul_apply,
+    Trivialization.continuousLinearMapAt_apply_of_mem 𝕜' _ hy,
+    ← Trivialization.continuousLinearMapAt_apply_of_mem 𝕜'' _ hy, map_smul]
 
 end CoordChange
 
