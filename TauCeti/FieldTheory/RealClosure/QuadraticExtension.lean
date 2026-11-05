@@ -15,15 +15,18 @@ import TauCeti.FieldTheory.IsAlgClosed.OddDegreeRoot
 
 /-! # Real closed fields and their algebraically closed quadratic extensions
 
-A field `R` is real closed exactly when some (equivalently, every) quadratic extension of `R`
-is algebraically closed. In particular, when `X ^ 2 + 1` is
-irreducible, `R` is real closed exactly when `R(√-1) = AdjoinRoot (X ^ 2 + 1)` is
-algebraically closed.
+A field `R` is real closed exactly when some quadratic extension of `R` is algebraically
+closed. Moreover, every quadratic extension of a real closed field is algebraically closed, so
+for a fixed quadratic extension `K` of `R` that exists, `R` is real closed exactly when `K` is
+algebraically closed. In particular, when `X ^ 2 + 1` is irreducible, `R` is real closed exactly
+when `R(√-1) = AdjoinRoot (X ^ 2 + 1)` is algebraically closed.
 
 For the forward direction, a quadratic extension embeds into the algebraically closed
 `QuadraticAlgebra R (-1) 0` of the same dimension, so all its elements are squares. For the
-converse, an
-algebraically closed extension `K` of degree two identifies `K` with `R(√-1)`. Writing a
+converse, first `-1` is not a square in `R`: writing `K ≅ QuadraticAlgebra R a b`, every element
+of `K` being a square makes the discriminant a square (or, in characteristic two, gives a zero
+divisor), contradicting that `K` is a field. Hence an algebraically closed extension `K` of
+degree two identifies `K` with `R(√-1)`. Writing a
 square root of `x + y √-1` in coordinates shows that every element or its negative is a
 square, and that a sum of two squares is a square. Every irreducible polynomial over `R`
 has degree dividing two, so a polynomial of odd degree has a root.
@@ -32,8 +35,8 @@ has degree dividing two, so a polynomial of odd degree has a root.
 
 * `TauCeti.RealClosure.isAlgClosed_of_isQuadraticExtension`: every quadratic extension of a
   real closed field is algebraically closed.
-* `TauCeti.RealClosure.not_isSquare_neg_one_of_isAlgClosed`: `-1` is not a square in a field
-  with an algebraically closed quadratic extension.
+* `TauCeti.RealClosure.not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension`: `-1` is
+  not a square in a field with an algebraically closed quadratic extension.
 * `TauCeti.RealClosure.isRealClosed_of_isAlgClosed_of_isQuadraticExtension`: a field with an
   algebraically closed quadratic extension is real closed.
 * `TauCeti.RealClosure.isRealClosed_iff_isAlgClosed_of_isQuadraticExtension`: the
@@ -78,7 +81,7 @@ theorem isAlgClosed_of_isQuadraticExtension [IsRealClosed R]
   exact ⟨y, f.injective (by simp [hw])⟩
 
 /-- `-1` is never a square in a field with an algebraically closed quadratic extension. -/
-theorem not_isSquare_neg_one_of_isAlgClosed [IsAlgClosed K]
+theorem not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension [IsAlgClosed K]
     [Algebra.IsQuadraticExtension R K] : ¬IsSquare (-1 : R) := by
   rintro ⟨s, hs⟩
   obtain ⟨a, b, ⟨e⟩⟩ :=
@@ -166,7 +169,8 @@ private theorem exists_coords_sqrt (hR : ¬IsSquare (-1 : R)) [Algebra.IsQuadrat
 /-- A field with an algebraically closed quadratic extension is real closed. -/
 theorem isRealClosed_of_isAlgClosed_of_isQuadraticExtension [Algebra.IsQuadraticExtension R K] :
     IsRealClosed R := by
-  have hR : ¬IsSquare (-1 : R) := not_isSquare_neg_one_of_isAlgClosed (K := K)
+  have hR : ¬IsSquare (-1 : R) :=
+    not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension (K := K)
   have h2 : (2 : R) ≠ 0 := fun h => hR ⟨1, by linear_combination -h⟩
   -- A sum of two squares `a² + b²` is the norm `(c² + d²)²` of a square root of `a + b √-1`.
   have hsumsq {s : R} (hs : IsSumSq s) : IsSquare s := by
