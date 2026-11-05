@@ -9,8 +9,12 @@ public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import Mathlib.Topology.ContinuousMap.Weierstrass
 public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
+import TauCeti.Analysis.Polynomial.Integral
+import TauCeti.Analysis.Polynomial.OneSidedApproximation
+import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.SpecialFunctions.ExpBounds
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # The logarithmic Tauberian theorem for zeta residues
@@ -105,30 +109,6 @@ private lemma sum_range_le_levelSum_add (hμ0 : ∀ j, 0 ≤ μ j) (hμ : Antito
         gcongr
         exact (summable_levelTerm hμ hμt x).sum_le_tsum _ fun j _ ↦ ite_nonneg (hμ0 j) le_rfl
 
-/-- The first `n + 1` entries of an antitone sequence are at least its `n`-th entry. -/
-private lemma mul_le_sum_range (hμ : Antitone μ) {n : ℕ} {c : ℝ} (hc : c ≤ μ n) :
-    (n + 1) * c ≤ ∑ j ∈ range (n + 1), μ j := by
-  calc (n + 1 : ℝ) * c = ∑ j ∈ range (n + 1), c := by simp
-    _ ≤ ∑ j ∈ range (n + 1), μ j :=
-        sum_le_sum fun j hj ↦ hc.trans (hμ (Nat.lt_succ_iff.1 (mem_range.1 hj)))
-
-/-- If `∑ⱼ μⱼ ^ s` converges for every `s > 1`, then `μ` tends to `0`. -/
-private lemma tendsto_zero_of_summable_rpow (hμ0 : ∀ j, 0 ≤ μ j)
-    (hsum : ∀ s : ℝ, 1 < s → Summable fun j ↦ μ j ^ s) : Tendsto μ atTop (𝓝 0) := by
-  have h1 : Summable fun j ↦ μ j ^ (2 : ℝ) := hsum 2 (by norm_num)
-  have h2 := h1.tendsto_atTop_zero.rpow_const (p := (2 : ℝ)⁻¹) (Or.inr (by norm_num))
-  rw [zero_rpow (by norm_num)] at h2
-  exact h2.congr fun j ↦ rpow_rpow_inv (hμ0 j) two_ne_zero
-
-/-- An affine function of `x` is eventually smaller than `exp (a x)` when `a > 0`. -/
-private lemma eventually_lt_exp {a : ℝ} (ha : 0 < a) (A B : ℝ) :
-    ∀ᶠ x in atTop, A * x + B < exp (a * x) := by
-  filter_upwards [(tendsto_exp_mul_div_rpow_atTop 1 a ha).eventually_gt_atTop (|A| + |B|),
-    eventually_ge_atTop 1] with x hx hx1
-  rw [rpow_one, lt_div_iff₀ (by linarith)] at hx
-  nlinarith [mul_nonneg (sub_nonneg.2 (le_abs_self A)) (by linarith : (0 : ℝ) ≤ x),
-    mul_nonneg (abs_nonneg B) (by linarith : (0 : ℝ) ≤ x - 1), le_abs_self B]
-
 private lemma sum_div_log_nonneg (hμ0 : ∀ j, 0 ≤ μ j) (N : ℕ) :
     0 ≤ (∑ j ∈ range (N + 1), μ j) / log ((N : ℝ) + 2) :=
   div_nonneg (sum_nonneg fun j _ ↦ hμ0 j) (log_nonneg (by linarith [N.cast_nonneg (α := ℝ)]))
@@ -151,7 +131,9 @@ private lemma tendsto_zero_of_tendsto_sum_div_log (hμ0 : ∀ j, 0 ≤ μ j) (h�
   have := h.mul hlog
   rw [mul_zero] at this
   refine squeeze_zero hμ0 (fun N ↦ ?_) this
-  have hS := mul_le_sum_range hμ (le_refl (μ N))
+  have hS : ((N : ℝ) + 1) * μ N ≤ ∑ j ∈ range (N + 1), μ j := by
+    simpa using card_nsmul_le_sum (range (N + 1)) μ (μ N) fun j hj ↦
+      hμ (Nat.lt_succ_iff.1 (mem_range.1 hj))
   have hlog0 : 0 < log ((N : ℝ) + 2) := log_pos (by linarith [N.cast_nonneg (α := ℝ)])
   calc μ N ≤ (∑ j ∈ range (N + 1), μ j) / ((N : ℝ) + 1) := by
         rw [le_div_iff₀ (by positivity)]; linarith
@@ -182,7 +164,7 @@ private lemma lt_sum_div_log_of_tendsto_levelSum (hμ0 : ∀ j, 0 ≤ μ j) (hμ
     rwa [lt_div_iff₀ hy0] at hy
   have h2 : ∀ᶠ N : ℕ in atTop,
       2 * c' * log ((N : ℝ) + 2) + 0 < exp ((1 - r) * log ((N : ℝ) + 2)) :=
-    (tendsto_log_natCast_add_atTop 2).eventually (eventually_lt_exp (by linarith) _ _)
+    (tendsto_log_natCast_add_atTop 2).eventually (eventually_mul_add_lt_exp_mul (by linarith) _ _)
   filter_upwards [h1, h2, (tendsto_log_natCast_add_atTop 2).eventually_gt_atTop 0] with N h1 h2 hpos
   rw [lt_div_iff₀ hpos]
   set z := log ((N : ℝ) + 2)
@@ -192,7 +174,9 @@ private lemma lt_sum_div_log_of_tendsto_levelSum (hμ0 : ∀ j, 0 ≤ μ j) (hμ
   · have := levelSum_le_sum_range hμ0 hμ hN
     linarith
   · -- Otherwise all of the first `N + 1` entries are large.
-    have hS := mul_le_sum_range hμ ((not_lt.1 hN).trans (hμ (Nat.le_succ N)))
+    have hS : ((N : ℝ) + 1) * exp (-(r * z)) ≤ ∑ j ∈ range (N + 1), μ j := by
+      simpa using card_nsmul_le_sum (range (N + 1)) μ (exp (-(r * z))) fun j hj ↦
+        ((not_lt.1 hN).trans (hμ (Nat.le_succ N))).trans (hμ (Nat.lt_succ_iff.1 (mem_range.1 hj)))
     have hez : exp z = N + 2 := exp_log (by positivity)
     have hsplit : exp ((1 - r) * z) = exp z * exp (-(r * z)) := by
       rw [← exp_add]; ring_nf
@@ -307,7 +291,7 @@ private lemma levelSum_div_lt_of_tendsto_sum_div_log (hμ0 : ∀ j, 0 ≤ μ j) 
     hN.eventually ((h.eventually (gt_mem_nhds hLc)).mono fun N hN ↦ by
       rwa [div_lt_iff₀ (log_pos (by linarith [N.cast_nonneg (α := ℝ)]))] at hN)
   have hgrow : ∀ᶠ x in atTop, c * r * x + c * log 4 < exp ((r - 1) * x) :=
-    eventually_lt_exp (by linarith) _ _
+    eventually_mul_add_lt_exp_mul (by linarith) _ _
   have h3 : ∀ᶠ x in atTop, c * log 4 < (b - c') * x :=
     (tendsto_id.const_mul_atTop (sub_pos.2 hc'b)).eventually_gt_atTop _
   filter_upwards [h1, hgrow, h3, eventually_gt_atTop 0] with x h1 hg h3 hx
@@ -322,7 +306,9 @@ private lemma levelSum_div_lt_of_tendsto_sum_div_log (hμ0 : ∀ j, 0 ≤ μ j) 
   -- No entry beyond `N` reaches the level `x`.
   have hμN : μ N < exp (-x) := by
     by_contra hcon
-    have hS := mul_le_sum_range hμ (not_lt.1 hcon)
+    have hS : ((N : ℝ) + 1) * exp (-x) ≤ ∑ j ∈ range (N + 1), μ j := by
+      simpa using card_nsmul_le_sum (range (N + 1)) μ (exp (-x)) fun j hj ↦
+        (not_lt.1 hcon).trans (hμ (Nat.lt_succ_iff.1 (mem_range.1 hj)))
     have : exp ((r - 1) * x) ≤ (N + 1) * exp (-x) := by
       rw [sub_mul, one_mul, sub_eq_add_neg, exp_add]
       nlinarith [exp_pos (-x)]
@@ -380,17 +366,6 @@ private lemma tsum_geometric_level_le_rpow {ε u : ℝ} (hε : 0 < ε) (hu0 : 0 
   · rw [← mul_assoc, ← exp_add, mul_comm _ u]
     exact mul_le_mul_of_nonneg_left (exp_le_exp.2 (by nlinarith)) hu.le
 
-/-- The weighted level series: `∑ₖ (1 - q) q ^ k (c k + B) = c q / (1 - q) + B`. -/
-private lemma hasSum_geometric_affine {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1) (c B : ℝ) :
-    HasSum (fun k : ℕ ↦ (1 - q) * q ^ k * (c * k + B)) (c * q / (1 - q) + B) := by
-  have hq : ‖q‖ < 1 := by rwa [norm_of_nonneg hq0]
-  have h := ((hasSum_coe_mul_geometric_of_norm_lt_one hq).mul_left ((1 - q) * c)).add
-    ((hasSum_geometric_of_lt_one hq0 hq1).mul_left ((1 - q) * B))
-  convert h using 1
-  · ext k; ring
-  · have : (1 - q) ≠ 0 := (sub_pos.2 hq1).ne'
-    field_simp
-
 /-- An affine bound on the level sums makes the weighted level series converge. -/
 private lemma summable_geometric_mul_levelSum (hμ0 : ∀ j, 0 ≤ μ j) {A B : ℝ}
     (hbound : ∀ k : ℕ, levelSum μ k ≤ A * k + B) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1) :
@@ -400,7 +375,7 @@ private lemma summable_geometric_mul_levelSum (hμ0 : ∀ j, 0 ≤ μ j) {A B : 
       (levelSum_nonneg hμ0 k))
     (fun k ↦ mul_le_mul_of_nonneg_left (hbound k)
       (mul_nonneg (sub_nonneg.2 hq1.le) (pow_nonneg hq0 _)))
-    (hasSum_geometric_affine hq0 hq1 A B).summable
+    (hasSum_one_sub_mul_geometric_mul_affine (by rwa [norm_of_nonneg hq0]) A B).summable
 
 /-- Comparison of the zeta function with the weighted level series. -/
 private lemma summable_rpow_and_le_of_levelSum_le (hμ0 : ∀ j, 0 ≤ μ j) (hμ1 : ∀ j, μ j ≤ 1)
@@ -439,17 +414,6 @@ private lemma summable_rpow_and_le_of_levelSum_le (hμ0 : ∀ j, 0 ≤ μ j) (h�
     exact hcols.tsum_le_tsum (fun j ↦ (hbr j).1) hsumm
   · rw [hcomm, ← hcols.tsum_mul_left]
     exact hsumm.tsum_le_tsum (fun j ↦ (hbr j).2) (hcols.mul_left _)
-
-/-- With `q = exp (-ε)`, the quantity `ε q / (1 - q) = ε / (exp ε - 1)` lies between `q` and `1`. -/
-private lemma mul_geometric_ratio_bounds {ε : ℝ} (hε : 0 < ε) :
-    exp (-ε) ≤ ε * (exp (-ε) / (1 - exp (-ε))) ∧ ε * (exp (-ε) / (1 - exp (-ε))) ≤ 1 := by
-  have h1 : 0 < 1 - exp (-ε) := sub_pos.2 (Real.exp_lt_one_iff.2 (by linarith))
-  have h2 := add_one_le_exp (-ε)
-  have h3 : exp (-ε) * (ε + 1) ≤ 1 := by
-    calc exp (-ε) * (ε + 1) ≤ exp (-ε) * exp ε := by gcongr; exact add_one_le_exp ε
-      _ = 1 := by rw [← exp_add]; simp
-  rw [mul_div_assoc', le_div_iff₀ h1, div_le_iff₀ h1]
-  constructor <;> nlinarith [exp_pos (-ε)]
 
 private lemma geometric_weight_nonneg {ε : ℝ} (hε : 0 < ε) (k : ℕ) :
     0 ≤ (1 - exp (-ε)) * exp (-ε) ^ k :=
@@ -507,14 +471,18 @@ private lemma lt_mul_tsum_rpow_of_tendsto_levelSum (hμ0 : ∀ j, 0 ≤ μ j)
   obtain ⟨-, hle, -⟩ := summable_rpow_and_le_of_levelSum_le hμ0 hμ1 hμ hμt hA hε
   have hq0 : 0 ≤ exp (-ε) := (exp_pos _).le
   have hq1 : exp (-ε) < 1 := Real.exp_lt_one_iff.2 (by linarith)
-  have hgeom := hasSum_geometric_affine hq0 hq1 c (-B)
+  have hgeom := hasSum_one_sub_mul_geometric_mul_affine (by rwa [norm_of_nonneg hq0]) c (-B)
   have hlow : c * exp (-ε) / (1 - exp (-ε)) - B ≤
       ∑' k : ℕ, (1 - exp (-ε)) * exp (-ε) ^ k * levelSum μ k := by
     rw [sub_eq_add_neg, ← hgeom.tsum_eq]
     exact hgeom.summable.tsum_le_tsum
       (fun k ↦ mul_le_mul_of_nonneg_left (by linarith [hB k]) (geometric_weight_nonneg hε k))
       (summable_geometric_mul_levelSum hμ0 hA hq0 hq1)
-  have := (mul_geometric_ratio_bounds hε).1
+  have hr : ε * (exp (-ε) / (1 - exp (-ε))) = ε / (exp ε - 1) := by
+    have : exp ε - 1 ≠ 0 := (sub_pos.2 (one_lt_exp_iff.2 hε)).ne'
+    rw [exp_neg]
+    field_simp
+  have : exp (-ε) ≤ ε * (exp (-ε) / (1 - exp (-ε))) := hr ▸ exp_neg_le_div_exp_sub_one hε
   calc a < c * exp (-ε) - ε * B := h1
     _ ≤ c * (ε * (exp (-ε) / (1 - exp (-ε)))) - ε * B := by gcongr
     _ = ε * (c * exp (-ε) / (1 - exp (-ε)) - B) := by ring
@@ -538,13 +506,17 @@ private lemma mul_tsum_rpow_lt_of_tendsto_levelSum (hμ0 : ∀ j, 0 ≤ μ j)
   obtain ⟨-, -, hle⟩ := summable_rpow_and_le_of_levelSum_le hμ0 hμ1 hμ hμt hB hε
   have hq0 : 0 ≤ exp (-ε) := (exp_pos _).le
   have hq1 : exp (-ε) < 1 := Real.exp_lt_one_iff.2 (by linarith)
-  have hgeom := hasSum_geometric_affine hq0 hq1 c B
+  have hgeom := hasSum_one_sub_mul_geometric_mul_affine (by rwa [norm_of_nonneg hq0]) c B
   have hup : ∑' k : ℕ, (1 - exp (-ε)) * exp (-ε) ^ k * levelSum μ k ≤
       c * exp (-ε) / (1 - exp (-ε)) + B := by
     rw [← hgeom.tsum_eq]
     exact (summable_geometric_mul_levelSum hμ0 hB hq0 hq1).tsum_le_tsum
       (fun k ↦ mul_le_mul_of_nonneg_left (hB k) (geometric_weight_nonneg hε k)) hgeom.summable
-  have := (mul_geometric_ratio_bounds hε).2
+  have hr : ε * (exp (-ε) / (1 - exp (-ε))) = ε / (exp ε - 1) := by
+    have : exp ε - 1 ≠ 0 := (sub_pos.2 (one_lt_exp_iff.2 hε)).ne'
+    rw [exp_neg]
+    field_simp
+  have : ε * (exp (-ε) / (1 - exp (-ε))) ≤ 1 := hr ▸ div_exp_sub_one_le_one hε.le
   calc ε * ∑' j, μ j ^ (1 + ε)
       ≤ ε * (exp ε * (c * exp (-ε) / (1 - exp (-ε)) + B)) := by
         gcongr; exact hle.trans (by gcongr)
@@ -579,16 +551,6 @@ private lemma tendsto_mul_tsum_rpow_one_add_mul {L : ℝ}
   simp only [Function.comp_apply, add_sub_cancel_left]
   field_simp
 
-/-- The integral of a polynomial over `[0, 1]`, in terms of its coefficients. -/
-private lemma integral_eval_eq_sum (Q : ℝ[X]) :
-    ∫ u in (0 : ℝ)..1, Q.eval u = ∑ i ∈ range (Q.natDegree + 1), Q.coeff i / (i + 1) := by
-  simp_rw [eval_eq_sum_range]
-  rw [intervalIntegral.integral_finsetSum fun i _ ↦
-    ((continuous_pow i).const_mul _).intervalIntegrable _ _]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [intervalIntegral.integral_const_mul, integral_pow]
-  simp [div_eq_mul_inv]
-
 private lemma rpow_one_add_mul_eval_eq_sum {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (Q : ℝ[X]) :
     x ^ (1 + ε) * Q.eval (x ^ ε) =
       ∑ i ∈ range (Q.natDegree + 1), Q.coeff i * x ^ (1 + (i + 1) * ε) := by
@@ -617,8 +579,8 @@ private lemma tendsto_mul_tsum_rpow_mul_eval (hμ0 : ∀ j, 0 ≤ μ j)
       (𝓝 (L * ∫ u in (0 : ℝ)..1, Q.eval u)) := by
   have hval : L * ∫ u in (0 : ℝ)..1, Q.eval u =
       ∑ i ∈ range (Q.natDegree + 1), Q.coeff i * (L / (i + 1)) := by
-    rw [integral_eval_eq_sum, mul_sum]
-    exact sum_congr rfl fun i _ ↦ by ring
+    rw [Q.integral_eval_eq_sum, mul_sum]
+    exact sum_congr rfl fun i _ ↦ by rw [one_pow, zero_pow (Nat.succ_ne_zero i)]; ring
   rw [hval]
   refine (tendsto_finsetSum (range (Q.natDegree + 1)) fun i _ ↦
     (tendsto_mul_tsum_rpow_one_add_mul hζ i).const_mul (Q.coeff i)).congr' ?_
@@ -631,110 +593,6 @@ private lemma tendsto_mul_tsum_rpow_mul_eval (hμ0 : ∀ j, 0 ≤ μ j)
     · have : (0 : ℝ) < (i + 1) * ε := by positivity
       linarith
   · have : (0 : ℝ) < (i + 1) * ε := by positivity
-    linarith
-
-/-- A continuous piecewise linear ramp, `0` left of `b` and `1` right of `b + w`. -/
-private noncomputable def ramp (b w u : ℝ) : ℝ := max 0 (min 1 ((u - b) / w))
-
-private lemma continuous_ramp (b w : ℝ) : Continuous (ramp b w) :=
-  continuous_const.max (continuous_const.min ((continuous_id.sub continuous_const).div_const w))
-
-private lemma ramp_nonneg (b w u : ℝ) : 0 ≤ ramp b w u := le_max_left _ _
-
-private lemma ramp_le_one (b w u : ℝ) : ramp b w u ≤ 1 :=
-  max_le zero_le_one (min_le_left _ _)
-
-private lemma ramp_eq_zero {b w u : ℝ} (hw : 0 < w) (hu : u ≤ b) : ramp b w u = 0 :=
-  max_eq_left (min_le_of_right_le (div_nonpos_of_nonpos_of_nonneg (by linarith) hw.le))
-
-private lemma ramp_eq_one {b w u : ℝ} (hw : 0 < w) (hu : b + w ≤ u) : ramp b w u = 1 := by
-  rw [ramp, min_eq_left ((le_div_iff₀ hw).2 (by linarith)), max_eq_right zero_le_one]
-
-private lemma integral_ramp_le {b w : ℝ} (hw : 0 < w) (hb0 : 0 ≤ b) (hb1 : b ≤ 1) :
-    ∫ u in (0 : ℝ)..1, ramp b w u ≤ 1 - b := by
-  have hc := continuous_ramp b w
-  rw [← intervalIntegral.integral_add_adjacent_intervals (hc.intervalIntegrable 0 b)
-    (hc.intervalIntegrable b 1)]
-  have h1 : ∫ u in (0 : ℝ)..b, ramp b w u ≤ ∫ u in (0 : ℝ)..b, (0 : ℝ) :=
-    intervalIntegral.integral_mono_on hb0 (hc.intervalIntegrable _ _) intervalIntegrable_const
-      fun u hu ↦ (ramp_eq_zero hw hu.2).le
-  have h2 : ∫ u in b..1, ramp b w u ≤ ∫ u in b..1, (1 : ℝ) :=
-    intervalIntegral.integral_mono_on hb1 (hc.intervalIntegrable _ _) intervalIntegrable_const
-      fun u _ ↦ ramp_le_one b w u
-  simp only [intervalIntegral.integral_zero, intervalIntegral.integral_const, smul_eq_mul,
-    mul_one] at h1 h2
-  linarith
-
-private lemma le_integral_ramp {b w : ℝ} (hw : 0 < w) (hb0 : 0 ≤ b) (hbw : b + w ≤ 1) :
-    1 - (b + w) ≤ ∫ u in (0 : ℝ)..1, ramp b w u := by
-  have hc := continuous_ramp b w
-  rw [← intervalIntegral.integral_add_adjacent_intervals (hc.intervalIntegrable 0 (b + w))
-    (hc.intervalIntegrable (b + w) 1)]
-  have h1 : 0 ≤ ∫ u in (0 : ℝ)..(b + w), ramp b w u :=
-    intervalIntegral.integral_nonneg (by linarith) fun u _ ↦ ramp_nonneg b w u
-  have h2 : ∫ u in (b + w)..1, (1 : ℝ) ≤ ∫ u in (b + w)..1, ramp b w u :=
-    intervalIntegral.integral_mono_on hbw intervalIntegrable_const (hc.intervalIntegrable _ _)
-      fun u hu ↦ (ramp_eq_one hw hu.1).ge
-  simp only [intervalIntegral.integral_const, smul_eq_mul, mul_one] at h2
-  linarith
-
-/-- Weierstrass approximation of a continuous function from above and from below on `[0, 1]`. -/
-private lemma exists_polynomial_between {g : ℝ → ℝ} (hg : Continuous g) {δ : ℝ} (hδ : 0 < δ) :
-    (∃ Q : ℝ[X], ∀ u ∈ Set.Icc (0 : ℝ) 1, g u ≤ Q.eval u ∧ Q.eval u ≤ g u + δ) ∧
-      ∃ Q : ℝ[X], ∀ u ∈ Set.Icc (0 : ℝ) 1, g u - δ ≤ Q.eval u ∧ Q.eval u ≤ g u := by
-  obtain ⟨P, hP⟩ :=
-    exists_polynomial_near_of_continuousOn 0 1 g hg.continuousOn (δ / 2) (half_pos hδ)
-  refine ⟨⟨P + C (δ / 2), fun u hu ↦ ?_⟩, ⟨P - C (δ / 2), fun u hu ↦ ?_⟩⟩ <;>
-  · have := abs_lt.1 (hP u hu)
-    simp only [eval_add, eval_sub, eval_C]
-    constructor <;> linarith [this.1, this.2]
-
-/-- A polynomial above the indicator of `[a, 1]` on `[0, 1]`, with integral at most
-`1 - a + η`. -/
-private lemma exists_polynomial_ge_indicator {a η : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (hη : 0 < η) :
-    ∃ Q : ℝ[X], (∀ u ∈ Set.Icc (0 : ℝ) 1, (if a ≤ u then (1 : ℝ) else 0) ≤ Q.eval u) ∧
-      ∫ u in (0 : ℝ)..1, Q.eval u ≤ 1 - a + η := by
-  set w := min (η / 3) a
-  have hw : 0 < w := lt_min (by positivity) ha0
-  have hwa : w ≤ a := min_le_right _ _
-  have hwη : w ≤ η / 3 := min_le_left _ _
-  obtain ⟨⟨Q, hQ⟩, -⟩ := exists_polynomial_between (continuous_ramp (a - w) w) hw
-  refine ⟨Q, fun u hu ↦ le_trans ?_ (hQ u hu).1, ?_⟩
-  · split_ifs with h
-    · rw [ramp_eq_one hw (by linarith)]
-    · exact ramp_nonneg _ _ _
-  · have hint : ∫ u in (0 : ℝ)..1, Q.eval u ≤ ∫ u in (0 : ℝ)..1, (ramp (a - w) w u + w) :=
-      intervalIntegral.integral_mono_on zero_le_one (Q.continuous.intervalIntegrable _ _)
-        (((continuous_ramp _ _).add continuous_const).intervalIntegrable _ _)
-        fun u hu ↦ (hQ u hu).2
-    rw [intervalIntegral.integral_add ((continuous_ramp _ _).intervalIntegrable _ _)
-      intervalIntegrable_const, intervalIntegral.integral_const] at hint
-    have := integral_ramp_le hw (by linarith) (by linarith : a - w ≤ 1)
-    simp only [sub_zero, smul_eq_mul, one_mul] at hint
-    linarith
-
-/-- A polynomial below the indicator of `[a, 1]` on `[0, 1]`, with integral at least
-`1 - a - η`. -/
-private lemma exists_polynomial_le_indicator {a η : ℝ} (ha0 : 0 ≤ a) (ha1 : a < 1) (hη : 0 < η) :
-    ∃ Q : ℝ[X], (∀ u ∈ Set.Icc (0 : ℝ) 1, Q.eval u ≤ if a ≤ u then (1 : ℝ) else 0) ∧
-      1 - a - η ≤ ∫ u in (0 : ℝ)..1, Q.eval u := by
-  set w := min (η / 3) (1 - a)
-  have hw : 0 < w := lt_min (by positivity) (by linarith)
-  have hwa : w ≤ 1 - a := min_le_right _ _
-  have hwη : w ≤ η / 3 := min_le_left _ _
-  obtain ⟨-, ⟨Q, hQ⟩⟩ := exists_polynomial_between (continuous_ramp a w) hw
-  refine ⟨Q, fun u hu ↦ (hQ u hu).2.trans ?_, ?_⟩
-  · split_ifs with h
-    · exact ramp_le_one _ _ _
-    · exact (ramp_eq_zero hw (not_le.1 h).le).le
-  · have hint : ∫ u in (0 : ℝ)..1, (ramp a w u - w) ≤ ∫ u in (0 : ℝ)..1, Q.eval u :=
-      intervalIntegral.integral_mono_on zero_le_one
-        (((continuous_ramp _ _).sub continuous_const).intervalIntegrable _ _)
-        (Q.continuous.intervalIntegrable _ _) fun u hu ↦ (hQ u hu).1
-    rw [intervalIntegral.integral_sub ((continuous_ramp _ _).intervalIntegrable _ _)
-      intervalIntegrable_const, intervalIntegral.integral_const] at hint
-    have := le_integral_ramp hw ha0 (by linarith : a + w ≤ 1)
-    simp only [sub_zero, smul_eq_mul, one_mul] at hint
     linarith
 
 private lemma nonneg_of_tendsto_sub_one_mul_tsum_rpow (hμ0 : ∀ j, 0 ≤ μ j) {L : ℝ}
@@ -783,13 +641,6 @@ private lemma tendsto_mul_tsum_rpow_mul_indicator (hμ0 : ∀ j, 0 ≤ μ j) (h�
       mul_le_mul_of_nonneg_left (hQ _ (hmem ε hε j)) (rpow_nonneg (hμ0 j) _))
       (summable_rpow_one_add_mul_eval hμ0 hsum hε Q)
 
-private lemma exp_neg_le_rpow_iff {x ε t : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) :
-    exp (-t) ≤ x ^ ε ↔ exp (-(t / ε)) ≤ x := by
-  rcases hx.eq_or_lt with rfl | hx
-  · simp [zero_rpow hε.ne', (exp_pos _).not_ge]
-  rw [← le_log_iff_exp_le hx, ← le_log_iff_exp_le (rpow_pos_of_pos hx ε), log_rpow hx,
-    ← neg_div, div_le_iff₀ hε, mul_comm]
-
 /-- The truncated sums of Karamata's step are comparable with the level sums. -/
 private lemma levelSum_le_tsum_rpow_mul_indicator (hμ0 : ∀ j, 0 ≤ μ j) (hμ1 : ∀ j, μ j ≤ 1)
     (hμ : Antitone μ) (hsum : ∀ s : ℝ, 1 < s → Summable fun j ↦ μ j ^ s) {t x : ℝ} (ht : 0 < t)
@@ -799,7 +650,8 @@ private lemma levelSum_le_tsum_rpow_mul_indicator (hμ0 : ∀ j, 0 ≤ μ j) (h�
       ∑' j, μ j ^ (1 + t / x) * (if exp (-t) ≤ μ j ^ (t / x) then (1 : ℝ) else 0) ≤
         levelSum μ x := by
   have hε : 0 < t / x := div_pos ht hx
-  have hμt := tendsto_zero_of_summable_rpow hμ0 hsum
+  have hμt : Tendsto μ atTop (𝓝 0) := Nat.cofinite_eq_atTop ▸
+    tendsto_cofinite_zero_of_summable_rpow two_pos hμ0 (hsum 2 one_lt_two)
   have htx : t / (t / x) = x := by field_simp
   have hS1 : Summable fun j ↦ μ j ^ (1 + t / x) *
       (if exp (-t) ≤ μ j ^ (t / x) then (1 : ℝ) else 0) :=
@@ -932,8 +784,10 @@ theorem summable_rpow_of_sum_le_mul_log (hμ0 : ∀ j, 0 ≤ μ j) (hμ : Antito
       rw [← mul_rpow (by norm_num) hN1.le]
       exact rpow_le_rpow (by positivity) (by linarith) hη.le
     have key : ((N : ℝ) + 1) * μ N ≤ C * 2 ^ η / η * ((N : ℝ) + 1) ^ η := by
-      calc ((N : ℝ) + 1) * μ N ≤ C * log ((N : ℝ) + 2) :=
-            (mul_le_sum_range hμ le_rfl).trans (hC N)
+      calc ((N : ℝ) + 1) * μ N ≤ C * log ((N : ℝ) + 2) := by
+            refine le_trans ?_ (hC N)
+            simpa using card_nsmul_le_sum (range (N + 1)) μ (μ N) fun j hj ↦
+              hμ (Nat.lt_succ_iff.1 (mem_range.1 hj))
         _ ≤ C * (((N : ℝ) + 2) ^ η / η) := by gcongr; exact log_le_rpow_div (by positivity) hη
         _ ≤ C * (2 ^ η * ((N : ℝ) + 1) ^ η / η) := by gcongr
         _ = C * 2 ^ η / η * ((N : ℝ) + 1) ^ η := by ring
@@ -1020,7 +874,8 @@ theorem tendsto_sum_div_log_of_tendsto_sub_one_mul_tsum_rpow (hμ0 : ∀ j, 0 �
     rw [Pi.div_apply, tsum_congr fun j ↦ div_rpow (hμ0 j) hc.le s, tsum_div_const, mul_div_assoc]
   have hlev := tendsto_levelSum_of_tendsto_sub_one_mul_tsum_rpow hν0 hν1 hνa hνsum hνζ
   have hmean := (tendsto_sum_div_log_of_tendsto_levelSum hν0 hνa
-    (tendsto_zero_of_summable_rpow hν0 hνsum) hlev).const_mul c
+    (Nat.cofinite_eq_atTop ▸ tendsto_cofinite_zero_of_summable_rpow two_pos hν0
+      (hνsum 2 one_lt_two)) hlev).const_mul c
   rw [show c * (L / c) = L by field_simp] at hmean
   refine hmean.congr fun N ↦ ?_
   rw [← sum_div]

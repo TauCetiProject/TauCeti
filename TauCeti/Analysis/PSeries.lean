@@ -28,11 +28,16 @@ The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and th
 the shifted weights `(1 + |n|) ^ r` for `r < -1`, the form in which the `p`-series enters
 weighted sequence spaces.
 
+Conversely, a nonnegative family with a summable positive power `f ^ p` tends to `0` along the
+cofinite filter, since its terms are the `p`-th roots of a summable family.
+
 ## Main results
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
+* `TauCeti.tendsto_cofinite_zero_of_summable_rpow` — a nonnegative family with a summable positive
+  power tends to `0`.
 -/
 
 public section
@@ -79,6 +84,15 @@ theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
   rw [neg_neg, Real.norm_of_nonneg (by positivity)]
   exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
     (le_add_of_nonneg_left zero_le_one) (by linarith)
+
+/-- A nonnegative family `f` with `f ^ p` summable for some `0 < p` tends to `0` along the
+cofinite filter. -/
+theorem tendsto_cofinite_zero_of_summable_rpow {ι : Type*} {f : ι → ℝ} {p : ℝ} (hp : 0 < p)
+    (hf : ∀ i, 0 ≤ f i) (h : Summable fun i ↦ f i ^ p) :
+    Filter.Tendsto f Filter.cofinite (nhds 0) := by
+  have h' := h.tendsto_cofinite_zero.rpow_const (p := p⁻¹) (Or.inr (inv_nonneg.2 hp.le))
+  rw [Real.zero_rpow (inv_ne_zero hp.ne')] at h'
+  exact h'.congr fun i ↦ Real.rpow_rpow_inv (hf i) hp.ne'
 
 end TauCeti
 
