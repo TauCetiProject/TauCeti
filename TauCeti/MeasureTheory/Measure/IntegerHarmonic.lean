@@ -36,13 +36,11 @@ theorem eq_zero_of_eq_average_int_translates (μ : Measure ℤ) [IsFiniteMeasure
   have hmass (z : ℤ) :
       μ.real {z - 1} + μ.real {z + 1} = μ.real {z} + μ.real {z} := by
     have hp : (fun x : ℤ => x + 1) ⁻¹' {z} = {z - 1} := by
-      ext x
-      simp only [Set.mem_preimage, Set.mem_singleton_iff]
-      omega
+      simpa only [sub_eq_add_neg] using
+        (Set.preimage_add_right_singleton (a := (1 : ℤ)) (b := z))
     have hm : (fun x : ℤ => x - 1) ⁻¹' {z} = {z + 1} := by
-      ext x
-      simp only [Set.mem_preimage, Set.mem_singleton_iff]
-      omega
+      simpa only [sub_eq_add_neg, neg_neg] using
+        (Set.preimage_add_right_singleton (a := (-1 : ℤ)) (b := z))
     have h := congrArg (fun ν : Measure ℤ => ν.real {z}) hμ
     rw [measureReal_add_apply
       (by simp [ENNReal.mul_eq_top]) (by simp [ENNReal.mul_eq_top])] at h
