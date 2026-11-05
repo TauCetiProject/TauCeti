@@ -142,7 +142,7 @@ private theorem ofReal_kantorovichDualValue_le
   have hgb : BddBelow (range g) := ⟨-(‖φ‖ / κ), forall_mem_range.2 fun x ↦ (abs_le.1 (hgC x)).1⟩
   have hHi (t s : ℝ) (hs : 0 < s) :
       Integrable (fun x ↦ hopfLax (‖·‖ ^ p) g s x) (ν t : Measure E) :=
-    integrable_hopfLax_norm_rpow hp hgC hs _
+    integrable_hopfLax_norm_rpow (zero_lt_one.trans_le hp) hgC hs _
   -- For `0 < δ < T`, the dual value with `ν (b - δ)` in place of `ν b` is bounded by the action.
   have hstep {δ : ℝ} (hδ : 0 < δ) (hδT : δ < b - a) :
       ENNReal.ofReal ((∫ y, ψ y ∂(ν (b - δ) : Measure E) + ∫ x, φ x ∂(ν a : Measure E)) / κ) ≤
