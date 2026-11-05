@@ -251,8 +251,11 @@ theorem layerActivation_linear (d : Fin (L + 1) → ℕ) (i : Fin L) :
   unfold layerActivation
   split <;> rfl
 
-/-- The MLP specification whose hidden layer `j + 1` evaluates the polynomial `p j`. -/
-def polynomial [Semiring K] (d : Fin (L + 1) → ℕ) (p : Fin (L - 1) → Polynomial K) :
+/-- The MLP specification whose hidden layer `j + 1` evaluates the polynomial `p j`.
+
+The constructor is exposed so its widths compute in dependent parameter types, including
+comparisons of networks over different scalar types. -/
+@[expose] def polynomial [Semiring K] (d : Fin (L + 1) → ℕ) (p : Fin (L - 1) → Polynomial K) :
     MLPSpec K L where
   width := d
   activation j t := (p j).eval t
