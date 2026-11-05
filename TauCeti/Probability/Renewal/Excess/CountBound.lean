@@ -85,10 +85,10 @@ theorem measureReal_renewalExcess_le_le_renewalFunction_sub
   have := hindep.isProbabilityMeasure
   have hint (s : ℝ≥0) : Integrable (fun ω ↦ (renewalCountNat T s ω : ℝ)) P :=
     (integrable_toReal_renewalCount hT hindep hid hzero s).congr <| by
-      filter_upwards [ae_natCast_renewalCountNat hT hindep hid hzero] with ω hω
+      filter_upwards [ae_natCast_renewalCountNat hindep hid hzero] with ω hω
       rw [← hω s, ENNReal.toReal_natCast]
   simpa only [integral_renewalCountNat hT hindep hid hzero] using
     measureReal_renewalExcess_le_le_integral_sub hT
-      (ae_tendsto_arrival_atTop hT hindep hid hzero) t x (hint t) (hint (t + x))
+      (ae_tendsto_arrival_atTop hindep hid hzero) t x (hint t) (hint (t + x))
 
 end TauCeti.Probability
