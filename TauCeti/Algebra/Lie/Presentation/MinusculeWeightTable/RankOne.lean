@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Basic
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
 # Rank-one representations on a minuscule weight basis
@@ -34,6 +34,9 @@ carrier built on the table.
   on diagonal matrices.
 * `TauCeti.MinusculeWeightTable.sl2BlockSL_injective`: the representation is faithful as soon as
   the node has a weight of coordinate `-1`.
+* `TauCeti.MinusculeWeightTable.sl2BlockSL_diag2nUnit`: a unit diagonal acts by weight powers.
+* `TauCeti.MinusculeWeightTable.sl2BlockSL_mem_of_transvection_mem`: over a field, containment
+  of both transvection families implies containment of the whole rank-one image.
 
 ## References
 
@@ -200,5 +203,37 @@ theorem sl2BlockMatrix_diagonal (i : B) (d : Fin 2 → R) :
   rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb
   all_goals by_cases hab : a = b
   all_goals simp [sl2BlockMatrix_apply, Matrix.one_apply, hb, hab]
+
+/-- The determinant-one unit diagonal acts by the integer powers specified by the weights. -/
+@[simp]
+theorem sl2BlockSL_diag2nUnit (i : B) (u : Rˣ) :
+    T.sl2BlockSL i (Matrix.SpecialLinearGroup.diag2nUnit
+      (by decide : (0 : Fin 2) ≠ 1) u) = diagGL (fun a ↦ u ^ T.weight a i) := by
+  apply Units.ext
+  rw [T.coe_sl2BlockSL, Matrix.SpecialLinearGroup.diag2nUnit_coe,
+    T.sl2BlockMatrix_diagonal, diagGL_coe]
+  congr 1
+  funext a
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
+  all_goals simp [h]
+
+/-- Over a field, the block action lands in every subgroup containing the images of both
+upper and lower transvection families. -/
+theorem sl2BlockSL_mem_of_transvection_mem {K : Type*} [Field K] (i : B)
+    {H : Subgroup (GL ι K)}
+    (hu : ∀ t : K, T.sl2BlockSL i (Matrix.SpecialLinearGroup.transvection
+      (by decide : (0 : Fin 2) ≠ 1) t) ∈ H)
+    (hl : ∀ t : K, T.sl2BlockSL i (Matrix.SpecialLinearGroup.transvection
+      (by decide : (1 : Fin 2) ≠ 0) t) ∈ H)
+    (g : Matrix.SpecialLinearGroup (Fin 2) K) : T.sl2BlockSL i g ∈ H := by
+  -- The carrier-independent containment argument uses Mathlib's transvection generation of SL₂.
+  induction g using Matrix.SL2.transvection_induction with
+  | htransvec a b hab t =>
+    fin_cases a <;> fin_cases b
+    · exact (hab rfl).elim
+    · exact hu t
+    · exact hl t
+    · exact (hab rfl).elim
+  | hmul g h hg hh => simpa only [map_mul] using mul_mem hg hh
 
 end TauCeti.MinusculeWeightTable

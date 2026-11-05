@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
 # Rank-one maps into the tripled D₄ carrier
@@ -70,45 +69,27 @@ theorem sl2BlockSL_lower_transvection (i : Fin 4) (t : R) :
     coe_rootSubgroupPoints_inr, loweringMatrix_def, toAdd_ofAdd]
 
 /-- The diagonal block action is the numbered simple-coroot point over any commutative ring. -/
-@[simp]
+-- The general weight-table diagonal lemma already supplies the simp normal form.
 theorem sl2BlockSL_diag2nUnit (i : Fin 4) (u : Rˣ) :
     weightTable.sl2BlockSL i (Matrix.SpecialLinearGroup.diag2nUnit
       (by decide : (0 : Fin 2) ≠ 1) u) =
         (weightTorusPoints R (Pi.mulSingle i u) : GL (Fin 24) R) := by
   apply Units.ext
-  rw [weightTable.coe_sl2BlockSL, Matrix.SpecialLinearGroup.diag2nUnit_coe,
-    weightTable.sl2BlockMatrix_diagonal, coe_weightTorusPoints,
+  rw [weightTable.sl2BlockSL_diag2nUnit, coe_weightTorusPoints,
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  congr 1
-  funext a
-  rw [torusCharacter_mulSingle]
-  rcases weightTable.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
-  all_goals simp_all only [weightTable_weight]
-  all_goals simp
+  simp only [torusCharacter_mulSingle, weightTable_weight, diagGL_coe]
 
 variable (K : Type*) [Field K] (i : Fin 4)
 
-/- The containment and image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`,
-using Mathlib's `Matrix.SL2.transvection_induction`. -/
-private theorem sl2BlockSL_mem_of_rootSubgroupPoints_mem {H : Subgroup (GL (Fin 24) K)}
-    (hinl : ∀ t : K, (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t) : GL (Fin 24) K) ∈ H)
-    (hinr : ∀ t : K, (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t) : GL (Fin 24) K) ∈ H)
-    (g : SL(2, K)) : weightTable.sl2BlockSL i g ∈ H := by
-  induction g using Matrix.SL2.transvection_induction with
-  | htransvec a b hab t =>
-    fin_cases a <;> fin_cases b
-    · exact (hab rfl).elim
-    · rw [sl2BlockSL_upper_transvection]
-      exact hinl t
-    · rw [sl2BlockSL_lower_transvection]
-      exact hinr t
-    · exact (hab rfl).elim
-  | hmul g h hg hh => simpa only [map_mul] using mul_mem hg hh
-
-private theorem sl2BlockSL_mem_points (g : SL(2, K)) : weightTable.sl2BlockSL i g ∈ points K :=
-  sl2BlockSL_mem_of_rootSubgroupPoints_mem K i
-    (fun t ↦ (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t)).property)
-    (fun t ↦ (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t)).property) g
+/- The containment and image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`. -/
+private theorem sl2BlockSL_mem_points (g : SL(2, K)) : weightTable.sl2BlockSL i g ∈ points K := by
+  apply weightTable.sl2BlockSL_mem_of_transvection_mem i _ _ g
+  · intro t
+    rw [sl2BlockSL_upper_transvection]
+    exact (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t)).property
+  · intro t
+    rw [sl2BlockSL_lower_transvection]
+    exact (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t)).property
 
 /-- The rank-one homomorphism into the tripled carrier at the numbered simple node `i`.
 It acts by the defining two-dimensional representation on each weight string of length two
@@ -164,11 +145,13 @@ theorem range_rankOnePoints :
   · rintro _ ⟨g, rfl⟩
     rw [← Subgroup.mem_map_iff_mem (points K).subtype_injective,
       Subgroup.subtype_apply, coe_rankOnePoints]
-    apply sl2BlockSL_mem_of_rootSubgroupPoints_mem K i
+    apply weightTable.sl2BlockSL_mem_of_transvection_mem i
     · intro t
+      rw [sl2BlockSL_upper_transvection]
       exact Subgroup.mem_map.mpr ⟨_,
         Subgroup.subset_closure (Set.mem_union_left _ (Set.mem_range_self _)), rfl⟩
     · intro t
+      rw [sl2BlockSL_lower_transvection]
       exact Subgroup.mem_map.mpr ⟨_,
         Subgroup.subset_closure (Set.mem_union_right _ (Set.mem_range_self _)), rfl⟩
   · rw [Subgroup.closure_le]
