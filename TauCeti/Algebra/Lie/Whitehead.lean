@@ -71,12 +71,37 @@ variable {K : Type u} {L : Type v} {M : Type w} [Field K] [CharZero K]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
 
+namespace LieAlgebra.IsKilling
+
+omit [CharZero K] [FiniteDimensional K L] [FiniteDimensional K M] in
+/-- A Lie algebra with nondegenerate Killing form is finite-dimensional or trivial: in infinite
+dimension every trace vanishes, so the Killing form is zero, which is nondegenerate only on the
+zero algebra. -/
+theorem finite_of_isKilling : Module.Finite K L := by
+  by_contra hnf
+  have h0 (x y : L) : killingForm K L x y = 0 := by
+    have : ¬ ∃ s : Finset L, Nonempty (Module.Basis s K L) := by
+      rintro ⟨s, ⟨b⟩⟩
+      exact hnf (Module.Finite.of_basis b)
+    simp [LieModule.traceForm_apply_apply, LinearMap.trace, this]
+  have : Subsingleton L := by
+    refine ⟨fun a b ↦ ?_⟩
+    have h1 : a - b ∈ LinearMap.ker (killingForm K L) := by
+      rw [LinearMap.mem_ker]; ext y; simp [h0]
+    rw [ker_killingForm_eq_bot] at h1
+    exact sub_eq_zero.mp (by simpa using h1)
+  exact hnf inferInstance
+
+end LieAlgebra.IsKilling
+
 namespace LieDerivation.IsKilling
 
+omit [FiniteDimensional K L] in
 /-- **Whitehead's first lemma.** Over a field of characteristic zero, every Lie derivation from a
-finite-dimensional Lie algebra with nondegenerate Killing form into a finite-dimensional module is
-inner: it is `x ↦ ⁅x, m⁆` for some `m`. -/
+Lie algebra with nondegenerate Killing form (necessarily finite-dimensional) into a
+finite-dimensional module is inner: it is `x ↦ ⁅x, m⁆` for some `m`. -/
 theorem exists_eq_inner (D : LieDerivation K L M) : ∃ m : M, inner K L M m = D := by
+  have := LieAlgebra.IsKilling.finite_of_isKilling (K := K) (L := L)
   -- The proper Lie submodule `M × 0` of the module sheared by `D`, into which `L` carries
   -- everything.
   let e := LieDerivation.ShearedModule.ofProd D
@@ -99,9 +124,10 @@ end LieDerivation.IsKilling
 
 namespace LieModule.Cohomology
 
+omit [FiniteDimensional K L] in
 /-- **Whitehead's first lemma** for cochains: over a field of characteristic zero, a 1-cocycle of a
-finite-dimensional Lie algebra with nondegenerate Killing form with values in a finite-dimensional
-module is a coboundary, `f x = ⁅x, m⁆`. -/
+Lie algebra with nondegenerate Killing form (necessarily finite-dimensional) with values in a
+finite-dimensional module is a coboundary, `f x = ⁅x, m⁆`. -/
 theorem exists_eq_lie_of_d₁₂_eq_zero {f : oneCochain K L M} (hf : d₁₂ K L M f = 0) :
     ∃ m : M, ∀ x, f x = ⁅x, m⁆ := by
   obtain ⟨m, hm⟩ := LieDerivation.IsKilling.exists_eq_inner (.ofD₁₂EqZero f hf)
