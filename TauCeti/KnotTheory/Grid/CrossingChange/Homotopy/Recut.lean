@@ -58,6 +58,8 @@ of this file.
 * `TauCeti.GridDiagram.mem_crossingChangeUnpairedHexagonComposites_of_toRectangleDecomposition_eq`:
   a counted composite is unpaired as soon as the canonical recut of its underlying decomposition
   underlies no counted composite.
+* `TauCeti.GridDiagram.mem_crossingChangeUnpairedHexagonComposites_of_isRecut`: the same, for a
+  counted composite recutting a decomposition that underlies no counted composite.
 * `TauCeti.GridDiagram.sum_crossingChangeHexagonCompositeWeight_overlap_eq_sum_unpaired`: in
   characteristic two, the overlapping composites have the total weight of the unpaired ones.
 * `TauCeti.GridDiagram.unblockedDifferential_crossingChangeHomotopy_add_eq_iff_unpaired`: the
@@ -486,6 +488,25 @@ theorem mem_crossingChangeUnpairedHexagonComposites_of_toRectangleDecomposition_
     exact D.not_hasDisjointSides_of_hasOneCommonSide hone
   · rw [hFD] at hrec
     exact (D.existsUnique_isRecut hone hfirst hsecond).unique hrec (D.isRecut_recut _ _ _)
+
+/-- A counted composite is unpaired when its underlying decomposition is a recut of a
+decomposition with exactly one common side that underlies no counted composite. -/
+theorem mem_crossingChangeUnpairedHexagonComposites_of_isRecut {x z : GridState n}
+    {D : GridRectangleDecomposition x z} (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty)
+    (hsecond : D.second.IsEmpty)
+    (hD : ∀ E ∈ G.crossingChangeHexagonCompositeDecompositions C t x z,
+      E.toRectangleDecomposition ≠ D)
+    {F : GridHexagonCompositeDecomposition a C.turnRow t x z}
+    (hF : F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z)
+    (hFD : D.IsRecut F.toRectangleDecomposition) :
+    F ∈ G.crossingChangeUnpairedHexagonComposites C t x z := by
+  have hFone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut
+    (hFD.symm hone hfirst hsecond) (D.target_ne_source_of_hasOneCommonSide hone)
+  refine mem_crossingChangeUnpairedHexagonComposites_of_toRectangleDecomposition_eq hFone
+    hFD.isEmpty_first hFD.isEmpty_second (fun E hE hED => hD E hE ?_) hF rfl
+  exact hED.trans ((F.toRectangleDecomposition.existsUnique_isRecut hFone hFD.isEmpty_first
+    hFD.isEmpty_second).unique (F.toRectangleDecomposition.isRecut_recut _ _ _)
+    (hFD.symm hone hfirst hsecond))
 
 /-- If the annulus squares carry no `X`-marking, a counted composite whose underlying
 decomposition has exactly one common side, and whose recut underlies no counted composite, is the
