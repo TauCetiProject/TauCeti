@@ -49,20 +49,7 @@ theorem map_surjective (f : S →ₐ[O] T) (hf : Function.Surjective f) :
   choose x hx using fun i : t ↦ hf (i : T)
   intro z
   obtain ⟨c, P, hP, hz⟩ := (mem_weakCompletion_iff π ht').mp z.property
-  let I : Ideal S := Ideal.span {algebraMap O S π}
-  let a : ℕ → S := fun k ↦ ∑ j ∈ range k, algebraMap O S π ^ j * aeval x (P j)
-  have ha : ∀ k, a k ≡ a (k + 1) [SMOD (I ^ k • ⊤ : Submodule S S)] := by
-    intro k
-    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
-    have hterm : algebraMap O S π ^ k * aeval x (P k) ∈ I ^ k :=
-      (I ^ k).mul_mem_right _ (Ideal.pow_mem_pow (Ideal.subset_span rfl) k)
-    simpa only [a, sum_range_succ, sub_add_eq_sub_sub, sub_self, zero_sub] using
-      (I ^ k).neg_mem hterm
-  let w : piAdicCompletion π S :=
-    AdicCompletion.mk I S (AdicCompletion.AdicCauchySequence.mk I S a ha)
-  have hw : ∀ k, AdicCompletion.evalₐ I k w = Ideal.Quotient.mk (I ^ k) (a k) := by
-    intro k
-    exact AdicCompletion.evalₐ_mk I k _
+  obtain ⟨w, hwset, hw⟩ := exists_mem_weakCompletionSet_of_degree_le π x P hP
   have hwmem : w ∈ weakCompletion π S := by
     obtain ⟨s, hs⟩ := Algebra.FiniteType.out (R := O) (A := S)
     have hs' : Algebra.adjoin O (Set.range ((↑) : s → S)) = ⊤ := by
@@ -70,13 +57,13 @@ theorem map_surjective (f : S →ₐ[O] T) (hf : Function.Surjective f) :
     rw [← SetLike.mem_coe, coe_weakCompletion π _ hs']
     apply weakCompletionSet_subset_of_forall_mem_adjoin (x := x)
       (fun _ ↦ hs'.symm ▸ Algebra.mem_top)
-    exact mem_weakCompletionSet_iff.mpr ⟨c, P, hP, hw⟩
+    exact hwset
   refine ⟨⟨w, hwmem⟩, Subtype.ext ?_⟩
   apply AdicCompletion.ext_evalₐ
   intro k
   rw [coe_map, AdicCompletion.evalₐ_mapₐ, hw, Ideal.quotientMap_mk, hz]
   congr 1
-  simp only [a, map_sum, map_mul, map_pow, AlgHom.toRingHom_eq_coe,
+  simp only [map_sum, map_mul, map_pow, AlgHom.toRingHom_eq_coe,
     AlgHom.coe_toRingHom, f.commutes, comp_aeval_apply, hx]
 
 /-- Every finite polynomial generating family gives a surjection from the weak completion
