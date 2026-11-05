@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
+import TauCeti.LinearAlgebra.Basis.Algebra
+import TauCeti.RingTheory.TensorProduct.Free
 
 /-!
 # Coefficient change of the completed group algebra
@@ -210,62 +211,31 @@ private theorem coeff_proj_mapCoord (φ : O →ₗ[R] R)
   simp [mapCoord]
 
 @[simp]
-private theorem mapCoord_algebraMap_smul (φ : O →ₗ[R] R) (r : R)
-    (y : completedGroupAlgebra O Γ) :
-    mapCoord R O Γ φ (algebraMap R O r • y) = r • mapCoord R O Γ φ y :=
-  ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
-    simp
-
-@[simp]
 private theorem mapCoord_smul_mapRingHom (φ : O →ₗ[R] R) (a : O)
     (x : completedGroupAlgebra R Γ) :
     mapCoord R O Γ φ (a • mapRingHom Γ (algebraMap R O) x) = φ a • x :=
   ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
-    simp only [coeff_proj_mapCoord, map_smul, MonoidAlgebra.coeff_smul_apply,
-      coeff_proj_mapRingHom, smul_eq_mul]
-    rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
-
-/-- Decompose `O[[Γ]]` into coordinates along a finite `R`-basis of `O`. -/
-private def coordEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R O) :
-    completedGroupAlgebra O Γ ≃ (ι → completedGroupAlgebra R Γ) where
-  toFun y i := mapCoord R O Γ (b.coord i) y
-  invFun f := ∑ i, b i • mapRingHom Γ (algebraMap R O) (f i)
-  left_inv y := ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
-    simp only [map_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, map_smul,
-      MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom, coeff_proj_mapCoord, smul_eq_mul]
-    simp_rw [← Algebra.commutes, ← Algebra.smul_def, Module.Basis.coord_apply]
-    exact b.sum_repr _
-  right_inv f := funext fun j ↦ by
-    simp [map_sum, Module.Basis.coord_apply, b.repr_self, Finsupp.single_apply]
+    simp [LinearMap.map_mul_algebraMap, smul_eq_mul]
 
 variable [Module.Free R O] [Module.Finite R O]
 
 /-- **Finite free base change of the completed group algebra is bijective.** When `O` is finite
 and free as an `R`-module, `baseChange R O Γ : O ⊗[R] R[[Γ]] →ₐ[O] O[[Γ]]` is bijective. -/
 theorem baseChange_bijective : Function.Bijective (baseChange R O Γ) := by
-  classical
   let _ : Algebra R (completedGroupAlgebra O Γ) := Algebra.restrictScalars R O _
   let _ : IsScalarTower R O (completedGroupAlgebra O Γ) := IsScalarTower.restrictScalars R O _
-  let ι := Module.Free.ChooseBasisIndex R O
-  let b : Module.Basis ι R O := Module.Free.chooseBasis R O
-  let e₁ : O ⊗[R] completedGroupAlgebra R Γ ≃ₗ[R] (ι → completedGroupAlgebra R Γ) :=
-    (TensorProduct.equivFinsuppOfBasisLeft b).trans
-      (Finsupp.linearEquivFunOnFinite R (completedGroupAlgebra R Γ) ι)
-  let e₂ : completedGroupAlgebra O Γ ≃ₗ[R] (ι → completedGroupAlgebra R Γ) :=
-    { coordEquiv R O Γ b with
-      map_add' x y := funext fun i ↦ map_add (mapCoord R O Γ (b.coord i)) x y
-      map_smul' r x := funext fun i ↦ by
-        dsimp only [coordEquiv, Equiv.toFun_as_coe, Equiv.coe_fn_mk, Pi.smul_apply,
-          RingHom.id_apply]
-        rw [← IsScalarTower.algebraMap_smul O r x, mapCoord_algebraMap_smul] }
-  have hcomm : e₂.toLinearMap.comp ((baseChange R O Γ).toLinearMap.restrictScalars R) =
-      e₁.toLinearMap :=
-    TensorProduct.ext' fun a x ↦ funext fun i ↦ by
-      simp [e₁, e₂, coordEquiv, Module.Basis.coord_apply]
-  have hfun : (baseChange R O Γ : O ⊗[R] completedGroupAlgebra R Γ → _) =
-      ⇑(e₁.trans e₂.symm) := funext fun z ↦
-    e₂.eq_symm_apply.mpr (LinearMap.congr_fun hcomm z)
-  exact hfun ▸ (e₁.trans e₂.symm).bijective
+  let b := Module.Free.chooseBasis R O
+  let j : completedGroupAlgebra R Γ →ₗ[R] completedGroupAlgebra O Γ :=
+    { toFun := mapRingHom Γ (algebraMap R O)
+      map_add' := map_add _
+      map_smul' r x := by rw [RingHom.id_apply, mapRingHom_smul, IsScalarTower.algebraMap_smul] }
+  have hbase : (baseChange R O Γ).toLinearMap = j.liftBaseChange O :=
+    (LinearMap.liftBaseChangeEquiv O).symm.injective <| LinearMap.ext fun x ↦ by simp [j]
+  rw [← AlgHom.coe_toLinearMap, hbase]
+  refine j.liftBaseChange_bijective_of_basis_coord b (fun i ↦ mapCoord R O Γ (b.coord i))
+    (fun i ↦ mapCoord_smul_mapRingHom R O Γ (b.coord i)) fun y ↦ ?_
+  exact ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
+    simpa [j, smul_eq_mul] using b.sum_mul_algebraMap_coord ((proj O Γ U y).coeff g)
 
 /-- **Finite free base change of the completed group algebra.** When `O` is finite and free as an
 `R`-module, `O ⊗[R] R[[Γ]]` is canonically isomorphic as an `O`-algebra to `O[[Γ]]`. -/

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.Topology.Algebra.Algebra
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.ContinuousMap.Algebra
+import TauCeti.LinearAlgebra.Basis.Algebra
 
 /-!
 # Coordinate decompositions of continuous maps under the module topology
@@ -124,10 +125,8 @@ decomposes along a finite `R`-basis of `A` into continuous `R`-valued coordinate
 theorem eq_sum_smul_algebraMap_comp_coordCLM (F : C(X, A)) (b : Module.Basis ι R A) :
     F = ∑ i, b i • (⟨algebraMap R A, continuous_algebraMap R A⟩ : C(R, A)).comp
       ((b.coordCLM i : C(A, R)).comp F) := by
-  conv_lhs => rw [F.eq_sum_coordCLM_comp_smul_const b]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
   ext x
-  simp [ContinuousMap.smul_apply', Algebra.smul_def, Algebra.commutes]
+  simpa [ContinuousMap.smul_apply'] using (b.sum_mul_algebraMap_coord (F x)).symm
 
 end Algebra
 

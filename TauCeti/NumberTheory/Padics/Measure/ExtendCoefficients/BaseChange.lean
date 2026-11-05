@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
-public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.NumberTheory.Padics.Measure.Basic
 public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Algebra
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.BaseChange
@@ -16,6 +15,8 @@ public import TauCeti.Topology.Algebra.Module.AutomaticContinuity
 public import TauCeti.Topology.ContinuousMap.ModuleTopology
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.NumberTheory.Padics.ProperSpace
+import TauCeti.LinearAlgebra.Basis.Algebra
+import TauCeti.RingTheory.TensorProduct.Free
 
 /-!
 # Finite-free base change of measures and the completed group algebra
@@ -67,8 +68,6 @@ homeomorphism from the weak topology on `D(Γ, O)` to the inverse-limit topology
   `AbstractMeasure.eq_extendCoefficients_of_baseChange_tmul`: compatibility of unit-ball
   coefficient extension with finite-free base change on pure tensors, which uniquely determines the
   extension on all `O`-valued measures.
-* `AbstractMeasure.exists_baseChange_algEquiv`: existence of the `O`-algebra base-change
-  isomorphism over `ℤ_[p]` sending `a ⊗ δ_x` to `a • δ_x` under `ContinuousSMul ℤ_[p] O`.
 * `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_finiteFree`,
   `AbstractMeasure.compactSpace_measures_weak_of_finiteFree`,
   `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_finiteFree`,
@@ -140,15 +139,7 @@ private def scalarExtendAux (μ : D(X, R)) : D(X, O) :=
           Finset.mul_sum]
         rw [Finset.sum_comm]
         refine Finset.sum_congr rfl fun j _ ↦ ?_
-        calc ∑ i, b i * (algebraMap R O (b.coord i (c * b j)) *
-                algebraMap R O (μ ((b.coordCLM j : C(O, R)).comp F)))
-            = (∑ i, b.repr (c * b j) i • b i) *
-                algebraMap R O (μ ((b.coordCLM j : C(O, R)).comp F)) := by
-              rw [Finset.sum_mul]
-              refine Finset.sum_congr rfl fun i _ ↦ ?_
-              rw [Module.Basis.coord_apply, Algebra.smul_def, mul_assoc, mul_left_comm]
-          _ = c * (b j * algebraMap R O (μ ((b.coordCLM j : C(O, R)).comp F))) := by
-              rw [b.sum_repr (c * b j), mul_assoc] }
+        simp_rw [← mul_assoc, ← Finset.sum_mul, b.sum_mul_algebraMap_coord] }
   have hL : Continuous L := continuous_finsetSum _ fun i _ ↦
     continuous_const.mul ((continuous_algebraMap R O).comp
       (μ.continuous.comp (ContinuousMap.continuous_postcomp (b.coordCLM i : C(O, R)))))
@@ -157,15 +148,10 @@ private def scalarExtendAux (μ : D(X, R)) : D(X, O) :=
 private theorem scalarExtendAux_apply_comp (μ : D(X, R)) (f : C(X, R)) :
     scalarExtendAux R O μ ((⟨algebraMap R O, continuous_algebraMap R O⟩ : C(R, O)).comp f) =
       algebraMap R O (μ f) := by
-  let b := Module.Free.chooseBasis R O
   simp only [scalarExtendAux, coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', LinearMap.coe_mk,
     AddHom.coe_mk, coordCLM_comp_algebraMap_comp, map_smul, smul_eq_mul, map_mul]
-  calc _ = (∑ i, b.repr 1 i • b i) * algebraMap R O (μ f) := by
-        rw [Finset.sum_mul]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [Module.Basis.coord_apply, Algebra.smul_def, mul_assoc, mul_left_comm]
-    _ = algebraMap R O (μ f) := by
-        rw [b.sum_repr 1, one_mul]
+  simp_rw [← mul_assoc, ← Finset.sum_mul,
+    (Module.Free.chooseBasis R O).sum_mul_algebraMap_coord, one_mul]
 
 /-- **Scalar extension of measures.** When `O` is finite and free over `R` and carries the
 `R`-module topology, every `R`-valued measure `μ ∈ D(X, R)` extends uniquely to an `O`-valued
@@ -233,12 +219,6 @@ end ScalarExtend
 
 section BaseChangeLinear
 
-private theorem finset_sum_apply {ι M : Type*} [CommRing M] [TopologicalSpace M]
-    [IsTopologicalRing M] (s : Finset ι) (ν : ι → D(X, M)) (F : C(X, M)) :
-    (∑ i ∈ s, ν i) F = ∑ i ∈ s, ν i F := by
-  rw [← coe_toCLMEquiv, map_sum, _root_.sum_apply]
-  simp only [coe_toCLMEquiv]
-
 /-- Apply an `R`-linear functional `φ : O →ₗ[R] R` (automatically continuous under
 `IsModuleTopology R O`) to the values of an `O`-valued measure on `R`-valued tests. -/
 private def mapCoord (φ : O →ₗ[R] R) : D(X, O) →+ D(X, R) where
@@ -273,86 +253,42 @@ private theorem mapCoord_apply (φ : O →ₗ[R] R) (ν : D(X, O)) (f : C(X, R))
       φ (ν ((⟨algebraMap R O, continuous_algebraMap R O⟩ : C(R, O)).comp f)) := by
   simp [mapCoord]
 
-@[simp]
-private theorem mapCoord_algebraMap_smul (φ : O →ₗ[R] R) (r : R) (ν : D(X, O)) :
-    mapCoord R O φ (algebraMap R O r • ν) = r • mapCoord R O φ ν :=
-  ext fun f ↦ by
-    simp only [mapCoord_apply, _root_.smul_apply, smul_eq_mul, ← Algebra.smul_def, map_smul]
-
 variable [Module.Free R O] [Module.Finite R O]
 
 @[simp]
 private theorem mapCoord_smul_scalarExtend (φ : O →ₗ[R] R) (a : O) (μ : D(X, R)) :
     mapCoord R O φ (a • scalarExtend R O μ) = φ a • μ :=
   ext fun f ↦ by
-    simp only [mapCoord_apply, _root_.smul_apply, scalarExtend_apply_comp, smul_eq_mul]
-    rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+    simp [LinearMap.map_mul_algebraMap, smul_eq_mul]
 
-/-- Decompose `D(X, O)` into `R`-valued coordinate measures along a finite `R`-basis of `O`. -/
-private def coordMeasureEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R O) :
-    D(X, O) ≃ (ι → D(X, R)) where
-  toFun ν i := mapCoord R O (b.coord i) ν
-  invFun c := ∑ i, b i • scalarExtend R O (c i)
-  left_inv ν := ext_of_apply_comp R O fun f ↦ by
-    simp only [finset_sum_apply, _root_.smul_apply, scalarExtend_apply_comp, smul_eq_mul,
-      mapCoord_apply]
-    simp_rw [← Algebra.commutes, ← Algebra.smul_def, Module.Basis.coord_apply]
-    exact b.sum_repr _
-  right_inv c := funext fun j ↦ by
-    have h0 (i : ι) : (0 : R) • c i = 0 := zero_smul R (c i)
-    simp [map_sum, Module.Basis.coord_apply, b.repr_self, Finsupp.single_apply, h0]
-
-/-- The canonical `O`-linear map `O ⊗[R] D(X, R) →ₗ[O] D(X, O)` induced by `scalarExtend R O`. -/
-private def baseChangeLinearMap : O ⊗[R] D(X, R) →ₗ[O] D(X, O) :=
-  letI : Module R D(X, O) := Module.compHom D(X, O) (algebraMap R O)
-  letI : IsScalarTower R O D(X, O) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  let l : D(X, R) →ₗ[R] D(X, O) :=
-    { toFun := scalarExtend R O
-      map_add' := map_add (scalarExtend R O)
-      map_smul' r μ := map_smulₛₗ (scalarExtend R O) r μ }
-  LinearMap.liftBaseChange O l
-
-private theorem baseChangeLinearMap_tmul (a : O) (μ : D(X, R)) :
-    baseChangeLinearMap R O (a ⊗ₜ[R] μ) = a • scalarExtend R O μ :=
-  (rfl)
-
-private theorem baseChangeLinearMap_bijective :
-    Function.Bijective (baseChangeLinearMap (X := X) R O) := by
-  classical
-  let _ : Module R D(X, O) := Module.compHom D(X, O) (algebraMap R O)
-  let _ : IsScalarTower R O D(X, O) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  let ι := Module.Free.ChooseBasisIndex R O
-  let b : Module.Basis ι R O := Module.Free.chooseBasis R O
-  let e₁ : O ⊗[R] D(X, R) ≃ₗ[R] (ι → D(X, R)) :=
-    (TensorProduct.equivFinsuppOfBasisLeft b).trans
-      (Finsupp.linearEquivFunOnFinite R D(X, R) ι)
-  let e₂ : D(X, O) ≃ₗ[R] (ι → D(X, R)) :=
-    { coordMeasureEquiv R O b with
-      map_add' ν₁ ν₂ := funext fun i ↦ map_add (mapCoord R O (b.coord i)) ν₁ ν₂
-      map_smul' r ν := funext fun i ↦ by
-        dsimp only [coordMeasureEquiv, Equiv.toFun_as_coe, Equiv.coe_fn_mk, Pi.smul_apply,
-          RingHom.id_apply]
-        rw [← IsScalarTower.algebraMap_smul O r ν, mapCoord_algebraMap_smul] }
-  have hcomm : e₂.toLinearMap.comp ((baseChangeLinearMap R O).restrictScalars R) =
-      e₁.toLinearMap :=
-    TensorProduct.ext' fun a μ ↦ funext fun i ↦ by
-      simp [e₁, e₂, coordMeasureEquiv, baseChangeLinearMap_tmul, Module.Basis.coord_apply]
-  have hfun : (baseChangeLinearMap (X := X) R O : O ⊗[R] D(X, R) → D(X, O)) =
-      ⇑(e₁.trans e₂.symm) := funext fun z ↦
-    e₂.eq_symm_apply.mpr (LinearMap.congr_fun hcomm z)
-  exact hfun ▸ (e₁.trans e₂.symm).bijective
+private theorem sum_smul_scalarExtend_mapCoord {ι : Type*} [Fintype ι] (b : Module.Basis ι R O)
+    (ν : D(X, O)) :
+    ∑ i, b i • scalarExtend R O (mapCoord R O (b.coord i) ν) = ν :=
+  ext_of_apply_comp R O fun f ↦ by
+    simpa [smul_eq_mul] using b.sum_mul_algebraMap_coord _
 
 /-- **Finite-free base change of measures.** When `O` is finite and free as an `R`-module and
 carries the `R`-module topology, `O ⊗[R] D(X, R)` is canonically isomorphic as an `O`-module to
 `D(X, O)`, sending `a ⊗ μ` to `a • scalarExtend R O μ`. -/
 def baseChange : O ⊗[R] D(X, R) ≃ₗ[O] D(X, O) :=
-  LinearEquiv.ofBijective (baseChangeLinearMap R O) (baseChangeLinearMap_bijective R O)
+  letI : Module R D(X, O) := Module.compHom D(X, O) (algebraMap R O)
+  letI : IsScalarTower R O D(X, O) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let b := Module.Free.chooseBasis R O
+  let l : D(X, R) →ₗ[R] D(X, O) :=
+    { toFun := scalarExtend R O
+      map_add' := map_add (scalarExtend R O)
+      map_smul' r μ := map_smulₛₗ (scalarExtend R O) r μ }
+  (IsBaseChange.of_basis_coord l b (fun i ↦ mapCoord R O (b.coord i))
+    (fun i ↦ mapCoord_smul_scalarExtend R O (b.coord i))
+    (sum_smul_scalarExtend_mapCoord R O b)).equiv
 
 /-- On a pure tensor `a ⊗ μ`, `baseChange R O` scales `scalarExtend R O μ` by `a`. -/
 @[simp]
 theorem baseChange_tmul (a : O) (μ : D(X, R)) :
-    baseChange R O (a ⊗ₜ[R] μ) = a • scalarExtend R O μ :=
-  (rfl)
+    baseChange R O (a ⊗ₜ[R] μ) = a • scalarExtend R O μ := by
+  let _ : Module R D(X, O) := Module.compHom D(X, O) (algebraMap R O)
+  let _ : IsScalarTower R O D(X, O) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  exact IsBaseChange.equiv_tmul _ a μ
 
 /-- `baseChange R O` sends `a ⊗ dirac R x` to `a • dirac O x`. -/
 theorem baseChange_tmul_dirac (a : O) (x : X) :
@@ -578,24 +514,6 @@ end WeakContinuity
 
 section PadicInt
 
-section LocallyCompactMonoid
-
-variable {p : ℕ} [Fact p.Prime]
-  {G : Type*} [TopologicalSpace G] [Monoid G] [ContinuousMul G] [LocallyCompactSpace G]
-
-/-- Over `ℤ_[p]`, any finite free Hausdorff topological `ℤ_[p]`-algebra `O` with a continuous
-`ℤ_[p]`-action admits an `O`-algebra isomorphism `O ⊗[ℤ_[p]] D(G, ℤ_[p]) ≃ₐ[O] D(G, O)` sending
-`a ⊗ dirac ℤ_[p] x` to `a • dirac O x`. -/
-theorem exists_baseChange_algEquiv (O : Type*) [CommRing O] [TopologicalSpace O]
-    [IsTopologicalRing O] [T2Space O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    ∃ e : O ⊗[ℤ_[p]] D(G, ℤ_[p]) ≃ₐ[O] D(G, O),
-      ∀ (a : O) (x : G), e (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x) = a • dirac O x := by
-  have : IsModuleTopology ℤ_[p] O := TauCeti.isModuleTopology_of_finite_of_compactSpace
-  exact ⟨baseChangeAlgEquiv ℤ_[p] O, fun a x ↦ by simp⟩
-
-end LocallyCompactMonoid
-
 section ProfiniteGroup
 
 variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ]
@@ -662,26 +580,24 @@ a finite free normed `ℤ_[p]`-algebra `O` with continuous `ℤ_[p]`-action is c
 topology. -/
 theorem compactSpace_measures_weak_of_finiteFree :
     @CompactSpace D(Γ, O) (WeakTopology (X := Γ) (R := O) (E := O)) := by
-  classical
   have : IsModuleTopology ℤ_[p] O := TauCeti.isModuleTopology_of_finite_of_compactSpace
   let _ : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
   let _ : TopologicalSpace D(Γ, O) := WeakTopology
   have : CompactSpace D(Γ, ℤ_[p]) := compactSpace_integralMeasures_weak
-  let ι := Module.Free.ChooseBasisIndex ℤ_[p] O
-  let _ : Fintype ι := Module.Free.ChooseBasisIndex.fintype ℤ_[p] O
-  let b : Module.Basis ι ℤ_[p] O := Module.Free.chooseBasis ℤ_[p] O
-  let Φ : (ι → D(Γ, ℤ_[p])) → D(Γ, O) := fun c ↦ ∑ i, b i • scalarExtend ℤ_[p] O (c i)
+  let b := Module.Free.chooseBasis ℤ_[p] O
+  let Φ : (Module.Free.ChooseBasisIndex ℤ_[p] O → D(Γ, ℤ_[p])) → D(Γ, O) :=
+    fun c ↦ ∑ i, b i • scalarExtend ℤ_[p] O (c i)
   have hΦ_cont : Continuous Φ := by
     refine continuous_induced_rng.mpr (continuous_pi fun F ↦ ?_)
-    have hΦF (c : ι → D(Γ, ℤ_[p])) :
+    have hΦF (c : Module.Free.ChooseBasisIndex ℤ_[p] O → D(Γ, ℤ_[p])) :
         Φ c F = ∑ i, b i * scalarExtend ℤ_[p] O (c i) F := by
-      simp only [Φ, finset_sum_apply, _root_.smul_apply, smul_eq_mul]
+      simp only [Φ, _root_.sum_apply, _root_.smul_apply, smul_eq_mul]
     simp_rw [Function.comp_def, hΦF]
     refine continuous_finsetSum _ fun i _ ↦ continuous_const.mul ?_
     exact ((continuous_apply F).comp continuous_induced_dom).comp
       ((continuous_scalarExtend_weak ℤ_[p] O).comp (continuous_apply i))
   have hΦ_surj : Function.Surjective Φ :=
-    fun ν ↦ ⟨coordMeasureEquiv ℤ_[p] O b ν, (coordMeasureEquiv ℤ_[p] O b).symm_apply_apply ν⟩
+    fun ν ↦ ⟨fun i ↦ mapCoord ℤ_[p] O (b.coord i) ν, sum_smul_scalarExtend_mapCoord ℤ_[p] O b ν⟩
   exact hΦ_surj.compactSpace hΦ_cont
 
 /-- **The completed group algebra comparison is a weak homeomorphism.** For a profinite group `Γ`
