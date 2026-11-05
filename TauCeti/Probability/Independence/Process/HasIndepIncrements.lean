@@ -23,7 +23,10 @@ using telescoping sums, and Mathlib's independence-of-processes theorem extends 
 to the generated sigma-algebras.
 
 The extension from finite vectors uses Mathlib's `IndepFun.process_indepFun`; equality of
-path laws uses `isProjectiveLimit_map` and uniqueness of projective limits.
+path laws uses `HasIndepIncrements.identDistrib_finset`, `isProjectiveLimit_map` and uniqueness
+of projective limits. `HasIndepIncrements.shift` preserves independent increments, and
+`HasIndepIncrements.identDistrib_shift` gives the path law of a centered deterministic shift
+under fixed-shift stationarity of increment laws.
 -/
 
 public section
@@ -31,6 +34,23 @@ public section
 open MeasureTheory Set Finset
 
 namespace ProbabilityTheory
+
+/-- A process with independent increments is defined over a probability measure when the
+index type is nonempty. -/
+theorem HasIndepIncrements.isProbabilityMeasure {T Ω E : Type*} [Preorder T] [Nonempty T]
+    [MeasurableSpace Ω] [MeasurableSpace E] [Sub E] {P : Measure Ω} {X : T → Ω → E}
+    (hX : HasIndepIncrements X P) : IsProbabilityMeasure P :=
+  (hX 0 (fun _ ↦ Classical.arbitrary T) monotone_const).isProbabilityMeasure
+
+/-- Shifting time and subtracting the value at the shift preserves independent increments. -/
+theorem HasIndepIncrements.shift {T Ω E : Type*} [Preorder T] [Add T] [AddLeftMono T]
+    [MeasurableSpace Ω] [MeasurableSpace E] [AddGroup E]
+    {P : Measure Ω} {X : T → Ω → E} (hX : HasIndepIncrements X P) (t : T) :
+    HasIndepIncrements (fun s ω ↦ X (t + s) ω - X t ω) P := by
+  intro n u hu
+  have h := hX n (fun i ↦ t + u i) (fun i j hij ↦ add_le_add_right (hu hij) t)
+  refine h.congr fun i ↦ ae_of_all _ fun ω ↦ ?_
+  exact (sub_sub_sub_cancel_right _ _ _).symm
 
 variable {T Ω E : Type*} [LinearOrder T] [OrderBot T] [MeasurableSpace Ω]
   [MeasurableSpace E] [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
@@ -53,20 +73,16 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
     · simp [τ, hn]
     by_cases hnI : n ≤ I.card
     · by_cases hnI' : n + 1 ≤ I.card
-      · simp only [τ, dite_eq_right hn, dite_eq_left hnI, dite_eq_right (by omega : n + 1 ≠ 0),
-          dite_eq_left hnI']
-        exact I.orderEmbOfFin rfl |>.monotone (by simp only [Fin.le_iff_val_le_val]; omega)
+      · simp [τ, hn, hnI, hnI']
       · have hncard : n = I.card := by omega
-        simp only [τ, dite_eq_right hn, dite_eq_left hnI, dite_eq_right (by omega : n + 1 ≠ 0),
-          dite_eq_right hnI', ite_eq_left (by omega : n + 1 = I.card + 1)]
-        exact hI _ (I.orderEmbOfFin_mem rfl _)
+        have hcard : I.card ≠ 0 := by omega
+        simpa [τ, hncard, hcard] using
+          hI _ (I.orderEmbOfFin_mem rfl ⟨n - 1, by omega⟩)
     · by_cases hncard : n = I.card + 1
       · simp [τ, hncard, hst]
-      · have hnI' : ¬n + 1 ≤ I.card := by omega
-        have hncard' : n + 1 ≠ I.card + 1 := by omega
-        simp only [τ, dite_eq_right hn, dite_eq_right hnI, ite_eq_right hncard,
-          dite_eq_right (Nat.succ_ne_zero n), dite_eq_right hnI', ite_eq_right hncard',
-          le_refl]
+      · have hnlt : ¬n < I.card := by omega
+        have hne : n ≠ I.card := by omega
+        simp [τ, hn, hnI, hncard, hnlt, hne]
   let D : ℕ → Ω → E := fun n ω ↦ X (τ (n + 1)) ω - X (τ n) ω
   have hD := hX.nat hτ
   -- Separate the adjacent increments generating the past from the last increment.
@@ -107,7 +123,7 @@ theorem HasIndepIncrements.indepFun_past_sub (hX : HasIndepIncrements X P)
     {s t : T} (hst : s ≤ t) :
     IndepFun (fun ω (u : Iic s) ↦ X u ω) (fun ω ↦ X t ω - X s ω) P := by
   classical
-  have : IsProbabilityMeasure P := (hX 0 (fun _ ↦ ⊥) monotone_const).isProbabilityMeasure
+  have : IsProbabilityMeasure P := hX.isProbabilityMeasure
   refine IndepFun.process_indepFun (fun u ↦ hm u) ((hm t).sub (hm s)) fun I ↦ ?_
   let J : Finset T := I.image Subtype.val
   have hj : ∀ i ∈ J, i ≤ s := by
@@ -118,6 +134,66 @@ theorem HasIndepIncrements.indepFun_past_sub (hX : HasIndepIncrements X P)
   exact h.comp (Measurable.of_eval fun (i : I) ↦ measurable_pi_apply
     ⟨i.val.val, Finset.mem_image.mpr ⟨i.val, i.property, rfl⟩⟩) measurable_id
 
+private theorem HasIndepIncrements.indepFun_future_past_insert
+    (hX : HasIndepIncrements X P) (hm : ∀ t, Measurable (X t))
+    (h0 : ∀ᵐ ω ∂P, X ⊥ ω = 0) (s : T) (J : Finset (Ici s)) (hJ : J.Nonempty)
+    (a : Ici s) (haJ : ∀ b ∈ J, b < a)
+    (ih : IndepFun (fun ω (i : J) ↦ X i.val ω - X s ω)
+      (fun ω (u : Iic s) ↦ X u ω) P) :
+    IndepFun (fun ω (i : ↥(insert a J)) ↦ X i.val ω - X s ω)
+      (fun ω (u : Iic s) ↦ X u ω) P := by
+  classical
+  have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  let u : Ici s := J.max' hJ
+  have huJ : u ∈ J := J.max'_mem hJ
+  have hua : u ≤ a := (haJ u huJ).le
+  let A : Ω → J → E := fun ω i ↦ X i.val ω - X s ω
+  let H : Ω → (Iic s) → E := fun ω i ↦ X i ω
+  let K : Ω → (Iic (u : T)) → E := fun ω i ↦ X i ω
+  let B : Ω → E := fun ω ↦ X a ω - X u ω
+  have hcoord (v : T) (hv : v ≤ u) :
+      Measurable[MeasurableSpace.comap K inferInstance] (X v) :=
+    (measurable_pi_apply (⟨v, hv⟩ : Iic (u : T))).comp (comap_measurable K)
+  have hAK : MeasurableSpace.comap A inferInstance ≤
+      MeasurableSpace.comap K inferInstance := by
+    let : MeasurableSpace Ω := MeasurableSpace.comap K inferInstance
+    apply Measurable.comap_le
+    exact Measurable.of_eval fun (i : J) ↦
+      (hcoord i.val (J.le_max' i.val i.property)).sub (hcoord s u.property)
+  have hHK : MeasurableSpace.comap H inferInstance ≤
+      MeasurableSpace.comap K inferInstance := by
+    let : MeasurableSpace Ω := MeasurableSpace.comap K inferInstance
+    apply Measurable.comap_le
+    exact Measurable.of_eval fun (i : Iic s) ↦ hcoord i (i.property.trans u.property)
+  -- The last increment is independent of both the earlier future vector and the history.
+  have hBAH : Indep (MeasurableSpace.comap B inferInstance)
+      (MeasurableSpace.comap A inferInstance ⊔ MeasurableSpace.comap H inferInstance) P :=
+    indep_of_indep_of_le_right (hX.indepFun_past_sub hm h0 hua).symm (sup_le hAK hHK)
+  have hAH : Indep (MeasurableSpace.comap A inferInstance)
+      (MeasurableSpace.comap H inferInstance) P := ih
+  have hjoin := hAH.sup_left hBAH
+    (Measurable.of_eval fun (i : J) ↦ (hm i.val).sub (hm s)).comap_le
+    ((hm a).sub (hm u)).comap_le (Measurable.of_eval fun (i : Iic s) ↦ hm i).comap_le
+  apply indep_of_indep_of_le_left hjoin
+  let : MeasurableSpace Ω := MeasurableSpace.comap A inferInstance ⊔
+    MeasurableSpace.comap B inferInstance
+  apply Measurable.comap_le
+  apply Measurable.of_eval
+  intro i
+  have hmA : Measurable[MeasurableSpace.comap A inferInstance ⊔
+      MeasurableSpace.comap B inferInstance] A :=
+    (comap_measurable A).mono le_sup_left le_rfl
+  by_cases hi : i.val = a
+  · have hmB : Measurable[MeasurableSpace.comap A inferInstance ⊔
+        MeasurableSpace.comap B inferInstance] B :=
+      (comap_measurable B).mono le_sup_right le_rfl
+    have hsum := hmB.add ((measurable_pi_apply ⟨u, huJ⟩).comp hmA)
+    convert hsum using 1
+    ext ω
+    simp only [hi, A, B, Pi.add_apply, Function.comp_apply]
+    abel
+  · exact (measurable_pi_apply ⟨i.val, (mem_insert.mp i.property).resolve_left hi⟩).comp hmA
+
 /-- The entire future increment process is independent of the natural history at the boundary.
 No independence from an enlarged filtration is asserted. -/
 theorem HasIndepIncrements.indepFun_future_past (hX : HasIndepIncrements X P)
@@ -125,7 +201,7 @@ theorem HasIndepIncrements.indepFun_future_past (hX : HasIndepIncrements X P)
     IndepFun (fun ω (u : Ici s) ↦ X u ω - X s ω)
       (fun ω (u : Iic s) ↦ X u ω) P := by
   classical
-  have : IsProbabilityMeasure P := (hX 0 (fun _ ↦ ⊥) monotone_const).isProbabilityMeasure
+  have : IsProbabilityMeasure P := hX.isProbabilityMeasure
   refine IndepFun.process_indepFun (fun u ↦ (hm u).sub (hm s))
     (Measurable.of_eval fun u ↦ hm u) fun J ↦ ?_
   induction J using Finset.induction_on_max with
@@ -139,55 +215,80 @@ theorem HasIndepIncrements.indepFun_future_past (hX : HasIndepIncrements X P)
       exact ae_of_all _ fun ω ↦ funext fun i ↦ by
         have hi : i.val = a := by simpa using i.property
         simp [hi]
-    let u : Ici s := J.max' hJ
-    have huJ : u ∈ J := J.max'_mem hJ
-    have hua : u ≤ a := (haJ u huJ).le
-    let A : Ω → J → E := fun ω i ↦ X i.val ω - X s ω
-    let H : Ω → (Iic s) → E := fun ω i ↦ X i ω
-    let K : Ω → (Iic (u : T)) → E := fun ω i ↦ X i ω
-    let B : Ω → E := fun ω ↦ X a ω - X u ω
-    have hcoord (v : T) (hv : v ≤ u) :
-        Measurable[MeasurableSpace.comap K inferInstance] (X v) :=
-      (measurable_pi_apply (⟨v, hv⟩ : Iic (u : T))).comp (comap_measurable K)
-    have hAK : MeasurableSpace.comap A inferInstance ≤
-        MeasurableSpace.comap K inferInstance := by
-      let : MeasurableSpace Ω := MeasurableSpace.comap K inferInstance
-      apply Measurable.comap_le
-      exact Measurable.of_eval fun (i : J) ↦
-        (hcoord i.val (J.le_max' i.val i.property)).sub (hcoord s u.property)
-    have hHK : MeasurableSpace.comap H inferInstance ≤
-        MeasurableSpace.comap K inferInstance := by
-      let : MeasurableSpace Ω := MeasurableSpace.comap K inferInstance
-      apply Measurable.comap_le
-      exact Measurable.of_eval fun (i : Iic s) ↦ hcoord i (i.property.trans u.property)
-    -- The last increment is independent of both the earlier future vector and the history.
-    have hBAH : Indep (MeasurableSpace.comap B inferInstance)
-        (MeasurableSpace.comap A inferInstance ⊔ MeasurableSpace.comap H inferInstance) P :=
-      indep_of_indep_of_le_right (hX.indepFun_past_sub hm h0 hua).symm (sup_le hAK hHK)
-    have hAH : Indep (MeasurableSpace.comap A inferInstance)
-        (MeasurableSpace.comap H inferInstance) P := ih
-    have hjoin := hAH.sup_left hBAH
-      (Measurable.of_eval fun (i : J) ↦ (hm i.val).sub (hm s)).comap_le
-      ((hm a).sub (hm u)).comap_le (Measurable.of_eval fun (i : Iic s) ↦ hm i).comap_le
-    apply indep_of_indep_of_le_left hjoin
-    let : MeasurableSpace Ω := MeasurableSpace.comap A inferInstance ⊔
-      MeasurableSpace.comap B inferInstance
-    apply Measurable.comap_le
-    apply Measurable.of_eval
-    intro i
-    have hmA : Measurable[MeasurableSpace.comap A inferInstance ⊔
-        MeasurableSpace.comap B inferInstance] A :=
-      (comap_measurable A).mono le_sup_left le_rfl
-    by_cases hi : i.val = a
-    · have hmB : Measurable[MeasurableSpace.comap A inferInstance ⊔
-          MeasurableSpace.comap B inferInstance] B :=
-        (comap_measurable B).mono le_sup_right le_rfl
-      have hsum := hmB.add ((measurable_pi_apply ⟨u, huJ⟩).comp hmA)
-      convert hsum using 1
-      ext ω
-      simp only [hi, A, B, Pi.add_apply, Function.comp_apply]
-      abel
-    · exact (measurable_pi_apply ⟨i.val, (mem_insert.mp i.property).resolve_left hi⟩).comp hmA
+    exact hX.indepFun_future_past_insert hm h0 s J hJ a haJ ih
+
+/-- Corresponding finite vectors of two processes starting at zero have the same law if
+both processes have independent increments and corresponding increment laws agree.
+The sample spaces may differ. -/
+theorem HasIndepIncrements.identDistrib_finset {Ω' : Type*} [MeasurableSpace Ω']
+    {Q : Measure Ω'} {Y : T → Ω' → E} (hX : HasIndepIncrements X P)
+    (hY : HasIndepIncrements Y Q) (hmX : ∀ t, Measurable (X t))
+    (hmY : ∀ t, Measurable (Y t)) (h0X : ∀ᵐ ω ∂P, X ⊥ ω = 0)
+    (h0Y : ∀ᵐ ω ∂Q, Y ⊥ ω = 0)
+    (hlaw : ∀ s t, s ≤ t → IdentDistrib (fun ω ↦ X t ω - X s ω)
+      (fun ω ↦ Y t ω - Y s ω) P Q) (I : Finset T) :
+    IdentDistrib (fun ω (i : I) ↦ X i ω) (fun ω (i : I) ↦ Y i ω) P Q := by
+  classical
+  have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have : IsProbabilityMeasure Q := hY.isProbabilityMeasure
+  induction I using Finset.induction_on_max with
+  | empty =>
+    refine ⟨(Measurable.of_eval fun (i : (∅ : Finset T)) ↦ hmX i).aemeasurable,
+      (Measurable.of_eval fun (i : (∅ : Finset T)) ↦ hmY i).aemeasurable, ?_⟩
+    have hempty (z : T → E) : (fun (i : (∅ : Finset T)) ↦ z i) = 0 := by
+      ext i
+      exact False.elim (Finset.notMem_empty _ i.property)
+    have hx : (fun ω (i : (∅ : Finset T)) ↦ X i ω) = fun _ ↦ 0 :=
+      funext fun ω ↦ hempty (X · ω)
+    have hy : (fun ω (i : (∅ : Finset T)) ↦ Y i ω) = fun _ ↦ 0 :=
+      funext fun ω ↦ hempty (Y · ω)
+    simp [hx, hy]
+  | insert a I haI ih =>
+    obtain rfl | hI := I.eq_empty_or_nonempty
+    · have hx : (fun ω ↦ X a ω - X ⊥ ω) =ᵐ[P] X a := by
+        filter_upwards [h0X] with ω hω using by simp [hω]
+      have hy : (fun ω ↦ Y a ω - Y ⊥ ω) =ᵐ[Q] Y a := by
+        filter_upwards [h0Y] with ω hω using by simp [hω]
+      have hsingle : IdentDistrib (X a) (Y a) P Q :=
+        (IdentDistrib.of_ae_eq ((hmX a).sub (hmX ⊥)).aemeasurable hx).symm.trans
+          ((hlaw ⊥ a bot_le).trans
+            (IdentDistrib.of_ae_eq ((hmY a).sub (hmY ⊥)).aemeasurable hy))
+      have hrec (z : T → E) : (fun (i : ↥(insert a (∅ : Finset T))) ↦ z i) =
+          fun _ ↦ z a := by
+        funext i
+        have hi : i.val = a := by simpa using i.property
+        exact congrArg z hi
+      convert hsingle.comp (Measurable.of_eval fun (_ : ↥(insert a (∅ : Finset T))) ↦
+        measurable_id) using 1
+      · exact funext fun ω ↦ hrec (X · ω)
+      · exact funext fun ω ↦ hrec (Y · ω)
+    let u := I.max' hI
+    have huI : u ∈ I := I.max'_mem hI
+    have hua : u ≤ a := (haI u huI).le
+    have hindX := hX.indepFun_finset_sub hmX h0X I
+      (fun i hi ↦ I.le_max' i hi) hua
+    have hindY := hY.indepFun_finset_sub hmY h0Y I
+      (fun i hi ↦ I.le_max' i hi) hua
+    let f : (I → E) × E → ↥(insert a I) → E := fun z i ↦
+      if h : i.val = a then z.1 ⟨u, huI⟩ + z.2 else
+        z.1 ⟨i.val, (mem_insert.mp i.property).resolve_left h⟩
+    have hf : Measurable f := by
+      apply Measurable.of_eval
+      intro i
+      dsimp only [f]
+      split_ifs <;> fun_prop
+    -- Adjoin the last value by pairing the previous observations with a fresh increment.
+    have hpair := (ih.prodMk (hlaw u a hua) hindX hindY).comp hf
+    have hrec (z : T → E) : (fun (i : ↥(insert a I)) ↦ z i) =
+        f ((fun i : I ↦ z i), z a - z u) := by
+      funext i
+      dsimp only [f]
+      split_ifs with hi
+      · simp [hi]
+      · rfl
+    convert hpair using 1
+    · exact funext fun ω ↦ hrec (X · ω)
+    · exact funext fun ω ↦ hrec (Y · ω)
 
 /-- Measurable processes starting at zero with independent increments have the same full path law
 if corresponding increments have the same laws. The sample spaces may differ. -/
@@ -200,72 +301,13 @@ theorem HasIndepIncrements.identDistrib {Ω' : Type*} [MeasurableSpace Ω']
       (fun ω ↦ Y t ω - Y s ω) P Q) :
     IdentDistrib (fun ω t ↦ X t ω) (fun ω t ↦ Y t ω) P Q := by
   classical
-  have : IsProbabilityMeasure P := (hX 0 (fun _ ↦ ⊥) monotone_const).isProbabilityMeasure
-  have : IsProbabilityMeasure Q := (hY 0 (fun _ ↦ ⊥) monotone_const).isProbabilityMeasure
+  have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have : IsProbabilityMeasure Q := hY.isProbabilityMeasure
   refine ⟨(Measurable.of_eval hmX).aemeasurable, (Measurable.of_eval hmY).aemeasurable, ?_⟩
   -- Finite-dimensional distributions determine the measure on the product sigma-algebra.
-  have hfin : ∀ I : Finset T, P.map (fun ω (i : I) ↦ X i ω) =
-      Q.map (fun ω (i : I) ↦ Y i ω) := by
-    intro I
-    have hfinite : IdentDistrib (fun ω (i : I) ↦ X i ω) (fun ω (i : I) ↦ Y i ω) P Q := by
-      induction I using Finset.induction_on_max with
-      | empty =>
-        refine ⟨(Measurable.of_eval fun (i : (∅ : Finset T)) ↦ hmX i).aemeasurable,
-          (Measurable.of_eval fun (i : (∅ : Finset T)) ↦ hmY i).aemeasurable, ?_⟩
-        have hx : (fun ω (i : (∅ : Finset T)) ↦ X i ω) = fun _ ↦ 0 := by
-          ext ω i
-          exact False.elim (Finset.notMem_empty _ i.property)
-        have hy : (fun ω (i : (∅ : Finset T)) ↦ Y i ω) = fun _ ↦ 0 := by
-          ext ω i
-          exact False.elim (Finset.notMem_empty _ i.property)
-        simp [hx, hy]
-      | insert a I haI ih =>
-        obtain rfl | hI := I.eq_empty_or_nonempty
-        · have hx : (fun ω ↦ X a ω - X ⊥ ω) =ᵐ[P] X a := by
-            filter_upwards [h0X] with ω hω using by simp [hω]
-          have hy : (fun ω ↦ Y a ω - Y ⊥ ω) =ᵐ[Q] Y a := by
-            filter_upwards [h0Y] with ω hω using by simp [hω]
-          have hsingle : IdentDistrib (X a) (Y a) P Q :=
-            (IdentDistrib.of_ae_eq ((hmX a).sub (hmX ⊥)).aemeasurable hx).symm.trans
-              ((hlaw ⊥ a bot_le).trans
-                (IdentDistrib.of_ae_eq ((hmY a).sub (hmY ⊥)).aemeasurable hy))
-          have hrec (z : T → E) : (fun (i : ↥(insert a (∅ : Finset T))) ↦ z i) =
-              fun _ ↦ z a := by
-            funext i
-            have hi : i.val = a := by simpa using i.property
-            exact congrArg z hi
-          convert hsingle.comp (Measurable.of_eval fun (_ : ↥(insert a (∅ : Finset T))) ↦
-            measurable_id) using 1
-          · exact funext fun ω ↦ hrec (X · ω)
-          · exact funext fun ω ↦ hrec (Y · ω)
-        let u := I.max' hI
-        have huI : u ∈ I := I.max'_mem hI
-        have hua : u ≤ a := (haI u huI).le
-        have hindX := hX.indepFun_finset_sub hmX h0X I
-          (fun i hi ↦ I.le_max' i hi) hua
-        have hindY := hY.indepFun_finset_sub hmY h0Y I
-          (fun i hi ↦ I.le_max' i hi) hua
-        let f : (I → E) × E → ↥(insert a I) → E := fun z i ↦
-          if h : i.val = a then z.1 ⟨u, huI⟩ + z.2 else
-            z.1 ⟨i.val, (mem_insert.mp i.property).resolve_left h⟩
-        have hf : Measurable f := by
-          apply Measurable.of_eval
-          intro i
-          dsimp only [f]
-          split_ifs <;> fun_prop
-        -- Adjoin the last value by pairing the previous observations with a fresh increment.
-        have hpair := (ih.prodMk (hlaw u a hua) hindX hindY).comp hf
-        have hrec (z : T → E) : (fun (i : ↥(insert a I)) ↦ z i) =
-            f ((fun i : I ↦ z i), z a - z u) := by
-          funext i
-          dsimp only [f]
-          split_ifs with hi
-          · simp [hi]
-          · rfl
-        convert hpair using 1
-        · exact funext fun ω ↦ hrec (X · ω)
-        · exact funext fun ω ↦ hrec (Y · ω)
-    exact hfinite.map_eq
+  have hfin (I : Finset T) : P.map (fun ω (i : I) ↦ X i ω) =
+      Q.map (fun ω (i : I) ↦ Y i ω) :=
+    (hX.identDistrib_finset hY hmX hmY h0X h0Y hlaw I).map_eq
   have hproj := isProjectiveLimit_map (P := P) (Measurable.of_eval hmX).aemeasurable
   have hfamily : (fun I : Finset T ↦ P.map (fun ω ↦ I.restrict (X · ω))) =
       (fun I : Finset T ↦ Q.map (fun ω ↦ I.restrict (Y · ω))) := funext hfin
@@ -280,7 +322,7 @@ variable {T Ω : Type*} [Preorder T] [MeasurableSpace Ω] {P : Measure Ω} {N : 
 
 /-- Casting a nondecreasing natural-valued process to the integers preserves independent
 increments. Monotonicity is needed because subtraction in the natural numbers is truncated. -/
-theorem HasIndepIncrements.intCast (hN : HasIndepIncrements N P)
+theorem HasIndepIncrements.natCast (hN : HasIndepIncrements N P)
     (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω)) :
     HasIndepIncrements (fun t ω ↦ (N t ω : ℤ)) P := by
   intro n t ht
@@ -288,6 +330,29 @@ theorem HasIndepIncrements.intCast (hN : HasIndepIncrements N P)
   refine h.congr fun i ↦ ?_
   filter_upwards [hmono] with ω hω
   exact Int.ofNat_sub (hω (ht i.castSucc_le_succ))
+
+end ProbabilityTheory
+
+namespace ProbabilityTheory
+
+/-- A measurable process starting at zero with independent increments has its original full
+path law after shifting time by `t` and subtracting its current value, provided its increment
+laws are invariant under this fixed shift. -/
+theorem HasIndepIncrements.identDistrib_shift {T Ω E : Type*} [LinearOrder T]
+    [AddCommMonoid T] [CanonicallyOrderedAdd T] [MeasurableSpace Ω] [MeasurableSpace E]
+    [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+    {P : Measure Ω} {X : T → Ω → E} (hX : HasIndepIncrements X P)
+    (hm : ∀ s, Measurable (X s)) (h0 : ∀ᵐ ω ∂P, X 0 ω = 0) (t : T)
+    (hlaw : ∀ s u, s ≤ u → IdentDistrib (fun ω ↦ X (t + u) ω - X (t + s) ω)
+      (fun ω ↦ X u ω - X s ω) P P) :
+    IdentDistrib (fun ω s ↦ X (t + s) ω - X t ω) (fun ω s ↦ X s ω) P P := by
+  let : OrderBot T := { bot := 0, bot_le := fun _ ↦ zero_le }
+  -- This local order bottom is the zero appearing in the caller's initial-time hypothesis.
+  have hbot : ∀ᵐ ω ∂P, X (⊥ : T) ω = 0 := h0
+  have hshiftbot : ∀ᵐ ω ∂P, X (t + (⊥ : T)) ω - X t ω = 0 := by simp
+  apply (hX.shift t).identDistrib hX (fun s ↦ (hm _).sub (hm _)) hm hshiftbot hbot
+  intro s u hsu
+  simpa only [sub_sub_sub_cancel_right] using hlaw s u hsu
 
 end ProbabilityTheory
 
@@ -308,7 +373,9 @@ theorem HasIndepIncrements.indepFun_shift_nat (hN : HasIndepIncrements N P)
     (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hm s)
   have h0Z : ∀ᵐ ω ∂P, (N 0 ω : ℤ) = 0 := by
     filter_upwards [h0] with ω hω using by simp [hω]
-  have h := (hN.intCast hmono).indepFun_future_past hmZ h0Z t
+  -- The local bottom is zero, so the history theorem's initial-time hypothesis is h0Z.
+  have hbotZ : ∀ᵐ ω ∂P, (N (⊥ : T) ω : ℤ) = 0 := h0Z
+  have h := (hN.natCast hmono).indepFun_future_past hmZ hbotZ t
   have hf : Measurable (fun (z : Ici t → ℤ) (s : T) ↦
       (z ⟨t + s, by simp only [Set.mem_Ici]; exact le_self_add⟩).toNat) := by fun_prop
   have hg : Measurable (fun (z : Iic t → ℤ) (s : Iic t) ↦ (z s).toNat) := by fun_prop
