@@ -11,10 +11,11 @@ public import TauCeti.AlgebraicGeometry.RelativeSpec.Unit
 # Global functions on relative spectra
 
 For a quasi-coherent algebra `A` on a scheme `X`, the global functions on its relative spectrum
-recover the global sections of `A`, compatibly with the algebra structure over the global
-functions on the base: this is the global component of the algebra-side unit
-`CategoryTheory.CommMon.relativeSpecPushforwardIso`. Over an affine base, it is the
-normalization `Spec_X A ≅ Spec Γ(A)` followed by the global-functions isomorphism for `Spec`.
+are the global sections of `A`, as algebras over the global functions on the base: this is the
+global component `CategoryTheory.CommMon.sectionsAlgEquiv A.relativeSpecPushforwardIso ⊤` of the
+algebra-side unit `CategoryTheory.CommMon.relativeSpecPushforwardIso`. Over an affine base, this
+file identifies it with the normalization `Spec_X A ≅ Spec Γ(A)` followed by the global-functions
+isomorphism for `Spec`.
 
 ## References
 
@@ -29,27 +30,19 @@ namespace CategoryTheory.CommMon
 
 universe u
 
-noncomputable section
-
 variable {X : Scheme.{u}} (A : CommMon X.Modules) [A.X.IsQuasicoherent]
 
-/-- The global functions on the relative spectrum of `A` are the global sections of `A`, as
-algebras over the global functions on the base: the global component of the isomorphism
-`p_* 𝒪 ≅ A`. -/
-def relativeSpecGlobalSectionsAlgEquiv :
-    Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, ⊤) ≃ₐ[Γ(X, ⊤)] Γ(A.X, ⊤) :=
-  CommMon.sectionsAlgEquiv A.relativeSpecPushforwardIso ⊤
-
-/-- Over an affine base, the global-function comparison evaluates a global function through the
-normalization `Spec_X A ≅ Spec Γ(A)` and the global-functions isomorphism for `Spec`. -/
-@[simp]
-theorem relativeSpecGlobalSectionsAlgEquiv_apply [IsAffine X]
+/-- Over an affine base, the global component of the isomorphism `p_* 𝒪 ≅ A` evaluates a global
+function through the normalization `Spec_X A ≅ Spec Γ(A)` and the global-functions isomorphism
+for `Spec`. -/
+-- Not a simp lemma: `CommMon.sectionsAlgEquiv_apply` already rewrites its left-hand side.
+theorem sectionsAlgEquiv_relativeSpecPushforwardIso_top_apply [IsAffine X]
     (s : Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, ⊤)) :
-    A.relativeSpecGlobalSectionsAlgEquiv s =
+    CommMon.sectionsAlgEquiv A.relativeSpecPushforwardIso ⊤ s =
       (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom
         (A.relativeSpecIsoSpec.inv.appTop
           (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv ⊤ s)) := by
-  rw [relativeSpecGlobalSectionsAlgEquiv, CommMon.sectionsAlgEquiv_apply]
+  rw [CommMon.sectionsAlgEquiv_apply]
   refine (A.sectionsAlgHom_relativeSpecPushforwardIso_hom_apply ⟨⊤, isAffineOpen_top X⟩ s).trans
     ((A.relativeSpecCoverFunctionAlgebraSectionsRingEquiv_apply ⟨⊤, isAffineOpen_top X⟩ s).trans
       ?_)
@@ -59,8 +52,6 @@ theorem relativeSpecGlobalSectionsAlgEquiv_apply [IsAffine X]
     Scheme.Hom.appLE_eq_app _
   rw [relativeSpecIsoSpec_inv]
   exact congrArg _ (ConcreteCategory.congr_hom h _)
-
-end
 
 end CategoryTheory.CommMon
 
