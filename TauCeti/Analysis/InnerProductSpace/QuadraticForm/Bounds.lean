@@ -109,9 +109,9 @@ attribute [local instance] realAlgebra realIsScalarTower
 /-- The real quadratic form of a real scalar operator is the scalar times the squared norm. -/
 @[simp] theorem re_inner_algebraMap_apply (c : ℝ) (x : E) :
     RCLike.re ⟪(algebraMap ℝ (E →L[𝕜] E) c) x, x⟫_𝕜 = c * ‖x‖ ^ 2 := by
-  rw [Algebra.algebraMap_eq_smul_one, ← IsScalarTower.algebraMap_smul 𝕜,
-    smul_apply, one_apply_eq_self, inner_smul_left, RCLike.algebraMap_eq_ofReal,
-    RCLike.conj_ofReal, RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
+  rw [Algebra.algebraMap_eq_smul_one, ← IsScalarTower.algebraMap_smul 𝕜]
+  simp only [smul_apply, one_apply_eq_self]
+  simp [inner_smul_left, RCLike.algebraMap_eq_ofReal]
 
 end RealScalar
 
