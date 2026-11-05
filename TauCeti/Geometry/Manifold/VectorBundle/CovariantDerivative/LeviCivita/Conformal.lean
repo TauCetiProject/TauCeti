@@ -231,7 +231,10 @@ theorem isLeviCivitaConnection_rescale_addOneForm
     linear_combination mvfderiv I f x (X x) * g.symm x (σ x) (τ x) -
       mvfderiv I f x (σ x) * g.symm x (X x) (τ x) + mvfderiv I f x (τ x) * g.symm x (σ x) (X x)
   -- Torsion-freeness: `A` is symmetric.
-  have htA := CovariantDerivative.torsion_addOneForm_eq_zero ht (conformalConnectionTensor_comm f)
+  have htA := (CovariantDerivative.isTorsionFree_iff_torsion_eq_zero _).1
+    (CovariantDerivative.isTorsionFree_addOneForm
+      ((CovariantDerivative.isTorsionFree_iff_torsion_eq_zero _).2 ht)
+      (conformalConnectionTensor_comm f))
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
   let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
