@@ -22,7 +22,6 @@ import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
 import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.Order.SupIndep
-import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
 # Jordan splittings over a discrete valuation ring
@@ -289,28 +288,6 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm
 
 variable [IsDomain R] [IsDiscreteValuationRing R]
 
-/-- Over a discrete valuation ring with uniformizer `π`, a nondegenerate symmetric bilinear form on
-a nontrivial finite free module has a nonzero orthogonal direct summand on which it is
-`π ^ k`-modular, where `π ^ k` is the minimal valuation of a Gram entry. -/
-theorem IsSymm.exists_ne_bot_isModular_pow_isCompl_orthogonal [Free R M] [Module.Finite R M]
-    [Nontrivial M] (hB : B.IsSymm) (hnd : B.Nondegenerate) {π : R} (hπ : Irreducible π) :
-    ∃ (S : Submodule R M) (k : ℕ), S ≠ ⊥ ∧ IsCompl S (B.orthogonal S) ∧
-      (B.restrict S).IsModular (π ^ k) := by
-  -- A Gram entry of minimal valuation divides every value of the form.
-  let b := Free.chooseBasis R M
-  have : Nonempty (Free.ChooseBasisIndex R M) := b.index_nonempty
-  obtain ⟨⟨i₀, j₀⟩, hij⟩ :=
-    TauCeti.PreValuationRing.exists_forall_dvd fun q : _ × _ ↦ B (b q.1) (b q.2)
-  have hdvd : ∀ x y, B (b i₀) (b j₀) ∣ B x y :=
-    dvd_apply_of_forall_dvd_basis b fun k l ↦ hij (k, l)
-  have hd0 : B (b i₀) (b j₀) ≠ 0 := fun h ↦
-    hnd.ne_zero (LinearMap.ext₂ fun x y ↦ zero_dvd_iff.mp (h ▸ hdvd x y))
-  obtain ⟨S, hS0, -, hSmod, hSc⟩ := hB.exists_isModular_restrict_isCompl_orthogonal
-    (mem_nonZeroDivisors_of_ne_zero hd0) hdvd
-  obtain ⟨k, u, hku⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hd0 hπ
-  exact ⟨S, k, hS0, hSc, hSmod.of_associated
-    ⟨u⁻¹, by rw [hku, mul_comm, ← mul_assoc, Units.inv_mul, one_mul]⟩⟩
-
 /-- **Jordan splittings exist.** Over a discrete valuation ring with uniformizer `π`, every
 nondegenerate symmetric bilinear form on a finite free module is an orthogonal direct sum of
 submodules `N i` on which the form is `π ^ i`-modular. -/
@@ -332,7 +309,7 @@ private theorem exists_isJordanSplitting_of_free [Free R M] [Module.Finite R M] 
   · refine ⟨fun _ ↦ ⊥, Subsingleton.elim _ _, fun _ _ _ x hx _ _ ↦ ?_,
       fun _ ↦ isModular_of_subsingleton⟩
     rw [(Submodule.mem_bot R).mp hx, map_zero, LinearMap.zero_apply]
-  -- Split off a modular summand `S` of minimal scale `π ^ k`; its orthogonal complement `N'` is
+  -- Split off a modular summand `S` of scale `π ^ k`; its orthogonal complement `N'` is
   -- finite free of smaller rank, with a nondegenerate form.
   obtain ⟨S, k, hS0, hSc, hSk⟩ := hB.exists_ne_bot_isModular_pow_isCompl_orthogonal hnd hπ
   obtain ⟨N'', htop', horth', hmod'⟩ := ih _ (hn ▸ S.finrank_lt_of_isCompl_of_ne_bot hSc hS0)

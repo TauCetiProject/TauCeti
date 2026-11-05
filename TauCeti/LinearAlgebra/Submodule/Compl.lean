@@ -44,8 +44,8 @@ A complement in a finite flat module over a local ring is finite free
 * `IsCompl.prod`: a product of complementary pairs is complementary.
 * `Submodule.finite_free_of_isCompl`: a direct summand of a finite flat module over a local ring
   is finite free.
-* `Submodule.finrank_lt_of_isCompl_of_ne_bot`: over a principal ideal domain, a nonzero summand of
-  a finite free module has a complement of strictly smaller rank.
+* `Submodule.finrank_lt_of_isCompl_of_ne_bot`: over a commutative domain, a nonzero summand of a
+  finite torsion-free module has a complement of strictly smaller rank.
 -/
 
 public section
@@ -113,16 +113,23 @@ theorem finite_free_of_isCompl {R M : Type*} [CommRing R] [IsLocalRing R]
     (S.projectionOnto T h) (by ext; simp)
   exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
 
-/-- Over a principal ideal domain, a nonzero summand of a finite free module has a complement of
-strictly smaller rank. -/
+/-- Over a commutative domain, a nonzero summand of a finite torsion-free module has a complement
+of strictly smaller rank. -/
 theorem finrank_lt_of_isCompl_of_ne_bot {R M : Type*} [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+    [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M] [Module.Finite R M]
     {S T : Submodule R M} (h : IsCompl S T) (hS : S ≠ ⊥) :
     Module.finrank R T < Module.finrank R M := by
-  have hrank := S.finrank_quotient_add_finrank
-  rw [(Submodule.quotientEquivOfIsCompl _ _ h).finrank_eq] at hrank
   have : Nontrivial S := Submodule.nontrivial_iff_ne_bot.mpr hS
-  have : 0 < Module.finrank R S := Module.finrank_pos
+  have : Module.Finite R S := .equiv (Submodule.quotientEquivOfIsCompl _ _ h.symm)
+  have : Module.Finite R T := .equiv (Submodule.quotientEquivOfIsCompl _ _ h)
+  have hr := rank_quotient_add_rank_of_isDomain S
+  rw [(Submodule.quotientEquivOfIsCompl _ _ h).rank_eq] at hr
+  have hS0 : 0 < Module.rank R S := rank_pos
+  simp only [Module.finrank]
+  rw [← hr, Cardinal.toNat_add (Module.rank_lt_aleph0 R T) (Module.rank_lt_aleph0 R S)]
+  have : 0 < (Module.rank R S).toNat := by
+    rw [Cardinal.toNat_pos]
+    exact ⟨hS0.ne', Module.rank_lt_aleph0 R S⟩
   omega
 
 end Submodule

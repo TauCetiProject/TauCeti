@@ -343,17 +343,6 @@ theorem restrict_nondegenerate_iff_disjoint_orthogonal {B : LinearMap.BilinForm 
   ⟨disjoint_orthogonal_of_restrict_nondegenerate,
     B.nondegenerate_restrict_of_disjoint_orthogonal hB⟩
 
-/-- For a nondegenerate reflexive form, the restriction to the orthogonal complement of a submodule
-complementary to its orthogonal complement is again nondegenerate. -/
-theorem nondegenerate_restrict_orthogonal_of_isCompl {B : LinearMap.BilinForm R M}
-    (hB : B.IsRefl) (hnd : B.Nondegenerate) {S : Submodule R M}
-    (hS : IsCompl S (B.orthogonal S)) : (B.restrict (B.orthogonal S)).Nondegenerate := by
-  refine B.nondegenerate_restrict_of_disjoint_orthogonal hB
-    (Submodule.disjoint_def.mpr fun x hx hx' ↦ hnd.2 x fun m ↦ ?_)
-  obtain ⟨s, hs, y, hy, rfl⟩ := Submodule.mem_sup.mp (hS.sup_eq_top ▸ Submodule.mem_top (x := m))
-  rw [map_add, LinearMap.add_apply, mem_orthogonal_iff.mp hx s hs,
-    mem_orthogonal_iff.mp hx' y hy, add_zero]
-
 /-- A submodule with perfect flipped restricted pairing is complementary to its right orthogonal
 complement. -/
 theorem isCompl_orthogonal_of_flip_restrict_bijective
@@ -491,6 +480,15 @@ theorem orthogonal_orthogonal_of_isCompl {R : Type u} {M : Type v}
     have ht't : B t' t = 0 := by simpa [hB.eq_zero hst'] using h
     simp [ht s' hs', ht't]
   simpa [ht0] using hs
+
+/-- For a nondegenerate reflexive form, the restriction to the orthogonal complement of a submodule
+complementary to its orthogonal complement is again nondegenerate. -/
+theorem nondegenerate_restrict_orthogonal_of_isCompl {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) (hnd : B.Nondegenerate) {S : Submodule R M}
+    (hS : IsCompl S (B.orthogonal S)) : (B.restrict (B.orthogonal S)).Nondegenerate := by
+  apply B.nondegenerate_restrict_of_disjoint_orthogonal hB
+  rw [B.orthogonal_orthogonal_of_isCompl hB hnd.2 S hS]
+  exact hS.disjoint.symm
 
 /-- A vector `x` whose self-pairing `B x x` is a non-zero-divisor dividing every pairing `B x y`
 spans an orthogonal direct summand. Over a field this is the condition `B x x ≠ 0`; over a
