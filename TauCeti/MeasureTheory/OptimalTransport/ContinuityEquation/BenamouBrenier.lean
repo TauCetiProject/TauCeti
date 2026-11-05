@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
-import TauCeti.Analysis.PDE.HopfLax
+import TauCeti.Analysis.PDE.HopfLax.Basic
 import TauCeti.Analysis.PDE.HopfLax.Integrable
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
