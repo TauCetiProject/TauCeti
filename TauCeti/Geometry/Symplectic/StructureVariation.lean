@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
@@ -13,7 +13,6 @@ public import TauCeti.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.SpecialFunctions.Exponential.BilinForm
 public import TauCeti.Analysis.Normed.Operator.Exponential
 public import TauCeti.Analysis.Normed.Algebra.Basic
-public import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Exponential paths of tame and compatible almost complex structures
@@ -63,39 +62,6 @@ variable {V : Type*}
 section Normed
 
 variable [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-namespace AlmostComplexStructure
-
-/-- In the operator-norm algebra, an almost complex structure squares to `-1`. -/
-@[simp]
-theorem toContinuousLinearMap_mul_self (J : AlmostComplexStructure V) :
-    LinearMap.toContinuousLinearMap J.toLinearMap * LinearMap.toContinuousLinearMap J.toLinearMap =
-      -1 := by
-  ext v
-  simp
-
-end AlmostComplexStructure
-
-namespace SymplecticForm
-
-/-- Tameness is an open condition: if a family of complex structures is continuous at `x` in
-the operator-norm topology and `ω`-tame there, it is `ω`-tame near `x`. -/
-theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : SymplecticForm V}
-    {J : X → AlmostComplexStructure V} {x : X}
-    (hJ : ContinuousAt (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) x)
-    (h : ω.Tames (J x)) : ∀ᶠ y in 𝓝 x, ω.Tames (J y) := by
-  let ωc := ω.toBilinForm.toContinuousBilinearMap
-  -- The forms `ω(·, A ·)` depend continuously on the operator `A`, and positivity is open.
-  have hc : Continuous fun A : V →L[ℝ] V => (ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc := by
-    fun_prop
-  have hA : ∀ᶠ A in 𝓝 (LinearMap.toContinuousLinearMap (J x).toLinearMap),
-      ∀ v, v ≠ 0 → 0 < ((ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc) v v :=
-    hc.continuousAt.preimage_mem_nhds (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
-      fun v hv => by simpa [ωc] using h v hv)
-  filter_upwards [hJ.eventually hA] with y hy v hv
-  simpa [ωc] using hy v hv
-
-end SymplecticForm
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
@@ -208,22 +174,6 @@ end AlmostComplexStructure
 namespace SymplecticForm
 
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
-
-omit [FiniteDimensional ℝ V] in
-/-- For a `J`-invariant form, composing a variation in the compatible tangent space with `J`
-gives an endomorphism that is skew-adjoint for `ω`. This is why the exponential paths with
-generator `J Y` stay `ω`-compatible. -/
-theorem Invariant.isSkewAdjoint_mul_of_mem_compatibleTangentSpace (h : ω.Invariant J)
-    {Y : Module.End ℝ V} (hY : Y ∈ ω.compatibleTangentSpace J) :
-    ω.toBilinForm.IsSkewAdjoint (J.toLinearMap * Y) := by
-  rw [mem_compatibleTangentSpace] at hY
-  intro v w
-  have h₁ := J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).mp h) (Y v) w
-  have h₂ := hY.2 v (J w)
-  simp only [Pi.neg_apply, mul_apply_eq_comp, map_neg]
-  beta_reduce at h₁ h₂ ⊢
-  rw [h₁, hY.1 w, map_neg] at *
-  linarith
 
 /-- The exponential of an infinitesimally symplectic endomorphism is a linear
 symplectomorphism. -/

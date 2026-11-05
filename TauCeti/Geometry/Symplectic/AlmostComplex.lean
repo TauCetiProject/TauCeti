@@ -811,6 +811,21 @@ theorem Invariant.mul_mem_tangentSpace_and_isSelfAdjoint (h : ω.Invariant J)
     rw [h₁, map_neg]
     linarith
 
+/-- For a `J`-invariant form, composing a variation in the compatible tangent space with `J`
+gives an endomorphism that is skew-adjoint for `ω`. This is why the exponential paths with
+generator `J Y` stay `ω`-compatible. -/
+theorem Invariant.isSkewAdjoint_mul_of_mem_compatibleTangentSpace (h : ω.Invariant J)
+    (hY : Y ∈ ω.compatibleTangentSpace J) :
+    ω.toBilinForm.IsSkewAdjoint (J.toLinearMap * Y) := by
+  rw [mem_compatibleTangentSpace] at hY
+  intro v w
+  have h₁ := J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).mp h) (Y v) w
+  have h₂ := hY.2 v (J w)
+  simp only [Pi.neg_apply, mul_apply_eq_comp, map_neg]
+  beta_reduce at h₁ h₂ ⊢
+  rw [h₁, hY.1 w, map_neg] at *
+  linarith
+
 /-- For `S` self-adjoint for `g = ω(·, J ·)`, the average `S + J S J` lies in the compatible
 tangent space of `J` whenever `ω` is `J`-invariant. -/
 private theorem Invariant.add_mul_mul_mem_compatibleTangentSpace (h : ω.Invariant J)
