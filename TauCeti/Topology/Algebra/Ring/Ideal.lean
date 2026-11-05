@@ -59,8 +59,9 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   automatically once `I` is known to be closed.
 * `Ideal.Quotient.mk_mem_closure_zero_iff`: the image of `x` in `R ⧸ I` lies in the closure of
   zero exactly when `x` lies in the closure of `I`.
-* `Ideal.Quotient.continuous_lift`: a continuous ring homomorphism annihilating `I` induces a
-  *continuous* homomorphism on `R ⧸ I`, with no hypothesis on `I`.
+* `Ideal.Quotient.continuous_lift`: a continuous ring homomorphism annihilating a two-sided ideal
+  `I` induces a *continuous* homomorphism on `R ⧸ I`, with no hypothesis on `I` beyond
+  two-sidedness (in particular, `I` need not be closed).
 * `Ideal.Quotient.mkA` and `Ideal.Quotient.liftA`: the quotient map by a two-sided ideal as a
   continuous algebra homomorphism, and the universal property of the quotient for continuous
   algebra homomorphisms; `Ideal.Quotient.continuousAlgHom_ext` says that continuous algebra
