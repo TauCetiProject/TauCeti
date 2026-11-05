@@ -43,11 +43,11 @@ in `S[X_i]`.
 * `TauCeti.MvPolynomial.finite_expand`: `expand n` is a finite ring map for `0 < n`.
 * `TauCeti.MvPolynomial.exists_pow_eq_map_expand`: `(map f) (expand (p ^ n) g)` is a
   `p ^ n`-th power once the coefficients of `g` have `p ^ n`-th roots in `S`.
-* `TauCeti.MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow`: over a perfect ring, `expand p g`
+* `MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow`: over a perfect ring, `expand p g`
   is the `p`-th power of the inverse Frobenius twist of `g`.
 * `TauCeti.MvPolynomial.basisExpand`: the monomials with exponents below `n` are a basis of
   `R[X_i]` over itself along `expand n`, for `0 < n`.
-* `TauCeti.MvPolynomial.coeff_basisExpand_repr`: the coordinate of `f` at `β` in that basis has
+* `MvPolynomial.coeff_basisExpand_repr`: the coordinate of `f` at `β` in that basis has
   the coefficients of `f` at the exponents `n • d + β`.
 * `TauCeti.MvPolynomial.flat_expand`: `expand n` is flat for `0 < n`.
 * `TauCeti.MvPolynomial.finitePresentation_expand`: `expand n` is of finite presentation for
@@ -192,8 +192,8 @@ theorem MvPolynomial.exists_pow_eq_map_expand {σ R S : Type*} [CommSemiring R] 
 /-- Over a perfect ring `R` of exponential characteristic `p`, the expansion of a polynomial is the
 `p`-th power of its inverse Frobenius twist: the multivariate form of Mathlib's
 `polynomial_expand_eq`. -/
-theorem MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow {σ R : Type*} [CommSemiring R]
-    (p : ℕ) [ExpChar R p] [PerfectRing R p] (g : MvPolynomial σ R) :
+theorem _root_.MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow {σ R : Type*}
+    [CommSemiring R] (p : ℕ) [ExpChar R p] [PerfectRing R p] (g : MvPolynomial σ R) :
     MvPolynomial.expand p g = MvPolynomial.map (frobeniusEquiv R p).symm g ^ p := by
   rw [← MvPolynomial.map_frobenius_expand, MvPolynomial.map_expand, MvPolynomial.map_map,
     frobenius_comp_frobeniusEquiv_symm, MvPolynomial.map_id]
@@ -255,7 +255,8 @@ theorem basisExpand_apply (β : σ →₀ Fin n) :
 /-- The coordinate at `β` of a polynomial `f` in `basisExpand` has, at `d`, the coefficient of `f`
 at `n • d + β`. The `letI` names the module structure along `expand n`; instance search would
 otherwise pick multiplication, under which `basisExpand` does not typecheck. -/
-theorem coeff_basisExpand_repr (f : MvPolynomial σ R) (β : σ →₀ Fin n) (d : σ →₀ ℕ) :
+theorem _root_.MvPolynomial.coeff_basisExpand_repr (f : MvPolynomial σ R) (β : σ →₀ Fin n)
+    (d : σ →₀ ℕ) :
     letI : Module (MvPolynomial σ R) (MvPolynomial σ R) :=
       (expand n : MvPolynomial σ R →ₐ[R] _).toRingHom.toAlgebra.toModule
     ((basisExpand σ R n).repr f β).coeff d =
