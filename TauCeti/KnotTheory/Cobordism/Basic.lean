@@ -78,8 +78,9 @@ a smooth embedding. Composing on the other side reverses the cobordism, composes
 (`TauCeti.SmoothEmbedding.Concordance.transKnotCobordism`). Both keep the genus, so the cobordism
 distance only depends on the concordance classes of the two knots
 (`TauCeti.cobordismDistance_congr_concordant`). This is the genus-`0` case of the triangle
-inequality. The general triangle inequality stacks two cobordisms, gluing their surfaces along the
-common collar, and is not proved here.
+inequality. Two cobordisms are stacked, gluing their surfaces along the common collar, in
+`TauCeti.KnotTheory.Cobordism.Trans` (`TauCeti.KnotCobordism.trans`); the general triangle
+inequality also needs the genus of the stacked surface, which is not computed.
 
 ## Main definitions
 
