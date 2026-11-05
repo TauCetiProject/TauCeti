@@ -271,7 +271,7 @@ theorem realizationRelabelingHomeomorph_symm_val {R : PreAbstractSimplicialCompl
       Finsupp.comapDomain f y.1.1 f.injective.injOn := by
   -- The set-congruence transports preserve the underlying point.
   simp only [realizationRelabelingHomeomorph, Homeomorph.symm_trans_apply,
-    TauCeti.Homeomorph.setCongr_symm_apply]
+    Homeomorph.setCongr_symm_apply]
   exact relabelingHomeomorph_symm_val P f hP.le (by rw [hmap]; exact hR) _
 
 section Ambient
@@ -351,7 +351,7 @@ theorem realizationTopHomeomorphFace_symm_val
       Finsupp.comapDomain f y.1.1 f.injective.injOn := by
   -- The set-congruence transport preserves the underlying point.
   rw [realizationTopHomeomorphFace, Homeomorph.symm_trans_apply,
-    TauCeti.Homeomorph.setCongr_symm_apply]
+    Homeomorph.setCongr_symm_apply]
   exact realizationRelabelingHomeomorph_symm_val _ f (map_simplex _)
     (by rw [simplex_univ, top_toPreAbstractSimplicialComplex]) (simplex_le_iff.mpr fun _ => hf) _
 

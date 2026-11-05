@@ -15,32 +15,47 @@ public import Mathlib.RingTheory.RingHom.Flat
 import Mathlib.RingTheory.Ideal.Over
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.Filtration
-import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.Tensor
+import Mathlib.RingTheory.TensorProduct.Quotient
+import Mathlib.Tactic.Algebraize
 import TauCeti.LinearAlgebra.TensorProduct.Submodule
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.Flat.TensorProduct
+import TauCeti.RingTheory.Ideal.TensorProduct
 import TauCeti.RingTheory.TensorProduct.Finite
 
 /-!
-# The local criterion for flatness along a regular element
+# The local criterion for flatness
 
-Let `R` be a Noetherian ring, `S` a Noetherian `R`-algebra, `M` a finite `S`-module and `x ∈ R` an
-element whose image in `S` lies in the Jacobson radical. If `x` is a nonzerodivisor on `M` and
-`M ⧸ x M` is flat over `R ⧸ (x)`, then `M` is flat over `R` (`Module.Flat.of_flat_quotSMulTop`).
-This is the case `I = (x)` of the variant of the local criterion for flatness (Stacks, Lemma
-10.99.10 (00ML)) together with the remark following it: for a principal ideal, regularity of `x`
-on `M` implies the vanishing of `Tor₁ᴿ(M, R ⧸ (x))`, and the two are equivalent when `x` is also
-`R`-regular. No regularity of `x` on `R` is needed for the criterion. Conversely,
-`M ⧸ x M` is flat over `R ⧸ (x)` whenever `M` is flat over `R`, so for an `M`-regular `x` the two
-conditions are equivalent (`Module.flat_quotSMulTop_iff_flat`), the flat counterpart of Mathlib's
-`Module.free_quotSMulTop_iff_free`.
+Let `R` be a Noetherian ring, `S` a Noetherian `R`-algebra, `M` a finite `S`-module and `I` an
+ideal of `R` whose extension `I S` lies in the Jacobson radical of `S`. If `I ⊗[R] M → M` is
+injective, that is `Tor₁ᴿ(R ⧸ I, M) = 0`, and `M ⧸ I M` is flat over `R ⧸ I`, then `M` is flat
+over `R` (`Module.Flat.of_subtype_rTensor_injective`). This is the local criterion for flatness
+(Stacks, Tag 00MK), stated with the Jacobson radical in place of a local homomorphism of local
+rings. For a local homomorphism `R → S` and `I` the maximal ideal of `R`, the quotient `M ⧸ I M`
+is a vector space over the residue field, so flatness of `M` reduces to the vanishing of
+`Tor₁ᴿ(κ, M)`.
 
-For a local homomorphism `R → S` of Noetherian local rings and `x` in the maximal ideal of `R`, the
-Jacobson hypothesis is automatic (`Module.Flat.of_flat_quotSMulTop_of_isLocalHom`). This is the
-inductive step of miracle flatness (Stacks, Lemma 10.128.1 (00R4)): there `R` is regular,
-`x ∈ 𝔪_R ∖ 𝔪_R²` is a nonzerodivisor on the Cohen–Macaulay ring `S`, and `S ⧸ x S` is flat over the
-regular local ring `R ⧸ (x)` by induction on the dimension.
+Two special cases are derived.
+
+* **A regular element** (Stacks, Tag 00ML, for the ideal `(x)`). If `x ∈ R` is `M`-regular, then
+  `Tor₁ᴿ(R ⧸ (x), M) = 0` (`IsSMulRegular.span_singleton_subtype_rTensor_injective`), so `M` is
+  flat over `R` as soon as `M ⧸ x M` is flat over `R ⧸ (x)` (`Module.Flat.of_flat_quotSMulTop`).
+  Conversely `M ⧸ x M` is flat over `R ⧸ (x)` whenever `M` is flat over `R`, so for an
+  `M`-regular `x` the two conditions are equivalent (`Module.flat_quotSMulTop_iff_flat`), the flat
+  counterpart of Mathlib's `Module.free_quotSMulTop_iff_free`. This is the inductive step of
+  miracle flatness (Stacks, Tag 00R4).
+* **Flatness over the fibres** (Stacks, Tag 00MP). Let `R → S → T` be ring maps with `S` and `T`
+  Noetherian, `M` a finite `T`-module flat over `R`, and `J` an ideal of `R` with `J T` in the
+  Jacobson radical of `T`. Flatness over `R` already gives `Tor₁ˢ(S ⧸ J S, M) = 0`
+  (`Module.Flat.map_subtype_rTensor_injective`, in `TauCeti.RingTheory.Ideal.TensorProduct`), so
+  `M` is flat over `S` as soon as `M ⧸ J M` is flat over `S ⧸ J S`
+  (`Module.Flat.of_flat_quotient_map`). For local rings and `J` the maximal ideal of `R`, the
+  fibre condition holds automatically when `J S` is the maximal ideal of `S`; in ring
+  homomorphism form, `f : S → T` is flat as soon as `f ∘ g` is, for some `g : R → S` with
+  `𝔪_R S = 𝔪_S` (`RingHom.Flat.of_comp_of_map_maximalIdeal_eq`). The typical `g` is the map to
+  the completion of a Noetherian local ring, which transports flatness of an endomorphism such as
+  Frobenius to the completion.
 
 Iterating the criterion along a sequence gives a flatness test for a local homomorphism `R → S`
 of Noetherian local rings: if `r₁, …, rₙ` generate the maximal ideal of `R` and their images form
@@ -56,28 +71,29 @@ structure of a ring over itself.
 
 ## Implementation notes
 
-By Mathlib's ideal criterion it suffices that `M ⊗[R] J → M` is injective for every ideal `J`. Let
-`t` be in its kernel.
+By Mathlib's ideal criterion it suffices that `J ⊗[R] M → M` is injective for every ideal `J`.
 
-1. Write `t = ∑ mᵢ ⊗ jᵢ`, so `∑ jᵢ mᵢ = 0`. The equational criterion for the flat
-   `R ⧸ (x)`-module `M ⧸ x M` gives `aᵢₖ ∈ R` and `yₖ ∈ M` with `mᵢ ≡ ∑ₖ aᵢₖ yₖ` modulo `x M`
-   and `∑ᵢ jᵢ aᵢₖ = x cₖ`. Then `cₖ ∈ (J : x)` and `t` is the image of an element `s` of
-   `M ⊗[R] (J : x)` under multiplication by `x`; regularity of `x` on `M` puts `s` in the kernel
-   of `M ⊗[R] (J : x) → M`.
-2. Iterating, `t` comes from `M ⊗[R] (J ⊓ (x) ^ n)` for every `n`. This needs no Noetherian
-   hypothesis.
-3. By the Artin–Rees lemma `J ⊓ (x) ^ n ⊆ (x) ^ (n - c) J`, so `t ∈ x ^ (n - c) (M ⊗[R] J)` for
-   all `n`. Since `M ⊗[R] J` is a finite `S`-module (`Module.Finite.tensor`), Krull's
-   intersection theorem over `S` gives `t = 0`.
+Steps 1–3 hold without Noetherian hypotheses and live in `TauCeti.RingTheory.Flat.TensorProduct`.
 
-This replaces the `Tor` computations of the Stacks proof by the equational criterion and avoids
-the general local criterion (Stacks, Lemma 10.99.7 (00MK)).
+1. Tensoring with `M` preserves injectivity of maps between modules killed by `I`: over `R ⧸ I`
+   this is flatness of `M ⧸ I M` (`Ideal.rTensor_injective_of_isTorsionBySet`).
+2. If `L ⧸ N` is killed by `I`, then `N ⊗[R] M → L ⊗[R] M` is injective, by a chase along a free
+   module covering `L` (`Ideal.subtype_rTensor_injective_of_smul_top_le`).
+3. By induction, the same holds when `L ⧸ N` is killed by `Iⁿ`
+   (`Ideal.subtype_rTensor_injective_of_pow_smul_top_le`). Applied to `J ⧸ (J ⊓ Iⁿ)` inside
+   `R ⧸ Iⁿ`, it shows that the kernel of `J ⊗[R] M → M` comes from `(J ⊓ Iⁿ) ⊗[R] M`
+   (`Ideal.mem_range_rTensor_inclusion_inf_pow`).
+4. By the Artin–Rees lemma `J ⊓ Iⁿ ⊆ I^(n - c) J`, so an element `t` of the kernel lies in
+   `I^(n - c) (J ⊗[R] M)` for all `n`. Its image in `M ⊗[R] J`, a finite `S`-module
+   (`Module.Finite.tensor`), therefore vanishes by Krull's intersection theorem over `S`.
 
 ## Main results
 
-* `Module.Flat.of_flat_quotSMulTop`: the criterion above.
-* `Module.Flat.of_flat_quotSMulTop_of_isLocalHom`: the same for a local homomorphism of
-  Noetherian local rings and `x` in the maximal ideal.
+* `Module.Flat.of_subtype_rTensor_injective`: the local criterion for flatness.
+* `Module.Flat.of_flat_quotient_map`: the criterion for flatness over the fibres.
+* `RingHom.Flat.of_comp_of_map_maximalIdeal_eq`: `f` is flat if `f ∘ g` is flat and `g` maps the
+  maximal ideal onto the maximal ideal.
+* `Module.Flat.of_flat_quotSMulTop`: the criterion along a regular element.
 * `Module.Flat.quotSMulTop`: `M ⧸ x M` is flat over `R ⧸ (x)` when `M` is flat over `R`.
 * `Module.flat_quotSMulTop_iff_flat`: for an `M`-regular `x` as above, `M ⧸ x M` is flat over
   `R ⧸ (x)` if and only if `M` is flat over `R`.
@@ -87,11 +103,13 @@ the general local criterion (Stacks, Lemma 10.99.7 (00MK)).
 
 ## References
 
-* [The Stacks Project, Lemma 10.99.10](https://stacks.math.columbia.edu/tag/00ML) and the remark
-  following it.
-* [The Stacks Project, Lemma 10.128.1](https://stacks.math.columbia.edu/tag/00R4), whose proof
-  uses this criterion.
-* H. Matsumura, *Commutative Ring Theory*, Theorem 22.3.
+* [The Stacks Project, Tag 00MK](https://stacks.math.columbia.edu/tag/00MK), the local criterion
+  for flatness, and Tag 00ML, its variant along a regular element.
+* [The Stacks Project, Tag 00MP](https://stacks.math.columbia.edu/tag/00MP), flatness over the
+  fibres.
+* [The Stacks Project, Tag 00R4](https://stacks.math.columbia.edu/tag/00R4), miracle flatness,
+  whose proof uses the criterion along a regular element.
+* H. Matsumura, *Commutative Ring Theory*, Theorems 22.3 and 22.5.
 -/
 
 public section
@@ -107,153 +125,85 @@ instance Flat.quotSMulTop [Flat R M] (x : R) : Flat (R ⧸ Ideal.span {x}) (Quot
   .of_linearEquiv ((QuotSMulTop.equivQuotTensor x M).extendScalarsOfSurjective
     Ideal.Quotient.mk_surjective)
 
+/-! ### The local criterion -/
+
+section
+
+variable {I : Ideal R} [Flat (R ⧸ I) (M ⧸ I • (⊤ : Submodule R M))]
+
+/-- **Local criterion for flatness** (Stacks, Tag 00MK). Let `R` and `S` be Noetherian, `M` a finite
+`S`-module and `I` an ideal of `R` with `I S` in the Jacobson radical of `S`. If `I ⊗[R] M → M` is
+injective, that is `Tor₁ᴿ(R ⧸ I, M) = 0`, and `M ⧸ I M` is flat over `R ⧸ I`, then `M` is flat over
+`R`. -/
+@[stacks 00MK "with `I S` in the Jacobson radical in place of a local homomorphism"]
+theorem Flat.of_subtype_rTensor_injective [IsNoetherianRing R] {S : Type*} [CommRing S]
+    [IsNoetherianRing S] [Algebra R S] [Module S M] [IsScalarTower R S M] [Module.Finite S M]
+    (hIS : I.map (algebraMap R S) ≤ (⊥ : Ideal S).jacobson)
+    (hI : Function.Injective (I.subtype.rTensor M)) : Flat R M := by
+  refine Flat.iff_rTensor_injective'.mpr fun J ↦ (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
+  obtain ⟨k, hk⟩ := I.exists_pow_inf_eq_pow_smul (M := R) J
+  -- By Artin–Rees, `t` is divisible by every power of `I` in `J ⊗[R] M`.
+  have hmem (n : ℕ) : t ∈ (I ^ n • ⊤ : Submodule R (J ⊗[R] M)) := by
+    obtain ⟨u, rfl⟩ := I.mem_range_rTensor_inclusion_inf_pow hI (n + k) ht
+    have hle : J ⊓ I ^ (n + k) ≤ I ^ n • J := fun c hc ↦ by
+      have := hk (n + k) (Nat.le_add_left k n)
+      rw [Nat.add_sub_cancel] at this
+      have hc' : c ∈ I ^ (n + k) • (⊤ : Submodule R R) ⊓ J :=
+        ⟨by simpa [smul_eq_mul, Ideal.mul_top] using hc.2, hc.1⟩
+      rw [this] at hc'
+      exact Submodule.smul_mono le_rfl inf_le_right hc'
+    have hcomp : Submodule.inclusion Submodule.smul_le_right ∘ₗ Submodule.inclusion hle =
+        Submodule.inclusion (inf_le_left : J ⊓ I ^ (n + k) ≤ J) := by
+      ext; simp
+    refine range_rTensor_inclusion_smul_le (I ^ n) J ⟨(Submodule.inclusion hle).rTensor M u, ?_⟩
+    rw [← rTensor_comp_apply, hcomp]
+  -- Krull's intersection theorem for the finite `S`-module `M ⊗[R] J`, which `S` acts on through
+  -- the left factor; it receives `t` through the symmetry of the tensor product.
+  have hcomm (n : ℕ) : TensorProduct.comm R J M t ∈ (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) :=
+    Submodule.smul_top_le_comap_smul_top _ (TensorProduct.comm R J M).toLinearMap (hmem n)
+  set IS := I.map (algebraMap R S)
+  have hle (n : ℕ) : (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) ≤
+      (IS ^ n • (⊤ : Submodule S (M ⊗[R] J))).restrictScalars R := by
+    rw [← Ideal.map_pow, Ideal.smul_restrictScalars, Submodule.restrictScalars_top]
+  have hbot := Ideal.iInf_pow_smul_eq_bot_of_le_jacobson IS
+    (by simpa only [Ideal.jacobson_bot] using hIS) (M := M ⊗[R] J)
+  have : TensorProduct.comm R J M t ∈ ⨅ n : ℕ, IS ^ n • (⊤ : Submodule S (M ⊗[R] J)) :=
+    Submodule.mem_iInf _ |>.mpr fun n ↦ hle n (hcomm n)
+  simpa [hbot] using this
+
+end
+
+/-- **Flatness over the fibres** (Stacks, Tag 00MP). Let `R → S → T` be ring maps with `S` and `T`
+Noetherian, let `M` be a finite `T`-module which is flat over `R`, and let `J` be an ideal of `R`
+with `J T` in the Jacobson radical of `T`. If `M ⧸ J M` is flat over `S ⧸ J S`, then `M` is flat
+over `S`. -/
+@[stacks 00MP "with `J T` in the Jacobson radical in place of local homomorphisms"]
+theorem Flat.of_flat_quotient_map {S T : Type*} [CommRing S] [IsNoetherianRing S]
+    [Algebra R S] [Module S M] [IsScalarTower R S M] [CommRing T] [IsNoetherianRing T]
+    [Algebra S T] [Module T M] [IsScalarTower S T M] [Module.Finite T M] [Flat R M] {J : Ideal R}
+    (hJ : (J.map (algebraMap R S)).map (algebraMap S T) ≤ (⊥ : Ideal T).jacobson)
+    [Flat (S ⧸ J.map (algebraMap R S)) (M ⧸ J.map (algebraMap R S) • (⊤ : Submodule S M))] :
+    Flat S M :=
+  of_subtype_rTensor_injective hJ (map_subtype_rTensor_injective J)
+
+/-! ### Along a regular element -/
+
 variable {x : R}
 
-open scoped Pointwise
-
-/-- Multiplication by `x`, from an ideal `P` to an ideal `Q` with `x P ⊆ Q`. -/
-private noncomputable def mulRestrict (x : R) {P Q : Ideal R} (h : ∀ c ∈ P, x * c ∈ Q) :
-    P →ₗ[R] Q :=
-  (mulLeft R x).restrict h
-
-@[simp]
-private theorem coe_mulRestrict_apply (x : R) {P Q : Ideal R} (h : ∀ c ∈ P, x * c ∈ Q) (c : P) :
-    (mulRestrict x h c : R) = x * c := rfl
-
-/-- Multiplication by `x`, from the colon ideal `(J : x)` to `J`. -/
-private noncomputable def mulColon (J : Ideal R) (x : R) : J.colon {x} →ₗ[R] J :=
-  mulRestrict x fun c hc ↦ by simpa [mul_comm] using Submodule.mem_colon_singleton.mp hc
-
-@[simp]
-private theorem coe_mulColon_apply (J : Ideal R) (x : R) (c : J.colon {x}) :
-    (mulColon J x c : R) = x * c := rfl
-
-/-- One step of the descent: an element of the kernel of `M ⊗[R] J → M` is `x` times an element
-of the kernel of `M ⊗[R] (J : x) → M`. -/
-private theorem exists_lTensor_mulColon_eq (reg : IsSMulRegular M x)
-    [Flat (R ⧸ Ideal.span {x}) (QuotSMulTop x M)] {J : Ideal R} {t : M ⊗[R] J}
-    (ht : J.subtype.lTensor M t = 0) :
-    ∃ s : M ⊗[R] J.colon {x}, (mulColon J x).lTensor M s = t ∧
-      (J.colon {x}).subtype.lTensor M s = 0 := by
-  classical
-  obtain ⟨T, rfl⟩ := TensorProduct.exists_finset t
-  have h0 : ∑ i ∈ T, (i.2 : R) • i.1 = 0 := by
-    simpa using congr(TensorProduct.rid R M $ht)
-  -- The relation `∑ jᵢ mᵢ = 0` holds modulo `x`; apply the equational criterion over `R ⧸ (x)`.
-  have h1 : ∑ i : T, (Ideal.Quotient.mk (Ideal.span {x}) (i.1.2 : R)) •
-      (Submodule.Quotient.mk i.1.1 : QuotSMulTop x M) = 0 := by
-    simp_rw [QuotSMulTop.mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
-      Finset.sum_coe_sort T (fun i ↦ (i.2 : R) • i.1), h0, map_zero]
-  obtain ⟨k, a, z, hy, ha⟩ := Flat.isTrivialRelation_of_sum_smul_eq_zero h1
-  -- Lift to `R` and `M`: `mᵢ = ∑ₖ aᵢₖ yₖ + x m'ᵢ` and `∑ᵢ aᵢₖ jᵢ = x cₖ`.
-  choose a' ha' using fun i j ↦ Ideal.Quotient.mk_surjective (a i j)
-  choose z' hz' using fun j ↦ Submodule.Quotient.mk_surjective _ (z j)
-  have hm (i : T) : ∃ m', i.1.1 = ∑ j, a' i j • z' j + x • m' := by
-    have hi := hy i
-    simp_rw [← ha', ← hz', QuotSMulTop.mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
-      Submodule.mkQ_apply, Submodule.Quotient.eq] at hi
-    obtain ⟨m', -, hm'⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hi
-    exact ⟨m', by rw [hm']; abel⟩
-  choose m' hm' using hm
-  have hc (j : Fin k) : ∃ c, ∑ i : T, a' i j * (i.1.2 : R) = x * c := by
-    have hj := ha j
-    simp_rw [← ha', ← map_mul, ← map_sum, Ideal.Quotient.eq_zero_iff_mem,
-      Ideal.mem_span_singleton'] at hj
-    obtain ⟨c, hc⟩ := hj
-    exact ⟨c, by rw [mul_comm x, hc]; simp_rw [mul_comm]⟩
-  choose c hc using hc
-  have hcJ (j : Fin k) : c j ∈ J.colon {x} := by
-    rw [Submodule.mem_colon_singleton, smul_eq_mul, mul_comm, ← hc]
-    exact J.sum_mem fun i _ ↦ J.mul_mem_left _ i.1.2.2
-  have hTJ (i : T) : (i.1.2 : R) ∈ J.colon {x} :=
-    Submodule.mem_colon_singleton.mpr (J.mul_mem_right x i.1.2.2)
-  -- Multiplication by `x` sends `s = ∑ₖ yₖ ⊗ cₖ + ∑ᵢ m'ᵢ ⊗ jᵢ` to `t`.
-  set s := ∑ j, z' j ⊗ₜ[R] (⟨c j, hcJ j⟩ : J.colon {x}) +
-    ∑ i : T, m' i ⊗ₜ[R] (⟨i.1.2, hTJ i⟩ : J.colon {x})
-  have hs : (mulColon J x).lTensor M s = ∑ i ∈ T, i.1 ⊗ₜ i.2 := by
-    have e1 (j : Fin k) : mulColon J x ⟨c j, hcJ j⟩ = ∑ i : T, a' i j • i.1.2 := by
-      ext; simp [← hc, smul_eq_mul]
-    have e2 (i : T) : mulColon J x ⟨i.1.2, hTJ i⟩ = x • i.1.2 := by
-      ext; simp [smul_eq_mul]
-    rw [← Finset.sum_coe_sort T (fun i ↦ i.1 ⊗ₜ[R] i.2)]
-    simp only [s, map_add, map_sum, lTensor_tmul, e1, e2, tmul_sum, tmul_smul]
-    conv_rhs => enter [2, i]; rw [hm' i, add_tmul, sum_tmul, smul_tmul]
-    rw [Finset.sum_add_distrib, Finset.sum_comm]
-    simp only [tmul_smul, smul_tmul']
-  refine ⟨s, hs, ?_⟩
-  -- The image of `s` in `M` is killed by `x`, so it vanishes by regularity.
-  have hcomp : x • (J.colon {x}).subtype = J.subtype ∘ₗ mulColon J x := by ext; simp
-  have key : x • (J.colon {x}).subtype.lTensor M s = 0 := by
-    rw [← LinearMap.smul_apply, ← lTensor_smul, hcomp, lTensor_comp_apply, hs, ht]
-  apply (TensorProduct.rid R M).injective
-  refine reg ?_
-  simp only [smul_zero, ← map_smul, key, map_zero]
-
-/-- An element of the kernel of `M ⊗[R] J → M` comes from `M ⊗[R] (J ⊓ (x) ^ n)` for every `n`. -/
-private theorem mem_range_lTensor_inclusion (reg : IsSMulRegular M x)
-    [Flat (R ⧸ Ideal.span {x}) (QuotSMulTop x M)] (n : ℕ) {J : Ideal R} {t : M ⊗[R] J}
-    (ht : J.subtype.lTensor M t = 0) :
-    t ∈ range ((Submodule.inclusion (inf_le_left : J ⊓ Ideal.span {x} ^ n ≤ J)).lTensor M) := by
-  induction n generalizing J t with
-  | zero =>
-    have hsurj : Function.Surjective
-        (Submodule.inclusion (inf_le_left : J ⊓ Ideal.span {x} ^ 0 ≤ J)) :=
-      fun j ↦ ⟨⟨j, j.2, by simp⟩, rfl⟩
-    rw [range_eq_top.mpr (lTensor_surjective M hsurj)]
-    exact Submodule.mem_top
-  | succ n ih =>
-    obtain ⟨s, rfl, hs⟩ := exists_lTensor_mulColon_eq reg ht
-    obtain ⟨u, rfl⟩ := ih hs
-    have hmul : ∀ c ∈ J.colon {x} ⊓ Ideal.span {x} ^ n, x * c ∈ J ⊓ Ideal.span {x} ^ (n + 1) :=
-      fun c hc ↦ ⟨by simpa [mul_comm] using Submodule.mem_colon_singleton.mp hc.1,
-        pow_succ' (Ideal.span {x}) n ▸ Ideal.mul_mem_mul (Ideal.mem_span_singleton_self x) hc.2⟩
-    let ψ := mulRestrict x hmul
-    have hcomp : mulColon J x ∘ₗ Submodule.inclusion inf_le_left =
-        Submodule.inclusion inf_le_left ∘ₗ ψ := by
-      ext; simp [ψ]
-    refine ⟨ψ.lTensor M u, ?_⟩
-    rw [← lTensor_comp_apply, ← lTensor_comp_apply, hcomp]
-
-/-- **Local criterion for flatness** along a regular element (Stacks, Lemma 10.99.10 (00ML), for
-the ideal `(x)`). Let `R` and `S` be Noetherian, `M` a finite `S`-module and `x ∈ R` with image in
-the Jacobson radical of `S`. If `x` is `M`-regular and `M ⧸ x M` is flat over `R ⧸ (x)`, then `M`
-is flat over `R`. -/
+/-- **Local criterion for flatness** along a regular element (Stacks, Tag 00ML, for the ideal
+`(x)`). Let `R` and `S` be Noetherian, `M` a finite `S`-module and `x ∈ R` with image in the
+Jacobson radical of `S`. If `x` is `M`-regular and `M ⧸ x M` is flat over `R ⧸ (x)`, then `M` is
+flat over `R`. -/
 @[stacks 00ML "the case of a principal ideal"]
 theorem Flat.of_flat_quotSMulTop [IsNoetherianRing R] {S : Type*} [CommRing S]
     [IsNoetherianRing S] [Algebra R S] [Module S M] [IsScalarTower R S M] [Module.Finite S M]
     (hx : algebraMap R S x ∈ (⊥ : Ideal S).jacobson) (reg : IsSMulRegular M x)
     [Flat (R ⧸ Ideal.span {x}) (QuotSMulTop x M)] : Flat R M := by
-  refine Flat.iff_lTensor_injective'.mpr fun J ↦ (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
-  set I := Ideal.span {x}
-  obtain ⟨k, hk⟩ := I.exists_pow_inf_eq_pow_smul (M := R) J
-  -- By Artin–Rees, `t` is divisible by every power of `x` in `M ⊗[R] J`.
-  have hmem (n : ℕ) : t ∈ (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) := by
-    obtain ⟨u, rfl⟩ := mem_range_lTensor_inclusion reg (n + k) ht
-    clear ht
-    induction u using TensorProduct.inductionOn with
-    | add u v hu hv => rw [map_add]; exact add_mem hu hv
-    | tmul m c =>
-      have hc : (c : R) ∈ I ^ n • J := by
-        have := hk (n + k) (Nat.le_add_left k n)
-        rw [Nat.add_sub_cancel] at this
-        have hc' : (c : R) ∈ I ^ (n + k) • (⊤ : Submodule R R) ⊓ J :=
-          ⟨by simpa [smul_eq_mul, Ideal.mul_top] using c.2.2, c.2.1⟩
-        rw [this] at hc'
-        exact Submodule.smul_mono le_rfl inf_le_right hc'
-      exact range_lTensor_inclusion_smul_le (I ^ n) J
-        ⟨m ⊗ₜ ⟨c, hc⟩, by simp [Submodule.inclusion_apply]⟩
-  -- Krull's intersection theorem for the finite `S`-module `M ⊗[R] J`.
-  set IS := I.map (algebraMap R S)
-  have hle (n : ℕ) : (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) ≤
-      (IS ^ n • (⊤ : Submodule S (M ⊗[R] J))).restrictScalars R := by
-    rw [← Ideal.map_pow, Ideal.smul_restrictScalars, Submodule.restrictScalars_top]
-  have hjac : IS ≤ (⊥ : Ideal S).jacobson := by
-    simpa [IS, I, Ideal.map_span, Ideal.span_singleton_le_iff_mem] using hx
-  have hbot := Ideal.iInf_pow_smul_eq_bot_of_le_jacobson IS
-    (by simpa only [Ideal.jacobson_bot] using hjac) (M := M ⊗[R] J)
-  have : t ∈ ⨅ n : ℕ, IS ^ n • (⊤ : Submodule S (M ⊗[R] J)) :=
-    Submodule.mem_iInf _ |>.mpr fun n ↦ hle n (hmem n)
-  simpa [hbot] using this
+  have : Flat (R ⧸ Ideal.span {x}) (M ⧸ Ideal.span {x} • (⊤ : Submodule R M)) :=
+    .of_linearEquiv ((Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x ⊤)
+      ).extendScalarsOfSurjective Ideal.Quotient.mk_surjective)
+  refine of_subtype_rTensor_injective (S := S) ?_ reg.span_singleton_subtype_rTensor_injective
+  simpa [Ideal.map_span, Ideal.span_singleton_le_iff_mem] using hx
 
 /-- **Local criterion for flatness** along a regular element, for a local homomorphism `R → S` of
 Noetherian local rings (Stacks, Lemma 10.99.10 (00ML), for the ideal `(x)`): if `x` lies in the
@@ -279,9 +229,29 @@ theorem flat_quotSMulTop_iff_flat [IsNoetherianRing R] {S : Type*} [CommRing S]
 
 end Module
 
-namespace Module
+open IsLocalRing in
+/-- Let `g : R → S` and `f : S → T` be ring homomorphisms of local rings, with `S` and `T`
+Noetherian and `f` local. If `f ∘ g` is flat and `g` maps the maximal ideal of `R` onto a generating
+set of the maximal ideal of `S`, then `f` is flat. This is flatness over the fibres
+(`Module.Flat.of_flat_quotient_map`), whose fibre condition holds because `S ⧸ 𝔪_R S` is a field.
+Unlike the module version, it applies to endomorphisms such as Frobenius. -/
+theorem RingHom.Flat.of_comp_of_map_maximalIdeal_eq {R S T : Type*} [CommRing R] [IsLocalRing R]
+    [CommRing S] [IsLocalRing S] [IsNoetherianRing S] [CommRing T] [IsLocalRing T]
+    [IsNoetherianRing T] (g : R →+* S) (f : S →+* T) [IsLocalHom f] (hfg : (f.comp g).Flat)
+    (hg : (maximalIdeal R).map g = maximalIdeal S) : f.Flat := by
+  algebraize [g, f, f.comp g]
+  let _ := Ideal.Quotient.field (maximalIdeal S)
+  have : Module.Flat (S ⧸ maximalIdeal S) (T ⧸ maximalIdeal S • (⊤ : Submodule S T)) :=
+    inferInstance
+  have hg' : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S := hg
+  rw [← hg'] at this
+  refine Module.Flat.of_flat_quotient_map (R := R) (M := T) (T := T) (J := maximalIdeal R) ?_
+  rw [IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top]
+  exact (Ideal.map_mono hg.le).trans (map_maximalIdeal_le f)
 
 open IsLocalRing RingTheory.Sequence Pointwise
+
+namespace Module
 
 universe u v
 

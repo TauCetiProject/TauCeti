@@ -211,6 +211,34 @@ theorem pbwBasis_eq_prod_pow (n : ι →₀ ℕ) :
           Function.comp_apply]
   rw [← hprod, ← b.pbwBasisMonomial_toFinsupp hword, hmult, pbwBasis_apply_aux]
 
+/-- For a basis indexed by `Fin n`, the PBW vector is the product of generator powers in
+index order, including the factors with exponent zero. -/
+theorem pbwBasis_eq_prod_pow_fin {n : ℕ} (b : Basis (Fin n) R L) (c : Fin n → ℕ) :
+    b.pbwBasis (Finsupp.equivFunOnFinite.symm c) =
+      ((List.finRange n).map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ c i).prod := by
+  classical
+  let d : Fin n →₀ ℕ := Finsupp.equivFunOnFinite.symm c
+  have hsort : ((List.finRange n).filter fun i ↦ i ∈ d.support) =
+      d.support.sort (· ≤ ·) := by
+    apply ((List.sortedLT_finRange n).pairwise.filter _).eq_of_mem_iff
+      d.support.sortedLT_sort.pairwise
+    simp
+  have hprod (l : List (Fin n)) :
+      ((l.filter fun i ↦ i ∈ d.support).map fun i ↦
+        _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ d i).prod =
+      (l.map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ d i).prod := by
+    induction l with
+    | nil => simp
+    | cons i l ih =>
+        by_cases hi : i ∈ d.support
+        · simp only [List.filter_cons, hi, decide_true, ite_true, List.map_cons,
+            List.prod_cons, ih]
+        · simp only [List.filter_cons, hi, decide_false, Bool.false_eq_true, ite_false,
+            List.map_cons, List.prod_cons, Finsupp.notMem_support_iff.mp hi, pow_zero,
+            one_mul, ih]
+  rw [pbwBasis_eq_prod_pow, ← hsort, hprod]
+  simp only [d, Finsupp.coe_equivFunOnFinite_symm]
+
 @[simp]
 theorem pbwBasis_single (i : ι) (k : ℕ) :
     b.pbwBasis (Finsupp.single i k) = _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ k := by

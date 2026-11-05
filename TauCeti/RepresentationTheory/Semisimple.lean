@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.AsModule
-public import TauCeti.RingTheory.Semisimple.Trace
+public import TauCeti.RingTheory.Semisimple.Trace.Basic
 
 /-!
 # Semisimple representations are determined by their characters

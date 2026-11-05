@@ -25,7 +25,7 @@ valuation ring, the least valuation of a `k × k` minor of `A` is therefore
 `v s₀ + ⋯ + v sₖ₋₁`, and `v (det A)` is the sum of all the `v sᵢ`. All row and column choices
 are needed here; the principal minors alone need not attain the minimum.
 
-Over a discrete valuation ring, every square matrix of nonzero determinant has such a Smith
+Over a discrete valuation ring, every square matrix has such a Smith
 normal form: `Matrix.exists_smith_normal_form_of_isDiscreteValuationRing` in
 `TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic`.
 
