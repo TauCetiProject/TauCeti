@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.SquareZeroCoroot
+public import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Integral matrices of type-B spin generators
@@ -235,33 +236,24 @@ private theorem rootOp_endpoint_projections_apply (i : Fin (n + 1))
     (pow_two_rep_rootGenerator_eq_zero n (.inl i))
     (pow_two_rep_rootGenerator_eq_zero n (.inr i))
 
-private theorem toMatrix_eq_diagonal_of_basis_projection
-    (f : Module.End ℤ (lattice n).toAddSubgroup) (p : Fin (dimension n) → Prop)
-    [DecidablePred p] (hf : ∀ a, f (latticeBasis n a) =
-      if p a then latticeBasis n a else 0) :
-    LinearMap.toMatrix (latticeBasis n) (latticeBasis n) f =
-      Matrix.diagonal (fun a ↦ if p a then 1 else 0) := by
-  ext a b
-  rw [LinearMap.toMatrix_apply, hf]
-  by_cases hab : a = b
-  · subst b
-    by_cases hp : p a <;> simp [hp]
-  · by_cases hp : p b <;> simp [hp, hab]
-
 /-- The integral product `EF` projects onto the basis vectors of simple-coroot weight `1`. -/
 theorem rootIntMatrix_inl_mul_inr (i : Fin (n + 1)) :
     rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) =
       Matrix.diagonal (fun a ↦ if basisWeight n a i = 1 then 1 else 0) := by
   simp only [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
-  exact toMatrix_eq_diagonal_of_basis_projection n _ _
-    (fun a ↦ (rootOp_endpoint_projections_apply n i a).1)
+  apply (Module.Basis.toMatrix_eq_diagonal_iff _ _ _ _).2
+  intro a
+  simpa only [ite_smul, one_smul, zero_smul] using
+    (rootOp_endpoint_projections_apply n i a).1
 
 /-- The integral product `FE` projects onto the basis vectors of simple-coroot weight `-1`. -/
 theorem rootIntMatrix_inr_mul_inl (i : Fin (n + 1)) :
     rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) =
       Matrix.diagonal (fun a ↦ if basisWeight n a i = -1 then 1 else 0) := by
   simp only [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
-  exact toMatrix_eq_diagonal_of_basis_projection n _ _
-    (fun a ↦ (rootOp_endpoint_projections_apply n i a).2)
+  apply (Module.Basis.toMatrix_eq_diagonal_iff _ _ _ _).2
+  intro a
+  simpa only [ite_smul, one_smul, zero_smul] using
+    (rootOp_endpoint_projections_apply n i a).2
 
 end TauCeti.TypeBSpinCarrier
