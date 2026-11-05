@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
+import TauCeti.RingTheory.Valuation.Orthogonality
 import Mathlib.Algebra.Polynomial.Derivative
 
 /-!
@@ -440,12 +440,12 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
         ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
     rw [IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
       addVal_algebraMap, IsDiscreteValuationRing.addVal_uniformizer hϖ, nsmul_one]
-  have hdistinct : ∀ i j : Fin n, i ≠ j →
-      algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ) ≠ 0 →
-      algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ) ≠ 0 →
+  have hdistinct : ∀ i ∈ Finset.univ, ∀ j ∈ Finset.univ, i ≠ j →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠ ⊤ →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) ≠ ⊤ →
       IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠
         IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) := by
-    intro i j hij hi0 hj0 hval
+    intro i _ j _ hij hi0 hj0 hval
     have hci : c i ≠ 0 := by
       intro h
       apply hi0
@@ -468,7 +468,7 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
       simpa [Nat.add_mod, Nat.mod_eq_of_lt (i.isLt.trans_le hn),
         Nat.mod_eq_of_lt (j.isLt.trans_le hn)] using hmod
     exact hij (Fin.ext hijval)
-  rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
+  rw [AddValuation.map_sum_eq_inf_of_ne _ _ _ hdistinct, Finset.inf_univ_eq_iInf]
   exact iInf_congr hterm
 
 /-- **Valuation balls in uniformizer coordinates.** For a uniformizer `ϖ` of `L` and `n ≤ e(L/K)`,
