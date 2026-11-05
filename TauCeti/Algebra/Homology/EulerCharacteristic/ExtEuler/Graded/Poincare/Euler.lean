@@ -106,8 +106,8 @@ theorem maslovEulerPowerSeries_bigradedExtPoincarePowerSeries
     (h : IsGradedExtInternallyFinite.{w} k e X Y) :
     Bigraded.maslovEulerPowerSeries (bigradedExtPoincarePowerSeries k e h) =
       PowerSeries.mk fun n ↦ (-1 : ℤ) ^ n * Module.finrank k (⨁ j, GradedExt.{w} e X Y n j) := by
-  rw [Bigraded.maslovEulerPowerSeries_apply,
-    rescale_neg_one_map_laurentEval_one_bigradedExtPoincarePowerSeries]
+  rw [Bigraded.maslovEulerPowerSeries_apply, map_laurentEval_one_bigradedExtPoincarePowerSeries,
+    PowerSeries.rescale_mk]
 
 /-- On a diagonally supported Ext Poincaré series, `Bigraded.maslovEulerPowerSeries` specializes to
 the signed formal power series of diagonal Ext dimensions `(-1)ⁿ dim_k Extⁿ(X, Y{n})`. -/
