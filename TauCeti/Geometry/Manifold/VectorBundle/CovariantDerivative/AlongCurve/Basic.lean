@@ -200,6 +200,18 @@ theorem alongCurve_add (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
   exact alongCurveWithin_add cov γ V W Set.univ hV.differentiableWithinAt
     hW.differentiableWithinAt
 
+/-- Covariant differentiation along a curve respects subtraction of differentiable fields. -/
+theorem alongCurve_sub (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
+    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt 𝕜 (sectionCoord (F := E) γ W (γ t)) t) :
+    alongCurve cov γ (fun r ↦ V r - W r) t =
+      alongCurve cov γ V t - alongCurve cov γ W t := by
+  rw [alongCurve_apply, alongCurve_apply, alongCurve_apply,
+    alongCurveInChartWithin_apply, alongCurveInChartWithin_apply,
+    alongCurveInChartWithin_apply, sectionCoord_sub]
+  simp only [derivWithin_univ, deriv_sub hV hW, Pi.sub_apply, map_sub, sub_apply, map_add]
+  abel
+
 /-- The coordinate formula within a parameter set obeys the scalar Leibniz rule. -/
 private theorem alongCurveInChartWithin_smul (f : 𝕜 → 𝕜) (s : Set 𝕜) (x : M) {t : 𝕜}
     (hf : DifferentiableWithinAt 𝕜 f s t)
