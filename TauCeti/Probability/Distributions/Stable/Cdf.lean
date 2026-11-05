@@ -55,18 +55,12 @@ theorem cdf_stableMeasure_eq_integral (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) 
     cdf (stableMeasure α β s m) x =
       ∫ y in Iic x, stablePDFReal α β s m y := by
   let _ := isProbabilityMeasure_stableMeasure hα hβ s m
-  have hμ : stableMeasure α β s m =
-      volume.withDensity fun y ↦ ENNReal.ofReal (stablePDFReal α β s m y) := by
-    rw [stableMeasure_eq_withDensity α β hs,
-      funext (stablePDF_eq_ofReal α β s m)]
+  have hμ := stableMeasure_eq_withDensity_ofReal α β hs m
   rw [cdf_eq_real, hμ]
   exact measureReal_withDensity_ofReal
     (ae_restrict_of_ae (ae_of_all volume fun y ↦ stablePDFReal_nonneg α β s m y))
     measurableSet_Iic
-    (integrable_of_eq_withDensity
-      hμ
-      (measurable_stablePDFReal α β s m).aemeasurable
-      (ae_of_all volume fun y ↦ stablePDFReal_nonneg α β s m y)).integrableOn
+    (integrable_stablePDFReal α β s m).integrableOn
 
 /-- The cdf of a positive-scale stable law is differentiable at every point, with derivative its
 Fourier-inversion density. -/
@@ -75,8 +69,7 @@ theorem hasDerivAt_cdf_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (
     HasDerivAt (cdf (stableMeasure α β s m)) (stablePDFReal α β s m x) x := by
   let _ := isProbabilityMeasure_stableMeasure hα hβ s m
   exact hasDerivAt_cdf_of_eq_withDensity
-    (by rw [stableMeasure_eq_withDensity α β hs,
-      funext (stablePDF_eq_ofReal α β s m)])
+    (stableMeasure_eq_withDensity_ofReal α β hs m)
     (measurable_stablePDFReal α β s m).aemeasurable
     (ae_of_all volume fun y ↦ stablePDFReal_nonneg α β s m y)
     (continuous_stablePDFReal α β s m).continuousAt

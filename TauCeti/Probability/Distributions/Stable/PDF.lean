@@ -189,6 +189,13 @@ theorem stableMeasure_eq_withDensity (α β : ℝ) (hs : 0 < s) (m : ℝ) :
   simp_rw [funext (stablePDF_eq_ofReal α β s m), stablePDFReal_def]
   exact Measure.eq_withDensity_charFunDensity (integrable_charFun_stableMeasure α β hs m)
 
+/-- **Stable laws of positive scale have a real-valued density.** The law is Lebesgue measure
+weighted by `ENNReal.ofReal ∘ stablePDFReal`. -/
+theorem stableMeasure_eq_withDensity_ofReal (α β : ℝ) (hs : 0 < s) (m : ℝ) :
+    stableMeasure α β s m =
+      volume.withDensity fun x ↦ ENNReal.ofReal (stablePDFReal α β s m x) := by
+  rw [stableMeasure_eq_withDensity α β hs, funext (stablePDF_eq_ofReal α β s m)]
+
 /-- The chosen real stable density is integrable for every parameter value. At zero scale and
 at invalid parameters this uses the library's zero-density convention. -/
 theorem integrable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
@@ -197,9 +204,7 @@ theorem integrable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
   · exact (integrable_zero ℝ ℝ volume).congr
       (ae_of_all _ fun x ↦ (stablePDFReal_zero_scale α β m x).symm)
   · exact Probability.integrable_of_eq_withDensity
-      (by
-        simpa only [funext (stablePDF_eq_ofReal α β s m)] using
-          stableMeasure_eq_withDensity α β hs m)
+      (stableMeasure_eq_withDensity_ofReal α β hs m)
       (measurable_stablePDFReal α β s m).aemeasurable
       (.of_forall fun x ↦ stablePDFReal_nonneg α β s m x)
 
