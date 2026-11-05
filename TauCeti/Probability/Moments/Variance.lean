@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
 
 /-!
@@ -125,5 +126,20 @@ theorem evariance_comp_measurePreserving {Ω Ω' : Type*} [MeasurableSpace Ω] [
     evariance (fun x => f (e x)) μ = evariance f ν := by
   rw [evariance, evariance, he.integral_comp hem f]
   exact he.lintegral_comp_emb hem fun y => ‖f y - ∫ y', f y' ∂ν‖ₑ ^ 2
+
+/-- The variance of `f` in coordinate `i`, with the other coordinates frozen at `x`, is a
+measurable function of `x`. -/
+theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) (i : ι) [SFinite (μ i)]
+    {f : (∀ i, α i) → ℝ} (hf : Measurable f) :
+    Measurable fun x => evariance (fun y => f (Function.update x i y)) (μ i) := by
+  have hu : Measurable fun p : (∀ i, α i) × α i => f (Function.update p.1 i p.2) :=
+    hf.comp measurable_update'
+  have hm : StronglyMeasurable fun x => ∫ y, f (Function.update x i y) ∂μ i :=
+    hu.stronglyMeasurable.integral_prod_right'
+  exact Measurable.lintegral_prod_right'
+    (f := fun p : (∀ i, α i) × α i =>
+      ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
+    ((hu.sub (hm.measurable.comp measurable_fst)).enorm.pow_const 2)
 
 end TauCeti.Probability
