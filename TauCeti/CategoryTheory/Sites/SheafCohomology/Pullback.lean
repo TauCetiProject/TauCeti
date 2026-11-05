@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.ExactSequences
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.MayerVietoris
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
@@ -267,33 +268,6 @@ private lemma map_comp_app_comp_map_of_comm {U₁ U₂ : C} {V₁ V₂ : D} (ψ�
       (freeYonedaSheafFunctor K).map j ≫ (freeYonedaSheafFunctor K).map ψ₂ ≫ c.app U₂ := by
   rw [Category.assoc, map_comp_app_comp_map, ← h, Functor.map_comp, Category.assoc]
 
-/-- The square relating the first maps of the short complexes of free sheaves of two
-Mayer-Vietoris squares, in terms of the squares relating their components. -/
-private lemma comp_map_biprod_lift {A₁ A₂ A₃ : Sheaf K AddCommGrpCat.{v}}
-    {B₁ B₂ B₃ : Sheaf J AddCommGrpCat.{v}} {a₁ : A₁ ⟶ pb.obj B₁} {a₂ : A₂ ⟶ pb.obj B₂}
-    {a₃ : A₃ ⟶ pb.obj B₃} {x : B₁ ⟶ B₂} {x' : B₁ ⟶ B₃} {y : A₁ ⟶ A₂} {y' : A₁ ⟶ A₃}
-    (h : a₁ ≫ pb.map x = y ≫ a₂) (h' : a₁ ≫ pb.map x' = y' ≫ a₃) :
-    a₁ ≫ pb.map (biprod.lift x (-x')) =
-      biprod.lift y (-y') ≫ biprod.desc (a₂ ≫ pb.map biprod.inl) (a₃ ≫ pb.map biprod.inr) := by
-  rw [biprod.lift_desc, biprod.lift_eq]
-  simp only [Functor.map_add, Functor.map_comp, Functor.map_neg, Preadditive.comp_add,
-    Preadditive.comp_neg, Preadditive.neg_comp, reassoc_of% h, reassoc_of% h']
-
-omit [pb.Additive] in
-/-- The square relating the second maps of the short complexes of free sheaves of two
-Mayer-Vietoris squares, in terms of the squares relating their components. -/
-private lemma biprod_desc_comp_map {A₂ A₃ A₄ : Sheaf K AddCommGrpCat.{v}}
-    {B₂ B₃ B₄ : Sheaf J AddCommGrpCat.{v}} {a₂ : A₂ ⟶ pb.obj B₂} {a₃ : A₃ ⟶ pb.obj B₃}
-    {a₄ : A₄ ⟶ pb.obj B₄} {z : B₂ ⟶ B₄} {z' : B₃ ⟶ B₄} {w : A₂ ⟶ A₄} {w' : A₃ ⟶ A₄}
-    (h : a₂ ≫ pb.map z = w ≫ a₄) (h' : a₃ ≫ pb.map z' = w' ≫ a₄) :
-    biprod.desc (a₂ ≫ pb.map biprod.inl) (a₃ ≫ pb.map biprod.inr) ≫ pb.map (biprod.desc z z') =
-      biprod.desc w w' ≫ a₄ := by
-  apply biprod.hom_ext'
-  · rw [biprod.inl_desc_assoc, biprod.inl_desc_assoc, Category.assoc, ← Functor.map_comp,
-      biprod.inl_desc, h]
-  · rw [biprod.inr_desc_assoc, biprod.inr_desc_assoc, Category.assoc, ← Functor.map_comp,
-      biprod.inr_desc, h']
-
 /-- The short complex `ℤ[S'.X₁] ⟶ ℤ[S'.X₂] ⊞ ℤ[S'.X₃] ⟶ ℤ[S'.X₄]` of a Mayer-Vietoris square `S'`
 maps to the image under `pb` of that of `S`, through `ψ` and `c`. -/
 private def shortComplexMap [HasWeakSheafify J (Type v)] [HasWeakSheafify K (Type v)]
@@ -304,10 +278,12 @@ private def shortComplexMap [HasWeakSheafify J (Type v)] [HasWeakSheafify K (Typ
   τ₂ := biprod.desc (((freeYonedaSheafFunctor K).map ψ.τ₂ ≫ c.app S.X₂) ≫ pb.map biprod.inl)
       (((freeYonedaSheafFunctor K).map ψ.τ₃ ≫ c.app S.X₃) ≫ pb.map biprod.inr)
   τ₃ := (freeYonedaSheafFunctor K).map ψ.τ₄ ≫ c.app S.X₄
-  comm₁₂ := comp_map_biprod_lift pb
-    (map_comp_app_comp_map_of_comm pb c ψ.τ₁ ψ.τ₂ S.f₁₂ S'.f₁₂ ψ.comm₁₂)
-    (map_comp_app_comp_map_of_comm pb c ψ.τ₁ ψ.τ₃ S.f₁₃ S'.f₁₃ ψ.comm₁₃)
-  comm₂₃ := biprod_desc_comp_map pb
+  comm₁₂ := by
+    have h := congrArg Neg.neg (map_comp_app_comp_map_of_comm pb c ψ.τ₁ ψ.τ₃ S.f₁₃ S'.f₁₃ ψ.comm₁₃)
+    rw [← Preadditive.comp_neg, ← Functor.map_neg, ← Preadditive.neg_comp] at h
+    exact pb.comp_map_biprod_lift
+      (map_comp_app_comp_map_of_comm pb c ψ.τ₁ ψ.τ₂ S.f₁₂ S'.f₁₂ ψ.comm₁₂) h
+  comm₂₃ := pb.biprod_desc_comp_map
     (map_comp_app_comp_map_of_comm pb c ψ.τ₂ ψ.τ₄ S.f₂₄ S'.f₂₄ ψ.comm₂₄)
     (map_comp_app_comp_map_of_comm pb c ψ.τ₃ ψ.τ₄ S.f₃₄ S'.f₃₄ ψ.comm₃₄)
 
