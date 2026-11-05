@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.CompStruct
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
+public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import TauCeti.CategoryTheory.Core
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
@@ -40,6 +41,11 @@ not proved here. For the nerve of a category `C`, the core is the nerve of the g
 * `SSet.Edge.isEquivalence_of_kanComplex`: every edge of a Kan complex is an equivalence. Hence
   every Kan complex contained in `X` lies in its core (`SSet.le_core_of_kanComplex`).
 * `SSet.le_core_iff`: the core is the largest subcomplex all of whose edges are equivalences.
+* `SSet.Edge.isEquivalence_tensor_iff`, `SSet.core_tensor`: an edge of a product is an
+  equivalence exactly when both of its projections are, so the core of a product is the product
+  of the cores. This makes the cores of function complexes closed under composition.
+* `SSet.range_le_core_of_unit`: maps from `𝟙_ SSet` factor through the core, so the cores of
+  function complexes contain the identities.
 * `SSet.hasLiftingProperty_horn_ι_core_ι`: the inclusion of the core of a quasicategory is an
   inner fibration, so `SSet.core.quasicategory`: the core of a quasicategory is a quasicategory.
 * `CategoryTheory.nerve.mem_core_iff`: a simplex of the nerve of a category lies in the core
@@ -53,7 +59,7 @@ not proved here. For the nerve of a category `C`, the core is the nerve of the g
 
 public section
 
-open CategoryTheory Opposite Simplicial
+open CategoryTheory MonoidalCategory CartesianMonoidalCategory Opposite Simplicial
 
 universe u v
 
@@ -287,6 +293,58 @@ lemma le_core_of_kanComplex (A : X.Subcomplex) [KanComplex (A : SSet)] : A ≤ X
   intro s hs
   exact (isEquivalence_iff_of_edge_eq (by simp)).1
     ((isEquivalence_of_kanComplex (mk' (⟨s, hs⟩ : (A : SSet) _⦋1⦌))).map A.ι)
+
+/-- Every map from the unit `𝟙_ SSet` factors through the core. -/
+lemma range_le_core_of_unit (f : 𝟙_ SSet.{u} ⟶ X) : Subcomplex.range f ≤ X.core := by
+  rw [range_le_core_iff]
+  intro y
+  -- The only `1`-simplex of `𝟙_ SSet` is degenerate, so its image is a degenerate edge.
+  have : f.app _ y = X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op (f.app _ PUnit.unit) :=
+    NatTrans.naturality_apply f (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op PUnit.unit
+  rw [this]
+  exact isEquivalence_mk'_map_of_eq _ _ (Subsingleton.elim (α := Fin 1) _ _)
+
+variable (X) in
+/-- Maps from the unit `𝟙_ SSet` into the core of `X` are the same as maps into `X`. -/
+noncomputable def coreUnitHomEquiv : (𝟙_ SSet.{u} ⟶ X.core) ≃ (𝟙_ SSet.{u} ⟶ X) where
+  toFun f := f ≫ X.core.ι
+  invFun f := Subcomplex.lift f (range_le_core_of_unit f)
+  left_inv f := by rw [← cancel_mono X.core.ι, Subcomplex.lift_ι]
+  right_inv f := Subcomplex.lift_ι _ _
+
+@[simp]
+lemma coreUnitHomEquiv_apply (f : 𝟙_ SSet.{u} ⟶ X.core) : X.coreUnitHomEquiv f = f ≫ X.core.ι :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+lemma coreUnitHomEquiv_symm_apply_ι (f : 𝟙_ SSet.{u} ⟶ X) :
+    X.coreUnitHomEquiv.symm f ≫ X.core.ι = f :=
+  (rfl)
+
+/-- An edge of a product `X ⊗ Y` is an equivalence exactly when both of its projections are. -/
+lemma Edge.isEquivalence_tensor_iff {p₀ p₁ : (X ⊗ Y) _⦋0⦌} (e : Edge p₀ p₁) :
+    e.IsEquivalence ↔ (e.map (fst X Y)).IsEquivalence ∧ (e.map (snd X Y)).IsEquivalence := by
+  refine ⟨fun h ↦ ⟨h.map _, h.map _⟩, fun ⟨⟨I₁⟩, ⟨I₂⟩⟩ ↦ ⟨?_⟩⟩
+  -- The simplices of `X ⊗ Y` are pairs of simplices, so the inverse and the `2`-simplices
+  -- witnessing it are formed componentwise.
+  exact
+    { inv := Edge.mk (X := X ⊗ Y) (I₁.inv.edge, I₂.inv.edge)
+        (Prod.ext I₁.inv.src_eq I₂.inv.src_eq) (Prod.ext I₁.inv.tgt_eq I₂.inv.tgt_eq)
+      homInvId := CompStruct.mk (X := X ⊗ Y) (I₁.homInvId.simplex, I₂.homInvId.simplex)
+        (Prod.ext I₁.homInvId.d₂ I₂.homInvId.d₂) (Prod.ext I₁.homInvId.d₀ I₂.homInvId.d₀)
+        (Prod.ext I₁.homInvId.d₁ I₂.homInvId.d₁)
+      invHomId := CompStruct.mk (X := X ⊗ Y) (I₁.invHomId.simplex, I₂.invHomId.simplex)
+        (Prod.ext I₁.invHomId.d₂ I₂.invHomId.d₂) (Prod.ext I₁.invHomId.d₀ I₂.invHomId.d₀)
+        (Prod.ext I₁.invHomId.d₁ I₂.invHomId.d₁) }
+
+variable (X Y) in
+/-- The core of a product is the product of the cores. -/
+@[simp]
+lemma core_tensor : (X ⊗ Y).core = X.core.prod Y.core := by
+  ext n s
+  rw [mem_core_iff, Subcomplex.prod_obj]
+  exact (forall_congr' fun f ↦ (Edge.isEquivalence_tensor_iff _).trans (and_congr
+    (isEquivalence_iff_of_edge_eq rfl) (isEquivalence_iff_of_edge_eq rfl))).trans forall_and
 
 /-- The long edge of a filler of an inner horn `Λ[2, 1]` in the core of a quasicategory is an
 equivalence, as a composite of the two equivalences of the horn. -/
