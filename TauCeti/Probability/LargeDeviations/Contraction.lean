@@ -32,15 +32,12 @@ namespace TauCeti.Probability
 variable {ι X Y : Type*}
 
 /-- The contracted rate function: the least cost of a preimage. -/
+@[expose]
 noncomputable def contractedRate (f : X → Y) (I : X → ℝ≥0∞) (y : Y) : ℝ≥0∞ :=
   ⨅ x ∈ f ⁻¹' {y}, I x
 
-private theorem contractedRate_apply_aux (f : X → Y) (I : X → ℝ≥0∞) (y : Y) :
-    contractedRate f I y = ⨅ x ∈ f ⁻¹' {y}, I x := rfl
-
 theorem contractedRate_apply (f : X → Y) (I : X → ℝ≥0∞) (y : Y) :
-    contractedRate f I y = ⨅ x ∈ f ⁻¹' {y}, I x :=
-  contractedRate_apply_aux f I y
+    contractedRate f I y = ⨅ x ∈ f ⁻¹' {y}, I x := rfl
 
 theorem le_contractedRate_iff {a : ℝ≥0∞} {f : X → Y} {I : X → ℝ≥0∞} {y : Y} :
     a ≤ contractedRate f I y ↔ ∀ x, f x = y → a ≤ I x := by
@@ -60,7 +57,7 @@ theorem iInf_contractedRate (f : X → Y) (I : X → ℝ≥0∞) (A : Set Y) :
 variable [TopologicalSpace X] [TopologicalSpace Y]
 namespace IsGoodRateFunction
 
-variable [T2Space Y] {f : X → Y} {I : X → ℝ≥0∞}
+variable [T1Space Y] {f : X → Y} {I : X → ℝ≥0∞}
 
 /-- A good rate function attains its infimum on every fibre where the infimum is finite. -/
 theorem exists_eq_contractedRate (hI : IsGoodRateFunction I) (hf : Continuous f) {y : Y}
@@ -78,20 +75,39 @@ theorem exists_eq_contractedRate (hI : IsGoodRateFunction I) (hf : Continuous f)
   · exact hmin ⟨h, hx⟩
   · exact hx₀I.trans (not_le.mp h).le
 
+/-- A finite sublevel set of the contracted rate is the image of the corresponding sublevel set
+of the original rate. -/
+theorem contractedRate_sublevel (hI : IsGoodRateFunction I) (hf : Continuous f)
+    (α : ℝ≥0∞) (hα : α ≠ ∞) :
+    {y | contractedRate f I y ≤ α} = f '' {x | I x ≤ α} := by
+  refine Set.ext fun y => ⟨fun hy => ?_, ?_⟩
+  · obtain ⟨x, rfl, hx⟩ := hI.exists_eq_contractedRate hf (ne_top_of_le_ne_top hα hy)
+    exact ⟨x, hx.le.trans hy, rfl⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact contractedRate_le.trans hx
+
+/-- Membership in a finite sublevel set of the contracted rate is equivalent to the existence of
+a preimage in the corresponding sublevel set. -/
+theorem mem_contractedRate_sublevel_iff (hI : IsGoodRateFunction I) (hf : Continuous f)
+    {α : ℝ≥0∞} (hα : α ≠ ∞) {y : Y} :
+    contractedRate f I y ≤ α ↔ ∃ x, f x = y ∧ I x ≤ α := by
+  constructor
+  · intro hy
+    have hmem : y ∈ {z | contractedRate f I z ≤ α} := hy
+    rw [hI.contractedRate_sublevel hf α hα] at hmem
+    rcases hmem with ⟨x, hx, hxy⟩
+    exact ⟨x, hxy, hx⟩
+  · rintro ⟨x, hxy, hx⟩
+    have hmem : y ∈ f '' {x | I x ≤ α} := ⟨x, hx, hxy⟩
+    rw [← hI.contractedRate_sublevel hf α hα] at hmem
+    exact hmem
+
 /-- The contraction of a good rate function by a continuous map is a good rate function. -/
-protected theorem contractedRate (hI : IsGoodRateFunction I) (hf : Continuous f) :
+protected theorem contractedRate [T2Space Y] (hI : IsGoodRateFunction I) (hf : Continuous f) :
     IsGoodRateFunction (contractedRate f I) := by
-  have hsub : ∀ α : ℝ≥0∞, α ≠ ∞ →
-      {y | contractedRate f I y ≤ α} = f '' {x | I x ≤ α} := by
-    intro α hα
-    refine Set.ext fun y => ⟨fun hy => ?_, ?_⟩
-    · obtain ⟨x, rfl, hx⟩ := hI.exists_eq_contractedRate hf (ne_top_of_le_ne_top hα hy)
-      exact ⟨x, hx.le.trans hy, rfl⟩
-    · rintro ⟨x, hx, rfl⟩
-      exact contractedRate_le.trans hx
   have hcomp : ∀ α : ℝ≥0∞, α ≠ ∞ →
       IsCompact {y | contractedRate f I y ≤ α} := fun α hα => by
-    rw [hsub α hα]
+    rw [hI.contractedRate_sublevel hf α hα]
     exact (hI.isCompact_sublevel α hα).image hf
   refine ⟨lowerSemicontinuous_iff_isClosed_preimage.mpr fun α => ?_, hcomp⟩
   by_cases hα : α = ∞
