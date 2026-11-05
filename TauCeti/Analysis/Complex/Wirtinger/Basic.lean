@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
@@ -47,6 +49,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.norm_wirtingerDeriv_smul_sub_smul_le`,
   `TauCeti.norm_conjWirtingerDeriv_smul_sub_smul_le`: for a real factor `χ`,
   `‖∂(χ u)(x) v - χ ∂u(x) v‖ ≤ ‖Dχ(x)‖ ‖v‖ ‖u(x)‖`, and likewise for `\bar∂`.
+* `ContDiffAt.conjWirtingerDeriv_apply`: the conjugate Wirtinger derivative of a `C^(m+1)` map is
+  `C^m`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 
@@ -195,6 +199,15 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
   ext v
   simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
   module
+
+/-- The conjugate Wirtinger derivative of a `C^(m+1)` map, evaluated on a fixed vector, is `C^m`. -/
+theorem _root_.ContDiffAt.conjWirtingerDeriv_apply {g : V → W} {x : V} {m n : WithTop ℕ∞}
+    (hg : ContDiffAt ℝ n g x) (hmn : m + 1 ≤ n) (v : V) :
+    ContDiffAt ℝ m (fun z ↦ conjWirtingerDeriv g z v) x := by
+  have h (w : V) : ContDiffAt ℝ m (fun z ↦ fderiv ℝ g z w) x :=
+    (hg.fderiv_right hmn).clm_apply contDiffAt_const
+  simp only [TauCeti.conjWirtingerDeriv_apply]
+  exact ((h v).add ((h (I • v)).const_smul I)).const_smul _
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
 Cauchy–Riemann equation `\bar∂g = 0`. -/
