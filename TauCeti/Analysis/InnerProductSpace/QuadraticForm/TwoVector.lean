@@ -10,9 +10,11 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 /-!
 # Two-vector quadratic-form identities in real or complex inner-product spaces
 
-Four elementary lemmas useful for block-operator perturbation estimates and planar motions:
+Five elementary lemmas useful for block-operator perturbation estimates and planar motions:
 
 * `LinearMap.IsSymmetric.re_inner_map_symm`: the real mixed coefficients agree for symmetric maps;
+* `LinearMap.abs_re_inner_map_le`: an operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of
+  every matrix coefficient `⟪u, H v⟫`;
 * `LinearMap.re_inner_smul_add_smul_map`: expand the real quadratic form of a two-vector
   real-linear combination;
 * `TauCeti.norm_smul_add_smul_sq`: the Pythagorean norm formula for a two-vector
@@ -54,6 +56,14 @@ theorem re_inner_smul_add_smul_map (H : E →ₗ[𝕜] E) (y z : E) (γ σ : ℝ
   simp only [map_add, LinearMap.map_smul, inner_add_left, inner_add_right,
     inner_smul_left, inner_smul_right, RCLike.conj_ofReal, RCLike.re_ofReal_mul]
   ring
+
+/-- An operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of every matrix coefficient. -/
+theorem abs_re_inner_map_le {H : E →ₗ[𝕜] E} {ε : ℝ} (hε : ∀ v, ‖H v‖ ≤ ε * ‖v‖) (u v : E) :
+    |RCLike.re ⟪u, H v⟫_𝕜| ≤ ‖u‖ * ‖v‖ * ε :=
+  calc |RCLike.re ⟪u, H v⟫_𝕜| ≤ ‖⟪u, H v⟫_𝕜‖ := RCLike.abs_re_le_norm _
+    _ ≤ ‖u‖ * ‖H v‖ := norm_inner_le_norm _ _
+    _ ≤ ‖u‖ * (ε * ‖v‖) := by gcongr; exact hε v
+    _ = ‖u‖ * ‖v‖ * ε := by ring
 
 end LinearMap
 
