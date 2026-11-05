@@ -55,6 +55,9 @@ chart. The analyticity of the same maps is in
 
 S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di Pisa
 (3) 18 (1964), 449–474, §3, p. 464.
+
+The affine-chart results are adapted from their complex counterparts for the Hermitian projector
+model in `TauCeti.Geometry.RealAlgebraic.HermitianProjectorEmbedding`.
 -/
 
 public section

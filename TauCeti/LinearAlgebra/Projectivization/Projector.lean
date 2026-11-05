@@ -57,6 +57,11 @@ S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Norm
 (3) 18 (1964), 449–474, §3, p. 464, for the use of this embedding to reduce triangulation of
 real projective spaces to the affine case. The formula here uses all homogeneous coordinates; the
 printed formula omits one of them.
+
+The affine-chart lemmas `Projectivization.projector_apply_self_eq_zero_iff`,
+`Projectivization.image_projector_affineOpen` and `Projectivization.affineChart_eq_projector_div`
+are adapted from the corresponding Hermitian projector lemmas in
+`TauCeti.LinearAlgebra.Projectivization.HermitianProjector`.
 -/
 
 public section

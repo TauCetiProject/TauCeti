@@ -36,6 +36,10 @@ from projection closure in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
 S. Basu, R. Pollack, and M.-F. Roy,
 [Algorithms in Real Algebraic Geometry](https://doi.org/10.1007/3-540-33099-2),
 second edition, Chapter 2.
+
+`TauCeti.isSemialgebraicOn_of_forall_eq_iff` is adapted from its complex-coordinate counterpart
+`TauCeti.isSemialgebraicOn_complexToRealPi_of_forall_eq_iff` in
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.Complex`.
 -/
 
 public section

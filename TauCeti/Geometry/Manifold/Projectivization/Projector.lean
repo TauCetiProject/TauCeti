@@ -45,6 +45,10 @@ embedding: analytic and semialgebraic in both directions on every standard affin
 S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di Pisa
 (3) 18 (1964), 449–474, §3, p. 464, for the use of this embedding to reduce triangulation of real
 projective spaces to the affine case.
+
+The immersion and closed-embedding proofs are adapted from those for the Veronese map in
+`TauCeti.Geometry.Manifold.Projectivization.Veronese`, which likewise use an analytic left inverse
+on each standard affine open.
 -/
 
 public section
