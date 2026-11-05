@@ -64,12 +64,18 @@ def ratioFunction (η ω : OneForm X) (hη : ∀ x, η.MeromorphicAt x) (hω : �
 variable (hη : ∀ x, η.MeromorphicAt x) (hω : ∀ x, ω.MeromorphicAt x)
 include hη hω
 
+/-- The finite part of the meromorphic function `η / ω` agrees with the pointwise ratio
+`TauCeti.RiemannSurface.OneForm.ratio η ω` on a punctured neighbourhood of every point. -/
+theorem finitePart_ratioFunction_eventuallyEq (x : X) :
+    (ratioFunction η ω hη hω).finitePart =ᶠ[𝓝[≠] x] ratio η ω :=
+  MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq _ x
+
 /-- **`ord_x (η / ω) + ord_x ω = ord_x η`** for the ratio as a meromorphic function, at a point
 where `ω` has finite order. -/
 theorem order_ratioFunction_add_order {x : X} (hx : ω.order x ≠ ⊤) :
     MeromorphicFunction.order x (ratioFunction η ω hη hω) + ω.order x = η.order x := by
-  rw [ratioFunction, MeromorphicFunction.order_apply, RiemannSurface.meromorphicOrderAt_congr
-    (MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq _ x)]
+  rw [MeromorphicFunction.order_apply, RiemannSurface.meromorphicOrderAt_congr
+    (finitePart_ratioFunction_eventuallyEq hη hω x)]
   exact meromorphicOrderAt_ratio_add_order (hη x) (hω x) hx
 
 /-- If `η` and `ω` both have finite order at some point, their ratio is a nonzero meromorphic
