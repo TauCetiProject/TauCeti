@@ -25,8 +25,8 @@ coboundaries of continuous one-cochains with trivial coefficients are continuous
 The residue cocycle `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y)` of an invariant symmetric form `Φ` is
 continuous: every current pairs to zero with all currents of sufficiently high order, and the
 pairing vanishes on the positive currents `a_0`. Its class in continuous second cohomology is
-therefore defined, and over a domain it is nonzero, and has no torsion, as soon as `Φ` is
-nonzero. Indeed no multiple `t • c_Φ` with `t ≠ 0` is a coboundary of any one-cochain, continuous
+therefore defined, and it is nonzero as soon as `Φ` is nonzero; over a domain it has no torsion.
+Indeed no multiple `t • c_Φ` with `t ≠ 0` is a coboundary of any one-cochain, continuous
 or not: a coboundary with trivial coefficients takes equal values on `(X⁻¹ ⊗ x, X ⊗ y)` and
 `(1 ⊗ x, 1 ⊗ y)`, whose brackets agree, while `t • c_Φ` takes `t Φ(x, y)` and `0` there.
 
@@ -48,8 +48,9 @@ the residue class of the Killing form.
 When `Ψ` is nonzero and spans the invariant forms, the classification extends to an arbitrary
 vector space `Z` of coefficients with trivial action, of any dimension: `z ↦ [c_Ψ ⊗ z]`, the class
 of `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Ψ(x, y) • z`, is a linear equivalence from `Z` onto the continuous
-second cohomology with coefficients in `Z`. Injectivity follows from the scalar case, since linear
-functionals separate the points of `Z`. For surjectivity, each functional `φ` turns a continuous
+second cohomology with coefficients in `Z`. Injectivity holds for torsion-free `Z` over a domain,
+since a coboundary takes equal values on `(x_{-1}, y_1)` and `(x_0, y_0)`, while `c_Ψ ⊗ z` takes
+`Ψ(x, y) • z` and `0` there. For surjectivity, each functional `φ` turns a continuous
 cocycle `c` into a scalar one, which is `t_φ • c_Ψ` up to a coboundary. The scalars `t_φ` are the
 values `φ z` at a single vector `z`, read off from the values of `c` at `(x_{-1}, y_1)` and
 `(x_0, y_0)`. Since formal currents are perfect, the difference
@@ -200,6 +201,38 @@ theorem residueClass_smul (r : R) {Φ : LinearMap.BilinForm R L} (hΦ : Φ.lieIn
   refine Subtype.ext ?_
   simpa using twoCochainOfBilinear_smul R L r Φ hΦs hrΦs
 
+/-- The residue class of the zero form is zero. -/
+@[simp]
+theorem residueClass_zero (h0 : (0 : LinearMap.BilinForm R L).lieInvariant L)
+    (h0s : (0 : LinearMap.BilinForm R L).IsSymm) : residueClass R L 0 h0 h0s = 0 := by
+  simpa using residueClass_smul (0 : R) h0 h0s (by simpa using h0) (by simp)
+
+/-- The brackets of `X⁻¹ ⊗ x` with `X ⊗ y` and of `1 ⊗ x` with `1 ⊗ y` agree. -/
+private lemma lie_single_neg_one_eq_lie_single_zero (x y : L) :
+    ⁅(HahnSeries.single (-1) 1 ⊗ₜ x : currentAlgebra R L),
+        (HahnSeries.single 1 1 ⊗ₜ y : currentAlgebra R L)⁆ =
+      ⁅(HahnSeries.single 0 1 ⊗ₜ x : currentAlgebra R L),
+        (HahnSeries.single 0 1 ⊗ₜ y : currentAlgebra R L)⁆ := by
+  simp [_root_.LieAlgebra.ExtendScalars.bracket_tmul, HahnSeries.single_mul_single]
+
+/-- The residue pairing of `X⁻¹ ⊗ x` with `X ⊗ y` exceeds that of `1 ⊗ x` with `1 ⊗ y` by
+`Φ(x, y)`. -/
+private lemma residuePairing_single_neg_one_sub (Φ : LinearMap.BilinForm R L) (x y : L) :
+    residuePairing R L Φ (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y) -
+      residuePairing R L Φ (HahnSeries.single 0 1 ⊗ₜ x) (HahnSeries.single 0 1 ⊗ₜ y) = Φ x y := by
+  simp [residuePairing_tmul, LaurentSeries.residuePairing_single]
+
+/-- **A trivial-coefficient coboundary cannot equal a residue cocycle.** If `-F [u, v]` is
+`Res(u, v) • z` for all currents `u, v`, then `Φ(x, y) • z = 0`: the coboundary takes equal values
+on `(X⁻¹ ⊗ x, X ⊗ y)` and `(1 ⊗ x, 1 ⊗ y)`, whose brackets agree, while the residue cocycle takes
+the values `Φ(x, y) • z` and `0` there. -/
+private lemma smul_eq_zero_of_neg_apply_lie_eq {Z : Type*} [AddCommGroup Z] [Module R Z]
+    (Φ : LinearMap.BilinForm R L) (F : currentAlgebra R L → Z) (z : Z)
+    (hF : ∀ u v, -F ⁅u, v⁆ = residuePairing R L Φ u v • z) (x y : L) : Φ x y • z = 0 := by
+  have h₁ := hF (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y)
+  rw [lie_single_neg_one_eq_lie_single_zero, hF] at h₁
+  rw [← residuePairing_single_neg_one_sub, sub_smul, ← h₁, sub_self]
+
 /-- **A continuous class determines its form.** Over every commutative ring, two invariant
 symmetric forms have the same residue class exactly when they are equal. -/
 @[simp]
@@ -213,21 +246,40 @@ theorem residueClass_inj {Φ Ψ : LinearMap.BilinForm R L}
   have hval (u v : currentAlgebra R L) :
       -eC (f ⁅u, v⁆) = residuePairing R L Φ u v - residuePairing R L Ψ u v := by
     simpa [d₁₂_apply_apply_ofTrivial, eC, trivial_lie_zero] using congrArg (fun c ↦ eC (c u v)) hf
-  -- A coboundary with trivial coefficients takes the same value on `(X⁻¹ ⊗ x, X ⊗ y)` and
-  -- `(1 ⊗ x, 1 ⊗ y)`, since their brackets agree. The residue cocycle of `Φ - Ψ` takes the
-  -- values `(Φ - Ψ)(x, y)` and `0` there.
-  refine LinearMap.ext₂ fun x y ↦ ?_
-  set a₁ : currentAlgebra R L := HahnSeries.single (-1) 1 ⊗ₜ x
-  set b₁ : currentAlgebra R L := HahnSeries.single 1 1 ⊗ₜ y
-  set a₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ x
-  set b₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ y
-  have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := by
-    simp [a₁, b₁, a₀, b₀, _root_.LieAlgebra.ExtendScalars.bracket_tmul,
-      HahnSeries.single_mul_single]
-  have h₁ := hval a₁ b₁
-  rw [hab, hval a₀ b₀] at h₁
-  simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single] at h₁
-  linear_combination -h₁
+  -- The coboundary is the residue cocycle of `Φ - Ψ`, with coefficient `1`.
+  refine sub_eq_zero.mp (LinearMap.ext₂ fun x y ↦ ?_)
+  have := smul_eq_zero_of_neg_apply_lie_eq (Φ - Ψ) (fun u ↦ eC (f u)) 1 (fun u v ↦ by
+    have h : residuePairing R L Φ u v =
+        residuePairing R L (Φ - Ψ) u v + residuePairing R L Ψ u v := by
+      conv_lhs => rw [← sub_add_cancel Φ Ψ, residuePairing_add]
+      rfl
+    rw [hval, smul_eq_mul, mul_one, h]
+    ring) x y
+  simpa using this
+
+/-- **A residue class vanishes exactly when its form does.** Over every commutative ring. -/
+theorem residueClass_eq_zero_iff {Φ : LinearMap.BilinForm R L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
+    residueClass R L Φ hΦ hΦs = 0 ↔ Φ = 0 := by
+  have h0i : (0 : LinearMap.BilinForm R L).lieInvariant L := fun x y z ↦ by simp
+  have h0s : (0 : LinearMap.BilinForm R L).IsSymm := ⟨fun x y ↦ by simp⟩
+  rw [← residueClass_zero h0i h0s, residueClass_inj]
+
+/-- The residue class of a nonzero invariant symmetric form is nonzero over every commutative
+ring. -/
+theorem residueClass_ne_zero {Φ : LinearMap.BilinForm R L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) :
+    residueClass R L Φ hΦ hΦs ≠ 0 :=
+  fun h ↦ hΦ0 ((residueClass_eq_zero_iff hΦ hΦs).mp h)
+
+/-- A multiple `t • [c_Φ]` of a residue class vanishes exactly when `t • Φ` does, over every
+commutative ring. -/
+theorem smul_residueClass_eq_zero_iff_smul_eq_zero {Φ : LinearMap.BilinForm R L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (t : R) :
+    t • residueClass R L Φ hΦ hΦs = 0 ↔ t • Φ = 0 := by
+  have hti : (t • Φ).lieInvariant L := fun x y z ↦ by simp [hΦ x y z]
+  have hts : (t • Φ).IsSymm := ⟨fun x y ↦ by simp [hΦs.eq x y]⟩
+  rw [← residueClass_smul t hΦ hΦs hti hts, residueClass_eq_zero_iff]
 
 /-- **The residue class of a nonzero form is torsion-free.** Over a domain, a multiple
 `t • [c_Φ]` of the residue class of a nonzero invariant symmetric form vanishes in continuous
@@ -235,34 +287,15 @@ second cohomology only for `t = 0`. -/
 theorem smul_residueClass_eq_zero_iff [IsDomain R] {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) (t : R) :
     t • residueClass R L Φ hΦ hΦs = 0 ↔ t = 0 := by
+  rw [smul_residueClass_eq_zero_iff_smul_eq_zero]
   refine ⟨fun h ↦ ?_, fun ht ↦ by simp [ht]⟩
-  have h0i : ((0 : R) • Φ).lieInvariant L := fun x y z ↦ by simp
-  have h0s : ((0 : R) • Φ).IsSymm := ⟨fun x y ↦ by simp⟩
-  have hti : (t • Φ).lieInvariant L := fun x y z ↦ by simp [hΦ x y z]
-  have hts : (t • Φ).IsSymm := ⟨fun x y ↦ by simp [hΦs.eq x y]⟩
-  have h0 : residueClass R L ((0 : R) • Φ) h0i h0s = 0 := by
-    rw [residueClass_smul 0 hΦ hΦs h0i h0s, zero_smul]
-  have h := (residueClass_inj hti hts h0i h0s).mp
-    ((residueClass_smul t hΦ hΦs hti hts).trans (h.trans h0.symm))
   by_contra ht
   obtain ⟨x, y, hxy⟩ : ∃ x y : L, Φ x y ≠ 0 := by
     by_contra! h'
     exact hΦ0 (LinearMap.ext₂ h')
   have := LinearMap.congr_fun₂ h x y
-  simp only [LinearMap.smul_apply, smul_eq_mul, zero_smul, LinearMap.zero_apply] at this
+  simp only [LinearMap.smul_apply, smul_eq_mul, LinearMap.zero_apply] at this
   exact hxy ((mul_eq_zero.mp this).resolve_left ht)
-
-/-- The residue class of a nonzero invariant symmetric form is nonzero over every commutative
-ring. -/
-theorem residueClass_ne_zero {Φ : LinearMap.BilinForm R L}
-    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) :
-    residueClass R L Φ hΦ hΦs ≠ 0 := by
-  intro h
-  have h0i : ((0 : R) • Φ).lieInvariant L := fun x y z ↦ by simp
-  have h0s : ((0 : R) • Φ).IsSymm := ⟨fun x y ↦ by simp⟩
-  have h0 : residueClass R L ((0 : R) • Φ) h0i h0s = 0 := by
-    rw [residueClass_smul 0 hΦ hΦs h0i h0s, zero_smul]
-  exact hΦ0 (((residueClass_inj hΦ hΦs h0i h0s).mp (h.trans h0.symm)).trans (zero_smul R Φ))
 
 section Coefficients
 
@@ -324,22 +357,11 @@ theorem residueClassMap_injective [IsDomain R] [Module.IsTorsionFree R Z]
   have hval (u v : currentAlgebra R L) : -eZ (f ⁅u, v⁆) = residuePairing R L Φ u v • z := by
     simpa [d₁₂_apply_apply_ofTrivial, eZ, trivial_lie_zero] using
       congrArg (fun c ↦ eZ (c u v)) hdf
-  -- A coboundary with trivial coefficients takes the same value on `(X⁻¹ ⊗ x, X ⊗ y)` and
-  -- `(1 ⊗ x, 1 ⊗ y)`, where `c_Φ ⊗ z` takes `Φ(x, y) • z` and `0`.
   obtain ⟨x, y, hxy⟩ : ∃ x y : L, Φ x y ≠ 0 := by
     by_contra! h'
     exact hΦ0 (LinearMap.ext₂ h')
-  set a₁ : currentAlgebra R L := HahnSeries.single (-1) 1 ⊗ₜ x
-  set b₁ : currentAlgebra R L := HahnSeries.single 1 1 ⊗ₜ y
-  set a₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ x
-  set b₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ y
-  have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := by
-    simp [a₁, b₁, a₀, b₀, _root_.LieAlgebra.ExtendScalars.bracket_tmul,
-      HahnSeries.single_mul_single]
-  have h₁ := hval a₁ b₁
-  rw [hab, hval a₀ b₀] at h₁
-  simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single] at h₁
-  exact (smul_eq_zero.mp h₁.symm).resolve_left hxy
+  exact (smul_eq_zero.mp
+    (smul_eq_zero_of_neg_apply_lie_eq Φ (fun u ↦ eZ (f u)) z hval x y)).resolve_left hxy
 
 end Coefficients
 
@@ -475,10 +497,9 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   set b₁ : currentAlgebra K L := HahnSeries.single 1 1 ⊗ₜ y
   set a₀ : currentAlgebra K L := HahnSeries.single 0 1 ⊗ₜ x
   set b₀ : currentAlgebra K L := HahnSeries.single 0 1 ⊗ₜ y
-  have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := by
-    simp [a₁, b₁, a₀, b₀, ExtendScalars.bracket_tmul, HahnSeries.single_mul_single]
-  have hres : residuePairing K L Ψ a₁ b₁ - residuePairing K L Ψ a₀ b₀ = Ψ x y := by
-    simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single]
+  have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := lie_single_neg_one_eq_lie_single_zero x y
+  have hres : residuePairing K L Ψ a₁ b₁ - residuePairing K L Ψ a₀ b₀ = Ψ x y :=
+    residuePairing_single_neg_one_sub Ψ x y
   set z := (Ψ x y)⁻¹ • (c a₁ b₁ - c a₀ b₀)
   have ht (φ) : t φ = φ z := by
     have h₁ := hcf_apply φ a₁ b₁
