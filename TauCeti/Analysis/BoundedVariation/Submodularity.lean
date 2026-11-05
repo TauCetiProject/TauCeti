@@ -123,7 +123,9 @@ private theorem totalVariationOn_mul_add_le_liminf_normed_convolution {Ω' : Ope
   have hmem := ContDiffBump.normed_convolution_mem_Icc (μ := μ) (G := E)
   have hli {w : E → ℝ} (hw : ContDiff ℝ 1 w) : LocallyIntegrableOn w Ω' μ :=
     hw.continuous.locallyIntegrable.locallyIntegrableOn _
-  have huv := hu.mul_of_mem_Icc hv hu01 hv01
+  have huv : LocallyIntegrable (u * v) μ :=
+    hu.mul_bdd hv.aestronglyMeasurable (C := 1) (ae_of_all _ fun x => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (hv01 x).1]; exact (hv01 x).2)
   have hlsc₁ := totalVariationOn_le_liminf (Ω := Ω') (l := atTop)
     (.of_forall fun n => hli ((hsmooth hu n).mul (hsmooth hv n))) (huv.locallyIntegrableOn _)
     fun K hK _ => hlim₂ (fun n x => enorm_mul_sub_mul_le_of_mem_Icc (hu01 x)

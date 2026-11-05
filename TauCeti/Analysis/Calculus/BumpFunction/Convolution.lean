@@ -100,16 +100,16 @@ theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
     (fun y hy => (hgδ ((mem_ball.1 hy).trans hi)).le)).trans_lt ?_
   exact half_lt_self hε
 
-/-- Mollifying a locally integrable function with values in `[0, 1]` by a normalized bump keeps
-its values in `[0, 1]`. -/
-theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ}
-    (hw : LocallyIntegrable w μ) (hw01 : ∀ x, w x ∈ Set.Icc (0 : ℝ) 1) (x : G) :
-    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc (0 : ℝ) 1 := by
+/-- Mollifying a locally integrable function with values in `[a, b]` by a normalized bump keeps
+its values in `[a, b]`. -/
+theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {a b : ℝ}
+    (hw : LocallyIntegrable w μ) (hwab : ∀ x, w x ∈ Set.Icc a b) (x : G) :
+    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc a b := by
   have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
     (lsmul ℝ ℝ) φ.continuous_normed hw x
   exact ⟨le_convolution_lsmul_of_forall_le (μ := μ) φ.support_normed_eq.subset
-    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hw01 y).1,
+    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).1,
     convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
-    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hw01 y).2⟩
+    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
 
 end ContDiffBump
