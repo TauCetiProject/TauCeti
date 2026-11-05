@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
@@ -46,6 +48,26 @@ noncomputable def quotientPiece (i : ι) : Submodule R (A ⧸ I) :=
 /-- A quotient piece is the image of its original submodule under the quotient map. -/
 theorem quotientPiece_def (i : ι) :
     quotientPiece 𝒜 I i = (𝒜 i).map (Ideal.Quotient.mkₐ R I).toLinearMap := (rfl)
+
+/-- A quotient piece remains finite whenever the corresponding original piece is finite. -/
+instance finite_quotientPiece (𝒜 : ι → Submodule R A) (I : Ideal A) [I.IsTwoSided] (n : ι)
+    [Module.Finite R (𝒜 n)] : Module.Finite R (quotientPiece 𝒜 I n) := by
+  rw [quotientPiece_def]
+  infer_instance
+
+/-- Quotienting by the zero ideal preserves the dimension of each piece. -/
+@[simp]
+theorem finrank_quotientPiece_bot (𝒜 : ι → Submodule R A) (n : ι) :
+    Module.finrank R (quotientPiece 𝒜 ⊥ n) = Module.finrank R (𝒜 n) := by
+  have hmap : (quotientPiece 𝒜 ⊥ n).map (AlgEquiv.quotientBot R A).toLinearMap = 𝒜 n := by
+    simp only [quotientPiece_def, ← Submodule.map_comp]
+    have hc : (AlgEquiv.quotientBot R A).toLinearMap.comp
+        (Ideal.Quotient.mkₐ R ⊥).toLinearMap = LinearMap.id := by
+      ext x
+      exact RingEquiv.quotientBot_mk x
+    rw [hc, Submodule.map_id]
+  exact ((AlgEquiv.quotientBot R A).toLinearEquiv.finrank_map_eq _).symm.trans
+    (congrArg (fun p : Submodule R A ↦ Module.finrank R p) hmap)
 
 /-- Membership in the descended piece is being the class of an element of the original piece. -/
 @[simp]
@@ -112,5 +134,23 @@ theorem iSup_quotientPiece_eq_top (h𝒜 : ⨆ i, 𝒜 i = ⊤) : ⨆ i, quotien
   rw [← Submodule.map_iSup, h𝒜, Submodule.map_top, LinearMap.range_eq_top]
   exact Ideal.Quotient.mkₐ_surjective R I
 
+end TauCeti.GradedAlgebra
+
+namespace TauCeti.GradedAlgebra
+
+variable {ι k A : Type*} [CommSemiring k] [CommRing A] [Algebra k A]
+
+/-- The third isomorphism theorem identifies successive quotient pieces with the piece
+in the quotient by the sum of the two ideals. No homogeneity is needed. -/
+theorem map_quotientPiece_quotientPiece (𝒜 : ι → Submodule k A) (I J : Ideal A) (n : ι) :
+    (quotientPiece (quotientPiece 𝒜 I) (J.map (Ideal.Quotient.mkₐ k I)) n).map
+        (DoubleQuot.quotQuotEquivQuotSupₐ k I J).toLinearMap =
+      quotientPiece 𝒜 (I ⊔ J) n := by
+  simp only [quotientPiece_def, ← Submodule.map_comp]
+  apply congrArg (fun f : A →ₗ[k] A ⧸ (I ⊔ J) ↦ (𝒜 n).map f)
+  ext x
+  simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+    DoubleQuot.coe_quotQuotEquivQuotSupₐ]
+  exact DoubleQuot.quotQuotEquivQuotSup_quotQuotMk I J x
 
 end TauCeti.GradedAlgebra

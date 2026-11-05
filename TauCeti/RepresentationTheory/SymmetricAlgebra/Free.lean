@@ -174,7 +174,7 @@ theorem linearIndependent_of_linearIndependent_mk
     have hε : ∀ a : A, (a : SymmetricAlgebra k M) - algebraMap k _ (ε a) ∈
         ρ.symmetricAlgebraHilbertIdeal := fun a ↦
       ρ.mem_symmetricAlgebraHilbertIdeal_of_mem (sub_mem a.2 (Subalgebra.algebraMap_mem _ _)) <| by
-        rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv, RingHom.mem_ker]
+        rw [mem_irrelevant_iff_algebraMapInv_eq_zero]
         simp [ε]
     have hc : ∀ i, ε (x i) = 0 := by
       refine Fintype.linearIndependent_iff.1 hli (fun i ↦ ε (x i)) ?_
