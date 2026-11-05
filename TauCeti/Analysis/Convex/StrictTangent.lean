@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Convex.Function
 
 /-!
 # Strict tangent inequalities on the closure of a convex domain
@@ -22,17 +23,6 @@ The proof follows the [KLS formalization](https://github.com/human-ai-mathematic
 public section
 
 open Set
-
-/-- An injective affine change of variables preserves strict convexity on the preimage. -/
-theorem StrictConvexOn.comp_affineMap_of_injective
-    {𝕜 E F β : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [AddCommGroup E] [Module 𝕜 E] [AddCommGroup F] [Module 𝕜 F]
-    [AddCommMonoid β] [PartialOrder β] [SMul 𝕜 β]
-    {S : Set E} {v : E → β} (hv : StrictConvexOn 𝕜 S v) (A : F →ᵃ[𝕜] E)
-    (hA : Function.Injective A) : StrictConvexOn 𝕜 (A ⁻¹' S) (v ∘ A) := by
-  refine ⟨hv.1.affine_preimage A, fun a ha b hb hab p q hp hq hpq => ?_⟩
-  simp only [Function.comp_apply, Convex.combo_affine_apply hpq]
-  exact hv.2 ha hb (fun h => hab (hA h)) hp hq hpq
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
