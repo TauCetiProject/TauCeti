@@ -45,15 +45,21 @@ namespace TauCeti.Probability
   rw [map_add_one_div_two_eval_uniformSphereMeasure, arcsineMeasure_eq_betaMeasure]
   norm_num [hι]
 
+/-- Each rescaled coordinate of the planar direction of a Haar-uniform angle is arcsine. -/
+@[simp] theorem map_add_one_div_two_eval_circleSphereHomeomorph_haarAddCircle (i : Fin 2) :
+    (@haarAddCircle (2 * π) ⟨two_pi_pos⟩).map
+      (fun θ ↦ ((circleSphereHomeomorph θ).val i + 1) / 2) = arcsineMeasure := by
+  have h := map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
+    (by decide : Fintype.card (Fin 2) = 2) i
+  rw [← map_circleSphereHomeomorph_haarAddCircle,
+    Measure.map_map (by fun_prop) (by fun_prop)] at h
+  exact h
+
 /-- A Haar-uniform angle gives an arcsine variable by rescaling its cosine to `[0, 1]`. -/
 @[simp] theorem map_add_one_div_two_cos_haarAddCircle :
     (@haarAddCircle (2 * π) ⟨two_pi_pos⟩).map
       (fun θ ↦ (cos_periodic.lift θ + 1) / 2) = arcsineMeasure := by
-  have h := map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
-    (by decide : Fintype.card (Fin 2) = 2) (0 : Fin 2)
-  rw [← map_circleSphereHomeomorph_haarAddCircle,
-    Measure.map_map (by fun_prop) (by fun_prop)] at h
-  convert h using 1
+  convert map_add_one_div_two_eval_circleSphereHomeomorph_haarAddCircle 0 using 1
   congr 1
   funext θ
   induction θ using QuotientAddGroup.induction_on with | H t =>
@@ -63,11 +69,7 @@ namespace TauCeti.Probability
 @[simp] theorem map_add_one_div_two_sin_haarAddCircle :
     (@haarAddCircle (2 * π) ⟨two_pi_pos⟩).map
       (fun θ ↦ (sin_periodic.lift θ + 1) / 2) = arcsineMeasure := by
-  have h := map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
-    (by decide : Fintype.card (Fin 2) = 2) (1 : Fin 2)
-  rw [← map_circleSphereHomeomorph_haarAddCircle,
-    Measure.map_map (by fun_prop) (by fun_prop)] at h
-  convert h using 1
+  convert map_add_one_div_two_eval_circleSphereHomeomorph_haarAddCircle 1 using 1
   congr 1
   funext θ
   induction θ using QuotientAddGroup.induction_on with | H t =>
@@ -94,18 +96,22 @@ theorem HasLaw.add_one_div_two_eval_uniformSphereMeasure_arcsine
 theorem HasLaw.add_one_div_two_cos_haarAddCircle
     {X : Ω → AddCircle (2 * π)}
     (hX : HasLaw X (@haarAddCircle (2 * π) ⟨two_pi_pos⟩) P) :
-    HasLaw (fun ω ↦ (cos_periodic.lift (X ω) + 1) / 2) arcsineMeasure P := by
-  have hc : Continuous (fun θ : AddCircle (2 * π) ↦ (cos_periodic.lift θ + 1) / 2) :=
-    (Real.Angle.continuous_cos.add continuous_const).div_const 2
-  exact (HasLaw.mk hc.measurable.aemeasurable map_add_one_div_two_cos_haarAddCircle).fun_comp hX
+    HasLaw (fun ω ↦ (cos_periodic.lift (X ω) + 1) / 2) arcsineMeasure P :=
+  (HasLaw.mk (by
+    have hc : Continuous (cos_periodic.lift : AddCircle (2 * π) → ℝ) :=
+      Real.Angle.continuous_cos
+    have := hc.measurable
+    fun_prop) map_add_one_div_two_cos_haarAddCircle).fun_comp hX
 
 /-- The rescaled sine of a Haar-uniform angle has the arcsine law. -/
 theorem HasLaw.add_one_div_two_sin_haarAddCircle
     {X : Ω → AddCircle (2 * π)}
     (hX : HasLaw X (@haarAddCircle (2 * π) ⟨two_pi_pos⟩) P) :
-    HasLaw (fun ω ↦ (sin_periodic.lift (X ω) + 1) / 2) arcsineMeasure P := by
-  have hc : Continuous (fun θ : AddCircle (2 * π) ↦ (sin_periodic.lift θ + 1) / 2) :=
-    (Real.Angle.continuous_sin.add continuous_const).div_const 2
-  exact (HasLaw.mk hc.measurable.aemeasurable map_add_one_div_two_sin_haarAddCircle).fun_comp hX
+    HasLaw (fun ω ↦ (sin_periodic.lift (X ω) + 1) / 2) arcsineMeasure P :=
+  (HasLaw.mk (by
+    have hc : Continuous (sin_periodic.lift : AddCircle (2 * π) → ℝ) :=
+      Real.Angle.continuous_sin
+    have := hc.measurable
+    fun_prop) map_add_one_div_two_sin_haarAddCircle).fun_comp hX
 
 end ProbabilityTheory
