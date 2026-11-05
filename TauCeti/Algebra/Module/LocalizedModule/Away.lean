@@ -28,6 +28,8 @@ uniquely `r`-divisible abelian group into a module over `R[r⁻¹]`.
 
 * `IsLocalizedModule.Away.pow_smul_eq_zero_of_pow_smul_eq`: if `fᵏ σ = φ x` and `(f g)ⁿ x = 0`,
   then `gⁿ σ = 0`.
+* `Function.Bijective.isLocalizedModule_id_of_forall`: if every element of a submonoid `S` acts
+  bijectively, the identity is a localization map at `S`.
 * `Function.Bijective.isLocalizedModule_id_powers`: if multiplication by `r` is bijective, the
   identity is a localization map at the powers of `r`.
 * `Function.Bijective.localizationAwayModule`: the induced `Localization.Away r`-module structure,
@@ -58,14 +60,27 @@ namespace Function.Bijective
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {r : R}
 
+/-- If every element of a submonoid `S` acts bijectively on `M`, the identity of `M` is a
+localization map at `S`. -/
+theorem isLocalizedModule_id_of_forall {S : Submonoid R}
+    (h : ∀ s ∈ S, Function.Bijective fun x : M ↦ s • x) :
+    IsLocalizedModule S (LinearMap.id : M →ₗ[R] M) where
+  map_units s := by
+    rw [Module.End.isUnit_iff, funext (Module.algebraMap_end_apply R R M (s : R))]
+    exact h s s.2
+  surj x := ⟨⟨x, 1⟩, by simp⟩
+  exists_of_eq hxy := ⟨1, by simpa using hxy⟩
+
 /-- If scalar multiplication by `r` is bijective on `M`, the identity of `M` is a localization
 map at the powers of `r`. -/
 theorem isLocalizedModule_id_powers (h : Function.Bijective fun x : M ↦ r • x) :
-    IsLocalizedModule (Submonoid.powers r) (LinearMap.id : M →ₗ[R] M) := by
-  have hr : IsUnit (algebraMap R (Module.End R M) r) := by
-    rw [Module.End.isUnit_iff, funext (Module.algebraMap_end_apply R R M r)]
-    exact h
-  exact IsLocalizedModule.Away.mk hr (fun x ↦ ⟨0, x, by simp⟩) fun _ _ hxy ↦ ⟨0, by simpa using hxy⟩
+    IsLocalizedModule (Submonoid.powers r) (LinearMap.id : M →ₗ[R] M) :=
+  isLocalizedModule_id_of_forall fun _ ⟨n, hn⟩ ↦ hn ▸ by
+    have hu : IsUnit (algebraMap R (Module.End R M) r) := by
+      rw [Module.End.isUnit_iff, funext (Module.algebraMap_end_apply R R M r)]
+      exact h
+    have : IsUnit (algebraMap R (Module.End R M) (r ^ n)) := by rw [map_pow]; exact hu.pow n
+    rwa [Module.End.isUnit_iff, funext (Module.algebraMap_end_apply R R M (r ^ n))] at this
 
 /-- The module structure over `R[r⁻¹]` on an `R`-module on which multiplication by `r` is
 bijective. Its restriction to `R` is the original module structure, as recorded by
