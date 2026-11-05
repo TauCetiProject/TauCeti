@@ -78,12 +78,18 @@ theorem integrableOn_rpow_neg_mul_one_sub_cos {q t : ℝ} (hq : 0 < q) (hq2 : q 
       abs_of_nonneg (mul_nonneg (Real.rpow_nonneg hx0.le _) hcos0)]
     simpa [mul_comm] using mul_le_mul_of_nonneg_left hcos2 (Real.rpow_nonneg hx0.le (-(q + 1)))
 
+private lemma integrableOn_exp_neg_mul_Ioi {s : ℝ} (hs : 0 < s) :
+    IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
+  simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
+
+private lemma integral_Ioi_exp_neg_mul {s : ℝ} (hs : 0 < s) :
+    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) = s⁻¹ := by
+  simpa [mul_comm, hs.ne'] using integral_exp_mul_Ioi (a := -s) (neg_lt_zero.mpr hs) 0
+
 /-- The exponentially damped cosine is integrable on the positive half-line. -/
 theorem integrableOn_exp_neg_mul_mul_cos {s : ℝ} (hs : 0 < s) (t : ℝ) :
     IntegrableOn (fun x : ℝ ↦ exp (-(x * s)) * cos (t * x)) (Ioi 0) := by
-  have hexp : IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
-    simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
-  refine hexp.mono' (by fun_prop) ?_
+  refine (integrableOn_exp_neg_mul_Ioi hs).mono' (by fun_prop) ?_
   filter_upwards with x
   rw [Real.norm_eq_abs, abs_mul, abs_exp, mul_le_iff_le_one_right (exp_pos _)]
   exact abs_cos_le_one _
@@ -92,83 +98,38 @@ theorem integrableOn_exp_neg_mul_mul_cos {s : ℝ} (hs : 0 < s) (t : ℝ) :
 `∫ x in (0, ∞), exp (-s x) cos (t x) = s / (s² + t²)`. -/
 theorem integral_Ioi_exp_neg_mul_mul_cos {s : ℝ} (hs : 0 < s) (t : ℝ) :
     ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * cos (t * x) = s / (s ^ 2 + t ^ 2) := by
-  have hcomp : IntegrableOn (fun x : ℝ ↦ exp (-(x * s)) •
-      (Complex.exp ((t * x : ℝ) * Complex.I) - 1 - (t * sin x : ℝ) * Complex.I))
-      (Ioi 0) := by
-    have hexp : IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
-      simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
-    refine (hexp.const_mul (2 + |t|)).mono' (by fun_prop) ?_
-    filter_upwards with x
-    rw [norm_smul, Real.norm_eq_abs, abs_exp]
-    calc
-      exp (-(x * s)) * ‖Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
-          (t * sin x : ℝ) * Complex.I‖ ≤ exp (-(x * s)) * (2 + |t|) := by
-            gcongr
-            calc
-              _ ≤ ‖Complex.exp ((t * x : ℝ) * Complex.I)‖ + ‖(1 : ℂ)‖ +
-                  ‖(t * sin x : ℝ) * Complex.I‖ := by
-                grw [norm_sub_le, norm_sub_le]
-              _ ≤ 2 + |t| := by
-                simp only [Complex.norm_exp, Complex.mul_re, Complex.ofReal_re,
-                  Complex.I_re, Complex.ofReal_im, Complex.I_im, mul_zero, mul_one,
-                  sub_zero, exp_zero, norm_one, norm_mul, Complex.norm_real, Complex.norm_I,
-                  mul_one]
-                have hbound := mul_le_mul_of_nonneg_left (abs_sin_le_one x) (abs_nonneg t)
-                simp only [Real.norm_eq_abs]
-                linarith
-      _ = (2 + |t|) * exp (-(x * s)) := by ring
-  have hreal0 := congrArg Complex.re
-    (integral_Ioi_exp_neg_mul_smul_cexp_sub_one_sub_sin hs t)
-  have hreal := (integral_re hcomp).trans hreal0
-  have hfun : (fun x : ℝ ↦ RCLike.re (exp (-(x * s)) •
-      (Complex.exp ((t * x : ℝ) * Complex.I) - 1 - (t * sin x : ℝ) * Complex.I))) =
-      fun x : ℝ ↦ exp (-(x * s)) * (cos (t * x) - 1) := by
-    funext x
-    rw [Complex.real_smul]
-    have hkernel : (Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
-        (t * sin x : ℝ) * Complex.I).re = cos (t * x) - 1 := by
+  have harg : (-s + t * Complex.I : ℂ).re < 0 := by simpa using hs
+  have hint := integrableOn_exp_mul_complex_Ioi harg 0
+  calc
+    _ = ∫ x in Ioi (0 : ℝ), (Complex.exp ((-s + t * Complex.I) * x)).re := by
+      congr 1
+      funext x
       simp [Complex.exp_re, Complex.mul_re, Complex.mul_im, mul_comm]
-    change ((exp (-(x * s)) : ℂ) * (Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
-      (t * sin x : ℝ) * Complex.I)).re = exp (-(x * s)) * (cos (t * x) - 1)
-    rw [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero, hkernel]
-  rw [hfun] at hreal
-  have hdiff : ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * (cos (t * x) - 1) =
-      s / (s ^ 2 + t ^ 2) - s⁻¹ := by
-    simpa only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im, mul_zero, zero_mul, sub_zero, mul_one, add_zero] using hreal
-  have hexp : IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
-    simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
-  have hcos := integrableOn_exp_neg_mul_mul_cos hs t
-  have hexp_value := integral_exp_mul_Ioi (a := -s) (neg_lt_zero.mpr hs) 0
-  have hexp_value' : ∫ x in Ioi (0 : ℝ), exp (-(x * s)) = s⁻¹ := by
-    simpa [mul_comm, hs.ne'] using hexp_value
-  have hdiff' : (∫ x in Ioi (0 : ℝ), exp (-(x * s)) * cos (t * x)) -
-      ∫ x in Ioi (0 : ℝ), exp (-(x * s)) = s / (s ^ 2 + t ^ 2) - s⁻¹ := by
-    rw [← integral_sub hcos hexp]
-    simpa [mul_sub] using hdiff
-  rw [hexp_value'] at hdiff'
-  linarith
+    _ = (∫ x in Ioi (0 : ℝ), Complex.exp ((-s + t * Complex.I) * x)).re :=
+      integral_re hint
+    _ = (-1 / (-s + t * Complex.I : ℂ)).re := by
+      rw [integral_exp_mul_complex_Ioi harg]
+      simp
+    _ = s / (s ^ 2 + t ^ 2) := by
+      rw [Complex.div_re]
+      norm_num [Complex.normSq, hs.ne']
+      ring
 
 /-- The Laplace transform of the cosine difference is
 `∫ x in (0, ∞), exp (-s x) (1 - cos (t x)) = s⁻¹ - s / (s² + t²)`. -/
 theorem integral_Ioi_exp_neg_mul_mul_one_sub_cos {s : ℝ} (hs : 0 < s) (t : ℝ) :
     ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * (1 - cos (t * x)) =
       s⁻¹ - s / (s ^ 2 + t ^ 2) := by
-  have hexp : IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
-    simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
   have hcos := integrableOn_exp_neg_mul_mul_cos hs t
   calc
     _ = (∫ x in Ioi (0 : ℝ), exp (-(x * s))) -
         ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * cos (t * x) := by
-      rw [← integral_sub hexp hcos]
+      rw [← integral_sub (integrableOn_exp_neg_mul_Ioi hs) hcos]
       congr 1
       funext x
       ring
     _ = s⁻¹ - s / (s ^ 2 + t ^ 2) := by
-      have hexp_value := integral_exp_mul_Ioi (a := -s) (neg_lt_zero.mpr hs) 0
-      have hexp_value' : ∫ x in Ioi (0 : ℝ), exp (-(x * s)) = s⁻¹ := by
-        simpa [mul_comm, hs.ne'] using hexp_value
-      rw [hexp_value', integral_Ioi_exp_neg_mul_mul_cos hs t]
+      rw [integral_Ioi_exp_neg_mul hs, integral_Ioi_exp_neg_mul_mul_cos hs t]
 
 /-- For `0 < q < 2`, the singular power-weighted cosine integral has the closed form
 `π |t|^q / (2 Γ(q + 1) sin(π q / 2))`. -/
