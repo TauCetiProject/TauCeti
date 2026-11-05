@@ -48,7 +48,9 @@ the parameter range.
 * `TauCeti.tendsto_lowerIncompleteGamma_atTop`, `TauCeti.tendsto_regularizedGamma_atTop` — the
   limits `Real.Gamma s` and `1` as `x → ∞`, with the resulting bounds
   `TauCeti.lowerIncompleteGamma_le_Gamma` and `TauCeti.regularizedGamma_le_one`;
-* `TauCeti.regularizedGamma_one` — `P(1, x) = 1 - e ^ (-x)` for `0 ≤ x`, the exponential cdf.
+* `TauCeti.regularizedGamma_one` — `P(1, x) = 1 - e ^ (-x)` for `0 ≤ x`, the exponential cdf;
+* `TauCeti.regularizedGamma_natCast` — the Erlang form
+  `P(n, x) = 1 - exp (-x) * ∑ j < n, x ^ j / j!` at a positive integer shape `n`, for `0 ≤ x`;
 * `TauCeti.Real.erf_eq_regularizedGamma_half_sq` — the error function is the regularized
   incomplete gamma function of shape `1 / 2` after squaring, on the nonnegative half-line;
 * `TauCeti.strictMonoOn_regularizedGamma`, `TauCeti.regularizedGamma_pos_iff`,
@@ -380,6 +382,21 @@ theorem lowerIncompleteGamma_one (hx : 0 ≤ x) :
 @[simp]
 theorem regularizedGamma_one (hx : 0 ≤ x) : regularizedGamma 1 x = 1 - Real.exp (-x) := by
   rw [regularizedGamma_eq_div, lowerIncompleteGamma_one hx, Real.Gamma_one, div_one]
+
+/-- **The Erlang form.** For a positive integer shape `n` and `0 ≤ x`,
+`P(n, x) = 1 - exp (-x) * ∑ j < n, x ^ j / j!`: the regularized lower incomplete gamma function
+at integer shape is the cumulative distribution function of an Erlang law. -/
+theorem regularizedGamma_natCast {n : ℕ} (hn : n ≠ 0) (hx : 0 ≤ x) :
+    regularizedGamma n x =
+      1 - Real.exp (-x) * ∑ j ∈ Finset.range n, x ^ j / (j.factorial : ℝ) := by
+  induction n with
+  | zero => exact absurd rfl hn
+  | succ n ih =>
+    rcases eq_or_ne n 0 with rfl | hn'
+    · simp [regularizedGamma_one hx]
+    rw [Nat.cast_succ, regularizedGamma_add_one (Nat.cast_pos.2 (Nat.pos_of_ne_zero hn')) hx,
+      ih hn', Real.rpow_natCast, Real.Gamma_nat_eq_factorial, Finset.sum_range_succ]
+    ring
 
 /-! ### Relation with the error function -/
 

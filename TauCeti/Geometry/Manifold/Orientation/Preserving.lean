@@ -35,6 +35,8 @@ or reverses every orientation of `E` according to the sign of its determinant
 (`isOrientationPreservingAt_of_det_pos`, `isOrientationReversingAt_of_det_neg`). In particular
 precomposing with an automorphism of negative determinant exchanges preservation and reversal
 (`isOrientationPreservingAt_comp_of_det_neg`, `isOrientationReversingAt_comp_of_det_neg`).
+More generally, a map with negative derivative determinant reverses orientations at that point
+(`isOrientationReversingAt_of_det_fderiv_neg`).
 -/
 
 public section
@@ -224,19 +226,32 @@ theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
   exact Module.Ray.ne_neg_self _
     (h.symm.trans ((isOrientationReversingAt_iff_of_coe_eq o o' f x e he).mp hrev))
 
+/-- A self-map fixing `x` whose derivative at `x` is the identity preserves every manifold
+orientation at `x`. -/
+theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M]
+    (o : Manifold.Orientation I M ι) {f : M → M} {x : M} (hx : f x = x)
+    (hd : mfderiv I I f x = ContinuousLinearMap.id ℝ (TangentSpace I x)) :
+    IsOrientationPreservingAt o o f x := by
+  refine ⟨ContinuousLinearEquiv.refl ℝ _, hd.symm, ?_⟩
+  -- The continuous and plain linear equivalence wrappers share this definitional equality,
+  -- which lets the orientation map use its identity lemma.
+  have h_refl :
+      (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
+        LinearEquiv.refl ℝ (TangentSpace I x) := rfl
+  /- The orientation at `f x` lives on the tangent space at `f x`; generalize the point to
+    substitute `x` for it along `hx`. -/
+  have key (y : M) (hy : y = x) : _root_.Orientation.map ι
+      (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv (o.orientationAt x) =
+        o.orientationAt y := by
+    subst hy
+    rw [h_refl, _root_.Orientation.map_refl, Equiv.refl_apply]
+  exact key _ hx
+
 /-- The identity map preserves every manifold orientation. -/
 @[simp] theorem isOrientationPreservingAt_id [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (x : M) :
-    IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x := by
-  refine ⟨ContinuousLinearEquiv.refl ℝ _, ?_, ?_⟩
-  · rw [ContinuousLinearEquiv.coe_refl, mfderiv_id]
-  · /- The continuous and plain linear equivalence wrappers share this definitional equality,
-      which lets the orientation map use its identity lemma. -/
-    have h_refl :
-        (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
-          LinearEquiv.refl ℝ (TangentSpace I x) := rfl
-    rw [h_refl, _root_.Orientation.map_refl]
-    simp only [Equiv.refl_apply, id_eq]
+    IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x :=
+  isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o rfl mfderiv_id
 
 /-- The identity map reverses an orientation when its target is given the opposite orientation. -/
 theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
@@ -475,6 +490,17 @@ theorem isOrientationReversingAt_of_det_neg (o : Manifold.Orientation 𝓘(ℝ, 
   apply (_root_.Orientation.map ι (NormedSpace.fromTangentSpace (L x)).toLinearEquiv).injective
   rw [map_tangentEquiv, _root_.Orientation.map_neg, ← modelOrientationAt, hL,
     modelOrientationAt_eq o x (L x)]
+
+/-- **A negative Jacobian determinant reverses orientation.** A map of a finite-dimensional
+real normed space with negative derivative determinant at `v` reverses every orientation there. -/
+theorem isOrientationReversingAt_of_det_fderiv_neg (o : Manifold.Orientation 𝓘(ℝ, E) E ι)
+    {f : E → E} {v : E} (hdet : (fderiv ℝ f v).det < 0) : IsOrientationReversingAt o o f v := by
+  let D : E ≃L[ℝ] E := (fderiv ℝ f v).toContinuousLinearEquivOfDetNeZero hdet.ne
+  refine (isOrientationReversingAt_iff_of_coe_eq o o _ v D ?_).mpr ?_
+  · rw [mfderiv_eq_fderiv]
+    exact (fderiv ℝ f v).coe_toContinuousLinearEquivOfDetNeZero hdet.ne
+  · rw [orientationAt_eq_orientationAt o (f v) v]
+    exact (_root_.Orientation.map_eq_neg_iff_det_neg _ _ o.card_eq).mpr hdet
 
 /-- Precomposing a map which reverses orientations at `L x` with a continuous linear automorphism
 `L` of `E` of negative determinant gives a map which preserves them at `x`. -/

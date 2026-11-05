@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Center
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -24,7 +25,9 @@ A morphism `(X, β_X) ⟶ (Y, β_Y)` of the centre is a morphism `f : X ⟶ Y` o
 sums, negatives and scalar multiples, so `Center C` is preadditive, or `R`-linear, with the
 operations computed on underlying morphisms. The forgetful functor, which is faithful for any
 monoidal category, is then additive and `R`-linear, and the centre is again monoidal preadditive,
-or monoidal `R`-linear.
+or monoidal `R`-linear. Over a division ring, each morphism space of the centre is
+finite-dimensional whenever the corresponding morphism space in `C` is: the forgetful functor gives
+an injective linear map. In particular, the centre of a Hom-finite category is Hom-finite.
 
 Finite biproducts are also computed in `C`. If each summand `f j` of a finite biproduct `⨁ f`
 carries a half-braiding `b j`, then `⨁ f` carries the half-braiding `HalfBraiding.biproduct f b`,
@@ -216,6 +219,16 @@ instance instMonoidalLinear : MonoidalLinear R (Center C) :=
   MonoidalLinear.ofFaithful R (forget C)
 
 end Linear
+
+/-- A morphism space in the centre is finite-dimensional whenever the corresponding underlying
+morphism space is finite-dimensional. This uses the canonical linear structure on the centre. -/
+instance instFiniteDimensionalHom [Preadditive C] [MonoidalPreadditive C]
+    {k : Type*} [DivisionRing k] [Linear k C] [MonoidalLinear k C]
+    (X Y : Center C) [FiniteDimensional k (X.1 ⟶ Y.1)] : FiniteDimensional k (X ⟶ Y) := by
+  -- Instance search does not unfold the forgetful functor's object projections.
+  have : FiniteDimensional k ((forget C).obj X ⟶ (forget C).obj Y) :=
+    ‹FiniteDimensional k (X.1 ⟶ Y.1)›
+  exact FiniteDimensional.of_injective ((forget C).mapLinearMap k) (forget C).map_injective
 
 section Biproduct
 

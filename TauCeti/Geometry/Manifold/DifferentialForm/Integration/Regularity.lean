@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Pullback
+public import Mathlib.Geometry.Manifold.Instances.Icc
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Integrability of compactly supported continuous top forms
@@ -19,7 +21,9 @@ manifold is needed; a model basis records the actual top degree.
 
 The resulting chart formula characterizes the oriented integral of such forms; on a
 finite-dimensional normed space with a constant orientation it is the Haar integral of the
-coefficient in a positively oriented basis.
+coefficient in a positively oriented basis. On `ℝ` with its standard orientation
+`TauCeti.Manifold.Orientation.real` it is the Lebesgue integral of the value on `1`
+(`TauCeti.integralTopForm_real_eq_integral`).
 -/
 
 public section
@@ -91,13 +95,29 @@ theorem integralTopForm_model_eq_integral (o : _root_.Orientation ℝ E (Fin k))
       ∫ x, φ x b ∂b.addHaar := by
   rw [Manifold.Orientation.model_eq_mk,
     integralTopForm_of_tsupport_subset_chart _ hφ hc 0 (by simp) b
-      (hb.trans (Manifold.OrientationLift.model_modelOrientation o hk).symm)]
+      (hb.trans (Manifold.OrientationLift.ofHasGroupoid_modelOrientation o hk).symm)]
   simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_target, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Measure.restrict_univ]
   refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
   simp only [id_eq, mpullback_id]
-  rw [Manifold.OrientationLift.signAt_of_mem _ (by simp), Manifold.OrientationLift.model_sign]
+  rw [Manifold.OrientationLift.signAt_of_mem _ (by simp),
+    Manifold.OrientationLift.ofHasGroupoid_sign]
   simp
+
+/-- Against the standard orientation of `ℝ`, the oriented integral of a compactly supported
+continuous `1`-form is the Lebesgue integral of its value on the unit vector. -/
+theorem integralTopForm_real_eq_integral {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
+    (hφ : IsSmoothForm 𝓘(ℝ, ℝ) 0 φ)
+    (hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) φ)) :
+    integralTopForm Manifold.Orientation.real φ = ∫ t, φ t fun _ ↦ 1 := by
+  have hvol : (Module.Basis.singleton (Fin 1) ℝ).addHaar = volume := by
+    rw [← OrthonormalBasis.toBasis_singleton]
+    exact OrthonormalBasis.addHaar_eq_volume _
+  rw [Manifold.Orientation.real_eq_model,
+    integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl, hvol,
+    Module.Basis.coe_singleton]
+  -- Mathlib's unit tangent vector `1 : TangentSpace 𝓘(ℝ) t` is defined to be `1 : ℝ`.
+  rfl
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The oriented integral is additive for compactly supported C0 top forms. -/

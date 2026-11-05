@@ -466,7 +466,7 @@ private theorem isRat_setOf_iff (P : Spv (𝒯 K) → Prop) :
   have hpre : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹'
       {v : closedPolydisc 1 K | P v.1} = {v : spa (powerBoundedSubring (𝒯 K)) | P v.1} := by
     ext v
-    simp only [Set.mem_preimage, Set.mem_ofPred_eq, TauCeti.Homeomorph.setCongr_symm_apply]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, Homeomorph.setCongr_symm_apply]
   rw [IsRat, hpre]
 
 omit [IsUltrametricDist K] in
@@ -497,7 +497,7 @@ private theorem isRat_setOf_vle (b d : K) :
   have hspan : Ideal.span (({C d} : Finset (𝒯 K)) : Set (𝒯 K)) = ⊤ :=
     Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) ((isUnit_iff_ne_zero.mpr hd).map C)
   rw [IsRat, setOf_vle_eq_rationalSubset _ (isUnit_iff_ne_zero.mpr hd), Set.preimage_preimage]
-  simp only [TauCeti.Homeomorph.setCongr_symm_apply]
+  simp only [Homeomorph.setCongr_symm_apply]
   exact mem_spaRationalFamily_iff.mpr ⟨_, _, by rw [hspan]; simp, rfl⟩
 
 /-- The complement `{v : v(f) ≤ v(r) or v(σ) ≤ v(f)}` of an open annulus is rational. -/

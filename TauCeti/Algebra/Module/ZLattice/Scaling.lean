@@ -41,12 +41,15 @@ first statement does not extend to `|c| < 1`.
 * `ZLattice.dual_smul`: `(c • L)^∨ = c⁻¹ • L^∨` for `c ≠ 0`.
 * `ZLattice.covolume_smul`, `ZLattice.det_smul`: `covolume (c • L) = |c|ⁿ covolume L` and
   `det (c • L) = c²ⁿ det L` for `c ≠ 0`.
+* `ZLattice.covolume_natCast_smul`: `covolume (c • L) = cⁿ covolume L` for a positive integer `c`.
 * `ZLattice.isIntegral_smul_iff`, `ZLattice.isEven_smul_iff`: the exact criteria for `c • L` to be
   integral or even.
 * `ZLattice.IsIntegral.sqrt_smul`, `ZLattice.IsEven.sqrt_smul`,
   `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
   even or when `L` is integral and `m` is even.
-* `ZLattice.det_sqrt_smul`: `det (√m • L) = mⁿ det L` for `m ≠ 0`.
+* `ZLattice.det_sqrt_smul`, `ZLattice.IsIntegral.card_discriminantGroup_sqrt_smul`:
+  `det (√m • L) = mⁿ det L` for `m ≠ 0` (and `|A_{√m • L}| = mⁿ |A_L|` for integral `L`), and
+  `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
   `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
   by `|c| > 1`, or a unimodular lattice by `|c| ≠ 1`, does not give a unimodular lattice.
@@ -136,6 +139,13 @@ theorem covolume_smul {c : ℝ} (hc : c ≠ 0) (μ : Measure E := by volume_tac)
   rw [smul_eq_comap L hc, covolume_comap_continuousLinearEquiv L _ μ, hA, LinearMap.det_smul,
     LinearMap.det_id, mul_one, abs_pow, abs_inv, inv_pow, inv_inv]
 
+/-- Scaling a full lattice by a positive integer `c` multiplies its covolume by `cⁿ`, where `n` is
+the dimension of the space, for any Haar measure. -/
+theorem covolume_natCast_smul (c : ℕ) [NeZero c] (μ : Measure E := by volume_tac)
+    [μ.IsAddHaarMeasure] :
+    covolume ((c : ℝ) • L) μ = (c : ℝ) ^ finrank ℝ E * covolume L μ := by
+  rw [covolume_smul L (NeZero.ne _) μ, Nat.abs_cast]
+
 end Normed
 
 /-! ### Duality, integrality and the determinant -/
@@ -193,7 +203,30 @@ theorem det_smul {c : ℝ} (hc : c ≠ 0) : det (c • L) = c ^ (2 * finrank ℝ
 theorem det_sqrt_smul {m : ℕ} (hm : m ≠ 0) : det (√(m : ℝ) • L) = m ^ finrank ℝ E * det L := by
   rw [det_smul L (Real.sqrt_ne_zero'.mpr (by positivity)), pow_mul, Real.sq_sqrt m.cast_nonneg]
 
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- For an orthonormal basis `b` and a nonzero natural number `m`, the scaled cubic lattice
+`√m • ℤ b` has determinant `mⁿ`, where `n` is the dimension of the space. For instance `√2 ℤ²` has
+determinant `4`. -/
+theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    {m : ℕ} (hm : m ≠ 0) : det (√(m : ℝ) • span ℤ (Set.range b)) = m ^ finrank ℝ E := by
+  have hu := isUnimodular_span_orthonormalBasis b
+  -- The lattice instances of `span ℤ (Set.range b)` are those of the `ℤ`-span of a basis.
+  rw [← b.coe_toBasis] at hu ⊢
+  rw [det_sqrt_smul _ hm, hu.det_eq_one, mul_one]
+
 variable {L}
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies the order of its
+discriminant group by `mⁿ`. -/
+theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
+    Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
+      m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
+  borelize E
+  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
+  refine Nat.cast_injective (R := ℝ) ?_
+  rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L hm,
+    h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
 
 /-- In positive dimension, scaling a full integral lattice by `c` with `1 < |c|` never gives a
 unimodular lattice: the determinant becomes `c²ⁿ det L > 1`. -/
