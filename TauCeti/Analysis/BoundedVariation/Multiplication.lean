@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
+import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
 /-!
@@ -22,8 +23,6 @@ bounded variation on `Ω` into one of bounded variation on the whole space.
 
 ## Main results
 
-* `TauCeti.ofReal_abs_integral_fderiv_apply_mul_le`: the remainder `∫ (Dχ φ) u` in the Leibniz
-  bound is at most `∫ ‖Dχ‖ |u|`.
 * `TauCeti.totalVariationOn_mul_le`: the variation of `χ u` for a smooth bounded `χ`.
 * `TauCeti.totalVariationOn_top_mul_le`: the variation on the whole space of `χ u` for a smooth
   cutoff `χ` supported in `Ω` with bounded derivative.
@@ -45,25 +44,6 @@ open scoped ENNReal ContDiff Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {Ω : Opens E} {u : E → ℝ}
-
-omit [FiniteDimensional ℝ E] in
-/-- **The remainder in the Leibniz bound.** For a test vector field `φ` on `Ω'` with
-`‖φ‖ ≤ 1`, the pairing `∫ (Dχ φ) u` is at most `∫_{Ω'} ‖Dχ‖ |u|` in absolute value. -/
-theorem ofReal_abs_integral_fderiv_apply_mul_le {χ : E → ℝ} {Ω' : Opens E} (φ : 𝓓(Ω', E))
-    (hφ : ∀ x, ‖φ x‖ ≤ 1) :
-    ENNReal.ofReal |∫ x, fderiv ℝ χ x (φ x) * u x ∂μ| ≤
-      ∫⁻ x in Ω', ‖fderiv ℝ χ x‖ₑ * ‖u x‖ₑ ∂μ := by
-  rw [← Real.enorm_eq_ofReal_abs, ← lintegral_indicator Ω'.isOpen.measurableSet]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
-  by_cases hx : x ∈ (Ω' : Set E)
-  · rw [indicator_of_mem hx, enorm_mul]
-    gcongr
-    rw [← ofReal_norm, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal <| ((fderiv ℝ χ x).le_opNorm _).trans
-      (mul_le_of_le_one_right (norm_nonneg _) (hφ x))
-  · have hφx : φ x = 0 :=
-      image_eq_zero_of_notMem_tsupport fun hmem => hx (φ.tsupport_subset hmem)
-    simp [hφx, hx]
 
 /-- **Multiplication by a smooth function.** Let `χ` be smooth with `|χ| ≤ c`, and let `Ω'` be an
 open set with `tsupport χ ∩ Ω' ⊆ Ω`. Every `u` locally integrable on `Ω` satisfies
@@ -105,7 +85,10 @@ theorem totalVariationOn_mul_le {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) {c 
     ring
   have hrem : ENNReal.ofReal |∫ x, a x * u x ∂μ| ≤
       ∫⁻ x in Ω', ‖fderiv ℝ χ x‖ₑ * ‖u x‖ₑ ∂μ := by
-    simpa only [ha] using ofReal_abs_integral_fderiv_apply_mul_le (χ := χ) (u := u) φ hφ
+    have h := φ.enorm_integral_apply_le_setLIntegral_enorm hφ (μ := μ)
+      (fun x => u x • fderiv ℝ χ x)
+    rw [← Real.enorm_eq_ofReal_abs]
+    simpa only [smul_apply, smul_eq_mul, enorm_smul, ha, mul_comm] using h
   rw [hsplit]
   calc ENNReal.ofReal (∫ x, divergenceCLM χφ x * u x ∂μ - ∫ x, a x * u x ∂μ)
       ≤ ENNReal.ofReal (∫ x, divergenceCLM χφ x * u x ∂μ) +

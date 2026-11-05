@@ -108,13 +108,13 @@ open scoped ContDiff
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
-/-- **Pairing a test function with a smooth operator field from a smaller open set.** If
-`A : E → F →L[ℝ] G` is smooth with `tsupport A ∩ Ω' ⊆ Ω` and `φ` is a test function on `Ω'`,
-then `x ↦ A x (φ x)` is a test function on `Ω`, whether or not `Ω' ≤ Ω`. This covers a smooth
+/-- **Pairing a test function with a `C^n` operator field from a smaller open set.** If
+`A : E → F →L[ℝ] G` is `C^n` with `tsupport A ∩ Ω' ⊆ Ω` and `φ` is a `C^n` test function on `Ω'`,
+then `x ↦ A x (φ x)` is a `C^n` test function on `Ω`, whether or not `Ω' ≤ Ω`. This covers a
 scalar multiple `f φ` (take `A x = f x • id`) and the pairing `Df φ` with a derivative. -/
 theorem exists_coe_eq_clm_apply_of_tsupport_inter_subset {A : E → F →L[ℝ] G}
-    (hA : ContDiff ℝ ∞ A) (h : tsupport A ∩ Ω' ⊆ Ω) (φ : 𝓓(Ω', F)) :
-    ∃ ψ : 𝓓(Ω, G), ⇑ψ = fun x => A x (φ x) := by
+    (hA : ContDiff ℝ n A) (h : tsupport A ∩ Ω' ⊆ Ω) (φ : 𝓓^{n}(Ω', F)) :
+    ∃ ψ : 𝓓^{n}(Ω, G), ⇑ψ = fun x => A x (φ x) := by
   have hsupp : support (fun x => A x (φ x)) ⊆ support A ∩ support φ :=
     fun x hx => ⟨fun h0 => hx (by simp [h0]), fun h0 => hx (by simp [h0])⟩
   exact ⟨⟨fun x => A x (φ x), hA.clm_apply φ.contDiff,
