@@ -314,11 +314,6 @@ theorem projectiveMomentFunction_comp_affineChart_symm (w : Fin (n + 1) → ℝ)
   ext z
   simp [model_apply, Fin.sum_univ_succAbove _ k]
 
-private theorem affineOpenPartialHomeomorph_mem_maximalAtlas (k : Fin (n + 1)) {r : ℕ∞ω} :
-    affineOpenPartialHomeomorph k ∈
-      IsManifold.maximalAtlas 𝓘(ℝ, Fin n → 𝕜) r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
-  IsManifold.subset_maximalAtlas (affineOpenPartialHomeomorph_mem_atlas k)
-
 private theorem projectiveMomentFunction_comp_extend_symm (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     projectiveMomentFunction 𝕜 w ∘ ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)).symm =
       model 𝕜 (w k) (w ∘ k.succAbove) := by
@@ -337,17 +332,6 @@ theorem contMDiff_projectiveMomentFunction (w : Fin (n + 1) → ℝ) {r : ℕ∞
     (by simpa using hk), projectiveMomentFunction_comp_extend_symm]
   exact (contDiff_model _ _).contDiffAt
 
-private theorem extend_apply (k : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
-    (affineOpenPartialHomeomorph (K := 𝕜) k).extend 𝓘(ℝ, Fin n → 𝕜) x = affineChart k x := by
-  rw [OpenPartialHomeomorph.extend_coe, comp_apply, modelWithCornersSelf_coe, id_eq,
-    coe_affineOpenPartialHomeomorph]
-
-private theorem extend_mk_single (k : Fin (n + 1)) :
-    (affineOpenPartialHomeomorph (K := 𝕜) k).extend 𝓘(ℝ, Fin n → 𝕜)
-      (mk 𝕜 (Pi.single k 1) (by simp)) = 0 := by
-  rw [extend_apply, ← affineChart_symm_zero]
-  exact (affineChart k).right_inv (by simp)
-
 private theorem mk_single_mem_source (k : Fin (n + 1)) :
     mk 𝕜 (Pi.single k 1) (by simp) ∈ (affineOpenPartialHomeomorph (K := 𝕜) k).source := by
   simp
@@ -358,9 +342,10 @@ theorem mk_single_mem_criticalPoints_projectiveMomentFunction (w : Fin (n + 1) �
     mk 𝕜 (Pi.single k 1) (by simp) ∈
       criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) := by
   rw [mem_criticalPoints, mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-    (affineOpenPartialHomeomorph_mem_maximalAtlas k) (mk_single_mem_source k)
+    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k)
+    (mk_single_mem_source k)
     ((contMDiff_projectiveMomentFunction w (r := 1)) _ |>.mdifferentiableAt one_ne_zero),
-    projectiveMomentFunction_comp_extend_symm, extend_mk_single]
+    projectiveMomentFunction_comp_extend_symm, affineOpenPartialHomeomorph_extend_mk_single]
   exact fderiv_model_zero _ _
 
 /-- If the weight `w k` is simple, the only critical point of the moment function in the affine
@@ -375,14 +360,13 @@ theorem mem_criticalPoints_projectiveMomentFunction_iff {w : Fin (n + 1) → ℝ
     ((contMDiff_projectiveMomentFunction w (r := 1)) x |>.mdifferentiableAt one_ne_zero),
     projectiveMomentFunction_comp_extend_symm,
     fderiv_model_eq_zero_iff (ν := w ∘ k.succAbove) fun j ↦ hk _ (Fin.succAbove_ne k j),
-    extend_apply]
+    affineOpenPartialHomeomorph_extend_apply]
   constructor
   · intro h
     rw [← affineChart_symm_zero, ← h]
     exact ((affineChart k).left_inv (by simpa using hx)).symm
   · rintro rfl
-    rw [← extend_apply]
-    exact extend_mk_single k
+    exact affineChart_mk_single k
 
 /-- **The critical points of the moment function.** For pairwise distinct weights, the critical
 points of the moment function are exactly the `n + 1` coordinate points `[eₖ]`. -/
@@ -406,7 +390,7 @@ theorem isManifoldNondegenerateCriticalPoint_projectiveMomentFunction {w : Fin (
       (mk 𝕜 (Pi.single k 1) (by simp)) := by
   rw [isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas
     (affineOpenPartialHomeomorph_mem_maximalAtlas k) (mk_single_mem_source k),
-    projectiveMomentFunction_comp_extend_symm, extend_mk_single]
+    projectiveMomentFunction_comp_extend_symm, affineOpenPartialHomeomorph_extend_mk_single]
   exact isNondegenerateCriticalPoint_model_zero fun j ↦ hk _ (Fin.succAbove_ne k j)
 
 /-- **The Morse index of the moment function.** At the coordinate point `[eₖ]` the Morse index of
@@ -416,10 +400,11 @@ theorem manifoldMorseIndex_projectiveMomentFunction (w : Fin (n + 1) → ℝ) (k
     manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w)
       (mk 𝕜 (Pi.single k 1) (by simp)) = Module.finrank ℝ 𝕜 * {i | w i < w k}.ncard := by
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
-    (affineOpenPartialHomeomorph_mem_maximalAtlas k) (mk_single_mem_source k)
-    ((contMDiff_projectiveMomentFunction w) _)
+    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k)
+    (mk_single_mem_source k) ((contMDiff_projectiveMomentFunction w) _)
     (mem_criticalPoints.mp (mk_single_mem_criticalPoints_projectiveMomentFunction (𝕜 := 𝕜) w k)),
-    projectiveMomentFunction_comp_extend_symm, extend_mk_single, morseIndex_model_zero]
+    projectiveMomentFunction_comp_extend_symm, affineOpenPartialHomeomorph_extend_mk_single,
+    morseIndex_model_zero]
   -- The weights below `w k` all sit at indices other than `k`.
   have himage : k.succAbove '' {j | (w ∘ k.succAbove) j < w k} = {i | w i < w k} := by
     ext i

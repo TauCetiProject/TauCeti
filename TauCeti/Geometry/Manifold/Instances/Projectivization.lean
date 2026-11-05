@@ -32,6 +32,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
 * `Projectivization.instIsManifoldReal`: over a normed `ℝ`-algebra, such as `ℂ`, it is also a real
   `C^r` manifold with the same charts.
+* `Projectivization.affineOpenPartialHomeomorph_mem_maximalAtlas`: the affine charts lie in the
+  maximal atlas of either manifold structure.
 * `Projectivization.contMDiffOn_affineChart` and `Projectivization.contMDiff_affineChart_symm`:
   the affine charts and their inverses are `C^r` maps.
 
@@ -94,6 +96,35 @@ on `𝓘(ℝ, Fin n → ℂ)`. -/
 instance instIsManifoldReal [NormedAlgebra ℝ 𝕜] (r : ℕ∞ω) :
     IsManifold 𝓘(ℝ, Fin n → 𝕜) r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
   (instIsManifold r).restrictScalars ℝ
+
+section Model
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' (Fin n → 𝕜)]
+
+/-- Each standard affine chart lies in the maximal atlas of any `C^r` manifold structure on
+projective space built on its atlas, such as `𝓘(𝕜, Fin n → 𝕜)` or, over a normed `ℝ`-algebra,
+`𝓘(ℝ, Fin n → 𝕜)`. -/
+theorem affineOpenPartialHomeomorph_mem_maximalAtlas
+    {I : ModelWithCorners 𝕜' (Fin n → 𝕜) (Fin n → 𝕜)} {r : ℕ∞ω}
+    [IsManifold I r (ℙ 𝕜 (Fin (n + 1) → 𝕜))] (i : Fin (n + 1)) :
+    affineOpenPartialHomeomorph i ∈ IsManifold.maximalAtlas I r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
+  IsManifold.subset_maximalAtlas (affineOpenPartialHomeomorph_mem_atlas i)
+
+/-- For a trivial model `𝓘(𝕜', Fin n → 𝕜)`, the extended standard affine chart of `i` is the
+affine chart itself. -/
+theorem affineOpenPartialHomeomorph_extend_apply (i : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    (affineOpenPartialHomeomorph i).extend 𝓘(𝕜', Fin n → 𝕜) x = affineChart i x := by
+  rw [OpenPartialHomeomorph.extend_coe, Function.comp_apply, modelWithCornersSelf_coe, id_eq,
+    coe_affineOpenPartialHomeomorph]
+
+/-- For a trivial model `𝓘(𝕜', Fin n → 𝕜)`, the extended standard affine chart of `i` sends the
+coordinate point `[eᵢ]` to `0`. -/
+theorem affineOpenPartialHomeomorph_extend_mk_single (i : Fin (n + 1)) :
+    (affineOpenPartialHomeomorph i).extend 𝓘(𝕜', Fin n → 𝕜) (mk 𝕜 (Pi.single i 1) (by simp)) =
+      0 := by
+  rw [affineOpenPartialHomeomorph_extend_apply, affineChart_mk_single]
+
+end Model
 
 /-- Each standard affine chart of projective space is a `C^r` map on its domain. -/
 theorem contMDiffOn_affineChart (i : Fin (n + 1)) (r : ℕ∞ω) :

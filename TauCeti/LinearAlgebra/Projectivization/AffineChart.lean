@@ -170,6 +170,12 @@ theorem affineChart_symm_zero (i : Fin (n + 1)) :
   funext j
   rcases Fin.eq_self_or_eq_succAbove i j with rfl | ⟨j, rfl⟩ <;> simp
 
+/-- The standard affine chart of `i` sends the coordinate point `[eᵢ]` to its centre `0`. -/
+theorem affineChart_mk_single (i : Fin (n + 1)) :
+    affineChart i (mk K (Pi.single i 1) (by simp)) = 0 := by
+  rw [← affineChart_symm_zero]
+  exact (affineChart i).right_inv (by simp)
+
 /-- The domain of the transition map from the standard affine chart of `i` to that of `j`
 consists of the points whose homogeneous coordinates `Fin.insertNth i 1 z` have nonzero `j`-th
 entry. -/
