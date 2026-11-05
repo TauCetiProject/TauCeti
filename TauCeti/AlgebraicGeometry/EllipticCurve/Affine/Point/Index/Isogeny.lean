@@ -49,11 +49,11 @@ of a minimal model), so every point of `E₂(F_u)` is divisible by `n`, hence li
 `f`, up to an element of `E₂(F_u)[n^∞]`; and the inverse image of `E₂(F_u)[n^∞]` under `f` is
 `E₁(F_u)[n^∞]`, since `f̂ ∘ f = [n]`.
 
-At good reduction the ratio is `1`. Reduction identifies `E(F_u)[n^∞]` with the `n`-primary
-component of the reduced curve over the residue field `k`, and isogenous curves with good
-reduction have reductions with the same number of points over `k`, because their Frobenius traces
-agree. Finite groups of the same order have `n`-primary components of the same order, so
-`#(E₂(F_u) ⧸ f E₁(F_u)) = #E₁(F_u)[f]`.
+At a place of good reduction prime to `n`, the ratio is `1`. Reduction identifies `E(F_u)[n^∞]`
+with the `n`-primary component of the reduced curve over the residue field `k`, and isogenous
+curves with good reduction have reductions with the same number of points over `k`, because their
+Frobenius traces agree. Finite groups of the same order have `n`-primary components of the same
+order, so `#(E₂(F_u) ⧸ f E₁(F_u)) = #E₁(F_u)[f]`.
 
 ## Main results
 
@@ -66,11 +66,11 @@ agree. Finite groups of the same order have `n`-primary components of the same o
 * `TauCeti.Isogeny.Hom.index_range_mul_card_primaryComponent_of_degree_notMem` and
   `TauCeti.Isogeny.Hom.index_range_div_card_ker_of_degree_notMem`: the local cokernel/kernel ratio
   of `f` is the ratio of the orders of the `deg f`-primary components.
-* `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction, compute
-  this ratio using only the primary components of the finite reduced point groups.
+* `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction prime to `n`,
+  compute this ratio using only the primary components of the finite reduced point groups.
 * `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic` and
-  `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel`: at good reduction,
-  the ratio is `1`.
+  `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel`: at good reduction
+  prime to `n`, the ratio is `1`.
 
 ## References
 
