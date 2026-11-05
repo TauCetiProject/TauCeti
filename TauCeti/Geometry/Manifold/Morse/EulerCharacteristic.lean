@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Algebra.Field.ULift
-import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
@@ -133,7 +132,8 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 theorem IsMorse.even_toNat_totalCriticalCount_sphere {f : sphere (0 : E) 1 → ℝ}
     (hf : IsMorse (𝓡 n) f) : Even (totalCriticalCount (𝓡 n) f).toNat := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := nonempty_sphere n
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
+  obtain ⟨v⟩ := NormedSpace.sphere_nonempty_rclike ℝ (E := E) zero_le_one
   have h₂ : totalCriticalCount (𝓡 n) (sphereHeight v) = 2 := by
     rw [totalCriticalCount_def, criticalPoints_sphereHeight,
       encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]

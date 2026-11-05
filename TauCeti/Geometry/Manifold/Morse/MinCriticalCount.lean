@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import TauCeti.Geometry.Manifold.Morse.LusternikSchnirelmann
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
@@ -138,7 +137,9 @@ points has fewer. -/
 @[simp]
 theorem minCriticalCount_sphere : minCriticalCount (𝓡 n) (sphere (0 : E) 1) = 2 := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := nonempty_sphere n
+  have : Nontrivial E :=
+    nontrivial_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = n + 1)]; lia)
+  obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   have : Nontrivial (sphere (0 : E) 1) := ⟨⟨v, -v, ne_neg_of_mem_unit_sphere ℝ v⟩⟩
   refine le_antisymm ((minCriticalCount_le (contMDiff_sphereHeight v)).trans_eq ?_)
     two_le_minCriticalCount

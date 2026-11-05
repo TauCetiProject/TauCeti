@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.MayerVietoris
 public import TauCeti.Geometry.Manifold.DeRham.Punctured
 import TauCeti.AlgebraicTopology.Sphere.Zero
-import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.Analysis.Normed.Module.Connected
@@ -77,6 +76,12 @@ section Cover
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
+/-- The unit sphere of a real inner product space of positive dimension is nonempty. -/
+private theorem nonempty_sphere {m : ℕ} (hE : finrank ℝ E = m + 1) :
+    Nonempty (sphere (0 : E) 1) :=
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
+
 /-- The sphere minus a point has no de Rham cohomology in positive degree: stereographic projection
 identifies it with `ℝⁿ`, where every closed form of positive degree is exact. -/
 theorem subsingleton_deRhamCohomology_sphere_compl_singleton (v : sphere (0 : E) 1) (k : ℕ) :
@@ -91,7 +96,7 @@ theorem subsingleton_deRhamCohomology_sphere_compl_singleton (v : sphere (0 : E)
 theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
     Subsingleton (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) 1) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  obtain ⟨v⟩ := nonempty_sphere (E := E) n
+  obtain ⟨v⟩ := nonempty_sphere (E := E) (m := n) Fact.out
   set U : Opens (sphere (0 : E) 1) := ⟨{v}ᶜ, isOpen_compl_singleton⟩
   set V : Opens (sphere (0 : E) 1) := ⟨{-v}ᶜ, isOpen_compl_singleton⟩
   -- `U ⊓ V` is connected, as it is diffeomorphic to `ℝⁿ \ {0}` with `n ≥ 2`. The domain of
@@ -129,7 +134,7 @@ theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E =
     Nonempty (deRhamCohomology (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (k + 1) ≃ₗ[ℝ]
       deRhamCohomology (𝓡 (n + 1)) (sphere (0 : E) 1) (k + 2)) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ (n + 1)
-  obtain ⟨v⟩ := nonempty_sphere (E := E) (n + 1)
+  obtain ⟨v⟩ := nonempty_sphere (E := E) (m := n + 1) Fact.out
   have e := deRhamCohomology.mayerVietorisδEquiv
     (subsingleton_deRhamCohomology_sphere_compl_singleton (n := n + 1) v k)
     (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) k)
@@ -189,7 +194,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 real inner product space consists of two points, so `H⁰(S⁰)` is two-dimensional. -/
 theorem finrank_deRhamCohomology_zero_sphere_of_finrank_eq_one [Fact (finrank ℝ E = 1)] :
     finrank ℝ (deRhamCohomology (𝓡 0) (sphere (0 : E) 1) 0) = 2 := by
-  obtain ⟨e⟩ := nonempty_sphere (E := E) 0
+  obtain ⟨e⟩ := nonempty_sphere (E := E) (m := 0) Fact.out
   have hS := sphere_eq_pair_of_finrank_eq_one Fact.out e.2
   have := finite_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
   have := discreteTopology_sphere_of_finrank_eq_one (E := E) Fact.out 0 1
@@ -203,7 +208,7 @@ space. -/
 private theorem finrank_deRhamCohomology_sphere_one_one [Fact (finrank ℝ E = 1 + 1)] :
     finrank ℝ (deRhamCohomology (𝓡 1) (sphere (0 : E) 1) 1) = 1 := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 1
-  obtain ⟨v⟩ := nonempty_sphere (E := E) 1
+  obtain ⟨v⟩ := nonempty_sphere (E := E) (m := 1) Fact.out
   set U : Opens (sphere (0 : E) 1) := ⟨{v}ᶜ, isOpen_compl_singleton⟩
   set V : Opens (sphere (0 : E) 1) := ⟨{-v}ᶜ, isOpen_compl_singleton⟩
   -- `U` and `V` are diffeomorphic to `ℝ`, hence connected.
