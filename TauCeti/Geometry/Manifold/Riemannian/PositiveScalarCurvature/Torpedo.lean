@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Concordance
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Rotational
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus

@@ -129,6 +129,13 @@ theorem archNorm_pos {y : realSpace K} (hy : ∀ w, 0 < y w) : 0 < archNorm y :=
 theorem archNorm_inv (y : realSpace K) : archNorm y⁻¹ = (archNorm y)⁻¹ := by
   simp [archNorm_apply, inv_pow, prod_inv_distrib]
 
+/-- Scaling every coordinate by `c` multiplies the norm by `c ^ [K : ℚ]`, since the multiplicities
+of the places add up to the degree. -/
+@[simp]
+theorem archNorm_smul (c : ℝ) (y : realSpace K) :
+    archNorm (c • y) = c ^ Module.finrank ℚ K * archNorm y := by
+  simp [archNorm_apply, mul_pow, prod_mul_distrib, prod_pow_eq_pow_sum, sum_mult_eq]
+
 @[fun_prop]
 theorem continuous_archNorm : Continuous (archNorm : realSpace K → ℝ) :=
   (continuous_finsetProd univ fun w _ ↦ (continuous_apply w).pow (mult w)).congr
