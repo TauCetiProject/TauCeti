@@ -60,6 +60,8 @@ linear approximation error by the difference of the Hessians.
 * `HolderWith.norm_le_of_hasFDerivAt`, `HolderWith.norm_fderiv_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le`: the interpolation inequality on the whole
   space.
+* `ContDiff.lipschitzWith_fderiv_of_norm_iteratedFDeriv_two_le`: a bounded second derivative
+  makes the derivative Lipschitz.
 * `ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le`: the Landau-type inequality.
 * `HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`: the absorbed bounds on the two
@@ -213,6 +215,16 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_le {f : E → F} {k : ℕ} {H α : �
 end HolderWith
 
 namespace ContDiff
+
+/-- If `f` is `C²` and its second derivative is bounded by `L`, then its derivative is
+`L`-Lipschitz. -/
+theorem lipschitzWith_fderiv_of_norm_iteratedFDeriv_two_le {f : E → F} (hf : ContDiff ℝ 2 f)
+    {L : ℝ≥0} (hL : ∀ y, ‖iteratedFDeriv ℝ 2 f y‖ ≤ L) : LipschitzWith L (fderiv ℝ f) :=
+  lipschitzWith_of_nnnorm_fderiv_le
+    ((contDiff_succ_iff_fderiv.1 hf).2.2.differentiable one_ne_zero)
+    fun y => by
+      rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+      exact hL y
 
 /-- **Landau-type interpolation inequality.** If `f` is `C^(k+2)` with `‖D^k f‖ ≤ M₀` and
 `‖D^(k+2) f‖ ≤ M₂`, then `‖D^(k+1) f x‖ ≤ 2 M₀ / ε + M₂ ε` for every `ε > 0`. -/

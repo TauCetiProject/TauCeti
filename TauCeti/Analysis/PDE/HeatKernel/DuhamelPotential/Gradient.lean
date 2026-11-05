@@ -90,24 +90,16 @@ theorem exists_holderOnWith_fderiv_heatDuhamelPotential (hα : 0 < α) (hα₂ :
   have hd : (d : ℝ) = dist t s ^ ((α / 2 : ℝ≥0) : ℝ) := by
     simp only [d, NNReal.coe_rpow, coe_nndist]
   -- Points with the same spatial coordinate are at parabolic distance `√|t - s|`.
-  have hgM : ∀ y, ‖(u - v) y‖ ≤ K * d := by
-    intro y
-    have h := hval.dist_le (slabMk y ⟨t, ht⟩) (slabMk y ⟨s, hs⟩)
-    rw [Subtype.dist_eq, ParabolicSpaceTime.dist_eq] at h
-    simp only [space_slabMk, time_slabMk, dist_self, zero_add] at h
-    rw [Pi.sub_apply, ← dist_eq_norm]
-    refine h.trans_eq ?_
-    rw [hd, Real.dist_eq, Real.sqrt_eq_rpow, ← Real.rpow_mul (abs_nonneg _), NNReal.coe_div,
-      NNReal.coe_ofNat]
-    congr 2
-    ring
+  have hgM : ∀ y, ‖(u - v) y‖ ≤ K * d := fun y => by
+    have htime : HolderOnWith K (α / 2) (fun r => heatDuhamelPotential f r y) (Icc 0 T) :=
+      fun r hr r' hr' => by
+        simpa [K, edist_slabMk_same_space_rpow] using hval (slabMk y ⟨r, hr⟩) (slabMk y ⟨r', hr'⟩)
+    simpa only [Pi.sub_apply, ← dist_eq_norm, hd] using htime.dist_le ht hs
   -- The Hessian of `u - v` is bounded by the temporal Hölder estimate of the Hessian.
-  have hlip : LipschitzWith (C * H * d) (fderiv ℝ (u - v)) := by
-    refine lipschitzWith_of_nnnorm_fderiv_le
-      ((hg.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero) fun y => ?_
-    rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv,
-      iteratedFDeriv_sub_apply hu.contDiffAt hv.contDiffAt, ← dist_eq_norm]
-    simpa only [NNReal.coe_mul, hd] using (hhess y).dist_le ht hs
+  have hlip : LipschitzWith (C * H * d) (fderiv ℝ (u - v)) :=
+    hg.lipschitzWith_fderiv_of_norm_iteratedFDeriv_two_le fun y => by
+      rw [iteratedFDeriv_sub_apply hu.contDiffAt hv.contDiffAt, ← dist_eq_norm]
+      simpa only [NNReal.coe_mul, hd] using (hhess y).dist_le ht hs
   have hD := (holderWith_one.2 hlip).norm_le_of_hasFDerivAt
     (fun y => ((hg.differentiable two_ne_zero) y).hasFDerivAt) hgM one_pos x
   rw [fderiv_sub (hu.differentiable two_ne_zero x) (hv.differentiable two_ne_zero x)] at hD
@@ -130,9 +122,7 @@ theorem exists_lipschitzWith_fderiv_heatDuhamelPotential (hα : 0 < α) :
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_two_heatDuhamelPotential_le (E := E) (F := F) hα
   refine ⟨C.toNNReal, fun {f T M H} hf hM hH t ht => ?_⟩
   have hcd := contDiff_heatDuhamelPotential_of_forall_holderWith hf hM hH hα ht
-  refine lipschitzWith_of_nnnorm_fderiv_le
-    ((hcd.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero) fun y => ?_
-  rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  refine hcd.lipschitzWith_fderiv_of_norm_iteratedFDeriv_two_le fun y => ?_
   rcases ht.1.eq_or_lt with h0 | hpos
   · rw [← h0, heatDuhamelPotential_zero, Pi.zero_def, iteratedFDeriv_const_of_ne two_ne_zero,
       Pi.zero_apply, norm_zero]
