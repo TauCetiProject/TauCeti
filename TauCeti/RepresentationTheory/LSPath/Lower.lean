@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.LSPath.Integrality
 public import TauCeti.RepresentationTheory.LSPath.Linked
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectedChain
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 
 /-!
 # Littelmann's lowering operator preserves Lakshmibai–Seshadri paths
@@ -270,9 +271,7 @@ private theorem preReflection_smul_apply (f : M →+ V) (i : b.support) (F : Mod
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (d : 𝕜) (w : P.weylGroup) :
     Module.preReflection (f (P.root i)) F (d • f (w • lam)) =
       d • f (((weylCoxeterSystem P b).simple i * w) • lam) := by
-  rw [Module.preReflection_apply, LinearMap.map_smul, hF, simple_mul_smul_eq_reflection,
-    P.reflection_apply, map_sub, map_zsmul, smul_sub, smul_eq_mul, mul_smul,
-    Int.cast_smul_eq_zsmul]
+  rw [map_smul, ← P.map_reflection_eq_preReflection i hF, simple_mul_smul_eq_reflection]
 
 /-- **The rational data of a lowering step.** If Littelmann's lowering operator `f_αᵢ` is defined on
 the path of an LS path `π` of dominant shape, it is presented by the lowered list
