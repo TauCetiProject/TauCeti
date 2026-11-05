@@ -45,8 +45,9 @@ separated as soon as the graded pieces vanish from some stage on.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
   Theorem 2.6 and Section 5.1, the spectral sequence of the filtration of a total space by the
   preimages of the skeleta of a CW base.
-* A. Hatcher, *Algebraic Topology*, Section 2.1, Proposition 2.6 (compact supports of singular
-  chains).
+* A. Hatcher, *Algebraic Topology*, Section 3.3, Proposition 3.33 and its proof (a singular
+  chain has compact image, so it lies in some member of a directed family of subspaces absorbing
+  compact sets).
 -/
 
 public section
