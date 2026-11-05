@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.IntermediateValue
-import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Algebra.Order.Group
+import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.ProjIcc
 
