@@ -5,14 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Comp
-public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Operator.Bilinear
-public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-public import Mathlib.Topology.MetricSpace.Holder
-public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
-import TauCeti.Analysis.Holder.Interpolation
+public import TauCeti.Analysis.Holder.Interpolation
 
 /-!
 # Differentiability of locally uniform limits with Hölder derivatives
