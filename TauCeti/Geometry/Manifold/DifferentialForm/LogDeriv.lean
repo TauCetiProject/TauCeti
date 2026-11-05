@@ -94,10 +94,9 @@ theorem mlogDeriv_eq_of_eventuallyEq_mul_exp {u g : M → ℂ} {x : M} {c : ℂ}
   rw [mlogDeriv_apply, hu,
     mvfderiv_comp_apply_of_differentiableAt hφ.differentiableAt hg, hφ.fderiv, hux,
     mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-  have hce : c * exp (g x) ≠ 0 := mul_ne_zero hc (exp_ne_zero _)
   rw [ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply,
     smul_eq_mul]
-  field_simp
+  field_simp [hc]
 
 /-- The logarithmic derivative of `exp g` is the differential of `g`. -/
 @[simp]

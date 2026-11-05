@@ -230,7 +230,7 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
   obtain ⟨δ₀, hδ₀, hδ₀'⟩ := (nhdsGT_basis (0 : ℝ)).eventually_iff.1 hslope
   refine ⟨4 * (|L| + 2), fun δ hδ ↦ ?_⟩
   -- Work at a scale `η ≤ δ` below `δ₀` and with `s + η < b`.
-  set η := min δ (min (δ₀ / 2) ((b - s) / 2)) with hη
+  set η := min δ (min (δ₀ / 2) ((b - s) / 2))
   have hη0 : 0 < η := lt_min hδ (lt_min (by linarith) (by linarith [hsI.2]))
   have hηδ : η ≤ δ := min_le_left _ _
   have hηδ₀ : η < δ₀ := (min_le_right _ _).trans_lt ((min_le_left _ _).trans_lt (by linarith))
