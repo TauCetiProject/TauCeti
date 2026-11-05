@@ -321,6 +321,56 @@ private theorem freeCumulant_ite_eq_freeCumulant_fiberProd {n : ℕ} (a : Fin (n
   rw [himage, ← freeCumulant_comp_of_strictMonoOn φ ((Fin.strictMono_succAbove _).strictMonoOn _)]
   exact congrArg (freeCumulant φ · univ) (funext fun q => (hfib q).symm)
 
+/-- Splitting the first generator `g` off the letter `L p = g :: r`, with `r ≠ []`, of a word of
+nonempty lists of generators gives a word of length `n + 1`, with the letters `[g]` at `p` and `r`
+at `p + 1`. It again consists of nonempty lists of generators, with the labels of `L` along
+`p.succ.succAbove` and the label of `L p` at `p + 1`, it has one generator less in excess, and
+grouping its letters at `p` and `p + 1` recovers the original word. -/
+private theorem exists_split_letter {n : ℕ} {L : Fin n → List A} {ℓ : Fin n → ι}
+    (hL : ∀ k, L k ≠ []) (hG : ∀ k, ∀ g ∈ L k, g ∈ G (ℓ k)) {p : Fin n} {g : A} {r : List A}
+    (hgr : L p = g :: r) (hr : r ≠ []) :
+    ∃ (L' : Fin (n + 1) → List A) (ℓ' : Fin (n + 1) → ι), (∀ z, L' z ≠ []) ∧
+      (∀ z, ∀ x ∈ L' z, x ∈ G (ℓ' z)) ∧ ∑ z, ((L' z).length - 1) < ∑ k, ((L k).length - 1) ∧
+      (∀ q, ℓ' (p.succ.succAbove q) = ℓ q) ∧ ℓ' p.succ = ℓ p ∧
+      (fun q => (L q).prod) = fun q => if q = p then (L' p.castSucc).prod * (L' p.succ).prod
+        else (L' (p.succ.succAbove q)).prod := by
+  set L' : Fin (n + 1) → List A := Fin.insertNth p.succ r (update L p [g])
+  set ℓ' : Fin (n + 1) → ι := Fin.insertNth p.succ (ℓ p) ℓ
+  have hL'e (q : Fin n) : L' (p.succ.succAbove q) = update L p [g] q :=
+    Fin.insertNth_apply_succAbove _ _ _ _
+  have hℓ'e (q : Fin n) : ℓ' (p.succ.succAbove q) = ℓ q := Fin.insertNth_apply_succAbove _ _ _ _
+  have hL'p : L' p.succ = r := Fin.insertNth_apply_same _ _ _
+  have hℓ'p : ℓ' p.succ = ℓ p := Fin.insertNth_apply_same _ _ _
+  have hep : p.succ.succAbove p = p.castSucc := Fin.succAbove_of_castSucc_lt _ _ p.castSucc_lt_succ
+  refine ⟨L', ℓ', (Fin.forall_iff_succAbove p.succ).2 ⟨hL'p ▸ hr, fun q => ?_⟩,
+    (Fin.forall_iff_succAbove p.succ).2 ⟨fun x hx => ?_, fun q x hx => ?_⟩, ?_, hℓ'e, hℓ'p, ?_⟩
+  · rw [hL'e]
+    by_cases hq : q = p
+    · simp [hq]
+    · simpa [hq] using hL q
+  · exact hℓ'p ▸ hG p x (by rw [hgr]; exact List.mem_cons_of_mem g (hL'p ▸ hx))
+  · rw [hL'e] at hx
+    rw [hℓ'e]
+    by_cases hq : q = p
+    · subst hq
+      exact hG q x (by simp_all)
+    · exact hG q x (by simpa [hq] using hx)
+  · -- The letter `[g]` at `p` has no excess, and `r` at `p + 1` has one generator less than `L p`.
+    have hupd : ∑ q, ((update L p [g] q).length - 1) = 0 + ∑ q ∈ univ \ {p}, ((L q).length - 1) :=
+      (sum_congr rfl fun q _ => apply_update (fun _ (l : List A) => l.length - 1) L p [g] q).trans
+        (sum_update_of_mem (mem_univ p) _ _)
+    have hsum := sum_update_of_mem (mem_univ p) (fun q => (L q).length - 1) ((L p).length - 1)
+    rw [update_eq_self] at hsum
+    rw [Fin.sum_univ_succAbove _ p.succ, hL'p]
+    simp only [hL'e, hupd, hsum, hgr, List.length_cons]
+    have := List.length_pos_of_ne_nil hr
+    omega
+  · funext q
+    by_cases hq : q = p
+    · rw [ite_eq_left hq, hq, ← hep, hL'e, hL'p, update_self, hgr]
+      simp
+    · simp [hL'e, hq]
+
 /-- The mixed free cumulants of words whose letters are products of nonempty lists of generators
 vanish, by induction on the number of generators in excess of the number of letters. -/
 private theorem freeCumulant_list_prod_eq_zero
@@ -343,41 +393,10 @@ private theorem freeCumulant_list_prod_eq_zero
     simp [hgr] at hp
   -- Split the letter at `p` into the adjacent letters `g` at `p` and `r.prod` at `p + 1`. The old
   -- positions sit in `Fin (n + 1)` along `e`, which skips `p + 1`.
+  obtain ⟨L', ℓ', hL', hG', hm', hℓ'e, hℓ'p, hgroup⟩ := exists_split_letter hL hG hgr hr
   set e : Fin n → Fin (n + 1) := p.succ.succAbove
-  set L' : Fin (n + 1) → List A := Fin.insertNth p.succ r (update L p [g])
-  set ℓ' : Fin (n + 1) → ι := Fin.insertNth p.succ (ℓ p) ℓ
   set a' : Fin (n + 1) → A := fun z => (L' z).prod
-  have hL'e (q : Fin n) : L' (e q) = update L p [g] q := Fin.insertNth_apply_succAbove _ _ _ _
-  have hℓ'e (q : Fin n) : ℓ' (e q) = ℓ q := Fin.insertNth_apply_succAbove _ _ _ _
-  have hL'p : L' p.succ = r := Fin.insertNth_apply_same _ _ _
-  have hℓ'p : ℓ' p.succ = ℓ p := Fin.insertNth_apply_same _ _ _
   have hep : e p = p.castSucc := Fin.succAbove_of_castSucc_lt _ _ p.castSucc_lt_succ
-  have hL' : ∀ z, L' z ≠ [] := (Fin.forall_iff_succAbove p.succ).2 ⟨hL'p ▸ hr, fun q => by
-    rw [hL'e]
-    by_cases hq : q = p
-    · simp [hq]
-    · simpa [hq] using hL q⟩
-  have hG' : ∀ z, ∀ x ∈ L' z, x ∈ G (ℓ' z) := (Fin.forall_iff_succAbove p.succ).2
-    ⟨fun x hx => hℓ'p ▸ hG p x (by rw [hgr]; exact List.mem_cons_of_mem g (hL'p ▸ hx)),
-      fun q x hx => by
-        rw [hL'e] at hx
-        rw [hℓ'e]
-        by_cases hq : q = p
-        · subst hq
-          exact hG q x (by simp_all)
-        · exact hG q x (by simpa [hq] using hx)⟩
-  -- The split word has one generator less in excess.
-  have hm' : ∑ z, ((L' z).length - 1) < m := by
-    have hsum : ∑ q, ((update L p [g] q).length - 1) = ∑ q ∈ univ.erase p, ((L q).length - 1) := by
-      rw [← add_sum_erase _ _ (mem_univ p)]
-      simp only [update_self, List.length_singleton, tsub_self, zero_add]
-      exact sum_congr rfl fun q hq => by rw [update_of_ne (ne_of_mem_erase hq)]
-    rw [Fin.sum_univ_succAbove _ p.succ, hL'p]
-    simp only [e] at hL'e
-    simp only [hL'e, hsum]
-    rw [← hm, ← add_sum_erase _ _ (mem_univ p), hgr, List.length_cons]
-    have := List.length_pos_of_ne_nil hr
-    omega
   -- Every mixed subword of the split word has vanishing cumulant, by induction.
   have hsub : ∀ t : Finset (Fin (n + 1)), ∀ x ∈ t, ∀ y ∈ t, ℓ' x ≠ ℓ' y →
       freeCumulant φ a' t = 0 := by
@@ -386,19 +405,12 @@ private theorem freeCumulant_list_prod_eq_zero
     obtain ⟨i, rfl⟩ : x ∈ Set.range eV := by rwa [range_orderEmbOfFin]
     obtain ⟨j, rfl⟩ : y ∈ Set.range eV := by rwa [range_orderEmbOfFin]
     rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin]
-    refine ih _ (lt_of_le_of_lt ?_ hm') _ (L' ∘ eV) (ℓ' ∘ eV) rfl (fun _ => hL' _)
+    refine ih _ (lt_of_le_of_lt ?_ (hm ▸ hm')) _ (L' ∘ eV) (ℓ' ∘ eV) rfl (fun _ => hL' _)
       (fun _ => hG' _) i j hxy
     exact (sum_image fun _ _ _ _ h => eV.injective h).symm.trans_le
       (sum_le_sum_of_subset (f := fun z => (L' z).length - 1) (subset_univ _))
   -- Grouping the two halves of the split letter recovers the original word.
-  have hgroup : (fun q => (L q).prod) =
-      fun q => if q = p then a' p.castSucc * a' p.succ else a' (e q) := by
-    funext q
-    by_cases hq : q = p
-    · subst hq
-      simp [a', ← hep, hL'e, hL'p, hgr]
-    · simp [a', hL'e, hq]
-  rw [hgroup, freeCumulant_ite_eq_freeCumulant_fiberProd,
+  rw [hgroup, freeCumulant_ite_eq_freeCumulant_fiberProd a',
     freeCumulant_fiberProd_collapse_eq (fun t _ => hsub t) (mem_univ (e k)) (mem_univ (e k'))
       (by rwa [hℓ'e, hℓ'e]) (mem_univ _) (mem_univ _) p.castSucc_lt_succ
       (fun z _ => by simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ]; omega)
