@@ -52,6 +52,15 @@ noncomputable def tensorInducedTransitivityLinearEquiv :
     (PiTensorProduct.reindex R (fun _ ↦ M)
       (quotientEquivProdOfLE' hVU (leftTransversalRep U s) (leftTransversalRep_mk U s)).symm)
 
+/-- The transitivity regrouping flattens the product index and then reindexes by the tower's
+coset coordinates. -/
+theorem tensorInducedTransitivityLinearEquiv_def :
+    tensorInducedTransitivityLinearEquiv (R := R) (M := M) hVU s =
+      PiTensorProduct.prodEquiv.trans
+        (PiTensorProduct.reindex R (fun _ ↦ M)
+          (quotientEquivProdOfLE' hVU (leftTransversalRep U s)
+            (leftTransversalRep_mk U s)).symm) := (rfl)
+
 /-- On tensors of pure tensors, regrouping reads the two coordinates of each coset. -/
 @[simp] theorem tensorInducedTransitivityLinearEquiv_tprod
     (m : (G ⧸ U) → (U ⧸ V.subgroupOf U) → M) :

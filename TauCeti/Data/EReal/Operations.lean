@@ -18,7 +18,8 @@ subtraction in the ways recorded here. The first two results below have a real s
 the last two a real minuend. The file also records that adding a finite extended nonnegative real
 to a real number is real addition, how the positive part `ENNReal.ofReal` of a real number
 compares with the number itself in `EReal`, that the coercion from `ℝ≥0∞` commutes with
-infima, and how combinations `s a + t b - r` with real weights and subtrahend behave. The named
+infima, how combinations `s a + t b - r` with real weights and subtrahend behave, and that
+negation distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
 installing a coercion; it is additive.
 
@@ -57,6 +58,8 @@ installing a coercion; it is additive.
 * `EReal.coe_mul_coe_mul_add_coe_mul_sub` — nonnegative real scaling distributes through a
   weighted sum with a real subtrahend.
 * `EReal.ne_top_of_coe_mul_ne_top` — a positive real multiple can be `≠ ⊤` only if its operand is.
+* `EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul` — negating a nonnegative combination
+  `a x + b y` of extended nonnegative reals gives the same combination of `-x` and `-y`.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -287,6 +290,16 @@ theorem _root_.EReal.ne_top_of_coe_mul_ne_top {c : ℝ} (hc : 0 < c) {d : EReal}
     (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
   rintro rfl
   exact hd (EReal.coe_mul_top_of_pos hc)
+
+/-- The negative of a nonnegative combination `a x + b y` in `ℝ≥0∞`, read in `EReal`, is the
+same combination of `-x` and `-y`. -/
+theorem _root_.EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha : 0 ≤ a)
+    (hb : 0 ≤ b) (x y : ℝ≥0∞) :
+    -((ENNReal.ofReal a * x + ENNReal.ofReal b * y : ℝ≥0∞) : EReal) =
+      (a : EReal) * -(x : EReal) + (b : EReal) * -(y : EReal) := by
+  rw [EReal.coe_ennreal_add,
+    EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _))]
+  simp [EReal.coe_ennreal_ofReal, ha, hb, sub_eq_add_neg]
 
 end TauCeti
 

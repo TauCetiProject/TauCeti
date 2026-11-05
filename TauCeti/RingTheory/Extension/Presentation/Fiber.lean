@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Smooth.Quotient
 import Mathlib.RingTheory.Support
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.Extension.Presentation.LocalizationAway
+import TauCeti.RingTheory.MvPolynomial.Rescale
 
 /-!
 # Lifting presentations from a fibre
@@ -225,10 +226,7 @@ theorem exists_ker_eq_span_range (Q : Presentation B S σ τ) (u : σ → Bˣ) {
     (hψ : ψ.comp (rename Sum.inr) = aeval fun j ↦ (u j : B) • Q.val j) :
     ∃ G : ι ⊕ τ → MvPolynomial (ι ⊕ σ) B, RingHom.ker ψ = Ideal.span (Set.range G) := by
   -- Rescaling the variables is an automorphism `e` of `B[σ]`.
-  let e : MvPolynomial σ B ≃ₐ[B] MvPolynomial σ B :=
-    AlgEquiv.ofAlgHom (aeval fun j ↦ C (↑(u j) : B) * X j) (aeval fun j ↦ C (↑(u j)⁻¹ : B) * X j)
-      (algHom_ext fun j ↦ by simp [← mul_assoc, ← C_mul])
-      (algHom_ext fun j ↦ by simp [← mul_assoc, ← C_mul])
+  let e : MvPolynomial σ B ≃ₐ[B] MvPolynomial σ B := rescaleEquiv u
   have he : (aeval (R := B) fun j ↦ (u j : B) • Q.val j) = (aeval Q.val).comp e.toAlgHom := by
     ext j
     simp [e, Algebra.smul_def]
