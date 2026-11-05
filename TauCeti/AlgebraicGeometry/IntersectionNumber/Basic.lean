@@ -78,7 +78,8 @@ off-diagonal entries of the intersection matrix.
   line bundle by an effective Cartier divisor meeting a proper curve properly;
 * `LineBundleClass.intersectionNumber_mul_of_isIntegral` and
   `LineBundleClass.intersectionNumber_inv_of_isIntegral`: additivity on a proper integral curve,
-  possibly singular;
+  possibly singular, with `LineBundleClass.intersectionNumber_pow_of_isIntegral` and
+  `LineBundleClass.intersectionNumber_prod_of_isIntegral` for powers and finite products;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
   additivity on a regular proper integral curve, bundled as
   `LineBundleClass.intersectionNumberHom k ι : Pic X →+ ℤ`;
@@ -238,6 +239,27 @@ theorem intersectionNumber_inv_of_isIntegral (a : LineBundleClass X) :
     intersectionNumber k ι a⁻¹ = -intersectionNumber k ι a := by
   rw [intersectionNumber_def, intersectionNumber_def, pullback_inv]
   exact eulerDegree_inv_of_isIntegral k _
+
+/-- The intersection number of a power of a class with a proper integral curve over `k` with
+finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` is the corresponding multiple. -/
+@[simp]
+theorem intersectionNumber_pow_of_isIntegral (a : LineBundleClass X) (n : ℕ) :
+    intersectionNumber k ι (a ^ n) = n * intersectionNumber k ι a := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, intersectionNumber_mul_of_isIntegral, ih]; push_cast; ring
+
+/-- The intersection number of a finite product of classes with a proper integral curve over `k`
+with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` is the sum of their intersection
+numbers. -/
+theorem intersectionNumber_prod_of_isIntegral {α : Type*} (s : Finset α)
+    (a : α → LineBundleClass X) :
+    intersectionNumber k ι (∏ i ∈ s, a i) = ∑ i ∈ s, intersectionNumber k ι (a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi, intersectionNumber_mul_of_isIntegral, ih]
 
 end Integral
 

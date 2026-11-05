@@ -33,6 +33,10 @@ of `I_D`, inverting gives `[𝒪_X(D + E)] = [𝒪_X(D)] * [𝒪_X(E)]`, which i
   with `Scheme.IdealSheafData.tensorProductSheafIso_hom_tmul` computing it on pure tensors;
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_mul`: the line-bundle class of
   the ideal sheaf of `D + E` is the product of the classes of the ideal sheaves of `D` and `E`.
+  `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_top`,
+  `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_pow` and
+  `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_prod` extend this to the empty
+  divisor, to multiples `n D` and to finite sums `∑ᵢ Dᵢ`.
 
 ## References
 
@@ -220,5 +224,40 @@ theorem mk_toInvertibleSheaf_mul (hI : I.IsEffectiveCartier) (hJ : J.IsEffective
   refine ⟨?_⟩
   simp only [IsEffectiveCartier.toInvertibleSheaf_obj, InvertibleSheaf.tensorProduct_obj]
   exact (tensorProductSheafIso I hJ).symm
+
+/-- The ideal sheaf of the empty effective Cartier divisor is the structure sheaf, whose
+line-bundle class is trivial. -/
+@[simp]
+theorem mk_toInvertibleSheaf_top :
+    mk (isEffectiveCartier_top X).toInvertibleSheaf = 1 := by
+  rw [mk_eq_one_iff, IsEffectiveCartier.toInvertibleSheaf_obj]
+  refine ⟨((⊤ : X.IdealSheafData).unitIsoOfForallIdealEqSpan (a := 1) (fun U ↦ ?_)
+    (fun U ↦ ?_)).symm⟩
+  · rw [map_one]
+    exact IsSMulRegular.one _
+  · rw [map_one, Ideal.span_singleton_one, ideal_top, Pi.top_apply]
+
+/-- The line-bundle class of the ideal sheaf of `n D` is the `n`-th power of the class of the
+ideal sheaf of the effective Cartier divisor `D`. -/
+theorem mk_toInvertibleSheaf_pow (hI : I.IsEffectiveCartier) (n : ℕ) :
+    mk (TauCeti.isEffectiveCartier_pow hI n).toInvertibleSheaf = mk hI.toInvertibleSheaf ^ n := by
+  induction n with
+  | zero => simp only [pow_zero, one_eq_top, mk_toInvertibleSheaf_top]
+  | succ n ih =>
+    simp only [pow_succ]
+    rw [mk_toInvertibleSheaf_mul (TauCeti.isEffectiveCartier_pow hI n) hI, ih]
+
+/-- The line-bundle class of the ideal sheaf of a finite sum `∑ᵢ Dᵢ` of effective Cartier divisors
+is the product of the classes of the ideal sheaves of the `Dᵢ`. -/
+theorem mk_toInvertibleSheaf_prod {ι : Type*} (s : Finset ι) {I : ι → X.IdealSheafData}
+    (hI : ∀ i, (I i).IsEffectiveCartier) :
+    mk (TauCeti.isEffectiveCartier_prod fun i (_ : i ∈ s) ↦ hI i).toInvertibleSheaf =
+      ∏ i ∈ s, mk (hI i).toInvertibleSheaf := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp only [Finset.prod_empty, one_eq_top, mk_toInvertibleSheaf_top]
+  | @insert i s hi ih =>
+    simp only [Finset.prod_insert hi]
+    rw [mk_toInvertibleSheaf_mul (hI i) (TauCeti.isEffectiveCartier_prod fun j _ ↦ hI j), ih]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
