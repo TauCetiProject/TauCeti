@@ -13,10 +13,13 @@ public import Mathlib.MeasureTheory.Measure.Restrict
 # Integer-valued measures
 
 `Measure.IsIntegerValued` says that every measurable set of finite mass has natural-number
-mass. Infinite mass is allowed. This is the measure-theoretic integrality condition used for
-point processes; neither local finiteness nor simplicity is part of it.
+mass. Equivalently, measurable sets have mass in `ℕ ∪ {∞}`: this is the extended
+integer-valued condition of Kallenberg. It implies neither s-finiteness nor a representation
+as a countable sum of Dirac measures. In general it is weaker than the counting measures of
+Last–Penrose, Definition 2.1, which are countable sums of finite integer-valued measures.
+Neither local finiteness nor simplicity is part of this predicate.
 
-Integer-valued measures are closed under measurable mapping, measurable restriction and
+Integer-valued measures are closed under mapping, restriction and
 superposition. In particular, `IsIntegerValued.sum` applies to sums of Dirac occurrences,
 without requiring distinct locations or nonexplosion. Repeated locations retain their
 multiplicity. Local finiteness can subsequently be checked separately on compact sets.
@@ -26,8 +29,10 @@ multiplicity from an atom of fractional mass, and also records the allowed infin
 
 ## References
 
+* Olav Kallenberg, *Random Measures, Theory and Applications*, Springer, 2017
+  (extended integer-valued measures).
 * Günter Last and Mathew Penrose, *Lectures on the Poisson Process*, Cambridge University
-  Press, 2018, Chapter 2 (counting measures and point processes).
+  Press, 2018, Chapter 2 (the stronger counting-measure notion motivating point processes).
 -/
 
 public section
@@ -43,6 +48,15 @@ variable {X Y ι : Type*} [MeasurableSpace X] [MeasurableSpace Y]
 Sets of infinite mass are allowed, and multiplicities need not be at most one. -/
 def IsIntegerValued (μ : Measure X) : Prop :=
   ∀ ⦃A : Set X⦄, MeasurableSet A → μ A < ∞ → ∃ n : ℕ, μ A = n
+
+/-- The defining finite-mass characterization of an integer-valued measure. -/
+theorem isIntegerValued_def : μ.IsIntegerValued ↔
+    ∀ ⦃A : Set X⦄, MeasurableSet A → μ A < ∞ → ∃ n : ℕ, μ A = n := (Iff.rfl)
+
+/-- Every finite measurable mass of an integer-valued measure is a natural number. -/
+theorem IsIntegerValued.exists_eq_natCast (hμ : μ.IsIntegerValued) {A : Set X}
+    (hA : MeasurableSet A) (hfin : μ A < ∞) : ∃ n : ℕ, μ A = n :=
+  isIntegerValued_def.1 hμ hA hfin
 
 /-- An integer-valued measure takes only natural-number or infinite values on measurable sets. -/
 theorem isIntegerValued_iff : μ.IsIntegerValued ↔
@@ -105,29 +119,35 @@ theorem IsIntegerValued.sum {μ : ι → Measure X} (hμ : ∀ i, (μ i).IsInteg
 @[simp] theorem isIntegerValued_count : (count : Measure X).IsIntegerValued :=
   IsIntegerValued.sum fun x => isIntegerValued_dirac x
 
-/-- Restricting to a measurable set preserves integrality. -/
-theorem IsIntegerValued.restrict (hμ : μ.IsIntegerValued) {A : Set X}
-    (hA : MeasurableSet A) : (μ.restrict A).IsIntegerValued := by
+/-- Restricting to any set preserves integrality. -/
+theorem IsIntegerValued.restrict (hμ : μ.IsIntegerValued) {A : Set X} :
+    (μ.restrict A).IsIntegerValued := by
   intro B hB hfin
-  rw [restrict_apply hB] at hfin ⊢
-  exact hμ (hB.inter hA) hfin
+  rw [restrict_apply hB, ← measure_toMeasurable (B ∩ A)] at hfin ⊢
+  exact hμ (measurableSet_toMeasurable μ (B ∩ A)) hfin
 
-/-- Measurable mapping preserves integrality; neither injectivity nor a local-finiteness
-hypothesis is needed. Different occurrences may be mapped to the same location. -/
-theorem IsIntegerValued.map (hμ : μ.IsIntegerValued) {f : X → Y} (hf : Measurable f) :
+/-- Mapping preserves integrality; neither injectivity nor a local-finiteness hypothesis is
+needed. Different occurrences may be mapped to the same location. For a non-a.e.-measurable
+map, Mathlib's pushforward is zero or a Dirac measure, so integrality still holds. -/
+theorem IsIntegerValued.map (hμ : μ.IsIntegerValued) {f : X → Y} :
     (μ.map f).IsIntegerValued := by
-  intro A hA hfin
-  rw [map_apply hf hA] at hfin ⊢
-  exact hμ (hA.preimage hf) hfin
+  by_cases hf : AEMeasurable f μ
+  · intro A hA hfin
+    rw [map_apply_of_aemeasurable hf hA, ← measure_toMeasurable (f ⁻¹' A)] at hfin ⊢
+    exact hμ (measurableSet_toMeasurable μ (f ⁻¹' A)) hfin
+  · obtain rfl | hne := eq_or_ne μ 0
+    · simp
+    · rw [map_of_not_aemeasurable_of_ne_zero hf hne]
+      exact isIntegerValued_dirac _
 
 /-- An atom is integer-valued exactly when its mass is a natural number or infinity. Thus
 fractional atoms are excluded, while infinite atoms require a separate finiteness condition. -/
-@[simp] theorem isIntegerValued_smul_dirac_iff [MeasurableSingletonClass X] (c : ℝ≥0∞) (x : X) :
+@[simp] theorem isIntegerValued_smul_dirac_iff (c : ℝ≥0∞) (x : X) :
     (c • dirac x).IsIntegerValued ↔ (∃ n : ℕ, c = n) ∨ c = ∞ := by
   classical
   constructor
   · intro h
-    simpa using isIntegerValued_iff.1 h {x} (measurableSet_singleton x)
+    simpa using isIntegerValued_iff.1 h Set.univ MeasurableSet.univ
   · intro hc
     rw [isIntegerValued_iff]
     intro A hA
@@ -145,11 +165,7 @@ open MeasureTheory
 theorem isIntegerValued_sum {ι X : Type*} [MeasurableSpace X]
     (s : Finset ι) {μ : ι → Measure X} (hμ : ∀ i ∈ s, (μ i).IsIntegerValued) :
     (∑ i ∈ s, μ i).IsIntegerValued := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s hi ih =>
-    rw [Finset.sum_insert hi]
-    exact (hμ i (by simp)).add (ih fun j hj => hμ j (by simp [hj]))
+  rw [← Measure.sum_coe_finset]
+  exact Measure.IsIntegerValued.sum fun i => hμ i i.2
 
 end Finset
