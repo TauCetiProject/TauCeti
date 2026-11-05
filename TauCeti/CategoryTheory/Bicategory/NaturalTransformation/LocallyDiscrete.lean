@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
-public import TauCeti.CategoryTheory.Bicategory.Basic
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Bicategory.Strict.Pseudofunctor
 
 /-!
@@ -196,12 +196,9 @@ naturality isomorphisms given by the unitors. -/
 def pullbackIdHom (F : LocallyDiscrete Γ ⥤ᵖ B) : (𝟭 Γ).toPseudofunctor.comp F ⟶ F where
   app x := 𝟙 (F.obj x)
   naturality φ := ρ_ (F.map φ) ≪≫ (λ_ (F.map φ)).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact rightUnitor_trans_leftUnitor_symm_naturality (𝟙 _)
+  naturality_naturality η := naturality_naturality_of_locallyDiscrete
+    ((𝟭 Γ).toPseudofunctor.comp F) F (fun x ↦ 𝟙 (F.obj x))
+    (fun φ ↦ ρ_ (F.map φ) ≪≫ (λ_ (F.map φ)).symm) η
   -- After identifying the unit and composition comparisons of the pullback with those of `F`,
   -- the conditions are those of the identity transformation of `F`.
   naturality_id x := by
@@ -220,12 +217,9 @@ naturality isomorphisms given by the unitors. -/
 def pullbackIdInv (F : LocallyDiscrete Γ ⥤ᵖ B) : F ⟶ (𝟭 Γ).toPseudofunctor.comp F where
   app x := 𝟙 (F.obj x)
   naturality φ := ρ_ (F.map φ) ≪≫ (λ_ (F.map φ)).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact rightUnitor_trans_leftUnitor_symm_naturality (𝟙 _)
+  naturality_naturality η := naturality_naturality_of_locallyDiscrete
+    F ((𝟭 Γ).toPseudofunctor.comp F) (fun x ↦ 𝟙 (F.obj x))
+    (fun φ ↦ ρ_ (F.map φ) ≪≫ (λ_ (F.map φ)).symm) η
   -- As in `pullbackIdHom`.
   naturality_id x := by
     rw [toPseudofunctor_id_comp_mapId]
@@ -244,12 +238,10 @@ def pullbackCompHom (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') (F : LocallyDiscrete Λ' �
     (f ⋙ g).toPseudofunctor.comp F ⟶ f.toPseudofunctor.comp (g.toPseudofunctor.comp F) where
   app x := 𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩)
   naturality φ := ρ_ (F.map (g.map (f.map φ.as)).toLoc) ≪≫ (λ_ _).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact rightUnitor_trans_leftUnitor_symm_naturality (𝟙 _)
+  naturality_naturality η := naturality_naturality_of_locallyDiscrete
+    ((f ⋙ g).toPseudofunctor.comp F) (f.toPseudofunctor.comp (g.toPseudofunctor.comp F))
+    (fun x ↦ 𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))
+    (fun φ ↦ ρ_ (F.map (g.map (f.map φ.as)).toLoc) ≪≫ (λ_ _).symm) η
   -- After identifying the unit and composition comparisons of the two pullbacks, the conditions
   -- are those of the identity transformation of the pullback along `f ⋙ g`.
   naturality_id x := by
@@ -269,12 +261,10 @@ def pullbackCompInv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') (F : LocallyDiscrete Λ' �
     f.toPseudofunctor.comp (g.toPseudofunctor.comp F) ⟶ (f ⋙ g).toPseudofunctor.comp F where
   app x := 𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩)
   naturality φ := ρ_ (F.map (g.map (f.map φ.as)).toLoc) ≪≫ (λ_ _).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact rightUnitor_trans_leftUnitor_symm_naturality (𝟙 _)
+  naturality_naturality η := naturality_naturality_of_locallyDiscrete
+    (f.toPseudofunctor.comp (g.toPseudofunctor.comp F)) ((f ⋙ g).toPseudofunctor.comp F)
+    (fun x ↦ 𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))
+    (fun φ ↦ ρ_ (F.map (g.map (f.map φ.as)).toLoc) ≪≫ (λ_ _).symm) η
   -- As in `pullbackCompHom`, with the roles of the two pullbacks exchanged.
   naturality_id x := by
     rw [toPseudofunctor_comp_comp_mapId]
