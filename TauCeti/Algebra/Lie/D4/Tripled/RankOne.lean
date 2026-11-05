@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.RankOne
 
 /-!
 # Rank-one maps into the tripled D₄ carrier
@@ -83,7 +84,7 @@ variable (K : Type*) [Field K] (i : Fin 4)
 
 /- The containment and image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`. -/
 private theorem sl2BlockSL_mem_points (g : SL(2, K)) : weightTable.sl2BlockSL i g ∈ points K := by
-  apply (weightTable.sl2BlockSL i).apply_mem_of_sl2_transvection_mem _ _ g
+  apply (weightTable.sl2BlockSL i).sl2_range_le_of_transvection_mem _ _ ⟨g, rfl⟩
   · intro t
     rw [sl2BlockSL_upper_transvection]
     exact (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t)).property
@@ -141,8 +142,8 @@ theorem range_rankOnePoints :
     (rankOnePoints K i).range = Subgroup.closure
       (Set.range (rootSubgroupPoints (.inl i) K) ∪
         Set.range (rootSubgroupPoints (.inr i) K)) := by
-  rw [MonoidHom.range_eq_closure_sl2_transvection]
-  simp only [rankOnePoints_upper_transvection, rankOnePoints_lower_transvection]
+  rw [MonoidHom.sl2_range_eq_closure]
+  simp only [Function.comp_def, rankOnePoints_upper_transvection, rankOnePoints_lower_transvection]
   apply congrArg Subgroup.closure
   apply congrArg₂ Set.union
   · exact (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp

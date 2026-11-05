@@ -23,7 +23,9 @@ and localizing the restriction of a function on `Ω` equals multiplication by `�
 These identities allow local boundary constructions to be assembled with a partition of
 unity. For `p < ∞`, localizing the restriction of a `W^{1,p}_0(Ω)` function to an open set
 `V` lands in `W^{1,p}_0(V)` when `V ∩ tsupport ψ ⊆ Ω` and `Ω ∩ tsupport ψ ⊆ V`
-(`TauCeti.W1p.localizeL_restrictL_mem_w1p0Submodule`).
+(`TauCeti.W1p.localizeL_restrictL_mem_w1p0Submodule`). In particular a `W^{1,p}_0(Ω)` function
+vanishing off a compact subset of `V` restricts to `W^{1,p}_0(Ω ∩ V)`
+(`TauCeti.W1p.restrictL_mem_w1p0Submodule_of_isCompact`).
 
 The construction reuses `TauCeti.W1p.contDiffSMulL` and zero extension of the ambient
 value-gradient jet; admissibility follows from
@@ -217,5 +219,34 @@ theorem W1p.localizeL_restrictL_mem_w1p0Submodule {V : Opens E} (hp : p ≠ (∞
     · rw [image_eq_zero_of_notMem_tsupport (fun hxφ => hxK ⟨hxφ, hxψ⟩), smul_zero]
     · rw [image_eq_zero_of_notMem_tsupport hxψ, zero_smul]
   · exact indicator_of_notMem hxU _
+
+/-- **Zero boundary values localize.** Let `u ∈ W^{1,p}_0(Ω)`, `p < ∞`, vanish almost everywhere
+off a compact set `K` contained in an open set `V`. Then the restriction of `u` to `Ω ∩ V` lies in
+`W^{1,p}_0(Ω ∩ V)`: the new part `Ω ∩ ∂V` of the boundary stays away from `K`. -/
+theorem W1p.restrictL_mem_w1p0Submodule_of_isCompact {V : Opens E} {K : Set E}
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hK : IsCompact K) (hKV : K ⊆ V) {u : W1p μ Ω p}
+    (hu : u ∈ w1p0Submodule μ Ω p) (hu0 : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → W1p.value u x = 0) :
+    W1p.restrictL (inf_le_left : Ω ⊓ V ≤ Ω) u ∈ w1p0Submodule μ (Ω ⊓ V) p := by
+  obtain ⟨ψ, M, hψ, -, hψ1, -, hψs, hM, hψM, hgM⟩ :=
+    hK.exists_contDiff_cutoff_with_bounds V.isOpen hKV
+  have hψK : ∀ x ∈ K, ψ x = 1 := fun x hx => interior_subset (hψ1 hx)
+  -- Localizing `u` by `ψ`, which is one on `K`, changes nothing on `Ω ∩ V`.
+  have hmem := W1p.localizeL_restrictL_mem_w1p0Submodule (V := Ω ⊓ V) hp hψ hM
+    (fun x _ => hψM x) (fun x _ => hgM x) (fun _ hx => hx.1.1) (fun _ hx => ⟨hx.1, hψs hx.2⟩) hu
+  convert hmem using 1
+  refine W1p.ext_value (Lp.ext ?_)
+  have hΩV : ((Ω ⊓ V : Opens E) : Set E) ⊆ (Ω ⊓ (Ω ⊓ V) : Opens E) := fun x hx => ⟨hx.1, hx⟩
+  filter_upwards [W1p.value_restrictL_ae (inf_le_left : Ω ⊓ V ≤ Ω) u,
+    W1p.value_localizeL_ae (μ := μ) (p := p) (inf_le_right : Ω ⊓ (Ω ⊓ V) ≤ Ω ⊓ V) hψ hM
+      (fun x _ => hψM x) (fun x _ => hgM x) (fun _ hx => ⟨hx.1.1, hx.1⟩)
+      (W1p.restrictL (inf_le_left : Ω ⊓ (Ω ⊓ V) ≤ Ω) u),
+    ae_restrict_of_ae_restrict_of_subset hΩV
+      (W1p.value_restrictL_ae (inf_le_left : Ω ⊓ (Ω ⊓ V) ≤ Ω) u),
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr inf_le_left) hu0,
+    ae_restrict_mem (Ω ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 hx
+  rw [h1, h2, indicator_of_mem (hΩV hx), h3]
+  by_cases hxK : x ∈ K
+  · rw [hψK x hxK, one_smul]
+  · rw [h4 hxK, smul_zero]
 
 end TauCeti
