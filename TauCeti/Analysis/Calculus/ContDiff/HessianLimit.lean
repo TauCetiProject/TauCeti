@@ -158,17 +158,17 @@ theorem contDiffOn_one_and_holderOnWith_fderiv_of_tendstoLocallyUniformlyOn
       hα hU hv hD hhol hx (hlim x hx)).differentiableAt.differentiableWithinAt
   · simpa only [contDiffOn_zero] using hH.continuousOn hα
 
-/-- A uniform derivative norm bound passes to the locally uniform limit when the derivatives
-have a common positive Hölder exponent. -/
+/-- A derivative norm bound at one point that holds eventually along the filter passes to
+the locally uniform limit there, when the derivatives have a common positive Hölder exponent. -/
 theorem norm_fderiv_le_of_tendstoLocallyUniformlyOn_of_holderOnWith
     (hα : 0 < α) (hU : IsOpen U) (hv : ∀ m, DifferentiableOn ℝ (v m) U)
     (hD : TendstoLocallyUniformlyOn v f l U)
-    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (v m)) U) {M : ℝ}
-    (hbound : ∀ m, ∀ x ∈ U, ‖fderiv ℝ (v m) x‖ ≤ M) {x : E} (hx : x ∈ U) :
+    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (v m)) U) {M : ℝ} {x : E}
+    (hbound : ∀ᶠ m in l, ‖fderiv ℝ (v m) x‖ ≤ M) (hx : x ∈ U) :
     ‖fderiv ℝ f x‖ ≤ M :=
-  le_of_tendsto'
+  le_of_tendsto
     (tendsto_fderiv_of_tendstoLocallyUniformlyOn_of_holderOnWith hα hU hv hD hhol hx).norm
-    (fun m => hbound m x hx)
+    hbound
 
 /-- A differentiable function is C² with Hölder second derivative when its first derivative
 is a locally uniform limit of first derivatives with a common Hölder second-derivative bound.
