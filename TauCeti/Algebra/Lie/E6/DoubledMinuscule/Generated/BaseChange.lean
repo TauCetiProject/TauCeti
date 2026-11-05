@@ -18,8 +18,9 @@ every generator. For free extensions it agrees with the existing base-change iso
 In particular the comparison is available for specialization from ℤ to a prime field. Neither
 its injectivity nor agreement with the specialized integral toral closure is asserted.
 
-The construction uses `CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le` and the
-quotient universal property. The generator compatibility argument follows
+The construction adapts `TauCeti.Algebra.Lie.E7.Minuscule.Generated.BaseChangeMap`, using
+`CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal_le` and
+`CommHopfAlgCat.baseChangeMapOfLeQuotient`. The generator equations follow
 `TauCeti.Algebra.Lie.E7.Minuscule.Generated.RelativeBaseChange`.
 
 ## References
@@ -45,79 +46,34 @@ theorem map_baseChangeHopfIdeal_generatedDefiningIdeal_le :
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom.hom ≤
       generatedDefiningIdeal K := by
   rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def]
-  refine (HopfIdeal.map_mono _
-    (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le
-      (K := K) (generatorCoordinateMap k))).trans_eq ?_
-  rw [CommHopfAlgCat.map_commonKernelHopfIdeal]
-  rw [← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective
-    (fun j ↦ (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).inv ≫
-      CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j))
-    (fun j ↦ (generatorCoordinateAlgebraBaseChangeIso k K j).hom)
-    fun j ↦ (ConcreteCategory.bijective_of_isIso
-      (generatorCoordinateAlgebraBaseChangeIso k K j).hom).1]
-  congr 1
-  funext j
-  exact generatorCoordinateMap_baseChange k K j
-
-private theorem baseChangeDefiningIdeal_le_comparison_ker :
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal k)).toIdeal ≤
-      RingHom.ker ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom ≫
-        generatedCoordinateMap K).hom.toAlgHom.toRingHom := by
-  have h := HopfIdeal.toIdeal_le_toIdeal.mpr
-    (map_baseChangeHopfIdeal_generatedDefiningIdeal_le k K)
-  rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap] at h
-  intro x hx
-  apply RingHom.mem_ker.mpr
-  have hx' : (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom.hom x ∈
-      (generatedDefiningIdeal K).toIdeal := h hx
-  have hz : (generatedCoordinateMap K).hom
-      ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom.hom x) = 0 := by
-    apply RingHom.mem_ker.mp
-    rwa [generatedCoordinateMap_ker K]
-  rw [_root_.CommHopfAlgCat.hom_comp]
-  exact hz
+  exact CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
+    (generatorCoordinateMap k)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54)
+    (generatorCoordinateAlgebraBaseChangeIso k K) (generatorCoordinateMap K)
+    (generatorCoordinateMap_baseChange k K)
 
 /-- The coordinate comparison from the scalar extension of the generated doubled E₆ subgroup
 to the subgroup generated over the extension ring. Contravariantly this is a closed immersion;
 no flatness assumption on the extension is needed. -/
-noncomputable def generatedCoordinateHopfAlgebraBaseChangeHom :
+noncomputable def generatedCoordinateHopfAlgebraBaseChangeMap :
     CommHopfAlgCat.baseChange (K := K) (generatedCoordinateHopfAlgebra k) ⟶
       generatedCoordinateHopfAlgebra K :=
-  (CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)).map
-      (eqToHom (generatedCoordinateHopfAlgebra_def k)) ≫
-    (CommHopfAlgCat.quotientBaseChangeIso (K := K) (generatedDefiningIdeal k)).inv ≫
-    CommHopfAlgCat.liftQuotient
-      (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal k))
-      ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom ≫
-        generatedCoordinateMap K) (baseChangeDefiningIdeal_le_comparison_ker k K)
+  CommHopfAlgCat.baseChangeMapOfLeQuotient (generatedDefiningIdeal k)
+    (generatedDefiningIdeal K) (generatedCoordinateHopfAlgebra_def k)
+    (generatedCoordinateHopfAlgebra_def K)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54)
+    (map_baseChangeHopfIdeal_generatedDefiningIdeal_le k K)
 
 /-- The arbitrary-extension comparison commutes with the ambient general-linear coordinates. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeHom :
+theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeMap :
     CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k) ≫
-        generatedCoordinateHopfAlgebraBaseChangeHom k K =
+        generatedCoordinateHopfAlgebraBaseChangeMap k K =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom ≫
         generatedCoordinateMap K := by
-  let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
-  have hbase :
-      CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k) ≫
-          F.map (eqToHom (generatedCoordinateHopfAlgebra_def k)) =
-        CommHopfAlgCat.baseChangeMap (K := K)
-          (CommHopfAlgCat.mkQuotient _ (generatedDefiningIdeal k)) := by
-    rw [← CommHopfAlgCat.baseChangeFunctor_map, ← F.map_comp,
-      ← eqToIso.hom, generatedCoordinateMap_comp_eqToIso_hom,
-      CommHopfAlgCat.baseChangeFunctor_map]
-  have hquot :
-      CommHopfAlgCat.baseChangeMap (K := K)
-          (CommHopfAlgCat.mkQuotient _ (generatedDefiningIdeal k)) ≫
-          (CommHopfAlgCat.quotientBaseChangeIso (K := K) (generatedDefiningIdeal k)).inv =
-        CommHopfAlgCat.mkQuotient _
-          (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal k)) := by
-    rw [← cancel_mono
-      (CommHopfAlgCat.quotientBaseChangeIso (K := K) (generatedDefiningIdeal k)).hom]
-    simp
-  rw [generatedCoordinateHopfAlgebraBaseChangeHom, ← Category.assoc, hbase,
-    ← Category.assoc, hquot, _root_.CommHopfAlgCat.mkQuotient_comp_liftQuotient]
+  apply CommHopfAlgCat.baseChangeMap_comp_baseChangeMapOfLeQuotient
+  · exact generatedCoordinateMap_comp_eqToIso_hom k
+  · exact generatedCoordinateMap_comp_eqToIso_hom K
 
 private instance baseChangedGeneratedCoordinateMap_epi :
     Epi (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k)) :=
@@ -125,41 +81,41 @@ private instance baseChangedGeneratedCoordinateMap_epi :
     (CommHopfAlgCat.baseChangeMap_surjective _ (generatedCoordinateMap_surjective k))
 
 /-- The ambient coordinate square uniquely determines the arbitrary-extension comparison. -/
-theorem generatedCoordinateHopfAlgebraBaseChangeHom_unique
+theorem generatedCoordinateHopfAlgebraBaseChangeMap_unique
     (f : CommHopfAlgCat.baseChange (K := K) (generatedCoordinateHopfAlgebra k) ⟶
       generatedCoordinateHopfAlgebra K)
     (hf : CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k) ≫ f =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom ≫
         generatedCoordinateMap K) :
-    f = generatedCoordinateHopfAlgebraBaseChangeHom k K := by
+    f = generatedCoordinateHopfAlgebraBaseChangeMap k K := by
   apply (cancel_epi
     (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k))).mp
-  rw [hf, baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeHom]
+  rw [hf, baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeMap]
 
 /-- The arbitrary-extension comparison is surjective on coordinate algebras, hence represents
 a closed immersion of affine group schemes. -/
-theorem generatedCoordinateHopfAlgebraBaseChangeHom_surjective :
-    Function.Surjective (generatedCoordinateHopfAlgebraBaseChangeHom k K).hom := by
+theorem generatedCoordinateHopfAlgebraBaseChangeMap_surjective :
+    Function.Surjective (generatedCoordinateHopfAlgebraBaseChangeMap k K).hom := by
   have hsurj : Function.Surjective
       ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom ≫
         generatedCoordinateMap K).hom :=
     (generatedCoordinateMap_surjective K).comp
       (ConcreteCategory.bijective_of_isIso
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom).2
-  rw [← baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeHom]
+  rw [← baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeMap]
     at hsurj
   exact Function.Surjective.of_comp hsurj
 
 /-- Every numbered root-subgroup and weight-torus coordinate lift commutes with the
-arbitrary-extension comparison. This is the form of
-`baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom`
-that needs no freeness assumption. -/
-@[reassoc (attr := simp)]
-theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom'
+arbitrary-extension comparison. This is a rewriting lemma rather than a simp rule, leaving
+the existing free-extension isomorphism as the simp normal form. -/
+@[reassoc]
+theorem generatedCoordinateHopfAlgebraBaseChangeMap_comp_generatedCoordinateLift
     (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
-    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
-        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
-      generatedCoordinateHopfAlgebraBaseChangeHom k K ≫ generatedCoordinateLift K j := by
+    generatedCoordinateHopfAlgebraBaseChangeMap k K ≫ generatedCoordinateLift K j =
+      CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso k K j).hom := by
+  symm
   let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
   apply (cancel_epi
     (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k))).mp
@@ -175,16 +131,16 @@ theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBas
         (generatorCoordinateMap_baseChange k K j)
     _ = _ := by
       rw [
-        baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeHom_assoc,
+        baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeMap_assoc,
         generatedCoordinateMap_comp_generatedCoordinateLift]
 
 /-- For free extensions, the arbitrary-extension comparison is the existing isomorphism's
 forward morphism. This is a rewriting lemma rather than a simp rule, so that inverse
 cancellation for the isomorphism remains available to the simplifier. -/
-theorem generatedCoordinateHopfAlgebraBaseChangeIso_hom_eq [Module.Free k K] :
+theorem generatedCoordinateHopfAlgebraBaseChangeIso_hom_eq_baseChangeMap [Module.Free k K] :
     (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom =
-      generatedCoordinateHopfAlgebraBaseChangeHom k K :=
-  generatedCoordinateHopfAlgebraBaseChangeHom_unique k K _
+      generatedCoordinateHopfAlgebraBaseChangeMap k K :=
+  generatedCoordinateHopfAlgebraBaseChangeMap_unique k K _
     (baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom k K)
 
 end TauCeti.E6DoubledMinuscule
