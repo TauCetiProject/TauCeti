@@ -258,6 +258,7 @@ theorem residueClass_inj {Φ Ψ : LinearMap.BilinForm R L}
   simpa using this
 
 /-- **A residue class vanishes exactly when its form does.** Over every commutative ring. -/
+@[simp]
 theorem residueClass_eq_zero_iff {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     residueClass R L Φ hΦ hΦs = 0 ↔ Φ = 0 := by
@@ -274,6 +275,7 @@ theorem residueClass_ne_zero {Φ : LinearMap.BilinForm R L}
 
 /-- A multiple `t • [c_Φ]` of a residue class vanishes exactly when `t • Φ` does, over every
 commutative ring. -/
+@[simp]
 theorem smul_residueClass_eq_zero_iff_smul_eq_zero {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (t : R) :
     t • residueClass R L Φ hΦ hΦs = 0 ↔ t • Φ = 0 := by
@@ -287,15 +289,7 @@ second cohomology only for `t = 0`. -/
 theorem smul_residueClass_eq_zero_iff [IsDomain R] {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) (t : R) :
     t • residueClass R L Φ hΦ hΦs = 0 ↔ t = 0 := by
-  rw [smul_residueClass_eq_zero_iff_smul_eq_zero]
-  refine ⟨fun h ↦ ?_, fun ht ↦ by simp [ht]⟩
-  by_contra ht
-  obtain ⟨x, y, hxy⟩ : ∃ x y : L, Φ x y ≠ 0 := by
-    by_contra! h'
-    exact hΦ0 (LinearMap.ext₂ h')
-  have := LinearMap.congr_fun₂ h x y
-  simp only [LinearMap.smul_apply, smul_eq_mul, LinearMap.zero_apply] at this
-  exact hxy ((mul_eq_zero.mp this).resolve_left ht)
+  rw [smul_residueClass_eq_zero_iff_smul_eq_zero, smul_eq_zero_iff_left hΦ0]
 
 section Coefficients
 
