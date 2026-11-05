@@ -30,6 +30,8 @@ excellent rings.
 * `AlgEquiv.regularAlgebraMap`: regularity is invariant under isomorphisms of `R`-algebras.
 * `TauCeti.Excellence.RegularAlgebraMap.of_bijective_algebraMap`: regularity is invariant under
   isomorphisms of the base ring.
+* `TauCeti.Excellence.RegularAlgebraMap.isRegularRing`: a Noetherian regular algebra over a regular
+  ring is a regular ring.
 * `RingEquiv.regularAlgebraMap_adicCompletion`: regularity of the completion map `A → Â` along an
   ideal is transported along a ring isomorphism matching the ideals.
 * `Ideal.regularAlgebraMap_adicCompletion_of_isAdicComplete`: the completion map of a ring along an
@@ -131,6 +133,13 @@ theorem of_bijective_algebraMap {R' : Type u} [CommRing R'] [Algebra R R'] [Alge
     exact ((Algebra.TensorProduct.cancelBaseChange R p.ResidueField p'.ResidueField
       p'.ResidueField B).trans (Algebra.TensorProduct.equivOfCompatibleSMul R R'
         p'.ResidueField p'.ResidueField B).symm).geometricallyRegular
+
+/-- A Noetherian regular algebra over a regular ring is a regular ring: its fibres are
+geometrically regular, hence regular. -/
+theorem isRegularRing [IsRegularRing R] [IsNoetherianRing B] [RegularAlgebraMap R B] :
+    IsRegularRing B :=
+  IsRegularRing.of_flat_of_isRegularRing_fiber (R := R) fun p _ ↦
+    GeometricallyRegular.isRegularRing p.ResidueField
 
 end RegularAlgebraMap
 
