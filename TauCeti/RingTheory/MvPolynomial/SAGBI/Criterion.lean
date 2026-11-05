@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Submonoid.Finsupp
-public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
+public import TauCeti.RingTheory.MvPolynomial.SAGBI.Subduction
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -177,40 +176,14 @@ theorem IsSAGBIBasis.exists_aeval_eq_aeval_sub (hc : ∀ i, m.Monic (c i))
     ∃ Q : MvPolynomial ι k, aeval c Q = aeval c (monomial u (1 : k) - monomial v 1) ∧
       ∀ w ∈ Q.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m]
         Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) u := by
-  set f := aeval c (monomial u (1 : k) - monomial v 1)
-  rcases eq_or_ne f 0 with hf | hf
-  · exact ⟨0, by rw [map_zero, hf], by simp⟩
-  have hf' : f = aeval c (monomial u (1 : k)) - aeval c (monomial v (1 : k)) :=
-    map_sub (aeval c) (monomial u (1 : k)) (monomial v 1)
-  have h1 (w : ι →₀ ℕ) : (aeval c (monomial w (1 : k))).coeff
-      (Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w) = 1 := by
-    rw [← degree_aeval_monomial_one hc]
-    exact (monic_aeval_monomial_one hc w).coeff_degree
-  -- The leading monomials `X^(A u)` of the images of `Y^u` and `Y^v` cancel.
-  have hlt : m.degree f ≺[m] Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) u := by
-    have hle : m.degree f ≼[m] Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) u := by
-      rw [hf']
-      refine m.degree_sub_le.trans ?_
-      rw [degree_aeval_monomial_one hc u, degree_aeval_monomial_one hc v, ← huv, sup_idem]
-    refine lt_of_le_of_ne hle fun heq ↦ m.coeff_degree_ne_zero_iff.2 hf ?_
-    rw [m.toSyn.injective heq, hf', coeff_sub, h1 u, huv, h1 v, sub_self]
-  -- Subduction expresses `f` through products `∏ i, c i ^ w i` of leading exponent at most that
-  -- of `f`, which are the images of the monomials `Y^w` with `A w ≼ m.degree f`.
-  have hsub : {g ∈ Submonoid.closure (Set.range c) | m.degree g ≼[m] m.degree f} ⊆
-      (aeval c).toLinearMap '' ((monomial · (1 : k)) ''
-        {w | Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] m.degree f}) := by
-    rintro g ⟨hg, hgf⟩
-    obtain ⟨w, rfl⟩ := Submonoid.exists_finsupp_of_mem_closure_range c g hg
-    have hw : aeval c (monomial w (1 : k)) = w.prod (c · ^ ·) := by
-      rw [aeval_monomial, map_one, one_mul]
-    refine ⟨monomial w 1, ⟨w, ?_, rfl⟩, hw⟩
-    rw [Set.mem_ofPred_eq, ← degree_aeval_monomial_one hc, hw]
-    exact hgf
-  have hmem := Submodule.span_mono hsub
-    (h.mem_span (Algebra.adjoin_range_eq_range_aeval k c ▸ ⟨_, rfl⟩ : f ∈ _))
-  rw [Submodule.span_image, ← restrictSupport_eq_span] at hmem
-  obtain ⟨Q, hQ, hQf⟩ := hmem
-  exact ⟨Q, hQf, fun w hw ↦ lt_of_le_of_lt ((mem_restrictSupport_iff k).1 hQ hw) hlt⟩
+  have hf : aeval c (monomial u (1 : k) - monomial v 1) ∈
+      Algebra.adjoin k (Set.range c) := by
+    rw [← aeval_range]
+    exact AlgHom.mem_range_self _ _
+  simpa only [Function.comp_def] using
+    h.exists_aeval_eq_support_lt (fun i ↦ (hc i).ne_zero) hf
+      (m.aeval_monomial_sub_monomial_eq_zero_or_degree_lt hc u v
+        (by simpa only [Function.comp_def] using huv))
 
 /-- The sufficiency step of the SAGBI criterion, by well-founded induction on an upper bound `δ`
 for the values of `A` on the exponents of a representation `f = aeval c P`. -/
