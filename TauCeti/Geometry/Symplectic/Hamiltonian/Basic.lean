@@ -143,6 +143,16 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
 
+/-- The Hamiltonian vector field of the linear function `ω(a, ·)` is the constant `a`. -/
+theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
+    ω.hamiltonianVectorField (fun y ↦ ω a y) x = a := by
+  -- The function `ω(a, ·)` is the continuous linear map `ω.toBilinForm.toContinuousBilinearMap a`.
+  have h : HasFDerivAt (fun y ↦ ω a y) (ω.toBilinForm.toContinuousBilinearMap a) x :=
+    (ω.toBilinForm.toContinuousBilinearMap a).hasFDerivAt
+  rw [eq_comm, eq_hamiltonianVectorField_iff, h.fderiv]
+  intro v
+  exact (LinearMap.toContinuousBilinearMap_apply _ a v).symm
+
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
 theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
