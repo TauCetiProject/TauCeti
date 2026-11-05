@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 
 /-!
 # Compactly supported smooth bundle sections
@@ -185,27 +185,6 @@ theorem compactlySupported_eq_top [CompactSpace M] : compactlySupported I F n V 
   apply top_unique
   intro s _
   exact s.isClosed_tsupport.isCompact
-
-/-- Multiplication of sections by a smooth scalar function as a linear map. -/
-def smulLinearMap (f : C^n⟮I, M; 𝕜⟯) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; F, V⟯ where
-  toFun s := ⟨fun x => f x • s x, f.contMDiff.smul_section s.contMDiff⟩
-  map_add' s t := by ext x; simp [smul_add]
-  map_smul' c s := by ext x; simp [smul_smul, mul_comm]
-
--- The pointwise action reuses the smoothness proof in `smulLinearMap`.
-/-- Scalar-valued `C^n` functions act on `C^n` sections by pointwise multiplication. -/
-instance instSMulContMDiffMap : SMul C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ :=
-  ⟨fun f s ↦ smulLinearMap f s⟩
-
-/-- Evaluation of smooth-function multiplication is fibrewise scalar multiplication. -/
-@[simp]
-theorem smul_apply (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) (x : M) :
-    (f • s) x = f x • s x := (rfl)
-
-/-- The scalar-localization linear map agrees with smooth-function multiplication. -/
-@[simp]
-theorem smulLinearMap_eq_smul (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
-    smulLinearMap f s = f • s := (rfl)
 
 /-- Scalar localization is supported in both the scalar support and the section support. -/
 theorem tsupport_smul_function_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
