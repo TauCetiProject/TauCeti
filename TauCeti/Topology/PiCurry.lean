@@ -29,6 +29,8 @@ Similarly, a family indexed by `Option ι` splits off its `none` component: the 
 * `TauCeti.piSigmaConstHomeomorph`: along an explicit equivalence from a sigma index, a
   homeomorphism between a family of tuples and a tuple in a fixed space.
 * `TauCeti.piOptionEquivProdHomeomorph`: `Equiv.piOptionEquivProd` as a homeomorphism.
+* `TauCeti.piOptionEquivProdHomeomorph_symm_update`: reassembling a tuple commutes with changing
+  one of its `some` components.
 -/
 
 public section
@@ -125,5 +127,15 @@ theorem piOptionEquivProdHomeomorph_symm_apply_some {ι : Type*} (Y : Option ι 
     [∀ i, TopologicalSpace (Y i)] (x : Y none × ∀ i : ι, Y (some i)) (i : ι) :
     (piOptionEquivProdHomeomorph Y).symm x (some i) = x.2 i :=
   (rfl)
+
+/-- Reassembling a tuple from its `none` component and its `some` components commutes with
+changing one of the `some` components. This is Mathlib's `Option.rec_update`, restated for
+`piOptionEquivProdHomeomorph`, whose definition is not exposed to importing modules. -/
+theorem piOptionEquivProdHomeomorph_symm_update {ι : Type*} [DecidableEq ι] (Y : Option ι → Type*)
+    [∀ i, TopologicalSpace (Y i)] (y : Y none) (x : ∀ i : ι, Y (some i)) (i : ι)
+    (a : Y (some i)) :
+    (piOptionEquivProdHomeomorph Y).symm (y, Function.update x i a) =
+      Function.update ((piOptionEquivProdHomeomorph Y).symm (y, x)) (some i) a :=
+  Option.rec_update y x i a
 
 end TauCeti
