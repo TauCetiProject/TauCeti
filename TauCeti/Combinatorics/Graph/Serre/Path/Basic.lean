@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import Mathlib.Algebra.FreeMonoid.Basic
+public import Mathlib.Combinatorics.Quiver.Cast
 public import Mathlib.Combinatorics.Quiver.Path.Decomposition
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 
@@ -102,6 +103,18 @@ def Path.IsReduced {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Prop
     (f : Quiver.Hom c d) :
     Path.IsReduced Γ ((p.cons e).cons f) ↔
       Path.IsReduced Γ (p.cons e) ∧ f.1 ≠ Γ.rev e.1 := Iff.rfl
+
+/-- Transporting a path along equalities of its endpoints keeps its darts. -/
+@[simp] theorem Path.darts_cast {a b a' b' : Γ.V} (ha : a = a') (hb : b = b') (p : Γ.Path a b) :
+    Path.darts Γ (p.cast ha hb) = Path.darts Γ p := by
+  subst ha hb
+  rfl
+
+/-- Transporting a path along equalities of its endpoints keeps it reduced. -/
+@[simp] theorem Path.isReduced_cast {a b a' b' : Γ.V} (ha : a = a') (hb : b = b')
+    (p : Γ.Path a b) : Path.IsReduced Γ (p.cast ha hb) ↔ Path.IsReduced Γ p := by
+  subst ha hb
+  rfl
 
 /-- Every prefix obtained by removing the final dart of a reduced path is reduced. -/
 theorem Path.IsReduced.of_cons {a b c : Γ.V} {p : Γ.Path a b} {e : Quiver.Hom b c}

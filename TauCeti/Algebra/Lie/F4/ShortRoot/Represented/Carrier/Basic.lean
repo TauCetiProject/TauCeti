@@ -181,14 +181,15 @@ private theorem f4ShortRootCarrierCotangentRange_toSubmodule :
         (congrArg Set.range (funext f4ShortRootCotangentFlagBasis_range)))
   exact f4ShortRootCarrierCotangentRange_toSubmodule_span.trans
     ((congrArg (Submodule.span 𝔽₂) hset).trans
-      (Submodule.map_eq_span_basis f4ShortRootRepresentedRange
-        f4ShortRootRepresentedRangeBasis f4ShortRootEndEquivCotangentDual.toLinearMap).symm)
+      (Submodule.map_eq_span_of_span_eq_top f4ShortRootRepresentedRange
+        f4ShortRootRepresentedRangeBasis.span_eq
+        f4ShortRootEndEquivCotangentDual.toLinearMap).symm)
 
 private theorem f4ShortRootRepresentedIdealAmbient_eq_map :
     f4ShortRootRepresentedIdealAmbient =
       f4ShortRootRepresentedIdeal.map f4ShortRootRepresentedRange.subtype := by
-  exact (Submodule.map_eq_span_basis f4ShortRootRepresentedIdeal
-    f4ShortRootRepresentedIdealBasis f4ShortRootRepresentedRange.subtype).symm
+  exact (Submodule.map_eq_span_of_span_eq_top f4ShortRootRepresentedIdeal
+    f4ShortRootRepresentedIdealBasis.span_eq f4ShortRootRepresentedRange.subtype).symm
 
 /-- The represented-ideal step, regarded as a subcomodule of the represented-range step. -/
 noncomputable def f4ShortRootCarrierIdealInRange :

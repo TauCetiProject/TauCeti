@@ -50,6 +50,8 @@ restricted power map with its image.
 * `SubMulAction.rootsOfUnityQuotientHomeomorph`: the orbit space of an invariant set `s` is
   homeomorphic to `(· ^ m) '' s`, sending the class of `u` to `u ^ m`.
 * `TauCeti.rootsOfUnityBall`: the open disc of radius `r` about `0`, as an invariant set.
+* `TauCeti.isOpen_rootsOfUnityBall`: the disc is open in `ℂ`, hence locally compact
+  (`TauCeti.rootsOfUnityBall.instLocallyCompactSpace`).
 * `TauCeti.image_pow_ball`: `u ↦ u ^ m` maps the disc of radius `r` onto the disc of radius
   `r ^ m`.
 * `TauCeti.rootsOfUnityBallQuotientHomeomorph`: the orbit space of the disc of radius `r` is
@@ -151,6 +153,15 @@ theorem coe_rootsOfUnityBall (r : ℝ) :
 @[simp]
 theorem mem_rootsOfUnityBall {r : ℝ} {u : ℂ} : u ∈ rootsOfUnityBall m r ↔ ‖u‖ < r := by
   rw [← SetLike.mem_coe, coe_rootsOfUnityBall, mem_ball_zero_iff]
+
+/-- The disc of radius `r` is open in `ℂ`. -/
+theorem isOpen_rootsOfUnityBall {r : ℝ} : IsOpen (rootsOfUnityBall m r : Set ℂ) := by
+  simp [Metric.isOpen_ball]
+
+/-- The disc of radius `r` is locally compact, as an open subset of `ℂ`. -/
+instance rootsOfUnityBall.instLocallyCompactSpace {r : ℝ} :
+    LocallyCompactSpace (rootsOfUnityBall m r) :=
+  isOpen_rootsOfUnityBall.locallyCompactSpace
 
 /-- For `0 ≤ r`, the map `u ↦ u ^ m` sends the disc of radius `r` about `0` onto the disc of
 radius `r ^ m`. -/
