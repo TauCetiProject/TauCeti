@@ -39,8 +39,8 @@ distance `√|t - s|`. The temporal Hölder estimate of the Hessian
 (`TauCeti.exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential`) bounds
 `‖D² g‖_∞ ≤ C H |t - s|^(α/2)`, so `D g` is Lipschitz with that constant. The Landau-type
 inequality `‖D g(x)‖ ≤ 2 ‖g‖_∞ + Lip(D g)` (`HolderWith.norm_le_of_hasFDerivAt` at scale one)
-then gives the estimate. Comparing first in time and then in space, gradients at two points of
-the slab at distance `d` differ by `O(d^(α/2) + d)`, which gives the joint continuity.
+then gives the estimate. A field that is Lipschitz in space uniformly in time and continuous in
+time at each point is jointly continuous (`continuousOn_prod_of_continuousOn_lipschitzOnWith'`).
 
 ## References
 
@@ -53,7 +53,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set Real ParabolicSpaceTime Topology
+open MeasureTheory Set Real ParabolicSpaceTime
 open scoped NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -159,35 +159,11 @@ theorem continuousOn_fderiv_heatDuhamelPotential (hf : StronglyMeasurable (Funct
       (Icc (0 : ℝ) T ×ˢ univ) := by
   obtain ⟨A, hA⟩ := exists_lipschitzWith_fderiv_heatDuhamelPotential (E := E) (F := F) hα
   obtain ⟨B, hB⟩ := exists_holderOnWith_fderiv_heatDuhamelPotential (E := E) (F := F) hα hα₂
-  set L : ℝ≥0 := A * H * T ^ ((α : ℝ) / 2)
-  set K : ℝ≥0 := 2 * (T * H * (1 + heatKernelMoment E α) + M * max 1 T) + B * H
-  -- Comparing first in time and then in space, gradients at distance `d` differ by at most
-  -- `K d^(α/2) + L d`.
-  have hbound : ∀ p ∈ Icc (0 : ℝ) T ×ˢ (univ : Set E), ∀ q ∈ Icc (0 : ℝ) T ×ˢ (univ : Set E),
-      ‖fderiv ℝ (heatDuhamelPotential f q.1) q.2 - fderiv ℝ (heatDuhamelPotential f p.1) p.2‖ ≤
-        K * dist q p ^ ((α / 2 : ℝ≥0) : ℝ) + L * dist q p := by
-    intro p hp q hq
-    rw [← sub_add_sub_cancel _ (fderiv ℝ (heatDuhamelPotential f p.1) q.2)]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · rw [← dist_eq_norm]
-      refine ((hB hf hM hH q.2).dist_le hq.1 hp.1).trans ?_
-      gcongr
-      exact (le_max_left _ _).trans_eq Prod.dist_eq.symm
-    · rw [← dist_eq_norm]
-      refine ((hA hf hM hH p.1 hp.1).dist_le_mul q.2 p.2).trans ?_
-      gcongr
-      exact (le_max_right _ _).trans_eq Prod.dist_eq.symm
-  intro p hp
-  rw [ContinuousWithinAt, tendsto_iff_norm_sub_tendsto_zero]
-  have hd : Tendsto (fun q : ℝ × E => dist q p) (𝓝[Icc (0 : ℝ) T ×ˢ univ] p) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds (by
-      simpa using ((continuous_id.dist continuous_const :
-        Continuous fun q : ℝ × E => dist q p).tendsto p))
-  have hlim := ((hd.rpow_const (Or.inr (α / 2 : ℝ≥0).coe_nonneg)).const_mul (K : ℝ)).add
-    (hd.const_mul (L : ℝ))
-  rw [Real.zero_rpow (NNReal.coe_ne_zero.2 (div_pos hα two_pos).ne'), mul_zero, mul_zero,
-    add_zero] at hlim
-  exact squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _)
-    (eventually_nhdsWithin_of_forall fun q hq => hbound p hp q hq) hlim
+  -- The gradient is Lipschitz in space with a constant independent of time, and continuous in
+  -- time at each point.
+  exact continuousOn_prod_of_continuousOn_lipschitzOnWith'
+    (fun p : ℝ × E => fderiv ℝ (heatDuhamelPotential f p.1) p.2) (A * H * T ^ ((α : ℝ) / 2))
+    (fun t ht => (hA hf hM hH t ht).lipschitzOnWith)
+    (fun x _ => (hB hf hM hH x).continuousOn (div_pos hα two_pos))
 
 end TauCeti
