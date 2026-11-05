@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Topology.ContinuousMap.Ordered
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Uniform positivity of continuous functions
@@ -14,6 +16,18 @@ public import Mathlib.Analysis.Convex.Basic
 The continuous real-valued functions bounded below by a positive constant form a convex set.
 On a compact domain this set is open for the uniform topology. These facts apply, for example,
 to separating positive continuous functions in the proof of Pietsch domination.
+
+A continuous linear functional on `C(X, ℝ)` that is bounded above by some `u ≤ 0` on the
+uniformly positive functions is nonpositive on every nonnegative function: adding a small positive
+constant to a nonnegative function makes it uniformly positive. This is the positivity of the
+functional produced by separating the uniformly positive functions from a cone.
+
+## Main results
+
+* `ContinuousMap.convex_uniformlyPositive`: the uniformly positive functions form a convex set.
+* `ContinuousMap.isOpen_uniformlyPositive`: on a compact space they form an open set.
+* `ContinuousLinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a functional bounded above
+  by `u ≤ 0` on the uniformly positive functions is nonpositive on the nonnegative functions.
 -/
 
 public section
@@ -47,3 +61,24 @@ theorem isOpen_uniformlyPositive {X : Type*} [TopologicalSpace X] [CompactSpace 
   linarith [hhδ f, (abs_le.1 this).1]
 
 end ContinuousMap
+
+namespace ContinuousLinearMap
+
+/-- A continuous linear functional on `C(X, ℝ)` that is bounded above by some `u ≤ 0` on the
+functions bounded below by a positive constant is nonpositive on the nonnegative functions. -/
+theorem apply_nonpos_of_forall_uniformlyPositive_lt {X : Type*} [TopologicalSpace X]
+    (L : StrongDual ℝ C(X, ℝ)) {u : ℝ} (hu : u ≤ 0)
+    (hL : ∀ h ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, ℝ)} (hh : 0 ≤ h) :
+    L h ≤ 0 := by
+  have hL1 : L 1 < 0 := (hL 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩).trans_le hu
+  -- `h + ε • 1` is bounded below by `ε`, so `L h + ε L 1 < 0`, for every `ε > 0`.
+  by_contra! hpos
+  have hε : 0 < L h / -L 1 := div_pos hpos (neg_pos.2 hL1)
+  have hmem : h + (L h / -L 1) • (1 : C(X, ℝ)) ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} :=
+    ⟨_, hε, fun x ↦ by simpa using hh x⟩
+  have hlt := (hL _ hmem).trans_le hu
+  rw [map_add, map_smul, smul_eq_mul] at hlt
+  have hcancel : L h / -L 1 * L 1 = -L h := by field_simp [hL1.ne]
+  linarith
+
+end ContinuousLinearMap

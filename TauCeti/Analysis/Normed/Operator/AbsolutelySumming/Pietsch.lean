@@ -10,6 +10,9 @@ public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.LinearAlgebra.Finsupp.LSum
+import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Compact
 import TauCeti.Topology.ContinuousMap.Compact
 
 /-!
@@ -53,15 +56,9 @@ public section
 noncomputable section
 
 open Metric MeasureTheory TauCeti
-open scoped ENNReal CompactlySupported
+open scoped ENNReal
 
 namespace ContinuousLinearMap
-
-/-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
-private theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
-    (hq : 0 < q) : a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I := by
-  rw [← Real.rpow_le_rpow_iff ha (by positivity) hq, Real.mul_rpow hC (by positivity), one_div,
-    Real.rpow_inv_rpow hI hq.ne']
 
 section NormedField
 
@@ -87,9 +84,10 @@ private theorem norm_apply_le_of_mem_dualBall (f : dualBall 𝕜 E) (x : E) :
 
 omit [Fact (1 ≤ p)] in
 /-- For a finite measure on the dual unit ball, each function `f ↦ ‖f x‖ ^ p` is integrable. -/
-private theorem integrable_norm_apply_rpow [MeasurableSpace (WeakDual 𝕜 E)]
-    [OpensMeasurableSpace (WeakDual 𝕜 E)] (ν : Measure (dualBall 𝕜 E)) [IsFiniteMeasure ν]
-    (x : E) : Integrable (fun f : dualBall 𝕜 E ↦ ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) ν := by
+private theorem _root_.MeasureTheory.Measure.integrable_norm_apply_rpow
+    [MeasurableSpace (WeakDual 𝕜 E)] [OpensMeasurableSpace (WeakDual 𝕜 E)]
+    (ν : Measure (dualBall 𝕜 E)) [IsFiniteMeasure ν] (x : E) :
+    Integrable (fun f : dualBall 𝕜 E ↦ ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) ν := by
   have h : Integrable (fun f ↦ WeakDual.evalRpow 1 p x f) ν :=
     Integrable.of_bound (WeakDual.evalRpow 1 p x).continuous.aestronglyMeasurable
       (‖x‖ ^ p.toReal) (ae_of_all _ fun f ↦ by
@@ -123,7 +121,7 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
       ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal)) :
     T.summingENorm p ≤ ENNReal.ofReal C := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
-  have hint := integrable_norm_apply_rpow (p := p) ν
+  have hint := ν.integrable_norm_apply_rpow (p := p)
   rw [summingENorm_le_ofReal_iff hC]
   intro n x
   set W := weakLpNorm (𝕜 := 𝕜) p x
@@ -133,7 +131,7 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
       ∑ i, ‖T (x i)‖ ^ p.toReal ≤
           ∑ i, C ^ p.toReal * ∫ f, ‖(f : WeakDual 𝕜 E) (x i)‖ ^ p.toReal ∂ν := by
         gcongr with i
-        exact (le_mul_rpow_one_div_iff (norm_nonneg _) hC
+        exact (Real.le_mul_rpow_one_div_iff (norm_nonneg _) hC
           (integral_nonneg fun _ ↦ by positivity) hq).1 (hT _)
       _ = C ^ p.toReal * ∫ f, ∑ i, ‖(f : WeakDual 𝕜 E) (x i)‖ ^ p.toReal ∂ν := by
         rw [integral_finsetSum _ fun i _ ↦ hint (x i), Finset.mul_sum]
@@ -215,39 +213,6 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
   rw [Real.rpow_le_rpow_iff (hAδ.trans (by linarith)) hAδ (by positivity)] at hsum
   linarith
 
-/-- A continuous linear functional on `C(X, ℝ)` that is bounded above by some `u ≤ 0` on the
-functions bounded below by a positive constant is nonpositive on the nonnegative functions. -/
-private theorem apply_nonpos_of_forall_uniformlyPositive_lt {X : Type*} [TopologicalSpace X]
-    (L : StrongDual ℝ C(X, ℝ)) {u : ℝ} (hu : u ≤ 0)
-    (hL : ∀ h ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, ℝ)} (hh : 0 ≤ h) :
-    L h ≤ 0 := by
-  have hL1 : L 1 < 0 := (hL 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩).trans_le hu
-  -- `h + ε • 1` is bounded below by `ε`, so `L h + ε L 1 < 0`, for every `ε > 0`.
-  by_contra! hpos
-  have hε : 0 < L h / -L 1 := div_pos hpos (neg_pos.2 hL1)
-  have hmem : h + (L h / -L 1) • (1 : C(X, ℝ)) ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} :=
-    ⟨_, hε, fun x ↦ by simpa using hh x⟩
-  have hlt := (hL _ hmem).trans_le hu
-  rw [map_add, map_smul, smul_eq_mul] at hlt
-  have hcancel : L h / -L 1 * L 1 = -L h := by field_simp [hL1.ne]
-  linarith
-
-/-- A linear functional on `ι →₀ ℝ` that is bounded below on the nonnegative functions is
-nonnegative on each `Finsupp.single i 1`. -/
-private theorem apply_single_nonneg_of_forall_le {ι : Type*} (ψ : (ι →₀ ℝ) →ₗ[ℝ] ℝ) {u : ℝ}
-    (hψ : ∀ w : ι →₀ ℝ, 0 ≤ w → u ≤ ψ w) (i : ι) : 0 ≤ ψ (Finsupp.single i 1) := by
-  have hu : u ≤ 0 := (hψ 0 le_rfl).trans_eq (map_zero ψ)
-  -- `t • Finsupp.single i 1` is nonnegative, so `u ≤ t ψ (Finsupp.single i 1)`, for every `t ≥ 0`.
-  by_contra! hneg
-  have ht : 0 ≤ u / ψ (Finsupp.single i 1) := div_nonneg_of_nonpos hu hneg.le
-  have hle := hψ ((u / ψ (Finsupp.single i 1) + 1) • Finsupp.single i 1)
-    (smul_nonneg (by linarith) (Finsupp.single_nonneg.2 zero_le_one))
-  rw [map_smul, smul_eq_mul] at hle
-  have hcancel : (u / ψ (Finsupp.single i 1) + 1) * ψ (Finsupp.single i 1) =
-      u + ψ (Finsupp.single i 1) := by
-    field_simp [hneg.ne]
-  linarith
-
 /-- A Hahn–Banach separation in `C(B, ℝ)` gives a continuous linear functional `L` on the
 continuous functions on the dual ball that is negative on the constant `1`, nonpositive on
 nonnegative functions, and satisfies `‖T x‖ ^ p * L 1 ≥ C ^ p * L (f ↦ ‖f x‖ ^ p)`. -/
@@ -277,48 +242,11 @@ private theorem exists_separating_functional (hp : p ≠ ∞) {T : E →L[𝕜] 
   refine ⟨L, (hLP 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩).trans_le hu,
     fun h hh ↦ apply_nonpos_of_forall_uniformlyPositive_lt L hu hLP hh, fun x ↦ ?_⟩
   -- `L` is bounded below on the cone `Q`, so it is nonnegative on each generator `g x`.
-  have hgx := apply_single_nonneg_of_forall_le (L.toLinearMap ∘ₗ Φ)
+  have hgx := LinearMap.apply_single_nonneg_of_forall_le (L.toLinearMap ∘ₗ Φ)
     (fun w hw ↦ hLQ _ ⟨w, hw, rfl⟩) x
   simpa only [Φ, g, LinearMap.coe_comp, coe_coe, Function.comp_apply,
     Finsupp.linearCombination_single, one_smul, map_sub, map_smul, smul_eq_mul,
     sub_nonneg] using hgx
-
-/-- **Riesz–Markov–Kakutani** for a continuous linear functional `L` on `C(X, ℝ)`, `X` compact
-Hausdorff, that is nonpositive on nonnegative functions: `-L` is integration against a regular
-measure. -/
-private theorem exists_regular_integral_eq_neg {X : Type*} [TopologicalSpace X] [CompactSpace X]
-    [T2Space X] [MeasurableSpace X] [BorelSpace X] (L : StrongDual ℝ C(X, ℝ))
-    (hL : ∀ h, 0 ≤ h → L h ≤ 0) :
-    ∃ μ : Measure X, μ.Regular ∧ ∀ h : C(X, ℝ), ∫ x, h x ∂μ = -L h := by
-  -- The positive functional `-L`, on compactly supported (here: all) continuous functions.
-  let Λ : C_c(X, ℝ) →ₚ[ℝ] ℝ := PositiveLinearMap.mk₀
-    { toFun h := -L h.toContinuousMap
-      -- `toContinuousMap` commutes with addition and scalar multiplication by definition.
-      map_add' h₁ h₂ := by rw [← neg_add, ← map_add]; rfl
-      map_smul' c h := by
-        rw [RingHom.id_apply, smul_eq_mul, mul_neg, ← smul_eq_mul, ← map_smul]; rfl }
-    fun h hh ↦ neg_nonneg.2 (hL _ fun f ↦ hh f)
-  exact ⟨RealRMK.rieszMeasure Λ, inferInstance, fun h ↦
-    RealRMK.integral_rieszMeasure Λ (CompactlySupportedContinuousMap.continuousMapEquiv h)⟩
-
-/-- A continuous linear functional `L` on `C(X, ℝ)`, `X` compact Hausdorff, that is negative at
-`1` and nonpositive on nonnegative functions is `h ↦ L 1 * ∫ h dν` for a regular probability
-measure `ν`. -/
-private theorem exists_isProbabilityMeasure_integral_eq_div {X : Type*} [TopologicalSpace X]
-    [CompactSpace X] [T2Space X] [MeasurableSpace X] [BorelSpace X] (L : StrongDual ℝ C(X, ℝ))
-    (hL1 : L 1 < 0) (hL : ∀ h, 0 ≤ h → L h ≤ 0) :
-    ∃ ν : Measure X, IsProbabilityMeasure ν ∧ ν.Regular ∧
-      ∀ h : C(X, ℝ), ∫ x, h x ∂ν = L h / L 1 := by
-  obtain ⟨μ, hreg, hμ⟩ := exists_regular_integral_eq_neg L hL
-  have hμ1 : μ.real Set.univ = -L 1 := by simpa using hμ 1
-  have hμ0 : μ Set.univ ≠ 0 := fun h0 ↦ by
-    have : μ.real Set.univ = 0 := by simp [measureReal_def, h0]
-    linarith
-  have : NeZero μ := ⟨fun h ↦ hμ0 (by simp [h])⟩
-  refine ⟨(μ Set.univ)⁻¹ • μ, inferInstance, Measure.Regular.smul (ENNReal.inv_ne_top.2 hμ0),
-    fun h ↦ ?_⟩
-  rw [integral_smul_measure, hμ, ENNReal.toReal_inv, ← measureReal_def, hμ1, smul_eq_mul,
-    inv_mul_eq_div, neg_div_neg_eq]
 
 /-- **Pietsch domination**, the main direction: if `πₚ(T) ≤ C` with `1 ≤ p < ∞`, there is a
 regular Borel probability measure `ν` on the weak-star compact dual unit ball such that
@@ -336,8 +264,8 @@ theorem exists_isProbabilityMeasure_of_summingENorm_le_ofReal [MeasurableSpace (
   refine ⟨ν, hν, hreg, fun x ↦ ?_⟩
   have hI : ∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν = L (WeakDual.evalRpow 1 p x) / L 1 := by
     simpa using hνL (WeakDual.evalRpow 1 p x)
-  rw [le_mul_rpow_one_div_iff (norm_nonneg _) hC (integral_nonneg fun _ ↦ by positivity) hq, hI,
-    mul_div_assoc', le_div_iff_of_neg hL1]
+  rw [Real.le_mul_rpow_one_div_iff (norm_nonneg _) hC (integral_nonneg fun _ ↦ by positivity) hq,
+    hI, mul_div_assoc', le_div_iff_of_neg hL1]
   exact hLx x
 
 /-- An absolutely `p`-summing operator, `1 ≤ p < ∞`, is dominated by a regular Borel probability
