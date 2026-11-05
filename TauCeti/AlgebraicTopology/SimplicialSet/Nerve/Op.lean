@@ -27,6 +27,10 @@ terminal vertices of nerves to results about initial vertices of nerves by duali
 
 * `CategoryTheory.nerve.opIso_hom_app_obj`: the vertex `i` of the image of a simplex `G` of
   `nerve Cᵒᵖ` is the vertex `i.rev` of `G`.
+* `CategoryTheory.nerve.opIso_hom_app_map`: the arrow `i ⟶ j` of the image of a simplex `G` of
+  `nerve Cᵒᵖ` is the opposite of the arrow `j.rev ⟶ i.rev` of `G`.
+* `CategoryTheory.nerve.opIso_inv_app_obj` and `CategoryTheory.nerve.opIso_inv_app_map`: the
+  same descriptions for the inverse isomorphism.
 * `CategoryTheory.nerve.opIso_hom_app_nerveEquiv_symm`: on vertices, the isomorphism is the
   identification of the objects of `Cᵒᵖ` with those of `C`.
 -/
@@ -66,6 +70,34 @@ noncomputable def opIso : nerve Cᵒᵖ ≅ (nerve C).op :=
 lemma opIso_hom_app_obj {n : ℕ} (G : (nerve Cᵒᵖ) _⦋n⦌) (i : Fin (n + 1)) :
     ((nerve C).opObjEquiv ((opIso C).hom.app _ G)).obj i = unop (G.obj i.rev) :=
   (rfl)
+
+/-- The arrow `i ⟶ j` of the image under `opIso` of a simplex `G` of `nerve Cᵒᵖ` is the opposite
+of the arrow `j.rev ⟶ i.rev` of `G`. -/
+@[simp]
+lemma opIso_hom_app_map {n : ℕ} (G : (nerve Cᵒᵖ) _⦋n⦌) {i j : Fin (n + 1)} (h : i ≤ j) :
+    ((nerve C).opObjEquiv ((opIso C).hom.app _ G)).map (homOfLE h) =
+      eqToHom (opIso_hom_app_obj C G i) ≫ (G.map (homOfLE (Fin.rev_le_rev.2 h))).unop ≫
+        eqToHom (opIso_hom_app_obj C G j).symm :=
+  -- Both transports are identities once `opIso` is unfolded.
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- The vertex `i` of the image under `opIso.inv` of a simplex `F` of `(nerve C)ᵒᵖ` is the vertex
+`i.rev` of `F`. -/
+@[simp]
+lemma opIso_inv_app_obj {n : ℕ} (F : (nerve C).op _⦋n⦌) (i : Fin (n + 1)) :
+    ((opIso C).inv.app _ F).obj i = op (((nerve C).opObjEquiv F).obj i.rev) :=
+  (rfl)
+
+/-- The arrow `i ⟶ j` of the image under `opIso.inv` of a simplex `F` of `(nerve C)ᵒᵖ` is the
+opposite of the arrow `j.rev ⟶ i.rev` of `F`. -/
+@[simp]
+lemma opIso_inv_app_map {n : ℕ} (F : (nerve C).op _⦋n⦌) {i j : Fin (n + 1)} (h : i ≤ j) :
+    ((opIso C).inv.app _ F).map (homOfLE h) =
+      eqToHom (opIso_inv_app_obj C F i) ≫
+        (((nerve C).opObjEquiv F).map (homOfLE (Fin.rev_le_rev.2 h))).op ≫
+          eqToHom (opIso_inv_app_obj C F j).symm :=
+  -- Both transports are identities once `opIso` is unfolded.
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- On vertices, `opIso` is the identification of the objects of `Cᵒᵖ` with those of `C`. -/
 @[simp]
