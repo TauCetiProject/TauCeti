@@ -398,18 +398,6 @@ private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
     exact h.submatrix fun i j hij ↦ Fin.ext
       (hv (Set.mem_Iio.2 i.isLt) (Set.mem_Iio.2 j.isLt) hij)
 
-/-- **A multiple edge with a further edge at one end is double**: a triple edge is isolated, so an
-edge `i - j` with Cartan product at least `2`, at whose end `j` a third index `k` is attached, has
-Cartan product exactly `2`. -/
-private lemma apply_mul_apply_eq_two_of_two_le (h : IsFiniteType A) {i j k : B} (hij : i ≠ j)
-    (hik : i ≠ k) (hjk : j ≠ k) (h2 : 2 ≤ A i j * A j i) (hk : A j k ≠ 0) :
-    A i j * A j i = 2 := by
-  have hmem := h.apply_mul_apply_mem_of_ne hij
-  have h3 : A i j * A j i ≠ 3 := fun h3 ↦
-    hk (h.apply_eq_zero_of_apply_mul_apply_eq_three hjk hik (by rwa [mul_comm]))
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
-  generalize A i j * A j i = p at *
-  omega
 /-- **At most one edge of a chain of a finite-type diagram is multiple.** Let `v 0, …, v (m + 2)`
 be distinct indices of a finite-type matrix, non-consecutive ones not joined at all and the
 interior edges of the chain - those joining `v s` to `v (s + 1)` for `0 < s < m + 1` - single. If
@@ -444,12 +432,12 @@ theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType
     · simp [hc] at hfirst
     · simpa [hc] using hsimple m hm (by omega)
   -- So both extreme edges are double: neither is triple, since both ends carry a further edge.
-  have hfirst2 := apply_mul_apply_eq_two_of_two_le h (hvne 0 1 (by omega) (by omega) (by omega))
+  have hfirst2 := h.apply_mul_apply_eq_two_of_two_le (hvne 0 1 (by omega) (by omega) (by omega))
     (hvne 0 2 (by omega) (by omega) (by omega)) (hvne 1 2 (by omega) (by omega) (by omega))
     hfirst hedge12
   have hlast2 : A (v (m + 1)) (v (m + 2)) * A (v (m + 2)) (v (m + 1)) = 2 := by
     rw [mul_comm]
-    exact apply_mul_apply_eq_two_of_two_le h (hvne (m + 2) (m + 1) (by omega) (by omega)
+    exact h.apply_mul_apply_eq_two_of_two_le (hvne (m + 2) (m + 1) (by omega) (by omega)
       (by omega)) (hvne (m + 2) m (by omega) (by omega) (by omega))
       (hvne (m + 1) m (by omega) (by omega) (by omega)) (by linarith) hedgeLast
   -- The interior edges are single, so both of their entries are `-1`.
