@@ -962,18 +962,17 @@ theorem gradedResolutionTopRep_ρ_smoothTensorInducedGradedResolutionComparison_
   TopRep.ResolutionContraction.gradedResolutionTopRep_ρ_gradedComparison _
     (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A hinv) g
 
-/-- The comparison carries the diagonal tensor `z ⊗ ⋯ ⊗ z` of a homogeneous cocycle to a cocycle
-of the total resolution. -/
+/-- The comparison carries the diagonal tensor `z ⊗ ⋯ ⊗ z` of a cocycle to a cocycle of the total
+resolution. -/
 theorem gradedResolutionTopRepDifferential_smoothTensorInducedGradedResolutionComparison_eq_zero
-    {n : ℕ} {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece n)
-    (hdz : A.obj.gradedResolutionDifferential z = 0) :
+    {z : A.obj.gradedResolutionModule} (hdz : A.obj.gradedResolutionDifferential z = 0) :
     ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced U hU s
         ((ofSmoothDiscrete R U).obj A))).obj.gradedResolutionTopRepDifferential.hom
         ((smoothTensorInducedGradedResolutionComparison U hU s A hA).hom.hom
           (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z)) = 0 :=
-  TopRep.ResolutionContraction.gradedResolutionTopRepDifferential_gradedComparison_eq_zero _
-    (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
-    (smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero U hU s A hdz)
+  (TopRep.gradedResolutionTopRepDifferential_apply _ _).trans <|
+    (smoothTensorInducedGradedResolutionComparison_slotSum U hU s A hA _).symm.trans <|
+      (congrArg _ (PiTensorProduct.slotSum_tprod_eq_zero _ _ fun _ ↦ hdz)).trans (map_zero _)
 
 /-- **The norm of a cocycle on the total resolution.** Let `z` be a `U`-invariant cocycle of degree
 `n` of the total resolution of `A`, and `y` the image under the comparison of its diagonal tensor
