@@ -22,7 +22,8 @@ pseudo-metrizable whenever `α` is. This makes metrizable-codomain results, such
 of pointwise limits of measurable maps, available for matrix-valued functions without choosing a
 matrix norm.
 
-Matrices with countably many rows and columns are second countable when their entries are.
+Matrices with countably many rows and columns are second countable when their entries are, and
+matrices with finitely many rows and columns are σ-compact when their entries are.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -71,6 +72,11 @@ second countable. -/
 instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
     [SecondCountableTopology α] : SecondCountableTopology (Matrix m n α) :=
   inferInstanceAs (SecondCountableTopology (m → n → α))
+
+/-- Matrices with finitely many rows and columns over a σ-compact space form a σ-compact space. -/
+instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaCompactSpace α] :
+    SigmaCompactSpace (Matrix m n α) :=
+  inferInstanceAs (SigmaCompactSpace (m → n → α))
 
 /-- Square matrices act jointly continuously on column vectors by `Matrix.mulVec`. -/
 instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]
