@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Probability.Kernel.Invariance
 public import TauCeti.Probability.MarkovChain.MarkovProperty
-public import TauCeti.Probability.Process.PathLaw.ProcessShift
 
 /-!
 # Stationary Markov path laws
