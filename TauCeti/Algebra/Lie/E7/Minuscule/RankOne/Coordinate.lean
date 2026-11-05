@@ -71,13 +71,16 @@ theorem pointsMulEquiv_sl2BlockCoordinateMap_lower (A : CommAlgCat.{u} R)
   rw [weightTable.coe_sl2BlockSL, weightTable.sl2BlockMatrix_lower_transvection,
     weightTable_loweringMatrix, coe_rootSubgroupPoints_inr]
 
-/-- Restricting the algebraic rank-one representation along the upper root of `SL₂`
-is the positive numbered root morphism of the specialized carrier, inside `GL₅₆`. -/
-@[simp]
-theorem sl2BlockCoordinateMap_comp_upper_rootSubgroupCoordinateMap :
-    weightTable.sl2BlockCoordinateMap R i ≫
-        SpecialLinear.rootSubgroupCoordinateMap (by decide : (0 : Fin 2) ≠ 1) =
-      coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R (.inl i) := by
+private theorem sl2BlockCoordinateMap_comp_rootSubgroupCoordinateMap
+    (k : Fin 7 ⊕ Fin 7) {a b : Fin 2} (hij : a ≠ b)
+    (h : ∀ (A : CommAlgCat.{u} R)
+      (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A),
+      GeneralLinear.pointsMulEquiv 56
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (weightTable.sl2BlockCoordinateMap R i)).app A
+            (SpecialLinear.rootSubgroupPoints hij q)) =
+        (rootSubgroupPoints k A (AdditiveGroup.gaPointsMulEquiv q) : GL (Fin 56) A)) :
+    weightTable.sl2BlockCoordinateMap R i ≫ SpecialLinear.rootSubgroupCoordinateMap hij =
+      coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R k := by
   apply Quiver.Hom.op_inj
   apply (CommHopfAlgCat.pointsFunctor.{u, u, u} (R := R)).map_injective
   simp only [CommHopfAlgCat.pointsFunctor_map, Quiver.Hom.unop_op,
@@ -85,15 +88,25 @@ theorem sl2BlockCoordinateMap_comp_upper_rootSubgroupCoordinateMap :
   ext A q
   apply (GeneralLinear.pointsMulEquiv 56).injective
   simp only [NatTrans.comp_app, GrpCat.comp_apply]
-  erw [SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app,
-    pointsMulEquiv_sl2BlockCoordinateMap_upper]
+  -- `rw` cannot reconcile `pointsFunctor.obj` with the concrete convolution-point types.
+  erw [SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app, h]
   symm
   -- The existing root comparison uses concrete convolution points rather than functor objects.
   erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply]
   simpa only [BialgHom.mapDomain_apply] using
     pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
-      R (.inl i) A q
+      R k A q
+
+/-- Restricting the algebraic rank-one representation along the upper root of `SL₂`
+is the positive numbered root morphism of the specialized carrier, inside `GL₅₆`. -/
+@[simp]
+theorem sl2BlockCoordinateMap_comp_upper_rootSubgroupCoordinateMap :
+    weightTable.sl2BlockCoordinateMap R i ≫
+        SpecialLinear.rootSubgroupCoordinateMap (by decide : (0 : Fin 2) ≠ 1) =
+      coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R (.inl i) :=
+  sl2BlockCoordinateMap_comp_rootSubgroupCoordinateMap R i (.inl i) _
+    (pointsMulEquiv_sl2BlockCoordinateMap_upper R i)
 
 /-- Restricting the algebraic rank-one representation along the lower root of `SL₂`
 is the negative numbered root morphism of the specialized carrier, inside `GL₅₆`. -/
@@ -101,27 +114,12 @@ is the negative numbered root morphism of the specialized carrier, inside `GL₅
 theorem sl2BlockCoordinateMap_comp_lower_rootSubgroupCoordinateMap :
     weightTable.sl2BlockCoordinateMap R i ≫
         SpecialLinear.rootSubgroupCoordinateMap (by decide : (1 : Fin 2) ≠ 0) =
-      coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R (.inr i) := by
-  apply Quiver.Hom.op_inj
-  apply (CommHopfAlgCat.pointsFunctor.{u, u, u} (R := R)).map_injective
-  simp only [CommHopfAlgCat.pointsFunctor_map, Quiver.Hom.unop_op,
-    CommHopfAlgCat.Hom.mapPointsFunctor_comp]
-  ext A q
-  apply (GeneralLinear.pointsMulEquiv 56).injective
-  simp only [NatTrans.comp_app, GrpCat.comp_apply]
-  erw [SpecialLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app,
-    pointsMulEquiv_sl2BlockCoordinateMap_lower]
-  symm
-  -- The existing root comparison uses concrete convolution points rather than functor objects.
-  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply]
-  simpa only [BialgHom.mapDomain_apply] using
-    pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
-      R (.inr i) A q
+      coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R (.inr i) :=
+  sl2BlockCoordinateMap_comp_rootSubgroupCoordinateMap R i (.inr i) _
+    (pointsMulEquiv_sl2BlockCoordinateMap_lower R i)
 
 /-- On field-valued points, the algebraic block map is the existing carrier-valued rank-one
 map followed by the carrier's matrix inclusion. -/
-@[simp]
 theorem pointsMulEquiv_sl2BlockCoordinateMap_eq_rankOnePoints
     (k : Type u) [Field k] [Algebra R k]
     (q : HopfAlgebra.points (R := R) (H := SpecialLinear.coordinateHopfAlgebra R 2)
