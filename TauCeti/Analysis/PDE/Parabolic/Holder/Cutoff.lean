@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Smooth
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # Smooth cutoffs on parabolic cylinders

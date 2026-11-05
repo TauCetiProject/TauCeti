@@ -29,55 +29,6 @@ namespace TauCeti.ParabolicSpaceTime
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {α : ℝ≥0}
 
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- Bounded Lipschitz maps on ordinary space-time are uniformly Hölder for the
-parabolic distance, even when time ranges over the whole real line. -/
-theorem exists_holderWith_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
-    {K : ℝ≥0} (hf : LipschitzWith K f) {M : ℝ}
-    (hbound : ∀ x, ‖f x‖ ≤ M) :
-    ∃ C : ℝ≥0, ∀ z : E × ℝ,
-      HolderWith C α (fun p : ParabolicSpaceTime E ↦ f (p.space - z.1, p.time - z.2)) := by
-  let C : ℝ≥0 := ⟨max (K : ℝ) (2 * M), le_max_of_le_left K.coe_nonneg⟩
-  refine ⟨C, fun z ↦ ?_⟩
-  have hdist (p q : ParabolicSpaceTime E) :
-      dist (f (p.space - z.1, p.time - z.2)) (f (q.space - z.1, q.time - z.2)) ≤
-        C * dist p q := by
-    by_cases hd : dist p q ≤ 1
-    · have ht : |p.time - q.time| ≤ dist p q := by
-        have hs := sqrt_abs_time_sub_le_dist p q
-        have hsq := Real.sq_sqrt (abs_nonneg (p.time - q.time))
-        nlinarith [Real.sqrt_nonneg |p.time - q.time|]
-      calc
-        _ ≤ K * dist (p.space - z.1, p.time - z.2) (q.space - z.1, q.time - z.2) :=
-          hf.dist_le_mul _ _
-        _ ≤ K * dist p q := by
-          gcongr
-          simpa [Prod.dist_eq, dist_sub_right, Real.dist_eq] using
-            max_le (dist_space_le p q) ht
-        _ ≤ C * dist p q := by gcongr; exact le_max_left _ _
-    · calc
-        _ ≤ ‖f (p.space - z.1, p.time - z.2)‖ + ‖f (q.space - z.1, q.time - z.2)‖ :=
-          dist_le_norm_add_norm _ _
-        _ ≤ 2 * M := by
-          linarith [hbound (p.space - z.1, p.time - z.2),
-            hbound (q.space - z.1, q.time - z.2)]
-        _ ≤ C * dist p q := by
-          have hc : 2 * M ≤ (C : ℝ) := le_max_right _ _
-          nlinarith [C.coe_nonneg]
-  have hlip : LipschitzWith C
-      (fun p : ParabolicSpaceTime E ↦ f (p.space - z.1, p.time - z.2)) :=
-    LipschitzWith.of_dist_le_mul hdist
-  have hzero : HolderWith C 0
-      (fun p : ParabolicSpaceTime E ↦ f (p.space - z.1, p.time - z.2)) := by
-    intro p q
-    simp only [NNReal.coe_zero, ENNReal.rpow_zero, mul_one]
-    rw [edist_dist, ← ENNReal.ofReal_coe_nnreal]
-    apply ENNReal.ofReal_le_ofReal
-    have hc : 2 * M ≤ (C : ℝ) := le_max_right _ _
-    exact (dist_le_norm_add_norm _ _).trans (by
-      linarith [hbound (p.space - z.1, p.time - z.2), hbound (q.space - z.1, q.time - z.2)])
-  simpa using hzero.of_le_of_le hlip.holderWith (by positivity : 0 ≤ α) hα
-
 /-- A compactly supported `C¹` map on ordinary space-time defines Hölder fields on
 all translated slabs with one common norm bound. -/
 theorem exists_norm_le_holderSpace_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
@@ -120,6 +71,14 @@ private local instance : NormedSpace ℝ (E →L[ℝ] F) := inferInstance
 private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
 private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
 
+private theorem hasFDerivAt_comp_spatial_coords {g : E × ℝ → F} (hg : ContDiff ℝ 1 g)
+    (z : E × ℝ) (t : ℝ) (x : E) :
+    HasFDerivAt (fun y ↦ g (y - z.1, t - z.2))
+      ((fderiv ℝ g (x - z.1, t - z.2)).comp (ContinuousLinearMap.inl ℝ E ℝ)) x := by
+  simpa [Function.comp_def] using (hg.differentiable (by simp) _).hasFDerivAt.comp x
+    ((hasFDerivAt_prodMk_left (x - z.1) (t - z.2)).comp x
+      ((hasFDerivAt_id x).sub_const z.1))
+
 /-- Compactly supported `C³` functions on ordinary space-time have a common
 order-two parabolic Hölder norm bound on all translated closed slabs. -/
 theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
@@ -130,8 +89,6 @@ theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
           (p : ParabolicSpaceTime E).time - z.2)) ∧ ‖g‖ ≤ C := by
   -- Restrict the ordinary derivatives to spatial directions and to the unit time direction.
   let ι : E →L[ℝ] E × ℝ := ContinuousLinearMap.inl ℝ E ℝ
-  have hi : (ContinuousLinearMap.id ℝ E).prod (0 : E →L[ℝ] ℝ) = ι := by
-    ext x <;> simp [ι]
   let R : (E × ℝ →L[ℝ] F) →L[ℝ] E →L[ℝ] F := ι.precomp F
   let S : (E × ℝ →L[ℝ] E →L[ℝ] F) →L[ℝ] E →L[ℝ] E →L[ℝ] F :=
     ι.precomp (E →L[ℝ] F)
@@ -166,15 +123,13 @@ theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
   have hx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ u (slabMk y t)) (ux (slabMk x t)) x := by
     simp only [hu, hux, space_slabMk, time_slabMk]
-    simpa [fx, R, Function.comp_def, hi] using
-      (hf.differentiable (by simp) _).hasFDerivAt.comp x
-        (((hasFDerivAt_id x).sub_const z.1).prodMk (hasFDerivAt_const ((t : ℝ) - z.2) x))
+    simpa [fx, R, ι, Function.comp_def] using
+      hasFDerivAt_comp_spatial_coords (hf.of_le (by norm_num)) z t x
   have hxx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ ux (slabMk y t)) (uxx (slabMk x t)) x := by
     simp only [hux, huxx, space_slabMk, time_slabMk]
-    simpa [fxx, S, Function.comp_def, hi] using
-      (hfx.differentiable (by simp) _).hasFDerivAt.comp x
-        (((hasFDerivAt_id x).sub_const z.1).prodMk (hasFDerivAt_const ((t : ℝ) - z.2) x))
+    simpa [fxx, S, ι, Function.comp_def] using
+      hasFDerivAt_comp_spatial_coords (hfx.of_le (by norm_num)) z t x
   -- On the closed interval the clamped extension agrees with the ordinary time slice,
   -- so its derivative includes the two endpoints.
   have ht (x : E) (t : Icc a b) :
