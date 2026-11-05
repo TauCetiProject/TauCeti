@@ -63,8 +63,8 @@ theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 :
 /-- The real and imaginary parts of a point of the unit sphere of `ℂ` satisfy
 `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1) :
-    z.re ^ 2 + z.im ^ 2 = 1 :=
-  re_sq_add_im_sq (homeomorphSphere.symm ⟨z, hz⟩)
+    z.re ^ 2 + z.im ^ 2 = 1 := by
+  simpa using re_sq_add_im_sq (homeomorphSphere.symm ⟨z, hz⟩)
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
