@@ -490,7 +490,7 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
   have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
   rw [Finpartition.isPairing_iff_part, Finpartition.isPairing_iff_part,
     Finpartition.isPairing_iff_part,
-    ← P.part_eq_pair_iff_inter_filter_lt_eq_singleton hms hxm hmax hmx]
+    ← P.part_eq_pair_iff_inter_filter_lt_eq_singleton hxm hmax hmx]
   constructor
   · intro h
     have hm2 : P.part m = {m, x} :=

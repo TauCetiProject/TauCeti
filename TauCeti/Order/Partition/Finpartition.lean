@@ -605,9 +605,10 @@ theorem part_eq_insert_part_restrict {m x : α} (hm : ∀ y ∈ P.part m, m ≤ 
 
 /-- If `x > m` is the last point of the part of `m`, the part of `m` is the pair `{m, x}` exactly
 when `m` is its only point before `x`. -/
-theorem part_eq_pair_iff_inter_filter_lt_eq_singleton {m x : α} (hms : m ∈ s)
+theorem part_eq_pair_iff_inter_filter_lt_eq_singleton {m x : α}
     (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) (hmx : m < x) :
     P.part m = {m, x} ↔ P.part m ∩ {y ∈ s | y < x} = {m} := by
+  have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
   refine ⟨fun h => ?_, fun h => Subset.antisymm (fun y hy => ?_) ?_⟩
   · rw [h]
     ext y
