@@ -160,113 +160,78 @@ theorem liftIsometry_comp_mapL (B : E' →L[𝕜] F' →L[𝕜] G) (f : E →L[�
     liftIsometry 𝕜 E' F' G B ∘L mapL f g = liftIsometry 𝕜 E F G (B.bilinearComp f g) :=
   continuousLinearMap_ext fun x y ↦ by simp
 
-/-- The induced operator is additive in the left operator. -/
 theorem mapL_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
     mapL (f₁ + f₂) g = mapL f₁ g + mapL f₂ g :=
   continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.add_tmul]
 
-/-- The induced operator is additive in the right operator. -/
 theorem mapL_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
     mapL f (g₁ + g₂) = mapL f g₁ + mapL f g₂ :=
   continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.tmul_add]
 
-/-- The induced operator is homogeneous in the left operator. -/
 theorem mapL_smul_left (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
     mapL (a • f) g = a • mapL f g :=
   continuousLinearMap_ext fun _ _ ↦ by simp [← TensorProduct.smul_tmul']
 
-/-- The induced operator is homogeneous in the right operator. -/
 theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
     mapL f (a • g) = a • mapL f g :=
   continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.tmul_smul]
 
-/-- The zero operator on the left induces the zero operator on projective tensor products. -/
-@[simp]
-theorem mapL_zero_left (g : F →L[𝕜] F') :
-    mapL (0 : E →L[𝕜] E') g = 0 :=
+@[simp] theorem mapL_zero_left (g : F →L[𝕜] F') : mapL (0 : E →L[𝕜] E') g = 0 :=
   continuousLinearMap_ext fun _ _ ↦ by simp
 
-/-- The zero operator on the right induces the zero operator on projective tensor products. -/
-@[simp]
-theorem mapL_zero_right (f : E →L[𝕜] E') :
-    mapL f (0 : F →L[𝕜] F') = 0 :=
+@[simp] theorem mapL_zero_right (f : E →L[𝕜] E') : mapL f (0 : F →L[𝕜] F') = 0 :=
   continuousLinearMap_ext fun _ _ ↦ by simp
 
 variable (𝕜 E E' F F') in
 /-- Bundled continuous bilinear operator sending `(f, g)` to `ProjectiveTensor.mapL f g`. -/
 noncomputable def mapCLM :
-    (E →L[𝕜] E') →L[𝕜] (F →L[𝕜] F') →L[𝕜]
-      ProjectiveTensor 𝕜 E F →L[𝕜] ProjectiveTensor 𝕜 E' F' :=
+    (E →L[𝕜] E') →L[𝕜] (F →L[𝕜] F') →L[𝕜] ProjectiveTensor 𝕜 E F →L[𝕜] ProjectiveTensor 𝕜 E' F' :=
   LinearMap.mkContinuous₂
     (LinearMap.mk₂ 𝕜 mapL mapL_add_left mapL_smul_left mapL_add_right mapL_smul_right)
     1 fun f g ↦ by simpa using norm_mapL_le f g
 
-/-- Evaluating `mapCLM` on two bounded operators gives `mapL`. -/
-@[simp]
-theorem mapCLM_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
-    mapCLM 𝕜 E E' F F' f g = mapL f g :=
-  (rfl)
+@[simp] theorem mapCLM_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapCLM 𝕜 E E' F F' f g = mapL f g := (rfl)
 
-/-- Evaluating `mapCLM` on one bounded operator has operator norm at most `‖f‖`. -/
 theorem norm_mapCLM_apply_le (f : E →L[𝕜] E') : ‖mapCLM 𝕜 E E' F F' f‖ ≤ ‖f‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun g ↦ by
-    simpa using norm_mapL_le f g
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun g ↦ by simpa using norm_mapL_le f g
 
 /-- Continuous linear equivalences of both factors induce a continuous linear equivalence of
 projective tensor products. -/
 noncomputable def congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
     ProjectiveTensor 𝕜 E F ≃L[𝕜] ProjectiveTensor 𝕜 E' F' :=
-  ContinuousLinearEquiv.equivOfInverse
-    (mapL e.toContinuousLinearMap f.toContinuousLinearMap)
+  .equivOfInverse (mapL e.toContinuousLinearMap f.toContinuousLinearMap)
     (mapL e.symm.toContinuousLinearMap f.symm.toContinuousLinearMap)
-    (fun u ↦ by
-      have h := DFunLike.congr_fun
-        (mapL_comp e.symm.toContinuousLinearMap e.toContinuousLinearMap
-          f.symm.toContinuousLinearMap f.toContinuousLinearMap).symm u
-      simpa using h)
-    (fun u ↦ by
-      have h := DFunLike.congr_fun
-        (mapL_comp e.toContinuousLinearMap e.symm.toContinuousLinearMap
-          f.toContinuousLinearMap f.symm.toContinuousLinearMap).symm u
-      simpa using h)
+    (fun u ↦ by simpa using DFunLike.congr_fun (mapL_comp e.symm.toContinuousLinearMap
+      e.toContinuousLinearMap f.symm.toContinuousLinearMap f.toContinuousLinearMap).symm u)
+    (fun u ↦ by simpa using DFunLike.congr_fun (mapL_comp e.toContinuousLinearMap
+      e.symm.toContinuousLinearMap f.toContinuousLinearMap f.symm.toContinuousLinearMap).symm u)
 
-/-- The induced equivalence acts on the underlying tensor by `TensorProduct.map`. -/
-@[simp]
-theorem congr_apply (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (u : ProjectiveTensor 𝕜 E F) :
+@[simp] theorem congr_apply (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (u : ProjectiveTensor 𝕜 E F) :
     congr e f u = ⟨_root_.TensorProduct.map e.toLinearMap f.toLinearMap u.toTensorProduct⟩ := by
   simp [congr]
 
-/-- The induced equivalence sends `x ⊗ₜ y` to `e x ⊗ₜ f y`. -/
 theorem congr_tmul (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (x : E) (y : F) :
-    congr e f ⟨x ⊗ₜ y⟩ = ⟨e x ⊗ₜ f y⟩ := by
-  simp
+    congr e f ⟨x ⊗ₜ y⟩ = ⟨e x ⊗ₜ f y⟩ := by simp
 
-/-- Forgetting invertibility of `congr e f` recovers `mapL`. -/
-@[simp]
-theorem toContinuousLinearMap_congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
+@[simp] theorem toContinuousLinearMap_congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
     (congr e f).toContinuousLinearMap = mapL e.toContinuousLinearMap f.toContinuousLinearMap :=
   (rfl)
 
-/-- The inverse of `congr e f` is induced by `e.symm` and `f.symm`. -/
-@[simp]
-theorem congr_symm (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
-    (congr e f).symm = congr e.symm f.symm :=
-  (rfl)
+@[simp] theorem congr_symm (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
+    (congr e f).symm = congr e.symm f.symm := (rfl)
 
-/-- Identity equivalences induce the identity equivalence of projective tensor products. -/
-@[simp]
-theorem congr_refl :
+@[simp] theorem congr_refl :
     congr (ContinuousLinearEquiv.refl 𝕜 E) (ContinuousLinearEquiv.refl 𝕜 F) =
       ContinuousLinearEquiv.refl 𝕜 (ProjectiveTensor 𝕜 E F) :=
   DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun mapL_id u
 
-/-- Equivalence functoriality respects composition. -/
 theorem congr_trans (e₁ : E ≃L[𝕜] E') (e₂ : E' ≃L[𝕜] E'')
     (f₁ : F ≃L[𝕜] F') (f₂ : F' ≃L[𝕜] F'') :
     (congr e₁ f₁).trans (congr e₂ f₂) = congr (e₁.trans e₂) (f₁.trans f₂) :=
-  DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun
-    (mapL_comp e₂.toContinuousLinearMap e₁.toContinuousLinearMap
-      f₂.toContinuousLinearMap f₁.toContinuousLinearMap).symm u
+  DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun (mapL_comp
+    e₂.toContinuousLinearMap e₁.toContinuousLinearMap
+    f₂.toContinuousLinearMap f₁.toContinuousLinearMap).symm u
 
 end ProjectiveTensor
 
@@ -309,113 +274,78 @@ theorem mapL_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') (g₂ : F'
     mapL (f₂ ∘L f₁) (g₂ ∘L g₁) = mapL f₂ g₂ ∘L mapL f₁ g₁ :=
   continuousLinearMap_ext fun _ _ ↦ by simp
 
-/-- The induced operator is additive in the left operator. -/
 theorem mapL_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
     mapL (f₁ + f₂) g = mapL f₁ g + mapL f₂ g :=
   continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.add_tmul]
 
-/-- The induced operator is additive in the right operator. -/
 theorem mapL_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
     mapL f (g₁ + g₂) = mapL f g₁ + mapL f g₂ :=
   continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.tmul_add]
 
-/-- The induced operator is homogeneous in the left operator. -/
 theorem mapL_smul_left (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
     mapL (a • f) g = a • mapL f g :=
   continuousLinearMap_ext fun _ _ ↦ by simp [← TensorProduct.smul_tmul']
 
-/-- The induced operator is homogeneous in the right operator. -/
 theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
     mapL f (a • g) = a • mapL f g :=
   continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.tmul_smul]
 
-/-- The zero operator on the left induces the zero operator on injective tensor products. -/
-@[simp]
-theorem mapL_zero_left (g : F →L[𝕜] F') :
-    mapL (0 : E →L[𝕜] E') g = 0 :=
+@[simp] theorem mapL_zero_left (g : F →L[𝕜] F') : mapL (0 : E →L[𝕜] E') g = 0 :=
   continuousLinearMap_ext fun _ _ ↦ by simp
 
-/-- The zero operator on the right induces the zero operator on injective tensor products. -/
-@[simp]
-theorem mapL_zero_right (f : E →L[𝕜] E') :
-    mapL f (0 : F →L[𝕜] F') = 0 :=
+@[simp] theorem mapL_zero_right (f : E →L[𝕜] E') : mapL f (0 : F →L[𝕜] F') = 0 :=
   continuousLinearMap_ext fun _ _ ↦ by simp
 
 variable (𝕜 E E' F F') in
 /-- Bundled continuous bilinear operator sending `(f, g)` to `InjectiveTensor.mapL f g`. -/
 noncomputable def mapCLM :
-    (E →L[𝕜] E') →L[𝕜] (F →L[𝕜] F') →L[𝕜]
-      InjectiveTensor 𝕜 E F →L[𝕜] InjectiveTensor 𝕜 E' F' :=
+    (E →L[𝕜] E') →L[𝕜] (F →L[𝕜] F') →L[𝕜] InjectiveTensor 𝕜 E F →L[𝕜] InjectiveTensor 𝕜 E' F' :=
   LinearMap.mkContinuous₂
     (LinearMap.mk₂ 𝕜 mapL mapL_add_left mapL_smul_left mapL_add_right mapL_smul_right)
     1 fun f g ↦ by simpa using norm_mapL_le f g
 
-/-- Evaluating `mapCLM` on two bounded operators gives `mapL`. -/
-@[simp]
-theorem mapCLM_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
-    mapCLM 𝕜 E E' F F' f g = mapL f g :=
-  (rfl)
+@[simp] theorem mapCLM_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapCLM 𝕜 E E' F F' f g = mapL f g := (rfl)
 
-/-- Evaluating `mapCLM` on one bounded operator has operator norm at most `‖f‖`. -/
 theorem norm_mapCLM_apply_le (f : E →L[𝕜] E') : ‖mapCLM 𝕜 E E' F F' f‖ ≤ ‖f‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun g ↦ by
-    simpa using norm_mapL_le f g
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun g ↦ by simpa using norm_mapL_le f g
 
 /-- Continuous linear equivalences of both factors induce a continuous linear equivalence of
 injective tensor products. -/
 noncomputable def congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
     InjectiveTensor 𝕜 E F ≃L[𝕜] InjectiveTensor 𝕜 E' F' :=
-  ContinuousLinearEquiv.equivOfInverse
-    (mapL e.toContinuousLinearMap f.toContinuousLinearMap)
+  .equivOfInverse (mapL e.toContinuousLinearMap f.toContinuousLinearMap)
     (mapL e.symm.toContinuousLinearMap f.symm.toContinuousLinearMap)
-    (fun u ↦ by
-      have h := DFunLike.congr_fun
-        (mapL_comp e.symm.toContinuousLinearMap e.toContinuousLinearMap
-          f.symm.toContinuousLinearMap f.toContinuousLinearMap).symm u
-      simpa using h)
-    (fun u ↦ by
-      have h := DFunLike.congr_fun
-        (mapL_comp e.toContinuousLinearMap e.symm.toContinuousLinearMap
-          f.toContinuousLinearMap f.symm.toContinuousLinearMap).symm u
-      simpa using h)
+    (fun u ↦ by simpa using DFunLike.congr_fun (mapL_comp e.symm.toContinuousLinearMap
+      e.toContinuousLinearMap f.symm.toContinuousLinearMap f.toContinuousLinearMap).symm u)
+    (fun u ↦ by simpa using DFunLike.congr_fun (mapL_comp e.toContinuousLinearMap
+      e.symm.toContinuousLinearMap f.toContinuousLinearMap f.symm.toContinuousLinearMap).symm u)
 
-/-- The induced equivalence acts on the underlying tensor by `TensorProduct.map`. -/
-@[simp]
-theorem congr_apply (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (u : InjectiveTensor 𝕜 E F) :
+@[simp] theorem congr_apply (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (u : InjectiveTensor 𝕜 E F) :
     congr e f u = ⟨_root_.TensorProduct.map e.toLinearMap f.toLinearMap u.toTensorProduct⟩ := by
   simp [congr]
 
-/-- The induced equivalence sends `x ⊗ₜ y` to `e x ⊗ₜ f y`. -/
 theorem congr_tmul (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') (x : E) (y : F) :
-    congr e f ⟨x ⊗ₜ y⟩ = ⟨e x ⊗ₜ f y⟩ := by
-  simp
+    congr e f ⟨x ⊗ₜ y⟩ = ⟨e x ⊗ₜ f y⟩ := by simp
 
-/-- Forgetting invertibility of `congr e f` recovers `mapL`. -/
-@[simp]
-theorem toContinuousLinearMap_congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
+@[simp] theorem toContinuousLinearMap_congr (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
     (congr e f).toContinuousLinearMap = mapL e.toContinuousLinearMap f.toContinuousLinearMap :=
   (rfl)
 
-/-- The inverse of `congr e f` is induced by `e.symm` and `f.symm`. -/
-@[simp]
-theorem congr_symm (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
-    (congr e f).symm = congr e.symm f.symm :=
-  (rfl)
+@[simp] theorem congr_symm (e : E ≃L[𝕜] E') (f : F ≃L[𝕜] F') :
+    (congr e f).symm = congr e.symm f.symm := (rfl)
 
-/-- Identity equivalences induce the identity equivalence of injective tensor products. -/
-@[simp]
-theorem congr_refl :
+@[simp] theorem congr_refl :
     congr (ContinuousLinearEquiv.refl 𝕜 E) (ContinuousLinearEquiv.refl 𝕜 F) =
       ContinuousLinearEquiv.refl 𝕜 (InjectiveTensor 𝕜 E F) :=
   DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun mapL_id u
 
-/-- Equivalence functoriality respects composition. -/
 theorem congr_trans (e₁ : E ≃L[𝕜] E') (e₂ : E' ≃L[𝕜] E'')
     (f₁ : F ≃L[𝕜] F') (f₂ : F' ≃L[𝕜] F'') :
     (congr e₁ f₁).trans (congr e₂ f₂) = congr (e₁.trans e₂) (f₁.trans f₂) :=
-  DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun
-    (mapL_comp e₂.toContinuousLinearMap e₁.toContinuousLinearMap
-      f₂.toContinuousLinearMap f₁.toContinuousLinearMap).symm u
+  DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun (mapL_comp
+    e₂.toContinuousLinearMap e₁.toContinuousLinearMap
+    f₂.toContinuousLinearMap f₁.toContinuousLinearMap).symm u
 
 end InjectiveTensor
 
