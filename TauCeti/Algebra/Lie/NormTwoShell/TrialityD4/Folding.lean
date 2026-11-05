@@ -55,24 +55,34 @@ theorem foldedH_vertexOrbitEquiv (k : Fin 2) :
   ext i
   simp only [Finset.mem_filter, Finset.mem_univ, true_and, sameCycle_vertexOrbitEquiv_out_iff]
 
+private theorem sum_chevalley_eq_invariantRoot (negative : Bool) (k : Fin 2) :
+    (∑ i with trialityPermD4.SameCycle i (vertexOrbitEquiv k).out,
+        cond negative
+          (ShellLieAlgebra.chevalleyF (CartanMatrix.D 4) (CartanMatrix.D_diag (n := 4)) i)
+          (ShellLieAlgebra.chevalleyE (CartanMatrix.D 4) (CartanMatrix.D_diag (n := 4)) i)) =
+      invariantRoot negative (simpleOrbit k) := by
+  refine (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr.injective (Finsupp.ext fun idx ↦ ?_)
+  rcases idx with i | a
+  · cases negative <;>
+      simp [ShellLieAlgebra.chevalleyE_def, ShellLieAlgebra.chevalleyF_def,
+        ← ShellLieAlgebra.basis_inr]
+  · obtain ⟨⟨neg', j⟩, rfl⟩ := rootEquiv.surjective a
+    rw [rootEquiv_apply, basis_repr_invariantRoot, map_sum, Finsupp.finsetSum_apply]
+    cases negative <;>
+      simp only [Bool.cond_false, Bool.cond_true, ShellLieAlgebra.chevalleyE_def,
+        ShellLieAlgebra.chevalleyF_def, sameCycle_vertexOrbitEquiv_out_iff,
+        ← ShellLieAlgebra.basis_inr, Module.Basis.repr_self, Finsupp.single_apply,
+        Sum.inr.injEq, Subtype.ext_iff, coe_root] <;>
+      cases neg' <;> fin_cases k <;> fin_cases j <;> decide
+
 /-- The folded raising generators of `D₄` triality are `invariantRoot false (simpleOrbit 0)` and
 `invariantRoot false (simpleOrbit 1)`. -/
 @[simp]
 theorem foldedE_vertexOrbitEquiv (k : Fin 2) :
     ShellLieAlgebra.foldedE (CartanMatrix.D_diag (n := 4)) trialityPermD4 (vertexOrbitEquiv k) =
       invariantRoot false (simpleOrbit k) := by
-  refine (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr.injective (Finsupp.ext fun idx ↦ ?_)
-  rcases idx with i | a
-  · simp [ShellLieAlgebra.foldedE_def, ShellLieAlgebra.chevalleyE_def,
-      ← ShellLieAlgebra.basis_inr]
-  · obtain ⟨⟨neg', j⟩, rfl⟩ := rootEquiv.surjective a
-    rw [rootEquiv_apply, basis_repr_invariantRoot, ShellLieAlgebra.foldedE_def, map_sum,
-      Finsupp.finsetSum_apply]
-    simp only [sameCycle_vertexOrbitEquiv_out_iff, ShellLieAlgebra.chevalleyE_def,
-      ← ShellLieAlgebra.basis_inr, Module.Basis.repr_self, Finsupp.single_apply, Sum.inr.injEq,
-      Subtype.ext_iff, coe_root]
-    cases neg' <;> fin_cases k <;> fin_cases j <;>
-      decide
+  rw [ShellLieAlgebra.foldedE_def]
+  exact sum_chevalley_eq_invariantRoot false k
 
 /-- The folded lowering generators of `D₄` triality are `invariantRoot true (simpleOrbit 0)` and
 `invariantRoot true (simpleOrbit 1)`. -/
@@ -80,18 +90,8 @@ theorem foldedE_vertexOrbitEquiv (k : Fin 2) :
 theorem foldedF_vertexOrbitEquiv (k : Fin 2) :
     ShellLieAlgebra.foldedF (CartanMatrix.D_diag (n := 4)) trialityPermD4 (vertexOrbitEquiv k) =
       invariantRoot true (simpleOrbit k) := by
-  refine (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr.injective (Finsupp.ext fun idx ↦ ?_)
-  rcases idx with i | a
-  · simp [ShellLieAlgebra.foldedF_def, ShellLieAlgebra.chevalleyF_def,
-      ← ShellLieAlgebra.basis_inr]
-  · obtain ⟨⟨neg', j⟩, rfl⟩ := rootEquiv.surjective a
-    rw [rootEquiv_apply, basis_repr_invariantRoot, ShellLieAlgebra.foldedF_def,
-      foldingScale_eq_one, one_smul, map_sum, Finsupp.finsetSum_apply]
-    simp only [sameCycle_vertexOrbitEquiv_out_iff, ShellLieAlgebra.chevalleyF_def,
-      ← ShellLieAlgebra.basis_inr, Module.Basis.repr_self, Finsupp.single_apply, Sum.inr.injEq,
-      Subtype.ext_iff, coe_root]
-    cases neg' <;> fin_cases k <;> fin_cases j <;>
-      decide
+  rw [ShellLieAlgebra.foldedF_def, foldingScale_eq_one, one_smul]
+  exact sum_chevalley_eq_invariantRoot true k
 
 /-! ### The folded `G₂` Serre system and homomorphism over any commutative ring -/
 

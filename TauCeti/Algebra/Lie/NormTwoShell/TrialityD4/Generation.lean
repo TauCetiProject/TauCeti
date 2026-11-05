@@ -271,9 +271,9 @@ theorem six_smul_invariantRoot_four (negative : Bool) :
     (6 : ℤ) • invariantRoot negative 4 =
       ⁅invariantRoot negative 0,
         ⁅invariantRoot negative 0, ⁅invariantRoot negative 0, invariantRoot negative 1⁆⁆⁆ := by
-  rw [lie_invariantRoot_zero_one, lie_invariantRoot_zero_two, neg_smul, lie_neg, lie_zsmul,
-    lie_invariantRoot_zero_three, neg_smul, smul_neg, neg_neg, smul_smul]
-  norm_num
+  simp only [lie_invariantRoot_zero_one, lie_invariantRoot_zero_two,
+    lie_invariantRoot_zero_three, lie_zsmul]
+  module
 
 /-- Explicit iterated Lie-word expression for six times the highest long orbit vector. -/
 theorem six_smul_invariantRoot_five (negative : Bool) :
@@ -430,8 +430,19 @@ private theorem isUnit_of_lieSpan_foldedGenerators_eq_top (A : Type*) [CommRing 
   rw [Module.Basis.repr_self, Finsupp.single_eq_same] at hdvd
   exact isUnit_iff_dvd_one.mpr hdvd
 
+private theorem fixedSubalgebraBaseChangeBasis_mem_of_lie_fixedBasis (A : Type*) [CommRing A]
+    {K : LieSubalgebra A (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra}
+    {i j m : Fin 2 ⊕ (Bool × Fin 6)} {c : ℤ} (hc : IsUnit (c : A))
+    (h : ⁅fixedBasis i, fixedBasis j⁆ = c • fixedBasis m)
+    (hi : fixedSubalgebraBaseChangeBasis A i ∈ K)
+    (hj : fixedSubalgebraBaseChangeBasis A j ∈ K) :
+    fixedSubalgebraBaseChangeBasis A m ∈ K := by
+  rw [← LieSubalgebra.mem_toSubmodule, ← K.toSubmodule.smul_mem_iff_of_isUnit hc,
+    LieSubalgebra.mem_toSubmodule, ← lie_fixedSubalgebraBaseChangeBasis_of_lie_fixedBasis A h]
+  exact K.lie_mem hi hj
+
 private theorem mem_lieSpan_foldedGenerators_inr (A : Type*) [CommRing A]
-    [Invertible (2 : A)] [Invertible (3 : A)] (neg : Bool) (o : Fin 6) :
+    (h2_unit : IsUnit (2 : A)) (h3_unit : IsUnit (3 : A)) (neg : Bool) (o : Fin 6) :
     fixedSubalgebraBaseChangeBasis A (.inr (neg, o)) ∈
       LieSubalgebra.lieSpan A (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra
         (foldedGenerators A) := by
@@ -444,44 +455,20 @@ private theorem mem_lieSpan_foldedGenerators_inr (A : Type*) [CommRing A]
   have h1 : b (.inr (neg, 1)) ∈ K :=
     LieSubalgebra.subset_lieSpan
       (by simpa using fixedSubalgebraBaseChangeBasis_simpleOrbit_mem_foldedGenerators A neg 1)
-  have h2 : b (.inr (neg, 2)) ∈ K := by
-    have hlie := lie_fixedSubalgebraBaseChangeBasis_of_lie_fixedBasis A
-      ((lie_fixedBasis_zero_one neg).trans (one_smul ℤ _).symm)
-    rw [Int.cast_one, one_smul] at hlie
-    exact hlie ▸ K.lie_mem h0 h1
-  have h3 : b (.inr (neg, 3)) ∈ K := by
-    have hlie := lie_fixedSubalgebraBaseChangeBasis_of_lie_fixedBasis A
-      (lie_fixedBasis_zero_two neg)
-    rw [Int.cast_neg, Int.cast_ofNat] at hlie
-    have hm := K.smul_mem (-⅟(2 : A)) (hlie ▸ K.lie_mem h0 h2)
-    rwa [smul_smul, neg_mul_neg, invOf_mul_self, one_smul] at hm
-  have h4 : b (.inr (neg, 4)) ∈ K := by
-    have hlie := lie_fixedSubalgebraBaseChangeBasis_of_lie_fixedBasis A
-      (lie_fixedBasis_zero_three neg)
-    rw [Int.cast_neg, Int.cast_ofNat] at hlie
-    have hm := K.smul_mem (-⅟(3 : A)) (hlie ▸ K.lie_mem h0 h3)
-    rwa [smul_smul, neg_mul_neg, invOf_mul_self, one_smul] at hm
-  have h5 : b (.inr (neg, 5)) ∈ K := by
-    have hlie := lie_fixedSubalgebraBaseChangeBasis_of_lie_fixedBasis A
-      ((lie_fixedBasis_one_four neg).trans (neg_one_smul ℤ _).symm)
-    rw [Int.cast_neg, Int.cast_one, neg_one_smul] at hlie
-    have hm : -b (.inr (neg, 5)) ∈ K := hlie ▸ K.lie_mem h1 h4
-    simpa using K.neg_mem hm
+  have h2 : b (.inr (neg, 2)) ∈ K :=
+    fixedSubalgebraBaseChangeBasis_mem_of_lie_fixedBasis A (by simp)
+      ((lie_fixedBasis_zero_one neg).trans (one_smul ℤ _).symm) h0 h1
+  have h3 : b (.inr (neg, 3)) ∈ K :=
+    fixedSubalgebraBaseChangeBasis_mem_of_lie_fixedBasis A (by simpa using h2_unit.neg)
+      (lie_fixedBasis_zero_two neg) h0 h2
+  have h4 : b (.inr (neg, 4)) ∈ K :=
+    fixedSubalgebraBaseChangeBasis_mem_of_lie_fixedBasis A (by simpa using h3_unit.neg)
+      (lie_fixedBasis_zero_three neg) h0 h3
+  have h5 : b (.inr (neg, 5)) ∈ K :=
+    fixedSubalgebraBaseChangeBasis_mem_of_lie_fixedBasis A (by simp)
+      ((lie_fixedBasis_one_four neg).trans (neg_one_smul ℤ _).symm) h1 h4
   fin_cases o
   exacts [h0, h1, h2, h3, h4, h5]
-
-private theorem lieSpan_foldedGenerators_eq_top_of_invertible (A : Type*) [CommRing A]
-    [Invertible (2 : A)] [Invertible (3 : A)] :
-    LieSubalgebra.lieSpan A (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra
-      (foldedGenerators A) = ⊤ := by
-  let b := fixedSubalgebraBaseChangeBasis A
-  rw [← LieSubalgebra.toSubmodule_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
-  rintro _ ⟨k | ⟨neg, o⟩, rfl⟩
-  · rw [SetLike.mem_coe, ← (isSerreSystem_g2FixedBaseChange A).lie_E_F_self k]
-    exact LieSubalgebra.lie_mem _
-      (mem_lieSpan_foldedGenerators_inr A false _)
-      (mem_lieSpan_foldedGenerators_inr A true _)
-  · exact mem_lieSpan_foldedGenerators_inr A neg o
 
 /-- **Sharp Lie-generation theorem for the `D₄` triality fixed Lie subalgebra.**
 Over any commutative ring `A`, the four folded `G₂` simple root vectors generate the entire
@@ -497,9 +484,14 @@ theorem lieSpan_foldedGenerators_eq_top_iff (A : Type*) [CommRing A] :
       isUnit_of_lieSpan_foldedGenerators_eq_top A 3 4 (by decide) 4 (by decide)
         (by decide) htop⟩
   · rintro ⟨h2, h3⟩
-    have := h2.nonempty_invertible.some
-    have := h3.nonempty_invertible.some
-    exact lieSpan_foldedGenerators_eq_top_of_invertible A
+    let b := fixedSubalgebraBaseChangeBasis A
+    rw [← LieSubalgebra.toSubmodule_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
+    rintro _ ⟨k | ⟨neg, o⟩, rfl⟩
+    · rw [SetLike.mem_coe, ← (isSerreSystem_g2FixedBaseChange A).lie_E_F_self k]
+      exact LieSubalgebra.lie_mem _
+        (mem_lieSpan_foldedGenerators_inr A h2 h3 false _)
+        (mem_lieSpan_foldedGenerators_inr A h2 h3 true _)
+    · exact mem_lieSpan_foldedGenerators_inr A h2 h3 neg o
 
 /-- When `2` and `3` are invertible in `A` (in particular over `ℚ` or any characteristic-zero
 field), the folded `G₂` simple root vectors generate the entire triality-fixed Lie subalgebra. -/
@@ -507,7 +499,7 @@ theorem lieSpan_foldedGenerators_eq_top (A : Type*) [CommRing A]
     [Invertible (2 : A)] [Invertible (3 : A)] :
     LieSubalgebra.lieSpan A (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra
       (foldedGenerators A) = ⊤ :=
-  lieSpan_foldedGenerators_eq_top_of_invertible A
+  (lieSpan_foldedGenerators_eq_top_iff A).mpr ⟨isUnit_of_invertible _, isUnit_of_invertible _⟩
 
 /-- The image of `g2SerreLift A` is always the `A`-Lie subalgebra generated by
 `foldedGenerators A`. -/

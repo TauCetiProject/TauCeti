@@ -322,8 +322,8 @@ theorem finrank_fixedSubalgebra :
 
 /-! ### Unconditional scalar extension of the fixed Lie subalgebra -/
 
-/-- Canonical `ℤ`-Lie homomorphism embedding the integral `D₄` triality-fixed Lie subring into the
-fixed Lie subalgebra after scalar extension to `A`, sending `v` to `1 ⊗ₜ[ℤ] v`. -/
+/-- Canonical scalar-extension `ℤ`-Lie homomorphism from the integral `D₄` triality-fixed Lie
+subring to the fixed Lie subalgebra after scalar extension to `A`, sending `v` to `1 ⊗ₜ[ℤ] v`. -/
 noncomputable def toFixedSubalgebraBaseChange (A : Type*) [CommRing A] :
     trialityLieEquiv.toLieHom.fixedSubalgebra →ₗ⁅ℤ⁆
       (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra :=
@@ -429,9 +429,7 @@ theorem fixedSubalgebraBaseChangeBasis_repr_lie (A : Type*) [CommRing A]
     (fixedSubalgebraBaseChangeBasis A).repr
         ⁅fixedSubalgebraBaseChangeBasis A i, fixedSubalgebraBaseChangeBasis A j⁆ l =
       (fixedBasis.repr ⁅fixedBasis i, fixedBasis j⁆ l : A) := by
-  rw [fixedSubalgebraBaseChangeBasis_apply, fixedSubalgebraBaseChangeBasis_apply,
-    ← (fixedSubalgebraBaseChangeLieEquiv A).map_lie, LieAlgebra.ExtendScalars.bracket_tmul,
-    one_mul, fixedSubalgebraBaseChangeBasis_repr_tmul, zsmul_one]
+  simp [fixedSubalgebraBaseChangeBasis_apply, ← LieEquiv.map_lie]
 
 /-- A scalar-multiple bracket relation between two integral fixed-basis elements transfers to
 `fixedSubalgebraBaseChangeBasis A` over any commutative ring `A`. -/

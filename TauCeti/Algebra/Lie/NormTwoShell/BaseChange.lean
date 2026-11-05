@@ -113,8 +113,8 @@ theorem toSubmodule_fixedSubalgebra_baseChange_reindexLieEquiv :
   exact LinearMap.ext (reindexLieEquiv_apply σ hσ _ _)
 
 omit [Finite B.normTwoShell] in
-/-- Canonical `ℤ`-Lie homomorphism embedding the integral fixed Lie subring of
-`reindexLieEquiv σ hσ Fact.out Fact.out` into the fixed Lie subalgebra after scalar extension to
+/-- Canonical scalar-extension `ℤ`-Lie homomorphism from the integral fixed Lie subring of
+`reindexLieEquiv σ hσ Fact.out Fact.out` to the fixed Lie subalgebra after scalar extension to
 `A`, sending `v` to `1 ⊗ₜ[ℤ] v`. -/
 noncomputable def toFixedSubalgebraBaseChange :
     (reindexLieEquiv σ hσ Fact.out Fact.out).toLieHom.fixedSubalgebra →ₗ⁅ℤ⁆
@@ -162,10 +162,9 @@ theorem isBaseChange_toFixedSubalgebraBaseChange
   have : Finite B.normTwoShell := (Fact.out : B.PosDef).finite_normTwoShell.to_subtype
   refine IsBaseChange.of_equiv (fixedSubalgebraBaseChangeLinearEquiv σ hσ A hA)
     fun v ↦ Subtype.ext ?_
-  rw [fixedSubalgebraBaseChangeLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.baseChange_tmul, fixedSubmoduleBaseChangeEquiv_apply,
-    LinearEquiv.coe_ofEq_apply, LinearMap.fixedSubmoduleBaseChange_tmul,
-    LinearEquiv.coe_ofEq_apply, LieHom.coe_toLinearMap, coe_toFixedSubalgebraBaseChange]
+  dsimp only [fixedSubalgebraBaseChangeLinearEquiv, LinearEquiv.trans_apply]
+  rw [LinearEquiv.coe_ofEq_apply]
+  simp
 
 omit [Finite B.normTwoShell] in
 /-- If there are no negative root cycles or the coefficient ring `A` has no `2`-torsion, the
@@ -196,8 +195,7 @@ theorem coe_fixedSubalgebraBaseChangeLieEquiv_tmul
     (fixedSubalgebraBaseChangeLieEquiv σ hσ A hA (a ⊗ₜ[ℤ] v) :
         A ⊗[ℤ] ShellLieAlgebra B) =
       a ⊗ₜ[ℤ] (v : ShellLieAlgebra B) := by
-  rw [fixedSubalgebraBaseChangeLieEquiv_tmul, SetLike.val_smul, coe_toFixedSubalgebraBaseChange,
-    TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  simp [fixedSubalgebraBaseChangeLieEquiv_tmul, TensorProduct.smul_tmul']
 
 end FixedSubalgebra
 
