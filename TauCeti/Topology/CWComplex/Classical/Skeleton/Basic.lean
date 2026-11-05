@@ -161,8 +161,14 @@ variable (C) in
 /-- The preimage under `f : E → X` of the `q`-skeleton of a relative CW complex `C` in `X`, the
 `q`th stage of the skeletal filtration of `E`. The `q`-skeleton is `skeletonLT C (q + 1)`, the union
 of the base and of the cells of dimension at most `q`; for `q < 0` it is the base. -/
-@[expose] def preimageSkeleton (f : E → X) (q : ℤ) : Set E :=
+def preimageSkeleton (f : E → X) (q : ℤ) : Set E :=
   f ⁻¹' skeletonLT C ((q + 1).toNat : ℕ∞)
+
+/-- The defining equation of the skeletal filtration: `preimageSkeleton C f q` is the preimage
+under `f` of `skeletonLT C (q + 1)`. -/
+lemma preimageSkeleton_def (f : E → X) (q : ℤ) :
+    preimageSkeleton C f q = f ⁻¹' skeletonLT C ((q + 1).toNat : ℕ∞) := by
+  rw [preimageSkeleton]
 
 @[simp]
 lemma mem_preimageSkeleton_iff (f : E → X) (q : ℤ) (x : E) :
@@ -175,7 +181,7 @@ lemma monotone_preimageSkeleton (f : E → X) : Monotone (preimageSkeleton C f) 
 /-- Below degree `0` the skeletal filtration is the preimage of the base. -/
 lemma preimageSkeleton_of_neg (f : E → X) {q : ℤ} (hq : q < 0) :
     preimageSkeleton C f q = f ⁻¹' D := by
-  rw [preimageSkeleton, Int.toNat_of_nonpos (by lia), Nat.cast_zero, skeletonLT_zero_eq_base]
+  rw [preimageSkeleton_def, Int.toNat_of_nonpos (by lia), Nat.cast_zero, skeletonLT_zero_eq_base]
 
 /-- For an absolute CW complex the skeletal filtration is empty below degree `0`. -/
 lemma preimageSkeleton_eq_empty {C : Set X} [CWComplex C] (f : E → X) {q : ℤ} (hq : q < 0) :

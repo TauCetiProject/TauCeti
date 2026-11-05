@@ -101,7 +101,7 @@ theorem isZero_singularHomology_preimageSkeleton_id [CWComplex (Set.univ : Set B
     (skeletonLT_subset_skeletonLT_succ (Set.univ : Set B) (m + 1)) ?_ ?_ n).2
     (isZero_singularHomology_skeletonPair_of_ne _ M (by lia))
   all_goals
-    rw [preimageSkeleton, Set.preimage_id]
+    rw [preimageSkeleton_def, Set.preimage_id]
     congr 2
 
 end TauCeti
