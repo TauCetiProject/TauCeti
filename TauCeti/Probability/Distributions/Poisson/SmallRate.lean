@@ -96,8 +96,8 @@ theorem isLittleO_poissonMeasure_real_Ici_two :
 
 /-- A union bound for multiple occurrences in finitely many Poisson counts. Neither
 independence nor equal rates are required. -/
-theorem measureReal_exists_two_le_of_hasLaw {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω]
-    {P : Measure Ω} {X : ι → Ω → ℕ} {r : ι → ℝ≥0}
+theorem measureReal_exists_two_le_of_hasLaw_poissonMeasure {ι Ω : Type*} [Fintype ι]
+    [MeasurableSpace Ω] {P : Measure Ω} {X : ι → Ω → ℕ} {r : ι → ℝ≥0}
     (hX : ∀ i, HasLaw (X i) (poissonMeasure (r i)) P) :
     P.real {ω | ∃ i, 2 ≤ X i ω} ≤ ∑ i, (r i : ℝ) ^ 2 / 2 := by
   have hevent : {ω | ∃ i, 2 ≤ X i ω} = ⋃ i, {ω | 2 ≤ X i ω} := by ext; simp
@@ -108,13 +108,13 @@ theorem measureReal_exists_two_le_of_hasLaw {ι Ω : Type*} [Fintype ι] [Measur
 
 /-- With rate `a / n` in each of `n` cells, the probability of any multiple occurrence
 vanishes as the subdivision is refined. The counts need not be independent. -/
-theorem tendsto_measureReal_exists_two_le_of_hasLaw {Ω : Type*} [MeasurableSpace Ω]
+theorem tendsto_measureReal_exists_two_le_of_hasLaw_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} (a : ℝ≥0) {X : (n : ℕ) → Fin n → Ω → ℕ}
     (hX : ∀ n i, HasLaw (X n i) (poissonMeasure (a / n)) P) :
     Tendsto (fun n => P.real {ω | ∃ i, 2 ≤ X n i ω}) atTop (𝓝 0) := by
   refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_)
     (tendsto_const_div_atTop_nhds_zero_nat ((a : ℝ) ^ 2 / 2))
-  refine (measureReal_exists_two_le_of_hasLaw (hX n)).trans ?_
+  refine (measureReal_exists_two_le_of_hasLaw_poissonMeasure (hX n)).trans ?_
   by_cases hn : n = 0
   · subst n
     simp
