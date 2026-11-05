@@ -13,9 +13,11 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Terminal
 # Gluing sections of sheaves on disjoint opens
 
 Sections of a sheaf with values in a concrete category on two disjoint open sets glue to a section
-on their union. The compatibility condition on the intersection is automatic: the sections over
-the empty open form a terminal object, which the forgetful functor sends to a one-point type.
-This applies in particular to sheaves of commutative rings.
+on their union, provided the forgetful functor preserves binary products. There is no compatibility
+condition on the intersection: the sections over the empty open form a terminal object, so the
+sections over the union form the binary product of those over the two opens, and the forgetful
+functor sends this product to the product of the underlying types. The hypothesis holds in
+particular for sheaves of commutative rings.
 -/
 
 public section
@@ -29,19 +31,22 @@ namespace TopCat.Sheaf
 variable {X : TopCat.{w}}
 
 /-- Sections of a sheaf with values in a concrete category on two disjoint opens glue to a section
-on their union. -/
+on their union, assuming that the forgetful functor preserves binary products. -/
 theorem exists_section_sup_of_disjoint {C : Type*} [Category* C] {FC : C → C → Type*}
     {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
-    [PreservesLimitsOfShape WalkingCospan (CategoryTheory.forget C)]
-    [PreservesLimit (Functor.empty.{0} C) (CategoryTheory.forget C)]
+    [PreservesLimitsOfShape (Discrete WalkingPair) (CategoryTheory.forget C)]
     (F : X.Sheaf C) {A B : Opens X} (hAB : Disjoint A B) (σ : ToType (F.obj.obj (op A)))
     (ρ : ToType (F.obj.obj (op B))) :
     ∃ τ : ToType (F.obj.obj (op (A ⊔ B))),
       F.obj.map (homOfLE le_sup_left).op τ = σ ∧ F.obj.map (homOfLE le_sup_right).op τ = ρ := by
-  have hP := (IsPullback.of_isLimit (F.isLimitPullbackCone A B)).map (CategoryTheory.forget C)
-  have hT : Subsingleton ((CategoryTheory.forget C).obj (F.obj.obj (op (A ⊓ B)))) :=
-    (Types.isTerminalEquivUnique _ |>.toFun
-      ((F.isTerminalOfEqEmpty hAB.eq_bot).isTerminalObj (CategoryTheory.forget C))).instSubsingleton
-  exact Types.exists_of_isPullback hP σ ρ (Subsingleton.elim _ _)
+  have hprod := isProductOfIsTerminalIsPullback (F.obj.map (homOfLE inf_le_left).op)
+    (F.obj.map (homOfLE inf_le_right).op) (F.obj.map (homOfLE le_sup_left).op)
+    (F.obj.map (homOfLE le_sup_right).op) (F.isTerminalOfEqEmpty hAB.eq_bot)
+    (F.isLimitPullbackCone A B)
+  have hl := mapIsLimitOfPreservesOfIsLimit (CategoryTheory.forget C) _ _ hprod
+  have h₁ := BinaryFan.IsLimit.lift_fst hl (↾fun _ : PUnit => σ) (↾fun _ : PUnit => ρ)
+  have h₂ := BinaryFan.IsLimit.lift_snd hl (↾fun _ : PUnit => σ) (↾fun _ : PUnit => ρ)
+  exact ⟨BinaryFan.IsLimit.lift hl (↾fun _ : PUnit => σ) (↾fun _ : PUnit => ρ) PUnit.unit,
+    ConcreteCategory.congr_hom h₁ PUnit.unit, ConcreteCategory.congr_hom h₂ PUnit.unit⟩
 
 end TopCat.Sheaf
