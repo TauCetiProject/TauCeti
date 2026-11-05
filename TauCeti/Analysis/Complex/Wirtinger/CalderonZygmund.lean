@@ -144,7 +144,7 @@ private theorem exists_eLpNorm_lineDerivOp_le (v : ℂ) {p : ℝ≥0∞} (hp : 1
     ∃ C : ℝ≥0, ∀ u : 𝓢(ℂ, F),
       eLpNorm (⇑(∂_{v} u : 𝓢(ℂ, F))) p volume ≤ C * eLpNorm (⇑(schwartzDbar u)) p volume := by
   obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq (N := 2)
-    ((contDiffOn_dbarSymbol v).of_le (by simp)) fun t ht ξ ↦ dbarSymbol_smul v ht ξ
+    ((contDiffOn_dbarSymbol v).of_le (by simp)) fun t ht ξ _ ↦ dbarSymbol_smul v ht ξ
   obtain ⟨C, hC⟩ := exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (V := ℂ)
     (F := F) (N := 2) (by simp [Complex.finrank_real_complex]) hp hp_top
   refine ⟨C * A, fun u ↦ ?_⟩

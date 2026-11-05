@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
+public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Reference
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
@@ -39,6 +43,18 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
 
 Changing the radial cutoff changes the reference by a smooth compactly supported field, so the
 affine space does not depend on the cutoff (`framedFieldSpace_eq`). The vacuum lies in `A_0^s`.
+
+Off the disc where the cutoff is active, the reference field is the field reconstructed from the
+holomorphic factor `z ^ m` and the harmonic amplitude `-m log |z|`
+(`referenceField_eventuallyEq_amplitudeField`). It therefore solves the vortex equation there, so
+its vortex defect is a smooth compactly supported field
+(`hasCompactSupport_equation_referenceField`). Its connection coefficients are homogeneous of
+degree `-1` and its section coefficients of degree `0` there, so every coordinate has bounded
+derivatives of each finite order on the whole plane
+(`exists_norm_iteratedFDeriv_referenceField_apply_le`). These are the properties of the reference
+that make multiplication by its coefficients, and its own defect, compatible with the Sobolev
+scale.
+
 For `s > 1`, a continuous field in `A_m^s` tends to the reference field at infinity, by Sobolev
 embedding into `C₀`. In particular its section satisfies the end framing
 `α(z) (z / |z|)^(-m) → 1`, and its modulus tends to one; with the maximum principle this gives
@@ -60,7 +76,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter MeasureTheory Module TemperedDistribution
-open scoped ContDiff Topology SchwartzMap
+open scoped ContDiff Topology SchwartzMap NNReal
 
 /-! ### The reference field -/
 
@@ -143,6 +159,132 @@ theorem hasCompactSupport_referenceField_zero_sub_vacuumField (f : ContDiffBump 
     f.zero_of_le_dist (by simpa [Real.dist_eq, abs_of_nonneg] using hz.2)
   ext i
   fin_cases i <;> simp [referenceField_apply, vacuumField_apply, hf0]
+
+/-! ### The reference field off a disc -/
+
+/-- Off the disc of squared radius `f.rOut`, the reference field is `(-i m dθ, (z / |z|) ^ m)`: its
+connection coefficients are `b₁ = m Im z / |z|²` and `b₂ = -m Re z / |z|²`. -/
+theorem referenceField_eq_of_rOut_le (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
+    (hz : f.rOut ≤ ‖z‖ ^ 2) :
+    referenceField f m z = !₂[m * z.im / ‖z‖ ^ 2, -(m * z.re / ‖z‖ ^ 2),
+      ((z / (‖z‖ : ℂ)) ^ m).re / 2, ((z / (‖z‖ : ℂ)) ^ m).im / 2] := by
+  rw [referenceField_apply, referenceConnection_eq_angular f m hz,
+    referenceConnection_eq_angular f m hz, referenceSection_eq_phase f m hz]
+  congr 1
+  simp only [div_eq_mul_inv, one_re, one_im, inv_im, inv_re, mul_im, mul_re, I_re, I_im, ofReal_re,
+    ofReal_im, neg_re, neg_im, natCast_re, natCast_im, normSq_eq_norm_sq]
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- Off the disc of squared radius `f.rOut`, the reference field is the field
+`amplitudeField u (· ^ m)` reconstructed from the holomorphic factor `z ^ m` and the amplitude
+`u = -m log |z|`. Its section is `z ^ m / |z| ^ m`, and its connection
+`i (-∂₂u ds + ∂₁u dt)` is `-i m dθ`. -/
+theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
+    (hz : f.rOut < ‖z‖ ^ 2) :
+    referenceField f m =ᶠ[𝓝 z] amplitudeField (fun w ↦ -(m * Real.log ‖w‖)) (· ^ m) := by
+  filter_upwards [(isOpen_lt continuous_const (by fun_prop : Continuous fun w : ℂ ↦ ‖w‖ ^ 2)
+    ).mem_nhds hz] with w hw
+  have hn : 0 < ‖w‖ := by nlinarith [f.rOut_pos, norm_nonneg w]
+  -- The derivative of `m log |w|` is `v ↦ m ⟪w, v⟫ / |w|² = m Re (v / w)`.
+  have hd (v : ℂ) : fderiv ℝ (fun w : ℂ ↦ m * Real.log ‖w‖) w v = m * (v / w).re := by
+    rw [((hasFDerivAt_log_norm_of_ne (norm_pos_iff.1 hn)).const_mul (m : ℝ)).fderiv]
+    simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul, Complex.inner,
+      div_re, normSq_eq_norm_sq, mul_re, conj_re, conj_im]
+    ring
+  rw [referenceField_eq_of_rOut_le f m (le_of_lt hw)]
+  ext i
+  fin_cases i
+  · simp [hd, div_re, normSq_eq_norm_sq, mul_div_assoc]
+  · simp [hd, normSq_eq_norm_sq, mul_div_assoc]
+  · simp only [Fin.reduceFinMk, amplitudeField_apply_two]
+    rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hn m), div_pow, ← ofReal_pow,
+      div_ofReal_re]
+    simp
+    ring
+  · simp only [Fin.reduceFinMk, amplitudeField_apply_three]
+    rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hn m), div_pow, ← ofReal_pow,
+      div_ofReal_im]
+    simp
+    ring
+
+/-- **The reference field is a vortex off a disc.** Off the disc of squared radius `f.rOut`, where
+the reference field is `(-i m dθ, (z / |z|) ^ m)`, it solves the plane vortex equation: the
+amplitude `-m log |z|` is harmonic there and the section has unit modulus. -/
+theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
+    (hz : f.rOut < ‖z‖ ^ 2) : equation (referenceField f m) z = 0 := by
+  have hn : 0 < ‖z‖ := by nlinarith [f.rOut_pos, norm_nonneg z]
+  have hu : InnerProductSpace.HarmonicAt (fun w : ℂ ↦ -(m * Real.log ‖w‖)) z :=
+    (((analyticAt_id (𝕜 := ℂ) (z := z)).harmonicAt_log_norm
+      (norm_pos_iff.1 hn)).const_smul (c := (m : ℝ))).neg
+  rw [equation_congr_nhds (referenceField_eventuallyEq_amplitudeField f m hz),
+    equation_amplitudeField_eq_zero_iff hu.1 (differentiableAt_pow m), hu.2.eq_of_nhds,
+    norm_pow, show 2 * -(m * Real.log ‖z‖) = -Real.log ((‖z‖ ^ m) ^ 2) by
+      rw [Real.log_pow, Real.log_pow]; push_cast; ring,
+    Real.exp_neg, Real.exp_log (by positivity), inv_mul_cancel₀ (by positivity)]
+  simp
+
+/-- **The vortex defect of the reference field is compactly supported.** It vanishes off the disc
+of squared radius `f.rOut`. With `contDiff_equation` and `contDiff_referenceField`, it is a smooth
+compactly supported field. -/
+theorem hasCompactSupport_equation_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
+    HasCompactSupport (equation (referenceField f m)) := by
+  refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (√f.rOut)) fun z hz ↦ ?_
+  have hz' : √f.rOut < ‖z‖ := by simpa using hz
+  exact equation_referenceField_eq_zero f m
+    ((Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hz')).1 hz')
+
+/-- **The reference field has bounded derivatives.** For every finite order `N`, each coordinate
+of the reference field has iterated derivatives of orders at most `N` bounded on the whole plane.
+Off a disc its connection coefficients are homogeneous of degree `-1` and its section coefficients
+of degree `0`, so their derivatives are bounded there; on the disc the field is smooth. -/
+theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 : ℝ)) (m : ℕ)
+    (i : Fin 4) (N : ℕ) :
+    ∃ M : ℝ≥0, ∀ k ≤ N, ∀ z, ‖iteratedFDeriv ℝ k (fun z ↦ referenceField f m z i) z‖ ≤ M := by
+  have hF : ContDiff ℝ N (fun z ↦ referenceField f m z i) :=
+    ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp
+      (contDiff_referenceField f m)).of_le (mod_cast le_top)
+  -- Outside the disc of radius `√rOut`, the coordinate agrees near each point with any map `g`
+  -- that agrees with it wherever the cutoff is inactive.
+  have hev (g : ℂ → ℝ) (hg : ∀ w, f.rOut ≤ ‖w‖ ^ 2 → referenceField f m w i = g w) (z : ℂ)
+      (hz : √f.rOut < ‖z‖) : (fun z ↦ referenceField f m z i) =ᶠ[𝓝 z] g := by
+    have hz' : f.rOut < ‖z‖ ^ 2 := (Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hz)).1 hz
+    filter_upwards [(isOpen_lt continuous_const (by fun_prop : Continuous fun w : ℂ ↦ ‖w‖ ^ 2)
+      ).mem_nhds hz'] with w hw
+    exact hg w (le_of_lt hw)
+  -- Off the disc the connection coefficients are `ℓ z / |z|²`, homogeneous of degree `-1`.
+  have hconn (ℓ : ℂ →L[ℝ] ℝ)
+      (hg : ∀ w, f.rOut ≤ ‖w‖ ^ 2 → referenceField f m w i = ℓ w / ‖w‖ ^ 2) :
+      ∃ M : ℝ≥0, ∀ k ≤ N, ∀ z, ‖iteratedFDeriv ℝ k (fun z ↦ referenceField f m z i) z‖ ≤ M := by
+    refine exists_norm_iteratedFDeriv_le_of_eventuallyEq (m := fun z ↦ ℓ z / ‖z‖ ^ 2) (d := -1)
+      (by norm_num) hF
+      (ℓ.contDiff.contDiffOn.div (contDiff_norm_sq ℝ).contDiffOn
+        fun _ hz ↦ pow_ne_zero 2 (norm_ne_zero_iff.2 hz)) (fun t ht z hz ↦ ?_) (hev _ hg)
+    have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.2 hz
+    rw [map_smul, norm_smul, Real.norm_of_nonneg ht.le, zpow_neg_one, smul_eq_mul, smul_eq_mul]
+    field_simp
+  -- Off the disc the section coefficients are `ℓ ((z / |z|) ^ m)`, homogeneous of degree `0`.
+  have hsec (ℓ : ℂ →L[ℝ] ℝ)
+      (hg : ∀ w, f.rOut ≤ ‖w‖ ^ 2 → referenceField f m w i = ℓ ((w / (‖w‖ : ℂ)) ^ m)) :
+      ∃ M : ℝ≥0, ∀ k ≤ N, ∀ z, ‖iteratedFDeriv ℝ k (fun z ↦ referenceField f m z i) z‖ ≤ M := by
+    refine exists_norm_iteratedFDeriv_le_of_eventuallyEq (d := 0) le_rfl hF (fun z hz ↦ ?_)
+      (fun t ht z _ ↦ ?_) (hev _ hg)
+    · have hn : ContDiffAt ℝ N (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
+        ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
+      have hp : ContDiffAt ℝ N (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
+        simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
+          contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
+      exact (ℓ.contDiff.contDiffAt.comp z (hp.pow m)).contDiffWithinAt
+    · rw [zpow_zero, one_smul, norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
+        mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
+  fin_cases i
+  · exact hconn ((m : ℝ) • imCLM) fun w hw ↦ by simp [referenceField_eq_of_rOut_le f m hw]
+  · exact hconn (-(m : ℝ) • reCLM) fun w hw ↦ by
+      simp [referenceField_eq_of_rOut_le f m hw, neg_div]
+  · exact hsec ((1 / 2 : ℝ) • reCLM) fun w hw ↦ by
+      simp [referenceField_eq_of_rOut_le f m hw, div_eq_inv_mul]
+  · exact hsec ((1 / 2 : ℝ) • imCLM) fun w hw ↦ by
+      simp [referenceField_eq_of_rOut_le f m hw, div_eq_inv_mul]
 
 /-! ### Sobolev fields -/
 
