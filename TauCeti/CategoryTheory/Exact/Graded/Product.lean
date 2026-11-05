@@ -80,11 +80,35 @@ noncomputable def fst : GradedConflationExact (E.prod E') E (CategoryTheory.Prod
   commShift := NatIso.ofComponents (fun _ => Iso.refl _)
     (fun f => by simp [GradedExactStructure.prod])
 
+/-- The first projection commutes with the shift by the canonical identity morphism. -/
+@[simp]
+theorem fst_commShift_hom_app (X : C × D) :
+    (fst E E').commShift.hom.app X = eqToHom (by simp) :=
+  (rfl)
+
+/-- The inverse shift commutation of the first projection is the canonical identity morphism. -/
+@[simp]
+theorem fst_commShift_inv_app (X : C × D) :
+    (fst E E').commShift.inv.app X = eqToHom (by simp) :=
+  (rfl)
+
 /-- The second projection is graded conflation-exact for the componentwise shift. -/
 noncomputable def snd : GradedConflationExact (E.prod E') E' (CategoryTheory.Prod.snd C D) where
   isConflationExact := ExactStructure.isConflationExact_snd_prod _ _
   commShift := NatIso.ofComponents (fun _ => Iso.refl _)
     (fun f => by simp [GradedExactStructure.prod])
+
+/-- The second projection commutes with the shift by the canonical identity morphism. -/
+@[simp]
+theorem snd_commShift_hom_app (X : C × D) :
+    (snd E E').commShift.hom.app X = eqToHom (by simp) :=
+  (rfl)
+
+/-- The inverse shift commutation of the second projection is the canonical identity morphism. -/
+@[simp]
+theorem snd_commShift_inv_app (X : C × D) :
+    (snd E E').commShift.inv.app X = eqToHom (by simp) :=
+  (rfl)
 
 /-- Inserting a zero object in the second coordinate is graded conflation-exact. -/
 noncomputable def sectL :
@@ -96,6 +120,23 @@ noncomputable def sectL :
       ((Category.comp_id _).trans (Category.id_comp _).symm)
       ((isZero_zero D).eq_of_src _ _))
 
+/-- The left zero section commutes with the shift by the identity and zero-object preservation.
+The transport identifies the product shift using `GradedExactStructure.prod_shift`. -/
+@[simp]
+theorem sectL_commShift_hom_app (X : C) :
+    (sectL E E').commShift.hom.app X =
+      CategoryTheory.Prod.mkHom (𝟙 (E.shift.functor.obj X))
+        (Functor.mapZeroObject E'.shift.functor).inv ≫ eqToHom (by simp) :=
+  (Category.comp_id _).symm
+
+/-- The inverse shift commutation of the left zero section uses the zero-object comparison. -/
+@[simp]
+theorem sectL_commShift_inv_app (X : C) :
+    (sectL E E').commShift.inv.app X =
+      eqToHom (by simp) ≫ CategoryTheory.Prod.mkHom (𝟙 (E.shift.functor.obj X))
+        (Functor.mapZeroObject E'.shift.functor).hom :=
+  (Category.id_comp _).symm
+
 /-- Inserting a zero object in the first coordinate is graded conflation-exact. -/
 noncomputable def sectR :
     GradedConflationExact E' (E.prod E') (CategoryTheory.Prod.sectR (0 : C) D) where
@@ -105,6 +146,23 @@ noncomputable def sectR :
     (fun _ => CategoryTheory.Prod.hom_ext
       ((isZero_zero C).eq_of_src _ _)
       ((Category.comp_id _).trans (Category.id_comp _).symm))
+
+/-- The right zero section commutes with the shift by zero-object preservation and the identity.
+The transport identifies the product shift using `GradedExactStructure.prod_shift`. -/
+@[simp]
+theorem sectR_commShift_hom_app (X : D) :
+    (sectR E E').commShift.hom.app X =
+      CategoryTheory.Prod.mkHom (Functor.mapZeroObject E.shift.functor).inv
+        (𝟙 (E'.shift.functor.obj X)) ≫ eqToHom (by simp) :=
+  (Category.comp_id _).symm
+
+/-- The inverse shift commutation of the right zero section uses the zero-object comparison. -/
+@[simp]
+theorem sectR_commShift_inv_app (X : D) :
+    (sectR E E').commShift.inv.app X =
+      eqToHom (by simp) ≫ CategoryTheory.Prod.mkHom (Functor.mapZeroObject E.shift.functor).hom
+        (𝟙 (E'.shift.functor.obj X)) :=
+  (Category.id_comp _).symm
 
 end Projections
 
@@ -128,6 +186,26 @@ def prod (hF : GradedConflationExact E K F) (hG : GradedConflationExact E' K' G)
     GradedConflationExact (E.prod E') (K.prod K') (F.prod G) where
   isConflationExact := hF.isConflationExact.prod hG.isConflationExact
   commShift := NatIso.prod hF.commShift hG.commShift
+
+/-- Shift commutation for a product functor is componentwise, after identifying product shifts. -/
+@[simp]
+theorem prod_commShift_hom_app (hF : GradedConflationExact E K F)
+    (hG : GradedConflationExact E' K' G) (X : C × D) :
+    (hF.prod hG).commShift.hom.app X =
+      eqToHom (by simp) ≫
+        CategoryTheory.Prod.mkHom (hF.commShift.hom.app X.1) (hG.commShift.hom.app X.2) ≫
+          eqToHom (by simp) :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- Inverse shift commutation for a product functor is componentwise. -/
+@[simp]
+theorem prod_commShift_inv_app (hF : GradedConflationExact E K F)
+    (hG : GradedConflationExact E' K' G) (X : C × D) :
+    (hF.prod hG).commShift.inv.app X =
+      eqToHom (by simp) ≫
+        CategoryTheory.Prod.mkHom (hF.commShift.inv.app X.1) (hG.commShift.inv.app X.2) ≫
+          eqToHom (by simp) :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 end Functors
 
