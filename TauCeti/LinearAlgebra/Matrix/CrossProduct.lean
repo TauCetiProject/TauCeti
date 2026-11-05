@@ -8,8 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import Mathlib.LinearAlgebra.UnitaryGroup
-public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+public import TauCeti.LinearAlgebra.UnitaryGroup
 
 /-!
 # How a matrix interacts with the cross product
@@ -71,10 +70,10 @@ adjugate of a rotation is its inverse, which is its transpose. The converse dire
 theorem _root_.Matrix.mulVec_cross_mulVec_of_mem_specialOrthogonalGroup
     {M : Matrix (Fin 3) (Fin 3) R} (hM : M ∈ specialOrthogonalGroup (Fin 3) R) (u w : Fin 3 → R) :
     (M *ᵥ u) ⨯₃ (M *ᵥ w) = M *ᵥ (u ⨯₃ w) := by
-  have hdet : M.det = 1 := hM.2
-  have hadj : M.adjugate = Mᵀ := by
-    simpa [hdet] using
-      Matrix.adjugate_eq_det_smul_of_mul_eq_one ((mem_orthogonalGroup_iff _ _).1 hM.1)
+  -- `specialOrthogonalGroup` is `specialUnitaryGroup` for the trivial star `starRingOfComm`,
+  -- under which `star M` is `Mᵀ` by definition.
+  let : StarRing R := starRingOfComm
+  have hadj : M.adjugate = Mᵀ := (Matrix.specialUnitaryGroup.star_eq_adjugate ⟨M, hM⟩).symm
   rw [Matrix.mulVec_cross_mulVec, hadj, transpose_transpose]
 
 /-- **A matrix acting on a cross product.** Applying `M` to one factor at a time and adding gives
