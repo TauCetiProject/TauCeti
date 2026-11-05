@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Graph
-public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
-public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
+public import TauCeti.Geometry.Symplectic.Lagrangian.TwistedProd
 
 /-!
 # Lagrangian graphs of diffeomorphisms
@@ -49,15 +48,14 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
     (hσ.twistedProd hτ).IsLagrangianMap I (fun x ↦ (x, φ x)) ↔
       SmoothForm.mpullback φ φ.contMDiff τ = σ := by
   have hpoint (x : M) :
-      ((hσ.twistedProd hτ).symplecticFormAt (x, φ x)).IsLagrangian
-          (LinearMap.range (mfderiv I (I.prod J) (fun y ↦ (y, φ y)) x).toLinearMap) ↔
+      ((hσ.symplecticFormAt x).twistedProd (hτ.symplecticFormAt (φ x))).IsLagrangian
+          (LinearMap.range
+            ((Manifold.tangentSpaceProdEquiv (x, φ x)).toLinearEquiv.toLinearMap ∘ₗ
+              (mfderiv I (I.prod J) (fun y ↦ (y, φ y)) x).toLinearMap)) ↔
         ∀ v w, SmoothBundleForm.eval₂ τ (φ x)
           (mfderiv I J φ x v) (mfderiv I J φ x w) =
           SmoothBundleForm.eval₂ σ x v w := by
-    rw [← SymplecticForm.isLagrangian_map_transport_iff
-      (e := (Manifold.tangentSpaceProdEquiv (I := I) (J := J) (x, φ x)).toLinearEquiv),
-      IsNondegenerate.symplecticFormAt_twistedProd hσ hτ,
-      Manifold.map_range_mfderiv_graph (φ.mdifferentiable (by simp) x)]
+    rw [LinearMap.range_comp, Manifold.map_range_mfderiv_graph (φ.mdifferentiable (by simp) x)]
     have he : (φ.mfderivToContinuousLinearEquiv (by simp) x).toLinearEquiv.toLinearMap =
         (mfderiv I J φ x).toLinearMap :=
       congrArg ContinuousLinearMap.toLinearMap (φ.mfderivToContinuousLinearEquiv_coe (by simp))
@@ -71,7 +69,7 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
     · intro h v w
       exact (hτ.symplecticFormAt_apply _ _ _).trans
         ((h v w).trans (hσ.symplecticFormAt_apply _ _ _).symm)
-  rw [IsNondegenerate.isLagrangianMap_iff_forall]
+  rw [isLagrangianMap_twistedProd_iff_forall hσ hτ]
   constructor
   · intro h
     apply SmoothBundleForm.ext_eval₂

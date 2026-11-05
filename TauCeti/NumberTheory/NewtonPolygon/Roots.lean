@@ -87,7 +87,8 @@ theorem newtonSlopes_multiset_prod_X_sub_C [DecidableEq R] (hv : ∀ x, v x = �
 nonzero polynomial is one of its finite slopes. The polynomial need not split. -/
 theorem neg_untop₀_mem_newtonSlopes_of_isRoot (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (hf : f ≠ 0)
     {α : R} (hα : α ≠ 0) (hroot : f.IsRoot α) : -(v α).untop₀ ∈ f.newtonSlopes v := by
-  have hle := newtonSlopes_le_of_dvd hv hf (dvd_iff_isRoot.mpr hroot)
+  have hle :=
+    newtonSlopes_le_of_dvd (newtonPolygon_ne_top_of_ne_zero hv hf) (dvd_iff_isRoot.mpr hroot)
   rw [newtonSlopes_X_sub_C v (mt (hv α) hα)] at hle
   exact Multiset.singleton_le.mp hle
 

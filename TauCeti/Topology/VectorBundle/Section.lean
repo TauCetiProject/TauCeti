@@ -191,6 +191,16 @@ theorem Continuous.finsum_section_of_locallyFinite
   filter_upwards [hU] with y hy
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hfin.mem_toFinset.mpr ⟨y, hi, hy⟩]
 
+omit [VectorBundle 𝕜 F E] in
+/-- The section with constant coordinates `v` in a linear trivialization `e` is continuous on the
+base set of `e`. -/
+theorem Bundle.Trivialization.continuousOn_mk_symmL (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜] (v : F) :
+    ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.symmL 𝕜 x v)) e.baseSet :=
+  (e.continuousOn_symm_prodMk_left (v := v)).congr fun x hx ↦ by
+    rw [e.symmL_apply hx]
+    exact e.mk_symm hx v
+
 end Operations
 
 namespace TauCeti

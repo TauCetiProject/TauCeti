@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
 # Tensor-product naturality, contractions and trace identities
@@ -33,6 +34,8 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
 * `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
   reassociation.
+* `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
+  functional which splits on products splits the contraction accordingly.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
@@ -183,6 +186,28 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
   simp only [LinearMap.comp_apply, LinearMap.tensorComponent_tmul, map_smul,
     smul_eq_mul, LinearMap.rTensor_tmul, LinearEquiv.coe_coe, TensorProduct.lid_tmul,
     mul_comm]
+
+/-- Contracting the coefficient of a product in an algebra tensor product `A ⊗ C` against a
+functional which splits on products as `θ (a * b) = φ a * ψ b + φ' a * ψ' b` splits the
+contraction accordingly. For a comodule algebra this computes the contraction of the coaction of
+a product. -/
+theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C] [Algebra R C]
+    {θ φ ψ φ' ψ' : C →ₗ[R] R} (hθ : ∀ a b, θ (a * b) = φ a * ψ b + φ' a * ψ' b)
+    (x y : A ⊗[R] C) :
+    tensorComponent θ (x * y) =
+      tensorComponent φ x * tensorComponent ψ y + tensorComponent φ' x * tensorComponent ψ' y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' =>
+    simp only [add_mul, map_add, hx, hx']
+    abel
+  | tmul a c =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' =>
+      simp only [mul_add, map_add, hy, hy']
+      abel
+    | tmul b c' =>
+      simp only [Algebra.TensorProduct.tmul_mul_tmul, tensorComponent_tmul, hθ, add_smul,
+        smul_mul_smul_comm]
 
 end
 

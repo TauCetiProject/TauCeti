@@ -36,6 +36,8 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
+* `TauCeti.hasFDerivAt_apply_snd_fst`: the derivative of `(x, (t, e)) ↦ F t x`, in terms of the
+  parameter velocity and the derivative of the slice `F t`.
 * `ContDiffAt.deriv_parameterCurve_eventuallyEq_timeFDeriv`: near a point, the derivatives of the
   parameter curves are the parameter-velocity field.
 * `ContDiffAt.differentiableAt_timeFDeriv`: the parameter-velocity field of a jointly `C²` map is
@@ -169,6 +171,29 @@ theorem hasDerivAt_comp_prodMk {F : 𝕜 × E → F'} {γ : 𝕜 → E} {v : E} 
   refine (hF.hasFDerivAt.comp_hasDerivAt t ((hasDerivAt_id t).prodMk hγ)).congr_deriv ?_
   rw [timeFDeriv_apply, spatialFDeriv_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
 
+/-- A scalar function `F(t, x)` of a parameter and a point, viewed as a function of
+`(x, (t, e))` that ignores the extra coordinate `e`, has derivative
+`(δx, δt, δe) ↦ ∂_t F(t, x) δt + d(F t)(x) δx` where it is differentiable. -/
+theorem hasFDerivAt_apply_snd_fst {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {F : 𝕜 → E → 𝕜} {t : 𝕜} {x : E}
+    (hF : DifferentiableAt 𝕜 (Function.uncurry F) (t, x)) (e : G) :
+    HasFDerivAt (fun y : E × (𝕜 × G) ↦ F y.2.1 y.1)
+      (timeFDeriv (Function.uncurry F) t x • (fst 𝕜 𝕜 G).comp (snd 𝕜 E (𝕜 × G)) +
+        (fderiv 𝕜 (F t) x).comp (fst 𝕜 E (𝕜 × G))) (x, (t, e)) := by
+  have hpair : HasFDerivAt (fun y : E × (𝕜 × G) ↦ (y.2.1, y.1))
+      (((fst 𝕜 𝕜 G).comp (snd 𝕜 E (𝕜 × G))).prod (fst 𝕜 E (𝕜 × G))) (x, (t, e)) :=
+    hasFDerivAt_snd.fst.prodMk hasFDerivAt_fst
+  have hspatial : spatialFDeriv (Function.uncurry F) x t = fderiv 𝕜 (F t) x :=
+    (fderiv_timeSlice hF).symm
+  refine (hF.hasFDerivAt.comp (x, (t, e)) hpair).congr_fderiv
+    (ContinuousLinearMap.ext fun w ↦ ?_)
+  -- Split `(δt, δx)` into its time and space components.
+  have hsplit : ((w.2.1, w.1) : 𝕜 × E) = w.2.1 • ((1 : 𝕜), (0 : E)) + (0, w.1) := by simp
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
+    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
+  rw [hsplit, map_add, map_smul, ← timeFDeriv_apply, ← spatialFDeriv_apply, hspatial]
+  simp [mul_comm]
+
 /-- **Mixed derivatives within a set.** Let `F : P × E → F'`, with `P` a normed parameter space, be
 sufficiently smooth within `univ ×ˢ s` at `(p, x)`, where `s` has unique derivatives and `x ∈ s` is
 accumulated by the interior of `s`. Then differentiating in the parameter the spatial derivative
@@ -262,6 +287,19 @@ theorem hasFDerivAt_parameterFDeriv_apply {P : Type*} [NormedAddCommGroup P] [No
     hF.comp (x, p) (contDiffAt_snd.prodMk contDiffAt_fst)
   exact ((hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt
     one_ne_zero).hasFDerivAt.clm_apply_const h
+
+/-- **Mixed partial derivatives commute.** For a map of two variables with the minimum smoothness
+needed for symmetric second derivatives, differentiating in the second variable in the direction
+`v` and then in the first variable in the direction `h` agrees with differentiating in the
+opposite order. -/
+theorem fderiv_fderiv_slice_apply_comm {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {p : P} {x : E} (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (p, x)) (h : P)
+    (v : E) :
+    fderiv 𝕜 (fun q ↦ fderiv 𝕜 (fun y ↦ F (q, y)) x v) p h =
+      fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h) x v := by
+  rw [((hasFDerivAt_spatialFDeriv hF).clm_apply_const v).fderiv,
+    (hasFDerivAt_parameterFDeriv_apply (hF.of_le le_minSmoothness) h).fderiv]
+  simp only [ContinuousLinearMap.flip_apply]
 
 /-- **Mixed derivatives within a set, scalar parameter.** The case `P = 𝕜` of
 `hasFDerivAt_fderivWithin_slice`, with the parameter derivative written as `deriv`. -/
