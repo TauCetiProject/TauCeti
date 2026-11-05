@@ -239,6 +239,35 @@ Its components are finite free, with no regularity assumption on `S` or `w`. -/
 @[simp] theorem rankOne_X₁ (a b : S) (h : a * b = w) :
     (rankOne a b h).obj.X₁ = FGModuleCat.of S S := rfl
 
+/-- The parity shift of `S --a--> S --b--> S` is isomorphic to
+`S --b--> S --a--> S`. The comparison is the identity in even parity and minus the
+identity in odd parity, removing the two minus signs in the shifted differential. -/
+noncomputable def parityShiftRankOneIso (a b : S) (h : a * b = w) :
+    parityShift.obj (rankOne a b h) ≅ rankOne b a (by rw [mul_comm, h]) :=
+  ObjectProperty.isoMk (P := isProjective S w) (CurvedDuplex.isoMk
+    (X := (parityShift.obj (rankOne a b h)).obj)
+    (Y := (rankOne b a (by rw [mul_comm, h])).obj)
+    (Iso.refl (FGModuleCat.of S S))
+    (-Iso.refl (FGModuleCat.of S S))
+    (by simp +instances)
+    (by simp +instances))
+
+@[simp]
+theorem parityShiftRankOneIso_hom_f₀ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).hom.hom.f₀ = 𝟙 (FGModuleCat.of S S) := (rfl)
+
+@[simp]
+theorem parityShiftRankOneIso_hom_f₁ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).hom.hom.f₁ = -𝟙 (FGModuleCat.of S S) := (rfl)
+
+@[simp]
+theorem parityShiftRankOneIso_inv_f₀ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).inv.hom.f₀ = 𝟙 (FGModuleCat.of S S) := (rfl)
+
+@[simp]
+theorem parityShiftRankOneIso_inv_f₁ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).inv.hom.f₁ = -𝟙 (FGModuleCat.of S S) := (rfl)
+
 /-! ### The matrix factorization of an injective map -/
 
 section OfInjective

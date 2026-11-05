@@ -48,8 +48,8 @@ of `p`, and the complementary dimension for the stable set of `q`.
   `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_stableSet_add_morseIndex`: the
   dimensions of the tangent spaces of the unstable and stable sets.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_unstableSet_inter_stableSet_chart`: a transverse
-  intersection of an unstable and a stable set is an embedded `C¹` submanifold, flattened onto the
-  intersection of the tangent spaces.
+  intersection of an unstable and a stable set is an embedded `C^n` submanifold, flattened onto
+  the intersection of the tangent spaces.
 * `TauCeti.IsNondegenerateCriticalPoint.span_tangentConeAt_unstableSet_inter_stableSet`: the
   tangent space of the intersection is the intersection of the tangent spaces.
 * `finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex` (in the namespace
@@ -98,7 +98,8 @@ theorem finrank_span_tangentConeAt_unstableSet (hp : IsNondegenerateCriticalPoin
     Module.finrank ℝ
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y)) =
       morseIndex f p := by
-  obtain ⟨e, hye, he, hes, hS⟩ := hp.exists_unstableSet_chart hfs hf hy
+  obtain ⟨e, hye, he, hes, hS⟩ :=
+    hp.exists_unstableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hy
   obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hye
     ((he _ hye).differentiableAt one_ne_zero)
     ((hes _ (e.map_source hye)).differentiableAt one_ne_zero)
@@ -114,7 +115,8 @@ theorem finrank_span_tangentConeAt_stableSet_add_morseIndex (hq : IsNondegenerat
     Module.finrank ℝ
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y)) +
       morseIndex f q = Module.finrank ℝ E := by
-  obtain ⟨e, hye, he, hes, hS⟩ := hq.exists_stableSet_chart hfs hf hy
+  obtain ⟨e, hye, he, hes, hS⟩ :=
+    hq.exists_stableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hy
   obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hye
     ((he _ hye).differentiableAt one_ne_zero)
     ((hes _ (e.map_source hye)).differentiableAt one_ne_zero)
@@ -125,16 +127,18 @@ theorem finrank_span_tangentConeAt_stableSet_add_morseIndex (hq : IsNondegenerat
 /-- **Transverse unstable and stable sets meet in an embedded submanifold.** If the unstable set of
 a Morse critical point `p` and the stable set of a Morse critical point `q` meet transversally at
 `y`, then near `y` their intersection, the set of points lying on trajectories from `p` to `q`, is
-flattened by a `C¹` chart with `C¹` inverse onto the intersection of their tangent spaces. -/
+flattened by a `C^n` chart with `C^n` inverse onto the intersection of their tangent spaces, for
+`f` globally `C^(n+1)`. -/
 theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPoint f p)
-    (hq : IsNondegenerateCriticalPoint f q) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hq : IsNondegenerateCriticalPoint f q) {n : ℕ} (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f)
+    (hf : LipschitzWith K (∇ f))
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q)
     (htr : Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
     ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
-      (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧
-      (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
+      (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
+      (∀ z ∈ e.target, ContDiffAt ℝ n e.symm z) ∧
       ∀ z ∈ e.source, z ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
           Flow.stableSet (negativeGradientFlow f hf) q ↔
         e z ∈
@@ -142,12 +146,13 @@ theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPo
             Submodule.span ℝ
               (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
-  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast Nat.one_le_iff_ne_zero.1 hn
+  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hn hfs hf hyu
+  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hn hfs hf hys
   obtain ⟨e, hye, he, hes, hS⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top
-    one_ne_zero (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
-    ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
-    ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
+    hn0 (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
+    ((hes₁ _ (e₁.map_source hy₁)).differentiableAt hn0)
+    ((hes₂ _ (e₂.map_source hy₂)).differentiableAt hn0) htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.closed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
@@ -170,8 +175,10 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCrit
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
-  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
+  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
+    hp.exists_unstableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hyu
+  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ :=
+    hq.exists_stableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hys
   exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top one_ne_zero
     (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)

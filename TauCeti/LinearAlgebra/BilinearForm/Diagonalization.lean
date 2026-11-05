@@ -69,6 +69,8 @@ forms are equivalent.
   identifies the associated quadratic form with a weighted sum of squares.
 * `LinearMap.BilinForm.det_toMatrix_comp`, `LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det`:
   the Gram determinant under a linear map and under a change of basis.
+* `LinearMap.BilinForm.toMatrix_reindex`, `LinearMap.BilinForm.det_toMatrix_reindex`: reindexing
+  a basis reindexes the Gram matrix and keeps its determinant.
 * `LinearMap.BilinForm.Equivalent.exists_det_eq_unit_sq_mul_det`: equivalent forms have Gram
   determinants differing by a unit square, in any finite bases with the same index type.
 * `LinearMap.BilinForm.Equivalent.isSquare_det_mul_det`: hence the product of their Gram
@@ -190,6 +192,13 @@ theorem det_toMatrix_eq_det_sq_mul_det {ι : Type*} [Fintype ι] [DecidableEq ι
     (B.toMatrix c).det = (b.toMatrix c).det ^ 2 * (B.toMatrix b).det := by
   simpa only [comp_id_id, LinearMap.toMatrix_id_eq_basis_toMatrix] using
     det_toMatrix_comp c b B LinearMap.id
+
+/-- Reindexing a basis reindexes the Gram matrix along the same equivalence. -/
+theorem toMatrix_reindex {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+    (b : Basis ι R M) (e : ι ≃ κ) (B : BilinForm R M) :
+    B.toMatrix (b.reindex e) = Matrix.reindex e e (B.toMatrix b) := by
+  ext i j
+  simp [toMatrix_apply]
 
 /-- The Gram determinants of equivalent bilinear forms differ by the square of a unit. This
 holds over any commutative ring, including for singular and nonsymmetric forms, in any

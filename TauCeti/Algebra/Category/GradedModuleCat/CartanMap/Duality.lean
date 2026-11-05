@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.Ext.Generated
 public import Mathlib.LinearAlgebra.Dual.Basis
 
 /-!
@@ -91,6 +92,28 @@ theorem gradedProjectiveExtEuler_simple_eq_mul_invert_repr
   simp only [map_sum, LinearMap.sum_apply, LinearMap.map_smulₛₗ, LinearMap.smul_apply, hbP,
     gradedProjectiveExtEuler_basis S he he₀ hI hne]
   simp [mul_comm]
+
+include he₀ hne hbP in
+/-- The projective coordinate of a module generated in degree `d` is a single monomial,
+scaled by the idempotent dimension of its degree-zero simple target. -/
+theorem smulGradedDimension_mul_repr_of_isGeneratedInDegree
+    (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) {d : ℤ}
+    (hP : P.obj.grading.IsGeneratedInDegree A d)
+    (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (i : I) :
+    (S i).obj.smulGradedDimension (e i) * bP.repr (LaurentK0.of.{uA} _ P) i =
+      C (Module.finrank k (P.obj ⟶ (S i).obj.shiftObj d) : ℤ) * T d := by
+  let _ : Module.Projective A P.obj := (gradedFiniteProjectiveModules_iff.mp P.property).2
+  have hpair := gradedProjectiveExtEuler_simple_eq_mul_invert_repr
+    S he he₀ hI hne bP hbP (LaurentK0.of.{uA} _ P) i
+  rw [gradedProjectiveExtEuler_of_of,
+    GradedModuleCat.gradedExtEuler_eq_C_mul_T_of_isGeneratedInDegree
+      P.obj (S i).obj hP (hconc i)] at hpair
+  have hinv := congrArg (LaurentPolynomial.invert (R := ℤ)) hpair
+  have hfixed : invert ((S i).obj.smulGradedDimension (e i)) =
+      (S i).obj.smulGradedDimension (e i) := by
+    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), invert_C]
+  simpa only [map_mul, invert_C, invert_T, neg_neg, hfixed,
+    involutive_invert (R := ℤ) (bP.repr (LaurentK0.of.{uA} _ P) i)] using hinv.symm
 
 section NeZero
 

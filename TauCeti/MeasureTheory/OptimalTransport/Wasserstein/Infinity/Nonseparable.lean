@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
-import Mathlib.Probability.Distributions.Bernoulli
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Bernoulli
 import Mathlib.Analysis.Real.Cardinality
 
 /-!
@@ -33,17 +33,9 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-private theorem hasFiniteMoment_bernoulliMeasure (p : unitInterval) :
-    HasFiniteMoment ∞ (bernoulliMeasure (0 : ℕ) 1 p) := by
-  have h : ∀ᵐ n ∂bernoulliMeasure (0 : ℕ) 1 p, n ∈ ({0, 1} : Finset ℕ) := by
-    apply mem_ae_iff.mpr
-    simp [bernoulliMeasure_def]
-  have : IsFiniteMeasure (bernoulliMeasure (0 : ℕ) 1 p) := inferInstance
-  exact hasFiniteMoment_of_ae_mem_finset (p := ∞) 0 h
-
 private def bernoulliLaw (p : unitInterval) : WassersteinSpace ∞ ℕ :=
   WassersteinSpace.mk ⟨bernoulliMeasure (0 : ℕ) 1 p, inferInstance⟩
-    (hasFiniteMoment_bernoulliMeasure p)
+    (hasFiniteMoment_bernoulliMeasure ∞ 0 1 p)
 
 private theorem bernoulliLaw_separated {p q : unitInterval} (hpq : p ≠ q) :
     (1 : ℝ≥0∞) ≤ edist (bernoulliLaw p) (bernoulliLaw q) := by
