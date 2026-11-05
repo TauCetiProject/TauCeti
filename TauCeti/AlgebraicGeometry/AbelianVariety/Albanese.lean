@@ -107,6 +107,14 @@ lemma comp_toOverHom_eq_one {J A : AbelianVariety K} {a : X ⟶ J.toOver}
     (ha : x₀ ≫ a = η[J.toOver]) (φ : J ⟶ A) : x₀ ≫ a ≫ toOverHom φ = η[A.toOver] := by
   rw [reassoc_of% ha, one_hom]
 
+/-- A factorization of a pointed morphism through another pointed morphism preserves the
+identity. -/
+lemma one_comp_eq_one_of_comp_eq {J A : AbelianVariety K} {a : X ⟶ J.toOver}
+    {f : X ⟶ A.toOver} {φ : J.toOver ⟶ A.toOver}
+    (ha : x₀ ≫ a = η[J.toOver]) (hf : x₀ ≫ f = η[A.toOver]) (hφ : a ≫ φ = f) :
+    η[J.toOver] ≫ φ = η[A.toOver] := by
+  rw [← ha, Category.assoc, hφ, hf]
+
 namespace IsAlbanese
 
 variable {J : AbelianVariety K} {a : X ⟶ J.toOver} (h : IsAlbanese x₀ a)
@@ -121,8 +129,7 @@ lemma existsUnique_fac_toOver {A : AbelianVariety K} (f : X ⟶ A.toOver)
     ∃! φ : J.toOver ⟶ A.toOver, a ≫ φ = f := by
   obtain ⟨φ, hφ, huniq⟩ := h.existsUnique_fac A f hf
   refine ⟨toOverHom φ, hφ, fun ψ hψ ↦ ?_⟩
-  have hψ₀ : η[J.toOver] ≫ ψ = η[A.toOver] := by
-    rw [← h.comp_eq_one, Category.assoc, hψ, hf]
+  have hψ₀ := one_comp_eq_one_of_comp_eq h.comp_eq_one hf hψ
   let ψ' : J ⟶ A := (equivPointed J A).symm ⟨ψ, hψ₀⟩
   have hψ' : a ≫ toOverHom ψ' = f := by
     simpa only [ψ', toOverHom_equivPointed_symm_apply] using hψ
@@ -246,8 +253,7 @@ lemma isAlbanese_iff_existsUnique_fac_toOver {J : AbelianVariety K} {a : X ⟶ J
   · rintro ⟨ha, h⟩
     refine ⟨ha, fun A f hf ↦ ?_⟩
     obtain ⟨φ, hφ, huniq⟩ := h A f hf
-    have hφ₀ : η[J.toOver] ≫ φ = η[A.toOver] := by
-      rw [← ha, Category.assoc, hφ, hf]
+    have hφ₀ := one_comp_eq_one_of_comp_eq ha hf hφ
     refine ⟨(equivPointed J A).symm ⟨φ, hφ₀⟩, ?_, fun ψ hψ ↦ ?_⟩
     · simpa only [toOverHom_equivPointed_symm_apply] using hφ
     · apply toOverHom_injective
@@ -260,8 +266,7 @@ theorem isAlbanese_of_isIso {A : AbelianVariety K} (a : X ⟶ A.toOver) [IsIso a
     (ha : x₀ ≫ a = η[A.toOver]) : IsAlbanese x₀ a where
   comp_eq_one := ha
   existsUnique_fac B f hf := by
-    have hf' : η[A.toOver] ≫ inv a ≫ f = η[B.toOver] := by
-      rw [← ha, Category.assoc, IsIso.hom_inv_id_assoc, hf]
+    have hf' := one_comp_eq_one_of_comp_eq ha hf (IsIso.hom_inv_id_assoc a f)
     refine ⟨(equivPointed A B).symm ⟨inv a ≫ f, hf'⟩, by simp,
       fun φ (hφ : _ = f) ↦ (equivPointed A B).eq_symm_apply.2 (Subtype.ext ?_)⟩
     rw [coe_equivPointed_apply, ← IsIso.inv_hom_id_assoc a (toOverHom φ), hφ]
