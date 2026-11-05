@@ -163,4 +163,32 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι 
   exact (ConcreteCategory.bijective_of_isIso _).comp
     ((ConcreteCategory.bijective_of_isIso _).comp (ConcreteCategory.bijective_of_isIso _))
 
+/-- For `h : f ≫ g = gf`, pulling a global section back along `gf` and identifying
+`gf^* M ≅ f^* g^* M` gives its iterated pullback along `g` and then `f`. -/
+lemma pullbackSections_comp_of_eq {gf : Z ⟶ X} (h : f ≫ g = gf) (s : Γ(M, ⊤)) :
+    ((pullbackComp f g).inv.app M).app ⊤ (((pullbackCongr h).inv.app M).app ⊤
+      (pullbackSections gf M ⊤ s)) =
+    pullbackSections f ((pullback g).obj M) ⊤ (pullbackSections g M ⊤ s) := by
+  subst h
+  exact pullbackSections_comp g M ⊤ f s
+
+open MonoidalCategory in
+/-- The pullback of the global section `1` of the structure sheaf is the global section `1`,
+under the identification `g^* 𝒪_X ≅ 𝒪_Y`. -/
+lemma pullbackObjUnitIso_inv_app_one :
+    (pullbackObjUnitIso g).inv.app ⊤ (1 : Γ(Y, ⊤)) =
+      pullbackSections g (𝟙_ X.Modules) ⊤ (1 : Γ(X, ⊤)) := by
+  -- The transpose of `g^* 𝒪_X ≅ 𝒪_Y` sends `1` to `g^♯ 1 = 1`.
+  have h := congr($(pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom g).val.app
+    (op ⊤) (1 : Γ(X, ⊤)))
+  rw [Adjunction.homEquiv_unit] at h
+  have h' : (pullbackObjUnitIso g).hom.app ⊤ (pullbackSections g (𝟙_ X.Modules) ⊤ (1 : Γ(X, ⊤))) =
+      (1 : Γ(Y, ⊤)) :=
+    (congrArg (fun x ↦ (pullbackObjUnitIso g).hom.app ⊤ x)
+      (pullbackSections_apply g (𝟙_ X.Modules) ⊤ (1 : Γ(X, ⊤)))).trans
+        (h.trans (map_one g.appTop.hom))
+  exact (congrArg (fun x ↦ (pullbackObjUnitIso g).inv.app ⊤ x) h').symm.trans
+    congr($((pullbackObjUnitIso g).hom_inv_id).app ⊤
+      (pullbackSections g (𝟙_ X.Modules) ⊤ (1 : Γ(X, ⊤))))
+
 end AlgebraicGeometry.Scheme.Hom
