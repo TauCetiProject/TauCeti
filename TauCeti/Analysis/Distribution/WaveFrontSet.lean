@@ -104,6 +104,31 @@ theorem localFourier_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (�
     (c • T).localFourier φ η = c * T.localFourier φ η :=
   complexPairing_smul c T _
 
+/-- The localized Fourier transform of the zero distribution vanishes. -/
+@[simp]
+theorem localFourier_zero (φ : 𝓓(Ω, ℂ)) (η : E) : (0 : 𝓓'(Ω, ℂ)).localFourier φ η = 0 := by
+  rw [← zero_smul ℂ (0 : 𝓓'(Ω, ℂ)), localFourier_smul, zero_mul]
+
+/-- The localized Fourier transform is additive in the cutoff. -/
+@[simp]
+theorem localFourier_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ ψ : 𝓓(Ω, ℂ)) (η : E) :
+    T.localFourier (φ + ψ) η = T.localFourier φ η + T.localFourier ψ η := by
+  simp only [localFourier, map_add]
+
+/-- The localized Fourier transform is complex-linear in the cutoff. -/
+@[simp]
+theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    T.localFourier (c • φ) η = c * T.localFourier φ η := by
+  rw [localFourier_eq T (c • φ) (ψ := c • bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+    (TauCeti.contDiff_fourierChar_neg_inner η) φ) fun x => ?_, map_smul, smul_eq_mul,
+    localFourier]
+  simp [bilinLeftCLM_apply, mul_assoc]
+
+/-- The localized Fourier transform with zero cutoff vanishes. -/
+@[simp]
+theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
+  simpa using localFourier_smul_cutoff T 0 0 η
+
 /-- A complex distribution `T` is **microlocally smooth** at `(x, ξ)` if some complex test
 function `φ` with `φ x ≠ 0` has localized Fourier transform `localFourier T φ` rapidly
 decreasing in an open cone `Γ` containing `ξ`. -/
