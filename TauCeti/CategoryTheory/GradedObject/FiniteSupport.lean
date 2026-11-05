@@ -87,7 +87,7 @@ section Reindex
 variable [HasZeroMorphisms C] (X : GradedObject I C) (p : I → J) [X.HasMap p]
 
 /-- Reindexing by coproducts cannot introduce a nonzero component outside the image of the
-original support. Equality need not hold in a general category. -/
+original support. -/
 lemma support_mapObj_subset : (X.mapObj p).support ⊆ p '' X.support := by
   intro j hj
   by_contra h
