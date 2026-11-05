@@ -14,14 +14,16 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 At a zero `x` of a finite-dimensional `C^n` vector field `V`, suppose its derivative `A`
 admits an exponential dichotomy with commuting stable projection `P`. Confined forward
-solutions in displacement coordinates form a `C^n` graph over `range P`; confined backward
-solutions form a `C^n` graph over `range (1 - P)`. Both graphs are tangent to their linear
-subspaces at the origin. No inner product, symmetry of `A`, gradient representation, or
-completeness of the nonlinear flow is required.
+solutions in displacement coordinates, restricted to a small stable parameter window, form a
+`C^n` graph over `range P`; confined backward solutions, restricted to a small unstable
+parameter window, form a `C^n` graph over `range (1 - P)`. Both graphs are tangent to their
+linear subspaces at the origin. No inner product, symmetry of `A`, gradient representation,
+or completeness of the nonlinear flow is required.
 
 The radii of confinement and of the graph domain are chosen from local regularity of `V`.
-The graph descriptions include every confined solution, not just the solutions constructed
-by the fixed-point argument. Each confined solution tends to the equilibrium in the
+The graph descriptions include every confined solution whose initial stable or unstable
+coordinate lies in the respective parameter window, not just the solutions constructed by
+the fixed-point argument. Each confined solution tends to the equilibrium in the
 appropriate time direction. These are local graph theorems, not assertions that global
 stable sets are embedded or that graphs depend differentiably on a vector-field parameter.
 
@@ -150,8 +152,10 @@ theorem exists_localStableGraph_of_contDiffAt :
       (hfield ▸ hy) hmaps
 
 /-- **Local unstable graph for a `C^n` vector field.** At the same equilibrium as in the
-stable graph theorem, confined backward solutions form a Lipschitz `C^n` graph tangent to
-`range (1 - P)` and tend to the equilibrium as time tends to negative infinity. -/
+stable graph theorem, backward solutions confined to a sufficiently small ball, truncated
+in the unstable coordinate, form a Lipschitz `C^n` graph tangent to `range (1 - P)`.
+Every backward solution confined to that ball tends to the equilibrium as time tends to
+negative infinity. -/
 theorem exists_localUnstableGraph_of_contDiffAt :
     ∃ r > 0, ∃ ρ > 0, ∃ g : E → E, ∃ C : ℝ≥0,
       LipschitzWith C g ∧ g 0 = 0 ∧ HasFDerivAt g (0 : E →L[ℝ] E) 0 ∧
