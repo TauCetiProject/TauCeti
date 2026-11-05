@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import TauCeti.Algebra.Polynomial.ConjReciprocal
 public import TauCeti.Algebra.Polynomial.Eval.OnSet
 public import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
+import TauCeti.Analysis.Calculus.Deriv.Polynomial
 
 /-!
 # Holomorphic functions on the disc with boundary values on a rotating line
@@ -42,6 +43,15 @@ For `k ≥ -1` this is `1 + k`, rank plus Maslov index, as the Riemann–Roch fo
 the cokernel is known to vanish; the cokernel, which needs Sobolev completions, is not treated
 here.
 
+For odd Maslov index `k = 2 * m + 1` the coefficients pair off as `a_{k-j} = conj aⱼ`, so a
+solution is `∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(k-j))` and is determined by its Taylor coefficients
+`aⱼ = u⁽ʲ⁾(0) / j!` of order `j ≤ m` at the centre. These jets identify the solutions with
+`ℂ^(m+1)` (`TauCeti.unitDiscCauchyRiemannKernelJetEquiv`). For `k = 3`, the normalization of the
+real-boundary disc problem in the linear theory of holomorphic discs, a solution is
+`a₀ + a₁ z + conj a₁ z² + conj a₀ z³` with `a₀ = u 0` and `a₁ = u' 0`, so the centre value and
+first derivative cut the four-dimensional kernel down to zero
+(`DiffContOnCl.eqOn_zero_of_eq_zpow_mul_conj_of_eq_zero_of_deriv_eq_zero`).
+
 The conjugate-reciprocal polynomials `TauCeti.conjReciprocalPolynomials k` and their dimension
 are developed in `TauCeti.Algebra.Polynomial.ConjReciprocal`, and the identification of Taylor
 coefficients with Fourier coefficients of boundary values in
@@ -52,6 +62,9 @@ coefficients with Fourier coefficients of boundary values in
 * `TauCeti.unitDiscCauchyRiemannKernel k`: the real subspace of functions on the closed unit disc
   that are restrictions of functions holomorphic on the open unit disc and continuous on its
   closure, satisfying `u w = w ^ k * conj (u w)` on the unit circle.
+* `TauCeti.unitDiscCauchyRiemannKernelJetEquiv m`: for `k = 2 * m + 1`, the real-linear
+  isomorphism from the solutions to `ℂ^(m+1)` given by the Taylor coefficients of order at most
+  `m` at the centre.
 
 ## Main results
 
@@ -66,6 +79,16 @@ coefficients with Fourier coefficients of boundary values in
   finite-dimensional real vector space.
 * `TauCeti.finrank_unitDiscCauchyRiemannKernel`: the solutions form a real vector space of
   dimension `(k + 1).toNat`.
+* `DiffContOnCl.eqOn_sum_iteratedDeriv_div_factorial_of_eq_zpow_mul_conj`: for
+  `k = 2 * m + 1`, a solution is `∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(k-j))` with `aⱼ = u⁽ʲ⁾(0) / j!`.
+* `DiffContOnCl.eqOn_zero_of_eq_zpow_mul_conj_of_iteratedDeriv_eq_zero`: for `k = 2 * m + 1`, a
+  solution whose derivatives of order at most `m` vanish at the centre is zero.
+* `DiffContOnCl.eqOn_cubic_of_eq_zpow_mul_conj`,
+  `DiffContOnCl.eqOn_zero_of_eq_zpow_mul_conj_of_eq_zero_of_deriv_eq_zero`: the case `k = 3`,
+  where the kernel is `a₀ + a₁ z + conj a₁ z² + conj a₀ z³` and the constraints `u 0 = 0`,
+  `u' 0 = 0` force `u = 0`.
+* `TauCeti.unitDiscCauchyRiemannKernelJetEquiv_apply`,
+  `TauCeti.unitDiscCauchyRiemannKernelJetEquiv_symm_apply`: the jet isomorphism and its inverse.
 
 ## References
 
@@ -80,7 +103,7 @@ public section
 namespace TauCeti
 
 open Complex Metric Module Polynomial Set
-open scoped ComplexConjugate Real
+open scoped ComplexConjugate Nat Real
 
 /-! ### Boundary values of conjugate-reciprocal polynomials -/
 
@@ -226,6 +249,11 @@ theorem mem_unitDiscCauchyRiemannKernel_iff_exists_eval :
     exact ⟨fun z => p.eval z, p.differentiable.diffContOnCl,
       fun w hw => eval_eq_zpow_mul_conj_eval hp (by simpa using hw), rfl⟩
 
+/-- Evaluation of polynomials on the closed unit disc is injective. -/
+private theorem evalOn_closedBall_injective :
+    Function.Injective ((evalOn (closedBall (0 : ℂ) 1)).restrictScalars ℝ) :=
+  evalOn_injective (infinite_of_mem_nhds 0 (closedBall_mem_nhds 0 one_pos))
+
 private theorem unitDiscCauchyRiemannKernel_eq_map :
     unitDiscCauchyRiemannKernel k =
       (conjReciprocalPolynomials k).map ((evalOn (closedBall (0 : ℂ) 1)).restrictScalars ℝ) := by
@@ -250,8 +278,111 @@ instance finiteDimensional_unitDiscCauchyRiemannKernel (k : ℤ) :
 theorem finrank_unitDiscCauchyRiemannKernel (k : ℤ) :
     finrank ℝ (unitDiscCauchyRiemannKernel k) = (k + 1).toNat := by
   rw [unitDiscCauchyRiemannKernel_eq_map, ← finrank_conjReciprocalPolynomials k]
-  have hinj : Function.Injective (evalOn (closedBall (0 : ℂ) 1)) :=
-    evalOn_injective (infinite_of_mem_nhds 0 (closedBall_mem_nhds 0 one_pos))
-  exact (Submodule.equivMapOfInjective ((evalOn _).restrictScalars ℝ) hinj _).finrank_eq.symm
+  exact (Submodule.equivMapOfInjective _ evalOn_closedBall_injective _).finrank_eq.symm
+
+
+/-! ### Odd Maslov index: the jets at the centre -/
+
+variable {m : ℕ}
+
+/-- If `u` agrees on the closed unit disc with the polynomial `p`, then the `n`-th Taylor
+coefficient `u⁽ⁿ⁾(0) / n!` of `u` at the centre is `p.coeff n`. -/
+private theorem iteratedDeriv_zero_div_factorial_eq_coeff {p : ℂ[X]}
+    (h : EqOn u (fun z => p.eval z) (closedBall 0 1)) (n : ℕ) :
+    iteratedDeriv n u 0 / n ! = p.coeff n :=
+  iteratedDeriv_div_factorial_eq_coeff_of_eventuallyEq
+    (Filter.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos) h) n
+
+/-- **Solutions for odd Maslov index.** For the boundary condition
+`u w = w ^ (2 * m + 1) * conj (u w)`, a solution agrees on the closed disc with
+`∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(2m+1-j))`, where `aⱼ = u⁽ʲ⁾(0) / j!` are its Taylor coefficients at
+the centre. -/
+theorem _root_.DiffContOnCl.eqOn_sum_iteratedDeriv_div_factorial_of_eq_zpow_mul_conj
+    (hu : DiffContOnCl ℂ u (ball 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ (2 * m + 1 : ℤ) * conj (u w)) :
+    EqOn u (fun z => ∑ j ∈ Finset.range (m + 1), (iteratedDeriv j u 0 / j ! * z ^ j +
+      conj (iteratedDeriv j u 0 / j !) * z ^ (2 * m + 1 - j))) (closedBall 0 1) := by
+  obtain ⟨p, hp, h⟩ := hu.exists_mem_conjReciprocalPolynomials_eqOn hb
+  intro z hz
+  rw [h hz, eq_sum_of_mem_conjReciprocalPolynomials hp]
+  simp [eval_finsetSum, iteratedDeriv_zero_div_factorial_eq_coeff h]
+
+/-- **The centre jets kill the kernel for odd Maslov index.** A solution for the boundary
+condition `u w = w ^ (2 * m + 1) * conj (u w)` whose derivatives of order at most `m` vanish at
+the centre vanishes on the closed disc. -/
+theorem _root_.DiffContOnCl.eqOn_zero_of_eq_zpow_mul_conj_of_iteratedDeriv_eq_zero
+    (hu : DiffContOnCl ℂ u (ball 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ (2 * m + 1 : ℤ) * conj (u w))
+    (h : ∀ j ≤ m, iteratedDeriv j u 0 = 0) : EqOn u 0 (closedBall 0 1) := fun z hz => by
+  rw [hu.eqOn_sum_iteratedDeriv_div_factorial_of_eq_zpow_mul_conj hb hz]
+  exact Finset.sum_eq_zero fun j hj => by
+    simp [h j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))]
+
+/-- **Maslov index three.** For the boundary condition `u w = w ^ 3 * conj (u w)`, that is, for
+boundary values `u(e^{iθ}) ∈ e^{3iθ/2} ℝ`, a solution agrees on the closed disc with
+`a₀ + a₁ z + conj a₁ z² + conj a₀ z³`, where `a₀ = u 0` and `a₁ = u' 0`. -/
+theorem _root_.DiffContOnCl.eqOn_cubic_of_eq_zpow_mul_conj (hu : DiffContOnCl ℂ u (ball 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ (3 : ℤ) * conj (u w)) :
+    EqOn u (fun z => u 0 + deriv u 0 * z + conj (deriv u 0) * z ^ 2 + conj (u 0) * z ^ 3)
+      (closedBall 0 1) := by
+  intro z hz
+  rw [hu.eqOn_sum_iteratedDeriv_div_factorial_of_eq_zpow_mul_conj (m := 1) (by simpa using hb) hz]
+  simp [Finset.sum_range_succ]
+  ring
+
+/-- **The centre and first-jet constraints for Maslov index three.** A solution for the boundary
+condition `u w = w ^ 3 * conj (u w)` with `u 0 = 0` and `u' 0 = 0` vanishes on the closed disc. -/
+theorem _root_.DiffContOnCl.eqOn_zero_of_eq_zpow_mul_conj_of_eq_zero_of_deriv_eq_zero
+    (hu : DiffContOnCl ℂ u (ball 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ (3 : ℤ) * conj (u w)) (h₀ : u 0 = 0)
+    (h₁ : deriv u 0 = 0) : EqOn u 0 (closedBall 0 1) := fun z hz => by
+  simp [hu.eqOn_cubic_of_eq_zpow_mul_conj hb hz, h₀, h₁]
+
+/-- **The jet isomorphism for odd Maslov index.** For the boundary condition of Maslov index
+`2 * m + 1`, the Taylor coefficients `u⁽ʲ⁾(0) / j!` at the centre of order `j ≤ m` identify the
+real vector space of solutions with `ℂ^(m+1)`
+(`TauCeti.unitDiscCauchyRiemannKernelJetEquiv_apply`). Every jet is attained, by the polynomial
+`∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(2m+1-j))`
+(`TauCeti.unitDiscCauchyRiemannKernelJetEquiv_symm_apply`). For `m = 1` these are the centre
+value `u 0` and the first derivative `u' 0`. -/
+noncomputable def unitDiscCauchyRiemannKernelJetEquiv (m : ℕ) :
+    unitDiscCauchyRiemannKernel (2 * m + 1) ≃ₗ[ℝ] (Fin (m + 1) → ℂ) :=
+  (LinearEquiv.ofEq _ _ unitDiscCauchyRiemannKernel_eq_map).trans <|
+    (Submodule.equivMapOfInjective _ evalOn_closedBall_injective _).symm.trans
+      (conjReciprocalLowerCoeffEquiv m)
+
+/-- The jet isomorphism sends the restriction of a solution `u` to the closed disc to its Taylor
+coefficients `u⁽ʲ⁾(0) / j!` at the centre, for `j ≤ m`. -/
+theorem unitDiscCauchyRiemannKernelJetEquiv_apply (hu : DiffContOnCl ℂ u (ball 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ (2 * m + 1 : ℤ) * conj (u w))
+    {g : unitDiscCauchyRiemannKernel (2 * m + 1)} (hg : (closedBall 0 1).domRestrict u = g)
+    (j : Fin (m + 1)) :
+    unitDiscCauchyRiemannKernelJetEquiv m g j = iteratedDeriv j u 0 / (j : ℕ) ! := by
+  obtain ⟨p, hp, h⟩ := hu.exists_mem_conjReciprocalPolynomials_eqOn hb
+  have hsymm : (Submodule.equivMapOfInjective _ evalOn_closedBall_injective
+      (conjReciprocalPolynomials (2 * m + 1))).symm
+        (LinearEquiv.ofEq _ _ unitDiscCauchyRiemannKernel_eq_map g) = ⟨p, hp⟩ := by
+    rw [LinearEquiv.symm_apply_eq]
+    ext z
+    simp [evalOn_apply, ← hg, h z.2]
+  simp only [unitDiscCauchyRiemannKernelJetEquiv, LinearEquiv.trans_apply, hsymm,
+    conjReciprocalLowerCoeffEquiv_apply]
+  rw [iteratedDeriv_zero_div_factorial_eq_coeff h]
+
+/-- The inverse of the jet isomorphism sends `a ∈ ℂ^(m+1)` to the solution
+`∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(2m+1-j))`. -/
+@[simp]
+theorem unitDiscCauchyRiemannKernelJetEquiv_symm_apply (a : Fin (m + 1) → ℂ)
+    (z : closedBall (0 : ℂ) 1) :
+    ((unitDiscCauchyRiemannKernelJetEquiv m).symm a : closedBall (0 : ℂ) 1 → ℂ) z =
+      ∑ j : Fin (m + 1), (a j * (z : ℂ) ^ (j : ℕ) + conj (a j) * (z : ℂ) ^ (2 * m + 1 - j)) := by
+  set q := (conjReciprocalLowerCoeffEquiv m).symm a
+  have hc (j : Fin (m + 1)) : (q : ℂ[X]).coeff j = a j :=
+    coeff_conjReciprocalLowerCoeffEquiv_symm_apply a j
+  simp only [unitDiscCauchyRiemannKernelJetEquiv, LinearEquiv.symm_trans_apply,
+    LinearEquiv.symm_symm, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
+    Submodule.coe_equivMapOfInjective_apply, LinearMap.coe_restrictScalars, evalOn_apply]
+  rw [eq_sum_of_mem_conjReciprocalPolynomials q.2, eval_finsetSum, Finset.sum_range]
+  simp [hc]
 
 end TauCeti

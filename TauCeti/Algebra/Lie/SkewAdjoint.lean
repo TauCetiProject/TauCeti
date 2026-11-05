@@ -73,7 +73,8 @@ composite is not built here.
   injective exactly when the centre is trivial
   (`TauCeti.LieAlgebra.adSkewAdjoint_injective_iff`); the same for the polar-form and Killing
   specializations (`TauCeti.LieAlgebra.ker_adjointSO`, `TauCeti.LieAlgebra.ker_killingAdjointSO`).
-* `TauCeti.LieAlgebra.polarBilin_killingQuadraticForm`: the polar form of the Killing quadratic
+* `TauCeti.LieAlgebra.polarBilin_killingQuadraticForm` and
+  `TauCeti.LieAlgebra.polar_killingQuadraticForm`: the polar form of the Killing quadratic
   form is `2 • killingForm`.
 * `TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate`: over a ring in which `2` is invertible,
   the Killing quadratic form of a Killing-semisimple Lie algebra is nondegenerate.
@@ -315,6 +316,13 @@ theorem polarBilin_killingQuadraticForm :
     QuadraticMap.polarBilin (killingQuadraticForm R L) = (2 : R) • killingForm R L := by
   rw [killingQuadraticForm]
   exact LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip (LieModule.traceForm_flip R L L)
+
+/-- The pointwise form of `polarBilin_killingQuadraticForm`: the polar form of the Killing quadratic
+form at `x` and `y` is `2 * κ(x, y)`. -/
+theorem polar_killingQuadraticForm (x y : L) :
+    QuadraticMap.polar (killingQuadraticForm R L) x y = 2 * killingForm R L x y := by
+  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using
+    LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm R L) x y
 
 /-- The Killing quadratic form is nondegenerate for a Killing-semisimple Lie algebra over a ring in
 which `2` is invertible. Both hypotheses are needed: `IsKilling` is nondegeneracy of `κ` itself, and

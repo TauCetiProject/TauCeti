@@ -97,6 +97,16 @@ theorem besselI_eq_rpow_mul (ν x : ℝ) :
   push_cast at hF ⊢
   rw [Complex.mul_re, hF, mul_zero, sub_zero]
 
+/-- For `x > 0`, the regularized hypergeometric value `₀F₁(; a; x² / 4)` is
+`(x / 2) ^ (1 - a) * I_{a-1}(x)`. -/
+theorem regularizedHGFun_zero_singleton_ofReal_re_eq_rpow_mul_besselI (a : ℝ) {x : ℝ} (hx : 0 < x) :
+    (Complex.regularizedHGFun 0 {(a : ℂ)} (x ^ 2 / 4 : ℝ)).re =
+      (x / 2) ^ (1 - a) * besselI (a - 1) x := by
+  have hx2 : 0 < x / 2 := by positivity
+  have harg : (x / 2) ^ 2 = x ^ 2 / 4 := by ring
+  rw [besselI_eq_rpow_mul, sub_add_cancel, ← mul_assoc, ← rpow_add hx2]
+  simp [harg]
+
 /-- For `x > 0`, `I_ν(x)` is the sum of its power series
 `∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`. -/
 theorem hasSum_besselI (ν : ℝ) {x : ℝ} (hx : 0 < x) :
@@ -171,10 +181,7 @@ theorem tendsto_rpow_neg_mul_besselI_nhdsGT_zero (ν : ℝ) :
   have h0 : (Complex.regularizedHGFun 0 {((ν + 1 : ℝ) : ℂ)} ((0 / 2) ^ 2 : ℝ)).re =
       (Gamma (ν + 1))⁻¹ := by
     have hzero : ((0 / 2) ^ 2 : ℝ) = 0 := by norm_num
-    rw [hzero, Complex.ofReal_zero, Complex.regularizedHGFun_zero,
-      Complex.regularizedHGFunCoeff_zero_singleton]
-    simp only [Nat.factorial_zero, Nat.cast_one, one_mul, Nat.cast_zero, add_zero]
-    rw [Complex.Gamma_ofReal, ← Complex.ofReal_inv, Complex.ofReal_re]
+    rw [hzero, Complex.ofReal_zero, Complex.regularizedHGFun_zero_singleton_ofReal_zero_re]
   rw [h0] at hcont
   refine hcont.congr' (eventually_nhdsWithin_of_forall fun x (hx : 0 < x) => ?_)
   have hx2 : 0 < x / 2 := by positivity
