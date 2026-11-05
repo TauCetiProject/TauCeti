@@ -106,10 +106,6 @@ theorem linearCocycleMulAction_prodMap_smul (σ : Γ' →* Γ) {f : Z → Y}
       (linearCocycle_baseChange_one R hone σ f)
       (linearCocycle_baseChange_mul R hmul σ hf)
     Prod.map f id (g • p) = σ g • Prod.map f id p := by
-  let _ := linearCocycleMulAction R hone hmul
-  let _ := linearCocycleMulAction (fun g z ↦ R (σ g) (f z))
-    (linearCocycle_baseChange_one R hone σ f)
-    (linearCocycle_baseChange_mul R hmul σ hf)
   simp [hf]
 
 variable (P : Y → Λ →ₗ[ℤ] E) (ρ : Representation ℤ Γ Λ)
@@ -130,15 +126,8 @@ with the linear action of `Γ` on `(Y × E)/Λ`. -/
       (period_baseChange_equivariant R P ρ hP σ hf)
     torusFamilyBaseChangeMap P f (g • x) = σ g • torusFamilyBaseChangeMap P f x := by
   let _ := periodAddAction P
-  let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyLinearMulAction R hone hmul P ρ hP
-  let _ := torusFamilyLinearMulAction (fun g z ↦ R (σ g) (f z))
-    (linearCocycle_baseChange_one R hone σ f)
-    (linearCocycle_baseChange_mul R hmul σ hf) (P ∘ f) (ρ.comp σ)
-    (period_baseChange_equivariant R P ρ hP σ hf)
-  induction x using Quotient.inductionOn with | h p =>
-    rcases p with ⟨z, v⟩
-    simp [hf]
+  induction x using Quotient.ind with | _ p => cases p; simp [hf]
 
 /-- The `σ`-equivariant base-change map `(Z × E)/Λ →ₑ[σ] (Y × E)/Λ` between families of tori
 carrying linear actions. -/
@@ -195,11 +184,10 @@ def torusFamilyLinearBaseChangeHom (σ : Γ' →* Γ) (f : Z → Y)
     letI := periodAddAction P
     letI := torusFamilyLinearMulAction R hone hmul P ρ hP
     (torusFamilyLinearBaseChangeHom R hone hmul P ρ hP (MonoidHom.id Γ) id
-      fun _ _ ↦ rfl).ofEq MonoidHom.coe_id = MulActionHom.id Γ := by
-  let _ := periodAddAction P
-  let _ := torusFamilyLinearMulAction R hone hmul P ρ hP
-  ext x
-  exact torusFamilyBaseChangeMap_id P x
+      fun _ _ ↦ rfl).ofEq MonoidHom.coe_id = MulActionHom.id Γ :=
+  letI := periodAddAction P
+  letI := torusFamilyLinearMulAction R hone hmul P ρ hP
+  MulActionHom.ext fun x ↦ torusFamilyBaseChangeMap_id P x
 
 /-- Equivariant linear base-change homomorphisms compose in the same order as the base maps and
 monoid homomorphisms. -/
@@ -228,25 +216,16 @@ theorem torusFamilyLinearBaseChangeHom_comp (σ : Γ' →* Γ) (τ : Γ'' →* �
         (linearCocycle_baseChange_mul R hmul σ hf) (P ∘ f) (ρ.comp σ)
         (period_baseChange_equivariant R P ρ hP σ hf) τ f' hf') =
       torusFamilyLinearBaseChangeHom R hone hmul P ρ hP (σ.comp τ) (f ∘ f')
-        (fun g w ↦ by simp only [comp_apply, MonoidHom.comp_apply, hf', hf]) := by
-  let _ := periodAddAction P
-  let _ := periodAddAction (P ∘ f)
-  let _ := periodAddAction (P ∘ (f ∘ f'))
-  let _ := torusFamilyLinearMulAction R hone hmul P ρ hP
-  let _ := torusFamilyLinearMulAction (fun g z ↦ R (σ g) (f z))
-    (linearCocycle_baseChange_one R hone σ f)
-    (linearCocycle_baseChange_mul R hmul σ hf) (P ∘ f) (ρ.comp σ)
-    (period_baseChange_equivariant R P ρ hP σ hf)
-  let _ := torusFamilyLinearMulAction (fun g w ↦ R ((σ.comp τ) g) ((f ∘ f') w))
-    (linearCocycle_baseChange_one R hone (σ.comp τ) (f ∘ f'))
-    (linearCocycle_baseChange_mul R hmul (σ.comp τ)
-      fun g w ↦ by simp only [comp_apply, MonoidHom.comp_apply, hf', hf])
-    (P ∘ (f ∘ f')) (ρ.comp (σ.comp τ))
-    (period_baseChange_equivariant R P ρ hP (σ.comp τ)
-      fun g w ↦ by simp only [comp_apply, MonoidHom.comp_apply, hf', hf])
-  let _ : CompTriple ⇑τ ⇑σ ⇑(σ.comp τ) := ⟨rfl⟩
-  ext x
-  exact torusFamilyBaseChangeMap_comp P f f' x
+        (fun g w ↦ by simp only [comp_apply, MonoidHom.comp_apply, hf', hf]) :=
+  letI := periodAddAction P
+  letI := periodAddAction (P ∘ f)
+  letI := periodAddAction (P ∘ (f ∘ f'))
+  letI := torusFamilyLinearMulAction R hone hmul P ρ hP
+  letI := torusFamilyLinearMulAction (fun g z ↦ R (σ g) (f z)) _ _ (P ∘ f) (ρ.comp σ) _
+  letI := torusFamilyLinearMulAction (fun g w ↦ R ((σ.comp τ) g) ((f ∘ f') w)) _ _
+    (P ∘ (f ∘ f')) (ρ.comp (σ.comp τ)) _
+  letI : CompTriple ⇑τ ⇑σ ⇑(σ.comp τ) := ⟨rfl⟩
+  MulActionHom.ext fun x ↦ torusFamilyBaseChangeMap_comp P f f' x
 
 omit [Monoid Γ''] [MulAction Γ'' W] in
 /-- If `Γ'` acts continuously on `Z`, `f : Z → Y` is continuous and `σ`-equivariant, and each
@@ -310,9 +289,8 @@ theorem orbitRelQuotientMap_torusFamilyLinearProjection_comp_baseChange
   let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyLinearMulAction R hone hmul P ρ hP
   let _ := torusFamilyLinearMulAction (fun g z ↦ R (σ g) (f z))
-    (linearCocycle_baseChange_one R hone σ f)
-    (linearCocycle_baseChange_mul R hmul σ hf) (P ∘ f) (ρ.comp σ)
-    (period_baseChange_equivariant R P ρ hP σ hf)
+    (linearCocycle_baseChange_one R hone σ f) (linearCocycle_baseChange_mul R hmul σ hf)
+    (P ∘ f) (ρ.comp σ) (period_baseChange_equivariant R P ρ hP σ hf)
   funext q
   induction q using Quotient.ind with | _ x =>
     simp only [comp_apply, MulActionHom.orbitRelQuotientMap_mk,
