@@ -76,6 +76,8 @@ roots of `F(X, 1)` multiplied by `a`.
   algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
 * `Polynomial.aeval_homogenize_of_eq_zero`, `Polynomial.aeval_homogenize_reflect`: the value
   at `(a, 0)` is `p_n a ^ n`, and reflecting `p` at `n` exchanges the two coordinates.
+* `Polynomial.eval_homogenize_geom_sum`: the homogenization of degree `m (p - 1)` of the geometric
+  sum `∑_{i < p} (X ^ m) ^ i` takes the value `∑_{i < p} (a ^ m) ^ i (b ^ m) ^ (p - 1 - i)`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
@@ -324,6 +326,20 @@ theorem aeval_homogenize_reflect {A : Type*} [CommSemiring A] [Algebra S A] (p :
   rw [Finset.mem_antidiagonal] at hkl
   rw [Prod.fst_swap, Prod.snd_swap, coeff_reflect, revAt_le (by omega),
     show n - kl.2 = kl.1 by omega, mul_comm (a ^ kl.2)]
+
+/-- The homogenization of the geometric sum `∑_{i < p} (X ^ m) ^ i` at degree `m (p - 1)` takes
+the value `∑_{i < p} (a ^ m) ^ i (b ^ m) ^ (p - 1 - i)` at `(a, b)`. -/
+theorem eval_homogenize_geom_sum (m p : ℕ) (a b : S) :
+    MvPolynomial.eval ![a, b]
+        ((∑ i ∈ Finset.range p, (X ^ m) ^ i : S[X]).homogenize (m * (p - 1))) =
+      ∑ i ∈ Finset.range p, (a ^ m) ^ i * (b ^ m) ^ (p - 1 - i) := by
+  rw [homogenize_finsetSum, map_sum]
+  refine Finset.sum_congr rfl fun i hi => ?_
+  have hi : i ≤ p - 1 := by
+    rw [Finset.mem_range] at hi
+    omega
+  rw [← pow_mul, homogenize_X_pow (Nat.mul_le_mul_left m hi), ← Nat.mul_sub, pow_mul, pow_mul]
+  simp
 
 end Evaluation
 

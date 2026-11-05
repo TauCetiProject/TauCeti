@@ -13,8 +13,8 @@ import TauCeti.Algebra.Polynomial.Reverse
 
 For `n ≠ 1` the coefficient sequence of the cyclotomic polynomial `Φ_n` reads the same in both
 directions: over any commutative ring, reflecting `cyclotomic n R` at its degree `φ(n)` returns
-`cyclotomic n R`, so its coefficients of index `k` and `φ(n) - k` agree. The exception is
-`Φ_1 = X - 1`, whose reflection `1 - X` is `-Φ_1`.
+`cyclotomic n R`, so its coefficients of index `k` and `φ(n) - k` agree for `k ≤ φ(n)`. The
+exception is `Φ_1 = X - 1`, whose reflection `1 - X` is `-Φ_1`.
 
 The proof is by strong induction through the factorization `X ^ n - 1 = ∏_{d ∣ n} Φ_d`: the
 reflection of `X ^ n - 1` at `n` is `-(X ^ n - 1)`, the proper divisors of `n ≥ 2` contribute the
@@ -74,11 +74,13 @@ private theorem reflect_cyclotomic_eq_C_mul (n : ℕ) :
 
 /-- **Cyclotomic polynomials are palindromic.** For `n ≠ 1`, reflecting `Φ_n` at its degree
 `φ(n)` returns `Φ_n`. -/
+@[simp]
 theorem reflect_cyclotomic {n : ℕ} (hn : n ≠ 1) :
     (cyclotomic n R).reflect n.totient = cyclotomic n R := by
   simp [reflect_cyclotomic_eq_C_mul, hn]
 
 /-- For `n ≠ 1` and `k ≤ φ(n)`, the coefficients of `Φ_n` of index `φ(n) - k` and `k` agree. -/
+@[simp]
 theorem coeff_cyclotomic_totient_sub {n k : ℕ} (hn : n ≠ 1) (hk : k ≤ n.totient) :
     (cyclotomic n R).coeff (n.totient - k) = (cyclotomic n R).coeff k := by
   conv_rhs => rw [← reflect_cyclotomic hn]

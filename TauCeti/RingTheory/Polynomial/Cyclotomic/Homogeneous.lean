@@ -42,6 +42,8 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
 * `TauCeti.prod_homogeneousCyclotomic_eq_pow_sub_pow`: `∏_{d ∣ n} Φ_d(a, b) = a ^ n - b ^ n` for
   `0 < n`, and `TauCeti.homogeneousCyclotomic_dvd_pow_sub_pow`: `Φ_d(a, b) ∣ a ^ n - b ^ n` for
   `d ∣ n`.
+* `TauCeti.homogeneousCyclotomic_mul_prod_properDivisors`:
+  `Φ_n(a, b) ∏_{d ∣ n, d < n} Φ_d(a, b) = a ^ n - b ^ n` for `0 < n`.
 * `TauCeti.homogeneousCyclotomic_pos`: in an ordered ring, `0 < Φ_n(a, b)` for `0 ≤ b < a`.
 
 ## References
@@ -106,11 +108,11 @@ theorem homogeneousCyclotomic_eq_eval_div_mul_pow {K : Type*} [Field K] (n : ℕ
 theorem map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b : R) :
     f (homogeneousCyclotomic n a b) = homogeneousCyclotomic n (f a) (f b) := by
   rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← map_cyclotomic n f,
-    homogenize_map, MvPolynomial.eval_map, MvPolynomial.eval, MvPolynomial.coe_eval₂Hom,
-    MvPolynomial.eval₂_comp_left, RingHom.comp_id]
+    homogenize_map, MvPolynomial.eval_map, ← MvPolynomial.eval₂_id, MvPolynomial.hom_eval₂,
+    RingHom.comp_id]
   congr 1
   ext i
-  fin_cases i <;> simp
+  fin_cases i <;> rfl
 
 /-- `Φ_n` is homogeneous of degree `φ(n)`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`. -/
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
@@ -137,29 +139,17 @@ theorem homogeneousCyclotomic_two (a b : R) : homogeneousCyclotomic 2 a b = a + 
   simp [homogeneousCyclotomic_def]
 
 /-- `Φ_3(a, b) = a ^ 2 + a b + b ^ 2`. -/
+@[simp]
 theorem homogeneousCyclotomic_three (a b : R) :
     homogeneousCyclotomic 3 a b = a ^ 2 + a * b + b ^ 2 := by
   simp [homogeneousCyclotomic_def, Nat.totient_prime Nat.prime_three]
 
 /-- `Φ_6(a, b) = a ^ 2 - a b + b ^ 2`. -/
+@[simp]
 theorem homogeneousCyclotomic_six (a b : R) :
     homogeneousCyclotomic 6 a b = a ^ 2 - a * b + b ^ 2 := by
   have h6 : Nat.totient 6 = 2 := by decide
   simp [homogeneousCyclotomic_def, cyclotomic_six, h6]
-
-/-- The homogenization of the geometric sum `∑_{i < p} (X ^ m) ^ i` at degree `m (p - 1)` takes
-the value `∑_{i < p} (a ^ m) ^ i (b ^ m) ^ (p - 1 - i)` at `(a, b)`. -/
-private theorem eval_homogenize_geom_sum (m p : ℕ) (a b : R) :
-    MvPolynomial.eval ![a, b]
-        ((∑ i ∈ Finset.range p, (X ^ m) ^ i : R[X]).homogenize (m * (p - 1))) =
-      ∑ i ∈ Finset.range p, (a ^ m) ^ i * (b ^ m) ^ (p - 1 - i) := by
-  rw [homogenize_finsetSum, map_sum]
-  refine Finset.sum_congr rfl fun i hi => ?_
-  have hi : i ≤ p - 1 := by
-    rw [Finset.mem_range] at hi
-    omega
-  rw [← pow_mul, homogenize_X_pow (Nat.mul_le_mul_left m hi), ← Nat.mul_sub, pow_mul, pow_mul]
-  simp
 
 /-- For a prime `p`, `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)`. -/
 theorem homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) (a b : R) :
@@ -196,6 +186,7 @@ theorem homogeneousCyclotomic_zero_right (n : ℕ) (a : R) :
   simp
 
 /-- For `n ≠ 1`, `Φ_n(0, b) = b ^ φ(n)`: the constant coefficient of `Φ_n` is `1`. -/
+@[simp]
 theorem homogeneousCyclotomic_zero_left {n : ℕ} (hn : n ≠ 1) (b : R) :
     homogeneousCyclotomic n 0 b = b ^ n.totient := by
   rw [homogeneousCyclotomic_comm hn, homogeneousCyclotomic_zero_right]
@@ -211,6 +202,15 @@ theorem prod_homogeneousCyclotomic_eq_pow_sub_pow {n : ℕ} (hn : 0 < n) (a b : 
   rw [← map_prod, ← homogenize_finsetProd fun d _ => natDegree_cyclotomic_le, Nat.sum_totient,
     prod_cyclotomic_eq_X_pow_sub_one hn, homogenize_sub, homogenize_X_pow le_rfl, homogenize_one]
   simp
+
+/-- For `0 < n`, `Φ_n(a, b) ∏_{d ∣ n, d < n} Φ_d(a, b) = a ^ n - b ^ n`: the factor of index `n`
+split off the factorization of `a ^ n - b ^ n`. -/
+theorem homogeneousCyclotomic_mul_prod_properDivisors {n : ℕ} (hn : 0 < n) (a b : R) :
+    homogeneousCyclotomic n a b * ∏ d ∈ n.properDivisors, homogeneousCyclotomic d a b =
+      a ^ n - b ^ n := by
+  rw [← Finset.prod_cons (f := fun d => homogeneousCyclotomic d a b)
+    Nat.self_notMem_properDivisors, Nat.cons_self_properDivisors hn.ne',
+    prod_homogeneousCyclotomic_eq_pow_sub_pow hn]
 
 /-- For `d ∣ n`, `Φ_d(a, b)` divides `a ^ n - b ^ n`. -/
 theorem homogeneousCyclotomic_dvd_pow_sub_pow {d n : ℕ} (h : d ∣ n) (a b : R) :
@@ -235,10 +235,7 @@ theorem homogeneousCyclotomic_pos [LinearOrder R] [IsStrictOrderedRing R] {a b :
     Finset.prod_pos fun d hd => ih d (Nat.mem_properDivisors.1 hd).2
   have h :
       0 < homogeneousCyclotomic n a b * ∏ d ∈ n.properDivisors, homogeneousCyclotomic d a b := by
-    have hcons := Finset.prod_cons (f := fun d => homogeneousCyclotomic d a b)
-      (Nat.self_notMem_properDivisors (n := n))
-    rw [Nat.cons_self_properDivisors hn.ne', prod_homogeneousCyclotomic_eq_pow_sub_pow hn] at hcons
-    rw [← hcons, sub_pos]
+    rw [homogeneousCyclotomic_mul_prod_properDivisors hn, sub_pos]
     exact pow_lt_pow_left₀ hba hb hn.ne'
   exact (pos_iff_pos_of_mul_pos h).2 hQ
 
