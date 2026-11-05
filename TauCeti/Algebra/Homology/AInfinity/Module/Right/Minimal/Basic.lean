@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Cohomology
 
 /-!
 # Minimal right A-infinity modules

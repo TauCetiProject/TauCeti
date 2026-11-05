@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Basic
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Transfer
 public import TauCeti.Algebra.Homology.Contraction.Linear.Homology
