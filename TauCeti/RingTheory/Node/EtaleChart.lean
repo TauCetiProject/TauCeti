@@ -48,6 +48,8 @@ Jacobian criterion `TauCeti.etale_aeval_of_basis`. The node chart is its base ch
 
 ## Main results
 
+* `Module.Basis.exists_etale_mul_eq_quadratic_of_point`: the factorization at a field-valued
+  point, allowing the value field to extend the residue field.
 * `TauCeti.exists_etale_mul_eq_quadratic`: after an étale extension preserving the residue field
   at `P`, the quadratic form is a product `s t` of étale coordinates vanishing at `P`.
 * `TauCeti.NodeAlgebra.etale_lift_of_etale_aeval`: if `A[X, Y] → T` given by `X ↦ s` and
@@ -73,7 +75,7 @@ open KaehlerDifferential MvPolynomial
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 namespace NodeAlgebra
 
@@ -174,6 +176,86 @@ section
 
 variable {A : Type u} {W : Type v} [CommRing A] [CommRing W] [Algebra A W]
 
+/-- A split nondegenerate quadratic form at a field-valued point is étale locally a product
+of étale coordinates vanishing at a lift of that point. The value field may extend the residue
+field, so this also applies to tangent directions which are not rational over the residue field. -/
+theorem _root_.Module.Basis.exists_etale_mul_eq_quadratic_of_point [Algebra.Smooth A W] {p q : W}
+    (bW : Module.Basis (Fin 2) W Ω[W⁄A]) (hbW₀ : bW 0 = D A W p) (hbW₁ : bW 1 = D A W q)
+    (a b c : W) (K : Type w) [Field K] [Algebra W K]
+    (hp : algebraMap W K p = 0) (hq : algebraMap W K q = 0)
+    (hdisc : algebraMap W K (discrim a b c) ≠ 0)
+    (hsplit : ∃ r : K, r ^ 2 + algebraMap W K b * r + algebraMap W K (a * c) = 0) :
+    ∃ (W' : Type v) (_ : CommRing W') (_ : Algebra W W') (_ : Algebra.Etale W W')
+      (_ : Algebra A W') (_ : IsScalarTower A W W') (ψ : W' →ₐ[W] K) (s t : W'),
+      ψ s = 0 ∧ ψ t = 0 ∧
+      s * t = algebraMap W W' (a * p ^ 2 + b * p * q + c * q ^ 2) ∧
+      (aeval (R := A) ![s, t]).toRingHom.Etale := by
+  -- Adjoin a root `ρ` of `X² + bX + ac` lifting a residue root `r`, inverting `2ρ + b`, `ρ + b`.
+  have hd : discrim 1 (algebraMap W K b) (algebraMap W K (a * c)) =
+      algebraMap W K (discrim a b c) := by
+    simp only [discrim, map_sub, map_mul, map_pow, map_ofNat]
+    ring
+  obtain ⟨r, ψ₁, hψ₁ρ, hr, hr₂⟩ := exists_lift_splittingPair (hd ▸ hdisc) hsplit
+  let E := splittingPair b (a * c)
+  let W₁ := E.Ring
+  let : Algebra A W₁ := Algebra.compHom W₁ (algebraMap A W)
+  have : IsScalarTower A W W₁ := .of_algebraMap_eq fun _ ↦ rfl
+  let ρ : W₁ := E.X
+  obtain ⟨hρ, -, hρ₁⟩ := (splittingPair_hasMap_iff b (a * c) ρ).mp E.hasMap_X
+  have hψ₁ (w : W) : ψ₁ (algebraMap W W₁ w) = algebraMap W K w := ψ₁.commutes w
+  -- The factorisation `a p² + b p q + c q² = s₁ t₁` in `W₁`, with `u = ρ + b` and `v = u⁻¹`.
+  set u : W₁ := ρ + algebraMap W W₁ b with hu
+  let v : W₁ := ↑hρ₁.unit⁻¹
+  have huv : u * v = 1 := hρ₁.mul_val_inv
+  let s₁ : W₁ := u * algebraMap W W₁ p + algebraMap W W₁ c * algebraMap W W₁ q
+  let t₁ : W₁ := v * (algebraMap W W₁ a * algebraMap W W₁ p + u * algebraMap W W₁ q)
+  have hst₁ : s₁ * t₁ = algebraMap W W₁ (a * p ^ 2 + b * p * q + c * q ^ 2) := by
+    rw [map_mul] at hρ
+    simpa using mul_eq_quadratic_of_root hρ huv (algebraMap W W₁ p) (algebraMap W W₁ q)
+  -- The determinant `d` of `ds₁, dt₁` in the basis `dp, dq` is `2r + b ≠ 0` at the point `ψ₁`.
+  let bW₁ := kaehlerBasisOfFormallyEtale A W W₁ bW
+  have hb₀ : D A W₁ (algebraMap W W₁ p) = bW₁ 0 := by simp [bW₁, hbW₀]
+  have hb₁ : D A W₁ (algebraMap W W₁ q) = bW₁ 1 := by simp [bW₁, hbW₁]
+  let d : W₁ := bW₁.det ![D A W₁ s₁, D A W₁ t₁]
+  have hψd : ψ₁ d ≠ 0 := by
+    have hU : ψ₁ u = r + algebraMap W K b := by rw [hu, map_add, hψ₁ρ, hψ₁]
+    have hwU : ψ₁ v * ψ₁ u = 1 := by rw [← map_mul, mul_comm v u, huv, map_one]
+    have hdet := det_D_eq bW₁ hb₀ hb₁ (ψ₁ : W₁ →+* K) (by simp [hψ₁, hp]) (by simp [hψ₁, hq])
+      u v (algebraMap W W₁ a) (algebraMap W W₁ c)
+    simp only [RingHom.coe_coe, hψ₁] at hdet
+    rw [map_mul] at hr
+    have : ψ₁ d = 2 * r + algebraMap W K b := by
+      rw [hdet]
+      linear_combination (ψ₁ u + r) * hwU + (1 - ψ₁ v * r) * hU - ψ₁ v * hr
+    rw [this]
+    exact hr₂
+  -- Invert `d`, and lift the field-valued point to `W' = W₁[1/d]` by `ρ ↦ r`.
+  let W' := Localization.Away d
+  let ψ : W' →ₐ[W] K := IsLocalization.Away.liftAlgHom d (f := ψ₁) hψd.isUnit
+  have hψ (w : W₁) : ψ (algebraMap W₁ W' w) = ψ₁ w :=
+    IsLocalization.Away.lift_eq d (g := ψ₁.toRingHom) hψd.isUnit w
+  let s := algebraMap W₁ W' s₁
+  let t := algebraMap W₁ W' t₁
+  refine ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, ψ,
+    s, t, ?_, ?_, ?_, ?_⟩
+  · rw [hψ]
+    simp [s₁, hψ₁, hp, hq]
+  · rw [hψ]
+    simp [t₁, hψ₁, hp, hq]
+  · simp only [s, t, ← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
+  -- `ds, dt` is a basis of `Ω[W'⁄A]`: its determinant in the basis `dp, dq` is the unit `d`.
+  let bW' := kaehlerBasisOfFormallyEtale A W₁ W' bW₁
+  have hdet : bW'.det ![D A W' s, D A W' t] = algebraMap W₁ W' d := by
+    rw [← kaehlerBasisOfFormallyEtale_det_map]
+    congr 1
+    ext i
+    fin_cases i <;> simp [s, t]
+  obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
+    (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
+  have : Algebra.Smooth A W₁ := .comp A W W₁
+  have : Algebra.Smooth A W' := .comp A W₁ W'
+  exact etale_aeval_of_basis ![s, t] (.mk hli hspan.ge) fun i ↦ by fin_cases i <;> simp
+
 /-- **A split nondegenerate binary quadratic form in étale coordinates is étale locally a product
 of étale coordinates.** Let `W` be a smooth `A`-algebra and `p, q ∈ W` elements whose
 differentials form a basis of `Ω[W⁄A]`, both lying in a prime `P`. Let `a, b, c ∈ W` be such that
@@ -194,76 +276,13 @@ theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
       Function.Bijective (Ideal.ResidueField.map P P' (algebraMap W W') hP') ∧
       s ∈ P' ∧ t ∈ P' ∧ s * t = algebraMap W W' (a * p ^ 2 + b * p * q + c * q ^ 2) ∧
       (aeval (R := A) ![s, t]).toRingHom.Etale := by
-  set κ := P.ResidueField
-  -- Adjoin a root `ρ` of `X² + bX + ac` lifting a residue root `r`, inverting `2ρ + b`, `ρ + b`.
-  have hd : discrim 1 (algebraMap W κ b) (algebraMap W κ (a * c)) =
-      algebraMap W κ (discrim a b c) := by
-    simp only [discrim, map_sub, map_mul, map_pow, map_ofNat]
-    ring
-  obtain ⟨r, ψ₁, hψ₁ρ, hr, hr₂⟩ := exists_lift_splittingPair (hd ▸ hdisc) hsplit
-  let E := splittingPair b (a * c)
-  let W₁ := E.Ring
-  let : Algebra A W₁ := Algebra.compHom W₁ (algebraMap A W)
-  have : IsScalarTower A W W₁ := .of_algebraMap_eq fun _ ↦ rfl
-  let ρ : W₁ := E.X
-  obtain ⟨hρ, -, hρ₁⟩ := (splittingPair_hasMap_iff b (a * c) ρ).mp E.hasMap_X
-  have hψ₁ (w : W) : ψ₁ (algebraMap W W₁ w) = algebraMap W κ w := ψ₁.commutes w
-  have hφp : algebraMap W κ p = 0 := Ideal.algebraMap_residueField_eq_zero.mpr hp
-  have hφq : algebraMap W κ q = 0 := Ideal.algebraMap_residueField_eq_zero.mpr hq
-  -- The factorisation `a p² + b p q + c q² = s₁ t₁` in `W₁`, with `u = ρ + b` and `v = u⁻¹`.
-  set u : W₁ := ρ + algebraMap W W₁ b with hu
-  let v : W₁ := ↑hρ₁.unit⁻¹
-  have huv : u * v = 1 := hρ₁.mul_val_inv
-  let s₁ : W₁ := u * algebraMap W W₁ p + algebraMap W W₁ c * algebraMap W W₁ q
-  let t₁ : W₁ := v * (algebraMap W W₁ a * algebraMap W W₁ p + u * algebraMap W W₁ q)
-  have hst₁ : s₁ * t₁ = algebraMap W W₁ (a * p ^ 2 + b * p * q + c * q ^ 2) := by
-    rw [map_mul] at hρ
-    simpa using mul_eq_quadratic_of_root hρ huv (algebraMap W W₁ p) (algebraMap W W₁ q)
-  -- The determinant `d` of `ds₁, dt₁` in the basis `dp, dq` is `2r + b ≠ 0` at the point `ψ₁`.
-  let bW₁ := kaehlerBasisOfFormallyEtale A W W₁ bW
-  have hb₀ : D A W₁ (algebraMap W W₁ p) = bW₁ 0 := by simp [bW₁, hbW₀]
-  have hb₁ : D A W₁ (algebraMap W W₁ q) = bW₁ 1 := by simp [bW₁, hbW₁]
-  let d : W₁ := bW₁.det ![D A W₁ s₁, D A W₁ t₁]
-  have hψd : ψ₁ d ≠ 0 := by
-    have hU : ψ₁ u = r + algebraMap W κ b := by rw [hu, map_add, hψ₁ρ, hψ₁]
-    have hwU : ψ₁ v * ψ₁ u = 1 := by rw [← map_mul, mul_comm v u, huv, map_one]
-    have hdet := det_D_eq bW₁ hb₀ hb₁ (ψ₁ : W₁ →+* κ) (by simp [hψ₁, hφp]) (by simp [hψ₁, hφq])
-      u v (algebraMap W W₁ a) (algebraMap W W₁ c)
-    simp only [RingHom.coe_coe, hψ₁] at hdet
-    rw [map_mul] at hr
-    have : ψ₁ d = 2 * r + algebraMap W κ b := by
-      rw [hdet]
-      linear_combination (ψ₁ u + r) * hwU + (1 - ψ₁ v * r) * hU - ψ₁ v * hr
-    rw [this]
-    exact hr₂
-  -- Invert `d`, and take the point `P'` of `W' = W₁[1/d]` given by `ρ ↦ r`.
-  let W' := Localization.Away d
-  let ψ : W' →ₐ[W] κ := IsLocalization.Away.liftAlgHom d (f := ψ₁) hψd.isUnit
-  have hψ (w : W₁) : ψ (algebraMap W₁ W' w) = ψ₁ w :=
-    IsLocalization.Away.lift_eq d (g := ψ₁.toRingHom) hψd.isUnit w
-  let P' := RingHom.ker ψ
-  let s := algebraMap W₁ W' s₁
-  let t := algebraMap W₁ W' t₁
-  refine ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, P',
-    RingHom.ker_isPrime _, ψ.comap_ker_eq_of_residueField.symm, s, t,
-    ψ.residueFieldMap_bijective, ?_, ?_, ?_, ?_⟩
-  · rw [RingHom.mem_ker, hψ]
-    simp [s₁, hψ₁, hφp, hφq]
-  · rw [RingHom.mem_ker, hψ]
-    simp [t₁, hψ₁, hφp, hφq]
-  · simp only [s, t, ← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
-  -- `ds, dt` is a basis of `Ω[W'⁄A]`: its determinant in the basis `dp, dq` is the unit `d`.
-  let bW' := kaehlerBasisOfFormallyEtale A W₁ W' bW₁
-  have hdet : bW'.det ![D A W' s, D A W' t] = algebraMap W₁ W' d := by
-    rw [← kaehlerBasisOfFormallyEtale_det_map]
-    congr 1
-    ext i
-    fin_cases i <;> simp [s, t]
-  obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
-    (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
-  have : Algebra.Smooth A W₁ := .comp A W W₁
-  have : Algebra.Smooth A W' := .comp A W₁ W'
-  exact etale_aeval_of_basis ![s, t] (.mk hli hspan.ge) fun i ↦ by fin_cases i <;> simp
+  obtain ⟨W', _, _, _, _, _, ψ, s, t, hs, ht, hst, he⟩ :=
+    bW.exists_etale_mul_eq_quadratic_of_point hbW₀ hbW₁ a b c P.ResidueField
+      (Ideal.algebraMap_residueField_eq_zero.mpr hp)
+      (Ideal.algebraMap_residueField_eq_zero.mpr hq) hdisc hsplit
+  exact ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    RingHom.ker ψ, RingHom.ker_isPrime _, ψ.comap_ker_eq_of_residueField.symm, s, t,
+    ψ.residueFieldMap_bijective, RingHom.mem_ker.mpr hs, RingHom.mem_ker.mpr ht, hst, he⟩
 
 end
 
