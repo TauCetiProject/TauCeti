@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 
@@ -26,6 +27,11 @@ current `Φ_# T = T ∘ Φ^*` on `Ω'`. Pullback commutes with the exterior deri
 pushforward commutes with the boundary `∂T = T ∘ d`. A bound `‖DΦ‖ ≤ L` on `Ω` gives
 `M(Φ_# T) ≤ L ^ k M(T)`.
 
+Multiplying by a test function `χ` on `Ω` removes the need for properness: the pullback with a
+cutoff `χ Φ^* ω` is a test form supported in `tsupport χ` for every map `Φ` smooth on `Ω`. It is
+used to push forward currents whose support is compact, see
+`TauCeti.Analysis.Distribution.CutoffPushforward`.
+
 ## Main declarations
 
 * `TestFunction.pullbackCLM`: the pullback of test forms along a smooth map proper from `Ω` to
@@ -39,6 +45,11 @@ pushforward commutes with the boundary `∂T = T ∘ d`. A bound `‖DΦ‖ ≤ 
 * `Distribution.mass_comp_pullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)` when `‖DΦ‖ ≤ L` on `Ω`.
 * `Distribution.HasLocallyFiniteMass.comp_pullbackCLM`: pushforward preserves locally finite
   mass.
+* `TestFunction.cutoffPullbackCLM`: the pullback with a cutoff `ω ↦ χ Φ^* ω`, as a continuous
+  linear map, with its values `TestFunction.cutoffPullbackCLM_apply`.
+* `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
+  near which `χ = 1`.
+* `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
 
 ## Implementation notes
 
@@ -99,6 +110,13 @@ private theorem support_pullbackFun_subset (ω : E' → E' [⋀^Fin k]→L[ℝ] 
     simp [pullbackFun, hxΩ, h, -compContinuousLinearMapCLM_apply]
   · exact absurd (indicator_of_notMem hxΩ _) hx
 
+/-- The pointwise pullback of a smooth form is smooth at each point of `Ω`. -/
+private theorem contDiffAt_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
+    {ω : E' → E' [⋀^Fin k]→L[ℝ] F} (hω : ContDiff ℝ (⊤ : ℕ∞) ω) {x : E} (hx : x ∈ Ω) :
+    ContDiffAt ℝ (⊤ : ℕ∞) (pullbackFun Ω Φ ω) x :=
+  ((hΦ.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (by simp)).differentialForm_pullback
+    hω.contDiffAt |>.congr_of_eventuallyEq (pullbackFun_eventuallyEq hx)
+
 /-- The pointwise pullback of a smooth form is smooth, provided that its support near `Ω` lies in
 a compact subset of `Ω`. -/
 private theorem contDiff_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
@@ -107,8 +125,7 @@ private theorem contDiff_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
     ContDiff ℝ (⊤ : ℕ∞) (pullbackFun Ω Φ ω) := by
   refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
   by_cases hx : x ∈ Ω
-  · exact ((hΦ.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (by simp)).differentialForm_pullback
-      hω.contDiffAt |>.congr_of_eventuallyEq (pullbackFun_eventuallyEq hx)
+  · exact contDiffAt_pullbackFun hΦ hω hx
   · -- Off `Ω`, the point lies outside the closed set `C`, near which the pullback vanishes.
     refine (contDiffAt_const (c := 0)).congr_of_eventuallyEq ?_
     filter_upwards [hC.isClosed.isOpen_compl.mem_nhds fun h ↦ hx (hCΩ h)] with y hy
@@ -304,6 +321,170 @@ theorem pullbackCLM_comp_extDerivCLM :
       extDerivCLM ∘L pullbackCLM Φ hΦ hΦp := by
   ext ω : 1
   exact (extDerivCLM_pullbackCLM ω).symm
+
+section CutoffPullback
+
+/-! ### Pullback with a cutoff
+
+A test function `χ` on `Ω` localizes the pullback: `χ Φ^* ω` is supported in the compact set
+`tsupport χ` whatever `Φ` does, so no properness of `Φ` is needed. Precomposing a current on `Ω`
+with this map gives its pushforward along `Φ` when `χ = 1` on a neighborhood of the current's
+support. -/
+
+/-- A cutoff pullback of a smooth form is smooth. -/
+private theorem contDiff_smul_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) (χ : 𝓓(Ω, ℝ))
+    {ω : E' → E' [⋀^Fin k]→L[ℝ] F} (hω : ContDiff ℝ (⊤ : ℕ∞) ω) :
+    ContDiff ℝ (⊤ : ℕ∞) (⇑χ • pullbackFun Ω Φ ω) :=
+  ContDiffOn.contDiff_smul_of_tsupport_subset
+    (fun _ hx ↦ (contDiffAt_pullbackFun hΦ hω hx).contDiffWithinAt) Ω.isOpen
+    χ.contDiff.contDiffOn χ.tsupport_subset
+
+/-- The `i`-th derivative of a cutoff pullback is bounded by a constant times a bound for the
+first `i` derivatives of the form. -/
+private theorem exists_norm_iteratedFDeriv_smul_pullbackFun_le (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
+    (χ : 𝓓(Ω, ℝ)) (i : ℕ) :
+    ∃ A : ℝ, 0 ≤ A ∧ ∀ (ω : E' → E' [⋀^Fin k]→L[ℝ] F), ContDiff ℝ (⊤ : ℕ∞) ω → ∀ B : ℝ,
+      (∀ j ≤ i, ∀ y, ‖iteratedFDeriv ℝ j ω y‖ ≤ B) →
+      ∀ x, ‖iteratedFDeriv ℝ i (⇑χ • pullbackFun Ω Φ ω) x‖ ≤ A * B := by
+  have hC : IsCompact (tsupport χ) := χ.hasCompactSupport
+  choose A hA h using fun j ↦
+    exists_norm_iteratedFDeriv_pullbackFun_le (k := k) (F := F) hΦ hC χ.tsupport_subset j
+  choose R hR using fun j ↦ hC.exists_bound_of_continuousOn
+    (χ.contDiff.continuous_iteratedFDeriv (m := j) (by simp)).continuousOn
+  refine ⟨∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * |R j| * A (i - j),
+    Finset.sum_nonneg fun j _ ↦ mul_nonneg (by positivity) (hA _), fun ω hω B hB x ↦ ?_⟩
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
+  by_cases hx : x ∈ tsupport χ
+  · have hxΩ : x ∈ Ω := χ.tsupport_subset hx
+    -- The Leibniz rule on the open set `Ω`, where the pullback is smooth.
+    rw [← iteratedFDerivWithin_of_isOpen i Ω.isOpen hxΩ, Finset.sum_mul]
+    refine (norm_iteratedFDerivWithin_smul_le χ.contDiff.contDiffOn
+      (fun y hy ↦ (contDiffAt_pullbackFun hΦ hω hy).contDiffWithinAt) Ω.isOpen.uniqueDiffOn hxΩ
+      (by simp)).trans (Finset.sum_le_sum fun j hj ↦ ?_)
+    have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+    rw [iteratedFDerivWithin_of_isOpen _ Ω.isOpen hxΩ,
+      iteratedFDerivWithin_of_isOpen _ Ω.isOpen hxΩ]
+    calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j χ x‖ *
+          ‖iteratedFDeriv ℝ (i - j) (pullbackFun Ω Φ ω) x‖
+        ≤ (i.choose j : ℝ) * |R j| * (A (i - j) * B) := by
+          gcongr
+          exacts [(hR j x hx).trans (le_abs_self _),
+            h (i - j) ω hω B (fun l hl y ↦ hB l (by omega) y) x hx]
+      _ = (i.choose j : ℝ) * |R j| * A (i - j) * B := by ring
+  · -- Off `tsupport χ` the cutoff pullback vanishes near `x`.
+    have hev : ⇑χ • pullbackFun Ω Φ ω =ᶠ[𝓝 x] 0 := by
+      filter_upwards [(isClosed_tsupport χ).isOpen_compl.mem_nhds hx] with y hy
+      simp [image_eq_zero_of_notMem_tsupport hy]
+    rw [(hev.iteratedFDeriv ℝ i).eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply, norm_zero]
+    exact mul_nonneg (Finset.sum_nonneg fun j _ ↦ mul_nonneg (by positivity) (hA _)) hB0
+
+/-- The cutoff pullback of tests supported in a compact `K ⊆ E'`, which are supported in the
+compact set `tsupport χ`. -/
+private def cutoffPullbackSupportedInCLM (χ : 𝓓(Ω, ℝ)) (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
+    (K : Compacts E') :
+    𝓓_{K}(E', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ]
+      𝓓_{⟨tsupport χ, χ.hasCompactSupport⟩}(E, E [⋀^Fin k]→L[ℝ] F) :=
+  letI P : 𝓓_{K}(E', E' [⋀^Fin k]→L[ℝ] F) →ₗ[ℝ]
+      𝓓_{⟨tsupport χ, χ.hasCompactSupport⟩}(E, E [⋀^Fin k]→L[ℝ] F) :=
+    { toFun ω := ⟨⇑χ • pullbackFun Ω Φ ω, contDiff_smul_pullbackFun hΦ χ ω.contDiff,
+        fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]⟩
+      map_add' ω η := ContDiffMapSupportedIn.ext fun x ↦
+        congrFun ((congrArg (⇑χ • ·) (pullbackFun_add ω η)).trans (smul_add _ _ _)) x
+      map_smul' c ω := ContDiffMapSupportedIn.ext fun x ↦
+        congrFun ((congrArg (⇑χ • ·) (pullbackFun_smul c ω)).trans (smul_comm _ _ _)) x }
+  { toLinearMap := P
+    cont := by
+      refine WithSeminorms.continuous_of_isBounded (ContDiffMapSupportedIn.withSeminorms ..)
+        (ContDiffMapSupportedIn.withSeminorms ..) _ (.of_real fun i ↦ ?_)
+      obtain ⟨A, hA, h⟩ := exists_norm_iteratedFDeriv_smul_pullbackFun_le (k := k) (F := F) hΦ χ i
+      refine ⟨Finset.range (i + 1), A, fun ω ↦ ((P ω).seminorm_le_iff ℝ
+        (mul_nonneg hA (apply_nonneg _ _)) i).2 fun _ x _ ↦
+          h ω ω.contDiff _ (fun j hj y ↦ ?_) x⟩
+      exact (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
+        (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (Nat.lt_succ_of_le hj))) }
+
+/-- The **pullback with a cutoff** `ω ↦ χ Φ^* ω` of test `k`-forms on `Ω'` along a map `Φ` smooth
+on `Ω`, where `χ` is a test function on `Ω`: its value at `x` is
+`χ x • ω (Φ x) ∘ (DΦ x, …, DΦ x)` (`TestFunction.cutoffPullbackCLM_apply`). It is supported in
+`tsupport χ`, so `Φ` need not be proper, and nothing is assumed about where `Φ` maps `Ω`. For a
+current `T` on `Ω` whose support lies in the interior of `{χ = 1}`, `T ∘ (χ Φ^*)` is the
+pushforward of `T` along `Φ`; it does not depend on such `χ` and agrees with `T ∘ Φ^*` when `Φ` is
+proper (see `TauCeti.Analysis.Distribution.CutoffPushforward`). -/
+def cutoffPullbackCLM (χ : 𝓓(Ω, ℝ)) (Φ : E → E') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
+    𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
+  letI T (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
+    ⟨⇑χ • pullbackFun Ω Φ ω, contDiff_smul_pullbackFun hΦ χ ω.contDiff,
+      χ.hasCompactSupport.smul_right, (tsupport_smul_subset_left _ _).trans χ.tsupport_subset⟩
+  TestFunction.limitCLM ℝ T
+    (fun K _ ↦ ofSupportedInCLM ℝ χ.tsupport_subset ∘L cutoffPullbackSupportedInCLM χ hΦ K)
+    (fun _ _ _ ↦ rfl)
+
+variable {χ : 𝓓(Ω, ℝ)} {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω}
+
+/-- The pullback with a cutoff is `x ↦ χ x • ω (Φ x) ∘ (DΦ x, …, DΦ x)`. -/
+@[simp]
+theorem cutoffPullbackCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    cutoffPullbackCLM χ Φ hΦ ω x = χ x • (ω (Φ x)).compContinuousLinearMap (fderiv ℝ Φ x) := by
+  -- By construction, the value is the pointwise product of `χ` with the pointwise pullback.
+  change χ x • pullbackFun Ω Φ ω x = _
+  by_cases hx : x ∈ Ω
+  · simp [pullbackFun, hx]
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (χ.tsupport_subset h)]
+
+/-- The support of a pullback with a cutoff lies in the support of the cutoff, over the support of
+the form. -/
+theorem tsupport_cutoffPullbackCLM_subset (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) :
+    tsupport (cutoffPullbackCLM χ Φ hΦ ω) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport ω := by
+  refine closure_minimal (fun x hx ↦ ⟨subset_tsupport _ fun h ↦ hx ?_,
+    subset_tsupport _ fun h ↦ hx ?_⟩) <|
+      (hΦ.continuousOn.mono χ.tsupport_subset).preimage_isClosed_of_isClosed
+        (isClosed_tsupport χ) (isClosed_tsupport ω)
+  · simp [h]
+  · ext v
+    simp [h]
+
+/-- The pointwise norm of a pullback of a `k`-form with a cutoff is at most
+`|χ x| ‖ω (Φ x)‖ ‖DΦ x‖ ^ k`. -/
+theorem norm_cutoffPullbackCLM_apply_le (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    ‖cutoffPullbackCLM χ Φ hΦ ω x‖ ≤ |χ x| * (‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k) := by
+  rw [cutoffPullbackCLM_apply, norm_smul, Real.norm_eq_abs]
+  gcongr
+  simpa using norm_compContinuousLinearMap_le (ω (Φ x)) (fderiv ℝ Φ x)
+
+/-- **Naturality of the exterior derivative** where the cutoff is one:
+`d (χ Φ^* ω) = χ Φ^* (d ω)` near every point at which `χ` is eventually equal to one. -/
+theorem extDerivCLM_cutoffPullbackCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) {x : E}
+    (hx : ∀ᶠ y in 𝓝 x, χ y = 1) :
+    extDerivCLM (cutoffPullbackCLM χ Φ hΦ ω) x = cutoffPullbackCLM χ Φ hΦ (extDerivCLM ω) x := by
+  have hxΩ : x ∈ Ω := χ.tsupport_subset <| subset_tsupport _ <| by
+    simp [Function.mem_support, hx.self_of_nhds]
+  have heq : ⇑(cutoffPullbackCLM χ Φ hΦ ω) =ᶠ[𝓝 x]
+      fun y ↦ (ω (Φ y)).compContinuousLinearMap (fderiv ℝ Φ y) :=
+    hx.mono fun y hy ↦ by simp [hy]
+  rw [extDerivCLM_apply, heq.extDeriv_eq, cutoffPullbackCLM_apply, hx.self_of_nhds, one_smul,
+    extDerivCLM_apply]
+  exact extDeriv_pullback (ω.contDiff.differentiable (by simp) _)
+    (hΦ.contDiffAt (Ω.isOpen.mem_nhds hxΩ)) (by simp)
+
+/-- **Composition of pullbacks with cutoffs**: `χ Φ^* (χ' Ψ^* ω) = (χ' ∘ Φ) χ (Ψ ∘ Φ)^* ω`, when
+`Φ` maps the support of `χ` into `Ω'`. -/
+theorem cutoffPullbackCLM_cutoffPullbackCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
+    {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω}
+    (hmaps : MapsTo Φ (tsupport χ) Ω') (ω : 𝓓(Ω'', E'' [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    cutoffPullbackCLM χ Φ hΦ (cutoffPullbackCLM χ' Ψ hΨ ω) x =
+      χ' (Φ x) • cutoffPullbackCLM χ (Ψ ∘ Φ) hΨΦ ω x := by
+  by_cases hx : x ∈ tsupport χ
+  · have hxΩ : x ∈ Ω := χ.tsupport_subset hx
+    have hΦx : DifferentiableAt ℝ Φ x :=
+      (hΦ.contDiffAt (Ω.isOpen.mem_nhds hxΩ)).differentiableAt (by simp)
+    have hΨx : DifferentiableAt ℝ Ψ (Φ x) :=
+      (hΨ.contDiffAt (Ω'.isOpen.mem_nhds (hmaps hx))).differentiableAt (by simp)
+    simp only [cutoffPullbackCLM_apply, Function.comp_apply, fderiv_comp x hΨx hΦx]
+    ext v
+    simp [smul_smul, mul_comm, ContinuousLinearMap.coe_comp, Function.comp_assoc]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
+end CutoffPullback
 
 end TestFunction
 

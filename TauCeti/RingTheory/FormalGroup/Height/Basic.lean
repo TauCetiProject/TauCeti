@@ -42,6 +42,16 @@ and its change of coordinate `φ • F`, have the same height. Over a ring, the 
 of `[p]_F` need not be a unit, and the exponent no longer measures the height in the usual sense;
 so the height is defined over fields.
 
+The leading coefficient `a` of `[p]_F(T) = a T ^ (p ^ h) + ⋯` depends on the coordinate, but in
+a controlled way. If `f(T) = u T + ⋯` is a homomorphism from `F` to `G` and `b` is the leading
+coefficient of `[p]_G`, comparing the coefficients of `T ^ (p ^ h)` in `f ∘ [p]_F = [p]_G ∘ f`
+gives `b u ^ (p ^ h) = u a`. So strict isomorphisms preserve `a`, and the homothety `T ↦ u T`
+with `u ^ (p ^ h - 1) = a` turns `a` into `1`; over a separably closed field such a `u` exists
+(`TauCeti.RingTheory.FormalGroup.Height.SepClosed`). This normalization is how Lazard's
+classification of formal group laws over separably closed fields by their height deals with the
+degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the same leading term
+`T ^ (p ^ h)`, and the strict coordinate changes that match the remaining coefficients keep it.
+
 ## Main definitions
 
 * `FormalGroup.height`: the height of a formal group law over a field of characteristic `p`.
@@ -69,12 +79,23 @@ so the height is defined over fields.
 * `TauCeti.FormalGroupHom.height_eq` and `TauCeti.FormalGroupIso.height_eq`: formal group laws
   related by a nonzero homomorphism, in particular isomorphic ones, have the same height.
 * `FormalGroup.height_smul`: the height is unchanged by a change of coordinate.
+* `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow`: a homomorphism `u T + ⋯` relates
+  the leading coefficients `a` of `[p]_F` and `b` of `[p]_G` by `b u ^ (p ^ h) = u a`; over a
+  ring, `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order` gives the same
+  relation for the coefficients of `T ^ q` in `[n]_F` and `[n]_G` when both have order at least
+  `q`.
+* `TauCeti.FormalGroupIso.coeff_nsmulSeries_eq_of_isStrict`: strict isomorphisms preserve the
+  leading coefficient of the `p`-series.
+* `FormalGroup.coeff_nsmulSeries_homothety_smul_eq_one`: the homothety by any `u` with
+  `u ^ (p ^ h - 1) = a` makes the leading coefficient `a` of the `p`-series equal to one.
 * `FormalGroup.height_𝔾ₐ` and `FormalGroup.height_𝔾ₘ`: the additive formal group law has height
   `⊤` and the multiplicative one has height `1`.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.7.
+* M. Lazard, *Sur les groupes de Lie formels à un paramètre*, Bull. Soc. Math. France 83 (1955).
+* A. Fröhlich, *Formal Groups*, Lecture Notes in Mathematics 74, Springer (1968), Chapter III.
 -/
 
 public section
@@ -317,7 +338,30 @@ theorem height_eq (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0) (p : ℕ
     F.height p = G.height p := by
   simp only [FormalGroup.height, ← PowerSeries.order_eq_top, f.order_nsmulSeries_eq hf]
 
+/-- **A homomorphism relates the leading coefficients of the `p`-series.** If `F` has finite
+height `h` over a field of characteristic `p`, and `f` is a homomorphism from `F` to `G` with
+linear coefficient `u`, then the coefficients `a` and `b` of `T ^ (p ^ h)` in `[p]_F` and `[p]_G`
+satisfy `b u ^ (p ^ h) = u a`. -/
+theorem coeff_nsmulSeries_mul_coeff_one_pow {p : ℕ} [hp : Fact p.Prime] [CharP K p] [F.IsComm]
+    (f : FormalGroupHom F G) {h : ℕ} (hF : F.height p = h) :
+    PowerSeries.coeff (p ^ h) (G.nsmulSeries p) * PowerSeries.coeff 1 f.toPowerSeries ^ (p ^ h) =
+      PowerSeries.coeff 1 f.toPowerSeries * PowerSeries.coeff (p ^ h) (F.nsmulSeries p) := by
+  have hFo := F.height_eq_natCast_iff.mp hF
+  by_cases hf : f.toPowerSeries = 0
+  · simp [hf, hp.out.ne_zero]
+  exact f.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order p hFo.ge
+    (f.order_nsmulSeries_eq hf p ▸ hFo).ge
+
 end FormalGroupHom
+
+/-- **Strict isomorphisms preserve the leading coefficient of the `p`-series.** If `F` has finite
+height `h` over a field of characteristic `p` and `e` is a strict isomorphism from `F` to `G`, then
+`[p]_F` and `[p]_G` have the same coefficient of `T ^ (p ^ h)`. -/
+theorem FormalGroupIso.coeff_nsmulSeries_eq_of_isStrict {K : Type*} [Field K] {F G : FormalGroup K}
+    {p : ℕ} [Fact p.Prime] [CharP K p] [F.IsComm] (e : FormalGroupIso F G) [e.IsStrict] {h : ℕ}
+    (hF : F.height p = h) :
+    PowerSeries.coeff (p ^ h) (G.nsmulSeries p) = PowerSeries.coeff (p ^ h) (F.nsmulSeries p) := by
+  simpa [FormalGroupIso.IsStrict.coeff_one] using e.toHom.coeff_nsmulSeries_mul_coeff_one_pow hF
 
 /-- **An isomorphism preserves the order of multiplication by `n`.** Over any commutative ring, if
 `e` is an isomorphism of formal group laws from `F` to `G`, then `[n]_F` and `[n]_G` have the same
@@ -356,5 +400,25 @@ namespace FormalGroup
 theorem height_smul {K : Type*} [Field K] (φ : TauCeti.FormalCoordinate K) (F : FormalGroup K)
     (p : ℕ) : (φ • F).height p = F.height p :=
   ((smulIso φ F).height_eq p).symm
+
+/-- **Normalizing the leading coefficient of the `p`-series.** Let `F` be a commutative formal
+group law of finite height `h` over a field of characteristic `p`, and let `a` be the leading
+coefficient of `[p]_F`. For any unit `u` with `u ^ (p ^ h - 1) = a`, the homothety `T ↦ u T`
+turns `F` into a formal group law whose `p`-series has leading term `T ^ (p ^ h)`. -/
+theorem coeff_nsmulSeries_homothety_smul_eq_one {K : Type*} [Field K] {p : ℕ} [hp : Fact p.Prime]
+    [CharP K p] (F : FormalGroup K) [F.IsComm] {h : ℕ} (hF : F.height p = h) (u : Kˣ)
+    (hu : (u : K) ^ (p ^ h - 1) = PowerSeries.coeff (p ^ h) (F.nsmulSeries p)) :
+    PowerSeries.coeff (p ^ h) ((TauCeti.FormalCoordinate.homothety u • F).nsmulSeries p) = 1 := by
+  set a := PowerSeries.coeff (p ^ h) (F.nsmulSeries p)
+  have ha : a ≠ 0 := (PowerSeries.order_eq_nat.mp (F.height_eq_natCast_iff.mp hF)).1
+  have key := (smulIso (TauCeti.FormalCoordinate.homothety u) F).toHom
+    |>.coeff_nsmulSeries_mul_coeff_one_pow hF
+  simp only [smulIso_toHom_toPowerSeries, TauCeti.FormalCoordinate.toPowerSeries_homothety,
+    PowerSeries.coeff_smul, PowerSeries.coeff_one_X, smul_eq_mul, mul_one] at key
+  -- `key : b u ^ (p ^ h) = u a`, where `u ^ (p ^ h) = u a` is nonzero, so `b = 1`
+  have hup : (u : K) ^ (p ^ h) = u * a := by
+    rw [← hu, ← pow_succ', Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.out.pos)]
+  rw [hup] at key
+  exact mul_right_cancel₀ (mul_ne_zero u.ne_zero ha) (key.trans (one_mul _).symm)
 
 end FormalGroup

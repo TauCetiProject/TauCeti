@@ -143,7 +143,7 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
       _ ≤ ENNReal.ofReal A := ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right zero_le_one)
   -- The flat Trudinger inequality for `w` on the ball of radius `r`, read back on `M`.
   have htr := setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (μ := μ) hw hwcs
-    measurableSet_ball hwsupp hn hA hDwA
+    hwsupp hn hA hDwA
   have hb : ball (φ c) b.rIn ⊆ ball (φ c) r :=
     ball_subset_closedBall.trans ((closedBall_subset_closedBall b.rIn_lt_rOut.le).trans hbr)
   have hF (t : ℝ) : ((κ * A) ^ q)⁻¹ * |t| ^ q = (‖t‖ / (κ * A)) ^ q := by

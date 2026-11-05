@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.GroupScheme.Degree
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 import TauCeti.AlgebraicGeometry.GroupScheme.Cokernel
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
+import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!
 # The factorisation dual of an isogeny of commutative group schemes
@@ -19,9 +21,34 @@ Multiplication by `n` therefore factors uniquely through `f`, giving a homomorph
 respective group schemes. The construction uses fpqc descent, so also applies in
 characteristics dividing the degree and over nonreduced bases.
 
+Uniqueness of the factorisation gives the formal properties of the dual. It reverses
+composition, commutes with arbitrary base change, and is computed on multiplication maps. If
+multiplication by `n` on `A` is an isogeny of degree `n * k` and multiplication by `n` on `B` is
+finite, the dual is an isogeny of degree `k`. When the dual again has degree `n`, its own
+factorisation dual is `f`.
+
 For elliptic curves, apply this API to `A = E.toCommGrp` and `B = E'.toCommGrp`;
-local finite presentation is automatic. This gives the factorisation construction before
-comparison with the Picard dual.
+local finite presentation is automatic, and multiplication by `n` has degree `n²`. This gives the
+factorisation construction before comparison with the Picard dual.
+
+## Main definitions
+
+* `TauCeti.GroupScheme.factorisationDual`: the factorisation dual `B ⟶ A` of an isogeny
+  `f : A ⟶ B` of constant degree.
+
+## Main results
+
+* `TauCeti.GroupScheme.comp_factorisationDual`, `TauCeti.GroupScheme.factorisationDual_comp`:
+  both composites of `f` with its dual are multiplication by the degree.
+* `TauCeti.GroupScheme.eq_factorisationDual`: uniqueness of the factorisation.
+* `TauCeti.GroupScheme.isogenyOfDegree_factorisationDual`: the dual is an isogeny, and its
+  degree.
+* `TauCeti.GroupScheme.factorisationDual_factorisationDual`: involutivity.
+* `TauCeti.GroupScheme.factorisationDual_comp_eq_comp`: the dual of a composite is the composite
+  of the duals in the opposite order.
+* `TauCeti.GroupScheme.factorisationDual_intCast`: the dual of multiplication by `m`.
+* `TauCeti.GroupScheme.pullback_mapCommGrp_map_factorisationDual`: compatibility with arbitrary
+  base change.
 
 ## References
 
@@ -92,5 +119,97 @@ theorem factorisationDual_comp (hf : IsogenyOfDegree f.hom n) :
   simpa only [CommGrp.comp_hom, Grp.comp_hom_hom, Category.assoc,
     CommGrp.natCast_hom_hom_hom, MonObj.pow_comp, MonObj.comp_pow,
     Category.id_comp, Category.comp_id] using h
+
+/-! ### Isogeny, degree and involutivity -/
+
+/-- **The factorisation dual is an isogeny.** Let `f : A ⟶ B` be an isogeny of degree `n`. If
+multiplication by `n` on `A` is an isogeny of degree `n * k` and multiplication by `n` on `B` is
+finite, then the factorisation dual `B ⟶ A` is an isogeny of degree `k`. For elliptic curves,
+multiplication by `n` has degree `n²`, so the dual of an isogeny of degree `n` again has degree
+`n`. -/
+theorem isogenyOfDegree_factorisationDual (hf : IsogenyOfDegree f.hom n) {k : ℕ}
+    (hA : IsogenyOfDegree (n : End A).asHom.hom (n * k))
+    [IsFinite (n : End B).asHom.hom.hom.hom.left] :
+    IsogenyOfDegree (factorisationDual f hf).hom k := by
+  have := hf.isIsogeny.isFinite
+  have := hf.isIsogeny.flat
+  have := hf.isIsogeny.surjective
+  have := hA.isIsogeny.isFinite
+  have := hA.isIsogeny.flat
+  have := hA.isIsogeny.surjective
+  -- The composites of `f` with its dual, as morphisms of schemes, are multiplication by `n`.
+  have hA' : f.hom.hom.hom.left ≫ (factorisationDual f hf).hom.hom.hom.left =
+      (n : End A).asHom.hom.hom.hom.left :=
+    congrArg (fun g ↦ g.hom.hom.hom.left) (comp_factorisationDual f hf)
+  have hB' : (factorisationDual f hf).hom.hom.hom.left ≫ f.hom.hom.hom.left =
+      (n : End B).asHom.hom.hom.hom.left :=
+    congrArg (fun g ↦ g.hom.hom.hom.left) (factorisationDual_comp f hf)
+  have : IsFinite (factorisationDual f hf).hom.hom.hom.left := by
+    have : IsFinite ((factorisationDual f hf).hom.hom.hom.left ≫ f.hom.hom.hom.left) := by
+      rw [hB']; infer_instance
+    exact IsFinite.of_comp _ f.hom.hom.hom.left
+  have : Flat ((factorisationDual f hf).hom.hom.hom.left) := by
+    have : Flat (f.hom.hom.hom.left ≫ (factorisationDual f hf).hom.hom.hom.left) := by
+      rw [hA']; infer_instance
+    exact Flat.of_comp_surjective f.hom.hom.hom.left _
+  have : Surjective ((factorisationDual f hf).hom.hom.hom.left) := by
+    have : Surjective (f.hom.hom.hom.left ≫ (factorisationDual f hf).hom.hom.hom.left) := by
+      rw [hA']; infer_instance
+    exact Surjective.of_comp f.hom.hom.hom.left _
+  refine ⟨(isIsogeny_iff _).mpr ⟨‹_›, ‹_›, ‹_›⟩, fun s ↦ ?_⟩
+  -- Degrees multiply along `f ≫ f̂ = [n]`, and the degree `n` of `f` is positive.
+  have hn : 0 < n := hf.degree_eq s ▸ degree_pos f.hom s
+  have h := degree_comp f.hom (factorisationDual f hf).hom s
+  rw [← CommGrp.comp_hom, comp_factorisationDual, hA.degree_eq,
+    hf.degree_eq] at h
+  exact (Nat.eq_of_mul_eq_mul_left hn h).symm
+
+/-- **The factorisation dual is involutive.** If the factorisation dual of an isogeny `f` of
+degree `n` is again an isogeny of degree `n`, then its own factorisation dual is `f`. -/
+@[simp]
+theorem factorisationDual_factorisationDual (hf : IsogenyOfDegree f.hom n)
+    [LocallyOfFinitePresentation (factorisationDual f hf).hom.hom.hom.left]
+    (hf' : IsogenyOfDegree (factorisationDual f hf).hom n) :
+    factorisationDual (factorisationDual f hf) hf' = f :=
+  (eq_factorisationDual _ hf' f (factorisationDual_comp f hf)).symm
+
+/-! ### Composition and multiplication maps -/
+
+/-- **The factorisation dual reverses composition.** For isogenies `f : A ⟶ B` of degree `m`
+and `g : B ⟶ C` of degree `n`, the factorisation dual of `f ≫ g : A ⟶ C`, of degree `m * n`, is
+the composite `C ⟶ B ⟶ A` of the factorisation duals of `g` and of `f`. -/
+theorem factorisationDual_comp_eq_comp {C : CommGrp (Over S)} (g : B ⟶ C)
+    [LocallyOfFinitePresentation g.hom.hom.hom.left]
+    [LocallyOfFinitePresentation (f ≫ g).hom.hom.hom.left] {m : ℕ}
+    (hf : IsogenyOfDegree f.hom m) (hg : IsogenyOfDegree g.hom n)
+    (hfg : IsogenyOfDegree (f ≫ g).hom (m * n)) :
+    factorisationDual (f ≫ g) hfg = factorisationDual g hg ≫ factorisationDual f hf := by
+  refine (eq_factorisationDual _ hfg _ ?_).symm
+  rw [Category.assoc, comp_factorisationDual_assoc, ← End.natCast_asHom_comp_assoc,
+    comp_factorisationDual, ← End.mul_asHom, ← Nat.cast_mul, mul_comm]
+
+/-- **The factorisation dual of a multiplication map.** If multiplication by an integer `m` is an
+isogeny of degree `d` with `d = m * k`, then its factorisation dual is multiplication by `k`. For
+elliptic curves, multiplication by `m ≠ 0` has degree `m²`, so it is its own factorisation dual. -/
+theorem factorisationDual_intCast (m k : ℤ) {d : ℕ}
+    [LocallyOfFinitePresentation (m : End A).asHom.hom.hom.hom.left]
+    (h : IsogenyOfDegree (m : End A).asHom.hom d) (hd : (d : ℤ) = m * k) :
+    factorisationDual (m : End A).asHom h = (k : End A).asHom := by
+  refine (eq_factorisationDual _ h _ ?_).symm
+  rw [← End.mul_asHom, ← Int.cast_mul, mul_comm, ← hd, Int.cast_natCast]
+
+/-! ### Base change -/
+
+/-- **The factorisation dual commutes with base change.** For an isogeny `f` of degree `n` and a
+morphism `s : T ⟶ S`, the factorisation dual of the base change of `f` along `s` is the base change
+of the factorisation dual of `f`. -/
+theorem pullback_mapCommGrp_map_factorisationDual {T : Scheme.{u}} (s : T ⟶ S)
+    (hf : IsogenyOfDegree f.hom n)
+    [LocallyOfFinitePresentation ((Over.pullback s).mapCommGrp.map f).hom.hom.hom.left]
+    (hf' : IsogenyOfDegree ((Over.pullback s).mapCommGrp.map f).hom n) :
+    (Over.pullback s).mapCommGrp.map (factorisationDual f hf) =
+      factorisationDual ((Over.pullback s).mapCommGrp.map f) hf' := by
+  refine eq_factorisationDual _ hf' _ ?_
+  rw [← Functor.map_comp, comp_factorisationDual, Functor.mapCommGrp_map_natCast]
 
 end TauCeti.GroupScheme

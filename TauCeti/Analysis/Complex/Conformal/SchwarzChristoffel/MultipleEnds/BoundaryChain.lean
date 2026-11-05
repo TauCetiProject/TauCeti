@@ -258,7 +258,7 @@ theorem schwarzChristoffelFiniteBoundary_eq_union_edges {n : ℕ}
     exact Or.inr (exists_mem_Icc_castSucc_succ b hn
       ⟨(le_of_not_ge hl), (le_of_not_ge hr)⟩)
   have hDl : Iic (b 0) ⊆ D := fun x hx =>
-    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (γ := OrderDual ℝ)
+    Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
       Finset.univ (by norm_num) hleft (fun i _ hi => hamin i hi) hx
   have hDr : Ici (b (Fin.last n)) ⊆ D := fun x hx =>
     Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le
