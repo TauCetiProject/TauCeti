@@ -49,8 +49,6 @@ namespace TauCeti.Probability
 
 universe u
 
-section Prod
-
 /-- The Efron–Stein inequality on `Measure.pi` over `Fin n`. -/
 private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, MeasurableSpace (α i)]
     (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)] {f : (∀ i, α i) → ℝ},
