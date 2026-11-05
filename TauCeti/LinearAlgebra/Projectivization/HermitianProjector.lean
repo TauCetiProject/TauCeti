@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Projectivization.Action
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
@@ -52,6 +53,8 @@ imaginary parts of the entries. Its topological and semialgebraic properties are
 
 * `TauCeti.rankOneHermitianProjector_mem_hermitianProjectorLocus`: the Hermitian projector of a
   vector with `x* x ≠ 0` lies in the locus.
+* `TauCeti.two_mul_sub_one_of_mem_hermitianProjectorLocus`: in dimension two, `2 P - 1` is a
+  traceless Hermitian involution for `P` in the locus.
 * `TauCeti.rankOneHermitianProjector_col_eq_self`: a matrix in the locus is the Hermitian
   projector of each of its columns with nonzero diagonal entry.
 * `TauCeti.rankOneHermitianProjector_unitary_mulVec` and
@@ -195,6 +198,21 @@ theorem rankOneHermitianProjector_mem_hermitianProjectorLocus {x : ι → K} (hx
     rankOneHermitianProjector x ∈ hermitianProjectorLocus ι K :=
   ⟨isStarProjection_rankOneHermitianProjector x, trace_rankOneHermitianProjector hx⟩
 
+/-- For a matrix `P` of the Hermitian projector locus in dimension two, `2 P - 1` is a traceless
+Hermitian matrix with square `1`. -/
+theorem two_mul_sub_one_of_mem_hermitianProjectorLocus [DecidableEq ι] {P : Matrix ι ι K}
+    (hP : P ∈ hermitianProjectorLocus ι K) (hι : Fintype.card ι = 2) :
+    (2 * P - 1).IsHermitian ∧ (2 * P - 1).trace = 0 ∧ (2 * P - 1) * (2 * P - 1) = 1 := by
+  obtain ⟨⟨hidem, hsa⟩, htr⟩ := mem_hermitianProjectorLocus.mp hP
+  refine ⟨?_, ?_, ?_⟩
+  · rw [isHermitian_iff_isSelfAdjoint, two_mul]
+    exact (hsa.add hsa).sub (.one _)
+  · rw [two_mul, trace_sub, trace_add, htr, trace_one, hι]
+    norm_num
+  · have h : (2 * P - 1) * (2 * P - 1) = 4 * (P * P) - 4 * P + 1 := by noncomm_ring
+    rw [h, hidem.eq]
+    abel
+
 variable [CharZero K]
 
 /-- A matrix in the Hermitian projector locus is the Hermitian projector of each of its columns
@@ -264,8 +282,8 @@ theorem hermitianProjector_eq_projector [TrivialStar K] :
   | h x hx => simp [rankOneHermitianProjector_eq_rankOneProjector]
 
 /-- Moving a line by a unitary matrix `U` conjugates its Hermitian projector by `U`. -/
-theorem hermitianProjector_unitary_smul [DecidableEq ι] (U : unitaryGroup ι K)
-    (p : ℙ K (ι → K)) :
+theorem hermitianProjector_unitary_smul [DecidableEq ι] (p : ℙ K (ι → K))
+    (U : unitaryGroup ι K) :
     hermitianProjector ((Unitary.toUnits U : GL ι K) • p) =
       (U : Matrix ι ι K) * hermitianProjector p * star (U : Matrix ι ι K) := by
   induction p using ind with

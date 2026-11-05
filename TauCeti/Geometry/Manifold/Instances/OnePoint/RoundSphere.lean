@@ -97,28 +97,14 @@ theorem sphereCoords_def (x : OnePoint ℂ) :
     sphereCoords x = pauliCoord (2 * hermitianProjector (equivProjectivization ℂ x) - 1) :=
   (rfl)
 
-/-- For a matrix `P` of the Hermitian projector locus of `ℂ²`, `2 P - 1` is a traceless Hermitian
-matrix with square `1`. -/
-private theorem two_mul_sub_one_of_mem {P : Matrix (Fin 2) (Fin 2) ℂ}
-    (hP : P ∈ hermitianProjectorLocus (Fin 2) ℂ) :
-    (2 * P - 1).IsHermitian ∧ (2 * P - 1).trace = 0 ∧ (2 * P - 1) * (2 * P - 1) = 1 := by
-  obtain ⟨⟨hidem, hsa⟩, htr⟩ := mem_hermitianProjectorLocus.mp hP
-  refine ⟨?_, ?_, ?_⟩
-  · rw [isHermitian_iff_isSelfAdjoint, two_mul]
-    exact (hsa.add hsa).sub (.one _)
-  · rw [two_mul, trace_sub, trace_add, htr, trace_one, Fintype.card_fin]
-    norm_num
-  · have h : (2 * P - 1) * (2 * P - 1) = 4 * (P * P) - 4 * P + 1 := by noncomm_ring
-    rw [h, hidem.eq]
-    abel
-
 /-- The Pauli matrix of `sphereCoords x` is `2 P - 1`, for `P` the orthogonal projector onto the
 line `x`. -/
 theorem pauli_sphereCoords (x : OnePoint ℂ) :
     pauli (sphereCoords x) = 2 * hermitianProjector (equivProjectivization ℂ x) - 1 := by
   obtain ⟨h1, h2, -⟩ :=
-    two_mul_sub_one_of_mem (hermitianProjector_mem_hermitianProjectorLocus
-      (equivProjectivization ℂ x))
+    two_mul_sub_one_of_mem_hermitianProjectorLocus
+      (hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x))
+      (Fintype.card_fin 2)
   exact pauli_pauliCoord h1 h2
 
 /-- `sphereCoords x` is a unit vector. -/
@@ -126,8 +112,9 @@ theorem pauli_sphereCoords (x : OnePoint ℂ) :
 theorem dotProduct_sphereCoords_self (x : OnePoint ℂ) :
     sphereCoords x ⬝ᵥ sphereCoords x = 1 := by
   obtain ⟨-, -, h3⟩ :=
-    two_mul_sub_one_of_mem (hermitianProjector_mem_hermitianProjectorLocus
-      (equivProjectivization ℂ x))
+    two_mul_sub_one_of_mem_hermitianProjectorLocus
+      (hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x))
+      (Fintype.card_fin 2)
   have h := trace_pauli_mul_pauli (sphereCoords x) (sphereCoords x)
   rw [pauli_sphereCoords, h3, trace_one, Fintype.card_fin] at h
   exact_mod_cast (mul_left_cancel₀ two_ne_zero (h.symm.trans (mul_one 2).symm) :)
