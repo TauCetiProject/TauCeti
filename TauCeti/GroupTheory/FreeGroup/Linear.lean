@@ -31,10 +31,13 @@ groups of finite rank follows, through the Hilbert basis theorem.
 
 * `TauCeti.injective_freeGroup_lift_transvection_of_two_le_abs`: Sanov's theorem, in the general
   form over a linearly ordered commutative ring: the transvections with parameters `c`, `d`,
-  `2 ≤ |c|`, `2 ≤ |d|`, freely generate a free subgroup of `SL(2, R)`; `A` and `B` are the case
-  `R = ℤ`, `c = d = 2`.
+  `2 ≤ |c|`, `2 ≤ |d|`, freely generate a free subgroup of `SL(2, R)`.
 * `TauCeti.injective_freeGroup_lift_conj_transvection_of_two_le_abs`: the conjugates `Bᵏ A B⁻ᵏ`
   for distinct `k` freely generate a free subgroup of `SL(2, R)`.
+* `TauCeti.injective_freeGroup_lift_transvection_two`: Sanov's theorem, `A` and `B` freely
+  generate a free subgroup of `SL(2, ℤ)`.
+* `TauCeti.injective_freeGroup_lift_conj_transvection_two`: the conjugates `Bᵏ A B⁻ᵏ` for
+  distinct `k` freely generate a free subgroup of `SL(2, ℤ)`.
 * `TauCeti.exists_injective_freeGroup_SL`: every free group of countable rank embeds in
   `SL(2, ℤ)`.
 * `TauCeti.injective_freeGroup_lift_conj_zpow_of`: the elements `bᵏ a b⁻ᵏ` for distinct `k`
@@ -94,8 +97,7 @@ private lemma disjoint_cones :
 
 /-- **Sanov's theorem**, in the general form over a linearly ordered commutative ring `R`: for
 `c, d : R` with `2 ≤ |c|` and `2 ≤ |d|`, the matrices `[[1, c], [0, 1]]` and `[[1, 0], [d, 1]]`
-freely generate a free subgroup of rank two of `SL(2, R)`. For `R = ℤ` and `c = d = 2` this is
-Sanov's theorem. -/
+freely generate a free subgroup of rank two of `SL(2, R)`. -/
 theorem injective_freeGroup_lift_transvection_of_two_le_abs {c d : R} (hc : 2 ≤ |c|)
     (hd : 2 ≤ |d|) :
     Function.Injective (FreeGroup.lift ![transvection (zero_ne_one : (0 : Fin 2) ≠ 1) c,
@@ -117,13 +119,31 @@ theorem injective_freeGroup_lift_conj_transvection_of_two_le_abs {ι : Type*} {k
     (fun _ hn => transvection_zpow_smul_subset _ hc hn)
     (fun _ hn => transvection_zpow_smul_subset _ hd hn) hk
 
+/-- **Sanov's theorem.** The matrices `[[1, 2], [0, 1]]` and `[[1, 0], [2, 1]]` freely generate
+a free subgroup of rank two of `SL(2, ℤ)`. This is the case `R = ℤ`, `c = d = 2` of
+`injective_freeGroup_lift_transvection_of_two_le_abs`. -/
+theorem injective_freeGroup_lift_transvection_two :
+    Function.Injective (FreeGroup.lift ![transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (2 : ℤ),
+      transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ)]) :=
+  injective_freeGroup_lift_transvection_of_two_le_abs (by norm_num) (by norm_num)
+
+/-- For distinct integers `k i`, the conjugates `Bᵏ⁽ⁱ⁾ A B⁻ᵏ⁽ⁱ⁾` of `A = [[1, 2], [0, 1]]` by
+powers of `B = [[1, 0], [2, 1]]` freely generate a free subgroup of `SL(2, ℤ)`. This is the case
+`R = ℤ`, `c = d = 2` of `injective_freeGroup_lift_conj_transvection_of_two_le_abs`. -/
+theorem injective_freeGroup_lift_conj_transvection_two {ι : Type*} {k : ι → ℤ}
+    (hk : Function.Injective k) :
+    Function.Injective (FreeGroup.lift fun i =>
+      transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ) ^ k i *
+        transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (2 : ℤ) *
+          (transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ) ^ k i)⁻¹) :=
+  injective_freeGroup_lift_conj_transvection_of_two_le_abs hk (by norm_num) (by norm_num)
+
 /-- **Free groups of countable rank are linear over `ℤ`.** Every free group on a countable basis
 embeds in `SL(2, ℤ)`. -/
 theorem exists_injective_freeGroup_SL (ι : Type*) [Countable ι] :
     ∃ f : FreeGroup ι →* SL(2, ℤ), Function.Injective f := by
   obtain ⟨k, hk⟩ := Countable.exists_injective_nat ι
-  exact ⟨_, injective_freeGroup_lift_conj_transvection_of_two_le_abs
-    (Nat.cast_injective.comp hk) (c := (2 : ℤ)) (d := 2) (by norm_num) (by norm_num)⟩
+  exact ⟨_, injective_freeGroup_lift_conj_transvection_two (Nat.cast_injective.comp hk)⟩
 
 /-- For distinct integers `k i`, the elements `bᵏ⁽ⁱ⁾ a b⁻ᵏ⁽ⁱ⁾` of the free group `F(a, b)` freely
 generate a free subgroup. In particular `FreeGroup (Fin n)` embeds in `FreeGroup (Fin 2)` by
@@ -137,8 +157,7 @@ theorem injective_freeGroup_lift_conj_zpow_of {ι : Type*} {k : ι → ℤ}
     ![transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (2 : ℤ),
       transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ)]) ?_
   rw [← MonoidHom.coe_comp]
-  convert injective_freeGroup_lift_conj_transvection_of_two_le_abs hk
-    (c := (2 : ℤ)) (d := 2) (by norm_num) (by norm_num) using 2
+  convert injective_freeGroup_lift_conj_transvection_two hk using 2
   ext i
   simp
 
