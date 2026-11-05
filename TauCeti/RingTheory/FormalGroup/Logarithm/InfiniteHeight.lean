@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 import TauCeti.RingTheory.FormalGroup.AddInv
+import TauCeti.RingTheory.FormalGroup.Hom.Defect
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -86,7 +87,6 @@ private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p :
     ∃ c : R, ((n + 1 : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ (g - c • PowerSeries.X ^ n)).order ∧
       ∀ k, n = p ^ k → c = 0 := by
   have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
-  obtain ⟨r, hr⟩ := F.exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle hg (by omega) hn
   by_cases hpow : ∃ k, n = p ^ k
   · obtain ⟨k, rfl⟩ := hpow
     have hk : k ≠ 0 := by
@@ -101,31 +101,10 @@ private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p :
     refine ⟨0, ?_, fun _ _ ↦ rfl⟩
     rw [zero_smul, sub_zero]
     exact succ_le_order_of_homogeneousComponent_eq_zero hn h0
-  · -- `d_n` is prime to `p`, hence a unit in `R`, and `r C_n = (r d_n⁻¹) ((X + Y)ⁿ - Xⁿ - Yⁿ)`
-    have hd : IsUnit ((TauCeti.lazardGcd n : ℕ) : R) := by
-      have hcop : (TauCeti.lazardGcd n).Coprime p := Nat.Coprime.symm <|
-        (Nat.Prime.coprime_iff_not_dvd hp).mpr fun h ↦
-          hpow ((TauCeti.prime_dvd_lazardGcd_iff hp (by omega)).mp h)
-      have : IsCoprime ((TauCeti.lazardGcd n : ℕ) : R) (p : R) := by
-        simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := R)
-      rwa [hpR, isCoprime_zero_right] at this
-    have hc : homogeneousComponent n (F.homDefect 𝔾ₐ g) = ↑((r * ↑hd.unit⁻¹) •
-        ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
-          MvPolynomial.X 1 ^ n : MvPolynomial (Fin 2) R)) := by
-      rw [hr, ← TauCeti.lazardGcd_nsmul_lazardCocycle (by omega), ← Nat.cast_smul_eq_nsmul R,
-        smul_smul, mul_assoc, hd.val_inv_mul, mul_one]
-    set c := r * ↑hd.unit⁻¹
-    refine ⟨c, ?_, fun k hk ↦ (hpow ⟨k, hk⟩).elim⟩
-    have hXn : (n : ℕ∞) ≤ (c • PowerSeries.X ^ n : PowerSeries R).order :=
-      PowerSeries.nat_le_order _ _ fun i hi ↦ by simp [PowerSeries.coeff_X_pow, hi.ne]
-    have hXn₀ : PowerSeries.constantCoeff (c • PowerSeries.X ^ n : PowerSeries R) = 0 := by
-      simp [show n ≠ 0 by omega]
-    have hn' : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ (g - c • PowerSeries.X ^ n)).order := by
-      rw [F.homDefect_𝔾ₐ_sub hg hXn₀]
-      exact le_order_sub hn (F.le_order_homDefect_𝔾ₐ hXn₀ hXn)
-    refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
-    rw [F.homDefect_𝔾ₐ_sub hg hXn₀, map_sub,
-      F.homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow c (by omega), hc, sub_self]
+  · -- `d_n` is prime to `p`, hence a unit in `R`
+    obtain ⟨c, hc⟩ := exists_succ_le_order_homDefect_sub_smul_X_pow (G := 𝔾ₐ) hn₂
+      (TauCeti.isUnit_lazardGcd hp hpR (by omega) hpow) hg hn
+    exact ⟨c, hc, fun k hk ↦ (hpow ⟨k, hk⟩).elim⟩
 
 end PSeries
 
