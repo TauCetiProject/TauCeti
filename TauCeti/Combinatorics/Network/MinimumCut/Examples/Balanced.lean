@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Star
 public import TauCeti.Combinatorics.Network.MinimumCut.CutTree
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
-import Mathlib.Combinatorics.SimpleGraph.Star
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -80,7 +80,8 @@ theorem isSubmodular_balancedCut : IsSubmodular balancedCut := by
   simp only [balancedCut]
   omega
 
-private theorem pairMinimumValue_balancedCut {s t : Fin 4} (hst : s ≠ t) :
+/-- Every distinct pair of vertices has balanced minimum cut value one. -/
+theorem pairMinimumValue_balancedCut {s t : Fin 4} (hst : s ≠ t) :
     pairMinimumValue balancedCut s t = 1 := by
   obtain ⟨S, hS⟩ := exists_minimum balancedCut (disjoint_singleton.mpr hst)
   obtain ⟨hs, ht⟩ := isAdmissible_singleton.mp hS.admissible
@@ -105,7 +106,8 @@ private theorem isFlowEquivalentTree_balanced {T : SimpleGraph (Fin 4)} (hT : T.
     exact ⟨e, he, (pairMinimumValue_balancedCut hst).symm⟩
 
 /-- The unit-weight star is a cut tree for the balanced cut function. -/
-example : IsCutTree balancedCut (starGraph 0) fun _ ↦ 1 := by
+theorem isCutTree_starGraph_balancedCut :
+    IsCutTree balancedCut (starGraph 0) fun _ ↦ 1 := by
   refine ⟨isFlowEquivalentTree_balanced (isTree_starGraph 0), fun u v huv ↦ ?_⟩
   have hbridge : (starGraph (0 : Fin 4)).IsBridge s(u, v) :=
     isAcyclic_iff_forall_adj_isBridge.mp (isAcyclic_starGraph 0) huv
@@ -129,12 +131,14 @@ example : IsCutTree balancedCut (starGraph 0) fun _ ↦ 1 := by
   exact ⟨self_mem_edgeSide _ u v, hbridge.notMem_edgeSide, hval⟩
 
 /-- The unit-weight path is flow-equivalent for the balanced cut function. -/
-example : IsFlowEquivalentTree balancedCut (pathGraph 4) fun _ ↦ 1 :=
+theorem isFlowEquivalentTree_pathGraph_balancedCut :
+    IsFlowEquivalentTree balancedCut (pathGraph 4) fun _ ↦ 1 :=
   isFlowEquivalentTree_balanced (isTree_pathGraph_add_one 3)
 
 /-- The unit-weight path is not a cut tree for the balanced cut function: deleting its middle edge
 leaves the side `{0, 1}`, of value two. -/
-example : ¬IsCutTree balancedCut (pathGraph 4) fun _ ↦ 1 := by
+theorem not_isCutTree_pathGraph_balancedCut :
+    ¬IsCutTree balancedCut (pathGraph 4) fun _ ↦ 1 := by
   intro hT
   have h12 : (pathGraph 4).Adj 1 2 := by simp [pathGraph_adj]
   have hbridge : (pathGraph 4).IsBridge s(1, 2) :=
