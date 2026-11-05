@@ -55,6 +55,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
   `a ≥ 0` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
+* `Real.smoothTransition.setIntegral_Icc_deriv`, `Real.smoothTransition.setIntegral_deriv_le_one`:
+  its integral over an interval containing `[0, 1]` is one, and over any set at most one.
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
 * `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
 * `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
@@ -160,6 +162,21 @@ theorem integral_deriv : ∫ x, deriv smoothTransition x = 1 := by
     exact (zero_of_nonpos hx).symm
   · filter_upwards [eventually_ge_atTop 1] with x hx
     exact (one_of_one_le hx).symm
+
+/-- Over any interval `[a, b]` containing `[0, 1]`, the derivative of the smooth transition
+function has integral one, its total increase. -/
+theorem setIntegral_Icc_deriv {a b : ℝ} (ha : a ≤ 0) (hb : 1 ≤ b) :
+    ∫ x in Icc a b, deriv smoothTransition x = 1 := by
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ ?_, integral_deriv]
+  rw [mem_Icc, not_and_or, not_le, not_le] at hx
+  rcases hx with hx | hx
+  · exact deriv_of_neg (hx.trans_le ha)
+  · exact deriv_of_one_lt (hb.trans_lt hx)
+
+/-- Over any set, the derivative of the smooth transition function has integral at most one. -/
+theorem setIntegral_deriv_le_one (s : Set ℝ) : ∫ x in s, deriv smoothTransition x ≤ 1 :=
+  integral_deriv ▸ setIntegral_le_integral integrable_deriv
+    (.of_forall fun _ ↦ smoothTransition.monotone.deriv_nonneg)
 
 /-- The rescaled derivatives `t ↦ c ψ'(c (a - t))` of the smooth transition function `ψ`
 integrate to one: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`. -/
