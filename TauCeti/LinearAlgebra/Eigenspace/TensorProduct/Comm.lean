@@ -43,7 +43,10 @@ private theorem koszulCommAux_tmul (γ : Module.End R E) (δ : Module.End R F)
     (hγ : Function.Involutive γ) (x : E) (y : F) :
     koszulCommAux γ δ hγ (x ⊗ₜ y) =
       (⅟2 : R) • (y ⊗ₜ x + y ⊗ₜ γ x + δ y ⊗ₜ x - δ y ⊗ₜ γ x) := by
-  simp [koszulCommAux, add_tmul]
+  simp only [koszulCommAux, LinearMap.coe_comp, LinearEquiv.coe_coe, LinearMap.coe_add,
+    Function.comp_apply, Pi.add_apply, map_tmul, Submodule.coe_subtype,
+    coe_eigenProjOfInvolutive_apply, one_smul, smul_add, one_apply_eq_self, add_tmul,
+    neg_smul, smul_neg, map_add, comm_tmul, tmul_smul]
   simp only [tmul_smul, tmul_neg]
   module
 
@@ -54,6 +57,8 @@ private theorem koszulCommAux_comp (γ : Module.End R E) (δ : Module.End R F)
   intro x y
   simp only [LinearMap.comp_apply, koszulCommAux_tmul, map_smul, map_add, map_sub,
     hγ x, hδ y, LinearMap.id_apply]
+  -- The composite expands to `(⅟2)^2 * 4` times the tensor; these two uses of
+  -- `2 * ⅟2 = 1` reduce that coefficient to `1`.
   linear_combination (norm := module)
     (2 * ⅟2 : R) • (mul_invOf_self (2 : R)) • (x ⊗ₜ[R] y) +
       (mul_invOf_self (2 : R)) • (x ⊗ₜ[R] y)
@@ -78,8 +83,23 @@ theorem koszulComm_symm (γ : Module.End R E) (δ : Module.End R F)
     (koszulComm γ δ hγ hδ).symm = koszulComm δ γ hδ hγ := by
   rfl
 
+/-- Applying the Koszul commutor twice, with swapped parity operators, is the identity. -/
+@[simp]
+theorem koszulComm_koszulComm (γ : Module.End R E) (δ : Module.End R F)
+    (hγ : Function.Involutive γ) (hδ : Function.Involutive δ) (z : E ⊗[R] F) :
+    koszulComm δ γ hδ hγ (koszulComm γ δ hγ hδ z) = z :=
+  (koszulComm γ δ hγ hδ).symm_apply_apply z
+
+/-- Composing the Koszul commutors in opposite directions is the identity equivalence. -/
+@[simp]
+theorem koszulComm_trans_koszulComm (γ : Module.End R E) (δ : Module.End R F)
+    (hγ : Function.Involutive γ) (hδ : Function.Involutive δ) :
+    (koszulComm γ δ hγ hδ).trans (koszulComm δ γ hδ hγ) = LinearEquiv.refl R (E ⊗[R] F) := by
+  ext z
+  exact koszulComm_koszulComm γ δ hγ hδ z
+
 /-- Homogeneous vectors of degrees `p` and `q` acquire the Koszul sign `(-1)^(p*q)`. -/
-theorem koszulComm_tmul_of_eigenvectors (γ : Module.End R E) (δ : Module.End R F)
+theorem koszulComm_tmul_of_apply_eq_neg_one_pow_smul (γ : Module.End R E) (δ : Module.End R F)
     (hγ : Function.Involutive γ) (hδ : Function.Involutive δ) {p q : ℕ} {x : E} {y : F}
     (hx : γ x = (-1 : R) ^ p • x) (hy : δ y = (-1 : R) ^ q • y) :
     koszulComm γ δ hγ hδ (x ⊗ₜ y) = (-1 : R) ^ (p * q) • (y ⊗ₜ x) := by
@@ -87,9 +107,10 @@ theorem koszulComm_tmul_of_eigenvectors (γ : Module.End R E) (δ : Module.End R
   by_cases hp : Even p <;> by_cases hq : Even q <;>
     simp only [neg_one_pow_eq_ite, Nat.even_mul, hp, hq, true_or, false_or, ite_true,
       ite_false, one_smul, neg_one_smul, tmul_neg, neg_tmul, neg_neg]
-  all_goals first
-    | linear_combination (norm := module) (mul_invOf_self (2 : R)) • (y ⊗ₜ[R] x)
-    | linear_combination (norm := module) -(mul_invOf_self (2 : R)) • (y ⊗ₜ[R] x)
+  · linear_combination (norm := module) (mul_invOf_self (2 : R)) • (y ⊗ₜ[R] x)
+  · linear_combination (norm := module) (mul_invOf_self (2 : R)) • (y ⊗ₜ[R] x)
+  · linear_combination (norm := module) (mul_invOf_self (2 : R)) • (y ⊗ₜ[R] x)
+  · linear_combination (norm := module) -(mul_invOf_self (2 : R)) • (y ⊗ₜ[R] x)
 
 /-- The Koszul commutor preserves the tensor parity operator. -/
 theorem koszulComm_map (γ : Module.End R E) (δ : Module.End R F)
