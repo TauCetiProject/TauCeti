@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 public import TauCeti.Combinatorics.Graph.Delete
 public import TauCeti.Combinatorics.Graph.Incidence
 public import TauCeti.Data.ENat.Lattice
@@ -250,6 +251,25 @@ theorem isEdgeConnected_two_iff_connected_and_forall_not_isBridge (hV : V(G).Non
   rw [isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge,
     connected_iff_forall_reachable, and_iff_right hV]
   exact and_congr_left' ⟨fun h _ _ hx hy ↦ h hx hy, fun h _ hx _ hy ↦ h hx hy⟩
+
+/-- The graph traced by a closed trail is `2`-edge-connected. -/
+theorem Walk.IsTrail.isEdgeConnected_two_walkGraph {p : G.Walk x x} (hp : p.IsTrail) :
+    (G.walkGraph p).IsEdgeConnected 2 := by
+  refine (isEdgeConnected_two_iff_connected_and_forall_not_isBridge
+    p.connected_walkGraph.nonempty).mpr ⟨p.connected_walkGraph, fun e he ↦ ?_⟩
+  have hep : e ∈ p.edges := (p.mem_edgeSet_walkGraph e).mp he.mem_edgeSet
+  have hpos : 0 < p.length := by
+    rw [← p.length_edges]
+    exact List.length_pos_of_mem hep
+  have hle : G.walkGraph p ≤ G := p.walkGraph_le_of_pos hpos
+  have hpG : ∀ f ∈ p.edges, f ∈ E(G.walkGraph p) := fun f hf ↦ (p.mem_edgeSet_walkGraph f).mpr hf
+  exact he.notMem_edges_of_isTrail ((Walk.isTrail_transfer hle p hpG).mpr hp)
+    (by simpa [Walk.edges_transfer] using hep)
+
+/-- The graph traced by a cycle is `2`-edge-connected. -/
+theorem Walk.IsCycle.isEdgeConnected_two_walkGraph {p : G.Walk x x} (hp : p.IsCycle) :
+    (G.walkGraph p).IsEdgeConnected 2 :=
+  hp.isTrail.isEdgeConnected_two_walkGraph
 
 /-! ### Graphs from simple graphs -/
 
