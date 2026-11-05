@@ -86,11 +86,7 @@ def centralInnerHom (δ : derivationLieAlgebra R A) :
     Multiplicative (Subalgebra.center R A) →* (DerivationExtension δ M ≃ₗ[A]
       DerivationExtension δ M) where
   toFun c := innerEquiv M (b := (c.toAdd : A)) (by
-    suffices innerDerivation R (c.toAdd : A) = 0 by simp [this]
-    ext a
-    simp only [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def,
-      ZeroMemClass.coe_zero]
-    exact sub_eq_zero.mpr (Subalgebra.mem_center_iff.mp c.toAdd.property a).symm)
+    simp [innerDerivation_eq_zero_of_mem_center R c.toAdd.property])
   map_one' := by
     apply innerEquiv_zero
   map_mul' c d := by
@@ -220,6 +216,9 @@ both endpoint maps. -/
 theorem mapShortComplex_discreteInnerIso :
     (discreteModules A).ι.mapShortComplex.mapIso (discreteInnerIso hδ hδ' h M) =
       (functorInnerIso h).app M.obj := by
+  -- The inclusion forgets the homMk wrappers. Its endpoint maps are identities, and its
+  -- middle map is the same innerEquiv.toLinearMap as in functorInnerIso. The final rfl
+  -- identifies these maps after reducing the short-complex object projections and wrappers.
   ext : 2 <;> simp <;> rfl
 
 /-- The discrete inner comparison for zero is the identity of the whole short complex. -/
@@ -227,10 +226,16 @@ theorem mapShortComplex_discreteInnerIso :
 theorem discreteInnerIso_zero (h : δ = δ + innerDerivation R (0 : A)) :
     discreteInnerIso hδ hδ h M = Iso.refl _ := by
   ext : 2
-  · simp only [discreteInnerIso_hom_τ₁]; rfl
-  · rw [discreteInnerIso_hom_τ₂, innerEquiv_zero]
-    rfl
-  · simp only [discreteInnerIso_hom_τ₃]; rfl
+  · simp [discreteShortComplex]
+  · rw [discreteInnerIso_hom_τ₂, innerEquiv_zero, Iso.refl_hom, ShortComplex.id_τ₂]
+    -- Normalize the middle object so the underlying ModuleCat identity lemma applies.
+    dsimp only [discreteShortComplex]
+    apply InducedCategory.hom_ext
+    apply ModuleCat.hom_ext
+    simp only [LinearEquiv.refl_toLinearMap, ObjectProperty.FullSubcategory.id_hom,
+      ModuleCat.hom_id]
+    exact ConcreteCategory.hom_ofHom (C := ModuleCat A) _
+  · simp [discreteShortComplex]
 
 /-- Successive inner changes compose by adding their actual indexing elements. -/
 theorem discreteInnerIso_trans (hδ'' : Continuous (δ'' : Module.End R A))
@@ -239,25 +244,23 @@ theorem discreteInnerIso_trans (hδ'' : Continuous (δ'' : Module.End R A))
       discreteInnerIso hδ hδ'' (b := b + b') (by rw [h', h, map_add, add_assoc]) M := by
   ext : 2
   · simp only [Iso.trans_hom, ShortComplex.comp_τ₁, discreteInnerIso_hom_τ₁]
-    rfl
+    exact Category.id_comp _
   · apply InducedCategory.hom_ext
     apply ModuleCat.hom_ext
     exact congrArg LinearEquiv.toLinearMap (innerEquiv_trans M.obj h h')
   · simp only [Iso.trans_hom, ShortComplex.comp_τ₃, discreteInnerIso_hom_τ₃]
-    rfl
+    exact Category.id_comp _
 
 /-- The inverse discrete comparison is indexed by the negative element. -/
 theorem discreteInnerIso_symm :
     (discreteInnerIso hδ hδ' h M).symm =
       discreteInnerIso hδ' hδ (b := -b) (by rw [h, map_neg, add_neg_cancel_right]) M := by
   ext : 2
-  · simp only [Iso.symm_hom, discreteInnerIso_inv_τ₁, discreteInnerIso_hom_τ₁]
-    rfl
+  · rw [Iso.symm_hom, discreteInnerIso_inv_τ₁, discreteInnerIso_hom_τ₁]
   · apply InducedCategory.hom_ext
     apply ModuleCat.hom_ext
     exact congrArg LinearEquiv.toLinearMap (innerEquiv_symm M.obj h)
-  · simp only [Iso.symm_hom, discreteInnerIso_inv_τ₃, discreteInnerIso_hom_τ₃]
-    rfl
+  · rw [Iso.symm_hom, discreteInnerIso_inv_τ₃, discreteInnerIso_hom_τ₃]
 
 end Discrete
 

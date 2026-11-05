@@ -282,6 +282,13 @@ theorem coe_innerDerivation (z : A) :
     (innerDerivation R z : Module.End R A) = LieAlgebra.ad R A z :=
   (rfl)
 
+/-- A central element induces the zero inner derivation. -/
+theorem innerDerivation_eq_zero_of_mem_center {z : A} (hz : z ∈ Subalgebra.center R A) :
+    innerDerivation R z = 0 := by
+  ext a
+  simp [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def,
+    ← Subalgebra.mem_center_iff.mp hz a]
+
 /-- **The bracket of a derivation with an inner derivation is inner**: `⁅D, ad z⁆ = ad (D z)`.
 This is the identity making the image of `innerDerivation` an ideal of `Der A`. It is the
 associative-algebra analogue of Mathlib's `LieDerivation.lie_der_ad_eq_ad_der`. -/

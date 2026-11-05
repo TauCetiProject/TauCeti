@@ -82,11 +82,8 @@ theorem extClass_eq_of_inner (hδ : Continuous (δ : Module.End R A))
   let φ := (discreteInnerIso hδ hδ' h M).hom
   have hn := (shortExact_discreteShortComplex hδ M).extClass_naturality
     (shortExact_discreteShortComplex hδ' M) φ
-  -- Normalize the short-complex endpoint presentations before the native identity laws match.
-  dsimp only [φ] at hn
-  rw [discreteInnerIso_hom_τ₁, discreteInnerIso_hom_τ₃] at hn
-  dsimp only [discreteShortComplex] at hn
-  simpa only [Ext.comp_mk₀_id, Ext.mk₀_id_comp, extClass] using! hn
+  simpa only [φ, discreteInnerIso_hom_τ₁, discreteInnerIso_hom_τ₃, discreteShortComplex,
+    Ext.comp_mk₀_id, Ext.mk₀_id_comp, extClass] using! hn
 
 /-- The class vanishes exactly when the projection of the self-extension admits an
 `A`-linear section. This is a splitting in the discrete module category, whose morphisms
