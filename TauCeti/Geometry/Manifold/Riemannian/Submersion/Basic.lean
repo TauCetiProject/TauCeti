@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Submersion
+public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
