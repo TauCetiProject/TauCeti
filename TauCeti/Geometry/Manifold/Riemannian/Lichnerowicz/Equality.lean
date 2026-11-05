@@ -55,57 +55,39 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 private theorem lichnerowicz_defect_eq_zero (hn : 0 < Module.finrank ℝ E)
     (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (heig : ∀ x, laplaceBeltrami I f x = -(Module.finrank ℝ E : ℝ) * k * f x)
+    (heig : ∀ x, laplaceBeltrami I f x = -((Module.finrank ℝ E : ℝ) * k) * f x)
     (hRic : ∀ (x : M) (v : TangentSpace I x),
       ((Module.finrank ℝ E : ℝ) - 1) * k * ‖v‖ ^ 2 ≤
         (CovariantDerivative.leviCivitaConnection I M).ricciTensor x v v) (x : M) :
     (1 / 2 : ℝ) * laplaceBeltrami I (fun y ↦ ‖mgradient I f y‖ ^ 2) x +
       k * ‖mgradient I f x‖ ^ 2 - (Module.finrank ℝ E : ℝ) * k ^ 2 * f x ^ 2 = 0 := by
-  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   let n : ℝ := Module.finrank ℝ E
   let N := fun y ↦ ‖mgradient I f y‖ ^ 2
   let D := fun y ↦ (1 / 2 : ℝ) * laplaceBeltrami I N y + k * N y - n * k ^ 2 * f y ^ 2
   have hn' : 0 < n := by dsimp [n]; exact_mod_cast hn
-  have hN : ContMDiff I 𝓘(ℝ) ∞ N := by
-    simpa only [N, real_inner_self_eq_norm_sq] using contMDiff_inner_mgradient (n := ∞) hf hf
-  have hL : Continuous (laplaceBeltrami I N) :=
-    (contMDiff_laplaceBeltrami (n := 0) (m := ∞) (k := ∞)
-      (by simp) (by simp) (hN.of_le (by simp))).continuous
-  have hD : Continuous D := ((hL.const_mul _).add (hN.continuous.const_mul _)).sub
+  obtain ⟨hN, hL, hfi, hNi, hLi, he, hz⟩ :=
+    laplaceBeltrami_eigenfunction_integral_data hf heig
+  have hD : Continuous D := ((hL.const_mul _).add (hN.const_mul _)).sub
     ((hf.continuous.pow 2).const_mul _)
   -- The dimension-weighted Bochner inequality makes the scalar defect nonnegative.
   have hnonneg (y : M) : 0 ≤ D y := by
     have h := le_finrank_mul_laplaceBeltrami_norm_sq_mgradient hf y (hRic y)
-    have hderiv : mvfderiv I (laplaceBeltrami I f) y (mgradient I f y) =
-        -n * k * N y := by
-      simpa only [neg_mul, N] using
-        mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
-          (lam := n * k) (fun y ↦ by simpa only [neg_mul] using heig y) y
+    have hderiv :=
+      mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul heig y
     rw [heig, hderiv] at h
     have hnd : 0 ≤ n * D y := by dsimp only [D, N, n] at h ⊢; nlinarith
     exact nonneg_of_mul_nonneg_right hnd hn'
-  have hNi : Integrable N (riemannianVolume I M) :=
-    hN.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
-  have hLi : Integrable (laplaceBeltrami I N) (riemannianVolume I M) :=
-    hL.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
-  have hfi : Integrable (fun y ↦ f y ^ 2) (riemannianVolume I M) :=
-    (hf.continuous.pow 2).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
   have hDi : Integrable D (riemannianVolume I M) :=
     ((hLi.const_mul _).add (hNi.const_mul _)).sub (hfi.const_mul _)
   -- Green's energy identity cancels the remaining two integrals.
   have hzero : ∫ y, D y ∂riemannianVolume I M = 0 := by
-    have he := integral_norm_sq_mgradient_eq_mul_integral_sq_of_laplaceBeltrami_eq_neg_mul
-      (hf.of_le (by simp)) (HasCompactSupport.of_compactSpace f)
-      (lam := n * k) (fun y ↦ by simpa [n, neg_mul] using heig y)
-    have hz := integral_laplaceBeltrami_eq_zero (hN.of_le (by simp))
-      (HasCompactSupport.of_compactSpace _)
     dsimp only [D]
     rw [integral_sub ((hLi.const_mul (1 / 2 : ℝ)).fun_add (hNi.const_mul k))
       (hfi.const_mul (n * k ^ 2)),
       integral_add (hLi.const_mul (1 / 2 : ℝ)) (hNi.const_mul k)]
-    simp only [integral_const_mul, hz, mul_zero, zero_add, N]
+    simp only [integral_const_mul, hz, mul_zero, zero_add]
     rw [he]
     ring
   -- Full support upgrades almost-everywhere vanishing to pointwise vanishing.
@@ -129,16 +111,14 @@ theorem hessian_eq_neg_mul_inner_of_laplaceBeltrami_eq_neg_mul
       rw [finrank_tangentSpace (I := I) x, hn])
     rw [Subsingleton.elim u 0]
     simp
-  have hD := lichnerowicz_defect_eq_zero (Nat.pos_of_ne_zero hn) hf heig hRic x
+  have heig' : ∀ y, laplaceBeltrami I f y = -((Module.finrank ℝ E : ℝ) * k) * f y := by
+    simpa only [neg_mul] using heig
+  have hD := lichnerowicz_defect_eq_zero (Nat.pos_of_ne_zero hn) hf heig' hRic x
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   let A : Matrix (Fin (Module.finrank ℝ (TangentSpace I x)))
       (Fin (Module.finrank ℝ (TangentSpace I x))) ℝ := fun i j ↦ hessian I f x (b i) (b j)
-  have hderiv : mvfderiv I (laplaceBeltrami I f) x (mgradient I f x) =
-      -(Module.finrank ℝ E : ℝ) * k * ‖mgradient I f x‖ ^ 2 := by
-    simpa only [neg_mul] using
-      mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
-        (lam := (Module.finrank ℝ E : ℝ) * k)
-        (fun y ↦ by simpa only [neg_mul] using heig y) x
+  have hderiv :=
+    mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul heig' x
   have hb := laplaceBeltrami_norm_sq_mgradient hf x b
   rw [hderiv] at hb
   have hs : (∑ i, ∑ j, A i j ^ 2) ≤ (Module.finrank ℝ E : ℝ) * (-k * f x) ^ 2 := by

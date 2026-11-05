@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Bochner.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -87,22 +87,25 @@ section Closed
 
 variable [I.Boundaryless] [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
 
-/-- **The Lichnerowicz estimate.** On a closed manifold of dimension `n ≥ 2` with
-`Ric ≥ (n - 1) k g`, every positive eigenvalue with a nonzero smooth eigenfunction
-is at least `n k`. The eigen-equation is stated for the native `Δ = div grad`.
-The real lower bound `k` need not be positive. -/
-theorem finrank_mul_le_of_laplaceBeltrami_eq_neg_mul
-    (hn : 2 ≤ Module.finrank ℝ E) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hlam : 0 < lam) (heig : ∀ x, laplaceBeltrami I f x = -lam * f x)
-    (hne : ∃ x, f x ≠ 0)
-    (hRic : ∀ (x : M) (v : TangentSpace I x),
-      ((Module.finrank ℝ E : ℝ) - 1) * k * ‖v‖ ^ 2 ≤
-        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x v v) :
-    (Module.finrank ℝ E : ℝ) * k ≤ lam := by
-  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
-  let n : ℝ := Module.finrank ℝ E
+
+/-- Analytic data for integrating the Bochner inequality of a smooth eigenfunction on a
+closed manifold: continuity and integrability of the squared gradient and its Laplacian,
+integrability of the squared function, Green's energy identity, and the vanishing integral
+of the squared gradient's Laplacian. No curvature or eigenvalue sign assumption is needed. -/
+theorem laplaceBeltrami_eigenfunction_integral_data
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (heig : ∀ x, laplaceBeltrami I f x = -lam * f x) :
+    Continuous (fun x ↦ ‖mgradient I f x‖ ^ 2) ∧
+    Continuous (laplaceBeltrami I (fun x ↦ ‖mgradient I f x‖ ^ 2)) ∧
+    Integrable (fun x ↦ f x ^ 2) (riemannianVolume I M) ∧
+    Integrable (fun x ↦ ‖mgradient I f x‖ ^ 2) (riemannianVolume I M) ∧
+    Integrable (laplaceBeltrami I (fun x ↦ ‖mgradient I f x‖ ^ 2)) (riemannianVolume I M) ∧
+    (∫ x, ‖mgradient I f x‖ ^ 2 ∂riemannianVolume I M =
+      lam * ∫ x, f x ^ 2 ∂riemannianVolume I M) ∧
+    (∫ x, laplaceBeltrami I (fun y ↦ ‖mgradient I f y‖ ^ 2) x ∂riemannianVolume I M = 0) := by
+  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   let μ := riemannianVolume I M
   have hN : ContMDiff I 𝓘(ℝ) ∞ (fun x ↦ ‖mgradient I f x‖ ^ 2) := by
     simpa only [real_inner_self_eq_norm_sq] using contMDiff_inner_mgradient (n := ∞) hf hf
@@ -118,6 +121,24 @@ theorem finrank_mul_le_of_laplaceBeltrami_eq_neg_mul
     (hf.of_le (by simp)) (HasCompactSupport.of_compactSpace f) heig
   have hzero := integral_laplaceBeltrami_eq_zero (hN.of_le (by simp))
     (HasCompactSupport.of_compactSpace _)
+  exact ⟨hN.continuous, hL.continuous, hFint, hNint, hLint, henergy, hzero⟩
+
+/-- **The Lichnerowicz estimate.** On a closed manifold of dimension `n ≥ 2` with
+`Ric ≥ (n - 1) k g`, every positive eigenvalue with a nonzero smooth eigenfunction
+is at least `n k`. The eigen-equation is stated for the native `Δ = div grad`.
+The real lower bound `k` need not be positive. -/
+theorem finrank_mul_le_of_laplaceBeltrami_eq_neg_mul
+    (hn : 2 ≤ Module.finrank ℝ E) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hlam : 0 < lam) (heig : ∀ x, laplaceBeltrami I f x = -lam * f x)
+    (hne : ∃ x, f x ≠ 0)
+    (hRic : ∀ (x : M) (v : TangentSpace I x),
+      ((Module.finrank ℝ E : ℝ) - 1) * k * ‖v‖ ^ 2 ≤
+        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x v v) :
+    (Module.finrank ℝ E : ℝ) * k ≤ lam := by
+  let n : ℝ := Module.finrank ℝ E
+  let μ := riemannianVolume I M
+  obtain ⟨_, _, hFint, hNint, hLint, henergy, hzero⟩ :=
+    laplaceBeltrami_eigenfunction_integral_data hf heig
   have hpoint (x : M) : 2 * lam ^ 2 * f x ^ 2 +
       (2 * n * ((n - 1) * k - lam)) * ‖mgradient I f x‖ ^ 2 ≤
       n * laplaceBeltrami I (fun y ↦ ‖mgradient I f y‖ ^ 2) x := by

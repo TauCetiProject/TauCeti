@@ -37,9 +37,13 @@ theorem sum_sq_sub_scalar (A : Matrix ι ι R) (c : R) :
         apply Finset.sum_congr rfl
         intro j _
         by_cases h : i = j
-        · subst j; simp [scalar_apply]; ring
-        · simp [scalar_apply, h]
-      _ = _ := by simp [Finset.sum_add_distrib]; ring
+        · subst j
+          simp only [scalar_apply, diagonal_apply_eq, ↓reduceIte]
+          ring
+        · simp only [scalar_apply, diagonal_apply, h, ↓reduceIte, sub_zero, add_zero]
+      _ = _ := by
+        simp only [Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+        ring
   simp_rw [hrow]
   simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
     Finset.sum_const, Finset.card_univ, nsmul_eq_mul, trace, diag_apply]
@@ -59,8 +63,7 @@ theorem eq_scalar_of_trace_eq_of_sum_sq_le (A : Matrix ι ι R) (c : R)
   have hentry := (Finset.sum_eq_zero_iff_of_nonneg
     (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ sq_nonneg _)).1 hz
   ext i j
-  have hi := (Finset.sum_eq_zero_iff_of_nonneg (fun j _ ↦ sq_nonneg _)).1
-    (hentry i (Finset.mem_univ i)) j (Finset.mem_univ j)
-  exact sub_eq_zero.mp (sq_eq_zero_iff.mp hi)
+  exact sub_eq_zero.mp ((Finset.sum_sq_eq_zero_iff _ _).1
+    (hentry i (Finset.mem_univ i)) j (Finset.mem_univ j))
 
 end Matrix
