@@ -5,21 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PolygonalComplex.SingleFace
 public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
-public import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
 
 /-!
 # Basic polygonal surface models
 
-This file supplies polygonal complexes with a single face (`PolygonalComplex.singleFace`), in
-particular the one-vertex polygons `PolygonalComplex.polygon w` whose face is attached along a word
-`w` in a rose, and the standard surface models built from them: the disc `a`, the torus
-`a b a⁻¹ b⁻¹` and the projective plane `a a`. The sphere is the digon `a a⁻¹` on the segment, with
-two vertices. For each model the file checks the surface links and the Euler characteristic. It
-also separates the disc from the closed models by their boundary darts, and the torus from the
-projective plane by orientability.
+This file builds the standard surface models from the single-face complexes of
+`TauCeti.Combinatorics.PolygonalComplex.SingleFace`: the disc `a`, the torus `a b a⁻¹ b⁻¹` and the
+projective plane `a a`, each a one-vertex polygon `PolygonalComplex.polygon w`. The sphere is the
+digon `a a⁻¹` on the segment, with two vertices. For each model the file checks the surface links
+and the Euler characteristic. It also separates the disc from the closed models by their boundary
+darts, and the torus from the projective plane by orientability.
 
 It also records how the surface-link condition fails at a pinched vertex. On the one-petal rose,
 any family of faces `a a⁻¹` (`PolygonalComplex.digons`) has a disconnected vertex link: every
@@ -29,8 +28,6 @@ For infinitely many faces the link is moreover infinite, and every germ then has
 
 ## Main definitions
 
-* `TauCeti.PolygonalComplex.singleFace`: a complex with one face attached along a closed word.
-* `TauCeti.PolygonalComplex.polygon`: the one-vertex complex with one face attached along a word.
 * `TauCeti.PolygonalComplex.digons`: a family of faces `a a⁻¹` on the one-petal rose.
 * `TauCeti.SurfaceModel.disc`, `TauCeti.SurfaceModel.torus`,
   `TauCeti.SurfaceModel.projectivePlane`, `TauCeti.SurfaceModel.sphere`: the standard models.
@@ -46,10 +43,6 @@ For infinitely many faces the link is moreover infinite, and every germ then has
 * `TauCeti.SurfaceModel.boundaryDarts_disc`, `TauCeti.SurfaceModel.boundaryDarts_torus`,
   `TauCeti.SurfaceModel.boundaryDarts_projectivePlane`, `TauCeti.SurfaceModel.boundaryDarts_sphere`:
   both darts of the disc are boundary darts, while the closed models have no boundary.
-* `TauCeti.PolygonalComplex.hasSurfaceLink_polygon`,
-  `TauCeti.PolygonalComplex.isOrientable_polygon`: sufficient conditions for `polygon w` to have
-  surface links (link connectivity plus letter counts of `w`) and to be orientable (distinct
-  occurrences of an edge are mutually reverse letters).
 * `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
   the one-petal rose has no surface link (for example, the sphere with two points identified).
 
@@ -66,135 +59,6 @@ universe u v
 namespace TauCeti
 
 namespace PolygonalComplex
-
-/-! ### Complexes with a single face -/
-
-/-- The polygonal complex with one-skeleton `Γ` and a single face, attached along the nonempty
-closed dart sequence `w`. It is reducible, so that its faces, corners and darts are seen to be
-`Unit`, positions in `w` and darts of `Γ`. -/
-abbrev singleFace (Γ : SerreGraph.{u, v}) (w : List Γ.E) (hw : w ≠ [])
-    (hclosed : ∀ i, Γ.tgt w[i] = Γ.src w[finRotate w.length i]) : PolygonalComplex.{u, v, 0} where
-  graph := Γ
-  Face := Unit
-  sides _ := w.length
-  sides_pos _ := List.length_pos_iff.2 hw
-  side _ i := w[i]
-  tgt_side _ := hclosed
-
-section singleFace
-
-variable {Γ : SerreGraph.{u, v}} {w : List Γ.E} {hw : w ≠ []}
-  {hclosed : ∀ i, Γ.tgt w[i] = Γ.src w[finRotate w.length i]}
-
-theorem outgoing_singleFace (k : Fin w.length) :
-    (singleFace Γ w hw hclosed).outgoing ⟨(), k⟩ = w[k] :=
-  outgoing_def _ _
-
-theorem incoming_singleFace (k : Fin w.length) :
-    (singleFace Γ w hw hclosed).incoming ⟨(), k⟩ = w[(finRotate w.length).symm k] :=
-  incoming_def _ _
-
-/-- The number of sides of a single face attached along a dart `e` is the number of occurrences of
-`e` in its word. -/
-theorem sideCount_singleFace [DecidableEq Γ.E] (e : Γ.E) :
-    (singleFace Γ w hw hclosed).sideCount e = w.count e := by
-  let eq : {c : (singleFace Γ w hw hclosed).Corner // (singleFace Γ w hw hclosed).outgoing c = e}
-      ≃ {i : Fin w.length // w[i] = e} :=
-    { toFun c := ⟨c.1.2, (outgoing_def _ _).symm.trans c.2⟩
-      invFun i := ⟨⟨(), i.1⟩, (outgoing_def _ _).trans i.2⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
-  rw [sideCount_def, Nat.card_congr eq, Nat.card_eq_fintype_card, Fintype.card_subtype,
-    ← List.count_ofFn]
-  congr 1
-  exact List.ext_getElem (by simp) fun i _ _ => by simp
-
-/-- The link degree of a dart in a single-face complex counts its occurrences and those of its
-reverse in the word. -/
-theorem linkDegree_singleFace [DecidableEq Γ.E] (e : Γ.E) :
-    (singleFace Γ w hw hclosed).linkDegree e = w.count (Γ.rev e) + w.count e := by
-  rw [linkDegree_eq_sideCount_rev_add_sideCount, sideCount_singleFace, sideCount_singleFace]
-
-theorem eulerChar_singleFace :
-    (singleFace Γ w hw hclosed).eulerChar = Nat.card Γ.V - Nat.card Γ.GeomEdge + 1 := by
-  rw [eulerChar_def, Nat.card_unique (α := Unit), Nat.cast_one]
-
-/-- In the link of a vertex of a single-face complex, the corner at position `k` joins the germ
-`w[k]` to the reverse of the preceding dart. -/
-theorem nonempty_vertexLink_path_singleFace {x : Γ.V}
-    {a y : ((singleFace Γ w hw hclosed).vertexLink x).V}
-    (b : ((singleFace Γ w hw hclosed).vertexLink x).V) (k : Fin w.length)
-    (hk : Γ.src w[k] = x) (ha : a.1 = w[k]) (hb : b.1 = Γ.rev w[(finRotate w.length).symm k])
-    (h : Nonempty (((singleFace Γ w hw hclosed).vertexLink x).Path b y)) :
-    Nonempty (((singleFace Γ w hw hclosed).vertexLink x).Path a y) := by
-  obtain ⟨p⟩ := (singleFace Γ w hw hclosed).nonempty_vertexLink_path ⟨⟨(), k⟩,
-    ((src_outgoing _ _).symm.trans (congrArg Γ.src (outgoing_singleFace k))).trans hk⟩
-    (ha.trans (outgoing_singleFace k).symm)
-    (hb.trans (congrArg Γ.rev (incoming_singleFace k).symm))
-  obtain ⟨q⟩ := h
-  exact ⟨p.comp q⟩
-
-end singleFace
-
-/-- The one-vertex polygonal complex whose one-skeleton is the rose on `α` and which has a single
-face, attached along the nonempty word `w`. -/
-abbrev polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) : PolygonalComplex.{0, u, 0} :=
-  singleFace (SerreGraph.rose α) w hw (by intro; rfl)
-
-/-- The link degree of a dart in `polygon w` counts its occurrences and those of its reverse in
-`w`. -/
-theorem linkDegree_polygon {α : Type u} [DecidableEq α] (w : List (α × Bool)) (hw : w ≠ [])
-    (e : α × Bool) : (polygon w hw).linkDegree e = w.count (e.1, !e.2) + w.count e := by
-  let _ : DecidableEq (SerreGraph.rose α).E := inferInstanceAs (DecidableEq (α × Bool))
-  exact linkDegree_singleFace (Γ := SerreGraph.rose α) e
-
-theorem eulerChar_polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) :
-    (polygon w hw).eulerChar = 2 - Nat.card α := by
-  refine (eulerChar_singleFace (Γ := SerreGraph.rose α) (w := w) (hw := hw)).trans ?_
-  rw [Nat.card_congr (SerreGraph.roseGeomEdgeEquiv α),
-    Nat.card_unique (α := (SerreGraph.rose α).V)]
-  ring
-
-/-- In the link of the vertex of `polygon w`, the corner at position `k` joins the germ `w[k]` to
-the reverse of the preceding letter. -/
-theorem nonempty_vertexLink_path_polygon {α : Type u} {w : List (α × Bool)} {hw : w ≠ []}
-    {a y : ((polygon w hw).vertexLink PUnit.unit).V} (b : ((polygon w hw).vertexLink PUnit.unit).V)
-    (k : Fin w.length) (ha : a.1 = w[k])
-    (hb : b.1 = (w[(finRotate w.length).symm k].1, !w[(finRotate w.length).symm k].2))
-    (h : Nonempty (((polygon w hw).vertexLink PUnit.unit).Path b y)) :
-    Nonempty (((polygon w hw).vertexLink PUnit.unit).Path a y) :=
-  nonempty_vertexLink_path_singleFace b k rfl ha hb h
-
-/-- A polygon whose link is joined from one germ to every germ, and whose letter counts give a
-circle or an interval, has surface links. -/
-theorem hasSurfaceLink_polygon {α : Type u} [DecidableEq α] {w : List (α × Bool)}
-    {hw : w ≠ []} (a : α × Bool)
-    (hpath : ∀ b : α × Bool,
-      Nonempty (((polygon w hw).vertexLink PUnit.unit).Path ⟨a, rfl⟩ ⟨b, rfl⟩))
-    (hdeg : (∀ e : α × Bool, w.count (e.1, !e.2) + w.count e = 2) ∨
-      ∃ e₁ e₂ : α × Bool, e₁ ≠ e₂ ∧ w.count (e₁.1, !e₁.2) + w.count e₁ = 1 ∧
-        w.count (e₂.1, !e₂.2) + w.count e₂ = 1 ∧
-          ∀ e : α × Bool, e ≠ e₁ → e ≠ e₂ → w.count (e.1, !e.2) + w.count e = 2)
-    (v : (polygon w hw).graph.V) : (polygon w hw).HasSurfaceLink v := by
-  refine ((polygon w hw).hasSurfaceLink_iff v).2 ⟨inferInstance,
-    ((polygon w hw).vertexLink v).connected_iff.2 ⟨⟨⟨a, rfl⟩⟩,
-      SerreGraph.preconnected_of_forall_nonempty_path _ ⟨a, rfl⟩ fun ⟨b, _⟩ => hpath b⟩, ?_⟩
-  rcases hdeg with hcirc | ⟨e₁, e₂, hne, h₁, h₂, h⟩
-  · exact .inl fun e _ => (linkDegree_polygon w hw e).trans (hcirc e)
-  · exact .inr ⟨e₁, e₂, hne, rfl, rfl, (linkDegree_polygon w hw e₁).trans h₁,
-      (linkDegree_polygon w hw e₂).trans h₂,
-      fun e _ he₁ he₂ => (linkDegree_polygon w hw e).trans (h e he₁ he₂)⟩
-
-/-- A polygon is orientable, keeping its face as given, when any two distinct occurrences of the
-same edge in its word are mutually reverse letters. -/
-theorem isOrientable_polygon {α : Type u} {w : List (α × Bool)} {hw : w ≠ []}
-    (h : ∀ k k' : Fin w.length, k ≠ k' → (w[k'] = w[k] ∨ w[k'] = (w[k].1, !w[k].2)) →
-      w[k'] = (w[k].1, !w[k].2)) :
-    (polygon w hw).IsOrientable := by
-  refine ((polygon w hw).isOrientable_iff).2 ⟨fun _ => true, fun ⟨⟨⟩, k⟩ ⟨⟨⟩, k'⟩ hne hk => ?_⟩
-  rw [orientedSide_of_eq_true _ rfl, orientedSide_of_eq_true _ rfl, outgoing_def, outgoing_def]
-  rw [outgoing_def, outgoing_def, SerreGraph.toGeomEdge_eq_toGeomEdge_iff] at hk
-  exact h k k' (fun hkk => hne (hkk ▸ rfl)) hk
 
 /-! ### Pinched vertices -/
 
