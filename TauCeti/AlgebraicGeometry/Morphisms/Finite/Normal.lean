@@ -10,15 +10,16 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
 
 /-!
-# Finite morphisms into normal integral schemes
+# Integral morphisms into normal integral schemes
 
-Let `f : X ⟶ Y` be a finite morphism of integral schemes with `Y` normal, and let `V` be an
+Let `f : X ⟶ Y` be an integral morphism of integral schemes with `Y` normal, and let `V` be an
 affine open of `Y`. If `f` is an isomorphism on sections over some nonempty open `W ⊆ V`, then
 `f` is bijective on sections over `V`
-(`AlgebraicGeometry.Scheme.Hom.bijective_app_of_isFinite_of_isIso_app`). Indeed, restricting to
-`f ⁻¹ W ≅ W` and taking germs at the generic point embeds `Γ(X, f ⁻¹ V)` into the function field
-of `Y`, the fraction field of `Γ(Y, V)`, as an integral extension of the integrally closed domain
-`Γ(Y, V)`, and such an extension is trivial.
+(`AlgebraicGeometry.Scheme.Hom.bijective_app_of_isIntegralHom_of_isIso_app`). Indeed, restricting
+to `f ⁻¹ W ≅ W` and taking germs at the generic point embeds `Γ(X, f ⁻¹ V)` into the function
+field of `Y`, the fraction field of `Γ(Y, V)`, as an integral extension of the integrally closed
+domain `Γ(Y, V)`, and such an extension is trivial. In particular this applies to finite
+morphisms.
 
 This is the affine step in the proof that a finite modification of a normal integral scheme is an
 isomorphism (Stacks, Lemma 29.54.8 (0AB1)).
@@ -38,11 +39,11 @@ universe u
 
 variable {X Y : Scheme.{u}}
 
-/-- If `f` is finite between integral schemes with `Y` normal, and `f` is an isomorphism on
+/-- If `f` is integral between integral schemes with `Y` normal, and `f` is an isomorphism on
 sections over a nonempty open `W` of an affine open `V`, then `f` is bijective on sections over
 `V`. -/
-theorem Scheme.Hom.bijective_app_of_isFinite_of_isIso_app [IsIntegral X] [IsIntegral Y]
-    [IsNormalScheme Y] (f : X ⟶ Y) [IsFinite f] {V W : Y.Opens} (hV : IsAffineOpen V)
+theorem Scheme.Hom.bijective_app_of_isIntegralHom_of_isIso_app [IsIntegral X] [IsIntegral Y]
+    [IsNormalScheme Y] (f : X ⟶ Y) [IsIntegralHom f] {V W : Y.Opens} (hV : IsAffineOpen V)
     (hWV : W ≤ V) [Nonempty W] [IsIso (f.app W)] :
     Function.Bijective (f.app V) := by
   have : Nonempty V := ⟨⟨_, hWV (Classical.choice ‹Nonempty W›).2⟩⟩
@@ -74,7 +75,7 @@ theorem Scheme.Hom.bijective_app_of_isFinite_of_isIso_app [IsIntegral X] [IsInte
   refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, V) Y.functionField ?_, fun b ↦ ?_⟩
   · rw [← hσφ, ← hσφ, hab]
   · -- `σ b` is integral over the integrally closed domain `Γ(Y, V)`, so it comes from `Γ(Y, V)`.
-    obtain ⟨p, hp, hpb⟩ := (f.finite_app V hV).to_isIntegral b
+    obtain ⟨p, hp, hpb⟩ := f.isIntegral_app V hV b
     have : _root_.IsIntegral Γ(Y, V) (σ b) := by
       refine ⟨p, hp, ?_⟩
       rw [← RingHom.ext (f := σ.hom.comp (f.app V).hom) hσφ, ← Polynomial.hom_eval₂, hpb,
