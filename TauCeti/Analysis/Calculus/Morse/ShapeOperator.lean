@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.ShapeOperator
 import TauCeti.Analysis.InnerProductSpace.PointSpectrum.Transport
-import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
 # Morse index and focal points of squared distance via the shape operator
@@ -57,7 +56,7 @@ squared-distance Morse indices along every normal vector `ν`.
 public section
 
 open Complex Function Module Module.End Set
-open scoped Finset RealInnerProductSpace
+open scoped RealInnerProductSpace
 
 namespace TauCeti
 
@@ -194,46 +193,15 @@ theorem morseIndex_norm_sq_sub_comp_eq_finsum_finrank_ker (hi : ContDiffAt ℝ 2
       ∑ᶠ t ∈ Ioo (0 : ℝ) 1, finrank ℝ
         (LinearMap.ker (fderiv ℝ (fderiv ℝ fun y ↦ ‖i y - (i x + t • (a - i x))‖ ^ 2) x :
           V →ₗ[ℝ] V →L[ℝ] ℝ)) := by
-  classical
-  let R : Submodule ℝ E := LinearMap.range (fderiv ℝ i x : V →ₗ[ℝ] E)
-  let eR : V ≃ₗ[ℝ] R := LinearEquiv.ofInjective (fderiv ℝ i x : V →ₗ[ℝ] E) h
-  have : FiniteDimensional ℝ R := Module.Finite.equiv eR
-  let S : Module.End ℝ V := shapeOperator i x (a - i x)
-  let T : Module.End ℝ R := eR.conj S
-  have hT : T.IsSymmetric := isSymmetric_conj_shapeOperator hi h (a - i x)
   have hν : a - i x ∈ (fderiv ℝ i x).rangeᗮ := by simpa using Submodule.neg_mem _ ha
   have hbij : BijOn Inv.inv (Ioo (0 : ℝ) 1) (Ioi (1 : ℝ)) :=
     ⟨fun t ht ↦ (one_lt_inv₀ ht.1).mpr ht.2, inv_injective.injOn, fun μ hμ ↦
       ⟨μ⁻¹, ⟨inv_pos.mpr (zero_lt_one.trans hμ), inv_lt_one_of_one_lt₀ hμ⟩, inv_inv μ⟩⟩
-  have hbij_sum := finsum_mem_eq_of_bijOn Inv.inv hbij
-    (f := fun t ↦ finrank ℝ (LinearMap.ker
-      (fderiv ℝ (fderiv ℝ fun y ↦ ‖i y - (i x + t • (a - i x))‖ ^ 2) x : V →ₗ[ℝ] V →L[ℝ] ℝ)))
-    (g := fun μ ↦ finrank ℝ (eigenspace S μ))
-    fun t ht ↦ by rw [ker_fderiv_fderiv_norm_sq_sub_add_smul_comp hi h hν ht.1.ne']
-  have heig (μ : ℝ) : finrank ℝ (eigenspace S μ) = #{j | hT.eigenvalues rfl j = μ} := by
-    have hmap : (eigenspace S μ).map eR.toLinearMap = eigenspace T μ := by
-      rw [eigenspace_eq_comap_of_intertwine (e := eR) (f := S) (g := T) (fun v ↦ by simp [T]) μ,
-        Submodule.map_comap_eq_self (by simp)]
-    rw [← eR.finrank_map_eq, hmap, ← hT.card_filter_eigenvalues_eq rfl]
-    simp
-  let s : Finset ℝ := (Finset.univ.image (hT.eigenvalues rfl)).filter (· ∈ Ioi (1 : ℝ))
-  have hsum : (∑ᶠ μ ∈ Ioi (1 : ℝ), finrank ℝ (eigenspace S μ)) =
-      ∑ μ ∈ s, finrank ℝ (eigenspace S μ) := by
-    refine finsum_mem_eq_sum_of_subset _ (fun μ ⟨hμ1, hμ0⟩ ↦ ?_)
-      (fun μ hμ ↦ (Finset.mem_filter.mp hμ).2)
-    rw [Function.mem_support, heig, Finset.card_ne_zero, Finset.filter_nonempty_iff] at hμ0
-    obtain ⟨j, -, rfl⟩ := hμ0
-    exact Finset.mem_filter.mpr ⟨Finset.mem_image_of_mem _ (Finset.mem_univ j), hμ1⟩
-  have hcard : ∑ μ ∈ s, finrank ℝ (eigenspace S μ) =
-      {j | hT.eigenvalues rfl j ∈ Ioi (1 : ℝ)}.ncard := by
-    simp_rw [heig]
-    rw [Finset.sum_card_fiberwise_eq_card_filter, ← Set.ncard_coe_finset]
-    congr 1
-    ext j
-    simp [s]
-  rw [morseIndex_norm_sq_sub_comp hi h ha, ← eR.finrank_map_eq,
-    map_pointSpectralSubspace_conj eR S (Ioi 1), hT.finrank_pointSpectralSubspace rfl (Ioi 1),
-    ← hcard, ← hsum, ← hbij_sum]
+  rw [morseIndex_norm_sq_sub_comp hi h ha,
+    (shapeOperator i x (a - i x)).finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace]
+  exact (finsum_mem_eq_of_bijOn Inv.inv hbij fun t ht ↦ by
+    rw [ker_fderiv_fderiv_norm_sq_sub_add_smul_comp hi h hν ht.1.ne']
+    simp).symm
 
 /-- At the base point `a = i x`, the squared-distance function `y ↦ ‖i y - i x‖²` has Morse index
 `0` for any `C²` map `i` (no immersion hypothesis is needed). -/

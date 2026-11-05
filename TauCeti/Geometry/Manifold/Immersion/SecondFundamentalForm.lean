@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Euclidean
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The second fundamental form of a map from a manifold into an inner product space
@@ -301,37 +300,9 @@ end General
 
 section Real
 
-variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- The orthogonal complement of `(mvfderiv I i x).range` in a real inner product space `V` is
-`TauCeti.normalSubspace I i x`. -/
-theorem orthogonal_range_mvfderiv_eq_normalSubspace (I : ModelWithCorners ℝ E H) (i : M → V)
-    (x : M) : (mvfderiv I i x).rangeᗮ = normalSubspace I i x := by
-  rw [normalSubspace, range_mvfderiv]
-
-/-- Membership in `TauCeti.normalSubspace I i x` in terms of `mvfderiv I i x`. -/
-theorem mem_normalSubspace_iff_mvfderiv {i : M → V} {x : M} {ν : V} :
-    ν ∈ normalSubspace I i x ↔ ∀ u : TangentSpace I x, ⟪ν, mvfderiv I i x u⟫_ℝ = 0 := by
-  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
-  refine ⟨fun h u ↦ Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
-    fun h _ ⟨u, hu⟩ ↦ hu ▸ inner_eq_zero_symm.mp (h u)⟩
-
-/-- When the model space `E` is finite-dimensional, `(mvfderiv I i x).range` is finite-dimensional
-and hence complete, so `TauCeti.normalSubspace I i x` has an orthogonal projection even when the
-ambient inner product space `V` is not complete. -/
-instance instHasOrthogonalProjectionNormalSubspace [FiniteDimensional ℝ E]
-    (I : ModelWithCorners ℝ E H) (i : M → V) (x : M) :
-    (normalSubspace I i x).HasOrthogonalProjection := by
-  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
-  have : FiniteDimensional ℝ (TangentSpace I x) :=
-    Module.Finite.equiv (tangentSpaceCastModel I x).symm.toLinearEquiv
-  have : FiniteDimensional ℝ (mvfderiv I i x).range :=
-    Module.Finite.range (mvfderiv I i x : TangentSpace I x →ₗ[ℝ] V)
-  infer_instance
-
-variable [FiniteDimensional ℝ E] [I.Boundaryless]
+variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- On a real boundaryless manifold, the second fundamental form takes values in
 `TauCeti.normalSubspace I i x`. -/

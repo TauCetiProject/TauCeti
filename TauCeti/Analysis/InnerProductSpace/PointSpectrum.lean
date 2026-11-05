@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
+import TauCeti.LinearAlgebra.Dimension.DirectSum
 
 /-!
 # Restricted point spectra and point-spectral subspaces
@@ -67,6 +68,9 @@ spectrum from that of its orthogonal complement.
   exactly when `A x = λ x` for some nonzero `x ∈ U`.
 * `Module.End.pointSpectrumIn_pointSpectralSubspace`: the point-spectral subspace selected by `Ω`
   has restricted point spectrum in `Ω`.
+* `Module.End.finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace`: in finite dimension, the
+  dimension of `A.pointSpectralSubspace Ω` is the sum of the dimensions of `A.eigenspace μ` over
+  `μ ∈ Ω`.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace`: for symmetric `A` in finite dimension,
   `(A.pointSpectralSubspace Ω)ᗮ = A.pointSpectralSubspace Ωᶜ`.
 * `LinearMap.IsSymmetric.pointSpectralSubspace_eq_eigenvectorSpan`: the point-spectral subspace is
@@ -291,6 +295,38 @@ theorem pointSpectralSubspace_insert_zero (hA : LinearMap.ker A = ⊥) :
     A.pointSpectralSubspace (insert 0 Ω) = A.pointSpectralSubspace Ω := by
   rw [Set.insert_eq, pointSpectralSubspace_union]
   simp [pointSpectralSubspace, eigenspace_zero, hA]
+
+/-- **Spectral dimension sum formula.** For any endomorphism of a finite-dimensional space, the
+dimension of the point-spectral subspace selected by `Ω` is the sum of the dimensions of its
+eigenspaces at eigenvalues in `Ω` (only finitely many of which are nonzero). -/
+theorem finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace [FiniteDimensional 𝕜 E]
+    (A : Module.End 𝕜 E) (Ω : Set ℝ) :
+    Module.finrank 𝕜 (A.pointSpectralSubspace Ω) =
+      ∑ᶠ μ ∈ Ω, Module.finrank 𝕜 (A.eigenspace (μ : 𝕜)) := by
+  let S : Set ℝ := Ω ∩ {μ : ℝ | A.HasEigenvalue (μ : 𝕜)}
+  have hS : S.Finite :=
+    (A.finite_hasEigenvalue.preimage RCLike.ofReal_injective.injOn).subset Set.inter_subset_right
+  have hiSup : A.pointSpectralSubspace Ω = ⨆ μ : hS.toFinset, A.eigenspace (μ.1 : 𝕜) := by
+    refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_)
+      (iSup_le fun μ ↦ eigenspace_le_pointSpectralSubspace (hS.mem_toFinset.mp μ.2).1)
+    by_cases h : A.HasEigenvalue (μ : 𝕜)
+    · exact le_iSup (fun ν : hS.toFinset ↦ A.eigenspace (ν.1 : 𝕜))
+        ⟨μ, hS.mem_toFinset.mpr ⟨hμ, h⟩⟩
+    · rw [Module.End.hasEigenvalue_iff, not_not] at h
+      simp [h]
+  have hind : iSupIndep (fun μ : hS.toFinset ↦ A.eigenspace (μ.1 : 𝕜)) :=
+    (A.eigenspaces_iSupIndep.comp RCLike.ofReal_injective).comp Subtype.val_injective
+  rw [hiSup, TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hind,
+    Finset.sum_coe_sort hS.toFinset (fun μ : ℝ ↦ Module.finrank 𝕜 (A.eigenspace (μ : 𝕜)))]
+  refine (finsum_mem_eq_sum_of_subset _ ?_ ?_).symm
+  · rintro μ ⟨hμΩ, hμ0⟩
+    rw [Set.Finite.coe_toFinset]
+    refine ⟨hμΩ, ?_⟩
+    rw [Set.mem_ofPred_eq, Module.End.hasEigenvalue_iff]
+    rintro hbot
+    exact hμ0 (by simp [hbot])
+  · rw [Set.Finite.coe_toFinset]
+    exact Set.inter_subset_left
 
 end Module.End
 

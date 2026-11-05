@@ -33,8 +33,9 @@ Morse index is the negative index of inertia of the critical Hessian.
 ## Main declarations
 
 * `TauCeti.criticalHessian`: the Hessian at a point, as a bilinear form on its tangent space.
-* `TauCeti.fderiv_fderiv_comp_chartAt_symm`: on a manifold modelled on a real normed space, the
-  second derivative in the preferred chart is the critical Hessian.
+* `TauCeti.criticalHessian_apply_eq_fderiv_fderiv` and `TauCeti.fderiv_fderiv_comp_chartAt_symm`:
+  the critical Hessian evaluated in the preferred chart via model-space casts (and on a manifold
+  modelled on a real normed space).
 * `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas`: at a critical point the critical Hessian
   is the Hessian in an arbitrary chart of the maximal atlas, composed with the chart derivative.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
@@ -95,6 +96,16 @@ def criticalHessian (I : ModelWithCorners ℝ E H) (f : M → ℝ) (x : M) :
 theorem criticalHessian_def :
     criticalHessian I f x = fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x) :=
   (rfl)
+
+/-- Evaluating the critical Hessian on tangent vectors evaluates the second derivative of the
+preferred coordinate expression on their model-space casts. -/
+theorem criticalHessian_apply_eq_fderiv_fderiv (v w : TangentSpace I x) :
+    criticalHessian I f x v w =
+      fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)
+        (tangentSpaceCastModel I x v) (tangentSpaceCastModel I x w) := by
+  rw [criticalHessian_def]
+  -- `tangentSpaceCastModel I x` is the identity on the model space `E`.
+  rfl
 
 /-- On a manifold modelled on a real normed space, the second derivative in the preferred chart is
 the critical Hessian. -/

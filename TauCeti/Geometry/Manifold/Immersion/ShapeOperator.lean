@@ -380,18 +380,6 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] {i : M → V} {x : M} {a : V}
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- `criticalHessian I f x` evaluated on `v, w` equals the second Fréchet derivative of
-`f ∘ (extChartAt I x).symm` at `extChartAt I x x` evaluated on `tangentSpaceCastModel I x v` and
-`tangentSpaceCastModel I x w`, since `tangentSpaceCastModel I x` is the identity on `E`. -/
-private theorem criticalHessian_apply_eq_fderiv_fderiv (f : M → ℝ) (x : M)
-    (v w : TangentSpace I x) :
-    criticalHessian I f x v w =
-      fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)
-        (tangentSpaceCastModel I x v) (tangentSpaceCastModel I x w) := by
-  rw [criticalHessian_def]
-  rfl
-
 omit [I.Boundaryless] in
 /-- Transporting `eigenspace` between `manifoldShapeOperator` and the preferred coordinate
 `shapeOperator` along `tangentSpaceCastModel I x`. -/
@@ -464,21 +452,28 @@ theorem ker_criticalHessian_norm_sq_sub_comp (hi : ContMDiffAt I 𝓘(ℝ, V) 2 
         (criticalHessian I (fun y ↦ ‖i y - a‖ ^ 2) x :
           TangentSpace I x →ₗ[ℝ] TangentSpace I x →L[ℝ] ℝ) =
       eigenspace (manifoldShapeOperator I i x (a - i x)) 1 := by
+  let g := i ∘ (extChartAt I x).symm
+  let z := extChartAt I x x
+  have hcomp : ((fun y ↦ ‖i y - a‖ ^ 2) ∘ (extChartAt I x).symm) = fun y ↦ ‖g y - a‖ ^ 2 := rfl
+  have hz : extChartAt I x x = z := rfl
+  have hcast (u : TangentSpace I x) :
+      (tangentSpaceCastModel I x).toLinearMap u = tangentSpaceCastModel I x u := rfl
+  have hgz : g z = i x := by simp [g, z]
+  have ha' : g z - a ∈ (fderiv ℝ g z).rangeᗮ := by
+    rwa [hgz, ← range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm,
+      orthogonal_range_mvfderiv_eq_normalSubspace]
+  have hker := ker_fderiv_fderiv_norm_sq_sub_comp hi.contDiffAt_comp_extChartAt_symm
+    (injective_fderiv_comp_extChartAt_symm_iff.mpr h) ha'
+  rw [eigenspace_manifoldShapeOperator_eq_comap, ← hgz, ← hker]
   ext v
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mem_eigenspace_iff, one_smul,
-    eq_comm (a := manifoldShapeOperator I i x (a - i x) v), ← sub_eq_zero (a := v)]
-  refine ⟨fun hv ↦ sub_eq_zero.2 <|
-      eq_of_forall_inner_comp (L := (mvfderiv I i x : TangentSpace I x →ₗ[ℝ] V)) h fun w ↦ ?_,
-    fun hv ↦ ContinuousLinearMap.ext fun w ↦ ?_⟩
-  · have hw := DFunLike.congr_fun hv w
-    rw [zero_apply,
-      criticalHessian_norm_sq_sub_comp_apply_eq_inner_manifoldShapeOperator hi h ha, map_sub,
-      inner_sub_left] at hw
-    simp only [ContinuousLinearMap.coe_coe]
-    linarith
-  · rw [zero_apply,
-      criticalHessian_norm_sq_sub_comp_apply_eq_inner_manifoldShapeOperator hi h ha, hv, map_zero,
-      inner_zero_left, mul_zero]
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Submodule.mem_comap, hcast,
+    ContinuousLinearMap.ext_iff, zero_apply]
+  refine ⟨fun hv u ↦ ?_, fun hv w ↦ ?_⟩
+  · have hvu := hv ((tangentSpaceCastModel I x).symm u)
+    rwa [criticalHessian_apply_eq_fderiv_fderiv, hcomp, hz,
+      ContinuousLinearEquiv.apply_symm_apply] at hvu
+  · rw [criticalHessian_apply_eq_fderiv_fderiv, hcomp, hz]
+    exact hv (tangentSpaceCastModel I x w)
 
 /-- **Focal points along a normal ray.** For `ν ∈ normalSubspace I i x` and `t ≠ 0`, the kernel of
 `criticalHessian` at `x` of squared distance from `i x + t • ν` is the `t⁻¹`-eigenspace of

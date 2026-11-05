@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.LocalCoordinates
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Tubular neighbourhoods in a Euclidean space
@@ -219,6 +220,36 @@ theorem mem_normalSubspace_iff {f : M → V} {x : M} {v : V} :
     v ∈ normalSubspace I f x ↔ ∀ u : E, ⟪v, (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V) u⟫_ℝ = 0 :=
   ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
     fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+variable (I) in
+/-- The orthogonal complement of `(mvfderiv I f x).range` in a real inner product space `V` is
+`TauCeti.normalSubspace I f x`. -/
+theorem orthogonal_range_mvfderiv_eq_normalSubspace (f : M → V) (x : M) :
+    (mvfderiv I f x).rangeᗮ = normalSubspace I f x := by
+  rw [normalSubspace, range_mvfderiv]
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- Membership in `TauCeti.normalSubspace I f x` in terms of `mvfderiv I f x`. -/
+theorem mem_normalSubspace_iff_mvfderiv {f : M → V} {x : M} {v : V} :
+    v ∈ normalSubspace I f x ↔ ∀ u : TangentSpace I x, ⟪v, mvfderiv I f x u⟫_ℝ = 0 := by
+  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
+  refine ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
+    fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
+
+omit [FiniteDimensional ℝ V] in
+variable (I) in
+/-- When the model space `E` is finite-dimensional, `(mvfderiv I f x).range` is finite-dimensional
+and hence complete, so `TauCeti.normalSubspace I f x` has an orthogonal projection even when the
+ambient inner product space `V` is not complete. -/
+instance instHasOrthogonalProjectionNormalSubspace (f : M → V) (x : M) :
+    (normalSubspace I f x).HasOrthogonalProjection := by
+  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
+  have : FiniteDimensional ℝ (TangentSpace I x) :=
+    Module.Finite.equiv (tangentSpaceCastModel I x).symm.toLinearEquiv
+  have : FiniteDimensional ℝ (mvfderiv I f x).range :=
+    Module.Finite.range (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] V)
+  infer_instance
 
 variable (I) in
 /-- The normal vectors along `f : M → V` of length less than `ε`, as a subset of `M × V`. -/
