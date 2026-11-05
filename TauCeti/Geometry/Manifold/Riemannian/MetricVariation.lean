@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.MetricVariation
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-public import TauCeti.Geometry.Manifold.Riemannian.Restriction
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.EVariationComparison
 
 /-!

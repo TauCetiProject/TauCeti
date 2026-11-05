@@ -34,7 +34,7 @@ inclusion of, the minimal model turns a quasi-isomorphism into `M` from a minima
 the chosen quasi-isomorphism and is not canonical.  It comes from the fact that a
 quasi-isomorphism between minimal modules is an isomorphism
 (`TauCeti.AInfinityRightModuleHom.IsQuasiIso.isIso`, in
-`TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Basic`).
+`TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso`).
 
 ## Main definitions
 
@@ -217,7 +217,8 @@ minimal model is an isomorphism of right `A∞` modules. -/
 theorem isIso_minimalModelProjection_comp (hN : NN.IsMinimal)
     {f : AInfinityRightModuleHom NN MM} (hf : f.IsQuasiIso) :
     (MM.minimalModelProjection.comp f).IsIso :=
-  (MM.isQuasiIso_minimalModelProjection.comp hf).isIso hN MM.isMinimal_minimalModel
+  (MM.isQuasiIso_minimalModelProjection.comp hf).isIso ((isMinimal_def _).1 hN)
+    MM.differential_minimalModel
 
 /-- **Uniqueness of the minimal model**, for a quasi-isomorphism out of `M`: if `g` is a
 quasi-isomorphism from `M` to a minimal module, then the inclusion of the minimal model followed
@@ -225,7 +226,8 @@ by `g` is an isomorphism of right `A∞` modules. -/
 theorem isIso_comp_minimalModelInclusion (hN : NN.IsMinimal)
     {g : AInfinityRightModuleHom MM NN} (hg : g.IsQuasiIso) :
     (g.comp MM.minimalModelInclusion).IsIso :=
-  (hg.comp MM.isQuasiIso_minimalModelInclusion).isIso MM.isMinimal_minimalModel hN
+  (hg.comp MM.isQuasiIso_minimalModelInclusion).isIso MM.differential_minimalModel
+    ((isMinimal_def _).1 hN)
 
 end Uniqueness
 

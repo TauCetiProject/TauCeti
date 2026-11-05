@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Basic
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.CofreeLift
 
 /-!
 # Suspension signs for right A-infinity module operations
@@ -35,6 +34,8 @@ morphisms (`q = 0`).
   `TauCeti.AInfinityRightModule.unsuspend_mem_piece`: its suspension sign and degree.
 * `TauCeti.AInfinityRightModule.apply_comp_subword_of_mem`: the suspension sign for a composite
   of module-first Taylor maps.
+* `TauCeti.AInfinityRightModule.cofreeLift_tmul_of_tprod`: the cofree lift of a map, expanded
+  over the cuts of a pure word.
 * `TauCeti.AInfinityRightModule.apply_coaugmentedBarDifferential_of_tprod`: the algebra bar
   differential expanded after an arbitrary linear map on a module tensor factor.
 * `TauCeti.AInfinityRightModule.apply_algebra_splice_of_mem`: the suspension sign when an algebra
@@ -207,6 +208,18 @@ theorem apply_comp_subword_of_mem
   rw [suspExp_add, hsum, suspExp_def t]
   push_cast
   ring
+
+/-- On a pure word, the cofree lift of `F` applies `F` to every prefix and retains the
+corresponding suffix. -/
+theorem cofreeLift_tmul_of_tprod (F : (M ⊗[R] TensorWords R A) →ₗ[R] N) (n : ℕ) (x : M)
+    (a : Fin n → A) :
+    (Comodule.Hom.cofreeLift (C := TensorWords R A) F).toLinearMap
+        (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
+      ∑ k ∈ Finset.range (n + 1), F (x ⊗ₜ[R] subword R a 0 k) ⊗ₜ[R] subword R a k (n - k) := by
+  rw [Comodule.Hom.cofreeLift_toLinearMap, LinearMap.comp_apply, Comodule.cofree_coact_tmul,
+    comul_eq_deconcatenation, of_tprod_eq_subword, deconcatenation_subword]
+  simp only [TensorProduct.tmul_sum, map_sum, TensorProduct.assoc_symm_tmul,
+    LinearMap.rTensor_tmul, Nat.zero_add]
 
 /-- Applying a linear map after tensoring a module element with the algebra bar differential
 expands as the sum over all nonempty blocks collapsed by the algebra Taylor map. -/

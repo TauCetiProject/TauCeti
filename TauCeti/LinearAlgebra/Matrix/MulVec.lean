@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Matrix-vector multiplication
@@ -27,6 +28,9 @@ Subtracting a matrix from a constant diagonal matrix turns its eigenvector equat
 homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
 eigenvector of each of its powers.
 
+The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
+line.
+
 ## Main results
 
 * `TauCeti.mulVec_mulVec_eq_zero_of_pow_two_eq_zero`: a square-zero matrix annihilates every
@@ -40,6 +44,7 @@ eigenvector of each of its powers.
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
   positive one.
+* `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 -/
 
 public section
@@ -103,6 +108,14 @@ theorem pow_mulVec_eq_pow_smul {A : Matrix n n R} {v : n → R} {μ : R} (h : A 
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
 
 end CommSemiring
+
+/-- Along a line the `σ`-sesquilinear form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`:
+`h(c v, c v) = σ c * c * h(v, v)`. -/
+theorem comp_smul_dotProduct_mulVec_smul {R : Type*} [CommSemiring R] (Q : Matrix n n R)
+    (σ : R →+* R) (c : R) (v : n → R) :
+    (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
+  rw [RingHom.comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul,
+    mul_assoc]
 
 section OrderedSemiring
 

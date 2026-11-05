@@ -13,11 +13,11 @@ public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso
 A right `A∞` module is **minimal** when its unary operation `m₁` vanishes
 (`TauCeti.AInfinityRightModule.IsMinimal`).  Every element of a minimal module is then a cycle and
 no nonzero element is a boundary, so the module is its own cohomology.  The map induced on
-cohomology by a morphism between minimal modules is therefore its linear part, and a
+cohomology by a morphism between minimal modules is therefore its linear part.  A
 quasi-isomorphism between minimal modules is an isomorphism of right `A∞` modules
-(`TauCeti.AInfinityRightModuleHom.IsQuasiIso.isIso`), by the inverse of a morphism with bijective
-linear part constructed in `TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso`.  This holds
-over any commutative ring.  The minimal model of a module over a field is constructed in
+(`TauCeti.AInfinityRightModuleHom.IsQuasiIso.isIso`, stated for vanishing unary operations in
+`TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso`).  This holds over any commutative
+ring.  The minimal model of a module over a field is constructed in
 `TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Model`.
 
 ## Main definitions
@@ -31,10 +31,8 @@ over any commutative ring.  The minimal model of a module over a field is constr
 * `TauCeti.AInfinityRightModule.isMinimal_iff_cycles_eq_top` and
   `TauCeti.AInfinityRightModule.isMinimal_iff_boundaries_eq_bot`: minimality in terms of cycles
   and boundaries.
-* `TauCeti.AInfinityRightModuleHom.isQuasiIso_iff_linearPart_bijective`: between minimal modules,
-  a morphism is a quasi-isomorphism exactly when its linear part is bijective.
-* `TauCeti.AInfinityRightModuleHom.isQuasiIso_iff_isIso`: between minimal modules, a morphism is
-  a quasi-isomorphism exactly when it is an isomorphism.
+* `TauCeti.AInfinityRightModuleHom.cohomologyMap_cohomologyEquiv`: between minimal modules, the
+  map induced on cohomology is the linear part.
 
 The algebra counterpart is `TauCeti.AInfinityAlgebra.IsMinimal`, in
 `TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal`.
@@ -119,27 +117,6 @@ theorem cohomologyMap_cohomologyEquiv (hM : MM.IsMinimal) (hN : NN.IsMinimal)
     (f : AInfinityRightModuleHom MM NN) (x : M) :
     f.cohomologyMap (hM.cohomologyEquiv x) = hN.cohomologyEquiv (f.linearPart x) := by
   simp only [AInfinityRightModule.IsMinimal.cohomologyEquiv_apply, cohomologyMap_cohomologyClass]
-
-/-- A morphism between minimal modules is a quasi-isomorphism exactly when its linear part is
-bijective. -/
-theorem isQuasiIso_iff_linearPart_bijective (hM : MM.IsMinimal) (hN : NN.IsMinimal)
-    (f : AInfinityRightModuleHom MM NN) :
-    f.IsQuasiIso ↔ Function.Bijective f.linearPart := by
-  have hcomm : ⇑f.cohomologyMap ∘ ⇑hM.cohomologyEquiv = ⇑hN.cohomologyEquiv ∘ ⇑f.linearPart :=
-    funext (cohomologyMap_cohomologyEquiv hM hN f)
-  rw [isQuasiIso_def, ← EquivLike.bijective_comp hM.cohomologyEquiv, hcomm,
-    EquivLike.comp_bijective]
-
-/-- Between minimal modules, a morphism is a quasi-isomorphism exactly when it is an isomorphism
-of right `A∞` modules. -/
-theorem isQuasiIso_iff_isIso (hM : MM.IsMinimal) (hN : NN.IsMinimal)
-    (f : AInfinityRightModuleHom MM NN) : f.IsQuasiIso ↔ f.IsIso := by
-  rw [isQuasiIso_iff_linearPart_bijective hM hN, isIso_iff_linearPart_bijective]
-
-/-- A quasi-isomorphism between minimal modules is an isomorphism of right `A∞` modules. -/
-theorem IsQuasiIso.isIso (hM : MM.IsMinimal) (hN : NN.IsMinimal)
-    {f : AInfinityRightModuleHom MM NN} (hf : f.IsQuasiIso) : f.IsIso :=
-  (isQuasiIso_iff_isIso hM hN f).1 hf
 
 end AInfinityRightModuleHom
 

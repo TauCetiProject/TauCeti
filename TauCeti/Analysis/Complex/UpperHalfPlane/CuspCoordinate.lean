@@ -23,7 +23,8 @@ quotient of the upper half-plane by these translations with the punctured unit d
 
 A periodic function need only be holomorphic above some height for boundedness to make its
 q-extension analytic at zero. This permits applying the same coordinate to functions with
-interior poles.
+interior poles. Likewise periodicity is only needed above that height, which permits applying it
+to functions defined only on a horodisc, such as local sections near a cusp.
 
 The construction reuses Mathlib's `Function.Periodic.qParam`; in particular, the normalization
 of `2 π i / w` agrees with the local parameter used for modular-form q-expansions. The analytic
@@ -42,6 +43,12 @@ removable singularity theorem.
   the translation-orbit quotient to the punctured unit disc.
 * `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_zero_of_eventually_mdifferentiableAt`: bounded
   functions holomorphic sufficiently high have a removable q-singularity.
+* `TauCeti.UpperHalfPlane.cuspFunction_qParam_of_lt_im`,
+  `TauCeti.UpperHalfPlane.eqOn_cuspFunction_of_lt_im` and
+  `TauCeti.UpperHalfPlane.differentiableOn_cuspFunction_of_lt_im`: a function periodic only above
+  a height `A ≥ 0`, as on a horodisc, has a q-extension which recovers it there and depends only
+  on its values there; if it is moreover holomorphic above that height and bounded at `i∞`, the
+  q-extension is holomorphic on the disc of radius `exp (-2 * π * A / w)`, including at `q = 0`.
 
 ## References
 
@@ -75,6 +82,111 @@ theorem analyticAt_cuspFunction_zero_of_eventually_mdifferentiableAt {f : ℍ �
     (Function.Periodic.eventually_differentiableAt_cuspFunction_nhds_ne_zero hw hper hdiff)
     (Function.Periodic.differentiableAt_cuspFunction_zero hw hper hdiff
       (hbounded.comp_tendsto tendsto_comap_im_ofComplex)).continuousAt
+
+/-- A function periodic above a height `A` is recovered from its q-extension at every point
+above that height. -/
+theorem cuspFunction_qParam_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
+    (hper : ∀ z : ℍ, A < z.im → f (w +ᵥ z) = f z) {z : ℍ} (hz : A < z.im) :
+    Function.Periodic.cuspFunction w (f ∘ ofComplex) (𝔢 w z) = f z := by
+  -- translates of `z` stay above height `A`, so periodicity applies along the whole orbit
+  have hzpow (n : ℤ) : f (((n : ℝ) * w) +ᵥ z) = f z := by
+    induction n using Int.induction_on with
+    | zero => simp
+    | succ n ih =>
+      have h := hper ((((n : ℤ) : ℝ) * w) +ᵥ z) (by rwa [vadd_im])
+      rw [vadd_vadd, ih] at h
+      rw [← h]
+      congr 2
+      push_cast
+      ring
+    | pred n ih =>
+      have h := hper ((((-(n : ℤ) - 1 : ℤ) : ℝ) * w) +ᵥ z) (by rwa [vadd_im])
+      rw [vadd_vadd] at h
+      rw [← ih, ← h]
+      congr 2
+      push_cast
+      ring
+  obtain ⟨m, hm⟩ := Function.Periodic.qParam_left_inv_mod_period hw.ne' (z : ℂ)
+  have him : 0 < ((z : ℂ) + m * w).im := by simpa using z.im_pos
+  rw [Function.Periodic.cuspFunction_eq_of_ne_zero _ _ (Function.Periodic.qParam_ne_zero _),
+    comp_apply, hm, ofComplex_apply_of_im_pos him, ← hzpow m]
+  congr 1
+  ext
+  simp [add_comm]
+
+/-- Two functions which agree above a height `A ≥ 0` have q-extensions which agree on the disc of
+the corresponding radius `exp (-2 * π * A / w)`, including at `q = 0`. -/
+theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w) (hA : 0 ≤ A)
+    (hfg : ∀ z : ℍ, A < z.im → f z = g z) :
+    Set.EqOn (Function.Periodic.cuspFunction w (f ∘ ofComplex))
+      (Function.Periodic.cuspFunction w (g ∘ ofComplex))
+      (Metric.ball 0 (Real.exp (-2 * Real.pi * A / w))) := by
+  have hne {q : ℂ} (hq : q ≠ 0) (hqA : ‖q‖ < Real.exp (-2 * Real.pi * A / w)) :
+      Function.Periodic.cuspFunction w (f ∘ ofComplex) q =
+        Function.Periodic.cuspFunction w (g ∘ ofComplex) q := by
+    have him : A < (Function.Periodic.invQParam w q).im := by
+      rwa [← Function.Periodic.norm_qParam_lt_iff hw,
+        Function.Periodic.qParam_right_inv hw.ne' hq]
+    rw [Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hq,
+      Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hq, comp_apply, comp_apply,
+      ofComplex_apply_of_im_pos (hA.trans_lt him)]
+    exact hfg _ him
+  intro q hq
+  rw [Metric.mem_ball, dist_zero_right] at hq
+  rcases ne_or_eq q 0 with hq0 | rfl
+  · exact hne hq0 hq
+  -- at `q = 0` both values are limits along the punctured disc, where the functions agree
+  have heq : Function.Periodic.cuspFunction w (f ∘ ofComplex) =ᶠ[𝓝[≠] 0]
+      Function.Periodic.cuspFunction w (g ∘ ofComplex) := by
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ)
+      (Real.exp_pos (-2 * Real.pi * A / w)))] with q hq0 hqA
+    exact hne hq0 (mem_ball_zero_iff.mp hqA)
+  rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne,
+    Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
+  exact congrArg lim (Filter.map_congr heq)
+
+/-- **The q-extension of a function periodic and holomorphic above a height.** If `f` is periodic
+of period `w > 0` and holomorphic above a height `A ≥ 0`, and bounded at `i∞`, then its q-extension
+is holomorphic on the disc of radius `exp (-2 * π * A / w)`, including at `q = 0`. -/
+theorem differentiableOn_cuspFunction_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw : 0 < w) (hA : 0 ≤ A)
+    (hper : ∀ z : ℍ, A < z.im → f (w +ᵥ z) = f z)
+    (hhol : ∀ z : ℍ, A < z.im → MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f z)
+    (hbounded : IsBoundedAtImInfty f) :
+    DifferentiableOn ℂ (Function.Periodic.cuspFunction w (f ∘ ofComplex))
+      (Metric.ball 0 (Real.exp (-2 * Real.pi * A / w))) := by
+  -- cut `f` off below height `A`: the result is periodic everywhere and has the same q-extension
+  set g : ℍ → ℂ := fun z ↦ if A < z.im then f z else 0 with hg
+  have hfg (z : ℍ) (hz : A < z.im) : f z = g z := by simp [hg, hz]
+  have hgper : Periodic (g ∘ ofComplex) w := UpperHalfPlane.periodic_comp_ofComplex fun z ↦ by
+    by_cases hz : A < z.im
+    · rw [← hfg _ (by rwa [vadd_im]), ← hfg _ hz, hper _ hz]
+    · simp [hg, vadd_im, hz]
+  have hgeq {z : ℍ} (hz : A < z.im) : g =ᶠ[𝓝 z] f := by
+    filter_upwards [(isOpen_lt continuous_const UpperHalfPlane.continuous_im).mem_nhds hz]
+      with z' hz'
+    exact (hfg z' hz').symm
+  have hghol {z : ℍ} (hz : A < z.im) : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g z :=
+    (hhol z hz).congr_of_eventuallyEq (hgeq hz)
+  refine DifferentiableOn.congr (fun q hq ↦ ?_) (eqOn_cuspFunction_of_lt_im hw hA hfg)
+  rw [Metric.mem_ball, dist_zero_right] at hq
+  refine DifferentiableAt.differentiableWithinAt ?_
+  rcases ne_or_eq q 0 with hq0 | rfl
+  · have him : A < (Function.Periodic.invQParam w q).im := by
+      rwa [← Function.Periodic.norm_qParam_lt_iff hw,
+        Function.Periodic.qParam_right_inv hw.ne' hq0]
+    have hpos : 0 < (Function.Periodic.invQParam w q).im := hA.trans_lt him
+    rw [← Function.Periodic.qParam_right_inv hw.ne' hq0]
+    refine Function.Periodic.differentiableAt_cuspFunction hw.ne' hgper ?_
+    have h := _root_.UpperHalfPlane.mdifferentiableAt_iff.mp
+      (hghol (z := ⟨_, hpos⟩) him)
+    simpa using h
+  · have hev : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g z :=
+      (atImInfty_mem _).mpr ⟨A + 1, fun z hz ↦ hghol (by linarith)⟩
+    have hgbdd : IsBoundedAtImInfty g := by
+      refine Asymptotics.IsBigO.congr' hbounded ?_ EventuallyEq.rfl
+      exact (atImInfty_mem _).mpr ⟨A + 1, fun z hz ↦ hfg z (by linarith)⟩
+    exact (analyticAt_cuspFunction_zero_of_eventually_mdifferentiableAt hw hgper hev
+      hgbdd).differentiableAt
 
 /-- The q-parameter of positive width, regarded as a map from the upper half-plane to the
 punctured unit disc. -/
