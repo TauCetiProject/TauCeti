@@ -52,7 +52,8 @@ theorem carlson_duplication_node_mem_slitPlane {x y z : ℂ}
   · simpa only [div_ofNat_re, add_re] using half_pos ((sqrt_add_sqrt_re_pos_iff x z).mpr hxz)
 
 /-- Principal powers split across the factorization of a duplicated Carlson node, with no
-branch correction. This includes the inverse square roots in the defining kernels. -/
+branch correction. In particular, `w = -1/2` gives the inverse square root of the duplicated
+node. -/
 theorem carlson_duplication_node_cpow {x y z : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) (w : ℂ) :
     ((x + (sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x)) / 4) ^ w =

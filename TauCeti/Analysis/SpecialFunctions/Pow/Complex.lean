@@ -89,11 +89,17 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
 
-/-- A principal power splits across a product of nonzero numbers when the sum of their
-arguments lies in the principal range `(-π, π]`. -/
-theorem mul_cpow_of_arg_add_mem {x y : ℂ} (hx : x ≠ 0) (hy : y ≠ 0)
+/-- A principal power splits across a product when the sum of the arguments lies in the
+principal range `(-π, π]`, including when either factor is zero. -/
+theorem mul_cpow_of_arg_add_mem {x y : ℂ}
     (h : arg x + arg y ∈ Set.Ioc (-Real.pi) Real.pi) (w : ℂ) :
     (x * y) ^ w = x ^ w * y ^ w := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [zero_cpow hw]
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [zero_cpow hw]
   rw [cpow_def_of_ne_zero (mul_ne_zero hx hy), cpow_def_of_ne_zero hx,
     cpow_def_of_ne_zero hy, log_mul hx hy h, add_mul, exp_add]
 
@@ -101,11 +107,9 @@ theorem mul_cpow_of_arg_add_mem {x y : ℂ} (hx : x ≠ 0) (hy : y ≠ 0)
 Their arguments add without crossing the branch cut. -/
 theorem mul_cpow_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) (w : ℂ) :
     (x * y) ^ w = x ^ w * y ^ w := by
-  have hx₀ : x ≠ 0 := by rintro rfl; simp at hx
-  have hy₀ : y ≠ 0 := by rintro rfl; simp at hy
   have hax := abs_lt.mp (abs_arg_lt_pi_div_two_iff.mpr (Or.inl hx))
   have hay := abs_lt.mp (abs_arg_lt_pi_div_two_iff.mpr (Or.inl hy))
-  exact mul_cpow_of_arg_add_mem hx₀ hy₀ ⟨by linarith, by linarith⟩ w
+  exact mul_cpow_of_arg_add_mem ⟨by linarith, by linarith⟩ w
 
 /-- A principal complex power of a natural power of a nonnegative real multiplies the exponents:
 `((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s)`.  The argument of `(r : ℂ)` is `0`, so the principal branch
