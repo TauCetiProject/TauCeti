@@ -38,7 +38,6 @@ theorem isInducing_inclusionInDoubleDualWeak :
 
 /-- An element of the bidual lies in the canonical image of `E` iff it does when viewed in the
 weak-star bidual. -/
-@[simp]
 theorem toWeakDual_mem_range_inclusionInDoubleDualWeak_iff
     (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
     StrongDual.toWeakDual Φ ∈ range (inclusionInDoubleDualWeak 𝕜 E) ↔

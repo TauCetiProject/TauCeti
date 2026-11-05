@@ -146,7 +146,6 @@ theorem continuous_toWeakDual_precomp_precomp (T : E →L[𝕜] F) :
   WeakDual.continuous_of_continuous_eval fun f ↦ WeakDual.eval_continuous (f.comp T)
 
 /-- On the canonical image of `E` in the weak-star bidual, the bidual adjoint `T**` acts as `T`. -/
-@[simp]
 theorem toWeakDual_precomp_precomp_inclusionInDoubleDualWeak (T : E →L[𝕜] F) (x : E) :
     StrongDual.toWeakDual (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)
         (WeakDual.toStrongDual (NormedSpace.inclusionInDoubleDualWeak 𝕜 E (toWeakSpace 𝕜 E x)))) =
