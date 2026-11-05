@@ -104,7 +104,7 @@ noncomputable def cliffordCrossedProductEquiv
     CrossedSystem.Algebra (cliffordCrossedSystem A t ht) ≃ₐ[k]
       CrossedSystem.Algebra (cliffordCrossedSystem A s hs) :=
   CrossedSystem.Algebra.gaugeEquiv _ _ (sectionDiff t s)
-    ((s.gauge_one_eq_one_iff hs _).mp (by simpa using ht))
+    (t.sectionDiff_one s ht hs)
     (cliffordCrossedSystem_action_sectionDiff A s t hs ht)
     (cliffordCrossedSystem_factor_sectionDiff A s t hs ht)
 

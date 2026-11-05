@@ -48,7 +48,7 @@ noncomputable def cliffordMultiplicityAlgebraEquiv :
     CrossedSystem.Algebra (cliffordCrossedSystem A t ht).opInv ≃ₐ[k]
       CrossedSystem.Algebra (cliffordCrossedSystem A s hs).opInv :=
   CrossedSystem.Algebra.opInvGaugeEquiv _ _ (sectionDiff t s)
-    ((s.gauge_one_eq_one_iff hs _).mp (by simpa using ht))
+    (t.sectionDiff_one s ht hs)
     (cliffordCrossedSystem_action_sectionDiff A s t hs ht)
     (cliffordCrossedSystem_factor_sectionDiff A s t hs ht)
 
@@ -151,18 +151,12 @@ noncomputable def cliffordMultiplicitySectionIso :
       apply ConcreteCategory.ext_apply
       intro f
       simp only [Functor.comp_map]
-      -- Use typed equalities: simp does not match the different stored module structures.
-      refine (ModuleCat.comp_apply _ _ f).trans ?_
-      refine (multiplicitySectionIsoApp_hom_apply A s t hs ht W' _).trans ?_
-      refine Eq.trans ?_ (ModuleCat.comp_apply _ _ f).symm
-      refine Eq.trans ?_
-        (congrArg ((ModuleCat.restrictScalars (E).toRingHom).map ((Cs).map g))
-          (multiplicitySectionIsoApp_hom_apply A s t hs ht W f).symm)
-      refine Eq.trans ?_
-        (ModuleCat.restrictScalars.map_apply (E).toRingHom ((Cs).map g) f).symm
-      simp only [cliffordMultiplicityFunctor, ModuleCat.hom_ofHom,
-        CrossedSystem.SemilinearAction.linearMap_apply]
-      rfl)
+      rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
+        multiplicitySectionIsoApp_hom_apply, multiplicitySectionIsoApp_hom_apply]
+      -- Keep the restriction-of-scalars formula typed to distinguish the stored module structures.
+      simpa only [cliffordMultiplicityFunctor_map_apply A s hs g,
+        cliffordMultiplicityFunctor_map_apply A t ht g] using
+        (ModuleCat.restrictScalars.map_apply (E).toRingHom ((Cs).map g) f).symm)
 
 /-- The section comparison is the identity on multiplicities. -/
 @[simp]
