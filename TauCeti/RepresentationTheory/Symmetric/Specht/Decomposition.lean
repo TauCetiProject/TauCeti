@@ -113,7 +113,7 @@ theorem factorial_mul_finrank_range_asAlgebraHom_youngSymmetrizer [FiniteDimensi
 `∑_μ f^μ dim (c_μ M)`, the sum over the partitions `μ` of `d` of the dimension of the Specht module
 `S^μ` times the dimension of the image of its Young symmetrizer. -/
 theorem finrank_eq_sum_finrank_spechtModule_mul_finrank_range [FiniteDimensional k M] :
-    finrank k M = ∑ μ : d.Partition, finrank ℚ (spechtModule μ) *
+    finrank k M = ∑ μ : d.Partition, finrank ℚ (spechtModule (R := ℚ) μ) *
       finrank k (LinearMap.range (ρ.asAlgebraHom (μ.youngSymmetrizer k))) := by
   have hd : (d.factorial : k) ≠ 0 := Nat.cast_ne_zero.mpr d.factorial_ne_zero
   apply Nat.cast_injective (R := k)
@@ -154,11 +154,11 @@ theorem youngSymmetrizerEval_lof_tmul (μ : d.Partition)
 private theorem asAlgebraHom_youngSymmetrizer_mem_range_youngSymmetrizerEval (μ : d.Partition)
     (m : M) :
     ρ.asAlgebraHom (μ.youngSymmetrizer k) m ∈ LinearMap.range ρ.youngSymmetrizerEval := by
-  have hκ : algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule μ)) ≠ 0 := by
+  have hκ : algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule (R := ℚ) μ)) ≠ 0 := by
     rw [map_ne_zero]
     exact div_ne_zero (Nat.cast_ne_zero.mpr d.factorial_ne_zero)
       (Nat.cast_ne_zero.mpr (finrank_spechtModule_pos μ).ne')
-  set κ := algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule μ))
+  set κ := algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule (R := ℚ) μ))
   set c := ρ.asAlgebraHom (μ.youngSymmetrizer k)
   refine ⟨DirectSum.lof k d.Partition _ μ
     (spanSingletonGenerator (μ.youngSymmetrizer k) ⊗ₜ ⟨κ⁻¹ • c m, κ⁻¹ • m, map_smul c _ _⟩), ?_⟩

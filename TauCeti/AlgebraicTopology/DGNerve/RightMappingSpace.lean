@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGNerve.Basic
-public import TauCeti.AlgebraicTopology.DoldKan.SimplexChainMap
+public import TauCeti.AlgebraicTopology.DoldKan.SimplexChainMap.Basic
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 import TauCeti.Data.Finset.Basic
 
