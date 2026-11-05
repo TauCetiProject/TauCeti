@@ -73,13 +73,6 @@ variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 variable (M : Model R K C toK) (I : M.total.IdealSheafData)
   (hC : Disjoint (Set.range M.genericι) (I.support : Set M.total))
 
-/-- Every ideal sheaf on the total space of a model is of finite type, since the total space is
-locally of finite type over the noetherian ring `R`. -/
-private lemma ideal_fg (U : M.total.affineOpens) : (I.ideal U).FG := by
-  have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
-  have := IsLocallyNoetherian.component_noetherian U
-  exact IsNoetherian.noetherian _
-
 /-- The generic fibre `C` of `M` lies in the open complement `X ∖ V(I)` of the centre. -/
 private def genericToCompl : C ⟶ I.support.compl :=
   IsOpenImmersion.lift (Scheme.Opens.ι I.support.compl) M.genericι (by
@@ -131,13 +124,13 @@ abbrev blowup : Model R K C toK where
   toBase := I.blowupToBase ≫ M.toBase
   flat := I.flat_blowupToBase_comp M.toBase
   locallyOfFinitePresentation := by
-    have := I.isProper_blowupToBase (ideal_fg M I)
+    have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
     infer_instance
   quasiCompact := by
-    have := I.isProper_blowupToBase (ideal_fg M I)
+    have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
     infer_instance
   quasiSeparated := by
-    have := I.isProper_blowupToBase (ideal_fg M I)
+    have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
     infer_instance
   genericFiberIso := M.blowupGenericFiberIso I hC
 
@@ -153,7 +146,7 @@ lemma blowup_toBase : (M.blowup I hC).toBase = I.blowupToBase ≫ M.toBase :=
 
 /-- The blowup of a proper model is a proper model. -/
 lemma isProper_blowup [hM : M.IsProper] : (M.blowup I hC).IsProper := by
-  have := I.isProper_blowupToBase (ideal_fg M I)
+  have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
   have : AlgebraicGeometry.IsProper M.toBase := hM
   rw [Model.IsProper, blowup_toBase]
   infer_instance
