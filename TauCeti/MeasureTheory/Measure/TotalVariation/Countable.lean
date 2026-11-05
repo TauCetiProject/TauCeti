@@ -17,9 +17,9 @@ distance is the sum of the absolute differences of their singleton masses. We gi
 and real formulas, together with summability of the real series. No probability normalization
 is required, and the formulas also cover the empty space.
 
-These identities identify the total variation metric used for convergence of countable-state
-Markov chains with the ℓ¹ distance between their transition probabilities. We use Mathlib's
-normalization: the distance between probability measures is at most two, not one.
+These identities identify total variation distance between distributions on a countable state
+space with the ℓ¹ distance of their point masses. We use Mathlib's normalization: the distance
+between probability measures is at most two, not one.
 
 The proof uses Mathlib's `VectorMeasure.variation_apply_singleton` and the decomposition of a
 measure into its singleton masses, rather than constructing a separate discrete distance.
