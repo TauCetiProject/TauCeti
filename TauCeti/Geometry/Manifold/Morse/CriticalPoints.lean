@@ -77,6 +77,9 @@ polynomial in the Morse inequalities.
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two`, with
+  `IsMinOn.eq_of_le_of_two_criticalPoints` and `IsMaxOn.eq_of_le_of_two_criticalPoints`: a function
+  with exactly two critical points is constant or has them as its unique minimum and maximum.
 * `TauCeti.totalCriticalCount_eq_finsum_connectedComponents`: the total count is the sum of the
   counts in the connected components, when there are finitely many.
 * `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
@@ -279,6 +282,28 @@ theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) : x ∈ critic
 /-- A local maximum is a critical point. -/
 theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) : x ∈ criticalPoints I f :=
   IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h)
+
+/-- If the only critical points of `f` are a global minimum `x₀` and a point `x₁` with a larger
+value, then `x₀` is the only point at which `f` attains its minimum: any other such point would be
+a third critical point. -/
+theorem _root_.IsMinOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₀ : IsMinOn f univ x₀)
+    (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
+    (hy : f y ≤ f x₀) : y = x₀ := by
+  have hy' : IsMinOn f univ y := isMinOn_univ_iff.2 fun z ↦ hy.trans (hx₀ (mem_univ z))
+  refine (hcrit y (hy'.isLocalMin univ_mem).mem_criticalPoints).resolve_right ?_
+  rintro rfl
+  exact hy.not_gt hlt
+
+/-- If the only critical points of `f` are a global maximum `x₁` and a point `x₀` with a smaller
+value, then `x₁` is the only point at which `f` attains its maximum: any other such point would be
+a third critical point. -/
+theorem _root_.IsMaxOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₁ : IsMaxOn f univ x₁)
+    (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
+    (hy : f x₁ ≤ f y) : y = x₁ := by
+  have hy' : IsMaxOn f univ y := isMaxOn_univ_iff.2 fun z ↦ (hx₁ (mem_univ z)).trans hy
+  refine (hcrit y (hy'.isLocalMax univ_mem).mem_criticalPoints).resolve_left ?_
+  rintro rfl
+  exact hy.not_gt hlt
 
 /-- A continuous function on a nonempty compact boundaryless manifold has a critical point, for
 instance a point where it attains its minimum. -/
@@ -563,6 +588,36 @@ theorem two_le_totalCriticalCount [I.Boundaryless] [CompactSpace M] [Nontrivial 
       IsLocalMax.mem_criticalPoints (.of_forall fun y ↦ (hp y).trans (hq x))
     obtain ⟨x, y, hxy⟩ := exists_pair_ne M
     exact hpair hxy (hcrit x) (hcrit y)
+
+/-- A continuous function on a compact boundaryless manifold with exactly two critical points
+attains its minimum at one of them, `x₀`, and its maximum at the other, `x₁`. Either
+`f x₀ < f x₁`, or `f` is constant, every point is critical, and `M` consists of `x₀` and `x₁`. -/
+theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [CompactSpace M]
+    (hf : Continuous f) (h2 : totalCriticalCount I f = 2) :
+    ∃ x₀ x₁ : M, IsMinOn f univ x₀ ∧ IsMaxOn f univ x₁ ∧ x₀ ≠ x₁ ∧
+      criticalPoints I f = {x₀, x₁} ∧
+      (f x₀ < f x₁ ∨ (∀ x, f x = f x₀) ∧ criticalPoints I f = univ) := by
+  obtain ⟨p, q, hpq, hpq'⟩ := encard_eq_two.1 ((totalCriticalCount_def (I := I)).symm.trans h2)
+  obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn ⟨p, mem_univ p⟩ hf.continuousOn
+  obtain ⟨x₁, -, hx₁⟩ := isCompact_univ.exists_isMaxOn ⟨p, mem_univ p⟩ hf.continuousOn
+  rcases (hx₀ (mem_univ x₁)).lt_or_eq with hlt | hconst
+  · -- The minimum and the maximum are two distinct critical points, so they are all of them.
+    have h₀ := (hx₀.isLocalMin univ_mem).mem_criticalPoints (I := I)
+    have h₁ := (hx₁.isLocalMax univ_mem).mem_criticalPoints (I := I)
+    have hne : x₀ ≠ x₁ := fun h ↦ hlt.ne (congrArg f h)
+    refine ⟨x₀, x₁, hx₀, hx₁, hne, ?_, .inl hlt⟩
+    rw [hpq', mem_insert_iff, mem_singleton_iff] at h₀ h₁
+    rw [hpq']
+    ext x
+    simp only [mem_insert_iff, mem_singleton_iff]
+    grind
+  -- A constant function: every point is a minimum and a maximum, and every point is critical.
+  have hall (x : M) : f x = f x₀ := le_antisymm (hconst ▸ hx₁ (mem_univ x)) (hx₀ (mem_univ x))
+  have hmin (x : M) : IsMinOn f univ x := isMinOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
+  have hmax (x : M) : IsMaxOn f univ x := isMaxOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
+  have hcrit : criticalPoints I f = univ :=
+    eq_univ_of_forall fun x ↦ ((hmin x).isLocalMin univ_mem).mem_criticalPoints
+  exact ⟨p, q, hmin p, hmax q, hpq, hpq', .inr ⟨fun x ↦ by rw [hall x, hall p], hcrit⟩⟩
 
 section FiniteDimensional
 

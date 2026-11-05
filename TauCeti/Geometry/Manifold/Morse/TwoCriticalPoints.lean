@@ -77,20 +77,10 @@ theorem exists_diffeomorph_mem_of_two_criticalPoints (hf : ContMDiff I 𝓘(ℝ)
     ∃ Φ : M ≃ₘ⟮I, I⟯ M, ∀ x ∉ V, Φ x ∈ B := by
   have hfc : Continuous f := hf.continuous
   -- The minimum and the maximum are strict: another point attaining either value is critical.
-  have hmin (y : M) (hy : y ≠ x₀) : f x₀ < f y := by
-    refine (hx₀ (mem_univ y)).lt_of_ne fun h ↦ ?_
-    have hy' : IsMinOn f univ y := fun z _ ↦ h ▸ hx₀ (mem_univ z)
-    rcases hcrit y (hy'.isLocalMin univ_mem).mem_criticalPoints with h' | h'
-    · exact hy h'
-    · rw [h'] at h
-      exact hlt.ne h
-  have hmax (y : M) (hy : y ≠ x₁) : f y < f x₁ := by
-    refine (hx₁ (mem_univ y)).lt_of_ne fun h ↦ ?_
-    have hy' : IsMaxOn f univ y := fun z _ ↦ h ▸ hx₁ (mem_univ z)
-    rcases hcrit y (hy'.isLocalMax univ_mem).mem_criticalPoints with h' | h'
-    · rw [h'] at h
-      exact hlt.ne h
-    · exact hy h'
+  have hmin (y : M) (hy : y ≠ x₀) : f x₀ < f y :=
+    (hx₀ (mem_univ y)).lt_of_ne fun h ↦ hy (hx₀.eq_of_le_of_two_criticalPoints hlt hcrit h.ge)
+  have hmax (y : M) (hy : y ≠ x₁) : f y < f x₁ :=
+    (hx₁ (mem_univ y)).lt_of_ne fun h ↦ hy (hx₁.eq_of_le_of_two_criticalPoints hlt hcrit h.ge)
   -- On the compact sets `M \ B` and `M \ V`, `f` stays away from its minimum and its maximum.
   obtain ⟨a', ha', ha'B⟩ := hB.isClosed_compl.isCompact.exists_forall_le' hfc.continuousOn
     fun y hy ↦ hmin y fun h ↦ hy (h ▸ hx₀B)
@@ -123,44 +113,23 @@ theorem exists_twoEuclideanOpenCover_of_two_criticalPoints (hf : ContMDiff I �
     ∃ U V : Set M, IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧
       Nonempty (U ≃ₜ EuclideanSpace ℝ (Fin (finrank ℝ E))) ∧
       Nonempty (V ≃ₜ EuclideanSpace ℝ (Fin (finrank ℝ E))) := by
-  -- Every point has an open neighbourhood parametrized by the whole of `ℝᵐ`, read on the copy of
-  -- `M` modelled on `E`.
-  have hball (x : M) : ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
-      Nonempty (U ≃ₜ EuclideanSpace ℝ (Fin (finrank ℝ E))) := by
-    set e := BoundarylessModel.homeomorph I M
-    obtain ⟨φ, hφ, hx, -⟩ :=
-      exists_contMDiff_parametrization (E := E) (M := BoundarylessModel I M) (n := ⊤) (e x)
-    exact ⟨e ⁻¹' φ.target, φ.open_target.preimage e.continuous, hx,
-      ⟨(e.sets rfl).trans <| φ.toHomeomorphSourceTarget.symm.trans <|
-        (Homeomorph.setCongr hφ).trans (Homeomorph.Set.univ _)⟩⟩
-  obtain ⟨p, q, hpq, hpq'⟩ := encard_eq_two.1 ((totalCriticalCount_def (I := I)).symm.trans h2)
-  have hfc : Continuous f := hf.continuous
-  obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn ⟨p, mem_univ p⟩ hfc.continuousOn
-  obtain ⟨x₁, -, hx₁⟩ := isCompact_univ.exists_isMaxOn ⟨p, mem_univ p⟩ hfc.continuousOn
-  rcases (hx₀ (mem_univ x₁)).lt_or_eq with hlt | hconst
+  obtain ⟨x₀, x₁, hx₀, hx₁, -, hcrit, hlt | ⟨-, huniv⟩⟩ :=
+    exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two hf.continuous h2
   · -- The critical points are the minimum `x₀` and the maximum `x₁`.
-    have hcrit (x : M) (hx : x ∈ criticalPoints I f) : x = x₀ ∨ x = x₁ := by
-      have h₀ := (hx₀.isLocalMin univ_mem).mem_criticalPoints (I := I)
-      have h₁ := (hx₁.isLocalMax univ_mem).mem_criticalPoints (I := I)
-      have hne : x₀ ≠ x₁ := fun h ↦ hlt.ne (congrArg f h)
-      rw [hpq', mem_insert_iff, mem_singleton_iff] at hx h₀ h₁
-      grind
-    obtain ⟨B, hB, hx₀B, ⟨eB⟩⟩ := hball x₀
-    obtain ⟨V, hV, hx₁V, hVe⟩ := hball x₁
-    obtain ⟨Φ, hΦ⟩ := exists_diffeomorph_mem_of_two_criticalPoints hf hx₀ hx₁ hlt hcrit hB hx₀B hV
-      hx₁V
+    obtain ⟨B, hB, hx₀B, ⟨eB⟩⟩ := exists_isOpen_mem_nonempty_homeomorph_euclideanSpace I x₀
+    obtain ⟨V, hV, hx₁V, hVe⟩ := exists_isOpen_mem_nonempty_homeomorph_euclideanSpace I x₁
+    obtain ⟨Φ, hΦ⟩ := exists_diffeomorph_mem_of_two_criticalPoints hf hx₀ hx₁ hlt
+      (fun x hx ↦ by rwa [hcrit] at hx) hB hx₀B hV hx₁V
     refine ⟨Φ ⁻¹' B, V, hB.preimage Φ.continuous, hV,
       eq_univ_of_forall fun x ↦ (em (x ∈ V)).elim Or.inr fun hx ↦ Or.inl (hΦ x hx),
       ⟨(Φ.toHomeomorph.sets (by rw [Diffeomorph.coe_toHomeomorph])).trans eB⟩, hVe⟩
-  -- A constant function: every point is critical, so `M = {p, q}`.
-  have hall (x : M) : f x = f x₀ := le_antisymm (hconst ▸ hx₁ (mem_univ x)) (hx₀ (mem_univ x))
-  obtain ⟨U, hU, hpU, hUe⟩ := hball p
-  obtain ⟨V, hV, hqV, hVe⟩ := hball q
+  -- A constant function: every point is critical, so `M = {x₀, x₁}`.
+  obtain ⟨U, hU, hx₀U, hUe⟩ := exists_isOpen_mem_nonempty_homeomorph_euclideanSpace I x₀
+  obtain ⟨V, hV, hx₁V, hVe⟩ := exists_isOpen_mem_nonempty_homeomorph_euclideanSpace I x₁
   refine ⟨U, V, hU, hV, eq_univ_of_forall fun x ↦ ?_, hUe, hVe⟩
-  have hx : x ∈ criticalPoints I f :=
-    ((isMinOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]).isLocalMin univ_mem).mem_criticalPoints
-  rw [hpq', mem_insert_iff, mem_singleton_iff] at hx
+  have hx : x ∈ criticalPoints I f := huniv ▸ mem_univ x
+  rw [hcrit, mem_insert_iff, mem_singleton_iff] at hx
   rcases hx with rfl | rfl
-  exacts [Or.inl hpU, Or.inr hqV]
+  exacts [Or.inl hx₀U, Or.inr hx₁V]
 
 end TauCeti
