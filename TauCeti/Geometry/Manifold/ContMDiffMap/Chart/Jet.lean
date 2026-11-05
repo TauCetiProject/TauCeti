@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney
+public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Basic
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Topology.ContinuousMap.Algebra

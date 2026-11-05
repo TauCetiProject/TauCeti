@@ -52,6 +52,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   generic stalks with this property.
 * `AlgebraicGeometry.Scheme.Hom.germToFunctionField_functionFieldMap`: `f^*` sends the germ of a
   section `s` over an open `U` to the germ of its pullback `f^* s` over `f⁻¹ U`.
+* `AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap_stalk`: `f^*` is compatible with the
+  maps of stalks `𝒪_{Y,f x} ⟶ 𝒪_{X,x}`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_injective_of_isDominant`: between integral schemes, the
   pullback of sections `Γ(Y, U) ⟶ Γ(X, V)` along a dominant morphism is injective for nonempty `V`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
@@ -182,6 +184,18 @@ theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y
     Y.germToFunctionField U ≫ f.functionFieldMap = f.app U ≫ X.germToFunctionField (f ⁻¹ᵁ U) := by
   rw [Scheme.germToFunctionField, Scheme.germToFunctionField, functionFieldMap,
     TopCat.Presheaf.germ_stalkSpecializes_assoc, germ_stalkMap]
+
+/-- The pullback of rational functions `f^*` along a dominant morphism `f : X ⟶ Y` of irreducible
+schemes is compatible with the maps of stalks: at a point `x` of `X`, it sends the image in `K(Y)`
+of an element `a` of `𝒪_{Y,f x}` to the image in `K(X)` of its pullback `f^* a ∈ 𝒪_{X,x}`. -/
+theorem functionFieldMap_algebraMap_stalk (f : X ⟶ Y) [IsDominant f] (x : X)
+    (a : Y.presheaf.stalk (f x)) :
+    f.functionFieldMap.hom (algebraMap (Y.presheaf.stalk (f x)) Y.functionField a) =
+      algebraMap (X.presheaf.stalk x) X.functionField (f.stalkMap x a) := by
+  rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, functionFieldMap,
+    ← CommRingCat.comp_apply, ← Category.assoc, TopCat.Presheaf.stalkSpecializes_comp,
+    CommRingCat.comp_apply,
+    f.stalkSpecializes_stalkMap_apply _ _ ((genericPoint_spec X).specializes trivial)]
 
 omit [IrreducibleSpace X] [IrreducibleSpace Y] in
 /-- For a dominant morphism `f : X ⟶ Y` of integral schemes, the pullback of sections

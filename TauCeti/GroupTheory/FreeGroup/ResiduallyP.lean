@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.FreeGroup.Syllables
 public import TauCeti.LinearAlgebra.Matrix.UnitriangularP
 public import TauCeti.NumberTheory.Binomial.PadicVal
 public import Mathlib.GroupTheory.ResiduallyFinite
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.Nat.Choose.Sum
 
 /-!
@@ -37,6 +38,7 @@ of free groups as a special case.
 public section
 
 open Matrix
+open TauCeti (upperUnitriangularGroup isPGroup_upperUnitriangularGroup)
 
 namespace FreeGroup
 
@@ -120,8 +122,9 @@ private theorem one_add_shift_pow_apply (x : X) (n : ℕ) (a b : Fin (D + 1)) :
       rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, ite_self]
   · exact Finset.sum_eq_zero fun j _ ↦ ite_eq_right fun h' ↦ h ⟨by omega, h'.2⟩
 
-private theorem isUnitri_one_add_shift (x : X) : IsUnitri p D (1 + shift ℓ D x) := by
-  refine (isUnitri_iff D).2 ⟨fun a ↦ by simp [shift], fun a b hab ↦ ?_⟩
+private theorem isUpperUnitriangular_one_add_shift (x : X) :
+    (1 + shift (p := p) ℓ D x).IsUpperUnitriangular := by
+  refine (isUpperUnitriangular_def _).2 ⟨fun a b (hab : b < a) ↦ ?_, fun a ↦ by simp [shift]⟩
   have : ¬ ((b : ℕ) = a + 1 ∧ ℓ b = some x) := fun h ↦ by
     have : (b : ℕ) < a := hab
     omega
@@ -130,31 +133,34 @@ private theorem isUnitri_one_add_shift (x : X) : IsUnitri p D (1 + shift ℓ D x
 variable [hp : Fact p.Prime]
 
 /-- The generator `x` as the unitriangular matrix `1 + Nₓ`. -/
-private def generator (x : X) : unitriangular (p := p) D :=
-  ⟨Units.ofPowEqOne _ (p ^ (D + 1)) ((isUnitri_one_add_shift ℓ D x).pow_eq_one D)
+private def generator (x : X) : upperUnitriangularGroup (Fin (D + 1)) (ZMod p) :=
+  ⟨Units.ofPowEqOne _ (p ^ (D + 1))
+      (by simpa only [Fintype.card_fin] using
+        (isUpperUnitriangular_one_add_shift ℓ D x).pow_eq_one)
       (pow_pos hp.out.pos _).ne',
-    (mem_unitriangular D).2 (isUnitri_one_add_shift ℓ D x)⟩
+    TauCeti.UpperUnitriangularGroup.mem_iff.2 (isUpperUnitriangular_one_add_shift ℓ D x)⟩
 
 private theorem generator_val (x : X) :
-    (((generator (p := p) ℓ D x : unitriangular (p := p) D) :
+    (((generator (p := p) ℓ D x : upperUnitriangularGroup (Fin (D + 1)) (ZMod p)) :
         (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ) :
         Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) = 1 + shift ℓ D x := by
   simp only [generator, Units.val_ofPowEqOne]
 
 /-- The representation of the free group by upper unitriangular matrices. -/
-private def rep : FreeGroup X →* unitriangular (p := p) D :=
+private def rep : FreeGroup X →* upperUnitriangularGroup (Fin (D + 1)) (ZMod p) :=
   lift (generator ℓ D)
 
 /-- The image of `x ^ e` is a natural power of `1 + Nₓ`, with exponent `e` reduced modulo
 `p ^ (D + 1)`. -/
 private theorem coe_rep_of_zpow (x : X) (e : ℤ) :
-    (((rep (p := p) ℓ D (of x ^ e) : unitriangular (p := p) D) :
+    (((rep (p := p) ℓ D (of x ^ e) : upperUnitriangularGroup (Fin (D + 1)) (ZMod p)) :
         (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ) :
         Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) =
       (1 + shift ℓ D x) ^ (e % (p ^ (D + 1) : ℕ)).toNat := by
   have hpow : generator (p := p) ℓ D x ^ p ^ (D + 1) = 1 := Subtype.ext (Units.ext (by
-    rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val]
-    exact ((mem_unitriangular D).1 (generator ℓ D x).2).pow_eq_one D))
+    rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val, Subgroup.coe_one, Units.val_one]
+    simpa only [Fintype.card_fin] using
+      (TauCeti.UpperUnitriangularGroup.isUpperUnitriangular (generator ℓ D x)).pow_eq_one))
   rw [rep, map_zpow, lift_apply_of, zpow_eq_zpow_emod' e hpow,
     ← Int.toNat_of_nonneg (Int.emod_nonneg _ (Nat.cast_ne_zero.2 (pow_pos hp.out.pos _).ne')),
     zpow_natCast, Subgroup.coe_pow, Units.val_pow_eq_pow_val, generator_val]
@@ -254,7 +260,8 @@ the positions after `L`. -/
 private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (L : ℕ)
     (hL : Spells (p := p) ℓ D L s) (R : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))
     (hR : RowInv D R L) (hprev : ∀ a ∈ s.head?, L = 0 ∨ ℓ L ≠ some a.1) :
-    RowInv D (R * (((rep (p := p) ℓ D (syllableProd s) : unitriangular (p := p) D) :
+    RowInv D (R * (((rep (p := p) ℓ D (syllableProd s) :
+        upperUnitriangularGroup (Fin (D + 1)) (ZMod p)) :
       (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ) :
       Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))) D := by
   induction s generalizing L R with
@@ -291,11 +298,14 @@ private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (
       -- Normalize the matrix index difference to the weight of this syllable.
       rw [coe_rep_of_zpow, one_add_shift_pow_apply, ite_eq_left ⟨by omega, by rwa [ha, hb]⟩,
         show (b : ℕ) - a = p ^ padicValInt p e by rw [ha, hb]; simp [weight]]
-      refine TauCeti.choose_emod_ne_zero (e := e) (hs0 _ List.mem_cons_self) ?_
-      have := Nat.lt_pow_self hp.out.one_lt (n := padicValInt p e)
-      have : weight p e ≤ D := by omega
-      simp only [weight] at this
-      omega
+      refine TauCeti.natCast_choose_pow_padicValInt_ne_zero_of_modEq (e := e) (K := D + 1)
+        (hs0 _ List.mem_cons_self) ?_ ?_
+      · have := Nat.lt_pow_self hp.out.one_lt (n := padicValInt p e)
+        have : weight p e ≤ D := by omega
+        simp only [weight] at this
+        omega
+      · rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by simp [hp.out.ne_zero]))]
+        exact_mod_cast Int.mod_modEq _ _
     -- Position `L + weight p e` is spelled `x`, which differs from the next syllable's letter.
     · intro c hc
       right
@@ -329,7 +339,8 @@ theorem exists_normal_isPGroup_quotient_notMem {w : FreeGroup X} (hw : w ≠ 1) 
   let D := totalWeight p s
   let ρ := rep (p := p) (letters p s) D
   refine ⟨ρ.ker, inferInstance, inferInstance,
-    (isPGroup_unitriangular D).of_injective _ (QuotientGroup.kerLift_injective ρ), fun hmem ↦ ?_⟩
+    isPGroup_upperUnitriangularGroup.of_injective _ (QuotientGroup.kerLift_injective ρ),
+    fun hmem ↦ ?_⟩
   have hD : 0 < D := by
     obtain ⟨a, s', rfl⟩ := List.exists_cons_of_ne_nil hs₀
     have := one_le_weight (p := p) a.2

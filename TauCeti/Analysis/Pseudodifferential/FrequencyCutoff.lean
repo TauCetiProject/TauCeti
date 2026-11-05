@@ -6,99 +6,91 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
 # Frequency cutoffs
 
-A frequency cutoff on a real normed space `E` is a smooth function `χ : E → ℝ` with values in
-`[0, 1]` that vanishes on the closed unit ball and is identically `1` outside the open ball of
-radius `2`. In the classical symbol calculus a homogeneous term `a(x, ξ)`, which is smooth only
-away from `ξ = 0`, is turned into a globally smooth symbol `χ(ξ) a(x, ξ)`; the cutoff removes the
-singularity at the zero frequency without changing `a` at large frequencies.
+A *frequency cutoff* on a real normed space `E` is a smooth function `χ : E → ℝ` with values in
+`[0, 1]` that vanishes on the closed unit ball `‖ξ‖ ≤ 1` and equals `1` for `‖ξ‖ ≥ 2`.
 
-Cutoffs exist on every space with smooth bump functions: `1 - φ` is one, for a bump `φ` that
-is `1` on the unit ball and supported in the ball of radius `2`. Their derivatives of positive
-order vanish outside the transition annulus `1 ≤ ‖ξ‖ ≤ 2`, so on a proper space they have compact
-support and every derivative is bounded. Two cutoffs agree outside the ball of radius `2`, so
-their difference is compactly supported.
+Classical symbols `a ∼ ∑ⱼ χ(ξ) aₘ₋ⱼ(x, ξ)` use such a cutoff to turn the homogeneous terms
+`aₘ₋ⱼ`, which are only smooth away from `ξ = 0`, into smooth functions on the whole frequency
+space. This file provides the carrier `TauCeti.FrequencyCutoff E` and the facts about it that
+the symbol calculus needs:
 
-## Main declarations
-
-* `TauCeti.FrequencyCutoff E`: the frequency cutoffs on `E`.
-* `TauCeti.FrequencyCutoff.ofContDiffBump`: the cutoff `1 - φ` built from a smooth bump `φ`.
-* `TauCeti.FrequencyCutoff.iteratedFDeriv_eq_zero_of_norm_lt_one`,
-  `TauCeti.FrequencyCutoff.iteratedFDeriv_eq_zero_of_two_lt_norm`: derivatives of positive order
-  vanish off the transition annulus.
-* `TauCeti.FrequencyCutoff.exists_norm_iteratedFDeriv_le`: every derivative is bounded.
-* `TauCeti.FrequencyCutoff.hasCompactSupport_sub`: two cutoffs differ by a compactly supported
-  function.
+* `FrequencyCutoff.ofContDiffBump`: `1 - f` is a frequency cutoff for a smooth bump `f` with
+  `1 ≤ f.rIn` and `f.rOut ≤ 2`, so frequency cutoffs exist whenever `E` has smooth bump functions
+  (for instance in every inner product space and every finite-dimensional space);
+* every iterated derivative of a cutoff vanishes on the closed unit ball, and every iterated
+  derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
+  annulus `1 ≤ ‖ξ‖ ≤ 2`;
+* on a proper space every iterated derivative of a cutoff is bounded, and the difference of two
+  cutoffs, as well as `1 - χ`, has compact support.
 
 ## References
 
-* M. E. Taylor, *Pseudodifferential Operators*, Lecture I, (1.17).
-* R. B. Melrose, *Introduction to Microlocal Analysis*, Chapter 2.
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, (1.17).
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 -/
 
 public section
 
-noncomputable section
-
-open Filter Metric Set
+open Metric Filter Set
 open scoped ContDiff Topology
 
 namespace TauCeti
 
-variable (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A frequency cutoff on `E`: a smooth function with values in `[0, 1]` which vanishes for
-`‖ξ‖ ≤ 1` and equals `1` for `2 ≤ ‖ξ‖`. -/
-structure FrequencyCutoff where
-  /-- The underlying function. Use the coercion to functions instead. -/
+/-- A frequency cutoff on `E`: a smooth function with values in `[0, 1]` that vanishes on the
+closed unit ball and equals `1` outside the open ball of radius `2`. -/
+structure FrequencyCutoff (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] where
+  /-- The underlying function. Use the coercion to a function instead. -/
   toFun : E → ℝ
-  /-- A cutoff is smooth. -/
   contDiff' : ContDiff ℝ ∞ toFun
-  /-- A cutoff vanishes on the closed unit ball. -/
   eq_zero_of_norm_le_one' : ∀ ξ, ‖ξ‖ ≤ 1 → toFun ξ = 0
-  /-- A cutoff equals `1` outside the open ball of radius `2`. -/
   eq_one_of_two_le_norm' : ∀ ξ, 2 ≤ ‖ξ‖ → toFun ξ = 1
-  /-- A cutoff is nonnegative. -/
   nonneg' : ∀ ξ, 0 ≤ toFun ξ
-  /-- A cutoff is at most `1`. -/
   le_one' : ∀ ξ, toFun ξ ≤ 1
 
 namespace FrequencyCutoff
 
-variable {E}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 instance : FunLike (FrequencyCutoff E) E ℝ where
   coe := toFun
   coe_injective χ₁ χ₂ h := by cases χ₁; cases χ₂; congr
 
-@[ext]
-theorem ext {χ₁ χ₂ : FrequencyCutoff E} (h : ∀ ξ, χ₁ ξ = χ₂ ξ) : χ₁ = χ₂ :=
-  DFunLike.ext _ _ h
-
 @[simp]
-theorem toFun_eq_coe (χ : FrequencyCutoff E) : χ.toFun = χ := (rfl)
+theorem toFun_eq_coe (χ : FrequencyCutoff E) : χ.toFun = χ :=
+  rfl
 
 @[simp]
 theorem coe_mk (f : E → ℝ) (h₁ h₂ h₃ h₄ h₅) :
     ⇑(⟨f, h₁, h₂, h₃, h₄, h₅⟩ : FrequencyCutoff E) = f :=
-  (rfl)
+  rfl
 
-variable (χ : FrequencyCutoff E) {ξ : E}
+@[ext]
+theorem ext {χ₁ χ₂ : FrequencyCutoff E} (h : ∀ ξ, χ₁ ξ = χ₂ ξ) : χ₁ = χ₂ :=
+  DFunLike.ext _ _ h
+
+variable (χ : FrequencyCutoff E)
 
 theorem contDiff {n : ℕ∞} : ContDiff ℝ n χ :=
   χ.contDiff'.of_le (mod_cast le_top)
 
 theorem continuous : Continuous χ :=
-  χ.contDiff'.continuous
+  (χ.contDiff (n := 0)).continuous
 
-theorem apply_eq_zero (hξ : ‖ξ‖ ≤ 1) : χ ξ = 0 :=
+theorem apply_eq_zero_of_norm_le_one {ξ : E} (hξ : ‖ξ‖ ≤ 1) : χ ξ = 0 :=
   χ.eq_zero_of_norm_le_one' ξ hξ
 
-theorem apply_eq_one (hξ : 2 ≤ ‖ξ‖) : χ ξ = 1 :=
+theorem apply_eq_one_of_two_le_norm {ξ : E} (hξ : 2 ≤ ‖ξ‖) : χ ξ = 1 :=
   χ.eq_one_of_two_le_norm' ξ hξ
+
+@[simp]
+theorem apply_zero : χ 0 = 0 :=
+  χ.apply_eq_zero_of_norm_le_one (by simp)
 
 theorem nonneg (ξ : E) : 0 ≤ χ ξ :=
   χ.nonneg' ξ
@@ -106,86 +98,101 @@ theorem nonneg (ξ : E) : 0 ≤ χ ξ :=
 theorem le_one (ξ : E) : χ ξ ≤ 1 :=
   χ.le_one' ξ
 
-@[simp]
-theorem apply_zero : χ 0 = 0 :=
-  χ.apply_eq_zero (by simp)
+theorem norm_le_one (ξ : E) : ‖χ ξ‖ ≤ 1 := by
+  rw [Real.norm_of_nonneg (χ.nonneg ξ)]
+  exact χ.le_one ξ
 
-/-- A cutoff vanishes near every frequency of norm less than `1`. -/
-theorem eventuallyEq_zero (hξ : ‖ξ‖ < 1) : χ =ᶠ[𝓝 ξ] 0 := by
-  filter_upwards [isOpen_lt continuous_norm continuous_const |>.mem_nhds hξ] with η hη
-  exact χ.apply_eq_zero hη.le
+/-- A frequency cutoff vanishes near every point of the open unit ball. -/
+theorem eventuallyEq_zero_of_norm_lt_one {ξ : E} (hξ : ‖ξ‖ < 1) : (χ : E → ℝ) =ᶠ[𝓝 ξ] 0 := by
+  filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hξ)] with η hη
+  exact χ.apply_eq_zero_of_norm_le_one (mem_ball_zero_iff.1 hη).le
 
-/-- A cutoff equals `1` near every frequency of norm greater than `2`. -/
-theorem eventuallyEq_one (hξ : 2 < ‖ξ‖) : χ =ᶠ[𝓝 ξ] 1 := by
-  filter_upwards [isOpen_lt continuous_const continuous_norm |>.mem_nhds hξ] with η hη
-  exact χ.apply_eq_one hη.le
+/-- A frequency cutoff equals `1` near every point outside the closed ball of radius `2`. -/
+theorem eventuallyEq_one_of_two_lt_norm {ξ : E} (hξ : 2 < ‖ξ‖) : (χ : E → ℝ) =ᶠ[𝓝 ξ] 1 := by
+  have : (closedBall (0 : E) 2)ᶜ ∈ 𝓝 ξ :=
+    isClosed_closedBall.isOpen_compl.mem_nhds (by simpa using hξ)
+  filter_upwards [this] with η hη
+  exact χ.apply_eq_one_of_two_le_norm (by simpa using hη : 2 < ‖η‖).le
 
-/-- The derivatives of positive order of a cutoff vanish inside the unit ball. -/
-theorem iteratedFDeriv_eq_zero_of_norm_lt_one {k : ℕ} (hξ : ‖ξ‖ < 1) :
+/-- Every iterated derivative of a frequency cutoff, including its value, vanishes on the closed
+unit ball. -/
+theorem iteratedFDeriv_eq_zero_of_norm_le_one (k : ℕ) {ξ : E} (hξ : ‖ξ‖ ≤ 1) :
     iteratedFDeriv ℝ k χ ξ = 0 := by
-  rw [(χ.eventuallyEq_zero hξ).iteratedFDeriv ℝ k |>.eq_of_nhds, iteratedFDeriv_zero,
-    Pi.zero_apply]
+  have hon : EqOn (iteratedFDeriv ℝ k χ) 0 (ball 0 1) := fun η hη ↦ by
+    simpa using ((χ.eventuallyEq_zero_of_norm_lt_one (mem_ball_zero_iff.1 hη)).iteratedFDeriv
+      ℝ k).eq_of_nhds
+  have hcl := hon.closure (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top))
+    continuous_const
+  rw [closure_ball _ one_ne_zero] at hcl
+  exact hcl (mem_closedBall_zero_iff.2 hξ)
 
-/-- The derivatives of positive order of a cutoff vanish outside the closed ball of radius `2`. -/
-theorem iteratedFDeriv_eq_zero_of_two_lt_norm {k : ℕ} (hk : k ≠ 0) (hξ : 2 < ‖ξ‖) :
+/-- Every iterated derivative of positive order of a frequency cutoff vanishes for `‖ξ‖ ≥ 2`. -/
+theorem iteratedFDeriv_eq_zero_of_two_le_norm {k : ℕ} (hk : k ≠ 0) {ξ : E} (hξ : 2 ≤ ‖ξ‖) :
     iteratedFDeriv ℝ k χ ξ = 0 := by
-  rw [(χ.eventuallyEq_one hξ).iteratedFDeriv ℝ k |>.eq_of_nhds]
-  exact congr_fun (iteratedFDeriv_const_of_ne hk (1 : ℝ)) ξ
+  have hon : EqOn (iteratedFDeriv ℝ k χ) 0 (closedBall 0 2)ᶜ := fun η hη ↦ by
+    have h := ((χ.eventuallyEq_one_of_two_lt_norm (by simpa using hη)).iteratedFDeriv
+      ℝ k).eq_of_nhds
+    rw [h]
+    exact congrFun (iteratedFDeriv_const_of_ne hk 1) η
+  have hcl := hon.closure (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top))
+    continuous_const
+  rw [closure_compl, interior_closedBall _ two_ne_zero] at hcl
+  exact hcl (by simpa using hξ)
 
-/-- A derivative of positive order of a cutoff is supported in the closed ball of radius `2`. -/
-theorem hasCompactSupport_iteratedFDeriv [ProperSpace E] {k : ℕ} (hk : k ≠ 0) :
-    HasCompactSupport (iteratedFDeriv ℝ k χ) :=
-  HasCompactSupport.intro (isCompact_closedBall (0 : E) 2) fun ξ hξ =>
-    χ.iteratedFDeriv_eq_zero_of_two_lt_norm hk (by simpa using hξ)
+/-- The iterated derivatives of positive order of a frequency cutoff are supported in the closed
+annulus `1 ≤ ‖ξ‖ ≤ 2`. -/
+theorem support_iteratedFDeriv_subset {k : ℕ} (hk : k ≠ 0) :
+    Function.support (iteratedFDeriv ℝ k χ) ⊆ {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ 2} := by
+  intro ξ hξ
+  by_contra h
+  rcases not_and_or.1 h with h | h
+  · exact hξ (χ.iteratedFDeriv_eq_zero_of_norm_le_one k (not_le.1 h).le)
+  · exact hξ (χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (not_le.1 h).le)
 
-/-- Every derivative of a cutoff is bounded. -/
-theorem exists_norm_iteratedFDeriv_le [ProperSpace E] (k : ℕ) :
+/-- The function `1 - χ` is supported in the closed ball of radius `2`, hence compactly supported
+in a proper space. -/
+theorem hasCompactSupport_one_sub [ProperSpace E] : HasCompactSupport (1 - ⇑χ) :=
+  HasCompactSupport.intro (isCompact_closedBall 0 2) fun ξ hξ ↦ by
+    simp [χ.apply_eq_one_of_two_le_norm (by simpa using hξ : 2 < ‖ξ‖).le]
+
+/-- Two frequency cutoffs agree outside the open ball of radius `2`, so their difference is
+compactly supported in a proper space. -/
+theorem hasCompactSupport_sub [ProperSpace E] (χ' : FrequencyCutoff E) :
+    HasCompactSupport (⇑χ - ⇑χ') :=
+  HasCompactSupport.intro (isCompact_closedBall 0 2) fun ξ hξ ↦ by
+    have hξ : 2 ≤ ‖ξ‖ := (by simpa using hξ : 2 < ‖ξ‖).le
+    simp [χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ]
+
+/-- Every iterated derivative of a frequency cutoff on a proper space is bounded. -/
+theorem exists_bound_iteratedFDeriv [ProperSpace E] (k : ℕ) :
     ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ C := by
   rcases eq_or_ne k 0 with rfl | hk
-  · refine ⟨1, fun ξ => ?_⟩
-    rw [norm_iteratedFDeriv_zero, Real.norm_of_nonneg (χ.nonneg ξ)]
-    exact χ.le_one ξ
-  · exact (χ.contDiff'.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-      (χ.hasCompactSupport_iteratedFDeriv hk)
+  · exact ⟨1, fun ξ ↦ by simpa using χ.norm_le_one ξ⟩
+  refine (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
+    (HasCompactSupport.intro (isCompact_closedBall 0 2) fun ξ hξ ↦ ?_)
+  exact χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by simpa using hξ : 2 < ‖ξ‖).le
 
-/-- The function `1 - χ` is supported in the closed ball of radius `2`. -/
-theorem hasCompactSupport_one_sub [ProperSpace E] : HasCompactSupport (1 - ⇑χ) :=
-  HasCompactSupport.intro (isCompact_closedBall (0 : E) 2) fun ξ hξ => by
-    simp [χ.apply_eq_one (by simpa using hξ : 2 < ‖ξ‖).le]
-
-/-- Two cutoffs differ by a compactly supported function. -/
-theorem hasCompactSupport_sub [ProperSpace E] (χ₁ χ₂ : FrequencyCutoff E) :
-    HasCompactSupport (⇑χ₁ - ⇑χ₂) :=
-  HasCompactSupport.intro (isCompact_closedBall (0 : E) 2) fun ξ hξ => by
-    have hξ : 2 ≤ ‖ξ‖ := (by simpa using hξ : 2 < ‖ξ‖).le
-    simp [χ₁.apply_eq_one hξ, χ₂.apply_eq_one hξ]
-
-section ContDiffBump
-
-variable [HasContDiffBump E]
-
-/-- The frequency cutoff `1 - φ` built from a smooth bump function `φ` centered at `0` which is
-`1` on the closed unit ball and supported in the open ball of radius `2`. -/
-def ofContDiffBump (φ : ContDiffBump (0 : E)) (hφ₁ : φ.rIn = 1) (hφ₂ : φ.rOut = 2) :
-    FrequencyCutoff E where
-  toFun ξ := 1 - φ ξ
-  contDiff' := contDiff_const.sub φ.contDiff
+/-- If `f` is a smooth bump function centred at `0` with `1 ≤ f.rIn` and `f.rOut ≤ 2`, then
+`1 - f` is a frequency cutoff. -/
+noncomputable def ofContDiffBump [HasContDiffBump E] (f : ContDiffBump (0 : E))
+    (h₁ : 1 ≤ f.rIn) (h₂ : f.rOut ≤ 2) : FrequencyCutoff E where
+  toFun ξ := 1 - f ξ
+  contDiff' := contDiff_const.sub f.contDiff
   eq_zero_of_norm_le_one' ξ hξ := by
-    rw [φ.one_of_mem_closedBall (by simpa [hφ₁] using hξ), sub_self]
+    rw [f.one_of_mem_closedBall (mem_closedBall_zero_iff.2 (hξ.trans h₁)), sub_self]
   eq_one_of_two_le_norm' ξ hξ := by
-    rw [φ.zero_of_le_dist (by simpa [hφ₂] using hξ), sub_zero]
-  nonneg' ξ := sub_nonneg.mpr φ.le_one
-  le_one' ξ := sub_le_self _ φ.nonneg
+    rw [f.zero_of_le_dist (by simpa using h₂.trans hξ), sub_zero]
+  nonneg' _ := sub_nonneg.2 f.le_one
+  le_one' _ := sub_le_self _ f.nonneg
 
 @[simp]
-theorem ofContDiffBump_apply (φ : ContDiffBump (0 : E)) (hφ₁ : φ.rIn = 1) (hφ₂ : φ.rOut = 2)
-    (ξ : E) : ofContDiffBump φ hφ₁ hφ₂ ξ = 1 - φ ξ := (rfl)
+theorem ofContDiffBump_apply [HasContDiffBump E] (f : ContDiffBump (0 : E)) (h₁ : 1 ≤ f.rIn)
+    (h₂ : f.rOut ≤ 2) (ξ : E) : ofContDiffBump f h₁ h₂ ξ = 1 - f ξ :=
+  (rfl)
 
-/-- Every space with smooth bump functions carries a frequency cutoff. -/
-instance : Inhabited (FrequencyCutoff E) :=
-  ⟨ofContDiffBump ⟨1, 2, one_pos, one_lt_two⟩ rfl rfl⟩
-
-end ContDiffBump
+/-- Frequency cutoffs exist on every space with smooth bump functions. -/
+noncomputable instance [HasContDiffBump E] : Inhabited (FrequencyCutoff E) :=
+  ⟨ofContDiffBump ⟨1, 2, one_pos, one_lt_two⟩ le_rfl le_rfl⟩
 
 end FrequencyCutoff
 

@@ -48,6 +48,8 @@ concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under p
   closed `C¹` curves.
 * `TauCeti.pathIntegral_comp`: invariance under `C¹` reparametrization.
 * `TauCeti.pathIntegral_curveConcat`: additivity under concatenation of curves.
+* `TauCeti.exists_contMDiff_loop_pathIntegral_eq_sub`: two smooth curves with common endpoints
+  form a smooth loop whose line integral is the difference of theirs.
 * `TauCeti.pathIntegral_mpullback`: naturality under pullback.
 
 ## References
@@ -263,6 +265,24 @@ theorem pathIntegral_curveConcat {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 
     norm_num
   rw [hl, hm, hr, zero_add]
 
+/-- Two smooth curves from `x₀` to `y`, constant on `(-∞, 0]` and on `[1, ∞)`, form a smooth loop
+at `x₀`, the first followed by the reversed second. The line integral of a continuous form along
+this loop is the difference of the line integrals along the two curves. -/
+theorem exists_contMDiff_loop_pathIntegral_eq_sub {φ : RoughForm I M F 1}
+    (hφ : IsSmoothForm I 0 φ) {x₀ y : M} {γ γ' : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ)
+    (hγ₀ : ∀ t ≤ 0, γ t = x₀) (hγ₁ : ∀ t, 1 ≤ t → γ t = y) (hγ' : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ')
+    (hγ'₀ : ∀ t ≤ 0, γ' t = x₀) (hγ'₁ : ∀ t, 1 ≤ t → γ' t = y) :
+    ∃ ℓ : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I ∞ ℓ ∧ ℓ 0 = x₀ ∧ ℓ 1 = x₀ ∧
+      pathIntegral φ ℓ 0 1 = pathIntegral φ γ 0 1 - pathIntegral φ γ' 0 1 := by
+  have hrev : ContMDiff 𝓘(ℝ, ℝ) I ∞ fun t ↦ γ' (1 - t) :=
+    hγ'.comp (by fun_prop : ContDiff ℝ ∞ fun t : ℝ ↦ 1 - t).contMDiff
+  have h₂ : ∀ t ≤ 0, γ' (1 - t) = y := fun t ht ↦ hγ'₁ _ (by linarith)
+  refine ⟨_, hγ.curveConcat hrev hγ₁ h₂,
+    by rw [curveConcat_of_le (by norm_num), hγ₀ _ (by norm_num)],
+    by rw [curveConcat_of_lt (by norm_num)]; exact hγ'₀ _ (by norm_num), ?_⟩
+  rw [pathIntegral_curveConcat hφ (hγ.of_le (by simp)) (hrev.of_le (by simp)) hγ₁ h₂,
+    pathIntegral_comp_sub_left hφ (hγ'.of_le (by simp)), sub_self, sub_zero, sub_eq_add_neg]
+
 end Continuous
 
 /-! ### Naturality -/
@@ -287,6 +307,38 @@ theorem pathIntegral_mpullback {f : M → M'} (φ : RoughForm I' M' F 1) {γ : �
       Manifold.curveVelocityWithin_map (s := univ) (hf t ht) uniqueDiffWithinAt_univ
         (hγ t ht).mdifferentiableWithinAt
   simp only [Function.comp_apply, hv]
+
+/-- The line integral of a one-form along the curve `t ↦ u (x, t)` is the integral of the pullback
+of the form along `u` on the second coordinate vector. -/
+theorem pathIntegral_apply_snd {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (x a b : ℝ) :
+    pathIntegral α (fun t ↦ u (x, t)) a b =
+      ∫ t in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (x, t) fun _ ↦ (0, 1) := by
+  rw [pathIntegral_eq_integral_mpullback]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  have hL : HasFDerivAt (fun t : ℝ ↦ (x, t)) ((0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ))
+      t := (hasFDerivAt_const x t).prodMk (hasFDerivAt_id t)
+  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
+  simp only [Function.comp_def] at this
+  rw [this]
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
+  congr 1
+
+/-- The line integral of a one-form along the curve `s ↦ u (s, y)` is the integral of the pullback
+of the form along `u` on the first coordinate vector. -/
+theorem pathIntegral_apply_fst {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (y a b : ℝ) :
+    pathIntegral α (fun s ↦ u (s, y)) a b =
+      ∫ s in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (s, y) fun _ ↦ (1, 0) := by
+  rw [pathIntegral_eq_integral_mpullback]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  have hL : HasFDerivAt (fun s : ℝ ↦ (s, y)) ((ContinuousLinearMap.id ℝ ℝ).prod (0 : ℝ →L[ℝ] ℝ))
+      s := (hasFDerivAt_id s).prodMk (hasFDerivAt_const y s)
+  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
+  simp only [Function.comp_def] at this
+  rw [this]
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
+  congr 1
 
 end Pullback
 
