@@ -14,11 +14,14 @@ public import Mathlib.Analysis.Normed.Ring.Units
 # Continuous left inverses of injective operators
 
 Mathlib's `ContinuousLinearMap.HasLeftInverse` records that a continuous linear map has a left
-inverse which is itself continuous and linear. This file adds two facts about it.
+inverse which is itself continuous and linear. This file adds two facts about it, and the
+corresponding statement for continuous pseudo-inverses.
 
 * Over `ℝ` or `ℂ`, an injective continuous linear map out of a finite-dimensional space has a
   continuous left inverse, whatever the locally convex codomain: its range is finite-dimensional,
-  hence has a closed complement by the Hahn–Banach theorem.
+  hence has a closed complement by the Hahn–Banach theorem. For the same reason, every continuous
+  linear map out of a finite-dimensional space has a continuous pseudo-inverse `g`, with
+  `f ∘ g ∘ f = f`.
 * Having a continuous left inverse is stable in families. If `A x` depends continuously on `x`
   and `A x₀` has a continuous left inverse, then so does `A x` for `x` near `x₀`, and the left
   inverses can be chosen to depend continuously on `x` at `x₀`. If `P` is a left inverse of
@@ -34,6 +37,8 @@ subbundle spanned by local frames.
 * `ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain`: an injective
   continuous linear map out of a finite-dimensional space over `ℝ` or `ℂ` has a continuous left
   inverse.
+* `ContinuousLinearMap.exists_comp_comp_eq_self`: a continuous linear map out of a
+  finite-dimensional space over `ℝ` or `ℂ` has a continuous pseudo-inverse.
 * `ContinuousAt.exists_continuousAt_leftInverse`: continuously varying left inverses of a
   continuous family of operators whose member at `x₀` has a continuous left inverse.
 -/
@@ -70,6 +75,32 @@ theorem of_injective_of_finiteDimensional_domain [IsRCLikeNormedField 𝕜] [Pol
   simp [g, hv]
 
 end ContinuousLinearMap.HasLeftInverse
+
+namespace ContinuousLinearMap
+
+variable {G : Type*} [TopologicalSpace G] [AddCommGroup G] [Module 𝕜 G] [IsTopologicalAddGroup G]
+  [ContinuousSMul 𝕜 G]
+  {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module 𝕜 F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- Over `ℝ` or `ℂ`, a continuous linear map `f` out of a finite-dimensional space into a locally
+convex (polynormable) space has a continuous *pseudo-inverse*: a continuous linear map `g` in the
+opposite direction with `f ∘ g ∘ f = f`. This is the continuous counterpart of
+`LinearMap.exists_comp_comp_eq_self`. -/
+theorem exists_comp_comp_eq_self [IsRCLikeNormedField 𝕜] [PolynormableSpace 𝕜 F]
+    [FiniteDimensional 𝕜 G] (f : G →L[𝕜] F) : ∃ g : F →L[𝕜] G, f ∘L g ∘L f = f := by
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  -- A continuous projection `p` onto the range, followed by a right inverse of `f` on its range.
+  obtain ⟨p, hp⟩ :=
+    Submodule.ClosedComplemented.of_finiteDimensional (LinearMap.range f.toLinearMap)
+  obtain ⟨σ, hσ⟩ :=
+    f.toLinearMap.rangeRestrict.exists_rightInverse_of_surjective f.toLinearMap.range_rangeRestrict
+  refine ⟨(LinearMap.toContinuousLinearMap σ).comp p, ext fun v ↦ ?_⟩
+  have hv : p (f v) = f.toLinearMap.rangeRestrict v :=
+    hp ⟨f v, LinearMap.mem_range_self f.toLinearMap v⟩
+  simpa [hv] using congrArg Subtype.val (LinearMap.congr_fun hσ (f.toLinearMap.rangeRestrict v))
+
+end ContinuousLinearMap
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {X : Type*} [TopologicalSpace X]
