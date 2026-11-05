@@ -37,7 +37,7 @@ a time.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
-* `TauCeti.Manifold.eq_sum_repr_continuousLinearMapAt_smul_localFrame`: a fibre vector is the sum of
+* `Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame`: a fibre vector is the sum of
   the local-frame vectors weighted by the coordinates of its reading in `e`.
 * `TauCeti.Manifold.basisAt_apply`: the basis `e.basisAt b hx` is the continuous inverse of `e`
   applied to `b`.
@@ -112,8 +112,8 @@ theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
 
 /-- A vector of the fibre over a point of the base set of a trivialization `e` is the sum of the
 local-frame vectors weighted by the coordinates of its reading in `e`. -/
-theorem eq_sum_repr_continuousLinearMapAt_smul_localFrame [Fintype ι] (hx : x ∈ e.baseSet)
-    (v : V x) :
+theorem _root_.Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame [Fintype ι]
+    (hx : x ∈ e.baseSet) (v : V x) :
     v = ∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • e.localFrame b i x := by
   calc
     v = e.symmL 𝕜 x (e.continuousLinearMapAt 𝕜 x v) := (e.symmL_continuousLinearMapAt hx v).symm

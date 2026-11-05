@@ -326,7 +326,7 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
   have hexp (Q : ∀ r, TangentSpace I (γ r)) (r : ℝ) (hr : γ r ∈ e.baseSet) :
       ∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) r) i • e.localFrame β i (γ r) = Q r := by
     rw [sectionCoord_apply]
-    exact (eq_sum_repr_continuousLinearMapAt_smul_localFrame β hr (Q r)).symm
+    exact (β.eq_sum_repr_continuousLinearMapAt_smul_localFrame hr (Q r)).symm
   refine HasPairingProductRuleWithinAt.congr_of_eventuallyEq hsum ?_ ?_ (hexp V t hbase)
     (hexp W t hbase)
   · filter_upwards [hnear] with r hr using hexp V r hr
