@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Certificate.Check
+public import TauCeti.FieldTheory.GaloisGroups.NormalClosure
 public import TauCeti.FieldTheory.GaloisGroups.Symmetric.Basic
 
 import Mathlib.FieldTheory.Finite.Basic
@@ -14,6 +15,8 @@ import TauCeti.Algebra.Polynomial.SpecificDegree
 import TauCeti.FieldTheory.GaloisGroups.Certificate.Examples
 import TauCeti.FieldTheory.GaloisGroups.Certificate.Frobenius
 import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.Minpoly
 
 /-!
 # Solvability and prime-degree symmetric Galois-group certificates
@@ -39,10 +42,13 @@ Three families of evidence are combined under `TauCeti.SolvabilityCertificate`:
    non-solvable whenever `5 ≤ d` (`Polynomial.HasFullSymmetricGaloisGroup.not_isSolvable`).
 
 Crucially, every certificate route that claims `isSolvable = false` also certifies irreducibility
-of `f` over `ℚ` (`SolvabilityCertificate.Verifies.irreducible_map_rat_of_isSolvable_eq_false`).
-Downstream consumers — such as Galois-closure certification for modular-form coefficient fields —
-can therefore identify `f.map (Int.castRingHom ℚ)` as the minimal polynomial of any root directly
-from `cert.check f = true` and `cert.isSolvable = false`.
+of `f` over `ℚ` (`SolvabilityCertificate.Verifies.irreducible_map_rat_of_isSolvable_eq_false`),
+hence identifies `f.map (Int.castRingHom ℚ)` as the minimal polynomial of any root
+(`SolvabilityCertificate.check_minpoly_eq_map_rat_of_isSolvable_eq_false`). Combining this with
+`TauCeti.FieldTheory.GaloisGroups.NormalClosure` yields general certificate-driven solvability,
+single-element generation, and Galois-group order theorems for
+`IntermediateField.normalClosure ℚ K Ω` of any algebraic or finite-dimensional intermediate field
+`K / ℚ` inside `[IsAlgClosed Ω]`.
 
 ## Main definitions and results
 
@@ -54,6 +60,13 @@ from `cert.check f = true` and `cert.isSolvable = false`.
   group in prime degree from two good-prime factor-degree patterns.
 * `TauCeti.SolvabilityCertificate`, `Verifies`, `check`, `isSolvable`, and `check_sound`: unified
   certificate type and Boolean checker for polynomial Galois-group solvability.
+* `TauCeti.SolvabilityCertificate.check_minpoly_eq_map_rat_of_isSolvable_eq_false`,
+  `TauCeti.SolvabilityCertificate.not_isSolvable_gal_normalClosure_of_check_eq_true`,
+  `TauCeti.SolvabilityCertificate.isSolvable_gal_normalClosure_iff_of_check_eq_true`,
+  `TauCeti.SolvabilityCertificate.not_isSolvable_gal_normalClosure_of_primeLinearQuadratic`,
+  `TauCeti.SolvabilityCertificate.adjoin_simple_eq_of_primeLinearQuadratic`,
+  `TauCeti.SolvabilityCertificate.natCard_gal_normalClosure_of_primeLinearQuadratic`:
+  certificate-to-Galois-closure transfer for intermediate fields `K : IntermediateField ℚ Ω`.
 * Worked witnesses covering every constructor: `X + 24`, `X ^ 5 - 2`, `X ^ 5 - X - 1`, and the
   `{5}` + `{1, 1, 1, 2}` Frobenius-cycle certificate on `X ^ 5 - X + 3`.
 
@@ -164,6 +177,15 @@ theorem hasFullSymmetricGaloisGroup_of_prime_factorDegrees {f : ℤ[X]} (hf : f.
   · rwa [hq_fac]
   · rwa [hq_fac]
 
+private theorem count_two_and_odd_replicate_one_add_two (n : ℕ) :
+    (Multiset.replicate n 1 + {2}).count 2 = 1 ∧
+      ∀ k ∈ Multiset.replicate n 1 + ({2} : Multiset ℕ), k ≠ 2 → Odd k := by
+  refine ⟨by simp [Multiset.count_replicate], fun k hk hk2 ↦ ?_⟩
+  rcases Multiset.mem_add.mp hk with hk1 | hk2'
+  · rw [Multiset.eq_of_mem_replicate hk1]
+    exact odd_one
+  · exact absurd (Multiset.mem_singleton.mp hk2') hk2
+
 /-- **The `{d}` + `{1, …, 1, 2}` Frobenius-cycle certificate in prime degree.** If a monic
 polynomial `f : ℤ[X]` is irreducible of prime degree `d` modulo a good prime `p` and splits modulo
 a good prime `q` into `d - 2` linear factors and one irreducible quadratic factor, then
@@ -171,14 +193,9 @@ a good prime `q` into `d - 2` linear factors and one irreducible quadratic facto
 theorem hasFullSymmetricGaloisGroup_of_prime_and_replicate_one_add_two {f : ℤ[X]} (hf : f.Monic)
     {d p q : ℕ} (hd : d.Prime) (hp : HasFactorDegrees f p {d})
     (hq : HasFactorDegrees f q (Multiset.replicate (d - 2) 1 + {2})) :
-    (f.map (Int.castRingHom ℚ)).HasFullSymmetricGaloisGroup := by
-  refine hasFullSymmetricGaloisGroup_of_prime_factorDegrees hf hd hp hq ?_ ?_
-  · simp [Multiset.count_replicate]
-  · intro k hk hk2
-    rcases Multiset.mem_add.mp hk with hk1 | hk2'
-    · rw [Multiset.eq_of_mem_replicate hk1]
-      exact odd_one
-    · exact absurd (Multiset.mem_singleton.mp hk2') hk2
+    (f.map (Int.castRingHom ℚ)).HasFullSymmetricGaloisGroup :=
+  let ⟨htwo, hodd⟩ := count_two_and_odd_replicate_one_add_two (d - 2)
+  hasFullSymmetricGaloisGroup_of_prime_factorDegrees hf hd hp hq htwo hodd
 
 /-- For a prime `d ≥ 5`, the `{d}` + `{1, …, 1, 2}` Frobenius-cycle certificate proves that the
 Galois group of `f` over `ℚ` is not solvable. -/
@@ -280,13 +297,9 @@ def check (cert : SolvabilityCertificate) (f : ℤ[X]) : Bool :=
       d.Prime ∧ 5 ≤ d ∧ HasFactorDegrees f p {d} ∧
         HasFactorDegrees f q (Multiset.replicate (d - 2) 1 + {2}) := by
   rw [primeLinearQuadratic_def, verifies_primeSymmetric_iff]
-  refine ⟨fun ⟨hd, hd5, hp, hq, _, _⟩ ↦ ⟨hd, hd5, hp, hq⟩,
-    fun ⟨hd, hd5, hp, hq⟩ ↦ ⟨hd, hd5, hp, hq, by simp [Multiset.count_replicate], ?_⟩⟩
-  intro k hk hk2
-  rcases Multiset.mem_add.mp hk with hk1 | hk2'
-  · rw [Multiset.eq_of_mem_replicate hk1]
-    exact odd_one
-  · exact absurd (Multiset.mem_singleton.mp hk2') hk2
+  have ⟨htwo, hodd⟩ := count_two_and_odd_replicate_one_add_two (d - 2)
+  exact ⟨fun ⟨hd, hd5, hp, hq, _, _⟩ ↦ ⟨hd, hd5, hp, hq⟩,
+    fun ⟨hd, hd5, hp, hq⟩ ↦ ⟨hd, hd5, hp, hq, htwo, hodd⟩⟩
 
 /-- `cert.check f = true` holds if and only if `cert.Verifies f`. -/
 @[simp] theorem check_eq_true_iff {cert : SolvabilityCertificate} {f : ℤ[X]} :
@@ -364,6 +377,16 @@ theorem check_irreducible_map_rat_of_isSolvable_eq_false {cert : SolvabilityCert
     Irreducible (f.map (Int.castRingHom ℚ)) :=
   (check_eq_true_iff.mp hcheck).irreducible_map_rat_of_isSolvable_eq_false hf hns
 
+/-- Any root `α` in a nontrivial `ℚ`-algebra of a monic polynomial `f : ℤ[X]` certified with
+`cert.check f = true` and `cert.isSolvable = false` has minimal polynomial
+`f.map (Int.castRingHom ℚ)`. -/
+theorem check_minpoly_eq_map_rat_of_isSolvable_eq_false {E : Type*} [Ring E] [Nontrivial E]
+    [Algebra ℚ E] {cert : SolvabilityCertificate} {f : ℤ[X]} {α : E} (hf : f.Monic)
+    (hroot : aeval α f = 0) (hcheck : cert.check f = true) (hns : cert.isSolvable = false) :
+    minpoly ℚ α = f.map (Int.castRingHom ℚ) :=
+  minpoly_eq_map_intCastRingHom_of_aeval_eq_zero hf
+    (check_irreducible_map_rat_of_isSolvable_eq_false hf hcheck hns) hroot
+
 /-- A verified `primeLinearQuadratic d p q` certificate proves full symmetric Galois group `S_d`.
 -/
 theorem check_hasFullSymmetricGaloisGroup_of_primeLinearQuadratic {d p q : ℕ} {f : ℤ[X]}
@@ -380,6 +403,92 @@ theorem check_natDegree_eq_of_primeLinearQuadratic {d p q : ℕ} {f : ℤ[X]}
   have hv := check_eq_true_iff.mp hcheck
   rw [primeLinearQuadratic_def] at hv
   exact hv.natDegree_eq_of_primeSymmetric hf
+
+/-! ### Certificate transfer to Galois closures of intermediate fields -/
+
+section NormalClosure
+
+open _root_.IntermediateField
+
+variable {Ω : Type*} [Field Ω] [CharZero Ω] {K : IntermediateField ℚ Ω}
+
+/-- If `α ∈ K` for an algebraic intermediate field `K / ℚ` inside `[IsAlgClosed Ω]` is a root of a
+monic polynomial `P : ℤ[X]` certified by `cert.check P = true` with `cert.isSolvable = false`, then
+`Gal(normalClosure ℚ K Ω/ℚ)` is not solvable. -/
+theorem not_isSolvable_gal_normalClosure_of_check_eq_true [IsAlgClosed Ω]
+    [Algebra.IsAlgebraic ℚ K] {α : Ω} (hα : α ∈ K) {P : ℤ[X]} (hP : P.Monic)
+    (hroot : aeval α P = 0) {cert : SolvabilityCertificate} (hcheck : cert.check P = true)
+    (hns : cert.isSolvable = false) :
+    ¬ Group.IsSolvable Gal(normalClosure ℚ K Ω/ℚ) := by
+  refine not_isSolvable_gal_normalClosure_of_mem hα ?_
+  rw [check_minpoly_eq_map_rat_of_isSolvable_eq_false hP hroot hcheck hns]
+  exact check_not_isSolvable hP hcheck hns
+
+/-- If `α ∈ K` for a finite-dimensional intermediate field `K / ℚ` inside `[IsAlgClosed Ω]` is a
+root of a monic polynomial `P : ℤ[X]` irreducible over `ℚ` with `Module.finrank ℚ K ≤ P.natDegree`,
+then any certificate `cert` with `cert.check P = true` decides solvability of
+`Gal(normalClosure ℚ K Ω/ℚ)`. -/
+theorem isSolvable_gal_normalClosure_iff_of_check_eq_true [IsAlgClosed Ω]
+    [FiniteDimensional ℚ K] {α : Ω} (hα : α ∈ K) {P : ℤ[X]} (hP : P.Monic)
+    (hirr : Irreducible (P.map (Int.castRingHom ℚ))) (hroot : aeval α P = 0)
+    (hdeg : Module.finrank ℚ K ≤ P.natDegree) {cert : SolvabilityCertificate}
+    (hcheck : cert.check P = true) :
+    Group.IsSolvable Gal(normalClosure ℚ K Ω/ℚ) ↔ cert.isSolvable = true := by
+  have hmin : minpoly ℚ α = P.map (Int.castRingHom ℚ) :=
+    minpoly_eq_map_intCastRingHom_of_aeval_eq_zero hP hirr hroot
+  have hα_int : IsIntegral ℚ α :=
+    IntermediateField.isIntegral_iff.mp (Algebra.IsIntegral.isIntegral (⟨α, hα⟩ : K))
+  have hadj : ℚ⟮α⟯ = K :=
+    TauCeti.IntermediateField.adjoin_simple_eq_of_finrank_le_natDegree_minpoly hα
+      (by rwa [hmin, hP.natDegree_map])
+  rw [isSolvable_gal_normalClosure_iff_of_adjoin_eq hα_int (IsAlgClosed.splits _) hadj, hmin]
+  exact check_sound hP hcheck
+
+/-- If `α ∈ K` for an algebraic intermediate field `K / ℚ` inside `[IsAlgClosed Ω]` is a root of a
+monic polynomial `P : ℤ[X]` on which `primeLinearQuadratic d p q` checks, then
+`Gal(normalClosure ℚ K Ω/ℚ)` is not solvable. -/
+theorem not_isSolvable_gal_normalClosure_of_primeLinearQuadratic [IsAlgClosed Ω]
+    [Algebra.IsAlgebraic ℚ K] {α : Ω} (hα : α ∈ K) {P : ℤ[X]} (hP : P.Monic)
+    (hroot : aeval α P = 0) {d p q : ℕ}
+    (hcheck : (primeLinearQuadratic d p q).check P = true) :
+    ¬ Group.IsSolvable Gal(normalClosure ℚ K Ω/ℚ) :=
+  not_isSolvable_gal_normalClosure_of_check_eq_true hα hP hroot hcheck
+    (isSolvable_primeLinearQuadratic d p q)
+
+/-- If `α ∈ K` for a finite-dimensional intermediate field `K / ℚ` is a root of a monic polynomial
+`P : ℤ[X]` on which `primeLinearQuadratic d p q` checks and `Module.finrank ℚ K ≤ d`, then
+`ℚ⟮α⟯ = K`. -/
+theorem adjoin_simple_eq_of_primeLinearQuadratic [FiniteDimensional ℚ K] {α : Ω} (hα : α ∈ K)
+    {P : ℤ[X]} (hP : P.Monic) (hroot : aeval α P = 0) {d p q : ℕ}
+    (hcheck : (primeLinearQuadratic d p q).check P = true) (hdeg : Module.finrank ℚ K ≤ d) :
+    ℚ⟮α⟯ = K := by
+  have hmin : minpoly ℚ α = P.map (Int.castRingHom ℚ) :=
+    check_minpoly_eq_map_rat_of_isSolvable_eq_false hP hroot hcheck
+      (isSolvable_primeLinearQuadratic d p q)
+  refine TauCeti.IntermediateField.adjoin_simple_eq_of_finrank_le_natDegree_minpoly hα ?_
+  rw [hmin, hP.natDegree_map, check_natDegree_eq_of_primeLinearQuadratic hP hcheck]
+  exact hdeg
+
+/-- If `α ∈ K` for a finite-dimensional intermediate field `K / ℚ` inside `[IsAlgClosed Ω]` is a
+root of a monic polynomial `P : ℤ[X]` on which `primeLinearQuadratic d p q` checks and
+`Module.finrank ℚ K ≤ d`, then `Nat.card Gal(normalClosure ℚ K Ω/ℚ) = d.factorial`. -/
+theorem natCard_gal_normalClosure_of_primeLinearQuadratic [IsAlgClosed Ω]
+    [FiniteDimensional ℚ K] {α : Ω} (hα : α ∈ K) {P : ℤ[X]} (hP : P.Monic)
+    (hroot : aeval α P = 0) {d p q : ℕ}
+    (hcheck : (primeLinearQuadratic d p q).check P = true) (hdeg : Module.finrank ℚ K ≤ d) :
+    Nat.card Gal(normalClosure ℚ K Ω/ℚ) = d.factorial := by
+  have hsym := check_hasFullSymmetricGaloisGroup_of_primeLinearQuadratic hP hcheck
+  have hα_int : IsIntegral ℚ α :=
+    IntermediateField.isIntegral_iff.mp (Algebra.IsIntegral.isIntegral (⟨α, hα⟩ : K))
+  have hadj : ℚ⟮α⟯ = K := adjoin_simple_eq_of_primeLinearQuadratic hα hP hroot hcheck hdeg
+  have hmin : minpoly ℚ α = P.map (Int.castRingHom ℚ) :=
+    check_minpoly_eq_map_rat_of_isSolvable_eq_false hP hroot hcheck
+      (isSolvable_primeLinearQuadratic d p q)
+  rw [natCard_gal_normalClosure_eq_of_adjoin_eq hα_int (IsAlgClosed.splits _) hadj, hmin,
+    (hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree hsym.separable).mp hsym,
+    hP.natDegree_map, check_natDegree_eq_of_primeLinearQuadratic hP hcheck]
+
+end NormalClosure
 
 /-! ### Worked examples covering every `SolvabilityCertificate` constructor -/
 

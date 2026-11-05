@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.Degree
 import Mathlib.SetTheory.Cardinal.Finite
+import TauCeti.GroupTheory.Solvable
 
 /-!
 # Polynomials with full symmetric Galois group
@@ -100,8 +101,7 @@ theorem HasFullSymmetricGaloisGroup.not_isSolvable (hf : f.HasFullSymmetricGaloi
     ¬ Group.IsSolvable f.Gal := by
   obtain ⟨e⟩ := hf.nonempty_mulEquiv
   intro hsolv
-  have : Group.IsSolvable (Equiv.Perm (Fin f.natDegree)) :=
-    Group.isSolvable_of_surjective (f := e.toMonoidHom) e.surjective
+  have := e.isSolvable_congr.mp hsolv
   refine Equiv.Perm.not_isSolvable (Fin f.natDegree) ?_ inferInstance
   rw [Cardinal.mk_fin]
   exact_mod_cast hdeg
