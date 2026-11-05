@@ -37,11 +37,12 @@ with the same scalar, it is zero.
 
 ## Main results
 
-* `TauCeti.UqSl2.genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero` and
-  `TauCeti.UqSl2.f_pow_smul_eq_zero_of_forall_e_smul_eq_zero`: if `E` kills the generalized
-  weight space of weight `ε q^m`, then `K` acts on it by `ε q^m` and `F^(m+1)` kills it.
-* `TauCeti.UqSl2.eq_zero_of_f_pow_smul_eq_zero`: if `E` kills the generalized weight space of
-  weight `ε q^m`, then `F^r` is injective on it for `r ≤ m`.
+* `TauCeti.UqSl2.genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero`: if `E` kills the
+  generalized weight space of weight `ε q^m`, then `K` acts on it by `ε q^m`.
+* `TauCeti.UqSl2.f_pow_smul_eq_zero_of_e_smul_eq_zero`: a generalized weight vector of weight
+  `ε q^m` killed by `E` is killed by `F^(m+1)`.
+* `TauCeti.UqSl2.eq_zero_of_f_pow_smul_eq_zero`: a generalized weight vector of weight `ε q^m`
+  killed by `E` and by `F^r` for some `r ≤ m` is zero.
 * `TauCeti.UqSl2.e_smul_eq_zero_of_casimirBlock_eq_top`: in a module equal to its Casimir block
   for the Casimir scalar of `ε q^m`, `E` kills the generalized weight space of weight `ε q^m`.
 * `TauCeti.UqSl2.isSemisimpleModule_of_finiteDimensional`: at a generic parameter, every
@@ -157,25 +158,24 @@ private theorem f_pow_smul_eq_zero_of_f_pow_succ_smul_eq_zero (hq : IsGenericQua
     (mem_weightSpace_iff.mpr hkp) hp
 
 variable (hq : IsGenericQuantumParameter q)
-  (hE : ∀ w ∈ genWeightSpace q V (ε * q ^ m), e q • w = 0)
-include hq hE
+include hq
 
-/-- If `E` kills the generalized weight space of weight `ε q^m`, then `F^r` is injective on it
-for `r ≤ m`. -/
+/-- A generalized weight vector of weight `ε q^m` killed by `E` and by `F^r` for some `r ≤ m`
+is zero: `F^r` is injective on such vectors. -/
 theorem eq_zero_of_f_pow_smul_eq_zero {r : ℕ} (hr : r ≤ m) {w : V}
-    (hw : w ∈ genWeightSpace q V (ε * q ^ m)) (hf : f q ^ r • w = 0) : w = 0 := by
+    (hw : w ∈ genWeightSpace q V (ε * q ^ m)) (he : e q • w = 0) (hf : f q ^ r • w = 0) :
+    w = 0 := by
   induction r with
   | zero => simpa using hf
   | succ r ih =>
-    exact ih (by omega)
-      (f_pow_smul_eq_zero_of_f_pow_succ_smul_eq_zero hq (by omega) hw (hE w hw) hf)
+    exact ih (by omega) (f_pow_smul_eq_zero_of_f_pow_succ_smul_eq_zero hq (by omega) hw he hf)
 
 variable [FiniteDimensional ℂ V]
 
-/-- At a generic parameter, if `E` kills the generalized weight space of weight `ε q^m` in a
-finite-dimensional module, then so does `F^(m+1)`. -/
-theorem f_pow_smul_eq_zero_of_forall_e_smul_eq_zero {w : V}
-    (hw : w ∈ genWeightSpace q V (ε * q ^ m)) : f q ^ (m + 1) • w = 0 := by
+/-- At a generic parameter, in a finite-dimensional module, a generalized weight vector of weight
+`ε q^m` killed by `E` is killed by `F^(m+1)`. -/
+theorem f_pow_smul_eq_zero_of_e_smul_eq_zero {w : V}
+    (hw : w ∈ genWeightSpace q V (ε * q ^ m)) (he : e q • w = 0) : f q ^ (m + 1) • w = 0 := by
   -- Some power `F^(m+1+n)` kills `w`; the exponent can be lowered one step at a time.
   obtain ⟨n, hn⟩ := exists_f_pow_smul_eq_zero hq w
   have hn' : f q ^ (m + 1 + n) • w = 0 := by
@@ -184,13 +184,14 @@ theorem f_pow_smul_eq_zero_of_forall_e_smul_eq_zero {w : V}
   induction n with
   | zero => simpa using hn'
   | succ n ih =>
-    exact ih (f_pow_smul_eq_zero_of_f_pow_succ_smul_eq_zero hq (by omega) hw (hE w hw)
+    exact ih (f_pow_smul_eq_zero_of_f_pow_succ_smul_eq_zero hq (by omega) hw he
       (by simpa [add_assoc] using hn'))
 
 /-- At a generic parameter, if `E` kills the generalized weight space of weight `ε q^m` in a
 finite-dimensional module, then `K` acts on it by the scalar `ε q^m`: the generalized weight
 space is an honest weight space. -/
-theorem genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero :
+theorem genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero
+    (hE : ∀ w ∈ genWeightSpace q V (ε * q ^ m), e q • w = 0) :
     genWeightSpace q V (ε * q ^ m) = weightSpace q V (ε * q ^ m) := by
   refine le_antisymm (fun w hw => ?_) (weightSpace_le_genWeightSpace _)
   have hq0 := hq.ne_zero
@@ -198,9 +199,9 @@ theorem genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero :
   have hX : q⁻¹ ^ m • k q • w - q ^ m • kInv q • w ∈ genWeightSpace q V (ε * q ^ m) :=
     sub_mem (Submodule.smul_mem _ _ (k_smul_mem_genWeightSpace hw))
       (Submodule.smul_mem _ _ (kInv_smul_mem_genWeightSpace hw))
-  have hX0 := eq_zero_of_f_pow_smul_eq_zero hq hE le_rfl hX
+  have hX0 := eq_zero_of_f_pow_smul_eq_zero hq le_rfl hX (hE _ hX)
     (f_pow_smul_k_smul_sub_kInv_smul hq (hE w hw)
-      (f_pow_smul_eq_zero_of_forall_e_smul_eq_zero hq hE hw))
+      (f_pow_smul_eq_zero_of_e_smul_eq_zero hq hw (hE w hw)))
   -- Applying `K` to `X w = 0` gives `K² w = q^(2m) w = (ε q^m)² w`.
   have hk2 : k q ^ 2 • w = ((ε : ℂ) * q ^ m) ^ 2 • w := by
     have h := congrArg (fun x => q ^ m • k q • x) hX0
@@ -273,7 +274,7 @@ private theorem isSemisimpleModule_of_casimirBlock_casimirScalar_eq_top :
     exact w.2
   let L (w : genWeightSpace q V (ε * q ^ m)) : Submodule (UqSl2 q) V :=
     LinearMap.range (LadderModule.lift hq (hW w) (hE w w.2)
-      (f_pow_smul_eq_zero_of_forall_e_smul_eq_zero hq hE w.2))
+      (f_pow_smul_eq_zero_of_e_smul_eq_zero hq w.2 (hE w w.2)))
   have : IsSimpleModule (UqSl2 q) (LadderModule q m ε) := LadderModule.isSimpleModule hq
   refine isSemisimpleModule_of_isSemisimpleModule_submodule'
     (p := L) (fun w => IsSemisimpleModule.range _) ?_
