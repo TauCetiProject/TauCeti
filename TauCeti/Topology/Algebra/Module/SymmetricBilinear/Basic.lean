@@ -228,6 +228,11 @@ theorem symmetrizeBilinear_coe [NeZero (2 : 𝕜)] (b : symmetricBilinearMaps �
   ext v w
   simp [symmetrizeBilinear_apply, b.property v w, ← two_smul 𝕜, NeZero.ne (2 : 𝕜)]
 
+/-- Every symmetric bilinear map is the symmetrization of a continuous bilinear map. -/
+theorem symmetrizeBilinear_surjective [NeZero (2 : 𝕜)] :
+    Function.Surjective (symmetrizeBilinear (𝕜 := 𝕜) (V := V) (G := G)) :=
+  fun B ↦ ⟨B.val, symmetrizeBilinear_coe B⟩
+
 /-- Symmetrization commutes with simultaneous pullback of its two arguments. -/
 theorem symmetrizeBilinear_bilinearComp
     {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
