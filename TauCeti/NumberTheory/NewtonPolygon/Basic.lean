@@ -329,12 +329,23 @@ theorem newtonPolygon_reverse :
       fun n => if n ≤ f.natDegree then f.newtonPolygon v (f.natDegree - n) else ⊤ :=
   f.newtonPolygon_reflect v le_rfl
 
-/-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`, provided
-that valuation is finite. -/
-theorem newtonPolygon_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
+/-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`. No finiteness
+is needed: when that valuation is infinite, the height at index `0` is unchanged and every later
+point becomes `⊤`. -/
+theorem newtonPolygon_comp_C_mul_X (c : R) :
     (f.comp (C c * X)).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
-  simp only [newtonPolygon_def, comp_C_mul_X_coeff, AddValuation.map_mul, AddValuation.map_pow]
-  exact lowerConvexEnvelope_add_nsmul _ hc
+  by_cases hc : v c = ⊤
+  · funext n
+    rcases n with _ | n
+    · have h0 (g : R[X]) : g.newtonPolygon v 0 = v (g.coeff 0) :=
+        lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff g v) nofun
+      simp [h0, comp_C_mul_X_coeff]
+    · rw [hc, succ_nsmul, add_top, add_top]
+      refine lowerConvexEnvelope_eq_top_of_forall_ge fun k hk => ?_
+      obtain ⟨k, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+      simp [comp_C_mul_X_coeff, hc, succ_nsmul]
+  · simp only [newtonPolygon_def, comp_C_mul_X_coeff, AddValuation.map_mul, AddValuation.map_pow]
+    exact lowerConvexEnvelope_add_nsmul _ hc
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
