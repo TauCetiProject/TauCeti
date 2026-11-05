@@ -140,8 +140,11 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
     TauCeti.addHaar_image_criticalPoints_eq_zero ν (fun y hy ↦ hVC y hy) hkV
   -- Near the chart origin, criticality of the parameter map is failure of regularity; pull both
   -- neighbourhoods back to a neighbourhood of `(x, l)`.
+  have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
+    filter_upwards [(hcont.of_le hn).eventually hkω] with w hw
+    exact hw.differentiableAt hk0
   obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
-    (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hstrict hcont hn0 hsurj
+    (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hstrict hdiff hsurj
       hker hxl)
   obtain ⟨Q, hQnhds, hQ⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict hsurj
     hker hxl (inter_mem (hVopen.mem_nhds hV0) (hWopen.mem_nhds hW0))

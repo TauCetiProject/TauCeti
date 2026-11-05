@@ -338,10 +338,11 @@ variable {x : E} {l : Λ} {c : F}
 the level-set chart and the derivative of the local parameter map at `k` is surjective exactly when
 the fixed-parameter part of the derivative of `f` at the solution `k` names is. This is
 `TauCeti.surjective_fderiv_levelSetParameterMap_iff_of_mem` with its membership hypotheses
-discharged on a neighbourhood of the origin, using only that `f` is differentiable near `(x, l)`. -/
-theorem eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff {n : ℕ∞ω}
-    (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l)) (hcont : ContDiffAt ℝ n f (x, l))
-    (hn : n ≠ 0) (hD : Surjective (D₁.coprod D₂))
+discharged on a neighbourhood of the origin; it needs only that `f` is differentiable near
+`(x, l)`. -/
+theorem eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff
+    (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
+    (hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w) (hD : Surjective (D₁.coprod D₂))
     (hker : (D₁.coprod D₂).ker.ClosedComplemented) (hxl : f (x, l) = c) :
     ∀ᶠ k in 𝓝 (0 : (D₁.coprod D₂).ker),
       k ∈ (levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).target ∧
@@ -349,10 +350,6 @@ theorem eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff {n 
         Surjective ((fderiv ℝ f (((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker
           hxl).symm k : ↥{z | f z = c}) : E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))) := by
   set Φ := levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl with hΦ
-  have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
-    filter_upwards [(hcont.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)).eventually (by simp)]
-      with w hw
-    exact hw.differentiableAt one_ne_zero
   have hsource : hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD) hker ∈
       𝓝 ((x, l) : E × Λ) :=
     (hf.isOpen_implicitCoordSource _ _).mem_nhds (hf.mem_implicitCoordSource _ _)
@@ -475,11 +472,15 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
           (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
               (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
             E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))})) := by
+  have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
+    (fun m : ℕ ↦ (by simp : ((m : ℕ) : ℕ∞ω) ≠ ∞)) _
   have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
     (fun m : ℕ ↦ (by simp : ((m + 1 : ℕ) : ℕ∞ω) ≠ 0)) _
-  have hn0 : n ≠ 0 := fun h ↦ hne0 (le_antisymm (h ▸ hn) bot_le)
+  have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
+    filter_upwards [(hcont.of_le hn).eventually hne] with w hw
+    exact hw.differentiableAt hne0
   obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
-    (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hf hcont hn0 hD
+    (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hf hdiff hD
       (hD₁.closedComplemented_ker_coprod hD) hxl)
   obtain ⟨N, hN, hNsub, hNclosed, hNdense⟩ :=
     exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
