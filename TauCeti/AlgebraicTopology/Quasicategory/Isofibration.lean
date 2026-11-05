@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.StrictSegal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveCodiscrete
 public import TauCeti.AlgebraicTopology.Quasicategory.Core
+public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 
 /-!
@@ -20,9 +21,9 @@ equivalence `e : p x₀ ⟶ y₁` of `Y` there is an equivalence `e' : x₀ ⟶ 
 `p e' = e` (Kerodon, Definition 4.4.1.4). The target is required to be a quasicategory; since `p`
 is an inner fibration, so is the source. HTT has no name for this notion: by HTT Corollary 2.4.6.5
 these maps are exactly the categorical fibrations between `∞`-categories, the fibrations of the
-Joyal model structure. Isofibrations are the maps along which relative left Kan extensions and
-relative colimits are formed: inner horn lifting alone does not suffice, since equivalences also
-have to lift.
+Joyal model structure. Relative colimits and relative left Kan extensions are defined along inner
+fibrations, but their existence and the trivial-fibration property of restriction (HTT §4.3.2)
+need equivalences to lift as well, so they are stated for isofibrations.
 
 For an arbitrary target, isofibrations are defined by the right lifting property against
 monomorphisms that are categorical equivalences (Kerodon, Definition 4.5.6.5), and over a
@@ -94,9 +95,9 @@ lemma exists_isEquivalence_lift_of_section {p : X ⟶ Y} (s : Y ⟶ X) (hs : s �
     (he : e.IsEquivalence) :
     ∃ (x₁ : X _⦋0⦌) (e' : Edge x₀ x₁), e'.IsEquivalence ∧ p.app _ e'.edge = e.edge := by
   refine ⟨_, (e.map s).ofEq hx₀ rfl, (Edge.isEquivalence_ofEq_iff _ _).2 (he.map s), ?_⟩
-  -- The transported edge `(e.map s).ofEq hx₀ rfl` has underlying simplex `s.app _ e.edge`.
-  calc p.app _ ((e.map s).ofEq hx₀ rfl).edge = (s ≫ p).app _ e.edge := rfl
-    _ = e.edge := by rw [hs, NatTrans.id_app, ConcreteCategory.id_apply]
+  calc p.app _ ((e.map s).ofEq hx₀ rfl).edge = p.app _ (s.app _ e.edge) :=
+        congrArg _ ((Edge.ofEq_edge _ _ _).trans (Edge.map_edge e s))
+    _ = e.edge := by rw [← NatTrans.comp_app_apply, hs, NatTrans.id_app, ConcreteCategory.id_apply]
 
 namespace Isofibration
 
@@ -125,10 +126,6 @@ theorem isofibration_iff_of_isTerminal [Quasicategory Y] (p : X ⟶ Y) (hY : IsT
   have := (quasicategory_iff_of_isTerminal p hY).1 h
   exact { exists_isEquivalence_lift x₀ _ _ _ :=
     ⟨x₀, .id x₀, Edge.isEquivalence_id x₀, yonedaEquiv.symm.injective (hY.hom_ext _ _)⟩ }
-
-/-- The terminal simplicial set is a quasicategory. -/
-instance : Quasicategory (⊤_ SSet.{u}) :=
-  (quasicategory_iff_of_isTerminal (𝟙 _) terminalIsTerminal).2 ⟨innerFibrations.of_isIso _⟩
 
 /-- A quasicategory maps to the terminal simplicial set by an isofibration. -/
 instance [Quasicategory X] : Isofibration (terminal.from X) :=
@@ -182,20 +179,20 @@ theorem isofibration_nerveMap_iff (F : C ⥤ D) :
     obtain ⟨g, rfl⟩ := edgeMk_surjective e'
     have : IsIso g := (isEquivalence_edgeMk_iff g).1 he'
     refine ⟨a', asIso g, ComposableArrows.arrowEquiv.symm.injective ?_⟩
-    -- The transported edge has the underlying simplex of `edgeMk e.hom`.
-    have := hpe'.trans (edgeMk_edge e.hom)
+    have := hpe'.trans ((Edge.ofEq_edge _ _ _).trans (edgeMk_edge e.hom))
     rw [edgeMk_edge, nerveMap_app_mk₁] at this
+    simp only [ComposableArrows.arrowEquiv_symm_apply, Arrow.mk_hom]
     exact this
   · obtain ⟨a, rfl⟩ := nerveEquiv.symm.surjective x₀
     obtain ⟨b, rfl⟩ := nerveEquiv.symm.surjective y₁
     obtain ⟨f, hf⟩ := edgeMk_surjective (e.ofEq (nerveMap_app_mk₀ F a) rfl)
     have : IsIso f := (isEquivalence_edgeMk_iff f).1 (hf ▸ (Edge.isEquivalence_ofEq_iff _ _).2 he)
-    -- The transported edge `e.ofEq _ rfl` has the underlying simplex of `e`.
-    have hfe : e.edge = ComposableArrows.mk₁ f := (congrArg Edge.edge hf).symm.trans (edgeMk_edge f)
+    have hfe : e.edge = ComposableArrows.mk₁ f :=
+      (Edge.ofEq_edge e _ _).symm.trans ((congrArg Edge.edge hf).symm.trans (edgeMk_edge f))
     obtain ⟨a', e', he'⟩ := h a b (asIso f)
     refine ⟨nerveEquiv.symm a', edgeMk e'.hom, (isEquivalence_edgeMk_iff _).2 inferInstance, ?_⟩
     rw [edgeMk_edge, nerveMap_app_mk₁, hfe]
-    exact congrArg ComposableArrows.arrowEquiv.symm he'
+    exact congrArg (fun φ : Arrow D ↦ ComposableArrows.mk₁ φ.hom) he'
 
 end nerve
 

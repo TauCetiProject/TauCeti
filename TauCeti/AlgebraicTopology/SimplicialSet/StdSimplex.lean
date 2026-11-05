@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
@@ -14,9 +15,9 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 
 A map of simplicial sets `q : Δ[m] ⟶ Δ[n]` is determined by its vertex map, the `m`-simplex
 `yonedaEquiv q` of `Δ[n]`, and it acts on the simplices of `Δ[m]` by composing with it. Standard
-simplices are nerves of finite linear orders, hence quasicategories. These facts let one handle
-maps from horns and simplices to `Δ[n]`, for instance to `Δ[1]` when splitting a simplex into
-an initial and a final segment.
+simplices are nerves of finite linear orders, hence quasicategories, and so is the terminal
+simplicial set. These facts let one handle maps from horns and simplices to `Δ[n]`, for instance
+to `Δ[1]` when splitting a simplex into an initial and a final segment.
 
 ## Main results
 
@@ -29,6 +30,7 @@ an initial and a final segment.
 * `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
   to the vertex `yonedaEquiv g j`.
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
+* `SSet.quasicategory_terminal`: the terminal simplicial set is a quasicategory.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
   `Δ[n]` to its identity.
@@ -115,6 +117,11 @@ instance quasicategory (n : ℕ) : Quasicategory (Δ[n] : SSet.{u}) where
   hornFilling' _ _ σ₀ h₀ hₙ := by
     obtain ⟨σ, hσ⟩ := Quasicategory.hornFilling' (σ₀ ≫ (isoNerve n).hom) h₀ hₙ
     exact ⟨σ ≫ (isoNerve n).inv, by rw [← Category.assoc, ← hσ]; simp⟩
+
+open Limits in
+/-- The terminal simplicial set is a quasicategory. -/
+instance _root_.SSet.quasicategory_terminal : Quasicategory (⊤_ SSet.{u}) :=
+  (quasicategory_iff_of_isTerminal (𝟙 _) terminalIsTerminal).2 ⟨innerFibrations.of_isIso _⟩
 
 /-- Standard simplices are connected: the edge from `0` to `k` joins every vertex `k` to the
 initial vertex. -/
