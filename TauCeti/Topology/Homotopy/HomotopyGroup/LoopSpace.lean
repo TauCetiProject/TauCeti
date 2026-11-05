@@ -94,6 +94,13 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
   refine congrArg _ (_root_.GenLoop.ext _ _ fun t => ?_)
   simp only [_root_.GenLoop.congr_apply, _root_.GenLoop.map_apply]
 
+/-- Conjugating `HomotopyGroup.map` at index type `N` by `HomotopyGroup.congrEquiv e` for
+`e : M ≃ N` gives `HomotopyGroup.map` at index type `M`. -/
+theorem congrEquiv_symm_comp_map_comp_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y}
+    (f : C(X, Y)) (hf : f x = y) (e : M ≃ N) :
+    (congrEquiv e).symm ∘ map (N := N) f hf ∘ congrEquiv e = map (N := M) f hf :=
+  funext fun a ↦ by simp
+
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
 from `e`; that is what the `letI` in the statement records. -/

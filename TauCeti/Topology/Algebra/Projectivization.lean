@@ -65,7 +65,9 @@ of projective space.
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
-  homeomorphism from `U_i` onto `Fin n → K`.
+  homeomorphism from `U_i` onto `Fin n → K`, with
+  `Projectivization.isOpenEmbedding_affineChart_symm` showing that its inverse is an open
+  embedding.
 
 The topology and its quotient-map API (`instTopologicalSpace` through `isOpenQuotientMap_mk'`)
 follow Zayn Blore's Mathlib pull request
@@ -330,6 +332,12 @@ theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
 theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
     ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
   (rfl)
+
+/-- The inverse of the standard affine chart is an open embedding onto `affineOpen i`. -/
+theorem isOpenEmbedding_affineChart_symm (i : Fin (n + 1)) :
+    IsOpenEmbedding (affineChart (K := K) i).symm :=
+  coe_affineOpenPartialHomeomorph_symm (K := K) i ▸
+    (affineOpenPartialHomeomorph (K := K) i).symm.isOpenEmbedding (by simp)
 
 end AffineChart
 
