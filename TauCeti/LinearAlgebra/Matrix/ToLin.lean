@@ -47,6 +47,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
   multiplication by `x`.
+* `Algebra.leftMulMatrix_algebraMap`: the left multiplication matrix of an element of the base ring
+  is the corresponding scalar matrix.
 * `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
   applied to a vector are the product of their matrices applied to its coordinates.
 
@@ -211,6 +213,14 @@ theorem toLin_leftMulMatrix {R S : Type*} [CommSemiring R] [Semiring S] [Algebra
     {m : Type*} [Fintype m] [DecidableEq m] (b : Module.Basis m R S) (x : S) :
     Matrix.toLin b b (leftMulMatrix b x) = LinearMap.mulLeft R x := by
   rw [← toMatrix_lmul_eq, Matrix.toLin_toMatrix]
+
+-- Not a `simp` lemma: `simp` rewrites the left-hand side through `AlgHom.commutes` first, into
+-- `algebraMap R (Matrix ι ι R) r`, so this lemma would never fire.
+/-- Left multiplication by an element of the base ring is the corresponding scalar matrix. -/
+theorem leftMulMatrix_algebraMap {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R S) (r : R) :
+    leftMulMatrix b (algebraMap R S r) = Matrix.scalar ι r := by
+  simp [Matrix.algebraMap_eq_diagonal, Matrix.scalar_apply]
 
 end Algebra
 
