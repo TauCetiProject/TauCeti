@@ -30,8 +30,9 @@ the exhaustiveness hypothesis of the convergence theorems for filtered complexes
 * if the relative homology `Hₙ(X (i + 1), X i)` vanishes for all `i ≥ b`, the `b`th piece of the
   filtration of `Hₙ(Y)` is everything
   (`TauCeti.isIso_filteredSpaceAbutmentFiltrationι_of_exhaustive`);
-* if moreover `X a = ∅`, the spectral sequence converges strongly: on a late enough page the object
-  at `(p, q)` is the graded piece `F_{q+1} H / F_q H` of `H_{-(p+q)}(Y)`
+* if `X a = ∅` and the relative homology `H_{1-(p+q)}(X (i + 1), X i)` vanishes for all large
+  `i`, the spectral sequence converges strongly: on a late enough page the object at `(p, q)` is
+  the graded piece `F_{q+1} H / F_q H` of `H_{-(p+q)}(Y)`
   (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive`).
 
 The filtration of the abutment vanishes at a stage `X a = ∅`, by

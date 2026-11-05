@@ -19,7 +19,9 @@ map. The preimages `E_q = f⁻¹(C^(q))` of the skeleta of `C` form an increasin
 `q`, so `E_q = f⁻¹(D)` for `q < 0` (`TauCeti.preimageSkeleton_of_neg`), and `E_{-1} = ∅` when `C`
 is an absolute CW complex (`TauCeti.preimageSkeleton_eq_empty`). For a Serre fibration
 `f : E → B` over a CW complex `B` this is the filtration whose spectral sequence is the Serre
-spectral sequence.
+spectral sequence. These topological statements live in
+`TauCeti.Topology.CWComplex.Classical.Skeleton.Basic` and
+`TauCeti.Topology.CWComplex.Classical.CompactSupport`; this file adds the homological applications.
 
 If `f` is continuous with values in `C`, the filtration absorbs every compact subset of `E`
 (`TauCeti.exists_subset_preimageSkeleton_of_isCompact`), since the image of a compact set lies in a
@@ -55,52 +57,9 @@ namespace TauCeti
 
 variable {B : Type w} [TopologicalSpace B] [T2Space B] {E : TopCat.{w}}
 
-section Relative
-
-variable {C D : Set B} [RelCWComplex C D]
-
-variable (C) in
-/-- The preimage under `f : E → B` of the `q`-skeleton of a relative CW complex `C` in `B`, the
-`q`th stage of the skeletal filtration of `E`. The `q`-skeleton is `skeletonLT C (q + 1)`, the union
-of the base and of the cells of dimension at most `q`; for `q < 0` it is the base. -/
-def preimageSkeleton (f : E → B) (q : ℤ) : Set E :=
-  f ⁻¹' skeletonLT C ((q + 1).toNat : ℕ∞)
-
-@[simp]
-lemma mem_preimageSkeleton_iff (f : E → B) (q : ℤ) (x : E) :
-    x ∈ preimageSkeleton C f q ↔ f x ∈ skeletonLT C ((q + 1).toNat : ℕ∞) := Iff.rfl
-
-/-- The preimages of the skeleta form an increasing filtration. -/
-lemma monotone_preimageSkeleton (f : E → B) : Monotone (preimageSkeleton C f) :=
-  fun _ _ h ↦ Set.preimage_mono (skeletonLT_mono (by exact_mod_cast Int.toNat_le_toNat (by lia)))
-
-/-- Below degree `0` the skeletal filtration is the preimage of the base. -/
-lemma preimageSkeleton_of_neg (f : E → B) {q : ℤ} (hq : q < 0) :
-    preimageSkeleton C f q = f ⁻¹' D := by
-  rw [preimageSkeleton, Int.toNat_of_nonpos (by lia), Nat.cast_zero, skeletonLT_zero_eq_base]
-
-/-- **The skeletal filtration absorbs compact sets.** If `f` is continuous with values in the
-complex `C`, every compact subset of `E` lies in the preimage of some skeleton, since its image is
-compact and so lies in a finite skeleton. -/
-lemma exists_subset_preimageSkeleton_of_isCompact {f : E → B} (hf : Continuous f)
-    (hfC : Set.range f ⊆ C) {K : Set E} (hK : IsCompact K) : ∃ q, K ⊆ preimageSkeleton C f q := by
-  obtain ⟨n, hn⟩ := exists_subset_skeletonLT_of_isCompact (hK.image hf)
-    ((Set.image_subset_range f K).trans hfC)
-  refine ⟨n, fun x hx ↦ ?_⟩
-  rw [mem_preimageSkeleton_iff]
-  exact skeletonLT_mono (by exact_mod_cast (by lia : n ≤ ((n : ℤ) + 1).toNat))
-    (hn (Set.mem_image_of_mem f hx))
-
-end Relative
-
 section Absolute
 
 variable {C : Set B} [CWComplex C]
-
-/-- For an absolute CW complex the skeletal filtration is empty below degree `0`. -/
-lemma preimageSkeleton_eq_empty (f : E → B) {q : ℤ} (hq : q < 0) :
-    preimageSkeleton C f q = ∅ := by
-  rw [preimageSkeleton_of_neg f hq, Set.preimage_empty]
 
 variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
 
