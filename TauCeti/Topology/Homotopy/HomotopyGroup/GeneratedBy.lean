@@ -50,8 +50,16 @@ def homotopyGroupGeneratedByEquiv [IsGeneratedBy X (I^N)] [IsGeneratedBy X (I ×
   Quotient.congr (genLoopGeneratedByEquiv X x) fun p q ↦
     (genLoopGeneratedByEquiv_homotopic_iff X x p q).symm
 
-/-- The comparison is the map on homotopy groups of the actual counit. This equation is
-kept as a named rewrite so generic equivalence inverse laws remain available to `simp`. -/
+/-- The counit comparison sends the class of a generated-topology loop to the class of its
+underlying loop. -/
+theorem homotopyGroupGeneratedByEquiv_mk [IsGeneratedBy X (I^N)]
+    [IsGeneratedBy X (I × I^N)] (x : WithGeneratedByTopology X Y)
+    (p : Ω^ N (WithGeneratedByTopology X Y) x) :
+    homotopyGroupGeneratedByEquiv X x (⟦p⟧ : HomotopyGroup N _ x) =
+      ⟦genLoopGeneratedByEquiv X x p⟧ :=
+  (rfl)
+
+/-- The comparison is the map on homotopy groups of the actual counit. -/
 theorem homotopyGroupGeneratedByEquiv_apply [IsGeneratedBy X (I^N)]
     [IsGeneratedBy X (I × I^N)] (x : WithGeneratedByTopology X Y)
     (a : HomotopyGroup N (WithGeneratedByTopology X Y) x) :
@@ -60,24 +68,13 @@ theorem homotopyGroupGeneratedByEquiv_apply [IsGeneratedBy X (I^N)]
         ⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ rfl a := by
   refine Quotient.inductionOn a ?_
   intro p
-  change (⟦genLoopGeneratedByEquiv X x p⟧ : HomotopyGroup N Y _) = _
-  rw [HomotopyGroup.map_mk]
+  rw [homotopyGroupGeneratedByEquiv_mk, HomotopyGroup.map_mk]
   apply congrArg (Quotient.mk _)
   apply _root_.GenLoop.ext
   intro z
   simp only [genLoopGeneratedByEquiv_apply, _root_.GenLoop.map_apply, ContinuousMap.coe_mk]
 
-/-- The counit comparison sends the class of a generated-topology loop to the class of its
-underlying loop. This is a named equation, preserving the bundled comparison for inverse laws. -/
-theorem homotopyGroupGeneratedByEquiv_mk [IsGeneratedBy X (I^N)]
-    [IsGeneratedBy X (I × I^N)] (x : WithGeneratedByTopology X Y)
-    (p : Ω^ N (WithGeneratedByTopology X Y) x) :
-    homotopyGroupGeneratedByEquiv X x (⟦p⟧ : HomotopyGroup N _ x) =
-      ⟦genLoopGeneratedByEquiv X x p⟧ :=
-  (rfl)
-
-/-- The inverse comparison lifts any representative to the generated topology. This is a
-named equation, preserving the bundled comparison for inverse laws. -/
+/-- The inverse comparison lifts any representative to the generated topology. -/
 theorem homotopyGroupGeneratedByEquiv_symm_mk [IsGeneratedBy X (I^N)]
     [IsGeneratedBy X (I × I^N)] (x : WithGeneratedByTopology X Y)
     (p : Ω^ N Y (WithGeneratedByTopology.equiv x)) :
@@ -115,8 +112,8 @@ theorem homotopyGroupGeneratedByEquiv_naturality {Z : Type w} [TopologicalSpace 
     ((HomotopyGroup.map_congr hcomm _ _ a).trans
       (HomotopyGroup.map_comp_apply f hb cY rfl a).symm)
 
-/-- In positive dimensions, compact-test lifting respects the group operation because its
-forward map is induced by the counit. -/
+/-- In positive dimensions, the generated-topology counit induces an isomorphism of homotopy
+groups. -/
 def homotopyGroupGeneratedByMulEquiv [DecidableEq N] [Nonempty N]
     [IsGeneratedBy X (I^N)] [IsGeneratedBy X (I × I^N)]
     (x : WithGeneratedByTopology X Y) :
@@ -129,7 +126,7 @@ def homotopyGroupGeneratedByMulEquiv [DecidableEq N] [Nonempty N]
         ⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ rfl a b
 
 /-- The multiplicative comparison has the same forward map as the comparison of homotopy
-classes. The bundled equivalence is retained as the simplifier's normal form. -/
+classes. -/
 theorem homotopyGroupGeneratedByMulEquiv_apply [DecidableEq N] [Nonempty N]
     [IsGeneratedBy X (I^N)] [IsGeneratedBy X (I × I^N)]
     (x : WithGeneratedByTopology X Y)
