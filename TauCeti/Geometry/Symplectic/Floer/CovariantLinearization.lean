@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
@@ -150,7 +151,6 @@ theorem floerLinearization_smul (c : ℝ) :
 
 /-- The intrinsic linearization is additive on directions differentiable along the two
 coordinate curves. -/
-@[simp]
 theorem floerLinearization_add
     (hξs : DifferentiableAt ℝ
       (sectionCoord (F := E) (fun s ↦ u (s, z.2)) (fun s ↦ ξ (s, z.2)) (u z)) z.1)
@@ -232,3 +232,25 @@ theorem alongCurve_floerOperator (ω : SmoothTwoForm I M)
   abel
 
 end TauCeti.SmoothTwoForm
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- Under the canonical target tangent identification, the intrinsic Floer operator for a
+constant form agrees with the vector-space operator at differentiable maps. -/
+theorem floerOperator_constSmooth (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    {u : ℝ × ℝ → V} {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u z) :
+    NormedSpace.fromTangentSpace (u z)
+        (ω.constSmooth.floerOperator (fun w x ↦
+          (NormedSpace.fromTangentSpace x).symm.toContinuousLinearMap ∘L
+            J w x ∘L (NormedSpace.fromTangentSpace x).toContinuousLinearMap) Ks Kt u z) =
+      ω.floerOperator J Ks Kt u z := by
+  rw [SmoothTwoForm.floerOperator_eq ω.constSmooth _ Ks Kt hu.mdifferentiableAt, map_add]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply,
+    fromTangentSpace_perturbedMFDeriv_constSmooth_apply, floerOperator_def,
+    perturbedFDeriv_apply_stdComplexLineReal, perturbedFDeriv_apply_stdComplexLineImag]
+
+end TauCeti.SymplecticForm
