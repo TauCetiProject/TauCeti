@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.AlgebraicTopology.FatRealization
-public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # The topological nerve of a category and its fat classifying space

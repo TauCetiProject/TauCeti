@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
-public import Mathlib.Combinatorics.Quiver.Subquiver
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
