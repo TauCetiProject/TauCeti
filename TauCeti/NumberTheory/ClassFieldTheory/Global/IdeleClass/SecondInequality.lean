@@ -69,6 +69,8 @@ The steps are the following.
   vanishes for every finite Galois extension `L/K` of number fields.
 * `TauCeti.ClassFieldTheory.natCard_H2_globalFormation_dvd_degree`: the second fundamental
   inequality for every layer of the idele-class formation.
+* `TauCeti.ClassFieldTheory.natCard_normQuotient_globalFormation_eq_degree_of_isCyclic`: every
+  cyclic layer of the idele-class formation has norm quotient of order its degree.
 
 ## References
 
@@ -178,14 +180,6 @@ theorem natCard_H2_globalFormation_dvd_degree_of_forall_index_le
 
 /-! ### Unconditional consequences -/
 
-/-- **The norm quotient on a layer of prime degree has order its degree.** -/
-theorem natCard_normQuotient_globalFormation_eq_degree_of_prime
-    (Lay : NormalLayer (AbsoluteGaloisGroup K)) (hp : Lay.degree.Prime) :
-    Nat.card (Lay.NormQuotient (globalFormation K)) = Lay.degree :=
-  natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le
-    (fun F L _ _ _ _ _ _ p _ _ hfin ↦
-      index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay hp
-
 /-- **`H¹` of the global idele-class formation vanishes.** For every finite normal layer
 `V ◁ U` of `G_K`, the group `H¹(U/V, C_L)` is trivial. -/
 theorem subsingleton_h1_globalFormation
@@ -212,5 +206,17 @@ theorem natCard_H2_globalFormation_dvd_degree
   natCard_H2_globalFormation_dvd_degree_of_forall_index_le
     (fun F L _ _ _ _ _ _ p _ _ hfin ↦
       index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay
+
+/-- **The norm quotient on a cyclic layer has order its degree.** If the Galois group `U ⧸ V` of a
+layer `V ◁ U` of `globalFormation K` is cyclic, its norm quotient, which is `C_F / N_{L/F}(C_L)`
+for `F` and `L` the fixed fields of `U` and `V`, has exactly `[U : V]` elements (Milne, VII,
+Lemma 5.2 with Theorem 5.1). The first inequality gives `≥`; on a cyclic layer the norm quotient
+has the order of `H²`, so the second inequality gives `≤`. -/
+theorem natCard_normQuotient_globalFormation_eq_degree_of_isCyclic
+    (Lay : NormalLayer (AbsoluteGaloisGroup K)) [IsCyclic Lay.Gal] :
+    Nat.card (Lay.NormQuotient (globalFormation K)) = Lay.degree :=
+  le_antisymm (Nat.le_of_dvd Lay.degree_pos
+    ((Lay.natCard_normQuotient_eq_natCard_H2 _).symm ▸ natCard_H2_globalFormation_dvd_degree Lay))
+    (degree_le_natCard_normQuotient_of_isCyclic Lay)
 
 end TauCeti.ClassFieldTheory
