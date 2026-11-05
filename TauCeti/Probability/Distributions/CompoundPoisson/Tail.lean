@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
 public import TauCeti.MeasureTheory.Group.Convolution.Tail
-import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!
 # Power-law tails of compound Poisson laws

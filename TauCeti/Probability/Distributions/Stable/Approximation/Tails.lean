@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
 public import TauCeti.Probability.Distributions.Stable.Tails
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Probability.Distributions.CompoundPoisson.Tail
 
 /-!
@@ -62,31 +63,14 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi
     ring
   have hsum := tendsto_rpow_mul_real_compoundPoissonMeasure_Ioi (ν A).toNNReal hα.1 hjump
   rw [ENNReal.coe_toNNReal_eq_toReal, mul_div_cancel₀ _ ha] at hsum
-  -- Translation by the fixed compensator preserves a power-law tail constant.
-  have hxadd : Tendsto (fun x : ℝ ↦ x + c) atTop atTop :=
-    tendsto_atTop_add_const_right atTop c tendsto_id
-  have hratio : Tendsto (fun x : ℝ ↦ x / (x + c)) atTop (𝓝 1) := by
-    have h := (tendsto_const_nhds (x := c)).div_atTop hxadd
-    have h' : Tendsto (fun x : ℝ ↦ 1 - c / (x + c)) atTop (𝓝 1) := by
-      simpa using h.const_sub 1
-    apply h'.congr'
-    filter_upwards [eventually_gt_atTop (-c)] with x hx
-    field_simp [(by linarith : x + c ≠ 0)]
-    ring
-  have h := (hratio.rpow_const (p := α) (Or.inl one_ne_zero)).mul (hsum.comp hxadd)
-  simp only [one_rpow, one_mul] at h
-  apply h.congr'
-  filter_upwards [eventually_gt_atTop 0, eventually_gt_atTop (-c)] with x hx hxc
-  have hx' : 0 < x + c := by linarith
+  apply (hsum.rpow_mul_comp_add c).congr
+  intro x
   have hpre : (fun y : ℝ ↦ y - c) ⁻¹' Ioi x = Ioi (x + c) := by
     ext y
     simp only [mem_preimage, mem_Ioi]
     constructor <;> intro h <;> linarith
   rw [stableCompensatedPoissonMeasure_def, map_measureReal_apply (by fun_prop)
     measurableSet_Ioi, hpre]
-  simp only [Function.comp_apply, ν, A]
-  rw [div_rpow hx.le hx'.le]
-  field_simp [(rpow_pos_of_pos hx' α).ne']
 
 /-- The compensated large jumps have the left-tail constant of the stable Lévy intensity,
 independently of the positive cutoff. At full positive skewness this constant is zero. -/
@@ -117,30 +101,13 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Iio_neg
     ring
   have hsum := tendsto_rpow_mul_real_compoundPoissonMeasure_Iio_neg (ν A).toNNReal hα.1 hjump
   rw [ENNReal.coe_toNNReal_eq_toReal, mul_div_cancel₀ _ ha] at hsum
-  -- Translation by the fixed compensator preserves a power-law tail constant.
-  have hxadd : Tendsto (fun x : ℝ ↦ x - c) atTop atTop := by
-    simpa only [sub_eq_add_neg, id_eq] using tendsto_atTop_add_const_right atTop (-c) tendsto_id
-  have hratio : Tendsto (fun x : ℝ ↦ x / (x - c)) atTop (𝓝 1) := by
-    have h := (tendsto_const_nhds (x := c)).div_atTop hxadd
-    have h' : Tendsto (fun x : ℝ ↦ 1 + c / (x - c)) atTop (𝓝 1) := by
-      simpa using h.const_add 1
-    apply h'.congr'
-    filter_upwards [eventually_gt_atTop c] with x hx
-    field_simp [(by linarith : x - c ≠ 0)]
-    ring
-  have h := (hratio.rpow_const (p := α) (Or.inl one_ne_zero)).mul (hsum.comp hxadd)
-  simp only [one_rpow, one_mul] at h
-  apply h.congr'
-  filter_upwards [eventually_gt_atTop 0, eventually_gt_atTop c] with x hx hxc
-  have hx' : 0 < x - c := by linarith
-  have hpre : (fun y : ℝ ↦ y - c) ⁻¹' Iio (-x) = Iio (-(x - c)) := by
+  apply (hsum.rpow_mul_comp_add (-c)).congr
+  intro x
+  have hpre : (fun y : ℝ ↦ y - c) ⁻¹' Iio (-x) = Iio (-(x + -c)) := by
     ext y
     simp only [mem_preimage, mem_Iio]
     constructor <;> intro h <;> linarith
   rw [stableCompensatedPoissonMeasure_def, map_measureReal_apply (by fun_prop)
     measurableSet_Iio, hpre]
-  simp only [Function.comp_apply, ν, A]
-  rw [div_rpow hx.le hx'.le]
-  field_simp [(rpow_pos_of_pos hx' α).ne']
 
 end TauCeti.Probability
