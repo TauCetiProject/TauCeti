@@ -321,9 +321,9 @@ variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] (fo : S.Obj → D)
   (fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g))
 
 /-- The interpretation of a formal morphism, given interpretations of the generating objects
-and coupons. Auxiliary definition for `FreeMonoidal.lift`. -/
-@[expose]
-def liftMapAux : ∀ {X Y : FreeMonoidalCategory S.Obj}, Hom X Y → (projectObj fo X ⟶ projectObj fo Y)
+and coupons. Auxiliary definition for `FreeMonoidal.liftMap`. -/
+private def liftMapAux :
+    ∀ {X Y : FreeMonoidalCategory S.Obj}, Hom X Y → (projectObj fo X ⟶ projectObj fo Y)
   | _, _, Hom.id _ => 𝟙 _
   | _, _, Hom.α_hom _ _ _ => (α_ _ _ _).hom
   | _, _, Hom.α_inv _ _ _ => (α_ _ _ _).inv
@@ -338,7 +338,8 @@ def liftMapAux : ∀ {X Y : FreeMonoidalCategory S.Obj}, Hom X Y → (projectObj
   | _, _, Hom.tensor f g => liftMapAux f ⊗ₘ liftMapAux g
 
 /-- The interpretation of formal morphisms respects the axioms of a monoidal category. -/
-theorem liftMapAux_sound {X Y : FreeMonoidalCategory S.Obj} {f g : Hom X Y} (h : HomEquiv f g) :
+private theorem liftMapAux_sound {X Y : FreeMonoidalCategory S.Obj} {f g : Hom X Y}
+    (h : HomEquiv f g) :
     liftMapAux fo fc f = liftMapAux fo fc g := by
   induction h with
   | refl => rfl
@@ -368,13 +369,28 @@ theorem liftMapAux_sound {X Y : FreeMonoidalCategory S.Obj} {f g : Hom X Y} (h :
   | pentagon => exact MonoidalCategory.pentagon _ _ _ _
   | triangle => exact MonoidalCategory.triangle _ _
 
+/-- The interpretation of morphisms of the free monoidal category on `S`, given the images `fo`
+of the generating objects and `fc` of the coupons. This is the action of `FreeMonoidal.lift` on
+morphisms; use the `lift_map_*` lemmas to compute it. -/
+def liftMap {X Y : S.FreeMonoidal} (f : X ⟶ Y) : projectObj fo X.as ⟶ projectObj fo Y.as :=
+  Quotient.lift (liftMapAux fo fc) (fun _ _ h ↦ liftMapAux_sound fo fc h) f
+
+theorem liftMap_id (X : S.FreeMonoidal) : liftMap fo fc (𝟙 X) = 𝟙 _ := by rfl
+
+theorem liftMap_comp {X Y Z : S.FreeMonoidal} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    liftMap fo fc (f ≫ g) = liftMap fo fc f ≫ liftMap fo fc g := by
+  induction f using Quotient.inductionOn
+  induction g using Quotient.inductionOn
+  rfl
+
 /-- The functor out of the free monoidal category on `S` determined by the images `fo` of the
 generating objects and `fc` of the coupons. It is strong monoidal, with identity tensorator and
 unit comparison. -/
 @[expose] def lift : S.FreeMonoidal ⥤ D where
   obj X := projectObj fo X.as
-  map {X Y} := Quotient.lift (liftMapAux fo fc) fun _ _ h ↦ liftMapAux_sound fo fc h
-  map_comp := by rintro _ _ _ ⟨_⟩ ⟨_⟩; rfl
+  map := liftMap fo fc
+  map_id := liftMap_id fo fc
+  map_comp := liftMap_comp fo fc
 
 @[simp]
 theorem lift_obj_of (a : S.Obj) : (lift fo fc).obj (of a) = fo a := rfl
@@ -387,7 +403,7 @@ theorem lift_obj_tensor (X Y : S.FreeMonoidal) :
 theorem lift_obj_tensorUnit : (lift fo fc).obj (𝟙_ S.FreeMonoidal) = 𝟙_ D := rfl
 
 @[simp]
-theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := rfl
+theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := by rfl
 
 @[simp]
 theorem lift_map_whiskerLeft (X : S.FreeMonoidal) {Y₁ Y₂ : S.FreeMonoidal} (f : Y₁ ⟶ Y₂) :
@@ -411,28 +427,27 @@ theorem lift_map_tensorHom {X₁ Y₁ X₂ Y₂ : S.FreeMonoidal} (f : X₁ ⟶ 
 @[simp]
 theorem lift_map_associator_hom (X Y Z : S.FreeMonoidal) :
     (lift fo fc).map (α_ X Y Z).hom =
-      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).hom := rfl
+      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).hom := by rfl
 
 @[simp]
 theorem lift_map_associator_inv (X Y Z : S.FreeMonoidal) :
     (lift fo fc).map (α_ X Y Z).inv =
-      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).inv := rfl
+      (α_ ((lift fo fc).obj X) ((lift fo fc).obj Y) ((lift fo fc).obj Z)).inv := by rfl
 
-@[simp]
+/- The unitor lemmas are not `@[simp]`: the Mathlib simp lemmas
+`Functor.LaxMonoidal.left_unitality` and `right_unitality` rewrite their right-hand sides back
+into `(lift fo fc).map` of a unitor. -/
 theorem lift_map_leftUnitor_hom (X : S.FreeMonoidal) :
-    (lift fo fc).map (λ_ X).hom = (λ_ ((lift fo fc).obj X)).hom := rfl
+    (lift fo fc).map (λ_ X).hom = (λ_ ((lift fo fc).obj X)).hom := by rfl
 
-@[simp]
 theorem lift_map_leftUnitor_inv (X : S.FreeMonoidal) :
-    (lift fo fc).map (λ_ X).inv = (λ_ ((lift fo fc).obj X)).inv := rfl
+    (lift fo fc).map (λ_ X).inv = (λ_ ((lift fo fc).obj X)).inv := by rfl
 
-@[simp]
 theorem lift_map_rightUnitor_hom (X : S.FreeMonoidal) :
-    (lift fo fc).map (ρ_ X).hom = (ρ_ ((lift fo fc).obj X)).hom := rfl
+    (lift fo fc).map (ρ_ X).hom = (ρ_ ((lift fo fc).obj X)).hom := by rfl
 
-@[simp]
 theorem lift_map_rightUnitor_inv (X : S.FreeMonoidal) :
-    (lift fo fc).map (ρ_ X).inv = (ρ_ ((lift fo fc).obj X)).inv := rfl
+    (lift fo fc).map (ρ_ X).inv = (ρ_ ((lift fo fc).obj X)).inv := by rfl
 
 /- The tensorator and unit comparison of `lift fo fc` are identities. The coherence goals mix
 the objects `(lift fo fc).obj (X ⊗ Y)` and `(lift fo fc).obj X ⊗ (lift fo fc).obj Y`, which agree
@@ -457,11 +472,11 @@ instance : (lift fo fc).Monoidal :=
       left_unitality := by
         intros
         dsimp only [Iso.refl_hom, lift_obj_tensor, lift_obj_tensorUnit]
-        simp
+        simp [lift_map_leftUnitor_hom]
       right_unitality := by
         intros
         dsimp only [Iso.refl_hom, lift_obj_tensor, lift_obj_tensorUnit]
-        simp }
+        simp [lift_map_rightUnitor_hom] }
 
 @[simp]
 theorem lift_ε : Functor.LaxMonoidal.ε (lift fo fc) = 𝟙 _ := rfl
