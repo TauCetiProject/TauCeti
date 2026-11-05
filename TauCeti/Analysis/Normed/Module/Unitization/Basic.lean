@@ -24,6 +24,9 @@ identity converges.
 ## Main declarations
 
 * `ContinuousLinearMap.unitizationActionL`: the bounded unital extension of a bilinear action.
+* `ContinuousLinearMap.eq_unitizationActionL`: uniqueness of the unital extension.
+* `ContinuousLinearMap.unitizationActionL_mul_iff`: preservation and reflection of associativity.
+* `ContinuousLinearMap.intertwines_unitizationActionL_iff`: characterization of intertwining maps.
 * `ContinuousLinearMap.unitizationAction`: the unital action of `A⁺` extending `L`.
 * `ContinuousLinearMap.unitizationAction_apply`: `(λ, a) · z = λ • z + L a z`.
 * `ContinuousLinearMap.norm_unitizationAction_apply_le`: `‖u · z‖ ≤ (1 + ‖L‖) * ‖u‖ * ‖z‖`.
@@ -94,6 +97,31 @@ theorem norm_unitizationActionL_le (M : A →L[𝕜] E →L[𝕜] E) :
   apply LinearMap.mkContinuous_norm_le
   positivity
 
+/-- A unital bounded action is uniquely determined by its restriction to `A`. -/
+theorem eq_unitizationActionL (Φ : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E)
+    (M : A →L[𝕜] E →L[𝕜] E) (h1 : Φ 1 = ContinuousLinearMap.id 𝕜 E)
+    (hM : ∀ a : A, Φ (toLp 1 (a : Unitization 𝕜 A)) = M a) :
+    Φ = M.unitizationActionL := by
+  ext u x
+  have hu : u = (ofLp u).fst • 1 + toLp 1 ((ofLp u).snd : Unitization 𝕜 A) := by
+    simpa [← Unitization.algebraMap_eq_inl, Algebra.algebraMap_eq_smul_one] using
+      (congrArg (unitizationAlgEquiv 𝕜).symm
+        (Unitization.inl_fst_add_inr_snd_eq (ofLp u))).symm
+  rw [hu, map_add, map_smul, h1, hM]
+  simp
+
+/-- A bounded linear map intertwines the unitized actions exactly when it intertwines
+the original actions. Apply this separately to the left and right actions of a bimodule. -/
+theorem intertwines_unitizationActionL_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) (M : A →L[𝕜] E →L[𝕜] E) (N : A →L[𝕜] F →L[𝕜] F) :
+    (∀ u x, T (M.unitizationActionL u x) = N.unitizationActionL u (T x)) ↔
+    ∀ a x, T (M a x) = N a (T x) := by
+  constructor
+  · intro h a x
+    simpa using h (toLp 1 (a : Unitization 𝕜 A)) x
+  · intro h u x
+    simp [h]
+
 /-- The unital action on `E` of the `ℓ¹` unitization of `A` extending the left action `L`. -/
 noncomputable def unitizationAction (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) :
@@ -121,6 +149,20 @@ algebra-homomorphism extension. -/
 theorem unitizationActionL_eq_unitizationAction (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b x, L (a * b) x = L a (L b x)) (u : WithLp 1 (Unitization 𝕜 A)) :
     L.unitizationActionL u = L.unitizationAction hL u := (rfl)
+
+/-- Left associativity is preserved and reflected by unitization. -/
+theorem unitizationActionL_mul_iff (L : A →L[𝕜] E →L[𝕜] E) :
+    (∀ u v x, L.unitizationActionL (u * v) x =
+      L.unitizationActionL u (L.unitizationActionL v x)) ↔
+    ∀ a b x, L (a * b) x = L a (L b x) := by
+  constructor
+  · intro h a b x
+    simpa using h (toLp 1 (a : Unitization 𝕜 A)) (toLp 1 (b : Unitization 𝕜 A)) x
+  · intro h u v x
+    rw [unitizationActionL_eq_unitizationAction L h,
+      map_mul, mul_apply_eq_comp,
+      unitizationActionL_eq_unitizationAction L h,
+      unitizationActionL_eq_unitizationAction L h]
 
 /-- The unitized action is bounded: `‖u · z‖ ≤ (1 + ‖L‖) * ‖u‖ * ‖z‖`. -/
 lemma norm_unitizationAction_apply_le (L : A →L[𝕜] E →L[𝕜] E)
