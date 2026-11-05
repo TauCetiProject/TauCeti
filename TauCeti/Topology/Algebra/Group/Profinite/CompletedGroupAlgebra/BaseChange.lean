@@ -76,8 +76,7 @@ private theorem mapDomain_mapOfLE_mapRingHom (f : R →+* S) {U V : OpenNormalSu
   have hcomm := RingHom.congr_fun
     (MonoidAlgebra.mapRingHom_comp_mapDomainRingHom f (QuotientGroup.mapOfLE hUV)).symm
     (proj R Γ U x)
-  simpa only [RingHom.comp_apply, MonoidAlgebra.mapDomainRingHom_apply,
-    mapDomain_mapOfLE_proj] using hcomm
+  simpa [mapDomain_mapOfLE_proj] using hcomm
 
 /-- Change of coefficients `R[[Γ]] →+* S[[Γ]]` along a ring homomorphism `f : R →+* S`, applying
 `f` to the coefficients of every projection `R[Γ ⧸ U]`. -/
@@ -155,22 +154,36 @@ section BaseChange
 variable (R : Type u) (O : Type w) (Γ : Type v) [CommRing R] [CommRing O] [Algebra R O]
   [Group Γ] [TopologicalSpace Γ]
 
+section
+private local instance : Algebra R (completedGroupAlgebra O Γ) := Algebra.restrictScalars R O _
+private local instance : IsScalarTower R O (completedGroupAlgebra O Γ) :=
+  IsScalarTower.restrictScalars R O _
+
+private def mapAlgHom : completedGroupAlgebra R Γ →ₐ[R] completedGroupAlgebra O Γ :=
+  AlgHom.mk' (mapRingHom Γ (algebraMap R O)) fun r x ↦ by
+    rw [mapRingHom_smul, IsScalarTower.algebraMap_smul]
+
+@[simp]
+private theorem mapAlgHom_apply (x : completedGroupAlgebra R Γ) :
+    mapAlgHom R O Γ x = mapRingHom Γ (algebraMap R O) x :=
+  rfl
+
 /-- The canonical `O`-algebra homomorphism `O ⊗[R] R[[Γ]] →ₐ[O] O[[Γ]]` sending `a ⊗ x` to `a`
 times `mapRingHom Γ (algebraMap R O) x`. -/
 def baseChange : O ⊗[R] completedGroupAlgebra R Γ →ₐ[O] completedGroupAlgebra O Γ :=
-  letI : Algebra R (completedGroupAlgebra O Γ) := Algebra.restrictScalars R O _
-  letI : IsScalarTower R O (completedGroupAlgebra O Γ) := IsScalarTower.restrictScalars R O _
-  let j : completedGroupAlgebra R Γ →ₐ[R] completedGroupAlgebra O Γ :=
-    AlgHom.mk' (mapRingHom Γ (algebraMap R O)) fun r x ↦ by
-      rw [mapRingHom_smul, IsScalarTower.algebraMap_smul]
-  Algebra.TensorProduct.lift (Algebra.ofId O (completedGroupAlgebra O Γ)) j
-    fun a _ ↦ Algebra.commutes a _
+  Algebra.TensorProduct.lift (Algebra.ofId O (completedGroupAlgebra O Γ)) (mapAlgHom R O Γ)
+    fun a y ↦ show Commute (Algebra.ofId O _ a) (mapAlgHom R O Γ y) from
+      Algebra.commute_algebraMap_left a _
 
 /-- On a pure tensor `a ⊗ x`, `baseChange` scales `mapRingHom Γ (algebraMap R O) x` by `a`. -/
 @[simp]
 theorem baseChange_tmul (a : O) (x : completedGroupAlgebra R Γ) :
-    baseChange R O Γ (a ⊗ₜ[R] x) = a • mapRingHom Γ (algebraMap R O) x :=
-  (Algebra.smul_def a (mapRingHom Γ (algebraMap R O) x)).symm
+    baseChange R O Γ (a ⊗ₜ[R] x) = a • mapRingHom Γ (algebraMap R O) x := by
+  simp [baseChange, Algebra.smul_def]
+
+private theorem toLinearMap_baseChange :
+    (baseChange R O Γ).toLinearMap = (mapAlgHom R O Γ).toLinearMap.liftBaseChange O :=
+  (LinearMap.liftBaseChangeEquiv O).symm.injective <| LinearMap.ext fun x ↦ by simp
 
 /-- On `a ⊗ of γ`, `baseChange` produces `a • of γ`. -/
 theorem baseChange_tmul_of (a : O) (γ : Γ) :
@@ -184,8 +197,6 @@ theorem proj_baseChange_tmul (U : OpenNormalSubgroup Γ) (a : O)
     proj O Γ U (baseChange R O Γ (a ⊗ₜ[R] x)) =
       a • MonoidAlgebra.mapRingHom (Γ ⧸ U.toSubgroup) (algebraMap R O) (proj R Γ U x) := by
   simp
-
-section FiniteFree
 
 /-- Apply an `R`-linear functional `φ : O →ₗ[R] R` coefficientwise at every level of `O[[Γ]]`. -/
 private def mapCoord (φ : O →ₗ[R] R) :
@@ -217,25 +228,23 @@ private theorem mapCoord_smul_mapRingHom (φ : O →ₗ[R] R) (a : O)
   ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
     simp [LinearMap.map_mul_algebraMap, smul_eq_mul]
 
-variable [Module.Free R O] [Module.Finite R O]
-
 /-- **Finite free base change of the completed group algebra is bijective.** When `O` is finite
 and free as an `R`-module, `baseChange R O Γ : O ⊗[R] R[[Γ]] →ₐ[O] O[[Γ]]` is bijective. -/
-theorem baseChange_bijective : Function.Bijective (baseChange R O Γ) := by
-  let _ : Algebra R (completedGroupAlgebra O Γ) := Algebra.restrictScalars R O _
-  let _ : IsScalarTower R O (completedGroupAlgebra O Γ) := IsScalarTower.restrictScalars R O _
+theorem baseChange_bijective [Module.Free R O] [Module.Finite R O] :
+    Function.Bijective (baseChange R O Γ) := by
   let b := Module.Free.chooseBasis R O
-  let j : completedGroupAlgebra R Γ →ₗ[R] completedGroupAlgebra O Γ :=
-    { toFun := mapRingHom Γ (algebraMap R O)
-      map_add' := map_add _
-      map_smul' r x := by rw [RingHom.id_apply, mapRingHom_smul, IsScalarTower.algebraMap_smul] }
-  have hbase : (baseChange R O Γ).toLinearMap = j.liftBaseChange O :=
-    (LinearMap.liftBaseChangeEquiv O).symm.injective <| LinearMap.ext fun x ↦ by simp [j]
-  rw [← AlgHom.coe_toLinearMap, hbase]
-  refine j.liftBaseChange_bijective_of_basis_coord b (fun i ↦ mapCoord R O Γ (b.coord i))
+  rw [← AlgHom.coe_toLinearMap, toLinearMap_baseChange]
+  refine (mapAlgHom R O Γ).toLinearMap.liftBaseChange_bijective_of_basis_coord b
+    (fun i ↦ mapCoord R O Γ (b.coord i))
     (fun i ↦ mapCoord_smul_mapRingHom R O Γ (b.coord i)) fun y ↦ ?_
   exact ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun g ↦ by
-    simpa [j, smul_eq_mul] using b.sum_mul_algebraMap_coord ((proj O Γ U y).coeff g)
+    simpa [smul_eq_mul] using b.sum_mul_algebraMap_coord ((proj O Γ U y).coeff g)
+
+end
+
+section FiniteFree
+
+variable [Module.Free R O] [Module.Finite R O]
 
 /-- **Finite free base change of the completed group algebra.** When `O` is finite and free as an
 `R`-module, `O ⊗[R] R[[Γ]]` is canonically isomorphic as an `O`-algebra to `O[[Γ]]`. -/

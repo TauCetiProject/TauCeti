@@ -101,8 +101,7 @@ theorem coordCLM_comp_algebraMap_comp (f : C(X, R)) (b : Module.Basis ι R A) (i
         ((⟨algebraMap R A, continuous_algebraMap R A⟩ : C(R, A)).comp f) =
       b.coord i 1 • f := by
   ext x
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, ContinuousMap.smul_apply,
-    Module.Basis.coordCLM_apply, Algebra.algebraMap_eq_smul_one, map_smul, smul_eq_mul, mul_comm]
+  simp [Algebra.algebraMap_eq_smul_one, mul_comm]
 
 variable [Fintype ι] [ContinuousMul A]
 
@@ -111,11 +110,11 @@ carrying the `R`-module topology are `R`-linear combinations of the coordinate f
 theorem coordCLM_comp_smul (F : C(X, A)) (b : Module.Basis ι R A) (i : ι) (c : A) :
     (b.coordCLM i : C(A, R)).comp (c • F) =
       ∑ j, b.coord i (c * b j) • (b.coordCLM j : C(A, R)).comp F := by
+  have hx (x : X) : c * F x = ∑ j, b.coord j (F x) • (c * b j) := by
+    conv_lhs => rw [← b.sum_repr (F x), Finset.mul_sum]
+    simp
   ext x
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, ContinuousMap.smul_apply,
-    smul_eq_mul, ContinuousMap.coe_sum, Finset.sum_apply, Module.Basis.coordCLM_apply]
-  conv_lhs => rw [← b.sum_repr (F x), Finset.mul_sum]
-  simp_rw [mul_smul_comm, map_sum, map_smul, Module.Basis.coord_apply, smul_eq_mul, mul_comm]
+  simp [hx x, mul_comm]
 
 variable [ContinuousAdd A]
 

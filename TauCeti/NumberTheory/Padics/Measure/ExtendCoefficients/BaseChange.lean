@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.NumberTheory.Padics.ProperSpace
 import TauCeti.LinearAlgebra.Basis.Algebra
 import TauCeti.RingTheory.TensorProduct.Free
+import TauCeti.Topology.Algebra.Ring.Basic
 
 /-!
 # Finite-free base change of measures and the completed group algebra
@@ -134,24 +135,35 @@ private def scalarExtendAux (μ : D(X, R)) : D(X, O) :=
           simp
         rw [hcomp, map_add, map_add, mul_add]
       map_smul' c F := by
-        dsimp only [RingHom.id_apply, smul_eq_mul]
-        simp_rw [F.coordCLM_comp_smul b _ c, map_sum, map_smul, smul_eq_mul, map_mul,
-          Finset.mul_sum]
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        simp_rw [← mul_assoc, ← Finset.sum_mul, b.sum_mul_algebraMap_coord] }
+        calc
+          ∑ i, b i * algebraMap R O (μ ((b.coordCLM i : C(O, R)).comp (c • F)))
+            = ∑ i, ∑ j, b i * algebraMap R O (b.coord i (c * b j)) *
+                algebraMap R O (μ ((b.coordCLM j : C(O, R)).comp F)) := by
+              simp [F.coordCLM_comp_smul b _ c, Finset.mul_sum, mul_assoc]
+          _ = ∑ j, (∑ i, b i * algebraMap R O (b.coord i (c * b j))) *
+                algebraMap R O (μ ((b.coordCLM j : C(O, R)).comp F)) := by
+              rw [Finset.sum_comm]
+              simp [Finset.sum_mul]
+          _ = c • ∑ j, b j * algebraMap R O (μ ((b.coordCLM j : C(O, R)).comp F)) := by
+              simp_rw [b.sum_mul_algebraMap_coord]
+              simp [Finset.mul_sum, mul_assoc] }
   have hL : Continuous L := continuous_finsetSum _ fun i _ ↦
     continuous_const.mul ((continuous_algebraMap R O).comp
       (μ.continuous.comp (ContinuousMap.continuous_postcomp (b.coordCLM i : C(O, R)))))
   toCLMEquiv.symm ⟨L, hL⟩
 
+private theorem scalarExtendAux_apply (μ : D(X, R)) (F : C(X, O)) :
+    scalarExtendAux R O μ F =
+      ∑ i, Module.Free.chooseBasis R O i *
+        algebraMap R O (μ (((Module.Free.chooseBasis R O).coordCLM i : C(O, R)).comp F)) := by
+  simp [scalarExtendAux]
+
 private theorem scalarExtendAux_apply_comp (μ : D(X, R)) (f : C(X, R)) :
     scalarExtendAux R O μ ((⟨algebraMap R O, continuous_algebraMap R O⟩ : C(R, O)).comp f) =
       algebraMap R O (μ f) := by
-  simp only [scalarExtendAux, coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', LinearMap.coe_mk,
-    AddHom.coe_mk, coordCLM_comp_algebraMap_comp, map_smul, smul_eq_mul, map_mul]
-  simp_rw [← mul_assoc, ← Finset.sum_mul,
-    (Module.Free.chooseBasis R O).sum_mul_algebraMap_coord, one_mul]
+  have h1 := (Module.Free.chooseBasis R O).sum_mul_algebraMap_coord 1
+  simp at h1
+  simp [scalarExtendAux_apply, coordCLM_comp_algebraMap_comp, ← mul_assoc, ← Finset.sum_mul, h1]
 
 /-- **Scalar extension of measures.** When `O` is finite and free over `R` and carries the
 `R`-module topology, every `R`-valued measure `μ ∈ D(X, R)` extends uniquely to an `O`-valued
@@ -164,6 +176,10 @@ def scalarExtend : D(X, R) →ₛₗ[algebraMap R O] D(X, O) where
     simp [scalarExtendAux_apply_comp]
   map_smul' r μ := ext_of_apply_comp R O fun f ↦ by
     simp [scalarExtendAux_apply_comp]
+
+private theorem scalarExtend_apply (μ : D(X, R)) (F : C(X, O)) :
+    scalarExtend R O μ F = scalarExtendAux R O μ F :=
+  rfl
 
 /-- Scalar extension of `μ` integrates `algebraMap R O ∘ f` to `algebraMap R O (μ f)`. -/
 @[simp]
@@ -242,9 +258,7 @@ private def mapCoord (φ : O →ₗ[R] R) : D(X, O) →+ D(X, R) where
       (IsModuleTopology.continuous_of_linearMap φ).comp
         (ν.continuous.comp (ContinuousMap.continuous_postcomp J))
     toCLMEquiv.symm ⟨L, hL⟩
-  map_zero' := ext fun f ↦ by
-    simp only [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', LinearMap.coe_mk, AddHom.coe_mk]
-    exact map_zero φ
+  map_zero' := ext fun f ↦ by simp
   map_add' ν₁ ν₂ := ext fun f ↦ by simp [_root_.add_apply]
 
 @[simp]
@@ -267,28 +281,35 @@ private theorem sum_smul_scalarExtend_mapCoord {ι : Type*} [Fintype ι] (b : Mo
   ext_of_apply_comp R O fun f ↦ by
     simpa [smul_eq_mul] using b.sum_mul_algebraMap_coord _
 
+section
+private local instance : Module R D(X, O) := Module.compHom D(X, O) (algebraMap R O)
+private local instance : IsScalarTower R O D(X, O) :=
+  IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+
+private def scalarExtendLinearMap : D(X, R) →ₗ[R] D(X, O) where
+  toFun := scalarExtend R O
+  map_add' := map_add (scalarExtend R O)
+  map_smul' r μ := map_smulₛₗ (scalarExtend R O) r μ
+
+private theorem isBaseChange_scalarExtend : IsBaseChange O (scalarExtendLinearMap (X := X) R O) :=
+  let b := Module.Free.chooseBasis R O
+  IsBaseChange.of_basis_coord (scalarExtendLinearMap R O) b (fun i ↦ mapCoord R O (b.coord i))
+    (fun i ↦ mapCoord_smul_scalarExtend R O (b.coord i))
+    (sum_smul_scalarExtend_mapCoord R O b)
+
 /-- **Finite-free base change of measures.** When `O` is finite and free as an `R`-module and
 carries the `R`-module topology, `O ⊗[R] D(X, R)` is canonically isomorphic as an `O`-module to
 `D(X, O)`, sending `a ⊗ μ` to `a • scalarExtend R O μ`. -/
 def baseChange : O ⊗[R] D(X, R) ≃ₗ[O] D(X, O) :=
-  letI : Module R D(X, O) := Module.compHom D(X, O) (algebraMap R O)
-  letI : IsScalarTower R O D(X, O) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  let b := Module.Free.chooseBasis R O
-  let l : D(X, R) →ₗ[R] D(X, O) :=
-    { toFun := scalarExtend R O
-      map_add' := map_add (scalarExtend R O)
-      map_smul' r μ := map_smulₛₗ (scalarExtend R O) r μ }
-  (IsBaseChange.of_basis_coord l b (fun i ↦ mapCoord R O (b.coord i))
-    (fun i ↦ mapCoord_smul_scalarExtend R O (b.coord i))
-    (sum_smul_scalarExtend_mapCoord R O b)).equiv
+  (isBaseChange_scalarExtend R O).equiv
 
 /-- On a pure tensor `a ⊗ μ`, `baseChange R O` scales `scalarExtend R O μ` by `a`. -/
 @[simp]
 theorem baseChange_tmul (a : O) (μ : D(X, R)) :
-    baseChange R O (a ⊗ₜ[R] μ) = a • scalarExtend R O μ := by
-  let _ : Module R D(X, O) := Module.compHom D(X, O) (algebraMap R O)
-  let _ : IsScalarTower R O D(X, O) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  exact IsBaseChange.equiv_tmul _ a μ
+    baseChange R O (a ⊗ₜ[R] μ) = a • scalarExtend R O μ :=
+  (isBaseChange_scalarExtend R O).equiv_tmul a μ
+
+end
 
 /-- `baseChange R O` sends `a ⊗ dirac R x` to `a • dirac O x`. -/
 theorem baseChange_tmul_dirac (a : O) (x : X) :
@@ -499,13 +520,8 @@ theorem continuous_scalarExtend_weak :
       (scalarExtend R O) := by
   let _ : TopologicalSpace D(X, R) := WeakTopology
   let _ : TopologicalSpace D(X, O) := WeakTopology
-  let b := Module.Free.chooseBasis R O
   refine continuous_induced_rng.mpr (continuous_pi fun F ↦ ?_)
-  have hF (μ : D(X, R)) : scalarExtend R O μ F =
-      ∑ i, b i * algebraMap R O (μ ((b.coordCLM i : C(O, R)).comp F)) := by
-    conv_lhs => rw [F.eq_sum_smul_algebraMap_comp_coordCLM b]
-    simp only [map_sum, map_smul, scalarExtend_apply_comp, smul_eq_mul]
-  simp_rw [Function.comp_def, hF]
+  simp_rw [Function.comp_def, scalarExtend_apply, scalarExtendAux_apply]
   exact continuous_finsetSum _ fun i _ ↦
     continuous_const.mul ((continuous_algebraMap R O).comp
       ((continuous_apply _).comp continuous_induced_dom))
@@ -532,21 +548,19 @@ theorem toCompletedGroupAlgebra_surjective_of_finiteFree :
     Function.Surjective
       (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
   have : IsModuleTopology ℤ_[p] O := TauCeti.isModuleTopology_of_finite_of_compactSpace
-  intro y
-  let z : O ⊗[ℤ_[p]] D(Γ, ℤ_[p]) :=
-    Algebra.TensorProduct.map (AlgHom.id O O) completedGroupAlgebraEquiv.symm.toAlgHom
-      ((completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ).symm y)
-  refine ⟨baseChange ℤ_[p] O z, ?_⟩
-  rw [toCompletedGroupAlgebra_baseChange]
-  have hmap : Algebra.TensorProduct.map (AlgHom.id O O) toCompletedGroupAlgebra z =
-      (completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ).symm y := by
-    dsimp only [z]
-    rw [← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp]
-    have hid : (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] _).comp
-        completedGroupAlgebraEquiv.symm.toAlgHom = AlgHom.id ℤ_[p] _ :=
-      AlgHom.ext fun x ↦ by simp [← completedGroupAlgebraEquiv_apply]
-    rw [hid, AlgHom.id_comp, Algebra.TensorProduct.map_id, AlgHom.id_apply]
-  rw [hmap, AlgEquiv.apply_symm_apply]
+  let e : D(Γ, O) ≃ₐ[O] completedGroupAlgebra O Γ :=
+    (baseChangeAlgEquiv ℤ_[p] O).symm.trans
+      ((Algebra.TensorProduct.congr AlgEquiv.refl completedGroupAlgebraEquiv).trans
+        (completedGroupAlgebra.baseChangeEquiv ℤ_[p] O Γ))
+  have he : ⇑e = (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
+    ext ν
+    have hcga :
+        (completedGroupAlgebraEquiv (Γ := Γ) (p := p) :
+            D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) =
+          toCompletedGroupAlgebra :=
+      AlgHom.ext completedGroupAlgebraEquiv_apply
+    simp [e, hcga, ← toCompletedGroupAlgebra_baseChange]
+  exact he ▸ e.surjective
 
 /-- **`O`-valued measures are the completed group algebra.** For a profinite group `Γ` and a
 finite free Hausdorff topological `ℤ_[p]`-algebra `O` with continuous `ℤ_[p]`-action, `D(Γ, O)` is
@@ -591,7 +605,7 @@ theorem compactSpace_measures_weak_of_finiteFree :
     refine continuous_induced_rng.mpr (continuous_pi fun F ↦ ?_)
     have hΦF (c : Module.Free.ChooseBasisIndex ℤ_[p] O → D(Γ, ℤ_[p])) :
         Φ c F = ∑ i, b i * scalarExtend ℤ_[p] O (c i) F := by
-      simp only [Φ, _root_.sum_apply, _root_.smul_apply, smul_eq_mul]
+      simp [Φ, smul_eq_mul]
     simp_rw [Function.comp_def, hΦF]
     refine continuous_finsetSum _ fun i _ ↦ continuous_const.mul ?_
     exact ((continuous_apply F).comp continuous_induced_dom).comp
@@ -616,18 +630,10 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_finiteFree :
 /-- Over a finite free normed `ℤ_[p]`-algebra `O` with continuous `ℤ_[p]`-action, `O`-valued
 measures on a profinite group form a topological ring for convolution and the weak topology. -/
 theorem _root_.TauCeti.isTopologicalRing_measures_weak_of_finiteFree :
-    @IsTopologicalRing D(Γ, O) (WeakTopology (X := Γ) (R := O) (E := O)) _ := by
+    @IsTopologicalRing D(Γ, O) (WeakTopology (X := Γ) (R := O) (E := O)) _ :=
   let _ : TopologicalSpace D(Γ, O) := WeakTopology
-  have h := (isHomeomorph_toCompletedGroupAlgebra_weak_of_finiteFree
-    (Γ := Γ) p O).isEmbedding.isInducing
-  let _ : IsTopologicalAddGroup D(Γ, O) :=
-    h.isTopologicalAddGroup (toCompletedGroupAlgebra (Γ := Γ) (R := O)).toAddMonoidHom
-  let _ : ContinuousMul D(Γ, O) :=
-    h.continuousMul (toCompletedGroupAlgebra (Γ := Γ) (R := O))
-  exact
-    { continuous_add := continuous_add
-      continuous_mul := continuous_mul
-      continuous_neg := continuous_neg }
+  (isHomeomorph_toCompletedGroupAlgebra_weak_of_finiteFree (Γ := Γ) p O).isEmbedding.isInducing
+    |>.isTopologicalRing (toCompletedGroupAlgebra (Γ := Γ) (R := O))
 
 end NormedCommRing
 

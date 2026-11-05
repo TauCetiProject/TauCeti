@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Bijectivity of lifts of tensor products from bases
@@ -91,11 +92,7 @@ theorem LinearMap.liftBaseChange_bijective_of_basis_coord
         simpa [Ψ] using hsum n }
   have hcomm : (f.liftBaseChange S).restrictScalars R = e₂.toLinearMap.comp e₁.toLinearMap :=
     TensorProduct.ext' fun s m ↦ by
-      simp only [LinearMap.coe_restrictScalars, LinearMap.liftBaseChange_tmul, LinearMap.comp_apply,
-        LinearEquiv.coe_coe, e₁, e₂, Ψ, LinearEquiv.trans_apply,
-        TensorProduct.equivFinsuppOfBasisLeft_apply_tmul, Finsupp.linearEquivFunOnFinite_apply,
-        Finsupp.mapRange_apply, LinearMap.sum_apply, LinearMap.lsmul_apply, LinearMap.proj_apply,
-        map_smul, ← smul_assoc, ← Finset.sum_smul, b.sum_repr]
+      simp [Ψ, e₁, e₂, ← smul_assoc, ← Finset.sum_smul, b.sum_repr]
   have hfun : ⇑(f.liftBaseChange S) = ⇑(e₁.trans e₂) :=
     funext fun z ↦ LinearMap.congr_fun hcomm z
   exact hfun ▸ (e₁.trans e₂).bijective
@@ -108,9 +105,7 @@ theorem IsBaseChange.of_basis_coord
     (hc : ∀ i (s : S) (m : M), c i (s • f m) = b.coord i s • m)
     (hsum : ∀ n : N, ∑ i, b i • f (c i n) = n) :
     IsBaseChange S f :=
-  IsBaseChange.of_equiv
-    (LinearEquiv.ofBijective (f.liftBaseChange S)
-      (f.liftBaseChange_bijective_of_basis_coord b c hc hsum))
-    fun _ ↦ by simp
+  IsBaseChange.iff_liftBaseChange_bijective.mpr
+    (f.liftBaseChange_bijective_of_basis_coord b c hc hsum)
 
 end BasisCoord
