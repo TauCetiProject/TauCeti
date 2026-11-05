@@ -43,7 +43,7 @@ private theorem duplication_node_eq (x y z : ℂ) :
 
 /-- A duplicated Carlson node lies in the slit plane if each square-root sum has an input
 in the slit plane. In particular this holds on the Carlson domain, including a zero node. -/
-theorem carlson_duplication_node_mem_slitPlane {x y z : ℂ}
+theorem carlson_duplication_node_mem_slitPlane (x : ℂ) {y z : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) :
     (x + (sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x)) / 4 ∈ slitPlane := by
   rw [duplication_node_eq]
@@ -54,7 +54,7 @@ theorem carlson_duplication_node_mem_slitPlane {x y z : ℂ}
 /-- Principal powers split across the factorization of a duplicated Carlson node, with no
 branch correction. In particular, `w = -1/2` gives the inverse square root of the duplicated
 node. -/
-theorem carlson_duplication_node_cpow {x y z : ℂ}
+theorem carlson_duplication_node_cpow (x : ℂ) {y z : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) (w : ℂ) :
     ((x + (sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x)) / 4) ^ w =
       ((sqrt x + sqrt y) / 2) ^ w * ((sqrt x + sqrt z) / 2) ^ w := by

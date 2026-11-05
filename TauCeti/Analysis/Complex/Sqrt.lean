@@ -26,6 +26,7 @@ theorem sq_sqrt (z : ℂ) : sqrt z ^ 2 = z :=
   cpow_ofNat_inv_pow z 2
 
 /-- The principal square root has nonnegative real part. -/
+@[simp]
 theorem sqrt_re_nonneg (z : ℂ) : 0 ≤ (sqrt z).re := by
   rw [sqrt, cpow_inv_two_re]
   positivity
