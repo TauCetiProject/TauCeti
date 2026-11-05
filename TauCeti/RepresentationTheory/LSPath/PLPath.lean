@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.Chain
 public import TauCeti.LinearAlgebra.Ray
+import TauCeti.Data.List.Range
 
 /-!
 # Piecewise-linear paths up to reparametrization
@@ -66,6 +67,9 @@ reparametrizations of a common one exactly when their normal forms agree, are in
   subdividing a straight path, or a segment of a segment list, along a ray.
 * `TauCeti.PLPath.ofSegments_div_smul_cons_sub_div_smul_cons`: subdividing a segment of a segment
   list at a fraction `d / e` with `0 ≤ d ≤ e`.
+* `TauCeti.PLPath.ofSegments_map_range_of_eq_zero`,
+  `TauCeti.PLPath.ofSegments_map_range_of_smul`: removing a stationary segment from, or merging
+  two adjacent segments along a common ray in, a segment list indexed by a range.
 
 ## References
 
@@ -598,6 +602,42 @@ theorem ofSegments_div_smul_cons_sub_div_smul_cons [PosMulReflectLT 𝕜] {d e :
     ofSegments 𝕜 ((d / e) • w :: ((e - d) / e) • w :: l) = ofSegments 𝕜 (w :: l) := by
   rw [ofSegments_smul_cons_smul_cons (div_nonneg hd he.le) (div_nonneg (sub_nonneg.2 hde) he.le),
     ← add_div, add_sub_cancel, div_self he.ne', one_smul]
+
+/-- Removing a stationary segment `g k = 0` from a segment list indexed by `range (s + 1)` does
+not change the presented path. -/
+theorem ofSegments_map_range_of_eq_zero {g g' : ℕ → V} {s k : ℕ} (hk : k < s + 1)
+    (hg : g k = 0) (hlt : ∀ n < k, g' n = g n) (hge : ∀ n, k ≤ n → g' n = g (n + 1)) :
+    ofSegments 𝕜 ((List.range (s + 1)).map g) = ofSegments 𝕜 ((List.range s).map g') := by
+  obtain ⟨n, rfl⟩ : ∃ n, s = k + n := ⟨s - k, by omega⟩
+  rw [show k + n + 1 = k + 1 + n by omega, List.map_range_add_one_add, List.range_add,
+    List.map_append, ofSegments_append, ofSegments_append, ofSegments_cons, hg, straight_zero,
+    one_mul, List.map_map]
+  congr 2
+  · exact List.map_congr_left fun m hm ↦ (hlt m (List.mem_range.mp hm)).symm
+  · refine List.map_congr_left fun m _ ↦ ?_
+    simp only [Function.comp_apply, hge (k + m) (by omega)]
+    congr 1
+    omega
+
+/-- Merging two adjacent segments `g k = a • u` and `g (k + 1) = c • u` along a common ray, for
+`0 ≤ a` and `0 ≤ c`, in a segment list indexed by `range (s + 1)` does not change the presented
+path. -/
+theorem ofSegments_map_range_of_smul {g g' : ℕ → V} {s k : ℕ} (hk : k + 1 < s + 1)
+    {a c : 𝕜} {u : V} (ha : 0 ≤ a) (hc : 0 ≤ c) (hg₀ : g k = a • u) (hg₁ : g (k + 1) = c • u)
+    (hg' : g' k = (a + c) • u) (hlt : ∀ n < k, g' n = g n)
+    (hgt : ∀ n, k < n → g' n = g (n + 1)) :
+    ofSegments 𝕜 ((List.range (s + 1)).map g) = ofSegments 𝕜 ((List.range s).map g') := by
+  obtain ⟨n, rfl⟩ : ∃ n, s = k + 1 + n := ⟨s - k - 1, by omega⟩
+  rw [show k + 1 + n + 1 = k + 1 + (0 + 1 + n) by omega, List.map_range_add_one_add,
+    List.map_range_add_one_add (fun m ↦ g (k + 1 + m)) 0 n, List.map_range_add_one_add g' k n]
+  simp only [List.range_zero, List.map_nil, List.nil_append, add_zero]
+  rw [ofSegments_append, ofSegments_append, hg₀, hg₁, ofSegments_smul_cons_smul_cons ha hc, hg']
+  congr 2
+  · exact List.map_congr_left fun m hm ↦ (hlt m (List.mem_range.mp hm)).symm
+  · refine congrArg _ (List.map_congr_left fun m _ ↦ ?_)
+    rw [hgt _ (by omega)]
+    congr 1
+    omega
 
 /-! ### Linear images -/
 

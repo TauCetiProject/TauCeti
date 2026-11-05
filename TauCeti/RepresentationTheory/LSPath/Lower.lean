@@ -28,18 +28,12 @@ between `t₀` and `t₁` the height at a break `a` is not an integer, so every 
 the positive side of the wall of `αᵢ` and reflects in `sᵢ`. At `t₁` the height is an integer, so
 `sᵢ τ ⋗ τ` is a `t₁`-chain.
 
-To assemble the new path, it is convenient to allow **break data** more general than LS paths: a
-sequence of directions `τ_k` and weakly increasing times `t_k` from `0` to `1`, where consecutive
-directions may agree and segments may be stationary, subject to the chain conditions at every
-break. Removing the stationary segments and merging the segments with repeated directions turns
-break data into an LS path presenting the same piecewise-linear path
-(`TauCeti.LSPath.exists_toPLPath_eq_ofSegments`).
+The new path is assembled as break data (`TauCeti.LSPath.exists_toPLPath_eq_ofSegments`): the
+reflected directions may agree with their neighbours and the new break may coincide with an old
+one, and these repetitions are removed when the break data are turned into an LS path.
 
 ## Main results
 
-* `TauCeti.LSPath.exists_toPLPath_eq_ofSegments`: **break data present an LS path.**
-* `TauCeti.LSPath.toPLPath_eq_ofSegments_natDir`: the realization of an LS path is presented by
-  its break data `TauCeti.LSPath.natDir` and `TauCeti.LSPath.natTime`.
 * `TauCeti.LSPath.exists_toPLPath_eq_of_lower_eq_some`: **Littelmann's lowering operator
   `f_{αᵢ}` sends an LS path of dominant shape `λ` to an LS path of shape `λ`** whenever it is
   defined.
@@ -62,203 +56,6 @@ variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
   {lam : M} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V]
-
-/-! ### Break data with repeated directions and stationary pieces -/
-
-/-- Splitting `range (k + 1 + n)` at `k`. -/
-private theorem map_range_add_one_add {α : Type*} (g : ℕ → α) (k n : ℕ) :
-    (List.range (k + 1 + n)).map g =
-      (List.range k).map g ++ g k :: (List.range n).map fun m ↦ g (k + 1 + m) := by
-  rw [List.range_add, List.range_succ, List.map_append, List.map_append, List.map_map]
-  simp [Function.comp_def]
-
-/-- Removing a stationary segment `g k = 0` from a segment list indexed by `range (s + 1)`. -/
-private theorem ofSegments_map_range_of_eq_zero {g g' : ℕ → V} {s k : ℕ} (hk : k < s + 1)
-    (hg : g k = 0) (hlt : ∀ n < k, g' n = g n) (hge : ∀ n, k ≤ n → g' n = g (n + 1)) :
-    PLPath.ofSegments 𝕜 ((List.range (s + 1)).map g) =
-      PLPath.ofSegments 𝕜 ((List.range s).map g') := by
-  obtain ⟨n, rfl⟩ : ∃ n, s = k + n := ⟨s - k, by omega⟩
-  rw [show k + n + 1 = k + 1 + n by omega, map_range_add_one_add, List.range_add,
-    List.map_append, PLPath.ofSegments_append, PLPath.ofSegments_append,
-    PLPath.ofSegments_cons, hg, PLPath.straight_zero, one_mul, List.map_map]
-  congr 2
-  · exact List.map_congr_left fun m hm ↦ (hlt m (List.mem_range.mp hm)).symm
-  · refine List.map_congr_left fun m _ ↦ ?_
-    simp only [Function.comp_apply, hge (k + m) (by omega)]
-    congr 1
-    omega
-
-/-- Merging two adjacent segments `g k = a • u` and `g (k + 1) = c • u` along a common ray in a
-segment list indexed by `range (s + 1)`. -/
-private theorem ofSegments_map_range_of_smul {g g' : ℕ → V} {s k : ℕ} (hk : k + 1 < s + 1)
-    {a c : 𝕜} {u : V} (ha : 0 ≤ a) (hc : 0 ≤ c) (hg₀ : g k = a • u) (hg₁ : g (k + 1) = c • u)
-    (hg' : g' k = (a + c) • u) (hlt : ∀ n < k, g' n = g n)
-    (hgt : ∀ n, k < n → g' n = g (n + 1)) :
-    PLPath.ofSegments 𝕜 ((List.range (s + 1)).map g) =
-      PLPath.ofSegments 𝕜 ((List.range s).map g') := by
-  obtain ⟨n, rfl⟩ : ∃ n, s = k + 1 + n := ⟨s - k - 1, by omega⟩
-  rw [show k + 1 + n + 1 = k + 1 + (0 + 1 + n) by omega, map_range_add_one_add,
-    map_range_add_one_add (fun m ↦ g (k + 1 + m)) 0 n, map_range_add_one_add g' k n]
-  simp only [List.range_zero, List.map_nil, List.nil_append, add_zero]
-  rw [PLPath.ofSegments_append, PLPath.ofSegments_append, hg₀, hg₁,
-    PLPath.ofSegments_smul_cons_smul_cons ha hc, hg']
-  congr 2
-  · exact List.map_congr_left fun m hm ↦ (hlt m (List.mem_range.mp hm)).symm
-  · refine congrArg _ (List.map_congr_left fun m _ ↦ ?_)
-    rw [hgt _ (by omega)]
-    congr 1
-    omega
-
-variable (b) in
-/-- Break data `(τ; t)` with `s` segments: the segment `k` runs along the orbit weight `τ k • λ`
-from time `t k` to time `t (k + 1)`. Consecutive directions may agree and segments may be
-stationary; the chain conditions are those of an LS path. -/
-private structure IsBreakData (lam : M) (s : ℕ) (τ : ℕ → P.weylGroup) (t : ℕ → ℚ) : Prop where
-  isMinimalCosetRep :
-    ∀ k < s, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (τ k)
-  time_zero : t 0 = 0
-  time_last : t s = 1
-  monotone : ∀ k < s, t k ≤ t (k + 1)
-  chain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-    (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C
-
-/-- Removing a stationary segment `k` from break data. -/
-private theorem IsBreakData.removeAt {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ}
-    (h : IsBreakData b lam (s + 1) τ t) {k : ℕ} (hk : k < s + 1) (hkt : t k = t (k + 1)) :
-    IsBreakData b lam s (fun n ↦ if n < k then τ n else τ (n + 1))
-      (fun n ↦ if n ≤ k then t n else t (n + 1)) where
-  isMinimalCosetRep n hn := by
-    split_ifs
-    · exact h.isMinimalCosetRep n (by omega)
-    · exact h.isMinimalCosetRep (n + 1) (by omega)
-  time_zero := by simpa using h.time_zero
-  time_last := by
-    split_ifs with hs
-    · obtain rfl : k = s := by omega
-      rw [hkt, h.time_last]
-    · exact h.time_last
-  monotone n hn := by
-    split_ifs with h₁ h₂ h₂
-    · exact h.monotone n (by omega)
-    · obtain rfl : n = k := by omega
-      rw [hkt]
-      exact h.monotone (n + 1) (by omega)
-    · omega
-    · exact h.monotone (n + 1) (by omega)
-  chain n hn := by
-    rcases lt_trichotomy (n + 1) k with hlt | heq | hgt
-    · simpa only [show n < k by omega, hlt, hlt.le, ↓reduceIte] using h.chain n (by omega)
-    · obtain ⟨C, hC₁, hC₂, hC⟩ := h.chain n (by omega)
-      obtain ⟨D, hD₁, hD₂, hD⟩ := h.chain k (by omega)
-      have hjoin : C.last = D.head := Subtype.ext (by rw [hC₂, hD₁, heq])
-      refine ⟨C.smash D hjoin, ?_, ?_, (isAChain_smash_iff hjoin).mpr ⟨?_, ?_⟩⟩
-      · simp [hC₁, show n < k by omega]
-      · simp [hD₂, heq]
-      · simpa only [heq.le, heq, le_refl, ↓reduceIte] using hC
-      · simpa only [heq.le, heq, hkt, le_refl, ↓reduceIte] using hD
-    · simpa only [show ¬n < k by omega, show ¬n + 1 < k by omega, show ¬n + 1 ≤ k by omega,
-        ↓reduceIte] using h.chain (n + 1) (by omega)
-
-/-- Merging the segments `k` and `k + 1` of break data with the same direction. -/
-private theorem IsBreakData.mergeAt {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ}
-    (h : IsBreakData b lam (s + 1) τ t) {k : ℕ} (hk : k + 1 < s + 1) (hkτ : τ k = τ (k + 1)) :
-    IsBreakData b lam s (fun n ↦ if n ≤ k then τ n else τ (n + 1))
-      (fun n ↦ if n ≤ k then t n else t (n + 1)) where
-  isMinimalCosetRep n hn := by
-    split_ifs
-    · exact h.isMinimalCosetRep n (by omega)
-    · exact h.isMinimalCosetRep (n + 1) (by omega)
-  time_zero := by simpa using h.time_zero
-  time_last := by
-    simpa only [show ¬s ≤ k by omega, ↓reduceIte] using h.time_last
-  monotone n hn := by
-    split_ifs with h₁ h₂ h₂
-    · exact h.monotone n (by omega)
-    · obtain rfl : n = k := by omega
-      exact (h.monotone n (by omega)).trans (h.monotone (n + 1) (by omega))
-    · omega
-    · exact h.monotone (n + 1) (by omega)
-  chain n hn := by
-    rcases lt_or_ge n k with hlt | hge
-    · simpa only [hlt.le, show n + 1 ≤ k by omega, ↓reduceIte] using h.chain n (by omega)
-    · rcases hge.eq_or_lt with rfl | hgt
-      · simpa only [le_refl, show ¬k + 1 ≤ k by omega, ↓reduceIte, hkτ] using
-          h.chain (k + 1) (by omega)
-      · simpa only [show ¬n ≤ k by omega, show ¬n + 1 ≤ k by omega, ↓reduceIte] using
-          h.chain (n + 1) (by omega)
-
-/-- Break data with positive durations and no repeated direction is an LS path. -/
-private theorem IsBreakData.exists_of_lt_of_ne {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ}
-    (h : IsBreakData b lam (s + 1) τ t) (hpos : ∀ k < s + 1, t k < t (k + 1))
-    (hne : ∀ k, k + 1 < s + 1 → τ k ≠ τ (k + 1)) :
-    ∃ π : LSPath P b lam, ∀ f : M →+ V, π.toPLPath 𝕜 f = PLPath.ofSegments 𝕜
-      ((List.range (s + 1)).map fun k ↦ ((t (k + 1) - t k : ℚ) : 𝕜) • f (τ k • lam)) := by
-  refine ⟨{
-    length := s
-    dir := fun j ↦ ⟨τ j, h.isMinimalCosetRep j j.2⟩
-    time := fun j ↦ t j
-    time_zero := by simpa using h.time_zero
-    time_last := by simpa using h.time_last
-    strictMono_time := Fin.strictMono_iff_lt_succ.mpr fun j ↦ by simpa using hpos j j.2
-    dir_succ_ne := fun j he ↦ hne j (by omega) (by simpa using (congrArg Subtype.val he).symm)
-    exists_isAChain := fun j ↦ by
-      obtain ⟨C, h₁, h₂, hC⟩ := h.chain j (by omega)
-      exact ⟨C, Subtype.ext (by simpa using h₁), Subtype.ext (by simpa using h₂),
-        by simpa using hC⟩ }, fun f ↦ ?_⟩
-  rw [toPLPath_def, timed_def, List.map_ofFn]
-  congr 1
-  refine List.ext_getElem (by simp) fun n h₁ h₂ ↦ ?_
-  simp only [List.getElem_ofFn, List.getElem_map, List.getElem_range, Function.comp_apply,
-    duration_def, Fin.val_succ, Fin.val_castSucc]
-
-/-- Break data presents an LS path: remove the stationary segments and merge the segments with
-repeated directions, one at a time. -/
-private theorem IsBreakData.exists_toPLPath_eq {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ}
-    (h : IsBreakData b lam s τ t) :
-    ∃ π : LSPath P b lam, ∀ f : M →+ V, π.toPLPath 𝕜 f = PLPath.ofSegments 𝕜
-      ((List.range s).map fun k ↦ ((t (k + 1) - t k : ℚ) : 𝕜) • f (τ k • lam)) := by
-  induction s generalizing τ t with
-  | zero => exact absurd (h.time_zero.symm.trans h.time_last) zero_ne_one
-  | succ s ih =>
-    by_cases hz : ∃ k < s + 1, t k = t (k + 1)
-    · obtain ⟨k, hk, hkt⟩ := hz
-      obtain ⟨π, hπ⟩ := ih (h.removeAt hk hkt)
-      refine ⟨π, fun f ↦ (hπ f).trans
-        (ofSegments_map_range_of_eq_zero hk (by simp [hkt]) (fun n hn ↦ ?_) fun n hn ↦ ?_).symm⟩
-      · simp [hn, hn.le, show n + 1 ≤ k by omega]
-      · rcases hn.eq_or_lt with rfl | hn
-        · simp [hkt]
-        · simp [show ¬n < k by omega, show ¬n ≤ k by omega, show ¬n + 1 ≤ k by omega]
-    by_cases hd : ∃ k, k + 1 < s + 1 ∧ τ k = τ (k + 1)
-    · obtain ⟨k, hk, hkτ⟩ := hd
-      obtain ⟨π, hπ⟩ := ih (h.mergeAt hk hkτ)
-      refine ⟨π, fun f ↦ (hπ f).trans (ofSegments_map_range_of_smul hk
-        (a := ((t (k + 1) - t k : ℚ) : 𝕜)) (c := ((t (k + 1 + 1) - t (k + 1) : ℚ) : 𝕜))
-        (u := f (τ k • lam)) (Rat.cast_nonneg.mpr (sub_nonneg.mpr (h.monotone k (by omega))))
-        (Rat.cast_nonneg.mpr (sub_nonneg.mpr (h.monotone (k + 1) hk))) rfl
-        (by rw [hkτ]) ?_ (fun n hn ↦ ?_) fun n hn ↦ ?_).symm⟩
-      · simp only [le_refl, show ¬k + 1 ≤ k by omega, ↓reduceIte]
-        push_cast
-        congr 1
-        ring
-      · simp [hn.le, show n + 1 ≤ k by omega]
-      · simp [show ¬n ≤ k by omega, show ¬n + 1 ≤ k by omega]
-    · push Not at hz hd
-      exact h.exists_of_lt_of_ne (fun k hk ↦ lt_of_le_of_ne (h.monotone k hk) (hz k hk)) hd
-
-/-- **Break data presents an LS path.** Let `τ₀, …, τ_{s-1}` be minimal coset representatives of
-`W / W_λ` and `0 = t₀ ≤ t₁ ≤ ⋯ ≤ t_s = 1` rational times such that consecutive directions are
-joined by a `t_{k+1}`-chain from `τ_k` down to `τ_{k+1}`. Consecutive directions may agree and
-segments may be stationary. Then the segments `(t_{k+1} - t_k) τ_k λ` present an LS path of
-shape `λ`, in every realization `f`. -/
-theorem exists_toPLPath_eq_ofSegments {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ}
-    (hτ : ∀ k < s, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (τ k))
-    (ht₀ : t 0 = 0) (hts : t s = 1) (hmono : ∀ k < s, t k ≤ t (k + 1))
-    (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C) :
-    ∃ π : LSPath P b lam, ∀ f : M →+ V, π.toPLPath 𝕜 f = PLPath.ofSegments 𝕜
-      ((List.range s).map fun k ↦ ((t (k + 1) - t k : ℚ) : 𝕜) • f (τ k • lam)) :=
-  IsBreakData.exists_toPLPath_eq ⟨hτ, ht₀, hts, hmono, hchain⟩
 
 /-! ### Lowering an LS path -/
 
@@ -293,53 +90,7 @@ private theorem lowered_eq_map_range {g g' : ℕ → V} (r : V → V) {s k₀ k�
     congr 1
     omega
 
-/-- The realization of an LS path is presented by the segments `(a_{k+1} - a_k) τ_k λ`, read off
-the sequences `TauCeti.LSPath.natTime` and `TauCeti.LSPath.natDir`. -/
-theorem toPLPath_eq_ofSegments_natDir (π : LSPath P b lam) (f : M →+ V) :
-    π.toPLPath 𝕜 f = PLPath.ofSegments 𝕜 ((List.range (π.length + 1)).map fun k ↦
-      ((π.natTime (k + 1) - π.natTime k : ℚ) : 𝕜) • f (π.natDir k • lam)) := by
-  rw [toPLPath_def, timed_def, List.map_ofFn]
-  congr 1
-  refine List.ext_getElem (by simp) fun n h₁ h₂ ↦ ?_
-  have hn : n < π.length + 1 := by simpa using h₁
-  simp only [List.getElem_ofFn, List.getElem_map, List.getElem_range, Function.comp_apply,
-    duration_def, π.natDir_of_le (by omega : n ≤ π.length),
-    π.natTime_of_le (by omega : n + 1 ≤ π.length + 1),
-    π.natTime_of_le (by omega : n ≤ π.length + 1), Fin.succ_mk, Fin.castSucc_mk]
-
-omit [Finite ι] [P.IsReduced] in
-/-- Vertex heights of a segment list indexed by a range. -/
-private theorem apply_sum_take_map_range (f : M →+ V) (F : Module.Dual 𝕜 V)
-    (g : Module.Dual ℤ M) (hF : ∀ m, F (f m) = (g m : 𝕜)) (s : ℕ) (τ : ℕ → P.weylGroup)
-    (t : ℕ → ℚ) (j : ℕ) :
-    F ((((List.range s).map fun k ↦ ((t (k + 1) - t k : ℚ) : 𝕜) • f (τ k • lam)).take j).sum) =
-      ((∑ k ∈ Finset.range (min j s), (t (k + 1) - t k) * g (τ k • lam) : ℚ) : 𝕜) := by
-  rw [← List.map_take, List.take_range]
-  generalize min j s = n
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [List.range_succ, List.map_append, List.sum_append, map_add, ih, Finset.sum_range_succ]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero, map_smul,
-      smul_eq_mul, hF]
-    rw [Rat.cast_add, Rat.cast_mul, Rat.cast_intCast]
-
 variable [P.flip.IsReduced]
-
-/-- The height of an LS path at the break `a_j`, minus `a_j` times the slope of the segment
-starting there, is an integer. -/
-private theorem exists_sum_sub_natTime_mul_eq_intCast (π : LSPath P b lam)
-    (hlam : lam ∈ dominantChamber P b) (g : Module.Dual ℤ M) {j : ℕ} (hj : j < π.length + 1) :
-    ∃ z : ℤ, ∑ k ∈ Finset.range j, (π.natTime (k + 1) - π.natTime k) * g (π.natDir k • lam) -
-      π.natTime j * g (π.natDir j • lam) = z := by
-  rcases j with _ | m
-  · exact ⟨0, by simp [π.natTime_zero]⟩
-  obtain ⟨z₁, hz₁⟩ := exists_sum_sub_mul_eq_intCast_of_isAChain hlam π.natTime_zero
-    π.natDir_chain g (j := m) (by omega)
-  obtain ⟨C, hh, hl, hC⟩ := π.natDir_chain m (by omega)
-  obtain ⟨z₂, hz₂⟩ := hC.exists_mul_sub_eq_intCast hlam g
-  rw [hh, hl] at hz₂
-  exact ⟨z₁ + z₂, by push_cast at hz₁ hz₂ ⊢; linear_combination hz₁ + hz₂⟩
 
 /-- The directions of an LS path after lowering at the vertices `k₀ < k₁`: the directions `τ_n`
 with `k₀ ≤ n < k₁` are reflected by `sᵢ`, and `τ_{k₁ - 1}` is repeated after the new break. -/

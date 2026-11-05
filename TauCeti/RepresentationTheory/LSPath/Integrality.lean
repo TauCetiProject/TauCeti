@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.LSPath.Basic
+public import TauCeti.RepresentationTheory.LSPath.BreakData
 public import TauCeti.RepresentationTheory.LSPath.RootOperator
 import TauCeti.RepresentationTheory.LSPath.Concatenation
 
@@ -51,53 +51,6 @@ variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
   {lam : M} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V]
 
-/-- The directions `τ₀, …, τ_l` of an LS path as a sequence indexed by `ℕ`, extended constantly
-past its last entry, in the form taken by the chain-height lemmas of
-`TauCeti.LinearAlgebra.RootSystem.Weyl.ChainBond`. -/
-def natDir (π : LSPath P b lam) (k : ℕ) : P.weylGroup :=
-  (π.dir ⟨min k π.length, by omega⟩).1
-
-/-- The break times `a₀, …, a_{l+1}` of an LS path as a sequence indexed by `ℕ`, extended
-constantly past its last entry. -/
-def natTime (π : LSPath P b lam) (k : ℕ) : ℚ :=
-  π.time ⟨min k (π.length + 1), by omega⟩
-
-theorem natDir_of_le (π : LSPath P b lam) {k : ℕ} (hk : k ≤ π.length) :
-    π.natDir k = (π.dir ⟨k, Nat.lt_succ_of_le hk⟩).1 := by
-  simp only [natDir, min_eq_left hk]
-
-theorem natTime_of_le (π : LSPath P b lam) {k : ℕ} (hk : k ≤ π.length + 1) :
-    π.natTime k = π.time ⟨k, Nat.lt_succ_of_le hk⟩ := by
-  simp only [natTime, min_eq_left hk]
-
-theorem isMinimalCosetRep_natDir (π : LSPath P b lam) (k : ℕ) :
-    (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (π.natDir k) :=
-  (π.dir _).2
-
-theorem natTime_zero (π : LSPath P b lam) : π.natTime 0 = 0 :=
-  π.time_zero
-
-theorem natTime_last (π : LSPath P b lam) : π.natTime (π.length + 1) = 1 := by
-  simpa only [natTime, min_self, Fin.last] using π.time_last
-
-theorem natTime_strictMono (π : LSPath P b lam) (k : ℕ) (hk : k < π.length + 1) :
-    π.natTime k < π.natTime (k + 1) := by
-  apply π.strictMono_time
-  simp only [Fin.mk_lt_mk, min_eq_left (by omega : k ≤ π.length + 1),
-    min_eq_left (by omega : k + 1 ≤ π.length + 1)]
-  omega
-
-/-- Consecutive directions of an LS path are joined by chains for the break between them. -/
-theorem natDir_chain (π : LSPath P b lam) (k : ℕ) (hk : k + 1 < π.length + 1) :
-    ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-      C.head.1 = π.natDir k ∧ C.last.1 = π.natDir (k + 1) ∧
-        IsAChain (π.natTime (k + 1)) lam C := by
-  obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain ⟨k, by omega⟩
-  refine ⟨C, ?_, ?_, ?_⟩
-  · simpa [natDir, min_eq_left (by omega : k ≤ π.length)] using congrArg Subtype.val hhead
-  · simpa [natDir, min_eq_left (by omega : k + 1 ≤ π.length)] using congrArg Subtype.val hlast
-  · simpa [natTime, min_eq_left (by omega : k + 1 ≤ π.length + 1)] using hC
-
 /-- Identify vertex heights of the native path presentation with the sums used by the
 chain-integrality lemmas. -/
 private theorem apply_sum_take (π : LSPath P b lam) (f : M →+ V)
@@ -106,22 +59,7 @@ private theorem apply_sum_take (π : LSPath P b lam) (f : M →+ V)
     F (((π.timed 𝕜 f).map Prod.snd).take k).sum =
       ((∑ j ∈ Finset.range k,
         (π.natTime (j + 1) - π.natTime j) * g (π.natDir j • lam) : ℚ) : 𝕜) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have hk' : k < π.length + 1 := by omega
-    have hlen : k < ((π.timed 𝕜 f).map Prod.snd).length := by
-      simpa [timed_def] using hk'
-    rw [List.sum_take_succ _ _ hlen, map_add, ih (by omega), Finset.sum_range_succ,
-      Rat.cast_add]
-    congr 1
-    simp only [timed_def, List.getElem_map, List.getElem_ofFn,
-      map_smul, smul_eq_mul, hF, duration_def, natTime, natDir,
-      Rat.cast_mul, Rat.cast_sub, Rat.cast_intCast,
-      Fin.succ_mk, Fin.castSucc_mk,
-      min_eq_left (by omega : k ≤ π.length),
-      min_eq_left (by omega : k ≤ π.length + 1),
-      min_eq_left (by omega : k + 1 ≤ π.length + 1)]
+  rw [π.map_snd_timed f, apply_sum_take_map_range f F g hF, min_eq_left hk]
 
 /-- The minimum height of an LS path is at most the height of its first vertex. -/
 theorem minHeight_le_duration_mul_dir_zero (π : LSPath P b lam) (f : M →+ V)
@@ -136,6 +74,16 @@ theorem minHeight_le_duration_mul_dir_zero (π : LSPath P b lam) (f : M →+ V)
 
 variable [P.flip.IsReduced]
 
+/-- The height of an LS path at the break `a_j`, minus `a_j` times the slope of the segment
+starting there, is an integer. -/
+theorem exists_sum_sub_natTime_mul_eq_intCast (π : LSPath P b lam)
+    (hlam : lam ∈ dominantChamber P b) (g : Module.Dual ℤ M) {j : ℕ} (hj : j < π.length + 1) :
+    ∃ z : ℤ, ∑ k ∈ Finset.range j, (π.natTime (k + 1) - π.natTime k) * g (π.natDir k • lam) -
+      π.natTime j * g (π.natDir j • lam) = z := by
+  obtain ⟨z, hz⟩ := exists_sum_sub_mul_eq_intCast_of_isAChain hlam π.natTime_zero
+    π.natDir_chain g hj
+  exact ⟨z, by rw [← hz, Finset.sum_range_succ]; ring⟩
+
 /-- The endpoint of an LS path has integral value under every height form agreeing with an
 integral linear form on the weight lattice. -/
 theorem exists_apply_endpoint_eq_intCast (π : LSPath P b lam)
@@ -143,7 +91,7 @@ theorem exists_apply_endpoint_eq_intCast (π : LSPath P b lam)
     (F : Module.Dual 𝕜 V) (g : Module.Dual ℤ M) (hF : ∀ m, F (f m) = (g m : 𝕜)) :
     ∃ z : ℤ, F (π.toPLPath 𝕜 f).endpoint = z := by
   obtain ⟨z, hz⟩ := exists_sum_eq_intCast_of_isAChain hlam π.natTime_zero π.natDir_chain
-    ⟨1, by simp [π.natTime_last]⟩ g
+    ⟨1, by simp⟩ g
   refine ⟨z, ?_⟩
   have hlen : ((π.timed 𝕜 f).map Prod.snd).length = π.length + 1 := by
     simp only [List.length_map, timed_def, List.length_ofFn]
@@ -185,7 +133,7 @@ theorem exists_minHeight_eq_intCast (π : LSPath P b lam)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) :
     ∃ z : ℤ, (π.toPLPath 𝕜 f).minHeight F = z := by
   obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam
-    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp [π.natTime_last]⟩ i
+    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp⟩ i
   exact ⟨z, by rw [π.minHeight_eq_of_isLeast f i F hF hz, Rat.cast_intCast]⟩
 
 /-- The raising and lowering heights of an LS path are natural numbers. Their difference is
@@ -277,7 +225,7 @@ theorem exists_lower_toPLPath_eq (π : LSPath P b lam) (hlam : lam ∈ dominantC
       linarith
     exact_mod_cast h'
   obtain ⟨k₀, k₁, hk₀₁, hk₁s, hleast, hrise, hafter⟩ := exists_strictly_rising_of_isAChain hlam
-    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp [π.natTime_last]⟩ i hgap
+    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp⟩ i hgap
   have hmin : (π.toPLPath 𝕜 f).minHeight F = (H k₀ : 𝕜) := π.minHeight_eq_of_isLeast f i F hF hleast
   -- The crossing segment `j₁ = k₁ - 1` and the fraction `θ` of it.
   set j₁ : Fin s := ⟨k₁ - 1, by omega⟩

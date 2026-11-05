@@ -14,8 +14,8 @@ public import Mathlib.Order.Interval.Finset.Nat
 Lists of the form `[f (b - 1), …, f 0]`, that is `(List.range b).reverse.map f`, record
 coefficient sequences from the top index down. This file peels off the top entry and collapses a
 run of vanishing entries at the top into a block of zeros. It also counts the occurrences of a
-value in the list `[f s, …, f (s + n - 1)]`, and splits the prefixes of a concatenation
-`f 0 ++ ⋯ ++ f (n - 1)` of lists.
+value in the list `[f s, …, f (s + n - 1)]`, splits the prefixes of a concatenation
+`f 0 ++ ⋯ ++ f (n - 1)` of lists, and splits `[f 0, …, f (k + n)]` at its entry `f k`.
 
 ## Main results
 
@@ -69,5 +69,13 @@ theorem _root_.List.exists_eq_flatMap_range_append {α : Type*} {f : ℕ → Lis
     rcases List.append_eq_append_iff.mp ht with ⟨a, ha, -⟩ | ⟨c, hc, hn⟩
     · exact ih ⟨a, ha.symm⟩
     · exact ⟨n, c, ⟨t, hn.symm⟩, hc⟩
+
+/-- The list `[f 0, …, f (k + n)]` is `[f 0, …, f (k - 1)]`, then `f k`, then
+`[f (k + 1), …, f (k + n)]`. -/
+theorem _root_.List.map_range_add_one_add {α : Type*} (f : ℕ → α) (k n : ℕ) :
+    (List.range (k + 1 + n)).map f =
+      (List.range k).map f ++ f k :: (List.range n).map fun m ↦ f (k + 1 + m) := by
+  rw [List.range_add, List.range_succ, List.map_append, List.map_append, List.map_map]
+  simp [Function.comp_def]
 
 end TauCeti
