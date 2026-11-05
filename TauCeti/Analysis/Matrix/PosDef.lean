@@ -26,8 +26,8 @@ The positive-definite cone itself is not open in the space of all square matrice
 Hermitian condition cuts out a proper subspace once there are at least two rows. On the
 Hermitian subspace over either `ℝ` or `ℂ`, the cone is open: positivity is uniform on the compact
 unit sphere and persists under small perturbations.
-Ambiently the cone is still measurable, being the intersection of the closed Hermitian condition
-with that open one.
+For real matrices the cone is measurable ambiently, being the intersection of the closed
+Hermitian condition with the open set of `isOpen_setOfPred_re_dotProduct_pos`.
 
 ## Main declarations
 
