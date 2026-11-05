@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The tangent representation of an isotropy group
@@ -150,33 +151,11 @@ theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsMa
   have h := (ContMDiffAt.mfderiv (fun (g : G) (y : M) ↦ g • y) (fun _ ↦ x) hf
     (contMDiffAt_const (n := 0)) (by simp)).continuousAt
   -- On the stabilizer both base points are `x`, so the coordinate changes are the identity.
-  have key : ∀ g : stabilizer G x,
-      inTangentCoordinates I I (fun _ : G ↦ x) (fun g : G ↦ g • x)
-        (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) g =
-        tangentRepresentation hd g := by
-    intro g
-    have hgx : (g : G) • x = x := g.2
-    have hg₀x : (g₀ : G) • x = x := g₀.2
-    rw [inTangentCoordinates_eq _ _ _ (mem_chart_source H x)
-      (by rw [hgx, hg₀x]; exact mem_chart_source H x)]
-    ext v
-    have hx : x ∈ (tangentBundleCore I M).baseSet (achart H x) := mem_chart_source H x
-    have h₁ : achart H ((g : G) • x) = achart H x := by rw [hgx]
-    have h₂ : achart H ((g₀ : G) • x) = achart H x := by rw [hg₀x]
-    have hx' : (g : G) • x ∈ (tangentBundleCore I M).baseSet (achart H x) := by
-      rw [hgx]
-      exact hx
-    simp only [ContinuousLinearMap.comp_apply, h₁, h₂, tangentRepresentation_apply,
-      (tangentBundleCore I M).coordChange_self _ _ hx']
-    -- `ContinuousLinearMap.comp_apply` does not fire on the inner composition, whose source is
-    -- `TangentSpace I x` rather than `E`; it is applied by definition.
-    exact congrArg (mfderiv I I (fun y : M ↦ (g : G) • y) x)
-      ((tangentBundleCore I M).coordChange_self _ _ hx v)
-  have hcomp : (tangentRepresentation hd : stabilizer G x → _) =
-      inTangentCoordinates I I (fun _ : G ↦ x) (fun g : G ↦ g • x)
-        (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) ∘ Subtype.val :=
-    funext fun g ↦ (key g).symm
-  rw [hcomp]
+  have hcomp : inTangentCoordinates I I (fun _ : G ↦ x) (fun g : G ↦ g • x)
+      (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) ∘ Subtype.val =
+        (tangentRepresentation hd : stabilizer G x → _) :=
+    funext fun g ↦ Manifold.inTangentCoordinates_eq_self_of_eq _ _ _ rfl (g.2.trans g₀.2.symm)
+  rw [← hcomp]
   exact h.comp continuous_subtype_val.continuousAt
 
 end Continuity

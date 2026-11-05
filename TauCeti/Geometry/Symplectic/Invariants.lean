@@ -44,7 +44,7 @@ symplectic, because a vector `v ∈ L ∩ L^ω` has `ω (v, J v) = 0`
 ## Main results
 
 * `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`: the invariants of a representation by
-  maps commuting with such a structure form a symplectic subspace.
+  maps complex linear for an almost complex structure `J` tamed by `ω` form a symplectic subspace.
 * `TauCeti.SymplecticForm.apply_mem_orthogonal`: the symplectic complement of a subspace stable
   under a group preserving `ω` is stable too.
 * `TauCeti.SymplecticForm.IsSymplectic.invariants_normalSubrepresentation`: when the invariants
