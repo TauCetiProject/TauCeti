@@ -108,13 +108,11 @@ theorem isZero_singularHomology_preimage_skeletonLT (hp : serreFibrations p) (R 
     -- The pairs `(t, A)` and `(t, s)` are isomorphic, by a basepoint-preserving isomorphism.
     let e := TopPair.ofSubsetPreimageValIso hst
     let f : (⟨TopPair.ofSubset A, a⟩ : BasedTopPair) ⟶ ⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ :=
-      ⟨e.hom, rfl⟩
+      ⟨e.hom, Subtype.ext (TopPair.ofSubsetPreimageValIso_hom_snd_apply a)⟩
     let g : (⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ : BasedTopPair) ⟶ ⟨TopPair.ofSubset A, a⟩ :=
-      ⟨e.inv, rfl⟩
-    have hfg : f ≫ g = 𝟙 _ := BasedTopPair.hom_ext e.hom_inv_id
-    refine Function.LeftInverse.injective (g := RelHomotopyGroup.map g)
-      (f := RelHomotopyGroup.map f) (fun x ↦ ?_) |>.subsingleton
-    rw [RelHomotopyGroup.map_map, hfg, RelHomotopyGroup.map_id, id]
+      ⟨e.inv, Subtype.ext (TopPair.ofSubsetPreimageValIso_inv_snd_apply ⟨a.1.1, a.2⟩)⟩
+    exact RelHomotopyGroup.subsingleton_of_comp_eq_id (f := f) (g := g)
+      (BasedTopPair.hom_ext e.hom_inv_id)
   -- The restriction of `p` over `t` is a Serre fibration, so its preimage pair has vanishing
   -- homology below degree `i + 1`.
   have hz := isZero_singularHomology_preimage_of_relHomotopyGroup

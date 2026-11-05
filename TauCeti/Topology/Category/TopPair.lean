@@ -186,13 +186,28 @@ def ofInclusionHomotopy {g₀ g₁ : C(t, t')} (F : g₀.Homotopy g₁)
 variable (hst) in
 /-- The pair of `t` and the preimage of `s` in `t` is isomorphic to the pair `(t, s)`: the two
 pairs have the same ambient space, and their subspaces are identified by the coercion to `X`. -/
-@[expose]
 def ofSubsetPreimageValIso :
     ofSubset (X := TopCat.of t) (Subtype.val ⁻¹' s) ≅ ofInclusion hst where
   hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
   inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨⟨x.1, hst x.2⟩, x.2⟩, by fun_prop⟩)
   hom_inv_id := by ext : 2 <;> rfl
   inv_hom_id := by ext : 2 <;> rfl
+
+@[simp]
+lemma ofSubsetPreimageValIso_hom_fst_apply (x : t) :
+    Hom.fst (ofSubsetPreimageValIso hst).hom x = x := (rfl)
+
+@[simp]
+lemma ofSubsetPreimageValIso_hom_snd_apply (x : (Subtype.val ⁻¹' s : Set t)) :
+    (Hom.snd (ofSubsetPreimageValIso hst).hom x).1 = x.1.1 := (rfl)
+
+@[simp]
+lemma ofSubsetPreimageValIso_inv_fst_apply (x : t) :
+    Hom.fst (ofSubsetPreimageValIso hst).inv x = x := (rfl)
+
+@[simp]
+lemma ofSubsetPreimageValIso_inv_snd_apply (x : s) :
+    (Hom.snd (ofSubsetPreimageValIso hst).inv x).1 = ⟨x.1, hst x.2⟩ := (rfl)
 
 end ofInclusion
 
