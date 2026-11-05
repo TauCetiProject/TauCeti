@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
+import TauCeti.Algebra.Ring.TwoPowMulThreePow
 import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 /-!
@@ -42,18 +43,6 @@ open MvPolynomial
 namespace Universal
 
 variable (R : Type*) [CommRing R] [Invertible (2 : R)] [Invertible (3 : R)]
-
-@[instance_reducible]
-private def invertible1728 : Invertible (1728 : R) := by
-  have h : (⅟(2 : R) ^ 6 * ⅟(3 : R) ^ 3) * 1728 = 1 := by
-    calc
-      _ = (2 * ⅟(2 : R)) ^ 6 * (3 * ⅟(3 : R)) ^ 3 := by ring
-      _ = 1 := by simp
-  exact ⟨_, h, by simpa only [mul_comm] using h⟩
-
-attribute [local instance] invertible1728
-
-private theorem invOf1728 : ⅟(1728 : R) = ⅟(2 : R) ^ 6 * ⅟(3 : R) ^ 3 := rfl
 
 /-- The universal `c₄,c₆` remain algebraically independent after base change to any ring
 in which `2` and `3` are invertible, with no reducedness or characteristic-zero hypothesis. -/
@@ -111,8 +100,10 @@ is the polynomial `(C₄³ - C₆²)/1728`. -/
 def adjoinMapC₄C₆ΔEquiv : MvPolynomial (Fin 2) R ≃ₐ[R]
     Algebra.adjoin R {MvPolynomial.map (Int.castRingHom R) curve.c₄,
       MvPolynomial.map (Int.castRingHom R) curve.c₆,
-      MvPolynomial.map (Int.castRingHom R) curve.Δ} :=
-  (algebraicIndependent_map_c₄_c₆ R).aevalEquiv.trans
+      MvPolynomial.map (Int.castRingHom R) curve.Δ} := by
+  letI := TauCeti.invertibleOfEqTwoPowMulThreePow
+    (by norm_num : (1728 : R) = 2 ^ 6 * 3 ^ 3)
+  exact (algebraicIndependent_map_c₄_c₆ R).aevalEquiv.trans
     (Subalgebra.equivOfEq _ _ (by
       rw [Matrix.range_cons_cons_empty]
       symm
@@ -157,7 +148,11 @@ theorem adjoinMapC₄C₆ΔEquiv_symm_Δ :
   rw [AlgEquiv.apply_symm_apply, adjoinMapC₄C₆ΔEquiv_apply]
   simp only [map_mul, map_sub, map_pow, aeval_C, aeval_X,
     Matrix.cons_val_zero, Matrix.cons_val_one]
-  simpa only [map_c₄, map_c₆, map_Δ, invOf1728, algebraMap_eq, map_mul, map_pow] using
+  let := TauCeti.invertibleOfEqTwoPowMulThreePow
+    (by norm_num : (1728 : R) = 2 ^ 6 * 3 ^ 3)
+  have h1728 := TauCeti.invOf_eq_invOf_two_pow_mul_invOf_three_pow
+    (by norm_num : (1728 : R) = 2 ^ 6 * 3 ^ 3)
+  simpa only [map_c₄, map_c₆, map_Δ, h1728, algebraMap_eq, map_mul, map_pow] using
     (curve.map (MvPolynomial.map (Int.castRingHom R))).Δ_eq_invOf_mul (R := R)
 
 end Universal
