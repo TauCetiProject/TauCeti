@@ -25,6 +25,8 @@ agree as functions, so the `A`-linearity of the first applies to the second.
   map is semilinear over that map.
 * `TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`: the `A`-linear base change of the
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
+* `TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange`: over the coefficient algebra itself,
+  `TensorProduct.AlgebraTensorModule.lTensor` is `LinearMap.baseChange`.
 -/
 
 public section
@@ -53,3 +55,11 @@ theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Typ
       (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
   rw [AlgebraTensorModule.coe_rTensor]
   exact congrArg (LinearMap.rTensor M · x) (LinearMap.ext fun a ↦ by simp)
+
+/-- Over the coefficient algebra itself, `TensorProduct.AlgebraTensorModule.lTensor` is
+`LinearMap.baseChange`: both extend scalars along `A`. -/
+theorem TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange {R : Type*} (A : Type*)
+    {M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
+    AlgebraTensorModule.lTensor A A f = f.baseChange A :=
+  AlgebraTensorModule.ext fun a x => by simp
