@@ -38,17 +38,6 @@ namespace QuadraticAlgebra
 
 variable {R : Type*} [CommRing R] {a b : R}
 
-/-- Multiplication in period coordinates, bundled as a monoid homomorphism. -/
-def periodMulMatrixHom : QuadraticAlgebra R a b →* Matrix (Fin 2) (Fin 2) R where
-  toFun := periodMulMatrix
-  map_one' := periodMulMatrix_one
-  map_mul' := periodMulMatrix_mul
-
-/-- The bundled period representation evaluates to the specified multiplication matrix. -/
-@[simp]
-theorem periodMulMatrixHom_apply (z : QuadraticAlgebra R a b) :
-    periodMulMatrixHom z = z.periodMulMatrix := (by rfl)
-
 /-- The period representation on units. Its value is an invertible multiplication matrix. -/
 def periodUnitMatrix : (QuadraticAlgebra R a b)ˣ →* GL (Fin 2) R :=
   Units.map periodMulMatrixHom
@@ -58,12 +47,14 @@ def periodUnitMatrix : (QuadraticAlgebra R a b)ˣ →* GL (Fin 2) R :=
 theorem coe_periodUnitMatrix (u : (QuadraticAlgebra R a b)ˣ) :
     (periodUnitMatrix u : Matrix (Fin 2) (Fin 2) R) =
       (u : QuadraticAlgebra R a b).periodMulMatrix :=
-  (by rfl)
+  periodMulMatrixHom_apply _
 
 /-- The unit representation is faithful, including over rings with zero divisors. -/
 theorem periodUnitMatrix_injective :
     Function.Injective (periodUnitMatrix : (QuadraticAlgebra R a b)ˣ → GL (Fin 2) R) :=
-  Units.map_injective periodMulMatrix_injective
+  Units.map_injective (by
+    simpa only [Function.Injective, periodMulMatrixHom_apply] using
+      (periodMulMatrix_injective (a := a) (b := b)))
 
 /-- The group of invertible quadratic multiplication matrices. -/
 def periodMatrixGroup (a b : R) : Subgroup (GL (Fin 2) R) :=
@@ -119,7 +110,9 @@ theorem periodUnitMatrix_mapRingHom {S : Type*} [CommRing S] (f : R →+* S)
       QuadraticAlgebra R a b →* QuadraticAlgebra S (f a) (f b)) u) =
       GeneralLinearGroup.map f (periodUnitMatrix u) := by
   apply Units.ext
-  exact periodMulMatrix_mapRingHom f _
+  simpa only [coe_periodUnitMatrix, GeneralLinearGroup.map, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply] using
+    (periodMulMatrix_mapRingHom f (u : QuadraticAlgebra R a b))
 
 /-- Counting the matrix group is the same as counting units in the actual quadratic algebra. -/
 theorem card_periodMatrixGroup :

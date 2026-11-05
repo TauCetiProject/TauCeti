@@ -50,6 +50,17 @@ theorem periodMulMatrix_mul (z w : QuadraticAlgebra R a b) :
   simp only [periodMulMatrix, map_mul, Matrix.transpose_mul]
   exact (Matrix.submatrix_mul_equiv _ _ Fin.revPerm Fin.revPerm Fin.revPerm).symm
 
+/-- Multiplication in period coordinates, bundled as a monoid homomorphism. -/
+def periodMulMatrixHom : QuadraticAlgebra R a b →* Matrix (Fin 2) (Fin 2) R where
+  toFun := periodMulMatrix
+  map_one' := periodMulMatrix_one
+  map_mul' := periodMulMatrix_mul
+
+/-- The bundled period representation evaluates to the specified multiplication matrix. -/
+@[simp]
+theorem periodMulMatrixHom_apply (z : QuadraticAlgebra R a b) :
+    periodMulMatrixHom z = z.periodMulMatrix := (by rfl)
+
 /-- The row multiplication matrix has the coefficients used for quadratic division points. -/
 theorem periodMulMatrix_eq (z : QuadraticAlgebra R a b) :
     z.periodMulMatrix = !![z.re + b * z.im, a * z.im; z.im, z.re] := by
