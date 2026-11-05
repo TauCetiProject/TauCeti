@@ -176,25 +176,16 @@ lemma inner_proj_eq_inner_proj_proj (P : ProjValMeasure X H)
     _ = ⟪T (T ψ), ξ⟫_ℂ := by rw [P.proj_apply_proj]
     _ = ⟪T ψ, T ξ⟫_ℂ := hsym (T ψ) ξ
 
-/-- For each measurable set `B`, the operator `P(B)` is positive. -/
-theorem isPositive_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) :
-    (P.proj B hB).IsPositive := by
-  rw [ContinuousLinearMap.isPositive_def']
-  constructor
-  · exact P.isSelfAdjoint_proj B hB
-  · intro ξ
-    -- `reApplyInnerSelf` is `re ⟪T ξ, ξ⟫`; the weld gives `⟪ξ, T ξ⟫`, and its
-    -- value is an embedded real, so flipping the slots by conjugation changes
-    -- nothing — leaving the nonnegative real `toReal`:
-    have hval := P.inner_proj_apply_left B hB ξ
-    rw [ContinuousLinearMap.reApplyInnerSelf, hval]
-    simp
-
 /-- Each measurable-set value of a PVM is an orthogonal (`star`) projection. -/
 theorem isStarProjection_proj (P : ProjValMeasure X H) (B : Set X)
     (hB : MeasurableSet B) : IsStarProjection (P.proj B hB) := by
   exact (isStarProjection_iff' (p := P.proj B hB)).2
     ⟨P.proj_idem B hB, (P.isSelfAdjoint_proj B hB).star_eq⟩
+
+/-- For each measurable set `B`, the operator `P(B)` is positive. -/
+theorem isPositive_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) :
+    (P.proj B hB).IsPositive :=
+  .of_isStarProjection (P.isStarProjection_proj B hB)
 
 /-- Measurable-set projections commute, because intersection is symmetric. -/
 theorem proj_mul_comm (P : ProjValMeasure X H) (B C : Set X)
@@ -235,15 +226,8 @@ range of `P(C)`. -/
 theorem proj_range_mono (P : ProjValMeasure X H) {B C : Set X}
     (hBC : B ⊆ C) (hB : MeasurableSet B) (hC : MeasurableSet C) :
     (P.proj B hB).range ≤ (P.proj C hC).range := by
-  intro v hv
-  obtain ⟨x, hvx⟩ := hv
-  use (P.proj B hB) x
-  calc
-    (P.proj C hC) ((P.proj B hB) x) =
-        ((P.proj C hC) * (P.proj B hB)) x :=
-          (mul_apply_eq_comp (P.proj C hC) (P.proj B hB) x).symm
-    _ = (P.proj B hB) x := by rw [P.proj_mul_eq_right_of_subset hBC hB hC]
-    _ = v := hvx
+  rw [← P.proj_mul_eq_right_of_subset hBC hB hC]
+  exact LinearMap.range_comp_le_range _ _
 
 /-- For disjoint measurable sets, the projection of their union is the sum of
 their projections. -/
@@ -312,11 +296,7 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
 lemma norm_proj_apply_le (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B)
     (ξ : H) :
     ‖P.proj B hB ξ‖ ≤ ‖ξ‖ := by
-  have hsq : ‖P.proj B hB ξ‖ ^ 2 ≤ ‖ξ‖ ^ 2 := by
-    rw [norm_sq_proj_apply, ← P.diag_univ_toReal ξ]
-    exact ENNReal.toReal_mono (measure_ne_top (μ := P.diag ξ) (s := Set.univ))
-      (measure_mono (Set.subset_univ B))
-  exact (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
+  simpa using (P.proj B hB).le_of_opNorm_le (P.isStarProjection_proj B hB).norm_le ξ
 
 /-! ## Strong countable additivity
 
