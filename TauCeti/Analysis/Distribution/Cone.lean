@@ -114,17 +114,23 @@ theorem cone_of_not_exists (x₀ : E) {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) �
     cone x₀ T = 0 := by
   rw [cone, dite_eq_right h]
 
+/-- The cone is zero unless `dsupport T` is a compact subset of `Ω`. -/
+theorem cone_of_not_isCompact_and_subset (x₀ : E) {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+    (h : ¬(IsCompact (dsupport T) ∧ dsupport T ⊆ Ω)) :
+    cone x₀ T = 0 :=
+  cone_of_not_exists x₀ fun ⟨_, hχ⟩ ↦ h (isCompact_dsupport_and_subset_of_eventually_eq_one hχ)
+
 /-- The cone is zero when `dsupport T` is not compact. -/
 theorem cone_of_not_isCompact (x₀ : E) {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
     (h : ¬IsCompact (dsupport T)) :
     cone x₀ T = 0 :=
-  cone_of_not_exists x₀ fun ⟨_, hχ⟩ ↦ h (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).1
+  cone_of_not_isCompact_and_subset x₀ fun hT ↦ h hT.1
 
 /-- The cone is zero when `dsupport T` is not contained in `Ω`. -/
 theorem cone_of_not_subset (x₀ : E) {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
     (h : ¬dsupport T ⊆ Ω) :
     cone x₀ T = 0 :=
-  cone_of_not_exists x₀ fun ⟨_, hχ⟩ ↦ h (isCompact_dsupport_and_subset_of_eventually_eq_one hχ).2
+  cone_of_not_isCompact_and_subset x₀ fun hT ↦ h hT.2
 
 @[simp]
 theorem cone_zero (x₀ : E) :
@@ -192,19 +198,17 @@ geometric cone `⋃ x ∈ dsupport T, segment ℝ x₀ x`, with no compactness a
 `dsupport T`. -/
 theorem dsupport_cone_subset (x₀ : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) :
     dsupport (cone x₀ T) ⊆ ⋃ x ∈ dsupport T, segment ℝ x₀ x := by
-  by_cases hT : IsCompact (dsupport T)
-  · by_cases hTΩ : dsupport T ⊆ Ω
-    · obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
-      have hK : IsCompact (⋃ x ∈ dsupport T, segment ℝ x₀ x) := hT.biUnion_segment x₀
-      refine compl_subset_compl.1 fun y hy ↦ ?_
-      rw [mem_compl_iff, notMem_dsupport_iff]
-      refine ⟨(⋃ x ∈ dsupport T, segment ℝ x₀ x)ᶜ, fun ω hω ↦ ?_, hK.isClosed.isOpen_compl, hy⟩
-      rw [cone_apply x₀ T hχ ω, ← map_zero T]
-      exact map_eq_map_of_eventuallyEq T <|
-        TestFunction.smulPoincareHomotopyCLM_eventuallyEq_zero_of_disjoint x₀ χ
-          (disjoint_compl_left.mono_left hω)
-    · simp [cone_of_not_subset x₀ hTΩ]
-  · simp [cone_of_not_isCompact x₀ hT]
+  by_cases hT : IsCompact (dsupport T) ∧ dsupport T ⊆ Ω
+  · obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT.1 hT.2
+    have hK : IsCompact (⋃ x ∈ dsupport T, segment ℝ x₀ x) := hT.1.biUnion_segment x₀
+    refine compl_subset_compl.1 fun y hy ↦ ?_
+    rw [mem_compl_iff, notMem_dsupport_iff]
+    refine ⟨(⋃ x ∈ dsupport T, segment ℝ x₀ x)ᶜ, fun ω hω ↦ ?_, hK.isClosed.isOpen_compl, hy⟩
+    rw [cone_apply x₀ T hχ ω, ← map_zero T]
+    exact map_eq_map_of_eventuallyEq T <|
+      TestFunction.smulPoincareHomotopyCLM_eventuallyEq_zero_of_disjoint x₀ χ
+        (disjoint_compl_left.mono_left hω)
+  · simp [cone_of_not_isCompact_and_subset x₀ hT]
 
 /-- The distributional support of `cone x₀ T` is always compact. -/
 theorem isCompact_dsupport_cone (x₀ : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) :
@@ -241,12 +245,11 @@ theorem cone_smul [ContinuousConstSMul ℝ V] (x₀ : E) (a : ℝ)
     rw [h0T, cone_zero, h0c]
   have hsup : dsupport (a • T) = dsupport T := by
     rw [FunLike.coe_smul, dsupport_smul_of_ne_zero ha]
-  by_cases hT : IsCompact (dsupport T)
-  · by_cases hTΩ : dsupport T ⊆ Ω
-    · obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
-      rw [cone_eq x₀ (a • T) (hsup ▸ hχ), cone_eq x₀ T hχ, smul_comp]
-    · rw [cone_of_not_subset x₀ (hsup ▸ hTΩ), cone_of_not_subset x₀ hTΩ, h0]
-  · rw [cone_of_not_isCompact x₀ (hsup ▸ hT), cone_of_not_isCompact x₀ hT, h0]
+  by_cases hT : IsCompact (dsupport T) ∧ dsupport T ⊆ Ω
+  · obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT.1 hT.2
+    rw [cone_eq x₀ (a • T) (hsup ▸ hχ), cone_eq x₀ T hχ, smul_comp]
+  · rw [cone_of_not_isCompact_and_subset x₀ (hsup ▸ hT),
+      cone_of_not_isCompact_and_subset x₀ hT, h0]
 
 /-- **Homotopy boundary formula in degree zero.** For a `0`-current `T` on `Ω` whose support is a
 compact subset of `Ω`, `(∂ (cone x₀ T)) ω = T ω - augmentation T (ω x₀)`. -/
@@ -354,12 +357,11 @@ theorem cone_neg (x₀ : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
     cone x₀ (-T) = -cone x₀ T := by
   have hsup : dsupport (-T) = dsupport T := by
     rw [FunLike.coe_neg, dsupport_neg]
-  by_cases hT : IsCompact (dsupport T)
-  · by_cases hTΩ : dsupport T ⊆ Ω
-    · obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
-      rw [cone_eq x₀ (-T) (hsup ▸ hχ), cone_eq x₀ T hχ, neg_comp]
-    · rw [cone_of_not_subset x₀ (hsup ▸ hTΩ), cone_of_not_subset x₀ hTΩ, neg_zero]
-  · rw [cone_of_not_isCompact x₀ (hsup ▸ hT), cone_of_not_isCompact x₀ hT, neg_zero]
+  by_cases hT : IsCompact (dsupport T) ∧ dsupport T ⊆ Ω
+  · obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT.1 hT.2
+    rw [cone_eq x₀ (-T) (hsup ▸ hχ), cone_eq x₀ T hχ, neg_comp]
+  · rw [cone_of_not_isCompact_and_subset x₀ (hsup ▸ hT),
+      cone_of_not_isCompact_and_subset x₀ hT, neg_zero]
 
 theorem cone_add (x₀ : E) {T S : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
     (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)

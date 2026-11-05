@@ -188,12 +188,10 @@ theorem extDerivCLM_smulPoincareHomotopyCLM_add_eventuallyEq (x₀ : E) {χ : �
     (extDerivCLM (smulPoincareHomotopyCLM x₀ χ ω) +
       smulPoincareHomotopyCLM x₀ χ (extDerivCLM ω) : E → E [⋀^Fin (k + 1)]→L[ℝ] F) =ᶠ[𝓝ˢ s] ω := by
   filter_upwards [hχ, hχ.eventually_nhdsSet] with y hy1 hy_nhds
-  have hloc : (smulPoincareHomotopyCLM x₀ χ ω : E → E [⋀^Fin k]→L[ℝ] F) =ᶠ[𝓝 y]
-      poincareHomotopy x₀ ω :=
+  have hloc : ⇑χ • poincareHomotopy x₀ ⇑ω =ᶠ[𝓝 y] poincareHomotopy x₀ ω :=
     hy_nhds.mono fun z hz ↦ by simp [hz]
-  rw [Pi.add_apply, extDerivCLM_apply, smulPoincareHomotopyCLM_apply, coe_extDerivCLM, hy1,
-    one_smul ℝ, hloc.extDeriv_eq]
-  exact extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv x₀ (ω.contDiff.of_le (by simp)) y
+  simpa [coe_extDerivCLM, hy1, hloc.extDeriv_eq] using
+    extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv x₀ (ω.contDiff.of_le (by simp)) y
 
 /-- **Local homotopy formula in degree zero.** Where `χ` is equal to `1` on a neighbourhood of
 `s`, `χ • K (d ω)` agrees on a neighbourhood of `s` with `ω - χ • ω x₀`, written using
@@ -203,10 +201,8 @@ theorem smulPoincareHomotopyCLM_extDerivCLM_finZero_eventuallyEq (x₀ : E) {χ 
     (smulPoincareHomotopyCLM x₀ χ (extDerivCLM ω) : E → E [⋀^Fin 0]→L[ℝ] F) =ᶠ[𝓝ˢ s]
       ⇑(ω - postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (ω x₀)) χ) := by
   filter_upwards [hχ] with y hy
-  rw [FunLike.coe_sub, Pi.sub_apply, smulPoincareHomotopyCLM_apply, coe_extDerivCLM,
-    postcompCLM_apply, Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, hy,
-    one_smul ℝ, one_smul ℝ]
-  exact poincareHomotopy_extDeriv_eq_sub x₀ (ω.contDiff.of_le (by simp)) y
+  simpa [coe_extDerivCLM, hy] using
+    poincareHomotopy_extDeriv_eq_sub x₀ (ω.contDiff.of_le (by simp)) y
 
 end Bounds
 
