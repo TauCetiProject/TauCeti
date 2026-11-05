@@ -48,6 +48,8 @@ spaces.
 
 * `TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`: an `L²` function in
   `H^s`, `2s > n`, agrees almost everywhere with a continuous function vanishing at infinity.
+* `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
+  function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
 * `TauCeti.Wkp.value_ae_eq_toZeroAtInfty`, `TauCeti.Wkp.toZeroAtInfty_eq_iff`: the embedding sends
   a Sobolev function to its unique continuous representative.
@@ -97,6 +99,22 @@ theorem MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq {s : ℝ} (hs : finrank
   refine ⟨g, ?_⟩
   rw [ZeroAtInftyContinuousMap.coe_mk]
   exact Lp.ae_eq_fourierInv_of_fourier_eq hv
+
+/-- **Continuous Sobolev functions vanish at infinity.** A continuous real function in `H^s`,
+`s > dim E / 2`, tends to zero at infinity: it agrees almost everywhere, hence everywhere, with
+the continuous representative given by `MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`. -/
+theorem tendsto_cocompact_of_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
+    Tendsto f (cocompact E) (𝓝 0) := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg⟩ := hS.exists_zeroAtInftyContinuousMap_ae_eq hs
+  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hg] with x h₁ h₂ h₃
+    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
+  have hc : Continuous fun x ↦ (f x : ℂ) := Complex.continuous_ofReal.comp hcont
+  have heq := (hc.ae_eq_iff_eq volume g.continuous).1 hae
+  have hg0 : Tendsto (fun x ↦ (f x : ℂ)) (cocompact E) (𝓝 0) := heq ▸ g.zero_at_infty'
+  simpa [Function.comp_def] using (Complex.continuous_re.tendsto 0).comp hg0
 
 end TemperedDistribution
 
