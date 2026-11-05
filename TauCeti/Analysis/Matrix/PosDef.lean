@@ -9,8 +9,6 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Topology.Instances.Matrix
 
@@ -45,10 +43,7 @@ bound. These inverse-segment arguments are adapted from the
   measurable set;
 * `TauCeti.continuousAt_inv_segment` and `TauCeti.continuous_inv_segment_pairs` — continuity
   of inverse segments with positive-definite endpoints;
-* `TauCeti.exists_uniform_inv_segment_apply_bound` — a common entry bound on compact fields;
-* `Matrix.PosDef.intervalIntegrable_inv_segment_apply` and
-  `Matrix.PosDef.intervalIntegrable_inv_segment_toQuadraticForm'` — interval integrability
-  of inverse-segment entries and quadratic forms.
+* `TauCeti.exists_uniform_inv_segment_apply_bound` — a common entry bound on compact fields.
 -/
 
 public section
@@ -166,30 +161,3 @@ theorem exists_uniform_inv_segment_apply_bound (H : X → Matrix ι ι ℝ) {s :
 end CompactPositiveFields
 
 end TauCeti
-
-open Set MeasureTheory in
-/-- Every entry of the inverse segment between positive-definite endpoints is interval
-integrable on the unit interval. -/
-theorem Matrix.PosDef.intervalIntegrable_inv_segment_apply
-    {ι : Type*} [Fintype ι] [DecidableEq ι] {A B : Matrix ι ι ℝ}
-    (hA : A.PosDef) (hB : B.PosDef) (i j : ι) :
-    IntervalIntegrable (fun t : ℝ => ((1 - t) • A + t • B)⁻¹ i j) volume 0 1 := by
-  refine ContinuousOn.intervalIntegrable_of_Icc zero_le_one (fun t ht => ?_)
-  have hc := TauCeti.continuousAt_inv_segment (P := fun _ : ℝ => A) (Q := fun _ : ℝ => B)
-    (t := id) continuousAt_const continuousAt_const continuousAt_id hA hB ht
-  exact ((continuous_apply_apply i j).continuousAt.comp hc).continuousWithinAt
-
-/-- The inverse segment's quadratic form is interval integrable for positive-definite endpoints. -/
-theorem Matrix.PosDef.intervalIntegrable_inv_segment_toQuadraticForm'
-    {ι : Type*} [Fintype ι] [DecidableEq ι] {A B : Matrix ι ι ℝ}
-    (hA : A.PosDef) (hB : B.PosDef) (ξ : ι → ℝ) :
-    IntervalIntegrable
-      (fun t : ℝ => (((1 - t) • A + t • B)⁻¹).toQuadraticForm' ξ)
-      MeasureTheory.volume 0 1 := by
-  refine ContinuousOn.intervalIntegrable_of_Icc zero_le_one (fun t ht => ?_)
-  have hc := TauCeti.continuousAt_inv_segment (P := fun _ : ℝ => A) (Q := fun _ : ℝ => B)
-    (t := id) continuousAt_const continuousAt_const continuousAt_id hA hB ht
-  have hq : Continuous (fun M : Matrix ι ι ℝ => M.toQuadraticForm' ξ) := by
-    simp only [Matrix.toQuadraticForm'_apply]
-    fun_prop
-  exact (hq.continuousAt.comp hc).continuousWithinAt

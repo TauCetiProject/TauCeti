@@ -14,8 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Matrix.Normed
 import TauCeti.Analysis.Holder.Integral
 import TauCeti.Analysis.Matrix.QuadraticBounds
-import TauCeti.Topology.Instances.Matrix
 import TauCeti.Analysis.Matrix.Holder
+import TauCeti.Analysis.Matrix.InverseSegment
 import TauCeti.Analysis.Matrix.PosDef
 
 /-!
