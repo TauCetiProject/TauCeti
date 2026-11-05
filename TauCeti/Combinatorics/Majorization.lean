@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Module
+public import Mathlib.Algebra.Order.Ring.Defs
 
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Ring.Int
@@ -23,8 +24,11 @@ possible sequences, but equality of a strictly convex statistic forces the extre
 Its integer-valued statement applies directly to occupation-number tuples after passing between
 finite indices and natural-number ranges.
 
-## Main result
+## Main results
 
+* `TauCeti.sum_range_eq_zero_of_sum_mul_eq_zero`: summation by parts against a strictly
+  decreasing weight; nonnegative initial sums of `d` with vanishing total and vanishing pairing
+  against the weight must all vanish.
 * `TauCeti.eq_staircase_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq`: an antitone
   integer sequence satisfying the staircase prefix, total, and quadratic-sum conditions agrees
   with the staircase throughout the prescribed range.
@@ -40,6 +44,44 @@ public section
 namespace TauCeti
 
 open scoped BigOperators
+
+/-- **Summation by parts against a strictly decreasing weight.**
+
+If every proper initial sum of `d` is nonnegative, the total sum of `d` over `range N` vanishes,
+`q` is strictly decreasing on `range N`, and `∑ i < N, d i * q i = 0`, then every initial sum of
+`d` up to `N` vanishes. -/
+theorem sum_range_eq_zero_of_sum_mul_eq_zero {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {N : ℕ} {d q : ℕ → R}
+    (hpartial : ∀ k, k < N → 0 ≤ ∑ i ∈ Finset.range k, d i)
+    (htotal : ∑ i ∈ Finset.range N, d i = 0)
+    (hq : ∀ k, k + 1 < N → q (k + 1) < q k)
+    (hdq : ∑ i ∈ Finset.range N, d i * q i = 0) :
+    ∀ k, k ≤ N → ∑ i ∈ Finset.range k, d i = 0 := by
+  have hterms_nonneg : ∀ k ∈ Finset.range (N - 1),
+      0 ≤ (q k - q (k + 1)) * ∑ i ∈ Finset.range (k + 1), d i := fun k hk => by
+    rw [Finset.mem_range] at hk
+    exact mul_nonneg (sub_nonneg.mpr (hq k (by omega)).le) (hpartial _ (by omega))
+  have hdecomp : ∑ k ∈ Finset.range (N - 1),
+      (q k - q (k + 1)) * ∑ i ∈ Finset.range (k + 1), d i = 0 := by
+    have hparts := Finset.sum_range_by_parts q d N
+    simp only [smul_eq_mul, htotal, mul_zero, zero_sub] at hparts
+    calc
+      _ = -∑ k ∈ Finset.range (N - 1),
+          (q (k + 1) - q k) * ∑ i ∈ Finset.range (k + 1), d i := by
+        rw [← Finset.sum_neg_distrib]
+        exact Finset.sum_congr rfl fun k _ => by ring
+      _ = ∑ i ∈ Finset.range N, d i * q i := by
+        rw [← hparts]
+        exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+      _ = 0 := hdq
+  intro k hk
+  rcases hk.eq_or_lt with rfl | hkN
+  · exact htotal
+  rcases k with _ | k
+  · simp
+  have hterm := (Finset.sum_eq_zero_iff_of_nonneg hterms_nonneg).mp hdecomp k
+    (Finset.mem_range.mpr (by omega))
+  exact (mul_eq_zero.mp hterm).resolve_left (sub_ne_zero.mpr (hq k hkN).ne')
 
 /-- **A sequence majorized by the finite staircase and having its quadratic sum is that
 staircase.**
@@ -63,80 +105,18 @@ theorem eq_staircase_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
       ∑ i ∈ Finset.range N, ((N - (i + 1) : ℕ) : ℤ) *
         (((N - (i + 1) : ℕ) : ℤ) + (N : ℤ) - 2 * i)) :
     ∀ i, i < N → a i = ((N - (i + 1) : ℕ) : ℤ) := by
-  let t : ℕ → ℤ := fun i => ((N - (i + 1) : ℕ) : ℤ)
-  let d : ℕ → ℤ := fun i => t i - a i
-  let q : ℕ → ℤ := fun i => t i + a i + N - 2 * i
-  have hsum_range : (∑ i ∈ Finset.range N, d i) = 0 := by
-    rw [Finset.sum_sub_distrib, sub_eq_zero]
-    exact hsum.symm
-  have hdq (i : ℕ) :
-      d i * q i = t i * (t i + N - 2 * i) - a i * (a i + N - 2 * i) := by
-    simp only [d, q]
-    ring
-  have hcasimir_range : (∑ i ∈ Finset.range N, d i * q i) = 0 := by
-    calc
-      _ = ∑ i ∈ Finset.range N,
-          (t i * (t i + N - 2 * i) - a i * (a i + N - 2 * i)) := by
-        apply Finset.sum_congr rfl
-        intro i _
-        exact hdq i
-      _ = (∑ i ∈ Finset.range N, t i * (t i + N - 2 * i)) -
-          ∑ i ∈ Finset.range N, a i * (a i + N - 2 * i) :=
-        by rw [Finset.sum_sub_distrib]
-      _ = 0 := sub_eq_zero.mpr hcasimir.symm
-  have hpartial_nonneg (k : ℕ) (hk : k < N) :
-      0 ≤ ∑ i ∈ Finset.range k, d i := by
-    rw [Finset.sum_sub_distrib]
-    exact sub_nonneg.mpr (hmajor k hk)
-  have hqdiff (k : ℕ) (hk : k + 1 < N) : 0 < q k - q (k + 1) := by
-    have hak := ha k hk
-    simp only [q, t]
-    omega
-  have hparts := Finset.sum_range_by_parts q d N
-  simp only [smul_eq_mul] at hparts
-  have hdecomp :
-      (∑ k ∈ Finset.range (N - 1), (∑ i ∈ Finset.range (k + 1), d i) *
-        (q k - q (k + 1))) = 0 := by
-    calc
-      _ = -(∑ k ∈ Finset.range (N - 1),
-          (q (k + 1) - q k) * (∑ i ∈ Finset.range (k + 1), d i)) := by
-        rw [← Finset.sum_neg_distrib]
-        apply Finset.sum_congr rfl
-        intro k _
-        ring
-      _ = q (N - 1) * (∑ i ∈ Finset.range N, d i) -
-          ∑ k ∈ Finset.range (N - 1),
-            (q (k + 1) - q k) * (∑ i ∈ Finset.range (k + 1), d i) := by
-        rw [hsum_range, mul_zero, zero_sub]
-      _ = ∑ i ∈ Finset.range N, q i * d i := hparts.symm
-      _ = ∑ i ∈ Finset.range N, d i * q i := by
-        apply Finset.sum_congr rfl
-        intro i _
-        ring
-      _ = 0 := hcasimir_range
-  have hterms_nonneg : ∀ k ∈ Finset.range (N - 1),
-      0 ≤ (∑ i ∈ Finset.range (k + 1), d i) * (q k - q (k + 1)) := by
-    intro k hk
-    simp only [Finset.mem_range] at hk
-    have hkN : k + 1 < N := by omega
-    exact mul_nonneg (hpartial_nonneg (k + 1) hkN) (le_of_lt (hqdiff k hkN))
-  have hterm_zero : ∀ k ∈ Finset.range (N - 1),
-      (∑ i ∈ Finset.range (k + 1), d i) * (q k - q (k + 1)) = 0 :=
-    (Finset.sum_eq_zero_iff_of_nonneg hterms_nonneg).mp hdecomp
-  have hpartial_zero (k : ℕ) (hk : k ≤ N) :
-      (∑ i ∈ Finset.range k, d i) = 0 := by
-    rcases eq_or_lt_of_le hk with rfl | hkN
-    · exact hsum_range
-    rcases k with _ | k
-    · simp
-    · have hprod := hterm_zero k (by simp only [Finset.mem_range]; omega)
-      exact (mul_eq_zero.mp hprod).resolve_right (ne_of_gt (hqdiff k (by omega)))
-  intro i hiN
-  have hdi : d i = 0 := by
-    have hnext := hpartial_zero (i + 1) (by omega)
-    rw [Finset.sum_range_succ, hpartial_zero i (by omega), zero_add] at hnext
-    exact hnext
-  have hti : t i - a i = 0 := by simpa only [d] using hdi
-  simpa only [t] using (sub_eq_zero.mp hti).symm
+  have hpartial := sum_range_eq_zero_of_sum_mul_eq_zero
+    (d := fun i => ((N - (i + 1) : ℕ) : ℤ) - a i)
+    (q := fun i => ((N - (i + 1) : ℕ) : ℤ) + a i + N - 2 * i)
+    (fun k hk => by rw [Finset.sum_sub_distrib]; exact sub_nonneg.mpr (hmajor k hk))
+    (by rw [Finset.sum_sub_distrib, hsum, sub_self])
+    (fun k hk => by have := ha k hk; omega)
+    (by
+      rw [← sub_eq_zero.mpr hcasimir.symm, ← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun i _ => by ring)
+  intro i hi
+  have hsucc := hpartial (i + 1) hi
+  rw [Finset.sum_range_succ, hpartial i hi.le, zero_add, sub_eq_zero] at hsucc
+  exact hsucc.symm
 
 end TauCeti
