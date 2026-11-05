@@ -24,10 +24,10 @@ It is a weak homotopy equivalence
 
 * it is a bijection on path components, since each summand is path-connected and is sent into the
   path component it approximates (`TauCeti.zerothHomotopyMk_sigmaCWApproximationMap`);
-* on `πₖ`, `k ≥ 1`, at a point of the summand of `c`, it is the composite of the inclusion of the
-  summand, a bijection on `πₖ` (`HomotopyGroup.bijective_map_sigmaMk`), with
-  `cwApproximationMap X x_c`, which is bijective on `πₖ` although `X` need not be path-connected
-  (`TauCeti.bijective_homotopyGroupMap_cwApproximationMap`).
+* on `πₖ`, `k ≥ 1`, at a point of the summand of `c`, it is the inverse of the bijection on `πₖ`
+  induced by the inclusion of the summand (`HomotopyGroup.bijective_map_sigmaMk`), followed by the
+  map induced by `cwApproximationMap X x_c`, which is bijective on `πₖ` although `X` need not be
+  path-connected (`TauCeti.bijective_homotopyGroupMap_cwApproximationMap`).
 
 The disjoint union of CW complexes is a CW complex
 (`Topology.CWComplex.sigmaUniv`), so `TauCeti.sigmaCWApproximation X` has CW type. The lift through

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.ContinuousMap.Sigma
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
@@ -18,11 +19,11 @@ map depends only on its restriction to that path component
 
 In particular, for a disjoint union `Σ i, X i` the inclusion of the summand `X i` induces
 bijections `π_N(X i, x) → π_N(Σ i, X i, ⟨i, x⟩)` in positive dimension
-(`HomotopyGroup.bijective_map_sigmaMk`): it has a retraction, collapsing every other summand to
-`x`, and the composite the other way round is the identity on the summand, which contains the path
-component of `⟨i, x⟩`. In dimension zero this fails as soon as there is a second nonempty summand.
-These are the homotopy groups of a CW approximation assembled from one approximation for each path
-component.
+(`HomotopyGroup.bijective_map_sigmaMk`): it has a retraction (`ContinuousMap.sigmaRetraction`),
+collapsing every other summand to `x`, and the composite the other way round is the identity on the
+summand, which contains the path component of `⟨i, x⟩`. In dimension zero this fails as soon as
+there is a second nonempty summand. These are the homotopy groups of a CW approximation assembled
+from one approximation for each path component.
 
 ## Main results
 
@@ -78,38 +79,21 @@ section Sigma
 
 variable {ι : Type*} {Z : ι → Type*} [∀ i, TopologicalSpace (Z i)]
 
-open scoped Classical in
-/-- The retraction of a disjoint union onto its summand `Z i`, sending every other summand to the
-point `z`. -/
-private noncomputable def sigmaRetraction (i : ι) (z : Z i) : C((Σ j, Z j), Z i) where
-  toFun p := if h : p.1 = i then h ▸ p.2 else z
-  continuous_toFun := continuous_sigma fun j ↦ by
-    by_cases h : j = i
-    · subst h
-      simpa using continuous_id'
-    · simpa [h] using continuous_const
-
-private theorem sigmaRetraction_sigmaMk (i : ι) (z w : Z i) :
-    sigmaRetraction i z ⟨i, w⟩ = w := by
-  simp [sigmaRetraction]
-
 /-- **Homotopy groups of a disjoint union.** In positive dimension, the inclusion of a summand
 `Z i` into the disjoint union `Σ j, Z j` induces a bijection on homotopy groups at every point
 of the summand. -/
 theorem bijective_map_sigmaMk [Nonempty N] (i : ι) (z : Z i) :
     Function.Bijective (map (N := N) (x := z) (ContinuousMap.sigmaMk (X := Z) i) rfl) := by
   let ι' : C(Z i, Σ j, Z j) := ContinuousMap.sigmaMk i
-  let r := sigmaRetraction i z
-  have hr : r (ι' z) = z := sigmaRetraction_sigmaMk i z z
-  have hri : r.comp ι' = ContinuousMap.id (Z i) := by
-    ext w
-    exact sigmaRetraction_sigmaMk i z w
+  let r := ContinuousMap.sigmaRetraction i z
+  have hr : r (ι' z) = z := ContinuousMap.sigmaRetraction_sigmaMk i z z
+  have hri : r.comp ι' = ContinuousMap.id (Z i) := ContinuousMap.sigmaRetraction_comp_sigmaMk i z
   -- On the summand of `⟨i, z⟩`, which contains its path component, `ι' ∘ r` is the identity.
   have hir : Set.EqOn (ι'.comp r) (ContinuousMap.id _) (pathComponent (ι' z)) := by
     intro p hp
     obtain ⟨w, rfl⟩ := (isClopen_range_sigmaMk.connectedComponent_subset ⟨z, rfl⟩)
       (pathComponent_subset_component _ hp)
-    simp [ι', r, sigmaRetraction_sigmaMk]
+    simp [ι', r]
   refine Function.bijective_iff_has_inverse.2 ⟨map r hr, fun a ↦ ?_, fun a ↦ ?_⟩
   · exact map_map_of_comp_eq_id r ι' rfl hr hri a
   · exact (map_comp_apply _ _ _ _ a).trans
