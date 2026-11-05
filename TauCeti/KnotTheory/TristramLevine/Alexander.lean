@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.TristramLevine.Basic
 public import Mathlib.Analysis.Complex.Circle
+public import TauCeti.Algebra.Polynomial.Laurent.Detection
 
 /-!
 # Alexander roots and the Tristram--Levine form
@@ -22,6 +23,9 @@ For a matrix of size `2 * g`, the determinant is
 The general-size formula and nonsingularity criterion also apply to odd-sized matrices.
 In size zero the determinant is `1`, including at `ω = 1`.
 
+When the Alexander polynomial is nonzero it has finitely many roots, so the singular parameters
+on the circle are isolated (`TauCeti.KnotTheory.eventually_det_tristramLevineForm_ne_zero`).
+
 ## References
 
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, GTM 175 (1997), Chapter 8,
@@ -33,7 +37,7 @@ In size zero the determinant is `1`, including at `ω = 1`.
 public section
 
 open Matrix LaurentPolynomial
-open scoped ComplexConjugate
+open scoped ComplexConjugate Topology
 
 namespace TauCeti.KnotTheory
 
@@ -107,6 +111,25 @@ theorem det_tristramLevineForm_ne_zero_iff (V : Matrix ι ι ℝ) (ω : Circle)
     simpa using congrArg (starRingEnd ℂ) (sub_eq_zero.mp h)
   rw [det_tristramLevineForm]
   simp [hconj, ω.coe_ne_zero]
+
+/-- **The singular parameters of the Tristram--Levine form on the unit circle are isolated** when
+the Alexander polynomial is nonzero: they are `1` and the finitely many roots of the Alexander
+polynomial on the circle. -/
+theorem eventually_det_tristramLevineForm_ne_zero {V : Matrix ι ι ℝ} (hΔ : alexander V ≠ 0)
+    (ω : Circle) : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm V z).det ≠ 0 := by
+  have hroots : {u : ℂˣ | eval₂ Complex.ofRealHom u (alexander V) = 0}.Finite :=
+    Set.not_infinite.mp fun h => hΔ <|
+      LaurentPolynomial.eq_zero_of_infinite_smeval_eq_zero (S := ℂ) (alexander V) <| by
+        have halg : algebraMap ℝ ℂ = Complex.ofRealHom := RingHom.ext fun _ ↦ rfl
+        simpa only [← LaurentPolynomial.eval₂_eq_smeval, halg] using h
+  have hinj : Function.Injective Circle.toUnits := fun a b h =>
+    Circle.ext (by simpa using congrArg Units.val h)
+  have hS : (insert 1 (Circle.toUnits ⁻¹'
+      {u : ℂˣ | eval₂ Complex.ofRealHom u (alexander V) = 0})).Finite :=
+    (hroots.preimage hinj.injOn).insert 1
+  filter_upwards [hS.eventually_cofinite_notMem.filter_mono (nhdsNE_le_cofinite ω)] with z hz
+  rw [Set.mem_insert_iff, not_or] at hz
+  exact (det_tristramLevineForm_ne_zero_iff V z hz.1).mpr hz.2
 
 /-- The nonsingularity criterion for integral Seifert matrices, evaluating the integer
 Alexander polynomial directly rather than its real-coefficient image. -/

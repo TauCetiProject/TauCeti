@@ -111,7 +111,7 @@ theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionFi
     exact ⟨z, trivial, rfl⟩
   have hrelAB : Subfield.relfinrank (k⟮y⟯.toSubfield.map (frobenius F p)) k⟮y⟯.toSubfield = p := by
     rw [hA]
-    exact relfinrank_adjoin_pow_adjoin hy p
+    exact hy.relfinrank_adjoin_pow_adjoin p
   have hrelAC : Subfield.relfinrank (k⟮y⟯.toSubfield.map (frobenius F p))
       (frobenius F p).fieldRange = Subfield.relfinrank k⟮y⟯.toSubfield ⊤ := by
     rw [RingHom.fieldRange_eq_map]
@@ -239,7 +239,7 @@ theorem exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable [Per
     have hy : Transcendental k y := fun h ↦ hx (h.isIntegral.pow p).isAlgebraic
     have hle : k⟮y ^ p⟯ ≤ k⟮y⟯ := IntermediateField.adjoin_simple_le_iff.mpr
       (pow_mem (IntermediateField.mem_adjoin_simple_self k y) p)
-    rw [← IntermediateField.relfinrank_mul_finrank_top hle, relfinrank_adjoin_pow_adjoin hy p,
+    rw [← IntermediateField.relfinrank_mul_finrank_top hle, hy.relfinrank_adjoin_pow_adjoin p,
       Nat.prime_mul_iff] at hprime
     refine ⟨y, rfl, IntermediateField.finrank_eq_one_iff_eq_top.mp ?_⟩
     rcases hprime with ⟨-, h⟩ | ⟨-, h⟩

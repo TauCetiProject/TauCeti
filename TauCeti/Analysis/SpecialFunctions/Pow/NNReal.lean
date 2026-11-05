@@ -41,6 +41,10 @@ For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is anti
 set slightly thus changes its `d`-dimensional diameter sum by little, as in Hausdorff measure
 approximations by open covers.
 
+A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
+for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
+densities and Hausdorff measures.
+
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
@@ -52,6 +56,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
   `m` and `p < 1`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
+* `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
@@ -103,6 +108,12 @@ theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp�
 theorem sq_rpow_one_half (x : ℝ≥0∞) : (x ^ 2) ^ (1 / 2 : ℝ) = x := by
   rw [← rpow_two, ← rpow_mul]
   norm_num
+
+/-- A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as a product, for every
+exponent `d`. -/
+theorem ofReal_mul_rpow {a : ℝ} (ha : 0 ≤ a) (r d : ℝ) :
+    ENNReal.ofReal (a * r) ^ d = ENNReal.ofReal a ^ d * ENNReal.ofReal r ^ d := by
+  rw [ENNReal.ofReal_mul ha, mul_rpow_of_ne_top ofReal_ne_top ofReal_ne_top]
 
 /-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
 theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :

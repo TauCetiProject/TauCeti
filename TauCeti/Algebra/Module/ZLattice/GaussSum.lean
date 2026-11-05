@@ -89,6 +89,10 @@ multiple `t` of the level prime to `a`.
   for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
+* `ZLattice.dualGaussSum_one`: for `c = 1` the Gauss sum over `L^∨ / cL` is the sum
+  `∑_{γ ∈ L^∨ / L} e(a ‖γ‖² / 2)` over the discriminant group.
+* `ZLattice.conj_dualGaussSum`: complex conjugation negates the coefficient of the Gauss sum over
+  `L^∨ / cL`.
 * `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
   `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
 * `ZLattice.IsEven.gaussSum_eq_jacobiSym`: for odd `c` prime to `a` and to `det L`,
@@ -466,6 +470,37 @@ noncomputable def dualGaussSum (hL : IsEven L) (a : ℤ) (c : ℕ)
 theorem dualGaussSum_def (a : ℤ) (c : ℕ) [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
     dualGaussSum L hL a c = ∑ y, dualGaussTerm L hL a c y :=
   (rfl)
+
+/-- For `c = 1` the Gauss sum over `L^∨ / cL` is the sum `∑_{γ ∈ L^∨ / L} e(a ‖γ‖² / 2)` over the
+discriminant group, computed with any function `f` on `L^∨ / L` taking the value
+`e(a ‖v‖² / 2)` at the class of each `v ∈ L^∨`. -/
+theorem dualGaussSum_one (a : ℤ) [Fintype (dual L ⧸ (((1 : ℕ) : ℝ) • L).submoduleOf (dual L))]
+    [Fintype (DiscriminantGroup L)] (f : DiscriminantGroup L → ℂ)
+    (hf : ∀ v : dual L,
+      f (Submodule.Quotient.mk v) = cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / 2 : ℝ) : ℂ))) :
+    dualGaussSum L hL a 1 = ∑ γ, f γ := by
+  have h : (((1 : ℕ) : ℝ) • L).submoduleOf (dual L) = L.submoduleOf (dual L) := by
+    rw [Nat.cast_one, one_smul]
+  rw [dualGaussSum_def]
+  refine Fintype.sum_equiv (Submodule.quotEquivOfEq _ _ h).toEquiv _ _ fun y ↦ ?_
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [LinearEquiv.coe_toEquiv, Submodule.quotEquivOfEq_mk, hf, dualGaussTerm_mk, Nat.cast_one,
+    mul_one]
+
+/-- Complex conjugation negates the coefficient of the Gauss sum over `L^∨ / cL`:
+`conj (∑_y e(a ‖y‖² / (2c))) = ∑_y e(-a ‖y‖² / (2c))`. -/
+@[simp]
+theorem conj_dualGaussSum (a : ℤ) (c : ℕ)
+    [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
+    starRingEnd ℂ (dualGaussSum L hL a c) = dualGaussSum L hL (-a) c := by
+  rw [dualGaussSum_def, dualGaussSum_def, map_sum]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [dualGaussTerm_mk, dualGaussTerm_mk, ← exp_conj]
+  simp only [map_mul, map_ofNat, conj_ofReal, conj_I]
+  congr 1
+  push_cast
+  ring
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 

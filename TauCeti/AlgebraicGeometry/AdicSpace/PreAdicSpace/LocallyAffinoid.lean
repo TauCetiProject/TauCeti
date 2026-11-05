@@ -104,6 +104,12 @@ theorem isCompact_of_mem_affinoidOpens {U : Opens X} (hU : U ∈ X.affinoidOpens
   isCompact_iff_compactSpace.mpr
     (spectralSpace_of_isAffinoid ((mem_propOpens_iff _).mp hU)).toCompactSpace
 
+/-- For a locally affinoid object `X`, the indexed supremum of its open affinoid subspaces is
+`⊤`. -/
+theorem isLocallyAffinoid.iSup_affinoidOpens_eq_top {X : PreAdicSpace.{u}}
+    (hX : isLocallyAffinoid X) : ⨆ O : X.affinoidOpens, O.1 = ⊤ :=
+  (sSup_eq_iSup' _).symm.trans ((isLocallyAffinoid_iff_sSup_eq_top X).mp hX)
+
 /-- Affinoid pre-adic spaces are locally affinoid. -/
 theorem isLocallyAffinoid_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
     isLocallyAffinoid X :=

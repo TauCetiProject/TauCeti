@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Finsupp.LSum
 public import TauCeti.KnotTheory.Jimbo.Basic
+public import TauCeti.LinearAlgebra.Finsupp.ProductDensity
+import TauCeti.Data.Fin.Tuple.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Order
@@ -57,6 +59,10 @@ alphabets of this kind arise from the vector representation of the quantum super
 * `TauCeti.signedCheckedR_mul_comm`: operators on disjoint pairs of strands commute.
 * `TauCeti.signedCheckedR_braid`: the braid relation.
 * `TauCeti.signedCheckedR_single_apply_comm`: the matrix in the word basis is symmetric.
+* `TauCeti.signedCheckedR_comp_lmapDomain_snoc`: appending a letter intertwines the operators on
+  the same two strands of the shorter and longer words.
+* `TauCeti.commute_productDensity_signedCheckedR`: the operators commute with every product
+  density, since they only permute the letters of a word.
 * `TauCeti.inv_smul_signedCheckedR_mul_self`: the Hecke quadratic relation for `s⁻¹ • X`.
 * `TauCeti.signedCheckedR_eq_jimboGenerator`: the comparison with the Jimbo R-matrix for an
   alphabet of positive letters.
@@ -230,6 +236,32 @@ theorem signedCheckedR_single_apply_comm (s : R) (j k : Fin n) (v w : Fin n → 
     have hv' : w ∘ Equiv.swap j k ≠ v := fun h ↦ hv h.symm
     have hw' : v ∘ Equiv.swap j k ≠ w := fun h ↦ hw h.symm
     split_ifs <;> simp [hvw, Ne.symm hvw, hv', hw']
+
+/-- Appending a letter intertwines the signed checked R-matrix on two strands with the one on the
+same two strands of the longer words. -/
+theorem signedCheckedR_comp_lmapDomain_snoc (s : R) (j k : Fin n) (a : ι) :
+    (signedCheckedR pos s j.castSucc k.castSucc).comp
+        (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)) =
+      (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)).comp (signedCheckedR pos s j k) := by
+  ext w : 2
+  simp only [LinearMap.comp_apply, lsingle_apply]
+  rw [lmapDomain_apply, mapDomain_single, signedCheckedR_single_one, signedCheckedR_single_one]
+  simp only [Fin.snoc_castSucc, Fin.snoc_comp_swap_castSucc]
+  split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single]
+
+/-- The product density commutes with the signed checked R-matrix on any two strands, which only
+permutes the letters of a word. -/
+theorem commute_productDensity_signedCheckedR (p : ι → R) (s : R) (j k : Fin n) :
+    Commute (productDensity p) (signedCheckedR pos s j k) := by
+  have hw (w : Fin n → ι) : (∏ i, p ((w ∘ Equiv.swap j k) i)) = ∏ i, p (w i) :=
+    Equiv.prod_comp (Equiv.swap j k) (fun i ↦ p (w i))
+  unfold Commute SemiconjBy
+  ext w : 2
+  simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
+    mul_apply_eq_comp, signedCheckedR_single_one, productDensity_single_one]
+  split_ifs <;>
+    simp_all only [map_smul, map_sub, map_neg, productDensity_single_one,
+      signedCheckedR_single_one, ↓reduceIte] <;> module
 
 section Unit
 
