@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Basic.NNReal.Interval
 public import TauCeti.Probability.Renewal.Equation
 
 /-!
@@ -46,16 +47,8 @@ theorem renewalConv_indicator_Ico (hab : a ≤ b) (hbt : b ≤ t) :
   rw [renewalConv_eq_integral_indicator, ← integral_indicator measurableSet_Ioc]
   apply integral_congr_ae
   filter_upwards [] with s
-  have he : s ≤ t ∧ a ≤ t - s ∧ t - s < b ↔ t - b < s ∧ s ≤ t - a := by
-    constructor
-    · rintro ⟨hst, ha, hb⟩
-      constructor
-      · exact (tsub_lt_iff_right hbt).2 ((tsub_lt_iff_left hst).1 hb)
-      · exact (le_tsub_iff_right (hab.trans hbt)).2 ((le_tsub_iff_left hst).1 ha)
-    · rintro ⟨hb, ha⟩
-      have hst : s ≤ t := ha.trans tsub_le_self
-      exact ⟨hst, (le_tsub_iff_left hst).2 ((le_tsub_iff_right (hab.trans hbt)).1 ha),
-        (tsub_lt_iff_left hst).2 ((tsub_lt_iff_right hbt).1 hb)⟩
+  have he := NNReal.mem_Ioc_tsub_iff s hab hbt
+  simp only [mem_Ico, mem_Ioc] at he
   simp only [indicator_apply, mem_Iic, mem_Ico, mem_Ioc]
   split_ifs <;> simp_all
 
@@ -110,11 +103,8 @@ theorem sum_mul_measureReal_Ioc_le_renewalConv
     (fun s hs ↦ ⟨(tsub_le_tsub_left (hp hkN) t).trans_lt hs.1,
       hs.2.trans tsub_le_self⟩)
   simpa [mul_comm] using setIntegral_mono_on (integrableOn_const hfin) hi
-    measurableSet_Ioc (fun s hs ↦ hm k hkN (t - s) ⟨
-      (le_tsub_iff_right (hs.2.trans tsub_le_self)).2
-        ((le_tsub_iff_left ((hp (Nat.le_succ k)).trans hkt)).1 hs.2),
-      (tsub_lt_iff_left (hs.2.trans tsub_le_self)).2
-        ((tsub_lt_iff_right hkt).1 hs.1)⟩)
+    measurableSet_Ioc (fun s hs ↦ hm k hkN (t - s)
+      ((NNReal.mem_Ioc_tsub_iff s (hp (Nat.le_succ k)) hkt).1 hs).2)
 
 /-- Upper bounds on each age cell give an upper bound on the truncated convolution.
 No monotonicity or sign condition on the forcing is needed. -/
@@ -137,11 +127,8 @@ theorem renewalConv_le_sum_mul_measureReal_Ioc
     (fun s hs ↦ ⟨(tsub_le_tsub_left (hp hkN) t).trans_lt hs.1,
       hs.2.trans tsub_le_self⟩)
   simpa [mul_comm] using setIntegral_mono_on hi (integrableOn_const hfin)
-    measurableSet_Ioc (fun s hs ↦ hM k hkN (t - s) ⟨
-      (le_tsub_iff_right (hs.2.trans tsub_le_self)).2
-        ((le_tsub_iff_left ((hp (Nat.le_succ k)).trans hkt)).1 hs.2),
-      (tsub_lt_iff_left (hs.2.trans tsub_le_self)).2
-        ((tsub_lt_iff_right hkt).1 hs.1)⟩)
+    measurableSet_Ioc (fun s hs ↦ hM k hkN (t - s)
+      ((NNReal.mem_Ioc_tsub_iff s (hp (Nat.le_succ k)) hkt).1 hs).2)
 
 /-- The right-endpoint Darboux sum bounds the truncated convolution from below when
 forcing is decreasing up to the cutoff. Repeated partition points contribute empty intervals. -/
