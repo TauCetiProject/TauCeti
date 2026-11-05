@@ -230,28 +230,20 @@ theorem charEval_subgroupCharSum_eq_zero (χ ψ : G →* Oˣ) (H : Subgroup G) [
   simpa [TauCeti.subgroupCharSum_def, map_sum] using sum_hom_units_eq_zero _ hne
 
 variable [Fintype (⊤ : Subgroup G)] in
-open Classical in
 /-- The integral character sum associated to `χ` evaluates to the group order at `χ` and to
 zero at each other character. It is the scaled character idempotent, with no division in `O`. -/
 @[simp]
-theorem charEval_subgroupCharSum_inv_top (χ ψ : G →* Oˣ) :
+theorem charEval_subgroupCharSum_inv_top [DecidableEq (G →* Oˣ)] (χ ψ : G →* Oˣ) :
     ψ.charEval (TauCeti.subgroupCharSum ((Units.coeHom O).comp χ⁻¹) ⊤) =
       if χ = ψ then (Nat.card G : O) else 0 := by
-  classical
+  have hker : ⊤ ≤ (χ⁻¹ * ψ).ker ↔ χ = ψ := by
+    rw [top_le_iff, MonoidHom.ker_eq_top_iff]
+    exact inv_mul_eq_one (a := χ) (b := ψ)
   by_cases h : χ = ψ
-  · subst ψ
-    simpa using charEval_subgroupCharSum_of_le_ker χ⁻¹ χ ⊤ (by
-      rw [top_le_iff, MonoidHom.ker_eq_top_iff]
-      ext g
-      simp)
+  · rw [ite_eq_left h]
+    simpa using charEval_subgroupCharSum_of_le_ker χ⁻¹ ψ ⊤ (hker.mpr h)
   · rw [ite_eq_right h]
-    apply charEval_subgroupCharSum_eq_zero
-    intro hker
-    apply h
-    have heq := MonoidHom.ker_eq_top_iff.mp (top_le_iff.mp hker)
-    ext g
-    have := DFunLike.congr_fun heq g
-    exact congrArg Units.val (inv_mul_eq_one.mp this)
+    exact charEval_subgroupCharSum_eq_zero χ⁻¹ ψ ⊤ fun hle ↦ h (hker.mp hle)
 
 /-- The norm element `∑_{h ∈ H} h` of a finite subgroup `H` on which `ψ` is nontrivial evaluates
 to `0` at `ψ` when `O` is a domain. For `H = G` this is the vanishing of a nontrivial character

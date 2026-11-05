@@ -18,8 +18,9 @@ For a finite commutative group `G` and a domain `O`, the character group ring `R
 or assuming that `O` contains every root of unity. Consequently, if `#G` is nonzero in `O`,
 the rank of `R_Ψ` is `#Ψ`. Over a principal ideal domain it is a finite free module.
 
-The additive quotient of the product by `R_Ψ` is finite when `O/(#G)` is finite. This extra
-coefficient hypothesis is necessary; a principal ideal domain can have infinite residue fields.
+The additive quotient of the product by `R_Ψ` is finite when `O/(#G)` is finite. This sufficient
+coefficient hypothesis is not necessary for every `Ψ`, but cannot be omitted in general:
+a principal ideal domain can have infinite residue fields.
 
 ## References
 
@@ -53,6 +54,7 @@ theorem finrank (hG : (Nat.card G : O) ≠ 0) :
   let := Fintype.ofFinite Ψ
   have hregular : IsSMulRegular (Ψ → O) (Nat.card G : O) :=
     (isRegular_iff_ne_zero.mpr hG).isSMulRegular
+  -- The subalgebra and its underlying submodule have the same subtype and module instances.
   let : Module.Finite O (charGroupRing Ψ).toSubmodule :=
     inferInstanceAs (Module.Finite O (charGroupRing Ψ))
   have hlower := LinearMap.finrank_le_of_isSMulRegular
