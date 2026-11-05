@@ -1072,19 +1072,27 @@ jobs:
           LAKE_CACHE_MAX_REVS: ${{ env.TOOLCHAIN_CHANGED == '1' && '1' || '1000' }}
         run: bash gate/scripts/lake-cache-get.sh pr
 
-      # A Bors/queue staging candidate is usually the exact tip the queue's repair worker built
-      # green on its host (under the same bwrap sandbox) and published to the repair cache
-      # ([services.repair_cache] in tauceti.toml). Fetch those outputs for this exact head, on top
-      # of the base cache, so the offline build below reuses them. Lake still checks every trace
-      # and recompiles what differs, and the audits and lints run as for any build, so the verdict
-      # is this job's. No outputs for the head is the normal case for an unrepaired candidate: the
-      # trusted script logs it and leaves the base cache exactly as the step above restored it, as
-      # it does for a fetch that never completes. Anonymous reads; no token, no PR code.
-      - name: Fetch the repair worker's outputs for the exact staging head (network, no token; no PR code)
+      # A Bors/queue staging candidate is usually a tip the queue's repair worker built green on
+      # its host (under the same bwrap sandbox) and published to the repair cache
+      # ([services.repair_cache] in tauceti.toml), or that tip replayed onto a newer main, which
+      # changes every commit SHA but hardly any module's inputs. Lake reuses outputs by content
+      # trace, never by commit, so the trusted script tries several candidate revisions in order:
+      # the exact staging head, then the revisions the queue lists in the dispatch payload's
+      # `repair_outputs_revs` (the batch's earlier published tips; absent means none), then the
+      # base, and fetches the outputs of each that has them, on top of the base cache, so the
+      # offline build below reuses them. Lake still checks every trace and recompiles what
+      # differs, and the audits and lints run as for any build, so the verdict is this job's. No
+      # outputs for any candidate is the normal case for an unrepaired head: the script logs it
+      # and leaves the base cache exactly as the step above restored it, as it does for a fetch
+      # that never completes. The payload list reaches the script only through the environment,
+      # and the script skips any entry that is not a full SHA. Anonymous reads; no token, no PR
+      # code.
+      - name: Fetch the repair worker's outputs for the staging candidates (network, no token; no PR code)
         id: repair_cache
         if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' && github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
         env:
           STAGING_HEAD: ${{ steps.pr.outputs.sha }}
+          REPAIR_OUTPUTS_REVS: ${{ format('{0} {1} {2}', steps.pr.outputs.sha, join(github.event.client_payload.repair_outputs_revs || fromJSON('[]'), ' '), steps.pr.outputs.base_sha) }}
         run: bash gate/scripts/repair-cache-get.sh pr "$STAGING_HEAD"
 
       - name: Save verified Lake archive records before candidate code runs
