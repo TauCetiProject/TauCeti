@@ -284,12 +284,8 @@ lemma quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion (U V : Set X)
   -- Restricting cochains to the small simplices of `U ∪ V` is an isomorphism on cohomology.
   have hq : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
       ((of ↥(U ∪ V)).smallSingularSubcomplex
-        (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)).ι) := by
-    rw [quasiIso_iff]
-    intro n
-    rw [quasiIsoAt_iff_isIso_homologyMap,
-      ← TauCeti.smallSingularCohomologyIso_hom R k M _ hcover hcov n]
-    infer_instance
+        (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)).ι) :=
+    TauCeti.quasiIso_cochainComplexMap_smallSingularSubcomplex_ι R k M _ hcover hcov
   rw [← he, SSet.cochainComplexMap_comp] at hq
   have : IsIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) e.hom) :=
     ⟨SSet.cochainComplexMap e.inv, by simp [← SSet.cochainComplexMap_comp],
