@@ -20,11 +20,16 @@ elements `x` whose join with a fixed `a ≠ ⊥` is `⊤` cancel. Choosing `a` t
 into a recurrence for `μ(⊥, ⊤)` in terms of the Möbius function on smaller intervals; this is how
 the Möbius function of the lattice of noncrossing partitions is computed.
 
+Finally, the Möbius function is invariant under order isomorphisms, which transports its values
+between isomorphic intervals.
+
 ## Main results
 
 * `IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul` — `∑_{y ≤ x} ∑_{z ≤ y} μ(z, y) g z = g x`.
 * `IncidenceAlgebra.sum_filter_sup_eq_top_mu_bot_eq_zero` — *Weisner's theorem*: for `a ≠ ⊥`,
   `∑_{x ⊔ a = ⊤} μ(⊥, x) = 0`.
+* `IncidenceAlgebra.mu_apply_orderIso` — the Möbius function is invariant under order
+  isomorphisms, `μ(e a, e b) = μ(a, b)`.
 
 ## References
 
@@ -82,5 +87,31 @@ theorem sum_filter_sup_eq_top_mu_bot_eq_zero {a : α} (ha : a ≠ ⊥) :
   exact sum_eq_zero fun y _ => hinner y
 
 end Weisner
+
+section OrderIso
+
+variable {𝕜 α β : Type*} [Ring 𝕜] [PartialOrder α] [PartialOrder β] [LocallyFiniteOrder α]
+  [LocallyFiniteOrder β] [DecidableEq α] [DecidableEq β]
+
+/-- The Möbius function is invariant under order isomorphisms: `μ(e a, e b) = μ(a, b)`. -/
+theorem mu_apply_orderIso (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b := by
+  classical
+  -- `(x, y) ↦ μ(e x, e y)` is a left inverse of `ζ` in the incidence algebra of `α`, so it is `μ`.
+  let mue : IncidenceAlgebra 𝕜 α :=
+    { toFun := fun x y => mu 𝕜 (e x) (e y)
+      eq_zero_of_not_le' := fun x y hxy =>
+        apply_eq_zero_of_not_le (by rwa [OrderIso.le_iff_le]) _ }
+  suffices h : mue = mu 𝕜 from congrFun₂ (congrArg DFunLike.coe h) a b
+  suffices h : mue * zeta 𝕜 = 1 by
+    rw [← mul_one mue, ← zeta_mul_mu, ← mul_assoc, h, one_mul]
+  ext x y
+  simp only [mul_boole, one_apply, mul_apply, zeta_apply]
+  calc ∑ z ∈ Icc x y, (if z ≤ y then mue x z else 0) = ∑ z ∈ Icc x y, mu 𝕜 (e x) (e z) :=
+        sum_congr rfl fun z hz => ite_eq_left (mem_Icc.1 hz).2
+    _ = ∑ z ∈ Icc (e x) (e y), mu 𝕜 (e x) z :=
+        sum_equiv e.toEquiv (fun z => by simp) fun _ _ => rfl
+    _ = if x = y then 1 else 0 := by simp_rw [sum_Icc_mu_right, e.injective.eq_iff]
+
+end OrderIso
 
 end IncidenceAlgebra

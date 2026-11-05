@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Enumerative.Catalan
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Interval
+public import TauCeti.Combinatorics.NoncrossingPartition.Kreweras
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Range
 
@@ -16,7 +17,8 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 
 The free cumulants of a word are obtained from its block moments by Möbius inversion on the
 lattice `NC(s)` of noncrossing partitions, so the values of its Möbius function `μ` are the
-coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`.
+coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`, and
+the values `μ(π, 1̂)` on the noncrossing partitions of `n` ordered positions.
 
 First, `μ(0̂, π)` is multiplicative: the lower interval `[0̂, π]` is the product of the lattices
 `NC(B)` over the parts `B` of `π`, and accordingly `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -28,6 +30,10 @@ are exactly the partitions into the positions after `m₁` up to some position `
 positions. Together with multiplicativity this gives the recurrence
 `μ_n = -∑_{0 < i < n} μ_i μ_(n-i)`, which is the recurrence of the signed Catalan numbers.
 
+Third, on `NC(n)` the Kreweras complement `K` reverses the order and maps the upper interval
+`[π, 1̂]` onto the lower interval `[0̂, K(π)]`, so `μ(π, 1̂) = μ(0̂, K(π))`. These are the
+coefficients of the formula expressing free cumulants through moments.
+
 ## Main results
 
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod_mu` — `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -35,6 +41,10 @@ positions. Together with multiplicativity this gives the recurrence
   `TauCeti.NoncrossingPartition.mu_bot_top_fin` — `μ(0_n, 1_n) = (-1)^(n-1) C_(n-1)` on `NC(n)`.
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod` — the blockwise formula
   `μ(0̂, π) = ∏_{B ∈ π} (-1)^(|B|-1) C_(|B|-1)`.
+* `TauCeti.NoncrossingPartition.mu_top_eq_mu_bot_kreweras` and
+  `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` — on `NC(n)`,
+  `μ(π, 1_n) = μ(0_n, K(π)) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras
+  complement.
 
 ## References
 
@@ -78,10 +88,8 @@ theorem mu_bot_eq_prod_mu (π : NoncrossingPartition s) :
       htop (Subtype.ext (Finpartition.eq_top_of_mem_parts (h ▸ hB)))
   obtain ⟨B, hB, hB1⟩ : ∃ B ∈ π.1.parts, 1 < #B := by
     by_contra! h
-    refine hbot (le_bot_iff.1 fun B hB => ?_)
-    obtain ⟨i, rfl⟩ :=
-      card_eq_one.1 (le_antisymm (h B hB) (π.1.nonempty_of_mem_parts hB).card_pos)
-    exact ⟨{i}, Finpartition.mem_bot_iff.2 ⟨i, π.1.le hB (mem_singleton_self i), rfl⟩, le_rfl⟩
+    exact hbot (Subtype.ext (Finpartition.eq_bot_iff_forall_card_eq_one.2 fun B hB =>
+      le_antisymm (h B hB) (π.1.nonempty_of_mem_parts hB).card_pos))
   have hsum : ∑ σ ∈ Iic π, ∏ C ∈ σ.1.parts, mu 𝕜 (⊥ : NoncrossingPartition C) ⊤ = 0 := by
     rw [sum_Iic_prod_parts_eq_prod_sum]
     refine prod_eq_zero hB ?_
@@ -287,5 +295,21 @@ theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
     mu 𝕜 ⊥ π = ∏ B ∈ π.1.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
   rw [mu_bot_eq_prod_mu]
   exact prod_congr rfl fun B _ => mu_bot_top B
+
+/-! ### Upper intervals -/
+
+/-- On `NC(n)`, the Möbius function on the upper interval of `π` is the Möbius function on the
+lower interval of its Kreweras complement, `μ(π, 1_n) = μ(0_n, K(π))`: the Kreweras complement
+is an order anti-automorphism of `NC(n)` sending `[π, 1_n]` onto `[0_n, K(π)]`. -/
+theorem mu_top_eq_mu_bot_kreweras {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
+  rw [← mu_apply_orderIso (krewerasOrderIso n), krewerasOrderIso_apply, krewerasOrderIso_apply,
+    kreweras_top, mu_toDual]
+
+/-- The blockwise formula for the Möbius function of `NC(n)` on upper intervals: `μ(π, 1_n)` is
+the product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
+theorem mu_top_eq_prod_kreweras {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    mu 𝕜 π ⊤ = ∏ B ∈ (kreweras π).1.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
+  rw [mu_top_eq_mu_bot_kreweras, mu_bot_eq_prod]
 
 end TauCeti.NoncrossingPartition
