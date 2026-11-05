@@ -84,6 +84,18 @@ namespace TauCeti
 
 section Counting
 
+/-- The lattice points `w` of `L` whose cell `{y | y - w ∈ F}` meets `X`: the set `B` of the module
+docstring. -/
+private def cellsMeeting {E : Type*} [NormedAddCommGroup E] (L : Submodule ℤ E) (F X : Set E) :
+    Set E :=
+  {w | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty}
+
+/-- The lattice points `w` of `L` whose cell `{y | y - w ∈ F}` lies inside `X`: the set `A` of the
+module docstring. -/
+private def cellsInside {E : Type*} [NormedAddCommGroup E] (L : Submodule ℤ E) (F X : Set E) :
+    Set E :=
+  {w | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X}
+
 variable {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
   [MeasurableSpace E] [BorelSpace E] {L : Submodule ℤ E} [DiscreteTopology L]
   {μ : Measure E} [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ] {F X : Set E}
@@ -91,9 +103,8 @@ variable {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The lattice points whose cell meets a bounded set `X` are finitely many. -/
 private theorem finite_cellsMeeting (hFb : IsBounded F) (hXb : IsBounded X) :
-    {w : E | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty}.Finite := by
-  have hBsub : {w : E | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty} ⊆
-      (X + -F) ∩ (L : Set E) := by
+    (cellsMeeting L F X).Finite := by
+  have hBsub : cellsMeeting L F X ⊆ (X + -F) ∩ (L : Set E) := by
     rintro w ⟨hwL, y, hyF, hyX⟩
     exact ⟨⟨y, hyX, -(y - w), by simpa using hyF, by simp⟩, hwL⟩
   exact (L.toAddSubgroup.finite_inter (isBounded_add hXb hFb.neg)).subset hBsub
@@ -102,9 +113,7 @@ omit [MeasurableSpace E] [BorelSpace E] [ProperSpace E] [DiscreteTopology L] in
 /-- A cell meeting `X` and its complement meets `frontier X`, so it is counted by the thickened
 frontier. -/
 private theorem cellsMeeting_sdiff_subset (hFpc : IsPreconnected F) :
-    ({w : E | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty} \
-        {w : E | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X}) ⊆
-      (frontier X + -F) ∩ (L : Set E) := by
+    cellsMeeting L F X \ cellsInside L F X ⊆ (frontier X + -F) ∩ (L : Set E) := by
   rintro w ⟨⟨hwL, hmeet⟩, hnA⟩
   obtain ⟨z, hzc, hzX⟩ := Set.not_subset.mp fun h ↦ hnA ⟨hwL, h⟩
   obtain ⟨y, hyc, hyfr⟩ :=
@@ -120,8 +129,7 @@ private theorem mem_cell_self (hF₀ : (0 : E) ∈ F) (w : E) : w ∈ {y : E | y
 omit [MeasurableSpace E] [BorelSpace E] [ProperSpace E] [DiscreteTopology L] in
 /-- A cell inside `X` meets `X`. -/
 private theorem cellsInside_subset_cellsMeeting (hF₀ : (0 : E) ∈ F) :
-    {w : E | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X} ⊆
-      {w : E | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty} :=
+    cellsInside L F X ⊆ cellsMeeting L F X :=
   fun w hw ↦ ⟨hw.1, ⟨w, mem_cell_self hF₀ w, hw.2 (mem_cell_self hF₀ w)⟩⟩
 
 /-- The cells inside `X` have total volume at most that of `X`, which is at most the total volume
@@ -130,29 +138,26 @@ private theorem ncard_cells_mul_measureReal_bounds
     (hF₀ : (0 : E) ∈ F) (hFb : IsBounded F) (hFm : MeasurableSet F)
     (hFu : ∀ x : E, ∀ w₁ ∈ (L : Set E), ∀ w₂ ∈ (L : Set E), x - w₁ ∈ F → x - w₂ ∈ F → w₁ = w₂)
     (hFe : ∀ x : E, ∃ w ∈ (L : Set E), x - w ∈ F) (hXb : IsBounded X) :
-    ({w : E | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X}.ncard : ℝ) * μ.real F ≤ μ.real X ∧
-      μ.real X ≤
-        ({w : E | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty}.ncard : ℝ) *
-          μ.real F := by
+    ((cellsInside L F X).ncard : ℝ) * μ.real F ≤ μ.real X ∧
+      μ.real X ≤ ((cellsMeeting L F X).ncard : ℝ) * μ.real F := by
   classical
-  set A : Set E := {w | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X}
-  set B : Set E := {w | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty}
   have hdisj : ∀ w₁ ∈ (L : Set E), ∀ w₂ ∈ (L : Set E), w₁ ≠ w₂ →
       Disjoint {y : E | y - w₁ ∈ F} {y : E | y - w₂ ∈ F} := fun w₁ h₁ w₂ h₂ hne ↦
     Set.disjoint_left.mpr fun y hy₁ hy₂ ↦ hne (hFu y w₁ h₁ w₂ h₂ hy₁ hy₂)
-  have hBfin : B.Finite := finite_cellsMeeting hFb hXb
-  have hAB : A ⊆ B := cellsInside_subset_cellsMeeting hF₀
-  have hAfin : A.Finite := hBfin.subset hAB
-  have hAmeas : μ (⋃ w ∈ hAfin.toFinset, {y : E | y - w ∈ F}) = A.ncard * μ F := by
+  have hBfin : (cellsMeeting L F X).Finite := finite_cellsMeeting hFb hXb
+  have hAfin : (cellsInside L F X).Finite := hBfin.subset (cellsInside_subset_cellsMeeting hF₀)
+  have hAmeas :
+      μ (⋃ w ∈ hAfin.toFinset, {y : E | y - w ∈ F}) = (cellsInside L F X).ncard * μ F := by
     rw [Measure.measure_biUnion_sub_mem μ hFm hdisj
         (fun w hw ↦ (hAfin.mem_toFinset.mp hw).1), Set.ncard_eq_toFinset_card _ hAfin]
-  have hBmeas : μ (⋃ w ∈ hBfin.toFinset, {y : E | y - w ∈ F}) = B.ncard * μ F := by
+  have hBmeas :
+      μ (⋃ w ∈ hBfin.toFinset, {y : E | y - w ∈ F}) = (cellsMeeting L F X).ncard * μ F := by
     rw [Measure.measure_biUnion_sub_mem μ hFm hdisj
         (fun w hw ↦ (hBfin.mem_toFinset.mp hw).1), Set.ncard_eq_toFinset_card _ hBfin]
-  have hlow : (A.ncard : ℝ≥0∞) * μ F ≤ μ X := by
+  have hlow : ((cellsInside L F X).ncard : ℝ≥0∞) * μ F ≤ μ X := by
     rw [← hAmeas]
     exact measure_mono (Set.iUnion₂_subset fun w hw ↦ (hAfin.mem_toFinset.mp hw).2)
-  have hup : μ X ≤ (B.ncard : ℝ≥0∞) * μ F := by
+  have hup : μ X ≤ ((cellsMeeting L F X).ncard : ℝ≥0∞) * μ F := by
     rw [← hBmeas]
     refine measure_mono fun x hx ↦ ?_
     obtain ⟨w, hwL, hwF⟩ := hFe x
@@ -182,28 +187,26 @@ theorem abs_ncard_inter_mul_sub_measureReal_le
     (hXb : IsBounded X) :
     |((X ∩ (L : Set E)).ncard : ℝ) * μ.real F - μ.real X| ≤
       (((frontier X + -F) ∩ (L : Set E)).ncard : ℝ) * μ.real F := by
-  set A : Set E := {w | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X}
-  set B : Set E := {w | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty}
-  have hself := mem_cell_self hF₀
-  have hBfin : B.Finite := finite_cellsMeeting hFb hXb
-  have hAB : A ⊆ B := cellsInside_subset_cellsMeeting hF₀
-  have hAfin : A.Finite := hBfin.subset hAB
+  have hBfin : (cellsMeeting L F X).Finite := finite_cellsMeeting hFb hXb
+  have hAB : cellsInside L F X ⊆ cellsMeeting L F X := cellsInside_subset_cellsMeeting hF₀
   have hbadfin : ((frontier X + -F) ∩ (L : Set E)).Finite :=
     L.toAddSubgroup.finite_inter
       (isBounded_add (hXb.closure.subset frontier_subset_closure) hFb.neg)
-  have hBA : B \ A ⊆ (frontier X + -F) ∩ (L : Set E) := cellsMeeting_sdiff_subset hFpc
   obtain ⟨h1, h2⟩ := ncard_cells_mul_measureReal_bounds (μ := μ) hF₀ hFb hFm hFu hFe hXb
-  have hAX : A ⊆ X ∩ (L : Set E) := fun w hw ↦ ⟨hw.2 (hself w), hw.1⟩
-  have hXB : X ∩ (L : Set E) ⊆ B := fun w hw ↦ ⟨hw.2, ⟨w, hself w, hw.1⟩⟩
+  have hAX : cellsInside L F X ⊆ X ∩ (L : Set E) := fun w hw ↦
+    ⟨hw.2 (mem_cell_self hF₀ w), hw.1⟩
+  have hXB : X ∩ (L : Set E) ⊆ cellsMeeting L F X := fun w hw ↦
+    ⟨hw.2, ⟨w, mem_cell_self hF₀ w, hw.1⟩⟩
   have hκ : (0 : ℝ) ≤ μ.real F := ENNReal.toReal_nonneg
-  have h3 : (A.ncard : ℝ) ≤ ((X ∩ (L : Set E)).ncard : ℝ) :=
+  have h3 : ((cellsInside L F X).ncard : ℝ) ≤ ((X ∩ (L : Set E)).ncard : ℝ) :=
     Nat.cast_le.mpr (Set.ncard_le_ncard hAX (L.toAddSubgroup.finite_inter hXb))
-  have h4 : ((X ∩ (L : Set E)).ncard : ℝ) ≤ (B.ncard : ℝ) :=
+  have h4 : ((X ∩ (L : Set E)).ncard : ℝ) ≤ ((cellsMeeting L F X).ncard : ℝ) :=
     Nat.cast_le.mpr (Set.ncard_le_ncard hXB hBfin)
-  have h5 : (B.ncard : ℝ) - A.ncard ≤ (((frontier X + -F) ∩ (L : Set E)).ncard : ℝ) := by
-    have hle := Set.ncard_le_ncard hBA hbadfin
-    rw [Set.ncard_sdiff hAB hAfin] at hle
-    have hAle : A.ncard ≤ B.ncard := Set.ncard_le_ncard hAB hBfin
+  have h5 : ((cellsMeeting L F X).ncard : ℝ) - (cellsInside L F X).ncard ≤
+      (((frontier X + -F) ∩ (L : Set E)).ncard : ℝ) := by
+    have hle := Set.ncard_le_ncard (cellsMeeting_sdiff_subset hFpc) hbadfin
+    rw [Set.ncard_sdiff hAB (hBfin.subset hAB)] at hle
+    have hAle := Set.ncard_le_ncard hAB hBfin
     rw [← Nat.cast_le (α := ℝ), Nat.cast_sub hAle] at hle
     linarith
   have e1 := mul_le_mul_of_nonneg_right h4 hκ
