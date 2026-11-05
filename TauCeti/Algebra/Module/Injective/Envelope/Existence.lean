@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.Injective.Envelope.Basic
 import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 import Mathlib.Algebra.Category.ModuleCat.Injective
+import TauCeti.Algebra.Module.Injective.SelfInjective
 
 /-!
 # Existence of injective envelopes
@@ -96,9 +97,7 @@ theorem exists_isInjectiveEnvelope_submodule [Module.Injective R Q]
   -- So `Q → Q ⧸ K → E` retracts `Q` onto `E`, and `E` is injective.
   let ρ : Q →ₗ[R] E := (φ ∘ₗ K.mkQ).codRestrict E fun q => hφE ▸ ⟨K.mkQ q, rfl⟩
   have hρ (e : E) : ρ (E.subtype e) = e := Subtype.ext (hφj e)
-  have hEinj : Module.Injective R E := ⟨fun X Y _ _ _ _ f hf g => by
-    obtain ⟨h, hh⟩ := Module.Injective.out f hf (E.subtype ∘ₗ g)
-    exact ⟨ρ ∘ₗ h, fun x => by simp only [LinearMap.comp_apply, hh]; exact hρ (g x)⟩⟩
+  have hEinj : Module.Injective R E := .of_leftInverse E.subtype ρ hρ
   refine ⟨E, hE.prop.1, hEinj, fun a b hab => hi (congrArg Subtype.val hab), ?_⟩
   rw [LinearMap.range_codRestrict]
   exact hE.prop.2

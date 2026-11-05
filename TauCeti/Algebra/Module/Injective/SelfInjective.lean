@@ -37,6 +37,8 @@ ring is injective (`Module.Injective.of_finite_projective`). The two Baer facts 
 * `Function.Bijective.moduleBaer_self` and `Function.Bijective.moduleInjective_self`: an algebra
   over a field carrying an associative bilinear form whose flip is bijective is self-injective.
 * `Module.Baer.of_leftInverse`: a retract of a Baer module is Baer.
+* `Module.Injective.of_leftInverse`: a retract of an injective module of the same universe is
+  injective.
 * `Module.Baer.of_isIdempotentElem`: over a self-injective ring, a left ideal consisting of the
   elements fixed by right multiplication by an idempotent is Baer.
 * `Module.Injective.of_finite_projective`: every finitely generated projective module over a
@@ -68,6 +70,15 @@ theorem _root_.Module.Baer.of_leftInverse (hQ : Module.Baer R Q) (s : M →ₗ[R
     (hrs : ∀ m, r (s m) = m) : Module.Baer R M := fun I g => by
   obtain ⟨g', hg'⟩ := hQ I (s ∘ₗ g)
   exact ⟨r ∘ₗ g', fun x hx => by rw [LinearMap.comp_apply, hg' x hx, LinearMap.comp_apply, hrs]⟩
+
+/-- **Injective modules are closed under retracts.** If `M` admits a split inclusion into an
+injective module `Q` of the same universe, then `M` is injective. -/
+theorem _root_.Module.Injective.of_leftInverse {M : Type v} [AddCommGroup M] [Module R M]
+    [Module.Injective R Q] (s : M →ₗ[R] Q) (r : Q →ₗ[R] M) (hrs : ∀ m, r (s m) = m) :
+    Module.Injective R M :=
+  ⟨fun X Y _ _ _ _ f hf g => by
+    obtain ⟨h, hh⟩ := Module.Injective.out f hf (s ∘ₗ g)
+    exact ⟨r ∘ₗ h, fun x => by simp only [LinearMap.comp_apply, hh, hrs]⟩⟩
 
 end Retract
 
