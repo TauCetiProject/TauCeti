@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.OrthSum
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Basic
+public import TauCeti.Algebra.Module.ZLattice.OrthSum
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Module.ZLattice.Basic
@@ -24,8 +25,25 @@ theta series of an orthogonal direct sum `L ⊕ M` is the product of a term for 
 and `Θ_{L ⊕ M} = Θ_L · Θ_M`. For instance `Θ_{E₈ ⊕ E₈} = Θ_{E₈}²`.
 
 The reindexing uses Mathlib's `ZLattice.comap_equiv` and `Submodule.equivMapOfInjective`.
-For the classical theta-series conventions see Serre, *A Course in Arithmetic*, Ch. VII §6,
-and Ebeling, *Lattices and Codes*, Ch. 2.
+
+The theta series of an orthogonal direct sum `L ⊕ M ⊆ WithLp 2 (E × F)` (`ZLattice.orthSum`) is
+the product of the theta series of the summands, `Θ_{L ⊕ M} = Θ_L Θ_M`, and more generally
+`θ_{(γ, δ) + (L ⊕ M)} = θ_{γ+L} θ_{δ+M}` for every translate `(γ, δ)`. Since
+`‖(x, y)‖² = ‖x‖² + ‖y‖²`, the term of index `(v, w) ∈ L × M` is the product of the terms of
+index `v` and `w`, and the double series is the product of the two series because both converge
+absolutely. Here `L` and `M` are discrete subgroups of finite-dimensional spaces, so that the
+series converge.
+
+## Main statements
+
+* `ZLattice.thetaCoset_comap`, `ZLattice.thetaSeries_comap`: invariance under linear isometries.
+* `ZLattice.thetaCoset_smul`, `ZLattice.thetaSeries_smul`: `Θ_{c • L}(τ) = Θ_L(c² τ)`.
+* `ZLattice.thetaCoset_orthSum`, `ZLattice.thetaSeries_orthSum`: `Θ_{L ⊕ M} = Θ_L Θ_M`.
+
+## References
+
+* J.-P. Serre, *A Course in Arithmetic*, Ch. VII §6.
+* W. Ebeling, *Lattices and Codes*, Ch. 2.
 -/
 
 public section

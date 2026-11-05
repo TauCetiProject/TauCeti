@@ -20,17 +20,17 @@ eigenspaces, and on the `μ`-eigenspace `X` acts by the scalar `μ`, so that eig
 semisimple over `R[X]` because it is semisimple over `R`. Over a field every module is
 semisimple, so there the eigenspaces spanning is the only hypothesis.
 
-For a semisimple endomorphism of a finite-dimensional vector space, the generalized eigenspaces
-are the eigenspaces, so the geometric multiplicity of every eigenvalue equals its algebraic
-multiplicity, the multiplicity of the eigenvalue as a root of the characteristic polynomial.
+For a semisimple endomorphism of a finite-dimensional space, each generalized eigenspace is the
+eigenspace, so the multiplicity of `μ` as a root of the characteristic polynomial is the dimension
+of the `μ`-eigenspace.
 
 ## Main results
 
 * `TauCeti.isSemisimple_of_iSup_eigenspace_eq_top`: an endomorphism of a semisimple module whose
   eigenspaces span the module is semisimple.
-* `Module.End.IsFinitelySemisimple.finrank_eigenspace_eq_rootMultiplicity`: for a semisimple
-  endomorphism, the dimension of each eigenspace is the multiplicity of the eigenvalue as a root
-  of the characteristic polynomial.
+* `Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`: for a semisimple endomorphism, the
+  multiplicity of a root `μ` of the characteristic polynomial is the dimension of the
+  `μ`-eigenspace.
 -/
 
 public section
@@ -71,15 +71,13 @@ end TauCeti
 
 namespace Module.End
 
-open Polynomial
-
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
-/-- **Geometric and algebraic multiplicities agree for a semisimple endomorphism.** The dimension
-of the `μ`-eigenspace is the multiplicity of `μ` as a root of the characteristic polynomial. -/
-theorem IsFinitelySemisimple.finrank_eigenspace_eq_rootMultiplicity {f : End K V}
+/-- For a semisimple endomorphism, the multiplicity of `μ` as a root of the characteristic
+polynomial is the dimension of the `μ`-eigenspace. -/
+theorem IsFinitelySemisimple.rootMultiplicity_charpoly {f : End K V}
     (hf : f.IsFinitelySemisimple) (μ : K) :
-    finrank K (f.eigenspace μ) = f.charpoly.rootMultiplicity μ := by
-  rw [← hf.maxGenEigenspace_eq_eigenspace, LinearMap.finrank_maxGenEigenspace_eq]
+    f.charpoly.rootMultiplicity μ = finrank K (f.eigenspace μ) := by
+  rw [← LinearMap.finrank_maxGenEigenspace_eq, hf.maxGenEigenspace_eq_eigenspace]
 
 end Module.End

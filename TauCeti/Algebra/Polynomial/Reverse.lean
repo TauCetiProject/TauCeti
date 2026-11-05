@@ -38,13 +38,14 @@ Evaluating the reversal of `p` at `0` gives the leading coefficient of `p`, whic
 when `p` is, and at a nonzero point `w` of a field it gives `w ^ d p(w⁻¹)`, where `d` is the
 degree of `p`: the reversal is `p` read in the reciprocal coordinate.
 
-The file also records how reversal interacts with products of monic polynomials, with the
-binomials `X ^ n - C a` and with the powers `(X - C a) ^ m`, which together compute the reverse
-of a characteristic polynomial that factors into such binomials, and that reflection at a sum of
-degree bounds is multiplicative on finite products (`Polynomial.reflect_prod`), which computes
-the reflection of a determinant of polynomials term by term. Reflection at a degree bound stays
-within that bound, also after a coefficient map, and its coefficient at the bound is the constant
-coefficient.
+The file also records how reversal interacts with products of monic polynomials and with the
+binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
+factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
+finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
+polynomials term by term. Reflection at a degree bound stays within that bound, also after a
+coefficient map, and its coefficient at the bound is the constant coefficient. The reverse of
+`(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
+is nonzero.
 
 Finally, reflecting the difference `p(X) - p(X - a)` at a bound on the degree of `p`, its first
 coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top terms cancel and
@@ -271,18 +272,6 @@ theorem reverse_X_pow_sub_C [Ring R] (n : ℕ) (a : R) :
   rw [sub_eq_add_neg, ← C_neg, reverse_add_C, hX, natDegree_X_pow, C_neg, neg_mul,
     ← sub_eq_add_neg]
 
-/-- The reverse of `(X - C a) ^ m` is `(1 - C a * X) ^ m`. -/
-@[simp]
-theorem reverse_X_sub_C_pow [CommRing R] (a : R) (m : ℕ) :
-    ((X - C a) ^ m).reverse = (1 - C a * X) ^ m := by
-  nontriviality R
-  induction m with
-  | zero => rw [pow_zero, pow_zero, ← C_1, reverse_C]
-  | succ m ih =>
-    have h : (X - C a).reverse = 1 - C a * X := by simpa using reverse_X_pow_sub_C 1 a
-    rw [pow_succ, reverse_mul (by simp [((monic_X_sub_C a).pow m).leadingCoeff]), ih, h,
-      pow_succ]
-
 /-- The reverse of a product of monic polynomials is the product of their reverses. -/
 theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
     (hs : ∀ p ∈ s, p.Monic) : s.prod.reverse = (s.map reverse).prod := by
@@ -296,6 +285,28 @@ theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
     rw [Multiset.prod_cons, Multiset.map_cons, Multiset.prod_cons,
       reverse_mul (by rw [hp.leadingCoeff, hprod.leadingCoeff, one_mul]; exact one_ne_zero),
       ih hs']
+
+/-- The reverse of `(X - C a) ^ n` is `(1 - C a * X) ^ n`. -/
+@[simp]
+theorem reverse_X_sub_C_pow [CommRing R] (a : R) (n : ℕ) :
+    ((X - C a) ^ n).reverse = (1 - C a * X) ^ n := by
+  nontriviality R
+  have h := reverse_X_pow_sub_C 1 a
+  rw [pow_one] at h
+  have h' := reverse_multiset_prod_of_monic (s := Multiset.replicate n (X - C a))
+    fun p hp ↦ Multiset.eq_of_mem_replicate hp ▸ monic_X_sub_C a
+  rwa [Multiset.prod_replicate, Multiset.map_replicate, h, Multiset.prod_replicate] at h'
+
+/-- The reverse of `(X - 1) ^ n` is `(1 - X) ^ n`. This is the form `reverse_X_sub_C_pow` takes
+after `C 1` simplifies to `1`, as in `LinearMap.charpoly_one`. -/
+@[simp]
+theorem reverse_X_sub_one_pow [CommRing R] (n : ℕ) :
+    ((X - 1 : R[X]) ^ n).reverse = (1 - X) ^ n := by
+  simpa using reverse_X_sub_C_pow (1 : R) n
+
+/-- Over a nontrivial ring, the polynomial `1 - X` is nonzero. -/
+theorem one_sub_X_ne_zero [Ring R] [Nontrivial R] : (1 - X : R[X]) ≠ 0 :=
+  fun h ↦ by simpa using congrArg (eval 0) h
 
 /-- The reversal of a polynomial takes the value of the leading coefficient at `0`. -/
 @[simp]

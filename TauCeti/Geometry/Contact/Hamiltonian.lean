@@ -61,6 +61,8 @@ vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistributio
 * `TauCeti.SmoothForm.contactHamiltonianVectorField`: the contact Hamiltonian vector field `X_f`.
 * `TauCeti.SmoothForm.IsContactForm.isContactHamiltonianVectorField_iff_eq`: existence and
   uniqueness.
+* `TauCeti.SmoothForm.IsContactHamiltonianVectorField.contMDiff`: a contact Hamiltonian vector
+  field of a `C^(n+1)` function is `C^n`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieDerivForm_eq`: `L_X α = (R_α f) α`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieBracket_mem_kerDistribution`:
   infinitesimal preservation of the contact distribution.
@@ -342,6 +344,16 @@ theorem contMDiff_contactHamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤
       ((degreeOneEquiv α).contMDiff.of_le hn)).sub_section hf.contMDiff_totalSpaceMk_mvfderiv
   exact (((contMDiff_contactFlat α).clm_bundle_inverse hα.isInvertible_contactFlat).of_le
     hn).clm_bundle_apply hcov
+
+/-- **Regularity of contact Hamiltonian vector fields.** For a contact form on a
+finite-dimensional manifold, every contact Hamiltonian vector field of a `C^(n+1)` function is a
+`C^n` vector field, for `n ≤ ∞`. -/
+theorem _root_.TauCeti.SmoothForm.IsContactHamiltonianVectorField.contMDiff
+    (hX : α.IsContactHamiltonianVectorField f X) {n : WithTop ℕ∞} (hn : n ≤ ∞)
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
+    ContMDiff I I.tangent n (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) := by
+  rw [hα.isContactHamiltonianVectorField_iff_eq.1 hX]
+  exact hα.contMDiff_contactHamiltonianVectorField hn hf
 
 /-- The contact Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_contactHamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
