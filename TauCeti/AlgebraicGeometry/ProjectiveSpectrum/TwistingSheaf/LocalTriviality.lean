@@ -59,6 +59,14 @@ theorem chartGenerator_apply (x : U) :
         ⟨f ^ (-n).toNat, fun h ↦ hU x.2 (x.1.isPrime.mem_of_pow_mem _ h)⟩ :=
   (rfl)
 
+/-- The standard basis section is the section `f ^ n.toNat / f ^ (-n).toNat` of `𝒪(n)`. -/
+theorem chartGenerator_eq_const :
+    chartGenerator n f hf U hU = const (i := (-n).toNat) (j := n.toNat) (by omega)
+      (f ^ n.toNat) (f ^ (-n).toNat) (by simpa using SetLike.pow_mem_graded n.toNat hf)
+      (by simpa using SetLike.pow_mem_graded (-n).toNat hf) U
+      (fun x hx ↦ fun h ↦ hU hx (x.isPrime.mem_of_pow_mem _ h)) :=
+  (rfl)
+
 /-- The standard basis sections commute with restriction. -/
 @[simp]
 theorem res_chartGenerator {V : (Proj 𝒜).Opens} (i : V ⟶ U) :

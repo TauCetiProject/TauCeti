@@ -24,13 +24,11 @@ free on the corresponding generators, and the comparison map matches the generat
 
 ## Main results
 
-* `AlgebraicGeometry.Proj.twistingSheaf.le_basicOpen_map`: an open lying over `D₊(f)` lies in
-  `D₊(g f)`.
 * `AlgebraicGeometry.Proj.twistingSheaf.comap_chartGenerator`: the pullback of the standard
   generator `fⁿ` is the standard generator `(g f)ⁿ`.
 * `AlgebraicGeometry.Proj.twistingSheaf.comap_chartSectionsLinearEquiv`: in standard chart
   coordinates, the pullback of sections of `𝒪(n)` is the pullback of functions.
-* `AlgebraicGeometry.Proj.twistingSheaf.twistingSheafMap_app_chartGenerator`: the morphism of
+* `AlgebraicGeometry.Proj.twistingSheafMap_app_chartGenerator`: the morphism of
   twisting sheaves sends the standard generator `fⁿ` to the standard generator `(g f)ⁿ`.
 
 ## References
@@ -42,7 +40,7 @@ public section
 
 noncomputable section
 
-namespace AlgebraicGeometry.Proj.twistingSheaf
+namespace AlgebraicGeometry.Proj
 
 open HomogeneousIdeal
 
@@ -52,23 +50,19 @@ variable {A B σ τ : Type u} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A
   [CommRing B] [SetLike τ B] [AddSubgroupClass τ B]
   {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
   (g : 𝒜 →+*ᵍ ℬ) (hg : ℬ₊ ≤ 𝒜₊.map g) (n : ℤ) {f : A} (hf : f ∈ 𝒜 1)
-  {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 f) {V : (Proj ℬ).Opens}
-  (hUV : V.1 ⊆ ProjectiveSpectrum.comap g hg ⁻¹' U.1)
 
-include hU hUV in
-/-- An open of `Proj ℬ` lying over an open contained in `D₊(f)` is contained in `D₊(g f)`. -/
-theorem le_basicOpen_map : V ≤ basicOpen ℬ (g f) :=
-  fun _ hy ↦ hU (hUV hy)
+namespace twistingSheaf
+
+variable {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 f) {V : (Proj ℬ).Opens}
+  (hUV : V.1 ⊆ ProjectiveSpectrum.comap g hg ⁻¹' U.1)
 
 /-- **The pullback of the standard generator `fⁿ` is the standard generator `(g f)ⁿ`.** -/
 @[simp]
 theorem comap_chartGenerator :
     comap g hg hUV (chartGenerator n f hf U hU) =
       chartGenerator n (g f) (Graded.map_mem g hf) V (le_basicOpen_map g hg hU hUV) := by
-  refine ext fun (y : V) ↦ ?_
-  simp only [comap_apply, chartGenerator_apply]
-  refine (ProjectiveSpectrum.TwistingSheaf.localizationsMap_mk g hg _ _ _).trans ?_
-  simp only [map_pow]
+  rw [chartGenerator_eq_const, chartGenerator_eq_const]
+  exact (comap_const ..).trans (const_ext (by rw [map_pow, map_pow]))
 
 /-- **In standard chart coordinates the pullback of sections of `𝒪(n)` is the pullback of
 functions**: the section `a • fⁿ` pulls back to `(Proj.map g hg)^* a • (g f)ⁿ`. -/
@@ -79,6 +73,10 @@ theorem comap_chartSectionsLinearEquiv (a : Γ(Proj 𝒜, U)) :
   rw [chartSectionsLinearEquiv_apply, chartSectionsLinearEquiv_apply, comap_smul,
     comap_chartGenerator]
 
+end twistingSheaf
+
+open twistingSheaf
+
 /-- The morphism of twisting sheaves induced by `g`, read in standard chart coordinates on an open
 `W ≤ D₊(f)`, is the pullback of functions along `Proj.map g hg`. -/
 theorem twistingSheafMap_app_chartSectionsLinearEquiv {W : (Proj 𝒜).Opens}
@@ -87,6 +85,8 @@ theorem twistingSheafMap_app_chartSectionsLinearEquiv {W : (Proj 𝒜).Opens}
       chartSectionsLinearEquiv n (g f) (Graded.map_mem g hf) (map g hg ⁻¹ᵁ W)
         (le_basicOpen_map g hg hW Set.Subset.rfl) ((map g hg).app W a) := by
   rw [twistingSheafMap_app, Scheme.Hom.app_eq_appLE]
+  -- the objects of the pushforward agree with those of `AddCommGrpCat.ofHom (comap ..)` only
+  -- definitionally, so `AddCommGrpCat.ofHom_apply` does not rewrite; `exact` unfolds `ofHom`
   exact comap_chartSectionsLinearEquiv g hg n hf hW Set.Subset.rfl a
 
 /-- The morphism of twisting sheaves induced by `g` sends the standard generator `fⁿ` on an open
@@ -96,6 +96,8 @@ theorem twistingSheafMap_app_chartGenerator {W : (Proj 𝒜).Opens} (hW : W ≤ 
       chartGenerator n (g f) (Graded.map_mem g hf) (map g hg ⁻¹ᵁ W)
         (le_basicOpen_map g hg hW Set.Subset.rfl) := by
   rw [twistingSheafMap_app]
+  -- the objects of the pushforward agree with those of `AddCommGrpCat.ofHom (comap ..)` only
+  -- definitionally, so `AddCommGrpCat.ofHom_apply` does not rewrite; `exact` unfolds `ofHom`
   exact comap_chartGenerator g hg n hf hW Set.Subset.rfl
 
-end AlgebraicGeometry.Proj.twistingSheaf
+end AlgebraicGeometry.Proj

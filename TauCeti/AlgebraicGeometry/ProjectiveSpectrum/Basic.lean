@@ -142,6 +142,13 @@ theorem map_congr {f g : 𝒜 →+*ᵍ ℬ} (hfg : f = g)
   subst hfg
   rfl
 
+/-- An open of `Proj ℬ` lying over an open contained in `D₊(s)` is contained in `D₊(f s)`. -/
+theorem le_basicOpen_map (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) {s : A}
+    {U : (Proj 𝒜).Opens} (hU : U ≤ basicOpen 𝒜 s) {V : (Proj ℬ).Opens}
+    (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1) : V ≤ basicOpen ℬ (f s) :=
+  fun _ hy ↦ hU (hUV hy)
+
 /-- Mutually inverse graded ring homomorphisms `f : 𝒜 →+*ᵍ ℬ` and `g : ℬ →+*ᵍ 𝒜` induce mutually
 inverse morphisms `Proj.map f` and `Proj.map g`. -/
 noncomputable def mapIso (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : Function.RightInverse g f)
