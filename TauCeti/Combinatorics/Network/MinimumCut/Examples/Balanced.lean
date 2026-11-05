@@ -166,18 +166,12 @@ theorem not_exists_pairCutCapacity_eq_balancedCut :
     rw [hcap] at h
     simp [balancedCut, hxy] at h
     linarith
-  have hczero : pairCutCapacity c = pairCutCapacity (fun _ ↦ (0 : ℝ)) :=
-    pairCutCapacity_eq_of_offDiagonal_eq c (fun _ ↦ 0) fun x y hxy ↦ by
+  have hczero : pairCutCapacity c = pairCutCapacity (0 : Sym2 (Fin 4) → ℝ) :=
+    pairCutCapacity_eq_of_offDiagonal_eq c 0 fun x y hxy ↦ by
       simp [hzero x y hxy]
   have h := congrFun hcap ({0} : Finset (Fin 4))
   rw [hczero] at h
-  have hz : pairCutCapacity (fun _ : Sym2 (Fin 4) ↦ (0 : ℝ)) {0} = 0 := by
-    classical
-    rw [pairCutCapacity_def]
-    apply sum_eq_zero
-    intro p _
-    split <;> rfl
-  rw [hz] at h
+  rw [pairCutCapacity_zero] at h
   norm_num [balancedCut] at h
 
 /-- The balanced cut function is symmetric submodular. -/

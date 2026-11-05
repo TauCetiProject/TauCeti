@@ -45,6 +45,13 @@ noncomputable def pairCutCapacity [Fintype V] [AddCommMonoid K]
     (c : Sym2 V → K) (S : Finset V) : K :=
   ∑ p : Sym2 V, if p.Crosses (S : Set V) then c p else 0
 
+/-- The zero pair-capacity function assigns zero capacity to every cut. -/
+@[simp]
+theorem pairCutCapacity_zero [Fintype V] [AddCommMonoid K] :
+    pairCutCapacity (0 : Sym2 V → K) = 0 := by
+  funext S
+  simp [pairCutCapacity]
+
 /-- The defining finite-sum formula for `pairCutCapacity`. -/
 theorem pairCutCapacity_def [Fintype V] [AddCommMonoid K]
     (c : Sym2 V → K) (S : Finset V)
