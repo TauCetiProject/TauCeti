@@ -53,7 +53,7 @@ variable {Ω : Set E} [DecidablePred (· ∈ Ω)]
   Iff.rfl
 
 /-- Evaluate the unit-density subsolution envelope as a pointwise supremum. -/
-@[simp] theorem unitDensitySubsolutionEnvelope_apply (x : E) :
+theorem unitDensitySubsolutionEnvelope_apply (x : E) :
     unitDensitySubsolutionEnvelope μ Ω x =
       sSup ((fun w => w x) '' unitDensitySubsolutions μ Ω) := by
   rw [unitDensitySubsolutionEnvelope]
