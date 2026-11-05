@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Complex-valued smooth functions on real manifolds
@@ -15,7 +16,8 @@ Complex-valued functions on a real manifold are real smooth maps, not holomorphi
 This file equips their native `ContMDiffMap` carrier with the complex algebra structure
 induced by constant functions. The native real scalar action agrees with restriction of
 scalars. Real and imaginary parts identify this real vector space with a pair of real
-function spaces, and conjugation is a real algebra involution.
+function spaces, and conjugation is a real algebra involution. Differentiation commutes with
+real and imaginary parts at every nonzero differentiability order.
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -327,5 +329,45 @@ theorem ofReal_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; ℝ⟯) :
       restrictRingHom I 𝓘(ℝ, ℂ) ℂ h (ofReal f) := by
   ext x
   rfl
+
+/-- Differentiation of a complex-valued real-smooth function commutes with taking real parts. -/
+@[simp]
+theorem mvfderiv_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x : M) :
+    mvfderiv I f.re x = Complex.reCLM.comp (mvfderiv I f x) := by
+  have hre : ⇑f.re = Complex.reCLM ∘ f := by ext y; simp
+  rw [hre]
+  ext v
+  have h := TauCeti.mvfderiv_comp_apply_of_differentiableAt Complex.reCLM.differentiableAt
+    (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
+  simpa only [ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply] using h
+
+/-- Differentiation of a complex-valued real-smooth function commutes with taking imaginary
+parts. -/
+@[simp]
+theorem mvfderiv_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x : M) :
+    mvfderiv I f.im x = Complex.imCLM.comp (mvfderiv I f x) := by
+  have him : ⇑f.im = Complex.imCLM ∘ f := by ext y; simp
+  rw [him]
+  ext v
+  have h := TauCeti.mvfderiv_comp_apply_of_differentiableAt Complex.imCLM.differentiableAt
+    (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
+  simpa only [ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply] using h
+
+/-- The differential of a complex function vanishes exactly when the differentials of both
+real components vanish. -/
+theorem mvfderiv_eq_zero_iff_re_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x : M) :
+    mvfderiv I f x = 0 ↔ mvfderiv I f.re x = 0 ∧ mvfderiv I f.im x = 0 := by
+  constructor
+  · intro h
+    simp [mvfderiv_re f hn, mvfderiv_im f hn, h]
+  · rintro ⟨hr, hi⟩
+    ext v
+    apply Complex.ext
+    · simpa only [mvfderiv_re f hn, ContinuousLinearMap.comp_apply,
+        Complex.reCLM_apply, zero_apply, Complex.zero_re] using
+        congrArg (fun L ↦ L v) hr
+    · simpa only [mvfderiv_im f hn, ContinuousLinearMap.comp_apply,
+        Complex.imCLM_apply, zero_apply, Complex.zero_im] using
+        congrArg (fun L ↦ L v) hi
 
 end ContMDiffMap
