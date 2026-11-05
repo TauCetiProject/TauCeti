@@ -46,7 +46,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL n ℂ) := by
   let : PathConnectedSpace {P : Matrix n n ℂ | P.PosDef} :=
     isPathConnected_iff_pathConnectedSpace.mp
-      (convex_setOf_posDef.isPathConnected ⟨1, PosDef.one⟩)
+      (convex_setOfPred_posDef.isPathConnected ⟨1, PosDef.one⟩)
   let f : {P : Matrix n n ℂ | P.PosDef} × unitaryGroup n ℂ → GL n ℂ :=
     fun PU => PU.1.2.isUnit.unit * Unitary.toUnits PU.2
   have hf : Function.Surjective f := by

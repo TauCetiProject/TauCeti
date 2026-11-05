@@ -112,6 +112,15 @@ noncomputable def pointMapHom (f : Hom W₁ W₂) : W₁.Point →+ W₂.Point :
 theorem pointMapHom_apply (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMapHom P = f.pointMap P :=
   (rfl)
 
+/-- A point belongs to the kernel exactly when its image under the morphism is zero. -/
+theorem mem_ker_pointMapHom_iff (f : Hom W₁ W₂) (P : W₁.Point) :
+    P ∈ f.pointMapHom.ker ↔ f.pointMap P = 0 := by
+  rw [AddMonoidHom.mem_ker, pointMapHom_apply]
+
+/-- The underlying function of `f.pointMapHom` is `f.pointMap`. -/
+theorem coe_pointMapHom (f : Hom W₁ W₂) : ⇑f.pointMapHom = f.pointMap :=
+  funext f.pointMapHom_apply
+
 @[simp]
 theorem pointMap_neg (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMap (-P) = -f.pointMap P :=
   f.pointMapHom.map_neg P
