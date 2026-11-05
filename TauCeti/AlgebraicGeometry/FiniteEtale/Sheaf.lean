@@ -141,11 +141,7 @@ instance : (toSheaf S).Faithful := (toSheafFullyFaithful S).faithful
 variable {S} {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
 /-- The stalk at a geometric point `x : Spec Ω ⟶ S` of the étale sheaf of sections of a finite
-étale `S`-scheme is its geometric fibre at `x`, naturally in the finite étale scheme.
-
-The stalk of a representable sheaf is the value of the fibre functor of the point
-`Scheme.pointSmallEtale x` (`GrothendieckTopology.Point.yonedaCompSheafFiberIso`), the set of
-lifts of `x`; `fiberCompInclIso` identifies that set with the geometric fibre. -/
+étale `S`-scheme is its geometric fibre at `x`, naturally in the finite étale scheme. -/
 noncomputable def toSheafCompSheafFiberIso (x : Spec (.of Ω) ⟶ S) :
     toSheaf S ⋙ (Scheme.pointSmallEtale x).sheafFiber ≅ fiber x ⋙ FintypeCat.incl :=
   Functor.associator _ _ _ ≪≫
@@ -164,8 +160,7 @@ theorem toSheafCompSheafFiberIso_inv_app_apply (x : Spec (.of Ω) ⟶ S) (X : Fi
   exact (Scheme.pointSmallEtale x).yonedaCompSheafFiberIso_inv_app_apply _ _
 
 /-- The sheaf-of-sections functor sends a colimit cocone to a colimit cocone when every geometric
-fibre functor does. The stalks at the geometric points through separable closures of the residue
-fields jointly reflect isomorphisms of étale sheaves, and they preserve colimits. -/
+fibre functor does. -/
 theorem preservesColimit_toSheaf {J : Type*} [Category J] (K : J ⥤ FiniteEtaleScheme S)
     [HasColimit (K ⋙ toSheaf S)]
     (h : ∀ (Ω : Type u) [Field Ω] [IsSepClosed Ω] (x : Spec (.of Ω) ⟶ S),
@@ -178,8 +173,7 @@ theorem preservesColimit_toSheaf {J : Type*} [Category J] (K : J ⥤ FiniteEtale
         (isColimitOfPreserves (fiber _ ⋙ FintypeCat.incl) hc)⟩)⟩
 
 /-- The sheaf-of-sections functor sends a finite limit cone to a limit cone when every geometric
-fibre functor does. The stalks at the geometric points through separable closures of the residue
-fields jointly reflect isomorphisms of étale sheaves, and they preserve finite limits. -/
+fibre functor does. -/
 theorem preservesLimit_toSheaf {J : Type*} [SmallCategory J] [FinCategory J]
     (K : J ⥤ FiniteEtaleScheme S)
     (h : ∀ (Ω : Type u) [Field Ω] [IsSepClosed Ω] (x : Spec (.of Ω) ⟶ S),
@@ -214,13 +208,11 @@ instance {G : Type u} [Group G] [Finite G] :
 
 instance : (toSheaf S).PreservesEpimorphisms where
   preserves f _ := by
-    refine @JointlyReflectEpimorphisms.epi _ _ _ _ _ _
-      ((Scheme.isConservativeFamilyOfPoints_pointSmallEtale' S).jointlyReflectEpimorphisms
-        (Type u)) _ _ _ fun Φ ↦ ?_
+    refine (((Scheme.isConservativeFamilyOfPoints_pointSmallEtale' S).jointlyReflectEpimorphisms
+      (Type u)).epi_iff _).2 fun Φ ↦ ?_
     obtain ⟨Φ, ⟨s⟩⟩ := Φ
     -- On stalks the map is that of geometric fibres, and geometric fibre functors preserve
     -- epimorphisms.
-    exact @Functor.map_epi _ _ _ _ (toSheaf S ⋙ _)
-      (Functor.PreservesEpimorphisms.of_iso (toSheafCompSheafFiberIso _).symm) _ _ f _
+    exact (Functor.PreservesEpimorphisms.of_iso (toSheafCompSheafFiberIso _).symm).preserves f
 
 end TauCeti.FiniteEtaleScheme

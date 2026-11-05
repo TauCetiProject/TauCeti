@@ -53,15 +53,15 @@ section `𝟙 X` of the sheaf represented by `X`. -/
 theorem yonedaCompSheafFiberIso_inv_app_apply (X : C) (x : Φ.fiber.obj X) :
     Φ.yonedaCompSheafFiberIso.inv.app X x =
       Φ.toPresheafFiber X x (J.yoneda.obj X).obj (𝟙 X) := by
-  simp only [yonedaCompSheafFiberIso, sheafToPresheafCompPresheafFiberIso,
-    yonedaCompSheafToPresheaf, Iso.trans_inv, Iso.symm_inv, Iso.refl_inv, NatTrans.comp_app,
+  -- `sheafToPresheafCompPresheafFiberIso` is `Iso.refl`, so its components are identities.
+  have h (F : Sheaf J (Type v)) (y) : Φ.sheafToPresheafCompPresheafFiberIso.hom.app F y = y := rfl
+  simp only [yonedaCompSheafFiberIso, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app,
     Functor.isoWhiskerLeft_inv, Functor.isoWhiskerRight_inv, Functor.whiskerLeft_app,
-    Functor.whiskerRight_app, Functor.associator_hom_app, NatTrans.id_app, types_comp_apply,
-    types_id_apply, shrinkYonedaCompPresheafFiberIso_inv_app_toPresheafFiber,
-    toPresheafFiber_naturality_apply]
-  simp [shrinkYonedaIsoYoneda]
-  -- What remains is the component of `sheafToPresheafCompPresheafFiberIso.symm.inv`, which is
-  -- the identity since `sheafToPresheafCompPresheafFiberIso` is `Iso.refl`.
+    Functor.whiskerRight_app, types_comp_apply, h,
+    shrinkYonedaCompPresheafFiberIso_inv_app_toPresheafFiber, toPresheafFiber_naturality_apply]
+  simp [shrinkYonedaIsoYoneda, yonedaCompSheafToPresheaf]
+  -- The two sides differ only in implicit arguments, where `(J.yoneda.obj X).obj` appears
+  -- in place of `yoneda.obj X`.
   rfl
 
 end CategoryTheory.GrothendieckTopology.Point
