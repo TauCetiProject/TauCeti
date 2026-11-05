@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Homothety
 -- Proof-only: a subset of a ball with the ball's volume agrees with it a.e.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # The isodiametric inequality
@@ -70,23 +71,13 @@ namespace MeasureTheory.Measure
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- An additive Haar measure is a positive finite multiple of `volume`, so it compares sets the
-same way. -/
-private lemma addHaar_le_addHaar_iff_volume_le {s t : Set E} :
-    μ s ≤ μ t ↔ volume s ≤ volume t := by
-  have hc : Measure.addHaarScalarFactor μ volume ≠ 0 :=
-    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
-  rw [μ.isAddLeftInvariant_eq_smul volume]
-  simp only [_root_.smul_apply, ENNReal.smul_def, smul_eq_mul]
-  exact ENNReal.mul_le_mul_iff_right (by exact_mod_cast hc) ENNReal.coe_ne_top
-
 /-- **Isodiametric inequality**: a bounded set has at most the measure of a closed ball whose
 radius is half its diameter, for any additive Haar measure `μ`. The set need not be measurable;
 its outer measure is bounded. -/
 theorem addHaar_le_addHaar_closedBall_diam_div_two {s : Set E} (hs : Bornology.IsBounded s)
     (x : E) : μ s ≤ μ (closedBall x (diam s / 2)) := by
   suffices volume s ≤ volume (closedBall x (diam s / 2)) from
-    (addHaar_le_addHaar_iff_volume_le μ).2 this
+    (addHaar_apply_le_addHaar_apply_iff μ volume).2 this
   rcases s.eq_empty_or_nonempty with rfl | hne
   · simp
   have hr : 0 ≤ diam s / 2 := by positivity
@@ -179,7 +170,7 @@ then `s` is contained in some closed ball of radius `diam s / 2`. No measurabili
 theorem exists_subset_closedBall_diam_div_two_of_addHaar_ge {s : Set E}
     (hs : Bornology.IsBounded s) {x : E} (hvol : μ (closedBall x (diam s / 2)) ≤ μ s) :
     ∃ c, s ⊆ closedBall c (diam s / 2) := by
-  replace hvol := (addHaar_le_addHaar_iff_volume_le μ).1 hvol
+  replace hvol := (addHaar_apply_le_addHaar_apply_iff μ volume).1 hvol
   rcases eq_or_ne (volume s) 0 with h0 | h0
   · exact exists_subset_closedBall_diam_div_two_of_volume_eq_zero hs hvol h0
   -- Pass to the closed convex hull `H`, which has the same diameter and the same volume.
