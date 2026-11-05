@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 public import TauCeti.Geometry.Lie.Exponential.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Monoid
 
 /-!
 # The Lie functor on smooth homomorphisms
@@ -30,6 +31,9 @@ Lie-group exponential.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
+* `ContMDiffMonoidMorphism.isLocalDiffeomorph_iff_lieMap_bijective` and
+  `ContMDiffMonoidMorphism.isLocalDiffeomorph_of_lieMap_bijective`: the local-diffeomorphism
+  criterion at every point.
 * `ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective`: injectivity of the identity
   differential implies injectivity of the Lie map.
 * `TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt`: the Lie-algebra equivalence induced by a smooth
@@ -406,6 +410,20 @@ theorem isLocalDiffeomorphAt_iff_lieMap_bijective
   IsLocalDiffeomorphAt I I' ∞ φ 1 ↔ Bijective (lieMap φ) :=
   ⟨lieMap_bijective_of_isLocalDiffeomorphAt φ,
     isLocalDiffeomorphAt_of_lieMap_bijective φ⟩
+
+/-- A smooth homomorphism of finite-dimensional Lie groups is a local diffeomorphism
+if and only if its Lie map is bijective. -/
+theorem isLocalDiffeomorph_iff_lieMap_bijective [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ E'] (f : ContMDiffMonoidMorphism I I' ∞ G G') :
+    IsLocalDiffeomorph I I' ∞ f ↔ Bijective (lieMap f) :=
+  (f.toMonoidHom.isLocalDiffeomorph_iff_isLocalDiffeomorphAt 1).trans
+    f.isLocalDiffeomorphAt_iff_lieMap_bijective
+
+/-- A smooth homomorphism with bijective Lie map is a local diffeomorphism. -/
+theorem isLocalDiffeomorph_of_lieMap_bijective [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ E'] (f : ContMDiffMonoidMorphism I I' ∞ G G')
+    (hf : Bijective (lieMap f)) : IsLocalDiffeomorph I I' ∞ f :=
+  f.isLocalDiffeomorph_iff_lieMap_bijective.mpr hf
 
 end ContMDiffMonoidMorphism
 
