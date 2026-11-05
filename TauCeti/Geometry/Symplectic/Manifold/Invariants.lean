@@ -23,8 +23,9 @@ stabilizer acts on the symplectic complement by the normal representation
 `TauCeti.SymplecticForm.normalSubrepresentation`, which has no nonzero fixed vector.
 
 At a point of the fixed locus `M^G` of `G` the stabilizer is all of `G`. Wherever `M^G` is a
-submanifold whose tangent space is the space of invariant vectors, this shows that it is a
-symplectic submanifold.
+submanifold whose tangent space is the space of invariant vectors, this shows that `σ` restricts
+to a nondegenerate two-form on it; when `σ` is moreover closed, so is its restriction, and `M^G`
+is a symplectic submanifold.
 
 ## Main results
 
@@ -65,8 +66,9 @@ theorem IsNondegenerate.symplecticFormAt_tangentRepresentation (hσ : σ.IsNonde
   have h := SmoothForm.eval₂_mpullback (fun y : M ↦ (g : G) • y)
     (ContMDiffSMul.contMDiff_const_smul (I := IG) (g : G)) σ x u v
   rw [hσG g g.2] at h
+  have hgx : (g : G) • x = x := g.2
   rw [IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply, h,
-    tangentRepresentation_apply, show (g : G) • x = x from g.2]
+    tangentRepresentation_apply, hgx]
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold IG 1 G] [IsTopologicalGroup G]
   [CompactSpace G]

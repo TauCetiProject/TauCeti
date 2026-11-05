@@ -43,8 +43,6 @@ symplectic, because a vector `v ∈ L ∩ L^ω` has `ω (v, J v) = 0`
 
 ## Main results
 
-* `TauCeti.SymplecticForm.Tames.isSymplectic`: a subspace stable under an almost complex structure
-  tamed by `ω` is symplectic.
 * `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`: the invariants of a representation by
   maps commuting with such a structure form a symplectic subspace.
 * `TauCeti.SymplecticForm.apply_mem_orthogonal`: the symplectic complement of a subspace stable
@@ -75,14 +73,6 @@ section Tames
 
 variable {J : AlmostComplexStructure V}
 
-/-- A subspace stable under an almost complex structure tamed by `ω` is symplectic. -/
-theorem Tames.isSymplectic (hJ : ω.Tames J) {L : Submodule ℝ V} (hL : ∀ v ∈ L, J v ∈ L) :
-    ω.IsSymplectic L := by
-  rw [isSymplectic_iff_disjoint, Submodule.disjoint_def]
-  intro v hv hv'
-  by_contra h
-  exact (hJ v h).ne' (mem_orthogonal_iff'.1 hv' (J v) (hL v hv))
-
 /-- The vectors fixed by a representation of a group by maps complex linear for an almost complex
 structure tamed by `ω` form a symplectic subspace. -/
 theorem Tames.isSymplectic_invariants {G : Type*} [Group G] (hJ : ω.Tames J)
@@ -112,10 +102,11 @@ theorem apply_mem_orthogonal (hρ : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) {L
 
 variable (ω) in
 /-- The **normal representation** of a representation `ρ` preserving `ω`: the restriction of `ρ`
-to the symplectic complement `(V^G)^ω` of its invariants. When the invariants form a symplectic
-subspace, as they do for a continuous representation of a compact group
-(`TauCeti.SymplecticForm.isSymplectic_invariants`), `V = V^G ⊕ (V^G)^ω` and this is the
-symplectic representation of `G` on the normal space to its fixed vectors. -/
+to the symplectic complement `(V^G)^ω` of its invariants. When `V` is finite-dimensional and the
+invariants form a symplectic subspace, as they do for a continuous representation of a compact
+group on a finite-dimensional space (`TauCeti.SymplecticForm.isSymplectic_invariants`),
+`V = V^G ⊕ (V^G)^ω` and this is the symplectic representation of `G` on the normal space to its
+fixed vectors. -/
 noncomputable def normalSubrepresentation (hρ : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) :
     Subrepresentation ρ where
   toSubmodule := ω.orthogonal ρ.invariants

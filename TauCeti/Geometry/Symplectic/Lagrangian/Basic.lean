@@ -49,6 +49,8 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.isSymplectic_iff_nondegenerate_restrict`: a subspace is symplectic exactly
   when `ω` restricts to it nondegenerately, and in finite dimension
   `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
+* `TauCeti.SymplecticForm.Tames.isSymplectic`: a subspace stable under an almost complex structure
+  tamed by `ω` is symplectic.
 * `TauCeti.SymplecticForm.finrank_add_finrank_orthogonal`: `dim L + dim L^ω = dim V`.
 * `TauCeti.SymplecticForm.IsLagrangian.two_mul_finrank`: a Lagrangian subspace is half-dimensional,
   `2 · dim L = dim V`, and `IsIsotropic.isLagrangian_of_finrank` and
@@ -254,6 +256,15 @@ lemma isSymplectic_bot : ω.IsSymplectic (⊥ : Submodule ℝ V) :=
 lemma isSymplectic_top : ω.IsSymplectic (⊤ : Submodule ℝ V) := by
   rw [isSymplectic_iff_disjoint, orthogonal_top]
   exact disjoint_bot_right
+
+/-- A subspace stable under an almost complex structure tamed by `ω` is symplectic: a vector
+`v ∈ L ∩ L^ω` has `ω (v, J v) = 0`, so `v = 0`. -/
+theorem Tames.isSymplectic {J : AlmostComplexStructure V} (hJ : ω.Tames J)
+    (hL : ∀ v ∈ L, J v ∈ L) : ω.IsSymplectic L := by
+  rw [isSymplectic_iff_disjoint, Submodule.disjoint_def]
+  intro v hv hv'
+  by_contra h
+  exact (hJ v h).ne' (mem_orthogonal_iff'.1 hv' (J v) (hL v hv))
 
 /-- A subspace that is both isotropic and symplectic is zero. -/
 lemma IsIsotropic.eq_bot_of_isSymplectic (h : ω.IsIsotropic L) (hs : ω.IsSymplectic L) : L = ⊥ :=
