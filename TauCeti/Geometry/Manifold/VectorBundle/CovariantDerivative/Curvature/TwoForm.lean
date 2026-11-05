@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Hom
 # The curvature endomorphism on real two-forms
 
 The musical identification `TauCeti.alternatingFormEquiv` carries the curvature endomorphism
-on bivectors to the existing continuous alternating two-form fibres. Its normalization is
+on bivectors to the continuous alternating two-form fibres. Its normalization is
 `Rop(u♭ ∧ v♭)(w,z) = ⟨R(u,v)z,w⟩`; constant curvature κ therefore gives κ times the identity.
 This is the curvature operator on two-forms, rather than the curvature of the induced
 connection on forms or the Weitzenböck potential.
@@ -57,7 +57,7 @@ variable [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
     (V := fun x : M ↦ TangentSpace I x) cov)
 
 /-- The curvature endomorphism on real two-forms, identified musically with the
-curvature endomorphism on bivectors. The norm on forms remains their existing operator norm;
+curvature endomorphism on bivectors. Forms carry the operator-norm topology;
 symmetry below is with respect to the Gram inner product. -/
 def curvatureFormEndomorphism (x : M) :
     (TangentSpace I x [⋀^Fin 2]→L[ℝ] ℝ) →L[ℝ]
@@ -104,8 +104,8 @@ theorem alternatingFormInner_curvatureFormEndomorphism (ht : cov.torsion = 0) (x
     alternatingFormInner_alternatingFormEquiv]
   exact cov.isSymmetric_curvatureEndomorphism hcov ht x a b
 
-/-- Constant sectional curvature at a point is equivalent to the scalar two-form curvature
-operator. Below dimension two both sides hold for every κ, so this does not identify κ. -/
+/-- Constant sectional curvature `κ` at `x` holds iff the two-form curvature operator at `x`
+is `κ • id`. Below dimension two both sides hold for every κ, so this does not identify κ. -/
 theorem hasSectionalCurvatureAt_iff_curvatureFormEndomorphism_eq_smul_id
     (ht : cov.torsion = 0) (x : M) (κ : ℝ) :
     cov.HasSectionalCurvatureAt hcov x κ ↔
@@ -213,8 +213,8 @@ theorem isSmoothForm_curvatureFormEndomorphism {α : RoughForm I M ℝ 2}
   rw [cov.curvatureFormEndomorphism_apply_eq_sum hcov y B]
   simp only [hdual, hB, Function.comp_def, e]
 
-/-- The curvature endomorphism is a smooth section of the native endomorphism bundle of
-real two-forms. No additional exterior-power bundle or topology is installed. -/
+/-- The curvature endomorphism is a smooth section of the endomorphism bundle of
+real two-forms. -/
 theorem contMDiff_curvatureFormEndomorphism :
     ContMDiff I (I.prod 𝓘(ℝ, (E [⋀^Fin 2]→L[ℝ] ℝ) →L[ℝ] E [⋀^Fin 2]→L[ℝ] ℝ)) ∞
       (fun x ↦ TotalSpace.mk' ((E [⋀^Fin 2]→L[ℝ] ℝ) →L[ℝ] E [⋀^Fin 2]→L[ℝ] ℝ)

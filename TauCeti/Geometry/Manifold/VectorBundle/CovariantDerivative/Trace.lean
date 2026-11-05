@@ -58,16 +58,6 @@ section DualFrame
 
 variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
-matrix. -/
-private theorem inner_chartDualFrame (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
-    (i j : Fin (Module.finrank ℝ E)) :
-    inner ℝ (chartDualFrame (I := I) α i y) (chartLocalFrame (I := I) α j y) =
-      if i = j then 1 else 0 := by
-  have h := congrFun (congrFun (chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy) i) j
-  simp only [Matrix.mul_apply, chartGramMatrix_apply, Matrix.one_apply] at h
-  simp only [chartDualFrame_apply, sum_inner, real_inner_smul_left, h]
-
 /-- On the chart domain, the metric trace of a bilinear form is `∑ᵢ B(Fᵢ, Dᵢ)`. -/
 private theorem bilinFormTrace_eq_sum_chartDualFrame (α : M) {y : M}
     (hy : y ∈ (chartAt H α).source) (B : LinearMap.BilinForm ℝ (TangentSpace I y)) :
@@ -85,36 +75,6 @@ private theorem bilinFormTrace_eq_sum_chartDualFrame (α : M) {y : M}
     Matrix.inv_eq_left_inv (hgram ▸ chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy)
   rw [TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hinv, hb]
   simp only [chartDualFrame_apply, map_sum, map_smul, smul_eq_mul]
-
-/-- On the chart domain, every tangent vector expands in the chart-local frame with the dual
-frame giving its coefficients, and in the dual frame with the chart-local frame giving its
-coefficients. -/
-private theorem sum_inner_chartDualFrame_smul (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
-    (w : TangentSpace I y) :
-    ∑ j, inner ℝ (chartDualFrame (I := I) α j y) w • chartLocalFrame (I := I) α j y = w ∧
-      ∑ j, inner ℝ (chartLocalFrame (I := I) α j y) w • chartDualFrame (I := I) α j y = w := by
-  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hy
-  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy'
-  have hb (i : Fin (Module.finrank ℝ E)) : b i = chartLocalFrame (I := I) α i y :=
-    (chartLocalFrame_apply_of_mem_chart_source (I := I) α hy i).symm
-  have hdual (i j : Fin (Module.finrank ℝ E)) :
-      inner ℝ (chartDualFrame (I := I) α i y) (b j) = if i = j then 1 else 0 := by
-    rw [hb]
-    exact inner_chartDualFrame α hy i j
-  constructor
-  · -- Both sides have the same coefficients in the basis `b`.
-    conv_rhs => rw [← b.sum_repr w]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← hb]
-    congr 1
-    conv_lhs => rw [← b.sum_repr w]
-    simp only [inner_sum, real_inner_smul_right, hdual, mul_ite, mul_one, mul_zero,
-      Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  · -- Both sides have the same inner products with the basis `b`.
-    refine InnerProductSpace.ext_inner_right_basis b fun k ↦ ?_
-    simp only [hb, sum_inner, real_inner_smul_left, inner_chartDualFrame α hy, mul_ite, mul_one,
-      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, real_inner_comm w]
 
 end DualFrame
 

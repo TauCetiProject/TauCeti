@@ -12,9 +12,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 # Naturality of the two-form curvature operator
 
 Pullback by the differential of a local Riemannian isometry intertwines the curvature
-endomorphisms on real two-forms. This uses the existing musical identification and the
-naturality of the bivector curvature endomorphism, so the statement holds on all two-forms,
-including those that are not decomposable. No global injectivity or surjectivity is needed.
+endomorphisms on all real two-forms, including those that are not decomposable.
+No global injectivity or surjectivity is needed.
 
 ## References
 
