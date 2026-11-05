@@ -265,21 +265,112 @@ theorem monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add {f : ℝ → ℝ} {
     nlinarith [mul_nonneg (mul_nonneg hD' hp.le) htp, mul_nonneg hC ht0.le]
   nlinarith
 
+/-- The exponent `2 / (1 + ε)` falls short of `2` by at most `2 ε`. -/
+private theorem two_sub_two_div_one_add_le {ε : ℝ} (hε : 0 ≤ ε) : 2 - 2 / (1 + ε) ≤ 2 * ε := by
+  have : 2 - 2 / (1 + ε) = 2 * ε / (1 + ε) := by
+    field_simp
+    ring
+  rw [this]
+  exact div_le_self (by positivity) (by linarith)
+
 /-- The normalization `β = 2 / (1 + ε)`, `p = 4` of
-`monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add`. -/
-private theorem monotoneOn_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C D ε : ℝ}
+`monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add`, with denominators cleared and the forcing
+correction bounded by the forcing term: for `x ≤ y` in `[a, b]`,
+`f x ψ(y) ≤ (f y + D y ^ 4) ψ(x)`, where `ψ(s) = (s / (1 + C s)) ^ (2 / (1 + ε))`. -/
+private theorem mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C D ε x y : ℝ}
     (ha : 0 < a) (hC : 0 ≤ C) (hD : 0 ≤ D) (hε : 0 ≤ ε) (hf : MonotoneOn f (Icc a b))
     (hfa : 0 ≤ f a)
-    (h : ∀ᵐ t, t ∈ Ioo a b → f t ≤ t / 2 * (1 + C * t) * (1 + ε) * deriv f t + D * t ^ 4) :
-    MonotoneOn (fun t ↦ (f t + 2 / (1 + ε) * D / (4 - 2 / (1 + ε)) * t ^ (4 : ℝ)) /
-      (t / (1 + C * t)) ^ (2 / (1 + ε))) (Icc a b) := by
+    (h : ∀ᵐ t, t ∈ Ioo a b → f t ≤ t / 2 * (1 + C * t) * (1 + ε) * deriv f t + D * t ^ 4)
+    (hx : x ∈ Icc a b) (hy : y ∈ Icc a b) (hxy : x ≤ y) :
+    f x * (y / (1 + C * y)) ^ (2 / (1 + ε)) ≤
+      (f y + D * y ^ 4) * (x / (1 + C * x)) ^ (2 / (1 + ε)) := by
   have hβ2 : 2 / (1 + ε) ≤ 2 := div_le_self zero_le_two (by linarith)
-  refine monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add ha hC hD (by positivity)
-    (by linarith) hf hfa ?_
-  filter_upwards [h] with t ht htI
-  convert ht htI using 2
-  · field_simp
-  · norm_cast
+  have hmono := monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add
+    (β := 2 / (1 + ε)) (p := 4) ha hC hD (by positivity) (by linarith) hf hfa (by
+      filter_upwards [h] with t ht htI
+      convert ht htI using 2
+      · field_simp
+      · norm_cast) hx hy hxy
+  set β := 2 / (1 + ε) with hβ_def
+  have hβ : 0 < β := by positivity
+  have hx0 : 0 < x := ha.trans_le hx.1
+  have hy0 : 0 < y := ha.trans_le hy.1
+  have hψx : 0 < (x / (1 + C * x)) ^ β := Real.rpow_pos_of_pos (by positivity) _
+  have hψy : 0 < (y / (1 + C * y)) ^ β := Real.rpow_pos_of_pos (by positivity) _
+  simp only [Real.rpow_ofNat] at hmono
+  rw [div_le_div_iff₀ hψx hψy] at hmono
+  -- The forcing correction `β D / (4 - β)` is nonnegative and at most `D`.
+  have hD' : 0 ≤ β * D / (4 - β) := div_nonneg (by positivity) (by linarith)
+  have hD'D : β * D / (4 - β) ≤ D := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith
+  nlinarith [mul_nonneg (mul_nonneg hD' (pow_nonneg hx0.le 4)) hψy.le,
+    mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hD'D (pow_nonneg hy0.le 4)) hψx.le]
+
+/-- For `a ≤ t ≤ 1` with `0 < a` and `ε ≤ A a`, the normalized power
+`(t / (1 + C t)) ^ (2 / (1 + ε))` is at most `e ^ (2 A) t ^ 2`. -/
+private theorem rpow_div_one_add_mul_le_exp_mul_sq {a t C ε A : ℝ} (ha : 0 < a) (hat : a ≤ t)
+    (ht1 : t ≤ 1) (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεa : ε ≤ A * a) :
+    (t / (1 + C * t)) ^ (2 / (1 + ε)) ≤ Real.exp (2 * A) * t ^ 2 := by
+  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right ha).1 (hε.trans hεa)
+  have ht0 : 0 < t := ha.trans_le hat
+  have h2β := two_sub_two_div_one_add_le hε
+  set β := 2 / (1 + ε) with hβ_def
+  have hβ : 0 < β := by positivity
+  calc (t / (1 + C * t)) ^ β ≤ t ^ β :=
+        Real.rpow_le_rpow (by positivity) (div_le_self ht0.le (by nlinarith)) hβ.le
+    _ = t ^ (2 : ℝ) * t ^ (β - 2) := by rw [← Real.rpow_add ht0]; ring_nf
+    _ ≤ t ^ (2 : ℝ) * t ^ (-(2 * ε)) :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge ht0 ht1 (by linarith))
+          (by positivity)
+    _ ≤ t ^ (2 : ℝ) * Real.exp (2 * A) :=
+        mul_le_mul_of_nonneg_left (rpow_neg_le_exp ht0 ht1 (by positivity)
+          (by nlinarith)) (by positivity)
+    _ = Real.exp (2 * A) * t ^ 2 := by rw [Real.rpow_two, mul_comm]
+
+/-- For `0 < b ≤ 1` and `β ≤ 2`, `((b / (1 + C b)) ^ β)⁻¹ ≤ ((1 + C b) / b) ^ 2`. -/
+private theorem inv_rpow_div_one_add_mul_le_sq {b C β : ℝ} (hb0 : 0 < b) (hb : b ≤ 1)
+    (hC : 0 ≤ C) (hβ2 : β ≤ 2) : ((b / (1 + C * b)) ^ β)⁻¹ ≤ ((1 + C * b) / b) ^ 2 := by
+  rw [← Real.inv_rpow (by positivity), inv_div, ← Real.rpow_two]
+  exact Real.rpow_le_rpow_of_exponent_le ((one_le_div hb0).2 (by nlinarith)) hβ2
+
+/-- For `0 < t ≤ b`, `t ≤ 1` and `0 ≤ β ≤ 2`, `t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β`. -/
+private theorem sq_le_mul_rpow_div_one_add_mul {t b C β : ℝ} (ht0 : 0 < t) (htb : t ≤ b)
+    (ht1 : t ≤ 1) (hC : 0 ≤ C) (hβ : 0 ≤ β) (hβ2 : β ≤ 2) :
+    t ^ 2 ≤ (1 + C * b) ^ 2 * (t / (1 + C * t)) ^ β := by
+  have hCb : 1 ≤ 1 + C * b := by nlinarith [mul_nonneg hC (ht0.le.trans htb)]
+  have ht2 : t ^ 2 ≤ t ^ β := by
+    rw [← Real.rpow_two]
+    exact Real.rpow_le_rpow_of_exponent_ge ht0 ht1 hβ2
+  have hCt : (1 + C * t) ^ β ≤ (1 + C * b) ^ 2 := by
+    calc (1 + C * t) ^ β ≤ (1 + C * b) ^ β :=
+          Real.rpow_le_rpow (by positivity) (by nlinarith [mul_le_mul_of_nonneg_left htb hC]) hβ
+      _ ≤ (1 + C * b) ^ (2 : ℝ) := Real.rpow_le_rpow_of_exponent_le hCb hβ2
+      _ = (1 + C * b) ^ 2 := Real.rpow_two _
+  rw [Real.div_rpow ht0.le (by positivity), mul_div_assoc', le_div_iff₀ (by positivity)]
+  calc t ^ 2 * (1 + C * t) ^ β ≤ t ^ β * (1 + C * b) ^ 2 :=
+        mul_le_mul ht2 hCt (by positivity) (by positivity)
+    _ = (1 + C * b) ^ 2 * t ^ β := mul_comm _ _
+
+/-- For `0 < a ≤ 1` and `ε ≤ A a`, `e ^ (-2 A) (a / (1 + C a)) ^ (2 / (1 + ε)) ≤ a ^ 2`. -/
+private theorem exp_neg_mul_rpow_div_one_add_mul_le_sq {a C ε A : ℝ} (ha : 0 < a) (ha1 : a ≤ 1)
+    (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεa : ε ≤ A * a) :
+    Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ (2 / (1 + ε)) ≤ a ^ 2 := by
+  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right ha).1 (hε.trans hεa)
+  have h2β := two_sub_two_div_one_add_le hε
+  set β := 2 / (1 + ε) with hβ_def
+  have hβ : 0 < β := by positivity
+  have hae : Real.exp (-(2 * A)) ≤ a ^ (2 - β) := by
+    calc Real.exp (-(2 * A)) = (Real.exp (2 * A))⁻¹ := Real.exp_neg _
+      _ ≤ (a ^ (-(2 * ε)))⁻¹ :=
+          inv_anti₀ (Real.rpow_pos_of_pos ha _) (rpow_neg_le_exp ha ha1 (by positivity)
+            (by linarith))
+      _ = a ^ (2 * ε) := by rw [Real.rpow_neg ha.le, inv_inv]
+      _ ≤ a ^ (2 - β) := Real.rpow_le_rpow_of_exponent_ge ha ha1 h2β
+  calc Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ β ≤ a ^ (2 - β) * a ^ β :=
+        mul_le_mul hae (Real.rpow_le_rpow (by positivity) (div_le_self ha.le (by nlinarith))
+          hβ.le) (by positivity) (by positivity)
+    _ = a ^ 2 := by rw [← Real.rpow_add ha, sub_add_cancel, Real.rpow_two]
 
 /-- **Quadratic upper bound from a monotonicity inequality.** Let `f` be monotone on `[a, b]` with
 `0 < a`, `b ≤ 1` and `0 ≤ f a`, and suppose that at almost every `t ∈ (a, b)`
@@ -296,52 +387,17 @@ theorem le_mul_sq_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C
     (h : ∀ᵐ s, s ∈ Ioo a b → f s ≤ s / 2 * (1 + C * s) * (1 + ε) * deriv f s + D * s ^ 4)
     (ht : t ∈ Icc a b) :
     f t ≤ (f b + D * b ^ 4) * ((1 + C * b) / b) ^ 2 * Real.exp (2 * A) * t ^ 2 := by
-  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right ha).1 (hε.trans hεa)
-  set β := 2 / (1 + ε) with hβ_def
-  have hβ : 0 < β := by positivity
-  have hβ2 : β ≤ 2 := div_le_self zero_le_two (by linarith)
-  have h2β : -(2 * ε) ≤ β - 2 := by
-    rw [hβ_def, le_sub_iff_add_le, le_div_iff₀ (by positivity)]
-    nlinarith
-  have hD'D : β * D / (4 - β) ≤ D := by
-    rw [div_le_iff₀ (by linarith)]
-    nlinarith
-  have ht0 : 0 < t := ha.trans_le ht.1
-  have hb0 : 0 < b := ht0.trans_le ht.2
-  have ht1 : t ≤ 1 := ht.2.trans hb
+  have hb0 : 0 < b := ha.trans_le (ht.1.trans ht.2)
   have hbI : b ∈ Icc a b := ⟨ht.1.trans ht.2, le_rfl⟩
   have hfb : 0 ≤ f b := hfa.trans (hf ⟨le_rfl, hbI.1⟩ hbI hbI.1)
-  have hψt : 0 < (t / (1 + C * t)) ^ β := Real.rpow_pos_of_pos (by positivity) _
-  have hψb : 0 < (b / (1 + C * b)) ^ β := Real.rpow_pos_of_pos (by positivity) _
-  have hmono := monotoneOn_of_le_half_mul_deriv_add_mul_pow_four ha hC hD hε hf hfa h ht hbI ht.2
-  simp only [← hβ_def] at hmono
-  rw [div_le_div_iff₀ hψt hψb] at hmono
-  -- `f t ψ(b) ≤ (f b + D b ^ 4) ψ(t)`, where `ψ(s) = (s / (1 + C s)) ^ β`.
-  have h1 : f t * (b / (1 + C * b)) ^ β ≤ (f b + D * b ^ 4) * (t / (1 + C * t)) ^ β := by
-    have hD't : 0 ≤ β * D / (4 - β) * t ^ (4 : ℝ) :=
-      mul_nonneg (div_nonneg (by positivity) (by linarith)) (by positivity)
-    have hD'b : β * D / (4 - β) * b ^ (4 : ℝ) ≤ D * b ^ 4 := by
-      rw [Real.rpow_ofNat]
-      exact mul_le_mul_of_nonneg_right hD'D (by positivity)
-    nlinarith
-  -- `ψ(t) ≤ t ^ β ≤ e ^ (2 A) t ^ 2`.
-  have h2 : (t / (1 + C * t)) ^ β ≤ Real.exp (2 * A) * t ^ 2 := by
-    calc (t / (1 + C * t)) ^ β ≤ t ^ β :=
-          Real.rpow_le_rpow (by positivity) (div_le_self ht0.le (by nlinarith)) hβ.le
-      _ = t ^ (2 : ℝ) * t ^ (β - 2) := by rw [← Real.rpow_add ht0]; ring_nf
-      _ ≤ t ^ (2 : ℝ) * t ^ (-(2 * ε)) :=
-          mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge ht0 ht1 h2β)
-            (by positivity)
-      _ ≤ t ^ (2 : ℝ) * Real.exp (2 * A) :=
-          mul_le_mul_of_nonneg_left (rpow_neg_le_exp ht0 ht1 (by positivity)
-            (by nlinarith [ht.1])) (by positivity)
-      _ = Real.exp (2 * A) * t ^ 2 := by rw [Real.rpow_two, mul_comm]
-  -- `ψ(b)⁻¹ = ((1 + C b) / b) ^ β ≤ ((1 + C b) / b) ^ 2`.
-  have h3 : ((b / (1 + C * b)) ^ β)⁻¹ ≤ ((1 + C * b) / b) ^ 2 := by
-    rw [← Real.inv_rpow (by positivity), inv_div, ← Real.rpow_two]
-    exact Real.rpow_le_rpow_of_exponent_le
-      ((one_le_div hb0).2 (by nlinarith)) hβ2
-  calc f t = f t * (b / (1 + C * b)) ^ β * ((b / (1 + C * b)) ^ β)⁻¹ := by
+  -- `f t ψ(b) ≤ (f b + D b ^ 4) ψ(t)`, `ψ(t) ≤ e ^ (2 A) t ^ 2` and
+  -- `ψ(b)⁻¹ ≤ ((1 + C b) / b) ^ 2`, where `ψ(s) = (s / (1 + C s)) ^ (2 / (1 + ε))`.
+  have h1 := mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four ha hC hD hε hf hfa h ht hbI ht.2
+  have h2 := rpow_div_one_add_mul_le_exp_mul_sq ha ht.1 (ht.2.trans hb) hC hε hεa
+  have h3 := inv_rpow_div_one_add_mul_le_sq hb0 hb hC
+    (div_le_self zero_le_two (by linarith) : 2 / (1 + ε) ≤ 2)
+  have hψb : 0 < (b / (1 + C * b)) ^ (2 / (1 + ε)) := Real.rpow_pos_of_pos (by positivity) _
+  calc f t = f t * (b / (1 + C * b)) ^ (2 / (1 + ε)) * ((b / (1 + C * b)) ^ (2 / (1 + ε)))⁻¹ := by
         field_simp
     _ ≤ (f b + D * b ^ 4) * (Real.exp (2 * A) * t ^ 2) * ((1 + C * b) / b) ^ 2 :=
         mul_le_mul (h1.trans (mul_le_mul_of_nonneg_left h2 (by positivity))) h3 (by positivity)
@@ -364,82 +420,33 @@ theorem mul_sq_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C
     (h : ∀ᵐ s, s ∈ Ioo a b → f s ≤ s / 2 * (1 + C * s) * (1 + ε) * deriv f s + D * s ^ 4)
     (ht : t ∈ Icc a b) :
     (c * Real.exp (-(2 * A)) / (1 + C * b) ^ 2 - D * b ^ 2) * t ^ 2 ≤ f t := by
-  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right ha).1 (hε.trans hεa)
-  set β := 2 / (1 + ε) with hβ_def
-  have hβ : 0 < β := by positivity
-  have hβ2 : β ≤ 2 := div_le_self zero_le_two (by linarith)
-  have h2β : 2 - β ≤ 2 * ε := by
-    have : 2 - β = 2 * ε / (1 + ε) := by
-      rw [hβ_def]
-      field_simp
-      ring
-    rw [this]
-    exact div_le_self (by positivity) (by linarith)
-  have hD'D : β * D / (4 - β) ≤ D := by
-    rw [div_le_iff₀ (by linarith)]
-    nlinarith
   have ht0 : 0 < t := ha.trans_le ht.1
-  have ht1 : t ≤ 1 := ht.2.trans hb
-  have ha1 : a ≤ 1 := ht.1.trans ht1
+  have hb0 : 0 ≤ b := ht0.le.trans ht.2
   have haI : a ∈ Icc a b := ⟨le_rfl, ht.1.trans ht.2⟩
   have hfa0 : 0 ≤ f a := (by positivity : 0 ≤ c * a ^ 2).trans hfa
-  have hCb : 1 ≤ 1 + C * b := by nlinarith [ht0.le.trans ht.2]
-  have hψt : 0 < (t / (1 + C * t)) ^ β := Real.rpow_pos_of_pos (by positivity) _
+  -- `f a ψ(t) ≤ (f t + D t ^ 4) ψ(a)`, `t ^ 2 ≤ (1 + C b) ^ 2 ψ(t)` and
+  -- `e ^ (-2 A) ψ(a) ≤ a ^ 2`, where `ψ(s) = (s / (1 + C s)) ^ (2 / (1 + ε))`.
+  have h1 := mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four ha hC hD hε hf hfa0 h haI ht ht.1
+  have h2 := sq_le_mul_rpow_div_one_add_mul ht0 ht.2 (ht.2.trans hb) hC (by positivity)
+    (div_le_self zero_le_two (by linarith) : 2 / (1 + ε) ≤ 2)
+  have h3 := exp_neg_mul_rpow_div_one_add_mul_le_sq ha (ht.1.trans (ht.2.trans hb)) hC hε hεa
+  set β := 2 / (1 + ε) with hβ_def
   have hψa : 0 < (a / (1 + C * a)) ^ β := Real.rpow_pos_of_pos (by positivity) _
-  have hmono := monotoneOn_of_le_half_mul_deriv_add_mul_pow_four ha hC hD hε hf hfa0 h haI ht ht.1
-  simp only [← hβ_def] at hmono
-  rw [div_le_div_iff₀ hψa hψt] at hmono
-  -- `t ^ 2 ≤ (1 + C b) ^ 2 ψ(t)`, where `ψ(s) = (s / (1 + C s)) ^ β`.
-  have h1 : t ^ 2 ≤ (1 + C * b) ^ 2 * (t / (1 + C * t)) ^ β := by
-    have ht2 : t ^ 2 ≤ t ^ β := by
-      rw [← Real.rpow_two]
-      exact Real.rpow_le_rpow_of_exponent_ge ht0 ht1 hβ2
-    have hCt : (1 + C * t) ^ β ≤ (1 + C * b) ^ 2 := by
-      calc (1 + C * t) ^ β ≤ (1 + C * b) ^ β :=
-            Real.rpow_le_rpow (by positivity) (by nlinarith [mul_le_mul_of_nonneg_left ht.2 hC])
-              hβ.le
-        _ ≤ (1 + C * b) ^ (2 : ℝ) := Real.rpow_le_rpow_of_exponent_le hCb hβ2
-        _ = (1 + C * b) ^ 2 := Real.rpow_two _
-    rw [Real.div_rpow ht0.le (by positivity), mul_div_assoc', le_div_iff₀ (by positivity)]
-    calc t ^ 2 * (1 + C * t) ^ β ≤ t ^ β * (1 + C * b) ^ 2 :=
-          mul_le_mul ht2 hCt (by positivity) (by positivity)
-      _ = (1 + C * b) ^ 2 * t ^ β := mul_comm _ _
-  -- `e ^ (-2 A) ψ(a) ≤ e ^ (-2 A) a ^ β ≤ a ^ 2`.
-  have h2 : Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ β ≤ a ^ 2 := by
-    have hae : Real.exp (-(2 * A)) ≤ a ^ (2 - β) := by
-      calc Real.exp (-(2 * A)) = (Real.exp (2 * A))⁻¹ := Real.exp_neg _
-        _ ≤ (a ^ (-(2 * ε)))⁻¹ :=
-            inv_anti₀ (Real.rpow_pos_of_pos ha _) (rpow_neg_le_exp ha ha1 (by positivity)
-              (by linarith))
-        _ = a ^ (2 * ε) := by rw [Real.rpow_neg ha.le, inv_inv]
-        _ ≤ a ^ (2 - β) := Real.rpow_le_rpow_of_exponent_ge ha ha1 h2β
-    calc Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ β ≤ a ^ (2 - β) * a ^ β :=
-          mul_le_mul hae (Real.rpow_le_rpow (by positivity) (div_le_self ha.le (by nlinarith))
-            hβ.le) (by positivity) (by positivity)
-      _ = a ^ 2 := by rw [← Real.rpow_add ha, sub_add_cancel, Real.rpow_two]
-  -- Hence `c e ^ (-2 A) t ^ 2 / (1 + C b) ^ 2 ≤ f t + D' t ^ 4`.
-  have h3 : c * Real.exp (-(2 * A)) / (1 + C * b) ^ 2 * t ^ 2 ≤
-      f t + β * D / (4 - β) * t ^ (4 : ℝ) := by
-    have hcψ : c * a ^ 2 * (t / (1 + C * t)) ^ β ≤
-        (f t + β * D / (4 - β) * t ^ (4 : ℝ)) * (a / (1 + C * a)) ^ β := by
-      have hD'a : 0 ≤ β * D / (4 - β) * a ^ (4 : ℝ) :=
-        mul_nonneg (div_nonneg (by positivity) (by linarith)) (by positivity)
-      nlinarith
+  -- Hence `c e ^ (-2 A) t ^ 2 / (1 + C b) ^ 2 ≤ f t + D t ^ 4`.
+  have h4 : c * Real.exp (-(2 * A)) / (1 + C * b) ^ 2 * t ^ 2 ≤ f t + D * t ^ 4 := by
     rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity), ← mul_le_mul_iff_of_pos_right hψa]
     calc c * Real.exp (-(2 * A)) * t ^ 2 * (a / (1 + C * a)) ^ β
         = c * t ^ 2 * (Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ β) := by ring
       _ ≤ c * ((1 + C * b) ^ 2 * (t / (1 + C * t)) ^ β) * a ^ 2 := by gcongr
       _ = c * a ^ 2 * (t / (1 + C * t)) ^ β * (1 + C * b) ^ 2 := by ring
-      _ ≤ (f t + β * D / (4 - β) * t ^ (4 : ℝ)) * (a / (1 + C * a)) ^ β * (1 + C * b) ^ 2 := by
-          gcongr
-      _ = (f t + β * D / (4 - β) * t ^ (4 : ℝ)) * (1 + C * b) ^ 2 * (a / (1 + C * a)) ^ β := by
-          ring
-  -- The forcing correction is at most `D t ^ 4 ≤ D b ^ 2 t ^ 2`.
-  have h4 : β * D / (4 - β) * t ^ (4 : ℝ) ≤ D * b ^ 2 * t ^ 2 := by
-    rw [Real.rpow_ofNat]
+      _ ≤ f a * (t / (1 + C * t)) ^ β * (1 + C * b) ^ 2 := by gcongr
+      _ ≤ (f t + D * t ^ 4) * (a / (1 + C * a)) ^ β * (1 + C * b) ^ 2 :=
+          mul_le_mul_of_nonneg_right h1 (by positivity)
+      _ = (f t + D * t ^ 4) * (1 + C * b) ^ 2 * (a / (1 + C * a)) ^ β := by ring
+  -- The forcing term is `D t ^ 4 ≤ D b ^ 2 t ^ 2`.
+  have h5 : D * t ^ 4 ≤ D * b ^ 2 * t ^ 2 := by
     have htb : t ^ 2 ≤ b ^ 2 := pow_le_pow_left₀ ht0.le ht.2 2
-    calc β * D / (4 - β) * t ^ 4 ≤ D * t ^ 4 := mul_le_mul_of_nonneg_right hD'D (by positivity)
-      _ = D * t ^ 2 * t ^ 2 := by ring
+    calc D * t ^ 4 = D * t ^ 2 * t ^ 2 := by ring
       _ ≤ D * b ^ 2 * t ^ 2 := by gcongr
   linarith
 
