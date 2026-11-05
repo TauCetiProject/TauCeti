@@ -76,13 +76,6 @@ variable {A}
 @[simp] theorem symmetricYosidaApproximation_zero : A.symmetricYosidaApproximation 0 = 0 := by
   simp [symmetricYosidaApproximation]
 
-/-- At an imaginary resolvent point, the approximation factors through the normalized resolvent
-on the domain of the operator. -/
-theorem imaginaryYosidaApproximation_apply_eq_smul_resolvent_apply
-    {r : ℝ} (hz : I * (r : ℂ) ∈ A.resolventSet) (x : A.domain) :
-    A.imaginaryYosidaApproximation r x = (I * (r : ℂ)) • A.resolvent (I * r) (A x) :=
-  TauCeti.Semigroups.yosidaApproximation_apply_eq_smul_resolvent_apply hz x
-
 variable [CompleteSpace H]
 
 /-- The normalized imaginary resolvent is a contraction. -/
@@ -101,25 +94,10 @@ theorem _root_.IsSelfAdjoint.norm_smul_resolvent_I_mul_le_one (hA : IsSelfAdjoin
 /-- The imaginary-shift approximation has norm at most `2 |r|`. -/
 theorem _root_.IsSelfAdjoint.norm_imaginaryYosidaApproximation_le
     (hA : IsSelfAdjoint A) (r : ℝ) : ‖A.imaginaryYosidaApproximation r‖ ≤ 2 * |r| := by
-  have hfirst : ‖(r : ℂ) ^ 2 • A.resolvent (I * r)‖ ≤ |r| := by
-    calc
-      ‖(r : ℂ) ^ 2 • A.resolvent (I * r)‖
-          = |r| * ‖(I * (r : ℂ)) • A.resolvent (I * r)‖ := by
-            rw [norm_smul, norm_pow, norm_smul]
-            simp only [norm_mul, norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs,
-              pow_two, mul_assoc]
-      _ ≤ |r| * 1 := mul_le_mul_of_nonneg_left
-        (hA.norm_smul_resolvent_I_mul_le_one r) (abs_nonneg r)
-      _ = |r| := mul_one _
-  have hone : ‖(1 : H →L[ℂ] H)‖ ≤ 1 := by
-    rw [ContinuousLinearMap.one_def]
-    exact ContinuousLinearMap.norm_id_le
-  have hsecond : ‖(I * (r : ℂ)) • (1 : H →L[ℂ] H)‖ ≤ |r| := by
-    rw [norm_smul, norm_mul, norm_I, Complex.norm_real, one_mul]
-    exact (mul_le_mul_of_nonneg_left hone (abs_nonneg r)).trans_eq (mul_one _)
-  rw [imaginaryYosidaApproximation_def]
-  exact (norm_sub_le _ _).trans (by
-    simpa only [norm_neg, two_mul] using add_le_add hfirst hsecond)
+  have hres := hA.norm_smul_resolvent_I_mul_le_one r
+  rw [norm_smul] at hres
+  simpa [imaginaryYosidaApproximation] using
+    (TauCeti.Semigroups.norm_yosidaApproximation_le hres)
 
 /-- The approximations at opposite imaginary shifts are adjoints of one another. -/
 theorem _root_.IsSelfAdjoint.adjoint_imaginaryYosidaApproximation
@@ -191,7 +169,8 @@ theorem _root_.IsSelfAdjoint.tendsto_symmetricYosidaApproximation_apply
   have hneg := (hA.tendsto_imaginaryYosidaApproximation_apply x).comp
     (Homeomorph.neg ℝ).isClosedEmbedding.tendsto_cocompact
   have h := ((hA.tendsto_imaginaryYosidaApproximation_apply x).add hneg).const_smul (1 / 2 : ℂ)
-  simpa [symmetricYosidaApproximation_eq_avg, _root_.smul_apply,
-    _root_.add_apply, ← smul_add, ← two_smul ℂ, smul_smul] using h
+  have havg : (1 / 2 : ℂ) • (A x + A x) = A x := by module
+  rw [havg] at h
+  simpa [symmetricYosidaApproximation_eq_avg, _root_.smul_apply, _root_.add_apply] using h
 
 end LinearPMap

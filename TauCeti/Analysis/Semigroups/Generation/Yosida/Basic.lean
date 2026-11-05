@@ -26,7 +26,9 @@ Splitting the exponential of `t A_lambda` into the commuting scalar and resolven
 that `exp (t A_lambda)` is a contraction for every `t ≥ 0`. Thus each approximation generates a
 uniformly continuous contraction semigroup. This is the bounded stage of the Yosida construction.
 
-The convergence stage follows. It is stated against a resolvent bound
+The general convergence criterion applies along any scalar family and filter: norm decay
+of the resolvents and a uniform bound on the normalized resolvents imply strong convergence.
+The real `_atTop` statements specialize this criterion to `lambda → +∞`, using a resolvent bound
 `‖R(lambda, A)‖ ≤ M / lambda` rather than against dissipativity, because the Hille--Yosida
 generation theorem needs the same estimates at a growth constant larger than one: for a densely
 defined operator with that bound, `lambda R(lambda, A)` converges strongly to the identity, hence
@@ -50,6 +52,11 @@ the limit of the approximating semigroups.
   `A_lambda x = lambda A R(lambda, A) x`.
 * `TauCeti.Semigroups.yosidaSemigroup`: the uniformly continuous contraction semigroup generated
   by `A_lambda`.
+* `TauCeti.Semigroups.tendsto_smul_resolvent_apply`: strong convergence of normalized resolvents
+  along any scalar family whose resolvents decay in norm and whose normalized resolvents are
+  uniformly bounded, for an operator with dense domain.
+* `TauCeti.Semigroups.tendsto_yosidaApproximation_apply`: convergence of Yosida approximations
+  on the domain from convergence of the normalized resolvents there.
 * `TauCeti.Semigroups.tendsto_smul_resolvent_apply_atTop`: the strong convergence
   `lambda R(lambda, A) x -> x` for a densely defined operator obeying the resolvent bound.
 * `TauCeti.Semigroups.tendsto_yosidaApproximation_apply_atTop`: the convergence
@@ -181,37 +188,31 @@ theorem tendsto_yosidaApproximation_apply {ι : Type*} {l : Filter ι} {z : ι �
   filter_upwards [hres] with i hi
   exact (yosidaApproximation_apply_eq_smul_resolvent_apply hi x).symm
 
+/-- The Yosida approximation has norm at most twice the parameter norm when its normalized
+resolvent is contractive. -/
+theorem norm_yosidaApproximation_le {A : X →ₗ.[𝕜] X} {lambda : 𝕜}
+    (hres : ‖lambda‖ * ‖LinearPMap.resolvent A lambda‖ ≤ 1) :
+    ‖yosidaApproximation A lambda‖ ≤ 2 * ‖lambda‖ := by
+  have hscaled : ‖lambda • (lambda • LinearPMap.resolvent A lambda)‖ ≤ ‖lambda‖ := by
+    simpa only [norm_smul, mul_one] using
+      mul_le_mul_of_nonneg_left hres (norm_nonneg lambda)
+  have hone : ‖lambda • (1 : X →L[𝕜] X)‖ ≤ ‖lambda‖ := by
+    simpa only [norm_smul, ContinuousLinearMap.one_def, mul_one] using
+      mul_le_mul_of_nonneg_left (ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := X))
+        (norm_nonneg lambda)
+  calc
+    ‖yosidaApproximation A lambda‖
+        = ‖lambda • (lambda • LinearPMap.resolvent A lambda) - lambda • (1 : X →L[𝕜] X)‖ := by
+          rw [yosidaApproximation, smul_smul, pow_two]
+    _ ≤ ‖lambda • (lambda • LinearPMap.resolvent A lambda)‖ + ‖lambda • (1 : X →L[𝕜] X)‖ :=
+      norm_sub_le _ _
+    _ ≤ ‖lambda‖ + ‖lambda‖ := add_le_add hscaled hone
+    _ = 2 * ‖lambda‖ := (two_mul _).symm
+
 end Algebra
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- The Yosida approximation has the elementary bound `‖A_lambda‖ ≤ 2 lambda`. -/
-theorem norm_yosidaApproximation_le {A : X →ₗ.[ℝ] X} {lambda : ℝ}
-    (hres : lambda * ‖LinearPMap.resolvent A lambda‖ ≤ 1) (hlambda : 0 < lambda) :
-    ‖yosidaApproximation A lambda‖ ≤ 2 * lambda := by
-  have hscaled : ‖lambda • (lambda • LinearPMap.resolvent A lambda)‖ ≤ lambda := by
-    calc
-      ‖lambda • (lambda • LinearPMap.resolvent A lambda)‖
-          = lambda * ‖lambda • LinearPMap.resolvent A lambda‖ := by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_pos hlambda]
-      _ ≤ lambda * 1 := by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_pos hlambda]
-        gcongr
-      _ = lambda := mul_one _
-  have hone : ‖lambda • (1 : X →L[ℝ] X)‖ ≤ lambda := by
-    calc
-      ‖lambda • (1 : X →L[ℝ] X)‖ = lambda * ‖(1 : X →L[ℝ] X)‖ := by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_pos hlambda]
-      _ ≤ lambda * 1 := by gcongr; exact ContinuousLinearMap.norm_id_le
-      _ = lambda := mul_one _
-  calc
-    ‖yosidaApproximation A lambda‖
-        = ‖lambda • (lambda • LinearPMap.resolvent A lambda) - lambda • (1 : X →L[ℝ] X)‖ := by
-      rw [yosidaApproximation, smul_smul, pow_two]
-    _ ≤ ‖lambda • (lambda • LinearPMap.resolvent A lambda)‖ + ‖lambda • (1 : X →L[ℝ] X)‖ :=
-      norm_sub_le _ _
-    _ ≤ lambda + lambda := add_le_add hscaled hone
-    _ = 2 * lambda := (two_mul lambda).symm
 
 section
 
