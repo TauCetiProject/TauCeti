@@ -112,6 +112,14 @@ def IsMicrolocallySmoothAt (T : 𝓓'(Ω, ℂ)) (x ξ : E) : Prop :=
     (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
     ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C
 
+/-- Unfolds `IsMicrolocallySmoothAt` into its cutoff, cone and decay witnesses. -/
+theorem isMicrolocallySmoothAt_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
+    T.IsMicrolocallySmoothAt x ξ ↔
+      ∃ φ : 𝓓(Ω, ℂ), φ x ≠ 0 ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧
+        (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+        ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C :=
+  Iff.rfl
+
 /-- The **wave front set** of a complex distribution `T` on `Ω`: the pairs `(x, ξ)` with `x ∈ Ω`
 and `ξ ≠ 0` at which `T` is not microlocally smooth. -/
 def waveFrontSet (T : 𝓓'(Ω, ℂ)) : Set (E × E) :=
