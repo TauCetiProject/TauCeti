@@ -25,6 +25,11 @@ Let `V` be a finite-dimensional real inner product space and `J` an almost compl
 two-forms as a derivation `D_J (u ∧ w) = J u ∧ w + u ∧ J w` (`exteriorPower.lieMap 2 J`),
 which is skew-adjoint and kills `ω`.
 
+Conversely, if a two-vector `F` and an almost complex structure `J` satisfy
+`⟪u, v⟫ = ⟪F, u ∧ J v⟫`, then `J` is the contraction `u ↦ u ⌟ F`
+(`TauCeti.twoVectorContraction F`), so such a `J` is unique; it is orthogonal and `F` is its
+Kähler two-vector.
+
 In dimension four, for the complex orientation, the one in which unitary frames are positively
 oriented, `ω` is self-dual, and on the self-dual two-forms
 `Λ⁺ = ℝ ω ⊕ (ℝ ω)ᗮ` the operator `D_J / 2` is zero on `ω` and squares to `-1` on its
@@ -50,6 +55,9 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
 * `lieMap_kahlerForm`: `D_J ω = 0`.
 * `map_kahlerForm_of_isComplexLinearMap`: complex-linear isometries preserve `ω`.
+* `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
+  contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
+  two-vector (`kahlerForm_eq_of_inner_eq`).
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
@@ -163,6 +171,42 @@ theorem map_kahlerForm_of_isComplexLinearMap {V' : Type*} [NormedAddCommGroup V'
   rw [inner_kahlerForm_ιMulti hJ, hmap, inner_kahlerForm_ιMulti hJ', ← hfJ', f.inner_map_map]
 
 end Orthogonal
+
+/-! ### Almost complex structures represented by a two-vector -/
+
+section Contraction
+
+variable {F : ⋀[ℝ]^2 V} {J : AlmostComplexStructure V}
+  (hJ : ∀ u v, ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, J v]⟫)
+include hJ
+
+/-- **Uniqueness of the compatible complex structure.** An almost complex structure `J` with
+`g(u, v) = ω(u, J v)`, where `ω(u, w) = ⟪F, u ∧ w⟫`, is the contraction by `F`. -/
+theorem toLinearMap_eq_twoVectorContraction : J.toLinearMap = twoVectorContraction F := by
+  -- Taking `v = -J w` gives `⟪u ⌟ F, w⟫ = -⟪u, J w⟫`.
+  have hA (u w : V) : ⟪twoVectorContraction F u, w⟫ = -⟪u, J w⟫ := by
+    have h := hJ u (-J w)
+    rw [map_neg, J.apply_apply, neg_neg, inner_neg_right] at h
+    rw [inner_twoVectorContraction_apply, ← h]
+  refine LinearMap.ext fun u ↦ ext_inner_right ℝ fun w ↦ ?_
+  rw [inner_twoVectorContraction_apply_left, real_inner_comm (twoVectorContraction F w) u, hA,
+    neg_neg, real_inner_comm]
+
+/-- An almost complex structure with `g(u, v) = ω(u, J v)` is orthogonal. -/
+theorem inner_apply_apply_of_inner_eq (u v : V) : ⟪J u, J v⟫ = ⟪u, v⟫ := by
+  have h : J u = twoVectorContraction F u :=
+    LinearMap.congr_fun (toLinearMap_eq_twoVectorContraction hJ) u
+  rw [h, inner_twoVectorContraction_apply, hJ]
+
+/-- A two-vector `F` with `g(u, v) = ω(u, J v)` is the Kähler two-vector of `J`. -/
+theorem kahlerForm_eq_of_inner_eq : J.kahlerForm = F := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  have h : J u = twoVectorContraction F u :=
+    LinearMap.congr_fun (toLinearMap_eq_twoVectorContraction hJ) u
+  rw [inner_kahlerForm_ιMulti (inner_apply_apply_of_inner_eq hJ), h,
+    inner_twoVectorContraction_apply]
+
+end Contraction
 
 /-! ### Dimension four -/
 
