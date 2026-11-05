@@ -151,14 +151,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
+          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -912,6 +912,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          # Large shared fleet guests spend less CPU on a narrower unpack pool.
+          if [[ "${RUNNER_NAME:-}" == fleet-* ]] && (( $(nproc) > 16 )); then
+            export RAYON_NUM_THREADS=16
+          fi
           if ! ( cd pr && lake exe cache get ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"; then
             echo "::warning::lake exe cache get failed; forcing a full refetch"
             ( cd pr && lake exe cache get! ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"
@@ -1234,7 +1238,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1589,14 +1593,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
+          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

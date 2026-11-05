@@ -36,6 +36,8 @@ contravariant splitting used by the relative theory.
 * `TauCeti.relativeCyclicCohomology.mk`: the class of a relative cyclic cocycle.
 * `TauCeti.relativeCyclicCochainComplexMap`, `TauCeti.relativeCyclicCohomology.map`: pullback along
   a homomorphism of nonunital algebras.
+* `TauCeti.relativeCyclicCohomology.toUnitization`: the map from relative cyclic cohomology to the
+  cyclic cohomology of the forced unitization.
 
 ## References
 
@@ -205,6 +207,16 @@ theorem mem_relativeCyclicCocycles_iff {n : ℕ} {φ : relativeCyclicCochains R 
     φ ∈ relativeCyclicCocycles R A M n ↔
       relativeCyclicHochschildCoboundary R A M n φ = 0 :=
   LinearMap.mem_ker
+
+variable {R A M} in
+/-- A relative cyclic cochain is a cyclic cocycle of the forced unitization exactly when it is a
+relative cyclic cocycle. -/
+theorem coe_mem_cyclicCocycles_iff_mem_relativeCyclicCocycles {n : ℕ}
+    {φ : relativeCyclicCochains R A M n} :
+    (φ : cyclicCochains R (Unitization R A) M n) ∈ cyclicCocycles R (Unitization R A) M n ↔
+      φ ∈ relativeCyclicCocycles R A M n := by
+  simp [mem_cyclicCocycles_iff, mem_relativeCyclicCocycles_iff, Subtype.ext_iff,
+    coe_relativeCyclicHochschildCoboundary_apply, coe_cyclicHochschildCoboundary_apply]
 
 /-- The relative cyclic coboundaries: zero in degree zero, and in positive degree the image of the
 relative Hochschild coboundary. -/
@@ -543,26 +555,10 @@ end relativeCyclicCohomology
 
 end ComplexMap
 
+section Inclusion
 
-section ComplexSplitting
-
-variable (R A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
-/-- Restriction of cyclic cochain complexes along the scalar inclusion. -/
-def unitizationScalarRestrictionComplexMap :
-    cyclicCochainComplex R (Unitization R A) M ⟶ cyclicCochainComplex R R M :=
-  cyclicCochainComplexMap M (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom
-
-/-- Under the identifications `cyclicCochainComplexXIso`, the components of scalar restriction of
-cyclic cochain complexes are scalar restriction of cyclic cochains. -/
-@[reassoc, elementwise]
-theorem unitizationScalarRestrictionComplexMap_f (n : ℕ) :
-    (unitizationScalarRestrictionComplexMap R A M).f n ≫ (cyclicCochainComplexXIso R R M n).hom =
-      (cyclicCochainComplexXIso R (Unitization R A) M n).hom ≫
-        ModuleCat.ofHom (unitizationScalarRestriction R A M n) := by
-  rw [unitizationScalarRestrictionComplexMap, cyclicCochainComplexMap_f,
-    unitizationScalarRestriction]
 
 /-- The inclusion of the relative cyclic cochain complex into the cyclic cochain complex of the
 forced unitization. -/
@@ -588,6 +584,77 @@ theorem relativeCyclicCochainComplexι_f (n : ℕ) :
       (relativeCyclicCochainComplexXIso R A M n).hom ≫
         ModuleCat.ofHom (relativeCyclicCochains R A M n).subtype :=
   by simp [relativeCyclicCochainComplexι, Category.assoc]
+
+end Inclusion
+
+section ToUnitization
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalRing A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
+namespace relativeCyclicCohomology
+
+/-- The map `HCⁿ(A; M) → HCⁿ(A⁺; M)` from relative cyclic cohomology to the cyclic cohomology of
+the forced unitization `A⁺ = Unitization R A`, induced by the inclusion of relative cyclic
+cochains. -/
+def toUnitization (n : ℕ) :
+    relativeCyclicCohomology R A M n ⟶ cyclicCohomology R (Unitization R A) M n :=
+  HomologicalComplex.homologyMap (relativeCyclicCochainComplexι R A M) n
+
+variable {R A M}
+
+/-- The class of a relative cyclic cocycle maps to its class as a cyclic cocycle of the forced
+unitization. -/
+@[simp]
+theorem toUnitization_mk {n : ℕ} (φ : relativeCyclicCocycles R A M n) :
+    toUnitization R A M n (mk R A M n φ) =
+      cyclicCohomology.mk R (Unitization R A) M n
+        ⟨_, coe_mem_cyclicCocycles_iff_mem_relativeCyclicCocycles.2 φ.2⟩ := by
+  rw [toUnitization, mk_apply]
+  refine (HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk _ _ _ _ _).trans
+    (cyclicCohomology.mk_eq_homologyπ R (Unitization R A) M _ _ ?_).symm
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, relativeCyclicCochainComplexι_f_apply]
+  -- `relativeCyclicCochainComplexXIso` is the identity.
+  rfl
+
+/-- The map to the cyclic cohomology of the forced unitization is natural for homomorphisms of
+nonunital algebras. -/
+theorem toUnitization_map {B : Type u} [NonUnitalRing B] [Module R B] [IsScalarTower R B B]
+    [SMulCommClass R B B] (f : A →ₙₐ[R] B) (n : ℕ) (c : relativeCyclicCohomology R B M n) :
+    toUnitization R A M n (map M f n c) =
+      cyclicCohomology.map M (Unitization.map f : Unitization R A →ₙₐ[R] Unitization R B) n
+        (toUnitization R B M n c) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective R B M n c
+  simp only [map_mk, toUnitization_mk, cyclicCohomology.map_mk]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [coe_relativeCyclicCochainsMap_apply]
+  -- Both sides pull back along the underlying linear map of `Unitization.map f`, read once through
+  -- the algebra homomorphism and once through the nonunital algebra homomorphism.
+  rfl
+
+end relativeCyclicCohomology
+
+end ToUnitization
+
+section ComplexSplitting
+
+variable (R A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
+/-- Restriction of cyclic cochain complexes along the scalar inclusion. -/
+def unitizationScalarRestrictionComplexMap :
+    cyclicCochainComplex R (Unitization R A) M ⟶ cyclicCochainComplex R R M :=
+  cyclicCochainComplexMap M (Algebra.ofId R (Unitization R A)).toNonUnitalAlgHom
+
+/-- Under the identifications `cyclicCochainComplexXIso`, the components of scalar restriction of
+cyclic cochain complexes are scalar restriction of cyclic cochains. -/
+@[reassoc, elementwise]
+theorem unitizationScalarRestrictionComplexMap_f (n : ℕ) :
+    (unitizationScalarRestrictionComplexMap R A M).f n ≫ (cyclicCochainComplexXIso R R M n).hom =
+      (cyclicCochainComplexXIso R (Unitization R A) M n).hom ≫
+        ModuleCat.ofHom (unitizationScalarRestriction R A M n) := by
+  rw [unitizationScalarRestrictionComplexMap, cyclicCochainComplexMap_f,
+    unitizationScalarRestriction]
 
 /-- The relative-complex inclusion followed by scalar restriction is zero. -/
 @[reassoc (attr := simp)]

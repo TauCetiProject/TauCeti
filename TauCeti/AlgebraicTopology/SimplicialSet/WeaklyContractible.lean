@@ -18,9 +18,9 @@ public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
 A simplicial set `K` is *weakly contractible* (`SSet.IsWeaklyContractible`) when, for every Kan
 complex `Z`, the inclusion `SSet.constMaps K Z : Z ⟶ Fun(K, Z)` of the constant maps into the
-internal hom is a simplicial homotopy equivalence. This is the mapping-space formulation used to
-define final maps of quasicategories: a map `K ⟶ L` is final when its fibre products with the
-coslices of `L` are weakly contractible.
+internal hom is a simplicial homotopy equivalence. It appears in Joyal's Theorem A (HTT Theorem
+4.1.3.1, Kerodon Theorem 7.2.3.1): a map `K ⟶ L` to a quasicategory is right cofinal exactly when
+its fibre products with the coslices of `L` are weakly contractible.
 
 A simplicial set with a homotopy from a constant map to its identity, such as a standard simplex
 (`SSet.stdSimplex.contraction`), is weakly contractible: evaluation at the vertex is a homotopy
