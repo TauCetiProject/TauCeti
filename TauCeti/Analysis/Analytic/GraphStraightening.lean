@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Analytic.HeightCompression
-import Mathlib.Topology.Instances.Int
 import TauCeti.Topology.ContinuousOn.ClosedGraph
 import TauCeti.Topology.MetricSpace.Thickening
 
@@ -57,10 +56,6 @@ Lipschitz constants `(K ν + 1)⁻¹`.
 
 ## Main results
 
-* `IsOpen.exists_tube_subset`: an open subset of `X × ℝ` containing a vertical line contains a
-  tube around it whose radius is locally bounded below by positive constants.
-* `TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`: disjoint closed intervals around the
-  terms of an injective two-sided sequence tending to `∓∞` at its two ends.
 * `TauCeti.exists_straightening_graphOn`: the straightening of the family of graphs.
 
 ## References
@@ -74,62 +69,7 @@ public section
 open Set Filter Metric Topology Function Real Bornology
 open scoped NNReal
 
-/-- **Tubes around a vertical line.** An open subset `W` of `X × ℝ` containing the vertical line
-through `c` contains a tube `{(u, t) | dist u c ≤ γ t}` around that line, whose radius `γ` is
-locally bounded below by positive constants. -/
-theorem IsOpen.exists_tube_subset {X : Type*} [PseudoMetricSpace X] {c : X}
-    {W : Set (X × ℝ)} (hW : IsOpen W) (hcW : ∀ t, (c, t) ∈ W) :
-    ∃ γ : ℝ → ℝ, (∀ x, ∃ r > 0, ∀ᶠ y in 𝓝 x, r ≤ γ y) ∧
-      ∀ u t, dist u c ≤ γ t → (u, t) ∈ W := by
-  -- Over each interval `[n, n + 1]`, the compact segment of the line has a thickening in `W`.
-  have hK (n : ℤ) : IsCompact ({c} ×ˢ Icc (n : ℝ) (n + 1)) := isCompact_singleton.prod isCompact_Icc
-  choose δ hδ hδW using fun n : ℤ ↦ (hK n).exists_thickening_subset_open hW
-    (by rintro ⟨u, t⟩ ⟨hu : u = c, -⟩; exact hu ▸ hcW t)
-  refine ⟨fun t ↦ δ ⌊t⌋ / 2, fun x ↦ ⟨min (δ ⌊x⌋) (δ (⌊x⌋ - 1)) / 2,
-    half_pos (lt_min (hδ _) (hδ _)), ?_⟩, fun u t hut ↦ hδW ⌊t⌋ ?_⟩
-  · have hx : Ioo ((⌊x⌋ : ℝ) - 1) (⌊x⌋ + 1) ∈ 𝓝 x :=
-      Ioo_mem_nhds (by linarith [Int.floor_le x]) (Int.lt_floor_add_one x)
-    filter_upwards [hx] with y hy
-    have h₁ : ⌊x⌋ - 1 ≤ ⌊y⌋ := Int.le_floor.2 (by push_cast; exact hy.1.le)
-    have h₂ : ⌊y⌋ < ⌊x⌋ + 1 := Int.floor_lt.2 (by push_cast; exact hy.2)
-    obtain h | h : ⌊y⌋ = ⌊x⌋ ∨ ⌊y⌋ = ⌊x⌋ - 1 := by omega
-    · rw [h]
-      exact div_le_div_of_nonneg_right (min_le_left _ _) zero_le_two
-    · rw [h]
-      exact div_le_div_of_nonneg_right (min_le_right _ _) zero_le_two
-  · refine mem_thickening_iff.2 ⟨(c, t), ⟨mem_singleton c, Int.floor_le t,
-      (Int.lt_floor_add_one t).le⟩, ?_⟩
-    rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
-    exact hut.trans_lt (half_lt_self (hδ _))
-
 namespace TauCeti
-
-/-- Around the terms of an injective two-sided sequence of reals tending to `-∞` and to `+∞` at
-its two ends, there are closed intervals of positive radii at most `1` which are pairwise disjoint
-and form a locally finite family. -/
-theorem exists_closedBall_pairwiseDisjoint_locallyFinite (x : ℤ → ℝ) (hx : Injective x)
-    (htop : Tendsto x atTop atTop) (hbot : Tendsto x atBot atBot) :
-    ∃ ε : ℤ → ℝ, (∀ ν, 0 < ε ν ∧ ε ν ≤ 1) ∧
-      Pairwise (Disjoint on fun ν ↦ closedBall (x ν) (ε ν)) ∧
-      LocallyFinite fun ν ↦ closedBall (x ν) (ε ν) := by
-  have hlf : LocallyFinite fun ν ↦ ({x ν} : Set ℝ) := by
-    intro y
-    obtain ⟨N, hN⟩ := eventually_atTop.1 (htop.eventually_ge_atTop (y + 1))
-    obtain ⟨N', hN'⟩ := eventually_atBot.1 (hbot.eventually_le_atBot (y - 1))
-    refine ⟨ball y 1, ball_mem_nhds y one_pos, (finite_Ioo N' N).subset ?_⟩
-    rintro ν ⟨_, rfl, hν⟩
-    rw [mem_ball, Real.dist_eq, abs_lt] at hν
-    exact ⟨lt_of_not_ge fun h ↦ by linarith [hN' ν h], lt_of_not_ge fun h ↦ by linarith [hN ν h]⟩
-  obtain ⟨δ, hδ, hdisj⟩ := hlf.exists_cthickenings_pairwiseDisjoint (fun _ ↦ isCompact_singleton)
-    fun ν μ h ↦ disjoint_singleton.2 (hx.ne h)
-  refine ⟨fun ν ↦ min (δ ν) 1, fun ν ↦ ⟨lt_min (hδ ν) one_pos, min_le_right _ _⟩,
-    fun ν μ h ↦ Disjoint.mono ?_ ?_ (hdisj h), ?_⟩
-  · exact (closedBall_subset_closedBall (min_le_left _ _)).trans
-      (cthickening_singleton _ (hδ ν).le).ge
-  · exact (closedBall_subset_closedBall (min_le_left _ _)).trans
-      (cthickening_singleton _ (hδ μ).le).ge
-  · have := hlf.cthickening (δ := fun ν ↦ min (δ ν) 1) (R := 1) fun ν ↦ min_le_right _ _
-    simpa only [cthickening_singleton _ (lt_min (hδ _) one_pos).le] using this
 
 section Straightening
 
