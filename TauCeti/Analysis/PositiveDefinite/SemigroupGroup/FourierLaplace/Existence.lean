@@ -38,8 +38,8 @@ Every ingredient is already in place, and the proof here is the assembly.
 
 The only step needing care is that "almost every fibre" is not "every fibre", while a kernel must
 be defined at every point: the density is corrected to `0` on a measurable null set containing the
-exceptional fibres, which changes neither the Bernstein measures elsewhere nor the resulting
-representation.
+exceptional fibres (`TauCeti.exists_isContinuousCompletelyMonotoneOnIoi_ae_eq`), which changes
+neither the Bernstein measures elsewhere nor the resulting representation.
 
 ## Main declarations
 
@@ -64,32 +64,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] {F : ℝ≥0 × V → ℂ}
-
-omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [BorelSpace V] in
-/-- Redefining an almost everywhere completely monotone family of time profiles to be `0` on a
-measurable null set gives a family that is completely monotone and bounded by `1` at time `0`
-everywhere, and agrees with the original almost everywhere. -/
-theorem exists_isContinuousCompletelyMonotoneOnIoi_ae_eq {ν : Measure V}
-    (φ : V → ℝ → ℝ) (hφ : ∀ᵐ q ∂ν, IsContinuousCompletelyMonotoneOnIoi (φ q) ∧ φ q 0 ≤ 1)
-    (hφmeas : ∀ n : ℕ, Measurable fun q => φ q n) :
-    ∃ (g : V → ℝ → ℝ) (_ : ∀ q, IsContinuousCompletelyMonotoneOnIoi (g q))
-      (_ : ∀ n : ℕ, Measurable fun q => g q n), (∀ q, g q 0 ≤ 1) ∧ ∀ᵐ q ∂ν, g q = φ q := by
-  classical
-  set N := toMeasurable ν {q | ¬(IsContinuousCompletelyMonotoneOnIoi (φ q) ∧ φ q 0 ≤ 1)}
-  have hgood (q : V) (hq : q ∉ N) : IsContinuousCompletelyMonotoneOnIoi (φ q) ∧ φ q 0 ≤ 1 :=
-    not_not.1 fun hcon => hq (subset_toMeasurable _ _ hcon)
-  refine ⟨fun q => if q ∈ N then 0 else φ q, fun q => ?_, fun n => ?_, fun q => ?_, ?_⟩
-  · dsimp only
-    split_ifs with hq
-    exacts [representsLaplace_zero.isContinuousCompletelyMonotoneOnIoi, (hgood q hq).1]
-  · simp only [apply_ite (fun h : ℝ → ℝ => h n), Pi.zero_apply]
-    exact Measurable.ite (measurableSet_toMeasurable _ _) measurable_const (hφmeas n)
-  · dsimp only
-    split_ifs with hq
-    exacts [zero_le_one, (hgood q hq).2]
-  · filter_upwards [measure_eq_zero_iff_ae_notMem.1
-      ((measure_toMeasurable _).trans (ae_iff.1 hφ))] with q hq
-    exact ite_eq_right_iff.2 fun h => absurd h hq
 
 /-- **The existence half of the Berg--Christensen--Ressel representation theorem.** A bounded
 continuous positive-definite function on the involutive semigroup `ℝ≥0 × V` is the Laplace--Fourier
