@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Quantile
 public import Mathlib.Data.Finset.Max
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 
 /-!
 # Quantiles of finite labelled laws
