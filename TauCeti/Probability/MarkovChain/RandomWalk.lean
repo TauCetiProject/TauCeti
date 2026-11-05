@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.MarkovChain
-public import TauCeti.Probability.Kernel.Randomization
+public import TauCeti.Probability.MarkovChain.Simulation
 public import TauCeti.MeasureTheory.Group.Convolution.Power
-public import Mathlib.Probability.Independence.Basic
 
 /-!
 # Additive random walks as Markov chains
@@ -123,42 +121,24 @@ theorem hasLaw_markovChainLaw_partialSums (hU : ∀ n, Measurable (U n))
     HasLaw (fun ω n => a + ∑ j ∈ Finset.range n, U j ω)
       (markovChainLaw (Measure.dirac a) μ.additiveWalk) P := by
   have := hindep.isProbabilityMeasure
-  let X (ω : Ω) (n : ℕ) := a + ∑ j ∈ Finset.range n, U j ω
-  have hX : Measurable X := by fun_prop
-  refine ⟨hX.aemeasurable, Measure.eq_markovChainLaw _ _ ?_ ?_⟩
-  · rw [Measure.map_map (by fun_prop) hX]
-    simp [X, Function.comp_def]
-  · intro n
-    let W (ω : Ω) (i : Fin (n + 1)) := X ω i
-    have hW : Measurable W := by fun_prop
-    -- The entire state prefix is a measurable function of increments strictly before `n`.
-    let F (v : Set.Iio n → α) (i : Fin (n + 1)) :=
-      a + ∑ j : Fin i.val, v ⟨j.val, lt_of_lt_of_le j.isLt (Nat.le_of_lt_succ i.isLt)⟩
-    have hF : Measurable F := by fun_prop
-    have hprefix (ω : Ω) : F (fun j => U j ω) = W ω := by
-      ext i
-      dsimp only [F, W, X]
-      rw [← Fin.sum_univ_eq_sum_range]
-    have hdis : Disjoint (Set.Iio n) ({n} : Set ℕ) := by
-      simp only [Set.disjoint_left, Set.mem_Iio, Set.mem_singleton_iff]
-      omega
-    have hi := (hindep.indepFun_set (Set.Iio n) {n} hdis hU).comp
-      hF (measurable_pi_apply ⟨n, rfl⟩)
-    have hi' : IndepFun W (U n) P := by
-      simpa only [Function.comp_def, hprefix] using hi
-    let η := μ.additiveWalk.comap
-      (fun w : Fin (n + 1) → α => w (Fin.last n)) (measurable_pi_apply _)
-    let step (w : Fin (n + 1) → α) (u : α) := w (Fin.last n) + u
-    calc
-      _ = P.map (fun ω => (W ω, step (W ω) (U n ω))) := by
-        rw [Measure.map_map (by fun_prop) hX]
-        congr 1
-        funext ω
-        simp [W, X, step, Finset.sum_range_succ, add_assoc]
-      _ = (P.map W) ⊗ₘ η := hi'.map_prodMk_eq_compProd_of_map hW (hU n) (hlaw n)
-        η step (by fun_prop) (fun w => by simp [η, step, Kernel.comap_apply])
-      _ = _ := by
-        rw [Measure.map_map (by fun_prop) hX]
-        rfl
+  let S (u : ℕ → α) (n : ℕ) := a + ∑ j ∈ Finset.range n, u j
+  have hS : Measurable S := by fun_prop
+  have hsim := hasLaw_randomizedChain (g := fun _ : α => a) (f := fun x u => x + u)
+    measurable_const (by fun_prop) hU hindep hlaw (Measure.dirac a) μ.additiveWalk
+    (by simp) (fun x => (Measure.additiveWalk_apply μ x).symm)
+  have heq (u : ℕ → α) (n : ℕ) :
+      randomizedChain (fun _ => a) (fun x v => x + v) u n = S (fun j => u (j + 1)) n := by
+    induction n with
+    | zero => simp [S]
+    | succ n ih => simp [randomizedChain_succ, ih, S, Finset.sum_range_succ, add_assoc]
+  have htail : HasLaw (fun ω => S (fun j => U (j + 1) ω))
+      (markovChainLaw (Measure.dirac a) μ.additiveWalk) P :=
+    hsim.congr (Filter.Eventually.of_forall fun ω =>
+      funext fun n => (heq (fun i => U i ω) n).symm)
+  -- An i.i.d. sequence and its tail have the same product law, so their partial sums agree in law.
+  exact HasLaw.comp_of_hasLaw_comp hS.aemeasurable
+    ((hindep.precomp Nat.succ_injective).hasLaw_infinitePi (fun j => hlaw (j + 1))
+      (by fun_prop))
+    (hindep.hasLaw_infinitePi hlaw (by fun_prop)) htail
 
 end TauCeti.Probability
