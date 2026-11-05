@@ -15,7 +15,7 @@ import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
-# The top coefficient and the reflection of a determinant of polynomials
+# Coefficients and determinants of polynomial matrices
 
 Let `A` be a square matrix with polynomial entries whose `j`-th column has degree at most `e j`.
 Every term of the Leibniz expansion of `det A` then has degree at most `∑ j, e j`, so `det A` does
@@ -28,6 +28,9 @@ reciprocal variable `X ^ (∑ j, e j) * det A (1 / X)`, gives the determinant of
 `j`-th column is reflected at `e j` (`Matrix.reflect_det_sum_eq_of_natDegree_le`). For instance,
 when all entries have degree at most one, `det (X • Bᵀ + B)` is its own reflection at the
 dimension, being the determinant of the transpose (`Matrix.reflect_det_X_smul_transpose_add`).
+
+Taking entrywise coefficients commutes with multiplication by constant matrices on either side.
+In particular, linear coefficients of matrix-valued curves commute with constant conjugation.
 
 Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
 and to the entries (`Matrix.aeval_map`). Natural matrix identities valid at unit parameters
@@ -74,6 +77,28 @@ theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (A : Matrix n 
     (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm
   ext i j
   by_cases h : i = j <;> simp [algebraMap_matrix_apply, h]
+
+omit [DecidableEq n] in
+/-- Taking an entrywise polynomial coefficient commutes with multiplication on the left by a
+constant matrix. -/
+@[simp]
+theorem map_coeff_map_C_mul [Semiring R] {m p : Type*}
+    (A : Matrix m n R) (P : Matrix n p R[X])
+    (d : ℕ) :
+    (A.map C * P).map (fun p ↦ p.coeff d) = A * P.map (fun p ↦ p.coeff d) := by
+  ext i j
+  simp [Matrix.mul_apply, finsetSum_coeff, coeff_C_mul]
+
+omit [DecidableEq n] in
+/-- Taking an entrywise polynomial coefficient commutes with multiplication on the right by a
+constant matrix. -/
+@[simp]
+theorem map_coeff_mul_map_C [Semiring R] {m p : Type*}
+    (P : Matrix m n R[X]) (A : Matrix n p R)
+    (d : ℕ) :
+    (P * A.map C).map (fun p ↦ p.coeff d) = P.map (fun p ↦ p.coeff d) * A := by
+  ext i j
+  simp [Matrix.mul_apply, finsetSum_coeff, coeff_mul_C]
 
 variable [CommRing R]
 
