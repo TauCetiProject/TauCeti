@@ -210,11 +210,12 @@ theorem natCard_H2_globalFormation_dvd_degree
 /-- **The norm quotient on a cyclic layer has order its degree.** If the Galois group `U ⧸ V` of a
 layer `V ◁ U` of `globalFormation K` is cyclic, its norm quotient, which is `C_F / N_{L/F}(C_L)`
 for `F` and `L` the fixed fields of `U` and `V`, has exactly `[U : V]` elements (Milne, VII,
-Lemma 5.2 with Theorem 5.1). The first inequality gives `≥`; on a cyclic layer the norm quotient
-has the order of `H²`, so the second inequality gives `≤`. -/
+Lemma 5.2 with Theorem 5.1). -/
 theorem natCard_normQuotient_globalFormation_eq_degree_of_isCyclic
     (Lay : NormalLayer (AbsoluteGaloisGroup K)) [IsCyclic Lay.Gal] :
     Nat.card (Lay.NormQuotient (globalFormation K)) = Lay.degree :=
+  -- `≤` from the second inequality, since on a cyclic layer the norm quotient has the order of
+  -- `H²`; `≥` from the first inequality.
   le_antisymm (Nat.le_of_dvd Lay.degree_pos
     ((Lay.natCard_normQuotient_eq_natCard_H2 _).symm ▸ natCard_H2_globalFormation_dvd_degree Lay))
     (degree_le_natCard_normQuotient_of_isCyclic Lay)
