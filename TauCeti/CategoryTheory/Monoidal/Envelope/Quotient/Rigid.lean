@@ -83,33 +83,29 @@ theorem rightDual_eq (X : MonoidalQuotient I) [HasRightDual X.as] :
 @[simp]
 theorem evaluation_leftDual (X : MonoidalQuotient I) [HasLeftDual X.as] :
     ε_ (ᘁX) X = (toMonoidalQuotient I).map (ε_ (ᘁ(X.as) : C) X.as) := by
-  simpa only [ExactPairing.evaluation, HasLeftDual.leftDual,
-    HasLeftDual.exact, instHasLeftDual, μ_eq, η_eq, Category.id_comp, Category.comp_id] using
-    (Functor.mapExactPairing_evaluation (F := toMonoidalQuotient I) (ᘁ(X.as) : C) X.as)
+  exact (Functor.mapExactPairing_evaluation
+    (F := toMonoidalQuotient I) (ᘁ(X.as) : C) X.as).trans (by simp)
 
 /-- The coevaluation for the descended left dual is the class of the original coevaluation. -/
 @[simp]
 theorem coevaluation_leftDual (X : MonoidalQuotient I) [HasLeftDual X.as] :
     η_ (ᘁX) X = (toMonoidalQuotient I).map (η_ (ᘁ(X.as) : C) X.as) := by
-  simpa only [ExactPairing.coevaluation, HasLeftDual.leftDual,
-    HasLeftDual.exact, instHasLeftDual, ε_eq, δ_eq, Category.id_comp, Category.comp_id] using
-    (Functor.mapExactPairing_coevaluation (F := toMonoidalQuotient I) (ᘁ(X.as) : C) X.as)
+  exact (Functor.mapExactPairing_coevaluation
+    (F := toMonoidalQuotient I) (ᘁ(X.as) : C) X.as).trans (by simp)
 
 /-- The evaluation for the descended right dual is the class of the original evaluation. -/
 @[simp]
 theorem evaluation_rightDual (X : MonoidalQuotient I) [HasRightDual X.as] :
     ε_ X Xᘁ = (toMonoidalQuotient I).map (ε_ X.as ((X.as)ᘁ : C)) := by
-  simpa only [ExactPairing.evaluation, HasRightDual.rightDual,
-    HasRightDual.exact, instHasRightDual, μ_eq, η_eq, Category.id_comp, Category.comp_id] using
-    (Functor.mapExactPairing_evaluation (F := toMonoidalQuotient I) X.as ((X.as)ᘁ : C))
+  exact (Functor.mapExactPairing_evaluation
+    (F := toMonoidalQuotient I) X.as ((X.as)ᘁ : C)).trans (by simp)
 
 /-- The coevaluation for the descended right dual is the class of the original coevaluation. -/
 @[simp]
 theorem coevaluation_rightDual (X : MonoidalQuotient I) [HasRightDual X.as] :
     η_ X Xᘁ = (toMonoidalQuotient I).map (η_ X.as ((X.as)ᘁ : C)) := by
-  simpa only [ExactPairing.coevaluation, HasRightDual.rightDual,
-    HasRightDual.exact, instHasRightDual, ε_eq, δ_eq, Category.id_comp, Category.comp_id] using
-    (Functor.mapExactPairing_coevaluation (F := toMonoidalQuotient I) X.as ((X.as)ᘁ : C))
+  exact (Functor.mapExactPairing_coevaluation
+    (F := toMonoidalQuotient I) X.as ((X.as)ᘁ : C)).trans (by simp)
 
 -- These equations retain the literal source object and its caller-provided dual instance.
 -- Rewriting the general equations first leaves a dependent dual of the underlying-object
@@ -175,8 +171,10 @@ theorem leftAdjointMate_map {X Y : C} [HasLeftDual X] [HasLeftDual Y] (f : X ⟶
   apply ExactPairing.leftDualHom_ext (Y := (toMonoidalQuotient I).obj X)
   rw [leftAdjointMate_comp_evaluation]
   simp only [evaluation_leftDual_obj, whiskerLeft_map, ← Functor.map_comp]
-  -- The remaining whiskering is by the explicitly chosen image of the source dual, so its
-  -- representative is the source whiskering in the image of the characteristic equation.
+  -- Rewriting `leftDual_obj` here gives an ill-typed motive: the following mapped evaluation
+  -- has fixed source the image of `Y ⊗ ᘁY`, while rewriting abstracts its dual object alone.
+  -- The chosen dual and quotient whiskering are definitionally the source images, so applying
+  -- `map` to the characteristic equation identifies the entire composite without transport.
   exact congrArg (toMonoidalQuotient I).map (leftAdjointMate_comp_evaluation f).symm
 
 /-- The right adjoint mate of a class is the class of the right adjoint mate. -/
@@ -186,7 +184,10 @@ theorem rightAdjointMate_map {X Y : C} [HasRightDual X] [HasRightDual Y] (f : X 
   apply ExactPairing.rightHom_ext (X := (toMonoidalQuotient I).obj X)
   rw [rightAdjointMate_comp_evaluation]
   simp only [evaluation_rightDual_obj, map_whiskerRight, ← Functor.map_comp]
-  -- The remaining whiskering is by the explicitly chosen image of the source dual, as above.
+  -- As above, rewriting `rightDual_obj` abstracts the whiskering object but leaves the mapped
+  -- evaluation's fixed source, the image of `Yᘁ ⊗ Y`; the resulting motive is ill-typed.
+  -- The descended dual and whiskering are definitionally the source images, allowing `map`
+  -- to identify the entire characteristic composite without transporting its evaluation.
   exact congrArg (toMonoidalQuotient I).map (rightAdjointMate_comp_evaluation f).symm
 
 end TauCeti.MonoidalQuotient
