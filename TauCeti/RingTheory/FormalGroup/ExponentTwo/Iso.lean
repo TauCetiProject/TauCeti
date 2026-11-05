@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
-public import TauCeti.RingTheory.FormalGroup.Hom
+public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.PowerSeries.SubstInv
 

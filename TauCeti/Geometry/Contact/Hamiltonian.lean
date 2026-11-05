@@ -46,7 +46,8 @@ field of `f` (`TauCeti.SmoothForm.IsContactForm.isContactHamiltonianVectorField_
 Hamiltonian of the Reeb vector field is the constant `1`: more generally `X_c = c R_α` for a
 constant `c` (`TauCeti.SmoothForm.IsContactForm.contactHamiltonianVectorField_const`). The
 contact Hamiltonian vector field of a `C^(n+1)` function is a `C^n` vector field
-(`TauCeti.SmoothForm.IsContactForm.contMDiff_contactHamiltonianVectorField`).
+(`TauCeti.SmoothForm.IsContactForm.contMDiff_contactHamiltonianVectorField`), as is its Reeb
+derivative `R_α f` (`TauCeti.SmoothForm.IsContactForm.contMDiff_mvfderiv_reebVectorField`).
 
 Unlike a symplectic Hamiltonian, a contact Hamiltonian need not be conserved: along `X_f` it
 changes by `df(X_f) = (R_α f) f`, so it is conserved exactly where `(R_α f) f = 0`
@@ -60,6 +61,8 @@ vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistributio
 * `TauCeti.SmoothForm.contactHamiltonianVectorField`: the contact Hamiltonian vector field `X_f`.
 * `TauCeti.SmoothForm.IsContactForm.isContactHamiltonianVectorField_iff_eq`: existence and
   uniqueness.
+* `TauCeti.SmoothForm.IsContactHamiltonianVectorField.contMDiff`: a contact Hamiltonian vector
+  field of a `C^(n+1)` function is `C^n`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieDerivForm_eq`: `L_X α = (R_α f) α`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieBracket_mem_kerDistribution`:
   infinitesimal preservation of the contact distribution.
@@ -313,14 +316,27 @@ theorem contactHamiltonianVectorField_one :
     α.contactHamiltonianVectorField 1 = α.reebVectorField := by
   rw [Pi.one_def, hα.contactHamiltonianVectorField_const, one_smul]
 
+/-- For a contact form on a finite-dimensional manifold, the derivative `R_α f` of a `C^(n+1)`
+function along the Reeb vector field is `C^n`, for `n ≤ ∞`. -/
+theorem contMDiff_mvfderiv_reebVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
+    ContMDiff I 𝓘(ℝ) n fun x ↦ mvfderiv I f x (α.reebVectorField x) :=
+  (hf.contMDiff_mvfderiv_apply le_rfl).comp (hα.contMDiff_reebVectorField.of_le hn)
+
+/-- For a contact form on a finite-dimensional manifold, the derivative `R_α f` of a `C²` function
+along the Reeb vector field is differentiable. -/
+theorem mdifferentiable_mvfderiv_reebVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    MDifferentiable I 𝓘(ℝ) fun x ↦ mvfderiv I f x (α.reebVectorField x) :=
+  (hα.contMDiff_mvfderiv_reebVectorField (n := 1) (by simp)
+    (by norm_num [hf])).mdifferentiable one_ne_zero
+
 /-- **Regularity of contact Hamiltonian vector fields.** For a contact form on a
 finite-dimensional manifold, the contact Hamiltonian vector field of a `C^(n+1)` function is a
 `C^n` vector field, for `n ≤ ∞`. -/
 theorem contMDiff_contactHamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
     (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
     ContMDiff I I.tangent n (T% (α.contactHamiltonianVectorField f)) := by
-  have hRf : ContMDiff I 𝓘(ℝ) n fun x ↦ mvfderiv I f x (α.reebVectorField x) :=
-    (hf.contMDiff_mvfderiv_apply le_rfl).comp (hα.contMDiff_reebVectorField.of_le hn)
+  have hRf := hα.contMDiff_mvfderiv_reebVectorField hn hf
   have hcov : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x
       ((f x + mvfderiv I f x (α.reebVectorField x)) • degreeOneEquiv α x - mvfderiv I f x) :=
@@ -328,6 +344,16 @@ theorem contMDiff_contactHamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤
       ((degreeOneEquiv α).contMDiff.of_le hn)).sub_section hf.contMDiff_totalSpaceMk_mvfderiv
   exact (((contMDiff_contactFlat α).clm_bundle_inverse hα.isInvertible_contactFlat).of_le
     hn).clm_bundle_apply hcov
+
+/-- **Regularity of contact Hamiltonian vector fields.** For a contact form on a
+finite-dimensional manifold, every contact Hamiltonian vector field of a `C^(n+1)` function is a
+`C^n` vector field, for `n ≤ ∞`. -/
+theorem _root_.TauCeti.SmoothForm.IsContactHamiltonianVectorField.contMDiff
+    (hX : α.IsContactHamiltonianVectorField f X) {n : WithTop ℕ∞} (hn : n ≤ ∞)
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
+    ContMDiff I I.tangent n (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) := by
+  rw [hα.isContactHamiltonianVectorField_iff_eq.1 hX]
+  exact hα.contMDiff_contactHamiltonianVectorField hn hf
 
 /-- The contact Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_contactHamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
