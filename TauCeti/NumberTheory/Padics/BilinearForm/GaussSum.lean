@@ -18,6 +18,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
 import TauCeti.LinearAlgebra.Matrix.GaussSum
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
+import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -106,33 +107,6 @@ private theorem sum_stdAddChar_eq_two_mul_gaussSum_dyadicCyclic (j : ℕ) [NeZer
   congr 1
   exact Fintype.sum_equiv (Equiv.funUnique Unit (ZMod (2 ^ j))) _ _ fun y ↦ rfl
 
-/-- For odd `θ`, `(-1) ^ ((θ² - 1) / 8)` is `χ₈(θ) = (2 / θ)`. -/
-private theorem neg_one_zpow_sq_sub_one_div_eight {θ : ℤ} (hθ : Odd θ) :
-    (-1 : ℂ) ^ ((θ ^ 2 - 1) / 8) = ((χ₈ θ : ℤ) : ℂ) := by
-  obtain ⟨m, r, hr0, hr8, rfl⟩ : ∃ m r : ℤ, 0 ≤ r ∧ r < 8 ∧ θ = 8 * m + r :=
-    ⟨θ / 8, θ % 8, Int.emod_nonneg _ (by norm_num), Int.emod_lt_of_pos _ (by norm_num), by omega⟩
-  have hdiv (c : ℤ) (h : (8 * m + r) ^ 2 - 1 = 8 * c) : ((8 * m + r) ^ 2 - 1) / 8 = c := by
-    rw [h, Int.mul_ediv_cancel_left _ (by norm_num)]
-  have hcast : ((8 * m + r : ℤ) : ZMod 8) = (r : ZMod 8) := by
-    push_cast
-    rw [show (8 : ZMod 8) = 0 from rfl, zero_mul, zero_add]
-  rw [hcast]
-  have hr : r = 1 ∨ r = 3 ∨ r = 5 ∨ r = 7 := by
-    obtain ⟨t, ht⟩ := hθ
-    omega
-  rcases hr with rfl | rfl | rfl | rfl
-  · rw [hdiv (8 * m ^ 2 + 2 * m) (by ring), show χ₈ ((1 : ℤ) : ZMod 8) = 1 from rfl, Int.cast_one]
-    exact Even.neg_one_zpow ⟨4 * m ^ 2 + m, by ring⟩
-  · rw [hdiv (8 * m ^ 2 + 6 * m + 1) (by ring), show χ₈ ((3 : ℤ) : ZMod 8) = -1 from rfl,
-      Int.cast_neg, Int.cast_one]
-    exact Odd.neg_one_zpow ⟨4 * m ^ 2 + 3 * m, by ring⟩
-  · rw [hdiv (8 * m ^ 2 + 10 * m + 3) (by ring), show χ₈ ((5 : ℤ) : ZMod 8) = -1 from rfl,
-      Int.cast_neg, Int.cast_one]
-    exact Odd.neg_one_zpow ⟨4 * m ^ 2 + 5 * m + 1, by ring⟩
-  · rw [hdiv (8 * m ^ 2 + 14 * m + 6) (by ring), show χ₈ ((7 : ℤ) : ZMod 8) = 1 from rfl,
-      Int.cast_one]
-    exact Even.neg_one_zpow ⟨4 * m ^ 2 + 7 * m + 3, by ring⟩
-
 /-- **The quadratic Gauss sum modulo a power of `2`.** For a unit `u` of `ℤ_[2]` and `k ≥ 2`,
 with `e(t) = exp (2πi t)`,
 `∑_{y ∈ ℤ/2^k} e(u y² / 2^k) = √2^{k + 1} · χ₈(u)^{k + 1} · e(u / 8)`. For `k = 1` the sum is
@@ -150,17 +124,25 @@ theorem sum_stdAddChar_toZModPow_mul_sq_eq_χ₈ {k : ℕ} (hk : 2 ≤ k) {u : �
   have hodd : Odd θ := by
     have h := isUnit_iff_toZModPow_three_mul_self.mp hu
     rw [hcast (by omega)] at h
-    have h2 := congrArg (ZMod.castHom (show 2 ∣ 2 ^ 3 by norm_num) (ZMod 2)) h
+    have h2 := congrArg (ZMod.castHom (dvd_pow_self 2 three_ne_zero) (ZMod 2)) h
     rw [map_mul, map_intCast, map_one] at h2
     refine Int.not_even_iff_odd.mp fun he ↦ ?_
     rw [(ZMod.intCast_zmod_eq_zero_iff_dvd θ 2).mpr (even_iff_two_dvd.mp he), zero_mul] at h2
     exact zero_ne_one h2
-  rw [hcast (by omega), hcast (by omega), sum_stdAddChar_eq_two_mul_gaussSum_dyadicCyclic,
-    ((isNondegenerate_dyadicCyclic_iff j θ).2 hodd).gaussSum_eq,
-    gaussSign_dyadicCyclic (k := j) hodd, natCard_dyadicCyclic, toRatAddCircle_intCast,
-    expCircle_coe, stdAddChar_coe, ← neg_one_zpow_sq_sub_one_div_eight hodd]
-  -- `e((θ + 4jω) / 8) = e(θ / 8) (-1)^{jω}` and `2 √(2^j) = √2^{j + 2}`, with `((-1)^ω)² = 1`.
   set ω := (θ ^ 2 - 1) / 8
+  -- Nikulin's evaluation: the sum is `2 √(2^j) e((θ + 4jω) / 8)`.
+  have hgauss : ∑ y : ZMod (2 ^ (j + 1)), stdAddChar ((θ : ZMod (2 ^ (j + 1))) * y ^ 2) =
+      2 * ((√(((2 ^ j : ℕ) : ℝ)) : ℂ) *
+        exp (2 * pi * I * (((θ + 4 * (j : ℤ) * ω : ℤ) : ℚ) / ((8 : ℕ) : ℚ) : ℚ))) := by
+    rw [sum_stdAddChar_eq_two_mul_gaussSum_dyadicCyclic,
+      ((isNondegenerate_dyadicCyclic_iff j θ).2 hodd).gaussSum_eq,
+      gaussSign_dyadicCyclic (k := j) hodd, natCard_dyadicCyclic, toRatAddCircle_intCast,
+      expCircle_coe]
+  -- `(-1)^ω = χ₈(θ)`, the second supplement to quadratic reciprocity.
+  have hχ : ((χ₈ (θ : ZMod (2 ^ 3)) : ℤ) : ℂ) = (-1 : ℂ) ^ ω := by
+    rw [ZMod.χ₈_intCast_eq_negOnePow hodd, Int.cast_negOnePow]
+  rw [hcast (by omega), hcast (by omega), hgauss, hχ, stdAddChar_coe]
+  -- `e((θ + 4jω) / 8) = e(θ / 8) (-1)^{jω}` and `2 √(2^j) = √2^{j + 2}`, with `((-1)^ω)² = 1`.
   have hexp : exp (2 * pi * I * (((θ + 4 * (j : ℤ) * ω : ℤ) : ℚ) / ((8 : ℕ) : ℚ) : ℚ)) =
       exp (2 * pi * I * θ / ((2 ^ 3 : ℕ) : ℂ)) * (-1 : ℂ) ^ (ω * j) := by
     rw [← Complex.exp_pi_mul_I, ← exp_int_mul, ← Complex.exp_add]
@@ -168,15 +150,11 @@ theorem sum_stdAddChar_toZModPow_mul_sq_eq_χ₈ {k : ℕ} (hk : 2 ≤ k) {u : �
     push_cast
     ring
   have hsqrt : (√(((2 ^ j : ℕ) : ℝ)) : ℂ) = (√2 : ℂ) ^ j := by
-    rw [show (((2 ^ j : ℕ) : ℝ)) = (√2 ^ j) ^ 2 by
-      rw [← pow_mul, mul_comm, pow_mul, Real.sq_sqrt (by norm_num)]; push_cast; rfl,
-      Real.sqrt_sq (by positivity)]
-    push_cast
-    rfl
+    have h : ((2 ^ j : ℕ) : ℝ) = (√2 ^ j) ^ 2 := by
+      rw [← pow_mul, mul_comm, pow_mul, Real.sq_sqrt zero_le_two, Nat.cast_pow, Nat.cast_ofNat]
+    rw [h, Real.sqrt_sq (by positivity), ofReal_pow]
   have h2 : (√2 : ℂ) ^ 2 = 2 := by
-    rw [← ofReal_pow, Real.sq_sqrt (by norm_num)]
-    push_cast
-    rfl
+    rw [← ofReal_pow, Real.sq_sqrt zero_le_two, ofReal_ofNat]
   have hsign : ((-1 : ℂ) ^ ω) ^ 2 = 1 := by
     rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul]
     simp
@@ -202,13 +180,16 @@ private theorem sum_stdAddChar_dotProduct_diagonal_map_mulVec_eq {k : ℕ} (hk :
           stdAddChar (PadicInt.toZModPow 3 (∑ i, d i)) := by
   rw [Matrix.diagonal_map (map_zero _), Matrix.sum_addChar_dotProduct_diagonal_mulVec]
   simp_rw [PadicInt.sum_stdAddChar_toZModPow_mul_sq_eq_χ₈ hk (hd _)]
-  rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
-    ← pow_mul, mul_comm (k + 1), Finset.prod_pow, map_prod, map_prod, Int.cast_prod, map_sum]
-  congr 1
-  have h := map_prod stdAddChar.toMonoidHom
-    (fun i ↦ Multiplicative.ofAdd (PadicInt.toZModPow 3 (d i))) Finset.univ
-  simp only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd] at h
-  exact h.symm
+  -- The additive character turns the sum of the entries into a product.
+  have hψ : stdAddChar (PadicInt.toZModPow 3 (∑ i, d i)) =
+      ∏ i, stdAddChar (PadicInt.toZModPow 3 (d i)) := by
+    have h := map_prod stdAddChar.toMonoidHom
+      (fun i ↦ Multiplicative.ofAdd (PadicInt.toZModPow 3 (d i))) Finset.univ
+    simp only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd] at h
+    rw [map_sum, h]
+  rw [hψ]
+  simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, ← pow_mul',
+    Finset.prod_pow, map_prod, Int.cast_prod]
 
 /-- **The odd case.** If a form over `ℤ_[2]` has an orthogonal basis `c` with unit self-pairings,
 then its Gauss sum modulo `2 ^ k` in any basis `e` of the same size is
@@ -223,9 +204,16 @@ private theorem iIsOrtho.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq {N : T
       (√2 : ℂ) ^ (n * (k + 1)) *
         ((χ₈ (PadicInt.toZModPow 3 (B.toMatrix e).det) : ℤ) : ℂ) ^ (k + 1) *
           stdAddChar (PadicInt.toZModPow 3 (B w w)) := by
-  rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq B c e, hc.toMatrix_eq_diagonal,
-    sum_stdAddChar_dotProduct_diagonal_map_mulVec_eq hk hcu, ← hc.det_toMatrix,
-    det_toMatrix_eq_det_sq_mul_det e c, ← hc.apply_sum_sum, Fintype.card_fin]
+  -- In the basis `c`, the Gram matrix is diagonal with unit entries.
+  have hcsum : ∑ x : Fin n → ZMod (2 ^ k),
+      stdAddChar (x ⬝ᵥ (B.toMatrix c).map (PadicInt.toZModPow k) *ᵥ x) =
+        (√2 : ℂ) ^ (n * (k + 1)) *
+          ((χ₈ (PadicInt.toZModPow 3 (B.toMatrix c).det) : ℤ) : ℂ) ^ (k + 1) *
+            stdAddChar (PadicInt.toZModPow 3 (B (∑ i, c i) (∑ i, c i))) := by
+    rw [hc.det_toMatrix, hc.apply_sum_sum, hc.toMatrix_eq_diagonal]
+    simpa only [Fintype.card_fin] using sum_stdAddChar_dotProduct_diagonal_map_mulVec_eq hk hcu
+  rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq B c e, hcsum,
+    det_toMatrix_eq_det_sq_mul_det e c]
   -- The sign: the determinants differ by the square of a unit.
   have hP : IsUnit (e.toMatrix c).det :=
     Matrix.isUnit_det_of_right_inverse (e.toMatrix_mul_toMatrix_flip c)
