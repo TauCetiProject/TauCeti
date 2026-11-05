@@ -59,31 +59,34 @@ theorem renewalConv_indicator_Ico (hab : a ≤ b) (hbt : b ≤ t) :
   split_ifs <;> simp_all
 
 /-- Splitting ages at consecutive partition points splits the convolution into reflected
-interval integrals. The cutoff is excluded, and the initial age zero is included. -/
+interval integrals. Integrability is required only on the reflected truncation.
+The cutoff is excluded, and the initial age zero is included. -/
 theorem renewalConv_indicator_Iio_eq_sum
-    (hint : IntegrableOn (fun s ↦ h (t - s)) (Iic t) μ)
-    (p : ℕ → ℝ≥0) (hp : Monotone p) (hp0 : p 0 = 0) (N : ℕ) (hNt : p N ≤ t) :
+    (p : ℕ → ℝ≥0) (hp : Monotone p) (hp0 : p 0 = 0) (N : ℕ) (hNt : p N ≤ t)
+    (hint : IntegrableOn (fun s ↦ h (t - s)) (Ioc (t - p N) t) μ) :
     renewalConv ((Iio (p N)).indicator h) μ t =
       ∑ k ∈ Finset.range N, ∫ s in Ioc (t - p (k + 1)) (t - p k), h (t - s) ∂μ := by
-  have hcell (k : ℕ) : IntegrableOn (fun s ↦ h (t - s))
+  have hcell (k : ℕ) (hk : k + 1 ≤ N) : IntegrableOn (fun s ↦ h (t - s))
       (Ioc (t - p (k + 1)) (t - p k)) μ :=
-    hint.mono_set fun s hs ↦ hs.2.trans tsub_le_self
-  have hsplit (n : ℕ) :
+    hint.mono_set fun s hs ↦
+      ⟨(tsub_le_tsub_left (hp hk) t).trans_lt hs.1, hs.2.trans tsub_le_self⟩
+  have hsplit (n : ℕ) (hn : n ≤ N) :
       (∫ s in Ioc (t - p n) t, h (t - s) ∂μ) =
         ∑ k ∈ Finset.range n, ∫ s in Ioc (t - p (k + 1)) (t - p k), h (t - s) ∂μ := by
     induction n with
     | zero => simp [hp0]
     | succ n ih =>
-      rw [Finset.sum_range_succ, ← ih, ← setIntegral_union]
+      rw [Finset.sum_range_succ, ← ih (Nat.le_of_succ_le hn), ← setIntegral_union]
       · rw [union_comm, Ioc_union_Ioc_eq_Ioc (tsub_le_tsub_left (hp (Nat.le_succ n)) t)
           tsub_le_self]
       · exact (Ioc_disjoint_Ioc_of_le le_rfl).symm
       · exact measurableSet_Ioc
-      · exact hint.mono_set Ioc_subset_Iic_self
-      · exact hcell n
+      · exact hint.mono_set fun s hs ↦
+          ⟨(tsub_le_tsub_left (hp (Nat.le_of_succ_le hn)) t).trans_lt hs.1, hs.2⟩
+      · exact hcell n hn
   have he : Iio (p N) = Ico 0 (p N) := by ext s; simp
   rw [he, renewalConv_indicator_Ico zero_le hNt, tsub_zero]
-  exact hsplit N
+  exact hsplit N le_rfl
 
 /-- The right-endpoint Darboux sum bounds a truncated decreasing forcing convolution from
 below. Repeated partition points contribute empty intervals. -/
@@ -96,7 +99,7 @@ theorem sum_mul_measureReal_Ioc_le_renewalConv (hh : Antitone h)
   have hC : ∀ s ≤ t, |h s| ≤ max |h t| |h 0| :=
     fun s hs ↦ abs_le_max_abs_abs (hh hs) (hh zero_le)
   have hi := integrableOn_Iic_sub hh.measurable hC hμ
-  rw [renewalConv_indicator_Iio_eq_sum hi p hp hp0 N hNt]
+  rw [renewalConv_indicator_Iio_eq_sum p hp hp0 N hNt (hi.mono_set Ioc_subset_Iic_self)]
   apply Finset.sum_le_sum
   intro k hk
   have hkt : p (k + 1) ≤ t := (hp (Finset.mem_range.mp hk)).trans hNt
@@ -119,7 +122,7 @@ theorem renewalConv_le_sum_mul_measureReal_Ioc (hh : Antitone h)
   have hC : ∀ s ≤ t, |h s| ≤ max |h t| |h 0| :=
     fun s hs ↦ abs_le_max_abs_abs (hh hs) (hh zero_le)
   have hi := integrableOn_Iic_sub hh.measurable hC hμ
-  rw [renewalConv_indicator_Iio_eq_sum hi p hp hp0 N hNt]
+  rw [renewalConv_indicator_Iio_eq_sum p hp hp0 N hNt (hi.mono_set Ioc_subset_Iic_self)]
   apply Finset.sum_le_sum
   intro k hk
   have hkt : p k ≤ t := (hp (le_of_lt (Finset.mem_range.mp hk))).trans hNt
