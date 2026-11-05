@@ -34,8 +34,15 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 
 ## Main results
 
+* `IsNilpotent.exists_pow_apply_eq_zero`: a nilpotent endomorphism is locally nilpotent.
+* `Module.End.sum_range_smul_pow_apply_eq_of_le`: at a vector killed by `f ^ k`, a power series in
+  `f` may be truncated at any length beyond `k`.
+* `Module.End.neg_pow_apply_eq_zero_iff`: a power of `-f` kills a vector exactly when the same
+  power of `f` does.
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
   locally nilpotent.
+* `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
+  map lowering an exhaustive filtration starting at `⊥` is bijective.
 * `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
@@ -50,14 +57,37 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 
 public section
 
+/-- A nilpotent endomorphism is locally nilpotent: each vector is killed by some power of it. -/
+theorem IsNilpotent.exists_pow_apply_eq_zero {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {f : Module.End R M} (hf : IsNilpotent f) (x : M) : ∃ n, (f ^ n) x = 0 := by
+  obtain ⟨n, hn⟩ := hf
+  exact ⟨n, by rw [hn, LinearMap.zero_apply]⟩
+
+/-- A power series in `f` applied to a vector killed by `f ^ k` does not change when it is
+truncated at any length beyond `k`, whatever its coefficients. -/
+theorem Module.End.sum_range_smul_pow_apply_eq_of_le {R S M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [SMulZeroClass S M] (f : Module.End R M) (c : ℕ → S)
+    {x : M} {k l : ℕ} (hk : (f ^ k) x = 0) (hkl : k ≤ l) :
+    ∑ i ∈ Finset.range l, c i • (f ^ i) x = ∑ i ∈ Finset.range k, c i • (f ^ i) x := by
+  have h : ∑ i ∈ Finset.Ico k l, c i • (f ^ i) x = 0 := Finset.sum_eq_zero fun i hi ↦ by
+    rw [Module.End.pow_map_zero_of_le (Finset.mem_Ico.1 hi).1 hk, smul_zero]
+  rw [← Finset.sum_range_add_sum_Ico _ hkl, h, add_zero]
+
 variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+
+/-- A power of `-f` kills a vector exactly when the same power of `f` does, so `-f` is locally
+nilpotent exactly when `f` is. -/
+@[simp]
+theorem Module.End.neg_pow_apply_eq_zero_iff (f : Module.End R M) (n : ℕ) (x : M) :
+    ((-f) ^ n) x = 0 ↔ (f ^ n) x = 0 := by
+  rcases neg_one_pow_eq_or (Module.End R M) n with h | h <;>
+    simp [neg_pow, h]
 
 /-- If every vector is annihilated by some power of `f`, then `1 + f` is invertible. -/
 theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module.End R M)
     (hf : ∀ x, ∃ n, (f ^ n) x = 0) : IsUnit (1 + f) := by
-  have hneg : ∀ (n : ℕ) (x : M), (f ^ n) x = 0 → ((-f) ^ n) x = 0 := by
-    intro n x hx
-    rw [neg_pow, _root_.mul_apply_eq_comp, hx, map_zero]
+  have hneg : ∀ (n : ℕ) (x : M), (f ^ n) x = 0 → ((-f) ^ n) x = 0 :=
+    fun n x ↦ (f.neg_pow_apply_eq_zero_iff n x).2
   rw [Module.End.isUnit_iff]
   refine ⟨(injective_iff_map_eq_zero (1 + f)).2 fun x hx ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨n, hn⟩ := hf x
@@ -71,6 +101,25 @@ theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module
     rwa [sub_neg_eq_add, _root_.mul_apply_eq_comp, LinearMap.sub_apply, _root_.one_apply_eq_self,
       hneg n y hn, sub_zero] at h
 
+/-- If `f` is the identity up to a map lowering an exhaustive increasing filtration `p` with
+`p 0 = ⊥`, that is `f x - x ∈ p n` whenever `x ∈ p (n + 1)`, then `f` is bijective: `f - 1` is
+locally nilpotent. -/
+theorem Module.End.bijective_of_sub_mem_filtration {p : ℕ → Submodule R M} (hp0 : p 0 = ⊥)
+    (hp : ∀ x, ∃ n, x ∈ p n) {f : Module.End R M}
+    (hf : ∀ n x, x ∈ p (n + 1) → f x - x ∈ p n) : Function.Bijective f := by
+  have hnil (n : ℕ) : ∀ x ∈ p n, ((f - 1) ^ n) x = 0 := by
+    induction n with
+    | zero =>
+      intro x hx
+      rw [hp0, Submodule.mem_bot] at hx
+      rw [hx, map_zero]
+    | succ n ih =>
+      intro x hx
+      rw [pow_succ, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self]
+      exact ih _ (hf n x hx)
+  have h := (f - 1).isUnit_one_add_of_forall_exists_pow_apply_eq_zero fun x ↦
+    (hp x).imp fun n ↦ hnil n x
+  rwa [add_sub_cancel, Module.End.isUnit_iff] at h
 
 section Ring
 
