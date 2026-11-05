@@ -117,6 +117,45 @@ theorem measureReal_Icc_le_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu] (hbet
     _ ≤ 2 * v * (F z).im := by
         exact mul_le_mul_of_nonneg_left hkey (by positivity)
 
+/-- A positive number `delta` and an interval `[a, b]` admit a partition of `[a, b]` into `N`
+intervals of half-width `v < delta`. -/
+private theorem exists_nat_halfWidth {a b delta : ℝ} (hab : a < b) (hdelta : 0 < delta) :
+    ∃ (N : ℕ) (v : ℝ), 0 < N ∧ 0 < v ∧ v < delta ∧ b = a + 2 * (N : ℝ) * v := by
+  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / (2 * delta))
+  have hNpos : 0 < N := by
+    by_contra h
+    have hzero : N = 0 := by omega
+    rw [hzero, Nat.cast_zero] at hN
+    exact absurd hN (not_lt.2 (div_nonneg (by linarith) (by positivity)))
+  have hNposR : (0 : ℝ) < N := by exact_mod_cast hNpos
+  refine ⟨N, (b - a) / (2 * N), hNpos, by positivity, ?_, by field_simp; ring⟩
+  rw [div_lt_iff₀ (by positivity)]
+  rw [div_lt_iff₀ (by positivity)] at hN
+  nlinarith
+
+/-- The intervals `[a + 2 k v, a + 2 (k + 1) v]`, `k < N`, cover `[a, b]` when
+`b = a + 2 N v`. -/
+private theorem Icc_subset_iUnion_range_Icc {a b v : ℝ} {N : ℕ} (hNpos : 0 < N) (hvpos : 0 < v)
+    (hbeq : b = a + 2 * (N : ℝ) * v) :
+    Icc a b ⊆ ⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v) := by
+  have hmono : Monotone (fun k : ℕ ↦ a + 2 * k * v) := by
+    intro k l hkl
+    have hklR : (k : ℝ) ≤ l := by exact_mod_cast hkl
+    nlinarith [mul_nonneg (sub_nonneg.mpr hklR) hvpos.le]
+  intro x hx
+  rcases hx.1.eq_or_lt with hxa | hxa
+  · subst x
+    simp only [Set.mem_iUnion, Finset.mem_range]
+    exact ⟨0, hNpos, by constructor <;> simp [hvpos.le]⟩
+  · have hx' : x ∈ ⋃ k ∈ Ico 0 N,
+        Ioc (a + 2 * k * v) (a + 2 * (Order.succ k) * v) := by
+      rw [hmono.biUnion_Ico_Ioc_map_succ]
+      simpa only [Nat.cast_zero, mul_zero, zero_mul, add_zero, ← hbeq] using ⟨hxa, hx.2⟩
+    simp only [Set.mem_iUnion, mem_Ico] at hx'
+    obtain ⟨k, ⟨-, hkN⟩, hxk⟩ := hx'
+    simp only [Set.mem_iUnion, Finset.mem_range]
+    exact ⟨k, hkN, Ioc_subset_Icc_self (by simpa using hxk)⟩
+
 /-- The covering estimate behind the Stieltjes--Perron vanishing theorem.  If the imaginary part
 of the represented function stays below `eps` at every height smaller than `delta` over `[a, b]`,
 the Nevanlinna measure of `[a, b]` is at most `(b - a) * eps`: cover `[a, b]` by `N` intervals of
@@ -128,44 +167,8 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
     (hd : ∀ u ∈ Icc a b, ∀ v : ℝ, 0 < v → v < delta →
       (F ((u : ℂ) + (v : ℂ) * I)).im < eps) :
     mu.real (Icc a b) ≤ (b - a) * eps := by
-  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / (2 * delta))
-  have hNpos : 0 < N := by
-    by_contra h
-    have hzero : N = 0 := by omega
-    rw [hzero, Nat.cast_zero] at hN
-    exact absurd hN (not_lt.2 (div_nonneg (by linarith) (by positivity)))
-  have hNposR : (0 : ℝ) < N := by exact_mod_cast hNpos
-  set v : ℝ := (b - a) / (2 * N) with hvdef
-  have hvpos : 0 < v := by
-    rw [hvdef]
-    positivity
-  have hvlt : v < delta := by
-    rw [hvdef, div_lt_iff₀ (by positivity)]
-    rw [div_lt_iff₀ (by positivity)] at hN
-    nlinarith
-  have hbeq : b = a + 2 * (N : ℝ) * v := by
-    rw [hvdef]
-    field_simp
-    ring
-  have hmono : Monotone (fun k : ℕ ↦ a + 2 * k * v) := by
-    intro k l hkl
-    have hklR : (k : ℝ) ≤ l := by exact_mod_cast hkl
-    nlinarith [mul_nonneg (sub_nonneg.mpr hklR) hvpos.le]
-  have hcover : Icc a b ⊆
-      ⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v) := by
-    intro x hx
-    rcases hx.1.eq_or_lt with hxa | hxa
-    · subst x
-      simp only [Set.mem_iUnion, Finset.mem_range]
-      exact ⟨0, hNpos, by constructor <;> simp [hvpos.le]⟩
-    · have hx' : x ∈ ⋃ k ∈ Ico 0 N,
-          Ioc (a + 2 * k * v) (a + 2 * (Order.succ k) * v) := by
-        rw [hmono.biUnion_Ico_Ioc_map_succ]
-        simpa only [Nat.cast_zero, mul_zero, zero_mul, add_zero, ← hbeq] using ⟨hxa, hx.2⟩
-      simp only [Set.mem_iUnion, mem_Ico] at hx'
-      obtain ⟨k, ⟨-, hkN⟩, hxk⟩ := hx'
-      simp only [Set.mem_iUnion, Finset.mem_range]
-      exact ⟨k, hkN, Ioc_subset_Icc_self (by simpa using hxk)⟩
+  obtain ⟨N, v, hNpos, hvpos, hvlt, hbeq⟩ := exists_nat_halfWidth hab hdelta
+  have hcover := Icc_subset_iUnion_range_Icc hNpos hvpos hbeq
   have hstep : ∀ k ∈ Finset.range N,
       mu.real (Icc (a + 2 * k * v) (a + 2 * (k + 1) * v)) ≤ 2 * v * eps := by
     intro k hk
@@ -189,9 +192,7 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
         measureReal_biUnion_finset_le _ _
     _ ≤ ∑ _k ∈ Finset.range N, 2 * v * eps := Finset.sum_le_sum hstep
     _ = (b - a) * eps := by
-        have hNv : (N : ℝ) * (2 * v) = b - a := by
-          rw [hvdef]
-          field_simp
+        have hNv : (N : ℝ) * (2 * v) = b - a := by linarith
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, ← mul_assoc, hNv]
 
 /-- **The Stieltjes--Perron vanishing theorem.** A Nevanlinna measure gives no mass to a compact
