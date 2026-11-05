@@ -9,8 +9,8 @@ public import TauCeti.Combinatorics.Hypergraph.Complex.Basic
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Nat.Choose.Cast
 public import Mathlib.Basic.Real.Basic
+import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -202,17 +202,8 @@ theorem card_edges_complete_cast :
 theorem card_triangles_complete_cast :
     ((complete V).triangles.card : ℝ) =
       Fintype.card V * (Fintype.card V - 1) * (Fintype.card V - 2) / 6 := by
-  rw [card_triangles_complete]
-  by_cases hn : 2 ≤ Fintype.card V
-  · have h := congrArg (Nat.cast : ℕ → ℝ)
-      (Nat.descFactorial_eq_factorial_mul_choose (Fintype.card V) 3)
-    norm_num [Nat.descFactorial_succ, Nat.factorial_succ,
-      Nat.cast_sub (by omega : 1 ≤ Fintype.card V), Nat.cast_sub hn] at h
-    nlinarith
-  · have hn' : Fintype.card V < 3 := by omega
-    rw [Nat.choose_eq_zero_of_lt hn']
-    have hsmall : Fintype.card V = 0 ∨ Fintype.card V = 1 := by omega
-    rcases hsmall with h | h <;> simp [h]
+  rw [card_triangles_complete, Nat.cast_choose_eq_descPochhammer_div]
+  norm_num [descPochhammer_succ_eval, Nat.factorial_succ]
 
 end FiniteVertices
 
