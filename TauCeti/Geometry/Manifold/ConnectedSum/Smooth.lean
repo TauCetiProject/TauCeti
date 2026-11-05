@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.ConnectedSum.Basic
 import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Instances.Quotient
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.MFDeriv.Sum
 
 /-!
@@ -44,6 +45,8 @@ The charts are not instances, as they depend on the hypotheses on the balls; con
 
 * `TauCeti.ConnectedSum.isManifold`: the connected sum of two `C^n` manifolds is a `C^n` manifold.
 * `TauCeti.ConnectedSum.isLocalDiffeomorph_mk`: its quotient map is a `C^n` local diffeomorphism.
+* `TauCeti.ConnectedSum.isLocalDiffeomorph_inl`, `TauCeti.ConnectedSum.isLocalDiffeomorph_inr`: so
+  are the inclusions of the two punctured summands.
 * `TauCeti.ConnectedSum.mfderiv_inl_apply`, `TauCeti.ConnectedSum.mfderiv_inr_apply`: the
   differentials of the inclusions of the punctured summands are those of the quotient map.
 
@@ -178,6 +181,26 @@ theorem isLocalDiffeomorph_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedd
   (isLocalHomeomorph_mk h₁ h₂).isLocalDiffeomorph_chartedSpaceOfRightInverse
     (mk_surjective e₁ e₂).hasRightInverse.choose_spec
     (exists_contMDiffAt_deck h₁ h₂ d₁ d₂)
+
+/-- The inclusion of the first punctured summand into the connected sum is a `C^n` local
+diffeomorphism. -/
+theorem isLocalDiffeomorph_inl (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂) :
+    letI := chartedSpace (H := H) h₁ h₂
+    IsLocalDiffeomorph I I n (inl e₁ e₂) := by
+  let := chartedSpace (H := H) h₁ h₂
+  rw [← mk_comp_inl]
+  exact fun x ↦ (isLocalDiffeomorph_sumInl x).comp (hg := isLocalDiffeomorph_mk h₁ h₂ d₁ d₂ _)
+
+/-- The inclusion of the second punctured summand into the connected sum is a `C^n` local
+diffeomorphism. -/
+theorem isLocalDiffeomorph_inr (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂) :
+    letI := chartedSpace (H := H) h₁ h₂
+    IsLocalDiffeomorph I I n (inr e₁ e₂) := by
+  let := chartedSpace (H := H) h₁ h₂
+  rw [← mk_comp_inr]
+  exact fun y ↦ (isLocalDiffeomorph_sumInr y).comp (hg := isLocalDiffeomorph_mk h₁ h₂ d₁ d₂ _)
 
 /-- The differential of the inclusion of the first punctured summand into the connected sum is that
 of the quotient map at the corresponding point of the disjoint union. -/
