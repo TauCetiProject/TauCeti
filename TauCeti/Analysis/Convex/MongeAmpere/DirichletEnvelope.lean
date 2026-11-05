@@ -41,7 +41,7 @@ def unitDensitySubsolutions (Ω : Set E) [DecidablePred (· ∈ Ω)] : Set (E �
 variable {Ω : Set E} [DecidablePred (· ∈ Ω)]
 
 /-- Characterize unit-density subsolutions by convexity, continuity, boundary values and measure. -/
-theorem mem_unitDensitySubsolutions {w : E → ℝ} :
+@[simp] theorem mem_unitDensitySubsolutions {w : E → ℝ} :
     w ∈ unitDensitySubsolutions μ Ω ↔
       ConvexOn ℝ (closure Ω) w ∧ ContinuousOn w (closure Ω) ∧
         (∀ z ∈ frontier Ω, w z ≤ 0) ∧
