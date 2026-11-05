@@ -11,10 +11,11 @@ public import Mathlib.Algebra.Module.Pi
 /-!
 # Linear and additive codes
 
-This file fixes the carrier conventions for finite-coordinate codes. A linear code over a field
-is a submodule of the word space, while an additive code over a commutative additive group is an
-additive subgroup. Consequently, the lattice operations, maps, comaps, and membership notation
-are exactly those of `Submodule` and `AddSubgroup` rather than parallel wrappers.
+This file fixes the carrier conventions for finite-coordinate codes. A linear code over a
+semiring, usually a finite field, is a submodule of the word space, while an additive code over a
+commutative additive group is an additive subgroup. Consequently, the lattice operations, maps,
+comaps, and membership notation are exactly those of `Submodule` and `AddSubgroup` rather than
+parallel wrappers.
 
 These aliases let matrix presentations, Hamming invariants, and duality share Mathlib's existing
 subobject APIs. Coordinate types are arbitrary; results about dimensions or matrices add
@@ -26,9 +27,9 @@ public section
 
 namespace TauCeti
 
-/-- A linear code over `F` with coordinate set `ι` is a linear subspace of the word space
-`ι → F`. -/
-abbrev LinearCode (F ι : Type*) [Field F] := Submodule F (ι → F)
+/-- A linear code over `R` with coordinate set `ι` is a submodule of the word space `ι → R`.
+Over a field this is a linear subspace; over a ring such as `ZMod 4` it is a ring-linear code. -/
+abbrev LinearCode (R ι : Type*) [Semiring R] := Submodule R (ι → R)
 
 /-- An additive code over `A` with coordinate set `ι` is an additive subgroup of the word space
 `ι → A`. No scalar closure is implicit in this notion. -/

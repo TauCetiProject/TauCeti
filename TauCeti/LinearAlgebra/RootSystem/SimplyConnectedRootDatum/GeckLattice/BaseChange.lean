@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.ClosedRootSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
 
 /-!
@@ -21,7 +21,8 @@ For every commutative ring `A`, `geckBaseChangeDefiningIdeal` is an ideal in `O(
 quotient is canonically the scalar extension of the integral coordinate Hopf algebra. The
 transported numbered root-subgroup maps and weight-torus map factor through that quotient. Thus
 the explicit integral carrier and its pinned generators base-change together; none of the data is
-chosen anew over `A`.
+chosen anew over `A`. The numbered root-subgroup coordinate maps remain surjective, so these
+copies of the additive group remain closed after arbitrary base change.
 
 The defining ideal transported from `ℤ` is contained in the common kernel of the transported
 generators. Equality is not asserted over an arbitrary, possibly non-flat, base: additional
@@ -320,6 +321,18 @@ noncomputable def geckRootSubgroupBaseChangeCoordinateMap
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) A i
 
+/-- The transported Geck root-subgroup map is the generic Kostant root-subgroup map after
+scalar extension into the directly constructed coordinate algebras. -/
+theorem geckRootSubgroupBaseChangeCoordinateMap_def (i : Fin t.rank ⊕ Fin t.rank) :
+    t.geckRootSubgroupBaseChangeCoordinateMap ht A i =
+      kostantRootSubgroupBaseChangePresentationCoordinateMap
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) A i :=
+  (rfl)
+
 /-- The base-changed `i`th Geck root-subgroup coordinate map factored through the transported
 Geck carrier. -/
 noncomputable def geckRootSubgroupToBaseChangeCoordinateMap
@@ -418,6 +431,17 @@ theorem geckBaseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) A i).symm
 
+/-- The numbered Geck root subgroups remain closed after arbitrary scalar extension. -/
+theorem geckRootSubgroupToBaseChangeCoordinateMap_surjective
+    (i : Fin t.rank ⊕ Fin t.rank) :
+    Function.Surjective (t.geckRootSubgroupToBaseChangeCoordinateMap ht A i).hom := by
+  rw [← geckBaseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap]
+  exact CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
+    (t.geckRootSubgroupIntegralCoordinateMap ht i)
+    (by rw [geckRootSubgroupIntegralCoordinateMap_def]
+        exact t.geckRootSubgroupCoordinateMap_surjective ht i)
+    (t.geckBaseChangeCoordinateIso ht A) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A)
+
 /-- The base change to `A` of the integral Geck weight-torus coordinate map, transported to the
 coordinate Hopf algebras constructed directly over `A`. -/
 noncomputable def geckWeightTorusBaseChangeCoordinateMap :
@@ -471,6 +495,41 @@ theorem mkQuotient_comp_geckWeightTorusIntegralCoordinateMap :
       GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht) := by
   rw [geckWeightTorusIntegralCoordinateMap_def]
   exact mkQuotient_comp_kostantWeightTorusToralCoordinateMap _ _ _ _ _ _ _ _
+
+/-- Pulling back a torus point along the integral Geck weight-torus coordinate map realizes
+that point as the corresponding matrix-valued Geck torus point. -/
+@[simp]
+theorem geckCoordinatePointMulEquiv_comp_geckWeightTorusIntegralCoordinateMap
+    (B : Type w) [CommRing B]
+    (q : WithConv (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)) →ₐ[ℤ]
+      (CommAlgCat.of ℤ B))) :
+    t.geckCoordinatePointMulEquiv ht B
+        (WithConv.toConv
+          (q.ofConv.comp (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom)) =
+      t.geckWeightTorusPoints ht B (SplitTorus.pointsMulEquiv q) := by
+  apply Subtype.ext
+  rw [coe_geckCoordinatePointMulEquiv, coe_geckWeightTorusPoints]
+  have h := pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+    (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+    (t.isNilpotent_geckRepresentation_rootGenerator ht)
+    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (t.geckDefiningIdeal_def ht)
+    (CommAlgCat.of ℤ B) q
+  -- Identify the two factorizations by their quotient composites, without unfolding them.
+  have hmap : kostantWeightTorusToralCoordinateMapOfEq
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (t.geckDefiningIdeal_def ht) =
+        t.geckWeightTorusIntegralCoordinateMap ht := by
+    apply (cancel_epi (CommHopfAlgCat.mkQuotient
+      (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) (t.geckDefiningIdeal ht))).mp
+    rw [mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq,
+      mkQuotient_comp_geckWeightTorusIntegralCoordinateMap]
+  rw [hmap, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
+  exact h
 
 /-- The underlying bialgebra map of the integral Geck weight torus factors the diagonal
 weight representation through the Geck defining ideal. -/

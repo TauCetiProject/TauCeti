@@ -94,6 +94,25 @@ local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "E" => ofTwoCocycle c
 local notation "UK" => CentralQuotient R (centralElement c) a
 
+/-- Current generators commute when the coefficient Lie algebra is abelian and the central
+commutator term vanishes. -/
+theorem commute_envelopingι_of_isLieAbelian (hL : IsLieAbelian L)
+    (hform : a • Φ = 0) (u v : C) :
+    Commute (envelopingι c a u) (envelopingι c a v) := by
+  induction u using TensorProduct.inductionOn with
+  | add u u' hu hu' => simpa only [map_add] using hu.add_left hu'
+  | tmul f x =>
+    induction v using TensorProduct.inductionOn with
+    | add v v' hv hv' => simpa only [map_add] using hv.add_right hv'
+    | tmul g y =>
+      have hxy : a * Φ x y = 0 := by
+        simpa using congrArg (fun B : LinearMap.BilinForm R L ↦ B x y) hform
+      apply sub_eq_zero.mp
+      rw [envelopingι_mul_sub_mul, twoCocycleOfBilinear_coe,
+        twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply]
+      simp [LieAlgebra.ExtendScalars.bracket_tmul, hL.trivial, residuePairing_tmul,
+        mul_left_comm a, hxy]
+
 variable {A : Type*} [Ring A] [Algebra R A]
 
 /-- The linear map from the extension sending `(u, z)` to `f u + a z`. -/
