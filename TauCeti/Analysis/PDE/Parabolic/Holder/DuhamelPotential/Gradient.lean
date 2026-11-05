@@ -103,9 +103,8 @@ private theorem exists_norm_gradient_le :
   · simp only [gradient, ← h0, heatDuhamelPotential_zero, Pi.zero_def, fderiv_const_apply,
       norm_zero]
     positivity
-  refine (hC (stronglyMeasurable_forcing f)
-    (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr =>
-      ae_of_all _ (norm_forcing_le f r ⟨hr.1.le, hr.2.le.trans ht.2⟩)) hpos _).trans ?_
+  refine (hC (stronglyMeasurable_forcing f) (ae_norm_le_of_forall_mem_Icc (norm_forcing_le f) ht.2)
+    hpos _).trans ?_
   simp only [coe_nnnorm]
   gcongr
   · exact le_max_left _ _

@@ -78,10 +78,8 @@ theorem exists_holderOnWith_fderiv_heatDuhamelPotential (hα : 0 < α) (hα₂ :
   refine ⟨C, fun {f T M H} hf hM hH x => ?_⟩
   set K : ℝ≥0 := T * H * (1 + heatKernelMoment E α) + M * max 1 T
   have hval := holderWith_heatDuhamelPotential hf hM hH hα hα₂.le
-  have hhess := hC hf
-    (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr =>
-      ae_of_all _ (hM r (Ioo_subset_Icc_self hr)))
-    (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr => hH r (Ioo_subset_Icc_self hr))
+  have hhess :=
+    hC hf (ae_norm_le_of_forall_mem_Icc hM le_rfl) (ae_holderWith_of_forall_mem_Icc hH le_rfl)
   refine HolderOnWith.of_dist_le fun t ht s hs => ?_
   set u := heatDuhamelPotential f t
   set v := heatDuhamelPotential f s
@@ -139,10 +137,7 @@ theorem exists_lipschitzWith_fderiv_heatDuhamelPotential (hα : 0 < α) :
   · rw [← h0, heatDuhamelPotential_zero, Pi.zero_def, iteratedFDeriv_const_of_ne two_ne_zero,
       Pi.zero_apply, norm_zero]
     positivity
-  refine (hC hf
-    (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr =>
-      ae_of_all _ (hM r ⟨hr.1.le, hr.2.le.trans ht.2⟩))
-    (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr => hH r ⟨hr.1.le, hr.2.le.trans ht.2⟩)
+  refine (hC hf (ae_norm_le_of_forall_mem_Icc hM ht.2) (ae_holderWith_of_forall_mem_Icc hH ht.2)
     hpos y).trans ?_
   rw [NNReal.coe_mul, NNReal.coe_mul, NNReal.coe_rpow, Real.coe_toNNReal']
   gcongr

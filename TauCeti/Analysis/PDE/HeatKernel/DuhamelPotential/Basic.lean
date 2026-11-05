@@ -429,6 +429,23 @@ theorem contDiff_heatDuhamelPotential_of_holderWith
   exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 2)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub
 
+omit [NormedSpace ℝ F] [CompleteSpace F] in
+/-- A bound `‖f(r, y)‖ ≤ M` on every slice `f(r, ·)`, `0 ≤ r ≤ T`, gives the almost-everywhere
+bound on the slices over `(0, t)` that the Duhamel estimates take, for every `t ≤ T`. -/
+theorem ae_norm_le_of_forall_mem_Icc {T : ℝ} (hM : ∀ r ∈ Icc 0 T, ∀ y, ‖f r y‖ ≤ M)
+    (ht : t ≤ T) : ∀ᵐ r ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f r y‖ ≤ M :=
+  ae_restrict_of_forall_mem measurableSet_Ioo fun r hr =>
+    ae_of_all _ (hM r ⟨hr.1.le, hr.2.le.trans ht⟩)
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedSpace ℝ F] [CompleteSpace F] in
+/-- If every slice `f(r, ·)`, `0 ≤ r ≤ T`, is `α`-Hölder with constant `H`, then so is almost
+every slice over `(0, t)`, for every `t ≤ T`, as the Duhamel estimates take it. -/
+theorem ae_holderWith_of_forall_mem_Icc {T : ℝ} {H α : ℝ≥0}
+    (hH : ∀ r ∈ Icc 0 T, HolderWith H α (f r)) (ht : t ≤ T) :
+    ∀ᵐ r ∂volume.restrict (Ioo 0 t), HolderWith H α (f r) :=
+  ae_restrict_of_forall_mem measurableSet_Ioo fun r hr => hH r ⟨hr.1.le, hr.2.le.trans ht⟩
+
 /-- Every slice `w(t, ·)`, `0 ≤ t ≤ T`, of the Duhamel potential of a jointly measurable forcing
 whose slices `f(r, ·)`, `0 ≤ r ≤ T`, are bounded by `M` and `α`-Hölder with constant `H`, with
 `α > 0`, is `C²`, including the initial slice `w(0, ·) = 0`. -/
@@ -440,10 +457,7 @@ theorem contDiff_heatDuhamelPotential_of_forall_holderWith {T : ℝ}
   · rw [← h0, heatDuhamelPotential_zero]
     exact contDiff_const
   · exact contDiff_heatDuhamelPotential_of_holderWith hf
-      (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr =>
-        ae_of_all _ (hM r ⟨hr.1.le, hr.2.le.trans ht.2⟩))
-      (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr => hH r ⟨hr.1.le, hr.2.le.trans ht.2⟩)
-      hα hpos
+      (ae_norm_le_of_forall_mem_Icc hM ht.2) (ae_holderWith_of_forall_mem_Icc hH ht.2) hα hpos
 
 /-- **The gradient bound for the Duhamel potential.** There is a constant `C`, depending only on
 the dimension, such that `‖D w(t, x)‖ ≤ C M √t` whenever `f` is jointly measurable and
