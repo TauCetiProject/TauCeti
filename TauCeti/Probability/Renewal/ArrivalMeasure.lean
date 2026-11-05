@@ -189,10 +189,10 @@ theorem bind_renewalArrivalMeasure (hT : ∀ n, Measurable (T n))
   rw [lintegral_tsum (f := fun n ω => (Measure.dirac (arrival T (n + 1) ω)) s)
     fun n => (measurable_dirac_arrival_apply hT hs n).aemeasurable]
   refine tsum_congr fun n => ?_
-  rw [← (hasLaw_arrival hindep hid (n + 1)).map_eq,
-    Measure.map_apply (measurable_arrival hT _) hs]
-  simp_rw [Measure.dirac_apply' _ hs, ← indicator_comp_right]
-  simp [lintegral_indicator (hs.preimage (measurable_arrival hT _))]
+  rw [← Measure.bind_apply (f := fun ω => Measure.dirac (arrival T (n + 1) ω)) hs
+    (Measure.measurable_dirac.comp (measurable_arrival hT (n + 1))).aemeasurable,
+    Measure.bind_dirac_eq_map P (measurable_arrival hT (n + 1)),
+    (hasLaw_arrival hindep hid (n + 1)).map_eq]
 
 /-- For exponential increments the arrival-measure counts on `(0,t]` agree with the natural
 renewal counts, on one event for every time. -/
