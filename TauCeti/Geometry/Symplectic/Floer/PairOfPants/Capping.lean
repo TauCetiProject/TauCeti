@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 
 /-!
