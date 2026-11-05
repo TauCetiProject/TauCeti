@@ -41,18 +41,13 @@ local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
 
 /-- The canonical inverse-square-root transport has positive determinant. -/
 theorem det_metricChangeTransport_pos (hH : IsStrictlyPositive h♯) :
-    0 < h.metricChangeTransport.det := by
-  have hT := isStrictlyPositive_metricChangeTransport hH
-  exact (nonneg_iff_isPositive.mp hT.nonneg).toLinearMap.det_pos
-    (LinearMap.ker_eq_bot.mpr (isUnit_iff_bijective.mp hT.isUnit).1)
+    0 < h.metricChangeTransport.det :=
+  (isStrictlyPositive_metricChangeTransport hH).det_pos
 
 /-- The square-root inverse transport has positive determinant. -/
 theorem det_sqrt_continuousLinearMapOfBilin_pos (hH : IsStrictlyPositive h♯) :
-    0 < (CFC.sqrt h♯).det := by
-  have heq := ContinuousLinearEquiv.det_coe_symm (h.metricChangeEquiv hH)
-  rw [coe_metricChangeEquiv_symm, coe_metricChangeEquiv] at heq
-  rw [heq]
-  exact inv_pos.mpr (det_metricChangeTransport_pos hH)
+    0 < (CFC.sqrt h♯).det :=
+  hH.sqrt.det_pos
 
 /-- Canonical transport between two positive metrics preserves orientation, even when their
 Riesz operators do not commute. -/
