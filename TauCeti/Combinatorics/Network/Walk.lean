@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
@@ -69,7 +70,8 @@ capacity; for residual capacities these are augmenting walks.
   of `B` contains a path from a vertex of `A` to a vertex of `B` with no other vertex in `A` or
   `B`, traversing only arrows of the walk.
 * `TauCeti.ArrowWalk.exists_isCycle_arrows_subset`: every closed walk of positive length contains
-  a cycle.
+  a cycle; `TauCeti.ArrowWalk.exists_isCycle_two_le_length` gives a cycle of length at least `2` in
+  any strongly connected arrow family on at least two vertices.
 * `TauCeti.ArrowWalk.le_bottleneck_iff` and `TauCeti.ArrowWalk.exists_mem_bottleneck_eq`: the
   bottleneck is the minimum of the capacities along the walk.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
@@ -161,6 +163,19 @@ theorem arrows_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
   induction p' with
   | nil => simp [comp]
   | cons p' e ih => simp [comp, ← List.append_assoc, ← ih]
+
+/-- Prepending a single arrow to a walk prepends that arrow to its arrow list. This is not a simp
+lemma, since `simp` already simplifies the left-hand side via `arrows_comp`, `arrows_cons`, and
+`arrows_nil`. -/
+theorem arrows_cons_nil_comp {u y w : V} (e : Q u y) (r : ArrowWalk Q y w) :
+    (((nil u).cons e).comp r).arrows = ⟨u, y, e⟩ :: r.arrows := by
+  simp
+
+/-- Prepending a single arrow to a walk prepends its source vertex to the vertex list. This is not
+a simp lemma, since `simp` already simplifies the left-hand side via `Quiver.Path.vertices_comp`. -/
+theorem vertices_cons_nil_comp {u y w : V} (e : Q u y) (r : ArrowWalk Q y w) :
+    (((nil u).cons e).comp r).vertices = u :: r.vertices := by
+  simp
 
 @[simp]
 theorem length_arrows {s t : V} (p : ArrowWalk Q s t) : p.arrows.length = p.length := by
@@ -327,6 +342,20 @@ theorem IsPath.target_notMem_vertices_of_cons {s t x : V} {p : ArrowWalk Q s t} 
   rw [isPath_def, vertices_cons, List.concat_eq_append, List.nodup_append] at hp
   exact fun hx ↦ hp.2.2 x hx x (List.mem_singleton_self x) rfl
 
+/-- The source of any arrow traversed by a path is distinct from the path's target. -/
+theorem IsPath.source_ne_target_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s t}
+    (hp : p.IsPath) {e : Q x y} (he : ⟨x, y, e⟩ ∈ p.arrows) : x ≠ t := by
+  cases p with
+  | nil => simp at he
+  | @cons z _ p₀ e₀ =>
+    rw [arrows_cons, List.mem_append, List.mem_singleton] at he
+    rcases he with he | he
+    · exact fun h ↦ hp.target_notMem_vertices_of_cons
+        (h ▸ source_mem_vertices_of_mem_arrows (Q := Q) p₀ he)
+    · obtain rfl : x = z := (Sigma.mk.inj_iff.1 he).1
+      exact fun h ↦ hp.target_notMem_vertices_of_cons
+        (h ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₀)
+
 /-- A path from `s` to `t` that traverses an arrow `e` from `s` to `t` consists of `e` alone. -/
 theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) {e : Q s t}
     (he : ⟨s, t, e⟩ ∈ p.arrows) : p = (nil s).cons e := by
@@ -450,6 +479,20 @@ theorem exists_isPath_interior_notMem {A B : Set V} {s t : V} (p : ArrowWalk Q s
   exact ⟨a, ha, b, hb, q, hq, List.Subset.trans hqsub (vertices_subset_of_arrows_subset hsub),
     List.Subset.trans hqasub hsub, hint⟩
 
+/-- Following a path from `s` to `t` by a return arrow from `t` to `s` forms a cycle. -/
+theorem IsPath.isCycle_cons {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) (e : Q t s) :
+    (p.cons e).IsCycle := by
+  refine ⟨by simp, ?_⟩
+  have hv : (p.cons e).vertices = p.vertices.concat s :=
+    @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p e
+  have hne : p.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p
+  have hh : p.vertices.head hne = s := @Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p hne
+  have hhead : p.vertices = s :: p.vertices.tail := by
+    conv_lhs => rw [← List.cons_head_tail hne, hh]
+  rw [isPath_def, hhead, List.nodup_cons] at hp
+  rw [hv, List.concat_eq_append, List.tail_append_of_ne_nil hne]
+  exact hp.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp.1)
+
 /-- **Cycle extraction.** Every closed walk of positive length contains a cycle at the same vertex
 that traverses only arrows of the walk. -/
 theorem exists_isCycle_arrows_subset {s : V} (c : ArrowWalk Q s s) (hc : 0 < c.length) :
@@ -458,19 +501,30 @@ theorem exists_isCycle_arrows_subset {s : V} (c : ArrowWalk Q s s) (hc : 0 < c.l
   | nil => simp at hc
   | @cons u _ p e =>
     obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset (Q := Q) p
-    refine ⟨p'.cons e, ⟨by simp, ?_⟩, ?_⟩
-    · have hv : (p'.cons e).vertices = p'.vertices.concat s :=
-        @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p' e
-      have hne : p'.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p'
-      have hh : p'.vertices.head hne = s := @Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p' hne
-      have hhead : p'.vertices = s :: p'.vertices.tail := by
-        conv_lhs => rw [← List.cons_head_tail hne, hh]
-      rw [isPath_def, hhead, List.nodup_cons] at hp'
-      rw [hv, List.concat_eq_append, List.tail_append_of_ne_nil hne]
-      exact hp'.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp'.1)
-    · rw [arrows_cons, arrows_cons]
-      exact List.append_subset.2
-        ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
+    refine ⟨p'.cons e, hp'.isCycle_cons e, ?_⟩
+    rw [arrows_cons, arrows_cons]
+    exact List.append_subset.2
+      ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
+
+/-- Every strongly connected arrow family on at least two vertices contains a directed cycle of
+length at least `2`. -/
+theorem exists_isCycle_two_le_length [Nontrivial V] (hQ : @Quiver.IsStronglyConnected V ⟨Q⟩) :
+    ∃ (v : V) (c : ArrowWalk Q v v), c.IsCycle ∧ 2 ≤ c.length := by
+  obtain ⟨u, v, huv⟩ := exists_pair_ne V
+  obtain ⟨q₁⟩ := (@Quiver.isStronglyConnected_iff V ⟨Q⟩).1 hQ u v
+  obtain ⟨p₁, hp₁, _⟩ := exists_isPath_arrows_subset (Q := Q) q₁
+  cases p₁ with
+  | nil => exact (huv rfl).elim
+  | @cons x _ p₀ e =>
+    have hxv : x ≠ v := fun h ↦
+      hp₁.target_notMem_vertices_of_cons (h ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₀)
+    obtain ⟨q₂⟩ := (@Quiver.isStronglyConnected_iff V ⟨Q⟩).1 hQ v x
+    obtain ⟨r, hr, _⟩ := exists_isPath_arrows_subset (Q := Q) q₂
+    have hr_pos : 0 < r.length := by
+      cases r with
+      | nil => exact (hxv.symm rfl).elim
+      | cons _ _ => simp
+    exact ⟨v, r.cons e, hr.isCycle_cons e, Nat.succ_le_succ hr_pos⟩
 
 /-! ### Bottlenecks -/
 
