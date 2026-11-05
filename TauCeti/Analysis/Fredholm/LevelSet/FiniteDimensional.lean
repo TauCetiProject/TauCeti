@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fredholm.LevelSet.GlobalParametric
 public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
+import TauCeti.MeasureTheory.Measure.LocallyNull
 
 /-!
 # Parametric transversality in finite dimensions: the exceptional parameters are null
@@ -42,9 +43,9 @@ the projection to `Λ` read in that chart, is as smooth as `f`. By
 `TauCeti.surjective_fderiv_levelSetParameterMap_iff_of_mem` its critical points are the solutions
 at which the fixed-parameter linearization is not surjective. The Morse--Sard theorem
 `TauCeti.addHaar_image_criticalPoints_eq_zero` makes its critical values near the chart origin a
-null set. The global step is the one of `TauCeti.isMeagre_setOf_not_isRegularParameter`: the
-universal level set inside `U` is second countable, so countably many of these neighbourhoods
-cover it, and a countable union of null sets is null.
+null set. The global step is `TauCeti.measure_image_null_of_locally_null`: the exceptional
+parameters are the projection to `Λ` of the non-regular solutions in `U`, a Lindelöf set, and a
+set whose projection is null near each of its points has null projection.
 
 The regularity threshold is the one of the Morse--Sard theorem in Tau Ceti, `(dim)² + 1` with
 `dim` the dimension of the source of the parameter map, which is the kernel of the *total*
@@ -110,6 +111,18 @@ theorem isRegularParameterOn_univ {f : E × Λ → F} {c : F} {l : Λ} :
   rw [isRegularParameter_iff]
   exact ⟨fun h x hx ↦ h x (mem_univ _) hx, fun h x _ hx ↦ h x hx⟩
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
+/-- Regularity on a set is inherited by its subsets. -/
+theorem IsRegularParameterOn.mono {f : E × Λ → F} {U V : Set (E × Λ)} {c : F} {l : Λ}
+    (hUV : U ⊆ V) (h : IsRegularParameterOn f V c l) : IsRegularParameterOn f U c l :=
+  fun x hx hfx ↦ h x (hUV hx) hfx
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
+/-- A regular parameter is regular on every set. -/
+theorem IsRegularParameter.isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F}
+    {l : Λ} (h : IsRegularParameter f c l) : IsRegularParameterOn f U c l :=
+  (isRegularParameterOn_univ.2 h).mono (subset_univ U)
+
 variable [MeasurableSpace Λ] [BorelSpace Λ] (ν : Measure Λ) [IsAddHaarMeasure ν]
 
 /-- **Local parametric transversality, measure form.** Near a solution `(x, l)` of a
@@ -153,7 +166,7 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
     eventually_nhds_iff.1 ((hgC.of_le hn).eventually hkω)
   have hkV : ((finrank ℝ (D₁.coprod D₂).ker * finrank ℝ (D₁.coprod D₂).ker + 1 : ℕ) : ℕ∞ω) ≤
       (k : ℕ∞ω) := by
-    rw [hcop]
+    rw [hcop, hkdef]
   have hnull : ν (g '' (V ∩ {y | ¬ Surjective (fderiv ℝ g y)})) = 0 :=
     TauCeti.addHaar_image_criticalPoints_eq_zero ν (fun y hy ↦ hVC y hy) hkV
   -- Near the chart origin, criticality of the parameter map is failure of regularity; pull both
@@ -185,25 +198,28 @@ theorem addHaar_setOf_not_isRegularParameterOn_eq_zero {f : E × Λ → F} {U : 
     (hn : ∀ z ∈ U, f z = c →
       ((finrank ℝ (fderiv ℝ f z).ker * finrank ℝ (fderiv ℝ f z).ker + 1 : ℕ) : ℕ∞ω) ≤ n) :
     ν {l | ¬ IsRegularParameterOn f U c l} = 0 := by
-  let S : Set (E × Λ) := {z | z ∈ U ∧ f z = c}
-  -- The local theorem at each solution in `U`, with the neighbourhood confined to `U`.
-  have hlocal : ∀ z ∈ S, ∃ Q ∈ 𝓝 z, ν {l' | ∃ x', (x', l') ∈ Q ∧ f (x', l') = c ∧
-      ¬ Surjective ((fderiv ℝ f (x', l')).comp (ContinuousLinearMap.inl ℝ E Λ))} = 0 := by
-    rintro ⟨x, l⟩ ⟨hzU, hzc⟩
-    exact exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_zero ν
+  -- The exceptional parameters are the projection of the non-regular solutions in `U`.
+  have hset : {l | ¬ IsRegularParameterOn f U c l} = Prod.snd '' {z : E × Λ | z ∈ U ∧ f z = c ∧
+      ¬ Surjective ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ))} := by
+    ext l
+    constructor
+    · intro hl
+      rw [mem_ofPred_eq, isRegularParameterOn_iff] at hl
+      push Not at hl
+      obtain ⟨x, hxU, hxc, hxbad⟩ := hl
+      exact ⟨(x, l), ⟨hxU, hxc, hxbad⟩, rfl⟩
+    · rintro ⟨⟨x, l'⟩, ⟨hxU, hxc, hxbad⟩, rfl⟩
+      exact fun h ↦ hxbad (h x hxU hxc)
+  rw [hset]
+  refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _) ?_
+  rintro ⟨x, l⟩ ⟨hzU, hzc, -⟩
+  obtain ⟨Q, hQ, hQnull⟩ :=
+    exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_zero ν
       (hcont _ hzU hzc) (htotal _ hzU hzc) hzc (hn _ hzU hzc)
-  choose! Q hQnhds hQnull using hlocal
-  let B : E × Λ → Set Λ := fun z ↦ {l' | ∃ x', (x', l') ∈ Q z ∧ f (x', l') = c ∧
-    ¬ Surjective ((fderiv ℝ f (x', l')).comp (ContinuousLinearMap.inl ℝ E Λ))}
-  -- Second countability reduces this neighbourhood cover of the level set to a countable one.
-  obtain ⟨t, hts, htcount, htcover⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (f := Q) (s := S) fun z hz ↦ nhdsWithin_le_nhds (hQnhds z hz)
-  refine measure_mono_null (fun l hl ↦ ?_)
-    ((measure_biUnion_null_iff (s := B) htcount).2 fun z hz ↦ hQnull z (hts hz))
-  simp only [mem_ofPred_eq, isRegularParameterOn_iff, not_forall] at hl
-  obtain ⟨x, hxU, hxc, hxbad⟩ := hl
-  obtain ⟨z, hzt, hwQ⟩ := mem_iUnion₂.1 (htcover ⟨hxU, hxc⟩)
-  exact mem_iUnion₂.2 ⟨z, hzt, x, hwQ, hxc, hxbad⟩
+  refine ⟨Q ∩ _, inter_mem (mem_nhdsWithin_of_mem_nhds hQ) self_mem_nhdsWithin,
+    measure_mono_null ?_ hQnull⟩
+  rintro _ ⟨⟨x', l'⟩, ⟨hx'Q, -, hx'c, hx'bad⟩, rfl⟩
+  exact ⟨x', hx'Q, hx'c, hx'bad⟩
 
 /-- Almost every parameter is regular on a set `U`, for additive Haar measure. -/
 theorem ae_isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F} {n : ℕ∞ω}
