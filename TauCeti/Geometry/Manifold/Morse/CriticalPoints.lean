@@ -41,10 +41,9 @@ polynomial in the Morse inequalities.
 
 ## Main declarations
 
-* `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`
-  on boundaryless manifolds,
-  `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`, and on a normed space
-  `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`.
+* `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`,
+  on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
+  and on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
