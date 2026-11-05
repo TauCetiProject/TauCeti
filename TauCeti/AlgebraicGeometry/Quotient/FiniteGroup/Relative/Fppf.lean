@@ -88,7 +88,7 @@ theorem etale_invariantSubalgebraPresheaf_relativeSpecπ_of_free :
   refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @Etale).mpr fun U ↦ ?_
   let := sectionsMulSemiringAction ρ U.toOpens
   have := TauCeti.AffineInvariantQuotient.etale_projection (free_sectionsMulSemiringAction hG U)
-  rw [invariantSubalgebraPresheaf_sections, specMap_invariantSections]
+  rw [specMap_invariantSections]
   infer_instance
 
 /-- For a free action, the quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` is finite, with no
@@ -112,7 +112,7 @@ theorem isPullback_invariantSubalgebraPresheaf_relativeSpecπ_of_free :
   -- Rebind the charts over `U` at their explicit sources, as in
   -- `SubalgebraPresheaf.relativeSpecπ_relativeSpecToBase`.
   let ι : Spec (CommRingCat.of Γ(A.X, U.toOpens)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιQ : Spec (CommRingCat.of (invariantSections ρ U.toOpens)) ⟶
+  let ιQ : Spec (CommRingCat.of ((invariantSubalgebraPresheaf ρ).sections U.toOpens)) ⟶
       (invariantSubalgebraPresheaf ρ).relativeSpec :=
     (invariantSubalgebraPresheaf ρ).relativeSpecCover.f U
   let e := quotientIsoSpecInvariantSections ρ U.toOpens
