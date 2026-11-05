@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Matrix
-public import Mathlib.Algebra.Lie.UniversalEnveloping
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+public import TauCeti.RingTheory.DividedPowers.Associative
 
 /-!
-# The defining representation of a matrix Lie subalgebra
+# The defining representation of a matrix Lie algebra and its subalgebras
 
 A Lie subalgebra of square matrices acts faithfully on coordinate vectors. This file extends that
-action to the universal enveloping algebra and records its values on Lie generators. It also
-shows that a Lie generator acts nilpotently exactly when its underlying matrix is nilpotent.
+action to the universal enveloping algebra and records its values on Lie generators, showing that a
+Lie generator acts nilpotently exactly when its underlying matrix is nilpotent. For the ambient
+matrix Lie algebra `Matrix n n R`, it also identifies
+`TauCeti.UniversalEnvelopingAlgebra.representation` on canonical generators with
+`Matrix.toLinAlgEquiv'` and evaluates the second divided power when a matrix squares to `2 • D`.
 
 ## Main definitions and results
 
@@ -22,6 +26,9 @@ shows that a Lie generator acts nilpotently exactly when its underlying matrix i
 * `LieSubalgebra.matrixRepresentation_ι_injective`: faithfulness on the Lie algebra.
 * `LieSubalgebra.isNilpotent_matrixRepresentation_ι_iff`: a Lie generator acts nilpotently
   exactly when its underlying matrix is nilpotent.
+* `TauCeti.UniversalEnvelopingAlgebra.representation_matrix_ι` and
+  `TauCeti.UniversalEnvelopingAlgebra.dividedPower_two_representation_matrix_apply`: generator and
+  divided-square action for `TauCeti.UniversalEnvelopingAlgebra.representation` on `Matrix n n R`.
 -/
 
 public section
@@ -86,3 +93,40 @@ theorem isNilpotent_matrixRepresentation_ι_iff {K : LieSubalgebra R (Matrix n n
 end
 
 end LieSubalgebra
+
+namespace TauCeti.UniversalEnvelopingAlgebra
+
+section Matrix
+
+open scoped Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing LieAlgebra.ofAssociativeAlgebra
+
+/-- In the defining representation of `Matrix n n R`, a canonical Lie generator acts through
+`Matrix.toLinAlgEquiv'`. -/
+theorem representation_matrix_ι {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+    (X : Matrix n n R) :
+    representation R (Matrix n n R) (n → R) (_root_.UniversalEnvelopingAlgebra.ι R X) =
+      Matrix.toLinAlgEquiv' X :=
+  LinearMap.ext fun v => by
+    rw [representation_ι_apply, Matrix.lie_apply, Matrix.toLinAlgEquiv'_apply]
+
+/-- When a matrix over a commutative `ℚ`-algebra squares to `2 • D`, the second divided power of
+its canonical generator in the defining representation acts by matrix-vector multiplication by
+`D`. -/
+theorem dividedPower_two_representation_matrix_apply {A n : Type*} [CommRing A] [Algebra ℚ A]
+    [Fintype n] [DecidableEq n] {X D : Matrix n n A} (hsq : X * X = 2 • D) (v : n → A) :
+    Associative.dividedPower 2
+      (representation A (Matrix n n A) (n → A) (_root_.UniversalEnvelopingAlgebra.ι A X)) v =
+      D *ᵥ v := by
+  have hsq' : representation A (Matrix n n A) (n → A)
+      (_root_.UniversalEnvelopingAlgebra.ι A X) ^ 2 =
+      (2 : ℕ) • Matrix.toLinAlgEquiv' D := by
+    rw [representation_matrix_ι, ← map_pow, sq, hsq, map_nsmul]
+  rw [Associative.dividedPower_def, LinearMap.smul_apply, hsq', LinearMap.smul_apply,
+    Matrix.toLinAlgEquiv'_apply, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
+  norm_num [Nat.factorial]
+
+end Matrix
+
+end TauCeti.UniversalEnvelopingAlgebra

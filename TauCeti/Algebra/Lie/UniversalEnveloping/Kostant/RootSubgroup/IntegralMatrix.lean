@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Matrix
 public import TauCeti.Algebra.Lie.Matrix.IntegralCast
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.CubeZeroMatrix
+public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 
 /-!
 # Kostant root subgroups of cube-zero integral matrix families
@@ -54,11 +54,6 @@ attribute [local instance] TauCeti.moduleNNRat
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-private theorem representation_matrix_ι (X : Matrix n n ℚ) :
-    representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ X) = Matrix.toLinAlgEquiv' X :=
-  LinearMap.ext fun v => by
-    rw [representation_ι_apply, Matrix.lie_apply, Matrix.toLinAlgEquiv'_apply]
-
 /-- An integral matrix that cubes to zero acts with vanishing cube on `n → ℚ`. -/
 theorem pow_three_representation_matrix_eq_zero {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
     representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ X)) ^ 3 = 0 := by
@@ -69,19 +64,6 @@ theorem pow_three_representation_matrix_eq_zero {X : Matrix n n ℤ} (hcube : X 
 theorem isNilpotent_representation_matrix {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
     IsNilpotent (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ X))) :=
   ⟨3, pow_three_representation_matrix_eq_zero hcube⟩
-
-private theorem dividedPower_two_representation_matrix_apply {X D : Matrix n n ℤ}
-    (hsq : X * X = 2 • D) (v : n → ℚ) :
-    Associative.dividedPower 2
-      (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ X))) v =
-      matrixIntCastLieHom ℚ D *ᵥ v := by
-  have hsq' : representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ X)) ^ 2 =
-      (2 : ℕ) • Matrix.toLinAlgEquiv' (matrixIntCastLieHom ℚ D) := by
-    rw [representation_matrix_ι, ← map_pow, sq, ← TauCeti.matrixIntCastLieHom_mul, hsq,
-      map_nsmul, map_nsmul]
-  rw [Associative.dividedPower_def, LinearMap.smul_apply, hsq', LinearMap.smul_apply,
-    Matrix.toLinAlgEquiv'_apply, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
-  norm_num [Nat.factorial]
 
 /-- The standard coordinate lattice is preserved by the Kostant `ℤ`-form of any family of cube-zero
 integral matrices whose squares are even integral matrices. -/
@@ -100,7 +82,8 @@ theorem kostantForm_integralMatrix_mem_coordinateLattice {I : Type*}
   · simpa using hw
   · rw [Associative.dividedPower_one, representation_ι_apply, Matrix.lie_apply]
     exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (E i) hw
-  · rw [dividedPower_two_representation_matrix_apply (hsq i)]
+  · rw [dividedPower_two_representation_matrix_apply
+      (by rw [← TauCeti.matrixIntCastLieHom_mul, hsq i, map_nsmul])]
     exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (D i) hw
 
 /-- **The Kostant root subgroup of a cube-zero integral matrix family** in the standard coordinate
@@ -142,7 +125,8 @@ theorem integralMatrixRootSubgroup_apply {I : Type*}
         (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ (E i))))
         ((coordinateLatticeBasis n s : coordinateLattice n) : n → ℚ) =
       ∑ r, D i r s • ((coordinateLatticeBasis n r : coordinateLattice n) : n → ℚ) := fun s => by
-    rw [dividedPower_two_representation_matrix_apply (hsq i)]
+    rw [dividedPower_two_representation_matrix_apply
+      (by rw [← TauCeti.matrixIntCastLieHom_mul, hsq i, map_nsmul])]
     simpa only [TauCeti.matrixIntCastLieHom_eq_map, Int.coe_castRingHom] using
       Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (D i) s
   simpa only [integralMatrixRootSubgroup_apply, MulEquiv.apply_symm_apply] using

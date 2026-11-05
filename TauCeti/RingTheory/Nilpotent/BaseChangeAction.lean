@@ -36,16 +36,20 @@ characteristic.
 
 * `TauCeti.integralDividedPower`: a divided-power operator restricted to an invariant additive
   subgroup.
+* `TauCeti.dividedPower_zsmul_smul_mem` and `TauCeti.integralDividedPower_zsmul`: integer rescaling
+  of divided-power subgroup stability and restricted divided-power operators.
 * `TauCeti.mul_integralDividedPower`: multiplication formula for restricted divided powers.
 * `TauCeti.baseChange_integralDividedPower_eq_zero_of_le`: a restricted divided power
   vanishes on base change above the nilpotency index.
 * `TauCeti.baseChangeExp`: the finite divided-power exponential on `R ⊗[ℤ] M` for an element of `A`.
-* `TauCeti.commute_baseChangeExp`: exponentials of commuting elements commute, without nilpotence
-  hypotheses.
+* `TauCeti.commute_baseChangeExp` and `TauCeti.commute_baseChangeExpHom`: exponentials and
+  one-parameter subgroups of commuting elements commute.
 * `TauCeti.map_baseChangeExp`: naturality of the exponential under a map of parameter rings.
 * `TauCeti.baseChangeExp_add`: its one-parameter group law.
 * `TauCeti.baseChangeExpLinearEquiv`: the resulting linear automorphism.
 * `TauCeti.baseChangeExpHom`: the additive one-parameter subgroup over `R`.
+* `TauCeti.baseChangeExp_zsmul` and `TauCeti.baseChangeExpHom_zsmul`: integer rescaling of
+  `baseChangeExp` and `baseChangeExpHom`.
 * `TauCeti.integralUnitRestrict`: a unit of `A` preserving `M` restricted to an integral
   automorphism of `M`.
 * `TauCeti.baseChangeExp_intCast`: at an integer parameter the exponential is the base change of a
@@ -134,6 +138,25 @@ theorem integralDividedPower_eq_zero_of_le (x : A)
   ext v
   simp [coe_integralDividedPower_apply, Associative.dividedPower_def,
     pow_eq_zero_of_le hkn hk]
+
+/-- An additive subgroup preserved by all divided powers of `x` is preserved by all divided powers
+of every integer multiple `c • x`. -/
+theorem dividedPower_zsmul_smul_mem (c : ℤ) {x : A} (M : S)
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) :
+    ∀ n, ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M := fun n v hv => by
+  rw [Associative.dividedPower_zsmul, smul_assoc]
+  exact zsmul_mem (hM n v hv) _
+
+/-- Restricting the divided power of an integer multiple scales the restricted operator by the
+same power of that integer. -/
+theorem integralDividedPower_zsmul (c : ℤ) {x : A} (M : S) (n : ℕ)
+    (hM : ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hcM : ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M) :
+    integralDividedPower (c • x) M n hcM = c ^ n • integralDividedPower x M n hM := by
+  ext v
+  rw [coe_integralDividedPower_apply, Associative.dividedPower_zsmul, smul_assoc,
+    LinearMap.smul_apply, ← coe_integralDividedPower_apply x M n hM v]
+  rfl
 
 /-! ## Restricting a unit to an invariant additive subgroup -/
 
@@ -520,6 +543,51 @@ theorem baseChangeExp_neg (x : A) (M : S)
       · rw [integralDividedPower_neg_of_odd x M hn (hM' n) (hM n), hn.neg_pow,
           LinearMap.neg_apply, TensorProduct.tmul_neg, neg_mul, TensorProduct.neg_tmul]
   | add a b ha hb => rw [map_add, map_add, ha, hb]
+
+/-- One-parameter subgroups attached to commuting nilpotent operators commute. -/
+theorem commute_baseChangeExpHom {x y : A} (M : S) (hxy : Commute x y)
+    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
+    (hx : IsNilpotent x) (hy : IsNilpotent y) (t u : Multiplicative R) :
+    Commute (baseChangeExpHom x M hMx hx t) (baseChangeExpHom y M hMy hy u) :=
+  LinearEquiv.toLinearMap_inj.mp <| by
+    simp only [LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap]
+    exact commute_baseChangeExp M hxy hMx hMy (Multiplicative.toAdd t) (Multiplicative.toAdd u)
+
+/-- Rescaling an element by an integer `c` rescales the parameter of its integral exponential by
+`c`. This is how an integer Chevalley structure constant is absorbed into the parameter of a root
+subgroup. -/
+theorem baseChangeExp_zsmul (c : ℤ) {x : A} (M : S)
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hcM : ∀ n, ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M)
+    (hx : IsNilpotent x) (t : R) :
+    baseChangeExp (c • x) M hcM t = baseChangeExp x M hM ((c : R) * t) := by
+  obtain ⟨k, hk⟩ := hx
+  have hck : (c • x) ^ k = 0 := by
+    rw [smul_pow, hk, smul_zero]
+  rw [baseChangeExp_of_pow_eq_zero (c • x) M hcM hck,
+    baseChangeExp_of_pow_eq_zero x M hM hk]
+  refine Finset.sum_congr rfl fun n _ => ?_
+  have hb : ((c ^ n • integralDividedPower x M n (hM n)).baseChange R :
+      Module.End R (R ⊗[ℤ] M)) = c ^ n • (integralDividedPower x M n (hM n)).baseChange R :=
+    map_zsmul (Module.End.baseChangeHom ℤ R M) _ _
+  rw [integralDividedPower_zsmul c M n (hM n) (hcM n), hb,
+    ← Int.cast_smul_eq_zsmul R (c ^ n) ((integralDividedPower x M n (hM n)).baseChange R),
+    smul_smul, Int.cast_pow]
+  congr 1
+  ring
+
+/-- Rescaling a nilpotent operator by an integer `c` rescales the additive parameter of its
+divided-power one-parameter subgroup `baseChangeExpHom` by `c`. -/
+theorem baseChangeExpHom_zsmul (c : ℤ) {x : A} (M : S)
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hcM : ∀ n, ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M)
+    (hx : IsNilpotent x) (hc : IsNilpotent (c • x)) (t : Multiplicative R) :
+    baseChangeExpHom (c • x) M hcM hc t =
+      baseChangeExpHom x M hM hx (Multiplicative.ofAdd ((c : R) * Multiplicative.toAdd t)) :=
+  LinearEquiv.toLinearMap_inj.mp <| by
+    rw [baseChangeExpHom_toLinearMap, baseChangeExpHom_toLinearMap, toAdd_ofAdd]
+    exact baseChangeExp_zsmul c M hM hcM hx (Multiplicative.toAdd t)
 
 /-! ## Conjugating the exponential by an integral unit -/
 

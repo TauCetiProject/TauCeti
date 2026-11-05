@@ -28,8 +28,6 @@ Jacobi identities from `TauCeti.Algebra.Lie.RootStringJacobi`.
 
 ## Main results
 
-* `TauCeti.UniversalEnvelopingAlgebra.commute_zsmul_of_zsmul_lie_eq_zero`: integer-scaled images of
-  `a, b ∈ L` with `(p * q) • ⁅a, b⁆ = 0` commute under any ring homomorphism out of `U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.commutatorElement_baseChangeExpHom_of_lie_lie_eq` and
   `commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq`: doubly-laced commutator relations.
 * `TauCeti.UniversalEnvelopingAlgebra.commutatorElement_baseChangeExpHom_of_g2_short_pair`,
@@ -57,36 +55,27 @@ open _root_.UniversalEnvelopingAlgebra (ι)
 
 section GroupHelpers
 
-private theorem conj_mul_g2_short_pair_cancel {G : Type*} [Group G] {y y' a b s₁ s₂ : G}
+private theorem conj_mul_g2_short_pair_cancel {G : Type*} [Monoid G] {y y' a b s₁ s₂ : G}
     (hy : y * y' = 1) (hay : a * y' = y' * s₁ * a) (hby : Commute b y') (hsy : Commute s₂ y')
     (hsa : Commute s₁ a) (hsb : Commute s₁ b) : y * a * b * s₂ * y' = a * b * (s₁ * s₂) := by
-  calc y * a * b * s₂ * y' = y * (a * y') * b * s₂ := by
-        rw [mul_assoc _ s₂, hsy.eq, ← mul_assoc (y * a * b), mul_assoc (y * a) b y', hby.eq,
-          ← mul_assoc (y * a) y' b, mul_assoc y a y']
-    _ = a * b * (s₁ * s₂) := by
-      rw [hay, ← mul_assoc y (y' * s₁) a, ← mul_assoc y y' s₁, hy, one_mul, hsa.eq,
-        mul_assoc a s₁ b, hsb.eq, ← mul_assoc a b s₁, mul_assoc]
+  have hay' : ∀ z, a * (y' * z) = y' * (s₁ * (a * z)) := fun z => by simp [← mul_assoc, hay]
+  have hy' : ∀ z, y * (y' * z) = z := fun z => by simp [← mul_assoc, hy]
+  simp only [mul_assoc, hsy.eq, hby.left_comm, hay', hy', hsa.left_comm, hsb.left_comm]
 
-private theorem conj_mul_g2_cancel {G : Type*} [Group G] {y y' a b c d : G}
+private theorem conj_mul_g2_cancel {G : Type*} [Monoid G] {y y' a b c d : G}
     (hy : y * y' = 1) (hcy : c * y' = y' * d * c) (hdy : Commute d y') (hby : Commute b y')
     (hay : Commute a y') (hdc : Commute d c) : y * a * b * c * d * y' = a * b * c * (d * d) := by
-  calc y * a * b * c * d * y' = y * a * b * y' * d * c * d := by
-        rw [mul_assoc _ d y', hdy.eq, ← mul_assoc (y * a * b * c) y' d, mul_assoc (y * a * b) c y',
-          hcy, ← mul_assoc (y * a * b) (y' * d) c, ← mul_assoc (y * a * b) y' d]
-    _ = a * b * c * (d * d) := by
-      rw [mul_assoc (y * a) b y', hby.eq, ← mul_assoc (y * a) y' b, mul_assoc y a y', hay.eq,
-        ← mul_assoc y y' a, hy, one_mul, mul_assoc (a * b) d c, hdc.eq, ← mul_assoc (a * b) c d,
-        mul_assoc]
+  have hcy' : ∀ z, c * (y' * z) = y' * (d * (c * z)) := fun z => by simp [← mul_assoc, hcy]
+  have hy' : ∀ z, y * (y' * z) = z := fun z => by simp [← mul_assoc, hy]
+  simp only [mul_assoc, hdy.eq, hcy', hby.left_comm, hay.left_comm, hy', hdc.left_comm]
 
-private theorem reorder_g2_rev {G : Type*} [Group G] {a b c d₁ d₂ : G}
+private theorem reorder_g2_rev {G : Type*} [Semigroup G] {a b c d₁ d₂ : G}
     (hba : b * a = a * b * d₂) (hd₁c : Commute d₁ c) (hd₁b : Commute d₁ b)
     (hd₁a : Commute d₁ a) (hca : Commute c a) (hcb : Commute c b) :
     d₁ * (c * (b * a)) = a * b * c * (d₂ * d₁) := by
-  calc d₁ * (c * (b * a)) = c * a * b * (d₂ * d₁) := by
-        rw [← mul_assoc d₁ c, hd₁c.eq, mul_assoc c d₁ (b * a), ← mul_assoc d₁ b a, hd₁b.eq,
-          mul_assoc b d₁ a, hd₁a.eq, ← mul_assoc b a d₁, ← mul_assoc c (b * a) d₁, hba,
-          ← mul_assoc c (a * b) d₂, ← mul_assoc c a b, mul_assoc (c * a * b) d₂ d₁]
-    _ = a * b * c * (d₂ * d₁) := by rw [hca.eq, mul_assoc a c b, hcb.eq, ← mul_assoc a b c]
+  have hba' : ∀ z, b * (a * z) = a * (b * (d₂ * z)) := fun z => by simp [← mul_assoc, hba]
+  simp only [mul_assoc, hd₁c.left_comm, hd₁b.left_comm, hd₁a.eq]
+  simp only [hba', hca.left_comm, hcb.left_comm]
 
 end GroupHelpers
 
@@ -95,14 +84,6 @@ section DividedPowerCommutator
 variable {L : Type*} [LieRing L] [LieAlgebra ℚ L] {A : Type*} [Ring A]
 variable {F : Type*} [FunLike F (_root_.UniversalEnvelopingAlgebra ℚ L) A]
   [NonUnitalRingHomClass F (_root_.UniversalEnvelopingAlgebra ℚ L) A]
-
-/-- If `(p * q) • ⁅a, b⁆ = 0`, the integer-scaled images of `a` and `b` commute under any ring
-homomorphism out of `U(L)`. -/
-theorem commute_zsmul_of_zsmul_lie_eq_zero (ρ : F) {a b : L} {p q : ℤ}
-    (hab : (p * q) • ⁅a, b⁆ = 0) : Commute (p • ρ (ι ℚ a)) (q • ρ (ι ℚ b)) := by
-  have h := zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (R := ℚ) ρ
-    (p := p) (q := q) (b' := a) (r := 0) (n := 0) (by simpa using hab)
-  rw [zero_smul, add_zero] at h; exact h
 
 private theorem comm_zsmul (ρ : F) {a b : L} (p q : ℤ) (h : ⁅a, b⁆ = 0) :
     Commute (p • ρ (ι ℚ a)) (q • ρ (ι ℚ b)) :=
@@ -121,7 +102,7 @@ private theorem inv_exp_ofAdd_eq_zsmul (M : S) {x : A} (c : ℤ)
     (hx : IsNilpotent x) {r s : R} (hrs : -r = (c : R) * s) :
     (baseChangeExpHom x M hM hx (ofAdd r))⁻¹ =
       baseChangeExpHom (c • x) M hcM (hx.smul c) (ofAdd s) := by
-  rw [← map_inv, ← ofAdd_neg, baseChangeExpHom_zsmul_ofAdd c M hM hcM hx (hx.smul c), hrs]
+  rw [← map_inv, ← ofAdd_neg, baseChangeExpHom_zsmul c M hM hcM hx (hx.smul c), toAdd_ofAdd, hrs]
 
 private theorem commute_exp_zsmul_right (ρ : F) (M : S) {a b : L} {q : ℤ} (hab : q • ⁅a, b⁆ = 0)
     (hMa : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ a)) • v ∈ M)
@@ -148,8 +129,8 @@ private theorem exp_mul_of_commutator_eq_zsmul (M : S) {u₁ u₂ u₃ : A} (k r
   have hMkr₃ := dividedPower_zsmul_smul_mem (k * r) M hM₃
   rw [baseChangeExpHom_mul_of_commutator_eq M h₁₂ h₁₃ h₂₃ hM₁ hM₂ hMkr₃
       hn₁ hn₂ (hn₃.smul (k * r)) t u,
-    baseChangeExpHom_zsmul_ofAdd (k * r) M hM₃ hMkr₃ hn₃ (hn₃.smul (k * r)),
-    baseChangeExpHom_zsmul_ofAdd r M hM₃ hMr₃ hn₃ (hn₃.smul r)]
+    baseChangeExpHom_zsmul (k * r) M hM₃ hMkr₃ hn₃ (hn₃.smul (k * r)),
+    baseChangeExpHom_zsmul r M hM₃ hMr₃ hn₃ (hn₃.smul r), toAdd_ofAdd, toAdd_ofAdd]
   congr 4; rw [← hs, Int.cast_mul]; ring
 
 /-- **Steinberg's Chevalley commutator relation for the chain `α + β, 2α + β`.** If
@@ -191,8 +172,9 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_eq (ρ : F) (M : S) {x y z
     ((commute_baseChangeExpHom M ((commute_of_lie_eq_zero ρ hyz).smul_right c)
         hMy hMcz hy (hz.smul c) u _).mul_right
       (commute_exp_zsmul_right ρ M hyw hMy hMdw hy (hw.smul d) u _)).mul_inv_cancel,
-    baseChangeExpHom_zsmul_ofAdd c M hMz hMcz hz (hz.smul c),
-    baseChangeExpHom_zsmul_ofAdd d M hMw hMdw hw (hw.smul d)]
+    baseChangeExpHom_zsmul c M hMz hMcz hz (hz.smul c),
+    baseChangeExpHom_zsmul d M hMw hMdw hw (hw.smul d)]
+  simp only [toAdd_ofAdd]; rfl
 
 /-- **Steinberg's Chevalley commutator relation for the reversed chain `α + β, α + 2β`.** If
 `⁅x, y⁆ = c • z` and `⁅y, ⁅y, x⁆⁆ = (2 * d) • w` with `⁅y, w⁆ = ⁅x, z⁆ = 0`, then
@@ -224,8 +206,9 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq (ρ : F) (M : S)
     inv_exp_ofAdd_eq_zsmul M c hMz hMcz hz (s := toAdd t * toAdd u) (by push_cast; ring),
     (commute_baseChangeExpHom M (commute_zsmul_of_zsmul_lie_eq_zero ρ hzw).symm
       hMdw hMcz (hw.smul (-d)) (hz.smul c) _ _).eq,
-    baseChangeExpHom_zsmul_ofAdd c M hMz hMcz hz (hz.smul c),
-    baseChangeExpHom_zsmul_ofAdd (-d) M hMw hMdw hw (hw.smul (-d)), Int.cast_neg]
+    baseChangeExpHom_zsmul c M hMz hMcz hz (hz.smul c),
+    baseChangeExpHom_zsmul (-d) M hMw hMdw hw (hw.smul (-d))]
+  simp only [toAdd_ofAdd, Int.cast_neg]
 
 /-- **Steinberg's Chevalley commutator relation for the type-`G₂` short pair.** For roots
 `α, α + β, 2α + β, 3α + β, 3α + 2β` corresponding to `x, y, z, w, s` with
@@ -294,10 +277,10 @@ theorem commutatorElement_baseChangeExpHom_of_g2_short_pair (ρ : F) (M : S)
       (commute_baseChangeExpHom M (comm_zsmul ρ d a hws).symm
         hMas hMdw (hs.smul a) (hw.smul d) _ _),
     ← (baseChangeExpHom _ M hMas (hs.smul a)).map_mul, ← ofAdd_add,
-    baseChangeExpHom_zsmul_ofAdd c M hMz hMcz hz (hz.smul c),
-    baseChangeExpHom_zsmul_ofAdd d M hMw hMdw hw (hw.smul d),
-    baseChangeExpHom_zsmul_ofAdd a M hMs hMas hs (hs.smul a)]
-  congr 3; ring
+    baseChangeExpHom_zsmul c M hMz hMcz hz (hz.smul c),
+    baseChangeExpHom_zsmul d M hMw hMdw hw (hw.smul d),
+    baseChangeExpHom_zsmul a M hMs hMas hs (hs.smul a)]
+  simp only [toAdd_ofAdd]; congr 3; ring
 
 /-- **Steinberg's Chevalley commutator relation in type `G₂` (`α` short, `β` long).** For roots
 `α, β, α + β, 2α + β, 3α + β, 3α + 2β` corresponding to `x, y, z, w, m, o` with `⁅x, y⁆ = c • z`,
@@ -378,11 +361,11 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S
       (commute_baseChangeExpHom M (comm_zsmul ρ a b hmo).symm
         hMbo hMam (ho.smul b) (hm.smul a) _ _),
     ← (baseChangeExpHom _ M hMbo (ho.smul b)).map_mul, ← ofAdd_add,
-    baseChangeExpHom_zsmul_ofAdd c M hMz hMcz hz (hz.smul c),
-    baseChangeExpHom_zsmul_ofAdd d M hMw hMdw hw (hw.smul d),
-    baseChangeExpHom_zsmul_ofAdd a M hMm hMam hm (hm.smul a),
-    baseChangeExpHom_zsmul_ofAdd b M hMo hMbo ho (ho.smul b)]
-  congr 3; ring
+    baseChangeExpHom_zsmul c M hMz hMcz hz (hz.smul c),
+    baseChangeExpHom_zsmul d M hMw hMdw hw (hw.smul d),
+    baseChangeExpHom_zsmul a M hMm hMam hm (hm.smul a),
+    baseChangeExpHom_zsmul b M hMo hMbo ho (ho.smul b)]
+  simp only [toAdd_ofAdd]; congr 3; ring
 
 /-- **Steinberg's Chevalley commutator relation in type `G₂` (`α` long, `β` short).** For roots
 `α, β, α + β, α + 2β, α + 3β, 2α + 3β` corresponding to `x, y, z, w, m, o` with
@@ -451,11 +434,12 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul_rev (ρ : F) (M
       (commute_baseChangeExpHom M (comm_zsmul ρ d a hwm).symm
         hMam hMdw (hm.smul a) (hw.smul d) _ _),
     ← (baseChangeExpHom _ M hMbo (ho.smul b)).map_mul, ← ofAdd_add,
-    baseChangeExpHom_zsmul_ofAdd c M hMz hMcz hz (hz.smul c),
-    baseChangeExpHom_zsmul_ofAdd d M hMw hMdw hw (hw.smul d),
-    baseChangeExpHom_zsmul_ofAdd a M hMm hMam hm (hm.smul a),
-    baseChangeExpHom_zsmul_ofAdd b M hMo hMbo ho (ho.smul b),
-    show (d : R) * -(tr * ur ^ 2) = (-d : R) * (tr * ur ^ 2) by ring,
+    baseChangeExpHom_zsmul c M hMz hMcz hz (hz.smul c),
+    baseChangeExpHom_zsmul d M hMw hMdw hw (hw.smul d),
+    baseChangeExpHom_zsmul a M hMm hMam hm (hm.smul a),
+    baseChangeExpHom_zsmul b M hMo hMbo ho (ho.smul b)]
+  simp only [toAdd_ofAdd]
+  rw [show (d : R) * -(tr * ur ^ 2) = (-d : R) * (tr * ur ^ 2) by ring,
     show (a : R) * -(tr * ur ^ 3) = (-a : R) * (tr * ur ^ 3) by ring,
     show (b : R) * (3 * (tr ^ 2 * ur ^ 3) + (-2 : R) * (tr ^ 2 * ur ^ 3)) =
       (b : R) * (tr ^ 2 * ur ^ 3) by ring]
