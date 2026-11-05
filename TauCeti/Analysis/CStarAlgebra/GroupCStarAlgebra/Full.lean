@@ -16,39 +16,35 @@ public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 /-!
 # The full group C⋆-algebra of a locally compact group
 
-Let `G : Type u` be a locally compact group and `μ` a left Haar measure on `G`. The *full* (or
-*universal*) *group C⋆-algebra* `FullGroupCStarAlgebra G μ` is the completion of the group
-convolution algebra `C_c(G, ℂ)` in `GroupConvolutionAlgebra.fullSeminorm G μ`, forming a
-`NonUnitalCStarAlgebra` (and a `NonUnitalCommCStarAlgebra` when `G` is abelian).
+For a locally compact group `G : Type u` and a left Haar measure `μ`, the *full* (or *universal*)
+*group C⋆-algebra* `FullGroupCStarAlgebra G μ` is the completion of `GroupConvolutionAlgebra G μ`
+in `GroupConvolutionAlgebra.fullSeminorm G μ`, forming a `NonUnitalCStarAlgebra` (and a
+`NonUnitalCommCStarAlgebra` when `G` is abelian).
 
 ## Main definitions
 
-* `TauCeti.FullGroupCStarAlgebra`: the full group C⋆-algebra `C⋆(G)` with respect to `μ`.
-* `TauCeti.FullGroupCStarAlgebra.of` and `TauCeti.FullGroupCStarAlgebra.lift`: the canonical
-  injective dense-range ⋆-homomorphism and universal extension map.
-* `ContRepresentation.IsUnitary.integratedGroupCStar`: extension of an integrated unitary
-  representation to a nondegenerate representation of `FullGroupCStarAlgebra G μ`.
+* `TauCeti.FullGroupCStarAlgebra`, `of`, `lift`: `C⋆(G)`, its dense embedding, and extension map.
+* `ContRepresentation.IsUnitary.integratedGroupCStar`: nondegenerate extension of `U` to `C⋆(G)`.
 * `TauCeti.FullGroupCStarAlgebra.groupMultiplier`: strictly continuous unitary generator map
   `G →* unitary 𝓜(ℂ, FullGroupCStarAlgebra G μ)`.
 * `TauCeti.FullGroupCStarAlgebra.toGroupRepresentation`: inverse map recovering a strongly
   continuous unitary representation from a nondegenerate representation of `C⋆(G)`.
 * `TauCeti.GroupConvolutionAlgebra.haarMeasureEquiv` and
-  `TauCeti.FullGroupCStarAlgebra.haarMeasureEquiv`: canonical Haar-measure rescaling ⋆-isomorphisms.
+  `TauCeti.FullGroupCStarAlgebra.haarMeasureEquiv`: Haar-measure rescaling ⋆-isomorphisms.
 
 ## Main statements
 
 * `TauCeti.FullGroupCStarAlgebra.of_injective` and `TauCeti.FullGroupCStarAlgebra.denseRange_of`:
   `GroupConvolutionAlgebra G μ` embeds injectively and densely into `FullGroupCStarAlgebra G μ`.
 * `TauCeti.FullGroupCStarAlgebra.continuous_groupMultiplier_fst_apply` and
-  `TauCeti.FullGroupCStarAlgebra.continuous_groupMultiplier_snd_apply`: strict continuity of the
-  unitary generator map `groupMultiplier`.
+  `TauCeti.FullGroupCStarAlgebra.continuous_groupMultiplier_snd_apply`: strict continuity of `i_G`.
 * `TauCeti.FullGroupCStarAlgebra.integratedGroupCStar_toGroupRepresentation` and
   `TauCeti.FullGroupCStarAlgebra.toGroupRepresentation_integratedGroupCStar`: bijection between
-  strongly continuous unitary representations of `G` and nondegenerate representations of `C⋆(G)`
-  on Hilbert spaces in `Type u`.
+  strongly continuous unitary representations of `G` and nondegenerate representations of `C⋆(G)`.
 
 ## References
 
+* Kenneth R. Davidson, *C*-Algebras by Example*, Chapter VII.
 * Jacques Dixmier, *C*-Algebras*, Section 13.9.
 * Gerald B. Folland, *A Course in Abstract Harmonic Analysis*, Section 7.1.
 * Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
@@ -81,11 +77,9 @@ instance : NonUnitalRing (FullGroupConvolutionAlgebra G μ) :=
   inferInstanceAs (NonUnitalRing (GroupConvolutionAlgebra G μ))
 instance : Module ℂ (FullGroupConvolutionAlgebra G μ) :=
   inferInstanceAs (Module ℂ (GroupConvolutionAlgebra G μ))
-instance : IsScalarTower ℂ (FullGroupConvolutionAlgebra G μ)
-    (FullGroupConvolutionAlgebra G μ) :=
+instance : IsScalarTower ℂ (FullGroupConvolutionAlgebra G μ) (FullGroupConvolutionAlgebra G μ) :=
   inferInstanceAs (IsScalarTower ℂ (GroupConvolutionAlgebra G μ) (GroupConvolutionAlgebra G μ))
-instance : SMulCommClass ℂ (FullGroupConvolutionAlgebra G μ)
-    (FullGroupConvolutionAlgebra G μ) :=
+instance : SMulCommClass ℂ (FullGroupConvolutionAlgebra G μ) (FullGroupConvolutionAlgebra G μ) :=
   inferInstanceAs (SMulCommClass ℂ (GroupConvolutionAlgebra G μ) (GroupConvolutionAlgebra G μ))
 instance : StarRing (FullGroupConvolutionAlgebra G μ) :=
   inferInstanceAs (StarRing (GroupConvolutionAlgebra G μ))
@@ -101,23 +95,26 @@ instance : SeminormedAddCommGroup (FullGroupConvolutionAlgebra G μ) :=
   @AddGroupSeminorm.toSeminormedAddCommGroup (FullGroupConvolutionAlgebra G μ) _
     (GroupConvolutionAlgebra.fullSeminorm G μ).toAddGroupSeminorm
 
-private theorem norm_def (f : FullGroupConvolutionAlgebra G μ) :
+/-- The norm of `equiv G μ f` in `FullGroupConvolutionAlgebra G μ` is its full group C⋆-seminorm. -/
+@[simp] theorem norm_equiv (f : GroupConvolutionAlgebra G μ) :
+    ‖equiv G μ f‖ = GroupConvolutionAlgebra.fullSeminorm G μ f := (rfl)
+
+/-- The norm on `FullGroupConvolutionAlgebra G μ` is the full group C⋆-seminorm of the underlying
+element of `GroupConvolutionAlgebra G μ`. -/
+theorem norm_def (f : FullGroupConvolutionAlgebra G μ) :
     ‖f‖ = GroupConvolutionAlgebra.fullSeminorm G μ ((equiv G μ).symm f) := (rfl)
 
 instance : NormedSpace ℂ (FullGroupConvolutionAlgebra G μ) where
   __ : Module ℂ (FullGroupConvolutionAlgebra G μ) := inferInstance
   norm_smul_le c f :=
     (map_smul_eq_mul (GroupConvolutionAlgebra.fullSeminorm G μ) c ((equiv G μ).symm f)).le
-
 instance : NonUnitalSeminormedRing (FullGroupConvolutionAlgebra G μ) where
   __ : SeminormedAddCommGroup (FullGroupConvolutionAlgebra G μ) := inferInstance
   __ : NonUnitalRing (FullGroupConvolutionAlgebra G μ) := inferInstance
   norm_mul_le f g :=
     GroupConvolutionAlgebra.fullSeminorm_mul_le ((equiv G μ).symm f) ((equiv G μ).symm g)
-
 instance : NormedStarGroup (FullGroupConvolutionAlgebra G μ) where
   norm_star_le f := (GroupConvolutionAlgebra.fullSeminorm_star ((equiv G μ).symm f)).le
-
 instance : NonUnitalCStarAlgebra (Completion (FullGroupConvolutionAlgebra G μ)) where
   toCStarRing := Completion.cstarRing fun f =>
     (GroupConvolutionAlgebra.fullSeminorm_star_mul_self ((equiv G μ).symm f)).ge
@@ -147,13 +144,12 @@ def of : GroupConvolutionAlgebra G μ →⋆ₙₐ[ℂ] FullGroupCStarAlgebra G 
   map_star' f := by rw [map_star]; exact Completion.coe_star _
 
 private theorem coe_equiv_eq_of (f : GroupConvolutionAlgebra G μ) :
-    ((equiv G μ f : Completion (FullGroupConvolutionAlgebra G μ)) :
-      FullGroupCStarAlgebra G μ) = of G μ f := (rfl)
+    ((equiv G μ f : Completion (FullGroupConvolutionAlgebra G μ)) : FullGroupCStarAlgebra G μ) =
+      of G μ f := (rfl)
 
 /-- The norm of `of G μ f` in `C⋆(G)` equals the universal group C⋆-seminorm `‖f‖ᵤ`. -/
 @[simp] theorem norm_of (f : GroupConvolutionAlgebra G μ) :
-    ‖of G μ f‖ = GroupConvolutionAlgebra.fullSeminorm G μ f :=
-  Completion.norm_coe (equiv G μ f)
+    ‖of G μ f‖ = GroupConvolutionAlgebra.fullSeminorm G μ f := Completion.norm_coe (equiv G μ f)
 
 /-- The canonical embedding `of G μ` is contractive for the `L¹(μ)` norm. -/
 theorem norm_of_le (f : GroupConvolutionAlgebra G μ) : ‖of G μ f‖ ≤ ‖f‖ :=
@@ -168,9 +164,8 @@ theorem denseRange_of : DenseRange (of G μ) :=
   Completion.denseRange_coe.comp (equiv G μ).surjective.denseRange (Completion.continuous_coe _)
 
 /-- To prove a closed predicate on `FullGroupCStarAlgebra G μ`, it suffices to check `of G μ f`. -/
-@[elab_as_elim]
-theorem induction_on {p : FullGroupCStarAlgebra G μ → Prop} (x : FullGroupCStarAlgebra G μ)
-    (hp : IsClosed {x | p x}) (ih : ∀ f, p (of G μ f)) : p x :=
+@[elab_as_elim] theorem induction_on {p : FullGroupCStarAlgebra G μ → Prop}
+    (x : FullGroupCStarAlgebra G μ) (hp : IsClosed {x | p x}) (ih : ∀ f, p (of G μ f)) : p x :=
   Completion.induction_on (p := p) x hp fun f =>
     coe_equiv_eq_of ((equiv G μ).symm f) ▸ ih ((equiv G μ).symm f)
 
@@ -195,14 +190,12 @@ theorem of_injective : Function.Injective (of G μ) :=
 
 section Lift
 
-variable {D : Type*} [NonUnitalCStarAlgebra D]
-  (ρ : GroupConvolutionAlgebra G μ →⋆ₙₐ[ℂ] D)
+variable {D : Type*} [NonUnitalCStarAlgebra D] (ρ : GroupConvolutionAlgebra G μ →⋆ₙₐ[ℂ] D)
   (hρ : ∀ f, ‖ρ f‖ ≤ GroupConvolutionAlgebra.fullSeminorm G μ f)
 
 private def liftCLM : FullGroupConvolutionAlgebra G μ →L[ℂ] D :=
   ((ρ : GroupConvolutionAlgebra G μ →ₗ[ℂ] D).comp
-    ((equiv G μ).symm :
-      FullGroupConvolutionAlgebra G μ →ₗ[ℂ] GroupConvolutionAlgebra G μ)).mkContinuous 1 fun f => by
+    ((equiv G μ).symm : FullGroupConvolutionAlgebra G μ →ₗ[ℂ] _)).mkContinuous 1 fun f => by
       simpa [norm_def] using hρ ((equiv G μ).symm f)
 
 private theorem fromCompletion_liftCLM_of (f : GroupConvolutionAlgebra G μ) :
@@ -229,16 +222,12 @@ def lift : FullGroupCStarAlgebra G μ →⋆ₙₐ[ℂ] D where
 
 @[simp] theorem lift_of (f : GroupConvolutionAlgebra G μ) : lift ρ hρ (of G μ f) = ρ f :=
   fromCompletion_liftCLM_of ρ hρ f
-
 @[simp] theorem lift_comp_of : (lift ρ hρ).comp (of G μ) = ρ :=
   NonUnitalStarAlgHom.ext (lift_of ρ hρ)
 
 end Lift
-
 end FullGroupCStarAlgebra
-
 end Group
-
 end TauCeti
 
 /-! ### Extended integrated unitary representations -/
@@ -265,7 +254,6 @@ def integratedGroupCStar {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure]
     (f : GroupConvolutionAlgebra G μ) :
     hU.integratedGroupCStar hcont μ (of G μ f) = hU.integratedStarAlgHom hcont μ f := lift_of _ _ f
-
 @[simp] theorem integratedGroupCStar_comp_of {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure] :
     (hU.integratedGroupCStar hcont μ).comp (of G μ) = hU.integratedStarAlgHom hcont μ :=
@@ -342,32 +330,27 @@ theorem of_eq_of_iff {f g : GroupConvolutionAlgebra G μ} :
 /-! ### Canonical unitary group multipliers -/
 
 private def translateCLM (r : G) : FullGroupCStarAlgebra G μ →L[ℂ] FullGroupCStarAlgebra G μ :=
-  ((((FullGroupConvolutionAlgebra.equiv G μ :
-    GroupConvolutionAlgebra G μ →ₗ[ℂ] FullGroupConvolutionAlgebra G μ).comp
-      ((translateLIE r).toLinearEquiv.toLinearMap.comp
-        ((FullGroupConvolutionAlgebra.equiv G μ).symm :
-          FullGroupConvolutionAlgebra G μ →ₗ[ℂ] GroupConvolutionAlgebra G μ))).mkContinuous 1
-            fun f => by simp [FullGroupConvolutionAlgebra.norm_def])).completion
+  ((((FullGroupConvolutionAlgebra.equiv G μ : GroupConvolutionAlgebra G μ →ₗ[ℂ] _).comp
+    ((translateLIE r).toLinearEquiv.toLinearMap.comp
+      ((FullGroupConvolutionAlgebra.equiv G μ).symm :
+        FullGroupConvolutionAlgebra G μ →ₗ[ℂ] _))).mkContinuous 1
+          fun _ => by simp [FullGroupConvolutionAlgebra.norm_def])).completion
 
 private theorem translateCLM_of (r : G) (f : GroupConvolutionAlgebra G μ) :
     translateCLM r (of G μ f) = of G μ (translateLIE r f) := by
   rw [← coe_equiv_eq_of, ← coe_equiv_eq_of, translateCLM]
   exact ContinuousLinearMap.completion_apply_coe _ _
-
 private theorem translateCLM_one : translateCLM (G := G) (μ := μ) 1 = 1 :=
   continuousLinearMap_ext fun f => by simp [translateCLM_of]
-
 private theorem translateCLM_mul (r t : G) :
     translateCLM (G := G) (μ := μ) (r * t) = translateCLM r * translateCLM t :=
   continuousLinearMap_ext fun f => by
     simp [translateCLM_of, translateLIE_mul, LinearIsometryEquiv.coe_mul]
-
 private theorem norm_translateCLM_apply (r : G) (x : FullGroupCStarAlgebra G μ) :
     ‖translateCLM r x‖ = ‖x‖ := by
   induction x using induction_on with
   | hp => exact isClosed_eq (by fun_prop) continuous_norm
   | ih f => simp [translateCLM_of]
-
 private theorem star_translateCLM_mul (r : G) (x y : FullGroupCStarAlgebra G μ) :
     star (translateCLM r⁻¹ x) * y = star x * translateCLM r y := by
   induction x using induction_on with
@@ -395,21 +378,17 @@ def groupMultiplier : G →* unitary 𝓜(ℂ, FullGroupCStarAlgebra G μ) where
 private theorem groupMultiplier_fst (r : G) :
     (groupMultiplier G μ r : 𝓜(ℂ, FullGroupCStarAlgebra G μ)).fst = translateCLM r :=
   DoubleCentralizer.ofAdjoint_fst
-
 private theorem groupMultiplier_snd_apply (r : G) (x : FullGroupCStarAlgebra G μ) :
     (groupMultiplier G μ r : 𝓜(ℂ, FullGroupCStarAlgebra G μ)).snd x =
-      star (translateCLM r⁻¹ (star x)) :=
-  DoubleCentralizer.ofAdjoint_snd_apply x
+      star (translateCLM r⁻¹ (star x)) := DoubleCentralizer.ofAdjoint_snd_apply x
 
 theorem groupMultiplier_snd_eq_star_fst_inv (r : G) (x : FullGroupCStarAlgebra G μ) :
     (groupMultiplier G μ r : 𝓜(ℂ, FullGroupCStarAlgebra G μ)).snd x =
       star ((groupMultiplier G μ r⁻¹ : 𝓜(ℂ, FullGroupCStarAlgebra G μ)).fst (star x)) :=
   (groupMultiplier_snd_apply r x).trans (by rw [groupMultiplier_fst])
-
 @[simp] theorem groupMultiplier_fst_of (r : G) (f : GroupConvolutionAlgebra G μ) :
     (groupMultiplier G μ r : 𝓜(ℂ, FullGroupCStarAlgebra G μ)).fst (of G μ f) =
       of G μ (translateLIE r f) := by rw [groupMultiplier_fst, translateCLM_of]
-
 @[simp] theorem groupMultiplier_snd_of (r : G) (f : GroupConvolutionAlgebra G μ) :
     (groupMultiplier G μ r : 𝓜(ℂ, FullGroupCStarAlgebra G μ)).snd (of G μ f) =
       star (of G μ (translateLIE r⁻¹ (star f))) := by
@@ -435,13 +414,10 @@ theorem continuous_groupMultiplier_snd_apply (x : FullGroupCStarAlgebra G μ) :
     Continuous fun r => (groupMultiplier G μ r : 𝓜(ℂ, FullGroupCStarAlgebra G μ)).snd x := by
   simp only [groupMultiplier_snd_apply]
   have h := (continuous_groupMultiplier_fst_apply (G := G) (μ := μ) (star x)).comp continuous_inv
-  simp only [groupMultiplier_fst] at h
-  exact h.star
+  simp only [groupMultiplier_fst] at h; exact h.star
 
 end FullGroupCStarAlgebra
-
 end NormAndMultipliers
-
 end TauCeti
 
 namespace ContRepresentation.IsUnitary
@@ -595,13 +571,11 @@ the original representation `U`. -/
         hU.integratedGroupCStar_groupMultiplier_fst]
 
 end SameUniverse
-
 end TauCeti.FullGroupCStarAlgebra
 
 /-! ### Commutative group C⋆-algebras -/
 
 section CommGroup
-
 namespace TauCeti.FullGroupCStarAlgebra
 
 universe u
@@ -622,7 +596,6 @@ instance : NonUnitalCommCStarAlgebra (FullGroupCStarAlgebra G μ) where
           simpa only [map_mul] using (hU.integratedStarAlgHom_commute hcont μ f g).eq
 
 end TauCeti.FullGroupCStarAlgebra
-
 end CommGroup
 
 /-! ### Independence of the choice of Haar measure -/
@@ -665,27 +638,22 @@ def haarMeasureEquiv (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] :
     simp_rw [mul_mul_mul_comm ((Measure.haarScalarFactor μ ν : ℝ) : ℂ)]
     rw [integral_const_mul]; ring
   map_star' f := ext <| CompactlySupportedContinuousMap.ext fun s => by
-    dsimp only
-    rw [ofConv_toConv, ofConv_star_apply, ofConv_toConv]
+    dsimp only; rw [ofConv_toConv, ofConv_star_apply, ofConv_toConv]
     simp [ofConv_star_apply, smul_eq_mul, Complex.real_smul]; ring
 
 @[simp] theorem ofConv_haarMeasureEquiv_apply (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
     (f : GroupConvolutionAlgebra G μ) (s : G) :
     (haarMeasureEquiv G μ ν f).ofConv s =
       ((Measure.haarScalarFactor μ ν : ℝ) : ℂ) * f.ofConv s := (rfl)
-
 @[simp] theorem haarMeasureEquiv_symm (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] :
     (haarMeasureEquiv G μ ν).symm = haarMeasureEquiv G ν μ := (rfl)
-
 @[simp] theorem haarMeasureEquiv_refl (μ : Measure G) [μ.IsHaarMeasure] :
     haarMeasureEquiv G μ μ = StarAlgEquiv.refl ℂ (GroupConvolutionAlgebra G μ) := by
   ext f : 1; apply ext; ext s; simp
-
 @[simp] theorem haarMeasureEquiv_apply_haarMeasureEquiv (μ ν κ : Measure G) [μ.IsHaarMeasure]
     [ν.IsHaarMeasure] [κ.IsHaarMeasure] (f : GroupConvolutionAlgebra G μ) :
     haarMeasureEquiv G ν κ (haarMeasureEquiv G μ ν f) = haarMeasureEquiv G μ κ f :=
   ext (smul_haarScalarFactor_smul μ ν κ f.ofConv)
-
 theorem haarMeasureEquiv_trans (μ ν κ : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
     [κ.IsHaarMeasure] :
     (haarMeasureEquiv G μ ν).trans (haarMeasureEquiv G ν κ) = haarMeasureEquiv G μ κ :=
@@ -751,20 +719,16 @@ def haarMeasureEquiv (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] :
     (f : GroupConvolutionAlgebra G μ) :
     haarMeasureEquiv G μ ν (of G μ f) =
       of G ν (GroupConvolutionAlgebra.haarMeasureEquiv G μ ν f) := lift_of _ _ f
-
 @[simp] theorem haarMeasureEquiv_symm (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] :
     (haarMeasureEquiv G μ ν).symm = haarMeasureEquiv G ν μ := (rfl)
-
 @[simp] theorem haarMeasureEquiv_refl (μ : Measure G) [μ.IsHaarMeasure] :
     haarMeasureEquiv G μ μ = StarAlgEquiv.refl ℂ (FullGroupCStarAlgebra G μ) :=
   StarAlgEquiv.ext fun x => induction_on x (isClosed_eq (by fun_prop) (by fun_prop))
     fun _ => by simp
-
 @[simp] theorem haarMeasureEquiv_apply_haarMeasureEquiv (μ ν κ : Measure G) [μ.IsHaarMeasure]
     [ν.IsHaarMeasure] [κ.IsHaarMeasure] (x : FullGroupCStarAlgebra G μ) :
     haarMeasureEquiv G ν κ (haarMeasureEquiv G μ ν x) = haarMeasureEquiv G μ κ x :=
   induction_on x (isClosed_eq (by fun_prop) (by fun_prop)) fun _ => by simp
-
 theorem haarMeasureEquiv_trans (μ ν κ : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
     [κ.IsHaarMeasure] :
     (haarMeasureEquiv G μ ν).trans (haarMeasureEquiv G ν κ) = haarMeasureEquiv G μ κ :=
@@ -793,7 +757,5 @@ theorem haarMeasureEquiv_trans (μ ν κ : Measure G) [μ.IsHaarMeasure] [ν.IsH
   | ih f => simp [hU.integratedStarAlgHom_haarMeasureEquiv]
 
 end TauCeti.FullGroupCStarAlgebra
-
 end HaarMeasureEquiv
-
 end

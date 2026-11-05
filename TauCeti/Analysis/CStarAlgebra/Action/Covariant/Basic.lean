@@ -94,3 +94,35 @@ theorem trivial_group (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
 end CovariantRepresentation
 
 end TauCeti.CStarAction
+
+namespace ContRepresentation.IsUnitary
+
+open TauCeti TauCeti.CStarAction
+
+variable {G H : Type*} [Group G] [TopologicalSpace G]
+  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- View a strongly continuous unitary representation `U` of `G` on `H` as a covariant
+representation of `CStarAction.trivial (G := G) (A := ℂ)` with scalar coefficients. -/
+noncomputable def toTrivialCovariant {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+    (hcont : ∀ v, Continuous fun g => U g v) :
+    CovariantRepresentation (CStarAction.trivial (G := G) (A := ℂ)) H where
+  coefficient := (StarAlgHom.ofId ℂ (H →L[ℂ] H)).toNonUnitalStarAlgHom
+  group := U
+  isUnitary := hU
+  continuous_orbit := hcont
+  covariance _ _ _ := by simp [Algebra.algebraMap_eq_smul_one]
+
+@[simp]
+theorem toTrivialCovariant_coefficient {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+    (hcont : ∀ v, Continuous fun g => U g v) (z : ℂ) :
+    (hU.toTrivialCovariant hcont).coefficient z = z • ContinuousLinearMap.id ℂ H :=
+  Algebra.algebraMap_eq_smul_one z
+
+@[simp]
+theorem toTrivialCovariant_group {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+    (hcont : ∀ v, Continuous fun g => U g v) :
+    (hU.toTrivialCovariant hcont).group = U :=
+  (rfl)
+
+end ContRepresentation.IsUnitary
