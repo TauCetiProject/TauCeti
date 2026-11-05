@@ -13,6 +13,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import TauCeti.Data.Option.Basic
 import TauCeti.RepresentationTheory.LSPath.PartialInverse
+import TauCeti.RepresentationTheory.LSPath.SimpleRootString
 
 /-!
 # Normal crystals of integral piecewise-linear paths
@@ -105,12 +106,6 @@ theorem RootStep.of_raise_eq_some {i : b.support} {π π' : PLPath 𝕜 V}
 theorem RootStep.of_lower_eq_some {i : b.support} {π π' : PLPath 𝕜 V}
     (h : lower (F i) (f (P.root i)) π = some π') : RootStep b f F π π' :=
   ⟨i, Or.inr h⟩
-
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- Every simple-coroot height form evaluates to `2` on its realized simple root. -/
-theorem apply_root_eq_two (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) : F i (f (P.root i)) = 2 := by
-  rw [hF, P.root_coroot'_eq_pairing, P.pairing_same, Int.cast_ofNat]
 
 /-- Because raising and lowering are partial inverses, `RootStep` is symmetric whenever the height
 forms agree with the simple coroots on `f(X)`. -/

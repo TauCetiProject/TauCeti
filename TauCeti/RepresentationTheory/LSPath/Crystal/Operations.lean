@@ -8,13 +8,11 @@ module
 public import TauCeti.Logic.Function.Basic
 public import TauCeti.RepresentationTheory.Crystal.WeightTwist
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Basic
+public import TauCeti.RepresentationTheory.LSPath.SimpleRootString
 
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Module
 import Mathlib.Tactic.Ring
 import TauCeti.RepresentationTheory.LSPath.Concatenation
 import TauCeti.RepresentationTheory.LSPath.LinearMap
-import TauCeti.RepresentationTheory.LSPath.PartialInverse
 
 /-!
 # Categorical operations and simple-root strings on path crystals
@@ -37,9 +35,10 @@ rank-one/isolated-node string examples:
   crystal-admissible sets and integral paths forward and induce strict crystal morphisms and
   isomorphisms (`TauCeti.PLPath.mapHom`, `TauCeti.PLPath.mapIso`);
 * for any isolated simple node `i` (in particular on every rank-one root datum), the three-element
-  simple-root string `{straight α_i, simpleRootBent, straight (-α_i)}` is crystal-admissible, and
-  iterated concatenations `straight (-α_i)^n * straight α_i^n` witness that the zero-weight fibre
-  of `normalCrystal` and the set of integral paths are infinite
+  simple-root string `{straight α_i, simpleRootBent, straight (-α_i)}` from
+  `TauCeti.RepresentationTheory.LSPath.SimpleRootString` is crystal-admissible, and iterated
+  concatenations `straight (-α_i)^n * straight α_i^n` witness that the zero-weight fibre of
+  `normalCrystal` and the set of integral paths are infinite
   (`TauCeti.PLPath.infinite_zero_weight_normalCrystal_of_isolated`,
   `TauCeti.PLPath.infinite_isIntegralPath_of_isolated`).
 
@@ -54,8 +53,6 @@ rank-one/isolated-node string examples:
   morphisms from the Kashiwara tensor product.
 * `TauCeti.PLPath.mapHom`, `TauCeti.PLPath.mapIso`: strict crystal morphisms and isomorphisms
   induced by compatible linear maps and equivalences.
-* `TauCeti.PLPath.simpleRootBent`: the zero-weight bent path at the middle of an isolated
-  simple-root string.
 
 ## References
 
@@ -547,65 +544,6 @@ end LinearMap
 
 section SimpleRootString
 
-variable (𝕜) in
-/-- The zero-weight bent path `-(1/2) α_i` followed by `(1/2) α_i` obtained by lowering the
-straight simple-root path `t ↦ t • α_i` once. -/
-noncomputable def simpleRootBent (f : X →+ V) (i : b.support) : PLPath 𝕜 V :=
-  straight 𝕜 (-(2 : 𝕜)⁻¹ • f (P.root i)) * straight 𝕜 ((2 : 𝕜)⁻¹ • f (P.root i))
-
-@[simp]
-theorem endpoint_simpleRootBent (i : b.support) :
-    (simpleRootBent 𝕜 f i).endpoint = 0 := by
-  simp [simpleRootBent]
-
-@[simp]
-theorem reverse_simpleRootBent (i : b.support) :
-    (simpleRootBent 𝕜 f i).reverse = simpleRootBent 𝕜 f i := by
-  simp [simpleRootBent]
-
-theorem minHeight_simpleRootBent_self
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support) :
-    (simpleRootBent 𝕜 f i).minHeight (F i) = -1 := by
-  rw [simpleRootBent, neg_smul, minHeight_straight_neg_mul_straight]
-  simp only [map_smul, smul_eq_mul, apply_root_eq_two hF i]
-  norm_num
-
-/-- Lowering the straight simple-root path `t ↦ t • α_i` gives `simpleRootBent`. -/
-theorem lower_straight_root
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support) :
-    lower (F i) (f (P.root i)) (straight 𝕜 (f (P.root i))) = some (simpleRootBent 𝕜 f i) := by
-  have hv := apply_root_eq_two hF i
-  rw [lower_straight (by linarith : (1 : 𝕜) ≤ F i (f (P.root i))), hv]
-  congr 1
-  have hrefl :
-      preReflection (f (P.root i)) (F i) ((2 : 𝕜)⁻¹ • f (P.root i)) =
-        -(2 : 𝕜)⁻¹ • f (P.root i) := by
-    rw [preReflection_apply, map_smul, hv, smul_eq_mul]
-    have h1 : (2 : 𝕜)⁻¹ * 2 = 1 := inv_mul_cancel₀ two_ne_zero
-    rw [h1, one_smul]
-    module
-  have hsub : (1 - (2 : 𝕜)⁻¹) = (2 : 𝕜)⁻¹ := by norm_num
-  rw [hrefl, hsub, simpleRootBent]
-
-/-- Raising `simpleRootBent` recovers `straight 𝕜 (f (P.root i))`. -/
-theorem raise_simpleRootBent
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support) :
-    raise (F i) (f (P.root i)) (simpleRootBent 𝕜 f i) = some (straight 𝕜 (f (P.root i))) :=
-  (lower_eq_some_iff (apply_root_eq_two hF i)).mp (lower_straight_root hF i)
-
-/-- Lowering `simpleRootBent` gives the opposite straight simple-root path `t ↦ -t • α_i`. -/
-theorem lower_simpleRootBent
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support) :
-    lower (F i) (f (P.root i)) (simpleRootBent 𝕜 f i) = some (straight 𝕜 (-f (P.root i))) := by
-  conv_lhs => rw [← reverse_simpleRootBent (f := f) i]
-  rw [lower_reverse, raise_simpleRootBent hF i, Option.map_some, reverse_straight]
-
-/-- Raising `straight 𝕜 (-f (P.root i))` gives `simpleRootBent`. -/
-theorem raise_straight_neg_root
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support) :
-    raise (F i) (f (P.root i)) (straight 𝕜 (-f (P.root i))) = some (simpleRootBent 𝕜 f i) :=
-  (lower_eq_some_iff (apply_root_eq_two hF i)).mp (lower_simpleRootBent hF i)
-
 /-- For an isolated simple node `i` (`⟨α_i, α_j^∨⟩ = 0` for all `j ≠ i`, in particular in rank
 one), the three-element simple-root string `{straight α_i, simpleRootBent, straight (-α_i)}` is
 crystal-admissible. -/
@@ -629,7 +567,7 @@ theorem isCrystalSet_simpleRootString
       · exact ⟨0, by simp [hv]⟩
       · exact ⟨-1, by simp [minHeight_simpleRootBent_self hF j]⟩
       · exact ⟨-2, by simp [hv]⟩
-    · rcases hπ with rfl | rfl | rfl <;> exact ⟨0, by simp [simpleRootBent, hFj hj]⟩
+    · rcases hπ with rfl | rfl | rfl <;> exact ⟨0, by simp [simpleRootBent_def, hFj hj]⟩
   · intro j π π' hr hπ
     by_cases hj : j = i
     · subst hj
@@ -638,7 +576,7 @@ theorem isCrystalSet_simpleRootString
       · rw [raise_simpleRootBent hF j, Option.some.injEq] at hr; exact hr ▸ Or.inl rfl
       · rw [raise_straight_neg_root hF j, Option.some.injEq] at hr; exact hr ▸ Or.inr (Or.inl rfl)
     · rcases hπ with rfl | rfl | rfl <;>
-        nomatch hr.symm.trans (by simp [simpleRootBent, hFj hj] : _ = none)
+        nomatch hr.symm.trans (by simp [simpleRootBent_def, hFj hj] : _ = none)
   · intro j π π' hl hπ
     by_cases hj : j = i
     · subst hj
@@ -647,7 +585,7 @@ theorem isCrystalSet_simpleRootString
       · rw [lower_simpleRootBent hF j, Option.some.injEq] at hl; exact hl ▸ Or.inr (Or.inr rfl)
       · nomatch hl.symm.trans (by simp [hv] : _ = none)
     · rcases hπ with rfl | rfl | rfl <;>
-        nomatch hl.symm.trans (by simp [simpleRootBent, hFj hj] : _ = none)
+        nomatch hl.symm.trans (by simp [simpleRootBent_def, hFj hj] : _ = none)
 
 /-- For an isolated simple node `i`, the straight simple-root path `straight 𝕜 (f (P.root i))` is
 an integral path. -/
