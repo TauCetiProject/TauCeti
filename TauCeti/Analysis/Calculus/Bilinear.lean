@@ -37,6 +37,12 @@ direction `w`; its derivative involves the second derivative of `u`.
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
+* `ContinuousLinearMap.apply_self_fderiv_eq_of_eventuallyEq`: a local map fixing zero and
+  preserving quadratic functions has a derivative preserving those quadratic functions.
+* `ContinuousAt.hasFDerivAt_clm_apply_zero`: evaluating a family `A q` of continuous linear maps,
+  continuous at `p`, on a vector `x` is differentiable at `(0, p)`, with no differentiability in
+  `q`. For instance, the tube `(u, t) ↦ γ t + A t u` around a curve `γ`, built from a merely
+  continuous frame `A t` of normal vectors, is differentiable along the curve.
 -/
 
 public section
@@ -116,6 +122,64 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
   exact ((ContinuousLinearMap.compL 𝕜 E F G).flip.contDiff.comp contDiff_snd).clm_comp
     (contDiff_fst.clm_comp contDiff_snd)
 
+/-- If a family `A` of continuous linear maps is continuous at `p`, then `(x, q) ↦ A q x` is
+differentiable at `(0, p)`, with derivative `(x, q) ↦ A p x`. No differentiability in `q` is
+needed. -/
+theorem _root_.ContinuousAt.hasFDerivAt_clm_apply_zero {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace 𝕜 P] {A : P → E →L[𝕜] F} {p : P} (hA : ContinuousAt A p) :
+    HasFDerivAt (fun q : E × P ↦ A q.2 q.1) ((A p).comp (ContinuousLinearMap.fst 𝕜 E P))
+      (0, p) := by
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero]
+  have hrem : (fun h : E × P ↦ A ((0, p) + h).2 ((0, p) + h).1 - A (0, p).2 (0, p).1 -
+      (A p).comp (ContinuousLinearMap.fst 𝕜 E P) h) = fun h ↦ (A (p + h.2) - A p) h.1 := by
+    ext h
+    simp
+  have htend : Filter.Tendsto (fun h : E × P ↦ ‖A (p + h.2) - A p‖) (nhds 0) (nhds 0) := by
+    have : Filter.Tendsto (fun h : E × P ↦ A (p + h.2)) (nhds 0) (nhds (A p)) := by
+      refine hA.tendsto.comp ?_
+      simpa using (tendsto_const_nhds (x := p)).add
+        ((continuous_snd (X := E) (Y := P)).tendsto (0 : E × P))
+    simpa using (this.sub_const (A p)).norm
+  rw [hrem]
+  refine Asymptotics.IsBigO.trans_isLittleO
+    (g := fun h : E × P ↦ ‖A (p + h.2) - A p‖ * ‖h‖) ?_ ?_
+  · refine Asymptotics.IsBigO.of_bound 1 (Filter.Eventually.of_forall fun h ↦ ?_)
+    rw [one_mul, Real.norm_of_nonneg (by positivity)]
+    exact ((A (p + h.2) - A p).le_opNorm h.1).trans
+      (mul_le_mul_of_nonneg_left (norm_fst_le h) (norm_nonneg _))
+  · have h := ((Asymptotics.isLittleO_one_iff ℝ).2 htend).mul_isBigO
+      (Asymptotics.isBigO_refl (fun h : E × P ↦ ‖h‖) (nhds 0))
+    simp only [one_mul] at h
+    exact h.trans_isBigO (Asymptotics.isBigO_norm_left.2 (Asymptotics.isBigO_refl _ _))
+
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The derivative at the origin of a local map preserving quadratic functions also preserves
+those quadratic functions. Only differentiability at the origin is required; the bilinear forms
+need not be symmetric or nondegenerate. -/
+theorem apply_self_fderiv_eq_of_eventuallyEq (B : F →L[ℝ] F →L[ℝ] ℝ)
+    (C : E →L[ℝ] E →L[ℝ] ℝ) {φ : E → F} (hφ : DifferentiableAt ℝ φ 0) (hφ0 : φ 0 = 0)
+    (h : (fun y ↦ B (φ y) (φ y)) =ᶠ[nhds 0] (fun y ↦ C y y)) (v : E) :
+    B (fderiv ℝ φ 0 v) (fderiv ℝ φ 0 v) = C v v := by
+  -- Rescale along the ray through v; quadratic homogeneity removes the scale.
+  have hlim := hφ.hasFDerivAt.lim_real v
+  simp only [zero_add, hφ0, sub_zero] at hlim
+  have hquad := (B.continuous₂.tendsto _).comp (hlim.prodMk_nhds hlim)
+  have hnear : Filter.Tendsto (fun t : ℝ ↦ t⁻¹ • v) Filter.atTop (nhds 0) := by
+    simpa using (tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const v
+  have heq : (fun t : ℝ ↦ B (t • φ (t⁻¹ • v)) (t • φ (t⁻¹ • v)))
+      =ᶠ[Filter.atTop] (fun _ ↦ C v v) := by
+    filter_upwards [hnear.eventually h, Filter.eventually_ne_atTop 0] with t ht ht0
+    simp only [map_smul, smul_apply, smul_smul]
+    rw [ht]
+    simp [mul_assoc, ht0]
+  exact tendsto_nhds_unique hquad (tendsto_const_nhds.congr' heq.symm)
+
+end ContinuousLinearMap
 
 end

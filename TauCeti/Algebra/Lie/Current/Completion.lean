@@ -110,6 +110,7 @@ public section
 noncomputable section
 
 open TauCeti.UniversalEnvelopingAlgebra Topology
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 
@@ -119,7 +120,7 @@ section Completion
 
 variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "UK" => CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a
 
 /-- The tower `U / I_0 ← U / I_1 ← U / I_2 ← ⋯` of the quotients of `U(ĝ) / (ι K - a)` by the left
 ideals of high-order currents, with the quotient maps as transitions. -/
@@ -310,14 +311,17 @@ section Map
 variable {Φ Ψ Θ : LinearMap.BilinForm R L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm}
   {hΨ : Ψ.lieInvariant L} {hΨs : Ψ.IsSymm} {hΘ : Θ.lieInvariant L} {hΘs : Θ.IsSymm} {a b c : R}
 
-local notation "UΨ" => CentralQuotient R (centralElement Ψ hΨ hΨs) b
-local notation "UΦ" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "cΦ" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "cΨ" => twoCocycleOfBilinear R L Ψ hΨ hΨs
+local notation "cΘ" => twoCocycleOfBilinear R L Θ hΘ hΘs
+local notation "UΨ" => CentralQuotient R (centralElement cΨ) b
+local notation "UΦ" => CentralQuotient R (centralElement cΦ) a
 
 /-- An algebra morphism which carries, for every `n`, the currents of some order `m` into `I_n`
 carries, for every `n`, some `I_m` into `I_n`. -/
 private theorem exists_orderLeftIdeal_le_comap {g : UΨ →ₐ[R] UΦ}
     (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      g (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) (n : ℕ) :
+      g (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) (n : ℕ) :
     ∃ m : ℕ, orderLeftIdeal Ψ hΨ hΨs b m ≤
       (orderLeftIdeal Φ hΦ hΦs a n).comap g.toRingHom.toSemilinearMap := by
   obtain ⟨m, hm⟩ := hg n
@@ -331,7 +335,7 @@ to an algebra morphism of the completions `lim_N U / I_N`. It is continuous
 extension of `g` (`TauCeti.CurrentAlgebra.eq_completedEnvelopingMap`). -/
 def completedEnvelopingMap (g : UΨ →ₐ[R] UΦ)
     (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      g (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
+      g (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
     CompletedEnveloping Ψ hΨ hΨs b →ₐ[R] CompletedEnveloping Φ hΦ hΦs a where
   toFun := ModuleTower.limQuotientsMap _ _ g.toRingHom.toSemilinearMap
     (exists_orderLeftIdeal_le_comap hg)
@@ -349,10 +353,10 @@ def completedEnvelopingMap (g : UΨ →ₐ[R] UΦ)
       RingHom.coe_toSemilinearMap]
     exact congrArg _ (g.commutes r)
 
-variable (g : CentralQuotient R (centralElement Ψ hΨ hΨs) b →ₐ[R]
-    CentralQuotient R (centralElement Φ hΦ hΦs) a)
+variable (g : CentralQuotient R (centralElement (twoCocycleOfBilinear R L Ψ hΨ hΨs)) b →ₐ[R]
+    CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a)
   (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-    g (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
+    g (envelopingι (twoCocycleOfBilinear R L Ψ hΨ hΨs) b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
 
 /-- The extension of `g` to the completions extends `g`, along the canonical maps `U → Û`
 (`TauCeti.CurrentAlgebra.toCompletedEnveloping`, in the simp normal form
@@ -368,7 +372,7 @@ theorem completedEnvelopingMap_toLimQuotients (x : UΨ) :
 the `n`-th coordinate of the image of `x` is the class of `g y` for any representative `y` of the
 `m`-th coordinate of `x`. -/
 theorem limπ_completedEnvelopingMap {x : CompletedEnveloping Ψ hΨ hΨs b} {n m : ℕ}
-    (hm : ∀ u ∈ orderSubmodule R L m, g (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
+    (hm : ∀ u ∈ orderSubmodule R L m, g (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
     {y : UΨ} (hy : ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Ψ hΨ hΨs b) m y =
       (orderQuotientTower Ψ hΨ hΨs b).limπ m x) :
     (orderQuotientTower Φ hΦ hΦs a).limπ n (completedEnvelopingMap g hg x) =
@@ -378,7 +382,7 @@ theorem limπ_completedEnvelopingMap {x : CompletedEnveloping Ψ hΨ hΨs b} {n 
 /-- If `g` carries the currents of order `m` into `I_n`, its extension carries the kernel of the
 projection to `U / I_m` into the kernel of the projection to `U / I_n`. -/
 theorem completedEnvelopingMap_mem_completedOrderLeftIdeal {n m : ℕ}
-    (hm : ∀ u ∈ orderSubmodule R L m, g (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
+    (hm : ∀ u ∈ orderSubmodule R L m, g (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
     {x : CompletedEnveloping Ψ hΨ hΨs b} (hx : x ∈ completedOrderLeftIdeal Ψ hΨ hΨs b m) :
     completedEnvelopingMap g hg x ∈ completedOrderLeftIdeal Φ hΦ hΦs a n := by
   rw [mem_completedOrderLeftIdeal] at hx ⊢
@@ -400,16 +404,16 @@ theorem eq_completedEnvelopingMap
 @[simp]
 theorem completedEnvelopingMap_id
     (h : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      AlgHom.id R UΦ (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
+      AlgHom.id R UΦ (envelopingι cΦ a u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
     completedEnvelopingMap (AlgHom.id R UΦ) h = AlgHom.id R (CompletedEnveloping Φ hΦ hΦs a) :=
   (eq_completedEnvelopingMap _ h continuous_id fun _ ↦ rfl).symm
 
 /-- The extension of a composite is the composite of the extensions. -/
-theorem completedEnvelopingMap_comp (g' : UΦ →ₐ[R] CentralQuotient R (centralElement Θ hΘ hΘs) c)
+theorem completedEnvelopingMap_comp (g' : UΦ →ₐ[R] CentralQuotient R (centralElement cΘ) c)
     (hg' : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      g' (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Θ hΘ hΘs c n)
+      g' (envelopingι cΦ a u) ∈ orderLeftIdeal Θ hΘ hΘs c n)
     (hg'g : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      g'.comp g (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Θ hΘ hΘs c n) :
+      g'.comp g (envelopingι cΨ b u) ∈ orderLeftIdeal Θ hΘ hΘs c n) :
     completedEnvelopingMap (g'.comp g) hg'g =
       (completedEnvelopingMap g' hg').comp (completedEnvelopingMap g hg) :=
   (eq_completedEnvelopingMap _ hg'g
@@ -421,12 +425,12 @@ relation. -/
 private theorem completedEnvelopingMap_comp_eq_id
     (g' : UΦ →ₐ[R] UΨ)
     (hg' : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      g' (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
+      g' (envelopingι cΦ a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
     (h : ∀ x, g (g' x) = x) :
     (completedEnvelopingMap g hg).comp (completedEnvelopingMap g' hg') =
       AlgHom.id R (CompletedEnveloping Φ hΦ hΦs a) := by
   have hid : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      AlgHom.id R UΦ (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Φ hΦ hΦs a n :=
+      AlgHom.id R UΦ (envelopingι cΦ a u) ∈ orderLeftIdeal Φ hΦ hΦs a n :=
     fun n ↦ ⟨n, fun _ hu ↦ envelopingι_mem_orderLeftIdeal hu⟩
   rw [← completedEnvelopingMap_id hid]
   exact eq_completedEnvelopingMap _ hid ((continuous_completedEnvelopingMap g hg).comp
@@ -439,9 +443,9 @@ isomorphism of the completions, which is a homeomorphism
 `TauCeti.CurrentAlgebra.continuous_completedEnvelopingEquiv_symm`). -/
 def completedEnvelopingEquiv (e : UΨ ≃ₐ[R] UΦ)
     (he : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      e (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
+      e (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
     (he' : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      e.symm (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n) :
+      e.symm (envelopingι cΦ a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n) :
     CompletedEnveloping Ψ hΨ hΨs b ≃ₐ[R] CompletedEnveloping Φ hΦ hΦs a :=
   AlgEquiv.ofAlgHom (completedEnvelopingMap e.toAlgHom (by simpa using he))
     (completedEnvelopingMap e.symm.toAlgHom (by simpa using he'))
@@ -450,19 +454,19 @@ def completedEnvelopingEquiv (e : UΨ ≃ₐ[R] UΦ)
 
 section Equiv
 
-variable (e : CentralQuotient R (centralElement Ψ hΨ hΨs) b ≃ₐ[R]
-    CentralQuotient R (centralElement Φ hΦ hΦs) a)
+variable (e : CentralQuotient R (centralElement (twoCocycleOfBilinear R L Ψ hΨ hΨs)) b ≃ₐ[R]
+    CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a)
   (he : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-    e (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
+    e (envelopingι (twoCocycleOfBilinear R L Ψ hΨ hΨs) b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
   (he' : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-    e.symm (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
+    e.symm (envelopingι (twoCocycleOfBilinear R L Φ hΦ hΦs) a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
 
 /-- The extension of `e` is the extension `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the
 underlying algebra morphism of `e`. The continuity hypothesis `hg` is an argument, so this is
 stated for `rw` rather than `simp`. -/
 theorem completedEnvelopingEquiv_toAlgHom
     (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      (e : UΨ →ₐ[R] UΦ) (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
+      (e : UΨ →ₐ[R] UΦ) (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
     (completedEnvelopingEquiv e he he' : CompletedEnveloping Ψ hΨ hΨs b →ₐ[R]
       CompletedEnveloping Φ hΦ hΦs a) = completedEnvelopingMap (e : UΨ →ₐ[R] UΦ) hg :=
   AlgHom.ext fun _ ↦ rfl
@@ -471,7 +475,7 @@ theorem completedEnvelopingEquiv_toAlgHom
 `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the underlying algebra morphism of `e⁻¹`. -/
 theorem completedEnvelopingEquiv_symm_toAlgHom
     (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      (e.symm : UΦ →ₐ[R] UΨ) (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n) :
+      (e.symm : UΦ →ₐ[R] UΨ) (envelopingι cΦ a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n) :
     ((completedEnvelopingEquiv e he he').symm : CompletedEnveloping Φ hΦ hΦs a →ₐ[R]
       CompletedEnveloping Ψ hΨ hΨs b) = completedEnvelopingMap (e.symm : UΦ →ₐ[R] UΨ) hg :=
   AlgHom.ext fun _ ↦ rfl
@@ -502,9 +506,9 @@ theorem continuous_completedEnvelopingEquiv_symm :
 /-- If `e` and `e⁻¹` carry the currents of order `n` into `I_n`, the extension of `e` carries the
 kernel of the projection to `U / I_n` onto the kernel of the projection to `U / I_n`. -/
 theorem completedEnvelopingEquiv_mem_completedOrderLeftIdeal_iff {n : ℕ}
-    (hn : ∀ u ∈ orderSubmodule R L n, e (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
+    (hn : ∀ u ∈ orderSubmodule R L n, e (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n)
     (hn' : ∀ u ∈ orderSubmodule R L n,
-      e.symm (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
+      e.symm (envelopingι cΦ a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
     {x : CompletedEnveloping Ψ hΨ hΨs b} :
     completedEnvelopingEquiv e he he' x ∈ completedOrderLeftIdeal Φ hΦ hΦs a n ↔
       x ∈ completedOrderLeftIdeal Ψ hΨ hΨs b n := by
@@ -525,16 +529,19 @@ section Level
 variable {Φ Ψ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
   (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) {k : R}
 
+local notation "cΦ" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "cΨ" => twoCocycleOfBilinear R L Ψ hΨ hΨs
+
 /-- The level comparison carries the currents of order `n` into `I_n`. -/
 private theorem levelEnvelopingEquiv_envelopingι_mem (h : Ψ = k • Φ) (n : ℕ) :
-    ∀ u ∈ orderSubmodule R L n, levelEnvelopingEquiv hΦ hΦs hΨ hΨs h (envelopingι Ψ hΨ hΨs 1 u) ∈
+    ∀ u ∈ orderSubmodule R L n, levelEnvelopingEquiv hΦ hΦs hΨ hΨs h (envelopingι cΨ 1 u) ∈
       orderLeftIdeal Φ hΦ hΦs k n :=
   fun _ hu ↦ by simpa using envelopingι_mem_orderLeftIdeal hu
 
 /-- The inverse level comparison carries the currents of order `n` into `I_n`. -/
 private theorem levelEnvelopingEquiv_symm_envelopingι_mem (h : Ψ = k • Φ) (n : ℕ) :
     ∀ u ∈ orderSubmodule R L n,
-      (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm (envelopingι Φ hΦ hΦs k u) ∈
+      (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm (envelopingι cΦ k u) ∈
         orderLeftIdeal Ψ hΨ hΨs 1 n :=
   fun _ hu ↦ by simpa using envelopingι_mem_orderLeftIdeal hu
 
@@ -554,8 +561,8 @@ def levelCompletedEnvelopingEquiv (h : Ψ = k • Φ) :
 hypothesis `hg` is an argument, so this is stated for `rw` rather than `simp`. -/
 theorem levelCompletedEnvelopingEquiv_toAlgHom (h : Ψ = k • Φ)
     (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h : CentralQuotient R (centralElement Ψ hΨ hΨs) 1 →ₐ[R]
-        CentralQuotient R (centralElement Φ hΦ hΦs) k) (envelopingι Ψ hΨ hΨs 1 u) ∈
+      (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h : CentralQuotient R (centralElement cΨ) 1 →ₐ[R]
+        CentralQuotient R (centralElement cΦ) k) (envelopingι cΨ 1 u) ∈
           orderLeftIdeal Φ hΦ hΦs k n) :
     (levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h : CompletedEnveloping Ψ hΨ hΨs 1 →ₐ[R]
       CompletedEnveloping Φ hΦ hΦs k) = completedEnvelopingMap _ hg :=
@@ -565,8 +572,8 @@ theorem levelCompletedEnvelopingEquiv_toAlgHom (h : Ψ = k • Φ)
 `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the inverse level comparison. -/
 theorem levelCompletedEnvelopingEquiv_symm_toAlgHom (h : Ψ = k • Φ)
     (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      ((levelEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm : CentralQuotient R (centralElement Φ hΦ hΦs) k
-        →ₐ[R] CentralQuotient R (centralElement Ψ hΨ hΨs) 1) (envelopingι Φ hΦ hΦs k u) ∈
+      ((levelEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm : CentralQuotient R (centralElement cΦ) k
+        →ₐ[R] CentralQuotient R (centralElement cΨ) 1) (envelopingι cΦ k u) ∈
           orderLeftIdeal Ψ hΨ hΨs 1 n) :
     ((levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm : CompletedEnveloping Φ hΦ hΦs k →ₐ[R]
       CompletedEnveloping Ψ hΨ hΨs 1) = completedEnvelopingMap _ hg :=
@@ -575,7 +582,7 @@ theorem levelCompletedEnvelopingEquiv_symm_toAlgHom (h : Ψ = k • Φ)
 /-- The completed level comparison extends the level comparison. -/
 @[simp]
 theorem levelCompletedEnvelopingEquiv_toLimQuotients (h : Ψ = k • Φ)
-    (x : CentralQuotient R (centralElement Ψ hΨ hΨs) 1) :
+    (x : CentralQuotient R (centralElement cΨ) 1) :
     levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h
         (ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Ψ hΨ hΨs 1) x) =
       ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs k)
@@ -585,7 +592,7 @@ theorem levelCompletedEnvelopingEquiv_toLimQuotients (h : Ψ = k • Φ)
 /-- The inverse completed level comparison extends the inverse level comparison. -/
 @[simp]
 theorem levelCompletedEnvelopingEquiv_symm_toLimQuotients (h : Ψ = k • Φ)
-    (x : CentralQuotient R (centralElement Φ hΦ hΦs) k) :
+    (x : CentralQuotient R (centralElement cΦ) k) :
     (levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm
         (ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs k) x) =
       ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Ψ hΨ hΨs 1)

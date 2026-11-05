@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed
 
 /-!
@@ -180,7 +182,7 @@ theorem dirichletData_hasFunctionalEquation :
   · subst N
     rw [dirichletData_modOne]
     exact riemannZetaData_hasFunctionalEquation
-  refine ⟨hχ.norm_rootNumber, by simp [hN], ?_⟩
+  refine ⟨DirichletCharacter.norm_rootNumber hχ, by simp [hN], ?_⟩
   intro s _ _
   have hpow : (N : ℂ) ^ (s / 2) * (N : ℂ) ^ ((1 - s) - 1 / 2) =
       (N : ℂ) ^ ((1 - s) / 2) := by

@@ -24,6 +24,9 @@ one attached to the frame; it is `frameCovariantDerivative`, and it witnesses th
 derivatives always exist locally. The second summand is tensorial in `σ`, and is the Christoffel
 form `christoffelForm` of `∇` in the frame: `∇` is the flat derivative plus `christoffelForm`.
 
+For an arbitrary local frame, `IsLocalFrameOn.covariantDerivative_eq_sum` gives the same product
+rule directly in its native coefficients.
+
 Specializing to the tangent bundle and expanding `∇_{eᵢ} eⱼ` again in the frame gives the scalar
 Christoffel symbols `christoffelSymbol`; they are `C^∞` on `e.baseSet` for a `C^∞` covariant
 derivative, and they give the classical coordinate formula for `∇ σ` along a frame direction.
@@ -75,6 +78,47 @@ open Bundle FiberBundle Module Set
 open scoped Manifold ContDiff Topology
 
 noncomputable section
+
+namespace IsLocalFrameOn
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul 𝕜 (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {ι : Type*} [Fintype ι] {s : ι → Π x, V x} {u : Set M} {x : M}
+
+/-- A covariant derivative in a local frame differentiates the coefficients and the frame
+sections by the product rule. Only differentiability of the coefficient functions at the point
+is required. -/
+theorem covariantDerivative_eq_sum {n : ℕ∞ω} (hs : IsLocalFrameOn I F n s u)
+    (hn : 1 ≤ n) (hu : u ∈ 𝓝 x)
+    {cov : (Π x, V x) → Π x, TangentSpace I x →L[𝕜] V x}
+    (hcov : IsCovariantDerivativeOn F cov u) {σ : Π x, V x}
+    (hcoeff : ∀ i, MDiffAt (fun y ↦ hs.coeff i y (σ y)) x) :
+    cov σ x = ∑ i, (hs.coeff i x (σ x) • cov (s i) x +
+      (mvfderiv I (fun y ↦ hs.coeff i y (σ y)) x).smulRight (s i x)) := by
+  have hframe (i : ι) : MDiffAt (T% (s i)) x :=
+    (((hs.contMDiffOn i).contMDiffAt hu).of_le hn).mdifferentiableAt one_ne_zero
+  have hterm (i : ι) : MDiffAt (T% ((fun y ↦ hs.coeff i y (σ y)) • s i)) x :=
+    (hcoeff i).smul_section (hframe i)
+  have hsum : MDiffAt (T% (∑ i, (fun y ↦ hs.coeff i y (σ y)) • s i)) x := by
+    simpa [Finset.sum_apply] using MDifferentiableAt.sum_section
+      (t := fun i ↦ (fun y ↦ hs.coeff i y (σ y)) • s i)
+      (s := (Finset.univ : Finset ι)) (fun i _ ↦ hterm i)
+  have heq : ∀ᶠ y in 𝓝 x, σ y = (∑ i, (fun z ↦ hs.coeff i z (σ z)) • s i) y := by
+    filter_upwards [hs.eventually_eq_sum_coeff_smul σ hu] with y hy
+    simpa [Finset.sum_apply] using hy
+  have hσ := hsum.congr_of_eventuallyEq (heq.mono fun y hy ↦ congrArg (TotalSpace.mk' F y) hy)
+  rw [hcov.congr_of_eventuallyEq hσ hsum hu heq,
+    TauCeti.Manifold.covariantDerivative_sum hcov (mem_of_mem_nhds hu) (fun i _ ↦ hterm i)]
+  exact Finset.sum_congr rfl fun i _ ↦ hcov.leibniz (hframe i) (hcoeff i) (mem_of_mem_nhds hu)
+
+end IsLocalFrameOn
 
 namespace TauCeti.Manifold
 
@@ -165,38 +209,11 @@ theorem covariantDerivative_eq_frameCovariantDerivative_add_sum
     (hσ : MDiffAt (T% σ) x) :
     cov σ x = frameCovariantDerivative I b e σ x +
       ∑ i, e.localFrameCoeff I b i x (σ x) • cov (e.localFrame b i) x := by
-  classical
-  have hcoeff (i : ι) : MDiffAt ((LinearMap.piApply (e.localFrameCoeff I b i)) σ) x :=
-    mdifferentiableAt_localFrameCoeff b hx hσ i
-  have hfr : IsLocalFrameOn I F 1 (e.localFrame b) e.baseSet :=
-    e.isLocalFrameOn_localFrame_baseSet I 1 b
-  have hframe (i : ι) : MDiffAt (T% (e.localFrame b i)) x :=
-    ((hfr.contMDiffOn i).mdifferentiableOn one_ne_zero).mdifferentiableAt
-      (e.open_baseSet.mem_nhds hx)
-  have hterm (i : ι) :
-      MDiffAt (T% ((LinearMap.piApply (e.localFrameCoeff I b i)) σ • e.localFrame b i)) x :=
-    (hcoeff i).smul_section (hframe i)
-  have hτdiff : MDiffAt
-      (T% (∑ i, (LinearMap.piApply (e.localFrameCoeff I b i)) σ • e.localFrame b i)) x := by
-    simpa [Finset.sum_apply] using MDifferentiableAt.sum_section
-      (t := fun i (y : M) ↦ (LinearMap.piApply (e.localFrameCoeff I b i)) σ y • e.localFrame b i y)
-      (s := (Finset.univ : Finset ι)) fun i _ ↦ hterm i
-  have hexp : ∀ᶠ y in 𝓝 x, σ y = ∑ i, e.localFrameCoeff I b i y (σ y) • e.localFrame b i y :=
-    e.eventually_eq_localFrame_sum_coeff_smul (s := σ) b hx
-  have hστ : ∀ᶠ y in 𝓝 x,
-      σ y = (∑ i, (LinearMap.piApply (e.localFrameCoeff I b i)) σ • e.localFrame b i) y :=
-    hexp.mono fun y hy ↦ by simpa [Finset.sum_apply] using hy
-  have hleib (i : ι) :
-      cov ((LinearMap.piApply (e.localFrameCoeff I b i)) σ • e.localFrame b i) x =
-        e.localFrameCoeff I b i x (σ x) • cov (e.localFrame b i) x +
-          (mvfderiv I ((LinearMap.piApply (e.localFrameCoeff I b i)) σ) x).smulRight
-            (e.localFrame b i x) :=
-    hcov.leibniz (hframe i) (hcoeff i) hx
-  rw [hcov.congr_of_eventuallyEq hσ hτdiff (e.open_baseSet.mem_nhds hx) hστ,
-    covariantDerivative_sum hcov hx (fun i _ ↦ hterm i)]
-  simp only [hleib, Finset.sum_add_distrib]
-  rw [add_comm]
+  have h := (e.isLocalFrameOn_localFrame_baseSet I 1 b).covariantDerivative_eq_sum
+    le_rfl (e.open_baseSet.mem_nhds hx) hcov (fun i ↦ mdifferentiableAt_localFrameCoeff b hx hσ i)
+  rw [Finset.sum_add_distrib, add_comm] at h
   rw [frameCovariantDerivative]
+  exact h
 
 omit [Fintype ι] in
 /-- Two covariant derivatives over the base set of a trivialization which agree on the frame

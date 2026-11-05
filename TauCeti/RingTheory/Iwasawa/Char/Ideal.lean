@@ -55,10 +55,14 @@ ideal `Λ` and Fitting ideal `(p, T)`.
   ideal is principal.
 * `TauCeti.Iwasawa.charIdeal_quotient_span_singleton`: over a noetherian unique factorization
   domain, `char_A(A ⧸ (f)) = (f)` for `f ≠ 0`.
+* `LinearEquiv.charIdeal_eq_comap`: along a ring isomorphism `σ : A → B`, a `σ`-semilinear
+  equivalence `N ≃ M` gives `char_A(N) = σ⁻¹(char_B(M))`.
 
-The examples at the end of the file are over `Λ = ℤ_p⟦T⟧`, which is factorial: the characteristic
-ideal of `Λ ⧸ (T² - p)` is `(T² - p)`, and the finite module `Λ ⧸ (p, T)` has characteristic ideal
-`Λ` but initial Fitting ideal `(p, T)`.
+The first examples at the end of the file are over `Λ = ℤ_p⟦T⟧`, which is factorial: the
+characteristic ideal of `Λ ⧸ (T² - p)` is `(T² - p)`, and the finite module `Λ ⧸ (p, T)` has
+characteristic ideal `Λ` but initial Fitting ideal `(p, T)`. The last one fixes the direction of
+the transport along a ring automorphism: over `ℚ[X]`, with `σ : X ↦ X + 1`, the module
+`ℚ[X] ⧸ (X)` is carried onto `ℚ[X] ⧸ (X + 1)`, and `(X) = σ⁻¹ (X + 1)`.
 
 ## References
 
@@ -140,6 +144,30 @@ theorem LinearEquiv.charIdeal_eq {A M N : Type*} [CommRing A] [AddCommGroup M] [
     TauCeti.Iwasawa.charIdeal A M = TauCeti.Iwasawa.charIdeal A N :=
   (TauCeti.Iwasawa.IsPseudoIsomorphism.of_bijective e.bijective).charIdeal_eq
 
+/-- **Transport of the characteristic ideal along a ring isomorphism.** Let `σ : A → B` be a ring
+isomorphism and `e : N ≃ M` a `σ`-semilinear equivalence from an `A`-module to a `B`-module. Then
+`char_A(N) = σ⁻¹(char_B(M))`. For `σ` the identity this is `LinearEquiv.charIdeal_eq`; for an
+automorphism `σ` of `A` it compares a module with its twist by `σ`, such as an Iwasawa module read
+through two different topological generators. -/
+theorem LinearEquiv.charIdeal_eq_comap {A B N M : Type*} [CommRing A] [CommRing B]
+    [AddCommGroup N] [Module A N] [AddCommGroup M] [Module B M] {σ : A →+* B} {σ' : B →+* A}
+    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : N ≃ₛₗ[σ] M) :
+    TauCeti.Iwasawa.charIdeal A N = (TauCeti.Iwasawa.charIdeal B M).comap σ := by
+  let σe := RingHomInvPair.toRingEquiv σ σ'
+  let E := (PrimeSpectrum.comapEquiv σe).symm.toEquiv
+  have hE (𝔮 : PrimeSpectrum B) : E 𝔮 = PrimeSpectrum.comap σ 𝔮 := by
+    ext x
+    simp [E, σe, PrimeSpectrum.comapEquiv_apply]
+  have hdiv : TauCeti.Iwasawa.charDivisor A N =
+      (TauCeti.Iwasawa.charDivisor B M).equivMapDomain E := by
+    ext 𝔭
+    obtain ⟨𝔮, rfl⟩ := E.surjective 𝔭
+    rw [Finsupp.equivMapDomain_apply, E.symm_apply_apply, hE, e.charDivisor_apply_comap]
+  have hcomap (I : Ideal B) : I.comap σ = I.map σ' := Ideal.comap_symm σe.symm
+  rw [TauCeti.Iwasawa.charIdeal_def, TauCeti.Iwasawa.charIdeal_def, hdiv,
+    Finsupp.prod_equivMapDomain, hcomap, ← Ideal.mapHom_apply, map_finsuppProd]
+  simp [hE, hcomap, Ideal.map_pow]
+
 namespace TauCeti.Iwasawa
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommGroup M] [Module A M]
@@ -214,6 +242,24 @@ example (p : ℕ) [Fact p.Prime] :
   ⟨IsPseudoNull.charIdeal_eq_top ((isPseudoNull_quotient_iff _).mpr fun 𝔮 h𝔮 ↦
     PadicInt.one_lt_height_of_C_p_mem_of_X_mem (h𝔮 (Ideal.subset_span (by simp)))
       (h𝔮 (Ideal.subset_span (by simp)))), fittingIdeal_quotient_zero _⟩
+
+open _root_.Polynomial in
+-- Over `ℚ[X]`, the automorphism `σ : X ↦ X + 1` carries `ℚ[X] ⧸ (X)` semilinearly onto
+-- `ℚ[X] ⧸ (X + 1)`, and the characteristic ideal is transported backwards: `(X) = σ⁻¹ (X + 1)`,
+-- whereas `σ⁻¹ (X) = (X - 1)`.
+example : (Ideal.span {X + C 1}).comap (taylorEquiv (1 : ℚ)) = Ideal.span {X} := by
+  let σ : ℚ[X] ≃+* ℚ[X] := (taylorEquiv (1 : ℚ)).toRingEquiv
+  let _ := RingHomInvPair.of_ringEquiv σ
+  let _ := RingHomInvPair.symm (σ : ℚ[X] →+* ℚ[X]) σ.symm
+  let e := Submodule.Quotient.equiv (Ideal.span {X}) (Ideal.span {X + C 1})
+    σ.toSemilinearEquiv (by
+      rw [Ideal.span, Submodule.map_span, Set.image_singleton]
+      -- `σ.toSemilinearEquiv` is `σ` as a function, and `σ X = X + C 1` is `taylor_X`.
+      exact congrArg (fun x ↦ Ideal.span {x}) (taylor_X (1 : ℚ)))
+  have h := e.charIdeal_eq_comap
+  rw [charIdeal_quotient_span_singleton X_ne_zero,
+    charIdeal_quotient_span_singleton (X_add_C_ne_zero 1)] at h
+  exact h.symm
 
 end TauCeti.Iwasawa
 

@@ -40,9 +40,10 @@ If `X` is strict Segal, for instance the nerve of a category, then every simplex
 a single edge to `y`. Hence `Hom^R_X(x, y)` is the discrete simplicial set on the edges from `x`
 to `y`.
 
-A map of simplicial sets `f : X ⟶ Y` induces maps `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`, which are
-the maps on mapping spaces whose invertibility up to weak equivalence makes `f` fully faithful.
-The projections of a product identify the right mapping spaces of `X ⊗ Y` with the products of
+A map of simplicial sets `f : X ⟶ Y` induces maps `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`. For
+strict Segal simplicial sets these are isomorphisms exactly when `f` is bijective on edges, and the
+inclusion of a subcomplex containing every simplex of `Hom^R_X(x, y)` induces an isomorphism. The
+projections of a product identify the right mapping spaces of `X ⊗ Y` with the products of
 those of `X` and `Y`.
 
 ## Main definitions

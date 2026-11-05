@@ -52,6 +52,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
+* `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -169,6 +170,11 @@ theorem card_filter_castSucc_lt_succ {n : ℕ} (S : Finset (Fin n)) (i : Fin n) 
 end Finset
 
 namespace Fin
+
+/-- The last index of the initial segment ending at `i` embeds as `i`. -/
+theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
+    Fin.castLE (Nat.succ_le_iff.mpr i.isLt) (Fin.last i.val) = i := by
+  rfl
 
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :

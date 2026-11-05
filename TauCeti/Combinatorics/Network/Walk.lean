@@ -192,6 +192,18 @@ theorem vertices_eq_cons_map_target_arrows {s t : V} (p : ArrowWalk Q s t) :
   rw [map_target_arrows]
   exact List.eq_cons_of_mem_head? (@Quiver.Path.vertices_head? V ⟨Q⟩ s t p)
 
+/-- The source of every arrow traversed by a walk is one of its vertices. -/
+theorem source_mem_vertices_of_mem_arrows {s t x y : V} (p : ArrowWalk Q s t) {e : Q x y}
+    (he : ⟨x, y, e⟩ ∈ p.arrows) : x ∈ p.vertices := by
+  induction p with
+  | nil => simp at he
+  | @cons z _ p e' ih =>
+    rw [arrows_cons, List.mem_append, List.mem_singleton] at he
+    rw [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton]
+    exact he.elim (fun h ↦ Or.inl (ih h)) fun h ↦ by
+      obtain rfl : x = z := (Sigma.mk.inj_iff.1 h).1
+      exact Or.inl (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p)
+
 /-- A walk whose vertices after the first are distinct traverses no arrow twice. -/
 theorem nodup_arrows_of_nodup_tail {s t : V} {p : ArrowWalk Q s t}
     (hp : p.vertices.tail.Nodup) : p.arrows.Nodup :=

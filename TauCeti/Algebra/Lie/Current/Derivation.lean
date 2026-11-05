@@ -26,7 +26,7 @@ central extension `ĝ = L((t)) ⊕ R K` acting by `h d/dt` on currents and killi
 enveloping algebra `U(ĝ) / (ι K - a)` acting by `h d/dt` on the current generators
 (`TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation`), at every central value `a`, including
 `a = 0`. This lift is unique, since a derivation of `U(ĝ) / (ι K - a)` is determined by its values
-on the current generators (`TauCeti.CurrentAlgebra.derivation_ext_envelopingι`).
+on the current generators (`LieAlgebra.ofTwoCocycle.derivation_ext_envelopingι`).
 
 If `h` has order at least `P`, the vector field `h d/dt` sends currents of order at least `N` to
 currents of order at least `P + N - 1`. So when `h` has positive order it preserves each order
@@ -84,6 +84,8 @@ noncomputable section
 
 open scoped TensorProduct LaurentSeries
 open HahnSeries LieAlgebra LieModule.Cohomology TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι ι_ofProd envelopingι_mul_sub_mul
+  algHom_ext_envelopingι derivation_ext_envelopingι)
 
 -- The coefficientwise algebra structure matches the module used by the tensor product.
 attribute [local instance 1100] HahnSeries.instAlgebra
@@ -227,7 +229,7 @@ theorem proj_vectorFieldExtensionDerivation (h : R⸨X⸩) (v : E) :
 /-- The lift kills the central element `K`. -/
 @[simp]
 theorem vectorFieldExtensionDerivation_centralElement (h : R⸨X⸩) :
-    vectorFieldExtensionDerivation Φ hΦ hΦs h (centralElement Φ hΦ hΦs) = 0 :=
+    vectorFieldExtensionDerivation Φ hΦ hΦs h (centralElement c) = 0 :=
   (ofProd c).symm.injective (by simp)
 
 end Extension
@@ -239,24 +241,24 @@ section Enveloping
 variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
-local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "UK" => CentralQuotient R (centralElement c) a
 
 /-- The linear map `u ↦ ι u + ε ι(h u')` from the currents to the dual numbers over
 `U(ĝ) / (ι K - a)`. -/
 private def dualMap (h : R⸨X⸩) : C →ₗ[R] DualNumber UK where
-  toFun u := TrivSqZeroExt.inl (envelopingι Φ hΦ hΦs a u) +
-    TrivSqZeroExt.inr (envelopingι Φ hΦ hΦs a (vectorFieldDerivation R L h u))
+  toFun u := TrivSqZeroExt.inl (envelopingι c a u) +
+    TrivSqZeroExt.inr (envelopingι c a (vectorFieldDerivation R L h u))
   map_add' u v := by refine TrivSqZeroExt.ext ?_ ?_ <;> simp
   map_smul' r u := by refine TrivSqZeroExt.ext ?_ ?_ <;> simp
 
 @[simp]
 private theorem fst_dualMap (h : R⸨X⸩) (u : C) :
-    (dualMap Φ hΦ hΦs a h u).fst = envelopingι Φ hΦ hΦs a u := by
+    (dualMap Φ hΦ hΦs a h u).fst = envelopingι c a u := by
   simp [dualMap]
 
 @[simp]
 private theorem snd_dualMap (h : R⸨X⸩) (u : C) :
-    (dualMap Φ hΦ hΦs a h u).snd = envelopingι Φ hΦ hΦs a (vectorFieldDerivation R L h u) := by
+    (dualMap Φ hΦ hΦs a h u).snd = envelopingι c a (vectorFieldDerivation R L h u) := by
   simp [dualMap]
 
 /-- The map `u ↦ ι u + ε ι(h u')` satisfies the commutator relations of the currents: on
@@ -268,7 +270,8 @@ private theorem dualMap_mul_sub_mul (h : R⸨X⸩) (u v : C) :
         algebraMap R (DualNumber UK) (a * residuePairing R L Φ u v) := by
   refine TrivSqZeroExt.ext ?_ ?_
   · simp only [TrivSqZeroExt.fst_sub, TrivSqZeroExt.fst_mul, fst_dualMap, TrivSqZeroExt.fst_add,
-      TrivSqZeroExt.algebraMap_eq_inl', TrivSqZeroExt.fst_inl, envelopingι_mul_sub_mul]
+      TrivSqZeroExt.algebraMap_eq_inl', TrivSqZeroExt.fst_inl, envelopingι_mul_sub_mul,
+      twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply]
   · -- The residue terms of the two commutators cancel since `h d/dt` is skew for the pairing.
     have hres : algebraMap R UK (a * residuePairing R L Φ u (vectorFieldDerivation R L h v)) +
         algebraMap R UK (a * residuePairing R L Φ (vectorFieldDerivation R L h u) v) = 0 := by
@@ -277,8 +280,10 @@ private theorem dualMap_mul_sub_mul (h : R⸨X⸩) (u v : C) :
     simp only [TrivSqZeroExt.snd_sub, DualNumber.snd_mul, fst_dualMap, snd_dualMap,
       TrivSqZeroExt.snd_add, TrivSqZeroExt.algebraMap_eq_inl', TrivSqZeroExt.snd_inl, add_zero,
       LieDerivation.apply_lie_eq_add, map_add]
-    have h₁ := envelopingι_mul_sub_mul Φ hΦ hΦs a u (vectorFieldDerivation R L h v)
-    have h₂ := envelopingι_mul_sub_mul Φ hΦ hΦs a (vectorFieldDerivation R L h u) v
+    have h₁ := envelopingι_mul_sub_mul c a u (vectorFieldDerivation R L h v)
+    have h₂ := envelopingι_mul_sub_mul c a (vectorFieldDerivation R L h u) v
+    simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply,
+      LinearEquiv.apply_symm_apply] at h₁ h₂
     linear_combination (norm := abel) h₁ + h₂ + hres
 
 /-- The algebra morphism `U(ĝ) / (ι K - a) → (U(ĝ) / (ι K - a))[ε]` lifting
@@ -290,13 +295,13 @@ private def dualAlgHom (h : R⸨X⸩) : UK →ₐ[R] DualNumber UK :=
 @[simp]
 private theorem fst_dualAlgHom (h : R⸨X⸩) (x : UK) : (dualAlgHom Φ hΦ hΦs a h x).fst = x := by
   have hid : (TrivSqZeroExt.fstHom R UK UK).comp (dualAlgHom Φ hΦ hΦs a h) = AlgHom.id R UK :=
-    algHom_ext_envelopingι Φ hΦ hΦs a fun u ↦ by simp [dualAlgHom]
+    algHom_ext_envelopingι c a fun u ↦ by simp [dualAlgHom]
   exact AlgHom.congr_fun hid x
 
 /-- **The vector field `h d/dt` on the level enveloping algebra**: the derivation of
 `U(ĝ) / (ι K - a)` acting by `ι u ↦ ι(h u')` on the current generators, for every central value
 `a`, including `a = 0`. It is the unique such derivation by
-`TauCeti.CurrentAlgebra.derivation_ext_envelopingι`. -/
+`LieAlgebra.ofTwoCocycle.derivation_ext_envelopingι`. -/
 def vectorFieldEnvelopingDerivation (h : R⸨X⸩) : derivationLieAlgebra R UK :=
   ⟨{ toFun x := (dualAlgHom Φ hΦ hΦs a h x).snd
      map_add' x y := by rw [map_add, TrivSqZeroExt.snd_add]
@@ -315,16 +320,16 @@ private theorem vectorFieldEnvelopingDerivation_apply (h : R⸨X⸩) (x : UK) :
 /-- **The lift acts by `h d/dt` on the current generators**: `ι u ↦ ι(h u')`. -/
 @[simp]
 theorem vectorFieldEnvelopingDerivation_envelopingι (h : R⸨X⸩) (u : C) :
-    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) (envelopingι Φ hΦ hΦs a u) =
-      envelopingι Φ hΦ hΦs a (vectorFieldDerivation R L h u) := by
+    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) (envelopingι c a u) =
+      envelopingι c a (vectorFieldDerivation R L h u) := by
   rw [vectorFieldEnvelopingDerivation_apply]
   simp [dualAlgHom]
 
 /-- The lift to the enveloping algebra extends the lift to the residue central extension. -/
 theorem vectorFieldEnvelopingDerivation_ι (h : R⸨X⸩) (x : ofTwoCocycle c) :
     (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK)
-        (CentralQuotient.ι (centralElement Φ hΦ hΦs) a x) =
-      CentralQuotient.ι (centralElement Φ hΦ hΦs) a
+        (CentralQuotient.ι (centralElement c) a x) =
+      CentralQuotient.ι (centralElement c) a
         (vectorFieldExtensionDerivation Φ hΦ hΦs h x) := by
   obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
   rw [ι_ofProd, map_add, vectorFieldEnvelopingDerivation_envelopingι,
@@ -355,8 +360,8 @@ theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal {h : R⸨X⸩}
 theorem vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul (n : ℤ) (r : R)
     (x : L) :
     (vectorFieldEnvelopingDerivation Φ hΦ hΦs a (single 1 1) : Module.End R UK)
-        (envelopingι Φ hΦ hΦs a (single n r ⊗ₜ x)) =
-      n • envelopingι Φ hΦ hΦs a (single n r ⊗ₜ x) := by
+        (envelopingι c a (single n r ⊗ₜ x)) =
+      n • envelopingι c a (single n r ⊗ₜ x) := by
   rw [vectorFieldEnvelopingDerivation_envelopingι, vectorFieldDerivation_single_one_single_tmul,
     map_zsmul]
 
@@ -369,17 +374,20 @@ section Level
 variable {Φ Ψ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
   (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) {k : R}
 
+local notation "cΦ" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "cΨ" => twoCocycleOfBilinear R L Ψ hΨ hΨs
+
 /-- **Vector fields commute with the level comparison.** If `Ψ = k • Φ`, the isomorphism
 `levelEnvelopingEquiv` from `U(ĝ_Ψ) / (ι K - 1)` to `U(ĝ_Φ) / (ι K - k)` intertwines the lifts of
 every vector field `h d/dt`, in particular of the degree derivation, for every `k`, including
 `k = 0`. -/
 theorem levelEnvelopingEquiv_vectorFieldEnvelopingDerivation (h : Ψ = k • Φ) (f : R⸨X⸩)
-    (x : CentralQuotient R (centralElement Ψ hΨ hΨs) 1) :
+    (x : CentralQuotient R (centralElement cΨ) 1) :
     levelEnvelopingEquiv hΦ hΦs hΨ hΨs h
         ((vectorFieldEnvelopingDerivation Ψ hΨ hΨs 1 f :
-          Module.End R (CentralQuotient R (centralElement Ψ hΨ hΨs) 1)) x) =
+          Module.End R (CentralQuotient R (centralElement cΨ) 1)) x) =
       (vectorFieldEnvelopingDerivation Φ hΦ hΦs k f :
-          Module.End R (CentralQuotient R (centralElement Φ hΦ hΦs) k))
+          Module.End R (CentralQuotient R (centralElement cΦ) k))
         (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h x) := by
   let e := levelEnvelopingEquiv hΦ hΦs hΨ hΨs h
   -- Conjugating the lift for `Φ` by the comparison gives a derivation for `Ψ` with the same values
@@ -387,7 +395,7 @@ theorem levelEnvelopingEquiv_vectorFieldEnvelopingDerivation (h : Ψ = k • Φ)
   have hconj : derivationLieAlgebraCongr e.symm.toLinearEquiv (fun x y ↦ map_mul e.symm x y)
       (vectorFieldEnvelopingDerivation Φ hΦ hΦs k f) =
         vectorFieldEnvelopingDerivation Ψ hΨ hΨs 1 f :=
-    derivation_ext_envelopingι Ψ hΨ hΨs 1 fun u ↦ by
+    derivation_ext_envelopingι cΨ 1 fun u ↦ by
       simp [e, derivationLieAlgebraCongr_apply]
   rw [← hconj]
   simp [e]

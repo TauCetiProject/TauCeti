@@ -164,6 +164,16 @@ theorem IsClosed.mpullback {φ : SmoothForm I' M' F k} (hφ : φ.IsClosed) (f : 
   rw [isClosed_def, ← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback, mextDerivₗ_apply,
     (isClosed_def φ).mp hφ, TauCeti.mpullback_zero]
 
+/-- Along a surjective smooth map whose derivatives are all surjective, a smooth form is closed
+exactly when its pullback is. -/
+theorem isClosed_mpullback_iff_of_surjective {φ : SmoothForm I' M' F k} {f : M → M'}
+    (hf : ContMDiff I I' ∞ f) (hsurj : Function.Surjective f)
+    (hdf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
+    (mpullback f hf φ).IsClosed ↔ φ.IsClosed := by
+  rw [isClosed_def, isClosed_def, ← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback,
+    mextDerivₗ_apply]
+  exact (TauCeti.mpullback_injective_of_surjective hsurj hdf).eq_iff' (TauCeti.mpullback_zero f)
+
 end Pullback
 
 end SmoothForm

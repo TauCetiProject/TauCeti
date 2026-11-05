@@ -246,8 +246,7 @@ variable (X)
 /-- Forgetting the grading of the total space `totalSpace X` gives the total space
 `totalSpaceScheme X` as an affine scheme over `X`. -/
 def totalSpaceForgetIso :
-    totalSpace X ⋙ (isGeometricVectorBundle X).ι ⋙ (isQuasicoherentLinearScheme X).ι ⋙
-        π₁ (affineFunctions X) GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.op ≅
+    totalSpace X ⋙ (isGeometricVectorBundle X).ι ⋙ QuasicoherentLinearScheme.forget X ≅
       totalSpaceScheme X :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦
     (Category.comp_id _).trans (Category.id_comp _).symm

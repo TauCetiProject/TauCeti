@@ -69,6 +69,9 @@ traciality are never assumed. For `s = ∅` the cumulant
   `κ_π(a) = ∏_{B ∈ π} κ_B(a)`; hence `TauCeti.apply_prod_eq_sum_prod_freeCumulant` and
   `TauCeti.apply_prod_ofFn_eq_sum_prod_freeCumulant` — a moment is the sum over all noncrossing
   partitions of the products of the cumulants along their parts.
+* `TauCeti.apply_pow_card_eq_sum_prod_freeCumulant` — the same for the powers of one element, and
+  `TauCeti.freeCumulant_const_eq_of_forall_apply_pow` — conversely, a sequence `c` that produces
+  the moments of an element through this formula is its sequence of free cumulants.
 * `TauCeti.freeCumulant_singleton` and `TauCeti.freeCumulant_pair` — the first two cumulants are
   the mean `φ a_i` and the covariance `φ (a_i * a_j) - φ a_i * φ a_j`.
 * `TauCeti.freeCumulant_const_of_card_eq_two` — the second free cumulant of a constant word is
@@ -308,6 +311,30 @@ theorem apply_prod_ofFn_eq_sum_prod_freeCumulant {n : ℕ} (hn : n ≠ 0) (a : F
     φ (List.ofFn a).prod =
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.1.parts, freeCumulant φ a B := by
   simp_rw [apply_prod_ofFn_eq_sum_partitionCumulant φ hn a, partitionCumulant_eq_prod_freeCumulant]
+
+/-- The *moment–cumulant formula* for the powers of a single element: for nonempty `s`,
+`φ (x ^ #s) = ∑_{π ∈ NC(s)} ∏_{B ∈ π} κ_B(x, …, x)`. -/
+theorem apply_pow_card_eq_sum_prod_freeCumulant (x : A) (hs : s.Nonempty) :
+    φ (x ^ #s) = ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, freeCumulant φ (fun _ => x) B := by
+  simpa [List.map_const', List.prod_replicate] using
+    apply_prod_eq_sum_prod_freeCumulant φ (fun _ => x) hs
+
+/-- The free cumulants of a single element are determined by its moments: if the moments of `x`
+are given by the moment–cumulant formula for a sequence `c`, that is
+`φ (x ^ #t) = ∑_{π ∈ NC(t)} ∏_{B ∈ π} c #B` for every nonempty `t ⊆ s`, then
+`κ_s(x, …, x) = c #s`. -/
+theorem freeCumulant_const_eq_of_forall_apply_pow {x : A} (c : ℕ → R) (hs : s.Nonempty)
+    (h : ∀ t ⊆ s, t.Nonempty →
+      φ (x ^ #t) = ∑ π : NoncrossingPartition t, ∏ B ∈ π.1.parts, c #B) :
+    freeCumulant φ (fun _ => x) s = c #s := by
+  -- The multiplicative family `π ↦ ∏_{B ∈ π} c #B` satisfies the moment–cumulant formula, so it
+  -- is the family of free cumulants.
+  have hc := eq_partitionCumulant_of_forall_sum_Iic φ (fun _ => x)
+    (fun π : NoncrossingPartition s => ∏ B ∈ π.1.parts, c #B) fun π => by
+      rw [NoncrossingPartition.sum_Iic_prod_parts_eq_prod_sum, partitionMoment_const]
+      exact prod_congr rfl fun B hB => (h B (π.1.le hB) (π.1.nonempty_of_mem_parts hB)).symm
+  rw [freeCumulant_def, ← congrFun hc ⊤, NoncrossingPartition.coe_top,
+    Finpartition.parts_top hs.ne_empty, prod_singleton]
 
 /-- In the multiplicative moment–cumulant formula for `s`, the noncrossing partitions having `{i}`
 as a part contribute the formula for `s.erase i`, when `φ 1 = 1` and the letter at `i` is the

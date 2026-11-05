@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
@@ -19,7 +21,16 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 The integral of the exterior derivative of a vector-valued real one-form over a rectangle or
 closed annulus is its positively oriented boundary integral. Zero inner radius gives the disc
 formula. Only C¹ regularity near the region of integration is required; in the annular
-case no regularity on the missing inner disc is needed.
+case no regularity on the missing inner disc is needed. On a rectangle the formula is stated both
+for the set integral over `Icc a b` (`TauCeti.integral_extDeriv_prod_Icc`) and for the iterated
+integral over oriented intervals (`TauCeti.integral2_extDeriv`).
+
+One dimension up, the integral of a closed two-form over the boundary of a cube vanishes: its
+integrals over the top and bottom faces differ by the signed integrals over the four side faces
+(`TauCeti.integral2_slice_sub_eq_sides`). This follows from the rectangle formula applied to the
+cylinder homotopy operator `TauCeti.cylinderHomotopy`, a primitive of the difference of the top
+and bottom slices of a closed form. Pulled back along a homotopy of maps into a manifold, it gives
+the homotopy invariance of integrals of closed two-forms over cylinders.
 
 Unlike the bilinear-pairing version of Green's formula, these results apply to arbitrary
 one-forms, including pullbacks of Liouville forms from exact symplectic manifolds. They
@@ -66,15 +77,10 @@ theorem integral_extDeriv_prod_Icc
   have hcurl z (hz : z ∈ Icc a b) :
       fderiv ℝ f z (1, 0) + fderiv ℝ g z (0, 1) =
         extDeriv ω z ![(1, 0), (0, 1)] := by
-    simp [extDeriv_apply_pair, f, g, sub_eq_add_neg,
-      fderiv_continuousAlternatingMap_apply_const_apply
-        ((hω z hz).differentiableAt one_ne_zero)]
-  have hcont : ContinuousOn (fun z ↦ extDeriv ω z ![(1, 0), (0, 1)]) (Icc a b) := by
-    intro z hz
-    have heval := (ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) F
-      ![(1, 0), (0, 1)]).continuous.continuousAt (x := extDeriv ω z)
-    exact (heval.comp
-      (contDiffAt_extDeriv (hω z hz) (r := 0) (by norm_num)).continuousAt).continuousWithinAt
+    simp [f, g, extDeriv_apply_pair_of_differentiableAt
+      ((hω z hz).differentiableAt one_ne_zero), sub_eq_add_neg]
+  have hcont : ContinuousOn (fun z ↦ extDeriv ω z ![(1, 0), (0, 1)]) (Icc a b) :=
+    fun z hz ↦ (continuousAt_extDeriv_apply (hω z hz) _).continuousWithinAt
   have hsub : Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 ⊆ Icc a b := by
     rw [Icc_prod_eq]
     exact prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
@@ -89,6 +95,117 @@ theorem integral_extDeriv_prod_Icc
   rw [setIntegral_congr_fun measurableSet_Icc hcurl] at h
   simp only [f, g, intervalIntegral.integral_neg] at h
   rw [h]
+  abel
+
+/-- Stokes' formula on a rectangle, as an iterated integral over oriented intervals, for a one-form
+that is C¹ near the closed rectangle. The corners may come in either order. -/
+theorem integral2_extDeriv
+    {ω : (ℝ × ℝ) → (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] F} {a₁ a₂ b₁ b₂ : ℝ}
+    (hω : ∀ z ∈ uIcc a₁ b₁ ×ˢ uIcc a₂ b₂, ContDiffAt ℝ 1 ω z) :
+    (∫ s in a₁..b₁, ∫ t in a₂..b₂, extDeriv ω (s, t) ![(1, 0), (0, 1)]) =
+      ((∫ t in a₂..b₂, ω (b₁, t) (fun _ ↦ (0, 1))) -
+        ∫ t in a₂..b₂, ω (a₁, t) (fun _ ↦ (0, 1))) -
+      ((∫ s in a₁..b₁, ω (s, b₂) (fun _ ↦ (1, 0))) -
+        ∫ s in a₁..b₁, ω (s, a₂) (fun _ ↦ (1, 0))) := by
+  let f := fun z ↦ ω z (fun _ ↦ (0, 1))
+  let g := fun z ↦ -ω z (fun _ ↦ (1, 0))
+  have hf z hz := ((hω z hz).differentiableAt one_ne_zero).hasFDerivAt
+    |>.continuousAlternatingMap_apply_const (fun _ ↦ (0, 1))
+  have hg z hz := (((hω z hz).differentiableAt one_ne_zero).hasFDerivAt
+    |>.continuousAlternatingMap_apply_const (fun _ ↦ (1, 0))).neg
+  have hcurl z (hz : z ∈ uIcc a₁ b₁ ×ˢ uIcc a₂ b₂) :
+      fderiv ℝ f z (1, 0) + fderiv ℝ g z (0, 1) =
+        extDeriv ω z ![(1, 0), (0, 1)] := by
+    simp [f, g, extDeriv_apply_pair_of_differentiableAt
+      ((hω z hz).differentiableAt one_ne_zero), sub_eq_add_neg]
+  have hcont : ContinuousOn (fun z ↦ extDeriv ω z ![(1, 0), (0, 1)])
+      (uIcc a₁ b₁ ×ˢ uIcc a₂ b₂) :=
+    fun z hz ↦ (continuousAt_extDeriv_apply (hω z hz) _).continuousWithinAt
+  have hsub : Ioo (min a₁ b₁) (max a₁ b₁) ×ˢ Ioo (min a₂ b₂) (max a₂ b₂) \ ∅ ⊆
+      uIcc a₁ b₁ ×ˢ uIcc a₂ b₂ := by
+    rw [sdiff_empty]
+    exact prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
+  have h := integral2_divergence_prod_of_hasFDerivAt_off_countable f g
+    (fderiv ℝ f) (fderiv ℝ g) a₁ a₂ b₁ b₂ ∅ countable_empty
+    (fun z hz ↦ (hf z hz).continuousAt.continuousWithinAt)
+    (fun z hz ↦ (hg z hz).continuousAt.continuousWithinAt)
+    (fun z hz ↦ (hf z (hsub hz)).differentiableAt.hasFDerivAt)
+    (fun z hz ↦ (hg z (hsub hz)).differentiableAt.hasFDerivAt)
+    ((hcont.integrableOn_compact (isCompact_uIcc.prod isCompact_uIcc)).congr_fun
+      (fun z hz ↦ (hcurl z hz).symm) (measurableSet_uIcc.prod measurableSet_uIcc))
+  have hinner : ∀ s ∈ uIcc a₁ b₁, (∫ t in a₂..b₂, fderiv ℝ f (s, t) (1, 0) +
+      fderiv ℝ g (s, t) (0, 1)) = ∫ t in a₂..b₂, extDeriv ω (s, t) ![(1, 0), (0, 1)] :=
+    fun s hs ↦ intervalIntegral.integral_congr fun t ht ↦ hcurl (s, t) ⟨hs, ht⟩
+  rw [intervalIntegral.integral_congr hinner] at h
+  simp only [f, g, intervalIntegral.integral_neg] at h
+  rw [h]
+  abel
+
+/-- **Stokes' formula on the boundary of a cube** for a closed two-form `ψ` that is C¹ on
+`(ℝ × ℝ) × ℝ`: its integrals over the top and bottom faces `[a, b] × {1}` and `[a, b] × {0}`
+differ by the signed sum of its integrals over the four side faces, each parametrized by the
+direction of its edge followed by the last coordinate. All integrals are iterated integrals over
+oriented intervals, so the corners `a` and `b` may come in either order.
+
+The proof applies Stokes' formula on the rectangle to the cylinder homotopy `h ψ`, whose exterior
+derivative is the difference of the top and bottom slices of the closed form `ψ`. -/
+theorem integral2_slice_sub_eq_sides [CompleteSpace F]
+    {ψ : (ℝ × ℝ) × ℝ → ((ℝ × ℝ) × ℝ) [⋀^Fin 2]→L[ℝ] F} (hψ : ContDiff ℝ 1 ψ)
+    (hdψ : extDeriv ψ = 0) (a b : ℝ × ℝ) :
+    ((∫ s in a.1..b.1, ∫ t in a.2..b.2, ψ ((s, t), 1) ![((1, 0), 0), ((0, 1), 0)]) -
+        ∫ s in a.1..b.1, ∫ t in a.2..b.2, ψ ((s, t), 0) ![((1, 0), 0), ((0, 1), 0)]) =
+      ((∫ t in a.2..b.2, ∫ c in (0 : ℝ)..1, ψ ((a.1, t), c) ![((0, 1), 0), (0, 1)]) -
+          ∫ t in a.2..b.2, ∫ c in (0 : ℝ)..1, ψ ((b.1, t), c) ![((0, 1), 0), (0, 1)]) -
+        ((∫ s in a.1..b.1, ∫ c in (0 : ℝ)..1, ψ ((s, a.2), c) ![((1, 0), 0), (0, 1)]) -
+          ∫ s in a.1..b.1, ∫ c in (0 : ℝ)..1, ψ ((s, b.2), c) ![((1, 0), 0), (0, 1)]) := by
+  -- The cylinder homotopy `β = h ψ` is a primitive of `ι₁^* ψ - ι₀^* ψ`.
+  let β := cylinderHomotopy ψ
+  have hβ : ContDiff ℝ 1 β := contDiff_cylinderHomotopy hψ
+  have hdβ (z : ℝ × ℝ) : extDeriv β z = (ψ (z, 1)).compContinuousLinearMap (.inl ℝ (ℝ × ℝ) ℝ) -
+      (ψ (z, 0)).compContinuousLinearMap (.inl ℝ (ℝ × ℝ) ℝ) := by
+    have h := extDeriv_cylinderHomotopy_add_cylinderHomotopy_extDeriv hψ z
+    rwa [hdψ, cylinderHomotopy_zero, Pi.zero_apply, add_zero] at h
+  -- On an edge direction `v`, `β` is minus the integral of `ψ(v, ∂_c)` over `c ∈ [0, 1]`.
+  have hβv (z v : ℝ × ℝ) :
+      β z (fun _ ↦ v) = -∫ c in (0 : ℝ)..1, ψ (z, c) ![(v, 0), (0, 1)] := by
+    rw [cylinderHomotopy_apply_apply
+      ((hψ.continuous.comp (Continuous.prodMk_right z)).intervalIntegrable _ _),
+      ← intervalIntegral.integral_neg]
+    refine intervalIntegral.integral_congr fun c _ ↦ ?_
+    have h := (ψ (z, c)).toAlternatingMap.map_swap (v := ![(v, 0), (0, 1)]) (i := 0) (j := 1)
+      (by decide)
+    have hv : (![(v, 0), (0, 1)] ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → (ℝ × ℝ) × ℝ) =
+        Fin.cons (0, 1) fun _ ↦ (v, 0) := by
+      funext i
+      fin_cases i <;> rfl
+    exact (congrArg (ψ (z, c)) hv).symm.trans h
+  -- The difference of the top and bottom faces is the integral of `dβ`.
+  have hd (s t : ℝ) : extDeriv β (s, t) ![(1, 0), (0, 1)] =
+      ψ ((s, t), 1) ![((1, 0), 0), ((0, 1), 0)] - ψ ((s, t), 0) ![((1, 0), 0), ((0, 1), 0)] := by
+    rw [hdβ, ContinuousAlternatingMap.sub_apply,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply]
+    congr 2 <;> funext i <;> fin_cases i <;> rfl
+  have hcont (c : ℝ) : Continuous fun z : ℝ × ℝ ↦ ψ (z, c) ![((1, 0), 0), ((0, 1), 0)] :=
+    (ContinuousAlternatingMap.apply ℝ ((ℝ × ℝ) × ℝ) F _).continuous.comp
+      (hψ.continuous.comp (Continuous.prodMk_left c))
+  have hin (c s : ℝ) : IntervalIntegrable
+      (fun t ↦ ψ ((s, t), c) ![((1, 0), 0), ((0, 1), 0)]) volume a.2 b.2 :=
+    ((hcont c).comp (Continuous.prodMk_right s)).intervalIntegrable _ _
+  have hout (c : ℝ) : IntervalIntegrable
+      (fun s ↦ ∫ t in a.2..b.2, ψ ((s, t), c) ![((1, 0), 0), ((0, 1), 0)]) volume a.1 b.1 :=
+    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
+      (f := fun s t ↦ ψ ((s, t), c) ![((1, 0), 0), ((0, 1), 0)]) (hcont c) _ _).intervalIntegrable
+      _ _
+  have htop : ((∫ s in a.1..b.1, ∫ t in a.2..b.2, ψ ((s, t), 1) ![((1, 0), 0), ((0, 1), 0)]) -
+        ∫ s in a.1..b.1, ∫ t in a.2..b.2, ψ ((s, t), 0) ![((1, 0), 0), ((0, 1), 0)]) =
+      ∫ s in a.1..b.1, ∫ t in a.2..b.2, extDeriv β (s, t) ![(1, 0), (0, 1)] := by
+    rw [← intervalIntegral.integral_sub (hout 1) (hout 0)]
+    refine intervalIntegral.integral_congr fun s _ ↦ ?_
+    simp only [hd]
+    exact (intervalIntegral.integral_sub (hin 1 s) (hin 0 s)).symm
+  rw [htop, integral2_extDeriv fun z _ ↦ hβ.contDiffAt]
+  simp only [hβv, intervalIntegral.integral_neg]
   abel
 
 /-- The exterior derivative of a one-form pulled back by the translated polar map,

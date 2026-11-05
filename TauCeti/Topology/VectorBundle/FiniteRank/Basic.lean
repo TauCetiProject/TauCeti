@@ -65,6 +65,24 @@ namespace FiniteRankBundleCore
 
 variable {𝕜 B}
 
+/-- To prove a property of point-indexed cores, one may assume the chosen index function
+is definitionally the identity. This avoids unpacking the fields of `VectorBundleCore`. -/
+@[elab_as_elim] theorem induction_on {motive : FiniteRankBundleCore 𝕜 B → Prop}
+    (A : FiniteRankBundleCore 𝕜 B)
+    (h : ∀ (n : ℕ) (c : VectorBundleCore 𝕜 B (Fin n → 𝕜) B)
+      (hc : ∀ x, c.indexAt x = x),
+      motive ⟨n,
+        { c with
+          indexAt := id
+          mem_baseSet_at := fun x => by simpa only [id_eq, hc] using c.mem_baseSet_at x },
+        fun _ => rfl⟩) : motive A := by
+  rcases A with ⟨n, c, hc⟩
+  have hi : c.indexAt = id := funext hc
+  have hm := h n c hc
+  cases c
+  cases hi
+  exact hm
+
 /-- The transition from a point's own chart to itself is the identity. -/
 @[simp] theorem coordChange_self (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     A.core.coordChange x x x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by

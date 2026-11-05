@@ -22,6 +22,7 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
 ## Main results
 
 * `TauCeti.groupHomology.chainsFunctorAdditive`: the chains functor is additive.
+* `groupHomology.map_id_nsmul_id`: so `Hₙ(G, -)` sends `c • 𝟙` to multiplication by `c`.
 * `TauCeti.groupHomology.map_mkH1OfIsTrivial`: with trivial coefficients, the map on `H₁` induced
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
@@ -102,3 +103,22 @@ theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.I
 end IsTrivial
 
 end TauCeti.groupHomology
+
+namespace groupHomology
+
+variable {R G : Type u} [CommRing R] [Group G]
+
+/-- The map on group homology induced by the multiple `c • 𝟙` of the identity of a representation
+is multiplication by `c`. -/
+@[simp]
+theorem map_id_nsmul_id (A : Rep R G) (c n : ℕ) :
+    map (MonoidHom.id G) (c • 𝟙 A) n = c • 𝟙 _ := by
+  -- `Hₙ(G, -)` is the composite of two additive functors.
+  have h : map (MonoidHom.id G) (c • 𝟙 A) n =
+      (HomologicalComplex.homologyFunctor _ _ n).map ((chainsFunctor R G).map (c • 𝟙 A)) := by
+    rw [map, HomologicalComplex.homologyFunctor_map, chainsFunctor_map]
+    rfl
+  rw [h, Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
+  exact congrArg (c • ·) (CategoryTheory.Functor.map_id _ _)
+
+end groupHomology

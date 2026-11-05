@@ -68,31 +68,27 @@ theorem atkinLehnerNormalizer_def (Q : ℕ) (k : ℤ) :
 /-- `atkinLehnerNormalizer Q k` is nonzero, which is what makes the normalized operator a
 bijection and lets the normalization be undone. -/
 theorem atkinLehnerNormalizer_ne_zero (hQ : Q ≠ 0) (k : ℤ) : atkinLehnerNormalizer Q k ≠ 0 :=
-  zpow_ne_zero _ <| Complex.ofReal_ne_zero.mpr <|
-    Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hQ))
+  zpow_ne_zero _ (by simpa using hQ)
 
 /-- `Q` is the square of the real square root `√Q`, cast to `ℂ`. Rewriting `Q` this way turns
 powers of `Q` into powers of `√Q`, the base of `atkinLehnerNormalizer`. -/
 theorem natCast_eq_ofReal_sqrt_zpow_two (Q : ℕ) :
     (Q : ℂ) = ((Real.sqrt Q : ℝ) : ℂ) ^ (2 : ℤ) := by
-  rw [zpow_two, ← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg Q),
-    Complex.ofReal_natCast]
+  norm_cast
+  simp
 
 /-- **The normalizer squares to `Q ^ (2 - k)`.** -/
-theorem atkinLehnerNormalizer_sq (hQ : Q ≠ 0) (k : ℤ) :
+theorem atkinLehnerNormalizer_sq (Q : ℕ) (k : ℤ) :
     atkinLehnerNormalizer Q k ^ 2 = (Q : ℂ) ^ (2 - k) := by
-  have hs0 : ((Real.sqrt Q : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr <|
-    Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hQ))
-  rw [atkinLehnerNormalizer_def, natCast_eq_ofReal_sqrt_zpow_two Q, ← zpow_mul, pow_two,
-    ← zpow_add₀ hs0, two_mul]
+  rw [atkinLehnerNormalizer_def, natCast_eq_ofReal_sqrt_zpow_two Q, ← zpow_mul', zpow_mul,
+    zpow_ofNat]
 
 /-- **The normalization cancels the scalar the raw slash squares to.** Multiplying
 `Q ^ (k - 2)` by the square of the normalizer leaves `1`; this single identity is the whole
 arithmetic content of the normalization. -/
 theorem atkinLehnerNormalizer_sq_mul (hQ : Q ≠ 0) (k : ℤ) :
     atkinLehnerNormalizer Q k ^ 2 * (Q : ℂ) ^ (k - 2) = 1 := by
-  have hQ' : (Q : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hQ
-  rw [atkinLehnerNormalizer_sq hQ, ← zpow_add₀ hQ']
+  rw [atkinLehnerNormalizer_sq, ← zpow_add₀ (Nat.cast_ne_zero.mpr hQ)]
   simp
 
 /-- **The normalizer is multiplicative in the divisor**, because the square root is: `√(Q R)` is
@@ -101,17 +97,13 @@ the composition law of the raw slashes. -/
 @[simp]
 theorem atkinLehnerNormalizer_mul (Q R : ℕ) (k : ℤ) :
     atkinLehnerNormalizer (Q * R) k = atkinLehnerNormalizer Q k * atkinLehnerNormalizer R k := by
-  rw [atkinLehnerNormalizer_def, atkinLehnerNormalizer_def, atkinLehnerNormalizer_def,
-    ← mul_zpow]
-  norm_cast
-  rw [Nat.cast_mul, Real.sqrt_mul (Nat.cast_nonneg Q)]
+  simp [atkinLehnerNormalizer_def, Real.sqrt_mul, mul_zpow]
 
 /-- **At `Q = 1` the normalizer is `1`**, matching the raw slash by an element of `Γ₀(N)` being
 the identity. -/
 @[simp]
 theorem atkinLehnerNormalizer_one (k : ℤ) : atkinLehnerNormalizer 1 k = 1 := by
-  rw [atkinLehnerNormalizer_def]
-  simp
+  simp [atkinLehnerNormalizer_def]
 
 /-- **The normalizer is real**: it is a power of the real number `√Q`, so complex conjugation
 fixes it. The Petersson product is conjugate-linear in one argument, so this is what makes the

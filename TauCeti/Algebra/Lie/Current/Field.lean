@@ -81,6 +81,7 @@ noncomputable section
 
 open scoped TensorProduct LaurentSeries VertexOperator
 open Finset
+open LieAlgebra.ofTwoCocycle (centralElement)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 
@@ -182,10 +183,13 @@ section Enveloping
 
 variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-local notation "UK" => UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "UK" => UniversalEnvelopingAlgebra.CentralQuotient R (centralElement c) a
 
-variable [Module (UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
-  [IsScalarTower R (UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
+variable [Module (UniversalEnvelopingAlgebra.CentralQuotient R
+    (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a) M]
+  [IsScalarTower R (UniversalEnvelopingAlgebra.CentralQuotient R
+    (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a) M]
 
 /-- The action of the currents on a module over `U(ĝ) / (ι K - a)` is smooth exactly when the
 module is smooth for the left ideals `I_N` of high-order currents. -/

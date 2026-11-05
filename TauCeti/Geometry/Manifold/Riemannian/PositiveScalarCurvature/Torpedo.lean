@@ -10,16 +10,14 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Concordance
+public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Rotational
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
-import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Radial
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 
 /-!
@@ -71,8 +69,6 @@ arclength radial coordinate `r = ∫ e^w ds` the metric takes the form `dr² + f
 * `TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace`: the product of the torpedo
   metric with a metric of positive scalar curvature has positive scalar curvature, in every
   dimension.
-* `TauCeti.inner_mvfderiv_exp_smul_coe_sphere`: polar coordinates `y = e^t u` pull the Euclidean
-  metric back to `e^(2 t) (g_(Sⁿ) + dt²)`.
 * `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere`: the torpedo metric in polar
   coordinates `y = e^t u` is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, and
   `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge`: on its cylindrical end `t ≥ -1`
@@ -338,51 +334,9 @@ theorem torpedoMetric_inner_of_ge {y : F} (h : exp (-1) ≤ ‖y‖) (v w : Tang
 
 section ScalarCurvature
 
-open InnerProductSpace Laplacian Module
-open scoped Gradient
-
-omit [InnerProductSpace ℝ F] in
-open Filter Topology in
-/-- Away from the centre the conformal exponent is `ψ (log ‖y‖)` with `ψ(s) = w(s) - s`. -/
-private theorem torpedoExponent_norm_eventuallyEq {y : F} (hy : y ≠ 0) :
-    (fun z : F ↦ torpedoExponent ‖z‖) =ᶠ[𝓝 y]
-      (fun s ↦ torpedoProfile s - s) ∘ fun z : F ↦ log ‖z‖ := by
-  filter_upwards [isOpen_ne.mem_nhds hy] with z hz
-  exact torpedoExponent_of_ne_zero (norm_ne_zero_iff.2 hz)
-
-private theorem deriv_torpedoProfile_sub_id :
-    deriv (fun s ↦ torpedoProfile s - s) = fun s ↦ torpedoSlope s - 1 := by
-  funext s
-  exact ((hasDerivAt_torpedoProfile s).sub (hasDerivAt_id s)).deriv
+open Module
 
 variable [FiniteDimensional ℝ F]
-
-/-- The Laplacian of the conformal exponent away from the centre. -/
-private theorem laplacian_torpedoExponent_norm {y : F} (hy : y ≠ 0) :
-    Δ (fun z : F ↦ torpedoExponent ‖z‖) y =
-      (deriv torpedoSlope (log ‖y‖) + (torpedoSlope (log ‖y‖) - 1) * (finrank ℝ F - 2)) /
-        ‖y‖ ^ 2 := by
-  have hψ : ContDiffAt ℝ 2 (fun s ↦ torpedoProfile s - s) (log ‖y‖) :=
-    (contDiff_torpedoProfile.sub contDiff_id).contDiffAt.of_le (by simp)
-  rw [(laplacian_congr_nhds (torpedoExponent_norm_eventuallyEq hy)).eq_of_nhds,
-    ContDiffAt.laplacian_comp (q := fun z : F ↦ log ‖z‖) hψ
-      ((contDiffAt_log.2 (norm_ne_zero_iff.2 hy)).comp y (contDiffAt_norm ℝ hy)),
-    deriv_torpedoProfile_sub_id,
-    laplacian_log_norm_of_ne hy, norm_gradient_eq_norm_fderiv, norm_fderiv_log_norm_of_ne hy]
-  simp only [deriv_sub_const]
-  have : ‖y‖ ≠ 0 := norm_ne_zero_iff.2 hy
-  field_simp
-
-/-- The norm of the gradient of the conformal exponent away from the centre. -/
-private theorem norm_gradient_torpedoExponent_norm {y : F} (hy : y ≠ 0) :
-    ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ = |torpedoSlope (log ‖y‖) - 1| * ‖y‖⁻¹ := by
-  have hd : HasFDerivAt (fun z : F ↦ torpedoExponent ‖z‖)
-      ((torpedoSlope (log ‖y‖) - 1) • fderiv ℝ (fun z : F ↦ log ‖z‖) y) y := by
-    refine HasFDerivAt.congr_of_eventuallyEq ?_ (torpedoExponent_norm_eventuallyEq hy)
-    exact ((hasDerivAt_torpedoProfile _).sub (hasDerivAt_id _)).comp_hasFDerivAt y
-      (hasFDerivAt_log_norm_of_ne hy).differentiableAt.hasFDerivAt
-  rw [norm_gradient_eq_norm_fderiv, hd.fderiv, norm_smul, norm_fderiv_log_norm_of_ne hy,
-    Real.norm_eq_abs]
 
 /-- **Scalar curvature of the torpedo metric.** Away from the centre, with `s = log ‖y‖`, the
 torpedo profile `w` and its slope `v = w'`, the scalar curvature of the torpedo metric on a space
@@ -392,48 +346,10 @@ theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
       (finrank ℝ F - 1) * exp (-2 * torpedoProfile (log ‖y‖)) *
         ((finrank ℝ F - 2) * (1 - torpedoSlope (log ‖y‖) ^ 2) -
           2 * deriv torpedoSlope (log ‖y‖)) := by
-  have hgrad : DifferentiableAt ℝ (∇ fun z : F ↦ torpedoExponent ‖z‖) y :=
-    ((contDiff_torpedoExponent_norm.gradient_right (m := 1) (by simp)).differentiable
-      (by simp)) y
-  -- The conformal change formula, applied to the flat Euclidean metric `g`, involves only the
-  -- Laplacian and the gradient of `Φ(‖·‖)` for `g`. The formula installs `g` with lowered
-  -- smoothness; the flat identifications are transported along `toRiemannianMetric_ofLE`.
-  rw [torpedoMetric, ContMDiffRiemannianMetric.scalarCurvature_rescale _ _ _
-    (φ := fun z ↦ torpedoExponent ‖z‖) (fun _ ↦ rfl) y]
-  have hscal : ((riemannianMetricVectorSpace F).ofLE
-      (le_top : (∞ : WithTop ℕ∞) ≤ ω)).scalarCurvature y = 0 := by
-    rw [ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvature_leviCivitaConnection _
-      -- Mathlib's `RiemannianBundle` instance on the tangent spaces of `F` is defined to be the
-      -- standard metric `(riemannianMetricVectorSpace F).toRiemannianMetric`, so this is `rfl`.
-      (by rw [ContMDiffRiemannianMetric.toRiemannianMetric_ofLE]; rfl),
-      TauCeti.Manifold.scalarCurvature_leviCivitaConnection_model_space]
-  have hm := ContMDiffRiemannianMetric.toRiemannianMetric_ofLE (riemannianMetricVectorSpace F)
-    (le_top : (∞ : WithTop ℕ∞) ≤ ω)
-  have hΔ : (letI : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
-      ⟨((riemannianMetricVectorSpace F).ofLE (le_top : (∞ : WithTop ℕ∞) ≤ ω)).toRiemannianMetric⟩
-      Manifold.laplaceBeltrami 𝓘(ℝ, F) (fun z ↦ torpedoExponent ‖z‖) y) =
-      Δ (fun z : F ↦ torpedoExponent ‖z‖) y :=
-    TauCeti.Manifold.laplaceBeltrami_eq_laplacian_of_eq
-      (inst := ⟨((riemannianMetricVectorSpace F).ofLE le_top).toRiemannianMetric⟩) hm hgrad
-  have hG : (letI : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
-      ⟨((riemannianMetricVectorSpace F).ofLE (le_top : (∞ : WithTop ℕ∞) ≤ ω)).toRiemannianMetric⟩
-      ‖Manifold.mgradient 𝓘(ℝ, F) (fun z ↦ torpedoExponent ‖z‖) y‖) =
-      ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ :=
-    TauCeti.Manifold.norm_mgradient_eq_norm_gradient_of_eq
-      (inst := ⟨((riemannianMetricVectorSpace F).ofLE le_top).toRiemannianMetric⟩) hm _ y
-  have hρ : 0 < ‖y‖ := norm_pos_iff.2 hy
-  have hexp : (exp (2 * torpedoExponent ‖y‖))⁻¹ =
-      exp (-2 * torpedoProfile (log ‖y‖)) * ‖y‖ ^ 2 := by
-    have harg : -(2 * (torpedoProfile (log ‖y‖) - log ‖y‖)) =
-        -2 * torpedoProfile (log ‖y‖) + log (‖y‖ ^ 2) := by
-      rw [log_pow]
-      push_cast
-      ring
-    rw [torpedoExponent_of_ne_zero hρ.ne', ← exp_neg, harg, exp_add, exp_log (by positivity)]
-  rw [hscal, hΔ, hG, hexp, laplacian_torpedoExponent_norm hy,
-    norm_gradient_torpedoExponent_norm hy, mul_pow, sq_abs]
-  field_simp
-  ring
+  rw [torpedoMetric, scalarCurvature_rescale_exp_radial contDiff_torpedoExponent_norm hy
+    (contDiff_torpedoProfile.contDiffAt.of_le (by simp)), deriv_torpedoProfile]
+  filter_upwards [isOpen_ne.mem_nhds hy] with z hz
+  exact torpedoExponent_of_ne_zero (norm_ne_zero_iff.2 hz)
 
 /-- On the cylindrical end the torpedo metric has the scalar curvature `(n - 1) (n - 2)` of the
 cylinder `ℝ × S^(n - 1)`. -/
@@ -574,30 +490,9 @@ open TauCeti.Manifold (tangentSpaceProdEquiv)
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
   [Fact (finrank ℝ V = n + 1)]
 
-/-- **The Euclidean metric in polar coordinates.** Polar coordinates `(u, t) ↦ e^t u` pull the
-inner product of `V` back to `e^(2 t)` times the cylinder metric `g_(Sⁿ) + dt²`. -/
-theorem inner_mvfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
-    (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
-    ⟪mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p v,
-      mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p w⟫_ℝ =
-      exp (2 * p.2) * ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
-  have hu : ⟪(p.1 : V), (p.1 : V)⟫_ℝ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p.1, one_pow]
-  have h₁ : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (tangentSpaceProdEquiv p v).1,
-      (p.1 : V)⟫_ℝ = 0 := by
-    rw [real_inner_comm]
-    exact inner_coe_mvfderiv_subtypeVal_sphere p.1 _
-  have h₂ := inner_coe_mvfderiv_subtypeVal_sphere p.1 (tangentSpaceProdEquiv p w).1
-  rw [mvfderiv_exp_smul_coe_sphere_apply, mvfderiv_exp_smul_coe_sphere_apply,
-    ContMDiffRiemannianMetric.cylinder_inner, ContMDiffRiemannianMetric.ofLE_inner,
-    sphereRoundMetric_inner, two_mul, exp_add]
-  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right, h₁, h₂,
-    hu]
-  ring
-
 /-- **The torpedo metric in polar coordinates.** In the coordinates `y = e^t u`, with `t ∈ ℝ` and
 `u` in the unit sphere, the torpedo metric is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, where `w` is the torpedo
-profile. -/
+profile: the rotationally symmetric metric `TauCeti.rotationalMetric` with profile `w`. -/
 theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
     (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
     (torpedoMetric V).inner (exp p.2 • (p.1 : V))
@@ -605,14 +500,13 @@ theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 ×
           p v)
         (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
           p w) =
-      exp (2 * torpedoProfile p.2) *
-        ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
+      (rotationalMetric (n := n) V contDiff_torpedoProfile).inner p v w := by
   have hnorm : ‖exp p.2 • (p.1 : V)‖ = exp p.2 := by
     rw [norm_smul, norm_eq_of_mem_sphere p.1, mul_one, norm_of_nonneg (exp_pos _).le]
-  rw [torpedoMetric_inner, NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply,
-    inner_mvfderiv_exp_smul_coe_sphere, ← mul_assoc, ← exp_add, hnorm,
-    torpedoExponent_of_ne_zero (exp_pos _).ne', log_exp]
+  rw [rotationalMetric_inner, torpedoMetric_inner, NormedSpace.fromTangentSpace_apply,
+    NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+    ← mvfderiv_apply_eq_mfderiv_apply, inner_mvfderiv_exp_smul_coe_sphere, ← mul_assoc,
+    ← exp_add, hnorm, torpedoExponent_of_ne_zero (exp_pos _).ne', log_exp]
   ring_nf
 
 /-- On the cylindrical end `t ≥ -1`, the torpedo metric in polar coordinates `y = e^t u` is the
@@ -625,8 +519,8 @@ theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge {p : sphere (0 : V
         (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
           p w) =
       ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
-  rw [torpedoMetric_inner_mfderiv_exp_smul_coe_sphere, torpedoProfile_of_ge hp, mul_zero, exp_zero,
-    one_mul]
+  rw [torpedoMetric_inner_mfderiv_exp_smul_coe_sphere, rotationalMetric_inner,
+    torpedoProfile_of_ge hp, mul_zero, exp_zero, one_mul]
 
 end Polar
 

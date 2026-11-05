@@ -28,6 +28,8 @@ matrix past `J`.
   `Aᵀ * J = -(J * A)`.
 * `LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg`: the same condition as a conjugation,
   `Aᵀ = J * (-A) * J⁻¹`.
+* `LieAlgebra.Symplectic.mem_sp_iff_J_mul_transpose_mul_J_eq`: the same condition as a fixed
+  point, `J * Aᵀ * J = A`.
 * `LieAlgebra.Symplectic.mul_J_add_J_mul_transpose_eq_zero`: the additive form
   `A * J + J * Aᵀ = 0`.
 * `LieAlgebra.Symplectic.transpose_mem_sp`: the symplectic Lie algebra is stable under
@@ -64,6 +66,18 @@ the shape `NormedSpace.exp` transports, by `Matrix.exp_conj`. -/
 theorem mem_sp_iff_transpose_eq_J_conj_neg (A : Matrix (l ⊕ l) (l ⊕ l) R) :
     A ∈ sp l R ↔ Aᵀ = J l R * (-A) * (J l R)⁻¹ := by
   rw [mem_sp, Matrix.eq_J_conj_iff_mul_J_eq, mul_neg]
+
+/-- **Membership in the symplectic Lie algebra, as a fixed point**: `A` lies in `sp l R` exactly
+when it is fixed by `Z ↦ J * Zᵀ * J`. -/
+theorem mem_sp_iff_J_mul_transpose_mul_J_eq (A : Matrix (l ⊕ l) (l ⊕ l) R) :
+    A ∈ sp l R ↔ J l R * Aᵀ * J l R = A := by
+  rw [mem_sp_iff_transpose_eq_J_conj_neg, J_inv]
+  simp only [mul_neg, neg_mul, neg_neg]
+  constructor
+  · intro h
+    rw [h, J_mul_mul_J_mul_J]
+  · intro h
+    rw [← J_mul_mul_J_mul_J Aᵀ, h]
 
 /-- **Membership in the symplectic Lie algebra, in additive form**: `A * J + J * Aᵀ = 0`. This is
 the shape a congruence computation `X ↦ X * J * Xᵀ` differentiates to. -/

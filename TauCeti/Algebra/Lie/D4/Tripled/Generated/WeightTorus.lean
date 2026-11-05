@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.StandardComodule
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Positive.Basic
-public import TauCeti.Algebra.Lie.D4.Tripled.Generated.BaseChange
+public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Specialization
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 

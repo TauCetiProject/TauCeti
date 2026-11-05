@@ -38,14 +38,13 @@ of `b`. -/
 @[simp]
 theorem algEquivAux₂_algebraMap_one_tmul (Q : Ideal (p.Fiber B)) [Q.IsPrime] (b : B) :
     algEquivAux₂ p Q (algebraMap _ (Localization.AtPrime Q) ((1 : p.ResidueField) ⊗ₜ[R] b)) =
-      Ideal.Quotient.mk _ (algebraMap B (Localization.AtPrime (Q.comap includeRight)) b) := by
+      algebraMap B (Localization.AtPrime (Q.comap includeRight) ⧸ _) b := by
   -- `algEquivAux₂` is the restriction of scalars to `R` of a composite of `B`-algebra
   -- isomorphisms; unfold it and use that each factor commutes with the maps from `B`.
   let : Algebra B (p.Fiber B) := rightAlgebra
   unfold algEquivAux₂
   simp only [AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply]
   rw [← AlgEquiv.restrictScalars_apply B, ← right_algebraMap_apply,
-    ← IsScalarTower.algebraMap_apply, AlgEquiv.commutes, AlgEquiv.commutes,
-    Ideal.Quotient.mk_algebraMap]
+    ← IsScalarTower.algebraMap_apply, AlgEquiv.commutes, AlgEquiv.commutes]
 
 end Ideal.Fiber

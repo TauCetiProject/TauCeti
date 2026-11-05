@@ -18,10 +18,10 @@ This remains true in residue characteristics `2` and `3`: the sixth coefficient 
 its integral coefficients, with no division in the target ring.
 
 For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
-these sums give a nonsingular Tate equation. The discriminant has the same norm as the parameter,
-even when the ring norm is only submultiplicative, and the coefficients `a₄` and `a₆` have norm at
-most that of the parameter. The invariant `c₄` has norm one under `NormOneClass` (`‖1‖ = 1`).
-Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
+these sums give a nonsingular Tate equation. The discriminant and the coefficient `a₆` have the
+same norm as the parameter, even when the ring norm is only submultiplicative, and the coefficient
+`a₄` has norm at most that of the parameter. The invariant `c₄` has norm one under `NormOneClass`
+(`‖1‖ = 1`). Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
 
 ## References
 
@@ -130,10 +130,12 @@ submultiplicative ring norm. -/
 theorem norm_tateCurveA₄_le (q : K) (hq : ‖q‖ < 1) : ‖tateCurveA₄ q hq‖ ≤ ‖q‖ :=
   norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq constantCoeff_tateCurve_a₄
 
-/-- The sixth Tate coefficient has norm at most that of the parameter, since the formal series
-`a₆` has no constant term. -/
-theorem norm_tateCurveA₆_le (q : K) (hq : ‖q‖ < 1) : ‖tateCurveA₆ q hq‖ ≤ ‖q‖ :=
-  norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq constantCoeff_tateCurve_a₆
+/-- **The sixth Tate coefficient has the same norm as the parameter**, since the formal series
+`a₆` is `q` times a unit, even for a submultiplicative ring norm. -/
+@[simp] theorem norm_tateCurveA₆ (q : K) (hq : ‖q‖ < 1) : ‖tateCurveA₆ q hq‖ = ‖q‖ := by
+  obtain ⟨u, -, hu, ha₆⟩ := exists_tateCurve_a₆_eq_X_mul
+  rw [tateCurveA₆, ha₆, map_mul, evalIntSeries_X]
+  exact norm_mul_evalIntSeries_of_isUnit q q hq hu
 
 variable [NormOneClass K]
 

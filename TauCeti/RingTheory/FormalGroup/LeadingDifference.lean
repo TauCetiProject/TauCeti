@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.Height
+public import TauCeti.RingTheory.FormalGroup.Height.Basic
 public import TauCeti.RingTheory.FormalGroup.Obstruction
 -- Proof-only: lowest-degree components and the linear part of a formal group law.
 import TauCeti.RingTheory.MvPowerSeries.Order

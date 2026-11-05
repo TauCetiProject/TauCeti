@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Wedge
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
+public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
@@ -37,6 +40,8 @@ representative formula pairs it with the class of the constant function `1` to g
   manifold, the exterior derivative of a compactly supported form integrates to zero.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral`: integration `H^n_c(M) → ℝ`, computed on
   classes by `TauCeti.compactlySupportedDeRhamCohomology.integral_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZero`: integration commutes with
+  extension by zero `H^n_c(U) → H^n_c(W)` along open subsets `U ≤ W`.
 * `Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`: on a
   finite-dimensional real normed space, a compactly supported closed top form with integral one,
   so integration `H^n_c(E) → ℝ` is nonzero.
@@ -55,6 +60,7 @@ public section
 
 noncomputable section
 
+open TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -122,6 +128,19 @@ theorem integral_neg (o : Manifold.Orientation I M (Fin n)) : integral (-o) = -i
   refine LinearMap.ext fun x ↦ ?_
   obtain ⟨φ, rfl⟩ := mk_surjective I n x
   rw [LinearMap.neg_apply, integral_mk, integral_mk, integralTopForm_neg]
+
+omit [SigmaCompactSpace M] in
+/-- Integration on compactly supported cohomology commutes with extension by zero: for open
+subsets `U ≤ W`, `∫_W ext x = ∫_U x` for the orientations restricted from `M`. -/
+@[simp]
+theorem integral_extendByZero (o : Manifold.Orientation I M (Fin n)) {U W : Opens M}
+    [SigmaCompactSpace U] [SigmaCompactSpace W] (h : U ≤ W)
+    (x : compactlySupportedDeRhamCohomology I U n) :
+    integral (o.restrict W) (extendByZero h n x) = integral (o.restrict U) x := by
+  obtain ⟨φ, rfl⟩ := mk_surjective I n x
+  rw [extendByZero_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_extendByZero]
+  exact integralTopForm_extendByZero o h ((mem_compactlySupportedForms I).mp
+    ((mem_compactlySupportedClosedForms I).mp φ.2).1)
 
 end compactlySupportedDeRhamCohomology
 

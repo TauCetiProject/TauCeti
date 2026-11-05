@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+import TauCeti.Algebra.Module.Lattice
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
@@ -130,6 +131,28 @@ theorem mem_weightSublattice_iff {μ : κ → ℤ} {x : M} :
   rw [weightSublattice, Submodule.mem_comap, Submodule.restrictScalars_mem,
     mem_jointWeightSpace_iff]
   rfl
+
+/-- The weight slice of a subgroup spanning a rational representation spans the corresponding
+rational joint weight space. No stability or finite-generation assumption is needed. -/
+theorem span_weightSublattice_eq_jointWeightSpace (N : Submodule ℤ V)
+    (hN : Submodule.span ℚ (N : Set V) = ⊤) (μ : κ → ℤ) :
+    Submodule.span ℚ
+        ((fun x : N.toAddSubgroup => (x : V)) ''
+          (weightSublattice h ρ N.toAddSubgroup μ : Set N.toAddSubgroup)) =
+      jointWeightSpace h ρ μ := by
+  refine le_antisymm (Submodule.span_le.mpr ?_) ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    exact (mem_jointWeightSpace_iff h ρ).mpr
+      ((mem_weightSublattice_iff h ρ N.toAddSubgroup).mp hx)
+  · intro x hx
+    obtain ⟨r, hr0, hrN⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ N hN x
+    have hrW : r • x ∈ jointWeightSpace h ρ μ :=
+      ((jointWeightSpace h ρ μ).restrictScalars ℤ).smul_mem r hx
+    have hrQ : (r : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hr0
+    rw [← inv_smul_smul₀ hrQ x, Int.cast_smul_eq_zsmul]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span
+      ⟨⟨r • x, hrN⟩, (mem_weightSublattice_iff h ρ N.toAddSubgroup).mpr
+        ((mem_jointWeightSpace_iff h ρ).mp hrW), rfl⟩)
 
 /-! ## Independence of weight vectors -/
 

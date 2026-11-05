@@ -122,6 +122,14 @@ noncomputable def generatedCoordinateMap :
       generatedCoordinateHopfAlgebra n hn A :=
   CommHopfAlgCat.mkQuotient _ _
 
+/-- Transporting the named generated coordinate algebra to its quotient presentation carries
+its coordinate map to the quotient projection. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_eqToHom :
+    generatedCoordinateMap n hn A ≫ eqToHom (generatedCoordinateHopfAlgebra_def n hn A) =
+      CommHopfAlgCat.mkQuotient _ (generatedDefiningIdeal n hn A) :=
+  (rfl)
+
 /-- The generated subgroup's coordinate map is surjective. -/
 theorem generatedCoordinateMap_surjective :
     Function.Surjective (generatedCoordinateMap n hn A).hom :=

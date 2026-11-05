@@ -209,12 +209,27 @@ instance : Algebra.FiniteType A (t.geckGeneratedCoordinateHopfAlgebra ht A) := b
 
 end
 
-/-! ## Free base change -/
+/-! ## Base change -/
 
 section BaseChange
 
 variable (t : DynkinType) (ht : t.Valid)
 variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
+
+/-- Transporting the common kernel of the scalar-extended generator maps into the ambient
+coordinate algebra over `K` gives the defining ideal of the generated Geck subgroup over `K`.
+This identification requires no freeness hypothesis. -/
+theorem map_commonKernelHopfIdeal_geckGeneratorCoordinateMap_baseChange :
+    (CommHopfAlgCat.commonKernelHopfIdeal (fun j ↦
+      CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratorCoordinateMap ht k j))).map
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom.hom =
+      t.geckGeneratedDefiningIdeal ht K := by
+  rw [geckGeneratedDefiningIdeal_def, CommHopfAlgCat.map_commonKernelHopfIdeal,
+    ← funext (t.geckGeneratorCoordinateMap_baseChange ht k K),
+    ← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
+      (ConcreteCategory.bijective_of_isIso
+        (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom).1]
+  simp only [Category.assoc]
 
 /-- **Generation commutes with free base change.** For `K` free over `k`, for instance a field
 extension, the base change of the defining ideal of the Geck subgroup generated over `k`,
@@ -224,14 +239,9 @@ theorem map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal [Module.Free k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (t.geckGeneratedDefiningIdeal ht k)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).hom.hom =
       t.geckGeneratedDefiningIdeal ht K := by
-  rw [geckGeneratedDefiningIdeal_def, geckGeneratedDefiningIdeal_def,
+  rw [t.geckGeneratedDefiningIdeal_def ht k,
     CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
-    CommHopfAlgCat.map_commonKernelHopfIdeal,
-    ← funext (t.geckGeneratorCoordinateMap_baseChange ht k K),
-    ← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
-      (ConcreteCategory.bijective_of_isIso
-        (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom).1]
-  simp only [Category.assoc]
+    t.map_commonKernelHopfIdeal_geckGeneratorCoordinateMap_baseChange ht k K]
 
 -- Within this module `geckGeneratedCoordinateHopfAlgebra` and `geckGeneratedCoordinateMap`
 -- unfold to the quotient by `geckGeneratedDefiningIdeal` and its quotient map, so the generic

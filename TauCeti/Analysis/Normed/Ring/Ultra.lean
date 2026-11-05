@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # The closed unit ball and products of elements close to one in ultrametric normed rings
@@ -16,7 +17,9 @@ An ultrametric seminormed ring is a nonarchimedean topological ring: its open ba
 are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit
 ball is an open subring. In an ultrametric normed ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1`. A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their
-arguments is bounded by its first argument `q w`.
+arguments is bounded by its first argument `q w`, and it depends on `w` in a `‖q‖`-Lipschitz way
+when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and
+`t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
 `‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one.
@@ -32,8 +35,20 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
   leaves the norm equal to one; `TauCeti.norm_div_one_sub_pow`: so does dividing by a power of
   such a `1 - w`.
+* `TauCeti.norm_div_one_sub_cube_sub_div_one_sub_cube_le` and
+  `TauCeti.norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le_max_mul`: on the open unit ball,
+  `t ↦ t / (1 - t)³` is `1`-Lipschitz and `t ↦ t² / (1 - t)³` is Lipschitz with constant the
+  larger of the two norms.
 * `TauCeti.norm_tsum_le_norm_mul`: a one-sided series `∑_{n ≥ 1} f(qⁿ w)` whose terms are bounded
-  by their arguments has norm at most `‖q w‖`.
+  by their arguments has norm at most `‖q w‖`; `TauCeti.norm_tsum_sub_tsum_le_norm_mul`: if the
+  terms are `1`-Lipschitz, two such series differ by at most `‖q (w - w')‖`;
+  `TauCeti.norm_tsum_sub_tsum_add_tsum_sub_tsum_le`: a series at `u` and a series at `u⁻¹` of
+  `1`-Lipschitz terms together depend on `u` in a `‖q‖`-Lipschitz way on the unit circle.
+* `TauCeti.norm_div_one_sub_sq_sub_div_one_sub_sq_le`: the map `t ↦ t / (1 - t)²` is
+  `1`-Lipschitz on the open unit ball of an ultrametric field;
+  `TauCeti.norm_sub_le_of_eq_mul_div` is the estimate behind it.
+* `TauCeti.norm_one_sub_cube_div_sub_one_sub_cube_div_le`: the map `v ↦ (1 - v)³ / v` is
+  `1`-Lipschitz on the unit circle of an ultrametric field.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
@@ -121,6 +136,50 @@ theorem norm_div_one_sub_pow {K : Type*} [NormedDivisionRing K] [IsUltrametricDi
     {w : K} (hw : ‖w‖ < 1) (k : ℕ) : ‖z / (1 - w) ^ k‖ = ‖z‖ := by
   rw [norm_div, norm_pow, norm_one_sub_of_norm_lt_one hw, one_pow, div_one]
 
+/-- The map `t ↦ t / (1 - t)³` is `1`-Lipschitz on the open unit ball of an ultrametric field. -/
+theorem norm_div_one_sub_cube_sub_div_one_sub_cube_le {K : Type*} [NormedField K]
+    [IsUltrametricDist K] {t t' : K} (ht : ‖t‖ < 1) (ht' : ‖t'‖ < 1) :
+    ‖t / (1 - t) ^ 3 - t' / (1 - t') ^ 3‖ ≤ ‖t - t'‖ := by
+  have h₁ : 1 - t ≠ 0 := norm_ne_zero_iff.mp (by simp [ht])
+  have h₂ : 1 - t' ≠ 0 := norm_ne_zero_iff.mp (by simp [ht'])
+  have e : t / (1 - t) ^ 3 - t' / (1 - t') ^ 3 =
+      (t - t') * (1 - t * t' - t * t' - t * t' + t * t' * (t + t')) /
+        ((1 - t) ^ 3 * (1 - t') ^ 3) := by
+    field_simp
+    ring
+  have hP : 1 - t * t' - t * t' - t * t' + t * t' * (t + t') ∈ Subring.unitClosedBall K := by
+    have h₃ : t ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht.le
+    have h₄ : t' ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht'.le
+    apply_rules [add_mem, sub_mem, mul_mem, one_mem]
+  rw [e, norm_div, norm_mul, norm_mul, norm_pow, norm_pow, norm_one_sub_of_norm_lt_one ht,
+    norm_one_sub_of_norm_lt_one ht', one_pow, mul_one, div_one]
+  exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp hP)
+
+/-- On the open unit ball of an ultrametric field, the map `t ↦ t² / (1 - t)³` is Lipschitz with
+constant `max ‖t‖ ‖t'‖` between `t` and `t'`, so it contracts near zero. -/
+theorem norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le_max_mul {K : Type*} [NormedField K]
+    [IsUltrametricDist K] {t t' : K} (ht : ‖t‖ < 1) (ht' : ‖t'‖ < 1) :
+    ‖t ^ 2 / (1 - t) ^ 3 - t' ^ 2 / (1 - t') ^ 3‖ ≤ max ‖t‖ ‖t'‖ * ‖t - t'‖ := by
+  have h₁ : 1 - t ≠ 0 := norm_ne_zero_iff.mp (by simp [ht])
+  have h₂ : 1 - t' ≠ 0 := norm_ne_zero_iff.mp (by simp [ht'])
+  set A := 1 - t' - t' - t' + t * t' ^ 2
+  have e : t ^ 2 / (1 - t) ^ 3 - t' ^ 2 / (1 - t') ^ 3 =
+      (t - t') * (t * A + t') / ((1 - t) ^ 3 * (1 - t') ^ 3) := by
+    field_simp
+    ring
+  have hA : ‖A‖ ≤ 1 := by
+    have h₃ : t ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht.le
+    have h₄ : t' ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht'.le
+    refine Subring.mem_unitClosedBall.mp ?_
+    apply_rules [add_mem, sub_mem, mul_mem, pow_mem, one_mem]
+  have hQ : ‖t * A + t'‖ ≤ max ‖t‖ ‖t'‖ := by
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le_max ?_ le_rfl)
+    rw [norm_mul]
+    exact mul_le_of_le_one_right (norm_nonneg _) hA
+  rw [e, norm_div, norm_mul, norm_mul, norm_pow, norm_pow, norm_one_sub_of_norm_lt_one ht,
+    norm_one_sub_of_norm_lt_one ht', one_pow, mul_one, div_one, mul_comm]
+  exact mul_le_mul_of_nonneg_right hQ (norm_nonneg _)
+
 /-- A one-sided series `∑_{n ≥ 1} f(qⁿ w)` with values in an ultrametric group, whose terms are
 bounded by their arguments, has norm at most `‖q w‖` when `‖q‖ ≤ 1` and `‖q w‖ < 1`. -/
 theorem norm_tsum_le_norm_mul {R E : Type*} [SeminormedRing R]
@@ -128,14 +187,95 @@ theorem norm_tsum_le_norm_mul {R E : Type*} [SeminormedRing R]
     (hf : ∀ w : R, ‖w‖ < 1 → ‖f w‖ ≤ ‖w‖) {q w : R} (hq : ‖q‖ ≤ 1) (hw : ‖q * w‖ < 1) :
     ‖∑' n : ℕ, f (q ^ (n + 1) * w)‖ ≤ ‖q * w‖ := by
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg _) fun n ↦ ?_
-  have h : ‖q ^ (n + 1) * w‖ ≤ ‖q * w‖ := by
-    induction n with
-    | zero => rw [zero_add, pow_one]
-    | succ n ih =>
-      calc ‖q ^ (n + 1 + 1) * w‖ = ‖q * (q ^ (n + 1) * w)‖ := by rw [pow_succ', mul_assoc]
-        _ ≤ ‖q‖ * ‖q ^ (n + 1) * w‖ := norm_mul_le _ _
-        _ ≤ ‖q * w‖ := mul_le_of_le_one_left (norm_nonneg _) hq |>.trans ih
+  have h := norm_pow_succ_mul_le hq w n
   exact (hf _ (h.trans_lt hw)).trans h
+
+/-- Two convergent one-sided series `∑_{n ≥ 1} f(qⁿ w)` and `∑_{n ≥ 1} f(qⁿ w')` with values in
+an ultrametric group, whose terms are `1`-Lipschitz on the open unit ball, differ by at most
+`‖q (w - w')‖` when `‖q‖ ≤ 1` and `‖q w‖, ‖q w'‖ < 1`. -/
+theorem norm_tsum_sub_tsum_le_norm_mul {R E : Type*} [SeminormedRing R]
+    [NormedAddCommGroup E] [IsUltrametricDist E] (f : R → E)
+    (hf : ∀ t t' : R, ‖t‖ < 1 → ‖t'‖ < 1 → ‖f t - f t'‖ ≤ ‖t - t'‖) {q w w' : R}
+    (hq : ‖q‖ ≤ 1) (hw : ‖q * w‖ < 1) (hw' : ‖q * w'‖ < 1)
+    (hs : Summable fun n : ℕ ↦ f (q ^ (n + 1) * w))
+    (hs' : Summable fun n : ℕ ↦ f (q ^ (n + 1) * w')) :
+    ‖∑' n : ℕ, f (q ^ (n + 1) * w) - ∑' n : ℕ, f (q ^ (n + 1) * w')‖ ≤ ‖q * (w - w')‖ := by
+  rw [← hs.tsum_sub hs']
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg _) fun n ↦ ?_
+  refine (hf _ _ ((norm_pow_succ_mul_le hq w n).trans_lt hw)
+    ((norm_pow_succ_mul_le hq w' n).trans_lt hw')).trans ?_
+  rw [← mul_sub]
+  exact norm_pow_succ_mul_le hq _ n
+
+/-- A one-sided series `∑_{n ≥ 1} f(qⁿ u)` at `u` and one `∑_{n ≥ 1} g(qⁿ u⁻¹)` at `u⁻¹`, with
+values in an ultrametric group, together depend on `u` in a `‖q‖`-Lipschitz way on the unit
+circle when their terms are `1`-Lipschitz on the open unit ball and `‖q‖ < 1`. Only the values
+need to be ultrametric. -/
+theorem norm_tsum_sub_tsum_add_tsum_sub_tsum_le {K E : Type*} [NormedField K]
+    [NormedAddCommGroup E] [IsUltrametricDist E] {q u u' : K} (hq : ‖q‖ < 1) (hu : ‖u‖ = 1)
+    (hu' : ‖u'‖ = 1) (f g : K → E) (hf : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖f t - f t'‖ ≤ ‖t - t'‖)
+    (hg : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖g t - g t'‖ ≤ ‖t - t'‖)
+    (hfs : Summable fun n : ℕ ↦ f (q ^ (n + 1) * u))
+    (hfs' : Summable fun n : ℕ ↦ f (q ^ (n + 1) * u'))
+    (hgs : Summable fun n : ℕ ↦ g (q ^ (n + 1) * u⁻¹))
+    (hgs' : Summable fun n : ℕ ↦ g (q ^ (n + 1) * u'⁻¹)) :
+    ‖(∑' n : ℕ, f (q ^ (n + 1) * u) - ∑' n : ℕ, f (q ^ (n + 1) * u')) +
+        (∑' n : ℕ, g (q ^ (n + 1) * u⁻¹) - ∑' n : ℕ, g (q ^ (n + 1) * u'⁻¹))‖ ≤
+      ‖q‖ * ‖u - u'‖ := by
+  have hqw (w : K) (hw : ‖w‖ = 1) : ‖q * w‖ < 1 := by rwa [norm_mul, hw, mul_one]
+  have hinv : ‖q * (u⁻¹ - u'⁻¹)‖ = ‖q‖ * ‖u - u'‖ := by
+    have h₀ : u ≠ 0 := norm_ne_zero_iff.mp (by rw [hu]; exact one_ne_zero)
+    have h₀' : u' ≠ 0 := norm_ne_zero_iff.mp (by rw [hu']; exact one_ne_zero)
+    rw [norm_mul, ← dist_eq_norm, dist_inv_inv₀ h₀ h₀', hu, hu', mul_one, div_one, dist_eq_norm]
+  refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
+  · rw [← norm_mul]
+    exact norm_tsum_sub_tsum_le_norm_mul f hf hq.le (hqw _ hu) (hqw _ hu') hfs hfs'
+  · rw [← hinv]
+    exact norm_tsum_sub_tsum_le_norm_mul g hg hq.le (hqw _ (by rw [norm_inv, hu, inv_one]))
+      (hqw _ (by rw [norm_inv, hu', inv_one])) hgs hgs'
+
+section Field
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-- A difference of the form `(t - t') P / ((1 - t)ᵏ (1 - t')ᵏ)` with `‖t‖, ‖t'‖ < 1` and
+`‖P‖ ≤ 1` has norm at most `‖t - t'‖`. -/
+theorem norm_sub_le_of_eq_mul_div {t t' a a' P : K} (ht : ‖t‖ < 1) (ht' : ‖t'‖ < 1)
+    {k : ℕ} (h : a - a' = (t - t') * P / ((1 - t) ^ k * (1 - t') ^ k)) (hP : ‖P‖ ≤ 1) :
+    ‖a - a'‖ ≤ ‖t - t'‖ := by
+  rw [h, norm_div, norm_mul, norm_mul, norm_pow, norm_pow, norm_one_sub_of_norm_lt_one ht,
+    norm_one_sub_of_norm_lt_one ht', one_pow, mul_one, div_one]
+  exact mul_le_of_le_one_right (norm_nonneg _) hP
+
+/-- The map `t ↦ t / (1 - t)²` is `1`-Lipschitz on the open unit ball of an ultrametric
+field. -/
+theorem norm_div_one_sub_sq_sub_div_one_sub_sq_le {t t' : K} (ht : ‖t‖ < 1) (ht' : ‖t'‖ < 1) :
+    ‖t / (1 - t) ^ 2 - t' / (1 - t') ^ 2‖ ≤ ‖t - t'‖ := by
+  have h₁ : 1 - t ≠ 0 := norm_ne_zero_iff.mp (by simp [ht])
+  have h₂ : 1 - t' ≠ 0 := norm_ne_zero_iff.mp (by simp [ht'])
+  refine norm_sub_le_of_eq_mul_div ht ht' (P := 1 - t * t') (k := 2) (by field_simp; ring)
+    (Subring.mem_unitClosedBall.mp ?_)
+  have h₃ : t ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht.le
+  have h₄ : t' ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht'.le
+  apply_rules [sub_mem, mul_mem, one_mem]
+
+/-- The map `v ↦ (1 - v)³ / v` is `1`-Lipschitz on the unit circle of an ultrametric field. -/
+theorem norm_one_sub_cube_div_sub_one_sub_cube_div_le {v w : K} (hv : ‖v‖ = 1) (hw : ‖w‖ = 1) :
+    ‖(1 - v) ^ 3 / v - (1 - w) ^ 3 / w‖ ≤ ‖v - w‖ := by
+  have h₀ : v ≠ 0 := norm_ne_zero_iff.mp (by rw [hv]; exact one_ne_zero)
+  have h₀' : w ≠ 0 := norm_ne_zero_iff.mp (by rw [hw]; exact one_ne_zero)
+  have e : (1 - v) ^ 3 / v - (1 - w) ^ 3 / w =
+      (w - v) * (1 - v * w - v * w - v * w + v * w * (v + w)) / (v * w) := by
+    field_simp
+    ring
+  have h₃ : v ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hv.le
+  have h₄ : w ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hw.le
+  have hP : 1 - v * w - v * w - v * w + v * w * (v + w) ∈ Subring.unitClosedBall K := by
+    apply_rules [add_mem, sub_mem, mul_mem, one_mem]
+  rw [e, norm_div, norm_mul, norm_mul, hv, hw, mul_one, div_one, norm_sub_rev]
+  exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp hP)
+
+end Field
 
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Matrix
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.FiniteLength
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.EulerAdmissible
+import TauCeti.RingTheory.GradedAlgebra.Semisimple
 
 /-!
 # The graded Cartan matrix in idempotent bases
@@ -52,6 +52,8 @@ supplies the hypothesis, that the projective basis vectors are the classes `[A e
   heads `(Sᵢ, Sⱼ)` is graded Euler-admissible, the graded Cartan matrix has unit determinant.
   Contrapositively, a graded Cartan determinant that is not a unit of `ℤ[q,q⁻¹]` exhibits a pair
   of graded heads that is not graded Euler-admissible.
+* `TauCeti.isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive`: the same
+  for primitive idempotents over a field that need not split the simple modules.
 
 ## References
 
@@ -165,25 +167,32 @@ theorem isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis
       (gradedPositiveMulQuotient 𝒜 (he₀ i)) (gradedPositiveMulQuotient 𝒜 (he₀ j))) :
     IsUnit (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
       (gradedIdempotentHeadBasis hneg he he₀ hspan hne)).det := by
-  -- Every finite graded module has a composition series by shifts of the `Sᵢ`, so admissibility
-  -- of the heads makes every pair of finite graded modules admissible, and
-  -- `TauCeti.isUnit_det_gradedCartanMatrix` applies.
-  have hS := isExhaustiveGradedSimpleFamily_gradedIdempotentHead (hcomplete := he) hneg he₀ hspan
-  have hne' : Pairwise fun i j =>
-      (gradedPositiveMulQuotient 𝒜 (he₀ j)).smulGradedDimension (e i) = 0 := fun i j hij => by
-    simpa [hij] using
-      smulGradedDimension_gradedIdempotentHead hneg he.toOrthogonalIdempotents he₀ hspan i j (hne j)
-  have hself (i : I) : (gradedPositiveMulQuotient 𝒜 (he₀ i)).smulGradedDimension (e i) = 1 := by
-    simpa using
-      smulGradedDimension_gradedIdempotentHead hneg he.toOrthogonalIdempotents he₀ hspan i i (hne i)
-  -- The head basis is the graded simple-class basis of the heads.
-  have hbasis : gradedSimpleClassBasis _ he.idem he₀ hne' hself hS =
-      gradedIdempotentHeadBasis hneg he he₀ hspan hne :=
-    Module.Basis.eq_of_apply_eq fun i => by
-      rw [gradedSimpleClassBasis_apply, gradedIdempotentHeadBasis_apply]
-  rw [← hbasis]
-  exact isUnit_det_gradedCartanMatrix _ he.idem he₀ hI hne' hself hS _
-    (gradedIdempotentProjectiveBasis_apply he he₀ hI hneg hspan hne)
-    ((isGradedEulerAdmissibleOn_gradedFiniteModules_iff hS).2 h)
+  -- The degree-zero part is semisimple and the heads form an exhaustive family of graded simples.
+  have := isSemisimpleRing_gradeZero_of_completeOrthogonalIdempotents he he₀ hspan
+  exact isUnit_det_gradedCartanMatrix_of_isGradedEulerAdmissible hneg
+    (isExhaustiveGradedSimpleFamily_gradedIdempotentHead (hcomplete := he) hneg he₀ hspan) h _ _
+
+section Primitive
+
+variable [IsSemisimpleRing (𝒜 0)] (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+  (hnoniso : Pairwise fun i j =>
+    IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A)))
+
+/-- **Graded Cartan unimodularity over a nonsplitting field.** For a complete family of orthogonal
+primitive idempotents `eᵢ` of degree zero with pairwise nonisomorphic left ideals, over a
+nonnegatively graded algebra with semisimple degree-zero part, if every pair `(Sᵢ, Sⱼ)` of graded
+heads of the `A eᵢ` is graded Euler-admissible, then the graded Cartan matrix in the bases
+`[A eⱼ]` and `[Sᵢ]` has unit determinant in `ℤ[q,q⁻¹]`. -/
+theorem isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive
+    (h : ∀ i j, IsGradedEulerAdmissible.{uA} k (GradedModuleCat.shift 𝒜)
+      (gradedPositiveMulQuotient 𝒜 (he₀ i)) (gradedPositiveMulQuotient 𝒜 (he₀ j))) :
+    IsUnit (gradedCartanMatrix 𝒜
+      (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+      (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso)).det :=
+  isUnit_det_gradedCartanMatrix_of_isGradedEulerAdmissible hneg
+    (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
+      hprim) h _ _
+
+end Primitive
 
 end TauCeti

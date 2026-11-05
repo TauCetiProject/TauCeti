@@ -45,6 +45,8 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
   entire series.
 * `taylor_one`, `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
+* `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
+  converges.
 * `PowerSeries.IsEntire.hasseDeriv_taylor`: Hasse derivatives commute with translation.
 * `PowerSeries.IsEntire.taylor_taylor`: `taylor b (taylor a f) = taylor (b + a) f`.
 * `PowerSeries.IsEntire.taylor_inj`, `PowerSeries.IsEntire.taylor_eq_zero_iff`: translation is
@@ -258,6 +260,12 @@ theorem IsEntire.taylor (hf : f.IsEntire) (a : R) : (taylor a f).IsEntire := by
               gcongr
               exact norm_coeff_hasseDeriv_mul_pow_le_max f a n m
           _ = M * G (n, m) := by simp only [G]; ring
+
+/-- **The Taylor expansion** of an entire series converges:
+`f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`. -/
+theorem IsEntire.hasSum_taylor [CompleteSpace R] (hf : f.IsEntire) (a b : R) :
+    HasSum (fun k ↦ (PowerSeries.hasseDeriv k f).evalAt a * b ^ k) (f.evalAt (b + a)) := by
+  simpa [smul_eq_mul, hf.evalAt_taylor] using (hf.taylor a).hasSum_evalAt b
 
 end Normed
 

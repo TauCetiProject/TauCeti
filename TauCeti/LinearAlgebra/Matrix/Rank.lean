@@ -51,6 +51,10 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `|K| ^ rank` elements.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
   negation preserve the rank.
+* `Matrix.rank_add_le`: over a field, the rank of a sum is at most the sum of the ranks.
+* `Matrix.rank_conjTranspose_of_field` and
+  `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
+  structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
@@ -269,6 +273,14 @@ theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
 
 end
 
+/-- The rank of a sum of matrices over a field is at most the sum of the ranks. -/
+theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := by
+  rw [Matrix.rank, Matrix.rank, Matrix.rank, mulVecLin_add]
+  refine (Submodule.finrank_mono ?_).trans
+    (Submodule.finrank_add_le_finrank_add_finrank (LinearMap.range A.mulVecLin)
+      (LinearMap.range B.mulVecLin))
+  exact LinearMap.range_add_le A.mulVecLin B.mulVecLin
+
 /-- The column space of a matrix over a field `K` has `|K| ^ rank` elements. Over an infinite
 field both sides are `0` unless the rank is `0`. -/
 theorem natCard_range_mulVec_eq_pow_rank (A : Matrix m n K) :
@@ -389,6 +401,30 @@ theorem isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose {ι : Type
 
 end StarOrderedField
 
+/-- The conjugate transpose of a matrix over a field with a star ring structure has the same
+rank. -/
+@[simp]
+theorem rank_conjTranspose_of_field {R : Type*} [Field R] [StarRing R] {m n : Type*} [Fintype m]
+    [Fintype n] (A : Matrix m n R) : Aᴴ.rank = A.rank := by
+  have h : Aᴴ = (A.map (starRingEnd R))ᵀ := rfl
+  rw [h, rank_transpose, rank_map]
+
+section StarField
+
+variable {R : Type*} [Field R] [StarRing R] {m n : Type*} [Fintype m] [Fintype n]
+
+/-- The rank of the difference of two Gram matrices `X * Xᴴ` and `Y * Yᴴ` is at most twice the
+rank of the difference of the factors. -/
+theorem rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le (X Y : Matrix m n R) :
+    (X * Xᴴ - Y * Yᴴ).rank ≤ 2 * (X - Y).rank := by
+  have h : X * Xᴴ - Y * Yᴴ = (X - Y) * Xᴴ + Y * (X - Y)ᴴ := by
+    rw [conjTranspose_sub, Matrix.sub_mul, Matrix.mul_sub]
+    abel
+  rw [h, two_mul]
+  refine (rank_add_le _ _).trans (add_le_add (rank_mul_le_left _ _) ?_)
+  exact (rank_mul_le_right _ _).trans (rank_conjTranspose_of_field _).le
+
+end StarField
 end Matrix
 
 open Matrix in

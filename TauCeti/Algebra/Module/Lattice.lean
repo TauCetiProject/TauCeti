@@ -448,14 +448,8 @@ theorem exists_ne_zero_forall_smul_mem (S : Submodule R V') [S.IsLattice K]
     {M : Submodule R V'} (hM : M.FG) : ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
   classical
   obtain ⟨t, rfl⟩ := hM
-  -- Every vector is `z⁻¹ • y` with `y ∈ S`, since `S` spans over `K`; so `z • v ∈ S`.
-  have h (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
-    have hv : v ∈ span K (S : Set V') := (IsLattice.span_eq_top (A := K) (M := S)).symm ▸ mem_top
-    obtain ⟨y, hy, z, rfl⟩ := (IsLocalization.mem_span_iff (nonZeroDivisors R)).mp hv
-    refine ⟨z, nonZeroDivisors.coe_ne_zero z, ?_⟩
-    rw [← algebraMap_smul K (z : R), smul_smul, IsLocalization.mk'_spec', map_one, one_smul]
-    simpa using hy
-  choose r hr0 hr using h
+  choose r hr0 hr using exists_ne_zero_smul_mem K S
+    (IsLattice.span_eq_top (A := K) (M := S))
   -- The product of these scalars over the generators clears the denominators of their span.
   have hle : span R (t : Set V') ≤ S.comap ((∏ v ∈ t, r v) • LinearMap.id) :=
     span_le.mpr fun v hv ↦ by

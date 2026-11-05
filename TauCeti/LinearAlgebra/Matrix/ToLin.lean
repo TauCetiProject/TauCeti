@@ -43,6 +43,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
+  linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
   multiplication by `x`.
 * `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
@@ -187,6 +189,18 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
       simp [e, Matrix.vecMul_fromBlocks, hl', hr', hrf, hgσ, hgf, hrσ]
 
 end LinearMap
+
+namespace Matrix
+
+/-- The rows of an identity matrix are linearly independent: they are the standard basis
+vectors `Pi.single i 1`. -/
+theorem linearIndependent_row_one {R m : Type*} [Semiring R] [DecidableEq m] :
+    LinearIndependent R (1 : Matrix m m R).row := by
+  convert Pi.linearIndependent_single_one m R using 1
+  ext i j
+  exact one_eq_pi_single
+
+end Matrix
 
 namespace Algebra
 

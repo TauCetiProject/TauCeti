@@ -48,6 +48,8 @@ transform and, at `z = -i t`, to the characteristic function.
   the value there of the remaining factors.
 * `TauCeti.Probability.sum_hypoexponentialCoeff_div_pow`: for nonzero rates, the numbers
   `A ρ k / ρ ^ k` sum to one.
+* `TauCeti.Probability.sum_hypoexponentialCoeff_div_pow_mul_of_injective`: for distinct rates,
+  the terms at each simple pole collapse to its classical product coefficient.
 -/
 
 public section
@@ -194,5 +196,23 @@ theorem sum_hypoexponentialCoeff_div_pow [Nonempty ι] {r : ι → ℝ} (hr : �
   have h := prod_div_add_eq_sum_hypoexponentialCoeff (K := ℝ) r (z := 0) (by simpa using hr)
   simp only [Algebra.algebraMap_self, RingHom.id_apply, zero_add] at h
   rw [← h, prod_eq_one fun i _ ↦ div_self (hr i)]
+
+/-- With pairwise distinct rates, every pole `r i` is simple, so the terms attached to it collapse
+to the single term of order one, with coefficient `∏ j ≠ i, r j / (r j - r i)`. -/
+theorem sum_hypoexponentialCoeff_div_pow_mul_of_injective [DecidableEq ι]
+    {r : ι → ℝ} (hinj : Function.Injective r) {i : ι} (hi : r i ≠ 0) (f : ℕ → ℝ) :
+    ∑ k ∈ Icc 1 #{j | r j = r i}, hypoexponentialCoeff r (r i) k / r i ^ k * f k =
+      (∏ j ∈ univ.erase i, r j / (r j - r i)) * f 1 := by
+  have hfilter : ({j | r j = r i} : Finset ι) = {i} := by
+    ext j
+    simp [hinj.eq_iff]
+  have hne : ({j | r j ≠ r i} : Finset ι) = univ.erase i := by
+    ext j
+    simp [hinj.ne_iff]
+  have hA := hypoexponentialCoeff_card r (r i)
+  rw [hfilter, card_singleton, hne] at hA
+  rw [hfilter, card_singleton, Icc_self, sum_singleton, hA,
+    ← mul_prod_erase univ r (mem_univ i), prod_div_distrib]
+  field_simp
 
 end TauCeti.Probability

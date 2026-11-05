@@ -233,19 +233,19 @@ theorem ofVectorBundleOrientation_toVectorBundleOrientation
 
 /-- The constant orientation of a model with corners. -/
 def model (o : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) :
-    Orientation I H ι := mk (OrientationLift.model (I := I) o hι)
+    Orientation I H ι := mk (OrientationLift.ofHasGroupoid (I := I) (M := H) o hι)
 
 /-- The constant model orientation is represented by its actual constant orientation lift. -/
 theorem model_eq_mk (o : _root_.Orientation ℝ E ι)
     (hι : Fintype.card ι = Module.finrank ℝ E) :
-    model (I := I) o hι = mk (OrientationLift.model (I := I) o hι) := (rfl)
+    model (I := I) o hι = mk (OrientationLift.ofHasGroupoid (I := I) (M := H) o hι) := (rfl)
 
 @[simp]
 theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     (hι : Fintype.card ι = Module.finrank ℝ E) (x : H) :
     orientationAt (model (I := I) o hι) x = o := by
   simp only [model, orientationAt, toVectorBundleOrientation_mk,
-    OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_model]
+    OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_ofHasGroupoid]
   -- The tangent space of the model uses its model-space scalar structure.
   rfl
 

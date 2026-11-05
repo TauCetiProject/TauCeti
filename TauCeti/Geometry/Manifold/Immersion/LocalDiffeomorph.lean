@@ -8,7 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
 /-!
 # Composing immersions with local diffeomorphisms
@@ -38,11 +40,19 @@ are the basic examples of the latter
 * `TauCeti.isImmersionAtOfComplement_comp_isLocalDiffeomorphAt`,
   `TauCeti.isImmersionAtOfComplement_isLocalDiffeomorphAt_comp`: the pointwise normal form with a
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
+* `TauCeti.isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff`,
+  `TauCeti.isImmersionAt_comp_isLocalDiffeomorphAt_iff`: on the source, precomposing with a local
+  diffeomorphism also reflects the pointwise normal form, since a local inverse is again a local
+  diffeomorphism.
 * `TauCeti.isImmersion_comp_isLocalDiffeomorph`, `TauCeti.isImmersion_isLocalDiffeomorphAt_comp`:
   the corresponding statements for immersions.
 * `TauCeti.isSmoothEmbedding_comp_isLocalDiffeomorph`,
   `TauCeti.isSmoothEmbedding_isLocalDiffeomorphAt_comp`: the corresponding statements for smooth
   embeddings.
+* `Manifold.IsImmersion.codRestrict`: an immersion with image in an open subset is an immersion
+  into that open submanifold.
+* `Manifold.IsImmersion.isLocalDiffeomorph`: an immersion of a boundaryless manifold into a
+  manifold modelled on a space of the same finite dimension is a local diffeomorphism.
 
 ## References
 
@@ -138,6 +148,29 @@ theorem isSmoothEmbedding_comp_isLocalDiffeomorph [IsManifold I n M']
     (h : IsSmoothEmbedding I J n f) : IsSmoothEmbedding I J n (f ∘ g) :=
   ⟨isImmersion_comp_isLocalDiffeomorph hg h.isImmersion, h.isEmbedding.comp hge⟩
 
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys the
+immersion normal form at a point: `f ∘ g` is an immersion at `x`, with complement `F`, exactly
+when `f` is one at `g x`. -/
+theorem isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff [IsManifold I n M]
+    [IsManifold I n M'] {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsImmersionAtOfComplement F I J n (f ∘ g) x ↔ IsImmersionAtOfComplement F I J n f (g x) := by
+  refine ⟨fun h ↦ ?_, isImmersionAtOfComplement_comp_isLocalDiffeomorphAt hg⟩
+  -- Near `g x`, `f` is `f ∘ g` composed with the local inverse of `g`, itself a local
+  -- diffeomorphism.
+  rw [← hg.localInverse_left_inv hg.localInverse_mem_target] at h
+  exact (isImmersionAtOfComplement_comp_isLocalDiffeomorphAt
+    hg.localInverse_isLocalDiffeomorphAt h).congr_of_eventuallyEq
+    (hg.localInverse_eventuallyEq_right.fun_comp f)
+
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys
+immersions at a point: `f ∘ g` is an immersion at `x` exactly when `f` is one at `g x`. -/
+theorem isImmersionAt_comp_isLocalDiffeomorphAt_iff [IsManifold I n M] [IsManifold I n M']
+    {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsImmersionAt I J n (f ∘ g) x ↔ IsImmersionAt I J n f (g x) :=
+  ⟨fun h ↦ ((isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff hg).1
+    h.isImmersionAtOfComplement_complement).isImmersionAt,
+    isImmersionAt_comp_isLocalDiffeomorphAt hg⟩
+
 /-! ### Postcomposing with a local diffeomorphism -/
 
 /-- Postcomposing with a local diffeomorphism of the target preserves the immersion normal form at
@@ -216,5 +249,51 @@ theorem isSmoothEmbedding_isLocalDiffeomorphAt_comp [IsManifold J n P] {k : N �
     IsSmoothEmbedding I J n (k ∘ f) :=
   ⟨isImmersion_isLocalDiffeomorphAt_comp hk h.isImmersion,
     hks.comp (h.isEmbedding.codRestrict s fun x => hfs (mem_range_self x))⟩
+
+/-! ### Codomain restriction and the inverse function theorem -/
+
+/-- An immersion with image in an open subset `U` stays an immersion into the open submanifold
+`U`. -/
+theorem _root_.Manifold.IsImmersion.codRestrict [IsManifold J n N] (hf : IsImmersion I J n f)
+    (U : TopologicalSpace.Opens N) (h : ∀ x, f x ∈ U) :
+    IsImmersion I J n fun x ↦ (⟨f x, h x⟩ : U) := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact IsImmersionOfComplement.isImmersion (F := E') fun x ↦ isEmptyElim x
+  have : Nonempty U := ⟨⟨f hM.some, h _⟩⟩
+  -- Read `f` through the inverse of the inclusion `U → N`, a partial diffeomorphism with
+  -- target `U`.
+  let Φ := ((isLocalDiffeomorph_subtype_val (I := J) (n := n) (U := U)).isLocalDiffeomorphOn
+    univ).partialDiffeomorphOfInjOn isOpen_univ Subtype.val_injective.injOn
+  have hk (x : M) : IsLocalDiffeomorphAt J J n Φ.symm (f x) :=
+    Φ.symm.isLocalDiffeomorphAt J J n (by simpa [Φ] using h x)
+  have hcomp : Φ.symm ∘ f = fun x ↦ (⟨f x, h x⟩ : U) := funext fun x ↦
+    (congrArg Φ.symm (by simp [Φ] : f x = Φ ⟨f x, h x⟩)).trans (Φ.left_inv (by simp [Φ]))
+  exact hcomp ▸ isImmersion_isLocalDiffeomorphAt_comp hk hf
+
+section InverseFunctionTheorem
+
+variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+  [FiniteDimensional 𝕂 F] {K : ModelWithCorners 𝕂 F H}
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] [FiniteDimensional 𝕂 F']
+  {K' : ModelWithCorners 𝕂 F' G}
+  {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
+  {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
+  [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
+
+/-- An immersion of a boundaryless manifold into a manifold modelled on a space of the same
+finite dimension is a local diffeomorphism. -/
+theorem _root_.Manifold.IsImmersion.isLocalDiffeomorph {g : X → Y} (hg : IsImmersion K K' n g)
+    (hd : Module.finrank 𝕂 F = Module.finrank 𝕂 F') (hn : 1 ≤ n) :
+    IsLocalDiffeomorph K K' n g := by
+  have := FiniteDimensional.complete 𝕂 F
+  refine isLocalDiffeomorph_of_mfderiv_eq hg.contMDiff hn fun y ↦ ?_
+  let L := (mfderiv K K' g y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (g y))
+  have hinj : Function.Injective L :=
+    (hg.isDiffImmersionAt (by rintro rfl; simp at hn) y).mfderiv_injective
+  exact ⟨(LinearEquiv.ofInjectiveOfFinrankEq L hinj hd).toContinuousLinearEquiv,
+    ContinuousLinearMap.ext fun v ↦
+      LinearMap.congr_fun (LinearEquiv.coe_ofInjectiveOfFinrankEq L hinj hd) v⟩
+
+end InverseFunctionTheorem
 
 end TauCeti

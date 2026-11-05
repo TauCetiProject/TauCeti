@@ -31,6 +31,8 @@ morphism is one.
 * `TauCeti.Almost.BasicSetup.almostZero_isSerreClass`: almost zero modules form a Serre class.
 * `TauCeti.Almost.BasicSetup.isAlmostIso_iff_isoModSerre`: a morphism of `V`-modules is an almost
   isomorphism iff it is an isomorphism modulo almost zero modules.
+* `TauCeti.Almost.BasicSetup.isoModSerre_isInvertedBy_iff`: an exact functor out of `ModuleCat V`
+  inverts the almost isomorphisms iff it kills the almost zero modules.
 * `TauCeti.Almost.BasicSetup.isoModSerre_classical` and
   `TauCeti.Almost.BasicSetup.isoModSerre_zero`: the isomorphisms modulo almost zero modules for
   the classical and the zero setups.
@@ -89,5 +91,14 @@ theorem isoModSerre_zero :
   ext M N f
   simpa only [MorphismProperty.top_apply, iff_true] using
     (isAlmostIso_iff_isoModSerre _ f).mp (isAlmostIso_zero f.hom)
+
+/-- An exact functor from `V`-modules to an abelian category inverts the almost isomorphisms iff
+it kills the almost zero modules. -/
+theorem isoModSerre_isInvertedBy_iff {D : Type*} [Category* D] [Abelian D]
+    (F : ModuleCat.{v} V ⥤ D) [Limits.PreservesFiniteLimits F] [Limits.PreservesFiniteColimits F] :
+    S.almostZero.isoModSerre.IsInvertedBy F ↔
+      ∀ M : ModuleCat.{v} V, S.IsAlmostZero M → Limits.IsZero (F.obj M) := by
+  rw [ObjectProperty.isoModSerre_isInvertedBy_iff]
+  exact forall_congr' fun M ↦ imp_congr (S.almostZero_iff M) Iff.rfl
 
 end TauCeti.Almost.BasicSetup

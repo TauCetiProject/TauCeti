@@ -56,15 +56,15 @@ theorem IsPrimitive.exists_isCoprime_eval {f : BinaryQuadraticForm ℤ} (hf : f.
     {M : ℤ} (hM : M ≠ 0) : ∃ x y : ℤ, IsCoprime x y ∧ IsCoprime (f.eval x y) M := by
   classical
   -- `y` collects the primes `p ∣ M` with `p ∤ a`, and `x` those with `p ∣ a` and `p ∤ c`.
-  set y := ∏ q ∈ (normalizedFactors M).toFinset.filter (fun q ↦ ¬ q ∣ f.a), q
-  set x := ∏ q ∈ (normalizedFactors M).toFinset.filter (fun q ↦ q ∣ f.a ∧ ¬ q ∣ f.c), q
+  set y := ∏ q ∈ (primeFactors M).filter (fun q ↦ ¬ q ∣ f.a), q
+  set x := ∏ q ∈ (primeFactors M).filter (fun q ↦ q ∣ f.a ∧ ¬ q ∣ f.c), q
   have hy {p : ℤ} (hp : Prime p) : p ∣ y ↔ p ∣ M ∧ ¬ p ∣ f.a :=
-    prime_dvd_prod_filter_normalizedFactors_iff hM hp _ fun h ↦ not_congr h.dvd_iff_dvd_left
+    prime_dvd_prod_filter_primeFactors_iff hM hp _ fun h ↦ not_congr h.dvd_iff_dvd_left
   have hx {p : ℤ} (hp : Prime p) : p ∣ x ↔ p ∣ M ∧ p ∣ f.a ∧ ¬ p ∣ f.c :=
-    prime_dvd_prod_filter_normalizedFactors_iff hM hp _ fun h ↦
+    prime_dvd_prod_filter_primeFactors_iff hM hp _ fun h ↦
       and_congr h.dvd_iff_dvd_left (not_congr h.dvd_iff_dvd_left)
   have hy0 : y ≠ 0 := Finset.prod_ne_zero_iff.mpr fun q hq ↦
-    (prime_of_normalized_factor q (Multiset.mem_toFinset.mp (Finset.mem_filter.mp hq).1)).ne_zero
+    (prime_of_normalized_factor q (mem_primeFactors.mp (Finset.mem_filter.mp hq).1)).ne_zero
   refine ⟨x, y, isCoprime_of_prime_dvd (fun h ↦ hy0 h.2) fun p hp hpx hpy ↦
     ((hy hp).mp hpy).2 ((hx hp).mp hpx).2.1, isCoprime_of_prime_dvd (fun h ↦ hM h.2)
     fun p hp hpv hpM ↦ ?_⟩

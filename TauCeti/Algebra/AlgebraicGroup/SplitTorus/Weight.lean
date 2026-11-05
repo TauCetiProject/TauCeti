@@ -35,6 +35,10 @@ faithful, so it is what turns a spanning set of weights into a closed immersion 
 * `TauCeti.SplitTorus.apply_weightCharacter`: evaluation of a weight character under an
   arbitrary multiplicative character.
 * `TauCeti.SplitTorus.charOfPoint_weightCharacter`: the value of a weight character at a point.
+* `TauCeti.SplitTorus.weightCharacter_neg` and
+  `TauCeti.SplitTorus.single_weightCharacter_mul_single_weightCharacter_neg`: the character of the
+  negative exponent vector is the inverse character, and the two multiply to one in the group
+  algebra of the character lattice.
 * `TauCeti.SplitTorus.closure_range_weightCharacter_eq_top_iff`: weights generate the character
   group exactly when they span the lattice of exponent vectors.
 
@@ -61,6 +65,12 @@ monomial `∏ j, x_j ^ μ j`. -/
 noncomputable def weightCharacter (μ : σ → ℤ) : Multiplicative (σ →₀ ℤ) :=
   Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm μ)
 
+/-- The weight character of an exponent vector is the character of the corresponding finitely
+supported exponent vector. -/
+theorem weightCharacter_def (μ : σ → ℤ) :
+    weightCharacter μ = Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm μ) := by
+  rw [weightCharacter]
+
 /-- A finitely supported exponent vector represents its own integral character. -/
 theorem weightCharacter_coe (f : σ →₀ ℤ) :
     weightCharacter ⇑f = Multiplicative.ofAdd f := by
@@ -70,6 +80,10 @@ theorem weightCharacter_coe (f : σ →₀ ℤ) :
 theorem toAdd_weightCharacter (μ : σ → ℤ) (j : σ) :
     Multiplicative.toAdd (weightCharacter μ) j = μ j := by
   simp [weightCharacter]
+
+/-- Integral exponent vectors are determined by their split-torus characters. -/
+theorem weightCharacter_injective : Function.Injective (weightCharacter (σ := σ)) :=
+  Multiplicative.ofAdd.injective.comp Finsupp.equivFunOnFinite.symm.injective
 
 /-- Relabelling the exponent coordinates along `e` relabels the weight character. -/
 theorem toMultiplicative_domCongr_weightCharacter {τ : Type*} [Fintype τ] (e : σ ≃ τ)
@@ -85,6 +99,21 @@ theorem toMultiplicative_domCongr_weightCharacter {τ : Type*} [Fintype τ] (e :
 theorem weightCharacter_eq_one_iff {μ : σ → ℤ} : weightCharacter μ = 1 ↔ μ = 0 := by
   rw [weightCharacter, ofAdd_eq_one, ← Finsupp.equivFunOnFinite_symm_coe 0, Finsupp.coe_zero,
     Equiv.apply_eq_iff_eq]
+
+/-- The weight character of the negative of an exponent vector is the inverse character. -/
+@[simp]
+theorem weightCharacter_neg (μ : σ → ℤ) : weightCharacter (-μ) = (weightCharacter μ)⁻¹ := by
+  apply Multiplicative.toAdd.injective
+  ext j
+  simp
+
+/-- In the group algebra of the character lattice, the characters of an exponent vector and of
+its negative multiply to one. -/
+theorem single_weightCharacter_mul_single_weightCharacter_neg (μ : σ → ℤ) :
+    MonoidAlgebra.single (weightCharacter μ) (1 : R) *
+      MonoidAlgebra.single (weightCharacter (-μ)) 1 = 1 := by
+  rw [MonoidAlgebra.single_mul_single, mul_one, weightCharacter_neg, mul_inv_cancel,
+    MonoidAlgebra.one_def]
 
 omit [Algebra R A] in
 /-- Evaluating a split-torus weight under a multiplicative character gives the corresponding

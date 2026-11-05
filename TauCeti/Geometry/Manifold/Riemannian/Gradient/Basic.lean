@@ -118,6 +118,14 @@ protected theorem _root_.HasCompactSupport.mgradient (hf : HasCompactSupport f) 
   hf.mono' fun _ hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
     (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
 
+/-- Pairing the gradient of a compactly supported function with any vector field gives a
+compactly supported scalar function. No differentiability assumption is needed. -/
+protected theorem _root_.HasCompactSupport.inner_mgradient (hf : HasCompactSupport f)
+    (X : Π x : M, TangentSpace I x) :
+    HasCompactSupport (fun x ↦ inner ℝ (mgradient I f x) (X x)) := by
+  refine (hf.mgradient I).mono' fun x hx ↦ subset_tsupport _ ?_
+  exact fun h ↦ hx ((congrArg (fun v ↦ inner ℝ v (X x)) h).trans (inner_zero_left _))
+
 /-- The gradient has the same length as the differential it represents: the Riesz equivalence is
 an isometry. -/
 theorem norm_mgradient_eq_norm_mvfderiv (f : M → ℝ) (x : M) :
@@ -285,6 +293,17 @@ theorem contMDiff_neg_mgradient_one [IsManifold I 2 M]
   have : IsManifold I (1 + 1) M := by rwa [one_add_one_eq_two]
   contMDiff_neg_mgradient (n := 1) (by rwa [one_add_one_eq_two])
 
+/-- For a `C^n` Riemannian metric, the inner product of the gradients of two `C^{n+1}`
+functions is `C^n`. -/
+theorem contMDiff_inner_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) (hg : ContMDiff I 𝓘(ℝ) (n + 1) g) :
+    ContMDiff I 𝓘(ℝ) n (fun x ↦ inner ℝ (mgradient I f x) (mgradient I g x)) := by
+  -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
+  exact ContMDiff.inner_bundle (IB := I) (F := E)
+    (E := fun x : M ↦ TangentSpace I x) (b := id)
+    (contMDiff_mgradient hf) (contMDiff_mgradient hg)
+
 /-- **The inner product of two gradients is continuous.** For a continuous Riemannian metric, the
 pointwise inner product `⟪grad f, grad g⟫` of two `C¹` functions is a continuous function. -/
 theorem continuous_inner_mgradient
@@ -292,12 +311,8 @@ theorem continuous_inner_mgradient
     (hf : ContMDiff I 𝓘(ℝ) 1 f) (hg : ContMDiff I 𝓘(ℝ) 1 g) :
     Continuous fun x ↦ inner ℝ (mgradient I f x) (mgradient I g x) := by
   have : IsManifold I (0 + 1) M := by rwa [zero_add]
-  -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
-  have hcont : CMDiff 0 fun x ↦ inner ℝ (mgradient I f x) (mgradient I g x) :=
-    ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id)
-      (contMDiff_mgradient (n := 0) (by rwa [zero_add]))
-      (contMDiff_mgradient (n := 0) (by rwa [zero_add]))
-  exact hcont.continuous
+  exact (contMDiff_inner_mgradient (n := 0) (by rwa [zero_add])
+    (by rwa [zero_add])).continuous
 
 /-! ### Comparison with the differential in a chart -/
 

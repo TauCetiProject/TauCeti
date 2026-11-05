@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.Orientation.CoordinateBall
 # The oriented connected sum of connected oriented manifolds
 
 The connected sum `TauCeti.ConnectedSum e₁ e₂` takes its coordinate balls `e₁ : E → M` and
-`e₂ : E → N` as data. For connected, Hausdorff, σ-compact oriented manifolds `M` and `N` without
+`e₂ : E → N` as data. For connected, Hausdorff oriented manifolds `M` and `N` without
 boundary, modelled on a finite-dimensional real inner product space `E`, its diffeomorphism type
 depends on the balls only through their orientation behaviour at the centres
 (`TauCeti.ConnectedSum.nonempty_diffeomorph_of_isOrientationPreservingAt`). This file picks the
@@ -32,7 +32,7 @@ up to diffeomorphism by the two oriented summands alone.
   ball of `N` which, for some orientation of `E`, respectively preserve and reverse the
   orientations at their centres. It is a smooth manifold, Hausdorff when `M` and `N` are, compact
   when they are, and connected when they are and `E` has dimension at least two.
-* **It does not depend on the choice.** For connected, Hausdorff, σ-compact summands, the oriented
+* **It does not depend on the choice.** For connected, Hausdorff summands, the oriented
   connected sum is diffeomorphic to the connected sum along any two balls which, for some
   orientation of `E`, preserve and reverse the orientations at their centres
   (`TauCeti.OrientedConnectedSum.nonempty_diffeomorph_connectedSum`). When that orientation of `E`
@@ -137,7 +137,7 @@ variable [Nontrivial E] [Nonempty M] [Nonempty N] [T1Space M] [T1Space N]
 
 /-- The **oriented connected sum** `M # N` of the oriented manifolds `(M, oM)` and `(N, oN)`: the
 connected sum along a ball of `M` and a ball of `N` which, for some orientation of `E`, preserve
-and reverse the orientations at their centres. For connected, Hausdorff, σ-compact summands it
+and reverse the orientations at their centres. For connected, Hausdorff summands it
 does not depend on the balls, up to diffeomorphism
 (`TauCeti.OrientedConnectedSum.nonempty_diffeomorph_connectedSum`). -/
 def OrientedConnectedSum (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
@@ -196,11 +196,11 @@ theorem connectedSpace [ConnectedSpace M] [ConnectedSpace N] (h : 1 < Module.ran
 
 section Independence
 
-variable [T2Space M] [SigmaCompactSpace M] [PreconnectedSpace M]
-  [T2Space N] [SigmaCompactSpace N] [PreconnectedSpace N]
+variable [T2Space M] [PreconnectedSpace M]
+  [T2Space N] [PreconnectedSpace N]
 
 /-- **The oriented connected sum does not depend on its balls.** Let `M` and `N` be connected,
-Hausdorff, σ-compact smooth manifolds without boundary, oriented by `oM` and `oN`. Let
+Hausdorff smooth manifolds without boundary, oriented by `oM` and `oN`. Let
 `e₁ : E → M` and `e₂ : E → N` be balls, open embeddings and smooth local diffeomorphisms, which for
 some orientation `oE` of `E` respectively preserve and reverse the orientations at `0`. Then the
 oriented connected sum of `M` and `N` is diffeomorphic to the connected sum along `e₁` and
@@ -249,8 +249,8 @@ end OrientedConnectedSum
 
 namespace IsComplementaryBall
 
-variable [T2Space M] [SigmaCompactSpace M] [PreconnectedSpace M]
-  [T2Space N] [SigmaCompactSpace N] [PreconnectedSpace N]
+variable [T2Space M] [PreconnectedSpace M]
+  [T2Space N] [PreconnectedSpace N]
   (oM : Manifold.Orientation 𝓘(ℝ, E) M ι) (oN : Manifold.Orientation 𝓘(ℝ, E) N ι)
 
 /-- **The connected sum with a sphere is trivial.** If `N` is covered by a ball `s` and a
@@ -285,10 +285,10 @@ namespace OrientedConnectedSum
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {n : ℕ} [NeZero n]
   [Fact (finrank ℝ F = n + 1)]
-  {X : Type*} [TopologicalSpace X] [T2Space X] [SigmaCompactSpace X] [PreconnectedSpace X]
+  {X : Type*} [TopologicalSpace X] [T2Space X] [PreconnectedSpace X]
   [Nonempty X] [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] [IsManifold (𝓡 n) ∞ X]
 
-/-- **`X # Sⁿ ≃ X`**: the oriented connected sum of a connected, Hausdorff, σ-compact smooth
+/-- **`X # Sⁿ ≃ X`**: the oriented connected sum of a connected, Hausdorff smooth
 `n`-manifold `X`, for `n ≥ 1`, with the unit sphere `Sⁿ`, is diffeomorphic to `X`, for all
 orientations of `X` and of the sphere. The sphere is nonempty because `F` has dimension `n + 1`,
 so this needs no nonemptiness hypothesis. -/

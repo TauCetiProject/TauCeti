@@ -42,6 +42,14 @@ atlas carries the canonical orientation of each tangent space to that of the mod
 (`TauCeti.map_orientationAt_complexManifoldOrientation`), and this property, required of the
 preferred charts only, characterizes it (`TauCeti.eq_complexManifoldOrientation_iff`).
 
+Integration of top-degree forms uses orientation lifts indexed by the form degree, which is the
+real dimension `finrank ℝ E`. Reindexing the canonical
+orientation of the model along `2 * finrank ℂ E = finrank ℝ E` gives the canonical orientation
+lift `TauCeti.complexOrientationLift E M`, indexed by `Fin (finrank ℝ E)`, all of whose chart
+signs are `1`: holomorphic coordinate changes have positive real Jacobian determinant. It is the
+only lift with this model orientation representing the canonical orientation
+(`TauCeti.eq_complexOrientationLift_iff`).
+
 Since a local biholomorphism pulls holomorphic charts back to holomorphic charts, the canonical
 orientation is natural: it is the pullback of the canonical orientation of the target along any
 local biholomorphism. Applied to the inclusion of an open subset, this says that the canonical
@@ -67,6 +75,11 @@ input is `TauCeti.prod_complexOrientation`.
 * `TauCeti.complexManifoldOrientation`: the canonical orientation of a complex manifold.
 * `TauCeti.orientationAt_complexManifoldOrientation`: its tangent orientation at a point, read
   through any holomorphic chart.
+* `TauCeti.complexOrientationLift`: the canonical orientation as a lift indexed by
+  `Fin (finrank ℝ E)`, with all chart signs `1` (`TauCeti.complexOrientationLift_sign`).
+* `TauCeti.orientationAt_complexOrientationLift` and `TauCeti.eq_complexOrientationLift_iff`: it
+  represents the reindexed canonical orientation, and is characterized by this and its model
+  orientation.
 * `IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOrientation`,
   `Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation`: local biholomorphisms, and in
   particular biholomorphisms, preserve canonical orientations.
@@ -264,6 +277,77 @@ theorem eq_complexManifoldOrientation_iff
 /-- A complex manifold is orientable as a real manifold. -/
 instance orientable_of_complex : Orientable 𝓘(ℝ, E) M :=
   Orientable.of_hasGroupoid
+
+/-- At every point `x`, the canonical orientation of the tangent space, read in the preferred
+chart at `x`, is the canonical real orientation of the model. -/
+@[simp]
+theorem orientationAt_complexManifoldOrientation_eq_complexOrientation (x : M) :
+    (complexManifoldOrientation E M).orientationAt x = complexOrientation E :=
+  (isOrientedAtlas_maximalAtlas_complex 1).orientationAt_orientation _ _
+    (IsManifold.chart_mem_maximalAtlas x)
+
+/-! ### The orientation lift indexed by the real dimension -/
+
+variable (E M) in
+/-- The canonical orientation of a complex manifold as an orientation lift indexed by the real
+dimension `Fin (finrank ℝ E)`. Its model orientation is the canonical real orientation of `E`,
+reindexed along `2 * finrank ℂ E = finrank ℝ E`, and all its chart signs are `1`, since
+holomorphic coordinate changes preserve orientation. It represents the canonical orientation
+(`TauCeti.orientationAt_complexOrientationLift`). -/
+def complexOrientationLift : Manifold.OrientationLift 𝓘(ℝ, E) M (Fin (finrank ℝ E)) :=
+  Manifold.OrientationLift.ofHasGroupoid
+    (Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm) (complexOrientation E))
+    (Fintype.card_fin _)
+
+@[simp]
+theorem complexOrientationLift_modelOrientation :
+    (complexOrientationLift E M).modelOrientation =
+      Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm)
+        (complexOrientation E) := by
+  simp [complexOrientationLift]
+
+/-- Every chart sign of the canonical orientation lift of a complex manifold is `1`. -/
+@[simp]
+theorem complexOrientationLift_sign (α : M) (x : (chartAt E α).source) :
+    (complexOrientationLift E M).sign α x = 1 := by
+  simp [complexOrientationLift]
+
+/-- The canonical orientation lift represents the canonical orientation of a complex manifold: at
+every point, its tangent orientation, read in the preferred chart, is the canonical real
+orientation of the model reindexed by the real dimension, which is also the canonical tangent
+orientation there (`TauCeti.orientationAt_complexManifoldOrientation_eq_complexOrientation`). -/
+@[simp]
+theorem orientationAt_complexOrientationLift (x : M) :
+    (complexOrientationLift E M).orientationAt x =
+      Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm)
+        (complexOrientation E) :=
+  Manifold.OrientationLift.orientationAt_ofHasGroupoid _ _ x
+
+/-- An orientation lift of a complex manifold, indexed by the real dimension, is the canonical
+lift exactly when its model orientation is the reindexed canonical real orientation of the model
+and its tangent orientations are the reindexed canonical ones. In particular, every lift with
+these two properties has all chart signs `1`. -/
+theorem eq_complexOrientationLift_iff
+    (l : Manifold.OrientationLift 𝓘(ℝ, E) M (Fin (finrank ℝ E))) :
+    l = complexOrientationLift E M ↔
+      l.modelOrientation = Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm)
+          (complexOrientation E) ∧
+        ∀ x, l.orientationAt x = Orientation.reindex ℝ _
+          (finCongr (finrank_real_of_complex E).symm)
+          ((complexManifoldOrientation E M).orientationAt x) := by
+  constructor
+  · rintro rfl
+    refine ⟨complexOrientationLift_modelOrientation, fun x ↦ ?_⟩
+    rw [orientationAt_complexManifoldOrientation_eq_complexOrientation]
+    exact orientationAt_complexOrientationLift x
+  · rintro ⟨hm, h⟩
+    exact Manifold.OrientationLift.ext_of_orientationAt
+      (hm.trans complexOrientationLift_modelOrientation.symm) fun x ↦
+      (h x).trans (by
+        rw [orientationAt_complexOrientationLift,
+          orientationAt_complexManifoldOrientation_eq_complexOrientation]
+        -- The tangent space at `x` is the model space, with its own scalar structure.
+        rfl)
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℂ, E) 1 N]
 

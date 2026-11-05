@@ -32,6 +32,8 @@ joining two sign sets whose cardinalities have different parities.
   the two half-spin summands.
 * `TauCeti.TypeDSpinCarrier.rootIntMatrix_eq_zero_of_weight_ne`: the integral matrix vanishes off
   its signed simple-root weight difference.
+* `TauCeti.TypeDSpinCarrier.lie_rootIntMatrix_inl_inr`: the opposite-root bracket is the diagonal
+  matrix of simple-coroot weights.
 
 ## References
 
@@ -50,6 +52,8 @@ open TauCeti.UniversalEnvelopingAlgebra
 namespace TauCeti.TypeDSpinCarrier
 
 universe v
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (n : ℕ) (hn : 4 ≤ n)
 
@@ -138,5 +142,58 @@ theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin n ⊕ Fin n) {a b : Fin (dim
       (rep_kostantForm_mem_lattice n hn) k (TypeDStd.lie_serreH_serreRootGenerator n k)
       (isCartanWeightVector_latticeBasis n hn b))
     fun h ↦ hab (sub_eq_iff_eq_add'.mpr h)
+
+private theorem rootOperator_commutator_apply (i : Fin n) (a : Fin (dimension n)) :
+    ⁅kostantRootOperator (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n hn) (.inl i),
+      kostantRootOperator (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n hn) (.inr i)⁆ (latticeBasis n a) =
+      basisWeight n a i • latticeBasis n a := by
+  apply Subtype.ext
+  have h := congrArg (fun f ↦ f (latticeBasis n a :
+      ExteriorAlgebra ℚ (polarization n).W))
+    (isSl2Triple_rep_rootGenerator n hn i).lie_e_f
+  rw [(isCartanWeightVector_iff (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn)).mp
+    (isCartanWeightVector_latticeBasis n hn a) i] at h
+  simpa only [LinearMap.sub_apply, mul_apply_eq_comp,
+    AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
+    AddSubgroupClass.coe_zsmul, Ring.lie_def, Int.cast_smul_eq_zsmul] using h
+
+/-- The bracket of the integral opposite simple-root matrices is the diagonal matrix of
+simple-coroot weights, before any specialization of the coefficient ring. -/
+theorem lie_rootIntMatrix_inl_inr (i : Fin n) :
+    ⁅rootIntMatrix n hn (.inl i), rootIntMatrix n hn (.inr i)⁆ =
+      Matrix.diagonal (fun a ↦ basisWeight n a i) := by
+  let E : Module.End ℤ (lattice n).toAddSubgroup := kostantRootOperator
+    (TauCeti.serreRootGenerator (CartanMatrix.D n))
+    (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n hn) (.inl i)
+  let F : Module.End ℤ (lattice n).toAddSubgroup := kostantRootOperator
+    (TauCeti.serreRootGenerator (CartanMatrix.D n))
+    (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n hn) (.inr i)
+  let m := LinearMap.toMatrix (latticeBasis n) (latticeBasis n)
+  trans m (E * F - F * E)
+  · calc
+      _ = m E * m F - m F * m E := congrArg₂ (fun X Y ↦ X * Y - Y * X)
+        (rootIntMatrix_eq_toMatrix n hn (.inl i))
+        (rootIntMatrix_eq_toMatrix n hn (.inr i))
+      _ = m (E * F) - m (F * E) := congrArg₂ (fun X Y ↦ X - Y)
+        (LinearMap.toMatrix_mul (latticeBasis n) E F).symm
+        (LinearMap.toMatrix_mul (latticeBasis n) F E).symm
+      _ = _ := (m.map_sub (E * F) (F * E)).symm
+  ext a b
+  calc
+    _ = (latticeBasis n).repr ((E * F - F * E) (latticeBasis n b)) a :=
+      LinearMap.toMatrix_apply (latticeBasis n) (latticeBasis n) (E * F - F * E) a b
+    _ = (latticeBasis n).repr (basisWeight n b i • latticeBasis n b) a :=
+      congrArg (fun v ↦ (latticeBasis n).repr v a) (rootOperator_commutator_apply n hn i b)
+    _ = _ := by
+      rw [map_smul, Module.Basis.repr_self]
+      simp only [Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul,
+        Matrix.diagonal_apply, mul_ite, mul_one, mul_zero]
+      split_ifs <;> grind
 
 end TauCeti.TypeDSpinCarrier
