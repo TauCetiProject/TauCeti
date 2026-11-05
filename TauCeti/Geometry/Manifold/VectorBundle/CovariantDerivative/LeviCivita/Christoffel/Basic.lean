@@ -333,17 +333,16 @@ theorem hasFDerivAt_repr_christoffelSecondKind {ι : Type*} (b : Module.Basis ι
   exact (b.coord k).toContinuousLinearMap.hasFDerivAt.comp x
     ((hΓ.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)).hasFDerivAt
 
-/-- Near a point where a `C¹` field `g` of bilinear forms is nondegenerate, lowering the index of
-the Christoffel symbols of the second kind gives the first-kind formula in terms of the derivatives
-of the scalar functions `y ↦ g y u v`. -/
-theorem eventuallyEq_apply_christoffelSecondKind (hg : ContDiffAt ℝ 1 g x)
+/-- Near a point where a field `g` of bilinear forms is differentiable on a neighbourhood and
+nondegenerate, lowering the index of the Christoffel symbols of the second kind gives the
+first-kind formula in terms of the derivatives of the scalar functions `y ↦ g y u v`. -/
+theorem eventuallyEq_apply_christoffelSecondKind (hg : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y)
     (hnd : (g x).toBilinForm.Nondegenerate) (u v w : E) :
     (fun y ↦ g y (christoffelSecondKind g y u v) w) =ᶠ[𝓝 x]
       fun y ↦ 2⁻¹ * (fderiv ℝ (fun y' ↦ g y' v w) y u + fderiv ℝ (fun y' ↦ g y' u w) y v -
         fderiv ℝ (fun y' ↦ g y' u v) y w) := by
-  filter_upwards [hg.continuousAt.eventually_toBilinForm_nondegenerate hnd,
-    hg.eventually (by simp)] with y hnd' hy
-  have hy' := hy.differentiableAt one_ne_zero
+  filter_upwards [hg.self_of_nhds.continuousAt.eventually_toBilinForm_nondegenerate hnd,
+    hg] with y hnd' hy'
   rw [apply_christoffelSecondKind hnd', christoffelFirstKind_apply,
     fderiv_clm_apply_const_apply₂ hy', fderiv_clm_apply_const_apply₂ hy',
     fderiv_clm_apply_const_apply₂ hy']

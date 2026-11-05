@@ -265,7 +265,9 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
       (m := 1) (by norm_num)).differentiableAt one_ne_zero).clm_apply (differentiableAt_const u)
   -- Lowering the index of `Γ` gives the Christoffel symbols of the first kind near `z`.
   have hlow (l : ι) :=
-    eventuallyEq_apply_christoffelSecondKind (hG.of_le one_le_two) hnd (b i) (b j) (b l)
+    eventuallyEq_apply_christoffelSecondKind
+      ((hG.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by norm_num)) hnd
+      (b i) (b j) (b l)
   -- Differentiating that identity in the direction `b m` gives the pairings of `∂ₘ Γ(b i, b j)`.
   have hpair (l : ι) : G z (fderiv ℝ (christoffelSecondKind G) z (b m) (b i) (b j)) (b l) =
       2⁻¹ * (fderiv ℝ (fun y ↦ fderiv ℝ (fun y' ↦ G y' (b j) (b l)) y (b i)) z (b m) +
