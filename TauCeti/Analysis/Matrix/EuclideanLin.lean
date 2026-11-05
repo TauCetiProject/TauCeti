@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # The map of a matrix on Euclidean space
@@ -36,6 +37,8 @@ A square matrix is unitary exactly when its continuous linear map preserves the 
 
 * `Matrix.inner_toEuclideanLin_toEuclideanLin` — the quadratic form of `B` at `A x` is the
   quadratic form of `Aᴴ * B * A` at `x`;
+* `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the quadratic form of `A` at a vector extended
+  by zero is the quadratic form of the principal submatrix at the original vector;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
@@ -62,6 +65,24 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
       ⟪x, (Aᴴ * B * A).toEuclideanLin x⟫_𝕜 := by
   rw [← LinearMap.adjoint_inner_right, ← toEuclideanLin_conjTranspose_eq_adjoint]
   simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
+
+/-- The quadratic form of `A` at a vector extended by zero along `f` is the quadratic form of the
+principal submatrix `A.submatrix f f` at the original vector. -/
+theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι ↪ κ)
+    (x : EuclideanSpace 𝕜 ι) :
+    ⟪A.toEuclideanLin (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x),
+        LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x⟫_𝕜 =
+      ⟪(A.submatrix f f).toEuclideanLin x, x⟫_𝕜 := by
+  have hmul : ∀ b, (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp) b =
+      ∑ c, A b (f c) * x c := fun b => by
+    simpa [mulVec, dotProduct] using LinearIsometry.sum_mul_piLpExtendByZero f x (A b)
+  simp only [PiLp.inner_apply, toLpLin_apply, RCLike.inner_apply]
+  conv_lhs => enter [2, b]; rw [mul_comm]
+  rw [LinearIsometry.sum_mul_piLpExtendByZero f x (fun b => (starRingEnd 𝕜)
+    (A.mulVec (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f x).ofLp b))]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [mul_comm, hmul (f a)]
+  simp [mulVec, dotProduct]
 
 omit [Fintype κ] [DecidableEq κ] in
 /-- The rank of a matrix is the dimension of the range of the linear map it induces on Euclidean
