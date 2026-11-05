@@ -59,6 +59,8 @@ at most `B₀ + B₁ + B_∞`, uniformly in `R`.
 * `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le`: the
   integrated curvature of the pair-of-pants perturbation along any map is at most the sum of
   bounds for the three end Hamiltonians.
+* `SymplecticForm.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt`: the curvature
+  vanishes where the perturbation is cylindrical, beyond the collars `1 ≤ ±s ≤ 2` of the ends.
 * `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`: the energy
   identity on the truncated pair of pants.
 * `SymplecticForm.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_le`: the
@@ -412,6 +414,44 @@ private theorem det_fderiv_endChart_nonneg (q : Puncture) (z : ℝ × ℝ) :
   simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
     Complex.normSq_nonneg]
 
+/-- The end chart is a local diffeomorphism: its Jacobian determinant is positive. -/
+private theorem det_fderiv_endChart_pos (q : Puncture) (z : ℝ × ℝ) :
+    0 < (fderiv ℝ (endChart q) z).det := by
+  rw [(hasFDerivAt_endChart q z).fderiv]
+  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
+    Complex.normSq_pos, q.deriv_cylindricalEndLift_ne_zero]
+
+/-- **The curvature vanishes on the cylindrical parts of the ends.** At a point of `S` where the
+signed longitudinal coordinate of some end is greater than `2`, the perturbation is `H_q(t) dt` in
+the coordinates of that end, and its curvature vanishes. Together with
+`hamiltonianCurvature_pairOfPantsPerturbation_eq_zero` on the core, this confines the curvature to
+the collars `1 ≤ ±s ≤ 2` of the three ends, a compact part of `S`. -/
+theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
+    {q : Puncture} (hq : 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re)
+    (x : V) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  obtain ⟨w, hw, rfl⟩ := mem_image_endChart hz (q := q) (by linarith)
+  have hw₂ : 2 < q.endSign * w.1 := by rwa [re_endCoord_endChart] at hq
+  -- In the coordinates of the end the curvature is `±β'(±s - 1) H_q(t)`, and `β' = 0` there.
+  have key := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := w)
+    (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (x := x) ((contDiff_endChart q).contDiffAt)
+    (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz _ 1)
+    (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz _ Complex.I)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hz _ 1)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hz _ Complex.I)
+  have hβ : deriv smoothTransition (q.endSign * w.1 - 1) = 0 :=
+    smoothTransition.deriv_of_one_lt (by linarith)
+  rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs (by linarith) x, hβ, mul_zero,
+    zero_mul] at key
+  exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_endChart_pos q w).ne'
+
 /-- The end pieces lie in the truncation. -/
 private theorem image_endPiece_subset (q : Puncture) {R : ℝ} (hR : 1 ≤ R) :
     endChart q '' endPiece q R ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
@@ -618,8 +658,8 @@ private theorem integral_floerEnergyDensity_image_endPiece (ω : SymplecticForm 
 
 /-- The Floer energy density, the symplectic area density and the curvature of the pair-of-pants
 perturbation, along a map that is `C¹` on `S`, are integrable over every truncation. -/
-private theorem integrableOn_truncation (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
+theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 1 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1}) (R : ℝ) :
     IntegrableOn (ω.floerEnergyDensity
@@ -682,7 +722,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   set A : Puncture → Set (ℝ × ℝ) := fun q => endChart q '' endPiece q R
   set C := T \ ⋃ q, A q
-  obtain ⟨hE, harea, hcurv⟩ := integrableOn_truncation ω hH hHs hu R
+  obtain ⟨hE, harea, hcurv⟩ := integrableOn_truncation_pairOfPantsPerturbation ω hH hHs hu R
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
   -- end pieces.
   have hTm : MeasurableSet T :=
