@@ -27,7 +27,9 @@ When `α` is a contact form on a manifold of dimension `2 n + 1`, the tangent im
 immersion is an isotropic subspace of the symplectic vector space `(ξ_(f x), dα)`, so its source
 has dimension at most `n` (`TauCeti.SmoothForm.IsIsotropicMap.two_mul_finrank_add_one_le`). A
 **Legendrian immersion** (`TauCeti.SmoothForm.IsLegendrianImmersion`) is a smooth isotropic
-immersion from a manifold of this maximal dimension `n`. Its image may have self-intersections.
+immersion from a manifold of this maximal dimension `n`. Its image may have self-intersections. A
+**Legendrian embedding** (`TauCeti.SmoothForm.IsLegendrianEmbedding`) is a Legendrian immersion
+which is moreover a topological embedding, and parametrizes an embedded Legendrian submanifold.
 
 The basic examples live in the contactization `(W × ℝ, dz - θ)` of an exact symplectic manifold
 `(W, -dθ)`. A map `y ↦ (g y, h y)` into it is isotropic exactly when `g^* θ = dh`
@@ -52,11 +54,13 @@ by `β` is then an exact Lagrangian graph
 * `TauCeti.SmoothForm.isIsotropicMap_diffeomorph_comp_iff`: transport by contactomorphisms.
 * `TauCeti.SmoothForm.IsIsotropicMap.eval₂_mextDerivₗ_mfderiv`: `dα` vanishes on tangent images.
 * `TauCeti.SmoothForm.IsIsotropicMap.two_mul_finrank_add_one_le`: the dimension bound.
-* `TauCeti.SmoothForm.IsLegendrianImmersion`: Legendrian immersions.
+* `TauCeti.SmoothForm.IsLegendrianImmersion`, `TauCeti.SmoothForm.IsLegendrianEmbedding`:
+  Legendrian immersions and embeddings.
 * `TauCeti.SmoothForm.isLegendrianImmersion_contactization_iff`: Legendrian lifts of exact
   Lagrangian immersions.
-* `TauCeti.CotangentBundle.oneJet`, `TauCeti.CotangentBundle.isLegendrianImmersion_oneJet`: one-jets
-  of functions are Legendrian.
+* `TauCeti.CotangentBundle.oneJet`, `TauCeti.CotangentBundle.isLegendrianImmersion_oneJet`,
+  `TauCeti.CotangentBundle.isLegendrianEmbedding_oneJet`: one-jets of functions are Legendrian
+  embeddings.
 
 ## References
 
@@ -210,6 +214,24 @@ structure IsLegendrianImmersion (α : SmoothForm I M ℝ 1) (f : N → M) : Prop
   `2 n + 1`. -/
   two_mul_finrank_add_one : 2 * finrank ℝ E' + 1 = finrank ℝ E
 
+variable (J) in
+/-- A **Legendrian embedding** for `α` is a Legendrian immersion which is moreover a topological
+embedding. It parametrizes an embedded Legendrian submanifold, without self-intersections. -/
+structure IsLegendrianEmbedding (α : SmoothForm I M ℝ 1) (f : N → M) : Prop
+    extends α.IsLegendrianImmersion J f where
+  /-- A Legendrian embedding is a homeomorphism onto its image. -/
+  isEmbedding : Topology.IsEmbedding f
+
+/-- A Legendrian embedding is a smooth embedding in Mathlib's sense. -/
+theorem IsLegendrianEmbedding.isSmoothEmbedding (h : α.IsLegendrianEmbedding J f) :
+    IsSmoothEmbedding J I ∞ f :=
+  ⟨h.isImmersion, h.isEmbedding⟩
+
+/-- A Legendrian embedding is a Legendrian immersion which is a topological embedding. -/
+theorem isLegendrianEmbedding_iff :
+    α.IsLegendrianEmbedding J f ↔ α.IsLegendrianImmersion J f ∧ Topology.IsEmbedding f :=
+  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
 /-! ### Legendrian lifts in a contactization -/
 
 section Contactization
@@ -356,6 +378,18 @@ theorem isLegendrianImmersion_oneJet {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ)
         mextDeriv_ofFunction_apply, mvfderiv_apply_eq_mfderiv_apply]
     rw [oneJet_apply, hx]
   exact hj ▸ (isLegendrianImmersion_section_iff dg).2 ⟨hg, hdg⟩
+
+/-- **One-jets are Legendrian embeddings.** The one-jet `j¹g` of a smooth function is a Legendrian
+embedding into `J¹M`: the projection `(p, z) ↦ π p` is a continuous left inverse, so the image of
+`j¹g` has no self-intersections. -/
+theorem isLegendrianEmbedding_oneJet {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
+    (liouvilleForm I M).contactization.IsLegendrianEmbedding I (oneJet g) :=
+  { isLegendrianImmersion_oneJet hg with
+    isEmbedding := Function.LeftInverse.isEmbedding (f := TotalSpace.proj ∘ Prod.fst)
+      (fun _ ↦ rfl)
+      ((FiberBundle.continuous_proj (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)).comp
+        continuous_fst)
+      (isLegendrianImmersion_oneJet hg).isImmersion.contMDiff.continuous }
 
 end CotangentBundle
 
