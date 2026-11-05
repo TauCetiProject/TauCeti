@@ -88,12 +88,20 @@ theorem Scheme.Hom.QuasiFiniteAt.finite_residueField {X Y : Scheme.{u}} {f : X �
   algebraize [(f.stalkMap x).hom]
   have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
     inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
+  -- The scheme residue fields are the residue fields of the stalks, and the two algebra
+  -- structures agree on the surjection from the stalk, as in Mathlib.
+  suffices h : Module.Finite
+      (IsLocalRing.ResidueField <| Y.presheaf.stalk (f x))
+      (IsLocalRing.ResidueField <| X.presheaf.stalk x) by
+    convert! h
+    congr 1
+    refine Algebra.algebra_ext _ _ fun r ↦ ?_
+    obtain ⟨r, rfl⟩ := IsLocalRing.residue_surjective r
+    rfl
   have : Algebra.QuasiFinite (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
     rw [← RingHom.quasiFinite_algebraMap, RingHom.algebraMap_toAlgebra]
     exact hx
-  exact RingHom.finite_algebraMap.mpr (inferInstance : Module.Finite
-    (IsLocalRing.ResidueField <| Y.presheaf.stalk (f x))
-    (IsLocalRing.ResidueField <| X.presheaf.stalk x))
+  infer_instance
 
 /-- **Residue field extensions of a locally quasi-finite morphism are finite.** If `f` is locally
 quasi-finite, then `κ(x)` is a finite extension of `κ(f x)` at every point `x`. Stacks,
