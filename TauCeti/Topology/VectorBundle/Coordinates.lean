@@ -247,24 +247,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [FiberBundle F' W] [VectorBundle 𝕜 F' W]
   {x₀ x : B} {y₀ y : B'} {ϕ : V x →L[𝕜] W y}
 
-/-- In trivializations whose base sets contain the two fibre base points, the coordinate
-expression of a continuous linear map between fibres reads a model vector as a fibre vector of
-`V`, applies the map, and reads the result in the trivialization of `W`. -/
-theorem inCoordinates_apply_of_mem (hx : x ∈ (trivializationAt F V x₀).baseSet)
-    (hy : y ∈ (trivializationAt F' W y₀).baseSet) (v : F) :
-    inCoordinates F V F' W x₀ x y₀ y ϕ v =
-      (trivializationAt F' W y₀ ⟨y, ϕ ((trivializationAt F V x₀).symm x v)⟩).2 := by
-  rw [inCoordinates, comp_apply, comp_apply, Trivialization.symmL_apply _ hx,
-    (trivializationAt F' W y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy]
-
 /-- In trivializations whose base sets contain the two fibre base points, a model vector lies in
 the kernel of the coordinate expression of a fibre map exactly when the corresponding fibre
 vector lies in the kernel of the map. -/
 theorem mem_ker_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).baseSet)
     (hy : y ∈ (trivializationAt F' W y₀).baseSet) (v : F) :
     v ∈ (inCoordinates F V F' W x₀ x y₀ y ϕ).ker ↔ (trivializationAt F V x₀).symm x v ∈ ϕ.ker := by
-  rw [LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, coe_coe, inCoordinates_apply_of_mem hx hy,
-    ← Trivialization.linearEquivAt_apply (R := 𝕜) _ _ hy, LinearEquiv.map_eq_zero_iff]
+  rw [inCoordinates_eq hx hy, LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, comp_apply,
+    comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.map_eq_zero_iff,
+    ContinuousLinearEquiv.coe_coe, Trivialization.continuousLinearEquivAt_symm_apply, coe_coe]
 
 /-- In trivializations whose base sets contain the two fibre base points, a model vector lies in
 the range of the coordinate expression of a fibre map exactly when the corresponding fibre vector
@@ -273,28 +264,25 @@ theorem mem_range_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).base
     (hy : y ∈ (trivializationAt F' W y₀).baseSet) (w : F') :
     w ∈ (inCoordinates F V F' W x₀ x y₀ y ϕ).range ↔
       (trivializationAt F' W y₀).symm y w ∈ ϕ.range := by
-  constructor
-  · rintro ⟨v, rfl⟩
-    refine ⟨(trivializationAt F V x₀).symm x v, ?_⟩
-    simp only [coe_coe]
-    rw [inCoordinates_apply_of_mem hx hy, Trivialization.symm_apply_apply_mk _ hy]
-  · rintro ⟨u, hu⟩
-    refine ⟨(trivializationAt F V x₀ ⟨x, u⟩).2, ?_⟩
-    simp only [coe_coe] at hu ⊢
-    rw [inCoordinates_apply_of_mem hx hy, Trivialization.symm_apply_apply_mk _ hx, hu,
-      Trivialization.apply_mk_symm _ hy]
+  rw [inCoordinates_eq hx hy, ← Trivialization.continuousLinearEquivAt_symm_apply (R := 𝕜) _ _ hy]
+  simp only [LinearMap.mem_range, coe_coe, comp_apply, ContinuousLinearEquiv.coe_coe,
+    ← ContinuousLinearEquiv.eq_symm_apply]
+  -- Reindex the witness through the invertible map from the model fibre to the fibre of `V`.
+  exact (((trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx).symm.surjective.exists
+    (p := fun u ↦ ϕ u = ((trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy).symm w)).symm
 
 /-- In trivializations whose base sets contain the two fibre base points, the coordinate
 expression of a fibre map has the rank of the map. -/
 theorem finrank_range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
     (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
     Module.finrank 𝕜 (inCoordinates F V F' W x₀ x y₀ y ϕ).range = Module.finrank 𝕜 ϕ.range := by
-  let L := (trivializationAt F' W y₀).linearEquivAt 𝕜 y hy
-  have : (inCoordinates F V F' W x₀ x y₀ y ϕ).range = ϕ.range.map L.toLinearMap := by
-    ext w
-    rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv,
-      Trivialization.linearEquivAt_symm_apply]
-  rw [this, LinearEquiv.finrank_map_eq]
+  let Lx := (trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx
+  let Ly := (trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy
+  rw [inCoordinates_eq hx hy, toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
+    LinearMap.range_comp_of_range_eq_top _
+      ((LinearMap.range_eq_top (f := ((Lx.symm : F →L[𝕜] V x) : F →ₗ[𝕜] V x))).mpr
+        Lx.symm.surjective)]
+  exact LinearEquiv.finrank_map_eq Ly.toLinearEquiv _
 
 end KerRange
 

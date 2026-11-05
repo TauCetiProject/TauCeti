@@ -58,7 +58,7 @@ theorem exists_continuousOn_ker_parametrization (hA : ContinuousOn A s) (hs : Is
     ∃ U ⊆ s, IsOpen U ∧ x₀ ∈ U ∧ ∃ κ : X → (A x₀).ker →L[𝕜] E, ContinuousOn κ U ∧
       ∀ x ∈ U, Injective (κ x) ∧ (κ x).range = (A x).ker := by
   have := FiniteDimensional.complete 𝕜 E
-  obtain ⟨p, q, V, hV, hx₀V, hinv⟩ :=
+  obtain ⟨p, -, q, -, V, hV, hx₀V, hinv⟩ :=
     exists_isOpen_isInvertible_prod_comp (hA.continuousAt (hs.mem_nhds hx₀))
   refine ⟨s ∩ V, inter_subset_left, hs.inter hV, ⟨hx₀, hx₀V⟩,
     fun x ↦ (p ∘L A x).kerSection q, fun x hx ↦ ?_, fun x hx ↦
@@ -87,7 +87,7 @@ theorem exists_continuousOn_range_parametrization (hA : ContinuousOn A s) (hs : 
     ∃ U ⊆ s, IsOpen U ∧ x₀ ∈ U ∧ ∃ ρ : X → (A x₀).range →L[𝕜] F, ContinuousOn ρ U ∧
       ∀ x ∈ U, Injective (ρ x) ∧ (ρ x).range = (A x).range := by
   have := FiniteDimensional.complete 𝕜 E
-  obtain ⟨p, q, V, hV, hx₀V, hinv⟩ :=
+  obtain ⟨p, -, q, -, V, hV, hx₀V, hinv⟩ :=
     exists_isOpen_isInvertible_prod_comp (hA.continuousAt (hs.mem_nhds hx₀))
   -- The section `σ x` of `p ∘ A x` with values in `ker q`, followed by `A x`.
   let σ : X → (A x₀).range →L[𝕜] E := fun x ↦

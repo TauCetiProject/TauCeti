@@ -28,12 +28,12 @@ ranges move continuously by `ContinuousLinearMap.exists_continuousOn_ker_paramet
 `ContinuousLinearMap.exists_continuousOn_range_parametrization`.
 
 A fibrewise surjective map has constant rank `finrank F₂`, and a fibrewise injective map has
-constant rank `finrank F₁`. So the kernel of a fibrewise surjection and the image of a fibrewise
-injection are subbundles (`TauCeti.hasLocalSubbundleFrames_ker_of_surjective` and
-`TauCeti.hasLocalSubbundleFrames_range_of_injective`). In a short exact sequence of bundles these
-are the same family of subspaces, the image of the first map and the kernel of the second. A map
-whose rank is only locally constant has these frames on each clopen set where the rank takes a
-fixed value, by restricting the bundles to that set.
+constant rank `finrank F₁`. So the kernels of a fibrewise surjection and the images of a fibrewise
+injection have continuous local frames (`TauCeti.hasLocalSubbundleFrames_ker_of_surjective` and
+`TauCeti.hasLocalSubbundleFrames_range_of_injective`), and over `ℝ` or `ℂ` they form subbundles.
+In a short exact sequence of bundles these are the same family of subspaces, the image of the first
+map and the kernel of the second. A map whose rank is only locally constant has these frames on
+each clopen set where the rank takes a fixed value, by restricting the bundles to that set.
 
 ## References
 
@@ -115,8 +115,9 @@ theorem hasLocalSubbundleFrames_range
     (finBasisOfFinrankEq 𝕜 _ hdim) (fun x hx ↦ (hρU x hx).1) fun x hx w ↦ by
       rw [(hρU x hx).2, ContinuousLinearMap.mem_range_inCoordinates_iff (hUW hx).1 (hUW hx).2]⟩
 
-/-- The kernel of a continuous fibrewise surjective bundle map is a subbundle: its kernels have
-continuous local frames with `finrank F₁ - finrank F₂` members near every point. -/
+/-- The kernels of a continuous fibrewise surjective bundle map have continuous local frames with
+`finrank F₁ - finrank F₂` members near every point. Over `ℝ` or `ℂ` they therefore form a
+subbundle of `E₁` (`TauCeti.HasLocalSubbundleFrames.vectorBundle`). -/
 theorem hasLocalSubbundleFrames_ker_of_surjective
     (hφ : Continuous fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (φ x))
     (hsurj : ∀ x, Surjective (φ x)) :
@@ -126,8 +127,9 @@ theorem hasLocalSubbundleFrames_ker_of_surjective
       ((trivializationAt F₂ E₂ x).continuousLinearEquivAt 𝕜 x
         (FiberBundle.mem_baseSet_trivializationAt' x)).toLinearEquiv.finrank_eq]
 
-/-- The image of a continuous fibrewise injective bundle map is a subbundle: its images have
-continuous local frames with `finrank F₁` members near every point. -/
+/-- The images of a continuous fibrewise injective bundle map have continuous local frames with
+`finrank F₁` members near every point. Over `ℝ` or `ℂ` they therefore form a subbundle of `E₂`
+(`TauCeti.HasLocalSubbundleFrames.vectorBundle`). -/
 theorem hasLocalSubbundleFrames_range_of_injective
     (hφ : Continuous fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (φ x))
     (hinj : ∀ x, Injective (φ x)) :

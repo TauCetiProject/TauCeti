@@ -122,8 +122,9 @@ variable {𝕜 E F X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜
 continuous projection `p` onto `range (A x₀)` and a continuous projection `q` onto
 `ker (A x₀)` such that the pair `(p ∘ A x, q)` is invertible on an open neighbourhood of `x₀`. -/
 theorem exists_isOpen_isInvertible_prod_comp {x₀ : X} (hA : ContinuousAt A x₀) :
-    ∃ p : F →L[𝕜] (A x₀).range, ∃ q : E →L[𝕜] (A x₀).ker, ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧
-      ∀ x ∈ U, ((p ∘L A x).prod q).IsInvertible := by
+    ∃ p : F →L[𝕜] (A x₀).range, (∀ y : (A x₀).range, p y = y) ∧
+      ∃ q : E →L[𝕜] (A x₀).ker, (∀ v : (A x₀).ker, q v = v) ∧
+        ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧ ∀ x ∈ U, ((p ∘L A x).prod q).IsInvertible := by
   have := FiniteDimensional.complete 𝕜 E
   obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional_quotient
     (Submodule.closed_of_finiteDimensional (A x₀).range)
@@ -136,6 +137,6 @@ theorem exists_isOpen_isInvertible_prod_comp {x₀ : X} (hA : ContinuousAt A x�
     (LinearEquiv.ofBijective ((p ∘L A x₀).prod q : E →ₗ[𝕜] _)
       ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp hinj⟩
       ).toContinuousLinearEquiv
-  exact ⟨p, q, exists_isOpen_isInvertible_prod (continuousAt_const.clm_comp hA) ⟨e, rfl⟩⟩
+  exact ⟨p, hp, q, hq, exists_isOpen_isInvertible_prod (continuousAt_const.clm_comp hA) ⟨e, rfl⟩⟩
 
 end ContinuousLinearMap
