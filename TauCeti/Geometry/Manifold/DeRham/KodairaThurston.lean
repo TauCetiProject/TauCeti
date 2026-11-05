@@ -170,6 +170,12 @@ private theorem yL_apply (p : Cover) : yL p = p.y := by simp [yL]
 
 private theorem tL_apply (p : Cover) : tL p = p.t := by simp [tL]
 
+private theorem coe_xL : ((xL : Cover →L[ℝ] ℝ) : Cover → ℝ) = x := funext xL_apply
+
+private theorem coe_yL : ((yL : Cover →L[ℝ] ℝ) : Cover → ℝ) = y := funext yL_apply
+
+private theorem coe_tL : ((tL : Cover →L[ℝ] ℝ) : Cover → ℝ) = t := funext tL_apply
+
 /-- The closed one-form `dx` of the Kodaira–Thurston manifold, descended from the differential of
 the `x`-coordinate of the cover. -/
 def dxForm : closedForms 𝓘(ℝ, Cover) KodairaThurston 1 :=
@@ -190,24 +196,21 @@ theorem mpullback_mk_dxForm :
     TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dxForm.1.1 =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) x) := by
   rw [← SmoothForm.coe_mpullback _ isLocalDiffeomorph_mk.contMDiff, dxForm,
-    mpullback_mk_descForm, coe_coverForm, show ((xL : Cover →L[ℝ] ℝ) : Cover → ℝ) = x from
-      funext xL_apply]
+    mpullback_mk_descForm, coe_coverForm, coe_xL]
 
 /-- `dy` pulls back to the differential of the `y`-coordinate of the cover. -/
 theorem mpullback_mk_dyForm :
     TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dyForm.1.1 =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) y) := by
   rw [← SmoothForm.coe_mpullback _ isLocalDiffeomorph_mk.contMDiff, dyForm,
-    mpullback_mk_descForm, coe_coverForm, show ((yL : Cover →L[ℝ] ℝ) : Cover → ℝ) = y from
-      funext yL_apply]
+    mpullback_mk_descForm, coe_coverForm, coe_yL]
 
 /-- `dt` pulls back to the differential of the `t`-coordinate of the cover. -/
 theorem mpullback_mk_dtForm :
     TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dtForm.1.1 =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) t) := by
   rw [← SmoothForm.coe_mpullback _ isLocalDiffeomorph_mk.contMDiff, dtForm,
-    mpullback_mk_descForm, coe_coverForm, show ((tL : Cover →L[ℝ] ℝ) : Cover → ℝ) = t from
-      funext tL_apply]
+    mpullback_mk_descForm, coe_coverForm, coe_tL]
 
 /-! ### Periods and the first de Rham cohomology -/
 

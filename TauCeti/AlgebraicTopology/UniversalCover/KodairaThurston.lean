@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.NotSimplyConnected
-public import TauCeti.GroupTheory.Abelianization.Basic
 public import TauCeti.Geometry.Manifold.Instances.KodairaThurston
 
 /-!

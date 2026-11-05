@@ -265,20 +265,10 @@ theorem ker_projXY : (projXY : HeisenbergGroup R →* _).ker = zAxis := by
 
 /-- **The abelianization of the Heisenberg group** is the additive group `R × R`, through the
 projection `(x, y, z) ↦ (x, y)`. -/
-def abelianizationMulEquiv : Abelianization (HeisenbergGroup R) ≃* Multiplicative (R × R) where
-  __ := Abelianization.lift projXY
-  invFun v := Abelianization.of ⟨v.toAdd.1, v.toAdd.2, 0⟩
-  left_inv w := QuotientGroup.induction_on w fun a ↦ by
-    -- `a = (a.x, a.y, 0) * (0, 0, a.z)`, and `(0, 0, a.z)` is a commutator.
-    have hz : Abelianization.of (⟨0, 0, a.z⟩ : HeisenbergGroup R) = 1 := by
-      rw [← MonoidHom.mem_ker, Abelianization.ker_of, commutator_eq_zAxis]
-      exact ⟨rfl, rfl⟩
-    have ha : a = ⟨a.x, a.y, 0⟩ * ⟨0, 0, a.z⟩ := by ext <;> simp
-    -- The class `QuotientGroup.mk a` is `Abelianization.of a`, and the composite of the lift and
-    -- the inverse sends it to the class of `(a.x, a.y, 0)`.
-    change Abelianization.of ⟨a.x, a.y, 0⟩ = Abelianization.of a
-    conv_rhs => rw [ha, map_mul, hz, mul_one]
-  right_inv _ := rfl
+def abelianizationMulEquiv : Abelianization (HeisenbergGroup R) ≃* Multiplicative (R × R) :=
+  (QuotientGroup.quotientMulEquivOfEq (commutator_eq_zAxis.trans ker_projXY.symm)).trans
+    (QuotientGroup.quotientKerEquivOfRightInverse (projXY : HeisenbergGroup R →* _)
+      (fun v ↦ (⟨v.toAdd.1, v.toAdd.2, 0⟩ : HeisenbergGroup R)) fun _ ↦ by rfl)
 
 @[simp]
 theorem abelianizationMulEquiv_of (a : HeisenbergGroup R) :
