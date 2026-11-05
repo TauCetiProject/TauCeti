@@ -27,7 +27,8 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
 `x * y - y * x`, which is the form the integer-eigenvector results take.
 
 The last section computes the group commutator of two units of the form `1 + A` and `1 + B` with
-square-zero `A`, `B` and vanishing products `A * B * A`, `B * A * B`: it is `1 + ⁅A, B⁆`, for the
+square-zero `A`, `B` and vanishing product `A * B * A`: it is
+`1 + ⁅A, B⁆ + B * A * B`. If `B * A * B` also vanishes, this reduces to `1 + ⁅A, B⁆`, for the
 Lie bracket `⁅A, B⁆ = A * B - B * A` of the ring.
 
 ## Main results
@@ -54,6 +55,8 @@ Lie bracket `⁅A, B⁆ = A * B - B * A` of the ring.
 * `Commute.of_commutator_eq_of_commutator_eq_smul`: commutation of the two successive
   correction terms when the second coefficient is a unit.
 * `Units.val_inv_eq_one_sub`: a unit `1 + A` with `A * A = 0` has inverse `1 - A`.
+* `Units.val_commutatorElement_eq_one_add_lie_add`: the group commutator of two such units is
+  `1 + ⁅A, B⁆ + B * A * B` when `A * B * A` vanishes.
 * `Units.val_commutatorElement_eq_one_add_lie`: the group commutator of two such units is
   `1 + ⁅A, B⁆` once the products `A * B * A` and `B * A * B` vanish.
 -/
@@ -277,6 +280,22 @@ theorem _root_.Units.val_inv_eq_one_sub (u : Sˣ) (A : S) (hu : (u : S) = 1 + A)
     (1 + A) * (1 - A) = 1 - A * A := by noncomm_ring
     _ = 1 := by rw [hA, sub_zero]
 
+/-- The commutator of square-zero unipotents with `A * B * A = 0` retains the cubic correction
+`B * A * B`. This is the term needed for a double root string, without division by two. -/
+theorem _root_.Units.val_commutatorElement_eq_one_add_lie_add (u v : Sˣ) (A B : S)
+    (hu : (u : S) = 1 + A) (hv : (v : S) = 1 + B)
+    (hA : A * A = 0) (hB : B * B = 0) (hABA : A * B * A = 0) :
+    (↑⁅u, v⁆ : S) = 1 + ⁅A, B⁆ + B * A * B := by
+  rw [commutatorElement_def, Units.val_mul, Units.val_mul, Units.val_mul,
+    Units.val_inv_eq_one_sub u A hu hA, Units.val_inv_eq_one_sub v B hv hB, hu, hv, Ring.lie_def]
+  calc
+    (1 + A) * (1 + B) * (1 - A) * (1 - B) =
+        1 + A * B - B * A - A * A - B * B - A * (B * B) + (A * A) * B -
+          A * B * A + B * A * B + (A * B * A) * B := by noncomm_ring
+    _ = 1 + (A * B - B * A) + B * A * B := by
+      rw [hA, hB, hABA]
+      simp [sub_eq_add_neg, add_assoc]
+
 /-- **The group commutator of two square-zero unipotent units is `1` plus the Lie bracket of
 their nilpotent parts**: if `u = 1 + A` and `v = 1 + B` with `A * A = 0`, `B * B = 0`,
 `A * B * A = 0` and `B * A * B = 0`, then `⁅u, v⁆ = 1 + ⁅A, B⁆`, in every ring. -/
@@ -284,13 +303,8 @@ theorem _root_.Units.val_commutatorElement_eq_one_add_lie (u v : Sˣ) (A B : S)
     (hu : (u : S) = 1 + A) (hv : (v : S) = 1 + B)
     (hA : A * A = 0) (hB : B * B = 0) (hABA : A * B * A = 0)
     (hBAB : B * A * B = 0) : (↑⁅u, v⁆ : S) = 1 + ⁅A, B⁆ := by
-  rw [commutatorElement_def, Units.val_mul, Units.val_mul, Units.val_mul,
-    Units.val_inv_eq_one_sub u A hu hA, Units.val_inv_eq_one_sub v B hv hB, hu, hv, Ring.lie_def]
-  calc
-    (1 + A) * (1 + B) * (1 - A) * (1 - B) =
-        1 + A * B - B * A - A * A - B * B - A * (B * B) + (A * A) * B -
-          A * B * A + B * A * B + (A * B * A) * B := by noncomm_ring
-    _ = 1 + (A * B - B * A) := by rw [hA, hB, hABA, hBAB]; simp [sub_eq_add_neg, add_assoc]
+  rw [Units.val_commutatorElement_eq_one_add_lie_add u v A B hu hv hA hB hABA,
+    hBAB, add_zero]
 
 end SquareZeroUnits
 
