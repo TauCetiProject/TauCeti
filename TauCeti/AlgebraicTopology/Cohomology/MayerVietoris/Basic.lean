@@ -52,7 +52,8 @@ subcomplex with the singular cohomology of `X` (`TauCeti.smallSingularCohomology
   `SSet.mayerVietorisCochainFromBiprod_naturality`).
 * `TauCeti.smallSingularCohomologyIso`: restricting cochains to the chains subordinate to an open
   cover is an isomorphism on cohomology, natural in maps of covered spaces
-  (`TauCeti.smallSingularCohomologyIso_naturality`).
+  (`TauCeti.smallSingularCohomologyIso_naturality`); equivalently, that restriction is a
+  quasi-isomorphism (`TauCeti.quasiIso_cochainComplexMap_smallSingularSubcomplex_ι`).
 * `TopCat.singularCohomologyMayerVietorisToBiprod` and
   `TopCat.singularCohomologyMayerVietorisFromBiprod`: the maps `Hⁿ(X) ⟶ Hⁿ(U) ⊞ Hⁿ(V)` and
   `Hⁿ(U) ⊞ Hⁿ(V) ⟶ Hⁿ(U ∩ V)`.
@@ -304,6 +305,15 @@ lemma smallSingularCohomologyIso_hom (n : ℕ) :
       HomologicalComplex.homologyMap (SSet.cochainComplexMap (X.smallSingularSubcomplex U).ι)
         n := by
   simp [smallSingularCohomologyIso, HomotopyEquiv.toHomologyIso, SSet.cochainComplexMap]
+
+include hU hcov in
+/-- Restricting singular cochains to the chains subordinate to an open cover is a
+quasi-isomorphism, since the inclusion of those chains is a chain homotopy equivalence. -/
+theorem quasiIso_cochainComplexMap_smallSingularSubcomplex_ι :
+    QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
+      (X.smallSingularSubcomplex U).ι) := by
+  have := ((smallSingularChainHomotopyEquiv R U hU hcov).linearYonedaFunctorMap k M).quasiIso_hom
+  rwa [HomotopyEquiv.linearYonedaFunctorMap_hom, smallSingularChainHomotopyEquiv_hom] at this
 
 /-- The small-chain cohomology isomorphism is natural under maps carrying members of one cover
 into members of another. -/

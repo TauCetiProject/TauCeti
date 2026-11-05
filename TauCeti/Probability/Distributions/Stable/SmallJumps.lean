@@ -59,9 +59,7 @@ theorem integrableOn_abs_rpow_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |�
   have hp := (TauCeti.integrableOn_norm_rpow_ball (mu := (volume : Measure ℝ))
     (s := q - α - 1) (by simp only [Module.finrank_self, Nat.cast_one]; linarith)
     (R := r)).const_mul (2 * (Gamma (1 + α) * sin (π * α / 2) / π))
-  have hd : Measurable (stableLevyDensity α β) :=
-    measurable_stableLevyDensity.comp
-      (measurable_const.prodMk measurable_id : Measurable fun x : ℝ ↦ ((α, β), x))
+  have hd := measurable_stableLevyDensity_apply α β
   refine ((integrable_indicator_iff measurableSet_ball).mpr hp).mono'
     (hd.aestronglyMeasurable.smul
       ((by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q).aestronglyMeasurable.indicator

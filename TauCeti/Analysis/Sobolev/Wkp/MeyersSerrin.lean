@@ -201,7 +201,7 @@ private theorem exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (k : ℕ) (u : Wk
     {ε : ℝ} (hε : 0 < ε) :
     ∃ (v : Wkp mu Omega p k) (f : E → ℝ), ContDiffOn ℝ ∞ f Omega ∧
       (value k v : E → ℝ) =ᵐ[mu.restrict Omega] f ∧ ‖v - u‖ < ε := by
-  obtain ⟨zeta, chi, hzeta, hchi, hchi_one, hfin⟩ :=
+  obtain ⟨zeta, chi, hzeta, -, -, hchi, hchi_one, hfin⟩ :=
     IsOpen.exists_contDiff_decomposition_cutoff Omega.isOpen
   -- the localized pieces `b j = ζ_j u`, and test functions `ζ_j ψ_j` within `ε 2^{-j-2}` of them
   choose b Phi hPhi_zero hb hlim using fun j =>
