@@ -11,6 +11,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
 # Periodic orbits at the ends of finite-energy Floer half-cylinders
@@ -92,6 +93,20 @@ theorem lintegral_norm_sq_sliceDefect_le {U : Set (ℝ × ℝ)} (hU : Measurable
   rw [sliceDefect_hamiltonianVectorField]
   exact le_add_of_nonneg_left (sq_nonneg _)
 
+/-- **Finite energy gives a square-integrable defect.** Under the hypotheses of
+`TauCeti.SymplecticForm.lintegral_norm_sq_sliceDefect_le`, if the energy over `U` is finite, then
+so is the integral of `‖∂_t u - X_{H_t}(u)‖²` over `U`. -/
+theorem lintegral_norm_sq_sliceDefect_ne_top {U : Set (ℝ × ℝ)} (hU : MeasurableSet U) (hc : 0 < c)
+    (hJc : ∀ z ∈ U, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) (hJM : ∀ z ∈ U, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hfloer : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in U,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
+    ∫⁻ z in U, ENNReal.ofReal
+        (‖sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u z‖ ^ 2) ≠ ⊤ :=
+  ((lintegral_norm_sq_sliceDefect_le hU hc hJc hJM hfloer).trans_lt
+    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hE.lt_top)).ne
+
 /-- **Periodic orbits at the end of a finite-energy Floer half-cylinder.** Let `H` be a `C¹`
 Hamiltonian, `1`-periodic in time, and let `u` be `C¹` on the half-cylinder `s > a`, with
 `1`-periodic loops `t ↦ u(s, t)` in a compact set `K`, solving the Floer equation
@@ -112,12 +127,11 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_floer (hH : ContDiff ℝ 
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
       ∃ φ : ℕ → ℝ, (∀ n, a < φ n) ∧ Tendsto φ atTop atTop ∧
         TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop := by
-  have hfin := (lintegral_norm_sq_sliceDefect_le (measurableSet_Ioi.prod measurableSet_Icc) hc
-    hJc hJM hfloer).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hE.lt_top)
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, -⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top hu hper hK huK
-      (ω.continuous_hamiltonianVectorField_uncurry hH)
-      (fun v t ↦ by simp only [hHper t]) hfin.ne
+      (ω.continuous_hamiltonianVectorField_uncurry hH) (fun v t ↦ by simp only [hHper t])
+      (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc
+        hJM hfloer hE)
   exact ⟨x, hxper, hx, φ, hφa, hφ, hux⟩
 
 /-- **The energy of a Floer half-cylinder.** Let `u` be a `C²` solution of the Floer equation on
@@ -135,42 +149,23 @@ theorem setLIntegral_floerEnergyDensity_Ici_eq_of_tendsto_hamiltonianAction
     ∫⁻ z in Ici b ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
       ENNReal.ofReal (L - ω.hamiltonianAction H (fun t ↦ u (b, t))) := by
-  set E : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-  set R : ℕ → Set (ℝ × ℝ) := fun n ↦ Icc b (b + n) ×ˢ Icc 0 1
-  have hRsub : ∀ n, R n ⊆ Ioi a ×ˢ Icc 0 1 := fun n ↦
+  have hRsub (n : ℕ) : Icc b (b + n) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ Icc 0 1 :=
     Set.prod_mono (fun s h ↦ hb.trans_le h.1) le_rfl
-  have hEcont : ContinuousOn E (Ioi a ×ˢ univ) :=
-    ω.continuousOn_floerEnergyDensity (isOpen_Ioi.prod isOpen_univ) (hu.of_le one_le_two)
-      contDiffOn_const (contDiff_uncurry_cylindrical hH).contDiffOn
-  -- On each rectangle the energy is the change of action.
-  have hrect : ∀ n : ℕ, ∫⁻ z in R n, ENNReal.ofReal (E z) =
-      ENNReal.ofReal (ω.hamiltonianAction H (fun t ↦ u (b + n, t)) -
-        ω.hamiltonianAction H (fun t ↦ u (b, t))) := by
-    intro n
-    have hRU : R n ⊆ Ioi a ×ˢ univ := (hRsub n).trans (Set.prod_mono le_rfl (subset_univ _))
-    rw [← ofReal_integral_eq_lintegral_ofReal
-      ((hEcont.mono hRU).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
+  have hRU (n : ℕ) : Icc b (b + n) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ :=
+    (hRsub n).trans (Set.prod_mono le_rfl (subset_univ _))
+  have hEcont := ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
+    (isOpen_Ioi.prod isOpen_univ) (hu.of_le one_le_two) contDiffOn_const
+    (contDiff_uncurry_cylindrical hH).contDiffOn
+  -- Exhaust the half-cylinder by the rectangles `[b, b + n] × [0, 1]`, on which the energy is the
+  -- change of action.
+  refine setLIntegral_Ici_prod_eq_ofReal_of_tendsto (fun n ↦ ?_) hL
+  rw [← ofReal_integral_eq_lintegral_ofReal
+      ((hEcont.mono (hRU n)).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
       ((ae_restrict_iff' (measurableSet_Icc.prod measurableSet_Icc)).2 (Eventually.of_forall
-        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hRsub n hz)) (hfloer z (hRsub n hz))))]
-    rw [ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH (isOpen_Ioi.prod isOpen_univ)
-      hu (le_add_of_nonneg_right n.cast_nonneg) hRU
+        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hRsub n hz)) (hfloer z (hRsub n hz)))),
+    ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH (isOpen_Ioi.prod isOpen_univ) hu
+      (le_add_of_nonneg_right n.cast_nonneg) (hRU n)
       fun s h ↦ by simpa using hper s (hb.trans_le h.1) 0]
-  -- The rectangles exhaust the half-cylinder.
-  have hmono : Monotone R := fun m n hmn ↦
-    Set.prod_mono (Icc_subset_Icc le_rfl (by simpa using hmn)) le_rfl
-  have hunion : ⋃ n, R n = Ici b ×ˢ Icc 0 1 := by
-    refine (iUnion_subset fun n ↦ Set.prod_mono Icc_subset_Ici_self le_rfl).antisymm fun z hz ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_ge (z.1 - b)
-    exact mem_iUnion.2 ⟨n, ⟨hz.1, by linarith⟩, hz.2⟩
-  have hlim : Tendsto (fun n ↦ ∫⁻ z in R n, ENNReal.ofReal (E z)) atTop
-      (𝓝 (∫⁻ z in Ici b ×ˢ Icc 0 1, ENNReal.ofReal (E z))) := by
-    rw [← hunion, setLIntegral_iUnion_of_directed _ hmono.directed_le]
-    exact tendsto_atTop_iSup fun m n hmn ↦ lintegral_mono' (Measure.restrict_mono (hmono hmn)
-      le_rfl) le_rfl
-  refine tendsto_nhds_unique hlim ?_
-  simp only [hrect]
-  exact (ENNReal.continuous_ofReal.tendsto _).comp
-    ((hL.comp (tendsto_atTop_add_const_left _ b tendsto_natCast_atTop_atTop)).sub_const _)
 
 /-- **The action increases along a Floer half-cylinder.** Let `u` be a `C²` solution of the
 Floer equation on `(a, ∞) × [0, 1]` with `1`-periodic loops and tame almost complex structures.
@@ -287,12 +282,11 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
         TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop) ∧
       Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop
         (𝓝 (ω.hamiltonianAction H x)) := by
-  have hfin := (lintegral_norm_sq_sliceDefect_le (measurableSet_Ioi.prod measurableSet_Icc) hc
-    hJc hJM hfloer).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hE.lt_top)
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top (hu.of_le one_le_two) hper hK
       huK (ω.continuous_hamiltonianVectorField_uncurry hH) (fun v t ↦ by simp only [hHper t])
-      hfin.ne
+      (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc
+        hJM hfloer hE)
   refine ⟨x, hxper, hx, ⟨φ, hφa, hφ, hux⟩, ?_⟩
   have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH
     (hu.of_le one_le_two) hK huK hφa hdef hx hux.tendsto_at
