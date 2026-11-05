@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.Homology
-public import TauCeti.KnotTheory.Grid.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
 
 /-!
 # The simply blocked stabilization chain map

@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
-public import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Scalar-extended coordinate spans of the represented modular F4 flag
@@ -229,9 +228,8 @@ private theorem f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq :
     _ = Submodule.span A (Set.range (g.comp f4ShortRootRepresentedRange.subtype)) :=
       (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedRangeBasis
         (g.comp f4ShortRootRepresentedRange.subtype)).symm
-    _ = Submodule.span A (Set.range (g.comp ρ)) :=
-      congrArg (Submodule.span A) (LinearMap.range_comp_rangeRestrict
-        ρ g).symm
+    _ = Submodule.span A (Set.range (g.comp ρ)) := by
+      simp only [← LinearMap.coe_range, LinearMap.range_comp, Submodule.range_subtype]
     _ = Submodule.span A (Set.range fun X : f4ModularChevalleyLieAlgebra =>
           f4ShortRootAdjointMatrixBaseChange (A := A) X) := by
       congr 2
@@ -272,9 +270,9 @@ private theorem f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq :
         ((g.comp f4ShortRootRepresentedRange.subtype).comp
           f4ShortRootRepresentedIdeal.subtype)).symm
     _ = Submodule.span A (Set.range
-          (g.comp ((ρ).comp f4ShortRootSubspace.subtype))) :=
-      congrArg (Submodule.span A) (LinearMap.range_comp_map_subtype ρ
-        f4ShortRootSubspace g).symm
+          (g.comp ((ρ).comp f4ShortRootSubspace.subtype))) := by
+      simp only [← LinearMap.coe_range, LinearMap.range_comp, Submodule.range_subtype,
+        ← Submodule.map_comp, LinearMap.comp_assoc, LinearMap.subtype_comp_rangeRestrict]
     _ = Submodule.span A (Set.range fun y : f4ShortRootLieIdeal =>
           f4ShortRootAdjointMatrixBaseChange (A := A)
             (y : f4ModularChevalleyLieAlgebra)) := by

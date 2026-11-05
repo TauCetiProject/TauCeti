@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import TauCeti.FieldTheory.FunctionField.Belyi.Bundled
 public import TauCeti.FieldTheory.FunctionField.Belyi.Conjugation
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # The Galois action on isomorphism classes of algebraic Belyi pairs
@@ -46,6 +47,8 @@ cardinality of its orbit under `Gal(k/ℚ)`, which is the index of its stabilize
 ## Main results
 
 * `TauCeti.AlgebraicBelyiPair.finrank_conj`: conjugation preserves the degree.
+* `TauCeti.AlgebraicBelyiPair.adjoin_conjRingEquiv_eq_top`: a generator of the function field of
+  `X` over `k` still generates that of its conjugate over `k'`.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.conj_refl` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.conj_conj`: conjugation of classes is functorial in `σ`.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_eq_mk_iff`: `σ` stabilizes the class of `X`
@@ -62,6 +65,8 @@ cardinality of its orbit under `Gal(k/ℚ)`, which is the index of its stabilize
 -/
 
 public section
+
+open scoped IntermediateField
 
 universe u
 
@@ -120,6 +125,13 @@ along `σ`. -/
 theorem conjRingEquiv_algebraMap (c : k) :
     conjRingEquiv σ X (algebraMap k X c) = algebraMap k' (X.conj σ) (σ c) :=
   apply_algebraMap_eq_of_mapRingEquiv σ _ (conjRingEquiv_algebraMap_ratFunc σ X) c
+
+variable {X} in
+/-- If `x` generates the function field of `X` over `k`, then it still generates the function
+field of the conjugate of `X` along `σ`, over `k'`. -/
+theorem adjoin_conjRingEquiv_eq_top {x : X} (hx : k⟮x⟯ = ⊤) : k'⟮conjRingEquiv σ X x⟯ = ⊤ := by
+  simpa using IntermediateField.adjoin_image_eq_top_of_ringEquiv (σ : k →+* k')
+    (conjRingEquiv σ X) (conjRingEquiv_algebraMap σ X) hx
 
 /-- **Conjugation preserves the degree** of an algebraic Belyi pair. -/
 @[simp]
