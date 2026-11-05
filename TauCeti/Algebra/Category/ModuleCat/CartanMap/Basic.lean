@@ -150,7 +150,7 @@ theorem finiteProjectiveModules_le_finiteModules :
     finiteProjectiveModules R ≤ ModuleCat.isFG R := fun _ h =>
   (ModuleCat.isFG_iff _).mpr (finiteProjectiveModules_iff.mp h).1
 
-instance : (ModuleCat.isFG.{u} R).IsClosedUnderIsomorphisms where
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderIsomorphisms where
   of_iso {M N} e h := by
     have : Module.Finite R M := (ModuleCat.isFG_iff M).mp h
     exact (ModuleCat.isFG_iff N).mpr (Module.Finite.equiv e.toLinearEquiv)
@@ -162,7 +162,7 @@ instance : (finiteProjectiveModules R).IsClosedUnderIsomorphisms where
     exact finiteProjectiveModules_iff.mpr
       ⟨Module.Finite.equiv e.toLinearEquiv, Module.Projective.of_equiv e.toLinearEquiv⟩
 
-instance : (ModuleCat.isFG.{u} R).ContainsZero where
+instance : (ModuleCat.isFG.{v} R).ContainsZero where
   exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
     (ModuleCat.isFG_iff _).mpr inferInstance⟩
 
@@ -184,7 +184,7 @@ instance : ObjectProperty.EssentiallySmall.{u} (finiteProjectiveModules R) :=
 /-- **The finitely generated modules are extension closed**: the middle term of a short exact
 sequence with finitely generated ends is finitely generated. -/
 theorem isExtensionClosed_finiteModules :
-    (ExactStructure.abelian (ModuleCat.{u} R)).IsExtensionClosed (ModuleCat.isFG R) where
+    (ExactStructure.abelian (ModuleCat.{v} R)).IsExtensionClosed (ModuleCat.isFG R) where
   prop_X₂ {S} hS h₁ h₃ := by
     rw [ExactStructure.abelian_conflation] at hS
     have : Module.Finite R S.X₁ := (ModuleCat.isFG_iff S.X₁).mp h₁
@@ -207,7 +207,7 @@ theorem finiteProjectiveModules_le_categoryTheory_isProjective :
     finiteProjectiveModules R ≤ CategoryTheory.isProjective (ModuleCat.{u} R) := fun M hM ↦
   (ExactStructure.abelian_isProjective_iff M).mp (finiteProjectiveModules_le_isProjective R M hM)
 
-instance : (ModuleCat.isFG.{u} R).IsClosedUnderBinaryProducts :=
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_finiteModules R).isClosedUnderBinaryProducts
 
 instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts := by
