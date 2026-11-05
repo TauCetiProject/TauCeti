@@ -43,8 +43,10 @@ attribute [local instance] Comodule.cofree
 
 namespace TensorWords
 
-variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
-  {M : Type uM} {N : Type uN} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+section CommSemiring
+
+variable {R : Type uR} {A : Type uA} [CommSemiring R] [AddCommMonoid A] [Module R A]
+  {M : Type uM} {N : Type uN} [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- On a pure word, the cofree lift of `F` applies `F` to every prefix and retains the
 corresponding suffix. -/
@@ -57,6 +59,11 @@ theorem cofreeLift_tmul_of_tprod (F : (M ⊗[R] TensorWords R A) →ₗ[R] N) (n
     comul_eq_deconcatenation, of_tprod_eq_subword, deconcatenation_subword]
   simp only [TensorProduct.tmul_sum, map_sum, TensorProduct.assoc_symm_tmul,
     LinearMap.rTensor_tmul, Nat.zero_add]
+
+end CommSemiring
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+  {M : Type uM} [AddCommGroup M] [Module R M]
 
 /-- **Local nilpotence from pure words.**  An endomorphism of `M ⊗ Tᶜ(A)` is locally nilpotent as
 soon as some power of it kills each pure word `x ⊗ a₀ ⊗ ⋯ ⊗ aₙ₋₁`. -/
