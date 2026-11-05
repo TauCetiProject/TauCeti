@@ -34,6 +34,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
+* `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
+  bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
+  majorant.
 -/
 
 public section
@@ -188,5 +191,23 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
     rwa [Set.univ_prod_univ, setIntegral_univ] at h
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
+
+/-- If an almost everywhere nonnegative measurable function `G : α × β → ℝ` has integrable
+`ν`-slices bounded above by an integrable majorant `H : α → ℝ` for `μ`-almost every `x`, then `G`
+is integrable on `μ.prod ν` and its product integral is at most `∫ x, H x ∂μ`. -/
+theorem integrable_and_integral_prod_le [SFinite μ] [SFinite ν] {G : α × β → ℝ}
+    (hG_meas : AEStronglyMeasurable G (μ.prod ν)) (hG_nn : 0 ≤ᵐ[μ.prod ν] G)
+    {H : α → ℝ} (hH_int : Integrable H μ)
+    (hslice : ∀ᵐ x ∂μ, Integrable (fun y ↦ G (x, y)) ν ∧ ∫ y, G (x, y) ∂ν ≤ H x) :
+    Integrable G (μ.prod ν) ∧ ∫ p, G p ∂(μ.prod ν) ≤ ∫ x, H x ∂μ := by
+  have hG_int : Integrable G (μ.prod ν) := by
+    rw [integrable_prod_iff hG_meas]
+    refine ⟨hslice.mono fun _ h ↦ h.1, hH_int.mono' hG_meas.norm.integral_prod_right' ?_⟩
+    filter_upwards [Measure.ae_ae_of_ae_prod hG_nn, hslice] with x hx h
+    rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _),
+      integral_congr_ae (hx.mono fun _ hy ↦ Real.norm_of_nonneg hy)]
+    exact h.2
+  exact ⟨hG_int, (integral_prod G hG_int).trans_le
+    (integral_mono_ae hG_int.integral_prod_left hH_int (hslice.mono fun _ h ↦ h.2))⟩
 
 end TauCeti
