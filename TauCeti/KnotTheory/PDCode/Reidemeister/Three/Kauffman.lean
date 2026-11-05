@@ -155,7 +155,6 @@ private theorem localPairing_internal (k : Fin 5) (p : Fin 3 × Fin 4)
   revert k p
   decide
 
-
 private theorem smoothingTurn_split (u : Fin n → Bool) :
     D.smoothingTurn u = localLift D c (localSmoothing (u ∘ c)) *
       exteriorSlots D c (fun i ↦ slotSmoothing (u i)) := by
@@ -250,13 +249,11 @@ private noncomputable def assembleState {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin
 private theorem assembleState_local {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (j : Fin 3) :
     assembleState c q r (c j) = q j := by
-  classical
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr]
 
 private theorem assembleState_outside {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (i : {i : Fin n // i ∉ Set.range c}) :
     assembleState c q r i = r i := by
-  classical
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr, i.property]
 
 private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
@@ -264,7 +261,6 @@ private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
     (f : Fin n → Bool → M) :
     (∏ i, f i (assembleState c q r i)) =
       (∏ j, f (c j) (q j)) * ∏ i : {i : Fin n // i ∉ Set.range c}, f i (r i) := by
-  classical
   let : Fintype (Set.range c) := Subtype.fintype (fun i ↦ i ∈ Set.range c)
   rw [← Fintype.prod_subtype_mul_prod_subtype (fun i ↦ i ∈ Set.range c)
     (fun i ↦ f i (assembleState c q r i))]
@@ -394,7 +390,7 @@ private def overWeight {R : Type*} [CommRing R] (a : Rˣ) (b : Bool) : R :=
   if b then ((a⁻¹ : Rˣ) : R) else (a : R)
 
 -- The coefficients of the two nonmatching boundary pairings agree at the Jones loop value.
-private theorem localCoefficient {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
+private theorem localCoefficient_eq {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
     (height : ba = bc → bb = ba) :
     overWeight a ba * overWeight a bb * overWeight a bc +
       overWeight a ba * overWeight a (!bb) * overWeight a bc * jonesDelta a +
@@ -425,7 +421,7 @@ private def pairingValue {R : Type*} [CommRing R] (δ P Q Rv S I : R)
 private def smoothingWeight {R : Type*} [CommRing R] (a : Rˣ) (over raw : Bool) : R :=
   overWeight a (if raw then !over else over)
 
-private theorem localSum {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
+private theorem localSum_eq {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
     (height : ba = bc → bb = ba) (P Q Rv S I : R) :
     (∑ u : Bool, ∑ v : Bool, ∑ t : Bool,
       smoothingWeight a ba u * smoothingWeight a bb v * smoothingWeight a bc t *
@@ -434,9 +430,9 @@ private theorem localSum {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
       smoothingWeight a bc u * smoothingWeight a bb v * smoothingWeight a ba t *
         pairingValue (jonesDelta a) S Rv Q P I u v t) := by
   simp only [Fintype.sum_bool, smoothingWeight, pairingValue, Bool.false_eq_true, ↓reduceIte]
-  linear_combination (P - S) * (localCoefficient a ba bb bc height)
+  linear_combination (P - S) * (localCoefficient_eq a ba bb bc height)
 
-private theorem sumCube {R : Type*} [AddCommMonoid R] (f : (Fin 3 → Bool) → R) :
+private theorem sum_fin_three_bool {R : Type*} [AddCommMonoid R] (f : (Fin 3 → Bool) → R) :
     (∑ q : Fin 3 → Bool, f q) = ∑ u : Bool, ∑ v : Bool, ∑ t : Bool, f ![u, v, t] := by
   let e : Bool × Bool × Bool ≃ (Fin 3 → Bool) :=
     (Equiv.prodCongr (Equiv.refl Bool) (piFinTwoEquiv (fun _ ↦ Bool)).symm).trans
@@ -446,7 +442,7 @@ private theorem sumCube {R : Type*} [AddCommMonoid R] (f : (Fin 3 → Bool) → 
   rfl
 
 -- Equality for each fixed exterior state, before summing over the surrounding diagram.
-private theorem localSumFin3 {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
+private theorem localSumFin3_eq {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool)
     (height : ba = bc → bb = ba) (P Q Rv S I : R) :
     (∑ q : Fin 3 → Bool,
       (∏ i, smoothingWeight a (![ba, bb, bc] i) (q i)) *
@@ -454,10 +450,10 @@ private theorem localSumFin3 {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool
     (∑ q : Fin 3 → Bool,
       (∏ i, smoothingWeight a (![bc, bb, ba] i) (q i)) *
         pairingValue (jonesDelta a) S Rv Q P I (q 0) (q 1) (q 2)) := by
-  rw [sumCube, sumCube]
+  rw [sum_fin_three_bool, sum_fin_three_bool]
   simp only [Fin.prod_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two]
-  exact localSum a ba bb bc height P Q Rv S I
+  exact localSum_eq a ba bb bc height P Q Rv S I
 
 private theorem rawState_weight {R : Type*} [CommRing R] (D : PDCode n)
     (a : Rˣ) (u : Fin n → Bool) :
@@ -477,7 +473,7 @@ private theorem kauffmanBracket_raw {R : Type*} [CommRing R] (D : PDCode n) (a :
     ⟨rawState_injective D, rawState_surjective D⟩ _ _ fun u ↦ ?_
   rw [rawState_weight, ← rawLoopCount_eq]
 
-private theorem localLoopValue {R : Type*} [CommRing R] (δ : R) (K : Fin 5 → ℕ)
+private theorem pow_pairingIndex_add_extraCircle {R : Type*} [CommRing R] (δ : R) (K : Fin 5 → ℕ)
     (side : Bool) (q : Fin 3 → Bool) :
     δ ^ (K (pairingIndex side q) + extraCircle q) =
       if side then pairingValue δ (δ ^ K 3) (δ ^ K 2) (δ ^ K 1) (δ ^ K 0) (δ ^ K 4)
@@ -512,7 +508,6 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
             (jonesDelta a ^ pairingExponent D c r 0) (jonesDelta a ^ pairingExponent D c r 1)
             (jonesDelta a ^ pairingExponent D c r 2) (jonesDelta a ^ pairingExponent D c r 3)
             (jonesDelta a ^ pairingExponent D c r 4) (q 0) (q 1) (q 2)) := by
-  classical
   rw [kauffmanBracket_raw, ← (localStatesEquiv c).symm.sum_comp]
   simp only [Fintype.sum_prod_type, ← assembleState.eq_def]
   rw [Finset.sum_comm]
@@ -521,7 +516,7 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
   rw [Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro q _
-  rw [assembleState_prod, rawLoopCount_assemble D c h side q r, localLoopValue]
+  rw [assembleState_prod, rawLoopCount_assemble D c h side q r, pow_pairingIndex_add_extraCircle]
   simp only [overPair_outside D c]
   ring
 
@@ -530,7 +525,6 @@ include h in
 PD-code and all six acyclic strand height orders. -/
 @[simp] theorem kauffmanBracket_reidemeisterThree {R : Type*} [CommRing R] (a : Rˣ) :
     (D.reidemeisterThree c).kauffmanBracket a = D.kauffmanBracket a := by
-  classical
   have hs0 := kauffmanBracket_split D c h a false
   have hs1 := kauffmanBracket_split D c h a true
   simp only [Bool.false_eq_true, ↓reduceIte] at hs0 hs1
@@ -548,7 +542,7 @@ PD-code and all six acyclic strand height orders. -/
       ![D.overPair (c 0), D.overPair (c 1), D.overPair (c 2)] := by
     funext j
     fin_cases j <;> rfl
-  have hl := localSumFin3 a (D.overPair (c 0)) (D.overPair (c 1)) (D.overPair (c 2))
+  have hl := localSumFin3_eq a (D.overPair (c 0)) (D.overPair (c 1)) (D.overPair (c 2))
     ((hasReidemeisterThreeTriangle_iff D c).mp h).2.2.2
     (jonesDelta a ^ pairingExponent D c r 0) (jonesDelta a ^ pairingExponent D c r 1)
     (jonesDelta a ^ pairingExponent D c r 2) (jonesDelta a ^ pairingExponent D c r 3)
