@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 /-!
 # Evaluating symmetric polynomials at the roots of `Z ^ n - X`
@@ -43,11 +42,6 @@ of symmetric multivariate power series, this evaluation constructs Cartier's Fro
 
 ## Main results
 
-* `MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm`: the expression of a degree-`m`
-  homogeneous symmetric polynomial in `e₁, …, eₙ` is weighted homogeneous of weight `m` for weights
-  `i ↦ i + 1`.
-* `MvPolynomial.map_esymmAlgEquiv_symm`: `(esymmAlgEquiv σ R hn).symm` commutes with
-  `MvPolynomial.map`.
 * `MvPolynomial.symmetricSubalgebra.coeff_evalTopEsymm_eq_zero`: for `P` homogeneous of degree `m`,
   `(evalTopEsymm σ R P).coeff k = 0` whenever `k * Fintype.card σ ≠ m`.
 * `MvPolynomial.symmetricSubalgebra.evalTopEsymm_eq_zero_of_not_dvd` and
@@ -71,52 +65,6 @@ public section
 open Finset
 
 namespace MvPolynomial
-
-section WeightedHomogeneous
-
-variable {σ R S : Type*} [Fintype σ] [CommRing R] [CommRing S] {n : ℕ}
-
-/-- If `p ∈ symmetricSubalgebra σ R` is homogeneous of degree `m`, then its unique expression in the
-elementary symmetric polynomials `e₁, …, eₙ` (`n = Fintype.card σ`) is weighted homogeneous of
-weight `m` for the weights `i ↦ i + 1`. -/
-theorem isWeightedHomogeneous_esymmAlgEquiv_symm (hn : Fintype.card σ = n)
-    {p : symmetricSubalgebra σ R} {m : ℕ} (hp : (p : MvPolynomial σ R).IsHomogeneous m) :
-    ((esymmAlgEquiv σ R hn).symm p).IsWeightedHomogeneous (fun i : Fin n ↦ (i : ℕ) + 1) m := by
-  have hinj : Function.Injective
-      (aeval (R := R) fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1)) := by
-    intro q₁ q₂ hq
-    exact esymmAlgHom_injective R hn.ge (Subtype.ext (by simpa [esymmAlgHom_apply] using hq))
-  refine isWeightedHomogeneous_of_isHomogeneous_aeval
-    (fun i : Fin n ↦ isHomogeneous_esymm (σ := σ) (R := R) ((i : ℕ) + 1)) hinj ?_
-  have happly : aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1))
-      ((esymmAlgEquiv σ R hn).symm p) = (p : MvPolynomial σ R) := by
-    rw [← esymmAlgHom_apply, ← esymmAlgEquiv_apply σ R hn, AlgEquiv.apply_symm_apply]
-  rwa [happly]
-
-/-- Expressing a symmetric polynomial in the elementary symmetric polynomials commutes with
-changing coefficients along a ring homomorphism `f : R →+* S`. -/
-theorem map_esymmAlgEquiv_symm (hn : Fintype.card σ = n) (f : R →+* S)
-    (p : symmetricSubalgebra σ R) :
-    map f ((esymmAlgEquiv σ R hn).symm p) =
-      (esymmAlgEquiv σ S hn).symm ⟨map f p, p.2.map f⟩ := by
-  apply (esymmAlgEquiv σ S hn).injective
-  apply Subtype.ext
-  rw [(esymmAlgEquiv σ S hn).apply_symm_apply]
-  have hR : aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1))
-      ((esymmAlgEquiv σ R hn).symm p) = p := by
-    rw [← esymmAlgHom_apply, ← esymmAlgEquiv_apply σ R hn, AlgEquiv.apply_symm_apply]
-  calc
-    (esymmAlgEquiv σ S hn (map f ((esymmAlgEquiv σ R hn).symm p)) : MvPolynomial σ S)
-      = eval₂ C (fun i : Fin n ↦ map f (esymm σ R ((i : ℕ) + 1)))
-          (map f ((esymmAlgEquiv σ R hn).symm p)) := by
-        simp [esymmAlgEquiv_apply, esymmAlgHom_apply, aeval_def, map_esymm]
-    _ = map f (aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1))
-          ((esymmAlgEquiv σ R hn).symm p)) := by
-        rw [eval₂_map, aeval_def, hom_eval₂]
-        exact congrFun (congrArg₂ eval₂ (RingHom.ext fun _ ↦ by simp) rfl) _
-    _ = map f p := congrArg (map f) hR
-
-end WeightedHomogeneous
 
 namespace symmetricSubalgebra
 
@@ -177,16 +125,6 @@ private theorem evalTopEsymm_mul_esymm_mul_eq_zero {a : ℕ} (ha0 : 0 < a)
     (hane : a ≠ Fintype.card σ) (x y : symmetricSubalgebra σ R) :
     evalTopEsymm σ R (x * ⟨esymm σ R a, esymm_isSymmetric σ R a⟩ * y) = 0 := by
   rw [map_mul, map_mul, evalTopEsymm_esymm_of_pos ha0, ite_eq_right hane, mul_zero, zero_mul]
-
-private theorem neg_one_pow_succ_mul_neg_one_pow_pred {α : Type*} [Ring α] {n : ℕ} (hn : 0 < n) :
-    (-1 : α) ^ (n + 1) * (-1) ^ (n - 1) = 1 := by
-  have hexp : n + 1 + (n - 1) = 2 * n := by omega
-  rw [← pow_add, hexp, pow_mul, neg_one_sq, one_pow]
-
-private theorem neg_neg_one_pow_mul_neg_one_pow_pred {α : Type*} [Ring α] {n : ℕ} (hn : 0 < n) :
-    -((-1 : α) ^ n * (-1) ^ (n - 1)) = 1 := by
-  have hexp : n + (n - 1) = 2 * (n - 1) + 1 := by omega
-  rw [← pow_add, hexp, pow_succ, pow_mul, neg_one_sq, one_pow, one_mul, neg_neg]
 
 section Nonempty
 
@@ -303,12 +241,8 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
         refine Finset.sum_eq_zero fun a ha ↦ ?_
         rw [mem_filter, Set.mem_Ioo] at ha
         exact evalTopEsymm_mul_esymm_mul_eq_zero ha.2.1 ha.2.2.ne _ _
-      rw [hsum, sub_zero,
-        show (-1 : Polynomial R) ^ (Fintype.card σ + 1) * (Fintype.card σ : Polynomial R) *
-            ((-1) ^ (Fintype.card σ - 1) * Polynomial.X) =
-          ((-1 : Polynomial R) ^ (Fintype.card σ + 1) * (-1) ^ (Fintype.card σ - 1)) *
-            ((Fintype.card σ : Polynomial R) * Polynomial.X) by ring,
-        neg_one_pow_succ_mul_neg_one_pow_pred hn, one_mul]
+      rw [hsum, sub_zero, mul_mul_mul_comm, ← pow_add,
+        Even.neg_one_pow ⟨Fintype.card σ, by omega⟩, one_mul]
     · -- Case `m > n`: `eₘ = 0` and only the `a = (n, m - n)` summand survives, reducing to
       -- `p_{m-n}` by strong induction.
       rw [ite_eq_right hgt.ne', mul_zero, zero_sub]
@@ -326,15 +260,9 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
           have hdiv : m / Fintype.card σ = (m - Fintype.card σ) / Fintype.card σ + 1 := by
             conv_lhs => rw [← Nat.sub_add_cancel hgt.le]
             exact Nat.add_div_right (m - Fintype.card σ) hn
-          rw [hdiv, pow_succ,
-            show -((-1 : Polynomial R) ^ Fintype.card σ *
-                ((-1) ^ (Fintype.card σ - 1) * Polynomial.X) *
-                ((Fintype.card σ : Polynomial R) *
-                  Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ))) =
-              -((-1 : Polynomial R) ^ Fintype.card σ * (-1) ^ (Fintype.card σ - 1)) *
-                ((Fintype.card σ : Polynomial R) *
-                  (Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ) * Polynomial.X)) by ring,
-            neg_neg_one_pow_mul_neg_one_pow_pred hn, one_mul]
+          rw [hdiv, pow_succ, ← mul_assoc ((-1 : Polynomial R) ^ Fintype.card σ), ← pow_add,
+            Odd.neg_one_pow ⟨Fintype.card σ - 1, by omega⟩]
+          ring
         · simp [h₁, mt hdvd.mpr h₁]
       · intro a ha hne
         rw [mem_filter, mem_antidiagonal, Set.mem_Ioo] at ha
