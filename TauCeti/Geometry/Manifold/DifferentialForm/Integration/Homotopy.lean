@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
@@ -67,10 +66,6 @@ operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold wit
 * `TauCeti.rectangleIntegral_congr`: the integral only depends on the map on the closed rectangle.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
-* `TauCeti.rectangleIntegral_comp_mul_add_fst`: an affine reparametrization of the first
-  coordinate moves the integral to the image rectangle.
-* `TauCeti.rectangleIntegral_add_adjacent_fst`: for a `C¹` map and a continuous form, the
-  integral is additive under cutting the rectangle along a line `s = m`.
 * `TauCeti.rectangleIntegral_sub_rectangleIntegral_eq_sides`: Stokes' formula for a homotopy of
   maps of a rectangle, for a closed form.
 * `TauCeti.rectangleIntegral_eq_of_homotopy`: homotopy invariance of the integral of a closed form
@@ -250,78 +245,6 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
     mpullback_comp_clm_apply_eq_zero φ γ (.fst ℝ ℝ ℝ) (j := fun s ↦ (s, z.2)) (by fun_prop)
       (fun _ ↦ rfl) rfl (i := 1) rfl
   simp [rectangleIntegral_def, h]
-
-/-- Reparametrizing the first coordinate by an affine map `s ↦ c * s + d` moves the integral to
-the image rectangle; for `c < 0` this reverses the orientation of the first coordinate. -/
-theorem rectangleIntegral_comp_mul_add_fst (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (c d : ℝ)
-    (a b : ℝ × ℝ) :
-    rectangleIntegral φ (fun z ↦ u (c * z.1 + d, z.2)) a b =
-      rectangleIntegral φ u (c * a.1 + d, a.2) (c * b.1 + d, b.2) := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp only [zero_mul, zero_add]
-    rw [rectangleIntegral_of_fst_eq φ u (a := (d, a.2)) (b := (d, b.2)) rfl]
-    exact rectangleIntegral_comp_snd φ (fun t ↦ u (d, t)) a b
-  let L : ℝ × ℝ →L[ℝ] ℝ × ℝ := (c • ContinuousLinearMap.fst ℝ ℝ ℝ).prod (.snd ℝ ℝ ℝ)
-  have hL (z : ℝ × ℝ) : HasFDerivAt (fun z : ℝ × ℝ ↦ (c * z.1 + d, z.2)) L z := by
-    have := (L.hasFDerivAt (x := z)).add_const ((d, 0) : ℝ × ℝ)
-    convert this using 1
-    ext <;> simp [L]
-  -- The integrand picks up the factor `c` from `∂_s`; where `u` is not differentiable, neither is
-  -- its reparametrization, and both integrands vanish.
-  have key (s t : ℝ) :
-      mpullback 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ u (c * z.1 + d, z.2)) φ (s, t) ![(1, 0), (0, 1)] =
-        c • mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (c * s + d, t) ![(1, 0), (0, 1)] := by
-    by_cases hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (c * s + d, t)
-    · have h := mpullback_comp_apply_of_hasFDerivAt (u := u) (hL (s, t)) hu φ
-      simp only [Function.comp_def] at h
-      rw [h]
-      refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
-      have hv : (L ∘ ![((1 : ℝ), (0 : ℝ)), (0, 1)]) =
-          Function.update ![((1 : ℝ), (0 : ℝ)), (0, 1)] 0 (c • ((1 : ℝ), (0 : ℝ))) := by
-        funext i
-        fin_cases i <;> simp [L]
-      refine (congrArg (mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (c * s + d, t)) hv).trans ?_
-      have hupd : Function.update ![((1 : ℝ), (0 : ℝ)), (0, 1)] 0 ((1 : ℝ), (0 : ℝ)) =
-          ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
-        simp
-      exact ((mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (c * s + d, t)).map_update_smul _ 0 c _).trans
-        (congrArg _ (congrArg (mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (c * s + d, t)) hupd))
-    · have hu' : ¬MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ u (c * z.1 + d, z.2)) (s, t) := by
-        intro h
-        refine hu ?_
-        have hinv : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ)
-            (fun z : ℝ × ℝ ↦ (c⁻¹ * (z.1 - d), z.2)) (c * s + d, t) :=
-          DifferentiableAt.mdifferentiableAt (by fun_prop)
-        have h' : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ u (c * z.1 + d, z.2))
-            ((fun z : ℝ × ℝ ↦ (c⁻¹ * (z.1 - d), z.2)) (c * s + d, t)) := by
-          simpa [hc] using h
-        convert h'.comp (c * s + d, t) hinv using 1
-        funext z
-        simp [hc]
-      simp only [mpullback_apply, mfderiv_zero_of_not_mdifferentiableAt hu,
-        mfderiv_zero_of_not_mdifferentiableAt hu', zero_apply]
-      rw [(φ _).map_coord_zero (0 : Fin 2) rfl, smul_zero]
-  simp only [rectangleIntegral_def, key, intervalIntegral.integral_smul]
-  exact intervalIntegral.smul_integral_comp_mul_add
-    (f := fun σ ↦ ∫ t in a.2..b.2, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (σ, t) ![(1, 0), (0, 1)]) c d
-
-/-- The integral over a `C¹` map of a continuous form is additive in the first coordinate: cutting
-the rectangle `[a.1, b.1] × [a.2, b.2]` along the line `s = m` splits the integral. -/
-theorem rectangleIntegral_add_adjacent_fst [IsManifold I 1 M]
-    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a b : ℝ × ℝ) (m : ℝ) :
-    rectangleIntegral φ u a (m, b.2) + rectangleIntegral φ u (m, a.2) b =
-      rectangleIntegral φ u a b := by
-  -- The integrand is continuous, hence so is the inner integral.
-  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
-  have hψ : ContDiff ℝ 0 ψ := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
-  have hc := intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
-    (μ := volume) (f := fun s t ↦ ψ (s, t) ![(1, 0), (0, 1)])
-    ((ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) F ![(1, 0), (0, 1)]).continuous.comp
-      hψ.continuous) a.2 b.2
-  simp only [rectangleIntegral_def]
-  exact intervalIntegral.integral_add_adjacent_intervals (hc.intervalIntegrable (μ := volume) _ _)
-    (hc.intervalIntegrable (μ := volume) _ _)
 
 /-- A side face of a homotopy, over `[y₀, y₁] × [0, 1]`, has zero integral when its edge stays
 fixed, or remains a constant path at `y`, during the homotopy. -/

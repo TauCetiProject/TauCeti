@@ -25,9 +25,7 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
-smooth right inverse, such as a vector bundle projection, is injective. Along a map of the plane,
-`mpullback_apply_inl` and `mpullback_apply_inr` evaluate a pulled-back one-form on the coordinate
-vectors as the pullbacks along the coordinate lines.
+smooth right inverse, such as a vector bundle projection, is injective.
 
 Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
 through `x`, a form is `C^m` near `f x` exactly when its pullback along `f` is `C^m` near `x`,
@@ -206,42 +204,6 @@ theorem IsSmoothForm.mpullback (hω : IsSmoothForm I' m ω)
   rw [isSmoothForm_def]
   exact (isSmoothBundleForm_def _ _).mp
     (IsSmoothBundleForm.mpullback ((isSmoothBundleForm_def _ _).mpr hω.contMDiff) hf le_rfl)
-
-omit [IsManifold I 1 M] in
-/-- Along a map of the plane, the pullback of a one-form evaluated on `∂_s` at `(s, t)` is the
-pullback along the line `s ↦ w (s, t)`. -/
-theorem mpullback_apply_inl (α : RoughForm I M F 1) {w : ℝ × ℝ → M} {s t : ℝ}
-    (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (s, t)) :
-    mpullback 𝓘(ℝ, ℝ × ℝ) I w α (s, t) (fun _ ↦ (1, 0)) =
-      mpullback 𝓘(ℝ) I (fun s ↦ w (s, t)) α s (fun _ ↦ 1) := by
-  have h := mpullback_comp_apply_of_hasFDerivAt (u := w) (L := fun s : ℝ ↦ (s, t))
-    ((hasFDerivAt_id s).prodMk (hasFDerivAt_const t s)) hw α
-  simp only [Function.comp_def] at h
-  rw [h]
-  refine Eq.trans ?_ (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
-  -- Identify the evaluation vector with the image of `1` under the derivative of the line;
-  -- the tangent spaces of `ℝ × ℝ` and `ℝ` are these model spaces by definition.
-  refine congrArg _ (funext fun _ ↦ ?_)
-  change ((1, 0) : ℝ × ℝ) = (ContinuousLinearMap.id ℝ ℝ).prod 0 (1 : ℝ)
-  simp
-
-omit [IsManifold I 1 M] in
-/-- Along a map of the plane, the pullback of a one-form evaluated on `∂_t` at `(s, t)` is the
-pullback along the line `t ↦ w (s, t)`. -/
-theorem mpullback_apply_inr (α : RoughForm I M F 1) {w : ℝ × ℝ → M} {s t : ℝ}
-    (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (s, t)) :
-    mpullback 𝓘(ℝ, ℝ × ℝ) I w α (s, t) (fun _ ↦ (0, 1)) =
-      mpullback 𝓘(ℝ) I (fun t ↦ w (s, t)) α t (fun _ ↦ 1) := by
-  have h := mpullback_comp_apply_of_hasFDerivAt (u := w) (L := fun t : ℝ ↦ (s, t))
-    ((hasFDerivAt_const s t).prodMk (hasFDerivAt_id t)) hw α
-  simp only [Function.comp_def] at h
-  rw [h]
-  refine Eq.trans ?_ (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
-  -- Identify the evaluation vector with the image of `1` under the derivative of the line;
-  -- the tangent spaces of `ℝ × ℝ` and `ℝ` are these model spaces by definition.
-  refine congrArg _ (funext fun _ ↦ ?_)
-  change ((0, 1) : ℝ × ℝ) = (0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ) (1 : ℝ)
-  simp
 
 /-- The pullback of a continuous form along a `C¹` map `u` from a normed space, evaluated on fixed
 vectors, is continuous. For `u` a map of the plane this is the integrand of a rectangle
