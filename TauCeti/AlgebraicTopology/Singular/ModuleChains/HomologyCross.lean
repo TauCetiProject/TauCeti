@@ -77,6 +77,9 @@ theorem singularHomologyCrossBilinear_naturality (f : X ⟶ X') (g : Y ⟶ Y')
   have he := (congrArg (fun t ↦ t (a' ⊗ₜ[k] b')) hn).symm
   simp only [CategoryTheory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul] at he
   simp only [singularHomologyCrossBilinear_apply]
+  -- TopCat's cartesian monoidal structure defines `X ⊗ Y` as `TopCat.of (X × Y)`
+  -- and `f ⊗ g` as `TopCat.ofHom (f.hom.prodMap g.hom)`. This identification accounts
+  -- for the remaining definitional equality between the two induced homology maps.
   convert he using 1
   rfl
 

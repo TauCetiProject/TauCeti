@@ -13,7 +13,7 @@ public import TauCeti.Topology.Instances.AddCircle.Cover
 /-!
 # The integral class of a positive circuit of an additive circle
 
-The loop `t ↦ [t * p]` defines `AddCircle.timeHomologyClass p` in the first integral singular
+The loop `t ↦ [t * p]` defines `AddCircle.fundamentalClass p` in the first integral singular
 homology of `AddCircle p`. For positive `p`, a loop winding `n` times represents `n` times this
 class. Reduction from a circle of length `k * p` to one of length `p` therefore multiplies
 the circuit class by `k`. This keeps track of traversal multiplicity when closed curves are
@@ -39,12 +39,12 @@ variable (p : ℝ)
 
 /-- The integral homology class of the circuit `t ↦ [t * p]` of `AddCircle p`. For `p > 0`
 this follows the positive real time direction once around the circle. -/
-def timeHomologyClass : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1 :=
+def fundamentalClass : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1 :=
   H₁AddEquivHomology _ (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1))
 
 /-- The circuit class is the Hurewicz class of the straight loop winding once. -/
-theorem timeHomologyClass_def :
-    timeHomologyClass p = H₁AddEquivHomology _
+theorem fundamentalClass_def :
+    fundamentalClass p = H₁AddEquivHomology _
       (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1)) := (rfl)
 
 /-- Winding `n` times around a positive-period circle multiplies its circuit class by `n`.
@@ -52,35 +52,34 @@ Negative windings reverse orientation. -/
 @[simp]
 theorem H₁AddEquivHomology_loopClass_zsmulLoop [Fact (0 < p)] (n : ℤ) :
     H₁AddEquivHomology _ (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n)) =
-      n • timeHomologyClass p := by
+      n • fundamentalClass p := by
   have hpow : FundamentalGroup.fromPath (.mk (zsmulLoop p 0 n)) =
       (FundamentalGroup.fromPath (.mk (zsmulLoop p 0 1))) ^ n := by
     apply (windingNumberIso ((0 : ℝ) : AddCircle p)).injective
     apply Multiplicative.toAdd.injective
+    have hwinding : windingNumber (x := ((0 : ℝ) : AddCircle p))
+        (FundamentalGroup.fromPath (.mk (zsmulLoop p 0 n))) =
+        n • windingNumber (x := ((0 : ℝ) : AddCircle p))
+          (FundamentalGroup.fromPath (.mk (zsmulLoop p 0 1))) := by
+      simp [windingNumber_zsmulLoop (p := p)]
     simp only [map_zpow, toAdd_zpow]
-    have hn := windingNumber_zsmulLoop (p := p) 0 n
-    have h1 := windingNumber_zsmulLoop (p := p) 0 1
-    rw [windingNumber] at hn h1
-    rw [hn, h1, smul_eq_mul, mul_one]
+    exact hwinding
   have h := congrArg
     (fun g ↦ (hurewicz₁ (TopCat.of (AddCircle p)) ((0 : ℝ) : AddCircle p) g).toAdd) hpow
   have hclass : loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n) =
       n • loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1) := by
-    rw [map_zpow, hurewicz₁_mk (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n),
-      hurewicz₁_mk (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1),
-      toAdd_ofAdd, toAdd_zpow, toAdd_ofAdd] at h
-    exact h
-  rw [hclass, map_zsmul, timeHomologyClass_def]
+    simpa [hurewicz₁_mk (X := TopCat.of (AddCircle p))] using h
+  rw [hclass, map_zsmul, fundamentalClass_def]
 
 variable {p} {q : ℝ} (h : p ∈ AddSubgroup.zmultiples q)
 
 /-- A reduction map from a circle of length `p = k * q` to the positive-period circle of
 length `q` sends one circuit to `k` circuits. -/
-theorem singularHomologyMap_coverMap_timeHomologyClass [Fact (0 < q)] (k : ℤ)
+theorem singularHomologyMap_coverMap_fundamentalClass [Fact (0 < q)] (k : ℤ)
     (hp : p = k * q) :
     ContinuousMap.singularHomologyMap ℤ 1 ⟨coverMap h, continuous_coverMap h⟩
-      (timeHomologyClass p) = k • timeHomologyClass q := by
-  rw [timeHomologyClass_def, homologyMap_H₁AddEquivHomology_loopClass]
+      (fundamentalClass p) = k • fundamentalClass q := by
+  rw [fundamentalClass_def, homologyMap_H₁AddEquivHomology_loopClass]
   have heq : loopClass (X := TopCat.of (AddCircle q)) ((zsmulLoop p 0 1).map
       (continuous_coverMap h)) =
       loopClass (X := TopCat.of (AddCircle q)) (zsmulLoop q 0 k) := by
@@ -100,15 +99,15 @@ namespace TauCeti
 
 /-- The cross product of the circuit classes of `AddCircle p` and `AddCircle q`, in that
 order. For positive periods this is the class of the positively oriented parameter torus. -/
-def addCircleProdTimeHomologyClass (p q : ℝ) :
+def addCircleProdFundamentalClass (p q : ℝ) :
     ((singularChains ℤ).obj (TopCat.of (AddCircle p × AddCircle q))).homology 2 :=
   TopCat.singularHomologyCrossBilinear ℤ (TopCat.of (AddCircle p)) (TopCat.of (AddCircle q))
-    1 1 2 rfl (AddCircle.timeHomologyClass p) (AddCircle.timeHomologyClass q)
+    1 1 2 rfl (AddCircle.fundamentalClass p) (AddCircle.fundamentalClass q)
 
 /-- The class of the parameter torus is the ordered cross product of its circuit classes. -/
-theorem addCircleProdTimeHomologyClass_def (p q : ℝ) :
-    addCircleProdTimeHomologyClass p q =
+theorem addCircleProdFundamentalClass_def (p q : ℝ) :
+    addCircleProdFundamentalClass p q =
       TopCat.singularHomologyCrossBilinear ℤ (TopCat.of (AddCircle p)) (TopCat.of (AddCircle q))
-        1 1 2 rfl (AddCircle.timeHomologyClass p) (AddCircle.timeHomologyClass q) := (rfl)
+        1 1 2 rfl (AddCircle.fundamentalClass p) (AddCircle.fundamentalClass q) := (rfl)
 
 end TauCeti

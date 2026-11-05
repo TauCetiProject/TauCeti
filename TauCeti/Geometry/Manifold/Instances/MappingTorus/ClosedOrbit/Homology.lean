@@ -46,13 +46,13 @@ closed orbit. For positive period the parameter follows the positive real time d
 def closedOrbitHomologyClass (hx : Function.IsPeriodicPt φ d x) :
     ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1 :=
   ContinuousMap.singularHomologyMap ℤ 1 ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩
-    (AddCircle.timeHomologyClass d)
+    (AddCircle.fundamentalClass d)
 
 /-- The orbit class is the pushforward of the circuit class of its period circle. -/
 theorem closedOrbitHomologyClass_def (hx : Function.IsPeriodicPt φ d x) :
     closedOrbitHomologyClass hx =
       ContinuousMap.singularHomologyMap ℤ 1 ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩
-        (AddCircle.timeHomologyClass d) := (rfl)
+        (AddCircle.fundamentalClass d) := (rfl)
 
 /-- The cross product of the independent unit circle with the closed suspension orbit.
 For positive orbit period this is the integral class of the parametrized periodic torus. -/
@@ -60,28 +60,28 @@ def orbitTorusHomologyClass (hx : Function.IsPeriodicPt φ d x) :
     ((singularChains ℤ).obj (TopCat.of (UnitAddCircle × SmoothMappingTorus φ))).homology 2 :=
   TopCat.singularHomologyCrossBilinear ℤ (TopCat.of UnitAddCircle)
     (TopCat.of (SmoothMappingTorus φ)) 1 1 2 rfl
-      (AddCircle.timeHomologyClass 1) (closedOrbitHomologyClass hx)
+      (AddCircle.fundamentalClass 1) (closedOrbitHomologyClass hx)
 
 /-- The orbit-torus class is the ordered cross product of the two one-dimensional classes. -/
 theorem orbitTorusHomologyClass_def (hx : Function.IsPeriodicPt φ d x) :
     orbitTorusHomologyClass hx =
       TopCat.singularHomologyCrossBilinear ℤ (TopCat.of UnitAddCircle)
         (TopCat.of (SmoothMappingTorus φ)) 1 1 2 rfl
-          (AddCircle.timeHomologyClass 1) (closedOrbitHomologyClass hx) := (rfl)
+          (AddCircle.fundamentalClass 1) (closedOrbitHomologyClass hx) := (rfl)
 
 /-- The cross-product class is represented by the actual periodic-torus parametrization,
 with the orientation given by the independent circle followed by the orbit circle. -/
-theorem singularHomologyMap_orbitTorus_addCircleProdTimeHomologyClass
+theorem singularHomologyMap_orbitTorus_addCircleProdFundamentalClass
     (hx : Function.IsPeriodicPt φ d x) :
     ContinuousMap.singularHomologyMap ℤ 2
         ⟨orbitTorus φ hx, continuous_orbitTorus hx⟩
-        (addCircleProdTimeHomologyClass 1 d) = orbitTorusHomologyClass hx := by
-  rw [addCircleProdTimeHomologyClass_def, orbitTorusHomologyClass_def,
+        (addCircleProdFundamentalClass 1 d) = orbitTorusHomologyClass hx := by
+  rw [addCircleProdFundamentalClass_def, orbitTorusHomologyClass_def,
     closedOrbitHomologyClass_def]
   have h := TopCat.singularHomologyCrossBilinear_naturality ℤ
     (𝟙 (TopCat.of UnitAddCircle))
     (TopCat.ofHom ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩) 1 1 2 rfl
-    (AddCircle.timeHomologyClass 1) (AddCircle.timeHomologyClass d)
+    (AddCircle.fundamentalClass 1) (AddCircle.fundamentalClass d)
   have hmap : (ContinuousMap.id UnitAddCircle).prodMap
       ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩ =
       ⟨orbitTorus φ hx, continuous_orbitTorus hx⟩ := by
@@ -106,7 +106,7 @@ theorem closedOrbitHomologyClass_const_mul (hx : Function.IsPeriodicPt φ d x)
     ext θ
     exact closedOrbit_coverMap hx (hx.const_mul k) hdm θ
   rw [closedOrbitHomologyClass_def, ← hcomp, ContinuousMap.singularHomologyMap_comp,
-    AddCircle.singularHomologyMap_coverMap_timeHomologyClass hdm (k : ℤ)
+    AddCircle.singularHomologyMap_coverMap_fundamentalClass hdm (k : ℤ)
       (by simp [Nat.cast_mul])]
   rw [map_zsmul, closedOrbitHomologyClass_def, natCast_zsmul]
 
