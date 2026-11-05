@@ -22,6 +22,10 @@ and compatibility with the subspace topology for the hyperboloid Riemannian metr
 The differential of the ambient level function and the differential of the global
 graph parametrization both identify this same tangent hyperplane.
 
+The Lorentz-normal projection `Hyperboloid.tangentProjection`, given by
+`v ↦ v + L(p,v)p`, fixes tangent vectors, kills the position vector, and preserves
+the Lorentz pairing with tangent vectors. It is used to differentiate tangent fields.
+
 ## References
 
 * J. Ratcliffe, *Foundations of Hyperbolic Manifolds*, third edition, Sections 3.1–3.2
@@ -70,25 +74,30 @@ theorem hasFDerivAt_minkowskiNormSq (p : ℝ × E) :
   have htime := (hasFDerivAt_fst (𝕜 := ℝ) (p := p)).pow 2
   have hspace := (hasStrictFDerivAt_norm_sq p.2).hasFDerivAt.comp p
     (hasFDerivAt_snd (𝕜 := ℝ) (p := p))
-  have h := htime.sub hspace
-  have hd : (2 • p.1 ^ (2 - 1)) • ContinuousLinearMap.fst ℝ ℝ E -
-      (2 • innerSL ℝ p.2).comp (ContinuousLinearMap.snd ℝ ℝ E) = -2 • lorentzForm p := by
-    apply ContinuousLinearMap.ext
-    intro v
-    simp
-    ring
-  rw [hd] at h
   have hf : minkowskiNormSq = (fun v : ℝ × E ↦ v.1 ^ 2 - ‖v.2‖ ^ 2) :=
     funext minkowskiNormSq_def
   rw [hf]
-  exact h
+  exact (htime.sub hspace).congr_fderiv (by
+    apply ContinuousLinearMap.ext
+    intro v
+    simp
+    ring)
 
 namespace Hyperboloid
 
 variable (p : hyperboloid E)
 
+/-- The position vector on the unit hyperboloid has Lorentz square `-1`. -/
+theorem lorentzForm_self_eq_neg_one : lorentzForm (p : ℝ × E) p = -1 := by
+  rw [lorentzForm_self, (mem_hyperboloid.mp p.property).2]
+
 /-- The tangent hyperplane, Lorentz-orthogonal to the position vector. -/
 def tangent : Submodule ℝ (ℝ × E) := (lorentzForm (p : ℝ × E)).ker
+
+/-- A tangent vector is Lorentz-orthogonal to the position vector. -/
+theorem lorentzForm_eq_zero_of_mem_tangent {v : ℝ × E} (hv : v ∈ tangent p) :
+    lorentzForm (p : ℝ × E) v = 0 :=
+  (LinearMap.mem_ker).mp hv
 
 /-- The tangent equation in ambient coordinates. -/
 @[simp] theorem mem_tangent (v : ℝ × E) :
@@ -144,7 +153,7 @@ theorem lorentzForm_tangentLift (u v : E) :
   simp [div_mul_div_comm, pow_two]
 
 /-- A quantitative lower bound for the Lorentz form on a tangent hyperplane. -/
-theorem norm_snd_sq_div_le_lorentzForm (v : tangent p) :
+theorem norm_snd_sq_div_le_lorentzForm_self (v : tangent p) :
     ‖(v : ℝ × E).2‖ ^ 2 / (p : ℝ × E).1 ^ 2 ≤ lorentzForm (v : ℝ × E) v := by
   have hcs := real_inner_mul_inner_self_le (p : ℝ × E).2 (v : ℝ × E).2
   rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
@@ -154,14 +163,15 @@ theorem norm_snd_sq_div_le_lorentzForm (v : tangent p) :
   nlinarith [time_sq p]
 
 /-- The Lorentz form is positive definite on every hyperboloid tangent hyperplane. -/
-theorem lorentzForm_pos (v : tangent p) (hv : v ≠ 0) : 0 < lorentzForm (v : ℝ × E) v := by
+theorem lorentzForm_self_pos (v : tangent p) (hv : v ≠ 0) :
+    0 < lorentzForm (v : ℝ × E) v := by
   have hs : (v : ℝ × E).2 ≠ 0 := by
     intro h
     apply hv
     apply (tangentEquiv p).injective
     simpa using h
   exact (div_pos (sq_pos_of_pos (norm_pos_iff.mpr hs)) (sq_pos_of_pos (time_pos p))).trans_le
-    (norm_snd_sq_div_le_lorentzForm p v)
+    (norm_snd_sq_div_le_lorentzForm_self p v)
 
 /-- The tangent hyperplane is precisely the kernel of the ambient level differential. -/
 theorem ker_fderiv_minkowskiNormSq :
@@ -175,15 +185,13 @@ theorem hasFDerivAt_parametrization (x : E) :
     HasFDerivAt (fun y : E ↦ (parametrization y : ℝ × E))
       (tangentLift (parametrization x)) x := by
   have hn := (hasStrictFDerivAt_norm_sq x).hasFDerivAt.const_add 1
-  have h := (hn.sqrt (by positivity)).prodMk (hasFDerivAt_id x)
-  have hd : ((1 / (2 * Real.sqrt (1 + ‖x‖ ^ 2))) • (2 • innerSL ℝ x)).prod
-      (ContinuousLinearMap.id ℝ E) = tangentLift (parametrization x) := by
-    apply ContinuousLinearMap.ext
-    intro v
-    apply Prod.ext <;> simp [tangentLift_apply, div_eq_mul_inv]
-    ring
-  rw [hd] at h
-  simpa only [coe_parametrization, id_eq] using h
+  simpa only [coe_parametrization, id_eq] using
+    ((hn.sqrt (by positivity)).prodMk (hasFDerivAt_id x)).congr_fderiv
+      (g' := tangentLift (parametrization x)) (by
+        ext v
+        · simp [tangentLift_apply, div_eq_mul_inv]
+          ring
+        · simp [tangentLift_apply])
 
 /-- The image of the parametrization differential is exactly the tangent hyperplane. -/
 theorem range_fderiv_parametrization (x : E) :
@@ -195,7 +203,9 @@ theorem range_fderiv_parametrization (x : E) :
   · rintro ⟨u, rfl⟩
     exact tangentLift_mem _ u
   · intro hv
-    exact ⟨v.2, congrArg Subtype.val ((tangentEquiv (parametrization x)).symm_apply_apply ⟨v, hv⟩)⟩
+    refine ⟨v.2, ?_⟩
+    simpa only [tangentEquiv_apply, coe_tangentEquiv_symm, ContinuousLinearMap.coe_coe] using
+      congrArg Subtype.val ((tangentEquiv (parametrization x)).symm_apply_apply ⟨v, hv⟩)
 
 /-- The Lorentz-orthogonal projection onto the tangent hyperplane. It kills the normal
 position vector and fixes every tangent vector. -/
@@ -205,10 +215,8 @@ def tangentProjection : (ℝ × E) →L[ℝ] tangent p :=
       simp only [add_apply, ContinuousLinearMap.id_apply,
         ContinuousLinearMap.smulRight_apply]
       -- The normal has Lorentz square `-1`, so the normal component cancels.
-      have hp : lorentzForm (p : ℝ × E) p = -1 := by
-        rw [lorentzForm_self, (mem_hyperboloid.mp p.property).2]
       simp only [tangent, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_add, map_smul,
-        hp, smul_eq_mul, mul_neg_one, add_neg_cancel]
+        lorentzForm_self_eq_neg_one, smul_eq_mul, mul_neg_one, add_neg_cancel]
 
 /-- The projection adds the Lorentz pairing with the normal times the normal. -/
 @[simp] theorem coe_tangentProjection (v : ℝ × E) :
@@ -217,20 +225,20 @@ def tangentProjection : (ℝ × E) →L[ℝ] tangent p :=
 /-- Tangent projection fixes tangent vectors. -/
 @[simp] theorem tangentProjection_coe (v : tangent p) : tangentProjection p v = v := by
   apply Subtype.ext
-  have hv : lorentzForm (p : ℝ × E) (v : ℝ × E) = 0 := v.property
+  have hv := lorentzForm_eq_zero_of_mem_tangent p v.property
   simp [hv]
 
 /-- Tangent projection kills the position vector. -/
 @[simp] theorem tangentProjection_self : tangentProjection p p = 0 := by
   apply Subtype.ext
-  rw [coe_tangentProjection, lorentzForm_self, (mem_hyperboloid.mp p.property).2]
+  rw [coe_tangentProjection, lorentzForm_self_eq_neg_one]
   simp
 
 /-- Tangent projection preserves the Lorentz pairing with every tangent vector. -/
 theorem lorentzForm_tangentProjection (u : ℝ × E) (v : tangent p) :
     lorentzForm (tangentProjection p u : ℝ × E) v = lorentzForm u v := by
   rw [coe_tangentProjection]
-  have hv : lorentzForm (p : ℝ × E) (v : ℝ × E) = 0 := v.property
+  have hv := lorentzForm_eq_zero_of_mem_tangent p v.property
   simp only [map_add, map_smulₛₗ, add_apply, smul_apply, hv, smul_zero,
     add_zero]
 

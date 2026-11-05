@@ -111,6 +111,16 @@ lemma hyperboloid_subset_futureCone : hyperboloid E ⊆ futureCone E := by
 
 namespace Hyperboloid
 
+/-- The time coordinate of a point of the upper hyperboloid is positive. -/
+theorem time_pos (p : hyperboloid E) : 0 < (p : ℝ × E).1 :=
+  (mem_hyperboloid.mp p.property).1
+
+/-- The hyperboloid equation expressed as a square of the time coordinate. -/
+theorem time_sq (p : hyperboloid E) : (p : ℝ × E).1 ^ 2 = 1 + ‖(p : ℝ × E).2‖ ^ 2 := by
+  have h := (mem_hyperboloid.mp p.property).2
+  rw [minkowskiNormSq_def] at h
+  linarith
+
 private theorem graph_mem (x : E) : (Real.sqrt (1 + ‖x‖ ^ 2), x) ∈ hyperboloid E := by
   rw [mem_hyperboloid, minkowskiNormSq_def]
   exact ⟨Real.sqrt_pos.mpr (by positivity), by rw [Real.sq_sqrt (by positivity)]; ring⟩
@@ -124,12 +134,8 @@ def parametrization : E ≃ₜ hyperboloid E where
   right_inv p := by
     apply Subtype.ext
     apply Prod.ext
-    · have hp := (mem_hyperboloid.mp p.property).1
-      have hq := (mem_hyperboloid.mp p.property).2
-      rw [minkowskiNormSq_def] at hq
-      dsimp only
-      have hq' : 1 + ‖(p : ℝ × E).2‖ ^ 2 = (p : ℝ × E).1 ^ 2 := by linarith
-      rw [hq', Real.sqrt_sq hp.le]
+    · dsimp only
+      rw [← time_sq p, Real.sqrt_sq (time_pos p).le]
     · rfl
   continuous_toFun :=
     ((Real.continuous_sqrt.comp (continuous_const.add (continuous_norm.pow 2))).prodMk
@@ -143,17 +149,6 @@ def parametrization : E ≃ₜ hyperboloid E where
 /-- The inverse global parametrization is spatial projection. -/
 @[simp] theorem parametrization_symm_apply (p : hyperboloid E) :
     parametrization.symm p = (p : ℝ × E).2 := (rfl)
-
-variable (p : hyperboloid E)
-
-/-- The time coordinate of a point of the upper hyperboloid is positive. -/
-theorem time_pos : 0 < (p : ℝ × E).1 := (mem_hyperboloid.mp p.property).1
-
-/-- The hyperboloid equation expressed as a square of the time coordinate. -/
-theorem time_sq : (p : ℝ × E).1 ^ 2 = 1 + ‖(p : ℝ × E).2‖ ^ 2 := by
-  have h := (mem_hyperboloid.mp p.property).2
-  rw [minkowskiNormSq_def] at h
-  linarith
 
 end Hyperboloid
 
