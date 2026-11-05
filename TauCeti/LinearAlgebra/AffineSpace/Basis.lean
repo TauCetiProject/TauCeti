@@ -19,7 +19,8 @@ fixed reference basis.
 
 The file also computes the barycentric coordinates of a point after a homothety about the centroid
 of an affine basis (`AffineBasis.coord_homothety_centroid`), which describes the homothetic images
-of the simplex spanned by the basis.
+of the simplex spanned by the basis, and those of a point of the segment between two points of the
+basis (`AffineBasis.coord_lineMap`).
 
 ## Main statements
 
@@ -27,7 +28,9 @@ of the simplex spanned by the basis.
   affine basis `b₂` carries barycentric coordinates relative to `b` to those relative to `b₂`;
 * `AffineBasis.exists_affineEquiv_apply_eq`: there is an affine equivalence sending `b` to `b₂`;
 * `AffineBasis.coord_homothety_centroid`: the barycentric coordinates of the image of a point under
-  a homothety about the centroid of an affine basis.
+  a homothety about the centroid of an affine basis;
+* `AffineBasis.coord_lineMap`: the barycentric coordinates of a point of the segment between two
+  points of an affine basis.
 -/
 
 public section
@@ -65,6 +68,14 @@ theorem exists_affineEquiv_apply_eq : ∃ T : P ≃ᵃ[k] P₂, ∀ i, T (b i) =
       rw [← b.basisOf_apply i₀ ⟨i, hi⟩, Module.Basis.equiv_apply, Equiv.refl_apply,
         basisOf_apply]
     simp [hL]
+
+/-- The barycentric coordinates relative to an affine basis `b` of a point of the segment between
+two of its points: coordinate `i` of `lineMap (b j) (b l) t` is the point at `t` of the segment
+between the `i`-th coordinates of `b j` and `b l`, each `1` or `0`. -/
+theorem coord_lineMap [DecidableEq ι] (i j l : ι) (t : k) :
+    b.coord i (AffineMap.lineMap (b j) (b l) t) =
+      AffineMap.lineMap (if i = j then (1 : k) else 0) (if i = l then 1 else 0) t := by
+  rw [(b.coord i).apply_lineMap, b.coord_apply, b.coord_apply]
 
 end AffineBasis
 
