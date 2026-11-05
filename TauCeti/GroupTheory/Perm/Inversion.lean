@@ -52,6 +52,7 @@ namespace Equiv.Perm
 open _root_.Finset
 
 /-- Inserting `i` at the first position creates exactly `i` additional inversions. -/
+@[simp]
 theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
     (i : Fin (n + 2)) :
     (univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>

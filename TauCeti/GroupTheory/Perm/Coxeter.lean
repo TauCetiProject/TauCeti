@@ -323,11 +323,13 @@ namespace Equiv.Perm
 
 /-- The length of the permutation obtained by inserting `i` at the first position is
 `i` plus the length of the original permutation. -/
+-- The explicit Coxeter index keeps the characteristic rule in simp normal form.
+@[simp]
 theorem permCoxeterSystem_length_decomposeFin'Symm {n : ℕ}
     (σ : Equiv.Perm (Fin (n + 1))) (i : Fin (n + 2)) :
-    (permCoxeterSystem (n + 2)).length (Equiv.Perm.decomposeFin'Symm i σ) =
+    (permCoxeterSystem (n + 2)).length (B := Fin (n + 1)) (Equiv.Perm.decomposeFin'Symm i σ) =
       i.val + (permCoxeterSystem (n + 1)).length σ := by
-  simp only [permCoxeterSystem_length_eq_card_inversion,
+  rw [permCoxeterSystem_length_eq_card_inversion, permCoxeterSystem_length_eq_card_inversion,
     Equiv.Perm.card_inversion_decomposeFin'Symm]
 
 end Equiv.Perm
