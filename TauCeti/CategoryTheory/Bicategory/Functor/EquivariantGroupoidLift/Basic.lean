@@ -598,10 +598,11 @@ lemma actComp_associativity (p : Γ) (a b c ab bc abc : SingleObj.star H ⟶ Sin
     (actComp actions p ab c abc habc).hom.app X ≫
         (act actions p c).map ((actComp actions p a b ab hab).hom.app X) =
       (actComp actions p a bc abc habc').hom.app X ≫
-        (actComp actions p b c bc hbc).hom.app ((act actions p a).obj X) :=
-  (actions p).mapComp'₀₂₃_hom_comp_mapComp'_hom_whiskerRight_app a.toLoc b.toLoc c.toLoc
+        (actComp actions p b c bc hbc).hom.app ((act actions p a).obj X) := by
+  have := (actions p).mapComp'₀₂₃_hom_comp_mapComp'_hom_whiskerRight_app a.toLoc b.toLoc c.toLoc
     ab.toLoc bc.toLoc abc.toLoc (by rw [← Quiver.Hom.comp_toLoc, hab])
     (by rw [← Quiver.Hom.comp_toLoc, hbc]) (by rw [← Quiver.Hom.comp_toLoc, habc]) X
+  simpa [actComp_hom_app] using this
 
 omit [Category.{v₁, u₁} Γ] in
 /-- Left unitality of the composition comparisons of the prescribed action at `p`. -/
