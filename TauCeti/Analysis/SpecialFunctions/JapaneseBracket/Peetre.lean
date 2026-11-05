@@ -27,6 +27,9 @@ space `H^s` by at most the factor `2 ^ (|s| / 2) ⟨y⟩ ^ |s|`. This is the est
 boundedness of multiplication by Schwartz functions on `H^s` for every real `s`, and behind the
 commutator estimates of the pseudodifferential calculus.
 
+The file also records that a norm is at most its bracket, `‖x‖ ≤ ⟨x⟩`, in the form
+`‖x‖ ⟨x⟩ ^ s ≤ ⟨x⟩ ^ (s + 1)`: multiplying by a norm raises the order of a weight by at most one.
+
 The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mathlib's
 `TemperedDistribution.besselPotential`.
 
@@ -37,6 +40,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x + y⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x⟩ ^ s ⟨y⟩ ^ |s|`.
 * `TauCeti.one_add_norm_sq_rpow_le_mul_sub`: the equivalent form
   `⟨x⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x - y⟩ ^ |s| ⟨y⟩ ^ s`.
+* `TauCeti.norm_mul_one_add_norm_sq_rpow_le`: `‖x‖ ⟨x⟩ ^ s ≤ ⟨x⟩ ^ (s + 1)`.
 
 ## References
 
@@ -101,5 +105,19 @@ theorem one_add_norm_sq_rpow_le_mul_sub [SeminormedAddCommGroup E] (s : ℝ) (x 
   have h := one_add_norm_add_sq_rpow_le_mul s y (x - y)
   rw [add_sub_cancel] at h
   linarith
+
+/-- A norm is at most the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`, so multiplying by it
+raises the order of the weight by at most one: `‖x‖ ⟨x⟩ ^ s ≤ ⟨x⟩ ^ (s + 1)`. -/
+theorem norm_mul_one_add_norm_sq_rpow_le (s : ℝ) (x : E) :
+    ‖x‖ * (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖ ^ 2) ^ ((s + 1) / 2) := by
+  have hpos : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  have hle : ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ (1 / 2 : ℝ) := by
+    rw [← Real.sqrt_eq_rpow]
+    exact Real.le_sqrt_of_sq_le (by linarith)
+  calc ‖x‖ * (1 + ‖x‖ ^ 2) ^ (s / 2)
+      ≤ (1 + ‖x‖ ^ 2) ^ (1 / 2 : ℝ) * (1 + ‖x‖ ^ 2) ^ (s / 2) := by gcongr
+    _ = (1 + ‖x‖ ^ 2) ^ ((s + 1) / 2) := by
+        rw [← Real.rpow_add hpos]
+        ring_nf
 
 end TauCeti

@@ -29,6 +29,8 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
+* `TauCeti.Symbol.exists_norm_fderiv_coefficient_fst_le`: the partial derivative of a symbol in
+  the position has the growth bound of order `m` in operator norm;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`).
@@ -389,6 +391,67 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
     Pi.zero_apply]
 
 end Deriv
+
+section PositionDeriv
+
+/-! ### The partial derivative in the position
+
+A symbol is differentiable in the position, and its partial derivative there is continuous in
+both variables, is given on coordinate vectors by the spatial derivatives
+`TauCeti.Symbol.spatialDeriv`, and satisfies the growth bound of order `m` in operator norm. -/
+
+/-- The growth bound of order `m` of a symbol, uniform on compact sets of positions. -/
+theorem exists_norm_coefficient_le (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+
+/-- A symbol is differentiable in the position. -/
+theorem hasFDerivAt_coefficient_fst (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    HasFDerivAt (fun y ↦ a.coefficient (y, ξ)) (fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x) x :=
+  ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).differentiable (by simp)
+    x).hasFDerivAt
+
+/-- The partial derivative of a symbol in the position is continuous in the position and the
+frequency together. -/
+theorem continuous_fderiv_coefficient_fst (a : Symbol n V W m) :
+    Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
+      fderiv ℝ (fun y ↦ a.coefficient (y, p.2)) p.1 :=
+  (ContDiff.fderiv (𝕜 := ℝ) (f := fun p y ↦ a.coefficient (y, p.2)) (n := 0)
+    (a.contDiff_coefficient.comp (contDiff_snd.prodMk (contDiff_snd.comp contDiff_fst)))
+    contDiff_fst (by simp)).continuous
+
+/-- The partial derivative of a symbol in the position along a coordinate vector is the
+coefficient of its spatial derivative. -/
+theorem fderiv_coefficient_fst_single (a : Symbol n V W m) (j : Fin n) :
+    (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      fderiv ℝ (fun y ↦ a.coefficient (y, p.2)) p.1 (EuclideanSpace.single j 1)) =
+      (spatialDeriv j a).coefficient := by
+  funext ⟨x, ξ⟩
+  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
+/-- The partial derivative of a symbol in the position satisfies the growth bound of order `m`
+in operator norm, uniformly on compact sets of positions. -/
+theorem exists_norm_fderiv_coefficient_fst_le (a : Symbol n V W m)
+    (K : Set (CoordinateSpace n)) (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose C hC0 hC using fun j : Fin n ↦ (spatialDeriv j a).exists_bound K hK [] []
+  set b := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+  refine ⟨Fintype.card (Fin n) • ‖b.equivFunL.toContinuousLinearMap‖ * ∑ j, C j,
+    fun x hx ξ ↦ ?_⟩
+  have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by positivity
+  refine (b.opNorm_le (M := (∑ j, C j) * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) hw) fun j ↦ ?_).trans_eq (by ring)
+  have hj := hC j x hx ξ
+  simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at hj
+  simp only [b, OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
+  rw [← congrFun (fderiv_coefficient_fst_single a j) (x, ξ)] at hj
+  exact hj.trans (mul_le_mul_of_nonneg_right
+    (Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)) hw)
+
+end PositionDeriv
 
 section Spatial
 

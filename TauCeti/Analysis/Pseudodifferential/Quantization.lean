@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Symbol
+public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Kohn–Nirenberg quantization on Schwartz functions
@@ -179,18 +180,6 @@ theorem integrable_quantizeSchwartzValue_integrand
   ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
     (aestronglyMeasurable_integrand hmeas f) (ae_of_all _ (norm_integrand_le_pow_neg hC f))
 
-/-- The weight `⟨2πζ⟩ ^ m` times the norm of a Schwartz function is integrable. -/
-private lemma integrable_weight_mul_norm (m : ℝ) (f : 𝓢(E, V)) :
-    Integrable (fun ζ : E ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖f ζ‖) :=
-  ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
-    ((((continuous_const.add ((continuous_const_smul _).norm.pow 2)).rpow_const
-      fun ζ ↦ Or.inl (by positivity : (1 : ℝ) + ‖(2 * π) • ζ‖ ^ 2 ≠ 0)).mul
-        f.continuous.norm).aestronglyMeasurable)
-    (ae_of_all _ fun ζ ↦ by
-      rw [Real.norm_of_nonneg (by positivity)]
-      exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℂ) (2 * π) m
-        (volume : Measure E).integrablePower ζ)
-
 /-- **Pointwise bound.** If `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` at the point `x`, then
 `‖Op(a) u (x)‖ ≤ C ∫ ⟨2πζ⟩ ^ m ‖𝓕 u ζ‖ dζ`. -/
 theorem norm_quantizeSchwartzValue_le (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -198,7 +187,8 @@ theorem norm_quantizeSchwartzValue_le (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 +
     ‖quantizeSchwartzValue a u x‖ ≤
       C * ∫ ζ, (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ := by
   rw [quantizeSchwartzValue_def, ← integral_const_mul]
-  exact norm_integral_le_of_norm_le ((integrable_weight_mul_norm m (𝓕 u)).const_mul C)
+  exact norm_integral_le_of_norm_le
+    (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m / 2)).const_mul C)
     (ae_of_all _ (norm_integrand_le hC (𝓕 u)))
 
 private lemma integral_integrand_add (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
@@ -309,9 +299,10 @@ section Derivative
 
 /-! ### Differentiation in the position
 
-Differentiating `exp(2πi ⟪ζ, x⟫) a(x, 2πζ)` in `x` gives `a'(x, 2πζ) v + 2πi ⟪ζ, v⟫ a(x, 2πζ)`
-in the direction `v`, and on the Fourier side the factor `2πi ⟪ζ, v⟫` is the derivative `∂_v` of
-the input (`SchwartzMap.fourier_lineDerivOp_apply`). Hence
+Differentiating `exp(2πi ⟪ζ, x⟫) a(x, 2πζ)` in `x` gives
+`exp(2πi ⟪ζ, x⟫) (a'(x, 2πζ) v + 2πi ⟪ζ, v⟫ a(x, 2πζ))` in the direction `v`, and on the
+Fourier side the factor `2πi ⟪ζ, v⟫` is the derivative `∂_v` of the input
+(`SchwartzMap.fourier_lineDerivOp_apply`). Hence
 `∂_v Op(a) u = Op(∂_v a) u + Op(a) (∂_v u)`, where `∂_v a` is the partial derivative of the
 coefficient in the position. -/
 
@@ -386,21 +377,6 @@ private lemma norm_integrandFDeriv_le (f : 𝓢(E, V)) (x ζ : E) :
       _ = 2 * π * ‖ζ‖ * ‖a (x, (2 * π) • ζ)‖ * ‖v‖ * ‖f ζ‖ := by ring
   nlinarith [h₁, h₂]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A norm is at most the weight `⟨·⟩ = (1 + ‖·‖²) ^ (1 / 2)`, so multiplying by it raises the
-order of the weight by one. -/
-private lemma norm_mul_weight_le (ξ : E) (m : ℝ) :
-    ‖ξ‖ * (1 + ‖ξ‖ ^ 2) ^ (m / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ ((m + 1) / 2) := by
-  have hpos : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  have hle : ‖ξ‖ ≤ (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) := by
-    rw [← Real.sqrt_eq_rpow]
-    exact Real.le_sqrt_of_sq_le (by linarith)
-  calc ‖ξ‖ * (1 + ‖ξ‖ ^ 2) ^ (m / 2)
-      ≤ (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by gcongr
-    _ = (1 + ‖ξ‖ ^ 2) ^ ((m + 1) / 2) := by
-        rw [← Real.rpow_add hpos]
-        ring_nf
-
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- At a point where `a` and `a'` satisfy growth bounds, the partial derivative of the integrand is
 dominated by an integrable function independent of the point. -/
@@ -412,7 +388,7 @@ private lemma norm_integrandFDeriv_le_weight {x : E} {C C' : ℝ} (hC0 : 0 ≤ C
   refine (norm_integrandFDeriv_le f x ζ).trans ?_
   have h₁ := hC ((2 * π) • ζ)
   have h₂ := hC' ((2 * π) • ζ)
-  have h₃ := norm_mul_weight_le ((2 * π) • ζ) m
+  have h₃ := norm_mul_one_add_norm_sq_rpow_le m ((2 * π) • ζ)
   have hf := norm_nonneg (f ζ)
   have hn := norm_nonneg ((2 * π) • ζ)
   calc (‖a' (x, (2 * π) • ζ)‖ + ‖(2 * π) • ζ‖ * ‖a (x, (2 * π) • ζ)‖) * ‖f ζ‖
@@ -454,8 +430,8 @@ private lemma hasFDerivAt_quantizeSchwartzValue_and_integrable (ha : Continuous 
       ((ha.comp (continuous_const.prodMk (continuous_const_smul _))).clm_apply (𝓕 u).continuous)
   have hbound : Integrable fun ζ ↦ C * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) * ‖𝓕 u ζ‖) +
       C' * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m' / 2) * ‖𝓕 u ζ‖) :=
-    ((integrable_weight_mul_norm _ _).const_mul _).add
-      ((integrable_weight_mul_norm _ _).const_mul _)
+    ((SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm _ _ _).const_mul _).add
+      ((SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm _ _ _).const_mul _)
   refine ⟨?_, hbound.mono' (continuous_integrandFDeriv ha ha' _ x₀).aestronglyMeasurable
     (ae_of_all _ (norm_integrandFDeriv_le_weight hC0 (hC x₀ hx₀) (hC' x₀ hx₀) _))⟩
   simp only [funext (quantizeSchwartzValue_def a u)]
@@ -645,54 +621,6 @@ its partial derivatives in the position are again symbols of order `m`. Iteratin
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
-
-/-- The growth bound of a symbol, uniform on compact sets of positions. -/
-private lemma exists_norm_coefficient_le (a : Symbol n V W m) (K : Set (CoordinateSpace n))
-    (hK : IsCompact K) :
-    ∃ C, ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨C, -, hC⟩ := a.exists_bound K hK [] []
-  exact ⟨C, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
-
-private lemma hasFDerivAt_coefficient_fst (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
-    HasFDerivAt (fun y ↦ a.coefficient (y, ξ)) (fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x) x :=
-  ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).differentiable (by simp)
-    x).hasFDerivAt
-
-private lemma continuous_fderiv_coefficient_fst (a : Symbol n V W m) :
-    Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
-      fderiv ℝ (fun y ↦ a.coefficient (y, p.2)) p.1 :=
-  (ContDiff.fderiv (𝕜 := ℝ) (f := fun p y ↦ a.coefficient (y, p.2)) (n := 0)
-    (a.contDiff_coefficient.comp (contDiff_snd.prodMk (contDiff_snd.comp contDiff_fst)))
-    contDiff_fst (by simp)).continuous
-
-/-- The partial derivative of a symbol in the position along a coordinate vector is the
-coefficient of its spatial derivative. -/
-private lemma fderiv_coefficient_fst_single (a : Symbol n V W m) (j : Fin n) :
-    (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      fderiv ℝ (fun y ↦ a.coefficient (y, p.2)) p.1 (EuclideanSpace.single j 1)) =
-      (spatialDeriv j a).coefficient := by
-  funext ⟨x, ξ⟩
-  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
-
-/-- The partial derivative of a symbol in the position satisfies the growth bound of order `m`,
-uniformly on compact sets of positions. -/
-private lemma exists_norm_fderiv_coefficient_fst_le (a : Symbol n V W m)
-    (K : Set (CoordinateSpace n)) (hK : IsCompact K) :
-    ∃ C, ∀ x ∈ K, ∀ ξ, ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤
-      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  choose C hC0 hC using fun j : Fin n ↦ (spatialDeriv j a).exists_bound K hK [] []
-  set b := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
-  refine ⟨Fintype.card (Fin n) • ‖b.equivFunL.toContinuousLinearMap‖ * ∑ j, C j,
-    fun x hx ξ ↦ ?_⟩
-  have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by positivity
-  refine (b.opNorm_le (M := (∑ j, C j) * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) hw) fun j ↦ ?_).trans_eq (by ring)
-  have hj := hC j x hx ξ
-  simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at hj
-  simp only [b, OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
-  rw [← congrFun (fderiv_coefficient_fst_single a j) (x, ξ)] at hj
-  exact hj.trans (mul_le_mul_of_nonneg_right
-    (Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)) hw)
 
 /-- The quantization `Op(a) u` of a symbol applied to a Schwartz function is differentiable. -/
 theorem differentiable_quantizeSchwartzValue (a : Symbol n V W m)
