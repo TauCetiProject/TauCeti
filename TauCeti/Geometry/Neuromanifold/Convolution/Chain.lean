@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Neuromanifold.MLP.Basic
 `MLPSpec` for the lengths and hidden activations, adding filter lengths, strides, and the
 valid-convolution length equations. The output head has no activation. Parameters contain
 one filter and one shared scalar bias per layer; bias-free parameters contain only filters.
+`ConvolutionSpec.polynomial` constructs such a specification with polynomial hidden activations.
 
 Evaluation reuses the MLP prefix evaluator through the structured convolution matrices.
 The prefix recursion is expressed as a filter sum, and the comparison with dense evaluation
@@ -49,6 +50,40 @@ structure ConvolutionSpec (K : Type*) (L : ℕ) extends MLPSpec K L where
 namespace ConvolutionSpec
 
 variable {K : Type*} {L : ℕ}
+
+section Specification
+
+variable [Semiring K]
+
+/-- A valid-convolution specification with polynomial hidden activations and an affine output
+head. This is an abbreviation so that its lengths and parameter index types compute across
+coefficient semirings in scalar-transport statements. -/
+abbrev polynomial (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
+    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
+    (q : Fin (L - 1) → Polynomial K) : ConvolutionSpec K L where
+  -- Override width to keep scalar-independent index types definitionally equal: the MLP
+  -- constructor is not exposed across module boundaries.
+  toMLPSpec := { MLPSpec.polynomial d q with width := d }
+  filterLength := k
+  stride := s
+  length_eq := h
+
+/-- The polynomial specification retains the prescribed lengths. -/
+@[simp] theorem polynomial_width (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
+    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
+    (q : Fin (L - 1) → Polynomial K) : (polynomial d k s h q).width = d := (rfl)
+
+/-- The polynomial specification retains the prescribed filter lengths. -/
+@[simp] theorem polynomial_filterLength (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
+    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
+    (q : Fin (L - 1) → Polynomial K) : (polynomial d k s h q).filterLength = k := (rfl)
+
+/-- The polynomial specification retains the prescribed strides. -/
+@[simp] theorem polynomial_stride (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
+    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
+    (q : Fin (L - 1) → Polynomial K) : (polynomial d k s h q).stride = s := (rfl)
+
+end Specification
 
 /-- Bias-free parameters: one filter for every layer. -/
 abbrev Weights (A : ConvolutionSpec K L) := (i : Fin L) → Fin (A.filterLength i) → K

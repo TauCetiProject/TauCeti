@@ -68,6 +68,13 @@ filter lengths, strides, and shared-bias coordinates. -/
         (fun j => (q j).map φ) a := by
   simpa only [polynomialRealize_def] using map_polynomialPrefix φ d k s h q (Fin.last L) a
 
+/-- The joint polynomial tuple commutes with scalar transport as a function. -/
+theorem map_comp_polynomialRealize :
+    map φ ∘ (polynomial d k s h q).polynomialRealize q =
+      (polynomial d k s h (fun j => (q j).map φ)).polynomialRealize
+        (fun j => (q j).map φ) :=
+  funext (map_polynomialRealize φ d k s h q)
+
 /-- Transporting the bias-free polynomial tuple commutes with zero-bias substitution. -/
 @[simp] theorem map_polynomialRealizeWeights (a : Fin (d (Fin.last L))) :
     map φ ((polynomial d k s h q).polynomialRealizeWeights q a) =
@@ -80,19 +87,26 @@ filter lengths, strides, and shared-bias coordinates. -/
   · funext b
     exact map_polynomialRealize φ d k s h q b
 
+/-- Map each filter coefficient and shared bias along the scalar homomorphism. -/
+def mapParameters (p : (polynomial d k s h q).Parameters) :
+    (polynomial d k s h (fun j => (q j).map φ)).Parameters :=
+  fun i => (φ ∘ (p i).1, φ (p i).2)
+
+/-- Scalar transport maps the filter and shared bias at each layer. -/
+@[simp] theorem mapParameters_apply (p : (polynomial d k s h q).Parameters) (i : Fin L) :
+    mapParameters φ d k s h q p i = (φ ∘ (p i).1, φ (p i).2) := (rfl)
+
 /-- Reconstructing affine parameters commutes with mapping their scalar coordinates. -/
 @[simp] theorem parameterEquiv_polynomial_map
     (p : (polynomial d k s h q).ParameterIndex → K) :
     (polynomial d k s h (fun j => (q j).map φ)).parameterEquiv (φ ∘ p) =
-      fun i => (φ ∘ ((polynomial d k s h q).parameterEquiv p i).1,
-        φ ((polynomial d k s h q).parameterEquiv p i).2) := by
+      mapParameters φ d k s h q ((polynomial d k s h q).parameterEquiv p) := by
   funext i
   ext j <;> simp [Function.comp_apply]
 
 /-- Mapping affine parameters commutes with the zero-bias inclusion. -/
-theorem zeroBias_polynomial_map (w : (polynomial d k s h q).Weights) :
-    (fun i => (φ ∘ ((polynomial d k s h q).zeroBias w i).1,
-        φ ((polynomial d k s h q).zeroBias w i).2)) =
+@[simp] theorem mapParameters_zeroBias (w : (polynomial d k s h q).Weights) :
+    mapParameters φ d k s h q ((polynomial d k s h q).zeroBias w) =
       (polynomial d k s h (fun j => (q j).map φ)).zeroBias (fun i => φ ∘ w i) := by
   funext i
   simp
@@ -102,16 +116,13 @@ is the scalar image of the original realization. -/
 @[simp] theorem realize_polynomial_map
     (p : (polynomial d k s h q).Parameters) (x : Fin (d 0) → K) :
     (polynomial d k s h (fun j => (q j).map φ)).realize
-        (fun i => (φ ∘ (p i).1, φ (p i).2)) (φ ∘ x) =
+        (mapParameters φ d k s h q p) (φ ∘ x) =
       φ ∘ (polynomial d k s h q).realize p x := by
   have H := polynomialRealization_map φ
     ((polynomial d k s h q).polynomialRealize q)
     ((polynomial d k s h q).parameterEquiv.symm p) x
-  have hP : map φ ∘ (polynomial d k s h q).polynomialRealize q =
-      (polynomial d k s h (fun j => (q j).map φ)).polynomialRealize
-        (fun j => (q j).map φ) := funext (map_polynomialRealize φ d k s h q)
-  rw [hP, polynomialRealization_polynomialRealize _ _ (fun _ _ => rfl),
-    polynomialRealization_polynomialRealize _ _ (fun _ _ => rfl)] at H
+  rw [map_comp_polynomialRealize, polynomialRealization_polynomial,
+    polynomialRealization_polynomial] at H
   simpa only [Function.comp_apply, parameterEquiv_polynomial_map,
     Equiv.apply_symm_apply] using H
 
@@ -121,7 +132,7 @@ is the scalar image of the original realization. -/
     (polynomial d k s h (fun j => (q j).map φ)).realizeWeights
         (fun i => φ ∘ w i) (φ ∘ x) =
       φ ∘ (polynomial d k s h q).realizeWeights w x := by
-  simpa only [realizeWeights_def, Function.comp_apply, zeroBias_polynomial_map] using
+  simpa only [realizeWeights_def, Function.comp_apply, mapParameters_zeroBias] using
     realize_polynomial_map φ d k s h q ((polynomial d k s h q).zeroBias w) x
 
 end CommSemiring
@@ -138,19 +149,16 @@ parameter equivalence for the affine convolutional chain. Equality is at every i
 theorem realize_polynomial_map_eq_iff (hφ : Function.Injective φ)
     (p v : (polynomial d k s h q).Parameters) :
     (polynomial d k s h (fun j => (q j).map φ)).realize
-        (fun i => (φ ∘ (p i).1, φ (p i).2)) =
+        (mapParameters φ d k s h q p) =
       (polynomial d k s h (fun j => (q j).map φ)).realize
-        (fun i => (φ ∘ (v i).1, φ (v i).2)) ↔
+        (mapParameters φ d k s h q v) ↔
       (polynomial d k s h q).realize p = (polynomial d k s h q).realize v := by
   have H := polynomialRealization_map_eq_iff hφ
     ((polynomial d k s h q).polynomialRealize q)
     ((polynomial d k s h q).parameterEquiv.symm p)
     ((polynomial d k s h q).parameterEquiv.symm v)
-  have hP : map φ ∘ (polynomial d k s h q).polynomialRealize q =
-      (polynomial d k s h (fun j => (q j).map φ)).polynomialRealize
-        (fun j => (q j).map φ) := funext (map_polynomialRealize φ d k s h q)
-  rw [hP, polynomialRealization_polynomialRealize _ _ (fun _ _ => rfl),
-    polynomialRealization_polynomialRealize _ _ (fun _ _ => rfl)] at H
+  rw [map_comp_polynomialRealize, polynomialRealization_polynomial,
+    polynomialRealization_polynomial] at H
   simpa only [Function.comp_apply, parameterEquiv_polynomial_map,
     Equiv.apply_symm_apply] using H
 
@@ -161,7 +169,7 @@ theorem realizeWeights_polynomial_map_eq_iff (hφ : Function.Injective φ)
       (polynomial d k s h (fun j => (q j).map φ)).realizeWeights (fun i => φ ∘ v i) ↔
       (polynomial d k s h q).realizeWeights w =
         (polynomial d k s h q).realizeWeights v := by
-  simpa only [realizeWeights_def, Function.comp_apply, zeroBias_polynomial_map] using
+  simpa only [realizeWeights_def, Function.comp_apply, mapParameters_zeroBias] using
     realize_polynomial_map_eq_iff φ d k s h q hφ
       ((polynomial d k s h q).zeroBias w) ((polynomial d k s h q).zeroBias v)
 

@@ -11,9 +11,8 @@ public import TauCeti.Geometry.Neuromanifold.Polynomial.Constructors
 /-!
 # Jointly polynomial convolutional networks
 
-`ConvolutionSpec.polynomial` constructs a fixed valid-convolution architecture with polynomial
-hidden activations. Its realization is jointly polynomial in its filters, shared biases, and
-inputs. `ConvolutionSpec.parameterEquiv`
+A fixed valid-convolution architecture with polynomial hidden activations has a realization
+jointly polynomial in its filters, shared biases, and inputs. `ConvolutionSpec.parameterEquiv`
 flattens precisely these parameters, not the entries of the associated dense matrices.
 `ConvolutionSpec.polynomialRealize` supplies the polynomial tuple, whose evaluation agrees
 with convolutional realization. The bias-free tuple substitutes zero for every bias and
@@ -40,45 +39,6 @@ namespace TauCeti.Neuromanifold.ConvolutionSpec
 open MvPolynomial
 
 variable {K : Type*} {L : ℕ}
-
-section Specification
-
-variable [Semiring K]
-
-/-- A valid-convolution specification with polynomial hidden activations and an affine output
-head. This is an abbreviation so that its lengths and parameter index types compute across
-coefficient semirings in scalar-transport statements. -/
-abbrev polynomial (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
-    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
-    (q : Fin (L - 1) → Polynomial K) : ConvolutionSpec K L where
-  width := d
-  activation j t := (q j).eval t
-  filterLength := k
-  stride := s
-  length_eq := h
-
-/-- The polynomial specification retains the prescribed lengths. -/
-@[simp] theorem polynomial_width (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
-    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
-    (q : Fin (L - 1) → Polynomial K) : (polynomial d k s h q).width = d := (rfl)
-
-/-- The polynomial specification retains the prescribed filter lengths. -/
-@[simp] theorem polynomial_filterLength (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
-    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
-    (q : Fin (L - 1) → Polynomial K) : (polynomial d k s h q).filterLength = k := (rfl)
-
-/-- The polynomial specification retains the prescribed strides. -/
-@[simp] theorem polynomial_stride (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
-    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
-    (q : Fin (L - 1) → Polynomial K) : (polynomial d k s h q).stride = s := (rfl)
-
-/-- Hidden activations evaluate the supplied polynomials. -/
-@[simp] theorem polynomial_activation (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
-    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
-    (q : Fin (L - 1) → Polynomial K) (j : Fin (L - 1)) (t : K) :
-    (polynomial d k s h q).activation j t = (q j).eval t := (rfl)
-
-end Specification
 
 variable [CommSemiring K]
 
@@ -148,6 +108,14 @@ theorem polynomialRealization_polynomialRealize (A : ConvolutionSpec K L)
   funext p x a
   rw [polynomialRealization_apply, polynomialRealize_def, Function.comp_apply, realize_def]
   exact A.eval_polynomialPrefix q hq p x (Fin.last L) a
+
+/-- The polynomial specification realizes its joint tuple through parameter reconstruction. -/
+theorem polynomialRealization_polynomial (d : Fin (L + 1) → ℕ) (k s : Fin L → ℕ)
+    (h : ∀ i : Fin L, d i.castSucc = s i * (d i.succ - 1) + k i)
+    (q : Fin (L - 1) → Polynomial K) :
+    polynomialRealization ((polynomial d k s h q).polynomialRealize q) =
+      (polynomial d k s h q).realize ∘ (polynomial d k s h q).parameterEquiv :=
+  polynomialRealization_polynomialRealize _ q (MLPSpec.polynomial_activation d q)
 
 /-- Polynomial coordinates do not alter the set of realized functions. -/
 theorem realizedFunctions_polynomialRealize (A : ConvolutionSpec K L)
