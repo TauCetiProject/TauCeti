@@ -32,13 +32,13 @@ public section
 
 open scoped NNReal ENNReal
 
-namespace Real
+namespace TauCeti
 
 /-- The central-binomial series diverges at its radius of convergence. -/
 theorem not_summable_centralBinom_div_four_pow :
     ¬ Summable (fun n : ℕ => (n.centralBinom : ℝ) / 4 ^ n) := by
   intro h
-  apply not_summable_natCast_inv
+  apply Real.not_summable_natCast_inv
   refine (h.mul_left 2).of_nonneg_of_le (fun n => by positivity) fun n => ?_
   rcases n.eq_zero_or_pos with rfl | hn
   · norm_num
@@ -74,7 +74,7 @@ theorem summable_centralBinom_mul_pow_iff {q : ℝ} :
   rw [← summable_abs_iff]
   simpa only [abs_mul, abs_pow, Nat.abs_cast] using key |q| (abs_nonneg q)
 
-end Real
+end TauCeti
 
 namespace NNReal
 
@@ -85,7 +85,7 @@ theorem tsum_centralBinom_mul_pow_eq_top_iff (q : ℝ≥0) :
   rw [← NNReal.coe_le_coe]
   simpa only [ENNReal.coe_mul, ENNReal.coe_pow, ENNReal.coe_natCast,
     NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_natCast,
-    Real.summable_centralBinom_mul_pow_iff, abs_of_nonneg q.coe_nonneg, not_lt,
+    TauCeti.summable_centralBinom_mul_pow_iff, abs_of_nonneg q.coe_nonneg, not_lt,
     NNReal.coe_le_coe, NNReal.coe_div, NNReal.coe_one, NNReal.coe_ofNat] using
     (ENNReal.tsum_coe_eq_top_iff_not_summable_coe
       (f := fun n : ℕ => (n.centralBinom : ℝ≥0) * q ^ n))
