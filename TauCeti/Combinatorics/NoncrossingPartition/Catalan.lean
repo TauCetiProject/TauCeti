@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Combinatorics.Enumerative.Catalan.Basic
 public import Mathlib.Data.Finset.Max
-public import TauCeti.Data.Finset.Basic
 public import TauCeti.Combinatorics.NoncrossingPartition.Basic
 public import TauCeti.Order.Partition.Pairing
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Noncrossing partitions and noncrossing pairings are counted by the Catalan numbers
@@ -478,25 +478,6 @@ private theorem part_restrict_after (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m 
   rw [Finpartition.part_restrict _ _ ha,
     inter_eq_left.2 (part_subset_filter_gt hP hm hxm hmax (mem_filter.1 ha).2)]
 
-/-- The part of `m` is `{m, x}` iff `m` is its only position before `x`. -/
-private theorem part_eq_pair_iff (hms : m ∈ s) (hxm : x ∈ P.part m)
-    (hmax : ∀ y ∈ P.part m, y ≤ x) (hmx : m < x) :
-    P.part m = {m, x} ↔ P.part m ∩ {y ∈ s | y < x} = {m} := by
-  refine ⟨fun h => ?_, fun h => Subset.antisymm (fun y hy => ?_) ?_⟩
-  · rw [h]
-    ext y
-    simp only [mem_inter, mem_insert, mem_singleton, mem_filter]
-    constructor
-    · rintro ⟨rfl | rfl, -, hy⟩
-      exacts [rfl, absurd hy (lt_irrefl _)]
-    · rintro rfl
-      exact ⟨Or.inl rfl, hms, hmx⟩
-  · rcases (hmax y hy).lt_or_eq with hyx | rfl
-    · exact mem_insert.2 <| Or.inl <| mem_singleton.1 <|
-        h ▸ mem_inter.2 ⟨hy, mem_filter.2 ⟨P.part_subset m hy, hyx⟩⟩
-    · exact mem_insert.2 <| Or.inr <| mem_singleton_self _
-  · exact insert_subset (P.mem_part_self.2 hms) (singleton_subset_iff.2 hxm)
-
 /-- Let `x > m` be the last position of the part of the first position `m` of a noncrossing
 partition `P`. Then `P` is a pairing iff `m` is the only position before `x` in its part, and the
 restrictions of `P` to the positions strictly between `m` and `x` and to the positions after `x`
@@ -508,7 +489,8 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
       (P.restrict (filter_subset (x < ·) s)).IsPairing := by
   have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
   rw [Finpartition.isPairing_iff_part, Finpartition.isPairing_iff_part,
-    Finpartition.isPairing_iff_part, ← part_eq_pair_iff hms hxm hmax hmx]
+    Finpartition.isPairing_iff_part,
+    ← P.part_eq_pair_iff_inter_filter_lt_eq_singleton hms hxm hmax hmx]
   constructor
   · intro h
     have hm2 : P.part m = {m, x} :=
