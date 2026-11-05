@@ -557,7 +557,11 @@ theorem walkAt_def (D : EarDecomposition T) (i : Fin D.length) :
     D.walkAt i = (D.ear i).toWalk :=
   (rfl)
 
-/-- Reindex an ear decomposition along an equality of final subnetworks. -/
+/-- Reindex an ear decomposition along an equality of final subnetworks.
+
+This definition is exposed so that `(D.copy h).length` reduces to `D.length` in stage and ear
+indices. -/
+@[expose]
 def copy {T T' : N.Subnetwork} (D : EarDecomposition T) (h : T = T') :
     EarDecomposition T' where
   length := D.length
@@ -581,26 +585,37 @@ theorem initialVertex_copy {T T' : N.Subnetwork} (D : EarDecomposition T) (h : T
 @[simp]
 theorem stage_copy {T T' : N.Subnetwork} (D : EarDecomposition T) (h : T = T')
     (j : Fin (D.length + 1)) :
-    (D.copy h).stage (Fin.cast (congrArg (· + 1) (D.length_copy h).symm) j) = D.stage j := by
-  dsimp only [copy]
-  rw [Fin.cast_eq_self]
+    (D.copy h).stage j = D.stage j :=
+  (rfl)
+
+@[simp]
+theorem ear_copy {T T' : N.Subnetwork} (D : EarDecomposition T) (h : T = T')
+    (i : Fin D.length) :
+    (D.copy h).ear i = D.ear i :=
+  (rfl)
 
 @[simp]
 theorem kindAt_copy {T T' : N.Subnetwork} (D : EarDecomposition T) (h : T = T')
     (i : Fin D.length) :
-    (D.copy h).kindAt (Fin.cast (D.length_copy h).symm i) = D.kindAt i := by
-  dsimp only [copy, kindAt]
-  rw [Fin.cast_eq_self]
+    (D.copy h).kindAt i = D.kindAt i :=
+  (rfl)
 
 @[simp]
+theorem walkAt_copy {T T' : N.Subnetwork} (D : EarDecomposition T) (h : T = T')
+    (i : Fin D.length) :
+    (D.copy h).walkAt i = D.walkAt i :=
+  (rfl)
+
 theorem ear_toSubnetwork_copy {T T' : N.Subnetwork} (D : EarDecomposition T) (h : T = T')
     (i : Fin D.length) :
-    ((D.copy h).ear (Fin.cast (D.length_copy h).symm i)).toSubnetwork =
-      (D.ear i).toSubnetwork := by
-  dsimp only [copy]
-  rw [Fin.cast_eq_self]
+    ((D.copy h).ear i).toSubnetwork = (D.ear i).toSubnetwork :=
+  (rfl)
 
-/-- Adjoin one ear at the end of an ear decomposition. -/
+/-- Adjoin one ear at the end of an ear decomposition.
+
+This definition is exposed so that `(D.snoc P).length` reduces to `D.length + 1` in stage and ear
+indices. -/
+@[expose]
 def snoc (D : EarDecomposition T) (P : Ear T) : EarDecomposition P.adjoin where
   length := D.length + 1
   initialVertex := D.initialVertex
@@ -629,39 +644,43 @@ theorem initialVertex_snoc (D : EarDecomposition T) (P : Ear T) :
 
 @[simp]
 theorem stage_snoc_castSucc (D : EarDecomposition T) (P : Ear T) (j : Fin (D.length + 1)) :
-    (D.snoc P).stage ((Fin.cast (D.length_snoc P).symm j).castSucc) = D.stage j := by
-  dsimp only [snoc]
-  rw [Fin.cast_eq_self, Fin.lastCases_castSucc]
+    (D.snoc P).stage j.castSucc = D.stage j := by
+  simp [snoc]
+
+@[simp]
+theorem stage_snoc_last (D : EarDecomposition T) (P : Ear T) :
+    (D.snoc P).stage (Fin.last (D.length + 1)) = P.adjoin := by
+  simp [snoc]
 
 @[simp]
 theorem kindAt_snoc_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
-    (D.snoc P).kindAt (Fin.cast (D.length_snoc P).symm i.castSucc) = D.kindAt i := by
-  dsimp only [snoc, kindAt]
-  rw [Fin.cast_eq_self]
-  simp only [Fin.lastCases_castSucc, Ear.kind_copy]
+    (D.snoc P).kindAt i.castSucc = D.kindAt i := by
+  simp [snoc, kindAt]
 
 @[simp]
 theorem kindAt_snoc_last (D : EarDecomposition T) (P : Ear T) :
-    (D.snoc P).kindAt (Fin.cast (D.length_snoc P).symm (Fin.last D.length)) = P.kind := by
-  dsimp only [snoc, kindAt]
-  rw [Fin.cast_eq_self]
-  simp only [Fin.lastCases_last, Ear.kind_copy]
+    (D.snoc P).kindAt (Fin.last D.length) = P.kind := by
+  simp [snoc, kindAt]
+
+@[simp]
+theorem walkAt_snoc_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
+    (D.snoc P).walkAt i.castSucc = D.walkAt i := by
+  simp [snoc, walkAt]
+
+@[simp]
+theorem walkAt_snoc_last (D : EarDecomposition T) (P : Ear T) :
+    (D.snoc P).walkAt (Fin.last D.length) = P.toWalk := by
+  simp [snoc, walkAt]
 
 @[simp]
 theorem ear_toSubnetwork_snoc_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
-    ((D.snoc P).ear (Fin.cast (D.length_snoc P).symm i.castSucc)).toSubnetwork =
-      (D.ear i).toSubnetwork := by
-  dsimp only [snoc]
-  rw [Fin.cast_eq_self]
-  simp only [Fin.lastCases_castSucc, Ear.toSubnetwork_copy]
+    ((D.snoc P).ear i.castSucc).toSubnetwork = (D.ear i).toSubnetwork := by
+  simp [snoc]
 
 @[simp]
 theorem ear_toSubnetwork_snoc_last (D : EarDecomposition T) (P : Ear T) :
-    ((D.snoc P).ear (Fin.cast (D.length_snoc P).symm (Fin.last D.length))).toSubnetwork =
-      P.toSubnetwork := by
-  dsimp only [snoc]
-  rw [Fin.cast_eq_self]
-  simp only [Fin.lastCases_last, Ear.toSubnetwork_copy]
+    ((D.snoc P).ear (Fin.last D.length)).toSubnetwork = P.toSubnetwork := by
+  simp [snoc]
 
 /-- Each stage is strictly contained in its successor. -/
 theorem stage_lt_succ (D : EarDecomposition T) (i : Fin D.length) :
@@ -681,6 +700,16 @@ theorem stage_le (D : EarDecomposition T) (j : Fin (D.length + 1)) : D.stage j �
 theorem ear_toSubnetwork_le (D : EarDecomposition T) (i : Fin D.length) :
     (D.ear i).toSubnetwork ≤ T :=
   (D.ear_toSubnetwork_le_stage_succ i).trans (D.stage_le i.succ)
+
+/-- Stage `(⟨0, h⟩ : Fin D.length).castSucc` is the singleton subnetwork at `initialVertex`. -/
+theorem stage_zero_castSucc (D : EarDecomposition T) (h : 0 < D.length) :
+    D.stage (⟨0, h⟩ : Fin D.length).castSucc = N.singletonSubnetwork D.initialVertex :=
+  (congrArg D.stage (Fin.ext rfl)).trans D.stage_zero
+
+/-- Every vertex of stage `0` is the initial vertex. -/
+theorem eq_initialVertex_of_mem_stage_zero (D : EarDecomposition T) {x : V}
+    (hx : x ∈ (D.stage 0).vertexSet) : x = D.initialVertex := by
+  simpa [D.stage_zero] using hx
 
 /-- The initial vertex belongs to every stage of an ear decomposition. -/
 theorem initialVertex_mem_stage (D : EarDecomposition T) (j : Fin (D.length + 1)) :
@@ -802,7 +831,7 @@ theorem isStronglyConnected (D : EarDecomposition T) : T.IsStronglyConnected := 
 
 /-- A network admitting a directed ear decomposition of `⊤` is strongly connected. -/
 theorem isStronglyConnected_network (D : EarDecomposition (⊤ : N.Subnetwork)) :
-    N.IsStronglyConnected :=
+    @Quiver.IsStronglyConnected V ⟨N.Hom⟩ :=
   Subnetwork.isStronglyConnected_top_iff.1 D.isStronglyConnected
 
 end EarDecomposition

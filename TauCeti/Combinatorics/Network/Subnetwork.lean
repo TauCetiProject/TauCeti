@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import Mathlib.Data.Set.Lattice.Bounded
 public import TauCeti.Combinatorics.Network.Basic
 public import TauCeti.Combinatorics.Network.Walk
@@ -22,10 +21,12 @@ vertex subtype, and its bounds are inherited from the ambient network.
 
 This file supplies the elementary set operations used to build subnetworks: induced subnetworks,
 restriction and deletion of vertices or arrows, singleton and empty subnetworks, and unions inside
-a fixed ambient network. It also defines the subnetwork traced by a directed walk, supplies walk
-inclusion and restriction between subnetworks and their ambient network, and evaluates strong
-connectivity on a subnetwork's selected vertices. In particular, isolated selected vertices remain
-visible under every operation that does not delete them.
+a fixed ambient network. It proves that finite vertex and arrow types give finitely many
+subnetworks (`Finite N.Subnetwork`), defines the subnetwork traced by a directed walk, supplies
+walk inclusion and restriction between subnetworks and their ambient network, and evaluates strong
+connectivity (via `Quiver.IsStronglyConnected`) on a subnetwork's selected vertices and arrows. In
+particular, isolated selected vertices remain visible under every operation that does not delete
+them.
 -/
 
 public section
@@ -35,15 +36,6 @@ universe u v w
 namespace TauCeti.Network
 
 variable {K : Type w} {V : Type u} [LE K] (N : Network K V)
-
-/-- A bounded network is strongly connected when every vertex can reach every other vertex along
-its directed arrows. -/
-def IsStronglyConnected : Prop :=
-  @Quiver.IsStronglyConnected V ⟨N.Hom⟩
-
-theorem isStronglyConnected_iff :
-    N.IsStronglyConnected ↔ ∀ x y : V, Nonempty (ArrowWalk N.Hom x y) :=
-  (Iff.rfl)
 
 /-- A subnetwork selects ambient vertices and ambient arrows whose endpoints are both selected. -/
 structure Subnetwork where
@@ -498,8 +490,9 @@ theorem isCycle_mapWalk (S : N.Subnetwork) {x : ↥S.vertexSet} (p : ArrowWalk S
     ← List.map_tail, List.nodup_map_iff Subtype.val_injective]
 
 /-- Every arrow traversed by a pushed-forward subnetwork walk belongs to the subnetwork. -/
-theorem arrows_mapWalk_mem (S : N.Subnetwork) {x y : ↥S.vertexSet} (p : ArrowWalk S.Hom x y)
-    {a : Σ u w, N.Hom u w} (ha : a ∈ (S.mapWalk p).arrows) : a ∈ S.arrowSet := by
+theorem mem_arrowSet_of_mem_arrows_mapWalk (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) {a : Σ u w, N.Hom u w} (ha : a ∈ (S.mapWalk p).arrows) :
+    a ∈ S.arrowSet := by
   induction p with
   | nil => simp at ha
   | cons p e ih =>
@@ -612,19 +605,27 @@ theorem liftWalk_nil (S : N.Subnetwork) {s : V} (hs ht : s ∈ S.vertexSet)
   (rfl)
 
 @[simp]
+theorem liftWalk_cons (S : N.Subnetwork) {s z t : V} (q : ArrowWalk N.Hom s z) (e : N.Hom z t)
+    (hs : s ∈ S.vertexSet) (ht : t ∈ S.vertexSet)
+    (ha : ∀ a ∈ (q.cons e).arrows, a ∈ S.arrowSet) :
+    S.liftWalk (q.cons e) hs ht ha =
+      (S.liftWalk q hs
+        (S.source_mem ⟨z, t, e⟩ (ha ⟨z, t, e⟩ (by simp)))
+        fun a h ↦ ha a (by simp [h])).cons ⟨e, ha ⟨z, t, e⟩ (by simp)⟩ :=
+  (rfl)
+
+@[simp]
 theorem mapWalk_liftWalk (S : N.Subnetwork) {s t : V} (p : ArrowWalk N.Hom s t)
     (hs : s ∈ S.vertexSet) (ht : t ∈ S.vertexSet) (ha : ∀ a ∈ p.arrows, a ∈ S.arrowSet) :
     S.mapWalk (S.liftWalk p hs ht ha) = p := by
   induction p with
   | nil => rfl
-  | cons q e ih =>
-    -- Unfold `liftWalk` on `cons` so `mapWalk_cons` and the induction hypothesis apply.
-    unfold liftWalk
-    simp [ih]
+  | cons _ _ ih => simp [ih]
 
 @[simp]
 theorem liftWalk_mapWalk (S : N.Subnetwork) {x y : ↥S.vertexSet} (p : ArrowWalk S.Hom x y)
-    (ha : ∀ a ∈ (S.mapWalk p).arrows, a ∈ S.arrowSet := fun _ h ↦ S.arrows_mapWalk_mem p h) :
+    (ha : ∀ a ∈ (S.mapWalk p).arrows, a ∈ S.arrowSet :=
+      fun _ h ↦ S.mem_arrowSet_of_mem_arrows_mapWalk p h) :
     S.liftWalk (S.mapWalk p) x.2 y.2 ha = p :=
   S.mapWalk_injective (S.mapWalk_liftWalk (S.mapWalk p) x.2 y.2 ha)
 
@@ -707,7 +708,7 @@ theorem toSubnetwork_le_iff {s t : V} {p : ArrowWalk N.Hom s t} {S : N.Subnetwor
 /-- Pushing a subnetwork walk into the ambient network traces a subnetwork of the original. -/
 theorem toSubnetwork_mapWalk_le {S : N.Subnetwork} {x y : ↥S.vertexSet} (p : ArrowWalk S.Hom x y) :
     (S.mapWalk p).toSubnetwork ≤ S :=
-  toSubnetwork_le_iff.2 ⟨x.2, fun _ ha ↦ S.arrows_mapWalk_mem p ha⟩
+  toSubnetwork_le_iff.2 ⟨x.2, fun _ ha ↦ S.mem_arrowSet_of_mem_arrows_mapWalk p ha⟩
 
 end TauCeti.ArrowWalk
 
@@ -717,14 +718,14 @@ variable {K : Type w} {V : Type u} [LE K] {N : Network K V}
 
 /-! ### Strong connectivity -/
 
-/-- A subnetwork is strongly connected when its induced network on the selected vertices is
-strongly connected. -/
+/-- A subnetwork is strongly connected when its selected vertices and arrows form a strongly
+connected quiver. -/
 def IsStronglyConnected (S : N.Subnetwork) : Prop :=
-  S.toNetwork.IsStronglyConnected
+  @Quiver.IsStronglyConnected ↥S.vertexSet ⟨S.Hom⟩
 
 theorem isStronglyConnected_iff (S : N.Subnetwork) :
     S.IsStronglyConnected ↔ ∀ x y : ↥S.vertexSet, Nonempty (ArrowWalk S.Hom x y) :=
-  S.toNetwork.isStronglyConnected_iff
+  @Quiver.isStronglyConnected_iff ↥S.vertexSet ⟨S.Hom⟩
 
 /-- A subnetwork is strongly connected precisely when any two selected vertices are joined by an
 ambient walk traversing only selected arrows. -/
@@ -736,7 +737,7 @@ theorem isStronglyConnected_iff_exists_walk (S : N.Subnetwork) :
   constructor
   · intro h x hx y hy
     obtain ⟨p⟩ := h ⟨x, hx⟩ ⟨y, hy⟩
-    exact ⟨S.mapWalk p, fun _ ha ↦ S.arrows_mapWalk_mem p ha⟩
+    exact ⟨S.mapWalk p, fun _ ha ↦ S.mem_arrowSet_of_mem_arrows_mapWalk p ha⟩
   · intro h ⟨x, hx⟩ ⟨y, hy⟩
     obtain ⟨p, hp⟩ := h hx hy
     exact ⟨S.liftWalk p hx hy hp⟩
@@ -762,14 +763,14 @@ theorem isStronglyConnected_singleton (x : V) : (N.singletonSubnetwork x).IsStro
 
 @[simp]
 theorem isStronglyConnected_full_iff :
-    N.fullSubnetwork.IsStronglyConnected ↔ N.IsStronglyConnected := by
-  rw [isStronglyConnected_iff_exists_walk, Network.isStronglyConnected_iff]
+    N.fullSubnetwork.IsStronglyConnected ↔ @Quiver.IsStronglyConnected V ⟨N.Hom⟩ := by
+  rw [isStronglyConnected_iff_exists_walk, @Quiver.isStronglyConnected_iff V ⟨N.Hom⟩]
   exact ⟨fun h x y ↦ let ⟨p, _⟩ := h (Set.mem_univ x) (Set.mem_univ y); ⟨p⟩,
     fun h x _ y _ ↦ let ⟨p⟩ := h x y; ⟨p, fun _ _ ↦ Set.mem_univ _⟩⟩
 
 @[simp]
 theorem isStronglyConnected_top_iff :
-    (⊤ : N.Subnetwork).IsStronglyConnected ↔ N.IsStronglyConnected :=
+    (⊤ : N.Subnetwork).IsStronglyConnected ↔ @Quiver.IsStronglyConnected V ⟨N.Hom⟩ :=
   isStronglyConnected_full_iff
 
 /-- Adjoining any directed walk whose endpoints already belong to a strongly connected subnetwork
@@ -778,33 +779,23 @@ theorem IsStronglyConnected.sup_toSubnetwork {S : N.Subnetwork} (hS : S.IsStrong
     {u w : V} (p : ArrowWalk N.Hom u w) (hu : u ∈ S.vertexSet) (hw : w ∈ S.vertexSet) :
     (S ⊔ p.toSubnetwork).IsStronglyConnected := by
   rw [isStronglyConnected_iff_exists_walk] at hS ⊢
-  have to_S : ∀ ⦃z⦄, z ∈ (S ⊔ p.toSubnetwork).vertexSet →
-      ∃ z' ∈ S.vertexSet, ∃ q : ArrowWalk N.Hom z z',
-        ∀ a ∈ q.arrows, a ∈ (S ⊔ p.toSubnetwork).arrowSet := by
+  have split_mem : ∀ ⦃z⦄, z ∈ (S ⊔ p.toSubnetwork).vertexSet →
+      ∃ z₁ ∈ S.vertexSet, ∃ z₂ ∈ S.vertexSet,
+        ∃ (r₁ : ArrowWalk N.Hom z₁ z) (r₂ : ArrowWalk N.Hom z z₂),
+          (∀ a ∈ r₁.arrows, a ∈ (S ⊔ p.toSubnetwork).arrowSet) ∧
+            ∀ a ∈ r₂.arrows, a ∈ (S ⊔ p.toSubnetwork).arrowSet := by
     intro z hz
     rcases hz with hzS | hzp
-    · exact ⟨z, hzS, ArrowWalk.nil z, by simp⟩
+    · exact ⟨z, hzS, z, hzS, ArrowWalk.nil z, ArrowWalk.nil z, by simp, by simp⟩
     · obtain ⟨p₁, p₂, rfl⟩ : ∃ (p₁ : ArrowWalk N.Hom u z) (p₂ : ArrowWalk N.Hom z w),
           p = p₁.comp p₂ :=
         @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ p _ hzp
-      refine ⟨w, hw, p₂, fun a ha ↦ .inr ?_⟩
-      rw [ArrowWalk.toSubnetwork_arrowSet, Set.mem_ofPred_eq, ArrowWalk.arrows_comp]
-      exact List.mem_append_right _ ha
-  have from_S : ∀ ⦃z⦄, z ∈ (S ⊔ p.toSubnetwork).vertexSet →
-      ∃ z₀ ∈ S.vertexSet, ∃ q : ArrowWalk N.Hom z₀ z,
-        ∀ a ∈ q.arrows, a ∈ (S ⊔ p.toSubnetwork).arrowSet := by
-    intro z hz
-    rcases hz with hzS | hzp
-    · exact ⟨z, hzS, ArrowWalk.nil z, by simp⟩
-    · obtain ⟨p₁, p₂, rfl⟩ : ∃ (p₁ : ArrowWalk N.Hom u z) (p₂ : ArrowWalk N.Hom z w),
-          p = p₁.comp p₂ :=
-        @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ p _ hzp
-      refine ⟨u, hu, p₁, fun a ha ↦ .inr ?_⟩
-      rw [ArrowWalk.toSubnetwork_arrowSet, Set.mem_ofPred_eq, ArrowWalk.arrows_comp]
-      exact List.mem_append_left _ ha
+      refine ⟨u, hu, w, hw, p₁, p₂, fun a ha ↦ .inr ?_, fun a ha ↦ .inr ?_⟩
+      · simpa [ArrowWalk.arrows_comp] using Or.inl ha
+      · simpa [ArrowWalk.arrows_comp] using Or.inr ha
   intro x hx y hy
-  obtain ⟨x', hx'S, q₁, hq₁⟩ := to_S hx
-  obtain ⟨y₀, hy₀S, q₃, hq₃⟩ := from_S hy
+  obtain ⟨_, _, x', hx'S, _, q₁, -, hq₁⟩ := split_mem hx
+  obtain ⟨y₀, hy₀S, _, _, q₃, _, hq₃, -⟩ := split_mem hy
   obtain ⟨q₂, hq₂⟩ := hS hx'S hy₀S
   refine ⟨(q₁.comp q₂).comp q₃, fun a ha ↦ ?_⟩
   rw [ArrowWalk.arrows_comp, ArrowWalk.arrows_comp, List.mem_append, List.mem_append] at ha

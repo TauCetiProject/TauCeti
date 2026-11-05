@@ -33,7 +33,7 @@ example :
         lower := fun {_ _} e ↦ e.elim
         upper := fun {_ _} e ↦ e.elim
         lower_le_upper := fun e ↦ e.elim }
-    ∃ D : N.EarDecomposition ⊤, D.length = 0 ∧ N.IsStronglyConnected := by
+    ∃ D : N.EarDecomposition ⊤, D.length = 0 ∧ @Quiver.IsStronglyConnected Unit ⟨N.Hom⟩ := by
   intro N
   have htop : N.singletonSubnetwork () = ⊤ :=
     Network.Subnetwork.ext (Set.ext fun x ↦ by simp)
@@ -51,7 +51,7 @@ example :
     ∃ D : N.EarDecomposition ⊤,
       D.length = 2 ∧
       (∀ i : Fin D.length, D.kindAt i = .closed) ∧
-      N.IsStronglyConnected := by
+      @Quiver.IsStronglyConnected Unit ⟨N.Hom⟩ := by
   intro N
   let c₀ : ArrowWalk N.Hom () () := (ArrowWalk.nil ()).cons false
   have hc₀ : c₀.IsCycle := ArrowWalk.isCycle_loop (Q := N.Hom) false
@@ -76,13 +76,12 @@ example :
     have hlen : D₂.length = 2 := by simp [D₂, D₁]
     rcases i with _ | _ | i
     · exact D₂.kindAt_zero_eq_closed (by omega)
-    · have h1 : (⟨1, hi⟩ : Fin D₂.length) =
-          Fin.cast ((D₁.snoc (.closed e₁)).length_copy htop).symm
-            (Fin.cast (D₁.length_snoc (.closed e₁)).symm (Fin.last D₁.length)) := by
+    · have h1 : (⟨1, hi⟩ : Fin D₂.length) = Fin.last D₁.length := by
         apply Fin.ext
         simp [D₁]
-      rw [h1, Network.EarDecomposition.kindAt_copy, Network.EarDecomposition.kindAt_snoc_last]
-      exact Network.Ear.kind_closed e₁
+      rw [h1]
+      exact ((D₁.snoc (.closed e₁)).kindAt_copy htop (Fin.last D₁.length)).trans
+        ((D₁.kindAt_snoc_last (.closed e₁)).trans (Network.Ear.kind_closed e₁))
     · omega
 
 -- 3. Two vertices `Bool` with two parallel forward arrows `false → true` and one return arrow
@@ -103,8 +102,8 @@ example :
   intro N
   have : ∀ x y, Finite (N.Hom x y) := fun x y ↦ by
     cases x <;> cases y <;> dsimp [N] <;> infer_instance
-  have hN : N.IsStronglyConnected := by
-    rw [N.isStronglyConnected_iff]
+  have hN : @Quiver.IsStronglyConnected Bool ⟨N.Hom⟩ := by
+    rw [@Quiver.isStronglyConnected_iff Bool ⟨N.Hom⟩]
     intro x y
     cases x <;> cases y
     · exact ⟨ArrowWalk.nil false⟩
@@ -122,13 +121,12 @@ example :
       (h : 0 < E.length),
       c.IsCycle ∧ 2 ≤ c.length ∧ E.initialVertex = v₀ ∧
         E.stage ⟨1, Nat.succ_lt_succ h⟩ = c.toSubnetwork ∧
-        ∃! i : Fin E.length,
-          (⟨0, 0, ⟨by simp [G]⟩⟩ : Σ x y, G.AdjHom x y) ∈ (E.ear i).toSubnetwork.arrowSet := by
+        ∀ (u v : Fin 3) (huv : G.Adj u v), ∃! i : Fin E.length,
+          (⟨u, v, ⟨huv⟩⟩ : Σ x y, G.AdjHom x y) ∈ (E.ear i).toSubnetwork.arrowSet := by
   intro G
   have h01 : G.Adj 0 1 := by simp [G]
   have h12 : G.Adj 1 2 := by simp [G]
   have h20 : G.Adj 2 0 := by simp [G]
-  have h00 : G.Adj 0 0 := by simp [G]
   have hG : ∀ u v : Fin 3, ReflTransGen G.Adj u v := by
     intro u v
     fin_cases u <;> fin_cases v
@@ -143,6 +141,6 @@ example :
     · exact .refl
   obtain ⟨v₀, c, E, h, hc, hlen, hinit, hstage⟩ :=
     G.forall_reflTransGen_iff_exists_cycle_earDecomposition.1 hG
-  exact ⟨v₀, c, E, h, hc, hlen, hinit, hstage, G.existsUnique_ear_of_adj E h00⟩
+  exact ⟨v₀, c, E, h, hc, hlen, hinit, hstage, fun _ _ huv ↦ G.existsUnique_ear_of_adj E huv⟩
 
 end TauCeti
