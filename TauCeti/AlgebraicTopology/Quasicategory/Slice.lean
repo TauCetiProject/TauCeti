@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
-public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
+public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
 
@@ -28,9 +28,12 @@ fibration: by Mathlib's description of the trivial fibrations as the maps liftin
 boundary inclusions (`SSet.rlp_monomorphisms`), it suffices to treat `∂Δ[n] ⟶ Δ[n]`, where the
 pushout-join `(Λ[m, i] ⋆ Δ[n]) ∪ (Δ[m] ⋆ ∂Δ[n])` is the inner horn `Λ[m + n + 1, i]`.
 
-More generally, for a monomorphism `j : L ⟶ K`, a lifting problem of `Λ[m, i] ⟶ Δ[m]` against
-the restriction of cones `C_{/p} ⟶ C_{/j ≫ p}` is a lifting problem of `j` against the same
-restriction of cocones, so this restriction is a right fibration too.
+More generally, for a monomorphism `j : L ⟶ K` and `0 < i`, a lifting problem of
+`Λ[m, i] ⟶ Δ[m]` against the restriction of cones `C_{/p} ⟶ C_{/j ≫ p}` is a lifting problem of
+`j` against the restriction of cocones `C_{σ/} ⟶ C_{(Λ[m, i] ⟶ Δ[m] ⟶ C)/}` along
+`Λ[m, i] ⟶ Δ[m]`, a trivial fibration, so the restriction of cones is a right fibration. As a
+right fibration over a quasicategory, it lifts with prescribed source every edge whose image in
+`C` is an equivalence.
 
 ## Main results
 
@@ -43,6 +46,8 @@ restriction of cocones, so this restriction is a right fibration too.
   quasicategory is a right fibration, and the slice is a quasicategory.
 * `SSet.slice.hasLiftingProperty_horn_ι_map`, `SSet.slice.rightFibration_map`: for a
   monomorphism `j : L ⟶ K`, the restriction of cones `C_{/p} ⟶ C_{/j ≫ p}` is a right fibration.
+* `SSet.slice.hasLift_of_isEquivalence`: this restriction lifts, with prescribed source, every
+  edge whose image in `C` is an equivalence.
 
 ## Implementation notes
 
@@ -185,6 +190,22 @@ theorem hasLiftingProperty_horn_ι_map [Quasicategory C] (p : K ⟶ C) (j : L �
 instance rightFibration_map [Quasicategory C] (p : K ⟶ C) (j : L ⟶ K) [Mono j] :
     RightFibration (map j (𝟙 C) (by simp) : slice p ⟶ slice (j ≫ p)) :=
   (rightFibration_iff_hasLiftingProperty _).2 fun _ _ h0 ↦ hasLiftingProperty_horn_ι_map p j h0
+
+open Edge in
+/-- For a quasicategory `C`, a diagram `p : K ⟶ C` and a monomorphism `j : L ⟶ K`, **the
+restriction of cones `C_{/p} ⟶ C_{/j ≫ p}` lifts, with prescribed source, every edge whose image
+in `C` is an equivalence**: a commutative square from `Λ[1, 0] ⟶ Δ[1]` to it has a lift when the
+edge of `C` underlying its bottom edge is an equivalence. Through the universal property of the
+slice, maps `(Λ[1, 0] ⋆ K) ∪ (Δ[1] ⋆ L) ⟶ C` extend to `Δ[1] ⋆ K` when their edge `Δ[1] ⟶ C` is an
+equivalence. -/
+theorem hasLift_of_isEquivalence [Quasicategory C] (p : K ⟶ C) (j : L ⟶ K) [Mono j]
+    {t : (Λ[1, 0] : SSet) ⟶ slice p} {b : Δ[1] ⟶ slice (j ≫ p)}
+    (sq : CommSq t Λ[1, 0].ι (map j (𝟙 C) (by simp)) b)
+    (hb : (Edge.mk' (yonedaEquiv (b ≫ π (j ≫ p)))).IsEquivalence) : sq.HasLift :=
+  RightFibration.hasLift_of_isEquivalence _ sq
+    ((isEquivalence_map_iff_of_rightFibration (π (j ≫ p)) _).1
+      ((isEquivalence_iff_of_edge_eq (by rw [map_edge, mk'_edge, mk'_edge, yonedaEquiv_comp])).2
+        hb))
 
 end slice
 
