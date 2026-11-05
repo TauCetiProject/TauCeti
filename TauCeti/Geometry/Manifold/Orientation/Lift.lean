@@ -19,7 +19,8 @@ An orientation lift consists of an orientation of the model vector space and loc
 signs defined only on the source of each preferred chart. The signs compensate for the sign of
 the transition derivative within the model range, including boundary and corner points.
 Simultaneously reversing the model orientation and every chart sign leaves the induced tangent
-orientations unchanged.
+orientations unchanged, and `TauCeti.Manifold.OrientationLift.congrModel` casts lifts along an
+equality of models on the same model vector space and chart carrier.
 
 ## References
 
@@ -190,6 +191,33 @@ theorem neg_modelOrientation (o : OrientationLift I M ι) :
 
 @[simp]
 theorem neg_sign (o : OrientationLift I M ι) (α) (x) : (-o).sign α x = o.sign α x := (rfl)
+
+/-- Reindex the model orientation of a lift along an equivalence of index types, keeping its chart
+signs. -/
+def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
+    OrientationLift I M ι' where
+  modelOrientation := _root_.Orientation.reindex ℝ E e o.modelOrientation
+  card_eq := (Fintype.card_congr e).symm.trans o.card_eq
+  sign := o.sign
+  locallyConstant_sign := o.locallyConstant_sign
+  compatible := o.compatible
+
+@[simp]
+theorem reindex_modelOrientation {ι' : Type*} [Fintype ι'] (e : ι ≃ ι')
+    (o : OrientationLift I M ι) :
+    (o.reindex e).modelOrientation = _root_.Orientation.reindex ℝ E e o.modelOrientation := (rfl)
+
+@[simp]
+theorem reindex_sign {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) (α)
+    (x) : (o.reindex e).sign α x = o.sign α x := (rfl)
+
+/-- Reindexing commutes with the diagonal flip. -/
+@[simp]
+theorem reindex_flip {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
+    o.flip.reindex e = (o.reindex e).flip := by
+  ext α x
+  · simp only [reindex_modelOrientation, flip_modelOrientation, _root_.Orientation.reindex_neg]
+  · simp only [reindex_sign, flip_sign]
 
 open Classical in
 /-- A total chart sign with the fixed value `1` off the chart source. Only the source-indexed
@@ -369,6 +397,18 @@ theorem orientationAt_neg (o : OrientationLift I M ι) (x : M) :
     neg_sign, neg_modelOrientation]
   split_ifs <;> rfl
 
+/-- Reindexing a lift reindexes every induced tangent orientation. -/
+@[simp]
+theorem orientationAt_reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι')
+    (o : OrientationLift I M ι) (x : M) :
+    (o.reindex e).orientationAt x =
+      _root_.Orientation.reindex ℝ (TangentSpace I x) e (o.orientationAt x) := by
+  rw [orientationAt_eq, orientationAt_eq, chartOrientation_eq_ite, chartOrientation_eq_ite]
+  simp only [reindex_sign, reindex_modelOrientation]
+  split_ifs
+  · rfl
+  · exact (_root_.Orientation.reindex_neg e o.modelOrientation).symm
+
 open Classical in
 /-- Every orientation of the tangent bundle gives a source-indexed lift, after choosing a
 model orientation. The model choice disappears in the diagonal quotient. -/
@@ -521,6 +561,64 @@ def setoid : Setoid (OrientationLift I M ι) where
 /-- The diagonal equivalence relation is equality or simultaneous sign reversal. -/
 theorem setoid_rel (o o' : OrientationLift I M ι) :
     setoid.r o o' ↔ o' = o ∨ o' = o.flip := Iff.rfl
+
+section CongrModel
+
+/-- Cast an orientation lift along an equality of models on the same model vector space and chart
+carrier. -/
+def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : OrientationLift I M ι) :
+    OrientationLift J M ι where
+  modelOrientation := o.modelOrientation
+  card_eq := o.card_eq
+  sign := o.sign
+  locallyConstant_sign := o.locallyConstant_sign
+  compatible := h ▸ o.compatible
+
+@[simp]
+theorem congrModel_modelOrientation {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) :
+    (o.congrModel h).modelOrientation = o.modelOrientation := (rfl)
+
+@[simp]
+theorem congrModel_sign {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) (α : M) (x : (chartAt H α).source) :
+    (o.congrModel h).sign α x = o.sign α x := (rfl)
+
+@[simp]
+theorem congrModel_signAt {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) (α x : M) :
+    (o.congrModel h).signAt α x = o.signAt α x := by
+  by_cases hx : x ∈ (chartAt H α).source <;> simp [hx]
+
+@[simp]
+theorem congrModel_refl {I : ModelWithCorners ℝ E H} (o : OrientationLift I M ι) :
+    o.congrModel rfl = o := (rfl)
+
+@[simp]
+theorem congrModel_congrModel {I J K : ModelWithCorners ℝ E H} (h₁ : I = J) (h₂ : J = K)
+    (o : OrientationLift I M ι) :
+    (o.congrModel h₁).congrModel h₂ = o.congrModel (h₁.trans h₂) := (rfl)
+
+@[simp]
+theorem flip_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) :
+    (o.congrModel h).flip = o.flip.congrModel h := by
+  ext α x <;> simp
+
+@[simp]
+theorem neg_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) :
+    (-o).congrModel h = -(o.congrModel h) := by
+  ext α x <;> simp
+
+@[simp]
+theorem orientationAt_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] (o : OrientationLift I M ι) (x : M) :
+    (o.congrModel h).orientationAt x = o.orientationAt x := by
+  subst h
+  rfl
+
+end CongrModel
 
 end OrientationLift
 end TauCeti.Manifold

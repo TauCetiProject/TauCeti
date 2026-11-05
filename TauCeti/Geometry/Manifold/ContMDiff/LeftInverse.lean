@@ -29,6 +29,7 @@ smoothly compatible.
 
 * `ContMDiffAt.exists_contMDiffAt_leftInverse`: `C^n` varying left inverses of a `C^n` family of
   operators whose member at `x₀` has a continuous left inverse.
+* `ContMDiffAt.of_clm_apply`: regularity can be tested after a smoothly varying split injection.
 -/
 
 public section
@@ -66,3 +67,13 @@ theorem ContMDiffAt.exists_contMDiffAt_leftInverse {A : M → G →L[𝕜] F} {x
   filter_upwards [hQ.continuousAt.preimage_mem_nhds (hQ₀ ▸ Units.nhds 1)] with x hx v
   have := congrArg (fun T : G →L[𝕜] G ↦ T v) (Ring.inverse_mul_cancel _ hx)
   simpa using this
+
+/-- Smoothness can be tested after a smoothly varying split injection. No regularity of `v`
+is assumed in advance. -/
+theorem ContMDiffAt.of_clm_apply {A : M → G →L[𝕜] F} {v : M → G} {x₀ : M}
+    (hAv : ContMDiffAt I 𝓘(𝕜, F) n (fun x ↦ A x (v x)) x₀)
+    (hA : ContMDiffAt I 𝓘(𝕜, G →L[𝕜] F) n A x₀) (h : (A x₀).HasLeftInverse) :
+    ContMDiffAt I 𝓘(𝕜, G) n v x₀ := by
+  obtain ⟨L, hL, hLA⟩ := hA.exists_contMDiffAt_leftInverse h
+  exact (hL.clm_apply hAv).congr_of_eventuallyEq
+    (hLA.mono fun x hx ↦ (hx (v x)).symm)

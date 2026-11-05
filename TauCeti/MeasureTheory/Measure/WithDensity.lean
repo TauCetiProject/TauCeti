@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
+import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 
 /-!
 # Pushing a weighted measure forward
@@ -50,10 +51,14 @@ measure finite.
   constant Jacobian factor.
 * `MeasureTheory.Measure.rnDeriv_map_affine`: the Radon–Nikodym derivative of an affine image is
   obtained by the same substitution and Jacobian factor.
+* `MeasureTheory.Measure.support_withDensity_eq`: weighting a measure by an almost-everywhere
+  nonzero density preserves its topological support.
 * `MeasureTheory.Measure.support_withDensity_eq_closure_of_subset`: a density positive on an open
   set and zero off its closure has topological support equal to that closure.
 * `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
   support is exactly the open set.
+* `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
+  presenting the same weighted measure are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
@@ -116,6 +121,14 @@ end TauCeti.Probability
 namespace MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+
+/-- Weighting a measure by an almost-everywhere nonzero density preserves its topological support.
+-/
+theorem support_withDensity_eq {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} {f : X → ℝ≥0∞} (hf : AEMeasurable f μ) (hf_ne_zero : ∀ᵐ x ∂μ, f x ≠ 0) :
+    (μ.withDensity f).support = μ.support :=
+  Set.Subset.antisymm (withDensity_absolutelyContinuous μ f).support_mono
+    (withDensity_absolutelyContinuous' hf hf_ne_zero).support_mono
 
 /-- If a measurable density is positive on an open set and zero off its closure, then its weighted
 measure has topological support equal to that closure, provided the reference measure is positive
@@ -271,6 +284,22 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
 end MeasureTheory.Measure
 
 namespace MeasureTheory
+
+/-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
+theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [SigmaFinite ν]
+    [ν.IsOpenPosMeasure] {p q : X → ℝ} (hp : Continuous p) (hq : Continuous q)
+    (hp0 : 0 ≤ p) (hq0 : 0 ≤ q)
+    (h : ν.withDensity (fun x ↦ ENNReal.ofReal (p x)) =
+      ν.withDensity (fun x ↦ ENNReal.ofReal (q x))) :
+    p = q := by
+  have haeENN : (fun x ↦ ENNReal.ofReal (p x)) =ᵐ[ν] fun x ↦ ENNReal.ofReal (q x) :=
+    (withDensity_eq_iff_of_sigmaFinite hp.measurable.ennreal_ofReal.aemeasurable
+      hq.measurable.ennreal_ofReal.aemeasurable).1 h
+  have hae : p =ᵐ[ν] q := by
+    filter_upwards [haeENN] with x hx
+    exact (ENNReal.ofReal_eq_ofReal_iff (hp0 x) (hq0 x)).mp hx
+  exact (hp.ae_eq_iff_eq ν hq).1 hae
 
 /-- A measure with log-density bounded above almost everywhere against a finite measure is
 finite. -/

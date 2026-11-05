@@ -11,6 +11,7 @@ import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -68,6 +69,8 @@ the kernel at the cost of a factor `(t' - s)⁻¹`), which integrates to `O(H h^
 
 * `TauCeti.heatDuhamelPotential`: the Duhamel potential `∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds`.
 * `TauCeti.norm_heatDuhamelPotential_le`: the bound `‖w(t, x)‖ ≤ M t`.
+* `TauCeti.exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution`: the derivatives
+  `D^m (K_τ ⋆ f(s, ·))(x)` agree with a jointly measurable function of `(s, τ)`.
 * `TauCeti.intervalIntegrable_heatKernel_convolution`,
   `TauCeti.intervalIntegrable_iteratedFDeriv_heatKernel_convolution`,
   `TauCeti.intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith`: the time
@@ -122,11 +125,31 @@ theorem heatDuhamelPotential_def (f : ℝ → E → F) (t : ℝ) (x : E) :
     heatDuhamelPotential f t x = ∫ s in 0..t, (heatKernel (t - s) ⋆ f s) x :=
   (rfl)
 
+/-- The Duhamel heat potential commutes with scalar multiplication, at every time. -/
+theorem heatDuhamelPotential_smul (c : ℝ) (f : ℝ → E → F) (t : ℝ) (x : E) :
+    heatDuhamelPotential (c • f) t x = c • heatDuhamelPotential f t x := by
+  simp only [heatDuhamelPotential_def, Pi.smul_apply, convolution_smul]
+  exact intervalIntegral.integral_smul c _
+
 /-- The Duhamel heat potential vanishes at time zero. -/
 @[simp]
 theorem heatDuhamelPotential_zero (f : ℝ → E → F) : heatDuhamelPotential f 0 = 0 := by
   funext x
   simp [heatDuhamelPotential_def]
+
+/-- Constant forcing produces linear growth in time. -/
+@[simp]
+theorem heatDuhamelPotential_const [CompleteSpace F] (c : F) {t : ℝ} (ht : 0 ≤ t) (x : E) :
+    heatDuhamelPotential (fun _ _ => c) t x = t • c := by
+  rw [heatDuhamelPotential_def]
+  calc (∫ s in 0..t, (heatKernel (t - s) ⋆ fun _ : E => c) x) = ∫ _ in 0..t, c := by
+        apply intervalIntegral.integral_congr_ae_restrict
+        rw [uIoc_of_le ht, ← restrict_Ioo_eq_restrict_Ioc]
+        filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs
+        rw [convolution_def]
+        simp only [ContinuousLinearMap.lsmul_apply]
+        rw [integral_smul_const, integral_heatKernel (sub_pos.2 hs.2), one_smul]
+    _ = t • c := by simp
 
 /-- The Duhamel potential at time `t` as a function of space. -/
 private theorem heatDuhamelPotential_eq_fun (f : ℝ → E → F) (t : ℝ) :
@@ -157,37 +180,48 @@ theorem norm_heatDuhamelPotential_le (ht : 0 ≤ t)
   filter_upwards [hae] with s hs hsI
   exact norm_heatKernel_convolution_le (sub_pos.2 (hs hsI).1.2) (hs hsI).2 x
 
+/-- **Joint measurability of the derivatives of heat convolutions.** For jointly measurable `f`,
+some jointly strongly measurable function of `(s, τ)` equals `D^m (K_τ ⋆ f(s, ·))(x)` whenever
+`τ > 0` and `f(s, ·)` is essentially bounded. Writing `D^m K_τ` through the parabolic scaling of
+`K_1` makes the convolution integrand jointly measurable in `(s, τ, z)`. -/
+theorem exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution
+    (hf : StronglyMeasurable (Function.uncurry f)) (m : ℕ) (x : E) :
+    ∃ Φ : ℝ × ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F, StronglyMeasurable Φ ∧
+      ∀ s τ (B : ℝ), 0 < τ → (∀ᵐ y, ‖f s y‖ ≤ B) →
+        Φ (s, τ) = iteratedFDeriv ℝ m (heatKernel τ ⋆ f s) x := by
+  set Ψ : (ℝ × ℝ) × E → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F := fun p =>
+    (p.1.2 ^ (-(finrank ℝ E + m : ℝ) / 2) •
+      iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) (p.1.2 ^ (-1 / 2 : ℝ) • p.2)).smulRight
+        (f p.1.1 (x - p.2))
+  have hΨ : StronglyMeasurable Ψ := by
+    have h₁ : Measurable fun p : (ℝ × ℝ) × E => p.1.2 ^ (-(finrank ℝ E + m : ℝ) / 2) := by
+      fun_prop
+    have h₂ : Measurable fun p : (ℝ × ℝ) × E => p.1.2 ^ (-1 / 2 : ℝ) • p.2 := by fun_prop
+    have h₃ : StronglyMeasurable fun p : (ℝ × ℝ) × E => f p.1.1 (x - p.2) :=
+      hf.comp_measurable (g := fun p : (ℝ × ℝ) × E => (p.1.1, x - p.2)) (by fun_prop)
+    exact (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).continuous₂
+      |>.comp_stronglyMeasurable ((h₁.stronglyMeasurable.smul
+        (((contDiff_heatKernel 1).continuous_iteratedFDeriv le_top).comp_stronglyMeasurable
+          h₂.stronglyMeasurable)).prodMk h₃)
+  refine ⟨fun q => ∫ z, Ψ (q, z), hΨ.integral_prod_right', fun s τ B hτ hB => ?_⟩
+  rw [iteratedFDeriv_heatKernel_convolution (g := f s) hτ
+    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hB m x]
+  refine integral_congr_ae (ae_of_all _ fun z => ?_)
+  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ]
+
 /-- For jointly measurable essentially bounded `f`, the spatial derivatives
-`D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. Writing `D^m K_{t-s}` through the parabolic
-scaling of `K_1` makes the integrand jointly measurable in `(s, z)`. -/
+`D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. -/
 private theorem aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution
     (hf : StronglyMeasurable (Function.uncurry f))
     (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M)
     (ht : 0 < t) (m : ℕ) (x : E) :
     AEStronglyMeasurable (fun s => iteratedFDeriv ℝ m (heatKernel (t - s) ⋆ f s) x)
       (volume.restrict (Ι 0 t)) := by
-  set Φ : ℝ × E → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F := fun p =>
-    ((t - p.1) ^ (-(finrank ℝ E + m : ℝ) / 2) •
-      iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) ((t - p.1) ^ (-1 / 2 : ℝ) • p.2)).smulRight
-        (f p.1 (x - p.2))
-  have hΦ : StronglyMeasurable Φ := by
-    have h₁ : Measurable fun p : ℝ × E => (t - p.1) ^ (-(finrank ℝ E + m : ℝ) / 2) := by
-      fun_prop
-    have h₂ : Measurable fun p : ℝ × E => (t - p.1) ^ (-1 / 2 : ℝ) • p.2 := by fun_prop
-    have h₃ : StronglyMeasurable fun p : ℝ × E => f p.1 (x - p.2) :=
-      hf.comp_measurable (g := fun p : ℝ × E => (p.1, x - p.2)) (by fun_prop)
-    exact (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).continuous₂
-      |>.comp_stronglyMeasurable ((h₁.stronglyMeasurable.smul
-        (((contDiff_heatKernel 1).continuous_iteratedFDeriv le_top).comp_stronglyMeasurable
-          h₂.stronglyMeasurable)).prodMk h₃)
-  refine (hΦ.integral_prod_right' (ν := volume)).aestronglyMeasurable.congr ?_
+  obtain ⟨Φ, hΦ, hΦeq⟩ := exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution hf m x
+  refine (hΦ.comp_measurable (by fun_prop : Measurable fun s : ℝ => (s, t - s))
+    ).aestronglyMeasurable.congr ?_
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs
-  have hts : 0 < t - s := sub_pos.2 hs.1.2
-  have hfs : AEStronglyMeasurable (f s) volume :=
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
-  rw [iteratedFDeriv_heatKernel_convolution hts hfs hs.2 m x]
-  refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  simp only [Φ, iteratedFDeriv_heatKernel_eq_rpow_smul hts]
+  exact hΦeq s (t - s) M (sub_pos.2 hs.1.2) hs.2
 
 /-- The time slices `K_{t-s} ⋆ f(s, ·)` are smooth for almost every `s ∈ Ι 0 t`. -/
 private theorem ae_contDiff_heatKernel_convolution (hf : StronglyMeasurable (Function.uncurry f))
@@ -251,6 +285,31 @@ theorem intervalIntegrable_heatKernel_convolution (hf : StronglyMeasurable (Func
         (aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht 0 x)
   · filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs
     exact norm_heatKernel_convolution_le (sub_pos.2 hs.1.2) hs.2 x
+
+/-- The Duhamel heat potential is additive for jointly measurable, essentially bounded
+forcing on the integration interval. No spatial continuity is required. -/
+theorem heatDuhamelPotential_add {g : ℝ → E → F} {N : ℝ}
+    (hf : StronglyMeasurable (Function.uncurry f))
+    (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M)
+    (hg : StronglyMeasurable (Function.uncurry g))
+    (hgN : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖g s y‖ ≤ N)
+    (ht : 0 ≤ t) (x : E) :
+    heatDuhamelPotential (f + g) t x =
+      heatDuhamelPotential f t x + heatDuhamelPotential g t x := by
+  rcases ht.eq_or_lt with rfl | ht
+  · simp
+  rw [heatDuhamelPotential_def, heatDuhamelPotential_def, heatDuhamelPotential_def,
+    ← intervalIntegral.integral_add (intervalIntegrable_heatKernel_convolution hf hfM ht x)
+      (intervalIntegrable_heatKernel_convolution hg hgN ht x)]
+  apply intervalIntegral.integral_congr_ae_restrict
+  filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM,
+    ae_mem_Ioo_and_ae_norm_le ht.le hgN] with s hs hs'
+  exact (convolutionExists_of_integrable_of_ae_norm_le _
+    (integrable_heatKernel (sub_pos.2 hs.1.2))
+    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hs.2 x).distrib_add
+      (convolutionExists_of_integrable_of_ae_norm_le _
+        (integrable_heatKernel (sub_pos.2 hs'.1.2))
+        (hg.comp_measurable measurable_prodMk_left).aestronglyMeasurable hs'.2 x)
 
 /-- For `f` jointly measurable and essentially bounded on `(0, t) × E`, the time integrands
 `s ↦ D^k (K_{t-s} ⋆ f(s, ·))(x)` of the spatial derivatives of order at most one of the Duhamel
