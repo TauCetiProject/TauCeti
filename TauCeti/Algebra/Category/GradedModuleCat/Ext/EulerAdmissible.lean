@@ -273,36 +273,9 @@ end TauCeti.GradedProjectiveResolution
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Abelian
 
-universe w v uk uA uI
-
-section CompositionSeries
-
-variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
-
-/-- Ordinary Euler-admissibility in `GradedModuleCat 𝒜` against a fixed target can be tested on
-finite-dimensional simple graded sources. -/
-theorem isEulerAdmissible_of_finite_of_forall_simple (Y : GradedModuleCat.{v} 𝒜)
-    (h : ∀ S : GradedModuleCat.{v} 𝒜, Module.Finite k S → Simple S → IsEulerAdmissible.{w} k S Y)
-    (X : GradedModuleCat.{v} 𝒜) [Module.Finite k X] :
-    IsEulerAdmissible.{w} k X Y :=
-  X.finite_induction (fun M ↦ IsEulerAdmissible.{w} k M Y)
-    (fun _ hM ↦ IsEulerAdmissible.of_isZero_left k hM) h
-    (fun hS h₁ h₃ ↦ h₁.of_shortExact₂' hS h₃)
-
-/-- Ordinary Euler-admissibility in `GradedModuleCat 𝒜` from a fixed source can be tested on
-finite-dimensional simple graded targets. -/
-theorem isEulerAdmissible_of_finite_of_forall_simple_right (X : GradedModuleCat.{v} 𝒜)
-    (h : ∀ T : GradedModuleCat.{v} 𝒜, Module.Finite k T → Simple T → IsEulerAdmissible.{w} k X T)
-    (Y : GradedModuleCat.{v} 𝒜) [Module.Finite k Y] :
-    IsEulerAdmissible.{w} k X Y :=
-  Y.finite_induction (fun M ↦ IsEulerAdmissible.{w} k X M)
-    (fun _ hM ↦ IsEulerAdmissible.of_isZero_right k hM) h
-    (fun hS h₁ h₃ ↦ h₁.of_shortExact₂ hS h₃)
-
-end CompositionSeries
+universe uk uA uI
 
 section FiniteAlgebra
 
