@@ -33,8 +33,9 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
 * `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
-  leaves the norm equal to one; `TauCeti.norm_div_one_sub_pow`: so does dividing by a power of
-  such a `1 - w`.
+  leaves the norm equal to one; `TauCeti.norm_eq_one_of_norm_one_sub_lt_one`: an element within
+  less than one of one has norm one; `TauCeti.norm_div_one_sub_pow`: dividing by a power of such
+  a `1 - w` does not change norms.
 * `TauCeti.norm_div_one_sub_cube_sub_div_one_sub_cube_le` and
   `TauCeti.norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le_max_mul`: on the open unit ball,
   `t ↦ t / (1 - t)³` is `1`-Lipschitz and `t ↦ t² / (1 - t)³` is Lipschitz with constant the
@@ -52,6 +53,8 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
+* `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
+  no farther from `1` than `x`.
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 -/
 
@@ -123,6 +126,11 @@ theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass
   rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm]
   · simp [hx.le]
   · exact ne_of_gt (by simpa using hx)
+
+/-- An element at distance less than one from one has norm one. -/
+theorem norm_eq_one_of_norm_one_sub_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : R} (hx : ‖1 - x‖ < 1) : ‖x‖ = 1 := by
+  simpa using norm_one_sub_of_norm_lt_one hx
 
 /-- Subtracting an element whose norm is not one from one gives norm at least one. -/
 theorem one_le_norm_one_sub_of_norm_ne_one {R : Type*} [SeminormedRing R] [NormOneClass R]
@@ -289,6 +297,15 @@ theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R]
     _ ≤ max ‖a * (b - 1)‖ ‖a - 1‖ := IsUltrametricDist.norm_add_le_max _ _
     _ < ε := max_lt ((norm_mul_le _ _).trans_lt
       ((mul_le_of_le_one_left (norm_nonneg _) hnorm).trans_lt hb)) ha
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1`, a power of an element `x` of norm at most
+one is no farther from `1` than `x` is: `‖x ^ n - 1‖ ≤ ‖x - 1‖`. -/
+theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : R} (hx : ‖x‖ ≤ 1) (n : ℕ) : ‖x ^ n - 1‖ ≤ ‖x - 1‖ := by
+  rw [← geom_sum_mul]
+  refine (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦
+    (norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg x) hx)
 
 /-- In an ultrametric normed commutative ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1` (for `0 < ε`). -/

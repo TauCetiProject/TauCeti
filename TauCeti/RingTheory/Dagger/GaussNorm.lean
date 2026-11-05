@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
+public import TauCeti.RingTheory.Huber.Normed
 
 /-!
 # The Gauss norm on overconvergent series
@@ -17,7 +18,8 @@ a normed algebra. This is the norm used to form residue norms of dagger algebras
 
 The inclusion `toTate` is an isometry. Coefficient bounds characterize the norm, constants
 retain their norm, the variables have norm one, and renaming the variables preserves the norm.
-Polynomials are dense for this norm.
+Polynomials are dense for this norm. Over a nontrivially normed ultrametric field, the
+power-bounded elements for the Gauss norm topology are the series of Gauss norm at most one.
 
 ## References
 
@@ -132,5 +134,19 @@ noncomputable instance : NormedAlgebra K (washnitzerAlgebra σ R) :=
   NormedAlgebra.induced K _ _ ((toTate σ R).restrictScalars K)
 
 end NormedAlgebra
+
+section NontriviallyNormedField
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+
+/-- **The power-bounded overconvergent series are the Gauss unit ball**: `f ∈ K⟨X⟩†` is
+power-bounded for the Gauss norm topology iff `‖f‖ ≤ 1`. -/
+theorem isPowerBounded_iff_norm_le_one {f : washnitzerAlgebra σ K} :
+    Huber.IsPowerBounded f ↔ ‖f‖ ≤ 1 := by
+  obtain ⟨ϖ, hϖ⟩ :=
+    (Huber.IsTateRing.of_normedAlgebra K (washnitzerAlgebra σ K)).exists_isPseudoUniformizer
+  exact hϖ.isPowerBounded_iff_norm_le_one fun x n _ ↦ norm_pow x n
+
+end NontriviallyNormedField
 
 end TauCeti.Dagger.washnitzerAlgebra

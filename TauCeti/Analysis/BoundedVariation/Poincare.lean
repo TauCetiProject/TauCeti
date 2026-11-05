@@ -346,7 +346,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
       ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
         diam (Ω : Set E) ^ finrank ℝ E / μ.real S) * μ A ^ (finrank ℝ E : ℝ)⁻¹ *
         totalVariationOn μ Ω u := by
-  obtain ⟨V, hVmono, hVopen, hVconv, hVcompact, hVclosure, hVunion⟩ :=
+  obtain ⟨V, hVmono, hVopen, hVconv, hVcompact, -, hVclosure, hVunion⟩ :=
     exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq Ω.isOpen hΩc
   have hVsub (n : ℕ) : V n ⊆ Ω := subset_closure.trans (hVclosure n)
   have hΩfin : μ Ω ≠ ∞ := hb.measure_lt_top.ne
