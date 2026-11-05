@@ -13,6 +13,8 @@ public import Mathlib.Order.Zorn
 -- `Subgroup.zpowers` occurs in `Subgroup.zpowers_le_centralizer_singleton`.
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 import TauCeti.Algebra.Group.Torsion
+-- `group` proves the conjugation identity behind `commute_conj_zpow_of_inv_mul_mem_centralizer`.
+import Mathlib.Tactic.Group
 
 /-!
 # Centralizers and maximal commutative subgroups
@@ -34,6 +36,8 @@ which is the form every concrete centralizer computation in a matrix group start
 * `Subgroup.exists_maximal_isMulCommutative`: every commutative subgroup lies in a maximal one.
 * `Subgroup.centralizer_zpow_eq` and `Subgroup.centralizer_pow_eq`: nonzero powers have the same
   centralizer as their base in groups with unique roots.
+* `Group.commute_conj_zpow_of_inv_mul_mem_centralizer`: conjugates of powers of `u` by `y` and
+  `y'` commute when `y⁻¹ * y'` centralizes `u`.
 -/
 
 public section
@@ -104,3 +108,21 @@ theorem centralizer_pow_eq {n : ℕ} (hn : n ≠ 0) :
   simpa only [zpow_natCast] using centralizer_zpow_eq x hn'
 
 end Subgroup
+
+namespace Group
+
+variable {G : Type*} [Group G]
+
+/-- Conjugates of powers of `u` by `y` and `y'` commute when `y⁻¹ * y'` centralizes `u`. -/
+theorem commute_conj_zpow_of_inv_mul_mem_centralizer {u y y' : G} (e e' : ℤ)
+    (hy : y⁻¹ * y' ∈ Subgroup.centralizer {u}) :
+    Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
+  have hc : Commute (y⁻¹ * y') (u ^ e') :=
+    (Commute.zpow_right (Subgroup.mem_centralizer_singleton_iff.1 hy) e')
+  have : y' * u ^ e' * y'⁻¹ = y * u ^ e' * y⁻¹ := by
+    calc y' * u ^ e' * y'⁻¹ = y * ((y⁻¹ * y') * u ^ e' * (y⁻¹ * y')⁻¹) * y⁻¹ := by group
+      _ = y * u ^ e' * y⁻¹ := by rw [hc.eq, mul_inv_cancel_right]
+  rw [this, Commute.conj_iff]
+  exact Commute.zpow_zpow_self u e e'
+
+end Group

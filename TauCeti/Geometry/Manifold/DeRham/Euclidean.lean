@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
@@ -92,23 +92,13 @@ open scoped ContDiff Manifold Topology
 namespace TauCeti
 
 /-- For every orientation `o` of a finite-dimensional real normed space `E` of dimension `n`,
-integration `H^n_c(E) → ℝ` is nonzero: the class of a bump form has integral `±1`. -/
+integration `H^n_c(E) → ℝ` is nonzero: the class of a bump form has integral one. -/
 private theorem compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
     (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
     ∃ v, compactlySupportedDeRhamCohomology.integral o v ≠ 0 := by
-  have hn : Fintype.card (Fin n) = finrank ℝ E := o.card_eq
-  let b := Module.finBasisOfFinrankEq ℝ E (by simpa using hn.symm)
-  obtain ⟨φ₀, hφ₀⟩ := b.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one hn
-  refine ⟨compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) n φ₀, ?_⟩
-  -- `o` is the constant orientation of `b` or its opposite, so the integral is `±1`.
-  rw [compactlySupportedDeRhamCohomology.integral_mk]
-  rcases Manifold.Orientation.eq_or_eq_neg o (Manifold.Orientation.model b.orientation hn)
-    with rfl | rfl
-  · rw [hφ₀]
-    exact one_ne_zero
-  · rw [integralTopForm_neg, hφ₀]
-    norm_num
+  obtain ⟨v, hv⟩ := compactlySupportedDeRhamCohomology.surjective_integral o 1
+  exact ⟨v, hv.trans_ne one_ne_zero⟩
 
 section InnerProductSpace
 
