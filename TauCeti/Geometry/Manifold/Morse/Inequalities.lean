@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
@@ -34,9 +34,10 @@ of a finite CW pair with one `i`-cell for each critical point of index `i`
 three statements are the Morse inequalities for CW pairs. Across a band without critical points
 the relative homology vanishes, by the deformation retraction of `M_b` onto `M_a`
 (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
-A band is cut at the critical values it contains into finitely many such pieces, and the long exact
-sequence of the triple `M_a ⊆ M_m ⊆ M_b` shows that dimensions and the alternating sums `Sₙ` are
-subadditive (`TauCeti.TopTriple.finrank_singularHomology_totalPair_le` and
+A band is cut at the critical values it contains into finitely many such pieces
+(`TauCeti.IsMorse.band_induction`), and the long exact sequence of the triple
+`M_a ⊆ M_m ⊆ M_b` shows that dimensions and the alternating sums `Sₙ` are subadditive
+(`TauCeti.TopTriple.finrank_singularHomology_totalPair_le` and
 `TauCeti.TopTriple.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le`), while the
 critical counts are additive. Above the dimension of `M` the connecting map in degree `n + 1`
 vanishes, since its source is zero by the weak inequalities, which turns the strong inequality
@@ -320,31 +321,17 @@ private theorem IsMorse.exists_morseInequalities_univ (hf : IsMorse I f) :
       (∀ n, Nonempty (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
         (TopCat.of M) ≅ (sublevelPair f hab).singularHomology V n)) ∧
       ∀ i, bandCount I f a b i = (criticalCount I f i).toNat := by
-  have hfc : Continuous f := hf.contMDiff.continuous
-  obtain ⟨l, hl⟩ := (isCompact_range hfc).bddBelow
-  obtain ⟨t, ht⟩ := (isCompact_range hfc).bddAbove
-  have ha (x : M) : l - 1 < f x := by linarith [hl (mem_range_self x)]
-  have hb (x : M) : f x < max (t + 1) (l - 1) :=
-    lt_max_of_lt_left (by linarith [ht (mem_range_self x)])
-  have hab : l - 1 ≤ max (t + 1) (l - 1) := le_max_right _ _
-  have hcrit {c : ℝ} (hc : ∀ x, f x ≠ c) : IsRegularValue I 𝓘(ℝ) f c :=
-    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, _, hx⟩ ↦ hc x hx
-  refine ⟨l - 1, max (t + 1) (l - 1), hab,
-    hf.morseInequalities V hab (isClosed_Icc.preimage hfc).isCompact
-      (hcrit fun x ↦ (ha x).ne') (hcrit fun x ↦ (hb x).ne), fun n ↦ ?_, fun i ↦ ?_⟩
-  · -- `{f ≤ a}` is empty and `{f ≤ b}` is all of `M`.
-    have : IsEmpty (sublevelPair f hab).snd :=
-      ⟨fun (x : {x : M | f x ≤ l - 1}) ↦ (ha x).not_ge x.2⟩
-    have hπ : IsIso ((sublevelPair f hab).singularHomologyπ V n) := inferInstance
-    exact ⟨((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).mapIso
-      (TopCat.isoOfHomeo ((Homeomorph.setCongr (eq_univ_of_forall fun x ↦ (hb x).le)).trans
-        (Homeomorph.Set.univ M))).symm ≪≫ @asIso _ _ _ _ _ hπ⟩
-  · rw [bandCount, criticalCount_def, ← ncard_def]
-    congr 1
-    ext x
-    simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
-    have : f x ∈ Ioc (l - 1) (max (t + 1) (l - 1)) := ⟨ha x, (hb x).le⟩
-    tauto
+  obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
+    exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
+  refine ⟨a, b, hab, hf.morseInequalities V hab hcompact ha hb,
+    fun n ↦ ⟨singularHomologyIsoSublevelPair hab (fun x ↦ (hf' x).1)
+      (fun x ↦ (hf' x).2) V n⟩, fun i ↦ ?_⟩
+  rw [bandCount, criticalCount_def, ← ncard_def]
+  congr 1
+  ext x
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
+  have := hf' x
+  tauto
 
 /-- **Finiteness of homology.** The singular homology of a compact boundaryless manifold carrying
 a Morse function, with coefficients in a finite-dimensional module `V`, is finite-dimensional in
