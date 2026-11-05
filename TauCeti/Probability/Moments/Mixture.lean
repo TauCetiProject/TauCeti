@@ -161,43 +161,6 @@ theorem evariance_prod_eq (hL : MemLp F 2 (μ.prod π)) :
     hvar, integral_congr_ae (hslice.mono fun a ha => ha.1),
     variance_congr (hslice.mono fun a ha => ha.2.1)]
 
-variable {ν : Measure α} {π : Measure β} [IsProbabilityMeasure ν] [IsProbabilityMeasure π]
-  {F : α × β → ℝ}
-
-/-- Jensen's inequality for the variance of an average: the variance of the average over the
-second coordinate is at most the average over the second coordinate of the variances in the first
-coordinate. -/
-theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.prod π)) :
-    evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
-      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  have hmm : StronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) :=
-    (hF.comp measurable_swap).stronglyMeasurable.integral_prod_right'
-  have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
-  have hm_eq : ∫ w, ∫ a, F (a, w) ∂ν ∂π = ∫ a, ∫ w, F (a, w) ∂π ∂ν := by
-    rw [← integral_prod_symm _ hint, integral_prod _ hint]
-  have hae : ∀ᵐ a ∂ν, ‖(∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν‖ₑ ^ 2 ≤
-      ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π := by
-    filter_upwards [hint.prod_right_ae] with a ha
-    have hsub : (∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν =
-        ∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π := by
-      rw [integral_sub ha hmint, hm_eq]
-    rw [hsub]
-    calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
-        ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
-          gcongr
-          exact enorm_integral_le_lintegral_enorm _
-      _ ≤ _ := by
-          simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
-            (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)
-            (((hF.comp measurable_prodMk_left).sub hmm.measurable).enorm.aemeasurable)
-            one_le_two
-  calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
-      ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
-    _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
-        lintegral_lintegral_swap
-          ((hF.sub (hmm.measurable.comp measurable_snd)).enorm.pow_const 2).aemeasurable
-    _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
-
 end TauCeti.Probability
 
 namespace ProbabilityTheory.Kernel

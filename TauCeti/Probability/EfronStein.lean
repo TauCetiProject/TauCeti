@@ -51,19 +51,6 @@ universe u
 
 section Prod
 
-variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
-  [IsProbabilityMeasure ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
-
-/-- The two-factor Efron--Stein inequality. -/
-theorem evariance_prod_le (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
-    evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
-      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  rw [evariance_prod_eq hL]
-  gcongr
-  exact evariance_integral_prod_le hF (hL.integrable one_le_two)
-
-end Prod
-
 /-- The Efron–Stein inequality on `Measure.pi` over `Fin n`. -/
 private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, MeasurableSpace (α i)]
     (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)] {f : (∀ i, α i) → ℝ},
