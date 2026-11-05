@@ -124,7 +124,7 @@ private theorem inputPolynomial_prefix_succ (A : MLPSpec K L) (r : Fin (L - 1) �
 
 /-- Every zero-bias monomial prefix is homogeneous in the inputs; its degree is the partial
 product of the exponents of the layers already evaluated. -/
-theorem isHomogeneous_inputPolynomial_polynomialPrefix_weights (A : MLPSpec K L)
+theorem isHomogeneous_inputPolynomial_polynomialPrefix_weights_monomial (A : MLPSpec K L)
     (r : Fin (L - 1) → ℕ) (i : Fin (L + 1)) (o : Fin (A.width i)) :
     (inputPolynomial
       (polynomialReparametrize A.zeroBiasSubstitution
@@ -144,7 +144,7 @@ theorem isHomogeneous_inputPolynomial_polynomialRealizeWeights_monomial (A : MLP
     (r : Fin (L - 1) → ℕ) (o : Fin (A.width (Fin.last L))) :
     (inputPolynomial (A.polynomialRealizeWeights fun j => Polynomial.X ^ r j) o).IsHomogeneous
       (∏ j, r j) := by
-  have h := A.isHomogeneous_inputPolynomial_polynomialPrefix_weights r (Fin.last L) o
+  have h := A.isHomogeneous_inputPolynomial_polynomialPrefix_weights_monomial r (Fin.last L) o
   have hd : Fin.partialProd (layerExponent r) (Fin.last L) = ∏ j, r j :=
     (Fin.partialProd_last (layerExponent r)).trans (prod_layerExponent r)
   simpa only [polynomialRealizeWeights_def, polynomialRealize_def, hd] using h
