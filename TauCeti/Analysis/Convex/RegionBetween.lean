@@ -27,6 +27,10 @@ describes them in the terms that subdivision needs.
   over the convex hull of `s` is the convex hull of the lower vertices `(x, a x)` and the upper
   vertices `(x, b x)`, `x ∈ s`. Over a finite set `s` it is therefore a polytope; where `a = b` it
   collapses to the graph (`TauCeti.closedRegionBetween_self`).
+* `TauCeti.le_of_forall_le_of_mem_convexHull`, `TauCeti.eq_of_le_of_mem_intrinsicInterior`: an
+  inequality `a ≤ b` between affine functions on `s` persists on its convex hull, and is strict on
+  the intrinsic interior of the convex hull unless `a = b` on all of it. Thus two ordered affine
+  functions over a simplex either agree on it or have disjoint graphs over its open simplex.
 * `ContinuousAffineMap.intrinsicInterior_graphOn`, `ContinuousAffineMap.intrinsicFrontier_graphOn`:
   the intrinsic interior of the graph of a continuous affine map lies over the intrinsic interior
   of its domain, and, for a closed domain, its intrinsic frontier lies over the intrinsic frontier
@@ -107,7 +111,33 @@ theorem closedRegionBetween_convexHull {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
     · rw [b.decomp]
       exact (b.linear.concaveOn hs).add (concaveOn_const _ hs)
 
+/-- An inequality between two affine functions on a set persists on its convex hull. -/
+theorem le_of_forall_le_of_mem_convexHull {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
+    (h : ∀ x ∈ s, a x ≤ b x) {x : E} (hx : x ∈ convexHull ℝ s) : a x ≤ b x := by
+  have hc : Convex ℝ {y | a y ≤ b y} := by
+    convert (convex_Ici (0 : ℝ)).affine_preimage (b - a) using 1
+    ext y
+    simp [sub_nonneg]
+  exact convexHull_min (fun y hy ↦ h y hy) hc hx
+
 end Convex
+
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- If `a ≤ b` on `s` for two affine functions, with equality at an intrinsic interior point of
+the convex hull of `s`, then `a = b` on the whole convex hull. -/
+theorem eq_of_le_of_mem_intrinsicInterior {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
+    (h : ∀ x ∈ s, a x ≤ b x) {x y : E} (hx : x ∈ intrinsicInterior ℝ (convexHull ℝ s))
+    (hxe : a x = b x) (hy : y ∈ convexHull ℝ s) : a y = b y := by
+  have := eq_zero_of_nonneg_of_mem_intrinsicInterior (g := b - a)
+    (fun z hz ↦ by simpa [sub_nonneg] using le_of_forall_le_of_mem_convexHull h hz) hx
+    (by simp [hxe]) hy
+  rw [AffineMap.coe_sub, Pi.sub_apply, sub_eq_zero] at this
+  exact this.symm
+
+end Normed
 
 end TauCeti
 

@@ -30,6 +30,7 @@ in `TauCeti.Analysis.Convex.SimplicialComplex.CommonSubdivision`.
   lies in the open simplex of one of its faces.
 * `Geometry.SimplicialComplex.eq_of_mem_intrinsicInterior`: distinct faces have disjoint open
   simplices.
+* `Geometry.SimplicialComplex.eq_of_convexHull_eq`: distinct faces have distinct simplices.
 * `Geometry.SimplicialComplex.existsUnique_mem_intrinsicInterior`: every point of `|K|` lies in
   the open simplex of exactly one face.
 
@@ -91,6 +92,14 @@ theorem eq_of_mem_intrinsicInterior (hs : s ∈ K.faces) (ht : t ∈ K.faces)
     have hy' : (⟨y, hy⟩ : s) ∈ {y : s | (y : E) ∈ t} := h ▸ mem_univ _
     simpa using hy'
   exact (key hs ht hxs hxt).antisymm (key ht hs hxt hxs)
+
+/-- Two faces of a geometric simplicial complex with the same simplex are equal. -/
+theorem eq_of_convexHull_eq (hs : s ∈ K.faces) (ht : t ∈ K.faces)
+    (h : convexHull ℝ (s : Set E) = convexHull ℝ (t : Set E)) : s = t := by
+  have : Nonempty s := (K.nonempty_of_mem_faces hs).coe_sort
+  have hx := (K.indep hs).centroid_mem_intrinsicInterior_convexHull
+  rw [Subtype.range_coe_subtype, Finset.setOfPred_mem] at hx
+  exact eq_of_mem_intrinsicInterior hs ht hx (h ▸ hx)
 
 /-- **The carrier of a point.** Every point of the underlying space of a geometric simplicial
 complex lies in the open simplex of exactly one of its faces. -/
