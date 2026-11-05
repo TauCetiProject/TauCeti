@@ -19,6 +19,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 
 ## Main results
 
+* `TauCeti.iterateFrobeniusEquiv_symm_pow`: the `p ^ n`-th power of the `p ^ n`-th root of `x`
+  is `x`.
 * `TauCeti.iterateFrobeniusEquiv_symm_add_pow`: the `p ^ n`-th power of the `p ^ (m + n)`-th root
   of `x` is its `p ^ m`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_succ_pow`: the `p`-th power of the `p ^ (n + 1)`-th root
@@ -43,6 +45,12 @@ public section
 namespace TauCeti
 
 variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p] [PerfectRing R p]
+
+/-- The `p ^ n`-th power of the `p ^ n`-th root of `x` is `x`. -/
+@[simp]
+theorem iterateFrobeniusEquiv_symm_pow (x : R) (n : ℕ) :
+    (iterateFrobeniusEquiv R p n).symm x ^ p ^ n = x := by
+  rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
 
 /-- The `p ^ n`-th power of the `p ^ (m + n)`-th root of `x` is its `p ^ m`-th root. -/
 @[simp]
