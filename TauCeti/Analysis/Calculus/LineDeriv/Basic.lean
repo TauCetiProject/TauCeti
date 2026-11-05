@@ -48,12 +48,13 @@ theorem lineDeriv_of_notMem_tsupport {E : Type*} [NormedAddCommGroup E] [NormedS
 
 /-- The function `y ↦ ∫₀¹ g (y - t h) dt` of a continuous `g` has directional derivative
 `g y - g (y - h)` in the direction `h`. -/
-theorem hasLineDerivAt_intervalIntegral_comp_sub {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {h : E} {g : E → ℝ} (hg : Continuous g) (y : E) :
+theorem hasLineDerivAt_intervalIntegral_comp_sub {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {h : E}
+    {g : E → G} (hg : Continuous g) (y : E) :
     HasLineDerivAt ℝ (fun y => ∫ t in (0 : ℝ)..1, g (y - t • h)) (g y - g (y - h)) y h := by
   -- `s ↦ Φ (y + s h)` differentiates by the fundamental theorem of calculus, as
   -- `Φ (y + s h) = ∫_{-s}^{1-s} g (y - t h) dt`.
-  set f : ℝ → ℝ := fun t => g (y - t • h)
+  set f : ℝ → G := fun t => g (y - t • h)
   have hf : Continuous f := hg.comp (by fun_prop)
   have hline : (fun s : ℝ => ∫ t in (0 : ℝ)..1, g (y + s • h - t • h)) =
       fun s => (∫ t in (0 : ℝ)..1 - s, f t) - ∫ t in (0 : ℝ)..-s, f t := by
@@ -71,10 +72,11 @@ theorem hasLineDerivAt_intervalIntegral_comp_sub {E : Type*} [NormedAddCommGroup
   have hlin : HasLineDerivAt ℝ (fun y => ∫ t in (0 : ℝ)..1, g (y - t • h)) (f 0 - f 1) y h := by
     unfold HasLineDerivAt
     rw [hline]
-    have h1 := ((hf.integral_hasStrictDerivAt 0 (1 - 0)).hasDerivAt.comp 0
-      ((hasDerivAt_id 0).const_sub 1))
-    have h2 := ((hf.integral_hasStrictDerivAt 0 (-0)).hasDerivAt.comp 0 (hasDerivAt_id 0).neg)
-    exact (h1.sub h2).congr_deriv (by simp only [sub_zero, neg_zero, mul_neg, mul_one]; ring)
+    have h1 := ((hf.integral_hasStrictDerivAt 0 (1 - 0)).hasDerivAt.scomp 0
+      ((hasDerivAt_id (0 : ℝ)).const_sub 1))
+    have h2 := ((hf.integral_hasStrictDerivAt 0 (-0)).hasDerivAt.scomp 0
+      (hasDerivAt_id (0 : ℝ)).neg)
+    exact (h1.sub h2).congr_deriv (by simp [sub_eq_add_neg, add_comm])
   simpa [f] using hlin
 
 end TauCeti
