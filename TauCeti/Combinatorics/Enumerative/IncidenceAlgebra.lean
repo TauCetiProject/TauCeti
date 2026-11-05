@@ -8,7 +8,9 @@ module
 public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 
 /-!
-# Converse Möbius inversion and Weisner's theorem
+# Order invariance, converse Möbius inversion and Weisner's theorem
+
+The Möbius function is invariant under order isomorphisms (`OrderIso.mu_map`).
 
 Mathlib's `IncidenceAlgebra.moebius_inversion_bot` recovers `f` from its lower sums
 `g x = ∑_{y ≤ x} f y` as `f x = ∑_{y ≤ x} μ(y, x) g y`. This file proves the converse direction:
@@ -20,16 +22,11 @@ elements `x` whose join with a fixed `a ≠ ⊥` is `⊤` cancel. Choosing `a` t
 into a recurrence for `μ(⊥, ⊤)` in terms of the Möbius function on smaller intervals; this is how
 the Möbius function of the lattice of noncrossing partitions is computed.
 
-Finally, the Möbius function is invariant under order isomorphisms, which transports its values
-between isomorphic intervals.
-
 ## Main results
 
 * `IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul` — `∑_{y ≤ x} ∑_{z ≤ y} μ(z, y) g z = g x`.
 * `IncidenceAlgebra.sum_filter_sup_eq_top_mu_bot_eq_zero` — *Weisner's theorem*: for `a ≠ ⊥`,
   `∑_{x ⊔ a = ⊤} μ(⊥, x) = 0`.
-* `IncidenceAlgebra.mu_apply_orderIso` — the Möbius function is invariant under order
-  isomorphisms, `μ(e a, e b) = μ(a, b)`.
 
 ## References
 
@@ -40,7 +37,39 @@ between isomorphic intervals.
 
 public section
 
-open Finset
+open Finset IncidenceAlgebra
+
+namespace OrderIso
+
+variable {𝕜 α β : Type*} [AddCommGroup 𝕜] [One 𝕜]
+  [PartialOrder α] [LocallyFiniteOrder α] [DecidableEq α]
+  [PartialOrder β] [LocallyFiniteOrder β] [DecidableEq β]
+
+/-- The Möbius function is invariant under order isomorphisms. -/
+@[simp]
+theorem mu_map (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b := by
+  induction hn : #(Icc a b) using Nat.strong_induction_on generalizing b with
+  | _ n ih =>
+    by_cases hab : a = b
+    · subst b
+      simp
+    rw [mu_eq_neg_sum_Ico_of_ne (e.injective.ne hab), mu_eq_neg_sum_Ico_of_ne hab]
+    congr 1
+    refine sum_bij (fun x _ => e.symm x) (fun x hx => ?_) ?_ ?_ ?_
+    · exact mem_Ico.2 ⟨by simpa using e.symm.monotone (mem_Ico.1 hx).1,
+        by simpa using e.symm.strictMono (mem_Ico.1 hx).2⟩
+    · intro x hx y hy hxy
+      exact e.symm.injective hxy
+    · intro x hx
+      exact ⟨e x, by simpa using hx, e.symm_apply_apply x⟩
+    · intro x hx
+      have h := mem_Ico.1 hx
+      have hlt : #(Icc a (e.symm x)) < #(Icc a b) := card_lt_card
+        (Icc_ssubset_Icc_right (by simpa using e.symm.monotone (h.1.trans h.2.le)) le_rfl
+          (by simpa using e.symm.strictMono h.2))
+      simpa using ih _ (hn ▸ hlt) (e.symm x) rfl
+
+end OrderIso
 
 namespace IncidenceAlgebra
 
@@ -87,31 +116,5 @@ theorem sum_filter_sup_eq_top_mu_bot_eq_zero {a : α} (ha : a ≠ ⊥) :
   exact sum_eq_zero fun y _ => hinner y
 
 end Weisner
-
-section OrderIso
-
-variable {𝕜 α β : Type*} [Ring 𝕜] [PartialOrder α] [PartialOrder β] [LocallyFiniteOrder α]
-  [LocallyFiniteOrder β] [DecidableEq α] [DecidableEq β]
-
-/-- The Möbius function is invariant under order isomorphisms: `μ(e a, e b) = μ(a, b)`. -/
-theorem mu_apply_orderIso (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b := by
-  classical
-  -- `(x, y) ↦ μ(e x, e y)` is a left inverse of `ζ` in the incidence algebra of `α`, so it is `μ`.
-  let mue : IncidenceAlgebra 𝕜 α :=
-    { toFun := fun x y => mu 𝕜 (e x) (e y)
-      eq_zero_of_not_le' := fun x y hxy =>
-        apply_eq_zero_of_not_le (by rwa [OrderIso.le_iff_le]) _ }
-  suffices h : mue = mu 𝕜 from congrFun₂ (congrArg DFunLike.coe h) a b
-  suffices h : mue * zeta 𝕜 = 1 by
-    rw [← mul_one mue, ← zeta_mul_mu, ← mul_assoc, h, one_mul]
-  ext x y
-  simp only [mul_boole, one_apply, mul_apply, zeta_apply]
-  calc ∑ z ∈ Icc x y, (if z ≤ y then mue x z else 0) = ∑ z ∈ Icc x y, mu 𝕜 (e x) (e z) :=
-        sum_congr rfl fun z hz => ite_eq_left (mem_Icc.1 hz).2
-    _ = ∑ z ∈ Icc (e x) (e y), mu 𝕜 (e x) z :=
-        sum_equiv e.toEquiv (fun z => by simp) fun _ _ => rfl
-    _ = if x = y then 1 else 0 := by simp_rw [sum_Icc_mu_right, e.injective.eq_iff]
-
-end OrderIso
 
 end IncidenceAlgebra

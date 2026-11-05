@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
 # Basic facts about manifold derivatives
@@ -18,6 +19,7 @@ manifold-derivative API.
 * `TauCeti.mfderiv_comp_of_apply_eq_self`: the chain rule at a fixed point `f x = x`, with both
   derivatives taken at `x`, so the composite is an endomorphism of the single tangent space
   `T_x M`.
+* `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
 -/
 
 public section
@@ -40,5 +42,19 @@ theorem mfderiv_comp_of_apply_eq_self {f g : M → M} (hg : MDifferentiableAt I 
   generalize hz : f x = z at h
   obtain rfl : z = x := hz.symm.trans hfx
   exact h
+
+/-- **The chain rule for iterates at a fixed point.** If `f x = x` and `f` has differential `f'`
+at `x`, an endomorphism of `T_x M`, then `f^[n]` has differential `f' ^ n` at `x`. This is the
+manifold version of `HasFDerivAt.iterate`. -/
+theorem _root_.HasMFDerivAt.iterate {f : M → M} {f' : TangentSpace I x →L[𝕜] TangentSpace I x}
+    (hf : HasMFDerivAt I I f x f') (hx : f x = x) (n : ℕ) :
+    HasMFDerivAt I I f^[n] x (f' ^ n) := by
+  induction n with
+  | zero => exact hasMFDerivAt_id x
+  | succ n ihn =>
+    rw [Function.iterate_succ, pow_succ]
+    -- Move the derivative of `f^[n]` to the point `f x`, where the chain rule evaluates it.
+    have ihn' : HasMFDerivAt I I f^[n] (f x) (f' ^ n) := by rw [hx]; exact ihn
+    exact ihn'.comp x hf
 
 end TauCeti

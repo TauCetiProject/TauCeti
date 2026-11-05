@@ -36,6 +36,8 @@ sorted list of the image in reversed order; in particular, sorting the points of
 
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
+
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
 -/
 
 public section

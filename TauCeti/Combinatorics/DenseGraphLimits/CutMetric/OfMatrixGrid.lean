@@ -11,7 +11,7 @@ import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
 import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.Coupling.Shift
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 
 /-!
 # Rounding the weights of a finite weighted graph

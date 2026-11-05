@@ -17,8 +17,9 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 
 The free cumulants of a word are obtained from its block moments by Möbius inversion on the
 lattice `NC(s)` of noncrossing partitions, so the values of its Möbius function `μ` are the
-coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`, and
-the values `μ(π, 1̂)` on the noncrossing partitions of `n` ordered positions.
+coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`,
+identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement, and so computes the values
+`μ(π, 1̂)` on the noncrossing partitions of `n` ordered positions.
 
 First, `μ(0̂, π)` is multiplicative: the lower interval `[0̂, π]` is the product of the lattices
 `NC(B)` over the parts `B` of `π`, and accordingly `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -39,12 +40,12 @@ coefficients of the formula expressing free cumulants through moments.
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod_mu` — `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
 * `TauCeti.NoncrossingPartition.mu_bot_top` — `μ(0̂, 1̂) = (-1)^(|s|-1) C_(|s|-1)` on `NC(s)`, and
   `TauCeti.NoncrossingPartition.mu_bot_top_fin` — `μ(0_n, 1_n) = (-1)^(n-1) C_(n-1)` on `NC(n)`.
+* `TauCeti.NoncrossingPartition.mu_top_eq_mu_bot_kreweras` — Kreweras duality of upper and
+  lower Möbius intervals on `NC(n)`.
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod` — the blockwise formula
   `μ(0̂, π) = ∏_{B ∈ π} (-1)^(|B|-1) C_(|B|-1)`.
-* `TauCeti.NoncrossingPartition.mu_top_eq_mu_bot_kreweras` and
-  `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` — on `NC(n)`,
-  `μ(π, 1_n) = μ(0_n, K(π)) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras
-  complement.
+* `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` — on `NC(n)`,
+  `μ(π, 1_n) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras complement.
 
 ## References
 
@@ -298,13 +299,12 @@ theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
 
 /-! ### Upper intervals -/
 
-/-- On `NC(n)`, the Möbius function on the upper interval of `π` is the Möbius function on the
-lower interval of its Kreweras complement, `μ(π, 1_n) = μ(0_n, K(π))`: the Kreweras complement
-is an order anti-automorphism of `NC(n)` sending `[π, 1_n]` onto `[0_n, K(π)]`. -/
-theorem mu_top_eq_mu_bot_kreweras {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+/-- The Kreweras complement identifies an upper Möbius interval with a lower one. -/
+theorem mu_top_eq_mu_bot_kreweras {𝕜 : Type*} [Ring 𝕜] {n : ℕ}
+    (π : NoncrossingPartition (univ : Finset (Fin n))) :
     mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
-  rw [← mu_apply_orderIso (krewerasOrderIso n), krewerasOrderIso_apply, krewerasOrderIso_apply,
-    kreweras_top, mu_toDual]
+  have h := OrderIso.mu_map (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
+  simpa only [krewerasOrderIso_apply, kreweras_top, mu_toDual] using h.symm
 
 /-- The blockwise formula for the Möbius function of `NC(n)` on upper intervals: `μ(π, 1_n)` is
 the product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
