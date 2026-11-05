@@ -98,19 +98,6 @@ theorem mul_volume_real_rpow_mul_le_perimeter_toReal (K : ConvexBody E)
   rw [hB, Measure.addHaar_real_closedBall_eq_addHaar_real_ball, le_div_iff₀ (by positivity)] at h
   linarith
 
-/-- The isoperimetric bound `n^n ω_n V^(n-1)` is the `n`-th power of the real quantity
-`n ω_n^(1/n) V^(1 - 1/n)`, read in `ℝ≥0∞`. -/
-private theorem finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal (K : ConvexBody E)
-    (hn : finrank ℝ E ≠ 0) :
-    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
-        volume (K : Set E) ^ (finrank ℝ E - 1) =
-      ENNReal.ofReal ((finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-        volume.real (K : Set E) ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ^ finrank ℝ E) := by
-  rw [mul_pow, mul_pow, Real.rpow_inv_natCast_pow measureReal_nonneg hn,
-    Real.rpow_one_sub_inv_natCast_pow measureReal_nonneg hn]
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
-  simp [ENNReal.ofReal_pow, measure_ball_lt_top.ne, K.isCompact.measure_lt_top.ne]
-
 /-- **The isoperimetric inequality for convex bodies.** In dimension `n ≥ 1`, a convex body `K`
 of positive volume satisfies `P(K)^n ≥ n^n ω_n |K|^(n-1)`, where `ω_n = volume (ball 0 1)`. -/
 theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow (K : ConvexBody E)
@@ -120,8 +107,8 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow (K : ConvexB
       perimeter volume ⊤ (K : Set E) ^ finrank ℝ E := by
   have hP : perimeter volume ⊤ (K : Set E) ≠ ⊤ :=
     (K.convex.perimeter_lt_top K.isCompact.isBounded).ne
-  rw [K.finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hn, ← ENNReal.ofReal_toReal hP,
-    ← ENNReal.ofReal_pow ENNReal.toReal_nonneg]
+  rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal K.isCompact.measure_lt_top.ne hn,
+    ← ENNReal.ofReal_toReal hP, ← ENNReal.ofReal_pow ENNReal.toReal_nonneg]
   exact ENNReal.ofReal_le_ofReal
     (pow_le_pow_left₀ (by positivity) (K.mul_volume_real_rpow_mul_le_perimeter_toReal hn hK) _)
 
@@ -142,7 +129,8 @@ theorem perimeter_pow_eq_iff_exists_eq_closedBall (K : ConvexBody E)
   have hd := K.hasDerivWithinAt_volume_real_add_smul_closedBall_rpow hK
   rw [← K.hasDerivWithinAt_volume_real_add_smul_closedBall_rpow_iff_exists_eq_closedBall hn hK,
     Measure.addHaar_real_closedBall_eq_addHaar_real_ball,
-    K.finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hn, ← ENNReal.ofReal_toReal hP,
+    finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal K.isCompact.measure_lt_top.ne hn,
+    ← ENNReal.ofReal_toReal hP,
     ← ENNReal.ofReal_pow ENNReal.toReal_nonneg,
     ENNReal.ofReal_eq_ofReal_iff (by positivity) (by positivity),
     pow_left_inj₀ ENNReal.toReal_nonneg (by positivity) hn]
