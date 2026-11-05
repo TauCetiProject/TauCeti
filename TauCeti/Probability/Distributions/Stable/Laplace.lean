@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Stable.IntegrableExpMul
 import TauCeti.MeasureTheory.Measure.FiniteMeasure.UniformIntegrable
 import TauCeti.Probability.Distributions.Affine
+import TauCeti.Probability.Distributions.Stable.CompensatedIntegral
 import TauCeti.Probability.Distributions.Stable.Operations
 
 /-!
@@ -91,29 +92,6 @@ theorem tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow
   funext n
   congr 1
 
-/-- Removing a shrinking neighbourhood of zero recovers the real compensated Lévy integral
-on the allowed half-line of a totally skewed stable law. -/
-private theorem tendsto_integral_real_compensated (hβ : |β| = 1) (ht : β * t ≤ 0) :
-    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|},
-      exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β) (𝓝 0)
-      (𝓝 (∫ x, exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β)) := by
-  have hi := integrable_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure
-    (ae_mul_nonpos_stableLevyMeasure (α := α) hβ ht)
-  have hs (ε : ℝ) : MeasurableSet {x : ℝ | ε < |x|} := by measurability
-  simp_rw [← integral_indicator (hs _)]
-  apply tendsto_integral_filter_of_dominated_convergence
-    (fun x : ℝ ↦ ‖exp (t * x) - 1 - t * sin x‖)
-  · exact .of_forall fun ε ↦ hi.aestronglyMeasurable.indicator (hs ε)
-  · exact .of_forall fun ε ↦ ae_of_all _ fun x ↦ norm_indicator_le_norm_self _ _
-  · exact hi.norm
-  · apply ae_of_all
-    intro x
-    by_cases hx : x = 0
-    · simp [hx, indicator_apply]
-    · apply tendsto_const_nhds.congr'
-      filter_upwards [eventually_lt_nhds (abs_pos.mpr hx)] with ε hε
-      simp only [indicator_apply, mem_ofPred_eq, ite_eq_left hε]
-
 /-- The transform of the standardized totally skewed non-Gaussian stable law is the exponential
 of its real compensated Lévy integral on the allowed half-line. -/
 private theorem mgf_id_stableMeasure_one_zero_eq_exp_integral
@@ -123,7 +101,8 @@ private theorem mgf_id_stableMeasure_one_zero_eq_exp_integral
   have hcut : Tendsto (fun n : ℕ ↦ (2 : ℝ)⁻¹ ^ n) atTop (𝓝 0) :=
     tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num) (by norm_num)
   have hlim := (continuous_exp.tendsto _).comp
-    ((tendsto_integral_real_compensated (α := α) hβ ht).comp hcut)
+    ((tendsto_integral_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure
+      (ae_mul_nonpos_stableLevyMeasure (α := α) hβ ht)).comp hcut)
   have hmgf : Tendsto (fun n : ℕ ↦ mgf id
       (stableCompensatedPoissonMeasure α β ((2 : ℝ)⁻¹ ^ n)) t) atTop
       (𝓝 (exp (∫ x, exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β))) := by
