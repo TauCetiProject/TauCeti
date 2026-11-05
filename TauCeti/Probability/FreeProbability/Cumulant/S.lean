@@ -84,9 +84,7 @@ theorem X_mul_sSeries (ha : IsUnit (φ a)) :
 @[simp]
 theorem constantCoeff_sSeries (ha : IsUnit (φ a)) :
     constantCoeff (sSeries φ a ha) = Ring.inverse (φ a) := by
-  rw [sSeries_def, map_mul, map_add, map_one, constantCoeff_X, add_zero, one_mul,
-    constantCoeff_mk, zero_add, coeff_one_substInvOfIsUnit, ← Ring.inverse_of_isUnit]
-  simp
+  simp [sSeries_def, coeff_one_substInvOfIsUnit, ← Ring.inverse_of_isUnit]
 
 /-- The S-series of an element with unit mean is a unit of the power series ring. -/
 theorem isUnit_sSeries (ha : IsUnit (φ a)) : IsUnit (sSeries φ a ha) := by
@@ -176,7 +174,8 @@ theorem sSeries_algebraMap (hφ : φ 1 = 1) (c : R) (hc : IsUnit c) :
   apply (eq_sSeries_of_subst_X_mul_eq (algebraMap R A c) hφ _ ?_).symm
   rw [hC, subst_mul (.of_constantCoeff_zero' (by simp)), subst_C,
     subst_X (.of_constantCoeff_zero' (by simp))]
-  rw [← C_apply, mul_left_comm, ← map_mul, Ring.mul_inverse_cancel c hc, map_one, mul_one]
+  rw [← C_apply, mul_left_comm]
+  simp [← map_mul, Ring.mul_inverse_cancel c hc]
 
 end Algebra
 
