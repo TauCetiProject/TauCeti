@@ -354,7 +354,7 @@ theorem mul_sq_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C
   -- `f a ψ(t) ≤ (f t + D t ^ 4) ψ(a)`, `t ^ 2 ≤ (1 + C b) ^ 2 ψ(t)` and
   -- `e ^ (-2 A) ψ(a) ≤ a ^ 2`, where `ψ(s) = (s / (1 + C s)) ^ (2 / (1 + ε))`.
   have h1 := mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four ha hC hD hε hf hfa0 h haI ht ht.1
-  have h2 := sq_le_mul_rpow_div_one_add_mul ht0 ht.2 (ht.2.trans hb) hC (by positivity)
+  have h2 := sq_le_mul_rpow_div_one_add_mul ht0 ht.2 (ht.2.trans hb) hC
     (div_le_self zero_le_two (by linarith) : 2 / (1 + ε) ≤ 2)
   have h3 : Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ (2 / (1 + ε)) ≤ a ^ 2 := by
     rw [Real.exp_neg, inv_mul_le_iff₀ (Real.exp_pos _)]
