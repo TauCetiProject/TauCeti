@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Poisson.Mixed.Basic
-public import Mathlib.Analysis.Asymptotics.Defs
+public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -74,33 +74,26 @@ theorem abs_poissonMeasure_real_singleton_one_sub_le (r : ℝ≥0) :
 /-- The one-occurrence probability is `r + o(r)` as the nonnegative rate tends to zero. -/
 theorem isLittleO_poissonMeasure_real_singleton_one_sub :
     (fun r : ℝ≥0 => (poissonMeasure r).real {1} - r) =o[𝓝 0] fun r => (r : ℝ) := by
-  refine IsLittleO.of_bound fun ε hε => ?_
-  have hsmall : ∀ᶠ r : ℝ≥0 in 𝓝 0, (r : ℝ) < ε :=
-    (NNReal.continuous_coe.tendsto 0).eventually (gt_mem_nhds hε)
-  filter_upwards [hsmall] with r hr
-  simp only [Real.norm_eq_abs, abs_of_nonneg r.coe_nonneg]
-  exact (abs_poissonMeasure_real_singleton_one_sub_le r).trans (by nlinarith [r.coe_nonneg])
+  refine (isBigO_of_le (𝓝 0) (g := fun r : ℝ≥0 => (r : ℝ) ^ 2) fun r => ?_).trans_isLittleO
+    ((isLittleO_pow_id one_lt_two).comp_tendsto
+      (NNReal.continuous_coe.tendsto' 0 0 rfl))
+  simpa only [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg (r : ℝ))] using
+    abs_poissonMeasure_real_singleton_one_sub_le r
 
 /-- The multiple-occurrence probability is `o(r)` as the nonnegative rate tends to zero. -/
 theorem isLittleO_poissonMeasure_real_Ici_two :
     (fun r : ℝ≥0 => (poissonMeasure r).real (Set.Ici 2)) =o[𝓝 0] fun r => (r : ℝ) := by
-  refine IsLittleO.of_bound fun ε hε => ?_
-  have hsmall : ∀ᶠ r : ℝ≥0 in 𝓝 0, (r : ℝ) < ε :=
-    (NNReal.continuous_coe.tendsto 0).eventually (gt_mem_nhds hε)
-  filter_upwards [hsmall] with r hr
-  simp only [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg,
-    abs_of_nonneg r.coe_nonneg]
-  exact (poissonMeasure_real_Ici_two_le r).trans (by nlinarith [r.coe_nonneg])
-
-end TauCeti.Probability
-
-namespace ProbabilityTheory.HasLaw
-
-open TauCeti.Probability
+  refine (isBigO_of_le' (𝓝 0) (c := (1 / 2 : ℝ))
+    (g := fun r : ℝ≥0 => (r : ℝ) ^ 2) fun r => ?_).trans_isLittleO
+    ((isLittleO_pow_id one_lt_two).comp_tendsto
+      (NNReal.continuous_coe.tendsto' 0 0 rfl))
+  simpa [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg,
+    abs_of_nonneg (sq_nonneg (r : ℝ)), div_eq_mul_inv, mul_comm] using
+    poissonMeasure_real_Ici_two_le r
 
 /-- A union bound for multiple occurrences in finitely many Poisson counts. Neither
 independence nor equal rates are required. -/
-theorem measureReal_exists_two_le {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω]
+theorem measureReal_exists_two_le_of_hasLaw {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω]
     {P : Measure Ω} {X : ι → Ω → ℕ} {r : ι → ℝ≥0}
     (hX : ∀ i, HasLaw (X i) (poissonMeasure (r i)) P) :
     P.real {ω | ∃ i, 2 ≤ X i ω} ≤ ∑ i, (r i : ℝ) ^ 2 / 2 := by
@@ -112,13 +105,13 @@ theorem measureReal_exists_two_le {ι Ω : Type*} [Fintype ι] [MeasurableSpace 
 
 /-- With rate `a / n` in each of `n` cells, the probability of any multiple occurrence
 vanishes as the subdivision is refined. The counts need not be independent. -/
-theorem tendsto_measureReal_exists_two_div {Ω : Type*} [MeasurableSpace Ω]
+theorem tendsto_measureReal_exists_two_div_of_hasLaw {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} (a : ℝ≥0) {X : (n : ℕ) → Fin n → Ω → ℕ}
     (hX : ∀ n i, HasLaw (X n i) (poissonMeasure (a / n)) P) :
     Tendsto (fun n => P.real {ω | ∃ i, 2 ≤ X n i ω}) atTop (𝓝 0) := by
   refine squeeze_zero (fun _ => measureReal_nonneg) (fun n => ?_)
     (tendsto_const_div_atTop_nhds_zero_nat ((a : ℝ) ^ 2 / 2))
-  refine (measureReal_exists_two_le (hX n)).trans ?_
+  refine (measureReal_exists_two_le_of_hasLaw (hX n)).trans ?_
   by_cases hn : n = 0
   · subst n
     simp
@@ -127,4 +120,4 @@ theorem tendsto_measureReal_exists_two_div {Ω : Type*} [MeasurableSpace Ω]
     have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
     exact le_of_eq (by field_simp)
 
-end ProbabilityTheory.HasLaw
+end TauCeti.Probability
