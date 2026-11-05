@@ -26,6 +26,8 @@ This file sets up that action and its fundamental domains:
   (`archNorm_unitScale`), and its kernel on parameters with nonzero coordinates is the torsion
   (`unitScale_eq_self_iff`).
 * `normOneSurface K` is the hypersurface `S = {y > 0 | N(y) = 1}` on which the units act.
+  Coordinatewise inversion and translation by a point of `S` give the self-homeomorphisms
+  `surfaceInv` and `surfaceMul`.
 * `IsUnitFundamentalDomain K D` says that `D` is a bounded measurable subset of `S` meeting every
   unit orbit, and meeting the orbit of each of its points exactly in the torsion translates.
 * `unitFundamentalDomain K` is the set of points of `S` whose coordinatewise square root lies in
@@ -193,6 +195,56 @@ theorem inv_mem_normOneSurface {y : realSpace K} (hy : y ∈ normOneSurface K) :
 theorem mul_mem_normOneSurface {y z : realSpace K} (hy : y ∈ normOneSurface K)
     (hz : z ∈ normOneSurface K) : y * z ∈ normOneSurface K :=
   ⟨fun w ↦ mul_pos (hy.1 w) (hz.1 w), by rw [map_mul, hy.2, hz.2, one_mul]⟩
+
+variable (K) in
+/-- Coordinatewise inversion as a homeomorphism of the norm-one hypersurface. -/
+noncomputable def surfaceInv : normOneSurface K ≃ₜ normOneSurface K where
+  toFun x := ⟨(x : realSpace K)⁻¹, inv_mem_normOneSurface x.property⟩
+  invFun x := ⟨(x : realSpace K)⁻¹, inv_mem_normOneSurface x.property⟩
+  left_inv _ := Subtype.ext (inv_inv _)
+  right_inv _ := Subtype.ext (inv_inv _)
+  continuous_toFun := (continuous_pi fun w ↦
+    ((continuous_apply w).comp continuous_subtype_val).inv₀
+      fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
+  continuous_invFun := (continuous_pi fun w ↦
+    ((continuous_apply w).comp continuous_subtype_val).inv₀
+      fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
+
+@[simp]
+theorem surfaceInv_apply (x : normOneSurface K) :
+    (surfaceInv K x : realSpace K) = (x : realSpace K)⁻¹ := (rfl)
+
+@[simp]
+theorem surfaceInv_symm : (surfaceInv K).symm = surfaceInv K := (rfl)
+
+@[simp]
+theorem surfaceInv_surfaceInv (x : normOneSurface K) : surfaceInv K (surfaceInv K x) = x := by
+  simpa only [surfaceInv_symm] using (surfaceInv K).symm_apply_apply x
+
+/-- Translation by a norm-one parameter as a homeomorphism of the norm-one hypersurface. -/
+noncomputable def surfaceMul (c : normOneSurface K) :
+    normOneSurface K ≃ₜ normOneSurface K where
+  toFun x := ⟨(c : realSpace K) * x, mul_mem_normOneSurface c.property x.property⟩
+  invFun x := ⟨(c : realSpace K)⁻¹ * x,
+    mul_mem_normOneSurface (inv_mem_normOneSurface c.property) x.property⟩
+  left_inv x := Subtype.ext (by
+    ext w
+    simp [((mem_normOneSurface.mp c.property).1 w).ne'])
+  right_inv x := Subtype.ext (by
+    ext w
+    simp [((mem_normOneSurface.mp c.property).1 w).ne'])
+  continuous_toFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+  continuous_invFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem surfaceMul_apply (c x : normOneSurface K) :
+    (surfaceMul c x : realSpace K) = (c : realSpace K) * x := (rfl)
+
+@[simp]
+theorem surfaceMul_symm (c : normOneSurface K) :
+    (surfaceMul c).symm = surfaceMul (surfaceInv K c) := by
+  ext x : 1
+  rfl
 
 /-- A point of the norm-one hypersurface with coordinates at most `C` has inverse coordinates at
 most `C ^ [K : ℚ]`: the other coordinates cannot make up for a small one. -/

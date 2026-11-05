@@ -44,6 +44,8 @@ restriction of a Killing field to every geodesic is a Jacobi field.
 * `CovariantDerivative.IsMetricCompatible.isKillingField_iff`: for a metric-compatible
   torsion-free connection, a vector field is Killing exactly when it is smooth and satisfies the
   Killing equation `⟪∇_u X, v⟫ = -⟪u, ∇_v X⟫`.
+* `CovariantDerivative.IsMetricCompatible.isKillingField_iff_inner_self`: the equivalent
+  diagonal equation `⟪∇_u X, u⟫ = 0`.
 * `TauCeti.Manifold.isKillingField_zero`, `TauCeti.Manifold.IsKillingField.add` and
   `TauCeti.Manifold.IsKillingField.const_smul`: Killing fields form a real vector space.
 * `TauCeti.Manifold.IsKillingField.secondCovariantDerivative_eq_curvatureTensor`: the identity
@@ -153,6 +155,24 @@ theorem _root_.CovariantDerivative.IsMetricCompatible.isKillingField_iff
       (hX.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)
       (hZ.mdifferentiable (by simp) x)
     rw [h x (Y x) (Z x)] at hLie
+    linarith
+
+/-- **The diagonal Killing equation.** For a metric-compatible torsion-free connection,
+a vector field is Killing exactly when it is smooth and `⟪∇_u X, u⟫ = 0` at every point.
+Polarization recovers the full Killing equation. -/
+theorem _root_.CovariantDerivative.IsMetricCompatible.isKillingField_iff_inner_self
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (ht : cov.torsion = 0) :
+    IsKillingField I X ↔ CMDiff ∞ (T% X) ∧
+      ∀ (x : M) (u : TangentSpace I x), inner ℝ (cov X x u) u = 0 := by
+  rw [hcov.isKillingField_iff ht]
+  refine and_congr_right fun _ ↦ ⟨fun h x u ↦ ?_, fun h x u v ↦ ?_⟩
+  · have hd := h x u u
+    have hc := real_inner_comm (cov X x u) u
+    linarith
+  · have hd := h x (u + v)
+    simp only [map_add, inner_add_left, inner_add_right, h] at hd
+    have hc := real_inner_comm u (cov X x v)
     linarith
 
 /-- **The Killing equation** for a Killing field: for a metric-compatible torsion-free

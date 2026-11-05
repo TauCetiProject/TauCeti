@@ -319,17 +319,14 @@ private theorem snd_cocycleHom_generator (n m : ℕ+) :
       have h₁ : ¬(i = 1 ∧ (m : ℕ) + 1 - i = 0) := by omega
       have h₂ : ¬(i = 0 ∧ (m : ℕ) + 1 - i = 1) := by omega
       simp [h₁, h₂]
-    rw [map_zsmul, TrivSqZeroExt.snd_smul, cocycleHom_coeff_formalGroup, hX, zero_add,
-      coeff_lazardCocycle]
+    rw [map_zsmul, TrivSqZeroExt.snd_smul, cocycleHom_coeff_formalGroup, hX, zero_add]
     by_cases hmn : m = n
     · subst hmn
-      have hi₀ : i ≠ 0 := by omega
-      have hj₀ : (m : ℕ) + 1 - i ≠ 0 := by omega
-      have hsum : i + (m + 1 - i) = m + 1 := by omega
-      simp [hi₀, hj₀, hsum, mul_comm]
+      rw [coeff_single_add_single_lazardCocycle (by omega) (by omega)]
+      simp [mul_comm]
     · have hmn' : (m : ℕ) ≠ n := fun h ↦ hmn (PNat.coe_injective h)
       have hsum : i + (m + 1 - i) ≠ n + 1 := by omega
-      simp [hmn, hsum]
+      simp [coeff_lazardCocycle, hmn, hsum]
   rw [sum_congr rfl h]
   split_ifs with hmn
   · subst hmn
