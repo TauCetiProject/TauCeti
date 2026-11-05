@@ -196,6 +196,22 @@ theorem orientationSign_comp (hg : MDifferentiableAt J K g (f x))
     · rw [orientationSign_of_not_isInvertible h, mul_zero]
     · rw [orientationSign_of_not_isInvertible h, zero_mul]
 
+@[simp]
+theorem orientationSign_congrModel_left {I₁ I₂ : ModelWithCorners ℝ E H} (h : I₁ = I₂)
+    [IsManifold I₁ 1 M] [IsManifold I₂ 1 M]
+    (o : Manifold.Orientation I₁ M ι) (o' : Manifold.Orientation J N ι) (f : M → N) (x : M) :
+    orientationSign (o.congrModel h) o' f x = orientationSign o o' f x := by
+  subst h
+  rw [congrModel_refl]
+
+@[simp]
+theorem orientationSign_congrModel_right {J₁ J₂ : ModelWithCorners ℝ E' H'} (h : J₁ = J₂)
+    [IsManifold J₁ 1 N] [IsManifold J₂ 1 N]
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J₁ N ι) (f : M → N) (x : M) :
+    orientationSign o (o'.congrModel h) f x = orientationSign o o' f x := by
+  subst h
+  rw [congrModel_refl]
+
 end Manifold.Orientation
 
 end TauCeti

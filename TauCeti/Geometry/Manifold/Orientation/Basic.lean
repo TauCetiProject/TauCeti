@@ -14,7 +14,8 @@ public import TauCeti.Geometry.Manifold.IsManifold.Basic
 A manifold orientation is a source-indexed orientation lift modulo simultaneous reversal of its
 model orientation and all chart signs. It induces an actual, locally constant orientation of the
 tangent bundle. This definition includes boundary and corner points.
-Orientability records existence; every model with corners is orientable.
+Orientability records existence; every model with corners is orientable, and
+`TauCeti.Manifold.Orientation.congrModel` casts manifold orientations along an equality of models.
 -/
 
 public section
@@ -248,6 +249,51 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_ofHasGroupoid]
   -- The tangent space of the model uses its model-space scalar structure.
   rfl
+
+/-- Cast a manifold orientation along an equality of models on the same model vector space and
+chart carrier. -/
+def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
+    Orientation J M ι :=
+  o.lift (fun l ↦ mk (l.congrModel h)) fun l ↦
+    (mk_eq_mk_iff _ _).mpr (.inr (l.flip_congrModel h).symm)
+
+@[simp]
+theorem congrModel_mk {I J : ModelWithCorners ℝ E H} (h : I = J) (l : OrientationLift I M ι) :
+    (mk l).congrModel h = mk (l.congrModel h) := by
+  unfold congrModel
+  rw [lift_mk]
+
+@[simp]
+theorem congrModel_refl {I : ModelWithCorners ℝ E H} (o : Orientation I M ι) :
+    o.congrModel rfl = o :=
+  o.inductionOn fun l ↦ by simp
+
+@[simp]
+theorem congrModel_congrModel {I J K : ModelWithCorners ℝ E H} (h₁ : I = J) (h₂ : J = K)
+    (o : Orientation I M ι) :
+    (o.congrModel h₁).congrModel h₂ = o.congrModel (h₁.trans h₂) :=
+  o.inductionOn fun l ↦ by simp
+
+@[simp]
+theorem neg_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
+    (-o).congrModel h = -(o.congrModel h) :=
+  o.inductionOn fun l ↦ by simp
+
+theorem congrModel_injective {I J : ModelWithCorners ℝ E H} (h : I = J) :
+    Function.Injective (congrModel (M := M) (ι := ι) h) := fun o₁ o₂ heq ↦ by
+  simpa using congrArg (congrModel h.symm) heq
+
+@[simp]
+theorem congrModel_inj {I J : ModelWithCorners ℝ E H} (h : I = J) {o₁ o₂ : Orientation I M ι} :
+    o₁.congrModel h = o₂.congrModel h ↔ o₁ = o₂ :=
+  (congrModel_injective h).eq_iff
+
+@[simp]
+theorem orientationAt_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] (o : Orientation I M ι) (x : M) :
+    (o.congrModel h).orientationAt x = o.orientationAt x := by
+  subst h
+  rw [congrModel_refl]
 
 end Orientation
 end TauCeti.Manifold
