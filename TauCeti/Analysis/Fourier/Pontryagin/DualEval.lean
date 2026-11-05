@@ -12,9 +12,10 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 # Evaluation of Pontryagin characters
 
 Evaluation at a fixed monoid element is continuous on the Pontryagin dual. Its complex-valued
-form is integrable against every finite measure. On a weakly locally compact monoid, characters
-in a compact set are uniformly close at nearby points. These lemmas supply the integrands for
-Fourier–Stieltjes transforms, and apply to arbitrary monoids with a topology.
+form is integrable against every finite measure. These two lemmas supply the integrands for
+Fourier–Stieltjes transforms, and apply to arbitrary monoids with a topology. On a weakly locally
+compact monoid, characters in a compact set are also uniformly close at nearby points; this
+estimate needs the weak local compactness and feeds the continuity of the transform.
 -/
 
 public section
