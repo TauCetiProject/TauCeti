@@ -9,14 +9,34 @@ public import Mathlib.CategoryTheory.ComposableArrows.Basic
 public import Mathlib.CategoryTheory.IsomorphismClasses
 
 /-!
-# Isomorphism classes of vertices in composable strings
+# Composable arrows: equality in length one and isomorphism classes of vertices
 
-All vertices of a composable string in a groupoid have the same isomorphism class.
+Two composable arrows `mk₁ f` and `mk₁ f'` of length one are equal exactly when `f` and `f'`
+are equal as arrows (`CategoryTheory.ComposableArrows.mk₁_eq_mk₁_iff`). Combined with
+`CategoryTheory.Arrow.mk_eq_mk_iff`, this identifies the sources and targets of `f` and `f'`
+and relates the two morphisms by `eqToHom`s; for instance, it compares edges of a nerve.
+
+All vertices of a composable string in a groupoid have the same isomorphism class
+(`CategoryTheory.ComposableArrows.quotient_mk_obj`).
 -/
 
 public noncomputable section
 
 namespace CategoryTheory.ComposableArrows
+
+section
+
+variable {C : Type*} [Category* C]
+
+/-- The composable arrows `mk₁ f` and `mk₁ f'` are equal exactly when `f` and `f'` are equal
+as arrows. -/
+lemma mk₁_eq_mk₁_iff {X₀ X₁ Y₀ Y₁ : C} {f : X₀ ⟶ X₁} {f' : Y₀ ⟶ Y₁} :
+    mk₁ f = mk₁ f' ↔ Arrow.mk f = Arrow.mk f' :=
+  arrowEquiv.apply_eq_iff_eq.symm
+
+end
+
+section
 
 variable {C : Type*} [Category C] [IsGroupoid C] {n : ℕ}
 
@@ -28,5 +48,7 @@ theorem quotient_mk_obj (F : ComposableArrows C n) (i : Fin (n + 1)) :
   symm
   exact Quotient.sound (s := isIsomorphicSetoid C)
     ⟨asIso (F.map (homOfLE (Fin.zero_le i)))⟩
+
+end
 
 end CategoryTheory.ComposableArrows
