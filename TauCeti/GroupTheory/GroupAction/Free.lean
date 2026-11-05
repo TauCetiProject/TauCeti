@@ -37,9 +37,9 @@ and `G`; its inverse sends `(q, g)` to the translate `g • q.out` of the chosen
 
 ## Main results
 
-* `TauCeti.MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
-* `TauCeti.MulAction.natCard_dvd_natCard_of_isCancelSMul`: the order of a group acting freely
-  divides the number of points.
+* `MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
+* `MulAction.natCard_dvd_natCard_of_isCancelSMul`: the order of a group acting freely divides
+  the number of points.
 * `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
   free action evaluated at `(q, g)` is `g • q.out`.
 
@@ -52,7 +52,9 @@ Eichler–Selberg trace formula*, J. Reine Angew. Math. **762** (2020), 105–12
 
 public section
 
-namespace TauCeti.MulAction
+namespace MulAction
+
+section Monoid
 
 variable {G X : Type*} [Monoid G] [MulAction G X]
 
@@ -85,12 +87,15 @@ theorem eq_empty_of_forall_exists_smul_mem [IsCancelSMul G X] {E P : Set G} (hP 
   rw [mul_smul, ← hpx]
   exact heq.symm
 
-open _root_.MulAction in
+end Monoid
+
+variable {G X : Type*} [Group G] [MulAction G X]
+
 /-- **The order of a group acting freely divides the number of points**: every orbit of a free
 action of `G` is a copy of `G`. No finiteness is needed, as `Nat.card` vanishes on infinite types,
 and a free action on a nonempty finite type is by a finite group. -/
-theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G X]
-    [IsCancelSMul G X] : Nat.card G ∣ Nat.card X := by
+theorem natCard_dvd_natCard_of_isCancelSMul [IsCancelSMul G X] :
+    Nat.card G ∣ Nat.card X := by
   classical
   rcases finite_or_infinite X with hX | hX
   swap
@@ -105,12 +110,6 @@ theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G
   simp_rw [IsCancelSMul.stabilizer_eq_bot]
   rw [Nat.card_congr QuotientGroup.quotientBot.toEquiv]
   simp
-
-end TauCeti.MulAction
-
-namespace MulAction
-
-variable {G X : Type*} [Group G] [MulAction G X]
 
 /-- For a free action, the inverse of the orbit decomposition `selfEquivOrbitsQuotientProd'`
 attached to a choice `φ` of orbit representatives sends `(q, g)` to `g • φ q`. -/
