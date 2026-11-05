@@ -57,7 +57,7 @@ Over a semiring without zero divisors, the lowest weighted homogeneous component
 polynomials multiply to a nonzero component of their product. So, for weights in `ℝ≥0∞`, the
 least weight of a monomial of a product is the sum of the least weights for the factors.
 
-For linearly ordered weights with a bottom element, sums and products satisfy the usual upper
+For weights in a sup-semilattice with a bottom element, sums and products satisfy the usual upper
 bounds on weighted total degree. For cancellative ordered weights, the component of a product
 at the sum of the maximal weights is the product of the maximal-weight components, even when
 zero divisors make this component zero. Injective coefficient maps preserve weighted degrees.
@@ -303,27 +303,25 @@ section TopWeight
 
 open Finsupp
 
-variable {M : Type*} [AddCommMonoid M] [LinearOrder M] [OrderBot M]
+section DegreeBounds
+
+variable {M : Type*} [AddCommMonoid M] [SemilatticeSup M] [OrderBot M]
   (w : σ → M) (p q : MvPolynomial σ R)
 
-/-- The weighted total degree of a sum is bounded by the maximum of the degrees. -/
+/-- The weighted total degree of a sum is bounded by the supremum of the degrees. -/
 theorem weightedTotalDegree_add_le :
-    (p + q).weightedTotalDegree w ≤ max (p.weightedTotalDegree w) (q.weightedTotalDegree w) := by
-  classical
-  apply Finset.sup_le
-  intro d hd
-  rcases Finset.mem_union.mp (support_add hd) with hd | hd
-  · exact (le_weightedTotalDegree w hd).trans (le_max_left _ _)
-  · exact (le_weightedTotalDegree w hd).trans (le_max_right _ _)
+    (p + q).weightedTotalDegree w ≤ p.weightedTotalDegree w ⊔ q.weightedTotalDegree w :=
+  AddMonoidAlgebra.sup_support_coeff_add_le (weight w) p q
 
 /-- The weighted total degree of a product is bounded by the sum of the degrees. -/
 theorem weightedTotalDegree_mul_le [IsOrderedAddMonoid M] :
-    (p * q).weightedTotalDegree w ≤ p.weightedTotalDegree w + q.weightedTotalDegree w := by
-  classical
-  apply Finset.sup_le
-  intro d hd
-  obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_add.mp (support_mul p q hd)
-  simpa only [map_add] using add_le_add (le_weightedTotalDegree w ha) (le_weightedTotalDegree w hb)
+    (p * q).weightedTotalDegree w ≤ p.weightedTotalDegree w + q.weightedTotalDegree w :=
+  AddMonoidAlgebra.sup_support_coeff_mul_le (fun a b ↦ (map_add (weight w) a b).le) p q
+
+end DegreeBounds
+
+variable {M : Type*} [AddCommMonoid M] [LinearOrder M] [OrderBot M]
+  (w : σ → M) (p q : MvPolynomial σ R)
 
 /-- At the sum of the maximal weights, the component of a product is the product of the top
 components. This holds even when zero divisors make that component vanish. -/
