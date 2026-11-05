@@ -214,10 +214,8 @@ lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
 lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
     ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max (v c * ⨆ i, v (x i)) 1 := by
   rw [iSup_option_elim_eq_max]
-  refine max_le_max (Real.iSup_le (fun i ↦ ?_) ?_) le_rfl
-  · simp only [Pi.smul_apply, smul_eq_mul, map_mul]
-    exact mul_le_mul_of_nonneg_left (Finite.le_ciSup_of_le i le_rfl) (apply_nonneg v c)
-  · exact mul_nonneg (apply_nonneg v c) (Real.iSup_nonneg_of_nonnegHomClass v _)
+  simp only [Pi.smul_apply, smul_eq_mul, map_mul, ← Real.mul_iSup_of_nonneg (apply_nonneg v c),
+    le_refl]
 
 /-- A logarithmic bound `m * log (v c) + m * log (⨆ i, v (x i)) ≤ B` with `0 ≤ m` and `0 ≤ B`
 bounds `m` times the logarithm of the local factor of the affine height of `c • x`. -/
