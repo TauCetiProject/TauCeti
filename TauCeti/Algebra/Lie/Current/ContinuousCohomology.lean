@@ -25,9 +25,10 @@ coboundaries of continuous one-cochains with trivial coefficients are continuous
 The residue cocycle `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y)` of an invariant symmetric form `Φ` is
 continuous: every current pairs to zero with all currents of sufficiently high order, and the
 pairing vanishes on the positive currents `a_0`. Its class in continuous second cohomology is
-therefore defined, and over a characteristic-zero domain it is nonzero, and has no torsion, as soon
-as `Φ` is nonzero. Indeed no multiple `t • c_Φ` with `t ≠ 0` is a coboundary of any one-cochain,
-continuous or not, since its restriction to polynomial currents is not.
+therefore defined, and over a domain it is nonzero, and has no torsion, as soon as `Φ` is
+nonzero. Indeed no multiple `t • c_Φ` with `t ≠ 0` is a coboundary of any one-cochain, continuous
+or not: a coboundary with trivial coefficients takes equal values on `(X⁻¹ ⊗ x, X ⊗ y)` and
+`(1 ⊗ x, 1 ⊗ y)`, whose brackets agree, while `t • c_Φ` takes `t Φ(x, y)` and `0` there.
 
 Conversely, when `L` is finite-dimensional with nondegenerate Killing form over a field of
 characteristic zero, for instance a semisimple Lie algebra, every continuous 2-cocycle `c` is
@@ -68,7 +69,7 @@ finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
 * `TauCeti.CurrentAlgebra.residueClass_add`, `TauCeti.CurrentAlgebra.residueClass_smul`: the
   residue class is linear in the form.
 * `TauCeti.CurrentAlgebra.smul_residueClass_eq_zero_iff`: a multiple of the residue class of a
-  nonzero form vanishes only when the scalar does.
+  nonzero form over a domain vanishes only when the scalar does.
 * `TauCeti.CurrentAlgebra.residueClass_inj`: distinct invariant symmetric forms have distinct
   residue classes over every commutative ring.
 * `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinear_add_d₁₂`: every continuous 2-cocycle is
@@ -79,7 +80,7 @@ finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
 * `TauCeti.CurrentAlgebra.residueClassMap`: the residue class `z ↦ [c_Φ ⊗ z]` with coefficients
   in a module `Z` with trivial action.
 * `TauCeti.CurrentAlgebra.residueClassMap_injective`: it is injective for a nonzero form over a
-  characteristic-zero domain and projective `Z`.
+  domain and torsion-free `Z`.
 * `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`: for a nonzero form
   `Ψ` spanning the invariant forms, every continuous 2-cocycle with values in a vector space `Z` is
   a residue cocycle `c_Ψ ⊗ z` plus a continuous coboundary.
@@ -199,43 +200,6 @@ theorem residueClass_smul (r : R) {Φ : LinearMap.BilinForm R L} (hΦ : Φ.lieIn
   refine Subtype.ext ?_
   simpa using twoCochainOfBilinear_smul R L r Φ hΦs hrΦs
 
-/-- **The residue class of a nonzero form is torsion-free.** Over a characteristic-zero domain, a
-multiple `t • [c_Φ]` of the residue class of a nonzero invariant symmetric form vanishes in
-continuous second cohomology only for `t = 0`. -/
-theorem smul_residueClass_eq_zero_iff [IsDomain R] [CharZero R] {Φ : LinearMap.BilinForm R L}
-    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) (t : R) :
-    t • residueClass R L Φ hΦ hΦs = 0 ↔ t = 0 := by
-  refine ⟨fun h ↦ ?_, fun ht ↦ by simp [ht]⟩
-  rw [residueClass_eq_mk, ← map_smul, continuousSecondCohomologyMk_eq_zero_iff] at h
-  obtain ⟨f, -, hf⟩ := h
-  let eC := TrivialLieModule.equiv R (currentAlgebra R L) R
-  let eP := TrivialLieModule.equiv R (_root_.LieAlgebra.loopAlgebra R ℤ L) R
-  -- Restricting the coboundary along the polynomial currents exhibits `t • c_Φ` as a coboundary
-  -- on the loop algebra, which is impossible for `t ≠ 0`.
-  refine (TauCeti.LieAlgebra.LoopAlgebra.smul_twoCochainOfBilinear_mem_range_d₁₂_iff hΦs hΦ0 t).mp
-    ⟨(eP.symm.toLinearMap ∘ₗ eC.toLinearMap) ∘ₗ f ∘ₗ (ofLoop R L).toLinearMap, ?_⟩
-  refine Subtype.ext (LinearMap.ext₂ fun u v ↦ eP.injective ?_)
-  -- The differential of the restricted cochain is the restriction of `t • c_Φ`.
-  have hd : eP (d₁₂ R _ _ ((eP.symm.toLinearMap ∘ₗ eC.toLinearMap) ∘ₗ f ∘ₗ
-      (ofLoop R L).toLinearMap) u v) =
-      t • eC (twoCochainOfBilinear R L Φ hΦs (ofLoop R L u) (ofLoop R L v)) := by
-    rw [d₁₂_comp_lieHom_apply_apply_ofTrivial, hf]
-    simp only [Submodule.coe_smul, smul_apply_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearEquiv.apply_symm_apply, map_smul]
-  -- On polynomial currents, `c_Φ` is the residue cocycle of the loop algebra.
-  have hres : eC (twoCochainOfBilinear R L Φ hΦs (ofLoop R L u) (ofLoop R L v)) =
-      eP (_root_.LieAlgebra.LoopAlgebra.twoCochainOfBilinear R ℤ L Φ hΦs u v) :=
-    twoCochainOfBilinear_ofLoop R L Φ hΦs u v
-  simpa only [twoCochain_val_apply, Submodule.coe_smul, LinearMap.smul_apply, map_smul, hres]
-    using hd
-
-/-- The residue class of a nonzero invariant symmetric form over a characteristic-zero domain is
-nonzero. -/
-theorem residueClass_ne_zero [IsDomain R] [CharZero R] {Φ : LinearMap.BilinForm R L}
-    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) :
-    residueClass R L Φ hΦ hΦs ≠ 0 := by
-  simpa using (smul_residueClass_eq_zero_iff hΦ hΦs hΦ0 1).not.mpr one_ne_zero
-
 /-- **A continuous class determines its form.** Over every commutative ring, two invariant
 symmetric forms have the same residue class exactly when they are equal. -/
 @[simp]
@@ -264,6 +228,41 @@ theorem residueClass_inj {Φ Ψ : LinearMap.BilinForm R L}
   rw [hab, hval a₀ b₀] at h₁
   simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single] at h₁
   linear_combination -h₁
+
+/-- **The residue class of a nonzero form is torsion-free.** Over a domain, a multiple
+`t • [c_Φ]` of the residue class of a nonzero invariant symmetric form vanishes in continuous
+second cohomology only for `t = 0`. -/
+theorem smul_residueClass_eq_zero_iff [IsDomain R] {Φ : LinearMap.BilinForm R L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) (t : R) :
+    t • residueClass R L Φ hΦ hΦs = 0 ↔ t = 0 := by
+  refine ⟨fun h ↦ ?_, fun ht ↦ by simp [ht]⟩
+  have h0i : ((0 : R) • Φ).lieInvariant L := fun x y z ↦ by simp
+  have h0s : ((0 : R) • Φ).IsSymm := ⟨fun x y ↦ by simp⟩
+  have hti : (t • Φ).lieInvariant L := fun x y z ↦ by simp [hΦ x y z]
+  have hts : (t • Φ).IsSymm := ⟨fun x y ↦ by simp [hΦs.eq x y]⟩
+  have h0 : residueClass R L ((0 : R) • Φ) h0i h0s = 0 := by
+    rw [residueClass_smul 0 hΦ hΦs h0i h0s, zero_smul]
+  have h := (residueClass_inj hti hts h0i h0s).mp
+    ((residueClass_smul t hΦ hΦs hti hts).trans (h.trans h0.symm))
+  by_contra ht
+  obtain ⟨x, y, hxy⟩ : ∃ x y : L, Φ x y ≠ 0 := by
+    by_contra! h'
+    exact hΦ0 (LinearMap.ext₂ h')
+  have := LinearMap.congr_fun₂ h x y
+  simp only [LinearMap.smul_apply, smul_eq_mul, zero_smul, LinearMap.zero_apply] at this
+  exact hxy ((mul_eq_zero.mp this).resolve_left ht)
+
+/-- The residue class of a nonzero invariant symmetric form is nonzero over every commutative
+ring. -/
+theorem residueClass_ne_zero {Φ : LinearMap.BilinForm R L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) :
+    residueClass R L Φ hΦ hΦs ≠ 0 := by
+  intro h
+  have h0i : ((0 : R) • Φ).lieInvariant L := fun x y z ↦ by simp
+  have h0s : ((0 : R) • Φ).IsSymm := ⟨fun x y ↦ by simp⟩
+  have h0 : residueClass R L ((0 : R) • Φ) h0i h0s = 0 := by
+    rw [residueClass_smul 0 hΦ hΦs h0i h0s, zero_smul]
+  exact hΦ0 (((residueClass_inj hΦ hΦs h0i h0s).mp (h.trans h0.symm)).trans (zero_smul R Φ))
 
 section Coefficients
 
@@ -312,28 +311,35 @@ theorem residueClassMap_self (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvaria
   conv_lhs => rw [← mul_one t, ← smul_eq_mul, map_smul]
   simp only [residueClassMap_apply, residueClass_eq_mk, twoCochainOfBilinearSMulRight_one]
 
-/-- **Residue classes with coefficients detect their coefficient.** Over a characteristic-zero
-domain, the residue class of a nonzero invariant symmetric form with coefficients in a projective
-module `Z`, for instance any vector space, is injective in its coefficient. -/
-theorem residueClassMap_injective [IsDomain R] [CharZero R] [Module.Projective R Z]
+/-- **Residue classes with coefficients detect their coefficient.** Over a domain, the residue
+class of a nonzero invariant symmetric form with coefficients in a torsion-free module `Z`, for
+instance any vector space, is injective in its coefficient. -/
+theorem residueClassMap_injective [IsDomain R] [Module.IsTorsionFree R Z]
     {Φ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0) :
     Function.Injective (residueClassMap R L Φ hΦ hΦs (Z := Z)) := by
   refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
   rw [residueClassMap_apply, continuousSecondCohomologyMk_eq_zero_iff] at hz
-  obtain ⟨f, hf, hdf⟩ := hz
-  refine (Module.forall_dual_apply_eq_zero_iff R z).mp fun φ ↦ ?_
-  -- Pushing the coboundary forward along `φ` shows that `φ z • [c_Φ] = 0`.
-  let e : TrivialLieModule R (currentAlgebra R L) Z →ₗ[R]
-      TrivialLieModule R (currentAlgebra R L) R :=
-    (TrivialLieModule.equiv R _ R).symm.toLinearMap ∘ₗ φ ∘ₗ
-      (TrivialLieModule.equiv R _ Z).toLinearMap
-  refine (smul_residueClass_eq_zero_iff hΦ hΦs hΦ0 (φ z)).mp ?_
-  rw [← residueClassMap_self, residueClassMap_apply, continuousSecondCohomologyMk_eq_zero_iff]
-  refine ⟨e ∘ₗ f, comp_mem_continuousOneCochain e hf, ?_⟩
-  have h := congrArg (twoCochainMap e LieHom.id) hdf
-  rw [twoCochainMap_twoCochainOfBilinearSMulRight] at h
-  refine Eq.trans (Subtype.ext (LinearMap.ext₂ fun u v ↦ ?_)) (h.trans (by simp))
-  simp [trivial_lie_zero]
+  obtain ⟨f, -, hdf⟩ := hz
+  set eZ := TrivialLieModule.equiv R (currentAlgebra R L) Z
+  have hval (u v : currentAlgebra R L) : -eZ (f ⁅u, v⁆) = residuePairing R L Φ u v • z := by
+    simpa [d₁₂_apply_apply_ofTrivial, eZ, trivial_lie_zero] using
+      congrArg (fun c ↦ eZ (c u v)) hdf
+  -- A coboundary with trivial coefficients takes the same value on `(X⁻¹ ⊗ x, X ⊗ y)` and
+  -- `(1 ⊗ x, 1 ⊗ y)`, where `c_Φ ⊗ z` takes `Φ(x, y) • z` and `0`.
+  obtain ⟨x, y, hxy⟩ : ∃ x y : L, Φ x y ≠ 0 := by
+    by_contra! h'
+    exact hΦ0 (LinearMap.ext₂ h')
+  set a₁ : currentAlgebra R L := HahnSeries.single (-1) 1 ⊗ₜ x
+  set b₁ : currentAlgebra R L := HahnSeries.single 1 1 ⊗ₜ y
+  set a₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ x
+  set b₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ y
+  have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := by
+    simp [a₁, b₁, a₀, b₀, _root_.LieAlgebra.ExtendScalars.bracket_tmul,
+      HahnSeries.single_mul_single]
+  have h₁ := hval a₁ b₁
+  rw [hab, hval a₀ b₀] at h₁
+  simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single] at h₁
+  exact (smul_eq_zero.mp h₁.symm).resolve_left hxy
 
 end Coefficients
 
