@@ -35,6 +35,9 @@ correspondence.
   `Cl_𝔪 ≃* Gal(rayClassField 𝔪 / K)` (`rayClassArtinEquiv`), hence
   `[rayClassField 𝔪 : K] = #Cl_𝔪` (`finrank_rayClassField`).
 
+For a totally complex base, the narrow and ordinary Hilbert class fields coincide
+(`narrowHilbertClassField_eq_hilbertClassField`), since there are no real places.
+
 The **Hilbert class field** `hilbertClassField K` is the ray class field of the trivial modulus,
 and the **narrow Hilbert class field** `narrowHilbertClassField K` that of the modulus carrying
 every real place and no finite place. The Artin map identifies the class group of `K` with the
@@ -255,6 +258,19 @@ theorem hilbertClassField_le_rayClassField : hilbertClassField K ≤ rayClassFie
 theorem hilbertClassField_le_narrowHilbertClassField :
     hilbertClassField K ≤ narrowHilbertClassField K :=
   hilbertClassField_le_rayClassField _
+
+/-- Over a totally complex number field, the narrow and ordinary Hilbert class fields coincide:
+there are no real places at which a narrow class field could allow extra ramification. -/
+@[simp]
+theorem narrowHilbertClassField_eq_hilbertClassField [IsTotallyComplex K] :
+    narrowHilbertClassField K = hilbertClassField K := by
+  have h : narrowModulus K = Modulus.one K := by
+    apply Modulus.ext
+    · simp
+    · apply Finset.ext
+      rintro ⟨w, hw⟩
+      exact (InfinitePlace.not_isReal_iff_isComplex.mpr (IsTotallyComplex.isComplex w) hw).elim
+  exact congrArg rayClassField h
 
 /-- **Reciprocity for the Hilbert class field**: the Artin map identifies the class group of `K`
 with the Galois group of the Hilbert class field: `rayClassArtinEquiv` at the trivial modulus, read
