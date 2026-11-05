@@ -140,6 +140,7 @@ private theorem exists_contDiffAt_sectionValue_eq_pow_mul_of_continuousAt (hk : 
     obtain ⟨w, ⟨hw, hvw⟩, hwz⟩ :=
       (((hfac.and (hv.eventually_ne hv₀)).filter_mono nhdsWithin_le_nhds).and
         (eventually_mem_nhdsWithin (s := {z}ᶜ))).exists
+    refine ⟨w, ?_⟩
     rw [hw]
     exact mul_ne_zero (pow_ne_zero n (sub_ne_zero.mpr (Set.mem_compl_singleton_iff.mp hwz))) hvw
   obtain ⟨m, V, hV, hV₀, hfacV⟩ :=

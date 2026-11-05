@@ -138,7 +138,6 @@ theorem existsUnique_framedGaugeGroup_smul_eq {x y : ℂ → EuclideanSpace ℝ 
   have hdense : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} := by
     refine (dense_univ.sdiff_finite (finite_setOfPred_sectionValue_eq_zero (k := ⊤) le_top
       (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hymod)).mono fun z hz ↦ ?_
-    show y z 2 ^ 2 + y z 3 ^ 2 ≠ 0
     intro h0
     have h2 : y z 2 = 0 := by nlinarith [sq_nonneg (y z 2), sq_nonneg (y z 3)]
     have h3 : y z 3 = 0 := by nlinarith [sq_nonneg (y z 2), sq_nonneg (y z 3)]
