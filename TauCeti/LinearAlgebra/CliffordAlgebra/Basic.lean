@@ -164,20 +164,17 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero {n : ℕ}
 
 end Exterior
 
-variable {K : Type u} [Field K] [Module K M] [FiniteDimensional K M]
-  [Invertible (2 : K)]
-
-omit [Invertible (2 : K)] in
 /-- A Clifford element annihilated by every left contraction is a scalar. -/
-theorem exists_eq_algebraMap_of_contractLeft_eq_zero (Q : QuadraticForm K M)
-    (x : CliffordAlgebra Q) (hx : ∀ d : Module.Dual K M, contractLeft d x = 0) :
-    ∃ r : K, x = algebraMap K (CliffordAlgebra Q) r := by
-  let b := Module.finBasis K M
-  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := K) (M := M) (N := K) (-Q)
-  have h : B.toQuadraticMap = (0 : QuadraticForm K M) - Q := by rw [hB]; simp
-  let y : ExteriorAlgebra K M := changeForm h x
-  have hycontract (d : Module.Dual K M) :
-      contractLeft (Q := (0 : QuadraticForm K M)) d y = 0 := by
+theorem exists_eq_algebraMap_of_contractLeft_eq_zero [Module.Free R M] [Module.Finite R M]
+    (Q : QuadraticForm R M) (x : CliffordAlgebra Q)
+    (hx : ∀ d : Module.Dual R M, contractLeft d x = 0) :
+    ∃ r : R, x = algebraMap R (CliffordAlgebra Q) r := by
+  let b := (Module.Free.chooseBasis R M).reindex (Fintype.equivFin _)
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (R := R) (M := M) (N := R) (-Q)
+  have h : B.toQuadraticMap = (0 : QuadraticForm R M) - Q := by rw [hB]; simp
+  let y : ExteriorAlgebra R M := changeForm h x
+  have hycontract (d : Module.Dual R M) :
+      contractLeft (Q := (0 : QuadraticForm R M)) d y = 0 := by
     dsimp only [y]
     rw [← changeForm_contractLeft h d x, hx, map_zero]
   let r := b.ExteriorAlgebra.repr y ∅
@@ -185,6 +182,9 @@ theorem exists_eq_algebraMap_of_contractLeft_eq_zero (Q : QuadraticForm K M)
   apply (changeFormEquiv h).injective
   simpa only [y, r, changeFormEquiv_apply, changeForm_algebraMap] using
     eq_algebraMap_of_all_contractLeft_eq_zero b y hycontract
+
+variable {K : Type u} [Field K] [Module K M] [FiniteDimensional K M]
+  [Invertible (2 : K)]
 
 /-- A Clifford element that graded-commutes with every generating vector is a scalar. Here
 `involute x * ι v = ι v * x` is the uniform equation combining commutation of the even part
