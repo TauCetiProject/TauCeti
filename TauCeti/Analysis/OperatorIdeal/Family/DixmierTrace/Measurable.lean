@@ -42,9 +42,9 @@ Dixmier measurable.
 * `TauCeti.isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean`,
   `TauCeti.isDixmierMeasurable_of_tendsto_kyFanLogMean_zero`: ordinary convergence of logarithmic
   means implies Dixmier measurability.
-* `TauCeti.harmonicDiagonalCLM`,
+* `TauCeti.harmonicDiagonalCLM`, `TauCeti.kyFanGauge_harmonicDiagonalCLM`,
   `TauCeti.exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne`: the harmonic diagonal
-  model and singularity / Loewner non-normality of `Tr_ω`.
+  model, its Ky Fan prefix gauges, and singularity / Loewner non-normality of `Tr_ω`.
 * `TauCeti.exists_isPositive_mem_logarithmic_notMem_traceClass_complexDixmierTrace_eq_zero`:
   positive operator in `L^(1,∞) \ L¹` with vanishing Dixmier trace.
 * `TauCeti.exists_isPositive_mem_logarithmic_not_isDixmierMeasurable`: positive operator in
@@ -315,8 +315,10 @@ noncomputable def harmonicDiagonalCLM : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ
 theorem harmonicDiagonalCLM_apply (x : ℓ^2(ℕ, ℂ)) (j : ℕ) :
     harmonicDiagonalCLM x j = ((j : ℂ) + 1)⁻¹ * x j := by simp [harmonicDiagonalCLM, harmonicSeq]
 
-private theorem kyFanGauge_harmonicDiagonalCLM (k : ℕ) :
-    (harmonicDiagonalCLM.kyFanGauge k : ℝ) = ∑ j ∈ Finset.range k, ((j : ℝ) + 1)⁻¹ := by
+/-- The `k`-th Ky Fan prefix gauge of `TauCeti.harmonicDiagonalCLM` is `∑ j < k, (j + 1)⁻¹`. -/
+@[simp]
+theorem kyFanGauge_harmonicDiagonalCLM (k : ℕ) :
+    harmonicDiagonalCLM.kyFanGauge k = ∑ j ∈ Finset.range k, ((j : ℝ≥0) + 1)⁻¹ := by
   simp [harmonicDiagonalCLM, harmonicSeq]
 
 /-- The harmonic diagonal operator is positive on `ℓ²(ℕ, ℂ)`. -/
@@ -339,7 +341,7 @@ theorem harmonicDiagonalCLM_mem_logarithmic :
   have hlogN : Real.log 2 ≤ Real.log ((N : ℝ) + 2) := Real.log_le_log two_pos (by linarith)
   calc harmonicDiagonalCLM.kyFanLogMean N
       ≤ (1 + Real.log ((N : ℝ) + 2)) / Real.log ((N : ℝ) + 2) := by
-        rw [kyFanLogMean_def, kyFanGauge_harmonicDiagonalCLM]
+        rw [kyFanLogMean_def, kyFanGauge_harmonicDiagonalCLM]; push_cast
         exact div_le_div_of_nonneg_right (sum_range_succ_inv_le_one_add_log N)
           (hlog2.trans_le hlogN).le
     _ = (Real.log ((N : ℝ) + 2))⁻¹ + 1 := by
@@ -708,7 +710,7 @@ theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
     refine (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 ⟨C, Set.forall_mem_range.2 fun N ↦ ?_⟩
     refine le_trans ?_ (hC ⟨N, rfl⟩)
     have hKsum : (T.kyFanGauge (N + 1) : ℝ) = ∑ j ∈ Finset.range (N + 1), oscSeq j := by simp [hT]
-    rw [kyFanLogMean_def, kyFanLogMean_def, hKsum, kyFanGauge_harmonicDiagonalCLM]
+    rw [kyFanLogMean_def, kyFanLogMean_def, hKsum, kyFanGauge_harmonicDiagonalCLM]; push_cast
     exact div_le_div_of_nonneg_right (Finset.sum_le_sum fun j _ ↦ oscSeq_le_inv j)
       (Real.log_natCast_add_pos one_lt_two N).le
   obtain ⟨g, hg⟩ := exists_coe_eq_kyFanLogMean hmem
