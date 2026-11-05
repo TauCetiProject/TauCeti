@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -35,6 +36,8 @@ to manifolds, including manifolds with boundary or corners.
 
 * `TauCeti.isRegularValue_iff_notMem_image`: the regular values are the complement of the image
   of the set of non-regular points.
+* `TauCeti.IsRegularValue.restrict`: restricting the source to an open subset preserves regular
+  values when the map is differentiable along the fibre.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
@@ -223,6 +226,18 @@ theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
   exact (isRegularPoint_iff.1 hf).comp (isRegularPoint_iff.1 hg)
 
 end Composition
+
+/-- Restricting the source to an open subset preserves regular values, provided the map is
+differentiable at each point of the fibre. -/
+theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y)
+    (hf : ∀ x, f x = y → MDifferentiableAt I J f x) (U : TopologicalSpace.Opens M) :
+    IsRegularValue I J (fun x : U ↦ f x) y := by
+  rw [isRegularValue_iff]
+  intro x hx
+  have hi := isLocalDiffeomorph_subtype_val (I := I) (n := 1) (U := U) x
+  exact (hreg.isRegularPoint hx).comp
+    (isRegularPoint_iff.2 (hi.isInvertible_mfderiv one_ne_zero).surjective)
+    (hf x hx) (hi.mdifferentiableAt one_ne_zero)
 
 section Level
 

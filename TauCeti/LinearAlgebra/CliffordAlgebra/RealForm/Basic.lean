@@ -65,6 +65,9 @@ unfolding.
 * `TauCeti.realCliffordFormNegIsometry`: the isometry from the negated `(p, q)` form to the
   `(q, p)` form, with coordinate equations `..._pos_of_neg` and `..._neg_of_pos`.
 * `TauCeti.realCliffordSplitIsometry`: the shared splitter into two standard signature blocks.
+* `TauCeti.realCliffordFormCongr`: the coordinate isometry between equal signatures.
+* `TauCeti.realCliffordBlockIsometry`: the splitting of the `(p, q)` form into its
+  positive-definite `(p, 0)` and negative-definite `(0, q)` blocks.
 * `TauCeti.realCliffordPositiveSplitIsometry`: the isometry which separates the last positive
   coordinate from a standard signature form.
 * `TauCeti.realBottSplitIsometry`: the two-coordinate specialization of the same signature
@@ -354,6 +357,46 @@ theorem realCliffordSplitIsometry_snd_neg (p₁ p₂ q₁ q₂ : ℕ)
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).2 _ = _
   simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
+
+/-- The coordinate isometry between two presentations of the same signature, relabelling the
+coordinates along `Fin.cast`. -/
+def realCliffordFormCongr {p q p' q' : ℕ} (hp : p = p') (hq : q = q') :
+    (realCliffordForm p q).IsometryEquiv (realCliffordForm p' q') := by
+  subst hp hq
+  exact .refl _
+
+/-- `realCliffordFormCongr` reads each coordinate through `Fin.cast`. -/
+@[simp]
+theorem realCliffordFormCongr_apply {p q p' q' : ℕ} (hp : p = p') (hq : q = q')
+    (x : Fin (p + q) → ℝ) (i : Fin (p' + q')) :
+    realCliffordFormCongr hp hq x i = x (i.cast (by rw [hp, hq])) := by
+  subst hp hq
+  rfl
+
+/-- The coordinate isometry which splits a real signature form into its positive-definite block,
+the first `p` coordinates, and its negative-definite block, the last `q` coordinates. -/
+def realCliffordBlockIsometry (p q : ℕ) :
+    (realCliffordForm p q).IsometryEquiv ((realCliffordForm p 0).prod (realCliffordForm 0 q)) :=
+  (realCliffordFormCongr rfl (Nat.zero_add q).symm).trans (realCliffordSplitIsometry p 0 0 q)
+
+/-- The positive block of `realCliffordBlockIsometry` consists of the first `p` coordinates. -/
+@[simp]
+theorem realCliffordBlockIsometry_apply_fst (p q : ℕ) (x : Fin (p + q) → ℝ) (i : Fin p) :
+    (realCliffordBlockIsometry p q x).1 i = x (Fin.castAdd q i) := by
+  -- The composed-isometry coercion does not expose the shared splitter with `dsimp`.
+  change (realCliffordSplitIsometry p 0 0 q _).1 (Fin.castAdd 0 i) = _
+  rw [realCliffordSplitIsometry_fst_pos]
+  exact realCliffordFormCongr_apply _ _ x _
+
+/-- The negative block of `realCliffordBlockIsometry` consists of the last `q` coordinates. -/
+@[simp]
+theorem realCliffordBlockIsometry_apply_snd (p q : ℕ) (x : Fin (p + q) → ℝ) (i : Fin (0 + q)) :
+    (realCliffordBlockIsometry p q x).2 i = x (Fin.natAdd p (i.cast (Nat.zero_add q))) := by
+  obtain ⟨i, rfl⟩ : ∃ j : Fin q, Fin.natAdd 0 j = i := ⟨i.cast (Nat.zero_add q), Fin.ext (by simp)⟩
+  -- The composed-isometry coercion does not expose the shared splitter with `dsimp`.
+  change (realCliffordSplitIsometry p 0 0 q _).2 (Fin.natAdd 0 i) = _
+  rw [realCliffordSplitIsometry_snd_neg]
+  exact (realCliffordFormCongr_apply _ _ x _).trans (congrArg x (Fin.ext (by simp)))
 
 private def realCliffordOnePositiveIsometry :
     (realCliffordForm 1 0).IsometryEquiv (QuadraticMap.sq (R := ℝ) (A := ℝ)) :=

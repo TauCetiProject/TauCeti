@@ -90,6 +90,18 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 54 ⟶ generatedCoordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54) (generatedDefiningIdeal A)
 
+/-- In the quotient presentation of the generated coordinate algebra, its coordinate map is
+the quotient morphism. -/
+theorem generatedCoordinateMap_comp_eqToIso_hom :
+    generatedCoordinateMap A ≫ (eqToIso (generatedCoordinateHopfAlgebra_def A)).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
+        (generatedDefiningIdeal A) := by
+  -- The named quotient and its map reduce in their defining module; this equation exports
+  -- that presentation without exposing either definition to importing modules.
+  change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
+      (generatedDefiningIdeal A) ≫ 𝟙 _ = _
+  simp
+
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
   CommHopfAlgCat.mkQuotient_surjective
@@ -221,6 +233,18 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
         generatedCoordinateMap K :=
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+
+/-- The generated-carrier base-change comparison intertwines each numbered root or torus lift. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom ≫
+        generatedCoordinateLift K j :=
+  CommHopfAlgCat.baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    _ _ _ (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+    _ _ _ _ _ (generatorCoordinateMap_baseChange k K j)
 
 end BaseChange
 

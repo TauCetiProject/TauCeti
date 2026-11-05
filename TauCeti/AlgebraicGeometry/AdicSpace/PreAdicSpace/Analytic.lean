@@ -462,6 +462,54 @@ instance : PreAdicSpace.IsOpenImmersion (analyticLocus.ι X).hom := by
   rw [analyticLocus.ι_hom]
   infer_instance
 
+variable {X} {T : AdicSpace.{u}}
+
+/-- The image of the analytic-locus inclusion is the set of analytic points. -/
+-- Not a simp lemma: `analyticLocus.ι_hom` already simplifies the underlying morphism.
+theorem analyticLocus.range_ι (X : AdicSpace.{u}) :
+    Set.range (analyticLocus.ι X).hom.base = X.obj.analyticPoints := by
+  have he : Function.Surjective
+      (eqToHom (analyticLocus_obj X) : X.analyticLocus.obj ⟶ X.obj.analyticLocus).base :=
+    (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso
+      (eqToIso (analyticLocus_obj X)))).surjective
+  rw [analyticLocus.ι_hom, PreAdicSpace.comp_base, TopCat.coe_comp, he.range_comp]
+  exact PreAdicSpace.analyticLocus.range_ι X.obj
+
+instance (X : AdicSpace.{u}) : Mono (analyticLocus.ι X) :=
+  (ObjectProperty.ι _).mono_of_mono_map
+    (inferInstanceAs (Mono (analyticLocus.ι X).hom))
+
+/-- A map whose image consists of analytic points factors through the analytic locus. -/
+noncomputable def analyticLocus.lift (g : T ⟶ X)
+    (hg : Set.range g.hom.base ⊆ X.obj.analyticPoints) : T ⟶ X.analyticLocus :=
+  ObjectProperty.homMk (PreAdicSpace.analyticLocus.lift g.hom hg ≫
+    eqToHom (analyticLocus_obj X).symm)
+
+/-- Composing the factorization with the open inclusion recovers the original map. -/
+@[reassoc (attr := simp)]
+theorem analyticLocus.lift_ι (g : T ⟶ X)
+    (hg : Set.range g.hom.base ⊆ X.obj.analyticPoints) :
+    analyticLocus.lift g hg ≫ analyticLocus.ι X = g := by
+  apply ObjectProperty.hom_ext
+  simp [analyticLocus.lift, analyticLocus.ι_hom]
+
+/-- The factorization through the analytic locus is unique. -/
+theorem analyticLocus.lift_uniq (g : T ⟶ X)
+    (hg : Set.range g.hom.base ⊆ X.obj.analyticPoints)
+    (l : T ⟶ X.analyticLocus) (hl : l ≫ analyticLocus.ι X = g) :
+    l = analyticLocus.lift g hg := by
+  rw [← cancel_mono (analyticLocus.ι X), hl, analyticLocus.lift_ι]
+
+/-- A morphism factors through the analytic locus exactly when its image is analytic. -/
+theorem analyticLocus.exists_comp_ι_eq_iff (g : T ⟶ X) :
+    (∃ l : T ⟶ X.analyticLocus, l ≫ analyticLocus.ι X = g) ↔
+      Set.range g.hom.base ⊆ X.obj.analyticPoints := by
+  refine ⟨?_, fun hg ↦ ⟨analyticLocus.lift g hg, analyticLocus.lift_ι g hg⟩⟩
+  rintro ⟨l, rfl⟩
+  rw [← analyticLocus.range_ι X, ObjectProperty.FullSubcategory.comp_hom,
+    PreAdicSpace.comp_base, TopCat.coe_comp]
+  exact Set.range_comp_subset_range _ _
+
 end AdicSpace
 
 end TauCeti
