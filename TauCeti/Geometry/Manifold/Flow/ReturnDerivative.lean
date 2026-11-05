@@ -23,24 +23,26 @@ The derivative of the time-`0` transition to a section through `p` is the projec
 onto the tangent space `ker dg_p` of the section along `v p`
 (`TauCeti.mfderiv_flowTransition_zero_apply`). It comes from the derivative
 `w ↦ w + dτ_p(w) • v p` of `z ↦ flowOf v (τ z) z` for a time `τ` vanishing at `p`
-(`TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero`). The derivative of a transition takes values in the
-tangent space of the target section (`TauCeti.mvfderiv_mfderiv_flowTransition_eq_zero`), and on the
-tangent space of the source section the derivative of the reverse transition is its left inverse
+(`TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero` in `TauCeti.Geometry.Manifold.Flow.Basic`). The
+derivative of a transition takes values in the tangent space of the target section
+(`TauCeti.mvfderiv_mfderiv_flowTransition_eq_zero`), and on the tangent space of the source section
+the derivative of the reverse transition is its left inverse
 (`TauCeti.mfderiv_flowTransition_neg_apply_mfderiv_flowTransition`). If the flow carries `p` to
 `q` at time `T`, the chain rule turns the conjugacy of return germs into
 `dh ∘ dP_p = dP_q ∘ dh` for the transition `h` from a section through `p` to one through `q`
 (`TauCeti.mfderiv_flowTransition_apply_mfderiv_flowTransition`).
 
-Since `dP_p` maps `T_pM` into `ker dg_p`, its eigenvectors for a nonzero eigenvalue lie in
-`ker dg_p` (`TauCeti.eigenspace_returnDerivative_le_ker`), so its nonzero eigenvalues are those of
-the normal return derivative, the restriction of `dP_p` to the tangent space of the section. On
-these eigenspaces `dh` is an isomorphism, with inverse the derivative of the reverse transition.
-Hence the nonzero eigenvalues of the linearized return map, with their geometric multiplicities,
-and in particular the test whether `1` is an eigenvalue, do not depend on the section or on the
-base point along the orbit (`TauCeti.hasEigenvalue_returnDerivative_iff`,
-`TauCeti.hasEigenvalue_one_returnDerivative_iff`). The linearized return map at time `k * T₀` is
-the `k`-th power of the one at time `T₀` (`TauCeti.returnDerivative_natCast_mul`), so the same
-holds for every positive iterate.
+Since `dP_p` maps `T_pM` into `ker dg_p`, its generalized eigenvectors for a nonzero eigenvalue lie
+in `ker dg_p` (`TauCeti.genEigenspace_returnDerivative_le_ker`), so its nonzero eigenvalues are
+those of the normal return derivative, the restriction of `dP_p` to the tangent space of the
+section. On these generalized eigenspaces `dh` is an isomorphism, with inverse the derivative of
+the reverse transition (`TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`). Hence the
+nonzero eigenvalues of the linearized return map, with their geometric and algebraic
+multiplicities, and in particular the test whether `1` is an eigenvalue, do not depend on the
+section or on the base point along the orbit (`TauCeti.finrank_genEigenspace_returnDerivative_eq`,
+`TauCeti.hasEigenvalue_returnDerivative_iff`, `TauCeti.hasEigenvalue_one_returnDerivative_iff`).
+The linearized return map at time `k * T₀` is the `k`-th power of the one at time `T₀`
+(`TauCeti.returnDerivative_natCast_mul`), so the same holds for every positive iterate.
 
 As in `TauCeti.Geometry.Manifold.Flow.Transition`, `T₀` need not be the least period and the
 return branch need not be the first return to the section.
@@ -52,8 +54,6 @@ return branch need not be the first return to the section.
 
 ## Main results
 
-* `TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero`: the derivative of flowing for a time vanishing at
-  the base point.
 * `TauCeti.mfderiv_flowTransition_zero_apply`: the derivative of the time-`0` transition is the
   projection onto the tangent space of the section along the field.
 * `TauCeti.mvfderiv_mfderiv_flowTransition_eq_zero`: the derivative of a transition takes values
@@ -62,10 +62,12 @@ return branch need not be the first return to the section.
   source section, the derivative of the reverse transition is a left inverse.
 * `TauCeti.mfderiv_flowTransition_apply_mfderiv_flowTransition`: transitions conjugate the
   derivatives of return germs.
+* `TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`,
+  `TauCeti.finrank_genEigenspace_returnDerivative_eq`: the nonzero generalized eigenspaces of
+  linearized return maps at two points of a periodic orbit are isomorphic.
 * `TauCeti.exists_linearEquiv_eigenspace_returnDerivative`,
   `TauCeti.finrank_eigenspace_returnDerivative_eq`, `TauCeti.hasEigenvalue_returnDerivative_iff`,
-  `TauCeti.hasEigenvalue_one_returnDerivative_iff`: the nonzero eigenspaces of linearized return
-  maps at two points of a periodic orbit are isomorphic.
+  `TauCeti.hasEigenvalue_one_returnDerivative_iff`: the same for eigenspaces and eigenvalues.
 * `TauCeti.returnDerivative_natCast_mul`: the linearized return map of an iterate.
 
 ## References
@@ -111,60 +113,13 @@ theorem returnDerivative_apply (w : TangentSpace I p) :
 variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
 include hv
 
-/-- The derivative of the flow at time `0` and at `p`: the time direction goes to the field at
-`p`, and the space direction is the identity. -/
-private theorem mfderiv_flowOf_zero_apply {t : ℝ} (ht : t = 0) (a : ℝ) (w : TangentSpace I p) :
-    -- The two sides live in tangent spaces at different points, both equal to `E` by definition,
-    -- so the equation is stated in `E`.
-    @Eq E (mfderiv (𝓘(ℝ).prod I) I (fun x : ℝ × M ↦ flowOf v x.1 x.2) (t, p) ((a, w) : ℝ × E))
-      (a • v p + w) := by
-  subst ht
-  have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero hv p
-  have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun x : ℝ × M ↦ flowOf v x.1 x.2) (0, p) :=
-    ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
-      ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
-  have hopen : {s : ℝ | (s, p) ∈ flowDomain v} ∈ 𝓝 (0 : ℝ) :=
-    ((isOpen_flowDomain hv).preimage (continuous_id.prodMk continuous_const)).mem_nhds h0
-  have htime := ((isMIntegralCurveOn_flowOf hv p).isMIntegralCurveAt hopen).hasMFDerivAt.mfderiv
-  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero hv)
-  have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t p) 0 a) (a • v p) := by
-    rw [htime]
-    -- Unfold the application of `smulRight`, whose domain is the tangent space of `ℝ` at `0`.
-    change @Eq E ((1 : ℝ →L[ℝ] ℝ) a • v (flowOf v 0 p)) (a • v p)
-    rw [flowOf_zero hv p]
-    rfl
-  have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) p w) w := by
-    rw [hspace, mfderiv_id]
-    rfl
-  erw [mfderiv_prod_eq_add_apply hG]
-  exact congrArg₂ (· + ·) h1 h2
-
-/-- **Flowing for a time that vanishes at `p`.** If `τ p = 0`, the map `z ↦ flowOf v (τ z) z`
-has derivative `w ↦ w + dτ_p(w) • v p` at `p`. -/
-theorem hasMFDerivAt_flowOf_comp_of_eq_zero {τ : M → ℝ} {dτ : TangentSpace I p →L[ℝ] ℝ}
-    (hτ : HasMFDerivAt I 𝓘(ℝ) τ p dτ) (hτp : τ p = 0) :
-    HasMFDerivAt I I (fun z ↦ flowOf v (τ z) z) p
-      (ContinuousLinearMap.id ℝ (TangentSpace I p) + dτ.smulRight (v p)) := by
-  have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero hv p
-  have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun x : ℝ × M ↦ flowOf v x.1 x.2) (τ p, p) := by
-    rw [hτp]
-    exact ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
-      ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
-  refine (hG.hasMFDerivAt.comp (f := fun z ↦ (τ z, id z)) p
-    (hτ.prodMk (hasMFDerivAt_id p))).congr_mfderiv ?_
-  refine ContinuousLinearMap.ext fun w ↦ ?_
-  -- Evaluate the composite with the pairing `z ↦ (τ z, z)` at `w`, as an equation in `E`.
-  change @Eq E (mfderiv (𝓘(ℝ).prod I) I (fun x : ℝ × M ↦ flowOf v x.1 x.2) (τ p, p)
-    ((dτ w, w) : ℝ × E)) (w + dτ w • v p)
-  rw [mfderiv_flowOf_zero_apply hv hτp, add_comm]
-
 /-- The derivative at `p` of the transition to the section `{g = g q}` through
 `q = flowOf v T p` takes values in the tangent space `ker dg_q` of that section. -/
 theorem mvfderiv_mfderiv_flowTransition_eq_zero (hT : (T, p) ∈ flowDomain v) (hq : flowOf v T p = q)
     (hg : ContMDiffAt I 𝓘(ℝ) 1 g q) (hgv : mvfderiv I g q (v q) ≠ 0) (w : TangentSpace I p) :
     mvfderiv I g q (mfderiv I I (flowTransition v g T p) p w) = 0 := by
+  have hh := mdifferentiableAt_flowTransition_of_eq hv hT hq hg hgv
   subst hq
-  have hh := (contMDiffAt_flowTransition le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
   have hconst : (fun _ ↦ g (flowOf v T p)) =ᶠ[𝓝 p] g ∘ flowTransition v g T p := by
     filter_upwards [eventually_flowHittingTime hv hT hg hgv] with z hz
     rw [comp_apply, flowTransition_apply]
@@ -184,9 +139,7 @@ theorem mfderiv_flowTransition_zero_apply (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
       w - (mvfderiv I g p w / mvfderiv I g p (v p)) • v p := by
   have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero hv p
   have hp0 : flowOf v 0 p = p := flowOf_zero hv p
-  have hg0 : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v 0 p) := by rwa [hp0]
-  have hgv0 : mvfderiv I g (flowOf v 0 p) (v (flowOf v 0 p)) ≠ 0 := by rwa [hp0]
-  have hτ := (contMDiffAt_flowHittingTime le_rfl hv h0 hg0 hgv0).mdifferentiableAt one_ne_zero
+  have hτ := mdifferentiableAt_flowHittingTime_of_eq hv h0 hp0 hg hgv
   have hD := (hasMFDerivAt_flowOf_comp_of_eq_zero hv hτ.hasMFDerivAt
     (flowHittingTime_self v g 0 p)).mfderiv
   -- The derivative of the hitting time is read as a real number, so that it can scale `v p`.
@@ -229,12 +182,10 @@ private theorem mfderiv_flowTransition_apply_mfderiv_flowTransition_of_add_eq_ze
   have hback := flowOf_neg_flowOf hv hT
   have hcomp := flowTransition_comp_eventuallyEq hv hT rfl hg' hg'v hneg hback hg hgv
   rw [add_neg_cancel] at hcomp
-  have hp0 : flowOf v 0 p = p := flowOf_zero hv p
-  have hπ := (contMDiffAt_flowTransition le_rfl hv (mem_flowDomain_zero hv p) (by rwa [hp0])
-    (by rwa [hp0])).mdifferentiableAt one_ne_zero
-  have hh := (contMDiffAt_flowTransition le_rfl hv hT hg' hg'v).mdifferentiableAt one_ne_zero
-  have hh' := (contMDiffAt_flowTransition le_rfl hv hneg (by rwa [hback]) (by rwa [hback]))
-    |>.mdifferentiableAt one_ne_zero
+  have hπ := mdifferentiableAt_flowTransition_of_eq hv (mem_flowDomain_zero hv p)
+    (flowOf_zero hv p) hg hgv
+  have hh := mdifferentiableAt_flowTransition_of_eq hv hT rfl hg' hg'v
+  have hh' := mdifferentiableAt_flowTransition_of_eq hv hneg hback hg hgv
   have hD := (hπ.hasMFDerivAt.congr_of_eventuallyEq_abuse hcomp).mfderiv
   rw [← mfderiv_comp_apply_of_eq p hh' hh (flowTransition_self ..), hD]
   exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv hw
@@ -258,16 +209,43 @@ theorem mfderiv_flowTransition_injOn :
 
 end Inverse
 
+omit hv in
+/-- For `μ ≠ 0`, the generalized eigenvectors for `μ` of an endomorphism `f` lie in every submodule
+containing the range of `f`: if `(f - μ)^(l + 1) w` lies in it, so do `(f - μ)^l w` and `f w`,
+hence `μ • w`. -/
+private theorem genEigenspace_le_of_range_le {V : Type*} [AddCommGroup V] [Module ℝ V]
+    {f : Module.End ℝ V} {K : Submodule ℝ V} (hf : LinearMap.range f ≤ K) {μ : ℝ} (hμ : μ ≠ 0)
+    (k : ℕ∞) : f.genEigenspace μ k ≤ K := fun w hw ↦ by
+  obtain ⟨l, -, hl⟩ := Module.End.mem_genEigenspace.1 hw
+  suffices h : ∀ (l : ℕ) (w : V), ((f - μ • 1) ^ l) w ∈ K → w ∈ K from
+    h l w ((LinearMap.mem_ker.1 hl).symm ▸ K.zero_mem)
+  intro l
+  induction l with
+  | zero => simp
+  | succ l ih =>
+    intro w hw
+    rw [pow_succ, mul_apply_eq_comp] at hw
+    have h := K.sub_mem (hf (LinearMap.mem_range_self f w)) (ih _ hw)
+    rw [LinearMap.sub_apply, sub_sub_cancel, LinearMap.smul_apply, one_apply_eq_self] at h
+    exact (K.smul_mem_iff hμ).1 h
+
+/-- The generalized eigenvectors of the linearized return map for a nonzero eigenvalue lie in the
+tangent space `ker dg_p` of the section. -/
+theorem genEigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v)
+    (hp : flowOf v T₀ p = p) (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v p) ≠ 0)
+    {μ : ℝ} (hμ : μ ≠ 0) (k : ℕ∞) :
+    (returnDerivative v g T₀ p).genEigenspace μ k ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
+  genEigenspace_le_of_range_le (fun _ ⟨w, hw⟩ ↦ hw ▸
+    mvfderiv_mfderiv_flowTransition_eq_zero hv hP hp hg hgv w) hμ k
+
 /-- The eigenvectors of the linearized return map for a nonzero eigenvalue lie in the tangent space
 `ker dg_p` of the section. -/
 theorem eigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v) (hp : flowOf v T₀ p = p)
     (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v p) ≠ 0) {μ : ℝ} (hμ : μ ≠ 0) :
     (returnDerivative v g T₀ p).eigenspace μ ≤
-      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) := fun w hw ↦ by
-  rw [Module.End.mem_eigenspace_iff, returnDerivative_apply] at hw
-  have h := mvfderiv_mfderiv_flowTransition_eq_zero hv hP hp hg hgv w
-  rw [hw, map_smul, smul_eq_mul, mul_eq_zero] at h
-  exact LinearMap.mem_ker.2 (h.resolve_left hμ)
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
+  genEigenspace_returnDerivative_le_ker hv hP hp hg hgv hμ 1
 
 /-- **The linearized return map of an iterate is the iterate of the linearized return map.** If
 `p` returns to itself at time `T₀`, then for `k ≠ 0` the linearized return map at time `k * T₀` of
@@ -285,10 +263,8 @@ theorem returnDerivative_natCast_mul (hP : (T₀, p) ∈ flowDomain v) (hp : flo
       push_cast
       ring
     have hcomp := flowTransition_comp_eventuallyEq hv hkP hkp hg hgv hP hp hg hgv
-    have hPk := (contMDiffAt_flowTransition le_rfl hv hkP (by rwa [hkp]) (by rwa [hkp]))
-      |>.mdifferentiableAt one_ne_zero
-    have hP1 := (contMDiffAt_flowTransition le_rfl hv hP (by rwa [hp]) (by rwa [hp]))
-      |>.mdifferentiableAt one_ne_zero
+    have hPk := mdifferentiableAt_flowTransition_of_eq hv hkP hkp hg hgv
+    have hP1 := mdifferentiableAt_flowTransition_of_eq hv hP hp hg hgv
     have hPkp : flowTransition v g (((k + 1 : ℕ) : ℝ) * T₀) p p = p :=
       (flowTransition_self ..).trans hkp
     have hD := ((hP1.comp_of_eq p hPk hPkp).hasMFDerivAt.congr_of_eventuallyEq_abuse
@@ -316,12 +292,9 @@ theorem mfderiv_flowTransition_apply_mfderiv_flowTransition (w : TangentSpace I 
   obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
   have hPp : flowTransition v g T₀ p p = p := (flowTransition_self ..).trans hp
   have hhp : flowTransition v g' T p p = q := (flowTransition_self ..).trans hq
-  have hP' := (contMDiffAt_flowTransition le_rfl hv hP (by rwa [hp]) (by rwa [hp]))
-    |>.mdifferentiableAt one_ne_zero
-  have hh := (contMDiffAt_flowTransition le_rfl hv hT (by rwa [hq]) (by rwa [hq]))
-    |>.mdifferentiableAt one_ne_zero
-  have hQ' := (contMDiffAt_flowTransition le_rfl hv hQ (by rwa [hq']) (by rwa [hq']))
-    |>.mdifferentiableAt one_ne_zero
+  have hP' := mdifferentiableAt_flowTransition_of_eq hv hP hp hg hgv
+  have hh := mdifferentiableAt_flowTransition_of_eq hv hT hq hg' hg'v
+  have hQ' := mdifferentiableAt_flowTransition_of_eq hv hQ hq' hg' hg'v
   have hQh : MDifferentiableAt I I (flowTransition v g' T₀ q) (flowTransition v g' T p p) := by
     rwa [hhp]
   have hsemi := flowTransition_semiconj_eventuallyEq hv hT hq hP hp hg hgv hg' hg'v
@@ -329,18 +302,50 @@ theorem mfderiv_flowTransition_apply_mfderiv_flowTransition (w : TangentSpace I 
   rw [← mfderiv_comp_apply_of_eq p hh hP' hPp, hD]
   exact mfderiv_comp_apply_of_eq p hQ' hh hhp w
 
-/-- The derivative of the transition between the sections maps each eigenspace of the linearized
-return map at `p` into the eigenspace for the same eigenvalue at `q`. -/
-private theorem mfderiv_flowTransition_mem_eigenspace_returnDerivative {μ : ℝ}
-    {w : TangentSpace I p} (hw : w ∈ (returnDerivative v g T₀ p).eigenspace μ) :
+/-- The derivative of the transition between the sections, read as a linear map into `T_qM`,
+intertwines the linearized return maps at `p` and at `q`. -/
+private theorem returnDerivative_comp_mfderiv_flowTransition :
     -- The derivative lands in the tangent space at `flowTransition v g' T p p`, which is `q` only
     -- propositionally; it is read as a map into the tangent space at `q`, which is the same `E`.
+    returnDerivative v g' T₀ q ∘ₗ (show TangentSpace I p →L[ℝ] TangentSpace I q from
+      mfderiv I I (flowTransition v g' T p) p).toLinearMap =
     (show TangentSpace I p →L[ℝ] TangentSpace I q from
-      mfderiv I I (flowTransition v g' T p) p) w ∈ (returnDerivative v g' T₀ q).eigenspace μ := by
-  rw [Module.End.mem_eigenspace_iff, returnDerivative_apply] at hw ⊢
-  have h := mfderiv_flowTransition_apply_mfderiv_flowTransition hv hT hq hP hp hg hgv hg' hg'v w
-  rw [hw, map_smul] at h
-  exact h.symm
+      mfderiv I I (flowTransition v g' T p) p).toLinearMap ∘ₗ returnDerivative v g T₀ p :=
+  LinearMap.ext fun w ↦
+    (mfderiv_flowTransition_apply_mfderiv_flowTransition hv hT hq hP hp hg hgv hg' hg'v w).symm
+
+/-- **The nonzero generalized eigenspaces of linearized return maps do not depend on the section or
+the base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time
+`T₀`, then for every `μ ≠ 0` and every `k : ℕ∞` the generalized eigenspaces for `μ` and exponent
+`k` of the linearized return maps at time `T₀` of transverse sections through `p` and through `q`
+are isomorphic, through the derivative of the transition between the sections. -/
+theorem exists_linearEquiv_genEigenspace_returnDerivative {μ : ℝ} (hμ : μ ≠ 0) (k : ℕ∞) :
+    ∃ e : (returnDerivative v g T₀ p).genEigenspace μ k ≃ₗ[ℝ]
+        (returnDerivative v g' T₀ q).genEigenspace μ k,
+      ∀ w, (e w : TangentSpace I q) = mfderiv I I (flowTransition v g' T p) p w := by
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  have hneg : (-T, q) ∈ flowDomain v := hq ▸ neg_mem_flowDomain_flowOf hv hT
+  have hback : flowOf v (-T) q = p := hq ▸ flowOf_neg_flowOf hv hT
+  let f : (returnDerivative v g T₀ p).genEigenspace μ k →ₗ[ℝ]
+      (returnDerivative v g' T₀ q).genEigenspace μ k :=
+    (show TangentSpace I p →L[ℝ] TangentSpace I q from
+      mfderiv I I (flowTransition v g' T p) p).toLinearMap.restrict fun _ hw ↦
+        Module.End.mapsTo_genEigenspace_of_comp _ (returnDerivative_comp_mfderiv_flowTransition hv
+          hT hq hP hp hg hgv hg' hg'v) μ k hw
+  let f' : (returnDerivative v g' T₀ q).genEigenspace μ k →ₗ[ℝ]
+      (returnDerivative v g T₀ p).genEigenspace μ k :=
+    (show TangentSpace I q →L[ℝ] TangentSpace I p from
+      mfderiv I I (flowTransition v g (-T) q) q).toLinearMap.restrict fun _ hw ↦
+        Module.End.mapsTo_genEigenspace_of_comp _ (returnDerivative_comp_mfderiv_flowTransition hv
+          hneg hback hQ hq' hg' hg'v hg hgv) μ k hw
+  refine ⟨LinearEquiv.ofLinearMap f f' ?_ ?_, fun w ↦ rfl⟩
+  · refine LinearMap.ext fun u ↦ Subtype.ext ?_
+    exact mfderiv_flowTransition_apply_mfderiv_flowTransition_of_add_eq_zero hv hneg hback hg'
+      hg'v hg hgv (neg_add_cancel T)
+      (genEigenspace_returnDerivative_le_ker hv hQ hq' hg' hg'v hμ k u.2)
+  · refine LinearMap.ext fun w ↦ Subtype.ext ?_
+    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v
+      (genEigenspace_returnDerivative_le_ker hv hP hp hg hgv hμ k w.2)
 
 /-- **The nonzero eigenspaces of linearized return maps do not depend on the section or the
 base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time `T₀`,
@@ -350,35 +355,24 @@ transition between the sections. -/
 theorem exists_linearEquiv_eigenspace_returnDerivative {μ : ℝ} (hμ : μ ≠ 0) :
     ∃ e : (returnDerivative v g T₀ p).eigenspace μ ≃ₗ[ℝ]
         (returnDerivative v g' T₀ q).eigenspace μ,
-      ∀ w, (e w : TangentSpace I q) = mfderiv I I (flowTransition v g' T p) p w := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
-  have hneg : (-T, q) ∈ flowDomain v := hq ▸ neg_mem_flowDomain_flowOf hv hT
-  have hback : flowOf v (-T) q = p := hq ▸ flowOf_neg_flowOf hv hT
-  let f : (returnDerivative v g T₀ p).eigenspace μ →ₗ[ℝ]
-      (returnDerivative v g' T₀ q).eigenspace μ :=
-    (show TangentSpace I p →L[ℝ] TangentSpace I q from
-      mfderiv I I (flowTransition v g' T p) p).toLinearMap.restrict fun _ ↦
-        mfderiv_flowTransition_mem_eigenspace_returnDerivative hv hT hq hP hp hg hgv hg' hg'v
-  let f' : (returnDerivative v g' T₀ q).eigenspace μ →ₗ[ℝ]
-      (returnDerivative v g T₀ p).eigenspace μ :=
-    (show TangentSpace I q →L[ℝ] TangentSpace I p from
-      mfderiv I I (flowTransition v g (-T) q) q).toLinearMap.restrict fun _ ↦
-        mfderiv_flowTransition_mem_eigenspace_returnDerivative hv hneg hback hQ hq' hg' hg'v hg hgv
-  refine ⟨LinearEquiv.ofLinearMap f f' ?_ ?_, fun w ↦ rfl⟩
-  · refine LinearMap.ext fun u ↦ Subtype.ext ?_
-    exact mfderiv_flowTransition_apply_mfderiv_flowTransition_of_add_eq_zero hv hneg hback hg'
-      hg'v hg hgv (neg_add_cancel T) (eigenspace_returnDerivative_le_ker hv hQ hq' hg' hg'v hμ u.2)
-  · refine LinearMap.ext fun w ↦ Subtype.ext ?_
-    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v
-      (eigenspace_returnDerivative_le_ker hv hP hp hg hgv hμ w.2)
+      ∀ w, (e w : TangentSpace I q) = mfderiv I I (flowTransition v g' T p) p w :=
+  exists_linearEquiv_genEigenspace_returnDerivative hv hT hq hP hp hg hgv hg' hg'v hμ 1
+
+/-- The nonzero generalized eigenspaces of the linearized return maps at time `T₀` of transverse
+sections through two points of a periodic orbit have the same dimension. For `k = ⊤` these
+dimensions are the algebraic multiplicities. -/
+theorem finrank_genEigenspace_returnDerivative_eq {μ : ℝ} (hμ : μ ≠ 0) (k : ℕ∞) :
+    Module.finrank ℝ ((returnDerivative v g T₀ p).genEigenspace μ k) =
+      Module.finrank ℝ ((returnDerivative v g' T₀ q).genEigenspace μ k) :=
+  (exists_linearEquiv_genEigenspace_returnDerivative hv hT hq hP hp hg hgv hg' hg'v hμ k).choose
+    |>.finrank_eq
 
 /-- The nonzero eigenspaces of the linearized return maps at time `T₀` of transverse sections
 through two points of a periodic orbit have the same dimension. -/
 theorem finrank_eigenspace_returnDerivative_eq {μ : ℝ} (hμ : μ ≠ 0) :
     Module.finrank ℝ ((returnDerivative v g T₀ p).eigenspace μ) =
       Module.finrank ℝ ((returnDerivative v g' T₀ q).eigenspace μ) :=
-  (exists_linearEquiv_eigenspace_returnDerivative hv hT hq hP hp hg hgv hg' hg'v hμ).choose
-    |>.finrank_eq
+  finrank_genEigenspace_returnDerivative_eq hv hT hq hP hp hg hgv hg' hg'v hμ 1
 
 /-- **The nonzero eigenvalues of linearized return maps do not depend on the section or the base
 point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time `T₀`, a
