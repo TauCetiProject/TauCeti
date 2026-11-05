@@ -45,6 +45,8 @@ to standard simplices.
 * `SSet.slice.isPullback_restrictionMap`, `SSet.slice.restrictionMap_comp` and
   `SSet.slice.isPullback_restrictionMapComp`: the behaviour of restriction maps under base change
   and composition.
+* `SSet.slice.hasLiftingProperty_restrictionMap`: lifting problems against a restriction map are
+  extension problems along a pushout-join `(B ⋆ K) ∪ (Y ⋆ L) ⟶ Y ⋆ K`.
 
 ## Implementation notes
 
@@ -521,6 +523,71 @@ lemma isPullback_restrictionMap {X' S' : SSet.{u}} {t : X' ⟶ X} {p' : X' ⟶ S
   · simp
   · exact hK.hom_ext (by simpa using hm₁)
       (by simpa using hm₂ =≫ Limits.pullback.snd _ _)
+
+/-- **Lifting against a restriction map is extension along a pushout-join.** For a monomorphism
+`j : L ⟶ K`, a subcomplex `B` of `Y` and a map `p : X ⟶ S` with the right lifting property with
+respect to the inclusion of `(B ⋆ K) ∪ (Y ⋆ j(L))` into `Y ⋆ K`, the restriction map
+`X_{/σ} ⟶ X_{/j ≫ σ} ×_{S_{/j ≫ σ ≫ p}} S_{/σ ≫ p}` has the right lifting property with respect
+to `B ⟶ Y`. Indeed, through the universal property of the slice a lifting square amounts to maps
+`B ⋆ K ⟶ X` and `Y ⋆ L ⟶ X`, agreeing on `B ⋆ L` and lying over a map `Y ⋆ K ⟶ S`, and a lift is
+an extension of the glued map to `Y ⋆ K` over `S`. -/
+theorem hasLiftingProperty_restrictionMap (j : L ⟶ K) [Mono j] {Y : SSet.{u}} (B : Y.Subcomplex)
+    (p : X ⟶ S) (σ : K ⟶ X) [HasLiftingProperty (B.unionJoin (Subcomplex.range j)).ι p] :
+    HasLiftingProperty B.ι (restrictionMap j p σ) := by
+  refine ⟨fun {a b} sq ↦ ?_⟩
+  let A := Subcomplex.range j
+  -- The cone `α` over `σ` on `B`, the cone `β` over `j ≫ σ` on `Y` and its image `γ` in `S`, a
+  -- cone over `σ ≫ p` on `Y`, with their compatibilities.
+  let α := (homEquiv a).1
+  let β := (homEquiv (b ≫ Limits.pullback.fst _ _)).1
+  let γ := (homEquiv (b ≫ Limits.pullback.snd _ _)).1
+  have hαβ : join.map (𝟙 _) j ≫ α = join.map B.ι (𝟙 L) ≫ β := by
+    have h := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ Limits.pullback.fst _ _)
+    simp only [Category.assoc, restrictionMap_fst] at h
+    rwa [homEquiv_comp_map_coe, Category.comp_id, homEquiv_comp_coe] at h
+  have hαγ : α ≫ p = join.map B.ι (𝟙 K) ≫ γ := by
+    have h := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ Limits.pullback.snd _ _)
+    simp only [Category.assoc, restrictionMap_snd] at h
+    rwa [homEquiv_comp_map_coe, join.map_id, Category.id_comp, homEquiv_comp_coe] at h
+  have hβγ : β ≫ p = join.map (𝟙 Y) j ≫ γ := by
+    have h := congrArg (fun F ↦ (homEquiv F).1) (b ≫= Limits.pullback.condition)
+    simp only [← Category.assoc] at h
+    rwa [homEquiv_comp_map_coe, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
+      Category.comp_id] at h
+  -- Transport `β` along the isomorphism `L ≅ j(L)` and glue it with `α` on the pushout-join.
+  have he : inv (Subcomplex.toRange j) ≫ j = A.ι := by
+    rw [IsIso.inv_comp_eq, Subcomplex.toRange_ι]
+  let β' := join.map (𝟙 Y) (inv (Subcomplex.toRange j)) ≫ β
+  have hpush := Subcomplex.unionJoin.isPushout B A
+  have hw : join.map (𝟙 (B : SSet)) A.ι ≫ α = join.map B.ι (𝟙 (A : SSet)) ≫ β' :=
+    calc join.map (𝟙 (B : SSet)) A.ι ≫ α =
+        join.map (𝟙 _) (inv (Subcomplex.toRange j)) ≫ join.map (𝟙 _) j ≫ α := by
+          rw [← join.map_comp_assoc, he, Category.id_comp]
+      _ = join.map B.ι (𝟙 (A : SSet)) ≫ β' := by
+          rw [hαβ]
+          simp only [β', ← join.map_comp_assoc, Category.id_comp, Category.comp_id]
+  have sq' : CommSq (hpush.desc α β' hw) (B.unionJoin A).ι p γ := ⟨hpush.hom_ext
+    (by simp only [IsPushout.inl_desc_assoc, Subcomplex.unionJoin.ι₁_ι_assoc, hαγ])
+    (by simp only [IsPushout.inr_desc_assoc, Subcomplex.unionJoin.ι₂_ι_assoc, β',
+      Category.assoc, hβγ, ← join.map_comp_assoc, he, Category.id_comp])⟩
+  have h₁ : join.map B.ι (𝟙 K) ≫ sq'.lift = α := by
+    rw [← Subcomplex.unionJoin.ι₁_ι, Category.assoc, sq'.fac_left, IsPushout.inl_desc]
+  have h₂ : join.map (𝟙 Y) A.ι ≫ sq'.lift = β' := by
+    rw [← Subcomplex.unionJoin.ι₂_ι, Category.assoc, sq'.fac_left, IsPushout.inr_desc]
+  have hj : join.map (𝟙 Y) j = join.map (𝟙 Y) (Subcomplex.toRange j) ≫ join.map (𝟙 Y) A.ι := by
+    rw [← join.map_comp, Category.comp_id, Subcomplex.toRange_ι]
+  refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, ?_, ?_⟩⟩⟩
+  · calc join.inr _ _ ≫ sq'.lift = join.inr _ _ ≫ join.map B.ι (𝟙 K) ≫ sq'.lift := by
+          rw [join.inr_map_assoc, Category.id_comp]
+      _ = σ := by rw [h₁, (homEquiv a).2]
+  · exact hom_ext (by rw [homEquiv_comp_coe, Equiv.apply_symm_apply, h₁])
+  · refine Limits.pullback.hom_ext (hom_ext ?_) (hom_ext ?_)
+    · rw [Category.assoc, restrictionMap_fst, homEquiv_comp_map_coe, Equiv.apply_symm_apply,
+        Category.comp_id, hj, Category.assoc, h₂]
+      simp only [β', β, ← join.map_comp_assoc, IsIso.hom_inv_id, Category.id_comp, join.map_id]
+    · rw [Category.assoc, restrictionMap_snd, homEquiv_comp_map_coe, Equiv.apply_symm_apply,
+        join.map_id, Category.id_comp]
+      exact sq'.fac_right
 
 section comp
 

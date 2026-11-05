@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 
 import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.RelativeCellComplex
 import Mathlib.AlgebraicTopology.SimplicialSet.Presentable
@@ -247,6 +248,24 @@ lemma leftAnodyneExtensions.horn_ι {n : ℕ} {i : Fin (n + 1)} (hn : i < Fin.la
 lemma rightAnodyneExtensions.horn_ι {n : ℕ} {i : Fin (n + 1)} (h0 : 0 < i) :
     rightAnodyneExtensions.{u} Λ[n, i].ι :=
   le_llp_rlp _ _ (horn_ι_mem_rightHornInclusions h0)
+
+/-- The inclusion `stdSimplex.δ 1 : Δ[0] ⟶ Δ[1]` of the vertex `0` is a left anodyne extension:
+its image is the left horn `Λ[1, 0]`. -/
+lemma leftAnodyneExtensions.stdSimplex_δ_one :
+    leftAnodyneExtensions.{u} (stdSimplex.δ (1 : Fin 2)) := by
+  rw [← Subcomplex.toRange_ι (stdSimplex.δ 1)]
+  refine (MorphismProperty.cancel_left_of_respectsIso _ _ _).2 ?_
+  rw [stdSimplex.range_δ_eq_horn_one]
+  exact horn_ι (by decide)
+
+/-- The inclusion `stdSimplex.δ 0 : Δ[0] ⟶ Δ[1]` of the vertex `1` is a right anodyne extension:
+its image is the right horn `Λ[1, 1]`. -/
+lemma rightAnodyneExtensions.stdSimplex_δ_zero :
+    rightAnodyneExtensions.{u} (stdSimplex.δ (0 : Fin 2)) := by
+  rw [← Subcomplex.toRange_ι (stdSimplex.δ 0)]
+  refine (MorphismProperty.cancel_left_of_respectsIso _ _ _).2 ?_
+  rw [stdSimplex.range_δ_eq_horn_one]
+  exact horn_ι (by decide)
 
 lemma leftAnodyneExtensions.hasLiftingProperty {A B X Y : SSet.{u}} {i : A ⟶ B}
     (hi : leftAnodyneExtensions i) (p : X ⟶ Y) [LeftFibration p] : HasLiftingProperty i p :=

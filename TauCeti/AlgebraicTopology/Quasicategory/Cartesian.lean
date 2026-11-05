@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
+public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Slice
 
 /-!
@@ -22,9 +24,11 @@ every edge of `S` ending at the image of a vertex `y` of `X` lifts to a `p`-Cart
 at `y`.
 
 Cartesian fibrations over `S` are the fibrations which straightening identifies with contravariant
-functors from `S` to `∞`-categories; coCartesian fibrations, their duals, correspond to covariant
-functors. This file sets up the definitions and their formal properties: stability under
-isomorphisms, base change and composition.
+functors from `S` to `∞`-categories; coCartesian fibrations, their duals
+(`SSet.CocartesianFibration`), correspond to covariant functors. This file sets up the definitions
+and their formal properties, stability under isomorphisms, base change and composition, and shows
+that every edge of a right fibration is Cartesian, so that right fibrations are Cartesian
+fibrations.
 
 ## Main definitions
 
@@ -39,13 +43,23 @@ isomorphisms, base change and composition.
   pulled-back map when its image is Cartesian along the original one.
 * `SSet.Edge.IsCartesian.comp`: if `f` is `p`-Cartesian and `p f` is `r`-Cartesian, then `f` is
   `p ≫ r`-Cartesian.
+* `SSet.Edge.isCartesian_of_rightFibration`: every edge of a right fibration is Cartesian.
 * `SSet.CartesianFibration.of_isPullback`, `SSet.CartesianFibration.comp`: Cartesian fibrations
-  are stable under base change and composition, and isomorphisms are Cartesian fibrations.
+  are stable under base change and composition, and isomorphisms and right fibrations are
+  Cartesian fibrations.
+
+## Implementation notes
+
+That an edge `f : Δ[1] ⟶ X` of a right fibration `p` is Cartesian is a lifting property of the
+boundary inclusions `∂Δ[n] ⟶ Δ[n]` against the restriction map. Through the universal property of
+the slice (`SSet.slice.hasLiftingProperty_restrictionMap`) it becomes a lifting property of the
+pushout-join `(∂Δ[n] ⋆ Δ[1]) ∪ (Δ[n] ⋆ Λ[1, 1]) ⟶ Δ[n] ⋆ Δ[1]` against `p`, and this inclusion is
+the right horn `Λ[n + 2, n + 2] ⟶ Δ[n + 2]` (`SSet.join.preimage_unionJoin_boundary_horn`).
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, Definition 2.4.1.1, Proposition 2.4.1.3, Definition 2.4.2.1
-  and Proposition 2.4.2.3.
+* J. Lurie, *Higher Topos Theory*, Definition 2.4.1.1, Proposition 2.4.1.3, Remark 2.4.1.4,
+  Definition 2.4.2.1 and Propositions 2.4.2.3 and 2.4.2.4.
 -/
 public section
 
@@ -101,6 +115,24 @@ lemma IsCartesian.comp {Z : SSet.{u}} {f : Edge x y} {p : X ⟶ S} {r : S ⟶ Z}
   rw [isCartesian_iff, slice.restrictionMap_comp]
   exact (monomorphisms SSet.{u}).rlp.comp_mem _ _ hf
     ((monomorphisms SSet.{u}).rlp.of_isPullback (slice.isPullback_restrictionMapComp _ _ _ _) hpf)
+
+/-- **Every edge of a right fibration is Cartesian.** Lifting a boundary inclusion
+`∂Δ[n] ⟶ Δ[n]` against the restriction map of an edge amounts to lifting the right horn
+`Λ[n + 2, n + 2] ⟶ Δ[n + 2]`, the pushout-join `(∂Δ[n] ⋆ Δ[1]) ∪ (Δ[n] ⋆ Λ[1, 1]) ⟶ Δ[n] ⋆ Δ[1]`,
+against `p`. -/
+theorem isCartesian_of_rightFibration (f : Edge x y) (p : X ⟶ S) [RightFibration p] :
+    f.IsCartesian p := by
+  rw [isCartesian_iff, rlp_monomorphisms]
+  rintro _ _ _ ⟨n⟩
+  have : HasLiftingProperty
+      ((∂Δ[n]).unionJoin (Subcomplex.range (stdSimplex.δ (0 : Fin 2)))).ι p := by
+    rw [stdSimplex.range_δ_eq_horn_one]
+    refine rightAnodyneExtensions.hasLiftingProperty ?_ p
+    refine (Subcomplex.morphismProperty_ι_iff_of_preimage_eq _ (join.stdSimplexIso n 1)
+      (join.preimage_unionJoin_boundary_horn n one_ne_zero _)).2
+      (rightAnodyneExtensions.horn_ι ?_)
+    simp [Fin.lt_def]
+  exact slice.hasLiftingProperty_restrictionMap _ _ _ _
 
 end Edge
 
@@ -167,6 +199,22 @@ instance comp {Z : SSet.{u}} (p : X ⟶ S) (r : S ⟶ Z) [CartesianFibration p]
     refine ⟨x, f, hf.comp (hg.of_edge_eq hfe.symm), ?_⟩
     simp only [Edge.map_edge, Edge.mk_edge] at hge hfe ⊢
     rw [NatTrans.comp_app, ConcreteCategory.comp_apply, hfe, hge]
+
+/-- **Right fibrations are Cartesian fibrations**: every edge of a right fibration is Cartesian
+(`SSet.Edge.isCartesian_of_rightFibration`), and edges lift with specified target since
+`stdSimplex.δ 0 : Δ[0] ⟶ Δ[1]` is right anodyne. -/
+instance of_rightFibration (p : X ⟶ S) [RightFibration p] : CartesianFibration p where
+  exists_isCartesian_lift {y s} e := by
+    have sq : CommSq (yonedaEquiv.symm y) (stdSimplex.δ 0) p (yonedaEquiv.symm e.edge) :=
+      ⟨by rw [yonedaEquiv_symm_comp, stdSimplex.δ_comp_yonedaEquiv_symm, e.tgt_eq]⟩
+    have := rightAnodyneExtensions.stdSimplex_δ_zero.hasLiftingProperty p
+    have htgt : X.δ 0 (yonedaEquiv sq.lift) = y := by
+      apply yonedaEquiv.symm.injective
+      rw [← stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.symm_apply_apply, sq.fac_left]
+    refine ⟨_, Edge.mk (yonedaEquiv sq.lift) rfl htgt,
+      Edge.isCartesian_of_rightFibration _ p, ?_⟩
+    simp only [Edge.map_edge, Edge.mk_edge]
+    rw [← yonedaEquiv_comp, sq.fac_right, Equiv.apply_symm_apply]
 
 end CartesianFibration
 
