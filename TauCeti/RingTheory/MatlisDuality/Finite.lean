@@ -73,16 +73,6 @@ theorem isArtinian_linearMap_of_finite (M : Type w) [AddCommGroup M] [Module R M
 
 variable [IsAdicComplete (maximalIdeal R) R]
 
-/-- Over a complete Noetherian local ring, every endomorphism of the injective hull of the
-residue field is scalar multiplication. -/
-theorem exists_eq_smul_id (f : Module.End R E) : ∃ r : R, f = r • LinearMap.id := by
-  obtain ⟨r, hr⟩ := (AdicCompletion.of_bijective (maximalIdeal R) R).surjective
-    (hι.adicCompletionEquivEnd.symm f)
-  refine ⟨r, LinearMap.ext fun x ↦ ?_⟩
-  have h := hι.adicCompletionEquivEnd_of r x
-  rw [hr, AlgEquiv.apply_symm_apply] at h
-  exact h
-
 variable (M : Type w) [AddCommGroup M] [Module R M] [Module.Finite R M]
 
 /-- Matlis biduality for finitely generated modules over a complete Noetherian local ring:
