@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod.Standard
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Dynkin
 
 /-!

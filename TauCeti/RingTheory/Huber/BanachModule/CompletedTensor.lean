@@ -76,6 +76,9 @@ products with a finite projective factor can be computed with the algebraic tens
   and `dense_span_range_tmul`: the elementary tensors span a dense submodule.
 * `TauCeti.Huber.BanachModule.CompletedTensor.lift_tmul` and `ext`: the universal property.
 * `TauCeti.Huber.BanachModule.CompletedTensor.map_tmul`, `map_id`, `map_comp`: functoriality.
+* `TauCeti.Huber.BanachModule.CompletedTensor.prodLeft`: completed tensoring in the first
+  variable preserves binary products, with component formulas `prodLeft_apply` and
+  `prodLeft_symm_apply`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.lid_tmul`: the unit isomorphism sends `a ⊗ m` to
   `a • m`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.toCompletion_bijective_of_finite_projective`:
@@ -403,6 +406,66 @@ theorem map_comp (f₂ : V' →L[A] V'') (g₂ : W' →L[A] W'') (f₁ : V →L[
   ext fun v w ↦ by simp
 
 end Map
+
+section Product
+
+variable [IsTopologicalRing A]
+  {U : Type*} [AddCommGroup U] [Module A U] [TopologicalSpace U]
+  {Q : Type*} [AddCommGroup Q] [Module A Q] [TopologicalSpace Q]
+
+/-- Completed tensoring in the first variable preserves binary products. -/
+noncomputable def prodLeft :
+    CompletedTensor A (U × Q) W ≃L[A]
+      CompletedTensor A U W × CompletedTensor A Q W :=
+  ContinuousLinearEquiv.equivOfInverse'
+    ((map (ContinuousLinearMap.fst A U Q) (.id A W)).prod
+      (map (ContinuousLinearMap.snd A U Q) (.id A W)))
+    ((map (ContinuousLinearMap.inl A U Q) (.id A W)).coprod
+      (map (ContinuousLinearMap.inr A U Q) (.id A W)))
+    (by ext v w <;> simp)
+    (by
+      apply ext
+      intro v w
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
+        ContinuousLinearMap.coprod_apply, map_tmul, ContinuousLinearMap.id_apply,
+        ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply]
+      rw [← LinearMap.add_apply, ← map_add]
+      simp)
+
+/-- The product comparison is given by the two completed tensor projections. -/
+theorem prodLeft_apply (z : CompletedTensor A (U × Q) W) :
+    prodLeft z =
+      (map (ContinuousLinearMap.fst A U Q) (.id A W) z,
+        map (ContinuousLinearMap.snd A U Q) (.id A W) z) :=
+  (rfl)
+
+/-- The first component of the product comparison is the completed tensor projection. -/
+@[simp]
+theorem prodLeft_fst (z : CompletedTensor A (U × Q) W) :
+    (prodLeft z).1 = map (ContinuousLinearMap.fst A U Q) (.id A W) z :=
+  (rfl)
+
+/-- The second component of the product comparison is the completed tensor projection. -/
+@[simp]
+theorem prodLeft_snd (z : CompletedTensor A (U × Q) W) :
+    (prodLeft z).2 = map (ContinuousLinearMap.snd A U Q) (.id A W) z :=
+  (rfl)
+
+/-- The product comparison sends an elementary tensor to its two component tensors. -/
+@[simp]
+theorem prodLeft_tmul (v : U × Q) (w : W) :
+    prodLeft (tmul A (U × Q) W v w) = (tmul A U W v.1 w, tmul A Q W v.2 w) := by
+  simp [prodLeft]
+
+/-- The inverse product comparison is the sum of the two completed tensor inclusions. -/
+@[simp]
+theorem prodLeft_symm_apply (x : CompletedTensor A U W) (y : CompletedTensor A Q W) :
+    prodLeft.symm (x, y) =
+      map (ContinuousLinearMap.inl A U Q) (.id A W) x +
+        map (ContinuousLinearMap.inr A U Q) (.id A W) y := by
+  rfl
+
+end Product
 
 section FiniteProjective
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Division
-public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.Normalization
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -96,27 +96,6 @@ structure IsEntirePreparation : Prop where
   /-- `F` is the product of the two factors. -/
   eq_mul : F = P * G
 
-/-- Dividing the polynomial factor of a normalised entire preparation by its leading coefficient
-`u`, and multiplying the series factor by `u`, writes `F` as a unit of the ring of restricted
-series times a monic polynomial of degree `d`. -/
-private theorem IsEntirePreparation.exists_isUnit_isMonicOfDegree_mul_eq
-    (h : IsEntirePreparation c d F P G) :
-    ∃ e : IsRestricted.subring (R := R) c, IsUnit e ∧
-      (h.isUnit_leadingCoeff.unit⁻¹ • P).IsMonicOfDegree d ∧ (e : R⟦X⟧) = P.leadingCoeff • G ∧
-      (e : R⟦X⟧) * ((h.isUnit_leadingCoeff.unit⁻¹ • P : Polynomial R) : R⟦X⟧) = F := by
-  set u := h.isUnit_leadingCoeff.unit
-  have hu : (u : R) = P.leadingCoeff := h.isUnit_leadingCoeff.unit_spec
-  refine ⟨algebraMap R _ u * ⟨G, h.isEntire.isRestricted c⟩,
-    (u.isUnit.map (algebraMap R _)).mul h.isUnit,
-    ⟨by rw [Polynomial.natDegree_smul_of_smul_regular P (IsSMulRegular.all _), h.natDegree_eq],
-      Polynomial.monic_of_isUnit_leadingCoeff_inv_smul h.isUnit_leadingCoeff⟩, ?_, ?_⟩
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
-      hu, smul_eq_C_mul]
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
-      ← smul_eq_C_mul, Units.smul_def, Polynomial.coe_smul,
-      smul_mul_smul_comm, u.mul_inv, one_smul, mul_comm]
-    exact h.eq_mul.symm
-
 /-- **The normalised preparation rescales every unit-times-monic factorization.** Let `F` be
 multiplicatively distinguished of degree `d` at a positive radius `c`, and let `F = e * ω` with
 `e` a unit of the ring of series restricted at `c` and `ω` a monic polynomial of degree `d`. Then
@@ -129,10 +108,8 @@ theorem IsEntirePreparation.eq_smul_and_smul_eq (h : IsEntirePreparation c d F P
     {ω : Polynomial R} (he : IsUnit e) (hω : ω.IsMonicOfDegree d)
     (heω : (e : R⟦X⟧) * (ω : R⟦X⟧) = F) :
     P = P.leadingCoeff • ω ∧ P.leadingCoeff • G = e := by
-  obtain ⟨e', he', hω', he'G, he'F⟩ := h.exists_isUnit_isMonicOfDegree_mul_eq
-  obtain ⟨rfl, rfl⟩ := hF.eq_and_eq_of_mul_eq_of_mul_eq hc he' he hω' hω he'F heω
-  refine ⟨?_, he'G.symm⟩
-  rw [Units.smul_def, smul_smul, h.isUnit_leadingCoeff.mul_val_inv, one_smul]
+  exact hF.eq_smul_and_smul_eq hc h.isUnit_leadingCoeff h.natDegree_eq h.isUnit
+    h.eq_mul he hω heω
 
 /-- **Uniqueness of the normalised entire preparation.** Over an ultrametric normed commutative
 ring, a series multiplicatively distinguished of degree `d` at a positive radius `c` has at most
@@ -140,24 +117,10 @@ one normalised entire preparation at `c` in degree `d`. -/
 theorem IsEntirePreparation.unique (h : IsEntirePreparation c d F P G)
     (h' : IsEntirePreparation c d F P' G') (hF : IsMulDistinguished c d F) (hc : 0 < c) :
     P = P' ∧ G = G' := by
-  obtain ⟨e', he', hω', he'G, he'F⟩ := h'.exists_isUnit_isMonicOfDegree_mul_eq
-  obtain ⟨hP, hG⟩ := h.eq_smul_and_smul_eq hF hc he' hω' he'F
-  set ω := h'.isUnit_leadingCoeff.unit⁻¹ • P' with hω
-  -- Both `P` and `P'` are multiples of `ω` with constant coefficient `1`, so their leading
-  -- coefficients are both the inverse of the constant coefficient of `ω`.
-  have h1 : P.leadingCoeff * ω.coeff 0 = 1 := by
-    rw [← smul_eq_mul, ← Polynomial.coeff_smul, ← hP, h.coeff_zero_eq_one]
-  have h2 : P'.leadingCoeff * ω.coeff 0 = 1 := by
-    rw [hω, Units.smul_def, Polynomial.coeff_smul, smul_eq_mul, ← mul_assoc,
-      h'.isUnit_leadingCoeff.mul_val_inv, one_mul, h'.coeff_zero_eq_one]
-  have ha : P.leadingCoeff = P'.leadingCoeff :=
-    calc P.leadingCoeff = P.leadingCoeff * (P'.leadingCoeff * ω.coeff 0) := by rw [h2, mul_one]
-      _ = P'.leadingCoeff * (P.leadingCoeff * ω.coeff 0) := by ring
-      _ = P'.leadingCoeff := by rw [h1, mul_one]
-  refine ⟨?_, ?_⟩
-  · rw [hP, ha, hω, Units.smul_def, smul_smul, h'.isUnit_leadingCoeff.mul_val_inv, one_smul]
-  · rw [he'G, ← ha] at hG
-    exact (h.isUnit_leadingCoeff.smul_left_cancel).mp hG
+  obtain ⟨hP, hG⟩ := hF.eq_and_eq_of_normalized_mul_eq hc h.isUnit_leadingCoeff
+    h'.isUnit_leadingCoeff h.natDegree_eq h'.natDegree_eq h.coeff_zero_eq_one
+    h'.coeff_zero_eq_one h.isUnit h'.isUnit h.eq_mul h'.eq_mul
+  exact ⟨hP, congrArg Subtype.val hG⟩
 
 /-- A normalised entire preparation at the radius `c` is one at every radius `c'` with
 `|c'| ≤ |c|`. Together with `TauCeti.PowerSeries.IsEntirePreparation.unique`, the normalised
@@ -179,30 +142,17 @@ theorem IsMulDistinguished.exists_isEntirePreparation [CompleteSpace R]
     hF.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq hc (hFe.isRestricted c)
   have heE : (e : R⟦X⟧).IsEntire :=
     hωd.isEntire_of_isEntire_coe_mul hc hω e.2 (by rw [mul_comm, heω]; exact hFe)
-  -- `F(0) = e(0) * ω(0) = 1`, so `e(0)` is a unit with inverse `ω(0)`.
-  have h0 : constantCoeff (e : R⟦X⟧) * ω.coeff 0 = 1 := by
-    rw [← hF0, ← heω, map_mul, ← Polynomial.coeff_coe, coeff_zero_eq_constantCoeff_apply]
-  let v : Rˣ := ⟨constantCoeff (e : R⟦X⟧), ω.coeff 0, h0, by rw [mul_comm]; exact h0⟩
-  refine ⟨v • ω, ((v⁻¹ : Rˣ) : R) • (e : R⟦X⟧),
-    { coeff_zero_eq_one := by rw [Units.smul_def, Polynomial.coeff_smul, smul_eq_mul]; exact h0
-      natDegree_eq := by
-        rw [Polynomial.natDegree_smul_of_smul_regular ω (IsSMulRegular.all _), hω.natDegree_eq]
-      isUnit_leadingCoeff := by
-        rw [Polynomial.leadingCoeff_smul_of_smul_regular ω (IsSMulRegular.all _),
-          hω.leadingCoeff_eq, Units.smul_def, smul_eq_mul, mul_one]
-        exact v.isUnit
-      isEntire := heE.smul _
-      constantCoeff_eq_one := by
-        rw [smul_eq_C_mul, map_mul, constantCoeff_C, mul_comm]
-        exact v.mul_inv
-      isUnit := ?_
-      eq_mul := ?_ }⟩
-  · convert ((v⁻¹).isUnit.map (algebraMap R (IsRestricted.subring (R := R) c))).mul he using 1
-    refine Subtype.ext ?_
-    rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply]
-    exact smul_eq_C_mul _ _
-  · rw [Units.smul_def, Polynomial.coe_smul, smul_mul_smul_comm, v.mul_inv, one_smul, mul_comm,
-      heω]
+  obtain ⟨a, U, hP0, hd, ha, hU0, hU, hPU, hUe⟩ :=
+    exists_normalized_factors_of_mul_eq he hω heω hF0
+  have hUE : (U : R⟦X⟧).IsEntire := hUe ▸ heE.smul _
+  exact ⟨a • ω, U,
+    { coeff_zero_eq_one := hP0
+      natDegree_eq := hd
+      isUnit_leadingCoeff := ha
+      isEntire := hUE
+      constantCoeff_eq_one := hU0
+      isUnit := hU
+      eq_mul := hPU }⟩
 
 /-- **Normalised preparation of entire series**, in its unique-existence form: over a complete
 ultrametric normed commutative ring, an entire series with constant coefficient `1` which is

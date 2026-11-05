@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.SymplecticGroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
@@ -62,6 +63,7 @@ symplectic coordinate Hopf algebra and group scheme live in
   `TauCeti.GLSymplecticFin.mulEquivGLSymplectic` identifying the two presentations. The
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
+* `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
 * `TauCeti.GLSymplecticFin.differenceShortRootHom`, `positiveSumShortRootHom`, and
@@ -266,6 +268,14 @@ theorem JFin_submatrix :
 theorem JFin_eq_submatrix :
     JFin m R = (J (Fin m) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm :=
   (rfl)
+
+variable {m R} in
+/-- **The standard alternating form is nondegenerate**: `J` is invertible, its determinant being
+that of Mathlib's `Matrix.J`. -/
+theorem nondegenerate_JFin : (JFin m R).Nondegenerate :=
+  .of_det_mem_nonZeroDivisors <| by
+    rw [JFin_eq_submatrix, det_submatrix_equiv_self]
+    exact (isUnit_det_J _ _).mem_nonZeroDivisors
 
 /-- The transported alternating form of `Sp₄`, written out. -/
 theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
