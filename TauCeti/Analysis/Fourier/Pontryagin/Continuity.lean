@@ -34,31 +34,10 @@ variable {G : Type*} [AddMonoid G] [TopologicalSpace G] [WeaklyLocallyCompactSpa
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
 
-omit [MeasurableSpace (PontryaginDual (Multiplicative G))]
-  [OpensMeasurableSpace (PontryaginDual (Multiplicative G))] in
-/-- Characters in a compact set `K` are uniformly close at `x` and at `g`, once `x` is near `g`. -/
-private theorem eventually_forall_norm_sub_le (g : G) {K : Set (PontryaginDual (Multiplicative G))}
-    (hK : IsCompact K) {δ : ℝ} (hδ : 0 < δ) :
-    ∀ᶠ x in 𝓝 g, ∀ χ ∈ K,
-      ‖(χ (Multiplicative.ofAdd x) : ℂ) - (χ (Multiplicative.ofAdd g) : ℂ)‖ ≤ δ := by
-  -- Joint evaluation and compactness give a common bound for all characters in K.
-  have heval : Continuous (fun p : G × PontryaginDual (Multiplicative G) =>
-      (p.2 (Multiplicative.ofAdd p.1) : ℂ)) :=
-    continuous_subtype_val.comp
-      ((continuous_eval (F := Multiplicative G →ₜ* Circle)).comp
-        (continuous_snd.prodMk (continuous_ofAdd.comp continuous_fst)))
-  apply hK.eventually_forall_of_forall_eventually
-  intro χ _
-  have hcont := (heval.sub
-    ((PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)).comp
-      continuous_snd)).norm
-  exact (hcont.continuousAt.eventually_lt continuousAt_const
-    (by simpa using hδ)).mono fun _ h => h.le
-
 omit [WeaklyLocallyCompactSpace G] in
 /-- Splitting the integral over a compact set `K` and its complement: the transform values at `x`
-and `g` differ by less than `ε` when the characters are `δ`-close on `K` and `K` carries all but
-`ε / 8` of the mass. -/
+and `g` differ by less than `ε` when the characters are `δ`-close on `K` with
+`δ * μ(K) ≤ ε / 4`, and `K` carries all but `ε / 8` of the mass. -/
 private theorem norm_transform_sub_lt (μ : FiniteMeasure (PontryaginDual (Multiplicative G)))
     {K : Set (PontryaginDual (Multiplicative G))} (hKmeas : MeasurableSet K) {x g : G} {δ ε : ℝ}
     (hx : ∀ χ ∈ K, ‖(χ (Multiplicative.ofAdd x) : ℂ) - (χ (Multiplicative.ofAdd g) : ℂ)‖ ≤ δ)
@@ -107,7 +86,8 @@ theorem _root_.MeasureTheory.FiniteMeasure.continuous_pontryaginMeasureTransform
       ENNReal.toReal_mono ENNReal.ofReal_ne_top (hKmass μ.toMeasure (Set.mem_singleton _))
   let δ := ε / (4 * C)
   have hδ : 0 < δ := by dsimp [δ]; positivity
-  have hnear := eventually_forall_norm_sub_le g hK hδ
+  have hnear := continuous_ofAdd.continuousAt.eventually
+    (PontryaginDual.eventually_forall_norm_coe_eval_sub_le (Multiplicative.ofAdd g) hK hδ)
   filter_upwards [hnear] with x hx
   -- The ball basis expresses continuity through the distance between transform values.
   change dist (μ.pontryaginMeasureTransform x) (μ.pontryaginMeasureTransform g) < ε
