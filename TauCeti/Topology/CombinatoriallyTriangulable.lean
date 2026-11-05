@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Triangulable
+public import TauCeti.Topology.Triangulable.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 
 /-!

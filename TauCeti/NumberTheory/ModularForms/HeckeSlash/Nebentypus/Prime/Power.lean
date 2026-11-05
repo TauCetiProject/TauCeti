@@ -148,7 +148,7 @@ theorem qExpansion_coeff_prime_pow_mul_heckeRingHomCharSpace_heckeTGeneratorRecG
             (p ^ (j + r - 2 * i) * m) := by
   induction r using Nat.twoStepInduction generalizing j with
   | zero =>
-    rw [heckeTGeneratorRecGamma0_zero, map_one, Module.End.one_apply]
+    rw [heckeTGeneratorRecGamma0_zero, map_one, one_apply_eq_self]
     simp
   | one =>
     rw [heckeTGeneratorRecGamma0_one]
@@ -212,7 +212,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorRecGamma0_of_dvd_l
   induction r generalizing m with
   | zero => simp
   | succ r ih =>
-      rw [pow_succ', Module.End.mul_apply,
+      rw [pow_succ', mul_apply_eq_comp,
         coe_heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp]
       have hs := qExpansion_coeff_heckeTNat_of_primeFactors_subset (N := N) k p
         (Nat.primeFactors_mono hpN (NeZero.ne N))

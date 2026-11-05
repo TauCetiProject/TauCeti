@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.CyclicCohomology.Normalized.Basic
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
+import TauCeti.Data.Fin.Tuple.Basic
+import Mathlib.Algebra.Module.BigOperators
 
 /-!
 # Normalized Hochschild chains and their mixed operators
@@ -22,8 +24,9 @@ transposes are exactly the existing normalized cochain operators, so the cochain
 give `b² = B² = bB + Bb = 0` on chains. On a tensor, `B` is the signed sum of cyclic
 rotations with an initial unit. These are the operators used for periodic Chern chains.
 
-This file uses the quotient-by-degeneracies model; it does not yet identify it with the
-tensor product having factors `A / R1` or compare its homology with the full complex.
+This file uses the quotient-by-degeneracies model. Its identification with the tensor product
+having factors `A / R1` is in `Normalized.TensorCoordinates`. Comparison of its homology with
+the full complex is not established here.
 
 ## References
 
@@ -181,6 +184,21 @@ theorem B_tensor (n : ℕ) (a : Fin (n + 1) → A) :
   exact connesB_apply_of_mem_normalizedHochschildCochains
     (tensor_mem_normalizedHochschildCochains R A (n + 1)) a
 
+/-- Connes' boundary kills a tensor with a unit in any slot, including the initial slot. -/
+theorem B_tensor_eq_zero_of_eq_one {n : ℕ} (a : Fin (n + 1) → A) (i : Fin (n + 1))
+    (ha : a i = 1) : B R A n (tensor R A n a) = 0 := by
+  rw [B, lift_tensor]
+  exact connesB_apply_eq_zero_of_mem_normalizedHochschildCochains
+    (tensor_mem_normalizedHochschildCochains R A (n + 1)) a i ha
+
+/-- On a constant tensor of even degree, Connes' boundary inserts an initial unit and
+multiplies by the number of factors. -/
+theorem B_tensor_const {n : ℕ} (hn : Even n) (a : A) :
+    B R A n (tensor R A n (fun _ ↦ a)) =
+      (n + 1) • tensor R A (n + 1) (Fin.cons 1 (fun _ ↦ a)) := by
+  rw [B_tensor]
+  simp [Function.comp_def, (hn.mul_right _).neg_one_pow]
+
 variable {R A} {M : Type*} [AddCommGroup M] [Module R M]
 
 /-- The transpose of the normalized Connes boundary is Connes' cochain operator. -/
@@ -234,6 +252,43 @@ theorem b_tensor (n : ℕ) (a : Fin (n + 2) → A) :
     b R A n (tensor R A (n + 1) a) =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ i.val • tensor R A n (hochschildFace i a) := by
   rw [b, lift_tensor, hochschildCoboundary_apply]
+
+/-- On a constant idempotent tensor, the Hochschild boundary is zero in odd chain degree
+and the same constant tensor in even chain degree. -/
+theorem b_tensor_const {n : ℕ} {e : A} (he : IsIdempotentElem e) :
+    b R A n (tensor R A (n + 1) (fun _ ↦ e)) =
+      if Even n then 0 else tensor R A n (fun _ ↦ e) := by
+  rw [b, lift_tensor]
+  exact hochschildCoboundary_apply_const_of_isIdempotentElem _ he
+
+/-- The boundary of the even-degree word `1 ⊗ e ⊗ ⋯ ⊗ e` for an idempotent `e`. -/
+theorem b_tensor_cons_one {e : A} (he : IsIdempotentElem e) (k : ℕ) :
+    b R A (2 * k + 1) (tensor R A (2 * k + 2) (Fin.cons 1 (fun _ ↦ e))) =
+      2 • tensor R A (2 * k + 1) (fun _ ↦ e) -
+        tensor R A (2 * k + 1) (Fin.cons 1 (fun _ ↦ e)) := by
+  have hfirst : hochschildFace (0 : Fin (2 * k + 3)) (Fin.cons 1 (fun _ ↦ e)) =
+      fun _ ↦ e := by
+    exact hochschildFace_zero_cons_one _
+  have hlast : hochschildFace (Fin.last (2 * k + 2)) (Fin.cons 1 (fun _ ↦ e)) =
+      fun _ ↦ e := by
+    rw [hochschildFace_last]
+    ext i
+    refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp
+  have hmiddle (i : Fin (2 * k + 1)) :
+      hochschildFace i.succ.castSucc (Fin.cons 1 (fun _ ↦ e)) =
+        Fin.cons 1 (fun _ ↦ e) := by
+    rw [hochschildFace_succ_castSucc_cons, hochschildFace_const_of_isIdempotentElem he]
+  rw [b_tensor, Fin.sum_univ_castSucc, Fin.sum_univ_succ]
+  simp only [Fin.val_castSucc, Fin.val_succ, Fin.castSucc_zero, hmiddle, hfirst, hlast,
+    Fin.val_zero, pow_zero, one_smul, Fin.val_last]
+  have heven : Even (2 * k + 2) := ⟨k + 1, by omega⟩
+  have hpow : (-1 : ℤ) ^ (2 * k + 2) = 1 := heven.neg_one_pow
+  rw [hpow, one_smul]
+  simp_rw [pow_succ, mul_neg_one, neg_smul]
+  rw [Finset.sum_neg_distrib, ← Finset.sum_smul, Fin.sum_neg_one_pow]
+  rw [ite_eq_right (Nat.not_even_two_mul_add_one k), one_smul]
+  simp only [two_smul]
+  abel
 
 variable {R A} {M : Type*} [AddCommGroup M] [Module R M]
 

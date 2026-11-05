@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.PiTensorProduct.Finite
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorPower.Basic
+public import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
 # Tensor powers of representations
@@ -21,6 +22,7 @@ the character.
 ## Main definitions
 
 * `Representation.tensorPower` is the diagonal action on `⨂[R]^d M`.
+* `FDRep.tensorPower` is its bundled finite-dimensional form.
 * `Representation.tensorPowerAddEquiv` identifies the tensor product of the `d`-th and `e`-th
   tensor-power representations with the `(d + e)`-th one.
 
@@ -68,10 +70,8 @@ representations to the tensor power indexed by their sum. -/
 noncomputable def tensorPowerAddEquiv (ρ : Representation R G M) (d e : ℕ) :
     ((ρ.tensorPower d).tprod (ρ.tensorPower e)).Equiv (ρ.tensorPower (d + e)) :=
   .mk TensorPower.mulEquiv fun g => by
-    have h : Fin.append (fun _ : Fin d => ρ g) (fun _ : Fin e => ρ g) = fun _ => ρ g :=
-      Fin.append_castAdd_natAdd (f := fun _ : Fin (d + e) => ρ g)
-    simpa only [tprod_apply, tensorPower_apply, h] using
-      TauCeti.TensorPower.mulEquiv_comp_map (fun _ : Fin d => ρ g) (fun _ : Fin e => ρ g)
+    simpa only [tprod_apply, tensorPower_apply] using
+      TauCeti.TensorPower.mulEquiv_comp_map_const d e (ρ g)
 
 end CommSemiring
 
@@ -99,3 +99,26 @@ theorem char_tensorPower (ρ : Representation R G M) (d : ℕ) (g : G) :
 end Field
 
 end Representation
+
+namespace FDRep
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+/-- The diagonal action on the `n`-fold tensor power of a finite-dimensional representation.
+The zero-fold power is one-dimensional, including when the original representation is zero. -/
+noncomputable def tensorPower (V : FDRep k G) (n : ℕ) : FDRep k G :=
+  FDRep.of (Representation.tensorPower V.ρ n)
+
+/-- The bundled tensor power is the unbundled tensor-power action, bundled.
+Together with `FDRep.of_ρ'`, this recovers the action without unfolding `tensorPower`. -/
+theorem tensorPower_def (V : FDRep k G) (n : ℕ) :
+    V.tensorPower n = FDRep.of (Representation.tensorPower V.ρ n) :=
+  (rfl)
+
+/-- The character of the bundled tensor power is the corresponding power of the character. -/
+@[simp]
+theorem char_tensorPower (V : FDRep k G) (n : ℕ) (g : G) :
+    (V.tensorPower n).character g = V.character g ^ n := by
+  rw [tensorPower_def, character_of, Representation.char_tensorPower, character_ρ]
+
+end FDRep

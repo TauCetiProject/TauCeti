@@ -75,7 +75,7 @@ theorem lie_mulLeft_mulLeft_mem_derivationLieAlgebra (a b : A) :
   intro x y
   have h₁ := cancel _ (two_nsmul_linearized_jordan y b x a)
   have h₂ := cancel _ (two_nsmul_linearized_jordan y a x b)
-  simp only [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, LinearMap.mulLeft_apply]
+  simp only [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, LinearMap.mulLeft_apply]
   rw [← sub_eq_zero]
   have key : a * (b * (x * y)) - b * (a * (x * y)) -
       ((a * (b * x) - b * (a * x)) * y + x * (a * (b * y) - b * (a * y))) =

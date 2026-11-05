@@ -72,7 +72,8 @@ private theorem jacobson_bot_restricted {σ : Type*} :
     ⟨PowerSeries.C a * PowerSeries.X, (PowerSeries.isRestricted_C 1 a).mul
       (PowerSeries.X_eq (R := Tate σ) ▸ PowerSeries.isRestricted_monomial 1 1 1)⟩
   have hd := PowerSeries.isDistinguished_zero_of_isUnit zero_lt_one
-    ((Ideal.mem_jacobson_bot.mp hf) y)
+    ((Ring.mem_jacobson_iff.mp ((Ideal.jacobson_bot (R :=
+      PowerSeries.IsRestricted.subring (R := Tate σ) 1)) ▸ hf)) y)
   -- The constant coefficient of `1 + f * a Y` is `1`, and its coefficient in degree `k + 1`
   -- is `r * a`, whose coefficient at `t` is `b * b⁻¹ = 1`.
   have h0 : PowerSeries.coeff 0 ((f * y + 1 : PowerSeries.IsRestricted.subring (R := Tate σ) 1) :
@@ -102,11 +103,13 @@ private theorem isJacobsonRing_option {σ : Type*} [Finite σ] [IsJacobsonRing (
   · -- Transport the vanishing of the Jacobson radical along `Φ`.
     refine eq_bot_iff.mpr fun g hg ↦ (Ideal.mem_bot).mpr <| Φ.injective ?_
     rw [map_zero, ← Ideal.mem_bot, ← jacobson_bot_restricted]
-    refine Ideal.mem_jacobson_bot.mpr fun z ↦ ?_
-    simpa using (Ideal.mem_jacobson_bot.mp hg (Φ.symm z)).map Φ
+    rw [Ideal.jacobson_bot]
+    refine Ring.mem_jacobson_iff.mpr fun z ↦ ?_
+    simpa using (Ring.mem_jacobson_iff.mp ((Ideal.jacobson_bot (R :=
+      Tate (Option σ))) ▸ hg) (Φ.symm z)).map Φ
   · -- Make `f` distinguished in `Y`; then `S ⧸ (Φ (e f))` is finite over `R`.
     obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf
-    have := hd.finite_quotient zero_lt_one hu
+    have := (PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩).finite_quotient zero_lt_one
     have : Algebra.IsIntegral R (S ⧸ Ideal.span {Φ (e f)}) := Algebra.IsIntegral.of_finite R _
     have : IsJacobsonRing (S ⧸ Ideal.span {Φ (e f)}) :=
       isJacobsonRing_of_isIntegral (R := R)

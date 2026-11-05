@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.LinearAlgebra.Matrix.KroneckerPower
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 
 /-!
 # Permuting tensor factors
@@ -67,7 +67,7 @@ noncomputable def reindexRepresentation :
   map_mul' σ τ := by
     apply LinearMap.ext
     intro x
-    simp only [Module.End.mul_apply, LinearEquiv.coe_toLinearMap]
+    simp only [mul_apply_eq_comp, LinearEquiv.coe_toLinearMap]
     simpa only [Equiv.Perm.mul_def] using
       (reindex_reindex (R := R) (s := fun _ : ι => M) τ σ x).symm
 
@@ -82,7 +82,7 @@ theorem commute_reindexRepresentation_map (σ : Equiv.Perm ι) (f : M →ₗ[R] 
     Commute (reindexRepresentation R M ι σ) (map fun _ : ι => f) := by
   apply LinearMap.ext
   intro x
-  simpa only [Module.End.mul_apply, reindexRepresentation_apply,
+  simpa only [mul_apply_eq_comp, reindexRepresentation_apply,
     LinearEquiv.coe_toLinearMap] using
     (map_reindex (f := fun _ : ι => f) σ x).symm
 
@@ -255,9 +255,8 @@ theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} 
     LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
         (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
       A.kroneckerPower (Fin d) := by
-  ext v u
-  rw [LinearMap.toMatrix_apply, A.piTensorProductMap_tensorPowerBasis u, map_sum]
-  simp [Finsupp.single_apply, -tensorPowerBasis_apply]
+  rw [tensorPowerBasis_def]
+  exact A.toMatrix_piTensorProductMap_mulVecLin
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
 -- provable from the underlying tensor-action rules, so adding them to the simp set is redundant.

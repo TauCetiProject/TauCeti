@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.MetricSpace.Holder
@@ -19,6 +20,9 @@ applies to restrictions and yields the product estimate for the supremum-plus-H�
 For scalar multiplication by a factor vanishing off a set `s`, the second function need only be
 Hölder and bounded on `s` (`HolderWith.smul_of_eq_zero`): this is how a cutoff extends a function
 given on `s` to the whole space.
+
+For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
+most `‖L‖` times the Hölder bound on the increment of `g` (`HolderWith.norm_smulRight_sub_le`).
 
 The argument is adapted from `holderWith_bilinear_of_norm_le` in
 [DifferentialGeometry, Holder/Bilinear.lean](https://github.com/qinz1yang/differential-geometry/blob/7a48598d35109aa99d1cc678e2724c213cdf4ff3/DifferentialGeometry/Analysis/Schauder/Holder/Bilinear.lean).
@@ -130,5 +134,14 @@ theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
   · rw [edist_comm, edist_comm x]
     exact hcross y hy x hx
   · simp [hc0 x hx, hc0 y hy]
+
+/-- For a scalar-valued continuous multilinear map `L` and an `α`-Hölder function `g` with
+constant `H`, `‖L.smulRight (g x - g y)‖ ≤ H (‖L‖ dist(x, y)^α)`. -/
+theorem norm_smulRight_sub_le {ι Y : Type*} [Fintype ι] {E : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] [PseudoMetricSpace Y]
+    {H α : ℝ≥0} {g : Y → G} (hg : HolderWith H α g) (L : ContinuousMultilinearMap 𝕜 E 𝕜)
+    (x y : Y) : ‖L.smulRight (g x - g y)‖ ≤ H * (‖L‖ * dist x y ^ (α : ℝ)) := by
+  rw [ContinuousMultilinearMap.norm_smulRight, mul_left_comm, ← dist_eq_norm]
+  exact mul_le_mul_of_nonneg_left (hg.dist_le x y) (norm_nonneg _)
 
 end HolderWith

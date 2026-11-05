@@ -65,22 +65,14 @@ theorem taylorExpAt_one : D.taylorExpAt hD 1 = D.taylorExp hD := by
   ext a
   simp [taylorExpAt_apply]
 
-private theorem taylorExpAt_eq_exp_restrict (r : R) {n : ℕ}
-    (K : Submodule ℚ A)
-    (hstable : ∀ a ∈ K, (r • D).toLinearMap.toAddMonoidHom.toRatLinearMap a ∈ K)
-    (hnil : (((r • D).toLinearMap.toAddMonoidHom.toRatLinearMap).restrict hstable) ^ n = 0)
-    (a : K) (ha : D^[n] a = 0) :
-    D.taylorExpAt hD r a =
-      ((IsNilpotent.exp
-        (((r • D).toLinearMap.toAddMonoidHom.toRatLinearMap).restrict hstable)) a : A) := by
-  rw [taylorExpAt_apply_eq_sum D hD r ha, IsNilpotent.exp_eq_sum hnil,
-    LinearMap.sum_apply]
-  simp only [LinearMap.smul_apply, Submodule.coe_sum, Submodule.coe_smul]
-  apply sum_congr rfl
-  intro i _
-  rw [Module.End.pow_restrict, LinearMap.restrict_apply]
-  simp only [Module.End.pow_apply, AddMonoidHom.coe_toRatLinearMap,
-    LinearMap.toAddMonoidHom_coe, coeFn_coe, iterate_smul_apply]
+/-- Evaluating the polynomial flow at `r` is the Taylor exponential of `r • D`. -/
+theorem taylorExpAt_eq_taylorExp_smul (r : R) :
+    D.taylorExpAt hD r = (r • D).taylorExp (D.exists_iterate_smul_eq_zero hD r) := by
+  ext a
+  obtain ⟨n, hn⟩ := hD a
+  rw [taylorExpAt_apply_eq_sum D hD r hn,
+    taylorExp_apply_eq_sum _ _ (n := n) (by rw [iterate_smul_apply, hn, smul_zero])]
+  simp only [iterate_smul_apply]
 
 /-- Flowing for `s` and then for `r` is flowing for `r + s`. -/
 theorem taylorExpAt_add (r s : R) :
@@ -92,14 +84,14 @@ theorem taylorExpAt_add (r s : R) :
   let f := D.toLinearMap.toAddMonoidHom.toRatLinearMap
   let K := LinearMap.ker (f ^ n)
   have hmem (x : A) : x ∈ K ↔ D^[n] x = 0 := by
-    simp only [K, LinearMap.mem_ker, Module.End.pow_apply, f,
+    simp only [K, LinearMap.mem_ker, _root_.pow_apply_eq_iterate, f,
       AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe, coeFn_coe]
   have hstable (t : R) : ∀ x ∈ K, (t • D) x ∈ K := by
     intro x hx
     rw [hmem] at hx ⊢
     calc
       D^[n] ((t • D) x) = t • D^[n] (D x) := by
-        simpa only [Module.End.pow_apply, coeFn_coe, smul_apply] using
+        simpa only [_root_.pow_apply_eq_iterate, coeFn_coe, _root_.smul_apply] using
           (D.toLinearMap ^ n).map_smul t (D x)
       _ = 0 := by
         rw [← Function.iterate_succ_apply, Function.iterate_succ_apply', hx,
@@ -111,34 +103,26 @@ theorem taylorExpAt_add (r s : R) :
   have hg_apply (t : R) :
       Function.Semiconj (fun y : K => (y : A)) (g t) (t • D) := fun _ => rfl
   have hpow (t : R) (i : ℕ) (y : K) : ((g t ^ i) y : A) = (t • D)^[i] y := by
-    simpa only [Module.End.pow_apply, coe_smul] using (hg_apply t).iterate_right i y
+    simpa only [_root_.pow_apply_eq_iterate, FunLike.coe_smul] using (hg_apply t).iterate_right i y
   have hnil (t : R) : g t ^ n = 0 := by
     ext x
     simp only [hpow, iterate_smul_apply, (hmem x).mp x.property, smul_zero,
       LinearMap.zero_apply, ZeroMemClass.coe_zero]
   let x : K := ⟨a, (hmem a).mpr hn⟩
   have heq (t : R) (y : K) :
-      D.taylorExpAt hD t y = ((IsNilpotent.exp (g t)) y : A) :=
-    taylorExpAt_eq_exp_restrict D hD t K (hstable t) (hnil t) y ((hmem y).mp y.property)
+      D.taylorExpAt hD t y = ((IsNilpotent.exp (g t)) y : A) := by
+    rw [taylorExpAt_eq_taylorExp_smul, taylorExp_apply_eq_locallyNilpotentExp,
+      Module.End.locallyNilpotentExp_apply_eq_exp_restrict _ _ (hstable t) (hnil t)]
   have hc : Commute (g r) (g s) := by
     ext y
-    simp [Module.End.mul_apply, g, smul_smul, mul_comm]
+    simp [_root_.mul_apply_eq_comp, g, smul_smul, mul_comm]
   have hg : g (r + s) = g r + g s := by
     ext y
     simp [g, add_smul]
   have h := IsNilpotent.exp_add_of_commute (A := Module.End ℚ K) hc ⟨n, hnil r⟩ ⟨n, hnil s⟩
   rw [← hg] at h
   have hv := congrArg (fun k : Module.End ℚ K => (k x : A)) h
-  simpa only [Module.End.mul_apply, ← heq, AlgHom.comp_apply] using hv
-
-/-- Evaluating the polynomial flow at `r` is the Taylor exponential of `r • D`. -/
-theorem taylorExpAt_eq_taylorExp_smul (r : R) :
-    D.taylorExpAt hD r = (r • D).taylorExp (D.exists_iterate_smul_eq_zero hD r) := by
-  ext a
-  obtain ⟨n, hn⟩ := hD a
-  rw [taylorExpAt_apply_eq_sum D hD r hn,
-    taylorExp_apply_eq_sum _ _ (n := n) (by rw [iterate_smul_apply, hn, smul_zero])]
-  simp only [iterate_smul_apply]
+  simpa only [_root_.mul_apply_eq_comp, ← heq, AlgHom.comp_apply] using hv
 
 /-- The flow at any parameter is an algebra automorphism; the inverse is the flow at
 its negative. -/

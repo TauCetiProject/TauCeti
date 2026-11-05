@@ -17,7 +17,7 @@ import Mathlib.Tactic.NoncommRing
 elementwise description of that ideal over a ring that is not assumed commutative: `x` lies in the
 radical exactly when `1 + y * x` is a unit for every `y`, equivalently when `1 + x * y` is a unit
 for every `y`. Mathlib proves the statement only over a commutative ring
-(`Ideal.mem_jacobson_bot`); the content of the noncommutative version is that membership in the
+(`Ring.mem_jacobson_iff`); the content of the noncommutative version is that membership in the
 radical only supplies a *left* inverse for `1 + y * x`, so the argument has to promote that left
 inverse to a two-sided one.
 
@@ -34,6 +34,8 @@ mechanism behind the left-right symmetry of the radical, proved in
   are nilpotent lies in the radical.
 * `TauCeti.Ring.instNontrivialQuotientJacobson`: the quotient of a nontrivial ring by its Jacobson
   radical is nontrivial.
+* `Ideal.subsingleton_of_le_jacobson`: a commutative ring is trivial if its quotient by some
+  ideal in the Jacobson radical is.
 
 ## References
 
@@ -63,7 +65,7 @@ private theorem mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one {x : R} :
 
 /-- The Jacobson radical of a ring is `{x | ∀ y, IsUnit (1 + y * x)}`.
 
-Mathlib's `Ideal.mem_jacobson_bot` is this statement over a commutative ring. -/
+Mathlib's `Ring.mem_jacobson_iff` is this statement over a commutative ring. -/
 theorem mem_jacobson_iff_isUnit_one_add_mul_left {x : R} :
     x ∈ Ring.jacobson R ↔ ∀ y : R, IsUnit (1 + y * x) := by
   rw [mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one]
@@ -112,3 +114,16 @@ instance instNontrivialQuotientJacobson [Nontrivial R] :
 end Ring
 
 end TauCeti
+
+namespace Ideal
+
+/-- If `I` lies in the Jacobson radical of `R` and `R ⧸ I` is trivial, then `R` is trivial: the
+ideal `I = ⊤` can only lie in the Jacobson radical of the zero ring. -/
+theorem subsingleton_of_le_jacobson {R : Type*} [CommRing R] {I : Ideal R}
+    (hI : I ≤ Ring.jacobson R) [Subsingleton (R ⧸ I)] : Subsingleton R := by
+  rw [← jacobson_bot] at hI
+  have h : (⊥ : Ideal R) = ⊤ :=
+    jacobson_eq_top_iff.mp <| top_le_iff.mp <| Quotient.subsingleton_iff.mp ‹_› ▸ hI
+  exact subsingleton_of_zero_eq_one (mem_bot.mp (h ▸ Submodule.mem_top : (1 : R) ∈ ⊥)).symm
+
+end Ideal

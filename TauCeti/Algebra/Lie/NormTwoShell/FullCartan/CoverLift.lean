@@ -497,7 +497,20 @@ end Reindex
 
 section Pow
 
+open ShellLieAlgebra (rootReindex)
+
 variable (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B) (γ : Y ≃ₗ[ℤ] Y)
+
+/-- In product coordinates the pinned action is the actual Cartan action together with the
+signed root permutation. -/
+@[simp]
+theorem equivProd_reindex (x : FullShellLieAlgebra D) :
+    equivProd D (reindex D D σ hσ γ x) =
+      (γ (equivProd D x).1, rootReindex σ hσ (equivProd D x).2) := by
+  have h : (equivProd D).toLinearMap ∘ₗ (reindex D D σ hσ γ).toLinearMap =
+      γ.toLinearMap.prodMap (rootReindex σ hσ).toLinearMap ∘ₗ (equivProd D).toLinearMap := by
+    refine linearMap_ext (fun y ↦ ?_) fun a ↦ ?_ <;> simp
+  exact LinearMap.congr_fun h x
 
 /-- **Powers of the pinned action of a diagram automorphism** are the pinned actions of the powers
 of the vertex permutation `σ` and of the Cartan automorphism `γ`, for symmetric `B`. -/
@@ -517,7 +530,8 @@ theorem reindex_iterate_eq_id (hB : B.IsSymm) {n : ℕ} (hσn : σ ^ n = 1) (hγ
   have key : ∀ (τ : Equiv.Perm I) (hτ : B.reindex τ τ = B), τ = 1 → reindex D D τ hτ 1 = 1 := by
     rintro τ hτ rfl
     exact reindex_refl D
-  rw [← LinearEquiv.coe_pow, reindex_pow D σ hσ γ hB, hγn, key _ _ hσn, LinearEquiv.coe_one]
+  rw [← FunLike.coe_pow_eq_iterate, reindex_pow D σ hσ γ hB, hγn, key _ _ hσn,
+    FunLike.coe_one_eq_id]
 
 end Pow
 

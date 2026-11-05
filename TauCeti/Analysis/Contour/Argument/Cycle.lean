@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.IsolatedZero
+public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Contour.Residue.Cycle
 public import TauCeti.Analysis.Contour.Residue.LogDeriv
 

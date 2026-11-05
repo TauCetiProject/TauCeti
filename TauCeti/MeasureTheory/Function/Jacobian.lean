@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
+public import Mathlib.Analysis.Calculus.FDeriv.Affine
 
 /-!
-# Pushforward bounds from a lower bound on the Jacobian
+# Change of variables: pushforward bounds and affine invariance of set integrals
 
 Let `f` be injective and differentiable on a null-measurable subset `s` of a finite-dimensional real
 normed space with an additive Haar measure `μ`. Mathlib's change of variables formula
@@ -25,12 +26,21 @@ Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate fo
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
 the Jacobian is needed, but a Jacobian that may vanish gives no such bound.
 
+A continuous affine map `T` carrying a measurable set `s` of finite measure onto itself preserves
+integrals over `s`. When `s` is not null, the linear part of `T` has determinant `±1`, because the
+image of `s` has `|det|` times the measure of `s`, so the change of variables formula has no
+Jacobian factor
+(`ContinuousAffineMap.setIntegral_comp_of_image_eq`). This is how a symmetry of a polytope, such as
+a permutation of the vertices of a simplex, acts on integrals over it.
+
 ## Main declarations
 
 * `MeasureTheory.map_restrict_le_smul_restrict_image`: the pushforward of `μ` on `s` is at most
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
+* `ContinuousAffineMap.setIntegral_comp_of_image_eq`: integrals over `s` are invariant under a
+  continuous affine map carrying `s` onto itself, when `s` has finite measure.
 -/
 
 public section
@@ -67,7 +77,7 @@ theorem map_restrict_le_smul_restrict_image (hs : NullMeasurableSet s μ)
   -- It remains to compare `μ` on `s` with `c⁻¹ |det f'| μ` on `s`.
   refine Measure.map_mono (Measure.le_iff.2 fun t ht => ?_) hg
   have hc0 : ENNReal.ofReal c ≠ 0 := by simpa using hc
-  rw [Measure.smul_apply, smul_eq_mul, withDensity_apply _ ht, ← ENNReal.mul_le_iff_le_inv hc0
+  rw [_root_.smul_apply, smul_eq_mul, withDensity_apply _ ht, ← ENNReal.mul_le_iff_le_inv hc0
     ENNReal.ofReal_ne_top, ← setLIntegral_const]
   exact lintegral_mono_ae ((ae_restrict_of_ae (ae_restrict_mem₀ hs)).mono fun x hx =>
     ENNReal.ofReal_le_ofReal (hdet x hx))
@@ -85,3 +95,43 @@ theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
       hdet).trans (by gcongr; exact hmaps.image_subset)
 
 end MeasureTheory
+
+namespace ContinuousAffineMap
+
+open MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E}
+
+/-- **Integrals over a set are invariant under an affine self-map of it.** If a continuous affine
+map `T` carries a measurable set `s` of finite measure onto itself, then
+`∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ` for every `g`. -/
+theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s) (hμ : μ s ≠ ∞)
+    (hT : T '' s = s) (g : E → F) :
+    ∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ := by
+  -- On a null set both integrals vanish.
+  by_cases h₀ : μ s = 0
+  · simp [Measure.restrict_eq_zero.2 h₀]
+  have hd : ∀ x ∈ s, HasFDerivWithinAt T T.contLinear s x := fun _ _ ↦ T.hasFDerivWithinAt
+  -- A singular linear part would collapse `s` to a null set.
+  have hdet : (T.contLinear : E →L[ℝ] E).det ≠ 0 := fun h ↦
+    h₀ (hT ▸ addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ hd fun _ _ ↦ h)
+  have hinj : InjOn T s := by
+    intro x _ y _ hxy
+    have hL := Module.End.isUnit_iff _ |>.1 <|
+      (LinearMap.isUnit_iff_isUnit_det (T.contLinear : E →ₗ[ℝ] E)).2 hdet.isUnit
+    rw [← sub_eq_zero, ← vsub_eq_sub, ← T.contLinear_apply_vsub, vsub_eq_sub] at hxy
+    exact sub_eq_zero.1 (hL.1 (by simpa using hxy))
+  -- Comparing the measures of `s` and of its image `T '' s = s` forces `|det| = 1`.
+  have habs : |(T.contLinear : E →L[ℝ] E).det| = 1 := by
+    have h := lintegral_abs_det_fderiv_eq_addHaar_image μ hs hd hinj
+    rw [hT, setLIntegral_const] at h
+    exact ENNReal.ofReal_eq_one.1 ((ENNReal.mul_eq_right h₀ hμ).1 h)
+  calc ∫ x in s, g (T x) ∂μ = ∫ x in s, |(T.contLinear : E →L[ℝ] E).det| • g (T x) ∂μ := by
+        simp [habs]
+    _ = ∫ x in T '' s, g x ∂μ :=
+        (integral_image_eq_integral_abs_det_fderiv_smul μ hs hd hinj g).symm
+    _ = ∫ x in s, g x ∂μ := by rw [hT]
+
+end ContinuousAffineMap

@@ -31,8 +31,8 @@ step towards a higher weight.
 
 * `RootPairing.InvariantForm.two_mul_apply_root`: `2 ⟨x, α⟩ = ⟨x, α^∨⟩ ⟨α, α⟩` for every `x`.
 * `RootPairing.InvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq`: if `x` and `y` have
-  equal length and `y - x`, of positive length, is a natural combination of roots of nonnegative
-  length, some root with positive coefficient has negative coroot value on `x`.
+  equal length and `y - x`, of positive length, is a nonnegative combination of roots of
+  nonnegative length, some root with positive coefficient has negative coroot value on `x`.
 * `RootPairing.InvariantForm.apply_self_eq_of_forall_exists_foldl`: vectors reached from one
   another by reflections have equal length.
 * `RootPairing.InvariantForm.reflTransGen_of_sub_eq_sum`: iterating such raising steps joins two
@@ -52,23 +52,21 @@ for every vector `x` of the weight space. This extends
 `RootPairing.InvariantForm.two_mul_apply_root_root` from the roots to all of `M`. -/
 theorem two_mul_apply_root (x : M) (j : ι) :
     2 * B.form x (P.root j) = P.coroot' j x * B.form (P.root j) (P.root j) := by
-  -- The reflection in `α := P.root j` preserves the form, and it sends `x` to `x - ⟨x, α^∨⟩ α`
-  -- and `α` to `-α`.
-  have h : B.form (x - P.coroot' j x • P.root j) (-P.root j) = B.form x (P.root j) := by
-    rw [← reflection_apply_self, ← reflection_apply]
-    exact B.apply_reflection_reflection j x (P.root j)
-  -- Expanding the left-hand side by bilinearity turns that into the claim.
-  rw [LinearMap.map_sub₂, LinearMap.map_smul₂, map_neg, map_neg, smul_eq_mul] at h
+  -- The reflection in `α := P.root j` preserves the form, sends `x` to `x - ⟨x, α^∨⟩ α` and `α`
+  -- to `-α`; expanding by bilinearity turns that invariance into the claim.
+  have h := B.apply_reflection_reflection j x (P.root j)
+  rw [reflection_apply, reflection_apply_self, LinearMap.map_sub₂, LinearMap.map_smul₂, map_neg,
+    map_neg, smul_eq_mul] at h
   linear_combination -h
 
 /-- **A raising root between vectors of the same length.** Let `x` and `y` have the same length
-for an invariant form whose roots have nonnegative length, and let `y - x`, of positive length, be
-a natural combination `∑ j ∈ s, c j • α_{f j}` of roots. Then some root `α_{f j}` with `c j > 0`
-has negative coroot value on `x`. -/
+for an invariant form, and let `y - x`, of positive length, be a nonnegative combination
+`∑ j ∈ s, c j • α_{f j}` of roots `α_{f j}` of nonnegative length. Then some root `α_{f j}` with
+`c j > 0` has negative coroot value on `x`. -/
 theorem exists_pos_and_coroot'_neg_of_apply_self_eq [LinearOrder R] [IsStrictOrderedRing R]
-    (hroot : ∀ i, 0 ≤ B.form (P.root i) (P.root i)) {x y : M}
-    (hxy : B.form x x = B.form y y) (hpos : 0 < B.form (y - x) (y - x))
-    {κ : Type*} {s : Finset κ} {f : κ → ι} {c : κ → ℕ}
+    {x y : M} (hxy : B.form x x = B.form y y) (hpos : 0 < B.form (y - x) (y - x))
+    {κ : Type*} {s : Finset κ} {f : κ → ι} {c : κ → R} (hc : ∀ j ∈ s, 0 ≤ c j)
+    (hroot : ∀ j ∈ s, 0 ≤ B.form (P.root (f j)) (P.root (f j)))
     (h : y - x = ∑ j ∈ s, c j • P.root (f j)) :
     ∃ j ∈ s, 0 < c j ∧ P.coroot' (f j) x < 0 := by
   -- Equal lengths give `⟨y - x, y - x⟩ = -2 ⟨x, y - x⟩`, so `2 ⟨x, y - x⟩` is negative.
@@ -77,17 +75,13 @@ theorem exists_pos_and_coroot'_neg_of_apply_self_eq [LinearOrder R] [IsStrictOrd
     simp only [map_sub, LinearMap.sub_apply] at hpos ⊢
     linarith
   -- Expanding `y - x` writes `2 ⟨x, y - x⟩` as a sum of `c j ⟨x, α_{f j}^∨⟩ ⟨α_{f j}, α_{f j}⟩`.
-  have hsum : 2 * B.form x (y - x) =
-      ∑ j ∈ s, (c j : R) * (P.coroot' (f j) x * B.form (P.root (f j)) (P.root (f j))) := by
-    rw [h, map_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [map_nsmul, nsmul_eq_mul, mul_left_comm, B.two_mul_apply_root]
-  rw [hsum] at hneg
+  rw [h, map_sum, Finset.mul_sum] at hneg
   by_contra! hnonneg
   refine hneg.not_ge (Finset.sum_nonneg fun j hj ↦ ?_)
-  rcases (c j).eq_zero_or_pos with hc | hc
-  · simp [hc]
-  · exact mul_nonneg (Nat.cast_nonneg _) (mul_nonneg (hnonneg j hj hc) (hroot _))
+  rw [map_smul, smul_eq_mul, mul_left_comm, B.two_mul_apply_root]
+  rcases (hc j hj).eq_or_lt with hcj | hcj
+  · simp [← hcj]
+  · exact mul_nonneg hcj.le (mul_nonneg (hnonneg j hj hcj) (hroot j hj))
 
 /-- **Equal length along a reflection orbit.** Let `s i` act on the indices of a family `μ` by
 lifting the reflection in `α_{e i}`. If every index is reached from `a₀` by successively applying
@@ -128,25 +122,24 @@ theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
     exact .refl
   have hspan : μ b - μ a ∈ P.rootSpan R := h ▸ Submodule.sum_mem _ fun j _ ↦
     Submodule.smul_of_tower_mem _ (c j) (Submodule.subset_span (Set.mem_range_self (f j)))
-  have hroot (i : ι) : 0 ≤ B.form (P.root i) (P.root i) :=
-    (hpos _ (Submodule.subset_span (Set.mem_range_self i)) (P.ne_zero i)).le
-  obtain ⟨j, -, hcj, hj⟩ := B.exists_pos_and_coroot'_neg_of_apply_self_eq hroot (hlen a b)
-    (hpos _ hspan (sub_ne_zero.mpr (hμ.ne (Ne.symm hab)))) h
+  obtain ⟨j, -, hcj, hj⟩ := B.exists_pos_and_coroot'_neg_of_apply_self_eq (hlen a b)
+    (hpos _ hspan (sub_ne_zero.mpr (hμ.ne (Ne.symm hab)))) (fun j _ ↦ (c j).cast_nonneg)
+    (fun j _ ↦ (hpos _ (Submodule.subset_span (Set.mem_range_self (f j))) (P.ne_zero _)).le)
+    (by simpa only [Nat.cast_smul_eq_nsmul] using h)
+  replace hcj : 0 < c j := Nat.cast_pos.mp hcj
   obtain ⟨a', hr, hμa'⟩ := hstep a j hj
-  have hlt : ∑ i, Function.update c j (c j - 1) i < n := hn ▸ Finset.sum_lt_sum
-    (fun i _ ↦ by rcases eq_or_ne i j with rfl | hi <;> simp [Function.update_of_ne, *])
-    ⟨j, Finset.mem_univ j, by simpa using hcj⟩
+  have hlt : ∑ i, Function.update c j (c j - 1) i < n := by
+    rw [Finset.sum_update_of_mem (Finset.mem_univ j), ← hn,
+      ← Finset.add_sum_erase _ _ (Finset.mem_univ j), Finset.sdiff_singleton_eq_erase]
+    omega
   refine .head hr (ih _ hlt (a := a') (c := Function.update c j (c j - 1)) ?_ rfl)
   -- Lowering the coefficient of `α_{f j}` by one removes one copy of `α_{f j}` from the sum.
   have hsum : ∑ i, c i • P.root (f i) =
-      (∑ i, Function.update c j (c j - 1) i • P.root (f i)) + P.root (f j) := by
-    have herase : ∑ i ∈ Finset.univ.erase j, Function.update c j (c j - 1) i • P.root (f i) =
-        ∑ i ∈ Finset.univ.erase j, c i • P.root (f i) :=
-      Finset.sum_congr rfl fun i hi ↦ by rw [Function.update_of_ne (Finset.ne_of_mem_erase hi)]
-    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ j),
-      ← Finset.add_sum_erase _ _ (Finset.mem_univ j), Function.update_self, herase]
-    conv_lhs => rw [← Nat.sub_add_cancel hcj, add_nsmul, one_nsmul]
-    abel
+      ∑ i, Function.update c j (c j - 1) i • P.root (f i) + P.root (f j) := by
+    simp_rw [Function.apply_update (fun i n ↦ n • P.root (f i)),
+      Finset.sum_update_of_mem (Finset.mem_univ j), Finset.sdiff_singleton_eq_erase,
+      ← Finset.add_sum_erase _ _ (Finset.mem_univ j)]
+    rw [add_right_comm, ← succ_nsmul, Nat.sub_add_cancel hcj]
   rw [hμa', sub_add_eq_sub_sub, h, hsum, add_sub_cancel_right]
 
 end RootPairing.InvariantForm

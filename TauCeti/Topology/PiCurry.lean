@@ -28,9 +28,8 @@ Similarly, a family indexed by `Option ι` splits off its `none` component: the 
   sigma index.
 * `TauCeti.piSigmaConstHomeomorph`: along an explicit equivalence from a sigma index, a
   homeomorphism between a family of tuples and a tuple in a fixed space.
-* `TauCeti.piOptionEquivProdHomeomorph`: `Equiv.piOptionEquivProd` as a homeomorphism.
-* `TauCeti.piOptionEquivProdHomeomorph_symm_update`: reassembling a tuple commutes with changing
-  one of its `some` components.
+* `TauCeti.piOptionEquivProdHomeomorph`: `Equiv.piOptionEquivProd` as a homeomorphism, with
+  `TauCeti.update_piOptionEquivProdHomeomorph_symm_some` for changing a `some` component.
 -/
 
 public section
@@ -128,14 +127,20 @@ theorem piOptionEquivProdHomeomorph_symm_apply_some {ι : Type*} (Y : Option ι 
     (piOptionEquivProdHomeomorph Y).symm x (some i) = x.2 i :=
   (rfl)
 
-/-- Reassembling a tuple from its `none` component and its `some` components commutes with
-changing one of the `some` components. This is Mathlib's `Option.rec_update`, restated for
-`piOptionEquivProdHomeomorph`, whose definition is not exposed to importing modules. -/
-theorem piOptionEquivProdHomeomorph_symm_update {ι : Type*} [DecidableEq ι] (Y : Option ι → Type*)
-    [∀ i, TopologicalSpace (Y i)] (y : Y none) (x : ∀ i : ι, Y (some i)) (i : ι)
-    (a : Y (some i)) :
-    (piOptionEquivProdHomeomorph Y).symm (y, Function.update x i a) =
-      Function.update ((piOptionEquivProdHomeomorph Y).symm (y, x)) (some i) a :=
-  Option.rec_update y x i a
+/-- Changing a `some` component commutes with reassembling a family indexed by `Option ι` from its
+`none` component and its `some` components. -/
+theorem update_piOptionEquivProdHomeomorph_symm_some {ι : Type*} [DecidableEq ι]
+    (Y : Option ι → Type*) [∀ i, TopologicalSpace (Y i)] (x : Y none × ∀ i : ι, Y (some i))
+    (j : ι) (v : Y (some j)) :
+    Function.update ((piOptionEquivProdHomeomorph Y).symm x) (some j) v =
+      (piOptionEquivProdHomeomorph Y).symm (x.1, Function.update x.2 j v) := by
+  funext k
+  cases k with
+  | none => rfl
+  | some k =>
+    by_cases hk : k = j
+    · subst hk
+      simp
+    · simp [hk]
 
 end TauCeti

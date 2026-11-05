@@ -68,19 +68,22 @@ def linterOrigins (modules : Array Name)
         if decl.toString.length > 1024 || reportName.length > 1024 ||
             reportName.any Char.isWhitespace then
           pure <| Json.mkObj [("unknown", toJson "unsupported_name")]
-        else if env.isPrivateOrAutoDecl decl then
-          pure <| unknown "private_or_generated"
         else if let some idx := env.getModuleIdxFor? decl then
           let mod := env.header.moduleNames[idx.toNat]!
-          if !modules.contains mod then
+          -- Any module of the linted package is a usable origin, listed or not: the
+          -- `unusedArguments` pass also lints transitive importers of the listed modules,
+          -- and `lint-env.sh` validates the module against the full project inventory.
+          if !lintedPackage.isPrefixOf mod then
             pure <| unknown "unsupported_module"
-          else if let some ranges ← findDeclarationRangesCore? decl then
-            -- No auxiliary-declaration fallback to a parent's range.
-            let pos := ranges.selectionRange.pos
-            fields := fields ++ [("module", toJson mod.toString),
-              ("line", toJson pos.line), ("column", toJson (pos.column + 1))]
+          else
+            -- A private or generated declaration still has a defining module, which is
+            -- enough to retry around its file. A range is added only from the
+            -- declaration's own entry: no auxiliary-declaration fallback to a parent's range.
+            fields := fields ++ [("module", toJson mod.toString)]
+            if let some ranges ← findDeclarationRangesCore? decl then
+              let pos := ranges.selectionRange.pos
+              fields := fields ++ [("line", toJson pos.line), ("column", toJson (pos.column + 1))]
             pure <| Json.mkObj fields
-          else pure <| unknown "missing_range"
         else pure <| unknown "missing_origin"
       records := records.push record
   return Json.mkObj [("version", toJson (1 : Nat)), ("total", toJson total),

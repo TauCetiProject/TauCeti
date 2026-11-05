@@ -254,10 +254,11 @@ theorem exists_algHom_surjective_of_prod [IsSimpleRing B] (φ : (A × A) →ₐ[
     have hswapone : swap (1, 0) = ((0 : A), (1 : A)) := by simp [hswap]
     have hu : (φ.comp swap) (1, 0) = 1 := by
       rw [AlgHom.comp_apply, hswapone, hw]
-    refine ⟨AlgHom.prodFirst (φ.comp swap) hu, AlgHom.prodFirst_surjective _ hu fun b => ?_⟩
+    refine ⟨AlgHom.prodFirst (φ.comp swap) hu,
+      (AlgHom.prodFirst_surjective_iff _ hu).2 fun b => ?_⟩
     obtain ⟨⟨a₁, a₂⟩, ha⟩ := hφ b
     exact ⟨(a₂, a₁), by simpa [hswap] using ha⟩
-  · exact ⟨AlgHom.prodFirst φ h, AlgHom.prodFirst_surjective φ h hφ⟩
+  · exact ⟨AlgHom.prodFirst φ h, (AlgHom.prodFirst_surjective_iff φ h).2 hφ⟩
 
 end ProdSurjection
 

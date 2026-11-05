@@ -197,22 +197,22 @@ local notation "t" => (_root_.RatFunc.X : _root_.RatFunc k) ^ p
 omit [CharP k p] in
 /-- `t − s` is `x ^ p − s` in `k(x)`, a prime element at its own place. -/
 private theorem ord_algebraMap_gen_sub (hs : ∀ c : k, c ^ p ≠ s) :
-    (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out hs)).ord
+    (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)).ord
       (algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s)) = 1 := by
   have : algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s) =
       algebraMap k[X] (_root_.RatFunc k) (X ^ p - C s) := by
     simp
   rw [this, ord_adicOfIrreducible_algebraMap_irreducible _
-    (X_pow_sub_C_irreducible_of_prime Fact.out hs)]
+    (irreducible_X_pow_sub_C_of_prime Fact.out hs)]
   simp
 
 /-- In `k(x) / k(x ^ p)`, the place of `x ^ p − s`, for `s` not a `p`-th power, is
 **unramified**: `e = 1`, although the extension is purely inseparable of degree `p`. -/
 theorem ramificationIdx_adicOfIrreducible_X_pow_sub_C (hs : ∀ c : k, c ^ p ≠ s) :
-    ramificationIdx k⟮t⟯ (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out hs)) =
+    ramificationIdx k⟮t⟯ (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)) =
       1 := by
   have h := ord_algebraMap_restrict k k⟮t⟯
-    (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out hs))
+    (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs))
     (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s)
   rw [ord_algebraMap_gen_sub hs] at h
   exact_mod_cast Int.eq_one_of_mul_eq_one_right (by positivity) h.symm
@@ -220,10 +220,10 @@ theorem ramificationIdx_adicOfIrreducible_X_pow_sub_C (hs : ∀ c : k, c ^ p ≠
 /-- In `k(x) / k(x ^ p)`, the place of `x ^ p − s`, for `s` not a `p`-th power, lies over the
 zero of `t − s`, where `t = x ^ p`: the order of `t − s` at the place below is `1`. -/
 theorem ord_restrict_adicOfIrreducible_X_pow_sub_C (hs : ∀ c : k, c ^ p ≠ s) :
-    ((adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out hs)).restrict k k⟮t⟯).ord
+    ((adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)).restrict k k⟮t⟯).ord
       (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s) = 1 := by
   have h := ord_algebraMap_restrict k k⟮t⟯
-    (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out hs))
+    (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs))
     (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s)
   rwa [ord_algebraMap_gen_sub hs, ramificationIdx_adicOfIrreducible_X_pow_sub_C hs,
     Nat.cast_one, one_mul, eq_comm] at h
@@ -232,14 +232,14 @@ theorem ord_restrict_adicOfIrreducible_X_pow_sub_C (hs : ∀ c : k, c ^ p ≠ s)
 **relative degree `p`**: the whole degree of the purely inseparable extension is carried by the
 residue extension. -/
 theorem relativeDegree_adicOfIrreducible_X_pow_sub_C (hs : ∀ c : k, c ^ p ≠ s) :
-    relativeDegree k k⟮t⟯ (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out hs)) =
+    relativeDegree k k⟮t⟯ (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)) =
       p := by
   have hp : 0 < p := (Fact.out : p.Prime).pos
   have : FiniteDimensional k⟮t⟯ (_root_.RatFunc k) :=
     Module.finite_of_finrank_pos (by rw [RatFunc.finrank_adjoin_X_pow]; exact hp)
   have := ramificationIdx_mul_relativeDegree_eq_finrank_of_isPurelyInseparable k k⟮t⟯
     (_root_.RatFunc.transcendental_X.pow hp).isFunctionField_adjoin
-    (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime (p := p) Fact.out hs))
+    (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime (p := p) Fact.out hs))
   rwa [ramificationIdx_adicOfIrreducible_X_pow_sub_C hs, one_mul,
     RatFunc.finrank_adjoin_X_pow] at this
 

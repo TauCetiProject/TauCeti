@@ -16,8 +16,9 @@ This file collects facts about leading monomials of multivariate polynomials for
 multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, leading data of renamed polynomials, elimination orders and the
-lexicographic ones among them, agreement of leading exponents under two monomial orders, and
-algebraic independence from leading monomials.
+lexicographic ones among them, agreement of leading exponents under two monomial orders,
+normalization to leading coefficient one over a field, leading data of substitutions of monic
+families, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -68,6 +69,16 @@ the images of the generators of the Lazard ring in a polynomial ring.
   polynomial whose leading monomial only involves the variables `e τ` is a renamed polynomial.
 * `MonomialOrder.coe_support_subset_of_lex_le`: monomials supported in an upper set of variables
   form a lower set for the lexicographic order.
+* `MonomialOrder.monicNormalize`: over a field, a polynomial divided by its leading coefficient,
+  monic with the same leading exponent when the polynomial is nonzero
+  (`MonomialOrder.monic_monicNormalize`, `MonomialOrder.degree_monicNormalize`).
+* `MonomialOrder.monic_aeval_monomial_one`, `MonomialOrder.degree_aeval_monomial_one`: for a
+  family `c` of monic polynomials, `∏ i, c i ^ w i` is monic with leading exponent
+  `A w = ∑ i, w i • m.degree (c i)`.
+* `MonomialOrder.coeff_aeval_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`: if all
+  exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
+  the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
+  most `e`.
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -387,6 +398,140 @@ theorem coe_support_subset_of_lex_le [LinearOrder σ] [WellFoundedGT σ] {s : Se
   exact (Finsupp.mem_support_iff.1 hj) ((hi j hji).trans hbj)
 
 end Lex
+
+section MonicNormalize
+
+variable {k : Type*} [Field k]
+
+/-- The polynomial `f` divided by its leading coefficient for the monomial order `m`. It is monic
+when `f ≠ 0` (`MonomialOrder.monic_monicNormalize`), and `0` when `f = 0`. -/
+noncomputable def monicNormalize (f : MvPolynomial σ k) : MvPolynomial σ k :=
+  C (m.leadingCoeff f)⁻¹ * f
+
+variable {m} {f : MvPolynomial σ k}
+
+theorem monicNormalize_def (f : MvPolynomial σ k) :
+    m.monicNormalize f = C (m.leadingCoeff f)⁻¹ * f :=
+  (rfl)
+
+@[simp]
+theorem monicNormalize_zero : m.monicNormalize (0 : MvPolynomial σ k) = 0 := by
+  simp [monicNormalize_def]
+
+@[simp]
+theorem monicNormalize_eq_zero_iff : m.monicNormalize f = 0 ↔ f = 0 := by
+  simp [monicNormalize_def]
+
+/-- Normalization does not change the leading exponent. -/
+@[simp]
+theorem degree_monicNormalize (f : MvPolynomial σ k) :
+    m.degree (m.monicNormalize f) = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [monicNormalize_def, m.degree_mul (by simpa using hf) hf, m.degree_C, zero_add]
+
+theorem monic_monicNormalize (hf : f ≠ 0) : m.Monic (m.monicNormalize f) := by
+  simp [Monic, monicNormalize_def, m.leadingCoeff_ne_zero_iff.2 hf]
+
+/-- Multiplying the normalization of `f` by the leading coefficient of `f` recovers `f`. -/
+@[simp]
+theorem C_leadingCoeff_mul_monicNormalize (f : MvPolynomial σ k) :
+    C (m.leadingCoeff f) * m.monicNormalize f = f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [monicNormalize_def, ← mul_assoc, ← C_mul, mul_inv_cancel₀ (m.leadingCoeff_ne_zero_iff.2 hf),
+    C_1, one_mul]
+
+/-- A monic polynomial is its own normalization. -/
+theorem Monic.monicNormalize_eq (hf : m.Monic f) : m.monicNormalize f = f := by
+  simp [monicNormalize_def, hf.leadingCoeff_eq_one]
+
+/-- The normalization of a nonzero polynomial has leading term `X ^ (m.degree f)`. -/
+theorem leadingTerm_monicNormalize_of_ne_zero (hf : f ≠ 0) :
+    m.leadingTerm (m.monicNormalize f) = monomial (m.degree f) 1 := by
+  rw [leadingTerm, (monic_monicNormalize hf).leadingCoeff_eq_one, degree_monicNormalize]
+
+/-- The leading term of the normalization is the normalization of the leading term. -/
+theorem leadingTerm_monicNormalize (f : MvPolynomial σ k) :
+    m.leadingTerm (m.monicNormalize f) = m.monicNormalize (m.leadingTerm f) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [leadingTerm_monicNormalize_of_ne_zero hf, monicNormalize_def, leadingCoeff_leadingTerm,
+    leadingTerm, C_mul_monomial, inv_mul_cancel₀ (m.leadingCoeff_ne_zero_iff.2 hf)]
+
+/-- A set of polynomials closed under multiplication by scalars in `k` (for example a
+`k`-subalgebra or a `k`-submodule) contains the normalization of `f` if and only if it
+contains `f`. -/
+@[simp]
+theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
+    [SMulMemClass S k (MvPolynomial σ k)] {A : S} : m.monicNormalize f ∈ A ↔ f ∈ A := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← C_leadingCoeff_mul_monicNormalize (m := m) f, ← smul_eq_C_mul]
+    exact SMulMemClass.smul_mem _ h
+  · rw [monicNormalize_def, ← smul_eq_C_mul]
+    exact SMulMemClass.smul_mem _ h
+
+end MonicNormalize
+
+section Substitution
+
+variable {ι : Type*} [CommSemiring R] {m} {c : ι → MvPolynomial σ R}
+
+/-- The image of the monomial `Y^w` under the substitution of a monic family is monic. -/
+theorem monic_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
+    m.Monic (aeval c (monomial w (1 : R))) := by
+  rw [aeval_monomial, map_one, one_mul, Finsupp.prod]
+  exact Monic.prod fun i _ ↦ (hc i).pow
+
+variable [Nontrivial R]
+
+/-- The image of the monomial `Y^w` under the substitution of a monic family `c` has leading
+exponent `∑ i, w i • m.degree (c i)`. -/
+theorem degree_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
+    m.degree (aeval c (monomial w (1 : R))) =
+      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w := by
+  rw [aeval_monomial, map_one, one_mul, Finsupp.prod,
+    m.degree_prod_of_regular fun i _ ↦ by rw [(hc i).pow.leadingCoeff_eq_one]; exact isRegular_one,
+    Finsupp.linearCombination_apply, Finsupp.sum]
+  exact Finset.sum_congr rfl fun i _ ↦
+    m.degree_pow_of_pow_leadingCoeff_ne_zero (by simp [(hc i).leadingCoeff_eq_one])
+
+open scoped Classical in
+/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
+`P` satisfies `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of the
+coefficients of `P` at the exponents `w` with `A w = e`: the images of the other monomials of `P`
+have leading exponent below `e`. -/
+theorem coeff_aeval_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
+    {e : σ →₀ ℕ}
+    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
+    (aeval c P).coeff e = ∑ w ∈ P.support with
+      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w = e, P.coeff w := by
+  classical
+  conv_lhs => rw [P.as_sum]
+  rw [map_sum, coeff_sum, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun w hw ↦ ?_
+  conv_lhs => rw [← mul_one (P.coeff w), ← C_mul_monomial]
+  rw [map_mul, aeval_C, algebraMap_eq, coeff_C_mul]
+  split_ifs with h
+  · rw [← h, ← degree_aeval_monomial_one hc, (monic_aeval_monomial_one hc w).coeff_degree, mul_one]
+  · rw [m.coeff_eq_zero_of_lt, mul_zero]
+    rw [degree_aeval_monomial_one hc]
+    exact lt_of_le_of_ne (hP w hw) fun h' ↦ h (m.toSyn.injective h')
+
+/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
+`P` satisfies `A w ≼ e`, then `aeval c P` has leading exponent at most `e`. -/
+theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
+    {e : σ →₀ ℕ}
+    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
+    m.degree (aeval c P) ≼[m] e := by
+  classical
+  refine m.degree_le_iff.2 fun d hd ↦ le_of_not_gt fun hlt ↦ ?_
+  rw [mem_support_iff, coeff_aeval_of_forall_le hc fun w hw ↦ (hP w hw).trans hlt.le] at hd
+  refine hd (Finset.sum_eq_zero fun w hw ↦ ?_)
+  rw [Finset.mem_filter] at hw
+  exact absurd (hP w hw.1) (by rw [hw.2]; exact not_le_of_gt hlt)
+
+end Substitution
 
 variable [CommRing R] [NoZeroDivisors R]
 

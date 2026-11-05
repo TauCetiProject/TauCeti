@@ -225,7 +225,7 @@ theorem ofGenLoop_transAt (i : N) (γ δ : Ω^ (Option N) X.pair.fst (X.pair.map
   rw [ofGenLoop_apply, transAt_apply, ofGenLoop_apply, ofGenLoop_apply, GenLoop.transAt,
     GenLoop.coe_copy]
   simp only [piOptionEquivProdHomeomorph_symm_apply_some,
-    ← piOptionEquivProdHomeomorph_symm_update]
+    update_piOptionEquivProdHomeomorph_symm_some]
 
 end RelGenLoop
 

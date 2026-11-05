@@ -126,6 +126,16 @@ def twistedAffineSimplex (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n
       (pathTransport σ z (affineToTop v (toTopInitialVertex ⦋k⦌))))
     (ιTwistedChainComplex L k (affineSimplex σ v))
 
+/-- The affine summand transports its coefficient to the initial vertex of the affine simplex
+and then includes that simplex's coefficient fibre. -/
+lemma twistedAffineSimplex_def (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop)
+    {k : ℕ} (v : Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) :
+    twistedAffineSimplex L σ z v =
+      L.map (pathTransport σ z (ULift.up
+        (StdSimplex.continuousAffineMapMk v (toTopInitialVertex.{v} ⦋k⦌).down))) ≫
+      ιTwistedChainComplex L k ((X.toSSetObjEquiv _).symm
+        ((X.toSSetObjEquiv n σ).comp (StdSimplex.continuousAffineMapMk v))) := (rfl)
+
 /-- The boundary of the summand of an affine simplex of `σ` is the alternating sum of the summands
 of its facets, all with coefficients transported from the same point of `σ`. -/
 @[simp]
@@ -302,6 +312,27 @@ lemma map_vertexTransport_comp_twistedSingularChain {m : ℕ}
   | single v a =>
     rw [twistedSingularChain_single, AffineChain.map_single, twistedSingularChain_single,
       Preadditive.comp_zsmul, map_vertexTransport_comp_twistedAffineSimplex]
+
+/-- Pushing an affine chain forward inside `σ` has zero coefficient on every singular simplex
+whose image is not contained in the image of `σ`. This support control applies to both
+barycentric subdivision and its prism operator. -/
+lemma twistedSingularChain_comp_twistedChainComplexCoeff_eq_zero
+    (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) {k : ℕ}
+    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) →₀ ℤ)
+    (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
+    (h : ¬ Set.range (TopCat.simplexMap ρ) ⊆ Set.range (TopCat.simplexMap σ)) :
+    twistedSingularChain L σ z k c ≫ twistedChainComplexCoeff L ρ = 0 := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd => simp [Preadditive.add_comp, hc, hd]
+  | single v a =>
+    have hne : affineSimplex σ v ≠ ρ := by
+      rintro rfl
+      apply h
+      rintro _ ⟨p, rfl⟩
+      exact ⟨affineToTop v p, rfl⟩
+    simp [twistedAffineSimplex,
+      ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L hne]
 
 open BarycentricSubdivision AffineChain
 

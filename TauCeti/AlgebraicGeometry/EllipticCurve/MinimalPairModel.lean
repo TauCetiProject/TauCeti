@@ -10,8 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.Data.Int.Interval
-import TauCeti.Data.Int.WeightedPrimitivePair
 import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.RingTheory.UniqueFactorizationDomain.WeightedPrimitivePair
 
 /-!
 # The minimal-pair short equation of an elliptic curve over `ℚ`, and its naïve height
@@ -231,7 +231,7 @@ theorem IsMinimalPairNF.eq_of_intCast_eq_pow_mul {W' : WeierstrassCurve ℤ}
       (by simpa [Rat.num_pow] using (q ^ 4).num_dvd_of_intCast_eq_mul_intCast h₄)
       (by simpa [Rat.num_pow] using (q ^ 6).num_dvd_of_intCast_eq_mul_intCast h₆))
   have hq : q = 1 ∨ q = -1 := by
-    rw [← Rat.coe_int_num_of_den_eq_one hden]
+    rw [← Rat.intCast_num_of_den_eq_one hden]
     rcases hnum with h | h <;> simp [h]
   have hq4 : q ^ 4 = 1 := by rcases hq with rfl | rfl <;> norm_num
   have hq6 : q ^ 6 = 1 := by rcases hq with rfl | rfl <;> norm_num
@@ -331,8 +331,8 @@ theorem exists_minimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
       (mul_eq_zero.mp (hB₁.trans (by rw [h.2, Int.cast_zero]))).resolve_left (pow_ne_zero 6 hd')
     exact (C • E).isUnit_Δ.ne_zero (by rw [Δ_of_isShortNF, ha₄, ha₆]; norm_num)
   obtain ⟨e, A, B, he, hA, hB, hmin⟩ :=
-    A₂.exists_eq_pow_mul_and_forall_prime_not_pow_dvd_of_ne_zero B₂ (m := 4) (n := 6)
-      (by norm_num) (by norm_num) hne
+    TauCeti.exists_eq_pow_mul_and_forall_isUnit_of_pow_dvd (m := 4) (n := 6) (by norm_num)
+      (by norm_num) hne
   have he' : (e : ℚ) ≠ 0 := Int.cast_ne_zero.mpr he
   have hA' : (A₂ : ℚ) = (e : ℚ) ^ 4 * A := by exact_mod_cast hA
   have hB' : (B₂ : ℚ) = (e : ℚ) ^ 6 * B := by exact_mod_cast hB
@@ -346,7 +346,8 @@ theorem exists_minimalPairModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
       linear_combination -hA₁ - hA'
     · rw [div_eq_iff (pow_ne_zero 6 hd')]
       linear_combination -hB₁ - hB'
-  exact ⟨⟨shortCurve A B, .of_forall_not_dvd (by simpa using hmin), C⁻¹ * ⟨u, 0, 0, 0⟩,
+  exact ⟨⟨shortCurve A B, .of_forall_not_dvd fun ℓ hℓ h ↦ (Nat.prime_iff_prime_int.mp hℓ).not_isUnit
+    (hmin _ (by simpa using h.1) (by simpa using h.2)), C⁻¹ * ⟨u, 0, 0, 0⟩,
     by rw [mul_smul, key, inv_smul_smul]⟩⟩
 
 /-- **A chosen minimal-pair model** of an elliptic curve over `ℚ`. Its equation and its height

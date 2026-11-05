@@ -144,20 +144,6 @@ open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules Scheme.Modules
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) {ι : Type u} (U : ι → Y.Opens)
 
-/-- Preimage under `f` sends a product of opens of `Y` to the product of their preimages: both are
-intersections, and preimage commutes with finite intersections. -/
-private lemma nonempty_pi_preimage_hom (n : ℕ) (a : Fin (n + 1) → ι) :
-    Nonempty ((∏ᶜ fun j ↦ (Opens.map f.base).obj (U (a j))) ⟶
-      (Opens.map f.base).obj (∏ᶜ fun j ↦ U (a j))) := by
-  refine ⟨homOfLE (le_of_eq ?_)⟩
-  -- a finite product of opens is their intersection
-  have h {Z : Scheme.{u}} (V : Fin (n + 1) → Z.Opens) : (∏ᶜ V) = Finset.univ.inf V :=
-    (CompleteLattice.finite_limit_eq_finset_univ_inf _).trans <| by
-      rw [Finset.inf_univ_eq_iInf, Finset.inf_univ_eq_iInf]
-      exact discreteEquiv.iInf_comp (g := V)
-  rw [h, h]
-  exact (map_finset_inf (Opens.comap f.base.hom) _ _).symm
-
 /-- The Čech complex of `f_* M` for the family `U` is the Čech complex of `M` for the family of
 preimages `f⁻¹ U i`. -/
 private def cechComplexPushforwardIso (M : X.Modules) :
@@ -167,7 +153,8 @@ private def cechComplexPushforwardIso (M : X.Modules) :
         ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj :=
   -- the sections of `f_* M` over `V` are by definition the sections of `M` over `f⁻¹ V`
   (TauCeti.CategoryTheory.cechComplexCompIso (Opens.map f.base) U
-    ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj (nonempty_pi_preimage_hom f U)).symm
+    ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj
+    fun _ a ↦ f.nonempty_pi_preimage_hom fun j ↦ U (a j)).symm
 
 /-- The identification of Čech complexes `cechComplexPushforwardIso` is natural in `M`. -/
 private lemma cechComplexPushforwardIso_naturality {M N : X.Modules} (α : M ⟶ N) :
@@ -178,7 +165,8 @@ private lemma cechComplexPushforwardIso_naturality {M N : X.Modules} (α : M ⟶
         ((SheafOfModules.toSheaf X.ringCatSheaf).map α).hom :=
   (Iso.eq_inv_comp _).2 <| (Category.assoc _ _ _).symm.trans <| (Iso.comp_inv_eq _).2 <|
     (TauCeti.CategoryTheory.cechComplexFunctor_map_comp_cechComplexCompIso_hom (Opens.map f.base)
-      U _ (nonempty_pi_preimage_hom f U) ((SheafOfModules.toSheaf X.ringCatSheaf).map α).hom).symm
+      U _ (fun _ a ↦ f.nonempty_pi_preimage_hom fun j ↦ U (a j))
+      ((SheafOfModules.toSheaf X.ringCatSheaf).map α).hom).symm
 
 variable [IsAffineHom f] (hU : ∀ i, IsAffineOpen (U i))
 
@@ -189,13 +177,10 @@ nonempty finite intersection: it is the preimage of an affine open, hence affine
 private lemma subsingleton_cohomologyOn_inf_preimage_succ
     [IsAffineHom (pullback.diagonal (terminal.from Y))] (M : X.Modules) [M.IsQuasicoherent]
     (s : Finset ι) (hs : s.Nonempty) (k : ℕ) :
-    Subsingleton (cohomologyOn M (k + 1) (s.inf fun i ↦ f ⁻¹ᵁ U i)) := by
-  have hW : IsAffineOpen (s.inf fun i ↦ f ⁻¹ᵁ U i) := by
-    have h : (s.inf fun i ↦ f ⁻¹ᵁ U i) = f ⁻¹ᵁ s.inf U :=
-      (map_finset_inf (Opens.comap f.base.hom) s U).symm
-    rw [h]
-    exact (IsAffineOpen.finset_inf s hs fun i _ ↦ hU i).preimage f
-  exact subsingleton_cohomologyOn_succ_of_isAffineOpen M hW k
+    Subsingleton (cohomologyOn M (k + 1) (s.inf fun i ↦ f ⁻¹ᵁ U i)) :=
+  subsingleton_cohomologyOn_succ_of_isAffineOpen M
+    (f.isAffineOpen_finset_inf_preimage (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
+      s hs) k
 
 variable [IsAffineHom (pullback.diagonal (terminal.from Y))] [Finite ι] (hcover : ⨆ i, U i = ⊤)
 

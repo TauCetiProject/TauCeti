@@ -27,6 +27,12 @@ transpose, so the resulting map is continuous for the induced topology.
 
 ## Main results
 
+* `TauCeti.QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne`: real
+  special-orthogonal matrices and the determinant-one isometries of the standard sum-of-squares
+  form are isomorphic topological groups.
+* `TauCeti.QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm`: the same
+  isomorphism with target the special orthogonal group of `realCliffordForm n 0`, acting by
+  matrix-vector multiplication (`matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply`).
 * `TauCeti.QuadraticMap.instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne`: the
   special orthogonal group of the standard sum-of-squares form on any finite coordinate type is
   compact.
@@ -94,6 +100,79 @@ instance instCompactSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :
   exact instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne (Fin n)
 
 end ClassicalDecEq
+
+/-- Real special-orthogonal matrices and the determinant-one isometries of the standard
+sum-of-squares form are isomorphic as topological groups, a matrix acting by its linear map. -/
+def matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne
+    (ι : Type u) [Fintype ι] [DecidableEq ι] :
+    Matrix.specialOrthogonalGroup ι ℝ ≃ₜ*
+      specialOrthogonalGroup (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) where
+  toMulEquiv := matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι
+  -- The continuity lemmas above are stated for the classical decidable-equality instance on `ι`;
+  -- `convert` identifies it with the given one.
+  continuous_toFun := (by convert continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι :
+    Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι))
+  continuous_invFun := (by
+    convert continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne_symm ι :
+    Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm)
+
+/-- The topological group isomorphism applies the matrix-to-isometry equivalence. -/
+@[simp]
+theorem coe_matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne
+    (ι : Type u) [Fintype ι] [DecidableEq ι] :
+    ⇑(matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne ι) =
+      matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι :=
+  (rfl)
+
+/-- The inverse topological group isomorphism applies the inverse equivalence. -/
+@[simp]
+theorem coe_matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne_symm
+    (ι : Type u) [Fintype ι] [DecidableEq ι] :
+    ⇑(matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne ι).symm =
+      (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm :=
+  (rfl)
+
+/-- Real special-orthogonal matrices and the determinant-one isometries of the positive-definite
+form `realCliffordForm n 0` are isomorphic as topological groups, a matrix acting by its linear
+map. This is `matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne` transported along
+`realCliffordForm_zero_eq_weightedSumSquares_one`. -/
+def matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm (n : ℕ) :
+    Matrix.specialOrthogonalGroup (Fin n) ℝ ≃ₜ* specialOrthogonalGroup (realCliffordForm n 0) :=
+  (realCliffordForm_zero_eq_weightedSumSquares_one n).symm ▸
+    matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne (Fin n)
+
+/-- The topological group isomorphism with the `realCliffordForm n 0` special orthogonal group
+acts by matrix-vector multiplication. -/
+@[simp]
+theorem matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply (n : ℕ)
+    (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) (x : Fin n → ℝ) :
+    ((matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n A :
+        specialOrthogonalGroup (realCliffordForm n 0)) : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) x =
+      Matrix.toLin' (A : Matrix (Fin n) (Fin n) ℝ) x := by
+  -- Generalizing the target form lets the transport along
+  -- `realCliffordForm_zero_eq_weightedSumSquares_one` be eliminated by `rfl`.
+  have key : ∀ (Q : QuadraticForm ℝ (Fin n → ℝ)) (h : weightedSumSquares ℝ (1 : Fin n → ℝ) = Q),
+      (((h ▸ matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne (Fin n) :
+        Matrix.specialOrthogonalGroup (Fin n) ℝ ≃ₜ* specialOrthogonalGroup Q) A :
+          specialOrthogonalGroup Q) : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) x =
+        Matrix.toLin' (A : Matrix (Fin n) (Fin n) ℝ) x := by
+    rintro _ rfl
+    exact matrixSpecialOrthogonalEquivWeightedSumSquaresOne_apply (Fin n) A x
+  exact key _ _
+
+/-- The inverse of the topological group isomorphism with the `realCliffordForm n 0` special
+orthogonal group recovers the matrix of an isometry. -/
+@[simp]
+theorem matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe (n : ℕ)
+    (g : specialOrthogonalGroup (realCliffordForm n 0)) :
+    (((matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n).symm g :
+        Matrix.specialOrthogonalGroup (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
+      LinearMap.toMatrix' (g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)).toLinearMap := by
+  apply Matrix.toLin'.injective
+  rw [Matrix.toLin'_toMatrix']
+  refine LinearMap.ext fun x => ?_
+  rw [← matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
+    ContinuousMulEquiv.apply_symm_apply, LinearEquiv.coe_coe]
 
 /-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
 special-orthogonal membership. -/

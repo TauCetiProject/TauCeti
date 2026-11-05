@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 import Mathlib.Logic.Equiv.Fintype
+import TauCeti.Algebra.Order.BigOperators.Sum.Min
 
 /-!
 # Uniqueness of elementary divisors with a fixed base
@@ -53,8 +54,8 @@ private theorem card_nsmul_ker_pi_pow {b : ℕ} [NeZero b] {ι : Type*} [Fintype
       intro i _
       rw [IsAddCyclic.card_nsmulAddMonoidHom_ker, Nat.card_zmod]
       rcases le_total (e i) k with h | h
-      · rw [Nat.gcd_eq_left (pow_dvd_pow b h), min_eq_right h]
-      · rw [Nat.gcd_eq_right (pow_dvd_pow b h), min_eq_left h]
+      · simp [Nat.gcd_eq_left (pow_dvd_pow b h), h]
+      · simp [Nat.gcd_eq_right (pow_dvd_pow b h), h]
     _ = _ := prod_pow_eq_pow_sum _ _ _
 
 private theorem sum_min_eq_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
@@ -71,13 +72,20 @@ private theorem sum_min_eq_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
     EquivLike.coe_coe, ← map_nsmul f, map_eq_zero_iff f f.injective]
 
 /-- Finite products of nontrivial cyclic groups with orders powers of the same base `b > 1`
-have uniquely determined exponents up to reindexing. Primality of the base is not needed. -/
+have uniquely determined exponents up to reindexing. Primality of the base is not needed, and the
+second index type is finite as soon as the first one is. -/
 theorem exists_equiv_exponents_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
-    {ι κ : Type*} [Finite ι] [Finite κ] (e : ι → ℕ) (e' : κ → ℕ)
+    {ι κ : Type*} [Finite ι] (e : ι → ℕ) (e' : κ → ℕ)
     (he : ∀ i, 0 < e i) (he' : ∀ j, 0 < e' j)
     (f : ((i : ι) → ZMod (b ^ e i)) ≃+ ((j : κ) → ZMod (b ^ e' j))) :
     ∃ σ : ι ≃ κ, ∀ i, e i = e' (σ i) := by
   classical
+  have : NeZero b := ⟨by omega⟩
+  have : Finite κ := by
+    -- Each factor `ZMod (b ^ e' j)` is nontrivial, so an infinite `κ` gives an infinite product.
+    have (j : κ) : Fact (1 < b ^ e' j) := ⟨Nat.one_lt_pow (he' j).ne' hb⟩
+    have := Finite.of_equiv _ f.toEquiv
+    exact not_infinite_iff_finite.mp fun _ ↦ not_finite ((j : κ) → ZMod (b ^ e' j))
   let := Fintype.ofFinite ι
   let := Fintype.ofFinite κ
   have hsum := sum_min_eq_of_pi_pow_addEquiv hb e e' f
@@ -89,25 +97,16 @@ theorem exists_equiv_exponents_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
       simp
     | succ k =>
       -- The multiplicity of the exponent `k + 1` is a second difference of `k ↦ ∑ i, min k (e i)`.
-      have hmin (n : ℕ) : min (k + 2) n + min k n + (if n = k + 1 then 1 else 0) =
-          min (k + 1) n + min (k + 1) n := by
-        split_ifs <;> omega
-      have h : (∑ i, min (k + 2) (e i)) + (∑ i, min k (e i)) + Fintype.card {i // e i = k + 1} =
-          (∑ i, min (k + 1) (e i)) + (∑ i, min (k + 1) (e i)) := by
-        rw [Fintype.card_subtype, card_filter, ← sum_add_distrib, ← sum_add_distrib,
-          ← sum_add_distrib]
-        exact sum_congr rfl fun i _ ↦ hmin (e i)
-      have h' : (∑ j, min (k + 2) (e' j)) + (∑ j, min k (e' j)) +
-            Fintype.card {j // e' j = k + 1} =
-          (∑ j, min (k + 1) (e' j)) + (∑ j, min (k + 1) (e' j)) := by
-        rw [Fintype.card_subtype, card_filter, ← sum_add_distrib, ← sum_add_distrib,
-          ← sum_add_distrib]
-        exact sum_congr rfl fun j _ ↦ hmin (e' j)
-      have h₀ := hsum k
-      have h₁ := hsum (k + 1)
-      have h₂ := hsum (k + 2)
+      have hk (n : ℕ) : k < n ∧ n < k + 1 + 1 ↔ n = k + 1 := by omega
+      have h := sum_min_add_sum_min_eq univ e (by omega : k < k + 1 + 1)
+      have h' := sum_min_add_sum_min_eq univ e' (by omega : k < k + 1 + 1)
+      simp only [hk, Nat.add_sub_cancel] at h h'
+      rw [Fintype.card_subtype, Fintype.card_subtype]
+      have := hsum k
+      have := hsum (k + 1)
+      have := hsum (k + 1 + 1)
       omega
-  let σ := Equiv.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k)
-  exact ⟨σ, fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
+  exact ⟨.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k),
+    fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
 
 end ZMod

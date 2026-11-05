@@ -51,7 +51,7 @@ anonymous `Fact (Irreducible …)` instance receives an auto-generated name that
 so the `-21` and `-5` instances would collide under one name when the whole library is loaded for
 the axioms audit. -/
 instance irreducible_X_sq_add_twenty_one : Fact (Irreducible (X ^ 2 - C (-21 : ℚ))) := ⟨by
-  exact (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr
+  exact (irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mpr
     (fun q _ => by nlinarith [sq_nonneg q])⟩
 
 /-- The concrete model `AdjoinRoot (X² + 21)` of `ℚ(√-21)` carries an integral generator with

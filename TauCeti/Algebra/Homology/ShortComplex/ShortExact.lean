@@ -223,6 +223,13 @@ lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.Short
   ((TauCeti.IsKernelCokernelPair.of_shortExact hS).biprod
     (TauCeti.IsKernelCokernelPair.of_shortExact hT)).shortExact
 
+/-- Exactness of a short complex of functors is checked objectwise. -/
+lemma exact_of_forall_evaluation {J : Type*} [Category* J] (S : ShortComplex (J ⥤ C))
+    (h : ∀ j, (S.map ((evaluation J C).obj j)).Exact) : S.Exact := by
+  rw [exact_iff_isZero_homology]
+  exact Functor.isZero _ fun j ↦ ((exact_iff_isZero_homology _).1 (h j)).of_iso
+    (S.mapHomologyIso ((evaluation J C).obj j)).symm
+
 /-- **Short exactness of functors is checked objectwise.** A short complex of functors with values
 in an abelian category is short exact if it becomes short exact after evaluation at every object.
 -/
@@ -232,10 +239,8 @@ lemma shortExact_of_forall_evaluation {J : Type*} [Category* J] (S : ShortComple
   have (j : J) : Epi (S.g.app j) := (h j).epi_g
   have : Mono S.f := NatTrans.mono_of_mono_app S.f
   have : Epi S.g := NatTrans.epi_of_epi_app S.g
-  refine ShortExact.mk' ?_ inferInstance inferInstance
-  rw [exact_iff_isZero_homology]
-  exact Functor.isZero _ fun j ↦ ((exact_iff_isZero_homology _).1 (h j).exact).of_iso
-    (S.mapHomologyIso ((evaluation J C).obj j)).symm
+  exact ShortExact.mk' (exact_of_forall_evaluation S fun j ↦ (h j).exact)
+    inferInstance inferInstance
 
 /-- If `X₁ ⟶ X₂ ⟶ X₃` is exact and `X₁ ⟶ X₂` is a monomorphism, then
 `0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0` is short exact. -/

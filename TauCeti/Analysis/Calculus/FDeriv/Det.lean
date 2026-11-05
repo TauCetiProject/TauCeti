@@ -6,109 +6,114 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Comp
-public import Mathlib.Analysis.Calculus.Deriv.Polynomial
-public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Matrix.Normed
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # The derivative of the determinant
 
-The determinant of a square matrix over a complete nontrivially normed field is a polynomial in
-the entries, hence differentiable, and its derivative at the identity matrix is the trace:
+The determinant of a square matrix over a nontrivially normed field is a continuous multilinear
+map of its rows. Its differential at every matrix, including singular matrices, is the sum of
+row replacements, or equivalently Jacobi's adjugate formula:
 
-`det (1 + H) = 1 + trace H + o(H)`.
+`D det (A) H = trace (adjugate A * H)`.
 
-This is Jacobi's formula at the identity. Along a line it is the statement that the polynomial
-`t ↦ det (1 + t • B)` has linear coefficient `trace B`, which Mathlib records as
-`Matrix.derivative_det_one_add_X_smul`; differentiability of the determinant then upgrades that
-directional derivative to the Fréchet derivative. Since `det B = det A * det (A⁻¹ * B)`, the
-formula at the identity transports to every invertible matrix `A`, giving Jacobi's formula
+At an invertible matrix this is `det A * trace (A⁻¹ * H)`, and at the identity it is `trace H`.
+The matrix index may be empty, and the field need not be complete.
 
-`det (A + H) = det A + det A * trace (A⁻¹ * H) + o(H)`.
+The multilinear proof generalizes the real determinant calculus in the
+[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/Matrix/DeterminantDerivative.lean).
+It uses `ContinuousMultilinearMap.hasFDerivAt` and the algebraic identity
+`Matrix.sum_det_updateRow_eq_trace_adjugate_mul`.
 
 The normed structure on matrices is Mathlib's `L∞` operator norm, available through
-`open scoped Matrix.Norms.Operator`; any other norm on the finite-dimensional space of matrices
-gives the same derivative.
+`open scoped Matrix.Norms.Operator`.
 
 ## Main results
 
+* `Matrix.differentiable_det`: the determinant is differentiable at every matrix.
+* `Matrix.fderiv_det_eq_sum_updateRow`: its differential is the sum of row replacements.
+* `Matrix.fderiv_det_apply_adjugate`: Jacobi's formula, including singular matrices.
 * `Matrix.hasDerivAt_det_one_add_smul`: `t ↦ det (1 + t • B)` has derivative `trace B` at `0`.
-* `Matrix.differentiable_det`: the determinant is differentiable.
-* `Matrix.hasFDerivAt_det_one`: **the derivative of the determinant at the identity is the
-  trace.**
-* `Matrix.hasFDerivAt_det`, `Matrix.fderiv_det_apply`: **Jacobi's formula** at an invertible
-  matrix.
+* `Matrix.hasFDerivAt_det_one`: the derivative at the identity is the trace.
+* `Matrix.hasFDerivAt_det`, `Matrix.fderiv_det_apply`: the inverse form at an invertible matrix.
 -/
 
 public section
 
-open Polynomial
 open scoped Matrix Matrix.Norms.Operator
 
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
+private noncomputable def detMultilinear :
+    ContinuousMultilinearMap 𝕜 (fun _ : n => n → 𝕜) 𝕜 :=
+  { (detRowAlternating : (n → 𝕜) [⋀^n]→ₗ[𝕜] 𝕜).toMultilinearMap with
+    cont := by
+      -- The alternating map acts on rows; expose its determinant expression for continuity.
+      change Continuous (fun M : n → n → 𝕜 => (Matrix.of M).det)
+      simp only [det_apply, Matrix.of_apply]
+      fun_prop }
+
+/-- The determinant is differentiable at every matrix over a nontrivially normed field. -/
+theorem differentiable_det : Differentiable 𝕜 (det : Matrix n n 𝕜 → 𝕜) :=
+  fun A => (detMultilinear.hasFDerivAt (fun i => A i)).differentiableAt
+
+/-- The differential of the determinant is the sum of determinants with one row replaced. -/
+theorem fderiv_det_eq_sum_updateRow (A H : Matrix n n 𝕜) :
+    fderiv 𝕜 det A H = ∑ i, (A.updateRow i (H i)).det := by
+  -- Matrices are row families; this presents the determinant to multilinear differentiation.
+  change fderiv 𝕜 (detMultilinear : (n → n → 𝕜) → 𝕜) (fun i => A i) (fun i => H i) = _
+  rw [(detMultilinear.hasFDerivAt (fun i => A i)).fderiv,
+    ContinuousMultilinearMap.linearDeriv_apply]
+  exact Finset.sum_congr rfl fun _ _ => rfl
+
+/-- **Jacobi's adjugate formula**, valid at singular as well as invertible matrices. -/
+theorem fderiv_det_apply_adjugate (A H : Matrix n n 𝕜) :
+    fderiv 𝕜 det A H = trace (A.adjugate * H) := by
+  rw [fderiv_det_eq_sum_updateRow, sum_det_updateRow_eq_trace_adjugate_mul]
+
 /-- The determinant along the line through the identity in the direction `B` has derivative
 `trace B` at the identity. -/
 theorem hasDerivAt_det_one_add_smul (B : Matrix n n 𝕜) :
     HasDerivAt (fun t : 𝕜 => det (1 + t • B)) (trace B) 0 := by
-  have h := (det (1 + (X : 𝕜[X]) • B.map C)).hasDerivAt 0
-  rw [derivative_det_one_add_X_smul] at h
-  convert h using 1
-  funext t
-  simp [eval_det, ← smul_eq_mul_diagonal]
+  have h := (differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt.comp_hasDerivAt_of_eq
+    (0 : 𝕜) (((hasDerivAt_id (0 : 𝕜)).smul_const B).const_add 1) (by simp)
+  simp only [id_eq, one_smul] at h
+  -- Restate the composite with matrix operations so the differential formula matches.
+  have h' : HasDerivAt (fun t : 𝕜 => det (1 + t • B))
+      (fderiv 𝕜 det (1 : Matrix n n 𝕜) B) 0 := h
+  simpa only [fderiv_det_apply_adjugate, adjugate_one, one_mul] using h'
 
-variable [CompleteSpace 𝕜]
-
-/-- The determinant is differentiable: it is a sum of products of matrix entries. -/
-theorem differentiable_det : Differentiable 𝕜 (det : Matrix n n 𝕜 → 𝕜) := by
-  have hentry (i j : n) : Differentiable 𝕜 (fun M : Matrix n n 𝕜 => M i j) :=
-    (LinearMap.toContinuousLinearMap (entryLinearMap 𝕜 𝕜 i j)).differentiable
-  simp_rw [_root_.funext det_apply, Units.smul_def, zsmul_eq_mul]
-  refine Differentiable.fun_sum fun σ _ => Differentiable.const_mul (fun M => ?_) _
-  exact (HasFDerivAt.finsetProd fun i _ => (hentry (σ i) i M).hasFDerivAt).differentiableAt
-
-/-- **The derivative of the determinant at the identity is the trace** (Jacobi's formula at the
-identity). -/
-theorem hasFDerivAt_det_one :
-    HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
-      (LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜)) 1 := by
-  have hD := (differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt
-  suffices h : fderiv 𝕜 det (1 : Matrix n n 𝕜) =
-      LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜) by rwa [h] at hD
-  refine ContinuousLinearMap.ext fun B => ?_
-  have h := hD.comp_hasDerivAt_of_eq (0 : 𝕜)
-    (((hasDerivAt_id (0 : 𝕜)).smul_const B).const_add 1) (by simp)
-  simp only [id, one_smul] at h
-  -- `h` is stated for the operator-norm addition on matrices; restating it with the default
-  -- matrix addition, to which it is definitionally equal, lets it meet the line derivative.
-  have h' : HasDerivAt (fun t : 𝕜 => det (1 + t • B)) (fderiv 𝕜 det 1 B) 0 := h
-  simpa using h'.unique (hasDerivAt_det_one_add_smul B)
-
-/-- **Jacobi's formula.** At a matrix `A` with invertible determinant, the derivative of the
-determinant in the direction `H` is `det A * trace (A⁻¹ * H)`. -/
-theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
-    HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
-      (A.det • (LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜)).comp
-        (LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 A⁻¹))) A := by
-  -- The determinant is `B ↦ det A * det (A⁻¹ * B)`, and `B ↦ A⁻¹ * B` sends `A` to `1`.
-  let L : Matrix n n 𝕜 →L[𝕜] Matrix n n 𝕜 :=
-    LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 A⁻¹)
-  have hL : L A = 1 := by simp [L, nonsing_inv_mul _ hA]
-  have h₁ : HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
-      (LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜)) (L A) :=
-    hL ▸ hasFDerivAt_det_one
-  refine ((h₁.comp A L.hasFDerivAt).const_mul A.det).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun B ↦ ?_)
-  simp [L, det_mul, det_nonsing_inv, ← mul_assoc, mul_inv_cancel₀ hA.ne_zero]
-
-/-- **Jacobi's formula**, evaluated on a direction: at a matrix `A` with invertible determinant,
-`D det (A) H = det A * trace (A⁻¹ * H)`. -/
+/-- **Jacobi's inverse formula**, evaluated on a direction at an invertible matrix. -/
 theorem fderiv_det_apply {A : Matrix n n 𝕜} (hA : IsUnit A.det) (H : Matrix n n 𝕜) :
     fderiv 𝕜 det A H = A.det * trace (A⁻¹ * H) := by
-  simp [(hasFDerivAt_det hA).fderiv]
+  rw [fderiv_det_apply_adjugate,
+    adjugate_eq_det_smul_of_mul_eq_one (mul_nonsing_inv A hA),
+    smul_mul_assoc, trace_smul, smul_eq_mul]
+
+/-- The Fréchet derivative of the determinant at the identity is the trace. -/
+theorem hasFDerivAt_det_one :
+    HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
+      ⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ 1 := by
+  refine ((differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt).congr_fderiv ?_
+  ext H
+  rw [fderiv_det_apply_adjugate, adjugate_one, one_mul]
+  exact ((congrFun (ContinuousLinearMap.coe_mk' (traceLinearMap n 𝕜 𝕜)
+    continuous_id.matrix_trace) H).trans (traceLinearMap_apply n 𝕜 𝕜 H)).symm
+
+/-- **Jacobi's inverse formula.** At a matrix with invertible determinant, the differential is
+`H ↦ det A * trace (A⁻¹ * H)`. -/
+theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
+    HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
+      (A.det • (⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ : Matrix n n 𝕜 →L[𝕜] 𝕜).comp
+        (ContinuousLinearMap.mul 𝕜 (Matrix n n 𝕜) A⁻¹)) A := by
+  refine (differentiable_det A).hasFDerivAt.congr_fderiv ?_
+  ext H
+  -- At H, the scaled composition evaluates to A.det * trace (A⁻¹ * H).
+  exact fderiv_det_apply hA H
 
 end Matrix

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
+import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
 # Polynomial derivatives
@@ -16,6 +17,8 @@ import Mathlib.Algebra.Polynomial.Eval.Degree
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
 iterated derivatives after a linear change of variables, and controlling degrees of derivatives
 under coefficient maps.
+The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
+`a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
@@ -37,6 +40,8 @@ basic example.
 
 For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
 iterates preserve the degree of a polynomial and have trivial kernel.
+
+Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a)` at `a`.
 -/
 
 public section
@@ -74,8 +79,8 @@ polynomial. -/
 theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSemiring R] (r : R)
     (p : R[X]) : ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
   refine ⟨p.natDegree + 1, ?_⟩
-  rw [← Derivation.coeFn_coe, ← Module.End.coe_pow, Derivation.coe_smul_linearMap, smul_pow,
-    LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
+  rw [← Derivation.coeFn_coe, ← FunLike.coe_pow_eq_iterate, Derivation.coe_smul_linearMap, smul_pow,
+    LinearMap.smul_apply, _root_.pow_apply_eq_iterate, Derivation.coeFn_coe, coe_derivative',
     iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
 /-- The `k`-th derivative of `p (a X + b)` is `a ^ k p⁽ᵏ⁾ (a X + b)`. -/
@@ -94,6 +99,16 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : 
     (k : ℕ) :
     derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
   simpa using p.iterate_derivative_comp_C_mul_X_add_C a 0 k
+
+/-- The derivative of the cubic `a (X - e₁)(X - e₂)(X - e₃)` at its root `e₁` is
+`a (e₁ - e₂)(e₁ - e₃)`. -/
+theorem _root_.Polynomial.eval_derivative_C_mul_X_sub_C_mul_X_sub_C_mul_X_sub_C [CommRing R]
+    (a e₁ e₂ e₃ : R) :
+    (C a * (X - C e₁) * (X - C e₂) * (X - C e₃)).derivative.eval e₁ =
+      a * (e₁ - e₂) * (e₁ - e₃) := by
+  simp only [derivative_mul, derivative_C, derivative_sub, derivative_X, eval_add, eval_mul,
+    eval_sub, eval_C, eval_X, eval_one, eval_zero]
+  ring
 
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/
@@ -198,3 +213,14 @@ theorem _root_.Polynomial.iterate_derivative_add_C_mul_eq_zero_iff (hδ : δ ≠
 end ShiftedDerivative
 
 end TauCeti
+
+namespace Polynomial
+
+/-- The quotient of `p` by `X - a` takes the value `p' (a)` at `a`, over any commutative ring.
+Note that `a` need not be a root of `p`. -/
+@[simp]
+theorem eval_divByMonic_X_sub_C_self {R : Type*} [CommRing R] (p : R[X]) (a : R) :
+    (p /ₘ (X - C a)).eval a = p.derivative.eval a := by
+  simpa using congrArg (eval a) (divByMonic_add_X_sub_C_mul_derivative_divByMonic_eq_derivative p a)
+
+end Polynomial

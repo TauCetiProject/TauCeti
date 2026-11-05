@@ -137,28 +137,21 @@ theorem primeIdealZetaSum_div_univ_le_one
 @[simp]
 theorem isLowerDirichletDensityBound_zero
     (S : Set (HeightOneSpectrum (𝓞 K))) :
-    IsLowerDirichletDensityBound S 0 := by
-  intro ε hε
-  filter_upwards [] with s
-  simpa only [zero_sub] using
-    (neg_lt_zero.mpr hε).trans_le (primeIdealZetaSum_div_univ_nonneg S s)
+    IsLowerDirichletDensityBound S 0 := fun ε hε ↦
+  .of_forall fun s ↦ by linarith [primeIdealZetaSum_div_univ_nonneg S s]
 
 /-- One is an upper Dirichlet-density bound for every set of primes. -/
 @[simp]
 theorem isUpperDirichletDensityBound_one
     (S : Set (HeightOneSpectrum (𝓞 K))) :
-    IsUpperDirichletDensityBound S 1 := by
-  intro ε hε
-  filter_upwards [] with s
-  exact (primeIdealZetaSum_div_univ_le_one S s).trans_lt (lt_add_of_pos_right 1 hε)
+    IsUpperDirichletDensityBound S 1 := fun ε hε ↦
+  .of_forall fun s ↦ by linarith [primeIdealZetaSum_div_univ_le_one S s]
 
 /-- A lower Dirichlet-density bound remains a lower bound when its value is decreased. -/
 theorem IsLowerDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))} {δ δ' : ℝ}
     (h : IsLowerDirichletDensityBound S δ) (hδ : δ' ≤ δ) :
-    IsLowerDirichletDensityBound S δ' := by
-  intro ε hε
-  filter_upwards [h ε hε] with s hs
-  exact lt_of_le_of_lt (sub_le_sub_right hδ ε) hs
+    IsLowerDirichletDensityBound S δ' := fun ε hε ↦
+  (h ε hε).mono fun _ hs ↦ by linarith
 
 /-- If every value below `δ` is a lower Dirichlet-density bound for `S`, then so is `δ`. -/
 theorem isLowerDirichletDensityBound_of_forall_lt {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
@@ -170,10 +163,8 @@ theorem isLowerDirichletDensityBound_of_forall_lt {S : Set (HeightOneSpectrum (�
 /-- An upper Dirichlet-density bound remains an upper bound when its value is increased. -/
 theorem IsUpperDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))} {δ δ' : ℝ}
     (h : IsUpperDirichletDensityBound S δ) (hδ : δ ≤ δ') :
-    IsUpperDirichletDensityBound S δ' := by
-  intro ε hε
-  filter_upwards [h ε hε] with s hs
-  exact hs.trans_le (by linarith)
+    IsUpperDirichletDensityBound S δ' := fun ε hε ↦
+  (h ε hε).mono fun _ hs ↦ by linarith
 
 /-- If every value above `δ` is an upper Dirichlet-density bound for `S`, then so is `δ`. -/
 theorem isUpperDirichletDensityBound_of_forall_gt {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
@@ -185,16 +176,14 @@ theorem isUpperDirichletDensityBound_of_forall_gt {S : Set (HeightOneSpectrum (�
 /-- A Dirichlet density is a lower Dirichlet-density bound. -/
 theorem HasDirichletDensity.isLowerDirichletDensityBound
     {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} (h : S.HasDirichletDensity δ) :
-    IsLowerDirichletDensityBound S δ := by
-  intro ε hε
-  exact (tendsto_order.1 (hasDirichletDensity_iff.1 h)).1 (δ - ε) (by linarith)
+    IsLowerDirichletDensityBound S δ := fun _ hε ↦
+  (tendsto_order.1 (hasDirichletDensity_iff.1 h)).1 _ (sub_lt_self δ hε)
 
 /-- A Dirichlet density is an upper Dirichlet-density bound. -/
 theorem HasDirichletDensity.isUpperDirichletDensityBound
     {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} (h : S.HasDirichletDensity δ) :
-    IsUpperDirichletDensityBound S δ := by
-  intro ε hε
-  exact (tendsto_order.1 (hasDirichletDensity_iff.1 h)).2 (δ + ε) (by linarith)
+    IsUpperDirichletDensityBound S δ := fun _ hε ↦
+  (tendsto_order.1 (hasDirichletDensity_iff.1 h)).2 _ (lt_add_of_pos_right δ hε)
 
 /-- Every lower Dirichlet-density bound is at most every upper Dirichlet-density bound for the
 same set of primes. -/
@@ -202,17 +191,10 @@ theorem IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound
     {S : Set (HeightOneSpectrum (𝓞 K))} {δ η : ℝ}
     (hlower : IsLowerDirichletDensityBound S δ)
     (hupper : IsUpperDirichletDensityBound S η) : δ ≤ η := by
-  by_contra hle
-  have hηδ : η < δ := lt_of_not_ge hle
-  let ε := (δ - η) / 2
-  have hε : 0 < ε := div_pos (sub_pos.mpr hηδ) zero_lt_two
-  obtain ⟨s, hs_lower, hs_upper⟩ :=
-    ((hlower ε hε).and (hupper ε hε)).exists
-  have heq : δ - ε = η + ε := by
-    dsimp [ε]
-    ring
-  rw [heq] at hs_lower
-  exact (not_lt_of_ge hs_upper.le) hs_lower
+  by_contra! hηδ
+  have hε : 0 < (δ - η) / 2 := half_pos (sub_pos.2 hηδ)
+  obtain ⟨s, hs_lower, hs_upper⟩ := ((hlower _ hε).and (hupper _ hε)).exists
+  linarith
 
 /-- A lower Dirichlet-density bound cannot exceed `1`. -/
 theorem IsLowerDirichletDensityBound.le_one
@@ -232,24 +214,10 @@ theorem hasDirichletDensity_of_upperBound_of_lowerBound
     {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
     (hupper : IsUpperDirichletDensityBound S δ)
     (hlower : IsLowerDirichletDensityBound S δ) :
-    S.HasDirichletDensity δ := by
-  refine hasDirichletDensity_iff.2 <| tendsto_order.2 ⟨?_, ?_⟩
-  · intro a ha
-    let ε := (δ - a) / 2
-    have hε : 0 < ε := div_pos (sub_pos.mpr ha) zero_lt_two
-    filter_upwards [hlower ε hε] with s hs
-    have hlt : a < δ - ε := by
-      dsimp [ε]
-      linarith
-    exact hlt.trans hs
-  · intro b hb
-    let ε := (b - δ) / 2
-    have hε : 0 < ε := div_pos (sub_pos.mpr hb) zero_lt_two
-    filter_upwards [hupper ε hε] with s hs
-    have hlt : δ + ε < b := by
-      dsimp [ε]
-      linarith
-    exact hs.trans hlt
+    S.HasDirichletDensity δ :=
+  hasDirichletDensity_iff.2 <| tendsto_order.2
+    ⟨fun a ha ↦ (hlower _ (sub_pos.2 ha)).mono fun _ hs ↦ by linarith,
+      fun b hb ↦ (hupper _ (sub_pos.2 hb)).mono fun _ hs ↦ by linarith⟩
 
 /-- A set of primes has Dirichlet density `δ` exactly when `δ` is both an upper and a lower
 Dirichlet-density bound for it. -/

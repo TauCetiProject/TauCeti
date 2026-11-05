@@ -16,7 +16,7 @@ determined, as such, on a punctured neighbourhood of `a`: Mathlib's `Meromorphic
 value at `a` itself. This file collects the germs along the punctured neighbourhood filter
 `𝓝[≠] a` of the functions `𝕜 → 𝕜` which are meromorphic at `a` into a subring
 `TauCeti.meromorphicGerms 𝕜 a` of Mathlib's ring of germs `Filter.Germ (𝓝[≠] a) 𝕜`, and shows
-that it is a field.
+that it is a field. Constant functions give its natural algebra structure over `𝕜`.
 
 The inverse of a germ is the pointwise inverse. It is a multiplicative inverse because, by the
 principle of isolated zeros (`MeromorphicAt.eventually_eq_zero_or_eventually_ne_zero`), a
@@ -81,6 +81,90 @@ theorem coe_mem_meromorphicGerms {f : 𝕜 → 𝕜} :
 
 namespace meromorphicGerms
 
+/-- The punctured germ of a function meromorphic at the centre. -/
+def mk (f : 𝕜 → 𝕜) (hf : MeromorphicAt f a) : meromorphicGerms 𝕜 a :=
+  ⟨(f : Germ (𝓝[≠] a) 𝕜), coe_mem_meromorphicGerms.mpr hf⟩
+
+@[simp]
+theorem coe_mk (f : 𝕜 → 𝕜) (hf : MeromorphicAt f a) :
+    ((mk f hf : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = f := (rfl)
+
+/-- Two meromorphic representatives define the same germ exactly when they agree near the
+centre on punctured neighbourhoods. -/
+@[simp]
+theorem mk_eq_mk_iff {f g : 𝕜 → 𝕜} {hf : MeromorphicAt f a} {hg : MeromorphicAt g a} :
+    mk f hf = mk g hg ↔ f =ᶠ[𝓝[≠] a] g :=
+  Subtype.ext_iff.trans Germ.coe_eq
+
+/-- Every meromorphic germ has a meromorphic function representative. -/
+theorem exists_mk (φ : meromorphicGerms 𝕜 a) :
+    ∃ (f : 𝕜 → 𝕜) (hf : MeromorphicAt f a), mk f hf = φ := by
+  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  exact ⟨f, hf, Subtype.ext hφ⟩
+
+@[simp]
+theorem mk_zero : mk (fun _ ↦ (0 : 𝕜)) (.const 0 a) = 0 :=
+  Subtype.ext Germ.coe_zero
+
+@[simp]
+theorem mk_one : mk (fun _ ↦ (1 : 𝕜)) (.const 1 a) = 1 :=
+  Subtype.ext Germ.coe_one
+
+@[simp]
+theorem mk_add {f g : 𝕜 → 𝕜} (hf : MeromorphicAt f a) (hg : MeromorphicAt g a) :
+    mk (f + g) (hf.add hg) = mk f hf + mk g hg :=
+  Subtype.ext (Germ.coe_add f g)
+
+@[simp]
+theorem mk_mul {f g : 𝕜 → 𝕜} (hf : MeromorphicAt f a) (hg : MeromorphicAt g a) :
+    mk (f * g) (hf.mul hg) = mk f hf * mk g hg :=
+  Subtype.ext (Germ.coe_mul f g)
+
+/-- The local coordinate germ vanishing at the centre. -/
+def coordinate (a : 𝕜) : meromorphicGerms 𝕜 a :=
+  mk (fun z ↦ z - a) ((MeromorphicAt.id a).sub (.const a a))
+
+@[simp]
+theorem coe_coordinate :
+    ((coordinate a : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
+      (fun z ↦ z - a : 𝕜 → 𝕜) := (rfl)
+
+/-- Scalars act on meromorphic germs through constant functions. -/
+instance : Algebra 𝕜 (meromorphicGerms 𝕜 a) :=
+  RingHom.toAlgebra
+    { toFun c := ⟨Germ.const c,
+        mem_meromorphicGerms_iff.mpr ⟨fun _ ↦ c, MeromorphicAt.const c a, rfl⟩⟩
+      map_zero' := rfl
+      map_one' := rfl
+      map_add' _ _ := rfl
+      map_mul' _ _ := rfl }
+
+@[simp, norm_cast]
+theorem coe_algebraMap (c : 𝕜) :
+    ((algebraMap 𝕜 (meromorphicGerms 𝕜 a) c : meromorphicGerms 𝕜 a) :
+      Germ (𝓝[≠] a) 𝕜) = Germ.const c := (rfl)
+
+@[simp]
+theorem mk_const (c : 𝕜) : mk (fun _ ↦ c) (.const c a) = algebraMap 𝕜 _ c :=
+  -- Germ.const is defined as the germ of the constant function.
+  Subtype.ext (rfl)
+
+@[simp, norm_cast]
+theorem coe_smul (c : 𝕜) (φ : meromorphicGerms 𝕜 a) :
+    ((c • φ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
+      c • (φ : Germ (𝓝[≠] a) 𝕜) := by
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap, ← hφ, ← Germ.coe_smul]
+  -- Germ.const c is definitionally the germ of the function fun _ ↦ c.
+  exact (Germ.coe_mul (fun _ ↦ c) f).symm.trans
+    (Germ.coe_eq.mpr (.of_forall fun _ ↦ by simp [smul_eq_mul]))
+
+@[simp]
+theorem mk_smul (c : 𝕜) {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
+    mk (c • f) (hf.const_smul c) = c • mk f hf := by
+  apply Subtype.ext
+  simp only [coe_mk, coe_smul, Germ.coe_smul]
+
 /-- The inverse of a meromorphic germ is its pointwise inverse. -/
 instance : Inv (meromorphicGerms 𝕜 a) where
   inv φ := ⟨(φ : Germ (𝓝[≠] a) 𝕜)⁻¹, by
@@ -92,6 +176,12 @@ instance : Inv (meromorphicGerms 𝕜 a) where
 theorem coe_inv (φ : meromorphicGerms 𝕜 a) :
     ((φ⁻¹ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = (φ : Germ (𝓝[≠] a) 𝕜)⁻¹ :=
   rfl
+
+@[simp]
+theorem mk_inv {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
+    mk f⁻¹ hf.inv = (mk f hf)⁻¹ := by
+  apply Subtype.ext
+  simp only [coe_mk, coe_inv, Germ.coe_inv]
 
 /-- The germs of functions meromorphic at `a`, on punctured neighbourhoods of `a`, form a
 field. -/
@@ -110,6 +200,21 @@ instance instField : Field (meromorphicGerms 𝕜 a) where
   inv_zero := Subtype.ext <| by
     rw [coe_inv, ZeroMemClass.coe_zero, ← Germ.coe_zero, ← Germ.coe_inv]
     exact Germ.coe_eq.2 (.of_forall fun _ ↦ inv_zero)
+  -- Constant rational casts keep rational scalar multiplication compatible with the algebra.
+  nnratCast q := algebraMap 𝕜 _ (q : 𝕜)
+  nnratCast_def q := by
+    -- Default division is multiplication by the pointwise inverse. Germ.const is the germ of
+    -- a constant function by definition, so Germ.coe_eq reduces the goal to scalar arithmetic.
+    apply Subtype.ext
+    apply Germ.coe_eq.mpr
+    exact .of_forall fun _ ↦ by simpa [div_eq_mul_inv] using (NNRat.cast_def q : (q : 𝕜) = _)
+  ratCast q := algebraMap 𝕜 _ (q : 𝕜)
+  ratCast_def q := by
+    -- Default division is multiplication by the pointwise inverse. Germ.const is the germ of
+    -- a constant function by definition, so Germ.coe_eq reduces the goal to scalar arithmetic.
+    apply Subtype.ext
+    apply Germ.coe_eq.mpr
+    exact .of_forall fun _ ↦ by simpa [div_eq_mul_inv] using (Rat.cast_def q : (q : 𝕜) = _)
   nnqsmul := _
   nnqsmul_def _ _ := rfl
   qsmul := _
