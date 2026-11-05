@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
 # Differentiating along a curve in a manifold
@@ -67,6 +68,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   directions.
 * `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
   the components of a curve in a product move with the components of its velocity.
+* `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
+  its value has the coordinate expression of its velocity as velocity.
 * `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
   family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
   `s = 0` share a point (`TauCeti.Manifold.variationField_eq_zero`) and is the differential of the
@@ -698,5 +701,21 @@ theorem snd_curve
   ((hasMFDerivAt_snd (c t)).comp t hc).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
 
 end Prod
+
+/-- A curve with velocity `w` at time `t`, read in any fixed extended chart containing its value,
+has velocity the coordinate expression of `w` in that chart. For an integral curve this says
+that, read in the chart, it solves the coordinate equation of the field. -/
+theorem hasDerivAt_extChartAt_comp [IsManifold I 1 M] {γ : 𝕜 → M} {x : M}
+    {w : TangentSpace I (γ t)} (hγ : HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hsrc : γ t ∈ (extChartAt I x).source) :
+    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t := by
+  replace hsrc := extChartAt_source I x ▸ hsrc
+  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
+    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
+  convert hderiv using 1
+  simp only [mvfderiv]
+  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
+    mfderiv_chartAt_eq_tangentCoordChange hsrc]
+  rfl
 
 end HasMFDerivAt
