@@ -177,19 +177,15 @@ theorem mem_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian �
     · simpa only [Function.comp_def,
         Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castLE_injective h)] using hw
     · intro i hi
-      have hnot : ¬ ∃ j : Fin N, Fin.castLE h j = i := by
-        rintro ⟨j, rfl⟩
-        exact (Nat.not_le_of_lt j.isLt) hi
+      have hnot : i ∉ range (Fin.castLE h) := by simpa [Fin.range_castLE] using hi
       exact Function.ExtendByZero.linearMap_apply_of_notMem_range 𝕜 w hnot
   · rintro ⟨hv, hz⟩
     refine ⟨v ∘ Fin.castLE h, hv, funext fun i ↦ ?_⟩
     by_cases hi : (i : ℕ) < N
-    · obtain ⟨j, rfl⟩ : ∃ j : Fin N, Fin.castLE h j = i := ⟨⟨i, hi⟩, Fin.ext rfl⟩
+    · obtain ⟨j, rfl⟩ : i ∈ range (Fin.castLE h) := by simpa [Fin.range_castLE] using hi
       simp only [Function.ExtendByZero.linearMap_apply_of_injective 𝕜
         (Fin.castLE_injective h), Function.comp_apply]
-    · have hnot : ¬ ∃ j : Fin N, Fin.castLE h j = i := by
-        rintro ⟨j, rfl⟩
-        exact hi j.isLt
+    · have hnot : i ∉ range (Fin.castLE h) := by simpa [Fin.range_castLE] using hi
       rw [Function.ExtendByZero.linearMap_apply_of_notMem_range 𝕜 _ hnot,
         hz i (Nat.le_of_not_gt hi)]
 

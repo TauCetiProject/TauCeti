@@ -235,15 +235,21 @@ noncomputable def isColimitForget : IsColimit ((forget TopCat).mapCocone (cocone
   Types.FilteredColimit.isColimitOf' _ _
     (fun (W : infiniteGrassmannian 𝕜 k) ↦
       (exists_toInfinite_eq W).imp fun _ ⟨V, hV⟩ ↦ ⟨V, hV.symm⟩)
-    fun n (_ _ : finiteGrassmannian 𝕜 k n) h ↦
-      ⟨n, 𝟙 n, congrArg _ (toInfinite_injective (n := n) h)⟩
+    fun n (V W : finiteGrassmannian 𝕜 k n) h ↦ by
+      have h' : toInfinite V = toInfinite W := by
+        rw [← cocone_ι_app_apply k n V, ← cocone_ι_app_apply k n W]
+        exact h
+      exact ⟨n, 𝟙 n, congrArg _ (toInfinite_injective h')⟩
 
 variable (𝕜) in
 /-- The infinite Grassmannian is the colimit in `TopCat` of the finite Grassmannians along
 ambient stabilization. -/
 noncomputable def isColimit : IsColimit (cocone 𝕜 k) :=
   Classical.choice <|
-    (TopCat.nonempty_isColimit_iff_eq_coinduced _ (isColimitForget (𝕜 := 𝕜) k)).2 rfl
+    (TopCat.nonempty_isColimit_iff_eq_coinduced _ (isColimitForget (𝕜 := 𝕜) k)).2 (by
+      -- The topology instance is the supremum of the topologies coinduced by `toInfinite`;
+      -- the cocone legs are these same maps, bundled as morphisms of `TopCat`.
+      rfl)
 
 end Colimit
 

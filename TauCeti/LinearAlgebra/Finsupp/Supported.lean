@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.Supported
-public import Mathlib.Order.Interval.Set.Fin
 public import Mathlib.RingTheory.Finiteness.Defs
 
 /-!
