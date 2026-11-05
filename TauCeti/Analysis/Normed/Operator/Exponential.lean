@@ -22,7 +22,9 @@ space. The norm bounds for exponentials in a general normed algebra live in
 * `ContinuousLinearMap.exp_add_smul`, `ContinuousLinearMap.exp_add_smul_apply`: exponentials of
   scalar multiples of a bounded operator compose additively.
 * `ContinuousLinearMap.expEquiv`: the exponential of a bounded operator as a continuous linear
-  automorphism with inverse `exp (-B)`.
+  automorphism with inverse `exp (-B)`, with `ContinuousLinearMap.coe_expEquiv` and
+  `ContinuousLinearMap.coe_expEquiv_symm` identifying it and its inverse with `exp B` and
+  `exp (-B)`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
@@ -54,7 +56,6 @@ theorem _root_.ContinuousLinearMap.exp_add_smul_apply (A : X →L[𝕜] X) (s t 
 
 /-- The exponential `exp B` of a continuous endomorphism of a Banach space, as a continuous linear
 automorphism with inverse `exp (-B)`. -/
-@[expose]
 noncomputable def _root_.ContinuousLinearMap.expEquiv (B : X →L[𝕜] X) : X ≃L[𝕜] X :=
   .equivOfInverse' (exp B) (exp (-B))
     (by
@@ -75,6 +76,16 @@ theorem _root_.ContinuousLinearMap.expEquiv_apply (B : X →L[𝕜] X) (x : X) :
 theorem _root_.ContinuousLinearMap.expEquiv_symm_apply (B : X →L[𝕜] X) (x : X) :
     B.expEquiv.symm x = exp (-B) x :=
   (rfl)
+
+@[simp]
+theorem _root_.ContinuousLinearMap.coe_expEquiv (B : X →L[𝕜] X) :
+    (B.expEquiv : X →L[𝕜] X) = exp B :=
+  ContinuousLinearMap.ext B.expEquiv_apply
+
+@[simp]
+theorem _root_.ContinuousLinearMap.coe_expEquiv_symm (B : X →L[𝕜] X) :
+    (B.expEquiv.symm : X →L[𝕜] X) = exp (-B) :=
+  ContinuousLinearMap.ext B.expEquiv_symm_apply
 
 /-- **The exponential of an operator acts exponentially on an eigenvector.** If `B x = μ • x`,
 then `exp B x = exp μ • x`. The statement also covers `x = 0`, without requiring a bundled

@@ -173,11 +173,11 @@ def expConj (J : AlmostComplexStructure V) (B : V →L[ℝ] V) :
 theorem expConj_toLinearMap (J : AlmostComplexStructure V) (B : V →L[ℝ] V) :
     (J.expConj B).toLinearMap =
       (exp B * LinearMap.toContinuousLinearMap J.toLinearMap * exp (-B)).toLinearMap :=
-  (rfl)
+  LinearMap.ext fun v => by simp [expConj, mul_apply_eq_comp]
 
 theorem expConj_apply (J : AlmostComplexStructure V) (B : V →L[ℝ] V) (v : V) :
-    J.expConj B v = exp B (J (exp (-B) v)) :=
-  (rfl)
+    J.expConj B v = exp B (J (exp (-B) v)) := by
+  simp [expConj]
 
 @[simp]
 theorem expConj_zero (J : AlmostComplexStructure V) : J.expConj 0 = J := by
@@ -198,7 +198,8 @@ theorem toContinuousLinearMap_tangentPath (J : AlmostComplexStructure V) (Y : V 
       exp (t • (2⁻¹ : ℝ) • (LinearMap.toContinuousLinearMap J.toLinearMap * Y)) *
         LinearMap.toContinuousLinearMap J.toLinearMap *
         exp (-(t • (2⁻¹ : ℝ) • (LinearMap.toContinuousLinearMap J.toLinearMap * Y))) :=
-  (rfl)
+  ContinuousLinearMap.ext fun v => by simp only [tangentPath, LinearMap.coe_toContinuousLinearMap',
+    expConj_apply, mul_apply_eq_comp]
 
 @[simp]
 theorem tangentPath_zero (J : AlmostComplexStructure V) (Y : V →L[ℝ] V) :
@@ -274,7 +275,7 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 symplectomorphism. -/
 theorem isSymplectomorphism_expEquiv {B : V →L[ℝ] V} (hB : ω.toBilinForm.IsSkewAdjoint B) :
     IsSymplectomorphism ω ω B.expEquiv.toLinearEquiv :=
-  isSymplectomorphism_iff.2 fun v w => hB.apply_exp_apply_exp v w
+  isSymplectomorphism_iff.2 fun v w => by simpa using hB.apply_exp_apply_exp v w
 
 /-- Conjugating an `ω`-compatible structure by the exponential of an infinitesimally symplectic
 endomorphism gives an `ω`-compatible structure. -/
@@ -288,25 +289,12 @@ tangent condition consists of `ω`-compatible structures. -/
 theorem Compatible.tangentPath (hJ : ω.Compatible J) {Y : V →L[ℝ] V}
     (hY : Y.toLinearMap ∈ ω.compatibleTangent J) (t : ℝ) :
     ω.Compatible (J.tangentPath Y t) := by
-  obtain ⟨hYJ, hYω⟩ := mem_compatibleTangent.1 hY
-  refine hJ.expConj fun v w => ?_
-  have hanti : ∀ u, Y (J u) = -J (Y u) := fun u => by
-    have h := AlmostComplexStructure.mem_tangent_iff_apply.1 hYJ u
-    simp only [ContinuousLinearMap.coe_coe] at h
-    rw [h, neg_neg]
-  have hskew (a b : V) : ω (Y a) b = -ω a (Y b) := by
-    simpa only [ContinuousLinearMap.coe_coe, Pi.neg_apply, map_neg] using hYω a b
-  have key : ω (J (Y v)) w = -ω v (J (Y w)) := by
-    have h1 := J.bilinForm_apply_left_eq_neg_apply_right hJ.invariant_apply (Y v) w
-    have h2 := hskew v (J w)
-    dsimp only at h1 h2 ⊢
-    rw [hanti, map_neg, neg_neg] at h2
-    rw [h1, h2]
-  have hJY (u : V) : (LinearMap.toContinuousLinearMap J.toLinearMap * Y) u = J (Y u) := by
-    simp
-  simp only [FunLike.coe_smul, Pi.smul_apply, Pi.neg_apply, hJY, map_smul, map_neg,
-    LinearMap.smul_apply, smul_eq_mul, key]
-  ring
+  refine hJ.expConj ((LinearMap.mem_skewAdjointSubmodule _).1 ?_)
+  rw [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.toLinearMap_smul,
+    ContinuousLinearMap.toLinearMap_mul, LinearMap.coe_toContinuousLinearMap]
+  exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
+    ((LinearMap.mem_skewAdjointSubmodule _).2
+      (hJ.invariant.isSkewAdjoint_mul_of_mem_compatibleTangent hY)))
 
 /-- The tangent path of an `ω`-tame structure is `ω`-tame for small times, in every direction. -/
 theorem Tames.eventually_tangentPath (hJ : ω.Tames J) (Y : V →L[ℝ] V) :

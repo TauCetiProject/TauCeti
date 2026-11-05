@@ -722,6 +722,20 @@ theorem compatibleTangent_le_tangent (ω : SymplecticForm V) (J : AlmostComplexS
     ω.compatibleTangent J ≤ J.tangent :=
   fun _ hY => hY.1
 
+/-- For an `ω`-invariant `J`, the product `J Y` of `J` with an element `Y` of the compatible
+tangent space is infinitesimally symplectic. This is why the exponential paths with generator
+`J Y` realizing compatible variations stay `ω`-compatible. -/
+theorem Invariant.isSkewAdjoint_mul_of_mem_compatibleTangent {ω : SymplecticForm V}
+    {J : AlmostComplexStructure V} (hJ : ω.Invariant J) {Y : Module.End ℝ V}
+    (hY : Y ∈ ω.compatibleTangent J) : ω.toBilinForm.IsSkewAdjoint (J.toLinearMap * Y) := by
+  obtain ⟨hYJ, hYω⟩ := mem_compatibleTangent.1 hY
+  intro v w
+  have hanti := AlmostComplexStructure.mem_tangent_iff_apply.1 hYJ w
+  have h1 := J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).1 hJ) (Y v) w
+  have h2 := hYω v (J w)
+  simp only [Pi.neg_apply, mul_apply_eq_comp, map_neg] at h1 h2 ⊢
+  rw [h1, h2, hanti, map_neg, neg_neg]
+
 end SymplecticForm
 
 namespace IsComplexLinearMap
