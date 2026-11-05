@@ -65,11 +65,12 @@ namespace TauCeti
 variable {n : ℕ}
 
 /-- The weight `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)` is monotone in the exponent. -/
-private theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ} (h : t ≤ t') :
+theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ} (h : t ≤ t') :
     (1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (t' / 2) :=
   Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
 
-private theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
+/-- The weight `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)` is positive. -/
+theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
     0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
 
@@ -289,7 +290,7 @@ end Inclusion
 section Deriv
 
 /-- One more frequency derivative lowers the order of the weight by one. -/
-private theorem order_sub_one_sub_length (m : ℝ) (β : List (Fin n)) (j : Fin n) :
+theorem order_sub_one_sub_length (m : ℝ) (β : List (Fin n)) (j : Fin n) :
     m - 1 - (β.length : ℝ) = m - ((β ++ [j]).length : ℝ) := by
   simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
   ring
@@ -321,6 +322,16 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coor
     (frequencyDeriv j a).coefficient (x, ξ) =
       coordinateDeriv [j] (fun η => a.coefficient (x, η)) ξ := (rfl)
 
+/-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
+theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (frequencyDeriv j a).coefficient x ξ =
+      mixedDeriv α (β ++ [j]) a.coefficient x ξ := by
+  have h : (frequencyDeriv j a).coefficient =
+      fun p => coordinateDeriv [j] (fun η => a.coefficient (p.1, η)) p.2 :=
+    funext fun p => coefficient_frequencyDeriv j a p.1 p.2
+  rw [h, mixedDeriv_coordinateDeriv_snd]
+
 /-- The spatial derivative `∂_{x_j} a` of a symbol of order `m`, again a symbol of order `m`. -/
 def spatialDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
   toFun a :=
@@ -348,15 +359,22 @@ theorem coefficient_spatialDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coordi
     (spatialDeriv j a).coefficient (x, ξ) =
       coordinateDeriv [j] (fun y => a.coefficient (y, ξ)) x := (rfl)
 
+/-- The mixed derivatives of `∂_{x_j} a` are those of `a` with one more position derivative. -/
+theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (spatialDeriv j a).coefficient x ξ =
+      mixedDeriv (α ++ [j]) β a.coefficient x ξ := by
+  have h : (spatialDeriv j a).coefficient =
+      fun p => coordinateDeriv [j] (fun y => a.coefficient (y, p.2)) p.1 :=
+    funext fun p => coefficient_spatialDeriv j a p.1 p.2
+  rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
+
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
   intro α β
   obtain ⟨C, hC, hCa⟩ := ha α (β ++ [j])
   refine ⟨C, hC, fun x ξ => ?_⟩
-  have h : (Symbol.frequencyDeriv j a).coefficient =
-      fun p => coordinateDeriv [j] (fun η => a.coefficient (p.1, η)) p.2 :=
-    funext fun p => coefficient_frequencyDeriv j a p.1 p.2
-  rw [h, mixedDeriv_coordinateDeriv_snd, order_sub_one_sub_length]
+  rw [mixedDeriv_frequencyDeriv, order_sub_one_sub_length]
   exact hCa x ξ
 
 theorem IsUniform.spatialDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
@@ -364,10 +382,7 @@ theorem IsUniform.spatialDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin 
   intro α β
   obtain ⟨C, hC, hCa⟩ := ha (α ++ [j]) β
   refine ⟨C, hC, fun x ξ => ?_⟩
-  have h : (Symbol.spatialDeriv j a).coefficient =
-      fun p => coordinateDeriv [j] (fun y => a.coefficient (y, p.2)) p.1 :=
-    funext fun p => coefficient_spatialDeriv j a p.1 p.2
-  rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
+  rw [mixedDeriv_spatialDeriv]
   exact hCa x ξ
 
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}

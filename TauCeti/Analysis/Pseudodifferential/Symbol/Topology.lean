@@ -37,8 +37,10 @@ The main results are:
   `TauCeti.Symbol.continuous_spatialDeriv`: order inclusions and derivatives are continuous, with
   the exact seminorm identities `TauCeti.Symbol.seminorm_frequencyDeriv` and
   `TauCeti.Symbol.seminorm_spatialDeriv`;
-* `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative at a point is a continuous
-  function of the symbol;
+* `TauCeti.Symbol.inclusionCLM`, `TauCeti.Symbol.frequencyDerivCLM`,
+  `TauCeti.Symbol.spatialDerivCLM`: these operations as continuous linear maps;
+* `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
+  at a point is a continuous linear function of the symbol;
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
 
@@ -50,8 +52,9 @@ The seminorms are set up following Mathlib's seminorms of the Schwartz space
 
 ## References
 
-* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Definition 18.1.1
-  and the topology defined there by the best constants of the estimates.
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, Definition 7.8.1:
+  symbol classes with constants depending on a compact set of positions, whose best constants
+  are the seminorms used here.
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
   Lecture I, (1.15).
 -/
@@ -99,7 +102,7 @@ private theorem le_seminormAux (K : Compacts (CoordinateSpace n)) (α β : List 
     (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∈ K) (ξ : CoordinateSpace n) :
     ‖mixedDeriv α β a.coefficient x ξ‖ ≤
       seminormAux K α β a * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  have hw : 0 < (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := Real.rpow_pos_of_pos (by positivity) _
+  have hw := rpow_weight_pos ξ (m - β.length)
   rw [← div_le_iff₀ hw]
   exact le_csInf (bounds_nonempty K α β a) fun c hc => (div_le_iff₀ hw).2 (hc.2 x hx ξ)
 
@@ -161,7 +164,7 @@ theorem seminorm_le_iff {K : Compacts (CoordinateSpace n)} {α β : List (Fin n)
     Symbol.seminorm K α β a ≤ C ↔ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   refine ⟨fun h x hx ξ => (le_seminorm K α β a hx ξ).trans ?_, seminorm_le_bound K α β a hC⟩
-  exact mul_le_mul_of_nonneg_right h (Real.rpow_pos_of_pos (by positivity) _).le
+  exact mul_le_mul_of_nonneg_right h (rpow_weight_pos ξ _).le
 
 /-- The seminorm `p_{K,[],[]}(a)` bounds `‖a(x, ξ)‖ / ⟨ξ⟩^m` for `x ∈ K`. -/
 theorem norm_coefficient_le_seminorm (K : Compacts (CoordinateSpace n)) (a : Symbol n V W m)
@@ -181,50 +184,24 @@ theorem seminorm_inclusion_le (h : m ≤ m') (K : Compacts (CoordinateSpace n))
   refine seminorm_le_bound K α β _ (apply_nonneg _ _) fun x hx ξ => ?_
   rw [coefficient_inclusion]
   refine (le_seminorm K α β a hx ξ).trans (mul_le_mul_of_nonneg_left ?_ (apply_nonneg _ _))
-  exact Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
-
-/-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
-private theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (frequencyDeriv j a).coefficient x ξ =
-      mixedDeriv α (β ++ [j]) a.coefficient x ξ := by
-  have h : (frequencyDeriv j a).coefficient =
-      fun p => coordinateDeriv [j] (fun η => a.coefficient (p.1, η)) p.2 :=
-    funext fun p => coefficient_frequencyDeriv j a p.1 p.2
-  rw [h, mixedDeriv_coordinateDeriv_snd]
-
-/-- The order-`(m - 1)` weight of `β` is the order-`m` weight of `β ++ [j]`. -/
-private theorem weight_frequencyDeriv (m : ℝ) (β : List (Fin n)) (j : Fin n)
-    (ξ : CoordinateSpace n) :
-    (1 + ‖ξ‖ ^ 2) ^ ((m - 1 - β.length) / 2) = (1 + ‖ξ‖ ^ 2) ^ ((m - (β ++ [j]).length) / 2) := by
-  congr 2
-  push_cast [List.length_append, List.length_singleton]
-  ring
+  exact rpow_weight_le_rpow_weight ξ (by linarith)
 
 /-- The seminorms of the frequency derivative `∂_{ξ_j} a` are seminorms of `a` with one more
 frequency derivative. -/
+@[simp]
 theorem seminorm_frequencyDeriv (j : Fin n) (K : Compacts (CoordinateSpace n))
     (α β : List (Fin n)) (a : Symbol n V W m) :
     Symbol.seminorm K α β (frequencyDeriv j a) = Symbol.seminorm K α (β ++ [j]) a := by
   refine le_antisymm (seminorm_le_bound K α β _ (apply_nonneg _ _) fun x hx ξ => ?_)
     (seminorm_le_bound K α _ a (apply_nonneg _ _) fun x hx ξ => ?_)
-  · rw [mixedDeriv_frequencyDeriv, weight_frequencyDeriv m β j]
+  · rw [mixedDeriv_frequencyDeriv, order_sub_one_sub_length m β j]
     exact le_seminorm K α (β ++ [j]) a hx ξ
-  · rw [← mixedDeriv_frequencyDeriv, ← weight_frequencyDeriv m β j]
+  · rw [← mixedDeriv_frequencyDeriv, ← order_sub_one_sub_length m β j]
     exact le_seminorm K α β (frequencyDeriv j a) hx ξ
-
-/-- The mixed derivatives of `∂_{x_j} a` are those of `a` with one more position derivative. -/
-private theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (spatialDeriv j a).coefficient x ξ =
-      mixedDeriv (α ++ [j]) β a.coefficient x ξ := by
-  have h : (spatialDeriv j a).coefficient =
-      fun p => coordinateDeriv [j] (fun y => a.coefficient (y, p.2)) p.1 :=
-    funext fun p => coefficient_spatialDeriv j a p.1 p.2
-  rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
 
 /-- The seminorms of the spatial derivative `∂_{x_j} a` are seminorms of `a` with one more
 position derivative. -/
+@[simp]
 theorem seminorm_spatialDeriv (j : Fin n) (K : Compacts (CoordinateSpace n))
     (α β : List (Fin n)) (a : Symbol n V W m) :
     Symbol.seminorm K α β (spatialDeriv j a) = Symbol.seminorm K (α ++ [j]) β a := by
@@ -270,7 +247,7 @@ theorem isUniform_iff_bddAbove_seminorm {a : Symbol n V W m} :
   · obtain ⟨C, hC⟩ := h α β
     refine ⟨max C 0, le_max_right _ _, fun x ξ => (le_seminorm {x} α β a rfl ξ).trans ?_⟩
     refine mul_le_mul_of_nonneg_right ((hC ⟨{x}, rfl⟩).trans (le_max_left _ _)) ?_
-    exact (Real.rpow_pos_of_pos (by positivity) _).le
+    exact (rpow_weight_pos ξ _).le
 
 end Seminorm
 
@@ -315,8 +292,7 @@ instance instPolynormableSpace : PolynormableSpace ℂ (Symbol n V W m) :=
 instance instLocallyConvexSpace : LocallyConvexSpace ℝ (Symbol n V W m) :=
   withSeminorms.toLocallyConvexSpace
 
-/-- The seminorms separate symbols: a nonzero symbol has a nonzero value `a(x, ξ)`, and then
-`p_{{x},[],[]}(a) ≠ 0`. -/
+/-- The symbol class is T1, hence Hausdorff: the seminorms `p_{K,α,β}` separate symbols. -/
 instance instT1Space : T1Space (Symbol n V W m) := by
   refine withSeminorms.T1_of_separating fun a ha => ?_
   obtain ⟨⟨x, ξ⟩, hxξ⟩ : ∃ p, a.coefficient p ≠ 0 := by
@@ -349,32 +325,69 @@ theorem continuous_inclusion (h : m ≤ m') :
     fun ⟨K, α, β⟩ => ⟨{(K, α, β)}, 1, fun a => by
       simpa using seminorm_inclusion_le h K α β a⟩
 
+/-- The order inclusion `inclusion h` as a continuous linear map. -/
+def inclusionCLM (h : m ≤ m') : Symbol n V W m →L[ℂ] Symbol n V W m' where
+  toLinearMap := inclusion h
+  cont := continuous_inclusion h
+
+@[simp]
+theorem inclusionCLM_apply (h : m ≤ m') (a : Symbol n V W m) :
+    inclusionCLM h a = inclusion h a := (rfl)
+
 /-- Frequency derivatives are continuous. -/
 theorem continuous_frequencyDeriv (j : Fin n) :
     Continuous (frequencyDeriv (n := n) (V := V) (W := W) (m := m) j) :=
   WithSeminorms.continuous_of_isBounded withSeminorms withSeminorms _
-    fun ⟨K, α, β⟩ => ⟨{(K, α, β ++ [j])}, 1, fun a => by
-      simp [seminorm_frequencyDeriv]⟩
+    fun ⟨K, α, β⟩ => ⟨{(K, α, β ++ [j])}, 1, fun a => by simp⟩
+
+/-- The frequency derivative `frequencyDeriv j` as a continuous linear map. -/
+def frequencyDerivCLM (j : Fin n) : Symbol n V W m →L[ℂ] Symbol n V W (m - 1) where
+  toLinearMap := frequencyDeriv j
+  cont := continuous_frequencyDeriv j
+
+@[simp]
+theorem frequencyDerivCLM_apply (j : Fin n) (a : Symbol n V W m) :
+    frequencyDerivCLM j a = frequencyDeriv j a := (rfl)
 
 /-- Spatial derivatives are continuous. -/
 theorem continuous_spatialDeriv (j : Fin n) :
     Continuous (spatialDeriv (n := n) (V := V) (W := W) (m := m) j) :=
   WithSeminorms.continuous_of_isBounded withSeminorms withSeminorms _
-    fun ⟨K, α, β⟩ => ⟨{(K, α ++ [j], β)}, 1, fun a => by
-      simp [seminorm_spatialDeriv]⟩
+    fun ⟨K, α, β⟩ => ⟨{(K, α ++ [j], β)}, 1, fun a => by simp⟩
 
-/-- Every mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` at a fixed point is a continuous function of the
-symbol `a`; in particular so is the value `a(x, ξ)`. -/
-theorem continuous_mixedDeriv (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    Continuous fun a : Symbol n V W m => mixedDeriv α β a.coefficient x ξ := by
+/-- The spatial derivative `spatialDeriv j` as a continuous linear map. -/
+def spatialDerivCLM (j : Fin n) : Symbol n V W m →L[ℂ] Symbol n V W m where
+  toLinearMap := spatialDeriv j
+  cont := continuous_spatialDeriv j
+
+@[simp]
+theorem spatialDerivCLM_apply (j : Fin n) (a : Symbol n V W m) :
+    spatialDerivCLM j a = spatialDeriv j a := (rfl)
+
+variable (n V W m) in
+/-- The mixed derivative `a ↦ ∂_x^α ∂_ξ^β a(x, ξ)` at a fixed point, as a continuous linear map
+on the symbols of order `m`; in particular the value `a ↦ a(x, ξ)` for `α = β = []`. -/
+def mixedDerivCLM (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    Symbol n V W m →L[ℂ] V →L[ℂ] W :=
   let L : Symbol n V W m →ₗ[ℂ] V →L[ℂ] W :=
     { toFun a := mixedDeriv α β a.coefficient x ξ
       map_add' a b := mixedDeriv_add a.contDiff_coefficient b.contDiff_coefficient α β x ξ
       map_smul' c a := mixedDeriv_const_smul a.contDiff_coefficient c α β x ξ }
-  refine WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) L
-    (Seminorm.IsBounded.of_real fun _ => ⟨{({x}, α, β)},
-      (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2), fun a => ?_⟩)
-  simpa [L, mul_comm] using le_seminorm {x} α β a rfl ξ
+  { toLinearMap := L
+    cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) L
+      (Seminorm.IsBounded.of_real fun _ => ⟨{({x}, α, β)},
+        (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2), fun a => by
+          simpa [L, mul_comm] using le_seminorm {x} α β a rfl ξ⟩) }
+
+@[simp]
+theorem mixedDerivCLM_apply (α β : List (Fin n)) (x ξ : CoordinateSpace n) (a : Symbol n V W m) :
+    mixedDerivCLM n V W m α β x ξ a = mixedDeriv α β a.coefficient x ξ := (rfl)
+
+/-- Every mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` at a fixed point is a continuous function of the
+symbol `a`; in particular so is the value `a(x, ξ)`. -/
+theorem continuous_mixedDeriv (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    Continuous fun a : Symbol n V W m => mixedDeriv α β a.coefficient x ξ :=
+  (mixedDerivCLM n V W m α β x ξ).continuous
 
 end Topology
 
