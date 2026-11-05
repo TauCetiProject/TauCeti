@@ -56,15 +56,10 @@ theorem ae_tendsto_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}
       (Measurable.of_discrete.comp
         (measurable_visitCount y n (measurableSet_singleton y))).div_const _
   -- On entrance, the stopped future has a point-started law, scaled by the entrance mass.
-  have hlaw := markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul ν κ hσ
-    MeasurableSet.univ (y := y) fun x hx => by
-      obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx.2
-      simp only [stoppedValue, ← hn, WithTop.untopD_coe]
-      exact (successiveVisit_eq_coe_iff.mp hn.symm).1
-  simp only [Set.univ_inter] at hlaw
+  have hlaw := markovChainLaw_restrict_map_successiveVisit_eq_smul ν κ y 0
   have hy' : ∀ᵐ x ∂markovChainLaw (dirac y) κ,
       Tendsto (fun n => (visitCount x y n : ℝ) / n) atTop (𝓝 r) :=
-    hy.mono fun x hx => (tendsto_visitCount_div_shift_iff x y 1 r).1 hx
+    hy.mono fun x hx => (tendsto_visitCount_shift_iterate_div_iff x y 1 r).1 hx
   have hfuture : ∀ᵐ x ∂(markovChainLaw ν κ).restrict {x | σ x ≠ ⊤},
       Tendsto (fun n => (visitCount (stoppedValue (fun n => (shift α)^[n]) σ x) y n : ℝ) / n)
         atTop (𝓝 r) := by
@@ -72,7 +67,8 @@ theorem ae_tendsto_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}
     rw [hlaw]
     exact ae_smul_measure hy' _
   have hS : MeasurableSet {x | σ x ≠ ⊤} :=
-    ((measurableSet_singleton ⊤).preimage hσ.measurable').compl
+    measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
+      (measurableSet_singleton y) 0
   filter_upwards [(ae_restrict_iff' hS).1 hfuture] with x hx
   by_cases hhit : hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤
   · rw [ite_eq_left hhit]
@@ -80,8 +76,8 @@ theorem ae_tendsto_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}
     obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hfin
     have htail := hx hfin
     simp only [stoppedValue, ← hn, WithTop.untopD_coe] at htail
-    exact (tendsto_visitCount_div_shift_iff x y 1 r).2
-      ((tendsto_visitCount_div_shift_iff x y n r).1 htail)
+    exact (tendsto_visitCount_shift_iterate_div_iff x y 1 r).2
+      ((tendsto_visitCount_shift_iterate_div_iff x y n r).1 htail)
   · -- A path that never enters `y` has every occupation count equal to zero.
     rw [ite_eq_right hhit]
     have hnever : ∀ n, x n ≠ y := by
@@ -109,11 +105,10 @@ theorem tendsto_integral_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}
     (⟨1, Filter.Eventually.of_forall fun n => Filter.Eventually.of_forall fun x => ?_⟩)
     (ae_tendsto_visitCount_div_of_ae_tendsto_dirac ν κ hy)
   · have hS : MeasurableSet {x : ℕ → α |
-        hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
-      ((measurableSet_singleton ⊤).preimage
-        (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-          (f := Filtration.piLE (X := fun _ : ℕ => α))
-          (measurableSet_singleton y)).measurable').compl
+        hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} := by
+      simpa only [successiveVisit_zero] using
+        measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
+          (measurableSet_singleton y) 0
     have he : (fun x : ℕ → α =>
         if hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ then r else 0) =
         {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤}.indicator (fun _ => r) := by
@@ -124,8 +119,6 @@ theorem tendsto_integral_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}
     by_cases hn : n = 0
     · simp [hn]
     · exact (div_le_one (by exact_mod_cast Nat.pos_of_ne_zero hn)).2
-        (by exact_mod_cast (by simpa only [visitCount_eq_count] using
-          (Nat.count_le (p := fun i => shift α x i = y) (n := n)) :
-            visitCount (shift α x) y n ≤ n))
+        (by exact_mod_cast visitCount_le (shift α x) y n)
 
 end MeasureTheory.Measure

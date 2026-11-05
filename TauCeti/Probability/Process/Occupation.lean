@@ -30,7 +30,7 @@ namespace TauCeti.Probability
 variable {α : Type*}
 
 /-- Deleting any finite prefix preserves and reflects convergence of the visit frequency. -/
-theorem tendsto_visitCount_div_shift_iff (x : ℕ → α) (y : α) (k : ℕ) (r : ℝ) :
+theorem tendsto_visitCount_shift_iterate_div_iff (x : ℕ → α) (y : α) (k : ℕ) (r : ℝ) :
     Tendsto (fun n => (visitCount ((shift α)^[k] x) y n : ℝ) / n) atTop (𝓝 r) ↔
       Tendsto (fun n => (visitCount x y n : ℝ) / n) atTop (𝓝 r) := by
   classical
@@ -44,16 +44,12 @@ theorem tendsto_visitCount_div_shift_iff (x : ℕ → α) (y : α) (k : ℕ) (r 
         (visitCount (shift α z) y n : ℝ) / n - (visitCount z y n : ℝ) / n) (fun n => ?_)
         (tendsto_const_nhds.div_atTop tendsto_natCast_atTop_atTop :
           Tendsto (fun n : ℕ => (1 : ℝ) / n) atTop (𝓝 0))
-      have hc := visitCount_add z y 1 n
+      have hc : visitCount (shift α z) y n + (if z 0 = y then 1 else 0) =
+          visitCount z y n + (if z n = y then 1 else 0) := by
+        simpa only [visitCount_def, shift_apply] using
+          occCount_succ_add_zero_eq_visitCount_add_last z y n
       have he : (visitCount (shift α z) y n : ℝ) - visitCount z y n =
           (if z n = y then 1 else 0) - (if z 0 = y then 1 else 0) := by
-        rw [Nat.add_comm 1 n, visitCount_succ, visitCount_succ, visitCount_zero,
-          zero_add] at hc
-        have hc' : visitCount (fun i => z (1 + i)) y n = visitCount (shift α z) y n := by
-          congr 1
-          funext i
-          simp [Nat.add_comm]
-        rw [hc'] at hc
         have hcR := congrArg (fun m : ℕ => (m : ℝ)) hc
         push_cast at hcR
         split_ifs at hcR ⊢ <;> linarith
