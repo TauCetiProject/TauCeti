@@ -29,6 +29,7 @@ through the isomorphism `(K ⋆ X)ᵒᵖ ≅ Xᵒᵖ ⋆ Kᵒᵖ` (`SSet.join.op
 * `SSet.coslice p`: the coslice `C_{p/}`, whose simplices are described by `SSet.coslice.objEquiv`.
 * `SSet.coslice.π p`: the projection `C_{p/} ⟶ C`, restricting a simplex `K ⋆ Δ[n] ⟶ C` to
   `Δ[n]`.
+* `SSet.coslice.opSliceIso p`: the identification of `C_{p/}` with `(Cᵒᵖ_{/pᵒᵖ})ᵒᵖ`.
 
 ## Main results
 
@@ -39,6 +40,7 @@ through the isomorphism `(K ⋆ X)ᵒᵖ ≅ Xᵒᵖ ⋆ Kᵒᵖ` (`SSet.join.op
   restrictions of the corresponding map `K ⋆ X ⟶ C`.
 * `SSet.coslice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
+* `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
 
 ## References
 
@@ -88,6 +90,11 @@ def coslice : SSet.{u} :=
   (slice (opFunctor.map p)).op
 
 namespace coslice
+
+/-- The coslice `C_{p/}` is the opposite of the slice `Cᵒᵖ_{/pᵒᵖ}`. Through this isomorphism,
+statements about the coslice are deduced from the dual statements about slices. -/
+def opSliceIso : coslice p ≅ (slice (opFunctor.map p)).op :=
+  Iso.refl _
 
 variable {p}
 
@@ -194,6 +201,17 @@ along the inclusion `X ⟶ K ⋆ X`. -/
 @[reassoc (attr := simp)]
 lemma comp_π (F : X ⟶ coslice p) : F ≫ π p = join.inr K X ≫ (homEquiv F).1 := by
   rw [π, ← join.inr_map_assoc (𝟙 K) F, ← homEquiv_comp_coe, Category.comp_id]
+
+variable (p) in
+/-- The coslice under the empty diagram is the whole simplicial set: when `K` is empty, the
+projection `C_{p/} ⟶ C` is an isomorphism. -/
+lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
+  refine isIso_of_yoneda_map_bijective _ fun X ↦ ⟨fun F G h ↦ hom_ext ?_, fun g ↦ ?_⟩
+  · have := join.isIso_inr (L := X) hK
+    simpa only [comp_π, cancel_epi] using h
+  · have := join.isIso_inr (L := X) hK
+    refine ⟨homEquiv.symm ⟨inv (join.inr K X) ≫ g, (isInitialOfNotNonempty hK).hom_ext _ _⟩, ?_⟩
+    simp
 
 /-- The projection to `C` sends a simplex `σ : K ⋆ Δ[n] ⟶ C` of the coslice to its restriction to
 `Δ[n]`. -/

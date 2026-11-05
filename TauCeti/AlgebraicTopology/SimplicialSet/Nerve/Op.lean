@@ -1,0 +1,98 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
+public import Mathlib.AlgebraicTopology.SimplicialSet.Op
+
+/-!
+# The nerve of the opposite category
+
+The nerve of the opposite category `Cᵒᵖ` is the opposite of the nerve of `C`
+(`CategoryTheory.nerve.opIso`): an `n`-simplex of `nerve Cᵒᵖ`, a sequence of `n` composable
+morphisms of `Cᵒᵖ`, is the same as the reversed sequence of composable morphisms of `C`, which is
+an `n`-simplex of `(nerve C)ᵒᵖ`. On simplices it is given by Mathlib's equivalence
+`CategoryTheory.ComposableArrows.opEquivalence`. This isomorphism is listed as a TODO in Mathlib's
+`Mathlib.AlgebraicTopology.SimplicialSet.Op`.
+
+## Main definitions
+
+* `CategoryTheory.nerve.opIso C`: the isomorphism `nerve Cᵒᵖ ≅ (nerve C)ᵒᵖ`.
+
+## Main results
+
+* `CategoryTheory.nerve.opIso_hom_app_obj`: the vertex `i` of the image of a simplex `G` of
+  `nerve Cᵒᵖ` is the vertex `i.rev` of `G`.
+* `CategoryTheory.nerve.opIso_hom_app_nerveEquiv_symm`: on vertices, the isomorphism is the
+  identification of the objects of `Cᵒᵖ` with those of `C`.
+-/
+
+public section
+
+open CategoryTheory Opposite Simplicial
+
+universe v u
+
+namespace CategoryTheory.nerve
+
+variable {D : Type*} [Category* D]
+
+/-- A functor out of `Fin (n + 1)` sends inequalities with equal endpoints to the same morphism, up
+to the identifications of the endpoints. -/
+private lemma map_homOfLE_eq {n : ℕ} (G : Fin (n + 1) ⥤ D) {a a' b b' : Fin (n + 1)}
+    (ha : a = a') (hb : b = b') (h : a ≤ b) :
+    G.map (homOfLE h) =
+      eqToHom (congrArg G.obj ha) ≫ G.map (homOfLE (ha ▸ hb ▸ h)) ≫
+        eqToHom (congrArg G.obj hb).symm := by
+  subst ha hb
+  simp
+
+/-- The variant of `map_homOfLE_eq` for the opposites of the morphisms given by a functor
+`Fin (n + 1) ⥤ Dᵒᵖ`. -/
+private lemma unop_map_homOfLE_eq {n : ℕ} (G : Fin (n + 1) ⥤ Dᵒᵖ) {a a' b b' : Fin (n + 1)}
+    (ha : a = a') (hb : b = b') (h : a ≤ b) :
+    (G.map (homOfLE h)).unop =
+      eqToHom (congrArg (fun j ↦ unop (G.obj j)) hb) ≫ (G.map (homOfLE (ha ▸ hb ▸ h))).unop ≫
+        eqToHom (congrArg (fun j ↦ unop (G.obj j)) ha).symm := by
+  subst ha hb
+  simp
+
+variable (C : Type u) [Category.{v} C]
+
+/-- The nerve of the opposite category is the opposite of the nerve: an `n`-simplex of
+`nerve Cᵒᵖ`, a sequence of composable morphisms of `Cᵒᵖ`, is the reversed sequence of composable
+morphisms of `C`. -/
+noncomputable def opIso : nerve Cᵒᵖ ≅ (nerve C).op :=
+  NatIso.ofComponents (fun n ↦ Equiv.toIso
+    { toFun G := ((ComposableArrows.opEquivalence C _).inverse.obj G).unop
+      invFun F := (ComposableArrows.opEquivalence C _).functor.obj (op F)
+      -- Reversing the vertices twice is the identity, up to `Fin.rev_rev`.
+      left_inv G := ComposableArrows.ext (fun i ↦ congrArg G.obj (Fin.rev_rev i))
+        (fun _ _ ↦ map_homOfLE_eq G (Fin.rev_rev _) (Fin.rev_rev _) _)
+      right_inv F := ComposableArrows.ext (fun i ↦ congrArg F.obj (Fin.rev_rev i))
+        (fun _ _ ↦ map_homOfLE_eq F (Fin.rev_rev _) (Fin.rev_rev _) _) })
+    (fun _ ↦ by
+      ext G
+      -- The simplicial operators of `(nerve C)ᵒᵖ` act through `SimplexCategory.rev`, which
+      -- conjugates by `Fin.rev`.
+      exact ComposableArrows.ext (fun i ↦ congrArg (fun j ↦ unop (G.obj j)) (Fin.rev_rev _).symm)
+        (fun _ _ ↦ unop_map_homOfLE_eq G (Fin.rev_rev _).symm (Fin.rev_rev _).symm _))
+
+/-- The vertex `i` of the image under `opIso` of a simplex `G` of `nerve Cᵒᵖ` is the vertex
+`i.rev` of `G`. -/
+@[simp]
+lemma opIso_hom_app_obj {n : ℕ} (G : (nerve Cᵒᵖ) _⦋n⦌) (i : Fin (n + 1)) :
+    ((nerve C).opObjEquiv ((opIso C).hom.app _ G)).obj i = unop (G.obj i.rev) :=
+  (rfl)
+
+/-- On vertices, `opIso` is the identification of the objects of `Cᵒᵖ` with those of `C`. -/
+@[simp]
+lemma opIso_hom_app_nerveEquiv_symm (x : Cᵒᵖ) :
+    (opIso C).hom.app (op ⦋0⦌) (nerveEquiv.symm x) =
+      (SSet.opObjEquiv (X := nerve C) (n := op ⦋0⦌)).symm (nerveEquiv.symm x.unop) :=
+  ComposableArrows.ext₀ rfl
+
+end CategoryTheory.nerve
