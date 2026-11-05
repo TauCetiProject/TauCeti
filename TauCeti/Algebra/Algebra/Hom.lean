@@ -56,7 +56,8 @@ several do.
   `AlgHom.range_comp_right_of_surjective`: ranges of composition maps on algebra homomorphisms,
   characterized by lifting values and by vanishing on a kernel.
 * `AlgHom.descend`: an algebra homomorphism constant on the fibres of a surjective algebra
-  homomorphism descends along it, over arbitrary semirings.
+  homomorphism descends along it, over arbitrary semirings; `AlgHom.descend_unique` says the
+  descent is the only homomorphism factoring it.
 
 ## Implementation notes
 
@@ -266,13 +267,22 @@ noncomputable def AlgHom.descend (g : A →ₐ[R] B) (hg : Function.Surjective g
   commutes' c := (h _ _ (by rw [Function.surjInv_eq hg, AlgHom.commutes])).trans (φ.commutes c)
 
 /-- The descent of `φ` along `g` sends `g a` to `φ a`. -/
+@[simp]
 theorem AlgHom.descend_apply (g : A →ₐ[R] B) (hg : Function.Surjective g) (φ : A →ₐ[R] C)
     (h : ∀ a b, g a = g b → φ a = φ b) (a : A) : g.descend hg φ h (g a) = φ a :=
   h _ _ (Function.surjInv_eq hg (g a))
 
 /-- The descent of `φ` along `g`, composed with `g`, is `φ`. -/
+@[simp]
 theorem AlgHom.descend_comp (g : A →ₐ[R] B) (hg : Function.Surjective g) (φ : A →ₐ[R] C)
     (h : ∀ a b, g a = g b → φ a = φ b) : (g.descend hg φ h).comp g = φ :=
   AlgHom.ext (g.descend_apply hg φ h)
+
+/-- The descent of `φ` along `g` is the only homomorphism whose composite with `g` is `φ`. -/
+theorem AlgHom.descend_unique (g : A →ₐ[R] B) (hg : Function.Surjective g) (φ : A →ₐ[R] C)
+    (h : ∀ a b, g a = g b → φ a = φ b) (ψ : B →ₐ[R] C) (hψ : ψ.comp g = φ) :
+    ψ = g.descend hg φ h :=
+  AlgHom.ext <| hg.forall.mpr fun a ↦
+    (DFunLike.congr_fun hψ a).trans (g.descend_apply hg φ h a).symm
 
 end Descend

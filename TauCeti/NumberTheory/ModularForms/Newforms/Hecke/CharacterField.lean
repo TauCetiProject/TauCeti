@@ -358,7 +358,8 @@ theorem heckeTCuspNewCharFieldCoefficientCharacter_surjective (hk : 2 ≤ k)
   rintro ⟨x, hx⟩
   obtain ⟨T, hT⟩ : x ∈ (heckeTCuspNewCharFieldCharacter f).range := by
     rwa [range_heckeTCuspNewCharFieldCharacter hk f]
-  exact ⟨T, Subtype.ext hT⟩
+  exact ⟨T, Subtype.ext
+    ((coe_heckeTCuspNewCharFieldCoefficientCharacter_apply f T).trans hT)⟩
 
 /-- Every `ℚ(χ)`-algebra character of the Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` vanishes
 on the kernel of the character of some newform of nebentypus `χ`. -/
@@ -411,7 +412,9 @@ theorem exists_conjHeckeTCuspNewCharFieldCharacter_eq (hk : 2 ≤ k)
   obtain ⟨f, hφ⟩ := exists_heckeTCuspNewCharFieldCharacter_ker_le φ
   let χf := heckeTCuspNewCharFieldCoefficientCharacter f
   have hφ' : ∀ T S, χf T = χf S → φ T = φ S := fun _ _ h ↦
-    apply_eq_of_heckeTCuspNewCharFieldCharacter_eq hφ (congrArg Subtype.val h)
+    apply_eq_of_heckeTCuspNewCharFieldCharacter_eq hφ
+      ((coe_heckeTCuspNewCharFieldCoefficientCharacter_apply f _).symm.trans
+        ((congrArg Subtype.val h).trans (coe_heckeTCuspNewCharFieldCoefficientCharacter_apply f _)))
   -- `AlgHom.liftOfSurjective` would need a `CommRing` instance on the Hecke algebra, and
   -- assembling one from `Subalgebra.toRing` times out, so `φ` descends along `χf` by its fibres.
   exact ⟨f, χf.descend (heckeTCuspNewCharFieldCoefficientCharacter_surjective hk f) φ hφ',
