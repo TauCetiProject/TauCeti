@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Tensor
-public import TauCeti.CategoryTheory.Monoidal.TensorPow
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Frobenius–Schur indicators of pivotal categories
