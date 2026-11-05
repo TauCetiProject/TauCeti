@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
-public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -138,8 +137,8 @@ theorem isClosed_approximatePointSpectrum (T : E →L[𝕜] E) :
   obtain ⟨x, hx, hres⟩ :=
     (mem_approximatePointSpectrum_iff_forall_pos T w).mp hw (ε / 2) (by positivity)
   refine ⟨x, hx, ?_⟩
-  have h := TauCeti.norm_sub_smul_le_norm_sub_smul_add (T x) x z w
-  rw [hx, mul_one] at h
+  have h := norm_sub_le_norm_sub_add_norm_sub (T x) (w • x) (z • x)
+  rw [← sub_smul, norm_smul, hx, mul_one, norm_sub_rev w z] at h
   rw [dist_eq_norm] at hzw
   linarith
 
