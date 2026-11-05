@@ -33,6 +33,8 @@ group of the root datum.
 
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint`: the Weyl representative as a point
   of the toral closure.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint_inv`: its inverse is the same word
+  with the signs reversed.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantToralWeylPoint`: the representative is natural
   in the value ring.
 * `TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralWeylPoint`: its matrix is the integral Weyl
@@ -125,6 +127,17 @@ theorem kostantToralWeylPoint_def (i j : I) (A : Type v) [CommRing A] :
         kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
           (Multiplicative.ofAdd (1 : A)) :=
   (rfl)
+
+/-- The inverse of the Weyl representative is the word `xᵢ(-1) xⱼ(1) xᵢ(-1)`. -/
+theorem kostantToralWeylPoint_inv (i j : I) (A : Type v) [CommRing A] :
+    (kostantToralWeylPoint e h ρ M hM hnil b wt i j A)⁻¹ =
+      kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (-1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt j A
+          (Multiplicative.ofAdd (1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (-1 : A)) := by
+  simp [kostantToralWeylPoint_def, mul_assoc]
 
 /-- The carrier's Weyl representative is natural in the value ring. Applying a ring homomorphism
 entrywise sends the representative over the source ring to the representative over the target
@@ -232,6 +245,26 @@ theorem kostantToralWeylPoint_conj_weightTorusPoints
       hT hα hαneg b wt hwt s)
   simpa only [map_mul, map_inv, MulEquiv.toMonoidHom_eq_coe,
     basisMatrix_kostantTorusPoints] using hmatrix
+
+include hT in
+/-- Conjugation by a Weyl representative reflects weight-torus points when the root-generator
+weights at the two chosen indices are `α` and `-α`. This form accepts a uniform family of
+Cartan bracket equations, as supplied by the numbered generators of concrete carriers. -/
+theorem kostantToralWeylPoint_conj_weightTorusPoints_of_rootWeight
+    [DecidableEq κ] (rootWeight : I → κ → ℤ)
+    (hroot : ∀ k q, ⁅h q, e k⁆ = (rootWeight k q : ℚ) • e k)
+    (hpos : ∀ q, rootWeight i q = α q) (hneg : ∀ q, rootWeight j q = -α q)
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    (A : Type v) [CommRing A] (s : κ → Aˣ) :
+    kostantToralWeylPoint e h ρ M hM hnil b wt i j A *
+        kostantToralWeightTorusPoints e h ρ M hM hnil b wt A s *
+        (kostantToralWeylPoint e h ρ M hM hnil b wt i j A)⁻¹ =
+      kostantToralWeightTorusPoints e h ρ M hM hnil b wt A
+        (weylReflectTorusPoint α c s) := by
+  exact kostantToralWeylPoint_conj_weightTorusPoints e h ρ M hM hnil b wt hT
+    (fun q ↦ by simpa only [hpos q] using hroot i q)
+    (fun q ↦ by simpa only [hneg q, Int.cast_neg, neg_smul] using hroot j q)
+    hwt A s
 
 include hT hα hαneg in
 /-- The Weyl representative is in the normalizer of the represented weight torus inside the

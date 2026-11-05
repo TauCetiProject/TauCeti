@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Basic.ENNReal.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.MvPolynomial.Rescale
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # Weighted homogeneity under substitution and evaluation
@@ -45,6 +47,11 @@ indicator weight of a block `b` of variables `X_{b,l}`, so that weighted homogen
 homogeneity in block `b`: a polynomial that does not vanish at a point with zero block `b` has
 degree zero in block `b`, and the blocks of degree zero can be replaced simultaneously by
 arbitrary vectors without changing the value.
+
+A polynomial algebra presentation also transports the weighted grading to its target: the
+images of the homogeneous pieces form an internal graded algebra. A ring map from an integral
+polynomial algebra with this grading preserves degrees exactly when the images of its variables
+have the prescribed degrees, allowing additive regrading of the target.
 
 Over a semiring without zero divisors, the lowest weighted homogeneous components of two
 polynomials multiply to a nonzero component of their product. So, for weights in `ℝ≥0∞`, the
@@ -183,23 +190,9 @@ theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n :
 monomial by `t` to the power of its weight. -/
 theorem coeff_aeval_C_pow_mul_X (t : R) (w : σ → ℕ) (φ : MvPolynomial σ R) (d : σ →₀ ℕ) :
     (aeval (fun i ↦ C (t ^ w i) * X i) φ).coeff d = t ^ Finsupp.weight w d * φ.coeff d := by
-  classical
-  induction φ using MvPolynomial.induction_on' with
-  | monomial e r =>
-    have h : aeval (fun i ↦ C (t ^ w i) * X i) (monomial e r) =
-        monomial e (t ^ Finsupp.weight w e * r) := by
-      rw [aeval_monomial, monomial_eq]
-      simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, mul_pow, Finset.prod_mul_distrib,
-        ← pow_mul', Finset.prod_pow_eq_pow_sum, ← map_pow, ← map_prod, algebraMap_eq, smul_eq_mul,
-        map_mul]
-      ring
-    rw [h, coeff_monomial, coeff_monomial]
-    split_ifs with he
-    · rw [he]
-    · rw [mul_zero]
-  | add p q hp hq =>
-    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.coe_add, Pi.add_apply]
-    rw [hp, hq, mul_add]
+  rw [← rescale_eq_aeval, coeff_rescale]
+  simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, ← pow_mul',
+    Finset.prod_pow_eq_pow_sum, smul_eq_mul]
 
 /-- **Weighted homogeneity from scaling.** If the powers of `t` are pairwise distinct and
 substituting `t ^ w i • X i` for each variable `X i` multiplies `φ` by `t ^ n`, then `φ` is
@@ -390,5 +383,55 @@ theorem IsWeightedHomogeneous.weightedHomogeneousComponent_mul_right
 end Component
 
 end CommSemiring
+
+namespace WeightedHomogeneousSubmodule
+
+/-- Transporting the weighted polynomial pieces along an algebra equivalence preserves the
+multiplicative grading. -/
+theorem gradedMonoid_map {M A : Type*} [AddCommMonoid M] [CommSemiring R]
+    [Semiring A] [Algebra R A] (w : σ → M) (e : MvPolynomial σ R ≃ₐ[R] A) :
+    SetLike.GradedMonoid (fun n ↦ (weightedHomogeneousSubmodule R w n).map e.toLinearMap) where
+  one_mem := Submodule.mem_map.mpr ⟨1, isWeightedHomogeneous_one R w, map_one e⟩
+  mul_mem _ _ _ _ ha hb := by
+    obtain ⟨a, ha', rfl⟩ := Submodule.mem_map.mp ha
+    obtain ⟨b, hb', rfl⟩ := Submodule.mem_map.mp hb
+    exact Submodule.mem_map.mpr ⟨a * b, ha'.mul hb', map_mul e _ _⟩
+
+/-- An algebra equivalence transports the weighted polynomial decomposition to an internal
+direct sum decomposition of its target. -/
+theorem isInternal_map {M A : Type*} [AddCommMonoid M] [DecidableEq M] [CommRing R]
+    [Ring A] [Algebra R A] (w : σ → M) (e : MvPolynomial σ R ≃ₐ[R] A) :
+    DirectSum.IsInternal (fun n ↦ (weightedHomogeneousSubmodule R w n).map e.toLinearMap) := by
+  classical
+  let := MvPolynomial.weightedGradedAlgebra (R := R) (w := w)
+  have hW := DirectSum.Decomposition.isInternal (weightedHomogeneousSubmodule R w)
+  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+  · exact e.toLinearMap.iSupIndep_map e.injective hW.submodule_iSupIndep
+  · rw [← Submodule.map_iSup, hW.submodule_iSup_eq_top, Submodule.map_top,
+      LinearMap.range_eq_top]
+    exact e.surjective
+
+/-- A ring map from integral polynomials preserves regraded weights exactly when the images
+of its variables have the given degrees. The target pieces may be additive subgroups rather
+than submodules. -/
+theorem map_mem_iff {M A S ι : Type*} [AddCommMonoid M] [CommRing A]
+    [SetLike S A] [AddSubgroupClass S A] [AddCommMonoid ι]
+    (w : σ → M) (𝒜 : ι → S) [SetLike.GradedMonoid 𝒜] (r : M →+ ι)
+    (f : MvPolynomial σ ℤ →+* A) :
+    (∀ ⦃n⦄ ⦃p⦄, p.IsWeightedHomogeneous w n → f p ∈ 𝒜 (r n)) ↔
+      ∀ i, f (X i) ∈ 𝒜 (r (w i)) := by
+  refine ⟨fun h i ↦ h (isWeightedHomogeneous_X _ _ _), ?_⟩
+  intro h n p hp
+  have := AddSubgroupClass.zsmulMemClass (S := S) (M := A)
+  have hpr : p.IsWeightedHomogeneous (r ∘ w) (r n) := fun d hd ↦ by
+    simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
+  have hp' := hpr.aeval_mem (𝒜 := 𝒜) h
+  have he : f.toIntAlgHom p = aeval (f.toIntAlgHom ∘ X) p :=
+    DFunLike.congr_fun (aeval_unique f.toIntAlgHom) p
+  simp only [Function.comp_def, RingHom.toIntAlgHom_apply] at he
+  rw [he]
+  exact hp'
+
+end WeightedHomogeneousSubmodule
 
 end MvPolynomial

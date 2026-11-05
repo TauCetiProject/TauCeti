@@ -301,6 +301,27 @@ theorem comp (hA : IsAffinoidAlgebra K A) {φ' : B →ₐ[K] C} {V : Set (Maxima
       fun θ hθ ↦ h'.eq_lift hD _ hχ (h.eq_lift hD ψ hψU ?_)⟩
     rwa [AlgHom.comp_assoc]
 
+/-- If both a map and its composite represent affinoid subdomains, the second map represents
+an affinoid subdomain of the first coordinate algebra, with the expected underlying set. -/
+theorem of_comp {χ : B →ₐ[K] C} {V : Set (MaximalSpectrum A)}
+    (hχ : IsAffinoidSubdomainMap (χ.comp φ) V) :
+    IsAffinoidSubdomainMap χ (h.isAffinoidAlgebra.maximalSpectrumComap φ ⁻¹' V) where
+  isAffinoidAlgebra := hχ.isAffinoidAlgebra
+  range_maximalSpectrumComap_subset := by
+    rintro _ ⟨z, rfl⟩
+    have hz := hχ.range_maximalSpectrumComap_subset ⟨z, rfl⟩
+    rwa [IsAffinoidAlgebra.maximalSpectrumComap_comp h.isAffinoidAlgebra
+      hχ.isAffinoidAlgebra] at hz
+  existsUnique_algHom {D} _ _ hD ψ hψ := by
+    have hψV : Set.range (hD.maximalSpectrumComap (ψ.comp φ)) ⊆ V := by
+      rw [IsAffinoidAlgebra.maximalSpectrumComap_comp h.isAffinoidAlgebra hD, Set.range_comp]
+      exact Set.image_subset_iff.mpr hψ
+    obtain ⟨δ, hδ, huniq⟩ := hχ.existsUnique_algHom hD (ψ.comp φ) hψV
+    refine ⟨δ, h.algHom_ext hD ?_, fun δ' hδ' ↦ huniq δ' ?_⟩
+    · simpa only [AlgHom.comp_assoc] using hδ
+    · simpa only [AlgHom.comp_assoc] using
+        congrArg (fun f : B →ₐ[K] D ↦ f.comp φ) hδ'
+
 end IsAffinoidSubdomainMap
 
 end TauCeti
