@@ -52,7 +52,7 @@ into relations computed for the coefficient-one leading terms.
 
 ## References
 
-* W. Bruns, A. Conca, M. Lembo, *SAGBI combinatorics of maximal minors and a SAGBI algorithm*,
+* W. Bruns, A. Conca, F. Lembo, *Sagbi bases, defining ideals and algebra of minors*,
   2025, arXiv:2504.10019, Section 2.
 * B. Sturmfels, *Gröbner Bases and Convex Polytopes*, University Lecture Series 8, AMS, 1996,
   Chapter 11.

@@ -411,16 +411,6 @@ theorem coe_support_subset_of_lex_le [LinearOrder σ] [WellFoundedGT σ] {s : Se
 
 end Lex
 
-/-- Substituting nonzero polynomials into a coefficient-one monomial adds their leading
-exponents, with the multiplicities prescribed by the monomial. -/
-theorem degree_aeval_monomial_one_of_ne_zero [CommSemiring R] [NoZeroDivisors R]
-    {ι : Type*} {b : ι → MvPolynomial σ R} (hb : ∀ i, b i ≠ 0) (u : ι →₀ ℕ) :
-    m.degree (aeval b (monomial u (1 : R))) = Finsupp.linearCombination ℕ (m.degree ∘ b) u := by
-  classical
-  simp only [aeval_monomial, map_one, one_mul, Finsupp.prod]
-  rw [m.degree_prod fun i _ ↦ pow_ne_zero _ (hb i)]
-  simp [m.degree_pow, Finsupp.linearCombination_apply, Finsupp.sum]
-
 section MonicNormalize
 
 variable {k : Type*} [Field k]
@@ -504,6 +494,16 @@ theorem monic_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ)
     m.Monic (aeval c (monomial w (1 : R))) := by
   rw [aeval_monomial, map_one, one_mul, Finsupp.prod]
   exact Monic.prod fun i _ ↦ (hc i).pow
+
+/-- Substituting nonzero polynomials into a coefficient-one monomial adds their leading
+exponents, with the multiplicities prescribed by the monomial. -/
+theorem degree_aeval_monomial_one_of_ne_zero [NoZeroDivisors R] (m : MonomialOrder σ)
+    (hc : ∀ i, c i ≠ 0) (u : ι →₀ ℕ) :
+    m.degree (aeval c (monomial u (1 : R))) = Finsupp.linearCombination ℕ (m.degree ∘ c) u := by
+  classical
+  simp only [aeval_monomial, map_one, one_mul, Finsupp.prod]
+  rw [m.degree_prod fun i _ ↦ pow_ne_zero _ (hc i)]
+  simp [m.degree_pow, Finsupp.linearCombination_apply, Finsupp.sum]
 
 variable [Nontrivial R]
 

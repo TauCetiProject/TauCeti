@@ -25,7 +25,7 @@ on the totalized degree of zero. The binomial certificates for monic families ar
 
 ## References
 
-* W. Bruns, A. Conca, F. Lembo, *Sagbi bases, defining equations and algebras of minors*,
+* W. Bruns, A. Conca, F. Lembo, *Sagbi bases, defining ideals and algebra of minors*,
   arXiv:2504.10019, §2.
 * B. Sturmfels, *Gröbner Bases and Convex Polytopes*, Chapter 11.
 -/
@@ -48,33 +48,18 @@ theorem IsSAGBIBasis.exists_aeval_eq_support_le
     ∃ Q : MvPolynomial ι k, aeval b Q = f ∧
       ∀ u ∈ Q.support, Finsupp.linearCombination ℕ (m.degree ∘ b) u ≼[m] m.degree f := by
   classical
-  have hspan := h.mem_span hf
-  -- Keep the target exponent fixed during span induction, so cancellation in a sum does not
-  -- change the bounds imposed on the expression being constructed.
-  refine Submodule.span_induction (p := fun g _ ↦
-    ∃ Q : MvPolynomial ι k, aeval b Q = g ∧
-      ∀ u ∈ Q.support, Finsupp.linearCombination ℕ (m.degree ∘ b) u ≼[m] m.degree f)
-    ?_ ?_ ?_ ?_ hspan
-  · intro g hg
+  have hsub : {g ∈ Submonoid.closure (Set.range b) | m.degree g ≼[m] m.degree f} ⊆
+      (aeval b).toLinearMap '' ((fun u ↦ monomial u (1 : k)) ''
+        {u | Finsupp.linearCombination ℕ (m.degree ∘ b) u ≼[m] m.degree f}) := by
+    intro g hg
     obtain ⟨u, rfl⟩ := Submonoid.mem_closure_range_iff.1 hg.1
-    refine ⟨monomial u (1 : k), ?_, ?_⟩
-    · simp [aeval_monomial]
-    · intro v hv
-      have hvu : u = v := by simpa using hv
-      subst v
-      rw [← m.degree_aeval_monomial_one_of_ne_zero hb]
-      simpa [aeval_monomial] using hg.2
-  · exact ⟨0, by simp, by simp⟩
-  · intro g₁ g₂ _ _ ih₁ ih₂
-    obtain ⟨Q₁, hQ₁, hbound₁⟩ := ih₁
-    obtain ⟨Q₂, hQ₂, hbound₂⟩ := ih₂
-    refine ⟨Q₁ + Q₂, by simp [hQ₁, hQ₂], fun u hu ↦ ?_⟩
-    rcases Finset.mem_union.1 (support_add hu) with hu | hu
-    · exact hbound₁ u hu
-    · exact hbound₂ u hu
-  · intro c g _ ih
-    obtain ⟨Q, hQ, hbound⟩ := ih
-    exact ⟨c • Q, by simp [hQ], fun u hu ↦ hbound u (support_smul hu)⟩
+    refine ⟨monomial u 1, ⟨u, ?_, rfl⟩, by simp [aeval_monomial]⟩
+    rw [Set.mem_ofPred_eq, ← m.degree_aeval_monomial_one_of_ne_zero hb]
+    simpa [aeval_monomial] using hg.2
+  have hmem := Submodule.span_mono hsub (h.mem_span hf)
+  rw [Submodule.span_image, ← restrictSupport_eq_span] at hmem
+  obtain ⟨Q, hQ, hQf⟩ := hmem
+  exact ⟨Q, hQf, fun u hu ↦ (mem_restrictSupport_iff k).1 hQ hu⟩
 
 /-- If an element of a SAGBI subalgebra is zero or has leading exponent below `a`, it has an
 expression all of whose substituted monomials have leading exponent strictly below `a`.
