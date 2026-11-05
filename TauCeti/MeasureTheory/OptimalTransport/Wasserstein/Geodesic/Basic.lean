@@ -459,6 +459,14 @@ end WassersteinSpace
 
 end Polish
 
+/-- Under any law `π` on pairs of points of a seminormed group, the displacement `x - y` and the
+ground distance `edist x y` have the same `L^p` seminorm. -/
+theorem eLpNorm_sub_eq_eLpNorm_edist {E : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E]
+    [OpensMeasurableSpace E] [SecondCountableTopology E] (p : ℝ≥0∞) (π : Measure (E × E)) :
+    eLpNorm (fun z : E × E ↦ z.1 - z.2) p π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
+  eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
+    (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
+
 section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -509,19 +517,20 @@ theorem WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling (hp : p ≠ 
   · rw [Measure.fst_map_prodMk (by fun_prop) (by fun_prop), ← hγc.fst_eq, Measure.fst]
   · rw [Measure.snd_map_prodMk (by fun_prop) (by fun_prop), hct t ht]
   · -- The displacement of the new coupling is `t` times that of `γ`.
-    have hd (π : Measure (E × E)) :
-        eLpNorm (fun z : E × E ↦ z.1 - z.2) p π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
-      eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-        (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
-    rw [← hd, eLpNorm_map_measure (by fun_prop) (by fun_prop)]
-    have hfun : ((fun z : E × E ↦ z.1 - z.2) ∘ fun z : E × E ↦ (z.1, (1 - t) • z.1 + t • z.2)) =
-        t • fun z : E × E ↦ z.1 - z.2 := by
+    have hscale : eLpNorm (fun z : E × E ↦ z.1 - z.2) p
+        (γ.map fun z ↦ (z.1, (1 - t) • z.1 + t • z.2)) =
+        ‖t‖ₑ * eLpNorm (fun z : E × E ↦ z.1 - z.2) p γ := by
+      rw [eLpNorm_map_measure (by fun_prop) (by fun_prop), ← eLpNorm_const_smul]
+      congr 1
       ext z
       simp only [Function.comp_apply, Pi.smul_apply]
       module
-    rw [hfun, eLpNorm_const_smul, hd, hopt, ← WassersteinSpace.edist_def,
-      ← WassersteinSpace.edist_def, edist_dist, edist_dist, hc.dist_source_apply ht,
-      ENNReal.ofReal_mul ht.1, Real.enorm_eq_ofReal ht.1]
+    -- The law `μ_t` is at distance `t * W_p (μ, ν)` from `μ`.
+    have hdist : edist μ (c t) = ‖t‖ₑ * edist μ ν := by
+      rw [edist_dist, edist_dist, hc.dist_source_apply ht, ENNReal.ofReal_mul ht.1,
+        Real.enorm_eq_ofReal ht.1]
+    rw [← eLpNorm_sub_eq_eLpNorm_edist, hscale, eLpNorm_sub_eq_eLpNorm_edist, hopt]
+    simpa only [WassersteinSpace.edist_def] using hdist.symm
 
 omit [Fact (1 ≤ p)] in
 /-- **Quadratic linear interpolation.** On a separable Banach space `E`, two laws `μ` and `ν` of
@@ -541,15 +550,11 @@ theorem WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_a
     ENNReal.ofNat_ne_top _ _
     (exists_isCoupling_of_wassersteinEDist_ne_top
       (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν))
-  -- The `L²` norm of the displacement is the `L²` norm of the ground distance.
-  have hd : eLpNorm (fun z : E × E ↦ z.1 - z.2) 2 π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π :=
-    eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-      (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
   have hmem : MemLp (fun z : E × E ↦ z.1 - z.2) 2 π := by
-    rw [memLp_iff, hd, hπopt]
+    rw [memLp_iff, eLpNorm_sub_eq_eLpNorm_edist, hπopt]
     exact (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν).lt_top
   refine ⟨π, hπ, hmem, ?_, WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hπ hπopt⟩
-  rw [WassersteinSpace.dist_def, ← hπopt, ← hd,
+  rw [WassersteinSpace.dist_def, ← hπopt, ← eLpNorm_sub_eq_eLpNorm_edist,
     hmem.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
     ENNReal.toReal_ofReal (by positivity)]
   simpa using Real.rpow_inv_natCast_pow (n := 2) (integral_nonneg fun z ↦ by positivity)
