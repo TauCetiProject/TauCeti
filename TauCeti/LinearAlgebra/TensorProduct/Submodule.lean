@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.RingTheory.Ideal.Operations
+public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 
 /-!
 # Scalar extension of images and powers of submodules
@@ -20,10 +21,13 @@ For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of 
 `p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
 (`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
 `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
-(`LinearMap.range_lTensor_inclusion_smul_le`).
+(`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
+(`LinearMap.range_rTensor_inclusion_smul_le`).
 
 Multiplication of tensor products of submodules is compatible with multiplication in each
-factor (`Submodule.map₂_tmul_mul_le`).
+factor (`Submodule.map₂_tmul_mul_le`). If a scalar extension is finitely generated, some finitely
+generated submodule of the original module already spans that scalar extension
+(`Submodule.exists_fg_baseChange_eq_top`).
 -/
 
 public section
@@ -81,6 +85,30 @@ theorem _root_.LinearMap.baseChange_range (f : M →ₗ[R] N) :
 
 end Map
 
+section Finiteness
+
+variable {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M]
+
+/-- If a scalar extension is finitely generated, a finitely generated submodule of the original
+module already spans it. No flatness or faithfulness of the scalar extension is required. -/
+theorem exists_fg_baseChange_eq_top [Module.Finite A (A ⊗[R] M)] :
+    ∃ P : Submodule R M, P.FG ∧ P.baseChange A = ⊤ := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := A ⊗[R] M)
+  obtain ⟨P, hP, hPs⟩ := TensorProduct.exists_finite_submodule_right_of_setFinite
+    (s : Set (A ⊗[R] M)) s.finite_toSet
+  refine ⟨P, Module.Finite.iff_fg.mp hP, top_unique ?_⟩
+  rw [← hs, span_le]
+  intro x hx
+  obtain ⟨y, hy⟩ := hPs hx
+  rw [Submodule.baseChange, SetLike.mem_coe, LinearMap.mem_range]
+  refine ⟨y, ?_⟩
+  rw [LinearMap.baseChange_eq_lTensor]
+  exact hy
+
+end Finiteness
+
 section Inclusion
 
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
@@ -118,6 +146,16 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
     have := mem_map_of_mem (f := TensorProduct.mk R M J m) hz
     rw [map_smul''] at this
     exact smul_mono le_rfl le_top this
+
+/-- The image of `(I • J) ⊗[R] M` in `J ⊗[R] M` is contained in `I • (J ⊗[R] M)`. -/
+theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Submodule R N) :
+    LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).rTensor M) ≤
+      (I • ⊤ : Submodule R (J ⊗[R] M)) := by
+  rintro _ ⟨u, rfl⟩
+  -- Transport the left-hand statement along the symmetry of the tensor product.
+  rw [← (TensorProduct.comm R M _).apply_symm_apply u, LinearMap.rTensor_comm]
+  exact smul_top_le_comap_smul_top I (TensorProduct.comm R M J).toLinearMap
+    (LinearMap.range_lTensor_inclusion_smul_le I J ⟨_, rfl⟩)
 
 end Inclusion
 

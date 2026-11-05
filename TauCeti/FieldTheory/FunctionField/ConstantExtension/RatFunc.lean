@@ -37,6 +37,8 @@ single place.
 * `TauCeti.constantCompositum_eq_top_of_X_mem`: a compositum `F · k'` inside `k'(X)` containing
   `X` is all of `k'(X)`.
 * `TauCeti.constantCompositum_ratFunc_eq_top`: `k'(X)` is the compositum of `k(X)` and `k'`.
+* `TauCeti.constantCompositum_adjoin_simple_ratFunc_eq_top`: if `z` generates `E` over `k'(X)`,
+  then `E` is the compositum of `k(X)(z)` and `k'`.
 * `TauCeti.Place.restrict_ratFunc_eq_infty_iff`: a place of `k'(X)` lies over the place at
   infinity of `k(X)` exactly when it is the place at infinity of `k'(X)`.
 * `TauCeti.Place.restrict_adicOfIrreducible_eq_iff`: the finite place of `q'` lies over the
@@ -89,6 +91,51 @@ theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) :
     constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ :=
   constantCompositum_eq_top_of_X_mem (hX ▸ IntermediateField.algebraMap_mem _ RatFunc.X)
+
+section AdjoinSimple
+
+open _root_.IntermediateField
+
+variable {E : Type*} [Field E] [Algebra (RatFunc k) (RatFunc k')] [Algebra (RatFunc k') E]
+  [Algebra (RatFunc k) E] [IsScalarTower (RatFunc k) (RatFunc k') E] [Algebra k' E]
+  [IsScalarTower k' (RatFunc k') E]
+
+/-- **A simple extension descended to `k(X)` is a model.** If `z` generates `E` over `k'(X)`, then
+the compositum of `k(X)(z)` with the constants `k'` is all of `E`, for any `k(X)`-algebra
+structure on `k'(X)` sending `X` to `X`. -/
+theorem constantCompositum_adjoin_simple_ratFunc_eq_top
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) {z : E}
+    (hgen : (RatFunc k')⟮z⟯ = ⊤) :
+    constantCompositum (RatFunc k)⟮z⟯ k' E = ⊤ := by
+  set L := constantCompositum (RatFunc k)⟮z⟯ k' E
+  have hsub : ∀ x ∈ (RatFunc k)⟮z⟯, (x : E) ∈ L.toSubfield := fun x hx ↦ by
+    simpa using L.algebraMap_mem ⟨x, hx⟩
+  -- The rational functions over `k'` whose images lie in `L` form an intermediate field of
+  -- `k'(X) / k'`. It contains `X`, so it is all of `k'(X)`.
+  let M := (L.toSubfield.comap (algebraMap (RatFunc k') E)).toIntermediateField (K := k')
+    fun c ↦ by
+      rw [Subfield.mem_comap, ← IsScalarTower.algebraMap_apply]
+      exact algebraMap_mem_constantCompositum _ k' E c
+  have hXM : (RatFunc.X : RatFunc k') ∈ M.toSubfield := by
+    rw [Subfield.toIntermediateField_toSubfield, Subfield.mem_comap, ← hX,
+      ← IsScalarTower.algebraMap_apply]
+    exact hsub _ (IntermediateField.algebraMap_mem _ _)
+  have hM : M = ⊤ :=
+    eq_top_iff.mpr <| _root_.RatFunc.adjoin_X.symm.le.trans (adjoin_simple_le_iff.mpr hXM)
+  have hkt (f : RatFunc k') : algebraMap (RatFunc k') E f ∈ L.toSubfield := by
+    have hf : f ∈ M.toSubfield := (mem_toSubfield M f).mpr (hM ▸ mem_top)
+    rwa [Subfield.toIntermediateField_toSubfield, Subfield.mem_comap] at hf
+  -- So `L` is an intermediate field of `E / k'(X)`, and it contains the generator `z`.
+  let N := L.toSubfield.toIntermediateField hkt
+  have hzN : z ∈ N.toSubfield := by
+    rw [Subfield.toIntermediateField_toSubfield]
+    exact hsub _ (mem_adjoin_simple_self _ z)
+  have hN : N = ⊤ := eq_top_iff.mpr <| hgen.symm.le.trans (adjoin_simple_le_iff.mpr hzN)
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  have hx : x ∈ N.toSubfield := (mem_toSubfield N x).mpr (hN ▸ mem_top)
+  rwa [Subfield.toIntermediateField_toSubfield, mem_toSubfield] at hx
+
+end AdjoinSimple
 
 namespace Place
 
