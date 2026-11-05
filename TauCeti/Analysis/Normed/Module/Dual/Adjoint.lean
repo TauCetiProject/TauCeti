@@ -241,6 +241,7 @@ theorem isClosed_range_precomp_iff [CompleteSpace F] (T : E →L[𝕜] F) :
 /-- A bounded map between Banach spaces is bijective if and only if its Banach transpose
 is bijective. The transpose here is precomposition on the continuous dual, not the Hilbert
 adjoint. -/
+@[simp]
 theorem bijective_precomp_iff [CompleteSpace F] (T : E →L[𝕜] F) :
     Bijective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔ Bijective T := by
   constructor

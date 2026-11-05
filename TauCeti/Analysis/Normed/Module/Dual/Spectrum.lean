@@ -32,6 +32,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜]
 
 /-- A bounded endomorphism of a Banach space is invertible exactly when its Banach
 transpose is invertible. -/
+@[simp]
 theorem isUnit_precomp_iff (T : E →L[𝕜] E) :
     IsUnit (precomp 𝕜 T : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 E) ↔ IsUnit T := by
   simp only [isUnit_iff_bijective, bijective_precomp_iff]
