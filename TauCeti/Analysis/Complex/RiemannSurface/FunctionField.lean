@@ -69,9 +69,10 @@ neighbourhood and its inverse is a multiplicative inverse.
   operations.
 * `TauCeti.RiemannSurface.MeromorphicFunction.inv_apply_of_eq_infty`: the inverse of a meromorphic
   function vanishes at its poles.
-* `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_infty` and
-  `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_zero`: on a compact connected Riemann
-  surface, a meromorphic function has finitely many poles, and a nonzero one finitely many zeros.
+* `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_infty`: on a compact preconnected
+  Riemann surface, a meromorphic function has finitely many poles.
+* `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_zero`: on a compact connected Riemann
+  surface, a nonzero meromorphic function has finitely many zeros.
 * `TauCeti.RiemannSurface.MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_infty`: the maximum
   principle, a meromorphic function without poles on a compact connected Riemann surface is
   constant.
@@ -214,7 +215,7 @@ theorem meromorphicAt_finitePart (f : MeromorphicFunction X) (x : X) :
       (hmd (Or.inr rfl) (by simp [invChart_source, hx]))).inv
   · exact meromorphicAt_of_eventually_mdifferentiableAt (hmd (Or.inl rfl) (by simpa using hx))
 
-/-! ### Isolated poles -/
+/-! ### Isolated poles and finiteness of poles -/
 
 section Preconnected
 
@@ -723,7 +724,7 @@ theorem inv_apply_of_eq_infty (hf : f x = ∞) : f⁻¹ x = ((0 : ℂ) : OnePoin
   filter_upwards [f.eventually_ne_infty x, nhdsWithin_le_nhds hne0] with y hy hy0
   rw [inv_apply hy hy0, finitePart_def, ← inv_invChart, inv_inv]
 
-/-! ### Finiteness of zeros and poles, and the maximum principle -/
+/-! ### Finiteness of zeros, and the maximum principle -/
 
 section Compact
 
