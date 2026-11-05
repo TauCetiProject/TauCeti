@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 public import TauCeti.Topology.Algebra.Projectivization
 
@@ -31,6 +32,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
 * `Projectivization.contMDiffOn_affineChart` and `Projectivization.contMDiff_affineChart_symm`:
   the affine charts and their inverses are `C^r` maps.
+* `Projectivization.contMDiff_of_contDiffOn_mk`: a function on projective space given by a `C^r`
+  function of the nonzero homogeneous coordinates is `C^r`.
 
 ## References
 
@@ -98,5 +101,23 @@ theorem contMDiff_affineChart_symm (i : Fin (n + 1)) (r : ℕ∞ω) :
   rw [← contMDiffOn_univ]
   simpa using contMDiffOn_symm_of_mem_maximalAtlas
     (IsManifold.subset_maximalAtlas (n := r) (affineOpenPartialHomeomorph_mem_atlas (𝕜 := 𝕜) i))
+
+/-- A function on projective space with values in a normed space, given in homogeneous coordinates
+by a function `F` which is `C^r` on the nonzero vectors, is `C^r`; for `r = ω` it is analytic.
+On the affine open at `i` it is `z ↦ F (Fin.insertNth i 1 z)` read in the chart at `i`. -/
+theorem contMDiff_of_contDiffOn_mk {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : ℙ 𝕜 (Fin (n + 1) → 𝕜) → E} {F : (Fin (n + 1) → 𝕜) → E} {r : ℕ∞ω}
+    (hF : ContDiffOn 𝕜 r F {v | v ≠ 0}) (hf : ∀ v (hv : v ≠ 0), f (mk 𝕜 v hv) = F v) :
+    ContMDiff 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) r f := by
+  intro x
+  obtain ⟨i, hi⟩ := exists_mem_affineOpen x
+  have hG : ContDiff 𝕜 r fun z : Fin n → 𝕜 ↦ F (Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z) :=
+    hF.comp_contDiff ((contDiff_const (c := (1 : 𝕜))).finInsertNth (F := fun _ ↦ 𝕜) i
+      contDiff_id) fun z ↦ Fin.insertNth_one_ne_zero i z
+  refine ((hG.contMDiff.comp_contMDiffOn (contMDiffOn_affineChart i r)).congr fun y hy ↦ ?_)
+    |>.contMDiffAt ((isOpen_affineOpen i).mem_nhds hi)
+  obtain ⟨z, rfl⟩ : ∃ z, (affineChart i).symm z = y :=
+    ⟨_, (affineChart i).left_inv (by simpa using hy)⟩
+  rw [Function.comp_apply, (affineChart i).right_inv (by simp), affineChart_symm_apply, hf]
 
 end Projectivization
