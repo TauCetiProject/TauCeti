@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Correlation
+import TauCeti.Algebra.BigOperators.Finset.Filter
 import Mathlib.Analysis.Calculus.Deriv.Pi
 
 /-!
@@ -89,16 +90,23 @@ private theorem partialCorrelationResidual_self (z : strictLowerTriangle p → �
   · intro _ _
     rfl
 
+/-- The below-diagonal Cholesky entry, expressed using the residual product used throughout this
+proof. This isolates the definitional identification between the two product presentations. -/
+private theorem partialCorrelationCholesky_apply_of_gt_residual
+    (z : strictLowerTriangle p → ℝ) {i j : Fin p} (h : j < i) :
+    partialCorrelationCholesky z i j =
+      z ⟨(i, j), h⟩ * partialCorrelationResidual z i j := by
+  rw [partialCorrelationCholesky_apply_of_gt]
+  rfl
+
 private theorem partialCorrelationCholesky_update_of_lt
     (z : strictLowerTriangle p → ℝ) (a : strictLowerTriangle p) (t : ℝ)
     {i j : Fin p} (hja : j < a.1.2) :
     partialCorrelationCholesky (Function.update z a t) i j =
       partialCorrelationCholesky z i j := by
   rcases lt_trichotomy j i with hji | rfl | hij
-  · rw [partialCorrelationCholesky_apply_of_gt _ hji,
-      partialCorrelationCholesky_apply_of_gt _ hji]
-    change Function.update z a t _ * partialCorrelationResidual (Function.update z a t) i j =
-      z _ * partialCorrelationResidual z i j
+  · rw [partialCorrelationCholesky_apply_of_gt_residual _ hji,
+      partialCorrelationCholesky_apply_of_gt_residual _ hji]
     rw [partialCorrelationResidual_update_of_le _ _ _ _ _ hja.le]
     rw [Function.update_apply, ite_eq_right]
     intro h
@@ -115,10 +123,8 @@ private theorem partialCorrelationCholesky_update_of_ne
     partialCorrelationCholesky (Function.update z a t) i j =
       partialCorrelationCholesky z i j := by
   rcases lt_trichotomy j i with hji | rfl | hij
-  · rw [partialCorrelationCholesky_apply_of_gt _ hji,
-      partialCorrelationCholesky_apply_of_gt _ hji]
-    change Function.update z a t _ * partialCorrelationResidual (Function.update z a t) i j =
-      z _ * partialCorrelationResidual z i j
+  · rw [partialCorrelationCholesky_apply_of_gt_residual _ hji,
+      partialCorrelationCholesky_apply_of_gt_residual _ hji]
     rw [partialCorrelationResidual_update_of_ne _ _ _ _ _ hia,
       Function.update_apply, ite_eq_right]
     intro h
@@ -133,8 +139,7 @@ private theorem partialCorrelationCholesky_update_self
     (z : strictLowerTriangle p → ℝ) (a : strictLowerTriangle p) (t : ℝ) :
     partialCorrelationCholesky (Function.update z a t) a.1.1 a.1.2 =
       t * partialCorrelationResidual z a.1.1 a.1.2 := by
-  rw [partialCorrelationCholesky_apply_of_gt _ a.2]
-  change Function.update z a t a * partialCorrelationResidual (Function.update z a t) _ _ = _
+  rw [partialCorrelationCholesky_apply_of_gt_residual _ a.2]
   rw [partialCorrelationResidual_update_of_le _ _ _ _ _ le_rfl]
   simp
 
@@ -187,14 +192,11 @@ private theorem partialCorrelationGram_update_self
       simp
   rw [herase, partialCorrelationCholesky_update_self,
     partialCorrelationCholesky_update_of_ne _ _ _ a.2.ne,
-    partialCorrelationCholesky_apply_of_gt _ a.2,
+    partialCorrelationCholesky_apply_of_gt_residual _ a.2,
     partialCorrelationCholesky_apply_self,
     ← partialCorrelationResidual_self]
   have ha : (⟨(a.1.1, a.1.2), a.2⟩ : strictLowerTriangle p) = a := Subtype.ext rfl
   rw [ha]
-  change _ + t * partialCorrelationResidual z _ _ * partialCorrelationResidual z _ _ =
-    _ + (z a * partialCorrelationResidual z _ _) * partialCorrelationResidual z _ _ +
-      (t - z a) * (partialCorrelationResidual z _ _ * partialCorrelationResidual z _ _)
   ring
 
 private theorem isOpen_partialCorrelationCube :
@@ -278,6 +280,11 @@ private def partialCorrelationCoordinateOrder : LinearOrder (strictLowerTriangle
     have hab := congrArg ofLex h
     exact Subtype.ext (Prod.ext (congrArg Prod.snd hab) (congrArg Prod.fst hab))
 
+/-- The private coordinate order is lexicographic in column-major order. -/
+private theorem partialCorrelationCoordinateOrder_lt_iff (a b : strictLowerTriangle p) :
+    @LT.lt (strictLowerTriangle p) partialCorrelationCoordinateOrder.toLT a b ↔
+      toLex (a.1.2, a.1.1) < toLex (b.1.2, b.1.1) := Iff.rfl
+
 private theorem det_fderiv_correlationCoordinatesOfPartialCorrelation_residual
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     LinearMap.det
@@ -294,102 +301,115 @@ private theorem det_fderiv_correlationCoordinatesOfPartialCorrelation_residual
   · intro b a hba
     rw [LinearMap.toMatrix'_apply]
     apply fderiv_correlationCoordinatesOfPartialCorrelation_eq_zero hz
-    have hba' : @LT.lt (strictLowerTriangle p) partialCorrelationCoordinateOrder.toLT b a := hba
-    change toLex (b.1.2, b.1.1) < toLex (a.1.2, a.1.1) at hba'
-    exact Prod.Lex.toLex_lt_toLex.1 hba'
+    exact Prod.Lex.toLex_lt_toLex.1
+      ((partialCorrelationCoordinateOrder_lt_iff b a).1 hba)
+
+private def partialCorrelationJacobianFiber (b : strictLowerTriangle p) :=
+  (Finset.univ.filter fun ab : strictLowerTriangle p × strictLowerTriangle p ↦
+    (ab.2.1.1 = ab.1.1.1 ∧ ab.2.1.2 < ab.1.1.2) ∨
+      ab.2.1.1 = ab.1.1.2).filter fun ab ↦ ab.2 = b
+
+private def partialCorrelationJacobianTarget (b : strictLowerTriangle p) :=
+  (Finset.Ioi b.1.2).erase b.1.1
+
+/-- An occurrence of `b` among the residual factors is indexed by the other coordinate of the
+corresponding strict-lower pair. The two branches are respectively the factors from rows below
+`b`'s row and the factors from columns above `b`'s column. -/
+private def partialCorrelationJacobianFiberIndex (b : strictLowerTriangle p)
+    (ab : {ab // ab ∈ partialCorrelationJacobianFiber b}) :
+    {n // n ∈ partialCorrelationJacobianTarget b} := by
+  refine ⟨if ab.1.1.1.1 = b.1.1 then ab.1.1.1.2 else ab.1.1.1.1, ?_⟩
+  have hab := ab.2
+  simp only [partialCorrelationJacobianFiber, Finset.mem_filter, Finset.mem_univ, true_and]
+    at hab
+  rcases hab with ⟨hocc, hsnd⟩
+  rw [hsnd] at hocc
+  simp only [partialCorrelationJacobianTarget, Finset.mem_erase, Finset.mem_Ioi]
+  rcases hocc with ⟨hrow, hcol⟩ | hcol
+  · rw [ite_eq_left hrow.symm]
+    exact ⟨(ab.1.1.2.trans_eq hrow.symm).ne, hcol⟩
+  · have hlt : b.1.1 < ab.1.1.1.1 := by simpa [hcol] using ab.1.1.2
+    rw [ite_eq_right hlt.ne']
+    exact ⟨hlt.ne', b.2.trans hlt⟩
+
+/-- The inverse sends an index below `b`'s row to a same-row occurrence and an index above that
+row to a same-column occurrence. -/
+private def partialCorrelationJacobianFiberPair (b : strictLowerTriangle p)
+    (n : {n // n ∈ partialCorrelationJacobianTarget b}) :
+    {ab // ab ∈ partialCorrelationJacobianFiber b} := by
+  have hn : n.1 ≠ b.1.1 ∧ b.1.2 < n.1 := by
+    simpa only [partialCorrelationJacobianTarget, Finset.mem_erase, Finset.mem_Ioi] using n.2
+  if hnr : n.1 < b.1.1 then
+    let a : strictLowerTriangle p := ⟨(b.1.1, n.1), hnr⟩
+    refine ⟨(a, b), ?_⟩
+    simp only [partialCorrelationJacobianFiber, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨Or.inl ⟨rfl, hn.2⟩, trivial⟩
+  else
+    have hrn : b.1.1 < n.1 := lt_of_le_of_ne (le_of_not_gt hnr) hn.1.symm
+    let a : strictLowerTriangle p := ⟨(n.1, b.1.1), hrn⟩
+    refine ⟨(a, b), ?_⟩
+    simp only [partialCorrelationJacobianFiber, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨Or.inr rfl, trivial⟩
+
+private theorem partialCorrelationJacobianFiberPair_index (b : strictLowerTriangle p)
+    (ab : {ab // ab ∈ partialCorrelationJacobianFiber b}) :
+    partialCorrelationJacobianFiberPair b (partialCorrelationJacobianFiberIndex b ab) = ab := by
+  apply Subtype.ext
+  have hab := ab.2
+  simp only [partialCorrelationJacobianFiber, Finset.mem_filter, Finset.mem_univ, true_and]
+    at hab
+  rcases hab with ⟨hocc, hsnd⟩
+  rw [hsnd] at hocc
+  rcases hocc with ⟨hrow, hcol⟩ | hcol
+  · have hlt : ab.1.1.1.2 < b.1.1 := ab.1.1.2.trans_eq hrow.symm
+    simp only [partialCorrelationJacobianFiberPair, partialCorrelationJacobianFiberIndex,
+      hrow.symm, ite_eq_left, hlt, dite_true]
+    apply Prod.ext
+    · exact Subtype.ext (Prod.ext hrow rfl)
+    · exact hsnd.symm
+  · have hlt : b.1.1 < ab.1.1.1.1 := by simpa [hcol] using ab.1.1.2
+    have hne : ab.1.1.1.1 ≠ b.1.1 := hlt.ne'
+    have hnlt : ¬ab.1.1.1.1 < b.1.1 := not_lt_of_ge hlt.le
+    simp only [partialCorrelationJacobianFiberPair, partialCorrelationJacobianFiberIndex,
+      hne, ite_false, hnlt, dite_false]
+    apply Prod.ext
+    · exact Subtype.ext (Prod.ext rfl hcol)
+    · exact hsnd.symm
+
+private theorem partialCorrelationJacobianFiberIndex_pair (b : strictLowerTriangle p)
+    (n : {n // n ∈ partialCorrelationJacobianTarget b}) :
+    partialCorrelationJacobianFiberIndex b (partialCorrelationJacobianFiberPair b n) = n := by
+  apply Subtype.ext
+  have hn : n.1 ≠ b.1.1 ∧ b.1.2 < n.1 := by
+    simpa only [partialCorrelationJacobianTarget, Finset.mem_erase, Finset.mem_Ioi] using n.2
+  by_cases hnr : n.1 < b.1.1
+  · simp [partialCorrelationJacobianFiberPair, partialCorrelationJacobianFiberIndex, hnr]
+  · have hrn : b.1.1 < n.1 := lt_of_le_of_ne (le_of_not_gt hnr) hn.1.symm
+    simp [partialCorrelationJacobianFiberPair, partialCorrelationJacobianFiberIndex,
+      hnr, hn.1]
+
+private def partialCorrelationJacobianFiberEquiv (b : strictLowerTriangle p) :
+    {ab // ab ∈ partialCorrelationJacobianFiber b} ≃
+      {n // n ∈ partialCorrelationJacobianTarget b} where
+  toFun := partialCorrelationJacobianFiberIndex b
+  invFun := partialCorrelationJacobianFiberPair b
+  left_inv := partialCorrelationJacobianFiberPair_index b
+  right_inv := partialCorrelationJacobianFiberIndex_pair b
 
 private theorem card_partialCorrelationJacobian_fiber (b : strictLowerTriangle p) :
     ((Finset.univ.filter fun ab : strictLowerTriangle p × strictLowerTriangle p ↦
         (ab.2.1.1 = ab.1.1.1 ∧ ab.2.1.2 < ab.1.1.2) ∨
           ab.2.1.1 = ab.1.1.2).filter fun ab ↦ ab.2 = b).card =
       p - b.1.2.val - 2 := by
-  let source := (Finset.univ.filter fun ab : strictLowerTriangle p × strictLowerTriangle p ↦
-    (ab.2.1.1 = ab.1.1.1 ∧ ab.2.1.2 < ab.1.1.2) ∨
-      ab.2.1.1 = ab.1.1.2).filter fun ab ↦ ab.2 = b
-  let target := (Finset.Ioi b.1.2).erase b.1.1
-  have hcard : source.card = target.card := by
-    apply Finset.card_bij
-      (fun ab _ ↦ if ab.1.1.1 = b.1.1 then ab.1.1.2 else ab.1.1.1)
-    · intro ab hab
-      simp only [source, Finset.mem_filter, Finset.mem_univ, true_and] at hab
-      rcases hab with ⟨hocc, hsnd⟩
-      rw [hsnd] at hocc
-      simp only [target, Finset.mem_erase, Finset.mem_Ioi]
-      rcases hocc with ⟨hrow, hcol⟩ | hcol
-      · rw [ite_eq_left hrow.symm]
-        exact ⟨(ab.1.2.trans_eq hrow.symm).ne, hcol⟩
-      · have hlt : b.1.1 < ab.1.1.1 := by simpa [hcol] using ab.1.2
-        have hrow : ab.1.1.1 ≠ b.1.1 := hlt.ne'
-        rw [ite_eq_right hrow]
-        exact ⟨hlt.ne', b.2.trans hlt⟩
-    · intro ab hab cd hcd heq
-      simp only [source, Finset.mem_filter, Finset.mem_univ, true_and] at hab hcd
-      rcases hab with ⟨hab, habb⟩
-      rcases hcd with ⟨hcd, hcdb⟩
-      rw [habb] at hab
-      rw [hcdb] at hcd
-      have hsnd : ab.2 = cd.2 := habb.trans hcdb.symm
-      apply Prod.ext
-      · by_cases ha : ab.1.1.1 = b.1.1
-        · by_cases hc : cd.1.1.1 = b.1.1
-          · apply Subtype.ext
-            apply Prod.ext
-            · exact ha.trans hc.symm
-            · simpa [ha, hc] using heq
-          · rcases hcd with hcd | hcd
-            · exact (hc hcd.1.symm).elim
-            · exfalso
-              have hleft : ab.1.1.2 < b.1.1 := ab.1.2.trans_eq ha
-              have hright : b.1.1 < cd.1.1.1 := by simpa [hcd] using cd.1.2
-              rw [ite_eq_left ha, ite_eq_right hc] at heq
-              exact (heq ▸ hleft).asymm hright
-        · by_cases hc : cd.1.1.1 = b.1.1
-          · rcases hab with hab | hab
-            · exact (ha hab.1.symm).elim
-            · exfalso
-              have hleft : b.1.1 < ab.1.1.1 := by simpa [hab] using ab.1.2
-              have hright : cd.1.1.2 < b.1.1 := cd.1.2.trans_eq hc
-              rw [ite_eq_right ha, ite_eq_left hc] at heq
-              exact (heq ▸ hleft).asymm hright
-          · have habcol : b.1.1 = ab.1.1.2 := by
-              rcases hab with hab | hab
-              · exact (ha hab.1.symm).elim
-              · exact hab
-            have hcdcol : b.1.1 = cd.1.1.2 := by
-              rcases hcd with hcd | hcd
-              · exact (hc hcd.1.symm).elim
-              · exact hcd
-            apply Subtype.ext
-            apply Prod.ext
-            · simpa [ha, hc] using heq
-            · exact habcol.symm.trans hcdcol
-      · exact hsnd
-    · intro n hn
-      simp only [target, Finset.mem_erase, Finset.mem_Ioi] at hn
-      rcases lt_or_gt_of_ne hn.1 with hnr | hrn
-      · let a : strictLowerTriangle p := ⟨(b.1.1, n), hnr⟩
-        refine ⟨(a, b), ?_, ?_⟩
-        · simp only [source, Finset.mem_filter, Finset.mem_univ, true_and]
-          exact ⟨Or.inl ⟨rfl, hn.2⟩, trivial⟩
-        · simp [a]
-      · let a : strictLowerTriangle p := ⟨(n, b.1.1), hrn⟩
-        refine ⟨(a, b), ?_, ?_⟩
-        · simp only [source, Finset.mem_filter, Finset.mem_univ, true_and]
-          exact ⟨Or.inr rfl, trivial⟩
-        · simp [a, hn.1]
-  change source.card = _
-  rw [hcard]
-  dsimp only [target]
-  rw [Finset.card_erase_of_mem (Finset.mem_Ioi.2 b.2), Fin.card_Ioi]
-  omega
-
-open scoped Classical in
-private theorem prod_prod_filter_eq {A : Type*} [Fintype A]
-    (P : A → A → Prop) [DecidableRel P] (q : A → ℝ) :
-    (∏ a : A, ∏ b : A with P a b, q b) =
-      ∏ ab : A × A with P ab.1 ab.2, q ab.2 := by
-  simp_rw [Finset.prod_filter]
-  rw [← Fintype.prod_prod_type']
+  calc
+    _ = (partialCorrelationJacobianTarget b).card := by
+      have hcard := Fintype.card_congr (partialCorrelationJacobianFiberEquiv b)
+      rw [Fintype.card_coe, Fintype.card_coe] at hcard
+      simpa only [partialCorrelationJacobianFiber] using hcard
+    _ = p - b.1.2.val - 2 := by
+      rw [partialCorrelationJacobianTarget,
+        Finset.card_erase_of_mem (Finset.mem_Ioi.2 b.2), Fin.card_Ioi]
+      omega
 
 private theorem prod_partialCorrelationResidual_expand
     (z : strictLowerTriangle p → ℝ) :
@@ -423,13 +443,13 @@ private theorem prod_partialCorrelationFilters_eq_pairProduct
           ∏ b : strictLowerTriangle p with b.1.1 = a.1.1 ∧ b.1.2 < a.1.2, q b) =
         ∏ ab : strictLowerTriangle p × strictLowerTriangle p with
           ab.2.1.1 = ab.1.1.1 ∧ ab.2.1.2 < ab.1.1.2, q ab.2 :=
-    prod_prod_filter_eq _ q
+    Finset.prod_prod_filter _ q
   have hsecond' :
       (∏ a : strictLowerTriangle p,
           ∏ b : strictLowerTriangle p with b.1.1 = a.1.2, q b) =
         ∏ ab : strictLowerTriangle p × strictLowerTriangle p with
           ab.2.1.1 = ab.1.1.2, q ab.2 :=
-    prod_prod_filter_eq _ q
+    Finset.prod_prod_filter _ q
   rw [hfirst, hsecond']
   have hdisjoint : Disjoint
       (Finset.univ.filter fun ab : strictLowerTriangle p × strictLowerTriangle p ↦
@@ -463,22 +483,13 @@ private theorem prod_pair_partialCorrelationResidual
   let q := fun b : strictLowerTriangle p ↦ Real.sqrt (1 - z b ^ 2)
   let s := Finset.univ.filter fun ab : strictLowerTriangle p × strictLowerTriangle p ↦
     (ab.2.1.1 = ab.1.1.1 ∧ ab.2.1.2 < ab.1.1.2) ∨ ab.2.1.1 = ab.1.1.2
-  change (∏ ab ∈ s, q ab.2) = _
-  rw [← Finset.prod_fiberwise s Prod.snd (fun ab ↦ q ab.2)]
-  apply Finset.prod_congr rfl
-  intro b _
-  calc
-    (∏ ab ∈ s with ab.2 = b, q ab.2) =
-        ∏ _ab ∈ s.filter (fun ab ↦ ab.2 = b), q b := by
-          apply Finset.prod_congr rfl
-          intro ab hab
-          exact congrArg q (Finset.mem_filter.1 hab).2
-    _ = q b ^ (s.filter fun ab ↦ ab.2 = b).card := by
-      simpa only using
-        (Finset.prod_const (s := s.filter fun ab ↦ ab.2 = b) (q b))
-    _ = q b ^ (p - b.1.2.val - 2) := by
-      rw [show (s.filter fun ab ↦ ab.2 = b).card = p - b.1.2.val - 2 by
-        exact card_partialCorrelationJacobian_fiber b]
+  have hfiber : (∏ ab ∈ s, q ab.2) =
+      ∏ b : strictLowerTriangle p, q b ^ (p - b.1.2.val - 2) := by
+    rw [← Finset.prod_fiberwise' s Prod.snd q]
+    apply Finset.prod_congr rfl
+    intro b _
+    rw [Finset.prod_const, card_partialCorrelationJacobian_fiber]
+  simpa only [s, q] using hfiber
 
 private theorem prod_partialCorrelationResidual (z : strictLowerTriangle p → ℝ) :
     (∏ a : strictLowerTriangle p,
@@ -488,12 +499,6 @@ private theorem prod_partialCorrelationResidual (z : strictLowerTriangle p → �
         Real.sqrt (1 - z b ^ 2) ^ (p - b.1.2.val - 2) :=
   (prod_partialCorrelationResidual_eq_pair_product z).trans
     (prod_pair_partialCorrelationResidual z)
-
-private theorem sqrt_pow_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) :
-    Real.sqrt x ^ n = x ^ ((n : ℝ) / 2) := by
-  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul hx]
-  congr 1
-  ring
 
 /-- The Jacobian determinant of the partial-correlation parametrization on the open cube.
 For a coordinate in zero-based column `j`, the residual variance has exponent
@@ -508,8 +513,10 @@ theorem det_fderiv_correlationCoordinatesOfPartialCorrelation
     prod_partialCorrelationResidual]
   apply Finset.prod_congr rfl
   intro ij _
-  apply sqrt_pow_eq_rpow
-  exact sub_nonneg.2 ((sq_le_one_iff_abs_le_one (z ij)).2 (hz ij).le)
+  have hx : 0 ≤ 1 - z ij ^ 2 :=
+    sub_nonneg.2 ((sq_le_one_iff_abs_le_one (z ij)).2 (hz ij).le)
+  simpa only [Real.rpow_natCast] using
+    (Real.rpow_div_two_eq_sqrt ((p - ij.1.2.val - 2 : ℕ) : ℝ) hx).symm
 
 /-- The absolute Jacobian determinant of the partial-correlation parametrization. -/
 theorem abs_det_fderiv_correlationCoordinatesOfPartialCorrelation

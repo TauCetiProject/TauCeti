@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Filtered products
@@ -19,10 +20,14 @@ For a family `u` of square roots of `1` with levels `k : ι → ℕ`, the produc
 `∏_{i ∈ s} u i ^ (k i - j)` for all `j` determine the products of the `u i` of each level `m ≥ 1`:
 if they all equal one, so do the level products.
 
+A nested filtered product over two finite types can be flattened to a filtered product over their
+product type.
+
 ## Main results
 
 * `Finset.prod_filter_or_eq_of_not`, `Finset.sum_filter_or_eq_of_not`: adjoining one point to
   the condition of a filtered product or sum.
+* `Finset.prod_prod_filter`: flattening a nested filtered product.
 * `Finset.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one`: the level products of square roots
   of `1` are trivial when all their truncated power products are.
 -/
@@ -30,6 +35,16 @@ if they all equal one, so do the level products.
 public section
 
 namespace TauCeti
+
+/-- A nested filtered product over two finite types is the corresponding filtered product over
+their product type. -/
+@[to_additive /-- A nested filtered sum over two finite types is the corresponding filtered sum
+over their product type. -/]
+theorem _root_.Finset.prod_prod_filter {ι κ M : Type*} [Fintype ι] [Fintype κ] [CommMonoid M]
+    (P : ι → κ → Prop) [DecidableRel P] (f : κ → M) :
+    (∏ i : ι, ∏ k : κ with P i k, f k) = ∏ ik : ι × κ with P ik.1 ik.2, f ik.2 := by
+  simp_rw [Finset.prod_filter]
+  rw [← Fintype.prod_prod_type']
 
 /-- Adjoining a point `c` with `¬P c` to the condition `P` of a filtered product over `s`
 multiplies it by the factor at `c` exactly when `c ∈ s`. -/
