@@ -333,6 +333,36 @@ theorem hasFDerivAt_repr_christoffelSecondKind {ι : Type*} (b : Module.Basis ι
   exact (b.coord k).toContinuousLinearMap.hasFDerivAt.comp x
     ((hΓ.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)).hasFDerivAt
 
+/-- Nondegeneracy of a continuous field of bilinear forms on a finite-dimensional space is an open
+condition: the Gram determinant in a basis is continuous and nonzero at the point. -/
+theorem _root_.ContinuousAt.eventually_toBilinForm_nondegenerate (hg : ContinuousAt g x)
+    (hnd : (g x).toBilinForm.Nondegenerate) : ∀ᶠ y in 𝓝 x, (g y).toBilinForm.Nondegenerate := by
+  let b := Module.finBasis ℝ E
+  have hdet : ContinuousAt (fun y ↦ (LinearMap.toMatrix₂ b b (g y).toBilinForm).det) x := by
+    refine continuous_id.matrix_det.continuousAt.comp
+      (f := fun y ↦ LinearMap.toMatrix₂ b b (g y).toBilinForm)
+      (continuousAt_pi.2 fun p ↦ continuousAt_pi.2 fun q ↦ ?_)
+    simpa using (hg.clm_apply (continuousAt_const (y := b p))).clm_apply
+      (continuousAt_const (y := b q))
+  exact (hdet.eventually_ne ((LinearMap.nondegenerate_iff_det_ne_zero b).1 hnd)).mono
+    fun _ ↦ (LinearMap.nondegenerate_iff_det_ne_zero b).2
+
+/-- Near a point where a `C²` field `g` of bilinear forms is nondegenerate, lowering the index of
+the Christoffel symbols of the second kind gives the first-kind formula in terms of the derivatives
+of the scalar functions `y ↦ g y u v`. -/
+theorem eventuallyEq_apply_christoffelSecondKind (hg : ContDiffAt ℝ 2 g x)
+    (hnd : (g x).toBilinForm.Nondegenerate) (u v w : E) :
+    (fun y ↦ g y (christoffelSecondKind g y u v) w) =ᶠ[𝓝 x]
+      fun y ↦ 2⁻¹ * (fderiv ℝ (fun y' ↦ g y' v w) y u + fderiv ℝ (fun y' ↦ g y' u w) y v -
+        fderiv ℝ (fun y' ↦ g y' u v) y w) := by
+  filter_upwards [hg.continuousAt.eventually_toBilinForm_nondegenerate hnd,
+    hg.eventually (by simp)] with y hnd' hy
+  have hy' := hy.differentiableAt (by norm_num)
+  rw [apply_christoffelSecondKind hnd', christoffelFirstKind_apply,
+    fderiv_clm_apply_const_apply₂ hy', fderiv_clm_apply_const_apply₂ hy',
+    fderiv_clm_apply_const_apply₂ hy']
+  ring
+
 /-! ### The index formula -/
 
 /-- **The index formula for the Christoffel symbols.** For a basis `b` of `E`, the `k`-th
