@@ -65,6 +65,8 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
 * `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
   subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
   every level;
+* `TauCeti.lintegral_min_rpow_eq` — the integral of a truncated power `min f k ^ p`, level by
+  level up to the cap `k`;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
 * `TauCeti.lintegral_sub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
@@ -85,7 +87,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal NNReal symmDiff
 
 namespace TauCeti
 
@@ -228,6 +230,35 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
       rw [hfa, hga]
+
+/-- **The layer cake formula for a truncation.** For `p > 0` and a cap `k`, the integral of
+`min f k ^ p` is `p` times the integral of `m {t < f} t ^ (p - 1)` over the heights `0 < t < k`. -/
+theorem lintegral_min_rpow_eq (m : Measure α) {f : α → ℝ≥0∞} (hf : AEMeasurable f m) (k : ℝ≥0)
+    {p : ℝ} (hp : 0 < p) :
+    ∫⁻ x, min (f x) k ^ p ∂m = ENNReal.ofReal p *
+      ∫⁻ t in Ioo 0 (k : ℝ), m {x | ENNReal.ofReal t < f x} * ENNReal.ofReal (t ^ (p - 1)) := by
+  have hmin : ∀ x, min (f x) k ≠ ∞ := fun x => (min_le_right _ _).trans_lt ENNReal.coe_lt_top |>.ne
+  have key := lintegral_rpow_eq_lintegral_meas_lt_mul m
+    (f := fun x => (min (f x) k).toReal)
+    (Filter.Eventually.of_forall fun _ => ENNReal.toReal_nonneg)
+    (hf.min aemeasurable_const).ennreal_toReal hp
+  simp only [← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le,
+    ENNReal.ofReal_toReal (hmin _)] at key
+  rw [key, ← Ioi_inter_Iio, inter_comm, ← setLIntegral_indicator measurableSet_Iio]
+  congr 1
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  rcases lt_or_ge t k with htk | htk
+  · rw [indicator_of_mem (by exact htk)]
+    congr 2
+    refine Set.ext fun x => ?_
+    simp only [mem_ofPred_eq]
+    rw [← ENNReal.ofReal_lt_iff_lt_toReal (le_of_lt ht) (hmin x), lt_min_iff,
+      and_iff_left (by rwa [← ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_lt_ofReal_iff
+        (by exact_mod_cast (lt_trans ht htk))])]
+  · have hempty : {x | t < (min (f x) k).toReal} = ∅ :=
+      eq_empty_iff_forall_notMem.2 fun x hx =>
+        (lt_irrefl t) (hx.trans_le ((ENNReal.toReal_le_coe_of_le_coe (min_le_right _ _)).trans htk))
+    rw [indicator_of_notMem (by simpa using htk), hempty, measure_empty, zero_mul]
 
 end TauCeti
 

@@ -14,13 +14,14 @@ Mathlib's `IsUnifLocDoublingMeasure.ae_tendsto_average_norm_sub` states the Lebe
 differentiation theorem for a uniformly locally doubling measure along arbitrary families of
 closed balls shrinking to a point. This file records its most common special case: almost every
 point `x` is a Lebesgue point of a locally integrable function `f` in the sense that the mean
-oscillation `⨍_{closedBall x r} ‖f - f x‖` tends to zero as `r → 0⁺`.
+oscillation `⨍_{closedBall x r} ‖f - f x‖` tends to zero as `r → 0⁺`, and the analogous statement
+for the averages of an integrable `ℝ≥0∞`-valued function.
 -/
 
 public section
 
 open Filter Metric MeasureTheory
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace IsUnifLocDoublingMeasure
 
@@ -36,5 +37,17 @@ theorem ae_tendsto_average_closedBall_norm_sub {f : α → E} (hf : LocallyInteg
   filter_upwards [ae_tendsto_average_norm_sub μ hf 1] with x hx
   exact hx (fun _ => x) id tendsto_id (eventually_mem_nhdsWithin.mono fun r hr =>
     mem_closedBall_self (by simpa using (le_of_lt hr)))
+
+/-- **Lebesgue differentiation theorem along concentric closed balls, for `ℝ≥0∞`-valued
+functions.** For a uniformly locally doubling measure and an a.e. measurable `f` with finite
+integral, the averages `⨍_{closedBall x r} f` tend to `f x` as `r → 0⁺` for almost every `x`. -/
+theorem ae_tendsto_setLAverage_closedBall {f : α → ℝ≥0∞} (hf : AEMeasurable f μ)
+    (hfin : ∫⁻ x, f x ∂μ ≠ ∞) :
+    ∀ᵐ x ∂μ, Tendsto (fun r => ⨍⁻ y in closedBall x r, f y ∂μ) (𝓝[>] 0) (𝓝 (f x)) := by
+  filter_upwards [(vitaliFamily μ 1).ae_tendsto_lintegral_div hf hfin] with x hx
+  refine (hx.comp (tendsto_closedBall_filterAt μ (fun _ => x) id tendsto_id
+    (eventually_mem_nhdsWithin.mono fun r hr =>
+      mem_closedBall_self (by simpa using (le_of_lt hr))))).congr fun r => ?_
+  simp only [Function.comp_apply, id, setLAverage_eq]
 
 end IsUnifLocDoublingMeasure
