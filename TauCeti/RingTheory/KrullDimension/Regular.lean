@@ -136,9 +136,7 @@ theorem IsRegular.length_le_supportDim {R : Type*} [CommRing R]
     (rs.length : WithBot ℕ∞) ≤ Module.supportDim R M := by
   induction rs generalizing M with
   | nil =>
-    have := reg.quot_ofList_smul_nontrivial ⊤
-    have : Nontrivial M :=
-      (Submodule.mkQ_surjective (Ideal.ofList ([] : List R) • (⊤ : Submodule R M))).nontrivial
+    have := reg.nontrivial
     obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1 (Module.supportDim_ne_bot_of_nontrivial R M)
     rw [← he]
     simp
