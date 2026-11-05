@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
 public import TauCeti.RingTheory.LaurentSeries.Basic
+public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
 # Ramified levels of Laurent series
@@ -256,6 +257,21 @@ noncomputable def contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : F
 theorem coeff_contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : Fin d) (k : ℤ) :
     (contract d f r).coeff k = f.coeff ((d : ℤ) * k + r) := (rfl)
 
+/-- Extracting an exponent-congruence component is continuous for the valuation topology. -/
+theorem continuous_contract {K : Type*} [Field K] (d : ℕ+) (r : Fin d) :
+    Continuous (fun f : K⸨X⸩ ↦ contract d f r) := by
+  refine continuous_iff_continuousAt.mpr fun f ↦
+    (TauCeti.tendsto_laurentSeries_iff_orderTop_sub _ _).mpr fun a ↦ ?_
+  filter_upwards [(TauCeti.tendsto_laurentSeries_iff_orderTop_sub id f).mp
+    Filter.tendsto_id ((d : ℤ) * a + r)] with g hg
+  rw [le_orderTop_iff_forall] at hg ⊢
+  intro k hk
+  rw [coeff_sub, coeff_contract, coeff_contract]
+  have hd : (0 : ℤ) < d := by exact_mod_cast d.pos
+  have hk' : k < a := WithTop.coe_lt_coe.mp hk
+  have hi : (d : ℤ) * k + r < (d : ℤ) * a + r := by nlinarith
+  exact hg _ (WithTop.coe_lt_coe.mpr hi)
+
 /-- Contraction is additive. -/
 @[simp]
 theorem contract_add {S : Type*} [AddMonoid S] (d : ℕ+) (f g : S⸨X⸩) (r : Fin d) :
@@ -445,6 +461,18 @@ theorem orderTop_ramifiedEmbedding (n : ℕ+) (f : R⸨X⸩) :
 /-- The level-`n` embedding is injective. -/
 theorem ramifiedEmbedding_injective (n : ℕ+) : Function.Injective (ramifiedEmbedding R n) :=
   embDomain_injective
+
+/-- The order of the level-`n` image of `f` is the order of `f` divided by `n`. -/
+@[simp]
+theorem order_ramifiedEmbedding (n : ℕ+) (f : R⸨X⸩) :
+    (ramifiedEmbedding R n f).order = (f.order : ℚ) / n := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hι : ramifiedEmbedding R n f ≠ 0 :=
+    (map_ne_zero_iff _ (ramifiedEmbedding_injective n)).mpr hf
+  apply WithTop.coe_injective
+  rw [order_eq_orderTop_of_ne_zero hι, orderTop_ramifiedEmbedding,
+    ← order_eq_orderTop_of_ne_zero hf, WithTop.map_coe]
 
 /-- The level-`n` image consists of the Hahn series all of whose exponents have denominator
 dividing `n`. -/

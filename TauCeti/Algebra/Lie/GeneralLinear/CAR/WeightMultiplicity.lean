@@ -357,7 +357,7 @@ private theorem glHalfStaircase_weightSpace_le_commonFixed
       ∀ j : Fin N, i < j → carOccupationElement (K := K) i j * x = x := by
     intro m
     induction m using Nat.strong_induction_on with
-    | h m ih =>
+    | ind m ih =>
         intro _ i him j hij
         have hlower {k : Fin N} (hki : k < i) :
             carOccupationElement (K := K) k i * x = x := by
@@ -376,7 +376,7 @@ private theorem glHalfStaircase_weightSpace_le_commonFixed
         have heigen : (∑ k ∈ t, p k) • x = (t.card : K) • x := by
           simpa [t, p] using hsum
         have hj : j ∈ t := by simpa [t] using hij
-        have := t.smul_eq_self_of_sum_smul_eq_card_smul p hp hcomm heigen hj
+        have := (t.sum_smul_eq_card_smul_iff p hp hcomm).1 heigen j hj
         simpa [p, smul_eq_mul] using this
   simp only [Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff]
   intro a ha

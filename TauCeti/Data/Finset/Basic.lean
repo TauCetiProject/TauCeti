@@ -11,6 +11,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.Max
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
@@ -49,6 +50,9 @@ import TauCeti.Data.Set.PowersetCard
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
   are the corresponding identities for an integer cancelling the cardinality of the finset.
+* `Finset.Nonempty.exists_subset_Ioi_insert_eq` writes a nonempty finset of a linear order as its
+  minimum inserted into a finset above it, and `Finset.min'_insert_of_subset_Ioi` recovers that
+  minimum.
 * `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
   a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
@@ -67,6 +71,9 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.mem_map_swap_prodCongr_refl_iff_of_ne` and
   `Finset.mk_mem_map_swap_prodCongr_refl_iff` describe membership in a finset of pairs whose
   first coordinates are transposed.
+* `Finset.union_eq_union_and_disjoint_and_disjoint_of_repartition` shows that two pairs of
+  disjoint finsets partition the same elements, given two such partitions they agree with away
+  from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -75,7 +82,9 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
   has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
-  says that this count is symmetric in the two factors, and
+  says that this count is symmetric in the two factors,
+  `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
+  half of the product when the second factor has two elements, and
   `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
   subproduct of the product of two equal or disjoint finsets.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
@@ -214,6 +223,17 @@ theorem card_filter_ne_product_comm {α : Type*} [DecidableEq α] (s t : Finset 
   apply card_equiv (Equiv.prodComm α α)
   simp [and_comm, ne_comm]
 
+/-- If `t` has at least two elements, then pairs with distinct coordinates make up at least half
+of `s ×ˢ t`. -/
+theorem card_mul_card_le_two_mul_card_filter_ne_product {α : Type*} [DecidableEq α]
+    (s t : Finset α) (ht : 2 ≤ #t) : #s * #t ≤ 2 * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+  have hle : #s * (#t - 1) ≤ #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+    rw [card_filter_ne_product, ← smul_eq_mul, ← sum_const]
+    exact sum_le_sum fun u _ ↦ pred_card_le_card_erase
+  calc #s * #t ≤ #s * (2 * (#t - 1)) := Nat.mul_le_mul_left _ (by omega)
+    _ = 2 * (#s * (#t - 1)) := Nat.mul_left_comm _ _ _
+    _ ≤ 2 * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := Nat.mul_le_mul_left _ hle
+
 /-- If `s` and `t` are equal or disjoint, then for `s' ⊆ s` and `t' ⊆ t` the pairs with distinct
 coordinates in `s' ×ˢ t'` are at most a `#s' / #s`-fraction of those in `s ×ˢ t`. For
 overlapping `s ≠ t` this can fail: take `s = {a, b}`, `t = {b, c}`, `s' = {a}` and `t' = t`. -/
@@ -242,7 +262,7 @@ theorem card_symmDiff_add_two_mul_card_inter {α : Type*} [DecidableEq α] (s t 
     (s ∆ t).card + 2 * (s ∩ t).card = s.card + t.card := by
   have hsub : s ∩ t ⊆ s ∪ t := inter_subset_left.trans subset_union_left
   have hcard : (s ∆ t).card = (s ∪ t).card - (s ∩ t).card := by
-    rw [symmDiff_eq_sup_sdiff_inf, sup_eq_union, inf_eq_inter, card_sdiff,
+    rw [symmDiff_eq_sup_sdiff_inf, card_sdiff,
       inter_eq_left.2 hsub]
   have hunion := card_union_add_card_inter s t
   have hle : (s ∩ t).card ≤ (s ∪ t).card := card_le_card hsub
@@ -345,6 +365,29 @@ theorem map_swap_symmDiff_pair_eq_self_iff {α : Type*} [DecidableEq α] (a b : 
         tauto
       · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
         tauto
+
+/-- Let `A₀, B₀` and `S, F₀` be two partitions of the same elements into two disjoint finsets.
+Suppose that, away from the exceptional elements (those satisfying `q`), the finsets `A`, `B` and
+`F` agree with `A₀`, `B₀` and `F₀`, that `S` contains no exceptional element, and that at the
+exceptional elements `A` and `B` contain exactly the elements of `F`, without overlap. Then
+`A, B` and `S, F` partition the same elements. -/
+theorem union_eq_union_and_disjoint_and_disjoint_of_repartition {α : Type*} [DecidableEq α]
+    (q : α → Prop) {A B S F A₀ B₀ F₀ : Finset α}
+    (hrep : S ∪ F₀ = A₀ ∪ B₀) (hSF : Disjoint S F₀) (hAB : Disjoint A₀ B₀)
+    (hA : ∀ p, ¬q p → (p ∈ A ↔ p ∈ A₀)) (hB : ∀ p, ¬q p → (p ∈ B ↔ p ∈ B₀))
+    (hF : ∀ p, ¬q p → (p ∈ F ↔ p ∈ F₀)) (hS : ∀ p ∈ S, ¬q p)
+    (hq : ∀ p, q p → (p ∈ A ∨ p ∈ B ↔ p ∈ F) ∧ ¬(p ∈ A ∧ p ∈ B)) :
+    A ∪ B = S ∪ F ∧ Disjoint A B ∧ Disjoint S F := by
+  refine ⟨Finset.ext fun p => ?_, Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_,
+    Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_⟩
+  · rw [Finset.mem_union, Finset.mem_union]
+    by_cases hp : q p
+    · rw [(hq p hp).1, iff_false_intro fun h => hS p h hp, false_or]
+    · rw [hA p hp, hB p hp, hF p hp, ← Finset.mem_union, ← Finset.mem_union, hrep]
+  · by_cases hp : q p
+    · exact (hq p hp).2 ⟨h₁, h₂⟩
+    · exact Finset.disjoint_left.mp hAB ((hA p hp).mp h₁) ((hB p hp).mp h₂)
+  · exact Finset.disjoint_left.mp hSF h₁ ((hF p (hS p h₁)).mp h₂)
 
 /-- The two coordinates of every element of a finite set of natural-number pairs lie below a
 common bound. -/
@@ -582,6 +625,21 @@ theorem filter_gt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] 
   fun _ hx ↦ by
     rw [mem_filter] at hx
     exact mem_Ioo.2 ⟨hx.2, (mem_Ioo.1 (hs hx.1)).2⟩
+
+/-- Inserting an element `a` into a finset above `a` makes `a` the minimum. -/
+theorem min'_insert_of_subset_Ioi {α : Type*} [LinearOrder α] [LocallyFiniteOrderTop α] {a : α}
+    {s : Finset α} (hs : s ⊆ Ioi a) : (insert a s).min' (insert_nonempty a s) = a :=
+  le_antisymm (min'_le _ _ (mem_insert_self a s)) (le_min' _ _ _ fun y hy ↦ by
+    rcases mem_insert.1 hy with rfl | hy
+    · exact le_rfl
+    · exact (mem_Ioi.1 (hs hy)).le)
+
+/-- A nonempty finset of a linear order is an element `a` inserted into a finset above `a`. -/
+theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
+    [LocallyFiniteOrderTop α] {s : Finset α} (hs : s.Nonempty) :
+    ∃ a t, t ⊆ Ioi a ∧ insert a t = s :=
+  ⟨s.min' hs, s.erase (s.min' hs), fun _ ht ↦ mem_Ioi.2 (min'_lt_of_mem_erase_min' _ _ ht),
+    insert_erase (min'_mem s hs)⟩
 
 /-- If a monotone map `f` is not injective on a finset `T` inside `Ioo a b`, or does not map `T`
 strictly between `f a` and `f b`, then it identifies two consecutive points `u < v` of

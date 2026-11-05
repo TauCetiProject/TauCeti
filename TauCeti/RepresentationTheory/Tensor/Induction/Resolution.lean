@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
 public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
+public import TauCeti.LinearAlgebra.PiTensorProduct.Decomposition
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.CoboundaryShift
 
 /-!
@@ -129,6 +130,23 @@ theorem smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply
   -- `toSmoothDiscrete` keeps the action of the discrete tensor induction.
   DiscreteRep.tensorInduced_ρ_apply U hU s _ g x
 
+/-- The action of `G` on the tensor-induced total resolution is tensor induction of the action
+`TopRep.gradedResolutionRepresentation` of `U` on the total resolution, with no passage through the
+smooth-discrete dictionary. -/
+theorem smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply'
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R U) (g : G)
+    (x : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V) :
+    ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.ρ g x =
+      U.tensorInducedRepresentation s A.obj.gradedResolutionRepresentation g x := by
+  have hρ : ((ofSmoothDiscrete R U).obj (smoothGradedResolutionFunctor.obj A)).ρ =
+      A.obj.gradedResolutionRepresentation :=
+    MonoidHom.ext fun u ↦ LinearMap.ext fun y ↦
+      (ofSmoothDiscrete_obj_ρ_apply R U _ u y).trans
+        ((smoothGradedResolutionFunctor_obj_obj_ρ_apply A u y).trans
+          (A.obj.gradedResolutionTopRep_ρ_apply u y))
+  exact (smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply U hU s A g x).trans
+    (congrArg (fun ρ ↦ U.tensorInducedRepresentation s ρ g x) hρ)
+
 /-- Tensor induction of the coefficient augmentation into the total shifted coinduced
 resolution.
 
@@ -207,6 +225,13 @@ homogeneous factors has the sum of their degrees. -/
 noncomputable abbrev smoothTensorInducedGradedResolutionPiece :
     ℤ → Submodule R ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V :=
   PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ A.obj.gradedResolutionPiece)
+
+/-- The total-degree pieces decompose the tensor-induced resolution. Thus a degreewise
+comparison out of this resolution assembles into a map on its whole underlying module. -/
+noncomputable instance smoothTensorInducedGradedResolutionPieceDecomposition :
+    DirectSum.Decomposition (smoothTensorInducedGradedResolutionPiece U hU s A) := by
+  exact PiTensorProduct.totalDegreePieceDecomposition _
+    (hℳ := fun _ ↦ A.obj.isInternal_gradedResolutionPiece.chooseDecomposition)
 
 /-- The action of `G` on the tensor-induced total resolution preserves the total degree. -/
 theorem smoothTensorInducedGradedResolutionPiece_ρ_mem (n : ℤ) (g : G)
@@ -293,6 +318,14 @@ coset factor. It is not equivariant. -/
 noncomputable def smoothTensorInducedGradedResolutionProjection :
     (⨂[R] _ : G ⧸ U, A.obj.gradedResolutionModule) →ₗ[R] ⨂[R] _ : G ⧸ U, A.obj.V :=
   PiTensorProduct.map fun _ ↦ A.obj.gradedResolutionProjection
+
+omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] [Fintype (G ⧸ U)] in
+/-- The projection of the tensor-induced total resolution is the projection of the total
+resolution in every coset factor. -/
+theorem smoothTensorInducedGradedResolutionProjection_def :
+    smoothTensorInducedGradedResolutionProjection U A =
+      PiTensorProduct.map fun _ ↦ A.obj.gradedResolutionProjection :=
+  (rfl)
 
 omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] [Fintype (G ⧸ U)] in
 /-- On a pure tensor, the projection applies the projection of the total resolution in every

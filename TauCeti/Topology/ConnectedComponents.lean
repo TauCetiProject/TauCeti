@@ -44,6 +44,8 @@ space by them.
   closure whose frontier misses `F`.
 * `TauCeti.connectedComponentIn_eq_of_lt`: a preconnected set on which a function stays on one
   side of a value it never takes is a connected component.
+* `TauCeti.connectedComponentIn_compl_Icc_eq_Ioi`, `TauCeti.connectedComponentIn_compl_Icc_eq_Iio`:
+  the components of the complement of a closed interval are the two open half-lines.
 * `TauCeti.isPreconnected_compl_of_isPreconnected_frontier`: in a preconnected, locally connected
   space, an open set with preconnected frontier has preconnected complement.
 * `TauCeti.isPreconnected_compl_of_isDiscrete`: removing from a preconnected space a closed
@@ -51,8 +53,9 @@ space by them.
   preconnected.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
   space is a T1 space.
-* `TauCeti.connectedComponentsSigmaHomeomorph`: a locally connected space is homeomorphic
-  to the disjoint union of its connected components.
+* `TauCeti.connectedComponentsSigmaHomeomorph`: a space whose connected components form a
+  discrete space, for example a locally connected space, is homeomorphic to the disjoint union of
+  its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
 * `TauCeti.isClopen_of_finite_pairwiseDisjoint_closed_cover`: each member of a finite pairwise
@@ -274,6 +277,30 @@ theorem connectedComponentIn_eq_of_lt {α : Type*} [LinearOrder α] [Topological
     · exact hqgt
   · exact hH.subset_connectedComponentIn hz hHD
 
+/-- The component of `[a, b]ᶜ` containing a point above `b` is the half-line `(b, ∞)`. -/
+theorem connectedComponentIn_compl_Icc_eq_Ioi {α : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] {a b x : α} (hab : a ≤ b)
+    (hx : b < x) : connectedComponentIn (Icc a b)ᶜ x = Ioi b := by
+  refine Subset.antisymm (fun y hy => ?_)
+    (isPreconnected_Ioi.subset_connectedComponentIn hx fun y hy h => not_lt.2 h.2 hy)
+  by_contra hyb
+  have hya : y < a := not_le.1 fun hay => connectedComponentIn_subset _ _ hy ⟨hay, not_lt.1 hyb⟩
+  exact connectedComponentIn_subset _ _ (isPreconnected_connectedComponentIn.Icc_subset hy
+    (mem_connectedComponentIn fun h => not_lt.2 h.2 hx) ⟨(hya.trans_le hab).le, hx.le⟩)
+    ⟨hab, le_rfl⟩
+
+/-- The component of `[a, b]ᶜ` containing a point below `a` is the half-line `(-∞, a)`. -/
+theorem connectedComponentIn_compl_Icc_eq_Iio {α : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] {a b x : α} (hab : a ≤ b)
+    (hx : x < a) : connectedComponentIn (Icc a b)ᶜ x = Iio a := by
+  refine Subset.antisymm (fun y hy => ?_)
+    (isPreconnected_Iio.subset_connectedComponentIn hx fun y hy h => not_lt.2 h.1 hy)
+  by_contra hya
+  have hyb : b < y := not_le.1 fun hyb => connectedComponentIn_subset _ _ hy ⟨not_lt.1 hya, hyb⟩
+  exact connectedComponentIn_subset _ _ (isPreconnected_connectedComponentIn.Icc_subset
+    (mem_connectedComponentIn fun h => not_lt.2 h.1 hx) hy ⟨hx.le, (hab.trans_lt hyb).le⟩)
+    ⟨le_rfl, hab⟩
+
 /-- **An open set with preconnected frontier has preconnected complement**, in a preconnected,
 locally connected space.
 
@@ -396,11 +423,13 @@ instance instLocallyPathConnectedSpaceConnectedComponentsFiber [LocallyPathConne
   rw [connectedComponents_preimage_singleton, ← pathComponent_eq_connectedComponent]
   infer_instance
 
-/-- **A locally connected space is the disjoint union of its connected components.**
+/-- **A space whose connected components form a discrete space is the disjoint union of its
+connected components.** This applies to locally connected spaces and to spaces with finitely many
+connected components.
 
 The summand indexed by `C : ConnectedComponents X` is the fibre of the canonical quotient map
 over `C`, so this decomposition does not require choosing representatives. -/
-noncomputable def connectedComponentsSigmaHomeomorph [LocallyConnectedSpace X] :
+noncomputable def connectedComponentsSigmaHomeomorph [DiscreteTopology (ConnectedComponents X)] :
     (Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) ≃ₜ X := by
   let e : (Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) ≃ X :=
     Equiv.sigmaPreimageEquiv ConnectedComponents.mk
@@ -410,13 +439,14 @@ noncomputable def connectedComponentsSigmaHomeomorph [LocallyConnectedSpace X] :
       ((isOpen_discrete {C}).preimage ConnectedComponents.continuous_coe).isOpenMap_subtype_val)
 
 @[simp]
-theorem connectedComponentsSigmaHomeomorph_apply [LocallyConnectedSpace X]
+theorem connectedComponentsSigmaHomeomorph_apply [DiscreteTopology (ConnectedComponents X)]
     (z : Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) :
     connectedComponentsSigmaHomeomorph z = z.2 :=
   (rfl)
 
 @[simp]
-theorem connectedComponentsSigmaHomeomorph_symm_apply [LocallyConnectedSpace X] (x : X) :
+theorem connectedComponentsSigmaHomeomorph_symm_apply
+    [DiscreteTopology (ConnectedComponents X)] (x : X) :
     connectedComponentsSigmaHomeomorph.symm x =
       ⟨ConnectedComponents.mk x, ⟨x, Set.mem_singleton _⟩⟩ :=
   (rfl)

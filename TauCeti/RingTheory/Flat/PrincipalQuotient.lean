@@ -33,9 +33,9 @@ Cartier divisors.
 
 The fibre ring can also be reached from the fibre over a prime `p` of `R`: for a prime `Q` of
 `κ(p) ⊗[R] B` lying over the prime `q` of `B`, the local ring `(κ(p) ⊗[R] B)_Q` is
-`B_q ⧸ p B_q` (Mathlib's `Ideal.Fiber.algEquivAux₂`), compatibly with the maps from `B`
-(`Ideal.Fiber.algEquivAux₂_algebraMap_one_tmul`). So the criterion applies to the local rings of
-the fibre ring at all its primes
+`B_q ⧸ p B_q` (Mathlib's `Ideal.Fiber.localizationAlgEquivQuotient`), compatibly with the maps
+from `B` (`Ideal.Fiber.algEquivAux₂_algebraMap_one_tmul`). So the criterion applies to the local
+rings of the fibre ring at all its primes
 (`Module.Flat.exists_isSMulRegular_and_map_eq_span_singleton_iff_fiber`), which is how it is
 read off the local rings of the scheme-theoretic fibre `X ×_S Spec κ(s)`.
 
@@ -107,7 +107,8 @@ Jacobson radical of `B`, and let `I` be a finitely generated ideal of `B` with `
 theorem eq_of_le_sup {I J : Ideal B} [Flat R (B ⧸ I)] (hI : I.FG)
     (hjac : 𝔪.map (algebraMap R B) ≤ (⊥ : Ideal B).jacobson) (hJI : J ≤ I)
     (hle : I ≤ J ⊔ 𝔪.map (algebraMap R B)) : I = J := by
-  refine le_antisymm (Submodule.le_of_le_smul_of_le_jacobson_bot hI hjac fun x hx ↦ ?_) hJI
+  refine le_antisymm (Submodule.le_of_le_smul_of_le_jacobson hI
+    (by simpa only [Ideal.jacobson_bot] using hjac) fun x hx ↦ ?_) hJI
   obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp (hle hx)
   have hzI : z ∈ I := by simpa using I.sub_mem hx (hJI hy)
   refine Submodule.mem_sup.mpr ⟨y, hy, z, ?_, rfl⟩
@@ -140,8 +141,8 @@ theorem isSMulRegular_of_isSMulRegular_quotient_mk [IsNoetherianRing B] [Flat R 
       (fun y ↦ by simp [Ideal.Quotient.eq_zero_iff_mem]) Subtype.val_injective
       Ideal.Quotient.mk_surjective
   have hker : LinearMap.ker g = ⊥ := by
-    refine Submodule.eq_bot_of_le_smul_of_le_jacobson_bot _ _ (IsNoetherian.noetherian _)
-      (fun x hx ↦ ?_) hjac
+    refine Submodule.eq_bot_of_le_smul_of_le_jacobson _ _ (IsNoetherian.noetherian _)
+      (fun x hx ↦ ?_) (by simpa only [Ideal.jacobson_bot] using hjac)
     have hfx : f * x = 0 := congrArg Subtype.val (LinearMap.mem_ker.mp hx)
     have hxJ : x ∈ 𝔪.map (algebraMap R B) := by
       rw [← Ideal.Quotient.eq_zero_iff_mem]
@@ -232,9 +233,9 @@ theorem exists_isSMulRegular_and_map_eq_span_singleton_iff_fiber [IsNoetherianRi
     simpa [r] using ha
   rw [exists_isSMulRegular_and_eq_span_singleton_iff (𝔪 := p) hjac]
   -- Transport along `(κ(p) ⊗[R] B)_Q ≅ B_r ⧸ p B_r`, which is compatible with the maps from `B`.
+  let := Localization.AtPrime.algebraOfLiesOver p r
   let e : Localization.AtPrime Q ≃+* Br ⧸ p.map (algebraMap R Br) :=
-    (Ideal.Fiber.algEquivAux₂ p Q).toRingEquiv.trans (Ideal.quotEquivOfEq (by
-      rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq]))
+    (Ideal.Fiber.localizationAlgEquivQuotient p Q).toRingEquiv
   have he : (J.map (algebraMap B Br)).map (Ideal.Quotient.mk (p.map (algebraMap R Br))) =
       ((J.map (includeRight : B →ₐ[R] p.Fiber B)).map
         (algebraMap (p.Fiber B) (Localization.AtPrime Q))).map e := by
@@ -242,7 +243,7 @@ theorem exists_isSMulRegular_and_map_eq_span_singleton_iff_fiber [IsNoetherianRi
       Ideal.map_map, Ideal.map_map]
     congr 1
     ext b
-    simp [e, Br, r, ← Ideal.Quotient.mk_algebraMap]
+    simp [e, Br, r, Ideal.Fiber.localizationAlgEquivQuotient, ← Ideal.Quotient.mk_algebraMap]
   rw [he]
   constructor
   · rintro ⟨g, hg, hIg⟩

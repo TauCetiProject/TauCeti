@@ -82,6 +82,19 @@ theorem coindResAdjunction_counit_app_hom_apply (A : Rep.{max w u v} k G)
 
 end Subgroup
 
+namespace Rep
+
+universe u v t
+
+/-- The finite-index induction–coinduction comparison is the native map on each vector. -/
+theorem indCoindIso_hom_hom_apply {k : Type u} {G : Type v} [CommRing k] [Group G]
+    {S : Subgroup G} [DecidableRel (QuotientGroup.rightRel S)] [S.FiniteIndex]
+    (A : Rep.{max t u} k S) (a : ind S.subtype A) :
+    (indCoindIso A).hom.hom a = indToCoind A a :=
+  LinearMap.congr_fun (indCoindIso_hom_hom_toLinearMap A) a
+
+end Rep
+
 namespace TauCeti
 
 open _root_.Rep
@@ -139,8 +152,8 @@ theorem resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app
   refine (Finset.sum_congr rfl (g := fun _ => a) fun q _ => ?_).trans ?_
   · induction q using Quotient.inductionOn with
     | h g =>
-      rw [Quotient.liftOn_mk, hcounit, hunit, ← Module.End.mul_apply, ← map_mul, inv_mul_cancel,
-        map_one, Module.End.one_apply]
+      rw [Quotient.liftOn_mk, hcounit, hunit, ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel,
+        map_one, one_apply_eq_self]
   · rw [Finset.sum_const, Finset.card_univ, QuotientGroup.card_quotient_rightRel, Rep.smul_hom,
       Representation.IntertwiningMap.smul_apply, Subgroup.index_eq_card, Nat.card_eq_fintype_card,
       Nat.cast_smul_eq_nsmul]
@@ -225,7 +238,7 @@ theorem coinvariantsMk_coindToInd_unit (M : Rep k G) (S : Subgroup G) [S.FiniteI
     have hg : (q.out : G)⁻¹ = ((⟨_, hs⟩ : S) : G) * g := by simp
     have h1 := coinvariantsMk_indVMk S (res S.subtype M) g (M.ρ g m)
     have h2 := coinvariantsMk_indVMk_one_apply S (res S.subtype M) ⟨_, hs⟩ (M.ρ g m)
-    rw [hg, map_mul, Module.End.mul_apply]
+    rw [hg, map_mul, mul_apply_eq_comp]
     exact h1.trans h2.symm
 
 end Rep

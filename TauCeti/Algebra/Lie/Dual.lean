@@ -16,8 +16,10 @@ The dual `M* = Module.Dual R M` of a Lie module carries the contragredient actio
 `⁅x, f⁆ m = - f ⁅x, m⁆` (Mathlib's `Module.Dual.instLieRingModule`). This file records three
 facts about it that self-duality statements need: irreducibility of the dual, the dictionary
 between invariant bilinear forms and morphisms `M → M*`, and the equivalence `M ≃ M*` induced by a
-nondegenerate invariant form. Nothing here mentions weights, so all three are stated for an
-arbitrary Lie algebra acting on an arbitrary module.
+nondegenerate invariant form. All three are stated for an arbitrary Lie algebra acting on an
+arbitrary module. It also records that an integer eigenspace decomposition for one element passes
+to the dual, which is how polynomial functions on a module inherit a grading from such an
+element.
 
 The first is that irreducibility passes to the dual in finite dimensions. If `N ≤ M*` is stable
 under the action then so is the set of vectors every functional in `N` kills, because `⁅x, f⁆`
@@ -53,6 +55,9 @@ coadjoint modules.
 * `TauCeti.LieModule.exists_ne_zero_lieInvariant_iff_nonempty_lieModuleEquiv_dual`: **a
   finite-dimensional irreducible Lie module carries a nonzero invariant bilinear form exactly when
   it is equivalent to its dual.**
+* `TauCeti.LieModule.iSup_eigenspace_toEnd_dual_eq_top`: if a finite-dimensional Lie module is
+  the direct sum of the integer eigenspaces of `x`, then the integer eigenspaces of `x` acting on
+  the dual span the dual.
 
 ## References
 
@@ -238,5 +243,37 @@ theorem exists_ne_zero_lieInvariant_iff_nonempty_lieModuleEquiv_dual :
     ← nonempty_lieModuleEquiv_iff_exists_ne_zero]
 
 end Field
+
+/-! ### Integer eigenspaces of the dual -/
+
+section Eigenspace
+
+variable {K : Type u} {L : Type v} {M : Type w}
+variable [Field K] [LieRing L] [LieAlgebra K L]
+variable [AddCommGroup M] [Module K M] [LieRingModule L M] [_root_.LieModule K L M]
+variable [FiniteDimensional K M]
+
+/-- **Integer weight decompositions pass to the dual.** If a finite-dimensional Lie module `M` is
+the internal direct sum of the eigenspaces of `x` at the integers, then the eigenspaces of `x` at
+the integers span the dual `M*`. The dual basis of a basis of eigenvectors of weights `jᵢ` consists
+of eigenvectors of weights `-jᵢ`, because `⁅x, φ⁆ m = -φ ⁅x, m⁆`. -/
+theorem iSup_eigenspace_toEnd_dual_eq_top {x : L}
+    (hx : DirectSum.IsInternal fun j : ℤ ↦ (_root_.LieModule.toEnd K L M x).eigenspace (j : K)) :
+    ⨆ j : ℤ, (_root_.LieModule.toEnd K L (Dual K M) x).eigenspace (j : K) = ⊤ := by
+  classical
+  let b := hx.collectedBasis fun j : ℤ ↦
+    Module.Basis.ofVectorSpace K ((_root_.LieModule.toEnd K L M x).eigenspace (j : K))
+  have := Module.Finite.finite_basis b
+  rw [eq_top_iff, ← b.dualBasis.span_eq, Submodule.span_le]
+  rintro _ ⟨i, rfl⟩
+  refine Submodule.mem_iSup_of_mem (-i.1) (Module.End.mem_eigenspace_iff.2 (b.ext fun k ↦ ?_))
+  have hk : _root_.LieModule.toEnd K L M x (b k) = (k.1 : K) • b k :=
+    Module.End.mem_eigenspace_iff.1 (hx.collectedBasis_mem _ k)
+  rw [_root_.LieModule.toEnd_apply_apply] at hk
+  rw [_root_.LieModule.toEnd_apply_apply, Module.Dual.lie_apply, hk, LinearMap.smul_apply,
+    map_smul, b.dualBasis_apply_self]
+  split_ifs with h <;> simp [h]
+
+end Eigenspace
 
 end TauCeti.LieModule

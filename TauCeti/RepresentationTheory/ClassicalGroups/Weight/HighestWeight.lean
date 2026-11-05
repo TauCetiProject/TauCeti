@@ -61,6 +61,8 @@ height while permutations of a weight are again weights
   subgroup is polynomial in the parameter.
 * `TauCeti.IsRationalRep.apply_transvectionUnit_eq_self`: a weight vector all of whose raised
   weight spaces vanish is fixed by the root subgroup.
+* `TauCeti.IsRationalRep.apply_transvectionUnit_eq_self_of_forall_sum_le`: a vector of a weight
+  dominating every weight of the representation is fixed by every positive root subgroup.
 * `TauCeti.IsRationalRep.exists_highestWeightVector`: **a nonzero rational representation has a
   highest weight vector**, of a dominant weight.
 * `TauCeti.IsRationalRep.nonempty_equiv_of_highestWeightVector`: **an irreducible rational
@@ -147,8 +149,8 @@ theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
   have hlhs : ∑ m' ∈ Finset.range d, c ^ m' • ρ (diagGL t) (A m' w)
       = ((weightChar K l t : Kˣ) : K) •
         ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : Kˣ) : K) * c) ^ m' • A m' w := by
-    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← Module.End.mul_apply,
-      ← map_mul, ← hconj, map_mul, Module.End.mul_apply, hexpand, map_sum]
+    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← mul_apply_eq_comp,
+      ← map_mul, ← hconj, map_mul, mul_apply_eq_comp, hexpand, map_sum]
     exact Finset.sum_congr rfl fun m' _ ↦ (map_smul _ _ _).symm
   have hrhs : ∑ m' ∈ Finset.range d,
       c ^ m' • (((weightChar K (l + m' • (Pi.single i 1 - Pi.single j 1)) t : Kˣ) : K) • A m' w)
@@ -216,7 +218,7 @@ theorem IsRationalRep.apply_transvectionUnit_eq_self (h : IsRationalRep ρ) {i j
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · have hw0 : w = 0 := by
       have h1 := hexpand 0
-      rw [transvectionUnit_zero, map_one, Module.End.one_apply, Finset.range_zero,
+      rw [transvectionUnit_zero, map_one, one_apply_eq_self, Finset.range_zero,
         Finset.sum_empty] at h1
       exact h1
     rw [hw0, map_zero]
@@ -227,12 +229,40 @@ theorem IsRationalRep.apply_transvectionUnit_eq_self (h : IsRationalRep ρ) {i j
           (Finset.mem_range.mp hm)), smul_zero]
     have hA0 : A 0 w = w := by
       have h1 := hexpand 0
-      rw [transvectionUnit_zero, map_one, Module.End.one_apply,
+      rw [transvectionUnit_zero, map_one, one_apply_eq_self,
         Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr hd)
           (fun m _ hm ↦ by rw [zero_pow hm, zero_smul]), pow_zero, one_smul] at h1
       exact h1.symm
     rw [hexpand c, Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr hd) hzero, pow_zero,
       one_smul, hA0]
+
+/-- **A vector of a weight dominating every weight is fixed by the positive root subgroups.** If
+every weight `a` of `ρ` is dominated by `l`, in the sense that each initial partial sum of `a` is
+at most the corresponding partial sum of `l`, then every transvection `xᵢⱼ(c)` with `i < j` fixes
+each vector of weight `l`: the raised weights `l + m (εᵢ - εⱼ)`, `m > 0`, violate the dominance
+bound at the partial sum through `i`. -/
+theorem IsRationalRep.apply_transvectionUnit_eq_self_of_forall_sum_le (h : IsRationalRep ρ)
+    {l : Fin n → ℤ}
+    (hl : ∀ a : Fin n → ℤ, weightSpace ρ a ≠ ⊥ → ∀ m : ℕ,
+      ∑ k ∈ Finset.univ.filter fun k : Fin n ↦ (k : ℕ) < m, a k ≤
+        ∑ k ∈ Finset.univ.filter fun k : Fin n ↦ (k : ℕ) < m, l k)
+    {i j : Fin n} (hij : i < j) {w : W} (hw : w ∈ weightSpace ρ l) (c : ℂ) :
+    ρ (transvectionUnit hij.ne c) w = w := by
+  classical
+  refine h.apply_transvectionUnit_eq_self hij.ne hw (fun m hm ↦ ?_) c
+  by_contra hne
+  have hsum := hl _ hne ((i : ℕ) + 1)
+  have hsingle (a : Fin n) :
+      ∑ k ∈ Finset.univ.filter fun k : Fin n ↦ (k : ℕ) < (i : ℕ) + 1,
+        (Pi.single a (1 : ℤ) : Fin n → ℤ) k = if (a : ℕ) < (i : ℕ) + 1 then 1 else 0 := by
+    rw [Finset.sum_pi_single']
+    simp
+  have hj : ¬ (j : ℕ) < (i : ℕ) + 1 := by have := Fin.lt_def.mp hij; omega
+  simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_sub, Finset.sum_add_distrib,
+    Finset.sum_sub_distrib, ← Finset.smul_sum, hsingle, Nat.lt_succ_self, ite_true, hj,
+    ite_false] at hsum
+  rw [nsmul_zero, sub_zero, Int.nsmul_eq_mul, mul_one] at hsum
+  omega
 
 /-! ## The highest weight -/
 

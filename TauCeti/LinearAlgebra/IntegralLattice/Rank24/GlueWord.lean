@@ -30,7 +30,9 @@ For a word given by its labels `List.ofFn d`, validity is the range condition on
 (`isValidGlueWord_ofFn_iff`), and decoding is natural under permutations of the components
 (`decodeGlueWord_ofFn_comp`): permuting the labels and the components together reindexes the
 decoded word through `Equiv.piCongrLeft`, the reindexing along which the glue-word isometry is
-natural.
+natural.  Replacing the components by an equal family, for instance the positions of a list of
+components by an explicitly given family, does not change digit lists
+(`encodeGlueWord_piGlueAlphabetCongr`).
 
 Sums and shortest norms of glue words can be computed on their digit words: `glueWordAdd` adds
 two digit words label by label (`encodeGlueWord_add`), and `glueWordMinimum` sums the shortest
@@ -96,6 +98,12 @@ theorem encodeGlueWord_def (w : ∀ i, (t i).glueAlphabet (ht i)) :
       (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   simp [encodeGlueWord]
 
+/-- The glue word with prescribed labels encodes to the list of those labels. -/
+@[simp] theorem encodeGlueWord_glueLabelEquiv (d : ∀ i, Fin (t i).glueLabelCount) :
+    encodeGlueWord t ht (fun i ↦ (t i).glueLabelEquiv (ht i) (d i)) =
+      List.ofFn fun i ↦ (d i : ℕ) := by
+  simp [encodeGlueWord]
+
 /-- The zero glue word has every label zero. -/
 @[simp] theorem encodeGlueWord_zero : encodeGlueWord t ht 0 = List.replicate n 0 := by
   simp [encodeGlueWord, List.ofFn_const]
@@ -129,6 +137,20 @@ theorem encodeGlueWord_injective : Function.Injective (encodeGlueWord t ht) := b
   intro w v h
   have h := congrArg (decodeGlueWord t ht) h
   simpa only [decodeGlueWord_encodeGlueWord, Option.some.injEq] using h
+
+/-- **Digits are unchanged by passing to an equal family of components**: if the components
+`s k` over `Fin m` are the components `t k` over `Fin n` read along `m = n`, then a glue word and
+its image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same digit list. -/
+theorem encodeGlueWord_piGlueAlphabetCongr {m : ℕ} {s : Fin m → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (hmn : m = n) (h : ∀ k, t (finCongr hmn k) = s k)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    encodeGlueWord s hs (DynkinType.piGlueAlphabetCongr t ht (finCongr hmn) h w) =
+      encodeGlueWord t ht w := by
+  subst hmn
+  rw [encodeGlueWord_def, encodeGlueWord_def]
+  exact congrArg List.ofFn (funext fun k ↦ by
+    rw [DynkinType.piGlueAlphabetCongr_apply]
+    exact DynkinType.val_glueLabelEquiv_symm_ofEq (h k) _ _ _)
 
 /-- Successful decoding determines exactly the digit list of the resulting word. -/
 @[simp] theorem decodeGlueWord_eq_some_iff (l : List ℕ)
@@ -172,14 +194,7 @@ component. -/
 theorem decodeGlueWord_ofFn (d : Fin n → ℕ) (hd : ∀ i, d i < (t i).glueLabelCount) :
     decodeGlueWord t ht (List.ofFn d) =
       some fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩ := by
-  rw [decodeGlueWord_eq_some_iff]
-  apply List.ext_getElem
-  · simp
-  · intro i hi _
-    have h := getElem_encodeGlueWord t ht (fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩)
-      ⟨i, by simpa using hi⟩
-    simp only [Equiv.symm_apply_apply] at h
-    simpa using h.symm
+  rw [decodeGlueWord_eq_some_iff, encodeGlueWord_glueLabelEquiv]
 
 /-- **Decoding is natural under permutations of the components.** Reindexing the labels of a
 word along `σ : Fin m ≃ Fin n` and decoding against the reindexed components `k ↦ t (σ k)`

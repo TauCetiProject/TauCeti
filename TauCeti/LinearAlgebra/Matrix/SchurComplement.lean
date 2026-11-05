@@ -162,7 +162,8 @@ theorem inv_inv_apply_self_eq_sub (A : Matrix n n K) (i : n)
       det_unique (_ : Matrix {a // a = i} {a // a = i} K),
       show (default : {a // a = i}) = ⟨i, rfl⟩ from Subsingleton.elim _ _]
     congr 1
-    simp only [s, sub_apply, submatrix_apply, invOf_eq_nonsing_inv, Matrix.mul_apply, dotProduct,
+    simp only [s, Matrix.sub_apply, submatrix_apply, invOf_eq_nonsing_inv, Matrix.mul_apply,
+      dotProduct,
       mulVec, Finset.mul_sum, Finset.sum_mul, mul_assoc]
     rw [Finset.sum_comm]
   have hadj : adjugate A i i = B.det := by
@@ -176,7 +177,7 @@ theorem inv_inv_apply_self_eq_sub (A : Matrix n n K) (i : n)
     rw [adjugate_apply, ← det_submatrix_equiv_self e, hblk, det_fromBlocks_zero₁₂, det_one,
       one_mul]
   have hB0 : B.det ≠ 0 := hB.ne_zero
-  rw [inv_def, smul_apply, hadj, hdet, Ring.inverse_eq_inv', smul_eq_mul, mul_comm,
+  rw [inv_def, Matrix.smul_apply, hadj, hdet, Ring.inverse_eq_inv', smul_eq_mul, mul_comm,
     ← div_eq_mul_inv, inv_div, mul_div_cancel_left₀ s hB0]
 
 /-- The reciprocal of a diagonal entry `(A⁻¹) i i` of the inverse of a positive-definite real

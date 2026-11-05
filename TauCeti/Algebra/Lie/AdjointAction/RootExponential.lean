@@ -145,7 +145,7 @@ theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι
         exact Submodule.sum_mem _ fun j _ ↦
           Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩)
       · set α : H.root := ⟨χ, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχ⟩⟩
-        obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_nonzero' (⟨e α, he α⟩ : rootSpace H χ)
+        obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_ne_zero' (⟨e α, he α⟩ : rootSpace H χ)
           (by simpa [Subtype.ext_iff] using he0 α)).mp (finrank_rootSpace_eq_one χ hχ) ⟨z, hz⟩
         have hz' : z = r • e α := by simpa [Subtype.ext_iff] using hr.symm
         have hbr : ⁅e α, (h₀ : L)⁆ = -(χ h₀) • e α := by
@@ -163,15 +163,16 @@ theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι
     exact ⟨w, by rw [hJ, hw, LinearEquiv.apply_symm_apply]⟩
   · -- The value at `x` is `g h` for a product `g` of root exponentials and `h ∈ H`.
     refine ⟨(l.map fun α ↦ ofLinearEquiv (expAd (x (Sum.inl α) • e α)
-        (hnil' α _)).toLinearEquiv).prod, list_prod_mem fun g hg ↦ ?_,
+        (hnil' α _).exists_pow_apply_eq_zero).toLinearEquiv).prod,
+      list_prod_mem fun g hg ↦ ?_,
       ∑ j, x (Sum.inr j) • (bH j : L), H.sum_mem fun j _ ↦ H.smul_mem _ (bH j).2, ?_⟩
     · obtain ⟨α, -, rfl⟩ := List.mem_map.mp hg
-      exact ofLinearEquiv_expAd_mem_intLieAlgebra _ _
+      exact ofLinearEquiv_expAd_mem_intLieAlgebra _ (hnil' α _)
     · ext i
       rw [eval_expProdPoly, b.equivFun_list_prod_smul]
       congr 2
       · refine List.map_congr_left fun α _ ↦ ?_
-        exact b.toMatrixAlgEquiv_expAd (hd α) _ _
+        exact b.toMatrixAlgEquiv_expAd (hd α) _ (hnil' α _)
       · simp [c, map_sum]
 
 /-- **A polynomial vanishing on the conjugates of a Cartan subalgebra is zero.** In the coordinates

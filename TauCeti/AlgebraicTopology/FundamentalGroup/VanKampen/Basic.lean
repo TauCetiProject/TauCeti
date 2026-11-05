@@ -16,6 +16,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Pushout
+import TauCeti.AlgebraicTopology.NotSimplyConnected
 import TauCeti.CategoryTheory.Groupoid.SingleObj
 import TauCeti.Topology.Connected.PathConnected
 

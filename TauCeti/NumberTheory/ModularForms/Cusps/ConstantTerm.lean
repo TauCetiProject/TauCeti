@@ -55,8 +55,9 @@ Eisenstein series through their constant terms.
 ## Main results
 
 * `ModularForm.qExpansionAt_mul`: the `q`-expansion at a cusp is multiplicative.
-* `ModularForm.qExpansionAt_mul_left`, `ModularForm.qExpansionAt_neg`: the dependence of the
-  `q`-expansion at a cusp on the representative.
+* `ModularForm.qExpansionAt_mul_left`, `ModularForm.qExpansionAt_neg`,
+  `ModularForm.qExpansionAt_SL2Z`: the dependence of the `q`-expansion at a cusp on the
+  representative, and collapse to `qExpansion 1` at level one.
 * `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
   cusps by left multiplication of cusp representatives.
 * `ModularForm.exists_qExpansion_translate_eq_expand_qExpansionAt`: at a strict period `N` of
@@ -219,6 +220,14 @@ theorem qExpansionAt_mul_left {h : SL(2, ℤ)} (hh : mapGL ℝ h ∈ Γ) (γ : S
   simp only [qExpansionAt_apply, coe_translate, map_mul, SlashAction.slash_mul,
     SlashInvariantFormClass.slash_action_eq f _ hh, _root_.mul_inv_rev, mul_smul, hΓ]
 
+/-- At level one, `SL₂(ℤ)` acts transitively on the cusps with trivial slash action, so the
+`q`-expansion at every representative `γ ∈ SL₂(ℤ)` is the expansion `qExpansion 1 f` at `∞`. -/
+@[simp]
+theorem qExpansionAt_SL2Z (γ : SL(2, ℤ)) (f : ModularForm 𝒮ℒ k) :
+    qExpansionAt γ f = qExpansion 1 f := by
+  have hγ : mapGL ℝ γ ∈ 𝒮ℒ := ⟨γ, rfl⟩
+  rw [← mul_one γ, qExpansionAt_mul_left hγ, qExpansionAt_one, Subgroup.strictWidthInfty_SL2Z]
+
 /-- Negating the representative multiplies the `q`-expansion at the cusp by `(-1)^k`. -/
 theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     qExpansionAt (-γ) f = (-1 : ℂ) ^ k • qExpansionAt γ f := by
@@ -229,7 +238,15 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
       Γγ :=
     Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.mem_normalizer_iff.mpr fun x ↦ by simp)
   simp only [qExpansionAt_apply, coe_translate, hneg, SlashAction.slash_mul,
-    ModularForm.slash_neg_one, _root_.mul_inv_rev, map_mul, mul_smul, hΓ]
+    ModularForm.slash_neg_one]
+  have hΓneg : ConjAct.toConjAct (mapGL ℝ γ * (-1))⁻¹ • Γ = Γγ := by
+    rw [_root_.mul_inv_rev, ConjAct.toConjAct_mul, mul_smul]
+    exact hΓ
+  rw [hΓneg]
+  -- The translate wrapper coerces to this slash action. Expose it so the public
+  -- `qExpansion_smul` lemma applies without unfolding the cusp-function construction.
+  change qExpansion Γγ.strictWidthInfty
+    ((-1 : ℂ) ^ k • (⇑f ∣[k] mapGL ℝ γ)) = _
   exact qExpansion_smul (ModularFormClass.analyticAt_cuspFunction_zero
     (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods) _
@@ -253,9 +270,9 @@ theorem exists_qExpansion_translate_eq_expand_qExpansionAt {N : ℕ} (hN : 0 < N
     rw [ha, Nat.cast_mul, Nat.cast_mul, hm]
     ring
   rw [qExpansionAt_apply, hNw]
-  exact TauCeti.qExpansion_nat_mul hw (Nat.mul_pos ha0 hm0)
+  exact TauCeti.qExpansion_nat_mul hw.ne' (Nat.mul_pos ha0 hm0)
     (SlashInvariantFormClass.periodic_comp_ofComplex _ Γγ.strictWidthInfty_mem_strictPeriods)
-    (ModularFormClass.bdd_at_infty _) (ModularFormClass.holo _)
+    (ModularFormClass.analyticAt_cuspFunction_zero _ hw Γγ.strictWidthInfty_mem_strictPeriods)
 
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 
@@ -487,7 +504,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
     exact this
   have hentry (g : SL(2, ℤ)) (j : Fin 2) : (g⁻¹ * γ₁ : SL(2, ℤ)) 1 j =
       (g⁻¹ : SL(2, ℤ)) 1 0 * γ₁ 0 j + (g⁻¹ : SL(2, ℤ)) 1 1 * γ₁ 1 j := by
-    simp only [Matrix.SpecialLinearGroup.coe_mul, mul_apply, Fin.sum_univ_two]
+    simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
   have hm1 (j : Fin 2) : ((m 1 j : ℤ) : ZMod N) = (((1 : SL(2, ℤ)) 1 j : ℤ) : ZMod N) := by
     rw [← inv_mul_cancel γ₁, hm, hentry, hentry]
     push_cast
@@ -500,7 +517,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
     simpa using hdet
   have hg : m * ModularGroup.T ^ (-m 0 1) ∈ Γ(N) := by
     rw [Gamma_mem]
-    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, mul_apply,
+    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, Matrix.mul_apply,
       Fin.sum_univ_two]
     simp [h00, h10, h11]
   have hγ : γ₁ = (γ₂ * (m * ModularGroup.T ^ (-m 0 1)) * γ₂⁻¹) * γ₂ *

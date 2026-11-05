@@ -8,8 +8,10 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Data.Sym.Card
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -36,7 +38,12 @@ form on `O` below by `d ∑ sᵢ²`.
 
 A symmetric matrix whose entries are divisible by `c` and whose diagonal entries are divisible by
 `2 * c` is `c • (D + Dᵀ)`, the shape in which even forms enter Hensel-type arguments when `2` is
-not a unit. The inverse of an invertible symmetric matrix with even diagonal has even diagonal.
+not a unit. The inverse of an invertible symmetric matrix with even diagonal has even diagonal,
+and the trace of the product of two symmetric matrices, one of them with even diagonal, is even.
+Consequently, if `G * H = a • 1` for a non-zero-divisor `a` and a symmetric `H`, a symmetric
+perturbation `G - (a * r) • E` with `2 ∣ r` has determinant `(1 + 2 r t) det G`, provided `H` or
+`E` has even diagonal: to first order the determinant changes by `-r tr(E H)`, which the parity of
+the trace makes divisible by `2 r`.
 
 A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
 function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them.
@@ -56,6 +63,10 @@ function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of
   and diagonal entries divisible by `2 * c` is `c • (D + Dᵀ)`.
 * `Matrix.IsSymm.two_dvd_inv_apply_self`: the inverse of an invertible symmetric matrix with even
   diagonal has even diagonal.
+* `Matrix.IsSymm.two_dvd_trace_mul`: the trace of the product of two symmetric matrices, the second
+  with even diagonal, is even.
+* `Matrix.IsSymm.exists_det_sub_smul_eq_mul_det`: perturbing a matrix with a symmetric inverse up
+  to the scalar `a` by `(a * r) • E` multiplies its determinant by an element of `1 + 2 r R`.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
 -/
@@ -167,7 +178,7 @@ theorem IsSymm.exists_eq_smul_add_transpose {n R : Type*} [CommRing R] {E : Matr
   choose f hf using h₂
   refine ⟨Matrix.of fun i i' ↦ if i < i' then e i i' else if i = i' then f i else 0, ?_⟩
   ext i i'
-  simp only [smul_apply, add_apply, transpose_apply, of_apply, smul_eq_mul]
+  simp only [Matrix.smul_apply, Matrix.add_apply, transpose_apply, of_apply, smul_eq_mul]
   rcases lt_trichotomy i i' with h | rfl | h
   · simp [h, h.ne', not_lt_of_gt h, he]
   · simp [hf, mul_comm 2 c, mul_assoc, two_mul]
@@ -186,8 +197,52 @@ theorem IsSymm.two_dvd_inv_apply_self {n R : Type*} [Fintype n] [DecidableEq n] 
   have : U⁻¹ = U⁻¹ * K * U⁻¹ + (U⁻¹ * K * U⁻¹)ᵀ := by
     rw [transpose_mul, transpose_mul, hinv, Matrix.mul_assoc, ← Matrix.mul_add,
       ← Matrix.add_mul, ← hK, mul_nonsing_inv _ hdet, Matrix.mul_one]
-  rw [this, add_apply, transpose_apply, ← two_mul]
+  rw [this, Matrix.add_apply, transpose_apply, ← two_mul]
   exact dvd_mul_right _ _
+
+/-- The trace of the product of two symmetric matrices, the second with even diagonal, is even:
+the off-diagonal terms `H i i' * E i' i` and `H i' i * E i i'` agree. -/
+theorem IsSymm.two_dvd_trace_mul {n R : Type*} [Fintype n] [CommRing R] {H E : Matrix n n R}
+    (hH : H.IsSymm) (hE : E.IsSymm) (hd : ∀ i, 2 ∣ E i i) : 2 ∣ (H * E).trace := by
+  obtain ⟨D, hD⟩ := hE.exists_eq_smul_add_transpose 1 (fun _ _ ↦ one_dvd _) (by simpa using hd)
+  rw [one_smul] at hD
+  have hDt : (H * Dᵀ).trace = (H * D).trace := by
+    rw [← trace_transpose, transpose_mul, transpose_transpose, hH.eq, trace_mul_comm]
+  exact ⟨(H * D).trace, by rw [hD, Matrix.mul_add, trace_add, hDt, two_mul]⟩
+
+/-- **Determinants of symmetric perturbations.** Let `G * H = a • 1` for a non-zero-divisor `a`
+and a symmetric matrix `H`, and let `E` be symmetric, with `H` or `E` of even diagonal. If
+`2 ∣ r`, then `det (G - (a * r) • E) = (1 + 2 r t) det G` for some `t`. For instance, if the
+entries of the symmetric matrix `G` lie in `ℤ_[2]` and `G` is perturbed by `2 a` times a
+symmetric matrix, where `a • G⁻¹` is integral with even diagonal, then the determinant changes by
+a factor `1 + 4 t`: its unit part is unchanged modulo `4`. -/
+theorem IsSymm.exists_det_sub_smul_eq_mul_det {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {G H E : Matrix n n R} {a r : R} (hH : H.IsSymm) (hE : E.IsSymm)
+    (hGH : G * H = a • 1) (ha : a ∈ nonZeroDivisors R) (hd : (∀ i, 2 ∣ H i i) ∨ ∀ i, 2 ∣ E i i)
+    (hr : 2 ∣ r) :
+    ∃ t, (G - (a * r) • E).det = (1 + 2 * r * t) * G.det := by
+  obtain ⟨k, rfl⟩ := hr
+  -- The trace of `E * H` is even.
+  obtain ⟨s, hs⟩ : 2 ∣ (E * H).trace := by
+    rcases hd with hd | hd
+    · exact hE.two_dvd_trace_mul hH hd
+    · exact trace_mul_comm H E ▸ hH.two_dvd_trace_mul hE hd
+  -- Multiplying by `H` turns the perturbation into `a • (1 + r • X)` with `X = -(E * H)`.
+  have hmul : (G - (a * (2 * k)) • E) * H = a • (1 + (2 * k) • -(E * H)) := by
+    rw [Matrix.sub_mul, hGH, Matrix.smul_mul, mul_smul]
+    simp only [smul_add, smul_neg, sub_eq_add_neg]
+  -- To first order, `det (1 + r • X) = 1 + r tr X`.
+  obtain ⟨c, hc⟩ : ∃ c, det (1 + (2 * k) • -(E * H)) = 1 + -(2 * s) * (2 * k) + c * (2 * k) ^ 2 :=
+    ⟨_, by rw [det_one_add_smul, trace_neg, hs]⟩
+  have hdet := congrArg det hmul
+  have hGHdet := congrArg det hGH
+  rw [det_mul, det_smul, hc] at hdet
+  rw [det_mul, det_smul, det_one, mul_one] at hGHdet
+  have hH : H.det ∈ nonZeroDivisors R :=
+    (mul_mem_nonZeroDivisors.mp (hGHdet ▸ pow_mem ha (Fintype.card n))).2
+  refine ⟨-s + k * c, (mul_cancel_right_mem_nonZeroDivisors hH).mp ?_⟩
+  rw [hdet, mul_assoc, hGHdet]
+  ring
 
 /-- **The number of symmetric matrices**: a symmetric `n × n` matrix over `R` is a function on the
 unordered pairs of indices, so there are `Nat.card R ^ (n + 1).choose 2` of them. -/

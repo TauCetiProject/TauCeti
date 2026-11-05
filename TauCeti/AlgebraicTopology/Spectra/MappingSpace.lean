@@ -73,6 +73,12 @@ noncomputable def tensorFreeZeroι (X : SymmetricSequence.{0}) (K : PointedSSet.
     (DayFunctor.η X ((free 0).obj K)).app (FiniteBijection.mk n, FiniteBijection.mk 0) ≫
       (X ⊗ (free 0).obj K).functor.map (ρ_ (FiniteBijection.mk n)).hom
 
+/-- The identity-shuffle inclusion inserts the level-zero generator and the right unitor. -/
+lemma tensorFreeZeroι_def (X : SymmetricSequence.{0}) (K : PointedSSet.{0}) (n : ℕ) :
+    tensorFreeZeroι X K n = X.functor.obj (FiniteBijection.mk n) ◁ freeι 0 K ≫
+      (DayFunctor.η X ((free 0).obj K)).app (FiniteBijection.mk n, FiniteBijection.mk 0) ≫
+        (X ⊗ (free 0).obj K).functor.map (ρ_ (FiniteBijection.mk n)).hom := (rfl)
+
 /-- **The level formula** `X_n ∧ K ≅ (X ⊗ G₀ K)_n`: in the wedge formula for `(X ⊗ G₀ K)_n`, every
 summand other than `X_n ∧ (G₀ K)₀ ≅ X_n ∧ K` is the point. -/
 instance isIso_tensorFreeZeroι (X : SymmetricSequence.{0}) (K : PointedSSet.{0}) (n : ℕ) :
@@ -173,11 +179,14 @@ noncomputable abbrev levelSmash (X : SymmetricSpectrum) : PointedSSet.{0} ⥤ Sy
 /-- The pointed mapping simplicial set `Map(X, Y)` of symmetric spectra, as a functor of `Y`:
 level zero of the object `Hom_S(X, Y)` of `S`-linear maps. Its `m`-simplices are the spectrum maps
 `X ∧ Δ[m]₊ ⟶ Y` (`mappingSpaceSimplexEquiv`). -/
--- An abbreviation, so that maps into `Map(X, Y)` are maps into the level of `Hom_S(X, Y)`.
+-- An abbreviation, so that maps into `Map(X, Y)` are maps into the level of `Hom_S(X, Y)`. It is
+-- the composite that `levelSmashMappingSpaceAdjunction` produces: written out with its own `obj`
+-- and `map`, the kernel needs far too long to match the two outside the module system, as it must
+-- for the equation lemma `levelSmashMappingSpaceAdjunction.eq_1` (which doc-gen4 asks for).
 noncomputable abbrev mappingSpace (X : SymmetricSpectrum) :
-    SymmetricSpectrum ⥤ PointedSSet.{0} where
-  obj Y := ((Mod.ihom X).obj Y).functor.obj (FiniteBijection.mk 0)
-  map g := ((Mod.ihom X).map g).natTrans.app (FiniteBijection.mk 0)
+    SymmetricSpectrum ⥤ PointedSSet.{0} :=
+  Mod.ihom X ⋙ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
+    (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk 0)
 
 /-- Smashing a symmetric spectrum `X` with pointed simplicial sets is left adjoint to the mapping
 space `Map(X, -)`: spectrum maps `X ∧ K ⟶ Y` are based maps `K ⟶ Map(X, Y)`. -/

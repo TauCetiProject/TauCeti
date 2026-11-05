@@ -80,8 +80,7 @@ theorem exists_eventually_norm_linearCombination_sub_le_edgewiseSubdivision
   have hkδ : δ⁻¹ < k := hN.trans_le (Nat.cast_le.mpr hk)
   have hmem (a : ρ) :
       (fun i : σ => (p a).1 i) ∈ range fun x : Convexity.StdSimplex ℝ σ => ⇑x.weights :=
-    ⟨Finset.standardSimplexHomeomorph σ (p a),
-      funext fun i => Finset.standardSimplexHomeomorph_weights σ (p a) i⟩
+    Finset.range_standardSimplex_coordinates σ ▸ mem_range_self (p a)
   have hentries : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ := by
     intro u hu l
     have hsupp := StandardSimplex.support_subset (p ⟨u, hu⟩)

@@ -33,7 +33,7 @@ scale: the Wishart family is closed under marginalisation.
 The two statements are proved together, by reducing an arbitrary full-row-rank congruence to a
 coordinate selection at the standard scale. Write `S = R * Rᵀ` and `M * S * Mᵀ = T * Tᵀ` with `R`
 and `T` invertible. Then `M * R` has Gram matrix `T * Tᵀ`, so by its `LQ` decomposition
-`Matrix.exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE` it equals `T * (E * Q)`, where
+`Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix` it equals `T * (E * Q)`, where
 `Q` is orthogonal and `E` is the row selection. Congruence by an invertible matrix is already
 understood, and congruence by `Q` fixes the standard law, which leaves the coordinate selection
 at the standard scale. There the Bartlett coordinates make it transparent: the leading block of
@@ -187,8 +187,9 @@ theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure
       _ = M * Rm * (M * Rm)ᵀ := by
           rw [Matrix.transpose_mul]
           simp only [Matrix.mul_assoc]
-  obtain ⟨Q, hQ, hQfac⟩ := Matrix.exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE (M * Rm)
-    hqp (Matrix.GeneralLinearGroup.det_ne_zero T) hMRT
+  obtain ⟨Q, hQ, hQfac⟩ := Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix (M * Rm)
+    (Fin.castLE_injective hqp) (Matrix.GeneralLinearGroup.det_ne_zero T) (by simpa using hMRT)
+  rw [Matrix.conjTranspose_eq_transpose_of_trivial] at hQ
   have hMR : M * Rm = Tm * (E * Q) := by
     have hsel : (1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id * Q =
         Q.submatrix (Fin.castLE hqp) id := by

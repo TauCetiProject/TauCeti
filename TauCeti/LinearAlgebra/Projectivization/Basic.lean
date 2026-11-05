@@ -21,7 +21,9 @@ scalar ring: two nonzero vectors give the same point exactly when one is a unit 
 other (`Projectivization.mk'_eq_mk'_iff`), so the saturation of a set of nonzero vectors is the
 union of its unit translates (`Projectivization.preimage_image_mk'`). These two lemmas are
 from Zayn Blore's Mathlib pull request
-[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
+[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117). Equivalently,
+two nonzero vectors give the same point exactly when the first lies on the line spanned by the
+second (`Projectivization.mk_eq_mk_iff_mem_span`).
 
 A linear map `G : V →ₗ[K] W` induces the map `Projectivization.linearProjection G`, sending
 `[v]` to `[G v]` on the set `Projectivization.linearProjectionDomain G` of points where `G` does
@@ -54,23 +56,12 @@ theorem coe_equivSubmodule (p : Projectivization K V) :
   -- Mathlib has no equivSubmodule_apply lemma; its forward map is definitionally submodule.
   (rfl)
 
-/-- Two nonzero vectors have the same image under `mk'` iff one is a unit multiple of the other,
-for the action of `Kˣ` on `{ v : V // v ≠ 0 }`. -/
-theorem mk'_eq_mk'_iff (v w : { v : V // v ≠ 0 }) :
-    mk' K v = mk' K w ↔ ∃ a : Kˣ, a • w = v := by
-  simp only [mk'_eq_mk, mk_eq_mk_iff, Subtype.ext_iff, Units.smul_coe]
-
-/-- The saturation of a set of nonzero vectors under `mk'` is the union of its translates by the
-units of `K`. -/
-theorem preimage_image_mk' (U : Set { v : V // v ≠ 0 }) :
-    mk' K ⁻¹' (mk' K '' U) = ⋃ a : Kˣ, (a • ·) '' U := by
-  ext v
-  simp only [Set.mem_preimage, Set.mem_image, Set.mem_iUnion, mk'_eq_mk'_iff]
-  constructor
-  · rintro ⟨_, hw, a, rfl⟩
-    exact ⟨a⁻¹, _, hw, inv_smul_smul a v⟩
-  · rintro ⟨a, w, hw, rfl⟩
-    exact ⟨w, hw, a⁻¹, inv_smul_smul a w⟩
+variable {K} in
+/-- Two nonzero vectors give the same projective point exactly when the first lies on the line
+spanned by the second. -/
+theorem mk_eq_mk_iff_mem_span {v w : V} (hv : v ≠ 0) (hw : w ≠ 0) :
+    mk K v hv = mk K w hw ↔ v ∈ K ∙ w := by
+  rw [mk_eq_mk_iff', Submodule.mem_span_singleton]
 
 variable {K} in
 /-- The projectivization of a vector space of dimension at most one has at most one point: all
@@ -109,7 +100,7 @@ theorem mk_mem_linearProjectionDomain_iff (G : V →ₗ[K] W) {v : V} (hv : v �
 on its representative. -/
 theorem mem_linearProjectionDomain_iff (G : V →ₗ[K] W) {y : Projectivization K V} :
     y ∈ linearProjectionDomain G ↔ G y.rep ≠ 0 := by
-  simpa only [mk_rep] using mk_mem_linearProjectionDomain_iff G y.rep_nonzero
+  simpa only [mk_rep] using mk_mem_linearProjectionDomain_iff G y.rep_ne_zero
 
 /-- The map `[v] ↦ [G v]` of projective spaces induced by a linear map `G`, on the set
 `Projectivization.linearProjectionDomain G` of points where `G` does not vanish; it sends the
@@ -137,17 +128,17 @@ to `1` whose coordinates are the ratios of the chosen representative's coordinat
 lemma exists_rep_apply_eq_one_of_ne_zero (x : Projectivization K (ι → K)) {i : ι}
     (hi : x.rep i ≠ 0) :
     ∃ (v : ι → K) (hv : v ≠ 0), v i = 1 ∧ (∀ j, v j = x.rep j / x.rep i) ∧ mk K v hv = x := by
-  refine ⟨(x.rep i)⁻¹ • x.rep, smul_ne_zero (inv_ne_zero hi) x.rep_nonzero,
+  refine ⟨(x.rep i)⁻¹ • x.rep, smul_ne_zero (inv_ne_zero hi) x.rep_ne_zero,
     inv_mul_cancel₀ hi, fun j ↦ (div_eq_inv_mul _ _).symm, ?_⟩
   conv_rhs => rw [← x.mk_rep]
-  exact (mk_eq_mk_iff' K _ _ _ x.rep_nonzero).mpr ⟨_, rfl⟩
+  exact (mk_eq_mk_iff' K _ _ _ x.rep_ne_zero).mpr ⟨_, rfl⟩
 
 /-- Every projective point has a representative with some coordinate equal to `1`,
 and its coordinates are the ratios at that coordinate. -/
 lemma exists_rep_apply_eq_one (x : Projectivization K (ι → K)) :
     ∃ (v : ι → K) (hv : v ≠ 0) (i : ι), v i = 1 ∧ (∀ j, v j = x.rep j / x.rep i) ∧
       mk K v hv = x := by
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp x.rep_nonzero
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp x.rep_ne_zero
   obtain ⟨v, hv, h1, hratio, hmk⟩ := exists_rep_apply_eq_one_of_ne_zero x hi
   exact ⟨v, hv, i, h1, hratio, hmk⟩
 

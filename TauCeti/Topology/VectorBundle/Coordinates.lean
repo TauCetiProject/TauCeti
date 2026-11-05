@@ -26,13 +26,16 @@ of fibre maps as the composite of their coordinate expressions.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
-trivializations with their core coordinate-change maps.
+trivializations with their core coordinate-change maps, and
+`VectorBundleCore.coordChange_self_eq_id` states the self-transition as an operator identity.
 The fibre instances `VectorBundleCore.isTopologicalAddGroupFiber` and
 `VectorBundleCore.continuousSMulFiber` make Mathlib's Hom bundle between two cores available.
 `VectorBundleCore.inChartCoordinates` expresses a fibre map between two cores in an arbitrary
 pair of source and target charts, not only the preferred charts of base points, and
 `VectorBundleCore.inChartCoordinates_comp` composes these expressions through any intermediate
 chart containing the base point.
+On the common domain of the two charts, `VectorBundleCore.inChartCoordinates_eq_localTriv_comp`
+reads the chart expression through the local trivializations of the two cores.
 
 The construction follows Mathlib's `ContinuousLinearMap.inCoordinates` and
 `Bundle.Trivialization.comp_continuousLinearEquivAt_eq_coord_change`.
@@ -64,6 +67,12 @@ variable {𝕜 B F κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
   ext v
   exact Z.trivializationAt_coordChange_eq hx v
 
+/-- The transition from a chart to itself is the identity operator; the operator form of
+`VectorBundleCore.coordChange_self`. -/
+theorem coordChange_self_eq_id (Z : VectorBundleCore 𝕜 B F κ) {i : κ} {x : B}
+    (hx : x ∈ Z.baseSet i) : Z.coordChange i i x = ContinuousLinearMap.id 𝕜 F :=
+  ContinuousLinearMap.ext (Z.coordChange_self i x hx)
+
 /-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
 This makes the Hom bundle between two cores available. -/
 instance isTopologicalAddGroupFiber (Z : VectorBundleCore 𝕜 B F κ) (x : B) :
@@ -93,6 +102,18 @@ variable (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
 @[simp] theorem inChartCoordinates_apply (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) (v : F) :
     Z.inChartCoordinates W i j x ϕ v =
       W.coordChange (W.indexAt x) j x (ϕ (Z.coordChange i (Z.indexAt x) x v)) := (rfl)
+
+variable {Z W} in
+/-- On the common domain of a source chart and a target chart, reading a fibre map through the
+local trivializations of those charts gives its chart expression. -/
+theorem inChartCoordinates_eq_localTriv_comp {i : ι} {j : κ} {x : B} (hi : x ∈ Z.baseSet i)
+    (hj : x ∈ W.baseSet j) (f : F →L[𝕜] G) :
+    Z.inChartCoordinates W i j x f =
+      ((W.localTriv j).continuousLinearMapAt 𝕜 x).comp (f.comp ((Z.localTriv i).symmL 𝕜 x)) := by
+  ext v
+  simp only [localTriv_continuousLinearMapAt _ hj, localTriv_symmL _ hi, inChartCoordinates_apply]
+  -- The remaining composite is stated between the core fibres, which are `F` and `G`.
+  rfl
 
 /-- In the preferred charts the coordinate expression of a fibre map is the map itself. -/
 @[simp] theorem inChartCoordinates_indexAt (x : B) (ϕ : F →L[𝕜] G) :

@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import Mathlib.RingTheory.Valuation.Extension
-public import TauCeti.RingTheory.LaurentSeries.Level.Basis
+public import TauCeti.RingTheory.LaurentSeries.Level.Kummer
 public import TauCeti.RingTheory.LaurentSeries.Valuation.Ring
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.Discrete.Order
@@ -75,6 +75,24 @@ variable {K d} in
 @[simp]
 theorem valuation_apply (x : Level K d) :
     valuation K d x = Valued.v (ringEquivLaurentSeries K d x) := (rfl)
+
+variable {K d} in
+/-- Every automorphism of a ramified Laurent level preserves its normalized valuation.
+This is not a simp lemma: `valuation_apply` already rewrites level valuations to Laurent
+valuations. -/
+theorem valuation_algEquiv_apply (σ : Level K d ≃ₐ[K⸨X⸩] Level K d) (x : Level K d) :
+    valuation K d (σ x) = valuation K d x := by
+  obtain ⟨η, rfl⟩ := kummer_surjective σ
+  simp
+
+variable {K d} in
+/-- The normalized valuation computed through a level isomorphism does not depend on that
+isomorphism. -/
+theorem valuation_apply_eq_of_algEquiv {L : Type*} [Semiring L] [Algebra K⸨X⸩ L]
+    (φ ψ : L ≃ₐ[K⸨X⸩] Level K d) (x : L) :
+    valuation K d (φ x) = valuation K d (ψ x) := by
+  rw [← valuation_algEquiv_apply (φ.symm.trans ψ), AlgEquiv.trans_apply,
+    AlgEquiv.symm_apply_apply]
 
 theorem valuation_surjective : Function.Surjective (valuation K d) := fun γ ↦ by
   obtain ⟨f, hf⟩ := _root_.LaurentSeries.valuation_surjective K γ
@@ -283,7 +301,7 @@ theorem inertiaDeg_maximalIdeal :
   rw [Ideal.inertiaDeg_eq_of_isMaximal
     (maximalIdeal (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring)]
   let := Ideal.Quotient.field (maximalIdeal (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring)
-  rw [finrank_eq_one_iff_of_nonzero' 1 one_ne_zero]
+  rw [finrank_eq_one_iff_of_ne_zero' 1 one_ne_zero]
   rintro ⟨x⟩
   obtain ⟨a, ha⟩ := exists_sub_algebraMap_mem_maximalIdeal x
   refine ⟨Ideal.Quotient.mk _ a, ?_⟩

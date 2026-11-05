@@ -28,6 +28,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
+* `MeasureTheory.Measure.cdf_map` computes the cdf of a measurable pushforward;
+* `MeasureTheory.Measure.memLp_cdf_comp` proves `Lᵖ` membership of a cdf composed with an
+  a.e. measurable function on a finite measure space;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
@@ -40,6 +43,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   has full topological support;
 * `MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support` proves strict increase on any
   interval contained in the support;
+* `MeasureTheory.Measure.cdf_pos_of_mem_support_of_lt` and
+  `MeasureTheory.Measure.cdf_lt_one_of_mem_support_of_lt` derive strict cdf bounds from a
+  support point on the appropriate side of the cutoff;
 * `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
   that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
@@ -83,6 +89,7 @@ atomless standard-Borel space with the unit interval proved as Theorem A.7 in S.
 public section
 
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
+open scoped ENNReal
 
 namespace ProbabilityTheory
 
@@ -113,6 +120,23 @@ theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
+
+/-- A cdf composed with an a.e. measurable function belongs to every `Lᵖ` on a finite measure
+space, since its values lie in `[0, 1]`. -/
+theorem memLp_cdf_comp (ν : Measure ℝ) {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} (hf : AEMeasurable f μ) (p : ℝ≥0∞) :
+    MemLp (cdf ν ∘ f) p μ := by
+  refine MemLp.of_bound ((monotone_cdf ν).measurable.comp_aemeasurable hf).aestronglyMeasurable
+    1 (ae_of_all _ fun x => ?_)
+  rw [Function.comp_apply, Real.norm_of_nonneg (cdf_nonneg _ _)]
+  exact cdf_le_one _ _
+
+/-- The cdf of a measurable pushforward is the real mass of the preimage of the corresponding
+closed ray. -/
+theorem cdf_map {I : Type*} [MeasurableSpace I] (μ : Measure I) [IsProbabilityMeasure μ]
+    (label : I → ℝ) (hlabel : Measurable label) (x : ℝ) :
+    cdf (μ.map label) x = μ.real (label ⁻¹' Iic x) := by
+  rw [cdf_eq_real, map_measureReal_apply hlabel measurableSet_Iic]
 
 /-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
 theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
@@ -325,6 +349,27 @@ theorem strictMonoOn_cdf_of_subset_support (ν : Measure ℝ) [IsProbabilityMeas
   obtain ⟨c, hac, hcb⟩ := exists_between hab
   exact ((mem_support_iff_forall _).mp (hν (hs.out ha hb ⟨hac.le, hcb.le⟩)) (Ioo a b)
     (Ioo_mem_nhds hac hcb)).trans_le (measure_mono Ioo_subset_Ioc_self)
+
+/-- A support point strictly below a cutoff forces the cdf at the cutoff to be positive. -/
+theorem cdf_pos_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {x y : ℝ} (hy : y ∈ μ.support) (hyx : y < x) : 0 < cdf μ x := by
+  rw [cdf_eq_real, measureReal_def]
+  apply ENNReal.toReal_pos
+  · exact ((mem_support_iff_forall y).mp hy (Iic x)
+      (mem_of_superset (Iio_mem_nhds hyx) Iio_subset_Iic_self)).ne'
+  · finiteness
+
+/-- A support point strictly above a cutoff forces the cdf at the cutoff to be less than one. -/
+theorem cdf_lt_one_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {x y : ℝ} (hy : y ∈ μ.support) (hxy : x < y) : cdf μ x < 1 := by
+  have htail : 0 < μ.real (Ioi x) := by
+    rw [measureReal_def]
+    apply ENNReal.toReal_pos
+    · exact ((mem_support_iff_forall y).mp hy (Ioi x) (Ioi_mem_nhds hxy)).ne'
+    · finiteness
+  rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic] at htail
+  rw [cdf_eq_real]
+  linarith
 
 /-- A law carried by an open interval with full closed-interval support has positive cdf
 exactly above the lower endpoint. -/

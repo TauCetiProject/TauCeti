@@ -6,8 +6,8 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
 # The invariant measure on `ℍ` and the Lebesgue measure on `ℂ`
@@ -26,8 +26,8 @@ subsets of `ℂ` are null in `ℍ`.
 * `UpperHalfPlane.volume_preimage_coe_null`: preimages of Lebesgue-null sets are null.
 * the `NullSingletonClass` instance for `volume : Measure ℍ`: points, hence countable sets, are
   null.
-* `UpperHalfPlane.volume_setOf_re_mem_Ico_and_lt_im`: for `A > 0`, the region
-  `{a ≤ re z < b, A < im z}` has invariant measure `ENNReal.ofReal ((b - a) / A)`.
+* `UpperHalfPlane.volume_setOf_re_mem_and_lt_im`: for `A > 0`, the region
+  `{re z ∈ S, A < im z}` has invariant measure `volume S * ENNReal.ofReal A⁻¹`.
 
 Split out of the Petersson inner-product development ported from the AINTLIB
 `LeanModularForms` project
@@ -61,12 +61,9 @@ invariant measure, since the density `(Im τ)⁻²` is everywhere positive on `�
 theorem comap_absolutelyContinuous_volume :
     Measure.comap UpperHalfPlane.coe (volume : Measure ℂ) ≪ (volume : Measure ℍ) := by
   rw [volume_def]
-  refine withDensity_absolutelyContinuous' ?_ (ae_of_all _ fun τ ↦ ?_)
-  · exact (measurable_coe_nnreal_ennreal.comp (by fun_prop)).aemeasurable
-  · have h1 : (1 / NNReal.mk τ.im τ.im_pos.le : ℝ≥0) ≠ 0 := by
-      rw [one_div, ne_eq, inv_eq_zero]
-      exact fun h ↦ τ.im_pos.ne' (congrArg NNReal.toReal h)
-    exact ENNReal.coe_ne_zero.mpr (pow_ne_zero _ h1)
+  refine withDensity_absolutelyContinuous' (Measurable.aemeasurable (by fun_prop))
+    (ae_of_all _ fun τ ↦ ?_)
+  simp [← NNReal.coe_ne_zero, τ.im_ne_zero]
 
 /-- The invariant measure gives positive mass to nonempty open sets. -/
 instance : IsOpenPosMeasure (volume : Measure ℍ) :=
@@ -86,37 +83,22 @@ instance : NullSingletonClass (volume : Measure ℍ) where
     have h := volume_preimage_coe_null (measure_singleton (τ : ℂ))
     rwa [← image_singleton, isOpenEmbedding_coe.injective.preimage_image] at h
 
-/-- The region of `ℍ` lying above the height `A > 0` and over the interval `[a, b)` has invariant
-measure `ENNReal.ofReal ((b - a) / A)`, which is zero when `b ≤ a`. -/
-theorem volume_setOf_re_mem_Ico_and_lt_im (a b : ℝ) {A : ℝ} (hA : 0 < A) :
-    volume {z : ℍ | z.re ∈ Ico a b ∧ A < z.im} = ENNReal.ofReal ((b - a) / A) := by
-  -- the inner integral `∫_A^∞ y⁻² dy = A⁻¹`
-  have hinner : ∫⁻ y in Ioi A, (((1 / ‖y‖₊) ^ 2 : ℝ≥0) : ℝ≥0∞) = ENNReal.ofReal A⁻¹ := by
-    have hint := integrableOn_Ioi_rpow_of_lt (a := -2) (by norm_num) hA
-    have hval : ∫ y in Ioi A, y ^ (-2 : ℝ) = A⁻¹ := by
-      convert integral_Ioi_rpow_of_lt (a := -2) (by norm_num) hA using 1
-      norm_num [Real.rpow_neg_one]
-    rw [← hval, ofReal_integral_eq_lintegral_ofReal hint
-      (ae_restrict_of_forall_mem measurableSet_Ioi fun y hy ↦
-        Real.rpow_nonneg (hA.trans hy).le _)]
-    refine setLIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
-    have hy : 0 < y := hA.trans hy
-    rw [← ENNReal.ofReal_coe_nnreal]
-    congr 1
-    simp [Real.rpow_neg hy.le, Real.nnnorm_of_nonneg hy.le]
-  have himage : (↑) '' {z : ℍ | z.re ∈ Ico a b ∧ A < z.im} =
-      Complex.measurableEquivRealProd ⁻¹' (Ico a b ×ˢ Ioi A) := by
+/-- The region of `ℍ` lying above the height `A > 0` and over a set `S` of real parts has
+invariant measure `volume S * ENNReal.ofReal A⁻¹`. -/
+theorem volume_setOf_re_mem_and_lt_im (S : Set ℝ) {A : ℝ} (hA : 0 < A) :
+    volume {z : ℍ | z.re ∈ S ∧ A < z.im} = volume S * ENNReal.ofReal A⁻¹ := by
+  have himage : (↑) '' {z : ℍ | z.re ∈ S ∧ A < z.im} =
+      Complex.measurableEquivRealProd ⁻¹' (S ×ˢ Ioi A) := by
     ext w
-    refine ⟨?_, fun hw ↦ ⟨⟨w, hA.trans hw.2⟩, hw, rfl⟩⟩
+    refine ⟨?_, fun hw ↦ ⟨⟨w, hA.trans hw.2⟩, by simpa using hw, rfl⟩⟩
     rintro ⟨z, hz, rfl⟩
-    exact hz
+    simpa using hz
   rw [volume_eq_lintegral, himage]
   refine (Complex.volume_preserving_equiv_real_prod.setLIntegral_comp_preimage_emb
     Complex.measurableEquivRealProd.measurableEmbedding
     (fun p : ℝ × ℝ ↦ (((1 / ‖p.2‖₊) ^ 2 : ℝ≥0) : ℝ≥0∞)) _).trans ?_
   rw [Measure.volume_eq_prod, setLIntegral_prod _ (by fun_prop)]
   simp only
-  rw [hinner, setLIntegral_const, Real.volume_Ico, ← ENNReal.ofReal_mul (inv_nonneg.mpr hA.le),
-    div_eq_mul_inv, mul_comm]
+  rw [TauCeti.lintegral_Ioi_inv_sq hA, setLIntegral_const, mul_comm]
 
 end UpperHalfPlane

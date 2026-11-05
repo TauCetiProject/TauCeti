@@ -114,7 +114,7 @@ theorem char_trivial {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
     [Module k V] [FiniteDimensional k V] (g : G) :
     (trivial k G V).character g = Module.finrank k V := by
   have hone : trivial k G V g = 1 :=
-    LinearMap.ext fun v => by rw [trivial_apply, Module.End.one_apply]
+    LinearMap.ext fun v => by rw [trivial_apply, _root_.one_apply_eq_self]
   rw [character, hone, LinearMap.trace_one]
 
 /-- **The character is additive on products of representations.** This is the unbundled counterpart
@@ -160,6 +160,15 @@ commutative rings; the two functors agree definitionally. -/
 instance (priority := 100) forget₂Rep {R : Type u} [Ring R] {G : Type v} [Monoid G] :
     HasForget₂ (FDRep R G) (Rep R G) where
   forget₂ := (forget₂ (FGModuleCat R) (ModuleCat R)).mapAction G ⋙ Rep.ActionToRep R G
+
+/-- The forward forgetful Hom equivalence preserves evaluations. -/
+@[simp]
+theorem forget₂HomLinearEquiv_apply {R : Type u} [CommRing R] {G : Type v} [Monoid G]
+    (X Y : FDRep R G)
+    (f : (forget₂ (FDRep R G) (Rep R G)).obj X ⟶
+      (forget₂ (FDRep R G) (Rep R G)).obj Y) (x : X) :
+    forget₂HomLinearEquiv X Y f x = f.hom x :=
+  rfl
 
 /-- **The character of the trivial one-dimensional representation is constantly `1`**, that
 dimension being `1`. This is the form in which the trivial character enters a pairing or a
@@ -256,7 +265,7 @@ instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
 
 /-- Forgetting finite generation preserves scalar multiplication of intertwiners. -/
 instance forget₂_linear {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
-    Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
+    CategoryTheory.Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
   -- As for additivity, the forgetful functor keeps the underlying linear map.
   map_smul := by intros; rfl
 
@@ -281,7 +290,8 @@ theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y 
   simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
 
 /-- The native opposite-endomorphism action is precomposition on underlying vectors. -/
-@[simp]
+-- Evaluate the scalar action before unfolding the opposite-representation wrapper.
+@[simp↓]
 theorem op_smul_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G)
     {B : FDRep R G} (d : End A) (f : A ⟶ B) (x : A) :
     (MulOpposite.op d • f).hom.hom.hom x = f.hom.hom.hom (d.asHom.hom.hom.hom x) := by

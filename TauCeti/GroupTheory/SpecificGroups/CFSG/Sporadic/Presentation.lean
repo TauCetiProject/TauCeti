@@ -17,7 +17,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HaradaNorton
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Held
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HigmanSims
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Four
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Three
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Two
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Lyons
@@ -91,6 +91,11 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
 
+/-- The presentation selected for the first Janko group is the transcribed ATLAS presentation. -/
+@[simp]
+theorem SporadicName.presentation_J1 : SporadicName.J1.presentation = Sporadic.j1Presentation :=
+  (rfl)
+
 /-- The selected Higman--Sims presentation is the transcribed ATLAS presentation `HSG1-P1`. -/
 @[simp]
 theorem SporadicName.presentation_HS : SporadicName.HS.presentation = Sporadic.hsPresentation := by
@@ -144,6 +149,12 @@ theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic
 to importing modules, so this equation is how they reach it. -/
 @[simp]
 theorem SporadicName.presentation_M12 : SporadicName.M12.presentation = Sporadic.m12Presentation :=
+  (rfl)
+
+/-- The presentation selected for `M₂₂` is the transcribed Conder–Havas–Ramsay presentation
+`TauCeti.Sporadic.m22Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_M22 : SporadicName.M22.presentation = Sporadic.m22Presentation :=
   (rfl)
 
 /-- The sporadic group concretely defined by its selected finite presentation. -/

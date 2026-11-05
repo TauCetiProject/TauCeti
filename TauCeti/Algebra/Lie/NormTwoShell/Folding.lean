@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.NormTwoShell.Reindex
 public import TauCeti.Algebra.Lie.NormTwoShell.Serre
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Folding
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Folding.Basic
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -18,7 +18,7 @@ entries, the Cartan matrix of a simply laced Dynkin diagram, possibly disconnect
 `σ : Equiv.Perm I` be a diagram automorphism, `B.reindex σ σ = B`. For a `σ`-orbit `O` of
 vertices let `c_O = Matrix.foldingScale B σ O` be its folding scale and let
 `C = Matrix.foldedCartanMatrix B σ` be the folded Cartan matrix, with `H` rows and `E` columns
-(see `TauCeti.LinearAlgebra.Matrix.Cartan.Folding`). In the signed shell Lie algebra
+(see `TauCeti.LinearAlgebra.Matrix.Cartan.Folding.Basic`). In the signed shell Lie algebra
 `Matrix.ShellLieAlgebra B`, with Chevalley generators `Hᵢ`, `Eᵢ`, `Fᵢ`, the folded frame is
 
 `H'_O = c_O ∑_{i ∈ O} Hᵢ`,  `E'_O = ∑_{i ∈ O} Eᵢ`,  `F'_O = c_O ∑_{i ∈ O} Fᵢ`.
@@ -190,7 +190,7 @@ private theorem ad_pow_root_mem_span (hB : B.PosDef) (hdiag : ∀ i, B i i = 2) 
     rw [Set.mem_ofPred_eq, Nat.cast_zero, hr, smul_smul, hζ, one_smul]
     exact isString_single O j
   | succ n ih =>
-    rw [pow_succ', Module.End.mul_apply, Nat.cast_succ]
+    rw [pow_succ', mul_apply_eq_comp, Nat.cast_succ]
     exact step n ih
 
 /-- **The folded higher Serre relation.** For a sign `ζ` and roots `rᵢ = ζ αᵢ`, with
@@ -231,7 +231,7 @@ private theorem ad_pow_lie_sum_root_eq_zero {σ : Equiv.Perm I} (hB : B.PosDef)
   let _ := lieRing hB fun i ↦ hdiag i ▸ even_two
   have hm : 0 ≤ -B.foldedCartanMatrix σ O P :=
     neg_nonneg.mpr (foldedCartanMatrix_nonpos hB hdiag hoff hσ hOP)
-  rw [← ad_apply ℤ, ← Module.End.mul_apply, ← pow_succ, map_sum]
+  rw [← ad_apply ℤ, ← mul_apply_eq_comp, ← pow_succ, map_sum]
   refine sum_eq_zero fun j hj ↦ ?_
   have hj' : σ.SameCycle j P.out := by simpa using hj
   refine ad_pow_root_eq_zero hB hdiag hoff hζ hr

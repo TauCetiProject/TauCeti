@@ -207,6 +207,11 @@ theorem finrank_orbitTangent_add_finrank_isotropy [FiniteDimensional ℝ 𝔤] :
       Module.finrank ℝ 𝔤 :=
   LinearMap.finrank_range_add_finrank_ker (a.eval x)
 
+/-- Where the action is locally free, the orbit tangent space has the dimension of `𝔤`. -/
+theorem finrank_orbitTangent_of_isotropy_eq_bot (h : a.isotropy x = ⊥) :
+    Module.finrank ℝ (a.orbitTangent x) = Module.finrank ℝ 𝔤 :=
+  LinearMap.finrank_range_of_inj ((a.isotropy_eq_bot_iff x).1 h)
+
 /-- The isotropy algebra of a restricted action is the preimage of the isotropy algebra. -/
 @[simp]
 theorem isotropy_comp (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) : (a.comp f).isotropy x = (a.isotropy x).comap f :=
@@ -288,8 +293,8 @@ def linear : InfinitesimalAction (Module.End ℝ V) 𝓘(ℝ, V) V where
     -- Evaluate the bundled map `A ↦ (x ↦ A x)` being defined; `LinearMap.coe_mk` cannot do this
     -- because its values are typed as tangent vectors rather than elements of `V`.
     change ⁅A, B⁆ x = -mlieBracket 𝓘(ℝ, V) (fun y ↦ A y) (fun y ↦ B y) x
-    rw [h, LieRing.of_associative_ring_bracket, LinearMap.sub_apply, Module.End.mul_apply,
-      Module.End.mul_apply]
+    rw [h, LieRing.of_associative_ring_bracket, LinearMap.sub_apply, mul_apply_eq_comp,
+      mul_apply_eq_comp]
     exact (neg_sub _ _).symm
 
 @[simp]

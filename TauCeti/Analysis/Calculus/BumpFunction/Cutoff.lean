@@ -22,20 +22,23 @@ This module provides smooth, compactly supported cutoffs for compact subsets of 
 finite-dimensional real normed space. The cutoff is equal to one on a neighborhood of the compact
 set and has topological support in a prescribed open set, which is the localization step used for
 compact exhaustions in domain arguments. Taking differences of consecutive cutoffs along a compact
-exhaustion gives a decomposition of unity (not necessarily nonnegative) of an open set by
-compactly supported smooth functions, together with cutoffs equal to one on their supports which
+exhaustion gives a nonnegative decomposition of unity of an open set by compactly supported smooth
+functions, with partial sums at most one, together with cutoffs equal to one on their supports which
 are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
 gluing device for global approximation on a domain. Multiplying by a cutoff turns a function which
 is `C^k` on an open set containing its support into a `C^k` function on the whole space
-(`ContDiffOn.contDiff_smul_of_tsupport_subset`). Locally finite sums of smooth functions are
-smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹` function is bounded
-and Hölder continuous with every exponent at most one
+(`ContDiffOn.contDiff_smul_of_tsupport_subset`), and on a set where the cutoff is one nearby the
+`Lᵖ` norm of the derivative of a function is at most that of its cut-off version
+(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
+functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹`
+function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
-with shrinking gaps.
+with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
+vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`).
 
 ## References
 
@@ -142,6 +145,23 @@ theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
       simp [hy]
     exact contDiffAt_const.congr_of_eventuallyEq h0
 
+/-- On a measurable set `K` where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm
+of `D u` on `K` is at most that of `D (χ u)` on the whole space. -/
+theorem eLpNorm_fderiv_restrict_le_of_subset_interior [NormedSpace ℝ E] [MeasurableSpace E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : MeasureTheory.Measure E}
+    {χ : E → ℝ} {u : E → F} {K : Set E} (hK : MeasurableSet K)
+    (hKχ : K ⊆ interior (χ ⁻¹' {1})) (p : ENNReal) :
+    MeasureTheory.eLpNorm (fderiv ℝ u) p (μ.restrict K) ≤
+      MeasureTheory.eLpNorm (fderiv ℝ fun y ↦ χ y • u y) p μ := by
+  have heq : fderiv ℝ u =ᵐ[μ.restrict K] fderiv ℝ fun y ↦ χ y • u y := by
+    refine MeasureTheory.ae_restrict_of_forall_mem hK fun z hz ↦ ?_
+    refine (Filter.EventuallyEq.fderiv_eq ?_).symm
+    filter_upwards [isOpen_interior.mem_nhds (hKχ hz)] with y hy
+    have hy1 : χ y = 1 := interior_subset hy
+    simp [hy1]
+  rw [MeasureTheory.eLpNorm_congr_ae heq]
+  exact MeasureTheory.eLpNorm_mono_measure _ MeasureTheory.Measure.restrict_le_self
+
 /-- A compactly supported `C¹` function is bounded, and Hölder continuous with every exponent
 `α ≤ 1`, with one constant `C` for both: it is Lipschitz and of bounded oscillation. -/
 theorem _root_.ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport [NormedSpace ℝ E]
@@ -186,16 +206,17 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
 finite-dimensional real normed space carries smooth compactly supported functions `ζ j` and
 `χ j`, `j : ℕ`, with topological supports in `U`, such that `χ j = 1` on the topological support
 of `ζ j`, and every point of `U` has a neighbourhood on which `χ j` vanishes and
-`∑ j ∈ Finset.range N, ζ j = 1` for all large `j` and `N`.
+`∑ j ∈ Finset.range N, ζ j = 1` for all large `j` and `N`. The functions `ζ j` are nonnegative
+and every partial sum `∑ j ∈ Finset.range N, ζ j` is at most one.
 
 So `(ζ j)` is a decomposition of unity of `U` by test functions on `U`, and the cutoffs `χ j` form
 a family which is locally finite in `U`. Neither family is locally finite at the frontier of `U`.
-The functions `ζ j` are differences of consecutive cutoffs along a compact exhaustion of `U`, and
-need not be nonnegative. -/
+The functions `ζ j` are differences of consecutive cutoffs along a compact exhaustion of `U`. -/
 theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] {U : Set E} (hU : IsOpen U) :
     ∃ ζ χ : ℕ → E → ℝ,
       (∀ j, ContDiff ℝ ∞ (ζ j) ∧ HasCompactSupport (ζ j) ∧ tsupport (ζ j) ⊆ U) ∧
+      (∀ j x, 0 ≤ ζ j x) ∧ (∀ N x, ∑ j ∈ Finset.range N, ζ j x ≤ 1) ∧
       (∀ j, ContDiff ℝ ∞ (χ j) ∧ HasCompactSupport (χ j) ∧ tsupport (χ j) ⊆ U) ∧
       (∀ j, EqOn (χ j) 1 (tsupport (ζ j))) ∧
       ∀ x ∈ U, ∃ m, ∀ᶠ y in 𝓝 x, (∀ j, m ≤ j → χ j y = 0) ∧
@@ -221,7 +242,7 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
     exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩
   have one_of_mem : ∀ {f : E → ℝ} {y : E}, y ∈ interior (f ⁻¹' {1}) → f y = 1 := fun h => by
     simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
-  choose eta heta _ heta_one heta_cpt heta_ts using K.exists_contDiff_cutoff
+  choose eta heta heta_range heta_one heta_cpt heta_ts using K.exists_contDiff_cutoff
   -- `eta' (n + 1) = eta n` is a cutoff for `L n`; prepending `eta' 0 = 0` makes the
   -- differences `zeta j = eta' (j + 1) - eta' j` telescope to `eta' N`.
   let eta' : ℕ → E → ℝ := fun n => Nat.casesOn n 0 eta
@@ -231,6 +252,9 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   have heta'_cpt : ∀ n, HasCompactSupport (eta' n) := fun n => by
     cases n
     exacts [HasCompactSupport.zero, heta_cpt _]
+  have heta'_range : ∀ n x, eta' n x ∈ Icc (0 : ℝ) 1 := fun n x => by
+    cases n
+    exacts [by simp [eta'], heta_range _ (mem_range_self x)]
   have heta'_ts : ∀ n, tsupport (eta' n) ⊆ V n := fun n => by
     cases n
     · simp [eta']
@@ -261,12 +285,22 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
       simp only [zeta, Pi.zero_apply, h₁, h₂, sub_self]
   have hsum : ∀ N y, ∑ j ∈ Finset.range N, zeta j y = eta' N y := fun N y => by
     simpa [zeta, eta'] using Finset.sum_range_sub (fun n => eta' n y) N
+  -- `eta' (j + 1) = 1` on the support of `eta' j`, so the differences are nonnegative
+  have hzeta_nonneg : ∀ j x, 0 ≤ zeta j x := fun j x => by
+    by_cases hx : x ∈ tsupport (eta' j)
+    · have h₁ : eta' (j + 1) x = 1 :=
+        one_of_mem (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))
+      simp only [zeta, h₁, sub_nonneg]
+      exact (heta'_range j x).2
+    · simp only [zeta, image_eq_zero_of_notMem_tsupport hx, sub_zero]
+      exact (heta'_range (j + 1) x).1
   -- cutoffs equal to one on `tsupport (zeta j)` and supported away from `L (j - 1)`
   have hU : ∀ j, tsupport (zeta j) ⊆ V (j + 1) \ L (j - 1) := fun j x hx =>
     ⟨hzeta_ts j hx, fun hxL => hzeta_L j x hxL hx⟩
   choose chi hchi_smooth _ hchi_one hchi_cpt hchi_ts using fun j =>
     (hzeta_cpt j).exists_contDiff_cutoff ((hVopen (j + 1)).sdiff (hLcpt (j - 1)).isClosed) (hU j)
   refine ⟨zeta, chi, fun j => ⟨hzeta_smooth j, hzeta_cpt j, (hzeta_ts j).trans (hVsub _)⟩,
+    hzeta_nonneg, fun N x => (hsum N x).trans_le (heta'_range N x).2,
     fun j => ⟨hchi_smooth j, hchi_cpt j, (hchi_ts j).trans (sdiff_subset.trans (hVsub _))⟩,
     fun j x hx => one_of_mem (hchi_one j hx), fun x hx => ?_⟩
   obtain ⟨n, hn⟩ := hcover x hx
@@ -426,5 +460,23 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
         _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
     · rw [(hout x hx).1, (hout x hx).2, abs_zero, zero_mul, zero_mul, zero_mul, zero_add]
       positivity
+
+/-- **A smooth cutoff of the identity on the line.** For `0 < r < R`, some smooth `k : ℝ → ℝ`
+equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
+It is `s ↦ χ s * s` for a smooth bump `χ` equal to one on `[-r, r]` and supported in `[-R, R]`. -/
+theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
+    ∃ k : ℝ → ℝ, ContDiff ℝ ∞ k ∧ (∀ s, |s| ≤ r → k s = s) ∧ (∀ s, R ≤ |s| → k s = 0) ∧
+      ∀ s, |s| < r → HasDerivAt k 1 s := by
+  let χ : ContDiffBump (0 : ℝ) := ⟨r, R, hr, hrR⟩
+  have hsmall : ∀ s, |s| ≤ r → χ s * s = s := by
+    intro s hs
+    have : χ s = 1 := χ.one_of_mem_closedBall (by simpa [Real.dist_eq] using hs)
+    simp [this]
+  refine ⟨fun s => χ s * s, χ.contDiff.mul contDiff_id, hsmall, fun s hs => ?_, fun s hs => ?_⟩
+  · have : χ s = 0 := χ.zero_of_le_dist (by simpa [Real.dist_eq] using hs)
+    simp [this]
+  · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
+    filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
+    exact hsmall x hx.le
 
 end TauCeti
