@@ -138,14 +138,6 @@ theorem hasSum_cauchyFueterKernel_add {q q₀ h : ℍ} (hq : q ≠ q₀)
 
 /-! ### Joint and slice real analyticity of the Cauchy–Fueter kernel off the diagonal -/
 
-/-- Quaternion conjugation as a continuous real-linear map `ℍ →L[ℝ] ℍ`. -/
-private noncomputable def conjCLM : ℍ →L[ℝ] ℍ :=
-  ((Quaternion.starAe : ℍ ≃ₐ[ℝ] ℍᵐᵒᵖ).toLinearEquiv.trans
-    (MulOpposite.opLinearEquiv ℝ).symm).toContinuousLinearMap
-
-@[simp]
-private theorem conjCLM_apply (x : ℍ) : conjCLM x = star x := rfl
-
 /-- `cauchyFueterKernel` is jointly real analytic at every off-diagonal pair `(q, q₀)`. -/
 theorem analyticAt_cauchyFueterKernel_uncurry {p : ℍ × ℍ} (hp : p.1 ≠ p.2) :
     AnalyticAt ℝ (Function.uncurry cauchyFueterKernel) p := by
@@ -163,8 +155,10 @@ theorem analyticAt_cauchyFueterKernel_uncurry {p : ℍ × ℍ} (hp : p.1 ≠ p.2
   have hne : ‖p.1 - p.2‖ ^ 4 ≠ 0 := pow_ne_zero 4 (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
   have hinv : AnalyticAt ℝ (fun x : ℍ × ℍ ↦ (‖x.1 - x.2‖ ^ 4)⁻¹) p := hn4.fun_inv hne
   have hstar : AnalyticAt ℝ (fun x : ℍ × ℍ ↦ star (x.1 - x.2)) p := by
+    let : StarModule ℝ ℍ := ⟨fun r h ↦ by simp⟩
     simpa [Function.comp_def] using
-      AnalyticAt.comp (f := fun x : ℍ × ℍ ↦ x.1 - x.2) (conjCLM.analyticAt _) hd
+      AnalyticAt.comp (f := fun x : ℍ × ℍ ↦ x.1 - x.2)
+        ((starL' ℝ : ℍ ≃L[ℝ] ℍ).toContinuousLinearMap.analyticAt _) hd
   have hfn : Function.uncurry cauchyFueterKernel =
       fun x : ℍ × ℍ ↦ (‖x.1 - x.2‖ ^ 4)⁻¹ • star (x.1 - x.2) := by
     funext ⟨q, q₀⟩
@@ -400,8 +394,7 @@ linear map `C(K, ℝ) →L[ℝ] C(K, ℍ)`. -/
 private noncomputable def kernelZeroNumerCLM (φ : C(K, ℍ)) {q₀ : ℍ} (hφ : ∀ z, φ z ≠ q₀) :
     C(K, ℝ) →L[ℝ] C(K, ℍ) :=
   let w₀ : C(K, ℍ) := ⟨fun z ↦ (‖φ z - q₀‖ ^ 4)⁻¹ • star (φ z - q₀),
-    (invNormSubPowFourMap φ hφ).continuous.smul
-      (conjCLM.continuous.comp (φ.continuous.sub continuous_const))⟩
+    (invNormSubPowFourMap φ hφ).continuous.smul (φ.continuous.sub continuous_const).star⟩
   LinearMap.mkContinuous
     { toFun a := ⟨fun z ↦ a z • w₀ z, a.continuous.smul w₀.continuous⟩
       map_add' a₁ a₂ := by ext z : 1; simp [add_smul]
