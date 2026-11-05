@@ -50,6 +50,8 @@ invertible. Compactness makes the two alternatives uniform.
   index there.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_criticalPoint_perturbation_morseIndex_eq`: in
   finite dimensions the perturbed critical point moreover has the Morse index of `x`.
+* `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
+  lower semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.HasNondegenerateCriticalPointsOn.exists_pos_forall_hasNondegenerateCriticalPointsOn`:
   in a Banach space, a function `C²`-close to `f` on a compact set on which `f` has only
   nondegenerate critical points has only nondegenerate critical points there.
@@ -182,11 +184,7 @@ theorem exists_pos_forall_morseIndex_eq [FiniteDimensional ℝ E]
     ⟨hg.isSymmSndFDerivAt (by simp)⟩
   have hmorse (g : E → ℝ) (y : E) :
       morseIndex g y = sigNeg (fderiv ℝ (fderiv ℝ g) y).toBilinForm.toQuadraticMap := by
-    rw [morseIndex_def]
-    congr 1
-    ext v
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, hessianQuadraticForm_apply,
-      ContinuousLinearMap.toBilinForm_apply]
+    rw [morseIndex_def, hessianQuadraticForm_def]
   -- The negative index is locally constant on the space of symmetric forms.
   let a : {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm} :=
     ⟨fderiv ℝ (fderiv ℝ f) x, hsymm h.contDiffAt⟩
@@ -241,6 +239,24 @@ theorem exists_criticalPoint_perturbation_morseIndex_eq [FiniteDimensional ℝ E
     _ = ε := add_halves _
 
 end TauCeti.IsNondegenerateCriticalPoint
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {f : E → ℝ} {x : E}
+
+/-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
+at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
+need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
+under perturbation, but negative directions are never lost. -/
+theorem eventually_morseIndex_le (hf : ContDiffAt ℝ 2 f x) :
+    ∀ᶠ y in 𝓝 x, morseIndex f x ≤ morseIndex f y := by
+  have hc : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
+    (hf.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
+  simpa only [morseIndex_def, hessianQuadraticForm_def] using
+    ContinuousLinearMap.eventually_sigNeg_toBilinForm_le_of_continuousAt hc
+
+end TauCeti
 
 namespace TauCeti.HasNondegenerateCriticalPointsOn
 

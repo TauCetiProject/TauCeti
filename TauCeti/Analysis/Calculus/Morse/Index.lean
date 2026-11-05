@@ -90,6 +90,11 @@ theorem hessianQuadraticForm_apply (f : E → ℝ) (x v : E) :
   simp only [hessianQuadraticForm, LinearMap.BilinMap.toQuadraticMap_apply,
     ContinuousLinearMap.toBilinForm_apply]
 
+/-- The Hessian quadratic form is the quadratic form of the second derivative. -/
+theorem hessianQuadraticForm_def (f : E → ℝ) (x : E) :
+    hessianQuadraticForm f x = (fderiv ℝ (fderiv ℝ f) x).toBilinForm.toQuadraticMap :=
+  (rfl)
+
 /-- For a twice continuously differentiable function, the bilinear form associated to its
 Hessian quadratic form is its second derivative. -/
 @[simp]
