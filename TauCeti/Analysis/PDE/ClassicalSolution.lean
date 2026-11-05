@@ -139,7 +139,7 @@ private theorem setLIntegral_enorm_gradient_sq_le
   have hO := Omega.isOpen
   have h2 : (2 : ℝ≥0∞) ≠ ∞ := ENNReal.ofNat_ne_top
   -- A neighbourhood `V` of the superlevel set, compactly contained in `Ω`.
-  obtain ⟨K, hK, hUK, hKO⟩ := exists_isCompact_inter_preimage_Ici_subset_subset hO hb hwc hw0 hε
+  obtain ⟨K, hK, hUK, hKO⟩ := exists_isCompact_inter_preimage_Ici_subset_subset hb hwc hw0 hε
   obtain ⟨V', hV'o, hKV, hVO', hL⟩ := exists_open_between_and_isCompact_closure hK hO hKO
   set V : Opens (EuclideanSpace ℝ ι) := ⟨V', hV'o⟩
   have hVL : (V : Set (EuclideanSpace ℝ ι)) ⊆ closure V' := subset_closure
