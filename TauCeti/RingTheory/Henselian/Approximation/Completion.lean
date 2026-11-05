@@ -325,9 +325,7 @@ private theorem eval_injective_of_constant (t : R) (I : Ideal R)
   have heq (z : Residue t I n) :
       Ideal.quotEquivOfEq ((hc n).trans (hc 0).symm) z =
         transition t I (Nat.zero_le n) z := by
-    obtain ⟨a, rfl⟩ := residueMap_surjective t I n z
-    rw [transition_residueMap, residueMap_apply, Ideal.quotEquivOfEq_mk,
-      residueMap_apply]
+    exact Ideal.quotEquivOfEq_eq_factor ((hc n).trans (hc 0).symm) z
   apply (Ideal.quotEquivOfEq ((hc n).trans (hc 0).symm)).injective
   rw [heq, heq, transition_eval, transition_eval]
   exact hxy
