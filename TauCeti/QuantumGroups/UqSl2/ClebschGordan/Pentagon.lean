@@ -122,9 +122,8 @@ theorem clebschGordanQuadLeftInclusion_apply (hq : IsGenericQuantumParameter q)
     clebschGordanQuadLeftInclusion hq i₁ i₂ i₃ v =
       tensorMap ℂ (UqSl2 q) (tensorMap ℂ (UqSl2 q) (clebschGordanInclusion hq i₁) LinearMap.id)
         LinearMap.id (clebschGordanLeftInclusion hq i₂ i₃ v) := by
-  symm; rw [clebschGordanLeftInclusion_def, LinearMap.comp_apply, ← LinearMap.comp_apply,
-    ← tensorMap_comp, LinearMap.id_comp, ← clebschGordanLeftInclusion_def,
-    ← LinearMap.comp_apply, ← clebschGordanQuadLeftInclusion_def]
+  simp only [clebschGordanQuadLeftInclusion_def, clebschGordanLeftInclusion_def,
+    ← LinearMap.comp_apply, ← LinearMap.comp_assoc, ← tensorMap_comp, LinearMap.id_comp]
 
 /-- `clebschGordanQuadRightProjection` factors through `clebschGordanRightProjection`. -/
 theorem clebschGordanQuadRightProjection_apply (hq : IsGenericQuantumParameter q)
@@ -135,13 +134,12 @@ theorem clebschGordanQuadRightProjection_apply (hq : IsGenericQuantumParameter q
     clebschGordanQuadRightProjection hq r₁ r₂ r₃ z =
       clebschGordanProjection hq r₃
         (tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanRightProjection hq r₁ r₂) z) := by
-  rw [clebschGordanQuadRightProjection_def, clebschGordanRightProjection_def, LinearMap.comp_assoc,
-    ← tensorMap_comp ℂ (UqSl2 q) LinearMap.id LinearMap.id, LinearMap.id_comp,
-    ← clebschGordanRightProjection_def, LinearMap.comp_apply]
+  simp only [clebschGordanQuadRightProjection_def, clebschGordanRightProjection_def,
+    ← LinearMap.comp_apply, LinearMap.comp_assoc, ← tensorMap_comp, LinearMap.id_comp]
 
 /-- Projecting the reassociated `(L_a^ε ⊗ L_b^δ) ⊗ (L_c^ζ ⊗ L_d^θ)` channel `(i₁, p₁, p₂)` onto
 right channel `(r₁, r₂, r₃)` extracts `recouplingCoeff` when `p₁ = r₁` and `0` otherwise. -/
-theorem clebschGordanQuadRightProjection_assoc_vec (hq : IsGenericQuantumParameter q)
+private theorem clebschGordanQuadRightProjection_assoc_vec (hq : IsGenericQuantumParameter q)
     (i₁ : Fin (min a b + 1)) (p₁ : Fin (min c d + 1))
     (p₂ : Fin (min (a + b - 2 * (i₁ : ℕ)) (c + d - 2 * (p₁ : ℕ)) + 1))
     (r₁ : Fin (min c d + 1)) (r₂ : Fin (min b (c + d - 2 * (r₁ : ℕ)) + 1))
@@ -158,26 +156,19 @@ theorem clebschGordanQuadRightProjection_assoc_vec (hq : IsGenericQuantumParamet
         (clebschGordanRightInclusion (n := c) (p := d) (δ := ζ) (ζ := θ) hq p₁ p₂ (vec q _ _ l)) =
       tensorMap ℂ (UqSl2 q) (tensorMap ℂ (UqSl2 q) LinearMap.id LinearMap.id)
         (clebschGordanInclusion hq p₁) (clebschGordanLeftInclusion hq i₁ p₂ (vec q _ _ l)) := by
-    have hmap : (tensorMap ℂ (UqSl2 q) (clebschGordanInclusion (m := a) (n := b)
-          (ε := ε) (δ := δ) hq i₁) LinearMap.id).comp
-        (tensorMap ℂ (UqSl2 q) LinearMap.id
-          (clebschGordanInclusion (m := c) (n := d) (ε := ζ) (δ := θ) hq p₁)) =
-        (tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq p₁)).comp
-          (tensorMap ℂ (UqSl2 q) (clebschGordanInclusion hq i₁) LinearMap.id) := by
-      rw [← tensorMap_comp, ← tensorMap_comp, LinearMap.comp_id, LinearMap.id_comp,
-        LinearMap.id_comp, LinearMap.comp_id]
-    rw [clebschGordanRightInclusion_def, LinearMap.comp_apply, ← LinearMap.comp_apply, hmap,
-      LinearMap.comp_apply, tensorMap_id, clebschGordanLeftInclusion_def, LinearMap.comp_apply]
+    simp only [clebschGordanRightInclusion_def, clebschGordanLeftInclusion_def, tensorMap_id,
+      ← LinearMap.comp_apply, ← LinearMap.comp_assoc, ← tensorMap_comp, LinearMap.comp_id,
+      LinearMap.id_comp]
   rw [hcomm, ← tensorMap_tensorMap_assoc ℂ (UqSl2 q) LinearMap.id LinearMap.id
-    (clebschGordanInclusion hq p₁), clebschGordanQuadRightProjection_def, ← LinearMap.comp_apply,
-    LinearMap.comp_assoc, ← tensorMap_comp, ← tensorMap_comp, LinearMap.id_comp,
-    LinearMap.id_comp, LinearMap.comp_apply]
+    (clebschGordanInclusion hq p₁)]
+  simp only [clebschGordanQuadRightProjection_def, ← LinearMap.comp_apply,
+    LinearMap.comp_assoc, ← tensorMap_comp, LinearMap.id_comp]
   split_ifs with hp₁
-  · subst hp₁; rw [clebschGordanProjection_comp_inclusion_self, tensorMap_id, tensorMap_id,
-      LinearMap.id_apply, ← LinearEquiv.coe_toLinearMap, ← LinearMap.comp_apply,
-      ← LinearMap.comp_apply, LinearMap.comp_assoc, ← recouplingHom_def, recouplingHom_vec]
-  · rw [clebschGordanProjection_comp_inclusion_of_ne hq (Ne.symm hp₁),
-      tensorMap_zero_right, tensorMap_zero_right, LinearMap.zero_apply, map_zero]
+  · subst hp₁
+    simp only [clebschGordanProjection_comp_inclusion_self, tensorMap_id, LinearMap.comp_id]
+    simpa [recouplingHom_def] using
+      recouplingHom_vec (ε := ε) (δ := δ) (ζ := ζ * θ) hq i₁ p₂ r₂ r₃ l
+  · simp [clebschGordanProjection_comp_inclusion_of_ne hq (Ne.symm hp₁)]
 
 /-- Evaluation of `quadRecouplingHom` on every ladder vector `v_l` along the two-step associator
 path `((A ⊗ B) ⊗ C) ⊗ D → (A ⊗ B) ⊗ (C ⊗ D) → A ⊗ (B ⊗ (C ⊗ D))`. -/
@@ -196,16 +187,18 @@ theorem quadRecouplingHom_vec_eq_sum_recouplingCoeff_mul_smul (hq : IsGenericQua
     ← tensorMap_tensorMap_assoc ℂ (UqSl2 q) (clebschGordanInclusion hq i₁) LinearMap.id
       LinearMap.id, tensorMap_id, assoc_clebschGordanLeftInclusion_vec hq i₂ i₃ l]
   -- Second associator step `(A ⊗ B) ⊗ (C ⊗ D) → A ⊗ (B ⊗ (C ⊗ D))` projects onto `p₁ = r₁`.
-  simp only [← LinearEquiv.coe_toLinearMap, map_sum, LinearMap.map_smul_of_tower]
-  simp only [LinearEquiv.coe_toLinearMap, clebschGordanQuadRightProjection_assoc_vec]
+  simp only [map_sum, LinearMap.map_smul_of_tower,
+    LinearMapClass.map_smul_of_tower (assoc ℂ (UqSl2 q) _ _ _),
+    clebschGordanQuadRightProjection_assoc_vec]
   rw [Finset.sum_eq_single r₁ (fun p₁ _ hp₁ => by simp [hp₁]) (by simp)]
   simp only [↓reduceDIte, smul_smul, ← Finset.sum_smul]
   exact congrArg (· • vec q _ _ l) (Finset.sum_congr rfl fun _ _ => mul_comm _ _)
 
 /-- Projecting the third-step associator image `id ⊗ assoc` on channel `(q₁, p₁, p₂)` onto right
 channel `(r₁, r₂, r₃)` extracts `recouplingCoeff` when `(p₂ : ℕ) = (r₃ : ℕ)` and `0` otherwise. -/
-theorem clebschGordanQuadRightProjection_tensorMap_id_assoc_vec (hq : IsGenericQuantumParameter q)
-    (q₁ : Fin (min b c + 1)) (p₁ : Fin (min (b + c - 2 * (q₁ : ℕ)) d + 1))
+private theorem clebschGordanQuadRightProjection_tensorMap_id_assoc_vec
+    (hq : IsGenericQuantumParameter q) (q₁ : Fin (min b c + 1))
+    (p₁ : Fin (min (b + c - 2 * (q₁ : ℕ)) d + 1))
     (p₂ : Fin (min a (b + c - 2 * (q₁ : ℕ) + d - 2 * (p₁ : ℕ)) + 1)) (r₁ : Fin (min c d + 1))
     (r₂ : Fin (min b (c + d - 2 * (r₁ : ℕ)) + 1))
     (r₃ : Fin (min a (b + (c + d - 2 * (r₁ : ℕ)) - 2 * (r₂ : ℕ)) + 1)) (l : ℤ) :
@@ -255,19 +248,17 @@ theorem quadRecouplingHom_vec_eq_sum_sum_recouplingCoeff_mul_smul (hq : IsGeneri
   rw [quadRecouplingHom_def, LinearMap.comp_apply, LinearMap.comp_apply,
     LinearEquiv.coe_toLinearMap, LinearEquiv.trans_apply, assoc_pentagon_apply]
   -- Step 1 (`assoc ⊗ id`): expand the inner triple `(A ⊗ B) ⊗ C → A ⊗ (B ⊗ C)` over `(q₁, q₂)`.
-  have hinner : tensorMap ℂ (UqSl2 q) (assoc ℂ (UqSl2 q) (LadderModule q a ε) (LadderModule q b δ)
-        (LadderModule q c ζ)).toLinearMap LinearMap.id
-        (clebschGordanQuadLeftInclusion (ε := ε) (δ := δ) (ζ := ζ) (θ := θ) hq i₁ i₂ i₃
-          (vec q _ _ l)) =
+  have hinner (x : _) : tensorMap ℂ (UqSl2 q) (assoc ℂ (UqSl2 q) (LadderModule q a ε)
+        (LadderModule q b δ) (LadderModule q c ζ)).toLinearMap LinearMap.id
+        (tensorMap ℂ (UqSl2 q) (clebschGordanLeftInclusion (ε := ε) (δ := δ) (ζ := ζ) hq i₁ i₂)
+          (LinearMap.id : LadderModule q d θ →ₗ[UqSl2 q] _) x) =
       ∑ q₁ : Fin (min b c + 1), ∑ q₂ : Fin (min a (b + c - 2 * (q₁ : ℕ)) + 1),
         tensorMap ℂ (UqSl2 q) ((clebschGordanRightInclusion hq q₁ q₂).comp
-          (recouplingHom hq i₁ i₂ q₁ q₂)) LinearMap.id (clebschGordanInclusion hq i₃
-            (vec q _ _ l)) := by
-    rw [clebschGordanQuadLeftInclusion_def, LinearMap.comp_apply, ← LinearMap.comp_apply,
-      ← tensorMap_comp, LinearMap.id_comp, assoc_comp_clebschGordanLeftInclusion hq i₁ i₂,
-      tensorMap_sum_left]
-    simp only [tensorMap_sum_left, LinearMap.sum_apply]
-  rw [hinner, Finset.sum_smul]; simp_rw [Finset.sum_smul]; simp only [map_sum]
+          (recouplingHom hq i₁ i₂ q₁ q₂)) LinearMap.id x := by
+    simp only [← LinearMap.comp_apply, ← tensorMap_comp, LinearMap.id_comp,
+      assoc_comp_clebschGordanLeftInclusion hq i₁ i₂, tensorMap_sum_left, LinearMap.sum_apply]
+  rw [clebschGordanQuadLeftInclusion_def, LinearMap.comp_apply, hinner, Finset.sum_smul]
+  simp_rw [Finset.sum_smul]; simp only [map_sum]
   refine Finset.sum_congr rfl fun q₁ _ => Finset.sum_congr rfl fun q₂ _ => ?_
   split_ifs with hw
   · -- Step 2 (`assoc A (B ⊗ C) D`): pull out the scalar and expand `(q₂, i₃')` over `(p₁, p₂)`.
@@ -279,21 +270,15 @@ theorem quadRecouplingHom_vec_eq_sum_sum_recouplingCoeff_mul_smul (hq : IsGeneri
         recouplingCoeff hq ε δ ζ i₁ i₂ q₁ q₂ • tensorMap ℂ (UqSl2 q)
           (tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq q₁)) LinearMap.id
           (clebschGordanLeftInclusion hq q₂ i₃' (vec q _ _ l)) := by
-      have hcomp : tensorMap ℂ (UqSl2 q) ((clebschGordanRightInclusion (m := a) (n := b) (p := c)
-              (ε := ε) (δ := δ) (ζ := ζ) hq q₁ q₂).comp (recouplingHom hq i₁ i₂ q₁ q₂))
-            (LinearMap.id : LadderModule q d θ →ₗ[UqSl2 q] _) =
-          (tensorMap ℂ (UqSl2 q) (clebschGordanRightInclusion hq q₁ q₂) LinearMap.id).comp
-            (tensorMap ℂ (UqSl2 q) (recouplingHom hq i₁ i₂ q₁ q₂) LinearMap.id) := by
-        rw [← tensorMap_comp, LinearMap.id_comp]
-      rw [hcomp, LinearMap.comp_apply,
+      rw [← LinearMap.id_comp (LinearMap.id : LadderModule q d θ →ₗ[UqSl2 q] _), tensorMap_comp,
+        LinearMap.comp_apply,
         tensorMap_clebschGordanInclusion_vec hq (recouplingHom hq i₁ i₂ q₁ q₂) LinearMap.id
           (j' := i₃') (Fin.val_cast _ _).symm l,
         schurScalar_id, mul_one, LinearMap.map_smul_of_tower, ← recouplingCoeff_def]
-      congr 1; symm
-      rw [clebschGordanLeftInclusion_def, LinearMap.comp_apply, ← LinearMap.comp_apply,
-        ← tensorMap_comp, LinearMap.id_comp, ← clebschGordanRightInclusion_def]
-    rw [hsplit, ← LinearEquiv.coe_toLinearMap, LinearMap.map_smul_of_tower,
-      LinearEquiv.coe_toLinearMap,
+      congr 1
+      simp only [clebschGordanRightInclusion_def, clebschGordanLeftInclusion_def,
+        ← LinearMap.comp_apply, ← LinearMap.comp_assoc, ← tensorMap_comp, LinearMap.id_comp]
+    rw [hsplit, LinearMapClass.map_smul_of_tower,
       ← tensorMap_tensorMap_assoc ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq q₁)
         LinearMap.id,
       assoc_clebschGordanLeftInclusion_vec hq q₂ i₃' l]
@@ -342,8 +327,9 @@ theorem recouplingCoeff_pentagon (hq : IsGenericQuantumParameter q) (ε δ ζ θ
 /-- When the left and right fourfold channels share total highest weight `e`, the two-step sum in
 `recouplingCoeff_pentagon` collapses to the product of the two `α₀ = 1` change-of-decomposition
 entries `sixJ` along `((A ⊗ B) ⊗ C) ⊗ D → (A ⊗ B) ⊗ (C ⊗ D) → A ⊗ (B ⊗ (C ⊗ D))`. -/
-theorem sum_recouplingCoeff_mul_eq_sixJ_mul (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ)
-    {a b c d u w e y x : ℕ} {i₁ : Fin (min a b + 1)} {i₂ : Fin (min (a + b - 2 * (i₁ : ℕ)) c + 1)}
+private theorem sum_recouplingCoeff_mul_eq_sixJ_mul (hq : IsGenericQuantumParameter q)
+    (ε δ ζ θ : ℤˣ) {a b c d u w e y x : ℕ} {i₁ : Fin (min a b + 1)}
+    {i₂ : Fin (min (a + b - 2 * (i₁ : ℕ)) c + 1)}
     {i₃ : Fin (min (a + b - 2 * (i₁ : ℕ) + c - 2 * (i₂ : ℕ)) d + 1)} {r₁ : Fin (min c d + 1)}
     {r₂ : Fin (min b (c + d - 2 * (r₁ : ℕ)) + 1)}
     {r₃ : Fin (min a (b + (c + d - 2 * (r₁ : ℕ)) - 2 * (r₂ : ℕ)) + 1)}
@@ -371,8 +357,9 @@ theorem sum_recouplingCoeff_mul_eq_sixJ_mul (hq : IsGenericQuantumParameter q) (
 /-- For each inner channel `q₁` of `L_b^δ ⊗ L_c^ζ` and matching total highest weights `e`, the
 inner three-step sums in `recouplingCoeff_pentagon` collapse to the product of the three `α₀ = 1`
 change-of-decomposition entries `sixJ` along the three-step associator path. -/
-theorem sum_sum_recouplingCoeff_eq_sixJ_mul (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ)
-    {a b c d u w e y x : ℕ} {i₁ : Fin (min a b + 1)} {i₂ : Fin (min (a + b - 2 * (i₁ : ℕ)) c + 1)}
+private theorem sum_sum_recouplingCoeff_eq_sixJ_mul (hq : IsGenericQuantumParameter q)
+    (ε δ ζ θ : ℤˣ) {a b c d u w e y x : ℕ} {i₁ : Fin (min a b + 1)}
+    {i₂ : Fin (min (a + b - 2 * (i₁ : ℕ)) c + 1)}
     {i₃ : Fin (min (a + b - 2 * (i₁ : ℕ) + c - 2 * (i₂ : ℕ)) d + 1)} {r₁ : Fin (min c d + 1)}
     {r₂ : Fin (min b (c + d - 2 * (r₁ : ℕ)) + 1)}
     {r₃ : Fin (min a (b + (c + d - 2 * (r₁ : ℕ)) - 2 * (r₂ : ℕ)) + 1)}
@@ -396,10 +383,6 @@ theorem sum_sum_recouplingCoeff_eq_sixJ_mul (hq : IsGenericQuantumParameter q) (
         sixJ hq ε (δ * ζ) θ a (b + c - 2 * (q₁ : ℕ)) d e w x *
         sixJ hq ε δ ζ a b c w u (b + c - 2 * (q₁ : ℕ)) := by
   subst hu hw he hy hx
-  have hbc := isClebschGordanChannel_sub_two_mul q₁
-  have hax : IsClebschGordanChannel a (b + (c + d - 2 * (r₁ : ℕ)) - 2 * (r₂ : ℕ))
-      (a + b - 2 * (i₁ : ℕ) + c - 2 * (i₂ : ℕ) + d - 2 * (i₃ : ℕ)) :=
-    isClebschGordanChannel_def.mpr ⟨r₃, he'⟩
   -- Step 1 (sum over `q₂`): only `q₂ = haz.index` matches weight `w`; otherwise both sides vanish.
   by_cases haz : IsClebschGordanChannel a (b + c - 2 * (q₁ : ℕ))
       (a + b - 2 * (i₁ : ℕ) + c - 2 * (i₂ : ℕ))
@@ -409,22 +392,16 @@ theorem sum_sum_recouplingCoeff_eq_sixJ_mul (hq : IsGenericQuantumParameter q) (
       by_cases hzd : IsClebschGordanChannel (b + c - 2 * (q₁ : ℕ)) d
           (b + (c + d - 2 * (r₁ : ℕ)) - 2 * (r₂ : ℕ))
       · rw [Finset.sum_eq_single hzd.index]
-        · -- Step 3 (sum over `p₂`): `(p₂ : ℕ) = (r₃ : ℕ)` selects `p₂ = hax.rightIndex hzd`.
-          have hp₂_eq : ((hax.rightIndex hzd) : ℕ) = (r₃ : ℕ) := by
-            rw [Fin.val_cast, hax.index_eq_of_eq he']
-          rw [Finset.sum_eq_single (hax.rightIndex hzd)]
+        · -- Step 3 (sum over `p₂`): `(p₂ : ℕ) = (r₃ : ℕ)` selects `p₂₀ = r₃.cast _`.
+          let p₂₀ := r₃.cast (congrArg (min a · + 1) hzd.sub_two_mul_index.symm)
+          have hp₂_eq : (p₂₀ : ℕ) = (r₃ : ℕ) := Fin.val_cast _ _
+          rw [Finset.sum_eq_single p₂₀]
           · rw [ite_eq_left hp₂_eq,
-              sixJ_eq_recouplingCoeff hq δ ζ θ ⟨hbc, hzd⟩
-                ⟨isClebschGordanChannel_sub_two_mul r₁, isClebschGordanChannel_sub_two_mul r₂⟩,
-              sixJ_eq_recouplingCoeff hq ε (δ * ζ) θ ⟨haz, isClebschGordanChannel_sub_two_mul i₃⟩
-                ⟨hzd, hax⟩,
-              sixJ_eq_recouplingCoeff hq ε δ ζ
-                ⟨isClebschGordanChannel_sub_two_mul i₁, isClebschGordanChannel_sub_two_mul i₂⟩
-                ⟨hbc, haz⟩]
-            exact congrArg₂ (· * ·) (congrArg₂ (· * ·)
-                (recouplingCoeff_congr hq δ ζ θ (by simp) (by simp) (by simp) (by simp))
-                (recouplingCoeff_congr hq ε (δ * ζ) θ rfl (by simp) rfl rfl))
-              (recouplingCoeff_congr hq ε δ ζ (by simp) (by simp) (by simp) (by simp))
+              ← sixJ_eq_recouplingCoeff hq δ ζ θ rfl hzd.sub_two_mul_index rfl rfl,
+              ← sixJ_eq_recouplingCoeff hq ε (δ * ζ) θ haz.sub_two_mul_index
+                (by simp [haz.sub_two_mul_index]; rfl) hzd.sub_two_mul_index
+                (by rw [hp₂_eq, hzd.sub_two_mul_index, he']),
+              ← sixJ_eq_recouplingCoeff hq ε δ ζ rfl rfl rfl haz.sub_two_mul_index]
           · exact fun p₂ _ hp₂ => ite_eq_right fun heq => hp₂ (Fin.ext (heq.trans hp₂_eq.symm))
           · simp
         · exact fun p₁ _ hp₁ => Finset.sum_eq_zero fun _ _ => by
@@ -451,20 +428,21 @@ theorem sixJ_pentagon (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ) (
       IsClebschGordanChannel w d e ∧ IsClebschGordanChannel c d y ∧
       IsClebschGordanChannel b y x ∧ IsClebschGordanChannel a x e
   · rcases hadm with ⟨hab, huc, hwd, hcd, hby, hax⟩
-    have hw : a + b - 2 * (hab.index : ℕ) + c - 2 * ((huc.leftIndex hab) : ℕ) = w := by
-      rw [Fin.val_cast, hab.sub_two_mul_index, huc.sub_two_mul_index]
-    have hx : b + (c + d - 2 * (hcd.index : ℕ)) - 2 * ((hby.rightIndex hcd) : ℕ) = x := by
-      rw [Fin.val_cast, hcd.sub_two_mul_index, hby.sub_two_mul_index]
+    let i₂ := huc.index.cast (congrArg (min · c + 1) hab.sub_two_mul_index.symm)
+    let r₂ := hby.index.cast (congrArg (min b · + 1) hcd.sub_two_mul_index.symm)
+    have hw : a + b - 2 * (hab.index : ℕ) + c - 2 * (i₂ : ℕ) = w := by
+      simp [i₂, hab.sub_two_mul_index, huc.sub_two_mul_index]
+    have hx : b + (c + d - 2 * (hcd.index : ℕ)) - 2 * (r₂ : ℕ) = x := by
+      simp [r₂, hcd.sub_two_mul_index, hby.sub_two_mul_index]
     let i₃ := hwd.index.cast (congrArg (min · d + 1) hw.symm)
     let r₃ := hax.index.cast (congrArg (min a · + 1) hx.symm)
-    have he : a + b - 2 * (hab.index : ℕ) + c - 2 * ((huc.leftIndex hab) : ℕ) + d -
-        2 * (i₃ : ℕ) = e := by rw [(Fin.val_cast _ _ : (i₃ : ℕ) = _), hw, hwd.sub_two_mul_index]
-    have he' : a + (b + (c + d - 2 * (hcd.index : ℕ)) - 2 * ((hby.rightIndex hcd) : ℕ)) -
-        2 * (r₃ : ℕ) = e := by rw [(Fin.val_cast _ _ : (r₃ : ℕ) = _), hx, hax.sub_two_mul_index]
+    have he : a + b - 2 * (hab.index : ℕ) + c - 2 * (i₂ : ℕ) + d - 2 * (i₃ : ℕ) = e := by
+      simp only [i₃, Fin.val_cast, hw, hwd.sub_two_mul_index]
+    have he' : a + (b + (c + d - 2 * (hcd.index : ℕ)) - 2 * (r₂ : ℕ)) - 2 * (r₃ : ℕ) = e := by
+      simp only [r₃, Fin.val_cast, hx, hax.sub_two_mul_index]
     rw [← sum_recouplingCoeff_mul_eq_sixJ_mul hq ε δ ζ θ hab.sub_two_mul_index hw he
         hcd.sub_two_mul_index hx he',
-      recouplingCoeff_pentagon hq ε δ ζ θ hab.index (huc.leftIndex hab) i₃
-        hcd.index (hby.rightIndex hcd) r₃,
+      recouplingCoeff_pentagon hq ε δ ζ θ hab.index i₂ i₃ hcd.index r₂ r₃,
       ← sum_fin_channel_eq_sum_range b c _ fun z hbc => by
         rw [sixJ_eq_zero_of_not hq δ ζ θ (fun h => hbc h.1.1), zero_mul, zero_mul]]
     exact Finset.sum_congr rfl fun q₁ _ => sum_sum_recouplingCoeff_eq_sixJ_mul hq ε δ ζ θ

@@ -153,8 +153,7 @@ theorem assoc_clebschGordanVector_tmul {P : Type*} [AddCommMonoid P] [Module ℂ
       tmul ℂ (UqSl2 q) (vec q m ε i) (tmul ℂ (UqSl2 q) (vec q n δ ((j : ℤ) - i)) x) := by
   rw [clebschGordanVector_def, sum_tmul, map_sum]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← smul_tmul', ← LinearEquiv.coe_toLinearMap, LinearMap.map_smul_of_tower,
-    LinearEquiv.coe_toLinearMap, assoc_tmul]
+  rw [← smul_tmul', LinearMapClass.map_smul_of_tower, assoc_tmul]
 
 /-- Inverse-reassociating `x ⊗ w_j` expands it into pure triple tensors `(x ⊗ v_i) ⊗ v_(j - i)`. -/
 theorem assoc_symm_tmul_clebschGordanVector {M : Type*} [AddCommMonoid M] [Module ℂ M]
@@ -165,8 +164,7 @@ theorem assoc_symm_tmul_clebschGordanVector {M : Type*} [AddCommMonoid M] [Modul
       tmul ℂ (UqSl2 q) (tmul ℂ (UqSl2 q) x (vec q m ε i)) (vec q n δ ((j : ℤ) - i)) := by
   rw [clebschGordanVector_def, tmul_sum, map_sum]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [tmul_smul, ← LinearEquiv.coe_toLinearMap, LinearMap.map_smul_of_tower,
-    LinearEquiv.coe_toLinearMap, assoc_symm_tmul]
+  rw [tmul_smul, LinearMapClass.map_smul_of_tower, assoc_symm_tmul]
 
 /-- The Clebsch–Gordan vector `w_j` has weight `εδ q^(m + n - 2j)`. -/
 theorem clebschGordanVector_mem_weightSpace (j : ℕ) :
@@ -288,7 +286,7 @@ theorem clebschGordanInclusion_zero_left_vec (hq : IsGenericQuantumParameter q) 
   | succ k ih =>
     apply smul_right_injective _ (quantumInteger_ne_zero hq (r := (k : ℤ) + 1) (by omega))
     dsimp only
-    rw [Nat.cast_succ, ← LinearMap.map_smul_of_tower, ← f_smul_vec, map_smul, ih, f_smul_tmul]
+    rw [Nat.cast_succ, ← LinearMapClass.map_smul_of_tower, ← f_smul_vec, map_smul, ih, f_smul_tmul]
     simp [f_smul_vec]
 
 /-- Tensoring with `L_0^δ` on the right embeds `v_k` as `δ^k (v_k ⊗ v₀)`. -/
@@ -300,12 +298,9 @@ theorem clebschGordanInclusion_zero_right_vec (hq : IsGenericQuantumParameter q)
   | succ k ih =>
     apply smul_right_injective _ (quantumInteger_ne_zero hq (r := (k : ℤ) + 1) (by omega))
     dsimp only
-    rw [Nat.cast_succ, ← LinearMap.map_smul_of_tower, ← f_smul_vec, map_smul, ih, smul_comm,
+    rw [Nat.cast_succ, ← LinearMapClass.map_smul_of_tower, ← f_smul_vec, map_smul, ih, smul_comm,
       f_smul_tmul]
-    have hf0 : f q • vec q 0 δ 0 = 0 := by simp
-    have hk0 : kInv q • vec q 0 δ 0 = (δ : ℂ) • vec q 0 δ 0 := by simp
-    rw [hf0, tmul_zero, add_zero, hk0, f_smul_vec, ← smul_tmul', tmul_smul, smul_smul, smul_smul,
-      smul_smul, pow_succ]
+    simp [f_smul_vec, ← smul_tmul', tmul_smul, smul_smul, pow_succ]
     congr 1; ring
 
 /-- The Clebsch–Gordan inclusions are injective. -/

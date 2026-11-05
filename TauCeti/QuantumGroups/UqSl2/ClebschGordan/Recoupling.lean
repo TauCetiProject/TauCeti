@@ -546,16 +546,6 @@ theorem invRecouplingCoeff_eq_zero_of_ne (hq : IsGenericQuantumParameter q) (ε 
     invRecouplingCoeff hq ε δ ζ r s i j = 0 :=
   letI : Fact (q ≠ 0) := ⟨hq.ne_zero⟩; schurScalar_eq_zero_of_ne hq (.inl hne) _
 
-/-- Views `hu₂.index` in `Fin (min (m + n - 2 * ↑hu₁.index) p + 1)` via `Fin.cast` along `hu₁`. -/
-abbrev IsClebschGordanChannel.leftIndex {m n p u k : ℕ} (hu₂ : IsClebschGordanChannel u p k)
-    (hu₁ : IsClebschGordanChannel m n u) : Fin (min (m + n - 2 * (hu₁.index : ℕ)) p + 1) :=
-  hu₂.index.cast (congrArg (min · p + 1) hu₁.sub_two_mul_index.symm)
-
-/-- Views `hv₂.index` in `Fin (min m (n + p - 2 * ↑hv₁.index) + 1)` via `Fin.cast` along `hv₁`. -/
-abbrev IsClebschGordanChannel.rightIndex {m n p v k : ℕ} (hv₂ : IsClebschGordanChannel m v k)
-    (hv₁ : IsClebschGordanChannel n p v) : Fin (min m (n + p - 2 * (hv₁.index : ℕ)) + 1) :=
-  hv₂.index.cast (congrArg (min m · + 1) hv₁.sub_two_mul_index.symm)
-
 /-- `recouplingCoeff` vanishes when the right outer coupling to `k` is inadmissible. -/
 theorem recouplingCoeff_eq_zero_of_not_channel_right (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
     {i : Fin (min m n + 1)} {j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)} {r : Fin (min n p + 1)}
@@ -716,14 +706,20 @@ theorem sum_invRecouplingCoeff_mul_recouplingCoeff (hq : IsGenericQuantumParamet
   have h := congrArg (fun y => clebschGordanLeftProjection hq i₁ j₁
       ((assoc ℂ (UqSl2 q) _ _ _).symm y))
     (assoc_clebschGordanLeftInclusion_vec (ε := ε) (δ := δ) (ζ := ζ) hq i₂ j₂ 0)
-  rw [LinearEquiv.symm_apply_apply] at h
-  simp only [map_sum, LinearMap.map_smul_of_tower, ← LinearEquiv.coe_toLinearMap,
-    ← LinearMap.comp_apply, ← invRecouplingHom_def, invRecouplingHom_vec, smul_smul,
+  have hinv (r) (s) : clebschGordanLeftProjection hq i₁ j₁ ((assoc ℂ (UqSl2 q) _ _ _).symm
+        (clebschGordanRightInclusion (ε := ε) (δ := δ) (ζ := ζ) hq r s (vec q _ _ 0))) =
+      invRecouplingCoeff hq ε δ ζ r s i₁ j₁ • vec q _ _ 0 := by
+    simpa [invRecouplingHom_def] using
+      invRecouplingHom_vec (ε := ε) (δ := δ) (ζ := ζ) hq r s i₁ j₁ 0
+  simp only [LinearEquiv.symm_apply_apply, map_sum, LinearMap.map_smul_of_tower,
+    LinearMapClass.map_smul_of_tower (assoc ℂ (UqSl2 q) _ _ _).symm, hinv, smul_smul,
     mul_comm (recouplingCoeff _ _ _ _ _ _ _ _), ← Finset.sum_smul] at h
   refine smul_left_injective ℂ (by simp : vec q _ _ 0 ≠ 0) (h.symm.trans ?_)
+  dsimp only
   split_ifs with hij
-  · obtain rfl := Fin.ext hij.1; obtain rfl := Fin.ext hij.2; simp
-  · rw [clebschGordanLeftProjection_comp_inclusion_of_ne hq (not_and_or.mp hij)]; simp
+  · obtain rfl := Fin.ext hij.1; obtain rfl := Fin.ext hij.2
+    rw [clebschGordanLeftProjection_inclusion_self, one_smul]
+  · rw [clebschGordanLeftProjection_inclusion_of_ne hq (not_and_or.mp hij), zero_smul]
 
 omit [Fact (q ≠ 0)] in
 /-- Channel-summed right orthogonality of `recouplingCoeff` and `invRecouplingCoeff`. -/
@@ -736,13 +732,18 @@ theorem sum_recouplingCoeff_mul_invRecouplingCoeff (hq : IsGenericQuantumParamet
   let : Fact (q ≠ 0) := ⟨hq.ne_zero⟩
   have h := congrArg (fun y => clebschGordanRightProjection hq r₁ s₁ (assoc ℂ (UqSl2 q) _ _ _ y))
     (assoc_symm_clebschGordanRightInclusion_vec (ε := ε) (δ := δ) (ζ := ζ) hq r₂ s₂ 0)
-  rw [LinearEquiv.apply_symm_apply] at h
-  simp only [map_sum, LinearMap.map_smul_of_tower, ← LinearEquiv.coe_toLinearMap,
-    ← LinearMap.comp_apply, ← recouplingHom_def, recouplingHom_vec, smul_smul,
+  have hrec (i) (j) : clebschGordanRightProjection hq r₁ s₁ (assoc ℂ (UqSl2 q) _ _ _
+        (clebschGordanLeftInclusion (ε := ε) (δ := δ) (ζ := ζ) hq i j (vec q _ _ 0))) =
+      recouplingCoeff hq ε δ ζ i j r₁ s₁ • vec q _ _ 0 := by
+    simpa [recouplingHom_def] using recouplingHom_vec (ε := ε) (δ := δ) (ζ := ζ) hq i j r₁ s₁ 0
+  simp only [LinearEquiv.apply_symm_apply, map_sum, LinearMap.map_smul_of_tower,
+    LinearMapClass.map_smul_of_tower (assoc ℂ (UqSl2 q) _ _ _), hrec, smul_smul,
     mul_comm (invRecouplingCoeff _ _ _ _ _ _ _ _), ← Finset.sum_smul] at h
   refine smul_left_injective ℂ (by simp : vec q _ _ 0 ≠ 0) (h.symm.trans ?_)
+  dsimp only
   split_ifs with hrs
-  · obtain rfl := Fin.ext hrs.1; obtain rfl := Fin.ext hrs.2; simp
-  · rw [clebschGordanRightProjection_comp_inclusion_of_ne hq (not_and_or.mp hrs)]; simp
+  · obtain rfl := Fin.ext hrs.1; obtain rfl := Fin.ext hrs.2
+    rw [clebschGordanRightProjection_inclusion_self, one_smul]
+  · rw [clebschGordanRightProjection_inclusion_of_ne hq (not_and_or.mp hrs), zero_smul]
 
 end TauCeti.UqSl2
