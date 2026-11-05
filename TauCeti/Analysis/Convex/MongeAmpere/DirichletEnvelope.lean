@@ -38,6 +38,10 @@ def unitDensitySubsolutions (Ω : Set E) [DecidablePred (· ∈ Ω)] : Set (E �
     (∀ z ∈ frontier Ω, w z ≤ 0) ∧
     μ.restrict Ω ≤ mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤)}
 
+/-- The pointwise supremum of the unit-density subsolution class. -/
+def unitDensitySubsolutionEnvelope (Ω : Set E) [DecidablePred (· ∈ Ω)] : E → ℝ :=
+  fun x => sSup ((fun w => w x) '' unitDensitySubsolutions μ Ω)
+
 variable {Ω : Set E} [DecidablePred (· ∈ Ω)]
 
 /-- Characterize unit-density subsolutions by convexity, continuity, boundary values and measure. -/
@@ -47,6 +51,12 @@ variable {Ω : Set E} [DecidablePred (· ∈ Ω)]
         (∀ z ∈ frontier Ω, w z ≤ 0) ∧
         μ.restrict Ω ≤ mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) :=
   Iff.rfl
+
+/-- Evaluate the unit-density subsolution envelope as a pointwise supremum. -/
+@[simp] theorem unitDensitySubsolutionEnvelope_apply (x : E) :
+    unitDensitySubsolutionEnvelope μ Ω x =
+      sSup ((fun w => w x) '' unitDensitySubsolutions μ Ω) := by
+  rw [unitDensitySubsolutionEnvelope]
 
 variable [μ.IsAddHaarMeasure]
 
@@ -65,45 +75,67 @@ theorem exists_quadratic_mem_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : C
   · rw [mongeAmpereMeasure_ite_mul_norm_sq_add μ hΩ hΩc (a := 1) zero_le_one,
       one_pow, ENNReal.ofReal_one, one_smul]
 
-/-- The unit-density subsolution class is nonempty and its supremum is finite and convex
-on the closure and continuous on the domain. -/
-theorem exists_unitDensitySubsolutionEnvelope [Nontrivial E] (hΩ : IsOpen Ω)
-    (hΩc : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) :
-    (unitDensitySubsolutions μ Ω).Nonempty ∧
-      ∃ U : E → ℝ, (∀ x ∈ closure Ω, U x = sSup ((fun w => w x) ''
-        unitDensitySubsolutions μ Ω)) ∧ ConvexOn ℝ (closure Ω) U ∧
-        ContinuousOn U Ω ∧ (∀ x ∈ closure Ω, U x ≤ 0) ∧
-        (∀ w ∈ unitDensitySubsolutions μ Ω, ∀ x ∈ closure Ω, w x ≤ U x) := by
+/-- The shifted quadratic supplies a unit-density subsolution on any bounded open convex set. -/
+theorem unitDensitySubsolutions_nonempty (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) : (unitDensitySubsolutions μ Ω).Nonempty := by
   obtain ⟨R, _, hq⟩ := exists_quadratic_mem_unitDensitySubsolutions μ hΩ hΩc hb
-  let S := unitDensitySubsolutions μ Ω
-  have hSne : S.Nonempty := ⟨_, hq⟩
-  have hzero : mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((0 : ℝ) : EReal) else ⊤) = 0 := by
-    have hdim : Module.finrank ℝ E ≠ 0 := (Module.finrank_pos (R := ℝ) (M := E)).ne'
-    simpa only [zero_div, zero_mul, zero_add, zero_pow hdim, ENNReal.ofReal_zero, zero_smul] using
-      mongeAmpereMeasure_ite_mul_norm_sq_add μ hΩ hΩc (a := 0) le_rfl 0
-  have hcap (w : E → ℝ) (hw : w ∈ S) (x : E) (hx : x ∈ closure Ω) : w x ≤ 0 := by
-    by_cases hxΩ : x ∈ Ω
-    · exact le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hb (convexOn_const 0 hΩc)
-        (hw.1.subset subset_closure hΩc) continuousOn_const hw.2.1
-        (by rw [hzero]; exact Measure.zero_le _) hw.2.2.1 hxΩ
-    · exact hw.2.2.1 x (hΩ.frontier_eq.symm ▸ ⟨hx, hxΩ⟩)
-  let U : E → ℝ := fun x => sSup ((fun w => w x) '' S)
-  have hB (x : E) (hx : x ∈ closure Ω) : BddAbove ((fun w => w x) '' S) := by
-    refine ⟨0, ?_⟩
-    rintro _ ⟨w, hw, rfl⟩
-    exact hcap w hw x hx
-  have hU : ConvexOn ℝ (closure Ω) U := by
-    refine ⟨hΩc.closure, ?_⟩
-    intro x hx y hy a b ha hb hab
-    apply csSup_le (hSne.image _)
-    rintro _ ⟨w, hw, rfl⟩
-    exact ((hw.1).2 hx hy ha hb hab).trans <|
-      add_le_add (smul_le_smul_of_nonneg_left (le_csSup (hB x hx) ⟨w, hw, rfl⟩) ha)
-        (smul_le_smul_of_nonneg_left (le_csSup (hB y hy) ⟨w, hw, rfl⟩) hb)
-  refine ⟨hSne, U, fun _ _ => rfl, hU, (hU.subset subset_closure hΩc).continuousOn hΩ, ?_, ?_⟩
-  · intro x hx
-    exact csSup_le (hSne.image _) (by rintro _ ⟨w, hw, rfl⟩; exact hcap w hw x hx)
-  · intro w hw x hx
-    exact le_csSup (hB x hx) ⟨w, hw, rfl⟩
+  exact ⟨_, hq⟩
+
+variable [Nontrivial E]
+
+/-- Every unit-density subsolution is nonpositive on the closure of a bounded open convex set. -/
+theorem nonpos_of_mem_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) {w : E → ℝ} (hw : w ∈ unitDensitySubsolutions μ Ω)
+    {x : E} (hx : x ∈ closure Ω) : w x ≤ 0 := by
+  by_cases hxΩ : x ∈ Ω
+  · exact le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hb (convexOn_const 0 hΩc)
+      (hw.1.subset subset_closure hΩc) continuousOn_const hw.2.1
+      (by rw [mongeAmpereMeasure_ite_const μ hΩ hΩc]; exact Measure.zero_le _)
+      hw.2.2.1 hxΩ
+  · exact hw.2.2.1 x (hΩ.frontier_eq.symm ▸ ⟨hx, hxΩ⟩)
+
+/-- The values of all unit-density subsolutions at a point in the closure are bounded above. -/
+theorem bddAbove_image_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) {x : E} (hx : x ∈ closure Ω) :
+    BddAbove ((fun w => w x) '' unitDensitySubsolutions μ Ω) := by
+  refine ⟨0, ?_⟩
+  rintro _ ⟨w, hw, rfl⟩
+  exact nonpos_of_mem_unitDensitySubsolutions μ hΩ hΩc hb hw hx
+
+/-- Every unit-density subsolution lies below the envelope on the closure. -/
+theorem le_unitDensitySubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) {w : E → ℝ} (hw : w ∈ unitDensitySubsolutions μ Ω)
+    {x : E} (hx : x ∈ closure Ω) : w x ≤ unitDensitySubsolutionEnvelope μ Ω x := by
+  rw [unitDensitySubsolutionEnvelope_apply]
+  exact le_csSup (bddAbove_image_unitDensitySubsolutions μ hΩ hΩc hb hx) ⟨w, hw, rfl⟩
+
+/-- The unit-density subsolution envelope is nonpositive on the closure. -/
+theorem unitDensitySubsolutionEnvelope_nonpos (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) {x : E} (hx : x ∈ closure Ω) :
+    unitDensitySubsolutionEnvelope μ Ω x ≤ 0 := by
+  rw [unitDensitySubsolutionEnvelope_apply]
+  apply csSup_le ((unitDensitySubsolutions_nonempty μ hΩ hΩc hb).image _)
+  rintro _ ⟨w, hw, rfl⟩
+  exact nonpos_of_mem_unitDensitySubsolutions μ hΩ hΩc hb hw hx
+
+/-- The pointwise subsolution envelope is convex on the closure of the domain. -/
+theorem convexOn_unitDensitySubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) :
+    ConvexOn ℝ (closure Ω) (unitDensitySubsolutionEnvelope μ Ω) := by
+  refine ⟨hΩc.closure, ?_⟩
+  intro x hx y hy a b ha hbb hab
+  rw [unitDensitySubsolutionEnvelope_apply]
+  apply csSup_le ((unitDensitySubsolutions_nonempty μ hΩ hΩc hb).image _)
+  rintro _ ⟨w, hw, rfl⟩
+  exact (hw.1.2 hx hy ha hbb hab).trans <|
+    add_le_add (smul_le_smul_of_nonneg_left
+      (le_unitDensitySubsolutionEnvelope μ hΩ hΩc hb hw hx) ha)
+      (smul_le_smul_of_nonneg_left
+        (le_unitDensitySubsolutionEnvelope μ hΩ hΩc hb hw hy) hbb)
+
+/-- The convex subsolution envelope is continuous in the open domain. -/
+theorem continuousOn_unitDensitySubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) : ContinuousOn (unitDensitySubsolutionEnvelope μ Ω) Ω :=
+  ((convexOn_unitDensitySubsolutionEnvelope μ hΩ hΩc hb).subset subset_closure hΩc).continuousOn hΩ
 
 end TauCeti
