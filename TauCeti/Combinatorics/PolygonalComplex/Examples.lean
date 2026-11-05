@@ -253,15 +253,11 @@ def sphere : SurfaceModel.{0, 0, 0} where
       · exact ⟨.nil⟩
       · exact ⟨(SerreGraph.segment.dart false).toPath⟩⟩
   hasSurfaceLink v := by
-    refine (PolygonalComplex.hasSurfaceLink_iff _ v).2 ⟨inferInstance,
-      (SerreGraph.connected_iff _).2 ⟨⟨⟨v, rfl⟩⟩,
-        SerreGraph.preconnected_of_forall_nonempty_path _ ⟨v, rfl⟩ fun ⟨e, he⟩ => ?_⟩,
-      .inl fun e _ => ?_⟩
-    · obtain rfl : e = v := (SerreGraph.segment_src e).symm.trans he
-      exact ⟨.nil⟩
-    · let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
-      refine (linkDegree_singleFace e).trans ?_
-      cases e <;> decide
+    let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
+    refine hasSurfaceLink_singleFace v v (SerreGraph.segment_src v) (fun b hb => ?_)
+      (.inl fun e _ => by cases e <;> decide)
+    obtain rfl : b = v := (SerreGraph.segment_src b).symm.trans hb
+    exact ⟨.nil⟩
 
 theorem sphere_toPolygonalComplex :
     sphere.toPolygonalComplex =
