@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.PiTensorProduct.SlotSum
 public import TauCeti.RepresentationTheory.Tensor.Pi.Discrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
+import TauCeti.Algebra.Ring.Commute
 
 /-!
 # Contracted resolutions of finite dependent tensor products
@@ -228,18 +229,7 @@ noncomputable def smoothPiTensorProductContraction :
       -- A differential commutes with its contraction projector because its square vanishes.
       have hde (i : I) : (d i).toLinearMap ∘ₗ ((a i).toLinearMap ∘ₗ π i) =
           ((a i).toLinearMap ∘ₗ π i) ∘ₗ (d i).toLinearMap := by
-        let D := (d i).toLinearMap
-        let H := h i
-        let E := (a i).toLinearMap ∘ₗ π i
-        have he : E = 1 - (D * H + H * D) := by
-          ext v
-          exact ((congrArg (v - ·) (hdh i v)).trans (sub_sub_cancel v _)).symm
-        have hD : D * D = 0 := hdd i
-        -- Multiplication in `Module.End` is composition of the linear operators.
-        change D * E = E * D
-        rw [he, mul_sub, sub_mul, mul_one, one_mul, mul_add, add_mul,
-          ← mul_assoc, hD, zero_mul, zero_add, mul_assoc H D D, hD, mul_zero, add_zero,
-          mul_assoc]
+        exact (commute_of_sq_zero_of_homotopy (hdd i) (LinearMap.ext (hdh i))).eq
       have hh' := LinearMap.congr_fun (PiTensorProduct.slotSum_comp_slotHomotopy_add hM hde
         (fun i ↦ LinearMap.ext (hdh i))) z
       exact (congrArg₂ (fun (v w : ⨂[R] i, (M i).V) ↦ v + w)
