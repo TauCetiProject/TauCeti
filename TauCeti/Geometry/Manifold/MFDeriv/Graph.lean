@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.MFDeriv.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -16,6 +17,8 @@ Under the canonical identification of product tangent spaces, the tangent image 
 bridges between linear criteria for graphs and products of subspaces and geometric conditions on
 embedded graphs and products of submanifolds, including Lagrangian ones. The calculations use
 Mathlib's product derivatives, `LinearMap.graph_eq_range_prod` and `LinearMap.range_prodMap`.
+The coordinates of the differential of a graph are computed by `mfderiv_graph_fst_apply` and
+`mfderiv_graph_snd_apply`.
 -/
 
 public section
@@ -30,6 +33,23 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H']
   {J : ModelWithCorners 𝕜 F H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- The differential of the graph `y ↦ (y, f y)` has first coordinate `v`. -/
+@[simp]
+theorem mfderiv_graph_fst_apply {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
+    (v : TangentSpace I x) : (mfderiv I (I.prod J) (fun y ↦ (y, f y)) x v).1 = v := by
+  have hg : MDifferentiableAt I (I.prod J) (fun y ↦ (y, f y)) x := mdifferentiableAt_id.prodMk hf
+  rw [← hg.mfderiv_fst_apply]
+  -- The first coordinate of `y ↦ (y, f y)` is the identity by definition.
+  exact DFunLike.congr_fun (mfderiv_id (I := I) (x := x)) v
+
+/-- The differential of the graph `y ↦ (y, f y)` has second coordinate `df v`. -/
+@[simp]
+theorem mfderiv_graph_snd_apply {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
+    (v : TangentSpace I x) :
+    (mfderiv I (I.prod J) (fun y ↦ (y, f y)) x v).2 = mfderiv I J f x v := by
+  have hg : MDifferentiableAt I (I.prod J) (fun y ↦ (y, f y)) x := mdifferentiableAt_id.prodMk hf
+  exact (hg.mfderiv_snd_apply v).symm
 
 /-- The tangent image of a graph, read in the product tangent spaces, is the graph of the
 original map's differential. -/
