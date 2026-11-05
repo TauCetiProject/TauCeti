@@ -26,9 +26,10 @@ in `K⟨X⟩†`. The decomposition is unique, and the quotient `q` and the coef
 remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖` and `‖r.coeff i‖ ≤ ‖f‖`.
 Uniqueness, and the statements deduced from it alone (the comparison of divisibility, descent of
 irreducibility, and the implication from primality in `K⟨X, Y⟩†` to primality in `K⟨X⟩†[Y]`), need
-only that `K` is an ultrametric normed commutative ring with multiplicative norm. Completeness and
-the field structure are used only for existence, the quotient identification, and the converse
-direction of primality.
+only that `K` is an ultrametric normed commutative ring with multiplicative norm. All other results,
+including existence, the norm bounds, the quotient identification, the converse direction of
+primality and the integral-quotient results, assume that `K` is a complete ultrametric normed
+field.
 
 Existence uses unequal radii: first select `1 < ρ ≤ r` preserving distinguishedness, then
 apply fixed-radius division over the Banach ring `K{X/ρ}` at radius `r` in `Y`. The quotient
