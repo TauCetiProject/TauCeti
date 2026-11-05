@@ -69,14 +69,9 @@ theorem isCoherentRing_of_forall_fin {R : Type*} [CommRing R]
   have hI₀_fg : I₀.FG := ⟨Finset.univ.image q, by simp [I₀]⟩
   have : Module.FinitePresentation (MvPolynomial V R) I₀ :=
     hcohV.finitePresentation_of_fg hI₀_fg
+  have hιq : ⇑ι ∘ q = Subtype.val := funext hq
   have hmap : I₀.map ι = I := by
-    rw [← hs]
-    dsimp only [I₀]
-    rw [Ideal.map_span, ← Set.range_comp]
-    congr 1
-    ext x
-    simp only [Set.mem_range, Function.comp_apply, Subtype.exists]
-    exact ⟨fun ⟨a, ha, hax⟩ ↦ (hq ⟨a, ha⟩ ▸ hax) ▸ ha, fun hx ↦ ⟨x, hx, hq ⟨x, hx⟩⟩⟩
+    rw [← hs, Ideal.map_span, ← Set.range_comp, hιq, Subtype.range_coe]
   let _ : Algebra (MvPolynomial V R) (MvPolynomial σ R) := ι.toAlgebra
   have : Module.Flat (MvPolynomial V R) (MvPolynomial σ R) := by
     rwa [← RingHom.flat_algebraMap_iff, ι.algebraMap_toAlgebra]

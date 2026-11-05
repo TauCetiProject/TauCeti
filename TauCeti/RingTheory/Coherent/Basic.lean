@@ -168,11 +168,17 @@ theorem of_fg_submodule [h : Module.IsCoherent R M] {K : Submodule R M} (hK : K.
     h.finitePresentation_of_fg (hL.map K.subtype)
   exact .of_equiv (Submodule.equivMapOfInjective K.subtype K.injective_subtype L).symm
 
+/-- A module that embeds `R`-linearly into a coherent module with finitely generated range is
+coherent. -/
+theorem of_injective_of_fg_range [Module.IsCoherent R N] (f : M →ₗ[R] N)
+    (hf : Function.Injective f) (hrf : (LinearMap.range f).FG) : Module.IsCoherent R M := by
+  have : Module.IsCoherent R (LinearMap.range f) := of_fg_submodule hrf
+  exact of_equiv (LinearEquiv.ofInjective f hf).symm
+
 /-- A finitely generated module that embeds `R`-linearly into a coherent module is coherent. -/
 theorem of_injective [Module.Finite R M] [Module.IsCoherent R N]
-    (f : M →ₗ[R] N) (hf : Function.Injective f) : Module.IsCoherent R M := by
-  have : Module.IsCoherent R (LinearMap.range f) := of_fg_submodule (Submodule.fg_range f)
-  exact of_equiv (LinearEquiv.ofInjective f hf).symm
+    (f : M →ₗ[R] N) (hf : Function.Injective f) : Module.IsCoherent R M :=
+  of_injective_of_fg_range f hf (Submodule.fg_range f)
 
 /-- The image of a finitely generated module in a coherent module is coherent. -/
 instance range [Module.Finite R M] [Module.IsCoherent R N] (f : M →ₗ[R] N) :
@@ -216,27 +222,21 @@ namespace Module.IsCoherent
 /-- In a left-exact sequence `0 → M →[f] N →[g] P`, if `N` and `P` are coherent, then `M` is
 coherent (Stacks, Lemma 10.90.3(1), Tag 05CU). Surjectivity of `g` is not needed. -/
 @[stacks 05CU]
-theorem of_exact_left [Module.IsCoherent R N] [hP : Module.IsCoherent R P]
+theorem of_exact_left [Module.IsCoherent R N] [Module.IsCoherent R P]
     (f : M →ₗ[R] N) (g : N →ₗ[R] P) (hf : Function.Injective f) (hfg : Function.Exact f g) :
     Module.IsCoherent R M := by
-  have : Module.FinitePresentation R (LinearMap.range g) :=
-    hP.finitePresentation_of_fg (Submodule.fg_range g)
-  have hrf : (LinearMap.range f).FG :=
-    LinearMap.exact_iff.mp hfg ▸ Module.FinitePresentation.fg_ker_of_range g
-  have : Module.Finite R (LinearMap.range f) := Module.Finite.iff_fg.mpr hrf
-  have : Module.Finite R M := Module.Finite.equiv (LinearEquiv.ofInjective f hf).symm
-  exact of_injective f hf
+  refine of_injective_of_fg_range f hf ?_
+  rw [← LinearMap.exact_iff.mp hfg]
+  exact Module.FinitePresentation.fg_ker_of_range g
 
 /-- Variant of `Module.IsCoherent.of_exact_left` for a short exact sequence
 `0 → M →[f] N →[g] P → 0`: when `g` is surjective, `P` need only be finitely presented. -/
 theorem of_exact_left_of_surjective [Module.IsCoherent R N] [Module.FinitePresentation R P]
     (f : M →ₗ[R] N) (g : N →ₗ[R] P) (hf : Function.Injective f) (hg : Function.Surjective g)
     (hfg : Function.Exact f g) : Module.IsCoherent R M := by
-  have hrf : (LinearMap.range f).FG :=
-    LinearMap.exact_iff.mp hfg ▸ Module.FinitePresentation.fg_ker g hg
-  have : Module.Finite R (LinearMap.range f) := Module.Finite.iff_fg.mpr hrf
-  have : Module.Finite R M := Module.Finite.equiv (LinearEquiv.ofInjective f hf).symm
-  exact of_injective f hf
+  refine of_injective_of_fg_range f hf ?_
+  rw [← LinearMap.exact_iff.mp hfg]
+  exact Module.FinitePresentation.fg_ker g hg
 
 /-- In a right-exact sequence `M →[f] N →[g] P → 0`, if `M` is finitely generated (in particular
 if `M` is coherent) and `N` is coherent, then `P` is coherent

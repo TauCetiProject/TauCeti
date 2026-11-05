@@ -47,12 +47,7 @@ theorem flat_rename {R σ τ : Type*} [CommRing R] {f : τ → σ} (hf : Functio
     IsScalarTower.toAlgHom R (MvPolynomial τ R) (MvPolynomial S₁ (MvPolynomial τ R))
   have hφ₀ : φ₀.toRingHom.Flat := RingHom.flat_algebraMap_iff.mpr inferInstance
   have heq : MvPolynomial.rename f = ψ.toAlgHom.comp φ₀ :=
-    MvPolynomial.algHom_ext fun t ↦ by
-      simp only [ψ, φ₀, e, S₁, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.trans_apply,
-        IsScalarTower.toAlgHom_apply, MvPolynomial.algebraMap_eq,
-        MvPolynomial.sumAlgEquiv_symm_C_X, MvPolynomial.renameEquiv_apply, MvPolynomial.rename_X,
-        Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inr, Equiv.sumCongr_apply, Sum.map_inl,
-        Equiv.Set.sumCompl_apply_inl, Equiv.ofInjective_apply]
+    MvPolynomial.algHom_ext fun t ↦ by simp [ψ, φ₀, e, S₁]
   rw [heq]
   exact hφ₀.comp (RingHom.Flat.of_bijective ψ.bijective)
 
