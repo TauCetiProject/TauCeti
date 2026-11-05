@@ -150,6 +150,19 @@ lemma map_mem_supportedSubmodule_of_le {S : Closeds X} {W' W : Opens X} (h : W' 
   simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp] using
     congr(F.obj.map (homOfLE (inf_le_inf_right S.compl h)).op $hs)
 
+/-- Enlarging the closed support enlarges the submodule of supported sections. -/
+@[gcongr]
+lemma supportedSubmodule_mono {Z S : Closeds X} (hZS : Z ≤ S) (W : Opens X) :
+    F.supportedSubmodule Z W ≤ F.supportedSubmodule S W := by
+  intro s hs
+  rw [mem_supportedSubmodule_iff] at hs ⊢
+  have hcompl : S.compl ≤ Z.compl := (Closeds.complOrderIso X).monotone hZS
+  have hcomp : S.complInclusion W =
+      homOfLE (inf_le_inf_left W hcompl) ≫
+        Z.complInclusion W := Subsingleton.elim _ _
+  rw [hcomp, op_comp, F.obj.map_comp]
+  simp [hs]
+
 end CategoryTheory.Sheaf
 
 namespace TopologicalSpace.Closeds
@@ -246,6 +259,23 @@ lemma supportedModuleHPresheafFunctor_map_app_apply (S : Closeds X) (n : ℕ)
     (x : F.supportedModuleH S W.unop n) :
     ((supportedModuleHPresheafFunctor S n).map f).app W x = x.comp (Ext.mk₀ f) (add_zero n) :=
   (rfl)
+
+/-- The supported cohomology presheaf functor is additive in its coefficients. -/
+instance additive_supportedModuleHPresheafFunctor (S : Closeds X) (n : ℕ) :
+    (supportedModuleHPresheafFunctor (R := R) S n).Additive where
+  map_add {F G f g} := by
+    apply NatTrans.ext
+    funext W
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    -- Normalize the domain before introducing a class: otherwise its type retains
+    -- the opaque composite functor, hiding the Ext group from rewriting.
+    change ∀ x : F.supportedModuleH S W.unop n,
+      x.comp (Ext.mk₀ (f + g)) (add_zero n) =
+        x.comp (Ext.mk₀ f) (add_zero n) + x.comp (Ext.mk₀ g) (add_zero n)
+    intro x
+    exact (congrArg (fun a : Ext.{u} F G 0 ↦ x.comp a (add_zero n))
+      (Ext.mk₀_add f g)).trans (Ext.comp_add x _ _ _)
 
 /-- Cohomology with supports in `S` vanishes on an open `W` disjoint from `S`. -/
 theorem subsingleton_supportedModuleH_of_le_compl (S : Closeds X) {W : Opens X}
