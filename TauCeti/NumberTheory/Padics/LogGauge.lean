@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Ring.LogGauge
+public import TauCeti.Analysis.Normed.Ring.Commensurable
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 
 /-!
@@ -19,10 +19,18 @@ multiplicative pseudo-uniformiser `ϖ` of norm `p⁻¹`, for instance `p` itself
 `ϖ.addValuation`, with values in `WithTop ℝ`, is the real form of the `p`-adic valuation
 normalised by `v(p) = 1`.
 
+Every nonzero norm on `ℚ_[p]` is an integer power of `p⁻¹`, so such a `ϖ` is commensurable, and
+its rational valuation `ϖ.ratAddValuation` is again `Padic.addValuation`, with its integer values
+viewed as rationals. For instance it takes the values `1` at `p` and `-2` at `p⁻²`.
+
 ## Main results
 
 * `TauCeti.NormedRing.PseudoUniformizer.logGauge_eq_map_padicAddValuation`: the logarithmic gauge
   of a multiplicative pseudo-uniformiser of norm `p⁻¹` is `Padic.addValuation`.
+* `TauCeti.NormedRing.PseudoUniformizer.isCommensurable_of_norm_eq_inv`: such a pseudo-uniformiser
+  is commensurable.
+* `TauCeti.NormedRing.PseudoUniformizer.ratAddValuation_eq_map_padicAddValuation`: its rational
+  valuation is `Padic.addValuation`.
 -/
 
 public section
@@ -49,5 +57,32 @@ theorem addValuation_eq_map_padicAddValuation (ϖ : PseudoUniformizer ℚ_[p])
     (hϖ : ‖(ϖ.unit : ℚ_[p])‖ = (p : ℝ)⁻¹) (x : ℚ_[p]) :
     ϖ.addValuation x = (Padic.addValuation x).map ((↑) : ℤ → ℝ) := by
   rw [addValuation_apply, logGauge_eq_map_padicAddValuation ϖ hϖ]
+
+/-- On `ℚ_[p]`, a multiplicative pseudo-uniformiser of norm `p⁻¹` is commensurable: every nonzero
+norm is an integer power of `p⁻¹`. -/
+theorem isCommensurable_of_norm_eq_inv (ϖ : PseudoUniformizer ℚ_[p])
+    (hϖ : ‖(ϖ.unit : ℚ_[p])‖ = (p : ℝ)⁻¹) : ϖ.IsCommensurable :=
+  isCommensurable_of_forall_norm_eq_zpow fun x hx ↦ ⟨x.valuation, by
+    rw [Padic.norm_eq_zpow_neg_valuation (norm_ne_zero_iff.1 hx), hϖ, inv_zpow']⟩
+
+/-- On `ℚ_[p]`, the rational valuation of a multiplicative pseudo-uniformiser of norm `p⁻¹` is the
+`p`-adic additive valuation `Padic.addValuation`, with its integer values viewed as rationals. -/
+theorem ratAddValuation_eq_map_padicAddValuation (ϖ : PseudoUniformizer ℚ_[p])
+    (hϖ : ‖(ϖ.unit : ℚ_[p])‖ = (p : ℝ)⁻¹) (hc : ϖ.IsCommensurable) (x : ℚ_[p]) :
+    ϖ.ratAddValuation hc x = (Padic.addValuation x).map ((↑) : ℤ → ℚ) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [Padic.addValuation.apply hx, WithTop.map_coe,
+    ratAddValuation_eq_intCast hc (by rw [Padic.norm_eq_zpow_neg_valuation hx, hϖ, inv_zpow'])]
+
+/-- On `ℚ_[p]`, normalised at `p`, the rational valuation of `p ^ n` is `n`, for `n ∈ ℤ`; for
+instance `v_p(p⁻²) = -2`. -/
+example (ϖ : PseudoUniformizer ℚ_[p]) (hϖ : (ϖ.unit : ℚ_[p]) = p) :
+    ϖ.ratAddValuation (isCommensurable_of_norm_eq_inv ϖ (by rw [hϖ, Padic.norm_p]))
+      ((p : ℚ_[p]) ^ (-2 : ℤ)) = ((-2 : ℚ) : WithTop ℚ) := by
+  have h : (p : ℚ_[p]) ^ (-2 : ℤ) = ((ϖ.unit ^ (-2 : ℤ) : ℚ_[p]ˣ) : ℚ_[p]) := by
+    rw [Units.val_zpow_eq_zpow_val, hϖ]
+  rw [h, ratAddValuation_zpow]
+  norm_num
 
 end TauCeti.NormedRing.PseudoUniformizer
