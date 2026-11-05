@@ -114,15 +114,6 @@ theorem IsPrimitive.span_intCast_eq_top {R : Type*} [CommRing R] {f : BinaryQuad
   refine (Ideal.eq_top_iff_one _).mpr (Submodule.mem_span_triple.mpr ⟨u, v, w, ?_⟩)
   simpa using congrArg (Int.cast : ℤ → R) h
 
-/-- If the coefficients of an integral form generate the unit ideal of `R`, then they generate the
-unit ideal of every commutative ring `S` receiving a ring homomorphism `φ : R →+* S`. -/
-theorem span_intCast_eq_top_of_ringHom {R S : Type*} [CommRing R] [CommRing S] (φ : R →+* S)
-    {f : BinaryQuadraticForm ℤ} (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) :
-    Ideal.span {(f.a : S), (f.b : S), (f.c : S)} = ⊤ := by
-  obtain ⟨u, v, w, h⟩ := Submodule.mem_span_triple.mp ((Ideal.eq_top_iff_one _).mp hf)
-  refine (Ideal.eq_top_iff_one _).mpr (Submodule.mem_span_triple.mpr ⟨φ u, φ v, φ w, ?_⟩)
-  simpa using congrArg φ h
-
 /-- A natural number divides the content exactly when it divides all three coefficients. -/
 theorem dvd_content_iff (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     n ∣ f.content ↔ (n : ℤ) ∣ f.a ∧ (n : ℤ) ∣ f.b ∧ (n : ℤ) ∣ f.c := by

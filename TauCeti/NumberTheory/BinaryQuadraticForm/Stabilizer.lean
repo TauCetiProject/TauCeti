@@ -355,8 +355,9 @@ theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R �
     (him : (w : QuadraticAlgebra S (((D - D ^ 2) / 4 : ℤ) : S) D).im =
       φ (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).im) :
     SpecialLinearGroup.map φ ((stabilizerEquivUnitary hf hfD hR).symm z : SL(2, R)) =
-      ((stabilizerEquivUnitary (span_intCast_eq_top_of_ringHom φ hf) hfD hS).symm w :
-        SL(2, S)) := by
+      ((stabilizerEquivUnitary (by
+          simpa [Ideal.map_span, Ideal.map_top, Set.image_insert_eq] using
+            congrArg (Ideal.map φ) hf) hfD hS).symm w : SL(2, S)) := by
   ext i j
   rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
     coe_stabilizerEquivUnitary_symm_apply, coe_stabilizerEquivUnitary_symm_apply]
