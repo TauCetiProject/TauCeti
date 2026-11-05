@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Convex.Continuous
 import TauCeti.Analysis.Convex.StrictTangent
 import TauCeti.Analysis.Convex.SubgradientImage
 
@@ -40,7 +41,7 @@ of an open set, then `w - (1 - δ) v` has an interior supporting point with deri
 `δ • Dv(z)` for each `z` in a fixed compact subset of the domain. -/
 theorem exists_mem_fderiv_sub_eq_smul_fderiv_and_supporting {S K : Set E} {v : E → ℝ}
     (hSo : IsOpen S) (hcl : IsCompact (closure S))
-    (hv : ConvexOn ℝ (closure S) v) (hvs : StrictConvexOn ℝ S v)
+    (hvs : StrictConvexOn ℝ S v)
     (hvc : ContinuousOn v (closure S)) (hvC1 : ContDiffOn ℝ 1 v S)
     (hK : IsCompact K) (hKS : K ⊆ S) {δ : ℝ} (hδ : 0 < δ) :
     ∃ τ > 0, ∀ w : E → ℝ, ContinuousOn w (closure S) → DifferentiableOn ℝ w S →
@@ -48,6 +49,7 @@ theorem exists_mem_fderiv_sub_eq_smul_fderiv_and_supporting {S K : Set E} {v : E
       ∃ x ∈ S,
         fderiv ℝ (fun y => w y - (1 - δ) * v y) x = δ • fderiv ℝ v z ∧
         ∀ y ∈ closure S, w x - (1 - δ) * v x + δ * fderiv ℝ v z (y - x) ≤ w y - (1 - δ) * v y := by
+  have hv : ConvexOn ℝ (closure S) v := hvs.convexOn.closure_of_continuousOn hvc
   -- The tangent gap has a positive minimum over the compact pairs of points.
   let T := K ×ˢ frontier S
   let gap : E × E → ℝ := fun p => v p.2 - v p.1 - fderiv ℝ v p.1 (p.2 - p.1)
@@ -120,7 +122,7 @@ theorem exists_ofReal_pow_mul_measure_image_gradient_le_measure_image_gradient_s
     [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
     {S K : Set E} {v : E → ℝ}
     (hSo : IsOpen S) (hSb : Bornology.IsBounded S)
-    (hv : ConvexOn ℝ (closure S) v) (hvs : StrictConvexOn ℝ S v)
+    (hvs : StrictConvexOn ℝ S v)
     (hvc : ContinuousOn v (closure S)) (hvC1 : ContDiffOn ℝ 1 v S)
     (hK : IsCompact K) (hKS : K ⊆ S) {δ : ℝ} (hδ : 0 < δ) :
     ∃ τ > 0, ∀ w : E → ℝ, ContinuousOn w (closure S) → DifferentiableOn ℝ w S →
@@ -129,7 +131,7 @@ theorem exists_ofReal_pow_mul_measure_image_gradient_le_measure_image_gradient_s
           μ ((∇ fun y => w y - (1 - δ) * v y) ''
             supportingTangentSet S (fun y => w y - (1 - δ) * v y)) := by
   obtain ⟨τ, hτ, hcontact⟩ := exists_mem_fderiv_sub_eq_smul_fderiv_and_supporting
-    hSo hSb.isCompact_closure hv hvs hvc hvC1 hK hKS hδ
+    hSo hSb.isCompact_closure hvs hvc hvC1 hK hKS hδ
   refine ⟨τ, hτ, ?_⟩
   intro w hwc hwD hclose
   let r := fun y => w y - (1 - δ) * v y

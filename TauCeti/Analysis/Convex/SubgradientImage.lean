@@ -29,7 +29,9 @@ in particular a real function convex on an open set has a supporting hyperplane 
 
 For a real function `u` continuous on the compact closure of a set `Ω`, every slope of an affine
 function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
-subgradient of `u` relative to `Ω` at some point of `Ω`. Consequently, if `w ≤ u` on the frontier
+supporting slope on the closure at some point of `Ω`. The argument works for continuous linear
+functionals on a real normed space; the inner-product form is a specialization.
+Consequently, if `w ≤ u` on the frontier
 of `Ω`, the subgradients of `w` relative to `Ω` at points where `u < w`, and their small
 perturbations, are subgradients of `u` relative to `Ω`: this is the comparison step behind the
 comparison principle for the Monge–Ampère equation.
@@ -55,6 +57,8 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
   around which `f` is finite;
 * `ConvexOn.exists_forall_add_inner_le` — a real function convex on an open set has a subgradient
   relative to that set at each of its points;
+* `TauCeti.exists_forall_add_apply_le_of_forall_frontier` — continuous-linear-functional slopes
+  below the boundary values support the function on the closure at an interior-domain point;
 * `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
   point of the graph that lie below the boundary values are subgradients at points of `Ω`;
 * `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le` — if `w ≤ u` on the frontier of
