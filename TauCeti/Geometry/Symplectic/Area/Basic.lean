@@ -8,7 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
+import Mathlib.Analysis.Calculus.Deriv.CompMul
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
@@ -30,7 +33,9 @@ of a map `u` on `[a, b] × [0, 1]` agree, so that each `t ↦ u(s, t)` is a loop
 formula says that the symplectic area of `u` is `a(u(b, ·)) - a(u(a, ·))`
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_eq_loopArea_sub`). In particular the loop
 area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
-(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`).
+(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`). Reparametrizing one
+period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its area over `[-π, π]`
+(`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 
@@ -116,6 +121,34 @@ theorem loopArea_def (ω : SymplecticForm V) (x : ℝ → V) :
 @[simp]
 theorem loopArea_const (ω : SymplecticForm V) (v : V) : ω.loopArea (fun _ ↦ v) = 0 := by
   simp [loopArea_def]
+
+/-- **The loop area of a circle traversed backwards.** If `g` is `2π`-periodic, the loop
+`t ↦ g(θ₀ - 2πt)` runs once through a period of `g` in the reverse direction, so its loop area
+is minus the area `½ ∫_{-π}^{π} ω(g(θ), g'(θ)) dθ` of `g` over one period. -/
+theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Function.Periodic g (2 * π))
+    (θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ g (θ₀ - 2 * π * t)) =
+      -((1 / 2 : ℝ) * ∫ θ in -π..π, ω (g θ) (deriv g θ)) := by
+  have hderiv (t : ℝ) :
+      deriv (fun t ↦ g (θ₀ - 2 * π * t)) t = -(2 * π) • deriv g (θ₀ - 2 * π * t) := by
+    rw [deriv_comp_mul_left (2 * π) (fun x ↦ g (θ₀ - x)) t, deriv_comp_const_sub, smul_neg,
+      neg_smul]
+  have hper : Function.Periodic (fun θ ↦ ω (g θ) (deriv g θ)) (2 * π) := fun θ ↦ by
+    have hd : deriv g (θ + 2 * π) = deriv g θ := by
+      rw [← deriv_comp_add_const, show (fun x ↦ g (x + 2 * π)) = g from funext hg]
+    simp only [hd, hg θ]
+  -- Substitute `θ = θ₀ - 2πt`, then shift the period interval to `[-π, π]`.
+  have hsub := intervalIntegral.integral_comp_sub_mul (fun θ ↦ ω (g θ) (deriv g θ))
+    (a := 0) (b := 1) (mul_ne_zero two_ne_zero Real.pi_ne_zero) θ₀
+  have hshift := hper.intervalIntegral_add_eq (θ₀ - 2 * π) (-π)
+  simp only [mul_one, mul_zero, sub_zero, sub_add_cancel,
+    show -π + 2 * π = π by ring] at hsub hshift
+  have hsmul (t : ℝ) : ω (g (θ₀ - 2 * π * t)) (-(2 * π) • deriv g (θ₀ - 2 * π * t)) =
+      -(2 * π) * ω (g (θ₀ - 2 * π * t)) (deriv g (θ₀ - 2 * π * t)) := by
+    simp
+  rw [loopArea_def]
+  simp only [hderiv, hsmul, intervalIntegral.integral_const_mul, hsub, hshift, smul_eq_mul]
+  field_simp
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 

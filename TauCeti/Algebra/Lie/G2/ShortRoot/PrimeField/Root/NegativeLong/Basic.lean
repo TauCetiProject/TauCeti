@@ -86,13 +86,7 @@ theorem negativeLongRootWeight_eq_neg_simpleRoots (i : Fin 2) :
       -(3 • DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (0 : Fin 2)) +
         (if i = 0 then 1 else 2) •
           DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (1 : Fin 2))) := by
-  have hroot (k : Fin 2) :
-      DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl k) =
-        fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) k j := by
-    funext j
-    simpa only [DynkinType.rank_G2, DynkinType.cartanMatrix_G2_eq] using
-      DynkinType.G2.rootGeneratorWeight_inl DynkinType.valid_G2 k j
-  rw [hroot, hroot]
+  rw [DynkinType.G2.rootGeneratorWeight_inl_eq, DynkinType.G2.rootGeneratorWeight_inl_eq]
   fin_cases i <;> decide
 
 private def negativeLongMatrix (i : Fin 2) : Matrix (Fin 7) (Fin 7) (ZMod 3) :=
