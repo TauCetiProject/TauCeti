@@ -38,10 +38,11 @@ filtration are the dyadic averaging operators `TauCeti.unitInterval.dyadicAverag
 Bochner space `Lp E p μ`, `1 ≤ p`. On `Lᵖ([0, 1])` they are the initial projections of the Haar
 system, and at `N = 2 ^ k` the operator replaces a function on each dyadic cell of level `k` by its
 `μ`-average there. These operators are contractions, compose according to
-`P_M ∘ P_N = P_(min M N)` and have finite rank when `E` is finite-dimensional. For `p < ∞` they
-converge pointwise to the identity, for every finite measure `μ` and every Banach space `E`. This
-convergence comes from uniform continuity and density of continuous functions, rather than from
-martingale theory, and does not need the dyadic cells to generate the σ-algebra of `I`.
+`P_M ∘ P_N = P_(min M N)`, fix exactly the functions measurable for `dyadicFiltration N`, and
+have finite rank when `E` is finite-dimensional. For `p < ∞` they converge pointwise to the
+identity, for every finite measure `μ` and every Banach space `E`. This convergence comes from
+uniform continuity and density of continuous functions, rather than from martingale theory, and
+does not need the dyadic cells to generate the σ-algebra of `I`.
 
 ## Main definitions
 
@@ -224,6 +225,12 @@ theorem dyadicAverage_comp_dyadicAverage (M N : ℕ) :
 theorem dyadicAverage_dyadicAverage (M N : ℕ) (f : Lp E p μ) :
     dyadicAverage 𝕜 μ M (dyadicAverage 𝕜 μ N f) = dyadicAverage 𝕜 μ (min M N) f := by
   rw [← dyadicAverage_comp_dyadicAverage, ContinuousLinearMap.comp_apply]
+
+/-- The fixed points of the `N`-th dyadic averaging operator, that is its range, are the elements
+of `Lp E p μ` that are almost everywhere strongly measurable for `dyadicFiltration N`. -/
+theorem dyadicAverage_eq_self_iff {N : ℕ} {f : Lp E p μ} :
+    dyadicAverage 𝕜 μ N f = f ↔ AEStronglyMeasurable[dyadicFiltration N] f μ :=
+  condExpLp_eq_self_iff (dyadicFiltration.le N)
 
 /-- At step `2 ^ k`, the dyadic average of `f` at almost every point `x` is the `μ`-average of `f`
 over the dyadic cell of level `k` containing `x`. -/
