@@ -34,21 +34,21 @@ weights. Point-incidence conditions are not part of the definition: this is the 
 classes of index zero, which carry no point constraints, such as the classes on a square-zero
 ray and the pullback classes of a surface mapping torus.
 
-Given a symplectic area `ω : H →+ ℝ` that is positive on the candidates, every configuration in
-class `A` uses only candidates of area at most `ω A`, with bounded multiplicities. Hence there
-are finitely many configurations as soon as there are finitely many candidates of area at most
-`ω A` (`TauCeti.finite_compatibleConfigurations`), discarding the candidates of larger area
-does not change the count (`TauCeti.configurationCount_eq_of_area_lt`), the empty
-configuration is the only one in class `0` (`TauCeti.configurationCount_zero`), and the count
-vanishes in classes of negative area.
+Given a symplectic area `ω : H →+ ℝ` that is nonnegative on the candidates, every configuration
+in class `A` uses only candidates of area at most `ω A`, so discarding the candidates of larger
+area does not change the count (`TauCeti.configurationCount_eq_of_area_lt`), and the count
+vanishes in classes of negative area. If `ω` is positive on the candidates, the multiplicities
+are bounded as well. Hence there are finitely many configurations as soon as there are finitely
+many candidates of area at most `ω A` (`TauCeti.finite_compatibleConfigurations`), and the
+empty configuration is the only one in class `0` (`TauCeti.configurationCount_zero`).
 
 On the ray of a class `A₀` that is not torsion, let `T` be a set of tori with classes
 `m c • A₀`. If `A₀ · A₀ = 0`, then distinct images of `T` have intersection number zero, so
 positivity of intersections makes them pairwise disjoint
-(`TauCeti.pairwise_of_apply_self_eq_zero`). For pairwise compatible `T` the configurations of
-class `j • A₀` supported in `T` are exactly the assignments of the weighted antidiagonal
-`Finset.weightedFinsuppAntidiag` used by the ray series, so the count is the `j`-th coefficient
-of the product of the local series at `t ^ m c`
+(`LinearMap.BilinForm.pairwise_of_apply_self_eq_zero`). For pairwise compatible `T` the
+configurations of class `j • A₀` supported in `T` are exactly the assignments of the weighted
+antidiagonal `Finset.weightedFinsuppAntidiag` used by the ray series, so the count is the
+`j`-th coefficient of the product of the local series at `t ^ m c`
 (`TauCeti.configurationCount_eq_coeff_rayTorusWeightSeries`), and the generating series of the
 ray counts is the infinite product `∏_C f_label(C)(t ^ m_C)`
 (`TauCeti.mk_configurationCount_eq_tprod`). A total class on the ray does not force the
@@ -72,8 +72,8 @@ intersections are inputs here; the geometric theorems supplying them are separat
   contribute.
 * `TauCeti.configurationCount_eq_of_forall_support_subset`: the conditional comparison of the
   counts over two candidate sets.
-* `TauCeti.pairwise_of_apply_self_eq_zero`: under positivity of intersections, tori on a
-  square-zero ray are pairwise compatible.
+* `LinearMap.BilinForm.pairwise_of_apply_self_eq_zero`: under positivity of intersections, tori
+  on a square-zero ray are pairwise compatible.
 * `TauCeti.compatibleConfigurations_eq_weightedFinsuppAntidiag`,
   `TauCeti.configurationCount_eq_coeff_prod_expand`,
   `TauCeti.configurationCount_eq_coeff_rayTorusWeightSeries`,
@@ -143,35 +143,57 @@ theorem area_eq_sum_of_mem_compatibleConfigurations
   rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
   simp [map_nsmul, nsmul_eq_mul]
 
-variable (hpos : ∀ c ∈ s, 0 < ω (cls c))
-include hpos
+section Nonneg
 
-/-- A class with a configuration of candidates of positive area has nonnegative area. -/
+variable (hnonneg : ∀ c ∈ s, 0 ≤ ω (cls c))
+include hnonneg
+
+/-- A class with a configuration of candidates of nonnegative area has nonnegative area. -/
 theorem area_nonneg_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) : 0 ≤ ω A := by
   rw [area_eq_sum_of_mem_compatibleConfigurations hl]
-  exact Finset.sum_nonneg fun c hc ↦ mul_nonneg (Nat.cast_nonneg _) (hpos c (hl.1 hc)).le
+  exact Finset.sum_nonneg fun c hc ↦ mul_nonneg (Nat.cast_nonneg _) (hnonneg c (hl.1 hc))
 
-/-- In a configuration of candidates of positive area, each component, counted with its
+/-- In a configuration of candidates of nonnegative area, each component, counted with its
 multiplicity, has area at most that of the total class. -/
 theorem mul_area_le_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) (c : ι) : (l c : ℝ) * ω (cls c) ≤ ω A := by
   by_cases hc : c ∈ l.support
   · rw [area_eq_sum_of_mem_compatibleConfigurations hl]
     exact Finset.single_le_sum (f := fun c ↦ (l c : ℝ) * ω (cls c))
-      (fun d hd ↦ mul_nonneg (Nat.cast_nonneg _) (hpos d (hl.1 hd)).le) hc
+      (fun d hd ↦ mul_nonneg (Nat.cast_nonneg _) (hnonneg d (hl.1 hd))) hc
   · simpa [Finsupp.notMem_support_iff.1 hc] using
-      area_nonneg_of_mem_compatibleConfigurations hpos hl
+      area_nonneg_of_mem_compatibleConfigurations hnonneg hl
 
-/-- In a configuration of candidates of positive area, each component has area at most that of
-the total class. -/
+/-- In a configuration of candidates of nonnegative area, each component has area at most that
+of the total class. -/
 theorem area_le_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) {c : ι} (hc : c ∈ l.support) :
     ω (cls c) ≤ ω A := by
   have h1 : (1 : ℝ) ≤ l c := by
     exact_mod_cast Nat.one_le_iff_ne_zero.2 (Finsupp.mem_support_iff.1 hc)
-  calc ω (cls c) ≤ (l c : ℝ) * ω (cls c) := le_mul_of_one_le_left (hpos c (hl.1 hc)).le h1
-    _ ≤ ω A := mul_area_le_of_mem_compatibleConfigurations hpos hl c
+  calc ω (cls c) ≤ (l c : ℝ) * ω (cls c) := le_mul_of_one_le_left (hnonneg c (hl.1 hc)) h1
+    _ ≤ ω A := mul_area_le_of_mem_compatibleConfigurations hnonneg hl c
+
+/-- There is no configuration in a class of negative area. -/
+theorem compatibleConfigurations_eq_empty_of_area_neg (hA : ω A < 0) :
+    compatibleConfigurations r cls s A = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ hl ↦
+    hA.not_ge (area_nonneg_of_mem_compatibleConfigurations hnonneg hl)
+
+/-- **Finite cutoff**: candidates of area larger than that of `A` lie in no configuration in
+class `A`. -/
+theorem compatibleConfigurations_eq_of_area_lt (hts : t ⊆ s)
+    (h : ∀ c ∈ s, c ∉ t → ω A < ω (cls c)) :
+    compatibleConfigurations r cls t A = compatibleConfigurations r cls s A :=
+  compatibleConfigurations_eq_of_forall_support_subset hts fun _ hl c hc ↦
+    by_contra fun hct ↦
+      (h c (hl.1 hc) hct).not_ge (area_le_of_mem_compatibleConfigurations hnonneg hl hc)
+
+end Nonneg
+
+variable (hpos : ∀ c ∈ s, 0 < ω (cls c))
+include hpos
 
 /-- **Finiteness of configurations.** If the candidates have positive area and only finitely
 many of them have area at most `ω A`, then there are only finitely many configurations in
@@ -182,34 +204,20 @@ theorem finite_compatibleConfigurations (hfin : {c ∈ s | ω (cls c) ≤ ω A}.
   refine (hfin.toFinset.finsupp fun c ↦ Finset.range (⌊ω A / ω (cls c)⌋₊ + 1)).finite_toSet.subset
     fun l hl ↦ ?_
   rw [Finset.mem_coe, Finset.mem_finsupp_iff]
+  have hnonneg : ∀ c ∈ s, 0 ≤ ω (cls c) := fun c hc ↦ (hpos c hc).le
   refine ⟨fun c hc ↦ hfin.mem_toFinset.2
-    ⟨hl.1 hc, area_le_of_mem_compatibleConfigurations hpos hl hc⟩, fun c hc ↦ ?_⟩
+    ⟨hl.1 hc, area_le_of_mem_compatibleConfigurations hnonneg hl hc⟩, fun c hc ↦ ?_⟩
   rw [Finset.mem_range, Nat.lt_succ_iff]
   exact Nat.le_floor ((le_div_iff₀ (hpos c (hfin.mem_toFinset.1 hc).1)).2
-    (mul_area_le_of_mem_compatibleConfigurations hpos hl c))
+    (mul_area_le_of_mem_compatibleConfigurations hnonneg hl c))
 
 /-- The empty configuration is the only configuration in class zero. -/
 theorem compatibleConfigurations_zero : compatibleConfigurations r cls s 0 = {0} := by
   refine Set.eq_singleton_iff_unique_mem.2 ⟨zero_mem_compatibleConfigurations_iff.2 rfl,
     fun l hl ↦ Finsupp.support_eq_empty.1 (Finset.eq_empty_of_forall_notMem fun c hc ↦ ?_)⟩
-  have := area_le_of_mem_compatibleConfigurations hpos hl hc
+  have := area_le_of_mem_compatibleConfigurations (fun c hc ↦ (hpos c hc).le) hl hc
   rw [map_zero] at this
   exact (hpos c (hl.1 hc)).not_ge this
-
-/-- There is no configuration in a class of negative area. -/
-theorem compatibleConfigurations_eq_empty_of_area_neg (hA : ω A < 0) :
-    compatibleConfigurations r cls s A = ∅ :=
-  Set.eq_empty_of_forall_notMem fun _ hl ↦
-    hA.not_ge (area_nonneg_of_mem_compatibleConfigurations hpos hl)
-
-/-- **Finite cutoff**: candidates of area larger than that of `A` lie in no configuration in
-class `A`. -/
-theorem compatibleConfigurations_eq_of_area_lt (hts : t ⊆ s)
-    (h : ∀ c ∈ s, c ∉ t → ω A < ω (cls c)) :
-    compatibleConfigurations r cls t A = compatibleConfigurations r cls s A :=
-  compatibleConfigurations_eq_of_forall_support_subset hts fun _ hl c hc ↦
-    by_contra fun hct ↦
-      (h c (hl.1 hc) hct).not_ge (area_le_of_mem_compatibleConfigurations hpos hl hc)
 
 end Area
 
@@ -222,8 +230,10 @@ variable (r cls) in
 configurations `l` in class `A` of candidates from `s`, of the products
 `l.prod w = ∏ c ∈ l.support, w c (l c)` of the weights of their components, where `w c k` is the
 weight of the candidate `c` taken with multiplicity `k`. This is a finite sum when there are
-finitely many configurations (`TauCeti.finite_compatibleConfigurations`); otherwise its value
-is `0` by convention of `finsum`. -/
+finitely many configurations (`TauCeti.finite_compatibleConfigurations`). In general `finsum`
+sums the finitely many nonzero weights if only finitely many configurations have nonzero
+weight, and its value is `0` by convention if infinitely many configurations have nonzero
+weight. -/
 noncomputable def configurationCount (w : ι → ℕ → R) (s : Set ι) (A : H) : R :=
   ∑ᶠ l ∈ compatibleConfigurations r cls s A, l.prod w
 
@@ -248,18 +258,21 @@ theorem configurationCount_eq_of_forall_support_subset (hts : t ⊆ s)
 
 section Area
 
-variable {ω : H →+ ℝ} (hpos : ∀ c ∈ s, 0 < ω (cls c))
-include hpos
+variable {ω : H →+ ℝ}
 
 /-- The count in class zero is `1`, the weight of the empty configuration. -/
-theorem configurationCount_zero : configurationCount r cls w s 0 = 1 := by
+theorem configurationCount_zero (hpos : ∀ c ∈ s, 0 < ω (cls c)) :
+    configurationCount r cls w s 0 = 1 := by
   rw [configurationCount_def, compatibleConfigurations_zero hpos, finsum_mem_singleton,
     Finsupp.prod_zero_index]
+
+variable (hnonneg : ∀ c ∈ s, 0 ≤ ω (cls c))
+include hnonneg
 
 /-- The count vanishes in classes of negative area. -/
 theorem configurationCount_eq_zero_of_area_neg (hA : ω A < 0) :
     configurationCount r cls w s A = 0 := by
-  rw [configurationCount_def, compatibleConfigurations_eq_empty_of_area_neg hpos hA,
+  rw [configurationCount_def, compatibleConfigurations_eq_empty_of_area_neg hnonneg hA,
     finsum_mem_empty]
 
 /-- **Finite cutoff**: discarding candidates of area larger than that of `A` does not change
@@ -267,25 +280,31 @@ the count in class `A`. -/
 theorem configurationCount_eq_of_area_lt (hts : t ⊆ s) (h : ∀ c ∈ s, c ∉ t → ω A < ω (cls c)) :
     configurationCount r cls w t A = configurationCount r cls w s A := by
   rw [configurationCount_def, configurationCount_def,
-    compatibleConfigurations_eq_of_area_lt hpos hts h]
+    compatibleConfigurations_eq_of_area_lt hnonneg hts h]
 
 end Area
 
 end Configuration
 
-/-! ### Tori on a square-zero ray -/
+end TauCeti
 
-section Ray
+/-! ### Tori on a square-zero ray -/
 
 /-- **Disjointness on a square-zero ray.** Let `B` be the intersection form and let every
 candidate of `T` have class `m c • A₀`, where `A₀ · A₀ = 0`. If distinct candidates of `T` with
 intersection number zero are compatible, as positivity of intersections gives for distinct
 pseudoholomorphic images, then the candidates of `T` are pairwise compatible. -/
-theorem pairwise_of_apply_self_eq_zero [AddCommGroup H] {r : ι → ι → Prop} {cls : ι → H}
-    {T : Set ι} {A₀ : H} {m : ι → ℕ} (B : LinearMap.BilinForm ℤ H) (hA₀ : B A₀ A₀ = 0)
-    (hcls : ∀ c ∈ T, cls c = m c • A₀)
+theorem LinearMap.BilinForm.pairwise_of_apply_self_eq_zero {ι H : Type*} [AddCommGroup H]
+    {r : ι → ι → Prop} {cls : ι → H} {T : Set ι} {A₀ : H} {m : ι → ℕ}
+    (B : LinearMap.BilinForm ℤ H) (hA₀ : B A₀ A₀ = 0) (hcls : ∀ c ∈ T, cls c = m c • A₀)
     (hr : ∀ a ∈ T, ∀ b ∈ T, a ≠ b → B (cls a) (cls b) = 0 → r a b) : T.Pairwise r :=
   fun a ha b hb hab ↦ hr a ha b hb hab (by simp [hcls a ha, hcls b hb, hA₀])
+
+namespace TauCeti
+
+variable {ι H R : Type*}
+
+section Ray
 
 variable [AddCommMonoid H] {r : ι → ι → Prop} {cls : ι → H} {T : Set ι} {A₀ : H}
   {m : ι → ℕ+}
