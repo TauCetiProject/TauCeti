@@ -392,7 +392,8 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
   [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet)
-  {K : Type*} [CommRing K] {R' M' : ModuleCat.{w} K} [Module.Projective K R']
+  {K : Type*} [CommRing K] [Linear K (ModuleCat.{w} K)] {R' M' : ModuleCat.{w} K}
+  [Module.Projective K R']
 
 include hW in
 /-- **Classes over a trivializing set in the top degree are determined on the fibres**: for `W`
@@ -469,7 +470,8 @@ theorem exists_isThomClass_pullback_baseSet (K : Type w) [CommRing K] :
 
 section ProdThomPair
 
-variable {K : Type*} [CommRing K] (R' M' : ModuleCat.{w} K) [Module.Projective K R']
+variable {K : Type*} [CommRing K] [Linear K (ModuleCat.{w} K)] (R' M' : ModuleCat.{w} K)
+  [Module.Projective K R']
 
 /-- **The relative cohomology of the Thom pair of a trivializable bundle vanishes below the
 rank**: for a trivialization of `E` over the whole base, `Hⁿ(E, E₀; R, M) = 0` for
