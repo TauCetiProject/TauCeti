@@ -70,8 +70,9 @@ private theorem measureReal_multiple_jump_le
     dsimp [B]
     omega
   have hprob (k : ℕ) : P.real (B k) = P.real {ω | 2 ≤ N h ω - N 0 ω} := by
-    exact congrArg ENNReal.toReal
-      ((hstat ((k : ℝ≥0) * h) h).measure_mem_eq measurableSet_Ici)
+    have heq := (hstat ((k : ℝ≥0) * h) h).measure_mem_eq (measurableSet_Ici (a := 2))
+    simp only [Set.preimage, Set.mem_Ici] at heq
+    simp only [B, measureReal_def, heq]
   calc
     _ ≤ P.real (⋃ k ∈ Finset.range n, B k) := measureReal_mono hcover (measure_ne_top _ _)
     _ ≤ ∑ k ∈ Finset.range n, P.real (B k) := measureReal_biUnion_finset_le _ _
