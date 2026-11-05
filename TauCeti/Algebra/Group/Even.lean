@@ -39,6 +39,7 @@ theorem isSquare_div_last_of_isSquare_div_prod
 end TauCeti
 
 /-- Multiplying by the square of a unit does not change whether an element is a square. -/
+@[simp]
 theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : IsUnit u) :
     IsSquare (u ^ 2 * x) ↔ IsSquare x := by
   refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩

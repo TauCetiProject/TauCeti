@@ -221,13 +221,6 @@ section Classification
 
 variable {B : BilinForm R M} {C : BilinForm R N}
 
-/-- Over a local ring with residue field of two elements, `2 * 2 - 1 = 3` is a unit. -/
-private theorem isUnit_two_mul_two_sub_one (hR : Nat.card (ResidueField R) = 2) :
-    IsUnit ((2 : R) * 2 - 1) := by
-  rw [show (2 : R) * 2 - 1 = 1 - -2 by ring]
-  exact isUnit_one_sub_self_of_mem_nonunits _
-    ((maximalIdeal R).neg_mem (two_mem_maximalIdeal_of_card_residueField_eq_two hR))
-
 /-- **Mixed binary blocks.** In rank two, let even unimodular forms `B` and `C` have pairs with
 Gram matrices `!![p, 1; 1, p]` and `!![q, 1; 1, q]` such that `(p * p - 1) * (q * q - 1) = -3`. If
 the product of their Gram determinants is a square, then `-3` is a square. -/
@@ -240,8 +233,8 @@ private theorem isSquare_neg_three_of_apply_pair_eq (hR : Nat.card (ResidueField
   have hGB := hB.apply_pair_eq heB hB₁ hfB
   have hGC := hC.apply_pair_eq heC hC₁ hfC
   have hunit : IsUnit ((p * p - 1) * (q * q - 1)) := by
-    rw [hpq, show (-3 : R) = -(2 * 2 - 1) by ring]
-    exact (isUnit_two_mul_two_sub_one hR).neg
+    rw [hpq]
+    exact (isUnit_three_of_card_residueField_eq_two hR).neg
   obtain ⟨-, tB, wB, hwB, hdetB⟩ := hB.exists_basis_orthogonal (m := 0) (k := 2) b hGB
     (by simpa [Matrix.det_fin_two_of] using isUnit_of_mul_isUnit_left hunit)
   obtain ⟨-, tC, wC, hwC, hdetC⟩ := hC.exists_basis_orthogonal (m := 0) (k := 2) c hGC
@@ -311,7 +304,8 @@ private theorem IsSymm.exists_pair_of_even (hR : Nat.card (ResidueField R) = 2) 
   -- Split off the span of `e₁, f₁` and look for a second binary block in its complement.
   have hG := hB.apply_pair_eq hV.1 h₁ hV.2
   have hGdet : IsUnit (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) R).det := by
-    simpa [Matrix.det_fin_two_of] using isUnit_two_mul_two_sub_one hR
+    simpa [Matrix.det_fin_two_of, show (2 : R) * 2 - 1 = 3 by norm_num] using
+      isUnit_three_of_card_residueField_eq_two hR
   obtain ⟨-, t, w, -, hdetT⟩ := hB.exists_basis_orthogonal (k := 2) b hG hGdet
   have hTdet : IsUnit ((B.restrict _).toMatrix t).det := by
     rw [hdetT] at hdet
@@ -371,7 +365,9 @@ private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (Resid
         (fun x ↦ hCeven x) tB tC
   -- Blocks of different types occur only in rank two, where the determinants differ by `-3`.
   have h3u : IsUnit ((0 : R) * 0 - 1) := by simp
-  have h3v := isUnit_two_mul_two_sub_one hR
+  have h3v : IsUnit ((2 : R) * 2 - 1) := by
+    rw [show (2 : R) * 2 - 1 = 3 by norm_num]
+    exact isUnit_three_of_card_residueField_eq_two hR
   rcases hBp with ⟨heB, hfB⟩ | ⟨hm, heB, hfB⟩ <;> rcases hCp with ⟨heC, hfC⟩ | ⟨hm', heC, hfC⟩
   · exact key 0 h3u heB hfB heC hfC
   · subst hm'
