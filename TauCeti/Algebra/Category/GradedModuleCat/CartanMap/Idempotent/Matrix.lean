@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.EulerAdmissible
 import TauCeti.RingTheory.GradedAlgebra.Semisimple
 
