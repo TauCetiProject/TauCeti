@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.Dimension.Basic
+import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.ConnectedComponents
 import Mathlib.Geometry.Manifold.HasGroupoid
@@ -36,6 +37,10 @@ model space `E` itself; no smoothness of the transition maps is needed.
 * `TauCeti.isConnected_compl_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from a
   connected manifold leaves it connected.
 * `TauCeti.isConnected_compl_of_finite_of_one_lt_rank`: the special case of a finite set.
+* `TauCeti.isPathConnected_compl_of_isDiscrete_of_one_lt_rank`: since a manifold is locally path
+  connected, the complement of a closed discrete set in a connected manifold is even path
+  connected.
+* `TauCeti.isPathConnected_compl_of_finite_of_one_lt_rank`: the special case of a finite set.
 * `TauCeti.isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`: closed discrete
   deletion inside a preconnected open subset.
 -/
@@ -110,5 +115,21 @@ theorem isConnected_compl_of_finite_of_one_lt_rank [ConnectedSpace X] (h : 1 < M
     {s : Set X} (hs : s.Finite) : IsConnected sᶜ :=
   have := ChartedSpace.t1Space E X
   isConnected_compl_of_isDiscrete_of_one_lt_rank h hs.isClosed hs.isDiscrete
+
+/-- **Removing a closed discrete set from a connected manifold leaves it path connected**, when
+the model is a real normed space of dimension greater than one. -/
+theorem isPathConnected_compl_of_isDiscrete_of_one_lt_rank [ConnectedSpace X]
+    (h : 1 < Module.rank ℝ E) {s : Set X} (hs : IsClosed s) (hd : IsDiscrete s) :
+    IsPathConnected sᶜ :=
+  have := ChartedSpace.locallyPathConnectedSpace E X
+  hs.isOpen_compl.isConnected_iff_isPathConnected.1
+    (isConnected_compl_of_isDiscrete_of_one_lt_rank h hs hd)
+
+/-- **Removing a finite set from a connected manifold leaves it path connected**, when the model
+is a real normed space of dimension greater than one. -/
+theorem isPathConnected_compl_of_finite_of_one_lt_rank [ConnectedSpace X]
+    (h : 1 < Module.rank ℝ E) {s : Set X} (hs : s.Finite) : IsPathConnected sᶜ :=
+  have := ChartedSpace.t1Space E X
+  isPathConnected_compl_of_isDiscrete_of_one_lt_rank h hs.isClosed hs.isDiscrete
 
 end TauCeti
