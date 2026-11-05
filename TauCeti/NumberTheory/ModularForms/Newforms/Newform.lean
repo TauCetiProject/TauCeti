@@ -72,7 +72,7 @@ classical eigenvalue `Eigenform.eigenvalue` (which in its convention carries a d
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn TauCeti
 
 open scoped MatrixGroups ModularForm HeckeCosetModule
 
