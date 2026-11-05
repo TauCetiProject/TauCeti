@@ -67,9 +67,14 @@ private theorem lichnerowicz_defect_eq_zero (hn : 0 < Module.finrank ℝ E)
   let N := fun y ↦ ‖mgradient I f y‖ ^ 2
   let D := fun y ↦ (1 / 2 : ℝ) * laplaceBeltrami I N y + k * N y - n * k ^ 2 * f y ^ 2
   have hn' : 0 < n := by dsimp [n]; exact_mod_cast hn
-  obtain ⟨hN, hL, hfi, hNi, hLi, he, hz⟩ :=
-    laplaceBeltrami_eigenfunction_integral_data hf heig
-  have hD : Continuous D := ((hL.const_mul _).add (hN.const_mul _)).sub
+  let _ : IsManifold I (2 + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  have hN := contMDiff_norm_sq_mgradient (n := 2) (hf.of_le (by simp))
+  have hL := contMDiff_laplaceBeltrami (I := I) (n := 0) (m := ∞) (k := ∞)
+    (by simp) (by simp) hN
+  have he := integral_norm_sq_mgradient_eq_mul_integral_sq_of_laplaceBeltrami_eq_neg_mul
+    (hf.of_le (by simp)) (HasCompactSupport.of_compactSpace f) heig
+  have hz := integral_laplaceBeltrami_eq_zero hN (HasCompactSupport.of_compactSpace _)
+  have hD : Continuous D := ((hL.continuous.const_mul _).add (hN.continuous.const_mul _)).sub
     ((hf.continuous.pow 2).const_mul _)
   -- The dimension-weighted Bochner inequality makes the scalar defect nonnegative.
   have hnonneg (y : M) : 0 ≤ D y := by
@@ -79,10 +84,16 @@ private theorem lichnerowicz_defect_eq_zero (hn : 0 < Module.finrank ℝ E)
     rw [heig, hderiv] at h
     have hnd : 0 ≤ n * D y := by dsimp only [D, N, n] at h ⊢; nlinarith
     exact nonneg_of_mul_nonneg_right hnd hn'
-  have hDi : Integrable D (riemannianVolume I M) :=
-    ((hLi.const_mul _).add (hNi.const_mul _)).sub (hfi.const_mul _)
+  have hDi := hD.integrable_of_hasCompactSupport
+    (μ := riemannianVolume I M) (HasCompactSupport.of_compactSpace _)
   -- Green's energy identity cancels the remaining two integrals.
   have hzero : ∫ y, D y ∂riemannianVolume I M = 0 := by
+    have hfi : Integrable (fun y ↦ f y ^ 2) (riemannianVolume I M) :=
+      (hf.continuous.pow 2).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+    have hNi := hN.continuous.integrable_of_hasCompactSupport
+      (μ := riemannianVolume I M) (HasCompactSupport.of_compactSpace _)
+    have hLi := hL.continuous.integrable_of_hasCompactSupport
+      (μ := riemannianVolume I M) (HasCompactSupport.of_compactSpace _)
     dsimp only [D]
     rw [integral_sub ((hLi.const_mul (1 / 2 : ℝ)).fun_add (hNi.const_mul k))
       (hfi.const_mul (n * k ^ 2)),
