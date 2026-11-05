@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Fin.Interleave
 public import TauCeti.Topology.Grassmannian.Tautological
 public import TauCeti.Topology.VectorBundle.Hom
-public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+public import TauCeti.Topology.Grassmannian.DirectSum
 public import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
@@ -22,8 +22,8 @@ topologies: concatenating frames lifts the sum, and the product of the two open 
 quotient maps is a quotient map. The induced linear equivalences on tautological fibres
 assemble into an actual homeomorphism of the pulled-back bundle total spaces.
 
-The construction uses Mathlib's product submodules, their dimension and linear-independence
-API, and the existing open frame-span quotient of finite Grassmannians. The total-space
+The construction specializes the existing `finiteGrassmannian.directSum` and
+`finiteFullRankFrame.directSum` APIs to the interleaving linear map. The total-space
 comparison uses `TauCeti.bundleHomeomorph`, whose inverse-continuity theorem applies to
 finite-dimensional bundle models. These constructions include zero ranks and empty
 Grassmannians.
@@ -49,12 +49,7 @@ namespace finiteFullRankFrame
 /-- Concatenate two frames in disjoint even/odd coordinate blocks. -/
 noncomputable def whitneySum (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) : finiteFullRankFrame 𝕜 (k + l) (2 * max a b) :=
-  ⟨fun i ↦ interleaveLinearMap 𝕜 𝕜 a b
-      (Sum.elim (fun j ↦ (f.1 j, 0)) (fun j ↦ (0, g.1 j)) (finSumFinEquiv.symm i)),
-    ((linearIndependent_inl_union_inr' f.2 g.2).map'
-      (interleaveLinearMap 𝕜 𝕜 a b)
-      (LinearMap.ker_eq_bot.2 interleaveLinearMap_injective)).comp _
-        finSumFinEquiv.symm.injective⟩
+  directSum (interleaveLinearMap 𝕜 𝕜 a b) interleaveLinearMap_injective f g
 
 @[simp] theorem whitneySum_castAdd (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) (i : Fin k) :
@@ -71,8 +66,11 @@ theorem range_whitneySum (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) :
     range (whitneySum f g).1 = interleaveLinearMap 𝕜 𝕜 a b ''
       (range (fun i ↦ (f.1 i, 0)) ∪ range (fun j ↦ (0, g.1 j))) := by
-  dsimp only [whitneySum]
-  rw [← Function.comp_def, range_comp]
+  have h : (whitneySum f g).1 = interleaveLinearMap 𝕜 𝕜 a b ∘
+      Sum.elim (fun i ↦ (f.1 i, 0)) (fun j ↦ (0, g.1 j)) ∘ finSumFinEquiv.symm := by
+    ext i
+    refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) i <;> simp [whitneySum]
+  rw [h, range_comp]
   exact congrArg _ ((finSumFinEquiv.symm.surjective.range_comp _).trans
     (Set.Sum.elim_range _ _))
 
@@ -80,19 +78,7 @@ theorem range_whitneySum (f : finiteFullRankFrame 𝕜 k a)
 @[fun_prop] theorem continuous_whitneySum [TopologicalSpace 𝕜] :
     Continuous (fun p : finiteFullRankFrame 𝕜 k a × finiteFullRankFrame 𝕜 l b ↦
       whitneySum p.1 p.2) := by
-  refine Continuous.subtype_mk (continuous_pi fun i ↦ ?_) _
-  obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective i
-  cases j with
-  | inl j =>
-    simp only [Equiv.symm_apply_apply, Sum.elim_inl]
-    exact continuous_interleaveLinearMap.comp
-      (((continuous_apply j).comp (continuous_subtype_val.comp continuous_fst)).prodMk
-        continuous_const)
-  | inr j =>
-    simp only [Equiv.symm_apply_apply, Sum.elim_inr]
-    exact continuous_interleaveLinearMap.comp
-      (continuous_const.prodMk
-        ((continuous_apply j).comp (continuous_subtype_val.comp continuous_snd)))
+  exact continuous_directSum _ interleaveLinearMap_injective continuous_interleaveLinearMap
 
 end finiteFullRankFrame
 
@@ -102,14 +88,12 @@ namespace finiteGrassmannian
 positions in the ambient space of dimension `2 * max a b`. -/
 noncomputable def whitneySum (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) : finiteGrassmannian 𝕜 (k + l) (2 * max a b) :=
-  ⟨(V.1.prod W.1).map (interleaveLinearMap 𝕜 𝕜 a b), by
-    rw [← (Submodule.equivMapOfInjective _ interleaveLinearMap_injective
-      (V.1.prod W.1)).finrank_eq, (V.1.prodEquiv W.1).finrank_eq,
-      Module.finrank_prod, V.2, W.2]⟩
+  directSum (interleaveLinearMap 𝕜 𝕜 a b) interleaveLinearMap_injective V W
 
 theorem coe_whitneySum (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) :
-    (whitneySum V W).1 = (V.1.prod W.1).map (interleaveLinearMap 𝕜 𝕜 a b) := (rfl)
+    (whitneySum V W).1 = (V.1.prod W.1).map (interleaveLinearMap 𝕜 𝕜 a b) :=
+  coe_directSum _ interleaveLinearMap_injective V W
 
 /-- A vector lies in the sum plane exactly when it is the interleaving of vectors in the two
 input planes. -/
@@ -117,11 +101,7 @@ theorem mem_whitneySum_iff (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) (z : Fin (2 * max a b) → 𝕜) :
     z ∈ (whitneySum V W).1 ↔ ∃ v ∈ V.1, ∃ w ∈ W.1,
       interleaveLinearMap 𝕜 𝕜 a b (v, w) = z := by
-  constructor
-  · rintro ⟨⟨v, w⟩, ⟨hv, hw⟩, h⟩
-    exact ⟨v, hv, w, hw, h⟩
-  · rintro ⟨v, hv, w, hw, h⟩
-    exact ⟨(v, w), ⟨hv, hw⟩, h⟩
+  exact mem_directSum _ interleaveLinearMap_injective V W z
 
 /-- An interleaved vector lies in the sum plane exactly when both components lie in their
 respective input planes. -/
@@ -135,18 +115,13 @@ respective input planes. -/
 @[simp] theorem frameSpan_whitneySum (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) :
     frameSpan (f.whitneySum g) = whitneySum (frameSpan f) (frameSpan g) := by
-  apply Subtype.ext
-  simp [coe_frameSpan, coe_whitneySum, finiteFullRankFrame.range_whitneySum,
-    Submodule.span_image, ← LinearMap.span_inl_union_inr, ← range_comp, Function.comp_def]
+  exact frameSpan_directSum _ interleaveLinearMap_injective f g
 
 /-- The finite-stage Whitney sum is continuous for the frame-quotient topologies. -/
 @[fun_prop] theorem continuous_whitneySum [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] :
     Continuous (fun p : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b ↦
       whitneySum p.1 p.2) := by
-  apply ((isOpenQuotientMap_frameSpan.prodMap
-    isOpenQuotientMap_frameSpan).isQuotientMap.continuous_iff).2
-  exact (continuous_frameSpan.comp finiteFullRankFrame.continuous_whitneySum).congr
-    fun p ↦ frameSpan_whitneySum p.1 p.2
+  exact continuous_directSum _ interleaveLinearMap_injective continuous_interleaveLinearMap
 
 end finiteGrassmannian
 end TauCeti
