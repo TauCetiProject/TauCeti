@@ -34,12 +34,10 @@ normed field. Over real or complex scalars, at exponent `∞` it is the operator
 decreases as the exponent grows: `π_q(T) ≤ π_p(T)` for `p ≤ q`, so absolutely `p`-summing
 operators are absolutely `q`-summing.
 
-At exponent `1`, an operator is absolutely summing exactly when it sends unconditionally convergent
-series to absolutely convergent series. This is usually stated on Banach spaces, but no
-completeness is needed. One direction bounds the weak `L¹` norms of the partial families of a
-summable family; the other concatenates finite families of small weak norm whose images have `L¹`
-norm one, each followed by its negative so that the concatenation sums to zero: it does so in the
-completion of the source, hence in the source itself.
+Over real or complex scalars, at exponent `1`, an operator is absolutely summing exactly when it
+sends unconditionally convergent series to absolutely convergent series, with no completeness
+assumption. One direction bounds the weak `L¹` norms of the partial families of a summable family;
+the other concatenates finite families of small weak norm whose images have `L¹` norm one.
 
 Packaged as an operator gauge, `πₚ` gives the normed operator ideal
 `TauCeti.AbsolutelySumming 𝕜 p E F`, written `Πₚ(E, F)`. Its norm is `πₚ`, it is a Banach space
@@ -267,14 +265,14 @@ theorem summingENorm_smulRight_le (f : StrongDual 𝕜 E) (y : F) :
       exact norm_eval_le_weakLpNorm p x f
     _ = _ := by ring
 
-/-- The `p`-summing gauge dominates the operator norm. No Hahn–Banach argument is needed: the
-one-vector family `(v)` has weak norm at most `‖v‖`. -/
+/-- The `p`-summing gauge dominates the operator norm. -/
 theorem enorm_le_summingENorm (T : E →L[𝕜] F) : ‖T‖ₑ ≤ T.summingENorm p := by
   refine T.opENorm_le_bound fun v ↦ ?_
   rcases eq_or_ne ‖v‖ₑ 0 with hv | hv
   · simpa [hv] using T.le_opENorm v
   have hT : (fun i ↦ T ((Pi.single 0 v : Fin 1 → E) i)) = Pi.single 0 (T v) :=
     funext fun i ↦ Pi.apply_single (fun _ ↦ ⇑T) (fun _ ↦ map_zero T) 0 v i
+  -- The one-vector family `(v)` has weak norm at most `‖v‖`; no Hahn–Banach argument is needed.
   have hw : ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p (Pi.single (0 : Fin 1) v)) ≤ ‖v‖ₑ := by
     simpa [PiLp.toLp_single, PiLp.norm_single] using
       ENNReal.ofReal_le_ofReal (weakLpNorm_le_norm (𝕜 := 𝕜) p (Pi.single (0 : Fin 1) v))
