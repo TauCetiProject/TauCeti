@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.Topology.Algebra.Module.BilinearForm
-import Mathlib.Analysis.Normed.Module.Normalize
 
 /-!
 # Uniform quadratic bounds for compact positive-definite matrix families
@@ -72,32 +71,19 @@ theorem exists_uniform_quadratic_bounds {ι X : Type*} [Fintype ι] [DecidableEq
     exact congrFun hz i
   obtain ⟨a, ha, hlo⟩ := isCompact_univ.exists_pos_forall_mul_norm_sq_le
     hB.continuousOn hpositive
-  let S : Set (X × EuclideanSpace ℝ ι) := univ ×ˢ Metric.sphere 0 1
-  let Q : X × EuclideanSpace ℝ ι → ℝ := fun z => (A z.1).toQuadraticForm' z.2
-  have hS : IsCompact S := isCompact_univ.prod (isCompact_sphere 0 1)
-  have hQ : Continuous Q := by
-    simp only [Q, Matrix.toQuadraticForm'_apply]
-    fun_prop
-  obtain ⟨R, hR⟩ := (hS.image hQ).isBounded.exists_norm_le
-  let b : ℝ := |R| + 1
+  obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn (f := B) hB.continuousOn
+  let b : ℝ := max M 0 + 1
+  have hMb : M ≤ b := (le_max_left M 0).trans (le_add_of_nonneg_right zero_le_one)
   refine ⟨a, b, ha, by positivity, fun x ξ => ⟨?_, ?_⟩⟩
   · rw [← hdiag]
     exact hlo x (mem_univ x) ξ
-  · by_cases hξ : ξ = 0
-    · simp [hξ]
-    have hn : ‖NormedSpace.normalize ξ‖ = 1 := NormedSpace.norm_normalize hξ
-    have hm : (x, NormedSpace.normalize ξ) ∈ S :=
-      ⟨mem_univ _, by simpa only [mem_sphere_iff_norm, sub_zero] using hn⟩
-    have hupper : Q (x, NormedSpace.normalize ξ) ≤ b := by
-      have h := hR _ ⟨(x, NormedSpace.normalize ξ), hm, rfl⟩
-      rw [Real.norm_eq_abs] at h
-      exact (le_abs_self _).trans (h.trans
-        ((le_abs_self R).trans (le_add_of_nonneg_right zero_le_one)))
-    have hscale := (A x).toQuadraticForm'.map_smul ‖ξ‖ (NormedSpace.normalize ξ).ofLp
-    rw [← WithLp.ofLp_smul, NormedSpace.norm_smul_normalize, smul_eq_mul, ← pow_two] at hscale
-    calc
-      (A x).toQuadraticForm' ξ = ‖ξ‖ ^ 2 * Q (x, NormedSpace.normalize ξ) := hscale
-      _ ≤ ‖ξ‖ ^ 2 * b := mul_le_mul_of_nonneg_left hupper (sq_nonneg _)
-      _ = b * ‖ξ‖ ^ 2 := mul_comm _ _
+  · calc
+      (A x).toQuadraticForm' ξ = B x ξ ξ := (hdiag x ξ).symm
+      _ ≤ ‖B x ξ ξ‖ := Real.le_norm_self _
+      _ ≤ ‖B x‖ * ‖ξ‖ * ‖ξ‖ := (B x).le_opNorm₂ ξ ξ
+      _ ≤ b * ‖ξ‖ * ‖ξ‖ := by
+        gcongr
+        exact (hM x (mem_univ x)).trans hMb
+      _ = b * ‖ξ‖ ^ 2 := by ring
 
 end TauCeti
