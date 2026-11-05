@@ -134,11 +134,8 @@ theorem corootCocharacter_eq_cocharacter_coroot_simpleIndex
   rw [corootCocharacter_def]
   congr 1
   apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin 6 → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact heval.trans (DynkinType.coroot_simpleIndex DynkinType.E6 ht i).symm
+  exact (SplitTorus.cocharEquiv_applyAddHom i).trans
+    (DynkinType.coroot_simpleIndex DynkinType.E6 ht i).symm
 
 /-- The matrix of a simple-coroot differential is the diagonal of its weight pairings. -/
 theorem tangentMatrixLieHom_derivationComp_corootCocharacter (i : Fin 6) :
