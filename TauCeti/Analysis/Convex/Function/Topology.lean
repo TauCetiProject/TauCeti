@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.FunctionTopology
-public import Mathlib.Analysis.Convex.Continuous
 public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Topology.Order.OrderClosed
 public import Mathlib.Topology.Instances.Real.Lemmas
