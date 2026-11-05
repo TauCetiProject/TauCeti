@@ -54,7 +54,7 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.fwdDiff_iter_descPochhammer_eval`: the `k`-th forward difference of the falling
   factorial of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling factorial of degree
   `j - k`.
-* `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any commutative ring, `x ^ m` is
+* `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
 -/
@@ -296,7 +296,7 @@ open scoped fwdDiff
 /-- **Forward differences of falling factorials.** The `k`-th forward difference of the falling
 factorial `x (x - 1) ⋯ (x - j + 1)` of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling
 factorial of degree `j - k`. In particular it vanishes for `k > j`. -/
-theorem fwdDiff_iter_descPochhammer_eval {R : Type*} [CommRing R] (j k : ℕ) :
+theorem fwdDiff_iter_descPochhammer_eval {R : Type*} [Ring R] (j k : ℕ) :
     Δ_[1]^[k] (fun x : R ↦ (descPochhammer R j).eval x) =
       fun x ↦ (j.descFactorial k : R) * (descPochhammer R (j - k)).eval x := by
   induction k with
@@ -306,17 +306,22 @@ theorem fwdDiff_iter_descPochhammer_eval {R : Type*} [CommRing R] (j k : ℕ) :
     funext x
     rcases Nat.lt_or_ge k j with h | h
     · obtain ⟨i, hi⟩ : ∃ i, j - k = i + 1 := ⟨j - k - 1, by omega⟩
+      -- the falling factorial at `x` commutes with `x`, as it is an integral polynomial in `x`
+      have hx : Commute ((descPochhammer R i).eval x) x := by
+        rw [← descPochhammer_map (Int.castRingHom R), eval_map, ← algebraMap_int_eq,
+          ← aeval_def]
+        simpa using (commute_X (descPochhammer ℤ i)).symm.map (aeval x)
       rw [fwdDiff, hi, descPochhammer_succ_eval_add_one, descPochhammer_succ_eval,
-        show j - (k + 1) = i by omega, Nat.descFactorial_succ, hi]
-      push_cast
-      ring
+        show j - (k + 1) = i by omega, Nat.descFactorial_succ, hi, ← mul_sub,
+        (hx.sub_right (Nat.cast_commute i _).symm).eq, ← sub_mul, add_sub_sub_cancel, ← mul_assoc,
+        add_comm (1 : R), ← Nat.cast_add_one, ← Nat.cast_mul, mul_comm]
     · simp [fwdDiff, Nat.descFactorial_succ, show j - k = 0 by omega,
         show j - (k + 1) = 0 by omega]
 
-/-- **Powers in the falling-factorial basis.** In any commutative ring, `x ^ m` is the sum of the
+/-- **Powers in the falling-factorial basis.** In any ring, `x ^ m` is the sum of the
 falling factorials of degree `j ≤ m` at `x`, weighted by the Stirling numbers of the second kind
 `S(m, j)`. This is the ring version of `Nat.pow_eq_sum_stirlingSecond_mul_descFactorial`. -/
-theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [CommRing R] (m : ℕ)
+theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (m : ℕ)
     (x : R) :
     x ^ m = ∑ j ∈ Finset.range (m + 1),
       (m.stirlingSecond j : R) * (descPochhammer R j).eval x := by
@@ -328,7 +333,8 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [CommRing 
     simp only [Set.mem_ofPred_eq, eval_pow, eval_X, eval_finsetSum, eval_mul, eval_natCast,
       descPochhammer_eval_eq_descFactorial]
     exact_mod_cast Nat.pow_eq_sum_stirlingSecond_mul_descFactorial n m
-  simpa [Polynomial.map_sum, descPochhammer_map, eval_finsetSum] using
-    congrArg (fun P : ℤ[X] ↦ (P.map (Int.castRingHom R)).eval x) hP
+  have hD (j : ℕ) : aeval x (descPochhammer ℤ j) = (descPochhammer R j).eval x := by
+    rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
+  simpa [hD] using congrArg (aeval x) hP
 
 end TauCeti

@@ -157,12 +157,12 @@ section Pow
 
 open Finset
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*}
 
 /-- **Forward differences of powers at zero.** The `k`-th forward difference of `t ↦ t ^ m` at
 `0` is `k!` times the Stirling number of the second kind `S(m, k)`. In particular it vanishes for
 `m < k` and equals `k!` for `m = k` (`fwdDiff_iter_eq_factorial`). -/
-theorem fwdDiff_iter_pow_apply_zero (k m : ℕ) :
+theorem fwdDiff_iter_pow_apply_zero [Ring R] (k m : ℕ) :
     Δ_[1]^[k] (fun t : R ↦ t ^ m) 0 = k.factorial * m.stirlingSecond k := by
   have h : (fun t : R ↦ t ^ m) =
       ∑ j ∈ range (m + 1), m.stirlingSecond j • fun t : R ↦ (descPochhammer R j).eval t := by
@@ -172,7 +172,9 @@ theorem fwdDiff_iter_pow_apply_zero (k m : ℕ) :
   simp only [fwdDiff_iter_const_smul, Pi.smul_apply, fwdDiff_iter_descPochhammer_eval]
   -- only the falling factorial of degree `k` contributes
   rw [sum_eq_single k (fun j _ hjk ↦ ?_) (fun hk ↦ ?_)]
-  · simp [Nat.descFactorial_self, mul_comm]
+  · simp only [Nat.descFactorial_self, tsub_self, descPochhammer_zero, Polynomial.eval_one,
+      mul_one, nsmul_eq_mul]
+    exact Nat.cast_comm _ _
   · rcases lt_or_gt_of_ne hjk with hj | hj
     · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hj]
     · simp [descPochhammer_ne_zero_eval_zero (R := R) (show j - k ≠ 0 by omega)]
@@ -182,7 +184,7 @@ theorem fwdDiff_iter_pow_apply_zero (k m : ℕ) :
 `y ↦ y ^ m` with step `h` at `x` is `∑ₗ C(m, l) x ^ (m - l) h ^ l k! S(l, k)`, where `S` is the
 Stirling number of the second kind. Only the terms with `k ≤ l` are nonzero, and every term is
 divisible by `k!`. -/
-theorem fwdDiff_iter_pow_eq_sum (h x : R) (k m : ℕ) :
+theorem fwdDiff_iter_pow_eq_sum [CommRing R] (h x : R) (k m : ℕ) :
     Δ_[h]^[k] (fun y : R ↦ y ^ m) x = ∑ l ∈ range (m + 1),
       x ^ (m - l) * h ^ l * m.choose l * (k.factorial * l.stirlingSecond k) := by
   simp_rw [← fwdDiff_iter_pow_apply_zero, fwdDiff_iter_eq_sum_shift, mul_sum]
