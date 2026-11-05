@@ -125,8 +125,7 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
 
 /-- **A product of Tate rings is a Tate ring**: if `A₀ ⊆ A` and `B₀ ⊆ B` are open bounded subrings
 and `ϖ_A`, `ϖ_B` are pseudouniformisers, then `A₀ × B₀` is an open bounded subring of `A × B` and
-`(ϖ_A, ϖ_B)` is a pseudouniformiser. This follows directly from the definitions, with
-`(ϖ_A, ϖ_B)` checked componentwise by `TauCeti.Huber.isPseudoUniformizer_prod_iff`. -/
+`(ϖ_A, ϖ_B)` is a pseudouniformiser. -/
 instance IsTateRing.instProd [IsTateRing A] [IsTateRing B] : IsTateRing (A × B) := by
   obtain ⟨⟨A₀, hA₀, hbA⟩, ϖ, hϖ⟩ := isTateRing_iff_exists_isOpen_isBounded.mp ‹IsTateRing A›
   obtain ⟨⟨B₀, hB₀, hbB⟩, ϖ', hϖ'⟩ := isTateRing_iff_exists_isOpen_isBounded.mp ‹IsTateRing B›
