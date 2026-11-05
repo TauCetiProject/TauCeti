@@ -67,9 +67,9 @@ so a `μ.prod ν`-null set can carry all the mass of some competitor. This is wh
 `TauCeti.transportCost_congr` quantifies over plans.
 
 Measurability of the cost is assumed only where it is used, namely in the theorems that move an
-integral along a pushforward (`TauCeti.transportCost_comp_swap`,
-`TauCeti.transportCost_comp_prodMap` and the Dirac formulas). The order-theoretic API needs
-none.
+integral along a pushforward by a map that is not an equivalence (the Dirac formulas).
+Pushing along a measurable equivalence (`TauCeti.transportCost_comp_swap`,
+`TauCeti.transportCost_comp_prodMap`) and the order-theoretic API need none.
 
 The Monge-to-Kantorovich inequality is a statement about the transport cost, so it is stated
 here; the graph plan that witnesses it and the change of variables it uses come from
@@ -223,34 +223,32 @@ section Functoriality
 
 /-- The transport cost is unchanged by exchanging the two factors, the cost being transported
 along the same exchange. -/
-theorem transportCost_comp_swap (hc : Measurable c) (μ : Measure X) (ν : Measure Y) :
+theorem transportCost_comp_swap (μ : Measure X) (ν : Measure Y) :
     transportCost (fun z ↦ c z.swap) ν μ = transportCost c μ ν := by
-  have hcs : Measurable fun z : Y × X ↦ c z.swap := hc.comp measurable_swap
   refine le_antisymm (le_transportCost fun π hπ ↦ ?_) (le_transportCost fun σ hσ ↦ ?_)
   · calc transportCost (fun z ↦ c z.swap) ν μ ≤ ∫⁻ w, c w.swap ∂π.map Prod.swap :=
         transportCost_le_lintegral hπ.swap _
-      _ = ∫⁻ z, c z ∂π := by
-        rw [lintegral_map hcs measurable_swap]
-        simp
+      _ = ∫⁻ z, c z ∂π :=
+        lintegral_map_equiv (μ := π) (fun w : Y × X ↦ c w.swap) MeasurableEquiv.prodComm
   · calc transportCost c μ ν ≤ ∫⁻ z, c z ∂σ.map Prod.swap :=
         transportCost_le_lintegral hσ.swap _
-      _ = ∫⁻ w, c w.swap ∂σ := lintegral_map hc measurable_swap
+      _ = ∫⁻ w, c w.swap ∂σ := lintegral_map_equiv c MeasurableEquiv.prodComm
 
 /-- A symmetric cost gives a symmetric transport cost. -/
-theorem transportCost_comm {c : X × X → ℝ≥0∞} (hc : Measurable c)
+theorem transportCost_comm {c : X × X → ℝ≥0∞}
     (hsymm : ∀ x y, c (x, y) = c (y, x)) (μ ν : Measure X) :
     transportCost c μ ν = transportCost c ν μ := by
   have h : (fun z : X × X ↦ c z.swap) = c := funext fun z ↦ hsymm z.2 z.1
-  rw [← transportCost_comp_swap hc μ ν, h]
+  rw [← transportCost_comp_swap μ ν, h]
 
 /-- The transport cost is invariant under measurable equivalences of the two factors: pushing
 the marginals forward and transporting the cost back gives the same value. -/
 theorem transportCost_comp_prodMap (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') {c : X' × Y' → ℝ≥0∞}
-    (hc : Measurable c) (μ : Measure X) (ν : Measure Y) :
+    (μ : Measure X) (ν : Measure Y) :
     transportCost (fun z ↦ c (e z.1, f z.2)) μ ν = transportCost c (μ.map e) (ν.map f) := by
   have key (π : Measure (X × Y)) :
       ∫⁻ w, c w ∂π.map (Prod.map e f) = ∫⁻ z, c (e z.1, f z.2) ∂π :=
-    lintegral_map hc (e.measurable.prodMap f.measurable)
+    lintegral_map_equiv c (e.prodCongr f)
   refine le_antisymm (le_transportCost fun σ hσ ↦ ?_) (le_transportCost fun π hπ ↦ ?_)
   · have hmap : (σ.map (Prod.map e.symm f.symm)).map (Prod.map e f) = σ :=
       MeasurableEquiv.map_map_symm (ν := σ) (e.prodCongr f)
@@ -282,7 +280,7 @@ theorem transportCost_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c) (
 is an integral against the source. -/
 theorem transportCost_dirac_right [IsProbabilityMeasure μ] (hc : Measurable c) (y : Y) :
     transportCost c μ (Measure.dirac y) = ∫⁻ x, c (x, y) ∂μ := by
-  rw [← transportCost_comp_swap hc μ (Measure.dirac y)]
+  rw [← transportCost_comp_swap μ (Measure.dirac y)]
   exact transportCost_dirac_left (hc.comp measurable_swap) y
 
 /-- Two Dirac measures have exactly one coupling, so their transport cost is the value of the
@@ -312,23 +310,24 @@ theorem lintegral_le (h : IsOptimalCoupling c π μ ν) (hσ : IsCoupling σ μ 
 /-- Pushing an optimal coupling forward along measurable equivalences gives an optimal coupling
 for the pushed-forward marginals and the transported cost. -/
 protected theorem map (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') {c : X' × Y' → ℝ≥0∞}
-    (hc : Measurable c) (h : IsOptimalCoupling (fun z ↦ c (e z.1, f z.2)) π μ ν) :
+    (h : IsOptimalCoupling (fun z ↦ c (e z.1, f z.2)) π μ ν) :
     IsOptimalCoupling c (π.map (Prod.map e f)) (μ.map e) (ν.map f) where
   toIsCoupling := h.toIsCoupling.map e.measurable f.measurable
   lintegral_eq := by
-    rw [lintegral_map hc (e.measurable.prodMap f.measurable),
-      ← transportCost_comp_prodMap e f hc μ ν]
+    rw [show ∫⁻ z, c z ∂π.map (Prod.map e f) = ∫⁻ z, c (e z.1, f z.2) ∂π from
+      lintegral_map_equiv c (e.prodCongr f), ← transportCost_comp_prodMap e f μ ν]
     exact h.lintegral_eq
 
 /-- Exchanging the two coordinates of an optimal coupling gives an optimal coupling for the
 exchanged cost. -/
-protected theorem swap (hc : Measurable c) (h : IsOptimalCoupling c π μ ν) :
+protected theorem swap (h : IsOptimalCoupling c π μ ν) :
     IsOptimalCoupling (fun z ↦ c z.swap) (π.map Prod.swap) ν μ where
   toIsCoupling := h.toIsCoupling.swap
   lintegral_eq := by
-    have hcs : Measurable fun z : Y × X ↦ c z.swap := hc.comp measurable_swap
-    rw [lintegral_map hcs measurable_swap, transportCost_comp_swap hc μ ν]
-    simpa using h.lintegral_eq
+    rw [show ∫⁻ z, c z.swap ∂π.map Prod.swap = ∫⁻ z, c z ∂π from
+      lintegral_map_equiv (μ := π) (fun z : Y × X ↦ c z.swap) MeasurableEquiv.prodComm,
+      transportCost_comp_swap μ ν]
+    exact h.lintegral_eq
 
 /-- A convex combination of optimal plans is optimal for the same marginals and cost.
 The cost need not be measurable, and the optimal value may be infinite. -/
@@ -376,7 +375,7 @@ theorem IsCoupling.isOptimalCoupling_dirac_right [IsProbabilityMeasure μ] (hc :
   have hπ' : IsOptimalCoupling (fun z : Y × X ↦ c z.swap) (π.map Prod.swap)
       (Measure.dirac y) μ :=
     hπ.swap.isOptimalCoupling_dirac_left (hc.comp measurable_swap)
-  have hπ'' := hπ'.swap (hc.comp measurable_swap)
+  have hπ'' := hπ'.swap
   have hmap : (π.map Prod.swap).map Prod.swap = π :=
     MeasurableEquiv.map_map_symm (ν := π) MeasurableEquiv.prodComm
   rw [hmap] at hπ''
