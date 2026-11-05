@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Unpaired
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Mixed.Side
-import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPartner
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Partner
 import TauCeti.Algebra.CharP.Two
 
 /-!

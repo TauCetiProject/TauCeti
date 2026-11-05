@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Recut
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSideRecut
-import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPartner
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Partner
 
 /-!
 # Off-diagonal unpaired crossing change composites are pentagon partners
