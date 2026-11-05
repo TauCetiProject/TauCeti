@@ -20,11 +20,14 @@ coordinate line first: it sends `V` to `𝕜 e₀ ⊕ shift(V)`, with shift send
 `i` to `i.succ`. The two stabilizations commute strictly, so they can be used as the
 two structure maps of a Grassmannian tower without choosing coordinate permutations.
 
+`ambientInclusion` includes `𝕜^N` into the first coordinates of `𝕜^M` for any `N ≤ M`.
+These inclusions compose functorially and agree with `ambientStabilization` in one step.
+
 The rank map is continuous for the frame-quotient topology and injective. Its image
 consists exactly of the planes containing `e₀`. Each stabilized subspace is identified
 linearly with `𝕜 × V`, in that order, by `Submodule.finConsEquiv`. Over the real or
-complex numbers both maps are closed embeddings. All constructions include rank zero
-and empty Grassmannians.
+complex numbers both stabilizations and all ambient inclusions are closed embeddings.
+All constructions include rank zero and empty Grassmannians.
 
 The continuity proof uses the frame-span quotient from
 `TauCeti.Topology.Grassmannian.Basic`; the coordinate splitting is Mathlib's
@@ -160,6 +163,34 @@ noncomputable def ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmanni
 theorem coe_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N) :
     (ambientInclusion h V).1 = V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h)) :=
   coe_map _ _ V
+
+/-- Membership in an ambient inclusion is detected by restricting to the old coordinates and
+checking that the remaining coordinates vanish. -/
+@[simp]
+theorem mem_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N)
+    (v : Fin M → 𝕜) :
+    v ∈ (ambientInclusion h V).1 ↔ v ∘ Fin.castLE h ∈ V.1 ∧ ∀ i : Fin M, N ≤ i → v i = 0 := by
+  rw [coe_ambientInclusion, Submodule.mem_map]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    constructor
+    · simpa only [Function.comp_def,
+        Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castLE_injective h)] using hw
+    · intro i hi
+      have hnot : ¬ ∃ j : Fin N, Fin.castLE h j = i := by
+        rintro ⟨j, rfl⟩
+        exact (Nat.not_le_of_lt j.isLt) hi
+      simp [Function.ExtendByZero.linearMap, hnot]
+  · rintro ⟨hv, hz⟩
+    refine ⟨v ∘ Fin.castLE h, hv, funext fun i ↦ ?_⟩
+    by_cases hi : (i : ℕ) < N
+    · have he : Fin.castLE h ⟨i, hi⟩ = i := Fin.ext rfl
+      rw [← he, Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castLE_injective h)]
+      rfl
+    · have hnot : ¬ ∃ j : Fin N, Fin.castLE h j = i := by
+        rintro ⟨j, rfl⟩
+        exact hi j.isLt
+      simp [Function.ExtendByZero.linearMap, hnot, hz i (Nat.le_of_not_gt hi)]
 
 theorem ambientInclusion_injective {M : ℕ} (h : N ≤ M) :
     Function.Injective (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Grassmannian.Stabilization
 public import TauCeti.LinearAlgebra.Finsupp.Supported
-public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 
@@ -42,6 +41,7 @@ limit topology follows J. Milnor and J. Stasheff, *Characteristic Classes*, §5.
 public section
 
 open Set Topology CategoryTheory Limits
+open _root_.Finsupp
 
 namespace TauCeti
 
@@ -53,58 +53,7 @@ rank zero. -/
 abbrev infiniteGrassmannian : Type _ :=
   {V : Submodule 𝕜 (ℕ →₀ 𝕜) // Module.rank 𝕜 V = k}
 
-namespace infiniteGrassmannian
-
-variable {𝕜}
-
-/-- The coordinate inclusion `𝕜^n → ℕ →₀ 𝕜`, sending the `i`-th coordinate vector to the
-`i`-th coordinate vector. -/
-noncomputable def coordinateInclusion (n : ℕ) : (Fin n → 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜) :=
-  Finsupp.lmapDomain 𝕜 𝕜 Fin.val ∘ₗ (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin n)).symm.toLinearMap
-
-@[simp]
-theorem coordinateInclusion_single (n : ℕ) (i : Fin n) (a : 𝕜) :
-    coordinateInclusion n (Pi.single i a) = Finsupp.single (i : ℕ) a := by
-  simp [coordinateInclusion]
-
-@[simp]
-theorem coordinateInclusion_apply_val {n : ℕ} (v : Fin n → 𝕜) (i : Fin n) :
-    coordinateInclusion n v i = v i := by
-  simp [coordinateInclusion, Finsupp.mapDomain_apply_of_injective Fin.val_injective]
-
-theorem coordinateInclusion_apply_of_le {n : ℕ} (v : Fin n → 𝕜) {i : ℕ} (hi : n ≤ i) :
-    coordinateInclusion n v i = 0 := by
-  simp only [coordinateInclusion, LinearMap.coe_comp, Function.comp_apply,
-    Finsupp.lmapDomain_apply]
-  exact Finsupp.mapDomain_of_notMem_range _ _ (by simpa [Fin.range_val] using hi)
-
-theorem coordinateInclusion_injective (n : ℕ) :
-    Function.Injective (coordinateInclusion (𝕜 := 𝕜) n) :=
-  (Finsupp.mapDomain_injective Fin.val_injective).comp
-    (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin n)).symm.injective
-
-/-- The image of the coordinate inclusion of `𝕜^n` consists of the finitely supported functions
-vanishing from coordinate `n` on. -/
-theorem range_coordinateInclusion (n : ℕ) :
-    LinearMap.range (coordinateInclusion (𝕜 := 𝕜) n) = Finsupp.supported 𝕜 𝕜 (Iio n) := by
-  rw [coordinateInclusion, LinearMap.range_comp, LinearEquiv.range, Submodule.map_top,
-    LinearMap.range_eq_map, ← Finsupp.supported_univ, Finsupp.lmapDomain_supported, image_univ,
-    Fin.range_val]
-
-/-- The coordinate inclusions are compatible with the inclusions `𝕜^m → 𝕜^n` onto the first
-coordinates. -/
-@[simp]
-theorem coordinateInclusion_comp_extendByZero_castLE {m n : ℕ} (h : m ≤ n) :
-    coordinateInclusion (𝕜 := 𝕜) n ∘ₗ Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h) =
-      coordinateInclusion m := by
-  refine LinearMap.pi_ext fun i a ↦ ?_
-  simp [Function.ExtendByZero.linearMap_single 𝕜 (Fin.castLE_injective h)]
-
-end infiniteGrassmannian
-
 namespace finiteGrassmannian
-
-open infiniteGrassmannian
 
 variable {𝕜 k} {n : ℕ}
 
@@ -217,8 +166,7 @@ theorem _root_.TauCeti.finiteGrassmannian.continuous_toInfinite {n : ℕ} :
 
 theorem isOpen_iff {U : Set (infiniteGrassmannian 𝕜 k)} :
     IsOpen U ↔ ∀ n, IsOpen ((toInfinite : finiteGrassmannian 𝕜 k n → _) ⁻¹' U) := by
-  rw [isOpen_iSup_iff]
-  rfl
+  simp only [isOpen_iSup_iff, isOpen_coinduced]
 
 theorem isClosed_iff {C : Set (infiniteGrassmannian 𝕜 k)} :
     IsClosed C ↔ ∀ n, IsClosed ((toInfinite : finiteGrassmannian 𝕜 k n → _) ⁻¹' C) := by
@@ -259,8 +207,9 @@ that its point is the infinite Grassmannian itself and its maps are the stage in
   ι.app _ := TopCat.ofHom ⟨toInfinite, continuous_toInfinite⟩
   ι.naturality _ _ φ := TopCat.ext fun V ↦ toInfinite_ambientInclusion (leOfHom φ) V
 
+@[simp]
 theorem cocone_ι_app_apply (n : ℕ) (V : finiteGrassmannian 𝕜 k n) :
-    (cocone 𝕜 k).ι.app n V = toInfinite V := (rfl)
+    ((cocone 𝕜 k).ι.app n).hom (Y := (cocone 𝕜 k).pt) V = toInfinite V := (rfl)
 
 /-- The underlying set of the infinite Grassmannian is the colimit of the underlying sets. -/
 noncomputable def isColimitForget : IsColimit ((forget TopCat).mapCocone (cocone 𝕜 k)) :=
