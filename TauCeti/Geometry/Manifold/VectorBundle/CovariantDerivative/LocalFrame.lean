@@ -40,6 +40,8 @@ derivative, and they give the classical coordinate formula for `∇ σ` along a 
   it is a covariant derivative over the trivialization base set, and
   `TauCeti.Manifold.contMDiffCovariantDerivativeOn_frameCovariantDerivative`, its regularity
   there.
+* `TauCeti.Manifold.frameCovariantDerivative_eq_symmL_comp`: the flat derivative of a section whose
+  frame coefficients are the coordinates of a model-valued map.
 * `TauCeti.Manifold.covariantDerivative_eq_frameCovariantDerivative_add_sum`: the local frame
   formula for an arbitrary covariant derivative.
 * `TauCeti.Manifold.covariantDerivative_eq_of_localFrame_eq`: two covariant derivatives which
@@ -166,6 +168,29 @@ theorem frameCovariantDerivative_apply (v : TangentSpace I x) :
   simp [frameCovariantDerivative]
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+
+/-- If the coefficients of a section in the frame of `e` agree near `x` with the coordinates of a
+model-valued map `g` that has derivative `A` at `x`, then its flat frame derivative at `x` is
+`e.symmL x ∘ A`. -/
+theorem frameCovariantDerivative_eq_symmL_comp {g : M → F}
+    {A : TangentSpace I x →L[𝕜] F} (hg : HasMFDerivAt I 𝓘(𝕜, F) g x A)
+    (hcoeff : ∀ i, (fun z ↦ e.localFrameCoeff I b i z (σ z)) =ᶠ[𝓝 x] fun z ↦ b.coord i (g z))
+    (hx : x ∈ e.baseSet) :
+    frameCovariantDerivative I b e σ x = (e.symmL 𝕜 x).comp A := by
+  ext v
+  rw [frameCovariantDerivative_apply]
+  have hterm (i : ι) :
+      mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i) σ) x v = b.coord i (A v) := by
+    let k : F →L[𝕜] 𝕜 := LinearMap.toContinuousLinearMap (b.coord i)
+    have h := (((ContinuousLinearMap.hasMFDerivAt k).comp x hg).congr_of_eventuallyEq
+      (hcoeff i : _ =ᶠ[𝓝 x] ⇑k ∘ g)).mfderiv
+    rw [mvfderiv_apply_eq_mfderiv_apply, LinearMap.piApply_apply, h]
+    rfl
+  simp only [hterm]
+  have h1 : e.symmL 𝕜 x (A v) = e.symmL 𝕜 x (∑ i, b.coord i (A v) • b i) := by
+    simp [Basis.sum_repr, Basis.coord_apply]
+  rw [ContinuousLinearMap.comp_apply, h1, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, symmL_basis_eq_localFrame b hx i]
 
 /-- The flat frame derivative satisfies the covariant-derivative axioms on the base set of the
 trivialization defining the frame. -/
