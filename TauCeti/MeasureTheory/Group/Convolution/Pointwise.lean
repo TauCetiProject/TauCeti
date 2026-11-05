@@ -78,22 +78,8 @@ open scoped ENNReal Topology
 section QuotientBorelHelpers
 
 /-- On an abstract second-countable topological group `Q` equipped explicitly with `borel Q`,
-`(x ↦ (v x)⁻¹ * u x)` is measurable whenever `u` and `v` are `borel Q`-measurable. Taking `Q`
-without an ambient `MeasurableSpace` avoids the `QuotientGroup.measurableSpace` diamond on
-`G ⧸ K`. -/
-private theorem measurable_borel_inv_mul {X Q : Type*} [MeasurableSpace X] [Group Q]
-    [TopologicalSpace Q] [IsTopologicalGroup Q] [SecondCountableTopology Q] {u v : X → Q}
-    (hu : @Measurable X Q ‹MeasurableSpace X› (borel Q) u)
-    (hv : @Measurable X Q ‹MeasurableSpace X› (borel Q) v) :
-    @Measurable X Q ‹MeasurableSpace X› (borel Q) (fun x ↦ (v x)⁻¹ * u x) := by
-  let _ : MeasurableSpace Q := borel Q
-  have : BorelSpace Q := ⟨rfl⟩
-  have hu' : Measurable u := hu
-  have hv' : Measurable v := hv
-  exact (continuous_snd.inv.mul continuous_fst).measurable.comp (hu'.prodMk hv')
-
-/-- On an abstract second-countable topological group `Q` equipped explicitly with `borel Q`,
-`(x ↦ u x * v x)` is measurable whenever `u` and `v` are `borel Q`-measurable. -/
+`(x ↦ u x * v x)` is measurable whenever `u` and `v` are `borel Q`-measurable. Taking `Q` without
+an ambient `MeasurableSpace` avoids the `QuotientGroup.measurableSpace` diamond on `G ⧸ K`. -/
 private theorem measurable_borel_mul {X Q : Type*} [MeasurableSpace X] [Group Q]
     [TopologicalSpace Q] [IsTopologicalGroup Q] [SecondCountableTopology Q] {u v : X → Q}
     (hu : @Measurable X Q ‹MeasurableSpace X› (borel Q) u)
@@ -115,60 +101,31 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [SigmaCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   {μ : Measure G} [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
 
-/-- If `f : G → β` into a metrizable space is `μ`-a.e. strongly measurable on a σ-compact locally
-compact group `G`, then `(x, y) ↦ f (y⁻¹ * x)` is `(μ.prod μ)`-a.e. strongly measurable. -/
-theorem AEStronglyMeasurable.comp_inv_mul_prod {β : Type*} [TopologicalSpace β]
-    [MetrizableSpace β] {f : G → β} (hf : AEStronglyMeasurable f μ) :
-    AEStronglyMeasurable (fun p : G × G ↦ f (p.2⁻¹ * p.1)) (μ.prod μ) := by
+/-- Shared quotient-factorization argument for joint `(μ.prod μ)`-strong measurability of
+`(p₁, p₂) ↦ f (φ p₁ * p₂)` along any continuous map `φ : G → G`. -/
+private theorem aestronglyMeasurable_comp_mul_prod {β : Type*} [TopologicalSpace β]
+    [MetrizableSpace β] {φ : G → G} (hφ : Continuous φ) {f : G → β}
+    (hf : AEStronglyMeasurable f μ) :
+    AEStronglyMeasurable (fun p : G × G ↦ f (φ p.1 * p.2)) (μ.prod μ) := by
   obtain ⟨K, _, _, _, _, _, g, Z', hg, hZ'_meas, hZ'_null, hfg⟩ :=
     hf.exists_compact_normal_subgroup_quotient_eq_off_null
   let π : G → G ⧸ K := QuotientGroup.mk
   have hπ_meas : @Measurable G (G ⧸ K) ‹MeasurableSpace G› (borel (G ⧸ K)) π :=
     (QuotientGroup.continuous_mk (N := K)).borel_measurable.mono OpensMeasurableSpace.borel_le
       le_rfl
-  let Φ : G × G → G ⧸ K := fun p ↦ (π p.2)⁻¹ * π p.1
-  have hΦ_meas : @Measurable (G × G) (G ⧸ K) inferInstance (borel (G ⧸ K)) Φ :=
-    measurable_borel_inv_mul (hπ_meas.comp measurable_fst) (hπ_meas.comp measurable_snd)
-  have hΦ_eq (p : G × G) : Φ p = π (p.2⁻¹ * p.1) := by
-    simp [Φ, π, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-  have hbad_meas : MeasurableSet (Φ ⁻¹' Z') := hΦ_meas hZ'_meas
-  have hbad_null : (μ.prod μ) (Φ ⁻¹' Z') = 0 := by
-    rw [Measure.prod_apply_symm hbad_meas]
-    have hslice (y : G) : μ ((fun x ↦ (x, y)) ⁻¹' (Φ ⁻¹' Z')) = 0 := by
-      have hpre : (fun x ↦ (x, y)) ⁻¹' (Φ ⁻¹' Z') = (y⁻¹ * ·) ⁻¹' (π ⁻¹' Z') := by
-        ext x
-        simp [mem_preimage, hΦ_eq]
-      rw [hpre, measure_preimage_mul, hZ'_null]
-    simp [hslice]
-  refine ⟨g ∘ Φ, hg.comp_measurable hΦ_meas, ?_⟩
-  rw [EventuallyEq, ae_iff]
-  refine measure_mono_null (fun p hp ↦ ?_) hbad_null
-  by_contra hpZ
-  have hxZ : p.2⁻¹ * p.1 ∉ π ⁻¹' Z' := by
-    simpa [mem_preimage, ← hΦ_eq] using hpZ
-  exact hp ((hfg _ hxZ).trans (congrArg g (hΦ_eq p).symm))
-
-/-- If `f : G → β` into a metrizable space is `μ`-a.e. strongly measurable on a σ-compact locally
-compact group `G`, then `(x, y) ↦ f (x * y)` is `(μ.prod μ)`-a.e. strongly measurable. -/
-theorem AEStronglyMeasurable.comp_mul_prod {β : Type*} [TopologicalSpace β]
-    [MetrizableSpace β] {f : G → β} (hf : AEStronglyMeasurable f μ) :
-    AEStronglyMeasurable (fun p : G × G ↦ f (p.1 * p.2)) (μ.prod μ) := by
-  obtain ⟨K, _, _, _, _, _, g, Z', hg, hZ'_meas, hZ'_null, hfg⟩ :=
-    hf.exists_compact_normal_subgroup_quotient_eq_off_null
-  let π : G → G ⧸ K := QuotientGroup.mk
-  have hπ_meas : @Measurable G (G ⧸ K) ‹MeasurableSpace G› (borel (G ⧸ K)) π :=
-    (QuotientGroup.continuous_mk (N := K)).borel_measurable.mono OpensMeasurableSpace.borel_le
-      le_rfl
-  let Ψ : G × G → G ⧸ K := fun p ↦ π p.1 * π p.2
+  have hπφ_meas : @Measurable G (G ⧸ K) ‹MeasurableSpace G› (borel (G ⧸ K)) (π ∘ φ) :=
+    ((QuotientGroup.continuous_mk (N := K)).comp hφ).borel_measurable.mono
+      OpensMeasurableSpace.borel_le le_rfl
+  let Ψ : G × G → G ⧸ K := fun p ↦ π (φ p.1) * π p.2
   have hΨ_meas : @Measurable (G × G) (G ⧸ K) inferInstance (borel (G ⧸ K)) Ψ :=
-    measurable_borel_mul (hπ_meas.comp measurable_fst) (hπ_meas.comp measurable_snd)
-  have hΨ_eq (p : G × G) : Ψ p = π (p.1 * p.2) := by
+    measurable_borel_mul (hπφ_meas.comp measurable_fst) (hπ_meas.comp measurable_snd)
+  have hΨ_eq (p : G × G) : Ψ p = π (φ p.1 * p.2) := by
     simp [Ψ, π, QuotientGroup.mk_mul]
   have hbad_meas : MeasurableSet (Ψ ⁻¹' Z') := hΨ_meas hZ'_meas
   have hbad_null : (μ.prod μ) (Ψ ⁻¹' Z') = 0 := by
     rw [Measure.prod_apply hbad_meas]
     have hslice (x : G) : μ (Prod.mk x ⁻¹' (Ψ ⁻¹' Z')) = 0 := by
-      have hpre : Prod.mk x ⁻¹' (Ψ ⁻¹' Z') = (x * ·) ⁻¹' (π ⁻¹' Z') := by
+      have hpre : Prod.mk x ⁻¹' (Ψ ⁻¹' Z') = (φ x * ·) ⁻¹' (π ⁻¹' Z') := by
         ext y
         simp [mem_preimage, hΨ_eq]
       rw [hpre, measure_preimage_mul, hZ'_null]
@@ -177,9 +134,23 @@ theorem AEStronglyMeasurable.comp_mul_prod {β : Type*} [TopologicalSpace β]
   rw [EventuallyEq, ae_iff]
   refine measure_mono_null (fun p hp ↦ ?_) hbad_null
   by_contra hpZ
-  have hxZ : p.1 * p.2 ∉ π ⁻¹' Z' := by
+  have hxZ : φ p.1 * p.2 ∉ π ⁻¹' Z' := by
     simpa [mem_preimage, ← hΨ_eq] using hpZ
   exact hp ((hfg _ hxZ).trans (congrArg g (hΨ_eq p).symm))
+
+/-- If `f : G → β` into a metrizable space is `μ`-a.e. strongly measurable on a σ-compact locally
+compact group `G`, then `(x, y) ↦ f (y⁻¹ * x)` is `(μ.prod μ)`-a.e. strongly measurable. -/
+theorem AEStronglyMeasurable.comp_inv_mul_prod {β : Type*} [TopologicalSpace β]
+    [MetrizableSpace β] {f : G → β} (hf : AEStronglyMeasurable f μ) :
+    AEStronglyMeasurable (fun p : G × G ↦ f (p.2⁻¹ * p.1)) (μ.prod μ) :=
+  (aestronglyMeasurable_comp_mul_prod continuous_inv hf).prod_swap
+
+/-- If `f : G → β` into a metrizable space is `μ`-a.e. strongly measurable on a σ-compact locally
+compact group `G`, then `(x, y) ↦ f (x * y)` is `(μ.prod μ)`-a.e. strongly measurable. -/
+theorem AEStronglyMeasurable.comp_mul_prod {β : Type*} [TopologicalSpace β]
+    [MetrizableSpace β] {f : G → β} (hf : AEStronglyMeasurable f μ) :
+    AEStronglyMeasurable (fun p : G × G ↦ f (p.1 * p.2)) (μ.prod μ) :=
+  aestronglyMeasurable_comp_mul_prod continuous_id hf
 
 /-- Joint `(μ.prod μ)`-strong measurability of the scalar-multiplied convolution integrand
 `(x, y) ↦ h y • f (y⁻¹ * x)` on a σ-compact locally compact group. -/
@@ -226,7 +197,7 @@ theorem AEMeasurable.aemeasurable_lintegral_mul_comp_inv_mul {h f : G → ℝ≥
 
 /-- **Tonelli's theorem** (Fubini swap) for the nonnegative extended-real convolution integrand
 `(x, y) ↦ h y * f (y⁻¹ * x)` on a σ-compact locally compact group. -/
-theorem AEMeasurable.lintegral_mul_comp_inv_mul_swap {h f : G → ℝ≥0∞}
+theorem AEMeasurable.lintegral_lintegral_mul_comp_inv_mul_swap {h f : G → ℝ≥0∞}
     (hh : AEMeasurable h μ) (hf : AEMeasurable f μ) :
     ∫⁻ x, ∫⁻ y, h y * f (y⁻¹ * x) ∂μ ∂μ = ∫⁻ y, ∫⁻ x, h y * f (y⁻¹ * x) ∂μ ∂μ :=
   lintegral_lintegral_swap (hh.comp_snd.mul hf.comp_inv_mul_prod)
@@ -237,7 +208,7 @@ integrals. -/
 theorem AEMeasurable.lintegral_lintegral_mul_comp_inv_mul {h f : G → ℝ≥0∞}
     (hh : AEMeasurable h μ) (hf : AEMeasurable f μ) :
     ∫⁻ x, ∫⁻ y, h y * f (y⁻¹ * x) ∂μ ∂μ = (∫⁻ y, h y ∂μ) * ∫⁻ x, f x ∂μ := by
-  rw [hh.lintegral_mul_comp_inv_mul_swap hf]
+  rw [hh.lintegral_lintegral_mul_comp_inv_mul_swap hf]
   have hinner (y : G) : ∫⁻ x, h y * f (y⁻¹ * x) ∂μ = h y * ∫⁻ x, f x ∂μ := by
     rw [lintegral_mul_left_eq_self (fun x ↦ h y * f x) y⁻¹, lintegral_const_mul'' _ hf]
   simp_rw [hinner]
@@ -256,6 +227,28 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 section BoundedSMul
 
 variable {𝕜 E : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+omit [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsMulLeftInvariant]
+  [μ.InnerRegularCompactLTTop] in
+/-- A uniform bound `∫ x, ‖f (y⁻¹ * x)‖ ∂ν ≤ C` across left translates gives product integrability
+of the convolution integrand `(x, y) ↦ h y • f (y⁻¹ * x)` on `ν.prod μ`. -/
+private theorem integrable_smul_comp_inv_mul_of_norm_integral_le {ν : Measure G} [SFinite ν]
+    {h : G → 𝕜} (hh : Integrable h μ) {f : G → E}
+    (hmeas : AEStronglyMeasurable (Function.uncurry fun x y ↦ h y • f (y⁻¹ * x)) (ν.prod μ))
+    (hint : ∀ y, Integrable (fun x ↦ f (y⁻¹ * x)) ν) {C : ℝ}
+    (hbound : ∀ y, ∫ x, ‖f (y⁻¹ * x)‖ ∂ν ≤ C) :
+    Integrable (Function.uncurry fun x y ↦ h y • f (y⁻¹ * x)) (ν.prod μ) := by
+  refine (integrable_prod_iff' hmeas).2 ⟨.of_forall fun y ↦ (hint y).smul (h y), ?_⟩
+  refine (hh.norm.mul_const C).mono' hmeas.prod_swap.norm.integral_prod_right'
+    (.of_forall fun y ↦ ?_)
+  simp only [Function.uncurry_apply_pair]
+  rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
+  calc ∫ x, ‖h y • f (y⁻¹ * x)‖ ∂ν
+      ≤ ∫ x, ‖h y‖ * ‖f (y⁻¹ * x)‖ ∂ν :=
+        integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
+          ((hint y).norm.const_mul _) (.of_forall fun _ ↦ norm_smul_le _ _)
+    _ = ‖h y‖ * ∫ x, ‖f (y⁻¹ * x)‖ ∂ν := integral_const_mul _ _
+    _ ≤ ‖h y‖ * C := mul_le_mul_of_nonneg_left (hbound y) (norm_nonneg _)
 
 /-- On any finite-measure set `s ⊆ G`, the convolution integrand `(x, y) ↦ h y • f (y⁻¹ * x)` of an
 integrable kernel `h` and an `Lᵖ` function `f` (`1 ≤ p ≤ ∞`) is integrable with respect to
@@ -287,21 +280,10 @@ theorem Integrable.smul_comp_inv_mul_prod_restrict {p : ℝ≥0∞} [Fact (1 ≤
       _ ≤ ‖R‖ * ‖hfn.toLp fn‖ := by
           rw [← LinearIsometryEquiv.norm_map (Lp.leftTranslation μ p ℝ y) (hfn.toLp fn)]
           exact R.le_opNorm _
-  refine (integrable_prod_iff' hmeas).2 ⟨.of_forall fun y ↦ ?_, ?_⟩
-  · exact (((hf.comp_measurePreserving (measurePreserving_mul_left μ y⁻¹)).restrict s).integrable
-      Fact.out).smul (h y)
-  · refine (hh.norm.mul_const (‖R‖ * ‖hfn.toLp fn‖)).mono' hmeas.prod_swap.norm.integral_prod_right'
-      (.of_forall fun y ↦ ?_)
-    simp only [Function.uncurry_apply_pair]
-    rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
-    calc ∫ x in s, ‖h y • f (y⁻¹ * x)‖ ∂μ
-        ≤ ∫ x in s, ‖h y‖ * ‖f (y⁻¹ * x)‖ ∂μ :=
-          integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
-            ((((hf.comp_measurePreserving
-              (measurePreserving_mul_left μ y⁻¹)).restrict s).integrable Fact.out).norm.const_mul _)
-            (.of_forall fun _ ↦ norm_smul_le _ _)
-      _ = ‖h y‖ * ∫ x in s, ‖f (y⁻¹ * x)‖ ∂μ := integral_const_mul _ _
-      _ ≤ ‖h y‖ * (‖R‖ * ‖hfn.toLp fn‖) := mul_le_mul_of_nonneg_left (hbound y) (norm_nonneg _)
+  exact integrable_smul_comp_inv_mul_of_norm_integral_le hh hmeas
+    (fun y ↦ ((hf.comp_measurePreserving (measurePreserving_mul_left μ y⁻¹)).restrict s).integrable
+      Fact.out)
+    hbound
 
 /-- For an integrable kernel `h` and an `Lᵖ` function `f` (`1 ≤ p ≤ ∞`) on a σ-compact locally
 compact group, `y ↦ h y • f (y⁻¹ * x)` is `μ`-integrable for `μ`-almost every `x`. -/
@@ -324,20 +306,11 @@ theorem MemLp.ae_integrable_smul_comp_inv_mul {p : ℝ≥0∞} [Fact (1 ≤ p)] 
 compact group. -/
 theorem Integrable.smul_comp_inv_mul_prod {h : G → 𝕜} (hh : Integrable h μ) {f : G → E}
     (hf : Integrable f μ) :
-    Integrable (Function.uncurry fun x y ↦ h y • f (y⁻¹ * x)) (μ.prod μ) := by
-  have hmeas : AEStronglyMeasurable (Function.uncurry fun x y ↦ h y • f (y⁻¹ * x)) (μ.prod μ) :=
-    hh.aestronglyMeasurable.smul_comp_inv_mul_prod hf.aestronglyMeasurable
-  refine (integrable_prod_iff' hmeas).2 ⟨.of_forall fun y ↦ (hf.comp_mul_left y⁻¹).smul (h y), ?_⟩
-  refine (hh.norm.mul_const (∫ x, ‖f x‖ ∂μ)).mono' hmeas.prod_swap.norm.integral_prod_right'
-    (.of_forall fun y ↦ ?_)
-  simp only [Function.uncurry_apply_pair]
-  rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
-  calc ∫ x, ‖h y • f (y⁻¹ * x)‖ ∂μ
-      ≤ ∫ x, ‖h y‖ * ‖f (y⁻¹ * x)‖ ∂μ :=
-        integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
-          ((hf.comp_mul_left y⁻¹).norm.const_mul _) (.of_forall fun _ ↦ norm_smul_le _ _)
-    _ = ‖h y‖ * ∫ x, ‖f (y⁻¹ * x)‖ ∂μ := integral_const_mul _ _
-    _ = ‖h y‖ * ∫ x, ‖f x‖ ∂μ := by rw [integral_mul_left_eq_self (fun x ↦ ‖f x‖) y⁻¹]
+    Integrable (Function.uncurry fun x y ↦ h y • f (y⁻¹ * x)) (μ.prod μ) :=
+  integrable_smul_comp_inv_mul_of_norm_integral_le hh
+    (hh.aestronglyMeasurable.smul_comp_inv_mul_prod hf.aestronglyMeasurable)
+    (fun y ↦ hf.comp_mul_left y⁻¹)
+    fun y ↦ (integral_mul_left_eq_self (fun x ↦ ‖f x‖) y⁻¹).le
 
 /-- Pointwise convolution of two integrable functions on a σ-compact locally compact group is
 integrable. -/
@@ -346,27 +319,7 @@ theorem Integrable.integrable_integral_smul_comp_inv_mul [NormedSpace ℝ E] {h 
     Integrable (fun x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ) μ :=
   (hh.smul_comp_inv_mul_prod hf).integral_prod_left
 
-/-- **Fubini's theorem** (order-swap form) for the Bochner convolution integrand
-`(x, y) ↦ h y • f (y⁻¹ * x)` on a σ-compact locally compact group. -/
-theorem Integrable.integral_smul_comp_inv_mul_swap [NormedSpace ℝ E] {h : G → 𝕜}
-    (hh : Integrable h μ) {f : G → E} (hf : Integrable f μ) :
-    ∫ x, ∫ y, h y • f (y⁻¹ * x) ∂μ ∂μ = ∫ y, ∫ x, h y • f (y⁻¹ * x) ∂μ ∂μ :=
-  integral_integral_swap (hh.smul_comp_inv_mul_prod hf)
-
 end BoundedSMul
-
-/-- **Fubini's theorem for pointwise group convolution**: for integrable `h` and `f` on a
-σ-compact locally compact group,
-`∫ x, ∫ y, h y • f (y⁻¹ * x) ∂μ ∂μ = (∫ y, h y ∂μ) • ∫ x, f x ∂μ`. -/
-theorem Integrable.integral_integral_smul_comp_inv_mul {𝕜 E : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E]
-    [CompleteSpace E] {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : Integrable f μ) :
-    ∫ x, ∫ y, h y • f (y⁻¹ * x) ∂μ ∂μ = (∫ y, h y ∂μ) • ∫ x, f x ∂μ := by
-  rw [hh.integral_smul_comp_inv_mul_swap hf]
-  have hinner (y : G) : ∫ x, h y • f (y⁻¹ * x) ∂μ = h y • ∫ x, f x ∂μ := by
-    rw [integral_mul_left_eq_self (fun x ↦ h y • f x) y⁻¹, hf.integral_smul]
-  simp_rw [hinner]
-  exact integral_smul_const _ _
 
 end BochnerConvolution
 
@@ -421,23 +374,6 @@ theorem coeFn_convolutionL_toL1_toLp [CompleteSpace E] {h : G → 𝕜}
     _ = ∫ x in s, ∫ y, h y • f (y⁻¹ * x) ∂μ ∂μ :=
         (integral_integral_swap (hh.smul_comp_inv_mul_prod_restrict hf hμs)).symm
 
-/-- **Pointwise formula for `convolutionL_toL1`**: for `1 ≤ p < ∞`, an integrable kernel
-`h : G → 𝕜`, and `f ∈ Lᵖ(G, μ; E)`, `convolutionL μ p hp (hh.toL1 h) f` agrees `μ`-almost
-everywhere with `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ`. -/
-theorem coeFn_convolutionL_toL1 [CompleteSpace E] {h : G → 𝕜} (hh : Integrable h μ)
-    (f : Lp E p μ) :
-    convolutionL μ p hp (hh.toL1 h) f =ᵐ[μ] fun x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ := by
-  simpa only [Lp.toLp_coeFn f (Lp.memLp f)] using
-    coeFn_convolutionL_toL1_toLp (hp := hp) hh (Lp.memLp f)
-
-/-- **Pointwise formula for `convolutionL`**: for `1 ≤ p < ∞`, `h ∈ L¹(G, μ; 𝕜)`, and
-`f ∈ Lᵖ(G, μ; E)` on a σ-compact locally compact group, `convolutionL μ p hp h f` agrees `μ`-almost
-everywhere with `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ`. -/
-theorem coeFn_convolutionL [CompleteSpace E] (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
-    convolutionL μ p hp h f =ᵐ[μ] fun x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ := by
-  simpa only [Integrable.toL1_coeFn h (L1.integrable_coeFn h)] using
-    coeFn_convolutionL_toL1 (hp := hp) (L1.integrable_coeFn h) f
-
 /-- **Pointwise formula for `convolutionL` with arbitrary `μ`-a.e. representatives**: if
 `h =ᵐ[μ] h₀` and `f =ᵐ[μ] f₀`, then `convolutionL μ p hp h f` agrees `μ`-almost everywhere with
 `x ↦ ∫ y, h₀ y • f₀ (y⁻¹ * x) ∂μ`. -/
@@ -450,9 +386,35 @@ theorem coeFn_convolutionL_of_ae_eq [CompleteSpace E] (h : Lp 𝕜 1 μ) (f : Lp
   have f_eq : hf₀.toLp f₀ = f := Lp.ext (hf₀.coeFn_toLp.trans hf.symm)
   simpa only [h_eq, f_eq] using coeFn_convolutionL_toL1_toLp (hp := hp) hh₀ hf₀
 
+/-- **Pointwise formula for `convolutionL`**: for `1 ≤ p < ∞`, `h ∈ L¹(G, μ; 𝕜)`, and
+`f ∈ Lᵖ(G, μ; E)` on a σ-compact locally compact group, `convolutionL μ p hp h f` agrees `μ`-almost
+everywhere with `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ`. -/
+theorem coeFn_convolutionL [CompleteSpace E] (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
+    convolutionL μ p hp h f =ᵐ[μ] fun x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ :=
+  coeFn_convolutionL_of_ae_eq h f .rfl .rfl
+
 end PointwiseConvolution
 
 end Lp
+
+section PointwiseIntegral
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [SigmaCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  {μ : Measure G} [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+
+/-- **Fubini's theorem for pointwise group convolution**: for integrable `h` and `f` on a
+σ-compact locally compact group,
+`∫ x, ∫ y, h y • f (y⁻¹ * x) ∂μ ∂μ = (∫ y, h y ∂μ) • ∫ x, f x ∂μ`. -/
+theorem Integrable.integral_integral_smul_comp_inv_mul {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+    [CompleteSpace E] {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : Integrable f μ) :
+    ∫ x, ∫ y, h y • f (y⁻¹ * x) ∂μ ∂μ = (∫ y, h y ∂μ) • ∫ x, f x ∂μ := by
+  have hf₁ : MemLp f 1 μ := memLp_one_iff_integrable.mpr hf
+  rw [← integral_congr_ae (Lp.coeFn_convolutionL_toL1_toLp (hp := ENNReal.one_ne_top) hh hf₁),
+    Lp.integral_convolutionL, integral_congr_ae hh.coeFn_toL1, integral_congr_ae hf₁.coeFn_toLp]
+
+end PointwiseIntegral
 
 end MeasureTheory
 

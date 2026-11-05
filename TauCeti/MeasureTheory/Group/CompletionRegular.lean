@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Group.Measure
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Metrizable
 public import TauCeti.Topology.Algebra.Group.KakutaniKodaira
-import Mathlib.MeasureTheory.Group.ModularCharacter
 import Mathlib.Topology.UrysohnsLemma
+import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
@@ -49,14 +49,14 @@ zero; inner regularity and σ-finiteness then yield `μ (π ⁻¹' ((π '' U) \ 
 * `TauCeti.exists_compact_normal_subgroup_forall_quotient_borel_sandwich`: simultaneous quotient
   Borel sandwiching of a countable family of `NullMeasurableSet`s.
 * `MeasureTheory.NullMeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich` and
-  `MeasureTheory.MeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich`: single-set
-  quotient Borel sandwiching.
+  `MeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich`: single-set quotient Borel
+  sandwiching.
 * `MeasureTheory.NullMeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich` and
-  `MeasureTheory.MeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich`: Haar completion
-  regularity in sandwich form.
+  `MeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich`: Haar completion regularity in
+  sandwich form.
 * `MeasureTheory.NullMeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null` and
-  `MeasureTheory.MeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null`: Haar
-  completion regularity in symmetric-difference form (Fremlin §443M).
+  `MeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null`: Haar completion
+  regularity in symmetric-difference form (Fremlin §443M).
 * `MeasureTheory.AEStronglyMeasurable.exists_compact_normal_subgroup_quotient_eq_off_null`:
   factorization of `AEStronglyMeasurable` functions outside a pullback Haar-null set through a
   metrizable second-countable quotient `G ⧸ K`.
@@ -82,14 +82,14 @@ section BorelHelpers
 
 /-- Construct a simple function on an abstract measurable space `Q` from a finite list of values
 `l : List β` and corresponding measurable sets `A : β → Set Q`. -/
-private noncomputable def liftSimpleList {Q β : Type*} [MeasurableSpace Q] (A : β → Set Q)
+private noncomputable def liftSimpleList {Q β : Type*} [mQ : MeasurableSpace Q] (A : β → Set Q)
     (hA : ∀ b, MeasurableSet (A b)) (b₀ : β) : List β → SimpleFunc Q β
   | [] => SimpleFunc.const Q b₀
   | b :: bs => SimpleFunc.piecewise (A b) (hA b) (SimpleFunc.const Q b) (liftSimpleList A hA b₀ bs)
 
-private theorem liftSimpleList_apply_of_unique {Q β : Type*} [MeasurableSpace Q] {A : β → Set Q}
-    (hA : ∀ b, MeasurableSet (A b)) (b₀ : β) {l : List β} {q : Q} {v : β} (hv : v ∈ l)
-    (hqv : q ∈ A v) (huniq : ∀ b ∈ l, q ∈ A b → b = v) :
+private theorem liftSimpleList_apply_of_unique {Q β : Type*} [mQ : MeasurableSpace Q]
+    {A : β → Set Q} (hA : ∀ b, MeasurableSet (A b)) (b₀ : β) {l : List β} {q : Q} {v : β}
+    (hv : v ∈ l) (hqv : q ∈ A v) (huniq : ∀ b ∈ l, q ∈ A b → b = v) :
     liftSimpleList A hA b₀ l q = v := by
   induction l with
   | nil => cases hv
@@ -105,10 +105,10 @@ private theorem liftSimpleList_apply_of_unique {Q β : Type*} [MeasurableSpace Q
 /-- Given a sequence of sets `A : ℕ → β → Set Q` on an abstract measurable space `(Q, mQ)` and a
 bad set `Z' : Set Q`, assemble the pointwise limit of lifted simple functions when the lifted
 sequence converges outside `Z'`. -/
-private theorem exists_stronglyMeasurable_of_quotient_fibers {Q G β : Type*} [MeasurableSpace Q]
-    [TopologicalSpace β] [MetrizableSpace β] (π : G → Q) (hπ : Function.Surjective π) (b₀ : β)
-    (vals : ℕ → List β) (A : ℕ → β → Set Q) (hA : ∀ n b, MeasurableSet (A n b))
-    (Z' : Set Q) (hZ' : MeasurableSet Z') (f₀ : G → β)
+private theorem exists_stronglyMeasurable_of_quotient_fibers {Q G β : Type*}
+    [mQ : MeasurableSpace Q] [TopologicalSpace β] [MetrizableSpace β] (π : G → Q)
+    (hπ : Function.Surjective π) (b₀ : β) (vals : ℕ → List β) (A : ℕ → β → Set Q)
+    (hA : ∀ n b, MeasurableSet (A n b)) (Z' : Set Q) (hZ' : MeasurableSet Z') (f₀ : G → β)
     (hconv : ∀ x, x ∉ π ⁻¹' Z' → Tendsto (fun n ↦
       liftSimpleList (A n) (hA n) b₀ (vals n) (π x)) atTop (𝓝 (f₀ x))) :
     ∃ g : Q → β, StronglyMeasurable g ∧ ∀ x, x ∉ π ⁻¹' Z' → g (π x) = f₀ x := by
@@ -144,26 +144,6 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [SigmaCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   {μ : Measure G} [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
 
-/-- Right multiplication preserves `μ`-null sets on a σ-compact locally compact group, without
-requiring `[μ.IsOpenPosMeasure]` or `[μ.Regular]`: either `μ = 0` or `μ` is an inner-regular Haar
-measure. -/
-private theorem measure_mul_right_null_of_sigmaCompact (g : G) {s : Set G} :
-    μ ((· * g) ⁻¹' s) = 0 ↔ μ s = 0 := by
-  rcases eq_or_ne μ 0 with rfl | hμ0
-  · simp
-  · have ⟨n, hn⟩ : ∃ n, μ (compactCovering G n) ≠ 0 := by
-      by_contra! h
-      exact hμ0 (Measure.measure_univ_eq_zero.mp
-        (iUnion_compactCovering G ▸ measure_iUnion_null h))
-    have : μ.IsOpenPosMeasure :=
-      isOpenPosMeasure_of_mulLeftInvariant_of_compact _ (isCompact_compactCovering G n) hn
-    have : μ.IsHaarMeasure := {}
-    have hmap := (MeasurableEquiv.mulRight g).map_apply (μ := μ) s
-    rw [MeasurableEquiv.coe_mulRight, Measure.map_right_mul_eq_modularCharacterFun_smul μ g,
-      smul_apply, Measure.nnreal_smul_coe_apply] at hmap
-    have hpos : Measure.modularCharacterFun g ≠ 0 := (Measure.modularCharacterFun_pos g).ne'
-    simp [← hmap, hpos]
-
 /-- **Right-`K` saturation of null open remainders**: if `K` is a normal subgroup of `G`,
 `U ⊆ G` is open, `A' ⊆ G ⧸ K` is Borel, and `μ (U \ π ⁻¹' A') = 0`, then the saturated remainder
 `π ⁻¹' ((π '' U) \ A')` also has `μ`-measure zero. -/
@@ -183,7 +163,7 @@ private theorem measure_preimage_image_diff_eq_zero {K : Subgroup G} [K.Normal]
   -- Every `K`-translate of `U` meets `S` inside a `K`-translate of the null set `U \ π ⁻¹' A'`.
   have htrans {k : G} (hk : k ∈ K) : μ (((· * k⁻¹) ⁻¹' U) ∩ S) = 0 := by
     refine measure_mono_null (fun x ⟨hxU, hxS⟩ ↦ ?_)
-      ((measure_mul_right_null_of_sigmaCompact k⁻¹).mpr hnull)
+      ((μ.measure_mul_right_null_of_innerRegular k⁻¹).mpr hnull)
     refine ⟨hxU, fun hxA' ↦ hxS.2 ?_⟩
     have hπk : (QuotientGroup.mk k : G ⧸ K) = 1 := (QuotientGroup.eq_one_iff k).mpr hk
     have hπeq : π (x * k⁻¹) = π x := by
@@ -234,10 +214,9 @@ private def IsQuotientSandwiched (μ : Measure G) (E : Set G) : Prop :=
 /-- Every open set of finite `μ`-measure satisfies `IsQuotientSandwiched μ`. -/
 private theorem isQuotientSandwiched_of_isOpen_lt_top {U : Set G} (hU : IsOpen U)
     (hμU : μ U < ∞) : IsQuotientSandwiched μ U := by
-  have happrox (j : ℕ) : ∃ C, C ⊆ U ∧ IsCompact C ∧ μ (U \ C) < 1 / ((j : ℝ≥0∞) + 1) := by
-    have hε : (1 / ((j : ℝ≥0∞) + 1)) ≠ 0 :=
-      ENNReal.div_ne_zero.mpr ⟨one_ne_zero, by simp⟩
-    obtain ⟨C, hCU, hCco, _, hμC⟩ := hU.measurableSet.exists_isCompact_isClosed_sdiff_lt hμU.ne hε
+  have happrox (j : ℕ) : ∃ C, C ⊆ U ∧ IsCompact C ∧ μ (U \ C) < (j : ℝ≥0∞)⁻¹ := by
+    obtain ⟨C, hCU, hCco, _, hμC⟩ := hU.measurableSet.exists_isCompact_isClosed_sdiff_lt hμU.ne
+      (ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top j))
     exact ⟨C, hCU, hCco, hμC⟩
   choose C hCU hC hμC using happrox
   have hury (j : ℕ) : ∃ f : C(G, ℝ), EqOn f 0 (C j) ∧ EqOn f 1 Uᶜ := by
@@ -269,18 +248,7 @@ private theorem isQuotientSandwiched_of_isOpen_lt_top {U : Set G} (hU : IsOpen U
     obtain ⟨j, hj⟩ := ENNReal.exists_inv_nat_lt hε.ne'
     have hsub : U \ π ⁻¹' A' ⊆ U \ C j := sdiff_subset_sdiff_right fun x hxC ↦
       mem_iUnion.mpr ⟨j, ((congr_fun (hgf j) x).trans (hf0 j hxC)).trans_lt zero_lt_one⟩
-    have hj' : (1 : ℝ≥0∞) / ((j : ℝ≥0∞) + 1) ≤ ((j + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
-      simp [one_div]
-    have hlt : ((j + 1 : ℕ) : ℝ≥0∞)⁻¹ ≤ ε := by
-      have h1 : (((j + 1 : ℕ) : ℝ≥0∞))⁻¹ ≤ (j : ℝ≥0∞)⁻¹ := by
-        rcases j with _ | j
-        · exact False.elim (by simp at hj)
-        · gcongr; omega
-      exact h1.trans hj.le
-    calc μ (U \ π ⁻¹' A') ≤ μ (U \ C j) := measure_mono hsub
-      _ ≤ 1 / ((j : ℝ≥0∞) + 1) := (hμC j).le
-      _ ≤ ε := hj'.trans hlt
-      _ = 0 + ε := (zero_add ε).symm
+    simpa only [zero_add] using (measure_mono hsub).trans ((hμC j).le.trans hj.le)
   have hAB' : A' ⊆ B' := by
     intro q hq
     obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
@@ -483,7 +451,7 @@ theorem NullMeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich
     hpreA' (), hpreB' (), hnull ()⟩
 
 /-- **Quotient Borel sandwiching** for a Borel set `E` on a σ-compact locally compact group `G`. -/
-theorem MeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich {E : Set G}
+theorem _root_.MeasurableSet.exists_compact_normal_subgroup_quotient_borel_sandwich {E : Set G}
     (hE : MeasurableSet E) :
     ∃ (K : Subgroup G) (_ : K.Normal), IsCompact (K : Set G) ∧ IsClosed (K : Set G) ∧
       MetrizableSpace (G ⧸ K) ∧ SecondCountableTopology (G ⧸ K) ∧
@@ -510,7 +478,7 @@ theorem NullMeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich {E : Set 
     hle _ ⟨A', hA', rfl⟩, hle _ ⟨B', hB', rfl⟩, hpreA', hpreB', hnull⟩
 
 /-- **Haar completion regularity** (sandwich form) for Borel sets. -/
-theorem MeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich {E : Set G}
+theorem _root_.MeasurableSet.exists_mem_iSup_comap_continuousMap_sandwich {E : Set G}
     (hE : MeasurableSet E) :
     ∃ A B : Set G,
       MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] A ∧
@@ -534,7 +502,7 @@ theorem NullMeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_nu
   · exact False.elim (hxE (hAE hxA))
 
 /-- **Haar completion regularity** (Fremlin §443M) for Borel sets. -/
-theorem MeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null {E : Set G}
+theorem _root_.MeasurableSet.exists_mem_iSup_comap_continuousMap_symmDiff_subset_null {E : Set G}
     (hE : MeasurableSet E) :
     ∃ A N : Set G,
       MeasurableSet[⨆ φ : C(G, ℝ), MeasurableSpace.comap φ inferInstance] A ∧
@@ -603,15 +571,15 @@ theorem AEStronglyMeasurable.exists_compact_normal_subgroup_quotient_eq_off_null
     split_ifs with hb
     · exact hA' (Sum.inr ⟨n, ⟨b, hb⟩⟩)
     · exact @MeasurableSet.empty _ (borel (G ⧸ K))
-  obtain ⟨g, hg_meas, hg_eq⟩ := @TauCeti.exists_stronglyMeasurable_of_quotient_fibers
-    (G ⧸ K) G β (borel (G ⧸ K)) _ _ π QuotientGroup.mk_surjective (f 1)
+  obtain ⟨g, hg_meas, hg_eq⟩ := TauCeti.exists_stronglyMeasurable_of_quotient_fibers
+    (mQ := borel (G ⧸ K)) π QuotientGroup.mk_surjective (f 1)
     (fun n ↦ (s n).range.toList) Aq hAq Z' hZ'_meas f₀ fun x hxZ' ↦ by
       have hval (n : ℕ) :
-          @TauCeti.liftSimpleList (G ⧸ K) β (borel (G ⧸ K)) (Aq n) (hAq n) (f 1)
+          TauCeti.liftSimpleList (mQ := borel (G ⧸ K)) (Aq n) (hAq n) (f 1)
             (s n).range.toList (π x) = s n x := by
         have hmem : s n x ∈ (s n).range := (s n).mem_range_self x
-        refine @TauCeti.liftSimpleList_apply_of_unique (G ⧸ K) β (borel (G ⧸ K)) (Aq n) (hAq n)
-          (f 1) (s n).range.toList (π x) (s n x) (Finset.mem_toList.mpr hmem) ?_ ?_
+        refine TauCeti.liftSimpleList_apply_of_unique (mQ := borel (G ⧸ K)) (hAq n)
+          (f 1) (Finset.mem_toList.mpr hmem) ?_ ?_
         · simp only [Aq, hmem, dite_true]
           have hxB : π x ∈ B' (Sum.inr ⟨n, ⟨s n x, hmem⟩⟩) :=
             hpreB' (Sum.inr ⟨n, ⟨s n x, hmem⟩⟩) rfl

@@ -10,6 +10,9 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.Topology.Algebra.Group.Metrizable
 import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Topology.UniformSpace.Separation
+import TauCeti.Topology.Algebra.Group.Basic
+import TauCeti.Topology.Algebra.Group.Pointwise
+import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # The Kakutani–Kodaira theorem for σ-compact locally compact groups
@@ -31,10 +34,6 @@ From this basic existence result we deduce two consequences:
 
 ## Main results
 
-* `IsCompact.exists_nhds_one_conj_subset` / `IsCompact.exists_nhds_zero_conj_subset`:
-  equicontinuity of conjugation over a compact set at the identity.
-* `QuotientGroup.instSigmaCompactSpace` / `QuotientAddGroup.instSigmaCompactSpace`:
-  quotients of σ-compact topological groups are σ-compact.
 * `TauCeti.exists_compact_normal_subgroup_quotient_metrizable` /
   `TauCeti.exists_compact_normal_addSubgroup_quotient_metrizable`: the Kakutani–Kodaira theorem.
 * `TauCeti.exists_compact_normal_subgroup_le` /
@@ -58,55 +57,12 @@ public section
 open Filter Set TopologicalSpace
 open scoped Pointwise Topology Uniformity
 
-/-- Over a compact subset `C` of a topological group, conjugation sends a sufficiently small
-identity neighbourhood into any prescribed identity neighbourhood. -/
-@[to_additive /-- Over a compact subset `C` of a topological additive group, conjugation sends a
-sufficiently small neighbourhood of zero into any prescribed neighbourhood of zero. -/]
-theorem IsCompact.exists_nhds_one_conj_subset {G : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] {C U : Set G} (hC : IsCompact C) (hU : U ∈ 𝓝 (1 : G)) :
-    ∃ V ∈ 𝓝 (1 : G), ∀ x ∈ C, ∀ y ∈ V, x * y * x⁻¹ ∈ U := by
-  let φ : G × G → G := fun p ↦ p.1 * p.2 * p.1⁻¹
-  have hφ : Continuous φ :=
-    (continuous_fst.mul continuous_snd).mul continuous_fst.inv
-  have hsub : C ×ˢ ({1} : Set G) ⊆ φ ⁻¹' interior U := by
-    rintro ⟨x, y⟩ ⟨_, hy⟩
-    simp only [mem_singleton_iff] at hy
-    simpa [φ, hy] using mem_interior_iff_mem_nhds.mpr hU
-  obtain ⟨A, B, _, hBo, hCA, h1B, hAB⟩ :=
-    generalized_tube_lemma hC isCompact_singleton (isOpen_interior.preimage hφ) hsub
-  refine ⟨B, hBo.mem_nhds (singleton_subset_iff.mp h1B), fun x hx y hy ↦ ?_⟩
-  exact interior_subset (mem_preimage.mp (hAB (mk_mem_prod (hCA hx) hy)))
-
-/-- Any quotient of a σ-compact group by a subgroup is σ-compact. -/
-@[to_additive /-- Any quotient of a σ-compact additive group by an additive subgroup is
-σ-compact. -/]
-instance QuotientGroup.instSigmaCompactSpace {G : Type*} [Group G] [TopologicalSpace G]
-    [SigmaCompactSpace G] (N : Subgroup G) : SigmaCompactSpace (G ⧸ N) := by
-  rw [← isSigmaCompact_univ_iff, ← (QuotientGroup.mk_surjective (s := N)).range_eq]
-  exact isSigmaCompact_range QuotientGroup.continuous_mk
-
 namespace TauCeti
 
 section KakutaniKodaira
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [WeaklyLocallyCompactSpace G]
-
-/-- Every identity neighbourhood in a weakly locally compact topological group contains a closed,
-compact, symmetric identity neighbourhood. -/
-@[to_additive]
-private theorem exists_isClosed_isCompact_symm_mem_nhds_one {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
-    ∃ V ∈ 𝓝 (1 : G), IsClosed V ∧ IsCompact V ∧ V⁻¹ = V ∧ V ⊆ U := by
-  obtain ⟨K₀, hK₀_comp, hK₀_mem⟩ := exists_compact_mem_nhds (1 : G)
-  obtain ⟨F, ⟨hF_mem, hF_closed⟩, hF_sub⟩ :=
-    (closed_nhds_basis (1 : G)).mem_iff.mp (inter_mem hU hK₀_mem)
-  have hF_comp : IsCompact F :=
-    hK₀_comp.of_isClosed_subset hF_closed (hF_sub.trans inter_subset_right)
-  refine ⟨F ∩ F⁻¹, inter_mem hF_mem (inv_mem_nhds_one G hF_mem), hF_closed.inter hF_closed.inv,
-    hF_comp.inter_right hF_closed.inv, ?_, inter_subset_left.trans (hF_sub.trans inter_subset_left)⟩
-  simp [inter_comm]
-
-variable [SigmaCompactSpace G]
+  [WeaklyLocallyCompactSpace G] [SigmaCompactSpace G]
 
 /-- One inductive step of the Kakutani–Kodaira construction: inside `U` and `interior V`, find a
 closed compact symmetric identity neighbourhood `W` with `W * W ⊆ interior V` and conjugate-stable
@@ -122,7 +78,8 @@ private theorem exists_kakutaniKodaira_step_one {V U : Set G} (hV : V ∈ 𝓝 (
     (finite_le_nat n).isCompact_biUnion fun k _ ↦ isCompact_compactCovering G k
   obtain ⟨W₂, hW₂_mem, hW₂_conj⟩ := hC.exists_nhds_one_conj_subset hintV
   obtain ⟨W, hW_mem, hW_cl, hW_cp, hW_symm, hW_sub⟩ :=
-    exists_isClosed_isCompact_symm_mem_nhds_one (inter_mem hU (inter_mem hW₁_mem hW₂_mem))
+    exists_mem_nhds_one_isClosed_isCompact_inv_eq_subset
+      (inter_mem hU (inter_mem hW₁_mem hW₂_mem))
   have hWU : W ⊆ U := hW_sub.trans inter_subset_left
   have hWW₁ : W ⊆ W₁ := hW_sub.trans (inter_subset_right.trans inter_subset_left)
   have hWW₂ : W ⊆ W₂ := hW_sub.trans (inter_subset_right.trans inter_subset_right)
@@ -137,24 +94,26 @@ closed compact normal subgroup `K = ⋂ n, V n` together with its antitone basis
 private theorem exists_compact_normal_subgroup_nat (U : ℕ → Set G) (hU : ∀ n, U n ∈ 𝓝 (1 : G)) :
     ∃ (K : Subgroup G) (_ : K.Normal), IsCompact (K : Set G) ∧ IsClosed (K : Set G) ∧
       (K : Set G) ⊆ ⋂ n, U n ∧ (𝓝 (1 : G ⧸ K)).IsCountablyGenerated := by
-  -- Build `V : ℕ → Set G` recursively using `exists_isClosed_isCompact_symm_mem_nhds_one` at `0`
-  -- and `exists_kakutaniKodaira_step_one` at `n + 1`.
+  -- Build `V : ℕ → Set G` recursively from `V₀ ⊆ U 0` and the step function `W`.
+  obtain ⟨V₀, hV₀_mem, hV₀_cl, hV₀_cp, hV₀_symm, hV₀_sub⟩ :=
+    exists_mem_nhds_one_isClosed_isCompact_inv_eq_subset (hU 0)
+  choose W hW_mem hW_cl _ hW_symm hW_sub hW_mul hW_conj using
+    fun (S : {S : Set G // S ∈ 𝓝 (1 : G)}) (n : ℕ) ↦
+      exists_kakutaniKodaira_step_one S.2 (hU (n + 1)) n
   let V : ℕ → {S : Set G // S ∈ 𝓝 (1 : G)} := fun n ↦
-    Nat.recOn n
-      ⟨(exists_isClosed_isCompact_symm_mem_nhds_one (hU 0)).choose,
-        (exists_isClosed_isCompact_symm_mem_nhds_one (hU 0)).choose_spec.1⟩
-      fun m ih ↦
-        ⟨(exists_kakutaniKodaira_step_one ih.2 (hU (m + 1)) m).choose,
-          (exists_kakutaniKodaira_step_one ih.2 (hU (m + 1)) m).choose_spec.1⟩
-  have hV0 := (exists_isClosed_isCompact_symm_mem_nhds_one (hU 0)).choose_spec.2
-  have hVstep (n : ℕ) := (exists_kakutaniKodaira_step_one (V n).2 (hU (n + 1)) n).choose_spec.2
-  have hV_cl : ∀ n, IsClosed (V n).1 := Nat.rec hV0.1 fun n _ ↦ (hVstep n).1
-  have hV_symm : ∀ n, (V n).1⁻¹ = (V n).1 := Nat.rec hV0.2.2.1 fun n _ ↦ (hVstep n).2.2.1
-  have hV_sub : ∀ n, (V n).1 ⊆ U n := Nat.rec hV0.2.2.2 fun n _ ↦ (hVstep n).2.2.2.1
-  have hV_mul : ∀ n, (V (n + 1)).1 * (V (n + 1)).1 ⊆ interior (V n).1 :=
-    fun n ↦ (hVstep n).2.2.2.2.1
-  have hV_conj : ∀ n, ∀ k ≤ n, ∀ x ∈ compactCovering G k, ∀ y ∈ (V (n + 1)).1,
-      x * y * x⁻¹ ∈ interior (V n).1 := fun n ↦ (hVstep n).2.2.2.2.2
+    Nat.recOn n ⟨V₀, hV₀_mem⟩ fun m ih ↦ ⟨W ih m, hW_mem ih m⟩
+  have hV_zero : (V 0).1 = V₀ := rfl
+  have hV_succ (n : ℕ) : (V (n + 1)).1 = W (V n) n := rfl
+  have hV_cl : ∀ n, IsClosed (V n).1 := Nat.rec hV₀_cl fun n _ ↦ hW_cl (V n) n
+  have hV_symm : ∀ n, (V n).1⁻¹ = (V n).1 := Nat.rec hV₀_symm fun n _ ↦ hW_symm (V n) n
+  have hV_sub : ∀ n, (V n).1 ⊆ U n := Nat.rec hV₀_sub fun n _ ↦ hW_sub (V n) n
+  have hV_mul (n : ℕ) : (V (n + 1)).1 * (V (n + 1)).1 ⊆ interior (V n).1 := by
+    rw [hV_succ]
+    exact hW_mul (V n) n
+  have hV_conj (n : ℕ) : ∀ k ≤ n, ∀ x ∈ compactCovering G k, ∀ y ∈ (V (n + 1)).1,
+      x * y * x⁻¹ ∈ interior (V n).1 := by
+    rw [hV_succ]
+    exact hW_conj (V n) n
   have hV_anti : Antitone (fun n ↦ (V n).1) := antitone_nat_of_succ_le fun n x hx ↦
     interior_subset <| hV_mul n ⟨x, hx, 1, mem_of_mem_nhds (V (n + 1)).2, mul_one x⟩
   let K : Subgroup G :=
@@ -171,7 +130,7 @@ private theorem exists_compact_normal_subgroup_nat (U : ℕ → Set G) (hU : ∀
       hV_conj (max n k) k (le_max_right n k) g hk y (mem_iInter.mp hy (max n k + 1))⟩
   have hK_cl : IsClosed (K : Set G) := isClosed_iInter hV_cl
   have hK_cp : IsCompact (K : Set G) :=
-    hV0.2.1.of_isClosed_subset hK_cl (iInter_subset (fun n ↦ (V n).1) 0)
+    hV₀_cp.of_isClosed_subset hK_cl (hV_zero ▸ iInter_subset (fun n ↦ (V n).1) 0)
   -- The images of `interior (V n)` form a countable basis of `𝓝 (1 : G ⧸ K)`.
   have hK_cg : (𝓝 (1 : G ⧸ K)).IsCountablyGenerated := by
     let π : G → G ⧸ K := QuotientGroup.mk
@@ -180,18 +139,18 @@ private theorem exists_compact_normal_subgroup_nat (U : ℕ → Set G) (hU : ∀
       refine ⟨fun O ↦ ⟨fun hO ↦ ?_, fun ⟨n, _, hn⟩ ↦ ?_⟩⟩
       · have hO' : IsOpen (π ⁻¹' interior O) :=
           isOpen_interior.preimage QuotientGroup.continuous_mk
-        have hdisj : Disjoint ((V 0).1 ∩ (π ⁻¹' interior O)ᶜ) (⋂ n, (V n).1) := by
+        have hdisj : Disjoint (V₀ ∩ (π ⁻¹' interior O)ᶜ) (⋂ n, (V n).1) := by
           refine disjoint_left.mpr fun x ⟨_, hxO⟩ hxK ↦ hxO ?_
           have hπx : π x = 1 := (QuotientGroup.eq_one_iff x).mpr hxK
           simpa [π, hπx] using mem_interior_iff_mem_nhds.mpr hO
-        obtain ⟨n, hn⟩ := (hV0.2.1.inter_right hO'.isClosed_compl).elim_directed_family_closed
+        obtain ⟨n, hn⟩ := (hV₀_cp.inter_right hO'.isClosed_compl).elim_directed_family_closed
           (fun n ↦ (V n).1) hV_cl hdisj hV_anti.directed_ge
         refine ⟨n, trivial, ?_⟩
         rintro _ ⟨x, hx, rfl⟩
         have hxV : x ∈ (V n).1 := interior_subset hx
         have hxO : x ∈ π ⁻¹' interior O := by
           by_contra hxno
-          exact hn.le_bot ⟨⟨hV_anti (Nat.zero_le n) hxV, hxno⟩, hxV⟩
+          exact hn.le_bot ⟨⟨hV_zero ▸ hV_anti (Nat.zero_le n) hxV, hxno⟩, hxV⟩
         exact interior_subset hxO
       · refine mem_of_superset ?_ hn
         exact (QuotientGroup.isOpenMap_coe (N := K) _ isOpen_interior).mem_nhds
