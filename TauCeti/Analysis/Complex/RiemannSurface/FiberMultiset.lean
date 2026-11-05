@@ -131,7 +131,7 @@ variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 /-- **The fibre multisets of a finite holomorphic map have the degree as cardinality.** -/
 @[simp]
 theorem FiniteHolomorphicMap.card_fiberMultiset [CompactSpace X] [T2Space X] [T2Space Y]
-    [PreconnectedSpace X] [PreconnectedSpace Y] (f : FiniteHolomorphicMap X Y) (y : Y) :
+    [PreconnectedSpace Y] (f : FiniteHolomorphicMap X Y) (y : Y) :
     Multiset.card (fiberMultiset f y) = degree f := by
   rw [RiemannSurface.card_fiberMultiset (f.finite_fiber y),
     fiberMultiplicitySum_eq_sum (f.finite_fiber y), degree_eq_fiber_sum f y]
