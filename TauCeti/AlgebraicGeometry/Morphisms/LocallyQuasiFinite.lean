@@ -88,7 +88,9 @@ theorem Scheme.Hom.QuasiFiniteAt.finite_residueField {X Y : Scheme.{u}} {f : X â
   algebraize [(f.stalkMap x).hom]
   have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
     inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
-  have : Algebra.QuasiFinite (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := hx
+  have : Algebra.QuasiFinite (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+    rw [â† RingHom.quasiFinite_algebraMap, RingHom.algebraMap_toAlgebra]
+    exact hx
   exact RingHom.finite_algebraMap.mpr (inferInstance : Module.Finite
     (IsLocalRing.ResidueField <| Y.presheaf.stalk (f x))
     (IsLocalRing.ResidueField <| X.presheaf.stalk x))
