@@ -46,6 +46,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {k lam : ℝ}
 
+/-- For a Laplace–Beltrami eigenfunction, the derivative of its Laplacian along its
+gradient is minus the eigenvalue times the squared gradient norm. -/
+theorem mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
+    [IsManifold I 2 M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (heig : ∀ x, laplaceBeltrami I f x = -lam * f x) (x : M) :
+    mvfderiv I (laplaceBeltrami I f) x (mgradient I f x) =
+      -lam * ‖mgradient I f x‖ ^ 2 := by
+  have heq : laplaceBeltrami I f = -lam • f := funext heig
+  rw [heq, mvfderiv_const_smul_field, smul_apply, smul_eq_mul,
+    ← inner_mgradient, real_inner_self_eq_norm_sq]
+
 variable [T2Space M] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
@@ -106,16 +118,11 @@ theorem finrank_mul_le_of_laplaceBeltrami_eq_neg_mul
     (hf.of_le (by simp)) (HasCompactSupport.of_compactSpace f) heig
   have hzero := integral_laplaceBeltrami_eq_zero (hN.of_le (by simp))
     (HasCompactSupport.of_compactSpace _)
-  have hderiv (x : M) : mvfderiv I (laplaceBeltrami I f) x (mgradient I f x) =
-      -lam * ‖mgradient I f x‖ ^ 2 := by
-    have heq : laplaceBeltrami I f = -lam • f := funext heig
-    rw [heq, mvfderiv_const_smul_field, smul_apply, smul_eq_mul,
-      ← inner_mgradient, real_inner_self_eq_norm_sq]
   have hpoint (x : M) : 2 * lam ^ 2 * f x ^ 2 +
       (2 * n * ((n - 1) * k - lam)) * ‖mgradient I f x‖ ^ 2 ≤
       n * laplaceBeltrami I (fun y ↦ ‖mgradient I f y‖ ^ 2) x := by
     have h := le_finrank_mul_laplaceBeltrami_norm_sq_mgradient hf x (hRic x)
-    rw [heig, hderiv] at h
+    rw [heig, mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul heig] at h
     dsimp [n]
     nlinarith
   have hint := integral_mono

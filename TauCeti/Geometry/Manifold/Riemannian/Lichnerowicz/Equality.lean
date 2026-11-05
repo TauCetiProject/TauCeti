@@ -80,11 +80,11 @@ private theorem lichnerowicz_defect_eq_zero (hn : 0 < Module.finrank ℝ E)
     have h := le_finrank_mul_laplaceBeltrami_norm_sq_mgradient hf y (hRic y)
     have hderiv : mvfderiv I (laplaceBeltrami I f) y (mgradient I f y) =
         -n * k * N y := by
-      have heq : laplaceBeltrami I f = (-n * k) • f := funext heig
-      rw [heq, mvfderiv_const_smul_field, smul_apply, smul_eq_mul,
-        ← inner_mgradient, real_inner_self_eq_norm_sq]
+      simpa only [neg_mul, N] using
+        mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
+          (lam := n * k) (fun y ↦ by simpa only [neg_mul] using heig y) y
     rw [heig, hderiv] at h
-    have hnd : 0 ≤ n * D y := by dsimp [D, N, n] at *; nlinarith
+    have hnd : 0 ≤ n * D y := by dsimp only [D, N, n] at h ⊢; nlinarith
     exact nonneg_of_mul_nonneg_right hnd hn'
   have hNi : Integrable N (riemannianVolume I M) :=
     hN.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
@@ -102,12 +102,9 @@ private theorem lichnerowicz_defect_eq_zero (hn : 0 < Module.finrank ℝ E)
     have hz := integral_laplaceBeltrami_eq_zero (hN.of_le (by simp))
       (HasCompactSupport.of_compactSpace _)
     dsimp only [D]
-    rw [integral_sub (f := fun y ↦ (1 / 2 : ℝ) * laplaceBeltrami I N y + k * N y)
-      (g := fun y ↦ n * k ^ 2 * f y ^ 2)
-      ((hLi.const_mul (1 / 2 : ℝ)).add (hNi.const_mul k))
+    rw [integral_sub ((hLi.const_mul (1 / 2 : ℝ)).fun_add (hNi.const_mul k))
       (hfi.const_mul (n * k ^ 2)),
-      integral_add (f := fun y ↦ (1 / 2 : ℝ) * laplaceBeltrami I N y)
-      (g := fun y ↦ k * N y) (hLi.const_mul (1 / 2 : ℝ)) (hNi.const_mul k)]
+      integral_add (hLi.const_mul (1 / 2 : ℝ)) (hNi.const_mul k)]
     simp only [integral_const_mul, hz, mul_zero, zero_add, N]
     rw [he]
     ring
@@ -138,9 +135,10 @@ theorem hessian_eq_neg_mul_inner_of_laplaceBeltrami_eq_neg_mul
       (Fin (Module.finrank ℝ (TangentSpace I x))) ℝ := fun i j ↦ hessian I f x (b i) (b j)
   have hderiv : mvfderiv I (laplaceBeltrami I f) x (mgradient I f x) =
       -(Module.finrank ℝ E : ℝ) * k * ‖mgradient I f x‖ ^ 2 := by
-    have heq : laplaceBeltrami I f = (-(Module.finrank ℝ E : ℝ) * k) • f := funext heig
-    rw [heq, mvfderiv_const_smul_field, smul_apply, smul_eq_mul,
-      ← inner_mgradient, real_inner_self_eq_norm_sq]
+    simpa only [neg_mul] using
+      mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
+        (lam := (Module.finrank ℝ E : ℝ) * k)
+        (fun y ↦ by simpa only [neg_mul] using heig y) x
   have hb := laplaceBeltrami_norm_sq_mgradient hf x b
   rw [hderiv] at hb
   have hs : (∑ i, ∑ j, A i j ^ 2) ≤ (Module.finrank ℝ E : ℝ) * (-k * f x) ^ 2 := by
