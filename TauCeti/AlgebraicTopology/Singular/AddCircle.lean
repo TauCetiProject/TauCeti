@@ -49,7 +49,8 @@ theorem timeHomologyClass_def :
 
 /-- Winding `n` times around a positive-period circle multiplies its circuit class by `n`.
 Negative windings reverse orientation. -/
-theorem homologyClass_zsmulLoop [Fact (0 < p)] (n : ℤ) :
+@[simp]
+theorem H₁AddEquivHomology_loopClass_zsmulLoop [Fact (0 < p)] (n : ℤ) :
     H₁AddEquivHomology _ (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n)) =
       n • timeHomologyClass p := by
   have hpow : FundamentalGroup.fromPath (.mk (zsmulLoop p 0 n)) =
@@ -91,7 +92,7 @@ theorem singularHomologyMap_coverMap_timeHomologyClass [Fact (0 < q)] (k : ℤ)
       zsmul_eq_mul, hp]
     congr 1
     ring
-  rw [heq, homologyClass_zsmulLoop]
+  rw [heq, H₁AddEquivHomology_loopClass_zsmulLoop]
 
 end AddCircle
 

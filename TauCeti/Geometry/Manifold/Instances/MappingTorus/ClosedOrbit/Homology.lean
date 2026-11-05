@@ -71,11 +71,10 @@ theorem orbitTorusHomologyClass_def (hx : Function.IsPeriodicPt φ d x) :
 
 /-- The cross-product class is represented by the actual periodic-torus parametrization,
 with the orientation given by the independent circle followed by the orbit circle. -/
-theorem singularHomologyMap_orbitTorus_timeHomologyClass
+theorem singularHomologyMap_orbitTorus_addCircleProdTimeHomologyClass
     (hx : Function.IsPeriodicPt φ d x) :
     ContinuousMap.singularHomologyMap ℤ 2
-        ⟨orbitTorus φ hx, (continuous_id.prodMap (continuous_closedOrbit hx)).congr
-          (fun p ↦ (orbitTorus_apply hx p).symm)⟩
+        ⟨orbitTorus φ hx, continuous_orbitTorus hx⟩
         (addCircleProdTimeHomologyClass 1 d) = orbitTorusHomologyClass hx := by
   rw [addCircleProdTimeHomologyClass_def, orbitTorusHomologyClass_def,
     closedOrbitHomologyClass_def]
@@ -83,17 +82,13 @@ theorem singularHomologyMap_orbitTorus_timeHomologyClass
     (𝟙 (TopCat.of UnitAddCircle))
     (TopCat.ofHom ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩) 1 1 2 rfl
     (AddCircle.timeHomologyClass 1) (AddCircle.timeHomologyClass d)
-  have hmap : (𝟙 (TopCat.of UnitAddCircle)) ⊗ₘ
-      (TopCat.ofHom ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩) =
-      TopCat.ofHom ⟨orbitTorus φ hx,
-        (continuous_id.prodMap (continuous_closedOrbit hx)).congr
-          (fun p ↦ (orbitTorus_apply hx p).symm)⟩ := by
-    apply ConcreteCategory.hom_ext
+  have hmap : (ContinuousMap.id UnitAddCircle).prodMap
+      ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩ =
+      ⟨orbitTorus φ hx, continuous_orbitTorus hx⟩ := by
+    apply ContinuousMap.ext
     intro p
     exact (orbitTorus_apply hx p).symm
-  rw [hmap] at h
-  -- The categorical coefficient unit is the coefficient module of `singularChains`.
-  erw [CategoryTheory.Functor.map_id, CategoryTheory.id_apply] at h
+  rw [TopCat.hom_id, TopCat.hom_ofHom, hmap, ContinuousMap.singularHomologyMap_id] at h
   exact h
 
 /-- Repeated traversal multiplies the integral closed-orbit class by `k`. The factorization
@@ -120,11 +115,7 @@ tori have the same image, while their parametrized classes retain the factor `k`
 theorem orbitTorusHomologyClass_const_mul (hx : Function.IsPeriodicPt φ d x)
     [Fact (0 < (d : ℝ))] (k : ℕ) :
     orbitTorusHomologyClass (hx.const_mul k) = k • orbitTorusHomologyClass hx := by
-  rw [orbitTorusHomologyClass_def, closedOrbitHomologyClass_const_mul hx k]
-  -- `singularChains` and the categorical homology functor are the two presentations of the
-  -- same homology groups; `erw` matches linearity across that coefficient-unit identification.
-  erw [map_nsmul]
-  rw [orbitTorusHomologyClass_def]
-  rfl
+  rw [orbitTorusHomologyClass_def, closedOrbitHomologyClass_const_mul hx k, map_nsmul,
+    orbitTorusHomologyClass_def]
 
 end TauCeti.SmoothMappingTorus

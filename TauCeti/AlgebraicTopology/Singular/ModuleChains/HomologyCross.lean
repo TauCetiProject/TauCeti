@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
 /-!
 # The bilinear cross product with coefficients in a commutative ring
@@ -25,7 +26,7 @@ cycle representatives or another shuffle map.
 
 public noncomputable section
 
-open CategoryTheory MonoidalCategory AlgebraicTopology
+open CategoryTheory MonoidalCategory AlgebraicTopology TauCeti
 
 universe w
 
@@ -38,17 +39,17 @@ variable (k : Type w) [CommRing k] (X Y : TopCat.{w})
 /-- The cross product with coefficients in a commutative ring, as a bilinear map. The
 coefficient identification `k ⊗ k ≅ k` is the left unitor, so it multiplies coefficients. -/
 def singularHomologyCrossBilinear (p q n : ℕ) (h : p + q = n) :
-    ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj X →ₗ[k]
-      ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj Y →ₗ[k]
-        ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ _)).obj (X ⊗ Y) :=
+    ((singularChains k).obj X).homology p →ₗ[k]
+      ((singularChains k).obj Y).homology q →ₗ[k]
+        ((singularChains k).obj (TopCat.of (X × Y))).homology n :=
   TensorProduct.curry (singularHomologyCross X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) p q n h ≫
     ((singularHomologyFunctor (ModuleCat.{w} k) n).map (λ_ (𝟙_ _)).hom).app (X ⊗ Y)).hom
 
 /-- The bilinear cross product is the categorical cross product followed by the coefficient
 identification `k ⊗ k ≅ k`. -/
 theorem singularHomologyCrossBilinear_apply (p q n : ℕ) (h : p + q = n)
-    (a : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj X)
-    (b : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj Y) :
+    (a : ((singularChains k).obj X).homology p)
+    (b : ((singularChains k).obj Y).homology q) :
     singularHomologyCrossBilinear k X Y p q n h a b =
       ((singularHomologyFunctor (ModuleCat.{w} k) n).map (λ_ (𝟙_ _)).hom).app (X ⊗ Y)
         (singularHomologyCross X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) p q n h (a ⊗ₜ b)) := (rfl)
@@ -58,19 +59,25 @@ variable {X Y} {X' Y' : TopCat.{w}}
 /-- Naturality of the bilinear cross product in both spaces. -/
 theorem singularHomologyCrossBilinear_naturality (f : X ⟶ X') (g : Y ⟶ Y')
     (p q n : ℕ) (h : p + q = n)
-    (a : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj X)
-    (b : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj Y) :
-    ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ _)).map (f ⊗ₘ g)
+    (a : ((singularChains k).obj X).homology p)
+    (b : ((singularChains k).obj Y).homology q) :
+    ContinuousMap.singularHomologyMap k n (f.hom.prodMap g.hom)
         (singularHomologyCrossBilinear k X Y p q n h a b) =
       singularHomologyCrossBilinear k X' Y' p q n h
-        (((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).map f a)
-        (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).map g b) := by
-  have hn := singularHomologyCross_naturality_assoc f g (𝟙_ (ModuleCat.{w} k))
-    (𝟙_ _) p q n h
+        (ContinuousMap.singularHomologyMap k p f.hom a)
+        (ContinuousMap.singularHomologyMap k q g.hom b) := by
+  have hn := singularHomologyCross_naturality_assoc f g (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) p q n h
     (((singularHomologyFunctor (ModuleCat.{w} k) n).map (λ_ (𝟙_ _)).hom).app (X' ⊗ Y'))
   rw [NatTrans.naturality] at hn
-  simpa only [CategoryTheory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul,
-    singularHomologyCrossBilinear_apply] using
-      (congrArg (fun t ↦ t (a ⊗ₜ[k] b)) hn).symm
+  -- The categorical coefficient unit is `ModuleCat.of k k`, so its homology objects and
+  -- induced maps are precisely those of `singularChains k` and `singularHomologyMap`.
+  -- Give the inputs that presentation here so the categorical tensor evaluation lemma matches.
+  let a' : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj X := a
+  let b' : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj Y := b
+  have he := (congrArg (fun t ↦ t (a' ⊗ₜ[k] b')) hn).symm
+  simp only [CategoryTheory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul] at he
+  simp only [singularHomologyCrossBilinear_apply]
+  convert he using 1
+  rfl
 
 end TopCat
