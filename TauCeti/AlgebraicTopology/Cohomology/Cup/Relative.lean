@@ -38,6 +38,8 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
 
 ## Main definitions and results
 
+* `TopPair.singularChainComplexMap_f_cupCochain_rightAlexanderWhitneyDiagonal`: the cup product of
+  absolute and relative cochains is natural in maps of pairs.
 * `TopPair.singularCup`, with `TopPair.singularCup_homologyπ` computing it on classes of cocycles,
   `TopPair.singularCohomologyπ_singularCup` its compatibility with the absolute cup product,
   `TopPair.singularCup_naturality`, and the module laws `TopPair.singularCup_assoc` and
@@ -94,6 +96,20 @@ lemma singularChainComplexπ_f_cupCochain_rightAlexanderWhitneyDiagonal (P : Top
     (P.rightAlexanderWhitneyDiagonal u) μ (P.fst.alexanderWhitneyDiagonal u)
     (P.singularChainComplexπ T) (𝟙 _) (P.singularChainComplexπ S)
     (P.singularChainComplexπ_rightAlexanderWhitneyDiagonal u) p q n h φ ψ).symm
+
+/-- **Naturality of the cup product of absolute and relative cochains** in maps of pairs: pulling
+back `φ ⌣ ψ` along `f : P ⟶ P'` is the cup product of the pull-backs of `φ` and `ψ`. -/
+lemma singularChainComplexMap_f_cupCochain_rightAlexanderWhitneyDiagonal {P P' : TopPair.{w}}
+    (f : P ⟶ P') (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
+    (φ : ((TopCat.toSSet.obj P'.fst).chainComplex R).X p ⟶ M)
+    (ψ : (P'.singularChainComplex S).X q ⟶ N) :
+    (singularChainComplexMap f T).f n ≫
+        TauCeti.ChainComplex.cupCochain k (P'.rightAlexanderWhitneyDiagonal u) μ p q n h φ ψ =
+      TauCeti.ChainComplex.cupCochain k (P.rightAlexanderWhitneyDiagonal u) μ p q n h
+        ((SSet.chainComplexMap (TopCat.toSSet.map (Hom.fst f)) R).f p ≫ φ)
+        ((singularChainComplexMap f S).f q ≫ ψ) :=
+  (TauCeti.ChainComplex.cupCochain_naturality _ μ _ _ _ _
+    (rightAlexanderWhitneyDiagonal_naturality f u) p q n h φ ψ).symm
 
 variable {R₁ R₂ T₁₂ T₂₃ M₁ M₂ M₃ M₁₂ M₂₃ : C}
 
