@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Sheaves.SheafCondition.PairwiseIntersections
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
-public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Terminal
 
 /-!
 # Gluing sections of sheaves on disjoint opens
