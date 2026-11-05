@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # The absolute Hurewicz theorem
@@ -88,18 +89,6 @@ private lemma singularCubicalHomologyIso_inv_cubicalHurewicz_mk {X : Type} [Topo
   rw [hp]
   exact h.symm
 
-/-- If `k ↦ k • g` identifies `ℤ` with `H` and an additive endomorphism of `H` sends `x` to `g`,
-then `g` is a unit multiple of `x`. -/
-private lemma exists_eq_units_smul_of_map_eq {H : Type*} [AddCommGroup H] {g x : H}
-    (hg : Function.Bijective fun k : ℤ ↦ k • g) (f : H →+ H) (hx : f x = g) :
-    ∃ ε : ℤˣ, g = (ε : ℤ) • x := by
-  -- Write `x = m • g` and `f g = j • g`. Then `g = f x = (m * j) • g`, so `m * j = 1`.
-  obtain ⟨m, rfl⟩ := hg.2 x
-  obtain ⟨j, hj⟩ := hg.2 (f g)
-  have hmj : m * j = 1 := hg.1 <| by
-    simp only [mul_smul, hj, ← map_zsmul, hx, one_smul]
-  exact ⟨Units.mkOfMulEqOne j m (by rw [mul_comm, hmj]), by simp [smul_smul, mul_comm j m, hmj]⟩
-
 /-- **On the sphere, the two Hurewicz classes of the tautological loop differ by a unit.** The
 Hurewicz class of `TauCeti.sphereGenLoop (n + 2)` with integer coefficients is a unit multiple of
 its cubical Hurewicz class, read in simplicial singular homology. -/
@@ -126,8 +115,8 @@ private lemma exists_hurewicz_sphereGenLoop_eq_units_smul (n : ℕ) :
   -- `h ∘ c⁻¹` sends `c ⟦ι⟧` to `h ⟦ι⟧ = g`, so `g` is a unit multiple of `c ⟦ι⟧`.
   let h := hurewiczIntHom (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) (sphereNorthPole (n + 2))
     (n + 1)
-  obtain ⟨ε, hε⟩ := exists_eq_units_smul_of_map_eq (he ▸ e.bijective)
-    (h.comp c.symm.toAddMonoidHom) (x := c (Additive.ofMul ⟦ι⟧)) <| by
+  obtain ⟨ε, hε⟩ := (h.comp c.symm.toAddMonoidHom).exists_eq_units_smul_of_map_eq
+    (he ▸ e.bijective) (x := c (Additive.ofMul ⟦ι⟧)) <| by
     rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply,
       hurewiczIntHom_apply]
     exact congrArg (fun f ↦ ModuleCat.Hom.hom f (1 : ℤ)) (hurewicz_mk (ModuleCat.of ℤ ℤ) (n + 1) ι)
