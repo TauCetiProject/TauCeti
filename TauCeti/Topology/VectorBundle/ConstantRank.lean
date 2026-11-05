@@ -58,6 +58,15 @@ variable {𝕜 B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [CompleteSpac
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
   {φ : Π x, E₁ x →L[𝕜] E₂ x} {r : ℕ}
 
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁] [FiniteDimensional 𝕜 F₂]
+  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
+/-- In the trivializations at `x₀`, the local matrices of a bundle map of constant rank `r` have
+rank `r` at every point of the common base set. -/
+private theorem finrank_range_inCoordinates_eq (hr : ∀ x, finrank 𝕜 (φ x).range = r) {x₀ x : B}
+    (hx : x ∈ (trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) :
+    finrank 𝕜 (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (φ x)).range = r := by
+  rw [ContinuousLinearMap.finrank_range_inCoordinates hx.1 hx.2, hr]
+
 /-- **Kernels of a bundle map of constant rank have local frames.** If a continuous bundle map
 `φ` between finite-rank vector bundles has rank `r` at every point, then its kernels have
 continuous local frames with `finrank F₁ - r` members near every point. Over `ℝ` or `ℂ` they
@@ -73,16 +82,15 @@ theorem hasLocalSubbundleFrames_ker
   obtain ⟨U, hUW, hU, hx₀U, κ, hκ, hκU⟩ :=
     ContinuousLinearMap.exists_continuousOn_ker_parametrization (continuousOn_inCoordinates hφ x₀)
       ((trivializationAt F₁ E₁ x₀).open_baseSet.inter (trivializationAt F₂ E₂ x₀).open_baseSet)
-      hx₀ fun x hx ↦ by rw [ContinuousLinearMap.finrank_range_inCoordinates hx.1 hx.2,
-        ContinuousLinearMap.finrank_range_inCoordinates hx₀.1 hx₀.2, hr, hr]
+      hx₀ fun x hx ↦ by
+        rw [finrank_range_inCoordinates_eq hr hx, finrank_range_inCoordinates_eq hr hx₀]
   -- The model kernel at `x₀` has dimension `finrank F₁ - r`, by rank–nullity.
   have hdim : finrank 𝕜
       (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x₀ x₀ x₀ (φ x₀)).ker =
       finrank 𝕜 F₁ - r := by
     have h := LinearMap.finrank_range_add_finrank_ker
       (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x₀ x₀ x₀ (φ x₀) : F₁ →ₗ[𝕜] F₂)
-    have h' := ContinuousLinearMap.finrank_range_inCoordinates (ϕ := φ x₀) hx₀.1 hx₀.2
-    rw [hr] at h'
+    have h' := finrank_range_inCoordinates_eq hr hx₀
     omega
   exact ⟨U, hU, hx₀U, _, Trivialization.isSubbundleFrameOn_symm_comp _
     (hUW.trans inter_subset_left) hκ
@@ -105,11 +113,11 @@ theorem hasLocalSubbundleFrames_range
     ContinuousLinearMap.exists_continuousOn_range_parametrization
       (continuousOn_inCoordinates hφ x₀)
       ((trivializationAt F₁ E₁ x₀).open_baseSet.inter (trivializationAt F₂ E₂ x₀).open_baseSet)
-      hx₀ fun x hx ↦ by rw [ContinuousLinearMap.finrank_range_inCoordinates hx.1 hx.2,
-        ContinuousLinearMap.finrank_range_inCoordinates hx₀.1 hx₀.2, hr, hr]
+      hx₀ fun x hx ↦ by
+        rw [finrank_range_inCoordinates_eq hr hx, finrank_range_inCoordinates_eq hr hx₀]
   have hdim : finrank 𝕜
-      (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x₀ x₀ x₀ (φ x₀)).range = r := by
-    rw [ContinuousLinearMap.finrank_range_inCoordinates hx₀.1 hx₀.2, hr]
+      (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x₀ x₀ x₀ (φ x₀)).range = r :=
+    finrank_range_inCoordinates_eq hr hx₀
   exact ⟨U, hU, hx₀U, _, Trivialization.isSubbundleFrameOn_symm_comp _
     (hUW.trans inter_subset_right) hρ
     (finBasisOfFinrankEq 𝕜 _ hdim) (fun x hx ↦ (hρU x hx).1) fun x hx w ↦ by

@@ -253,9 +253,8 @@ vector lies in the kernel of the map. -/
 theorem mem_ker_inCoordinates_iff (hx : x ∈ (trivializationAt F V x₀).baseSet)
     (hy : y ∈ (trivializationAt F' W y₀).baseSet) (v : F) :
     v ∈ (inCoordinates F V F' W x₀ x y₀ y ϕ).ker ↔ (trivializationAt F V x₀).symm x v ∈ ϕ.ker := by
-  rw [inCoordinates_eq hx hy, LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, comp_apply,
-    comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.map_eq_zero_iff,
-    ContinuousLinearEquiv.coe_coe, Trivialization.continuousLinearEquivAt_symm_apply, coe_coe]
+  rw [inCoordinates_eq hx hy]
+  simp [Trivialization.continuousLinearEquivAt_symm_apply]
 
 /-- In trivializations whose base sets contain the two fibre base points, a model vector lies in
 the range of the coordinate expression of a fibre map exactly when the corresponding fibre vector
@@ -276,13 +275,14 @@ expression of a fibre map has the rank of the map. -/
 theorem finrank_range_inCoordinates (hx : x ∈ (trivializationAt F V x₀).baseSet)
     (hy : y ∈ (trivializationAt F' W y₀).baseSet) :
     Module.finrank 𝕜 (inCoordinates F V F' W x₀ x y₀ y ϕ).range = Module.finrank 𝕜 ϕ.range := by
-  let Lx := (trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx
   let Ly := (trivializationAt F' W y₀).continuousLinearEquivAt 𝕜 y hy
-  rw [inCoordinates_eq hx hy, toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
-    LinearMap.range_comp_of_range_eq_top _
-      ((LinearMap.range_eq_top (f := ((Lx.symm : F →L[𝕜] V x) : F →ₗ[𝕜] V x))).mpr
-        Lx.symm.surjective)]
-  exact LinearEquiv.finrank_map_eq Ly.toLinearEquiv _
+  -- The coordinate range is the image of `range ϕ` under the trivialization of `W` at `y`.
+  have h : (inCoordinates F V F' W x₀ x y₀ y ϕ).range =
+      ϕ.range.map (Ly.toLinearEquiv : W y →ₗ[𝕜] F') := by
+    ext w
+    rw [mem_range_inCoordinates_iff hx hy, Submodule.mem_map_equiv]
+    simp [Ly, Trivialization.continuousLinearEquivAt_symm_apply]
+  rw [h, LinearEquiv.finrank_map_eq]
 
 end KerRange
 

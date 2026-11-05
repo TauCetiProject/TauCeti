@@ -35,7 +35,7 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
 * `ContinuousLinearMap.eq_kerSection`: it is the only map with that defining property.
 * `ContinuousLinearMap.range_kerSection`: its range is exactly `ker A`.
 * `ContinuousLinearMap.kerEquivOfProd`: the resulting isomorphism `G ≃L[R] ↥A.ker`.
-* `ContinuousLinearMap.injective_prod_comp`: projections fixing the range and the kernel of an
+* `ContinuousLinearMap.prod_comp_injective`: projections fixing the range and the kernel of an
   operator `T` give an injective pair `(p ∘ T, q)`.
 -/
 
@@ -148,7 +148,7 @@ variable {R M F : Type*} [Ring R]
 /-- If `p` fixes the range of `T` and `q` fixes its kernel, then the pair `(p ∘ T, q)` is
 injective. With `p` and `q` continuous projections onto the range and the kernel, this pair is
 the standard choice of local product coordinates near `T`. -/
-theorem injective_prod_comp {T : M →L[R] F} {p : F →L[R] T.range} {q : M →L[R] T.ker}
+theorem prod_comp_injective {T : M →L[R] F} {p : F →L[R] T.range} {q : M →L[R] T.ker}
     (hp : ∀ y : T.range, p y = y) (hq : ∀ v : T.ker, q v = v) :
     Function.Injective ((p ∘L T).prod q) := by
   refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ ?_
