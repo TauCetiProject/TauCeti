@@ -393,7 +393,7 @@ It represents the block action on every commutative value ring. -/
 def rankOneCoordinateMap (i : Fin 7) :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ 56) definingIdeal ⟶
       SpecialLinear.coordinateHopfAlgebra ℤ 2 :=
-  ((CommHopfAlgCat.pointsFunctor (R := ℤ)).preimage (rankOnePointsNatTrans i)).unop
+  CommHopfAlgCat.homOfPointsMap (rankOnePointsNatTrans i)
 
 /-- The integral coordinate map induces the prescribed rank-one map on algebra-valued points. -/
 @[simp↓]
@@ -404,13 +404,7 @@ theorem mulEquiv_mapPointsFunctor_rankOneCoordinateMap (i : Fin 7) (A : Type) [C
         ((CommHopfAlgCat.Hom.mapPointsFunctor (rankOneCoordinateMap i)).app
           (CommAlgCat.of ℤ A) p) =
       rankOnePoints A i (SpecialLinear.pointsMulEquiv (A := A) ℤ 2 p) := by
-  have hmap : CommHopfAlgCat.Hom.mapPointsFunctor (rankOneCoordinateMap i) =
-      rankOnePointsNatTrans i := by
-    -- Unop/op cancels in the definition of the represented coordinate map.
-    change (CommHopfAlgCat.pointsFunctor (R := ℤ)).map
-        ((CommHopfAlgCat.pointsFunctor (R := ℤ)).preimage (rankOnePointsNatTrans i)) = _
-    exact Functor.map_preimage _ _
-  rw [hmap]
+  rw [rankOneCoordinateMap, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
   exact (GeneralLinear.IntegralPointsPresentation.mulEquiv
     (A := CommAlgCat.of ℤ A) (pointsPresentation A)).apply_symm_apply _
 
