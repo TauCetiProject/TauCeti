@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Integer
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
 
@@ -128,17 +129,6 @@ theorem generalLinearGroup_smul_snd_apply_single (A : GL ι ℤ)
 
 /-! ### Integral affine changes of action–angle coordinates -/
 
-/-- Casting invertible integer matrices to real matrices is multiplicative: it is the coercion of
-`Matrix.GeneralLinearGroup.map (Int.castRingHom ℝ)`. -/
-private theorem map_intCast_mul (A B : GL ι ℤ) :
-    ((A * B : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) =
-      (A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) * (B : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) :=
-  congrArg Units.val (Matrix.GeneralLinearGroup.map_mul (Int.castRingHom ℝ) A B)
-
-/-- Casting the identity integer matrix to a real matrix gives the identity. -/
-private theorem map_intCast_one : ((1 : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) = 1 :=
-  congrArg Units.val (Matrix.GeneralLinearGroup.map_one (Int.castRingHom ℝ))
-
 /-- The **integral affine change of action–angle coordinates** of `T*Tⁿ` given by an integer matrix
 `A ∈ GL(ι, ℤ)` and a shift `b : ι → ℝ`: the cotangent lift of `θ ↦ A θ` followed by the fibre
 translation by the closed one-form `∑ j, b j • dθ_j`. In action–angle coordinates it is
@@ -249,8 +239,8 @@ theorem integralAffineDiffeomorph_one_zero :
     integralAffineDiffeomorph p (1 : GL ι ℤ) 0 = Diffeomorph.refl _ _ _ :=
   Diffeomorph.ext fun z ↦ CotangentBundle.ext (by simp) fun v ↦
     (integralAffineDiffeomorph_snd_apply p 1 0 z v).trans <| by
-      simp only [inv_one, map_intCast_one, Pi.zero_apply, zero_mul, Finset.sum_const_zero,
-        add_zero]
+      simp only [inv_one, Units.val_one, Matrix.map_one _ Int.cast_zero Int.cast_one,
+        Pi.zero_apply, zero_mul, Finset.sum_const_zero, add_zero]
       exact congrArg z.2 (Matrix.one_mulVec v)
 
 /-- **Composition of integral affine changes.** Applying `Φ_(A', b')` and then `Φ_(A, b)` is the
@@ -270,7 +260,7 @@ theorem integralAffineDiffeomorph_trans (A A' : GL ι ℤ) (b b' : ι → ℝ) :
     have hz (w : ι → ℝ) : ((A'⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ
           (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ w) =
         (((A * A')⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ w := by
-      rw [Matrix.mulVec_mulVec, _root_.mul_inv_rev, map_intCast_mul]
+      rw [Matrix.mulVec_mulVec, _root_.mul_inv_rev, Units.val_mul, Matrix.map_mul_intCast]
     have hb (w : ι → ℝ) :
         ∑ j, b' j * ((((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)) *ᵥ w) j =
           ∑ j, ((((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ b') j * w j := by
@@ -293,7 +283,8 @@ theorem integralAffineDiffeomorph_symm (A : GL ι ℤ) (b : ι → ℝ) :
       (integralAffineDiffeomorph p A b) = Diffeomorph.refl _ _ _ := by
     have hb : (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ
         -(((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ b) + b = 0 := by
-      rw [Matrix.mulVec_neg, Matrix.mulVec_mulVec, ← Matrix.transpose_mul, ← map_intCast_mul]
+      rw [Matrix.mulVec_neg, Matrix.mulVec_mulVec, ← Matrix.transpose_mul, ← Matrix.map_mul_intCast,
+        ← Units.val_mul]
       simp
     rw [integralAffineDiffeomorph_trans, mul_inv_cancel, hb, integralAffineDiffeomorph_one_zero]
   exact Diffeomorph.ext fun z ↦
