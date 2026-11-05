@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Lagrangian
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
 
 /-!
 # The rootful rank-24 lattices glued from the table
