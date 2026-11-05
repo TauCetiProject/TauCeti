@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.MarkovChain.Visits
-public import TauCeti.Probability.Process.SuccessorArray
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -131,10 +130,8 @@ theorem tendsto_measureReal_apply_eq_zero_of_return_lt_one
       {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} < 1) :
     Tendsto (fun n : ℕ => P.real {ω | X ω n = y}) atTop (𝓝 0) := by
   have hm (n : ℕ) : P {ω | X ω n = y} = ((κ ^ n) ∘ₘ ν) {y} := by
-    rw [← Measure.markovChainLaw_setOf_apply_eq_comp ν κ n y, ← hX.map_eq]
-    have hs : MeasurableSet {x : ℕ → α | x n = y} :=
-      (measurableSet_singleton y).preimage (measurable_pi_apply n)
-    exact (Measure.map_apply_of_aemeasurable hX.aemeasurable hs).symm
+    exact (hX.measure_eq ((measurableSet_singleton y).preimage (measurable_pi_apply n))).trans
+      (Measure.markovChainLaw_setOf_apply_eq_comp ν κ n y)
   simpa only [Measure.real, hm, ENNReal.toReal_zero, Function.comp_def] using
     (ENNReal.continuousAt_toReal ENNReal.zero_ne_top).tendsto.comp
       (κ.tendsto_pow_comp_apply_singleton_zero_of_return_lt_one hy ν)
