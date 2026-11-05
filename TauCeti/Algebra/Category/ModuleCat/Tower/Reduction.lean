@@ -445,9 +445,7 @@ noncomputable def reductionLimIso : reduction I F.lim ≅ F :=
 @[simp]
 theorem reductionLimIso_hom_app_reductionπ (n : ℕ) (x : F.lim) :
     (hF.reductionLimIso.hom.app (op n)).hom (reductionπ I F.lim n x) = F.limπ n x := by
-  simp only [reductionLimIso, NatIso.ofComponents_hom_app, LinearEquiv.toModuleIso_hom]
-  rw [ModuleCat.hom_ofHom]
-  exact hF.reductionLimEquiv_reductionπ n x
+  simp [reductionLimIso, reductionLimEquiv_reductionπ]
 
 end IsAdicSystem
 
