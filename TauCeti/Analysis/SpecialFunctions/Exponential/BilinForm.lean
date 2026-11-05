@@ -14,15 +14,13 @@ public import TauCeti.Analysis.Normed.Algebra.Basic
 /-!
 # Exponentials of skew-adjoint operators preserve bilinear forms
 
-The exponential `exp B` of a continuous endomorphism `B` of a real Banach space is a continuous
-linear automorphism with inverse `exp (-B)`. If `B` is skew-adjoint for a real bilinear form `β`
-on a finite-dimensional space, `β (B v) w + β v (B w) = 0`, then `exp B` preserves `β`: the
-derivative of `t ↦ β (exp (t B) v) (exp (t B) w)` vanishes. For a symplectic form this says that
+If a continuous endomorphism `B` is skew-adjoint for a real bilinear form `β` on a
+finite-dimensional space, `β (B v) w + β v (B w) = 0`, then `exp B` preserves `β`: the derivative
+of `t ↦ β (exp (t B) v) (exp (t B) w)` vanishes. For a symplectic form this says that
 the exponential of an infinitesimally symplectic endomorphism is symplectic.
 
 ## Main declarations
 
-* `ContinuousLinearMap.expEquiv`: `exp B` as a continuous linear automorphism.
 * `LinearMap.IsSkewAdjoint.apply_exp_apply_exp`: the exponential of a `β`-skew-adjoint
   endomorphism preserves `β`.
 -/
@@ -36,30 +34,6 @@ open NormedSpace
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
-
-namespace ContinuousLinearMap
-
-variable [CompleteSpace V]
-
-/-- The exponential `exp B` of a continuous endomorphism of a real Banach space, as a continuous
-linear automorphism with inverse `exp (-B)`. -/
-@[expose]
-def expEquiv (B : V →L[ℝ] V) : V ≃L[ℝ] V :=
-  .equivOfInverse' (exp B) (exp (-B))
-    (by rw [← mul_def, ← exp_add_of_commute (Commute.refl B).neg_right, add_neg_cancel, exp_zero,
-      one_def])
-    (by rw [← mul_def, ← exp_add_of_commute (Commute.refl B).neg_left, neg_add_cancel, exp_zero,
-      one_def])
-
-@[simp]
-theorem expEquiv_apply (B : V →L[ℝ] V) (v : V) : B.expEquiv v = exp B v :=
-  (rfl)
-
-@[simp]
-theorem expEquiv_symm_apply (B : V →L[ℝ] V) (v : V) : B.expEquiv.symm v = exp (-B) v :=
-  (rfl)
-
-end ContinuousLinearMap
 
 /-- The exponential of an endomorphism that is skew-adjoint for a real bilinear form `β`
 preserves `β`. For a symplectic form this says that the exponential of an infinitesimally

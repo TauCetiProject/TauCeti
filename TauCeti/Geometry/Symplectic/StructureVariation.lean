@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.SpecialFunctions.Exponential.BilinForm
+public import TauCeti.Analysis.Normed.Operator.Exponential
 public import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
