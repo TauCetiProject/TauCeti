@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.Splitting
+public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
 
 /-!
 # The quotient extension and subgroup complements
@@ -24,19 +25,20 @@ namespace Subgroup
 variable {G : Type*} [Group G] (N : Subgroup G) [N.Normal]
 
 /-- The extension of `G ⧸ N` by `N` given by inclusion and the quotient homomorphism. -/
-def quotientExtension : GroupExtension N G (G ⧸ N) where
-  inl := N.subtype
-  rightHom := QuotientGroup.mk' N
-  inl_injective := N.subtype_injective
-  range_inl_eq_ker_rightHom := by simp
-  rightHom_surjective := QuotientGroup.mk'_surjective N
+def quotientExtension : GroupExtension N G (G ⧸ N) :=
+  GroupExtension.ofMulEquivKer (QuotientGroup.mk'_surjective N)
+    (MulEquiv.subgroupCongr (QuotientGroup.ker_mk' N).symm)
 
 @[simp]
-theorem quotientExtension_inl : N.quotientExtension.inl = N.subtype := (rfl)
+theorem quotientExtension_inl : N.quotientExtension.inl = N.subtype := by
+  rw [quotientExtension, GroupExtension.ofMulEquivKer_inl]
+  ext
+  rfl
 
 @[simp]
 theorem quotientExtension_rightHom :
-    N.quotientExtension.rightHom = QuotientGroup.mk' N := (rfl)
+    N.quotientExtension.rightHom = QuotientGroup.mk' N := by
+  rw [quotientExtension, GroupExtension.ofMulEquivKer_rightHom]
 
 variable {N} {D : Subgroup G}
 
@@ -46,7 +48,10 @@ noncomputable def IsComplement'.quotientSplitting (h : N.IsComplement' D) :
     N.quotientExtension.Splitting where
   toMonoidHom := D.subtype.comp h.symm.QuotientMulEquiv.toMonoidHom
   rightInverse_rightHom q := by
-    exact h.symm.quotientGroupMk_leftQuotientEquiv q
+    simpa only [quotientExtension_rightHom, MonoidHom.toFun_eq_coe, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom, subtype_apply, QuotientGroup.mk'_apply,
+      IsComplement'.QuotientMulEquiv_apply] using
+      h.symm.quotientGroupMk_leftQuotientEquiv q
 
 theorem IsComplement'.quotientSplitting_apply (h : N.IsComplement' D) (q : G ⧸ N) :
     h.quotientSplitting q = (h.symm.QuotientMulEquiv q : G) := (rfl)
@@ -55,7 +60,10 @@ theorem IsComplement'.quotientSplitting_apply (h : N.IsComplement' D) (q : G ⧸
 @[simp]
 theorem IsComplement'.quotientSplitting_mk (h : N.IsComplement' D) (d : D) :
     h.quotientSplitting ((d : G) : G ⧸ N) = d := by
-  exact congrArg (fun x : D => (x : G)) (h.symm.leftQuotientEquiv.apply_symm_apply d)
+  rw [quotientSplitting_apply]
+  have hd : h.symm.QuotientMulEquiv.symm d = ((d : G) : G ⧸ N) :=
+    h.symm.QuotientMulEquiv_symm_apply d
+  rw [← hd, MulEquiv.apply_symm_apply]
 
 /-- The splitting constructed from a complement has exactly that complement as its range. -/
 @[simp]
@@ -99,7 +107,7 @@ noncomputable def quotientSplittingEquiv :
     exact D.property.range_quotientSplitting
 
 @[simp]
-theorem quotientSplittingEquiv_apply (s : N.quotientExtension.Splitting) :
+theorem quotientSplittingEquiv_apply_coe (s : N.quotientExtension.Splitting) :
     (N.quotientSplittingEquiv s).val = s.toMonoidHom.range := (rfl)
 
 @[simp]
@@ -108,7 +116,7 @@ theorem quotientSplittingEquiv_symm_apply (D : {D : Subgroup G // N.IsComplement
     N.quotientSplittingEquiv.symm D q = D.property.quotientSplitting q := (rfl)
 
 /-- A normal subgroup has a complement if and only if its quotient extension splits. -/
-theorem exists_isComplement'_iff_nonempty_quotientSplitting :
+theorem exists_isComplement'_iff_nonempty_splitting_quotientExtension :
     (∃ D : Subgroup G, N.IsComplement' D) ↔ Nonempty N.quotientExtension.Splitting := by
   rw [← nonempty_subtype]
   exact N.quotientSplittingEquiv.nonempty_congr.symm

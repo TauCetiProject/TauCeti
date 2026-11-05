@@ -57,27 +57,22 @@ theorem Splitting.eq_of_range_eq (s t : S.Splitting)
 
 variable {E' : Type*} [Group E'] {S' : GroupExtension N E' G}
 
-/-- Compose a splitting with an equivalence of extensions. -/
-def Splitting.equivComp (s : S.Splitting) (e : S.Equiv S') : S'.Splitting where
-  toMonoidHom := e.toMulEquiv.toMonoidHom.comp s.toMonoidHom
-  rightInverse_rightHom g := by simp
-
-@[simp]
-theorem Splitting.equivComp_apply (s : S.Splitting) (e : S.Equiv S') (g : G) :
-    s.equivComp e g = e (s g) := (rfl)
-
 /-- An equivalence of extensions induces a bijection on their splittings. -/
 def Equiv.splittingEquiv (e : S.Equiv S') : S.Splitting ≃ S'.Splitting where
-  toFun s := s.equivComp e
-  invFun s := s.equivComp e.symm
+  toFun s :=
+    { toMonoidHom := e.toMulEquiv.toMonoidHom.comp s.toMonoidHom
+      rightInverse_rightHom g := by simp }
+  invFun s :=
+    { toMonoidHom := e.symm.toMulEquiv.toMonoidHom.comp s.toMonoidHom
+      rightInverse_rightHom g := by simp }
   left_inv s := by
     apply DFunLike.ext
     intro g
-    simp
+    exact e.symm_apply_apply (s g)
   right_inv s := by
     apply DFunLike.ext
     intro g
-    simp
+    exact e.apply_symm_apply (s g)
 
 @[simp]
 theorem Equiv.splittingEquiv_apply (e : S.Equiv S') (s : S.Splitting) (g : G) :
