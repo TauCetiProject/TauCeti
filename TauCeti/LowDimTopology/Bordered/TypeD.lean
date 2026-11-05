@@ -47,7 +47,7 @@ on matrices entrywise.
   `∂ (φ ⬝ F) + (∂ φ) ⬝ F = φ ⬝ ∂F` (`TauCeti.TypeDStructure.boxDifferential_continuationMap`). So
   homomorphisms induce chain maps, a morphism `H` with `∂H = F + G` induces a chain homotopy
   between the maps of `F` and `G`, composition is preserved
-  (`TauCeti.continuationMap_mul`), and the identity morphism acts as the identity on `M ⊗ N`.
+  (`TauCeti.continuationMap_matMul`), and the identity morphism acts as the identity on `M ⊗ N`.
 
 Over a ring of characteristic two the type `D` structure equation, the box tensor product and the
 morphism complex need no signs; this is the setting of bordered Heegaard Floer homology over `𝔽₂`.
@@ -333,8 +333,8 @@ theorem boxDifferential_boxDifferential [CharP R 2] {dM : M →ₗ[R] M}
     (hM : IsUngradedDGRightModule d dM) (φ : X → M) :
     N.boxDifferential dM (N.boxDifferential dM φ) = 0 := by
   have h := congrArg (fun F => continuationMap R M F φ) N.map_coeff_add_coeff_mul_coeff
-  simp only [continuationMap_add, continuationMap_mul, continuationMap_zero, LinearMap.add_apply,
-    LinearMap.comp_apply, LinearMap.zero_apply] at h
+  simp only [continuationMap_add, continuationMap_matMul, continuationMap_zero,
+    LinearMap.add_apply, LinearMap.comp_apply, LinearMap.zero_apply] at h
   ext z
   have hz := congrFun h z
   simp only [Pi.add_apply, Pi.zero_apply] at hz
@@ -387,7 +387,7 @@ theorem boxDifferential_continuationMap [CharP R 2] {dM : M →ₗ[R] M}
       continuationMap R M (morphismDifferential N N' F) φ := by
   ext z
   simp only [boxDifferential_apply, morphismDifferential_apply, continuationMap_add,
-    continuationMap_mul, map_add, LinearMap.add_apply, LinearMap.comp_apply, Pi.add_apply,
+    continuationMap_matMul, map_add, LinearMap.add_apply, LinearMap.comp_apply, Pi.add_apply,
     hM.map_continuationMap]
   calc _ = (continuationMap R M F (fun x => dM (φ x)) z +
         continuationMap R M F (fun x => dM (φ x)) z) +

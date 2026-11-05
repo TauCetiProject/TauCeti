@@ -42,9 +42,8 @@ theorems take the degree and continuation equations as hypotheses, and the bundl
 * `TauCeti.continuationMap_mem_twistedTotalGrading`: the continuation map has total degree zero.
 * `TauCeti.continuationMap_twistedDifferential`: the continuation map is a chain map,
   `Ψ ∘ D_P = D_Q ∘ Ψ`, for a differential graded right module.
-* `TauCeti.continuationMap_kronecker`, `TauCeti.continuationMap_matMul`,
-  `TauCeti.continuationMap_mul`: the Kronecker matrix induces the identity and the matrix product
-  induces the composite.
+* `TauCeti.continuationMap_kronecker`, `TauCeti.continuationMap_matMul`: the Kronecker matrix
+  induces the identity and the matrix product induces the composite.
 * `TauCeti.continuation_kronecker`, `TauCeti.continuation_matMul`: the Kronecker matrix and the
   matrix product satisfy the continuation equation.
 
@@ -139,19 +138,13 @@ theorem continuationMap_kronecker [DecidableEq P] :
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
 
 /-- The matrix product induces the composite of the continuation maps. -/
-theorem continuationMap_matMul (ν₁ : P → Q → A) (ν₂ : Q → S → A) :
-    continuationMap R M (Matrix.of ν₁ * Matrix.of ν₂) =
-      (continuationMap R M ν₂).comp (continuationMap R M ν₁) := by
-  refine LinearMap.ext fun f ↦ funext fun z ↦ (continuationMap_apply _ f z).trans ?_
-  rw [LinearMap.comp_apply, continuationMap_apply]
-  simp only [continuationMap_apply, Matrix.mul_apply, Matrix.of_apply, Finset.op_sum,
-    Finset.sum_smul, Finset.smul_sum, op_mul, mul_smul]
+theorem continuationMap_matMul (F : Matrix P Q A) (G : Matrix Q S A) :
+    continuationMap R M (F * G) = (continuationMap R M G).comp (continuationMap R M F) := by
+  refine LinearMap.ext fun f ↦ funext fun z ↦ ?_
+  rw [LinearMap.comp_apply, continuationMap_apply (F * G), continuationMap_apply G]
+  simp only [continuationMap_apply F, Matrix.mul_apply, Finset.op_sum, Finset.sum_smul,
+    Finset.smul_sum, op_mul, mul_smul]
   exact Finset.sum_comm
-
-/-- The matrix product induces the composite of the continuation maps, stated for matrices. -/
-theorem continuationMap_mul (F : Matrix P Q A) (G : Matrix Q S A) :
-    continuationMap R M (F * G) = (continuationMap R M G).comp (continuationMap R M F) :=
-  continuationMap_matMul F G
 
 end MapMatrix
 
