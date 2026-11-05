@@ -28,7 +28,8 @@ in `TauCeti.exists_congruence_of_symmetric_family`.
 This stability result applies in particular to signature functions of Seifert matrices
 away from their singular parameters. Through Gram matrices, it also gives local constancy of the
 negative index of a continuous family of symmetric bilinear forms on a finite-dimensional real
-space at a nondegenerate member.
+space at a nondegenerate member, and hence constancy along a preconnected set of nondegenerate
+members.
 
 ## References
 
@@ -152,5 +153,20 @@ theorem eventually_sigNeg_toBilinForm_eq_of_continuousAt {X : Type*} [Topologica
     (hHermitian hsymm.self_of_nhds) (hsymm.mono fun _ ↦ hHermitian) hA hdet
   filter_upwards [hindex] with y hy
   simpa only [A, LinearMap.BilinForm.sigNeg_toMatrix] using hy
+
+/-- The negative index of a family of symmetric bilinear forms on a finite-dimensional real space,
+continuous on a preconnected set on which every member is nondegenerate, is constant on that set. -/
+theorem sigNeg_toBilinForm_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
+    {V : X → E →L[ℝ] E →L[ℝ] ℝ} {s : Set X} (hs : IsPreconnected s) (hc : ContinuousOn V s)
+    (hsymm : ∀ x ∈ s, (V x).toBilinForm.IsSymm) (hnd : ∀ x ∈ s, (V x).toBilinForm.Nondegenerate)
+    {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
+    sigNeg (V x).toBilinForm.toQuadraticMap = sigNeg (V y).toBilinForm.toQuadraticMap := by
+  -- Local constancy on the subtype `s` gives continuity into the discrete `ℕ`.
+  refine hs.constant (f := fun x ↦ sigNeg (V x).toBilinForm.toQuadraticMap)
+    (continuousOn_iff_continuous_domRestrict.2 ((IsLocallyConstant.iff_eventually_eq _).2
+      fun z ↦ eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := fun w : s ↦ V w)
+        (Eventually.of_forall fun w ↦ hsymm w w.2)
+        (continuousOn_iff_continuous_domRestrict.1 hc).continuousAt (hnd z z.2)).continuous)
+    hx hy
 
 end ContinuousLinearMap
