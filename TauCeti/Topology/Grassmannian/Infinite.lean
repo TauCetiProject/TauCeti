@@ -26,8 +26,9 @@ inclusions.
 We show that this union is the colimit, in `TopCat`, of the sequence of finite Grassmannians
 `Gr_k(𝕜^n)` along ambient stabilization (`TauCeti.infiniteGrassmannian.isColimit`); the stages
 with `n < k` are empty, so this is the same as the colimit of the stages `Gr_k(𝕜^(N + k))`.
-Over the real or complex numbers, where the finite Grassmannians are compact Hausdorff, each
-stage inclusion is a closed embedding and points are closed.
+Points are closed whenever they are closed in each finite stage. Over the real or complex
+numbers, where the finite Grassmannians are compact Hausdorff, each stage inclusion is a closed
+embedding.
 
 Over `ℝ` and `ℂ` these are the standard models `BO(k)` and `BU(k)` for classifying rank-`k` real
 and complex vector bundles, and the rank-one case is the infinite projective space `ℝP∞` or
@@ -195,6 +196,14 @@ theorem isClosed_iff {C : Set (infiniteGrassmannian 𝕜 k)} :
     IsClosed C ↔ ∀ n, IsClosed ((toInfinite : finiteGrassmannian 𝕜 k n → _) ⁻¹' C) := by
   simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
 
+/-- Points are closed in the final topology whenever they are closed in every finite stage. -/
+instance [∀ n, T1Space (finiteGrassmannian 𝕜 k n)] :
+    T1Space (infiniteGrassmannian 𝕜 k) where
+  t1 W := isClosed_iff.2 fun n ↦ by
+    apply Set.Subsingleton.isClosed
+    intro V hV V' hV'
+    exact toInfinite_injective (hV.trans hV'.symm)
+
 /-- A map out of the infinite Grassmannian is continuous exactly when it is continuous on every
 finite stage. -/
 theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : infiniteGrassmannian 𝕜 k → X} :
@@ -283,11 +292,6 @@ theorem _root_.TauCeti.finiteGrassmannian.isClosedEmbedding_toInfinite {n : ℕ}
     IsClosedEmbedding (toInfinite : finiteGrassmannian 𝕜 k n → infiniteGrassmannian 𝕜 k) :=
   .of_continuous_injective_isClosedMap continuous_toInfinite toInfinite_injective
     fun _ ↦ isClosed_image_toInfinite
-
-instance : T1Space (infiniteGrassmannian 𝕜 k) where
-  t1 W := by
-    obtain ⟨n, V, rfl⟩ := exists_toInfinite_eq W
-    simpa using isClosed_image_toInfinite (isClosed_singleton (x := V))
 
 end RCLike
 
