@@ -302,3 +302,24 @@ Analytics says how much of the 27M is still reaching the bucket.
   has already recovered from.
 - https://github.com/leanprover/lean4/pull/14651, merged: `lake cache get` exit status was
   unreliable. Ships in v4.34.0, not backported to v4.33.0.
+
+## Optional local dependency-prefill canary
+
+An individual fleet PR job can consume a host-provided read-only payload at
+`/opt/tauceti-dependency-prefill` after integrated configuration attestation. No
+payload is the ordinary path. The consumer checks the exact Lake configuration
+bytes, toolchain, platform, UID and project path, then verifies the payload digest
+and all package revisions/origins. It publishes a complete dependency tree only
+once, from a private extraction directory; mismatch or absence falls back cold.
+
+The payload includes only trusted dependency sources and the built Mathlib cache
+executable. Normal Mathlib archive restoration and `lake exe cache get` always run.
+The optimization never bypasses sandbox setup, source guards, audits or candidate
+builds. Staging and cloud jobs retain their current setup. The Fleet canary ticket
+selects one new general guest, without changing registration classes or priorities;
+a mixed-class guest assigned staging simply leaves the payload unused.
+
+The consumer prints a `dependency-prefill` JSON record with hit/miss, bounded
+reason, digest and elapsed time. Judge the canary from that record, native cache
+executable reuse, zero missing downloads and the complete job result. Local
+payload availability is necessary: downloading it on every job can erase savings.

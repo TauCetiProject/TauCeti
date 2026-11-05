@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
+import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 
 /-!
 # Pushing a weighted measure forward
@@ -54,6 +55,8 @@ measure finite.
   set and zero off its closure has topological support equal to that closure.
 * `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
   support is exactly the open set.
+* `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
+  presenting the same weighted measure are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
@@ -271,6 +274,22 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
 end MeasureTheory.Measure
 
 namespace MeasureTheory
+
+/-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
+theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [SigmaFinite ν]
+    [ν.IsOpenPosMeasure] {p q : X → ℝ} (hp : Continuous p) (hq : Continuous q)
+    (hp0 : 0 ≤ p) (hq0 : 0 ≤ q)
+    (h : ν.withDensity (fun x ↦ ENNReal.ofReal (p x)) =
+      ν.withDensity (fun x ↦ ENNReal.ofReal (q x))) :
+    p = q := by
+  have haeENN : (fun x ↦ ENNReal.ofReal (p x)) =ᵐ[ν] fun x ↦ ENNReal.ofReal (q x) :=
+    (withDensity_eq_iff_of_sigmaFinite hp.measurable.ennreal_ofReal.aemeasurable
+      hq.measurable.ennreal_ofReal.aemeasurable).1 h
+  have hae : p =ᵐ[ν] q := by
+    filter_upwards [haeENN] with x hx
+    exact (ENNReal.ofReal_eq_ofReal_iff (hp0 x) (hq0 x)).mp hx
+  exact (hp.ae_eq_iff_eq ν hq).1 hae
 
 /-- A measure with log-density bounded above almost everywhere against a finite measure is
 finite. -/
