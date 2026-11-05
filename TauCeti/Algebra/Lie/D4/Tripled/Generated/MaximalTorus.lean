@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.WeightTorus
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.Lie.D4.Tripled.MaximalTorus
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
-import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
 # The maximal torus of the generated tripled D₄ group
@@ -57,12 +55,6 @@ private def carrierRestriction : coordinateHopfAlgebra k ⟶ generatedCoordinate
     rw [← generatedCoordinateMap_ker] at hmem
     exact hmem)
 
-private theorem coordinateMap_comp_carrierRestriction :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra k 24)
-        (baseChangeDefiningIdeal k) ≫ carrierRestriction k = generatedCoordinateMap k := by
-  unfold carrierRestriction
-  exact CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
-
 private def carrierPointsHom :
     HopfAlgebra.points (R := k) (H := generatedCoordinateHopfAlgebra k) (CommAlgCat.of k k) →*
       points k :=
@@ -83,14 +75,13 @@ private theorem coe_carrierPointsHom
   exact congrArg (GeneralLinear.pointsMulEquiv 24)
     (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
       (baseChangeDefiningIdeal k) (carrierRestriction k) (generatedCoordinateMap k)
-      (coordinateMap_comp_carrierRestriction k) (CommAlgCat.of k k) g).symm
+      (CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _) (CommAlgCat.of k k) g).symm
 
-private theorem carrierPointsHom_injective : Function.Injective (carrierPointsHom k) := by
-  intro g h heq
-  apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
-    (generatedCoordinateMap k) (generatedCoordinateMap_surjective k) (CommAlgCat.of k k)
-  apply (GeneralLinear.pointsMulEquiv 24).injective
-  rw [← coe_carrierPointsHom, ← coe_carrierPointsHom, heq]
+private theorem carrierPointsHom_injective : Function.Injective (carrierPointsHom k) :=
+  (baseChangePointsMulEquiv k (CommAlgCat.of k k)).injective.comp
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective _
+      (CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
+        (generatedCoordinateMap_surjective k)) (CommAlgCat.of k k))
 
 private theorem map_torus_carrierPointsHom :
     (CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra k)
@@ -112,34 +103,17 @@ theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
     [IsReduced (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I)]
     [Coalgebra.IsCocomm k (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I)]
     (hI : I ≤ weightTorusDefiningIdeal k) : I = weightTorusDefiningIdeal k := by
-  let H := generatedCoordinateHopfAlgebra k
-  let A := CommAlgCat.of k k
-  let GI := CommHopfAlgCat.quotientPointsSubgroup H I A
-  let GT := CommHopfAlgCat.quotientPointsSubgroup H (weightTorusDefiningIdeal k) A
-  let _ : IsMulCommutative GI :=
-    CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup H I A
-  let _ : IsMulCommutative (GI.map (carrierPointsHom k)) :=
-    Subgroup.map_isMulCommutative GI (carrierPointsHom k)
-  have hTG : GT ≤ GI := CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
-  have hmap : GI.map (carrierPointsHom k) = GT.map (carrierPointsHom k) := by
-    rw [map_torus_carrierPointsHom]
-    apply eq_range_weightTorusPoints_of_le_of_isMulCommutative
-    rw [← map_torus_carrierPointsHom k]
-    exact Subgroup.map_mono hTG
-  have hpoints : GI = GT := Subgroup.map_injective (carrierPointsHom_injective k) hmap
-  exact le_antisymm hI (HopfIdeal.le_of_quotientPointsSubgroup_le hpoints.le)
+  exact HopfIdeal.eq_of_le_of_isCocomm_of_maximal_points (weightTorusDefiningIdeal k)
+    (carrierPointsHom k) (carrierPointsHom_injective k) (map_torus_carrierPointsHom k)
+    (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative k P hP) I hI
 
 private theorem isMaximalTorus_weightTorusDefiningIdeal_of_isAlgClosed [IsAlgClosed k] :
     HopfIdeal.IsMaximalTorus k (generatedCoordinateHopfAlgebra k)
-      (weightTorusDefiningIdeal k) := by
-  rw [HopfIdeal.isMaximalTorus_iff]
-  refine ⟨(splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal k).torus k _, ?_⟩
-  intro I hI hIT
-  let _ : IsReduced (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I) :=
-    hI.geometricallyReduced.isReduced
-  let _ : Coalgebra.IsCocomm k
-      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I) := hI.isCocomm k _
-  exact (eq_weightTorusDefiningIdeal_of_le_of_isCocomm k I hIT).ge
+      (weightTorusDefiningIdeal k) :=
+  HopfIdeal.isMaximalTorus_of_maximal_points (weightTorusDefiningIdeal k)
+    ((splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal k).torus k _)
+    (carrierPointsHom k) (carrierPointsHom_injective k) (map_torus_carrierPointsHom k)
+    (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative k P hP)
 
 /-- Over every field, the closed rank-four weight torus is a maximal torus of the generated
 tripled D₄ group. No assumption on the characteristic or on the integral carrier is needed. -/
