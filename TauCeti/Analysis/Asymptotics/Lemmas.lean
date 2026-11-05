@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -55,7 +56,9 @@ is the limit at infinity of antiderivatives built from such ratios, for example 
 evaluations of elliptic integrals.
 
 A finite limit of `x ^ α * f x` at infinity is preserved by a fixed translation of `f`.
-This transfers power-law tail constants through deterministic shifts.
+Positive dilations multiply the limit by the inverse power of the dilation. For a positive
+exponent, a finite power-law limit also implies that the original function tends to zero.
+These facts transfer power-law tail constants through deterministic shifts and rescalings.
 
 ## Main results
 
@@ -212,6 +215,28 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   ring
 
 end TauCeti
+
+/-- A positive dilation of a real function multiplies its finite power-law constant at infinity
+by the inverse power of the dilation, for any real exponent. -/
+theorem Filter.Tendsto.rpow_mul_comp_const_mul {f : ℝ → ℝ} {α C a : ℝ}
+    (h : Tendsto (fun x : ℝ ↦ x ^ α * f x) atTop (𝓝 C)) (ha : 0 < a) :
+    Tendsto (fun x : ℝ ↦ x ^ α * f (a * x)) atTop (𝓝 (a ^ (-α) * C)) := by
+  have hlim := (h.comp (tendsto_id.const_mul_atTop ha)).const_mul (a ^ (-α))
+  apply hlim.congr'
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  simp only [Function.comp_apply, id_eq]
+  rw [Real.mul_rpow ha.le hx.le, ← mul_assoc, ← mul_assoc, ← Real.rpow_add ha,
+    neg_add_cancel, Real.rpow_zero, one_mul]
+
+/-- A real function with a finite power-law limit of positive exponent tends to zero. -/
+theorem Filter.Tendsto.of_rpow_mul {f : ℝ → ℝ} {α C : ℝ}
+    (h : Tendsto (fun x : ℝ ↦ x ^ α * f x) atTop (𝓝 C)) (hα : 0 < α) :
+    Tendsto f atTop (𝓝 0) := by
+  have hlim := h.mul (tendsto_rpow_neg_atTop hα)
+  simp only [mul_zero] at hlim
+  apply hlim.congr'
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  rw [mul_right_comm, ← Real.rpow_add hx, add_neg_cancel, Real.rpow_zero, one_mul]
 
 /-- A fixed translation of a real function preserves its finite power-law constant at infinity,
 for any real exponent. -/

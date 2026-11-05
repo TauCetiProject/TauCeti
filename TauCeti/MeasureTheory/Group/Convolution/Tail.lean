@@ -6,11 +6,10 @@ Authors: Codex
 module
 
 public import TauCeti.MeasureTheory.Group.Convolution.Power
-public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.MeasureTheory.Integral.Bind
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
 # Power-law tails of convolutions
@@ -113,35 +112,16 @@ theorem tendsto_rpow_mul_real_conv_Ioi {α C D : ℝ} (hα : 0 < α)
     (hν : Tendsto (fun x : ℝ ↦ x ^ α * ν.real (Ioi x)) atTop (𝓝 D)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ ∗ ν).real (Ioi x)) atTop
       (𝓝 (C * ν.real univ + μ.real univ * D)) := by
-  -- Rescaling the threshold multiplies its tail constant by the inverse power.
-  have scale {f : ℝ → ℝ} {c a : ℝ}
-      (hf : Tendsto (fun x : ℝ ↦ x ^ α * f x) atTop (𝓝 c)) (ha : 0 < a) :
-      Tendsto (fun x : ℝ ↦ x ^ α * f (a * x)) atTop (𝓝 (a ^ (-α) * c)) := by
-    have h := (hf.comp (tendsto_id.const_mul_atTop ha)).const_mul (a ^ (-α))
-    apply h.congr'
-    filter_upwards [eventually_gt_atTop 0] with x hx
-    simp only [Function.comp_apply, id_eq]
-    rw [Real.mul_rpow ha.le hx.le, ← mul_assoc, ← mul_assoc, ← Real.rpow_add ha, neg_add_cancel,
-      Real.rpow_zero, one_mul]
-  have mass (ρ : Measure ℝ) [IsFiniteMeasure ρ] {δ : ℝ} (hδ : 0 < δ) :
-      Tendsto (fun x : ℝ ↦ ρ.real (Icc (-(δ * x)) (δ * x))) atTop (𝓝 (ρ.real univ)) := by
-    have hcover : (⋃ x : ℝ, Icc (-x) x) = univ := by
-      rw [iUnion_eq_univ_iff]
-      intro x
-      exact ⟨|x|, neg_abs_le x, le_abs_self x⟩
-    have hm := tendsto_measure_iUnion_atTop
-      (μ := ρ) (fun x y (hxy : x ≤ y) ↦ Icc_subset_Icc (neg_le_neg hxy) hxy)
-    rw [hcover] at hm
-    exact ((ENNReal.tendsto_toReal (measure_ne_top ρ univ)).comp hm).comp
-      (tendsto_id.const_mul_atTop hδ)
   -- Fixed relative windows exhaust the real line and recover both single-large-jump terms.
   have lower {δ : ℝ} (hδ : 0 < δ) :
       Tendsto (fun x : ℝ ↦
         (x ^ α * μ.real (Ioi ((1 + δ) * x))) * ν.real (Icc (-(δ * x)) (δ * x)) +
         μ.real (Icc (-(δ * x)) (δ * x)) * (x ^ α * ν.real (Ioi ((1 + δ) * x))))
         atTop (𝓝 ((1 + δ) ^ (-α) * (C * ν.real univ + μ.real univ * D))) := by
-    convert ((scale hμ (by linarith : 0 < 1 + δ)).mul (mass ν hδ)).add
-      ((mass μ hδ).mul (scale hν (by linarith : 0 < 1 + δ))) using 2; ring
+    convert ((hμ.rpow_mul_comp_const_mul (by linarith : 0 < 1 + δ)).mul
+      (ν.tendsto_measureReal_Icc_neg_mul_atTop hδ)).add
+      ((μ.tendsto_measureReal_Icc_neg_mul_atTop hδ).mul
+        (hν.rpow_mul_comp_const_mul (by linarith : 0 < 1 + δ))) using 2; ring
   -- The simultaneous moderate-jump term vanishes after multiplication by the tail power.
   have upper {δ : ℝ} (hδ : 0 < δ) (hδ' : δ < 1 / 2) :
       Tendsto (fun x : ℝ ↦
@@ -149,15 +129,10 @@ theorem tendsto_rpow_mul_real_conv_Ioi {α C D : ℝ} (hα : 0 < α)
           μ.real univ * (x ^ α * ν.real (Ioi ((1 - δ) * x))) +
           (x ^ α * μ.real (Ioi (δ * x))) * ν.real (Ioi (δ * x)))
         atTop (𝓝 ((1 - δ) ^ (-α) * (C * ν.real univ + μ.real univ * D))) := by
-    have htail : Tendsto (fun x : ℝ ↦ ν.real (Ioi (δ * x))) atTop (𝓝 0) := by
-      have h := (scale hν hδ).mul (tendsto_rpow_neg_atTop hα)
-      simp only [mul_zero] at h
-      apply h.congr'
-      filter_upwards [eventually_gt_atTop 0] with x hx
-      rw [mul_right_comm, ← Real.rpow_add hx, add_neg_cancel, Real.rpow_zero, one_mul]
-    convert (((scale hμ (by linarith : 0 < 1 - δ)).mul_const (ν.real univ)).add
-      ((scale hν (by linarith : 0 < 1 - δ)).const_mul (μ.real univ))).add
-      ((scale hμ hδ).mul htail) using 2; ring
+    have htail := (hν.rpow_mul_comp_const_mul hδ).of_rpow_mul hα
+    convert (((hμ.rpow_mul_comp_const_mul (by linarith : 0 < 1 - δ)).mul_const (ν.real univ)).add
+      ((hν.rpow_mul_comp_const_mul (by linarith : 0 < 1 - δ)).const_mul (μ.real univ))).add
+      ((hμ.rpow_mul_comp_const_mul hδ).mul htail) using 2; ring
   -- Finally shrink the relative window to squeeze the upper and lower constants together.
   have near (sgn : ℝ) : Tendsto
       (fun δ : ℝ ↦ (1 + sgn * δ) ^ (-α) * (C * ν.real univ + μ.real univ * D))
@@ -230,9 +205,9 @@ theorem tendsto_rpow_mul_real_convolutionPower_Ioi {μ : Measure ℝ} [IsProbabi
 
 /-- Mixing convolution powers against a count law with a finite moment of order `α + 1`
 multiplies a power-law tail constant by the mean count. Jumps may have either sign, and
-their left tail is unrestricted. The count measure may have arbitrary finite mass. -/
+their left tail is unrestricted. The count measure need not be finite. -/
 theorem tendsto_rpow_mul_real_bind_convolutionPower_Ioi {μ : Measure ℝ}
-    [IsProbabilityMeasure μ] {ρ : Measure ℕ} [IsFiniteMeasure ρ] {α C : ℝ} (hα : 0 < α)
+    [IsProbabilityMeasure μ] {ρ : Measure ℕ} {α C : ℝ} (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hρ : Integrable (fun n : ℕ ↦ (n : ℝ) ^ (α + 1)) ρ) :
     Tendsto (fun x : ℝ ↦ x ^ α * (ρ.bind μ.convolutionPower).real (Ioi x)) atTop
@@ -270,20 +245,6 @@ theorem tendsto_rpow_mul_real_bind_convolutionPower_Ioi {μ : Measure ℝ}
         _ ≤ (n : ℝ) ^ (α + 1) * K := mul_le_mul_of_nonneg_left
           (hbound (div_pos hx hn')) (rpow_nonneg hn'.le _)
         _ = _ := mul_comm _ _
-  let _ : IsFiniteMeasure (ρ.bind μ.convolutionPower) := ⟨by
-    rw [bind_apply MeasurableSet.univ Measurable.of_discrete.aemeasurable]
-    simp⟩
-  have real_bind (x : ℝ) : (ρ.bind μ.convolutionPower).real (Ioi x) =
-      ∫ n : ℕ, (μ.convolutionPower n).real (Ioi x) ∂ρ := by
-    calc
-      _ = ∫ y : ℝ, (Ioi x).indicator (fun _ ↦ (1 : ℝ)) y
-          ∂ρ.bind μ.convolutionPower := by
-        simp only [integral_indicator_const _ measurableSet_Ioi, smul_eq_mul, mul_one]
-      _ = ∫ n : ℕ, ∫ y : ℝ, (Ioi x).indicator (fun _ ↦ (1 : ℝ)) y
-          ∂μ.convolutionPower n ∂ρ := integral_bind Measurable.of_discrete.aemeasurable
-        ((integrable_const (1 : ℝ)).indicator measurableSet_Ioi)
-      _ = _ := by
-        simp only [integral_indicator_const _ measurableSet_Ioi, smul_eq_mul, mul_one]
   -- The count moment dominates the normalized finite-sum tails, so their limits can be mixed.
   have h := tendsto_integral_filter_of_dominated_convergence (μ := ρ)
     (F := fun x : ℝ ↦ fun n : ℕ ↦ x ^ α * (μ.convolutionPower n).real (Ioi x))
@@ -296,6 +257,8 @@ theorem tendsto_rpow_mul_real_bind_convolutionPower_Ioi {μ : Measure ℝ}
         exact hsum hx n)
     (hρ.const_mul K)
     (ae_of_all _ fun n ↦ tendsto_rpow_mul_real_convolutionPower_Ioi hα hμ n)
-  simpa only [integral_const_mul, integral_mul_const, ← real_bind] using h
+  simpa only [integral_const_mul, integral_mul_const,
+    bind_apply_real Measurable.of_discrete.aemeasurable measurableSet_Ioi
+      (ae_of_all _ fun _ ↦ measure_ne_top _ _)] using h
 
 end MeasureTheory.Measure

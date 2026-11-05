@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
 public import TauCeti.Probability.Distributions.Stable.Tails
-import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.CompoundPoisson.Tail
 
 /-!
@@ -57,10 +57,8 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi
     have hsub : Ioi x ⊆ A := by
       intro y hy
       exact hx.trans (hy.trans_le (le_abs_self y))
-    rw [measureReal_def, cond_apply' measurableSet_Ioi, inter_eq_right.mpr hsub,
-      ENNReal.toReal_mul, ENNReal.toReal_inv]
-    dsimp [a, ν]
-    ring
+    rw [cond_real_of_subset measurableSet_Ioi hsub, mul_div_assoc]
+    rfl
   have hsum := tendsto_rpow_mul_real_compoundPoissonMeasure_Ioi (ν A).toNNReal hα.1 hjump
   rw [ENNReal.coe_toNNReal_eq_toReal, mul_div_cancel₀ _ ha] at hsum
   apply (hsum.rpow_mul_comp_add c).congr
@@ -79,35 +77,9 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Iio_neg
     Tendsto (fun x : ℝ ↦ x ^ α *
       (stableCompensatedPoissonMeasure α β ε).real (Iio (-x))) atTop
       (𝓝 (stableTailConstant α * (1 - β))) := by
-  let ν := stableLevyMeasure α β
-  let A := {y : ℝ | ε < |y|}
-  let a := (ν A).toReal
-  let c := ∫ y in A, sin y ∂ν
-  let _ := isProbabilityMeasure_cond_stableLevyMeasure hα hβ hε
-  have ha : a ≠ 0 := ENNReal.toReal_ne_zero.mpr
-    ⟨(stableLevyMeasure_abs_gt_pos hα hβ hε).ne', stableLevyMeasure_abs_gt_ne_top hε⟩
-  have hjump : Tendsto (fun x : ℝ ↦ x ^ α * (cond ν A).real (Iio (-x))) atTop
-      (𝓝 (stableTailConstant α * (1 - β) / a)) := by
-    apply ((tendsto_rpow_mul_toReal_stableLevyMeasure_Iio hα hβ).div_const a).congr'
-    filter_upwards [eventually_gt_atTop ε] with x hx
-    have hsub : Iio (-x) ⊆ A := by
-      intro y hy
-      have hxy : x < -y := by
-        simpa only [neg_neg] using neg_lt_neg (mem_Iio.mp hy)
-      exact hx.trans (hxy.trans_le (neg_le_abs y))
-    rw [measureReal_def, cond_apply' measurableSet_Iio, inter_eq_right.mpr hsub,
-      ENNReal.toReal_mul, ENNReal.toReal_inv]
-    dsimp [a, ν]
-    ring
-  have hsum := tendsto_rpow_mul_real_compoundPoissonMeasure_Iio_neg (ν A).toNNReal hα.1 hjump
-  rw [ENNReal.coe_toNNReal_eq_toReal, mul_div_cancel₀ _ ha] at hsum
-  apply (hsum.rpow_mul_comp_add (-c)).congr
-  intro x
-  have hpre : (fun y : ℝ ↦ y - c) ⁻¹' Iio (-x) = Iio (-(x + -c)) := by
-    ext y
-    simp only [mem_preimage, mem_Iio]
-    constructor <;> intro h <;> linarith
-  rw [stableCompensatedPoissonMeasure_def, map_measureReal_apply (by fun_prop)
-    measurableSet_Iio, hpre]
+  have h := tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi (β := -β) hα
+    (by simpa only [abs_neg] using hβ) hε
+  rw [← map_neg_stableCompensatedPoissonMeasure α β ε] at h
+  simpa [map_measureReal_apply measurable_neg measurableSet_Ioi, sub_eq_add_neg] using h
 
 end TauCeti.Probability
