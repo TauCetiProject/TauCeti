@@ -21,8 +21,7 @@ that a Lie generator acts nilpotently exactly when its underlying matrix is nilp
 
 * `TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix`: a Lie generator acts through its
   underlying matrix.
-* `TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix_injective`: faithfulness on the Lie
-  algebra.
+* `LieSubalgebra.representation_ι_matrix_injective`: faithfulness on the Lie algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_representation_ι_matrix_iff`: a Lie generator
   acts nilpotently exactly when its underlying matrix is nilpotent.
 -/
@@ -51,14 +50,6 @@ theorem representation_ι_matrix_apply {K : LieSubalgebra R (Matrix n n R)} (x :
       (x : Matrix n n R) *ᵥ v := by
   rw [representation_ι_matrix, toLinAlgEquiv'_apply]
 
-/-- The defining representation of a matrix Lie subalgebra is faithful on the Lie algebra. -/
-theorem representation_ι_matrix_injective (K : LieSubalgebra R (Matrix n n R)) :
-    Function.Injective fun x : K =>
-      representation R K (n → R) (_root_.UniversalEnvelopingAlgebra.ι R x) := by
-  intro x y hxy
-  simpa only [representation_ι_matrix, EmbeddingLike.apply_eq_iff_eq, SetLike.coe_eq_coe]
-    using hxy
-
 /-- A Lie generator of a matrix Lie subalgebra acts nilpotently on coordinate vectors if and only
 if its underlying matrix is nilpotent. -/
 theorem isNilpotent_representation_ι_matrix_iff {K : LieSubalgebra R (Matrix n n R)} (x : K) :
@@ -67,3 +58,20 @@ theorem isNilpotent_representation_ι_matrix_iff {K : LieSubalgebra R (Matrix n 
   rw [representation_ι_matrix, IsNilpotent.map_iff toLinAlgEquiv'.injective]
 
 end TauCeti.UniversalEnvelopingAlgebra
+
+namespace LieSubalgebra
+
+variable {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- The defining representation of a matrix Lie subalgebra is faithful on the Lie algebra. -/
+theorem representation_ι_matrix_injective (K : LieSubalgebra R (Matrix n n R)) :
+    Function.Injective fun x : K =>
+      TauCeti.UniversalEnvelopingAlgebra.representation R K (n → R)
+        (_root_.UniversalEnvelopingAlgebra.ι R x) := by
+  intro x y hxy
+  simpa only [TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix,
+    EmbeddingLike.apply_eq_iff_eq, SetLike.coe_eq_coe] using hxy
+
+end LieSubalgebra
