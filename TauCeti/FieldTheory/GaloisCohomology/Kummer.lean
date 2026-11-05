@@ -410,8 +410,9 @@ variable {K n} in
 field containing a primitive `n`th root of unity and with `Kˣ ⧸ (Kˣ)ⁿ` finite, and `H` a
 topological group isomorphic to `G_K`. Then `H¹(H, M)` is finite for every cyclic discrete
 `H`-module `M` of order `n` with trivial action: such a module is `μₙ(Kˢ)`
-(`TauCeti.finite_H1_kummerCoeff`). Continuity of the action is automatic, since it is trivial; the
-last argument only lets callers supply a different instance. -/
+(`TauCeti.finite_H1_kummerCoeff`). Continuity of the action, needed to state `H¹(H, M)`, holds
+automatically because the action is trivial; the final argument defaults to that proof, so callers
+never need to supply it. -/
 theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
     (hζ : IsPrimitiveRoot ζ n) [Finite (powerClassQuotient Kˣ n)] {H : Type*} [Group H]
     [TopologicalSpace H] (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M]
