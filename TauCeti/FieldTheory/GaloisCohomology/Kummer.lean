@@ -14,6 +14,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RingTheory.Norm.Units
+public import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # The Kummer map `Kˣ → H¹(G_K, μₙ)` and the Kummer isomorphism
@@ -418,7 +419,7 @@ theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
     [TopologicalSpace H] (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M]
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [IsAddCyclic M]
     (hM : Nat.card M = n) (htriv : ∀ (h : H) (m : M), h • m = m)
-    (_ : ContinuousSMul H M := ⟨by simpa only [htriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H M := continuousSMul_of_forall_smul_eq_self htriv) :
     Finite (H1 H M) := by
   have := hζ.neZero'
   have := finite_H1_kummerCoeff K n (NeZero.ne (n : K)).isUnit

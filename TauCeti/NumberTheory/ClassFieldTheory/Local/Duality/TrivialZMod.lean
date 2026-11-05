@@ -147,7 +147,7 @@ private noncomputable def h2ZModEquiv [ContinuousSMul H (ZMod n)] : H2 H (ZMod n
 `H¹(H, ℤ/n) → Hom(H¹(H, Hom(ℤ/n, ℤ/n)), H²(H, ℤ/n))` is a bijection. Under evaluation at `1` it is
 the cup square, a perfect pairing by `cupFp_bijective_of_isPrimitiveRoot`. -/
 theorem dualityMap1_zmod_bijective_of_isPrimitiveRoot
-    (_ : ContinuousSMul H (ZMod n) := ⟨by simpa only [htriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv) :
     Function.Bijective (dualityMap1 H (ZMod n) (ZMod n)) := by
   let ψ := (absoluteGaloisGroupRestrictEquiv K).trans φ
   have : LocallyCompactSpace H := ψ.symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
@@ -159,7 +159,7 @@ theorem dualityMap1_zmod_bijective_of_isPrimitiveRoot
 `H⁰(H, ℤ/n) → Hom(H²(H, Hom(ℤ/n, ℤ/n)), H²(H, ℤ/n))` is a bijection, since it is scalar
 multiplication on `H²(H, ℤ/n)`, which is `ℤ/n` by the local invariant (`h2FpEquivZMod`). -/
 theorem dualityMap0_zmod_bijective_of_isPrimitiveRoot
-    (_ : ContinuousSMul H (ZMod n) := ⟨by simpa only [htriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv) :
     Function.Bijective (dualityMap0 H (ZMod n) (ZMod n)) :=
   dualityMap0_zmod_bijective_of_addEquiv htriv (h2ZModEquiv hζ φ htriv)
 
@@ -183,8 +183,8 @@ root of unity: for every finite discrete `H`-module `A` killed by `n` on which `
 (`dualityMap0_zmod_bijective_of_isPrimitiveRoot` and its companions) propagated to every such `A`
 by `TauCeti.ContCohomology.dualityMap0_bijective_of_smul_eq_self`. -/
 theorem dualityMap0_bijective_of_isPrimitiveRoot
-    (_ : ContinuousSMul H (ZMod n) := ⟨by simpa only [htriv] using continuous_snd⟩)
-    (_ : ContinuousSMul H A := ⟨by simpa only [hAtriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv)
+    (_ : ContinuousSMul H A := continuousSMul_of_forall_smul_eq_self hAtriv) :
     Function.Bijective (dualityMap0 H A (ZMod n)) :=
   dualityMap0_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
     (dualityMap0_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
@@ -196,8 +196,8 @@ topological group `H` isomorphic to `G_K`, when the local field `K` contains a p
 root of unity: for every finite discrete `H`-module `A` killed by `n` on which `H` acts trivially,
 `H¹(H, A) → Hom(H¹(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. -/
 theorem dualityMap1_bijective_of_isPrimitiveRoot
-    (_ : ContinuousSMul H (ZMod n) := ⟨by simpa only [htriv] using continuous_snd⟩)
-    (_ : ContinuousSMul H A := ⟨by simpa only [hAtriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv)
+    (_ : ContinuousSMul H A := continuousSMul_of_forall_smul_eq_self hAtriv) :
     Function.Bijective (dualityMap1 H A (ZMod n)) :=
   have := finite_H1_zmod hζ φ htriv
   dualityMap1_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
@@ -210,8 +210,8 @@ topological group `H` isomorphic to `G_K`, when the local field `K` contains a p
 root of unity: for every finite discrete `H`-module `A` killed by `n` on which `H` acts trivially,
 `H²(H, A) → Hom(H⁰(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. -/
 theorem dualityMap2_bijective_of_isPrimitiveRoot
-    (_ : ContinuousSMul H (ZMod n) := ⟨by simpa only [htriv] using continuous_snd⟩)
-    (_ : ContinuousSMul H A := ⟨by simpa only [hAtriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv)
+    (_ : ContinuousSMul H A := continuousSMul_of_forall_smul_eq_self hAtriv) :
     Function.Bijective (dualityMap2 H A (ZMod n)) :=
   dualityMap2_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
     (dualityMap0_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)

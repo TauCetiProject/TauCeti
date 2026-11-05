@@ -73,7 +73,7 @@ theorem finite_H2_of_isPrimitiveRoot_of_natCard_dvd [NeZero n] {ζ : F}
     (φ : AbsoluteGaloisGroup F ≃ₜ* H) (M : Type) [AddCommGroup M]
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [IsAddCyclic M]
     (hMn : Nat.card M ∣ n) (htriv : ∀ (h : H) (m : M), h • m = m)
-    (_ : ContinuousSMul H M := ⟨by simpa only [htriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H M := continuousSMul_of_forall_smul_eq_self htriv) :
     Finite (H2 H M) := by
   have : NeZero (Nat.card M) := ⟨fun h ↦ NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hMn))⟩
   -- A primitive n-th root supplies a primitive root of every order dividing n.

@@ -48,7 +48,7 @@ theorem finite_H1_of_isPrimitiveRoot_of_natCard_dvd (K : Type*) [Field K] [Valua
     (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M] [TopologicalSpace M]
     [DiscreteTopology M] [DistribMulAction H M] [IsAddCyclic M]
     (hMn : Nat.card M ∣ n) (htriv : ∀ (h : H) (m : M), h • m = m)
-    (_ : ContinuousSMul H M := ⟨by simpa only [htriv] using continuous_snd⟩) :
+    (_ : ContinuousSMul H M := continuousSMul_of_forall_smul_eq_self htriv) :
     Finite (H1 H M) := by
   have : NeZero (Nat.card M) := ⟨fun h ↦ NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hMn))⟩
   -- `ζ ^ (n / ℓ)` is a primitive `ℓ`th root of unity in `K`, for `ℓ = Nat.card M`
