@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Flow.Periodic
-public import TauCeti.Dynamics.Flow.Variational
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -25,11 +23,11 @@ fixed point (`TauCeti.IsNondegenerateFixedPt`): `1` is not an eigenvalue of `Dφ
 The Floer equation on a cylindrical end asymptotic to `x` is governed by the asymptotic operator
 `A ζ = J_t (ζ' - S_t ζ)` with `S_t = dX_{H_t}(x(t))` (`TauCeti.Floer.asymptoticOperator`), whose
 one-periodic kernel consists of the periodic solutions of `ζ' = S_t ζ`, that is, of the fixed
-vectors of the return map `Ψ(1)` of that linear equation. This file identifies `Ψ(t)` with the
-derivative of the flow, `Dφ(0, t)(x₀) = Ψ(t)`, using the variational equation of the flow
-(`TauCeti.fderiv_timeDependentFlow_eq_dysonSeriesLeft`). Consequently a one-periodic orbit is
-nondegenerate exactly when its asymptotic operator, for any almost complex structures `J_t`, has
-no nonzero one-periodic kernel.
+vectors of the return map `Ψ(1)` of that linear equation. Since `Ψ(t)` is the derivative of the
+flow, `Dφ(0, t)(x₀) = Ψ(t)`
+(`TauCeti.SymplecticForm.fderiv_timeDependentFlow_hamiltonianVectorField`), a one-periodic orbit
+is nondegenerate exactly when its asymptotic operator, for any almost complex structures `J_t`,
+has no nonzero one-periodic kernel.
 
 Floer operators on the ends are considered on maps decaying like `e^{-δ s}`, which turns the
 asymptotic operator into `A - δ` (`TauCeti.Floer.stationaryCylinderOperator_exp_smul`). Since
@@ -39,8 +37,6 @@ the weights `δ` at which `A - δ` has a periodic kernel form a closed set
 
 ## Main results
 
-* `TauCeti.SymplecticForm.fderiv_timeDependentFlow_hamiltonianVectorField`: the derivative of
-  the Hamiltonian flow along an orbit is the propagator of the linearized Hamiltonian equation.
 * `TauCeti.SymplecticForm.isNondegenerateFixedPt_timeDependentFlow_iff`: a one-periodic orbit is
   nondegenerate exactly when its asymptotic operator is injective on one-periodic loops.
 * `TauCeti.SymplecticForm.eventually_eq_zero_of_asymptoticOperator_eq_smul`: at a nondegenerate
@@ -65,41 +61,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
   (hv : LipschitzWith K (timeDependentSuspension fun t ↦ ω.hamiltonianVectorField (H t)))
-
-/-- **The linearized Hamiltonian flow is the propagator of the linearized equation.** For a jointly
-`C²` Hamiltonian, the derivative `Dφ(0, t)(x)` of its flow is the propagator `Ψ(t)` of the
-linearized Hamiltonian equation `ζ' = S_τ ζ` along the trajectory of `x`, where
-`S_τ = dX_{H_τ}(φ(0, τ) x)`. -/
-theorem fderiv_timeDependentFlow_hamiltonianVectorField (hH : ContDiff ℝ 2 (uncurry H)) (t : ℝ)
-    (x : V) :
-    fderiv ℝ (timeDependentFlow _ hv 0 t) x =
-      dysonSeriesLeft (fun τ ↦ fderiv ℝ (ω.hamiltonianVectorField (H τ))
-        (timeDependentFlow _ hv 0 τ x)) t := by
-  simpa using fderiv_timeDependentFlow_eq_dysonSeriesLeft hv
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH) 0 t x
-
-/-- Along a one-periodic orbit of a one-periodic Hamiltonian, the linearized Hamiltonian vector
-fields `S_t = dX_{H_t}(φ(0, t) x)` are one-periodic. -/
-theorem periodic_fderiv_hamiltonianVectorField_timeDependentFlow (hHp : Periodic H 1) {x : V}
-    (hx : IsFixedPt (timeDependentFlow _ hv 0 1) x) :
-    Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t))
-      (timeDependentFlow _ hv 0 t x)) 1 := by
-  have hX : Periodic (fun t ↦ ω.hamiltonianVectorField (H t)) 1 := fun t ↦ by
-    simp only [hHp t]
-  have horb := (periodic_timeDependentFlow_iff hv hX 0 x).2 (by simpa using hx)
-  intro t
-  simp only [hHp t, horb t]
-
-/-- The linearized Hamiltonian vector fields `S_t = dX_{H_t}(φ(0, t) x)` along a trajectory of a
-jointly `C²` Hamiltonian depend continuously on time. -/
-theorem continuous_fderiv_hamiltonianVectorField_timeDependentFlow
-    (hH : ContDiff ℝ 2 (uncurry H)) (x : V) :
-    Continuous fun t ↦
-      fderiv ℝ (ω.hamiltonianVectorField (H t)) (timeDependentFlow _ hv 0 t x) := by
-  have hx : Continuous fun t ↦ timeDependentFlow _ hv 0 t x :=
-    (continuous_timeDependentFlow _ hv).comp
-      (by fun_prop : Continuous fun t : ℝ ↦ (((0 : ℝ), t), x))
-  exact ω.continuous_fderiv_hamiltonianVectorField_comp hH hx
 
 /-- **Nondegenerate orbits have injective asymptotic operators.** Let `H` be a jointly `C²`
 one-periodic Hamiltonian and `x` a fixed point of its time-one map, so that `t ↦ φ(0, t) x` is a

@@ -382,6 +382,8 @@ theorem fderiv_timeDependentFlow_eq_dysonSeriesLeft (s t : ℝ) (x : E) :
     (hasDerivAt_fderiv_timeDependentFlow hv hvs s (s + τ) x).comp_const_add s τ
   have h := eq_dysonSeriesLeft_mul hM hf (t - s)
   have h₀ : fderiv ℝ (timeDependentFlow v hv s (s + 0)) x = 1 := by
+    -- `timeDependentFlow_self` is pointwise; lift it to an equality of maps to rewrite under
+    -- `fderiv`.
     rw [add_zero, show timeDependentFlow v hv s s = id from funext (timeDependentFlow_self v hv s),
       fderiv_id]
     rfl
