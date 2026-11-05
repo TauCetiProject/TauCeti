@@ -39,8 +39,6 @@ modulus defect `-log |α|²` of a plane vortex is such a subsolution for every r
 * `TauCeti.le_mul_exp_of_mul_le_laplacian`: a subsolution of `-Δ + V`, `V ≥ c²`, on the exterior of
   a ball which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
-* `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
-  extends to the whole space for a continuous function, with a larger constant.
 
 ## References
 
@@ -159,26 +157,5 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
     u x ≤ M * Real.exp (-(c * (‖x‖ - R))) :=
   le_mul_exp_of_mul_le_laplacian (V := fun _ ↦ c ^ 2) hR hc hM hcont hcd (fun _ _ ↦ le_rfl) hsub
     hbdry hlim hx
-
-/-- A continuous function bounded by `K exp (-c ‖x‖)` outside a compact set is bounded by
-`K' exp (-c ‖x‖)` everywhere, for some constant `K'`. -/
-theorem exists_forall_le_mul_exp_of_eventually_le {f : E → ℝ} (hf : Continuous f) {c K : ℝ}
-    (h : ∀ᶠ x in cocompact E, f x ≤ K * Real.exp (-(c * ‖x‖))) :
-    ∃ K', ∀ x, f x ≤ K' * Real.exp (-(c * ‖x‖)) := by
-  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp
-    (cobounded_eq_cocompact (α := E) ▸ h)
-  -- Inside the ball, bound `f x exp (c ‖x‖)` by compactness.
-  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn
-    (f := fun x ↦ f x * Real.exp (c * ‖x‖)) (by fun_prop)
-  refine ⟨max K M, fun x ↦ ?_⟩
-  have he : 0 < Real.exp (-(c * ‖x‖)) := Real.exp_pos _
-  rcases le_or_gt R ‖x‖ with hx | hx
-  · exact (hR hx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) he.le)
-  · have hb := hM x (mem_closedBall_zero_iff.mpr hx.le)
-    rw [Real.norm_eq_abs] at hb
-    calc f x = f x * Real.exp (c * ‖x‖) * Real.exp (-(c * ‖x‖)) := by
-          rw [mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
-      _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
-          mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
 
 end TauCeti

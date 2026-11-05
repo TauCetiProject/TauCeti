@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
@@ -83,8 +84,7 @@ private theorem laplacian_log_normSq_sub_comp_add_right
         Real.log (4 * (x (y + h) 2 ^ 2 + x (y + h) 3 ^ 2))) w =
       (4 * (x w 2 ^ 2 + x w 3 ^ 2) - 4 * (x (w + h) 2 ^ 2 + x (w + h) 3 ^ 2)) / 4 := by
   set ℓ : ℂ → ℝ := fun y ↦ Real.log (4 * (x y 2 ^ 2 + x y 3 ^ 2))
-  have hscd : ContDiff ℝ 2 (fun y ↦ 4 * (x y 2 ^ 2 + x y 3 ^ 2)) :=
-    contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hscd := contDiff_normSq hp hq
   have hshift : ContDiffAt ℝ 2 (fun y ↦ ℓ (y + h)) w :=
     (hscd.contDiffAt.log hwh.ne').comp w (contDiffAt_id.add contDiffAt_const)
   rw [show (fun y ↦ ℓ y - ℓ (y + h)) = ℓ - fun y ↦ ℓ (y + h) from rfl,
@@ -115,7 +115,7 @@ private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
       L * ‖h‖ * Real.exp (-(c * (‖z‖ - R))) := by
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
   set D : ℂ → ℝ := fun w ↦ Real.log (s w) - Real.log (s (w + h))
-  have hscd : ContDiff ℝ 2 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
   have hw₁ : ∀ w : ℂ, R ≤ ‖w‖ → R - 1 ≤ ‖w‖ := fun w hw ↦ by linarith
   have hwh : ∀ w : ℂ, R ≤ ‖w‖ → R - 1 ≤ ‖w + h‖ := fun w hw ↦ by
     have := abs_norm_sub_norm_le (w + h) w
@@ -185,7 +185,7 @@ private theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
         K * Real.exp (-(c * ‖z‖)) := by
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
   set ℓ : ℂ → ℝ := fun z ↦ Real.log (s z)
-  have hscd : ContDiff ℝ 2 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
   -- Outside a disc of radius `R - 1`, `|α|² > max (4 c²) (1 / 2)`.
   have hθ : max (4 * c ^ 2) (1 / 2) < 1 := max_lt (by nlinarith) (by norm_num)
   obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
@@ -235,9 +235,7 @@ private theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
     rw [Real.norm_eq_abs, abs_sub_comm]
     exact h.trans_eq (by ring))
   calc ‖fderiv ℝ ℓ z‖ ≤ L * Real.exp (-(c * (‖z‖ - R))) := hle
-    _ = L * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := by
-      rw [mul_assoc, ← Real.exp_add]
-      ring_nf
+    _ = L * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := by rw [exp_neg_mul_sub, mul_assoc]
 
 /-- **Exponential decay of the gradient of `log |α|²`.** Outside a compact set, a vortex on the
 whole plane whose section satisfies `|α| → 1` at infinity has
@@ -266,8 +264,7 @@ theorem exists_norm_fderiv_normSq_le_mul_exp
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) :
     ∃ K, ∀ z, ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  have hscd : ContDiff ℝ 2 (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :=
-    contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hscd := contDiff_normSq hp hq
   obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
   refine exists_forall_le_mul_exp_of_eventually_le (K := K)
     (hscd.continuous_fderiv (by norm_num)).norm ?_

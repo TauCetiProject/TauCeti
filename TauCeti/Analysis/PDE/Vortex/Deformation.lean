@@ -89,15 +89,25 @@ theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace �
   simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
   exact this.congr fun z ↦ (sectionValue_apply x z).symm
 
+/-- The section with its real coordinates composed with `ofRealCLM`, the form used to compute its
+regularity and derivative. -/
+private theorem sectionValue_eq_ofRealCLM (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    sectionValue x = fun w ↦ 2 * ((ofRealCLM ∘ fun w ↦ x w 2) w +
+      (ofRealCLM ∘ fun w ↦ x w 3) w * I) :=
+  (rfl)
+
+/-- The squared modulus `|α|² = 4 (p² + q²)` is as regular as the real coordinates of the
+section. -/
+theorem contDiff_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop ℕ∞}
+    (hp : ContDiff ℝ n (fun w ↦ x w 2)) (hq : ContDiff ℝ n (fun w ↦ x w 3)) :
+    ContDiff ℝ n (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :=
+  contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+
 /-- The section `α = 2 (p + i q)` is as regular as its real coordinates. -/
 theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop ℕ∞}
     (hp : ContDiff ℝ n (fun w ↦ x w 2)) (hq : ContDiff ℝ n (fun w ↦ x w 3)) :
     ContDiff ℝ n (sectionValue x) := by
-  have hfun : sectionValue x = fun w ↦ 2 * ((ofRealCLM ∘ fun w ↦ x w 2) w +
-      (ofRealCLM ∘ fun w ↦ x w 3) w * I) := by
-    funext w
-    simp [sectionValue_apply]
-  rw [hfun]
+  rw [sectionValue_eq_ofRealCLM]
   exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
     ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
 
@@ -110,12 +120,9 @@ theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
   have hcp := ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt
   have hcq := ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt
   have h := (hcp.fun_add (hcq.mul_const I)).const_mul (2 : ℂ)
-  have hfun : sectionValue x = fun w ↦ 2 * ((ofRealCLM ∘ fun w ↦ x w 2) w +
-      (ofRealCLM ∘ fun w ↦ x w 3) w * I) := by
-    funext w
-    simp [sectionValue_apply]
-  rw [hfun, h.fderiv]
-  simp
+  rw [sectionValue_eq_ofRealCLM, h.fderiv]
+  simp only [Fin.isValue, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ofRealCLM_apply, smul_eq_mul]
   ring
 
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
@@ -255,7 +262,10 @@ theorem fderiv_normSq_apply_one_sq_add_apply_I_sq {x : ℂ → EuclideanSpace �
   have hd := ((hp.hasFDerivAt.pow 2).fun_add (hq.hasFDerivAt.pow 2)).const_mul (4 : ℝ)
   rw [hd.fderiv, covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply,
     Complex.sq_norm, Complex.normSq_apply]
-  simp
+  simp only [Fin.isValue, Nat.add_one_sub_one, pow_one, nsmul_eq_mul, Nat.cast_ofNat, smul_add,
+    add_apply, smul_apply, smul_eq_mul, one_re, mul_one, one_im, mul_zero, add_zero, add_re, mul_re,
+    re_ofNat, ofReal_re, I_re, ofReal_im, I_im, sub_self, im_ofNat, add_im, mul_im, zero_add,
+    zero_mul, sub_zero, one_mul, zero_sub]
   -- With `A + i B = d_a α (1) / 2`, the rows give `p ∂_t p + q ∂_t q = q A - p B`, while
   -- `p ∂_s p + q ∂_s q = p A + q B`.
   linear_combination (64 * (x z 2 * fderiv ℝ (fun w ↦ x w 2) z I +
