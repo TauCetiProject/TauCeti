@@ -73,26 +73,38 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
 omit [FiniteDimensional ℝ V] in
 /-- If the Cayley transforms of all the end structures lie in a convex set containing `0`, so does
-the cutoff-weighted sum of the Cayley transforms: at most one cutoff is nonzero at each point. -/
-private theorem sum_smul_cayley_mem {s : Set (Module.End ℝ V)} (hs : Convex ℝ s)
+every sum of them with weights `c q ∈ [0, 1]` that vanish off the parts `±s > 0` of their ends:
+the parts `±s > 0` of distinct ends are disjoint, so at most one weight is nonzero at each
+point. -/
+theorem sum_smul_cayley_mem {s : Set (Module.End ℝ V)} (hs : Convex ℝ s)
     (h0 : (0 : Module.End ℝ V) ∈ s) {J : Puncture → ℝ → M → AlmostComplexStructure V}
-    (hJ : ∀ q t x, J₀.cayley (J q t x) ∈ s) (w : ℂ) (x : M) :
-    ∑ q, smoothTransition (q.endSign * (q.endCoord w).re - 1) •
-      J₀.cayley (J q (q.endCoord w).im x) ∈ s := by
-  by_cases h : ∃ q : Puncture, smoothTransition (q.endSign * (q.endCoord w).re - 1) ≠ 0
+    (hJ : ∀ q t x, J₀.cayley (J q t x) ∈ s) {w : ℂ} {c : Puncture → ℝ}
+    (hc : ∀ q, c q ∈ Icc 0 1) (hc₀ : ∀ q, c q ≠ 0 → 0 < q.endSign * (q.endCoord w).re)
+    (x : M) :
+    ∑ q, c q • J₀.cayley (J q (q.endCoord w).im x) ∈ s := by
+  by_cases h : ∃ q, c q ≠ 0
   · obtain ⟨q, hq⟩ := h
-    obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hq
     rw [Finset.sum_eq_single q]
-    · exact hs.smul_mem_of_zero_mem h0 (hJ _ _ _)
-        ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
+    · exact hs.smul_mem_of_zero_mem h0 (hJ _ _ _) (hc q)
     · intro r _ hr
-      have hr' := smoothTransition_endCoord_cylindricalEndLift_eq_zero hr
-        (z := q.endCoord w) (by linarith)
-      rw [q.cylindricalEndLift_endCoord hw] at hr'
-      simp [hr']
+      by_contra hr'
+      have hle := endSign_mul_re_endCoord_nonpos (Ne.symm hr) (hc₀ q hq)
+      exact absurd (hc₀ r fun h => hr' (by simp [h])) hle.not_gt
     · simp
   · push Not at h
     simpa [h] using h0
+
+omit [FiniteDimensional ℝ V] in
+/-- The cutoffs `β(±s_q(w) - 1)` of the pair-of-pants structure are admissible weights for
+`sum_smul_cayley_mem`. -/
+private theorem sum_smoothTransition_smul_cayley_mem {s : Set (Module.End ℝ V)}
+    (hs : Convex ℝ s) (h0 : (0 : Module.End ℝ V) ∈ s)
+    {J : Puncture → ℝ → M → AlmostComplexStructure V} (hJ : ∀ q t x, J₀.cayley (J q t x) ∈ s)
+    (w : ℂ) (x : M) :
+    ∑ q, smoothTransition (q.endSign * (q.endCoord w).re - 1) •
+      J₀.cayley (J q (q.endCoord w).im x) ∈ s :=
+  sum_smul_cayley_mem hs h0 hJ (fun _ => ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩)
+    (fun _ hq => zero_lt_one.trans (one_lt_endSign_mul_re_endCoord hq).1) x
 
 /-- The domain-dependent almost complex structure on the pair of pants given by families
 `J q t x` of `ω`-tame structures on its three ends, relative to an `ω`-compatible base structure
@@ -106,8 +118,8 @@ def pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀)
   h₀.cayleyEquiv.symm
     ⟨∑ q, smoothTransition (q.endSign * (q.endCoord w).re - 1) •
         J₀.cayley (J q (q.endCoord w).im x),
-      sum_smul_cayley_mem h₀.tames.convex_cayleyBall h₀.tames.zero_mem_cayleyBall
-        (fun q t x => h₀.cayley_mem_cayleyBall (hJ q t x)) w x⟩
+      sum_smoothTransition_smul_cayley_mem h₀.tames.convex_cayleyBall
+        h₀.tames.zero_mem_cayleyBall (fun q t x => h₀.cayley_mem_cayleyBall (hJ q t x)) w x⟩
 
 variable {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
 
@@ -132,7 +144,7 @@ theorem compatible_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀)
     ω.Compatible (pairOfPantsAlmostComplex h₀ J hJ w x) := by
   refine (h₀.cayley_mem_compatibleCayleyBall_iff (tames_pairOfPantsAlmostComplex h₀ w x)).mp ?_
   rw [cayley_pairOfPantsAlmostComplex]
-  exact sum_smul_cayley_mem h₀.tames.convex_compatibleCayleyBall
+  exact sum_smoothTransition_smul_cayley_mem h₀.tames.convex_compatibleCayleyBall
     h₀.tames.zero_mem_compatibleCayleyBall
     (fun q t x => (h₀.cayley_mem_compatibleCayleyBall_iff (hJ q t x)).mpr (hJc q t x)) w x
 
