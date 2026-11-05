@@ -141,18 +141,14 @@ theorem range_rankOnePoints :
     (rankOnePoints K i).range = Subgroup.closure
       (Set.range (rootSubgroupPoints (.inl i) K) ∪
         Set.range (rootSubgroupPoints (.inr i) K)) := by
-  apply Subgroup.map_injective (points K).subtype_injective
-  have h : (points K).subtype.comp (rankOnePoints K i) = weightTable.sl2BlockSL i :=
-    MonoidHom.ext (coe_rankOnePoints K i)
-  rw [MonoidHom.map_range, h, MonoidHom.range_eq_closure_sl2_transvection, MonoidHom.map_closure,
-    Set.image_union, ← Set.range_comp, ← Set.range_comp]
-  simp only [sl2BlockSL_upper_transvection, sl2BlockSL_lower_transvection]
+  rw [MonoidHom.range_eq_closure_sl2_transvection]
+  simp only [rankOnePoints_upper_transvection, rankOnePoints_lower_transvection]
   apply congrArg Subgroup.closure
   apply congrArg₂ Set.union
   · exact (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
-      ((points K).subtype ∘ rootSubgroupPoints (.inl i) K)
+      (rootSubgroupPoints (.inl i) K)
   · exact (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
-      ((points K).subtype ∘ rootSubgroupPoints (.inr i) K)
+      (rootSubgroupPoints (.inr i) K)
 
 end
 
