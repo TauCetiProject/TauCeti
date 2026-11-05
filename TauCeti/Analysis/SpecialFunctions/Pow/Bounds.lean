@@ -50,7 +50,10 @@ bound `1 / (q (q + q')) < |ξ - p / q|`.
 
 If `0 < t ≤ 1` and `ε ≤ A t` with `0 ≤ A`, then `t ^ (-ε) ≤ exp A`. This makes factors such as
 `a ^ (-ε)` uniformly bounded when the exponent `ε` shrinks with the radius `a`, as in Taubes's
-monotonicity inequality with `ε = C₀ r ^ (-1/2)` and `a = c₀ r ^ (-1/2)`.
+monotonicity inequality with `ε = C₀ r ^ (-1/2)` and `a = c₀ r ^ (-1/2)`. For `C ≥ 0` and
+exponents `0 ≤ β ≤ 2`, the damped radius `t / (1 + C t)` raised to `β` compares with `t ^ 2` on
+`(0, 1]`: `((b / (1 + C b)) ^ β)⁻¹ ≤ ((1 + C b) / b) ^ 2` and
+`t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β` for `t ≤ b`.
 
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
@@ -81,6 +84,8 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
   for `1 < q`, `0 < δ ≤ 1` and `0 ≤ r ≤ 1`.
 * `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: the uniform strict power mean inequality.
 * `TauCeti.rpow_neg_le_exp`: `t ^ (-ε) ≤ exp A` for `0 < t ≤ 1`, `0 ≤ A` and `ε ≤ A t`.
+* `TauCeti.inv_rpow_div_one_add_mul_le_sq`: `((b / (1 + C b)) ^ β)⁻¹ ≤ ((1 + C b) / b) ^ 2`.
+* `TauCeti.sq_le_mul_rpow_div_one_add_mul`: `t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -311,6 +316,32 @@ theorem rpow_neg_le_exp {t ε A : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) (hA : 0 ≤ 
     _ = A * (t * -Real.log t) := by ring
     _ ≤ A * 1 := mul_le_mul_of_nonneg_left htlog hA
     _ = A := mul_one A
+
+/-- For `0 < b ≤ 1`, `C ≥ 0` and `β ≤ 2`, the reciprocal of `(b / (1 + C b)) ^ β` is at most
+`((1 + C b) / b) ^ 2`. -/
+theorem inv_rpow_div_one_add_mul_le_sq {b C β : ℝ} (hb0 : 0 < b) (hb : b ≤ 1)
+    (hC : 0 ≤ C) (hβ2 : β ≤ 2) : ((b / (1 + C * b)) ^ β)⁻¹ ≤ ((1 + C * b) / b) ^ 2 := by
+  rw [← Real.inv_rpow (by positivity), inv_div, ← Real.rpow_two]
+  exact Real.rpow_le_rpow_of_exponent_le ((one_le_div hb0).2 (by nlinarith)) hβ2
+
+/-- For `0 < t ≤ b`, `t ≤ 1`, `C ≥ 0` and `0 ≤ β ≤ 2`,
+`t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β`. -/
+theorem sq_le_mul_rpow_div_one_add_mul {t b C β : ℝ} (ht0 : 0 < t) (htb : t ≤ b)
+    (ht1 : t ≤ 1) (hC : 0 ≤ C) (hβ : 0 ≤ β) (hβ2 : β ≤ 2) :
+    t ^ 2 ≤ (1 + C * b) ^ 2 * (t / (1 + C * t)) ^ β := by
+  have hCb : 1 ≤ 1 + C * b := by nlinarith [mul_nonneg hC (ht0.le.trans htb)]
+  have ht2 : t ^ 2 ≤ t ^ β := by
+    rw [← Real.rpow_two]
+    exact Real.rpow_le_rpow_of_exponent_ge ht0 ht1 hβ2
+  have hCt : (1 + C * t) ^ β ≤ (1 + C * b) ^ 2 := by
+    calc (1 + C * t) ^ β ≤ (1 + C * b) ^ β :=
+          Real.rpow_le_rpow (by positivity) (by nlinarith [mul_le_mul_of_nonneg_left htb hC]) hβ
+      _ ≤ (1 + C * b) ^ (2 : ℝ) := Real.rpow_le_rpow_of_exponent_le hCb hβ2
+      _ = (1 + C * b) ^ 2 := Real.rpow_two _
+  rw [Real.div_rpow ht0.le (by positivity), mul_div_assoc', le_div_iff₀ (by positivity)]
+  calc t ^ 2 * (1 + C * t) ^ β ≤ t ^ β * (1 + C * b) ^ 2 :=
+        mul_le_mul ht2 hCt (by positivity) (by positivity)
+    _ = (1 + C * b) ^ 2 * t ^ β := mul_comm _ _
 
 /-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
 `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/

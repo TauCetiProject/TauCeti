@@ -328,30 +328,6 @@ private theorem rpow_div_one_add_mul_le_exp_mul_sq {a t C ε A : ℝ} (ha : 0 < 
           (by nlinarith)) (by positivity)
     _ = Real.exp (2 * A) * t ^ 2 := by rw [Real.rpow_two, mul_comm]
 
-/-- For `0 < b ≤ 1` and `β ≤ 2`, `((b / (1 + C b)) ^ β)⁻¹ ≤ ((1 + C b) / b) ^ 2`. -/
-private theorem inv_rpow_div_one_add_mul_le_sq {b C β : ℝ} (hb0 : 0 < b) (hb : b ≤ 1)
-    (hC : 0 ≤ C) (hβ2 : β ≤ 2) : ((b / (1 + C * b)) ^ β)⁻¹ ≤ ((1 + C * b) / b) ^ 2 := by
-  rw [← Real.inv_rpow (by positivity), inv_div, ← Real.rpow_two]
-  exact Real.rpow_le_rpow_of_exponent_le ((one_le_div hb0).2 (by nlinarith)) hβ2
-
-/-- For `0 < t ≤ b`, `t ≤ 1` and `0 ≤ β ≤ 2`, `t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β`. -/
-private theorem sq_le_mul_rpow_div_one_add_mul {t b C β : ℝ} (ht0 : 0 < t) (htb : t ≤ b)
-    (ht1 : t ≤ 1) (hC : 0 ≤ C) (hβ : 0 ≤ β) (hβ2 : β ≤ 2) :
-    t ^ 2 ≤ (1 + C * b) ^ 2 * (t / (1 + C * t)) ^ β := by
-  have hCb : 1 ≤ 1 + C * b := by nlinarith [mul_nonneg hC (ht0.le.trans htb)]
-  have ht2 : t ^ 2 ≤ t ^ β := by
-    rw [← Real.rpow_two]
-    exact Real.rpow_le_rpow_of_exponent_ge ht0 ht1 hβ2
-  have hCt : (1 + C * t) ^ β ≤ (1 + C * b) ^ 2 := by
-    calc (1 + C * t) ^ β ≤ (1 + C * b) ^ β :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith [mul_le_mul_of_nonneg_left htb hC]) hβ
-      _ ≤ (1 + C * b) ^ (2 : ℝ) := Real.rpow_le_rpow_of_exponent_le hCb hβ2
-      _ = (1 + C * b) ^ 2 := Real.rpow_two _
-  rw [Real.div_rpow ht0.le (by positivity), mul_div_assoc', le_div_iff₀ (by positivity)]
-  calc t ^ 2 * (1 + C * t) ^ β ≤ t ^ β * (1 + C * b) ^ 2 :=
-        mul_le_mul ht2 hCt (by positivity) (by positivity)
-    _ = (1 + C * b) ^ 2 * t ^ β := mul_comm _ _
-
 /-- For `0 < a ≤ 1` and `ε ≤ A a`, `e ^ (-2 A) (a / (1 + C a)) ^ (2 / (1 + ε)) ≤ a ^ 2`. -/
 private theorem exp_neg_mul_rpow_div_one_add_mul_le_sq {a C ε A : ℝ} (ha : 0 < a) (ha1 : a ≤ 1)
     (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεa : ε ≤ A * a) :
