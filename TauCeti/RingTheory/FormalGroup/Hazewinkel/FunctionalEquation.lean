@@ -53,22 +53,6 @@ theorem hazewinkelFunctionalCoeff_pos (i : ℕ+) :
   rw [hazewinkelFunctionalCoeff, dite_eq_left i.pos]
   congr 2
 
-/-- Applying the `i`-th iterate of a coefficient Frobenius lift to a logarithm
-coefficient replaces each generator by its `pⁱ`-th power. -/
-theorem pow_apply_hazewinkelLogCoeff (σ : K →+* K) (hσ : ∀ j, σ (v j) = v j ^ p)
-    (i n : ℕ) :
-    (σ ^ i) (hazewinkelLogCoeff p v n) =
-      hazewinkelLogCoeff p (fun j ↦ v j ^ p ^ i) n := by
-  rw [map_hazewinkelLogCoeff]
-  congr 1
-  funext j
-  simp only [Function.comp_apply]
-  induction i with
-  | zero => simp
-  | succ i ih =>
-    rw [pow_succ', RingHom.mul_def, RingHom.comp_apply, ih, map_pow, hσ,
-      ← pow_mul, ← pow_succ']
-
 section Equation
 
 variable [NeZero p]
