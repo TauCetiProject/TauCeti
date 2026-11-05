@@ -62,11 +62,11 @@ theorem mapDomain_formalCharacter_of_mem_weylGroup {w : MulAut X} (hw : w ∈ we
       Comodule.formalCharacter k X V := by
   let : Comodule k (MonoidAlgebra k X) V := Comodule.Corestrict (M := V) π.toCoalgHom
   refine MonoidAlgebra.coeff_injective (Finsupp.ext fun y ↦ ?_)
-  have hy := finrank_weightSpace_apply_of_mem_weylGroup π hπ (V := V) hw (w.symm y)
-  rw [MulEquiv.apply_symm_apply, DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace,
-    DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace] at hy
-  rw [MonoidAlgebra.coeff_mapDomain, ← MulEquiv.coe_toEquiv, Finsupp.mapDomain_equiv_apply,
-    ← MulEquiv.toEquiv_symm, MulEquiv.coe_toEquiv, Comodule.formalCharacter_coeff,
-    Comodule.formalCharacter_coeff, hy]
+  obtain ⟨x, rfl⟩ := w.surjective y
+  have hx := finrank_weightSpace_apply_of_mem_weylGroup π hπ (V := V) hw x
+  rw [DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace,
+    DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace] at hx
+  rw [MonoidAlgebra.coeff_mapDomain, Finsupp.mapDomain_apply_of_injective w.injective,
+    Comodule.formalCharacter_coeff, Comodule.formalCharacter_coeff, hx]
 
 end BialgHom
