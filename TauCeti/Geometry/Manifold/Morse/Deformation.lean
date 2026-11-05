@@ -216,9 +216,9 @@ theorem exists_sublevelHomotopyEquiv (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a
     (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) :
     ∃ e : ContinuousMap.HomotopyEquiv {x | f x ≤ a} {x | f x ≤ b},
       ∀ x : {x | f x ≤ a}, (e x : M) = x := by
-  obtain ⟨r, hr, ⟨F⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
-  exact ⟨.ofDeformationRetraction (sublevelInclusion f a b hab) r hr ⟨F.toHomotopy⟩,
-    coe_sublevelInclusion_apply f hab⟩
+  obtain ⟨r, hr, hF⟩ := exists_sublevelDeformation hf hab hcompact hreg
+  exact ⟨.ofDeformationRetraction (sublevelInclusion f a b hab) r hr
+    (ContinuousMap.HomotopicRel.homotopic hF), fun x ↦ by simp⟩
 
 /-- **Sublevels on either side of a band without critical points are diffeomorphic**
 (Milnor, Theorem 3.1). If `f` is smooth, `a ≤ b`, and the band `f⁻¹[a, b]` is compact and contains

@@ -198,11 +198,14 @@ private theorem sublevelBandConnected_of_isOpenEmbedding (hj : IsOpenEmbedding j
     (fun {c ε} hε C' _ _ hC' hempty r hri G ↦ ?_) (fun _ _ h₁ h₂ ↦ h₁.trans h₂)
   · have he := (ContinuousMap.HomotopyEquiv.ofDeformationRetraction
         (ContinuousMap.inclusion (sublevel_mono F hst)) r hri
-        ⟨G.toHomotopy⟩).isWeakHomotopyEquivalence
+        (ContinuousMap.HomotopicRel.homotopic ⟨G⟩)).isWeakHomotopyEquivalence
+    rw [ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun] at he
     exact ⟨fun _ ↦ he.exists_joined, fun _ x ↦ (he.bijective _ x).surjective,
       fun _ x ↦ (he.bijective _ x).injective⟩
   · have hg := (ContinuousMap.HomotopyEquiv.ofDeformationRetraction
-      (ContinuousMap.inclusion hC') r hri ⟨G.toHomotopy⟩).isWeakHomotopyEquivalence
+        (ContinuousMap.inclusion hC') r hri
+        (ContinuousMap.HomotopicRel.homotopic ⟨G⟩)).isWeakHomotopyEquivalence
+    rw [ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun] at hg
     have hgf : (ContinuousMap.inclusion hC').comp (ContinuousMap.inclusion base_subset_complex) =
         (ContinuousMap.inclusion (sublevel_mono F (a := c - ε) (b := c + ε) (by linarith))).comp
           (ContinuousMap.id _) :=

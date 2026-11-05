@@ -154,9 +154,8 @@ open scoped unitInterval
 
 /-- **A deformation retraction gives a homotopy equivalence.** If `r : C(Z, Y)` is a left inverse
 of `i : C(Y, Z)` and `i ∘ r` is homotopic to the identity of `Z`, then `i` is a homotopy
-equivalence `Y ≃ₕ Z` with homotopy inverse `r`. The definition is `@[expose]`d so that its forward
-and backward continuous maps are `i` and `r` by `rfl` in downstream modules. -/
-@[expose] def ofDeformationRetraction {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+equivalence `Y ≃ₕ Z` with homotopy inverse `r`. -/
+def ofDeformationRetraction {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
     (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
     (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) : Y ≃ₕ Z where
   toFun := i
@@ -166,8 +165,23 @@ and backward continuous maps are `i` and `r` by `rfl` in downstream modules. -/
     h ▸ ContinuousMap.Homotopic.refl _
   right_inv := hir
 
-/-- `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` acts on points as `i`. -/
+/-- The forward continuous map of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` is `i`. -/
 @[simp]
+theorem ofDeformationRetraction_toFun {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) :
+    (ofDeformationRetraction i r hri hir).toFun = i :=
+  (rfl)
+
+/-- The inverse continuous map of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` is `r`. -/
+@[simp]
+theorem ofDeformationRetraction_invFun {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) :
+    (ofDeformationRetraction i r hri hir).invFun = r :=
+  (rfl)
+
+/-- `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` acts on points as `i`. -/
 theorem ofDeformationRetraction_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
     (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
     (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) (y : Y) :
