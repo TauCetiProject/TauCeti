@@ -125,15 +125,15 @@ instance : Mul (WordSeries ι R) :=
 theorem coeff_mul (w : FreeMonoid ι) (f g : WordSeries ι R) :
     coeff w (f * g) = ∑ p ∈ Finset.mulAntidiagonal w, coeff p.1 f * coeff p.2 g := (rfl)
 
-protected theorem zero_mul (f : WordSeries ι R) : 0 * f = 0 := by
+private theorem zero_mul_aux (f : WordSeries ι R) : 0 * f = 0 := by
   ext w
   simp [coeff_mul]
 
-protected theorem mul_zero (f : WordSeries ι R) : f * 0 = 0 := by
+private theorem mul_zero_aux (f : WordSeries ι R) : f * 0 = 0 := by
   ext w
   simp [coeff_mul]
 
-protected theorem one_mul (f : WordSeries ι R) : 1 * f = f := by
+private theorem one_mul_aux (f : WordSeries ι R) : 1 * f = f := by
   classical
   ext w
   rw [coeff_mul, Finset.sum_eq_single (1, w)]
@@ -147,7 +147,7 @@ protected theorem one_mul (f : WordSeries ι R) : 1 * f = f := by
     simp [this]
   · simp
 
-protected theorem mul_one (f : WordSeries ι R) : f * 1 = f := by
+private theorem mul_one_aux (f : WordSeries ι R) : f * 1 = f := by
   classical
   ext w
   rw [coeff_mul, Finset.sum_eq_single (w, 1)]
@@ -161,15 +161,15 @@ protected theorem mul_one (f : WordSeries ι R) : f * 1 = f := by
     simp [this]
   · simp
 
-protected theorem mul_add (f g h : WordSeries ι R) : f * (g + h) = f * g + f * h := by
+private theorem mul_add_aux (f g h : WordSeries ι R) : f * (g + h) = f * g + f * h := by
   ext w
   simp [coeff_mul, mul_add, Finset.sum_add_distrib]
 
-protected theorem add_mul (f g h : WordSeries ι R) : (f + g) * h = f * h + g * h := by
+private theorem add_mul_aux (f g h : WordSeries ι R) : (f + g) * h = f * h + g * h := by
   ext w
   simp [coeff_mul, add_mul, Finset.sum_add_distrib]
 
-protected theorem mul_assoc (f g h : WordSeries ι R) : f * g * h = f * (g * h) := by
+private theorem mul_assoc_aux (f g h : WordSeries ι R) : f * g * h = f * (g * h) := by
   ext w
   classical
   simp only [coeff_mul, Finset.sum_mul, Finset.mul_sum, Finset.sum_sigma']
@@ -178,13 +178,13 @@ protected theorem mul_assoc (f g h : WordSeries ι R) : f * g * h = f * (g * h) 
     aesop (add simp [mul_assoc])
 
 instance : Semiring (WordSeries ι R) where
-  one_mul := WordSeries.one_mul
-  mul_one := WordSeries.mul_one
-  mul_zero := WordSeries.mul_zero
-  zero_mul := WordSeries.zero_mul
-  left_distrib := WordSeries.mul_add
-  right_distrib := WordSeries.add_mul
-  mul_assoc := WordSeries.mul_assoc
+  one_mul := by exact one_mul_aux
+  mul_one := by exact mul_one_aux
+  mul_zero := by exact mul_zero_aux
+  zero_mul := by exact zero_mul_aux
+  left_distrib := by exact mul_add_aux
+  right_distrib := by exact add_mul_aux
+  mul_assoc := by exact mul_assoc_aux
 
 /-- Monomial multiplication concatenates the words, without commuting the coefficients. -/
 @[simp] theorem monomial_mul_monomial (u v : FreeMonoid ι) (r s : R) :
@@ -311,6 +311,15 @@ instance [CommSemiring R] : Algebra R (WordSeries ι R) where
   smul_def' r f := by
     ext w
     simp
+
+/-- The algebra map sends a scalar to its constant word series. -/
+theorem algebraMap_eq_C [CommSemiring R] : algebraMap R (WordSeries ι R) = C := (rfl)
+
+open Classical in
+/-- Scalars have their given coefficient at the empty word and vanish at every other word. -/
+@[simp] theorem coeff_algebraMap [CommSemiring R] (w : FreeMonoid ι) (r : R) :
+    coeff w (algebraMap R (WordSeries ι R) r) = if w = 1 then r else 0 := by
+  rw [algebraMap_eq_C, coeff_C]
 
 end WordSeries
 end TauCeti
