@@ -39,10 +39,7 @@ theorem exists_section_sup_of_disjoint {C : Type*} [Category* C] {FC : C → C �
     (ρ : ToType (F.obj.obj (op B))) :
     ∃ τ : ToType (F.obj.obj (op (A ⊔ B))),
       F.obj.map (homOfLE le_sup_left).op τ = σ ∧ F.obj.map (homOfLE le_sup_right).op τ = ρ := by
-  have hprod := isProductOfIsTerminalIsPullback (F.obj.map (homOfLE inf_le_left).op)
-    (F.obj.map (homOfLE inf_le_right).op) (F.obj.map (homOfLE le_sup_left).op)
-    (F.obj.map (homOfLE le_sup_right).op) (F.isTerminalOfEqEmpty hAB.eq_bot)
-    (F.isLimitPullbackCone A B)
+  have hprod := F.isProductOfDisjoint A B hAB.eq_bot
   have hl := mapIsLimitOfPreservesOfIsLimit (CategoryTheory.forget C) _ _ hprod
   have h₁ := BinaryFan.IsLimit.lift_fst hl (↾fun _ : PUnit => σ) (↾fun _ : PUnit => ρ)
   have h₂ := BinaryFan.IsLimit.lift_snd hl (↾fun _ : PUnit => σ) (↾fun _ : PUnit => ρ)
