@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Topology.Sequences
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.Topology.Order.Compact
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 import TauCeti.Topology.Sequences
@@ -19,7 +20,10 @@ Let `e k ≥ 0` be a sequence of densities on a set `Ω` of a metric space, with
 sequence when every ball about `z` eventually carries energy at least `δ`:
 for every `ε > 0`, eventually `δ ≤ ∫_{B_ε(z) ∩ Ω} e k`. Balls about distinct points are disjoint
 once they are small, so a finite set `Z` of such points satisfies `#Z * δ ≤ E`
-(`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`).
+(`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`). If instead the densities
+`1 + e k` concentrate energy `δ` at a null point `z`, then the `e k` concentrate energy `δ'` there
+for every `δ' < δ`, since small balls about `z` have small measure
+(`TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`).
 
 Now let `g k` be continuous functions on `Ω`, for instance the norms of the differentials of
 maps `u k` whose energy densities are `e k`. Suppose that energy concentrates wherever the `g k`
@@ -43,6 +47,8 @@ curves, the mean-value inequality supplies the energy concentration hypothesis, 
 
 * `TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`: a finite set of energy
   concentration points of threshold `δ` has at most `E / δ` elements.
+* `TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`: removing the
+  measure of small balls from concentrating energy loses arbitrarily little of it.
 * `TauCeti.exists_strictMono_finset_forall_le_of_concentration`: when energy concentrates at
   blow-up points, a subsequence is bounded on compact sets off finitely many concentration points.
 
@@ -87,6 +93,32 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
       setIntegral_mono_set (hint i) (ae_restrict_of_forall_mem hΩ (he i))
         (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallyLE
     _ ≤ E := hE i
+
+/-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
+set `Ω`, and let `z` be a point of measure zero about which some ball has finite measure. If for
+every `ρ > 0` eventually `δ ≤ μ(B_ρ(z) ∩ Ω) + ∫_{B_ρ(z) ∩ Ω} e i`, then for every `δ' < δ` and
+`ε > 0` eventually `δ' ≤ ∫_{B_ε(z) ∩ Ω} e i`: the balls about `z` shrink to a null set, so a small
+one has measure below `δ - δ'`. -/
+theorem eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball {ι : Type*}
+    {l : Filter ι} {e : ι → X → ℝ} {z : X} {δ' ε : ℝ} (hΩ : MeasurableSet Ω) (hz : μ {z} = 0)
+    (hfin : ∃ R > 0, μ (ball z R) ≠ ⊤) (he : ∀ i, ∀ y ∈ Ω, 0 ≤ e i y)
+    (hint : ∀ i, IntegrableOn (e i) Ω μ) (hδ' : δ' < δ) (hε : 0 < ε)
+    (hconc : ∀ ρ > 0, ∀ᶠ i in l, δ ≤ μ.real (ball z ρ ∩ Ω) + ∫ y in ball z ρ ∩ Ω, e i y ∂μ) :
+    ∀ᶠ i in l, δ' ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ := by
+  have hlim : Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 0) := by
+    simpa [thickening_singleton, hz] using
+      tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+  obtain ⟨ρ, hρμ, hρ⟩ := ((hlim.eventually (gt_mem_nhds
+    (ENNReal.ofReal_pos.2 (sub_pos.2 hδ')))).and (Ioo_mem_nhdsGT hε)).exists
+  have hρvol : μ.real (ball z ρ ∩ Ω) < δ - δ' :=
+    (measureReal_mono inter_subset_left (hρμ.trans ENNReal.ofReal_lt_top).ne).trans_lt
+      (ENNReal.toReal_lt_of_lt_ofReal hρμ)
+  filter_upwards [hconc ρ hρ.1] with i hi
+  calc δ' ≤ ∫ y in ball z ρ ∩ Ω, e i y ∂μ := by linarith
+    _ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ :=
+      setIntegral_mono_set ((hint i).mono_set inter_subset_right)
+        (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ) fun y hy ↦ he i y hy.2)
+        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallyLE
 
 /-- **Finitely many blow-up points.** Let `g k` be functions continuous on a measurable set `Ω`,
 and let `e k ≥ 0` be densities on `Ω` with `∫_Ω e k ≤ E`. Suppose that energy at least `δ > 0`

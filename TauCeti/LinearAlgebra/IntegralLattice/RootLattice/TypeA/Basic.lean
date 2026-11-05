@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod.Standard
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum

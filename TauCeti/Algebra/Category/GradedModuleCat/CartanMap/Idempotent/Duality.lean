@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Duality
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.PrimitiveHead
 
 /-!

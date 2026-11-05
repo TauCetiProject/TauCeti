@@ -52,7 +52,15 @@ theorem groupAlgebraEquiv_additiveJucysMurphy (hq : q = q⁻¹) (k : Fin n) :
       rw [additiveJucysMurphy_zero, map_zero]
       exact (Finset.sum_eq_zero fun j _ ↦ Fin.elim0 j).symm
     | succ i ih =>
-      rw [additiveJucysMurphy_succ, map_add, map_mul, map_mul, map_smul, ih]
+      have hrec : additiveJucysMurphy q i.succ =
+          T (n := n + 1) q i * additiveJucysMurphy q i.castSucc * T (n := n + 1) q i +
+            (↑q⁻¹ : R) • T (n := n + 1) q i := by
+        have hs : (⟨i.val + 1, i.succ.isLt⟩ : Fin (n + 1)) = i.succ :=
+          Fin.ext (by simp)
+        have hc : (⟨i.val, by omega⟩ : Fin (n + 1)) = i.castSucc := Fin.ext (by simp)
+        have hi : (⟨i.val, by omega⟩ : Fin ((n + 1) - 1)) = i := Fin.ext rfl
+        simpa only [hs, hc, hi] using additiveJucysMurphy_succ (q := q) i.val i.succ.isLt
+      rw [hrec, map_add, map_mul, map_mul, map_smul, ih]
       simp only [groupAlgebraEquiv_T, permCoxeterSystem_simple, Fin.val_succ,
         Fin.sum_univ_castSucc, Finset.mul_sum, Finset.sum_mul,
         MonoidAlgebra.single_mul_single, one_mul, mul_one]
