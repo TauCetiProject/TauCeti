@@ -109,22 +109,22 @@ theorem regularNorm_equivOfIsometry {W : Type*} [AddCommGroup W] [Module ℝ W]
   regularNorm_map Q f.toIsometry x
 
 /-- Left vector multiplication has its exact Euclidean norm scaling factor. -/
-theorem regularNorm_ι_mul (hQ : ∀ v, Q v ≤ 0) (v : V) (x : CliffordAlgebra Q) :
+theorem regularNorm_ι_mul (v : V) (hv : Q v ≤ 0) (x : CliffordAlgebra Q) :
     regularNorm Q (ι Q v * x) = Real.sqrt (-Q v) * regularNorm Q x := by
   simp only [regularNorm, regularBilinForm_ι_mul_self]
-  exact Real.sqrt_mul (neg_nonneg.mpr (hQ v)) _
+  exact Real.sqrt_mul (neg_nonneg.mpr hv) _
 
 /-- Right vector multiplication has the same scaling factor as left multiplication. -/
-theorem regularNorm_mul_ι (hQ : ∀ v, Q v ≤ 0) (v : V) (x : CliffordAlgebra Q) :
+theorem regularNorm_mul_ι (v : V) (hv : Q v ≤ 0) (x : CliffordAlgebra Q) :
     regularNorm Q (x * ι Q v) = Real.sqrt (-Q v) * regularNorm Q x := by
   rw [← regularNorm_star Q (x * ι Q v), star_mul, star_ι, neg_mul,
-    regularNorm_neg, regularNorm_ι_mul Q hQ, regularNorm_star]
+    regularNorm_neg, regularNorm_ι_mul Q v hv, regularNorm_star]
 
 /-- The norm of a vector is the square root of the negative quadratic form. -/
 @[simp]
-theorem regularNorm_ι (hQ : ∀ v, Q v ≤ 0) (v : V) :
+theorem regularNorm_ι (v : V) (hv : Q v ≤ 0) :
     regularNorm Q (ι Q v) = Real.sqrt (-Q v) := by
-  simpa using regularNorm_ι_mul Q hQ v 1
+  simpa using regularNorm_ι_mul Q v hv 1
 
 /-- Real scalar multiplication has the usual absolute-value norm formula. -/
 @[simp]
