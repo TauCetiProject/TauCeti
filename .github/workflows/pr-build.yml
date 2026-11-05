@@ -912,6 +912,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          # Large shared fleet guests spend less CPU on a narrower unpack pool.
+          if [[ "${RUNNER_NAME:-}" == fleet-* ]] && (( $(nproc) > 16 )); then
+            export RAYON_NUM_THREADS=16
+          fi
           if ! ( cd pr && lake exe cache get ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"; then
             echo "::warning::lake exe cache get failed; forcing a full refetch"
             ( cd pr && lake exe cache get! ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"
