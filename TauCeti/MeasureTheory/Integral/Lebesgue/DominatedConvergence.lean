@@ -15,10 +15,15 @@ A function `f : α → ℝ≥0∞` of finite Lebesgue integral exceeds a large c
 amount of small integral: `∫⁻ x, f x - M ∂μ → 0` as `M → ∞`. This is dominated convergence with
 the bound `f`, since `f x - M` vanishes for `M ≥ f x` and `f` is almost everywhere finite.
 
+The file also records a squeeze principle: if `f n ≤ g n + h n` and the integrals of `g n` and
+`h n` tend to `0`, so does the integral of `f n`.
+
 ## Main statements
 
 * `TauCeti.tendsto_lintegral_tsub_atTop`: the integral of the excess of `f` over the constant `M`
   tends to `0` as `M → ∞`.
+* `TauCeti.tendsto_lintegral_zero_of_le_add`: the integral of a function bounded by the sum of
+  two functions with integrals tending to `0` tends to `0`.
 -/
 
 public section
@@ -47,5 +52,19 @@ theorem tendsto_lintegral_tsub_atTop {f : α → ℝ≥0∞} (hf : AEMeasurable 
   filter_upwards [eventually_ge_atTop (f x).toNNReal] with M hM
   rw [eq_comm, tsub_eq_zero_iff_le]
   exact (ENNReal.coe_toNNReal hx.ne).symm.trans_le (ENNReal.coe_le_coe.2 hM)
+
+/-- If `f n ≤ g n + h n` pointwise, `g n` is almost everywhere measurable, and the Lebesgue
+integrals of `g n` and `h n` tend to `0`, then so do those of `f n`. -/
+theorem tendsto_lintegral_zero_of_le_add {ι : Type*} {l : Filter ι} {f g h : ι → α → ℝ≥0∞}
+    (hfgh : ∀ i x, f i x ≤ g i x + h i x) (hg : ∀ i, AEMeasurable (g i) μ)
+    (hgt : Tendsto (fun i ↦ ∫⁻ x, g i x ∂μ) l (𝓝 0))
+    (hht : Tendsto (fun i ↦ ∫⁻ x, h i x ∂μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫⁻ x, f i x ∂μ) l (𝓝 0) := by
+  have hsum := hgt.add hht
+  rw [add_zero] at hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+    (fun _ ↦ zero_le) fun i ↦ ?_
+  rw [← lintegral_add_left' (hg i)]
+  exact lintegral_mono (hfgh i)
 
 end TauCeti

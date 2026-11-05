@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 
+import TauCeti.Analysis.Convolution.Basic
+
 /-!
 # Uniform approximation by normalized bumps
 
@@ -97,5 +99,17 @@ theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
   refine ((ρ i).dist_normed_convolution_le (μ := μ) hg.continuous.aestronglyMeasurable
     (fun y hy => (hgδ ((mem_ball.1 hy).trans hi)).le)).trans_lt ?_
   exact half_lt_self hε
+
+/-- Mollifying a locally integrable function with values in `[0, 1]` by a normalized bump keeps
+its values in `[0, 1]`. -/
+theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ}
+    (hw : LocallyIntegrable w μ) (hw01 : ∀ x, w x ∈ Set.Icc (0 : ℝ) 1) (x : G) :
+    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc (0 : ℝ) 1 := by
+  have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
+    (lsmul ℝ ℝ) φ.continuous_normed hw x
+  exact ⟨le_convolution_lsmul_of_forall_le (μ := μ) φ.support_normed_eq.subset
+    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hw01 y).1,
+    convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
+    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hw01 y).2⟩
 
 end ContDiffBump
