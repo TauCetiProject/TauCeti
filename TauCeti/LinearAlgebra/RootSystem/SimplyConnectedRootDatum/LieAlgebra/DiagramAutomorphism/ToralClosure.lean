@@ -30,7 +30,7 @@ a fundamental representation.
 ## Main declarations
 
 * `TauCeti.DynkinType.scToralDiagramAut`: the descended diagram automorphism.
-* `TauCeti.DynkinType.scToralDiagramAut_mul`: compatibility with multiplication of symmetries.
+* `TauCeti.DynkinType.scToralDiagramAutHom`: the action bundled as a group homomorphism.
 * `TauCeti.DynkinType.scToralDiagramAut_pow_eq_one`: every order relation of the node permutation
   holds on the group scheme.
 
@@ -71,7 +71,7 @@ def scToralDiagramAut (hσ : σ ∈ t.diagramSymmetry) :
 /-- On the numbered positive and negative simple root maps the diagram automorphism only
 renumbers the root, leaving its additive parameter unchanged. -/
 @[simp]
-theorem kostantRootSubgroupToToral_comp_scToralDiagramAut (hσ : σ ∈ t.diagramSymmetry)
+theorem kostantRootSubgroupToToral_comp_scToralDiagramAut_hom (hσ : σ ∈ t.diagramSymmetry)
     (i : Fin t.rank ⊕ Fin t.rank) :
     kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
@@ -88,7 +88,7 @@ theorem kostantRootSubgroupToToral_comp_scToralDiagramAut (hσ : σ ∈ t.diagra
 /-- The diagram automorphism acts on the full-weight torus by inverse relabelling of its
 parameters, the pullback convention for characters. -/
 @[simp]
-theorem kostantWeightTorusToToral_comp_scToralDiagramAut (hσ : σ ∈ t.diagramSymmetry) :
+theorem kostantWeightTorusToToral_comp_scToralDiagramAut_hom (hσ : σ ∈ t.diagramSymmetry) :
     kostantWeightTorusToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
         (t.kostantForm_apply_mem_scLattice ht)
@@ -124,29 +124,45 @@ theorem scToralDiagramAut_mul (hσ : σ ∈ t.diagramSymmetry) (hτ : τ ∈ t.d
   apply kostantToralGroupScheme_hom_ext
   · intro i
     simp only [Aut.mul_asIso, Iso.trans_hom, ← Category.assoc,
-      kostantRootSubgroupToToral_comp_scToralDiagramAut]
+      kostantRootSubgroupToToral_comp_scToralDiagramAut_hom]
     cases i <;> simp
   · simp only [Aut.mul_asIso, Iso.trans_hom, ← Category.assoc,
-      kostantWeightTorusToToral_comp_scToralDiagramAut]
+      kostantWeightTorusToToral_comp_scToralDiagramAut_hom]
     have h := congrArg (fun f => SplitTorus.relabel ℤ τ⁻¹ ≫ f)
-      (t.kostantWeightTorusToToral_comp_scToralDiagramAut ht hσ)
+      (t.kostantWeightTorusToToral_comp_scToralDiagramAut_hom ht hσ)
     simpa only [← Category.assoc, SplitTorus.relabel_comp, mul_inv_rev] using h.symm
+
+/-- The action of the diagram symmetry group on the full-weight integral toral closure,
+bundled as a group homomorphism. -/
+def scToralDiagramAutHom :
+    t.diagramSymmetry →*
+      Aut (kostantToralGroupScheme (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+      (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+      (t.kostantForm_apply_mem_scLattice ht)
+      (t.isNilpotent_representation_scModule_rootGenerator ht)
+      (t.scWeightBasis ht) (t.scWeight ht)) where
+  toFun g := t.scToralDiagramAut ht g.2
+  map_one' := t.scToralDiagramAut_one ht
+  map_mul' g₁ g₂ := t.scToralDiagramAut_mul ht g₁.2 g₂.2
+
+/-- Evaluation of the bundled diagram action is the descended diagram automorphism. -/
+theorem scToralDiagramAutHom_apply (g : t.diagramSymmetry) :
+    t.scToralDiagramAutHom ht g = t.scToralDiagramAut ht g.2 :=
+  (rfl)
 
 /-- Inverting a diagram symmetry inverts its descended automorphism. -/
 @[simp]
 theorem scToralDiagramAut_inv (hσ : σ ∈ t.diagramSymmetry) :
-    t.scToralDiagramAut ht (t.diagramSymmetry.inv_mem hσ) = (t.scToralDiagramAut ht hσ)⁻¹ := by
-  apply eq_inv_of_mul_eq_one_left
-  have h := t.scToralDiagramAut_mul ht (t.diagramSymmetry.inv_mem hσ) hσ
-  simpa only [inv_mul_cancel, scToralDiagramAut_one] using h.symm
+    t.scToralDiagramAut ht (t.diagramSymmetry.inv_mem hσ) = (t.scToralDiagramAut ht hσ)⁻¹ :=
+  map_inv (t.scToralDiagramAutHom ht) ⟨σ, hσ⟩
 
 /-- Every order relation of a diagram permutation holds on the integral toral closure. -/
 theorem scToralDiagramAut_pow_eq_one (hσ : σ ∈ t.diagramSymmetry) (m : ℕ)
     (hσm : σ ^ m = 1) : (t.scToralDiagramAut ht hσ) ^ m = 1 := by
-  apply kostantToralNumberedSymmetryIso_pow_eq_one
-  · simpa only [Equiv.Perm.coe_pow, Equiv.Perm.coe_one] using
-      congrArg DFunLike.coe (diagramRootGeneratorPerm_pow_eq_one hσm)
-  · exact hσm
+  have h : (⟨σ, hσ⟩ : t.diagramSymmetry) ^ m = 1 := Subtype.ext (by simpa using hσm)
+  calc t.scToralDiagramAut ht hσ ^ m = t.scToralDiagramAutHom ht (⟨σ, hσ⟩ ^ m) :=
+        (map_pow (t.scToralDiagramAutHom ht) ⟨σ, hσ⟩ m).symm
+    _ = 1 := (congrArg (t.scToralDiagramAutHom ht) h).trans (map_one _)
 
 end
 
