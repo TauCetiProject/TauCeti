@@ -19,6 +19,10 @@ The inverse of an invertible map also suffices, including on trivial spaces. The
 without completeness or continuity of the original family, and are useful when differentiating
 inverse families.
 
+Over a field, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
+of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
+maps is seen to be homogeneous of the opposite degree.
+
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
@@ -88,6 +92,47 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
       intro hzero
       exact hE (isInvertible_zero_iff.mp (hzero ▸ hB.inverse)).2
     exact eventually_isInvertible_of_tendsto_inverse h hne
+
+section Smul
+
+variable {𝕜 M M₂ : Type*} [Field 𝕜]
+  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+
+/-- Multiplying a continuous linear map by a nonzero scalar does not change its
+invertibility. -/
+@[simp]
+theorem isInvertible_smul_iff {c : 𝕜} (hc : c ≠ 0) {f : M →L[𝕜] M₂} :
+    (c • f).IsInvertible ↔ f.IsInvertible := by
+  refine ⟨fun h ↦ IsInvertible.of_inverse (g := c • (c • f).inverse) ?_ ?_,
+    fun h ↦ IsInvertible.of_inverse (g := c⁻¹ • f.inverse) ?_ ?_⟩
+  · ext y
+    simpa using h.self_apply_inverse y
+  · ext x
+    rw [comp_apply, smul_apply, ← map_smul, ← smul_apply, h.inverse_apply_self, id_apply]
+  · ext y
+    simp [smul_smul, hc, h.self_apply_inverse]
+  · ext x
+    simp [smul_smul, hc, h.inverse_apply_self]
+
+/-- The inverse of `c • f` is `c⁻¹ • f.inverse`. This holds for every scalar: both sides vanish
+when `c = 0` or when `f` is not invertible. -/
+theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · ext y
+    simp [show (0 : 𝕜) • f = 0 by ext; simp]
+  by_cases hf : f.IsInvertible
+  · refine inverse_eq ?_ ?_
+    · ext y
+      simp [smul_smul, hc, hf.self_apply_inverse]
+    · ext x
+      simp [smul_smul, hc, hf.inverse_apply_self]
+  · rw [inverse_of_not_isInvertible hf,
+      inverse_of_not_isInvertible (by rwa [isInvertible_smul_iff hc])]
+    ext y
+    simp
+
+end Smul
 
 section ProdMap
 
