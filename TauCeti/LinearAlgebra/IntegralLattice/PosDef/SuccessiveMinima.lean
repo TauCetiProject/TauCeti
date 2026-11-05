@@ -181,9 +181,11 @@ theorem IsPosSemidef.successiveMinimum_le_integralNorm_of_linearIndependent (hL 
   have := Int.toNat_of_nonneg (hL.integralNorm_nonneg z)
   omega
 
-/-- The greedy step: a least-norm vector outside the rational span of the vectors chosen so far
-attains the next successive minimum, and is at most every vector outside the enlarged span. -/
-theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
+/-- Greedy step: if `x` is a family of `m` independent lattice vectors, each of norm at most that
+of every vector outside their rational span, then some `w` extends it so that `Fin.snoc x w` is
+independent, `w` attains the `m`-th successive minimum, and the extended family keeps the same
+invariant. -/
+private theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
     (hL : L.IsPosSemidef) {m : ℕ} (hm : m < Module.finrank ℤ L) (x : Fin m → L)
     (hx : LinearIndependent ℤ x)
     (hmin : ∀ y : L, (y : V) ∉ Submodule.span ℚ (Set.range (fun j ↦ (x j : V))) →
@@ -194,7 +196,7 @@ theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
           (Set.range (fun j ↦ ((Fin.snoc x w : Fin (m + 1) → L) j : V))) →
         ∀ j, L.integralNorm ((Fin.snoc x w : Fin (m + 1) → L) j) ≤ L.integralNorm y := by
   let S := Submodule.span ℚ (Set.range (fun j ↦ (x j : V)))
-  obtain ⟨y, -, hy⟩ := L.exists_integralNorm_le_successiveMinimum_not_mem_span ⟨m, hm⟩ x
+  obtain ⟨y, hybound, hy⟩ := L.exists_integralNorm_le_successiveMinimum_not_mem_span ⟨m, hm⟩ x
   obtain ⟨w, hwmin⟩ := exists_minimalFor_of_wellFoundedLT
     (fun y : L ↦ (y : V) ∉ S) (fun y ↦ (L.integralNorm y).toNat) ⟨y, hy⟩
   have hw := hwmin.1
@@ -202,7 +204,7 @@ theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
     have hle := hwmin.le hy
     have hwcast := Int.toNat_of_nonneg (hL.integralNorm_nonneg w)
     have hycast := Int.toNat_of_nonneg (hL.integralNorm_nonneg y)
-    exact hwcast ▸ hycast ▸ Int.ofNat_le.mpr hle
+    omega
   have hcw : L.integralNorm w = ((L.integralNorm w).toNat : ℤ) :=
     (Int.toNat_of_nonneg (hL.integralNorm_nonneg w)).symm
   have hsnoc : LinearIndependent ℤ (Fin.snoc x w : Fin (m + 1) → L) := by
@@ -212,7 +214,6 @@ theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
       simpa only [Fin.comp_snoc, Submodule.subtype_apply] using h
     exact h'.of_comp L.carrier.subtype
   have hcw' : L.integralNorm w = L.successiveMinimum ⟨m, hm⟩ := by
-    obtain ⟨y, hybound, hy⟩ := L.exists_integralNorm_le_successiveMinimum_not_mem_span ⟨m, hm⟩ x
     apply le_antisymm ((hleast y hy).trans hybound)
     have hle := L.successiveMinimum_le_of_linearIndependent ⟨m, hm⟩ hsnoc
       (c := (L.integralNorm w).toNat) (fun j ↦ Fin.lastCases (by simp)
@@ -221,7 +222,7 @@ theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
     exact_mod_cast hle
   refine ⟨w, hsnoc, hcw', fun y hy j ↦ ?_⟩
   have hsub : S ≤ Submodule.span ℚ
-      (Set.range (L.carrier.subtype ∘ (Fin.snoc x w : Fin (m + 1) → L))) := by
+      (Set.range (fun j ↦ ((Fin.snoc x w : Fin (m + 1) → L) j : V))) := by
     apply Submodule.span_mono
     rintro z ⟨k, rfl⟩
     exact ⟨k.castSucc, by simp⟩
@@ -230,7 +231,8 @@ theorem IsPosSemidef.exists_snoc_integralNorm_eq_successiveMinimum
 
 /-- Greedy construction of `m` independent vectors realising the first `m` successive minima,
 each at most every vector outside the span of the chosen ones. -/
-theorem IsPosSemidef.exists_linearIndependent_greedy (hL : L.IsPosSemidef) (m : ℕ)
+theorem IsPosSemidef.exists_linearIndependent_fin_integralNorm_eq_successiveMinimum_of_le
+    (hL : L.IsPosSemidef) (m : ℕ)
     (hm : m ≤ Module.finrank ℤ L) :
     ∃ x : Fin m → L, LinearIndependent ℤ x ∧
       (∀ j, L.integralNorm (x j) = L.successiveMinimum ⟨j.val, j.isLt.trans_le hm⟩) ∧
@@ -254,7 +256,9 @@ theorem IsPosSemidef.exists_linearIndependent_integralNorm_eq_successiveMinimum
     (hL : L.IsPosSemidef) :
     ∃ x : Fin (Module.finrank ℤ L) → L,
       LinearIndependent ℤ x ∧ ∀ i, L.integralNorm (x i) = L.successiveMinimum i := by
-  obtain ⟨x, hx, hnorm, -⟩ := hL.exists_linearIndependent_greedy (Module.finrank ℤ L) le_rfl
+  obtain ⟨x, hx, hnorm, -⟩ :=
+    hL.exists_linearIndependent_fin_integralNorm_eq_successiveMinimum_of_le
+      (Module.finrank ℤ L) le_rfl
   exact ⟨x, hx, hnorm⟩
 
 /-- Every successive minimum of a positive semidefinite lattice is the norm of a nonzero vector.
