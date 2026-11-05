@@ -38,6 +38,10 @@ Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `�
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
 (`ContinuousLinearMap.norm_apply_bounds_of_net`).
 
+A continuous bilinear map satisfies a Young-type bound
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
+(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
+
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
 radius (`ContinuousLinearMap.image_ball_eq_ball`).
@@ -149,6 +153,25 @@ theorem norm_sum_apply_apply_le {ι : Type*} (s : Finset ι) (A : X →L[𝕜] X
         mul_le_mul_of_nonneg_right (A.le_opNorm _) (norm_nonneg _)
     _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
     _ = ‖A‖ := by ring
+
+section Young
+
+variable {𝕜 X Y Z : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X]
+  [NormedSpace 𝕜 X] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y] [SeminormedAddCommGroup Z]
+  [NormedSpace 𝕜 Z]
+
+/-- A Young-type bound for a continuous bilinear map: for every `c > 0`,
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
+theorem norm_apply_apply_le_mul_add_sq (B : X →L[𝕜] Y →L[𝕜] Z) {c : ℝ} (hc : 0 < c) (u : X)
+    (v : Y) : ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
+  refine (B.le_opNorm₂ _ _).trans ?_
+  rw [mul_assoc]
+  gcongr
+  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
+  rw [inv_inv] at h
+  linarith
+
+end Young
 
 section Net
 
