@@ -9,7 +9,7 @@ public import Mathlib.Dynamics.Flow
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Quotient.Descent
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.MappingTorus.Basic
 
 /-!

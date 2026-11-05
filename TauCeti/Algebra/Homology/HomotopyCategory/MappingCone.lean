@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
+public import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # Mapping cones and homotopy equivalences
@@ -14,6 +15,11 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 The standard null-homotopy of `f ≫ mappingCone.inr f` has components given by
 `mappingCone.inl f`. This file exposes that homotopy and the component formulas relating
 Mathlib's mapping-cone API to its underlying homotopy-cofiber construction.
+
+For Mathlib's `mappingCone.mapOfHomotopy`, the component formulas retain the specified square
+homotopy. These maps compose using `Homotopy.compSquare`, and a specified degree-minus-two
+cochain whose differential is the difference of two square homotopies induces a homotopy
+of the cone maps (`mapOfHomotopyHomotopy`). This uses Joël Riou's `mappingCone.descHomotopy`.
 
 A morphism of cochain complexes `f : K ⟶ L` sits in the distinguished triangle
 `K ⟶ L ⟶ cone f ⟶ K⟦1⟧` of the homotopy category. In a pretriangulated category the third
@@ -51,6 +57,33 @@ complex of towers of modules is built from such a functor.
   isomorphism of arrows.
 * `NatTrans.mappingConeFunctor`: the mapping cone of a natural transformation, as a functor, which
   commutes with the shifts when `τ` does.
+
+## Mapping cones of maps of mapping cones
+
+A commutative square `a ≫ v = u ≫ b` of cochain complexes, with `a : X₁ ⟶ X₂`, `b : Y₁ ⟶ Y₂`,
+`u : X₁ ⟶ Y₁` and `v : X₂ ⟶ Y₂`, induces maps of mapping cones `cone a ⟶ cone b` and
+`cone u ⟶ cone v`. Their mapping cones are isomorphic: in degree `n` both are
+`X₁ⁿ⁺² ⊕ X₂ⁿ⁺¹ ⊕ Y₁ⁿ⁺¹ ⊕ Y₂ⁿ`, and the isomorphism changes the sign of the first summand. It is
+compatible with the right inclusions of `cone v` and with the third morphisms of the mapping cone
+triangles. It is built with Joël Riou's `mappingCone.lift` and `mappingCone.descCocycle`.
+
+For a natural transformation `α : F ⟶ G` of additive functors, the mapping cone of the induced
+natural transformation of functors on cochain complexes, evaluated at the mapping cone of `φ`,
+is such a mapping cone of a map of mapping cones, after Mathlib's identification
+`mappingCone.mapHomologicalComplexIso` of `F (cone φ)` with `cone (F φ)`. Hence the functor
+`NatTrans.mappingConeFunctor` sends mapping cone triangles to mapping cone triangles, compatibly
+with its commutation with the shifts, as Mathlib's `CochainComplex.mappingCone.mapTriangleIso`
+does for a single additive functor.
+
+* `CochainComplex.mappingCone.transposeIso`: the isomorphism between the mapping cones of
+  `cone a ⟶ cone b` and of `cone u ⟶ cone v`.
+* `CochainComplex.mappingCone.map_inr_inr_comp_transposeHom` and
+  `CochainComplex.mappingCone.map_triangle_mor₃_comp_shiftIso_inv`: its compatibility with the
+  mapping cone triangles.
+* `CochainComplex.mappingCone.mapHomologicalComplexIso_hom_naturality`: naturality of
+  `mapHomologicalComplexIso` in the additive functor.
+* `NatTrans.mappingConeFunctorMapTriangleIso`: the image of a mapping cone triangle by the mapping
+  cone functor of a natural transformation of additive functors.
 -/
 
 public section
@@ -102,6 +135,91 @@ theorem nonempty_homotopy_id_zero_of_homotopyEquiv (e : HomotopyEquiv K L) :
   nonempty_homotopy_id_zero_of_isIso_quotient_map e.hom
 
 end
+
+section HomotopySquares
+
+open HomComplex
+
+variable {K₁ L₁ K₂ L₂ K₃ L₃ : CochainComplex C ℤ}
+  {φ₁ : K₁ ⟶ L₁} {φ₂ : K₂ ⟶ L₂} {φ₃ : K₃ ⟶ L₃}
+  {a : K₁ ⟶ K₂} {b : L₁ ⟶ L₂}
+  (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
+
+/-- A cone map from a specified square homotopy acts on the shifted source by the source map
+and the chosen homotopy. -/
+@[reassoc (attr := simp)]
+lemma inl_v_mapOfHomotopy_f (p q : ℤ) (hpq : p + -1 = q) :
+    (inl φ₁).v p q hpq ≫ (mapOfHomotopy H).f q =
+      a.f p ≫ (inl φ₂).v p q hpq + H.hom p q ≫ (inr φ₂).f q := by
+  simp [mapOfHomotopy, Cochain.equivHomotopy, Cochain.ofHomotopy]
+
+/-- A cone map from a specified square homotopy acts on the target by the target map. -/
+@[reassoc (attr := simp)]
+lemma inr_f_mapOfHomotopy_f (p : ℤ) :
+    (inr φ₁).f p ≫ (mapOfHomotopy H).f p = b.f p ≫ (inr φ₂).f p :=
+  HomologicalComplex.congr_hom (triangleMapOfHomotopy_comm₂ H) p
+
+/-- The first projection of a cone map does not depend on the square homotopy. -/
+@[reassoc (attr := simp)]
+lemma mapOfHomotopy_f_fst_v (p q : ℤ) (hpq : p + 1 = q) :
+    (mapOfHomotopy H).f p ≫ (fst φ₂).1.v p q hpq =
+      (fst φ₁).1.v p q hpq ≫ a.f q := by
+  apply ext_from φ₁ q p hpq <;> simp
+
+/-- The second projection retains the specified square homotopy. -/
+@[reassoc (attr := simp)]
+lemma mapOfHomotopy_f_snd_v (p q : ℤ) (hpq : p + 1 = q) :
+    (mapOfHomotopy H).f p ≫ (snd φ₂).v p p (add_zero p) =
+      (fst φ₁).1.v p q hpq ≫ H.hom q p +
+        (snd φ₁).v p p (add_zero p) ≫ b.f p := by
+  apply ext_from φ₁ q p hpq <;> simp
+
+variable {a' : K₂ ⟶ K₃} {b' : L₂ ⟶ L₃}
+  (H' : Homotopy (φ₂ ≫ b') (a' ≫ φ₃))
+
+/-- Cone maps compose with the composed square homotopy, not with an independently chosen
+homotopy for the outer square. -/
+@[reassoc]
+lemma mapOfHomotopy_comp :
+    mapOfHomotopy (H.compSquare H') = mapOfHomotopy H ≫ mapOfHomotopy H' := by
+  ext p
+  apply ext_from φ₁ (p + 1) p rfl <;>
+    simp [Preadditive.add_comp, Preadditive.comp_add, add_assoc, add_comm]
+
+/-- A specified second homotopy between square homotopies gives a homotopy of their cone maps.
+No independence from an arbitrary choice of square homotopy is asserted. -/
+noncomputable def mapOfHomotopyHomotopy
+    (H₂ : Homotopy (φ₁ ≫ b) (a ≫ φ₂)) (s : Cochain K₁ L₂ (-2))
+    (hs : δ (-2) (-1) s = Cochain.ofHomotopy H - Cochain.ofHomotopy H₂) :
+    Homotopy (mapOfHomotopy H) (mapOfHomotopy H₂) :=
+  descHomotopy φ₁ _ _ (s.comp (Cochain.ofHom (inr φ₂)) (add_zero _)) 0
+    (by
+      rw [δ_comp_zero_cochain _ _ (-1) (by omega), δ_ofHom, Cochain.comp_zero,
+        zero_add, hs, Cochain.sub_comp]
+      simp only [mapOfHomotopy, inl_desc, Cochain.comp_zero, add_zero]
+      ext p q hpq
+      simp only [Cochain.add_v, Cochain.sub_v, Cochain.zero_cochain_comp_v,
+        Cochain.ofHom_v, Cochain.comp_zero_cochain_v]
+      simp [Cochain.equivHomotopy, Cochain.ofHomotopy]
+      abel)
+    (by simp [mapOfHomotopy])
+
+/-- The second homotopy of cone maps factors through the first projection of the source
+and the right inclusion of the target. -/
+@[simp]
+lemma mapOfHomotopyHomotopy_hom
+    (H₂ : Homotopy (φ₁ ≫ b) (a ≫ φ₂)) (s : Cochain K₁ L₂ (-2))
+    (hs : δ (-2) (-1) s = Cochain.ofHomotopy H - Cochain.ofHomotopy H₂)
+    (p q : ℤ) (hpq : p + -1 = q) :
+    (mapOfHomotopyHomotopy H H₂ s hs).hom p q =
+      (fst φ₁ : Cochain _ _ 1).v p (p + 1) rfl ≫
+        s.v (p + 1) q (by omega) ≫ (inr φ₂).f q := by
+  simp only [mapOfHomotopyHomotopy, descHomotopy, Cochain.equivHomotopy,
+    Equiv.coe_fn_symm_mk, hpq, ↓reduceDIte, descCochain, Cochain.comp_zero, add_zero]
+  rw [Cochain.comp_v _ _ _ p (p + 1) q rfl (by omega),
+    Cochain.comp_zero_cochain_v, Cochain.ofHom_v]
+
+end HomotopySquares
 
 section Shift
 
@@ -222,6 +340,111 @@ lemma shiftFunctorAdd_inv_app_shiftIso_hom (a b : ℤ) :
 
 end Shift
 
+section Transpose
+
+open HomComplex
+
+variable {X₁ X₂ Y₁ Y₂ : CochainComplex C ℤ} (a : X₁ ⟶ X₂) (b : Y₁ ⟶ Y₂) (u : X₁ ⟶ Y₁)
+  (v : X₂ ⟶ Y₂) (comm : a ≫ v = u ≫ b)
+
+/-- For a commutative square `a ≫ v = u ≫ b` of cochain complexes, the comparison morphism
+between the mapping cones of the maps `cone a ⟶ cone b` and `cone u ⟶ cone v` induced by the
+square. In degree `n` both mapping cones are `X₁ⁿ⁺² ⊕ X₂ⁿ⁺¹ ⊕ Y₁ⁿ⁺¹ ⊕ Y₂ⁿ`, and the comparison
+is the identity on these summands except for the sign `-1` on `X₁ⁿ⁺²`. It is an isomorphism,
+`mappingCone.transposeIso`, whose inverse is the comparison for the transposed square. -/
+noncomputable def transposeHom :
+    mappingCone (map a b u v comm) ⟶ mappingCone (map u v a b comm.symm) :=
+  lift _ (descCocycle _ (-(fst a).1.comp (inl u) (add_neg_cancel 1))
+      (Cocycle.mk ((fst b).1.comp (Cochain.ofHom (inr u)) (add_zero 1)) 2 (by lia) (by
+        simp [δ_comp_zero_cochain])) (zero_add 1) (by
+        rw [δ_neg, δ_comp (fst a).1 (inl u) _ 2 0 1 (by lia) rfl (by lia)]
+        ext p q hpq
+        simp))
+    (descCochain _ ((snd a).comp (inl v) (zero_add _))
+      ((snd b).comp (Cochain.ofHom (inr v)) (zero_add 0)) (neg_add_cancel 1)) (by
+      ext p _ rfl
+      simp [ext_from_iff _ (p + 1) p rfl, ext_from_iff _ (p + 2) (p + 1) (by lia),
+        inl_v_d_assoc _ (p + 1) p (p + 2) (by lia) (by lia),
+        inl_v_d _ (p + 1) p (p + 2) (by lia) (by lia),
+        inl_v_d_assoc _ (p + 2) (p + 1) (p + 3) (by lia) (by lia),
+        Cochain.comp_v _ _ (add_neg_cancel 1) (p + 1) (p + 2) (p + 1) (by lia) (by lia)])
+
+/-- The comparison for the transposed square is inverse to `mappingCone.transposeHom`. -/
+@[reassoc (attr := simp)]
+lemma transposeHom_comp_transposeHom :
+    transposeHom a b u v comm ≫ transposeHom u v a b comm.symm = 𝟙 _ := by
+  ext n
+  simp [transposeHom, lift_f _ _ _ _ n (n + 1) rfl, ext_from_iff _ (n + 1) n rfl,
+    Cochain.comp_v _ _ (add_neg_cancel 1) (n + 1) (n + 2) (n + 1) (by lia) (by lia),
+    ext_from_iff _ (n + 2) (n + 1) (by lia)]
+
+/-- The mapping cone of the map `cone a ⟶ cone b` of mapping cones induced by a commutative
+square `a ≫ v = u ≫ b` is isomorphic to the mapping cone of the map `cone u ⟶ cone v`. -/
+noncomputable def transposeIso :
+    mappingCone (map a b u v comm) ≅ mappingCone (map u v a b comm.symm) where
+  hom := transposeHom a b u v comm
+  inv := transposeHom u v a b comm.symm
+  hom_inv_id := transposeHom_comp_transposeHom a b u v comm
+  inv_hom_id := transposeHom_comp_transposeHom u v a b comm.symm
+
+@[simp]
+lemma transposeIso_hom : (transposeIso a b u v comm).hom = transposeHom a b u v comm :=
+  (rfl)
+
+@[simp]
+lemma transposeIso_inv : (transposeIso a b u v comm).inv = transposeHom u v a b comm.symm :=
+  (rfl)
+
+/-- Under `mappingCone.transposeHom`, the map `cone v ⟶ cone (cone a ⟶ cone b)` induced by the
+right inclusions becomes the right inclusion of `cone v` in the mapping cone of
+`cone u ⟶ cone v`. -/
+@[reassoc (attr := simp)]
+lemma map_inr_inr_comp_transposeHom :
+    map v (map a b u v comm) (inr a) (inr b) (by ext; simp) ≫
+        transposeHom a b u v comm =
+      inr (map u v a b comm.symm) := by
+  ext n
+  simp [transposeHom, ext_from_iff _ (n + 1) n rfl, ext_to_iff _ n (n + 1) rfl,
+    Cochain.comp_v _ _ (add_neg_cancel 1) (n + 1) (n + 2) (n + 1) (by lia) (by lia)]
+
+/-- Under `mappingCone.transposeHom`, the map `cone (cone a ⟶ cone b) ⟶ cone (u⟦1⟧')` induced
+by the third morphisms of the mapping cone triangles of `a` and `b`, followed by
+`mappingCone.shiftIso`, becomes the third morphism of the mapping cone triangle of
+`cone u ⟶ cone v`. -/
+@[reassoc]
+lemma map_triangle_mor₃_comp_shiftIso_inv :
+    map (map a b u v comm) (u⟦(1 : ℤ)⟧') (triangle a).mor₃ (triangle b).mor₃
+        (by ext n; simp [ext_from_iff _ (n + 1) n rfl]) ≫ (shiftIso u 1).inv =
+      transposeHom a b u v comm ≫ (triangle (map u v a b comm.symm)).mor₃ := by
+  ext n
+  simp [transposeHom, lift_f _ _ _ _ n (n + 1) rfl, ext_from_iff _ (n + 1) n rfl,
+    ext_to_iff _ (n + 1) (n + 2) (by lia), shiftIso, Cochain.shift_v',
+    ext_from_iff _ (n + 2) (n + 1) (by lia),
+    inl_v_fst_v' u (n + 1 + 1) (n + 1) (n + 2) (by lia) (by lia),
+    Cochain.comp_v _ _ (add_neg_cancel 1) (n + 1) (n + 2) (n + 1) (by lia) (by lia)]
+
+end Transpose
+
+section MapHomologicalComplex
+
+variable {D : Type*} [Category* D] [Preadditive D] [HasBinaryBiproducts D] {F G : C ⥤ D}
+  [F.Additive] [G.Additive] (α : F ⟶ G)
+
+/-- The identification `mappingCone.mapHomologicalComplexIso` of the image of a mapping cone by
+an additive functor with the mapping cone of the image is natural in the additive functor. -/
+@[reassoc]
+lemma mapHomologicalComplexIso_hom_naturality :
+    (NatTrans.mapHomologicalComplex α _).app (mappingCone f) ≫
+        (mapHomologicalComplexIso f G).hom =
+      (mapHomologicalComplexIso f F).hom ≫
+        map _ _ ((NatTrans.mapHomologicalComplex α _).app K)
+          ((NatTrans.mapHomologicalComplex α _).app L)
+          ((NatTrans.mapHomologicalComplex α _).naturality f) := by
+  ext n
+  simp [mapHomologicalComplexIso, mapHomologicalComplexXIso_eq f _ n (n + 1) rfl]
+
+end MapHomologicalComplex
+
 end CochainComplex.mappingCone
 
 namespace CategoryTheory.NatTrans
@@ -320,6 +543,102 @@ noncomputable instance : (mappingConeFunctor τ).CommShift ℤ where
 
 lemma mappingConeFunctor_commShiftIso_hom_app (a : ℤ) (X : D) :
     ((mappingConeFunctor τ).commShiftIso a).hom.app X = (mappingConeFunctorShiftIso τ a X).hom :=
+  (rfl)
+
+end CategoryTheory.NatTrans
+
+namespace CategoryTheory.NatTrans
+
+open CategoryTheory CochainComplex CochainComplex.mappingCone
+
+variable {A : Type*} [Category* A] [Preadditive A] [HasBinaryBiproducts A]
+  {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C] {F G : A ⥤ C}
+  [F.Additive] [G.Additive] (α : F ⟶ G) {K L : CochainComplex A ℤ} (φ : K ⟶ L)
+
+private lemma mappingConeFunctorMapTriangleIso_comm₂ :
+    map _ _ ((F.mapHomologicalComplex _).map (inr φ)) ((G.mapHomologicalComplex _).map (inr φ))
+        ((NatTrans.mapHomologicalComplex α _).naturality (inr φ)).symm ≫
+      map _ _ (mapHomologicalComplexIso φ F).hom (mapHomologicalComplexIso φ G).hom
+        (mapHomologicalComplexIso_hom_naturality φ α) ≫
+      transposeHom _ _ _ _ ((NatTrans.mapHomologicalComplex α _).naturality φ) =
+    inr (map _ _ ((F.mapHomologicalComplex _).map φ) ((G.mapHomologicalComplex _).map φ)
+      ((NatTrans.mapHomologicalComplex α _).naturality φ).symm) := by
+  rw [← Category.assoc, ← map_comp]
+  simp only [map_inr, map_inr_inr_comp_transposeHom]
+
+private lemma mappingConeFunctorMapTriangleIso_comm₃ :
+    map _ _ ((F.mapHomologicalComplex _).map (triangle φ).mor₃)
+        ((G.mapHomologicalComplex _).map (triangle φ).mor₃)
+        ((NatTrans.mapHomologicalComplex α _).naturality _).symm ≫
+      map _ _ (((F.mapHomologicalComplex _).commShiftIso (1 : ℤ)).hom.app K)
+        (((G.mapHomologicalComplex _).commShiftIso (1 : ℤ)).hom.app K)
+        (NatTrans.shift_app_comm (NatTrans.mapHomologicalComplex α _) 1 K).symm ≫
+      (shiftIso ((NatTrans.mapHomologicalComplex α _).app K) 1).inv =
+    (map _ _ (mapHomologicalComplexIso φ F).hom (mapHomologicalComplexIso φ G).hom
+        (mapHomologicalComplexIso_hom_naturality φ α) ≫
+      transposeHom _ _ _ _ ((NatTrans.mapHomologicalComplex α _).naturality φ)) ≫
+      (triangle (map _ _ ((F.mapHomologicalComplex _).map φ) ((G.mapHomologicalComplex _).map φ)
+        ((NatTrans.mapHomologicalComplex α _).naturality φ).symm)).mor₃ := by
+  rw [Category.assoc, ← map_triangle_mor₃_comp_shiftIso_inv, ← Category.assoc,
+    ← Category.assoc, ← map_comp, ← map_comp]
+  simp only [map_δ]
+  -- The two sides differ only by `(triangle φ).obj₃ = mappingCone φ`, which holds by definition.
+  rfl
+
+/-- For a natural transformation `α : F ⟶ G` of additive functors, the mapping cone functor
+`K ↦ mappingCone (α.app K)` of the induced natural transformation of functors on cochain
+complexes sends the mapping cone triangle of `φ` to the mapping cone triangle of its image,
+compatibly with its commutation with the shifts. This extends Mathlib's
+`CochainComplex.mappingCone.mapTriangleIso`, the case of a single additive functor. -/
+noncomputable def mappingConeFunctorMapTriangleIso :
+    (mappingConeFunctor (NatTrans.mapHomologicalComplex α (ComplexShape.up ℤ))).mapTriangle.obj
+        (triangle φ) ≅
+      triangle
+        ((mappingConeFunctor (NatTrans.mapHomologicalComplex α (ComplexShape.up ℤ))).map φ) :=
+  Pretriangulated.Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _)
+    (mapIso (mapHomologicalComplexIso φ F) (mapHomologicalComplexIso φ G)
+        (mapHomologicalComplexIso_hom_naturality φ α) ≪≫
+      transposeIso _ _ _ _ ((NatTrans.mapHomologicalComplex α _).naturality φ))
+    (by dsimp; exact (Category.comp_id _).trans (Category.id_comp _).symm)
+    (by
+      dsimp
+      exact (mappingConeFunctorMapTriangleIso_comm₂ α φ).trans (Category.id_comp _).symm)
+    (by dsimp; exact (Category.comp_id _).trans (mappingConeFunctorMapTriangleIso_comm₃ α φ))
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_hom_hom₁ :
+    (mappingConeFunctorMapTriangleIso α φ).hom.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_hom_hom₂ :
+    (mappingConeFunctorMapTriangleIso α φ).hom.hom₂ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_hom_hom₃ :
+    (mappingConeFunctorMapTriangleIso α φ).hom.hom₃ =
+      map _ _ (mapHomologicalComplexIso φ F).hom (mapHomologicalComplexIso φ G).hom
+          (mapHomologicalComplexIso_hom_naturality φ α) ≫
+        transposeHom _ _ _ _ ((NatTrans.mapHomologicalComplex α _).naturality φ) :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_inv_hom₁ :
+    (mappingConeFunctorMapTriangleIso α φ).inv.hom₁ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_inv_hom₂ :
+    (mappingConeFunctorMapTriangleIso α φ).inv.hom₂ = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma mappingConeFunctorMapTriangleIso_inv_hom₃ :
+    (mappingConeFunctorMapTriangleIso α φ).inv.hom₃ =
+      transposeHom _ _ _ _ ((NatTrans.mapHomologicalComplex α _).naturality φ).symm ≫
+        (mapIso (mapHomologicalComplexIso φ F) (mapHomologicalComplexIso φ G)
+          (mapHomologicalComplexIso_hom_naturality φ α)).inv :=
   (rfl)
 
 end CategoryTheory.NatTrans

@@ -6,6 +6,7 @@ Authors: William Coram, The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
@@ -568,6 +569,51 @@ theorem exists_convexSeq_le_iff {a : ℕ → WithTop ℝ} :
     exact hh.isAdmissible.mono hha
   · rintro ⟨c, m, hcm⟩
     exact ⟨_, isConvexSeq_affine c m, hcm⟩
+
+/-! ### Changes of height scale -/
+
+section HeightScale
+
+variable {h : ℕ → WithTop ℝ} (e : ℝ ≃+o ℝ)
+
+/-- Changing the height scale leaves the finite unit edges unchanged. -/
+@[simp]
+theorem finiteEdges_map (f : ℝ → ℝ) :
+    finiteEdges (fun n => WithTop.map f (h n)) = finiteEdges h := by
+  ext n
+  simp
+
+/-- Unit increments transform additively with the height scale. This also respects
+the zero default at infinite heights; only finite edges represent geometric slopes. -/
+@[simp]
+theorem unitSlope_map {F : Type*} [FunLike F ℝ ℝ] [AddMonoidHomClass F ℝ ℝ]
+    (f : F) (n : ℕ) :
+    unitSlope (fun n => WithTop.map f (h n)) n = f (unitSlope h n) := by
+  simp only [unitSlope_def, map_sub]
+  generalize h n = x, h (n + 1) = y
+  induction x using WithTop.recTopCoe <;>
+    induction y using WithTop.recTopCoe <;> simp
+
+/-- An ordered additive change of height scale preserves convexity. -/
+theorem IsConvexSeq.map (hh : IsConvexSeq h) {F : Type*} [FunLike F ℝ ℝ]
+    [AddMonoidHomClass F ℝ ℝ] [OrderHomClass F ℝ ℝ] (f : F) :
+    IsConvexSeq (fun n => WithTop.map f (h n)) := by
+  refine ⟨?_, ?_⟩
+  · simpa only [ne_eq, WithTop.map_eq_top_iff] using hh.ordConnected
+  · intro i hi j hj hij
+    rw [finiteEdges_map] at hi hj
+    simp only [unitSlope_map]
+    exact OrderHomClass.mono f (hh.monotoneOn hi hj hij)
+
+/-- An ordered additive change of height scale preserves and reflects convexity. -/
+@[simp]
+theorem isConvexSeq_map_iff :
+    IsConvexSeq (fun n => WithTop.map e (h n)) ↔ IsConvexSeq h := by
+  refine ⟨fun hh => ?_, fun hh => hh.map e⟩
+  have hinv : e.symm ∘ e = id := funext e.symm_apply_apply
+  simpa only [WithTop.map_map, hinv, WithTop.map_id, id_eq] using hh.map e.symm
+
+end HeightScale
 
 /-! ### Affine covariance -/
 

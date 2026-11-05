@@ -36,8 +36,10 @@ gives the cylindrical end in coordinates: every point `x` outside `W` is `ψ_t(y
 point `y` of the boundary `∂W` and one time `t > 0`, where `ψ` is the Liouville flow
 (`TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`). So `M` is the disjoint union of `W` and
 the flow-out `(y, t) ↦ ψ_t(y)` of `∂W × (0, ∞)`, which is the end `∂W × (1, ∞)` of the completion
-in the coordinate `r = e^t`. This file proves this point-set description of the end; the
-identification of the primitive on it with `r α|∂W` is not treated here.
+in the coordinate `r = e^t`: the map `(t, y) ↦ ψ_t(y)` is a bijection from `(0, ∞) × ∂W` onto
+`M \ W` (`TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ioi_prod_frontier`). This file proves this
+point-set description of the end; the identification of the primitive on it with `r α|∂W` is in
+`TauCeti.Geometry.Symplectic.Liouville.Symplectization`.
 
 ## Main definitions
 
@@ -53,6 +55,10 @@ identification of the primitive on it with `r α|∂W` is not treated here.
   Liouville domain under the Liouville flow are Liouville domains.
 * `TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`: the cylindrical end of a completion,
   each point outside `W` lies on exactly one outgoing Liouville trajectory from `∂W`.
+* `TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ioi_prod_frontier`,
+  `TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ici_prod_frontier`: the Liouville flow map of a
+  completion is a bijection from `(0, ∞) × ∂W` onto `M \ W`, and from `[0, ∞) × ∂W` onto
+  `M \ int W`.
 * `TauCeti.IsLiouvilleCompletion.flowOf_flowOf`: the Liouville flow of a completion is a global
   flow, satisfying the group law.
 * `TauCeti.IsLiouvilleCompletion.flowOf_neg_mem_interior`: the backward Liouville flow carries
@@ -294,6 +300,40 @@ theorem exists_mem_frontier_flowOf_eq (h : IsLiouvilleCompletion ω α W)
     exact ⟨hxW, hx⟩
   · obtain ⟨⟨y, s⟩, ⟨hy, hs, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hxW
     exact ⟨y, hy, s, hs.le, hyx⟩
+
+/-- The Liouville flow map of a completion is injective on `ℝ × ∂W`. -/
+private theorem injOn_flowOf_prod_frontier (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) {s : Set ℝ} :
+    InjOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (s ×ˢ frontier W) := by
+  intro p hp q hq hpq
+  have := h.injOn_flowOf hZ (h.isCompleteVectorField hZ) (x₁ := p.swap) (x₂ := q.swap)
+    ⟨hp.2, mem_univ _⟩ ⟨hq.2, mem_univ _⟩ hpq
+  exact Prod.swap_injective this
+
+/-- **The cylindrical end of a completion.** Let `M` be a completion of the Liouville domain `W`,
+with Liouville flow `ψ`. The map `(t, y) ↦ ψₜ(y)` is a bijection from `(0, ∞) × ∂W` onto the
+complement of `W`. -/
+theorem bijOn_flowOf_Ioi_prod_frontier (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    BijOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (Ioi 0 ×ˢ frontier W) Wᶜ := by
+  refine ⟨fun p hp ↦ ?_, h.injOn_flowOf_prod_frontier hZ, fun x hx ↦ ?_⟩
+  · exact fun hW ↦ (not_le.2 hp.1) ((h.flowOf_mem_iff_of_mem_frontier hZ hp.2).1 hW)
+  · obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
+    exact ⟨(t, y), ⟨ht, hy⟩, hyx⟩
+
+/-- **The closed cylindrical end of a completion.** Let `M` be a completion of the Liouville
+domain `W`, with Liouville flow `ψ`. The map `(t, y) ↦ ψₜ(y)` is a bijection from `[0, ∞) × ∂W`
+onto the complement of the interior of `W`. -/
+theorem bijOn_flowOf_Ici_prod_frontier (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    BijOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (Ici 0 ×ˢ frontier W) (interior W)ᶜ := by
+  refine ⟨fun p hp ↦ ?_, h.injOn_flowOf_prod_frontier hZ, fun x hx ↦ ?_⟩
+  · rcases hp.1.eq_or_lt' with h0 | hpos
+    · simpa only [h0, h.flowOf_zero hZ, mem_compl_iff] using hp.2.2
+    · exact fun hW ↦ (not_le.2 hpos)
+        ((h.flowOf_mem_iff_of_mem_frontier hZ hp.2).1 (interior_subset hW))
+  · obtain ⟨y, hy, t, ht, hyx⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
+    exact ⟨(t, y), ⟨ht, hy⟩, hyx⟩
 
 end IsLiouvilleCompletion
 

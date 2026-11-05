@@ -193,6 +193,18 @@ theorem continuous_eval_manifoldWeakWhitney :
     exact h.congr' (hsrc.mono fun _ h ↦ ψ.left_inv h)
   exact (hval.comp hφ).congr' (hsymm.mono fun _ h ↦ by simp only [Function.comp_apply, h])
 
+/-- Uniform closeness of values on a compact set, up to a continuous tolerance which is positive
+there, is a neighbourhood condition for the manifold weak Whitney topology. -/
+theorem eventually_forall_dist_lt {X : Type*} [PseudoMetricSpace X] [ChartedSpace G X]
+    [IsManifold J n X] (f₀ : C^n⟮I, M; J, X⟯) {K : Set M} (hK : IsCompact K)
+    {δ : M → ℝ} (hδ : Continuous δ) (hδ₀ : ∀ x ∈ K, 0 < δ x) :
+    ∀ᶠ f in 𝓝 f₀, ∀ x ∈ K, dist (f x) (f₀ x) < δ x := by
+  refine hK.eventually_forall_of_forall_eventually fun x hx ↦ ?_
+  have hopen : IsOpen {p : C^n⟮I, M; J, X⟯ × M | dist (p.1 p.2) (f₀ p.2) < δ p.2} :=
+    isOpen_lt (continuous_eval_manifoldWeakWhitney.dist
+      (f₀.contMDiff.continuous.comp continuous_snd)) (hδ.comp continuous_snd)
+  exact hopen.mem_nhds (by simpa using hδ₀ x hx)
+
 /-- Joint evaluation is continuous for the manifold weak Whitney topology. -/
 theorem continuousEval_manifoldWeakWhitney :
     ContinuousEval C^n⟮I, M; J, N⟯ M N :=

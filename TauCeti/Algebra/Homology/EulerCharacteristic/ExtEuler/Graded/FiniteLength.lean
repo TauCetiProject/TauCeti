@@ -38,7 +38,7 @@ pair of members of the family is.
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Sections 2.4--2.7.
 
-The dimension inductions use `GradedModuleCat.exists_mono_cokernel_finrank_lt`; the extension
+The composition-series inductions use `GradedModuleCat.finite_induction`; the extension
 steps use `IsGradedEulerAdmissible.of_shortExact₂'` and `IsGradedEulerAdmissible.of_shortExact₂`.
 -/
 
@@ -65,19 +65,9 @@ theorem isGradedEulerAdmissible_of_finite_of_forall_simple
       IsGradedEulerAdmissible.{w} k e S Y)
     (X : GradedModuleCat.{v} 𝒜) [Module.Finite k X] :
     IsGradedEulerAdmissible.{w} k e X Y := by
-  classical
-  induction hn : Module.finrank k X using Nat.strong_induction_on generalizing X with
-  | _ n ih =>
-    by_cases hX : IsZero X
-    · exact IsGradedEulerAdmissible.of_isZero_left k e hX
-    by_cases hs : Simple X
-    · exact h X inferInstance hs
-    obtain ⟨Z, i, hi, hZ, hQ, _, hdimZ, hdimQ⟩ :=
-      X.exists_mono_cokernel_finrank_lt hX hs
-    have : Module.Finite k Z := hZ
-    have : Module.Finite k (GradedModuleCat.cokernelObj i) := hQ
-    exact (ih _ (hn ▸ hdimZ) Z rfl).of_shortExact₂' (GradedModuleCat.shortExact_cokernelπ i)
-      (ih _ (hn ▸ hdimQ) (GradedModuleCat.cokernelObj i) rfl)
+  exact X.finite_induction (fun M ↦ IsGradedEulerAdmissible.{w} k e M Y)
+    (fun _ hM ↦ IsGradedEulerAdmissible.of_isZero_left k e hM) h
+    (fun hS h₁ h₃ ↦ h₁.of_shortExact₂' hS h₃)
 
 /-- Admissibility from a fixed source against every finite-dimensional simple target implies
 admissibility against all finite-dimensional graded targets, for any chosen internal-shift
@@ -89,18 +79,9 @@ theorem isGradedEulerAdmissible_of_finite_of_forall_simple_right
       IsGradedEulerAdmissible.{w} k e X T)
     (Y : GradedModuleCat.{v} 𝒜) [Module.Finite k Y] :
     IsGradedEulerAdmissible.{w} k e X Y := by
-  classical
-  induction hn : Module.finrank k Y using Nat.strong_induction_on generalizing Y with
-  | _ n ih =>
-    by_cases hY : IsZero Y
-    · exact IsGradedEulerAdmissible.of_isZero_right k e hY
-    by_cases hs : Simple Y
-    · exact h Y inferInstance hs
-    obtain ⟨Z, i, hi, hZ, hQ, _, hdimZ, hdimQ⟩ := Y.exists_mono_cokernel_finrank_lt hY hs
-    have : Module.Finite k Z := hZ
-    have : Module.Finite k (GradedModuleCat.cokernelObj i) := hQ
-    exact (ih _ (hn ▸ hdimZ) Z rfl).of_shortExact₂ (GradedModuleCat.shortExact_cokernelπ i)
-      (ih _ (hn ▸ hdimQ) (GradedModuleCat.cokernelObj i) rfl)
+  exact Y.finite_induction (fun M ↦ IsGradedEulerAdmissible.{w} k e X M)
+    (fun _ hM ↦ IsGradedEulerAdmissible.of_isZero_right k e hM) h
+    (fun hS h₁ h₃ ↦ h₁.of_shortExact₂ hS h₃)
 
 end Simple
 
@@ -120,24 +101,16 @@ theorem isGradedEulerAdmissibleOn_gradedFiniteModules_iff
         (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜) ↔
       ∀ i j, IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) (S i).obj (S j).obj := by
   refine ⟨fun h i j ↦ h.isGradedEulerAdmissible (S i).property (S j).property, fun h ↦ ?_⟩
-  -- A simple finite graded module is a shift of a member of `S`.
-  have hshift (T : GradedModuleCat.{uA} 𝒜) [Module.Finite k T] (hT : Simple T) :
-      ∃ i d, Nonempty (T ≅ (S i).obj.shiftObj d) :=
-    (isExhaustiveGradedSimpleFamily_iff S).1 hS
-      ⟨T, gradedFiniteModules_iff.2 (Module.Finite.of_restrictScalars_finite k A T)⟩ hT
-  refine ⟨fun X Y hX hY ↦ ?_⟩
-  have : Module.Finite A X := gradedFiniteModules_iff.1 hX
-  have : Module.Finite A Y := gradedFiniteModules_iff.1 hY
-  have : Module.Finite k X := Module.Finite.trans A X
-  have : Module.Finite k Y := Module.Finite.trans A Y
-  -- Reduce the source to a shifted simple `(S i){d}`, then the target to a shifted `(S j){d'}`.
-  refine isGradedEulerAdmissible_of_finite_of_forall_simple _ Y (fun T _ hT ↦ ?_) X
-  obtain ⟨i, d, ⟨φ⟩⟩ := hshift T hT
-  refine IsGradedEulerAdmissible.of_iso k (IsGradedEulerAdmissible.shiftObj ?_ d) φ.symm
-    (Iso.refl Y)
-  refine isGradedEulerAdmissible_of_finite_of_forall_simple_right _ _ (fun T' _ hT' ↦ ?_) Y
-  obtain ⟨j, d', ⟨φ'⟩⟩ := hshift T' hT'
-  exact ((h i j).shiftObjTarget d').of_iso k (Iso.refl _) φ'.symm
+  refine ⟨fun X Y hX hY ↦ hS.prop_on_pairs
+    (IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜))
+    (fun h i j ↦ h.of_iso k i j) (fun h d ↦ h.shiftObj d)
+    (fun h d ↦ h.shiftObjTarget d) ?_ ?_ h hX hY⟩
+  · intro Y h X hX
+    have := hX
+    exact isGradedEulerAdmissible_of_finite_of_forall_simple _ Y h X
+  · intro X h Y hY
+    have := hY
+    exact isGradedEulerAdmissible_of_finite_of_forall_simple_right _ X h Y
 
 end Exhaustive
 

@@ -24,23 +24,34 @@ public section
 
 namespace Function.ExtendByZero
 
+section Module
+
+variable {ι κ : Type*} (R : Type*) {M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] (e : ι → κ)
+
+/-- Mathlib's `Function.ExtendByZero.linearMap` is continuous for the product topologies. -/
+@[fun_prop]
+theorem continuous_linearMap : Continuous (linearMap R M e) := by
+  classical
+  have h : Continuous (fun x : ι → M => Function.extend e x 0) := by
+    apply continuous_pi
+    intro j
+    by_cases hj : ∃ i, e i = j
+    · simpa only [Function.extend_def, dite_eq_left hj] using
+        (continuous_apply (Classical.choose hj) : Continuous fun x : ι → M =>
+          x (Classical.choose hj))
+    · simpa only [Function.extend_apply' _ _ _ hj, Pi.zero_apply] using
+        (continuous_const : Continuous fun _ : ι → M => (0 : M))
+  exact h.congr fun x ↦ funext fun j ↦ (linearMap_apply R M e x j).symm
+
+end Module
+
 variable {ι κ : Type*} (R : Type*) [Semiring R] [TopologicalSpace R] (e : ι → κ)
 
 /-- Extension by zero as a continuous linear map between product spaces of coordinates. -/
 noncomputable def continuousLinearMap : (ι → R) →L[R] (κ → R) :=
   { linearMap R R e with
-    cont := by
-      classical
-      have h : Continuous (fun x : ι → R => Function.extend e x 0) := by
-        apply continuous_pi
-        intro j
-        by_cases hj : ∃ i, e i = j
-        · simpa only [Function.extend_def, dite_eq_left hj] using
-            (continuous_apply (Classical.choose hj) : Continuous fun x : ι → R =>
-              x (Classical.choose hj))
-        · simpa only [Function.extend_apply' _ _ _ hj, Pi.zero_apply] using
-            (continuous_const : Continuous fun _ : ι → R => (0 : R))
-      exact h }
+    cont := continuous_linearMap R e }
 
 /-- The continuous linear extension uses `Function.extend` with zero outside the image. -/
 @[simp]

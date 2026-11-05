@@ -18,9 +18,9 @@ import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
 import TauCeti.Analysis.Normed.Group.BallSphere
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -52,8 +52,8 @@ a parameter likewise acts smoothly on the sphere.
 
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
 loop and its lift to `ℝ` have the same tangent lines, and its local inverse, the argument, is smooth
-away from `-1`. A differentiable loop in a sphere of dimension
-at least two omits a point, allowing the entire loop to be read in one stereographic chart.
+away from `-1`. A differentiable path or loop in a sphere of dimension at least two omits a point,
+allowing the entire path or loop to be read in one stereographic chart.
 
 ## Main results
 
@@ -65,6 +65,10 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
   smooth embedding of the model space into the sphere.
+* `TauCeti.coe_comp_stereographic'_symm`, `TauCeti.contDiff_coe_comp_stereographic'_symm`,
+  `TauCeti.injective_fderiv_coe_comp_stereographic'_symm`: read in the ambient space, the inverse
+  of a stereographic chart is `stereoInvFunAux` precomposed with a linear isometry, so it is smooth
+  with injective derivative.
 * `TauCeti.compl_singleton_sup_compl_singleton_neg_eq_top`: the complements of two antipodal
   points cover the sphere.
 * `TauCeti.stereographicDiffeomorph`, `TauCeti.stereographicPuncturedDiffeomorph`: stereographic
@@ -95,8 +99,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   immersive.
 * `TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`: two loops in a sphere through the same point
   with the same velocity there, read along `Circle.exp`, have the same derivative.
-* `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
-  at least two omits a point.
+* `TauCeti.exists_notMem_range_real_sphere`, `TauCeti.exists_notMem_range_circle_sphere`: a
+  differentiable path or loop in a sphere of dimension at least two omits a point.
 * `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
   of the unit sphere into the punctured space `E \ {0}` and the radial projection
   `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
@@ -177,6 +181,38 @@ theorem isSmoothEmbedding_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞
     (IsManifold.subset_maximalAtlas ⟨v, rfl⟩)
     (fun u _ ↦ (stereographic' n v).map_target (by simp)) fun u _ ↦ ?_
   simp
+
+/-- Read in the ambient space, the inverse of the stereographic chart `stereographic' n v` is the
+inverse `stereoInvFunAux v` of stereographic projection, precomposed with the linear isometry of
+`ℝⁿ` onto the hyperplane `(ℝ ∙ v)ᗮ` that the chart uses. -/
+theorem coe_comp_stereographic'_symm (v : sphere (0 : E) 1) :
+    ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm =
+      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘
+        (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+          (ne_zero_of_mem_unit_sphere v)).repr.symm := by
+  funext y
+  simp [stereographic'_symm_apply, smul_add]
+
+/-- Read in the ambient space, the inverse of a stereographic chart is smooth. -/
+theorem contDiff_coe_comp_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞ω} :
+    ContDiff ℝ k (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) := by
+  rw [coe_comp_stereographic'_symm]
+  exact contDiff_stereoInvFunAux.comp ((ℝ ∙ (v : E))ᗮ.subtypeL.contDiff.comp
+    (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+      (ne_zero_of_mem_unit_sphere v)).repr.symm.toContinuousLinearEquiv.contDiff)
+
+/-- Read in the ambient space, the inverse of a stereographic chart has injective derivative at
+every point. -/
+theorem injective_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
+    (y : EuclideanSpace ℝ (Fin n)) :
+    Injective (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y) := by
+  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+    (ne_zero_of_mem_unit_sphere v)).repr
+  rw [coe_comp_stereographic'_symm, ← Function.comp_assoc,
+    ← LinearIsometryEquiv.coe_toContinuousLinearEquiv U.symm,
+    ContinuousLinearEquiv.comp_right_fderiv]
+  exact (injective_fderiv_stereoInvFunAux_comp_coe (norm_eq_of_mem_sphere v) _).comp
+    U.symm.injective
 
 /-- Stereographic projection from `v` is a chart in the maximal atlas of the sphere, at every
 regularity. -/
@@ -421,11 +457,8 @@ theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.
   have hslit : (z : ℂ) ∈ Complex.slitPlane :=
     Complex.mem_slitPlane_iff_arg.2 ⟨fun h => by simp [h, abs_of_pos Real.pi_pos] at hz,
       Circle.coe_ne_zero z⟩
-  have h : ContDiffAt ℝ n (fun x : ℂ => (Complex.log x).im) z :=
-    Complex.imCLM.contDiff.contDiffAt.comp _ ((Complex.contDiffAt_log hslit).restrict_scalars ℝ)
   have hc : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) n (fun w : Circle => (w : ℂ)) := contMDiff_coe_sphere
-  exact (h.contMDiffAt.comp z hc.contMDiffAt).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun w => (Complex.log_im w).symm)
+  exact (Complex.contDiffAt_arg hslit).contMDiffAt.comp z hc.contMDiffAt
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -577,19 +610,18 @@ end SphereLoop
 
 /-! ### Points omitted by differentiable loops -/
 
-/-- A differentiable loop in a sphere of dimension at least two omits a point.
+/-- A differentiable path `ℝ → Sⁿ` in a sphere of dimension at least two omits a point.
 No immersion or injectivity assumption is needed. -/
-theorem exists_notMem_range_circle_sphere
+theorem exists_notMem_range_real_sphere
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
-    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    {f : ℝ → sphere (0 : E) 1} (hf : MDifferentiable 𝓘(ℝ) (𝓡 n) f) :
     ∃ p : sphere (0 : E) 1, p ∉ range f := by
-  -- The cone over the loop is the image of a differentiable map from a plane.
-  have hγ : Differentiable ℝ (fun t => (f (Circle.exp t) : E)) :=
+  -- The cone over the path is the image of a differentiable map from a plane.
+  have hγ : Differentiable ℝ (fun t => (f t : E)) :=
     mdifferentiable_iff_differentiable.mp <|
-      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp
-        (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
-  let F : ℝ × ℝ → E := fun q => q.1 • (f (Circle.exp q.2) : E)
+      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp hf
+  let F : ℝ × ℝ → E := fun q => q.1 • (f q.2 : E)
   have hF : Differentiable ℝ F := differentiable_fst.smul (hγ.comp differentiable_snd)
   obtain ⟨a, ha⟩ := (hF.dense_compl_range_of_finrank_lt_finrank (by
     rw [Module.finrank_prod, Module.finrank_self, (Fact.out : finrank ℝ E = n + 1)]
@@ -599,11 +631,21 @@ theorem exists_notMem_range_circle_sphere
     exact ha ⟨(0, 0), by simp [F]⟩
   have hnorm : ‖‖a‖⁻¹ • a‖ = 1 := norm_smul_inv_norm ha0
   refine ⟨⟨‖a‖⁻¹ • a, mem_sphere_zero_iff_norm.mpr hnorm⟩, ?_⟩
-  rintro ⟨z, hz⟩
-  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
-  have hz' := congrArg Subtype.val hz
+  rintro ⟨t, ht⟩
   refine ha ⟨(‖a‖, t), ?_⟩
-  simp only [F, hz', smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+  simp only [F, ht, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+
+/-- A differentiable loop in a sphere of dimension at least two omits a point.
+No immersion or injectivity assumption is needed. -/
+theorem exists_notMem_range_circle_sphere
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
+    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    ∃ p : sphere (0 : E) 1, p ∉ range f := by
+  obtain ⟨p, hp⟩ := exists_notMem_range_real_sphere hn
+    (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
+  rw [range_comp, Circle.exp_surjective.range_eq, image_univ] at hp
+  exact ⟨p, hp⟩
 
 /-! ### The unit sphere in the punctured space -/
 
