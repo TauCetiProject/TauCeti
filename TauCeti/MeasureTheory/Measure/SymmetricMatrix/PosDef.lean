@@ -12,9 +12,8 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 /-!
 # The positive-definite cone is open and measurable
 
-On the symmetric subspace, positive definiteness cuts out an open subset: the Hermitian
-condition holds identically there, so the cone is the preimage of the open set of matrices with
-positive quadratic form, `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos`.
+On the symmetric subspace, positive definiteness cuts out an open subset by
+`Matrix.isOpen_setOf_posDef_selfAdjoint`.
 
 The Wishart densities are supported on this cone, so its measurability is part of the
 carrier API.
@@ -25,8 +24,6 @@ Wishart and Cholesky APIs are stated on.
 ## Main declarations
 
 * `TauCeti.PosDefMatrix` — the positive-definite cone in the space of real symmetric matrices.
-* `TauCeti.isOpen_setOfPred_posDefMatrix` — the positive-definite cone is open in the symmetric
-  subspace.
 * `TauCeti.measurableSet_posDefMatrix` — the positive-definite cone is measurable.
 -/
 
@@ -43,25 +40,12 @@ abbrev PosDefMatrix (p : ℕ) :=
   {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) //
     (A : Matrix (Fin p) (Fin p) ℝ).PosDef}
 
-/-- The positive-definite cone is open in the symmetric subspace. -/
-theorem isOpen_setOfPred_posDefMatrix (p : ℕ) :
-    IsOpen {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
-  have hpre : {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} =
-      Subtype.val ⁻¹'
-        {M : Matrix (Fin p) (Fin p) ℝ | ∀ x : Fin p → ℝ, x ≠ 0 → 0 < x ⬝ᵥ M *ᵥ x} := by
-    ext A
-    simp only [Set.mem_ofPred_eq, Set.mem_preimage, Matrix.posDef_iff_dotProduct_mulVec]
-    exact ⟨fun h x hx => by simpa using h.2 hx,
-      fun h => ⟨selfAdjoint.isHermitian_coe A, fun x hx => by simpa using h x hx⟩⟩
-  rw [hpre]
-  exact isOpen_setOfPred_dotProduct_mulVec_pos.preimage continuous_subtype_val
-
 /-- The positive-definite cone is measurable in the symmetric subspace. -/
 theorem measurableSet_posDefMatrix (p : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} :=
-  (isOpen_setOfPred_posDefMatrix p).measurableSet
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
+  have h : IsOpen {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := Matrix.isOpen_setOf_posDef_selfAdjoint
+  exact h.measurableSet
 
 end TauCeti

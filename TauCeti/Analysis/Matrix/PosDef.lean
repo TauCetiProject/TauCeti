@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.Algebra.Order.Star.Real
 
 /-!
@@ -22,9 +23,9 @@ Positivity of `x ⬝ᵥ M *ᵥ x` on nonzero vectors cuts out an open set of rea
 symmetric or not.
 
 The positive-definite cone itself is not open in the space of all square matrices — the
-Hermitian condition cuts out a proper subspace once there are at least two rows — but on the
-symmetric subspace, where the Hermitian condition holds identically, the cone is the preimage
-of this open set and hence open; see `TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef`.
+Hermitian condition cuts out a proper subspace once there are at least two rows. On the
+Hermitian subspace over either `ℝ` or `ℂ`, the cone is open: positivity is uniform on the compact
+unit sphere and persists under small perturbations.
 Ambiently the cone is still measurable, being the intersection of the closed Hermitian condition
 with that open one.
 
@@ -35,6 +36,8 @@ with that open one.
   vectors is an open condition on real square matrices;
 * `TauCeti.measurableSet_setOfPred_posDef` — the positive-definite real matrices form a
   measurable set.
+* `Matrix.isOpen_setOf_posDef_selfAdjoint` — the positive-definite cone is open in the
+  Hermitian subspace over `ℝ` or `ℂ`.
 -/
 
 public section
@@ -87,3 +90,41 @@ theorem measurableSet_setOfPred_posDef {ι : Type*} [Finite ι] :
     isOpen_setOfPred_dotProduct_mulVec_pos.measurableSet
 
 end TauCeti
+
+namespace Matrix
+
+open scoped ComplexOrder
+
+/-- Positive definiteness is open in the real vector space of Hermitian matrices, over either
+the real or the complex scalars. -/
+theorem isOpen_setOf_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
+    [RCLike 𝕜] :
+    IsOpen {A : selfAdjoint (Matrix n n 𝕜) | (A : Matrix n n 𝕜).PosDef} := by
+  classical
+  let : Fintype n := Fintype.ofFinite n
+  rw [isOpen_iff_mem_nhds]
+  intro A hA
+  -- Positivity is uniform on the compact unit sphere, and hence persists nearby.
+  have hcont : Continuous (fun z : selfAdjoint (Matrix n n 𝕜) × (n → 𝕜) ↦
+      RCLike.re (star z.2 ⬝ᵥ (z.1 : Matrix n n 𝕜) *ᵥ z.2)) := by
+    fun_prop
+  have key : ∀ᶠ B : selfAdjoint (Matrix n n 𝕜) in 𝓝 A,
+      ∀ x ∈ Metric.sphere (0 : n → 𝕜) 1,
+      0 < RCLike.re (star x ⬝ᵥ (B : Matrix n n 𝕜) *ᵥ x) := by
+    refine (isCompact_sphere (0 : n → 𝕜) 1).eventually_forall_of_forall_eventually
+      fun x hx ↦ ?_
+    exact (hcont.tendsto (A, x)).eventually_const_lt
+      (hA.re_dotProduct_pos (ne_zero_of_mem_sphere one_ne_zero ⟨x, hx⟩))
+  filter_upwards [key] with B hB
+  have hBH := isHermitian_iff_isSelfAdjoint.mpr B.prop
+  refine PosDef.of_dotProduct_mulVec_pos hBH fun x hx ↦ ?_
+  apply RCLike.pos_iff.mpr
+  refine ⟨?_, hBH.im_star_dotProduct_mulVec_self x⟩
+  have hx0 : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  have h := hB (‖x‖⁻¹ • x) (by simp [norm_smul, hx0.ne'])
+  simp only [star_smul, star_trivial, Matrix.mulVec_smul, smul_dotProduct,
+    dotProduct_smul, RCLike.smul_re] at h
+  exact (mul_pos_iff_of_pos_left (inv_pos.mpr hx0)).mp
+    ((mul_pos_iff_of_pos_left (inv_pos.mpr hx0)).mp h)
+
+end Matrix
