@@ -49,7 +49,7 @@ namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
-  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace X] [PreconnectedSpace Y]
+  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 
 /-- Above a finite set containing all branch values, the defect in the number of distinct
 points is exactly the total ramification degree. Extra unramified values do not change the

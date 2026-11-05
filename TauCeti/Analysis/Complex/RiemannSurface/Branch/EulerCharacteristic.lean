@@ -71,7 +71,7 @@ namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
-  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace X]
+  [CompactSpace X] [T2Space X] [T2Space Y]
   (f : FiniteHolomorphicMap X Y) {S : Set Y}
 
 /-- If the target punctured at a set containing every branch value has finite CW type, so does

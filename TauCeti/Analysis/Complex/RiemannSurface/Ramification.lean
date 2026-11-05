@@ -81,7 +81,7 @@ theorem ramificationDegree_def (f : X → Y) :
     ramificationDegree f = ∑ᶠ x, (localMultiplicity f x - 1) :=
   (rfl)
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- The ramification points of a finite holomorphic map from a connected Riemann surface are
 isolated: the local multiplicity is `1` away from a closed discrete set. -/

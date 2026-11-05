@@ -78,7 +78,7 @@ theorem mem_branchValues_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
     y ∈ f.branchValues ↔ ∃ x, f x = y ∧ 1 < localMultiplicity f x := by
   simp [branchValues, and_comm]
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- Away from branch values, every point of the fibre has local multiplicity one. -/
 -- Simplify nonmembership before `mem_branchValues_iff` rewrites the inner membership.
