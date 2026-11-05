@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Normalization
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
+import Mathlib.Analysis.Normed.Algebra.Ultra
 
 /-!
 # Constant-one preparation on a closed disc
@@ -21,11 +24,34 @@ The normalised unit satisfies `‖U - 1‖ < 1` in the Gauss norm. Consequently 
 polynomial approximation satisfies the scale-correct bound `‖f - P‖ < ‖f‖`.
 No assumption of entire convergence is made.
 
+The polynomial carries the zeros of `f` in the closed disc, in any complete normed field
+extension, and the same order of vanishing at `0`. If `r ≤ s` and `f = Q * V` is the preparation
+at `s`, then `V` is also a unit at `r`, so `Q` is `P` times a unit of the ring of series restricted
+at `r`; since division of polynomials by `P` agrees with Weierstrass division at `r`, `P` divides
+`Q` as a polynomial.
+
+## Main results
+
+* `TauCeti.PowerSeries.IsDistinguished.exists_isDiscPreparation` and
+  `TauCeti.PowerSeries.IsDistinguished.existsUnique_isDiscPreparation`: existence and uniqueness of
+  the constant-one disc preparation.
+* `TauCeti.PowerSeries.exists_isDiscPreparation_iff`: a series has a constant-one disc preparation
+  at `r` in degree `d` exactly when it is restricted and distinguished of degree `d` at `r` and has
+  constant coefficient `1`.
+* `TauCeti.PowerSeries.IsDiscPreparation.gaussNorm_sub_polynomial_lt`: `‖f - P‖_r < ‖f‖_r`.
+* `TauCeti.PowerSeries.IsDiscPreparation.order_eq` and
+  `TauCeti.PowerSeries.IsDiscPreparation.evalAt_eq_zero_iff`: `f` and `P` have the same order of
+  vanishing at `0` and the same zeros in the closed disc of radius `r`, in every complete normed
+  field extension.
+* `TauCeti.PowerSeries.IsDiscPreparation.dvd_of_le`: the polynomial factor at a radius `r` divides
+  the polynomial factor at every radius `s ≥ r`.
+
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.2.2, Theorem 1.
 * M. Lazard, *Les zéros d'une fonction analytique d'une variable sur un corps valué
-  complet*, Publications Mathématiques de l'IHÉS 14 (1962), §3.
+  complet*, Publications Mathématiques de l'IHÉS 14 (1962), §3, for the polynomials attached to
+  closed discs and their divisibility as the radius grows.
 -/
 
 public section
@@ -131,6 +157,87 @@ theorem IsDiscPreparation.unique (h : IsDiscPreparation r d f P U)
     h.natDegree_eq h'.natDegree_eq h.coeff_zero_eq_one h'.coeff_zero_eq_one
     h.isUnit h'.isUnit h.eq_mul h'.eq_mul
 
+/-- The polynomial factor of a disc preparation is distinguished of degree `d` at `r`, like the
+original series. -/
+theorem IsDiscPreparation.isDistinguished_coe (h : IsDiscPreparation r d f P U) (hr : 0 < r) :
+    IsDistinguished r d (P : K⟦X⟧) := by
+  obtain ⟨k, hk⟩ := exists_isDistinguished hr (isRestricted_polynomial (c := r) P)
+    (by exact_mod_cast h.polynomial_ne_zero)
+  have hPU := hk.mul (isDistinguished_zero_of_isUnit hr h.isUnit) hr (norm_mul _ _)
+  rw [add_zero, ← h.eq_mul] at hPU
+  rwa [hPU.unique h.isDistinguished] at hk
+
+/-- **The order of vanishing at `0`.** The series and the polynomial factor of its disc
+preparation have the same order of vanishing at `0`. -/
+theorem IsDiscPreparation.order_eq (h : IsDiscPreparation r d f P U) :
+    f.order = (P : K⟦X⟧).order := by
+  have hU : (U : K⟦X⟧).order = 0 := by
+    by_contra hne
+    simpa [h.constantCoeff_unit_eq_one] using order_ne_zero_iff_constCoeff_eq_zero.mp hne
+  rw [h.eq_mul, order_mul, hU, add_zero]
+
+/-- **The zeros in the closed disc.** In a complete normed field extension `L` of `K`, a point `x`
+with `‖x‖ ≤ r` is a zero of `f` exactly when it is a root of the polynomial factor of the disc
+preparation of `f` at `r`. -/
+theorem IsDiscPreparation.evalAt_eq_zero_iff {L : Type*} [NormedField L] [NormedAlgebra K L]
+    [CompleteSpace L] (h : IsDiscPreparation r d f P U) (hr : 0 < r) {x : L} (hx : ‖x‖ ≤ r) :
+    f.evalAt x = 0 ↔ Polynomial.aeval x P = 0 := by
+  have : IsUltrametricDist L := .of_normedAlgebra K
+  have hU1 := U.2.sub (isRestricted_one r)
+  -- `U(x) = (U - 1)(x) + 1` with `‖(U - 1)(x)‖ ≤ ‖U - 1‖_r < 1`, so `U(x) ≠ 0`.
+  have hu : (U : K⟦X⟧).evalAt x ≠ 0 := by
+    intro hx0
+    have hlt := (_root_.PowerSeries.norm_evalAt_le_gaussNorm
+      (hasGaussNorm_of_isRestricted hU1) hx).trans_lt (h.gaussNorm_sub_one_lt hr)
+    rw [← sub_add_cancel (U : K⟦X⟧) 1, _root_.PowerSeries.IsRestricted.evalAt_add hU1
+      (isRestricted_one r) hx, _root_.PowerSeries.evalAt_one, add_eq_zero_iff_eq_neg] at hx0
+    simp [hx0] at hlt
+  rw [h.eq_mul, _root_.PowerSeries.IsRestricted.evalAt_mul (isRestricted_polynomial P) U.2 hx,
+    _root_.PowerSeries.evalAt_coe, mul_eq_zero, or_iff_left hu]
+
+/-- **Nested disc polynomials.** If `f = P * U` and `f = Q * V` are the disc preparations of `f`
+at radii `0 < r ≤ s`, then `P` divides `Q`. -/
+theorem IsDiscPreparation.dvd_of_le [CompleteSpace K] {s : ℝ} {e : ℕ} {Q : Polynomial K}
+    {V : IsRestricted.subring (R := K) s} (h : IsDiscPreparation r d f P U)
+    (h' : IsDiscPreparation s e f Q V) (hr : 0 < r) (hrs : r ≤ s) : P ∣ Q := by
+  have hrs' : |r| ≤ |s| := by rwa [abs_of_pos hr, abs_of_pos (hr.trans_le hrs)]
+  -- `V` is close to `1` at `r` as well, so it is a unit at `r`.
+  have hVr : (V : K⟦X⟧).IsRestricted r := isRestricted_of_abs_le V.2 hrs'
+  have hVs : ((V : K⟦X⟧) - 1).HasGaussNorm norm s :=
+    hasGaussNorm_of_isRestricted (V.2.sub (isRestricted_one s))
+  have hVr1 : ((V : K⟦X⟧) - 1).gaussNorm norm r < 1 :=
+    (gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) hr.le hrs hVs).trans_lt
+      (h'.gaussNorm_sub_one_lt (hr.trans_le hrs))
+  let Vr : IsRestricted.subring (R := K) r := ⟨(V : K⟦X⟧), hVr⟩
+  obtain ⟨W, hW⟩ := ((isUnit_iff_gaussNorm_sub_one_lt_one hr Vr
+    h'.constantCoeff_unit_eq_one).mpr hVr1).exists_right_inv
+  have hVW : (V : K⟦X⟧) * (W : K⟦X⟧) = 1 := congrArg Subtype.val hW
+  -- Normalise `P` to the monic polynomial `ω = a⁻¹ • P`, distinguished of degree `d` at `r`.
+  set a := P.leadingCoeff with ha_def
+  have ha : a ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero
+  set ω : Polynomial K := Polynomial.C a⁻¹ * P with hω_def
+  have hω : ω.IsMonicOfDegree d :=
+    ⟨by rw [hω_def, Polynomial.natDegree_C_mul (inv_ne_zero ha), h.natDegree_eq],
+      Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (inv_mul_cancel₀ ha)⟩
+  have hPω : (P : K⟦X⟧) = C a * ω := by
+    rw [hω_def, Polynomial.coe_mul, Polynomial.coe_C, ← mul_assoc, ← map_mul,
+      mul_inv_cancel₀ ha, map_one, one_mul]
+  have hωd : IsDistinguished r d (ω : K⟦X⟧) := by
+    have hd := h.isDistinguished_coe hr
+    rw [hPω] at hd
+    exact hd.of_isUnit_mul hr ((isUnit_iff_ne_zero.mpr ha).map
+      (algebraMap K (IsRestricted.subring (R := K) r)))
+  -- At `r`, `Q = f * W = ω * (a • U * W)`, so `ω` divides `Q` among restricted series.
+  have hdvd : polynomialToRestricted r ω ∣ polynomialToRestricted r Q := by
+    refine ⟨algebraMap K _ a * U * W, Subtype.ext ?_⟩
+    have hQ : (Q : K⟦X⟧) = f * W := by
+      rw [h'.eq_mul, mul_assoc, hVW, mul_one]
+    simp only [coe_polynomialToRestricted, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
+      Algebra.algebraMap_self_apply]
+    rw [hQ, h.eq_mul, hPω]
+    ring
+  exact (dvd_mul_left P _).trans ((hωd.polynomialToRestricted_dvd_iff hr hω Q).mp hdvd)
+
 /-- A restricted series with constant coefficient one has a constant-one disc
 preparation at its last active coefficient. -/
 theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K]
@@ -157,5 +264,17 @@ theorem IsDistinguished.existsUnique_isDiscPreparation [CompleteSpace K]
   refine ⟨(P, U), h, fun PU h' => ?_⟩
   obtain ⟨hP, hU⟩ := h'.unique h hr
   exact Prod.ext hP hU
+
+/-- **Characterisation of the constant-one disc preparation.** Over a complete nonarchimedean
+field and at a radius `r > 0`, a series has a constant-one preparation on the closed disc of
+radius `r` in degree `d` exactly when it is restricted and distinguished of degree `d` at `r` and
+has constant coefficient `1`. -/
+theorem exists_isDiscPreparation_iff [CompleteSpace K] (hr : 0 < r) :
+    (∃ (P : Polynomial K) (U : IsRestricted.subring (R := K) r), IsDiscPreparation r d f P U) ↔
+      IsDistinguished r d f ∧ f.IsRestricted r ∧ constantCoeff f = 1 := by
+  refine ⟨fun ⟨P, U, h⟩ ↦ ⟨h.isDistinguished, ?_, h.constantCoeff_eq_one⟩,
+    fun ⟨hf, hfr, hf0⟩ ↦ hf.exists_isDiscPreparation hr hfr hf0⟩
+  rw [h.eq_mul]
+  exact (isRestricted_polynomial P).mul U.2
 
 end TauCeti.PowerSeries
