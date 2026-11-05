@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Interval.Set.Group
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Order.ToIntervalMod
+import Mathlib.Order.SuccPred.IntervalSucc
+import Mathlib.Tactic.Linarith
 
 /-!
 # Uniform interval grids on the real line
@@ -110,3 +112,31 @@ theorem abs_le_of_mem_gridCell {ε : ℝ} {k : ℤ} {s : ℝ}
       rw [add_mul, one_mul, add_comm]
 
 end Real
+
+namespace Set
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+
+/-- The closed interval `[a, a + N h]` is covered by the `N` consecutive closed intervals
+`[a + k h, a + (k + 1) h]`, `k < N`, of step `h > 0`. -/
+theorem Icc_subset_biUnion_range_Icc {a b h : K} {N : ℕ} (hN : 0 < N) (hh : 0 < h)
+    (hb : b = a + N * h) :
+    Icc a b ⊆ ⋃ k ∈ Finset.range N, Icc (a + k * h) (a + (k + 1) * h) := by
+  have hmono : Monotone (fun k : ℕ ↦ a + k * h) := by
+    intro k l hkl
+    have hklR : (k : K) ≤ l := by exact_mod_cast hkl
+    nlinarith [mul_nonneg (sub_nonneg.mpr hklR) hh.le]
+  intro x hx
+  rcases hx.1.eq_or_lt with hxa | hxa
+  · subst x
+    simp only [Set.mem_iUnion, Finset.mem_range]
+    exact ⟨0, hN, by constructor <;> simp [hh.le]⟩
+  · have hx' : x ∈ ⋃ k ∈ Ico 0 N, Ioc (a + k * h) (a + (Order.succ k : ℕ) * h) := by
+      rw [hmono.biUnion_Ico_Ioc_map_succ]
+      simpa only [Nat.cast_zero, zero_mul, add_zero, ← hb] using ⟨hxa, hx.2⟩
+    simp only [Set.mem_iUnion, mem_Ico] at hx'
+    obtain ⟨k, ⟨-, hkN⟩, hxk⟩ := hx'
+    simp only [Set.mem_iUnion, Finset.mem_range]
+    exact ⟨k, hkN, Ioc_subset_Icc_self (by simpa using hxk)⟩
+
+end Set
