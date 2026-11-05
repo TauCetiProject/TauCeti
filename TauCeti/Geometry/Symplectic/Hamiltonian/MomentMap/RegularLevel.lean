@@ -13,9 +13,9 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 
 Let `μ : M → 𝔤*` be a moment map of an infinitesimal action `Z ↦ Z_M` of a real Lie algebra `𝔤` on
 a manifold with a two-form `σ`, so that `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`. Read in a basis `b` of `𝔤`,
-the components `μ_{b_i}` of `μ` form a family of functions whose regular points are exactly the
-points where the form is nondegenerate and the action is locally free
-(`TauCeti.SmoothTwoForm.IsMomentMap.isRegularPoint_iff_isotropy_eq_bot`). For a nondegenerate
+the components `μ_{b_i}` of `μ` form a family of functions. At points where the form is
+nondegenerate, the regular points of this family are exactly the points where the action is locally
+free (`TauCeti.SmoothTwoForm.IsMomentMap.isRegularPoint_iff_isotropy_eq_bot`). For a nondegenerate
 form they pairwise Poisson-commute wherever the cocycle of `μ` vanishes and `μ(x)` is
 coadjoint-fixed (`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`).
 

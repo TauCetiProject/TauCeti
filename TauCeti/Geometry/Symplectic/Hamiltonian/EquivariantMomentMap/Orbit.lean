@@ -21,7 +21,7 @@ is coadjoint-fixed.
 For a Lie group with an abelian Lie algebra, such as a torus, every value is coadjoint-fixed. So
 every orbit tangent space is isotropic
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isIsotropic_orbitTangent`), the group has at most
-half the dimension of `M` if it acts locally freely somewhere
+half the dimension of `M` if it acts locally freely at a point where the form is nondegenerate
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.two_mul_finrank_le`), and a parametrization of a
 level `μ = c` of the dimension `dim M - dim G`, at whose points the action is locally free, is a
 coisotropic map (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isCoisotropicMap_of_forall_eq`),
@@ -74,14 +74,15 @@ theorem isIsotropic_orbitTangent (h : σ.IsEquivariantMomentMap μ) (x : M) :
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) :=
   h.toIsMomentMap.isIsotropic_orbitTangent hσ (h.momentCocycle_eq_zero x)
 
+omit hσ in
 /-- **The dimension bound for torus actions.** If a Lie group with abelian Lie algebra, such as a
-torus, has a group-level moment map and acts locally freely at some point, then it has at most
-half the dimension of `M`. -/
+torus, has a group-level moment map and acts locally freely at a point where the form is
+nondegenerate, then it has at most half the dimension of `M`. -/
 theorem two_mul_finrank_le (h : σ.IsEquivariantMomentMap μ) {x : M}
+    (hσx : (σ.bilinFormAt x).Nondegenerate)
     (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
     2 * finrank ℝ (GroupLieAlgebra I G) ≤ finrank ℝ E' :=
-  h.toIsMomentMap.two_mul_finrank_le (hσ.nondegenerate_bilinFormAt x) (h.momentCocycle_eq_zero x)
-    hfree
+  h.toIsMomentMap.two_mul_finrank_le hσx (h.momentCocycle_eq_zero x) hfree
 
 variable {F H'' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'']
   {J : ModelWithCorners ℝ F H''} {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]

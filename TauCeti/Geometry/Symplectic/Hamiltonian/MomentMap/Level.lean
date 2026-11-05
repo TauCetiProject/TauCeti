@@ -233,14 +233,16 @@ theorem finrank_ker_differential_sub_finrank_inf_orthogonal [FiniteDimensional �
 
 /-! ### Isotropic orbits and Lagrangian levels -/
 
-include hσ in
-/-- **The dimension bound for isotropic orbits.** For a nondegenerate form, at a point where the
+/-- **The dimension bound for isotropic orbits.** At a point where the form is nondegenerate, the
 cocycle of a moment map vanishes and `μ(x)` is coadjoint-fixed, the orbit tangent space has at
 most half the dimension of `M`. -/
-theorem two_mul_finrank_orbitTangent_le [FiniteDimensional ℝ E] (hc : σ.momentCocycle a μ x = 0)
+theorem two_mul_finrank_orbitTangent_le [FiniteDimensional ℝ E]
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
     (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) : 2 * finrank ℝ (a.orbitTangent x) ≤ finrank ℝ E := by
-  simpa only [finrank_tangentSpace] using
-    ((h.isIsotropic_orbitTangent_iff hσ hc).2 hμ).two_mul_finrank_le
+  have hle := Submodule.finrank_mono ((h.orbitTangent_le_ker_differential_iff hc).2 hμ)
+  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
+  rw [finrank_tangentSpace] at hsum
+  omega
 
 /-- **The Lagrangian criterion for `ker dμ_x`.** For a nondegenerate form, if the action is locally
 free at a point where the cocycle of a moment map vanishes and `μ(x)` is coadjoint-fixed, then
@@ -259,17 +261,19 @@ theorem isLagrangian_ker_differential_iff [FiniteDimensional ℝ E]
   · rw [finrank_tangentSpace]
     omega
 
-include hσ in
-/-- **The Lagrangian kernel is the orbit tangent space.** For a nondegenerate form, if the action is
-locally free at a point where the cocycle of a moment map vanishes, `μ(x)` is coadjoint-fixed, and
-`𝔤` has half the dimension of `M`, then `ker dμ_x = 𝔤 · x`. -/
+/-- **The Lagrangian kernel is the orbit tangent space.** At a point where the form is
+nondegenerate, the cocycle of a moment map vanishes, `μ(x)` is coadjoint-fixed, and the orbit
+tangent space `𝔤 · x` has half the dimension of `M`, we have `ker dμ_x = 𝔤 · x`. At a locally free
+point the dimension condition reads `2 dim 𝔤 = dim M`. -/
 theorem ker_differential_eq_orbitTangent [FiniteDimensional ℝ E]
-    (hc : σ.momentCocycle a μ x = 0) (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤)
-    (hfree : a.isotropy x = ⊥) (hdim : 2 * finrank ℝ 𝔤 = finrank ℝ E) :
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤)
+    (hdim : 2 * finrank ℝ (a.orbitTangent x) = finrank ℝ E) :
     LinearMap.ker (h.differential x) = a.orbitTangent x := by
-  have hL := ((h.isLagrangian_ker_differential_iff hσ hc hμ hfree).2 hdim).isIsotropic
-  rw [SymplecticForm.isIsotropic_iff_le, h.symplecticFormAt_orthogonal_ker_differential hσ] at hL
-  exact le_antisymm hL ((h.orbitTangent_le_ker_differential_iff hc).2 hμ)
+  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
+  rw [finrank_tangentSpace] at hsum
+  exact (Submodule.eq_of_le_of_finrank_eq ((h.orbitTangent_le_ker_differential_iff hc).2 hμ)
+    (by omega)).symm
 
 /-! ### The pulled-back form on a parametrized level -/
 
