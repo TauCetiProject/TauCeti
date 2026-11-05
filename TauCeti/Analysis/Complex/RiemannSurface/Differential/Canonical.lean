@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Divisor
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Ratio
 
 /-!
 # Canonical divisors of a compact Riemann surface
@@ -49,60 +50,7 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 
 namespace OneForm
 
-variable {ω η : OneForm X} {x : X} {e : OpenPartialHomeomorph X ℂ}
-
-/-- The **ratio** `η / ω` of two `1`-forms: at each point, the quotient of their coefficients in
-the preferred chart there. It does not depend on the chart
-(`TauCeti.RiemannSurface.OneForm.ratio_eq_of_mem_maximalAtlas`), and `η = (η / ω) ω` wherever `ω`
-does not vanish. -/
-def ratio (η ω : OneForm X) (x : X) : ℂ :=
-  η.coeff (chartAt ℂ x) (chartAt ℂ x x) / ω.coeff (chartAt ℂ x) (chartAt ℂ x x)
-
-theorem ratio_def (η ω : OneForm X) (x : X) :
-    ratio η ω x = η.coeff (chartAt ℂ x) (chartAt ℂ x x) / ω.coeff (chartAt ℂ x) (chartAt ℂ x x) :=
-  (rfl)
-
-variable [IsManifold 𝓘(ℂ) 1 X]
-
-/-- **Chart independence of the ratio.** The ratio of two `1`-forms at `y` is the quotient of their
-coefficients in any chart of the maximal atlas at `y`. -/
-theorem ratio_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {y : X}
-    (hy : y ∈ e.source) : ratio η ω y = η.coeff e (e y) / ω.coeff e (e y) := by
-  have hcy := mem_chart_source ℂ y
-  rw [ratio_def, coeff_eq_coeff_mul_deriv η he (chart_mem_maximalAtlas y) hy hcy,
-    coeff_eq_coeff_mul_deriv ω he (chart_mem_maximalAtlas y) hy hcy,
-    mul_div_mul_right _ _ (TauCeti.deriv_symm_trans_ne_zero (chart_mem_maximalAtlas y) he hcy hy)]
-
-/-- Read in the chart at `x`, the ratio is the quotient of the coefficients near `x`. -/
-theorem ratio_comp_chartAt_symm_eventuallyEq :
-    ratio η ω ∘ (chartAt ℂ x).symm =ᶠ[𝓝 (chartAt ℂ x x)]
-      η.coeff (chartAt ℂ x) / ω.coeff (chartAt ℂ x) := by
-  filter_upwards [(chartAt ℂ x).open_target.mem_nhds
-    ((chartAt ℂ x).map_source (mem_chart_source ℂ x))] with z hz
-  rw [comp_apply, ratio_eq_of_mem_maximalAtlas (chart_mem_maximalAtlas x)
-    ((chartAt ℂ x).map_target hz), (chartAt ℂ x).right_inv hz, Pi.div_apply]
-
-/-- The ratio of two meromorphic `1`-forms is a meromorphic function. -/
-theorem meromorphicAt_ratio (hη : η.MeromorphicAt x) (hω : ω.MeromorphicAt x) :
-    RiemannSurface.MeromorphicAt (ratio η ω) x := by
-  rw [RiemannSurface.meromorphicAt_def]
-  exact (((meromorphicAt_def η x).1 hη).div ((meromorphicAt_def ω x).1 hω)).congr
-    (ratio_comp_chartAt_symm_eventuallyEq.symm.filter_mono nhdsWithin_le_nhds)
-
-/-- **`ord_x (η / ω) + ord_x ω = ord_x η`** for meromorphic `1`-forms, with `ω` of finite order at
-`x`. -/
-theorem meromorphicOrderAt_ratio_add_order (hη : η.MeromorphicAt x) (hω : ω.MeromorphicAt x)
-    (hω₀ : ω.order x ≠ ⊤) :
-    RiemannSurface.meromorphicOrderAt (ratio η ω) x + ω.order x = η.order x := by
-  rw [RiemannSurface.meromorphicOrderAt_def, _root_.meromorphicOrderAt_congr
-    (ratio_comp_chartAt_symm_eventuallyEq.filter_mono nhdsWithin_le_nhds),
-    _root_.meromorphicOrderAt_div ((meromorphicAt_def η x).1 hη) ((meromorphicAt_def ω x).1 hω),
-    ← order_def, ← order_def]
-  generalize η.order x = a at *
-  lift ω.order x to ℤ using hω₀ with b
-  cases a with
-  | top => simp
-  | coe a => norm_cast; simp
+variable [IsManifold 𝓘(ℂ) 1 X] {ω η : OneForm X}
 
 section Connected
 
@@ -114,42 +62,46 @@ def ratioFunction (η ω : OneForm X) (hη : ∀ x, η.MeromorphicAt x) (hω : �
   MeromorphicFunction.ofMeromorphic fun x ↦ meromorphicAt_ratio (hη x) (hω x)
 
 variable (hη : ∀ x, η.MeromorphicAt x) (hω : ∀ x, ω.MeromorphicAt x)
-  (hω₀ : ∀ x, ω.order x ≠ ⊤)
-include hη hω hω₀
+include hη hω
 
-/-- **`ord_x (η / ω) + ord_x ω = ord_x η`** for the ratio as a meromorphic function. -/
-theorem order_ratioFunction_add_order (x : X) :
+/-- **`ord_x (η / ω) + ord_x ω = ord_x η`** for the ratio as a meromorphic function, at a point
+where `ω` has finite order. -/
+theorem order_ratioFunction_add_order {x : X} (hx : ω.order x ≠ ⊤) :
     MeromorphicFunction.order x (ratioFunction η ω hη hω) + ω.order x = η.order x := by
   rw [ratioFunction, MeromorphicFunction.order_apply, RiemannSurface.meromorphicOrderAt_congr
     (MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq _ x)]
-  exact meromorphicOrderAt_ratio_add_order (hη x) (hω x) (hω₀ x)
+  exact meromorphicOrderAt_ratio_add_order (hη x) (hω x) hx
 
-omit hω₀ in
-/-- If `η` has finite order somewhere, its ratio to `ω` is a nonzero meromorphic function. -/
-theorem ratioFunction_ne_zero (hω₀ : ∀ x, ω.order x ≠ ⊤) (hη₀ : ∀ x, η.order x ≠ ⊤) :
+/-- If `η` and `ω` both have finite order at some point, their ratio is a nonzero meromorphic
+function. -/
+theorem ratioFunction_ne_zero (h : ∃ x, ω.order x ≠ ⊤ ∧ η.order x ≠ ⊤) :
     ratioFunction η ω hη hω ≠ 0 := by
-  intro h
-  obtain ⟨x⟩ : Nonempty X := inferInstance
-  have := order_ratioFunction_add_order hη hω hω₀ x
-  rw [h, AddValuation.map_zero, WithTop.top_add] at this
-  exact hη₀ x this.symm
+  intro hf
+  obtain ⟨x, hωx, hηx⟩ := h
+  have := order_ratioFunction_add_order hη hω hωx
+  rw [hf, AddValuation.map_zero, WithTop.top_add] at this
+  exact hηx this.symm
 
-variable [CompactSpace X]
+variable [CompactSpace X] (hω₀ : ∀ x, ω.order x ≠ ⊤)
+include hω₀
+
 
 /-- **Divisors of `1`-forms differ by a principal divisor.** On a compact connected Riemann
 surface, if `η` and `ω` are meromorphic and of finite order everywhere then
 `div η = div (η / ω) + div ω`. -/
 theorem divisor_eq_principalDivisor_add (hη₀ : ∀ x, η.order x ≠ ⊤) :
     η.divisor = (MeromorphicFunction.orderSystem X).principalDivisor
-      (Additive.ofMul (Units.mk0 _ (ratioFunction_ne_zero hη hω hω₀ hη₀))) + ω.divisor := by
+      (Additive.ofMul (Units.mk0 _ (ratioFunction_ne_zero hη hω
+        ⟨Classical.arbitrary X, hω₀ _, hη₀ _⟩))) + ω.divisor := by
+  have hne := ratioFunction_ne_zero hη hω ⟨Classical.arbitrary X, hω₀ _, hη₀ _⟩
   refine WeilDivisor.ext fun x ↦ ?_
   have hp := MeromorphicFunction.coe_coeff_principalDivisor_orderSystem
-    (Additive.ofMul (Units.mk0 _ (ratioFunction_ne_zero hη hω hω₀ hη₀))) x
+    (Additive.ofMul (Units.mk0 _ hne)) x
   simp only [toMul_ofMul, Units.val_mk0] at hp
   have hf₀ : MeromorphicFunction.order x (ratioFunction η ω hη hω) ≠ ⊤ :=
-    (MeromorphicFunction.order x).ne_top_iff.2 (ratioFunction_ne_zero hη hω hω₀ hη₀)
+    (MeromorphicFunction.order x).ne_top_iff.2 hne
   rw [WeilDivisor.coeff_add, coeff_divisor hη, coeff_divisor hω,
-    ← order_ratioFunction_add_order hη hω hω₀ x, WithTop.untop₀_add hf₀ (hω₀ x), ← hp,
+    ← order_ratioFunction_add_order hη hω (hω₀ x), WithTop.untop₀_add hf₀ (hω₀ x), ← hp,
     WithTop.untop₀_coe]
 
 /-- **Divisors of `1`-forms are linearly equivalent.** On a compact connected Riemann surface, the
