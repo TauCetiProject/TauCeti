@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Dynamics.Flow.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -81,20 +82,9 @@ noncomputable def bandLevelDiffeomorph (has : a ≤ s) (hsb : s ≤ b)
     {x : M // f x = s} ≃ₘ⟮𝓘(ℝ, Fin n → ℝ), 𝓘(ℝ, Fin n → ℝ)⟯ {x : M // f x = a} :=
   letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt.of_le (by simp)) hregs hn
   letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt.of_le (by simp)) hrega hn
-  have hdown (x : {x : M // f x = s}) : f (φ (s - a) x) = a := by
-    rw [hφf x _ (sub_nonneg.2 has) (by rw [x.2]; linarith) (x.2.trans_le hsb), x.2]
-    ring
-  have hup (y : {x : M // f x = a}) : f (φ (a - s) y) = s := by
-    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf.continuous hanti hφf hφa y.2
-      (sub_nonneg.2 has) (by linarith), add_sub_cancel]
-  { toFun x := ⟨φ (s - a) x, hdown x⟩
-    invFun y := ⟨φ (a - s) y, hup y⟩
-    left_inv x := Subtype.ext <| by
-      dsimp only
-      rw [← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
-    right_inv y := Subtype.ext <| by
-      dsimp only
-      rw [← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
+  { toEquiv := (φ.toHomeomorph (s - a)).toEquiv.subtypeEquiv fun x ↦
+      (φ.apply_eq_iff_of_apply_eq_sub hf.continuous has hanti
+        (fun x t h₁ h₂ h₃ ↦ hφf x t h₁ h₂ (h₃.trans hsb)) hφa x).symm
     contMDiff_toFun := (isSmoothEmbedding_coe_regularLevel (by simp) (fun _ _ ↦ hf.contMDiffAt)
         hrega hn).contMDiff_iff_comp.2 <| (hφ.comp (contMDiff_const.prodMk contMDiff_id)).comp
           (isSmoothEmbedding_coe_regularLevel (by simp) (fun _ _ ↦ hf.contMDiffAt) hregs
@@ -121,7 +111,7 @@ theorem coe_bandLevelDiffeomorph_symm_apply (has : a ≤ s) (hsb : s ≤ b)
     letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt.of_le (by simp)) hrega hn
     ((φ.bandLevelDiffeomorph hφ hf hanti hφf hφa hn has hsb hrega hregs).symm y : M) =
       φ (a - s) y :=
-  (rfl)
+  show φ (-(s - a)) y = φ (a - s) y by rw [neg_sub]
 
 /-- **The open band traversed at unit speed is a product.** Let `φ` be a flow, jointly smooth in
 time and space, along whose lines `f` never increases in positive time, and which lowers `f` at
@@ -139,22 +129,18 @@ noncomputable def bandInteriorDiffeomorph (hrega : IsRegularValue I 𝓘(ℝ) f 
       f x ∈ Ioo a b :=
     mem_preimage.1 (Opens.mem_mk.1 x.2)
   have hdown (x : (⟨f ⁻¹' Ioo a b, isOpen_Ioo.preimage hf.continuous⟩ : Opens M)) :
-      f (φ (f x - a) x) = a := by
-    rw [hφf x _ (by linarith [(hmem x).1]) (by linarith) (hmem x).2.le]
-    ring
+      f (φ (f x - a) x) = a :=
+    φ.apply_apply_sub_eq_of_apply_eq_sub hφf (hmem x).1.le (hmem x).2.le
   have hup (p : {x : M // f x = a} × (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ)) :
-      f (φ (a - p.2) p.1) = p.2 := by
+      f (φ (a - p.2) p.1) = p.2 :=
     have hp : (p.2 : ℝ) ∈ Ioo a b := Opens.mem_mk.1 p.2.2
-    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf.continuous hanti hφf hφa p.1.2
-      (by linarith [hp.1]) (by linarith [hp.2]), add_sub_cancel]
+    φ.apply_sub_eq_of_apply_eq_sub hf.continuous hanti hφf hφa p.1.2 hp.1.le hp.2.le
   { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, Opens.mem_mk.2 (hmem x)⟩)
     invFun p := ⟨φ (a - p.2) p.1, by rw [Opens.mem_mk, mem_preimage, hup p]; exact p.2.2⟩
-    left_inv x := Subtype.ext <| by
-      dsimp only
-      rw [← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
+    left_inv x := Subtype.ext <| φ.map_sub_apply_map_sub_apply _ _ _
     right_inv p := Prod.ext (Subtype.ext <| by
         dsimp only
-        rw [hup p, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply])
+        rw [hup p, φ.map_sub_apply_map_sub_apply])
       (Subtype.ext (hup p))
     contMDiff_toFun := by
       have hemb := isSmoothEmbedding_coe_regularLevel (by simp) (fun _ _ ↦ hf.contMDiffAt) hrega hn

@@ -19,6 +19,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
   inverses is unchanged by each map.
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
+* `Flow.map_sub_apply_map_sub_apply`: flowing for time `t - u` and then `u - t` is the identity.
 -/
 
 public section
@@ -47,5 +48,10 @@ theorem apply_comm [AddCommMonoid τ] (ϕ : Flow τ α) (s t : τ) (x : α) :
 @[simp]
 theorem orbit_apply [AddGroup τ] (ϕ : Flow τ α) (s : τ) (x : α) : orbit ϕ (ϕ s x) = orbit ϕ x :=
   @AddAction.orbit_vadd τ α _ ϕ.toAddAction s x
+
+/-- Flowing for time `t - u` and then for time `u - t` returns every point to where it started. -/
+theorem map_sub_apply_map_sub_apply [AddGroup τ] (ϕ : Flow τ α) (t u : τ) (x : α) :
+    ϕ (u - t) (ϕ (t - u) x) = x := by
+  rw [← map_add, sub_add_sub_cancel, sub_self, map_zero_apply]
 
 end Flow

@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.Category.TopPair
 import Mathlib.Tactic.Linarith
+import TauCeti.Dynamics.Flow.Basic
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -323,6 +324,25 @@ theorem apply_neg_eq_add_of_apply_eq_sub (hf : Continuous f)
     rw [← Flow.map_add, ← sub_eq_add_neg, hfu, add_sub_cancel_right] at h1
     exact lt_irrefl a (h1 ▸ h2)
 
+/-- **Descent to the lower level.** If `φ` lowers `f` at unit speed through the band
+`a ≤ f ≤ b`, then a point `x` of the band reaches the level `f⁻¹(a)` at time `f x - a`. -/
+theorem apply_apply_sub_eq_of_apply_eq_sub
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t) {x : X} (hxa : a ≤ f x)
+    (hxb : f x ≤ b) : f (φ (f x - a) x) = a := by
+  rw [hφf x _ (sub_nonneg.2 hxa) (by linarith) hxb]
+  ring
+
+/-- **Ascent to a level of the band.** Under the hypotheses of
+`Flow.apply_neg_eq_add_of_apply_eq_sub`, a point `y` of the level `f⁻¹(a)` reaches the level
+`f⁻¹(s)`, for `a ≤ s ≤ b`, at time `a - s`. -/
+theorem apply_sub_eq_of_apply_eq_sub (hf : Continuous f)
+    (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+    (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) {y : X} (hy : f y = a) {s : ℝ}
+    (has : a ≤ s) (hsb : s ≤ b) : f (φ (a - s) y) = s := by
+  rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa hy (sub_nonneg.2 has)
+    (by linarith), add_sub_cancel]
+
 /-- **A band traversed at unit speed is a product.** Under the hypotheses of
 `Flow.apply_eq_iff_of_apply_eq_sub`, following the flow line of a point `x` of the band
 `f⁻¹[a, b]` down to the level `a` is a homeomorphism `x ↦ (φ (f x - a) x, f x)` from the band onto
@@ -332,23 +352,19 @@ def bandHomeomorph (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (
     (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
     (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) :
     f ⁻¹' Icc a b ≃ₜ (f ⁻¹' {a}) × Icc a b :=
-  have hdown (x : f ⁻¹' Icc a b) : φ (f x - a) x ∈ f ⁻¹' {a} := by
-    rw [mem_preimage, mem_singleton_iff, hφf x _ (by linarith [x.2.1]) (by linarith) x.2.2]
-    ring
-  have hup (p : (f ⁻¹' {a}) × Icc a b) : f (φ (a - p.2) p.1) = p.2 := by
-    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa p.1.2
-      (sub_nonneg.2 p.2.2.1) (by linarith [p.2.2.2]), add_sub_cancel]
+  have hdown (x : f ⁻¹' Icc a b) : φ (f x - a) x ∈ f ⁻¹' {a} :=
+    φ.apply_apply_sub_eq_of_apply_eq_sub hφf x.2.1 x.2.2
+  have hup (p : (f ⁻¹' {a}) × Icc a b) : f (φ (a - p.2) p.1) = p.2 :=
+    φ.apply_sub_eq_of_apply_eq_sub hf hanti hφf hφa p.1.2 p.2.2.1 p.2.2.2
   have hband (p : (f ⁻¹' {a}) × Icc a b) : φ (a - p.2) p.1 ∈ f ⁻¹' Icc a b := by
     rw [mem_preimage, hup p]
     exact p.2.2
   { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, x.2⟩)
     invFun p := ⟨φ (a - p.2) p.1, hband p⟩
-    left_inv x := Subtype.ext <| by
-      dsimp only
-      rw [← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
+    left_inv x := Subtype.ext <| φ.map_sub_apply_map_sub_apply _ _ _
     right_inv p := Prod.ext (Subtype.ext <| by
         dsimp only
-        rw [hup p, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply])
+        rw [hup p, φ.map_sub_apply_map_sub_apply])
       (Subtype.ext (hup p))
     continuous_toFun := by
       have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtype_val
