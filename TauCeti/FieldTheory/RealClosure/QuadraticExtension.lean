@@ -80,10 +80,60 @@ theorem isAlgClosed_of_isQuadraticExtension [IsRealClosed R]
   obtain ⟨y, rfl⟩ := hf w
   exact ⟨y, f.injective (by simp [hw])⟩
 
+/-- In characteristic two, a field `QuadraticAlgebra R a b` cannot have every element a square and
+a solution of the Artin–Schreier equation `z ^ 2 + b z = a / b • ω` when `b ≠ 0`. -/
+private theorem false_of_forall_isSquare_of_two_eq_zero {a b : R} (h2 : (2 : R) = 0)
+    (hfield : IsField (QuadraticAlgebra R a b)) (hsq : ∀ q : QuadraticAlgebra R a b, ∃ z, z * z = q)
+    (hroot : b ≠ 0 → ∃ w : QuadraticAlgebra R a b, w * w + b • w = ⟨0, a / b⟩) : False := by
+  by_cases hb : b = 0
+  · subst hb
+    obtain ⟨z, hz⟩ := hsq ⟨0, 1⟩
+    have him := congrArg QuadraticAlgebra.im hz
+    simp only [QuadraticAlgebra.im_mul, zero_mul, add_zero] at him
+    have : (1 : R) = 0 := by linear_combination -him + z.re * z.im * h2
+    exact one_ne_zero this
+  · obtain ⟨w, hz⟩ := hroot hb
+    have him := congrArg QuadraticAlgebra.im hz
+    simp only [QuadraticAlgebra.im_add, QuadraticAlgebra.im_mul, QuadraticAlgebra.im_smul,
+      smul_eq_mul] at him
+    rw [eq_div_iff hb] at him
+    -- `r = b * w.im` is a root of `X ^ 2 - b X - a`, so the algebra has zero divisors
+    have hr : (b * w.im) * (b * w.im) = a + b * (b * w.im) := by
+      linear_combination him - (b ^ 2 * w.im + b * w.re * w.im) * h2
+    have h0 : (⟨-(b * w.im), 1⟩ : QuadraticAlgebra R a b) * ⟨b * w.im - b, 1⟩ = 0 := by
+      ext
+      · simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.re_zero]
+        linear_combination -hr
+      · simp only [QuadraticAlgebra.im_mul, QuadraticAlgebra.im_zero]
+        ring
+    let := hfield.toField
+    rcases mul_eq_zero.mp h0 with h | h <;>
+      simpa using congrArg QuadraticAlgebra.im h
+
+/-- If `2 ≠ 0` and `-1` is a square in `R`, then `QuadraticAlgebra R a b` is not a field when
+every element is a square: the discriminant is then a square. -/
+private theorem false_of_forall_isSquare_of_ne_two {a b : R} (h2 : (2 : R) ≠ 0)
+    (hs : IsSquare (-1 : R)) (hfield : IsField (QuadraticAlgebra R a b))
+    (hsq : ∀ q : QuadraticAlgebra R a b, ∃ z, z * z = q) : False := by
+  have : NeZero (2 : R) := ⟨h2⟩
+  obtain ⟨s, hs⟩ := hs
+  obtain ⟨z, hz⟩ := hsq ⟨-b, 2⟩
+  have hre := congrArg QuadraticAlgebra.re hz
+  have him := congrArg QuadraticAlgebra.im hz
+  simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.im_mul] at hre him
+  have hd : z.im ≠ 0 := by
+    rintro hd
+    rw [hd] at him
+    exact h2 (by linear_combination -him)
+  refine QuadraticAlgebra.not_isField_of_isSquare_discr ⟨s * (2 * z.re + z.im * b) / z.im, ?_⟩
+    hfield
+  rw [QuadraticAlgebra.discr_def, div_mul_div_comm, eq_div_iff (mul_ne_zero hd hd)]
+  linear_combination (2 * z.re + z.im * b) ^ 2 * hs + 4 * hre + 2 * b * him
+
 /-- `-1` is never a square in a field with an algebraically closed quadratic extension. -/
 theorem not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension [IsAlgClosed K]
     [Algebra.IsQuadraticExtension R K] : ¬IsSquare (-1 : R) := by
-  rintro ⟨s, hs⟩
+  intro hs
   obtain ⟨a, b, ⟨e⟩⟩ :=
     Algebra.IsQuadraticExtension.exists_algEquiv_quadraticAlgebra (R := R) (A := K)
   have hfield : IsField (QuadraticAlgebra R a b) :=
@@ -93,52 +143,19 @@ theorem not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension [IsAlgClosed
     obtain ⟨w, hw⟩ := IsAlgClosed.exists_pow_nat_eq (e.symm q) two_pos
     exact ⟨e w, by rw [← map_mul, ← sq, hw, AlgEquiv.apply_symm_apply]⟩
   by_cases h2 : (2 : R) = 0
-  · -- characteristic two
-    by_cases hb : b = 0
-    · subst hb
-      obtain ⟨z, hz⟩ := hsq ⟨0, 1⟩
-      have him := congrArg QuadraticAlgebra.im hz
-      simp only [QuadraticAlgebra.im_mul, zero_mul, add_zero] at him
-      have : (1 : R) = 0 := by linear_combination -him + z.re * z.im * h2
-      exact one_ne_zero this
-    · -- solve the Artin–Schreier equation `z ^ 2 + b z = a / b • ω` in `K`
-      have hdeg : (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)).degree = 2 := by
-        compute_degree!
-      obtain ⟨w, hw⟩ := IsAlgClosed.exists_root
-        (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)) (by rw [hdeg]; decide)
-      have hz : e w * e w + b • e w = ⟨0, a / b⟩ := by
-        have := congrArg e (sub_eq_zero.mp (by simpa using hw))
-        simpa [map_add, map_mul, Algebra.smul_def, ← sq] using this
-      have him := congrArg QuadraticAlgebra.im hz
-      simp only [QuadraticAlgebra.im_add, QuadraticAlgebra.im_mul, QuadraticAlgebra.im_smul,
-        smul_eq_mul] at him
-      field_simp at him
-      -- `r = b * z.im` is a root of `X ^ 2 - b X - a`, so the algebra has zero divisors
-      have hr : (b * (e w).im) * (b * (e w).im) = a + b * (b * (e w).im) := by
-        linear_combination him - (b ^ 2 * (e w).im + b * (e w).re * (e w).im) * h2
-      have h0 : (⟨-(b * (e w).im), 1⟩ : QuadraticAlgebra R a b) *
-          ⟨b * (e w).im - b, 1⟩ = 0 := by
-        ext
-        · simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.re_zero]
-          linear_combination -hr
-        · simp only [QuadraticAlgebra.im_mul, QuadraticAlgebra.im_zero]
-          ring
-      let := hfield.toField
-      rcases mul_eq_zero.mp h0 with h | h <;>
-        simpa using congrArg QuadraticAlgebra.im h
-  · have : NeZero (2 : R) := ⟨h2⟩
-    obtain ⟨z, hz⟩ := hsq ⟨-b, 2⟩
-    have hre := congrArg QuadraticAlgebra.re hz
-    have him := congrArg QuadraticAlgebra.im hz
-    simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.im_mul] at hre him
-    have hd : z.im ≠ 0 := by
-      rintro hd
-      rw [hd] at him
-      exact h2 (by linear_combination -him)
-    refine QuadraticAlgebra.not_isField_of_isSquare_discr ⟨s * (2 * z.re + z.im * b) / z.im, ?_⟩
-      hfield
-    rw [QuadraticAlgebra.discr_def, div_mul_div_comm, eq_div_iff (mul_ne_zero hd hd)]
-    linear_combination (2 * z.re + z.im * b) ^ 2 * hs + 4 * hre + 2 * b * him
+  · refine false_of_forall_isSquare_of_two_eq_zero h2 hfield hsq fun hb => ?_
+    -- solve the Artin–Schreier equation `z ^ 2 + b z = a / b • ω` in `K`
+    have hdeg : (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)).degree = 2 := by
+      compute_degree!
+    obtain ⟨w, hw⟩ := IsAlgClosed.exists_root
+      (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)) (by rw [hdeg]; decide)
+    rw [IsRoot, eval_sub, eval_add, eval_pow, eval_mul, eval_C, eval_X, eval_C,
+      sub_eq_zero] at hw
+    refine ⟨e w, ?_⟩
+    have := congrArg e hw
+    rwa [map_add, map_pow, map_mul, AlgEquiv.commutes, AlgEquiv.apply_symm_apply, sq,
+      ← Algebra.smul_def] at this
+  · exact false_of_forall_isSquare_of_ne_two h2 hs hfield hsq
 
 section Converse
 
