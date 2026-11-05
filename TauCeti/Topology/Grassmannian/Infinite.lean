@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Grassmannian.Stabilization
+public import TauCeti.LinearAlgebra.Finsupp.CoordinateInclusion
 public import TauCeti.LinearAlgebra.Finsupp.Supported
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
@@ -64,6 +65,24 @@ noncomputable def toInfinite (V : finiteGrassmannian 𝕜 k n) : infiniteGrassma
 
 theorem coe_toInfinite (V : finiteGrassmannian 𝕜 k n) :
     (toInfinite V).1 = V.1.map (coordinateInclusion n) := (rfl)
+
+/-- Membership in a finite stage is detected by restricting to its coordinates and checking
+that all later coordinates vanish. -/
+@[simp]
+theorem mem_toInfinite (V : finiteGrassmannian 𝕜 k n) (v : ℕ →₀ 𝕜) :
+    v ∈ (toInfinite V).1 ↔ (fun i : Fin n ↦ v i) ∈ V.1 ∧ ∀ i, n ≤ i → v i = 0 := by
+  rw [coe_toInfinite, Submodule.mem_map]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    exact ⟨by simpa only [coordinateInclusion_apply_val] using hw,
+      fun i hi ↦ coordinateInclusion_apply_of_le w hi⟩
+  · rintro ⟨hv, hz⟩
+    refine ⟨fun i ↦ v i, hv, ?_⟩
+    ext i
+    by_cases hi : i < n
+    · exact coordinateInclusion_apply_val _ ⟨i, hi⟩
+    · rw [coordinateInclusion_apply_of_le _ (Nat.le_of_not_gt hi),
+        hz i (Nat.le_of_not_gt hi)]
 
 theorem toInfinite_injective : Function.Injective (toInfinite : finiteGrassmannian 𝕜 k n → _) :=
   fun _ _ h ↦ Subtype.ext

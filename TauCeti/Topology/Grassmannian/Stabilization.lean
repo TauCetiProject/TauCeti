@@ -180,17 +180,18 @@ theorem mem_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian �
       have hnot : ¬ ∃ j : Fin N, Fin.castLE h j = i := by
         rintro ⟨j, rfl⟩
         exact (Nat.not_le_of_lt j.isLt) hi
-      simp [Function.ExtendByZero.linearMap, hnot]
+      exact Function.ExtendByZero.linearMap_apply_of_notMem_range 𝕜 w hnot
   · rintro ⟨hv, hz⟩
     refine ⟨v ∘ Fin.castLE h, hv, funext fun i ↦ ?_⟩
     by_cases hi : (i : ℕ) < N
-    · have he : Fin.castLE h ⟨i, hi⟩ = i := Fin.ext rfl
-      rw [← he, Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castLE_injective h)]
-      rfl
+    · obtain ⟨j, rfl⟩ : ∃ j : Fin N, Fin.castLE h j = i := ⟨⟨i, hi⟩, Fin.ext rfl⟩
+      simp only [Function.ExtendByZero.linearMap_apply_of_injective 𝕜
+        (Fin.castLE_injective h), Function.comp_apply]
     · have hnot : ¬ ∃ j : Fin N, Fin.castLE h j = i := by
         rintro ⟨j, rfl⟩
         exact hi j.isLt
-      simp [Function.ExtendByZero.linearMap, hnot, hz i (Nat.le_of_not_gt hi)]
+      rw [Function.ExtendByZero.linearMap_apply_of_notMem_range 𝕜 _ hnot,
+        hz i (Nat.le_of_not_gt hi)]
 
 theorem ambientInclusion_injective {M : ℕ} (h : N ≤ M) :
     Function.Injective (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=
@@ -200,8 +201,7 @@ theorem ambientInclusion_injective {M : ℕ} (h : N ≤ M) :
 theorem ambientInclusion_refl (V : finiteGrassmannian 𝕜 r N) :
     ambientInclusion le_rfl V = V := by
   apply Subtype.ext
-  have : Fin.castLE (le_refl N) = id := funext fun i ↦ Fin.castLE_refl _ i
-  rw [coe_ambientInclusion, this, Function.ExtendByZero.linearMap_id, Submodule.map_id]
+  rw [coe_ambientInclusion, Fin.castLE_rfl, Function.ExtendByZero.linearMap_id, Submodule.map_id]
 
 @[simp]
 theorem ambientInclusion_ambientInclusion {M L : ℕ} (h : N ≤ M) (h' : M ≤ L)

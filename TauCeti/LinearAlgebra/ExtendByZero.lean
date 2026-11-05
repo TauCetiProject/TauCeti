@@ -30,6 +30,11 @@ theorem linearMap_apply_of_injective {ι κ : Type*} {e : ι → κ} (he : Injec
     (v : ι → M) (i : ι) : linearMap R M e v (e i) = v i :=
   he.extend_apply v 0 i
 
+/-- Extension by zero vanishes outside the range of the index map. -/
+theorem linearMap_apply_of_notMem_range {ι κ : Type*} {e : ι → κ} (v : ι → M)
+    {j : κ} (hj : j ∉ Set.range e) : linearMap R M e v j = 0 :=
+  Function.extend_apply' v (0 : κ → M) j hj
+
 /-- Extension by zero along an injective index map sends the basis vector at `i` to the basis
 vector at `e i`. -/
 theorem linearMap_single {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {e : ι → κ}
