@@ -540,8 +540,10 @@ theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
       simp only [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
         ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply]
       exact h
-    -- The ambient map of a composite of maps of pairs is the composite of the ambient maps; the
-    -- `change` writes both sides as iterated applications so that the evaluation lemmas apply.
+    -- The ambient map of a composite of maps of pairs is the composite of the ambient maps. After
+    -- `TopPair.Hom.fst_comp`, `ConcreteCategory.comp_apply` and `ContinuousMap.comp_apply` do not
+    -- fire: the intermediate objects are `TopPair.ofSubset` carriers that agree with the types of
+    -- the composed maps only after unfolding. So `change` states the iterated applications.
     change TopPair.Hom.fst (negThomPairMap F E) (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
       TopPair.Hom.fst (fiberThomPairMap F E b) (TopPair.Hom.fst t.complZeroPairIso.inv
         (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom

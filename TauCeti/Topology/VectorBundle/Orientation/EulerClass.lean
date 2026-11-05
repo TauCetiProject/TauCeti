@@ -107,6 +107,6 @@ theorem eulerClass_eq_zero_of_forall_ne_zero {s : ∀ b, E b}
     (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) (hs₀ : ∀ b, s b ≠ 0) :
     o.eulerClass hF = 0 := by
   rw [eulerClass_def, TauCeti.eulerClass_eq_zero_of_forall_ne_zero F E hs hs₀]
-  rfl
+  simp
 
 end TauCeti.VectorBundleOrientation
