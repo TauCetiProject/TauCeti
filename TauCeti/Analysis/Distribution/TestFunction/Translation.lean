@@ -84,12 +84,12 @@ theorem lineDeriv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
   congr 1
   abel
 
-/-- For `g ∈ 𝓓(V, ℝ)`, the function `Φ y = ∫₀¹ g (y - t h) dt` is a test function on
+/-- For `g ∈ 𝓓(V, F)`, the function `Φ y = ∫₀¹ g (y - t h) dt` is a test function on
 `Omega`, as soon as the segments `x + [0, 1] h` starting in `V` lie in `Omega`. -/
 theorem exists_testFunction_eq_intervalIntegral
-    (hVO : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Omega) (g : 𝓓(V, ℝ)) :
-    ∃ Φ : 𝓓(Omega, ℝ), ∀ y, Φ y = ∫ t in (0 : ℝ)..1, g (y - t • h) := by
-  set Φ : E → ℝ := fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) with hΦ_def
+    (hVO : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Omega) (g : 𝓓(V, F)) :
+    ∃ Φ : 𝓓(Omega, F), ∀ y, Φ y = ∫ t in (0 : ℝ)..1, g (y - t • h) := by
+  set Φ : E → F := fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) with hΦ_def
   have hΦs : ContDiff ℝ ∞ Φ := by
     rw [← contDiffOn_univ]
     refine (contDiffOn_integral_smul_of_contDiffOn (n := (⊤ : ℕ∞))
@@ -106,7 +106,7 @@ theorem exists_testFunction_eq_intervalIntegral
     rintro _ ⟨⟨x, t⟩, ⟨hx, ht⟩, rfl⟩
     exact hVO t ht (g.tsupport_subset hx)
   have hΦC (y : E) (hy : y ∉ C) : Φ y = 0 := by
-    refine (intervalIntegral.integral_congr (g := fun _ => (0 : ℝ)) fun t ht => ?_).trans
+    refine (intervalIntegral.integral_congr (g := fun _ => (0 : F)) fun t ht => ?_).trans
       (by simp)
     rw [uIcc_of_le zero_le_one] at ht
     exact image_eq_zero_of_notMem_tsupport fun hmem =>
