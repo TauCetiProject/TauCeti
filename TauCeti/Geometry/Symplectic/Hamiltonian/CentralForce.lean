@@ -97,6 +97,13 @@ theorem centralForceHamiltonian_apply (m : ℝ) (U : ℝ → ℝ) (q p : V) :
     centralForceHamiltonian m U (q, p) = ‖p‖ ^ 2 / (2 * m) + U ‖q‖ :=
   (rfl)
 
+/-- A central-force Hamiltonian is continuous at every point `(q, p)` such that the potential `U`
+is continuous at `‖q‖`. -/
+theorem continuousAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {x : V × V}
+    (hU : ContinuousAt U ‖x.1‖) : ContinuousAt (centralForceHamiltonian m U) x :=
+  ((continuous_snd.norm.pow 2).continuousAt.div_const _).add
+    (hU.comp (f := fun y : V × V ↦ ‖y.1‖) continuous_fst.norm.continuousAt)
+
 variable [InnerProductSpace ℝ V]
 
 /-- The angular momentum `⟪q, u⟫⟪p, w⟫ - ⟪q, w⟫⟪p, u⟫` in the plane of `u` and `w`, the pairing

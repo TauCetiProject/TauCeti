@@ -50,7 +50,8 @@ the circular orbits of radius `r₀`. This file classifies them at the extrema o
 * `not_hasEigenvalue_fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`:
   at a nondegenerate minimum the linearization has no real eigenvalue.
 * `hasEigenvector_fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`:
-  at a nondegenerate maximum the linearization has the real eigenvalues `± √(-U_ℓ''(r₀) / m)`.
+  every `κ` with `κ² = -U_ℓ''(r₀) / m` is an eigenvalue of the linearization, so at a
+  nondegenerate maximum it has the real eigenvalues `± √(-U_ℓ''(r₀) / m)`.
 
 ## References
 
@@ -214,21 +215,19 @@ theorem not_hasEigenvalue_fderiv_hamiltonianVectorField_centralForceHamiltonian_
   have hμ2 : μ ^ 2 = -(a / m) := smul_left_injective ℝ hv.2 (by simpa [sq, smul_smul] using h)
   nlinarith [sq_nonneg μ]
 
-/-- **Circular orbits at a nondegenerate maximum are hyperbolic.** If `U_ℓ''(r₀) / m < 0`, the
-linearization of the reduced Hamiltonian vector field at `(r₀, p_r)` has the real eigenvalue
-`κ = √(-U_ℓ''(r₀) / m)`, with eigenvector `(1, m κ)`, and the real eigenvalue `-κ`, with
-eigenvector `(1, -m κ)`. When `r₀` is a critical point of `U_ℓ`, `(r₀, 0)` is an equilibrium of the
-reduced system, and this says that it is a hyperbolic equilibrium. -/
+/-- **Circular orbits at a nondegenerate maximum are hyperbolic.** For a nonzero mass, every real
+`κ` with `κ² = -(U_ℓ''(r₀) / m)` is an eigenvalue of the linearization of the reduced Hamiltonian
+vector field at `(r₀, p_r)`, with eigenvector `(1, m κ)`. If `U_ℓ''(r₀) / m < 0`, this applies to
+`κ = √(-U_ℓ''(r₀) / m)` and to `-κ`, so the linearization has the two real eigenvalues `± κ`, with
+eigenvectors `(1, ± m κ)`. When `r₀` is a critical point of `U_ℓ`, `(r₀, 0)` is an equilibrium of
+the reduced system, and this says that it is a hyperbolic equilibrium. -/
 theorem hasEigenvector_fderiv_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
     {r₀ a : ℝ} (hr₀ : 0 < r₀) (hU : ∀ᶠ r in 𝓝 r₀, DifferentiableAt ℝ U r)
-    (ha : HasDerivAt (deriv (effectivePotential m ℓ U)) a r₀) (ham : a / m < 0) (p_r : ℝ)
-    {κ : ℝ} (hκ : κ = √(-(a / m)) ∨ κ = -√(-(a / m))) :
+    (ha : HasDerivAt (deriv (effectivePotential m ℓ U)) a r₀) (hm : m ≠ 0) (p_r : ℝ)
+    {κ : ℝ} (hκ : κ ^ 2 = -(a / m)) :
     Module.End.HasEigenvector (fderiv ℝ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
         (centralForceHamiltonian m (effectivePotential m ℓ U))) (r₀, p_r) :
           Module.End ℝ (ℝ × ℝ)) κ (1, m * κ) := by
-  have hm : m ≠ 0 := by rintro rfl; simp at ham
-  have hκ2 : κ ^ 2 = -(a / m) := by
-    rcases hκ with rfl | rfl <;> simp [Real.sq_sqrt (neg_nonneg.2 ham.le)]
   rw [Module.End.hasEigenvector_iff, Module.End.mem_eigenspace_iff, ContinuousLinearMap.coe_coe,
     (hasFDerivAt_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
       hr₀ hU ha p_r).fderiv]
@@ -238,7 +237,7 @@ theorem hasEigenvector_fderiv_hamiltonianVectorField_centralForceHamiltonian_eff
   · simp only [ContinuousLinearMap.prod_apply, smul_apply, ContinuousLinearMap.coe_fst',
       ContinuousLinearMap.coe_snd', neg_apply, smul_eq_mul, mul_one, Prod.smul_mk]
     have hmκ : m * κ ^ 2 = -a := by
-      rw [hκ2]
+      rw [hκ]
       field_simp
     linear_combination -hmκ
 
