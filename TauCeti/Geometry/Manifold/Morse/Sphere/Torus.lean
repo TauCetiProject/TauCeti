@@ -31,14 +31,15 @@ intermediate index, so the Morse–Smale condition is a hypothesis.
 The Morse complex is defined for manifolds modelled on a normed space `F` with the model
 `𝓘(ℝ, F)`. Mathlib's product charts on `S¹ × S¹` take values in the type synonym `ModelProd`, with
 the product model `(𝓡 1).prod (𝓡 1)`. This file reads the same charts on the normed space
-`EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)` (`TauCeti.torusChartedSpace`), and transports
-the Morse data along Mathlib's `modelWithCornersSelf_prod`.
+`EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)` (`TauCeti.torusProdChartedSpace`), and
+transports the Morse data along Mathlib's `modelWithCornersSelf_prod`. These differ from the charts
+`TauCeti.torusChartedSpace` on `Circle × Circle`, which take values in `EuclideanSpace ℝ (Fin 2)`.
 
 ## Main declarations
 
-* `TauCeti.torusChartedSpace` and `TauCeti.isManifold_torusChartedSpace`: the product charts of
-  `S¹ × S¹` on the normed space `EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)`, and their
-  smooth compatibility. They are local instances in this file.
+* `TauCeti.torusProdChartedSpace` and `TauCeti.isManifold_torusProdChartedSpace`: the product
+  charts of `S¹ × S¹` on the normed space `EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)`,
+  and their smooth compatibility. They are local instances in this file.
 * `TauCeti.isMorse_modelWithCornersSelf_sphereHeight_comp_fst_add_comp_snd`: the sum of the two
   height functions is Morse for these charts.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_sphereHeight_comp_fst_add_comp_snd`:
@@ -64,22 +65,22 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The product charts of the torus `S¹ × S¹`, read on the normed space
 `EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)` rather than on Mathlib's type synonym
 `ModelProd (EuclideanSpace ℝ (Fin 1)) (EuclideanSpace ℝ (Fin 1))`. -/
-noncomputable abbrev torusChartedSpace :
+noncomputable abbrev torusProdChartedSpace :
     ChartedSpace (EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
       (sphere (0 : E) 1 × sphere (0 : E') 1) :=
   prodChartedSpace _ _ _ _
 
-attribute [local instance] torusChartedSpace
+attribute [local instance] torusProdChartedSpace
 
 /-- The product charts of the torus are smoothly compatible for the model
 `𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))`. -/
-theorem isManifold_torusChartedSpace :
+theorem isManifold_torusProdChartedSpace :
     IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)) ∞
       (sphere (0 : E) 1 × sphere (0 : E') 1) := by
   rw [modelWithCornersSelf_prod]
   exact (inferInstance : IsManifold ((𝓡 1).prod (𝓡 1)) ∞ (sphere (0 : E) 1 × sphere (0 : E') 1))
 
-attribute [local instance] isManifold_torusChartedSpace
+attribute [local instance] isManifold_torusProdChartedSpace
 
 /-- The sum of two height functions is a Morse function on the torus, for the product charts read
 on `EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)`. -/
