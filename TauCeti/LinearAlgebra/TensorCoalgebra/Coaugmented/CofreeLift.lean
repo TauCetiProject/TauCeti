@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
 
@@ -60,11 +59,6 @@ theorem cofreeLift_tmul_of_tprod (F : (M ⊗[R] TensorWords R A) →ₗ[R] N) (n
   simp only [TensorProduct.tmul_sum, map_sum, TensorProduct.assoc_symm_tmul,
     LinearMap.rTensor_tmul, Nat.zero_add]
 
-end CommSemiring
-
-variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
-  {M : Type uM} [AddCommGroup M] [Module R M]
-
 /-- **Local nilpotence from pure words.**  An endomorphism of `M ⊗ Tᶜ(A)` is locally nilpotent as
 soon as some power of it kills each pure word `x ⊗ a₀ ⊗ ⋯ ⊗ aₙ₋₁`. -/
 theorem exists_pow_apply_eq_zero_of_forall_tmul_of_tprod
@@ -73,23 +67,27 @@ theorem exists_pow_apply_eq_zero_of_forall_tmul_of_tprod
       ∃ k, (f ^ k) (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0)
     (z : M ⊗[R] TensorWords R A) : ∃ k, (f ^ k) z = 0 := by
   -- The vectors killed by a power of `f` form the submodule `S`.
-  let S := Module.End.maxGenEigenspace f 0
-  have hmem (z) : z ∈ S ↔ ∃ k, (f ^ k) z = 0 := by
-    simp only [S, Module.End.mem_maxGenEigenspace, zero_smul, sub_zero]
+  let S : Submodule R (M ⊗[R] TensorWords R A) :=
+    { carrier := {z | ∃ k, (f ^ k) z = 0}
+      add_mem' := fun {z z'} ⟨k, hk⟩ ⟨k', hk'⟩ ↦ ⟨max k k', by
+        rw [map_add, Module.End.pow_map_zero_of_le (le_max_left k k') hk,
+          Module.End.pow_map_zero_of_le (le_max_right k k') hk', add_zero]⟩
+      zero_mem' := ⟨0, map_zero _⟩
+      smul_mem' := fun r z ⟨k, hk⟩ ↦ ⟨k, by rw [map_smul, hk, smul_zero]⟩ }
   have hS : ∀ z, z ∈ S := by
     intro z
     induction z using TensorProduct.inductionOn with
     | add z z' hz hz' => exact S.add_mem hz hz'
     | tmul x w =>
-      have h : S.mkQ ∘ₗ TensorProduct.mk R M (TensorWords R A) x = 0 :=
-        TensorWords.linearMap_ext R A fun n a ↦ by
-          rw [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
-            Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, hmem]
-          exact hf n x a
-      have hw := LinearMap.congr_fun h w
-      rwa [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
-        Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hw
-  exact (hmem z).1 (hS z)
+      have h : ⊤ ≤ S.comap (TensorProduct.mk R M (TensorWords R A) x) := by
+        rw [← TensorWords.iSup_range_of R A, iSup_le_iff]
+        intro n
+        rw [LinearMap.range_le_iff_comap, eq_top_iff, ← PiTensorProduct.span_tprod_eq_top,
+          Submodule.span_le]
+        rintro _ ⟨a, rfl⟩
+        exact hf n x a
+      exact h Submodule.mem_top
+  exact hS z
 
 /-- On a pure word of length `n`, the cofree lift of a map vanishing on the empty word only
 produces shorter words, so by strong induction its `(n + 1)`-st power kills the word. -/
@@ -116,6 +114,8 @@ theorem exists_pow_cofreeLift_apply_eq_zero (ψ : (M ⊗[R] TensorWords R A) →
     ∃ n, ((Comodule.Hom.cofreeLift (C := TensorWords R A) ψ).toLinearMap ^ n) z = 0 :=
   exists_pow_apply_eq_zero_of_forall_tmul_of_tprod _
     (fun n x a ↦ ⟨n + 1, pow_succ_cofreeLift_tmul_of_tprod ψ hψ n x a⟩) z
+
+end CommSemiring
 
 end TensorWords
 
