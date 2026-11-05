@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
-public import TauCeti.AlgebraicTopology.Cohomology.Cup
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 
 /-!
 # Associativity of the singular cap product

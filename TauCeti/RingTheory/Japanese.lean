@@ -94,7 +94,7 @@ every fraction field and every universe.
 
 ## References
 
-* [Stacks Project, Section 10.161 (032E)](https://stacks.math.columbia.edu/tag/032E)
+* [Stacks Project, Section 10.161 (0BI1)](https://stacks.math.columbia.edu/tag/0BI1)
 * The proof of `TauCeti.Ring.finite_integralClosure_of_etale` through the field factors follows
   T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
