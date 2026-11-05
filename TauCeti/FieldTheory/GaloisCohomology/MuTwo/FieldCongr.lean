@@ -28,8 +28,9 @@ trivialF2Map2Equiv e.absoluteGaloisGroupCongr ((a) ⌣ (b)) = (e a) ⌣ (e b),
 for `a, b ∈ Kˣ`. On explicit cocycles the first is the observation that if `α² = a` in `Kˢ`,
 then the image `β` of `α` in `Lˢ` is a square root of `e a`, and `g ∈ G_L` fixes `β` exactly when
 its conjugate in `G_K` fixes `α`, so the two `𝔽₂`-valued Kummer cocycles correspond under the
-compatible pair. The second follows because the transports intertwine cup products
-(`TauCeti.trivialF2Map2Equiv_cup_one_one`).
+compatible pair. The second is then a `simp` consequence, because the transports intertwine
+cup products (`TauCeti.trivialF2Map2Equiv_cup_one_one`); examples at the end of the file record
+it for Kummer classes and for the Kummer cup pairing `TauCeti.kummerCup`.
 
 ## Main results
 
@@ -39,10 +40,6 @@ compatible pair. The second follows because the transports intertwine cup produc
   of `b ∈ Lˣ` to the Kummer class of `e⁻¹ b`.
 * `RingEquiv.trivialF2Map1Equiv_kummerSquareClassEquiv`: the square-class form, through the
   pushforward `RingHom.squareClassMap` of square classes.
-* `RingEquiv.trivialF2Map2Equiv_cup_kummerClass`: transport of `H²(-, 𝔽₂)` sends the cup product
-  `(a) ⌣ (b)` to `(e a) ⌣ (e b)`.
-* `RingEquiv.trivialF2Map2Equiv_kummerCup`: the same statement for the Kummer cup pairing
-  `TauCeti.kummerCup` on square classes.
 
 ## References
 
@@ -152,29 +149,23 @@ theorem trivialF2Map1Equiv_kummerSquareClassEquiv (e : K ≃+* L) (x : SquareCla
     kummerSquareClassEquiv_squareClass, kummerSquareClassEquiv_squareClass,
     trivialF2Map1Equiv_kummerClass, RingHom.toMonoidHom_eq_coe]
 
--- Not `@[simp]`: `simp` proves it from `trivialF2Map2Equiv_cup_one_one` and
--- `trivialF2Map1Equiv_kummerClass`.
-/-- **Cup products of Kummer classes are natural in field isomorphisms**: for `e : K ≃+* L` with
-`K` and `L` in independent universes, transport of `H²(-, 𝔽₂)` along `G_L ≃ G_K` sends
-`(a) ⌣ (b) ∈ H²(G_K, 𝔽₂)` to `(e a) ⌣ (e b) ∈ H²(G_L, 𝔽₂)`. -/
-theorem trivialF2Map2Equiv_cup_kummerClass (e : K ≃+* L) (a b : Kˣ) :
+/-! Cup products of Kummer classes are natural in field isomorphisms: `simp` sends
+`(a) ⌣ (b)` to `(e a) ⌣ (e b)` through `TauCeti.trivialF2Map2Equiv_cup_one_one` and
+`RingEquiv.trivialF2Map1Equiv_kummerClass`, and likewise for the Kummer cup pairing
+`TauCeti.kummerCup` on square classes through `TauCeti.kummerCup_apply` and
+`RingEquiv.trivialF2Map1Equiv_kummerSquareClassEquiv`. -/
+
+example (e : K ≃+* L) (a b : Kˣ) :
     trivialF2Map2Equiv e.absoluteGaloisGroupCongr
         ((trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b)) =
       (trivialF2TopPairing (AbsoluteGaloisGroup L)).cup 1 1
         (kummerClass (Units.map ((e : K →+* L) : K →* L) a))
         (kummerClass (Units.map ((e : K →+* L) : K →* L) b)) := by
-  rw [trivialF2Map2Equiv_cup_one_one, trivialF2Map1Equiv_kummerClass,
-    trivialF2Map1Equiv_kummerClass]
+  simp
 
--- Not `@[simp]`: `simp` proves it from `kummerCup_apply`, `trivialF2Map2Equiv_cup_one_one` and
--- `trivialF2Map1Equiv_kummerSquareClassEquiv`.
-/-- **The Kummer cup pairing is natural in field isomorphisms**: transport of `H²(-, 𝔽₂)` along
-`G_L ≃ G_K` carries `[a] ⌣ [b]` to `[e a] ⌣ [e b]`, read on square classes through the
-pushforward `RingHom.squareClassMap`. -/
-theorem trivialF2Map2Equiv_kummerCup (e : K ≃+* L) (x y : SquareClassGroup K) :
+example (e : K ≃+* L) (x y : SquareClassGroup K) :
     trivialF2Map2Equiv e.absoluteGaloisGroupCongr (kummerCup K x y) =
       kummerCup L ((e : K →+* L).squareClassMap x) ((e : K →+* L).squareClassMap y) := by
-  rw [kummerCup_apply, kummerCup_apply, trivialF2Map2Equiv_cup_one_one,
-    trivialF2Map1Equiv_kummerSquareClassEquiv, trivialF2Map1Equiv_kummerSquareClassEquiv]
+  simp
 
 end RingEquiv

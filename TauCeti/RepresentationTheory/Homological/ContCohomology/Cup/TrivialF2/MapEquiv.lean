@@ -78,17 +78,16 @@ theorem trivialF2Map2Equiv_cup_one_one (φ : H ≃ₜ* G)
       trivialF2CoeffHom (trivialF2Pairing G m n) =
         trivialF2Pairing H (trivialF2CoeffHom m) (trivialF2CoeffHom n) := fun m n ↦ by
     simp only [trivialF2CoeffHom_apply, trivialF2Pairing_apply, AddEquiv.apply_symm_apply]
-  simp only [eG, eqToIso.hom]
-  rw [trivialF2TopPairing_cup_one_one_explicitH1, trivialF2Map2Equiv_eqToHom,
-    trivialF2Map1Equiv_eqToHom, trivialF2Map1Equiv_eqToHom,
+  -- Normalize both sides to explicit cup products and explicit transports of explicit classes.
+  simp only [eG, eqToIso.hom, trivialF2TopPairing_cup_one_one_explicitH1,
+    trivialF2Map2Equiv_eqToHom, trivialF2Map1Equiv_eqToHom,
     explicitH2AddEquivContinuousCohomology_continuousCohomologyMap2,
-    explicitH1AddEquivContinuousCohomology_continuousCohomologyMap1,
-    explicitH1AddEquivContinuousCohomology_continuousCohomologyMap1,
-    trivialF2TopPairing_cup_one_one_explicitH1, ← trivialF2CoeffHom_def,
-    explicitMap2_explicitCup11 G _ _ _ (trivialF2Pairing G) continuous_of_discreteTopology
-      (trivialF2Pairing_smul_smul G) H _ _ _ (trivialF2Pairing H) continuous_of_discreteTopology
-      (trivialF2Pairing_smul_smul H) φ trivialF2CoeffHom trivialF2CoeffHom trivialF2CoeffHom
-      continuous_of_discreteTopology continuous_of_discreteTopology continuous_of_discreteTopology
-      _ _ _ hpair]
+    explicitH1AddEquivContinuousCohomology_continuousCohomologyMap1, ← trivialF2CoeffHom_def]
+  -- The comparison is explicit cup naturality for the compatible pair `(φ, trivialF2CoeffHom)`.
+  rw [explicitMap2_explicitCup11 G _ _ _ (trivialF2Pairing G) continuous_of_discreteTopology
+    (trivialF2Pairing_smul_smul G) H _ _ _ (trivialF2Pairing H) continuous_of_discreteTopology
+    (trivialF2Pairing_smul_smul H) φ trivialF2CoeffHom trivialF2CoeffHom trivialF2CoeffHom
+    continuous_of_discreteTopology continuous_of_discreteTopology continuous_of_discreteTopology
+    _ _ _ hpair]
 
 end TauCeti
