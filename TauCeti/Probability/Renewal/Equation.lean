@@ -32,7 +32,8 @@ The second part solves the renewal equation. If the renewal measure of `F` is lo
 which holds for a probability measure `F` with `F {0} < 1`
 (`MeasureTheory.Measure.isLocallyFiniteMeasure_renewalMeasure`), then `g = h ∗ U` solves
 `g = h + g ∗ F`, and it is the only solution that is measurable and bounded on each interval
-`[0, t]`. Uniqueness iterates the equation: the difference `d` of two solutions satisfies
+`[0, t]`. At zero, any solution satisfies `g 0 = h 0 / (1 - F.real {0})` when
+`F.real {0} ≠ 1`. Uniqueness iterates the equation: the difference `d` of two solutions satisfies
 `d = d ∗ F^{∗n}` for every `n`, and `F^{∗n} [0, t] → 0` because these masses sum to `U [0, t]`.
 
 The file ends with the tail identity `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`, which follows from
@@ -51,7 +52,13 @@ it is the identity from which the constant in Blackwell's renewal theorem is com
 * `TauCeti.Probability.tendstoUniformlyOn_sum_renewalConv_convolutionPower` — uniform convergence
   of `∑ n, h ∗ F^{∗n}` on `[0, T]`, and `TauCeti.Probability.renewalConv_renewalMeasure`,
   identifying its sum with `h ∗ U`.
+* `TauCeti.Probability.apply_zero_of_eq_add_renewalConv` — the initial value
+  `g 0 = h 0 / (1 - F.real {0})`.
 * `TauCeti.Probability.renewalConv_renewalMeasure_eq_add` — `h ∗ U` solves `g = h + g ∗ F`.
+* `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_conv` — the equivalent formula
+  `h ∗ U = h + h ∗ (F ∗ U)`.
+* `MeasureTheory.Measure.renewalConv_measureReal_Iic_renewalMeasure` — the convolution of
+  `F [0, ·]` with `U` is the real-valued renewal function.
 * `TauCeti.Probability.eq_zero_of_renewalConv_eq_self` — the homogeneous equation `d = d ∗ F`
   has no nonzero locally bounded measurable solution.
 * `TauCeti.Probability.eq_renewalConv_renewalMeasure` — uniqueness of locally bounded measurable
@@ -104,8 +111,8 @@ theorem renewalConv_zero_left (μ : Measure ℝ≥0) (t : ℝ≥0) : renewalConv
 @[simp]
 theorem renewalConv_apply_zero (h : ℝ≥0 → ℝ) (μ : Measure ℝ≥0) :
     renewalConv h μ 0 = μ.real {0} * h 0 := by
-  have hz : Iic (0 : ℝ≥0) = {0} := by ext s; simp
-  simp [renewalConv_def, hz, measureReal_def]
+  -- Specialize the bottom-interval lemma to zero before rewriting under the measure.
+  simp [renewalConv_def, show Iic (0 : ℝ≥0) = {0} from Iic_bot, measureReal_def]
 
 /-- A solution of the renewal equation has its initial value determined by the forcing and
 by the atom at zero. No regularity of the solution is needed for this boundary identity. -/
@@ -128,6 +135,25 @@ theorem renewalConv_dirac_zero (h : ℝ≥0 → ℝ) (t : ℝ≥0) :
 theorem renewalConv_const (c : ℝ) (μ : Measure ℝ≥0) (t : ℝ≥0) :
     renewalConv (fun _ ↦ c) μ t = μ.real (Iic t) * c := by
   simp [renewalConv_def]
+
+end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+open TauCeti.Probability
+
+/-- Convolution of the constant one with a measure is its real-valued distribution function. -/
+@[simp]
+theorem renewalConv_const_one (μ : Measure ℝ≥0) :
+    renewalConv (fun _ ↦ 1) μ = fun t ↦ μ.real (Iic t) := by
+  ext t
+  simp
+
+end MeasureTheory.Measure
+
+namespace TauCeti.Probability
+
+variable {h g : ℝ≥0 → ℝ} {μ ν : Measure ℝ≥0} {s t T : ℝ≥0} {C : ℝ}
 
 /-- The integrand of `renewalConv h μ t` is integrable when `h` is measurable and bounded on
 `[0, t]` and `μ` is finite on `[0, t]`. -/
@@ -377,6 +403,27 @@ theorem eq_renewalConv_renewalMeasure [SFinite μ] (hh : Measurable h)
 
 end RenewalEquation
 
+end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+open TauCeti.Probability
+
+/-- The renewal function is the convolution of the increment distribution function with the
+renewal measure. This holds whenever the renewal measure is locally finite, without probability
+normalization of the increment measure. -/
+theorem renewalConv_measureReal_Iic_renewalMeasure (μ : Measure ℝ≥0) [SFinite μ]
+    [IsLocallyFiniteMeasure μ.renewalMeasure] (t : ℝ≥0) :
+    renewalConv (fun u ↦ μ.real (Iic u)) μ.renewalMeasure t = (μ.renewalFunction t).toReal := by
+  have := isLocallyFiniteMeasure_of_renewalMeasure μ
+  rw [← renewalConv_const_one, renewalConv_renewalConv measurable_const (C := 1) (by simp)
+    measure_Iic_lt_top.ne measure_Iic_lt_top.ne, renewalConv_const, mul_one,
+    measureReal_def, renewalFunction_def]
+
+end MeasureTheory.Measure
+
+namespace TauCeti.Probability
+
 /-! ### The tail identity -/
 
 /-- **The tail of `F` integrates to one against the renewal measure**:
@@ -386,6 +433,7 @@ theorem renewalConv_measureReal_Ioi_renewalMeasure [IsProbabilityMeasure μ] (h�
     (t : ℝ≥0) : renewalConv (fun u ↦ μ.real (Ioi u)) μ.renewalMeasure t = 1 := by
   have hU := (Measure.renewalMeasure_Iic_lt_top μ hμ t).ne
   have hm := (Measure.renewalFunction_lt_top μ hμ t).ne
+  let := Measure.isLocallyFiniteMeasure_renewalMeasure μ hμ
   -- The tail is `1 - (1 ∗ F)`, and `(1 ∗ F) ∗ U = 1 ∗ (F ∗ U)` evaluates to the renewal function.
   have htail : (fun u ↦ μ.real (Ioi u)) = (fun _ ↦ (1 : ℝ)) - renewalConv (fun _ ↦ 1) μ := by
     funext u
@@ -393,10 +441,11 @@ theorem renewalConv_measureReal_Ioi_renewalMeasure [IsProbabilityMeasure μ] (h�
   have hbd : ∀ s ≤ t, |renewalConv (fun _ ↦ (1 : ℝ)) μ s| ≤ 1 := fun s _ ↦ by
     simp [abs_of_nonneg measureReal_nonneg]
   rw [htail, renewalConv_sub (integrableOn_Iic_sub measurable_const (C := 1) (by simp) hU)
-    (integrableOn_Iic_sub (measurable_renewalConv measurable_const μ) hbd hU),
-    renewalConv_renewalConv measurable_const (C := 1) (by simp) (measure_ne_top μ _) hU]
-  simp only [renewalConv_const, mul_one, measureReal_def, Measure.renewalMeasure_Iic,
-    ← Measure.renewalFunction_def, ENNReal.toReal_add ENNReal.one_ne_top hm, ENNReal.toReal_one]
+    (integrableOn_Iic_sub (measurable_renewalConv measurable_const μ) hbd hU)]
+  simp only [Measure.renewalConv_const_one]
+  rw [Measure.renewalConv_measureReal_Iic_renewalMeasure]
+  simp only [measureReal_def, Measure.renewalMeasure_Iic,
+    ENNReal.toReal_add ENNReal.one_ne_top hm, ENNReal.toReal_one]
   ring
 
 end TauCeti.Probability

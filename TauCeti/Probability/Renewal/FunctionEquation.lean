@@ -10,11 +10,12 @@ public import TauCeti.Probability.Renewal.Equation
 /-!
 # The renewal equation for the mean count
 
-The renewal function `m` is the unique measurable, locally bounded solution of the renewal
-equation with forcing `t ↦ F [0, t]`. This file identifies its real-valued version with the
-convolution of that forcing and the renewal measure, and derives the equation
-`m = F [0, ·] + m ∗ F`. The general uniqueness theorem is
-`TauCeti.Probability.eq_renewalConv_renewalMeasure`.
+When the renewal measure `U` is locally finite, the real-valued renewal function
+`t ↦ (m t).toReal` solves the renewal equation with forcing `t ↦ F.real [0, t]`.
+This file identifies that real-valued function with the convolution of the forcing and `U`,
+and derives its renewal equation. By
+`TauCeti.Probability.eq_renewalConv_renewalMeasure`, it is then the only measurable,
+locally bounded real-valued solution.
 
 All convolution intervals include both endpoints. Consequently, when `F` has an atom at zero,
 the initial mean count is `F {0} / (1 - F {0})`, rather than zero. The nondegeneracy assumption
@@ -37,20 +38,6 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-/-- The renewal function is the convolution of the increment distribution function with the
-renewal measure. This holds whenever the renewal measure is locally finite, without probability
-normalization of the increment measure. -/
-theorem renewalConv_measureReal_Iic_renewalMeasure (μ : Measure ℝ≥0) [SFinite μ]
-    [IsLocallyFiniteMeasure μ.renewalMeasure] (t : ℝ≥0) :
-    renewalConv (fun u ↦ μ.real (Iic u)) μ.renewalMeasure t = (μ.renewalFunction t).toReal := by
-  have := isLocallyFiniteMeasure_of_renewalMeasure μ
-  have hcdf : (fun u ↦ μ.real (Iic u)) = renewalConv (fun _ ↦ 1) μ := by
-    ext u
-    simp
-  rw [hcdf, renewalConv_renewalConv measurable_const (C := 1) (by simp)
-    measure_Iic_lt_top.ne measure_Iic_lt_top.ne, renewalConv_const, mul_one,
-    measureReal_def, renewalFunction_def]
-
 /-- The mean renewal count solves the renewal equation with forcing `t ↦ F [0, t]`.
 The atom at zero is retained in the convolution. -/
 theorem renewalFunction_toReal_eq_add_renewalConv (μ : Measure ℝ≥0) [SFinite μ]
@@ -58,11 +45,8 @@ theorem renewalFunction_toReal_eq_add_renewalConv (μ : Measure ℝ≥0) [SFinit
     (μ.renewalFunction t).toReal = μ.real (Iic t) +
       renewalConv (fun u ↦ (μ.renewalFunction u).toReal) μ t := by
   have := isLocallyFiniteMeasure_of_renewalMeasure μ
-  have hcdf : (fun u ↦ μ.real (Iic u)) = renewalConv (fun _ ↦ 1) μ := by
-    ext u
-    simp
   have hmeas : Measurable (fun u ↦ μ.real (Iic u)) := by
-    rw [hcdf]
+    rw [← renewalConv_const_one]
     exact measurable_renewalConv measurable_const μ
   have hbound : ∀ s ≤ t, |μ.real (Iic s)| ≤ μ.real (Iic t) := fun s hs ↦ by
     rw [abs_of_nonneg measureReal_nonneg]
@@ -74,20 +58,28 @@ theorem renewalFunction_toReal_eq_add_renewalConv (μ : Measure ℝ≥0) [SFinit
   rwa [hid] at heq
 
 /-- At time zero the expected number of genuine arrivals is `F {0} / (1 - F {0})`.
-In particular, an atom at zero yields a nonzero initial renewal function. -/
+This identity needs only local finiteness of the renewal measure and `F.real {0} ≠ 1`,
+not probability normalization. -/
 @[simp]
-theorem renewalFunction_toReal_zero (μ : Measure ℝ≥0) [IsProbabilityMeasure μ]
-    (hμ : μ {0} < 1) :
+theorem renewalFunction_toReal_zero (μ : Measure ℝ≥0) [SFinite μ]
+    [IsLocallyFiniteMeasure μ.renewalMeasure] (hμ : μ.real {0} ≠ 1) :
     (μ.renewalFunction 0).toReal = μ.real {0} / (1 - μ.real {0}) := by
-  have hlt : μ.real {0} < 1 := by
-    simpa only [measureReal_def, ENNReal.toReal_one] using
-      (ENNReal.toReal_lt_toReal (measure_ne_top μ _) ENNReal.one_ne_top).2 hμ
-  let := isLocallyFiniteMeasure_renewalMeasure μ hμ
   have heq : (fun u ↦ (μ.renewalFunction u).toReal) =
       (fun u ↦ μ.real (Iic u)) + renewalConv (fun u ↦ (μ.renewalFunction u).toReal) μ := by
     funext t
     exact renewalFunction_toReal_eq_add_renewalConv μ t
-  have hz : Iic (0 : ℝ≥0) = {0} := by ext s; simp
-  simpa only [hz] using apply_zero_of_eq_add_renewalConv heq hlt.ne
+  -- Specialize the bottom-interval lemma to zero before rewriting under the measure.
+  simpa only [show Iic (0 : ℝ≥0) = {0} from Iic_bot] using
+    apply_zero_of_eq_add_renewalConv heq hμ
+
+/-- The initial mean count for a probability increment law with `F {0} < 1`. -/
+theorem renewalFunction_toReal_zero_of_isProbabilityMeasure (μ : Measure ℝ≥0)
+    [IsProbabilityMeasure μ] (hμ : μ {0} < 1) :
+    (μ.renewalFunction 0).toReal = μ.real {0} / (1 - μ.real {0}) := by
+  let := isLocallyFiniteMeasure_renewalMeasure μ hμ
+  have hlt : μ.real {0} < 1 := by
+    simpa only [measureReal_def, ENNReal.toReal_one] using
+      (ENNReal.toReal_lt_toReal (measure_ne_top μ _) ENNReal.one_ne_top).2 hμ
+  exact renewalFunction_toReal_zero μ hlt.ne
 
 end MeasureTheory.Measure
