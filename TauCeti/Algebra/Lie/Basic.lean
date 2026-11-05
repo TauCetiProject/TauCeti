@@ -430,6 +430,15 @@ theorem _root_.LieHom.isNilpotent_ad_of_surjective
   rw [← f.map_ad_pow, hn]
   simp
 
+/-- A Lie algebra isomorphism preserves and reflects ad-nilpotence, without finiteness or
+characteristic assumptions. -/
+@[simp]
+theorem _root_.LieEquiv.isNilpotent_ad_apply_iff (e : L ≃ₗ⁅R⁆ L') (x : L) :
+    IsNilpotent (LieAlgebra.ad R L' (e x)) ↔ IsNilpotent (LieAlgebra.ad R L x) := by
+  refine ⟨fun h ↦ ?_, e.toLieHom.isNilpotent_ad_of_surjective e.surjective⟩
+  simpa only [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply] using
+    e.symm.toLieHom.isNilpotent_ad_of_surjective e.symm.surjective h
+
 variable (f : L →ₗ⁅R⁆ L') (I : LieIdeal R L')
 
 /-- The restriction of a Lie homomorphism `f` to the preimage of a Lie ideal `I`, as a Lie
