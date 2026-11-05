@@ -75,11 +75,14 @@ theorem floerOperator_eq (ω : SmoothTwoForm I M)
     ω.floerOperator J Ks Kt u z =
       ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal +
         J z (u z) (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) := by
+  have hu' : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I
+      (fun p : ℝ × ℝ ↦ u (p.1, p.2)) (z.1, z.2) := by
+    simpa only [Prod.mk.eta] using hu
   rw [floerOperator_def, perturbedMFDeriv_apply_stdComplexLineReal,
     perturbedMFDeriv_apply_stdComplexLineImag,
-    curveVelocity_eq_mfderiv_fst (f := fun s t ↦ u (s, t)) hu,
-    curveVelocity_eq_mfderiv_snd (f := fun s t ↦ u (s, t)) hu]
-  rfl
+    curveVelocity_eq_mfderiv_fst (f := fun s t ↦ u (s, t)) hu',
+    curveVelocity_eq_mfderiv_snd (f := fun s t ↦ u (s, t)) hu']
+  simp only [stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 variable [FiniteDimensional ℝ E]
 
