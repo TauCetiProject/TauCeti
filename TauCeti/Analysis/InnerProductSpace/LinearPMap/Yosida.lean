@@ -40,7 +40,9 @@ open scoped Topology
 
 namespace LinearPMap
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+section NormedSpace
+
+variable {H : Type*} [NormedAddCommGroup H] [NormedSpace ℂ H]
 variable (A : H →ₗ.[ℂ] H)
 
 /-- The imaginary-shift Yosida approximation `-r² R(ir) - ir I`. -/
@@ -57,6 +59,12 @@ theorem imaginaryYosidaApproximation_eq_yosidaApproximation (r : ℝ) :
 noncomputable def symmetricYosidaApproximation (r : ℝ) : H →L[ℂ] H :=
   (-((r : ℂ) ^ 2 / 2)) • (A.resolvent (I * r) + A.resolvent (-I * r))
 
+/-- The resolvent formula for the symmetric approximation. -/
+theorem symmetricYosidaApproximation_def (r : ℝ) :
+    A.symmetricYosidaApproximation r =
+      (-((r : ℂ) ^ 2 / 2)) • (A.resolvent (I * r) + A.resolvent (-I * r)) := by
+  rw [symmetricYosidaApproximation]
+
 /-- The formula for the imaginary-shift approximation. -/
 theorem imaginaryYosidaApproximation_def (r : ℝ) :
     A.imaginaryYosidaApproximation r = -((r : ℂ) ^ 2 • A.resolvent (I * r)) - (I * r) • 1 := by
@@ -68,7 +76,7 @@ theorem imaginaryYosidaApproximation_def (r : ℝ) :
 theorem symmetricYosidaApproximation_eq_avg (r : ℝ) :
     A.symmetricYosidaApproximation r =
       (1 / 2 : ℂ) • (A.imaginaryYosidaApproximation r + A.imaginaryYosidaApproximation (-r)) := by
-  simp only [symmetricYosidaApproximation, imaginaryYosidaApproximation_def, Complex.ofReal_neg,
+  simp only [symmetricYosidaApproximation_def, imaginaryYosidaApproximation_def, Complex.ofReal_neg,
     mul_neg, neg_mul, neg_sq]
   module
 
@@ -80,9 +88,12 @@ variable {A}
 
 /-- The symmetric approximation at zero is zero. -/
 @[simp] theorem symmetricYosidaApproximation_zero : A.symmetricYosidaApproximation 0 = 0 := by
-  simp [symmetricYosidaApproximation]
+  simp [symmetricYosidaApproximation_def]
 
-variable [CompleteSpace H]
+end NormedSpace
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable {A : H →ₗ.[ℂ] H}
 
 /-- The normalized imaginary resolvent is a contraction. -/
 theorem _root_.IsSelfAdjoint.norm_smul_resolvent_I_mul_le_one (hA : IsSelfAdjoint A) (r : ℝ) :
