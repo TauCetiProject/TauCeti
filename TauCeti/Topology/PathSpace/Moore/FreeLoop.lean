@@ -28,6 +28,7 @@ constant loop, and the constant loops `X → 𝓛₀X` are again a closed embedd
 ## Main definitions
 
 * `TauCeti.MooreFreeLoopSpace X`: the free Moore loops `𝓛X`, with `basepoint` and `length`.
+* `TauCeti.MooreFreeLoopSpace.map`: postcomposition, retaining the duration.
 * `TauCeti.MooreFreeLoopSpace.const x`: the constant loop at `x` of length zero.
 * `TauCeti.MooreLoopSpace.toFreeLoop`: a based Moore loop as a free loop.
 * `TauCeti.MooreFreeLoopSpace.contractibleLoops X`: the contractible free loops `𝓛₀X`, and
@@ -118,6 +119,43 @@ theorem length_toMoorePath (γ : MooreFreeLoopSpace X) : γ.toMoorePath.length =
 theorem continuous_length : Continuous (length : MooreFreeLoopSpace X → ℝ≥0) :=
   MoorePath.continuous_length.comp continuous_toMoorePath
 
+/-! ### Maps of the target space -/
+
+variable {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- Postcompose a free Moore loop with a continuous map, retaining its duration. -/
+def map (f : C(X, Y)) (γ : MooreFreeLoopSpace X) : MooreFreeLoopSpace Y :=
+  ⟨γ.toMoorePath.map f, by simp [γ.target_eq_source]⟩
+
+@[simp]
+theorem toMoorePath_map (f : C(X, Y)) (γ : MooreFreeLoopSpace X) :
+    (map f γ).toMoorePath = γ.toMoorePath.map f :=
+  (rfl)
+
+@[simp]
+theorem basepoint_map (f : C(X, Y)) (γ : MooreFreeLoopSpace X) :
+    (map f γ).basepoint = f γ.basepoint :=
+  MoorePath.source_map f γ.toMoorePath
+
+@[simp]
+theorem length_map (f : C(X, Y)) (γ : MooreFreeLoopSpace X) : (map f γ).length = γ.length :=
+  MoorePath.length_map f γ.toMoorePath
+
+@[simp]
+theorem map_id (γ : MooreFreeLoopSpace X) : map (.id X) γ = γ :=
+  ext (MoorePath.map_id γ.toMoorePath)
+
+@[simp]
+theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MooreFreeLoopSpace X) :
+    map g (map f γ) = map (g.comp f) γ :=
+  ext (MoorePath.map_map g f γ.toMoorePath)
+
+@[fun_prop]
+theorem continuous_map (f : C(X, Y)) :
+    Continuous (map f : MooreFreeLoopSpace X → MooreFreeLoopSpace Y) :=
+  isEmbedding_toMoorePath.continuous_iff.mpr
+    ((MoorePath.continuous_map f).comp continuous_toMoorePath)
+
 /-! ### Constant loops -/
 
 /-- The constant loop at `x`, of length zero. -/
@@ -139,6 +177,10 @@ theorem length_const (x : X) : (const x).length = 0 :=
 @[fun_prop]
 protected theorem continuous_const : Continuous (const : X → MooreFreeLoopSpace X) :=
   isEmbedding_toMoorePath.continuous_iff.2 MoorePath.continuous_refl
+
+@[simp]
+theorem map_const (f : C(X, Y)) (x : X) : map f (const x) = const (f x) :=
+  ext (MoorePath.map_refl f x)
 
 /-- A free loop of length zero is the constant loop at its base point. -/
 theorem eq_const_of_length_eq_zero {γ : MooreFreeLoopSpace X} (h : γ.length = 0) :
