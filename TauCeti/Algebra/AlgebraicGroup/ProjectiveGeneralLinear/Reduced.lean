@@ -65,9 +65,8 @@ variable (k : Type u) [Field k]
 
 /-- The coordinate algebra of `PGLₙ` is geometrically reduced over every field. -/
 instance instIsGeometricallyReducedCoordinateHopfAlgebra :
-    Algebra.IsGeometricallyReduced k (coordinateHopfAlgebra n k) := by
-  let _ := isGeometricallyReduced_of_smooth k (GeneralLinear.coordinateHopfAlgebra k n)
-  exact Algebra.IsGeometricallyReduced.of_injective (conjugationMap n k).hom.toAlgHom
+    Algebra.IsGeometricallyReduced k (coordinateHopfAlgebra n k) :=
+  Algebra.IsGeometricallyReduced.of_injective (conjugationMap n k).hom.toAlgHom
     (conjugationMap_injective n k)
 
 end TauCeti.ProjectiveGeneralLinear

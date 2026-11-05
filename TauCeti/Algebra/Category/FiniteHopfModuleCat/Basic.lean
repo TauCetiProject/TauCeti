@@ -201,6 +201,21 @@ theorem _root_.LinearEquiv.toFiniteHopfModuleCatIso_inv_hom
     {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) :
     e.toFiniteHopfModuleCatIso.inv.hom.hom = e.symm.toLinearMap := (rfl)
 
+/-- An isomorphism of finite-dimensional modules gives an `H`-linear equivalence of the underlying
+modules. -/
+def isoToLinearEquiv {M N : FiniteHopfModuleCat k H} (e : M ≅ N) : M ≃ₗ[H] N :=
+  ((incl k H).mapIso e).toLinearEquiv
+
+/-- The `H`-linear equivalence of an isomorphism is its forward map. -/
+@[simp]
+theorem isoToLinearEquiv_apply {M N : FiniteHopfModuleCat k H} (e : M ≅ N) (x : M) :
+    isoToLinearEquiv e x = e.hom.hom.hom x := (rfl)
+
+/-- The inverse of the `H`-linear equivalence of an isomorphism is its inverse map. -/
+@[simp]
+theorem isoToLinearEquiv_symm_apply {M N : FiniteHopfModuleCat k H} (e : M ≅ N) (x : N) :
+    (isoToLinearEquiv e).symm x = e.inv.hom.hom x := (rfl)
+
 /-- Morphisms of finite-dimensional modules are determined by their native linear maps. -/
 @[ext]
 theorem hom_ext {M N : FiniteHopfModuleCat k H} {f g : M ⟶ N}

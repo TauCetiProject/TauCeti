@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
+public import Mathlib.NumberTheory.Real.Irrational
 public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
@@ -43,6 +44,8 @@ defined from it.
 ## Main definitions
 
 * `ZLattice.dual L`: the dual of `L : Submodule ℤ E` with respect to the inner product.
+* `ZLattice.dualComapEquiv L e`: the `ℤ`-linear equivalence `(e⁻¹ L)^∨ ≃ₗ[ℤ] L^∨` induced by a
+  linear isometry equivalence `e`.
 
 ## Notation
 
@@ -54,6 +57,9 @@ defined from it.
 * `ZLattice.dual_span_basis`: the dual of the `ℤ`-span of an `ℝ`-basis is the `ℤ`-span of its
   dual basis.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
+* `ZLattice.dual_span_singleton`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`.
+* `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
+  meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
 * `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
@@ -112,6 +118,20 @@ theorem dual_span_basis {ι : Type*} [Finite ι] [DecidableEq ι] (b : Basis ι 
       span ℤ (Set.range (BilinForm.dualBasis (innerₗ E) TauCeti.nondegenerate_inner b)) :=
   BilinForm.dualSubmodule_span_of_basis (innerₗ E) TauCeti.nondegenerate_inner b
 
+/-- The `ℤ`-span of an orthonormal basis is discrete, as the `ℤ`-span of the underlying basis
+`b.toBasis` is. -/
+instance instDiscreteTopologySpanOrthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) : DiscreteTopology (span ℤ (Set.range b)) := by
+  rw [← b.coe_toBasis]
+  infer_instance
+
+/-- The `ℤ`-span of an orthonormal basis is a full lattice, a copy of `ℤⁿ ⊆ ℝⁿ`. -/
+instance instIsZLatticeSpanOrthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) : IsZLattice ℝ (span ℤ (Set.range b)) where
+  span_top := by
+    rw [← b.coe_toBasis]
+    exact IsZLattice.span_top
+
 /-- The `ℤ`-span of an orthonormal basis is its own dual. -/
 @[simp]
 theorem dual_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
@@ -125,6 +145,47 @@ theorem dual_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBas
     simp only [eq_comm]
   rw [← b.coe_toBasis, dual_span_basis, hb, b.coe_toBasis]
 
+/-- The dual of the rank-one lattice `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`. -/
+theorem dual_span_singleton {c : ℝ} (hc : c ≠ 0) :
+    dual (span ℤ {c} : Submodule ℤ ℝ) = span ℤ {c⁻¹} := by
+  ext x
+  refine ⟨fun hx ↦ ?_, fun hx ↦ mem_dual.mpr fun y hy ↦ ?_⟩
+  · obtain ⟨m, hm⟩ := mem_dual.mp hx c (Submodule.mem_span_singleton_self c)
+    rw [RCLike.inner_apply, conj_trivial] at hm
+    refine Submodule.mem_span_singleton.mpr ⟨m, ?_⟩
+    rw [zsmul_eq_mul, ← hm, mul_comm c x, mul_inv_cancel_right₀ hc]
+  · obtain ⟨m, rfl⟩ := Submodule.mem_span_singleton.mp hx
+    obtain ⟨n, rfl⟩ := Submodule.mem_span_singleton.mp hy
+    refine ⟨m * n, ?_⟩
+    rw [RCLike.inner_apply, conj_trivial, zsmul_eq_mul, zsmul_eq_mul, Int.cast_mul]
+    calc (n : ℝ) * c * ((m : ℝ) * c⁻¹)
+        = (m : ℝ) * (n : ℝ) * (c * c⁻¹) := by ring
+      _ = (m : ℝ) * (n : ℝ) := by rw [mul_inv_cancel₀ hc, mul_one]
+
+/-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
+theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
+    (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) = ⊥ := by
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    exact hc ⟨0, by norm_num⟩
+  rw [dual_span_singleton hc0, eq_bot_iff]
+  intro x hx
+  rw [Submodule.mem_inf, Submodule.mem_span_singleton, Submodule.mem_span_singleton] at hx
+  obtain ⟨⟨m, rfl⟩, ⟨n, hn⟩⟩ := hx
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  exfalso
+  refine hc ⟨(n : ℚ) / (m : ℚ), ?_⟩
+  have hm' : (m : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hm
+  have hmc : (m : ℝ) * c = (n : ℝ) * c⁻¹ := by simpa [zsmul_eq_mul] using hn.symm
+  have hmc2 : (n : ℝ) = c ^ 2 * m := by
+    calc
+      (n : ℝ) = (n : ℝ) * c⁻¹ * c := (inv_mul_cancel_right₀ hc0 (n : ℝ)).symm
+      _ = (m : ℝ) * c * c := by rw [← hmc]
+      _ = c ^ 2 * m := by ring
+  push_cast
+  exact (div_eq_iff hm').mpr hmc2
+
 /-- The dual commutes with pulling a lattice back along a linear isometry equivalence. -/
 @[simp]
 theorem dual_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
@@ -135,6 +196,26 @@ theorem dual_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
   refine ⟨fun h z hz ↦ ?_, fun h y hy ↦ e.inner_map_map x y ▸ h _ hy⟩
   obtain ⟨m, hm⟩ := h (e.symm z) (by rwa [e.apply_symm_apply])
   exact ⟨m, by rwa [← e.inner_map_map, e.apply_symm_apply] at hm⟩
+
+/-- A linear isometry equivalence `e : F ≃ₗᵢ[ℝ] E` identifies the dual of the pullback of `L` with
+the dual of `L`. -/
+noncomputable def dualComapEquiv (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
+    dual (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) ≃ₗ[ℤ] dual L :=
+  (LinearEquiv.ofEq _ _ (dual_comap L e)).trans
+    ((e.toLinearEquiv.restrictScalars ℤ).ofSubmodule' (dual L))
+
+/-- Applying `dualComapEquiv L e` applies `e` to the underlying vector. -/
+@[simp]
+theorem coe_dualComapEquiv_apply (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E)
+    (x : dual (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap)) :
+    (dualComapEquiv L e x : E) = e x :=
+  (rfl)
+
+/-- Applying `(dualComapEquiv L e).symm` applies `e.symm` to the underlying vector. -/
+@[simp]
+theorem coe_dualComapEquiv_symm_apply (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) (y : dual L) :
+    ((dualComapEquiv L e).symm y : F) = e.symm y :=
+  (rfl)
 
 /-- The dual of the pullback of a lattice along a continuous linear equivalence `e` is the
 pullback of the dual along the adjoint of `e⁻¹`. Read through images, the dual of `A L` is

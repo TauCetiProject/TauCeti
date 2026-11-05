@@ -73,6 +73,8 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
 * `Bundle.Trivialization.isSubbundleFrameOn_symm_comp`: a continuous family of injective
   operators into the model fibre, read through a linear trivialization, is a local frame of the
   subspaces corresponding to its ranges.
+* `Bundle.Trivialization.continuousAt_symm_subbundle`: a vector given by a trivialization of `V`,
+  read in a trivialization of `E`, depends continuously on the base point.
 
 ## References
 
@@ -586,6 +588,34 @@ end TauCeti
 
 namespace Bundle.Trivialization
 
+section Continuity
+
+variable {𝕜 B F F' : Type*} [Semiring 𝕜] [TopologicalSpace B] [TopologicalSpace F]
+  [TopologicalSpace F'] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] {V : Π x, Submodule 𝕜 (E x)}
+  [TopologicalSpace (TotalSpace F' fun x ↦ V x)]
+
+/-- A vector `e'.symm x v` given by a trivialization `e'` of a family `V` of subspaces of the
+fibres of `E`, read in a trivialization `g` of `E`, depends continuously on the base point near a
+point of both base sets, provided the total space of `V` maps continuously into that of `E`. -/
+theorem continuousAt_symm_subbundle
+    (e' : Trivialization F' (π F' fun x ↦ V x)) (g : Trivialization F (π F E))
+    (hV : Continuous fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))
+    {b₀ : B} (he' : b₀ ∈ e'.baseSet) (hg : b₀ ∈ g.baseSet) (v : F') :
+    ContinuousAt (fun x ↦ (g ⟨x, (e'.symm x v : E x)⟩).2) b₀ := by
+  -- Near `b₀`, the vector is the image of `e'.symm (x, v)` in the total space of `E`.
+  have hframe : (fun x ↦ (⟨x, (e'.symm x v : E x)⟩ : TotalSpace F E)) =ᶠ[𝓝 b₀]
+      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E)) ∘
+        fun x ↦ e'.toOpenPartialHomeomorph.symm (x, v) := by
+    filter_upwards [e'.open_baseSet.mem_nhds he'] with x hx
+    rw [Function.comp_apply, ← e'.mk_symm hx]
+  have h := (hV.continuousAt.comp (e'.continuousAt_symm_prodMk_left he')).congr hframe.symm
+  exact ((g.continuousOn.continuousAt (g.open_source.mem_nhds (g.mem_source.2 hg))).comp h).snd
+
+end Continuity
+
+section Frame
+
 open Function Set
 
 variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
@@ -622,5 +652,7 @@ theorem isSubbundleFrameOn_symm_comp {K ι : Type*} [NormedAddCommGroup K] [Norm
     ext w
     rw [hspan, Submodule.mem_map_equiv, LinearEquiv.symm_symm, hrange x hx,
       e.linearEquivAt_apply, e.symm_apply_apply_mk (hU hx)]
+
+end Frame
 
 end Bundle.Trivialization
