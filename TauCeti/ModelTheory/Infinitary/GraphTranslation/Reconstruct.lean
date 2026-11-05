@@ -93,6 +93,12 @@ variable {k : ℕ} (f : L.Functions k)
 def graphTotality : L.graphLanguage.Sentenceω :=
   (BoundedFormulaInf.rel (GraphRelation.graph f) fun i => Term.var (Sum.inr i)).ex.alls
 
+/-- Defining equation for `graphTotality`. -/
+theorem graphTotality_def :
+    f.graphTotality =
+      (BoundedFormulaInf.rel (GraphRelation.graph f) fun i => Term.var (Sum.inr i)).ex.alls :=
+  (rfl)
+
 /-- **Functionality** of the graph relation of a function symbol `f`: the sentence
 `∀ xs y z, G_f(xs, y) → G_f(xs, z) → y = z` of the graph language, with `xs` the first `k` bound
 positions and `y`, `z` the last two. -/
@@ -105,6 +111,19 @@ def graphFunctionality : L.graphLanguage.Sentenceω :=
           (Fin.last (k + 1)) i))).imp
       (BoundedFormulaInf.equal (Term.var (Sum.inr (Fin.last k).castSucc))
         (Term.var (Sum.inr (Fin.last (k + 1))))))).alls
+
+/-- Defining equation for `graphFunctionality`. -/
+theorem graphFunctionality_def :
+    f.graphFunctionality =
+      ((BoundedFormulaInf.rel (GraphRelation.graph f) fun i =>
+          Term.var (Sum.inr (Fin.snoc (α := fun _ => Fin (k + 2)) (fun j => j.castSucc.castSucc)
+            (Fin.last k).castSucc i))).imp
+        ((BoundedFormulaInf.rel (GraphRelation.graph f) fun i =>
+            Term.var (Sum.inr (Fin.snoc (α := fun _ => Fin (k + 2)) (fun j => j.castSucc.castSucc)
+              (Fin.last (k + 1)) i))).imp
+          (BoundedFormulaInf.equal (Term.var (Sum.inr (Fin.last k).castSucc))
+            (Term.var (Sum.inr (Fin.last (k + 1))))))).alls :=
+  (rfl)
 
 variable {M : Type w} [L.graphLanguage.Structure M]
 

@@ -8,6 +8,9 @@ module
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.LinearAlgebra.FixedSubmodule
 public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.GroupTheory.Perm.Cycle.Factors
+import TauCeti.LinearAlgebra.Matrix.Dual
 
 /-!
 # Fixed vectors of coordinate permutations
@@ -16,6 +19,11 @@ Functions on the cycle quotient identify linearly with the fixed submodule of
 precomposition by a permutation. The underlying bijection is the existing
 invariant-colouring equivalence; no enumeration of cycles is needed. The orbit basis
 requires only finitely many cycles, even when their elements form an infinite type.
+
+For finitely many coordinates, the orbit mean `Equiv.Perm.orbitMean σ O` rescales the indicator
+of a cycle `O` by `|O|⁻¹`. Read as the folded simple root `β_O = |O|⁻¹ ∑_{i ∈ O} αᵢ` of a
+diagram automorphism, these vectors are linearly independent
+(`Equiv.Perm.linearIndependent_orbitMean`).
 -/
 
 public noncomputable section
@@ -150,5 +158,50 @@ theorem permutationFixedProjection_comp_subtype (σ : Perm I)
       (funCongrLeft R M σ).toLinearMap.fixedSubmodule.subtype = LinearMap.id := by
   ext v i
   exact congrFun (congrArg Subtype.val (permutationFixedProjection_fixed σ r hr v)) i
+
+/-! ### Orbit means -/
+
+section OrbitMean
+
+open _root_.Finset Matrix
+
+variable {I : Type*} [Fintype I] [DecidableEq I] (σ : Perm I)
+
+/-- The folded simple root `β_O = |O|⁻¹ ∑_{i ∈ O} αᵢ` of a `σ`-orbit `O` of vertices: the mean of
+the coordinate vectors of the vertices in `O`, as a vector of coordinates in the basis `αᵢ`. -/
+def orbitMean (O : Quotient (SameCycle.setoid σ)) : I → ℚ :=
+  fun i ↦ if σ.SameCycle i O.out then (#{j | σ.SameCycle j O.out} : ℚ)⁻¹ else 0
+
+theorem orbitMean_apply (O : Quotient (SameCycle.setoid σ)) (i : I) :
+    σ.orbitMean O i = if σ.SameCycle i O.out then (#{j | σ.SameCycle j O.out} : ℚ)⁻¹ else 0 :=
+  (rfl)
+
+/-- The dot product with a folded simple root is the mean over the orbit. -/
+theorem orbitMean_dotProduct (O : Quotient (SameCycle.setoid σ)) (v : I → ℚ) :
+    σ.orbitMean O ⬝ᵥ v =
+      (#{j | σ.SameCycle j O.out} : ℚ)⁻¹ * ∑ i with σ.SameCycle i O.out, v i := by
+  simp [dotProduct, orbitMean_apply, ite_mul, sum_filter, mul_sum]
+
+/-- The dot product with a folded simple root is the mean over the orbit. -/
+theorem dotProduct_orbitMean (O : Quotient (SameCycle.setoid σ)) (v : I → ℚ) :
+    v ⬝ᵥ σ.orbitMean O =
+      (#{j | σ.SameCycle j O.out} : ℚ)⁻¹ * ∑ i with σ.SameCycle i O.out, v i := by
+  rw [dotProduct_comm, orbitMean_dotProduct]
+
+/-- **The folded simple roots are linearly independent.** -/
+theorem linearIndependent_orbitMean : LinearIndependent ℚ σ.orbitMean :=
+  -- The orbits are disjoint and nonempty, so pairing with the coordinate vector of the
+  -- representative of `O` only sees `β_O`.
+  TauCeti.linearIndependent_of_dotProduct_diagonal (w := fun O ↦ Pi.single O.out 1)
+    (c := fun O ↦ (#{j | σ.SameCycle j O.out} : ℚ)⁻¹)
+    (fun O ↦ (IsRegular.of_ne_zero (inv_ne_zero (Nat.cast_ne_zero.mpr
+      (σ.card_sameCycle_out_pos O).ne'))).right)
+    (fun O ↦ by simp [orbitMean_apply, SameCycle.refl])
+    (fun O P hOP ↦ by
+      have : ¬σ.SameCycle P.out O.out := fun h ↦
+        ne_of_sameCycle_out h (SameCycle.refl σ P.out) hOP rfl
+      simp [orbitMean_apply, this])
+
+end OrbitMean
 
 end Equiv.Perm

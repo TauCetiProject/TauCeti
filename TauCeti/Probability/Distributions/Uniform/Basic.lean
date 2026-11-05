@@ -52,6 +52,8 @@ therefore takes `a < b` as a hypothesis rather than assuming it silently.
 * `hasPDF_of_hasLaw_uniformMeasure` — a variable with this law satisfies `HasPDF`, i.e. its law is
   absolutely continuous; the density itself is identified by the two results above;
 * `uniformPDF_eq_ofReal_uniformPDFReal` — the bridge between that density and the real-valued one;
+* `integrable_uniformMeasure` and `integral_uniformMeasure` — integrability on the interval gives
+  integrability for the uniform law, and integrals against it are interval averages;
 * `cdf_uniformMeasure` — the cdf is `0` below `a`, `1` above `b`, and `(x - a) / (b - a)` between;
 * `integral_id_uniformMeasure` — the mean is `(a + b) / 2`;
 * `variance_id_uniformMeasure` — the variance is `(b - a) ^ 2 / 12`;
@@ -281,6 +283,23 @@ theorem cdf_uniformMeasure {a b : ℝ} (hab : a < b) (x : ℝ) :
     rw [min_eq_right hxb, ← ENNReal.ofReal_inv_of_pos hba,
       ← ENNReal.ofReal_mul (by positivity), ENNReal.toReal_ofReal (by positivity)]
     field_simp
+
+/-- A function integrable on `Set.Ioc a b` is integrable for the uniform measure on that
+interval. No hypothesis on the endpoints is needed. -/
+theorem integrable_uniformMeasure {E : Type*} [NormedAddCommGroup E] {a b : ℝ} {g : ℝ → E}
+    (hg : IntegrableOn g (Set.Ioc a b)) : Integrable g (uniformMeasure a b) := by
+  rcases lt_or_ge a b with hab | hba
+  · rw [uniformMeasure_eq_smul]
+    exact hg.smul_measure (by simpa using hab)
+  · simp [uniformMeasure_eq_zero_of_le hba]
+
+/-- The integral against the uniform measure on `Set.Ioc a b` is the average
+`(b - a)⁻¹ • ∫ x in a..b, g x` of `g` over the interval. -/
+theorem integral_uniformMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ℝ}
+    (hab : a ≤ b) (g : ℝ → E) :
+    ∫ x, g x ∂uniformMeasure a b = (b - a)⁻¹ • ∫ x in a..b, g x := by
+  rw [uniformMeasure_eq_smul, integral_smul_measure, intervalIntegral.integral_of_le hab,
+    ENNReal.toReal_inv, ENNReal.toReal_ofReal (sub_nonneg.mpr hab)]
 
 /-- The mean of the uniform distribution on `Set.Ioc a b` is the midpoint `(a + b) / 2`. -/
 theorem integral_id_uniformMeasure {a b : ℝ} (hab : a < b) :
