@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.MinimalResolution
 public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare.Basic
 
 /-!
 # Detecting linear resolutions by bigraded Ext Poincaré series
