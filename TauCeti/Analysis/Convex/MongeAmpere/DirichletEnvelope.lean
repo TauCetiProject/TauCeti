@@ -10,11 +10,18 @@ import TauCeti.Analysis.Convex.MongeAmpere.Section
 import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
-# The unit-density Monge–Ampère subsolution envelope
+# The zero-boundary Monge–Ampère subsolution envelope
 
-A shifted quadratic gives a unit-density subsolution on any bounded open convex domain.
-The comparison principle bounds every subsolution by zero and the pointwise supremum is
-a finite convex function, continuous in the open domain.
+For a reference Haar measure `μ` and arbitrary data measure `ν`, the supremum of convex
+subsolutions with nonpositive boundary values is the Perron candidate for the Monge–Ampère
+Dirichlet problem with datum `ν` and zero boundary values. On a bounded open convex domain,
+a shifted unit quadratic makes the class nonempty whenever `ν ≤ μ.restrict Ω`, in any dimension.
+In positive dimension, comparison bounds every subsolution by zero; when the class is
+nonempty, its pointwise supremum on the closure is finite and convex, and is continuous
+in the open domain.
+If the class is empty, the real supremum convention gives the zero function, so the same
+nonpositivity, convexity and continuity conclusions still hold. The unit-density case is
+`ν = μ.restrict Ω`. Boundary attainment and the measure identity are not asserted here.
 
 The construction is adapted from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/Dirichlet/Envelope.lean).
 -/
@@ -29,42 +36,44 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+  [MeasurableSpace E] [BorelSpace E] (μ ν : Measure E)
 
 /-- Convex potentials continuous on the closed domain, with nonpositive boundary values and
-Aleksandrov measure at least the reference measure on the open domain. -/
-def unitDensitySubsolutions (Ω : Set E) [DecidablePred (· ∈ Ω)] : Set (E → ℝ) :=
+Aleksandrov measure at least the data measure `ν`. -/
+def dirichletSubsolutions (Ω : Set E) [DecidablePred (· ∈ Ω)] : Set (E → ℝ) :=
   {w | ConvexOn ℝ (closure Ω) w ∧ ContinuousOn w (closure Ω) ∧
     (∀ z ∈ frontier Ω, w z ≤ 0) ∧
-    μ.restrict Ω ≤ mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤)}
+    ν ≤ mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤)}
 
-/-- The pointwise supremum of the unit-density subsolution class. -/
-def unitDensitySubsolutionEnvelope (Ω : Set E) [DecidablePred (· ∈ Ω)] : E → ℝ :=
-  fun x => sSup ((fun w => w x) '' unitDensitySubsolutions μ Ω)
+/-- The pointwise supremum of the subsolution class for datum `ν` and zero boundary values.
+It is the zero function if the class is empty, by the real supremum convention. -/
+def dirichletSubsolutionEnvelope (Ω : Set E) [DecidablePred (· ∈ Ω)] : E → ℝ :=
+  fun x => sSup ((fun w => w x) '' dirichletSubsolutions μ ν Ω)
 
 variable {Ω : Set E} [DecidablePred (· ∈ Ω)]
 
-/-- Characterize unit-density subsolutions by convexity, continuity, boundary values and measure. -/
-@[simp] theorem mem_unitDensitySubsolutions {w : E → ℝ} :
-    w ∈ unitDensitySubsolutions μ Ω ↔
+/-- Characterize subsolutions by convexity, continuity, boundary values and measure. -/
+@[simp] theorem mem_dirichletSubsolutions {w : E → ℝ} :
+    w ∈ dirichletSubsolutions μ ν Ω ↔
       ConvexOn ℝ (closure Ω) w ∧ ContinuousOn w (closure Ω) ∧
         (∀ z ∈ frontier Ω, w z ≤ 0) ∧
-        μ.restrict Ω ≤ mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) :=
+        ν ≤ mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) :=
   Iff.rfl
 
-/-- Evaluate the unit-density subsolution envelope as a pointwise supremum. -/
-theorem unitDensitySubsolutionEnvelope_apply (x : E) :
-    unitDensitySubsolutionEnvelope μ Ω x =
-      sSup ((fun w => w x) '' unitDensitySubsolutions μ Ω) := by
-  rw [unitDensitySubsolutionEnvelope]
+/-- Evaluate the zero-boundary subsolution envelope as a pointwise supremum. -/
+theorem dirichletSubsolutionEnvelope_apply (x : E) :
+    dirichletSubsolutionEnvelope μ ν Ω x =
+      sSup ((fun w => w x) '' dirichletSubsolutions μ ν Ω) := by
+  rw [dirichletSubsolutionEnvelope]
 
 variable [μ.IsAddHaarMeasure]
 
-/-- A sufficiently far downward translate of the unit quadratic belongs to the subsolution class. -/
-theorem exists_quadratic_mem_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
-    (hb : Bornology.IsBounded Ω) :
+/-- If the datum is bounded by the reference measure on the domain, a sufficiently far downward
+translate of the unit quadratic belongs to the subsolution class, in every dimension. -/
+theorem exists_quadratic_mem_dirichletSubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hν : ν ≤ μ.restrict Ω) :
     ∃ R > (0 : ℝ), (fun x : E => (1 / 2 : ℝ) * ‖x‖ ^ 2 + (-R ^ 2 / 2)) ∈
-      unitDensitySubsolutions μ Ω := by
+      dirichletSubsolutions μ ν Ω := by
   obtain ⟨R, hR, hbound⟩ := hb.closure.exists_pos_norm_le
   refine ⟨R, hR, convexOn_mul_norm_sq_add hΩc.closure (a := 1) zero_le_one _, ?_, ?_, ?_⟩
   · have hc : Continuous (fun x : E => (1 / 2 : ℝ) * ‖x‖ ^ 2 + (-R ^ 2 / 2)) := by fun_prop
@@ -74,18 +83,21 @@ theorem exists_quadratic_mem_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : C
     nlinarith [norm_nonneg z]
   · rw [mongeAmpereMeasure_ite_mul_norm_sq_add μ hΩ hΩc (a := 1) zero_le_one,
       one_pow, ENNReal.ofReal_one, one_smul]
+    exact hν
 
-/-- The shifted quadratic supplies a unit-density subsolution on any bounded open convex set. -/
-theorem unitDensitySubsolutions_nonempty (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
-    (hb : Bornology.IsBounded Ω) : (unitDensitySubsolutions μ Ω).Nonempty := by
-  obtain ⟨R, _, hq⟩ := exists_quadratic_mem_unitDensitySubsolutions μ hΩ hΩc hb
+/-- The shifted unit quadratic supplies a subsolution for any datum at most `μ.restrict Ω`,
+on a bounded open convex set, in every dimension. -/
+theorem dirichletSubsolutions_nonempty_of_le_restrict (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hν : ν ≤ μ.restrict Ω) :
+    (dirichletSubsolutions μ ν Ω).Nonempty := by
+  obtain ⟨R, _, hq⟩ := exists_quadratic_mem_dirichletSubsolutions μ ν hΩ hΩc hb hν
   exact ⟨_, hq⟩
 
 variable [Nontrivial E]
 
-/-- Every unit-density subsolution is nonpositive on the closure of a bounded open convex set. -/
-theorem nonpos_of_mem_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
-    (hb : Bornology.IsBounded Ω) {w : E → ℝ} (hw : w ∈ unitDensitySubsolutions μ Ω)
+/-- Every zero-boundary subsolution is nonpositive on the closure of a bounded open convex set. -/
+theorem nonpos_of_mem_dirichletSubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) {w : E → ℝ} (hw : w ∈ dirichletSubsolutions μ ν Ω)
     {x : E} (hx : x ∈ closure Ω) : w x ≤ 0 := by
   by_cases hxΩ : x ∈ Ω
   · exact le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hb (convexOn_const 0 hΩc)
@@ -94,48 +106,55 @@ theorem nonpos_of_mem_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : Convex �
       hw.2.2.1 hxΩ
   · exact hw.2.2.1 x (hΩ.frontier_eq.symm ▸ ⟨hx, hxΩ⟩)
 
-/-- The values of all unit-density subsolutions at a point in the closure are bounded above. -/
-theorem bddAbove_image_unitDensitySubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+/-- The values of all zero-boundary subsolutions at a point in the closure are bounded above. -/
+theorem bddAbove_image_dirichletSubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) {x : E} (hx : x ∈ closure Ω) :
-    BddAbove ((fun w => w x) '' unitDensitySubsolutions μ Ω) := by
+    BddAbove ((fun w => w x) '' dirichletSubsolutions μ ν Ω) := by
   refine ⟨0, ?_⟩
   rintro _ ⟨w, hw, rfl⟩
-  exact nonpos_of_mem_unitDensitySubsolutions μ hΩ hΩc hb hw hx
+  exact nonpos_of_mem_dirichletSubsolutions μ ν hΩ hΩc hb hw hx
 
-/-- Every unit-density subsolution lies below the envelope on the closure. -/
-theorem le_unitDensitySubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
-    (hb : Bornology.IsBounded Ω) {w : E → ℝ} (hw : w ∈ unitDensitySubsolutions μ Ω)
-    {x : E} (hx : x ∈ closure Ω) : w x ≤ unitDensitySubsolutionEnvelope μ Ω x := by
-  rw [unitDensitySubsolutionEnvelope_apply]
-  exact le_csSup (bddAbove_image_unitDensitySubsolutions μ hΩ hΩc hb hx) ⟨w, hw, rfl⟩
+/-- Every zero-boundary subsolution lies below the envelope on the closure. -/
+theorem le_dirichletSubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) {w : E → ℝ} (hw : w ∈ dirichletSubsolutions μ ν Ω)
+    {x : E} (hx : x ∈ closure Ω) : w x ≤ dirichletSubsolutionEnvelope μ ν Ω x := by
+  rw [dirichletSubsolutionEnvelope_apply]
+  exact le_csSup (bddAbove_image_dirichletSubsolutions μ ν hΩ hΩc hb hx) ⟨w, hw, rfl⟩
 
-/-- The unit-density subsolution envelope is nonpositive on the closure. -/
-theorem unitDensitySubsolutionEnvelope_nonpos (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+/-- The zero-boundary subsolution envelope is nonpositive on the closure. -/
+theorem dirichletSubsolutionEnvelope_nonpos (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) {x : E} (hx : x ∈ closure Ω) :
-    unitDensitySubsolutionEnvelope μ Ω x ≤ 0 := by
-  rw [unitDensitySubsolutionEnvelope_apply]
-  apply csSup_le ((unitDensitySubsolutions_nonempty μ hΩ hΩc hb).image _)
+    dirichletSubsolutionEnvelope μ ν Ω x ≤ 0 := by
+  rw [dirichletSubsolutionEnvelope_apply]
+  apply Real.sSup_nonpos
   rintro _ ⟨w, hw, rfl⟩
-  exact nonpos_of_mem_unitDensitySubsolutions μ hΩ hΩc hb hw hx
+  exact nonpos_of_mem_dirichletSubsolutions μ ν hΩ hΩc hb hw hx
 
 /-- The pointwise subsolution envelope is convex on the closure of the domain. -/
-theorem convexOn_unitDensitySubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+theorem convexOn_dirichletSubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) :
-    ConvexOn ℝ (closure Ω) (unitDensitySubsolutionEnvelope μ Ω) := by
-  refine ⟨hΩc.closure, ?_⟩
-  intro x hx y hy a b ha hbb hab
-  rw [unitDensitySubsolutionEnvelope_apply]
-  apply csSup_le ((unitDensitySubsolutions_nonempty μ hΩ hΩc hb).image _)
-  rintro _ ⟨w, hw, rfl⟩
-  exact (hw.1.2 hx hy ha hbb hab).trans <|
-    add_le_add (smul_le_smul_of_nonneg_left
-      (le_unitDensitySubsolutionEnvelope μ hΩ hΩc hb hw hx) ha)
-      (smul_le_smul_of_nonneg_left
-        (le_unitDensitySubsolutionEnvelope μ hΩ hΩc hb hw hy) hbb)
+    ConvexOn ℝ (closure Ω) (dirichletSubsolutionEnvelope μ ν Ω) := by
+  classical
+  obtain hempty | hne := (dirichletSubsolutions μ ν Ω).eq_empty_or_nonempty
+  · have hzero : dirichletSubsolutionEnvelope μ ν Ω = fun _ => 0 := by
+      funext x
+      simp only [dirichletSubsolutionEnvelope_apply, hempty, image_empty, Real.sSup_empty]
+    rw [hzero]
+    exact convexOn_const 0 hΩc.closure
+  · refine ⟨hΩc.closure, ?_⟩
+    intro x hx y hy a b ha hbb hab
+    rw [dirichletSubsolutionEnvelope_apply]
+    apply csSup_le (hne.image _)
+    rintro _ ⟨w, hw, rfl⟩
+    exact (hw.1.2 hx hy ha hbb hab).trans <|
+      add_le_add (smul_le_smul_of_nonneg_left
+        (le_dirichletSubsolutionEnvelope μ ν hΩ hΩc hb hw hx) ha)
+        (smul_le_smul_of_nonneg_left
+          (le_dirichletSubsolutionEnvelope μ ν hΩ hΩc hb hw hy) hbb)
 
 /-- The convex subsolution envelope is continuous in the open domain. -/
-theorem continuousOn_unitDensitySubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
-    (hb : Bornology.IsBounded Ω) : ContinuousOn (unitDensitySubsolutionEnvelope μ Ω) Ω :=
-  ((convexOn_unitDensitySubsolutionEnvelope μ hΩ hΩc hb).subset subset_closure hΩc).continuousOn hΩ
+theorem continuousOn_dirichletSubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) : ContinuousOn (dirichletSubsolutionEnvelope μ ν Ω) Ω :=
+  ((convexOn_dirichletSubsolutionEnvelope μ ν hΩ hΩc hb).subset subset_closure hΩc).continuousOn hΩ
 
 end TauCeti
