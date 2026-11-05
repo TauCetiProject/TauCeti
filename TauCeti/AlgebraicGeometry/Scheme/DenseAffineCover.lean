@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Properties
 
 /-!
@@ -42,7 +41,7 @@ namespace AlgebraicGeometry.Scheme
 
 universe u
 
-variable {X : Scheme.{u}}
+variable (X : Scheme.{u})
 
 /-- For a scheme with finitely many irreducible components, the generic point of a
 component has an affine neighbourhood contained in that component and disjoint from
@@ -88,7 +87,7 @@ theorem exists_isAffineOpen_mem_and_genericPoints_subset
   -- Each missing generic point has an affine neighbourhood inside its own component
   -- and outside every other component. These neighbourhoods are pairwise disjoint.
   choose V hV hηV hVC hVD using fun C : s ↦
-    exists_isAffineOpen_genericPoint_mem_and_disjoint hX ⟨C.1, C.2.1⟩
+    X.exists_isAffineOpen_genericPoint_mem_and_disjoint hX ⟨C.1, C.2.1⟩
   have : Finite s := hs.to_subtype
   have hpair : Pairwise fun C D : s ↦ Disjoint (V C) (V D) := by
     intro C D hCD
@@ -118,7 +117,7 @@ theorem exists_finite_affine_cover_dense_iInter [CompactSpace X]
     ∃ s : Finset X.affineOpens, (⨆ U ∈ s, U.1) = ⊤ ∧
       Dense (⋂ U ∈ s, (U.1 : Set X)) := by
   classical
-  choose U hU hxU hηU using exists_isAffineOpen_mem_and_genericPoints_subset hX
+  choose U hU hxU hηU using X.exists_isAffineOpen_mem_and_genericPoints_subset hX
   obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover (fun x ↦ (U x : Set X))
     (fun x ↦ (U x).isOpen) (fun x _ ↦ Set.mem_iUnion.mpr ⟨x, hxU x⟩)
   refine ⟨s.image (fun x ↦ ⟨U x, hU x⟩), ?_, ?_⟩
