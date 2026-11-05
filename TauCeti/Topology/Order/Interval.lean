@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Topology.Algebra.Order.Group
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -29,6 +30,8 @@ when the limit is finite.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
+* `TauCeti.tendsto_sub_nhdsGT_nhdsWithin_Icc` — the curve `δ ↦ b - δ` tends to `b` within `[a, b]`
+  as `δ → 0⁺`.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
@@ -143,5 +146,16 @@ theorem _root_.ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto
     exact ⟨hdmono.monotoneOn self_mem_Ici hx hxp, hlt⟩
   · exact isPreconnected_Ici.intermediate_value_Ico self_mem_Ici
       (le_principal_iff.mpr (Ici_mem_atTop p)) hdcont hdl
+
+/-- The curve `δ ↦ b - δ` tends to `b` within `[a, b]` as `δ → 0⁺`. -/
+theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOrder G]
+    [IsOrderedAddMonoid G] [TopologicalSpace G] [OrderTopology G] {a b : G} (hab : a < b) :
+    Tendsto (fun δ : G ↦ b - δ) (𝓝[>] 0) (𝓝[Icc a b] b) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+  · have : Tendsto (fun δ : G ↦ b - δ) (𝓝 0) (𝓝 (b - 0)) := tendsto_const_nhds.sub tendsto_id
+    rw [sub_zero] at this
+    exact this.mono_left nhdsWithin_le_nhds
+  · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
+    exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
 
 end TauCeti

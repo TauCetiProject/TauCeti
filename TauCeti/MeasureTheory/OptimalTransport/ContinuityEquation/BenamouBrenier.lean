@@ -11,6 +11,7 @@ import TauCeti.Analysis.PDE.HopfLax
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The Benamou–Brenier formula
@@ -120,17 +121,7 @@ private theorem ofReal_integral_hopfLax_sub_le
   simp_rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (zero_le_one.trans hp), ofReal_norm]
 
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The Hopf–Lax value for the Lagrangian `‖·‖ ^ p` at a time `s ≥ 0` lies below the initial
-datum. -/
-private theorem hopfLax_norm_rpow_le_self {p : ℝ} (hp : 1 ≤ p) {g : E → ℝ}
-    (hgb : BddBelow (range g))
-    {s : ℝ} (hs : 0 ≤ s) (x : E) : hopfLax (‖·‖ ^ p) g s x ≤ g x := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  simpa [Real.zero_rpow hp0] using hopfLax_le_add_mul hgb
-    ⟨0, forall_mem_range.2 fun w ↦ Real.rpow_nonneg (norm_nonneg w) p⟩ hs x
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- At time `T = b - a` the Hopf–Lax value of `-φ / κ`, with `κ = T ^ (p - 1)`, lies above
+/-- At a time `T > 0`, the Hopf–Lax value of `-φ / κ`, with `κ = T ^ (p - 1)`, lies above
 `ψ / κ` whenever `φ ⊕ ψ` is feasible for the cost `‖x - y‖ ^ p`. -/
 private theorem le_hopfLax_norm_rpow_neg_div {p : ℝ} {φ ψ : E →ᵇ ℝ} {T : ℝ} (hT : 0 < T)
     (hφψ : ∀ x y, φ x + ψ y ≤ ‖x - y‖ ^ p) (y : E) :
@@ -154,16 +145,6 @@ private theorem integrable_hopfLax_norm_rpow {p : ℝ} (hp : 1 ≤ p) {g : E →
   .of_bound (((continuousOn_hopfLax_norm_rpow hp hg hgb).comp_continuous
     (f := fun x : E ↦ (s, x)) (by fun_prop) fun _ ↦ hs).aestronglyMeasurable) C
     (ae_of_all _ fun x ↦ (abs_hopfLax_norm_rpow_le (zero_lt_one.trans_le hp).ne' hgC hs.le x))
-
-/-- The curve `δ ↦ b - δ` tends to `b` within `[a, b]` as `δ → 0⁺`. -/
-private theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {a b : ℝ} (hab : a < b) :
-    Tendsto (fun δ : ℝ ↦ b - δ) (𝓝[>] 0) (𝓝[Icc a b] b) := by
-  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-  · have : Tendsto (fun δ : ℝ ↦ b - δ) (𝓝 0) (𝓝 (b - 0)) := tendsto_const_nhds.sub tendsto_id
-    rw [sub_zero] at this
-    exact this.mono_left nhdsWithin_le_nhds
-  · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
-    exact ⟨by linarith [hδ.2], by linarith [hδ.1]⟩
 
 /-- The dual step of the Benamou–Brenier lower bound: a pair of bounded continuous potentials
 feasible for the cost `‖x - y‖ ^ p` has dual value at most `(b - a) ^ (p - 1)` times the
@@ -197,7 +178,8 @@ private theorem ofReal_kantorovichDualValue_le
     have hψ := integral_mono ((ψ.integrable _).div_const κ) (hHi (b - δ) (b - a) hT)
       (le_hopfLax_norm_rpow_neg_div hT hφψ)
     have hgi : Integrable g (ν a : Measure E) := (φ.integrable _).neg.div_const κ
-    have hφ := integral_mono (hHi a δ hδ) hgi (hopfLax_norm_rpow_le_self hp hgb hδ.le)
+    have hφ := integral_mono (hHi a δ hδ) hgi
+      (hopfLax_norm_rpow_le_self (zero_lt_one.trans_le hp).ne' hgb hδ.le)
     have hg : ∫ x, g x ∂(ν a : Measure E) = -((∫ x, φ x ∂(ν a : Measure E)) / κ) := by
       simp only [g, integral_div, integral_neg, neg_div]
     rw [integral_div] at hψ
