@@ -46,7 +46,9 @@ naturally both in the object of the site and in the coefficient sheaf.
   between free abelian sheaves along a continuous functor `u`, natural in `U` and an
   isomorphism, and
   `CategoryTheory.Functor.freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app`, its
-  description as the image of the canonical section of `ℤ[U]` under the unit of `u^* ⊣ u_*`.
+  description as the image of the canonical section of `ℤ[U]` under the unit of `u^* ⊣ u_*`;
+  `CategoryTheory.Functor.sheafAdjunctionContinuous_unit_app_hom_app_freeYonedaSheafSectionsEquiv`
+  computes that unit on the section corresponding to any map out of `ℤ[U]`.
 
 The equivalence composes the sheafification adjunction, the free-forgetful adjunction for abelian
 groups, and the Yoneda equivalence. This is the same model of the free abelian sheaf used
@@ -304,6 +306,28 @@ private def freeYonedaSheafPullbackSection (U : C) :
     ((freeYonedaSheafFunctor J).obj U)).hom.app (op U)
       (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _))
 
+omit [HasSheafify K AddCommGrpCat.{v}] in
+/-- The unit of `u^* ⊣ u_*` sends the section of `G` over `U` corresponding to `g : ℤ[U] ⟶ G` to
+the image under `u^* g` of the section that it assigns to the canonical section of `ℤ[U]`. -/
+lemma sheafAdjunctionContinuous_unit_app_hom_app_freeYonedaSheafSectionsEquiv {U : C}
+    {G : Sheaf J AddCommGrpCat.{v}} (g : (freeYonedaSheafFunctor J).obj U ⟶ G) :
+    ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app G).hom.app (op U)
+        (freeYonedaSheafSectionsEquiv J U G g) =
+      ((u.sheafPullback AddCommGrpCat.{v} J K).map g).hom.app (op (u.obj U))
+        (((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app
+          ((freeYonedaSheafFunctor J).obj U)).hom.app (op U)
+            (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _))) := by
+  -- The section corresponding to `g` is the image under `g` of the canonical section, and the
+  -- unit is natural in the sheaf.
+  have h := congrArg (fun φ ↦ φ.hom.app (op U)
+    (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _)))
+    ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.naturality g)
+  dsimp only [Functor.id_obj, Functor.id_map, Functor.comp_map] at h
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply] at h
+  rw [← Category.id_comp g, freeYonedaSheafSectionsEquiv_naturality_right, Category.id_comp]
+  exact h
+
 /-- The comparison `ℤ[u(U)] ⟶ u^* ℤ[U]` from the free abelian sheaf on `u(U)` to the pullback
 along a continuous functor `u` of the free abelian sheaf on `U`, natural in `U`. It corresponds to
 the section of `u^* ℤ[U]` over `u(U)` that the unit of `u^* ⊣ u_*` assigns to the canonical
@@ -321,20 +345,14 @@ def freeYonedaSheafToSheafPullback :
       AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
     -- Both sides are images of the canonical section of `ℤ[U']`: restrict it along `i` and apply
     -- the unit, or apply the unit and restrict along `u(i)`.
-    have h₁ := congrArg (fun φ ↦ φ.hom.app (op U)
-      (freeYonedaSheafSectionsEquiv J U ((freeYonedaSheafFunctor J).obj U) (𝟙 _)))
-      ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.naturality
-        ((freeYonedaSheafFunctor J).map i))
-    have h₂ : ((freeYonedaSheafFunctor J).map i).hom.app (op U)
-        (freeYonedaSheafSectionsEquiv J U _ (𝟙 _)) =
+    have h : freeYonedaSheafSectionsEquiv J U _ ((freeYonedaSheafFunctor J).map i) =
         ((freeYonedaSheafFunctor J).obj U').obj.map i.op
           (freeYonedaSheafSectionsEquiv J U' _ (𝟙 _)) := by
-      rw [← freeYonedaSheafSectionsEquiv_naturality_right,
-        ← freeYonedaSheafSectionsEquiv_naturality_left, Category.id_comp, Category.comp_id]
-    dsimp only [Functor.id_obj, Functor.id_map, Functor.comp_map] at h₁
-    simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-      ConcreteCategory.comp_apply, h₂, NatTrans.naturality_apply] at h₁
-    exact h₁
+      rw [← freeYonedaSheafSectionsEquiv_naturality_left, Category.comp_id]
+    rw [freeYonedaSheafPullbackSection, freeYonedaSheafPullbackSection,
+      ← sheafAdjunctionContinuous_unit_app_hom_app_freeYonedaSheafSectionsEquiv, h]
+    exact (NatTrans.naturality_apply ((u.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app
+      ((freeYonedaSheafFunctor J).obj U')).hom i.op _).symm
 
 /-- Under `freeYonedaSheafSectionsEquiv`, the comparison `ℤ[u(U)] ⟶ u^* ℤ[U]` is the section of
 `u^* ℤ[U]` over `u(U)` that the unit of `u^* ⊣ u_*` assigns to the canonical section of `ℤ[U]`. -/
@@ -362,7 +380,10 @@ instance (U : C) : IsIso ((u.freeYonedaSheafToSheafPullback J K).app U) := by
     rw [freeYonedaSheafSectionsEquiv_naturality_right,
       freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app, Adjunction.homEquiv_unit,
       ← Category.id_comp (adj.unit.app _ ≫ _), freeYonedaSheafSectionsEquiv_naturality_right]
-    rfl
+    simp only [adj, Functor.id_obj, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+      Functor.sheafPushforwardContinuous_map_hom_app]
+    -- The sections of `u_* (u^* ℤ[U])` over `U` are those of `u^* ℤ[U]` over `u(U)`.
+    exact (ConcreteCategory.comp_apply _ _ _).symm
   exact (Function.Bijective.of_comp_iff' (freeYonedaSheafSectionsEquiv K (u.obj U) G).bijective
     _).1 (this ▸ (freeYonedaSheafSectionsEquiv J U _).bijective.comp (adj.homEquiv _ _).bijective)
 

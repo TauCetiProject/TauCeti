@@ -17,7 +17,7 @@ For a closed embedding `f : X ⟶ Y`, the cohomology of `f_* F` over an open `U`
 of `Y` is naturally isomorphic to the cohomology of `F` over `f⁻¹(U)`.
 The comparison uses Mathlib's `CategoryTheory.Adjunction.extEquiv` for the exact
 inverse-image/direct-image adjunction, and identifies the first Ext argument by the
-universal property of the free abelian sheaf on an open subset.
+comparison `CategoryTheory.Functor.freeYonedaSheafToSheafPullback` of free abelian sheaves.
 
 ## References
 
@@ -37,28 +37,15 @@ noncomputable section
 
 variable {X Y : TopCat.{u}} (f : X ⟶ Y)
 
-private def pullbackFreeYonedaCorepresentation (U : Opens Y) :
-    ((sheafSections (Opens.grothendieckTopology X) AddCommGrpCat.{u}).obj
-        (op ((Opens.map f).obj U)) ⋙ forget AddCommGrpCat).CorepresentableBy
-      ((TopCat.Sheaf.pullback AddCommGrpCat f).obj
-        ((freeYonedaSheafFunctor (Opens.grothendieckTopology Y)).obj U)) where
-  homEquiv :=
-    ((TopCat.Sheaf.pullbackPushforwardAdjunction AddCommGrpCat f).homEquiv _ _).trans
-      (freeYonedaSheafSectionsEquiv (Opens.grothendieckTopology Y) U _).toEquiv
-  homEquiv_comp g α := by
-    exact (congrArg (freeYonedaSheafSectionsEquiv (Opens.grothendieckTopology Y) U _)
-      ((TopCat.Sheaf.pullbackPushforwardAdjunction AddCommGrpCat f).homEquiv_naturality_right
-        α g)).trans
-      (freeYonedaSheafSectionsEquiv_naturality_right (Opens.grothendieckTopology Y) _
-        ((TopCat.Sheaf.pushforward AddCommGrpCat f).map g))
-
-/-- Inverse image takes the free abelian sheaf on `U` to the free abelian sheaf on `f⁻¹(U)`. -/
+/-- Inverse image takes the free abelian sheaf on `U` to the free abelian sheaf on `f⁻¹(U)`: the
+inverse of the comparison `CategoryTheory.Functor.freeYonedaSheafToSheafPullback` for
+`Opens.map f`. -/
 def pullbackFreeYonedaIso (U : Opens Y) :
     (TopCat.Sheaf.pullback AddCommGrpCat f).obj
         ((freeYonedaSheafFunctor (Opens.grothendieckTopology Y)).obj U) ≅
       (freeYonedaSheafFunctor (Opens.grothendieckTopology X)).obj ((Opens.map f).obj U) :=
-  (pullbackFreeYonedaCorepresentation f U).uniqueUpToIso
-    (freeYonedaSheafCorepresentableBy (Opens.grothendieckTopology X) ((Opens.map f).obj U))
+  (asIso (((Opens.map f).freeYonedaSheafToSheafPullback (Opens.grothendieckTopology Y)
+    (Opens.grothendieckTopology X)).app U)).symm
 
 /-- Cohomology over `U` of the direct image from a closed subspace is cohomology over
 `f⁻¹(U)`, naturally in the coefficient sheaf. -/
