@@ -76,7 +76,7 @@ variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
 /-- Almostification, written through the firm model. -/
 private noncomputable def firmCompInverseIso : S.firm ⋙ (firmEquiv S).inverse ≅ toAlmost S :=
-  (Iso.isoCompInverse (toAlmostCompFirmEquivIso S)).symm
+  (Iso.isoCompInverse (toAlmostCompFirmIso S)).symm
 
 /-! ### Almost elements -/
 
@@ -263,7 +263,7 @@ noncomputable instance : Coreflective (shriek S) where
 noncomputable def toAlmostCompShriekIso :
     toAlmost S ⋙ shriek S ≅ MonoidalCategory.tensorLeft (ModuleCat.of V S.tilde) :=
   Functor.isoWhiskerLeft _ (shriekIsoShriekFirm S) ≪≫ (Functor.associator _ _ _).symm ≪≫
-    Functor.isoWhiskerRight (toAlmostCompFirmEquivIso S) _ ≪≫ S.isFirm.liftCompιIso _ _
+    Functor.isoWhiskerRight (toAlmostCompFirmIso S) _ ≪≫ S.isFirm.liftCompιIso _ _
 
 /-- For every `V`-module `N`, the counit `(N^a)_! → N` is an almost isomorphism (Gabber–Ramero,
 (2.2.9)). -/
