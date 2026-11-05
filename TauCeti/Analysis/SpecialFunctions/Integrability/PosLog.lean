@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
 public import Mathlib.MeasureTheory.Integral.CircleAverage
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 import TauCeti.Topology.MetricSpace.RadialLimit
 
 /-!
@@ -60,8 +61,9 @@ theorem _root_.DifferentiableOn.circleIntegrable_posLog_norm {R : ℝ}
 /-- Circle averages of `log⁺ ‖f - a‖` are at most those of `log⁺ ‖f‖` plus
 `log⁺ ‖a‖ + log 2`, whenever both integrands are circle integrable. -/
 theorem _root_.CircleIntegrable.circleAverage_posLog_norm_sub_const_le
+    {E : Type*} [SeminormedAddCommGroup E] {f : ℂ → E}
     (hf : CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r)
-    (a : ℂ) (hfa : CircleIntegrable (fun z ↦ log⁺ ‖f z - a‖) c r) :
+    (a : E) (hfa : CircleIntegrable (fun z ↦ log⁺ ‖f z - a‖) c r) :
     circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤
       circleAverage (fun z ↦ log⁺ ‖f z‖) c r + (log⁺ ‖a‖ + Real.log 2) := by
   have hadd := circleAverage_add hf (circleIntegrable_const (log⁺ ‖a‖ + Real.log 2) c r)
