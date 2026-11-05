@@ -36,11 +36,12 @@ If a continuous motion of the space lowers `f` at unit speed through the band `a
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
 homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
 `TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`, a closed embedding when
-`f` is continuous (`TauCeti.isClosedEmbedding_sublevelInclusion`). This is the topological half
-of the deformation of sublevels across a band without critical points, where the motion is the
-flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
-`TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
-topology across the band.
+`f` is continuous (`TauCeti.isClosedEmbedding_sublevelInclusion`), and when `f ≤ b` everywhere the
+sublevel `{f ≤ b}` is homeomorphic to the whole space (`TauCeti.sublevelHomeomorphUniv`). This is
+the topological half of the deformation of sublevels across a band without critical points, where
+the motion is the flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the
+topological pair `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the
+change in topology across the band.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -168,6 +169,23 @@ theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preo
     (f : X → β) {a b : β} (hab : a ≤ b) :
     sublevelInclusion f a b hab =
       ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) :=
+  (rfl)
+
+/-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
+`X` via `Subtype.val`. -/
+def sublevelHomeomorphUniv {X β : Type*} [TopologicalSpace X] [LE β] {f : X → β} {b : β}
+    (hfb : ∀ x, f x ≤ b) : {x | f x ≤ b} ≃ₜ X :=
+  (Homeomorph.setCongr (eq_univ_of_forall hfb)).trans (Homeomorph.Set.univ X)
+
+@[simp]
+theorem coe_sublevelHomeomorphUniv {X β : Type*} [TopologicalSpace X] [LE β] {f : X → β} {b : β}
+    (hfb : ∀ x, f x ≤ b) : ⇑(sublevelHomeomorphUniv hfb) = Subtype.val :=
+  (rfl)
+
+@[simp]
+theorem sublevelHomeomorphUniv_symm_apply {X β : Type*} [TopologicalSpace X] [LE β] {f : X → β}
+    {b : β} (hfb : ∀ x, f x ≤ b) (x : X) :
+    (sublevelHomeomorphUniv hfb).symm x = ⟨x, hfb x⟩ :=
   (rfl)
 
 /-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/

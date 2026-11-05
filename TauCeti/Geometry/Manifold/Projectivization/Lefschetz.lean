@@ -126,33 +126,45 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
       (∀ a b, 0 < a → a ≤ b → IsCompact (F ⁻¹' Icc a b)) ∧
       (∀ p ∈ criticalPoints 𝓘(ℝ, E) (F ∘ j),
         Module.finrank ℂ E ≤ manifoldMorseIndex 𝓘(ℝ, E) (F ∘ j) p) := by
-  have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
-  have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
-  have : IsManifold 𝓘(ℝ, E) 2 Z := IsManifold.of_le (n := ∞) (by simp)
-  have : IsManifold 𝓘(ℂ, E) 2 Z := IsManifold.of_le (n := ∞) (by simp)
   -- Step 1: restrict `(affineChart i).symm` to an open embedding `j : Z → X` onto `X \ H_i`.
-  let j : Z → X := Projectivization.affineChartSymmRestrict i hZ
-  have hj : IsOpenEmbedding j := Projectivization.isOpenEmbedding_affineChartSymmRestrict i hZ
+  have hpre : (Projectivization.affineChart i).symm ⁻¹' X = Z := by
+    simpa [Projectivization.affineChart_source, Projectivization.affineChart_target, inter_comm,
+      hZ] using ((Projectivization.affineChart i).image_source_inter_eq' X).symm
+  subst hpre
+  have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
+  have : IsManifold 𝓘(ℝ, E) ∞ ((Projectivization.affineChart i).symm ⁻¹' X) :=
+    (inferInstance : IsManifold 𝓘(ℂ, E) ∞ _).restrictScalars ℝ
+  have : IsManifold 𝓘(ℝ, E) 2 ((Projectivization.affineChart i).symm ⁻¹' X) :=
+    IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold 𝓘(ℂ, E) 2 ((Projectivization.affineChart i).symm ⁻¹' X) :=
+    IsManifold.of_le (n := ∞) (by simp)
+  let j := X.restrictPreimage (Projectivization.affineChart i).symm
+  have hj : IsOpenEmbedding j :=
+    X.restrictPreimage_isOpenEmbedding (Projectivization.isOpenEmbedding_affineChart_symm i)
   -- Step 2: compose `Z → Fin n → ℂ` with the linear equivalence onto `EuclideanSpace ℂ (Fin n)`
   -- and restrict scalars from `ℂ` to `ℝ`, preserving derivative injectivity.
   let eL := (PiLp.continuousLinearEquiv 2 ℂ fun _ : Fin n ↦ ℂ).symm
-  let ι : Z → EuclideanSpace ℂ (Fin n) := eL ∘ Subtype.val
+  let ι : (Projectivization.affineChart i).symm ⁻¹' X → EuclideanSpace ℂ (Fin n) :=
+    eL ∘ Subtype.val
   have hιC : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, EuclideanSpace ℂ (Fin n)) ∞ ι :=
     eL.contDiff.contMDiff.comp hZval
   have hιR : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ∞ ι := by
     simpa using hιC.restrictScalars ℝ
-  have hinj_mvC (z : Z) : Injective (mvfderiv 𝓘(ℂ, E) ι z) := by
+  have hinj_mvC (z : (Projectivization.affineChart i).symm ⁻¹' X) :
+      Injective (mvfderiv 𝓘(ℂ, E) ι z) := by
     intro v w hvw
     have hmd : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, Fin n → ℂ) Subtype.val z :=
       (hZval z).mdifferentiableAt (by simp)
     simp only [ι, mvfderiv_comp_apply_of_differentiableAt eL.differentiableAt hmd,
       eL.fderiv, mvfderiv_apply_eq_mfderiv_apply] at hvw
     exact hinj z (eL.injective hvw)
-  have hinj_mfC (z : Z) : Injective (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, EuclideanSpace ℂ (Fin n)) ι z) :=
+  have hinj_mfC (z : (Projectivization.affineChart i).symm ⁻¹' X) :
+      Injective (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, EuclideanSpace ℂ (Fin n)) ι z) :=
     fun v w hvw ↦ hinj_mvC z
       ((mvfderiv_apply_eq_mfderiv_apply ι z v).trans
         (hvw.trans (mvfderiv_apply_eq_mfderiv_apply ι z w).symm))
-  have hinj_mfR (z : Z) : Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ι z) :=
+  have hinj_mfR (z : (Projectivization.affineChart i).symm ⁻¹' X) :
+      Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ι z) :=
     ((hιC z).mdifferentiableAt (by simp)).injective_mfderiv_restrictScalars ℝ (hinj_mfC z)
   -- Step 3: choose a generic centre `c` so `ρ(z) = ‖ι z - c‖²` is Morse on `Z`, and identify the
   -- pullback `F ∘ j` of `affineChartInvOneAddDistSq i c` with `(1 + ρ)⁻¹`.
@@ -161,24 +173,24 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
     (ae_isMorse_norm_sq_sub_comp
       (MeasureTheory.volume : MeasureTheory.Measure (EuclideanSpace ℂ (Fin n)))
       hιR hinj_mfR).exists
-  let ρ : Z → ℝ := fun z ↦ ‖ι z - c‖ ^ 2
+  let ρ : (Projectivization.affineChart i).symm ⁻¹' X → ℝ := fun z ↦ ‖ι z - c‖ ^ 2
   let F : X → ℝ := fun x ↦ Projectivization.affineChartInvOneAddDistSq i c x.1
   have hF_cont : Continuous F :=
     (Projectivization.continuous_affineChartInvOneAddDistSq i c).comp continuous_subtype_val
-  have hFj : F ∘ j = fun z : Z ↦ (1 + ρ z)⁻¹ := by
+  have hFj : F ∘ j = fun z ↦ (1 + ρ z)⁻¹ := by
     ext z
-    dsimp only [Function.comp_apply, F, j, ι, ρ, eL]
-    rw [Projectivization.coe_affineChartSymmRestrict,
-      Projectivization.affineChartInvOneAddDistSq_affineChart_symm, dist_eq_norm,
-      PiLp.coe_symm_continuousLinearEquiv]
-  have hρ_denom (z : Z) : 1 + ρ z ≠ 0 := by dsimp only [ρ]; positivity
+    simp [F, j, ι, ρ, eL]
+  have hρ_denom (z : (Projectivization.affineChart i).symm ⁻¹' X) : 1 + ρ z ≠ 0 := by
+    dsimp only [ρ]; positivity
   have hf_morse : IsMorse 𝓘(ℝ, E) (F ∘ j) := hFj ▸ hc_morse.inv_one_add hρ_denom
   -- Step 4: verify the sign, compactness, and plurisubharmonic Morse-index lower bound of `F`.
   refine ⟨j, F, hj, hF_cont, hf_morse,
     ⟨1, forall_mem_range.2 fun x ↦ Projectivization.affineChartInvOneAddDistSq_le_one i c x.1⟩,
     fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_,
     fun _ _ _ _ ↦ (isClosed_Icc.preimage hF_cont).isCompact, fun p hp ↦ ?_⟩
-  · rw [Projectivization.range_affineChartSymmRestrict] at hx
+  · rw [Set.range_restrictPreimage, ← image_univ, ← Projectivization.affineChart_target i,
+      (Projectivization.affineChart i).symm_image_target_eq_source,
+      Projectivization.affineChart_source] at hx
     exact (Projectivization.affineChartInvOneAddDistSq_of_notMem hx).le
   · exact (Projectivization.affineChartInvOneAddDistSq_of_notMem hx).le
   · simp only [mem_ofPred_eq, not_not] at hx
@@ -258,7 +270,9 @@ theorem surjective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
     (hJ : Nat.card J < Module.finrank ℂ E)
     (a₀ : {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}) :
     Surjective (HomotopyGroup.map (N := J) (x := a₀)
-      ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X))) := by
+      (ContinuousMap.subtypeVal
+        {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
+      (rfl : (a₀ : X) = (a₀ : X))) := by
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -281,7 +295,9 @@ theorem bijective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
     (hJ : Nat.card J + 1 < Module.finrank ℂ E)
     (a₀ : {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}) :
     Bijective (HomotopyGroup.map (N := J) (x := a₀)
-      ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X))) := by
+      (ContinuousMap.subtypeVal
+        {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
+      (rfl : (a₀ : X) = (a₀ : X))) := by
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -335,9 +351,8 @@ theorem epi_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ
       (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
     (hW_nhds : W ∈ 𝓝ˢ {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
     (hk : k < Module.finrank ℂ E) :
-    Epi (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-        C({x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}, X)))) R k) := by
+    Epi (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal
+      {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}))) R k) := by
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -360,9 +375,8 @@ theorem isIso_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → �
       (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
     (hW_nhds : W ∈ 𝓝ˢ {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
     (hk : k + 1 < Module.finrank ℂ E) :
-    IsIso (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-        C({x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}, X)))) R k) := by
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal
+      {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}))) R k) := by
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -495,7 +509,8 @@ theorem surjective_homotopyGroupMap_complexProjectiveZeroLocus_notMem_affineOpen
     (a₀ : {x : complexProjectiveZeroLocus p |
       (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}) :
     Surjective (HomotopyGroup.map (N := J) (x := a₀)
-      ⟨Subtype.val, continuous_subtype_val⟩
+      (ContinuousMap.subtypeVal {x : complexProjectiveZeroLocus p |
+        (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
       (rfl : (a₀ : complexProjectiveZeroLocus p) = (a₀ : complexProjectiveZeroLocus p))) := by
   let _ := affineZeroLocusChartedSpace hrank
   have := isManifold_affineZeroLocus hrank ∞
@@ -521,7 +536,8 @@ theorem bijective_homotopyGroupMap_complexProjectiveZeroLocus_notMem_affineOpen
     (a₀ : {x : complexProjectiveZeroLocus p |
       (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}) :
     Bijective (HomotopyGroup.map (N := J) (x := a₀)
-      ⟨Subtype.val, continuous_subtype_val⟩
+      (ContinuousMap.subtypeVal {x : complexProjectiveZeroLocus p |
+        (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
       (rfl : (a₀ : complexProjectiveZeroLocus p) = (a₀ : complexProjectiveZeroLocus p))) := by
   let _ := affineZeroLocusChartedSpace hrank
   have := isManifold_affineZeroLocus hrank ∞
@@ -547,11 +563,9 @@ theorem epi_homologyMap_complexProjectiveZeroLocus_notMem_affineOpen
     (hW_nhds : W ∈ 𝓝ˢ {x : complexProjectiveZeroLocus p |
       (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
     (hk : k < n - Fintype.card ι) :
-    Epi (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-        C({x : complexProjectiveZeroLocus p |
-          (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i},
-          complexProjectiveZeroLocus p)))) R k) := by
+    Epi (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal
+      {x : complexProjectiveZeroLocus p |
+        (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}))) R k) := by
   let _ := affineZeroLocusChartedSpace hrank
   have := isManifold_affineZeroLocus hrank ∞
   exact epi_homologyMap_notMem_affineOpen (isClosed_complexProjectiveZeroLocus p) i
@@ -572,11 +586,9 @@ theorem isIso_homologyMap_complexProjectiveZeroLocus_notMem_affineOpen
     (hW_nhds : W ∈ 𝓝ˢ {x : complexProjectiveZeroLocus p |
       (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
     (hk : k + 1 < n - Fintype.card ι) :
-    IsIso (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-        C({x : complexProjectiveZeroLocus p |
-          (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i},
-          complexProjectiveZeroLocus p)))) R k) := by
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal
+      {x : complexProjectiveZeroLocus p |
+        (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}))) R k) := by
   let _ := affineZeroLocusChartedSpace hrank
   have := isManifold_affineZeroLocus hrank ∞
   exact isIso_homologyMap_notMem_affineOpen (isClosed_complexProjectiveZeroLocus p) i

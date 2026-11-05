@@ -337,8 +337,8 @@ private theorem IsMorse.exists_morseInequalities_univ (hf : IsMorse I f) :
       ⟨fun (x : {x : M | f x ≤ l - 1}) ↦ (ha x).not_ge x.2⟩
     have hπ : IsIso ((sublevelPair f hab).singularHomologyπ V n) := inferInstance
     exact ⟨((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).mapIso
-      (TopCat.isoOfHomeo ((Homeomorph.setCongr (eq_univ_of_forall fun x ↦ (hb x).le)).trans
-        (Homeomorph.Set.univ M))).symm ≪≫ @asIso _ _ _ _ _ hπ⟩
+      (TopCat.isoOfHomeo (sublevelHomeomorphUniv fun x ↦ (hb x).le)).symm ≪≫
+        @asIso _ _ _ _ _ hπ⟩
   · rw [bandCount, criticalCount_def, ← ncard_def]
     congr 1
     ext x

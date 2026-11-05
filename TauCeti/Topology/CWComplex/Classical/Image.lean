@@ -253,7 +253,7 @@ def relCWComplex (hD' : IsClosed D') (hpre : f ⁻¹' D' = D) (hcompl : (range f
       (D' ∪ ⋃ n, ⋃ i : cell C n, f '' (map n i '' closedBall 0 1)) =
           (D' ∪ f '' D) ∪ ⋃ n, ⋃ i : cell C n, f '' closedCell n i := by
         rw [hsub]
-        rfl
+        simp only [closedCell]
       _ = D' ∪ f '' C := by rw [union_assoc, ← hCD]
       _ = C' := hC'
 

@@ -461,17 +461,39 @@ end SublevelHomology
 
 section PairConnectivity
 
+private theorem surjective_homotopyGroupMap_subtypeVal_sublevel_iff
+    {X : Type u} [TopologicalSpace X] {N : Type v} [Finite N] {F : X → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hFb : ∀ x, F x ≤ b) (y : {x | F x ≤ a}) :
+    Surjective (HomotopyGroup.map (N := N) (x := y)
+        (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) ↔
+      Surjective (HomotopyGroup.map (N := N) (x := y) (sublevelInclusion F a b hab) rfl) :=
+  (ContinuousMap.HomotopyEquiv.refl _).isWeakHomotopyEquivalence.surjective_map_iff_of_comp_eq
+    (sublevelHomeomorphUniv hFb).toHomotopyEquiv.isWeakHomotopyEquivalence
+    (ContinuousMap.ext fun x ↦ by simp) N y
+
+private theorem injective_homotopyGroupMap_subtypeVal_sublevel_iff
+    {X : Type u} [TopologicalSpace X] {N : Type v} [Finite N] {F : X → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hFb : ∀ x, F x ≤ b) (y : {x | F x ≤ a}) :
+    Injective (HomotopyGroup.map (N := N) (x := y)
+        (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) ↔
+      Injective (HomotopyGroup.map (N := N) (x := y) (sublevelInclusion F a b hab) rfl) :=
+  (ContinuousMap.HomotopyEquiv.refl _).isWeakHomotopyEquivalence.injective_map_iff_of_comp_eq
+    (sublevelHomeomorphUniv hFb).toHomotopyEquiv.isWeakHomotopyEquivalence
+    (ContinuousMap.ext fun x ↦ by simp) N y
+
+private theorem sublevelInclusion_comp_sublevelHomeomorphUniv
+    {X : Type u} [TopologicalSpace X] {F : X → ℝ} {a b : ℝ} (hab : a ≤ b) (hFb : ∀ x, F x ≤ b) :
+    TopCat.ofHom (sublevelInclusion F a b hab) ≫
+        (TopCat.isoOfHomeo (X := TopCat.of ↥{x | F x ≤ b}) (Y := TopCat.of X)
+          (sublevelHomeomorphUniv hFb)).hom =
+      TopCat.ofHom (ContinuousMap.subtypeVal {x | F x ≤ a}) := by
+  ext x
+  simp
+
 variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [TopologicalSpace X] [T2Space X]
   {j : M → X} {F : X → ℝ} {A W : Set X} {n : ℕ}
-
-omit [T2Space X] in
-/-- When `F x ≤ b` for every `x : X`, the sublevel `{x | F x ≤ b}` is homeomorphic to `X` via
-`Subtype.val`. -/
-private def sublevelHomeoUniv {F : X → ℝ} {b : ℝ} (hFb : ∀ x, F x ≤ b) :
-    {x | F x ≤ b} ≃ₜ X :=
-  (Homeomorph.setCongr (eq_univ_of_forall hFb)).trans (Homeomorph.Set.univ X)
 
 omit [FiniteDimensional ℝ E] [T2Space M] [T2Space X] in
 /-- Choose a regular value `0 < a < δ` of `F ∘ j` and an upper bound `b > F` so `{F ≤ a} ⊆ W` and
@@ -529,36 +551,21 @@ theorem IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
     {hAW : A ⊆ W} (hW : (ContinuousMap.inclusion hAW).IsWeakHomotopyEquivalence)
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hN : Nat.card N < n) (a₀ : A) :
     Surjective (HomotopyGroup.map (N := N) (x := a₀)
-      ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X))) := by
+      (ContinuousMap.subtypeVal A) (rfl : (a₀ : X) = (a₀ : X))) := by
   obtain ⟨a, b, hab, -, hAa, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let eb := sublevelHomeoUniv fun x ↦ (hFb x).le
-  let α : C(A, {x | F x ≤ a}) := ContinuousMap.inclusion hAa
-  let β : C({x | F x ≤ a}, W) := ContinuousMap.inclusion haW
-  let γ : C(W, X) := ⟨Subtype.val, continuous_subtype_val⟩
-  let inc : C({x | F x ≤ a}, {x | F x ≤ b}) := ContinuousMap.inclusion (sublevel_mono F hab)
-  have hγβ : HomotopyGroup.map (N := N) γ rfl ∘
-      HomotopyGroup.map β (rfl : β (α a₀) = β (α a₀)) =
-      HomotopyGroup.map eb.toHomotopyEquiv.toFun rfl ∘ HomotopyGroup.map inc rfl := by
-    rw [HomotopyGroup.map_comp_map, HomotopyGroup.map_comp_map]
-    exact funext (HomotopyGroup.map_congr (ContinuousMap.ext fun _ ↦ rfl) _ _)
-  have hsurj_inc : Surjective (HomotopyGroup.map (N := N) inc (rfl : inc (α a₀) = inc (α a₀))) :=
-    (HomotopyGroup.surjective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl).1
+  let y : {x | F x ≤ a} := ContinuousMap.inclusion hAa a₀
+  have hsurj_sub : Surjective (HomotopyGroup.map (N := N) (x := y)
+      (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) :=
+    (surjective_homotopyGroupMap_subtypeVal_sublevel_iff hab (fun x ↦ (hFb x).le) y).2
       (hf.surjective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt
-        ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN (α a₀))
-  have hsurj_γβ : Surjective (HomotopyGroup.map (N := N) γ rfl ∘
-      HomotopyGroup.map β (rfl : β (α a₀) = β (α a₀))) := by
-    rw [hγβ]
-    exact (eb.toHomotopyEquiv.isWeakHomotopyEquivalence.map_bijective N _).surjective.comp hsurj_inc
-  have hsurj_γ : Surjective (HomotopyGroup.map (N := N) γ
-      (rfl : γ (ContinuousMap.inclusion hAW a₀) = γ (ContinuousMap.inclusion hAW a₀))) :=
-    hsurj_γβ.of_comp
-  have hcomp : HomotopyGroup.map (N := N) γ rfl ∘
-      HomotopyGroup.map (ContinuousMap.inclusion hAW)
-        (rfl : ContinuousMap.inclusion hAW a₀ = ContinuousMap.inclusion hAW a₀) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X)) :=
-    HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.ext fun _ ↦ rfl) rfl rfl rfl
-  exact hcomp ▸ hsurj_γ.comp (hW.map_bijective N a₀).surjective
+        ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN y)
+  have hsurj_W : Surjective (HomotopyGroup.map (N := N) (x := ContinuousMap.inclusion haW y)
+      (ContinuousMap.subtypeVal W) rfl) :=
+    ((HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.subtypeVal_comp_inclusion haW)
+      rfl rfl rfl).symm ▸ hsurj_sub).of_comp
+  exact (HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.subtypeVal_comp_inclusion hAW)
+    rfl rfl rfl) ▸ hsurj_W.comp (hW.map_bijective N a₀).surjective
 
 /-- **Injectivity of `π_k(A, a₀) → π_k(X, a₀)` for `k + 1 < n` on a compactified pair.** -/
 theorem IsMorse.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
@@ -569,33 +576,21 @@ theorem IsMorse.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
     {hAW : A ⊆ W} (hW : (ContinuousMap.inclusion hAW).IsWeakHomotopyEquivalence)
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hN : Nat.card N + 1 < n) (a₀ : A) :
     Injective (HomotopyGroup.map (N := N) (x := a₀)
-      ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X))) := by
+      (ContinuousMap.subtypeVal A) (rfl : (a₀ : X) = (a₀ : X))) := by
   obtain ⟨a, b, hab, -, hAa, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let eb := sublevelHomeoUniv fun x ↦ (hFb x).le
-  let α : C(A, {x | F x ≤ a}) := ContinuousMap.inclusion hAa
-  let β : C({x | F x ≤ a}, W) := ContinuousMap.inclusion haW
-  let inc : C({x | F x ≤ a}, {x | F x ≤ b}) := ContinuousMap.inclusion (sublevel_mono F hab)
-  have hβα : HomotopyGroup.map (N := N) β rfl ∘
-      HomotopyGroup.map α (rfl : α a₀ = α a₀) =
-      HomotopyGroup.map (ContinuousMap.inclusion hAW) rfl :=
-    HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.ext fun _ ↦ rfl) rfl rfl rfl
-  have hinj_α : Injective (HomotopyGroup.map (N := N) α (rfl : α a₀ = α a₀)) :=
-    (hβα.symm ▸ (hW.map_bijective N a₀).injective).of_comp
-  have hinj_inc : Injective (HomotopyGroup.map (N := N) inc (rfl : inc (α a₀) = inc (α a₀))) :=
-    (HomotopyGroup.injective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl).1
+  let y : {x | F x ≤ a} := ContinuousMap.inclusion hAa a₀
+  have hinj_sub : Injective (HomotopyGroup.map (N := N) (x := y)
+      (ContinuousMap.subtypeVal {x | F x ≤ a}) rfl) :=
+    (injective_homotopyGroupMap_subtypeVal_sublevel_iff hab (fun x ↦ (hFb x).le) y).2
       (hf.injective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt
-        ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN (α a₀))
-  have hinj_rest : Injective (HomotopyGroup.map (N := N) eb.toHomotopyEquiv.toFun rfl ∘
-      HomotopyGroup.map inc (rfl : inc (α a₀) = inc (α a₀))) :=
-    (eb.toHomotopyEquiv.isWeakHomotopyEquivalence.map_bijective N _).injective.comp hinj_inc
-  have hcomp : (HomotopyGroup.map (N := N) eb.toHomotopyEquiv.toFun rfl ∘
-        HomotopyGroup.map inc rfl) ∘
-      HomotopyGroup.map α (rfl : α a₀ = α a₀) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X)) := by
-    rw [HomotopyGroup.map_comp_map, HomotopyGroup.map_comp_map]
-    exact funext (HomotopyGroup.map_congr (ContinuousMap.ext fun _ ↦ rfl) _ _)
-  exact hcomp ▸ hinj_rest.comp hinj_α
+        ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN y)
+  have hinj_α : Injective (HomotopyGroup.map (N := N) (x := a₀)
+      (ContinuousMap.inclusion hAa) rfl) :=
+    ((HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.inclusion_comp_inclusion haW hAa)
+      rfl rfl rfl).symm ▸ (hW.map_bijective N a₀).injective).of_comp
+  exact (HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.subtypeVal_comp_inclusion hAa)
+    rfl rfl rfl) ▸ hinj_sub.comp hinj_α
 
 /-- **Bijectivity of `π_k(A, a₀) → π_k(X, a₀)` for `k + 1 < n` on a compactified pair.** -/
 theorem IsMorse.bijective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
@@ -606,7 +601,7 @@ theorem IsMorse.bijective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
     {hAW : A ⊆ W} (hW : (ContinuousMap.inclusion hAW).IsWeakHomotopyEquivalence)
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hN : Nat.card N + 1 < n) (a₀ : A) :
     Bijective (HomotopyGroup.map (N := N) (x := a₀)
-      ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X))) :=
+      (ContinuousMap.subtypeVal A) (rfl : (a₀ : X) = (a₀ : X))) :=
   ⟨hf.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding hj hF hbdd hA hAF hcompact hindex hW
       hδ hN a₀,
     hf.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding hj hF hbdd hA hAF hcompact hindex
@@ -621,7 +616,7 @@ theorem IsMorse.joined_subtypeVal_iff_of_isOpenEmbedding (hj : IsOpenEmbedding j
     {hAW : A ⊆ W} (hW : (ContinuousMap.inclusion hAW).IsWeakHomotopyEquivalence)
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hn : 1 < n) {a₀ a₁ : A} :
     Joined (a₀ : X) (a₁ : X) ↔ Joined a₀ a₁ :=
-  ContinuousMap.joined_iff_of_injective_homotopyGroupMap ⟨Subtype.val, continuous_subtype_val⟩
+  ContinuousMap.joined_iff_of_injective_homotopyGroupMap (ContinuousMap.subtypeVal A)
     (hf.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding (N := Fin 0) hj hF hbdd hA hAF
       hcompact hindex hW hδ (by simpa using hn) a₀)
 
@@ -658,35 +653,27 @@ theorem IsMorse.epi_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbedd
       (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hk : k < n) :
     Epi (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)))) R k) := by
+      (TopCat.ofHom (ContinuousMap.subtypeVal A))) R k) := by
   obtain ⟨a, b, hab, -, -, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let ebIso := TopCat.isoOfHomeo (X := TopCat.of ↥{x | F x ≤ b}) (Y := TopCat.of X)
-    (sublevelHomeoUniv fun x ↦ (hFb x).le)
   let H := (AlgebraicTopology.singularHomologyFunctor A_cat k).obj R
-  let β : TopCat.of ↥{x | F x ≤ a} ⟶ TopCat.of W := TopCat.ofHom (ContinuousMap.inclusion haW)
-  let γ : TopCat.of W ⟶ TopCat.of X := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩
-  let iAW : TopCat.of A ⟶ TopCat.of W := TopCat.ofHom (ContinuousMap.inclusion hAW)
   have : Epi (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) := by
     rw [singularHomologyFunctor_obj_map]
     exact hf.epi_homologyMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt ha_reg hb_reg
       (fun p hp ↦ hindex p hp.1) R hk
-  have hβγ : β ≫ γ = TopCat.ofHom (sublevelInclusion F a b hab) ≫ ebIso.hom := by
-    dsimp only [ebIso]
-    rw [sublevelInclusion_eq_inclusion, TopCat.isoOfHomeo_hom]
-    ext x
-    rfl
-  have : Epi (H.map β ≫ H.map γ) := by
-    rw [← H.map_comp, hβγ, H.map_comp]
-    exact epi_comp (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) (H.map ebIso.hom)
-  have : Epi (H.map γ) := epi_of_epi (H.map β) (H.map γ)
-  have : IsIso (H.map iAW) := by
+  have hepi_sub : Epi (H.map (TopCat.ofHom (ContinuousMap.subtypeVal {x | F x ≤ a}))) := by
+    rw [← sublevelInclusion_comp_sublevelHomeomorphUniv hab fun x ↦ (hFb x).le, H.map_comp]
+    exact epi_comp _ _
+  have : Epi (H.map (TopCat.ofHom (ContinuousMap.inclusion haW)) ≫
+      H.map (TopCat.ofHom (ContinuousMap.subtypeVal W))) := by
+    rwa [← H.map_comp, ← TopCat.ofHom_comp, ContinuousMap.subtypeVal_comp_inclusion]
+  have : Epi (H.map (TopCat.ofHom (ContinuousMap.subtypeVal W))) :=
+    epi_of_epi (H.map (TopCat.ofHom (ContinuousMap.inclusion haW))) _
+  have : IsIso (H.map (TopCat.ofHom (ContinuousMap.inclusion hAW))) := by
     rwa [singularHomologyFunctor_obj_map]
-  have hcomp : iAW ≫ γ = TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)) := by
-    ext x
-    rfl
-  have hepi : Epi (H.map iAW ≫ H.map γ) := epi_comp (H.map iAW) (H.map γ)
-  rw [← H.map_comp, hcomp] at hepi
+  have hepi : Epi (H.map (TopCat.ofHom (ContinuousMap.inclusion hAW)) ≫
+      H.map (TopCat.ofHom (ContinuousMap.subtypeVal W))) := epi_comp _ _
+  rw [← H.map_comp, ← TopCat.ofHom_comp, ContinuousMap.subtypeVal_comp_inclusion] at hepi
   dsimp only [H] at hepi
   rwa [singularHomologyFunctor_obj_map] at hepi
 
@@ -703,42 +690,30 @@ theorem IsMorse.mono_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbed
       (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hk : k + 1 < n) :
     Mono (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)))) R k) := by
+      (TopCat.ofHom (ContinuousMap.subtypeVal A))) R k) := by
   obtain ⟨a, b, hab, -, hAa, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let ebIso := TopCat.isoOfHomeo (X := TopCat.of ↥{x | F x ≤ b}) (Y := TopCat.of X)
-    (sublevelHomeoUniv fun x ↦ (hFb x).le)
   let H := (AlgebraicTopology.singularHomologyFunctor A_cat k).obj R
-  let α : TopCat.of A ⟶ TopCat.of ↥{x | F x ≤ a} := TopCat.ofHom (ContinuousMap.inclusion hAa)
-  let β : TopCat.of ↥{x | F x ≤ a} ⟶ TopCat.of W := TopCat.ofHom (ContinuousMap.inclusion haW)
-  have hαβ : α ≫ β = TopCat.ofHom (ContinuousMap.inclusion hAW) := by
-    ext x
-    rfl
   have : IsIso (H.map (TopCat.ofHom (ContinuousMap.inclusion hAW))) := by
     rwa [singularHomologyFunctor_obj_map]
-  have : Mono (H.map α ≫ H.map β) := by
-    rw [← H.map_comp, hαβ]
+  have : Mono (H.map (TopCat.ofHom (ContinuousMap.inclusion hAa)) ≫
+      H.map (TopCat.ofHom (ContinuousMap.inclusion haW))) := by
+    rw [← H.map_comp, ← TopCat.ofHom_comp, ContinuousMap.inclusion_comp_inclusion]
     infer_instance
-  have : Mono (H.map α) := mono_of_mono (H.map α) (H.map β)
+  have : Mono (H.map (TopCat.ofHom (ContinuousMap.inclusion hAa))) :=
+    mono_of_mono _ (H.map (TopCat.ofHom (ContinuousMap.inclusion haW)))
   have : IsIso (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) := by
     rw [singularHomologyFunctor_obj_map]
     exact hf.isIso_homologyMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt ha_reg
       hb_reg (fun p hp ↦ hindex p hp.1) R hk
-  have hcomp : α ≫ TopCat.ofHom (sublevelInclusion F a b hab) ≫ ebIso.hom =
-      TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)) := by
-    dsimp only [ebIso]
-    rw [sublevelInclusion_eq_inclusion, TopCat.isoOfHomeo_hom]
-    ext x
-    rfl
-  let rest := TopCat.ofHom (sublevelInclusion F a b hab) ≫ ebIso.hom
-  have : Mono (H.map rest) := by
-    dsimp only [rest]
-    rw [H.map_comp]
-    exact mono_comp (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) (H.map ebIso.hom)
-  have hmono : Mono (H.map α ≫ H.map rest) := mono_comp (H.map α) (H.map rest)
-  rw [← H.map_comp] at hmono
-  dsimp only [rest, H] at hmono
-  rwa [hcomp, singularHomologyFunctor_obj_map] at hmono
+  have : Mono (H.map (TopCat.ofHom (ContinuousMap.subtypeVal {x | F x ≤ a}))) := by
+    rw [← sublevelInclusion_comp_sublevelHomeomorphUniv hab fun x ↦ (hFb x).le, H.map_comp]
+    exact mono_comp _ _
+  have hmono : Mono (H.map (TopCat.ofHom (ContinuousMap.inclusion hAa)) ≫
+      H.map (TopCat.ofHom (ContinuousMap.subtypeVal {x | F x ≤ a}))) := mono_comp _ _
+  rw [← H.map_comp, ← TopCat.ofHom_comp, ContinuousMap.subtypeVal_comp_inclusion] at hmono
+  dsimp only [H] at hmono
+  rwa [singularHomologyFunctor_obj_map] at hmono
 
 /-- **Isomorphism `H_k(A; R) ≅ H_k(X; R)` for `k + 1 < n` on a compactified pair.** If `A ↪ W`
 induces a singular homology isomorphism in degree `k` on a set `W` containing a positive sublevel
@@ -753,8 +728,8 @@ theorem IsMorse.isIso_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbe
       (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hk : k + 1 < n) :
     IsIso (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)))) R k) := by
-  let f : TopCat.of A ⟶ TopCat.of X := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩
+      (TopCat.ofHom (ContinuousMap.subtypeVal A))) R k) := by
+  let f : TopCat.of A ⟶ TopCat.of X := TopCat.ofHom (ContinuousMap.subtypeVal A)
   have : Mono (SSet.homologyMap (TopCat.toSSet.map f) R k) :=
     hf.mono_homologyMap_subtypeVal_of_isOpenEmbedding hj hF hbdd hA hAF hcompact hindex R hW hδ hk
   have : Epi (SSet.homologyMap (TopCat.toSSet.map f) R k) :=
