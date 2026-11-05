@@ -77,8 +77,8 @@ because the Hessian of `w` is Hölder in time
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §2.3.1, Theorem 2 (Duhamel's principle for the
-  nonhomogeneous heat equation).
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §2.3.1, Theorem 2 (Duhamel's principle
+  for the nonhomogeneous heat equation).
 * A. Friedman, *Partial Differential Equations of Parabolic Type*, Chapter 1, Section 3 (the
   volume potential of a forcing Hölder continuous in space).
 -/
