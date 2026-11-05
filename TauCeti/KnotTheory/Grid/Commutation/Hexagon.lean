@@ -110,8 +110,10 @@ from a grid state `x` to a grid state `y`.
 
 It is recorded by the oriented rectangle from `x` to `y` with the same corners, whose terminal side
 is the grid line `finRotate n a`; the rows that side spans must contain the lower intersection row
-`s` and, above it, the upper intersection row `s'`. A hexagon-counting map only uses these shapes
-through `GridDiagram.ColumnCommutationData`, which places the column-`a` markings in the bigon. -/
+`s` and, above it, the upper intersection row `s'`. The shape records only the corners and the two
+turn rows. Its `coveredSquares` describe the squares of the hexagon when
+`GridDiagram.ColumnCommutationData` places the column-`a` markings in the bigon; the crossing change
+counts the same shapes for interleaving columns, with `crossingCoveredSquares` instead. -/
 structure GridHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState n)
     extends GridRectangleBetween x y where
   /-- The terminal side lies on the grid line between column `a` and the next column. -/
@@ -285,9 +287,11 @@ from a grid state `x` to a grid state `y`.
 
 It is recorded by the oriented rectangle from `x` to `y` with the same corners, whose initial side
 is the grid line `finRotate n a`; the rows that side spans must contain the lower intersection row
-`s` and, above it, the upper intersection row `s'`. A hexagon-counting map only uses these shapes
-through `GridDiagram.ColumnCommutationData`, which places the column-`finRotate n a` markings in the
-bigon. -/
+`s` and, above it, the upper intersection row `s'`. The shape records only the corners and the two
+turn rows. Its `coveredSquares` describe the squares of the hexagon when
+`GridDiagram.ColumnCommutationData` places the column-`finRotate n a` markings in the bigon; the
+crossing change counts the same shapes for interleaving columns, with `crossingCoveredSquares`
+instead. -/
 structure GridInitialHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState n)
     extends GridRectangleBetween x y where
   /-- The initial side lies on the grid line between column `a` and the next column. -/
