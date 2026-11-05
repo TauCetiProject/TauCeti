@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.PurelyInseparable.Tower
 public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
@@ -76,6 +78,10 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.ramificationIdx_dvd_ord_sum_of_linearIndependent_residue` — and the
   ultrametric estimate `TauCeti.Place.sum_ne_zero_of_ord_eq_mul_add_natCast` with
   `TauCeti.Place.ord_sum_le_of_ord_eq_mul_add_natCast` that combines them.
+* `TauCeti.Place.exists_sub_sum_mem_filtration`: expansion to finite order. If residues of
+  `u i ∈ 𝒪_{P'}` span `F'_{P'}` over `F_P` and `t` is a prime element for `P'`, every function
+  regular at `P'` agrees to order `n` with a combination of the `u i t ^ m`, `m < n`, whose
+  coefficients are regular at `P`.
 * `TauCeti.Place.ord_smul_of_restrict_eq`: `ord_P (c • z) = e(P ∣ P₁) · ord_{P₁} c + ord_P z`
   for `c` in the subfield `F₁` and `P` over the place `P₁` of `F₁`.
 * `TauCeti.Place.linearIndependent_of_ord_neg_of_restrict_eq`: arbitrary families of functions
@@ -95,6 +101,12 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict`:
   `[k' : k] · deg P' = f(P' ∣ P) · deg P`, the comparison of the degrees of `P'` and of the place
   it lies over.
+* `TauCeti.Place.isSeparable_residueField_of_isSeparable_restrict`: residue fields separable over
+  the constants stay separable over the enlarged constants when the residue extension is
+  separable.
+* `TauCeti.Place.degree_restrict_le_degree_of_isPurelyInseparable`: for purely inseparable
+  `k' / k`, a place with residue field separable over `k` has degree at most that of any place
+  above it.
 * `TauCeti.Place.algebraMap_residueField_algebraMap`: the two routes from `k` into `F'_{P'}`,
   through `F_P` and through `k'`, agree.
 * `TauCeti.Place.not_isSeparable_residueField_of_degree_eq_one`: over a place of degree one, the
@@ -578,6 +590,35 @@ theorem relativeDegree_def :
     relativeDegree k F P' = Module.finrank (P'.restrict k F).ResidueField P'.ResidueField := by
   rw [relativeDegree]
 
+omit [Algebra k F'] [IsScalarTower k k' F'] in
+/-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra. This is not an
+instance: for `k = k'` it would compete with the constant-field algebra of `P'`. Use it as a local
+instance together with `isScalarTower_integersAlgebraBase` and
+`isScalarTower_integers_restrict`. -/
+noncomputable abbrev integersAlgebraBase : Algebra k P'.integers :=
+  ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
+
+omit [Algebra k F'] [IsScalarTower k k' F'] in
+/-- The `k`-algebra `integersAlgebraBase` on the valuation ring of `P'` factors through the
+constants `k'`. -/
+theorem isScalarTower_integersAlgebraBase :
+    letI := integersAlgebraBase k P'
+    IsScalarTower k k' P'.integers :=
+  letI := integersAlgebraBase k P'
+  .of_algebraMap_eq fun _ ↦ rfl
+
+/-- The `k`-algebra `integersAlgebraBase` on the valuation ring of `P'` is compatible with the
+valuation ring of the place below. -/
+theorem isScalarTower_integers_restrict :
+    letI := integersAlgebraBase k P'
+    IsScalarTower k (P'.restrict k F).integers P'.integers := by
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  refine .of_algebraMap_eq fun c ↦ Subtype.ext ?_
+  rw [coe_algebraMap_integers, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F',
+    IsScalarTower.algebraMap_apply k k' P'.integers, coe_algebraMap_constants,
+    ← IsScalarTower.algebraMap_apply k k' F']
+
 /-- **The degree of a place and the degree of the place below it** (Stichtenoth, Section III.1):
 the residue field `F'_{P'}` sits in the two towers `k ⊆ k' ⊆ F'_{P'}` and `k ⊆ F_P ⊆ F'_{P'}`,
 whose successive degrees are `[k' : k]`, `deg P'` and `deg P`, `f(P' ∣ P)`.  Comparing them gives
@@ -587,19 +628,52 @@ The factor `[k' : k]` is mandatory and the identity is stated cross-multiplied: 
 field grows, `deg P'` falls short of `f(P' ∣ P) · deg P` by exactly that factor. -/
 theorem finrank_mul_degree_eq_relativeDegree_mul_degree_restrict :
     Module.finrank k k' * P'.degree = relativeDegree k F P' * (P'.restrict k F).degree := by
-  -- The residue field of `P'` is a `k`-algebra through the constants `k'` of `F'`.  This is a
-  -- local instance: for `k = k'` it would compete with the constant-field algebra of `P'`.
-  let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
-  have : IsScalarTower k k' P'.integers := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k (P'.restrict k F).integers P'.integers := by
-    refine .of_algebraMap_eq fun c ↦ Subtype.ext ?_
-    rw [coe_algebraMap_integers, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F']
-    exact (P'.coe_algebraMap_constants (algebraMap k k' c)).trans
-      (IsScalarTower.algebraMap_apply k k' F' c).symm
+  -- The residue field of `P'` is a `k`-algebra through the constants `k'` of `F'`.
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
   rw [degree_eq_finrank, degree_eq_finrank, relativeDegree_def,
     Module.finrank_mul_finrank k k' P'.ResidueField,
     mul_comm (Module.finrank (P'.restrict k F).ResidueField P'.ResidueField),
     Module.finrank_mul_finrank k (P'.restrict k F).ResidueField P'.ResidueField]
+
+/-- **Separable residue fields stay separable over the enlarged constants**: if the residue field
+of the place below `P'` is separable over `k` and `F'_{P'}` is separable over it, then `F'_{P'}` is
+separable over `k'`. -/
+theorem isSeparable_residueField_of_isSeparable_restrict
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField]
+    [Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField] :
+    Algebra.IsSeparable k' P'.ResidueField := by
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  have := Algebra.IsSeparable.trans k (P'.restrict k F).ResidueField P'.ResidueField
+  exact Algebra.isSeparable_tower_top_of_isSeparable k k' P'.ResidueField
+
+/-- **Purely inseparable constants keep separable residue degrees**: if `k' / k` is purely
+inseparable and the residue field `F_P` of the place `P` below `P'` is separable over `k`, then
+`deg P ≤ deg P'`. A `k`-basis of `F_P` stays linearly independent over `k'` in `F'_{P'}`. -/
+theorem degree_restrict_le_degree_of_isPurelyInseparable [IsPurelyInseparable k k']
+    [FiniteDimensional k' P'.ResidueField] [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
+    (P'.restrict k F).degree ≤ P'.degree := by
+  set R := (P'.restrict k F).ResidueField
+  by_cases hR : FiniteDimensional k R
+  swap
+  · rw [degree_eq_finrank, Module.finrank_of_not_finite hR]
+    exact Nat.zero_le _
+  -- The residue field of `P'` is a `k`-algebra through the constants `k'`, compatibly with the
+  -- residue field of the place below.
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  let ι := IsScalarTower.toAlgHom k R P'.ResidueField
+  let b := Module.finBasis k R
+  have hli : LinearIndependent k (ι ∘ b) :=
+    b.linearIndependent.map' ι.toLinearMap (LinearMap.ker_eq_bot.mpr ι.injective)
+  have hli' : LinearIndependent k' (ι ∘ b) :=
+    LinearIndependent.map_of_isPurelyInseparable_of_isSeparable k'
+      (fun i ↦ (Algebra.IsSeparable.isSeparable k (b i)).map ι ι.injective) hli
+  simpa [degree_eq_finrank] using hli'.fintype_card_le_finrank
 
 end ResidueField
 
@@ -886,6 +960,57 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*}
     fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
   exact hI.comp f fun p q h ↦ Subtype.ext <|
     congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
+
+/-- **Expansion to finite order.** If the residues of `u i ∈ 𝒪_{P'}` span the residue field of
+`P'` over that of the place below, and `t` is a uniformizer at `P'`, then every function regular
+at `P'` agrees to order `n` with a combination `∑_{m < n} ∑_i c_{m,i} u_i t ^ m` whose coefficients
+are regular at the place below. -/
+theorem exists_sub_sum_mem_filtration {ι : Type*} [Fintype ι] (u : ι → P'.integers)
+    (hu : Submodule.span (P'.restrict k F).ResidueField
+      (Set.range fun i ↦ IsLocalRing.residue P'.integers (u i)) = ⊤)
+    {t : F'} (ht : P'.ord t = 1) (n : ℕ) {y : F'} (hy : y ∈ P'.integers) :
+    ∃ c : ℕ → ι → (P'.restrict k F).integers,
+      y - ∑ m ∈ Finset.range n, ∑ i, algebraMap F F' (c m i : F) * (u i : F') * t ^ m ∈
+        P'.filtration n := by
+  classical
+  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
+  induction n with
+  | zero => exact ⟨0, by simpa [P'.mem_filtration_zero_iff] using hy⟩
+  | succ n ih =>
+    obtain ⟨c, hc⟩ := ih
+    set z := y - ∑ m ∈ Finset.range n, ∑ i, algebraMap F F' (c m i : F) * (u i : F') * t ^ m
+    have hw : z / t ^ n ∈ P'.integers := by
+      rcases eq_or_ne z 0 with h | h
+      · simp [h]
+      · rw [P'.mem_integers_iff_ord_nonneg, P'.ord_div h (pow_ne_zero _ ht0), P'.ord_pow, ht]
+        have := (P'.mem_filtration_iff_le_ord h).mp hc
+        linarith
+    obtain ⟨r, hr⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
+      (hu ▸ Submodule.mem_top : IsLocalRing.residue P'.integers ⟨_, hw⟩ ∈ Submodule.span _ _)
+    choose d hd using fun i ↦ IsLocalRing.residue_surjective (r i)
+    -- The residue of `z / t ^ n` is the residue of `∑ d_i u_i`.
+    set W : P'.integers := ∑ i, algebraMap _ P'.integers (d i) * u i with hW
+    have hWres : IsLocalRing.residue P'.integers ⟨_, hw⟩ = IsLocalRing.residue P'.integers W := by
+      rw [← hr, hW, map_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [map_mul, Algebra.smul_def, ← hd, IsLocalRing.ResidueField.algebraMap_residue]
+    have hWcoe : (W : F') = ∑ i, algebraMap F F' (d i : F) * (u i : F') := by
+      rw [hW]
+      push_cast
+      simp
+    have h1 : (z / t ^ n - (W : F')) * t ^ n ∈ P'.filtration (1 + n) := by
+      have := P'.mul_mem_filtration ((P'.residue_eq_iff_sub_mem_filtration_one).mp hWres)
+        (P'.mem_filtration_ord (t ^ n))
+      rwa [P'.ord_pow, ht, mul_one] at this
+    refine ⟨Function.update c n d, ?_⟩
+    rw [Finset.sum_range_succ, Function.update_self,
+      Finset.sum_congr rfl fun m hm ↦ by rw [Function.update_of_ne (Finset.mem_range.mp hm).ne]]
+    convert h1 using 2
+    · push_cast
+      ring
+    · rw [sub_mul, div_mul_cancel₀ _ (pow_ne_zero _ ht0), hWcoe, Finset.sum_mul]
+      simp only [z]
+      ring
 
 end Independence
 

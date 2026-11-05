@@ -153,6 +153,22 @@ theorem single_mem_of_rep_rootGenerator_eq
   exact (Submodule.smul_mem_iff_of_isUnit _ (by simpa using c.isUnit.map (Int.castRingHom R))).1
     hsub
 
+/-- Stability under a positive simple-root point at parameter one propagates a coordinate
+vector along its raising edge. The coefficient is a unit over every commutative ring. -/
+theorem single_basisReflection_mem_of_rootSubgroupPoints
+    (N : Submodule R (Fin (dimension n) → R))
+    (i : Fin (n + 1)) (a : Fin (dimension n))
+    (hroot : ∀ w ∈ N, ((rootSubgroupPoints n (.inl i) R (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin (dimension n)) R) :
+          Matrix (Fin (dimension n)) (Fin (dimension n)) R) *ᵥ w ∈ N)
+    (hi : basisWeight n a i = -1) (ha : Pi.single a 1 ∈ N) :
+    Pi.single (basisReflection n i a) 1 ∈ N := by
+  obtain ⟨c, hc⟩ := exists_rep_rootGenerator_inl_exteriorBasis n i _ _ hi
+    (signSet_basisReflection n i a).symm
+  refine single_mem_of_rep_rootGenerator_eq n R N (.inl i) (c := c) hroot ?_ ha
+  rw [coe_latticeBasis n a, coe_latticeBasis n (basisReflection n i a)]
+  exact hc
+
 /-- The character of the spin weight torus attached to a spin-basis index. -/
 noncomputable abbrev basisCharacter (a : Fin (dimension n)) :
     Multiplicative (Fin (n + 1) →₀ ℤ) :=
@@ -167,6 +183,31 @@ theorem basisCharacter_injective : Function.Injective (basisCharacter n) := by
       congrArg (fun χ : Multiplicative (Fin (n + 1) →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
   exact (Fintype.equivFin (Finset (Fin (n + 1)))).symm.injective
     (DynkinType.typeBSpinWeight_injective hw)
+
+/-- A simple-root difference of spin weights is precisely a raising edge: the first weight
+pairs to `-1` with the simple coroot and the second index is its simple reflection. -/
+theorem basisReflection_eq_of_weight_sub
+    (i : Fin (n + 1)) {a b : Fin (dimension n)}
+    (hab : basisWeight n b - basisWeight n a = rootGeneratorWeight n (.inl i)) :
+    basisWeight n a i = -1 ∧ basisReflection n i a = b := by
+  have hi := congrFun hab i
+  rw [Pi.sub_apply, rootGeneratorWeight_inl, CartanMatrix.B_diag] at hi
+  have ha : basisWeight n a i = -1 ∨ basisWeight n a i = 0 ∨ basisWeight n a i = 1 :=
+    DynkinType.typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n a) i
+  have hb : basisWeight n b i = -1 ∨ basisWeight n b i = 0 ∨ basisWeight n b i = 1 :=
+    DynkinType.typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n b) i
+  have hneg : basisWeight n a i = -1 := by rcases ha with ha | ha | ha <;>
+    rcases hb with hb | hb | hb <;> omega
+  refine ⟨hneg, basisCharacter_injective n ?_⟩
+  apply congrArg SplitTorus.weightCharacter
+  funext j
+  have hj := congrFun hab j
+  rw [Pi.sub_apply, rootGeneratorWeight_inl] at hj
+  simp only [basisWeight, signSet_basisReflection,
+    DynkinType.typeBSpinWeight_typeBSpinReflection_apply]
+  simp only [basisWeight] at hneg
+  rw [hneg]
+  linarith
 
 /-- **Restricting the standard carrier comodule to the spin weight torus gives the direct sum of
 the distinct spin weight lines.** Corestricting along `weightTorusToBaseChangeCoordinateMap`
@@ -201,11 +242,7 @@ private theorem single_basisReflection_mem
     Pi.single (basisReflection n i a) 1 ∈ N := by
   rcases DynkinType.typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n a) i with
     hneg | hzero | hpos
-  · obtain ⟨c, hc⟩ := exists_rep_rootGenerator_inl_exteriorBasis n i _ _ hneg
-      (signSet_basisReflection n i a).symm
-    refine single_mem_of_rep_rootGenerator_eq n k N (.inl i) (c := c) (hroot _) ?_ ha
-    rw [coe_latticeBasis n a, coe_latticeBasis n (basisReflection n i a)]
-    exact hc
+  · exact single_basisReflection_mem_of_rootSubgroupPoints n k N i a (hroot _) hneg ha
   · rwa [(basisReflection_eq_self_iff n i a).2 hzero]
   · obtain ⟨c, hc⟩ := exists_rep_rootGenerator_inr_exteriorBasis n i _ _ hpos
       (signSet_basisReflection n i a).symm
