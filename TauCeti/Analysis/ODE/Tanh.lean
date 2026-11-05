@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.ODE.Caratheodory
-import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
 # The linear equations `v' = ± tanh(s) v`

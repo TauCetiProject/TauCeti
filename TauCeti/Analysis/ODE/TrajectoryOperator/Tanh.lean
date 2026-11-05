@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import TauCeti.Analysis.ODE.Tanh
-import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.MeasureTheory.Integral.Cosh
 
 /-!
