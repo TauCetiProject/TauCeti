@@ -7,13 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.EndFraming
 public import TauCeti.Analysis.Complex.LogOneAddNormSq
-public import Mathlib.MeasureTheory.Function.L2Space
+public import TauCeti.Analysis.Polynomial.AtInfinity
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Polynomial.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Integral.Asymptotics
 
 /-!
 # The background amplitude of the prescribed-zero vortex problem
@@ -31,19 +27,21 @@ smooth background with the same growth. Here the background is
 
 `u₀ = -log (1 + |P|²) / 2`    (`TauCeti.Vortex.backgroundAmplitude`),
 
-which needs no choice of roots and no cutoff. For `m ≥ 1`,
-`u₀ + m log |z| → 0`, and for every function `w`:
+which needs no choice of roots and no cutoff. For `m ≥ 1`, `u₀ + m log |z| → 0`. For a
+correction `w`:
 
-* `u = u₀ + w` solves the scalar equation exactly when
+* if `w` is `C²` at `z`, then `u = u₀ + w` solves the scalar equation at `z` exactly when
 
   `Δw = (exp(2w) h - 1) / 8 + g`,    `h = |P|² / (1 + |P|²)`,    `g = 2 |P'|² / (1 + |P|²)²`;
 
   here `g = -Δu₀` and `h = exp(2u₀) |P|²` is the squared modulus of the background section;
-* the reconstructed section has the degree-`m` end framing exactly when `w → 0` at infinity.
+* for every `w`, the reconstructed section has the degree-`m` end framing exactly when `w → 0`
+  at infinity.
 
-So a vortex with zero divisor `P` is the same as a solution of the reduced equation that tends to
-zero at infinity, and the reduced equation has smooth coefficients with `0 ≤ h < 1`. The defect
-`1 - h = (1 + |P|²)⁻¹` is square integrable and the source `g` is integrable; these are the
+So a vortex with zero divisor `P` whose amplitude is `C²` is the same as a `C²` solution of the
+reduced equation that tends to zero at infinity, and the reduced equation has smooth coefficients
+with `0 ≤ h < 1`. The defect `1 - h = (1 + |P|²)⁻¹` is square integrable
+(`Polynomial.memLp_inv_one_add_norm_eval_sq`) and the source `g` is integrable; these are the
 integrability properties of the coefficients that a variational treatment of the reduced
 equation on `H¹(ℂ)` uses. Existence of a solution of the reduced equation is not proved here.
 
@@ -57,9 +55,8 @@ equation on `H¹(ℂ)` uses. Existence of a solution of the reduced equation is 
 * `TauCeti.Vortex.tendsto_backgroundAmplitude_add_natDegree_mul_log`: `u₀ + m log |z| → 0`.
 * `TauCeti.Vortex.tendsto_sectionValue_amplitudeField_backgroundAmplitude_add_iff`: the end
   framing of the reconstructed section is equivalent to `w → 0`.
-* `TauCeti.Vortex.integrable_laplacian_backgroundAmplitude`,
-  `TauCeti.Vortex.memLp_inv_one_add_norm_eval_sq`: integrability of the coefficients of the
-  reduced equation.
+* `TauCeti.Vortex.integrable_laplacian_backgroundAmplitude`: the source term of the reduced
+  equation is integrable.
 
 ## References
 
@@ -75,13 +72,13 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter Topology InnerProductSpace Laplacian MeasureTheory Asymptotics
+open Complex Filter Topology InnerProductSpace Laplacian MeasureTheory
 
 variable {f : ℂ → ℂ} {z : ℂ}
 
-/-- The background amplitude `u₀ = -log (1 + ‖f‖²) / 2`. For a polynomial `f` of degree `m ≥ 1`
-it is smooth on the whole plane and has the growth `-m log ‖z‖` of a degree-`m` vortex
-amplitude at infinity. -/
+/-- The background amplitude `u₀ = -log (1 + ‖f‖²) / 2`. For a polynomial `f` it is smooth on the
+whole plane, and for a monic polynomial `f` of degree `m ≥ 1` it has the growth `-m log ‖z‖` of a
+degree-`m` vortex amplitude at infinity. -/
 def backgroundAmplitude (f : ℂ → ℂ) (z : ℂ) : ℝ :=
   -Real.log (1 + ‖f z‖ ^ 2) / 2
 
@@ -93,8 +90,8 @@ theorem backgroundAmplitude_apply (f : ℂ → ℂ) (z : ℂ) :
 @[simp]
 theorem exp_two_mul_backgroundAmplitude (f : ℂ → ℂ) (z : ℂ) :
     Real.exp (2 * backgroundAmplitude f z) = (1 + ‖f z‖ ^ 2)⁻¹ := by
-  rw [backgroundAmplitude_apply, show 2 * (-Real.log (1 + ‖f z‖ ^ 2) / 2) =
-    -Real.log (1 + ‖f z‖ ^ 2) by ring, Real.exp_neg, Real.exp_log (by positivity)]
+  rw [backgroundAmplitude_apply, mul_div_cancel₀ _ two_ne_zero, Real.exp_neg,
+    Real.exp_log (by positivity)]
 
 /-- The background amplitude is as smooth as `f`, including at the zeros of `f`. -/
 theorem contDiff_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
@@ -137,8 +134,7 @@ theorem laplacian_backgroundAmplitude_add_eq_iff {w : ℂ → ℝ} (hf : Analyti
       Real.exp (2 * w z) * (‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2)) := by
     rw [mul_add, Real.exp_add, exp_two_mul_backgroundAmplitude]
     field_simp
-  rw [show (fun z ↦ backgroundAmplitude f z + w z) = backgroundAmplitude f + w from rfl,
-    hbg.laplacian_add hw, laplacian_backgroundAmplitude hf, hexp]
+  rw [← Pi.add_def, hbg.laplacian_add hw, laplacian_backgroundAmplitude hf, hexp]
   constructor <;> intro h <;> linarith
 
 /-- The field reconstructed from the amplitude `u₀ + w` and a holomorphic `f` solves the vortex
@@ -162,10 +158,7 @@ theorem tendsto_backgroundAmplitude_add_natDegree_mul_log {P : Polynomial ℂ} (
   set m := P.natDegree
   have hz : ∀ᶠ z : ℂ in cocompact ℂ, z ≠ 0 :=
     (isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact
-  have hq : Tendsto (fun z ↦ P.eval z / z ^ m) (cocompact ℂ) (𝓝 1) := by
-    have he := Polynomial.isEquivalent_cobounded_leading_monomial (P := P)
-    simp only [hP.leadingCoeff, one_mul, Metric.cobounded_eq_cocompact] at he
-    exact (isEquivalent_iff_tendsto_one (hz.mono fun z hz ↦ pow_ne_zero _ hz)).mp he
+  have hq := hP.tendsto_eval_div_pow_natDegree_cocompact
   have hinv : Tendsto (fun z : ℂ ↦ (‖z‖ ^ (2 * m))⁻¹) (cocompact ℂ) (𝓝 0) :=
     tendsto_inv_atTop_zero.comp
       ((tendsto_pow_atTop (by omega)).comp tendsto_norm_cocompact_atTop)
@@ -208,101 +201,16 @@ theorem tendsto_sectionValue_amplitudeField_backgroundAmplitude_add_iff {P : Pol
 
 /-! ### Integrability of the coefficients of the reduced equation -/
 
--- Polynomial growth bounds at infinity, in the form used below: `‖z‖ ^ m ≤ c ‖P z‖` gives
--- `(‖z‖ ^ m) ^ 4 ≤ c ^ 4 (1 + ‖P z‖²)²`, and `‖P' z‖ ≤ c ‖z‖ ^ (m - 1)` is squared.
-private theorem exists_eventually_norm_bounds {P : Polynomial ℂ} (hm : 0 < P.natDegree) :
-    ∃ c : ℝ, 0 < c ∧ ∀ᶠ z : ℂ in cocompact ℂ, 1 ≤ ‖z‖ ∧ (1 + ‖z‖) ^ 4 ≤ 16 * ‖z‖ ^ 4 ∧
-      (‖z‖ ^ P.natDegree) ^ 4 ≤ c ^ 4 * (1 + ‖P.eval z‖ ^ 2) ^ 2 ∧
-      ‖P.derivative.eval z‖ ^ 2 ≤ c ^ 2 * ‖z‖ ^ (2 * (P.natDegree - 1)) := by
-  have hP : P ≠ 0 := Polynomial.ne_zero_of_natDegree_gt hm
-  have hlow : (fun z : ℂ ↦ z ^ P.natDegree) =O[cocompact ℂ] P.eval := by
-    have he := (Polynomial.isEquivalent_cobounded_leading_monomial (P := P)).symm.isBigO
-    rw [Metric.cobounded_eq_cocompact] at he
-    exact (isBigO_self_const_mul (Polynomial.leadingCoeff_ne_zero.mpr hP) _ _).trans he
-  have hup : P.derivative.eval =O[cocompact ℂ] fun z : ℂ ↦ z ^ (P.natDegree - 1) := by
-    have h := (Polynomial.isBigO_cobounded_pow_natDegree P.derivative).trans
-      (isBigO_pow_pow_cobounded_of_le (Polynomial.natDegree_derivative_le P))
-    rwa [Metric.cobounded_eq_cocompact] at h
-  obtain ⟨c₁, hc₁⟩ := hlow.bound
-  obtain ⟨c₂, hc₂⟩ := hup.bound
-  set c := max (max c₁ c₂) 1
-  refine ⟨c, by positivity, ?_⟩
-  filter_upwards [hc₁, hc₂, tendsto_norm_cocompact_atTop.eventually_ge_atTop 1]
-    with z h₁ h₂ h₃
-  rw [norm_pow] at h₁ h₂
-  have h₁' : ‖z‖ ^ P.natDegree ≤ c * ‖P.eval z‖ :=
-    h₁.trans (by gcongr; exact (le_max_left _ _).trans (le_max_left _ _))
-  have h₂' : ‖P.derivative.eval z‖ ≤ c * ‖z‖ ^ (P.natDegree - 1) :=
-    h₂.trans (by gcongr; exact (le_max_right _ _).trans (le_max_left _ _))
-  refine ⟨h₃, ?_, ?_, ?_⟩
-  · calc (1 + ‖z‖) ^ 4 ≤ (2 * ‖z‖) ^ 4 := by gcongr; linarith
-      _ = 16 * ‖z‖ ^ 4 := by ring
-  · calc (‖z‖ ^ P.natDegree) ^ 4 ≤ (c * ‖P.eval z‖) ^ 4 := by gcongr
-      _ = c ^ 4 * (‖P.eval z‖ ^ 2) ^ 2 := by ring
-      _ ≤ c ^ 4 * (1 + ‖P.eval z‖ ^ 2) ^ 2 := by gcongr; linarith
-  · calc ‖P.derivative.eval z‖ ^ 2 ≤ (c * ‖z‖ ^ (P.natDegree - 1)) ^ 2 := by gcongr
-      _ = c ^ 2 * ‖z‖ ^ (2 * (P.natDegree - 1)) := by ring
-
--- A continuous function on the plane bounded at infinity by a multiple of `(1 + ‖z‖)⁻⁴` is
--- integrable.
-private theorem integrable_of_eventually_le_div_one_add_norm_pow_four {F : ℂ → ℝ}
-    (hF : Continuous F) {K : ℝ} (h : ∀ᶠ z in cocompact ℂ, ‖F z‖ ≤ K / (1 + ‖z‖) ^ 4) :
-    Integrable F := by
-  refine hF.locallyIntegrable.integrable_of_isBigO_cocompact
-    (g := fun z : ℂ ↦ (1 + ‖z‖) ^ (-(4 : ℝ))) (IsBigO.of_bound K (h.mono fun z hz ↦ ?_))
-    ((integrable_one_add_norm (r := 4) (by simp [Complex.finrank_real_complex]; norm_num)
-      ).integrableAtFilter _)
-  have hpos : 0 < 1 + ‖z‖ := by positivity
-  rwa [Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖z‖) ^ (-(4 : ℝ))),
-    Real.rpow_neg hpos.le, Real.rpow_ofNat, ← div_eq_mul_inv]
-
-/-- For a polynomial `P` of degree `m ≥ 1`, the Laplacian of the background amplitude, the
-source term `-g` of the reduced equation, is integrable on the plane. -/
-theorem integrable_laplacian_backgroundAmplitude {P : Polynomial ℂ} (hm : 0 < P.natDegree) :
+/-- For every complex polynomial `P`, the Laplacian of the background amplitude, the source term
+`-g` of the reduced equation, is integrable on the plane. -/
+theorem integrable_laplacian_backgroundAmplitude (P : Polynomial ℂ) :
     Integrable (Δ (backgroundAmplitude P.eval)) := by
   have hΔ : Δ (backgroundAmplitude P.eval) = fun z ↦
-      -(2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2) := by
+      -(2 * (‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2)) := by
     funext z
-    rw [laplacian_backgroundAmplitude (P.differentiable.analyticAt z), Polynomial.deriv]
-  obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
-  have hcont : Continuous (Δ (backgroundAmplitude P.eval)) :=
-    (contDiff_backgroundAmplitude
-      ((P.differentiable.contDiff (n := 2)).restrict_scalars ℝ)).continuous_laplacian
-  refine integrable_of_eventually_le_div_one_add_norm_pow_four hcont (K := 32 * c ^ 6) ?_
-  filter_upwards [hb] with z ⟨h₁, hr, ha, hd⟩
-  obtain ⟨k, hk⟩ : ∃ k, P.natDegree = k + 1 := ⟨P.natDegree - 1, by omega⟩
-  rw [hk] at ha hd
-  rw [Nat.add_sub_cancel] at hd
-  rw [hΔ, norm_neg, Real.norm_of_nonneg (by positivity), div_le_div_iff₀ (by positivity)
-    (by positivity)]
-  -- `‖P'‖² (1 + ‖z‖)⁴ ≲ ‖z‖ ^ (2m + 2) ≤ ‖z‖ ^ (4m) ≲ (1 + ‖P‖²)²`, using `m ≥ 1`.
-  have hpow : ‖z‖ ^ (2 * k) * ‖z‖ ^ 4 ≤ (‖z‖ ^ (k + 1)) ^ 4 := by
-    rw [← pow_add, ← pow_mul]
-    exact pow_le_pow_right₀ h₁ (by omega)
-  calc 2 * ‖P.derivative.eval z‖ ^ 2 * (1 + ‖z‖) ^ 4 ≤
-        2 * (c ^ 2 * ‖z‖ ^ (2 * k)) * (16 * ‖z‖ ^ 4) := by gcongr
-    _ = 32 * c ^ 2 * (‖z‖ ^ (2 * k) * ‖z‖ ^ 4) := by ring
-    _ ≤ 32 * c ^ 2 * (c ^ 4 * (1 + ‖P.eval z‖ ^ 2) ^ 2) :=
-        mul_le_mul_of_nonneg_left (hpow.trans ha) (by positivity)
-    _ = 32 * c ^ 6 * (1 + ‖P.eval z‖ ^ 2) ^ 2 := by ring
-
-/-- For a polynomial `P` of degree `m ≥ 1`, the defect `1 - h = (1 + ‖P‖²)⁻¹` of the reduced
-equation is square integrable on the plane. -/
-theorem memLp_inv_one_add_norm_eval_sq {P : Polynomial ℂ} (hm : 0 < P.natDegree) :
-    MemLp (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) 2 := by
-  have hcont : Continuous fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹ :=
-    (continuous_const.add (P.continuous.norm.pow 2)).inv₀ fun z ↦
-      (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne'
-  rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
-  obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
-  refine integrable_of_eventually_le_div_one_add_norm_pow_four (hcont.pow 2)
-    (K := 16 * c ^ 4) ?_
-  filter_upwards [hb] with z ⟨h₁, hr, ha, _⟩
-  rw [Real.norm_of_nonneg (by positivity), inv_pow, ← one_div,
-    div_le_div_iff₀ (by positivity) (by positivity)]
-  have hpow : ‖z‖ ^ 4 ≤ (‖z‖ ^ P.natDegree) ^ 4 := by
-    rw [← pow_mul]
-    exact pow_le_pow_right₀ h₁ (by omega)
-  linarith [hpow.trans ha]
+    rw [laplacian_backgroundAmplitude (P.differentiable.analyticAt z), Polynomial.deriv,
+      mul_div_assoc]
+  rw [hΔ]
+  exact (P.integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq.const_mul 2).neg
 
 end TauCeti.Vortex
