@@ -25,6 +25,8 @@ at a prime.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`, and the functoriality laws
   `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
+* `AdicCompletion.mapₐ_bijective`: the map of completions is bijective if `f` induces bijections
+  `S ⧸ I ^ n → S' ⧸ I' ^ n` for all `n`.
 * `AdicCompletion.congrₐ`: the isomorphism of completions induced by an algebra isomorphism,
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
   `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
@@ -105,6 +107,34 @@ theorem mapₐ_mapₐ (g : S' →ₐ[R] S'') (hg : I' ≤ I''.comap g) (f : S �
     (hf : I ≤ I'.comap f) (x : AdicCompletion I S) :
     mapₐ g hg (mapₐ f hf x) = mapₐ (g.comp f) (hf.trans (Ideal.comap_mono hg)) x :=
   DFunLike.congr_fun (mapₐ_comp g hg f hf) x
+
+/-- If an algebra homomorphism `f : S →ₐ[R] S'` with `I ≤ f⁻¹ I'` induces bijections
+`S ⧸ I ^ n → S' ⧸ I' ^ n` for all `n`, then the induced map of completions is bijective. -/
+theorem mapₐ_bijective (f : S →ₐ[R] S') (hf : I ≤ I'.comap f)
+    (h : ∀ n, Function.Bijective (Ideal.quotientMap (I' ^ n) f.toRingHom
+      ((Ideal.pow_right_mono hf n).trans (Ideal.le_comap_pow _ n)))) :
+    Function.Bijective (mapₐ f hf) := by
+  refine ⟨fun x y hxy ↦ ext_evalₐ fun n ↦ (h n).1 ?_, fun y ↦ ?_⟩
+  · simpa using congr(evalₐ I' n $hxy)
+  -- the inverse reduces modulo `I ^ n` to the inverse of the bijection at level `n`
+  let e (n : ℕ) := AlgEquiv.ofBijective (Ideal.quotientMapₐ (I' ^ n) f
+    ((Ideal.pow_right_mono hf n).trans (Ideal.le_comap_pow _ n))) (h n)
+  have he (n : ℕ) (s : S) :
+      e n (Ideal.Quotient.mk (I ^ n) s) = Ideal.Quotient.mk (I' ^ n) (f s) :=
+    Ideal.quotient_map_mkₐ (I' ^ n) f
+      ((Ideal.pow_right_mono hf n).trans (Ideal.le_comap_pow _ n))
+  have hfactor {m n : ℕ} (hle : m ≤ n) (z : S ⧸ I ^ n) :
+      e m (Ideal.Quotient.factor (Ideal.pow_le_pow_right hle) z) =
+        Ideal.Quotient.factor (Ideal.pow_le_pow_right hle) (e n z) := by
+    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective z
+    simp [he]
+  let g := liftAlgHom I (fun n ↦ (e n).symm.toAlgHom.comp ((evalₐ I' n).restrictScalars R))
+    fun {m n} hle ↦ AlgHom.ext fun z ↦ (e m).injective <| by
+      simpa [hfactor hle] using factor_evalₐ hle z
+  have hg (n : ℕ) : evalₐ I n (g y) = (e n).symm (evalₐ I' n y) := evalₐ_liftAlgHom _ _ _ n y
+  refine ⟨g y, ext_evalₐ fun n ↦ ?_⟩
+  rw [evalₐ_mapₐ, hg]
+  exact (e n).apply_symm_apply _
 
 /-- An `R`-algebra isomorphism `e : S ≃ₐ[R] S'` carrying `I` onto `I'` induces an `R`-algebra
 isomorphism `AdicCompletion I S ≃ₐ[R] AdicCompletion I' S'`. -/
