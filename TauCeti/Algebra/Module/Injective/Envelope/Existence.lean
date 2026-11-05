@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Injective.Envelope.Basic
-import TauCeti.Algebra.Module.Injective.SelfInjective
 import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 import Mathlib.Algebra.Category.ModuleCat.Injective
 
@@ -52,11 +51,10 @@ universe u v w
 variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
   {Q : Type w} [AddCommGroup Q] [Module R Q]
 
-variable (R) in
 /-- **Injective envelopes inside an injective module.** Every embedding into an injective module
 restricts to an injective envelope inside that module: some submodule `P` of `Q` containing the
 image is injective, with the image essential in `P`. -/
-theorem exists_isInjectiveEnvelope_submodule [Small.{w} R] [Module.Injective R Q]
+theorem exists_isInjectiveEnvelope_submodule [Module.Injective R Q]
     (i : M →ₗ[R] Q) (hi : Function.Injective i) :
     ∃ (P : Submodule R Q) (hP : LinearMap.range i ≤ P),
       IsInjectiveEnvelope (i.codRestrict P (fun x => hP ⟨x, rfl⟩)) := by
@@ -82,8 +80,8 @@ theorem exists_isInjectiveEnvelope_submodule [Small.{w} R] [Module.Injective R Q
     exact hK.prop
   have hjess : IsEssential (LinearMap.range j) := isEssential_range_mkQ_comp_subtype hK
   -- Extend the inclusion of `E` along `j`; the extension is injective since `j` is essential.
-  obtain ⟨φ, hφ⟩ := Module.Injective.extension_property R Q E (Q ⧸ K) j hj E.subtype
-  have hφj (e : E) : φ (j e) = e := LinearMap.congr_fun hφ e
+  obtain ⟨φ, hφj⟩ := Module.Injective.out j hj E.subtype
+  have hφ : φ ∘ₗ j = E.subtype := LinearMap.ext hφj
   have hφ_inj : Function.Injective φ :=
     hjess.injective_of_injective_comp (by rw [hφ]; exact E.injective_subtype)
   -- The range of `φ` is an essential extension of `N` containing `E`, so it is `E`: transport
@@ -97,8 +95,10 @@ theorem exists_isInjectiveEnvelope_submodule [Small.{w} R] [Module.Injective R Q
   have hφE : LinearMap.range φ = E := (hE.eq_of_le hφS hEφ).symm
   -- So `Q → Q ⧸ K → E` retracts `Q` onto `E`, and `E` is injective.
   let ρ : Q →ₗ[R] E := (φ ∘ₗ K.mkQ).codRestrict E fun q => hφE ▸ ⟨K.mkQ q, rfl⟩
-  have hEinj : Module.Injective R E := Module.Baer.injective
-    ((Module.Baer.of_injective ‹_›).of_leftInverse E.subtype ρ fun e => Subtype.ext (hφj e))
+  have hρ (e : E) : ρ (E.subtype e) = e := Subtype.ext (hφj e)
+  have hEinj : Module.Injective R E := ⟨fun X Y _ _ _ _ f hf g => by
+    obtain ⟨h, hh⟩ := Module.Injective.out f hf (E.subtype ∘ₗ g)
+    exact ⟨ρ ∘ₗ h, fun x => by simp only [LinearMap.comp_apply, hh]; exact hρ (g x)⟩⟩
   refine ⟨E, hE.prop.1, hEinj, fun a b hab => hi (congrArg Subtype.val hab), ?_⟩
   rw [LinearMap.range_codRestrict]
   exact hE.prop.2
@@ -113,7 +113,7 @@ theorem exists_isInjectiveEnvelope [Small.{v} R] :
   let ι : ModuleCat.of R M ⟶ I := CategoryTheory.Injective.ι (ModuleCat.of R M)
   have : Module.Injective R I := Module.injective_module_of_injective_object R I
     (inj := CategoryTheory.Injective.injective_under (ModuleCat.of R M))
-  obtain ⟨P, _, hP⟩ := exists_isInjectiveEnvelope_submodule R ι.hom
+  obtain ⟨P, _, hP⟩ := exists_isInjectiveEnvelope_submodule ι.hom
     ((ModuleCat.mono_iff_injective ι).mp inferInstance)
   exact ⟨P, _, _, _, hP⟩
 
