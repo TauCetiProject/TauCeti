@@ -255,32 +255,6 @@ theorem map_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
 
 variable {G : Type*} [AddCommGroup G] [Module R G] [Module.Free R G] [Module.Finite R G] {p : ℕ}
 
-omit [LinearOrder R] [IsStrictOrderedRing R] [Module.Free R E] [Module.Finite R E]
-  [Module.Free R F] [Module.Finite R F] [Module.Free R G] [Module.Finite R G] in
-/-- Reassociating the ordered product basis of three bases only relabels its index. -/
-private theorem map_prodAssoc_basis (b : Basis (Fin m) R E) (c : Basis (Fin n) R F)
-    (d : Basis (Fin p) R G) :
-    ((((b.prod c).reindex finSumFinEquiv).prod d).reindex finSumFinEquiv).map
-        (LinearEquiv.prodAssoc R E F G) =
-      ((b.prod ((c.prod d).reindex finSumFinEquiv)).reindex finSumFinEquiv).reindex
-        (finCongr (add_assoc m n p).symm) := by
-  refine Basis.eq_of_apply_eq fun i ↦ ?_
-  induction i using Fin.addCases with
-  | left j =>
-    induction j using Fin.addCases with
-    | left k =>
-      have h : Fin.cast (add_assoc m n p) (Fin.castAdd p (Fin.castAdd n k)) =
-          Fin.castAdd (n + p) k := Fin.ext rfl
-      simp [Basis.prod_apply, h]
-    | right k =>
-      have h : Fin.cast (add_assoc m n p) (Fin.castAdd p (Fin.natAdd m k)) =
-          Fin.natAdd m (Fin.castAdd p k) := Fin.ext rfl
-      simp [Basis.prod_apply, h]
-  | right k =>
-    have h : Fin.cast (add_assoc m n p) (Fin.natAdd (m + n) k) =
-        Fin.natAdd m (Fin.natAdd n k) := Fin.ext (Nat.add_assoc m n k)
-    simp [Basis.prod_apply, h]
-
 /-- **Associativity of product orientations.** Reassociating `(E × F) × G` as `E × (F × G)`
 carries the product orientation `(o × o') × o''` to `o × (o' × o'')`. The index types are
 identified through `m + n + p = m + (n + p)`. -/
@@ -301,7 +275,7 @@ theorem map_prodAssoc_prod (o : Orientation R E (Fin m)) (o' : Orientation R F (
         (prod b.orientation (prod c.orientation d.orientation hn hp) hm
           (by rw [Module.finrank_prod, hn, hp])) := by
     rw [prod_basis_orientation, prod_basis_orientation, prod_basis_orientation,
-      prod_basis_orientation, ← Basis.orientation_map, map_prodAssoc_basis,
+      prod_basis_orientation, ← Basis.orientation_map, Basis.map_prodAssoc_prod,
       Basis.orientation_reindex]
   rcases b.orientation_eq_or_eq_neg o with ho | ho <;>
     rcases c.orientation_eq_or_eq_neg o' with ho' | ho' <;>

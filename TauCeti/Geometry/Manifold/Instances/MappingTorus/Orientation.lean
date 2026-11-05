@@ -60,19 +60,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
   (φ : M ≃ₘ⟮I, I⟯ M) {m : ℕ} (o : Manifold.Orientation I M (Fin m))
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] in
-/-- The identification of the cover with `ℝ × M` is a local diffeomorphism. -/
-private theorem isLocalDiffeomorph_ofProd_symm :
-    IsLocalDiffeomorph (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) 1 (ofProd φ).symm :=
-  Diffeomorph.isLocalDiffeomorph
-    { toEquiv := (ofProd φ).symm
-      contMDiff_toFun := contMDiff_ofProd_symm φ 1
-      contMDiff_invFun := contMDiff_ofProd φ 1 }
-
 /-- The product orientation of `ℝ × M`, read on the cover of the mapping torus. -/
 private def coverOrientation : Manifold.Orientation (𝓘(ℝ).prod I) (Cover φ) (Fin (1 + m)) :=
   (Manifold.Orientation.real.prod o).pullback (contMDiff_ofProd_symm φ 1)
-    ((isLocalDiffeomorph_ofProd_symm φ).isInvertible_mfderiv one_ne_zero)
+    ((isLocalDiffeomorph_ofProd_symm φ 1).isInvertible_mfderiv one_ne_zero)
     (by rw [Fintype.card_fin, finrank_prod, finrank_self, ← o.card_eq, Fintype.card_fin])
 
 omit [T2Space M] [LocallyCompactSpace M] in
@@ -84,17 +75,9 @@ private theorem isOrientationPreservingAt_ofProd_symm (z : Cover φ) :
 omit [T2Space M] [LocallyCompactSpace M] in
 private theorem isOrientationPreservingAt_ofProd (p : ℝ × M) :
     IsOrientationPreservingAt (Manifold.Orientation.real.prod o) (coverOrientation φ o)
-      (ofProd φ) p := by
-  refine (isOrientationPreservingAt_ofProd_symm φ o _).of_comp ?_
-    ((contMDiff_ofProd φ 1).mdifferentiableAt one_ne_zero)
-  rw [Equiv.symm_comp_self]
-  exact isOrientationPreservingAt_id _ p
-
-/-- Translations of `ℝ` preserve its standard orientation. -/
-private theorem isOrientationPreservingAt_add_const (a t : ℝ) :
-    IsOrientationPreservingAt Manifold.Orientation.real Manifold.Orientation.real (· + a) t :=
-  isOrientationPreservingAt_of_orientationAt_eq (orientationAt_real t) (orientationAt_real _)
-    one_pos (by rw [one_smul]; exact ((hasFDerivAt_id t).add_const a).hasMFDerivAt.mfderiv)
+      (ofProd φ) p :=
+  (isOrientationPreservingAt_ofProd_symm φ o _).diffeomorph_symm
+    (e := (ofProdDiffeomorph φ 1).symm) one_ne_zero
 
 variable {φ o} (hφ : ∀ x, IsOrientationPreservingAt o o φ x)
 include hφ

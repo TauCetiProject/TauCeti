@@ -32,7 +32,8 @@ sign of the coordinate Jacobian of an orientation-preserving map.
 For one-dimensional manifolds modelled on `ℝ` whose orientations are the standard orientation of
 `ℝ` at the relevant points, `isOrientationPreservingAt_of_orientationAt_eq` and
 `isOrientationReversingAt_of_orientationAt_eq` reduce preservation and reversal to the sign of the
-real number by which the derivative multiplies.
+real number by which the derivative multiplies. In particular, translations of `ℝ` preserve its
+standard orientation (`isOrientationPreservingAt_add_const`).
 
 On the model space `E` itself, every orientation is constant once the tangent spaces are identified
 with `E` (`orientationAt_eq_orientationAt`), so a continuous linear automorphism of `E` preserves
@@ -427,6 +428,12 @@ theorem isOrientationReversingAt_of_orientationAt_eq
   refine (_root_.Orientation.map_eq_neg_iff_det_neg _ _ (by simp)).mpr ?_
   -- On `ℝ`, the determinant of multiplication by `c` is `c`.
   exact ((LinearMap.det_ring (R := ℝ) _).trans (mul_one c)).trans_lt hc
+
+/-- Translations of `ℝ` preserve its standard orientation. -/
+theorem isOrientationPreservingAt_add_const (a t : ℝ) :
+    IsOrientationPreservingAt real real (· + a) t :=
+  isOrientationPreservingAt_of_orientationAt_eq (orientationAt_real t) (orientationAt_real _)
+    one_pos (by rw [one_smul]; exact ((hasFDerivAt_id t).add_const a).hasMFDerivAt.mfderiv)
 
 end RealLine
 
