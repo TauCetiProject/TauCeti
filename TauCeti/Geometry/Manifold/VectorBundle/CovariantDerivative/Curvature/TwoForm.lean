@@ -132,26 +132,26 @@ variable [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
   (hcov : CovariantDerivative.IsMetricCompatible
     (V := fun x : M ↦ TangentSpace I x) cov)
 
-/-- The curvature endomorphism sends smooth real two-forms to smooth real two-forms. -/
-theorem isSmoothForm_curvatureFormEndomorphism {α : RoughForm I M ℝ 2}
-    (hα : IsSmoothForm I ∞ α) :
-    IsSmoothForm I ∞ (fun y ↦ cov.curvatureFormEndomorphism hcov y (α y)) := by
-  classical
+/-- Curvature coefficients in the metric-dual chart frame are smooth on the
+tangent-trivialization base set. The last two arguments are constant in that trivialization. -/
+theorem contMDiffAt_inner_curvatureTensor_chartDualFrame (x : M) {y : M}
+    (hy : y ∈ (trivializationAt E (TangentSpace I) x).baseSet)
+    (i j : Fin (finrank ℝ E)) (w w' : E) :
+    ContMDiffAt I 𝓘(ℝ) ∞ (fun z ↦
+      ⟪cov.curvatureTensor z (Riemannian.Tensor.chartDualFrame (I := I) x i z)
+        (Riemannian.Tensor.chartDualFrame (I := I) x j z)
+        ((trivializationAt E (TangentSpace I) x).symmL ℝ z w),
+          (trivializationAt E (TangentSpace I) x).symmL ℝ z w'⟫) y := by
   have : IsManifold I (∞ + 1) M := by
     simpa using (inferInstance : IsManifold I ∞ M)
-  rw [isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply] at hα ⊢
-  intro x v
   let e := trivializationAt E (TangentSpace I) x
-  let b := Module.finBasis ℝ E
   let D := Riemannian.Tensor.chartDualFrame (I := I) x
-  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x
-  have hbase := e.open_baseSet.mem_nhds hx
-  have hframe (w : E) : CMDiffAt ∞ (T% (fun y ↦ e.symmL ℝ y w)) x :=
-    (e.contMDiffAt_symmL hx).clm_bundle_apply (by
+  have hframe (v : E) : CMDiffAt ∞ (T% (fun z ↦ e.symmL ℝ z v)) y :=
+    (e.contMDiffAt_symmL hy).clm_bundle_apply (by
       rw [contMDiffAt_section]
-      simpa using (contMDiffAt_const (I := I) (c := w) (n := ∞) (x := x)))
-  have hD (i : Fin (finrank ℝ E)) : CMDiffAt ∞ (T% (D i)) x :=
-    Riemannian.Tensor.contMDiffAt_chartDualFrame (n := ∞) x hx i
+      simpa using (contMDiffAt_const (I := I) (c := v) (n := ∞) (x := y)))
+  have hD (k : Fin (finrank ℝ E)) : CMDiffAt ∞ (T% (D k)) y :=
+    Riemannian.Tensor.contMDiffAt_chartDualFrame (n := ∞) x hy k
   -- Cache the iterated operator fibres to keep typeclass search within its default budget.
   let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
   let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
@@ -169,13 +169,29 @@ theorem isSmoothForm_curvatureFormEndomorphism {α : RoughForm I M ℝ 2}
       (TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) :=
     fun y ↦ (inferInstance : NormedAddCommGroup
       (TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y)).toAddCommMonoid
-  have hR (i j : Fin (finrank ℝ E)) :
-      CMDiffAt ∞ (T% (fun y ↦ cov.curvatureTensor y (D i y) (D j y)
-        (e.symmL ℝ y (v 1)))) x := by
+  have hR : CMDiffAt ∞ (T% (fun z ↦
+      cov.curvatureTensor z (D i z) (D j z) (e.symmL ℝ z w))) y := by
     simpa only [curvatureTensorCLM_apply] using
-      (((contMDiff_curvatureTensorCLM (F := E) (V := fun y : M ↦ TangentSpace I y)
-        (fiberNorm := fun y ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I y)))
-        cov x).clm_bundle_apply (hD i)).clm_bundle_apply (hD j)).clm_bundle_apply (hframe (v 1))
+      (((contMDiff_curvatureTensorCLM (F := E) (V := fun z : M ↦ TangentSpace I z)
+        (fiberNorm := fun z ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I z)))
+        cov y).clm_bundle_apply (hD i)).clm_bundle_apply (hD j)).clm_bundle_apply (hframe w)
+  exact hR.inner_bundle (IB := I) (F := E) (E := fun z : M ↦ TangentSpace I z)
+    (b := fun z : M ↦ z)
+    (h := (inferInstance : IsContMDiffRiemannianBundle I ∞ E
+      (fun z : M ↦ TangentSpace I z))) (hframe w')
+
+/-- The curvature endomorphism sends smooth real two-forms to smooth real two-forms. -/
+theorem isSmoothForm_curvatureFormEndomorphism {α : RoughForm I M ℝ 2}
+    (hα : IsSmoothForm I ∞ α) :
+    IsSmoothForm I ∞ (fun y ↦ cov.curvatureFormEndomorphism hcov y (α y)) := by
+  classical
+  rw [isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply] at hα ⊢
+  intro x v
+  let e := trivializationAt E (TangentSpace I) x
+  let b := Module.finBasis ℝ E
+  let D := Riemannian.Tensor.chartDualFrame (I := I) x
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x
+  have hbase := e.open_baseSet.mem_nhds hx
   have hsum : ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦
       ∑ s : Set.powersetCard (Fin (finrank ℝ E)) 2,
         α y (e.symmL ℝ y ∘ (b ∘ Set.powersetCard.ofFinEmbEquiv.symm s)) *
@@ -183,10 +199,7 @@ theorem isSmoothForm_curvatureFormEndomorphism {α : RoughForm I M ℝ 2}
             (D (Set.powersetCard.ofFinEmbEquiv.symm s 1) y) (e.symmL ℝ y (v 1)),
               e.symmL ℝ y (v 0)⟫) x :=
     contMDiffAt_finsetSum fun s _ ↦ (hα x _).mul
-      ((hR _ _).inner_bundle (IB := I) (F := E) (E := fun y : M ↦ TangentSpace I y)
-        (b := fun y : M ↦ y)
-        (h := (inferInstance : IsContMDiffRiemannianBundle I ∞ E
-          (fun y : M ↦ TangentSpace I y))) (hframe (v 0)))
+      (cov.contMDiffAt_inner_curvatureTensor_chartDualFrame x hx _ _ (v 1) (v 0))
   -- On the chart domain, this is exactly the arbitrary-basis evaluation formula.
   refine hsum.congr_of_eventuallyEq ?_
   filter_upwards [hbase] with y hy
