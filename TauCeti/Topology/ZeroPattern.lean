@@ -14,14 +14,14 @@ public import Mathlib.Topology.Separation.Basic
 
 For a subset `A` of an index type, the corresponding zero-pattern stratum consists of families
 that vanish exactly on `A`, paired with an unrestricted second component. This file records the
-product description of these strata, their local closedness for a finite index type, and their
-closure when zero is not isolated.
+product description of these strata, their local closedness when only finitely many coordinates
+are required to be nonzero, and their closure when zero is not isolated.
 
 ## Main declarations
 
 * `TauCeti.zeroPatternSet`: the coordinate stratum with zero set exactly `A`.
-* `TauCeti.isLocallyClosed_zeroPatternSet`: a zero-pattern stratum with finitely many coordinates
-  is locally closed.
+* `TauCeti.isLocallyClosed_zeroPatternSet`: a zero-pattern stratum with finitely many nonzero
+  coordinates is locally closed.
 * `TauCeti.closure_zeroPatternSet`: its closure allows additional coordinates to vanish.
 * `TauCeti.zeroPatternSetHomeomorph`: its nonzero coordinates give product coordinates.
 -/
@@ -116,12 +116,13 @@ theorem zeroPatternSetHomeomorph_symm_snd_apply [Zero K] [TopologicalSpace K]
     ((zeroPatternSetHomeomorph α β K A).symm w).1.2 = w.2 := by
   simp [zeroPatternSetHomeomorph]
 
-/-- A coordinate stratum with finitely many first coordinates is locally closed. -/
-theorem isLocallyClosed_zeroPatternSet [Finite α] [Zero K] [TopologicalSpace K] [T1Space K]
-    [TopologicalSpace β] (A : Set α) :
+/-- A coordinate stratum is locally closed when only finitely many first coordinates are required
+to be nonzero. -/
+theorem isLocallyClosed_zeroPatternSet [Zero K] [TopologicalSpace K] [T1Space K]
+    [TopologicalSpace β] {A : Set α} (hA : Aᶜ.Finite) :
     IsLocallyClosed (zeroPatternSet α β K A) := by
   refine ⟨(Set.pi Aᶜ fun _ ↦ {0}ᶜ) ×ˢ Set.univ, (Set.pi A fun _ ↦ {0}) ×ˢ Set.univ,
-    (isOpen_set_pi (Set.toFinite _) fun _ _ ↦ isOpen_compl_singleton).prod isOpen_univ,
+    (isOpen_set_pi hA fun _ _ ↦ isOpen_compl_singleton).prod isOpen_univ,
     (isClosed_set_pi fun _ _ ↦ isClosed_singleton).prod isClosed_univ, ?_⟩
   ext z
   simp only [mem_zeroPatternSet, Set.mem_inter_iff, Set.mem_prod, Set.mem_pi, Set.mem_compl_iff,
