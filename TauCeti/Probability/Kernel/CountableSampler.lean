@@ -15,7 +15,7 @@ A probability law on the natural numbers partitions `[0,1)` into left-closed,
 right-open cumulative-mass intervals. `Measure.natSampler` selects the interval
 containing the supplied uniform variable. Empty intervals are skipped, including
 at zero, so a state of zero mass is never selected. An injective enumeration
-transports this construction to any nonempty countable measurable space.
+transports this construction to any nonempty countable measurable space with measurable singletons.
 
 The samplers are jointly measurable in a measurable family of probability laws.
 Their pushforward identities allow the independent-noise construction of Markov
@@ -36,8 +36,9 @@ namespace MeasureTheory.Measure
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
-/-- The first cumulative mass strictly above `u`. The left endpoint belongs to the
-next nonempty interval; in particular zero-weight states are never selected. -/
+/-- The first state `n` whose cumulative mass `μ.real (Iic n)` is strictly above `u`.
+The left endpoint belongs to the next nonempty interval; in particular zero-weight states
+are never selected. -/
 def natSampler (u : Ico (0 : ℝ) 1) : ℕ :=
   Nat.find (μ.exists_nat_lt_measureReal_Iic u.property.2)
 
