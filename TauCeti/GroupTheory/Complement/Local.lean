@@ -101,9 +101,18 @@ theorem isLocalComplement_top_iff [N.Normal] :
     exact ⟨disjoint_iff.mp h.disjoint, h.sup_eq_top⟩
 
 /-- A global complement restricts to a local complement in every intermediate subgroup. -/
-theorem IsComplement'.isLocalComplement_inf [N.Normal] (h : N.IsComplement' K) (hNH : N ≤ H) :
-    N.IsLocalComplement (K ⊓ H) H :=
-  (isLocalComplement_top_iff.mpr h).restrict hNH le_top
+theorem IsComplement'.isLocalComplement_inf (h : N.IsComplement' K) (hNH : N ≤ H) :
+    N.IsLocalComplement (K ⊓ H) H := by
+  refine ⟨disjoint_iff.mp (h.disjoint.mono_right inf_le_left), le_antisymm ?_ ?_⟩
+  · exact sup_le hNH inf_le_right
+  · intro x hx
+    obtain ⟨⟨n, k⟩, hnk, _⟩ := h.existsUnique x
+    have hkH : (k : G) ∈ H := by
+      rw [eq_inv_mul_iff_mul_eq.mpr hnk]
+      exact H.mul_mem (H.inv_mem (hNH n.property)) hx
+    rw [← hnk]
+    exact (N ⊔ K ⊓ H).mul_mem (mem_sup_left n.property)
+      (mem_sup_right ⟨k.property, hkH⟩)
 
 /-- Local complementation is global complementation inside the specified subgroup. -/
 theorem isLocalComplement_iff_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
@@ -158,7 +167,12 @@ noncomputable def equiv : H ≃ N × K :=
 /-- Multiplication reconstructs an element from its decomposition. -/
 @[simp]
 theorem coe_equiv_symm_apply (x : N × K) :
-    (h.equiv.symm x : G) = (x.1 : G) * (x.2 : G) := (rfl)
+    (h.equiv.symm x : G) = (x.1 : G) * (x.2 : G) := by
+  simp only [equiv, Equiv.symm_trans_apply, Equiv.prodCongr_symm,
+    Equiv.prodCongr_apply, IsComplement.equiv_symm_apply, coe_mul, Prod.map_fst,
+    Prod.map_snd, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv_symm]
+  exact congrArg₂ (· * ·) (subgroupOfEquivOfLe_symm_apply_coe_coe h.left_le x.1)
+    (subgroupOfEquivOfLe_symm_apply_coe_coe h.right_le x.2)
 
 /-- The two components multiply to the original element. -/
 theorem equiv_fst_mul_equiv_snd (x : H) :
@@ -168,8 +182,10 @@ theorem equiv_fst_mul_equiv_snd (x : H) :
 /-- The decomposition of an explicitly given product. -/
 @[simp]
 theorem equiv_mul (n : N) (k : K) :
-    h.equiv ⟨(n : G) * k, H.mul_mem (h.left_le n.property) (h.right_le k.property)⟩ = (n, k) :=
-  h.equiv.apply_symm_apply (n, k)
+    h.equiv ⟨(n : G) * k, H.mul_mem (h.left_le n.property) (h.right_le k.property)⟩ = (n, k) := by
+  apply h.equiv.symm.injective
+  apply Subtype.ext
+  simp only [Equiv.symm_apply_apply, coe_equiv_symm_apply]
 
 /-- Every element of the ambient subgroup has a unique product decomposition. -/
 theorem existsUnique (x : H) : ∃! p : N × K, (p.1 : G) * p.2 = x := by
@@ -201,9 +217,15 @@ theorem rightProjection_left (n : N) :
 @[simp]
 theorem rightProjection_right (k : K) :
     h.rightProjection ⟨k, h.right_le k.property⟩ = k := by
-  exact congrArg (subgroupOfEquivOfLe h.right_le)
-    (h.isComplement'_subgroupOf.symm.leftQuotientEquiv.apply_symm_apply
-      ((subgroupOfEquivOfLe h.right_le).symm k))
+  simp only [rightProjection, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    IsComplement'.QuotientMulEquiv_apply]
+  -- Mathlib has no representative formula for the inverse of leftQuotientEquiv;
+  -- its definition is the quotient map restricted to the complementary subgroup.
+  change (subgroupOfEquivOfLe h.right_le)
+    (h.isComplement'_subgroupOf.symm.leftQuotientEquiv
+      (h.isComplement'_subgroupOf.symm.leftQuotientEquiv.symm
+        ((subgroupOfEquivOfLe h.right_le).symm k))) = k
+  rw [Equiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
 /-- The right projection extracts the second factor of a product. -/
 @[simp]
@@ -256,15 +278,9 @@ theorem leftProjection_right (k : K) :
 /-- The kernel of the right projection is the normal subgroup in the ambient subgroup. -/
 @[simp]
 theorem ker_rightProjection : h.rightProjection.ker = N.subgroupOf H := by
-  ext x
-  constructor
-  · intro hx
-    have heq : (h.leftProjection x : G) = x := by
-      simpa only [MonoidHom.mem_ker.mp hx, OneMemClass.coe_one, mul_one] using
-        h.leftProjection_mul_rightProjection x
-    exact mem_subgroupOf.mpr (heq ▸ (h.leftProjection x).property)
-  · intro hx
-    exact h.rightProjection_left ⟨x, hx⟩
+  rw [rightProjection, MulEquiv.toMonoidHom_eq_coe,
+    MulEquiv.toMonoidHom_eq_coe, MonoidHom.ker_mulEquiv_comp, MonoidHom.ker_mulEquiv_comp,
+    QuotientGroup.ker_mk']
 
 /-- The left projection is trivial exactly on the complementary subgroup. -/
 @[simp]
