@@ -871,13 +871,10 @@ noncomputable def Coherences.boundaryFace (f : Coherences R Y)
     exact (Coherences.congr _ (image_empty _)).trans (hself _)
   dgDifferential_coh i j S d hij hS hd := by
     have he := Fin.strictMono_succAbove l
-    have hsub : S.image l.succAbove ⊆ Ioo (l.succAbove i) (l.succAbove j) := by
-      rw [← coe_subset, coe_image, coe_Ioo]
-      exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans he.image_Ioo_subset
     have hd' : d + #(S.image l.succAbove) = 0 := by
       rwa [card_image_of_injective _ he.injective]
-    rw [Coherences.comap_apply f he hij hS hd (he.monotone hij) hsub hd',
-      boundary_comap f he hij hS hd (he.monotone hij) hsub hd']
+    rw [Coherences.comap_apply f he hij hS hd (he.monotone hij) (he.image_subset_Ioo hS) hd',
+      boundary_comap f he hij hS hd (he.monotone hij) (he.image_subset_Ioo hS) hd']
     exact heq _ _ _ _ _ _ _ ⟨l, (Fin.succAbove_ne l i).symm, (Fin.succAbove_ne l j).symm,
       by simp [Fin.succAbove_ne]⟩
 
@@ -919,24 +916,19 @@ theorem Coherences.boundaryFace_map_δ {a b : Fin (n + 3)} (hab : a < b) :
     have := congrArg (fun f : SimplexCategory.mk n ⟶ SimplexCategory.mk (n + 2) ↦ f.toOrderHom w)
       (SimplexCategory.δ_comp_δ' (i := a') (j := b) (by simpa [a'] using hab))
     simpa [SimplexCategory.δ, a', b'] using this.symm
-  have hsub : ∀ {n : ℕ} (k : Fin (n + 2)) {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))},
-      S ⊆ Ioo i j → S.image k.succAbove ⊆ Ioo (k.succAbove i) (k.succAbove j) := by
-    intro n k i j S hS
-    rw [← coe_subset, coe_image, coe_Ioo]
-    exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans
-      (Fin.strictMono_succAbove k).image_Ioo_subset
   -- A coherence of the face of `f.boundaryFace hself heq l` opposite to `k` is a coherence of `f`.
   have hcoh : ∀ (l : Fin (n + 3)) (k : Fin (n + 2)) {i j S d hij hS hd},
       ((f.boundaryFace hself heq l).map (SimplexCategory.δ k).toOrderHom).coh i j S d hij hS hd ≍
         f (l.succAbove (k.succAbove i)) (l.succAbove (k.succAbove j))
           ((S.image k.succAbove).image l.succAbove) d
           ((Fin.strictMono_succAbove l).monotone ((Fin.strictMono_succAbove k).monotone hij))
-          (hsub l (hsub k hS)) (by
+          ((Fin.strictMono_succAbove l).image_subset_Ioo
+            ((Fin.strictMono_succAbove k).image_subset_Ioo hS)) (by
             rwa [card_image_of_injective _ (Fin.strictMono_succAbove l).injective,
               card_image_of_injective _ (Fin.strictMono_succAbove k).injective]) := by
     intro l k i j S d hij hS hd
     rw [Simplex.map_coh_of_strictMono (α := (SimplexCategory.δ k).toOrderHom) _
-      (Fin.strictMono_succAbove k) hij hS hd (hsub k hS)]
+      (Fin.strictMono_succAbove k) hij hS hd ((Fin.strictMono_succAbove k).image_subset_Ioo hS)]
     exact Coherences.boundaryFace_coh _ _ _ _ _ _ _ _ _ _
   have hf : ∀ {i i' j j' : Fin (n + 3)} {S S' : Finset (Fin (n + 3))} {d : ℤ} {h₁ : i ≤ j}
       {h₂ : S ⊆ Ioo i j} {h₃ : d + #S = 0} {h₁' : i' ≤ j'} {h₂' : S' ⊆ Ioo i' j'}

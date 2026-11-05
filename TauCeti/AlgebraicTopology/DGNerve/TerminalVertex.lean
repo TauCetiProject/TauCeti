@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.DGNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
-import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 
 /-!
 # Terminal vertices of the differential graded nerve
@@ -22,7 +21,7 @@ the zero objects of the `∞`-categories presented by dg categories of complexes
 
 A map `∂Δ[n + 1] ⟶ N_dg(C)` amounts to coherences on all proper subsets of the vertices
 satisfying the dg nerve equation (`TauCeti.DGNerve.exists_coherences_of_faces` and
-`TauCeti.DGNerve.Coherences.boundaryFace`). It extends to `Δ[n + 1]` exactly when the obstruction,
+`TauCeti.DGNerve.Coherences.boundaryHom`). It extends to `Δ[n + 1]` exactly when the obstruction,
 the right-hand side of the dg nerve equation for the one missing coherence, a cycle of degree
 `1 - n` in `Hom_C(X 0, X (n + 1))`, is a boundary
 (`TauCeti.DGNerve.Coherences.exists_simplex_iff_of_boundary`). Every cycle `z` of degree `-m` in
@@ -50,45 +49,11 @@ namespace TauCeti
 
 open DGNerve
 
-universe w v u
+universe v u
 
 variable {R : Type v} [CommRing R] {C : Type u} [DGCategory R C]
 
 namespace dgNerve
-
-/-- The vertex `i` of the boundary `∂Δ[m + 2]`. -/
-private def boundaryVertex (m : ℕ) (i : Fin (m + 3)) : (∂Δ[m + 2] : SSet.{w}) _⦋0⦌ :=
-  ⟨stdSimplex.obj₀Equiv.symm i, by rw [boundary_obj_eq_univ 0 (m + 2)]; trivial⟩
-
-/-- The objects of a face of a map `∂Δ[m + 2] ⟶ N_dg(C)` are its objects at the vertices other than
-the omitted one. -/
-private lemma obj_yonedaEquiv_ι_comp {m : ℕ} (σ₀ : (∂Δ[m + 2] : SSet) ⟶ dgNerve R C)
-    (l : Fin (m + 3)) (p : Fin (m + 2)) :
-    Simplex.obj (R := R) (SSet.yonedaEquiv (boundary.ι l ≫ σ₀)) p =
-      Simplex.obj (R := R) (σ₀.app _ (boundaryVertex m (l.succAbove p))) 0 := by
-  have h := NatTrans.naturality_apply σ₀ (SimplexCategory.const ⦋0⦌ ⦋m + 1⦌ p).op
-    (SSet.yonedaEquiv (boundary.ι l))
-  have hc : (∂Δ[m + 2] : SSet).map (SimplexCategory.const ⦋0⦌ ⦋m + 1⦌ p).op
-      (SSet.yonedaEquiv (boundary.ι l)) = boundaryVertex m (l.succAbove p) := by
-    apply Subtype.ext
-    ext i
-    fin_cases i
-    rfl
-  rw [hc] at h
-  rw [yonedaEquiv_comp, h]
-  -- A simplicial operator acts on objects by precomposition, by definition of `Simplex.map`.
-  rfl
-
-/-- The faces of a map `∂Δ[m + 2] ⟶ N_dg(C)` agree on their common faces. -/
-private lemma map_yonedaEquiv_ι_comp {m : ℕ} (σ₀ : (∂Δ[m + 2] : SSet) ⟶ dgNerve R C)
-    (a b : Fin (m + 3)) (hab : a < b) :
-    Simplex.map (SSet.yonedaEquiv (boundary.ι a ≫ σ₀))
-        (SimplexCategory.δ (b.pred (Fin.ne_zero_of_lt hab))).toOrderHom =
-      Simplex.map (SSet.yonedaEquiv (boundary.ι b ≫ σ₀))
-        (SimplexCategory.δ (a.castPred (Fin.ne_last_of_lt hab))).toOrderHom := by
-  have h := congrArg SSet.yonedaEquiv ((boundary.isCompatible_iff _).1
-    (boundary.IsCompatible.of_hom σ₀) a b hab)
-  rwa [stdSimplex.yonedaEquiv_δ_comp, stdSimplex.yonedaEquiv_δ_comp, dgNerve_δ, dgNerve_δ] at h
 
 /-- The last vertex of a map `∂Δ[n + 1] ⟶ N_dg(C)` is the last vertex of its face `0`. -/
 private lemma obj_last_of_map_const {n : ℕ} (σ₀ : (∂Δ[n + 1] : SSet) ⟶ dgNerve R C) {Y : C}
@@ -118,16 +83,16 @@ private theorem isTerminalVertex_of_exactAt {Y : C}
     · rfl
   -- Glue the faces of `σ₀` to coherences on its vertices.
   obtain ⟨f, hself, heq, hfaces⟩ := DGNerve.exists_coherences_of_faces (R := R) (fun _ ↦ True)
-    (fun i ↦ Simplex.obj (R := R) (σ₀.app _ (boundaryVertex m i)) 0)
+    (fun i ↦ Simplex.obj (R := R) (σ₀.app _ (boundary.vertex (m + 1) i)) 0)
     (fun l _ ↦ SSet.yonedaEquiv (boundary.ι l ≫ σ₀)) (fun l _ p ↦ obj_yonedaEquiv_ι_comp σ₀ l p)
-    (fun a b _ _ hab ↦ map_yonedaEquiv_ι_comp σ₀ a b hab)
+    (fun _ _ _ _ hab ↦ map_yonedaEquiv_ι_comp σ₀ hab)
   have hself' := fun i ↦ hself i ((exists_ne i).imp fun _ hl ↦ ⟨trivial, hl⟩)
   have heq' : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) → _ :=
     fun i j S d hij hS hd hl ↦ heq i j S d hij hS hd (hl.imp fun _ hl ↦ ⟨trivial, hl⟩)
   have hd : (-(m + 1 : ℕ) : ℤ) + #(Ioo 0 (Fin.last (m + 2))) = 0 := by simp
   -- The last vertex is `Y`, so the obstruction to filling is a cycle of degree `-m` into `Y`,
   -- hence a boundary.
-  have hexact := h (Simplex.obj (R := R) (σ₀.app _ (boundaryVertex m 0)) 0) _
+  have hexact := h (Simplex.obj (R := R) (σ₀.app _ (boundary.vertex (m + 1) 0)) 0) _
     (by omega : -(m + 1 : ℕ) + 1 ≤ (0 : ℤ))
   rw [← hY, obj_yonedaEquiv_ι_comp, Fin.succAbove_zero, Fin.succ_last] at hexact
   obtain ⟨g, hg⟩ := (exactAt_iff_forall_exists_dgDifferential_eq R).1 hexact _
@@ -227,11 +192,8 @@ private lemma sphereCoh_comap_succ (z : DGHom R (-(m + 1 : ℕ) + 1) X Y) :
   have himg : (S.image Fin.succ).preimage Fin.succ (Fin.succ_injective _).injOn = S := by
     ext s
     simp
-  have hS' : S.image Fin.succ ⊆ Ioo i.succ j.succ := fun s hs ↦ by
-    obtain ⟨s, hs', rfl⟩ := mem_image.1 hs
-    have := mem_Ioo.1 (hS hs')
-    exact mem_Ioo.2 ⟨Fin.succ_lt_succ_iff.2 this.1, Fin.succ_lt_succ_iff.2 this.2⟩
-  rw [Coherences.comap_apply _ _ _ _ _ (Fin.succ_le_succ_iff.2 hij) hS'
+  rw [Coherences.comap_apply _ _ _ _ _ (Fin.succ_le_succ_iff.2 hij)
+    ((Fin.strictMono_succ (n := m + 2)).image_subset_Ioo hS)
     (by rwa [card_image_of_injective _ (Fin.succ_injective _)])]
   -- `sphereCoh` is defined by cases on its vertices, which reduce at successors.
   exact (dite_eq_left ⟨hij, by rwa [himg], by rwa [himg]⟩).trans (Coherences.congr _ himg)
@@ -303,18 +265,10 @@ private lemma dgDifferential_sphereCoh_of_ne_zero (z : DGHom R (-(m + 1 : ℕ) +
     dgDifferential R p (sphereCoh z i j S p hij hS hp) =
       boundary R (sphereCoh z) i j S p hij hS hp := by
   have he := Fin.strictMono_succ (n := m + 2)
-  obtain ⟨i, rfl⟩ := Fin.exists_succ_eq.2 hi
-  obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.2 ((Fin.succ_pos i).trans_le hij).ne'
-  obtain ⟨S, rfl⟩ : ∃ S', S'.image Fin.succ = S :=
-    ⟨S.preimage Fin.succ (Fin.succ_injective _).injOn, by
-      rw [image_preimage]
-      exact filter_true_of_mem fun s hs ↦
-        Fin.exists_succ_eq.2 ((Fin.succ_pos i).trans (mem_Ioo.1 (hS hs)).1).ne'⟩
-  have hij' : i ≤ j := Fin.succ_le_succ_iff.1 hij
-  have hS' : S ⊆ Ioo i j := fun s hs ↦ by
-    have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
-    exact mem_Ioo.2 ⟨Fin.succ_lt_succ_iff.1 this.1, Fin.succ_lt_succ_iff.1 this.2⟩
-  have hp' : p + #S = 0 := by rwa [card_image_of_injective _ (Fin.succ_injective _)] at hp
+  have hi₀ := Fin.pos_iff_ne_zero.2 hi
+  obtain ⟨i, j, S, rfl, rfl, rfl, hij', hS', hp'⟩ := exists_image_eq_of_strictMono he hij hS hp
+    (Fin.exists_succ_eq.2 hi) (Fin.exists_succ_eq.2 (hi₀.trans_le hij).ne')
+    fun s hs ↦ Fin.exists_succ_eq.2 (hi₀.trans (mem_Ioo.1 (hS hs)).1).ne'
   rw [← Coherences.comap_apply (sphereCoh z) he hij' hS' hp',
     ← boundary_comap (sphereCoh z) he hij' hS' hp', sphereCoh_comap_succ]
   exact (degenerate Y m).dgDifferential_coh i j S p hij' hS' hp'
@@ -345,7 +299,9 @@ private lemma boundary_sphereCoh_top (z : DGHom R (-(m + 1 : ℕ) + 1) X Y)
     rw [filter_true_of_mem fun s hs ↦ Fin.one_le_of_ne_zero (mem_Ioo.1 hs).1.ne']
     omega
   rw [hcard]
-  -- `Fin.last (m + 2)` is `(Fin.last (m + 1)).succ` by definition.
+  -- `Fin.last (m + 2)` is `(Fin.last (m + 1)).succ` by definition. Rewriting with
+  -- `Fin.succ_last` instead is not type correct: the type of the coherence depends on its target
+  -- vertex, while the type of `z` does not.
   exact congrArg _ (sphereRow_succ_last z)
 
 end Sphere
@@ -367,14 +323,9 @@ private lemma exists_simplex_of_isTerminalVertex (f : Coherences R V)
     ∃ x : Simplex R C (m + 2), x.obj = V ∧ ∀ i j S d hij hS hd,
       (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) → x.coh i j S d hij hS hd ≍ f i j S d hij hS hd := by
   let y : Fin (m + 3) → (dgNerve R C) _⦋m + 1⦌ := f.boundaryFace hself heq
-  have hy : boundary.IsCompatible fun l ↦ SSet.yonedaEquiv.symm (y l) := by
-    rw [boundary.isCompatible_iff]
-    intro a b hab
-    rw [stdSimplex.δ_comp_yonedaEquiv_symm, stdSimplex.δ_comp_yonedaEquiv_symm, dgNerve_δ,
-      dgNerve_δ, f.boundaryFace_map_δ hself heq hab]
-  have hι : ∀ l, SSet.yonedaEquiv (boundary.ι l ≫ hy.desc) = y l := fun l ↦ by
-    rw [hy.ι_desc, Equiv.apply_symm_apply]
-  obtain ⟨σ, hσ⟩ := (SSet.isTerminalVertex_iff _).1 hV hy.desc (by
+  have hι : ∀ l, SSet.yonedaEquiv (boundary.ι l ≫ f.boundaryHom hself heq) = y l := fun l ↦
+    (congrArg _ (f.ι_boundaryHom hself heq l)).trans (Equiv.apply_symm_apply _ _)
+  obtain ⟨σ, hσ⟩ := (SSet.isTerminalVertex_iff _).1 hV (f.boundaryHom hself heq) (by
     rw [hι]
     refine Simplex.ext_zero ?_
     rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj, dgNerve_map_apply, Simplex.map_obj]
@@ -394,17 +345,9 @@ private lemma exists_simplex_of_isTerminalVertex (f : Coherences R V)
   -- A coherence missing the vertex `l` is a coherence of the face opposite to `l`.
   rintro i j S d hij hS hd ⟨l, hli, hlj, hlS⟩
   have he := Fin.strictMono_succAbove l
-  obtain ⟨i', rfl⟩ := Fin.exists_succAbove_eq (Ne.symm hli)
-  obtain ⟨j', rfl⟩ := Fin.exists_succAbove_eq (Ne.symm hlj)
-  obtain ⟨S', rfl⟩ : ∃ S', S'.image l.succAbove = S :=
-    ⟨S.preimage l.succAbove Fin.succAbove_right_injective.injOn, by
-      rw [image_preimage]
-      exact filter_true_of_mem fun s hs ↦ Fin.exists_succAbove_eq fun h ↦ hlS (h ▸ hs)⟩
-  have hij' : i' ≤ j' := he.le_iff_le.1 hij
-  have hS' : S' ⊆ Ioo i' j' := fun s hs ↦ by
-    have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
-    exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
-  have hd' : d + #S' = 0 := by rwa [card_image_of_injective _ he.injective] at hd
+  obtain ⟨i', j', S', rfl, rfl, rfl, hij', hS', hd'⟩ := exists_image_eq_of_strictMono he hij hS hd
+    (Fin.exists_succAbove_eq (Ne.symm hli)) (Fin.exists_succAbove_eq (Ne.symm hlj))
+    fun s hs ↦ Fin.exists_succAbove_eq fun h ↦ hlS (h ▸ hs)
   refine (heq_of_eq (x.map_coh_of_strictMono (α := (SimplexCategory.δ l).toOrderHom) he hij'
     hS' hd' hS)).symm.trans ?_
   exact (congr_arg_heq (fun s : Simplex R C (m + 1) ↦ s.coh i' j' S' d hij' hS' hd')
