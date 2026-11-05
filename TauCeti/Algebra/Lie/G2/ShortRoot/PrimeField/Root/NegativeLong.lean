@@ -38,13 +38,9 @@ open CategoryTheory
 
 noncomputable section
 
-private def rankOneWord (i : Fin 2) : points (ZMod 3) :=
-  rootSubgroupPoints (.inr i) (ZMod 3) (Multiplicative.ofAdd 1) *
-    rootSubgroupPoints (.inl i) (ZMod 3) (Multiplicative.ofAdd (-1)) *
-      rootSubgroupPoints (.inr i) (ZMod 3) (Multiplicative.ofAdd 1)
-
 private def conjugator (i : Fin 2) : points (ZMod 3) :=
-  if i = 0 then rankOneWord 0 else rankOneWord 1 * rankOneWord 0
+  if i = 0 then rankOneWordPoints 0 (ZMod 3)
+  else rankOneWordPoints 1 (ZMod 3) * rankOneWordPoints 0 (ZMod 3)
 
 /-- The tangent vector at `-(3α₁ + α₂)` (index zero) or `-(3α₁ + 2α₂)` (index one),
 obtained by conjugating the negative simple long-root vector by explicit rank-one root words. -/
@@ -55,13 +51,11 @@ def negativeLongRootVector (i : Fin 2) :
 /-- The negative long-root vectors are conjugates of the negative simple long-root vector
 by the indicated products of rank-one root words. -/
 theorem negativeLongRootVector_eq_conjugateTangent (i : Fin 2) :
-    let w := fun j : Fin 2 =>
-      rootSubgroupPoints (.inr j) (ZMod 3) (Multiplicative.ofAdd 1) *
-        rootSubgroupPoints (.inl j) (ZMod 3) (Multiplicative.ofAdd (-1)) *
-          rootSubgroupPoints (.inr j) (ZMod 3) (Multiplicative.ofAdd 1)
     negativeLongRootVector i =
-      conjugateTangent (if i = 0 then w 0 else w 1 * w 0) (rootVector (.inr 1)) := by
-  simp only [negativeLongRootVector, conjugator, rankOneWord]
+      conjugateTangent (if i = 0 then rankOneWordPoints 0 (ZMod 3)
+        else rankOneWordPoints 1 (ZMod 3) * rankOneWordPoints 0 (ZMod 3))
+        (rootVector (.inr 1)) := by
+  simp only [negativeLongRootVector, conjugator]
 
 /-- The two negative nonsimple long roots, in fundamental-weight coordinates. -/
 def negativeLongRootWeight (i : Fin 2) : Fin 2 → ℤ :=
@@ -107,7 +101,7 @@ theorem tangentMatrix_negativeLongRootVector (i : Fin 2) :
   rw [negativeLongRootVector, tangentMatrix_conjugateTangent, tangentMatrix_rootVector]
   unfold conjugator
   split_ifs <;>
-    simp only [rankOneWord,
+    simp only [rankOneWordPoints_def,
       Subgroup.coe_mul, Units.val_mul, mul_inv_rev,
       ← map_inv (rootSubgroupPoints _ (ZMod 3)), ← ofAdd_neg,
       neg_neg, coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints,
