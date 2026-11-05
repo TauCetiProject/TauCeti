@@ -42,7 +42,7 @@ bound confines all solutions of the intermediate equations to a fixed ball.
 ## Main results
 
 * `TauCeti.conjWirtingerDeriv_conj_sub_smul_apply_one`: `\bar∂ (conj (w - c) • b) = b`.
-* `TauCeti.differentiableAt_sub_conj_sub_smul`: if `\bar∂u = b` at `z`, then
+* `DifferentiableAt.sub_conj_sub_smul`: if `\bar∂u = b` at `z`, then
   `u w - conj (w - c) • b` is complex differentiable at `z`.
 * `TauCeti.harmonicOnNhd_of_conjWirtingerDeriv_apply_one_eq`: a solution of `\bar∂u = b` on an
   open set is harmonic there.
@@ -88,7 +88,7 @@ theorem conjWirtingerDeriv_conj_sub_smul_apply_one (c : ℂ) (b : E) (z : ℂ) :
 
 /-- If `u` is real differentiable at `z` with `\bar∂u(z) = b`, then removing the antiholomorphic
 affine part, `w ↦ u w - conj (w - c) • b` is complex differentiable at `z`. -/
-theorem differentiableAt_sub_conj_sub_smul {u : ℂ → E} {c z : ℂ} {b : E}
+theorem _root_.DifferentiableAt.sub_conj_sub_smul {u : ℂ → E} {c z : ℂ} {b : E}
     (hu : DifferentiableAt ℝ u z) (hb : conjWirtingerDeriv u z 1 = b) :
     DifferentiableAt ℂ (fun w ↦ u w - conj (w - c) • b) z := by
   have hl := (hasFDerivAt_conj_sub_smul c b z).differentiableAt
@@ -104,8 +104,7 @@ theorem harmonicOnNhd_of_conjWirtingerDeriv_apply_one_eq [CompleteSpace E] {u : 
     HarmonicOnNhd u U := by
   intro z hz
   have hg : DifferentiableOn ℂ (fun w ↦ u w - conj w • b) U := fun w hw ↦ by
-    simpa using (differentiableAt_sub_conj_sub_smul (c := 0) (hd w hw)
-      (hb w hw)).differentiableWithinAt
+    simpa using ((hd w hw).sub_conj_sub_smul (c := 0) (hb w hw)).differentiableWithinAt
   have hgh : HarmonicAt (fun w ↦ u w - conj w • b) z :=
     ((hg.contDiffOn (n := 2) hU).contDiffAt (hU.mem_nhds hz)).harmonicAt
   have hconj : HarmonicAt (fun w : ℂ ↦ conj w) z :=
@@ -135,7 +134,7 @@ theorem circleIntegral_eq_of_conjWirtingerDeriv_apply_one_eq {u : ℂ → E} {c 
   have hg : (∮ z in C(c, R), (u z - conj (z - c) • b)) = 0 :=
     Complex.circleIntegral_eq_zero_of_differentiable_on_off_countable hR countable_empty
       (hc.sub hlc.continuousOn) fun z hz ↦
-        differentiableAt_sub_conj_sub_smul (hd z hz.1) (hb z hz.1)
+        (hd z hz.1).sub_conj_sub_smul (hb z hz.1)
   -- On the circle `conj (z - c) = R² (z - c)⁻¹`, whose integral is `2 π i R²`.
   have hconj : (∮ z in C(c, R), conj (z - c)) = 2 * π * R ^ 2 * I := by
     have heq : EqOn (fun z ↦ conj (z - c)) (fun z ↦ (R ^ 2 : ℂ) • (z - c)⁻¹) (sphere c R) := by
