@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.Geometry.Neuromanifold.MLP.Polynomial
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Homogeneous
 
@@ -112,10 +113,8 @@ theorem isHomogeneous_inputPolynomial_polynomialRealizeWeights (A : MLPSpec K L)
     (inputPolynomial (A.polynomialRealizeWeights fun j => Polynomial.X ^ r j) o).IsHomogeneous
       (∏ j, r j) := by
   have h := A.isHomogeneous_inputPolynomial_polynomialPrefix_weights r (Fin.last L) o
-  have hd : Fin.partialProd (layerExponent r) (Fin.last L) = ∏ j, r j := by
-    simp only [Fin.partialProd, Fin.val_last]
-    rw [List.take_of_length_le (by simp)]
-    exact (Fin.prod_ofFn _).trans (prod_layerExponent r)
+  have hd : Fin.partialProd (layerExponent r) (Fin.last L) = ∏ j, r j :=
+    (Fin.partialProd_last (layerExponent r)).trans (prod_layerExponent r)
   simpa only [polynomialRealizeWeights_def, polynomialRealize_def, hd] using h
 
 /-- With a common hidden exponent `r`, the input polynomials are homogeneous of degree
