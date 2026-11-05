@@ -60,10 +60,6 @@ theorem curryLeft_curryLeft_eq_neg {N : Type*} [AddCommGroup N] [Module R N]
   · rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) (succ_succ_ne_one k)]
     simp
 
-end CommSemiring
-
-variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-
 /-- A linear family `g` of alternating maps in `n + 1` arguments, each vanishing when its first
 argument equals the parameter, assembles into an alternating map in `n + 2` arguments whose first
 argument is the parameter. This inverts `AlternatingMap.curryLeft`. -/
@@ -80,9 +76,12 @@ def uncurryLeft (g : M →ₗ[R] M [⋀^Fin (n + 1)]→ₗ[R] N) (hg : ∀ x, (g
     · exact this j i hv.symm hij.symm (lt_of_le_of_ne (not_lt.1 hle) hij.symm)
     rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨i, rfl⟩
     · obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.2 hij.symm
-      have hj : tail v j = v 0 := hv.symm
-      rw [← insertNth_self_removeNth j (tail v), hj, map_insertNth, ← curryLeft_apply_apply, hg,
-        zero_apply, smul_zero]
+      have hfront (w : Fin (n + 1) → M) (hw : w 0 = v 0) : g (v 0) w = 0 := by
+        rw [← cons_self_tail w, hw, ← Matrix.vecCons, ← curryLeft_apply_apply, hg, zero_apply]
+      rcases eq_or_ne j 0 with rfl | hj
+      · exact hfront _ hv.symm
+      · simpa [hfront (tail v ∘ Equiv.swap 0 j) (by simp [tail, hv])] using
+          (g (v 0)).map_swap_add (tail v) hj.symm
     · obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.2 (Fin.ne_zero_of_lt hle)
       exact (g (v 0)).map_eq_zero_of_eq (tail v) hv (ne_of_apply_ne succ hij)
 
@@ -106,5 +105,7 @@ theorem uncurryLeft_curryLeft (f : M [⋀^Fin (n + 2)]→ₗ[R] N) :
   ext v
   rw [uncurryLeft_apply, curryLeft_apply_apply]
   exact congrArg f (cons_self_tail v)
+
+end CommSemiring
 
 end AlternatingMap
