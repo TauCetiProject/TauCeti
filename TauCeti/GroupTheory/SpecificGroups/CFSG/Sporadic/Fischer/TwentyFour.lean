@@ -638,20 +638,13 @@ abbrev Fi24AutomorphismGroup : Type :=
 order of the two generators. -/
 theorem fi24AutomorphismGroup_of_mul_of_pow (i j : Fin 12) :
     (PresentedGroup.of i * PresentedGroup.of j : Fi24AutomorphismGroup) ^
-      fi24AutomorphismCoxeterMatrix i j = 1 := by
-  have hmem : fi24AutomorphismCoxeterMatrix.relation i j ∈
-      Subgroup.normalClosure (Relator.relatorSet fi24AutomorphismRelators) := by
-    rw [fi24AutomorphismRelators_def, normalClosure_relatorSet_coxeterRelators_append]
-    exact Subgroup.subset_normalClosure (Or.inl ⟨(i, j), rfl⟩)
-  have key := PresentedGroup.mk_eq_one_iff.mpr hmem
-  rw [CoxeterMatrix.relation, map_pow, map_mul] at key
-  exact key
+      fi24AutomorphismCoxeterMatrix i j = 1 :=
+  of_mul_of_pow_coxeterRelators_append _ _ i j
 
 /-- Every source generator is an involution in the source presented group. -/
 theorem fi24AutomorphismGroup_of_mul_of_self (i : Fin 12) :
-    (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 := by
-  have key := fi24AutomorphismGroup_of_mul_of_pow i i
-  rwa [fi24AutomorphismCoxeterMatrix.diagonal, pow_one] at key
+    (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 :=
+  of_mul_of_self_coxeterRelators_append _ _ i
 
 /-- **All source generators agree in the abelianization of the source presented group.** Two
 generators joined by an edge of the diagram are involutions whose product has order dividing
