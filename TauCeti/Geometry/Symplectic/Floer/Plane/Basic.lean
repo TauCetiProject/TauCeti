@@ -400,6 +400,7 @@ theorem endComponent_eq (hH : Function.Periodic H 1) (v : ℂ) :
   exact perturbation_cylindricalEndLift hH _ x v
 
 /-- The `ds` component of the perturbation in end coordinates vanishes. -/
+@[simp]
 theorem endComponent_one : p.endComponent H 1 = fun _ _ ↦ 0 := by
   funext z x
   rw [endComponent_def, perturbation_def, smul_apply, endAngularForm_cylindricalEndLift]
