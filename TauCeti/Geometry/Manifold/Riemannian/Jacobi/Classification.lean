@@ -75,13 +75,13 @@ theorem IsJacobiFieldOn.exists_eq_affine_smul_add_curvatureCosine_smul_add_curva
           curvatureSine (κ * ‖curveVelocityWithin I γ s a‖ ^ 2) (t - a) • Q t) := by
   let N := fun r ↦ V r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (V r)
   have hN := h.isJacobiFieldOn_sub_starProjection_singleton hs
-  have horth : ∀ r ∈ s, ⟪N r, curveVelocityWithin I γ s r⟫_ℝ = 0 :=
-    fun r _ ↦ Submodule.starProjection_inner_eq_zero _ _ (Submodule.mem_span_singleton_self _)
-  have hdata := (hN.forall_inner_curveVelocityWithin_eq_zero_iff hs ha).1 horth
+  have hdata := h.isGeodesicCurveOn.inner_sub_starProjection_singleton_eq_zero hs ha
+    (h.differentiableWithinAt_sectionCoord ha)
   obtain ⟨P, Q, hP, hQ, hdP, hdQ, hPa, hQa, hform⟩ :=
     hN.exists_eq_curvatureCosine_smul_add_curvatureSine_smul hs ha hκ hdata.1 hdata.2
   refine ⟨P, Q, hP, hQ, hdP, hdQ, hPa, ?_, fun r hr ↦ ?_⟩
-  · rw [hQa, h.alongCurveWithin_sub_starProjection_singleton hs ha]
+  · rw [hQa, h.isGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton hs ha
+      (h.differentiableWithinAt_sectionCoord ha)]
   · have hsplit : V r = (ℝ ∙ curveVelocityWithin I γ s r).starProjection (V r) + N r := by
       simp [N]
     rw [hsplit, h.starProjection_singleton_eq hs ha hr]
@@ -113,15 +113,15 @@ theorem IsJacobiFieldOn.norm_sq_eq_affine_add_curvatureSine
             (alongCurveWithin (leviCivitaConnection I M) γ V s a)‖ ^ 2 := by
   let N := fun r ↦ V r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (V r)
   have hN := h.isJacobiFieldOn_sub_starProjection_singleton hs
-  have horth : ∀ r ∈ s, ⟪N r, curveVelocityWithin I γ s r⟫_ℝ = 0 :=
-    fun r _ ↦ Submodule.starProjection_inner_eq_zero _ _ (Submodule.mem_span_singleton_self _)
-  have hdata := (hN.forall_inner_curveVelocityWithin_eq_zero_iff hs ha).1 horth
+  have hdata := h.isGeodesicCurveOn.inner_sub_starProjection_singleton_eq_zero hs ha
+    (h.differentiableWithinAt_sectionCoord ha)
   have hnorm := hN.norm_sq_eq_curvatureSine hs ha hκ hdata.1 hdata.2 ht
   have hDN : alongCurveWithin (leviCivitaConnection I M) γ N s a =
       alongCurveWithin (leviCivitaConnection I M) γ V s a -
         (ℝ ∙ curveVelocityWithin I γ s a).starProjection
           (alongCurveWithin (leviCivitaConnection I M) γ V s a) := by
-    rw [h.alongCurveWithin_sub_starProjection_singleton hs ha]
+    rw [h.isGeodesicCurveOn.alongCurveWithin_sub_starProjection_singleton hs ha
+      (h.differentiableWithinAt_sectionCoord ha)]
   rw [hDN] at hnorm
   have hpyth := (ℝ ∙ curveVelocityWithin I γ s t).norm_sq_eq_add_norm_sq_starProjection (V t)
   rw [Submodule.starProjection_orthogonal_val] at hpyth
