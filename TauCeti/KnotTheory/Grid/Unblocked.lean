@@ -56,6 +56,8 @@ assignment, which `SignAssignment/Differential.lean` does.
 ## Main definitions
 
 * `TauCeti.GridDiagram.OColumns`: the columns whose `O`-marking a rectangle covers.
+* `TauCeti.GridDiagram.squaresMonomial`: the squarefree monomial `∏ V_c` of the `O`-markings in a
+  set of squares; the rectangle, hexagon and annulus weights are its values.
 * `TauCeti.GridDiagram.OMonomial`: the monomial `V^{O(r)}` weighting a rectangle.
 * `TauCeti.GridDiagram.unblockedRectangles`: the empty rectangles carrying no `X`-marking.
 * `TauCeti.GridChainMinus`: the free `R[V₀, …, V_{n-1}]`-module on grid states.
@@ -553,6 +555,17 @@ theorem squaresMonomial_eq_prod_ite (S : Finset (Fin n × Fin n)) :
     G.squaresMonomial R S = ∏ p ∈ S, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
   (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X S).symm
 
+/-- The monomial of a set of squares carrying no `O`-marking is `1`. -/
+theorem squaresMonomial_eq_one_of_disjoint {S : Finset (Fin n × Fin n)} (h : Disjoint S G.OSet) :
+    G.squaresMonomial R S = 1 := by
+  rw [squaresMonomial_eq_prod_ite]
+  exact Finset.prod_eq_one fun p hp => ite_eq_right (Finset.disjoint_left.mp h hp)
+
+/-- The monomial of the empty set of squares is `1`. -/
+@[simp]
+theorem squaresMonomial_empty : G.squaresMonomial R ∅ = 1 :=
+  G.squaresMonomial_eq_one_of_disjoint R (Finset.disjoint_empty_left _)
+
 /-- The weight of a toroidal rectangle in the unblocked differential: the squarefree monomial
 `∏ V_c` over the columns whose `O`-marking the rectangle covers, `GridDiagram.squaresMonomial` of
 the squares it covers. -/
@@ -566,16 +579,15 @@ theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) 
     (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
     (G.swapColumns a b).OMonomial R r =
       MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) := by
-  unfold OMonomial squaresMonomial
-  rw [← OColumns, ← OColumns, G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
+  rw [OMonomial, OMonomial, squaresMonomial_def, squaresMonomial_def, ← OColumns, ← OColumns,
+    G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
   simp only [MvPolynomial.rename_X, Finset.prod_image (Equiv.swap a b).injective.injOn]
 
 /-- The weight of a rectangle covering no `O`-marking is `1`. -/
 theorem OMonomial_eq_one_of_disjoint {r : GridRectangle n}
     (h : Disjoint r.coveredSquares G.OSet) :
-    G.OMonomial R r = 1 := by
-  rw [OMonomial, squaresMonomial, ← OColumns, (G.OColumns_eq_empty_iff r).mpr h,
-    Finset.prod_empty]
+    G.OMonomial R r = 1 :=
+  G.squaresMonomial_eq_one_of_disjoint R h
 
 /-- The weight of a rectangle, written as a monomial with an explicit exponent vector. -/
 theorem OMonomial_eq_monomial (r : GridRectangle n) :
