@@ -13,16 +13,18 @@ import TauCeti.Algebra.Lie.Cochain
 import TauCeti.Algebra.Lie.Derivation.Cocycle
 import TauCeti.Algebra.Lie.Extension.Basic
 import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.LeviDecomposition.Abelian
 import TauCeti.Algebra.Lie.Quotient
 
 /-!
 # Whitehead's lemmas
 
-Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a field `K` of
-characteristic zero, and `M` a finite-dimensional `L`-module. **Whitehead's first and second
-lemmas** say that the Lie algebra cohomology groups `H¹(L, M)` and `H²(L, M)` vanish. In terms of
-Mathlib's low-degree cochains (`LieModule.Cohomology.d₁₂`, `LieModule.Cohomology.twoCocycle`):
+Let `L` be a Lie algebra with nondegenerate Killing form over a field `K` of characteristic zero
+(such an `L` is automatically finite-dimensional, `TauCeti.finite_of_isKilling`), and `M` a
+finite-dimensional `L`-module. **Whitehead's first and second lemmas** say that the Lie algebra
+cohomology groups `H¹(L, M)` and `H²(L, M)` vanish. In terms of Mathlib's low-degree cochains
+(`LieModule.Cohomology.d₁₂`, `LieModule.Cohomology.twoCocycle`):
 
 * every 1-cochain `f` with `d₁₂ f = 0` is `x ↦ ⁅x, m⁆` for some `m : M`; equivalently every Lie
   derivation `L → M` is inner;
@@ -48,6 +50,8 @@ section `x ↦ (x, g x)`, and the section being a Lie homomorphism says exactly 
 
 ## Main results
 
+* `TauCeti.finite_of_isKilling`, in `TauCeti/Algebra/Lie/Killing/Basic.lean`: nondegeneracy of the
+  Killing form forces finite dimension, so `L` needs no separate finiteness hypothesis.
 * `LieDerivation.IsKilling.exists_eq_inner`: every Lie derivation into a finite-dimensional module
   is inner (Whitehead's first lemma).
 * `LieModule.Cohomology.exists_eq_lie_of_d₁₂_eq_zero`: the cochain form of the first lemma.
@@ -68,40 +72,16 @@ open LieAlgebra LieModule LieModule.Cohomology
 universe u v w
 
 variable {K : Type u} {L : Type v} {M : Type w} [Field K] [CharZero K]
-  [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
+  [LieRing L] [LieAlgebra K L] [IsKilling K L]
   [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
-
-namespace LieAlgebra.IsKilling
-
-omit [CharZero K] [FiniteDimensional K L] [FiniteDimensional K M] in
-/-- A Lie algebra with nondegenerate Killing form is finite-dimensional or trivial: in infinite
-dimension every trace vanishes, so the Killing form is zero, which is nondegenerate only on the
-zero algebra. -/
-theorem finite_of_isKilling : Module.Finite K L := by
-  by_contra hnf
-  have h0 (x y : L) : killingForm K L x y = 0 := by
-    have : ¬ ∃ s : Finset L, Nonempty (Module.Basis s K L) := by
-      rintro ⟨s, ⟨b⟩⟩
-      exact hnf (Module.Finite.of_basis b)
-    simp [LieModule.traceForm_apply_apply, LinearMap.trace, this]
-  have : Subsingleton L := by
-    refine ⟨fun a b ↦ ?_⟩
-    have h1 : a - b ∈ LinearMap.ker (killingForm K L) := by
-      rw [LinearMap.mem_ker]; ext y; simp [h0]
-    rw [ker_killingForm_eq_bot] at h1
-    exact sub_eq_zero.mp (by simpa using h1)
-  exact hnf inferInstance
-
-end LieAlgebra.IsKilling
 
 namespace LieDerivation.IsKilling
 
-omit [FiniteDimensional K L] in
 /-- **Whitehead's first lemma.** Over a field of characteristic zero, every Lie derivation from a
 Lie algebra with nondegenerate Killing form (necessarily finite-dimensional) into a
 finite-dimensional module is inner: it is `x ↦ ⁅x, m⁆` for some `m`. -/
 theorem exists_eq_inner (D : LieDerivation K L M) : ∃ m : M, inner K L M m = D := by
-  have := LieAlgebra.IsKilling.finite_of_isKilling (K := K) (L := L)
+  have := TauCeti.finite_of_isKilling (R := K) (L := L)
   -- The proper Lie submodule `M × 0` of the module sheared by `D`, into which `L` carries
   -- everything.
   let e := LieDerivation.ShearedModule.ofProd D
@@ -124,7 +104,6 @@ end LieDerivation.IsKilling
 
 namespace LieModule.Cohomology
 
-omit [FiniteDimensional K L] in
 /-- **Whitehead's first lemma** for cochains: over a field of characteristic zero, a 1-cocycle of a
 Lie algebra with nondegenerate Killing form (necessarily finite-dimensional) with values in a
 finite-dimensional module is a coboundary, `f x = ⁅x, m⁆`. -/
@@ -134,9 +113,10 @@ theorem exists_eq_lie_of_d₁₂_eq_zero {f : oneCochain K L M} (hf : d₁₂ K 
   exact ⟨m, fun x ↦ by simpa using (congrArg (· x) hm).symm⟩
 
 /-- **Whitehead's second lemma.** Over a field of characteristic zero, every 2-cocycle of a
-finite-dimensional Lie algebra with nondegenerate Killing form with values in a finite-dimensional
-module is a coboundary. -/
+Lie algebra with nondegenerate Killing form with values in a finite-dimensional module is a
+coboundary. -/
 theorem exists_d₁₂_eq (c : twoCocycle K L M) : ∃ f : oneCochain K L M, d₁₂ K L M f = c := by
+  have := TauCeti.finite_of_isKilling (R := K) (L := L)
   -- The sheared Lie algebra `E = L × M` and its projection `p` onto `L`, with kernel `0 × M`.
   let p := ofTwoCocycle.proj c
   have : IsKilling K (ofTwoCocycle c ⧸ p.ker) :=
@@ -161,8 +141,8 @@ theorem exists_d₁₂_eq (c : twoCocycle K L M) : ∃ f : oneCochain K L M, d�
   abel
 
 /-- **Whitehead's second lemma**, as an equality of submodules: the 2-cocycles of a
-finite-dimensional Lie algebra with nondegenerate Killing form in characteristic zero, with values
-in a finite-dimensional module, are exactly the coboundaries. -/
+Lie algebra with nondegenerate Killing form in characteristic zero, with values in a
+finite-dimensional module, are exactly the coboundaries. -/
 theorem twoCocycle_eq_range_d₁₂ : twoCocycle K L M = LinearMap.range (d₁₂ K L M) :=
   le_antisymm (fun c hc ↦ exists_d₁₂_eq ⟨c, hc⟩) range_d₁₂_le_twoCocycle
 

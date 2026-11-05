@@ -25,6 +25,8 @@ with the form itself, as under base change.
   nondegenerate is Killing.
 * `TauCeti.isKilling_iff_killingForm_nondegenerate`: `LieAlgebra.IsKilling` is exactly
   nondegeneracy of the Killing form.
+* `TauCeti.finite_of_isKilling`: a Lie algebra with nondegenerate Killing form is finite over the
+  base ring.
 * `TauCeti.exists_killingForm_lie_ne_zero`: on a nontrivial finite-dimensional Killing Lie algebra
   the Killing form does not vanish on all brackets.
 
@@ -80,5 +82,29 @@ theorem exists_killingForm_lie_ne_zero {K L : Type*} [Field K] [LieRing L] [LieA
     exact hab ⟨h⟩
   by_contra! h
   exact hxy ((IsKilling.killingForm_nondegenerate K L).1 _ (h x y))
+
+section Finite
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- A Lie algebra with nondegenerate Killing form is finite over the base ring. -/
+theorem finite_of_isKilling [IsKilling R L] : Module.Finite R L := by
+  by_contra hnf
+  -- Without a finite basis every trace vanishes, so the Killing form is zero, and a zero form has
+  -- trivial kernel only on the zero module.
+  have h0 (x y : L) : killingForm R L x y = 0 := by
+    have : ¬ ∃ s : Finset L, Nonempty (Module.Basis s R L) := by
+      rintro ⟨s, ⟨b⟩⟩
+      exact hnf (Module.Finite.of_basis b)
+    simp [LieModule.traceForm_apply_apply, LinearMap.trace, this]
+  have : Subsingleton L := by
+    refine ⟨fun a b ↦ ?_⟩
+    have h1 : a - b ∈ LinearMap.ker (killingForm R L) := by
+      rw [LinearMap.mem_ker]; ext y; simp [h0]
+    rw [IsKilling.ker_killingForm_eq_bot] at h1
+    exact sub_eq_zero.mp (by simpa using h1)
+  exact hnf inferInstance
+
+end Finite
 
 end TauCeti
