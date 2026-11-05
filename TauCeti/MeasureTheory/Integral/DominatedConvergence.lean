@@ -15,7 +15,8 @@ This file packages the common application of dominated convergence in which a pa
 family is controlled and converges pointwise away from one exceptional point. When that point has
 measure zero, the pointwise hypotheses supply the almost-everywhere hypotheses of the dominated
 convergence theorem. It also records the convergence of integrals against cutoffs
-which equal one on a closed ball and are supported in shrinking larger balls.
+which equal one on a closed ball and are supported in shrinking larger balls, and against cutoffs
+which equal one on balls exhausting a normed space.
 
 ## Main declarations
 
@@ -24,6 +25,8 @@ which equal one on a closed ball and are supported in shrinking larger balls.
 * `TauCeti.tendsto_integral_smul_of_cutoff`: integrals against cutoffs equal to one on
   `closedBall x r` and vanishing off `ball x (r + h)` tend to the integral over `closedBall x r` as
   `h → 0⁺`.
+* `TauCeti.tendsto_integral_smul_of_eq_one_ball`: integrals against `[0, 1]`-valued cutoffs equal
+  to one on `ball 0 (R i)` with `R i → ∞` tend to the integral over the whole space.
 -/
 
 public section
@@ -100,5 +103,23 @@ theorem tendsto_integral_smul_of_cutoff {E G : Type*} [PseudoMetricSpace E] [Mea
     · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 (not_le.1 hy))] with h hh
       simp [indicator_of_notMem (mt mem_preimage.1 hy),
         hψ0 h hh.1 (f y) fun h' => (mem_ball.1 h').not_ge (by linarith [hh.2])]
+
+/-- **Integrals against cutoffs exhaust the space.** If the cutoffs `χ i` take values in `[0, 1]`
+and equal `1` on `ball 0 (R i)` with `R i → ∞`, then `∫ χ i • f → ∫ f` for integrable `f`. -/
+theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E]
+    [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {χ : ι → E → ℝ} {R : ι → ℝ} {μ : Measure E}
+    (hR : Tendsto R l atTop) (hχm : ∀ i, AEStronglyMeasurable (χ i) μ)
+    (hχ1 : ∀ i x, ‖x‖ < R i → χ i x = 1) (hχI : ∀ i x, χ i x ∈ Set.Icc (0 : ℝ) 1)
+    {f : E → F} (hf : Integrable f μ) :
+    Tendsto (fun i ↦ ∫ x, χ i x • f x ∂μ) l (𝓝 (∫ x, f x ∂μ)) := by
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖f x‖)
+    (.of_forall fun i ↦ (hχm i).smul hf.aestronglyMeasurable)
+    (.of_forall fun i ↦ .of_forall fun x ↦ ?_) hf.norm (.of_forall fun x ↦ ?_)
+  · rw [norm_smul, Real.norm_of_nonneg (hχI i x).1]
+    exact mul_le_of_le_one_left (norm_nonneg _) (hχI i x).2
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
+    rw [hχ1 i x hi, one_smul]
 
 end TauCeti

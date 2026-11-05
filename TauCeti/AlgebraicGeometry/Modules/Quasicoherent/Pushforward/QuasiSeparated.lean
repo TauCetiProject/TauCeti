@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Localization
-public import TauCeti.AlgebraicGeometry.Modules.Pushforward
+public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 
 /-!

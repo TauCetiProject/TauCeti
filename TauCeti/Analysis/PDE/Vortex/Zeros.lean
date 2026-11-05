@@ -56,6 +56,9 @@ theorem conjWirtingerDeriv_apply_one_section_eq_mul {z : ℂ}
   apply Complex.ext <;>
     simp [smul_eq_mul, Complex.ofRealCLM_apply] <;> linarith
 
+private theorem sectionValue_eq (w : ℂ) : sectionValue x w = 2 * ((x w 2 : ℂ) + I * x w 3) := by
+  rw [sectionValue_apply, mul_comm (x w 3 : ℂ) I]
+
 variable {k : ℕ∞} (hn : 1 ≤ k) (hb₁ : ContDiff ℝ k (fun w ↦ x w 0))
   (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
   (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
@@ -78,23 +81,23 @@ include hn
 
 /-- A nontrivial plane vortex section factors locally as a nonnegative integral power
 times a factor `Cᵏ` at `z` and nonzero there, including at repeated zeros. -/
-theorem exists_contDiffAt_section_eq_pow_mul
-    (hne : ∃ w, (x w 2 : ℂ) + I * x w 3 ≠ 0) (z : ℂ) :
+theorem exists_contDiffAt_sectionValue_eq_pow_mul
+    (hne : ∃ w, sectionValue x w ≠ 0) (z : ℂ) :
     ∃ (n : ℕ) (v : ℂ → ℂ), ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, 2 * ((x w 2 : ℂ) + I * x w 3) = (w - z) ^ n * v w := by
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * v w := by
   obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
   have hneα : ∃ w ∈ (univ : Set ℂ), 2 * ((x w 2 : ℂ) + I * x w 3) ≠ 0 := by
-    simpa only [mem_univ, true_and, mul_ne_zero_iff, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true] using hne
+    simpa only [mem_univ, true_and, sectionValue_eq] using hne
+  simp only [sectionValue_eq]
   exact exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
     ha.contDiffOn hα.differentiableOn (fun w _ ↦ heq w) (mem_univ z)
     (not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
       isPreconnected_univ ha.contDiffOn hα.differentiableOn (fun w _ ↦ heq w) hneα (mem_univ z))
 
 /-- A plane vortex section approaching unit modulus has finitely many zeros. -/
-theorem finite_setOfPred_section_eq_zero
+theorem finite_setOfPred_sectionValue_eq_zero
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    {w | (x w 2 : ℂ) + I * x w 3 = 0}.Finite := by
+    {w | sectionValue x w = 0}.Finite := by
   let α := fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)
   obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
   have htail : ∀ᶠ w in cocompact ℂ, α w ≠ 0 := by
@@ -103,6 +106,7 @@ theorem finite_setOfPred_section_eq_zero
     have hr : x w 2 = 0 := by simpa [α] using congrArg Complex.re hz
     have hi : x w 3 = 0 := by simpa [α] using congrArg Complex.im hz
     simp [hr, hi] at hw
-  simpa [α] using finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn ha hα heq htail
+  simpa only [sectionValue_eq] using
+    finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn ha hα heq htail
 
 end TauCeti.Vortex
