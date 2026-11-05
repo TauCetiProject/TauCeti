@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
@@ -79,8 +80,7 @@ theorem mFourier_coe_add_mul (n : d → ℤ) (θ ν : d → ℝ) (t : ℝ) :
     mFourier n (fun i ↦ ((θ i + ν i * t : ℝ) : UnitAddCircle)) =
       Complex.exp (2 * π * Complex.I * ∑ i, (n i : ℂ) * θ i) *
         Complex.exp (2 * π * Complex.I * (∑ i, (n i : ℝ) * ν i : ℝ) * t) := by
-  simp only [mFourier, ContinuousMap.coe_mk, fourier_coe_apply]
-  rw [← Complex.exp_sum, ← Complex.exp_add]
+  rw [mFourier_coe_apply, ← Complex.exp_add]
   congr 1
   push_cast
   simp only [Finset.mul_sum, Finset.sum_mul, ← Finset.sum_add_distrib]
