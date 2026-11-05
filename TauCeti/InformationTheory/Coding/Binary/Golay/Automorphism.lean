@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
-public import TauCeti.InformationTheory.Coding.Additive.Equivalence
+public import TauCeti.InformationTheory.Coding.Binary.Automorphism
 public import TauCeti.InformationTheory.Coding.Binary.Golay.Basic
 
 /-!
@@ -15,9 +15,11 @@ public import TauCeti.InformationTheory.Coding.Binary.Golay.Basic
 Because the extended binary Golay code `TauCeti.BinaryGolay.code` has minimum weight eight, two
 distinct octads (codewords of weight eight) can share at most four nonzero coordinates: over
 `ZMod 2`, any five shared nonzero coordinates cancel in their difference, leaving a nonzero
-codeword of weight at most `3 + 3 = 6 < 8`. Consequently, any coordinate permutation automorphism
-of `code` that fixes at least five points of an octad fixes that octad as a codeword and stabilizes
-its eight-point support setwise.
+codeword of weight at most `3 + 3 = 6 < 8`. Specializing general binary codeword uniqueness and
+automorphism support rigidity (`TauCeti.eq_of_mem_of_hammingNorm_add_lt` and
+`TauCeti.AdditiveCode.apply_perm_eq_of_mem_permutationAut_of_two_mul_hammingNorm_lt`), any
+coordinate permutation automorphism of `code` that fixes at least five points of an octad fixes
+that octad as a codeword and stabilizes its eight-point support setwise.
 
 Combining octad rigidity with systematic encoding (`encodingEquiv`) and Euclidean self-duality
 (`euclideanDual_code`) gives a concrete seven-point base `![0, 1, 2, 3, 4, 17, 5]` for the full
@@ -38,8 +40,8 @@ This bounds the basic-orbit lengths of `AdditiveCode.permutationAut code.toAddSu
 
 * `TauCeti.BinaryGolay.mem_permutationAut_code_iff`: Gram-matrix criterion for coordinate
   permutation automorphisms of `code`.
-* `TauCeti.BinaryGolay.eq_of_mem_code_of_hammingNorm_eq_eight`: at most one octad is nonzero on any
-  five given coordinates.
+* `TauCeti.BinaryGolay.eq_of_mem_code_of_hammingNorm_eq_eight`: two octads whose supports share at
+  least five coordinates are equal.
 * `TauCeti.BinaryGolay.comp_symm_eq_of_mem_permutationAut_of_hammingNorm_eq_eight`: an automorphism
   fixing five coordinates of an octad fixes that octad.
 * `TauCeti.BinaryGolay.base`: the seven-point base `0, 1, 2, 3, 4, 17, 5` of the permutation
@@ -64,7 +66,7 @@ namespace TauCeti.BinaryGolay
 
 open Matrix MulAction
 
-/-! ### Gram criterion, decidability, and coordinate separation -/
+/-! ### Gram criterion and decidability -/
 
 /-- Entry formula for `block` using `Bool` arithmetic for fast kernel evaluation. -/
 private def blockFun (i j : Fin 12) : ZMod 2 :=
@@ -116,73 +118,14 @@ instance instDecidableMemPermutationAutCode (e : Equiv.Perm (Fin 24)) :
         rfl
       rw [mem_permutationAut_code_iff, hg])
 
-/-- Two codewords of the extended binary Golay code agreeing on the twelve information coordinates
-are equal. -/
-theorem eq_of_mem_code_of_forall_castAdd_eq {x y : Fin 24 → ZMod 2} (hx : x ∈ code) (hy : y ∈ code)
-    (h : ∀ i : Fin 12, x (i.castAdd 12) = y (i.castAdd 12)) : x = y := by
-  have hsub : (⟨x, hx⟩ : code) = ⟨y, hy⟩ :=
-    encodingEquiv.symm.injective <| funext fun i ↦ by
-      rw [encodingEquiv_symm_apply, encodingEquiv_symm_apply]
-      exact h i
-  exact congrArg Subtype.val hsub
-
-/-- Distinct coordinates of `Fin 24` are separated by some codeword of `code`. -/
-theorem eq_of_forall_mem_code_apply_eq {i j : Fin 24} (h : ∀ c ∈ code, c i = c j) : i = j := by
-  by_contra hij
-  let v : Fin 24 → ZMod 2 := Pi.single i 1 - Pi.single j 1
-  have hv_mem : v ∈ code := by
-    rw [← euclideanDual_code, Submodule.mem_euclideanDual]
-    intro c hc
-    simp [v, dotProduct_sub, h c hc]
-  have hv_ne : v ≠ 0 := by
-    intro hv0
-    have hi := congrFun hv0 i
-    simp [v, hij] at hi
-  have h8 : 8 ≤ hammingNorm v := eight_le_hammingNorm hv_mem hv_ne
-  have hle2 : hammingNorm v ≤ 2 := by
-    have hsub : Finset.univ.filter (fun k ↦ v k ≠ 0) ⊆ ({i, j} : Finset (Fin 24)) := by
-      intro k hk
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
-      by_contra hnij
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hnij
-      exact hk (by simp [v, Pi.single_eq_of_ne hnij.1, Pi.single_eq_of_ne hnij.2])
-    exact (Finset.card_le_card hsub).trans (Finset.card_insert_le i {j})
-  omega
-
 /-! ### Octad uniqueness and rigidity -/
 
-/-- Two octads of the extended binary Golay code that are both nonzero on at least five coordinates
-are equal. -/
+/-- Two octads of the extended binary Golay code whose supports share at least five coordinates are
+equal. -/
 theorem eq_of_mem_code_of_hammingNorm_eq_eight {x y : Fin 24 → ZMod 2} (hx : x ∈ code)
     (hy : y ∈ code) (hxw : hammingNorm x = 8) (hyw : hammingNorm y = 8) {s : Finset (Fin 24)}
-    (hs5 : 5 ≤ s.card) (hs : ∀ i ∈ s, x i ≠ 0 ∧ y i ≠ 0) : x = y := by
-  by_contra hxy
-  have h8 : 8 ≤ hammingNorm (x - y) :=
-    eight_le_hammingNorm (code.sub_mem hx hy) (sub_ne_zero.mpr hxy)
-  let sx := Finset.univ.filter fun i ↦ x i ≠ 0
-  let sy := Finset.univ.filter fun i ↦ y i ≠ 0
-  let sd := Finset.univ.filter fun i ↦ (x - y) i ≠ 0
-  have hsx : sx.card = 8 := hxw
-  have hsy : sy.card = 8 := hyw
-  have hsd : sd.card = hammingNorm (x - y) := rfl
-  have hinter : 5 ≤ (sx ∩ sy).card := by
-    refine hs5.trans (Finset.card_le_card fun i hi ↦ ?_)
-    simp [sx, sy, (hs i hi).1, (hs i hi).2]
-  have h01 : ∀ z : ZMod 2, z = 0 ∨ z = 1 := by decide
-  have hsd_sub : sd ⊆ (sx \ sy) ∪ (sy \ sx) := by
-    intro i hi
-    simp only [sd, Finset.mem_filter, Finset.mem_univ, true_and, Pi.sub_apply, sub_ne_zero] at hi
-    rcases h01 (x i) with hxi | hxi <;> rcases h01 (y i) with hyi | hyi
-    · exact absurd (hxi.trans hyi.symm) hi
-    · exact Finset.mem_union_right _ (by simp [sx, sy, hxi, hyi])
-    · exact Finset.mem_union_left _ (by simp [sx, sy, hxi, hyi])
-    · exact absurd (hxi.trans hyi.symm) hi
-  have hcard_le : sd.card ≤ (sx \ sy).card + (sy \ sx).card :=
-    (Finset.card_le_card hsd_sub).trans (Finset.card_union_le _ _)
-  have hsx_split := Finset.card_sdiff_add_card_inter sx sy
-  have hsy_split := Finset.card_sdiff_add_card_inter sy sx
-  rw [Finset.inter_comm sy sx] at hsy_split
-  omega
+    (hs5 : 5 ≤ s.card) (hs : ∀ i ∈ s, x i ≠ 0 ∧ y i ≠ 0) : x = y :=
+  eq_of_mem_of_hammingNorm_add_lt (fun _ ↦ eight_le_hammingNorm) hx hy hs (by omega)
 
 /-- A coordinate permutation automorphism of `code` fixing at least five coordinates of the support
 of an octad fixes that octad as a codeword. -/
@@ -190,21 +133,17 @@ theorem comp_symm_eq_of_mem_permutationAut_of_hammingNorm_eq_eight {σ : Equiv.P
     (hσ : σ ∈ AdditiveCode.permutationAut code.toAddSubgroup) {x : Fin 24 → ZMod 2}
     (hx : x ∈ code) (hxw : hammingNorm x = 8) {s : Finset (Fin 24)} (hs5 : 5 ≤ s.card)
     (hs : ∀ i ∈ s, x i ≠ 0 ∧ σ i = i) : x ∘ σ.symm = x :=
-  eq_of_mem_code_of_hammingNorm_eq_eight
-    (AdditiveCode.comp_symm_mem_of_mem_permutationAut hσ hx) hx
-    ((Equiv.hammingNorm_comp σ.symm x).trans hxw) hxw hs5 fun i hi ↦ by
-      have hsymm : σ.symm i = i := σ.symm_apply_eq.mpr (hs i hi).2.symm
-      exact ⟨by simpa [Function.comp_apply, hsymm] using (hs i hi).1, (hs i hi).1⟩
+  AdditiveCode.comp_symm_eq_of_mem_permutationAut_of_two_mul_hammingNorm_lt
+    (fun _ ↦ eight_le_hammingNorm) hσ hx hs (by omega)
 
 /-- If an automorphism `σ` fixes at least five coordinates of an octad `x`, then `x` is constant on
 every `σ`-orbit. -/
 theorem apply_perm_eq_of_mem_permutationAut_of_hammingNorm_eq_eight {σ : Equiv.Perm (Fin 24)}
     (hσ : σ ∈ AdditiveCode.permutationAut code.toAddSubgroup) {x : Fin 24 → ZMod 2}
     (hx : x ∈ code) (hxw : hammingNorm x = 8) {s : Finset (Fin 24)} (hs5 : 5 ≤ s.card)
-    (hs : ∀ i ∈ s, x i ≠ 0 ∧ σ i = i) (i : Fin 24) : x (σ i) = x i := by
-  have h := congrFun (comp_symm_eq_of_mem_permutationAut_of_hammingNorm_eq_eight hσ hx hxw hs5 hs)
-    (σ i)
-  simpa using h.symm
+    (hs : ∀ i ∈ s, x i ≠ 0 ∧ σ i = i) (i : Fin 24) : x (σ i) = x i :=
+  AdditiveCode.apply_perm_eq_of_mem_permutationAut_of_two_mul_hammingNorm_lt
+    (fun _ ↦ eight_le_hammingNorm) hσ hx hs (by omega) i
 
 /-! ### The seven-point base `0, 1, 2, 3, 4, 17, 5` -/
 
@@ -273,23 +212,30 @@ private theorem primaryOctad_ne_zero_iff :
     ∀ i : Fin 24, primaryOctad i ≠ 0 ↔ i ∈ ({0, 1, 2, 3, 4, 17, 21, 23} : Finset (Fin 24)) := by
   decide +kernel
 
+/-- Every automorphism fixing `base 0` through `base 4` (`0, 1, 2, 3, 4`) preserves
+`primaryOctad`. -/
+private theorem primaryOctad_apply_perm_eq {σ : Equiv.Perm (Fin 24)}
+    (hσ : σ ∈ (AdditiveCode.permutationAut code.toAddSubgroup).stabilizerChain base 5)
+    (i : Fin 24) : primaryOctad (σ i) = primaryOctad i := by
+  rw [Subgroup.mem_stabilizerChain_iff] at hσ
+  exact apply_perm_eq_of_mem_permutationAut_of_hammingNorm_eq_eight hσ.1
+    primaryOctad_mem_code hammingNorm_primaryOctad (s := {0, 1, 2, 3, 4}) (by decide)
+    (fun j hj ↦ by
+      fin_cases j <;> simp at hj
+      · exact ⟨by decide +kernel, hσ.2 0 (by omega)⟩
+      · exact ⟨by decide +kernel, hσ.2 1 (by omega)⟩
+      · exact ⟨by decide +kernel, hσ.2 2 (by omega)⟩
+      · exact ⟨by decide +kernel, hσ.2 3 (by omega)⟩
+      · exact ⟨by decide +kernel, hσ.2 4 (by omega)⟩) i
+
 /-- The basic orbit at level `5` (`base 5 = 17`) lies in `{17, 21, 23}`. -/
 theorem orbit_stabilizerChain_five_subset :
     orbit ((AdditiveCode.permutationAut code.toAddSubgroup).stabilizerChain base 5) (base 5) ⊆
       (({17, 21, 23} : Finset (Fin 24)) : Set (Fin 24)) := by
   intro _ hy
   obtain ⟨⟨σ, hσ⟩, rfl⟩ := mem_orbit_iff.mp hy
-  rw [Subgroup.mem_stabilizerChain_iff] at hσ
-  rcases hσ with ⟨hσ_aut, hσ_fix⟩
-  have hpres := apply_perm_eq_of_mem_permutationAut_of_hammingNorm_eq_eight hσ_aut
-    primaryOctad_mem_code hammingNorm_primaryOctad (s := {0, 1, 2, 3, 4}) (by decide)
-    (fun i hi ↦ by
-      fin_cases i <;> simp at hi
-      · exact ⟨by decide +kernel, hσ_fix 0 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 1 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 2 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 3 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 4 (by omega)⟩)
+  have hpres := primaryOctad_apply_perm_eq hσ
+  have hσ_fix := ((Subgroup.mem_stabilizerChain_iff _ _).mp hσ).2
   have h17 : primaryOctad (σ 17) ≠ 0 := by
     rw [hpres 17]
     decide +kernel
@@ -323,17 +269,8 @@ theorem orbit_stabilizerChain_six_subset :
       ((({0, 1, 2, 3, 4, 17, 21, 23} : Finset (Fin 24))ᶜ : Finset (Fin 24)) : Set (Fin 24)) := by
   intro _ hy
   obtain ⟨⟨σ, hσ⟩, rfl⟩ := mem_orbit_iff.mp hy
-  rw [Subgroup.mem_stabilizerChain_iff] at hσ
-  rcases hσ with ⟨hσ_aut, hσ_fix⟩
-  have hpres := apply_perm_eq_of_mem_permutationAut_of_hammingNorm_eq_eight hσ_aut
-    primaryOctad_mem_code hammingNorm_primaryOctad (s := {0, 1, 2, 3, 4}) (by decide)
-    (fun i hi ↦ by
-      fin_cases i <;> simp at hi
-      · exact ⟨by decide +kernel, hσ_fix 0 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 1 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 2 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 3 (by omega)⟩
-      · exact ⟨by decide +kernel, hσ_fix 4 (by omega)⟩)
+  have hpres := primaryOctad_apply_perm_eq
+    ((AdditiveCode.permutationAut code.toAddSubgroup).stabilizerChain_antitone base (by omega) hσ)
   rw [Subgroup.smul_def, Equiv.Perm.smul_def, base_six, Finset.mem_coe, Finset.mem_compl,
     ← primaryOctad_ne_zero_iff (σ 5), not_not]
   have h5 : primaryOctad 5 = 0 := by decide +kernel
