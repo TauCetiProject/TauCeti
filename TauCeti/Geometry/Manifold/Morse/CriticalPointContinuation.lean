@@ -43,6 +43,34 @@ variable {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [CompleteSpace
 
 variable [FiniteDimensional ℝ E]
 
+omit [CompleteSpace P] [FiniteDimensional ℝ E] in
+/-- Uniqueness of critical points in the extended chart at `x` transfers to the manifold: if the
+critical point of the slice `fun v ↦ F (q.1, φ.symm v)` near `(p, φ x)` is `η q.1`, then the
+critical point of `fun y ↦ F (q.1, y)` near `(p, x)` is `φ.symm (η q.1)`, for `φ` the extended
+chart at `x`. -/
+private theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm
+    {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 3 M]
+    {F : P × M → ℝ} {p : P} {x : M} {η : P → E}
+    (hG : ContDiffAt ℝ 3 (fun q : P × E ↦ F (q.1, (extChartAt 𝓘(ℝ, E) x).symm q.2))
+      (p, extChartAt 𝓘(ℝ, E) x x))
+    (htarget : ∀ᶠ q in 𝓝 p, η q ∈ (extChartAt 𝓘(ℝ, E) x).target)
+    (huniq : ∀ᶠ q in 𝓝 (p, extChartAt 𝓘(ℝ, E) x x),
+      fderiv ℝ (fun v ↦ F (q.1, (extChartAt 𝓘(ℝ, E) x).symm v)) q.2 = 0 ↔ η q.1 = q.2) :
+    ∀ᶠ q in 𝓝 (p, x), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) (fun y ↦ F (q.1, y)) q.2 = 0 ↔
+      (extChartAt 𝓘(ℝ, E) x).symm (η q.1) = q.2 := by
+  let φ := extChartAt 𝓘(ℝ, E) x
+  have hmap : ContinuousAt (fun q : P × M ↦ (q.1, φ q.2)) (p, x) :=
+    continuousAt_fst.prodMk ((continuousAt_extChartAt (I := 𝓘(ℝ, E)) x).comp continuousAt_snd)
+  have hGnear := hmap.eventually (hG.eventually (by norm_num))
+  have hsnear : ∀ᶠ q : P × M in 𝓝 (p, x), q.2 ∈ φ.source :=
+    continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds x)
+  filter_upwards [hmap.eventually huniq, hGnear, hsnear,
+    continuousAt_fst.preimage_mem_nhds htarget] with q hu hg hs ht
+  have hslice : DifferentiableAt ℝ ((fun y ↦ F (q.1, y)) ∘ φ.symm) (φ q.2) :=
+    (hg.comp (φ q.2) (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by norm_num)
+  rw [mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hs hslice]
+  exact hu.trans (φ.symm_apply_eq hs ht).symm
+
 private theorem exists_criticalPoint_continuation_self
     {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 3 M]
     {F : P × M → ℝ} {p : P} {x : M}
@@ -99,22 +127,7 @@ private theorem exists_criticalPoint_continuation_self
       manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas he ht hq
     rw [hchart, manifoldMorseIndex_def]
     exact hi
-  -- Pull the joint uniqueness neighbourhood back through the coordinate map.
-  have hmap : ContinuousAt (fun q : P × M ↦ (q.1, φ q.2)) (p, x) :=
-    continuousAt_fst.prodMk ((continuousAt_extChartAt (I := 𝓘(ℝ, E)) x).comp continuousAt_snd)
-  have hGnear := hmap.eventually (hG.eventually (by norm_num))
-  have hsnear : ∀ᶠ q : P × M in 𝓝 (p, x), q.2 ∈ φ.source :=
-    continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds x)
-  have huniq' : ∀ᶠ q in 𝓝 (p, x),
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) (fun y ↦ F (q.1, y)) q.2 = 0 ↔ ψ q.1 = q.2 := by
-    filter_upwards [hmap.eventually huniq, hGnear, hsnear,
-      continuousAt_fst.preimage_mem_nhds htarget] with q hu hg hs ht
-    have hslice : DifferentiableAt ℝ (fun v ↦ G (q.1, v)) (φ q.2) :=
-      (hg.comp (φ q.2) (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt
-        (by norm_num)
-    rw [hsliceFun] at hslice
-    rw [mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hs hslice]
-    exact hu.trans (φ.symm_apply_eq hs ht).symm
+  have huniq' := eventually_mfderiv_eq_zero_iff_extChartAt_symm hG htarget huniq
   refine ⟨ψ, hψp, hψ, hnd', hindex', huniq', hval, ?_⟩
   simpa only [G, hηp, φ.left_inv hx] using hderiv
 
