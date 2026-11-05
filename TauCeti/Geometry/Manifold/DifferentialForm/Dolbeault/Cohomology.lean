@@ -160,15 +160,8 @@ private theorem exactTypeForms_zero (p : ℕ) : exactTypeForms E M F p 0 = ⊥ :
 /-- The `∂bar`-exact forms of type `(p,q+1)` are the image of `∂bar` on forms of type `(p,q)`. -/
 private theorem exactTypeForms_succ (p q : ℕ) :
     exactTypeForms E M F p (q + 1) =
-      LinearMap.range ((ofComplexManifold E M).delBarTypeForms F p q) := by
-  ext ψ
-  rw [exactTypeForms, Submodule.mem_comap, Submodule.coe_subtype, mem_delBarExactForms_succ,
-    LinearMap.mem_range]
-  constructor
-  · rintro ⟨χ, hχ, h⟩
-    exact ⟨⟨χ, mem_typeForms.2 hχ⟩, Subtype.ext (by rw [coe_delBarTypeForms, h])⟩
-  · rintro ⟨χ, rfl⟩
-    exact ⟨χ.1, mem_typeForms.1 χ.2, (coe_delBarTypeForms _ _ _).symm⟩
+      LinearMap.range ((ofComplexManifold E M).delBarTypeForms F p q) :=
+  (range_delBarTypeForms _ _ p q).symm
 
 /-- A form of type `(p,q)` is `∂bar`-exact exactly when it is hit by the incoming differential of
 the Dolbeault complex. -/

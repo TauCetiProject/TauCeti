@@ -355,6 +355,14 @@ theorem delBarClosedForms_zero_zero :
     J.delBarClosedForms F 0 0 = LinearMap.ker (J.delBar (F := F) (k := 0)) := by
   rw [delBarClosedForms, typeForms_zero_zero, top_inf_eq]
 
+/-- The range of `∂bar` on forms of type `(p,q)` consists of the `∂bar`-exact forms of type
+`(p,q+1)`, viewed inside the forms of type `(p,q+1)`. -/
+theorem range_delBarTypeForms (p q : ℕ) :
+    LinearMap.range (J.delBarTypeForms F p q) =
+      (J.delBarExactForms F p (q + 1)).comap (J.typeForms F p (q + 1)).subtype := by
+  rw [delBarExactForms_succ, delBarTypeForms, LinearMap.range_codRestrict,
+    LinearMap.range_domRestrict]
+
 /-! ### Pullback of `∂bar`-closed and `∂bar`-exact forms -/
 
 section Pullback
