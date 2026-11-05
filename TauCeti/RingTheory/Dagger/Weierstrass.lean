@@ -18,12 +18,17 @@ import TauCeti.RingTheory.PowerSeries.Trunc
 /-!
 # Multivariable overconvergent Weierstrass division
 
-Let `K` be a complete ultrametric normed field. A series in `K⟨X, Y⟩†`, with `Y = X none`,
-which is distinguished of degree `s` in `Y` at unit radius and has a unit coefficient in
-degree `s`, divides every overconvergent series. The quotient is overconvergent in all
-variables and the remainder is a polynomial in `Y` of degree less than `s`, with coefficients
+Let `K` be a complete ultrametric normed field, except where noted below. A series in `K⟨X, Y⟩†`,
+with `Y = X none`, which is distinguished of degree `s` in `Y` at unit radius and has a unit
+coefficient in degree `s`, divides every overconvergent series. The quotient is overconvergent in
+all variables and the remainder is a polynomial in `Y` of degree less than `s`, with coefficients
 in `K⟨X⟩†`. The decomposition is unique, and the quotient `q` and the coefficients of the
 remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖` and `‖r.coeff i‖ ≤ ‖f‖`.
+Uniqueness, and the statements deduced from it alone (the comparison of divisibility, descent of
+irreducibility, and the implication from primality in `K⟨X, Y⟩†` to primality in `K⟨X⟩†[Y]`), need
+only that `K` is an ultrametric normed commutative ring with multiplicative norm. Completeness and
+the field structure are used only for existence, the quotient identification, and the converse
+direction of primality.
 
 Existence uses unequal radii: first select `1 < ρ ≤ r` preserving distinguishedness, then
 apply fixed-radius division over the Banach ring `K{X/ρ}` at radius `r` in `Y`. The quotient
