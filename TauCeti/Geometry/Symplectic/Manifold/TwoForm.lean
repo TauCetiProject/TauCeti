@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.TwoForm.Closed
+public import TauCeti.Geometry.Manifold.TwoForm.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
@@ -47,8 +48,6 @@ example.
   local diffeomorphism the converse holds as well.
 * `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
   two-form back to a symplectic form exactly when the form is symplectic.
-* `TauCeti.SmoothTwoForm.ker_bilinFormAt_mpullback`: the kernel of a pullback is the preimage of
-  the kernel when the derivative is surjective.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_forall_ker_bilinFormAt_mpullback`: nondegeneracy
   characterized by pullback kernels along a surjective smooth map with surjective derivatives.
 * `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: a form on the base of such a map is
@@ -220,25 +219,6 @@ variable {E H Z E' H' Q : Type*}
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
   [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
   {p : Z → Q} {σ : SmoothTwoForm I Z} {η : SmoothTwoForm J Q}
-
-/-- If the derivative of `p` at `z` is surjective, the null space of the pullback `p^* η` at `z`
-is the preimage under `dp_z` of the null space of `η` at `p z`. -/
-theorem ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p) (η : SmoothTwoForm J Q) {z : Z}
-    (hdp : Surjective (mfderiv I J p z)) :
-    LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) =
-      (LinearMap.ker (η.bilinFormAt (p z))).comap (mfderiv I J p z).toLinearMap := by
-  ext v
-  simp only [LinearMap.mem_ker, Submodule.mem_comap, ContinuousLinearMap.coe_coe]
-  refine ⟨fun h ↦ LinearMap.ext fun u ↦ ?_, fun h ↦ LinearMap.ext fun w ↦ ?_⟩
-  · obtain ⟨w, rfl⟩ := hdp u
-    have hw := LinearMap.congr_fun h w
-    simp only [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
-      LinearMap.zero_apply] at hw ⊢
-    exact hw
-  · have hw := LinearMap.congr_fun h (mfderiv I J p z w)
-    simp only [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
-      LinearMap.zero_apply] at hw ⊢
-    exact hw
 
 /-- For a surjective `p` with surjective derivatives, `η` is nondegenerate exactly when, at every
 point `z`, the null space of the pullback `p^* η` is the kernel of the derivative of `p`. -/
