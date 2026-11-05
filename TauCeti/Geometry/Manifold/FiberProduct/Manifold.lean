@@ -18,9 +18,13 @@ For transverse smooth maps `f : X → N` and `g : Y → N`, the subtype
 model dimension `dim X + dim Y - dim N`. Its tangent vectors are exactly the pairs with
 equal images under the differentials of `f` and `g`.
 
-`TauCeti.exists_transverseFiberProduct_smoothEmbedding` glues the coordinate-patch fibre
-products of `PartialDiffeomorph.exists_isManifold_localFiberProduct_isSmoothEmbedding`.
-The returned embedding gives the smooth universal property via
+`TauCeti.transverseFiberProductChartedSpace` glues the coordinate-patch fibre products of
+`PartialDiffeomorph.exists_isManifold_localFiberProduct_isSmoothEmbedding`. It is a named,
+non-instance atlas, characterized by `TauCeti.isManifold_transverseFiberProduct`,
+`TauCeti.isSmoothEmbedding_coe_transverseFiberProduct`, and
+`TauCeti.mem_range_mfderiv_coe_transverseFiberProduct_iff`. The existence-only form is
+`TauCeti.exists_isManifold_transverseFiberProduct_isSmoothEmbedding`.
+The embedding gives the smooth universal property via
 `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: a map into the fibre product is smooth
 exactly when both component maps are smooth. In particular both projections are smooth.
 No Hausdorff or countability assumptions are used, and the fibre product may be empty.
@@ -80,7 +84,7 @@ variable [IsManifold IX n X] [IsManifold IY n Y]
 subspace topology. Its inclusion is a smooth embedding, and its tangent image consists of
 pairs whose images under the two differentials agree. Empty fibre products are allowed;
 no separation or countability hypotheses are needed. -/
-theorem exists_transverseFiberProduct_smoothEmbedding (hn : 1 ≤ n)
+private theorem exists_fiberProductAtlas (hn : 1 ≤ n)
     (hf : ContMDiff IX IN n f) (hg : ContMDiff IY IN n g)
     (htrans : ∀ p : X × Y, f p.1 = g p.2 →
       (mfderiv IX IN f p.1).range ⊔
@@ -119,27 +123,8 @@ theorem exists_transverseFiberProduct_smoothEmbedding (hn : 1 ≤ n)
   have hcover (p : P) : ∃ a q, ι a q = p := by
     refine ⟨f p.1.1, ⟨p.1, p.2, ?_⟩, rfl⟩
     exact (mem_extChartPartialDiffeomorph_source IN n _).2 BoundarylessManifold.isInteriorPoint
-  -- On an overlap, the topological transition is smooth because its composite with
-  -- the embedding into X × Y is the inclusion of the source patch.
-  have hdeck (a b : N) (x : U a) (y : U b) (hxy : ι a x = ι b y) :
-      ∃ T : U a → U b, ContMDiffAt K K n T x ∧ ι b ∘ T =ᶠ[𝓝 x] ι a := by
-    have : Nonempty (U b) := ⟨y⟩
-    let e := (hopen b).toOpenPartialHomeomorph (ι b)
-    let T := e.symm ∘ ι a
-    have hx : ι a x ∈ range (ι b) := ⟨y, hxy.symm⟩
-    have hT : ContinuousAt T x :=
-      (e.continuousOn_symm.continuousAt (by
-        simpa only [e, IsOpenEmbedding.toOpenPartialHomeomorph_target] using
-          (hopen b).isOpen_range.mem_nhds hx)).comp
-        (hopen a).continuous.continuousAt
-    have hEq : ι b ∘ T =ᶠ[𝓝 x] ι a := by
-      filter_upwards [(hopen a).continuous.continuousAt.preimage_mem_nhds
-        ((hopen b).isOpen_range.mem_nhds hx)] with z hz
-      exact (hopen b).toOpenPartialHomeomorph_right_inv _ hz
-    refine ⟨T, ?_, hEq⟩
-    rw [ContMDiffAt.iff_comp_isImmersionAt ((hemb b).isImmersion.isImmersionAt (T x))]
-    refine ⟨hT, ((hemb a).contMDiff x).congr_of_eventuallyEq ?_⟩
-    exact hEq.fun_comp Subtype.val
+  have hdeck := exists_contMDiffAt_transition_of_isImmersion hopen
+    (g := (Subtype.val : P → X × Y)) (fun a ↦ (hemb a).isImmersion)
   let := chartedSpaceOfIsOpenEmbedding (H := Fin d → ℝ) hopen hcover
   have : IsManifold K n P := isManifold_chartedSpaceOfIsOpenEmbedding hopen hcover hdeck
   have hlocal (a : N) : IsLocalDiffeomorph K K n (ι a) :=
@@ -157,19 +142,78 @@ theorem exists_transverseFiberProduct_smoothEmbedding (hn : 1 ≤ n)
   intro p v
   obtain ⟨a, q, rfl⟩ := hcover p
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
-  have hchain := mfderiv_comp q (hi.contMDiff _ |>.mdifferentiableAt hn0)
-    ((hlocal a q).mdifferentiableAt hn0)
-  have hrange : (mfderiv K (IX.prod IY) (Subtype.val : U a → X × Y) q).range =
-      (mfderiv K (IX.prod IY) (Subtype.val : P → X × Y) (ι a q)).range := by
-    -- The composite of the patch inclusion and the ambient inclusion is Subtype.val.
-    have hinc : (Subtype.val : P → X × Y) ∘ ι a = (Subtype.val : U a → X × Y) := rfl
-    rw [hinc] at hchain
-    have hr := LinearMap.range_comp_of_range_eq_top
-      (mfderiv K (IX.prod IY) (Subtype.val : P → X × Y) (ι a q)).toLinearMap
-      (LinearMap.range_eq_top.2 ((hlocal a q).isInvertible_mfderiv hn0).surjective)
-    exact (congrArg (fun L : TangentSpace K q →L[ℝ] TangentSpace (IX.prod IY) q.1 ↦
-      L.range) hchain).trans hr
+  have hinc : (Subtype.val : P → X × Y) ∘ ι a = (Subtype.val : U a → X × Y) := rfl
+  have hrange := (hlocal a q).range_mfderiv_comp hn0
+    (hi.contMDiff _ |>.mdifferentiableAt hn0)
+  rw [hinc] at hrange
   rw [← hrange]
   exact (localData a).choose_spec.2.2 q v
+
+variable (hn : 1 ≤ n) (hf : ContMDiff IX IN n f) (hg : ContMDiff IY IN n g)
+  (htrans : ∀ p : X × Y, f p.1 = g p.2 →
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤)
+
+/-- A fixed atlas on the transverse fibre product, chosen from the construction by gluing
+embedded target-coordinate patches. It uses the subspace topology and is not a global instance.
+Its manifold, embedding, and tangent-image properties are given by the lemmas below. -/
+@[instance_reducible]
+noncomputable def transverseFiberProductChartedSpace :
+    ChartedSpace (Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ)
+      {p : X × Y // f p.1 = g p.2} :=
+  (exists_fiberProductAtlas hn hf hg htrans).choose
+
+/-- The transverse fibre product with its chosen atlas is a `C^n` manifold. -/
+theorem isManifold_transverseFiberProduct :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    IsManifold 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) n
+      {p : X × Y // f p.1 = g p.2} :=
+  (exists_fiberProductAtlas hn hf hg htrans).choose_spec.1
+
+/-- The inclusion of the transverse fibre product with its chosen atlas is a smooth embedding. -/
+theorem isSmoothEmbedding_coe_transverseFiberProduct :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    Manifold.IsSmoothEmbedding
+      𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY) n
+      (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) :=
+  (exists_fiberProductAtlas hn hf hg htrans).choose_spec.2.1
+
+/-- A tangent vector lies in the image of the fibre-product inclusion exactly when its two
+components have equal images under the differentials of the defining maps. -/
+theorem mem_range_mfderiv_coe_transverseFiberProduct_iff :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    ∀ (p : {p : X × Y // f p.1 = g p.2}) (v : TangentSpace (IX.prod IY) p.1),
+      v ∈ (mfderiv
+        𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY)
+        (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) p).range ↔
+      mfderiv IX IN f p.1.1 v.1 =
+        tangentSpaceCast IN (g p.1.2) (f p.1.1) (mfderiv IY IN g p.1.2 v.2) :=
+  (exists_fiberProductAtlas hn hf hg htrans).choose_spec.2.2
+
+include hn hf hg htrans in
+/-- **The transverse fibre-product theorem.** The equal-value subtype of transverse `C^n` maps
+admits a `C^n` manifold structure of dimension `dim X + dim Y - dim N`, with its subspace topology,
+a smooth ambient embedding, and the tangent-image equalizer formula. No separation, countability,
+or nonemptiness assumptions are needed. -/
+theorem exists_isManifold_transverseFiberProduct_isSmoothEmbedding :
+    ∃ cs : ChartedSpace (Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ)
+        {p : X × Y // f p.1 = g p.2},
+      letI := cs
+      IsManifold 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) n
+        {p : X × Y // f p.1 = g p.2} ∧
+      Manifold.IsSmoothEmbedding
+        𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY) n
+        (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) ∧
+      ∀ (p : {p : X × Y // f p.1 = g p.2}) (v : TangentSpace (IX.prod IY) p.1),
+        v ∈ (mfderiv
+          𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY)
+          (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) p).range ↔
+        mfderiv IX IN f p.1.1 v.1 =
+          tangentSpaceCast IN (g p.1.2) (f p.1.1) (mfderiv IY IN g p.1.2 v.2) :=
+  ⟨transverseFiberProductChartedSpace hn hf hg htrans,
+    isManifold_transverseFiberProduct hn hf hg htrans,
+    isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans,
+    mem_range_mfderiv_coe_transverseFiberProduct_iff hn hf hg htrans⟩
 
 end TauCeti

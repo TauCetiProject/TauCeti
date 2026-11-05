@@ -100,6 +100,21 @@ theorem coe_diffeomorphOfBijective
     ⇑(hf.diffeomorphOfBijective hf') = f := by
   rfl
 
+/-- Precomposing a differentiable map with a local diffeomorphism does not change the
+image of its differential. -/
+theorem _root_.IsLocalDiffeomorphAt.range_mfderiv_comp
+    {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
+    {E' H' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕂 E']
+    [TopologicalSpace H'] {K : ModelWithCorners 𝕂 E' H'}
+    [TopologicalSpace P] [ChartedSpace H' P]
+    {φ : M → N} {g : N → P} {x : M}
+    (hφ : IsLocalDiffeomorphAt I J n φ x) (hn : n ≠ 0)
+    (hg : MDifferentiableAt J K g (φ x)) :
+    (mfderiv I K (g ∘ φ) x).range = (mfderiv J K g (φ x)).range := by
+  rw [mfderiv_comp x hg (hφ.mdifferentiableAt hn), ContinuousLinearMap.toLinearMap_comp]
+  exact LinearMap.range_comp_of_range_eq_top _
+    (LinearMap.range_eq_top.2 (hφ.isInvertible_mfderiv hn).surjective)
+
 section Charts
 
 variable (I : ModelWithCorners 𝕂 E H) (n : WithTop ℕ∞) [IsManifold I n M]
