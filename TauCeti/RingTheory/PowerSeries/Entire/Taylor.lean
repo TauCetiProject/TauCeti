@@ -6,44 +6,36 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
+public import TauCeti.RingTheory.PowerSeries.Taylor
 import Mathlib.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Taylor translation of entire power series
 
-For a power series `f` over a commutative topological ring and a point `a`, the Taylor translate
-`taylor a f` is the series whose `n`-th coefficient is the value `(Δⁿ f)(a)` of the
-`n`-th Hasse derivative of `f` at `a`. On polynomials it is `Polynomial.taylor a`, the substitution
-`X ↦ X + a`.
-
-For an entire series `f` over a complete normed commutative ring, the translate is again entire and
-satisfies the **Taylor identity** `(taylor a f)(b) = f(b + a)`. Writing `f = ∑ cₖ Xᵏ`, both sides
-are sums of the absolutely summable double series `∑ₙ,ₘ (n + m).choose n • cₙ₊ₘ aᵐ bⁿ`: grouping
-its terms by `n` gives the translate at `b`, and grouping them by `n + m` gives `f` at `b + a` by
-the binomial theorem. Since Hasse derivatives commute with translation, translations compose,
-`taylor b (taylor a f) = taylor (b + a) f`, so translation by `-a` inverts translation by `a` and
-Taylor translation is injective on entire series. No factorial is inverted and no ultrametric
-hypothesis is used, so all of this holds in every characteristic and over `ℂ` as well as over
-nonarchimedean rings.
+For a power series `f` and a point `a`, the Taylor translate `taylor a f` is the series whose
+`n`-th coefficient is the value `(Δⁿ f)(a)` of the `n`-th Hasse derivative of `f` at `a`
+(`TauCeti.RingTheory.PowerSeries.Taylor`). For an entire series `f` over a complete normed
+commutative ring, the translate is again entire and satisfies the **Taylor identity**
+`(taylor a f)(b) = f(b + a)`. Writing `f = ∑ cₖ Xᵏ`, both sides are sums of the absolutely summable
+double series `∑ₙ,ₘ (n + m).choose n • cₙ₊ₘ aᵐ bⁿ`: grouping its terms by `n` gives the translate
+at `b`, and grouping them by `n + m` gives `f` at `b + a` by the binomial theorem
+(`PowerSeries.evalAt_taylor_of_summable`). Since Hasse derivatives commute with translation,
+translations compose, `taylor b (taylor a f) = taylor (b + a) f`, so translation by `-a` inverts
+translation by `a` and Taylor translation is injective on entire series. No factorial is inverted
+and no ultrametric hypothesis is used, so all of this holds in every characteristic and over `ℂ` as
+well as over nonarchimedean rings.
 
 Injectivity is what controls the zeros of entire series over a field: a nonzero entire series has a
 nonvanishing Hasse derivative at every point, so each of its zeros has a finite order
 (`PowerSeries.IsEntire.exists_isGoodZero`).
 
-## Main definitions
-
-* `taylor a f`: the Taylor translate of `f` at `a`, with coefficients `(Δⁿ f)(a)`.
-
 ## Main results
 
-* `constantCoeff_taylor`: the constant term of the translate is `f(a)`.
-* `taylor_coe`: on polynomials, the translate is `Polynomial.taylor`.
-* `taylor_zero`: translation by `0` is the identity.
 * `PowerSeries.IsEntire.taylor`: the translate of an entire series is entire.
 * `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
   entire series.
-* `taylor_one`, `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
+* `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
   converges.
@@ -58,54 +50,6 @@ public section
 namespace PowerSeries
 
 open Filter Finset
-
-section Topological
-
-variable {R : Type*} [CommSemiring R] [TopologicalSpace R]
-
-/-- The **Taylor translate** of a power series `f` at `a`: the series `∑ₙ (Δⁿ f)(a) Xⁿ`, whose
-coefficients are the values at `a` of the Hasse derivatives of `f`. For an entire series over a
-complete normed ring it is the series `f(X + a)` (`PowerSeries.IsEntire.evalAt_taylor`); in
-general the values `(Δⁿ f)(a)` are the junk value of `PowerSeries.evalAt` when they diverge. -/
-noncomputable def taylor (a : R) (f : R⟦X⟧) : R⟦X⟧ :=
-  mk fun n ↦ (hasseDeriv n f).evalAt a
-
-/-- The coefficients of the Taylor translate are the values of the Hasse derivatives. -/
-@[simp]
-theorem coeff_taylor (a : R) (f : R⟦X⟧) (n : ℕ) :
-    coeff n (taylor a f) = (hasseDeriv n f).evalAt a := by
-  simp [taylor]
-
-/-- The constant term of the Taylor translate at `a` is the value at `a`. -/
-@[simp]
-theorem constantCoeff_taylor (a : R) (f : R⟦X⟧) : constantCoeff (taylor a f) = f.evalAt a := by
-  simp [← coeff_zero_eq_constantCoeff_apply]
-
-/-- On polynomials, Taylor translation is `Polynomial.taylor`. -/
-@[simp]
-theorem taylor_coe (a : R) (p : Polynomial R) :
-    taylor a (p : R⟦X⟧) = (Polynomial.taylor a p : R⟦X⟧) := by
-  ext n
-  rw [coeff_taylor, evalAt_hasseDeriv_coe, Polynomial.coeff_coe]
-
-/-- Translation by `0` is the identity. -/
-@[simp]
-theorem taylor_zero (f : R⟦X⟧) : taylor 0 f = f := by
-  ext n
-  simp [evalAt_at_zero, ← coeff_zero_eq_constantCoeff_apply]
-
-/-- The translate of the zero series is zero. -/
-@[simp]
-theorem taylor_zero_right (a : R) : taylor a (0 : R⟦X⟧) = 0 := by
-  ext n
-  simp
-
-/-- The translate of the constant series `1` is `1`. -/
-@[simp]
-theorem taylor_one (a : R) : taylor a (1 : R⟦X⟧) = 1 := by
-  simpa using taylor_coe a 1
-
-end Topological
 
 section Normed
 
@@ -172,35 +116,17 @@ theorem IsEntire.taylor_mul {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (
 `b` is `f(b + a)`. -/
 theorem IsEntire.evalAt_taylor (hf : f.IsEntire) (a b : R) :
     (taylor a f).evalAt b = f.evalAt (b + a) := by
-  set F : ℕ × ℕ → R := fun p ↦ coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2 * b ^ p.1
-  have hF : Summable F := by
-    refine Summable.of_norm <| ((summable_taylorMajorant hf a (norm_nonneg b)).mul_left
-      (max ‖(1 : R)‖ 1 * max ‖(1 : R)‖ 1)).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun p ↦ ?_
-    calc ‖F p‖ ≤ ‖coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2‖ * ‖b ^ p.1‖ :=
+  refine evalAt_taylor_of_summable (Summable.of_norm <| ((summable_taylorMajorant hf a
+    (norm_nonneg b)).mul_left (max ‖(1 : R)‖ 1 * max ‖(1 : R)‖ 1)).of_nonneg_of_le
+      (fun _ ↦ norm_nonneg _) fun p ↦ ?_) fun n ↦ (hf.hasseDeriv n).hasSum_evalAt a
+  calc ‖coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2 * b ^ p.1‖
+      ≤ ‖coeff p.2 (PowerSeries.hasseDeriv p.1 f) * a ^ p.2‖ * ‖b ^ p.1‖ :=
         norm_mul_le _ _
-      _ ≤ max ‖(1 : R)‖ 1 * ((p.1 + p.2).choose p.1 * ‖coeff (p.1 + p.2) f‖ * ‖a‖ ^ p.2) *
-          (max ‖(1 : R)‖ 1 * ‖b‖ ^ p.1) :=
-        mul_le_mul (norm_coeff_hasseDeriv_mul_pow_le_max f a p.1 p.2)
-          (TauCeti.norm_pow_le_max_mul b p.1) (norm_nonneg _) (by positivity)
-      _ = _ := by ring
-  -- Grouping the terms by the order `n` of the Hasse derivative gives the translate at `b`.
-  have h₁ : HasSum (fun n ↦ coeff n (taylor a f) • b ^ n) (∑' p, F p) :=
-    hF.hasSum.prod_fiberwise fun n ↦ by
-      simpa only [coeff_taylor, smul_eq_mul] using
-        ((hf.hasseDeriv n).hasSum_evalAt a).mul_right (b ^ n)
-  -- Grouping them by the total degree `n + m` gives `f` at `b + a`, by the binomial theorem.
-  have h₂ : HasSum (fun k ↦ coeff k f • (b + a) ^ k) (∑' p, F p) := by
-    have h := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hF.hasSum).sigma
-      fun k ↦ hasSum_fintype _
-    simp only [Function.comp_apply, HasAntidiagonal.sigmaAntidiagonalEquivProd_apply,
-      sum_coe_sort (antidiagonal _) F] at h
-    convert h using 2 with k
-    rw [(Commute.all _ _).add_pow', smul_eq_mul, mul_sum]
-    refine sum_congr rfl fun p hp ↦ ?_
-    rw [mem_antidiagonal] at hp
-    simp only [F, coeff_hasseDeriv, add_comm p.2 p.1, hp, nsmul_eq_mul]
-    ring
-  rw [evalAt_def, h₁.tsum_eq, (hf.hasSum_evalAt (b + a)).unique h₂]
+    _ ≤ max ‖(1 : R)‖ 1 * ((p.1 + p.2).choose p.1 * ‖coeff (p.1 + p.2) f‖ * ‖a‖ ^ p.2) *
+        (max ‖(1 : R)‖ 1 * ‖b‖ ^ p.1) :=
+      mul_le_mul (norm_coeff_hasseDeriv_mul_pow_le_max f a p.1 p.2)
+        (TauCeti.norm_pow_le_max_mul b p.1) (norm_nonneg _) (by positivity)
+    _ = _ := by ring
 
 /-- **Hasse derivatives commute with Taylor translation** of entire series. -/
 theorem IsEntire.hasseDeriv_taylor (hf : f.IsEntire) (a : R) (k : ℕ) :

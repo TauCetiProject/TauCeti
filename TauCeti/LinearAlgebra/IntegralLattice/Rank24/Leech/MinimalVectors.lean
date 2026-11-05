@@ -27,7 +27,8 @@ families of them:
   `j` lies in the support and `-3` otherwise. There are `4096 · 24 = 98304` of them.
 
 Together the Leech lattice has `1104 + 97152 + 98304 = 196560` minimal vectors, which is its
-kissing number.
+kissing number. The first family alone spans the rational ambient space: adding two vectors
+with opposite signs at the second coordinate isolates a nonzero multiple of any coordinate vector.
 
 The classification reads the congruence model coordinatewise. A vector `a = 2b` of the even class
 has `∑ bᵢ² = 8`. If `b` reduces to the zero codeword then `b = 2w` with `∑ wᵢ² = 2`, giving the
@@ -57,6 +58,7 @@ congruence holds automatically, because Golay weights are divisible by four. The
   `TauCeti.ncard_leechOddVectors`: the three counts `1104`, `97152` and `98304`.
 * `TauCeti.ncard_vectorsOfNorm_four_leechLattice` and `TauCeti.kissingNumber_leechLattice`: the
   Leech lattice has `196560` minimal vectors.
+* `TauCeti.span_vectorsOfNorm_four_leechLattice`: the minimal vectors span the rational space.
 
 ## References
 
@@ -198,6 +200,42 @@ theorem leechPairVector_mem {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
   rw [← hab, hsum]
   rcases Int.units_eq_one_or s with rfl | rfl <;> rcases Int.units_eq_one_or t with rfl | rfl <;>
     decide
+
+private theorem pair_mem_minimalSpan {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
+    (fun k ↦ (leechPairVector i j s t k : ℚ) / 2) ∈
+      Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) := by
+  obtain ⟨hmem, hnorm⟩ := leechPairVector_mem hij s t
+  apply Submodule.subset_span
+  refine ⟨⟨_, hmem⟩, ?_, rfl⟩
+  rw [mem_vectorsOfNorm, leechLattice_norm_intCast_div_two, hnorm]
+  norm_num
+
+/-- The Leech minimal vectors span the entire rational coordinate space. This is a rational
+span assertion; it does not assert that the first family alone generates the integral lattice. -/
+theorem span_vectorsOfNorm_four_leechLattice :
+    Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) = ⊤ := by
+  let S := Submodule.span ℚ
+    (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ))
+  have hsingle (i : Fin 24) : Pi.single i (1 : ℚ) ∈ S := by
+    obtain ⟨j, hji⟩ := exists_ne i
+    have h := S.smul_mem (1 / 4 : ℚ)
+      (S.add_mem (pair_mem_minimalSpan hji.symm 1 1) (pair_mem_minimalSpan hji.symm 1 (-1)))
+    have heq : (1 / 4 : ℚ) •
+        ((fun k ↦ (leechPairVector i j 1 1 k : ℚ) / 2) +
+          (fun k ↦ (leechPairVector i j 1 (-1) k : ℚ) / 2)) = Pi.single i 1 := by
+      funext k
+      by_cases hki : k = i
+      · subst k
+        simp [leechPairVector_apply]
+      · by_cases hkj : k = j
+        · subst k
+          norm_num [leechPairVector_apply, hji]
+        · simp [leechPairVector_apply, hki, hkj]
+    exact heq ▸ h
+  apply top_unique
+  intro x _
+  rw [pi_eq_sum_univ' x]
+  exact S.sum_mem fun i _ ↦ S.smul_mem (x i) (hsingle i)
 
 /-- A vector of the second shape, on an octad `c` with signs `d` of even weight inside it,
 halves into the Leech lattice and has `∑ aᵢ² = 32`. -/
@@ -752,6 +790,10 @@ theorem ncard_vectorsOfNorm_four_leechLattice :
   · intro x hx
     obtain ⟨a, ha, hxa⟩ := (mem_vectorsOfNorm_four_leechLattice_iff x).1 hx
     exact ⟨a, ha, Subtype.ext hxa.symm⟩
+
+/-- The norm-four shell of the Leech lattice is finite. -/
+instance instFiniteVectorsOfNormFourLeechLattice : Finite (leechLattice.vectorsOfNorm 4) :=
+  (isPosDef_leechLattice.finite_vectorsOfNorm 4).to_subtype
 
 /-- **The kissing number of the Leech lattice is `196560`.** -/
 @[simp]

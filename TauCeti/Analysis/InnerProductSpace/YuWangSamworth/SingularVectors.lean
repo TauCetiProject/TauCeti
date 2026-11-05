@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.InnerProductSpace.YuWangSamworth.Basic
 
 /-!
-# Population-gap bounds for right singular vectors
+# Population-gap bounds for right and left singular vectors
 
 For rectangular maps `A` and `Â`, bounds with constants `a`, `â`, and `ε`
 on `A`, `Â`, and `Â - A` control the cross-block overlap of their right singular bases:
@@ -20,6 +20,9 @@ The theorem is stated in multiplied form, which also covers `Γ = 0`.
 The separation is imposed only on the squared singular values of the population
 operator. No gap is required for the perturbed operator, and the index block need
 not be contiguous.
+
+The same estimate holds for the eigenbases of the target Gram operators `A A†` and
+`Â Â†`, including their zero eigenspaces.
 
 The pointwise bound for `A† A` is available in
 `TauCeti.Analysis.InnerProductSpace.Gram.Perturbation`.
@@ -80,5 +83,41 @@ theorem sq_mul_sum_sum_norm_inner_rightSingularBasis_sq_le_four_mul_card_mul_sq
   simpa only [add_comm â a] using
     (LinearMap.norm_adjoint_comp_self_sub_adjoint_comp_self_apply_le
       Â A hÂ hA hE x)
+
+/-- **Yu–Wang–Samworth bound for left singular vectors.** A population gap in the
+eigenvalues of the target Gram operator gives the same cross-block
+bound as for right singular vectors. The eigenbases of `A A†` and `Â Â†` include
+complete bases of the kernels, so no positive-rank assumption is needed.
+
+Adapted by target-Gram duality from the left-singular population bound in
+`YuWangSamworth2015/YuWangSamworth2015/Rectangular/Theorem4.lean` in the Kitware
+DKPS formalization (Jon Crall and GPT 5.6 High; Apache-2.0). -/
+theorem sq_mul_sum_sum_norm_inner_self_comp_adjoint_eigenvectorBasis_sq_le_four_mul_card_mul_sq
+    (A Â : E →ₗ[𝕜] F) {Γ a â ε : ℝ} (hΓ : 0 ≤ Γ)
+    (hA : ∀ x, ‖A x‖ ≤ a * ‖x‖) (hÂ : ∀ x, ‖Â x‖ ≤ â * ‖x‖)
+    (hE : ∀ x, ‖(Â - A) x‖ ≤ ε * ‖x‖)
+    (s : Finset (Fin (finrank 𝕜 F)))
+    (hgap : ∀ j ∈ s, ∀ k ∉ s,
+      Γ ≤ |A.adjoint.isSymmetric_adjoint_comp_self.eigenvalues rfl j -
+        A.adjoint.isSymmetric_adjoint_comp_self.eigenvalues rfl k|) :
+    Γ ^ 2 * ∑ j ∈ s, ∑ k ∈ sᶜ,
+        ‖⟪A.adjoint.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl k,
+          Â.adjoint.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl j⟫_𝕜‖ ^ 2
+      ≤ 4 * s.card * ((a + â) * ε) ^ 2 := by
+  by_cases hsub : Subsingleton E
+  · let : Subsingleton E := hsub
+    have hz := LinearMap.IsSymmetric.sq_mul_sum_sum_norm_inner_sq_le_four_mul_card_mul_sq
+      A.adjoint.isSymmetric_adjoint_comp_self
+      Â.adjoint.isSymmetric_adjoint_comp_self rfl hΓ hgap (ε := 0)
+      (fun x ↦ by simp [Subsingleton.elim A 0, Subsingleton.elim Â 0])
+    simp only [zero_pow (by decide : 2 ≠ 0), mul_zero] at hz
+    exact hz.trans (by positivity)
+  · let : Nontrivial E := not_subsingleton_iff_nontrivial.mp hsub
+    apply LinearMap.IsSymmetric.sq_mul_sum_sum_norm_inner_sq_le_four_mul_card_mul_sq
+      A.adjoint.isSymmetric_adjoint_comp_self
+      Â.adjoint.isSymmetric_adjoint_comp_self rfl hΓ hgap
+    intro x
+    simpa only [LinearMap.adjoint_adjoint, add_comm â a] using
+      (LinearMap.norm_self_comp_adjoint_sub_self_comp_adjoint_apply_le Â A hÂ hA hE x)
 
 end LinearMap

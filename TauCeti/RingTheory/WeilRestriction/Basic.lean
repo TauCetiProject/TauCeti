@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.IsTensorProduct.Pushout
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.RingTheory.Flat.Basic
@@ -51,6 +52,9 @@ shows that its formation commutes with an arbitrary base change `A → A'`.
   restriction takes values in a subalgebra `S` if and only if the point it classifies takes values
   in `B ⊗[A] S`.
 * `TauCeti.Algebra.WeilRestriction.homEquiv_comp_map`: `homEquiv` is natural in the `B`-algebra `C`.
+* `TauCeti.Algebra.WeilRestriction.universalCoefficient`: coefficients of the universal point,
+  extracted by arbitrary linear functionals; `adjoin_range_universalCoefficient` says they
+  generate the representing algebra, without choosing a basis.
 * `TauCeti.Algebra.WeilRestriction.map_surjective`: the Weil restriction preserves surjections, that
   is, closed immersions.
 * `TauCeti.Algebra.WeilRestriction.homEquiv_comp_baseChangeAlgEquiv`: `baseChangeAlgEquiv` is
@@ -62,6 +66,7 @@ shows that its formation commutes with an arbitrary base change `A → A'`.
 ## References
 
 * S. Bosch, W. Lütkebohmert, M. Raynaud, *Néron Models*, §7.6.
+* B. Conrad, *Weil and Grothendieck approaches to adelic points*, Exercise 2.4.
 * F. Bruhat, J. Tits, *Groupes réductifs sur un corps local II*, Publ. Math. IHÉS 60 (1984), §1.5.
 * [The Stacks Project, Section 05Y8](https://stacks.math.columbia.edu/tag/05Y8) (restriction of
   scalars), and [Lemma 05YC](https://stacks.math.columbia.edu/tag/05YC) (base change).
@@ -110,11 +115,19 @@ variable {T}
 private lemma Coords.coord_tmul (K : Coords A B) (j : Fin K.n) (x : B) (t : T) :
     K.coord T j (x ⊗ₜ t) = K.φ j x • t := rfl
 
+private lemma Coords.coord_eq_tensorComponent (K : Coords A B) (j : Fin K.n)
+    (z : B ⊗[A] T) :
+    K.coord T j z = LinearMap.tensorComponent (K.φ j) (TensorProduct.comm A B T z) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul x t => simp [coord_tmul]
+  | add z w hz hw => simp only [map_add, hz, hw]
+
 private lemma Coords.sum_tmul_coord (K : Coords A B) (z : B ⊗[A] T) :
     ∑ j, K.b j ⊗ₜ K.coord T j z = z := by
-  induction z with
-  | tmul x t => simp [coord_tmul, smul_tmul', ← sum_tmul, K.sum_smul]
-  | add z w hz hw => simp [tmul_add, Finset.sum_add_distrib, hz, hw]
+  simp_rw [K.coord_eq_tensorComponent]
+  apply (TensorProduct.comm A B T).injective
+  simpa using LinearMap.sum_tensorComponent_tmul K.b K.φ K.sum_smul
+    (TensorProduct.comm A B T z)
 
 -- The family `i ↦ ∑ j, b j ⊗ X (i, j)` in `B ⊗[A] A[X]`, where `A[X]` is the polynomial ring in
 -- the variables `X (i, j)`. For a commutative `A`-algebra `T`, every family `ι → B ⊗[A] T` is its
@@ -499,6 +512,93 @@ theorem tensorHomEquiv_comp {T' : Type*} [CommRing T'] [Algebra A T']
   exact Algebra.TensorProduct.comm_comp_map_apply (AlgHom.id A B) k _
 
 end TensorHom
+
+section UniversalCoefficients
+
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
+  [Algebra.FinitePresentation B C]
+
+/-- The coefficient of the universal point at `c`, extracted by the linear functional `φ`
+on the coefficient algebra `B`. -/
+def universalCoefficient (φ : Module.Dual A B) (c : C) : WeilRestriction A B C :=
+  LinearMap.tensorComponent φ
+    (TensorProduct.comm A B (WeilRestriction A B C) (universalPoint A B C c))
+
+/-- A universal coefficient is contraction of the universal point against its functional. -/
+theorem universalCoefficient_def (φ : Module.Dual A B) (c : C) :
+    universalCoefficient φ c = LinearMap.tensorComponent φ
+      (TensorProduct.comm A B (WeilRestriction A B C) (universalPoint A B C c)) := (rfl)
+
+/-- The zero functional extracts the zero coefficient. -/
+@[simp]
+theorem universalCoefficient_zero_left (c : C) :
+    universalCoefficient (0 : Module.Dual A B) c = 0 := by
+  simp [universalCoefficient_def]
+
+/-- Universal coefficients are additive in the functional. -/
+@[simp]
+theorem universalCoefficient_add_left (φ ψ : Module.Dual A B) (c : C) :
+    universalCoefficient (φ + ψ) c = universalCoefficient φ c + universalCoefficient ψ c := by
+  simp [universalCoefficient_def]
+
+/-- Universal coefficients respect scalar multiplication of the functional. -/
+@[simp]
+theorem universalCoefficient_smul_left (a : A) (φ : Module.Dual A B) (c : C) :
+    universalCoefficient (a • φ) c = a • universalCoefficient φ c := by
+  simp [universalCoefficient_def]
+
+/-- Every coefficient of zero is zero. -/
+@[simp]
+theorem universalCoefficient_zero_right (φ : Module.Dual A B) :
+    universalCoefficient (C := C) φ 0 = 0 := by
+  simp [universalCoefficient_def]
+
+/-- Universal coefficients are additive in the element of the source algebra. -/
+@[simp]
+theorem universalCoefficient_add_right (φ : Module.Dual A B) (c d : C) :
+    universalCoefficient φ (c + d) = universalCoefficient φ c + universalCoefficient φ d := by
+  simp [universalCoefficient_def]
+
+/-- Scaling the source by a scalar from `A` scales its universal coefficients. The scalar is
+mapped through `B`, so no choice of an `A`-algebra structure on `C` is required. -/
+@[simp]
+theorem universalCoefficient_smul_right (a : A) (φ : Module.Dual A B) (c : C) :
+    universalCoefficient φ (algebraMap A B a • c) = a • universalCoefficient φ c := by
+  simp [universalCoefficient_def, IsScalarTower.algebraMap_smul B]
+
+/-- Evaluating a universal coefficient is the same as extracting the corresponding coefficient
+of the classified point. -/
+theorem map_universalCoefficient {T : Type*} [CommRing T] [Algebra A T]
+    (g : WeilRestriction A B C →ₐ[A] T) (φ : Module.Dual A B) (c : C) :
+    g (universalCoefficient φ c) = LinearMap.tensorComponent φ
+      (TensorProduct.comm A B T (homEquiv A B C T g c)) := by
+  simp only [universalCoefficient_def, homEquiv_apply, AlgHom.comp_apply]
+  -- The algebra tensor map is `B`-linear, whereas contraction uses `A`-linear tensor maps.
+  -- Pure tensors avoid identifying these differently bundled maps by definitional equality.
+  induction universalPoint A B C c using TensorProduct.inductionOn with
+  | tmul b w => simp
+  | add z w hz hw => simp only [map_add, hz, hw]
+
+/-- The coefficients of the universal point generate the Weil restriction as an `A`-algebra.
+All linear functionals may be used, so no basis or projective splitting is part of the statement. -/
+theorem adjoin_range_universalCoefficient :
+    Algebra.adjoin A (Set.range fun p : Module.Dual A B × C ↦
+      universalCoefficient p.1 p.2) = ⊤ := by
+  classical
+  let S := Algebra.adjoin A (Set.range fun p : Module.Dual A B × C ↦
+    universalCoefficient p.1 p.2)
+  suffices (AlgHom.id A (WeilRestriction A B C)).range ≤ S by simpa using this
+  apply (range_le_iff_range_homEquiv_le).2
+  rintro _ ⟨c, rfl⟩
+  let K := coords A B
+  have hc (i : Fin K.n) : universalCoefficient (K.φ i) c ∈ S :=
+    Algebra.subset_adjoin ⟨(K.φ i, c), rfl⟩
+  refine ⟨∑ i, K.b i ⊗ₜ[A] (⟨universalCoefficient (K.φ i) c, hc i⟩ : S), ?_⟩
+  simpa [homEquiv_apply, universalCoefficient_def, ← K.coord_eq_tensorComponent] using
+    K.sum_tmul_coord (universalPoint A B C c)
+
+end UniversalCoefficients
 
 end WeilRestriction
 
