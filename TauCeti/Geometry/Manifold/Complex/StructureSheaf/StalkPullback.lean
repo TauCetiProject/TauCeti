@@ -16,6 +16,8 @@ public import TauCeti.Order.Filter.Germ
 near the chosen point. Unlike the sheaf morphism `stalkPrecomp`, this requires no globally
 holomorphic extension of the map. Equality, evaluation and composition are characterized
 through the injective comparison with function germs. The two pullbacks agree when both apply.
+Pullback along a map with a local analytic inverse, such as a chart, is bijective
+(`stalkPullback_bijective`).
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -130,5 +132,31 @@ theorem stalkPullback_comp {g : Y → Z} (hg : ∀ᶠ y in 𝓝 (f a), ContMDiff
   simp only [toFilterGerm_stalkPullback]
   exact Germ.inductionOn
     (toFilterGerm K Z (g (f a)) (𝓝 (g (f a))) le_rfl s) fun _ ↦ rfl
+
+/-- Pullback along a map with a local analytic inverse near the base point, such as a chart or a
+biholomorphism, is bijective. -/
+theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), ContMDiffAt J I ω g y)
+    (hgf : ∀ᶠ x in 𝓝 a, g (f x) = x) (hfg : ∀ᶠ y in 𝓝 (f a), f (g y) = y) :
+    Function.Bijective (stalkPullback hf) := by
+  have hg_tendsto : Tendsto g (𝓝 (f a)) (𝓝 a) := by
+    simpa only [hgf.self_of_nhds] using hg.self_of_nhds.continuousAt.tendsto
+  refine ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, fun s ↦ ?_⟩
+  · -- A germ whose composition with `f` vanishes near `a` vanishes near `f a = f (g (f a))`.
+    obtain ⟨u, -, hu⟩ := exists_toFilterGerm_eq (f a) s
+    apply toFilterGerm_nhds_injective (f a)
+    have h0 := congrArg (toFilterGerm I X a (𝓝 a) le_rfl) hs
+    rw [toFilterGerm_stalkPullback, hu, Germ.coe_compTendsto, map_zero, ← Germ.coe_zero,
+      Germ.coe_eq] at h0
+    rw [hu, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+    filter_upwards [hfg, hg_tendsto.eventually h0] with y hy hy0
+    simpa [hy] using hy0
+  · -- A germ `u` at `a` is the pullback of the germ `u ∘ g` at `f a`.
+    obtain ⟨u, hu_an, hu⟩ := exists_toFilterGerm_eq a s
+    obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt (x := f a) (f := u ∘ g)
+      ((hg.and (hg_tendsto.eventually hu_an)).mono fun y hy ↦ hy.2.comp y hy.1)
+    refine ⟨t, toFilterGerm_nhds_injective a ?_⟩
+    rw [toFilterGerm_stalkPullback, ht _ le_rfl, hu, Germ.coe_compTendsto, Germ.coe_eq]
+    filter_upwards [hgf] with x hx
+    simp [hx]
 
 end TauCeti.holomorphicStructureSheaf
