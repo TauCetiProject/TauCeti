@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.GradientFlow.Slope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
+import TauCeti.Topology.Instances.EReal
 
 /-!
 # Geodesic convexity of energies
@@ -220,9 +221,7 @@ theorem ConvexAlong.const_mul (h : ConvexAlong m φ γ) {c : ℝ} (hc : 0 ≤ c)
         (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)) :=
       mul_le_mul_of_nonneg_left (h t ht) hc'
     _ = _ := by
-      rw [EReal.mul_sub_of_nonneg_of_ne_top hc' (EReal.coe_ne_top _),
-        EReal.left_distrib_of_nonneg_of_ne_top hc' (EReal.coe_ne_top _), mul_left_comm,
-        mul_left_comm (c : EReal) (t : EReal), ← EReal.coe_mul]
+      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc]
       congr 2
       ring
 
@@ -233,10 +232,8 @@ theorem ConvexAlong.iSup {ι : Sort*} {φs : ι → X → EReal} (h : ∀ i, Con
   intro t ht
   simp only [iSup_apply]
   refine iSup_le fun i ↦ (h i t ht).trans ?_
-  exact EReal.sub_le_sub (add_le_add
-    (mul_le_mul_of_nonneg_left (le_iSup (fun i ↦ φs i (γ 0)) i)
-      (EReal.coe_nonneg.2 (sub_nonneg.2 ht.2)))
-    (mul_le_mul_of_nonneg_left (le_iSup (fun i ↦ φs i (γ 1)) i) (EReal.coe_nonneg.2 ht.1))) le_rfl
+  exact EReal.coe_mul_add_coe_mul_sub_le_of_le (le_iSup (fun i ↦ φs i (γ 0)) i)
+    (le_iSup (fun i ↦ φs i (γ 1)) i) (sub_nonneg.2 ht.2) ht.1 _
 
 /-- **Convexity along a curve passes to pointwise limits.** If the energies `φs i` are eventually
 `m`-convex along `γ` and converge to `φ` at every point `γ t`, `t ∈ [0, 1]`, and the endpoint
@@ -246,24 +243,10 @@ theorem ConvexAlong.of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {φs : ι 
     (hφ : ∀ t ∈ Icc (0 : ℝ) 1, Tendsto (fun i ↦ φs i (γ t)) l (𝓝 (φ (γ t))))
     (h₀ : φ (γ 0) ≠ ⊤) (h₁ : φ (γ 1) ≠ ⊤) : ConvexAlong m φ γ := by
   intro t ht
-  have hs : 0 ≤ 1 - t := sub_nonneg.2 ht.2
-  have hmul {s : ℝ} {u : ι → EReal} {a : EReal} (hu : Tendsto u l (𝓝 a)) :
-      Tendsto (fun i ↦ (s : EReal) * u i) l (𝓝 ((s : EReal) * a)) :=
-    EReal.Tendsto.const_mul hu (.inl (EReal.coe_ne_bot s)) (.inl (EReal.coe_ne_top s))
-  have hadd {u v : ι → EReal} {a b : EReal} (hu : Tendsto u l (𝓝 a)) (hv : Tendsto v l (𝓝 b))
-      (ha : a ≠ ⊤) (hb : b ≠ ⊤) : Tendsto (fun i ↦ u i + v i) l (𝓝 (a + b)) :=
-    (EReal.continuousAt_add (.inl ha) (.inr hb)).tendsto.comp (hu.prodMk_nhds hv)
-  have hne {c : ℝ} (hc : 0 ≤ c) {d : EReal} (hd : d ≠ ⊤) : (c : EReal) * d ≠ ⊤ := by
-    simp [EReal.mul_ne_top, hc, hd]
-  have ha := hne hs h₀
-  have hb := hne ht.1 h₁
-  -- The right-hand sides of the convexity inequalities for `φs i` converge to the one for `φ`.
-  have hR := hadd (hadd (hmul (hφ 0 (left_mem_Icc.2 zero_le_one)))
-    (hmul (hφ 1 (right_mem_Icc.2 zero_le_one))) ha hb)
-    (tendsto_const_nhds (x := ((-(m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2) : ℝ) : EReal)))
-    (EReal.add_ne_top ha hb) (EReal.coe_ne_top _)
-  simp only [EReal.coe_neg, ← sub_eq_add_neg] at hR
-  exact le_of_tendsto_of_tendsto (hφ t ht) hR (h.mono fun i hi ↦ hi t ht)
+  exact le_of_tendsto_of_tendsto (hφ t ht)
+    (EReal.tendsto_coe_mul_add_coe_mul_sub (hφ 0 (left_mem_Icc.2 zero_le_one))
+      (hφ 1 (right_mem_Icc.2 zero_le_one)) h₀ h₁ (sub_nonneg.2 ht.2) ht.1 _)
+    (h.mono fun i hi ↦ hi t ht)
 
 /-- **Restriction to a piece of a geodesic.** If `φ` is `m`-convex along geodesics, then along a
 geodesic segment `γ` between two points of its effective domain, `φ` is also `m`-convex along the
@@ -299,11 +282,9 @@ theorem GeodesicallyConvex.add_convexAlongGeodesics (hφ : GeodesicallyConvex m 
 /-- **Positive multiple of a geodesically convex energy.** If `φ` is `m`-geodesically convex and
 `c > 0`, then `c φ` is `(c m)`-geodesically convex. -/
 theorem GeodesicallyConvex.const_mul (h : GeodesicallyConvex m φ) {c : ℝ} (hc : 0 < c) :
-    GeodesicallyConvex (c * m) fun x ↦ (c : EReal) * φ x := by
-  have hne {d : EReal} (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
-    rintro rfl
-    exact hd (EReal.coe_mul_top_of_pos hc)
-  exact fun _ _ hx hy ↦ (h (hne hx) (hne hy)).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.const_mul hc.le⟩
+    GeodesicallyConvex (c * m) fun x ↦ (c : EReal) * φ x := fun _ _ hx hy ↦
+  (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy)).imp
+    fun _ hγ ↦ ⟨hγ.1, hγ.2.const_mul hc.le⟩
 
 /-- **Nonnegative multiple of an energy convex along geodesics.** If `φ` is `m`-convex along
 geodesics and `c ≥ 0`, then `c φ` is `(c m)`-convex along geodesics. For `c = 0` this is the zero
@@ -313,10 +294,9 @@ theorem ConvexAlongGeodesics.const_mul (h : ConvexAlongGeodesics m φ) {c : ℝ}
   rcases hc.eq_or_lt with rfl | hc
   · intro _ _ _ _ _ _ t _
     simp
-  have hne {d : EReal} (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
-    rintro rfl
-    exact hd (EReal.coe_mul_top_of_pos hc)
-  exact fun _ _ hx hy _ hγ ↦ (h (hne hx) (hne hy) hγ).const_mul hc.le
+  exact fun _ _ hx hy _ hγ ↦
+    (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy) hγ).const_mul
+      hc.le
 
 /-- **Supremum of energies convex along geodesics.** The pointwise supremum of a family of
 energies, each `m`-convex along geodesics, is `m`-convex along geodesics. -/

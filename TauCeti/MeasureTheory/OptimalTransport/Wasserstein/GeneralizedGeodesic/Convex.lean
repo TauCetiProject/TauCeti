@@ -42,6 +42,8 @@ midpoint of the generalized geodesic joining two minimizers would otherwise do s
 
 ## Main definitions
 
+* `TauCeti.ConvexAlongGeneralizedGeodesicPlan m φ ν₀ ν₁ γ`: the convexity inequality along
+  a fixed three-plan, with the quadratic cost of its endpoint coupling as the correction.
 * `TauCeti.GeneralizedGeodesicallyConvex m φ μ`: the energy `φ` on `P₂(E)` is `m`-convex along
   generalized geodesics based at `μ`.
 
@@ -90,6 +92,37 @@ section Convexity
 variable [NormedSpace ℝ E] {m m' : ℝ}
   {φ : WassersteinSpace 2 E → EReal} {μ : WassersteinSpace 2 E}
 
+/-- The energy `φ` satisfies the `m`-convexity inequality along the interpolation of the fixed
+three-plan `γ`, with endpoint laws `ν₀`, `ν₁`. The correction uses the quadratic cost of `γ.snd`.
+This predicate alone does not require that `γ` is a generalized-geodesic plan. -/
+def ConvexAlongGeneralizedGeodesicPlan (m : ℝ) (φ : WassersteinSpace 2 E → EReal)
+    (ν₀ ν₁ : WassersteinSpace 2 E) (γ : Measure (E × E × E)) : Prop :=
+  ∀ t ∈ Icc (0 : ℝ) 1, ∀ ν : WassersteinSpace 2 E,
+    ((ν : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t →
+    φ ν ≤ ((1 - t : ℝ) : EReal) * φ ν₀ + (t : EReal) * φ ν₁ -
+      ((m / 2 * t * (1 - t) * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd : ℝ) : EReal)
+
+/-- The defining inequality for convexity along a fixed three-plan. -/
+theorem convexAlongGeneralizedGeodesicPlan_def {ν₀ ν₁ : WassersteinSpace 2 E}
+    {γ : Measure (E × E × E)} :
+    ConvexAlongGeneralizedGeodesicPlan m φ ν₀ ν₁ γ ↔
+      ∀ t ∈ Icc (0 : ℝ) 1, ∀ ν : WassersteinSpace 2 E,
+        ((ν : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t →
+        φ ν ≤ ((1 - t : ℝ) : EReal) * φ ν₀ + (t : EReal) * φ ν₁ -
+          ((m / 2 * t * (1 - t) * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd : ℝ) : EReal) :=
+  Iff.rfl
+
+/-- Convexity along a fixed three-plan persists with a smaller parameter. -/
+theorem ConvexAlongGeneralizedGeodesicPlan.mono {ν₀ ν₁ : WassersteinSpace 2 E}
+    {γ : Measure (E × E × E)} (h : ConvexAlongGeneralizedGeodesicPlan m φ ν₀ ν₁ γ)
+    (hm : m' ≤ m) : ConvexAlongGeneralizedGeodesicPlan m' φ ν₀ ν₁ γ := by
+  intro t ht ν hν
+  refine (h t ht ν hν).trans (EReal.sub_le_sub le_rfl ?_)
+  apply EReal.coe_le_coe_iff.2
+  have : 0 ≤ t * (1 - t) * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd :=
+    mul_nonneg (mul_nonneg ht.1 (sub_nonneg.2 ht.2)) (integral_nonneg fun _ ↦ by positivity)
+  nlinarith
+
 /-- The energy `φ` on `P₂(E)` is *`m`-convex along generalized geodesics based at `μ`*: any two
 laws `ν₀` and `ν₁` with `φ ν₀ ≠ ⊤` and `φ ν₁ ≠ ⊤` (energy `⊥` is allowed) carry a quadratic
 generalized-geodesic plan `γ` from `ν₀` to `ν₁` based at `μ` along whose generalized geodesic
@@ -102,10 +135,7 @@ def GeneralizedGeodesicallyConvex (m : ℝ) (φ : WassersteinSpace 2 E → EReal
   ∀ ⦃ν₀ ν₁ : WassersteinSpace 2 E⦄, φ ν₀ ≠ ⊤ → φ ν₁ ≠ ⊤ → ∃ γ : Measure (E × E × E),
     IsGeneralizedGeodesicPlan 2 γ ((μ : ProbabilityMeasure E) : Measure E)
       ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E) ∧
-    ∀ t ∈ Icc (0 : ℝ) 1, ∀ ν : WassersteinSpace 2 E,
-      ((ν : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t →
-      φ ν ≤ ((1 - t : ℝ) : EReal) * φ ν₀ + (t : EReal) * φ ν₁ -
-        ((m / 2 * t * (1 - t) * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd : ℝ) : EReal)
+    ConvexAlongGeneralizedGeodesicPlan m φ ν₀ ν₁ γ
 
 /-- The defining condition of convexity along generalized geodesics. -/
 theorem generalizedGeodesicallyConvex_def :
@@ -113,21 +143,14 @@ theorem generalizedGeodesicallyConvex_def :
       ∀ ⦃ν₀ ν₁ : WassersteinSpace 2 E⦄, φ ν₀ ≠ ⊤ → φ ν₁ ≠ ⊤ → ∃ γ : Measure (E × E × E),
         IsGeneralizedGeodesicPlan 2 γ ((μ : ProbabilityMeasure E) : Measure E)
           ((ν₀ : ProbabilityMeasure E) : Measure E) ((ν₁ : ProbabilityMeasure E) : Measure E) ∧
-        ∀ t ∈ Icc (0 : ℝ) 1, ∀ ν : WassersteinSpace 2 E,
-          ((ν : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t →
-          φ ν ≤ ((1 - t : ℝ) : EReal) * φ ν₀ + (t : EReal) * φ ν₁ -
-            ((m / 2 * t * (1 - t) * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd : ℝ) : EReal) :=
+        ConvexAlongGeneralizedGeodesicPlan m φ ν₀ ν₁ γ :=
   Iff.rfl
 
 /-- Convexity along generalized geodesics with a parameter `m` implies it for every smaller
 parameter. -/
 theorem GeneralizedGeodesicallyConvex.mono (h : GeneralizedGeodesicallyConvex m φ μ)
     (hm : m' ≤ m) : GeneralizedGeodesicallyConvex m' φ μ := fun _ _ h₀ h₁ ↦
-  (h h₀ h₁).imp fun γ hγ ↦ ⟨hγ.1, fun t ht ν hν ↦ (hγ.2 t ht ν hν).trans <|
-    EReal.sub_le_sub le_rfl <| EReal.coe_le_coe_iff.2 <| by
-      have : 0 ≤ t * (1 - t) * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd :=
-        mul_nonneg (mul_nonneg ht.1 (sub_nonneg.2 ht.2)) (integral_nonneg fun _ ↦ by positivity)
-      nlinarith⟩
+  (h h₀ h₁).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.mono hm⟩
 
 end Convexity
 
