@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Cut-off homogeneous terms are symbols
@@ -17,9 +18,6 @@ homogeneous symbols `aₘ₋ⱼ` of degree `m - j`, made smooth at the zero freq
 cutoff `χ`. For this expansion to make sense in the symbol classes, each cut-off term must be a
 symbol of its degree. This file proves this:
 
-* `TauCeti.HomogeneousSymbol.exists_norm_mixedDeriv_le`: on a compact set of positions, the mixed
-  derivatives of a homogeneous symbol of degree `m` on `ℝⁿ × ℝⁿ` satisfy
-  `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency;
 * `TauCeti.HomogeneousSymbol.toSymbol χ`: the cut-off term `χ(ξ) • a(x, ξ)` as a symbol in
   `S^m_{1,0}`, linear in `a`. It vanishes for `‖ξ‖ ≤ 1`, has the same mixed derivatives as `a`
   for `‖ξ‖ > 2`
@@ -31,7 +29,8 @@ symbol of its degree. This file proves this:
   (`TauCeti.HomogeneousSymbol.toSymbol_injective`), and the homogeneous terms of a classical
   expansion are determined by the symbol.
 
-The symbol estimates for `χ(ξ) • a(x, ξ)` come from the homogeneous bound for `‖ξ‖ > 2`, where
+The symbol estimates for `χ(ξ) • a(x, ξ)` come from the homogeneous bound
+`TauCeti.HomogeneousSymbol.exists_norm_mixedDeriv_le` for `‖ξ‖ > 2`, where
 `‖ξ‖ ^ (m - |β|)` and `⟨ξ⟩ ^ (m - |β|) = (1 + ‖ξ‖²) ^ ((m - |β|) / 2)` are comparable, and from
 compactness of `K × {‖ξ‖ ≤ 2}`.
 
@@ -50,127 +49,11 @@ open scoped ContDiff Topology
 
 namespace TauCeti
 
-/-- For `t ≥ 1` and an exponent `r` of either sign, `t ^ r ≤ 2 ^ (|r| / 2) (1 + t²) ^ (r / 2)`. -/
-private theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
-    t ^ r ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-  have hu : 0 < t ^ 2 := by positivity
-  have hs : 0 < 1 + t ^ 2 := by positivity
-  have htr : t ^ r = (t ^ 2) ^ (r / 2) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (by linarith)]
-    congr 1
-    push_cast
-    ring
-  rw [htr]
-  rcases le_total 0 r with hr | hr
-  · calc (t ^ 2) ^ (r / 2) ≤ (1 + t ^ 2) ^ (r / 2) :=
-          Real.rpow_le_rpow hu.le (by linarith) (by linarith)
-      _ ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) :=
-          le_mul_of_one_le_left (by positivity)
-            (Real.one_le_rpow (by norm_num) (by positivity))
-  · -- For a nonpositive exponent use `(1 + t²) / 2 ≤ t²`, and `2 ^ (|r| / 2) = 2 ^ (-(r / 2))`.
-    have h2 : (1 + t ^ 2) / 2 ≤ t ^ 2 := by nlinarith
-    calc (t ^ 2) ^ (r / 2) ≤ ((1 + t ^ 2) / 2) ^ (r / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) h2 (by linarith)
-      _ = 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-          rw [Real.div_rpow hs.le (by norm_num), abs_of_nonpos hr, neg_div, Real.rpow_neg
-            (by norm_num), div_eq_inv_mul]
-
-/-- For `t ≥ 1` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`. -/
-private theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
-    (1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * t ^ r := by
-  have hu : 0 < t ^ 2 := by positivity
-  have htr : t ^ r = (t ^ 2) ^ (r / 2) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (by linarith)]
-    congr 1
-    push_cast
-    ring
-  rw [htr]
-  rcases le_total 0 r with hr | hr
-  · -- For a nonnegative exponent use `1 + t² ≤ 2 t²`.
-    calc (1 + t ^ 2) ^ (r / 2) ≤ (2 * t ^ 2) ^ (r / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith) (by linarith)
-      _ = 2 ^ (|r| / 2) * (t ^ 2) ^ (r / 2) := by
-          rw [Real.mul_rpow (by norm_num) hu.le, abs_of_nonneg hr]
-  · calc (1 + t ^ 2) ^ (r / 2) ≤ (t ^ 2) ^ (r / 2) :=
-          Real.rpow_le_rpow_of_nonpos hu (by linarith) (by linarith)
-      _ ≤ 2 ^ (|r| / 2) * (t ^ 2) ^ (r / 2) :=
-          le_mul_of_one_le_left (by positivity)
-            (Real.one_le_rpow (by norm_num) (by positivity))
-
-/-- For `|t| ≤ 2` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2)` is at least
-`5 ^ (-|r| / 2)`. -/
-private theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ) :
-    1 ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-  have hs : 1 ≤ 1 + t ^ 2 := by nlinarith [sq_nonneg t]
-  have hs5 : 1 + t ^ 2 ≤ 5 := by nlinarith [sq_abs t, abs_nonneg t]
-  calc (1 : ℝ) ≤ (1 + t ^ 2) ^ ((|r| + r) / 2) :=
-        Real.one_le_rpow hs (by linarith [neg_abs_le r])
-    _ = (1 + t ^ 2) ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-        rw [← Real.rpow_add (by linarith), add_div]
-    _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-        gcongr
-
 namespace HomogeneousSymbol
 
 variable {n : ℕ} {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {E : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
-
-/-! ### Mixed derivatives of homogeneous symbols -/
-
-/-- The iterated frequency derivative `∂_ξ^β a`, a homogeneous symbol of degree `m - |β|`. -/
-private def iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m) :
-    (β : List (Fin n)) → HomogeneousSymbol X (CoordinateSpace n) V W (m - β.length)
-  | [] => a.castDegree (by simp)
-  | j :: js => ((iterFrequencyDeriv a js).frequencyDeriv (EuclideanSpace.single j 1)).castDegree
-      (by simp only [List.length_cons]; push_cast; ring)
-
-/-- The iterated spatial derivative `∂_x^α a`, a homogeneous symbol of the same degree. -/
-private def iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m) :
-    List (Fin n) → HomogeneousSymbol (CoordinateSpace n) E V W m
-  | [] => a
-  | j :: js => (iterSpatialDeriv a js).spatialDeriv (EuclideanSpace.single j 1)
-
-private theorem coefficient_iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m)
-    (β : List (Fin n)) (x : X) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
-    (iterFrequencyDeriv a β).coefficient (x, ξ) =
-      coordinateDeriv β (fun η => a.coefficient (x, η)) ξ := by
-  induction β generalizing ξ with
-  | nil => simp [iterFrequencyDeriv]
-  | cons j js ih =>
-    -- The two sides are derivatives of functions that agree on the open set of nonzero
-    -- frequencies.
-    have h : (fun η => (iterFrequencyDeriv a js).coefficient (x, η)) =ᶠ[𝓝 ξ]
-        coordinateDeriv js (fun η => a.coefficient (x, η)) :=
-      eventually_of_mem (isOpen_ne.mem_nhds hξ) fun η hη => ih hη
-    rw [iterFrequencyDeriv, coefficient_castDegree, coefficient_frequencyDeriv _ _ hξ,
-      coordinateDeriv_cons, h.fderiv_eq]
-
-private theorem coefficient_iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m)
-    (α : List (Fin n)) (x : CoordinateSpace n) {ξ : E} (hξ : ξ ≠ 0) :
-    (iterSpatialDeriv a α).coefficient (x, ξ) =
-      coordinateDeriv α (fun y => a.coefficient (y, ξ)) x := by
-  induction α generalizing x with
-  | nil => simp [iterSpatialDeriv]
-  | cons j js ih =>
-    rw [iterSpatialDeriv, coefficient_spatialDeriv _ _ hξ, coordinateDeriv_cons, funext ih]
-
-/-- **Growth of the mixed derivatives of a homogeneous symbol.** On a compact set of positions,
-the mixed derivatives of a homogeneous symbol of degree `m` satisfy
-`‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency. -/
-theorem exists_norm_mixedDeriv_le
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ξ ≠ 0 →
-      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length) := by
-  obtain ⟨C, hC, hCK⟩ := (iterSpatialDeriv (iterFrequencyDeriv a β) α).exists_norm_coefficient_le hK
-  refine ⟨C, hC, fun x hx ξ hξ => ?_⟩
-  have h : (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
-      mixedDeriv α β a.coefficient x ξ := by
-    rw [coefficient_iterSpatialDeriv _ _ _ hξ, mixedDeriv_def]
-    exact congrArg (coordinateDeriv α · x)
-      (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
-  exact h ▸ hCK x hx ξ
 
 /-! ### The cut-off term -/
 
@@ -210,13 +93,13 @@ private theorem exists_bound_smul_coefficient (χ : FrequencyCutoff (CoordinateS
     calc _ ≤ max B 0 := h.trans (le_max_left _ _)
       _ ≤ max B 0 * (5 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
           le_mul_of_one_le_right (le_max_right _ _)
-            (one_le_five_rpow_mul_one_add_sq_rpow (by rwa [abs_norm]) r)
+            (Real.one_le_five_rpow_mul_one_add_sq_rpow (by rwa [abs_norm]) r)
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_left (by positivity)
   · rw [mixedDeriv_smul_coefficient_of_two_lt_norm χ a α β x hξ]
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
     calc _ ≤ C * ‖ξ‖ ^ r := hCK x hx ξ hξ0
       _ ≤ C * (2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
-          mul_le_mul_of_nonneg_left (rpow_le_two_rpow_mul_one_add_sq_rpow (by linarith) r) hC
+          mul_le_mul_of_nonneg_left (Real.rpow_le_two_rpow_mul_one_add_sq_rpow (by linarith) r) hC
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_right (by positivity)
 
 /-- The cut-off term `χ(ξ) • a(x, ξ)` of a homogeneous symbol `a` of degree `m`, a symbol of
@@ -292,18 +175,18 @@ theorem eq_zero_of_coefficient_toSymbol_eq {m' : ℝ} (hm : m' < m) (b : Symbol 
   have key : ∀ t, 2 / ‖ξ‖ ≤ t → ‖a.coefficient (x, ξ)‖ ≤ D * t ^ (m' - m) := by
     intro t ht
     have ht0 : 0 < t := lt_of_lt_of_le (by positivity) ht
-    have htξ : 2 ≤ ‖t • ξ‖ := by
-      rw [norm_smul, Real.norm_of_nonneg ht0.le]
-      exact (div_le_iff₀ hn).1 ht
+    have hnorm : ‖t • ξ‖ = t * ‖ξ‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]
+    have htξ : 2 ≤ t * ‖ξ‖ := (div_le_iff₀ hn).1 ht
+    -- At `t • ξ` the symbol `b` is `a(x, t • ξ) = t ^ m • a(x, ξ)`.
     have h := hCb x rfl (t • ξ)
-    rw [mixedDeriv_nil_nil, ← hb, coefficient_toSymbol_of_two_le_norm χ a x htξ,
-      a.homogeneous x ξ t ht0, norm_smul, Real.norm_of_nonneg (by positivity)] at h
-    simp only [List.length_nil, CharP.cast_eq_zero, sub_zero] at h
-    have hw := one_add_sq_rpow_le_two_rpow_mul_rpow (by linarith) m' (t := ‖t • ξ‖)
-    rw [norm_smul, Real.norm_of_nonneg ht0.le, Real.mul_rpow ht0.le hn.le] at hw
+    rw [mixedDeriv_nil_nil, ← hb, coefficient_toSymbol_of_two_le_norm χ a x (hnorm ▸ htξ),
+      a.homogeneous x ξ t ht0, hnorm, norm_smul, Real.norm_of_nonneg (by positivity),
+      List.length_nil, Nat.cast_zero, sub_zero] at h
+    have hw : (1 + (t * ‖ξ‖) ^ 2) ^ (m' / 2) ≤ 2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m') := by
+      rw [← Real.mul_rpow ht0.le hn.le]
+      exact Real.one_add_sq_rpow_le_two_rpow_mul_rpow (by linarith) m'
     rw [Real.rpow_sub ht0, ← mul_div_assoc, le_div_iff₀' (by positivity)]
-    calc t ^ m * ‖a.coefficient (x, ξ)‖ ≤ C * (1 + (t * ‖ξ‖) ^ 2) ^ (m' / 2) := by
-          rwa [norm_smul, Real.norm_of_nonneg ht0.le] at h
+    calc t ^ m * ‖a.coefficient (x, ξ)‖ ≤ C * (1 + (t * ‖ξ‖) ^ 2) ^ (m' / 2) := h
       _ ≤ C * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) := mul_le_mul_of_nonneg_left hw hC
       _ = D * t ^ m' := by ring
   have hlim : Tendsto (fun t : ℝ => D * t ^ (m' - m)) atTop (𝓝 0) := by
