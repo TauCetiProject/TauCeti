@@ -107,12 +107,13 @@ theorem comp_pointConjugationAlgHom_eq_symm_comp {A : Type w} [Semiring A] [Alge
     (π : H →ₐ[R] A) (g : WithConv (H →ₐ[R] R)) (e : A ≃ₐ[R] A)
     (hg : π.comp (pointConjugationAlgHom g⁻¹) = e.toAlgHom.comp π) :
     π.comp (pointConjugationAlgHom g) = e.symm.toAlgHom.comp π := by
+  have hinv : (pointConjugationAlgHom g⁻¹).comp (pointConjugationAlgHom g) = AlgHom.id R H := by
+    rw [← pointConjugationAlgHom_mul, mul_inv_cancel, pointConjugationAlgHom_one]
+  -- Precomposing `hg` with conjugation by `g` gives `π = e ∘ (π ∘ conj g)`.
+  have hπ := congrArg (·.comp (pointConjugationAlgHom g)) hg
+  simp only [AlgHom.comp_assoc, hinv, AlgHom.comp_id] at hπ
   refine AlgHom.ext fun x ↦ e.injective ?_
-  have hx := AlgHom.congr_fun hg (pointConjugationAlgHom g x)
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, ← AlgHom.comp_apply (pointConjugationAlgHom g⁻¹),
-    ← pointConjugationAlgHom_mul, mul_inv_cancel, pointConjugationAlgHom_one,
-    AlgHom.id_apply] at hx
-  simpa using hx.symm
+  simpa using (AlgHom.congr_fun hπ x).symm
 
 private theorem pointConjugationAlgHom_bijective (g : WithConv (H →ₐ[R] R)) :
     Function.Bijective (pointConjugationAlgHom g) := by

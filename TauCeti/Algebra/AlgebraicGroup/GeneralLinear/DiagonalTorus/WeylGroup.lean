@@ -198,10 +198,12 @@ theorem diagonalTorusCoordinateMap_comp_pointConjugationAlgHom_permutationGL
   apply toConv_injective
   apply (pointsMulEquiv (R := R)
     (A := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) N).injective
+  -- Evaluate both coordinate maps at the generic point of the diagonal torus.
   rw [pointsMulEquiv_toConv_domCongr_comp_diagonalTorusCoordinateMap,
     pointsMulEquiv_toConv_diagonalTorusCoordinateMap_comp_pointConjugationAlgHom,
-    MulEquiv.apply_symm_apply, map_inv, map_permutationGL, ← map_inv,
-    permutationGL_mul_diagGL_mul_inv]
+    MulEquiv.apply_symm_apply]
+  -- The remaining matrix identity is conjugation of a diagonal matrix by a permutation matrix.
+  rw [map_inv, map_permutationGL, ← map_inv, permutationGL_mul_diagGL_mul_inv]
   congr 1
   funext i
   apply Units.ext
@@ -283,12 +285,7 @@ theorem exists_characterRelabel_eq_of_mem_weylGroup_diagonalTorusCoordinateMap
   -- Its diagonal factor commutes with the generic diagonal matrix; its permutation factor
   -- relabels the entries.
   have hconj : h * diagGL genericDiagonal * h⁻¹ = diagGL fun i ↦ genericDiagonal (ρ⁻¹ i) := by
-    rw [hdρ, mul_inv_rev, show diagGL d * permutationGL ρ * diagGL genericDiagonal *
-        ((permutationGL ρ)⁻¹ * (diagGL d)⁻¹) =
-        diagGL d * (permutationGL ρ * diagGL genericDiagonal * (permutationGL ρ)⁻¹) *
-          (diagGL d)⁻¹ by group,
-      permutationGL_mul_diagGL_mul_inv, ← map_inv, ← map_mul, ← map_mul, mul_comm d,
-      mul_inv_cancel_right]
+    rw [hdρ, diagGL_mul_permutationGL_mul_diagGL_mul_inv]
   -- Comparing diagonal entries, `w` sends the coordinate character of `i` to that of `ρ⁻¹ i`.
   have hent (i : Fin N) : w (Multiplicative.ofAdd (Finsupp.single (ULift.up i) 1)) =
       Multiplicative.ofAdd (Finsupp.single (ULift.up (ρ⁻¹ i)) 1) := by
