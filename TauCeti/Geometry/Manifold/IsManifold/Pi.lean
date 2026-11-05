@@ -125,7 +125,6 @@ theorem extChartAt_pi (x : ∀ i, M i) :
 corresponding factor at the corresponding coordinate of `x`. -/
 theorem extChartAt_pi_apply (x y : ∀ i, M i) (i : ι) :
     extChartAt (ModelWithCorners.pi I) x y i = extChartAt (I i) (x i) (y i) := by
-  rw [extChartAt_pi]
-  rfl
+  rw [extChartAt_pi, PartialEquiv.pi_apply, Pi.map_apply]
 
 end TauCeti

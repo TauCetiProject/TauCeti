@@ -103,18 +103,19 @@ theorem im_toCircle_eq_zero_iff {T : ℝ} (hT : T ≠ 0) {x : AddCircle T} :
       have := Circle.normSq_coe (toCircle x)
       rw [Complex.normSq_apply, h] at this
       linear_combination this
+    -- Such a point of the circle is determined by its real part.
+    have heq (w : Circle) (hw : (w : ℂ).im = 0) (hre : (toCircle x : ℂ).re = (w : ℂ).re) :
+        toCircle x = w :=
+      Circle.ext (Complex.ext hre (h.trans hw.symm))
     rcases mul_eq_zero.1 hsq with hre | hre
     · left
       refine injective_toCircle hT ?_
       rw [toCircle_zero]
-      exact Circle.ext (Complex.ext (by rw [Circle.coe_one, Complex.one_re]; linarith)
-        (by simp [h]))
+      exact heq 1 (by simp) (by simp [sub_eq_zero.1 hre])
     · right
       refine injective_toCircle hT ?_
       rw [toCircle_half_period hT]
-      exact Circle.ext (Complex.ext
-        (by rw [Circle.coe_neg, Circle.coe_one, Complex.neg_re, Complex.one_re]; linarith)
-        (by simp [h]))
+      exact heq (-1) (by simp) (by simp [eq_neg_of_add_eq_zero_left hre])
   · rintro (rfl | rfl) <;> simp [hT]
 
 end AddCircle
