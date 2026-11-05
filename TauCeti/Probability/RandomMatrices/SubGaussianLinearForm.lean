@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.NNReal.Basic
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.Moments.SubGaussian
 
@@ -37,7 +38,7 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
   let a2 : ι → ℝ≥0 := fun i ↦ ⟨(a i) ^ 2, sq_nonneg (a i)⟩
   let S : Ω → ℝ := fun ω ↦ ∑ i, Y i ω
   have hY_indep : iIndepFun Y μ := by
-    simpa [Y] using
+    simpa only [Y, Function.comp_apply] using
       h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
   have hY : ∀ i, HasSubgaussianMGF (Y i) (a2 i * c) μ := by
     intro i
