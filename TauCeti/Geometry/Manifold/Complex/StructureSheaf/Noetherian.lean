@@ -109,7 +109,7 @@ private theorem isNoetherianRing_stalk_prod [FiniteDimensional ℂ V]
   obtain ⟨L, hL⟩ := SeparatingDual.exists_continuousLinearEquiv_apply_eq (R := ℂ)
     (x := ((0 : V), (1 : ℂ))) (by simp) hv0
   obtain ⟨⟨x₀, w₀⟩, rfl⟩ : ∃ q, L q = p := ⟨L.symm p, L.apply_symm_apply p⟩
-  let σ := RingEquiv.ofBijective _ (stalkPullback_continuousLinearEquiv_bijective L (x₀, w₀))
+  let σ := RingEquiv.ofBijective _ (L.holomorphicStalkPullback_bijective (x₀, w₀))
   have hσf : toFilterGerm 𝓘(ℂ, V × ℂ) (V × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (σ f) = ↑(F ∘ L) := by
     simp only [σ, RingEquiv.ofBijective_apply, toFilterGerm_stalkPullback, hfF _ le_rfl,
       Germ.coe_compTendsto]
@@ -152,7 +152,7 @@ private theorem isNoetherianRing_stalk_of_finrank_eq :
     have := isNoetherianRing_stalk_prod
       (isNoetherianRing_stalk_of_finrank_eq n (Fin n → ℂ) (by simp)) (e x)
     exact isNoetherianRing_of_surjective _ _ _
-      (stalkPullback_continuousLinearEquiv_bijective e x).2
+      (e.holomorphicStalkPullback_bijective x).2
 
 end NormedSpace
 
