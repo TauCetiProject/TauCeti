@@ -179,6 +179,7 @@ lemma monotone_preimageSkeleton (f : E → X) : Monotone (preimageSkeleton C f) 
   fun _ _ h ↦ Set.preimage_mono (skeletonLT_mono (by exact_mod_cast Int.toNat_le_toNat (by lia)))
 
 /-- Below degree `0` the skeletal filtration is the preimage of the base. -/
+@[simp]
 lemma preimageSkeleton_of_neg (f : E → X) {q : ℤ} (hq : q < 0) :
     preimageSkeleton C f q = f ⁻¹' D := by
   rw [preimageSkeleton_def, Int.toNat_of_nonpos (by lia), Nat.cast_zero, skeletonLT_zero_eq_base]
