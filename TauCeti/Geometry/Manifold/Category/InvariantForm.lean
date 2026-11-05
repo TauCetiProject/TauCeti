@@ -17,10 +17,10 @@ forms on objects satisfying `s*ω = t*ω`. They are closed under exterior differ
 products. The object and arrow manifolds may have different models; neither properness nor
 étaleness is needed for these operations.
 
-A functor smooth on objects and total arrows pulls invariant forms back to invariant forms.
-These pullbacks commute with differentiation, reverse composition, and agree for functors joined
-by a smooth natural transformation. The last assertion holds for transformations, not just
-isomorphisms: only the smooth family of connecting arrows is needed. On groupoids it gives the
+A prefunctor smooth on objects and total arrows pulls invariant forms back to invariant forms.
+These pullbacks commute with differentiation, reverse composition, and agree for object maps joined
+by a smooth family of connecting arrows. In particular this applies to functors joined by a smooth
+natural transformation, not just a natural isomorphism. On groupoids it gives the
 2-isomorphism invariance needed to compare pullbacks through presentation refinements.
 
 The categorical and manifold carriers are unchanged. In particular no arrows, including
@@ -101,16 +101,24 @@ theorem wedgeWith_mem_invariantForms {V₁ V₂ V₃ : Type*} [NormedAddCommGrou
   rw [mem_invariantForms_iff] at hφ hη ⊢
   rw [SmoothForm.mpullback_wedgeWith, SmoothForm.mpullback_wedgeWith, hφ, hη]
 
+/-- Wedge products of invariant real-valued forms are invariant. -/
+theorem wedge_mem_invariantForms {l : ℕ} {φ : SmoothForm I C ℝ k}
+    {η : SmoothForm I C ℝ l} (hφ : φ ∈ invariantForms I J hs ht ℝ k)
+    (hη : η ∈ invariantForms I J hs ht ℝ l) :
+    SmoothForm.wedge φ η ∈ invariantForms I J hs ht ℝ (k + l) := by
+  rw [SmoothForm.wedge_def]
+  exact wedgeWith_mem_invariantForms _ hφ hη
+
 end TauCeti.Quiver
 
-namespace CategoryTheory.Functor
+namespace Prefunctor
 
 variable {E H A K E' H' A' K' C D : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   [NormedAddCommGroup A'] [NormedSpace ℝ A'] [TopologicalSpace K']
-  [Category C] [Category D] [TopologicalSpace C] [TopologicalSpace D]
+  [Quiver C] [Quiver D] [TopologicalSpace C] [TopologicalSpace D]
   [TopologicalSpace (Quiver.Total C)] [TopologicalSpace (Quiver.Total D)]
   [ChartedSpace H C] [ChartedSpace K (Quiver.Total C)]
   [ChartedSpace H' D] [ChartedSpace K' (Quiver.Total D)]
@@ -126,13 +134,13 @@ variable {E H A K E' H' A' K' C D : Type*}
 
 open TauCeti
 
-/-- A functor smooth on objects and total arrows pulls back invariant forms. -/
-theorem mpullback_mem_invariantForms (Φ : C ⥤ D) (hΦ : ContMDiff I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) {φ : SmoothForm I' D V k}
+/-- A prefunctor smooth on objects and total arrows pulls back invariant forms. -/
+theorem mpullback_mem_invariantForms (Φ : C ⥤q D) (hΦ : ContMDiff I I' ∞ Φ.obj)
+    (hΦ₁ : ContMDiff J J' ∞ Φ.mapTotal) {φ : SmoothForm I' D V k}
     (hφ : φ ∈ TauCeti.Quiver.invariantForms I' J' hs' ht' V k) :
     SmoothForm.mpullback Φ.obj hΦ φ ∈ TauCeti.Quiver.invariantForms I J hs ht V k := by
   rw [TauCeti.Quiver.mem_invariantForms_iff] at hφ ⊢
-  -- The two composites are equal because a functor preserves the endpoints of each arrow.
+  -- The two composites are equal because a prefunctor preserves the endpoints of each arrow.
   calc
     _ = SmoothForm.mpullback _ hΦ₁ (SmoothForm.mpullback _ hs' φ) := by
       rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
@@ -142,24 +150,24 @@ theorem mpullback_mem_invariantForms (Φ : C ⥤ D) (hΦ : ContMDiff I I' ∞ Φ
       rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
       rfl
 
-/-- Pullback on invariant forms induced by a functor smooth on objects and total arrows. -/
-def invariantFormsPullback (Φ : C ⥤ D) (hΦ : ContMDiff I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) :
+/-- Pullback on invariant forms induced by a prefunctor smooth on objects and total arrows. -/
+def invariantFormsPullback (Φ : C ⥤q D) (hΦ : ContMDiff I I' ∞ Φ.obj)
+    (hΦ₁ : ContMDiff J J' ∞ Φ.mapTotal) :
     TauCeti.Quiver.invariantForms I' J' hs' ht' V k →ₗ[ℝ]
       TauCeti.Quiver.invariantForms I J hs ht V k :=
   (SmoothForm.mpullback Φ.obj hΦ).restrict fun _ ↦ Φ.mpullback_mem_invariantForms hΦ hΦ₁
 
 /-- Pullback of an invariant form is its ordinary pullback on objects. -/
 @[simp]
-theorem coe_invariantFormsPullback (Φ : C ⥤ D) (hΦ : ContMDiff I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+theorem coe_invariantFormsPullback (Φ : C ⥤q D) (hΦ : ContMDiff I I' ∞ Φ.obj)
+    (hΦ₁ : ContMDiff J J' ∞ Φ.mapTotal)
     (φ : TauCeti.Quiver.invariantForms I' J' hs' ht' V k) :
     (Φ.invariantFormsPullback (hs := hs) (ht := ht) hΦ hΦ₁ φ : SmoothForm I C V k) =
       SmoothForm.mpullback Φ.obj hΦ φ := (rfl)
 
 /-- Pullback of invariant forms commutes with exterior differentiation. -/
-theorem mextDerivₗ_invariantFormsPullback (Φ : C ⥤ D) (hΦ : ContMDiff I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
+theorem mextDerivₗ_invariantFormsPullback (Φ : C ⥤q D) (hΦ : ContMDiff I I' ∞ Φ.obj)
+    (hΦ₁ : ContMDiff J J' ∞ Φ.mapTotal)
     (φ : TauCeti.Quiver.invariantForms I' J' hs' ht' V k) :
     TauCeti.Quiver.invariantForms.mextDerivₗ I J hs ht V k
         (Φ.invariantFormsPullback hΦ hΦ₁ φ) =
@@ -167,36 +175,64 @@ theorem mextDerivₗ_invariantFormsPullback (Φ : C ⥤ D) (hΦ : ContMDiff I I'
         (TauCeti.Quiver.invariantForms.mextDerivₗ I' J' hs' ht' V k φ) :=
   Subtype.ext (SmoothForm.mextDerivₗ_mpullback _ _ k φ.1)
 
-/-- The identity functor acts identically on invariant forms. -/
+/-- The identity prefunctor acts identically on invariant forms. -/
 @[simp]
 theorem invariantFormsPullback_id :
-    (𝟭 C).invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs) (ht' := ht)
+    (𝟭q C).invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs) (ht' := ht)
       (V := V) (k := k) contMDiff_id contMDiff_id = LinearMap.id := by
   ext φ : 1
   exact Subtype.ext (LinearMap.congr_fun SmoothForm.mpullback_id φ.1)
 
-/-- Pullback on invariant forms reverses composition of smooth functors. -/
+/-- Pullback on invariant forms reverses composition of smooth prefunctors. -/
 theorem invariantFormsPullback_comp {E'' H'' A'' K'' B : Type*}
     [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
     [NormedAddCommGroup A''] [NormedSpace ℝ A''] [TopologicalSpace K'']
-    [Category B] [TopologicalSpace B] [TopologicalSpace (Quiver.Total B)]
+    [Quiver B] [TopologicalSpace B] [TopologicalSpace (Quiver.Total B)]
     [ChartedSpace H'' B] [ChartedSpace K'' (Quiver.Total B)]
     {I'' : ModelWithCorners ℝ E'' H''} {J'' : ModelWithCorners ℝ A'' K''}
     [IsManifold I'' ∞ B] [IsManifold J'' ∞ (Quiver.Total B)]
     {hs'' : ContMDiff J'' I'' ∞ (Quiver.Total.left : Quiver.Total B → B)}
     {ht'' : ContMDiff J'' I'' ∞ (Quiver.Total.right : Quiver.Total B → B)}
-    (Φ : C ⥤ D) (Ψ : D ⥤ B) (hΦ : ContMDiff I I' ∞ Φ.obj)
-    (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal) (hΨ : ContMDiff I' I'' ∞ Ψ.obj)
-    (hΨ₁ : ContMDiff J' J'' ∞ Ψ.toPrefunctor.mapTotal) :
-    (Φ ⋙ Ψ).invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs'') (ht' := ht'')
+    (Φ : C ⥤q D) (Ψ : D ⥤q B) (hΦ : ContMDiff I I' ∞ Φ.obj)
+    (hΦ₁ : ContMDiff J J' ∞ Φ.mapTotal) (hΨ : ContMDiff I' I'' ∞ Ψ.obj)
+    (hΨ₁ : ContMDiff J' J'' ∞ Ψ.mapTotal) :
+    (Φ ⋙q Ψ).invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs'') (ht' := ht'')
         (V := V) (k := k) (hΨ.comp hΦ)
-        (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸ hΨ₁.comp hΦ₁) =
+        (Prefunctor.mapTotal_comp Φ Ψ ▸ hΨ₁.comp hΦ₁) =
       (Φ.invariantFormsPullback (hs' := hs') (ht' := ht') hΦ hΦ₁).comp
         (Ψ.invariantFormsPullback hΨ hΨ₁) := by
   ext φ : 1
   exact Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.1).symm
 
-end CategoryTheory.Functor
+end Prefunctor
+
+namespace TauCeti.Quiver
+
+variable {E H A K E' H' C D : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace K]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  [TopologicalSpace C] [TopologicalSpace D] [Quiver D]
+  [TopologicalSpace (_root_.Quiver.Total D)] [ChartedSpace H C]
+  [ChartedSpace H' D] [ChartedSpace K (_root_.Quiver.Total D)]
+  {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ E' H'}
+  {J' : ModelWithCorners ℝ A K} [IsManifold I ∞ C] [IsManifold I' ∞ D]
+  [IsManifold J' ∞ (_root_.Quiver.Total D)]
+  {hs' : ContMDiff J' I' ∞ (_root_.Quiver.Total.left : _root_.Quiver.Total D → D)}
+  {ht' : ContMDiff J' I' ∞ (_root_.Quiver.Total.right : _root_.Quiver.Total D → D)}
+  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {k : ℕ}
+
+/-- Smooth maps joined by a smooth family of arrows have equal pullbacks on invariant forms. -/
+theorem mpullback_eq_of_mem_invariantForms {f g : C → D} (a : ∀ x, f x ⟶ g x)
+    (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
+    (ha : ContMDiff I J' ∞ fun x ↦ (⟨f x, g x, a x⟩ : _root_.Quiver.Total D))
+    {φ : SmoothForm I' D V k} (hφ : φ ∈ invariantForms I' J' hs' ht' V k) :
+    SmoothForm.mpullback f hf φ = SmoothForm.mpullback g hg φ := by
+  have h := congrArg (SmoothForm.mpullback _ ha) (mem_invariantForms_iff.mp hφ)
+  -- The source and target of each connecting arrow are the two object maps.
+  simpa only [SmoothForm.mpullback_mpullback, Function.comp_def] using h
+
+end TauCeti.Quiver
 
 namespace CategoryTheory.NatTrans
 
@@ -224,11 +260,8 @@ theorem mpullback_eq_of_mem_invariantForms (η : Φ ⟶ Ψ)
     (hη : ContMDiff I J' ∞ fun x ↦ (⟨Φ.obj x, Ψ.obj x, η.app x⟩ : Quiver.Total D))
     {φ : SmoothForm I' D V k}
     (hφ : φ ∈ TauCeti.Quiver.invariantForms I' J' hs' ht' V k) :
-    SmoothForm.mpullback Φ.obj hΦ φ = SmoothForm.mpullback Ψ.obj hΨ φ := by
-  have h := congrArg (SmoothForm.mpullback _ hη)
-    (TauCeti.Quiver.mem_invariantForms_iff.mp hφ)
-  -- The source and target of the total component of `η` are its two object maps.
-  simpa only [SmoothForm.mpullback_mpullback, Function.comp_def] using h
+    SmoothForm.mpullback Φ.obj hΦ φ = SmoothForm.mpullback Ψ.obj hΨ φ :=
+  TauCeti.Quiver.mpullback_eq_of_mem_invariantForms η.app hΦ hΨ hη hφ
 
 /-- A smooth natural transformation identifies the linear pullback maps on invariant forms. -/
 theorem invariantFormsPullback_eq {B L : Type*} [NormedAddCommGroup B] [NormedSpace ℝ B]
@@ -240,8 +273,8 @@ theorem invariantFormsPullback_eq {B L : Type*} [NormedAddCommGroup B] [NormedSp
     (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (hΨ₁ : ContMDiff J J' ∞ Ψ.toPrefunctor.mapTotal)
     (hη : ContMDiff I J' ∞ fun x ↦ (⟨Φ.obj x, Ψ.obj x, η.app x⟩ : Quiver.Total D)) :
-    Φ.invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs') (ht' := ht')
-        (V := V) (k := k) hΦ hΦ₁ = Ψ.invariantFormsPullback hΨ hΨ₁ := by
+    Φ.toPrefunctor.invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs') (ht' := ht')
+        (V := V) (k := k) hΦ hΦ₁ = Ψ.toPrefunctor.invariantFormsPullback hΨ hΨ₁ := by
   ext φ : 1
   exact Subtype.ext (η.mpullback_eq_of_mem_invariantForms hΦ hΨ hη φ.2)
 
