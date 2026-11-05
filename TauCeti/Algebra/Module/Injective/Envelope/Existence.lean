@@ -15,7 +15,7 @@ import TauCeti.Algebra.Module.Injective.SelfInjective
 
 Every module has an injective envelope (Eckmann–Schopf). More precisely, every embedding
 `i : M →ₗ[R] Q` into an injective module restricts to an injective envelope of `M` inside `Q`
-(`TauCeti.exists_isInjectiveEnvelope_submodule`), and since every module embeds into an injective
+(`LinearMap.exists_isInjectiveEnvelope_submodule`), and since every module embeds into an injective
 module, every module has an injective envelope in its own universe
 (`TauCeti.exists_isInjectiveEnvelope`). By `TauCeti.IsInjectiveEnvelope.exists_linearEquiv` this
 envelope is unique up to isomorphism. In particular this provides the injective hull `E(k)` of the
@@ -33,7 +33,7 @@ onto `E` and `E` is injective as a retract of an injective module.
 
 ## Main results
 
-* `TauCeti.exists_isInjectiveEnvelope_submodule`: an embedding into an injective module restricts
+* `LinearMap.exists_isInjectiveEnvelope_submodule`: an embedding into an injective module restricts
   to an injective envelope inside that module.
 * `TauCeti.exists_isInjectiveEnvelope`: every module has an injective envelope.
 
@@ -55,7 +55,7 @@ variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
 /-- **Injective envelopes inside an injective module.** Every embedding into an injective module
 restricts to an injective envelope inside that module: some submodule `P` of `Q` containing the
 image is injective, with the image essential in `P`. -/
-theorem exists_isInjectiveEnvelope_submodule [Module.Injective R Q]
+theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective R Q]
     (i : M →ₗ[R] Q) (hi : Function.Injective i) :
     ∃ (P : Submodule R Q) (hP : LinearMap.range i ≤ P),
       IsInjectiveEnvelope (i.codRestrict P (fun x => hP ⟨x, rfl⟩)) := by
@@ -112,7 +112,7 @@ theorem exists_isInjectiveEnvelope [Small.{v} R] :
   let ι : ModuleCat.of R M ⟶ I := CategoryTheory.Injective.ι (ModuleCat.of R M)
   have : Module.Injective R I := Module.injective_module_of_injective_object R I
     (inj := CategoryTheory.Injective.injective_under (ModuleCat.of R M))
-  obtain ⟨P, _, hP⟩ := exists_isInjectiveEnvelope_submodule ι.hom
+  obtain ⟨P, _, hP⟩ := ι.hom.exists_isInjectiveEnvelope_submodule
     ((ModuleCat.mono_iff_injective ι).mp inferInstance)
   exact ⟨P, _, _, _, hP⟩
 
