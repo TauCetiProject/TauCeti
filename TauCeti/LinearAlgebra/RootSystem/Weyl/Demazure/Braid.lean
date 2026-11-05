@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Coxeter.Matsumoto
+public import TauCeti.GroupTheory.Coxeter.DemazureProduct
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Demazure.Basic
 
@@ -56,6 +56,9 @@ the two Cartan entries.
   of the Demazure operators along a reduced word depends only on the Weyl group element it spells.
 * `RootPairing.demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent`: `Dᵢ D_w = D_w`
   when `sᵢ` is a left descent of `w`.
+* `RootPairing.prod_map_demazureOperator_eq_of_wordProd_eq_demazureProd`: **word independence along
+  arbitrary words**, the product of the Demazure operators along any word, reduced or not, is
+  `D_{δ(ω)}` for the Demazure product `δ(ω)` of the word.
 
 ## References
 
@@ -722,16 +725,25 @@ theorem demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent [P.IsRed
     (hi : (TauCeti.weylCoxeterSystem P b).IsLeftDescent
       ((TauCeti.weylCoxeterSystem P b).wordProd ω) i) :
     P.demazureOperator i * (ω.map fun m : b.support ↦ P.demazureOperator m).prod =
-      (ω.map fun m : b.support ↦ P.demazureOperator m).prod := by
-  set cs := TauCeti.weylCoxeterSystem P b
-  obtain ⟨σ, hσ, hσw⟩ := cs.exists_isReduced (cs.simple i * cs.wordProd ω)
-  have hred := cs.isReduced_cons_of_isLeftDescent hi hσ hσw.symm
-  have hprod : cs.wordProd (i :: σ) = cs.wordProd ω := by
-    rw [cs.wordProd_cons, ← hσw, cs.simple_mul_simple_cancel_left]
-  have hidem : P.demazureOperator i * P.demazureOperator i = P.demazureOperator i :=
-    LinearMap.ext (P.demazureOperator_demazureOperator i)
-  rw [← P.prod_map_demazureOperator_eq_of_wordProd_eq b hred hω hprod, List.map_cons,
-    List.prod_cons, ← mul_assoc, hidem]
+      (ω.map fun m : b.support ↦ P.demazureOperator m).prod :=
+  (TauCeti.weylCoxeterSystem P b).mul_prod_map_eq_of_isLeftDescent _
+    (P.prod_map_demazureOperator_braidWord b)
+    (LinearMap.ext (P.demazureOperator_demazureOperator i)) hω hi
+
+/-- **Word independence along arbitrary words.** For any word `ω` in the simple reflections of a
+base, reduced or not, the product `D_{i₁} ⋯ D_{iᵣ}` of the Demazure operators along `ω` equals
+their product along any reduced word `ν` for the Demazure product `δ(ω)`
+(`CoxeterSystem.demazureProd`). So `D_{i₁} ⋯ D_{iᵣ} = D_{δ(ω)}`, the Demazure operator of a single
+Weyl group element. -/
+theorem prod_map_demazureOperator_eq_of_wordProd_eq_demazureProd [P.IsReduced]
+    {ω ν : List b.support} (hν : (TauCeti.weylCoxeterSystem P b).IsReduced ν)
+    (h : (TauCeti.weylCoxeterSystem P b).wordProd ν =
+      (TauCeti.weylCoxeterSystem P b).demazureProd ω) :
+    (ω.map fun m : b.support ↦ P.demazureOperator m).prod =
+      (ν.map fun m : b.support ↦ P.demazureOperator m).prod :=
+  (TauCeti.weylCoxeterSystem P b).prod_map_eq_of_wordProd_eq_demazureProd _
+    (P.prod_map_demazureOperator_braidWord b)
+    (fun i ↦ LinearMap.ext (P.demazureOperator_demazureOperator i)) hν h
 
 end Base
 
