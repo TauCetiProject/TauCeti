@@ -230,6 +230,32 @@ theorem reduce_cons_of_reduce_eq_cons_reverse {a b c : Γ.V} (p : Γ.Path a b)
   rw [reduce_cons, h]
   simpa only [Quiver.reverse_reverse] using reduceSnoc_cons_reverse Γ q (Quiver.reverse e)
 
+/-- Free reduction never lengthens a path. -/
+theorem length_reduce_le {a b : Γ.V} (p : Γ.Path a b) :
+    (reduce Γ p).length ≤ p.length := by
+  induction p with
+  | nil => simp [reduce_nil]
+  | @cons b c p e ih =>
+    by_cases h : IsReduced Γ ((reduce Γ p).cons e)
+    · rw [reduce_cons_of_isReduced Γ p e h, Quiver.Path.length_cons,
+        Quiver.Path.length_cons]
+      omega
+    · -- The appended dart backtracks against the last dart of the reduced prefix.
+      generalize hq : reduce Γ p = q at h ih
+      cases q with
+      | nil => exact absurd (isReduced_toPath Γ e) h
+      | @cons d _ q f =>
+        have hfe : e.1 = Γ.rev f.1 := by
+          by_contra hne
+          exact h ((isReduced_cons_cons Γ q f e).mpr
+            ⟨hq ▸ isReduced_reduce Γ p, hne⟩)
+        obtain rfl : c = d := endpoint_eq_of_reverse_val Γ f e hfe
+        obtain rfl : e = Quiver.reverse f := hom_eq_reverse_of_val_eq Γ f e hfe
+        rw [reduce_cons_of_reduce_eq_cons_reverse Γ p q _ (by
+          rw [hq, Quiver.reverse_reverse]), Quiver.Path.length_cons]
+        rw [Quiver.Path.length_cons] at ih
+        omega
+
 /-- Reduction leaves an already reduced path unchanged. -/
 @[simp] theorem reduce_eq_self_of_isReduced {a b : Γ.V} (p : Γ.Path a b)
     (hp : IsReduced Γ p) : reduce Γ p = p := by
