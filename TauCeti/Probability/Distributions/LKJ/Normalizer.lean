@@ -161,39 +161,6 @@ theorem lkjNormalizer_eq_prod_beta_self {p : ℕ} {η : ℝ} (hη : 0 < η) :
 
 variable {p : ℕ} {η : ℝ}
 
-/-- Grouping the strictly lower positions by column: the zero-based column `j` contains
-`p - 1 - j` positions. -/
-private theorem prod_strictLowerTriangle_eq_prod_Ico (F : ℕ → ℝ) :
-    ∏ ij : strictLowerTriangle p, F (p - ij.1.2.1 - 2) = ∏ k ∈ Finset.Ico 1 p, F (k - 1) ^ k := by
-  have hcard (j : Fin p) :
-      (Finset.univ.filter fun ij : strictLowerTriangle p ↦ ij.1.2 = j).card = p - 1 - j := by
-    rw [← Fin.card_Ioi j]
-    refine Finset.card_bij (fun ij _ ↦ ij.1.1) (fun ij hij ↦ ?_) (fun ij hij kl hkl h ↦ ?_)
-      fun i hi ↦ ⟨⟨(i, j), Finset.mem_Ioi.1 hi⟩, by simp, rfl⟩
-    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij
-      exact Finset.mem_Ioi.2 (hij ▸ ij.2)
-    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij hkl
-      exact Subtype.ext (Prod.ext h (hij.trans hkl.symm))
-  calc
-    _ = ∏ j : Fin p, ∏ ij : strictLowerTriangle p with ij.1.2 = j, F (p - ij.1.2.1 - 2) :=
-      (Finset.prod_fiberwise _ _ _).symm
-    _ = ∏ j : Fin p, F (p - 1 - j - 1) ^ (p - 1 - j) := by
-      refine Finset.prod_congr rfl fun j _ ↦ ?_
-      rw [Finset.prod_congr rfl fun ij hij ↦ by
-        rw [(Finset.mem_filter.1 hij).2], Finset.prod_const, hcard]
-      congr 2
-      omega
-    _ = ∏ k ∈ Finset.range p, F (k - 1) ^ k :=
-      (Fin.prod_univ_eq_prod_range (fun j ↦ F (p - 1 - j - 1) ^ (p - 1 - j)) p).trans
-        (Finset.prod_range_reflect (fun k ↦ F (k - 1) ^ k) p)
-    _ = _ := by
-      refine (Finset.prod_subset (fun k hk ↦ ?_) fun k hk hk' ↦ ?_).symm
-      · exact Finset.mem_range.2 (Finset.mem_Ico.1 hk).2
-      · obtain rfl : k = 0 := by
-          simp only [Finset.mem_range, Finset.mem_Ico, not_and, not_lt] at hk hk'
-          omega
-        simp
-
 /-- On the open cube the Jacobian-weighted power of the determinant factors into one-dimensional
 powers of the residual variances `1 - z ij ^ 2`. -/
 private theorem jacobian_mul_det_rpow {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
