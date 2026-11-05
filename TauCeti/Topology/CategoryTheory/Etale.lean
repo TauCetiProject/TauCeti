@@ -12,6 +12,7 @@ public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
 public import TauCeti.Topology.CategoryTheory.QuiverTotal
+public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -67,9 +68,7 @@ theorem finite_total_arrows_of_proper_source_target
   have hc : IsCompact {a : Quiver.Total C | a.left = x ∧ a.right = y} := by
     simpa only [Set.preimage, Set.mem_singleton_iff, Prod.mk.injEq] using
       hp.isCompact_preimage (isCompact_singleton (x := (x, y)))
-  apply hc.finite
-  apply hs.isLocalHomeomorphOn.isDiscrete_of_image
-  exact Set.subsingleton_singleton.isDiscrete.mono fun _ ⟨a, ha, h⟩ ↦ h ▸ ha.1
+  exact hs.finite_preimage_singleton_inter (s := Quiver.Total.right ⁻¹' {y}) hc
 
 /-- Every hom type is finite in a quiver with proper source-target map and locally
 homeomorphic source. Applied with equal endpoints, this gives finiteness of isotropy. -/
