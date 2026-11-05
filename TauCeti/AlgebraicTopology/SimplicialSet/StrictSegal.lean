@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 
@@ -15,18 +16,29 @@ In a strict Segal simplicial set, such as the nerve of a category, a simplex is 
 spine (Mathlib's `SSet.IsStrictSegal`), so it is determined by its simplices of dimension at most
 two. This file records consequences of this.
 
-A simplicial operator fixes a simplex as soon as it fixes every edge of its spine. A simplex of
-dimension at least two is determined by its first and last faces, which together contain its
-spine. Every map from the boundary `∂Δ[n]` with `n ≥ 3` extends to `Δ[n]`: fill the inner horn
-`Λ[n, 1]` and observe that the missing face is forced by the others. In dimensions one and two
-this fails in general: two vertices need not be joined by an edge, and the third edge of the
-boundary of a triangle need not be the composite of the other two.
+A simplicial operator fixes a simplex as soon as it fixes every edge of its spine. Since every
+inner horn contains the spine of the standard simplex, a map from a standard simplex to a strict
+Segal simplicial set is determined by its restriction to an inner horn, so any map from a
+quasicategory to a strict Segal simplicial set is an inner fibration. In particular the nerve of
+every functor is an inner fibration. The inner horn containing the spine is Mathlib's
+`SSet.horn.spineId`, as in Mathlib's proof `SSet.StrictSegal.quasicategory` that strict Segal
+simplicial sets are quasicategories.
+
+A simplex of dimension at least two is determined by its first and last faces, which together
+contain its spine. Every map from the boundary `∂Δ[n]` with `n ≥ 3` extends to `Δ[n]`: fill the
+inner horn `Λ[n, 1]` and observe that the missing face is forced by the others. In dimensions one
+and two this fails in general: two vertices need not be joined by an edge, and the third edge of
+the boundary of a triangle need not be the composite of the other two.
 
 ## Main results
 
 * `SSet.map_eq_of_isStrictSegal`: an `(n + 1)`-simplex whose face opposite to the last vertex is
   constant at a vertex is fixed by any operator that fixes its last edge and collapses the other
   edges of its spine to the vertex `n`.
+* `SSet.IsStrictSegal.hom_ext_of_innerHorn`: maps from `Δ[n + 2]` to a strict Segal simplicial
+  set agree as soon as they agree on an inner horn.
+* `SSet.innerFibration_of_isStrictSegal`: a map from a quasicategory to a strict Segal simplicial
+  set is an inner fibration.
 * `SSet.IsStrictSegal.ext_of_δ_zero_of_δ_last`: a simplex of dimension at least two is determined
   by its first and last faces.
 * `SSet.IsStrictSegal.exists_boundary_extension`: every map `∂Δ[n + 3] ⟶ X` extends to
@@ -42,6 +54,31 @@ universe u
 namespace SSet
 
 variable {X : SSet.{u}} [X.IsStrictSegal]
+
+/-- Two maps from `Δ[n + 2]` to a strict Segal simplicial set agree as soon as they agree on an
+inner horn: the inner horn contains the spine of `Δ[n + 2]`. -/
+theorem IsStrictSegal.hom_ext_of_innerHorn {n : ℕ} {i : Fin (n + 3)} (h₀ : 0 < i)
+    (hₙ : i < Fin.last (n + 2)) {f g : Δ[n + 2] ⟶ X}
+    (h : Λ[n + 2, i].ι ≫ f = Λ[n + 2, i].ι ≫ g) : f = g := by
+  have key (f : Δ[n + 2] ⟶ X) :
+      X.spine (n + 2) (yonedaEquiv f) = (horn.spineId i h₀ hₙ).map (Λ[n + 2, i].ι ≫ f) := by
+    ext k
+    rw [spine_arrow, yonedaEquiv_naturality, yonedaEquiv_comp]
+    -- Both sides are the image under `f` of the edge `mkOfSucc k` of `Δ[n + 2]`.
+    rfl
+  exact yonedaEquiv.injective ((IsStrictSegal.segal (n + 2)).injective (by rw [key, key, h]))
+
+/-- A map from a quasicategory to a strict Segal simplicial set is an inner fibration: inner horns
+fill in the source, and the filler lies over the given simplex because simplices of the target
+are determined by their restrictions to inner horns. -/
+instance innerFibration_of_isStrictSegal {W : SSet.{u}} [Quasicategory W] (p : W ⟶ X) :
+    InnerFibration p where
+  mem _ _ _ := fun ⟨_, h₀, hₙ⟩ ↦ ⟨fun {a _} sq ↦ by
+    obtain ⟨σ, hσ⟩ := Quasicategory.hornFilling h₀ hₙ a
+    refine ⟨⟨{ l := σ
+               fac_left := hσ.symm
+               fac_right := IsStrictSegal.hom_ext_of_innerHorn h₀ hₙ ?_ }⟩⟩
+    rw [← Category.assoc, ← hσ, sq.w]⟩
 
 /-- In a strict Segal simplicial set, an `(n + 1)`-simplex whose face opposite to the last vertex
 is constant at `x` is fixed by any operator `r` that fixes the last edge and sends every other
