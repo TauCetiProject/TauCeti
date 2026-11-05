@@ -58,16 +58,23 @@ theorem renewalFunction_toReal_eq_add_renewalConv (μ : Measure ℝ≥0) [SFinit
   rwa [hid] at heq
 
 /-- At time zero the expected number of genuine arrivals is `F {0} / (1 - F {0})`.
-This identity needs only local finiteness of the renewal measure and `F.real {0} ≠ 1`,
-not probability normalization. -/
+This identity needs only local finiteness of the renewal measure, not probability
+normalization or a separate nondegeneracy assumption. -/
 @[simp]
 theorem renewalFunction_toReal_zero (μ : Measure ℝ≥0) [SFinite μ]
-    [IsLocallyFiniteMeasure μ.renewalMeasure] (hμ : μ.real {0} ≠ 1) :
+    [IsLocallyFiniteMeasure μ.renewalMeasure] :
     (μ.renewalFunction 0).toReal = μ.real {0} / (1 - μ.real {0}) := by
   have heq : (fun u ↦ (μ.renewalFunction u).toReal) =
       (fun u ↦ μ.real (Iic u)) + renewalConv (fun u ↦ (μ.renewalFunction u).toReal) μ := by
     funext t
     exact renewalFunction_toReal_eq_add_renewalConv μ t
+  have hμ : μ.real {0} ≠ 1 := by
+    intro hμ
+    have hz := congrFun heq 0
+    -- Specialize the bottom-interval lemma to identify the forcing and convolution at zero.
+    simp only [Pi.add_apply, renewalConv_apply_zero,
+      show Iic (0 : ℝ≥0) = {0} from Iic_bot, hμ, one_mul] at hz
+    linarith
   -- Specialize the bottom-interval lemma to zero before rewriting under the measure.
   simpa only [show Iic (0 : ℝ≥0) = {0} from Iic_bot] using
     apply_zero_of_eq_add_renewalConv heq hμ
@@ -77,9 +84,6 @@ theorem renewalFunction_toReal_zero_of_isProbabilityMeasure (μ : Measure ℝ≥
     [IsProbabilityMeasure μ] (hμ : μ {0} < 1) :
     (μ.renewalFunction 0).toReal = μ.real {0} / (1 - μ.real {0}) := by
   let := isLocallyFiniteMeasure_renewalMeasure μ hμ
-  have hlt : μ.real {0} < 1 := by
-    simpa only [measureReal_def, ENNReal.toReal_one] using
-      (ENNReal.toReal_lt_toReal (measure_ne_top μ _) ENNReal.one_ne_top).2 hμ
-  exact renewalFunction_toReal_zero μ hlt.ne
+  exact renewalFunction_toReal_zero μ
 
 end MeasureTheory.Measure
