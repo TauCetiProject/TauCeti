@@ -22,7 +22,7 @@ the effective domain `{x | φ x ≠ ⊤}` there is a curve `γ` from `v₀` to `
 (`TauCeti.PenalizedConvex m τ φ`). This holds when `φ` is `m`-geodesically convex on a CAT(0)
 space, where the squared distance from `w` is `2`-convex along every geodesic
 (`TauCeti.GeodesicallyConvex.penalizedConvex`), and, on the quadratic Wasserstein space, when `φ`
-is `m`-convex along generalized geodesics based at every law
+is `m`-convex along generalized geodesics based at every law and `1 + m τ ≥ 0`
 (`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`). Ordinary geodesic convexity is not
 enough in general, because the squared distance from a point need not be convex along geodesics.
 Ambrosio–Gigli–Savaré take the base point `w` in the effective domain; it is arbitrary here, as in
@@ -44,14 +44,15 @@ resolvent has at most one point (`TauCeti.PenalizedConvex.subsingleton_moreauYos
 
 Along a minimizing movement sequence `U` with `U (n + 1) ∈ J_τ (U n)`, the discrete variational
 inequality reads `r d(U (n + 1), v)² - d(U n, v)² ≤ 2τ (φ v - φ (U (n + 1)))` with
-`r = 1 + m τ`. Multiplying by `r ^ n` and summing, with the energy nonincreasing, gives the
-discrete integrated inequality (`TauCeti.PenalizedConvex.pow_mul_dist_sq_sub_le`)
+`r = 1 + m τ`. When `r ≥ 0`, multiplying by `r ^ n` and summing, with the energy nonincreasing,
+gives the discrete integrated inequality (`TauCeti.PenalizedConvex.pow_mul_dist_sq_sub_le`)
 
 `r ^ N d(U N, v)² / 2 - d(U 0, v)² / 2 ≤ τ (∑_{n < N} r ^ n) (φ v - φ (U N))`.
 
 This is the discrete form of the integrated evolution variational inequality
 `TauCeti.IsEVISolution.exp_mul_dist_sq_sub_le`: `r ^ N` replaces `e^{m N τ}` and
-`τ ∑_{n < N} r ^ n` replaces `∫₀^{Nτ} e^{m s} ds`. It gives the energy regularization estimate
+`τ ∑_{n < N} r ^ n` replaces `∫₀^{Nτ} e^{m s} ds`. Still for `r ≥ 0`, it gives the energy
+regularization estimate
 `φ (U N) ≤ φ v + (d(U 0, v)² - r ^ N d(U N, v)²) / (2τ ∑_{n < N} r ^ n)` for `N ≥ 1`
 (`TauCeti.PenalizedConvex.apply_le`), which for `m = 0` is the rate
 `φ (U N) ≤ φ v + d(U 0, v)² / (2 N τ)`, and the weighted distance estimate
@@ -74,10 +75,11 @@ which the convergence of minimizing movements to the `EVI_m` flow rests.
   when `1 + m τ > 0`, for a resolvent step of finite energy, respectively for an energy that
   never takes the value `⊥` and is finite somewhere.
 * `TauCeti.PenalizedConvex.pow_mul_dist_sq_sub_le`: the discrete integrated evolution variational
-  inequality along a minimizing movement sequence.
-* `TauCeti.PenalizedConvex.apply_le`: the discrete energy regularization estimate.
+  inequality along a minimizing movement sequence, when `1 + m τ ≥ 0`.
+* `TauCeti.PenalizedConvex.apply_le`: the discrete energy regularization estimate, when
+  `1 + m τ ≥ 0`.
 * `TauCeti.PenalizedConvex.pow_mul_dist_sq_le`: the weighted distance estimate of a minimizing
-  movement sequence towards points of smaller energy.
+  movement sequence towards points of smaller energy, when `1 + m τ ≥ 0`.
 * `TauCeti.GeodesicallyConvex.penalizedConvex`: on a CAT(0) space, an `m`-geodesically convex
   energy satisfies the hypothesis for every time step.
 
