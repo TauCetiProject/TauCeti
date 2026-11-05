@@ -122,8 +122,9 @@ theorem tamagawaNumber_pos [HenselianLocalRing v.valuationSubring]
   rw [tamagawaNumber_def]
   exact AddSubgroup.index_pos
 
-/-- Tate's algorithm, run on any integral equation, computes the local Tamagawa number. The
-equation need not be assumed minimal: an equation at which the algorithm stops is minimal. -/
+/-- If Tate's algorithm stops with symbol `s` on an integral equation for `E`, then
+`tateLocalIndex` at `s` is the local Tamagawa number. Minimality need not be assumed, since an
+equation on which the algorithm stops is minimal. -/
 theorem tamagawaNumber_eq_tateLocalIndex [HenselianLocalRing v.valuationSubring]
     [Finite (IsLocalRing.ResidueField v.valuationSubring)] [IsIntegral v.valuationSubring E]
     {ϖ : v.valuationSubring}
