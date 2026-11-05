@@ -51,6 +51,8 @@ measure finite.
   constant Jacobian factor.
 * `MeasureTheory.Measure.rnDeriv_map_affine`: the Radon–Nikodym derivative of an affine image is
   obtained by the same substitution and Jacobian factor.
+* `MeasureTheory.Measure.support_withDensity_eq`: weighting a measure by an almost-everywhere
+  nonzero density preserves its topological support.
 * `MeasureTheory.Measure.support_withDensity_eq_closure_of_subset`: a density positive on an open
   set and zero off its closure has topological support equal to that closure.
 * `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
@@ -119,6 +121,14 @@ end TauCeti.Probability
 namespace MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+
+/-- Weighting a measure by an almost-everywhere nonzero density preserves its topological support.
+-/
+theorem support_withDensity_eq {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} {f : X → ℝ≥0∞} (hf : AEMeasurable f μ) (hf_ne_zero : ∀ᵐ x ∂μ, f x ≠ 0) :
+    (μ.withDensity f).support = μ.support :=
+  Set.Subset.antisymm (withDensity_absolutelyContinuous μ f).support_mono
+    (withDensity_absolutelyContinuous' hf hf_ne_zero).support_mono
 
 /-- If a measurable density is positive on an open set and zero off its closure, then its weighted
 measure has topological support equal to that closure, provided the reference measure is positive
