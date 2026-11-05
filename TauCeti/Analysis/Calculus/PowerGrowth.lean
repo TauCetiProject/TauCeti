@@ -265,14 +265,6 @@ theorem monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add {f : ℝ → ℝ} {
     nlinarith [mul_nonneg (mul_nonneg hD' hp.le) htp, mul_nonneg hC ht0.le]
   nlinarith
 
-/-- The exponent `2 / (1 + ε)` falls short of `2` by at most `2 ε`. -/
-private theorem two_sub_two_div_one_add_le {ε : ℝ} (hε : 0 ≤ ε) : 2 - 2 / (1 + ε) ≤ 2 * ε := by
-  have : 2 - 2 / (1 + ε) = 2 * ε / (1 + ε) := by
-    field_simp
-    ring
-  rw [this]
-  exact div_le_self (by positivity) (by linarith)
-
 /-- The normalization `β = 2 / (1 + ε)`, `p = 4` of
 `monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add`, with denominators cleared and the forcing
 correction bounded by the forcing term: for `x ≤ y` in `[a, b]`,
@@ -306,37 +298,6 @@ private theorem mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → �
     nlinarith
   nlinarith [mul_nonneg (mul_nonneg hD' (pow_nonneg hx0.le 4)) hψy.le,
     mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hD'D (pow_nonneg hy0.le 4)) hψx.le]
-
-/-- For `a ≤ t ≤ 1` with `0 < a` and `ε ≤ A a`, the normalized power
-`(t / (1 + C t)) ^ (2 / (1 + ε))` is at most `e ^ (2 A) t ^ 2`. -/
-private theorem rpow_div_one_add_mul_le_exp_mul_sq {a t C ε A : ℝ} (ha : 0 < a) (hat : a ≤ t)
-    (ht1 : t ≤ 1) (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεa : ε ≤ A * a) :
-    (t / (1 + C * t)) ^ (2 / (1 + ε)) ≤ Real.exp (2 * A) * t ^ 2 := by
-  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right ha).1 (hε.trans hεa)
-  have ht0 : 0 < t := ha.trans_le hat
-  have h2β := two_sub_two_div_one_add_le hε
-  set β := 2 / (1 + ε) with hβ_def
-  have hβ : 0 < β := by positivity
-  calc (t / (1 + C * t)) ^ β ≤ t ^ β :=
-        Real.rpow_le_rpow (by positivity) (div_le_self ht0.le (by nlinarith)) hβ.le
-    _ = t ^ (2 : ℝ) * t ^ (β - 2) := by rw [← Real.rpow_add ht0]; ring_nf
-    _ ≤ t ^ (2 : ℝ) * t ^ (-(2 * ε)) :=
-        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge ht0 ht1 (by linarith))
-          (by positivity)
-    _ ≤ t ^ (2 : ℝ) * Real.exp (2 * A) :=
-        mul_le_mul_of_nonneg_left (rpow_neg_le_exp ht0 ht1 (by positivity)
-          (by nlinarith)) (by positivity)
-    _ = Real.exp (2 * A) * t ^ 2 := by rw [Real.rpow_two, mul_comm]
-
-/-- For `0 < a ≤ 1` and `ε ≤ A a`, `e ^ (-2 A) (a / (1 + C a)) ^ (2 / (1 + ε)) ≤ a ^ 2`. -/
-private theorem exp_neg_mul_rpow_div_one_add_mul_le_sq {a C ε A : ℝ} (ha : 0 < a) (ha1 : a ≤ 1)
-    (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεa : ε ≤ A * a) :
-    Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ (2 / (1 + ε)) ≤ a ^ 2 := by
-  calc Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ (2 / (1 + ε))
-      ≤ Real.exp (-(2 * A)) * (Real.exp (2 * A) * a ^ 2) := by
-        gcongr
-        exact rpow_div_one_add_mul_le_exp_mul_sq ha le_rfl ha1 hC hε hεa
-    _ = a ^ 2 := by rw [← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul]
 
 /-- **Quadratic upper bound from a monotonicity inequality.** Let `f` be monotone on `[a, b]` with
 `0 < a`, `b ≤ 1` and `0 ≤ f a`, and suppose that at almost every `t ∈ (a, b)`
@@ -395,7 +356,9 @@ theorem mul_sq_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C
   have h1 := mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four ha hC hD hε hf hfa0 h haI ht ht.1
   have h2 := sq_le_mul_rpow_div_one_add_mul ht0 ht.2 (ht.2.trans hb) hC (by positivity)
     (div_le_self zero_le_two (by linarith) : 2 / (1 + ε) ≤ 2)
-  have h3 := exp_neg_mul_rpow_div_one_add_mul_le_sq ha (ht.1.trans (ht.2.trans hb)) hC hε hεa
+  have h3 : Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ (2 / (1 + ε)) ≤ a ^ 2 := by
+    rw [Real.exp_neg, inv_mul_le_iff₀ (Real.exp_pos _)]
+    exact rpow_div_one_add_mul_le_exp_mul_sq ha le_rfl (ht.1.trans (ht.2.trans hb)) hC hε hεa
   set β := 2 / (1 + ε) with hβ_def
   have hψa : 0 < (a / (1 + C * a)) ^ β := Real.rpow_pos_of_pos (by positivity) _
   -- Hence `c e ^ (-2 A) t ^ 2 / (1 + C b) ^ 2 ≤ f t + D t ^ 4`.

@@ -53,7 +53,8 @@ If `0 < t ≤ 1` and `ε ≤ A t` with `0 ≤ A`, then `t ^ (-ε) ≤ exp A`. Th
 monotonicity inequality with `ε = C₀ r ^ (-1/2)` and `a = c₀ r ^ (-1/2)`. For `C ≥ 0` and
 exponents `0 ≤ β ≤ 2`, the damped radius `t / (1 + C t)` raised to `β` compares with `t ^ 2` on
 `(0, 1]`: `((b / (1 + C b)) ^ β)⁻¹ ≤ ((1 + C b) / b) ^ 2` and
-`t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β` for `t ≤ b`.
+`t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β` for `t ≤ b`. Conversely, for the exponent
+`2 / (1 + ε)` with `ε ≤ A a` and `a ≤ t ≤ 1`, `(t / (1 + C t)) ^ (2 / (1 + ε)) ≤ e ^ (2 A) t ^ 2`.
 
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
@@ -86,6 +87,8 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 * `TauCeti.rpow_neg_le_exp`: `t ^ (-ε) ≤ exp A` for `0 < t ≤ 1`, `0 ≤ A` and `ε ≤ A t`.
 * `TauCeti.inv_rpow_div_one_add_mul_le_sq`: `((b / (1 + C b)) ^ β)⁻¹ ≤ ((1 + C b) / b) ^ 2`.
 * `TauCeti.sq_le_mul_rpow_div_one_add_mul`: `t ^ 2 ≤ (1 + C b) ^ 2 (t / (1 + C t)) ^ β`.
+* `TauCeti.rpow_div_one_add_mul_le_exp_mul_sq`:
+  `(t / (1 + C t)) ^ (2 / (1 + ε)) ≤ e ^ (2 A) t ^ 2` for `0 < a ≤ t ≤ 1` and `ε ≤ A a`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -342,6 +345,33 @@ theorem sq_le_mul_rpow_div_one_add_mul {t b C β : ℝ} (ht0 : 0 < t) (htb : t �
   calc t ^ 2 * (1 + C * t) ^ β ≤ t ^ β * (1 + C * b) ^ 2 :=
         mul_le_mul ht2 hCt (by positivity) (by positivity)
     _ = (1 + C * b) ^ 2 * t ^ β := mul_comm _ _
+
+/-- For `a ≤ t ≤ 1` with `0 < a` and `ε ≤ A a`, the normalized power
+`(t / (1 + C t)) ^ (2 / (1 + ε))` is at most `e ^ (2 A) t ^ 2`. -/
+theorem rpow_div_one_add_mul_le_exp_mul_sq {a t C ε A : ℝ} (ha : 0 < a) (hat : a ≤ t)
+    (ht1 : t ≤ 1) (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεa : ε ≤ A * a) :
+    (t / (1 + C * t)) ^ (2 / (1 + ε)) ≤ Real.exp (2 * A) * t ^ 2 := by
+  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right ha).1 (hε.trans hεa)
+  have ht0 : 0 < t := ha.trans_le hat
+  -- The exponent `2 / (1 + ε)` falls short of `2` by at most `2 ε`.
+  have h2β : 2 - 2 / (1 + ε) ≤ 2 * ε := by
+    have : 2 - 2 / (1 + ε) = 2 * ε / (1 + ε) := by
+      field_simp
+      ring
+    rw [this]
+    exact div_le_self (by positivity) (by linarith)
+  set β := 2 / (1 + ε) with hβ_def
+  have hβ : 0 < β := by positivity
+  calc (t / (1 + C * t)) ^ β ≤ t ^ β :=
+        Real.rpow_le_rpow (by positivity) (div_le_self ht0.le (by nlinarith)) hβ.le
+    _ = t ^ (2 : ℝ) * t ^ (β - 2) := by rw [← Real.rpow_add ht0]; ring_nf
+    _ ≤ t ^ (2 : ℝ) * t ^ (-(2 * ε)) :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge ht0 ht1 (by linarith))
+          (by positivity)
+    _ ≤ t ^ (2 : ℝ) * Real.exp (2 * A) :=
+        mul_le_mul_of_nonneg_left (rpow_neg_le_exp ht0 ht1 (by positivity)
+          (by nlinarith)) (by positivity)
+    _ = Real.exp (2 * A) * t ^ 2 := by rw [Real.rpow_two, mul_comm]
 
 /-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
 `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/
