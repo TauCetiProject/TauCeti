@@ -78,8 +78,7 @@ private theorem eq_homScalar_weightProjection_smul_weightInclusion
         hom_eq_zero_of_weight_ne hq hne.symm ((clebschGordanWeightProjection hq a ε b δ d').comp f),
         LinearMap.comp_zero]
     · exact fun h => (h hd).elim
-  · have hnot : ¬ IsClebschGordanTriple a b d := fun htr =>
-      hd (Finset.mem_range.mpr (Nat.lt_succ_of_le htr.le_add))
+  · have hnot : ¬ IsClebschGordanTriple a b d := fun htr => hd htr.mem_range
     rw [clebschGordanWeightInclusion_eq_zero_of_not_isClebschGordanTriple hq ε δ hnot,
       LinearMap.zero_comp, smul_zero]
     refine Finset.sum_eq_zero fun d' hd' => ?_
@@ -228,14 +227,17 @@ private theorem toMatrix_coupledBasis_apply (hq : IsGenericQuantumParameter q)
             (LinearMap.single _ _ i).comp (LinearMap.single _ _ j))
       else 0 := by
   rw [LinearMap.toMatrix_apply]
-  simp only [Basis.map_repr, Basis.map_apply, LinearEquiv.restrictScalars_apply,
-    LinearMap.restrictScalars_apply, Pi.basis_apply, ← vec_coe]
+  simp only [Basis.map_repr, Basis.map_apply, LinearEquiv.trans_apply,
+    LinearEquiv.restrictScalars_apply, LinearEquiv.restrictScalars_symm_apply,
+    LinearMap.restrictScalars_apply, Pi.basis_repr, Pi.basis_apply, ← vec_coe]
   set φ : LadderModule q (w₁ i j) η₁ →ₗ[UqSl2 q] LadderModule q (w₂ r s) η₂ :=
     (LinearMap.proj s).comp <| (LinearMap.proj r).comp <|
       e₂.symm.toLinearMap.comp <| f.comp <| e₁.toLinearMap.comp <|
         (LinearMap.single _ _ i).comp (LinearMap.single _ _ j)
-  change (basis q (w₂ r s) η₂).repr (φ (vec q (w₁ i j) η₁ k)) l = _
-  rw [apply_vec_eq_homScalar_smul hq φ, map_smul, Finsupp.smul_apply, basis_repr_vec, smul_eq_mul]
+  have hφ : e₂.symm (f (e₁ (Pi.single i (Pi.single j (vec q (w₁ i j) η₁ k))))) r s =
+      φ (vec q (w₁ i j) η₁ k) := by simp [φ]
+  rw [hφ, apply_vec_eq_homScalar_smul hq φ, map_smul, Finsupp.smul_apply, basis_repr_vec,
+    smul_eq_mul]
   norm_cast; simp [mul_ite]
 
 /-- Matrix of the coproduct tensor associator in the coupled normalized `F`-ladder bases: entries
@@ -260,7 +262,7 @@ theorem toMatrix_assoc_clebschGordanBasis (hq : IsGenericQuantumParameter q)
   have hφ : ((LinearMap.proj s).comp <| (LinearMap.proj r).comp <|
       (clebschGordanRightEquiv hq).symm.toLinearMap.comp <|
         (assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
-          (LadderModule q p ζ)).toLinearMap.comp <|
+            (LadderModule q p ζ)).toLinearMap.comp <|
           (clebschGordanLeftEquiv hq).toLinearMap.comp <|
             (LinearMap.single _ _ i).comp (LinearMap.single _ _ j)) =
       (clebschGordanProjection hq s).comp
@@ -268,7 +270,11 @@ theorem toMatrix_assoc_clebschGordanBasis (hq : IsGenericQuantumParameter q)
           ((assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
               (LadderModule q p ζ)).toLinearMap.comp
             ((tensorMap ℂ (UqSl2 q) (clebschGordanInclusion hq i) LinearMap.id).comp
-              (clebschGordanInclusion hq j)))) := by ext x; simp
+              (clebschGordanInclusion hq j)))) := by
+    ext x
+    simp only [LinearMap.comp_apply, LinearMap.proj_apply, LinearEquiv.coe_coe,
+      LinearMap.single_apply, ← clebschGordanRightEquiv_recoupling, LinearEquiv.symm_apply_apply]
+    exact clebschGordanRecouplingEquiv_single_apply hq i j r s x
   rw [hφ]
   by_cases hd : m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ) = m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ)
   · rw [sixJSymbol, sixJRecouplingHom,
@@ -297,7 +303,7 @@ theorem toMatrix_assoc_symm_clebschGordanBasis (hq : IsGenericQuantumParameter q
   have hφ : ((LinearMap.proj j).comp <| (LinearMap.proj i).comp <|
       (clebschGordanLeftEquiv hq).symm.toLinearMap.comp <|
         (assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
-          (LadderModule q p ζ)).symm.toLinearMap.comp <|
+            (LadderModule q p ζ)).symm.toLinearMap.comp <|
           (clebschGordanRightEquiv hq).toLinearMap.comp <|
             (LinearMap.single _ _ r).comp (LinearMap.single _ _ s)) =
       (clebschGordanProjection hq j).comp
@@ -305,7 +311,12 @@ theorem toMatrix_assoc_symm_clebschGordanBasis (hq : IsGenericQuantumParameter q
           ((assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)
               (LadderModule q p ζ)).symm.toLinearMap.comp
             ((tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq r)).comp
-              (clebschGordanInclusion hq s)))) := by ext x; simp
+              (clebschGordanInclusion hq s)))) := by
+    ext x
+    simp only [LinearMap.comp_apply, LinearMap.proj_apply, LinearEquiv.coe_coe,
+      LinearMap.single_apply, ← clebschGordanLeftEquiv_recoupling_symm,
+      LinearEquiv.symm_apply_apply]
+    exact clebschGordanRecouplingEquiv_symm_single_apply hq i j r s x
   rw [hφ]
   by_cases hd : m + n - 2 * (i : ℕ) + p - 2 * (j : ℕ) = m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ)
   · rw [sixJSymbolSymm, sixJRecouplingSymmHom,

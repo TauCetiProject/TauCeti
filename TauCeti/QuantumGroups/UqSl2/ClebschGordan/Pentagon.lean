@@ -317,11 +317,11 @@ private theorem homScalar_two_step (hq : IsGenericQuantumParameter q)
     rw [Finset.sum_eq_single s]
     · simp [mul_comm]
     · intro s' _ hne; simp [Ne.symm hne]
-    · exact fun h => (h (Finset.mem_range.mpr (Nat.lt_succ_of_le htri.2.1.le_add))).elim
+    · exact fun h => (h htri.2.1.mem_range).elim
   · intro r' _ hne
     rw [LinearMap.comp_assoc, edge_five_four, homScalar_comp_sum_smul_comp_congr hq]
     simp [homScalar_quadrupleRight_of_triples hq ε δ ζ θ htri, Ne.symm hne]
-  · exact fun h => (h (Finset.mem_range.mpr (Nat.lt_succ_of_le htri.1.le_add))).elim
+  · exact fun h => (h htri.1.mem_range).elim
 
 private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
     (ε δ ζ θ : ℤˣ) {a b c d e p q' r s : ℕ}
@@ -362,15 +362,14 @@ private theorem homScalar_three_step (hq : IsGenericQuantumParameter q)
     · rcases eq_or_ne s s' with rfl | hs; · simp
       · simp [hs]
     · intro r' _ hne; simp [Ne.symm hne]
-    · exact fun h => (h (Finset.mem_range.mpr (Nat.lt_succ_of_le htri.1.le_add))).elim
+    · exact fun h => (h htri.1.mem_range).elim
   rw [Finset.sum_congr rfl hinner]
   by_cases hs_mem : s ∈ Finset.range (t + d + 1)
   · rw [Finset.sum_eq_single s]
     · simp; ring
     · intro s' _ hne; simp [Ne.symm hne]
     · exact fun h => (h hs_mem).elim
-  · have hnot : ¬ IsClebschGordanTriple t d s := fun htr =>
-      hs_mem (Finset.mem_range.mpr (Nat.lt_succ_of_le htr.le_add))
+  · have hnot : ¬ IsClebschGordanTriple t d s := fun htr => hs_mem htr.mem_range
     rw [sixJSymbol_eq_zero_of_not_isClebschGordanTriple hq δ ζ θ (fun h => hnot h.2.1),
       zero_mul, zero_mul,
       Finset.sum_eq_zero fun s' hs' => by simp [show s ≠ s' from fun h => hs_mem (h ▸ hs')],

@@ -64,13 +64,18 @@ theorem IsClebschGordanTriple.le_add {a b c : ℕ} (h : IsClebschGordanTriple a 
 theorem IsClebschGordanTriple.even_add_sub {a b c : ℕ} (h : IsClebschGordanTriple a b c) :
     Even (a + b - c) := h.2.2.2
 
+/-- Every admissible summand weight `c` for `(a, b)` lies in `Finset.range (a + b + 1)`. -/
+theorem IsClebschGordanTriple.mem_range {a b c : ℕ} (h : IsClebschGordanTriple a b c) :
+    c ∈ Finset.range (a + b + 1) :=
+  Finset.mem_range.mpr (Nat.lt_succ_of_le h.le_add)
+
 /-- Filtering `Finset.range (a + b + 1)` by `IsClebschGordanTriple a b u ∧ p u` retains every
 natural number satisfying `IsClebschGordanTriple a b u ∧ p u`. -/
 theorem mem_filter_range_isClebschGordanTriple_and {a b u : ℕ} {p : ℕ → Prop} [DecidablePred p] :
     u ∈ (Finset.range (a + b + 1)).filter (fun u => IsClebschGordanTriple a b u ∧ p u) ↔
       IsClebschGordanTriple a b u ∧ p u := by
-  simp only [Finset.mem_filter, Finset.mem_range]
-  exact ⟨fun h => h.2, fun h => ⟨Nat.lt_succ_of_le h.1.le_add, h⟩⟩
+  simp only [Finset.mem_filter]
+  exact ⟨fun h => h.2, fun h => ⟨h.1.mem_range, h⟩⟩
 
 /-- Every lowering step `j : Fin (min a b + 1)` yields an admissible weight `a + b - 2 * j`. -/
 theorem isClebschGordanTriple_sub_two_mul {a b : ℕ} (j : Fin (min a b + 1)) :
@@ -110,9 +115,8 @@ theorem sum_range_eq_sum_fin_sub_two_mul {M : Type*} [AddCommMonoid M] (a b : �
     ∑ c ∈ Finset.range (a + b + 1), f c = ∑ j : Fin (min a b + 1), f (a + b - 2 * (j : ℕ)) := by
   rw [← Finset.sum_filter_of_ne (p := IsClebschGordanTriple a b) fun c _ => Not.imp_symm (hf c)]
   refine (Finset.sum_nbij (fun j : Fin (min a b + 1) => a + b - 2 * (j : ℕ))
-    (fun j _ => by
-      have := j.isLt; simp only [Finset.mem_filter, Finset.mem_range]
-      exact ⟨by omega, isClebschGordanTriple_sub_two_mul j⟩)
+    (fun j _ => Finset.mem_filter.mpr
+      ⟨(isClebschGordanTriple_sub_two_mul j).mem_range, isClebschGordanTriple_sub_two_mul j⟩)
     (fun j₁ _ j₂ _ h => by have := j₁.isLt; have := j₂.isLt; dsimp only at h; ext; omega)
     (fun c hc => ?_) fun _ _ => rfl).symm
   simp only [Finset.mem_coe, Finset.mem_filter] at hc
@@ -170,7 +174,7 @@ theorem clebschGordanWeightProjection_comp_inclusion_self (hq : IsGenericQuantum
   simp only [clebschGordanWeightProjection, clebschGordanWeightInclusion, dite_eq_left h,
     LinearMap.comp_apply, LinearEquiv.coe_coe, clebschGordanProjection_inclusion_self,
     LinearMap.id_apply]
-  rw [← LinearEquiv.trans_apply, congr_trans, congr_refl, LinearEquiv.refl_apply]
+  rw [← LinearEquiv.trans_apply]; simp
 
 /-- Weight-indexed Clebsch–Gordan inclusions and projections at distinct weights are orthogonal. -/
 theorem clebschGordanWeightProjection_comp_inclusion_of_ne (hq : IsGenericQuantumParameter q)

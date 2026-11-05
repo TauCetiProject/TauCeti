@@ -74,7 +74,7 @@ def congr (hm : m = n) (hε : ε = δ) : LadderModule q m ε ≃ₗ[UqSl2 q] Lad
   LinearEquiv.ext fun _ => by simp [congr]
 
 /-- `congr` composes along transitivity of parameter equalities. -/
-theorem congr_trans (hm₁ : m = n) (hε₁ : ε = δ) (hm₂ : n = p) (hε₂ : δ = ζ) :
+@[simp] theorem congr_trans (hm₁ : m = n) (hε₁ : ε = δ) (hm₂ : n = p) (hε₂ : δ = ζ) :
     (congr (q := q) hm₁ hε₁).trans (congr hm₂ hε₂) = congr (hm₁.trans hm₂) (hε₁.trans hε₂) :=
   LinearEquiv.ext fun _ => by simp [congr]
 
