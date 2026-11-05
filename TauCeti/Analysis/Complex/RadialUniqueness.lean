@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 public import TauCeti.Analysis.Complex.IsolatedZero
 public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
-import TauCeti.Topology.MetricSpace.RadialLimit
 
 /-!
 # Radial limits determine a holomorphic function: the F. and M. Riesz uniqueness theorem
