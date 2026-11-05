@@ -148,7 +148,6 @@ theorem coeFn_piLpEquiv_symm_single [DecidableEq ι] (i : ι) (h : Lp (E i) p μ
   exact hx.trans (PiLp.ext hcoord)
 
 /-- Coordinate evaluation via `piLpEquiv` commutes with heterogeneous `Lp` scalar multiplication. -/
-@[simp]
 theorem piLpEquiv_lpSMul {q : ℝ≥0∞} [HolderTriple q p p] (a : Lp 𝕜 q μ)
     (f : Lp (PiLp p E) p μ) (i : ι) :
     piLpEquiv p 𝕜 E μ (a • f : Lp (PiLp p E) p μ) i =
