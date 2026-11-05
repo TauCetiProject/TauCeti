@@ -21,6 +21,11 @@ reductions modulo a prime.
 * `LieModuleHom.baseChange`: the extension of scalars
   `A ⊗[R] M →ₗ⁅A,A ⊗[R] L⁆ A ⊗[R] N` of a Lie-module map, with underlying linear map
   `LinearMap.baseChange`.
+
+## Main statements
+
+* `LieModuleHom.baseChange_id` and `LieModuleHom.baseChange_comp`: extension of scalars is
+  functorial.
 -/
 
 public section
@@ -58,5 +63,26 @@ def baseChange (f : M →ₗ⁅R,L⁆ N) :
 @[simp] theorem baseChange_tmul (f : M →ₗ⁅R,L⁆ N) (a : A) (m : M) :
     f.baseChange A (a ⊗ₜ[R] m) = a ⊗ₜ[R] f m :=
   (rfl)
+
+/-- As a function, scalar extension is the linear scalar extension. Not `@[simp]`: as for
+`LieHom.baseChange`, the simp normal form keeps `LieModuleHom.baseChange` and evaluates it on pure
+tensors by `LieModuleHom.baseChange_tmul`. -/
+theorem coe_baseChange (f : M →ₗ⁅R,L⁆ N) :
+    ⇑(f.baseChange A) = ⇑(f.toLinearMap.baseChange A) :=
+  (rfl)
+
+/-- Extension of scalars is functorial: it takes the identity to the identity. -/
+@[simp]
+theorem baseChange_id : (LieModuleHom.id : M →ₗ⁅R,L⁆ M).baseChange A = LieModuleHom.id := by
+  ext x
+  exact DFunLike.congr_fun (LinearMap.baseChange_id (R := R) (A := A) (M := M)) x
+
+/-- Extension of scalars is functorial: it takes a composition to the composition. -/
+theorem baseChange_comp {P : Type*} [AddCommGroup P] [Module R P] [LieRingModule L P]
+    [LieModule R L P] (g : N →ₗ⁅R,L⁆ P) (f : M →ₗ⁅R,L⁆ N) :
+    (g.comp f).baseChange A = (g.baseChange A).comp (f.baseChange A) := by
+  ext x
+  exact DFunLike.congr_fun (LinearMap.baseChange_comp (A := A) (f := f.toLinearMap)
+    (g := g.toLinearMap)) x
 
 end LieModuleHom
