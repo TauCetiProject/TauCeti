@@ -12,7 +12,9 @@ public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
 # Evaluation of power series as infinite sums
@@ -69,9 +71,13 @@ coefficient rings here may have nilpotents.
   point are absolutely summable.
 * `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
   `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
-  `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series.
+  `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series;
+  `PowerSeries.IsRestricted.evalAt_smul` and `PowerSeries.IsRestricted.evalAt_sum` record the
+  compatibility with scalars and finite sums.
 * `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
   restricted series.
+* `PowerSeries.evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq`: zeros in the closed disc of a
+  series factored as `u * (X ^ a * ∏ᶠ m, g m)` with `u` a restricted unit.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
   `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
   sums.
@@ -442,6 +448,22 @@ theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) 
   exact HasSum.tsum_eq
     (by simpa [add_smul] using (hf.hasSum_evalAt hb).add (hg.hasSum_evalAt hb))
 
+/-- Evaluation at a point of norm at most `c` commutes with scalar multiplication of a series
+restricted at `c`. -/
+theorem IsRestricted.evalAt_smul (hf : f.IsRestricted c) (a : R) (hb : ‖b‖ ≤ c) :
+    (a • f).evalAt b = a • f.evalAt b := by
+  rw [evalAt_def]
+  exact HasSum.tsum_eq (by simpa [mul_smul] using HasSum.const_smul a (hf.hasSum_evalAt hb))
+
+/-- Evaluation at a point of norm at most `c` commutes with finite sums of series restricted
+at `c`. -/
+theorem IsRestricted.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, (f i).IsRestricted c) (hb : ‖b‖ ≤ c) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  have h := hasSum_sum fun i hi ↦ (hf i hi).hasSum_evalAt hb
+  rw [evalAt_def]
+  exact HasSum.tsum_eq (by simpa [Finset.sum_smul] using h)
+
 /-- Evaluation at a point of norm at most `c` is multiplicative on series restricted at `c`: this
 is the Cauchy product formula, which holds in a complete ultrametric ring as soon as the terms of
 both series tend to zero. -/
@@ -476,5 +498,29 @@ theorem IsRestricted.evalAtHom_apply (hb : ‖b‖ ≤ c) (f : IsRestricted.subr
   (rfl)
 
 end Restricted
+
+/-- Suppose `f = u * (X ^ a * ∏ᶠ m, g m)` on the closed disc of radius `r`, where `u` is a unit of
+the ring of series restricted at `r` and `g` is a finitely supported family of polynomials. Then in
+any complete ultrametric normed domain `A` over `R`, for every `x : A` with `‖x‖ ≤ r`,
+`f.evalAt x = 0` iff `(x = 0 ∧ 0 < a)` or `x` is a root of some factor `g m`
+(`m ∈ Function.mulSupport g`). -/
+theorem evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq {R A ι : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [NormedCommRing A] [IsDomain A] [Algebra R A] [IsBoundedSMul R A]
+    [IsUltrametricDist A] [CompleteSpace A] {f : R⟦X⟧} {r : ℝ}
+    {u : IsRestricted.subring (R := R) r} (hu : IsUnit u) {a : ℕ} {g : ι → Polynomial R}
+    (hfin : (Function.mulSupport g).Finite)
+    (hmul : (u : R⟦X⟧) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial R) : R⟦X⟧)) = f)
+    {x : A} (hx : ‖x‖ ≤ r) :
+    f.evalAt x = 0 ↔
+      (x = 0 ∧ 0 < a) ∨ ∃ m ∈ Function.mulSupport g, Polynomial.aeval x (g m) = 0 := by
+  have hu_eval : IsUnit ((u : R⟦X⟧).evalAt x) := by
+    simpa using hu.map (IsRestricted.evalAtHom R hx)
+  rw [← hmul, finprod_eq_prod g hfin,
+    IsRestricted.evalAt_mul u.2 (TauCeti.PowerSeries.isRestricted_polynomial _) hx,
+    evalAt_coe, hu_eval.mul_right_eq_zero, map_mul, map_pow, Polynomial.aeval_X,
+    map_prod (Polynomial.aeval (R := R) x), mul_eq_zero, pow_eq_zero_iff', Finset.prod_eq_zero_iff]
+  refine or_congr ⟨fun ⟨hx0, ha0⟩ => ⟨hx0, Nat.pos_of_ne_zero ha0⟩,
+    fun ⟨hx0, ha0⟩ => ⟨hx0, ha0.ne'⟩⟩ ?_
+  simp only [Set.Finite.mem_toFinset]
 
 end PowerSeries

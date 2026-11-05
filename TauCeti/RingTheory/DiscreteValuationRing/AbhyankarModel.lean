@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.RegularLocalRing.Defs
-public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover
+public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 import Mathlib.RingTheory.Finiteness.Quotient
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Ideal.GoingUp
