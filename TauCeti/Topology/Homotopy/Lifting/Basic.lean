@@ -19,8 +19,11 @@ spaces in arbitrary universes.  Covering maps have it for every space
 (`Homeomorph.hasHomotopyLiftingProperty`); it is closed under composition
 (`TauCeti.HasHomotopyLiftingProperty.comp`), base change
 (`TauCeti.HasHomotopyLiftingProperty.pullback`) and restriction over a subset of the base
-(`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`); it depends on the space only up to
-homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), and a map with it lifts paths
+(`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`), and homotopy lifting of
+`U.restrictPreimage p` lifts homotopies valued in `U`
+(`TauCeti.HasHomotopyLiftingProperty.exists_lift_of_mem`); it depends on the space only up to
+homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), passes from open subsets along open
+embeddings (`TauCeti.HasHomotopyLiftingProperty.of_isOpenEmbedding`), and a map with it lifts paths
 (`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`).
 
 Serre fibrations, the maps with the homotopy lifting property with respect to every disk, are in
@@ -119,6 +122,23 @@ theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProp
   exact ⟨⟨fun x ↦ ⟨G x, hGt x⟩, by fun_prop⟩, funext fun x ↦ Subtype.ext (congrFun hG x),
     fun a ↦ Subtype.ext (hG₀ a)⟩
 
+/-- If the restriction `U.restrictPreimage p : p ⁻¹' U → U` over `U : Set B` has the homotopy
+lifting property with respect to `A`, then every homotopy `H : C(I × A, B)` valued in `U` whose
+initial map lifts along `p` to `f : C(A, E)` lifts along `p` to a homotopy `G : C(I × A, E)`
+starting at `f`. -/
+theorem HasHomotopyLiftingProperty.exists_lift_of_mem {U : Set B}
+    (h : HasHomotopyLiftingProperty (U.restrictPreimage p) A)
+    (f : C(A, E)) (H : C(I × A, B)) (hHU : ∀ z, H z ∈ U) (hH : ∀ a, H (0, a) = p (f a)) :
+    ∃ G : C(I × A, E), p ∘ G = H ∧ ∀ a, G (0, a) = f a := by
+  have hfU (a : A) : f a ∈ p ⁻¹' U := by
+    rw [Set.mem_preimage, ← hH a]
+    exact hHU (0, a)
+  obtain ⟨G, hG, hG₀⟩ := h ⟨fun a ↦ ⟨f a, hfU a⟩, by fun_prop⟩
+    ⟨fun z ↦ ⟨H z, hHU z⟩, by fun_prop⟩ fun a ↦ Subtype.ext (hH a)
+  exact ⟨(ContinuousMap.subtypeVal _).comp G,
+    funext fun z ↦ congrArg Subtype.val (congrFun hG z),
+    fun a ↦ congrArg Subtype.val (hG₀ a)⟩
+
 /-- The homotopy lifting property with respect to a space passes to every space homeomorphic to
 it. -/
 theorem HasHomotopyLiftingProperty.of_homeomorph (h : HasHomotopyLiftingProperty p A')
@@ -130,6 +150,14 @@ theorem HasHomotopyLiftingProperty.of_homeomorph (h : HasHomotopyLiftingProperty
   obtain ⟨G, hG, hG₀⟩ := h (f.comp e.symm) (H.comp ψ) fun y ↦ hH (e.symm y)
   refine ⟨G.comp φ, funext fun x ↦ ?_, fun x ↦ by simpa [φ] using hG₀ (e x)⟩
   simpa [φ, ψ] using congrFun hG (φ x)
+
+/-- If `p` has the homotopy lifting property with respect to every open subset of `A'`, then it has
+the homotopy lifting property with respect to every space admitting an open embedding into `A'`. -/
+theorem HasHomotopyLiftingProperty.of_isOpenEmbedding
+    (h : ∀ W : Set A', IsOpen W → HasHomotopyLiftingProperty p W)
+    {e : A → A'} (he : Topology.IsOpenEmbedding e) :
+    HasHomotopyLiftingProperty p A :=
+  (h (Set.range e) he.isOpen_range).of_homeomorph he.toHomeomorph
 
 end TauCeti
 

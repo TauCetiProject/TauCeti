@@ -405,6 +405,33 @@ theorem coeff_algebraMap_addSubgroup_of_notMem (b : NovikovSeries R K (N.comp K.
   rw [algebraMap_addSubgroup_eq_mapRingHom, mapRingHom_apply]
   exact coeff_map_eq_zero_of_notMem_range _ K.subtype _ b (by simpa using hh)
 
+/-- Restricting to a subgroup and then including recovers a series supported on that subgroup. -/
+theorem algebraMap_comap_subtype_of_support_subset (a : NovikovSeries R H N)
+    (ha : a.support ⊆ (K : Set H)) :
+    algebraMap (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N)
+      (comap K.subtype (exists_period_rescale_subtype K)
+        (by simp [K.subtype.ker_eq_bot K.subtype_injective]) a) = a := by
+  ext h
+  by_cases hh : h ∈ K
+  · exact (coeff_algebraMap_addSubgroup_coe _ ⟨h, hh⟩).trans (coeff_comap _ _ _ _ _)
+  · rw [coeff_algebraMap_addSubgroup_of_notMem _ hh]
+    symm
+    by_contra hc
+    exact hh (ha (mem_support.2 hc))
+
+/-- A series comes from the subgroup Novikov ring exactly when its support lies in the subgroup. -/
+-- Rewrite before the generic simp rule that expands membership in a range to an existential.
+@[simp high]
+theorem mem_range_algebraMap_addSubgroup_iff (a : NovikovSeries R H N) :
+    a ∈ Set.range (algebraMap (NovikovSeries R K (N.comp K.subtype))
+      (NovikovSeries R H N)) ↔ a.support ⊆ (K : Set H) := by
+  constructor
+  · rintro ⟨b, rfl⟩ h hh
+    by_contra hK
+    exact (mem_support.1 hh) (coeff_algebraMap_addSubgroup_of_notMem b hK)
+  · intro ha
+    exact ⟨_, algebraMap_comap_subtype_of_support_subset a ha⟩
+
 /-- The algebra map from Novikov series on `K` sends the monomial `r e^k` to `r e^k`. -/
 @[simp]
 theorem algebraMap_addSubgroup_single (k : K) (r : R) :
@@ -428,6 +455,14 @@ theorem comap_subtype_algebraMap (b : NovikovSeries R K (N.comp K.subtype)) :
     comap K.subtype hφ hker (algebraMap _ (NovikovSeries R H N) b) = b := by
   ext k
   simp
+
+/-- The algebra map induced by inclusion of a subgroup of exponents is injective. -/
+theorem algebraMap_addSubgroup_injective :
+    Function.Injective (algebraMap (NovikovSeries R K (N.comp K.subtype))
+      (NovikovSeries R H N)) :=
+  Function.LeftInverse.injective
+    (comap_subtype_algebraMap (exists_period_rescale_subtype K)
+      (by simp [K.subtype.ker_eq_bot K.subtype_injective]))
 
 /-- The projection formula: restriction of coefficients to `K` is linear over Novikov series
 on `K`. -/
