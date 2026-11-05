@@ -86,6 +86,7 @@ theorem rescale_one : rescale (1 : σ → R) = AlgHom.id R (MvPolynomial σ R) :
   algHom_ext fun i ↦ by simp
 
 /-- Rescaling by units does not change the support. -/
+@[simp]
 theorem support_rescale (ha : ∀ i, IsUnit (a i)) (p : MvPolynomial σ R) :
     (rescale a p).support = p.support := by
   ext n
