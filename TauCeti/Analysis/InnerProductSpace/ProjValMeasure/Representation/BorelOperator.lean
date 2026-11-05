@@ -236,6 +236,11 @@ def representationBorelOperator : BoundedBorelFunction K →⋆ₐ[ℂ] (H →L[
       representationBorelOperatorAux_ofContinuousMap, AlgHomClass.commutes]
   map_star' := representationBorelOperatorAux_star π
 
+/-- The Borel extension evaluates through its auxiliary construction. -/
+private theorem representationBorelOperator_apply (f : BoundedBorelFunction K) :
+    representationBorelOperator π f = representationBorelOperatorAux π f :=
+  rfl
+
 /-- **Matrix elements of the Borel extension.** `⟪ψ, T_f ξ⟫ = ∫ f dμ_(ψ,ξ)`. -/
 theorem inner_representationBorelOperator (f : BoundedBorelFunction K) (ψ ξ : H) :
     ⟪ψ, representationBorelOperator π f ξ⟫_ℂ =
@@ -258,7 +263,7 @@ theorem integral_representationPolarizedMeasure_representationBorelOperator
       ∫ᵛ x, f x * g x ∂[ContinuousLinearMap.mul ℝ ℂ; representationPolarizedMeasure π ψ ξ] := by
   rw [← inner_representationBorelOperator, ← mul_apply_eq_comp, ← map_mul,
     inner_representationBorelOperator, BoundedBorelFunction.coe_mul]
-  rfl
+  simp only [Pi.mul_apply]
 
 /-- **Commutant of the Borel extension.** An operator commuting with `π f` for every continuous
 `f` commutes with `T_g` for every bounded Borel symbol `g`: the matrix elements
@@ -266,7 +271,7 @@ theorem integral_representationPolarizedMeasure_representationBorelOperator
 symbols. -/
 theorem commute_representationBorelOperator {A : H →L[ℂ] H} (hA : ∀ f : C(K, ℂ), Commute A (π f))
     (g : BoundedBorelFunction K) : Commute A (representationBorelOperator π g) := by
-  rw [commute_iff_eq]
+  rw [commute_iff_eq, representationBorelOperator_apply]
   refine ContinuousLinearMap.ext fun ξ => ext_inner_left ℂ fun ψ => ?_
   rw [mul_apply_eq_comp, mul_apply_eq_comp, ← ContinuousLinearMap.adjoint_inner_left A]
   refine congrFun (BoundedBorelFunction.eq_of_forall_ofContinuousMap_eq
