@@ -653,7 +653,6 @@ theorem existsUnique_weierstrassDivision_of_isDistinguishedAt {x₀ : E} {w₀ :
     TauCeti.Polynomial.monicOfCoeff_coeff hP.monic rfl
   have hc0_germ : ∀ i : Fin d, eval 𝓘(ℂ, E) E x₀ (c i) = 0 :=
     (isDistinguishedAt_monicOfCoeff_iff c).1 (hP_eq.symm ▸ hP)
-  let C : Fin d → E → ℂ := fun i ↦ Classical.choose (exists_analyticAt_toFilterGerm_eq x₀ (c i))
   have hC_spec := fun i : Fin d ↦ Classical.choose_spec (exists_analyticAt_toFilterGerm_eq x₀ (c i))
   obtain ⟨G, hG_an, hgG⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) g
   obtain ⟨Q, R, hQ_an, hR_an, hdiv⟩ := hG_an.exists_weierstrassDivision_monicOfCoeff

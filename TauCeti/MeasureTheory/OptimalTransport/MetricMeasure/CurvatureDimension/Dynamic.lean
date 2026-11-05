@@ -325,7 +325,7 @@ theorem dynamicCurvatureDimension_zero_of_finrank_le [Nontrivial E] (hN : (finra
     M.DynamicCurvatureDimension 0 N := by
   have hn : (1 : ℝ) ≤ finrank ℝ E := Nat.one_le_cast.2 finrank_pos
   refine (dynamicCurvatureDimension_zero_iff (zero_lt_one.trans_le (hn.trans hN))).2
-    ⟨by rw [support_def, Measure.support_eq_univ], fun μ₀ μ₁ h₀ h₁ hb₀ hb₁ ↦ ?_⟩
+    ⟨by rw [support_def, Measure.support_eq_univ], fun μ₀ μ₁ h₀ _ hb₀ hb₁ ↦ ?_⟩
   -- Bounded supports give finite second moments, hence a finite quadratic transport cost.
   have hm (μ : ProbabilityMeasure E) (hb : Bornology.IsBounded (μ : Measure E).support) :
       HasFiniteMoment 2 (μ : Measure E) :=

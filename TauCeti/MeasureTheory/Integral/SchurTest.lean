@@ -232,7 +232,6 @@ theorem eLpNorm_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β → �
         exact lintegral_rpow_lintegral_mul_le hk hg hr hA hB
     _ = A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ *
           (∫⁻ y, g y ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
-        have hr0 : 0 < p.toReal := zero_lt_one.trans_le hr
         rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
           ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, one_div,
           show (p.toReal - 1) * p.toReal⁻¹ = 1 - p.toReal⁻¹ by field_simp]

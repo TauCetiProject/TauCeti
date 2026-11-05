@@ -494,7 +494,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   have hβ₁ : β - 1 ≤ 0 := by
     have : (α : ℝ) ≤ 2 := by exact_mod_cast hα
     linarith
-  have hH : (0 : ℝ) ≤ H := H.coe_nonneg
   set u : ℝ → F := fun r => heatCauchyPotential g r x
   -- `set` does not fold the applications `heatCauchyPotential g r x` into `u r`.
   change ‖u b - u a‖ ≤ _
@@ -513,7 +512,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
     -- `H M_α b^β ≤ H M_α (b - a) (-a)^(β - 1)` of it.
     rw [hneg a ha.le, abs_of_neg ha]
     have hd : 0 < -a := neg_pos.2 ha
-    have hC : 0 ≤ 2 * C₂ + 4 * Mα := by positivity
     rcases le_or_gt b 0 with hb | hb
     · rw [hneg b hb, sub_self, norm_zero]
       exact mul_nonneg (by positivity) (rpow_nonneg hd.le _)
@@ -536,7 +534,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
           _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by gcongr
           _ = _ := by ring
   rw [abs_of_pos ha]
-  have hX : 0 ≤ H * (|b - a| * a ^ (β - 1)) := by positivity
   rcases le_or_gt (a / 2) b with hb | hb
   · -- Near `a`, the mean value theorem on `[a / 2, ∞)`, where the derivative is
     -- `O(H (a / 2)^(β - 1)) = O(H a^(β - 1))`.

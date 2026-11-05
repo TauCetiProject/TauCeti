@@ -163,7 +163,6 @@ private lemma norm_sq_le_of_mem_ball_half {x₀ x : E} {R : ℝ} (hR : 0 < R)
       (ball_subset_closedBall.trans hsub).eventuallyLE
   rw [μ.addHaar_real_ball_of_pos x (half_pos hR), div_pow] at h
   rw [le_div_iff₀ (by positivity)]
-  have h2 : (0 : ℝ) < 2 ^ finrank ℝ E := by positivity
   calc ‖u x‖ ^ 2 * (R ^ finrank ℝ E * μ.real (ball (0 : E) 1))
       = 2 ^ finrank ℝ E *
           (R ^ finrank ℝ E / 2 ^ finrank ℝ E * μ.real (ball (0 : E) 1) * ‖u x‖ ^ 2) := by
@@ -382,7 +381,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAver
         ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
   set n := finrank ℝ E with hn
   set I := ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ
-  have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
   rcases hρ.eq_or_lt with rfl | hρ
   · simp only [ball_zero, Measure.restrict_empty, integral_zero_measure]
     positivity
@@ -528,7 +526,6 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
         (ρ / R) ^ (finrank ℝ E + 2) * ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
   set n := finrank ℝ E with hn
   set I := ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ
-  have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
   -- `u` is continuous on `ball x₀ R`, so `u - c'` is square integrable there for every `c'`.
   have hcont : ContinuousOn u (ball x₀ R) := by
     refine (hu.continuousOn.comp e.symm.continuous.continuousOn fun x hx ↦ ?_).congr

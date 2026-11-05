@@ -376,7 +376,7 @@ theorem two_mul_sub_mul_carlsonRD_self_right {x y : ℂ} (hx : x ∈ slitPlane �
   have hint : IntegrableOn G' (Ioi 0) := (integrableOn_carlsonRC_integrand hx hy).sub
     ((integrableOn_carlsonRJ_integrand hx hy hy hy).const_mul (2 * (y - x)))
   have hG_lim : Tendsto G atTop (𝓝 0) := by
-    obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_inv_ofReal_add_le hy
+    obtain ⟨Cy, _, hCy⟩ := TauCeti.exists_norm_inv_ofReal_add_le hy
     have h0 : Tendsto
         (fun t : ℝ => 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * (1 + t) ^ (-(1 / 2) : ℝ))
         atTop (𝓝 0) := by

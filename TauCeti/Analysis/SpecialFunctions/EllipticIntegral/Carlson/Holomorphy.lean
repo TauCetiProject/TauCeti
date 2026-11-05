@@ -472,7 +472,6 @@ private theorem integrableOn_carlsonRGWeight₂_mul_cpow {x y z : ℂ} (hx : x �
   obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx hr
   obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hy hr
   have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
-  have hCy0 : 0 ≤ Cy := by simpa using (norm_nonneg _).trans (hCy 1 one_pos)
   push_cast at hCx hCy
   refine (hz_int.norm.const_mul (Cx * Cy)).mono'
     (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
@@ -557,7 +556,6 @@ theorem hasDerivAt_carlsonRG_right_integral {x y z : ℂ} (hx : x ∈ slitPlane 
         have h1 : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) = t⁻¹ := by
           rw [← Real.rpow_add ht0]; norm_num [Real.rpow_neg_one]
         rw [mul_assoc, h1, sq, mul_assoc, mul_inv_cancel₀ ht0.ne', mul_one]
-      have hcz0 : 0 ≤ Cz := (norm_nonneg _).trans (hCz t ht0.le)
       simp only [K, norm_mul, norm_neg, norm_pow, norm_real, Real.norm_of_nonneg ht0.le]
       calc t ^ 2 * ‖((t : ℂ) + x) ^ (-(1 / 2) : ℂ)‖ * ‖((t : ℂ) + y) ^ (-(1 / 2) : ℂ)‖ *
             ‖((t : ℂ) + z) ^ (-(3 / 2) : ℂ)‖
@@ -632,7 +630,6 @@ theorem hasDerivAt_carlsonRG_right_integral {x y z : ℂ} (hx : x ∈ slitPlane 
         (Cx * Cy * Cz')
     refine squeeze_zero_norm' ?_ h0
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht0
-    have hcz'0 : 0 ≤ Cz' := by simpa using (norm_nonneg _).trans (hCz' 1 one_pos)
     have ht_pow : t ^ 2 * t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t ^ (-(3 / 2) : ℝ) =
         t ^ (-(1 / 2) : ℝ) := by
       rw [← Real.rpow_natCast t 2, ← Real.rpow_add ht0, ← Real.rpow_add ht0, ← Real.rpow_add ht0]

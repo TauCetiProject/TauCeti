@@ -142,8 +142,6 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
     charP_of_injective_algebraMap (algebraMap K (PowerSeries K)).injective p
   set q := p ^ h
   set ψ := (G.heightFrobeniusIso hG).toHom.toPowerSeries
-  have hψ : constantCoeff (ψ : MvPowerSeries Unit K) = 0 :=
-    (G.heightFrobeniusIso hG).toHom.zero_constantCoeff
   have hcX : PowerSeries.constantCoeff (c • PowerSeries.X ^ M : PowerSeries K) = 0 := by
     simp [hM]
   have hfc : PowerSeries.constantCoeff (f + c • PowerSeries.X ^ M) = 0 := by
@@ -233,7 +231,7 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
     have := F.one_le_height (p := p)
     rw [hF] at this
     exact_mod_cast (Nat.one_le_iff_ne_zero.mp (by exact_mod_cast this))
-  set M := N + 1 with hM
+  set M := N + 1
   have hcX (c : K) : PowerSeries.constantCoeff (c • PowerSeries.X ^ M : PowerSeries K) = 0 := by
     simp [M]
   have hXM (c : K) : (M : ℕ∞) ≤ (f + c • PowerSeries.X ^ M - f).order := by

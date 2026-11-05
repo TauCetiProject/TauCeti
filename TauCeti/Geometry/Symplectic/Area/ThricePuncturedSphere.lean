@@ -147,7 +147,6 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
   have hr : r ≤ 1 / 10 := by
     rw [hr_def]
     nlinarith [Real.exp_pos (-(2 * π * R))]
-  have hρ : 10 ≤ ρ := by rw [hρ_def]; linarith
   have hS : IsOpen {w : ℂ | w ≠ 0 ∧ w ≠ 1} :=
     (isOpen_ne_fun continuous_id continuous_const).inter
       (isOpen_ne_fun continuous_id continuous_const)

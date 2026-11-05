@@ -265,7 +265,7 @@ theorem addHaar_image_eq_zero_of_iteratedFDeriv_ne_zero {i : ℕ} (hi : 1 ≤ i)
   obtain ⟨u, hu, hfu⟩ := (hf a ha).contDiffOn (m := ((i + 1 : ℕ) : ℕ∞ω)) le_rfl
     fun h ↦ absurd h (natCast_ne_infty _)
   set t : Set E := s ∩ (interior u ∩
-    {x | iteratedFDeriv ℝ i f x = 0 → x ∈ θ '' Metric.ball 0 ρ}) with ht
+    {x | iteratedFDeriv ℝ i f x = 0 → x ∈ θ '' Metric.ball 0 ρ})
   refine ⟨t, inter_mem_nhdsWithin _ (Filter.inter_mem (interior_mem_nhds.2 hu)
     (hcover _ (Metric.ball_mem_nhds 0 hρ))), ?_⟩
   -- The local piece lies on the hypersurface parametrized by `θ`.

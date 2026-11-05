@@ -417,7 +417,7 @@ theorem exists_strictMonoOn_dual_comp_uncurry {Γ : ℝ → ℝ → E}
   -- The constants come from compactness of `Q = [t₀, t₁] × [a, b + 1]`: a bound `B` on the
   -- derivative of `Γ`, a lower bound `m` for the derivative of the curves, and a modulus `δ₁` of
   -- uniform continuity of that derivative.
-  set Q : Set (ℝ × ℝ) := Icc t₀ t₁ ×ˢ Icc a (b + 1) with hQ
+  set Q : Set (ℝ × ℝ) := Icc t₀ t₁ ×ˢ Icc a (b + 1)
   have hQc : IsCompact Q := isCompact_Icc.prod isCompact_Icc
   have hQv : Convex ℝ Q := (convex_Icc _ _).prod (convex_Icc _ _)
   have hQ0 : (t₀, a) ∈ Q := ⟨⟨le_rfl, ht⟩, ⟨le_rfl, by linarith⟩⟩
@@ -430,7 +430,7 @@ theorem exists_strictMonoOn_dual_comp_uncurry {Γ : ℝ → ℝ → E}
     have := hQv.norm_image_sub_le_of_norm_fderiv_le (fun x _ ↦ hdiff x) hB h₂ h₁
     simpa [Prod.norm_def, Real.norm_eq_abs] using this
   -- The derivative `v (t, s)` of the curve `Γ t` at `s`.
-  set v : ℝ × ℝ → E := fun p ↦ fderiv ℝ (uncurry Γ) p ((0 : ℝ), (1 : ℝ)) with hv
+  set v : ℝ × ℝ → E := fun p ↦ fderiv ℝ (uncurry Γ) p ((0 : ℝ), (1 : ℝ))
   have hvc : Continuous v := hfc.clm_apply continuous_const
   have hvd (t s : ℝ) : HasDerivAt (Γ t) (v (t, s)) s := by
     have h := (hdiff (t, s)).hasFDerivAt.comp_hasDerivAt s
@@ -438,16 +438,16 @@ theorem exists_strictMonoOn_dual_comp_uncurry {Γ : ℝ → ℝ → E}
     have e : (uncurry Γ ∘ Prod.mk t) = Γ t := by funext s; simp
     rwa [e] at h
   obtain ⟨p₀, hp₀, hmin⟩ := hQc.exists_isMinOn ⟨_, hQ0⟩ hvc.norm.continuousOn
-  set m := ‖v p₀‖ with hm_def
+  set m := ‖v p₀‖
   have hm : 0 < m := norm_pos_iff.2 fun h0 ↦
     hderiv _ hp₀.1 p₀.2 (by rw [(hvd p₀.1 p₀.2).deriv, Prod.mk.eta, h0])
   obtain ⟨δ₁, hδ₁, huc⟩ := Metric.uniformContinuousOn_iff.1
     (hQc.uniformContinuousOn_of_continuous hvc.continuousOn) (m / 4) (by positivity)
-  set δ := min (δ₁ / 2) 1 with hδ_def
+  set δ := min (δ₁ / 2) 1
   have hδ : 0 < δ := lt_min (by positivity) one_pos
   have hδ₁' : δ ≤ δ₁ / 2 := min_le_left _ _
   have hδ1 : δ ≤ 1 := min_le_right _ _
-  set lam := min 1 (m / (2 * (B + 1))) with hlam_def
+  set lam := min 1 (m / (2 * (B + 1)))
   have hlam : 0 < lam := lt_min one_pos (by positivity)
   have hlam1 : lam ≤ 1 := min_le_left _ _
   have hBlam : B * lam ≤ m / 2 := by

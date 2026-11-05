@@ -437,8 +437,7 @@ theorem morseChartChange_morseCellAttachmentCell_of_le_norm (i : ι) {w v : TopC
   have htime : diskCupTime w = t := Subtype.ext ((cupTime_of_le_norm hw).trans ht.symm)
   rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun]
   split_ifs with hw'
-  · have hw'' : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 2⁻¹ := le_antisymm hw' hw
-    rw [hcup]
+  · rw [hcup]
     refine morseCellAttachmentCell_eq_morseCellAttachmentIncl φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁
       h K hK i v (by rw [← hcup]; exact norm_cupPoint_of_le_norm hw) z ?_
     rw [hz, ← htime, diskCupTime_of_norm_le hw']

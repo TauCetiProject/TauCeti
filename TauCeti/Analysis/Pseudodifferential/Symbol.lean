@@ -138,7 +138,7 @@ instance : Zero (Symbol n V W m) where
   zero :=
     { coefficient := 0
       contDiff_coefficient := contDiff_const
-      exists_bound := fun _ _ α β => ⟨0, le_rfl, fun x ξ => by simp⟩ }
+      exists_bound := fun _ _ α β => ⟨0, le_rfl, fun x _ => by simp⟩ }
 
 instance : Add (Symbol n V W m) where
   add a b :=

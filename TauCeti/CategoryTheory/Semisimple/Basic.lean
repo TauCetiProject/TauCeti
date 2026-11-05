@@ -223,7 +223,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C
 
 /-- Every object of a finite semisimple category is injective. -/
 instance injective (X : C) : Injective X := by
-  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := exists_biproduct_simples X
+  obtain ⟨ι, _, f, hf, hbf, ⟨e⟩⟩ := exists_biproduct_simples X
   -- A monomorphism out of a simple object is nonzero, hence split.
   have (i : ι) : Injective (f i) := by
     have := hf i

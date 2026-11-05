@@ -133,7 +133,6 @@ theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareIneq
   rw [variance_map hfL.aemeasurable he.measurable.aemeasurable,
     TauCeti.integral_sq_norm_fderiv_comp_smul ha]
   have := h _ hg hgL hdg
-  have hpos : 0 < a ^ 2 := by positivity
   calc _ ≤ C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
     _ = a ^ 2 * C * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
       field_simp
@@ -150,7 +149,6 @@ theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolev
     exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
   rw [entropy_map he, TauCeti.integral_sq_norm_fderiv_comp_smul ha]
   have := h _ hg hdg ((he.integrable_map_iff).1 hf2) ((he.integrable_map_iff).1 hf2log)
-  have hpos : 0 < a ^ 2 := by positivity
   calc _ ≤ 2 * C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
     _ = 2 * (a ^ 2 * C) * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
       field_simp

@@ -447,7 +447,7 @@ private theorem sigNeg_sub_sigNeg_eq_sum_crossingForm_of_finset (S : Finset ℝ)
     exact sigNeg_toBilinForm_eq_of_isPreconnected isPreconnected_Icc hc hsymm
       (fun t ht ↦ hnd t ht (Finset.notMem_empty t)) (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
   | insert s S hlt ih =>
-    intro b hab hc hsymm hnd hS
+    intro b _ hc hsymm hnd hS
     obtain ⟨⟨has, hsb⟩, hd, hΓ⟩ := hS s (Finset.mem_insert_self s S)
     -- Choose `t₁ < s < t₂`, with `t₁` above every other crossing, across which the negative index
     -- jumps by the signature of the crossing form at `s`.

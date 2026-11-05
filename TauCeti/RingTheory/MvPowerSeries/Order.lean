@@ -367,7 +367,6 @@ theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries 
     rw [hprod, hprod, map_add, Finsupp.degree_single]
     rcases eq_or_ne f 0 with rfl | hf
     · simpa using le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk
-    have hf₀ : f.degree ≠ 0 := fun h ↦ hf ((Finsupp.degree_eq_zero_iff f).mp h)
     refine le_order_mul_sub_mul ((add_le_add (le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk)
       (degree_le_order_prod_pow ha₀ f)).trans' ?_)
       ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k (hb₀ i)) (ih hf)).trans' ?_)

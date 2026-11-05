@@ -158,7 +158,6 @@ theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im)
     4096 * ‖cexp (2 * π * I * τ)‖ *
       (1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 ≤
       ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ := by
-  have hA := norm_nonneg (cexp (2 * π * I * τ))
   have h := norm_tprod_one_add_pow_sub_one_le (by linarith : 2 * ‖cexp (2 * π * I * τ)‖ < 1)
   have hε : 0 ≤ 1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖) := by
     rw [sub_nonneg, div_le_one (by linarith)]

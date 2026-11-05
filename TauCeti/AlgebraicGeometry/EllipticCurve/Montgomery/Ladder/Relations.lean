@@ -78,7 +78,7 @@ theorem coordinates (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0) (hB : B �
   | zero =>
     simp only [zero_nsmul, Nat.zero_add, one_nsmul, Montgomery.coordinates_zero]
     exact ⟨by simp [Pair.ne_zero_iff], by simp, hS, hSP⟩
-  | @bit n U V b h ih =>
+  | @bit n U V b _ ih =>
     obtain ⟨hU, hUP, hV, hVP⟩ := ih
     have hsub : (n + 1) • P - n • P = P := by simp [succ_nsmul]
     have hsum : (n + 1) • P + n • P = (2 * n + 1) • P := by

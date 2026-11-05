@@ -850,7 +850,6 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
   have hΦ : HasFDerivAt Φ (A : (E × F) →L[ℝ] (E × F)) (x₀, y₀) := by
     simpa only [Φ, A] using
       hasFDerivAt_graph_of_solution_family hu₀ husmooth huinit' husol'
-  have hΦ₀ : Φ (x₀, y₀) = (x₀, y₀) := by simp [Φ, hu₀]
   -- The derivative of `Φ` stays invertible on an open neighbourhood `V` of the base point.
   let V : Set (E × F) := U ∩ fderiv ℝ Φ ⁻¹' range ((↑) : ((E × F) ≃L[ℝ] (E × F)) → _)
   have hV : IsOpen V :=
