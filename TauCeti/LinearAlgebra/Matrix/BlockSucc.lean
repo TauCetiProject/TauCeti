@@ -41,6 +41,7 @@ the last basis vector.
   fixes the last one.
 * `Matrix.transpose_blockSucc`: extending a matrix commutes with transposing it, the last row and
   column of the identity matrix being exchanged with each other.
+* `Matrix.conjTranspose_blockSucc`: the same for the conjugate transpose.
 * `Matrix.trace_blockSucc` and `Matrix.det_blockSucc`: the trace grows by one and the determinant
   is unchanged.
 -/
@@ -126,6 +127,23 @@ orthogonality of its extension. -/
 @[simp]
 theorem transpose_blockSucc (M : Matrix (Fin n) (Fin n) k) :
     (blockSucc M)ᵀ = blockSucc Mᵀ := by
+  ext i j
+  induction i using Fin.lastCases with
+  | last =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
+  | cast i =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
+
+/-- Extending a matrix commutes with taking its conjugate transpose, the last row and column being
+those of the identity matrix.  This carries the contravariance of the conjugate transpose along the
+block inclusion. -/
+@[simp]
+theorem conjTranspose_blockSucc [StarRing k] (M : Matrix (Fin n) (Fin n) k) :
+    (blockSucc M)ᴴ = blockSucc Mᴴ := by
   ext i j
   induction i using Fin.lastCases with
   | last =>

@@ -584,9 +584,9 @@ section CommonKernelIso
 
 variable {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
 
-/-- Under arbitrary scalar extension, an ambient base-change isomorphism carries the base
-change of a common-kernel Hopf ideal into the common kernel of a target family, when each
-target map is obtained from the base-changed generator by an isomorphism of its codomain. -/
+/-- An ambient base-change isomorphism carries the base change of a common-kernel Hopf ideal
+into the common kernel of a target family when the generators match through codomain
+isomorphisms. No freeness hypothesis is required. -/
 theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
     {H' : _root_.CommHopfAlgCat.{max w v} K} {N' : ι → _root_.CommHopfAlgCat.{max w v} K}
     (f : ∀ i, H ⟶ N i) (ambient : baseChange (K := K) H ≅ H')
@@ -594,13 +594,8 @@ theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
     (h : ∀ i, (ambient.inv ≫ baseChangeMap (K := K) (f i)) ≫ (e i).hom = g i) :
     (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).map ambient.hom.hom ≤
       commonKernelHopfIdeal g := by
-  calc
-    _ ≤ (commonKernelHopfIdeal (fun i ↦ baseChangeMap (K := K) (f i))).map ambient.hom.hom :=
-      HopfIdeal.map_mono _ (baseChangeHopfIdeal_commonKernelHopfIdeal_le f)
-    _ = _ := by
-      rw [map_commonKernelHopfIdeal, ← funext h,
-        commonKernelHopfIdeal_comp_of_injective _ _ fun i ↦
-          (ConcreteCategory.bijective_of_isIso (e i).hom).1]
+  refine le_trans (HopfIdeal.map_mono _ (baseChangeHopfIdeal_commonKernelHopfIdeal_le f)) ?_
+  exact le_of_eq (map_commonKernelHopfIdeal_of_comp_eq _ ambient e g h)
 
 /-- An ambient base-change isomorphism carries the base change of a common-kernel Hopf ideal to
 the common kernel of a target family, when each target map is obtained from the base-changed
@@ -612,13 +607,8 @@ theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K]
     (h : ∀ i, (ambient.inv ≫ baseChangeMap (K := K) (f i)) ≫ (e i).hom = g i) :
     (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).map ambient.hom.hom =
       commonKernelHopfIdeal g := by
-  rw [baseChangeHopfIdeal_commonKernelHopfIdeal, map_commonKernelHopfIdeal]
-  rw [← commonKernelHopfIdeal_comp_of_injective
-    (fun i ↦ ambient.inv ≫ baseChangeMap (K := K) (f i)) (fun i ↦ (e i).hom)
-    fun i ↦ (ConcreteCategory.bijective_of_isIso (e i).hom).1]
-  congr 1
-  funext i
-  exact h i
+  rw [baseChangeHopfIdeal_commonKernelHopfIdeal]
+  exact map_commonKernelHopfIdeal_of_comp_eq _ ambient e g h
 
 end CommonKernelIso
 

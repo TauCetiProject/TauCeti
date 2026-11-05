@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
+public import TauCeti.NumberTheory.Padics.LocalGlobalLattice
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -64,6 +65,8 @@ local data of the genus over to the rational quadratic spaces.
   of `L_p` from `ℤ_p` to `ℚ_p` along the canonical map.
 * `TauCeti.IntegralLattice.localizationToCompletion_injective`: the canonical map is injective.
 * `TauCeti.IntegralLattice.span_range_localizationToCompletion`: its image spans `V_p` over `ℚ_p`.
+* `TauCeti.IntegralLattice.range_localizationToCompletion`: its image is the localization
+  `Submodule.padicLocalization` of the carrier of `L`, the `ℤ_p`-span of the vectors `1 ⊗ x`.
 * `TauCeti.IntegralLattice.mem_range_localizationToCompletion_iff`: in the rational basis of a
   basis of `L`, its image consists of the vectors with `p`-adic integral coordinates.
 * `TauCeti.IntegralLattice.completedRationalForm_localizationToCompletion`: the localized integral
@@ -201,6 +204,14 @@ instance isLattice_range_localizationToCompletion :
     rw [LinearMap.coe_range]
     exact L.span_range_localizationToCompletion p
 
+/-- **The image of `L_p` in `V_p` is the localization of the carrier of `L`**, the `ℤ_p`-span of
+the vectors `1 ⊗ x` with `x ∈ L`. -/
+theorem range_localizationToCompletion :
+    LinearMap.range (L.localizationToCompletion p) = L.carrier.padicLocalization p := by
+  rw [localizationToCompletion, LinearMap.range_liftBaseChange, LinearMap.range_comp,
+    Submodule.range_subtype, Submodule.map_coe, Submodule.padicLocalization_def]
+  rfl
+
 section Coordinates
 
 variable {ι : Type*} (e : Basis ι ℤ L)
@@ -236,19 +247,8 @@ vectors whose coordinates are `p`-adic integers. -/
 theorem mem_range_localizationToCompletion_iff (x : ℚ_[p] ⊗[ℚ] V) :
     x ∈ LinearMap.range (L.localizationToCompletion p) ↔
       ∀ i, ‖((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr x i‖ ≤ 1 := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨t, rfl⟩ i
-    rw [repr_localizationToCompletion]
-    exact (PadicInt.mem_subring_iff p).mp ((e.baseChange ℤ_[p]).repr t i).property
-  · let b := (e.extendOfIsLattice ℚ).baseChange ℚ_[p]
-    -- The `p`-adic integral coordinates of `x` are those of a vector of `L_p`.
-    refine ⟨(e.baseChange ℤ_[p]).repr.symm (Finsupp.ofSupportFinite
-      (fun i ↦ Padic.lift (b.repr x i) (h i))
-      ((b.repr x).support.finite_toSet.subset fun i hi ↦
-        Finsupp.mem_support_iff.mpr fun h0 ↦ hi (PadicInt.ext h0))), b.repr.injective ?_⟩
-    ext i
-    rw [repr_localizationToCompletion, LinearEquiv.apply_symm_apply, Finsupp.ofSupportFinite_coe,
-      PadicInt.coe_lift]
+  rw [range_localizationToCompletion]
+  exact Submodule.mem_padicLocalization_iff_repr_mem e x
 
 end Coordinates
 
