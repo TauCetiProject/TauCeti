@@ -25,6 +25,8 @@ curvature:
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
 * `OrthonormalBasis.real_inner_fin_two`: in a real plane with orthonormal basis `b`,
   `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`.
+* `Complex.isometryOfOrthonormal_symm_apply_eq_mk`: in the same plane, the complex coordinate of
+  `x` given by `Complex.isometryOfOrthonormal b` is `⟪x, b₀⟫ + i ⟪x, b₁⟫`.
 -/
 
 public section
@@ -88,3 +90,12 @@ theorem sum_sum_inner_mul_inner_mul_inner (u : OrthonormalBasis ι 𝕜 E)
   exact Finset.sum_congr rfl fun j _ ↦ by ring
 
 end OrthonormalBasis
+
+open scoped InnerProductSpace in
+/-- The complex coordinate of `x` given by `Complex.isometryOfOrthonormal b` is
+`⟪x, b₀⟫ + i ⟪x, b₁⟫`. -/
+theorem Complex.isometryOfOrthonormal_symm_apply_eq_mk {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (b : OrthonormalBasis (Fin 2) ℝ V) (x : V) :
+    (Complex.isometryOfOrthonormal b).symm x = ⟨⟪x, b 0⟫_ℝ, ⟪x, b 1⟫_ℝ⟩ := by
+  rw [Complex.isometryOfOrthonormal_symm_apply]
+  apply Complex.ext <;> simp [b.coe_toBasis_repr_apply, b.repr_apply_apply, real_inner_comm]

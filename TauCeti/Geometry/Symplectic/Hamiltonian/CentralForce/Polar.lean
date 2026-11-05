@@ -176,6 +176,7 @@ theorem inner_polarAngularUnit_self (θ : ℝ) :
   linear_combination sin_sq_add_cos_sq θ
 
 /-- The polar unit vectors form an orthonormal pair: `⟪e_r, e_θ⟫ = 0`. -/
+@[simp]
 theorem inner_polarRadialUnit_polarAngularUnit (θ : ℝ) :
     ⟪polarRadialUnit u w θ, polarAngularUnit u w θ⟫_ℝ = 0 := by
   simp only [polarRadialUnit, polarAngularUnit, inner_add_left, inner_add_right,
@@ -183,16 +184,19 @@ theorem inner_polarRadialUnit_polarAngularUnit (θ : ℝ) :
   simp only [real_inner_self_eq_norm_sq, hu, hw]
   ring
 
+@[simp]
 theorem inner_polarAngularUnit_polarRadialUnit (θ : ℝ) :
     ⟪polarAngularUnit u w θ, polarRadialUnit u w θ⟫_ℝ = 0 := by
   rw [real_inner_comm, inner_polarRadialUnit_polarAngularUnit hu hw huw]
 
 /-- The polar unit vectors have unit length: `‖e_r‖ = 1`. -/
+@[simp]
 theorem norm_polarRadialUnit (θ : ℝ) : ‖polarRadialUnit u w θ‖ = 1 := by
   have h := inner_polarRadialUnit_self hu hw huw θ
   rwa [real_inner_self_eq_norm_sq, pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
 
 /-- The polar unit vectors have unit length: `‖e_θ‖ = 1`. -/
+@[simp]
 theorem norm_polarAngularUnit (θ : ℝ) : ‖polarAngularUnit u w θ‖ = 1 := by
   have h := inner_polarAngularUnit_self hu hw huw θ
   rwa [real_inner_self_eq_norm_sq, pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
@@ -433,18 +437,11 @@ theorem polarAngle_zero (u w : V) : polarAngle u w 0 = 0 := by
     Complex.ext (by simp) (by simp)
   rw [polarAngle, h, Complex.arg_zero, Real.Angle.coe_zero]
 
-/-- The complex coordinate of `q` given by `Complex.isometryOfOrthonormal b` is
-`⟪q, b₀⟫ + i ⟪q, b₁⟫`. -/
-private theorem isometryOfOrthonormal_symm_eq_mk (b : OrthonormalBasis (Fin 2) ℝ V) (q : V) :
-    (Complex.isometryOfOrthonormal b).symm q = ⟨⟪q, b 0⟫_ℝ, ⟪q, b 1⟫_ℝ⟩ := by
-  rw [Complex.isometryOfOrthonormal_symm_apply]
-  apply Complex.ext <;> simp [b.coe_toBasis_repr_apply, b.repr_apply_apply, real_inner_comm]
-
 /-- For an orthonormal basis `b` of a plane, the polar angle in the frame `(b₀, b₁)` is the
 argument of the complex coordinate of `q` given by `Complex.isometryOfOrthonormal b`. -/
 theorem polarAngle_eq_arg_isometryOfOrthonormal_symm (b : OrthonormalBasis (Fin 2) ℝ V) (q : V) :
     polarAngle (b 0) (b 1) q = Complex.arg ((Complex.isometryOfOrthonormal b).symm q) := by
-  rw [polarAngle, isometryOfOrthonormal_symm_eq_mk]
+  rw [polarAngle, Complex.isometryOfOrthonormal_symm_apply_eq_mk]
 
 /-- For an orthonormal basis `b` of an oriented plane, the polar angle in the frame `(b₀, b₁)` is
 Mathlib's oriented angle from `b₀` to `q` for the orientation of `b`. -/
@@ -456,10 +453,11 @@ theorem polarAngle_eq_oangle [Fact (Module.finrank ℝ V = 2)] (b : OrthonormalB
     rw [← Module.Basis.orientation_map, Complex.orientation]
     congr 1
     ext i
-    fin_cases i <;> simp [e, isometryOfOrthonormal_symm_eq_mk, Complex.ext_iff, b.inner_eq_ite]
+    fin_cases i <;>
+      simp [e, Complex.isometryOfOrthonormal_symm_apply_eq_mk, Complex.ext_iff, b.inner_eq_ite]
   rw [Orientation.oangle_map_complex _ e.symm he, polarAngle_eq_arg_isometryOfOrthonormal_symm]
   congr 2
-  simp [e, isometryOfOrthonormal_symm_eq_mk, Complex.ext_iff, b.inner_eq_ite]
+  simp [e, Complex.isometryOfOrthonormal_symm_apply_eq_mk, Complex.ext_iff, b.inner_eq_ite]
 
 /-- For an orthonormal basis `b` of a plane, `‖q‖ cos θ = ⟪q, b₀⟫`, where `θ` is the polar angle
 of `q` in the frame `(b₀, b₁)`. -/
@@ -467,7 +465,7 @@ theorem norm_mul_cos_polarAngle (b : OrthonormalBasis (Fin 2) ℝ V) (q : V) :
     ‖q‖ * Real.Angle.cos (polarAngle (b 0) (b 1) q) = ⟪q, b 0⟫_ℝ := by
   rw [← (Complex.isometryOfOrthonormal b).symm.norm_map q,
     polarAngle_eq_arg_isometryOfOrthonormal_symm, Real.Angle.cos_coe, Complex.norm_mul_cos_arg,
-    isometryOfOrthonormal_symm_eq_mk]
+    Complex.isometryOfOrthonormal_symm_apply_eq_mk]
 
 /-- For an orthonormal basis `b` of a plane, `‖q‖ sin θ = ⟪q, b₁⟫`, where `θ` is the polar angle
 of `q` in the frame `(b₀, b₁)`. -/
@@ -475,7 +473,7 @@ theorem norm_mul_sin_polarAngle (b : OrthonormalBasis (Fin 2) ℝ V) (q : V) :
     ‖q‖ * Real.Angle.sin (polarAngle (b 0) (b 1) q) = ⟪q, b 1⟫_ℝ := by
   rw [← (Complex.isometryOfOrthonormal b).symm.norm_map q,
     polarAngle_eq_arg_isometryOfOrthonormal_symm, Real.Angle.sin_coe, Complex.norm_mul_sin_arg,
-    isometryOfOrthonormal_symm_eq_mk]
+    Complex.isometryOfOrthonormal_symm_apply_eq_mk]
 
 section Orthonormal
 
@@ -539,7 +537,7 @@ theorem polarCanonical_polarAngle {q : V} (p : V) (hq : q ≠ 0) {θ : ℝ}
     rw [eq_div_iff hq0, ← Real.Angle.sin_coe, hθ, mul_comm, norm_mul_sin_polarAngle]
   have hrepr (v : V) : v = ⟪v, b 0⟫_ℝ • b 0 + ⟪v, b 1⟫_ℝ • b 1 := by
     conv_lhs => rw [← (Complex.isometryOfOrthonormal b).apply_symm_apply v,
-      Complex.isometryOfOrthonormal_apply, isometryOfOrthonormal_symm_eq_mk]
+      Complex.isometryOfOrthonormal_apply, Complex.isometryOfOrthonormal_symm_apply_eq_mk]
   rw [polarCanonical_apply, polarRadialUnit, polarAngularUnit, hcos, hsin, radialMomentum_apply,
     b.real_inner_fin_two q p, angularMomentum_apply]
   conv_rhs => rw [hrepr q, hrepr p]
