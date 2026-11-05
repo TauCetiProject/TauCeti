@@ -23,7 +23,7 @@ the Taylor map to every prefix `x ⊗ a₁ ⋯ a_k` and keeps the suffix `a_{k+1
 comodule endomorphism `G = (f₁⁻¹ ⊗ 1) F` of the source is therefore `1 + K` with `K` the cofree
 lift of a map vanishing on the empty algebra word.  Such a cofree lift strictly shortens algebra
 words, so it is locally nilpotent
-(`TauCeti.AInfinityRightModule.exists_pow_cofreeLift_apply_eq_zero`) and `G` is invertible, with
+(`TauCeti.TensorWords.exists_pow_cofreeLift_apply_eq_zero`) and `G` is invertible, with
 inverse again a comodule endomorphism of degree zero.  The bar map of the inverse module morphism
 `TauCeti.AInfinityRightModuleHom.inverse` is `G⁻¹ (f₁⁻¹ ⊗ 1)`, and its linear part is the inverse
 of `f₁`.
@@ -131,7 +131,7 @@ private theorem unipotentBarHom_toLinearMap :
 private theorem isUnit_unipotentBarHom : IsUnit (unipotentBarHom f hf).toLinearMap := by
   rw [unipotentBarHom_toLinearMap]
   exact Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero _
-    (AInfinityRightModule.exists_pow_cofreeLift_apply_eq_zero _
+    (TensorWords.exists_pow_cofreeLift_apply_eq_zero _
       (unipotentTaylorDiff_tmul_one f hf))
 
 /-- The bar map of the inverse, `G⁻¹ (f₁⁻¹ ⊗ 1)` with `G = (f₁⁻¹ ⊗ 1) F`. -/

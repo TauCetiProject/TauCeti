@@ -61,7 +61,7 @@ theorem barMap_tmul_of_tprod (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x : 
       ∑ k ∈ Finset.range (n + 1),
         f.taylor (x ⊗ₜ[R] TensorWords.subword R a 0 k) ⊗ₜ[R]
           TensorWords.subword R a k (n - k) := by
-  rw [barMap_eq_cofreeLift, AInfinityRightModule.cofreeLift_tmul_of_tprod]
+  rw [barMap_eq_cofreeLift, TensorWords.cofreeLift_tmul_of_tprod]
 
 /-- The suspended component equation on a word with `n` algebra inputs.  The target Taylor map
 after the morphism bar map equals the morphism Taylor map after the source bar differential. -/
