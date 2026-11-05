@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
 import TauCeti.Analysis.PDE.HopfLax
+import TauCeti.Analysis.PDE.HopfLax.Integrable
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
@@ -120,32 +121,6 @@ private theorem ofReal_integral_hopfLax_sub_le
     ((lintegral_mono_set (Ioo_subset_Ioo_right (by linarith : b - δ ≤ b))).trans_eq ?_)
   simp_rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (zero_le_one.trans hp), ofReal_norm]
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- At a time `T > 0`, the Hopf–Lax value of `-φ / κ`, with `κ = T ^ (p - 1)`, lies above
-`ψ / κ` whenever `φ ⊕ ψ` is feasible for the cost `‖x - y‖ ^ p`. -/
-private theorem le_hopfLax_norm_rpow_neg_div {p : ℝ} {φ ψ : E →ᵇ ℝ} {T : ℝ} (hT : 0 < T)
-    (hφψ : ∀ x y, φ x + ψ y ≤ ‖x - y‖ ^ p) (y : E) :
-    ψ y / T ^ (p - 1) ≤ hopfLax (‖·‖ ^ p) (fun x ↦ -φ x / T ^ (p - 1)) T y := by
-  have hκ : 0 < T ^ (p - 1) := Real.rpow_pos_of_pos hT _
-  rw [hopfLax_norm_rpow _ hT]
-  refine le_ciInf fun x ↦ ?_
-  calc ψ y / T ^ (p - 1) = (-φ x + (φ x + ψ y)) / T ^ (p - 1) := by ring
-    _ ≤ (-φ x + ‖y - x‖ ^ p) / T ^ (p - 1) := by
-        gcongr
-        rw [norm_sub_rev]
-        exact hφψ x y
-    _ = -φ x / T ^ (p - 1) + ‖y - x‖ ^ p / T ^ (p - 1) := by ring
-
-/-- The Hopf–Lax value of a bounded continuous function at a positive time is integrable against
-a finite measure. -/
-private theorem integrable_hopfLax_norm_rpow {p : ℝ} (hp : 1 ≤ p) {g : E → ℝ}
-    (hg : Continuous g) {C : ℝ} (hgC : ∀ x, |g x| ≤ C) {s : ℝ} (hs : 0 < s) (μ : Measure E)
-    [IsFiniteMeasure μ] : Integrable (fun x ↦ hopfLax (‖·‖ ^ p) g s x) μ :=
-  have hgb : BddBelow (range g) := ⟨-C, forall_mem_range.2 fun x ↦ (abs_le.1 (hgC x)).1⟩
-  .of_bound (((continuousOn_hopfLax_norm_rpow hp hg hgb).comp_continuous
-    (f := fun x : E ↦ (s, x)) (by fun_prop) fun _ ↦ hs).aestronglyMeasurable) C
-    (ae_of_all _ fun x ↦ (abs_hopfLax_norm_rpow_le (zero_lt_one.trans_le hp).ne' hgC hs.le x))
-
 /-- The dual step of the Benamou–Brenier lower bound: a pair of bounded continuous potentials
 feasible for the cost `‖x - y‖ ^ p` has dual value at most `(b - a) ^ (p - 1)` times the
 `p`-action of a narrowly continuous solution of the continuity equation on `(a, b)`. The Hopf–Lax
@@ -176,7 +151,7 @@ private theorem ofReal_kantorovichDualValue_le
     refine le_trans (ENNReal.ofReal_le_ofReal ?_)
       (ofReal_integral_hopfLax_sub_le h hν hp (by fun_prop) hgC hδ hδT)
     have hψ := integral_mono ((ψ.integrable _).div_const κ) (hHi (b - δ) (b - a) hT)
-      (le_hopfLax_norm_rpow_neg_div hT hφψ)
+      (le_hopfLax_norm_rpow_neg_div (φ := φ) hT hφψ)
     have hgi : Integrable g (ν a : Measure E) := (φ.integrable _).neg.div_const κ
     have hφ := integral_mono (hHi a δ hδ) hgi
       (hopfLax_norm_rpow_le_self (zero_lt_one.trans_le hp).ne' hgb hδ.le)
