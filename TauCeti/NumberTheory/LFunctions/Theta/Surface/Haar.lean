@@ -25,8 +25,9 @@ the measures of that decomposition:
   (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
-  and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite. Neukirch's canonical surface measure
-  is `2 ^ r₂` times `surfaceHaar K`.
+  and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and bounded subsets of `S` have
+  finite mass (`surfaceHaar_lt_top_of_isBounded`). Neukirch's canonical surface measure is `2 ^ r₂`
+  times `surfaceHaar K`.
 * `archHaar_eq_map`: `dy / y` is the image of the product measure `d*x × dt / t` under
   `(x, t) ↦ x t^(1/n)`. The corresponding rectangle-mass formula is
   `archHaar_surfacePart_preimage_inter`, allowing any measurable radial shell.
@@ -206,6 +207,26 @@ instance : SigmaFinite (surfaceHaar K) :=
       set_mem := fun _ ↦ mem_univ _
       finite := surfaceHaar_surfaceBox_lt_top
       spanning := iUnion_surfaceBox }
+
+/-- A bounded subset of `S` has finite `d*x`-mass: its coordinates are bounded above, hence also
+bounded below on `S`, so it lies in a box of finite mass. -/
+theorem surfaceHaar_lt_top_of_isBounded {A : Set (normOneSurface K)}
+    (hA : Bornology.IsBounded (Subtype.val '' A)) : surfaceHaar K A < ∞ := by
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hA
+  set C' := max C 1
+  obtain ⟨k, hk⟩ := exists_nat_ge (C' ^ Module.finrank ℚ K)
+  have hk' : C' ^ Module.finrank ℚ K ≤ k + 1 := hk.trans (le_add_of_nonneg_right zero_le_one)
+  refine (measure_mono (fun x hx ↦ ?_ : A ⊆ surfaceBox k)).trans_lt
+    (surfaceHaar_surfaceBox_lt_top k)
+  intro w _
+  have hxC (v : InfinitePlace K) : (x : realSpace K) v ≤ C' :=
+    (Real.le_norm_self _).trans ((norm_le_pi_norm (x : realSpace K) v).trans
+      ((hC _ ⟨x, hx, rfl⟩).trans (le_max_left _ _)))
+  refine ⟨?_, ?_⟩
+  · rw [inv_le_comm₀ (by positivity) ((mem_normOneSurface.mp x.2).1 w)]
+    exact (inv_le_pow_finrank_of_mem_normOneSurface x.2 (le_max_right _ _) hxC w).trans hk'
+  · exact (hxC w).trans
+      ((le_self_pow₀ (le_max_right _ _) Module.finrank_pos.ne').trans hk')
 
 /-! ### The decomposition `dy / y = d*x × dt / t` -/
 
