@@ -88,6 +88,18 @@ universe u
 
 variable {X : TopCat.{u}} (R : Type u) [CommRing R]
 
+/-- Sheafification of presheaves of `R`-modules on a space, as a single named instance, so that
+every declaration elaborates it to the same term. -/
+instance TopCat.hasSheafify_moduleCat (X : TopCat.{u}) :
+    HasSheafify (Opens.grothendieckTopology X) (ModuleCat.{u} R) :=
+  inferInstance
+
+/-- Sheaves of `R`-modules on a space have small `Ext` groups, as a single named instance, for the
+reason given at `TopCat.Sheaf.hasExt_addCommGrpCat`. -/
+instance TopCat.Sheaf.hasExt_moduleCat (X : TopCat.{u}) :
+    HasExt.{u} (CategoryTheory.Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :=
+  inferInstance
+
 noncomputable section
 
 namespace TopologicalSpace.Closeds

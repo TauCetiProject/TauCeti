@@ -105,6 +105,20 @@ abbrev TopologicalSpace.Closeds.complInclusion {X : TopCat.{u}} (S : Closeds X) 
     W ⊓ S.compl ⟶ W :=
   homOfLE inf_le_left
 
+/-- Sheafification of presheaves of abelian groups on a space, as a single named instance, so that
+every declaration elaborates it to the same term. -/
+instance TopCat.hasSheafify_addCommGrpCat (X : TopCat.{u}) :
+    HasSheafify (Opens.grothendieckTopology X) AddCommGrpCat.{u} :=
+  inferInstance
+
+/-- Sheaves of abelian groups on a space have small `Ext` groups. Elaborating this instance through
+one named constant keeps its type syntactically the same in every declaration: an instance found
+through `CategoryTheory.IsGrothendieckAbelian.hasExt` records the instance terms it was found with
+in its type, and the kernel then unfolds the derived category to compare two such types. -/
+instance TopCat.Sheaf.hasExt_addCommGrpCat (X : TopCat.{u}) :
+    HasExt.{u} (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :=
+  inferInstance
+
 namespace CategoryTheory
 
 namespace Sheaf
