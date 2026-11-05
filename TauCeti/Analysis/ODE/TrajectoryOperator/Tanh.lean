@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
-import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.ODE.Tanh
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.MeasureTheory.Integral.Cosh
 
@@ -78,28 +78,6 @@ private theorem continuous_neg_tanh_smul_id :
 private theorem continuous_tanh_smul_id :
     Continuous fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ F :=
   Real.continuous_tanh.smul continuous_const
-
-/-- Every solution of `v' = tanh(s) v` is `cosh(s) v(0)`, by uniqueness for linear equations. -/
-private theorem eq_cosh_smul_of_hasDerivAt {v : ℝ → F}
-    (hv : ∀ s, HasDerivAt v (Real.tanh s • v s) s) : v = fun s ↦ Real.cosh s • v 0 := by
-  refine continuous_tanh_smul_id.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hv s)
-    (fun s ↦ ?_) (t₀ := 0) (by simp)
-  rw [smul_apply, ContinuousLinearMap.id_apply, smul_smul,
-    Real.tanh_eq_sinh_div_cosh, div_mul_cancel₀ _ (Real.cosh_pos s).ne']
-  exact (Real.hasDerivAt_cosh s).smul_const (v 0)
-
-/-- The path `(cosh s)⁻¹ • x` solves `v' = -tanh(s) v`. -/
-private theorem hasDerivAt_inv_cosh_smul (x : F) (s : ℝ) :
-    HasDerivAt (fun s ↦ (Real.cosh s)⁻¹ • x) (-Real.tanh s • ((Real.cosh s)⁻¹ • x)) s := by
-  simpa [smul_smul] using (Real.hasDerivAt_inv_cosh s).smul_const x
-
-/-- Every solution of `v' = -tanh(s) v` is `(cosh s)⁻¹ • v(0)`, by uniqueness for linear
-equations. -/
-private theorem eq_inv_cosh_smul_of_hasDerivAt {v : ℝ → F}
-    (hv : ∀ s, HasDerivAt v (-Real.tanh s • v s) s) : v = fun s ↦ (Real.cosh s)⁻¹ • v 0 :=
-  continuous_neg_tanh_smul_id.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hv s)
-    (fun s ↦ by simpa [smul_comm (Real.tanh s)] using hasDerivAt_inv_cosh_smul (v 0) s) (t₀ := 0)
-    (by simp)
 
 /-- **The equation `v' = tanh(s) v` has no nonzero square-integrable solution.** Every solution is
 `cosh(s) v(0)`, whose norm is at least `‖v(0)‖` everywhere. -/
