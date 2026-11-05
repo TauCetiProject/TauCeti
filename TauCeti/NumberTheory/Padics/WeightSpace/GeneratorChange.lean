@@ -100,7 +100,7 @@ theorem weightCoordChangeEquiv_mul (u v : ℤ_[p]ˣ)
   apply Subtype.ext
   rw [coe_weightCoordChangeEquiv_apply, coe_weightCoordChangeEquiv_apply,
     addChar_weightCoordChangeEquiv]
-  rfl
+  rw [Units.val_mul]
 
 /-- The inverse coordinate change uses the reciprocal exponent. -/
 theorem weightCoordChangeEquiv_symm (u : ℤ_[p]ˣ) :
@@ -127,13 +127,13 @@ noncomputable def coordAt (κ : WeightSpace p S) (u : ℤ_[p]ˣ) : S :=
   κ ((unitsPrincipalLogEquiv p).symm (.ofAdd (u : ℤ_[p]))) - 1
 
 /-- Evaluation at the changed generator agrees with the principal character. -/
-theorem coordAt_def (κ : WeightSpace p S) (u : ℤ_[p]ˣ) :
+theorem coordAt_eq_principalChar_sub_one (κ : WeightSpace p S) (u : ℤ_[p]ˣ) :
     κ.coordAt u = κ.principalChar (u : ℤ_[p]) - 1 :=
   by rw [principalChar_apply]; rfl
 
 @[simp]
 theorem coordAt_one (κ : WeightSpace p S) : κ.coordAt 1 = κ.coord := by
-  rw [coordAt_def, Units.val_one, principalChar_one, coord_def]
+  rw [coordAt_eq_principalChar_sub_one, Units.val_one, principalChar_one, coord_def]
 
 end Ring
 
@@ -142,14 +142,14 @@ omit [CompleteSpace R] in
 theorem tendsto_coordAt_pow (κ : WeightSpace p R) (u : ℤ_[p]ˣ) :
     Tendsto (κ.coordAt u ^ ·) atTop (𝓝 0) := by
   let χ := κ.principalChar.compAddMonoidHom (AddMonoidHom.mulLeft (u : ℤ_[p]))
-  simpa [χ, coordAt_def] using χ.tendsto_eval_one_sub_pow
+  simpa [χ, coordAt_eq_principalChar_sub_one] using χ.tendsto_eval_one_sub_pow
     (κ.continuous_principalChar.comp (continuous_const.mul continuous_id))
 
 /-- **Change of principal generator for a weight.** Its new coordinate is
 `(1 + T_κ) ^ u - 1`, using the continuous binomial character. -/
 theorem coordAt_eq_weightCoordChangeEquiv (κ : WeightSpace p R) (u : ℤ_[p]ˣ) :
     κ.coordAt u = (weightCoordChangeEquiv p R u ⟨κ.coord, κ.tendsto_coord_pow⟩ : R) := by
-  rw [coordAt_def, coe_weightCoordChangeEquiv_apply,
+  rw [coordAt_eq_principalChar_sub_one, coe_weightCoordChangeEquiv_apply,
     κ.principalChar_eq_addChar_of_value_at_one]
 
 /-- The original coordinate is recovered from the new one by the inverse binomial exponent. -/
