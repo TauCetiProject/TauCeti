@@ -420,7 +420,7 @@ private theorem norm_sq_partialSum_sub (P : ProjValMeasure X H) {f : ℕ → Set
     ‖partialSum P f hf n ξ - P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ‖ ^ 2 =
       (P.diag ξ (⋃ k, f k) - ∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal := by
   have hUle := sum_measure_le_measure_iUnion (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
-    hdisj (Finset.range n)
+    hdisj.aedisjoint (Finset.range n)
   rw [ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption _ _
     (partialSum_selfAdjoint P hf n) (partialSum_idem P hf hdisj n) (partialSum_mul_univ P hf n) ξ,
     P.norm_sq_proj_apply, norm_sq_partialSum P hf hdisj ξ n,
@@ -436,7 +436,7 @@ theorem tendsto_sum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ 
   -- The uncovered mass of the union tends to zero, by countable additivity of `P.diag ξ`.
   have hmass := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
     (tendsto_measure_iUnion_sub_sum_range (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
-      hdisj (measure_ne_top _ _))
+      hdisj.aedisjoint (measure_ne_top _ _))
   have hsq := (hmass.sqrt : Tendsto _ _ (𝓝 (Real.sqrt (ENNReal.toReal 0))))
   rw [ENNReal.toReal_zero, Real.sqrt_zero] at hsq
   refine hsq.congr fun n => ?_
