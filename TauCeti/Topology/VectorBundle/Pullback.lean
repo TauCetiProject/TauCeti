@@ -26,6 +26,11 @@ namespace Bundle.Pullback
 
 variable {B B' : Type*} {E : B → Type*} (f : B' → B)
 
+/-- A pullback fibre carries the additive group structure of the original fibre. -/
+instance instAddCommGroup [∀ b, AddCommGroup (E b)] (x : B') :
+    AddCommGroup ((f *ᵖ E) x) :=
+  inferInstanceAs (AddCommGroup (E (f x)))
+
 /-- A pullback fibre carries the normed additive group structure of the original fibre. -/
 instance instNormedAddCommGroup [∀ b, NormedAddCommGroup (E b)] (x : B') :
     NormedAddCommGroup ((f *ᵖ E) x) :=
