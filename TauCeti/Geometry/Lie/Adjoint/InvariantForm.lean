@@ -47,6 +47,27 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable {b : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G →L[ℝ] ℝ}
 
+/-- Along an exponential line, the derivative at zero of a bilinear form applied to two
+adjoint orbits is the sum of its two Lie-bracket terms. -/
+theorem _root_.ContinuousLinearMap.hasDerivAt_tangentAd_mulInvariantExp_smul_zero
+    (b : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G →L[ℝ] ℝ)
+    (X Y Z : GroupLieAlgebra I G) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    HasDerivAt (fun t : ℝ ↦ b (tangentAd (mulInvariantExp (t • X)) Y)
+      (tangentAd (mulInvariantExp (t • X)) Z)) (b Y ⁅X, Z⁆ + b ⁅X, Y⁆ Z) 0 := by
+  let : T2Space G := I.t2Space_of_lieGroup ∞
+  let : NormedAddCommGroup (GroupLieAlgebra I G) := inferInstanceAs (NormedAddCommGroup E)
+  let : NormedSpace ℝ (GroupLieAlgebra I G) := inferInstanceAs (NormedSpace ℝ E)
+  have hY := hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero (I := I) X Y
+  have hZ := hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero (I := I) X Z
+  convert! ContinuousLinearMap.hasDerivAt_of_bilinear (B := b)
+    (fun _ ↦ hY) (fun _ ↦ hZ) using 1
+  simp only [zero_smul, mulInvariantExp_zero, tangentAd_one, LieEquiv.refl_apply,
+    LieAlgebra.ad_apply]
+  -- The derivative theorem uses `show E from` for each tangent vector. Here the tangent Lie
+  -- algebra has exactly the model's norm instances, so the remaining model/tangent casts reduce.
+  rfl
+
 /-- An Ad-invariant bilinear form is invariant under the tangent Lie algebra. The group may
 be disconnected, and the form need not be symmetric or nondegenerate. -/
 theorem lieInvariant_of_adjoint_invariant
@@ -54,20 +75,8 @@ theorem lieInvariant_of_adjoint_invariant
       b (adjointContinuousLinearMap g Y) (adjointContinuousLinearMap g Z) = b Y Z) :
     b.toBilinForm.lieInvariant (GroupLieAlgebra I G) := by
   let : T2Space G := I.t2Space_of_lieGroup ∞
-  -- Use the model norm on the tangent Lie algebra for the ordinary derivative API.
-  let : NormedAddCommGroup (GroupLieAlgebra I G) := inferInstanceAs (NormedAddCommGroup E)
-  let : NormedSpace ℝ (GroupLieAlgebra I G) := inferInstanceAs (NormedSpace ℝ E)
   intro X Y Z
-  have hY := hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero (I := I) X Y
-  have hZ := hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero (I := I) X Z
-  have h : HasDerivAt (fun t : ℝ ↦ b (tangentAd (mulInvariantExp (t • X)) Y)
-      (tangentAd (mulInvariantExp (t • X)) Z)) (b Y ⁅X, Z⁆ + b ⁅X, Y⁆ Z) 0 := by
-    -- Convert the model-space derivatives to the tangent Lie algebra before rewriting.
-    convert! ContinuousLinearMap.hasDerivAt_of_bilinear (B := b)
-      (fun _ ↦ hY) (fun _ ↦ hZ) using 1
-    simp only [zero_smul, mulInvariantExp_zero, tangentAd_one, LieEquiv.refl_apply,
-      LieAlgebra.ad_apply]
-    rfl
+  have h := b.hasDerivAt_tangentAd_mulInvariantExp_smul_zero X Y Z
   have heq : (fun t : ℝ ↦ b (tangentAd (mulInvariantExp (t • X)) Y)
       (tangentAd (mulInvariantExp (t • X)) Z)) = fun _ ↦ b Y Z := by
     funext t
@@ -82,9 +91,10 @@ theorem adjoint_invariant_of_lieInvariant [PreconnectedSpace G]
     (g : G) (Y Z : GroupLieAlgebra I G) :
     b (adjointContinuousLinearMap g Y) (adjointContinuousLinearMap g Z) = b Y Z := by
   let : T2Space G := I.t2Space_of_lieGroup ∞
-  -- Use the model norm on the tangent Lie algebra for the ordinary derivative API.
+  -- Use the model's normed-space structure for smoothness and bilinear precomposition.
   let : NormedAddCommGroup (GroupLieAlgebra I G) := inferInstanceAs (NormedAddCommGroup E)
   let : NormedSpace ℝ (GroupLieAlgebra I G) := inferInstanceAs (NormedSpace ℝ E)
+  let : IsNormableSpace ℝ (GroupLieAlgebra I G) := inferInstanceAs (IsNormableSpace ℝ E)
   let f : G → ℝ := fun x ↦ b (tangentAd x Y) (tangentAd x Z)
   have hf : ContMDiff I 𝓘(ℝ) ∞ f :=
     (b.contMDiff.comp (contMDiff_tangentAd_apply_const (I := I) (G := G) Y)).clm_apply
@@ -95,20 +105,12 @@ theorem adjoint_invariant_of_lieInvariant [PreconnectedSpace G]
     have hpath := (hf.mdifferentiable (by simp) x).hasMFDerivAt
       |>.hasDerivAt_comp_mul_mulInvariantExp_smul_zero X
     let A : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G := adjointContinuousLinearMap (I := I) x
-    have hY := A.hasFDerivAt.comp_hasDerivAt 0
-      (hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero (I := I) X Y)
-    have hZ := A.hasFDerivAt.comp_hasDerivAt 0
-      (hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero (I := I) X Z)
     have h : HasDerivAt (fun t : ℝ ↦ f (x * mulInvariantExp (t • X)))
         (b (tangentAd x Y) (tangentAd x ⁅X, Z⁆) +
           b (tangentAd x ⁅X, Y⁆) (tangentAd x Z)) 0 := by
-      -- The chain rule uses model-space norms; convert before using the adjoint laws.
-      convert! ContinuousLinearMap.hasDerivAt_of_bilinear (B := b)
-        (fun _ ↦ hY) (fun _ ↦ hZ) using 1 <;>
-        simp only [A, Function.comp_apply, f, tangentAd_apply,
-          adjointContinuousLinearMap_mul, adjointContinuousLinearMap_one,
-          ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
-          zero_smul, mulInvariantExp_zero, LieAlgebra.ad_apply] <;> rfl
+      simpa only [ContinuousLinearMap.bilinearComp_apply, A, f, tangentAd_apply,
+        adjointContinuousLinearMap_mul, ContinuousLinearMap.comp_apply] using
+        (b.bilinearComp A A).hasDerivAt_tangentAd_mulInvariantExp_smul_zero X Y Z
     have hskew := hb (tangentAd x X) (tangentAd x Y) (tangentAd x Z)
     have hderiv : HasDerivAt (fun t : ℝ ↦ f (x * mulInvariantExp (t • X))) 0 0 := by
       apply h.congr_deriv
