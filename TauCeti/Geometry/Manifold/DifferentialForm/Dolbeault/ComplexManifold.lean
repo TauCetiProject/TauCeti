@@ -47,9 +47,10 @@ shows that the alternation of the derivative, the exterior derivative, has compo
   `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_ofComplexManifold`,
   `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del_ofComplexManifold`:
   `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0` on a complex manifold.
-* `TauCeti.delBarTypeForms_comp_delBarTypeForms_ofComplexManifold`,
-  `TauCeti.delBarExactForms_le_delBarClosedForms_ofComplexManifold`: `∂bar` restricted to forms of
-  a fixed type squares to zero, so `∂bar`-exact forms are `∂bar`-closed.
+* `TauCeti.SmoothAlmostComplexStructure.delBarTypeForms_comp_delBarTypeForms_ofComplexManifold`,
+  `TauCeti.SmoothAlmostComplexStructure.delBarExactForms_le_delBarClosedForms_ofComplexManifold`:
+  `∂bar` restricted to forms of a fixed type squares to zero, so `∂bar`-exact forms are
+  `∂bar`-closed.
 
 ## References
 
@@ -178,8 +179,6 @@ theorem del_delBar_add_delBar_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E
   del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar
     mextDerivₗ_eq_del_add_delBar_ofComplexManifold mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
-end SmoothAlmostComplexStructure
-
 /-- On a complex manifold, `∂bar` on forms of type `(p,q)` and on forms of type `(p,q+1)` compose
 to zero. -/
 theorem delBarTypeForms_comp_delBarTypeForms_ofComplexManifold (p q : ℕ) :
@@ -202,5 +201,7 @@ theorem delBarExactForms_le_delBarClosedForms_ofComplexManifold (p q : ℕ) :
   | succ q =>
     obtain ⟨ψ, hψ, rfl⟩ := mem_delBarExactForms_succ.1 hφ
     exact mem_delBarClosedForms.2 ⟨hψ.delBar, delBar_delBar_ofComplexManifold ψ⟩
+
+end SmoothAlmostComplexStructure
 
 end TauCeti
