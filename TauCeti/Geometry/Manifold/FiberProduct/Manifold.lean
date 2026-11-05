@@ -84,7 +84,7 @@ variable [IsManifold IX n X] [IsManifold IY n Y]
 subspace topology. Its inclusion is a smooth embedding, and its tangent image consists of
 pairs whose images under the two differentials agree. Empty fibre products are allowed;
 no separation or countability hypotheses are needed. -/
-private theorem exists_fiberProductAtlas (hn : 1 ≤ n)
+theorem exists_isManifold_transverseFiberProduct_isSmoothEmbedding (hn : 1 ≤ n)
     (hf : ContMDiff IX IN n f) (hg : ContMDiff IY IN n g)
     (htrans : ∀ p : X × Y, f p.1 = g p.2 →
       (mfderiv IX IN f p.1).range ⊔
@@ -162,14 +162,14 @@ Its manifold, embedding, and tangent-image properties are given by the lemmas be
 noncomputable def transverseFiberProductChartedSpace :
     ChartedSpace (Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ)
       {p : X × Y // f p.1 = g p.2} :=
-  (exists_fiberProductAtlas hn hf hg htrans).choose
+  (exists_isManifold_transverseFiberProduct_isSmoothEmbedding hn hf hg htrans).choose
 
 /-- The transverse fibre product with its chosen atlas is a `C^n` manifold. -/
 theorem isManifold_transverseFiberProduct :
     letI := transverseFiberProductChartedSpace hn hf hg htrans
     IsManifold 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) n
       {p : X × Y // f p.1 = g p.2} :=
-  (exists_fiberProductAtlas hn hf hg htrans).choose_spec.1
+  (exists_isManifold_transverseFiberProduct_isSmoothEmbedding hn hf hg htrans).choose_spec.1
 
 /-- The inclusion of the transverse fibre product with its chosen atlas is a smooth embedding. -/
 theorem isSmoothEmbedding_coe_transverseFiberProduct :
@@ -177,7 +177,7 @@ theorem isSmoothEmbedding_coe_transverseFiberProduct :
     Manifold.IsSmoothEmbedding
       𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY) n
       (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) :=
-  (exists_fiberProductAtlas hn hf hg htrans).choose_spec.2.1
+  (exists_isManifold_transverseFiberProduct_isSmoothEmbedding hn hf hg htrans).choose_spec.2.1
 
 /-- A tangent vector lies in the image of the fibre-product inclusion exactly when its two
 components have equal images under the differentials of the defining maps. -/
@@ -189,31 +189,6 @@ theorem mem_range_mfderiv_coe_transverseFiberProduct_iff :
         (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) p).range ↔
       mfderiv IX IN f p.1.1 v.1 =
         tangentSpaceCast IN (g p.1.2) (f p.1.1) (mfderiv IY IN g p.1.2 v.2) :=
-  (exists_fiberProductAtlas hn hf hg htrans).choose_spec.2.2
-
-include hn hf hg htrans in
-/-- **The transverse fibre-product theorem.** The equal-value subtype of transverse `C^n` maps
-admits a `C^n` manifold structure of dimension `dim X + dim Y - dim N`, with its subspace topology,
-a smooth ambient embedding, and the tangent-image equalizer formula. No separation, countability,
-or nonemptiness assumptions are needed. -/
-theorem exists_isManifold_transverseFiberProduct_isSmoothEmbedding :
-    ∃ cs : ChartedSpace (Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ)
-        {p : X × Y // f p.1 = g p.2},
-      letI := cs
-      IsManifold 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) n
-        {p : X × Y // f p.1 = g p.2} ∧
-      Manifold.IsSmoothEmbedding
-        𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY) n
-        (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) ∧
-      ∀ (p : {p : X × Y // f p.1 = g p.2}) (v : TangentSpace (IX.prod IY) p.1),
-        v ∈ (mfderiv
-          𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY)
-          (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) p).range ↔
-        mfderiv IX IN f p.1.1 v.1 =
-          tangentSpaceCast IN (g p.1.2) (f p.1.1) (mfderiv IY IN g p.1.2 v.2) :=
-  ⟨transverseFiberProductChartedSpace hn hf hg htrans,
-    isManifold_transverseFiberProduct hn hf hg htrans,
-    isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans,
-    mem_range_mfderiv_coe_transverseFiberProduct_iff hn hf hg htrans⟩
+  (exists_isManifold_transverseFiberProduct_isSmoothEmbedding hn hf hg htrans).choose_spec.2.2
 
 end TauCeti
