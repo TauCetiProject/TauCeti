@@ -41,16 +41,15 @@ of a word (`encodeGlueWord_glueModuleIsometry`) and its glue minimum
 closed under multiplication by `ω` (`d4SixQuaternaryIsometry_symm_smul_mem_d4SixGlueSubgroup`).
 
 Transporting the separate checks then gives, for these rows and for the table subgroup itself,
-the order `|H_r| = glueOrder r`, the Lagrangian property, and, except for `A₂¹²`, the bound
-`μ(w) ≥ 4` on the glue minimum of every nonzero word.
+the order `|H_r| = glueOrder r` and the bound `μ(w) ≥ 4` on the glue minimum of every nonzero
+word.
 
 ## Main declarations
 
 * `map_glueSubgroup_a2Twelfth`, `map_glueSubgroup_d4Sixth`, `map_glueSubgroup_a11d7e6`: the
   table subgroups are the separately identified subgroups.
-* `natCard_glueSubgroup_*`, `isLagrangian_glueSubgroup_*`,
-  `four_le_sum_glueMinimum_of_mem_glueSubgroup_*`: the order, Lagrangian and minimum-norm checks
-  of these rows, for the table subgroup.
+* `natCard_glueSubgroup_*`, `four_le_sum_glueMinimum_of_mem_glueSubgroup_*`: the order and
+  minimum-norm checks of these rows, for the table subgroup.
 
 ## References
 
@@ -97,12 +96,6 @@ theorem natCard_glueSubgroup_a1TwentyFourth :
     map_glueSubgroup_a1TwentyFourthGlueModuleIsometry).trans <| by
     rw [natCard_a1TwentyFourGlueSubgroup]; rfl
 
-/-- **The table glue subgroup of `A₁²⁴` is a quadratic Lagrangian.** -/
-theorem isLagrangian_glueSubgroup_a1TwentyFourth :
-    a1TwentyFourth.glueModule.IsLagrangian a1TwentyFourth.glueSubgroup :=
-  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry
-    map_glueSubgroup_a1TwentyFourthGlueModuleIsometry).mpr isLagrangian_a1TwentyFourGlueSubgroup
-
 /-- **Every nonzero word of the table glue subgroup of `A₁²⁴` has glue minimum at least `4`.** -/
 theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_a1TwentyFourth
     {w : a1TwentyFourth.glueModule} (hw : w ∈ a1TwentyFourth.glueSubgroup) (hw0 : w ≠ 0) :
@@ -141,11 +134,13 @@ theorem natCard_glueSubgroup_a2Twelfth : Nat.card a2Twelfth.glueSubgroup = a2Twe
   (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_a2Twelfth).trans <| by
     rw [natCard_a2TwelfthGlueSubgroup]; rfl
 
-/-- **The table glue subgroup of `A₂¹²` is a quadratic Lagrangian.** -/
-theorem isLagrangian_glueSubgroup_a2Twelfth :
-    a2Twelfth.glueModule.IsLagrangian a2Twelfth.glueSubgroup :=
-  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_a2Twelfth).mpr
-    isLagrangian_a2TwelfthGlueSubgroup
+/-- **Every nonzero word of the table glue subgroup of `A₂¹²` has glue minimum at least `4`.** -/
+theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_a2Twelfth {w : a2Twelfth.glueModule}
+    (hw : w ∈ a2Twelfth.glueSubgroup) (hw0 : w ≠ 0) :
+    4 ≤ ∑ i, (a2Twelfth.componentType i).glueMinimum (a2Twelfth.isSimplyLaced_componentType i)
+      (w i) :=
+  le_sum_glueMinimum_of_map_glueModuleIsometry map_glueSubgroup_a2Twelfth
+    four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup hw hw0
 
 /-! ### `D₄⁶` -/
 
@@ -267,12 +262,6 @@ theorem natCard_glueSubgroup_d4Sixth : Nat.card d4Sixth.glueSubgroup = d4Sixth.g
   (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_d4Sixth).trans <| by
     rw [natCard_d4SixGlueSubgroup]; rfl
 
-/-- **The table glue subgroup of `D₄⁶` is a quadratic Lagrangian.** -/
-theorem isLagrangian_glueSubgroup_d4Sixth :
-    d4Sixth.glueModule.IsLagrangian d4Sixth.glueSubgroup :=
-  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_d4Sixth).mpr
-    isLagrangian_d4SixGlueSubgroup
-
 /-- **Every nonzero word of the table glue subgroup of `D₄⁶` has glue minimum at least `4`.** -/
 theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_d4Sixth {w : d4Sixth.glueModule}
     (hw : w ∈ d4Sixth.glueSubgroup) (hw0 : w ≠ 0) :
@@ -328,12 +317,6 @@ theorem map_glueSubgroup_a11d7e6 :
 theorem natCard_glueSubgroup_a11d7e6 : Nat.card a11d7e6.glueSubgroup = a11d7e6.glueOrder :=
   (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_a11d7e6).trans <| by
     rw [natCard_a11d7e6GlueSubgroup]; rfl
-
-/-- **The table glue subgroup of `A₁₁ D₇ E₆` is a quadratic Lagrangian.** -/
-theorem isLagrangian_glueSubgroup_a11d7e6 :
-    a11d7e6.glueModule.IsLagrangian a11d7e6.glueSubgroup :=
-  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_a11d7e6).mpr
-    isLagrangian_a11d7e6GlueSubgroup
 
 /-- **Every nonzero word of the table glue subgroup of `A₁₁ D₇ E₆` has glue minimum at
 least `4`.** -/
