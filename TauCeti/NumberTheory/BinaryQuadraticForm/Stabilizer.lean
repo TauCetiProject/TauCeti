@@ -313,14 +313,6 @@ private theorem unitaryEquivStabilizer_apply (hfD : f.discrim = D)
 
 variable {f}
 
-/-- The coefficients of a primitive integral form generate the unit ideal of every commutative
-ring `R`, so the results below apply to every primitive form over every such `R`. -/
-theorem IsPrimitive.span_intCast_eq_top (hf : f.IsPrimitive) :
-    Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤ := by
-  obtain ⟨u, v, w, h⟩ := hf.exists_linearCombination_eq_one
-  refine (Ideal.eq_top_iff_one _).mpr (Submodule.mem_span_triple.mpr ⟨u, v, w, ?_⟩)
-  simpa using congrArg (Int.cast : ℤ → R) h
-
 /-- **Automorphs are norm-one elements of the order.** Let `f` be an integral binary quadratic
 form of discriminant `D`, and let `R` be a commutative ring in which `2` is not a zero divisor and
 the coefficients `a`, `b`, `c` of `f` generate the unit ideal, for instance any `R` when `f` is
@@ -354,8 +346,7 @@ theorem coe_stabilizerEquivUnitary_symm_apply
 attached to a norm-one element `z` over `R` entrywise to the automorph attached to the norm-one
 element over `S` whose coordinates are the images of those of `z`. -/
 theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R →+* S)
-    (hfR : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤)
-    (hfS : Ideal.span {(f.a : S), (f.b : S), (f.c : S)} = ⊤) (hfD : f.discrim = D)
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (hfD : f.discrim = D)
     (hR : IsLeftRegular (2 : R)) (hS : IsLeftRegular (2 : S))
     (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D))
     (w : unitary (QuadraticAlgebra S (((D - D ^ 2) / 4 : ℤ) : S) D))
@@ -363,8 +354,9 @@ theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R �
       φ (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).re)
     (him : (w : QuadraticAlgebra S (((D - D ^ 2) / 4 : ℤ) : S) D).im =
       φ (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).im) :
-    SpecialLinearGroup.map φ ((stabilizerEquivUnitary hfR hfD hR).symm z : SL(2, R)) =
-      ((stabilizerEquivUnitary hfS hfD hS).symm w : SL(2, S)) := by
+    SpecialLinearGroup.map φ ((stabilizerEquivUnitary hf hfD hR).symm z : SL(2, R)) =
+      ((stabilizerEquivUnitary (span_intCast_eq_top_of_ringHom φ hf) hfD hS).symm w :
+        SL(2, S)) := by
   ext i j
   rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
     coe_stabilizerEquivUnitary_symm_apply, coe_stabilizerEquivUnitary_symm_apply]
