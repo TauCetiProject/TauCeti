@@ -11,13 +11,15 @@ public import TauCeti.Analysis.PDE.HopfLax.Basic
 /-!
 # Integrability of the Hopf–Lax value
 
-For the cost `L w = ‖w‖ ^ p` and a bounded continuous initial datum, the Hopf–Lax value at a
-positive time is bounded and continuous, hence integrable against a finite measure.
+For the cost `L w = ‖w‖ ^ p` with `1 ≤ p`, in a proper space, and a bounded continuous initial
+datum, the Hopf–Lax value at a positive time is bounded and continuous, hence integrable against
+a finite measure.
 
 ## Main results
 
-* `TauCeti.integrable_hopfLax_norm_rpow`: the Hopf–Lax value of a bounded continuous function at
-  a positive time is integrable against a finite measure.
+* `TauCeti.integrable_hopfLax_norm_rpow`: for the cost `‖w‖ ^ p` with `1 ≤ p`, in a proper space,
+  the Hopf–Lax value of a bounded continuous function at a positive time is integrable against a
+  finite measure.
 -/
 
 public section
@@ -29,8 +31,9 @@ namespace TauCeti
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   [MeasurableSpace E] [OpensMeasurableSpace E]
 
-/-- The Hopf–Lax value of a bounded continuous function at a positive time is integrable against
-a finite measure. -/
+/-- For the cost `L w = ‖w‖ ^ p` with `1 ≤ p`, in a proper real seminormed space, the Hopf–Lax
+value of a bounded continuous function at a positive time is integrable against a finite
+measure. -/
 theorem integrable_hopfLax_norm_rpow {p : ℝ} (hp : 1 ≤ p) {g : E → ℝ}
     (hg : Continuous g) {C : ℝ} (hgC : ∀ x, |g x| ≤ C) {s : ℝ} (hs : 0 < s) (μ : Measure E)
     [IsFiniteMeasure μ] : Integrable (fun x ↦ hopfLax (‖·‖ ^ p) g s x) μ :=
