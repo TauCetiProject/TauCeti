@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.SuccessorArray
+public import TauCeti.Combinatorics.Enumerative.SuccessorArray
 public import TauCeti.Probability.Process.PathLaw.Shift
 public import Mathlib.Dynamics.BirkhoffSum.NormedSpace
 

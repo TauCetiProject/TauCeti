@@ -88,7 +88,7 @@ theorem ae_tendsto_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}
     simpa only [hzero, Nat.cast_zero, zero_div] using
       (tendsto_const_nhds : Tendsto (fun _ : ℕ => (0 : ℝ)) atTop (𝓝 0))
 
-/-- Expected occupation fractions converge to the probability of entering `y` times its
+/-- Expected occupation fractions converge to the measure of paths entering `y` times its
 point-started limiting frequency. No probability normalization of the initial measure is needed. -/
 theorem tendsto_integral_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}
     (hy : ∀ᵐ x ∂markovChainLaw (dirac y) κ,
