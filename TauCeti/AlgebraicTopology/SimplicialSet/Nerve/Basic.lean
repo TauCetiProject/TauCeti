@@ -164,8 +164,7 @@ theorem σ_δ_castSucc_eq_self {n : ℕ} (s : ComposableArrows C (n + 1)) {i : F
 /-- A simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its `i`-th
 arrow is an identity arrow. This generalizes Mathlib's `PartialOrder.mem_range_nerve_σ_iff`
 (in `Mathlib/AlgebraicTopology/SimplicialSet/NerveNondegenerate.lean`) from partial orders to
-arbitrary categories, and adapts its proof: the converse exhibits the simplex as the degeneracy
-of its face (`σ_δ_castSucc_eq_self`). -/
+arbitrary categories. -/
 theorem mem_range_σ_iff {n : ℕ} (s : ComposableArrows C (n + 1)) (i : Fin (n + 1)) :
     s ∈ Set.range ((nerve C).σ i) ↔
       s.totalArrow i.castSucc i.succ i.castSucc_le_succ ∈
@@ -180,7 +179,9 @@ theorem mem_range_σ_iff {n : ℕ} (s : ComposableArrows C (n + 1)) (i : Fin (n 
     change t.totalArrow (i.predAbove i.castSucc) (i.predAbove i.succ) _ = _
     simp only [Fin.predAbove_castSucc_self, Fin.predAbove_succ_self]
     exact ComposableArrows.totalArrow_self (n := n) t i
-  · rintro ⟨x, hx⟩
+  · -- Adapting Mathlib's proof, exhibit the simplex as the degeneracy of its face
+    -- (`σ_δ_castSucc_eq_self`).
+    rintro ⟨x, hx⟩
     rw [ComposableArrows.totalArrow_def] at hx
     obtain ⟨rfl, hr, hh⟩ := Quiver.Total.ext_iff.1 hx
     dsimp only at hr hh
