@@ -42,25 +42,8 @@ open Module
 
 namespace ContinuousAlternatingMap
 
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-
-/-- If `ω(v, w) = 0` for every `w`, then the interior product of `v` with every positive power of
-`ω` vanishes. -/
-theorem curryLeftTopological_wedgePow_succ_eq_zero (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) {v : E}
-    (hv : ∀ w, ω ![v, w] = 0) :
-    curryLeftTopological (n := 2 * m + 1) (ω.wedgePow (m + 1)) v = 0 := by
-  have h₀ : curryLeftTopological (n := 1) ω v = 0 := by
-    ext u
-    rw [curryLeftTopological_apply_apply, coe_zero, Pi.zero_apply, ← hv (u 0)]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
-  ext w
-  rw [curryLeftTopological_apply_apply, coe_zero, Pi.zero_apply]
-  refine (wedgePow_succ_apply_vecCons ω m v w).trans ?_
-  rw [h₀, pairedWedge_zero_left, coe_zero, Pi.zero_apply, mul_zero]
-
-variable [FiniteDimensional ℝ E] {n : ℕ}
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [FiniteDimensional ℝ E]
+  {n : ℕ}
 
 /-- **The volume criterion for linear symplectic forms.** On a real vector space of dimension
 `2 n`, a two-form `ω` is nondegenerate, in the sense that the only vector `v` with `ω(v, w) = 0`

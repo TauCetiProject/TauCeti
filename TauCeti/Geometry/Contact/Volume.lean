@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.Geometry.Symplectic.Volume
-import TauCeti.LinearAlgebra.Alternating.TopDegree
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Covector
 
 /-!
 # The contact volume criterion
@@ -32,8 +32,9 @@ hyperplane `ker a`, and since `a` vanishes on `ker a`,
 `ι_r (a ∧ Bⁿ) = a(r) Bⁿ = (B|_(ker a))ⁿ` on `ker a`.
 
 So `a ∧ Bⁿ ≠ 0` exactly when the top power of the restriction of `B` to the `2 n`-dimensional
-hyperplane `ker a` is nonzero, that is, when this restriction is nondegenerate
-(`ContinuousAlternatingMap.wedgePow_ne_zero_iff`).
+hyperplane `ker a` is nonzero
+(`ContinuousAlternatingMap.pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero`),
+that is, when this restriction is nondegenerate (`ContinuousAlternatingMap.wedgePow_ne_zero_iff`).
 
 Consequently a contact form `α` makes `M` orientable: `α ∧ (dα)ⁿ` is a volume form, and
 `TauCeti.SmoothForm.IsContactForm.volumeOrientation` is the orientation on which it is positive.
@@ -95,33 +96,10 @@ theorem pairedWedge_wedgePow_ne_zero_iff (hn : finrank ℝ E = 2 * n + 1)
   have hNrank : finrank ℝ N = 2 * n := by
     have : finrank ℝ N + 1 = finrank ℝ E := Dual.finrank_ker_add_one_of_ne_zero hf₀
     omega
-  obtain ⟨r, hr⟩ : ∃ r, f r = 1 := by
-    obtain ⟨u, hu⟩ : ∃ u, f u ≠ 0 := by
-      by_contra! h
-      exact hf₀ (LinearMap.ext h)
-    exact ⟨(f u)⁻¹ • u, by rw [map_smul, smul_eq_mul, inv_mul_cancel₀ hu]⟩
-  set Θ := pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
-    (B.wedgePow n)
-  -- The interior product of `Θ` with `r`, restricted to `N`, is the top power of `B|_N`.
-  have hΘ : ((Θ.toAlternatingMap.domDomCongr (finCongr (Nat.add_comm 1 (2 * n)))).curryLeft r
-      ).compLinearMap N.subtype =
-        ((B.compContinuousLinearMap N.subtypeL).wedgePow n).toAlternatingMap := by
-    ext w
-    have hw (i : Fin (2 * n)) : a ![(w i : E)] = 0 := (hN _).1 (w i).2
-    simp only [AlternatingMap.compLinearMap_apply, AlternatingMap.curryLeft_apply_apply,
-      AlternatingMap.domDomCongr_apply, coe_toAlternatingMap, Submodule.coe_subtype,
-      ← wedgePow_compContinuousLinearMap, compContinuousLinearMap_apply,
-      Submodule.coe_subtypeL]
-    have hcast : (Matrix.vecCons r fun i ↦ (w i : E)) ∘ ⇑(finCongr (Nat.add_comm 1 (2 * n))) =
-        Matrix.vecCons r (fun i ↦ (w i : E)) ∘ Fin.cast (Nat.add_comm 1 (2 * n)) := by
-      ext
-      simp
-    rw [hcast, pairedWedge_apply_vecCons_of_forall _ _ _ _ r _ hw, ← hf, hr,
-      ContinuousLinearMap.mul_apply', one_mul, Function.comp_def]
-  rw [Ne, ← toAlternatingMap_injective.eq_iff, toAlternatingMap_zero,
-    ← AlternatingMap.domDomCongr_eq_zero_iff (finCongr (Nat.add_comm 1 (2 * n))),
-    ← AlternatingMap.curryLeft_compLinearMap_subtype_eq_zero_iff hn _ hr, hΘ,
-    ← toAlternatingMap_zero, toAlternatingMap_injective.eq_iff, ← Ne,
+  obtain ⟨r, hr⟩ := LinearMap.surjective_iff_ne_zero.2 hf₀ 1
+  -- `a ∧ Bⁿ ≠ 0` exactly when `(B|_N)ⁿ ≠ 0`, that is, when `B|_N` is nondegenerate.
+  rw [Ne, pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero hn a _ hN
+      ((hf r).symm.trans hr), wedgePow_compContinuousLinearMap, ← Ne,
     wedgePow_ne_zero_iff hNrank]
   have hpair (p q : N) : (Subtype.val ∘ ![p, q] : Fin 2 → E) = ![(p : E), q] := by
     ext i
