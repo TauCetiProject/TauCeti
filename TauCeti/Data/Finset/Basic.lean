@@ -692,7 +692,7 @@ theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [Locall
 monotone map `e`, are the images under `e` of endpoints `a' ≤ b'` and of a finset
 `S' ⊆ Ioo a' b'`. -/
 theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearOrder α]
-    [LocallyFiniteOrder α] [LinearOrder β] [LocallyFiniteOrder β] {e : α → β}
+    [LocallyFiniteOrder α] [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β}
     (he : StrictMono e) {a b : β} {S : Finset β} (hab : a ≤ b) (hS : S ⊆ Ioo a b)
     (ha : ∃ a', e a' = a) (hb : ∃ b', e b' = b) (hSe : ∀ s ∈ S, ∃ s', e s' = s) :
     ∃ a' b' S', e a' = a ∧ e b' = b ∧ S'.image e = S ∧ a' ≤ b' ∧ S' ⊆ Ioo a' b' := by
