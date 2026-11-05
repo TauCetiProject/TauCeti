@@ -263,7 +263,8 @@ private theorem latticeMap_injective : Function.Injective (latticeMap p L hi) :=
   obtain ⟨M, hM0, hM⟩ := exists_forall_pow_eq_mem_unitFiltration_mul_zpow i
     (normalizedValuation_primeUnit_ne_one (p := p) (L := L))
   -- A `p`-adic integer `c` with `r * c ≡ 0` modulo every `p ^ m`, read on the approximations
-  -- `c.appr m`, vanishes when `r ≠ 0` (Krull's intersection theorem in `ℤ_[p]`).
+  -- `c.appr m`, vanishes when `r ≠ 0`: `r * c` maps to zero in every `ZMod (p ^ m)`, as the
+  -- kernel of `toZModPow m` is the ideal spanned by `p ^ m`, so `r * c = 0`.
   have hzero {r : ℕ} (hr : r ≠ 0) {c : ℤ_[p]}
       (h : ∀ m, ((r * c.appr m : ℕ) : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p]) ^ m}) : c = 0 := by
     refine (mul_eq_zero.mp (PadicInt.ext_of_toZModPow.mp fun m ↦ ?_)).resolve_left
