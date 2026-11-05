@@ -55,6 +55,8 @@ linear approximation error by the difference of the Hessians.
 
 * `HolderOnWith.norm_image_sub_sub_le_of_hasFDerivWithinAt`: the first-order Taylor bound for a
   Hölder derivative.
+* `HolderOnWith.norm_sub_fderiv_le_of_mem_ball`: the Taylor remainder on a ball for the
+  derivative of a differentiable function.
 * `HolderOnWith.norm_apply_le_of_hasFDerivWithinAt`: the resulting bound on a directional
   derivative.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_ball`: the local interpolation inequality on a
@@ -113,6 +115,24 @@ theorem norm_image_sub_sub_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
     (fun y hy => (hg y (hxw hy)).mono hxw) hbound hx (right_mem_segment ℝ x (x + w))
   rw [Real.rpow_add' (norm_nonneg w) (by positivity), Real.rpow_one, mul_comm (‖w‖)]
   simpa only [add_sub_cancel_left, mul_assoc] using hmvt
+
+/-- **Taylor remainder on a ball.** A differentiable function whose derivative is `(H, α)`-Hölder
+on a ball satisfies `‖g y - g x - Dg(x)(y - x)‖ ≤ H ‖y - x‖^α ‖y - x‖` at its centre `x`.
+Neither finite dimensionality, completeness nor a positive exponent is required. -/
+theorem norm_sub_fderiv_le_of_mem_ball {g : E → F} {H α : ℝ≥0} {x y : E} {r : ℝ}
+    (hH : HolderOnWith H α (fderiv ℝ g) (Metric.ball x r))
+    (hg : DifferentiableOn ℝ g (Metric.ball x r)) (hy : y ∈ Metric.ball x r) :
+    ‖g y - g x - fderiv ℝ g x (y - x)‖ ≤ H * ‖y - x‖ ^ (α : ℝ) * ‖y - x‖ := by
+  have hrpos := lt_of_le_of_lt dist_nonneg (Metric.mem_ball.mp hy)
+  have hseg : segment ℝ x (x + (y - x)) ⊆ Metric.ball x r := by
+    rw [add_sub_cancel]
+    exact (convex_ball x r).segment_subset (Metric.mem_ball_self hrpos) hy
+  have hTaylor := hH.norm_image_sub_sub_le_of_hasFDerivWithinAt
+    (fun z hz => ((hg z hz).differentiableAt (Metric.isOpen_ball.mem_nhds hz)).hasFDerivAt
+      |>.hasFDerivWithinAt) hseg
+  rw [add_sub_cancel, add_comm 1, Real.rpow_add' (norm_nonneg _) (by positivity),
+    Real.rpow_one] at hTaylor
+  simpa only [mul_assoc] using hTaylor
 
 /-- **Interpolation along a segment.** If `g` has derivative `g'` within `s` and `g'` is
 `α`-Hölder with constant `H` on `s`, then for a segment from `x` to `x + w` contained in `s`,

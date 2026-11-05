@@ -11,10 +11,13 @@ public import TauCeti.Analysis.Holder.Interpolation
 /-!
 # Differentiability of locally uniform limits with Hölder derivatives
 
-Locally uniform convergence of differentiable maps with uniformly Hölder derivatives preserves
-differentiability, the Hölder bound and any uniform derivative norm bound. Applying this to
-gradients gives the corresponding C² limit step for the difference quotient method. The family
-is indexed by any nontrivial filter, including a real-parameter limit `h → 0`.
+Locally uniform convergence of maps that are eventually differentiable with a common
+derivative Hölder bound preserves differentiability and that bound. A derivative norm
+bound at a fixed point passes to the limit if it holds eventually along the filter.
+Approximating the gradient by differentiable linear-map-valued fields gives the C² limit
+step for the difference quotient method. The family is indexed by any nontrivial filter,
+so regularity need only hold for small nonzero parameters in a real-parameter limit `h →
+0`.
 
 The proof is adapted from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/IteratedDerivative/QuotientLimit.lean).
 -/
@@ -33,27 +36,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {ι : Type*} {l : Filter ι} [l.NeBot]
   {U : Set E} {f : E → F} {v : ι → E → F} {K α : ℝ≥0}
 
-omit [FiniteDimensional ℝ E] in
-private theorem norm_sub_fderiv_le_of_holderOnWith
-    (hU : IsOpen U) {u : E → F} (hu : DifferentiableOn ℝ u U)
-    (hhol : HolderOnWith K α (fderiv ℝ u) U)
-    {x y : E} {r : ℝ} (hr : ball x r ⊆ U) (hy : y ∈ ball x r) :
-    ‖u y - u x - fderiv ℝ u x (y - x)‖ ≤ (K : ℝ) * ‖y - x‖ ^ (α : ℝ) * ‖y - x‖ := by
-  have hseg : segment ℝ x (x + (y - x)) ⊆ ball x r := by
-    rw [add_sub_cancel]
-    have hrpos := lt_of_le_of_lt dist_nonneg (mem_ball.mp hy)
-    exact (convex_ball x r).segment_subset (mem_ball_self hrpos) hy
-  have hTaylor := (hhol.mono hr).norm_image_sub_sub_le_of_hasFDerivWithinAt
-    (fun z hz => ((hu z (hr hz)).differentiableAt (hU.mem_nhds (hr hz))).hasFDerivAt
-      |>.hasFDerivWithinAt) hseg
-  rw [add_sub_cancel, add_comm 1, Real.rpow_add' (norm_nonneg _) (by positivity),
-    Real.rpow_one] at hTaylor
-  simpa only [mul_assoc] using hTaylor
-
 private theorem cauchy_map_fderiv_of_tendstoLocallyUniformlyOn
-    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ m, DifferentiableOn ℝ (v m) U)
+    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ᶠ m in l, DifferentiableOn ℝ (v m) U)
     (hD : TendstoLocallyUniformlyOn v f l U)
-    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (v m)) U) :
+    (hhol : ∀ᶠ m in l, HolderOnWith K α (fderiv ℝ (v m)) U) :
     ∀ x ∈ U, Cauchy (map (fun m => fderiv ℝ (v m) x) l) := by
   intro x hx
   obtain ⟨r, hr0, hrU⟩ := Metric.isOpen_iff.1 hU x hx
@@ -72,8 +58,9 @@ private theorem cauchy_map_fderiv_of_tendstoLocallyUniformlyOn
   -- This function-error tolerance gives the interpolation error 8 η / δ = ε / 4.
   set η := ε * δ / 32 with hη_def
   have hη : 0 < η := by positivity
-  let S : Set ι := {m | ∀ y ∈ closedBall x δ, dist (f y) (v m y) < η}
-  have hS : S ∈ l := Metric.tendstoUniformlyOn_iff.1 hunif η hη
+  let S : Set ι := {m | (∀ y ∈ closedBall x δ, dist (f y) (v m y) < η) ∧
+    DifferentiableOn ℝ (v m) U ∧ HolderOnWith K α (fderiv ℝ (v m)) U}
+  have hS : S ∈ l := (Metric.tendstoUniformlyOn_iff.1 hunif η hη).and (hv.and hhol)
   refine ⟨(fun m => fderiv ℝ (v m) x) '' S,
     mem_map_iff_exists_image.2 ⟨S, hS, Set.Subset.rfl⟩, ?_⟩
   rintro _ ⟨m, hm, rfl⟩ _ ⟨n, hn, rfl⟩
@@ -84,11 +71,11 @@ private theorem cauchy_map_fderiv_of_tendstoLocallyUniformlyOn
       dist (v m y) (v n y) ≤ dist (v m y) (f y) + dist (f y) (v n y) :=
         dist_triangle _ _ _
       _ ≤ η + η := add_le_add
-        (by simpa only [dist_comm] using (hm y (ball_subset_closedBall hy)).le)
-        (hn y (ball_subset_closedBall hy)).le
+        (by simpa only [dist_comm] using (hm.1 y (ball_subset_closedBall hy)).le)
+        (hn.1 y (ball_subset_closedBall hy)).le
       _ = 2 * η := (two_mul η).symm
-  have hop := ((hhol m).mono hb).norm_fderiv_sub_fderiv_le_of_norm_sub_le_ball
-    ((hhol n).mono hb) ((hv m).mono hb) ((hv n).mono hb) herr hδ0
+  have hop := (hm.2.2.mono hb).norm_fderiv_sub_fderiv_le_of_norm_sub_le_ball
+    (hn.2.2.mono hb) (hm.2.1.mono hb) (hn.2.1.mono hb) herr hδ0
   have hop' : ‖fderiv ℝ (v m) x - fderiv ℝ (v n) x‖ ≤
       2 * (K : ℝ) * δ ^ (α : ℝ) + 8 * η / δ := by
     calc
@@ -104,9 +91,9 @@ private theorem cauchy_map_fderiv_of_tendstoLocallyUniformlyOn
 
 omit [FiniteDimensional ℝ E] in
 private theorem hasFDerivAt_of_tendsto_fderiv_of_tendstoLocallyUniformlyOn
-    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ m, DifferentiableOn ℝ (v m) U)
+    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ᶠ m in l, DifferentiableOn ℝ (v m) U)
     (hD : TendstoLocallyUniformlyOn v f l U)
-    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (v m)) U)
+    (hhol : ∀ᶠ m in l, HolderOnWith K α (fderiv ℝ (v m)) U)
     {x : E} (hx : x ∈ U) {A : E →L[ℝ] F}
     (hA : Tendsto (fun m => fderiv ℝ (v m) x) l (𝓝 A)) : HasFDerivAt f A x := by
   obtain ⟨r, hr0, hrU⟩ := Metric.isOpen_iff.1 hU x hx
@@ -119,18 +106,20 @@ private theorem hasFDerivAt_of_tendsto_fderiv_of_tendstoLocallyUniformlyOn
   have happ : Tendsto (fun m => fderiv ℝ (v m) x (y - x)) l (𝓝 (A (y - x))) :=
     ((ContinuousLinearMap.apply ℝ F (y - x)).continuous.tendsto A).comp hA
   have hlim := ((hD.tendsto_at (hrU hy)).sub (hD.tendsto_at hx)).sub happ
-  have hTaylor := le_of_tendsto' hlim.norm
-    (fun m => norm_sub_fderiv_le_of_holderOnWith hU (hv m) (hhol m) hrU hy)
+  have hTaylor := le_of_tendsto hlim.norm
+    ((hv.and hhol).mono fun m hm =>
+      (hm.2.mono hrU).norm_sub_fderiv_le_of_mem_ball (hm.1.mono hrU) hy)
   exact hTaylor.trans (mul_le_mul_of_nonneg_right hyc.le (norm_nonneg _))
 
 variable [CompleteSpace F]
 
-/-- Uniform Hölder control of the derivatives upgrades locally uniform function convergence
-on an open set to pointwise convergence of the derivatives. No global norm bound is needed. -/
+/-- Eventual differentiability and uniform Hölder control of the derivatives upgrade locally
+uniform function convergence on an open set to pointwise convergence of the derivatives.
+No global norm bound is needed. -/
 theorem tendsto_fderiv_of_tendstoLocallyUniformlyOn_of_holderOnWith
-    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ m, DifferentiableOn ℝ (v m) U)
+    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ᶠ m in l, DifferentiableOn ℝ (v m) U)
     (hD : TendstoLocallyUniformlyOn v f l U)
-    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (v m)) U) {x : E} (hx : x ∈ U) :
+    (hhol : ∀ᶠ m in l, HolderOnWith K α (fderiv ℝ (v m)) U) {x : E} (hx : x ∈ U) :
     Tendsto (fun m => fderiv ℝ (v m) x) l (𝓝 (fderiv ℝ f x)) := by
   have hc := cauchy_map_fderiv_of_tendstoLocallyUniformlyOn hα hU hv hD hhol x hx
   obtain ⟨A, hA⟩ := cauchy_map_iff_exists_tendsto.1 hc
@@ -139,18 +128,19 @@ theorem tendsto_fderiv_of_tendstoLocallyUniformlyOn_of_holderOnWith
   rw [hderiv.fderiv]
   exact hA
 
-/-- A locally uniform limit of differentiable functions with uniformly Hölder derivatives on
-an open set is C¹ and inherits the Hölder bound, without a global derivative norm bound. -/
+/-- A locally uniform limit of functions that are eventually differentiable with uniformly Hölder
+derivatives on an open set is C¹ and inherits that bound, without a global derivative norm bound. -/
 theorem contDiffOn_one_and_holderOnWith_fderiv_of_tendstoLocallyUniformlyOn
-    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ m, DifferentiableOn ℝ (v m) U)
+    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ᶠ m in l, DifferentiableOn ℝ (v m) U)
     (hD : TendstoLocallyUniformlyOn v f l U)
-    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (v m)) U) :
+    (hhol : ∀ᶠ m in l, HolderOnWith K α (fderiv ℝ (v m)) U) :
     ContDiffOn ℝ 1 f U ∧ HolderOnWith K α (fderiv ℝ f) U := by
   have hlim (x : E) (hx : x ∈ U) :=
     tendsto_fderiv_of_tendstoLocallyUniformlyOn_of_holderOnWith hα hU hv hD hhol hx
   have hH : HolderOnWith K α (fderiv ℝ f) U := by
     refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-    exact le_of_tendsto' ((hlim x hx).dist (hlim y hy)) (fun m => (hhol m).dist_le hx hy)
+    exact le_of_tendsto ((hlim x hx).dist (hlim y hy))
+      (hhol.mono fun m hm => hm.dist_le hx hy)
   refine ⟨?_, hH⟩
   apply (contDiffOn_succ_iff_fderiv_of_isOpen (n := 0) hU).2
   refine ⟨fun x hx => ?_, by simp, ?_⟩
@@ -161,23 +151,24 @@ theorem contDiffOn_one_and_holderOnWith_fderiv_of_tendstoLocallyUniformlyOn
 /-- A derivative norm bound at one point that holds eventually along the filter passes to
 the locally uniform limit there, when the derivatives have a common positive Hölder exponent. -/
 theorem norm_fderiv_le_of_tendstoLocallyUniformlyOn_of_holderOnWith
-    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ m, DifferentiableOn ℝ (v m) U)
+    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ᶠ m in l, DifferentiableOn ℝ (v m) U)
     (hD : TendstoLocallyUniformlyOn v f l U)
-    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (v m)) U) {M : ℝ} {x : E}
+    (hhol : ∀ᶠ m in l, HolderOnWith K α (fderiv ℝ (v m)) U) {M : ℝ} {x : E}
     (hbound : ∀ᶠ m in l, ‖fderiv ℝ (v m) x‖ ≤ M) (hx : x ∈ U) :
     ‖fderiv ℝ f x‖ ≤ M :=
   le_of_tendsto
     (tendsto_fderiv_of_tendstoLocallyUniformlyOn_of_holderOnWith hα hU hv hD hhol hx).norm
     hbound
 
-/-- A differentiable function is C² with Hölder second derivative when its first derivative
-is a locally uniform limit of first derivatives with a common Hölder second-derivative bound.
-The second derivatives need not have a global norm bound. -/
-theorem contDiffOn_two_and_holderOnWith_fderiv_fderiv_of_tendstoLocallyUniformlyOn_fderiv
-    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ m, DifferentiableOn ℝ (fderiv ℝ (v m)) U)
+/-- A differentiable function is C² with Hölder second derivative when its derivative is a
+locally uniform limit of eventually differentiable linear-map-valued fields with a common
+derivative Hölder bound. The fields need not themselves be derivatives of other functions. -/
+theorem contDiffOn_two_and_holderOnWith_fderiv_fderiv_of_tendstoLocallyUniformlyOn
+    {g : ι → E → E →L[ℝ] F}
+    (hα : 0 < α) (hU : IsOpen U) (hv : ∀ᶠ m in l, DifferentiableOn ℝ (g m) U)
     (hf : DifferentiableOn ℝ f U)
-    (hD : TendstoLocallyUniformlyOn (fun m => fderiv ℝ (v m)) (fderiv ℝ f) l U)
-    (hhol : ∀ m, HolderOnWith K α (fderiv ℝ (fderiv ℝ (v m))) U) :
+    (hD : TendstoLocallyUniformlyOn g (fderiv ℝ f) l U)
+    (hhol : ∀ᶠ m in l, HolderOnWith K α (fderiv ℝ (g m)) U) :
     ContDiffOn ℝ 2 f U ∧ HolderOnWith K α (fderiv ℝ (fderiv ℝ f)) U := by
   obtain ⟨hC, hK⟩ := contDiffOn_one_and_holderOnWith_fderiv_of_tendstoLocallyUniformlyOn
     hα hU hv hD hhol
