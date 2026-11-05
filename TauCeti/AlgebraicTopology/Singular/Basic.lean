@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
 /-!
@@ -12,6 +13,9 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology map it induces.
+It also records the degree-zero component of Mathlib's identification of the singular chains of
+a totally disconnected space with an alternating constant complex
+(`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
 -/
 
 public section
@@ -19,6 +23,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits
+open scoped Simplicial
 
 universe w v u
 
@@ -47,5 +52,30 @@ lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : 
     (f : X ⟶ Y) :
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
+
+/-- Mathlib's identification of the singular chains of a totally disconnected space with the
+alternating constant complex sends the summand of a singular vertex to the summand of the point
+it picks out. -/
+@[simp, reassoc]
+lemma ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero
+    (X : TopCat.{w}) [TotallyDisconnectedSpace X] (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
+    (TopCat.toSSet.obj X).ιChainComplex σ ≫
+        (AlgebraicTopology.singularChainComplexFunctorIsoOfTotallyDisconnectedSpace
+          C R X).hom.f 0 =
+      Sigma.ι (fun _ : X ↦ R) (TopCat.toSSetObj₀Equiv σ) := by
+  -- Mathlib states no degree-zero formula for this isomorphism. By definition it is the map of
+  -- alternating face map complexes induced by `TopCat.toSSetIsoConst`, followed by the identity
+  -- identification `alternatingFaceMapComplexConst`.
+  change _ ≫ ((AlgebraicTopology.alternatingFaceMapComplex C).map
+      (Functor.whiskerRight (TopCat.toSSetIsoConst X).hom (sigmaConst.obj R) ≫
+        (Functor.constComp _ _ _).hom)).f 0 ≫ 𝟙 _ = _
+  simp only [SSet.ιChainComplex, Functor.map_comp, HomologicalComplex.comp_f,
+    AlgebraicTopology.alternatingFaceMapComplex_map_f, Functor.whiskerRight_app,
+    sigmaConst_obj_map, Functor.constComp_hom_app]
+  refine (congrArg _ ((Category.comp_id _).trans (Category.comp_id _))).trans ?_
+  rw [Sigma.ι_comp_map', Category.id_comp]
+  -- The constant-set isomorphism evaluates a simplex at an arbitrary point of the topological
+  -- `0`-simplex, which is the unique point there.
+  exact congrArg _ (congrArg (TopCat.toSSetObjEquiv X _ σ) (Subsingleton.elim _ _))
 
 end TauCeti

@@ -8,29 +8,26 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 
 /-!
-# Basic estimates for real or complex numbers
+# Basic norm bounds for `RCLike` fields
 
-The norm of a real or complex number is at most the sum of the absolute values of its real and
-imaginary parts. This is the `RCLike` form of Mathlib's `Complex.norm_le_abs_re_add_abs_im`; it
-reduces estimates on the norm of a scalar to estimates on two real numbers of fixed sign.
+## Main results
+
+* `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
+  `Complex.norm_le_abs_re_add_abs_im`.
 -/
 
 public section
 
 namespace RCLike
 
-variable {𝕜 : Type*} [RCLike 𝕜]
+variable {K : Type*} [RCLike K]
 
-/-- The norm of a real or complex number is at most the sum of the absolute values of its real
-and imaginary parts. -/
-theorem norm_le_abs_re_add_abs_im (z : 𝕜) : ‖z‖ ≤ |re z| + |im z| :=
-  calc ‖z‖ = ‖(re z : 𝕜) + (im z : 𝕜) * I‖ := by rw [re_add_im]
-    _ ≤ ‖(re z : 𝕜)‖ + ‖(im z : 𝕜) * I‖ := norm_add_le _ _
-    _ ≤ |re z| + |im z| := by
-      rw [norm_ofReal, norm_mul, norm_ofReal]
-      gcongr
-      refine mul_le_of_le_one_right (abs_nonneg _) ?_
-      rw [norm_I]
-      split_ifs <;> norm_num
+/-- The norm of a scalar is at most the sum of the absolute values of its real and imaginary
+parts. -/
+theorem norm_le_abs_re_add_abs_im (z : K) : ‖z‖ ≤ |re z| + |im z| := by
+  refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
+  rw [norm_sq_eq_def]
+  nlinarith [abs_mul_abs_self (re z), abs_mul_abs_self (im z), abs_nonneg (re z),
+    abs_nonneg (im z)]
 
 end RCLike
