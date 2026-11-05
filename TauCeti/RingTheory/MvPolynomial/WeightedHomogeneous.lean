@@ -8,6 +8,7 @@ module
 public import Mathlib.Basic.ENNReal.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import TauCeti.RingTheory.MvPolynomial.Rescale
 
 /-!
 # Weighted homogeneity under substitution and evaluation
@@ -189,23 +190,9 @@ theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n :
 monomial by `t` to the power of its weight. -/
 theorem coeff_aeval_C_pow_mul_X (t : R) (w : σ → ℕ) (φ : MvPolynomial σ R) (d : σ →₀ ℕ) :
     (aeval (fun i ↦ C (t ^ w i) * X i) φ).coeff d = t ^ Finsupp.weight w d * φ.coeff d := by
-  classical
-  induction φ using MvPolynomial.induction_on' with
-  | monomial e r =>
-    have h : aeval (fun i ↦ C (t ^ w i) * X i) (monomial e r) =
-        monomial e (t ^ Finsupp.weight w e * r) := by
-      rw [aeval_monomial, monomial_eq]
-      simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, mul_pow, Finset.prod_mul_distrib,
-        ← pow_mul', Finset.prod_pow_eq_pow_sum, ← map_pow, ← map_prod, algebraMap_eq, smul_eq_mul,
-        map_mul]
-      ring
-    rw [h, coeff_monomial, coeff_monomial]
-    split_ifs with he
-    · rw [he]
-    · rw [mul_zero]
-  | add p q hp hq =>
-    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.coe_add, Pi.add_apply]
-    rw [hp, hq, mul_add]
+  rw [← rescale_def, coeff_rescale]
+  simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, ← pow_mul,
+    Finset.prod_pow_eq_pow_sum, smul_eq_mul, mul_comm]
 
 /-- **Weighted homogeneity from scaling.** If the powers of `t` are pairwise distinct and
 substituting `t ^ w i • X i` for each variable `X i` multiplies `φ` by `t ^ n`, then `φ` is

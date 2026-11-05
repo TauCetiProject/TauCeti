@@ -150,6 +150,26 @@ theorem isSAGBIBasis_sdiff_singleton_zero :
   simp only [isSAGBIBasis_iff, hadj, Set.sdiff_singleton_subset_iff,
     Set.insert_eq_of_mem (show (0 : MvPolynomial σ R) ∈ (A : Set _) from A.zero_mem)]
 
+/-- Removing the zero members of a family does not change the subalgebra it generates. -/
+@[simp]
+theorem adjoin_range_subtype_ne_zero {ι : Type*} (b : ι → MvPolynomial σ R) :
+    Algebra.adjoin R (Set.range fun i : {i // b i ≠ 0} ↦ b i) = Algebra.adjoin R (Set.range b) := by
+  refine le_antisymm (Algebra.adjoin_mono fun _ ⟨i, hi⟩ ↦ ⟨i, hi⟩) (Algebra.adjoin_le ?_)
+  rintro _ ⟨i, rfl⟩
+  by_cases hi : b i = 0
+  · simp [hi]
+  · exact Algebra.subset_adjoin ⟨⟨i, hi⟩, rfl⟩
+
+/-- Removing the zero members of a family does not change whether it is a SAGBI basis. -/
+@[simp]
+theorem isSAGBIBasis_range_subtype_ne_zero_iff {ι : Type*} {b : ι → MvPolynomial σ R} :
+    m.IsSAGBIBasis (Set.range fun i : {i // b i ≠ 0} ↦ b i) A ↔ m.IsSAGBIBasis (Set.range b) A := by
+  have h : (Set.range fun i : {i // b i ≠ 0} ↦ b i) = Set.range b \ {0} := by
+    ext p
+    simp only [Set.mem_range, Subtype.exists, exists_prop, Set.mem_sdiff, Set.mem_singleton_iff]
+    exact ⟨fun ⟨i, hi, hp⟩ ↦ ⟨⟨i, hp⟩, hp ▸ hi⟩, fun ⟨⟨i, hp⟩, h0⟩ ↦ ⟨i, hp ▸ h0, hp⟩⟩
+  rw [h, isSAGBIBasis_sdiff_singleton_zero]
+
 /-- The variables form a SAGBI basis of the whole polynomial ring. -/
 theorem isSAGBIBasis_range_X :
     m.IsSAGBIBasis (Set.range X) (⊤ : Subalgebra R (MvPolynomial σ R)) := by
