@@ -133,6 +133,15 @@ theorem algSpecHomEquivAlgHom_comp {A' : CommAlgCat.{u} R} (h : A' ⟶ A)
   rw [← Equiv.eq_symm_apply, algSpecHomEquivAlgHom_symm_apply, CommAlgCat.ofHom_comp,
     CommAlgCat.ofHom_hom, op_comp, Functor.map_comp, algSpec_map_algSpecHomEquivAlgHom]
 
+/-- Changing the source test algebra postcomposes the corresponding algebra homomorphism. -/
+@[simp]
+theorem algSpecHomEquivAlgHom_map_comp {B' : CommAlgCat.{u} R} (h : B ⟶ B')
+    (g : (algSpec R).obj (op B) ⟶ (algSpec R).obj (op A)) :
+    algSpecHomEquivAlgHom A B' ((algSpec R).map h.op ≫ g) =
+      h.hom.comp (algSpecHomEquivAlgHom A B g) := by
+  rw [← Equiv.eq_symm_apply, algSpecHomEquivAlgHom_symm_apply, CommAlgCat.ofHom_comp,
+    op_comp, Functor.map_comp, algSpec_map_algSpecHomEquivAlgHom, CommAlgCat.ofHom_hom]
+
 end algSpec
 
 end TauCeti.AlgebraicGeometry

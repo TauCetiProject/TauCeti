@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Group.Affine
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
+public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Tilde
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LinearPoints
 
 /-!
@@ -42,30 +43,66 @@ universe u
 
 noncomputable section
 
-variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
+variable {R : CommRingCat.{u}} (M : Type u) [AddCommMonoid M] [Module R M]
 
 /-- Points of `Spec (Sym_R M)` over an affine test scheme `Spec S` are `R`-linear
 functionals `M → S`. -/
 def specSymmetricAlgebraHomEquiv (S : CommAlgCat.{u} R) :
     ((algSpec R).obj (op S) ⟶
       (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M)))) ≃ (M →ₗ[R] S) :=
-  ((algSpec.fullyFaithful (R := R)).homEquiv.symm.trans
-    (opEquiv (op S) (op (CommAlgCat.of R (SymmetricAlgebra R M))))).trans
-      (ConcreteCategory.homEquiv.trans SymmetricAlgebra.lift.symm)
+  (algSpecHomEquivAlgHom (CommAlgCat.of R (SymmetricAlgebra R M)) S).trans
+    SymmetricAlgebra.lift.symm
 
 /-- The point corresponding to a functional is the spectrum of its symmetric-algebra lift. -/
 @[simp]
 theorem specSymmetricAlgebraHomEquiv_symm_apply (S : CommAlgCat.{u} R) (g : M →ₗ[R] S) :
     (specSymmetricAlgebraHomEquiv M S).symm g =
-      (algSpec R).map (CommAlgCat.ofHom (SymmetricAlgebra.lift g)).op :=
-  (rfl)
+      (algSpec R).map (CommAlgCat.ofHom (SymmetricAlgebra.lift g)).op := by
+  exact algSpecHomEquivAlgHom_symm_apply (A := CommAlgCat.of R (SymmetricAlgebra R M))
+    (B := S) (SymmetricAlgebra.lift g)
 
 /-- The spectrum of the lift of a functional has that functional as its point coordinates. -/
 @[simp]
 theorem specSymmetricAlgebraHomEquiv_map_lift (S : CommAlgCat.{u} R) (g : M →ₗ[R] S) :
     specSymmetricAlgebraHomEquiv M S
-      ((algSpec R).map (CommAlgCat.ofHom (SymmetricAlgebra.lift g)).op) = g :=
-  (specSymmetricAlgebraHomEquiv M S).apply_symm_apply g
+      ((algSpec R).map (CommAlgCat.ofHom (SymmetricAlgebra.lift g)).op) = g := by
+  rw [← specSymmetricAlgebraHomEquiv_symm_apply, Equiv.apply_symm_apply]
+
+/-- The coordinates of a point are obtained by restricting its algebra homomorphism to
+symmetric-algebra generators. -/
+theorem specSymmetricAlgebraHomEquiv_apply (S : CommAlgCat.{u} R)
+    (p : (algSpec R).obj (op S) ⟶
+      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M)))) (m : M) :
+    specSymmetricAlgebraHomEquiv M S p m =
+      algSpecHomEquivAlgHom (CommAlgCat.of R (SymmetricAlgebra R M)) S p
+        (SymmetricAlgebra.ι R M m) := by
+  exact (SymmetricAlgebra.lift_ι_apply _ m).symm.trans
+    (congrArg (fun f : SymmetricAlgebra R M →ₐ[R] S ↦ f (SymmetricAlgebra.ι R M m))
+      (SymmetricAlgebra.lift.apply_symm_apply _))
+
+/-- The coordinates of an arbitrary point are its pullbacks of the symmetric-algebra
+generators, transported from global functions to the test algebra. -/
+theorem specSymmetricAlgebraHomEquiv_eq_appTop (S : CommAlgCat.{u} R)
+    (p : (algSpec R).obj (op S) ⟶
+      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M)))) (m : M) :
+    specSymmetricAlgebraHomEquiv M S p m =
+      (Scheme.ΓSpecIso (CommRingCat.of S)).hom
+        (p.left.appTop
+          ((Scheme.ΓSpecIso (CommRingCat.of (SymmetricAlgebra R M))).inv
+            (SymmetricAlgebra.ι R M m))) := by
+  obtain ⟨g, rfl⟩ := (specSymmetricAlgebraHomEquiv M S).symm.surjective p
+  have hp : ((specSymmetricAlgebraHomEquiv M S).symm g).left =
+      Spec.map (CommRingCat.ofHom (SymmetricAlgebra.lift g).toRingHom) := by
+    rw [specSymmetricAlgebraHomEquiv_symm_apply]
+    rfl
+  rw [Equiv.apply_symm_apply, hp]
+  have h := ConcreteCategory.congr_hom
+    (Scheme.ΓSpecIso_inv_naturality (R := CommRingCat.of (SymmetricAlgebra R M))
+      (S := CommRingCat.of S) (CommRingCat.ofHom (SymmetricAlgebra.lift g).toRingHom))
+    (SymmetricAlgebra.ι R M m)
+  have h' := congrArg (Scheme.ΓSpecIso (CommRingCat.of S)).hom h
+  simp only [CategoryTheory.comp_apply, CommRingCat.hom_ofHom, Iso.inv_hom_id_apply] at h'
+  exact (SymmetricAlgebra.lift_ι_apply g m).symm.trans h'
 
 /-- Changing the test algebra postcomposes the linear functional with its algebra map. -/
 @[simp]
@@ -74,18 +111,19 @@ theorem specSymmetricAlgebraHomEquiv_comp {S T : CommAlgCat.{u} R} (h : S ⟶ T)
       (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M)))) :
     specSymmetricAlgebraHomEquiv M T ((algSpec R).map h.op ≫ p) =
       h.hom.toLinearMap.comp (specSymmetricAlgebraHomEquiv M S p) := by
-  obtain ⟨g, rfl⟩ := (specSymmetricAlgebraHomEquiv M S).symm.surjective p
-  apply (specSymmetricAlgebraHomEquiv M T).symm.injective
-  simp only [specSymmetricAlgebraHomEquiv_map_lift, Equiv.symm_apply_apply,
-    specSymmetricAlgebraHomEquiv_symm_apply]
-  rw [← Functor.map_comp, ← op_comp]
-  congr 2
-  apply CommAlgCat.hom_ext
-  apply SymmetricAlgebra.algHom_ext
   ext m
+  rw [specSymmetricAlgebraHomEquiv_apply, algSpecHomEquivAlgHom_map_comp (R := R)]
+  rfl
+
+/-- The point of a postcomposed functional is obtained by changing its test algebra. -/
+theorem specSymmetricAlgebraHomEquiv_symm_comp {S T : CommAlgCat.{u} R} (h : S ⟶ T)
+    (g : M →ₗ[R] S) :
+    (specSymmetricAlgebraHomEquiv M T).symm (h.hom.toLinearMap.comp g) =
+      (algSpec R).map h.op ≫ (specSymmetricAlgebraHomEquiv M S).symm g := by
+  apply (specSymmetricAlgebraHomEquiv M T).injective
   simp
 
-variable {M} {N : ModuleCat.{u} R}
+variable {M} {N : Type u} [AddCommMonoid N] [Module R N]
 
 /-- A linear map induces the contravariant morphism of affine linear spectra. -/
 def specSymmetricAlgebraMap (f : N →ₗ[R] M) :
@@ -107,7 +145,8 @@ theorem specSymmetricAlgebraMap_id :
   simp [specSymmetricAlgebraMap]
 
 /-- Composing linear maps reverses the order of the induced scheme morphisms. -/
-theorem specSymmetricAlgebraMap_comp {P : ModuleCat.{u} R}
+@[simp]
+theorem specSymmetricAlgebraMap_comp {P : Type u} [AddCommMonoid P] [Module R P]
     (f : N →ₗ[R] M) (g : P →ₗ[R] N) :
     specSymmetricAlgebraMap (f.comp g) =
       specSymmetricAlgebraMap f ≫ specSymmetricAlgebraMap g := by
@@ -121,16 +160,10 @@ theorem specSymmetricAlgebraHomEquiv_comp_map (f : N →ₗ[R] M)
       (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M)))) :
     specSymmetricAlgebraHomEquiv N S (p ≫ specSymmetricAlgebraMap f) =
       (specSymmetricAlgebraHomEquiv M S p).comp f := by
-  obtain ⟨g, rfl⟩ := (specSymmetricAlgebraHomEquiv M S).symm.surjective p
-  apply (specSymmetricAlgebraHomEquiv N S).symm.injective
-  simp only [specSymmetricAlgebraHomEquiv_map_lift, Equiv.symm_apply_apply,
-    specSymmetricAlgebraHomEquiv_symm_apply, specSymmetricAlgebraMap]
-  rw [← Functor.map_comp, ← op_comp]
-  congr 2
-  apply CommAlgCat.hom_ext
-  apply SymmetricAlgebra.algHom_ext
   ext n
-  simp
+  rw [specSymmetricAlgebraHomEquiv_apply, specSymmetricAlgebraMap,
+    algSpecHomEquivAlgHom_comp (R := R)]
+  simp [specSymmetricAlgebraHomEquiv_apply]
 
 /-- A morphism of affine linear spectra induces a natural transformation of linear point
 functors, without any assumption that the morphism itself is linear. -/
@@ -143,18 +176,9 @@ def specSymmetricAlgebraPointsMap
   naturality S T h := by
     apply ConcreteCategory.hom_ext
     intro g
-    have hn := specSymmetricAlgebraHomEquiv_comp M h
-      ((specSymmetricAlgebraHomEquiv M S).symm g)
-    have hs : (specSymmetricAlgebraHomEquiv M T).symm (h.hom.toLinearMap.comp g) =
-        (algSpec R).map h.op ≫ (specSymmetricAlgebraHomEquiv M S).symm g := by
-      apply (specSymmetricAlgebraHomEquiv M T).injective
-      simpa only [Equiv.apply_symm_apply] using hn.symm
-    -- Evaluate bundled type-category compositions before applying the point formulas.
-    change specSymmetricAlgebraHomEquiv N T
-      ((specSymmetricAlgebraHomEquiv M T).symm (h.hom.toLinearMap.comp g) ≫ ψ) =
-        h.hom.toLinearMap.comp (specSymmetricAlgebraHomEquiv N S
-          ((specSymmetricAlgebraHomEquiv M S).symm g ≫ ψ))
-    rw [hs, Category.assoc, specSymmetricAlgebraHomEquiv_comp]
+    simp only [CategoryTheory.comp_apply, TypeCat.ofHom_apply,
+      specSymmetricAlgebraHomEquiv_symm_comp,
+      Category.assoc, specSymmetricAlgebraHomEquiv_comp]
 
 /-- The induced transformation is computed by composing the corresponding scheme point. -/
 @[simp]
@@ -168,7 +192,7 @@ theorem specSymmetricAlgebraPointsMap_app
 
 /-- Scheme morphisms are determined by their action on affine linear-spectrum points. -/
 theorem specSymmetricAlgebraPointsMap_injective :
-    Function.Injective (specSymmetricAlgebraPointsMap (M := M) (N := N)) := by
+    Function.Injective (specSymmetricAlgebraPointsMap (R := R) (M := M) (N := N)) := by
   intro ψ χ h
   let S := CommAlgCat.of R (SymmetricAlgebra R M)
   let p := specSymmetricAlgebraHomEquiv M S (𝟙 _)
@@ -213,7 +237,7 @@ theorem existsUnique_specSymmetricAlgebraMap_of_smul
   rw [hg, specSymmetricAlgebraPointsMap_map]
 
 /-- The scalar-equivariance criterion is equivalent to being induced by a linear map. -/
-theorem specSymmetricAlgebraPointsMap_smul_iff
+theorem specSymmetricAlgebraPointsMap_smul_iff_exists_specSymmetricAlgebraMap
     (ψ : (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M))) ⟶
       (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R N)))) :
     (∀ (S : CommAlgCat.{u} R) (c : S) (g : M →ₗ[R] S),
@@ -238,10 +262,35 @@ theorem specSymmetricAlgebraPointsMap_add_of_smul
     (specSymmetricAlgebraPointsMap ψ).app S (p + q) =
       (specSymmetricAlgebraPointsMap ψ).app S p +
         (specSymmetricAlgebraPointsMap ψ).app S q := by
-  obtain ⟨f, rfl⟩ := (specSymmetricAlgebraPointsMap_smul_iff ψ).mp hψ
+  obtain ⟨f, rfl⟩ := (specSymmetricAlgebraPointsMap_smul_iff_exists_specSymmetricAlgebraMap ψ).mp hψ
   simp only [specSymmetricAlgebraPointsMap_map,
     SymmetricAlgebra.linearPointsMap_app_apply]
   exact LinearMap.add_comp f q p
+
+/-- The affine linear spectrum used by relative Spec is the symmetric-algebra object of
+`algSpec` after forgetting its affine-morphism property. -/
+@[simp]
+theorem specSymmetricAlgebraOver_forget (M : ModuleCat.{u} R) :
+    (MorphismProperty.Over.forget _ _ (Spec R)).obj (specSymmetricAlgebraOver M) =
+      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M))) :=
+  (rfl)
+
+/-- The affine-spectrum isomorphism induced by a linear equivalence agrees with the
+contravariant morphism induced by its inverse linear map. -/
+@[simp]
+theorem specSymmetricAlgebraOverIso_forget_map_hom {M N : ModuleCat.{u} R}
+    (e : M ≃ₗ[R] N) :
+    (MorphismProperty.Over.forget _ _ (Spec R)).map (specSymmetricAlgebraOverIso e).hom =
+      specSymmetricAlgebraMap e.symm.toLinearMap := by
+  apply Over.OverMorphism.ext
+  -- Forgetting the affine-morphism property is definitionally the same underlying scheme
+  -- map; its comma-category presentation otherwise hides the left-map rewrite lemmas.
+  change (specSymmetricAlgebraOverIso e).hom.left =
+    (specSymmetricAlgebraMap e.symm.toLinearMap).left
+  rw [specSymmetricAlgebraOverIso_hom_left, specSymmetricAlgebraMap_left,
+    SymmetricAlgebra.mapEquiv_symm]
+  congr 2
+  exact congrArg (fun f ↦ f.toRingHom) (SymmetricAlgebra.mapEquiv_toAlgHom R e.symm)
 
 end
 
