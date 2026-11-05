@@ -12,8 +12,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 /-!
 # Summability of central-binomial series
 
-For nonnegative `q`, the series with terms `Nat.centralBinom n * q ^ n` is summable
-exactly when `q < 1 / 4`. At the boundary, the elementary lower bound on central
+For real `q`, the series with terms `Nat.centralBinom n * q ^ n` is summable
+exactly when `|q| < 1 / 4`. At the boundary, the elementary lower bound on central
 binomial coefficients compares this series with the harmonic series; no asymptotic
 formula is needed.
 
@@ -49,26 +49,30 @@ theorem not_summable_centralBinom_div_four_pow :
     inv_mul_le_iff₀ hn']
   nlinarith
 
-/-- A nonnegative central-binomial power series is summable exactly inside its
-radius of convergence; the boundary is excluded. -/
-theorem summable_centralBinom_mul_pow_iff {q : ℝ} (hq : 0 ≤ q) :
-    Summable (fun n : ℕ => (n.centralBinom : ℝ) * q ^ n) ↔ q < 1 / 4 := by
-  constructor
-  · intro h
-    by_contra hlt
-    have hq' : 1 / 4 ≤ q := le_of_not_gt hlt
-    apply not_summable_centralBinom_div_four_pow
-    refine h.of_nonneg_of_le (fun n => by positivity) fun n => ?_
-    rw [div_eq_mul_inv, ← inv_pow]
-    gcongr
-    simpa using hq'
-  · intro hq'
-    have hgeo : Summable (fun n : ℕ => (4 * q) ^ n) :=
-      summable_geometric_of_lt_one (by positivity) (by linarith)
-    refine hgeo.of_nonneg_of_le (fun n => by positivity) fun n => ?_
-    rw [mul_pow]
-    gcongr
-    exact_mod_cast Nat.centralBinom_le_four_pow n
+/-- A real central-binomial power series is summable exactly inside its
+radius of convergence; both boundary points are excluded. -/
+theorem summable_centralBinom_mul_pow_iff {q : ℝ} :
+    Summable (fun n : ℕ => (n.centralBinom : ℝ) * q ^ n) ↔ |q| < 1 / 4 := by
+  have key (q : ℝ) (hq : 0 ≤ q) :
+      Summable (fun n : ℕ => (n.centralBinom : ℝ) * q ^ n) ↔ q < 1 / 4 := by
+    constructor
+    · intro h
+      by_contra hlt
+      have hq' : 1 / 4 ≤ q := le_of_not_gt hlt
+      apply not_summable_centralBinom_div_four_pow
+      refine h.of_nonneg_of_le (fun n => by positivity) fun n => ?_
+      rw [div_eq_mul_inv, ← inv_pow]
+      gcongr
+      simpa using hq'
+    · intro hq'
+      have hgeo : Summable (fun n : ℕ => (4 * q) ^ n) :=
+        summable_geometric_of_lt_one (by positivity) (by linarith)
+      refine hgeo.of_nonneg_of_le (fun n => by positivity) fun n => ?_
+      rw [mul_pow]
+      gcongr
+      exact_mod_cast Nat.centralBinom_le_four_pow n
+  rw [← summable_abs_iff]
+  simpa only [abs_mul, abs_pow, Nat.abs_cast] using key |q| (abs_nonneg q)
 
 end Real
 
@@ -81,7 +85,7 @@ theorem tsum_centralBinom_mul_pow_eq_top_iff (q : ℝ≥0) :
   rw [← NNReal.coe_le_coe]
   simpa only [ENNReal.coe_mul, ENNReal.coe_pow, ENNReal.coe_natCast,
     NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_natCast,
-    Real.summable_centralBinom_mul_pow_iff q.coe_nonneg, not_lt,
+    Real.summable_centralBinom_mul_pow_iff, abs_of_nonneg q.coe_nonneg, not_lt,
     NNReal.coe_le_coe, NNReal.coe_div, NNReal.coe_one, NNReal.coe_ofNat] using
     (ENNReal.tsum_coe_eq_top_iff_not_summable_coe
       (f := fun n : ℕ => (n.centralBinom : ℝ≥0) * q ^ n))
