@@ -88,7 +88,7 @@ in `s`. If the join in `NC(s)` of `π` with the partition `σ_f` into the fibres
 noncrossing partition above `π` and `σ_f`. -/
 private theorem mem_union_of_sup_comap_eq_top {f : α → α} (hf : MonotoneOn f s) {i j : α}
     (hi : i ∈ s) (hj : j ∈ s) (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z)
-    (hfeq : ∀ {u v}, f u = f v → u ≠ v → (u = i ∨ u = j) ∧ (v = i ∨ v = j))
+    (hfeq : ∀ {u v}, u ∈ s → v ∈ s → f u = f v → u ≠ v → (u = i ∨ u = j) ∧ (v = i ∨ v = j))
     {π : NoncrossingPartition s} (hπ : π ⊔ NoncrossingPartition.comap hf ⊥ = ⊤) {z : α}
     (hz : z ∈ s) : z ∈ π.1.part i ∪ π.1.part j := by
   obtain ⟨Q, hQ, hπQ, hQi⟩ := π.2.exists_part_eq_union hi hj hij hadj
@@ -103,10 +103,10 @@ private theorem mem_union_of_sup_comap_eq_top {f : α → α} (hf : MonotoneOn f
     refine ⟨Q.part x, Q.part_mem.2 hxs, fun w hw => ?_⟩
     rw [← Finpartition.part_eq_of_mem _ hb hx, NoncrossingPartition.coe_comap,
       NoncrossingPartition.coe_bot, Finpartition.part_comap_bot hxs] at hw
-    obtain ⟨-, hwx⟩ := mem_filter.1 hw
+    obtain ⟨hws, hwx⟩ := mem_filter.1 hw
     rcases eq_or_ne w x with rfl | hne
     · exact Q.mem_part_self.2 hxs
-    obtain ⟨hw', hx'⟩ := hfeq hwx hne
+    obtain ⟨hw', hx'⟩ := hfeq hws hxs hwx hne
     rw [Q.part_eq_of_mem (Q.part_mem.2 hi) (hiQ hx')]
     exact hiQ hw'
   have htop : Q = ⊤ := congrArg Subtype.val
@@ -135,7 +135,7 @@ private theorem freeCumulant_fiberProd_collapse_eq {a : α → A}
   obtain ⟨z, hz, hzi⟩ : ∃ z ∈ s, ℓ z ≠ ℓ i := by
     by_contra! h
     exact hxy ((h x hx).trans (h y hy).symm)
-  rcases mem_union.1 (mem_union_of_sup_comap_eq_top hf hi hj hij.le hadj hfeq
+  rcases mem_union.1 (mem_union_of_sup_comap_eq_top hf hi hj hij.le hadj (fun _ _ => hfeq)
     (mem_filter.1 hπ).2 hz) with hz' | hz'
   · exact prod_freeCumulant_eq_zero_of_mixed hsub hπtop (π.1.part_mem.2 hi) hz'
       (π.1.mem_part_self.2 hi) hzi
