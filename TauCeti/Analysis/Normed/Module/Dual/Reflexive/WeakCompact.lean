@@ -60,8 +60,10 @@ theorem surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall
     StrongDual.toStrongDual_toWeakDual, ContinuousLinearMap.coe_coe] using
       congrArg WeakDual.toStrongDual hx
 
-/-- In a reflexive seminormed space, every norm-bounded set has weakly compact closure. -/
-theorem isCompact_closure_toWeakSpace
+/-- In a reflexive seminormed space over a proper nontrivially normed field, every norm-bounded
+set has weakly compact closure. -/
+theorem isCompact_closure_toWeakSpace {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
     (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hs : IsBounded s) :
     IsCompact (closure (toWeakSpace 𝕜 E '' s)) := by
   apply NormedSpace.isCompact_closure_weakSpace_of_isBounded 𝕜 E
