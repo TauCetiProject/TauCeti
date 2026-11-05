@@ -96,8 +96,7 @@ theorem flat_of_isSchemeTheoreticallyDominant_of_flat_comp {R : Type u} [CommRin
   let m := pullback.map (h ≫ toBase) (Spec.map (CommRingCat.ofHom (algebraMap R K))) toBase
     (Spec.map (CommRingCat.ofHom (algebraMap R K))) h (𝟙 _) (𝟙 _) (by simp) (by simp)
   have : IsSchemeTheoreticallyDominant (m ≫ genericFiberι R K toBase) := by
-    rw [show m ≫ genericFiberι R K toBase = genericFiberι R K (h ≫ toBase) ≫ h from
-      pullback.lift_fst _ _ _]
+    rw [show m ≫ genericFiberι R K toBase = genericFiberι R K (h ≫ toBase) ≫ h by simp [m]]
     infer_instance
   have := IsSchemeTheoreticallyDominant.of_comp m (genericFiberι R K toBase)
   exact flat_of_isSchemeTheoreticallyDominant_genericFiberι K toBase
