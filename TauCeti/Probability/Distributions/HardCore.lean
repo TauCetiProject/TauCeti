@@ -124,12 +124,11 @@ open Classical in
 open Classical in
 /-- The activity-one law agrees with Mathlib's uniform measure on independent sets. -/
 theorem hardCorePMF_one_toMeasure
-    [MeasurableSpace {s : Finset V // G.IsIndepSet (s : Set V)}]
-    [MeasurableSingletonClass {s : Finset V // G.IsIndepSet (s : Set V)}] :
+    [MeasurableSpace {s : Finset V // G.IsIndepSet (s : Set V)}] :
     (G.hardCorePMF 1).toMeasure = uniformOfFinset Finset.univ := by
-  apply Measure.ext_of_singleton
-  intro I
-  simp [uniformOfFinset_apply_singleton]
+  ext s hs
+  simp [PMF.toMeasure_apply _ hs, uniformOfFinset, sum_apply, smul_apply,
+    dirac_apply' _ hs, tsum_fintype, Set.indicator, mul_ite]
 
 open Classical in
 /-- Single-site balance: if two independent sets agree off `v`, their Gibbs
