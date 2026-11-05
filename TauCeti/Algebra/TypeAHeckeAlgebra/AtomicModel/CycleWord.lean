@@ -86,32 +86,18 @@ private theorem signedChecked_T_last_mul_strandIncl_single_snoc_apply
       Fin.snoc (update w (Fin.last n) c) (w (Fin.last n)) := by
     rw [Equiv.comp_swap_eq_update]
     simp [← Fin.snoc_update, Fin.update_snoc_last]
-  have hx := signedChecked_strandIncl_mapDomain_snoc pos q x c (single w 1)
-  rw [mapDomain_single] at hx
-  have hinj : Injective fun u : Fin (n + 1) → ι ↦ (Fin.snoc u c : Fin (n + 2) → ι) :=
-    @Fin.snoc_left_injective _ (fun _ ↦ ι) c
   -- The last letter of the exchanged word is `w (Fin.last n)`, which `x` does not change.
-  have hother (h : w (Fin.last n) ≠ c) : mapDomain (fun u : Fin (n + 1) → ι ↦
-      (Fin.snoc u c : Fin (n + 2) → ι)) (signedChecked pos q x (single w 1))
-      (Fin.snoc (update w (Fin.last n) c) (w (Fin.last n))) = 0 := by
-    apply mapDomain_of_notMem_range
-    rintro ⟨v, hv⟩
-    apply h
-    simpa using (congrArg (fun z : Fin (n + 2) → ι ↦ z (Fin.last (n + 1))) hv).symm
-  have hself : mapDomain (fun u : Fin (n + 1) → ι ↦ (Fin.snoc u c : Fin (n + 2) → ι))
-      (signedChecked pos q x (single w 1)) (Fin.snoc w c) =
-      signedChecked pos q x (single w 1) w :=
-    mapDomain_apply_of_injective hinj _ w
-  rw [map_mul, mul_apply_eq_comp, hx, signedChecked_T, hj, hk, LinearMap.smul_apply,
-    Finsupp.smul_apply, signedCheckedR_apply, hswap, hself]
-  simp only [Fin.snoc_castSucc, Fin.snoc_last, smul_eq_mul, crossingDiag]
+  rw [map_mul, mul_apply_eq_comp, signedChecked_T, hj, hk, LinearMap.smul_apply,
+    Finsupp.smul_apply, signedCheckedR_apply, hswap]
+  simp only [Fin.snoc_castSucc, Fin.snoc_last, smul_eq_mul, crossingDiag,
+    signedChecked_strandIncl_single_snoc_apply_snoc]
   rcases lt_trichotomy (w (Fin.last n)) c with h | h | h
-  · simp only [h.ne, h, ↓reduceIte, hother h.ne]
+  · simp only [h.ne, h.ne', h, ↓reduceIte]
     ring
   · subst h
     simp only [↓reduceIte]
     ring
-  · simp only [h.ne', h.not_gt, ↓reduceIte, hother h.ne']
+  · simp only [h.ne', h.ne, h.not_gt, ↓reduceIte]
     ring
 
 variable [Fintype ι]
@@ -178,6 +164,8 @@ private theorem lastLetterSeries_mul (c : ι) :
       C (p c) * (1 + C ((q : R) ^ 2 - 1) * X * ∑ b with b < c, lastLetterSeries pos q p b) := by
   set ε : R := if pos c then (q : R) ^ 2 else -1
   set S := ∑ b with b < c, lastLetterSeries pos q p b
+  -- Put both sides in the form `constant + series * X`, so that the coefficients of degree
+  -- `m + 1` follow from `coeff_succ_mul_X` without expanding a product of two series.
   rw [show lastLetterSeries pos q p c * (1 - C (ε * p c) * X) =
       lastLetterSeries pos q p c - C (ε * p c) * lastLetterSeries pos q p c * X by ring,
     show C (p c) * (1 + C ((q : R) ^ 2 - 1) * X * S) =
