@@ -487,14 +487,15 @@ namespace ResolutionEquiv
 
 variable {D : PDCode n} {D' : PDCode m} {D'' : PDCode r}
 
-/-- The half-edge bijection carries the slots of `c` bijectively to those of `crossingEquiv c`:
-flipping the state at `crossingEquiv c` changes the smoothing turn at the four half-edges of
-`crossingEquiv c` and nowhere else, while flipping it at `c` changes the turn at every half-edge
-of `c`, so the half-edge bijection, which commutes with the smoothing turns, carries the
-half-edges of `c` into those of `crossingEquiv c`. -/
+/-- The half-edge bijection carries the four half-edges of `c` bijectively onto those of
+`crossingEquiv c`, by a slot bijection `Fin 4 ≃ Fin 4`. -/
 theorem exists_slots (E : D.ResolutionEquiv D') (c : Fin n) :
     ∃ slots : Fin 4 ≃ Fin 4, ∀ k,
       E.halfEdgeEquiv (D.crossing c k) = D'.crossing (E.crossingEquiv c) (slots k) := by
+  -- Flipping the state at `crossingEquiv c` changes the smoothing turn at the four half-edges of
+  -- `crossingEquiv c` and nowhere else, while flipping it at `c` changes the turn at every
+  -- half-edge of `c`. The half-edge bijection commutes with the smoothing turns, so it carries
+  -- the half-edges of `c` into those of `crossingEquiv c`.
   have hturn (t : Fin m → Bool) (x : Fin (4 * n)) :
       D'.smoothingTurn (D'.smoothingChoice t) (E.halfEdgeEquiv x) =
         E.halfEdgeEquiv (D.smoothingTurn (D.smoothingChoice (t ∘ E.crossingEquiv)) x) := by
