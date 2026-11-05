@@ -21,8 +21,9 @@ module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are 
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms; the
 left-commutativity isometry `Q₁ ⊕ (Q₂ ⊕ Q₃) ≅ Q₂ ⊕ (Q₁ ⊕ Q₃)` is recorded as a composite of them.
 For an orthogonal sum `QuadraticMap.pi` indexed by `Fin (n + 1)`, splitting off the first summand
-is likewise isometric, which lets such a sum be assembled one summand at a time; and reindexing an
-orthogonal sum along an equivalence of its index types is isometric.
+is likewise isometric, which lets such a sum be assembled one summand at a time; reindexing an
+orthogonal sum along an equivalence of its index types is isometric; and so is deleting the
+summands of an orthogonal sum that are carried by trivial modules.
 
 For a quadratic form over a commutative ring, it also records the isometry associated to a
 direct-sum decomposition of the underlying module that is orthogonal for the polar form.
@@ -44,6 +45,8 @@ the two summands gives an orthogonal family of the orthogonal sum.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
 * `QuadraticMap.IsometryEquiv.consPi`: `Fin.consLinearEquiv` is isometric.
 * `QuadraticMap.IsometryEquiv.piCongrLeft`: `LinearEquiv.piCongrLeft` is isometric.
+* `QuadraticMap.IsometryEquiv.piSubtype`: deleting the summands of an orthogonal sum that are
+  carried by trivial modules is isometric.
 * `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
   the original form.
 * `QuadraticMap.orthogonalGroupProd`: the orthogonal sum `O(Q₁) × O(Q₂) →* O(Q₁.prod Q₂)`.
@@ -194,6 +197,46 @@ theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fin
     (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (x : ∀ i', M (e i')) (i' : ι') :
     IsometryEquiv.piCongrLeft Q e x (e i') = x i' :=
   Equiv.piCongrLeft_apply_apply M e x i'
+
+/-- Restriction to the summands indexed by `{i // S i}` is isometric when every other summand is
+carried by a trivial module: such summands may be deleted from an orthogonal sum. -/
+def IsometryEquiv.piSubtype {ι : Type*} [Fintype ι] {M : ι → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (S : ι → Prop) [DecidablePred S]
+    (hS : ∀ i, ¬S i → Subsingleton (M i)) :
+    (QuadraticMap.pi Q).IsometryEquiv (QuadraticMap.pi fun i : Subtype S ↦ Q i) where
+  toFun x i := x i
+  invFun y i := if hi : S i then y ⟨i, hi⟩ else 0
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv x := funext fun i ↦ by
+    by_cases hi : S i
+    · simp [hi]
+    · have := hS i hi
+      exact Subsingleton.elim _ _
+  right_inv y := funext fun i ↦ by simp [i.2]
+  map_app' x := by
+    have hzero : ∑ i : {i // ¬S i}, Q i (x i) = 0 := Finset.sum_eq_zero fun i _ ↦ by
+      have := hS i i.2
+      rw [Subsingleton.elim (x i) 0, map_zero]
+    rw [pi_apply, pi_apply, ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.piSubtype` restricts to the retained summands. -/
+@[simp]
+theorem IsometryEquiv.piSubtype_apply {ι : Type*} [Fintype ι] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (S : ι → Prop) [DecidablePred S] (hS : ∀ i, ¬S i → Subsingleton (M i)) (x : ∀ i, M i)
+    (i : Subtype S) :
+    IsometryEquiv.piSubtype Q S hS x i = x i :=
+  (rfl)
+
+/-- The inverse map of `QuadraticMap.IsometryEquiv.piSubtype` extends by zero. -/
+@[simp]
+theorem IsometryEquiv.piSubtype_symm_apply {ι : Type*} [Fintype ι] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (S : ι → Prop) [DecidablePred S] (hS : ∀ i, ¬S i → Subsingleton (M i))
+    (y : ∀ i : Subtype S, M i) (i : ι) :
+    (IsometryEquiv.piSubtype Q S hS).symm y i = if hi : S i then y ⟨i, hi⟩ else 0 :=
+  (rfl)
 
 section OrthogonalDecomposition
 

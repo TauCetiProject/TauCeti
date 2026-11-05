@@ -291,6 +291,20 @@ theorem mextDerivWithin_sub (hs : UniqueMDiffWithinAt I s x)
   rw [sub_eq_add_neg, mextDerivWithin_add hs hφ (by simpa using hη.neg),
     mextDerivWithin_neg hs, sub_eq_add_neg]
 
+/-- Swapping two tangent vectors negates the exterior derivative of a one-form. -/
+theorem mextDeriv_apply_swap (φ : RoughForm I M F 1) (x : M) (v w : TangentSpace I x) :
+    mextDeriv φ x ![v, w] = -mextDeriv φ x ![w, v] := by
+  simpa using (mextDeriv φ x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
+
+/-- The exterior derivative of a one-form, evaluated on two tangent vectors, is linear in the
+first vector. -/
+theorem mextDeriv_apply_smul_left (φ : RoughForm I M F 1) (x : M) (c : ℝ)
+    (v w : TangentSpace I x) :
+    mextDeriv φ x ![c • v, w] = c • mextDeriv φ x ![v, w] := by
+  have h₁ : Function.update ![v, w] 0 (c • v) = ![c • v, w] := Fin.update_cons_zero ..
+  have h₂ : Function.update ![v, w] 0 v = ![v, w] := Fin.update_cons_zero ..
+  simpa only [h₁, h₂] using (mextDeriv φ x).map_update_smul ![v, w] 0 c v
+
 /-! ### The model space -/
 
 /-- Over the model space `𝓘(ℝ, E)`, the coordinate expression of a form is the form itself. -/
