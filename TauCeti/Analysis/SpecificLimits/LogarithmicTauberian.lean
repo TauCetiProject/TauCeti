@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
+import TauCeti.Analysis.Polynomial.EvalRpow
 import TauCeti.Analysis.Polynomial.Integral
 import TauCeti.Analysis.Polynomial.OneSidedApproximation
 import TauCeti.Analysis.PSeries
@@ -551,25 +552,6 @@ private lemma tendsto_mul_tsum_rpow_one_add_mul {L : ℝ}
   simp only [Function.comp_apply, add_sub_cancel_left]
   field_simp
 
-private lemma rpow_one_add_mul_eval_eq_sum {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (Q : ℝ[X]) :
-    x ^ (1 + ε) * Q.eval (x ^ ε) =
-      ∑ i ∈ range (Q.natDegree + 1), Q.coeff i * x ^ (1 + (i + 1) * ε) := by
-  rw [eval_eq_sum_range, mul_sum]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [← rpow_mul_natCast hx, mul_left_comm,
-    ← rpow_add' hx (show 1 + ε + ε * (i : ℝ) ≠ 0 by positivity),
-    show 1 + ε + ε * (i : ℝ) = 1 + (i + 1) * ε by ring]
-
-private lemma summable_rpow_one_add_mul_eval (hμ0 : ∀ j, 0 ≤ μ j)
-    (hsum : ∀ s : ℝ, 1 < s → Summable fun j ↦ μ j ^ s) {ε : ℝ} (hε : 0 < ε) (Q : ℝ[X]) :
-    Summable fun j ↦ μ j ^ (1 + ε) * Q.eval (μ j ^ ε) := by
-  refine (summable_sum (s := range (Q.natDegree + 1))
-    (f := fun i j ↦ Q.coeff i * μ j ^ (1 + (i + 1) * ε))
-    fun i _ ↦ (hsum _ ?_).mul_left (Q.coeff i)).congr fun j ↦
-    (rpow_one_add_mul_eval_eq_sum (hμ0 j) hε Q).symm
-  have : (0 : ℝ) < (i + 1) * ε := by positivity
-  linarith
-
 /-- The residue hypothesis evaluates `ε ∑ⱼ μⱼ ^ (1 + ε) Q(μⱼ ^ ε)` in the limit for every
 polynomial `Q`. -/
 private lemma tendsto_mul_tsum_rpow_mul_eval (hμ0 : ∀ j, 0 ≤ μ j)
@@ -585,15 +567,11 @@ private lemma tendsto_mul_tsum_rpow_mul_eval (hμ0 : ∀ j, 0 ≤ μ j)
   refine (tendsto_finsetSum (range (Q.natDegree + 1)) fun i _ ↦
     (tendsto_mul_tsum_rpow_one_add_mul hζ i).const_mul (Q.coeff i)).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
-  rw [tsum_congr fun j ↦ rpow_one_add_mul_eval_eq_sum (hμ0 j) hε Q,
-    Summable.tsum_finsetSum fun i _ ↦ (hsum _ ?_).mul_left _, mul_sum]
-  · refine sum_congr rfl fun i _ ↦ ?_
-    rw [Summable.tsum_mul_left _ (hsum _ ?_)]
-    · ring
-    · have : (0 : ℝ) < (i + 1) * ε := by positivity
-      linarith
-  · have : (0 : ℝ) < (i + 1) * ε := by positivity
-    linarith
+  rw [tsum_rpow_mul_eval_rpow_eq_sum (a := 1 + ε) hμ0 (by linarith) hε.le Q
+    fun i _ ↦ hsum _ (by nlinarith [mul_nonneg i.cast_nonneg hε.le]), mul_sum]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [show 1 + ε + (i : ℝ) * ε = 1 + (i + 1) * ε by ring]
+  ring
 
 private lemma nonneg_of_tendsto_sub_one_mul_tsum_rpow (hμ0 : ∀ j, 0 ≤ μ j) {L : ℝ}
     (hζ : Tendsto (fun s : ℝ ↦ (s - 1) * ∑' j, μ j ^ s) (𝓝[>] 1) (𝓝 L)) : 0 ≤ L :=
@@ -626,7 +604,9 @@ private lemma tendsto_mul_tsum_rpow_mul_indicator (hμ0 : ∀ j, 0 ≤ μ j) (h�
     filter_upwards [(tendsto_mul_tsum_rpow_mul_eval hμ0 hsum hζ Q).eventually (lt_mem_nhds hlt),
       self_mem_nhdsWithin] with ε h1 (hε : 0 < ε)
     refine h1.trans_le (mul_le_mul_of_nonneg_left ?_ hε.le)
-    exact (summable_rpow_one_add_mul_eval hμ0 hsum hε Q).tsum_le_tsum (fun j ↦
+    have hQs := summable_rpow_mul_eval_rpow (a := 1 + ε) hμ0 (by linarith) hε.le Q
+      fun i _ ↦ hsum _ (by nlinarith [mul_nonneg i.cast_nonneg hε.le])
+    exact hQs.tsum_le_tsum (fun j ↦
       mul_le_mul_of_nonneg_left (hQ _ (hmem ε hε j)) (rpow_nonneg (hμ0 j) _)) (hind ε hε)
   · set η := (b - L * (1 - a)) / (L + 1)
     have hη : 0 < η := div_pos (by linarith) (by linarith)
@@ -639,7 +619,8 @@ private lemma tendsto_mul_tsum_rpow_mul_indicator (hμ0 : ∀ j, 0 ≤ μ j) (h�
     refine (mul_le_mul_of_nonneg_left ?_ hε.le).trans_lt h1
     exact (hind ε hε).tsum_le_tsum (fun j ↦
       mul_le_mul_of_nonneg_left (hQ _ (hmem ε hε j)) (rpow_nonneg (hμ0 j) _))
-      (summable_rpow_one_add_mul_eval hμ0 hsum hε Q)
+      (summable_rpow_mul_eval_rpow (a := 1 + ε) hμ0 (by linarith) hε.le Q
+        fun i _ ↦ hsum _ (by nlinarith [mul_nonneg i.cast_nonneg hε.le]))
 
 /-- The truncated sums of Karamata's step are comparable with the level sums. -/
 private lemma levelSum_le_tsum_rpow_mul_indicator (hμ0 : ∀ j, 0 ≤ μ j) (hμ1 : ∀ j, μ j ≤ 1)
