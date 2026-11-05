@@ -26,7 +26,8 @@ relational and has countably many relation symbols when `L` has countably many s
 back-translation of the Scott sentence of the graph expansion of `M` holds in a structure exactly
 when that Scott sentence holds in its graph expansion
 (`FirstOrder.Language.BoundedFormulaInf.realize_backTranslate`), and two structures are
-isomorphic exactly when their graph expansions are.
+isomorphic exactly when their graph expansions are
+(`FirstOrder.Language.nonempty_equiv_graphExpansion_iff`).
 
 The countability of the model cannot be dropped: models of the Scott sentence of any cardinality
 are only potentially isomorphic to `M` (`TauCeti.potentialIso_of_realize_scottSentenceAt`).
@@ -81,40 +82,6 @@ theorem realize_scottSentence_iff (N : Type w') [L.Structure N] [Countable N] :
     fun ⟨e⟩ => e.realize_scottSentence⟩
 
 end Relational
-
-/-- Two structures are isomorphic exactly when their graph expansions are. -/
-private theorem nonempty_equiv_graphExpansion_iff {M : Type w} {N : Type w'} [L.Structure M]
-    [L.Structure N] :
-    letI := graphExpansion L M
-    letI := graphExpansion L N
-    Nonempty (M ≃[L.graphLanguage] N) ↔ Nonempty (M ≃[L] N) := by
-  let := graphExpansion L M
-  let := graphExpansion L N
-  constructor
-  · rintro ⟨e⟩
-    refine ⟨{ toEquiv := e.toEquiv, map_fun' := ?_, map_rel' := ?_ }⟩
-    · intro k f x
-      have h := (e.map_rel (GraphRelation.graph f) (Fin.snoc x (Structure.funMap f x))).mpr
-        (by simp)
-      simp only [graphExpansion_relMap_graph, Fin.init_def, Function.comp_apply,
-        Fin.snoc_castSucc, Fin.snoc_last] at h
-      exact h.symm
-    · intro k R x
-      have h := e.map_rel (GraphRelation.base R) x
-      rw [graphExpansion_relMap_base, graphExpansion_relMap_base] at h
-      exact h
-  · rintro ⟨e⟩
-    refine ⟨{ toEquiv := e.toEquiv, map_fun' := fun f => PEmpty.elim f, map_rel' := ?_ }⟩
-    intro k R x
-    cases R with
-    | base R =>
-      rw [graphExpansion_relMap_base, graphExpansion_relMap_base]
-      exact e.map_rel R x
-    | graph f =>
-      rw [graphExpansion_relMap_graph, graphExpansion_relMap_graph]
-      have : Fin.init (e.toFun ∘ x) = e ∘ Fin.init x := rfl
-      rw [this, ← e.map_fun]
-      exact e.injective.eq_iff
 
 /-- **Scott's isomorphism theorem.** In a countable language, every countable structure `M` has
 an `Lω₁ω` sentence that `M` satisfies and that holds in a countable structure, in any universe,
