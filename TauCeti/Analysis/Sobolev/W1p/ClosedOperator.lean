@@ -37,8 +37,9 @@ The three basic properties of this operator are proved here.
 ## Main declarations
 
 * `TauCeti.weakGradientPMap`: the weak gradient as a partially defined linear operator.
-* `TauCeti.mem_graph_weakGradientPMap_iff`, `TauCeti.mem_domain_weakGradientPMap_iff` and
-  `TauCeti.weakGradientPMap_apply_value`: its graph, its domain and its values.
+* `TauCeti.mem_graph_weakGradientPMap_iff`, `TauCeti.mem_domain_weakGradientPMap_iff`,
+  `TauCeti.weakGradientPMap_apply` and `TauCeti.weakGradientPMap_apply_value`: its graph, its
+  domain and its values.
 * `TauCeti.isClosed_weakGradientPMap`: the weak gradient is a closed operator.
 * `TauCeti.dense_domain_weakGradientPMap`: it is densely defined on `L²(Ω)`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_exp_inner`: exponentials of linear functions are
@@ -129,17 +130,21 @@ theorem value_mem_domain_weakGradientPMap (u : W1p mu Omega p) :
     W1p.value u ∈ (weakGradientPMap mu Omega p).domain :=
   mem_domain_weakGradientPMap_iff.2 ⟨u, rfl⟩
 
+/-- The weak gradient operator sends a domain element represented by a Sobolev function `u` to
+the weak gradient of `u`. -/
+theorem weakGradientPMap_apply {f : (weakGradientPMap mu Omega p).domain} {u : W1p mu Omega p}
+    (h : W1p.value u = f) : weakGradientPMap mu Omega p f = W1p.gradient u := by
+  obtain ⟨v, hv, hgrad⟩ :=
+    mem_graph_weakGradientPMap_iff.1 (LinearPMap.mem_graph (weakGradientPMap mu Omega p) f)
+  rw [← W1p.ext_value (hv.trans h.symm)]
+  exact hgrad.symm
+
 /-- The weak gradient operator sends the value of a Sobolev function to its weak gradient. -/
 @[simp]
 theorem weakGradientPMap_apply_value (u : W1p mu Omega p) :
     weakGradientPMap mu Omega p ⟨W1p.value u, value_mem_domain_weakGradientPMap u⟩ =
-      W1p.gradient u := by
-  have hmem := LinearPMap.mem_graph (weakGradientPMap mu Omega p)
-    ⟨W1p.value u, value_mem_domain_weakGradientPMap u⟩
-  obtain ⟨v, hv, hgrad⟩ := mem_graph_weakGradientPMap_iff.1 hmem
-  have hvu : v = u := W1p.ext_value hv
-  rw [hvu] at hgrad
-  exact hgrad.symm
+      W1p.gradient u :=
+  weakGradientPMap_apply rfl
 
 /-- **The weak gradient is a closed operator.** If `uₙ → u` in `Lᵖ(Ω)` with `uₙ ∈ W^{1,p}(Ω)` and
 `∇uₙ → g` in `Lᵖ(Ω; E)`, then `u ∈ W^{1,p}(Ω)` and `∇u = g`. -/
@@ -176,16 +181,9 @@ theorem W1p.exists_value_gradient_ae_eq_exp_inner (hΩ : Bornology.IsBounded (Om
       W1p.gradient u =ᵐ[mu.restrict Omega] fun x => (c * Real.exp (c * ⟪w, x⟫_ℝ)) • w := by
   have hcd : ContDiff ℝ 1 fun x : E => Real.exp (c * ⟪w, x⟫_ℝ) :=
     (contDiff_exp_inner c w).of_le (by exact_mod_cast le_top)
-  have hgrad : ∇ (fun x : E => Real.exp (c * ⟪w, x⟫_ℝ)) =
-      fun x => (c * Real.exp (c * ⟪w, x⟫_ℝ)) • w := by
-    refine gradient_eq fun x => hasGradientAt_iff_hasFDerivAt.2 ?_
-    refine ((hcd.differentiable one_ne_zero) x).hasFDerivAt.congr_fderiv ?_
-    ext v
-    rw [fderiv_exp_inner_apply, InnerProductSpace.toDual_apply_apply, real_inner_smul_left]
-    ring
-  simpa only [hgrad] using
-    W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact isOpen_univ hcd.contDiffOn
-      hΩ.isCompact_closure subset_closure (subset_univ _)
+  simpa only [funext (gradient_exp_inner c w)] using
+    W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (p := p) isOpen_univ
+      hcd.contDiffOn hΩ.isCompact_closure subset_closure (subset_univ _)
 
 /-- **The weak gradient scales the exponentials of linear functions.** On a bounded domain, if
 `u ∈ W^{1,p}(Ω)` represents `x ↦ exp (c ⟪w, x⟫)` for a unit vector `w`, then the weak gradient
