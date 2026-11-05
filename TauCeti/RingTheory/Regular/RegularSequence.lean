@@ -44,9 +44,10 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_ofList_smul_top_of_sum_eq_zero`: the coefficients of a
   relation `∑ fᵢ mᵢ = 0` among a weakly `M`-regular sequence lie in `(f₁, …, f_r) M`.
-* `Ideal.exists_mem_isSMulRegular_iff_of_finite`, `Ideal.exists_mem_isSMulRegular_iff`: `I`
-  contains an `M`-regular element if and only if it lies in no associated prime of `M`, for `M`
-  with finitely many associated primes, in particular for `M` finite.
+* `Ideal.exists_mem_isSMulRegular_iff_of_finite_associatedPrimes`,
+  `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
+  in no associated prime of `M`, for `M` with finitely many associated primes, in particular for
+  `M` finite.
 * `IsLocalRing.exists_isSMulRegular_of_depth_ne_zero`: over a Noetherian local ring, a finite
   module of nonzero depth has a regular element in the maximal ideal.
 * `TauCeti.exists_isWeaklyRegular_of_le_depth_localizedModule`: if `depth M_p ≥ n` at every prime
@@ -185,8 +186,9 @@ variable {R : Type u} [CommRing R] [IsNoetherianRing R] {M : Type v} [AddCommGro
 /-- **Prime avoidance for regular elements.** An ideal `I` of a Noetherian ring contains an
 element that is regular on a module `M` with finitely many associated primes if and only if `I`
 is contained in no associated prime of `M`. -/
-theorem Ideal.exists_mem_isSMulRegular_iff_of_finite (hfin : (associatedPrimes R M).Finite)
-    (I : Ideal R) : (∃ a ∈ I, IsSMulRegular M a) ↔ ∀ p ∈ associatedPrimes R M, ¬ I ≤ p := by
+theorem Ideal.exists_mem_isSMulRegular_iff_of_finite_associatedPrimes
+    (hfin : (associatedPrimes R M).Finite) (I : Ideal R) :
+    (∃ a ∈ I, IsSMulRegular M a) ↔ ∀ p ∈ associatedPrimes R M, ¬ I ≤ p := by
   have hzd := biUnion_associatedPrimes_eq_compl_regular R M
   refine ⟨fun ⟨a, ha, reg⟩ p hp hle ↦ ?_, fun h ↦ ?_⟩
   · have hmem : a ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp (hle ha)
@@ -206,7 +208,7 @@ element that is regular on a finite module `M` if and only if `I` is contained i
 prime of `M`. -/
 theorem Ideal.exists_mem_isSMulRegular_iff (I : Ideal R) :
     (∃ a ∈ I, IsSMulRegular M a) ↔ ∀ p ∈ associatedPrimes R M, ¬ I ≤ p :=
-  I.exists_mem_isSMulRegular_iff_of_finite (associatedPrimes.finite R M)
+  I.exists_mem_isSMulRegular_iff_of_finite_associatedPrimes (associatedPrimes.finite R M)
 
 /-- Over a Noetherian local ring, a finite module of nonzero depth has a regular element in the
 maximal ideal. -/
