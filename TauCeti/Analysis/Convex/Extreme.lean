@@ -131,7 +131,7 @@ theorem AffineIndependent.isExtreme_convexHull (hp : AffineIndependent 𝕜 p) (
     rw [show p j = b ⟨p j, hpt (Set.mem_range_self j)⟩ from rfl, b.coord_apply]
     simp [hp.injective.eq_iff]
   have hnn (i : ι) : convexHull 𝕜 (Set.range p) ⊆ {x | 0 ≤ c i x} :=
-    convexHull_min (by rintro _ ⟨j, rfl⟩; simp [hcp]; split_ifs <;> simp)
+    convexHull_min (by rintro _ ⟨j, rfl⟩; rw [Set.mem_ofPred_eq, hcp]; split_ifs <;> simp)
       ((convex_Ici 0).affine_preimage (c i))
   have hzero (i : ι) (hi : i ∉ s) : convexHull 𝕜 (p '' s) ⊆ {x | c i x = 0} :=
     convexHull_min (by rintro _ ⟨j, hj, rfl⟩; simp [hcp, ne_of_mem_of_not_mem hj hi |>.symm])

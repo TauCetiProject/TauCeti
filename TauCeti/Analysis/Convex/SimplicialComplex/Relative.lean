@@ -12,8 +12,9 @@ import TauCeti.Analysis.Convex.Extreme
 /-!
 # Extending a subdivision of a subcomplex
 
-A locally finite subdivision of a subcomplex extends to a locally finite subdivision of
-the whole complex, without changing the prescribed triangulation on the subcomplex.
+For a locally finite complex in a finite-dimensional real normed space, a locally finite
+subdivision of a subcomplex extends to a locally finite subdivision of the whole complex,
+without changing the prescribed triangulation on the subcomplex.
 This is the relative subdivision theorem used to make triangulations agree on overlaps.
 
 The restriction of a subdivision to any original simplex triangulates that simplex.
@@ -31,21 +32,23 @@ open Set
 
 namespace Geometry.SimplicialComplex
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {K L A : SimplicialComplex ℝ E} {s : Finset E}
+section LinearOrderedField
+
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] {K L A : SimplicialComplex 𝕜 E} {s : Finset E}
 
 /-- A subdivision of a subcomplex restricts to its intersection with every simplex of the
 containing complex. -/
 theorem IsSubdivision.space_restrict_of_le (h : L.IsSubdivision A) (hAK : A ≤ K)
     (hs : s ∈ K.faces) :
-    (L.restrict (convexHull ℝ (s : Set E))).space = L.space ∩ convexHull ℝ (s : Set E) := by
+    (L.restrict (convexHull 𝕜 (s : Set E))).space = L.space ∩ convexHull 𝕜 (s : Set E) := by
   classical
-  refine (space_restrict_subset (convex_convexHull ℝ _)).antisymm ?_
+  refine (space_restrict_subset (convex_convexHull 𝕜 _)).antisymm ?_
   rintro x ⟨hxL, hxs⟩
   obtain ⟨t, ht, hxt⟩ := mem_space_iff.mp hxL
   obtain ⟨u, hu, htu⟩ := h.exists_convexHull_subset ht
-  have hext : IsExtreme ℝ (convexHull ℝ (u : Set E))
-      (convexHull ℝ ((u : Set E) ∩ s)) := by
+  have hext : IsExtreme 𝕜 (convexHull 𝕜 (u : Set E))
+      (convexHull 𝕜 ((u : Set E) ∩ s)) := by
     have him : ((↑) : u → E) '' {v : u | (v : E) ∈ s} = (u : Set E) ∩ s := by
       ext v
       simp [and_comm]
@@ -56,8 +59,8 @@ theorem IsSubdivision.space_restrict_of_le (h : L.IsSubdivision A) (hAK : A ≤ 
       (K.indep (hAK hu)).isExtreme_convexHull {v : u | (v : E) ∈ s}
   have hxus := K.inter_subset_convexHull (hAK hu) hs ⟨htu hxt, hxs⟩
   have hx' := hext.convexHull_inter_subset htu ⟨hxt, hxus⟩
-  have hsub : (t : Set E) ∩ convexHull ℝ ((u : Set E) ∩ s) ⊆
-      ↑(t.filter fun v => v ∈ convexHull ℝ (s : Set E)) := by
+  have hsub : (t : Set E) ∩ convexHull 𝕜 ((u : Set E) ∩ s) ⊆
+      ↑(t.filter fun v => v ∈ convexHull 𝕜 (s : Set E)) := by
     intro v hv
     exact Finset.mem_filter.mpr ⟨hv.1, convexHull_mono inter_subset_right hv.2⟩
   have hxfilter := convexHull_mono hsub hx'
@@ -68,15 +71,21 @@ theorem IsSubdivision.space_restrict_of_le (h : L.IsSubdivision A) (hAK : A ≤ 
 
 /-- The restriction of a subdivision to an original simplex triangulates that simplex. -/
 theorem IsSubdivision.space_restrict (h : L.IsSubdivision K) (hs : s ∈ K.faces) :
-    (L.restrict (convexHull ℝ (s : Set E))).space = convexHull ℝ (s : Set E) := by
+    (L.restrict (convexHull 𝕜 (s : Set E))).space = convexHull 𝕜 (s : Set E) := by
   rw [h.space_restrict_of_le le_rfl hs, h.space_eq,
     inter_eq_right.mpr (convexHull_subset_space hs)]
 
+end LinearOrderedField
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {K L A : SimplicialComplex ℝ E}
+
 variable [FiniteDimensional ℝ E]
 
-/-- A locally finite subdivision of a subcomplex extends to a locally finite subdivision
-of the whole complex. Its restriction to the original subcomplex is exactly the prescribed
-subdivision, so no new simplex with all vertices there is introduced. -/
+/-- In a finite-dimensional real normed space, a locally finite subdivision of a subcomplex
+of a locally finite complex extends to a locally finite subdivision of the whole complex.
+Its restriction to the original subcomplex is exactly the prescribed subdivision, so no new
+simplex with all vertices there is introduced. -/
 theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
     (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E))
     (hL : LocallyFinite fun s : L.faces => convexHull ℝ (s : Set E)) :
@@ -92,10 +101,8 @@ theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
     convexHull_nonempty_iff.mpr (K.nonempty_of_mem_faces s.1.2)
   have hP : LocallyFinite P := hK.comp_injective Subtype.val_injective
   have hri : Pairwise fun s t : J => Disjoint (intrinsicInterior ℝ (P s))
-      (intrinsicInterior ℝ (P t)) := by
-    intro s t hst
-    exact Set.disjoint_left.mpr fun x hxs hxt =>
-      hst (Subtype.ext (Subtype.ext (eq_of_mem_intrinsicInterior s.1.2 t.1.2 hxs hxt)))
+      (intrinsicInterior ℝ (P t)) :=
+    K.pairwise_disjoint_intrinsicInterior.comp_of_injective Subtype.val_injective
   have hfr (s : J) : intrinsicFrontier ℝ (P s) ⊆
       L.space ∪ ⋃ (t : J) (_ : t ≠ s ∧ P t ⊆ P s), P t := by
     intro x hx
@@ -112,10 +119,8 @@ theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
         exact hx.2
       exact hxi (hjs ▸ hxt)
   have hLi (s : J) : Disjoint (intrinsicInterior ℝ (P s)) L.space := by
-    refine Set.disjoint_left.mpr fun x hxs hxL => ?_
-    obtain ⟨t, ht, hxt⟩ := mem_space_iff.mp (h.space_eq ▸ hxL)
-    obtain ⟨u, hu, -, hxu⟩ := exists_mem_faces_subset_mem_intrinsicInterior ht hxt
-    exact s.2 (eq_of_mem_intrinsicInterior s.1.2 (hAK hu) hxs hxu ▸ hu)
+    rw [h.space_eq]
+    exact disjoint_intrinsicInterior_space_of_not_mem hAK s.1.2 s.2
   -- Each attachment meets the prescribed subdivision in finitely many boundary simplices.
   obtain ⟨M, hML, hMs, hMP, hMf⟩ := exists_subdivision_extending L P hPc hPv hPne hP hri hfr
     (fun s x ⟨hxP, hxL⟩ => (h.space_restrict_of_le hAK s.1.2).symm ▸ ⟨hxL, hxP⟩)
