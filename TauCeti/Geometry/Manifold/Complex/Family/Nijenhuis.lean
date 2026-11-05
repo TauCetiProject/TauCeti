@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Nijenhuis
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
-import Mathlib.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Nijenhuis equations in a product trivialization
@@ -148,9 +148,11 @@ theorem verticalTerm_def (j : B × V → V →L[ℝ] V) (p : B × V) (v w : V) :
 theorem fderiv_fiber_connection {α : B × V → B →L[ℝ] V} {p : B × V}
     (hα : DifferentiableAt ℝ α p) (a : B) (v : V) :
     fderiv ℝ (fun y ↦ α (p.1, y) a) p.2 v = fderiv ℝ α p (0, v) a := by
-  simpa using congrArg (fun D : V →L[ℝ] V ↦ D v)
-    (((hα.hasFDerivAt.comp p.2 (hasFDerivAt_prodMk_right p.1 p.2)).clm_apply
-      (hasFDerivAt_const a p.2)).fderiv)
+  have hd : DifferentiableAt ℝ (fun q : B × V ↦ α q a) (p.1, p.2) := by
+    rw [Prod.mk.eta]; exact hα.clm_apply (differentiableAt_const a)
+  rw [fderiv_slice_right hd, Prod.mk.eta, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.inr_apply, fderiv_clm_apply hα (differentiableAt_const a)]
+  simp
 
 /-- The native bracket of two fibre vector fields from `α`, in total-space derivatives.
 The source bracket in `horizontalTerm` is its negative. -/

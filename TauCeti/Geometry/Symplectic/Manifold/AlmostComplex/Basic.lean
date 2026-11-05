@@ -31,7 +31,8 @@ structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorph
 
 * `TauCeti.SmoothAlmostComplexStructure`: a smooth tangent-bundle endomorphism squaring to `-1`.
 * `TauCeti.SmoothAlmostComplexStructure.almostComplexStructureAt`: the pointwise almost complex
-  structure on a tangent space.
+  structure on a tangent space, with model-space complex-linearity bridge
+  `TauCeti.SmoothAlmostComplexStructure.isComplexLinearMap_almostComplexStructureAt_model_iff`.
 * `TauCeti.SmoothAlmostComplexStructure.contMDiff_apply`: applying the structure to a `C^n` vector
   field along a `C^n` map gives a `C^n` vector field along that map.
 * `TauCeti.SmoothAlmostComplexStructure.mdifferentiableAt_apply`: the pointwise differentiable
@@ -122,6 +123,27 @@ lemma almostComplexStructureAt_apply (J : SmoothAlmostComplexStructure I M) (x :
     (v : TangentSpace I x) :
     J.almostComplexStructureAt x v = J x v :=
   (rfl)
+
+/-- On self-modelled normed spaces, `IsComplexLinearMap` between `almostComplexStructureAt` values
+is pointwise intertwining of `toEndomorphism` on the model spaces (bridging `TangentSpace 𝓘(ℝ, V) x`
+and `V`, where `rw` cannot match `.toLinearMap` at `implicit` transparency). -/
+theorem isComplexLinearMap_almostComplexStructureAt_model_iff
+    {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    (J₁ : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (J₂ : SmoothAlmostComplexStructure 𝓘(ℝ, W) W)
+    (v : V) (w : W) (L : V →ₗ[ℝ] W) :
+    IsComplexLinearMap (J₁.almostComplexStructureAt v) (J₂.almostComplexStructureAt w) L ↔
+      ∀ u : V, L ((J₁.toEndomorphism v : V →L[ℝ] V) u) =
+        (J₂.toEndomorphism w : W →L[ℝ] W) (L u) := by
+  let K₁ : AlmostComplexStructure V := J₁.almostComplexStructureAt v
+  let K₂ : AlmostComplexStructure W := J₂.almostComplexStructureAt w
+  have hK₁ : K₁.toLinearMap = (J₁.toEndomorphism v : V →L[ℝ] V).toLinearMap :=
+    J₁.almostComplexStructureAt_toLinearMap v
+  have hK₂ : K₂.toLinearMap = (J₂.toEndomorphism w : W →L[ℝ] W).toLinearMap :=
+    J₂.almostComplexStructureAt_toLinearMap w
+  -- Replace `TangentSpace`-typed structures with `K₁, K₂` so `simp` sees model-space types.
+  change IsComplexLinearMap K₁ K₂ L ↔ _
+  simp only [isComplexLinearMap_iff_apply, hK₁, hK₂]
+  rfl
 
 /-- Applying a smooth almost complex structure twice gives the negative tangent vector. -/
 @[simp]

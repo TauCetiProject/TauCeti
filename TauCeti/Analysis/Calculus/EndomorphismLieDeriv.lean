@@ -222,11 +222,11 @@ theorem lieDerivEndomorphism_sub_left (hU : DifferentiableAt 𝕜 U x)
   rw [sub_eq_add_neg, lieDerivEndomorphism_add_left hU hV.neg,
     lieDerivEndomorphism_neg_left, ← sub_eq_add_neg]
 
-theorem lieDerivEndomorphism_const_smul_left (c : 𝕜) (hV : DifferentiableAt 𝕜 V x) :
+theorem lieDerivEndomorphism_const_smul_left (c : 𝕜) (V : E → E) (A : E → E →L[𝕜] E) (x : E) :
     lieDerivEndomorphism (c • V) A x = c • lieDerivEndomorphism V A x := by
   ext w
-  simp only [lieDerivEndomorphism_apply, fderiv_const_smul hV, Pi.smul_apply,
-    smul_apply, map_smul, smul_sub, smul_add]
+  rw [lieDerivEndomorphism_apply, fderiv_const_smul_field (f := V) c]
+  simp [lieDerivEndomorphism_apply, smul_sub, smul_add]
 
 theorem _root_.Filter.EventuallyEq.lieDerivEndomorphismWithin_eq_nhds
     (hV : V₁ =ᶠ[𝓝 x] V) (hA : A₁ =ᶠ[𝓝 x] A) :
@@ -346,9 +346,8 @@ theorem lieDerivEndomorphism_lieBracket {n : ℕ∞ω} (hn : minSmoothness 𝕜 
     hA_ev.mono fun y hy ↦ by
       simp only [Pi.add_apply, lieDerivEndomorphism_apply_eq_lieBracket hy w, sub_add_cancel]
   have hZ_diff (Z : E → E) (hZ : ContDiffAt 𝕜 n Z x) :
-      DifferentiableAt 𝕜 (lieBracket 𝕜 Z (fun _ ↦ w)) x := by
-    rw [show lieBracket 𝕜 Z (fun _ ↦ w) = fun y ↦ -(fderiv 𝕜 Z y w) by ext y; simp [lieBracket_eq]]
-    exact (((hZ.fderiv_right h11n).clm_apply contDiffAt_const).differentiableAt one_ne_zero).neg
+      DifferentiableAt 𝕜 (lieBracket 𝕜 Z (fun _ ↦ w)) x :=
+    (hZ.lieBracket_vectorField hc h11n).differentiableAt one_ne_zero
   have hstep {Y Z : E → E} (hZ : ContDiffAt 𝕜 n Z x) :
       lieBracket 𝕜 Y (lieBracket 𝕜 Z (fun y ↦ A y w)) x =
         lieDerivEndomorphism Y (lieDerivEndomorphism Z A) x w +
@@ -377,9 +376,9 @@ theorem lieDerivEndomorphism_fderiv_sub_fderiv {n : ℕ∞ω} (hn : minSmoothnes
     lieDerivEndomorphism (fun y ↦ fderiv 𝕜 U y (V y) - fderiv 𝕜 V y (U y)) A x =
       lieDerivEndomorphism V (lieDerivEndomorphism U A) x -
         lieDerivEndomorphism U (lieDerivEndomorphism V A) x := by
-  rw [show (fun y ↦ fderiv 𝕜 U y (V y) - fderiv 𝕜 V y (U y)) = -lieBracket 𝕜 U V by
-      ext y; simp [lieBracket_eq],
-    lieDerivEndomorphism_neg_left, lieDerivEndomorphism_lieBracket hn hU hV hA, neg_sub]
+  have hbr : (fun y ↦ fderiv 𝕜 U y (V y) - fderiv 𝕜 V y (U y)) = -lieBracket 𝕜 U V := by
+    ext y; simp [lieBracket_eq]
+  rw [hbr, lieDerivEndomorphism_neg_left, lieDerivEndomorphism_lieBracket hn hU hV hA, neg_sub]
 
 /-! ### Nijenhuis–Lie-derivative identities -/
 

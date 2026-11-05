@@ -261,9 +261,9 @@ theorem isPseudoholomorphicAt_fst_iff_toEndomorphism_eq_blockEndomorphism
   refine ⟨fun h ↦ ContinuousLinearMap.ext fun w ↦ Prod.ext (by simp [h w]) ?_,
     fun h w ↦ by
       simpa [blockEndomorphism_apply] using congrArg (fun L : (B × V) →L[ℝ] B × V ↦ (L w).1) h⟩
+  have hKw : K w = K (w.1, 0) + K (0, w.2) := by rw [← map_add]; congr 1; ext <;> simp
   simp only [blockEndomorphism_apply]
-  exact congrArg Prod.snd
-    (show K w = K (w.1, 0) + K (0, w.2) by rw [← map_add]; congr 1; ext <;> simp)
+  exact congrArg Prod.snd hKw
 
 /-- When `Prod.fst` is pseudoholomorphic at `p`, the extracted blocks satisfy `j(p)² = -1` and
 `α(p)(i a) + j(p)(α(p) a) = 0`. -/
