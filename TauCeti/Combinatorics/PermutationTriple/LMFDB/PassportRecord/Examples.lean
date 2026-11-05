@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PermutationTriple.LMFDB.BelyiRecord.Label
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.GroupLabel
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Label
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Primitivization
@@ -29,7 +30,8 @@ rotation. In both rows the stored order triple is not sorted, so it differs from
 Their full stored passport labels also parse and agree with the certified group and partitions.
 The map row `2T1-2_2_1.1-a` certifies the primitivization of the second row: the quotient of
 `torusTriple` by the translates of its block is the double cover of the sphere branched over `0`
-and `1`.
+and `1`. Its stored map label extends its passport label and agrees with its stored partitions, and
+it is a mathematical label of every passport for which the row is valid.
 
 The stored geometry type is not a function of the stored genus. The triples of the frozen
 records `4T4-3.1_3.1_3.1-a` and `4T5-4_4_3.1-a` have genus zero with Euclidean geometry and
@@ -365,6 +367,46 @@ theorem isPrimitivizationOf_torusPassportRecord :
         obtain rfl := List.mem_singleton.mp hs
         rw [toTriple_doubleCoverStoredTriple, ← computedGenus_eq]
         decide }
+
+/-! ### The map label `2T1-2_2_1.1-a` -/
+
+namespace BelyiRecord
+
+/-- The map label of the double cover parses to the passport `2T1-2_2_1.1` and the orbit `a`. -/
+theorem parseMapLabel_doubleCoverBelyiRecord :
+    parseMapLabel 2 doubleCoverBelyiRecord.label =
+      some (⟨⟨0, by simp⟩, {2}, {2}, {1, 1}⟩, "a") := by
+  rw [parseMapLabel_eq_some_iff_append]
+  refine ⟨"2T1-2_2_1.1", by decide +kernel, by decide, by decide, ?_⟩
+  rw [parsePassportLabel_eq_some_iff]
+  refine ⟨"2T1", "2_2_1.1", "2", "2", "1.1", by decide +kernel,
+    by decide +kernel, ?_, ?_, ?_, ?_⟩
+  · simp only [parseTransitiveGroupLabel_eq_some_iff, transitiveGroupLabelString_def]
+    decide +kernel
+  · exact parseCyclePartition_eq_some_iff.mpr ⟨[2], by decide +kernel, rfl, by simp, rfl⟩
+  · exact parseCyclePartition_eq_some_iff.mpr ⟨[2], by decide +kernel, rfl, by simp, rfl⟩
+  · exact parseCyclePartition_eq_some_iff.mpr ⟨[1, 1], by decide +kernel, rfl, by simp, rfl⟩
+
+/-- The stored map label of the double cover extends its passport label and agrees with its
+stored partitions. -/
+theorem hasValidLabel_doubleCoverBelyiRecord : doubleCoverBelyiRecord.HasValidLabel :=
+  (hasValidLabel_iff_of_parse parseMapLabel_doubleCoverBelyiRecord).mpr ⟨by decide +kernel, rfl⟩
+
+-- The certified label of the double cover is a mathematical label of every passport for which the
+-- row is valid: the stored transposition generates the group `2T1`.
+example {P : PassportSpec 2} (h : doubleCoverBelyiRecord.IsValidFor P) :
+    P.HasLabel ⟨⟨0, by simp⟩, {2}, {2}, {1, 1}⟩ := by
+  refine (h.hasLabel_iff_closure hasValidLabel_doubleCoverBelyiRecord
+    parseMapLabel_doubleCoverBelyiRecord (List.mem_singleton_self _)).mpr
+    ((transitiveGroupLabel_iff _ _).mpr ⟨1, ?_⟩)
+  have hperm : ∀ σ : Perm (Fin 2), σ = 1 ∨ σ = swap 0 1 := by decide
+  rw [referenceSubgroup_two, eq_top_iff]
+  rintro σ -
+  rcases hperm σ with rfl | rfl
+  · exact one_mem _
+  · exact ⟨_, Subgroup.subset_closure (Set.mem_insert _ _), by simp [doubleCoverStoredTriple]⟩
+
+end BelyiRecord
 
 /-! ### Geometry type is not a function of genus -/
 
