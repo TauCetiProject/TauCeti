@@ -150,6 +150,45 @@ theorem mem_ambientStabilization (V : finiteGrassmannian 𝕜 r N) (v : Fin (N +
       rw [Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castSucc_injective N),
         Fin.init]
 
+/-- The inclusion `𝕜^N → 𝕜^M`, for `N ≤ M`, onto the first `N` coordinates, on planes. Its
+one-step case is `ambientStabilization`. -/
+noncomputable def ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N) :
+    finiteGrassmannian 𝕜 r M :=
+  map (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h))
+    (Function.extend_injective (Fin.castLE_injective h) 0) V
+
+theorem coe_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N) :
+    (ambientInclusion h V).1 = V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h)) :=
+  coe_map _ _ V
+
+theorem ambientInclusion_injective {M : ℕ} (h : N ≤ M) :
+    Function.Injective (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=
+  map_injective _ _
+
+@[simp]
+theorem ambientInclusion_refl (V : finiteGrassmannian 𝕜 r N) :
+    ambientInclusion le_rfl V = V := by
+  apply Subtype.ext
+  have : Fin.castLE (le_refl N) = id := funext fun i ↦ Fin.castLE_refl _ i
+  rw [coe_ambientInclusion, this, Function.ExtendByZero.linearMap_id, Submodule.map_id]
+
+@[simp]
+theorem ambientInclusion_ambientInclusion {M L : ℕ} (h : N ≤ M) (h' : M ≤ L)
+    (V : finiteGrassmannian 𝕜 r N) :
+    ambientInclusion h' (ambientInclusion h V) = ambientInclusion (h.trans h') V := by
+  apply Subtype.ext
+  rw [coe_ambientInclusion, coe_ambientInclusion, coe_ambientInclusion, ← Submodule.map_comp,
+    ← Function.ExtendByZero.linearMap_comp _ (Fin.castLE_injective h) (Fin.castLE_injective h'),
+    Fin.castLE_comp_castLE]
+
+/-- The one-step ambient inclusion is ambient stabilization. -/
+@[simp]
+theorem ambientInclusion_succ (V : finiteGrassmannian 𝕜 r N) :
+    ambientInclusion (Nat.le_succ N) V = ambientStabilization V := by
+  apply Subtype.ext
+  have : Fin.castLE (Nat.le_succ N) = Fin.castSucc := funext fun i ↦ Fin.ext (by simp)
+  rw [coe_ambientInclusion, coe_ambientStabilization, this]
+
 /-- Rank and ambient stabilization commute as actual maps, with no intervening
 coordinate permutation or homotopy. -/
 theorem ambientStabilization_rankStabilization (V : finiteGrassmannian 𝕜 r N) :
@@ -191,6 +230,12 @@ theorem continuous_ambientStabilization [TopologicalSpace 𝕜] :
     Continuous (ambientStabilization : finiteGrassmannian 𝕜 r N → _) :=
   continuous_map _ _ (Function.ExtendByZero.continuous_linearMap 𝕜 Fin.castSucc)
 
+/-- Including into a larger coordinate space is continuous for the frame-quotient topologies. -/
+@[fun_prop]
+theorem continuous_ambientInclusion [TopologicalSpace 𝕜] {M : ℕ} (h : N ≤ M) :
+    Continuous (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=
+  continuous_map _ _ (Function.ExtendByZero.continuous_linearMap 𝕜 _)
+
 /-- A plane is in the image of rank stabilization exactly when it contains the new
 first coordinate vector. -/
 theorem mem_range_rankStabilization (W : finiteGrassmannian 𝕜 (r + 1) (N + 1)) :
@@ -229,6 +274,12 @@ theorem isClosedEmbedding_rankStabilization :
 theorem isClosedEmbedding_ambientStabilization :
     Topology.IsClosedEmbedding (ambientStabilization : finiteGrassmannian 𝕜 r N → _) :=
   continuous_ambientStabilization.isClosedEmbedding ambientStabilization_injective
+
+/-- Over the real or complex numbers, the inclusion into a larger coordinate space is a closed
+embedding. -/
+theorem isClosedEmbedding_ambientInclusion {M : ℕ} (h : N ≤ M) :
+    Topology.IsClosedEmbedding (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=
+  (continuous_ambientInclusion h).isClosedEmbedding (ambientInclusion_injective h)
 
 /-- The locus of planes containing the first coordinate line is closed. -/
 theorem isClosed_single_zero_mem :
