@@ -283,6 +283,10 @@ logarithm `TauCeti.hazewinkelLog` (`∑ₙ mₙ(v) X^(pⁿ)` for `p > 1`). -/
 noncomputable def hazewinkelFormalGroup : FormalGroup K :=
   (hazewinkelLog p v)⁻¹ • FormalGroup.𝔾ₐ
 
+/-- Hazewinkel's formal group is the additive law transported by the inverse logarithm. -/
+theorem hazewinkelFormalGroup_def :
+    hazewinkelFormalGroup p v = (hazewinkelLog p v)⁻¹ • FormalGroup.𝔾ₐ := (rfl)
+
 instance : (hazewinkelFormalGroup p v).IsComm :=
   FormalGroup.instIsCommSMul _ _
 
