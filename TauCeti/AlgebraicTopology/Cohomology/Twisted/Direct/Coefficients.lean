@@ -43,31 +43,7 @@ universe u v w
 
 namespace TauCeti.LocalCoefficientSystem
 
-variable (R : Type u) [Ring R] (X : TopCat.{v})
-
-/-- Direct singular cochains, functorially in their local coefficient system. The abbreviation
-keeps the objects and maps identified with the existing cochain complexes and coefficient maps. -/
-abbrev cochainComplexFunctor :
-    LocalCoefficientSystem.{u, v, w} R X ⥤ CochainComplex (ModuleCat.{max v w} R) ℕ where
-  obj := cochainComplex
-  map := cochainComplexCoefficientMap
-  map_id := cochainComplexCoefficientMap_id
-  map_comp := cochainComplexCoefficientMap_comp
-
-/-- The direct cochain functor is additive in the local coefficient system. -/
-instance : (cochainComplexFunctor.{u, v, w} R X).Additive where
-  map_add {L K} η θ := by
-    apply HomologicalComplex.hom_ext
-    intro n
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro c
-    apply cochainComplex_ext
-    intro σ
-    simp only [cochainComplexFunctor, HomologicalComplex.add_f_apply, ModuleCat.hom_add,
-      LinearMap.add_apply, map_add, cochainComplexCoefficientMap_eval.{u, v, w}, NatTrans.app_add]
-
-variable {R X}
+variable {R : Type u} [Ring R] {X : TopCat.{v}}
 
 /-- A short exact sequence of local systems induces a short exact sequence of direct singular
 cochain complexes, without projectivity assumptions on any of the fibres. -/
@@ -201,14 +177,5 @@ lemma cohomologyδ_naturality (hT : T.ShortExact) (φ : S ⟶ T)
     HomologicalComplex.HomologySequence.δ_naturality
       ((cochainComplexFunctor R X).mapShortComplex.map φ)
       (hS.map_cochainComplexFunctor) (hT.map_cochainComplexFunctor) n m h
-
-/-- The coefficient long exact sequence starts with an injection
-`0 ⟶ H⁰(X; L₁) ⟶ H⁰(X; L₂)`. -/
-lemma mono_cohomologyCoefficientMap_zero : Mono (cohomologyCoefficientMap S.f 0) := by
-  rw [cohomologyCoefficientMap_eq]
-  have : Mono (cochainComplexCoefficientMap S.f) :=
-    (hS.map_cochainComplexFunctor).mono_f
-  exact HomologicalComplex.mono_homologyMap_of_mono_of_not_rel
-    (cochainComplexCoefficientMap S.f) 0 (by simp)
 
 end CategoryTheory.ShortComplex.ShortExact
