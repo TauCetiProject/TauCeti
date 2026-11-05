@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.Fiber
 public import TauCeti.Algebra.Module.ZLattice.Family.HomeomorphProd
@@ -90,17 +91,23 @@ def torusFamilyParallelTransport (y y' : Y) : E ≃L[ℝ] E :=
   let b := Module.Free.chooseBasis ℤ Λ
   (periodBasis P b hinj y).equivFunL.trans (periodBasis P b hinj y').equivFunL.symm
 
-/-- Period parallel transport carries each period `P y l` at `y` to the corresponding period
-`P y' l` at `y'`. -/
-@[simp]
-theorem torusFamilyParallelTransport_period (y y' : Y) (l : Λ) :
-    torusFamilyParallelTransport P hinj y y' (P y l) = P y' l := by
-  let b := Module.Free.chooseBasis ℤ Λ
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
+private theorem periodBasis_equivFunL_trans_symm_period {ι : Type*} [Finite ι]
+    (b : Basis ι ℤ Λ) (y y' : Y) (l : Λ) :
+    ((periodBasis P b hinj y).equivFunL.trans (periodBasis P b hinj y').equivFunL.symm)
+      (P y l) = P y' l := by
   -- Unfold the composition of `equivFunL` and `equivFunL.symm` to `equivFun` on `P y l`.
   change (periodBasis P b hinj y').equivFun.symm ((periodBasis P b hinj y).equivFun (P y l)) =
     P y' l
   rw [periodBasis_equivFun_period P b hinj y l, ← periodBasis_equivFun_period P b hinj y' l,
     LinearEquiv.symm_apply_apply]
+
+/-- Period parallel transport carries each period `P y l` at `y` to the corresponding period
+`P y' l` at `y'`. -/
+@[simp]
+theorem torusFamilyParallelTransport_period (y y' : Y) (l : Λ) :
+    torusFamilyParallelTransport P hinj y y' (P y l) = P y' l :=
+  periodBasis_equivFunL_trans_symm_period P hinj (Module.Free.chooseBasis ℤ Λ) y y' l
 
 /-- Any real-linear map sending `P y l` to `P y' l` for all `l : Λ` agrees with
 `torusFamilyParallelTransport`. -/
@@ -119,13 +126,8 @@ theorem torusFamilyParallelTransport_eq_of_basis {ι : Type*} [Finite ι]
       (periodBasis P b hinj y).equivFunL.trans (periodBasis P b hinj y').equivFunL.symm := by
   apply ContinuousLinearEquiv.toLinearEquiv_injective
   apply LinearEquiv.toLinearMap_injective
-  symm
-  refine eq_torusFamilyParallelTransport P hinj _ fun l ↦ ?_
-  -- Unfold the composition of `equivFunL` and `equivFunL.symm` to `equivFun` on `P y l`.
-  change (periodBasis P b hinj y').equivFun.symm ((periodBasis P b hinj y).equivFun (P y l)) =
-    P y' l
-  rw [periodBasis_equivFun_period P b hinj y l, ← periodBasis_equivFun_period P b hinj y' l,
-    LinearEquiv.symm_apply_apply]
+  exact (eq_torusFamilyParallelTransport P hinj _
+    (periodBasis_equivFunL_trans_symm_period P hinj b y y')).symm
 
 @[simp]
 theorem torusFamilyParallelTransport_self (y : Y) :

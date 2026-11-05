@@ -158,20 +158,39 @@ theorem oneEquiv_torusFamilyHomologyMarking
     (torusFamilyFiberHomeomorph P y hcont).symm
   set d := ContinuousMap.singularHomologyMap ℤ 1 e_symm c
   apply hinj y
-  rw [torusFamilyHomologyMarking_apply, torusFamilyMarking_apply]
-  have hnat := LinearMap.congr_fun
-    (exteriorPower.oneEquiv_naturality (LinearEquiv.ofInjective (P y) (hinj y)).symm.toLinearMap)
-    ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)
-  change exteriorPower.oneEquiv ℤ Λ
-      (((LinearEquiv.ofInjective (P y) (hinj y)).symm.exteriorPower 1)
+  rw [torusFamilyHomologyMarking_apply, torusFamilyMarking_apply,
+    ← LinearEquiv.coe_toLinearMap ((LinearEquiv.ofInjective (P y) (hinj y)).symm.exteriorPower 1),
+    LinearEquiv.exteriorPower_toLinearMap]
+  have hnat : exteriorPower.oneEquiv ℤ Λ
+      (exteriorPower.map 1 (LinearEquiv.ofInjective (P y) (hinj y)).symm.toLinearMap
         ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)) =
-    (LinearEquiv.ofInjective (P y) (hinj y)).symm
-      (exteriorPower.oneEquiv ℤ (LinearMap.range (P y))
-        ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)) at hnat
+      (LinearEquiv.ofInjective (P y) (hinj y)).symm
+        (exteriorPower.oneEquiv ℤ (LinearMap.range (P y))
+          ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)) :=
+    LinearMap.congr_fun
+      (exteriorPower.oneEquiv_naturality (LinearEquiv.ofInjective (P y) (hinj y)).symm.toLinearMap)
+      ((LinearMap.range (P y)).orbitRelQuotientHomologyEquiv 1 d)
   have hrhs (x : LinearMap.range (P y)) :
       P y ((LinearEquiv.ofInjective (P y) (hinj y)).symm x) = x.1 :=
     congrArg Subtype.val ((LinearEquiv.ofInjective (P y) (hinj y)).apply_symm_apply x)
   rw [hnat, hrhs, hrhs, Submodule.coe_oneEquiv_orbitRelQuotientHomologyEquiv]
+
+/-- `torusFamilyHomologyMarking` typed directly on `(TopCat.ofHom ...).fiber y`, which is
+definitionally `TopCat.of {z | torusFamilyProjection P z = y}` at semireducible transparency. -/
+private def torusFamilyFiberHomologyMarking (n : ℕ) :
+    letI := periodAddAction P
+    ((singularChains ℤ).obj ((TopCat.ofHom ⟨torusFamilyProjection P,
+      continuous_torusFamilyProjection P⟩).fiber y)).homology n ≃ₗ[ℤ] ⋀[ℤ]^n Λ :=
+  torusFamilyHomologyMarking P hcont hinj y n
+
+@[simp]
+private theorem torusFamilyFiberHomologyMarking_apply (n : ℕ)
+    (c : letI := periodAddAction P; ((singularChains ℤ).obj ((TopCat.ofHom
+      ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).fiber y)).homology n) :
+    letI := periodAddAction P
+    torusFamilyFiberHomologyMarking P hcont hinj y n c =
+      torusFamilyHomologyMarking P hcont hinj y n c :=
+  rfl
 
 end HomologyMarking
 
@@ -204,12 +223,10 @@ private theorem torusFamilyHomologyMarking_map {Y₀ Y₁ E : Type}
       ((singularChains ℤ).obj (TopCat.of
         {z : AddAction.orbitRel.Quotient Λ₀ (Y₀ × E) |
           torusFamilyProjection P₀ z = y₀})).homology n) :
-    letI := periodAddAction P₀
-    letI := periodAddAction P₁
+    letI := periodAddAction P₀; letI := periodAddAction P₁
     torusFamilyHomologyMarking P₁ hcont₁ hinj₁ y₁ n (ContinuousMap.singularHomologyMap ℤ n g c) =
       (α.exteriorPower n) (torusFamilyHomologyMarking P₀ hcont₀ hinj₀ y₀ n c) := by
-  let _ := periodAddAction P₀
-  let _ := periodAddAction P₁
+  let _ := periodAddAction P₀; let _ := periodAddAction P₁
   let e₀s : C({z : AddAction.orbitRel.Quotient Λ₀ (Y₀ × E) | torusFamilyProjection P₀ z = y₀},
       AddAction.orbitRel.Quotient (LinearMap.range (P₀ y₀)) E) :=
     (torusFamilyFiberHomeomorph P₀ y₀ hcont₀).symm
@@ -224,16 +241,15 @@ private theorem torusFamilyHomologyMarking_map {Y₀ Y₁ E : Type}
     ext x
     obtain ⟨w, rfl⟩ := (torusFamilyFiberHomeomorph P₀ y₀ hcont₀).surjective x
     simpa [e₀s, e₁s] using hg w
-  rw [torusFamilyHomologyMarking_apply, torusFamilyHomologyMarking_apply]
-  change exteriorPower.map n (LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.toLinearMap
-      ((LinearMap.range (P₁ y₁)).orbitRelQuotientHomologyEquiv n
-        (ContinuousMap.singularHomologyMap ℤ n e₁s
-          (ContinuousMap.singularHomologyMap ℤ n g c))) =
-    exteriorPower.map n α.toLinearMap
-      (exteriorPower.map n (LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.toLinearMap
-        ((LinearMap.range (P₀ y₀)).orbitRelQuotientHomologyEquiv n
-          (ContinuousMap.singularHomologyMap ℤ n e₀s c)))
-  rw [← ContinuousMap.singularHomologyMap_comp, hcomp, ContinuousMap.singularHomologyMap_comp,
+  rw [torusFamilyHomologyMarking_apply, torusFamilyHomologyMarking_apply,
+    ← LinearEquiv.coe_toLinearMap
+      ((LinearEquiv.ofInjective (P₁ y₁) (hinj₁ y₁)).symm.exteriorPower n),
+    LinearEquiv.exteriorPower_toLinearMap,
+    ← LinearEquiv.coe_toLinearMap (α.exteriorPower n), LinearEquiv.exteriorPower_toLinearMap,
+    ← LinearEquiv.coe_toLinearMap
+      ((LinearEquiv.ofInjective (P₀ y₀) (hinj₀ y₀)).symm.exteriorPower n),
+    LinearEquiv.exteriorPower_toLinearMap,
+    ← ContinuousMap.singularHomologyMap_comp, hcomp, ContinuousMap.singularHomologyMap_comp,
     Submodule.orbitRelQuotientHomologyEquiv_singularHomologyMap _ _ hφ hφL,
     ← LinearMap.comp_apply, ← LinearMap.comp_apply,
     ← exteriorPower.map_comp, ← exteriorPower.map_comp]
@@ -261,14 +277,11 @@ variable {Y Λ E : Type} [TopologicalSpace Y]
 function `L` of `torusFamilyProjection P` and any path `γ : Path y₀ y₁`, the map induced on `Hₙ` by
 `L.transport γ` intertwines the canonical markings over `y₀` and `y₁`. -/
 theorem torusFamilyHomologyMarking_transport {y₀ y₁ : Y}
-    (L : letI := periodAddAction P
-      LiftingFunction
-        (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+    (L : letI := periodAddAction P; LiftingFunction
+      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
     (γ : Path y₀ y₁) (n : ℕ)
-    (c : letI := periodAddAction P
-      ((singularChains ℤ).obj
-        ((TopCat.ofHom ⟨torusFamilyProjection P,
-          continuous_torusFamilyProjection P⟩).fiber y₀)).homology n) :
+    (c : letI := periodAddAction P; ((singularChains ℤ).obj ((TopCat.ofHom
+      ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).fiber y₀)).homology n) :
     letI := periodAddAction P
     torusFamilyHomologyMarking P hcont hinj y₁ n
         (ContinuousMap.singularHomologyMap ℤ n (L.transport γ) c) =
@@ -282,25 +295,23 @@ theorem torusFamilyHomologyMarking_transport {y₀ y₁ : Y}
       ((torusFamilyLiftingFunction P hcont hinj).transport γ).continuous⟩
   let c₀ : ((singularChains ℤ).obj (TopCat.of
       {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀})).homology n := c
+  -- `(TopCat.ofHom ...).fiber y₀` is definitionally the subtype `TopCat.of {z | ... = y₀}` on
+  -- which `torusFamilyHomologyMarking` is stated.
   change torusFamilyHomologyMarking P hcont hinj y₁ n (ContinuousMap.singularHomologyMap ℤ n g c₀) =
     torusFamilyHomologyMarking P hcont hinj y₀ n c₀
   exact (torusFamilyHomologyMarking_map P hcont hinj y₀ P hcont hinj y₁ (.refl ℤ Λ)
     (torusFamilyParallelTransport P hinj y₀ y₁).continuous
     (torusFamilyParallelTransport_le_comap_range P hinj y₀ y₁)
     (torusFamilyParallelTransport_period P hinj y₀ y₁) g
-    (torusFamilyLiftingFunction_transport_fiberHomeomorph P hcont hinj γ) n c₀).trans
-    (by simp [LinearEquiv.exteriorPower])
+    (torusFamilyLiftingFunction_transport_fiberHomeomorph P hcont hinj γ) n c₀).trans (by simp)
 
 /-- **Hurewicz transport preserves the degree-one marking.** -/
 theorem torusFamilyMarking_transport {y₀ y₁ : Y}
-    (L : letI := periodAddAction P
-      LiftingFunction
-        (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+    (L : letI := periodAddAction P; LiftingFunction
+      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
     (γ : Path y₀ y₁)
-    (c : letI := periodAddAction P
-      ((singularChains ℤ).obj
-        ((TopCat.ofHom ⟨torusFamilyProjection P,
-          continuous_torusFamilyProjection P⟩).fiber y₀)).homology 1) :
+    (c : letI := periodAddAction P; ((singularChains ℤ).obj ((TopCat.ofHom
+      ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).fiber y₀)).homology 1) :
     letI := periodAddAction P
     torusFamilyMarking P hcont hinj y₁ (ContinuousMap.singularHomologyMap ℤ 1 (L.transport γ) c) =
       torusFamilyMarking P hcont hinj y₀ c :=
@@ -310,9 +321,8 @@ theorem torusFamilyMarking_transport {y₀ y₁ : Y}
       (torusFamilyHomologyMarking_transport P hcont hinj L γ 1 c)).trans
       (oneEquiv_torusFamilyHomologyMarking P hcont hinj y₀ c)
 
-variable (L : letI := periodAddAction P
-  LiftingFunction
-    (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+variable (L : letI := periodAddAction P; LiftingFunction
+  (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
 
 /-- **Canonical trivialization of the `n`-th fiber homology local system** of a torus family,
 identifying `TauCeti.fiberLocalSystem L ℤ n` with the constant local system `⋀[ℤ]^n Λ` over `Y`. -/
@@ -323,17 +333,33 @@ def torusFamilyHomologyLocalSystemIso (n : ℕ) :
   letI := periodAddAction P
   NatIso.ofComponents
     (fun b ↦ fiberLocalSystemSingularObjIso L ℤ n b ≪≫
-      (torusFamilyHomologyMarking P hcont hinj b.as n).toModuleIso)
+      (torusFamilyFiberHomologyMarking P hcont hinj b.as n).toModuleIso)
     (by
       intro b₀ b₁ q
       induction q using Path.Homotopic.Quotient.ind with | mk γ =>
+      dsimp [constantFunctor]
       ext x
-      change torusFamilyHomologyMarking P hcont hinj b₁.as n
-          ((fiberLocalSystemSingularObjIso L ℤ n b₁).hom
-            ((fiberLocalSystem L ℤ n).map (Path.Homotopic.Quotient.mk γ) x)) =
-        torusFamilyHomologyMarking P hcont hinj b₀.as n
-          ((fiberLocalSystemSingularObjIso L ℤ n b₀).hom x)
-      rw [fiberLocalSystemSingularObjIso_hom_map_mk, torusFamilyHomologyMarking_transport])
+      simp only [LinearEquiv.toModuleIso_hom, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom,
+        LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+        torusFamilyFiberHomologyMarking_apply, Category.comp_id, SetLike.coe_eq_coe]
+      exact (congrArg (torusFamilyHomologyMarking P hcont hinj b₁.as n)
+        (fiberLocalSystemSingularObjIso_hom_map_mk L ℤ n γ x)).trans
+        (torusFamilyHomologyMarking_transport P hcont hinj L γ n _))
+
+theorem torusFamilyHomologyLocalSystemIso_hom_app_apply
+    (n : ℕ) (b : FundamentalGroupoid (TopCat.of Y))
+    (x : letI := periodAddAction P; (fiberLocalSystem L ℤ n).obj b) :
+    letI := periodAddAction P
+    (torusFamilyHomologyLocalSystemIso P hcont hinj L n).hom.app b x =
+      torusFamilyHomologyMarking P hcont hinj b.as n
+        ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) := by
+  let _ := periodAddAction P
+  let f : (fiberLocalSystem L ℤ n).obj b ⟶ ModuleCat.of ℤ (⋀[ℤ]^n Λ) :=
+    (fiberLocalSystemSingularObjIso L ℤ n b ≪≫
+      (torusFamilyFiberHomologyMarking P hcont hinj b.as n).toModuleIso).hom
+  have hf : f x = torusFamilyHomologyMarking P hcont hinj b.as n
+      ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) := by simp [f]
+  exact hf
 
 theorem constantAppIso_torusFamilyHomologyLocalSystemIso_hom_apply
     (n : ℕ) (b : FundamentalGroupoid (TopCat.of Y))
@@ -341,10 +367,11 @@ theorem constantAppIso_torusFamilyHomologyLocalSystemIso_hom_apply
     letI := periodAddAction P
     (constantAppIso (torusFamilyHomologyLocalSystemIso P hcont hinj L n) b).hom x =
       torusFamilyHomologyMarking P hcont hinj b.as n
-        ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) := by
-  let _ := periodAddAction P
-  rw [constantAppIso_hom]
-  rfl
+        ((fiberLocalSystemSingularObjIso L ℤ n b).hom x) :=
+  letI := periodAddAction P
+  (ConcreteCategory.congr_hom
+    (constantAppIso_hom (torusFamilyHomologyLocalSystemIso P hcont hinj L n) b) x).trans
+    (torusFamilyHomologyLocalSystemIso_hom_app_apply P hcont hinj L n b x)
 
 theorem constantAppIso_torusFamilyHomologyLocalSystemIso_inv_apply
     (n : ℕ) (b : FundamentalGroupoid (TopCat.of Y)) (w : ⋀[ℤ]^n Λ) :
@@ -353,8 +380,11 @@ theorem constantAppIso_torusFamilyHomologyLocalSystemIso_inv_apply
       (fiberLocalSystemSingularObjIso L ℤ n b).inv
         ((torusFamilyHomologyMarking P hcont hinj b.as n).symm w) := by
   let _ := periodAddAction P
-  rw [constantAppIso_inv]
-  rfl
+  let e := constantAppIso (torusFamilyHomologyLocalSystemIso P hcont hinj L n) b
+  apply (ConcreteCategory.bijective_of_isIso e.hom).1
+  rw [e.inv_hom_id_apply, constantAppIso_torusFamilyHomologyLocalSystemIso_hom_apply,
+    (fiberLocalSystemSingularObjIso L ℤ n b).inv_hom_id_apply
+      ((torusFamilyHomologyMarking P hcont hinj b.as n).symm w), LinearEquiv.apply_symm_apply]
 
 /-- **Canonical trivialization of the first fiber homology local system** of a torus family,
 identifying `TauCeti.fiberLocalSystem L ℤ 1` with the constant local system `Λ` over `Y`. -/
@@ -365,15 +395,28 @@ def torusFamilyFirstHomologyLocalSystemIso :
   torusFamilyHomologyLocalSystemIso P hcont hinj L 1 ≪≫
     (constantFunctor (TopCat.of Y)).mapIso (exteriorPower.oneEquiv ℤ Λ).toModuleIso
 
+theorem torusFamilyFirstHomologyLocalSystemIso_hom_app_apply (b : FundamentalGroupoid (TopCat.of Y))
+    (x : letI := periodAddAction P; (fiberLocalSystem L ℤ 1).obj b) :
+    letI := periodAddAction P
+    (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).hom.app b x =
+      torusFamilyMarking P hcont hinj b.as ((fiberLocalSystemSingularObjIso L ℤ 1 b).hom x) := by
+  let _ := periodAddAction P
+  simp only [torusFamilyFirstHomologyLocalSystemIso, Iso.trans_hom, Functor.mapIso_hom,
+    NatTrans.comp_app, ModuleCat.comp_apply, torusFamilyHomologyLocalSystemIso_hom_app_apply]
+  exact (ConcreteCategory.congr_hom
+    (constantFunctor_map_app (TopCat.of Y) (exteriorPower.oneEquiv ℤ Λ).toModuleIso.hom b) _).trans
+    (oneEquiv_torusFamilyHomologyMarking P hcont hinj b.as _)
+
 theorem constantAppIso_torusFamilyFirstHomologyLocalSystemIso_hom_apply
     (b : FundamentalGroupoid (TopCat.of Y))
     (x : letI := periodAddAction P; (fiberLocalSystem L ℤ 1).obj b) :
     letI := periodAddAction P
     (constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) b).hom x =
-      torusFamilyMarking P hcont hinj b.as ((fiberLocalSystemSingularObjIso L ℤ 1 b).hom x) := by
-  let _ := periodAddAction P
-  rw [constantAppIso_hom]
-  exact oneEquiv_torusFamilyHomologyMarking P hcont hinj b.as _
+      torusFamilyMarking P hcont hinj b.as ((fiberLocalSystemSingularObjIso L ℤ 1 b).hom x) :=
+  letI := periodAddAction P
+  (ConcreteCategory.congr_hom
+    (constantAppIso_hom (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) b) x).trans
+    (torusFamilyFirstHomologyLocalSystemIso_hom_app_apply P hcont hinj L b x)
 
 theorem constantAppIso_torusFamilyFirstHomologyLocalSystemIso_inv_apply
     (b : FundamentalGroupoid (TopCat.of Y)) (l : Λ) :
@@ -383,12 +426,10 @@ theorem constantAppIso_torusFamilyFirstHomologyLocalSystemIso_inv_apply
         ((torusFamilyMarking P hcont hinj b.as).symm l) := by
   let _ := periodAddAction P
   let e := constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) b
-  apply e.toLinearEquiv.injective
-  change e.hom _ = e.hom _
+  apply (ConcreteCategory.bijective_of_isIso e.hom).1
   rw [e.inv_hom_id_apply, constantAppIso_torusFamilyFirstHomologyLocalSystemIso_hom_apply,
     (fiberLocalSystemSingularObjIso L ℤ 1 b).inv_hom_id_apply
-      ((torusFamilyMarking P hcont hinj b.as).symm l)]
-  exact ((torusFamilyMarking P hcont hinj b.as).apply_symm_apply l).symm
+      ((torusFamilyMarking P hcont hinj b.as).symm l), LinearEquiv.apply_symm_apply]
 
 include hcont hinj in
 /-- **Trivial monodromy.** In every degree `n`, the monodromy representation of the fiber homology
@@ -405,8 +446,7 @@ representation of `π₁(Y, y)` on `⋀[ℤ]^n Λ`. -/
 def torusFamilyHomologyMonodromyIsoTrivial (n : ℕ) (y : Y) :
     letI := periodAddAction P
     (monodromyFunctor ℤ (TopCat.of Y) y).obj (fiberLocalSystem L ℤ n) ≅
-      (Rep.trivialFunctor ℤ (FundamentalGroup (TopCat.of Y) y)).obj
-        (ModuleCat.of ℤ (⋀[ℤ]^n Λ)) :=
+      (Rep.trivialFunctor ℤ (FundamentalGroup (TopCat.of Y) y)).obj (ModuleCat.of ℤ (⋀[ℤ]^n Λ)) :=
   letI := periodAddAction P
   monodromyIsoTrivial (torusFamilyHomologyLocalSystemIso P hcont hinj L n) (y : TopCat.of Y)
 
@@ -425,24 +465,6 @@ end LocalSystem
 
 section BaseChange
 
-/-- Pulling back a family of discrete period subgroups along `f : Z → Y` preserves discreteness. -/
-theorem discreteTopology_range_baseChange {Y Z Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
-    [TopologicalSpace E] (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
-    (f : Z → Y) (z : Z) : DiscreteTopology (LinearMap.range ((P ∘ f) z)) :=
-  inferInstanceAs (DiscreteTopology (LinearMap.range (P (f z))))
-
-attribute [local instance] discreteTopology_range_baseChange
-
-/-- Pulling back a family of full lattices along `f : Z → Y` preserves fullness. -/
-theorem isZLattice_range_baseChange {Y Z Λ E : Type*} [AddCommGroup Λ]
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
-    [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
-    (f : Z → Y) (z : Z) : IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) :=
-  inferInstanceAs (IsZLattice ℝ (LinearMap.range (P (f z))))
-
-attribute [local instance] isZLattice_range_baseChange
-
 variable {Y Z E : Type} [TopologicalSpace Y] [TopologicalSpace Z]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -456,19 +478,16 @@ variable {Λ : Type*} [AddCommGroup Λ]
 /-- **Naturality of the canonical homology marking under base change.** Pulling back a continuous
 family of full lattices along `f : C(Z, Y)` preserves the canonical markings in all degrees. -/
 theorem torusFamilyHomologyMarking_baseChange (n : ℕ)
-    (c : letI := periodAddAction (P ∘ f)
-      ((singularChains ℤ).obj
-        ((TopCat.ofHom ⟨torusFamilyProjection (P ∘ f),
-          continuous_torusFamilyProjection (P ∘ f)⟩).fiber z)).homology n) :
-    letI := periodAddAction P
-    letI := periodAddAction (P ∘ f)
+    (c : letI := periodAddAction (P ∘ f); ((singularChains ℤ).obj ((TopCat.ofHom
+      ⟨torusFamilyProjection (P ∘ f), continuous_torusFamilyProjection (P ∘ f)⟩).fiber z)).homology
+      n) :
+    letI := periodAddAction P; letI := periodAddAction (P ∘ f)
     torusFamilyHomologyMarking P hcont hinj (f z) n
         (ContinuousMap.singularHomologyMap ℤ n
           ((torusFamilyBaseChangeCommSq P f).fiberMap z).hom c) =
       torusFamilyHomologyMarking (P ∘ f) (fun l ↦ (hcont l).comp f.continuous)
         (fun z' ↦ hinj (f z')) z n c := by
-  let _ := periodAddAction P
-  let _ := periodAddAction (P ∘ f)
+  let _ := periodAddAction P; let _ := periodAddAction (P ∘ f)
   let g : C({w : AddAction.orbitRel.Quotient Λ (Z × E) | torusFamilyProjection (P ∘ f) w = z},
       {w : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P w = f z}) :=
     ⟨fun x ↦ ((torusFamilyBaseChangeCommSq P f).fiberMap z).hom x,
@@ -476,6 +495,8 @@ theorem torusFamilyHomologyMarking_baseChange (n : ℕ)
   let c₀ : ((singularChains ℤ).obj (TopCat.of
       {w : AddAction.orbitRel.Quotient Λ (Z × E) |
         torusFamilyProjection (P ∘ f) w = z})).homology n := c
+  -- `(TopCat.ofHom ...).fiber z` is definitionally the subtype `TopCat.of {w | ... = z}` on
+  -- which `torusFamilyHomologyMarking` is stated.
   change torusFamilyHomologyMarking P hcont hinj (f z) n
       (ContinuousMap.singularHomologyMap ℤ n g c₀) =
     torusFamilyHomologyMarking (P ∘ f) (fun l ↦ (hcont l).comp f.continuous)
@@ -486,23 +507,20 @@ theorem torusFamilyHomologyMarking_baseChange (n : ℕ)
     (fun w ↦ ((Homeomorph.symm_apply_eq (torusFamilyFiberHomeomorph P (f z) hcont)).mpr
       (torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph P f hcont z w)).trans
       (DFunLike.congr_fun ((LinearMap.range (P (f z))).orbitRelQuotientMap_id le_rfl).symm w))
-    n c₀).trans (by simp [LinearEquiv.exteriorPower])
+    n c₀).trans (by simp)
 
 /-- **Naturality of the degree-one marking under base change.** -/
 theorem torusFamilyMarking_baseChange
-    (c : letI := periodAddAction (P ∘ f)
-      ((singularChains ℤ).obj
-        ((TopCat.ofHom ⟨torusFamilyProjection (P ∘ f),
-          continuous_torusFamilyProjection (P ∘ f)⟩).fiber z)).homology 1) :
-    letI := periodAddAction P
-    letI := periodAddAction (P ∘ f)
+    (c : letI := periodAddAction (P ∘ f); ((singularChains ℤ).obj ((TopCat.ofHom
+      ⟨torusFamilyProjection (P ∘ f), continuous_torusFamilyProjection (P ∘ f)⟩).fiber z)).homology
+      1) :
+    letI := periodAddAction P; letI := periodAddAction (P ∘ f)
     torusFamilyMarking P hcont hinj (f z)
         (ContinuousMap.singularHomologyMap ℤ 1
           ((torusFamilyBaseChangeCommSq P f).fiberMap z).hom c) =
       torusFamilyMarking (P ∘ f) (fun l ↦ (hcont l).comp f.continuous)
         (fun z' ↦ hinj (f z')) z c :=
-  letI := periodAddAction P
-  letI := periodAddAction (P ∘ f)
+  letI := periodAddAction P; letI := periodAddAction (P ∘ f)
   (oneEquiv_torusFamilyHomologyMarking P hcont hinj (f z) _).symm.trans <|
     (congrArg (exteriorPower.oneEquiv ℤ Λ)
       (torusFamilyHomologyMarking_baseChange P hcont hinj f z 1 c)).trans
@@ -516,74 +534,59 @@ variable {Λ : Type} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ �
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) (f : C(Z, Y))
-  (L : letI := periodAddAction P
-    LiftingFunction
-      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
-  (L' : letI := periodAddAction (P ∘ f)
-    LiftingFunction
-      (TopCat.ofHom ⟨torusFamilyProjection (P ∘ f),
-        continuous_torusFamilyProjection (P ∘ f)⟩).hom)
+  (L : letI := periodAddAction P; LiftingFunction
+    (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+  (L' : letI := periodAddAction (P ∘ f); LiftingFunction
+    (TopCat.ofHom ⟨torusFamilyProjection (P ∘ f), continuous_torusFamilyProjection (P ∘ f)⟩).hom)
 
 /-- **Base-change naturality of the local-system trivialization.** For any continuous map
 `f : C(Z, Y)`, the comparison morphism `CommSq.fiberLocalSystemMap` of
 `TauCeti.torusFamilyBaseChangeCommSq` is an isomorphism compatible with the canonical
 trivializations by `⋀[ℤ]^n Λ`. -/
 theorem torusFamilyBaseChange_fiberLocalSystemMap_comp_iso (n : ℕ) :
-    letI := periodAddAction P
-    letI := periodAddAction (P ∘ f)
+    letI := periodAddAction P; letI := periodAddAction (P ∘ f)
     (torusFamilyBaseChangeCommSq P f).fiberLocalSystemMap L' L ℤ n ≫
         (pullback (TopCat.ofHom f).hom).map
           (torusFamilyHomologyLocalSystemIso P hcont hinj L n).hom ≫
         (pullbackConstantIso (TopCat.ofHom f).hom (ModuleCat.of ℤ (⋀[ℤ]^n Λ))).hom =
       (torusFamilyHomologyLocalSystemIso (P ∘ f) (fun l ↦ (hcont l).comp f.continuous)
         (fun z ↦ hinj (f z)) L' n).hom := by
-  let _ := periodAddAction P
-  let _ := periodAddAction (P ∘ f)
+  let _ := periodAddAction P; let _ := periodAddAction (P ∘ f)
   ext b x
+  simp only [NatTrans.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply]
   have hconst := ConcreteCategory.congr_hom
     (pullbackConstantIso_hom_app (TopCat.ofHom f).hom (ModuleCat.of ℤ (⋀[ℤ]^n Λ)) b)
     (((pullback (TopCat.ofHom f).hom).map
       (torusFamilyHomologyLocalSystemIso P hcont hinj L n).hom).app b
       (((torusFamilyBaseChangeCommSq P f).fiberLocalSystemMap L' L ℤ n).app b x))
-  simp only [NatTrans.comp_app, ModuleCat.comp_apply]
   refine hconst.trans ?_
-  change torusFamilyHomologyMarking P hcont hinj (f b.as) n
-      ((fiberLocalSystemSingularObjIso L ℤ n (.mk ((TopCat.ofHom f) b.as))).hom
-        (((torusFamilyBaseChangeCommSq P f).fiberLocalSystemMap L' L ℤ n).app b x)) =
-    torusFamilyHomologyMarking (P ∘ f) (fun l ↦ (hcont l).comp f.continuous)
-      (fun z ↦ hinj (f z)) b.as n ((fiberLocalSystemSingularObjIso L' ℤ n b).hom x)
-  rw [(torusFamilyBaseChangeCommSq P f).fiberLocalSystemSingularObjIso_hom_fiberLocalSystemMap_app,
-    torusFamilyHomologyMarking_baseChange]
+  simp only [pullback_map_app, torusFamilyHomologyLocalSystemIso_hom_app_apply]
+  exact (congrArg (torusFamilyHomologyMarking P hcont hinj (f b.as) n)
+    ((torusFamilyBaseChangeCommSq P f).fiberLocalSystemSingularObjIso_hom_fiberLocalSystemMap_app
+      L' L ℤ n b x)).trans
+    (torusFamilyHomologyMarking_baseChange P hcont hinj f b.as n _)
 
 /-- **Base-change naturality of the degree-one local-system trivialization.** -/
 theorem torusFamilyBaseChange_fiberLocalSystemMap_comp_firstHomologyIso :
-    letI := periodAddAction P
-    letI := periodAddAction (P ∘ f)
+    letI := periodAddAction P; letI := periodAddAction (P ∘ f)
     (torusFamilyBaseChangeCommSq P f).fiberLocalSystemMap L' L ℤ 1 ≫
         (pullback (TopCat.ofHom f).hom).map
           (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).hom ≫
         (pullbackConstantIso (TopCat.ofHom f).hom (ModuleCat.of ℤ Λ)).hom =
       (torusFamilyFirstHomologyLocalSystemIso (P ∘ f) (fun l ↦ (hcont l).comp f.continuous)
         (fun z ↦ hinj (f z)) L').hom := by
-  let _ := periodAddAction P
-  let _ := periodAddAction (P ∘ f)
-  ext b x
-  have hconst := ConcreteCategory.congr_hom
-    (pullbackConstantIso_hom_app (TopCat.ofHom f).hom (ModuleCat.of ℤ Λ) b)
-    (((pullback (TopCat.ofHom f).hom).map
-      (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).hom).app b
-      (((torusFamilyBaseChangeCommSq P f).fiberLocalSystemMap L' L ℤ 1).app b x))
-  simp only [NatTrans.comp_app, ModuleCat.comp_apply]
-  refine hconst.trans ?_
-  change exteriorPower.oneEquiv ℤ Λ
-      (torusFamilyHomologyMarking P hcont hinj (f b.as) 1
-        ((fiberLocalSystemSingularObjIso L ℤ 1 (.mk ((TopCat.ofHom f) b.as))).hom
-          (((torusFamilyBaseChangeCommSq P f).fiberLocalSystemMap L' L ℤ 1).app b x))) =
-    exteriorPower.oneEquiv ℤ Λ
-      (torusFamilyHomologyMarking (P ∘ f) (fun l ↦ (hcont l).comp f.continuous)
-        (fun z ↦ hinj (f z)) b.as 1 ((fiberLocalSystemSingularObjIso L' ℤ 1 b).hom x))
-  rw [(torusFamilyBaseChangeCommSq P f).fiberLocalSystemSingularObjIso_hom_fiberLocalSystemMap_app,
-    torusFamilyHomologyMarking_baseChange]
+  let _ := periodAddAction P; let _ := periodAddAction (P ∘ f)
+  have hcomm :
+      (pullback (TopCat.ofHom f).hom).map
+          ((constantFunctor (TopCat.of Y)).map (exteriorPower.oneEquiv ℤ Λ).toModuleIso.hom) ≫
+        (pullbackConstantIso (TopCat.ofHom f).hom (ModuleCat.of ℤ Λ)).hom =
+      (pullbackConstantIso (TopCat.ofHom f).hom (ModuleCat.of ℤ (⋀[ℤ]^1 Λ))).hom ≫
+        (constantFunctor (TopCat.of Z)).map (exteriorPower.oneEquiv ℤ Λ).toModuleIso.hom := by
+    ext b x
+    simp
+  simp only [torusFamilyFirstHomologyLocalSystemIso, Iso.trans_hom, Functor.mapIso_hom,
+    Functor.map_comp, Category.assoc, hcomm]
+  slice_lhs 1 3 => rw [torusFamilyBaseChange_fiberLocalSystemMap_comp_iso P hcont hinj f L L' 1]
 
 end
 
@@ -592,19 +595,14 @@ omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 local systems in every degree. -/
 theorem isIso_torusFamilyBaseChangeCommSq_fiberLocalSystemMap {Λ : Type*} [AddCommGroup Λ]
     (P : Y → Λ →ₗ[ℤ] E) (hcont : ∀ l, Continuous fun y ↦ P y l) (f : C(Z, Y))
-    (L : letI := periodAddAction P
-      LiftingFunction
-        (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
-    (L' : letI := periodAddAction (P ∘ f)
-      LiftingFunction
-        (TopCat.ofHom ⟨torusFamilyProjection (P ∘ f),
-          continuous_torusFamilyProjection (P ∘ f)⟩).hom)
+    (L : letI := periodAddAction P; LiftingFunction
+      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+    (L' : letI := periodAddAction (P ∘ f); LiftingFunction
+      (TopCat.ofHom ⟨torusFamilyProjection (P ∘ f), continuous_torusFamilyProjection (P ∘ f)⟩).hom)
     (n : ℕ) :
-    letI := periodAddAction P
-    letI := periodAddAction (P ∘ f)
+    letI := periodAddAction P; letI := periodAddAction (P ∘ f)
     IsIso ((torusFamilyBaseChangeCommSq P f).fiberLocalSystemMap L' L ℤ n) :=
-  letI := periodAddAction P
-  letI := periodAddAction (P ∘ f)
+  letI := periodAddAction P; letI := periodAddAction (P ∘ f)
   @CommSq.isIso_fiberLocalSystemMap _ _ _ _ _ _ _ _ (torusFamilyBaseChangeCommSq P f) L' L ℤ _ n
     (isIso_torusFamilyBaseChangeCommSq_fiberMap P f hcont)
 
@@ -613,28 +611,6 @@ end BaseChange
 /-! ### Change of lattice marking and classification by `Aut(Λ)` -/
 
 section Remark
-
-/-- Re-marking a period map by `α : Λ' ≃ₗ[ℤ] Λ` preserves discreteness of the period subgroup. -/
-theorem discreteTopology_range_comp_equiv {Y Λ Λ' E : Type*} [AddCommGroup Λ] [AddCommGroup Λ']
-    [AddCommGroup E] [TopologicalSpace E]
-    (P : Y → Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ) [∀ y, DiscreteTopology (LinearMap.range (P y))]
-    (y : Y) : DiscreteTopology (LinearMap.range ((P y).comp α.toLinearMap)) :=
-  α.range_comp (P y) ▸ inferInstance
-
-attribute [local instance] discreteTopology_range_comp_equiv
-
-/-- Re-marking a period map by `α : Λ' ≃ₗ[ℤ] Λ` preserves fullness of the period lattice. -/
-theorem isZLattice_range_comp_equiv {Y Λ Λ' E : Type*} [AddCommGroup Λ] [AddCommGroup Λ']
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (P : Y → Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ) [∀ y, DiscreteTopology (LinearMap.range (P y))]
-    [∀ y, IsZLattice ℝ (LinearMap.range (P y))] (y : Y) :
-    IsZLattice ℝ (LinearMap.range ((P y).comp α.toLinearMap)) := by
-  suffices ∀ (L : Submodule ℤ E) [DiscreteTopology L],
-      L = LinearMap.range (P y) → IsZLattice ℝ L from this _ (α.range_comp (P y))
-  rintro _ _ rfl
-  convert (inferInstance : IsZLattice ℝ (LinearMap.range (P y)))
-
-attribute [local instance] isZLattice_range_comp_equiv
 
 variable {Y E : Type} [TopologicalSpace Y]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -651,20 +627,17 @@ equivalence `α : Λ' ≃ₗ[ℤ] Λ` leaves the period lattices and total space
 `TauCeti.torusFamilyRemarkCommSq`, the `P`-marking of a homology class equals `α.exteriorPower n`
 applied to its `(P ∘ α)`-marking. -/
 theorem torusFamilyHomologyMarking_comp_equiv (n : ℕ)
-    (c : letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-      ((singularChains ℤ).obj
-        ((TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
-          continuous_torusFamilyProjection _⟩).fiber y)).homology n) :
-    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    letI := periodAddAction P
+    (c : letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; ((singularChains ℤ).obj
+      ((TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
+        continuous_torusFamilyProjection _⟩).fiber y)).homology n) :
+    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; letI := periodAddAction P
     torusFamilyHomologyMarking P hcont hinj y n
         (ContinuousMap.singularHomologyMap ℤ n
           ((torusFamilyRemarkCommSq P α).fiberMap y).hom c) =
       (α.exteriorPower n)
         (torusFamilyHomologyMarking (fun y ↦ (P y).comp α.toLinearMap)
           (fun l' ↦ hcont (α l')) (fun y' ↦ (hinj y').comp α.injective) y n c) :=
-  letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-  letI := periodAddAction P
+  letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; letI := periodAddAction P
   torusFamilyHomologyMarking_map (fun y ↦ (P y).comp α.toLinearMap) (fun l' ↦ hcont (α l'))
     (fun y' ↦ (hinj y').comp α.injective) y P hcont hinj y α
     (φ := LinearMap.id) continuous_id (by simp) (fun _ ↦ rfl)
@@ -676,19 +649,16 @@ theorem torusFamilyHomologyMarking_comp_equiv (n : ℕ)
 /-- **Effect of re-marking the lattice in degree one.** Under `TauCeti.torusFamilyRemarkCommSq`,
 the `P`-marking of a degree-one class equals `α` applied to its `(P ∘ α)`-marking. -/
 theorem torusFamilyMarking_comp_equiv
-    (c : letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-      ((singularChains ℤ).obj
-        ((TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
-          continuous_torusFamilyProjection _⟩).fiber y)).homology 1) :
-    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    letI := periodAddAction P
+    (c : letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; ((singularChains ℤ).obj
+      ((TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
+        continuous_torusFamilyProjection _⟩).fiber y)).homology 1) :
+    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; letI := periodAddAction P
     torusFamilyMarking P hcont hinj y
         (ContinuousMap.singularHomologyMap ℤ 1
           ((torusFamilyRemarkCommSq P α).fiberMap y).hom c) =
       α (torusFamilyMarking (fun y ↦ (P y).comp α.toLinearMap)
         (fun l' ↦ hcont (α l')) (fun y' ↦ (hinj y').comp α.injective) y c) := by
-  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-  let _ := periodAddAction P
+  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap; let _ := periodAddAction P
   refine (oneEquiv_torusFamilyHomologyMarking P hcont hinj y _).symm.trans ?_
   refine (congrArg (exteriorPower.oneEquiv ℤ Λ)
     (torusFamilyHomologyMarking_comp_equiv P α hcont hinj y 1 c)).trans ?_
@@ -704,57 +674,55 @@ variable {Λ Λ' : Type} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite �
   (P : Y → Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ)
   [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
-  (L : letI := periodAddAction P
-    LiftingFunction
-      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
-  (L' : letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    LiftingFunction
-      (TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
-        continuous_torusFamilyProjection _⟩).hom)
+  (L : letI := periodAddAction P; LiftingFunction
+    (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+  (L' : letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; LiftingFunction
+    (TopCat.ofHom ⟨torusFamilyProjection fun y ↦ (P y).comp α.toLinearMap,
+      continuous_torusFamilyProjection _⟩).hom)
 
 /-- **Local-system compatibility under re-marking.** Re-marking `P` by `α : Λ' ≃ₗ[ℤ] Λ` intertwines
 `TauCeti.torusFamilyHomologyLocalSystemIso` via `α.exteriorPower n`. -/
 theorem torusFamilyRemark_fiberLocalSystemMap_comp_iso (n : ℕ) :
-    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    letI := periodAddAction P
+    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; letI := periodAddAction P
     (torusFamilyRemarkCommSq P α).fiberLocalSystemMap L' L ℤ n ≫
         (pullbackIdIso (TopCat.of Y)).hom.app (fiberLocalSystem L ℤ n) ≫
         (torusFamilyHomologyLocalSystemIso P hcont hinj L n).hom =
       (torusFamilyHomologyLocalSystemIso (fun y ↦ (P y).comp α.toLinearMap)
           (fun l' ↦ hcont (α l')) (fun y' ↦ (hinj y').comp α.injective) L' n).hom ≫
         (constantFunctor (TopCat.of Y)).map (α.exteriorPower n).toModuleIso.hom := by
-  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-  let _ := periodAddAction P
+  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap; let _ := periodAddAction P
   ext b x
   simp only [NatTrans.comp_app, ModuleCat.comp_apply]
   have hid := ConcreteCategory.congr_hom
     (pullbackIdIso_hom_app_app (R := ℤ) (TopCat.of Y) (fiberLocalSystem L ℤ n) b)
     (((torusFamilyRemarkCommSq P α).fiberLocalSystemMap L' L ℤ n).app b x)
-  refine (congrArg
-    (fun z ↦ (torusFamilyHomologyLocalSystemIso P hcont hinj L n).hom.app b z) hid).trans ?_
-  change torusFamilyHomologyMarking P hcont hinj b.as n
-      ((fiberLocalSystemSingularObjIso L ℤ n (.mk ((𝟙 (TopCat.of Y)) b.as))).hom
-        (((torusFamilyRemarkCommSq P α).fiberLocalSystemMap L' L ℤ n).app b x)) =
-    (α.exteriorPower n)
-      (torusFamilyHomologyMarking (fun y ↦ (P y).comp α.toLinearMap)
-        (fun l' ↦ hcont (α l')) (fun y' ↦ (hinj y').comp α.injective) b.as n
-        ((fiberLocalSystemSingularObjIso L' ℤ n b).hom x))
-  rw [(torusFamilyRemarkCommSq P α).fiberLocalSystemSingularObjIso_hom_fiberLocalSystemMap_app,
-    torusFamilyHomologyMarking_comp_equiv]
+  have hlhs := (congrArg
+      (fun z ↦ (torusFamilyHomologyLocalSystemIso P hcont hinj L n).hom.app b z) hid).trans
+    (torusFamilyHomologyLocalSystemIso_hom_app_apply P hcont hinj L n b
+      (((torusFamilyRemarkCommSq P α).fiberLocalSystemMap L' L ℤ n).app b x))
+  have hrhs := (ConcreteCategory.congr_hom
+      (constantFunctor_map_app (TopCat.of Y) (α.exteriorPower n).toModuleIso.hom b)
+      ((torusFamilyHomologyLocalSystemIso (fun y ↦ (P y).comp α.toLinearMap)
+        (fun l' ↦ hcont (α l')) (fun y' ↦ (hinj y').comp α.injective) L' n).hom.app b x)).trans
+    (congrArg (α.exteriorPower n)
+      (torusFamilyHomologyLocalSystemIso_hom_app_apply (fun y ↦ (P y).comp α.toLinearMap)
+        (fun l' ↦ hcont (α l')) (fun y' ↦ (hinj y').comp α.injective) L' n b x))
+  exact hlhs.trans (((congrArg (torusFamilyHomologyMarking P hcont hinj b.as n)
+    ((torusFamilyRemarkCommSq P α).fiberLocalSystemSingularObjIso_hom_fiberLocalSystemMap_app
+      L' L ℤ n b x)).trans
+    (torusFamilyHomologyMarking_comp_equiv P α hcont hinj b.as n _)).trans hrhs.symm)
 
 /-- **Degree-one local-system compatibility under re-marking.** Re-marking `P` by `α : Λ' ≃ₗ[ℤ] Λ`
 intertwines `TauCeti.torusFamilyFirstHomologyLocalSystemIso` via `α`. -/
 theorem torusFamilyRemark_fiberLocalSystemMap_comp_firstHomologyIso :
-    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-    letI := periodAddAction P
+    letI := periodAddAction fun y ↦ (P y).comp α.toLinearMap; letI := periodAddAction P
     (torusFamilyRemarkCommSq P α).fiberLocalSystemMap L' L ℤ 1 ≫
         (pullbackIdIso (TopCat.of Y)).hom.app (fiberLocalSystem L ℤ 1) ≫
         (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L).hom =
       (torusFamilyFirstHomologyLocalSystemIso (fun y ↦ (P y).comp α.toLinearMap)
           (fun l' ↦ hcont (α l')) (fun y' ↦ (hinj y').comp α.injective) L').hom ≫
         (constantFunctor (TopCat.of Y)).map α.toModuleIso.hom := by
-  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap
-  let _ := periodAddAction P
+  let _ := periodAddAction fun y ↦ (P y).comp α.toLinearMap; let _ := periodAddAction P
   have h1 : (α.exteriorPower 1).toModuleIso.hom ≫ (exteriorPower.oneEquiv ℤ Λ).toModuleIso.hom =
       (exteriorPower.oneEquiv ℤ Λ').toModuleIso.hom ≫ α.toModuleIso.hom :=
     ModuleCat.hom_ext (exteriorPower.oneEquiv_naturality α.toLinearMap)
@@ -772,9 +740,8 @@ variable [PathConnectedSpace Y] {Λ : Type}
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
-  (L : letI := periodAddAction P
-    LiftingFunction
-      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+  (L : letI := periodAddAction P; LiftingFunction
+    (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
 
 /-- **Classification of global markings by `Aut(Λ)`.** Over a path-connected base `Y`, global
 markings `fiberLocalSystem L ℤ 1 ≅ const(Λ)` of a torus family correspond bijectively to `ℤ`-linear
@@ -817,10 +784,21 @@ theorem torusFamilyMarkingIsoEquivAut_apply
         ((fiberLocalSystemSingularObjIso L ℤ 1 (.mk y)).inv
           ((torusFamilyMarking P hcont hinj y).symm l)) := by
   let _ := periodAddAction P
-  rw [torusFamilyMarkingIsoEquivAut, trivializationEquivLinearEquiv_apply _ _ e (.mk y)]
-  change (constantAppIso e (.mk y)).hom
-      ((constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (.mk y)).inv l) = _
-  rw [constantAppIso_torusFamilyFirstHomologyLocalSystemIso_inv_apply]
+  let i := (constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (.mk y)).symm ≪≫
+    constantAppIso e (.mk y)
+  have h₁ : torusFamilyMarkingIsoEquivAut P hcont hinj L e l = i.toLinearEquiv l :=
+    LinearEquiv.congr_fun
+      (trivializationEquivLinearEquiv_apply
+        (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (ModuleCat.of ℤ Λ) e (.mk y)) l
+  have h₂ : i.hom l = (constantAppIso e (.mk y)).hom
+      ((constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (.mk y)).inv l) := by
+    simp only [i, Iso.trans_hom, Iso.symm_hom]
+    exact ModuleCat.comp_apply
+      (constantAppIso (torusFamilyFirstHomologyLocalSystemIso P hcont hinj L) (.mk y)).inv
+      (constantAppIso e (.mk y)).hom l
+  exact h₁.trans ((Iso.toLinearEquiv_apply i l).trans (h₂.trans
+    (congrArg (constantAppIso e (.mk y)).hom
+      (constantAppIso_torusFamilyFirstHomologyLocalSystemIso_inv_apply P hcont hinj L (.mk y) l))))
 
 end
 

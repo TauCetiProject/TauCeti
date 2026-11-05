@@ -11,19 +11,19 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 /-!
 # Constant local coefficient systems and global trivializations
 
-A morphism between constant local coefficient systems on a space `X` has the same component at the
-endpoints of any path (`constantFunctor_hom_app_eq_of_hom`). Over a path-connected space `X`,
-every morphism or isomorphism between constant local systems is therefore induced by a single
-module homomorphism or isomorphism (`eq_constantFunctor_map`, `constantFunctor_iso_eq_mapIso`), so
-`TauCeti.LocalCoefficientSystem.constantFunctor` is fully faithful. Consequently, once a local
-system `L` admits a reference trivialization `e₀ : L ≅ (constantFunctor X).obj M`, all
-trivializations `L ≅ (constantFunctor X).obj N` correspond bijectively to linear equivalences
-`M ≃ₗ[R] N` (`trivializationEquivLinearEquiv`); in particular, global markings by `M` form a
-principal homogeneous set under `M ≃ₗ[R] M`.
+Over a path-connected space `X`, `FundamentalGroupoid X` is connected as a category
+(`FundamentalGroupoid.instIsConnected`), so by `CategoryTheory.nat_trans_from_is_connected` every
+morphism or isomorphism between constant local systems takes the same value at every point and comes
+from `ModuleCat` (`constantFunctor_iso_eq_mapIso`), making
+`TauCeti.LocalCoefficientSystem.constantFunctor` fully faithful. Consequently, once a local system
+`L` admits a reference trivialization `e₀ : L ≅ (constantFunctor X).obj M`, all trivializations
+`L ≅ (constantFunctor X).obj N` correspond bijectively to linear equivalences `M ≃ₗ[R] N`
+(`trivializationEquivLinearEquiv`); in particular, global markings by `M` form a principal
+homogeneous set under `M ≃ₗ[R] M`.
 
 Without any connectedness hypothesis on `X`, any trivializable local system has trivial path
 endomorphisms and trivial monodromy representation at every basepoint
-(`monodromyRepresentation_of_iso_constant`, `monodromyIsoTrivial`).
+(`monodromyRepresentation_eq_trivial_of_iso_constant`, `monodromyIsoTrivial`).
 
 ## Main definitions
 
@@ -38,13 +38,10 @@ endomorphisms and trivial monodromy representation at every basepoint
 
 ## Main results
 
-* `TauCeti.LocalCoefficientSystem.constantFunctor_hom_app_eq`: over a path-connected space, a
-  morphism between constant local systems takes the same value at every point.
-* `TauCeti.LocalCoefficientSystem.eq_constantFunctor_map`,
-  `TauCeti.LocalCoefficientSystem.constantFunctor_iso_eq_mapIso`: morphisms and isomorphisms
-  between constant local systems on a path-connected space come from `ModuleCat`.
-* `TauCeti.LocalCoefficientSystem.monodromyRepresentation_of_iso_constant`: a trivializable local
-  system has trivial monodromy representation at every point.
+* `TauCeti.LocalCoefficientSystem.monodromyRepresentation_eq_trivial_of_iso_constant`: a
+  trivializable local system has trivial monodromy representation at every point.
+* `TauCeti.LocalCoefficientSystem.constantFunctor_iso_eq_mapIso`: over a path-connected space,
+  every isomorphism between constant local systems is induced by its component at a point.
 -/
 
 public section
@@ -58,23 +55,6 @@ universe u v w
 namespace TauCeti.LocalCoefficientSystem
 
 variable {R : Type u} [Ring R] {X : TopCat.{v}}
-
-/-- A morphism between constant local coefficient systems has the same component at the source and
-target of any morphism in the fundamental groupoid. -/
-theorem constantFunctor_hom_app_eq_of_hom {M N : ModuleCat.{w} R}
-    (η : (constantFunctor (R := R) X).obj M ⟶ (constantFunctor (R := R) X).obj N)
-    {x y : FundamentalGroupoid X} (p : x ⟶ y) :
-    (η.app x : M ⟶ N) = (η.app y : M ⟶ N) := by
-  ext m
-  exact (η.naturality_apply p m).symm
-
-/-- A morphism between constant local coefficient systems has the same component at any two points
-joined by a path. -/
-theorem constantFunctor_hom_app_eq_of_joined {M N : ModuleCat.{w} R}
-    (η : (constantFunctor (R := R) X).obj M ⟶ (constantFunctor (R := R) X).obj N)
-    {x y : X} (h : Joined x y) :
-    (η.app (.mk x) : M ⟶ N) = (η.app (.mk y) : M ⟶ N) :=
-  constantFunctor_hom_app_eq_of_hom η ⟦h.somePath⟧
 
 /-- The fiber isomorphism `L.obj x ≅ M` at `x` induced by a trivialization
 `e : L ≅ (constantFunctor X).obj M`, typed directly with target `M` rather than
@@ -116,7 +96,8 @@ theorem map_end_eq_id_of_iso_constant {L : LocalCoefficientSystem.{u, v, w} R X}
 
 /-- A local system admitting a trivialization has trivial monodromy representation at every
 basepoint. -/
-theorem monodromyRepresentation_of_iso_constant {L : LocalCoefficientSystem.{u, v, w} R X}
+theorem monodromyRepresentation_eq_trivial_of_iso_constant
+    {L : LocalCoefficientSystem.{u, v, w} R X}
     {M : ModuleCat.{w} R} (e : L ≅ (constantFunctor (R := R) X).obj M) (x : X) :
     monodromyRepresentation L x =
       Representation.trivial R (FundamentalGroup X x) (L.obj (.mk x)) := by
@@ -129,7 +110,7 @@ theorem isTrivial_monodromyRepresentation_of_iso_constant
     {L : LocalCoefficientSystem.{u, v, w} R X} {M : ModuleCat.{w} R}
     (e : L ≅ (constantFunctor (R := R) X).obj M) (x : X) :
     (monodromyRepresentation L x).IsTrivial := by
-  rw [monodromyRepresentation_of_iso_constant e x]
+  rw [monodromyRepresentation_eq_trivial_of_iso_constant e x]
   infer_instance
 
 /-- The monodromy object of a constant local system at `x` is canonically isomorphic in `Rep` to
@@ -175,29 +156,10 @@ section PathConnected
 
 variable [PathConnectedSpace X]
 
-/-- Over a path-connected space, a morphism between constant local systems has the same component
-at every point. -/
-theorem constantFunctor_hom_app_eq {M N : ModuleCat.{w} R}
-    (η : (constantFunctor (R := R) X).obj M ⟶ (constantFunctor (R := R) X).obj N)
-    (x y : FundamentalGroupoid X) :
-    (η.app x : M ⟶ N) = (η.app y : M ⟶ N) :=
-  constantFunctor_hom_app_eq_of_hom η (FundamentalGroupoid.nonempty_hom x y).some
-
-/-- Over a path-connected space, every morphism between constant local systems is the constant
-morphism equal to its component at any chosen point. -/
-theorem eq_constantFunctor_map {M N : ModuleCat.{w} R}
-    (η : (constantFunctor (R := R) X).obj M ⟶ (constantFunctor (R := R) X).obj N)
-    (x : FundamentalGroupoid X) :
-    η = (constantFunctor (R := R) X).map (η.app x) := by
-  ext y m
-  exact ConcreteCategory.congr_hom (constantFunctor_hom_app_eq η y x) m
-
 instance :
     (constantFunctor (R := R) X :
-      ModuleCat.{w} R ⥤ LocalCoefficientSystem.{u, v, w} R X).Full where
-  map_surjective η :=
-    ⟨η.app (.mk (Classical.arbitrary X)),
-      (eq_constantFunctor_map η (.mk (Classical.arbitrary X))).symm⟩
+      ModuleCat.{w} R ⥤ LocalCoefficientSystem.{u, v, w} R X).Full :=
+  inferInstanceAs (Functor.const (FundamentalGroupoid X)).Full
 
 /-- Over a path-connected space, every isomorphism between constant local systems is induced by its
 component at any chosen point. -/
@@ -205,7 +167,7 @@ theorem constantFunctor_iso_eq_mapIso {M N : ModuleCat.{w} R}
     (e : (constantFunctor (R := R) X).obj M ≅ (constantFunctor (R := R) X).obj N)
     (x : FundamentalGroupoid X) :
     e = (constantFunctor (R := R) X).mapIso (e.app x) :=
-  Iso.ext (eq_constantFunctor_map e.hom x)
+  Iso.ext <| NatTrans.ext <| funext fun y ↦ nat_trans_from_is_connected e.hom y x
 
 /-- Given a reference trivialization `e₀ : L ≅ (constantFunctor X).obj M` over a path-connected
 space `X`, all trivializations `L ≅ (constantFunctor X).obj N` correspond bijectively to linear
@@ -222,7 +184,7 @@ def trivializationEquivLinearEquiv {L : LocalCoefficientSystem.{u, v, w} R X}
     let x₀ : FundamentalGroupoid X := .mk (Classical.arbitrary X)
     ext x a
     have hconst := ConcreteCategory.congr_hom
-      (constantFunctor_hom_app_eq (e₀.symm ≪≫ e).hom x₀ x) ((constantAppIso e₀ x).hom a)
+      (nat_trans_from_is_connected (e₀.symm ≪≫ e).hom x₀ x) ((constantAppIso e₀ x).hom a)
     refine hconst.trans ?_
     -- After replacing `x₀` by `x`, `e₀.inv.app x` and `e₀.hom.app x` cancel via `constantAppIso`.
     change (constantAppIso e x).hom ((constantAppIso e₀ x).inv ((constantAppIso e₀ x).hom a)) =
@@ -245,7 +207,7 @@ theorem trivializationEquivLinearEquiv_apply {L : LocalCoefficientSystem.{u, v, 
   have h : (constantAppIso e₀ (.mk (Classical.arbitrary X))).symm ≪≫
         constantAppIso e (.mk (Classical.arbitrary X)) =
       (constantAppIso e₀ x).symm ≪≫ constantAppIso e x :=
-    Iso.ext (constantFunctor_hom_app_eq (e₀.symm ≪≫ e).hom (.mk (Classical.arbitrary X)) x)
+    Iso.ext (nat_trans_from_is_connected (e₀.symm ≪≫ e).hom (.mk (Classical.arbitrary X)) x)
   exact congrArg Iso.toLinearEquiv h
 
 @[simp]
