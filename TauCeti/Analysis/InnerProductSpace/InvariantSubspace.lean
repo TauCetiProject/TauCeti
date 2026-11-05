@@ -15,6 +15,11 @@ A subspace reduces an endomorphism when both it and its orthogonal complement ar
 For a symmetric endomorphism, invariance of the subspace alone is enough. When an orthogonal
 projection exists, reduction is equivalently commutation with that projection; in particular the
 orthogonal projection onto a subspace invariant under a symmetric endomorphism commutes with it.
+
+For a bounded operator `A` on a Hilbert space and a complete subspace invariant under both `A`
+and its adjoint, the adjoint of the restriction of `A` is the restriction of the adjoint
+(`ContinuousLinearMap.adjoint_restrict`), so the restriction of a normal operator is normal
+(`IsStarNormal.restrict`).
 -/
 
 public section
@@ -157,3 +162,26 @@ theorem Module.End.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End �
     U.IsReducing A.adjoint ↔ U.IsReducing A := by
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
     LinearMap.adjoint_adjoint, and_comm]
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] {U : Submodule 𝕜 E} [CompleteSpace U] {A : E →L[𝕜] E}
+
+/-- The adjoint of the restriction of a bounded operator `A` to a complete subspace invariant
+under both `A` and its adjoint is the restriction of the adjoint. -/
+theorem adjoint_restrict (hA : ∀ x ∈ U, A x ∈ U) (hA' : ∀ x ∈ U, adjoint A x ∈ U) :
+    adjoint (A.restrict hA) = (adjoint A).restrict hA' :=
+  ((eq_adjoint_iff _ _).mpr fun x y ↦ by
+    simp only [Submodule.coe_inner, coe_restrict_apply, adjoint_inner_left]).symm
+
+/-- The restriction of a normal operator to a complete subspace invariant under both the operator
+and its adjoint is normal. -/
+theorem _root_.IsStarNormal.restrict (hN : IsStarNormal A) (hA : ∀ x ∈ U, A x ∈ U)
+    (hA' : ∀ x ∈ U, adjoint A x ∈ U) : IsStarNormal (A.restrict hA) := by
+  rw [isStarNormal_iff_norm_eq_adjoint, adjoint_restrict hA hA']
+  intro x
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe, coe_restrict_apply, coe_restrict_apply]
+  exact isStarNormal_iff_norm_eq_adjoint.mp hN x
+
+end ContinuousLinearMap
