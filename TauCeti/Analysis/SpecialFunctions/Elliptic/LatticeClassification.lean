@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
 import Mathlib.AlgebraicGeometry.EllipticCurve.IsomOfJ
+import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 
 /-!
@@ -130,20 +131,13 @@ theorem exists_g₂_g₃_eq {a b : ℂ} (hab : a ^ 3 - 27 * b ^ 2 ≠ 0) :
     ring
   have : E.IsElliptic := ⟨hΔ ▸ hab.isUnit⟩
   obtain ⟨τ, C, hC⟩ := E.exists_variableChange_smul_weierstrassCurve_periodPair_eq
-  -- A change of variables between two curves with `a₁ = a₂ = a₃ = 0` has `r = s = t = 0`.
-  have hu : (C.u : ℂ) ≠ 0 := C.u.ne_zero
-  have hs : C.s = 0 := by
-    have := congrArg a₁ hC
-    simp only [variableChange_a₁, weierstrassCurve_a₁, E] at this
-    simpa [hu] using this
-  have hr : C.r = 0 := by
-    have := congrArg a₂ hC
-    simp only [variableChange_a₂, weierstrassCurve_a₁, weierstrassCurve_a₂, hs, E] at this
-    simpa [hu] using this
-  have ht : C.t = 0 := by
-    have := congrArg a₃ hC
-    simp only [variableChange_a₃, weierstrassCurve_a₁, weierstrassCurve_a₃, hr, E] at this
-    simpa [hu] using this
+  -- A change of variables between two short normal forms has `r = s = t = 0`.
+  have : τ.periodPair.weierstrassCurve.IsShortNF := ⟨by simp, by simp, by simp⟩
+  have : (C • τ.periodPair.weierstrassCurve).IsShortNF := hC ▸ ⟨rfl, rfl, rfl⟩
+  have h2 : IsRegular (2 : ℂ) := .of_ne_zero two_ne_zero
+  have hs := C.s_eq_zero_of_isShortNF τ.periodPair.weierstrassCurve h2
+  have hr := C.r_eq_zero_of_isShortNF τ.periodPair.weierstrassCurve h2 (.of_ne_zero three_ne_zero)
+  have ht := C.t_eq_zero_of_isShortNF τ.periodPair.weierstrassCurve h2
   have hE : (C.u • τ.periodPair).weierstrassCurve = E := by
     rw [weierstrassCurve_smul, ← hC]
     congr 1
