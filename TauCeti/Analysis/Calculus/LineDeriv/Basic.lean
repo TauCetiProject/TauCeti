@@ -48,8 +48,9 @@ theorem lineDeriv_of_notMem_tsupport {E : Type*} [NormedAddCommGroup E] [NormedS
 
 /-- The function `y ↦ ∫₀¹ g (y - t h) dt` of a continuous `g` has directional derivative
 `g y - g (y - h)` in the direction `h`. -/
-theorem hasLineDerivAt_intervalIntegral_comp_sub {E G : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {h : E}
+theorem _root_.Continuous.hasLineDerivAt_intervalIntegral_comp_sub {E G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] {h : E}
     {g : E → G} (hg : Continuous g) (y : E) :
     HasLineDerivAt ℝ (fun y => ∫ t in (0 : ℝ)..1, g (y - t • h)) (g y - g (y - h)) y h := by
   -- `s ↦ Φ (y + s h)` differentiates by the fundamental theorem of calculus, as
