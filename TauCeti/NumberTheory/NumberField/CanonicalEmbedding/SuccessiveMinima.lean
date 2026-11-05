@@ -369,7 +369,7 @@ theorem successiveMinimum_le_iff_lt_finrank_span [DiscreteTopology Λ.mixedImage
         (fun j ↦ mixedEmbedding K (x j)) ∈ t • (B : Set (ι → mixedSpace K))}) := by
   rw [successiveMinimum_le_iff hB hl ht, ← Nat.succ_le_iff,
     le_finrank_span_iff_exists_linearIndependent]
-  rfl
+  simp only [Set.mem_ofPred_eq]
 
 open scoped Classical in
 /-- The rank of the lattice points in a positive dilate of a convex body is the number of
