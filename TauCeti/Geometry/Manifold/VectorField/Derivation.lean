@@ -268,6 +268,18 @@ theorem vectorField_lie (δ₁ δ₂ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞
 
 end Derivation
 
+namespace ContMDiffSection
+
+open TauCeti
+
+/-- The vector field of the derivation along a smooth vector field is that field. -/
+@[simp]
+theorem vectorField_vectorFieldDerivation (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (x : M) : (vectorFieldDerivation X).vectorField x = X x :=
+  (Derivation.eq_vectorField_iff.mpr fun f ↦ (X.vectorFieldDerivation_apply_apply f x).symm).symm
+
+end ContMDiffSection
+
 namespace TauCeti
 
 /-- **Derivations are smooth vector fields.** On a finite-dimensional, Hausdorff, boundaryless
@@ -283,8 +295,7 @@ def derivationEquivSmoothVectorField :
     vectorFieldDerivation
     (by
       ext X x
-      exact (Derivation.eq_vectorField_iff.mpr fun f ↦
-        (X.vectorFieldDerivation_apply_apply f x).symm).symm)
+      exact X.vectorField_vectorFieldDerivation x)
     (by
       ext δ f x
       exact δ.mvfderiv_vectorField f x)
