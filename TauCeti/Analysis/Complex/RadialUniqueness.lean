@@ -41,6 +41,9 @@ boundary point along almost every radius ending in an arc of the circle.
 * `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le` — a function
   whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii accumulating at `R`, and
   whose radial limit is `0` on a set of angles of positive measure, vanishes on the disc.
+* `TauCeti.eqOn_const_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le` — a function
+  whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii accumulating at `R`, and
+  whose radial limit is `a` on a set of angles of positive measure, is the constant `a`.
 * `TauCeti.eqOn_const_ball_of_tendsto_circleMap` — a bounded holomorphic function with radial limit
   `a` on a set of angles of positive measure is the constant `a`.
 
@@ -191,6 +194,45 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_l
     (fun n ↦ ⟨(hρ n).2.1.le, (hρ n).2.2⟩) (fun n ↦ (hρ n).1) hE
     fun θ hθ ↦ (hlim θ hθ).comp hρlim
 
+/-- **F. and M. Riesz uniqueness theorem, for an arbitrary limit.** Let `f` be holomorphic on the
+disc `ball c R`, with circle averages of `log⁺ ‖f‖` at most `C` on circles about `c` whose radii
+accumulate at `R` from below. If the radial limit of `f` is `a` at every angle of a set `E` of
+positive measure, then `f` is the constant `a` on the disc. The radial limit at the angle `θ` is
+taken along `r ↦ circleMap c r θ` as `r` increases to `R`. -/
+theorem eqOn_const_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le
+    {a : ℂ} {C : ℝ} {E : Set ℝ} (hf : DifferentiableOn ℂ f (ball c R))
+    (hC : ∃ᶠ r in 𝓝[<] R, circleAverage (fun z ↦ log⁺ ‖f z‖) c r ≤ C)
+    (hE : volume E ≠ 0)
+    (hlim : ∀ θ ∈ E, Tendsto (fun r ↦ f (circleMap c r θ)) (𝓝[<] R) (𝓝 a)) :
+    EqOn f (fun _ ↦ a) (ball c R) := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [ball_eq_empty.2 hR]
+  have hg : DifferentiableOn ℂ (fun z ↦ f z - a) (ball c R) := hf.sub_const a
+  -- `log⁺ ‖f - a‖ ≤ log⁺ ‖f‖ + (log⁺ ‖a‖ + log 2)`, so `f - a` has bounded averages too.
+  have hC' : ∃ᶠ r in 𝓝[<] R,
+      circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤ C + (log⁺ ‖a‖ + Real.log 2) := by
+    refine (hC.and_eventually (Ioo_mem_nhdsLT hR)).mono fun r ⟨hr, hr0⟩ ↦ ?_
+    have hsphere : sphere c |r| ⊆ ball c R := by
+      rw [abs_of_pos hr0.1]
+      exact sphere_subset_ball hr0.2
+    have hint :=
+      ((hf.analyticOnNhd isOpen_ball).mono hsphere).meromorphicOn.circleIntegrable_posLog_norm
+    have hadd := circleAverage_add hint (circleIntegrable_const (log⁺ ‖a‖ + Real.log 2) c r)
+    rw [circleAverage_const] at hadd
+    calc circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r
+        ≤ circleAverage (fun z ↦ log⁺ ‖f z‖ + (log⁺ ‖a‖ + Real.log 2)) c r := by
+          refine circleAverage_mono
+            ((hg.analyticOnNhd isOpen_ball).mono hsphere).meromorphicOn.circleIntegrable_posLog_norm
+            (hint.add (circleIntegrable_const _ _ _)) fun z _ ↦ ?_
+          have := Real.posLog_norm_add_le (f z) (-a)
+          simp only [norm_neg, ← sub_eq_add_neg] at this
+          linarith
+      _ = circleAverage (fun z ↦ log⁺ ‖f z‖) c r + (log⁺ ‖a‖ + Real.log 2) := hadd
+      _ ≤ C + (log⁺ ‖a‖ + Real.log 2) := by linarith
+  intro z hz
+  exact sub_eq_zero.1 <| eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le
+    hg hC' hE (fun θ hθ ↦ by simpa using (hlim θ hθ).sub_const a) hz
+
 /-- **F. and M. Riesz uniqueness theorem, bounded form.** A bounded holomorphic function on the
 disc `ball c R` whose radial limit is `a` at every angle of a set of positive measure is the
 constant `a`. The radial limit at the angle `θ` is taken along `r ↦ circleMap c r θ` as `r`
@@ -202,20 +244,15 @@ theorem eqOn_const_ball_of_tendsto_circleMap {a : ℂ} {M : ℝ} {E : Set ℝ}
     EqOn f (fun _ ↦ a) (ball c R) := by
   rcases le_or_gt R 0 with hR | hR
   · simp [ball_eq_empty.2 hR]
-  have hg : DifferentiableOn ℂ (fun z ↦ f z - a) (ball c R) := hf.sub_const a
-  -- On every circle inside the disc, `log⁺ ‖f - a‖` is at most `log⁺ (M + ‖a‖)`.
-  have hC : ∃ᶠ r in 𝓝[<] R, circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤ log⁺ (M + ‖a‖) := by
-    refine Eventually.frequently ?_
-    filter_upwards [Ioo_mem_nhdsLT hR] with r hr
-    have hsphere : sphere c |r| ⊆ ball c R := by
-      rw [abs_of_pos hr.1]
-      exact sphere_subset_ball hr.2
-    refine circleAverage_mono_on_of_le_circle
-      ((hg.analyticOnNhd isOpen_ball).mono hsphere).meromorphicOn.circleIntegrable_posLog_norm
-      fun z hz ↦ posLog_le_posLog (by linarith [norm_nonneg (f z - a)]) ?_
-    exact (norm_sub_le _ _).trans (by linarith [hM z (hsphere hz)])
-  intro z hz
-  exact sub_eq_zero.1 <| eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le
-    hg hC hE (fun θ hθ ↦ by simpa using (hlim θ hθ).sub_const a) hz
+  -- On every circle inside the disc, `log⁺ ‖f‖` is at most `log⁺ M`.
+  refine eqOn_const_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le (C := log⁺ M)
+    hf (Eventually.frequently ?_) hE hlim
+  filter_upwards [Ioo_mem_nhdsLT hR] with r hr
+  have hsphere : sphere c |r| ⊆ ball c R := by
+    rw [abs_of_pos hr.1]
+    exact sphere_subset_ball hr.2
+  exact circleAverage_mono_on_of_le_circle
+    ((hf.analyticOnNhd isOpen_ball).mono hsphere).meromorphicOn.circleIntegrable_posLog_norm
+    fun z hz ↦ posLog_le_posLog (by linarith [norm_nonneg (f z)]) (hM z (hsphere hz))
 
 end TauCeti
