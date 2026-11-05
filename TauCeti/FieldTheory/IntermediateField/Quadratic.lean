@@ -188,8 +188,8 @@ theorem isSquare_mul_of_adjoin_simple_eq [NeZero (2 : K)] {a c : K} {x y : L}
       (algebraMap K L p₀ + algebraMap K L q₀ * x) ^ 2 ∈ (⊥ : IntermediateField K L) := by
     rw [← hy_eq, hy]; exact IntermediateField.algebraMap_mem _ _
   have hpq : algebraMap K L p₀ * algebraMap K L q₀ = 0 :=
-    mul_eq_zero_of_add_mul_sq_mem hx2 hxb (IntermediateField.algebraMap_mem _ _)
-      (IntermediateField.algebraMap_mem _ _) hab_mem
+    (add_mul_sq_mem_iff_mul_eq_zero hx2 hxb (IntermediateField.algebraMap_mem _ _)
+      (IntermediateField.algebraMap_mem _ _)).mp hab_mem
   have hpq0 : p₀ * q₀ = 0 := by
     apply FaithfulSMul.algebraMap_injective K L
     rw [map_mul, map_zero]
