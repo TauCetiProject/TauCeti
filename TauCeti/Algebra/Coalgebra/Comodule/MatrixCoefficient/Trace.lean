@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Convolution
+public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import Mathlib.LinearAlgebra.Trace
 

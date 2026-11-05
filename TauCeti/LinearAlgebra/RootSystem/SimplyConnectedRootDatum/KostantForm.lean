@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.Algebra.Module.IntegralOrbit
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
+import TauCeti.Algebra.Lie.Sl2.Basic
+import TauCeti.LinearAlgebra.RootSystem.RankTwo
 
 /-!
 # A simple-generator Kostant form of the pinned split Lie algebra of a Dynkin type
@@ -73,6 +75,8 @@ not claimed. This file is the numbered input those later steps consume.
   over `ℚ`.
 * `TauCeti.DynkinType.geckRepresentation_ι_injective`: the defining representation is faithful on
   the Lie algebra.
+* `TauCeti.DynkinType.isSl2Triple_geckRepresentation`: the defining representation carries each
+  numbered `sl₂` triple to an `sl₂` triple of endomorphisms.
 * `TauCeti.DynkinType.isNilpotent_geckRepresentation_rootGenerator`: each numbered root generator
   acts nilpotently.
 * `TauCeti.DynkinType.isCartanWeightVector_geckRepresentation_single`: the standard coordinate
@@ -82,7 +86,8 @@ not claimed. This file is the numbered input those later steps consume.
 * `TauCeti.DynkinType.rootGeneratorWeight_inl_eq_root_simpleIndex` and
   `TauCeti.DynkinType.rootGeneratorWeight_inr_eq_neg_root_simpleIndex`: that integral root is the
   simple root of `TauCeti.DynkinType.simplyConnectedRootDatum` with the same Bourbaki node number,
-  respectively its negative.
+  respectively its negative; in particular it is nonzero
+  (`TauCeti.DynkinType.rootGeneratorWeight_ne_zero`).
 * `TauCeti.DynkinType.geckRepresentation_mem_geckOrbit` and
   `TauCeti.DynkinType.span_geckOrbit_eq_top`: the integral orbit is stable under the Kostant form
   and spans the Geck module over `ℚ`.
@@ -192,6 +197,14 @@ def rootGeneratorWeight : Fin t.rank ⊕ Fin t.rank → Fin t.rank → ℤ :=
     t.rootGeneratorWeight ht (.inr i) j = -t.cartanMatrix i j := by
   rw [rootGeneratorWeight, LieAlgebra.Basis.rootGeneratorWeight_inr, lieBasis_A_eq]
 
+/-- The numbered raising-generator weights of `G₂` are the rows of its Bourbaki Cartan
+matrix, with the short simple root first. -/
+theorem G2.rootGeneratorWeight_inl_eq (i : Fin 2) :
+    G2.rootGeneratorWeight valid_G2 (.inl i) =
+      fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
+  funext j
+  simpa only [rank_G2, cartanMatrix_G2_eq] using G2.rootGeneratorWeight_inl valid_G2 i j
+
 /-! The two identifications below read those Cartan-matrix rows as the simple roots of
 `TauCeti.DynkinType.simplyConnectedRootDatum`. They are deliberately not `simp` lemmas: both sides
 are already `simp`-normal, since `rootGeneratorWeight_inl` and `root_simpleIndex` rewrite them to
@@ -213,6 +226,17 @@ theorem rootGeneratorWeight_inr_eq_neg_root_simpleIndex (i : Fin t.rank) :
       -(t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) := by
   funext j
   rw [rootGeneratorWeight_inr, Pi.neg_apply, root_simpleIndex]
+
+/-- **Every numbered root generator has a nonzero root**, being plus or minus a simple root. -/
+theorem rootGeneratorWeight_ne_zero (i : Fin t.rank ⊕ Fin t.rank) :
+    t.rootGeneratorWeight ht i ≠ 0 := by
+  cases i with
+  | inl i =>
+    rw [rootGeneratorWeight_inl_eq_root_simpleIndex]
+    exact (t.simplyConnectedRootDatum ht).ne_zero _
+  | inr i =>
+    rw [rootGeneratorWeight_inr_eq_neg_root_simpleIndex, neg_ne_zero]
+    exact (t.simplyConnectedRootDatum ht).ne_zero _
 
 /-- **The pinned Cartan generators act on a numbered root generator through its root.** -/
 theorem lie_lieBasis_h_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) (j : Fin t.rank) :
@@ -262,6 +286,26 @@ theorem geckRepresentation_ι_injective :
       t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
   rw [geckRepresentation_def]
   exact LieSubalgebra.matrixRepresentation_ι_injective (t.lieAlgebra ht)
+
+/-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
+of endomorphisms of the Geck module. -/
+theorem isSl2Triple_geckRepresentation (i : Fin t.rank) :
+    IsSl2Triple
+      (t.geckRepresentation ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
+      (t.geckRepresentation ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
+      (t.geckRepresentation ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
+  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
+    ((t.lieBasis ht).sl2 i).map
+      ((t.geckRepresentation ht).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+      (by
+        intro hzero
+        apply ((t.lieBasis ht).sl2 i).h_ne_zero
+        apply t.geckRepresentation_ι_injective ht
+        simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply, map_zero] using hzero)
 
 /-! ## Nilpotency of the numbered generators -/
 
