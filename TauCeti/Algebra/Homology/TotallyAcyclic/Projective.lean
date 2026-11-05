@@ -20,7 +20,7 @@ identifying finite projectives as relative injectives among Gorenstein-projectiv
 The dual exactness in `CochainComplex.IsTotallyAcyclic` tests only the regular module. A
 projective module `Q` is a retract of a free module `Q →₀ A`, and since the terms of the complex
 are finitely generated, a map from a term to `Q →₀ A` lands in the functions supported on a finite
-set (`TauCeti.Finsupp.exists_finset_support_subset`), a finite power of the regular module. No
+set (`LinearMap.exists_finset_support_subset`), a finite power of the regular module. No
 self-injectivity or commutativity assumption is needed. Taking the coefficient ring to be `Rᵐᵒᵖ`
 gives the statements for right `R`-modules.
 
@@ -58,7 +58,7 @@ theorem exact_hom_projective (i j k : ℤ) (hij : i + 1 = j) (hjk : j + 1 = k) :
   constructor
   · intro hf
     -- As `Pʲ` is finitely generated, `s ∘ f` takes values in functions supported on a finite `T`.
-    obtain ⟨T, hT⟩ := TauCeti.Finsupp.exists_finset_support_subset (s ∘ₗ f)
+    obtain ⟨T, hT⟩ := (s ∘ₗ f).exists_finset_support_subset
     -- Extend each coordinate in `T` along the differential, then map back to the retract `Q`.
     have hcoord (t : Q) : ∃ g : P.X k →ₗ[A] A,
         g.comp (P.d j k).hom = (Finsupp.lapply t).comp (s.comp f) := by

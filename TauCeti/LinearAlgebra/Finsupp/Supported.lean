@@ -18,7 +18,7 @@ between the submodules `Finsupp.supported M R s` and `Finsupp.supported M R t`; 
 `Finsupp.restrictDom` is the case of the predicate `(· ∈ t)` on the whole space.
 
 A linear map from a finitely generated module into `α →₀ M` takes values in the functions supported
-on one finite set (`TauCeti.Finsupp.exists_finset_support_subset`).
+on one finite set (`LinearMap.exists_finset_support_subset`).
 
 ## Main definitions
 
@@ -27,7 +27,7 @@ on one finite set (`TauCeti.Finsupp.exists_finset_support_subset`).
 
 ## Main results
 
-* `TauCeti.Finsupp.exists_finset_support_subset`: the values of a linear map from a finitely
+* `LinearMap.exists_finset_support_subset`: the values of a linear map from a finitely
   generated module into `α →₀ M` have their supports in one finite set.
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
@@ -84,8 +84,8 @@ theorem inclusion_comp_filterSupported {s t t' : Set α} (p : α → Prop) [Deci
 map from a finitely generated module into `α →₀ M` are all supported on one finite set, the union
 of the supports of the images of finitely many generators
 (Mathlib's `Finsupp.span_le_supported_biUnion_support`). -/
-theorem exists_finset_support_subset {N : Type*} [AddCommMonoid N] [Module R N] [Module.Finite R N]
-    (f : N →ₗ[R] α →₀ M) : ∃ T : Finset α, ∀ y, (f y).support ⊆ T := by
+theorem _root_.LinearMap.exists_finset_support_subset {N : Type*} [AddCommMonoid N] [Module R N]
+    [Module.Finite R N] (f : N →ₗ[R] α →₀ M) : ∃ T : Finset α, ∀ y, (f y).support ⊆ T := by
   classical
   obtain ⟨m, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := N)
   refine ⟨Finset.univ.biUnion fun a ↦ (f (x a)).support, fun y t ht ↦ ?_⟩
@@ -93,7 +93,7 @@ theorem exists_finset_support_subset {N : Type*} [AddCommMonoid N] [Module R N] 
   have hy : f y ∈ Submodule.span R (Set.range (f ∘ x)) := by
     rw [Set.range_comp, ← Submodule.map_span, hx, Submodule.map_top]
     exact LinearMap.mem_range_self f y
-  have hsupp := (mem_supported R _).1 (span_le_supported_biUnion_support R _ hy) ht
+  have hsupp := (Finsupp.mem_supported R _).1 (Finsupp.span_le_supported_biUnion_support R _ hy) ht
   simp only [Set.mem_iUnion, Set.mem_range, Function.comp_apply, exists_prop] at hsupp
   obtain ⟨_, ⟨a, rfl⟩, hta⟩ := hsupp
   exact Finset.mem_biUnion.2 ⟨a, Finset.mem_univ _, hta⟩
