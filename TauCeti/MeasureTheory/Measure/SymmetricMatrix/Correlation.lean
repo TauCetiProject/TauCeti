@@ -983,11 +983,6 @@ theorem volume_frontier_posDefCorrelationRegion :
 
 /-! ### Integration in partial-correlation coordinates -/
 
-private theorem isOpen_partialCorrelationCube :
-    IsOpen {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} := by
-  simp only [ofPred_forall]
-  exact isOpen_iInter_of_finite fun ij ↦ isOpen_lt (by fun_prop) continuous_const
-
 private theorem hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     HasFDerivWithinAt (correlationCoordinatesOfPartialCorrelation (p := p))
@@ -995,7 +990,7 @@ private theorem hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation
       {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} z :=
   ((contDiffOn_correlationCoordinatesOfPartialCorrelation.differentiableOn
     (by simp)).differentiableAt
-      (isOpen_partialCorrelationCube.mem_nhds hz)).hasFDerivAt.hasFDerivWithinAt
+      (isOpen_setOf_forall_abs_lt_one.mem_nhds hz)).hasFDerivAt.hasFDerivWithinAt
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -1011,10 +1006,10 @@ theorem integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff
       IntegrableOn g (posDefCorrelationRegion p) := by
   rw [← image_correlationCoordinatesOfPartialCorrelation,
     integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume
-      isOpen_partialCorrelationCube.measurableSet
+      isOpen_setOf_forall_abs_lt_one.measurableSet
       (fun _ hz ↦ hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation hz)
       injOn_correlationCoordinatesOfPartialCorrelation]
-  refine integrableOn_congr_fun (fun z hz ↦ ?_) isOpen_partialCorrelationCube.measurableSet
+  refine integrableOn_congr_fun (fun z hz ↦ ?_) isOpen_setOf_forall_abs_lt_one.measurableSet
   rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation hz]
 
 /-- **Change of variables to partial correlations.** The integral of a function over the
@@ -1029,10 +1024,10 @@ theorem setIntegral_comp_correlationCoordinatesOfPartialCorrelation
       ∫ x in posDefCorrelationRegion p, g x := by
   rw [← image_correlationCoordinatesOfPartialCorrelation,
     integral_image_eq_integral_abs_det_fderiv_smul volume
-      isOpen_partialCorrelationCube.measurableSet
+      isOpen_setOf_forall_abs_lt_one.measurableSet
       (fun _ hz ↦ hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation hz)
       injOn_correlationCoordinatesOfPartialCorrelation]
-  refine setIntegral_congr_fun isOpen_partialCorrelationCube.measurableSet fun z hz ↦ ?_
+  refine setIntegral_congr_fun isOpen_setOf_forall_abs_lt_one.measurableSet fun z hz ↦ ?_
   rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation hz]
 
 /-! ### Invariance under permutations and sign changes
