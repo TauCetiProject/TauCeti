@@ -36,8 +36,6 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 * `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
   entire series.
 * `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
-* `taylor_add_of_summable_norm`, `taylor_mul_of_summable_norm`: translation is additive and
-  multiplicative when all Hasse derivatives have absolutely summable terms at the centre.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
   converges.
@@ -89,37 +87,6 @@ private theorem norm_coeff_hasseDeriv_mul_pow_le_max (f : R⟦X⟧) (a : R) (n m
 section Complete
 
 variable [CompleteSpace R]
-
-/-- Taylor translation is additive when all Hasse derivatives have absolutely summable terms
-at the translation point. -/
-theorem taylor_add_of_summable_norm {g : R⟦X⟧} {a : R}
-    (hf : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n f) • a ^ m‖)
-    (hg : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n g) • a ^ m‖) :
-    taylor a (f + g) = taylor a f + taylor a g := by
-  ext n
-  simp only [coeff_taylor, map_add, evalAt_add_of_summable_norm (hf n) (hg n)]
-
-/-- Taylor translation is multiplicative when all Hasse derivatives have absolutely summable
-terms at the translation point. -/
-theorem taylor_mul_of_summable_norm {g : R⟦X⟧} {a : R}
-    (hf : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n f) • a ^ m‖)
-    (hg : ∀ n, Summable fun m ↦ ‖coeff m (hasseDeriv n g) • a ^ m‖) :
-    taylor a (f * g) = taylor a f * taylor a g := by
-  have hmul (i j : ℕ) :
-      Summable fun m ↦ ‖coeff m (hasseDeriv i f * hasseDeriv j g) • a ^ m‖ := by
-    refine (summable_norm_sum_mul_antidiagonal_of_summable_norm (hf i) (hg j)).congr
-      fun m ↦ ?_
-    apply congrArg norm
-    rw [coeff_mul, Finset.sum_smul]
-    exact sum_congr rfl fun p hp ↦ by
-      rw [← mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
-  ext n
-  rw [coeff_taylor, hasseDeriv_mul,
-    evalAt_sum_of_summable_norm _
-      (f := fun p : ℕ × ℕ ↦ hasseDeriv p.1 f * hasseDeriv p.2 g)
-      (b := a) (fun p _ ↦ hmul p.1 p.2), coeff_mul]
-  exact sum_congr rfl fun p _ ↦ by
-    rw [evalAt_mul_of_summable_norm (hf p.1) (hg p.2), coeff_taylor, coeff_taylor]
 
 /-- Taylor translation is additive on entire series. -/
 theorem IsEntire.taylor_add {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
-public import TauCeti.RingTheory.PowerSeries.Entire.Taylor
+public import TauCeti.RingTheory.PowerSeries.Taylor
 import TauCeti.RingTheory.PowerSeries.Restricted.Taylor
 
 /-!
