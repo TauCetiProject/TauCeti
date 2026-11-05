@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
@@ -26,7 +27,8 @@ The projection `1 - A (P A)⁻¹ P` then produces a smooth annihilating covector
 open, and the rank of the distribution makes its inclusion in the kernel an equality.
 
 This is the local defining-form construction for hyperplane fields, including noncoorientable
-contact structures.
+contact structures. Over `ℝ`, the covector field is the same as a local one-form whose kernel is
+the hyperplane field (`TauCeti.IsContMDiffDistribution.exists_roughForm_ker_eq`).
 
 ## References
 
@@ -43,6 +45,8 @@ open Bundle Set Filter Function Module
 open scoped Manifold ContDiff Topology
 
 namespace TauCeti
+
+section Annihilator
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
@@ -155,5 +159,41 @@ theorem IsContMDiffDistribution.exists_local_annihilator
     exact Module.Dual.ker_eq_of_le_of_finrank_add_one (α y).toLinearMap
       (fun hz ↦ hαy (ContinuousLinearMap.coe_injective hz)) hle
       (by rw [hD.finrank_eq y, finrank_tangentSpace, hk])
+
+end Annihilator
+
+/-! ### Local defining one-forms -/
+
+section RoughForm
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : ℕ∞ω} [IsManifold I 1 M] [IsManifold I (n + 1) M]
+  {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+
+/-- **A hyperplane field is locally the kernel of a one-form.** Every point of a `C^n` distribution
+`D` of rank `k` with `k + 1 = dim E` has an open neighbourhood `U` on which `D` is the kernel of a
+one-form `α` of class `C^n` on `U` which vanishes nowhere on `U`. No coorientation is assumed: the
+form is only defined near the chosen point. -/
+theorem IsContMDiffDistribution.exists_roughForm_ker_eq
+    (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank ℝ E) (x : M) :
+    ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ α : RoughForm I M ℝ 1,
+      ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
+        (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
+      ∀ y ∈ U, α y ≠ 0 ∧ α.ker y = D y := by
+  obtain ⟨U, a, hU, hxU, ha, haD⟩ := hD.exists_local_annihilator hk x
+  -- The covector field `a` is the one-form `α`, with the same kernel and regularity.
+  let α : RoughForm I M ℝ 1 :=
+    fun y ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I y) ℝ (0 : Fin 1) (a y)
+  refine ⟨U, hU, hxU, α, fun y hy ↦ ?_, fun y hy ↦ ⟨fun h ↦ (haD y hy).1 <|
+    ContinuousLinearMap.ext fun v ↦ by simpa [α] using congr($h ![v]), ?_⟩⟩
+  · exact ((contMDiffAt_ofSubsingleton_iff (V := Bundle.Trivial M ℝ)).2
+      ((ha y hy).contMDiffAt (hU.mem_nhds hy))).contMDiffWithinAt
+  · ext v
+    rw [← (haD y hy).2, RoughForm.mem_ker]
+    simp [α]
+
+end RoughForm
 
 end TauCeti

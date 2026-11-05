@@ -51,6 +51,16 @@ theorem continuous_hamiltonianVectorField_uncurry (ω : SymplecticForm V) {K : P
     (ω.contDiffAt_hamiltonianVectorField_uncurry (n := 0) (by simpa using hK.contDiffAt)
       ).continuousAt
 
+/-- Along a continuous path `x`, the linearized Hamiltonian vector fields
+`S_t = dX_{H_t}(x(t))` of a jointly `C²` Hamiltonian depend continuously on `t`. -/
+theorem continuous_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V} (hx : Continuous x) :
+    Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) := by
+  have hF : ContDiff ℝ 1 (Function.uncurry fun t y ↦ ω.hamiltonianVectorField (H t) y) :=
+    contDiff_iff_contDiffAt.2 fun p ↦
+      ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hH.contDiffAt
+  exact (hF.fderiv (contDiff_zero.2 hx) le_rfl).continuous
+
 /-- Differentiating a Hamiltonian vector field in a parameter direction gives the Hamiltonian
 vector field of the actual parameter derivative of the Hamiltonian. -/
 theorem fderiv_hamiltonianVectorField_parameter_apply (ω : SymplecticForm V)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
+public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.Curves.Cohomology
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
@@ -26,10 +27,11 @@ the full Euler characteristic. As for `InvertibleSheaf.eulerDegree`, no hypothes
 form the invariant, which takes junk values when the cohomology is infinite-dimensional or does
 not vanish above degree one.
 
-The degree is normalised by the trivial bundle and is additive in short exact sequences of
-vector bundles (Stacks, Lemma 0AYS). In rank one it is the Euler-characteristic degree of a line
-bundle, and hence, on a proper integral curve whose codimension-one local rings are discrete
-valuation rings, `deg 𝒪_X(D) = Σ_y D(y) [κ(y) : k]` for a Weil divisor `D` (Stacks, Lemma 0AYY).
+The degree is normalised by the trivial bundle, is additive in short exact sequences of vector
+bundles (Stacks, Lemma 0AYS) and is unchanged by extension of the ground field (Stacks,
+Lemma 0B59). In rank one it is the Euler-characteristic degree of a line bundle, and hence, on a
+proper integral curve whose codimension-one local rings are discrete valuation rings,
+`deg 𝒪_X(D) = Σ_y D(y) [κ(y) : k]` for a Weil divisor `D` (Stacks, Lemma 0AYY).
 
 ## Main declarations
 
@@ -46,12 +48,16 @@ valuation rings, `deg 𝒪_X(D) = Σ_y D(y) [κ(y) : k]` for a Weil divisor `D` 
   finite-dimensionality of the cohomology it reads and vanishing of `H²` of the subbundle, and
   `FixedRank.vectorBundleDegree_add_of_shortExact_of_isCurveOver`, where these hypotheses are
   discharged on a proper integral curve whose codimension-one local rings are discrete valuation
-  rings.
+  rings;
+* `FixedRank.vectorBundleDegree_baseChange`: the degree of the pullback of `E` to `X_K` for a
+  field extension `K / k` is the degree of `E`.
 
 ## References
 
 * [The Stacks Project, Section 33.44, Degrees on curves](https://stacks.math.columbia.edu/tag/0AYR):
   Definition 0AYR and Lemmas 0AYS, 0AYY.
+* [The Stacks Project, Lemma 0B59](https://stacks.math.columbia.edu/tag/0B59): invariance of the
+  degree under extension of the ground field.
 -/
 
 public section
@@ -176,6 +182,32 @@ theorem vectorBundleDegree_add_of_shortExact_of_isCurveOver [X.IsCurveOver k]
     (subsingleton_cohomology_of_two_le_of_isCurveOver k E₁.obj.obj 2 le_rfl)
 
 end ShortExact
+
+section BaseChange
+
+variable {k} {K : Type u} [Field K] [Algebra k K] {Y : Scheme.{u}} [Y.Over (Spec (.of K))]
+  {g : Y ⟶ X}
+
+/-- **The degree is invariant under extension of the ground field.** For a field extension
+`K / k`, presented as a pullback square `Y = X ×_k K` with projection `g : Y ⟶ X`, the pullback
+`g^* E` of a vector bundle `E` of constant rank `r` has the same degree over `K` as `E` has over
+`k`. The scheme `X` need only be quasi-compact with affine diagonal, for instance proper over `k`;
+it need not be a curve, irreducible or geometrically connected. -/
+theorem vectorBundleDegree_baseChange
+    (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
+    [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))] (E : FixedRank X r) :
+    vectorBundleDegree K ((pullback g).obj E) = vectorBundleDegree k E := by
+  -- The pullback of the structure sheaf `𝒪_X` is the structure sheaf `𝒪_Y`.
+  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
+      (InvertibleSheaf.trivial Y).obj :=
+    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
+      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  rw [vectorBundleDegree_def, vectorBundleDegree_def, pullback_obj_obj,
+    FiniteLocallyFreeSheaf.pullback_obj_obj, ← eulerCharBelow_congr K e 2,
+    eulerCharBelow_pullback_eq_of_isPullback H, eulerCharBelow_pullback_eq_of_isPullback H]
+
+end BaseChange
 
 end FiniteLocallyFreeSheaf.FixedRank
 
