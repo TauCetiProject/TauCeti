@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Carrier
+public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.NestedCommutator
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.ChevalleyRelations
 
 /-!
-# Commuting simple-root subgroups of the type-E₇ minuscule carrier
+# Chevalley relations between simple-root subgroups of the type-E₇ minuscule carrier
 
 The numbered positive and negative simple-root subgroups of the integral minuscule carrier
 satisfy the commuting Chevalley relations. Two roots of the same sign commute when their nodes
@@ -20,6 +21,24 @@ rings of positive characteristic.
 Together these give the zero-commutator cases of the pinned Chevalley relations for the E₇
 carrier. They allow the numbered root-subgroup points to be reordered at nonadjacent nodes or
 at distinct nodes with opposite signs.
+
+At adjacent nodes `i` and `j` the root points do not commute. Instead they satisfy the nested
+commutator relations `⁅⁅xᵢ(t), xⱼ(s)⁆, x₋ⱼ(r)⁆ = xᵢ(t * s * r)` and
+`⁅⁅x₋ᵢ(t), x₋ⱼ(s)⁆, xⱼ(r)⁆ = x₋ᵢ(t * s * r)`, again over every commutative ring.
+The minuscule weight table supplies the square-zero identities
+and the Serre relations between the integral generator matrices supply the bracket and
+vanishing-product identities that `Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul`
+turns into the group identity.
+
+## Main results
+
+* `TauCeti.E7Minuscule.commute_rootSubgroupPoints_inl_inl` and `commute_rootSubgroupPoints_inr_inr`:
+  root points of the same sign commute at nonadjacent nodes.
+* `TauCeti.E7Minuscule.commute_rootSubgroupPoints_inl_inr` and `commute_rootSubgroupPoints_inr_inl`:
+  root points of opposite signs commute at distinct nodes.
+* `TauCeti.E7Minuscule.commutatorElement_commutatorElement_rootSubgroupPoints_inl` and
+  `commutatorElement_commutatorElement_rootSubgroupPoints_inr`: the nested commutator relations at
+  adjacent nodes.
 
 ## References
 
@@ -41,21 +60,6 @@ local notation "CM" => CartanMatrix.E 7
 local notation "rootGen" => TauCeti.serreRootGenerator CM
 local notation "cartanGen" => TauCeti.serreH ℚ CM
 
-private theorem lie_positive_positive_eq_zero {i j : Fin 7} (hij : CM i j = 0) :
-    ⁅rootGen (.inl i), rootGen (.inl j)⁆ = 0 := by
-  simpa [TauCeti.serreRootGenerator_inl, hij] using
-    TauCeti.ad_pow_lie_serreE_serreE ℚ CM i j
-
-private theorem lie_negative_negative_eq_zero {i j : Fin 7} (hij : CM i j = 0) :
-    ⁅rootGen (.inr i), rootGen (.inr j)⁆ = 0 := by
-  simpa [TauCeti.serreRootGenerator_inr, hij] using
-    TauCeti.ad_pow_lie_serreF_serreF ℚ CM i j
-
-private theorem lie_positive_negative_eq_zero {i j : Fin 7} (hij : i ≠ j) :
-    ⁅rootGen (.inl i), rootGen (.inr j)⁆ = 0 := by
-  simpa only [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr] using
-    TauCeti.lie_serreE_serreF_of_ne ℚ CM hij
-
 private theorem commute_rootSubgroupPoints_of_lie_eq_zero
     {i j : Fin 7 ⊕ Fin 7} (hij : ⁅rootGen i, rootGen j⁆ = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
@@ -74,21 +78,27 @@ commutative ring. -/
 theorem commute_rootSubgroupPoints_inl_inl {i j : Fin 7} (hij : CM i j = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints (.inl i) A s) (rootSubgroupPoints (.inl j) A t) :=
-  commute_rootSubgroupPoints_of_lie_eq_zero (lie_positive_positive_eq_zero hij) A s t
+  commute_rootSubgroupPoints_of_lie_eq_zero
+    (by simpa only [TauCeti.serreRootGenerator_inl] using
+      TauCeti.lie_serreE_serreE_of_eq_zero ℚ CM hij) A s t
 
 /-- Negative numbered simple-root subgroups at nonadjacent nodes commute over every
 commutative ring. -/
 theorem commute_rootSubgroupPoints_inr_inr {i j : Fin 7} (hij : CM i j = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints (.inr i) A s) (rootSubgroupPoints (.inr j) A t) :=
-  commute_rootSubgroupPoints_of_lie_eq_zero (lie_negative_negative_eq_zero hij) A s t
+  commute_rootSubgroupPoints_of_lie_eq_zero
+    (by simpa only [TauCeti.serreRootGenerator_inr] using
+      TauCeti.lie_serreF_serreF_of_eq_zero ℚ CM hij) A s t
 
 /-- A positive and a negative numbered simple-root subgroup at distinct nodes commute over
 every commutative ring. -/
 theorem commute_rootSubgroupPoints_inl_inr {i j : Fin 7} (hij : i ≠ j)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints (.inl i) A s) (rootSubgroupPoints (.inr j) A t) :=
-  commute_rootSubgroupPoints_of_lie_eq_zero (lie_positive_negative_eq_zero hij) A s t
+  commute_rootSubgroupPoints_of_lie_eq_zero (by
+    simpa only [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr] using
+      TauCeti.lie_serreE_serreF_of_ne ℚ CM hij) A s t
 
 /-- A negative and a positive numbered simple-root subgroup at distinct nodes commute over
 every commutative ring. -/
@@ -96,5 +106,55 @@ theorem commute_rootSubgroupPoints_inr_inl {i j : Fin 7} (hij : i ≠ j)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints (.inr i) A s) (rootSubgroupPoints (.inl j) A t) :=
   (commute_rootSubgroupPoints_inl_inr hij.symm A t s).symm
+
+/-! ## Nested commutators at adjacent nodes -/
+
+section NestedCommutators
+
+open scoped commutatorElement
+
+/-- **The nested commutator relation of positive simple-root points at adjacent nodes**:
+`⁅⁅xᵢ(t), xⱼ(s)⁆, x₋ⱼ(r)⁆ = xᵢ(t * s * r)` over every commutative ring. -/
+theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl {i j : Fin 7}
+    (hij : CM i j = -1) (A : Type u) [CommRing A] (t s r : A) :
+    ⁅⁅rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd t),
+        rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd s)⁆,
+      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd r)⁆ =
+        rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (t * s * r)) := by
+  have hji : CM j i = -1 := by
+    rw [(CartanMatrix.E_isSymm 7).apply, hij]
+  apply (points A).subtype_injective
+  simp only [map_commutatorElement, Subgroup.subtype_apply]
+  apply Units.ext
+  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, ← weightTable_raisingMatrix]
+  exact weightTable.coe_commutatorElement_commutatorElement_raisingMatrix
+    (by simpa only [weightTable_cartanMatrix] using hij)
+    (by simpa only [weightTable_cartanMatrix] using hji) t s r _ _ _
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
+
+/-- **The nested commutator relation of negative simple-root points at adjacent nodes**:
+`⁅⁅x₋ᵢ(t), x₋ⱼ(s)⁆, xⱼ(r)⁆ = x₋ᵢ(t * s * r)` over every commutative ring. -/
+theorem commutatorElement_commutatorElement_rootSubgroupPoints_inr {i j : Fin 7}
+    (hij : CM i j = -1) (A : Type u) [CommRing A] (t s r : A) :
+    ⁅⁅rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd t),
+        rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd s)⁆,
+      rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd r)⁆ =
+        rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (t * s * r)) := by
+  have hji : CM j i = -1 := by
+    rw [(CartanMatrix.E_isSymm 7).apply, hij]
+  apply (points A).subtype_injective
+  simp only [map_commutatorElement, Subgroup.subtype_apply]
+  apply Units.ext
+  rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, ← weightTable_loweringMatrix]
+  exact weightTable.coe_commutatorElement_commutatorElement_loweringMatrix
+    (by simpa only [weightTable_cartanMatrix] using hij)
+    (by simpa only [weightTable_cartanMatrix] using hji) t s r _ _ _
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
+
+end NestedCommutators
 
 end TauCeti.E7Minuscule

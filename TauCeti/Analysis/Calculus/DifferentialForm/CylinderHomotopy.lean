@@ -135,6 +135,20 @@ theorem cylinderHomotopy_congr {x : E} {ω₁ ω₂ : E × ℝ → (E × ℝ) [�
   refine intervalIntegral.integral_congr fun t ht ↦ ?_
   simp only [h t (by rwa [uIcc_of_le zero_le_one] at ht)]
 
+/-- Evaluated on vectors `v₁, …, vₙ` of `E`, the cylinder homotopy operator is the time integral
+`∫₀¹ ω(x, t)(∂ₜ, (v₁, 0), …, (vₙ, 0)) dt`, for a form integrable along the segment
+`{x} × [0, 1]`. -/
+theorem cylinderHomotopy_apply_apply [CompleteSpace F]
+    {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} {x : E}
+    (hω : IntervalIntegrable (fun t ↦ ω (x, t)) volume 0 1) (v : Fin n → E) :
+    cylinderHomotopy ω x v = ∫ t in (0 : ℝ)..1, ω (x, t) (Fin.cons (0, 1) fun i ↦ (v i, 0)) := by
+  have h : cylinderHomotopy ω x = contractInl (∫ t in (0 : ℝ)..1, ω (x, t)) := by
+    rw [cylinderHomotopy_apply]
+    exact contractInl.intervalIntegral_comp_comm hω
+  rw [h, contractInl_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ContinuousAlternatingMap.curryLeft_apply_apply]
+  exact ((ContinuousAlternatingMap.apply ℝ (E × ℝ) F _).intervalIntegral_comp_comm hω).symm
+
 /-- The cylinder homotopy operator of the zero form is zero. -/
 @[simp]
 theorem cylinderHomotopy_zero :

@@ -48,6 +48,7 @@ among sets, and its degree is the supremum of their degrees.
 * `Set.partrec_oracle_iff`: partial computability of a set oracle is equivalent to computability
   of membership.
 * `Set.turingReducible_empty_iff`: reducibility to the empty oracle characterizes computable sets.
+* `Set.union_turingReducible`: if two sets reduce to an oracle, so does their union.
 
 ## References
 
@@ -87,6 +88,15 @@ noncomputable def oracle (A : Set ℕ) : ℕ →. ℕ :=
 theorem oracle_apply (A : Set ℕ) (n : ℕ) : A.oracle n = Part.some (A.indicator 1 n) :=
   (rfl)
 
+/-- A set's characteristic function is computable in its own oracle. -/
+theorem computableIn_indicator (A : Set ℕ) : ComputableIn {A.oracle} (A.indicator 1 : ℕ → ℕ) :=
+  RecursiveIn.of_eq (RecursiveIn.oracle A.oracle rfl) fun n => A.oracle_apply n
+
+/-- Reducing a set oracle is equivalent to computing its characteristic function. -/
+theorem turingReducible_iff_computableIn_indicator (A : Set ℕ) (O : ℕ →. ℕ) :
+    TuringReducible A.oracle O ↔ ComputableIn {O} (A.indicator 1 : ℕ → ℕ) := by
+  rw [TuringReducible, funext A.oracle_apply, ComputableIn]
+
 /-- The empty set answers zero on every input. -/
 @[simp]
 theorem oracle_empty : (∅ : Set ℕ).oracle = fun _ => Part.some 0 := by
@@ -118,6 +128,17 @@ theorem turingReducible_empty_iff (A : Set ℕ) :
     TuringReducible A.oracle (∅ : Set ℕ).oracle ↔ ComputablePred (· ∈ A) := by
   rw [oracle_empty, ← partrec_oracle_iff]
   exact ⟨TuringReducible.partrec_of_const, Partrec.turingReducible⟩
+
+/-- If `A` and `B` are Turing reducible to an oracle `g`, so is `A ∪ B`: take the maximum of the
+two answers. -/
+theorem union_turingReducible {A B : Set ℕ} {g : ℕ →. ℕ} (hA : TuringReducible A.oracle g)
+    (hB : TuringReducible B.oracle g) : TuringReducible (A ∪ B).oracle g := by
+  classical
+  have h := ((RecursiveIn.iff_nat.1 hA).pair (RecursiveIn.iff_nat.1 hB)).map_primrec
+    (g := fun p => max p.unpair.1 p.unpair.2) <| Primrec.nat_iff.1 <|
+      Primrec.nat_max.comp (Primrec.fst.comp Primrec.unpair) (Primrec.snd.comp Primrec.unpair)
+  refine RecursiveIn.iff_nat.2 (h.of_eq fun n => ?_)
+  by_cases hnA : n ∈ A <;> by_cases hnB : n ∈ B <;> simp [Seq.seq, hnA, hnB]
 
 end Set
 

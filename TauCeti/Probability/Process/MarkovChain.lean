@@ -53,11 +53,14 @@ along it, so no canonical sample space is imposed on users.
 
 ## Main results
 
-* `TauCeti.Probability.markovChainLaw_map_eval_zero` — the chain starts from `ν`.
+* `TauCeti.Probability.markovChainLaw_map_eval_zero` — the chain starts from `ν`;
+  `TauCeti.Probability.markovChainLaw_dirac_ae_apply_zero` — started at `a₀`, it is almost surely
+  at `a₀` at time zero.
 * `MeasureTheory.Measure.markovChainLaw_eq_comp` — the path law with initial law `ν` is the path-law
   kernel integrated against `ν`.
 * `MeasureTheory.Measure.markovChainLaw_map_eval` — the state at time `n` has law `(κ ^ n) ∘ₘ ν`;
-  `ProbabilityTheory.Kernel.markovChainKernel_map_eval` is the kernel form.
+  `ProbabilityTheory.Kernel.markovChainKernel_map_eval` is the kernel form, and
+  `MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp` evaluates it at a singleton.
 * `TauCeti.Probability.markovChainLaw_map_prefix_succ_eq_compProd` — the Markov property: the joint
   law of a prefix and of the next state is the prefix law extended by one `κ`-step from its last
   coordinate.
@@ -74,6 +77,9 @@ along it, so no canonical sample space is imposed on users.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff` — a process on an arbitrary measure space has
   path law `markovChainLaw ν κ` exactly when it starts from `ν` and its prefix laws satisfy the
   Markov recursion.
+* `TauCeti.Probability.prefixLaw_compProd_apply_prod` — for any process, the prefix-law side of
+  that recursion, evaluated on a rectangle `A ×ˢ C`, is the integral of `κ (X n) C` over the event
+  `{(X 0, …, X n) ∈ A}`.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff_prefixLaw_singleton` — on a countable state space,
   a process has path law `markovChainLaw ν κ` exactly when its finite path masses are given by the
   product formula.
@@ -234,6 +240,12 @@ theorem markovChainLaw_map_eval_zero :
             (g := fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩)
             (by fun_prop) (MeasurableEquiv.measurable _), hid, Measure.map_id]
 
+/-- **A chain started at `a₀` starts at `a₀`.** -/
+theorem markovChainLaw_dirac_ae_apply_zero [MeasurableSingletonClass α] (a₀ : α) :
+    ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) κ), x 0 = a₀ :=
+  HasLaw.ae_eq_of_dirac
+    ⟨(measurable_pi_apply 0).aemeasurable, markovChainLaw_map_eval_zero _ _⟩
+
 /-- **The Markov property of the chain.** The joint law of the length-`n + 1` prefix
 `(X 0, …, X n)` and of the next state `X (n + 1)` is the prefix law extended by one `κ`-step out of
 the last coordinate of the prefix. Together with `markovChainLaw_map_eval_zero` this determines all
@@ -332,6 +344,14 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_eval (n : ℕ) :
     (markovChainLaw ν κ).map (fun w => w n) = (κ ^ n) ∘ₘ ν := by
   rw [Measure.markovChainLaw_eq_comp, Measure.map_comp _ _ (measurable_pi_apply n),
     Kernel.markovChainKernel_map_eval]
+
+/-- The chain is at `y` at time `n` with probability `((κ ^ n) ∘ₘ ν) {y}`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp
+    [MeasurableSingletonClass α] (n : ℕ) (y : α) :
+    markovChainLaw ν κ {x | x n = y} = ((κ ^ n) ∘ₘ ν) {y} := by
+  rw [← Measure.markovChainLaw_map_eval, Measure.map_apply (measurable_pi_apply n)
+    (measurableSet_singleton y)]
+  simp only [Set.preimage, Set.mem_singleton_iff]
 
 /-- **The finite path masses of the chain.** On a state space with measurable singletons the mass a
 homogeneous Markov chain gives to a finite path is the initial weight of its first state times the
@@ -499,6 +519,25 @@ theorem hasLaw_markovChainLaw_iff [IsFiniteMeasure ν] (hX : ∀ n, AEMeasurable
   refine ⟨fun h => ?_, fun h => ⟨hY, Measure.eq_markovChainLaw ν κ h.1 h.2⟩⟩
   rw [pathLaw_def, h.map_eq]
   exact ⟨markovChainLaw_map_eval_zero ν κ, markovChainLaw_map_prefix_succ_eq_compProd ν κ⟩
+
+omit [IsMarkovKernel κ] in
+/-- The joint law of a prefix `(X 0, …, X n)` of a process and one further `κ`-step from its last
+coordinate, evaluated on a rectangle `A ×ˢ C`: it is the integral of `κ (X n) C` over the event
+`{(X 0, …, X n) ∈ A}`. -/
+theorem prefixLaw_compProd_apply_prod [SFinite μ] [IsSFiniteKernel κ] (hX : ∀ n, Measurable (X n))
+    (n : ℕ) {A : Set (Fin (n + 1) → α)} (hA : MeasurableSet A) {C : Set α} (hC : MeasurableSet C) :
+    (prefixLaw μ X (n + 1) ⊗ₘ κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
+        (measurable_pi_apply (Fin.last n))) (A ×ˢ C) =
+      ∫⁻ ω in (fun ω (i : Fin (n + 1)) => X i ω) ⁻¹' A, κ (X n ω) C ∂μ := by
+  have hpre : Measurable fun ω (i : Fin (n + 1)) => X i ω := measurable_pi_iff.2 fun i => hX i
+  have : SFinite (prefixLaw μ X (n + 1)) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [Measure.compProd_apply_prod hA hC, prefixLaw_def, blockLaw_def]
+  simp only [Kernel.comap_apply]
+  rw [setLIntegral_map (f := fun w : Fin (n + 1) → α => κ (w (Fin.last n)) C) hA
+    ((κ.measurable_coe hC).comp (measurable_pi_apply _)) hpre]
+  simp
 
 /-- **Product-formula characterization of the law of a Markov chain.** On a countable state space
 with measurable singletons, the path of a coordinatewise a.e. measurable process `X` has law

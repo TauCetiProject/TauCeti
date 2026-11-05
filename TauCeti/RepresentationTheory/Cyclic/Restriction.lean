@@ -60,4 +60,14 @@ theorem coe_cyclicRepResHom_hom :
       (B.cyclicRepresentation hB)) (f.cyclicRepResHom hA hB χ d hχ hf).hom = f :=
   (rfl)
 
+/-- Restriction along the identity with generator exponent one is the ordinary coefficient
+morphism. This identifies the restriction formulas with the coefficient maps of a short complex. -/
+@[simp]
+theorem cyclicRepResHom_id (hB : (⇑B)^[m] = _root_.id) (hf : ∀ x, f (A x) = B (f x)) :
+    f.cyclicRepResHom hA hB (MonoidHom.id _) 1 (by simp) hf =
+      f.cyclicRepHom hA hB hf := by
+  ext x
+  exact (congrFun (coe_cyclicRepResHom_hom f hA hB (MonoidHom.id _) 1 (by simp) hf) x).trans
+    (congrFun (coe_cyclicRepHom_hom f hA hB hf) x).symm
+
 end AddMonoidHom

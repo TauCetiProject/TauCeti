@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Core
+public import TauCeti.Topology.VectorBundle.Core.Basic
 public import TauCeti.Topology.VectorBundle.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -17,8 +17,9 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 with model `Fin rank → 𝕜`, indexed by the base points, with the chart at `x` labelled by `x`.
 Its morphisms are `VectorBundleCore.CoordinateHom`: continuous chart operators satisfying
 transition compatibility, hence actual continuous fibrewise linear maps of the reconstructed
-bundles. Addition of chart operators makes this category preadditive. The trivial rank-zero
-core is a zero object. No nonemptiness or separation assumption on the base is required.
+bundles. Addition of chart operators makes this category preadditive. Every rank-zero core,
+in particular the trivial one, is a zero object. No nonemptiness or separation assumption on
+the base is required.
 
 Objects here have constant rank. They provide the constituent categories on the clopen rank
 strata of a variable-rank bundle; no boundedness assertion about variable ranks is made.
@@ -32,6 +33,10 @@ For real or complex scalars and `B : Type u`, both the objects and the morphisms
 jointly detects equality of morphisms. Over a complete scalar field, `isIso_iff_bijective`
 characterizes categorical isomorphisms exactly by fibrewise bijectivity: continuous inversion
 in finite-dimensional charts supplies the inverse bundle morphism.
+
+Between two cores with the same chart domains, a fixed coordinate operator intertwining their
+transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
+intertwining coordinate equivalence is an isomorphism (`constIso`).
 
 The construction uses Mathlib's vector-bundle cores and preadditive-category interfaces,
 and the coordinate descent and Hom-bundle inversion API in the imported modules.
@@ -60,6 +65,24 @@ structure FiniteRankBundleCore where
 namespace FiniteRankBundleCore
 
 variable {𝕜 B}
+
+/-- To prove a property of point-indexed cores, one may assume the chosen index function
+is definitionally the identity. This avoids unpacking the fields of `VectorBundleCore`. -/
+@[elab_as_elim] theorem induction_on {motive : FiniteRankBundleCore 𝕜 B → Prop}
+    (A : FiniteRankBundleCore 𝕜 B)
+    (h : ∀ (n : ℕ) (c : VectorBundleCore 𝕜 B (Fin n → 𝕜) B)
+      (hc : ∀ x, c.indexAt x = x),
+      motive ⟨n,
+        { c with
+          indexAt := id
+          mem_baseSet_at := fun x => by simpa only [id_eq, hc] using c.mem_baseSet_at x },
+        fun _ => rfl⟩) : motive A := by
+  rcases A with ⟨n, c, hc⟩
+  have hi : c.indexAt = id := funext hc
+  have hm := h n c hc
+  cases c
+  cases hi
+  exact hm
 
 /-- The transition from a point's own chart to itself is the identity. -/
 @[simp] theorem coordChange_self (A : FiniteRankBundleCore 𝕜 B) (x : B) :
@@ -91,6 +114,18 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
 @[simp] theorem fiberMap_comp (f : A ⟶ D) (g : D ⟶ C) (x : B) :
     (f ≫ g).fiberMap x = (g.fiberMap x).comp (f.fiberMap x) :=
   CoordinateHom.fiberMap_comp g f x
+
+/-- Each point lies in the chart labelled by itself. -/
+theorem mem_baseSet_self (A : FiniteRankBundleCore 𝕜 B) (x : B) : x ∈ A.core.baseSet x := by
+  simpa only [A.indexAt_eq] using A.core.mem_baseSet_at x
+
+/-- At the charts labelled by a point, the chart operator of a morphism is its fibre map. -/
+theorem operator_self (f : A ⟶ D) (x : B) :
+    f.operator x x ⟨x, A.mem_baseSet_self x, D.mem_baseSet_self x⟩ = f.fiberMap x := by
+  rw [CoordinateHom.operator_eq]
+  ext v
+  simp only [inChartCoordinates_apply, A.indexAt_eq, D.indexAt_eq, coordChange_self,
+    ContinuousLinearMap.id_apply]
 
 /-- Pointwise addition of coordinate bundle maps makes the category preadditive. -/
 instance : Preadditive (FiniteRankBundleCore 𝕜 B) where
@@ -157,23 +192,27 @@ def trivial (n : ℕ) : FiniteRankBundleCore 𝕜 B where
 @[simp] theorem coordChange_trivial (n : ℕ) (i j x : B) :
     (trivial 𝕜 B n).core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin n → 𝕜) := (rfl)
 
-/-- The trivial rank-zero core is a zero object. -/
-theorem isZero_trivial_zero : IsZero (trivial 𝕜 B 0) where
+/-- A core of rank zero is a zero object: its fibres are zero spaces. -/
+theorem isZero_of_rank_eq_zero (A : FiniteRankBundleCore 𝕜 B) (h : A.rank = 0) : IsZero A where
   unique_to D := ⟨⟨⟨0⟩, fun f => by
     apply hom_ext
     intro x
     apply ContinuousLinearMap.ext
     intro v
-    let : Subsingleton (Fin (trivial 𝕜 B 0).rank → 𝕜) := by
-      rw [rank_trivial]
+    let : Subsingleton (Fin A.rank → 𝕜) := by
+      rw [h]
       infer_instance
     have hv : v = 0 := Subsingleton.elim _ _
     simp [hv]⟩⟩
-  unique_from A := ⟨⟨⟨0⟩, fun f => by
+  unique_from D := ⟨⟨⟨0⟩, fun f => by
     apply hom_ext
     intro x
     ext v i
-    exact Fin.elim0 i⟩⟩
+    exact (Fin.cast h i).elim0⟩⟩
+
+/-- The trivial rank-zero core is a zero object. -/
+theorem isZero_trivial_zero : IsZero (trivial 𝕜 B 0) :=
+  isZero_of_rank_eq_zero _ (rank_trivial 0)
 
 /-- A point-indexed rank-zero core supplies the category's zero object. -/
 instance : HasZeroObject (FiniteRankBundleCore 𝕜 B) :=
@@ -204,6 +243,83 @@ noncomputable def ofBundle (n : ℕ) (E : B → Type*)
     [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
     [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] :
     (ofBundle 𝕜 n E).core = pointIndexedCore 𝕜 (Fin n → 𝕜) E := (rfl)
+
+/-- The bundle map whose coordinate matrix is the same operator `T` at every point, from a core
+whose chart domains lie in those of the target, when `T` intertwines the transition maps. In the
+charts `i` and `j` it is represented by the target transition from `i` to `j` after `T`. -/
+def constHom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
+    (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (hT : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) :
+    A ⟶ D where
+  operator i j :=
+    ⟨fun x => (D.core.coordChange i j x).comp T,
+      (continuousOn_iff_continuous_domRestrict.1 ((D.core.continuousOn_coordChange i j).mono
+        fun _ (hx : _ ∈ A.core.baseSet i ∩ D.core.baseSet j) =>
+          ⟨hbase i hx.1, hx.2⟩)).clm_comp_const T⟩
+  compatible i i' j j' x hi hi' hj hj' v := by
+    have hDi : x ∈ D.core.baseSet i := hbase i hi
+    have hDi' : x ∈ D.core.baseSet i' := hbase i' hi'
+    -- Both sides are transitions of `D` applied after `T`; the calculation is stated on the
+    -- underlying operators, to which the chart operators reduce.
+    calc D.core.coordChange j j' x (D.core.coordChange i j x (T v))
+        = D.core.coordChange i j' x (T v) := D.core.coordChange_comp i j j' x ⟨⟨hDi, hj⟩, hj'⟩ _
+      _ = D.core.coordChange i' j' x (D.core.coordChange i i' x (T v)) :=
+        (D.core.coordChange_comp i i' j' x ⟨⟨hDi, hDi'⟩, hj'⟩ _).symm
+      _ = D.core.coordChange i' j' x (T (A.core.coordChange i i' x v)) := by
+        rw [← ContinuousLinearMap.comp_apply T, hT i i' x hi hi', ContinuousLinearMap.comp_apply]
+
+/-- A bundle map with constant coordinate matrix `T` is `T` on every fibre. -/
+@[simp] theorem fiberMap_constHom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
+    (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (hT : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) (x : B) :
+    (constHom hbase T hT).fiberMap x = T := by
+  ext v : 1
+  rw [CoordinateHom.fiberMap_def]
+  simp only [constHom, ContinuousMap.coe_mk, ContinuousLinearMap.comp_apply, A.indexAt_eq,
+    D.indexAt_eq, coordChange_self, ContinuousLinearMap.id_apply]
+
+/-- Two cores with the same chart domains whose transition maps are intertwined by a fixed
+coordinate equivalence `e` are isomorphic, by `e` on every fibre. -/
+def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
+    A ≅ D where
+  hom := constHom (fun i => (hbase i).le) e he
+  inv := constHom (fun i => (hbase i).ge) (e.symm : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜))
+      fun i j x hi hj => by
+    ext w : 1
+    apply e.injective
+    have h := congrArg (fun S => S (e.symm w))
+      (he i j x ((hbase i).symm ▸ hi) ((hbase j).symm ▸ hj))
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply] at h ⊢
+    exact h.symm
+  hom_inv_id := hom_ext fun x => by
+    rw [fiberMap_comp, fiberMap_constHom, fiberMap_constHom, fiberMap_id]
+    exact e.coe_symm_comp_coe
+  inv_hom_id := hom_ext fun x => by
+    rw [fiberMap_comp, fiberMap_constHom, fiberMap_constHom, fiberMap_id]
+    exact e.coe_comp_coe_symm
+
+@[simp] theorem fiberMap_constIso_hom (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) (x : B) :
+    (constIso hbase e he).hom.fiberMap x = e :=
+  fiberMap_constHom (fun i => (hbase i).le) _ he x
+
+@[simp] theorem fiberMap_constIso_inv (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) (x : B) :
+    (constIso hbase e he).inv.fiberMap x = e.symm := by
+  simp only [constIso, fiberMap_constHom]
 
 section Isomorphisms
 

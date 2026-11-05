@@ -43,6 +43,7 @@ in its parameters with no case split.
 * `hasLaw_logisticMeasure_of_hasLaw_uniformMeasure` — the logit of a standard uniform variable,
   scaled and shifted, has the logistic law;
 * `cdf_logisticMeasure_eq` — the cdf is `Real.sigmoid ((x - m) / s)`;
+* `support_logisticMeasure` — every valid logistic law has full topological support;
 * `logisticMeasure_eq_withDensity`, `hasPDF_of_hasLaw_logisticMeasure`,
   `pdf_eq_logisticPDF_of_hasLaw_logisticMeasure` and `rnDeriv_logisticMeasure` — the density;
 * `quantile_logisticMeasure` — the quantile is `m + s * log (u / (1 - u))`;
@@ -294,6 +295,31 @@ theorem cdf_logisticMeasure_eq (hs : 0 < s) (m x : ℝ) :
   rw [cdf_eq_real, measureReal_def, logisticMeasure_Iic hs,
     ENNReal.toReal_ofReal (Real.sigmoid_nonneg _)]
 
+/-- The cdf of a valid logistic law is strictly increasing. -/
+theorem strictMono_cdf_logisticMeasure (hs : 0 < s) (m : ℝ) :
+    StrictMono (cdf (logisticMeasure m s)) := by
+  intro x y hxy
+  rw [cdf_logisticMeasure_eq hs, cdf_logisticMeasure_eq hs]
+  exact Real.sigmoid_strictMono (div_lt_div_of_pos_right (sub_lt_sub_right hxy m) hs)
+
+/-- The cdf of a valid logistic law is continuous. -/
+theorem continuous_cdf_logisticMeasure (hs : 0 < s) (m : ℝ) :
+    Continuous (cdf (logisticMeasure m s)) := by
+  have hfun : cdf (logisticMeasure m s) = fun x ↦ Real.sigmoid ((x - m) / s) :=
+    funext (cdf_logisticMeasure_eq hs m)
+  rw [hfun]
+  fun_prop
+
+/-- A valid logistic law has full topological support; an invalid law has empty support. -/
+@[simp]
+theorem support_logisticMeasure (m s : ℝ) :
+    (logisticMeasure m s).support = if 0 < s then Set.univ else ∅ := by
+  by_cases hs : 0 < s
+  · rw [ite_eq_left hs]
+    let _ := isProbabilityMeasure_logisticMeasure hs m
+    exact Measure.support_eq_univ_of_strictMono_cdf _ (strictMono_cdf_logisticMeasure hs m)
+  · rw [ite_eq_right hs, logisticMeasure_of_nonpos (le_of_not_gt hs), Measure.support_zero]
+
 /-! ### The density of the measure -/
 
 /-- **The density of the logistic law.** The logistic law is `volume.withDensity logisticPDF`, at
@@ -341,9 +367,7 @@ theorem quantile_logisticMeasure (hs : 0 < s) (m : ℝ) {u : ℝ} (hu : u ∈ Io
   have hcdf : cdf (logisticMeasure m s) (m + s * Real.log (u / (1 - u))) = u := by
     rw [cdf_logisticMeasure_eq hs, add_sub_cancel_left, mul_div_cancel_left₀ _ hs.ne',
       Real.sigmoid_log_div_one_sub hu.1 hu.2]
-  have hmono : StrictMono (cdf (logisticMeasure m s)) := fun x y hxy => by
-    rw [cdf_logisticMeasure_eq hs, cdf_logisticMeasure_eq hs]
-    exact Real.sigmoid_strictMono (div_lt_div_of_pos_right (sub_lt_sub_right hxy m) hs)
+  have hmono := strictMono_cdf_logisticMeasure hs m
   have hq := Measure.quantile_cdf (logisticMeasure m s) (hmono.strictMonoOn _)
     (x := m + s * Real.log (u / (1 - u))) (by rw [hcdf]; exact hu)
   rwa [hcdf] at hq

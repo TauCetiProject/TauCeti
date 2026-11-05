@@ -38,6 +38,8 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
   bases equals the operator Frobenius seminorm.
 * `LinearMap.sum_norm_apply_sq_eq_sum_norm_apply_sq`: `∑ᵢ ‖A bᵢ‖²` is independent of the
   orthonormal basis.
+* `LinearMap.sum_sq_norm_apply_orthonormal_le`: compression to an orthonormal family
+  cannot increase the squared Frobenius sum.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius`: the Frobenius seminorm.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_apply`: `‖A‖_F = √(∑ᵢ ‖A bᵢ‖²)` for every
   orthonormal basis `(bᵢ)`.
@@ -206,3 +208,33 @@ theorem nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply (A : E →ₗ[�
 end TauCeti.UnitarilyInvariantSeminorm
 
 end SingularValues
+
+/-- A linear map's total squared norm on an orthonormal family is bounded by
+its total squared norm on an orthonormal basis of the source. The target need
+not be finite-dimensional.
+
+Generalized from `YuWangSamworth2015/Core/Residual.lean` in the Kitware DKPS
+formalization (Jon Crall and GPT 5.6 High; Apache-2.0), using orthonormal basis
+extension in place of symmetry. -/
+theorem LinearMap.sum_sq_norm_apply_orthonormal_le
+    {𝕜 E F ι κ : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [Fintype ι] [Fintype κ]
+    (M : E →ₗ[𝕜] F) (b : OrthonormalBasis ι 𝕜 E)
+    {w : κ → E} (hw : Orthonormal 𝕜 w) :
+    ∑ i, ‖M (w i)‖ ^ 2 ≤ ∑ k, ‖M (b k)‖ ^ 2 := by
+  classical
+  have := Module.Finite.of_basis b.toBasis
+  have hwrange : Orthonormal 𝕜 ((↑) : Set.range w → E) :=
+    (orthonormal_subtype_range hw.linearIndependent.injective).mpr hw
+  obtain ⟨t, c, ht, hc⟩ := hwrange.exists_orthonormalBasis_extension
+  let g : κ ↪ t := ⟨fun i ↦ ⟨w i, ht ⟨i, rfl⟩⟩,
+    fun _ _ h ↦ hw.linearIndependent.injective (congrArg Subtype.val h)⟩
+  have hg (i : κ) : c (g i) = w i := by
+    rw [hc]
+    rfl
+  calc ∑ i, ‖M (w i)‖ ^ 2 = ∑ i, ‖M (c (g i))‖ ^ 2 := by simp only [hg]
+    _ ≤ ∑ k, ‖M (c k)‖ ^ 2 := by
+      rw [← Finset.sum_map Finset.univ g (fun k ↦ ‖M (c k)‖ ^ 2)]
+      exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _)
+        fun _ _ _ ↦ sq_nonneg _
+    _ = ∑ k, ‖M (b k)‖ ^ 2 := M.sum_norm_apply_sq_eq_sum_norm_apply_sq c b

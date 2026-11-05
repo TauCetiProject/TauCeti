@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.HomotopyClass
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic

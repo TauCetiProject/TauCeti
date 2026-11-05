@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric
 
 /-!
 # The algebraic form of Legendre's elliptic integrals
@@ -53,86 +52,24 @@ open _root_.Real MeasureTheory Set
 
 /-! ### The substitution `t = sin θ` -/
 
-/- Mathlib's monotone change of variables
-`intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg` and its integrability counterpart
-`intervalIntegral.integrable_deriv_smul_comp_iff_of_deriv_nonneg`, applied to `t = sin θ` on
-`[-π/2, π/2]`, need no continuity of the integrand in `t`. On the open interval `(-π/2, π/2)`,
-each algebraic integrand at `t = sin θ`, multiplied by `cos θ`, is the trigonometric integrand,
-for every `k` and `α2`; this gives the identities. The integrability statements also use
-continuity of the trigonometric integrand, which holds for `k ^ 2 < 1` (and `α2 < 1`) in the
-first and third cases and for every `k` in the second. -/
+/- The shared weighted sine-substitution API handles the change of variables, including
+its singular endpoints. Only the algebraic rearrangement of the Legendre integrands remains. -/
 
-/-- On `(-π/2, π/2)`, `cos θ * (1 - sin² θ)^(-1/2) = 1`. -/
-private lemma cos_mul_one_sub_sin_sq_rpow {θ : ℝ} (hθ : θ ∈ Ioo (-(π / 2)) (π / 2)) :
-    cos θ * (1 - sin θ ^ 2) ^ (-1 / 2 : ℝ) = 1 := by
-  have hc : 0 < cos θ := cos_pos_of_mem_Ioo hθ
-  rw [← cos_sq', neg_div, rpow_neg (sq_nonneg _), ← sqrt_eq_rpow, sqrt_sq hc.le,
-    mul_inv_cancel₀ hc.ne']
+private lemma firstKind_algebraic_integrand {k t : ℝ} (ht : t ∈ Icc (-1 : ℝ) 1) :
+    ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ) =
+      (1 - t ^ 2) ^ (-1 / 2 : ℝ) * (1 - k ^ 2 * t ^ 2) ^ (-1 / 2 : ℝ) := by
+  have ht' : 0 ≤ 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
+  simp_rw [neg_div, rpow_neg_eq_inv_rpow, ← sqrt_eq_rpow, sqrt_inv,
+    sqrt_mul ht', mul_inv]
 
-/-- If `cos θ * g (sin θ) = f θ` on `(-π/2, π/2)`, then `∫₀^φ f = ∫₀^{sin φ} g` for
-`|φ| ≤ π / 2`. -/
-private lemma integral_eq_integral_sin_of_eqOn {f g : ℝ → ℝ}
-    (hfg : EqOn (fun θ ↦ cos θ * g (sin θ)) f (Ioo (-(π / 2)) (π / 2))) {φ : ℝ}
-    (hφ : |φ| ≤ π / 2) :
-    ∫ θ in (0 : ℝ)..φ, f θ = ∫ t in (0 : ℝ)..sin φ, g t := by
-  have h0 : (0 : ℝ) ∈ Icc (-(π / 2)) (π / 2) := ⟨by linarith [pi_pos], by linarith [pi_pos]⟩
-  have hsub : ∀ θ ∈ Ioo (min 0 φ) (max 0 φ), θ ∈ Ioo (-(π / 2)) (π / 2) :=
-    fun θ hθ ↦ uIoo_subset_Ioo h0 (abs_le.1 hφ) hθ
-  have h := intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg (g := g)
-    continuous_sin.continuousOn (fun θ _ ↦ hasDerivAt_sin θ)
-    (fun θ hθ ↦ (cos_pos_of_mem_Ioo (hsub θ hθ)).le)
-  rw [sin_zero] at h
-  rw [← h]
-  exact intervalIntegral.integral_congr_uIoo fun θ hθ ↦ (hfg (hsub θ hθ)).symm
-
-/-- If `cos θ * g (sin θ) = f θ` on `(-π/2, π/2)` for a continuous `f`, then `g` is integrable
-on `[-1, 1]`. -/
-private lemma integrableOn_Icc_of_eqOn {f g : ℝ → ℝ}
-    (hfg : EqOn (fun θ ↦ cos θ * g (sin θ)) f (Ioo (-(π / 2)) (π / 2))) (hf : Continuous f) :
-    IntegrableOn g (Icc (-1) 1) := by
-  have hπ : -(π / 2) ≤ π / 2 := by linarith [pi_pos]
-  have hsub : ∀ θ ∈ Ioo (min (-(π / 2)) (π / 2)) (max (-(π / 2)) (π / 2)),
-      θ ∈ Ioo (-(π / 2)) (π / 2) :=
-    fun θ hθ ↦ uIoo_subset_Ioo (left_mem_Icc.2 hπ) (right_mem_Icc.2 hπ) hθ
-  have h := (intervalIntegral.integrable_deriv_smul_comp_iff_of_deriv_nonneg (g := g)
-    continuous_sin.continuousOn (fun θ _ ↦ hasDerivAt_sin θ)
-    (fun θ hθ ↦ (cos_pos_of_mem_Ioo (hsub θ hθ)).le)).1 <|
-      (hf.intervalIntegrable _ _).congr_uIoo fun θ hθ ↦ (hfg (hsub θ hθ)).symm
-  rwa [sin_neg, sin_pi_div_two, intervalIntegrable_iff_integrableOn_Icc_of_le (by norm_num)] at h
-
-/-- The algebraic integrand of the first kind at `t = sin θ`, times `cos θ`, is the
-trigonometric integrand. -/
-private lemma eqOn_legendreF_integrand (k : ℝ) :
-    EqOn (fun θ ↦ cos θ * ((1 - sin θ ^ 2) * (1 - k ^ 2 * sin θ ^ 2)) ^ (-1 / 2 : ℝ))
-      (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) (Ioo (-(π / 2)) (π / 2)) := fun θ hθ ↦ by
+private lemma thirdKind_algebraic_integrand (k α2 : ℝ) :
+    EqOn (fun t ↦ (1 - t ^ 2) ^ (-1 / 2 : ℝ) *
+      ((1 - α2 * t ^ 2)⁻¹ * (1 - k ^ 2 * t ^ 2) ^ (-1 / 2 : ℝ)))
+      (fun t ↦ (1 - α2 * t ^ 2)⁻¹ *
+        ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ)) (Icc (-1) 1) := by
+  intro t ht
   dsimp only
-  have hc : 0 < 1 - sin θ ^ 2 := by rw [← cos_sq']; exact pow_pos (cos_pos_of_mem_Ioo hθ) 2
-  rcases le_or_gt 0 (1 - k ^ 2 * sin θ ^ 2) with hΔ | hΔ
-  · rw [mul_rpow hc.le hΔ, ← mul_assoc, cos_mul_one_sub_sin_sq_rpow hθ, one_mul]
-  · -- A negative base to the power `-1/2` is `0`, as `cos (-1/2 * π) = 0`.
-    have hcos : cos ((-1 / 2 : ℝ) * π) = 0 := by
-      rw [show (-1 / 2 : ℝ) * π = -(π / 2) by ring, cos_neg, cos_pi_div_two]
-    rw [rpow_def_of_neg (mul_neg_of_pos_of_neg hc hΔ), rpow_def_of_neg hΔ, hcos, mul_zero,
-      mul_zero, mul_zero]
-
-/-- The algebraic integrand of the second kind at `t = sin θ`, times `cos θ`, is the
-trigonometric integrand. -/
-private lemma eqOn_legendreE_integrand (k : ℝ) :
-    EqOn (fun θ ↦ cos θ * ((1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) * (1 - sin θ ^ 2) ^ (-1 / 2 : ℝ)))
-      (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ)) (Ioo (-(π / 2)) (π / 2)) := fun θ hθ ↦ by
-  dsimp only
-  rw [mul_left_comm, cos_mul_one_sub_sin_sq_rpow hθ, mul_one]
-
-/-- The algebraic integrand of the third kind at `t = sin θ`, times `cos θ`, is the
-trigonometric integrand. -/
-private lemma eqOn_legendrePi_integrand (k α2 : ℝ) :
-    EqOn (fun θ ↦ cos θ * ((1 - α2 * sin θ ^ 2)⁻¹ *
-        ((1 - sin θ ^ 2) * (1 - k ^ 2 * sin θ ^ 2)) ^ (-1 / 2 : ℝ)))
-      (fun θ ↦ (1 - α2 * sin θ ^ 2)⁻¹ * (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ))
-      (Ioo (-(π / 2)) (π / 2)) := fun θ hθ ↦ by
-  dsimp only
-  rw [mul_left_comm]
-  exact congrArg _ (eqOn_legendreF_integrand k hθ)
+  rw [firstKind_algebraic_integrand ht, mul_left_comm]
 
 /-! ### The incomplete integrals -/
 
@@ -141,24 +78,35 @@ private lemma eqOn_legendrePi_integrand (k α2 : ℝ) :
 theorem legendreF_eq_integral_algebraic {φ : ℝ} (k : ℝ) (hφ : |φ| ≤ π / 2) :
     legendreF φ k =
       ∫ t in (0 : ℝ)..sin φ, ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ) := by
-  rw [legendreF_def]
-  exact integral_eq_integral_sin_of_eqOn (eqOn_legendreF_integrand k) hφ
+  rw [legendreF_def, integral_comp_sin_eq_integral_rpow (E := ℝ) (a := 0)
+    (abs_zero.trans_le pi_div_two_pos.le) hφ
+    (fun t ↦ (1 - k ^ 2 * t ^ 2) ^ (-1 / 2 : ℝ)), sin_zero]
+  simp only [smul_eq_mul]
+  exact intervalIntegral.integral_congr fun t ht ↦
+    (firstKind_algebraic_integrand
+      (uIcc_subset_Icc (by norm_num) ⟨neg_one_le_sin φ, sin_le_one φ⟩ ht)).symm
 
 /-- **The algebraic form of the integral of the second kind** (DLMF 19.2.5): for `|φ| ≤ π / 2`,
 `E(φ, k) = ∫₀^{sin φ} (1 - k² t²)^(1/2) (1 - t²)^(-1/2) dt`. -/
 theorem legendreE_eq_integral_algebraic {φ : ℝ} (k : ℝ) (hφ : |φ| ≤ π / 2) :
     legendreE φ k =
       ∫ t in (0 : ℝ)..sin φ, (1 - k ^ 2 * t ^ 2) ^ (1 / 2 : ℝ) * (1 - t ^ 2) ^ (-1 / 2 : ℝ) := by
-  rw [legendreE_def]
-  exact integral_eq_integral_sin_of_eqOn (eqOn_legendreE_integrand k) hφ
+  simpa only [legendreE_def, sin_zero, smul_eq_mul, mul_comm] using
+    integral_comp_sin_eq_integral_rpow (E := ℝ) (a := 0) (abs_zero.trans_le pi_div_two_pos.le) hφ
+      (fun t ↦ (1 - k ^ 2 * t ^ 2) ^ (1 / 2 : ℝ))
 
 /-- **The algebraic form of the integral of the third kind** (DLMF 19.2.7): for `|φ| ≤ π / 2`,
 `Π(φ, k, α²) = ∫₀^{sin φ} (1 - α² t²)⁻¹ ((1 - t²)(1 - k² t²))^(-1/2) dt`. -/
 theorem legendrePi_eq_integral_algebraic {φ : ℝ} (k α2 : ℝ) (hφ : |φ| ≤ π / 2) :
     legendrePi φ k α2 = ∫ t in (0 : ℝ)..sin φ,
       (1 - α2 * t ^ 2)⁻¹ * ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ) := by
-  rw [legendrePi_def]
-  exact integral_eq_integral_sin_of_eqOn (eqOn_legendrePi_integrand k α2) hφ
+  rw [legendrePi_def, integral_comp_sin_eq_integral_rpow (E := ℝ) (a := 0)
+    (abs_zero.trans_le pi_div_two_pos.le) hφ
+    (fun t ↦ (1 - α2 * t ^ 2)⁻¹ * (1 - k ^ 2 * t ^ 2) ^ (-1 / 2 : ℝ)), sin_zero]
+  simp only [smul_eq_mul]
+  exact intervalIntegral.integral_congr fun t ht ↦
+    thirdKind_algebraic_integrand k α2
+      (uIcc_subset_Icc (by norm_num) ⟨neg_one_le_sin φ, sin_le_one φ⟩ ht)
 
 /-! ### The complete integrals -/
 
@@ -195,23 +143,40 @@ theorem legendrePic_eq_integral_algebraic (k α2 : ℝ) :
 /-- For `k ^ 2 < 1`, the algebraic integrand `((1 - t²)(1 - k² t²))^(-1/2)` of the first kind is
 integrable on `[-1, 1]`, despite its singularities at `t = ±1`. -/
 theorem integrableOn_legendreF_algebraic_integrand {k : ℝ} (hk : k ^ 2 < 1) :
-    IntegrableOn (fun t ↦ ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ)) (Icc (-1) 1) :=
-  integrableOn_Icc_of_eqOn (eqOn_legendreF_integrand k) (continuous_legendreF_integrand hk)
+    IntegrableOn (fun t ↦ ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ)) (Icc (-1) 1) := by
+  have h := (intervalIntegrable_comp_sin_iff (E := ℝ) (a := -(π / 2)) (b := π / 2)
+    (by rw [abs_neg, abs_of_pos pi_div_two_pos]) (abs_of_pos pi_div_two_pos).le
+    (fun t ↦ (1 - k ^ 2 * t ^ 2) ^ (-1 / 2 : ℝ))).mp
+      ((continuous_legendreF_integrand hk).intervalIntegrable _ _)
+  simp only [sin_neg, sin_pi_div_two, smul_eq_mul] at h
+  rw [intervalIntegrable_iff_integrableOn_Icc_of_le (by norm_num)] at h
+  exact h.congr_fun (fun t ht ↦ (firstKind_algebraic_integrand ht).symm) measurableSet_Icc
 
 /-- For every `k`, the algebraic integrand `(1 - k² t²)^(1/2) (1 - t²)^(-1/2)` of the second kind
 is integrable on `[-1, 1]`, including for `k ^ 2 < 1`, where it is singular at `t = ±1`. -/
 theorem integrableOn_legendreE_algebraic_integrand (k : ℝ) :
     IntegrableOn (fun t ↦ (1 - k ^ 2 * t ^ 2) ^ (1 / 2 : ℝ) * (1 - t ^ 2) ^ (-1 / 2 : ℝ))
-      (Icc (-1) 1) :=
-  integrableOn_Icc_of_eqOn (eqOn_legendreE_integrand k) (continuous_legendreE_integrand k)
+      (Icc (-1) 1) := by
+  have h := (intervalIntegrable_comp_sin_iff (E := ℝ) (a := -(π / 2)) (b := π / 2)
+    (by rw [abs_neg, abs_of_pos pi_div_two_pos]) (abs_of_pos pi_div_two_pos).le
+    (fun t ↦ (1 - k ^ 2 * t ^ 2) ^ (1 / 2 : ℝ))).mp
+      ((continuous_legendreE_integrand k).intervalIntegrable _ _)
+  simp only [sin_neg, sin_pi_div_two, smul_eq_mul] at h
+  rw [intervalIntegrable_iff_integrableOn_Icc_of_le (by norm_num)] at h
+  simpa only [mul_comm] using h
 
 /-- For `k ^ 2 < 1` and `α2 < 1`, the algebraic integrand
 `(1 - α² t²)⁻¹ ((1 - t²)(1 - k² t²))^(-1/2)` of the third kind is integrable on `[-1, 1]`, despite
 its singularities at `t = ±1`. -/
 theorem integrableOn_legendrePi_algebraic_integrand {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) :
     IntegrableOn (fun t ↦ (1 - α2 * t ^ 2)⁻¹ * ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ))
-      (Icc (-1) 1) :=
-  integrableOn_Icc_of_eqOn (eqOn_legendrePi_integrand k α2)
-    (continuous_legendrePi_integrand hk hα)
+      (Icc (-1) 1) := by
+  have h := (intervalIntegrable_comp_sin_iff (E := ℝ) (a := -(π / 2)) (b := π / 2)
+    (by rw [abs_neg, abs_of_pos pi_div_two_pos]) (abs_of_pos pi_div_two_pos).le
+    (fun t ↦ (1 - α2 * t ^ 2)⁻¹ * (1 - k ^ 2 * t ^ 2) ^ (-1 / 2 : ℝ))).mp
+      ((continuous_legendrePi_integrand hk hα).intervalIntegrable _ _)
+  simp only [sin_neg, sin_pi_div_two, smul_eq_mul] at h
+  rw [intervalIntegrable_iff_integrableOn_Icc_of_le (by norm_num)] at h
+  exact h.congr_fun (thirdKind_algebraic_integrand k α2) measurableSet_Icc
 
 end TauCeti.Real

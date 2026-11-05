@@ -25,7 +25,9 @@ to `e^τ`, where `τ ≥ 0` is the least time for which the backward Liouville f
 
 * `r(ψ_t y) = e^t` for `y ∈ ∂W` and `t ≥ 0`
   (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_flowOf`), and more generally
-  `r(ψ_t x) = e^t r(x)` for `x` outside the interior of `W` and `t ≥ 0`;
+  `r(ψ_t x) = e^t r(x)` for `x` outside the interior of `W` and `t ≥ 0`, and even for `t < 0`
+  as long as `log r(x) + t ≥ 0`
+  (`TauCeti.IsLiouvilleCompletion.log_liouvilleRadialCoordinate_flowOf`);
 * conversely `ψ_{-log r(x)}(x)` is the boundary point on the trajectory through such an `x`
   (`TauCeti.IsLiouvilleCompletion.flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier`).
 
@@ -33,8 +35,9 @@ Its sublevel sets are images of `W` under the flow: for `T ≥ 0`, `r(x) ≤ e^T
 `ψ_{-T}(x) ∈ W` (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_le_exp_iff`), and for
 `T > 0`, `r(x) < e^T` exactly when `ψ_{-T}(x)` lies in the interior of `W`. Hence `r` is
 continuous and its sublevel sets `{r ≤ c}` are compact, so that "outside a compact set" and
-"where `r` is large" mean the same thing. Smoothness of `r` on the cylindrical end is not
-treated here.
+"where `r` is large" mean the same thing. For `c ≥ 1` these truncations `{r ≤ c}` of the
+completion are again Liouville domains, containing `W` in their interior when `c > 1`.
+Smoothness of `r` on the cylindrical end is not treated here.
 
 A function `F : M → ℝ` is linear at infinity with slope `a` (`TauCeti.IsLinearAtInfinity`) when
 `F = a r + b` outside a compact set; on a completion this holds exactly when `F = a r + b` on some
@@ -55,9 +58,13 @@ determined by `F` as soon as `W ≠ M` (`TauCeti.IsLinearAtInfinity.unique`).
   interior, under the backward Liouville flow `ψ_{-T}`.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_flowOf_of_notMem_interior`:
   `r(ψ_t x) = e^t r(x)` on the cylindrical end, for `t ≥ 0`.
+* `TauCeti.IsLiouvilleCompletion.log_liouvilleRadialCoordinate_flowOf`:
+  `log r(ψ_t x) = log r(x) + t` on the cylindrical end, also for times `t < 0` that stay on it.
 * `TauCeti.IsLiouvilleCompletion.continuous_liouvilleRadialCoordinate`,
   `TauCeti.IsLiouvilleCompletion.isCompact_setOf_liouvilleRadialCoordinate_le`: `r` is continuous
   with compact sublevel sets.
+* `TauCeti.IsLiouvilleCompletion.isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le`: the
+  truncations `{r ≤ c}`, `c ≥ 1`, of a completion are Liouville domains.
 * `TauCeti.IsLiouvilleCompletion.isLinearAtInfinity_iff`: linearity at infinity in terms of the
   region where `r` is large.
 * `TauCeti.IsLinearAtInfinity.unique`: the slope at infinity is unique.
@@ -256,6 +263,20 @@ theorem liouvilleRadialCoordinate_flowOf_of_notMem_interior (h : IsLiouvilleComp
   rw [h.liouvilleRadialCoordinate_flowOf hZ hy hs, h.flowOf_flowOf hZ,
     h.liouvilleRadialCoordinate_flowOf hZ hy (add_nonneg ht hs), Real.exp_add]
 
+/-- **The Liouville flow translates the logarithm of the radial coordinate.** If `x` lies outside
+the interior of the Liouville domain and `0 ≤ log r(x) + t`, then `log r(ψ_t x) = log r(x) + t`.
+Here `t` may be negative, as long as the trajectory through `x` does not enter the interior of the
+domain before time `t`: `log r` is the time coordinate of the cylindrical end. -/
+theorem log_liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W)
+    (ht : 0 ≤ Real.log (liouvilleRadialCoordinate Z W x) + t) :
+    Real.log (liouvilleRadialCoordinate Z W (flowOf Z t x)) =
+      Real.log (liouvilleRadialCoordinate Z W x) + t := by
+  obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
+  rw [h.liouvilleRadialCoordinate_flowOf hZ hy hs, Real.log_exp] at ht ⊢
+  rw [h.flowOf_flowOf hZ, h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith), Real.log_exp,
+    add_comm]
+
 /-- **The boundary point of a Liouville trajectory.** If `x` lies outside the interior of the
 Liouville domain, then flowing `x` backwards for time `log r(x)` lands on the boundary. -/
 theorem flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier (h : IsLiouvilleCompletion ω α W)
@@ -305,18 +326,34 @@ theorem continuous_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
           Real.exp_log (one_pos.trans hc)]
       exact this ▸ isOpen_interior.preimage (hcont _)
 
+/-- **The truncations of a completion are Liouville domains.** For `c ≥ 1`, the sublevel set
+`{r ≤ c}` of the radial coordinate of a completion of the Liouville domain `W`, which is the image
+of `W` under the Liouville flow for time `log c`, is a Liouville domain for the same form and
+primitive. -/
+theorem isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 ≤ c) :
+    IsLiouvilleDomain ω α {x | liouvilleRadialCoordinate Z W x ≤ c} := by
+  rw [h.setOf_liouvilleRadialCoordinate_le_eq hZ hc]
+  exact h.preimage_flowOf hZ (h.isCompleteVectorField hZ) _
+
 /-- The sublevel sets `{r ≤ c}` of the radial coordinate of a completion are compact. -/
 theorem isCompact_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (c : ℝ) :
     IsCompact {x | liouvilleRadialCoordinate Z W x ≤ c} := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   rcases lt_or_ge c 1 with hc | hc
   · have : {x | liouvilleRadialCoordinate Z W x ≤ c} = ∅ := eq_empty_of_forall_notMem
       fun x hx ↦ (hc.trans_le (one_le_liouvilleRadialCoordinate Z W x)).not_ge hx
     exact this ▸ isCompact_empty
-  · -- The preimage of `W` under `ψ_{-log c}` is its image under the inverse map `ψ_{log c}`.
-    rw [h.setOf_liouvilleRadialCoordinate_le_eq hZ hc, funext (hψ _), ← ψ.image_eq_preimage_symm]
-    exact h.isCompact.image (ψ.continuous continuous_const continuous_id)
+  · exact (h.isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le hZ hc).isCompact
+
+/-- For `c > 1`, a Liouville domain lies in the interior of the truncation `{r ≤ c}` of its
+completion. -/
+theorem subset_interior_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 < c) :
+    W ⊆ interior {x | liouvilleRadialCoordinate Z W x ≤ c} := fun x hx ↦
+  interior_maximal (fun _ hy ↦ le_of_lt hy)
+    (isOpen_lt (h.continuous_liouvilleRadialCoordinate hZ) continuous_const)
+    (by rw [mem_ofPred_eq, (h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx]; exact hc)
 
 /-- **Linearity at infinity on a completion.** A function is linear at infinity with slope `a`
 exactly when it equals `a r + b` on the region `{r ≥ R}` where the radial coordinate is large. -/

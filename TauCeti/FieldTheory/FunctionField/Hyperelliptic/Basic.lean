@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
-public import TauCeti.FieldTheory.Separable.Quadratic
+public import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # Hyperelliptic function fields
@@ -110,7 +110,8 @@ theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
   refine ⟨Divisor.poles hF (Units.mk0 x hx0), ?_, ?_⟩
   · rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx, Units.val_mk0, hrank]
     norm_num
-  · simpa using Divisor.succ_le_dim_nsmul_poles hF (Units.mk0 x hx0) hx 1
+  · simpa using le_dim_zsmul_poles hF (Units.mk0 x hx0) hx (n := 1 + 1) (m := ((1 : ℕ) : ℤ))
+      (by omega)
 
 /-! ### From a divisor of degree two to the index-two subfield -/
 

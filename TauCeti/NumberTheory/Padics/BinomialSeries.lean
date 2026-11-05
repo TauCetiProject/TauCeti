@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.MahlerBasis
-public import Mathlib.RingTheory.PowerSeries.Binomial
-public import Mathlib.RingTheory.PowerSeries.PiTopology
+public import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The `p`-adic binomial series depends continuously on its exponent
@@ -23,6 +22,10 @@ continuously on `u`. This is the continuity that lets an identity between `(1 + 
 
 * `PadicInt.continuous_binomialSeries`: `u ↦ binomialSeries ℤ_[p] u` is continuous for the product
   topology on `ℤ_[p]⟦X⟧`.
+* `Continuous.powerSeries_subst_binomialSeries_sub_one`: binomial substitution depends
+  continuously on both the exponent and the outer series, in any topological p-adic algebra
+  with continuous scalar action. This permits dilation identities to extend from natural to
+  p-adic parameters.
 -/
 
 public section
@@ -43,3 +46,20 @@ theorem continuous_binomialSeries :
   exact (continuous_choose n).continuousAt
 
 end PadicInt
+
+open PowerSeries
+open scoped PowerSeries.WithPiTopology
+
+/-- Binomial substitution depends continuously on both the exponent and an independently
+varying outer series, for the coefficientwise topologies. -/
+theorem Continuous.powerSeries_subst_binomialSeries_sub_one {p : ℕ} [Fact p.Prime]
+    {R A : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [Algebra ℤ_[p] R]
+    [ContinuousSMul ℤ_[p] R] [TopologicalSpace A]
+    {F : A → R⟦X⟧} {a : A → ℤ_[p]} (hF : Continuous F) (ha : Continuous a) :
+    Continuous fun s ↦ (F s).subst (binomialSeries R (a s) - 1) := by
+  have hb : Continuous fun s ↦ binomialSeries R (a s) := by
+    refine continuous_iff_continuousAt.mpr fun s ↦
+      (WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+    simp only [binomialSeries_coeff]
+    exact (((PadicInt.continuous_choose n).comp ha).smul continuous_const).continuousAt
+  exact hF.powerSeries_subst (hb.sub continuous_const) (fun s ↦ by simp)

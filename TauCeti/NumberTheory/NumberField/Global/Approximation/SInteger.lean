@@ -141,13 +141,10 @@ theorem exists_forall_apply_add_le :
   refine ⟨∑ i, ‖mixedEmbedding.latticeBasis K i‖, fun S γ ↦ ?_⟩
   obtain ⟨ξ, hξS, hξ⟩ := exists_forall_finitePlace_apply_add_le_one S fun v ↦ γ v.1
   obtain ⟨ω, hω⟩ := exists_integer_forall_infinitePlace_add_le fun v ↦ ξ + γ v.1
-  have hω₁ (v : FinitePlace K) : v (ω : K) ≤ 1 := by
-    rw [← FinitePlace.norm_embedding_eq, RingOfIntegers.coe_eq_algebraMap]
-    exact FinitePlace.norm_le_one K v.maximalIdeal ω
   refine ⟨ξ + ω, fun v hv ↦ ?_, fun v hv ↦ ?_, fun v ↦ ?_⟩
-  · exact (v.add_le _ _).trans (max_le (hξS v hv) (hω₁ v))
+  · exact (v.add_le _ _).trans (max_le (hξS v hv) (v.apply_le_one ω))
   · rw [add_right_comm]
-    exact (v.add_le _ _).trans (max_le (hξ v hv) (hω₁ v))
+    exact (v.add_le _ _).trans (max_le (hξ v hv) (v.apply_le_one ω))
   · rw [add_comm ξ, add_assoc]
     exact hω v
 
