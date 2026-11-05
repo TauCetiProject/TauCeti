@@ -40,9 +40,11 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.orbitRelQuotient_smul_eq_base_iff`: in a cancellative action, a
   translate has the same `H`-orbit class as the base point exactly when the translator is in
   `H`.
-* `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq`: for a
-  normal subgroup, equality of two translates in the `H`-orbit quotient is equality of the
-  corresponding inverse representatives in `N(H) / H`.
+* `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer` and
+  `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq`: if the
+  normalizer of `H` acts freely, equality of two translates by elements of `N(H)` in the
+  `H`-orbit quotient is `g * k⁻¹ ∈ H`, equivalently equality of the corresponding inverse
+  representatives in `N(H) / H`.
 * `TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal`: in a free transitive
   action, the quotient by a normal subgroup is the normalizer quotient `N(H) / H`.
 * `TauCeti.MulAction.normalizerOrbitRelQuotientPermHom`: the normalizer action on the
@@ -52,8 +54,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive`: if the normalizer
   acts transitively, then the descended `N(H) / H` action on the `H`-orbit quotient is
   transitive.
-* `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
-  action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
+* `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the normalizer
+  of `H` acts freely, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 * `TauCeti.MulAction.orbitRelQuotientCongr`: an equivalence carrying one action to another along
   a group isomorphism induces an equivalence of orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
@@ -263,21 +265,42 @@ lemma MulAction.orbitRelQuotient_smul_eq_base_iff [IsCancelSMul G X] (H : Subgro
       g ∈ H := by
   simpa using MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem H x g 1
 
-/-- In a cancellative action by `G`, equality of two translates in the quotient by a normal
-subgroup `H` is equality of the corresponding inverse representatives in the normalizer
-quotient `N(H) / H`. -/
-lemma MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq [IsCancelSMul G X]
-    (H : Subgroup G) [H.Normal] (x : X) (g k : G) :
-    (Quotient.mk'' (g • x) : MulAction.orbitRel.Quotient H X) =
-        Quotient.mk'' (k • x) ↔
-      Subgroup.normalizerQuotientMk H
-          ⟨g⁻¹, by simp [H.normalizer_eq_top]⟩ =
-        Subgroup.normalizerQuotientMk H
-          ⟨k⁻¹, by simp [H.normalizer_eq_top]⟩ := by
-  rw [MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem,
-    Subgroup.normalizerQuotientMk_eq_iff_div_mem, div_eq_mul_inv, inv_inv,
-    (inferInstance : H.Normal).mem_comm_iff, ← inv_mem_iff]
-  simp [mul_inv_rev]
+/-- If the normalizer of `H` acts freely, two translates by elements of the normalizer have the
+same `H`-orbit class exactly when `g * k⁻¹ ∈ H`. -/
+lemma MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer
+    (H : Subgroup G) [IsCancelSMul (Subgroup.normalizer (H : Set G)) X] (x : X)
+    (g k : Subgroup.normalizer (H : Set G)) :
+    (Quotient.mk'' ((g : G) • x) : MulAction.orbitRel.Quotient H X) =
+        Quotient.mk'' ((k : G) • x) ↔
+      (g : G) * (k : G)⁻¹ ∈ H := by
+  constructor
+  · intro h
+    rw [Quotient.eq'', MulAction.orbitRel_apply] at h
+    obtain ⟨l, hl⟩ := h
+    have hmul : (⟨l, H.le_normalizer l.2⟩ * k : Subgroup.normalizer (H : Set G)) • x =
+        g • x := by
+      simpa [Subgroup.smul_def, smul_smul] using hl
+    have hg := congrArg Subtype.val (IsCancelSMul.right_cancel _ _ x hmul)
+    simp [← hg]
+  · intro hg
+    rw [Quotient.eq'', MulAction.orbitRel_apply]
+    exact ⟨⟨g * k⁻¹, hg⟩, by simp [Subgroup.smul_def, smul_smul]⟩
+
+/-- In an action whose normalizer of `H` acts freely, equality of the `H`-orbit classes of two
+translates by elements `g`, `k` of the normalizer is equality of the corresponding inverse
+representatives in the normalizer quotient `N(H) / H`. No normality of `H` is needed. -/
+lemma MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq
+    (H : Subgroup G) [IsCancelSMul (Subgroup.normalizer (H : Set G)) X] (x : X)
+    (g k : Subgroup.normalizer (H : Set G)) :
+    (Quotient.mk'' ((g : G) • x) : MulAction.orbitRel.Quotient H X) =
+        Quotient.mk'' ((k : G) • x) ↔
+      Subgroup.normalizerQuotientMk H g⁻¹ = Subgroup.normalizerQuotientMk H k⁻¹ := by
+  rw [MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer,
+    Subgroup.normalizerQuotientMk_eq_iff_div_mem]
+  have h := (Subgroup.mem_normalizer_iff.mp g⁻¹.2) ((k : G) * (g : G)⁻¹)
+  simp only [div_eq_mul_inv, Subgroup.coe_inv, inv_inv, mul_assoc] at h ⊢
+  rw [← inv_mem_iff, mul_inv_rev, inv_inv]
+  simpa [mul_assoc] using h
 
 /-- Mathlib's subgroup-orbit quotient equivalence sends the coset of `g` back to the orbit
 class of `g⁻¹ • x`. This records the representative convention once, so later lemmas can
@@ -611,10 +634,11 @@ theorem MulAction.normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
   exact MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive (X := X) H
 
 /-- Equality after the descended `N(H) / H` action on an `H`-orbit quotient is equality of
-normalizer-quotient elements, provided the original action is free. -/
+normalizer-quotient elements, provided the normalizer of `H` acts freely. -/
 @[simp]
-lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff [IsCancelSMul G X]
-    (H : Subgroup G) (a c : Subgroup.normalizerQuotient H)
+lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff
+    (H : Subgroup G) [IsCancelSMul (Subgroup.normalizer (H : Set G)) X]
+    (a c : Subgroup.normalizerQuotient H)
     (x : MulAction.orbitRel.Quotient H X) :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
     a • x = c • x ↔ a = c := by
@@ -629,15 +653,16 @@ lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff [IsCancelSMu
       MulAction.normalizerQuotientOrbitRelQuotient_smul_mk] at h
     rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
     simpa [div_eq_mul_inv] using
-      (MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem H x (g : G) (k : G)).mp h
+      (MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer H x g k).mp h
   · intro h
     rw [h]
 
-/-- If a group acts freely on `X`, then the descended `N(H) / H` action on the quotient of `X`
-by `H`-orbits is free. This packages `normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff` as the
-cancellativity of the descended action. -/
+/-- If the normalizer of `H` acts freely on `X`, then the descended `N(H) / H` action on the
+quotient of `X` by `H`-orbits is free. This packages
+`normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff` as the cancellativity of the descended
+action. -/
 theorem MulAction.normalizerQuotientOrbitRelQuotientIsCancelSMul
-    [IsCancelSMul G X] (H : Subgroup G) :
+    (H : Subgroup G) [IsCancelSMul (Subgroup.normalizer (H : Set G)) X] :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
     IsCancelSMul (Subgroup.normalizerQuotient H) (MulAction.orbitRel.Quotient H X) :=
   letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
