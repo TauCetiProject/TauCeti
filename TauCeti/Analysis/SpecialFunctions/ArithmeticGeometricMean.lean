@@ -109,13 +109,6 @@ theorem agmSequences_snd_sub_fst_le {x y : ℝ≥0} (hy : 0 < y) (hxy : y ≤ x)
           field_simp
           ring
 
-/-- Every geometric mean in the AGM sequence is positive when both inputs are positive. -/
-theorem agmSequences_fst_pos {x y : ℝ≥0} (hx : 0 < x) (hy : 0 < y) (n : ℕ) :
-    0 < (agmSequences x y n).1 := by
-  have hpos : 0 < (agmSequences x y 0).1 := by
-    simpa only [agmSequences_zero] using NNReal.sqrt_pos.2 (mul_pos hx hy)
-  exact hpos.trans_le (agmSequences_fst_monotone (Nat.zero_le n))
-
 /-- The square of any geometric AGM mean is at most the square of any arithmetic AGM mean. -/
 theorem agmSequences_fst_sq_le_snd_sq (x y : ℝ≥0) (n m : ℕ) :
     ((agmSequences x y n).1 : ℝ) ^ 2 ≤ ((agmSequences x y m).2 : ℝ) ^ 2 :=

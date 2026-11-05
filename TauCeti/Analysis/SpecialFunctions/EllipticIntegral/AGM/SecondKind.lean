@@ -24,7 +24,8 @@ gap bound suffices to show that the remainder tends to zero.
 * NIST DLMF §19.8(i), <https://dlmf.nist.gov/19.8>.
 * B. C. Carlson, *Special Functions of Applied Mathematics*, §9.5, Exercises 3–4.
 * Bastiaan J Braams, `lean-codes`, `Carlson/Elliptic/AGMSecondKind.lean`, commit
-  `2b8cba1` (Apache-2.0), for the telescoping proof plan. Here we use the real Legendre
+  `2b8cba1` (Apache-2.0), specifically `Carlson.hasSum_agmA_zero` and
+  `Carlson.carlsonRE_eq_agm`, for the telescoping proof plan. Here we use the real Legendre
   Landen identities and Mathlib's `NNReal.agmSequences`, not Carlson's general R-function.
 -/
 
@@ -158,24 +159,36 @@ theorem hasSum_agmSequences_secondKind {a b : ℝ≥0} (hb : 0 < b) (hba : b ≤
   dsimp only [secondKindError] at h ⊢
   linear_combination h
 
-/-- **AGM evaluation of `E`**. Starting from `1` and the complementary modulus, let
-`(gₙ₊₁, aₙ₊₁) = agmSequences 1 k' n`. Then
-`E(k) = K(k) (1 - k²/2 - ∑ 2ⁿ (aₙ₊₁² - gₙ₊₁²))`.
-The differences of squares equal the squared half-gaps from the preceding step. -/
-theorem legendreEc_eq_agmSeries {k : ℝ} (hk : k ^ 2 < 1) :
-    legendreEc k = legendreK k * (1 - k ^ 2 / 2 - ∑' n,
-      (2 : ℝ) ^ n *
-        (((NNReal.agmSequences 1 (√(1 - k ^ 2)).toNNReal n).2 : ℝ) ^ 2 -
-          ((NNReal.agmSequences 1 (√(1 - k ^ 2)).toNNReal n).1 : ℝ) ^ 2)) := by
-  have hc : 0 < √(1 - k ^ 2) := sqrt_pos.2 (by linarith)
-  have hc₁ : √(1 - k ^ 2) ≤ 1 := sqrt_le_one.2 (by nlinarith)
-  have h := hasSum_agmSequences_secondKind (a := 1)
-    (b := (√(1 - k ^ 2)).toNNReal) (toNNReal_pos.2 hc)
-    (by simpa only [← NNReal.coe_le_coe, coe_toNNReal _ hc.le, NNReal.coe_one] using hc₁)
-  simp only [NNReal.coe_one, coe_toNNReal _ hc.le, one_pow, div_one,
-    sq_sqrt (by linarith : 0 ≤ 1 - k ^ 2),
-    sub_sub_cancel, sqrt_sq_eq_abs, legendreEc_abs, legendreK_abs, one_mul] at h
-  rw [h.tsum_eq]
+/-- The squared AGM corrections form a convergent series evaluating `E(k) / K(k)`.
+The sequence starts after one step: its difference of squares is `cₙ₊₁²` in the
+classical convention `c₀ = k`, `cₙ₊₁ = (aₙ - gₙ) / 2`. -/
+theorem hasSum_legendreEc_agm {k : ℝ} (hk : k ^ 2 < 1) :
+    HasSum (fun n ↦ (2 : ℝ) ^ n *
+      (((NNReal.agmSequences 1 (NNReal.sqrt (Real.toNNReal (1 - k ^ 2))) n).2 : ℝ) ^ 2 -
+        ((NNReal.agmSequences 1 (NNReal.sqrt (Real.toNNReal (1 - k ^ 2))) n).1 : ℝ) ^ 2))
+      (1 - k ^ 2 / 2 - legendreEc k / legendreK k) := by
+  let b : ℝ≥0 := NNReal.sqrt (Real.toNNReal (1 - k ^ 2))
+  have hbval : (b : ℝ) = √(1 - k ^ 2) := by
+    simp [b, coe_sqrt, Real.toNNReal_of_nonneg (sub_pos.2 hk).le]
+  have hb : 0 < b := by rw [← NNReal.coe_pos, hbval]; positivity
+  have hba : b ≤ 1 := by
+    rw [← NNReal.coe_le_coe, hbval, NNReal.coe_one]
+    exact sqrt_le_one.2 (by nlinarith)
+  have h := hasSum_agmSequences_secondKind hb hba
+  simp only [NNReal.coe_one, hbval, one_pow, div_one,
+    sq_sqrt (sub_pos.2 hk).le, sub_sub_cancel, sqrt_sq_eq_abs,
+    legendreEc_abs, legendreK_abs, one_mul] at h
+  convert h using 1
+  ring
+
+/-- **AGM evaluation of the complete second kind** (DLMF 19.8.6).
+The initial correction is `k² / 2`; the remaining corrections use Mathlib's
+AGM sequence, whose index zero is already one step after `(1, √(1 - k²))`. -/
+theorem legendreEc_eq_agm_tsum {k : ℝ} (hk : k ^ 2 < 1) :
+    legendreEc k = legendreK k * (1 - k ^ 2 / 2 - ∑' n, (2 : ℝ) ^ n *
+      (((NNReal.agmSequences 1 (NNReal.sqrt (Real.toNNReal (1 - k ^ 2))) n).2 : ℝ) ^ 2 -
+        ((NNReal.agmSequences 1 (NNReal.sqrt (Real.toNNReal (1 - k ^ 2))) n).1 : ℝ) ^ 2)) := by
+  rw [(hasSum_legendreEc_agm hk).tsum_eq]
   field_simp [(legendreK_pos hk).ne']
   ring
 
