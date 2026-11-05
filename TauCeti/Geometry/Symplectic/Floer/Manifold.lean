@@ -18,14 +18,15 @@ area density satisfies
 
 `ω(du - X_K) = ω(du) + d(K(u)) - R_K(u)`.
 
-Here `R_K = ∂s Kt - ∂t Ks - {Ks, Kt}` uses the intrinsic Hamiltonian vector fields,
-with convention `ι_(X_H) ω = dH`. For a nondegenerate two-form on a finite-dimensional
-model, the identity holds for differentiable maps and jointly differentiable Hamiltonians
-on the domain times the manifold. Neither closedness of the two-form nor the Floer equation
-is needed for this pointwise identity. For solutions of
-the equation the density is nonnegative under tameness, and is half the standard quadratic
-energy density. The almost complex structure may be chosen independently at each domain
-point, as is needed for domain-dependent perturbations.
+Here `R_K = ∂s Kt - ∂t Ks - {Ks, Kt}` uses the intrinsic Hamiltonian vector fields, with convention
+`ι_(X_H) ω = dH`. The curvature of a cylindrical perturbation `K = H_t dt`, with no `ds` component
+and independent of `s`, vanishes (`TauCeti.SmoothTwoForm.hamiltonianCurvature_cylindrical`). For a
+nondegenerate two-form on a finite-dimensional model, the identity holds for differentiable maps and
+jointly differentiable Hamiltonians on the domain times the manifold. Neither closedness of the
+two-form nor the Floer equation is needed for this pointwise identity. For solutions of the equation
+the density is nonnegative under tameness, and is half the standard quadratic energy density. The
+almost complex structure may be chosen independently at each domain point, as is needed for
+domain-dependent perturbations.
 
 Integrating the identity over a rectangle `[a₁, b₁] × [a₂, b₂]` of the domain gives
 
@@ -56,6 +57,7 @@ form they recover the vector-space definitions.
 
 ## Main results
 
+* `SmoothTwoForm.hamiltonianCurvature_cylindrical`: the curvature of `K = H_t dt` vanishes.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
@@ -98,6 +100,33 @@ theorem hamiltonianCurvature_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ �
       fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal -
         fderiv ℝ (fun w ↦ Ks w x) z stdComplexLineImag - ω.poissonBracket (Ks z) (Kt z) x :=
   (rfl)
+
+/-- Without a `ds` component, the curvature of `K = K_t dt` is `∂_s K_t`. -/
+theorem hamiltonianCurvature_zero_left (ω : SmoothTwoForm I M) (Kt : ℝ × ℝ → M → ℝ)
+    (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) Kt z x =
+      fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal := by
+  simp only [hamiltonianCurvature_def, poissonBracket_def, hamiltonianVectorField_const,
+    Pi.zero_apply, SmoothBundleForm.eval₂_apply]
+  -- The bracket pairs the zero vector field of the zero Hamiltonian with `X_{K_t}`.
+  rw [ContinuousAlternatingMap.map_coord_zero _ 0 rfl]
+  simp
+
+/-- A cylindrical perturbation `K = H_t dt`, independent of `s`, has zero curvature. -/
+theorem hamiltonianCurvature_cylindrical (ω : SmoothTwoForm I M) (H : ℝ → M → ℝ) (z : ℝ × ℝ)
+    (x : M) : ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
+  rw [hamiltonianCurvature_zero_left]
+  by_cases hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2
+  · have h : HasFDerivAt (fun w : ℝ × ℝ ↦ H w.2 x)
+        ((fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
+      hH.hasFDerivAt.comp z hasFDerivAt_snd
+    simp [h.fderiv, stdComplexLineReal]
+  · -- A function of `t` alone is differentiable on the plane only if it is differentiable in `t`.
+    have hH' : ¬DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z := by
+      intro h
+      have h' : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) (z.1, z.2) := h
+      exact hH (h'.comp z.2 ((differentiableAt_const z.1).prodMk differentiableAt_id))
+    simp [fderiv_zero_of_not_differentiableAt hH']
 
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
