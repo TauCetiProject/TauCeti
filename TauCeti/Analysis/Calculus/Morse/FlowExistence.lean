@@ -93,7 +93,7 @@ the two derivatives of `f` make its negative-gradient field `C¹`. -/
 theorem contDiff_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f))
     (hfs : ContDiff ℝ 2 f) :
     ContDiff ℝ 1 (Function.uncurry (negativeGradientFlow f hf)) := by
-  apply contDiff_flowOfLipschitz 0 (fun x ↦ -∇ f x) hf.neg
+  apply contDiff_flowOfLipschitz (n := 0) (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := 1) (by norm_num)).neg
 
 /-- **The time-`t` maps of the negative-gradient flow of a globally `C^(n+1)` function are `C^n`**
@@ -102,7 +102,7 @@ theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith 
     {n : ℕ} (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (t : ℝ) :
     ContDiff ℝ n (negativeGradientFlow f hf t) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  apply contDiff_flowOfLipschitz_apply m (fun x ↦ -∇ f x) hf.neg
+  apply contDiff_flowOfLipschitz_apply (n := m) (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := m + 1) le_rfl).neg
 
 /-- For a globally `C²` function, each time-`t` map of the negative-gradient flow is

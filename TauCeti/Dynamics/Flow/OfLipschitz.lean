@@ -75,20 +75,20 @@ theorem flowOfLipschitz_congr {K' : ℝ≥0} (hv : LipschitzWith K v) (hv' : Lip
 
 /-- **A globally Lipschitz `C^(n+1)` vector field has a `C^(n+1)` global flow**, jointly in time
 and the initial condition. -/
-theorem contDiff_flowOfLipschitz (n : ℕ) (v : E → E) (hv : LipschitzWith K v)
+theorem contDiff_flowOfLipschitz {n : ℕ∞} (v : E → E) (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) :
     ContDiff ℝ (n + 1) (Function.uncurry (flowOfLipschitz v hv)) := by
-  convert (ODE.contDiff_globalSolution (n := n) v hv (by exact_mod_cast hvs)).comp
+  convert (ODE.contDiff_globalSolution v hv hvs).comp
     (contDiff_snd.prodMk contDiff_fst) using 1
   funext p
   rw [Function.comp_apply, Function.uncurry_apply_pair, flowOfLipschitz_apply]
 
 /-- At each fixed time, the flow of a globally Lipschitz `C^(n+1)` vector field is `C^(n+1)` in
 the initial condition. -/
-theorem contDiff_flowOfLipschitz_apply (n : ℕ) (v : E → E) (hv : LipschitzWith K v)
+theorem contDiff_flowOfLipschitz_apply {n : ℕ∞} (v : E → E) (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) (t : ℝ) :
     ContDiff ℝ (n + 1) (flowOfLipschitz v hv t) := by
-  convert ODE.contDiff_globalSolution_apply (n := n) v hv (by exact_mod_cast hvs) t using 1
+  convert ODE.contDiff_globalSolution_apply v hv hvs t using 1
   funext x
   rw [flowOfLipschitz_apply]
 

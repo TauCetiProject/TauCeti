@@ -481,7 +481,7 @@ theorem contDiff_perturbedFlow_of_contDiff (n : ℕ) (hfs : ContDiff ℝ (n + 2)
   have hF : ContDiff ℝ (((n + 1 : ℕ) : ℕ∞) : WithTop ℕ∞) (perturbedField f h) :=
     contDiff_perturbedField_of (by rw [e]; exact hfs) fun i ↦ by rw [e]; exact hhs i
   rw [perturbedFlow_eq_flowOfLipschitz]
-  exact contDiff_flowOfLipschitz n _ _ (by exact_mod_cast hF)
+  exact contDiff_flowOfLipschitz (n := n) _ _ (by exact_mod_cast hF)
 
 /-- **The perturbed flow is `C¹`**, jointly in time, the initial condition and the parameter. -/
 theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))

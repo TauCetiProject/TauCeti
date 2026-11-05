@@ -66,9 +66,9 @@ Hamiltonian is `C^(n+2)`. -/
 theorem contDiff_hamiltonianFlow_apply (n : ℕ)
     (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ (n + 2) H)
     (t : ℝ) : ContDiff ℝ (n + 1) (ω.hamiltonianFlow H hX t) :=
-  contDiff_flowOfLipschitz_apply n _ hX
+  contDiff_flowOfLipschitz_apply (n := n) _ hX
     (ω.contDiff_hamiltonianVectorField
-      (by simpa only [add_assoc, one_add_one_eq_two] using hH)) t
+      (by simpa only [add_assoc, one_add_one_eq_two] using hH : ContDiff ℝ (n + 1 + 1) H)) t
 
 /-- Each time map of a `C²` Hamiltonian flow preserves the symplectic form on tangent
 vectors. No nondegeneracy of the Hessian is required. -/

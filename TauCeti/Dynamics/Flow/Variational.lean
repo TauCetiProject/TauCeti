@@ -60,12 +60,12 @@ include hv hvs
 
 private theorem contDiff_uncurry_flowOfLipschitz :
     ContDiff ℝ 1 (Function.uncurry (flowOfLipschitz v hv)) := by
-  simpa using contDiff_flowOfLipschitz 0 v hv (by simpa using hvs)
+  simpa using contDiff_flowOfLipschitz (n := 0) v hv (by simpa using hvs)
 
 /-- The time-`t` map of the flow of a Lipschitz `C¹` vector field is differentiable. -/
 theorem differentiable_flowOfLipschitz_apply (t : ℝ) :
     Differentiable ℝ (flowOfLipschitz v hv t) :=
-  (contDiff_flowOfLipschitz_apply 0 v hv (by simpa using hvs) t).differentiable
+  (contDiff_flowOfLipschitz_apply (n := 0) v hv (by simpa using hvs) t).differentiable
     (by norm_num)
 
 /-- The derivative of the time-`τ` map at a fixed point is continuous in `τ`. -/
@@ -265,7 +265,7 @@ theorem contDiff_timeDependentFlow (n : ℕ)
     ContDiff ℝ (n + 1) fun p : (ℝ × ℝ) × E ↦ timeDependentFlow v hv p.1.1 p.1.2 p.2 := by
   have hS : ContDiff ℝ (n + 1) (timeDependentSuspension v) := by
     rw [timeDependentSuspension_eq]; exact contDiff_const.prodMk hvs
-  have h := (contDiff_flowOfLipschitz n _ hv hS).comp
+  have h := (contDiff_flowOfLipschitz (n := n) _ hv hS).comp
     (by fun_prop : ContDiff ℝ (n + 1) fun p : (ℝ × ℝ) × E ↦ (p.1.2 - p.1.1, (p.1.1, p.2)))
   convert contDiff_snd.comp h using 1
   funext p
