@@ -183,10 +183,14 @@ theorem _root_.TauCeti.finiteGrassmannian.continuous_toInfinite {n : ℕ} :
   continuous_iff_coinduced_le.2 <| le_iSup
     (fun n ↦ TopologicalSpace.coinduced (toInfinite : finiteGrassmannian 𝕜 k n → _) inferInstance) n
 
+/-- A subset of the infinite Grassmannian is open exactly when its preimage in every finite
+coordinate stage is open. -/
 theorem isOpen_iff {U : Set (infiniteGrassmannian 𝕜 k)} :
     IsOpen U ↔ ∀ n, IsOpen ((toInfinite : finiteGrassmannian 𝕜 k n → _) ⁻¹' U) := by
   simp only [isOpen_iSup_iff, isOpen_coinduced]
 
+/-- A subset of the infinite Grassmannian is closed exactly when its preimage in every finite
+coordinate stage is closed. -/
 theorem isClosed_iff {C : Set (infiniteGrassmannian 𝕜 k)} :
     IsClosed C ↔ ∀ n, IsClosed ((toInfinite : finiteGrassmannian 𝕜 k n → _) ⁻¹' C) := by
   simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
