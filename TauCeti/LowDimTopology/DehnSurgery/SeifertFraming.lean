@@ -66,6 +66,9 @@ radius `1 / 2`, which is homotopic in `X ∖ K` to the meridian on the boundary 
 
 ## Main results
 
+* `TauCeti.IsSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map`: a
+  null-homologous longitude stays null-homologous under a reparametrization of the core circle
+  followed by a map of knot complements.
 * `TauCeti.IsSolidTorusNeighborhood.complementHomologyEquiv_boundaryHomologyMap`: a class with
   `(μ, λ)`-coordinates `(p, q)` goes to `p + n q`.
 * `TauCeti.IsSolidTorusNeighborhood.complementHomologyEquiv_boundaryHomologyMap_preferred`: a
@@ -389,6 +392,45 @@ theorem boundaryHomologyMap_def (h : IsSolidTorusNeighborhood f Φ) :
       (TopCat.ofHom (ContinuousMap.inclusion h.frontier_subset_compl_range))) 1).hom :=
   (rfl)
 
+/-- The boundary longitude is the image of the `(0, 1)` curve under the boundary torus of the
+exterior, parametrized by the framing and read in the knot complement. -/
+private theorem boundaryHomologyMap_basis_one (h : IsSolidTorusNeighborhood f Φ) :
+    h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) =
+      singularHomologyMap ℤ 1
+        (h.frontierToComplement.comp (h.exteriorFrontierHomeomorph : C(Circle × Circle, _)))
+        (torusClass 0 1) := by
+  rw [singularHomologyMap_comp, FramedBoundaryTorus.ofHomeomorph_basis_one,
+    FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap]
+  rfl
+
+/-- A null-homologous longitude stays null-homologous under a reparametrization of the core
+circle followed by a map of knot complements. Let `Φ'` be a solid torus neighbourhood of a loop
+`f'` in a Hausdorff space `Y`, `g` a self-map of the circle and `m` a map from the complement of
+`f` to the complement of `f'` sending `Φ (w, g z)` to `Φ' (w, z)` on the boundary torus. If the
+longitude of `Φ` is null-homologous in the complement of `f`, then the longitude of `Φ'` is
+null-homologous in the complement of `f'`. -/
+theorem boundaryHomologyMap_basis_one_eq_zero_of_map {Y : Type} [TopologicalSpace Y] [T2Space Y]
+    {f' : Circle → Y} {Φ' : SolidTorus → Y} (h : IsSolidTorusNeighborhood f Φ)
+    (h' : IsSolidTorusNeighborhood f' Φ') (g : C(Circle, Circle))
+    (m : C(↥(range f)ᶜ, ↥(range f')ᶜ))
+    (hm : ∀ (x : ↥(range f)ᶜ) (q : Circle × Circle),
+      (x : X) = Φ (SolidTorus.boundaryInclusion (q.1, g q.2)) →
+        (m x : Y) = Φ' (SolidTorus.boundaryInclusion q))
+    (hΦ : h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) = 0) :
+    h'.boundaryHomologyMap (h'.framedBoundaryTorus.basis 1) = 0 := by
+  -- The boundary torus of `Φ'`, read in the complement of `f'`, factors through that of `Φ`.
+  have hcomp : h'.frontierToComplement.comp (h'.exteriorFrontierHomeomorph : C(Circle × Circle, _))
+      = m.comp ((h.frontierToComplement.comp (h.exteriorFrontierHomeomorph : C(_, _))).comp
+        ((ContinuousMap.id Circle).prodMap g)) := by
+    refine ContinuousMap.ext fun q ↦ Subtype.ext ?_
+    exact (h'.coe_exteriorFrontierHomeomorph_apply q).trans
+      (hm _ q (h.coe_exteriorFrontierHomeomorph_apply (q.1, g q.2))).symm
+  obtain ⟨n, hn⟩ := g.exists_singularHomologyMap_prodMap_torusClass_zero_one
+  rw [h.boundaryHomologyMap_basis_one] at hΦ
+  rw [h'.boundaryHomologyMap_basis_one, hcomp, singularHomologyMap_comp, singularHomologyMap_comp,
+    hn, torusClass_eq]
+  simp only [zero_smul, zero_add, map_zsmul, hΦ, zsmul_zero, map_zero]
+
 /-- On the boundary torus, the `(p, q)` curve is homologous in the knot complement to the
 `(p, q)` curve at radius `1 / 2`. -/
 private theorem boundaryHomologyMap_torusCurveClass (h : IsSolidTorusNeighborhood f Φ)
@@ -491,6 +533,12 @@ theorem framingNumber_eq_iff (h : IsSolidTorusNeighborhood f Φ) (n : ℤ) :
     rw [framingNumber]
     simpa only [map_zsmul, complementHomologyEquiv_boundaryHomologyMap_basis_zero, smul_eq_mul,
       mul_one] using hlongitude
+
+/-- The framing number vanishes exactly when the longitude is null-homologous in the knot
+complement, that is, when the framing is the preferred (Seifert) framing. -/
+theorem framingNumber_eq_zero_iff (h : IsSolidTorusNeighborhood f Φ) :
+    h.framingNumber h₁ h₂ = 0 ↔ h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) = 0 := by
+  rw [framingNumber_eq_iff, zero_smul]
 
 /-- A class of the boundary torus with `(μ, λ)`-coordinates `(p, q)` is homologous in the knot
 complement to `p + n q` times the meridian, `n` the framing number. -/

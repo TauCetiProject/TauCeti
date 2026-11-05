@@ -39,6 +39,8 @@ as a `ℤ`-module: `AddSubgroup.index_range_nsmul` gives `n ^ finrank ℤ M`. Th
 * `AddEquiv.map_ker_nsmulAddMonoidHom` and `AddEquiv.index_range_nsmulAddMonoidHom`: an additive
   equivalence carries `G[n]` to `H[n]` and preserves the index of `n • G`. These are the kernel
   counterparts of Mathlib's `AddEquiv.map_range_nsmulAddMonoidHom`.
+* `AddEquiv.injective_nsmul_iff`: multiplication by `n` is injective on one side of an additive
+  equivalence exactly when it is injective on the other.
 
 What the descent needs here is the exact count, not merely finiteness of the index.
 `TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 makes explicit `2`-descent a target in its own
@@ -188,6 +190,15 @@ theorem index_range_pow_mul_card_ker (U : Subgroup G) [U.FiniteIndex] (n : ℕ) 
 end Subgroup
 
 namespace AddEquiv
+
+/-- Multiplication by `n` is injective on `M` exactly when it is injective on `N`, for an additive
+equivalence `M ≃+ N`, since the equivalence commutes with it. -/
+theorem injective_nsmul_iff {M N : Type*} [AddMonoid M] [AddMonoid N] (e : M ≃+ N) (n : ℕ) :
+    Function.Injective (fun x : M ↦ n • x) ↔ Function.Injective (fun y : N ↦ n • y) := by
+  have h : (fun y : N ↦ n • y) = e ∘ (fun x : M ↦ n • x) ∘ e.symm := by
+    ext y
+    simp
+  rw [h, EquivLike.comp_injective, EquivLike.injective_comp]
 
 variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
 
