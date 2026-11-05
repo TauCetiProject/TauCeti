@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Shrink
 public import Mathlib.RingTheory.Smooth.NoetherianDescent
 import Mathlib.RingTheory.Smooth.Flat
 
@@ -28,6 +29,8 @@ over rings of finite type over `R`, for example their descent along directed col
 
 * `Algebra.Etale.exists_subalgebra_fg_of_finite`: a finite étale `A`-algebra is the base change of
   a finite étale algebra over an `R`-subalgebra of `A` of finite type.
+* `TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization`: descent through
+  any family of ring maps through which maps from finitely presented rings factor.
 
 ## References
 
@@ -37,7 +40,7 @@ over rings of finite type over `R`, for example their descent along directed col
 
 public section
 
-universe u
+universe w v u
 
 open TensorProduct Polynomial
 
@@ -92,3 +95,36 @@ theorem exists_subalgebra_fg_of_finite [Etale A B] [Module.Finite A B] :
     ⟨e.trans (TensorProduct.cancelBaseChange A₀ A₁ A A B₀).symm⟩⟩
 
 end Algebra.Etale
+
+namespace TauCeti.Algebra
+
+/-- If every map from a finitely presented `ℤ`-algebra into `S` factors through some
+`ψ i : A i →+* S`, every finite étale `S`-algebra is the base change of a finite étale
+`A i`-algebra. The model lies in the universe of the stage rings, even when `S` is larger. -/
+theorem exists_etale_finite_algEquiv_tensorProduct_of_factorization
+    {S : Type u} [CommRing S] {ι : Type w} (A : ι → Type v) [∀ i, CommRing (A i)]
+    (ψ : ∀ i, A i →+* S)
+    (h : ∀ (P : Type u) [CommRing P] [Algebra.FinitePresentation ℤ P] (g : P →+* S),
+      ∃ i, ∃ φ : P →+* A i, (ψ i).comp φ = g)
+    (B : Type*) [CommRing B] [Algebra S B] [Algebra.Etale S B] [Module.Finite S B] :
+    ∃ i, ∃ (Bᵢ : Type v) (_ : CommRing Bᵢ) (_ : Algebra (A i) Bᵢ),
+      Algebra.Etale (A i) Bᵢ ∧ Module.Finite (A i) Bᵢ ∧
+      letI := (ψ i).toAlgebra
+      Nonempty (B ≃ₐ[S] S ⊗[A i] Bᵢ) := by
+  obtain ⟨S₀, B₀, _, _, hS₀, _, _, ⟨e⟩⟩ :=
+    Algebra.Etale.exists_subalgebra_fg_of_finite ℤ S B
+  have : Algebra.FinitePresentation ℤ S₀ :=
+    Algebra.FinitePresentation.of_finiteType.mp (Subalgebra.fg_iff_finiteType S₀ |>.mp hS₀)
+  obtain ⟨i, φ, hφ⟩ := h S₀ (algebraMap S₀ S)
+  let := (ψ i).toAlgebra
+  let : Algebra S₀ (A i) := φ.toAlgebra
+  have : IsScalarTower S₀ (A i) S := .of_algebraMap_eq fun x ↦ congr($hφ x).symm
+  -- Finiteness keeps the stage model small even if the intermediate subring is larger.
+  have : Small.{v} (A i ⊗[S₀] B₀) := Module.Finite.small (A i) _
+  let e' := Shrink.algEquiv (A i) (A i ⊗[S₀] B₀)
+  exact ⟨i, Shrink.{v} (A i ⊗[S₀] B₀), inferInstance, inferInstance, .of_equiv e'.symm,
+    .equiv e'.symm.toLinearEquiv,
+    ⟨e.trans <| (Algebra.TensorProduct.cancelBaseChange S₀ (A i) S S B₀).symm.trans <|
+      Algebra.TensorProduct.congr .refl e'.symm⟩⟩
+
+end TauCeti.Algebra
