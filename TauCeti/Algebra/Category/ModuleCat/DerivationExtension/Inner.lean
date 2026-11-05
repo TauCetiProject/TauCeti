@@ -130,7 +130,8 @@ theorem map_comp_centralInnerHom {N : Type*} [AddCommGroup N] [Module A N]
     (c : Multiplicative (Subalgebra.center R A)) (f : M →ₗ[A] N) :
     map (δ := δ) f ∘ₗ (centralInnerHom M δ c).toLinearMap =
       (centralInnerHom N δ c).toLinearMap ∘ₗ map f := by
-  ext x <;> simp
+  exact map_comp_innerEquiv M (b := (c.toAdd : A))
+    (by simp [innerDerivation_eq_zero_of_mem_center R c.toAdd.property]) f
 
 variable [Module R M] (χ : Subalgebra.center R A →ₐ[R] R)
   (hχ : ∀ (z : Subalgebra.center R A) (v : M), (z : A) • v = χ z • v)
