@@ -179,6 +179,12 @@ lemma natDiagGL_const_mem_normalizer (c : ℕ) (Γ : Subgroup (GL (Fin n) ℚ)) 
   rw [natDiagGL_coe n _ (fun _ ↦ Nat.one_pos)]
   simp
 
+/-- The all-zeros tuple sends `natDiagGL` to its fallback value `1` in every rank `n`. -/
+@[simp] lemma natDiagGL_const_zero : natDiagGL n (fun _ ↦ 0) = 1 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact Subsingleton.elim _ _
+  · exact natDiagGL_of_not_pos n fun h ↦ Nat.lt_irrefl 0 (h ⟨0, hn⟩)
+
 end Diagonal
 
 /-- The divisibility chain condition on natural-number sequences: entries divide all later entries.
