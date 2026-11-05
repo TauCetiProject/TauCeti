@@ -737,13 +737,6 @@ private abbrev toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     cechX U P n ⟶ ((strictMonoCechComplexFunctor U).obj P).X n :=
   ((toStrictMonoCechComplex U).app P).f n
 
-@[reassoc]
-private lemma toStrictMonoCechX_π (P : Cᵒᵖ ⥤ A) (n : ℕ)
-    (a : {a : Fin (n + 1) → ι // StrictMono a}) :
-    toStrictMonoCechX U P n ≫ strictMonoCechComplexπ U P a =
-      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.1 :=
-  toStrictMonoCechComplex_app_f_π U P n a
-
 variable [Quiver.IsThin C]
 
 /-- Restricting a Čech cochain to the strictly increasing tuples and extending it alternatingly is
@@ -756,7 +749,10 @@ private lemma toStrictMonoCechX_comp_fromStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n 
     · simp only [hb, ↓reduceDIte]
       rw [alt_single_of_injective hb, map_zsmul,
         evalChain_single U P (range_sortTuple b).le, one_smul, Preadditive.comp_zsmul,
-        toStrictMonoCechX_π_assoc, Subsingleton.elim (tupleRestrict U _)]
+        show toStrictMonoCechX U P n ≫ _ ≫ _ =
+          Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) _ ≫ _ from
+          toStrictMonoCechComplex_app_f_π_assoc U P n _ _,
+        Subsingleton.elim (tupleRestrict U _)]
     · simp only [hb, ↓reduceDIte, comp_zero, alt_single_of_not_injective hb, map_zero]
 
 private lemma fromStrictMonoCechX_comm (P : Cᵒᵖ ⥤ A) (n : ℕ) :
@@ -778,20 +774,15 @@ define their terms. -/
 private abbrev cechMapX {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) : cechX U P n ⟶ cechX U Q n :=
   ((cechComplexFunctor U).map α).f n
 
-omit [LinearOrder ι] [Quiver.IsThin C] in
-@[reassoc]
-private lemma cechMapX_π {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) (b : Fin (n + 1) → ι) :
-    cechMapX U α n ≫ Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ U (a j)))) b =
-      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) b ≫
-        α.app (op (∏ᶜ fun j ↦ U (b j))) :=
-  cechComplexFunctor_map_f_π U P α n b
-
 omit [Quiver.IsThin C] in
 private lemma fromStrictMonoCechX_naturality {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
     ((strictMonoCechComplexFunctor U).map α).f n ≫ fromStrictMonoCechX U Q n =
       fromStrictMonoCechX U P n ≫ cechMapX U α n :=
   Pi.hom_ext _ _ fun b ↦ by
-    rw [Category.assoc, Category.assoc, fromStrictMonoCechX_π, cechMapX_π,
+    rw [Category.assoc, Category.assoc, fromStrictMonoCechX_π,
+      show cechMapX U α n ≫ Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ U (a j)))) b =
+        Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) b ≫ _ from
+        cechComplexFunctor_map_f_π U P α n b,
       fromStrictMonoCechX_π_assoc]
     by_cases hb : Function.Injective b
     · simp [hb]
@@ -804,8 +795,10 @@ private lemma fromStrictMonoCechX_comp_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n 
   rw [← cancel_epi (toStrictMonoCechX U P n), ← Category.assoc,
     toStrictMonoCechX_comp_fromStrictMonoCechX, Category.comp_id]
   ext a
-  rw [Category.assoc, toStrictMonoCechX_π, dualMap_π, alt_single_of_injective a.2.injective,
-    sortTuple_eq_self a.2, tupleSign,
+  rw [Category.assoc, show toStrictMonoCechX U P n ≫ _ =
+      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.1 from
+      toStrictMonoCechComplex_app_f_π U P n a,
+    dualMap_π, alt_single_of_injective a.2.injective, sortTuple_eq_self a.2, tupleSign,
     inversions_eq_empty_of_monotone a.2.monotone, card_empty, pow_zero, one_smul,
     evalChain_single U P subset_rfl, one_smul, Subsingleton.elim (tupleRestrict U _) (𝟙 _), op_id,
     P.map_id, Category.comp_id]
