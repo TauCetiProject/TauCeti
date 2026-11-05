@@ -203,15 +203,15 @@ Hermitian matrix with square `1`. -/
 theorem two_mul_sub_one_of_mem_hermitianProjectorLocus [DecidableEq ι] {P : Matrix ι ι K}
     (hP : P ∈ hermitianProjectorLocus ι K) (hι : Fintype.card ι = 2) :
     (2 * P - 1).IsHermitian ∧ (2 * P - 1).trace = 0 ∧ (2 * P - 1) * (2 * P - 1) = 1 := by
-  obtain ⟨⟨hidem, hsa⟩, htr⟩ := mem_hermitianProjectorLocus.mp hP
-  refine ⟨?_, ?_, ?_⟩
-  · rw [isHermitian_iff_isSelfAdjoint, two_mul]
-    exact (hsa.add hsa).sub (.one _)
+  obtain ⟨hproj, htr⟩ := mem_hermitianProjectorLocus.mp hP
+  have hH : (2 * P - 1).IsHermitian := by
+    rw [isHermitian_iff_isSelfAdjoint, two_mul]
+    exact (hproj.isSelfAdjoint.add hproj.isSelfAdjoint).sub (.one _)
+  refine ⟨hH, ?_, ?_⟩
   · rw [two_mul, trace_sub, trace_add, htr, trace_one, hι]
     norm_num
-  · have h : (2 * P - 1) * (2 * P - 1) = 4 * (P * P) - 4 * P + 1 := by noncomm_ring
-    rw [h, hidem.eq]
-    abel
+  · simpa only [hH.isSelfAdjoint.star_eq] using
+      Unitary.star_mul_self_of_mem hproj.two_mul_sub_one_mem_unitary
 
 variable [CharZero K]
 
