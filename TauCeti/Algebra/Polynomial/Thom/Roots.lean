@@ -125,8 +125,7 @@ theorem ThomLT.trans {σ τ υ : Fin d → SignType} (hστ : ThomLT σ τ) (hτ
     · rw [h1] at h2; cases h2
     · rw [h1] at h2; cases h2
     · exact ⟨i, (hlt'.trans hlt).ne', htail, hd, Or.inr ⟨h1, hlt'.trans hlt⟩⟩
-  · have _ : k < ⟨i.val + 1, hd⟩ := Fin.lt_def.2 (Nat.lt_succ_of_lt hik)
-    refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
+  · refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
     rwa [← hk' i hik]
 
 private theorem thomLT_cmp_neg (s a b : SignType) :

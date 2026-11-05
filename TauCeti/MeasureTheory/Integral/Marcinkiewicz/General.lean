@@ -489,7 +489,7 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
           ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ +
         A₁ * ENNReal.ofReal (e ^ (-p₁)) * ENNReal.ofReal (t ^ (-p₁)) *
           ∫⁻ x in {x | ‖v x‖ₑ ≤ ENNReal.ofReal (c * t)}, ‖v x‖ₑ ^ p₁ ∂μ := by
-  set g : α → G := hv.mk v with _
+  set g : α → G := hv.mk v
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef
