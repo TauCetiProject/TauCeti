@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.Complex.Coordinates
+import TauCeti.Analysis.SpecialFunctions.Complex.ExpSlope
 
 /-!
 # The Fourier transform of the two-sided exponential
@@ -36,26 +38,6 @@ namespace TauCeti
 
 variable {a : ℝ}
 
-/-- On each half-line the oscillation times the exponential is a single complex exponential. -/
-private theorem exp_mul_I_mul_exp_mul (b c x : ℝ) :
-    Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (c * x) : ℂ)
-      = Complex.exp (((c : ℂ) + b * Complex.I) * x) := by
-  rw [Complex.ofReal_exp, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
-/-- The two-sided exponential times a unimodular oscillation is integrable. -/
-private theorem integrable_exp_mul_I_mul_exp_neg_mul_abs (ha : 0 < a) (b : ℝ) :
-    Integrable
-      (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ)) :=
-  ((integrable_exp_neg_mul_abs ha).ofReal).bdd_mul (c := 1) (by fun_prop)
-    (.of_forall fun x ↦ by simp [Complex.norm_exp])
-
-/-- A complex number with nonzero real part is nonzero. -/
-private theorem add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (b : ℝ) : (c : ℂ) + b * Complex.I ≠ 0 :=
-  fun h ↦ hc (by simpa using congrArg Complex.re h)
-
 /-- **The Lorentzian pairing of the two-sided exponential with a complex oscillation.** -/
 theorem integral_exp_mul_I_mul_exp_neg_mul_abs (ha : 0 < a) (b : ℝ) :
     (∫ x : ℝ, Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ))
@@ -67,16 +49,16 @@ theorem integral_exp_mul_I_mul_exp_neg_mul_abs (ha : 0 < a) (b : ℝ) :
       (fun x : ℝ ↦ Complex.exp (((a : ℂ) + b * Complex.I) * x)) (Iic 0) := by
     intro x hx
     have hxa : -(a * |x|) = a * x := by rw [abs_of_nonpos (mem_Iic.mp hx)]; ring
-    simpa only [hxa] using exp_mul_I_mul_exp_mul b a x
+    simpa only [hxa] using exp_mul_I_mul_ofReal_exp_mul b a x
   have hp : EqOn (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ))
       (fun x : ℝ ↦ Complex.exp ((-(a : ℂ) + b * Complex.I) * x)) (Ioi 0) := by
     intro x hx
     have hxa : -(a * |x|) = -a * x := by rw [abs_of_pos (mem_Ioi.mp hx)]; ring
-    simpa only [hxa, Complex.ofReal_neg] using exp_mul_I_mul_exp_mul b (-a) x
+    simpa only [hxa, Complex.ofReal_neg] using exp_mul_I_mul_ofReal_exp_mul b (-a) x
   have hint := integrable_exp_mul_I_mul_exp_neg_mul_abs ha b
-  have hne₁ := add_mul_I_ne_zero ha.ne' b
+  have hne₁ := Complex.ofReal_add_mul_I_ne_zero ha.ne' b
   have hne₂ : -(a : ℂ) + b * Complex.I ≠ 0 := by
-    simpa using add_mul_I_ne_zero (neg_ne_zero.2 ha.ne') b
+    simpa using Complex.ofReal_add_mul_I_ne_zero (neg_ne_zero.2 ha.ne') b
   have hsq : (0 : ℝ) < a ^ 2 + b ^ 2 := by positivity
   -- Evaluate the two half-line integrals and combine the resulting rational functions.
   rw [← intervalIntegral.integral_Iic_add_Ioi hint.integrableOn hint.integrableOn,

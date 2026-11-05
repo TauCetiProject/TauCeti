@@ -21,10 +21,14 @@ Restricting to `t → 0⁺` (via `nhdsGT_le_nhdsNE`) gives the shape a generator
 takes: the semigroup parameter of a C₀-semigroup runs over the nonnegative reals, so its
 generator is a limit along `𝓝[>] 0`.
 
+The file also records that an oscillation `exp (b x i)` times a real exponential `exp (c x)` is the
+single complex exponential `exp ((c + b i) x)`.
+
 ## Main results
 
 * `TauCeti.tendsto_inv_smul_exp_mul_ofReal_sub_one`: the difference quotient of
   `t ↦ exp (c t)` at `0` tends to `c`.
+* `TauCeti.exp_mul_I_mul_ofReal_exp_mul`: `exp (b x i) * exp (c x) = exp ((c + b i) x)`.
 -/
 
 public section
@@ -39,6 +43,16 @@ tends to `c`: the derivative of a complex exponential at the origin. -/
 theorem tendsto_inv_smul_exp_mul_ofReal_sub_one (c : ℂ) :
     Tendsto (fun t : ℝ => t⁻¹ • (Complex.exp (c * t) - 1)) (𝓝[≠] (0 : ℝ)) (𝓝 c) := by
   simpa using ((hasDerivAt_id (0 : ℝ)).ofReal_comp.const_mul c).cexp.tendsto_slope_zero
+
+/-- `exp (b x i) * exp (c x) = exp ((c + b i) x)`: an oscillation times a real exponential is a
+single complex exponential. -/
+theorem exp_mul_I_mul_ofReal_exp_mul (b c x : ℝ) :
+    Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (c * x) : ℂ)
+      = Complex.exp (((c : ℂ) + b * Complex.I) * x) := by
+  rw [Complex.ofReal_exp, ← Complex.exp_add]
+  congr 1
+  push_cast
+  ring
 
 end TauCeti
 
