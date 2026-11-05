@@ -8,22 +8,22 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Composition
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
-public import TauCeti.LinearAlgebra.Orientation.Basic
+public import Mathlib.LinearAlgebra.Orientation
 
 /-!
 # Orientations and canonical changes of metric
 
-The inverse-square-root equivalence between two positive inner products preserves every
-orientation of the underlying finite-dimensional real vector space. Its inverse preserves the
-same orientation, including either sign in dimension zero. Thus changing the metric does not
-exchange the sheets of the orientation cover.
+The canonical inverse-square-root transport from the fixed inner product to a positive metric
+`h`, and its inverse, fix every orientation of the underlying finite-dimensional real vector
+space, including either sign in dimension zero. Thus this transport does not exchange the sheets
+of the orientation cover. The transport `metricChangeBetween h k` between two positive metrics
+has positive determinant.
 
 The orthogonal discrepancy between successive canonical metric changes and direct transport
-also preserves orientation: it belongs to the existing special orthogonal group. This is the
-comparison needed when using metric transports to compare positively oriented frames; the
-transports themselves need not compose literally.
+also preserves orientation: it belongs to the special orthogonal group
+`TauCeti.specialOrthogonalGroup E`. This is the comparison needed when using metric transports to
+compare positively oriented frames; the transports themselves need not compose literally.
 
-The proofs use the positive-operator determinant theorem and the existing composition equation.
 See Milnor and Stasheff, *Characteristic Classes*, §9, for orientations, and Bhatia,
 *Positive Definite Matrices*, Chapter 1, for positive square roots.
 -/
