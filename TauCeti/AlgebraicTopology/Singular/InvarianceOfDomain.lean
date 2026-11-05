@@ -61,27 +61,6 @@ public section
 
 open Function Metric Module Set Topology
 
-/-- The image of an open ball under a map injective on the closed ball lies in the complement of
-the image of the sphere. -/
-theorem Set.InjOn.image_ball_subset_compl_image_sphere {α β : Type*} [PseudoMetricSpace α]
-    {h : α → β} {x : α} {r : ℝ} (hinj : InjOn h (closedBall x r)) :
-    h '' ball x r ⊆ (h '' sphere x r)ᶜ := by
-  rintro _ ⟨z, hz, rfl⟩ ⟨y, hy, hyz⟩
-  exact hz.ne <| (hinj (sphere_subset_closedBall hy) (ball_subset_closedBall hz) hyz).symm ▸ hy
-
-/-- The complement of the image of a sphere is covered by the image of the open ball and the
-complement of the image of the closed ball. -/
-theorem Set.compl_image_sphere_subset_image_ball_union_compl_image_closedBall {α β : Type*}
-    [PseudoMetricSpace α] (h : α → β) (x : α) (r : ℝ) :
-    (h '' sphere x r)ᶜ ⊆ h '' ball x r ∪ (h '' closedBall x r)ᶜ := by
-  intro p hp
-  by_contra hpn
-  obtain ⟨hpB, hpC⟩ := not_or.1 hpn
-  obtain ⟨y, hy, rfl⟩ := not_not.1 hpC
-  rcases (mem_closedBall.1 hy).lt_or_eq with hlt | heq
-  · exact hpB ⟨y, hlt, rfl⟩
-  · exact hp ⟨y, heq, rfl⟩
-
 namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -125,11 +104,16 @@ private theorem isOpen_image_ball_zero_one (hEF : finrank ℝ E = finrank ℝ F)
     exact OnePoint.coe_ne_infty _ (Φ.injective hy)
   -- By the Jordan–Brouwer separation theorem `A` is not path connected, so `B` is a path
   -- component of `A`.
+  have hAB : A ⊆ B ∪ C := fun p hp ↦ by
+    by_cases hpC : p ∈ (j ∘ f) '' closedBall 0 1
+    · exact .inl <| (subset_image_sdiff _ _ _).trans
+        (image_mono closedBall_sdiff_sphere.subset) ⟨hpC, hp⟩
+    · exact .inr hpC
   have hcomp : pathComponentIn A (j (f 0)) = B :=
     hB.pathComponentIn_eq_of_not_isPathConnected hC
-      (Set.InjOn.image_ball_subset_compl_image_sphere hjf)
-      (compl_subset_compl.2 (image_mono sphere_subset_closedBall))
-      (Set.compl_image_sphere_subset_image_ball_union_compl_image_closedBall _ _ _)
+      (sphere_disjoint_ball.symm.image hjf ball_subset_closedBall
+        sphere_subset_closedBall).subset_compl_right
+      (compl_subset_compl.2 (image_mono sphere_subset_closedBall)) hAB
       ⟨0, mem_ball_self one_pos, rfl⟩ fun hA ↦
       not_isPreconnected_compl_range_sphere (by simp [hEF]) (hcont sphere_subset_closedBall)
         (hinj' sphere_subset_closedBall) (by rw [← hAeq]; exact hA.isConnected.isPreconnected)
@@ -153,12 +137,11 @@ private theorem isOpen_image_ball (hEF : finrank ℝ E = finrank ℝ F) {f : E �
   let a : E → E := fun y ↦ x + r • y
   have ha_comp : a = (x +ᵥ ·) ∘ (r • ·) := rfl
   have ha_ball : a '' ball 0 1 = ball x r := by
-    rw [ha_comp, image_comp, Set.image_smul, smul_ball hr.ne', Set.image_vadd, Metric.vadd_ball]
-    simp [abs_of_pos hr]
+    rw [ha_comp, image_comp, Set.image_smul, Set.image_vadd]
+    exact affinity_unitBall hr x
   have ha_closedBall : a '' closedBall 0 1 = closedBall x r := by
-    rw [ha_comp, image_comp, Set.image_smul, smul_closedBall' hr.ne', Set.image_vadd,
-      Metric.vadd_closedBall]
-    simp [abs_of_pos hr]
+    rw [ha_comp, image_comp, Set.image_smul, Set.image_vadd]
+    exact affinity_unitClosedBall hr.le x
   have ha_maps : MapsTo a (closedBall 0 1) (closedBall x r) := ha_closedBall ▸ mapsTo_image _ _
   have ha_inj : Injective a := fun y z h ↦ smul_right_injective E hr.ne' (add_left_cancel h)
   have := isOpen_image_ball_zero_one hEF (f := f ∘ a) (hf.comp (by fun_prop) ha_maps)
