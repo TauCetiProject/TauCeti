@@ -27,8 +27,8 @@ Mathlib's germ relation `Filter.germSetoid atTop Bool`, so its quotient is the t
 be separated by countably many invariant Borel sets. This file proves the facts about `E₀` that
 make this so and that Borel reducibility arguments use:
 
-* the graph of `E₀` is Borel, every class is countable and dense, and the graph is meagre in the
-  square;
+* the graph of `E₀` is Fσ (its complement is Gδ), hence Borel, every class is countable and
+  dense, and the graph is meagre in the square;
 * **generic ergodicity**: an `E₀`-invariant set with the Baire property is meagre or comeagre. If
   such a set is comeagre in the cylinder of a word `s ++ [b]`, the coordinate flip at `s.length`,
   which changes a point only at one coordinate and so preserves the set, shows that it is comeagre
@@ -101,13 +101,19 @@ theorem eZero_flipAt (n : ℕ) (x : ℕ → Bool) : eZero (flipAt n x) x :=
 
 /-! ### Borelness and the classes of `E₀` -/
 
+/-- The graph of `E₀` is Fσ, expressed as a Gδ complement: agreement from any fixed index
+on is a closed condition. -/
+theorem isGδ_compl_eZero :
+    IsGδ {p : (ℕ → Bool) × (ℕ → Bool) | eZero p.1 p.2}ᶜ := by
+  simp only [eZero_iff, eventually_atTop, ofPred_exists, ofPred_forall, compl_iUnion]
+  exact .iInter fun _ => (isClosed_iInter fun n => isClosed_iInter fun _ =>
+    isClosed_eq ((continuous_apply n).comp continuous_fst)
+      ((continuous_apply n).comp continuous_snd)).isOpen_compl.isGδ
+
 /-- The graph of `E₀` is Borel. -/
 theorem measurableSet_eZero :
     MeasurableSet {p : (ℕ → Bool) × (ℕ → Bool) | eZero p.1 p.2} := by
-  simp only [eZero_iff, eventually_atTop, ofPred_exists, ofPred_forall]
-  exact .iUnion fun _ => .iInter fun n => .iInter fun _ =>
-    measurableSet_eq_fun ((measurable_pi_apply n).comp measurable_fst)
-      ((measurable_pi_apply n).comp measurable_snd)
+  simpa only [compl_compl] using isGδ_compl_eZero.measurableSet.compl
 
 /-- Every class of `E₀` is countable: a point equivalent to `x` is `x` with the coordinates in a
 finite set negated. -/
