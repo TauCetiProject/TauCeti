@@ -11,13 +11,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 /-!
 # Integrals of positive-semidefinite and positive-definite matrices
 
-An entrywise integral of an almost everywhere positive-semidefinite family of matrices over an
-`RCLike` scalar field is positive semidefinite: its quadratic form is the integral of the pointwise
-quadratic forms. Over a nonzero measure, almost everywhere positive definiteness likewise passes to
-the entrywise integral.
-
-## Main results
-
 * `TauCeti.posSemidef_integral` — the entrywise integral of an a.e. positive-semidefinite family of
   finite matrices with integrable entries is positive semidefinite.
 * `TauCeti.posDef_integral` — over a nonzero measure, the entrywise integral of an a.e.
@@ -57,16 +50,16 @@ theorem posSemidef_integral {α ι 𝕜 : Type*} [MeasurableSpace α] {μ : Meas
     (hint : ∀ i j, Integrable (fun x => M x i j) μ) :
     (Matrix.of fun i j => ∫ x, M x i j ∂μ).PosSemidef := by
   have := Fintype.ofFinite ι
-  refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun c => ?_
-  · refine Matrix.IsHermitian.ext fun i j => ?_
-    simp only [Matrix.of_apply, RCLike.star_def, ← integral_conj]
-    exact integral_congr_ae
-      (hM.mono fun x hx => by simpa [RCLike.star_def] using hx.isHermitian.apply i j)
-  · obtain ⟨hquad, hint_quad⟩ := dotProduct_mulVec_integral_eq hint c
-    rw [hquad, RCLike.nonneg_iff, ← integral_re hint_quad, ← integral_im hint_quad]
-    refine ⟨integral_nonneg_of_ae (hM.mono fun x hx => hx.re_dotProduct_nonneg c), ?_⟩
-    exact integral_eq_zero_of_ae
-      (hM.mono fun x hx => (RCLike.nonneg_iff.mp (hx.dotProduct_mulVec_nonneg c)).2)
+  refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg
+    (Matrix.IsHermitian.ext fun i j => by
+      simp only [Matrix.of_apply, RCLike.star_def, ← integral_conj]
+      exact integral_congr_ae (hM.mono fun x hx => by
+        simpa [RCLike.star_def] using hx.isHermitian.apply i j)) fun c => ?_
+  obtain ⟨hquad, hint_quad⟩ := dotProduct_mulVec_integral_eq hint c
+  rw [hquad, RCLike.nonneg_iff, ← integral_re hint_quad, ← integral_im hint_quad]
+  exact ⟨integral_nonneg_of_ae (hM.mono fun _ hx => hx.re_dotProduct_nonneg c),
+    integral_eq_zero_of_ae (hM.mono fun _ hx =>
+      (RCLike.nonneg_iff.mp (hx.dotProduct_mulVec_nonneg c)).2)⟩
 
 /-- Over a nonzero measure, the **entrywise integral of positive-definite matrices** is positive
 definite. -/
@@ -75,29 +68,20 @@ theorem posDef_integral {α ι 𝕜 : Type*} [MeasurableSpace α] {μ : Measure 
     (hint : ∀ i j, Integrable (fun x => M x i j) μ) :
     (Matrix.of fun i j => ∫ x, M x i j ∂μ).PosDef := by
   have := Fintype.ofFinite ι
-  have hpsd : (Matrix.of fun i j => ∫ x, M x i j ∂μ).PosSemidef :=
-    posSemidef_integral (hM.mono fun _ hx => hx.posSemidef) hint
+  have hpsd := posSemidef_integral (hM.mono fun _ hx => hx.posSemidef) hint
   refine Matrix.PosDef.of_dotProduct_mulVec_pos hpsd.isHermitian fun c hc => ?_
   obtain ⟨hquad, hint_quad⟩ := dotProduct_mulVec_integral_eq hint c
-  have him : RCLike.im (star c ⬝ᵥ ((Matrix.of fun i j => ∫ x, M x i j ∂μ) *ᵥ c)) = 0 :=
-    (RCLike.nonneg_iff.mp (hpsd.dotProduct_mulVec_nonneg c)).2
-  rw [RCLike.pos_iff]
-  refine ⟨?_, him⟩
+  refine RCLike.pos_iff.mpr ⟨?_, (RCLike.nonneg_iff.mp (hpsd.dotProduct_mulVec_nonneg c)).2⟩
   rw [hquad, ← integral_re hint_quad]
   have hpos_ae : ∀ᵐ x ∂μ, 0 < RCLike.re (star c ⬝ᵥ (M x *ᵥ c)) :=
-    hM.mono fun x hx => hx.re_dotProduct_pos hc
-  rw [integral_pos_iff_support_of_nonneg_ae (hpos_ae.mono fun _ hx => hx.le) hint_quad.re]
-  rw [pos_iff_ne_zero]
-  intro hsupp
-  have hcompl : μ (Function.support fun x => RCLike.re (star c ⬝ᵥ (M x *ᵥ c)))ᶜ = 0 := by
-    rw [ae_iff] at hpos_ae
-    refine measure_mono_null (fun x hx => ?_) hpos_ae
-    simp only [Set.mem_compl_iff, Function.mem_support, not_not] at hx
-    simp [hx]
-  have huniv : μ Set.univ ≤ 0 := by
-    simpa [hsupp, hcompl] using
-      measure_univ_le_add_compl (μ := μ)
-        (s := Function.support fun x => RCLike.re (star c ⬝ᵥ (M x *ᵥ c)))
-  exact hμ.out (Measure.measure_univ_eq_zero.mp (nonpos_iff_eq_zero.mp huniv))
+    hM.mono fun _ hx => hx.re_dotProduct_pos hc
+  refine (integral_pos_iff_support_of_nonneg_ae (hpos_ae.mono fun _ hx => hx.le)
+    hint_quad.re).mpr (pos_iff_ne_zero.mpr fun hsupp => hμ.out ?_)
+  have hcompl : μ (Function.support fun x => RCLike.re (star c ⬝ᵥ (M x *ᵥ c)))ᶜ = 0 :=
+    measure_mono_null (fun _ => mt Function.mem_support.mpr)
+      (ae_iff.mp (hpos_ae.mono fun _ hx => hx.ne'))
+  exact Measure.measure_univ_eq_zero.mp <| nonpos_iff_eq_zero.mp <| by
+    simpa [hsupp, hcompl] using measure_univ_le_add_compl
+      (μ := μ) (s := Function.support fun x => RCLike.re (star c ⬝ᵥ (M x *ᵥ c)))
 
 end TauCeti
