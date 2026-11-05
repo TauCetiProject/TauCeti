@@ -63,11 +63,6 @@ def IsBoundedlyComplete : Prop :=
     BddAbove (range (fun n ↦ ‖∑ i ∈ Finset.range n, a i • b i‖)) →
     ∃ x, HasSum (fun i ↦ a i • b i) x (SummationFilter.conditional ℕ)
 
-/-- Precomposition with an initial projection is a finite linear combination of coordinates. -/
-theorem comp_proj_eq_sum (f : StrongDual 𝕜 E) (n : ℕ) :
-    f.comp (b.proj n) = ∑ i ∈ Finset.range n, f (b i) • b.coord i :=
-  GeneralSchauderBasis.comp_proj_eq_sum b f (Finset.range n)
-
 /-- Bounded completeness says precisely that every coefficient sequence with bounded
 initial partial sums is the coordinate sequence of a vector. -/
 theorem isBoundedlyComplete_iff : b.IsBoundedlyComplete ↔
