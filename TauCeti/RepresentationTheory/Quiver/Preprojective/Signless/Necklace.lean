@@ -38,9 +38,10 @@ For a finite Dynkin graph, `Π⁺(G)` is finite-dimensional and its elements of 
 degree are nilpotent, so they have trace zero in every finite-dimensional representation, and the
 matrix representations of
 `TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixRepresentation` cannot detect
-cyclic classes in positive degree. Necklace weights can: the space of such weights in a fixed
-degree is the dual of the corresponding piece of the cyclic quotient, and a weight is checked on
-finitely many closed walks.
+cyclic classes in positive degree. Necklace weights can: in a fixed positive degree, the
+weights satisfying the relations, taken up to their values on necklaces that are not closed walks
+of the graph (which the functional never sees), correspond to the dual of that piece of the cyclic
+quotient, and a weight is checked on finitely many closed walks.
 
 ## Main definitions
 
@@ -52,8 +53,6 @@ finitely many closed walks.
 
 ## Main results
 
-* `TauCeti.DoubledQuiver.isChain_map_vertices`: the vertices of a path of the doubled quiver form
-  a walk of the graph.
 * `TauCeti.DoubledQuiver.necklaceFunctional_mul_comm`: the necklace functional is a trace.
 * `TauCeti.DoubledQuiver.necklaceFunctional_eq_zero_of_mem_signlessPreprojectiveIdeal`: under
   the signless necklace relations it kills the signless relation ideal.
@@ -90,26 +89,7 @@ variable (k : Type w) {V : Type u} (G : SimpleGraph V)
 
 namespace DoubledQuiver
 
-/-! ### Vertices of paths of a doubled quiver -/
-
-/-- **The vertices of a path of a doubled quiver form a walk of the graph.** -/
-theorem isChain_map_vertices {a b : DoubledQuiver G} (p : Path a b) :
-    (p.vertices.map (vertexEquiv G).symm).IsChain G.Adj := by
-  induction p with
-  | nil => simp
-  | @cons b c p e ih =>
-    obtain ⟨i, rfl⟩ := exists_eq_vertex G b
-    obtain ⟨j, rfl⟩ := exists_eq_vertex G c
-    rw [Path.vertices_cons, List.concat_eq_append, List.map_append, List.isChain_append]
-    refine ⟨ih, List.isChain_singleton _, fun x hx y hy => ?_⟩
-    rw [List.getLast?_map, List.getLast?_eq_some_getLast p.vertices_ne_nil,
-      Path.vertices_getLast] at hx
-    simp only [Option.map_some, Option.mem_def, Option.some.injEq,
-      vertexEquiv_symm_vertex] at hx
-    simp only [List.map_cons, List.map_nil, List.head?_cons, Option.mem_def, Option.some.injEq,
-      vertexEquiv_symm_vertex] at hy
-    subst hx hy
-    exact (nonempty_hom_iff G).mp ⟨e⟩
+/-! ### Vertices of closed paths of a doubled quiver -/
 
 /-- The vertices of a closed path at `v` of a doubled quiver, the final return to `v` omitted,
 form a closed walk of the graph at `v`. -/
@@ -154,6 +134,7 @@ theorem necklaceFunctional_ofPath (a : DoubledQuiver G) (p : Path a a) :
   rw [necklaceFunctional, liftLinear_ofPath, ite_eq_left rfl]
 
 /-- The necklace functional vanishes on a path which is not closed. -/
+@[simp]
 theorem necklaceFunctional_ofPath_of_ne {a b : DoubledQuiver G} (p : Path a b) (h : a ≠ b) :
     necklaceFunctional k G W (ofPath ⟨a, b, p⟩) = 0 := by
   rw [necklaceFunctional, liftLinear_ofPath, ite_eq_right h]

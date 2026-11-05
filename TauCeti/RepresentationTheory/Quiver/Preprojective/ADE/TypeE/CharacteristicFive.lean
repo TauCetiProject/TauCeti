@@ -35,8 +35,9 @@ Positive-degree elements of the finite-dimensional algebra `Π⁺(E₈)` are nil
 of matrix representations cannot detect them. Instead the class is detected by a necklace
 functional, `TauCeti.signlessNecklaceFunctional`: a weight on the cyclic words of closed walks
 of length ten which satisfies the signless necklace relations `∑_{w ∼ v} W (v w L) = 0` for every
-closed walk `L` of length eight at every vertex `v`. Such weights are the linear functionals on
-the degree-ten piece of the cyclic quotient. The weight used here was found by solving these
+closed walk `L` of length eight at every vertex `v`. Such weights, taken up to their values on
+necklaces that are not closed walks of `E₈`, correspond to the linear functionals on the degree-ten
+piece of the cyclic quotient. The weight used here was found by solving these
 linear relations over `ZMod 5` by computer; it is supported on `84` necklaces and takes the value
 one on the necklace of `y z⁴`. It is recorded below by integer representatives, indexed by a
 numerical code of the necklace, and its relations, one for each closed walk of length eight, are
