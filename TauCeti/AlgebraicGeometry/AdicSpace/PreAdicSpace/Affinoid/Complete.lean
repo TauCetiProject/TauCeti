@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
 
 /-!
 # Complete models of affinoid pre-adic spaces
@@ -105,5 +106,34 @@ theorem isAffinoid_iff_exists_complete (X : PreAdicSpace.{u}) : isAffinoid X ↔
   · rintro ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩
     exact (isAffinoid_iff X).mpr
       ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, ⟨e⟩⟩
+
+/-- Every sheafy affinoid pre-adic space admits a presentation by a complete Hausdorff Huber pair
+whose presentation-limit structure presheaf is a sheaf. -/
+theorem isAffinoid.exists_complete_isSheaf {X : PreAdicSpace.{u}}
+    (hX : isAffinoid X) (hs : isSheafy X) :
+    ∃ (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
+      (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsHuberRing A)
+      (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+      (_ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
+        (presentationLimitPresheaf P S.plus)),
+      Nonempty (X ≅ presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
+  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff_exists_complete X).mp hX
+  exact ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, S, P, hP, ObjectProperty.prop_of_iso isSheafy e hs, ⟨e⟩⟩
+
+/-- Every open affinoid subspace of a sheafy pre-adic space admits a presentation by a complete
+Hausdorff Huber pair whose presentation-limit structure presheaf is a sheaf. -/
+theorem isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens {X : PreAdicSpace.{u}}
+    (hs : isSheafy X) {U : Opens X} (hU : U ∈ X.affinoidOpens) :
+    ∃ (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
+      (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsHuberRing A)
+      (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+      (_ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
+        (presentationLimitPresheaf P S.plus)),
+      Nonempty (X.restrict U.isOpenEmbedding ≅ presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
+  ((mem_propOpens_iff isAffinoid).mp hU).exists_complete_isSheaf
+    (isSheafy_restrict U.isOpenEmbedding hs)
 
 end TauCeti.PreAdicSpace

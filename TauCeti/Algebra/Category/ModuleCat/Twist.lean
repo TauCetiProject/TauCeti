@@ -39,6 +39,8 @@ sense of Mathlib's `MonoidalLeftAction`, that is, a coherent categorical action 
   acts by homeomorphisms, and for the smooth modules for a family of left ideals
   (`TauCeti.smoothModules`) when each twist preserves the family up to cofinality. The action
   then restricts to these full subcategories.
+* `RingHom.leftLinearRestrictScalars`: restriction of scalars along a ring homomorphism
+  intertwining two such actions is equivariant for the twisting actions, with identity lineators.
 
 Through `MonoidalLeftAction.pseudofunctor`, the action is a pseudofunctor out of the one-object
 bicategory of `H` whose unit and composition comparisons are those of restriction of scalars.
@@ -243,6 +245,77 @@ lemma isStableUnderLeftAction_smoothModules {ι : Type*} (J : ι → Submodule A
     TauCeti.smoothModules_restrictScalars _ (hJ h) hM
 
 end MonoidHom
+
+namespace RingHom
+
+open Functor.LaxLeftLinear Functor.OplaxLeftLinear
+
+variable {H : Type*} [Monoid H] {A : Type u} [Ring A] {B : Type*} [Ring B] (f : A →+* B)
+  {a : H →* RingAut A} {b : H →* RingAut B} (hf : ∀ h x, f (a h x) = b h (f x))
+
+include hf in
+/-- If a ring homomorphism `f : A →+* B` intertwines actions `a` and `b` of `H` by ring
+automorphisms, then restriction of scalars along `f` is equivariant for the twisting actions.
+Twisting the restriction of a `B`-module by `h` and restricting its twist are both restriction
+of scalars along `f ∘ (a h)⁻¹ = (b h)⁻¹ ∘ f`, and the lineators are the identity maps of the
+underlying abelian group. -/
+@[instance_reducible]
+noncomputable def leftLinearRestrictScalars :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    (ModuleCat.restrictScalars.{v} f).LeftLinear (Discrete H) :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
+  letI := b.restrictScalarsMonoidalLeftAction.{v}
+  have hsymm (h : H) (x : A) : f ((a h).symm x) = (b h).symm (f x) := by
+    rw [RingEquiv.eq_symm_apply, ← hf, RingEquiv.apply_symm_apply]
+  -- Both lineators are the identity on the carrier of `M`. By
+  -- `ModuleCat.restrictScalars.smul_def`, `r : A` acts on that carrier by `f ((a c).symm r)`
+  -- through the twisted restriction and by `(b c).symm (f r)` through the restricted twist; these
+  -- agree by `hsymm`. The ascription `show M from x` views `x` in `M`, so that both sides are the
+  -- action of `B` on `M` and differ only in the scalar.
+  { μₗ c M := ModuleCat.ofHom
+      (X := (c ⊙ₗ (ModuleCat.restrictScalars f).obj M : ModuleCat.{v} A))
+      (Y := (ModuleCat.restrictScalars f).obj (c ⊙ₗ M : ModuleCat.{v} B))
+      { toFun := fun x => x
+        map_add' _ _ := rfl
+        map_smul' r x := congrArg (· • (show M from x)) (hsymm c.as r) }
+    δₗ c M := ModuleCat.ofHom
+      (X := (ModuleCat.restrictScalars f).obj (c ⊙ₗ M : ModuleCat.{v} B))
+      (Y := (c ⊙ₗ (ModuleCat.restrictScalars f).obj M : ModuleCat.{v} A))
+      { toFun := fun x => x
+        map_add' _ _ := rfl
+        map_smul' r x :=
+          (congrArg (· • (show M from x)) (hsymm c.as r)).symm }
+    μₗ_naturality_left _ _ := by ext; rfl
+    μₗ_naturality_right _ _ _ _ := by ext; rfl
+    μₗ_associativity _ _ _ := by ext; rfl
+    μₗ_unitality _ := by ext; rfl
+    δₗ_naturality_left _ _ := by ext; rfl
+    δₗ_naturality_right _ _ _ _ := by ext; rfl
+    δₗ_associativity _ _ _ := by ext; rfl
+    δₗ_unitality_inv _ := by ext; rfl
+    μₗ_comp_δₗ _ _ := by ext; rfl
+    δₗ_comp_μₗ _ _ := by ext; rfl }
+
+/-- The lax lineators of `RingHom.leftLinearRestrictScalars` are identity maps. -/
+@[simp]
+lemma leftLinearRestrictScalars_μₗ_apply (c : Discrete H) (M : ModuleCat.{v} B) (x : M) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    letI := f.leftLinearRestrictScalars hf
+    μₗ (ModuleCat.restrictScalars.{v} f) c M x = x :=
+  (rfl)
+
+/-- The oplax lineators of `RingHom.leftLinearRestrictScalars` are identity maps. -/
+@[simp]
+lemma leftLinearRestrictScalars_δₗ_apply (c : Discrete H) (M : ModuleCat.{v} B) (x : M) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    letI := f.leftLinearRestrictScalars hf
+    δₗ (ModuleCat.restrictScalars.{v} f) c M x = x :=
+  (rfl)
+
+end RingHom
 
 namespace TauCeti
 

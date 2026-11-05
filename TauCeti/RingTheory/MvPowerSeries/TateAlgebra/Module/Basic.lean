@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Convolution
 public import Mathlib.LinearAlgebra.Finsupp.Pi
 public import Mathlib.Data.Finsupp.Option
 import Mathlib.Algebra.Order.Antidiag.Tendsto
+import TauCeti.Data.Finsupp.Sum
 import TauCeti.Data.Finsupp.Weight
 
 /-!
@@ -30,8 +31,9 @@ such as analytic functions on a closed polydisc with values in a Banach module.
 The restricted families form an additive subgroup of the coefficient families, and an
 `R`-submodule when `E` is a module over a seminormed ring `R` with `‖r • e‖ ≤ ‖r‖ * ‖e‖`. This file
 gives their coefficient maps and extensionality, the inclusion of finitely supported families,
-the slices obtained by fixing the exponent of one variable
-(`TauCeti.MvPowerSeries.IsRestrictedFamily.comp_optionElim`), and the maps induced
+the slices obtained by fixing exponents in one variable or a set of variables
+(`TauCeti.MvPowerSeries.IsRestrictedFamily.comp_optionElim` and
+`TauCeti.MvPowerSeries.IsRestrictedFamily.comp_sumElim`), and the maps induced
 coefficientwise by bounded linear maps `‖φ e‖ ≤ C * ‖e‖`. When `E` is
 ultrametric, restricted series over `R` act on restricted families by convolution,
 
@@ -166,6 +168,21 @@ theorem IsRestrictedFamily.comp_optionElim {c : Option σ → ℝ} (hc : 0 < c n
   refine isRestrictedFamily_iff.mpr (h.congr fun t ↦ ?_)
   rw [Function.comp_apply, Finsupp.prod_pow_optionElim]
   field_simp [(pow_pos hc k).ne']
+
+/-- Fixing the exponents in one set of variables preserves restrictedness in the others.
+Only the radii of the fixed variables need to be positive. -/
+theorem IsRestrictedFamily.comp_sumElim {τ : Type*} {d : τ → ℝ} [∀ i, Fact (0 < c i)]
+    {a : ((σ ⊕ τ) →₀ ℕ) → E}
+    (ha : IsRestrictedFamily (Sum.elim c d) a) (s : σ →₀ ℕ) :
+    IsRestrictedFamily d (fun t ↦ a (s.sumElim t)) := by
+  have hi : Function.Injective (s.sumElim : (τ →₀ ℕ) → (σ ⊕ τ) →₀ ℕ) := fun _ _ h ↦
+    (Finsupp.sumElim_inj.mp h).2
+  have h := ((isRestrictedFamily_iff.mp ha).comp hi.tendsto_cofinite).const_mul
+    (s.prod (c · ^ ·))⁻¹
+  rw [mul_zero] at h
+  refine isRestrictedFamily_iff.mpr (h.congr fun t ↦ ?_)
+  rw [Function.comp_apply, Finsupp.prod_pow_sumElim]
+  field_simp [(prod_pow_pos (c := c) s).ne']
 
 end Predicate
 
@@ -319,6 +336,46 @@ theorem mapLinearMap_injective (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖�
     (hinj : Function.Injective φ) :
     Function.Injective (mapLinearMap (c := c) φ hφ) := fun _ _ h ↦
   ext fun t ↦ hinj (congrFun (congrArg Subtype.val h) t)
+
+section Lifts
+
+variable (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+
+/-- A restricted family is killed by the induced map exactly when each coefficient is killed. -/
+@[simp]
+theorem mapLinearMap_eq_zero_iff (a : IsRestrictedFamily.addSubgroup E c) :
+    mapLinearMap φ hφ a = 0 ↔ ∀ t, φ (a.1 t) = 0 := by
+  constructor
+  · intro h t
+    simpa only [coe_mapLinearMap, Function.comp_apply, AddSubgroup.coe_zero, Pi.zero_apply]
+      using congrFun (congrArg Subtype.val h) t
+  · intro h
+    apply ext
+    simpa only [coe_mapLinearMap, Function.comp_apply, AddSubgroup.coe_zero, Pi.zero_apply]
+      using h
+
+/-- Uniformly bounded coefficient lifts give restricted lifts with the same coefficient bound.
+The polyradius can be arbitrary and the lift need not be linear. -/
+theorem exists_mapLinearMap_eq_and_norm_coeff_le {L : ℝ}
+    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖)
+    (b : IsRestrictedFamily.addSubgroup F c) :
+    ∃ a, mapLinearMap φ hφ a = b ∧ ∀ t, ‖a.1 t‖ ≤ L * ‖b.1 t‖ := by
+  choose f hf hnorm using hlift
+  refine ⟨⟨f ∘ b.1, mem_addSubgroup.mpr ((mem_addSubgroup.mp b.2).map f hnorm)⟩,
+    ?_, fun t ↦ hnorm _⟩
+  apply ext
+  simpa only [coe_mapLinearMap, Function.comp_apply] using fun t ↦ hf (b.1 t)
+
+/-- Bounded lifts, rather than algebraic surjectivity alone, guarantee surjectivity on
+restricted families. -/
+theorem mapLinearMap_surjective {L : ℝ}
+    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
+    Function.Surjective (mapLinearMap (c := c) φ hφ) := by
+  intro b
+  obtain ⟨a, ha, -⟩ := exists_mapLinearMap_eq_and_norm_coeff_le φ hφ hlift b
+  exact ⟨a, ha⟩
+
+end Lifts
 
 theorem mapLinearMap_ofFinsupp (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
     (a : (σ →₀ ℕ) →₀ E) :

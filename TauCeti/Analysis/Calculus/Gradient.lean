@@ -75,6 +75,12 @@ isometry. -/
 theorem norm_gradient_eq_norm_fderiv (f : F → 𝕜) (x : F) : ‖∇ f x‖ = ‖fderiv 𝕜 f x‖ :=
   (toDual 𝕜 F).symm.norm_map _
 
+/-- Differences of gradients have the same norm as differences of the corresponding Fréchet
+derivatives, with no differentiability assumptions. -/
+theorem norm_gradient_sub_gradient_eq_norm_fderiv_sub (f g : F → 𝕜) (x : F) :
+    ‖∇ f x - ∇ g x‖ = ‖fderiv 𝕜 f x - fderiv 𝕜 g x‖ := by
+  simp only [gradient, ← map_sub, LinearIsometryEquiv.norm_map]
+
 /-- The gradient is additive wherever both summands are differentiable. -/
 theorem gradient_add (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
     ∇ (f + g) x = ∇ f x + ∇ g x := by

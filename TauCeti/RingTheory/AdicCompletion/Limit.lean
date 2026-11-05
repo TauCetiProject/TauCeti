@@ -33,6 +33,7 @@ spectrum, and the form used to identify its global sections with `R`.
 
 ## Main definitions
 
+* `TauCeti.antitoneQuotientDiagram K hK`: quotients by a decreasing sequence of ideals.
 * `Ideal.quotientPowSuccDiagram I`: the diagram `n ↦ R ⧸ I ^ (n + 1)` of commutative rings.
 * `Ideal.quotientPowSuccCone I`: the cone over it with apex `R` given by the quotient maps.
 * `AdicCompletion.quotientPowSuccCone I`: the cone over it with apex `AdicCompletion I R` given by
@@ -54,6 +55,18 @@ open CategoryTheory Limits Opposite
 
 @[expose] public section
 
+namespace TauCeti
+
+/-- The inverse system of quotients by a decreasing sequence of ideals. -/
+noncomputable abbrev antitoneQuotientDiagram {R : Type u} [CommRing R]
+    (K : ℕ → Ideal R) (hK : Antitone K) : ℕᵒᵖ ⥤ CommRingCat.{u} where
+  obj n := CommRingCat.of (R ⧸ K n.unop)
+  map f := CommRingCat.ofHom (Ideal.Quotient.factor (hK (leOfHom f.unop)))
+  map_id _ := by ext x; rfl
+  map_comp _ _ := by ext x; rfl
+
+end TauCeti
+
 namespace Ideal
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
@@ -61,16 +74,9 @@ variable {R : Type u} [CommRing R] (I : Ideal R)
 /-- The diagram `R ⧸ I ← R ⧸ I ^ 2 ← R ⧸ I ^ 3 ← ⋯` of commutative rings, with the quotient
 maps as transitions. -/
 @[simps]
-noncomputable def quotientPowSuccDiagram : ℕᵒᵖ ⥤ CommRingCat.{u} where
-  obj n := CommRingCat.of (R ⧸ I ^ (n.unop + 1))
-  map f := CommRingCat.ofHom (Quotient.factor
-    (pow_le_pow_right (Nat.succ_le_succ (leOfHom f.unop))))
-  map_id _ := by
-    ext x
-    rfl
-  map_comp _ _ := by
-    ext x
-    rfl
+noncomputable def quotientPowSuccDiagram : ℕᵒᵖ ⥤ CommRingCat.{u} :=
+  TauCeti.antitoneQuotientDiagram (fun n ↦ I ^ (n + 1))
+    (fun _ _ h ↦ pow_le_pow_right (Nat.succ_le_succ h))
 
 /-- The cone of quotient maps `R → R ⧸ I ^ (n + 1)` over `Ideal.quotientPowSuccDiagram I`. -/
 @[simps]

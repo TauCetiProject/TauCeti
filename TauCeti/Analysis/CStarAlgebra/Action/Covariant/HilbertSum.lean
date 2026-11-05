@@ -52,9 +52,11 @@ def hilbertSum : CovariantRepresentation α (lp H 2) where
       map_smul' c a := by ext x i; simp
       map_mul' a b := by ext x i; simp [mul_apply_eq_comp]
       map_star' a := by
-        rw [ContinuousLinearMap.star_eq_adjoint, lp.adjoint_mapCLM]
+        rw [lp.star_mapCLM _ _ _ (norm_nonneg a)
+          (fun i => by simpa only [norm_star] using
+            NonUnitalStarAlgHom.norm_apply_le (P i).coefficient a)]
         ext x i
-        simp [← ContinuousLinearMap.star_eq_adjoint, map_star] }
+        simp [map_star] }
   group := .ofMonoidHom
     { toFun g := lp.mapCLM 2 (fun i => (P i).group g) zero_le_one
         (fun i => (P i).isUnitary.norm_le_one g)
