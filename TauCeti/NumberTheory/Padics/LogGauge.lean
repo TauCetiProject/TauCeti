@@ -87,4 +87,14 @@ theorem ratAddValuation_eq_map_padicAddValuation (ϖ : PseudoUniformizer ℚ_[p]
   rw [Padic.addValuation.apply hx, WithTop.map_coe,
     ratAddValuation_eq_intCast hc (norm_eq_zpow_valuation ϖ hϖ hx)]
 
+/-- On `ℚ_[p]`, normalised at `p`, the rational valuation of `p ^ n` is `n`, for `n ∈ ℤ`; for
+instance `v_p(p⁻²) = -2`. -/
+example (ϖ : PseudoUniformizer ℚ_[p]) (hϖ : (ϖ.unit : ℚ_[p]) = p) :
+    ϖ.ratAddValuation (isCommensurable_padic ϖ) ((p : ℚ_[p]) ^ (-2 : ℤ)) =
+      ((-2 : ℚ) : WithTop ℚ) := by
+  have h : (p : ℚ_[p]) ^ (-2 : ℤ) = ((ϖ.unit ^ (-2 : ℤ) : ℚ_[p]ˣ) : ℚ_[p]) := by
+    rw [Units.val_zpow_eq_zpow_val, hϖ]
+  rw [h, ratAddValuation_zpow]
+  norm_num
+
 end TauCeti.NormedRing.PseudoUniformizer
