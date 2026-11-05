@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
-public import TauCeti.Geometry.Symplectic.Floer.Pullback
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The integrated curvature and the energy identity of the pair-of-pants perturbation
@@ -110,20 +108,6 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
-/-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
-private noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
-  Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))
-
-/-- The part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates. It
-contains the support of the curvature of the end, and the end lift is injective on it. -/
-private noncomputable def endStrip (q : Puncture) : Set (ℝ × ℝ) :=
-  {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2)
-
-private theorem endSign_mul_pos_of_mem_endStrip {q : Puncture} {z : ℝ × ℝ}
-    (hz : z ∈ endStrip q) : 0 < q.endSign * z.1 := by
-  have h : 1 / 2 < q.endSign * z.1 := hz.1
-  linarith
-
 /-- The perturbation is `C¹` jointly in the domain point of `S` and the target point. -/
 private theorem contDiffAt_pairOfPantsPerturbation_prod (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
@@ -160,49 +144,18 @@ private theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Per
   exact (hK.comp x ((differentiableAt_const w).prodMk differentiableAt_id)).clm_apply
     (differentiableAt_const v)
 
-/-- The derivative of the end chart is multiplication by the derivative of the end lift. -/
-private theorem hasFDerivAt_endChart (q : Puncture) (z : ℝ × ℝ) :
-    HasFDerivAt (endChart q)
-      ((Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ).comp
-        (((ContinuousLinearMap.toSpanSingleton ℂ
-          (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))).restrictScalars ℝ).comp
-            (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ))) z := by
-  have h := ((q.hasDerivAt_cylindricalEndLift
-    (Complex.equivRealProdCLM.symm z)).differentiableAt.hasDerivAt.hasFDerivAt.restrictScalars ℝ)
-  exact Complex.equivRealProdCLM.hasFDerivAt.comp z
-    (h.comp z Complex.equivRealProdCLM.symm.hasFDerivAt)
-
-private theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
-    fderiv ℝ (endChart q) z v = Complex.equivRealProdCLM
-      (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) *
-        Complex.equivRealProdCLM.symm v) := by
-  rw [(hasFDerivAt_endChart q z).fderiv]
-  simp [mul_comm]
-
-private theorem contDiff_endChart (q : Puncture) : ContDiff ℝ 2 (endChart q) := by
-  exact Complex.equivRealProdCLM.contDiff.comp
-    (((q.contDiff_cylindricalEndLift 2).restrict_scalars ℝ).comp
-      Complex.equivRealProdCLM.symm.contDiff)
-
 omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
 /-- The pullback of the perturbation along the end chart of `q`, evaluated on a tangent vector
 `v`, is its component `TauCeti.Floer.pairOfPantsEndComponent` along `v` in the end coordinates. -/
-private theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
+private theorem perturbationPullback_endChart_pairOfPantsPerturbation (q : Puncture)
+    (v : ℝ × ℝ) :
     perturbationPullback (endChart q)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
       pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm v) := by
-  -- A real-linear functional `L` on `ℂ` satisfies `L w = Re w · L 1 + Im w · L i`.
-  have hL (L : ℂ →L[ℝ] ℝ) (w : ℂ) :
-      (Complex.equivRealProdCLM w).1 * L 1 + (Complex.equivRealProdCLM w).2 * L Complex.I =
-        L w := by
-    have hw : w = w.re • (1 : ℂ) + w.im • Complex.I := by simp
-    conv_rhs => rw [hw]
-    rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-    simp
+  rw [perturbationPullback_endChart (pairOfPantsPerturbation H)]
   funext z x
-  rw [perturbationPullback_apply, fderiv_endChart_apply, endChart,
-    ContinuousLinearEquiv.symm_apply_apply, hL, pairOfPantsEndComponent_def]
+  rw [pairOfPantsEndComponent_def]
   rfl
 
 variable [FiniteDimensional ℝ V]
@@ -226,7 +179,8 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : Symplec
     DifferentiableAt.comp (g := uncurry (H q)) (f := fun t : ℝ ↦ (t, x)) z.2
       ((hHs q).differentiable one_ne_zero (z.2, x))
       (differentiableAt_id.prodMk (differentiableAt_const x))
-  rw [perturbationPullback_endChart, perturbationPullback_endChart,
+  rw [perturbationPullback_endChart_pairOfPantsPerturbation,
+    perturbationPullback_endChart_pairOfPantsPerturbation,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
     ω.hamiltonianCurvature_pairOfPantsEndComponent (hH q) hz hHt]
 
@@ -258,40 +212,6 @@ private theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero (ω : Sympl
     (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
   simp
 
-/-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
-period. -/
-private theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := by
-  intro a ha b hb hab
-  have h := q.injOn_cylindricalEndLift (by simpa using ha.2) (by simpa using hb.2)
-    (Complex.equivRealProdCLM.injective hab)
-  exact Complex.equivRealProdCLM.symm.injective h
-
-/-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
-image of a point of that end's strip. -/
-private theorem mem_image_endChart {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
-    {q : Puncture} (hq : 1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
-    z ∈ endChart q '' endStrip q := by
-  refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
-    ⟨by simpa using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
-  rw [endChart, ContinuousLinearEquiv.symm_apply_apply,
-    q.cylindricalEndLift_endCoord (ne_endCenter hz q), ContinuousLinearEquiv.apply_symm_apply]
-
-/-- The cutoff of an end has total increase one along the end. -/
-private theorem lintegral_deriv_smoothTransition_endSign (q : Puncture) :
-    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) = 1 := by
-  have h₁ : ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (s - 1)) = 1 := by
-    rw [lintegral_sub_right_eq_self (fun s ↦ ENNReal.ofReal (deriv smoothTransition s)) 1,
-      ← ofReal_integral_eq_lintegral_ofReal smoothTransition.integrable_deriv
-        (ae_of_all _ fun _ ↦ smoothTransition.monotone.deriv_nonneg),
-      smoothTransition.integral_deriv, ENNReal.ofReal_one]
-  cases q
-  · simpa using h₁
-  · simpa using h₁
-  · convert smoothTransition.lintegral_ofReal_mul_deriv (-1) one_pos using 4 with s
-    simp only [endSign_inf, one_mul]
-    ring_nf
-
 /-- The curvature of the perturbation over the image of the strip of the end `q` is at most a
 bound `B_q` for the Hamiltonian of that end. -/
 private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
@@ -303,8 +223,7 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         z (u z)‖ₑ ≤ ENNReal.ofReal (B q) := by
   -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hmeas : MeasurableSet (endStrip q) :=
-    (measurableSet_lt measurable_const (measurable_const.mul measurable_id)).prod measurableSet_Ico
+  have hmeas : MeasurableSet (endStrip q) := measurableSet_endStrip q
   have hψ : ∀ s, 0 ≤ deriv smoothTransition s := fun _ ↦ smoothTransition.monotone.deriv_nonneg
   rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hmeas
     (fun z _ ↦ (hasFDerivAt_endChart q z).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
@@ -315,7 +234,7 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         have hz' := endSign_mul_pos_of_mem_endStrip hz
         have hS : Complex.equivRealProdCLM.symm (endChart q z) ≠ 0 ∧
             Complex.equivRealProdCLM.symm (endChart q z) ≠ 1 := by
-          rw [endChart, ContinuousLinearEquiv.symm_apply_apply]
+          rw [endChart_def, ContinuousLinearEquiv.symm_apply_apply]
           exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz')
         -- The curvature is a two-form, and in the coordinates of the end it is `±β' H_q`.
         have key := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := z)
@@ -340,13 +259,13 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         have hvol : volume (Ico (-1 / 2 : ℝ) (1 / 2)) = 1 := by
           rw [Real.volume_Ico]
           norm_num
-        rw [Measure.volume_eq_prod, endStrip, setLIntegral_prod _ hm.aemeasurable]
+        rw [Measure.volume_eq_prod, endStrip_def, setLIntegral_prod _ hm.aemeasurable]
         simp only [setLIntegral_const, hvol, mul_one]
     _ ≤ ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) :=
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal (B q) := by
         rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
-          lintegral_deriv_smoothTransition_endSign, one_mul]
+          lintegral_ofReal_deriv_smoothTransition_endSign_mul_sub, one_mul]
 
 /-- **The integrated curvature of the pair-of-pants perturbation.** Let `K` be the pair-of-pants
 perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, with
@@ -379,7 +298,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sy
     by_cases hq : ∃ q : Puncture,
         1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
     · obtain ⟨q, hq⟩ := hq
-      exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart ⟨h₀, h₁⟩ hq⟩)
+      exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart (ne_endCenter ⟨h₀, h₁⟩ q) hq⟩)
     · simp only [not_exists, not_lt] at hq
       refine absurd ?_ hz
       simp [hamiltonianCurvature_pairOfPantsPerturbation_eq_zero ω ⟨h₀, h₁⟩
@@ -423,34 +342,6 @@ private theorem isOpen_puncturedSphere :
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
-/-- In complex coordinates the end chart is the end lift. -/
-private theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
-    Complex.equivRealProdCLM.symm (endChart q z) =
-      q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) := by
-  rw [endChart, ContinuousLinearEquiv.symm_apply_apply]
-
-/-- The end chart sends the part `±s > 0` of the end into `S`. -/
-private theorem endChart_mem_puncturedSphere (q : Puncture) {z : ℝ × ℝ}
-    (hz : 0 < q.endSign * z.1) :
-    Complex.equivRealProdCLM.symm (endChart q z) ≠ 0 ∧
-      Complex.equivRealProdCLM.symm (endChart q z) ≠ 1 := by
-  rw [equivRealProdCLM_symm_endChart]
-  exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz)
-
-/-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
-private theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
-    (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm z)
-  rw [equivRealProdCLM_symm_endChart, hk]
-  simp
-
-/-- The end chart is holomorphic, so it preserves orientation. -/
-private theorem det_fderiv_endChart_nonneg (q : Puncture) (z : ℝ × ℝ) :
-    0 ≤ (fderiv ℝ (endChart q) z).det := by
-  rw [(hasFDerivAt_endChart q z).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_nonneg]
-
 /-- The end pieces lie in the truncation. -/
 private theorem image_endPiece_subset (q : Puncture) {R : ℝ} (hR : 1 ≤ R) :
     endChart q '' endPiece q R ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
@@ -476,7 +367,7 @@ private theorem mem_image_endPiece {R : ℝ} {z : ℝ × ℝ}
   refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
     (⟨⟨by simpa using hq, by simpa using hzR q⟩, by simpa using q.im_endCoord_mem_Ico _⟩ :
       _ ∧ _), ?_⟩
-  rw [endChart, ContinuousLinearEquiv.symm_apply_apply,
+  rw [endChart_def, ContinuousLinearEquiv.symm_apply_apply,
     q.cylindricalEndLift_endCoord (ne_endCenter ⟨hz₀, hz₁⟩ q),
     ContinuousLinearEquiv.apply_symm_apply]
 
@@ -550,7 +441,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
   have hS {z : ℝ × ℝ} (hz : z ∈ U) := endChart_mem_puncturedSphere q (hpos hz)
   have hmeas : MeasurableSet s := measurableSet_Icc.prod measurableSet_Ico
   have hinj : InjOn (endChart q) s :=
-    (injOn_endChart q).mono fun z hz => (⟨hsU hz, hz.2⟩ : z ∈ endStrip q)
+    (injOn_endChart q).mono fun z hz => mem_endStrip.2 ⟨hsU hz, hz.2⟩
   have hφ (w : ℝ × ℝ) : DifferentiableAt ℝ (endChart q) w :=
     (hasFDerivAt_endChart q w).differentiableAt
   have hud {w : ℝ × ℝ} (hw : w ∈ U) : DifferentiableAt ℝ u (endChart q w) :=
@@ -576,7 +467,8 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
       (fun w hw => differentiableAt_pairOfPantsPerturbation_domain hH hHs (hS (hsU hw)) _ _)
       (fun w hw => differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hsU hw)) _ 1)
       (fun w hw => differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hsU hw)) _ _),
-    perturbationPullback_endChart, perturbationPullback_endChart,
+    perturbationPullback_endChart_pairOfPantsPerturbation,
+    perturbationPullback_endChart_pairOfPantsPerturbation,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
   -- The half-open strip and the closed rectangle differ by a null set.
   have hae : s =ᵐ[volume] Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2) := by
@@ -586,7 +478,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
   -- In the cylinder coordinates the datum is `β(±s - 1) H_q(t) dt`: apply the energy identity on
   -- the rectangle.
   have hu' : ContDiffOn ℝ 1 (u ∘ endChart q) U :=
-    hu.comp ((contDiff_endChart q).of_le (by norm_num)).contDiffOn fun w hw => hS hw
+    hu.comp (contDiff_endChart q).contDiffOn fun w hw => hS hw
   have hKs : ContDiffOn ℝ 1 (uncurry (pairOfPantsEndComponent H q 1)) (U ×ˢ univ) :=
     (contDiffOn_const (c := (0 : ℝ))).congr fun p hp =>
       pairOfPantsEndComponent_one_of_pos (hH q) (hpos hp.1) p.2
@@ -735,7 +627,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
       (fun w _ => (hasFDerivAt_endChart q w).hasFDerivWithinAt)
       ((injOn_endChart q).mono fun z hz => by
         have h : 1 ≤ q.endSign * z.1 := hz.1.1
-        exact (⟨(by linarith : (1 / 2 : ℝ) < q.endSign * z.1), hz.2⟩ : z ∈ endStrip q))
+        exact mem_endStrip.2 ⟨(by linarith : (1 / 2 : ℝ) < q.endSign * z.1), hz.2⟩)
   have hAT (q : Puncture) : A q ⊆ T := image_endPiece_subset q hR
   have hAd : Pairwise (Disjoint on A) := fun q r hqr => disjoint_image_endPiece hqr
   have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f T) :
@@ -779,7 +671,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
       simp only [q.periodic_cylindricalEndLift (q.endSign * R) t, hH q t]
     have h := Function.Periodic.intervalIntegral_add_eq hper (-1 / 2) 0
     norm_num at h
-    simp only [endChart, Complex.equivRealProdCLM_symm_apply]
+    simp only [endChart_def, Complex.equivRealProdCLM_symm_apply]
     convert h using 1 <;> norm_num
   rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hCE, hCR,
     Finset.sum_congr rfl fun q _ => integral_floerEnergyDensity_image_endPiece ω hH hHs hu hR q,
