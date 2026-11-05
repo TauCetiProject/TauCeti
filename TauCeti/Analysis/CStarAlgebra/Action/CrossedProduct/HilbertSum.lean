@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Full
+public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Representation
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.HilbertSum
 
 /-!
@@ -42,19 +42,8 @@ variable {G : Type u} {A : Type v} {ι : Type (max u v)} {H : ι → Type (max u
 @[simp]
 theorem integratedFull_hilbertSum_apply (a : FullCrossedProduct α μ) (x : lp H 2) (i : ι) :
     (hilbertSum P).integratedFull μ a x i = (P i).integratedFull μ a (x i) := by
-  -- Use bundled evaluation to avoid relying on the coercion from `lp` through `PreLp`.
-  suffices h : lp.evalCLM ℂ H 2 i ((hilbertSum P).integratedFull μ a x) =
-      (P i).integratedFull μ a (x i) by
-    simpa only [lp.evalCLM_apply] using h
-  induction a using FullCrossedProduct.induction_on with
-  | hp =>
-    exact isClosed_eq
-      ((lp.evalCLM ℂ H 2 i).continuous.comp
-        ((map_continuous ((hilbertSum P).integratedFull μ)).clm_apply continuous_const))
-      ((map_continuous ((P i).integratedFull μ)).clm_apply continuous_const)
-  | ih f =>
-    simp only [integratedFull_of, integratedStarAlgHom_apply, lp.evalCLM_apply,
-      integratedOperator_hilbertSum_apply]
+  simpa using congr($(comp_integratedFull μ (P := hilbertSum P) (Q := P i)
+    (T := lp.evalCLM ℂ H 2 i) (fun a => by ext; simp) (fun g => by ext; simp) a) x)
 
 /-- Full integration turns a Hilbert direct sum of covariant pairs into the Hilbert direct sum
 of their full integrated representations. -/

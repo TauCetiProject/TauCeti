@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
+public import Mathlib.Topology.UniformSpace.UniformApproximation
 public import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
@@ -35,6 +36,8 @@ adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
 * `lp.mapCLM_inj`: the direct sum determines the family.
 * `lp.mapCLM_add`, `lp.mapCLM_smul`, `lp.mapCLM_id`, `lp.mapCLM_comp`: the algebraic laws.
 * `lp.norm_mapCLM`: `‖⊕ T i‖ = ⨆ i, ‖T i‖`.
+* `lp.continuous_mapCLM_apply`: at finite exponent, uniformly bounded coordinatewise operator
+  families are strongly continuous whenever each coordinate family is strongly continuous.
 
 ## References
 
@@ -169,5 +172,35 @@ theorem norm_mapCLM (T : ∀ i, E i →L[𝕜] F i) {K : ℝ} (hK : 0 ≤ K) (hT
   rw [mapCLM_congr rfl hK hTK (Real.iSup_nonneg fun i ↦ norm_nonneg (T i))
     fun i ↦ le_ciSup hbdd i]
   exact norm_mapCLM_le _ _ _ _
+
+/-- A uniformly bounded coordinatewise operator family is strongly continuous on `lp` at finite
+exponent if each coordinate family is strongly continuous. -/
+theorem continuous_mapCLM_apply {X : Type*} [TopologicalSpace X] (hp : p ≠ ∞)
+    (T : X → ∀ i, E i →L[𝕜] F i) {K : ℝ} (hK : 0 ≤ K) (hT : ∀ t i, ‖T t i‖ ≤ K)
+    (hcont : ∀ i v, Continuous fun t => T t i v) (x : lp E p) :
+    Continuous fun t => mapCLM p (T t) hK (hT t) x := by
+  classical
+  let S (s : Finset ι) (t : X) := ∑ i ∈ s, lp.single p i (T t i (x i))
+  have hS (s : Finset ι) : Continuous (S s) :=
+    continuous_finsetSum s fun i _ =>
+      (singleContinuousLinearMap 𝕜 F p i).continuous.comp (hcont i (x i))
+  have happrox : TendstoUniformly S (fun t => mapCLM p (T t) hK (hT t) x) Filter.atTop := by
+    apply Metric.tendstoUniformly_iff.mpr
+    intro ε hε
+    have hx := lp.hasSum_single hp x
+    have hdist := (tendsto_iff_dist_tendsto_zero.mp hx).mul_const K
+    have hevent := (tendsto_order.mp hdist).2 ε (by simpa using hε)
+    filter_upwards [hevent] with s hs t
+    have heq : S s t = mapCLM p (T t) hK (hT t) (∑ i ∈ s, lp.single p i (x i)) := by
+      simp only [S, map_sum, mapCLM_single]
+    rw [heq]
+    calc
+      dist (mapCLM p (T t) hK (hT t) x)
+          (mapCLM p (T t) hK (hT t) (∑ i ∈ s, lp.single p i (x i)))
+          ≤ K * dist x (∑ i ∈ s, lp.single p i (x i)) := by
+        simpa only [dist_eq_norm, ← map_sub] using
+          (mapCLM p (T t) hK (hT t)).le_of_opNorm_le (norm_mapCLM_le _ _ _ _) _
+      _ < ε := by simpa only [dist_comm, mul_comm] using hs
+  exact happrox.continuous (Filter.Eventually.of_forall hS).frequently
 
 end lp

@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.Normed.Lp.Basic
-public import TauCeti.Analysis.Normed.Lp.Map
 
 /-!
 # Hilbert direct sums of covariant representations
@@ -98,19 +97,8 @@ variable [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
 @[simp]
 theorem integratedOperator_hilbertSum_apply (f : C_c(G, A)) (x : lp H 2) (i : ι) :
     (hilbertSum P).integratedOperator μ f x i = (P i).integratedOperator μ f (x i) := by
-  let ev := lp.evalCLM ℂ H 2 i
-  calc
-    _ = ev ((hilbertSum P).integratedOperator μ f x) :=
-      (lp.evalCLM_apply i _).symm
-    _ = ev (∫ g, (hilbertSum P).coefficient (f g) ((hilbertSum P).group g x) ∂μ) :=
-      congrArg ev ((hilbertSum P).integratedOperator_apply μ f x)
-    _ = ∫ g, ev ((hilbertSum P).coefficient (f g) ((hilbertSum P).group g x)) ∂μ :=
-      (ev.integral_comp_comm ((hilbertSum P).integrable_integrand μ f x)).symm
-    _ = ∫ g, (P i).coefficient (f g) ((P i).group g (x i)) ∂μ := by
-      apply integral_congr_ae
-      exact Filter.Eventually.of_forall fun g => by
-        simp [ev]
-    _ = _ := ((P i).integratedOperator_apply μ f (x i)).symm
+  simpa using congr($(comp_integratedOperator μ (P := hilbertSum P) (Q := P i)
+    (T := lp.evalCLM ℂ H 2 i) (fun a => by ext; simp) (fun g => by ext; simp) f) x)
 
 /-- The integrated operator of a Hilbert direct sum is the Hilbert direct sum of the integrated
 operators, uniformly bounded by the common L¹ estimate. -/
