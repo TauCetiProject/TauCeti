@@ -45,8 +45,9 @@ gives two inequalities:
 * the localized estimate on `B_t`, applied to the equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = g` with
   `g = f - ⟪b, ∇u⟫ - c u`, bounds `‖D²u‖_{B_s}` by `‖g‖_{B_t}`, `(t - s)⁻¹ ‖∇u‖_{B_t}` and
   `(t - s)⁻² ‖u‖_{B_R}`. Since `‖g‖_{B_t} ≤ ‖f‖_{B_R} + β ‖∇u‖_{B_t} + γ ‖u‖_{B_R}` and
-  `t - s ≤ R`, the lower-order terms only enlarge the coefficients of the last two terms by
-  `β R` and `γ R²`;
+  `t - s ≤ R`, the lower-order terms are absorbed into the last two terms: their coefficient
+  grows by a constant multiple of `(β R + γ R²) / λ`, and the constant from the cutoff bounds
+  grows by `1` (`TauCeti.le_add_mul_of_le_add_of_le_add_mul_add_mul`);
 * the interpolation inequality between concentric balls
   (`TauCeti.Wkp.exists_lpNorm_gradient_ball_le`) bounds `‖∇u‖_{B_s}` by `ε ‖D²u‖_{B_t}` plus
   lower-order terms, for every `ε > 0`.

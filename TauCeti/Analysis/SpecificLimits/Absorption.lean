@@ -270,9 +270,10 @@ theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} 
 /-- **Absorbing bounded lower-order terms in the step between concentric balls.** Let
 `0 < s < t ≤ R`. If the step between `B_s` and `B_t` bounds `k` by `a G` plus terms in
 `(t - s)⁻¹ h` and `(t - s)⁻² z`, and `G ≤ F + β h + γ z`, then since `t - s ≤ R` the terms `β h`
-and `γ z` only enlarge the coefficient `K` of the last two terms by `a (β R + γ R²)`. This puts a
-step estimate with lower-order terms into the form required by `TauCeti.sq_mul_le_of_forall_le`,
-as in the interior `W^{2,p}` estimate with lower-order terms. -/
+and `γ z` are absorbed into the last two terms: their coefficient `K` becomes
+`K + a (β R + γ R²)` and the constant `cA` becomes `cA + 1`. This puts a step estimate with
+lower-order terms into the form required by `TauCeti.sq_mul_le_of_forall_le`, as in the interior
+`W^{2,p}` estimate with lower-order terms. -/
 theorem le_add_mul_of_le_add_of_le_add_mul_add_mul {k G F h z a K cA β γ R s t : ℝ}
     (ha : 0 ≤ a) (hK : 0 ≤ K) (hcA : 0 ≤ cA) (hβ : 0 ≤ β) (hγ : 0 ≤ γ) (hh : 0 ≤ h)
     (hz : 0 ≤ z) (hs : 0 < s) (hst : s < t) (htR : t ≤ R)
