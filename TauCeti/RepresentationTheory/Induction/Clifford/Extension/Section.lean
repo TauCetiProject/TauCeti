@@ -132,6 +132,14 @@ private noncomputable def multiplicitySectionIsoApp (W : FDRep k (inertia A)) :
           (E).toRingHom (M := (Cs).obj W) a f).symm }
   exact e.toModuleIso
 
+private theorem multiplicitySectionIsoApp_hom_apply (W : FDRep k (inertia A))
+    (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
+    (multiplicitySectionIsoApp A s t hs ht W).hom f = f := (rfl)
+
+private theorem multiplicitySectionIsoApp_inv_apply (W : FDRep k (inertia A))
+    (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
+    (multiplicitySectionIsoApp A s t hs ht W).inv f = f := (rfl)
+
 /-- Changing the normalized Clifford section leaves the multiplicity functor naturally
 isomorphic after restriction along the opposite-inverse gauge algebra isomorphism.
 Every component is the identity on the actual normal-subgroup intertwiner space. -/
@@ -140,28 +148,36 @@ noncomputable def cliffordMultiplicitySectionIso :
   NatIso.ofComponents (fun W => multiplicitySectionIsoApp A s t hs ht W)
     (by
       intro W W' g
-      let := ((Ct).obj W).isModule
-      let := ((ModuleCat.restrictScalars (E).toRingHom).obj ((Cs).obj W')).isModule
-      apply ModuleCat.hom_ext
-      apply LinearMap.ext
+      apply ConcreteCategory.ext_apply
       intro f
-      -- The components and restriction of scalars leave the underlying Hom maps unchanged.
-      change ((Ct).map g).hom f = ((Cs).map g).hom f
+      simp only [Functor.comp_map]
+      -- Use typed equalities: simp does not match the different stored module structures.
+      refine (ModuleCat.comp_apply _ _ f).trans ?_
+      refine (multiplicitySectionIsoApp_hom_apply A s t hs ht W' _).trans ?_
+      refine Eq.trans ?_ (ModuleCat.comp_apply _ _ f).symm
+      refine Eq.trans ?_
+        (congrArg ((ModuleCat.restrictScalars (E).toRingHom).map ((Cs).map g))
+          (multiplicitySectionIsoApp_hom_apply A s t hs ht W f).symm)
+      refine Eq.trans ?_
+        (ModuleCat.restrictScalars.map_apply (E).toRingHom ((Cs).map g) f).symm
       simp only [cliffordMultiplicityFunctor, ModuleCat.hom_ofHom,
-        CrossedSystem.SemilinearAction.linearMap_apply])
+        CrossedSystem.SemilinearAction.linearMap_apply]
+      rfl)
 
 /-- The section comparison is the identity on multiplicities. -/
 @[simp]
 theorem cliffordMultiplicitySectionIso_hom_app_apply (W : FDRep k (inertia A))
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
      dsimp% only [Functor.comp_obj, AlgEquiv.toRingEquiv_toRingHom, RingEquiv.toRingHom_eq_coe]
-      (cliffordMultiplicitySectionIso A s t hs ht).hom.app W f = f := (rfl)
+      (cliffordMultiplicitySectionIso A s t hs ht).hom.app W f = f :=
+  (multiplicitySectionIsoApp_hom_apply A s t hs ht W f)
 
 /-- The inverse section comparison is also the identity on multiplicities. -/
 @[simp]
 theorem cliffordMultiplicitySectionIso_inv_app_apply (W : FDRep k (inertia A))
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
      dsimp% only [Functor.comp_obj, AlgEquiv.toRingEquiv_toRingHom, RingEquiv.toRingHom_eq_coe]
-      (cliffordMultiplicitySectionIso A s t hs ht).inv.app W f = f := (rfl)
+      (cliffordMultiplicitySectionIso A s t hs ht).inv.app W f = f :=
+  (multiplicitySectionIsoApp_inv_apply A s t hs ht W f)
 
 end FDRep
