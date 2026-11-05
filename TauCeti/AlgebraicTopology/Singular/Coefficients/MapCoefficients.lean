@@ -63,16 +63,6 @@ def singularChainComplexFunctorObjCompMapIso :
       (singularChainComplexFunctor D).obj (F.obj R) :=
   Functor.isoWhiskerLeft TopCat.toSSet (SSet.chainComplexFunctorObjCompMapIso F R)
 
-/-- The identification `F (C(X; R)) ≅ C(X; F R)` sends the image under `F` of the summand of a
-singular simplex to the summand of that simplex. -/
-@[simp, reassoc]
-lemma map_ιChainComplex_singularChainComplexFunctorObjCompMapIso_hom_app_f (X : TopCat.{w})
-    {n : ℕ} (x : (TopCat.toSSet.obj X) _⦋n⦌) :
-    F.map ((TopCat.toSSet.obj X).ιChainComplex (R := R) x) ≫
-        ((singularChainComplexFunctorObjCompMapIso F R).hom.app X).f n =
-      (TopCat.toSSet.obj X).ιChainComplex x :=
-  SSet.map_ιChainComplex_chainComplexFunctorObjCompMapIso_hom_app_f _ F x
-
 variable [CategoryWithHomology C] [CategoryWithHomology D] [F.PreservesHomology]
 
 /-- **Singular homology commutes with an exact coproduct-preserving functor of coefficients**: for
