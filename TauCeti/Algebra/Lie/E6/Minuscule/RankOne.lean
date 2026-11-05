@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.RankOne
 
 /-!
 # Rank-one subgroups of the E6 minuscule carrier
@@ -86,7 +87,8 @@ def rankOnePoints : SL(2, K) →* points K :=
   (weightTable.sl2BlockSL i).codRestrict (points K)
     (by
       intro g
-      apply (weightTable.sl2BlockSL i).map_mem_of_transvection_mem
+      refine (weightTable.sl2BlockSL i).sl2_range_le_of_transvection_mem
+        ?_ ?_ ⟨g, rfl⟩
       · intro t
         rw [sl2BlockSL_upper_transvection]
         exact (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t)).property
@@ -137,10 +139,12 @@ theorem range_rankOnePoints :
     (rankOnePoints K i).range =
       Subgroup.closure (Set.range (rootSubgroupPoints (.inl i) K) ∪
         Set.range (rootSubgroupPoints (.inr i) K)) := by
-  simpa only [MonoidHom.coe_comp, Function.comp_def,
-    Matrix.SpecialLinearGroup.transvectionHom_apply, rankOnePoints_upper_transvection,
-    rankOnePoints_lower_transvection, ofAdd_toAdd] using
-    (rankOnePoints K i).range_eq_closure_transvection
+  rw [(rankOnePoints K i).sl2_range_eq_closure]
+  congr 2 <;>
+    simpa only [Function.comp_def, rankOnePoints_upper_transvection,
+      rankOnePoints_lower_transvection] using
+      (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
+        (rootSubgroupPoints _ K)
 
 end
 

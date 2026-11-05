@@ -76,8 +76,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Manifold Set
-open scoped Manifold ContDiff
+open _root_.Manifold Set
+open scoped _root_.Manifold ContDiff
 
 section IsSmoothEmbedding
 
