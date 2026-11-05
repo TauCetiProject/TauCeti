@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Inertia
+public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Galois
+public import TauCeti.NumberTheory.LocalField.MaximalPrime
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
-import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # Inertia acts trivially on the Tate module at good reduction
@@ -71,6 +70,32 @@ open ValuativeRel IsLocalRing TauCeti
 
 namespace WeierstrassCurve
 
+section MaximalPrime
+
+/-! The statements over the fraction field of a Dedekind domain apply over a local field `L` at the
+maximal ideal `TauCeti.maximalPrime L` of `𝒪[L]`. The valuation ring of its adic valuation is
+`𝒪[L]` again, and the declarations below supply the integral model of `W` over it. -/
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] (W : WeierstrassCurve K)
+  [IsIntegral 𝒪[K] W]
+
+/-- The base change of an equation integral over `𝒪[K]` is integral over the valuation ring of the
+adic valuation of the maximal ideal of `𝒪[L]`. -/
+instance isIntegral_valuationSubring_maximalPrime :
+    IsIntegral ((maximalPrime L).valuation L).valuationSubring (W⁄L) :=
+  IsIntegral.baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
+
+/-- The integral model of the base change of `W` over the valuation ring of the adic valuation of
+the maximal ideal of `𝒪[L]` is the image of the integral model of `W` over `𝒪[K]`. -/
+theorem integralModel_valuationSubring_maximalPrime :
+    integralModel ((maximalPrime L).valuation L).valuationSubring (W⁄L) =
+      (integralModel 𝒪[K] W).map
+        (algebraMap 𝒪[K] ((maximalPrime L).valuation L).valuationSubring) :=
+  integralModel_baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
+
+end MaximalPrime
+
 section FiniteExtension
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -89,27 +114,12 @@ theorem Affine.Point.map_eq_self_of_mem_lowerRamificationGroup_zero {n : ℕ}
     (hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup K L 0)
     {P : (W⁄L).toAffine.Point} (hP : Affine.Point.map τ.toAlgHom (n • P) = n • P) :
     Affine.Point.map τ.toAlgHom P = P := by
-  -- The valuation ring `A` of `L` is a discrete valuation ring, and the adic valuation of its
-  -- maximal ideal `u` has valuation ring `A` again.
-  set A := (valuation L).valuationSubring
-  -- `A` is `𝒪[L]` with its ring structure, packaged as a valuation subring.
-  have : IsDiscreteValuationRing A := inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
-  set u := IsDiscreteValuationRing.maximalIdeal A
-  set B := (u.valuation L).valuationSubring
-  have hB : B = A := Place.valuationSubring_valuation_maximalIdeal A
-  have hequiv : (u.valuation L).IsEquiv (valuation L) :=
-    (Valuation.isEquiv_iff_valuationSubring _ _).2 hB
-  -- Good reduction over `𝒪[K]` gives good reduction over `B`.
-  have hKB (r : 𝒪[K]) : algebraMap K L r ∈ B := by
-    rw [hB, ← TauCeti.coe_algebraMap_integerRing]
-    exact (algebraMap 𝒪[K] 𝒪[L] r).2
-  let : Algebra 𝒪[K] B :=
-    (((algebraMap K L).comp (algebraMap 𝒪[K] K)).codRestrict B hKB).toAlgebra
-  have hRS : (algebraMap B L).comp (algebraMap 𝒪[K] B) =
-      (algebraMap K L).comp (algebraMap 𝒪[K] K) := rfl
-  have := IsIntegral.baseChange hRS W
+  -- The valuation ring `B` of the adic valuation of the maximal ideal of `𝒪[L]` is `𝒪[L]` again,
+  -- and good reduction over `𝒪[K]` gives good reduction over `B`.
+  set B := ((maximalPrime L).valuation L).valuationSubring
+  have hB : B = (valuation L).valuationSubring := valuationSubring_valuation_maximalPrime L
   have : (integralModel B (W⁄L)).IsElliptic := by
-    rw [integralModel_baseChange hRS W]
+    rw [integralModel_valuationSubring_maximalPrime]
     infer_instance
   -- `τ` lies in the inertia group of `B`, since `B` has the same elements as `𝒪[L]`.
   have hdec : τ ∈ B.decompositionSubgroup K := by
@@ -121,16 +131,13 @@ theorem Affine.Point.map_eq_self_of_mem_lowerRamificationGroup_zero {n : ℕ}
     rintro ⟨x, hx⟩
     rw [LocalFieldsRamification.lowerRamificationGroup_def,
       TauCeti.IsLocalRing.mem_ramificationGroup_zero_iff] at hτ
-    have hxA : x ∈ A := hB ▸ hx
+    have hxA : x ∈ (valuation L).valuationSubring := hB ▸ hx
     have h := hτ ⟨x, hxA⟩
     rw [mem_maximalIdeal, mem_nonunits_iff, Valuation.Integer.not_isUnit_iff_valuation_lt_one] at h
     rw [Valuation.mem_maximalIdeal_iff]
-    exact hequiv.lt_one_iff_lt_one.mpr h
-  -- `n` is a unit of `𝒪[K]`, hence of `A`.
-  have hn' : (n : A) ∉ u.asIdeal := fun h ↦
-    ((Valuation.mem_maximalIdeal_iff (v := valuation L)).mp h).ne
-      (by simpa using valuation_natCast_eq_one_of_residueField_natCast_ne_zero (L := L) hn)
-  exact Affine.Point.map_eq_self_of_mem_inertiaSubgroup u hn' hσ hP
+    exact (isEquiv_valuation_maximalPrime L).lt_one_iff_lt_one.mpr h
+  exact Affine.Point.map_eq_self_of_mem_inertiaSubgroup (maximalPrime L)
+    (natCast_notMem_maximalPrime hn) hσ hP
 
 /-- **A field generated by points with inertia-fixed multiples has trivial inertia at good
 reduction.** Let `L/K` be a finite extension of nonarchimedean local fields generated by the
