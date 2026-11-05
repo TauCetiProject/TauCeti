@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.ConnectedSum.Position
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.ArcStraightening
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Arc.Straightening
 
 /-!
 # Boosting concordances into connected-sum position
