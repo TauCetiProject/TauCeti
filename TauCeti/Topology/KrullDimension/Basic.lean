@@ -160,7 +160,6 @@ theorem GeneralizingMap.topologicalKrullDim_le_of_surjective {X Y : Type*}
   rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
   refine iSup_le fun y ↦ ?_
   obtain ⟨x, rfl⟩ := hsurj y
-  let := specializationPreorder X
   exact (WithBot.coe_le_coe.mpr (hf.coheight_apply_le_coheight hcont x)).trans
     (TauCeti.coheight_le_topologicalKrullDim x)
 
