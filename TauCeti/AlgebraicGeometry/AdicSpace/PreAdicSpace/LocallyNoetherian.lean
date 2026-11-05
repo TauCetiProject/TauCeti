@@ -166,15 +166,8 @@ theorem spaBasicOpen_mem_noetherianAffinoidOpens {T : Finset A} {s : A}
   have _ := isHuberRing_completion_locTopology P T s _ hden
   have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P
     (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden
-  let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
-    ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P
-      Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
-    ObjectProperty.prop_of_iso PreAdicSpace.isNoetherianAffinoid
-    (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
-    (PreAdicSpace.isNoetherianAffinoid_presentationLimitPreAdicSpace S'
-      (completionLocalization P T s _ hden)
-      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
+  exact spaBasicOpen_mem_propOpens P Aplus T s _ hden hAplus hP hT PreAdicSpace.isNoetherianAffinoid
+    (PreAdicSpace.isNoetherianAffinoid_presentationLimitPreAdicSpace _ _ _)
 
 /-- **The open affinoids of noetherian type form a basis of `Spa(A, A⁺)`** when `A` is of noetherian
 type, since the rational opens do. -/

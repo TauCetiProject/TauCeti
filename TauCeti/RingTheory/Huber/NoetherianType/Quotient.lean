@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Huber.ModuleTopology.Complete
 public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 public import TauCeti.Topology.Algebra.Ring.Ideal
 
+import TauCeti.Topology.Maps.OpenQuotient
+
 /-!
 # Ideals and quotients of Huber rings of noetherian type and in Huber's standing class
 
@@ -116,9 +118,7 @@ theorem IsHuberStandard.of_isOpenQuotientMap [IsHuberStandard A] {B : Type*} [Co
   · have := IsTateRing.of_continuous hf.continuous (φ := f)
     have := hf.isStronglyNoetherian
     infer_instance
-  · have h0 : IsOpen ({0} : Set B) := by
-      simpa using hf.isOpenMap ({0} : Set A) (isOpen_discrete _)
-    have : DiscreteTopology B := discreteTopology_iff_isOpen_singleton_zero.mpr h0
+  · have := hf.discreteTopology
     infer_instance
 
 /-- **Every ideal of a complete Hausdorff Huber ring of noetherian type is closed** (Huber,

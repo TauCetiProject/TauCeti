@@ -17,13 +17,14 @@ import TauCeti.RingTheory.Huber.NoetherianType.Tate
 
 Huber's theory of unramified, smooth, and étale morphisms of adic spaces is developed over adic
 spaces covered by open affinoids whose coordinate rings belong to Huber's standing class
-(`TauCeti.Huber.IsHuberStandard`, Huber 1996, (1.1.1)): complete Hausdorff Huber rings that are
-finite type over a noetherian ring of definition, are strongly noetherian Tate rings, or carry the
-discrete topology. No condition is placed on the plus rings beyond being rings of integral elements.
+(`TauCeti.Huber.IsHuberStandard`, Huber 1996, (1.1.1)): Huber rings that are finite type over a
+noetherian ring of definition, are strongly noetherian Tate rings, or carry the discrete topology.
+No condition is placed on the plus rings beyond being rings of integral elements.
 
 An object of `𝒱^pre` is an *affinoid of Huber's standing class*
 (`TauCeti.PreAdicSpace.isHuberStandardAffinoid`) when it is isomorphic to `Spa(A, A⁺)` for a
-complete Hausdorff Huber pair with `A` in Huber's standing class, and an adic space `X` is
+complete Hausdorff Huber pair with `A` in Huber's standing class (completeness and Hausdorffness are
+imposed by this affinoid predicate rather than by `IsHuberStandard`), and an adic space `X` is
 *locally of Huber's standing class* (`TauCeti.AdicSpace.IsLocallyHuberStandard`) when every point of
 `X` has an open neighbourhood of this form (`TauCeti.PreAdicSpace.huberStandardAffinoidOpens`).
 
@@ -191,15 +192,9 @@ theorem spaBasicOpen_mem_huberStandardAffinoidOpens {T : Finset A} {s : A}
   have _ := isHuberRing_completion_locTopology P T s _ hden
   have _ := isHuberStandard_completion_locTopology_of_isHuberStandard P
     (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden
-  let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
-    ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P
-      Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
-    ObjectProperty.prop_of_iso PreAdicSpace.isHuberStandardAffinoid
-    (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
-    (PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace S'
-      (completionLocalization P T s _ hden)
-      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
+  exact spaBasicOpen_mem_propOpens P Aplus T s _ hden hAplus hP hT
+    PreAdicSpace.isHuberStandardAffinoid
+    (PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace _ _ _)
 
 /-- **The open affinoids of Huber's standing class form a basis of `Spa(A, A⁺)`** when `A` is in
 Huber's standing class, since the rational opens do. -/
@@ -226,39 +221,25 @@ theorem exists_mem_huberStandardAffinoidOpens_of_mem_analyticPoints_presentation
     {x : presentationLimitPreAdicSpace P Aplus hAplus hP}
     (hx : x ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints) :
     ∃ U ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).huberStandardAffinoidOpens, x ∈ U := by
-  classical
   rw [analyticPoints_presentationLimitPreAdicSpace] at hx
-  obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
-  replace hx : x.1 ∈ spaAnalytic Aplus := hx
-  rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hx
-  obtain ⟨g, hg, hxg⟩ := Set.mem_iUnion₂.mp hx
-  set T := G.image ((↑) : P.ringOfDefinition → A)
-  have hT : IsOpen (Ideal.span (T : Set A) : Set A) :=
-    P.span_image_eq_extendedIdealOfDefinition G hG ▸ P.isOpen_extendedIdealOfDefinition
-  let L := Localization.Away (g : A)
+  obtain ⟨T, g, hT, hxg, hnil⟩ :=
+    exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic P Aplus hx
+  let L := Localization.Away g
   have hden := P.hasDenominatorPower_of_isOpen_span T g L hT
   let _ := locUniformSpace P T g L hden
   have _ := isUniformAddGroup_locUniformSpace P T g L hden
   have _ := isTopologicalRing_locUniformSpace P T g L hden
   have _ := isHuberRing_completion_locTopology P T g L hden
-  have _ : IsTateRing (UniformSpace.Completion L) :=
-    ⟨⟨_, isPseudoUniformizer_toCompletionLoc P T g L hden
-      (P.isTopologicallyNilpotent_of_mem_idealOfDefinition
-        (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg)))⟩⟩
+  have _ := isTateRing_completion_locTopology_of_isTopologicallyNilpotent P T g L hden hnil
   have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P
     (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) L hden
   have _ : IsHuberStandard (UniformSpace.Completion L) :=
     isHuberStandard_iff_isNoetherianType.mpr inferInstance
-  let S' : Pair (UniformSpace.Completion L) :=
-    ⟨completedPlusSubring P Aplus T g L hden, isRingOfIntegralElements_completedPlusSubring P
-      Aplus (fun j _ ↦ hP j.2) hAplus T g L hden⟩
-  refine ⟨spaBasicOpen Aplus T g, (PreAdicSpace.mem_propOpens_iff _).mpr ?_,
+  exact ⟨spaBasicOpen Aplus T g,
+    spaBasicOpen_mem_propOpens P Aplus T g L hden hAplus hP hT
+      PreAdicSpace.isHuberStandardAffinoid
+      (PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace _ _ _),
     mem_spaBasicOpen.mpr hxg⟩
-  exact ObjectProperty.prop_of_iso PreAdicSpace.isHuberStandardAffinoid
-    (restrictSpaBasicOpenIso P Aplus T g L hden hAplus hP hT).symm
-    (PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace S'
-      (completionLocalization P T g L hden)
-      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T g L hden))
 
 end Analytic
 

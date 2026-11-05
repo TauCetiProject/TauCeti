@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
+import Mathlib.RingTheory.FiniteType
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.Algebra.Group.Pow
 import TauCeti.RingTheory.Subring.SpanSingleton
@@ -49,6 +50,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 
 * `TauCeti.Huber.PairOfDefinition.mem_idealImage` and
   `TauCeti.Huber.PairOfDefinition.coe_idealImage`: membership in the image of `Iⁿ`.
+* `TauCeti.Huber.PairOfDefinition.finiteType_map`: finite generation over a ring of definition
+  descends along an open quotient map.
 * `TauCeti.Huber.PairOfDefinition.span_image_eq_extendedIdealOfDefinition`: generators of `I`
   continue to generate its extension to `A`.
 * `TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero`: the images of `Iⁿ` are a neighbourhood
@@ -545,6 +548,20 @@ theorem map_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
     exact ⟨a, ⟨a, ha, rfl⟩, rfl⟩
   · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
     exact ⟨f₀ a, Ideal.mem_map_of_mem f₀ ha, rfl⟩
+
+/-- **Finite generation over a ring of definition descends along an open quotient map**: if `A` is
+finite type over `P.ringOfDefinition` and `f : A →+* B` is an open quotient map, then `B` is
+finite type over the image ring of definition `(P.map f hf).ringOfDefinition`. -/
+instance finiteType_map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+    (P : PairOfDefinition A) [hfg : Algebra.FiniteType P.ringOfDefinition A]
+    (f : A →+* B) (hf : IsOpenQuotientMap f) :
+    Algebra.FiniteType (P.map f hf).ringOfDefinition B := by
+  let f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=
+    (f.comp P.ringOfDefinition.subtype).codRestrict _ fun a ↦
+      Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+  have hcomp : ((algebraMap (P.map f hf).ringOfDefinition B).comp f₀).FiniteType :=
+    (RingHom.finiteType_algebraMap.mpr hfg).comp_surjective hf.surjective
+  exact RingHom.finiteType_algebraMap.mp (RingHom.FiniteType.of_comp_finiteType hcomp)
 
 /-- The image of a pair of definition in a quotient ring `A ⧸ J`, with the quotient topology: its
 ring of definition is the image of `A₀` (`TauCeti.Huber.PairOfDefinition.quotient_ringOfDefinition`)

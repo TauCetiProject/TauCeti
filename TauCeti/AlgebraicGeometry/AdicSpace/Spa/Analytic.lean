@@ -56,6 +56,9 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   adic spectrum containing it.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_biUnion_rationalSubset` : generators of an ideal of
   definition give a finite rational cover of the analytic locus.
+* `TauCeti.ValuationSpectrum.exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic`:
+  every analytic point lies in a rational subset with open numerator ideal and topologically
+  nilpotent denominator.
 * `TauCeti.ValuationSpectrum.isTateRing_completion_locTopology_of_mem_generators` : the completed
   coordinate ring of each chart in that cover is Tate.
 * `TauCeti.ValuationSpectrum.IsAnalyticPoint.comap` : the pullback of an analytic point along an
@@ -350,6 +353,23 @@ theorem spaAnalytic_eq_biUnion_rationalSubset (P : PairOfDefinition A) (Aplus : 
     have hg' : (g : A) ∈ T := by
       simpa only [T] using Finset.mem_image.mpr ⟨g, hg, rfl⟩
     exact Set.subset_iUnion₂_of_subset (g : A) hg' Set.Subset.rfl
+
+/-- **Every analytic point lies in a rational subset with topologically nilpotent denominator**:
+from a finite generating set `G` of an ideal of definition, an analytic point `v ∈ Spa(A, A⁺)_a`
+lies in a chart `R(G/g)` with `g ∈ G`, whose numerator ideal is the open extended ideal of
+definition and whose denominator `g` is topologically nilpotent. -/
+theorem exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic
+    (P : PairOfDefinition A) (Aplus : Subring A) {v : Spv A} (hv : v ∈ spaAnalytic Aplus) :
+    ∃ (T : Finset A) (g : A), IsOpen (Ideal.span (T : Set A) : Set A) ∧
+      v ∈ rationalSubset Aplus T g ∧ IsTopologicallyNilpotent g := by
+  classical
+  obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
+  rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hv
+  obtain ⟨g, hg, hvg⟩ := Set.mem_iUnion₂.mp hv
+  exact ⟨G.image ((↑) : P.ringOfDefinition → A), g,
+    P.span_image_eq_extendedIdealOfDefinition G hG ▸ P.isOpen_extendedIdealOfDefinition, hvg,
+    P.isTopologicallyNilpotent_of_mem_idealOfDefinition
+      (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg))⟩
 
 open scoped Classical in
 /-- Every set in the standard analytic cover is a member of the rational basis: its numerator

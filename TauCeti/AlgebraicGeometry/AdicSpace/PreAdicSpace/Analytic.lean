@@ -344,27 +344,19 @@ theorem analyticPoints_presentationLimitPreAdicSpace :
     exact rationalSubset_subset_spaAnalytic_of_isTateRing P hP i.pres.num i.pres.den _
       i.pres.hasDenominatorPower i.isOpen_span ⟨⟨_, hf.map φ.2⟩⟩ (mem_spaBasicOpen.mp hi)
   · intro hx
-    -- `x` lies in a chart `R(G/g)` of the standard rational cover of the analytic locus
-    classical
-    obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
-    replace hx : x.1 ∈ spaAnalytic Aplus := hx
-    rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hx
-    obtain ⟨g, hg, hxg⟩ := Set.mem_iUnion₂.mp hx
-    set T := G.image ((↑) : P.ringOfDefinition → A)
-    have hT : IsOpen (Ideal.span (T : Set A) : Set A) :=
-      P.span_image_eq_extendedIdealOfDefinition G hG ▸ P.isOpen_extendedIdealOfDefinition
+    -- `x` lies in a rational chart `R(T/g)` with `g` topologically nilpotent
+    obtain ⟨T, g, hT, hxg, hnil⟩ :=
+      exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic P Aplus hx
     let p : Presentation P := ⟨T, g, P.hasDenominatorPower_of_isOpen_span _ _ _ hT⟩
     let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
     have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
     have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    -- the image of `g` in `A⟨G/g⟩`, the sections over `R(G/g)`, is a pseudouniformiser
+    -- the image of `g` in `A⟨T/g⟩`, the sections over `R(T/g)`, is a pseudouniformiser
     let ψ := eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm ≫
       (presentationLimitRationalIso Aplus hAplus p hT).inv.hom ≫
       (eqToHom (presentationLimitPresheaf_obj P Aplus (op (spaBasicOpen Aplus T g))).symm).hom
     exact ⟨spaBasicOpen Aplus T g, mem_spaBasicOpen.mpr hxg, _,
-      (isPseudoUniformizer_toCompletionLoc P _ _ _ p.hasDenominatorPower
-        (P.isTopologicallyNilpotent_of_mem_idealOfDefinition
-          (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg)))).map ψ.2⟩
+      (isPseudoUniformizer_toCompletionLoc P _ _ _ p.hasDenominatorPower hnil).map ψ.2⟩
 
 /-- **Every point of the adic spectrum of a Tate ring is analytic**: over a Tate ring the
 analytic locus is the whole adic spectrum (Wedhorn, Remark 7.40(3)). -/

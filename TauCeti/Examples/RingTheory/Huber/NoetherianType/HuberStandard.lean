@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
-
+import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 import TauCeti.RingTheory.Huber.NoetherianType.Quotient
 import TauCeti.RingTheory.Huber.Padic.Basic
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Examples: Huber's standing class and its separation from noetherian type
@@ -35,8 +35,6 @@ together with quotient stability and the strict separation from `TauCeti.Huber.I
 * R. Huber, *Étale Cohomology of Rigid Analytic Varieties and Adic Spaces*, (1.1.1).
 -/
 
-public section
-
 open IsLocalRing MvPolynomial Topology TauCeti.Huber
 
 section Examples
@@ -57,25 +55,6 @@ example (J : Ideal ℤ_[p]) : ¬ IsTateRing ℤ_[p] ∧ IsHuberStandard (ℤ_[p]
 
 end Examples
 
-namespace TauCeti.Examples.HuberStandard
-
-/-- `ℤ[X₀, X₁, …]` is not noetherian: the ascending chain of ideals `(X₀, …, Xₙ₋₁)` never
-stabilizes. -/
-theorem not_isNoetherianRing_mvPolynomial_nat_int :
-    ¬ IsNoetherianRing (MvPolynomial ℕ ℤ) := by
-  intro h
-  obtain ⟨N, hN⟩ := monotone_stabilizes_iff_noetherian.mpr h
-    ⟨fun n ↦ Ideal.span (X '' Set.Iio n), fun _ _ hmn ↦
-      Ideal.span_mono (Set.image_mono (Set.Iio_subset_Iio hmn))⟩
-  have hX : (X N : MvPolynomial ℕ ℤ) ∈ Ideal.span (X '' Set.Iio N) := by
-    have hN' : Ideal.span (X '' Set.Iio N) = Ideal.span (X '' Set.Iio (N + 1)) :=
-      hN (N + 1) N.le_succ
-    exact hN' ▸ Ideal.subset_span ⟨N, Nat.lt_succ_self N, rfl⟩
-  have hker : Ideal.span (X '' Set.Iio N) ≤
-      RingHom.ker (aeval (R := ℤ) fun i : ℕ ↦ if i < N then (0 : ℤ) else 1) :=
-    Ideal.span_le.mpr (by rintro _ ⟨i, hi, rfl⟩; simp_all)
-  simpa using hker hX
-
 /-- Discrete `ℤ[X₀, X₁, …]` is in Huber's standing class even though it is not noetherian. -/
 example :
     letI : TopologicalSpace (MvPolynomial ℕ ℤ) := ⊥
@@ -84,7 +63,7 @@ example :
     ¬ IsNoetherianRing (MvPolynomial ℕ ℤ) ∧ IsHuberStandard (MvPolynomial ℕ ℤ) := by
   let _ : TopologicalSpace (MvPolynomial ℕ ℤ) := ⊥
   have _ : DiscreteTopology (MvPolynomial ℕ ℤ) := ⟨rfl⟩
-  exact ⟨not_isNoetherianRing_mvPolynomial_nat_int, inferInstance⟩
+  exact ⟨MvPolynomial.not_isNoetherianRing ℕ ℤ, inferInstance⟩
 
 /-- **Complete Hausdorff separation of `IsNoetherianType` and `IsHuberStandard`**: the product
 `ℤ_[p] × ℤ[X₀, X₁, …]` (with discrete second factor) is a complete Hausdorff Huber ring of
@@ -123,10 +102,9 @@ example (p : ℕ) [Fact p.Prime] :
   have hadic : IsAdic (Ideal.span {π}) := by
     rw [isAdic_iff]
     refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
-    · cases n with
-      | zero => simp
-      | succ n =>
-        rw [hpow n]
+    · rcases n with _ | n
+      · simp
+      · rw [hpow n]
         exact ((IsLocalRing.isOpen_maximalIdeal_pow ℤ_[p] _).prod
           (isOpen_discrete ({0} : Set B))).preimage continuous_subtype_val
     · rw [nhds_subtype_eq_comap, Filter.mem_comap] at hs
@@ -157,7 +135,7 @@ example (p : ℕ) [Fact p.Prime] :
     have := Algebra.FiniteType.isNoetherianRing Q.ringOfDefinition (ℤ_[p] × B)
     have hB : IsNoetherianRing B :=
       isNoetherianRing_of_surjective (ℤ_[p] × B) B (RingHom.snd ℤ_[p] B) Prod.snd_surjective
-    exact not_isNoetherianRing_mvPolynomial_nat_int hB
+    exact MvPolynomial.not_isNoetherianRing ℕ ℤ hB
   · intro hTate _
     exact PadicInt.not_isTateRing
       (IsTateRing.of_continuous (A := ℤ_[p] × B) continuous_fst (φ := RingHom.fst ℤ_[p] B))
@@ -170,5 +148,3 @@ example (p : ℕ) [Fact p.Prime] :
       PadicInt.isTopologicallyNilpotent_iff_dvd.mpr dvd_rfl
     obtain ⟨n, hn⟩ := Filter.eventually_atTop.mp (hnilp (h0.mem_nhds rfl))
     exact pow_ne_zero n (NeZero.ne (p : ℤ_[p])) (hn n le_rfl)
-
-end TauCeti.Examples.HuberStandard

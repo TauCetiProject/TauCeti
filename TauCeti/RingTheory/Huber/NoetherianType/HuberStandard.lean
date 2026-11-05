@@ -21,9 +21,8 @@ This condition is stronger than being of noetherian type: the first alternative 
 requires finite generation over the ring of definition, which makes the ambient ring noetherian
 (`Algebra.FiniteType.isNoetherianRing`), whereas the third alternative admits non-noetherian
 discrete rings. The declarations below record the three ways to enter the class, show that every
-ring in the standing class is of noetherian type, transport finite generation over a ring of
-definition along open quotient maps, and establish invariance of the class under bicontinuous ring
-isomorphisms.
+ring in the standing class is of noetherian type, and establish invariance of the class under
+bicontinuous ring isomorphisms.
 
 ## References
 
@@ -33,28 +32,6 @@ isomorphisms.
 public section
 
 namespace TauCeti.Huber
-
-/-- **Finite generation over a ring of definition descends along an open quotient map**: if `A` is
-finite type over `P.ringOfDefinition` and `f : A →+* B` is an open quotient map, then `B` is
-finite type over the image ring of definition `(P.map f hf).ringOfDefinition`. -/
-instance PairOfDefinition.finiteType_map {A B : Type*} [CommRing A] [TopologicalSpace A]
-    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-    (P : PairOfDefinition A) [hfg : Algebra.FiniteType P.ringOfDefinition A]
-    (f : A →+* B) (hf : IsOpenQuotientMap f) :
-    Algebra.FiniteType (P.map f hf).ringOfDefinition B := by
-  classical
-  obtain ⟨G, hG⟩ := hfg.out
-  let S := Algebra.adjoin (P.map f hf).ringOfDefinition (G.image f : Set B)
-  have hle : (Algebra.adjoin P.ringOfDefinition (G : Set A)).toSubring ≤ S.toSubring.comap f := by
-    rw [Algebra.adjoin_eq_ring_closure, Subring.closure_le]
-    rintro x (⟨r, rfl⟩ | hx)
-    · exact S.algebraMap_mem ⟨f r, by
-        rw [P.map_ringOfDefinition]
-        exact Subring.mem_map.mpr ⟨r, r.2, rfl⟩⟩
-    · exact Algebra.subset_adjoin (Finset.mem_coe.mpr (Finset.mem_image_of_mem f hx))
-  refine ⟨⟨G.image f, eq_top_iff.mpr fun b _ ↦ ?_⟩⟩
-  obtain ⟨a, rfl⟩ := hf.surjective b
-  exact hle (by rw [hG]; trivial)
 
 variable (A : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
 

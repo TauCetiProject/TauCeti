@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Huber.NoetherianType.Quotient
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Complete
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Noetherian
+import TauCeti.Topology.Algebra.GroupCompletion
+import TauCeti.Topology.Maps.OpenQuotient
 
 /-!
 # Noetherian type and Huber's standing class ascend along homomorphisms topologically of finite type
@@ -98,21 +100,17 @@ theorem IsTopologicallyFiniteType.exists_pairOfDefinition_isNoetherianRing_and_f
   have := P.finiteType_weighted_completion hT
   exact ⟨(P.weighted hT).completion.map π hπ, inferInstance, inferInstance⟩
 
+omit [IsTopologicalRing B] in
 /-- **Discrete topology ascends along homomorphisms topologically of finite type**: over a discrete
 ring `A`, every weighted restricted power-series ring `A⟨X⟩_T` and its completion are discrete, so
 any open quotient `B` is discrete as well. -/
 theorem IsTopologicallyFiniteType.discreteTopology [DiscreteTopology A]
     (hφ : IsTopologicallyFiniteType φ) : DiscreteTopology B := by
   obtain ⟨k, T, _, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp hφ
-  let W := weightedRestrictedSubring T hT
-  have : DiscreteUniformity W := DiscreteUniformity.of_discreteTopology
-  have : DiscreteTopology (Completion W) :=
-    (Homeomorph.mk (Completion.completeRingEquivSelf W).toEquiv
-      (Completion.uniformContinuous_completeRingEquivSelf W).continuous
-      (Completion.uniformContinuous_completeRingEquivSelf_symm W).continuous).symm.discreteTopology
-  have h0 : IsOpen ({0} : Set B) := by
-    simpa using hπ.isOpenMap ({0} : Set (Completion W)) (isOpen_discrete _)
-  exact discreteTopology_iff_isOpen_singleton_zero.mpr h0
+  have : DiscreteTopology (Completion (weightedRestrictedSubring T hT)) :=
+    Completion.discreteTopology_iff_separationQuotient.mpr
+      SeparationQuotient.isQuotientMap_mk.discreteTopology
+  exact hπ.discreteTopology
 
 /-- **Noetherian type ascends along homomorphisms topologically of finite type** (Huber,
 Corollary 3.4; Wedhorn, Proposition 6.35 and Remark 6.37(1)). If `A` is a Huber ring of
