@@ -15,8 +15,9 @@ bilinear action of the external ℓ¹ unitization, with `(λ,a)` acting as `λ �
 This construction does not require an associativity law. It therefore applies to both
 left and right actions, with the algebra argument first in both cases.
 
-The left associativity, right associativity, and commuting-action laws hold for the
-extensions exactly when they hold for the original actions. Thus a bounded bimodule
+The left associativity, reversed right associativity (`unitizationActionL_mul_rev_iff`),
+and commuting-action laws hold for the extensions exactly when they hold for the original
+actions. Thus a bounded bimodule
 over a possibly nonunital algebra is equivalently a compatible unital bounded bimodule
 over its unitization. No contractivity or completeness assumption is needed. The
 uniqueness and intertwining results allow module maps to pass between these descriptions.
@@ -44,7 +45,7 @@ variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Right associativity is preserved and reflected by unitization. Here `R a x`
 means `x · a`, so the order of the nested actions is reversed. -/
-theorem unitizationActionL_mul_right_iff (R : A →L[𝕜] E →L[𝕜] E) :
+theorem unitizationActionL_mul_rev_iff (R : A →L[𝕜] E →L[𝕜] E) :
     (∀ u v x, R.unitizationActionL (u * v) x =
       R.unitizationActionL v (R.unitizationActionL u x)) ↔
     ∀ a b x, R (a * b) x = R b (R a x) := by

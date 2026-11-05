@@ -11,15 +11,15 @@ public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 /-!
 # Unitized bounded actions and Banach left modules
 
-A bounded bilinear action extends to the ℓ¹ unitization without an associativity assumption
-via `ContinuousLinearMap.unitizationActionL`. Its norm is at most `1 + ‖L‖`.
-
-Let `A` be a possibly nonunital normed algebra acting on a normed space `E` on the left through a
-bounded bilinear map `L : A →L[𝕜] E →L[𝕜] E` with `L (a * b) x = L a (L b x)`. The action extends
-to a unital algebra homomorphism from the `ℓ¹` unitization `A⁺ = WithLp 1 (Unitization 𝕜 A)` to
-`E →L[𝕜] E`, sending `(λ, a)` to `λ • id + L a`. This file constructs it and records its apply
-formula, its norm bound, and the invariance under `A⁺` of the points where a left approximate
-identity converges.
+A bounded bilinear action `M : A →L[𝕜] E →L[𝕜] E` of a possibly nonunital normed algebra
+extends to the ℓ¹ unitization `A⁺ = WithLp 1 (Unitization 𝕜 A)` without an associativity
+assumption via `ContinuousLinearMap.unitizationActionL`, sending `(λ, a)` to `λ • id + M a`.
+This file records its apply formula, identity action, norm bound `1 + ‖M‖`, and uniqueness,
+and characterizes intertwining maps and left associativity by iff statements. For associative
+left actions, `ContinuousLinearMap.unitizationAction` is the algebra-homomorphism form of the
+same extension, with an explicit comparison lemma. The approximate-identity lemmas show that
+the points where a left approximate identity converges are invariant under `A⁺`, and that
+each unitized orbit lies in the closure of the original orbit at such a point.
 
 ## Main declarations
 
