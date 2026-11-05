@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import Mathlib.LinearAlgebra.Isomorphisms
@@ -39,6 +40,8 @@ representative formula pairs it with the class of the constant function `1` to g
   classes by `TauCeti.compactlySupportedDeRhamCohomology.integral_mk`.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZero`: integration commutes with
   extension by zero `H^n_c(U) → H^n_c(W)` along open subsets `U ≤ W`.
+* `TauCeti.compactlySupportedDeRhamCohomology.integral_map_diffeomorph`: integration is
+  preserved by orientation-preserving diffeomorphisms.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`.
@@ -135,6 +138,25 @@ theorem integral_extendByZero (o : Manifold.Orientation I M (Fin n)) {U W : Open
   rw [extendByZero_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_extendByZero]
   exact integralTopForm_extendByZero o h ((mem_compactlySupportedForms I).mp
     ((mem_compactlySupportedClosedForms I).mp φ.2).1)
+
+/-- An orientation-preserving diffeomorphism preserves integration on compactly supported
+cohomology. No integrability hypothesis is needed: representatives are smooth and compactly
+supported. The target orientation must be specified explicitly, so this is not a simp lemma. -/
+theorem integral_map_diffeomorph
+    {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'}
+    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+    [BoundarylessManifold J N] [T2Space N] [SigmaCompactSpace N]
+    (o : Manifold.Orientation I M (Fin n)) (o' : Manifold.Orientation J N (Fin n))
+    (Φ : M ≃ₘ⟮I, J⟯ N) (hΦ : ∀ x, o.IsOrientationPreservingAt o' Φ x)
+    (c : compactlySupportedDeRhamCohomology J N n) :
+    integral o (map Φ Φ.contMDiff Φ.toHomeomorph.isProperMap n c) = integral o' c := by
+  obtain ⟨φ, rfl⟩ := mk_surjective J n c
+  -- The properness proof uses the homeomorphism coercion; `erw` identifies it with `Φ`.
+  erw [map_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_mpullback,
+    SmoothForm.coe_mpullback]
+  exact (show Topology.IsOpenEmbedding (Φ : M → N) from
+    Φ.toHomeomorph.isOpenEmbedding).integralTopForm_mpullback_of_isOrientationPreservingAt
+      hΦ (fun y _ ↦ ⟨Φ.symm y, Φ.apply_symm_apply y⟩)
 
 end compactlySupportedDeRhamCohomology
 

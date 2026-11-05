@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
+import TauCeti.Geometry.Manifold.DifferentialForm.Support
+import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
 # Extension by zero of compactly supported forms
@@ -32,6 +34,8 @@ extension by zero is discontinuous at the other origin.
 * `TauCeti.compactlySupportedForms.extendByZero_injective` and
   `TauCeti.compactlySupportedForms.mem_range_extendByZero_iff`: it is injective, and its image
   consists of the compactly supported forms supported in the smaller open subset.
+* `TauCeti.compactlySupportedForms.exists_sum_extendByZero`: every compactly supported form is
+  a finite sum of extensions by zero from an arbitrary open cover.
 * `TauCeti.compactlySupportedForms.mextDerivₗ_extendByZero`: it commutes with the exterior
   derivative.
 * `TauCeti.compactlySupportedDeRhamComplex.extendByZero`: the induced cochain map of compactly
@@ -151,6 +155,44 @@ theorem mem_range_extendByZero_iff {U W : Opens M} (h : U ≤ W) {k : ℕ}
       fun hx' ↦ hx (hφ hx')).symm
 
 end Forms
+
+/-- A compactly supported smooth form on an open subset is a finite sum of extensions by zero
+from any open cover. The summands need not be closed, even if the original form is closed. -/
+theorem exists_sum_extendByZero [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+    {W : Opens M} [SigmaCompactSpace W] {ι : Type*} (U : ι → Opens M)
+    (hU : ∀ i, U i ≤ W) (hcover : W ≤ iSup U) (k : ℕ)
+    (φ : compactlySupportedForms I W k) :
+    ∃ s : Finset ι, ∃ ψ : ∀ i, compactlySupportedForms I (U i) k,
+      φ = ∑ i ∈ s, extendByZero (hU i) k (ψ i) := by
+  classical
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : SecondCountableTopology W := ChartedSpace.secondCountable_of_sigmaCompact H W
+  have : LocallyCompactSpace W := ChartedSpace.locallyCompactSpace H W
+  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
+    (fun i ↦ {x : W | (x : M) ∈ U i})
+    (fun i ↦ (U i).isOpen.preimage continuous_subtype_val) (fun x _ ↦ by
+      obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover x.2)
+      exact Set.mem_iUnion.mpr ⟨i, hi⟩)
+  -- Use the model-fibre view for function-support lemmas, whose codomain is nondependent.
+  let θ (i : ι) : compactlySupportedForms I W k :=
+    ⟨⟨fun x ↦ ρ i x • φ.1.1 x,
+        (φ.1.isSmoothForm.fun_smul (ρ i).contMDiff).mem_smoothBundleForms⟩,
+      (mem_compactlySupportedForms I).mpr <|
+        ((mem_compactlySupportedForms I).mp φ.2).of_isClosed_subset (isClosed_tsupport _)
+          (_root_.tsupport_smul_subset_right (ρ i)
+            (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1))⟩
+  have hθ (i : ι) : θ i ∈ LinearMap.range (extendByZero (hU i) k) :=
+    (mem_range_extendByZero_iff (hU i)).mpr <|
+      (_root_.tsupport_smul_subset_left (ρ i)
+        (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1)).trans (hρ i)
+  choose ψ hψ using hθ
+  obtain ⟨s, hs, -⟩ := RoughForm.exists_finset_partition_eq φ.1.1
+    ((mem_compactlySupportedForms I).mp φ.2) ρ.toPartitionOfUnity
+  refine ⟨s, ψ, ?_⟩
+  simp_rw [hψ]
+  refine Subtype.ext <| Subtype.ext ?_
+  exact hs.trans (by ext x; simp [θ])
 
 /-- Extension by zero of compactly supported forms commutes with the exterior derivative. -/
 theorem mextDerivₗ_extendByZero [IsManifold I 2 M] {U W : Opens M} (h : U ≤ W) (k : ℕ)
