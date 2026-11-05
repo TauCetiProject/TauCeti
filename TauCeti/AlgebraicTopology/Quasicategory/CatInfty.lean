@@ -21,8 +21,8 @@ another simplicial category `SSet.CoreEnriched`: an edge of `Fun(A, B) ⊗ Fun(B
 components are equivalences is an equivalence, so composition preserves cores.
 
 Restricting to quasicategories gives the simplicial category `SSet.CatInftyΔ`, and its simplicial
-(homotopy coherent) nerve is `SSet.catInfty`, the `∞`-category `Cat∞` of small quasicategories
-(HTT Definition 3.0.0.1). The underlying ordinary category of `SSet.CatInftyΔ` is the category of
+(homotopy coherent) nerve is `SSet.catInfty`, HTT's `Cat∞` of small quasicategories (HTT
+Definition 3.0.0.1). The underlying ordinary category of `SSet.CatInftyΔ` is the category of
 quasicategories and maps of simplicial sets.
 
 The mapping simplicial sets of `SSet.CatInftyΔ` are quasicategories, and for a Kan complex `B`
@@ -155,8 +155,9 @@ as mapping simplicial sets. This is HTT's `Cat_∞^Δ`. -/
 abbrev CatInftyΔ : Type (u + 1) :=
   ObjectProperty.FullSubcategory fun A : CoreEnriched.{u} ↦ Quasicategory A.toSSet
 
-/-- The `∞`-category `Cat∞` of small quasicategories: the simplicial (homotopy coherent) nerve of
-`CatInftyΔ`, whose objects are the quasicategories in universe `u`. -/
+/-- The simplicial (homotopy coherent) nerve of `CatInftyΔ`, HTT's `Cat∞` of small quasicategories,
+whose objects are the quasicategories in universe `u`. It is a quasicategory once the cores of
+quasicategories are known to be Kan complexes. -/
 noncomputable abbrev catInfty : SSet.{u + 1} :=
   SimplicialNerve CatInftyΔ.{u}
 

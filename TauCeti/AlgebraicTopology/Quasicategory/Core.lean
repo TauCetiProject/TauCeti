@@ -43,8 +43,9 @@ not proved here. For the nerve of a category `C`, the core is the nerve of the g
 * `SSet.le_core_iff`: the core is the largest subcomplex all of whose edges are equivalences.
 * `SSet.Edge.isEquivalence_tensor_iff`, `SSet.core_tensor`: an edge of a product is an
   equivalence exactly when both of its projections are, so the core of a product is the product
-  of the cores. Together with `SSet.range_le_core_of_unit` (maps from `𝟙_ SSet` factor through
-  the core), this makes the cores of function complexes closed under composition.
+  of the cores. This makes the cores of function complexes closed under composition.
+* `SSet.range_le_core_of_unit`: maps from `𝟙_ SSet` factor through the core, so the cores of
+  function complexes contain the identities.
 * `SSet.hasLiftingProperty_horn_ι_core_ι`: the inclusion of the core of a quasicategory is an
   inner fibration, so `SSet.core.quasicategory`: the core of a quasicategory is a quasicategory.
 * `CategoryTheory.nerve.mem_core_iff`: a simplex of the nerve of a category lies in the core
