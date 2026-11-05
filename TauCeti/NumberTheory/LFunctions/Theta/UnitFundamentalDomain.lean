@@ -281,6 +281,22 @@ theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ n
   · exact h.trans h1
   · exact (le_self_pow₀ h.le mult_ne_zero).trans hpow
 
+/-- A bounded subset of the norm-one surface stays uniformly away from every coordinate
+hyperplane. This makes Gaussian estimates uniform on unit fundamental domains. -/
+theorem exists_pos_le_of_isBounded_normOneSurface {D : Set (realSpace K)}
+    (hD : IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ b > 0, ∀ x ∈ D, ∀ w, b ≤ x w := by
+  obtain ⟨M, _, hbound⟩ := hD.exists_pos_norm_le
+  let C := max 1 M
+  have hC : 1 ≤ C := le_max_left _ _
+  have hCp : 0 < C ^ Module.finrank ℚ K := pow_pos (lt_of_lt_of_le zero_lt_one hC) _
+  refine ⟨(C ^ Module.finrank ℚ K)⁻¹, inv_pos.mpr hCp, fun x hx w ↦ ?_⟩
+  have hxpos := (hS hx).1 w
+  have hi := inv_le_pow_finrank_of_mem_normOneSurface (hS hx) hC
+    (fun v ↦ (le_abs_self (x v)).trans <|
+      (norm_le_pi_norm x v).trans ((hbound x hx).trans (le_max_right _ _))) w
+  exact (inv_le_comm₀ hCp hxpos).mpr hi
+
 /-! ### Unit fundamental domains -/
 
 variable (K) in
