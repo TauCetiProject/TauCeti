@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.StrandDiagram
 import Mathlib.Algebra.Group.End
+import TauCeti.Logic.Equiv.Basic
 
 /-!
 # Resolving a crossing of a strand diagram
@@ -71,12 +72,6 @@ namespace StrandDiagram
 
 variable {α : Type*} [LinearOrder α] [Fintype α]
 
-omit [Fintype α] in
-private theorem swap_min_max (a b : α) : Equiv.swap (min a b) (max a b) = Equiv.swap a b := by
-  rcases le_total a b with h | h
-  · rw [min_eq_left h, max_eq_right h]
-  · rw [min_eq_right h, max_eq_left h, Equiv.swap_comm]
-
 /-- The resolution of a crossing `p = (i, j)` of a strand diagram `φ`: the diagram that sends `i`
 to `φ j` and `j` to `φ i` and otherwise agrees with `φ`. Pictorially the crossing is smoothed. When
 `p` is not a crossing of `φ`, the resolution is `φ` itself. -/
@@ -111,13 +106,14 @@ theorem resolve_apply (h : p ∈ φ.inversions) (x : α) :
   rw [← coe_toPEquiv, toPEquiv_resolve h, PEquiv.trans_eq_some]
   simp
 
+@[simp]
 theorem resolve_of_notMem (h : p ∉ φ.inversions) : φ.resolve p = φ := by
   simp [resolve, h]
 
 /-- The resolution at a crossing written as the sorted pair of its two starting points. -/
 theorem resolve_min_max_apply {x y : α} (h : (min x y, max x y) ∈ φ.inversions) (z : α) :
     φ.resolve (min x y, max x y) z = φ (Equiv.swap x y z) := by
-  rw [resolve_apply h, swap_min_max]
+  rw [resolve_apply h, Equiv.swap_min_max]
 
 /-- The transposition of the two strands of a crossing preserves the starting points. -/
 theorem swap_mem_source_iff (h : p ∈ φ.inversions) {x : α} :
@@ -223,7 +219,7 @@ theorem trans_resolve_eq_trans_resolve (ha : a ∈ φ p.1) (hb : b ∈ φ p.2)
     (φ.trans ψ).resolve p = φ.trans (ψ.resolve (min a b, max a b)) := by
   refine toPEquiv_injective ?_
   rw [toPEquiv_resolve h', toPEquiv_trans, toPEquiv_trans, toPEquiv_resolve h,
-    ← PEquiv.trans_assoc, swap_trans_eq_trans_swap ha hb, PEquiv.trans_assoc, swap_min_max]
+    ← PEquiv.trans_assoc, swap_trans_eq_trans_swap ha hb, PEquiv.trans_assoc, Equiv.swap_min_max]
 
 /-- When the strands starting at `p.1` and `p.2`, with end points `a` and `b` in `φ`, cross in
 both pieces of a concatenation, resolving the crossing in either piece gives the same
@@ -233,15 +229,17 @@ theorem resolve_trans_eq_trans_resolve (ha : a ∈ φ p.1) (hb : b ∈ φ p.2)
     (φ.resolve p).trans ψ = φ.trans (ψ.resolve (min a b, max a b)) := by
   refine toPEquiv_injective ?_
   rw [toPEquiv_trans, toPEquiv_trans, toPEquiv_resolve h, toPEquiv_resolve h',
-    swap_trans_eq_trans_swap ha hb, swap_min_max, PEquiv.trans_assoc]
+    swap_trans_eq_trans_swap ha hb, Equiv.swap_min_max, PEquiv.trans_assoc]
 
 end Trans
 
 /-- **Resolutions of disjoint pairs of strands commute.** -/
 theorem resolve_resolve_comm (hp : p ∈ φ.inversions) (hq : q ∈ φ.inversions)
-    (hp' : p ∈ (φ.resolve q).inversions) (hq' : q ∈ (φ.resolve p).inversions)
     (h₁ : q.1 ≠ p.1) (h₂ : q.1 ≠ p.2) (h₃ : q.2 ≠ p.1) (h₄ : q.2 ≠ p.2) :
     (φ.resolve p).resolve q = (φ.resolve q).resolve p := by
+  have hp' : p ∈ (φ.resolve q).inversions :=
+    (mem_inversions_resolve_iff_of_ne hq h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
+  have hq' : q ∈ (φ.resolve p).inversions := (mem_inversions_resolve_iff_of_ne hp h₁ h₂ h₃ h₄).2 hq
   refine toPEquiv_injective ?_
   rw [toPEquiv_resolve hq', toPEquiv_resolve hp', toPEquiv_resolve hp, toPEquiv_resolve hq,
     ← PEquiv.trans_assoc, ← PEquiv.trans_assoc, ← Equiv.toPEquiv_trans, ← Equiv.toPEquiv_trans]
@@ -256,17 +254,23 @@ theorem resolve_resolve_comm (hp : p ∈ φ.inversions) (hq : q ∈ φ.inversion
 /-- **The three-cycle relation for resolutions.** For three strands starting at distinct points `s`,
 `u` and `w`, resolving the pair `{s, u}` and then `{s, w}` gives the same diagram as resolving
 `{s, w}` and then `{u, w}`. -/
-theorem resolve_resolve_eq_resolve_resolve {s u w : α} (hsu : s ≠ u) (huw : u ≠ w)
+theorem resolve_resolve_eq_resolve_resolve {s u w : α}
     (h₁ : (min s u, max s u) ∈ φ.inversions)
     (h₂ : (min s w, max s w) ∈ (φ.resolve (min s u, max s u)).inversions)
     (h₃ : (min s w, max s w) ∈ φ.inversions)
     (h₄ : (min u w, max u w) ∈ (φ.resolve (min s w, max s w)).inversions) :
     (φ.resolve (min s u, max s u)).resolve (min s w, max s w) =
       (φ.resolve (min s w, max s w)).resolve (min u w, max u w) := by
+  have hsu : s ≠ u := by
+    rintro rfl
+    simpa using (mem_inversions.1 h₁).1
+  have huw : u ≠ w := by
+    rintro rfl
+    simpa using (mem_inversions.1 h₄).1
   refine toPEquiv_injective ?_
   rw [toPEquiv_resolve h₂, toPEquiv_resolve h₁, toPEquiv_resolve h₄, toPEquiv_resolve h₃,
     ← PEquiv.trans_assoc, ← PEquiv.trans_assoc, ← Equiv.toPEquiv_trans, ← Equiv.toPEquiv_trans]
-  simp only [swap_min_max]
+  simp only [Equiv.swap_min_max]
   congr 2
   -- Conjugating `swap u w` by `swap s w` gives `swap s u`.
   have hc := Equiv.swap_mul_swap_mul_swap huw hsu.symm
@@ -282,6 +286,7 @@ the differential of the strands algebra sums the resolutions at these crossings.
 def resolvableInversions (φ : StrandDiagram α) : Finset (α × α) :=
   {p ∈ φ.inversions | (φ.resolve p).inversionCount + 1 = φ.inversionCount}
 
+@[simp]
 theorem mem_resolvableInversions :
     p ∈ φ.resolvableInversions ↔
       p ∈ φ.inversions ∧ (φ.resolve p).inversionCount + 1 = φ.inversionCount :=

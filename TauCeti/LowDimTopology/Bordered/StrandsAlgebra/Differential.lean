@@ -191,31 +191,8 @@ private theorem mem_chains_swap {p q : α × α}
   have hq' : q ∈ φ.inversions := (mem_inversions_resolve_iff_of_ne hp h₁ h₂ h₃ h₄).1 hq
   have hp' : p ∈ (φ.resolve q).inversions :=
     (mem_inversions_resolve_iff_of_ne hq' h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
-  have he := resolve_resolve_comm hp hq' hp' hq h₁ h₂ h₃ h₄
+  have he := resolve_resolve_comm hp hq' h₁ h₂ h₃ h₄
   exact ⟨mem_chains_iff.2 ⟨hq', hp', he ▸ hc⟩, he.symm⟩
-
-/-- For distinct `x` and `y`, the sorted pair `(min x y, max x y)` is a crossing exactly when the
-strands from `x` and `y` reverse their order. -/
-private theorem min_max_mem_inversions_iff {x y a b : α} (hxy : x ≠ y) (ha : a ∈ φ x)
-    (hb : b ∈ φ y) : (min x y, max x y) ∈ φ.inversions ↔ (x < y ↔ b < a) := by
-  have hab : a ≠ b := by
-    rintro rfl
-    exact hxy (φ.toPEquiv.inj ha hb)
-  rcases lt_or_gt_of_ne hxy with h | h
-  · simp [min_eq_left h.le, max_eq_right h.le, mem_inversions_iff_of_mem ha hb, h]
-  · simp only [min_eq_right h.le, max_eq_left h.le, mem_inversions_iff_of_mem hb ha, h,
-      true_and, h.not_gt, false_iff, not_lt]
-    exact ⟨fun h' ↦ h'.le, fun h' ↦ lt_of_le_of_ne h' hab⟩
-
-private theorem mem_source_of_min_max_mem_inversions {x y : α}
-    (h : (min x y, max x y) ∈ φ.inversions) : x ∈ φ.source ∧ y ∈ φ.source := by
-  have h₁ := fst_mem_source_of_mem_inversions h
-  have h₂ := snd_mem_source_of_mem_inversions h
-  rcases le_total x y with hxy | hxy
-  · simp only [min_eq_left hxy, max_eq_right hxy] at h₁ h₂
-    exact ⟨h₁, h₂⟩
-  · simp only [min_eq_right hxy, max_eq_left hxy] at h₁ h₂
-    exact ⟨h₂, h₁⟩
 
 omit [Fintype α] in
 /-- The comparison of end points behind the pairing of chains sharing a strand. Three strands start
@@ -252,7 +229,7 @@ private theorem chains_three_cycle {s u w : α} (hsu : s ≠ u) (hsw : s ≠ w) 
       (h₄ : (min u w, max u w) ∈ (φ.resolve (min s w, max s w)).inversions) :
       (φ.resolve (min s w, max s w)).resolve (min u w, max u w) =
         (φ.resolve (min s u, max s u)).resolve (min s w, max s w) :=
-    (resolve_resolve_eq_resolve_resolve hsu huw h₁ h₂ h₃ h₄).symm
+    (resolve_resolve_eq_resolve_resolve h₁ h₂ h₃ h₄).symm
   have hrp (h₃ : (min u w, max u w) ∈ φ.inversions)
       (h₄ : (min s u, max s u) ∈ (φ.resolve (min u w, max u w)).inversions) :
       (φ.resolve (min u w, max u w)).resolve (min s u, max s u) =
@@ -262,7 +239,7 @@ private theorem chains_three_cycle {s u w : α} (hsu : s ≠ u) (hsw : s ≠ w) 
       rwa [min_comm w, max_comm w, min_comm u, max_comm u]
     have h₄' : (min u s, max u s) ∈ (φ.resolve (min u w, max u w)).inversions := by
       rwa [min_comm u s, max_comm u s]
-    have := resolve_resolve_eq_resolve_resolve huw hsw.symm h₃ h₄' h₁' h₂'
+    have := resolve_resolve_eq_resolve_resolve h₃ h₄' h₁' h₂'
     rwa [min_comm u s, max_comm u s, min_comm w s, max_comm w s] at this
   refine ⟨?_, fun h ↦ hqr (mem_chains_iff.1 h).1 (mem_chains_iff.1 h).2.1,
     fun h ↦ hrp (mem_chains_iff.1 h).1 (mem_chains_iff.1 h).2.1⟩
@@ -445,6 +422,8 @@ Ozsváth and Thurston. -/
 def differential : StrandsAlgebra R α →ₗ[R] StrandsAlgebra R α :=
   (basis R α).constr R fun φ ↦ ∑ p ∈ φ.resolvableInversions, of (φ.resolve p)
 
+/-- The differential of a strand diagram is the sum of its resolutions at the crossings whose
+resolution has exactly one crossing fewer. -/
 theorem differential_of (φ : StrandDiagram α) :
     differential R α (of φ) = ∑ p ∈ φ.resolvableInversions, of (φ.resolve p) := by
   rw [differential, ← basis_apply, Module.Basis.constr_basis]
@@ -615,6 +594,8 @@ private theorem chains_def (φ : StrandDiagram α) :
     φ.resolvableInversions.sigma (fun p ↦ (φ.resolve p).resolvableInversions) = φ.chains :=
   rfl
 
+/-- The differential squares to zero on a strand diagram, over a ring of characteristic two: the
+two-step resolution chains cancel in pairs. -/
 theorem differential_differential_of [CharP R 2] (φ : StrandDiagram α) :
     differential R α (differential R α (of φ)) = 0 := by
   rw [differential_of, map_sum]
@@ -627,6 +608,7 @@ theorem differential_differential_of [CharP R 2] (φ : StrandDiagram α) :
 
 /-- **The differential of the strands algebra squares to zero** over a ring of characteristic two.
 -/
+@[simp]
 theorem differential_differential [CharP R 2] (x : StrandsAlgebra R α) :
     differential R α (differential R α x) = 0 := by
   induction x using induction_on with
