@@ -298,6 +298,23 @@ theorem totalDegreePiece_le_iff {n : A} {P : Submodule R (⨂[R] i, M i)} :
   · rintro h _ ⟨p, m, hm, hp, rfl⟩
     exact h p m hm hp
 
+/-- Collecting the tensor products of homogeneous pieces by the sum of their degrees gives
+the total-degree piece. -/
+theorem totalDegreePiece_eq_iSup (n : A) :
+    totalDegreePiece ι ℳ n = ⨆ p : ι → A, ⨆ _ : ∑ i, p i = n,
+      LinearMap.range (PiTensorProduct.map fun i ↦ (ℳ i (p i)).subtype) := by
+  apply le_antisymm
+  · refine totalDegreePiece_le_iff.2 ?_
+    intro p m hm hp
+    exact Submodule.mem_iSup_of_mem p (Submodule.mem_iSup_of_mem hp
+      ⟨PiTensorProduct.tprod R (fun i ↦ (⟨m i, hm i⟩ : ℳ i (p i))),
+        PiTensorProduct.map_tprod _ _⟩)
+  · refine iSup_le fun p ↦ iSup_le fun hp ↦ ?_
+    rw [PiTensorProduct.map_range_eq_span_tprod, Submodule.span_le]
+    rintro _ ⟨m, rfl⟩
+    subst n
+    exact tprod_mem_totalDegreePiece fun i ↦ (m i).property
+
 /-- Factorwise maps of degrees `a i` shift the total degree by `∑ i, a i`. -/
 theorem isHomogeneous_map {𝒩 : ∀ i, A → Submodule R (N i)} {g : ∀ i, N i →ₗ[R] M i}
     {a : ι → A} (hg : ∀ i, LinearMap.IsHomogeneous (g i) (𝒩 i) (ℳ i) (a i)) :
@@ -322,6 +339,32 @@ theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
   rw [Submodule.mem_comap, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod, add_zero,
     ← σ.symm.sum_comp p]
   exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
+
+/-- Reindexing a tensor product detects as well as preserves total degree. -/
+@[simp]
+theorem reindex_mem_totalDegreePiece_iff [Fintype κ]
+    (ℳ : ∀ i, A → Submodule R (M i)) (σ : ι ≃ κ) (n : A) (z : ⨂[R] i, M i) :
+    PiTensorProduct.reindex R M σ z ∈ totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ↔
+      z ∈ totalDegreePiece ι ℳ n := by
+  constructor
+  · intro hz
+    have h : totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ≤
+        (totalDegreePiece ι ℳ n).comap (PiTensorProduct.reindex R M σ).symm.toLinearMap := by
+      refine totalDegreePiece_le_iff.2 ?_
+      intro p m hm hp
+      obtain ⟨m, rfl⟩ := (Equiv.piCongrLeft' M σ).surjective m
+      rw [funext (Equiv.piCongrLeft'_apply M σ m)] at hm ⊢
+      simp only [Submodule.mem_comap, LinearEquiv.coe_coe,
+        PiTensorProduct.reindex_symm_tprod]
+      rw [← hp, ← σ.sum_comp p]
+      apply tprod_mem_totalDegreePiece
+      intro i
+      obtain ⟨j, rfl⟩ := σ.symm.surjective i
+      simpa only [σ.apply_symm_apply] using hm j
+    simpa only [Submodule.mem_comap, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply] using h hz
+  · intro hz
+    simpa only [LinearEquiv.coe_coe, add_zero] using (isHomogeneous_reindex σ).map_mem hz
 
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
