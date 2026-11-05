@@ -96,16 +96,22 @@ theorem isWeaklyCompact_iff_exists_isCompact {T : E →L[𝕜] F} :
 /-- The zero operator is weakly compact. -/
 @[simp]
 theorem isWeaklyCompact_zero : (0 : E →L[𝕜] F).IsWeaklyCompact :=
+  -- `toWeakSpace` is the identity map of the underlying space, so `toWeakSpace ∘ 0` is `0` by
+  -- definitional unfolding; this is intended.
   .of_isCompactOperator isCompactOperator_zero
 
 /-- The sum of two weakly compact operators is weakly compact. -/
 theorem IsWeaklyCompact.add {T S : E →L[𝕜] F} (hT : T.IsWeaklyCompact)
     (hS : S.IsWeaklyCompact) : (T + S).IsWeaklyCompact :=
+  -- `toWeakSpace` is the identity map of the underlying space, so `toWeakSpace ∘ (T + S)` is
+  -- `toWeakSpace ∘ T + toWeakSpace ∘ S` by definitional unfolding; this is intended.
   .of_isCompactOperator (hT.isCompactOperator.add hS.isCompactOperator)
 
 /-- A scalar multiple of a weakly compact operator is weakly compact. -/
 theorem IsWeaklyCompact.smul {T : E →L[𝕜] F} (hT : T.IsWeaklyCompact) (c : 𝕜) :
     (c • T).IsWeaklyCompact :=
+  -- `toWeakSpace` is the identity map of the underlying space, so `toWeakSpace ∘ (c • T)` is
+  -- `c • (toWeakSpace ∘ T)` by definitional unfolding; this is intended.
   .of_isCompactOperator (hT.isCompactOperator.smul c)
 
 /-- The negative of a weakly compact operator is weakly compact. -/
@@ -169,28 +175,6 @@ theorem isWeaklyCompact_id_and_not_isCompactOperator_id
 
 /-! ### Gantmacher's theorem -/
 
-/-- The bidual adjoint `T**` is continuous between the weak-star topologies of the biduals. -/
-private theorem continuous_toWeakDual_precomp_precomp (T : E →L[𝕜] F) :
-    Continuous fun Φ : WeakDual 𝕜 (StrongDual 𝕜 E) ↦ StrongDual.toWeakDual
-      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (WeakDual.toStrongDual Φ)) :=
-  WeakDual.continuous_of_continuous_eval fun f ↦ WeakDual.eval_continuous (f.comp T)
-
-/-- On the canonical image of `E` in the weak-star bidual, the bidual adjoint `T**` acts as `T`. -/
-private theorem toWeakDual_precomp_precomp_inclusionInDoubleDualWeak (T : E →L[𝕜] F) (x : E) :
-    StrongDual.toWeakDual (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)
-        (WeakDual.toStrongDual (inclusionInDoubleDualWeak 𝕜 E (toWeakSpace 𝕜 E x)))) =
-      inclusionInDoubleDualWeak 𝕜 F (toWeakSpace 𝕜 F (T x)) := by
-  simp [inclusionInDoubleDualWeak_apply]
-
-/-- An element of the bidual lies in the canonical image of `F` iff it does when viewed in the
-weak-star bidual. -/
-private theorem toWeakDual_mem_range_inclusionInDoubleDualWeak_iff
-    (Φ : StrongDual 𝕜 (StrongDual 𝕜 F)) :
-    StrongDual.toWeakDual Φ ∈ range (inclusionInDoubleDualWeak 𝕜 F) ↔
-      Φ ∈ range (inclusionInDoubleDual 𝕜 F) := by
-  simp only [mem_range, inclusionInDoubleDualWeak_apply, EmbeddingLike.apply_eq_iff_eq,
-    (toWeakSpace 𝕜 F).symm.surjective.exists]
-
 /-- **Gantmacher's criterion**, forward direction: the bidual adjoint `T**` of a weakly compact
 operator takes values in the canonical image of the codomain in its bidual. -/
 theorem IsWeaklyCompact.range_precomp_precomp_subset {T : E →L[𝕜] F} (hT : T.IsWeaklyCompact) :
@@ -203,7 +187,7 @@ theorem IsWeaklyCompact.range_precomp_precomp_subset {T : E →L[𝕜] F} (hT : 
   -- By Goldstine, `Φ` lies in the weak-star closure of the image of a ball of `E`, so `A Φ`
   -- lies in the weak-star closure of the image of the weakly compact set `K`.
   rintro _ ⟨Φ, rfl⟩
-  rw [← toWeakDual_mem_range_inclusionInDoubleDualWeak_iff]
+  rw [← NormedSpace.toWeakDual_mem_range_inclusionInDoubleDualWeak_iff 𝕜 F]
   set K := closure (toWeakSpace 𝕜 F '' (T '' closedBall 0 ‖Φ‖))
   have hK : IsCompact K := hT.isCompact_closure_image isBounded_closedBall
   have hΦ : StrongDual.toWeakDual Φ ∈
@@ -219,7 +203,7 @@ theorem IsWeaklyCompact.range_precomp_precomp_subset {T : E →L[𝕜] F} (hT : 
   obtain ⟨y, -, hy⟩ := closure_minimal hsub
     (hK.image (inclusionInDoubleDualWeak 𝕜 F).continuous).isClosed
     (image_closure_subset_closure_image (continuous_toWeakDual_precomp_precomp T) ⟨_, hΦ, rfl⟩)
-  exact ⟨y, hy⟩
+  exact ⟨y, by simpa [A] using hy⟩
 
 /-- **Gantmacher's criterion**, reverse direction: a bounded operator whose bidual adjoint `T**`
 takes values in the canonical image of the codomain in its bidual is weakly compact. -/
@@ -247,7 +231,7 @@ theorem IsWeaklyCompact.of_range_precomp_precomp_subset {T : E →L[𝕜] F}
     refine (closure_minimal hsub ((WeakDual.isCompact_closedBall 0 1).image
       (continuous_toWeakDual_precomp_precomp T)).isClosed).trans ?_
     rintro _ ⟨Φ, -, rfl⟩
-    exact (toWeakDual_mem_range_inclusionInDoubleDualWeak_iff _).2 (h ⟨_, rfl⟩)
+    exact (NormedSpace.toWeakDual_mem_range_inclusionInDoubleDualWeak_iff 𝕜 F _).2 (h ⟨_, rfl⟩)
 
 /-- **Gantmacher's criterion.** A bounded operator is weakly compact iff its bidual adjoint
 `T**` takes values in the canonical image of the codomain in its bidual. No completeness is
