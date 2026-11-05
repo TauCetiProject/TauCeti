@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Cyclotomic.Basic
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 
 /-!
 # Coprime power substitutions on exact cyclotomic integers
@@ -13,7 +14,9 @@ public import TauCeti.RingTheory.Cyclotomic.Basic
 Substitution `ζ_e ↦ ζ_e ^ n`, for `n` coprime to `e`, preserves the cyclotomic relation.
 The resulting ring homomorphism is computed by Horner evaluation of coefficient vectors.
 Evaluation at another cyclotomic root intertwines it with the same power substitution on that
-root. This allows all conjugate residues to be recovered from one reduction.
+root. This allows all conjugate residues to be recovered from one reduction. A field embedded in
+`ℂ` containing a primitive `e`-th root receives the exact integers compatibly with these
+substitutions.
 
 ## References
 
@@ -80,5 +83,25 @@ theorem reduce_powRingHom {p : ℕ} (hn : e.Coprime n)
     reduce p α (powRingHom hn x) = reduce p (α ^ n) x := by
   rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hα, map_powRingHom,
     evalRingHom_zeta, reduce]
+
+/-- A subfield of `ℂ`, presented through an embedding `ι`, that contains a primitive `e`-th root of
+unity receives the exact cyclotomic integers compatibly with `complexEmbedding`. Any endomorphism
+of the field powering the given root intertwines this map with the matching power substitution. -/
+theorem exists_ringHom_comp_eq_complexEmbedding {K : Type*} [Field K] (ι : K →+* ℂ) {ζ : K}
+    (hζ : IsPrimitiveRoot ζ e) :
+    ∃ f : Cyclotomic e →+* K, ι.comp f = complexEmbedding ∧
+      ∀ (σ : K →+* K) {n : ℕ} (hn : e.Coprime n), σ ζ = ζ ^ n →
+        σ.comp f = f.comp (powRingHom hn) := by
+  obtain ⟨a, -, ha⟩ := (hζ.map_of_injective ι.injective).eq_pow_of_pow_eq_one
+    (isPrimitiveRoot_complexRoot (e := e)).pow_eq_one
+  have hroot : IsPrimitiveRoot (ζ ^ a) e :=
+    IsPrimitiveRoot.of_map_of_injective (f := ι)
+      (by rw [map_pow, ha]; exact isPrimitiveRoot_complexRoot) ι.injective
+  let f := evalRingHom (Int.castRingHom K) (ζ ^ a) (hroot.eval₂_cyclotomic _)
+  have hf : f (zeta e) = ζ ^ a := evalRingHom_zeta ..
+  refine ⟨f, ringHom_ext ?_, fun σ n hn hσ ↦ ringHom_ext ?_⟩
+  · simp [hf, ha]
+  · simp only [RingHom.comp_apply, powRingHom_zeta, map_pow, hf, hσ]
+    rw [pow_right_comm]
 
 end TauCeti.Cyclotomic

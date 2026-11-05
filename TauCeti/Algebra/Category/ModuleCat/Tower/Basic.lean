@@ -58,6 +58,8 @@ noncommutative ring are allowed.
   `∏ₙ Bₙ` inside the image of the shift map.
 * `TauCeti.ModuleTower.subsingleton_limOne_of_surjective`: towers with surjective transitions
   have vanishing `lim¹`.
+* `TauCeti.ModuleTower.smulTower`: the tower `M ←f M ←f ⋯` of a module over a commutative ring,
+  whose transitions are multiplication by `f`.
 
 ## References
 
@@ -585,6 +587,29 @@ theorem limOneEquivOfIso_symm_apply (e : F ≅ G) (x : G.limOne) :
   (rfl)
 
 end Functoriality
+
+end ModuleTower
+
+namespace ModuleTower
+
+section SMulTower
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+variable (M) in
+/-- The tower `M ←f M ←f ⋯` whose transition maps are multiplication by `f`. -/
+@[expose] def smulTower (f : R) : ModuleTower.{v} R :=
+  Functor.ofOpSequence (X := fun _ ↦ ModuleCat.of R M) fun _ ↦ ModuleCat.ofHom (f • LinearMap.id)
+
+/-- The transition maps of `M ←f M ←f ⋯` are multiplication by `f`. -/
+@[simp]
+theorem smulTower_transition (f : R) (n : ℕ) :
+    (smulTower M f).transition n = (f • LinearMap.id : M →ₗ[R] M) := by
+  simp only [smulTower, transition_def, Functor.ofOpSequence_map_homOfLE_succ]
+  -- `ModuleCat.hom_ofHom`, stated for the carrier `M` rather than `ModuleCat.of R M`
+  rfl
+
+end SMulTower
 
 end ModuleTower
 
