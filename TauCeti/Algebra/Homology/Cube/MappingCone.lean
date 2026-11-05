@@ -491,18 +491,6 @@ private lemma map_comp_eqToHom {κ : Type*} {G : Finset κ ⥤ C} {S T S' T' : F
 private def frontEquiv : Fin (n + 1) ≃ WithBot (Fin n) :=
   finSuccEquiv' c
 
-private lemma frontEquiv_self : frontEquiv c c = ⊥ :=
-  finSuccEquiv'_at c
-
-private lemma frontEquiv_succAbove (a : Fin n) : frontEquiv c (c.succAbove a) = a :=
-  finSuccEquiv'_succAbove c a
-
-private lemma frontEquiv_symm_bot : (frontEquiv c).symm ⊥ = c :=
-  finSuccEquiv'_symm_none c
-
-private lemma frontEquiv_symm_coe (a : Fin n) : (frontEquiv c).symm a = c.succAbove a :=
-  finSuccEquiv'_symm_some c a
-
 /-- The cube `F` with the index `c` moved to the front. -/
 private abbrev cubeFront : Finset (WithBot (Fin n)) ⥤ C :=
   (show Monotone (Finset.map (frontEquiv c).symm.toEmbedding) from
@@ -520,15 +508,16 @@ private lemma map_coeWithBot_map_frontEquiv_symm (S : Finset (Fin n)) :
     Fin.coe_succAboveEmb]
   constructor
   · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
-    exact ⟨a, ha, (frontEquiv_symm_coe c a).symm⟩
+    exact ⟨a, ha, (finSuccEquiv'_symm_some c a).symm⟩
   · rintro ⟨a, ha, rfl⟩
-    exact ⟨a, ⟨a, ha, rfl⟩, frontEquiv_symm_coe c a⟩
+    exact ⟨a, ⟨a, ha, rfl⟩, finSuccEquiv'_symm_some c a⟩
 
 private lemma insertBot_map_frontEquiv_symm (S : Finset (Fin n)) :
     (WithBot.insertBot S).map (frontEquiv c).symm.toEmbedding =
       insert c (S.map c.succAboveEmb) := by
+  have hc : (frontEquiv c).symm ⊥ = c := finSuccEquiv'_symm_none c
   rw [WithBot.insertBot_eq_insert, map_insert, map_coeWithBot_map_frontEquiv_symm]
-  simp [frontEquiv_symm_bot]
+  simp [hc]
 
 /-- Moving `c` to the front is compatible with the edge maps. -/
 private lemma isCubeReindexCompatible_cubeFront :
@@ -603,7 +592,8 @@ private lemma inversions_map_succAboveEmb (S : Finset (Fin n)) :
   ext ⟨x, y⟩
   simp only [mem_inversions, mem_map, Fin.coe_succAboveEmb, notMem_empty, iff_false, not_and]
   rintro ⟨a, -, rfl⟩ ⟨b, -, rfl⟩ hab
-  rw [frontEquiv_succAbove, frontEquiv_succAbove, WithBot.coe_lt_coe, not_lt]
+  have ha (a : Fin n) : frontEquiv c (c.succAbove a) = a := finSuccEquiv'_succAbove c a
+  rw [ha, ha, WithBot.coe_lt_coe, not_lt]
   exact ((Fin.strictMono_succAbove c).lt_iff_lt.1 hab).le
 
 /-- Moving `c` to the front of a vertex containing `c` reverses the order of `c` and the
@@ -611,9 +601,11 @@ elements of the vertex preceding it. -/
 private lemma card_inversions_insert_map_succAboveEmb (S : Finset (Fin n)) :
     #((insert c (S.map c.succAboveEmb)).inversions (frontEquiv c)) =
       #{a ∈ S | a.castSucc < c} := by
+  have hc : frontEquiv c c = ⊥ := finSuccEquiv'_at c
+  have ha (a : Fin n) : frontEquiv c (c.succAbove a) = a := finSuccEquiv'_succAbove c a
   rw [card_inversions_insert _ (by simp [Fin.succAbove_ne]), inversions_map_succAboveEmb,
-    card_empty, zero_add, frontEquiv_self]
-  simp [filter_map, Function.comp_def, frontEquiv_succAbove]
+    card_empty, zero_add, hc]
+  simp [filter_map, Function.comp_def, ha]
 
 /-- The inverse of the reindexing isomorphism moving `c` to the front, on a vertex `U` given as
 the image of a vertex `S` of `F`. -/
