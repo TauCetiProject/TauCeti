@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.NoncommPiCoprod
+public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Hamiltonian flows are symplectic, and Poisson-commuting flows commute
@@ -36,7 +38,11 @@ symplectic diffeomorphisms (`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowA
 `v` acts by the composite of the time-`vᵢ` maps of the flows of the `Fᵢ`, in any order. It
 restricts to the flow of `Fᵢ` on the `i`-th coordinate axis, preserves `σ` and preserves every
 `Fᵢ`, and it is the unique such homomorphism with these restrictions
-(`TauCeti.SmoothTwoForm.IsSymplectic.eq_hamiltonianFlowAction`). For a completely integrable system
+(`TauCeti.SmoothTwoForm.IsSymplectic.eq_hamiltonianFlowAction`). The action is jointly smooth
+(`TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry`), and the orbit map
+`v ↦ v • x` has derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)`
+(`TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`). For a completely
+integrable system
 `F` (`TauCeti.SmoothTwoForm.IsIntegrableSystem`) that is a proper map, the completeness hypothesis
 holds (`IsIntegrableSystem.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`), and this
 is the action of `ℝⁿ` on the fibres of `F` from which the Liouville–Arnold theorem
@@ -58,6 +64,11 @@ identifies a compact connected regular fibre with a torus.
   `TauCeti.SmoothTwoForm.IsSymplectic.eq_hamiltonianFlowAction`,
   `TauCeti.SmoothTwoForm.IsSymplectic.mpullback_hamiltonianFlowAction` and
   `TauCeti.SmoothTwoForm.IsSymplectic.apply_hamiltonianFlowAction`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAddAction`: the same action packaged as an
+  `AddAction` of `ι → ℝ` on `M`, giving access to Mathlib's orbit and stabilizer API.
+* `TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry` and
+  `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`: the action is jointly
+  smooth, and the derivative of an orbit map is spanned by the Hamiltonian vector fields.
 
 ## References
 
@@ -299,6 +310,131 @@ theorem apply_hamiltonianFlowAction (v : ι → ℝ) (x : M) :
     exact (isFirstIntegral_iff.2 fun x ↦ hcomm j i x).apply_globalFlow hσ.isNondegenerate
       ((contMDiff_pi_module_iff.1 hF i).of_le (by simp))
       ((contMDiff_pi_module_iff.1 hF j).mdifferentiable (by simp)) _ (hc i) t y
+
+/-! ### Algebraic and smoothness properties of the Hamiltonian flow action -/
+
+include hF hcomm hc in
+/-- **The Hamiltonian flow action as an additive action.** The vector `v : ι → ℝ` acts on `y : M`
+by `v +ᵥ y = (hamiltonianFlowAction v) y`. It depends on the hypotheses on `σ` and `F`, so it is
+not an instance; it makes Mathlib's orbit and stabilizer API available for this action. -/
+abbrev hamiltonianFlowAddAction : AddAction (ι → ℝ) M :=
+  AddAction.compHom M (hσ.hamiltonianFlowAction hF hcomm hc)
+
+/-- The zero vector acts as the identity. -/
+theorem hamiltonianFlowAction_zero_apply (x : M) :
+    (hσ.hamiltonianFlowAction hF hcomm hc 0).toMul x = x :=
+  letI := hσ.hamiltonianFlowAddAction hF hcomm hc
+  zero_vadd (ι → ℝ) x
+
+/-- The action of `v + w` is the action of `v` after that of `w`. -/
+theorem hamiltonianFlowAction_add_apply (v w : ι → ℝ) (x : M) :
+    (hσ.hamiltonianFlowAction hF hcomm hc (v + w)).toMul x =
+      (hσ.hamiltonianFlowAction hF hcomm hc v).toMul
+        ((hσ.hamiltonianFlowAction hF hcomm hc w).toMul x) :=
+  letI := hσ.hamiltonianFlowAddAction hF hcomm hc
+  add_vadd v w x
+
+/-- The action of `-v` undoes the action of `v`. -/
+theorem hamiltonianFlowAction_neg_apply_apply (v : ι → ℝ) (x : M) :
+    (hσ.hamiltonianFlowAction hF hcomm hc (-v)).toMul
+        ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) = x :=
+  letI := hσ.hamiltonianFlowAddAction hF hcomm hc
+  neg_vadd_vadd v x
+
+/-- The action of `v` undoes the action of `-v`. -/
+theorem hamiltonianFlowAction_apply_neg_apply (v : ι → ℝ) (x : M) :
+    (hσ.hamiltonianFlowAction hF hcomm hc v).toMul
+        ((hσ.hamiltonianFlowAction hF hcomm hc (-v)).toMul x) = x :=
+  letI := hσ.hamiltonianFlowAddAction hF hcomm hc
+  vadd_neg_vadd v x
+
+/-- **The Hamiltonian flow action is jointly smooth.** The map `(v, y) ↦ v • y`, where `v : ι → ℝ`
+acts by the composite of the time-`vᵢ` maps of the flows of the `Fᵢ`, is smooth on
+`(ι → ℝ) × M`. -/
+theorem contMDiff_hamiltonianFlowAction_uncurry :
+    ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
+      fun p : (ι → ℝ) × M ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul p.2 := by
+  classical
+  have hv := contMDiff_hamiltonianVectorField_apply hσ hF
+  -- Add the coordinate axes one at a time: on `Pi.single j (v j) + w` the action is the flow of
+  -- `F j` for time `v j` after the action of `w`.
+  have key (s : Finset ι) : ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞ fun p : (ι → ℝ) × M ↦
+      (hσ.hamiltonianFlowAction hF hcomm hc (∑ i ∈ s, Pi.single i (p.1 i))).toMul p.2 := by
+    induction s using Finset.induction_on with
+    | empty => simpa using contMDiff_snd
+    | insert j s hj ih =>
+      have heq : (fun p : (ι → ℝ) × M ↦
+          (hσ.hamiltonianFlowAction hF hcomm hc (∑ i ∈ insert j s, Pi.single i (p.1 i))).toMul
+            p.2) = fun p ↦ globalFlow (σ.hamiltonianVectorField (F · j))
+              ((hv j).of_le (by exact_mod_cast le_top)) (hc j) (p.1 j)
+              ((hσ.hamiltonianFlowAction hF hcomm hc (∑ i ∈ s, Pi.single i (p.1 i))).toMul
+                p.2) := by
+        funext p
+        rw [Finset.sum_insert hj, hσ.hamiltonianFlowAction_add_apply hF hcomm hc,
+          hσ.hamiltonianFlowAction_single_apply hF hcomm hc]
+      rw [heq]
+      exact (contMDiff_globalFlow_uncurry (hc j) le_top (hv j)).comp
+        (((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).contMDiff.comp
+          contMDiff_fst).prodMk ih)
+  simpa only [Finset.univ_sum_single] using key Finset.univ
+
+/-- **The orbit maps of the Hamiltonian flow action are smooth.** -/
+theorem contMDiff_hamiltonianFlowAction_apply (x : M) :
+    ContMDiff 𝓘(ℝ, ι → ℝ) I ∞ fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x :=
+  (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
+    (contMDiff_id.prodMk contMDiff_const)
+
+/-- The orbit maps of the Hamiltonian flow action are continuous. -/
+theorem continuous_hamiltonianFlowAction_apply (x : M) :
+    Continuous fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x :=
+  (hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x).continuous
+
+/-- **The derivative of an orbit map of the Hamiltonian flow action.** The orbit map
+`v ↦ v • x` has derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)` at every `v : ι → ℝ`. -/
+theorem mfderiv_hamiltonianFlowAction_apply (x : M) (v w : ι → ℝ) :
+    mfderiv 𝓘(ℝ, ι → ℝ) I (fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) v w =
+      ∑ i, w i •
+        σ.hamiltonianVectorField (F · i) ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) := by
+  classical
+  set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x with ho
+  have hv := contMDiff_hamiltonianVectorField_apply hσ hF
+  have hd (u : ι → ℝ) : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I o u :=
+    (hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x).mdifferentiableAt (by simp)
+  -- Along the `i`-th coordinate axis through `v`, the orbit map is the flow line of `Fᵢ`
+  -- through `v • x`.
+  have hax (i : ι) : mfderiv 𝓘(ℝ, ι → ℝ) I o v (Pi.single i 1) =
+      σ.hamiltonianVectorField (F · i) (o v) := by
+    have hcd : HasDerivAt (fun t : ℝ ↦ v + t • Pi.single i (1 : ℝ)) (Pi.single i 1) 0 := by
+      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const (Pi.single i (1 : ℝ))).const_add v
+    have hflow : (o ∘ fun t : ℝ ↦ v + t • Pi.single i 1) = fun t ↦
+        globalFlow (σ.hamiltonianVectorField (F · i))
+          ((hv i).of_le (by exact_mod_cast le_top)) (hc i) t (o v) := by
+      funext t
+      simp only [comp_apply, ho, add_comm v, hσ.hamiltonianFlowAction_add_apply hF hcomm hc]
+      rw [← Pi.single_smul', smul_eq_mul, mul_one,
+        hσ.hamiltonianFlowAction_single_apply hF hcomm hc]
+    have hvel := Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+      (isMIntegralCurve_globalFlow ((hv i).of_le (by exact_mod_cast le_top)) (hc i) (o v)
+        0).hasMFDerivWithinAt uniqueDiffWithinAt_univ
+    rw [Manifold.curveVelocityWithin_univ] at hvel
+    have h1 := MDifferentiableAt.curveVelocity_comp_mfderiv (hd _) hcd
+    have h0 : v + (0 : ℝ) • Pi.single i (1 : ℝ) = v := by simp
+    rw [hflow, hvel, h0] at h1
+    rw [← h1]
+    -- The flow line starts at `o v`; its time-zero value is the structure field `map_zero'`.
+    exact congrArg (fun y ↦ (σ.hamiltonianVectorField (F · i) y : E))
+      ((globalFlow _ _ (hc i)).map_zero' (o v))
+  -- Expand `w` in the coordinate basis. The tangent spaces involved are `ι → ℝ` and `E` with
+  -- their own `TangentSpace` instances, which block rewriting with the coordinate expansion of
+  -- `w`; the `change` reads the derivative as a map between the model spaces.
+  let L : (ι → ℝ) →L[ℝ] E := mfderiv 𝓘(ℝ, ι → ℝ) I o v
+  change L w = ∑ i, w i • (σ.hamiltonianVectorField (F · i) (o v) : E)
+  conv_lhs => rw [← Finset.univ_sum_single w]
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [show Pi.single i (w i) = w i • Pi.single i (1 : ℝ) by
+    rw [← Pi.single_smul', smul_eq_mul, mul_one], map_smul]
+  exact congrArg (w i • ·) (hax i)
 
 end IsSymplectic
 

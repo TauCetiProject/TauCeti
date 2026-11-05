@@ -416,7 +416,6 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
       fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorFunction_le_of_mem_cell hψ hf hε hμ_eq hxi hxε hxv
   have hab : c - ε ≤ c + ε := by linarith
   have hYX : {x | F x ≤ c - ε} ⊆ {x | F x ≤ c + ε} := fun _ hx ↦ le_trans hx hab
-  have e : sublevelInclusion F (c - ε) (c + ε) hab = .inclusion hYX := by ext; simp
   have hFcompact : IsCompact (F ⁻¹' Icc (c - ε) (c + ε)) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hFs.continuous) fun x hx ↦
       ⟨hx.1.trans (milnorFunction_le hμ_nonneg x), (Set.ext_iff.1 hX x).1 hx.2⟩
@@ -425,7 +424,7 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
   -- enter through their open partial homeomorphisms, with the same source and forward map.
   exact hX ▸ ContinuousMap.HomotopicRel.exists_inter_deformation_trans hYX
     (inter_subset_right.trans hSY)
-    (e ▸ exists_sublevelDeformation hFs hab hFcompact fun _ ↦
+    (sublevelInclusion_eq_inclusion F hab ▸ exists_sublevelDeformation hFs hab hFcompact fun _ ↦
       mfderiv_milnorFunction_ne_zero_of_mem_Icc hψ hf hμ₀ hball hε hfs hμ hμa hμ_nonneg hμ_eq hcrit)
     (exists_inter_sublevel_union_cells_deformation
       (fun i ↦ (ψ i).toOpenPartialHomeomorph) hψ k hball hf (X := {x | F x ≤ c - ε})

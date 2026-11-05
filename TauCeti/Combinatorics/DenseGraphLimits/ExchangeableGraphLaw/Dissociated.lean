@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Defs
 public import TauCeti.Combinatorics.SimpleGraph.Sum
 public import Mathlib.MeasureTheory.Measure.Prod
-import TauCeti.MeasureTheory.Measure.FiniteOrder
+import TauCeti.MeasureTheory.Measure.WellFoundedOrder
 
 /-!
 # Dissociated exchangeable graph laws
@@ -26,8 +26,8 @@ dissociated exactly when its upper masses are multiplicative over disjoint union
 One direction reads the multiplicativity off the upper rectangles. The other needs that the upper
 rectangles determine a law on pairs of graphs, which is Möbius inversion over the product of the
 two finite lattices of graphs — the downward induction of
-`MeasureTheory.Measure.ext_of_Ici_of_finite`, since the upper ray at a pair of patterns is the
-rectangle of their upper events.
+`MeasureTheory.Measure.ext_of_Ici_of_wellFoundedGT`, since the upper ray at a pair of patterns is
+the rectangle of their upper events.
 
 ## Main definitions
 
@@ -123,7 +123,7 @@ theorem isDissociated_iff_upperMass_mul (L : ExchangeableGraphLaw) :
       ExchangeableGraphLaw.upperMass_def, ExchangeableGraphLaw.upperMass_def]
     rfl
   · intro h k l
-    refine Measure.ext_of_Ici_of_finite _ _ fun F => ?_
+    refine Measure.ext_of_Ici_of_wellFoundedGT _ _ fun F => ?_
     rw [← Set.Ici_prod_Ici, Measure.prod_prod]
     refine (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) ?_).1 ?_
     · exact ENNReal.mul_ne_top (measure_ne_top _ _) (measure_ne_top _ _)
