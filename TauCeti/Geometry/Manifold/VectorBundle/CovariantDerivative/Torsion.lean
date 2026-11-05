@@ -83,4 +83,17 @@ theorem isTorsionFree_iff_torsion_eq_zero
     cov.IsTorsionFree ↔ cov.torsion = 0 :=
   cov.torsion_eq_zero_iff.symm
 
+/-- Adding a symmetric endomorphism-valued one-form to a torsion-free covariant derivative on the
+tangent bundle keeps it torsion-free. -/
+theorem torsion_addOneForm_eq_zero
+    {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)} (ht : cov.torsion = 0)
+    {A : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] TangentSpace I x}
+    (hA : ∀ (x : M) (v w : TangentSpace I x), A x v w = A x w v) :
+    (cov.addOneForm A).torsion = 0 := by
+  rw [torsion_eq_zero_iff]
+  intro X Y x hX hY
+  simp only [addOneForm, add_apply]
+  rw [← cov.torsion_eq_zero_iff.1 ht hX hY, hA x (Y x)]
+  abel
+
 end CovariantDerivative
