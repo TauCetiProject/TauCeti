@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Density
