@@ -14,10 +14,11 @@ public import TauCeti.Probability.FreeProbability.Semicircular.Basic
 
 Let `φ : A →ₗ[R] R` be a linear functional on an algebra `A` over a commutative ring `R`. A family
 `s : ι → A` is a *semicircular system with covariance `C : Matrix ι ι R`* for `φ` when `φ` is
-normalised and the only nonvanishing joint free cumulants of the family are those of order two,
-given by the covariance: `κ₂(s i, s j) = C i j`, and `κ_n(s_{w 1}, …, s_{w n}) = 0` for every word
-`w` of length `n ≠ 2`. Equivalently, `φ (s i) = 0`, `φ (s i * s j) = C i j`, and all higher joint
-free cumulants vanish. This is the free analogue of a centred Gaussian family with covariance `C`.
+normalised and the only nonvanishing joint free cumulants of positive order of the family are
+those of order two, given by the covariance: `κ₂(s i, s j) = C i j`, and
+`κ_n(s_{w 1}, …, s_{w n}) = 0` for every word `w` of length `n ≥ 1` with `n ≠ 2`.
+Equivalently, `φ (s i) = 0`, `φ (s i * s j) = C i j`, and all higher joint free cumulants vanish.
+This is the free analogue of a centred Gaussian family with covariance `C`.
 
 The joint distribution of a semicircular system is determined by its covariance, and every member
 `s i` is semicircular of variance `C i i`. Real (or `R`-linear) changes of coordinates preserve
@@ -69,8 +70,8 @@ variable {R A B ι κ : Type*} [CommRing R] [Semiring A] [Algebra R A] [Semiring
   {φ : A →ₗ[R] R} {s : ι → A} {C : Matrix ι ι R}
 
 /-- A family `s` is a *semicircular system with covariance `C`* for the functional `φ` if `φ` is
-normalised and the only nonvanishing joint free cumulants of `s` are those of order two,
-`κ₂(s i, s j) = C i j`. -/
+normalised and the only nonvanishing joint free cumulants of `s` of positive order are those of
+order two, `κ₂(s i, s j) = C i j`. -/
 structure IsSemicircularSystem (φ : A →ₗ[R] R) (s : ι → A) (C : Matrix ι ι R) : Prop where
   /-- The functional is normalised. -/
   apply_one : φ 1 = 1
@@ -90,8 +91,9 @@ theorem apply_eq_zero (h : IsSemicircularSystem φ s C) (i : ι) : φ (s i) = 0 
 `φ (s i * s j) = C i j`. -/
 theorem apply_mul (h : IsSemicircularSystem φ s C) (i j : ι) : φ (s i * s j) = C i j := by
   have hκ := h.freeCumulant_two ![i, j]
-  rw [show (univ : Finset (Fin 2)) = {0, 1} by decide,
-    freeCumulant_pair φ _ (show (0 : Fin 2) < 1 by decide)] at hκ
+  have huniv : (univ : Finset (Fin 2)) = {0, 1} := by decide
+  have h01 : (0 : Fin 2) < 1 := by decide
+  rw [huniv, freeCumulant_pair φ _ h01] at hκ
   simpa [h.apply_eq_zero] using hκ
 
 /-- The joint free cumulants of a semicircular system depend only on its covariance: two
@@ -137,16 +139,6 @@ theorem comp (h : IsSemicircularSystem φ s C) (e : κ → ι) :
   freeCumulant_two w := h.freeCumulant_two (e ∘ w)
   freeCumulant_eq_zero hn₀ hn₂ w := h.freeCumulant_eq_zero hn₀ hn₂ (e ∘ w)
 
-/-- The joint free cumulants of the linear combinations `t k = ∑ i, M i k • s i` along a word `w`,
-expanded by multilinearity over all words `v` in the original family. -/
-private theorem freeCumulant_sum_smul [Fintype ι] (M : Matrix ι κ R) {n : ℕ}
-    (w : Fin n → κ) :
-    freeCumulant φ ((fun k => ∑ i, M i k • s i) ∘ w) univ =
-      ∑ v : Fin n → ι, (∏ m, M (v m) (w m)) * freeCumulant φ (s ∘ v) univ := by
-  classical
-  simp_rw [← freeCumulantMultilinear_apply, Function.comp_def, MultilinearMap.map_sum,
-    MultilinearMap.map_smul_univ, smul_eq_mul]
-
 /-- *Linear changes of coordinates*: if `s` is a semicircular system with covariance `C` and `M`
 is a matrix, then the linear combinations `t k = ∑ i, M i k • s i` form a semicircular system with
 covariance `Mᵀ * C * M`. -/
@@ -155,14 +147,15 @@ theorem sum_smul [Fintype ι] (h : IsSemicircularSystem φ s C) (M : Matrix ι �
   apply_one := h.apply_one
   freeCumulant_two w := by
     classical
-    rw [freeCumulant_sum_smul, ← (finTwoArrowEquiv ι).symm.sum_comp, Fintype.sum_prod_type]
+    rw [Function.comp_def, freeCumulant_sum_smul φ s, ← (finTwoArrowEquiv ι).symm.sum_comp,
+      Fintype.sum_prod_type]
     simp only [h.freeCumulant_two, finTwoArrowEquiv_symm_apply, Fin.prod_univ_two,
       cons_val_zero, cons_val_one, Matrix.mul_apply, transpose_apply, sum_mul]
     rw [sum_comm]
     exact sum_congr rfl fun _ _ => sum_congr rfl fun _ _ => by ring
   freeCumulant_eq_zero hn₀ hn₂ w := by
-    classical
-    simp [freeCumulant_sum_smul, h.freeCumulant_eq_zero hn₀ hn₂]
+    rw [Function.comp_def, freeCumulant_sum_smul φ s]
+    simp [h.freeCumulant_eq_zero hn₀ hn₂]
 
 /-- *Freeness is orthogonality*: a semicircular system is freely independent exactly when its
 covariance is diagonal. -/
@@ -195,8 +188,8 @@ theorem isSemicircularSystem_diagonal_iff [DecidableEq ι] {v : ι → R} :
         else 0 := by
     by_cases hw : ∀ m, w m = w ⟨0, by omega⟩
     · have : Nonempty (Fin n) := ⟨⟨0, by omega⟩⟩
-      rw [show s ∘ w = fun _ => s (w ⟨0, by omega⟩) from funext fun m => congrArg s (hw m),
-        (hs _).freeCumulant_const univ_nonempty]
+      have hsw : s ∘ w = fun _ => s (w ⟨0, by omega⟩) := funext fun m => congrArg s (hw m)
+      rw [hsw, (hs _).freeCumulant_const univ_nonempty]
       simp [hw]
     · push Not at hw
       obtain ⟨m, hm⟩ := hw

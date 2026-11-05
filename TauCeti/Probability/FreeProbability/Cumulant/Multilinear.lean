@@ -45,6 +45,8 @@ all of `α` are bundled as multilinear maps `(α → A) → R`:
   `κ_π(a)` and `κ_s(a)` are linear in each entry `a i` with `i ∈ s`.
 * `TauCeti.freeCumulant_add_algebraMap` — for a normalised `φ`, free cumulants of order at least
   two are invariant under adding scalars to their arguments, in particular under centring.
+* `TauCeti.freeCumulant_sum_smul` — the free cumulant of linear combinations of a family expands
+  as a sum over words in the family.
 
 ## Implementation notes
 
@@ -242,6 +244,16 @@ def freeCumulantMultilinear : MultilinearMap R (fun _ : α => A) R :=
 theorem freeCumulantMultilinear_apply (a : α → A) :
     freeCumulantMultilinear φ a = freeCumulant φ a univ := by
   rw [freeCumulantMultilinear, partitionCumulantMultilinear_apply, freeCumulant_def]
+
+/-- *Multilinear expansion*: the free cumulant of the linear combinations
+`m ↦ ∑ i, c m i • s i` is the sum, over all words `v` in the family `s`, of the product of the
+coefficients `c m (v m)` times the free cumulant of `s ∘ v`. -/
+theorem freeCumulant_sum_smul {ι : Type*} [DecidableEq α] [Fintype ι] (s : ι → A)
+    (c : α → ι → R) :
+    freeCumulant φ (fun m => ∑ i, c m i • s i) univ =
+      ∑ v : α → ι, (∏ m, c m (v m)) * freeCumulant φ (s ∘ v) univ := by
+  simp_rw [← freeCumulantMultilinear_apply, MultilinearMap.map_sum, MultilinearMap.map_smul_univ,
+    smul_eq_mul, comp_def]
 
 end Cumulant
 
