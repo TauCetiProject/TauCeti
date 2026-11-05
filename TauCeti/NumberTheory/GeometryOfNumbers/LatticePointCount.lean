@@ -112,6 +112,18 @@ private theorem cellsMeeting_sdiff_subset (hFpc : IsPreconnected F) :
       hmeet ⟨z, hzc, hzX⟩
   exact ⟨⟨y, hyfr, -(y - w), by simpa using hyc, by simp⟩, hwL⟩
 
+omit [MeasurableSpace E] [BorelSpace E] [ProperSpace E] [DiscreteTopology L] in
+/-- A point lies in its own cell when the cell contains `0`. -/
+private theorem mem_cell_self (hF₀ : (0 : E) ∈ F) (w : E) : w ∈ {y : E | y - w ∈ F} := by
+  simpa using hF₀
+
+omit [MeasurableSpace E] [BorelSpace E] [ProperSpace E] [DiscreteTopology L] in
+/-- A cell inside `X` meets `X`. -/
+private theorem cellsInside_subset_cellsMeeting (hF₀ : (0 : E) ∈ F) :
+    {w : E | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X} ⊆
+      {w : E | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty} :=
+  fun w hw ↦ ⟨hw.1, ⟨w, mem_cell_self hF₀ w, hw.2 (mem_cell_self hF₀ w)⟩⟩
+
 /-- The cells inside `X` have total volume at most that of `X`, which is at most the total volume
 of the cells meeting `X`. -/
 private theorem ncard_cells_mul_measureReal_bounds
@@ -125,12 +137,11 @@ private theorem ncard_cells_mul_measureReal_bounds
   classical
   set A : Set E := {w | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X}
   set B : Set E := {w | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty}
-  have hself : ∀ w : E, w ∈ {y : E | y - w ∈ F} := fun w ↦ by simpa using hF₀
   have hdisj : ∀ w₁ ∈ (L : Set E), ∀ w₂ ∈ (L : Set E), w₁ ≠ w₂ →
       Disjoint {y : E | y - w₁ ∈ F} {y : E | y - w₂ ∈ F} := fun w₁ h₁ w₂ h₂ hne ↦
     Set.disjoint_left.mpr fun y hy₁ hy₂ ↦ hne (hFu y w₁ h₁ w₂ h₂ hy₁ hy₂)
   have hBfin : B.Finite := finite_cellsMeeting hFb hXb
-  have hAB : A ⊆ B := fun w hw ↦ ⟨hw.1, ⟨w, hself w, hw.2 (hself w)⟩⟩
+  have hAB : A ⊆ B := cellsInside_subset_cellsMeeting hF₀
   have hAfin : A.Finite := hBfin.subset hAB
   have hAmeas : μ (⋃ w ∈ hAfin.toFinset, {y : E | y - w ∈ F}) = A.ncard * μ F := by
     rw [Measure.measure_biUnion_sub_mem μ hFm hdisj
@@ -173,9 +184,9 @@ theorem abs_ncard_inter_mul_sub_measureReal_le
       (((frontier X + -F) ∩ (L : Set E)).ncard : ℝ) * μ.real F := by
   set A : Set E := {w | w ∈ (L : Set E) ∧ {y : E | y - w ∈ F} ⊆ X}
   set B : Set E := {w | w ∈ (L : Set E) ∧ ({y : E | y - w ∈ F} ∩ X).Nonempty}
-  have hself : ∀ w : E, w ∈ {y : E | y - w ∈ F} := fun w ↦ by simpa using hF₀
+  have hself := mem_cell_self hF₀
   have hBfin : B.Finite := finite_cellsMeeting hFb hXb
-  have hAB : A ⊆ B := fun w hw ↦ ⟨hw.1, ⟨w, hself w, hw.2 (hself w)⟩⟩
+  have hAB : A ⊆ B := cellsInside_subset_cellsMeeting hF₀
   have hAfin : A.Finite := hBfin.subset hAB
   have hbadfin : ((frontier X + -F) ∩ (L : Set E)).Finite :=
     L.toAddSubgroup.finite_inter
