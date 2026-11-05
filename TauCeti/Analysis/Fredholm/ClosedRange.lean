@@ -149,16 +149,12 @@ theorem _root_.ContinuousLinearMap.IsFredholm.of_comp_left_right
     (h₂ : ContinuousLinearMap.IsFredholm (T.comp S₂)) :
     ContinuousLinearMap.IsFredholm T := by
   refine .of_finite_ker_coker T ?_ ?_
-  · have hker : LinearMap.ker (T : E →ₗ[𝕜] F) ≤ LinearMap.ker (S₁.comp T : E →ₗ[𝕜] G) := by
-      intro x hx
-      rw [LinearMap.mem_ker] at hx ⊢
-      simpa only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, map_zero] using
-        congrArg S₁ hx
+  · have hker : LinearMap.ker (T : E →ₗ[𝕜] F) ≤ LinearMap.ker (S₁.comp T : E →ₗ[𝕜] G) :=
+      LinearMap.ker_le_ker_comp T.toLinearMap S₁.toLinearMap
     have := h₁.finite_ker
     exact Submodule.finiteDimensional_of_le hker
-  · have hrange : LinearMap.range (T.comp S₂ : H →ₗ[𝕜] F) ≤ LinearMap.range (T : E →ₗ[𝕜] F) := by
-      rintro y ⟨z, rfl⟩
-      exact ⟨S₂ z, rfl⟩
+  · have hrange : LinearMap.range (T.comp S₂ : H →ₗ[𝕜] F) ≤ LinearMap.range (T : E →ₗ[𝕜] F) :=
+      LinearMap.range_comp_le_range S₂.toLinearMap T.toLinearMap
     have := h₂.finite_coker
     exact FiniteDimensional.of_surjective (Submodule.factor hrange)
       (Submodule.factor_surjective hrange)

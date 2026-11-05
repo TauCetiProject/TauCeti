@@ -16,6 +16,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Topology.CompactOpen
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 
 /-!
 # Winding number, continuous logarithms, and homotopy of nowhere-zero circle functions
@@ -59,8 +60,10 @@ Toeplitz symbols.
 ## Main results
 
 * `ContinuousMap.windingNumber_mul`, `ContinuousMap.windingNumber_pow`,
-  `ContinuousMap.windingNumber_const`, `ContinuousMap.windingNumber_fourier`: algebraic rules and
-  evaluation on Fourier modes (`(fourier k).windingNumber _ = k`).
+  `ContinuousMap.windingNumber_const`, `ContinuousMap.windingNumber_fourier`,
+  `ContinuousMap.windingNumber_fourier_sub_const_of_norm_lt_one`,
+  `ContinuousMap.windingNumber_fourier_sub_const_of_one_lt_norm`: algebraic rules and evaluations on
+  Fourier modes and shifted Fourier modes.
 * `ContinuousMap.windingNumber_eq_of_homotopy`, `ContinuousMap.windingNumber_eq_of_norm_sub_lt`:
   homotopy invariance and Rouché stability of the winding number.
 * `ContinuousMap.exists_eq_fourier_mul_exp`: canonical factorization
@@ -234,6 +237,32 @@ theorem windingNumber_fourier [hT : Fact (0 < T)] (k : ℤ)
   push_cast
   field_simp
 
+/-- Subtracting a constant `w` with `‖w‖ < 1` from `fourier k` leaves its winding number equal to
+`k`. -/
+theorem windingNumber_fourier_sub_const_of_norm_lt_one [Fact (0 < T)] (k : ℤ) {w : ℂ}
+    (hw : ‖w‖ < 1)
+    (hf : ∀ x : AddCircle T, (fourier (T := T) k - ContinuousMap.const (AddCircle T) w) x ≠ 0 :=
+      fun x hx => hw.ne <| by simpa using (congrArg norm (sub_eq_zero.mp hx)).symm) :
+    (fourier (T := T) k - ContinuousMap.const (AddCircle T) w).windingNumber hf = k := by
+  have hlt (x : AddCircle T) :
+      ‖(fourier (T := T) k - ContinuousMap.const (AddCircle T) w) x - fourier k x‖ <
+        ‖fourier (T := T) k x‖ := by
+    simpa using hw
+  rw [windingNumber_eq_of_norm_sub_lt (fourier_ne_zero k) hlt, windingNumber_fourier]
+
+/-- Subtracting a constant `w` with `1 < ‖w‖` from `fourier k` produces winding number `0`. -/
+theorem windingNumber_fourier_sub_const_of_one_lt_norm (k : ℤ) {w : ℂ} (hw : 1 < ‖w‖)
+    (hf : ∀ x : AddCircle T, (fourier (T := T) k - ContinuousMap.const (AddCircle T) w) x ≠ 0 :=
+      fun x hx => hw.ne <| by simpa using congrArg norm (sub_eq_zero.mp hx)) :
+    (fourier (T := T) k - ContinuousMap.const (AddCircle T) w).windingNumber hf = 0 := by
+  have hw0 : -w ≠ 0 := neg_ne_zero.mpr (norm_pos_iff.mp (zero_lt_one.trans hw))
+  have hlt (x : AddCircle T) :
+      ‖(fourier (T := T) k - ContinuousMap.const (AddCircle T) w) x -
+          ContinuousMap.const (AddCircle T) (-w) x‖ <
+        ‖ContinuousMap.const (AddCircle T) (-w) x‖ := by
+    simpa [sub_neg_eq_add, add_sub_cancel_right] using hw
+  rw [windingNumber_eq_of_norm_sub_lt (fun _ => hw0) hlt, windingNumber_const hw0]
+
 /-- **Canonical exponential factorization of a nowhere-zero circle function.** Every nowhere-zero
 continuous `f : C(AddCircle T, ℂ)` factors as `f x = fourier (f.windingNumber hf) x * exp(g x)`
 for some continuous `g : C(AddCircle T, ℂ)`. -/
@@ -363,36 +392,6 @@ end Winding
 
 section ContourComparison
 
-/-- Direct evaluation of the contour winding integral of `t ↦ c₀ * exp(2πikt)` on `[0, 1]`. -/
-private theorem contour_windingNumber_const_mul_exp (c₀ : ℂ) (hc₀ : c₀ ≠ 0) (k : ℤ) :
-    TauCeti.Contour.windingNumber
-        (fun t : ℝ => c₀ * Complex.exp (2 * Real.pi * Complex.I * k * t)) 0 1 0 = k := by
-  set α : ℂ := 2 * (Real.pi : ℂ) * Complex.I * (k : ℂ)
-  set δ : ℝ → ℂ := fun t => c₀ * Complex.exp (α * t)
-  have h2piI : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero two_ne_zero (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero))
-      Complex.I_ne_zero
-  have hδ_ne (t : ℝ) : δ t ≠ 0 := mul_ne_zero hc₀ (Complex.exp_ne_zero _)
-  have hδ_deriv (t : ℝ) : HasDerivAt δ (δ t * α) t := by
-    have hlin : HasDerivAt (fun s : ℝ => α * (s : ℂ)) α t := by
-      simpa using (Complex.ofRealCLM.hasDerivAt (x := t)).const_mul α
-    simpa [δ, mul_assoc] using (hlin.cexp).const_mul c₀
-  have hint_eq (t : ℝ) : (δ t - 0)⁻¹ * deriv δ t = α := by
-    rw [sub_zero, (hδ_deriv t).deriv, inv_mul_cancel_left₀ (hδ_ne t)]
-  have hdiv_fun : (fun t => (δ t - 0)⁻¹ * deriv δ t) = fun _ => α := funext hint_eq
-  have hcont : ContinuousOn δ (uIcc 0 1) := by
-    refine Continuous.continuousOn ?_
-    simp only [δ]
-    fun_prop
-  have hint : IntervalIntegrable (fun t => (δ t - 0)⁻¹ * deriv δ t)
-      MeasureTheory.volume 0 1 := by
-    simp only [hint_eq]
-    exact intervalIntegrable_const
-  rw [TauCeti.Contour.windingNumber_eq_integral_of_avoidance hcont
-    (fun t _ => hδ_ne t) hint, hdiv_fun, intervalIntegral.integral_const]
-  simp only [sub_zero, one_smul, α]
-  field_simp
-
 /-- **Equality of topological and contour winding numbers on `AddCircle T`.** For a nowhere-zero
 continuous function `f : C(AddCircle T, ℂ)` whose unit-interval pullback
 `t ↦ f (((t * T : ℝ) : AddCircle T))` is piecewise `C¹` on `[0, 1]`, the integer winding number
@@ -456,7 +455,7 @@ theorem coe_windingNumber_eq_contour_windingNumber {T : ℝ} [hT : Fact (0 < T)]
       TauCeti.Contour.windingNumber q.extend 0 1 0 :=
     TauCeti.Contour.windingNumber_congr_curve (hq_eq.mono uIoo_subset_uIcc_self)
   rw [hp_wind, hhom, ← hq_wind]
-  exact (contour_windingNumber_const_mul_exp (f 0) (hf 0) k).symm
+  exact (TauCeti.Contour.windingNumber_const_mul_exp (hf 0) k).symm
 
 /-- **Equality of topological and contour winding numbers on `UnitAddCircle`.** For a nowhere-zero
 continuous symbol `f : C(UnitAddCircle, ℂ)` whose pullback `t ↦ f (t : UnitAddCircle)` is piecewise
@@ -475,36 +474,6 @@ end ContourComparison
 section ZeroPerturbation
 
 variable {T : ℝ}
-
-/-- On the unit circle, `z ↦ z - w` has winding number `1` when `‖w‖ < 1`. -/
-private theorem windingNumber_fourier_one_sub_const_of_norm_lt_one [Fact (0 < T)]
-    {w : ℂ} (hw : ‖w‖ < 1) :
-    (fourier (T := T) 1 - ContinuousMap.const (AddCircle T) w).windingNumber
-      (fun x hx => by
-        have h : ‖fourier (T := T) 1 x‖ = ‖w‖ := congrArg norm (sub_eq_zero.mp hx)
-        rw [norm_fourier_apply] at h
-        exact hw.ne h.symm) = 1 := by
-  have hlt (x : AddCircle T) :
-      ‖(fourier (T := T) 1 - ContinuousMap.const (AddCircle T) w) x - fourier 1 x‖ <
-        ‖fourier (T := T) 1 x‖ := by
-    simpa using hw
-  rw [windingNumber_eq_of_norm_sub_lt (fourier_ne_zero 1) hlt, windingNumber_fourier]
-
-/-- On the unit circle, `z ↦ z - w` has winding number `0` when `1 < ‖w‖`. -/
-private theorem windingNumber_fourier_one_sub_const_of_one_lt_norm
-    {w : ℂ} (hw : 1 < ‖w‖) :
-    (fourier (T := T) 1 - ContinuousMap.const (AddCircle T) w).windingNumber
-      (fun x hx => by
-        have h : ‖fourier (T := T) 1 x‖ = ‖w‖ := congrArg norm (sub_eq_zero.mp hx)
-        rw [norm_fourier_apply] at h
-        exact hw.ne h) = 0 := by
-  have hw0 : -w ≠ 0 := neg_ne_zero.mpr (norm_pos_iff.mp (zero_lt_one.trans hw))
-  have hlt (x : AddCircle T) :
-      ‖(fourier (T := T) 1 - ContinuousMap.const (AddCircle T) w) x -
-          ContinuousMap.const (AddCircle T) (-w) x‖ <
-        ‖ContinuousMap.const (AddCircle T) (-w) x‖ := by
-    simpa [sub_neg_eq_add, add_sub_cancel_right] using hw
-  rw [windingNumber_eq_of_norm_sub_lt (fun _ => hw0) hlt, windingNumber_const hw0]
 
 /-- Degenerate zero-perturbation step: if `‖f‖ < η < ε`, small nonzero scalar multiples of
 `fourier 1` and `fourier 0` lie within `ε` of `f` and have winding numbers `1 ≠ 0`. -/
@@ -530,6 +499,70 @@ private theorem exists_norm_sub_lt_windingNumber_ne_of_norm_lt [Fact (0 < T)]
     fun x => mul_ne_zero hc (fourier_ne_zero 0 x), hbound 1, hbound 0, ?_⟩
   simp [windingNumber_smul hc]
 
+/-- Scales unit-circle roots radially by `1 - δ` while leaving off-circle roots fixed. -/
+private def pushUnitCircleRoot (r : ℂ) (δ : ℝ) : ℂ :=
+  if ‖r‖ = 1 then ((1 - δ : ℝ) : ℂ) * r else r
+
+/-- Product of the deformed linear Fourier factors `fourier 1 - const (pushUnitCircleRoot r δ)`
+over a multiset of roots `M`. -/
+private def pushedRootsProd (M : Multiset ℂ) (δ : ℝ) : C(AddCircle T, ℂ) :=
+  (M.map fun r => fourier 1 - ContinuousMap.const (AddCircle T) (pushUnitCircleRoot r δ)).prod
+
+private theorem continuous_pushedRootsProd (M : Multiset ℂ) :
+    Continuous (pushedRootsProd (T := T) M) := by
+  refine continuous_multiset_prod M fun r _ => ?_
+  have hρ_cont : Continuous (pushUnitCircleRoot r) := by
+    unfold pushUnitCircleRoot
+    split_ifs <;> fun_prop
+  exact continuous_const.sub (ContinuousMap.continuous_const'.comp hρ_cont)
+
+private theorem pushedRootsProd_apply (M : Multiset ℂ) (δ : ℝ) (x : AddCircle T) :
+    pushedRootsProd (T := T) M δ x =
+      (M.map fun r => fourier (T := T) 1 x - pushUnitCircleRoot r δ).prod := by
+  have hprod : ∀ S : Multiset C(AddCircle T, ℂ), S.prod x = (S.map (· x)).prod :=
+    ((Pi.evalMonoidHom (fun _ : AddCircle T => ℂ) x).comp coeFnMonoidHom).map_multiset_prod
+  simp [pushedRootsProd, hprod, Function.comp_def]
+
+private theorem pushedRootsProd_apply_ne_zero (M : Multiset ℂ) {δ : ℝ} (hδ0 : 0 < δ)
+    (hδ1 : δ < 1) (x : AddCircle T) :
+    pushedRootsProd (T := T) M δ x ≠ 0 := by
+  rw [pushedRootsProd_apply]
+  refine Multiset.prod_ne_zero ?_
+  simp only [Multiset.mem_map, not_exists, not_and]
+  intro r _ hzero
+  have hnorm_eq : 1 = ‖pushUnitCircleRoot r δ‖ := by
+    simpa using congrArg norm (sub_eq_zero.mp hzero)
+  simp only [pushUnitCircleRoot] at hnorm_eq
+  split_ifs at hnorm_eq with hr
+  · rw [norm_mul, hr, mul_one, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_pos (sub_pos.mpr hδ1)] at hnorm_eq
+    linarith
+  · exact hr hnorm_eq.symm
+
+/-- Continuous one-parameter root-deformation family pushing a distinguished root `z₀` to
+`(1 + s * δ) * z₀` while pushing every unit-circle root in `M` inward to `(1 - δ) * r`. -/
+private def rootPushFamily (c z₀ : ℂ) (N : ℕ) (M : Multiset ℂ) (s δ : ℝ) : C(AddCircle T, ℂ) :=
+  (fourier 1 - ContinuousMap.const (AddCircle T) (((1 + s * δ : ℝ) : ℂ) * z₀)) *
+    (ContinuousMap.const (AddCircle T) c * fourier (-N) * pushedRootsProd M δ)
+
+private theorem continuous_rootPushFamily (c z₀ : ℂ) (N : ℕ) (M : Multiset ℂ) (s : ℝ) :
+    Continuous (rootPushFamily (T := T) c z₀ N M s) :=
+  (continuous_const.sub (ContinuousMap.continuous_const'.comp (by fun_prop))).mul
+    (continuous_const.mul (continuous_pushedRootsProd M))
+
+private theorem rootPushFamily_apply_ne_zero {c z₀ : ℂ} (hc : c ≠ 0) (hz₀ : ‖z₀‖ = 1) (N : ℕ)
+    (M : Multiset ℂ) {s δ : ℝ} (hs : s ≠ 0) (hδ0 : 0 < δ) (hδ1 : δ < 1)
+    (hpos : 0 ≤ 1 + s * δ) (x : AddCircle T) :
+    rootPushFamily (T := T) c z₀ N M s δ x ≠ 0 := by
+  refine mul_ne_zero (fun hx => ?_)
+    (mul_ne_zero (mul_ne_zero hc (fourier_ne_zero (-N) x))
+      (pushedRootsProd_apply_ne_zero M hδ0 hδ1 x))
+  have h1 : 1 = 1 + s * δ := by
+    have h := congrArg norm (sub_eq_zero.mp hx)
+    rwa [norm_fourier_apply, ContinuousMap.const_apply, norm_mul, hz₀, mul_one,
+      Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hpos] at h
+  exact mul_ne_zero hs hδ0.ne' (by linarith)
+
 /-- Root-pushing perturbation step: if `q x = fourier (-N) x * P.eval (fourier 1 x)` with `P ≠ 0`
 and `q x₀ = 0`, pushing `z₀ = fourier 1 x₀` slightly inside vs slightly outside the unit circle
 (while pushing every other unit-circle root of `P` inside) yields nowhere-zero approximations
@@ -540,100 +573,58 @@ private theorem exists_norm_sub_lt_windingNumber_ne_of_eq_fourier_mul_eval [Fact
     {x₀ : AddCircle T} (hqx₀ : q x₀ = 0) {η : ℝ} (hη : 0 < η) :
     ∃ (g₁ g₂ : C(AddCircle T, ℂ)) (hg₁ : ∀ x, g₁ x ≠ 0) (hg₂ : ∀ x, g₂ x ≠ 0),
       ‖g₁ - q‖ < η ∧ ‖g₂ - q‖ < η ∧ g₁.windingNumber hg₁ ≠ g₂.windingNumber hg₂ := by
+  -- 1. Factor out the unit-circle root `z₀ = fourier 1 x₀` of `P` and identify `q` at `δ = 0`.
   set z₀ : ℂ := fourier 1 x₀
   have hz₀_norm : ‖z₀‖ = 1 := norm_fourier_apply 1 x₀
-  have hz₀_eval : P.eval z₀ = 0 :=
+  have hz₀_mem : z₀ ∈ P.roots := (Polynomial.mem_roots hP0).mpr <|
     (mul_eq_zero.mp ((hP x₀).symm.trans hqx₀)).resolve_left (fourier_ne_zero (-N) x₀)
-  have hz₀_mem : z₀ ∈ P.roots := (Polynomial.mem_roots hP0).mpr hz₀_eval
   set M : Multiset ℂ := P.roots.erase z₀
-  have hroots : P.roots = z₀ ::ₘ M := (Multiset.cons_erase hz₀_mem).symm
-  have hsplit (z : ℂ) :
-      P.eval z = P.leadingCoeff * ((z - z₀) * (M.map fun r => z - r).prod) := by
-    rw [(IsAlgClosed.splits P).eval_eq_prod_roots, hroots, Multiset.map_cons, Multiset.prod_cons]
-  let ρ : ℂ → ℝ → ℂ := fun r δ => if ‖r‖ = 1 then ((1 - δ : ℝ) : ℂ) * r else r
-  let factor : ℂ → ℝ → C(AddCircle T, ℂ) :=
-    fun r δ => fourier 1 - ContinuousMap.const (AddCircle T) (ρ r δ)
-  let R : ℝ → C(AddCircle T, ℂ) := fun δ =>
-    ContinuousMap.const (AddCircle T) P.leadingCoeff * fourier (-N) *
-      (M.map fun r => factor r δ).prod
-  let G₁ : ℝ → C(AddCircle T, ℂ) := fun δ =>
-    (fourier 1 - ContinuousMap.const (AddCircle T) (((1 - δ : ℝ) : ℂ) * z₀)) * R δ
-  let G₂ : ℝ → C(AddCircle T, ℂ) := fun δ =>
-    (fourier 1 - ContinuousMap.const (AddCircle T) (((1 + δ : ℝ) : ℂ) * z₀)) * R δ
-  have hfactor_cont (r : ℂ) : Continuous (factor r) := by
-    have hρ_cont : Continuous (ρ r) := by simp only [ρ]; split_ifs <;> fun_prop
-    exact continuous_const.sub (ContinuousMap.continuous_const'.comp hρ_cont)
-  have hR_cont : Continuous R :=
-    continuous_const.mul (continuous_multiset_prod M fun r _ => hfactor_cont r)
-  have hG₁_cont : Continuous G₁ :=
-    (continuous_const.sub (ContinuousMap.continuous_const'.comp (by fun_prop))).mul hR_cont
-  have hG₂_cont : Continuous G₂ :=
-    (continuous_const.sub (ContinuousMap.continuous_const'.comp (by fun_prop))).mul hR_cont
-  have hprod_apply (S : Multiset C(AddCircle T, ℂ)) (x : AddCircle T) :
-      S.prod x = (S.map (· x)).prod :=
-    ((Pi.evalMonoidHom (fun _ : AddCircle T => ℂ) x).comp coeFnMonoidHom).map_multiset_prod S
-  have hq_eq_G0 : G₁ 0 = q ∧ G₂ 0 = q := by
-    have hval (x : AddCircle T) : (fourier 1 x - z₀) * R 0 x = q x := by
-      simp only [R, ContinuousMap.mul_apply, ContinuousMap.const_apply, hprod_apply,
-        Multiset.map_map, Function.comp_def, factor, ρ, sub_zero, Complex.ofReal_one, one_mul,
-        ite_self, ContinuousMap.sub_apply]
-      rw [hP x, hsplit (fourier 1 x)]
-      ring
-    exact ⟨by ext x; simpa [G₁] using hval x, by ext x; simpa [G₂] using hval x⟩
-  obtain ⟨δ₁, hδ₁_pos, hδ₁⟩ := Metric.continuousAt_iff.mp (hG₁_cont.continuousAt (x := 0)) η hη
-  obtain ⟨δ₂, hδ₂_pos, hδ₂⟩ := Metric.continuousAt_iff.mp (hG₂_cont.continuousAt (x := 0)) η hη
+  have hG0 (s : ℝ) : rootPushFamily (T := T) P.leadingCoeff z₀ N M s 0 = q := by
+    ext x
+    have hsplit : P.eval (fourier 1 x) =
+        P.leadingCoeff * ((fourier 1 x - z₀) * (M.map fun r => fourier 1 x - r).prod) := by
+      rw [(IsAlgClosed.splits P).eval_eq_prod_roots, ← Multiset.cons_erase hz₀_mem,
+        Multiset.map_cons, Multiset.prod_cons]
+    simp only [rootPushFamily, ContinuousMap.mul_apply, ContinuousMap.sub_apply,
+      ContinuousMap.const_apply, mul_zero, add_zero, Complex.ofReal_one, one_mul,
+      pushedRootsProd_apply, pushUnitCircleRoot, sub_zero, ite_self, hP x, hsplit]
+    ring
+  -- 2. Choose `δ ∈ (0, 1)` small enough that the inward (`s = -1`) and outward (`s = 1`) shifts
+  --    both stay within `η` of `q`.
+  obtain ⟨δ₁, hδ₁_pos, hδ₁⟩ := Metric.continuousAt_iff.mp
+    ((continuous_rootPushFamily (T := T) P.leadingCoeff z₀ N M (-1)).continuousAt (x := 0)) η hη
+  obtain ⟨δ₂, hδ₂_pos, hδ₂⟩ := Metric.continuousAt_iff.mp
+    ((continuous_rootPushFamily (T := T) P.leadingCoeff z₀ N M 1).continuousAt (x := 0)) η hη
   let δ : ℝ := min (1 / 2) (min (δ₁ / 2) (δ₂ / 2))
   have hδ0 : 0 < δ := by positivity
   have hδ1 : δ < 1 := lt_of_le_of_lt (min_le_left _ _) (by norm_num)
   have hδ_dist : dist δ 0 = δ := by simp [abs_of_pos hδ0]
-  have hG₁_close : ‖G₁ δ - q‖ < η := by
-    have hlt : dist δ 0 < δ₁ := by
-      rw [hδ_dist]
-      exact lt_of_le_of_lt ((min_le_right _ _).trans (min_le_left _ _)) (half_lt_self hδ₁_pos)
-    simpa [hq_eq_G0.1, dist_eq_norm] using hδ₁ hlt
-  have hG₂_close : ‖G₂ δ - q‖ < η := by
-    have hlt : dist δ 0 < δ₂ := by
-      rw [hδ_dist]
-      exact lt_of_le_of_lt ((min_le_right _ _).trans (min_le_right _ _)) (half_lt_self hδ₂_pos)
-    simpa [hq_eq_G0.2, dist_eq_norm] using hδ₂ hlt
-  have hfactor_ne (r : ℂ) (x : AddCircle T) : factor r δ x ≠ 0 := by
-    intro hzero
-    have hnorm_eq : 1 = ‖ρ r δ‖ := by simpa using congrArg norm (sub_eq_zero.mp hzero)
-    simp only [ρ] at hnorm_eq
-    split_ifs at hnorm_eq with hr
-    · rw [norm_mul, hr, mul_one, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (sub_pos.mpr hδ1)] at hnorm_eq
-      linarith
-    · exact hr hnorm_eq.symm
-  have hM_ne (x : AddCircle T) : (M.map fun r => factor r δ).prod x ≠ 0 := by
-    rw [hprod_apply]
-    refine Multiset.prod_ne_zero ?_
-    simp only [Multiset.mem_map, not_exists, not_and]
-    rintro _ ⟨r, -, rfl⟩ h0
-    exact hfactor_ne r x h0
-  have hR_ne (x : AddCircle T) : R δ x ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (Polynomial.leadingCoeff_ne_zero.mpr hP0)
-      (fourier_ne_zero (-N) x)) (hM_ne x)
-  have hw₁ : ‖((1 - δ : ℝ) : ℂ) * z₀‖ < 1 := by
-    rw [norm_mul, hz₀_norm, mul_one, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_pos (sub_pos.mpr hδ1)]
+  have hG₁_close : ‖rootPushFamily P.leadingCoeff z₀ N M (-1) δ - q‖ < η := by
+    simpa [hG0 (-1), dist_eq_norm] using hδ₁ <| hδ_dist.trans_lt <|
+      lt_of_le_of_lt ((min_le_right _ _).trans (min_le_left _ _)) (half_lt_self hδ₁_pos)
+  have hG₂_close : ‖rootPushFamily P.leadingCoeff z₀ N M 1 δ - q‖ < η := by
+    simpa [hG0 1, dist_eq_norm] using hδ₂ <| hδ_dist.trans_lt <|
+      lt_of_le_of_lt ((min_le_right _ _).trans (min_le_right _ _)) (half_lt_self hδ₂_pos)
+  -- 3. Compare the winding numbers of the inward (`‖w₁‖ < 1`) and outward (`1 < ‖w₂‖`) shifts.
+  have hc : P.leadingCoeff ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr hP0
+  have hg₁ := rootPushFamily_apply_ne_zero (T := T) hc hz₀_norm N M
+    (by norm_num : (-1 : ℝ) ≠ 0) hδ0 hδ1 (by linarith)
+  have hg₂ := rootPushFamily_apply_ne_zero (T := T) hc hz₀_norm N M
+    one_ne_zero hδ0 hδ1 (by linarith)
+  have hw₁ : ‖((1 + (-1 : ℝ) * δ : ℝ) : ℂ) * z₀‖ < 1 := by
+    rw [norm_mul, hz₀_norm, mul_one, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
     linarith
-  have hw₂ : 1 < ‖((1 + δ : ℝ) : ℂ) * z₀‖ := by
-    rw [norm_mul, hz₀_norm, mul_one, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_pos (by linarith)]
+  have hw₂ : 1 < ‖((1 + (1 : ℝ) * δ : ℝ) : ℂ) * z₀‖ := by
+    rw [norm_mul, hz₀_norm, mul_one, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
     linarith
-  have hf₁_ne (x : AddCircle T) :
-      (fourier (T := T) 1 - ContinuousMap.const (AddCircle T) (((1 - δ : ℝ) : ℂ) * z₀)) x ≠ 0 :=
-    fun hx => hw₁.ne <| by simpa using (congrArg norm (sub_eq_zero.mp hx)).symm
-  have hf₂_ne (x : AddCircle T) :
-      (fourier (T := T) 1 - ContinuousMap.const (AddCircle T) (((1 + δ : ℝ) : ℂ) * z₀)) x ≠ 0 :=
-    fun hx => hw₂.ne <| by simpa using congrArg norm (sub_eq_zero.mp hx)
-  have hG₁_ne (x : AddCircle T) : G₁ δ x ≠ 0 := mul_ne_zero (hf₁_ne x) (hR_ne x)
-  have hG₂_ne (x : AddCircle T) : G₂ δ x ≠ 0 := mul_ne_zero (hf₂_ne x) (hR_ne x)
-  refine ⟨G₁ δ, G₂ δ, hG₁_ne, hG₂_ne, hG₁_close, hG₂_close, ?_⟩
-  rw [windingNumber_mul _ _ hf₁_ne hR_ne, windingNumber_mul _ _ hf₂_ne hR_ne,
-    windingNumber_fourier_one_sub_const_of_norm_lt_one hw₁,
-    windingNumber_fourier_one_sub_const_of_one_lt_norm hw₂]
+  refine ⟨_, _, hg₁, hg₂, hG₁_close, hG₂_close, ?_⟩
+  simp only [rootPushFamily,
+    windingNumber_mul _ _ (fun x => left_ne_zero_of_mul (hg₁ x))
+      (fun x => right_ne_zero_of_mul (hg₁ x)),
+    windingNumber_mul _ _ (fun x => left_ne_zero_of_mul (hg₂ x))
+      (fun x => right_ne_zero_of_mul (hg₂ x)),
+    windingNumber_fourier_sub_const_of_norm_lt_one 1 hw₁,
+    windingNumber_fourier_sub_const_of_one_lt_norm 1 hw₂]
   omega
 
 /-- **Instability of winding at a zero.** Every continuous function `f : C(AddCircle T, ℂ)` that

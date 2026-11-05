@@ -16,21 +16,19 @@ import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.Fredholm.Pow
 
 /-!
-# Shift identities and the Gohberg–Krein Fredholm index theorem
+# The Gohberg–Krein Fredholm index theorem for continuous Toeplitz operators
 
 This file develops the Fredholm theory of Toeplitz operators `T_a` with continuous symbols
 `a : C(UnitAddCircle, ℂ)` on the boundary Hardy space `HardySpace`.
 
 ## Mathematical overview
 
-1. **Shift identities and Laurent monomial models.** The forward shift
-   `S = toeplitz (fourierLp ∞ 1)` raises the Hardy basis (`S eₙ = eₙ₊₁`), while its adjoint
-   `S† = toeplitz (fourierLp ∞ (-1))` is the backward shift (`S† e₀ = 0`, `S† eₙ₊₁ = eₙ`). They
-   satisfy `S† ∘L S = id` and the defect identity `S ∘L S† = id - P_{e₀}`, where
-   `P_{e₀} = (ℂ ∙ hardyBasis 0).starProjection` is the rank-one orthogonal projection onto the
-   constant mode. In particular `S†` is surjective with one-dimensional kernel `ℂ ∙ hardyBasis 0`,
-   so `S†` is Fredholm of index `1`, `S` is Fredholm of index `-1`, and for every `k : ℤ` the
-   monomial Toeplitz operator `toeplitz (fourierLp ∞ k)` is Fredholm of index `-k`.
+1. **Laurent monomial models.** Using the shift surjectivity and kernel formulas from
+   `TauCeti/Analysis/Fourier/Hardy/Toeplitz.lean` (`toeplitz_fourierLp_neg_one_surjective` and
+   `ker_toeplitz_fourierLp_neg_one`), the backward shift `S† = toeplitz (fourierLp ∞ (-1))` is
+   Fredholm of index `1`, its adjoint `S = toeplitz (fourierLp ∞ 1)` is Fredholm of index `-1`, and
+   for every `k : ℤ` the monomial Toeplitz operator `toeplitz (fourierLp ∞ k)` is Fredholm of index
+   `-k`.
 
 2. **Sufficiency and homotopy invariance.** When `a : C(UnitAddCircle, ℂ)` is nowhere zero, `a⁻¹`
    is also continuous, and the semicommutators `T_(a⁻¹) T_a - I` and `T_a T_(a⁻¹) - I` are compact
@@ -56,10 +54,6 @@ This file develops the Fredholm theory of Toeplitz operators `T_a` with continuo
 
 ## Main results
 
-* `TauCeti.toeplitz_fourierLp_neg_one_comp_one`, `TauCeti.toeplitz_fourierLp_one_comp_neg_one`:
-  `S† ∘L S = id` and `S ∘L S† = id - (ℂ ∙ hardyBasis 0).starProjection`.
-* `TauCeti.toeplitz_fourierLp_neg_one_surjective`, `TauCeti.ker_toeplitz_fourierLp_neg_one`:
-  surjectivity and one-dimensional kernel of the backward shift `T_(e_{-1})`.
 * `TauCeti.isFredholm_toeplitz_fourierLp`, `TauCeti.index_toeplitz_fourierLp`: for every `k : ℤ`,
   `toeplitz (fourierLp ∞ k)` is Fredholm of index `-k`.
 * `TauCeti.isFredholm_toeplitz_toLp_iff`: **Gohberg–Krein Fredholm criterion** — for continuous
@@ -90,60 +84,7 @@ open scoped ENNReal InnerProductSpace unitInterval
 
 namespace TauCeti
 
-section ShiftIdentities
-
-/-- The backward shift is a left inverse to the forward shift: `S† ∘L S = id`. -/
-@[simp]
-theorem toeplitz_fourierLp_neg_one_comp_one :
-    toeplitz (fourierLp (T := 1) ∞ (-1)) ∘L toeplitz (fourierLp (T := 1) ∞ 1) =
-      ContinuousLinearMap.id ℂ HardySpace := by
-  rw [toeplitz_comp_of_analytic]
-  · rw [fourierLp_smul_fourierLp, neg_add_cancel, toeplitz_fourierLp_zero]
-  · intro n hn
-    rw [fourierCoeff_fourierLp, ite_eq_right (by omega)]
-
-/-- **Shift defect identity.** Composing the forward shift after the backward shift differs from
-the identity by the rank-one orthogonal projection onto `ℂ ∙ hardyBasis 0`. -/
-theorem toeplitz_fourierLp_one_comp_neg_one :
-    toeplitz (fourierLp (T := 1) ∞ 1) ∘L toeplitz (fourierLp (T := 1) ∞ (-1)) =
-      ContinuousLinearMap.id ℂ HardySpace - (ℂ ∙ hardyBasis 0).starProjection := by
-  apply ContinuousLinearMap.ext_on (s := Set.range hardyBasis) (by
-    rw [dense_iff_closure_eq, ← Submodule.topologicalClosure_coe, hardyBasis.dense_span]
-    rfl)
-  rintro _ ⟨k, rfl⟩
-  cases k <;> simp [span_hardyBasis_starProjection_hardyBasis]
-
-/-- The forward shift `S = T_(e_1)` is injective: its kernel is trivial. -/
-theorem ker_toeplitz_fourierLp_one :
-    LinearMap.ker (toeplitz (fourierLp (T := 1) ∞ 1) : HardySpace →ₗ[ℂ] HardySpace) = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro f hf
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hf
-  have h := congrArg (fun T => T f) toeplitz_fourierLp_neg_one_comp_one
-  rw [ContinuousLinearMap.comp_apply, hf, map_zero, ContinuousLinearMap.id_apply] at h
-  exact h.symm
-
-/-- The backward shift `S† = T_(e_{-1})` is surjective. -/
-theorem toeplitz_fourierLp_neg_one_surjective :
-    Function.Surjective (toeplitz (fourierLp (T := 1) ∞ (-1))) := fun g =>
-  ⟨toeplitz (fourierLp (T := 1) ∞ 1) g,
-    congrArg (fun T => T g) toeplitz_fourierLp_neg_one_comp_one⟩
-
-/-- The kernel of the backward shift `S† = T_(e_{-1})` is the one-dimensional subspace spanned by
-`hardyBasis 0`. -/
-theorem ker_toeplitz_fourierLp_neg_one :
-    LinearMap.ker (toeplitz (fourierLp (T := 1) ∞ (-1)) : HardySpace →ₗ[ℂ] HardySpace) =
-      ℂ ∙ hardyBasis 0 := by
-  refine le_antisymm (fun f hf => ?_) ?_
-  · rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hf
-    have h := congrArg (fun T => T f) toeplitz_fourierLp_one_comp_neg_one
-    rw [ContinuousLinearMap.comp_apply, hf, map_zero, sub_apply, ContinuousLinearMap.id_apply,
-      eq_comm, sub_eq_zero] at h
-    rw [h, Submodule.starProjection_apply]
-    exact Submodule.coe_mem _
-  · rw [Submodule.span_le, Set.singleton_subset_iff, SetLike.mem_coe, LinearMap.mem_ker,
-      ContinuousLinearMap.coe_coe]
-    exact toeplitz_fourierLp_neg_one_hardyBasis_zero
+section MonomialModels
 
 /-- The backward shift `T_(e_{-1})` is a Fredholm operator on `HardySpace`. -/
 theorem isFredholm_toeplitz_fourierLp_neg_one :
@@ -205,7 +146,7 @@ theorem index_toeplitz_fourierLp (k : ℤ) :
       index_toeplitz_fourierLp_one]
     ring
 
-end ShiftIdentities
+end MonomialModels
 
 section GohbergKrein
 
@@ -341,26 +282,13 @@ theorem index_toeplitz_toLp_sub (a : C(UnitAddCircle, ℂ)) (ha : ∀ x, a x ≠
   rw [sub_eq_add_neg _ K]
   exact index_toeplitz_toLp_add a ha (hK.neg :)
 
-/-- Orthogonal projection onto the constant Hardy mode `ℂ ∙ hardyBasis 0` has finite rank. -/
-theorem hasFiniteRange_span_hardyBasis_zero_starProjection :
-    (((ℂ ∙ hardyBasis 0).starProjection : HardySpace →L[ℂ] HardySpace) :
-      HardySpace →ₗ[ℂ] HardySpace).HasFiniteRange := by
-  refine hardyBasis.hasFiniteRange_of_apply_eq_zero _ {0} fun k hk => ?_
-  rw [Finset.mem_singleton] at hk
-  rw [span_hardyBasis_starProjection_hardyBasis, ite_eq_right hk]
-
-/-- Orthogonal projection onto `ℂ ∙ hardyBasis 0` is a compact operator on `HardySpace`. -/
-theorem isCompactOperator_span_hardyBasis_zero_starProjection :
-    IsCompactOperator ((ℂ ∙ hardyBasis 0).starProjection : HardySpace →L[ℂ] HardySpace) :=
-  hasFiniteRange_span_hardyBasis_zero_starProjection.isCompactOperator
-
 /-- The compact perturbation `T_1 - (ℂ ∙ hardyBasis 0).starProjection` (= `S ∘L S†`) is Fredholm. -/
 theorem isFredholm_toeplitz_toLp_one_sub_span_hardyBasis_zero_starProjection :
     ContinuousLinearMap.IsFredholm
       (toeplitz
         (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ (1 : C(UnitAddCircle, ℂ))) -
           (ℂ ∙ hardyBasis 0).starProjection) :=
-  (isFredholm_toeplitz_toLp_sub_iff 1 isCompactOperator_span_hardyBasis_zero_starProjection).mpr
+  (isFredholm_toeplitz_toLp_sub_iff 1 (isCompactOperator_span_hardyBasis_starProjection 0)).mpr
     fun _ => one_ne_zero
 
 /-- The compact perturbation `T_1 - (ℂ ∙ hardyBasis 0).starProjection` has Fredholm index `0`. -/
@@ -370,7 +298,7 @@ theorem index_toeplitz_toLp_one_sub_span_hardyBasis_zero_starProjection :
         (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ (1 : C(UnitAddCircle, ℂ))) -
           (ℂ ∙ hardyBasis 0).starProjection) = 0 := by
   rw [index_toeplitz_toLp_sub 1 (fun _ => one_ne_zero)
-    isCompactOperator_span_hardyBasis_zero_starProjection, ContinuousMap.windingNumber_one,
+    (isCompactOperator_span_hardyBasis_starProjection 0), ContinuousMap.windingNumber_one,
     neg_zero]
 
 /-- Although `T_1 - (ℂ ∙ hardyBasis 0).starProjection` is a compact perturbation of `T_1` that is

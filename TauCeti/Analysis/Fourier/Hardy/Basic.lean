@@ -183,6 +183,14 @@ theorem span_hardyBasis_starProjection_hardyBasis (m n : ℕ) :
   · simp
   · simp [h, h.symm]
 
+/-- Orthogonal projection onto the line `ℂ ∙ hardyBasis m` has finite rank. -/
+theorem hasFiniteRange_span_hardyBasis_starProjection (m : ℕ) :
+    (((ℂ ∙ hardyBasis m).starProjection : HardySpace →L[ℂ] HardySpace) :
+      HardySpace →ₗ[ℂ] HardySpace).HasFiniteRange := by
+  refine hardyBasis.hasFiniteRange_of_apply_eq_zero _ {m} fun k hk => ?_
+  rw [Finset.mem_singleton] at hk
+  rw [span_hardyBasis_starProjection_hardyBasis, ite_eq_right hk]
+
 /-- Hardy coordinates are the ordinary nonnegative Fourier coefficients. -/
 theorem hardyBasis_repr (f : HardySpace) (n : ℕ) :
     hardyBasis.repr f n = fourierCoeff (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))
