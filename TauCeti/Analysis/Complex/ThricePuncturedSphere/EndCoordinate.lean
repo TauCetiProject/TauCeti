@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.SpecialFunctions.Log.DivLeIff
@@ -121,6 +122,19 @@ theorem ne_endCenter {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (q : Puncture) : w ≠
 theorem cylindricalEndLift_eq (q : Puncture) (z : ℂ) :
     q.cylindricalEndLift z = q.endCenter + q.endScale * Complex.exp (-(2 * (π : ℂ)) * z) := by
   cases q <;> simp <;> ring
+
+/-- In polar form, the end lift traverses the circle of radius `‖b_q‖ exp (-2πs)` about the
+center `c_q` of the end clockwise, starting at the argument of the scale `b_q`. -/
+theorem cylindricalEndLift_ofReal_add_ofReal_mul_I (q : Puncture) (x t : ℝ) :
+    q.cylindricalEndLift (x + t * Complex.I) =
+      circleMap q.endCenter (‖q.endScale‖ * Real.exp (-(2 * π * x)))
+        (Complex.arg q.endScale - 2 * π * t) := by
+  rw [cylindricalEndLift_eq, circleMap]
+  congr 1
+  conv_lhs => rw [← Complex.norm_mul_exp_arg_mul_I q.endScale]
+  push_cast
+  simp only [mul_assoc, ← Complex.exp_add]
+  ring_nf
 
 /-- The derivative of an end lift at `z` is `-2π` times the displacement of its value from the
 center of the end. -/
