@@ -18,8 +18,9 @@ An integrand dominated by `C * cosh (k * t)` has a primitive bounded by
 Picard iteration in a weighted space of bounded continuous functions on the whole real line.
 
 The hyperbolic secant `(cosh x)⁻¹` is square integrable on the line (`TauCeti.memLp_inv_cosh`),
-because `(cosh x)⁻² ≤ 4 (1 + x²)⁻¹`. It is the decaying solution of the scalar equations
-`v' = ∓ tanh(s) v` that model the kernels of trajectory operators.
+because `(cosh x)⁻² ≤ 4 (1 + x²)⁻¹`. It is the decaying solution of the scalar equation
+`v' = -tanh(s) v`, which describes both the kernel of `d/ds + tanh` and the cokernel (the kernel of
+the formal adjoint) of `d/ds - tanh`.
 -/
 
 public section
@@ -67,9 +68,10 @@ theorem memLp_inv_cosh : MemLp (fun x : ℝ ↦ (Real.cosh x)⁻¹) 2 := by
   have hx : 1 + |x| ≤ 2 * Real.cosh x := by
     rw [← Real.cosh_abs, Real.cosh_eq]
     linarith [Real.add_one_le_exp |x|, Real.exp_pos (-|x|)]
-  have hpos : 0 < 1 + x ^ 2 := by positivity
-  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), inv_pow, ← div_eq_mul_inv,
-    inv_le_iff_one_le_mul₀ (by positivity), div_mul_eq_mul_div, le_div_iff₀ hpos]
-  nlinarith [abs_nonneg x, sq_abs x]
+  have hx2 : 1 + x ^ 2 ≤ 4 * Real.cosh x ^ 2 := by nlinarith [abs_nonneg x, sq_abs x]
+  have hc := Real.cosh_pos x
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  calc (Real.cosh x)⁻¹ ^ 2 = 4 * (4 * Real.cosh x ^ 2)⁻¹ := by field_simp
+    _ ≤ 4 * (1 + x ^ 2)⁻¹ := by gcongr
 
 end TauCeti

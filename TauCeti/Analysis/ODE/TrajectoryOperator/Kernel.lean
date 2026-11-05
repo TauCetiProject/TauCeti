@@ -37,6 +37,8 @@ difference of dimensions of spaces of square-integrable solutions is
   `v' + A(s) v = 0`.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
+* `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
+  solution of `v' = g - A v`, with `g ∈ Lᵖ`, is the value of an element `u` with `D_A u = g`.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_eq_zero_of_hasDerivAt`: an `Lᵖ` classical
   solution of `v' = -A v` is the value of an element of the kernel of `D_A`.
 * `TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`: the kernel of `D_A` on `W^{1,2}(ℝ, F)` is
@@ -131,10 +133,47 @@ theorem exists_hasDerivAt_of_trajectoryOperator_eq_zero (hA : Continuous A)
   exact ((hcont.integral_hasStrictDerivAt 0 t).hasDerivAt.const_add c).congr_of_eventuallyEq
     (Eventually.of_forall hv)
 
+/-- **Classical solutions give elements of the weak-derivative graph.** If `v` is a classical
+solution of `v' = g - A v` with `v` and `g` in `Lᵖ(ℝ, F)`, then `v` is the value of an element `u`
+of the weak-derivative graph over `Lᵖ(ℝ, F)` with `D_A u = g`. No continuity of `A` is needed: the
+derivative `g - A v` lies in `Lᵖ` because `A` is essentially bounded. -/
+theorem exists_trajectoryOperator_ae_eq_of_hasDerivAt
+    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) {v g : ℝ → F}
+    (hv : ∀ s, HasDerivAt v (g s - A s (v s)) s) (hvp : MemLp v p) (hgp : MemLp g p) :
+    ∃ u : WeakDerivStep volume ⊤ p
+        (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      ⇑(trajectoryOperator AL u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] g ∧
+        ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+          =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := by
+  have hvp' : MemLp v p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by simpa using hvp
+  have hgp' : MemLp g p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by simpa using hgp
+  set x := hvp'.toLp v
+  set f := hgp'.toLp g
+  have hx : (x : ℝ → F) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := hvp'.coeFn_toLp
+  have hf : (f : ℝ → F) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] g := hgp'.coeFn_toLp
+  -- The derivative `g - A v` agrees almost everywhere with the `Lᵖ` path `f - A x`.
+  have hd : (fun s ↦ g s - A s (v s)) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ f s - AL s (x s) := by
+    filter_upwards [hf, hAL, hx] with s hfs hs hxs
+    rw [hfs, hs, hxs]
+  have hloc' : LocallyIntegrableOn (fun s ↦ g s - A s (v s)) (⊤ : Opens ℝ) volume := by
+    refine (Lp.locallyIntegrableOn
+      (f - (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p AL x) Fact.out).congr ?_
+    filter_upwards [Lp.coeFn_sub f ((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p AL x),
+      (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) AL x, hAL, hx, hf]
+      with s hsub hAs hALs hxs hfs
+    rw [hsub, Pi.sub_apply, hAs, ContinuousLinearMap.id_apply, hALs, hxs, hfs]
+  have h : HasWeakLineDerivOn volume ⊤ v (fun s ↦ g s - A s (v s)) 1 :=
+    hasWeakLineDerivOn_of_hasLineDerivAt ((hvp.locallyIntegrable Fact.out).locallyIntegrableOn _)
+      hloc' fun s _ ↦ by simpa using (hv s).hasFDerivAt.hasLineDerivAt 1
+  obtain ⟨u, hux, hu⟩ := exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn AL
+    ((h.congr_ae hx.symm).congr_ae_deriv hd)
+  exact ⟨u, by rw [hu]; exact hf, by rw [hux]; exact hx⟩
+
 /-- **Classical solutions lie in the kernel.** If `v` is a classical solution of `v' = -A v` that
 lies in `Lᵖ(ℝ, F)`, then `v` is the value of an element `u` of the weak-derivative graph over
-`Lᵖ(ℝ, F)` with `D_A u = 0`. No continuity of `A` is needed: the derivative `-A v` lies in `Lᵖ`
-because `A` is essentially bounded. -/
+`Lᵖ(ℝ, F)` with `D_A u = 0`. -/
 theorem exists_trajectoryOperator_eq_zero_of_hasDerivAt
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) {v : ℝ → F}
@@ -144,28 +183,9 @@ theorem exists_trajectoryOperator_eq_zero_of_hasDerivAt
       trajectoryOperator AL u = 0 ∧
         ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
           =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := by
-  have hvp' : MemLp v p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by simpa using hvp
-  set x := hvp'.toLp v
-  have hx : (x : ℝ → F) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := hvp'.coeFn_toLp
-  -- The derivative `-A v` agrees almost everywhere with the `Lᵖ` path `-(A x)`.
-  have hd : (fun s ↦ -A s (v s)) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ (0 : Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) s - AL s (x s) := by
-    filter_upwards [Lp.coeFn_zero F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)), hAL, hx]
-      with s h0 hs hxs
-    rw [h0, hs, hxs, Pi.zero_apply, zero_sub]
-  have hloc' : LocallyIntegrableOn (fun s ↦ -A s (v s)) (⊤ : Opens ℝ) volume := by
-    refine (Lp.locallyIntegrableOn
-      (-(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p AL x) Fact.out).congr ?_
-    filter_upwards [Lp.coeFn_neg ((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p AL x),
-      (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) AL x, hAL, hx]
-      with s hneg hAs hALs hxs
-    rw [hneg, Pi.neg_apply, hAs, ContinuousLinearMap.id_apply, hALs, hxs]
-  have h : HasWeakLineDerivOn volume ⊤ v (fun s ↦ -A s (v s)) 1 :=
-    hasWeakLineDerivOn_of_hasLineDerivAt ((hvp.locallyIntegrable Fact.out).locallyIntegrableOn _)
-      hloc' fun s _ ↦ by simpa using (hv s).hasFDerivAt.hasLineDerivAt 1
-  obtain ⟨u, hux, hu⟩ := exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn AL
-    ((h.congr_ae hx.symm).congr_ae_deriv hd)
-  exact ⟨u, hu, by rw [hux]; exact hx⟩
+  obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt hAL (g := 0)
+    (fun s ↦ by simpa using hv s) hvp MemLp.zero
+  exact ⟨u, Lp.eq_zero_iff_ae_eq_zero.2 hu, hux⟩
 
 end Banach
 

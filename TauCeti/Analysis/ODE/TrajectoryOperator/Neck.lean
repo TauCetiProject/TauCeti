@@ -137,33 +137,22 @@ theorem neckCoeff_le_one {R : ℝ} (hR : 0 ≤ R) (s : ℝ) : neckCoeff R s ≤ 
 theorem abs_neckCoeff_le_one {R : ℝ} (hR : 0 ≤ R) (s : ℝ) : |neckCoeff R s| ≤ 1 :=
   abs_le.2 ⟨(neg_one_lt_neckCoeff R s).le, neckCoeff_le_one hR s⟩
 
-/-- The denominator `cosh (2 s) + cosh (2 R)` of the closed form tends to infinity at `+∞`. -/
-private theorem tendsto_cosh_two_mul_add_atTop (R : ℝ) :
-    Tendsto (fun s ↦ cosh (2 * s) + cosh (2 * R)) atTop atTop :=
-  tendsto_atTop_add_const_right _ _
-    (tendsto_cosh_atTop.comp (tendsto_id.const_mul_atTop two_pos))
-
-private theorem tendsto_cosh_two_mul_add_atBot (R : ℝ) :
-    Tendsto (fun s ↦ cosh (2 * s) + cosh (2 * R)) atBot atTop :=
-  tendsto_atTop_add_const_right _ _
-    (tendsto_cosh_atBot.comp (tendsto_id.const_mul_atBot two_pos))
-
-/-- Since `a_R = 1 - 2 sinh (2 R) / D` with `D → ∞`, the coefficient tends to `1` along any
-filter on which `D` tends to infinity. -/
+/-- Since `a_R = 1 - 2 sinh (2 R) / (cosh (2 s) + cosh (2 R))`, the coefficient tends to `1`
+along any filter on which `cosh (2 s)` tends to infinity. -/
 private theorem tendsto_neckCoeff_of_tendsto {l : Filter ℝ} (R : ℝ)
-    (h : Tendsto (fun s ↦ cosh (2 * s) + cosh (2 * R)) l atTop) :
+    (h : Tendsto (fun s ↦ cosh (2 * s)) l atTop) :
     Tendsto (neckCoeff R) l (𝓝 1) := by
-  have := (tendsto_const_nhds (x := 1)).sub
-    ((tendsto_const_nhds (x := 2 * sinh (2 * R))).mul h.inv_tendsto_atTop)
+  have := (tendsto_const_nhds (x := 1)).sub ((tendsto_const_nhds (x := 2 * sinh (2 * R))).mul
+    (tendsto_atTop_add_const_right _ (cosh (2 * R)) h).inv_tendsto_atTop)
   simpa [funext (neckCoeff_eq R), div_eq_mul_inv] using this
 
 /-- The neck coefficient tends to `1` at `+∞`. -/
 theorem tendsto_neckCoeff_atTop (R : ℝ) : Tendsto (neckCoeff R) atTop (𝓝 1) :=
-  tendsto_neckCoeff_of_tendsto R (tendsto_cosh_two_mul_add_atTop R)
+  tendsto_neckCoeff_of_tendsto R (tendsto_cosh_atTop.comp (tendsto_id.const_mul_atTop two_pos))
 
 /-- The neck coefficient tends to `1` at `-∞`. -/
 theorem tendsto_neckCoeff_atBot (R : ℝ) : Tendsto (neckCoeff R) atBot (𝓝 1) :=
-  tendsto_neckCoeff_of_tendsto R (tendsto_cosh_two_mul_add_atBot R)
+  tendsto_neckCoeff_of_tendsto R (tendsto_cosh_atBot.comp (tendsto_id.const_mul_atBot two_pos))
 
 /-- The derivative of the neck coefficient,
 `a_R'(s) = 4 sinh (2 R) sinh (2 s) / (cosh (2 s) + cosh (2 R)) ^ 2`. -/
@@ -187,26 +176,29 @@ private theorem norm_deriv_neckCoeff_le (R s : ℝ) :
     rw [abs_le]
     constructor <;> linarith [sinh_lt_cosh (x := 2 * s), sinh_lt_cosh (x := -(2 * s)),
       sinh_neg (2 * s), cosh_neg (2 * s), cosh_pos (2 * R)]
-  rw [(hasDerivAt_neckCoeff R s).deriv, Real.norm_eq_abs, abs_div, abs_mul, abs_mul,
-    abs_of_pos (by positivity : (0 : ℝ) < (cosh (2 * s) + cosh (2 * R)) ^ 2),
-    abs_of_pos (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
-  calc 4 * |sinh (2 * R)| * |sinh (2 * s)|
-      ≤ 4 * |sinh (2 * R)| * (cosh (2 * s) + cosh (2 * R)) := by gcongr
+  calc ‖deriv (neckCoeff R) s‖
+      = 4 * |sinh (2 * R)| * |sinh (2 * s)| / (cosh (2 * s) + cosh (2 * R)) ^ 2 := by
+        simp [(hasDerivAt_neckCoeff R s).deriv, abs_of_pos hD]
+    _ ≤ 4 * |sinh (2 * R)| * (cosh (2 * s) + cosh (2 * R)) /
+        (cosh (2 * s) + cosh (2 * R)) ^ 2 := by gcongr
     _ = _ := by field_simp
 
 private theorem tendsto_deriv_neckCoeff_of_tendsto {l : Filter ℝ} (R : ℝ)
-    (h : Tendsto (fun s ↦ cosh (2 * s) + cosh (2 * R)) l atTop) :
+    (h : Tendsto (fun s ↦ cosh (2 * s)) l atTop) :
     Tendsto (deriv (neckCoeff R)) l (𝓝 0) := by
   refine squeeze_zero_norm (norm_deriv_neckCoeff_le R) ?_
-  simpa using (tendsto_const_nhds (x := 4 * |sinh (2 * R)|)).mul h.inv_tendsto_atTop
+  simpa using (tendsto_const_nhds (x := 4 * |sinh (2 * R)|)).mul
+    (tendsto_atTop_add_const_right _ (cosh (2 * R)) h).inv_tendsto_atTop
 
 /-- The derivative of the neck coefficient tends to `0` at `+∞`. -/
 theorem tendsto_deriv_neckCoeff_atTop (R : ℝ) : Tendsto (deriv (neckCoeff R)) atTop (𝓝 0) :=
-  tendsto_deriv_neckCoeff_of_tendsto R (tendsto_cosh_two_mul_add_atTop R)
+  tendsto_deriv_neckCoeff_of_tendsto R
+    (tendsto_cosh_atTop.comp (tendsto_id.const_mul_atTop two_pos))
 
 /-- The derivative of the neck coefficient tends to `0` at `-∞`. -/
 theorem tendsto_deriv_neckCoeff_atBot (R : ℝ) : Tendsto (deriv (neckCoeff R)) atBot (𝓝 0) :=
-  tendsto_deriv_neckCoeff_of_tendsto R (tendsto_cosh_two_mul_add_atBot R)
+  tendsto_deriv_neckCoeff_of_tendsto R
+    (tendsto_cosh_atBot.comp (tendsto_id.const_mul_atBot two_pos))
 
 /-- **The neck near `-R` is `d/ds + tanh s`.** After translation by `-R`, the neck coefficient
 differs from `-tanh` by at most `2 exp (2 (s - 2 R))`; so `a_R(s - R) → -tanh s` uniformly on
@@ -272,28 +264,6 @@ theorem hasDerivAt_inv_neckSolution (R s : ℝ) :
   convert (hasDerivAt_neckSolution R s).inv h using 1
   field_simp
 
-/-- The ratio `cosh (s - R) / cosh (s + R)` tends to `exp (-2 R)` at `+∞`. -/
-private theorem tendsto_cosh_sub_div_cosh_add_atTop (R : ℝ) :
-    Tendsto (fun s ↦ cosh (s - R) / cosh (s + R)) atTop (𝓝 (exp (-(2 * R)))) := by
-  -- In terms of `t = exp (-s)`, the ratio is `(exp (-R) + exp R t²) / (exp R + exp (-R) t²)`.
-  set g : ℝ → ℝ := fun t ↦ (exp (-R) + exp R * t ^ 2) / (exp R + exp (-R) * t ^ 2)
-  have hg : ContinuousAt g 0 :=
-    ((continuous_const.add (continuous_const.mul (continuous_pow 2))).continuousAt).div
-      ((continuous_const.add (continuous_const.mul (continuous_pow 2))).continuousAt)
-      (by simp [(exp_pos R).ne'])
-  have hg0 : g 0 = exp (-(2 * R)) := by
-    simp only [g, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero, add_zero]
-    rw [← exp_sub]
-    ring_nf
-  have heq : (fun s ↦ cosh (s - R) / cosh (s + R)) = g ∘ fun s ↦ exp (-s) := by
-    funext s
-    have := exp_pos s
-    have := exp_pos R
-    simp only [g, Function.comp_apply, cosh_eq, exp_neg, exp_sub, exp_add]
-    field_simp
-  rw [heq, ← hg0]
-  exact hg.tendsto.comp tendsto_exp_neg_atTop_nhds_zero
-
 /-- `F_R(s) / exp s → exp (-2 R)` as `s → ∞`. -/
 theorem tendsto_neckSolution_div_exp_atTop (R : ℝ) :
     Tendsto (fun s ↦ neckSolution R s / exp s) atTop (𝓝 (exp (-(2 * R)))) := by
@@ -331,49 +301,45 @@ section Banach
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- If the scalar equation `g' = b g` has a solution with `g 0 = 1` that tends to infinity at
+one end of the line, then `v' = b v` has no nonzero square-integrable solution in `F`: every
+solution is `g(s) • v 0`. -/
+private theorem squareIntegrableSolutions_neg_smul_id_eq_bot {b g : ℝ → ℝ} (hb : Continuous b)
+    (hg : ∀ s, HasDerivAt g (b s * g s) s) (hg0 : g 0 = 1) {l : Filter ℝ}
+    (hl : l = atTop ∨ l = atBot) (hgl : Tendsto g l atTop) :
+    squareIntegrableSolutions (fun s ↦ -b s • ContinuousLinearMap.id ℝ F) = ⊥ := by
+  rw [eq_bot_iff]
+  intro x hx
+  obtain ⟨v, rfl, hv, hv2⟩ := mem_squareIntegrableSolutions.1 hx
+  have hB : Continuous fun s ↦ b s • ContinuousLinearMap.id ℝ F := hb.smul continuous_const
+  have heq : v = fun s ↦ g s • v 0 :=
+    hB.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hv s)
+      (fun s ↦ by simpa [smul_smul, mul_comm] using (hg s).smul_const (v 0))
+      (t₀ := 0) (by simp [hg0])
+  rw [Submodule.mem_bot]
+  by_contra h0
+  have hvl : Tendsto (fun s ↦ ‖v s‖) l atTop := by
+    rw [heq]
+    simp_rw [norm_smul, Real.norm_eq_abs]
+    exact (tendsto_atTop_mono (fun s ↦ le_abs_self (g s)) hgl).atTop_mul_const (norm_pos_iff.2 h0)
+  rcases hl with rfl | rfl
+  · exact MeasureTheory.not_memLp_of_tendsto_norm_atTop two_ne_zero ENNReal.ofNat_ne_top hvl hv2
+  · exact MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero ENNReal.ofNat_ne_top hvl hv2
+
 /-- **`v' = a_R v` has no nonzero square-integrable solution.** Every solution is `F_R(s) • v 0`,
 which grows like `exp s` at `+∞`. In the convention `v' + A v = 0` of
 `TauCeti.squareIntegrableSolutions`, the coefficient is `A(s) = -a_R(s) • id`. -/
 theorem squareIntegrableSolutions_neg_neckCoeff_smul_id (R : ℝ) :
-    squareIntegrableSolutions (fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ F) = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  obtain ⟨v, rfl, hv, hv2⟩ := mem_squareIntegrableSolutions.1 hx
-  have hB : Continuous fun s ↦ neckCoeff R s • ContinuousLinearMap.id ℝ F :=
-    (continuous_neckCoeff R).smul continuous_const
-  have heq : v = fun s ↦ neckSolution R s • v 0 :=
-    hB.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hv s)
-      (fun s ↦ by
-        simpa [smul_smul, mul_comm] using (hasDerivAt_neckSolution R s).smul_const (v 0))
-      (t₀ := 0) (by simp)
-  rw [Submodule.mem_bot]
-  by_contra h0
-  refine MeasureTheory.not_memLp_of_tendsto_norm_atTop two_ne_zero ENNReal.ofNat_ne_top ?_ hv2
-  rw [heq]
-  simp_rw [norm_smul, Real.norm_eq_abs, abs_of_pos (neckSolution_pos R _)]
-  exact (tendsto_neckSolution_atTop R).atTop_mul_const (norm_pos_iff.2 h0)
+    squareIntegrableSolutions (fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ F) = ⊥ :=
+  squareIntegrableSolutions_neg_smul_id_eq_bot (continuous_neckCoeff R) (hasDerivAt_neckSolution R)
+    (neckSolution_zero R) (.inl rfl) (tendsto_neckSolution_atTop R)
 
 /-- **The adjoint equation `v' = -a_R v` has no nonzero square-integrable solution.** Every
 solution is `F_R(s)⁻¹ • v 0`, which grows like `exp (-s)` at `-∞`. -/
 theorem squareIntegrableSolutions_neckCoeff_smul_id (R : ℝ) :
     squareIntegrableSolutions (fun s ↦ neckCoeff R s • ContinuousLinearMap.id ℝ F) = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  obtain ⟨v, rfl, hv, hv2⟩ := mem_squareIntegrableSolutions.1 hx
-  have hB : Continuous fun s ↦ -(neckCoeff R s • ContinuousLinearMap.id ℝ F) :=
-    ((continuous_neckCoeff R).smul continuous_const).neg
-  have heq : v = fun s ↦ (neckSolution R s)⁻¹ • v 0 :=
-    hB.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hv s)
-      (fun s ↦ by
-        simpa [smul_smul, neg_smul, mul_comm] using
-          (hasDerivAt_inv_neckSolution R s).smul_const (v 0))
-      (t₀ := 0) (by simp)
-  rw [Submodule.mem_bot]
-  by_contra h0
-  refine MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero ENNReal.ofNat_ne_top ?_ hv2
-  rw [heq]
-  simp_rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 (neckSolution_pos R _))]
-  exact (tendsto_inv_neckSolution_atBot R).atTop_mul_const (norm_pos_iff.2 h0)
+  simpa using squareIntegrableSolutions_neg_smul_id_eq_bot (F := F) (continuous_neckCoeff R).neg
+    (hasDerivAt_inv_neckSolution R) (by simp) (.inr rfl) (tendsto_inv_neckSolution_atBot R)
 
 end Banach
 
@@ -474,52 +440,33 @@ theorem exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le (R : ℝ) {e : F
       prev _ u ≠ 0 ∧
         ‖trajectoryOperator AL u‖ ≤ 2 * exp (-(2 * R)) * ‖prev _ u‖ := by
   have hres : volume.restrict ((⊤ : Opens ℝ) : Set ℝ) = volume := by simp
-  have hξ : MemLp (neckTestPath R e) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
-    rw [hres]; exact memLp_neckTestPath R e
-  have hξneg : MemLp (fun s ↦ neckTestPath R e (-s)) 2
+  have hξneg : MemLp (fun s ↦ neckTestPath R e (-s)) 2 :=
+    (memLp_neckTestPath R e).comp_measurePreserving (Measure.measurePreserving_neg volume)
+  have hξneg' : MemLp (fun s ↦ neckTestPath R e (-s)) 2
       (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
     rw [hres]
-    exact (memLp_neckTestPath R e).comp_measurePreserving (Measure.measurePreserving_neg volume)
-  have hg : MemLp (neckTestImage R e) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-    hξneg.of_le_mul (continuous_neckTestImage R e).aestronglyMeasurable
-      (ae_of_all _ (norm_neckTestImage_le R e))
-  set x := hξ.toLp _
-  set f := hg.toLp _
-  have hx : (x : ℝ → F) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] neckTestPath R e :=
-    hξ.coeFn_toLp
-  have hf : (f : ℝ → F) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] neckTestImage R e :=
-    hg.coeFn_toLp
-  -- The classical derivative of `ξ_R` is the weak derivative `f - A x`.
-  have hweak : HasWeakLineDerivOn volume ⊤ (neckTestPath R e)
-      (fun s ↦ neckTestImage R e s + neckCoeff R s • neckTestPath R e s) 1 :=
-    hasWeakLineDerivOn_of_hasLineDerivAt
-      ((continuous_neckTestPath R e).locallyIntegrable.locallyIntegrableOn _)
-      (((continuous_neckTestImage R e).add ((continuous_neckCoeff R).smul
-        (continuous_neckTestPath R e))).locallyIntegrable.locallyIntegrableOn _)
-      fun s _ ↦ by simpa using (hasDerivAt_neckTestPath R e s).hasFDerivAt.hasLineDerivAt 1
-  obtain ⟨u, hux, hu⟩ := exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn AL
-    (x := x) (f := f) <| (hweak.congr_ae hx.symm).congr_ae_deriv <| by
-      filter_upwards [hx, hf, hAL] with s hxs hfs hAs
-      rw [hxs, hfs, hAs]
-      simp
+    exact hξneg
+  -- The classical derivative of `ξ_R` is `D_R ξ_R - A ξ_R`, with `D_R ξ_R` in `L²`.
+  obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt hAL
+    (fun s ↦ by simpa using hasDerivAt_neckTestPath R e s) (memLp_neckTestPath R e)
+    (hξneg.of_le_mul (continuous_neckTestImage R e).aestronglyMeasurable
+      (ae_of_all _ (norm_neckTestImage_le R e)))
   refine ⟨u, ?_, ?_⟩
   · -- `ξ_R` is continuous and nonzero at `0`, so its class is nonzero.
-    rw [hux]
     intro h0
-    have h := hx.symm.trans ((Lp.eq_zero_iff_ae_eq_zero.1 h0))
+    have h := hux.symm.trans (Lp.eq_zero_iff_ae_eq_zero.1 h0)
     rw [hres] at h
     have := congrFun ((Continuous.ae_eq_iff_eq volume (continuous_neckTestPath R e)
       continuous_zero).1 h) 0
     simp [neckTestPath, he, (cosh_pos R).ne'] at this
-  · rw [hu, hux]
-    calc ‖f‖ ≤ 2 * exp (-(2 * R)) * ‖hξneg.toLp _‖ :=
+  · calc ‖trajectoryOperator AL u‖ ≤ 2 * exp (-(2 * R)) * ‖hξneg'.toLp _‖ :=
           Lp.norm_le_mul_norm_of_ae_le_mul <| by
-            filter_upwards [hf, hξneg.coeFn_toLp] with s hfs hξs
+            filter_upwards [hu, hξneg'.coeFn_toLp] with s hfs hξs
             rw [hfs, hξs]
             exact norm_neckTestImage_le R e s
-      _ = 2 * exp (-(2 * R)) * ‖x‖ := by
+      _ = 2 * exp (-(2 * R)) * ‖prev _ u‖ := by
           congr 1
-          rw [Lp.norm_toLp, Lp.norm_toLp, hres]
+          rw [Lp.norm_toLp, Lp.norm_def, eLpNorm_congr_ae hux, hres]
           exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving
             (continuous_neckTestPath R e).aestronglyMeasurable
             (Measure.measurePreserving_neg volume))
