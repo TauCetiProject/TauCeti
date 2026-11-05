@@ -53,13 +53,11 @@ theorem gaussSum_eq_sqrt_card_mul_jacobiSym (hk : finrank ℝ E = 2 * k) {a c : 
   have : NeZero a := ⟨ha.pos.ne'⟩
   have := hL.isIntegral.finite_quotient_smul_submoduleOf_dual a
   let := Fintype.ofFinite (dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))
-  have hcov : covolume L = √(Nat.card (DiscriminantGroup L) : ℝ) :=
-    inv_injective hL.isIntegral.inv_covolume_eq_inv_sqrt_card_discriminantGroup
   have hD : (Nat.card (DiscriminantGroup L) : ℂ) = (covolume L : ℂ) ^ 2 := by
     exact_mod_cast (hL.isIntegral.det_eq_card_discriminantGroup.symm.trans (det_def L))
   rw [hL.gaussSum_eq_mul_dualGaussSum hk a c,
     hL.dualGaussSum_eq_jacobiSym hk ha (dvd_neg.mpr (Int.natCast_dvd_natCast.mpr hN))
-      hac.symm.isCoprime.neg_left, hD, ← hcov]
+      hac.symm.isCoprime.neg_left, hD, ← hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup]
   have ha0 : (a : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne a)
   have hcov0 : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_pos L).ne'
   rw [div_pow]
@@ -73,10 +71,9 @@ theorem normalized_gaussSum_eq_jacobiSym (hk : finrank ℝ E = 2 * k) {a c : ℕ
     [NeZero c] (ha : Odd a) (hN : level L ∣ c) (hac : a.Coprime c) :
     (-I) ^ k * ((c : ℂ) ^ k)⁻¹ * (covolume L : ℂ)⁻¹ * gaussSum L hL a c =
       jacobiSym ((-1) ^ k * Nat.card (DiscriminantGroup L)) a := by
-  have hcov : covolume L = √(Nat.card (DiscriminantGroup L) : ℝ) :=
-    inv_injective hL.isIntegral.inv_covolume_eq_inv_sqrt_card_discriminantGroup
   have hI : (-I) ^ k * I ^ k = 1 := by rw [← mul_pow]; simp
-  rw [hL.gaussSum_eq_sqrt_card_mul_jacobiSym hk ha hN hac, ← hcov]
+  rw [hL.gaussSum_eq_sqrt_card_mul_jacobiSym hk ha hN hac,
+    ← hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup]
   have hc0 : (c : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne c)
   have hcov0 : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_pos L).ne'
   field_simp
