@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Quantile
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 
 /-!
 # Quantiles of finite labelled laws

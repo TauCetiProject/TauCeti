@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.UniformIntegrable
+public import TauCeti.MeasureTheory.Measure.FiniteMeasure.UniformIntegrable
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.WeakConvergence
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
@@ -95,14 +95,14 @@ theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral (hp0 : p ≠ 0) (
   have hg : Continuous g := continuous_nndist_rpow_const hq.le x
   have hcoe (y : X) : (g y : ℝ≥0∞) = edist x y ^ p.toReal :=
     coe_nndist_rpow hq.le x y
-  obtain ⟨R, hR⟩ := exists_setLIntegral_le_of_tendsto_lintegral hg h
-    (by simpa only [hcoe] using hμ)
-    (by simpa only [hcoe] using hlim) hε
+  obtain ⟨R, hR⟩ := exists_setLIntegral_le_of_tendsto_lintegral hg
+    ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds L).1 h)
+    (by simpa [hcoe] using hμ) (by simpa [hcoe] using hlim) hε
   refine ⟨R ^ p.toReal⁻¹, hR.mono fun i hi ↦ ?_⟩
   have hset : {y | R ^ p.toReal⁻¹ ≤ nndist x y} = {y | R ≤ g y} := by
     ext y
     exact NNReal.rpow_inv_le_iff hq
-  simpa only [hset, hcoe] using hi
+  simpa [hset, hcoe] using hi
 
 /-- The part of a moment coming from the open region beyond a radius is a weakly lower
 semicontinuous function of the law, its integrand being lower semicontinuous. -/
@@ -150,9 +150,9 @@ theorem tendsto_lintegral_edist_rpow {q : ℝ} (hq : 0 < q) {γ : Type*} {L : Fi
     Tendsto (fun i ↦ ∫⁻ y, edist x y ^ q ∂(μs i : Measure X)) L
       (𝓝 (∫⁻ y, edist x y ^ q ∂(μ : Measure X))) := by
   simp_rw [← coe_nndist_rpow hq.le x]
-  refine tendsto_lintegral_of_tendsto_probabilityMeasure
-    (continuous_nndist_rpow_const hq.le x) h
-    fun ε hε ↦ ?_
+  refine tendsto_lintegral_of_forall_exists_setLIntegral_le
+    (continuous_nndist_rpow_const hq.le x)
+    ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds L).1 h) fun ε hε ↦ ?_
   obtain ⟨r, hr⟩ := htail ε hε
   refine ⟨(r + 1) ^ q, hr.mono fun i hi ↦ ?_⟩
   have hsub : {y | (r + 1) ^ q ≤ nndist x y ^ q} ⊆ {y | r < nndist x y} :=
