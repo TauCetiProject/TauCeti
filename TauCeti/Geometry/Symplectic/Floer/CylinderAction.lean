@@ -30,8 +30,8 @@ rewrites the right-hand side as a difference of actions of the two loops, in two
 
 * For a weakly exact form (`TauCeti.IsWeaklyExact`, the area half of symplectic asphericity) and
   a `C²` cylinder whose loop `γ_b` bounds a cap, the energy is `A_H(γ_a) - A_H(γ_b)` for the
-  action `A_H(γ) = ∫ γ̄^* ω - ∫₀¹ H(t, γ(t)) dt` of contractible loops
-  (`TauCeti.contractibleLoopAction`), the cap `γ̄` running from `γ` to its centre
+  action `A_H(γ) = ∫ v^* ω - ∫₀¹ H(t, γ(t)) dt` of contractible loops
+  (`TauCeti.contractibleLoopAction`), the cap `v` running from `γ` to its centre
   (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_sub`).
 * For an exact form `ω = dα`, such as the form of a Liouville domain, no cap is needed: for every
   `C²` cylinder the energy is `A_H(γ_a) - A_H(γ_b)` for the action
