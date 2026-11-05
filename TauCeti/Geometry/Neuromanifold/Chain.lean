@@ -104,8 +104,10 @@ theorem realizedFunctions_chain_succ {X : Fin (n + 2) → Type u}
   calc
     _ = realizedFunctions (chain f ∘ Fin.consEquiv W) := by
       simp only [realizedFunctions_def, (Fin.consEquiv W).surjective.range_comp]
-    _ = _ := (congrArg realizedFunctions (chain_comp_consEquiv f)).trans
-      (realizedFunctions_compose _ _)
+    _ = realizedFunctions (X := X 0) (Y := X (Fin.last (n + 1)))
+        (compose (f 0) (chain (X := fun i => X i.succ) (fun i => f i.succ))) :=
+      congrArg realizedFunctions (chain_comp_consEquiv f)
+    _ = _ := realizedFunctions_compose _ _
 
 /-- The functions realized by a nonempty chain are the composites of a function realized by
 its prefix and a last-layer function. -/
@@ -115,19 +117,18 @@ theorem realizedFunctions_chain_succ_last {X : Fin (n + 2) → Type u}
       Set.image2 (fun a b => b ∘ a)
         (realizedFunctions (chain (X := fun i => X i.castSucc) (fun i => f i.castSucc)))
         (realizedFunctions (f (Fin.last n))) := by
-  have hswap :
-      realizedFunctions
+  calc
+    _ = realizedFunctions (chain f ∘ Fin.snocEquiv W) := by
+      simp only [realizedFunctions_def, (Fin.snocEquiv W).surjective.range_comp]
+    _ = realizedFunctions (X := X 0) (Y := X (Fin.last (n + 1)))
         (compose (chain (X := fun i => X i.castSucc) (fun i => f i.castSucc))
-          (f (Fin.last n)) ∘ Equiv.prodComm _ _) =
-      realizedFunctions
+          (f (Fin.last n)) ∘ Equiv.prodComm _ _) :=
+      congrArg realizedFunctions (chain_comp_snocEquiv f)
+    _ = realizedFunctions (X := X 0) (Y := X (Fin.last (n + 1)))
         (compose (chain (X := fun i => X i.castSucc) (fun i => f i.castSucc))
           (f (Fin.last n))) := by
-    simp only [realizedFunctions_def, (Equiv.prodComm _ _).surjective.range_comp]
-  have hparams : realizedFunctions (chain f) =
-      realizedFunctions (chain f ∘ Fin.snocEquiv W) := by
-    simp only [realizedFunctions_def, (Fin.snocEquiv W).surjective.range_comp]
-  exact hparams.trans ((congrArg realizedFunctions (chain_comp_snocEquiv f)).trans
-    (hswap.trans (realizedFunctions_compose _ _)))
+      simp only [realizedFunctions_def, (Equiv.prodComm _ _).surjective.range_comp]
+    _ = _ := realizedFunctions_compose _ _
 
 /-- Reparametrizing every layer reparametrizes the chain by the induced map of parameter
 products. The parameter maps need not be injective or surjective. -/
