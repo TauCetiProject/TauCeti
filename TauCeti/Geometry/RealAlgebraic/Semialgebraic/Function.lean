@@ -186,33 +186,9 @@ theorem isSemialgebraicOn_of_forall_eq_iff {ι : Type*} [Finite ι] {f : (σ →
 every semialgebraic domain. -/
 theorem isSemialgebraicOn_eval [Finite τ] (p : τ → MvPolynomial σ R)
     {s : Set (σ → R)} (hs : IsSemialgebraic s) :
-    IsSemialgebraicOn (fun x i => eval x (p i)) s := by
-  refine ⟨hs, ?_⟩
-  have hgraph : Equiv.sumArrowEquivProdArrow σ τ R ⁻¹'
-      s.graphOn (fun x i => eval x (p i)) =
-      ((fun z : σ ⊕ τ → R => z ∘ Sum.inl) ⁻¹' s) ∩
-        ⋂ i, {z | eval z (X (Sum.inr i) - rename Sum.inl (p i)) = 0} := by
-    ext z
-    have hfst : (Equiv.sumArrowEquivProdArrow σ τ R z).1 = z ∘ Sum.inl := by
-      funext i
-      exact Equiv.sumArrowEquivProdArrow_apply_fst z i
-    have hsnd : (Equiv.sumArrowEquivProdArrow σ τ R z).2 = z ∘ Sum.inr := by
-      funext i
-      exact Equiv.sumArrowEquivProdArrow_apply_snd z i
-    simp only [mem_preimage, mem_graphOn, mem_inter_iff, mem_iInter, mem_ofPred_eq, hfst, hsnd]
-    constructor
-    · rintro ⟨hz, hp⟩
-      refine ⟨hz, fun i => ?_⟩
-      simpa [sub_eq_zero, MvPolynomial.eval_rename] using (congrFun hp i).symm
-    · rintro ⟨hz, hp⟩
-      refine ⟨hz, funext fun i => ?_⟩
-      have hi := hp i
-      have hi' : z (Sum.inr i) = eval (z ∘ Sum.inl) (p i) := by
-        simpa [sub_eq_zero, MvPolynomial.eval_rename] using hi
-      exact hi'.symm
-  rw [hgraph]
-  exact (hs.preimage_comp Sum.inl).inter <|
-    .iInter fun i => isSemialgebraic_eval_eq_zero (X (Sum.inr i) - rename Sum.inl (p i))
+    IsSemialgebraicOn (fun x i => eval x (p i)) s :=
+  isSemialgebraicOn_of_forall_eq_iff hs (fun i => X (Sum.inr i) - rename Sum.inl (p i))
+    fun x _ y => by simp [funext_iff, sub_eq_zero, eval_rename, eq_comm (a := y _)]
 
 /-- A polynomial map between coordinate spaces is semialgebraic. -/
 theorem isSemialgebraicMap_eval [Finite τ] (p : τ → MvPolynomial σ R) :

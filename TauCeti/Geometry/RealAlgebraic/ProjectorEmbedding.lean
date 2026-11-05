@@ -174,7 +174,7 @@ theorem isSemialgebraicOn_projector_affineChart (i : Fin (n + 1)) :
   refine isSemialgebraicOn_of_forall_eq_iff (isSemialgebraic_image_projector_affineOpen i)
     (fun k ↦ X (.inl (i, i)) * X (.inr k) - X (.inl (i.succAbove k, i))) fun a ha w ↦ ?_
   rw [mem_ofPred_eq, image_projector_affineOpen] at ha
-  have hii : a (i, i) ≠ 0 := ha.2
+  have hii : a (i, i) ≠ 0 := by simpa using ha.2
   simp only [funext_iff]
   refine forall_congr' fun k ↦ ?_
   rw [div_eq_iff hii, eq_comm, ← sub_eq_zero]
@@ -205,7 +205,7 @@ theorem isSemialgebraic_image_projector_iff [HasSemialgebraicProjections K]
       obtain rfl := projector_injective (hp.trans hp'.symm)
       refine ⟨p, ⟨hpS, hpi⟩, ?_⟩
       rw [affineChart_eq_projector_div, hp]
-      rfl
+      simp only [Matrix.of_apply, Function.curry_apply]
   · -- The image of `S` is the union over `i` of the images of the chart images under the inverse
     -- charts followed by the projector map.
     intro hS
@@ -218,11 +218,12 @@ theorem isSemialgebraic_image_projector_iff [HasSemialgebraicProjections K]
       obtain ⟨i, hi⟩ := exists_mem_affineOpen p
       refine ⟨i, affineChart i p, ⟨p, ⟨hpS, hi⟩, rfl⟩, ?_⟩
       rw [(affineChart i).left_inv (by simpa using hi), hp]
-      rfl
+      simp only [Matrix.of_apply, Function.curry_apply, Prod.mk.eta]
     · rintro ⟨i, _, ⟨p, ⟨hpS, hi⟩, rfl⟩, rfl⟩
       refine ⟨p, hpS, ?_⟩
       rw [(affineChart i).left_inv (by simpa using hi)]
-      rfl
+      ext j k
+      simp only [Matrix.of_apply, Function.curry_apply]
 
 end AffineChart
 
