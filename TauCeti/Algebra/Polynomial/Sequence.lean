@@ -54,16 +54,14 @@ theorem linearIndependent_of_isRightRegular_leadingCoeff
     rw [Finset.sum_insert ha, Finset.sum_insert ha] at hsum
     have hfg : f a = g a := hCoeff a <| by
       have hcoeff := congrArg (fun p : R[X] ↦ p.coeff a) hsum
-      rw [AddMonoidAlgebra.coeff_add, Finsupp.add_apply,
-        AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hzero, hzero,
-        add_zero, add_zero] at hcoeff
+      simp only [Polynomial.coeff_add, hzero, add_zero] at hcoeff
       simpa [leadingCoeff] using hcoeff
     rcases Finset.mem_insert.1 hi with rfl | hi
     · exact hfg
     · have := AddCommMagma.IsRightCancelAdd.toIsLeftCancelAdd R
       refine ih (AddMonoidAlgebra.ext <| Finsupp.ext fun n =>
         add_left_cancel (a := (g a • S a).coeff n) ?_) i hi
-      simpa only [hfg, AddMonoidAlgebra.coeff_add, Finsupp.add_apply] using
+      simpa only [hfg, Polynomial.coeff_add] using
         congrArg (fun p : R[X] ↦ p.coeff n) hsum
 
 end Semiring
