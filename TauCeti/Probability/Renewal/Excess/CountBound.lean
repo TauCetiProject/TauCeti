@@ -36,7 +36,7 @@ variable {Ω : Type*} {T : ℕ → Ω → ℝ≥0}
 
 /-- The next arrival is within `x` of `t` exactly when the count increases by time `t + x`.
 This includes an arrival exactly at `t + x`, even in the presence of zero increments. -/
-lemma renewalExcess_le_iff_count_lt {ω : Ω}
+lemma renewalExcess_le_iff_renewalCountNat_lt {ω : Ω}
     (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop) {t x : ℝ≥0} :
     renewalExcess T t ω ≤ x ↔ renewalCountNat T t ω < renewalCountNat T (t + x) ω := by
   rw [← Nat.succ_le_iff, le_renewalCountNat_iff hω, ← add_renewalExcess hω t]
@@ -65,7 +65,7 @@ theorem measureReal_renewalExcess_le_le_integral_sub
     Nat.cast_le.mpr (monotone_renewalCountNat T ω le_self_add)
   by_cases hx : renewalExcess T t ω ≤ x
   · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hx, ↓reduceIte, Pi.one_apply]
-    have hlt := (renewalExcess_le_iff_count_lt hω).1 hx
+    have hlt := (renewalExcess_le_iff_renewalCountNat_lt hω).1 hx
     have hle : (renewalCountNat T t ω : ℝ) + 1 ≤ renewalCountNat T (t + x) ω := by
       exact_mod_cast Nat.succ_le_of_lt hlt
     linarith
