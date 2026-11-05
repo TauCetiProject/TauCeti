@@ -43,6 +43,8 @@ difference of dimensions of spaces of square-integrable solutions is
   linearly equivalent to `TauCeti.squareIntegrableSolutions A`.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator`: the kernel of `D_A` on
   `W^{1,2}(ℝ, F)` has the dimension of `TauCeti.squareIntegrableSolutions A`.
+* `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot_iff`: `D_A` is injective on
+  `W^{1,2}(ℝ, F)` exactly when `v' + A v = 0` has no nonzero square-integrable solution.
 
 ## References
 
@@ -313,6 +315,16 @@ theorem finrank_ker_trajectoryOperator (hA : Continuous A)
     Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
       Module.finrank ℝ (squareIntegrableSolutions A) :=
   (kerTrajectoryOperatorEquiv hA AL hAL).finrank_eq
+
+/-- **Injectivity of the trajectory operator.** For a continuous family `A` of bounded operators on
+a real Banach space `F`, the trajectory operator `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` is injective
+exactly when `v' + A v = 0` has no nonzero square-integrable solution. -/
+theorem ker_trajectoryOperator_eq_bot_iff (hA : Continuous A)
+    (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).ker = ⊥ ↔ squareIntegrableSolutions A = ⊥ := by
+  rw [← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot]
+  exact (kerTrajectoryOperatorEquiv hA AL hAL).toEquiv.subsingleton_congr
 
 end SquareIntegrable
 
