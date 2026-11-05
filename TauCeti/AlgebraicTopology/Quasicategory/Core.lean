@@ -286,11 +286,11 @@ lemma le_core_of_kanComplex (A : X.Subcomplex) [KanComplex (A : SSet)] : A ≤ X
   exact (isEquivalence_iff_of_edge_eq (by simp)).1
     ((isEquivalence_of_kanComplex (mk' (⟨s, hs⟩ : (A : SSet) _⦋1⦌))).map A.ι)
 
-/-- Every map from the unit `𝟙_ SSet` factors through the core: its edges are degenerate. -/
+/-- Every map from the unit `𝟙_ SSet` factors through the core. -/
 lemma range_le_core_of_unit (f : 𝟙_ SSet.{u} ⟶ X) : Subcomplex.range f ≤ X.core := by
   rw [range_le_core_iff]
   intro y
-  -- The only `1`-simplex of `𝟙_ SSet` is degenerate.
+  -- The only `1`-simplex of `𝟙_ SSet` is degenerate, so its image is a degenerate edge.
   have : f.app _ y = X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op (f.app _ PUnit.unit) :=
     NatTrans.naturality_apply f (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op PUnit.unit
   rw [this]
@@ -313,12 +313,12 @@ lemma coreUnitHomEquiv_symm_apply_ι (f : 𝟙_ SSet.{u} ⟶ X) :
     X.coreUnitHomEquiv.symm f ≫ X.core.ι = f :=
   (rfl)
 
-/-- An edge of a product `X ⊗ Y` is an equivalence exactly when both of its projections are:
-inverses and the `2`-simplices witnessing them are formed componentwise, as the simplices of
-`X ⊗ Y` are pairs of simplices. -/
+/-- An edge of a product `X ⊗ Y` is an equivalence exactly when both of its projections are. -/
 lemma Edge.isEquivalence_tensor_iff {p₀ p₁ : (X ⊗ Y) _⦋0⦌} (e : Edge p₀ p₁) :
     e.IsEquivalence ↔ (e.map (fst X Y)).IsEquivalence ∧ (e.map (snd X Y)).IsEquivalence := by
   refine ⟨fun h ↦ ⟨h.map _, h.map _⟩, fun ⟨⟨I₁⟩, ⟨I₂⟩⟩ ↦ ⟨?_⟩⟩
+  -- The simplices of `X ⊗ Y` are pairs of simplices, so the inverse and the `2`-simplices
+  -- witnessing it are formed componentwise.
   exact
     { inv := Edge.mk (X := X ⊗ Y) (I₁.inv.edge, I₂.inv.edge)
         (Prod.ext I₁.inv.src_eq I₂.inv.src_eq) (Prod.ext I₁.inv.tgt_eq I₂.inv.tgt_eq)
