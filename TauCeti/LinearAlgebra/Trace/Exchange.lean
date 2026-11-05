@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Algebra.DirectSum.LinearMap
 import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.LinearAlgebra.Trace.Exact
+import TauCeti.LinearAlgebra.Trace.Submodule
 
 /-!
 # The trace of an endomorphism exchanging two subspaces
@@ -35,7 +36,9 @@ polynomials `W_w = A ∩ B` is its trace on `V_w`. This application is
 The proofs move traces between restrictions with two general lemmas:
 `LinearMap.trace_restrict_congr` (the traces of `f` on equal submodules agree) and
 `LinearMap.trace_restrict_restrict` (for `p ≤ q`, restricting `f` to `q` and then to `p`, viewed
-inside `q`, has the same trace as restricting `f` to `p`).
+inside `q`, has the same trace as restricting `f` to `p`). With them,
+`LinearMap.trace_restrict_sup_eq_add` says that the trace on the sum of two disjoint invariant
+subspaces is the sum of the traces on each.
 
 ## References
 
@@ -127,5 +130,34 @@ theorem trace_restrict_inf_eq_trace_restrict_sup {A B : Submodule K V} {f : V �
   -- `A ⊓ B`, seen inside `U`, is `A.comap U.subtype ⊓ B.comap U.subtype`
   exact (trace_restrict_restrict inf_le_sup _ _).symm.trans
     (trace_restrict_congr (comap_inf A B U.subtype) _ _ _)
+
+/-- **The trace is additive on a direct sum of invariant subspaces.** If `f` preserves two
+disjoint subspaces `A` and `B`, then its trace on `A ⊔ B` is the sum of its traces on `A` and on
+`B`. -/
+theorem trace_restrict_sup_eq_add {A B : Submodule K V} (hAB : Disjoint A B) {f : V →ₗ[K] V}
+    (hA : ∀ x ∈ A, f x ∈ A) (hB : ∀ x ∈ B, f x ∈ B)
+    (hAB' : ∀ x ∈ A ⊔ B, f x ∈ A ⊔ B := fun _ hx ↦
+      (sup_le (fun x hx ↦ mem_sup_left (hA x hx)) (fun x hx ↦ mem_sup_right (hB x hx)) :
+        A ⊔ B ≤ (A ⊔ B).comap f) hx) :
+    trace K (A ⊔ B : Submodule K V) (f.restrict hAB') =
+      trace K A (f.restrict hA) + trace K B (f.restrict hB) := by
+  -- inside `A ⊔ B`, the preimages of `A` and `B` span and meet in `0`
+  have hcod : Codisjoint (A.comap (A ⊔ B).subtype) (B.comap (A ⊔ B).subtype) := by
+    rw [codisjoint_iff]
+    refine map_injective_of_injective (A ⊔ B).injective_subtype ?_
+    rw [Submodule.map_sup, map_comap_subtype, map_comap_subtype, map_subtype_top,
+      inf_of_le_right le_sup_left, inf_of_le_right le_sup_right]
+  -- and the trace on their intersection `0` vanishes
+  have h0 (g : Module.End K (A.comap (A ⊔ B).subtype ⊓ B.comap (A ⊔ B).subtype :
+      Submodule K (A ⊔ B : Submodule K V))) : trace K _ g = 0 := by
+    have : Subsingleton (A.comap (A ⊔ B).subtype ⊓ B.comap (A ⊔ B).subtype :
+        Submodule K (A ⊔ B : Submodule K V)) := by
+      rw [subsingleton_iff_eq_bot, ← comap_inf, hAB.eq_bot, comap_bot, ker_subtype]
+    rw [Subsingleton.elim g 0, map_zero]
+  have h := trace_restrict_add_trace_restrict_eq_trace_add_trace_restrict_inf hcod
+    (f.restrict hAB') (fun x hx ↦ hA x hx) (fun x hx ↦ hB x hx)
+  rw [trace_restrict_restrict le_sup_left, trace_restrict_restrict le_sup_right, h0,
+    add_zero] at h
+  exact h.symm
 
 end LinearMap
