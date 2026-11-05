@@ -23,6 +23,10 @@ The convention is `∂bar_a α = (∇₁α + i ∇₂α) / 2`, with `∇ = d + a
 differentiable phases, and its first variation requires no phase regularity.
 Covariance of the equation requires `C²` phases. Where the section does not vanish,
 `∂bar_a α = 0` determines the connection from the section (`eq_of_forall_section_eq`).
+Where `∂bar_a α = 0`, the covariant derivative is complex linear,
+`d_a α (v) = v · d_a α (1)` (`covariantDerivative_eq_mul_of_equation_eq_zero`), and it controls
+the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
+(`fderiv_normSq_apply_one_sq_add_apply_I_sq`).
 
 `equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
 identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
@@ -84,6 +88,35 @@ theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace �
   have := (h.tendsto 0).comp hx
   simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
   exact this.congr fun z ↦ (sectionValue_apply x z).symm
+
+/-- The section `α = 2 (p + i q)` is as regular as its real coordinates. -/
+theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop ℕ∞}
+    (hp : ContDiff ℝ n (fun w ↦ x w 2)) (hq : ContDiff ℝ n (fun w ↦ x w 3)) :
+    ContDiff ℝ n (sectionValue x) := by
+  have hfun : sectionValue x = fun w ↦ 2 * ((ofRealCLM ∘ fun w ↦ x w 2) w +
+      (ofRealCLM ∘ fun w ↦ x w 3) w * I) := by
+    funext w
+    simp [sectionValue_apply]
+  rw [hfun]
+  exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
+    ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
+
+/-- The derivative of the section `α = 2 (p + i q)` in terms of those of its real coordinates. -/
+theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    fderiv ℝ (sectionValue x) z v =
+      2 * ((fderiv ℝ (fun w ↦ x w 2) z v : ℂ) + (fderiv ℝ (fun w ↦ x w 3) z v : ℂ) * I) := by
+  have hcp := ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt
+  have hcq := ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt
+  have h := (hcp.fun_add (hcq.mul_const I)).const_mul (2 : ℂ)
+  have hfun : sectionValue x = fun w ↦ 2 * ((ofRealCLM ∘ fun w ↦ x w 2) w +
+      (ofRealCLM ∘ fun w ↦ x w 3) w * I) := by
+    funext w
+    simp [sectionValue_apply]
+  rw [hfun, h.fderiv]
+  simp
+  ring
 
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
@@ -191,6 +224,45 @@ theorem curvature_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)
   have h := congrArg (· 0) hsol
   simp only [equation_apply_zero, PiLp.zero_apply] at h
   linarith
+
+/-- Where the holomorphicity rows `∂bar_a α = 0` hold, the covariant derivative is complex linear
+in the tangent vector: `d_a α (v) = v · d_a α (1)`. -/
+theorem covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0) (v : ℂ) :
+    covariantDerivative x z v = v * covariantDerivative x z 1 := by
+  rw [equation_apply_one] at h₁
+  rw [equation_apply_two] at h₂
+  have hI : covariantDerivative x z I = I * covariantDerivative x z 1 := by
+    apply Complex.ext <;>
+      simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply] <;>
+      linarith
+  rw [covariantDerivative_eq_re_mul_add_im_mul, hI]
+  calc (v.re : ℂ) * covariantDerivative x z 1 + v.im * (I * covariantDerivative x z 1) =
+      (v.re + v.im * I) * covariantDerivative x z 1 := by ring
+    _ = v * covariantDerivative x z 1 := by rw [re_add_im]
+
+/-- Where the holomorphicity rows `∂bar_a α = 0` hold, the gradient of `|α|²` and the covariant
+derivative of `α` satisfy `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`. -/
+theorem fderiv_normSq_apply_one_sq_add_apply_I_sq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0) :
+    fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z 1 ^ 2 +
+        fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z I ^ 2 =
+      4 * (4 * (x z 2 ^ 2 + x z 3 ^ 2)) * ‖covariantDerivative x z 1‖ ^ 2 := by
+  rw [equation_apply_one] at h₁
+  rw [equation_apply_two] at h₂
+  have hd := ((hp.hasFDerivAt.pow 2).fun_add (hq.hasFDerivAt.pow 2)).const_mul (4 : ℝ)
+  rw [hd.fderiv, covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply,
+    Complex.sq_norm, Complex.normSq_apply]
+  simp
+  -- With `A + i B = d_a α (1) / 2`, the rows give `p ∂_t p + q ∂_t q = q A - p B`, while
+  -- `p ∂_s p + q ∂_s q = p A + q B`.
+  linear_combination (64 * (x z 2 * fderiv ℝ (fun w ↦ x w 2) z I +
+      x z 3 * fderiv ℝ (fun w ↦ x w 3) z I) +
+    64 * (x z 3 * (fderiv ℝ (fun w ↦ x w 2) z 1 - x z 0 * x z 3) -
+      x z 2 * (fderiv ℝ (fun w ↦ x w 3) z 1 + x z 0 * x z 2))) *
+    (x z 2 * h₂ - x z 3 * h₁)
 
 /-- The curvature component of the linearized equation. -/
 @[simp]

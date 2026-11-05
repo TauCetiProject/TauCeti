@@ -26,13 +26,21 @@ comparison principle for `-Δ + c²` on the compact annuli `R ≤ ‖x‖ ≤ R'
 (`TauCeti.le_of_mul_le_laplacian_le_of_le_frontier`) and the limit at infinity, which controls the
 outer sphere as `R' → ∞`, then give the bound.
 
+The same bound holds for subsolutions of `-Δ + V` with a variable potential `V ≥ c²`, since the
+barrier is nonnegative and hence also a supersolution of `-Δ + V`. Such potentials arise for
+solutions of a linear equation `Δ u = V u` of indefinite sign, to which the constant form does not
+apply: both `u` and `-u` are subsolutions of `-Δ + V`, so `|u|` decays at the rate `c`.
+
 This is the decay mechanism of massive fields: for instance, outside a large disc the logarithmic
 modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`.
 
 ## Main declarations
 
-* `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: a subsolution of `-Δ + c²` on the exterior of a ball
-  which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
+* `TauCeti.le_mul_exp_of_mul_le_laplacian`: a subsolution of `-Δ + V`, `V ≥ c²`, on the exterior of
+  a ball which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
+* `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
+* `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
+  extends to the whole space for a continuous function, with a larger constant.
 
 ## References
 
@@ -81,13 +89,14 @@ private theorem laplacian_exp_barrier_le {A c ε : ℝ} (hA : 0 ≤ A) (hc : 0 �
   rw [hneg, mul_add]
   linarith
 
-/-- **Exponential decay of subsolutions of `-Δ + c²`.** Let `u` be continuous on the exterior
-`‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `c² u ≤ Δ u` there for some `c ≥ 0`
-and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
-`u x ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`. -/
-theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
+/-- **Exponential decay of subsolutions of `-Δ + V` with `V ≥ c²`.** Let `u` be continuous on the
+exterior `‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `V u ≤ Δ u` there for a
+potential `V ≥ c²`, `c ≥ 0`, and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with
+`M ≥ 0`, then `u x ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`. -/
+theorem le_mul_exp_of_mul_le_laplacian {u V : E → ℝ} {R c M : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
     (hM : 0 ≤ M) (hcont : ContinuousOn u {x | R ≤ ‖x‖})
-    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hsub : ∀ x, R < ‖x‖ → c ^ 2 * u x ≤ Δ u x)
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hV : ∀ x, R < ‖x‖ → c ^ 2 ≤ V x)
+    (hsub : ∀ x, R < ‖x‖ → V x * u x ≤ Δ u x)
     (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
     (hx : R ≤ ‖x‖) :
     u x ≤ M * Real.exp (-(c * (‖x‖ - R))) := by
@@ -120,13 +129,14 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
       exact .inr (by simpa using hy₂)
   have hyne : ∀ ⦃y : E⦄, y ∈ interior K → y ≠ 0 := fun y hy ↦
     norm_pos_iff.mp (hR.trans (hint hy))
-  refine le_of_mul_le_laplacian_le_of_le_frontier (c := fun _ ↦ c ^ 2)
+  refine le_of_mul_le_laplacian_le_of_le_frontier (c := V)
     (g := fun y ↦ A * Real.exp (-(c * ‖y‖)) + ε) hK (hcont.mono hKsub) (by fun_prop)
     (fun y hy ↦ hcd y (hint hy))
     (fun y hy ↦ (((contDiffAt_norm ℝ (hyne hy)).const_smul c).neg.exp.const_smul A).add
       contDiffAt_const)
-    (fun _ _ ↦ sq_nonneg c) (fun y hy ↦ hsub y (hint hy))
-    (fun y hy ↦ laplacian_exp_barrier_le hAnn hc hε.le (hyne hy)) (fun y hy ↦ ?_)
+    (fun y hy ↦ (sq_nonneg c).trans (hV y (hint hy))) (fun y hy ↦ hsub y (hint hy))
+    (fun y hy ↦ (laplacian_exp_barrier_le hAnn hc hε.le (hyne hy)).trans
+      (mul_le_mul_of_nonneg_right (hV y (hint hy)) (by positivity))) (fun y hy ↦ ?_)
     ⟨mem_closedBall_zero_iff.mpr (le_max_right _ _), by simpa using hx⟩
   rcases hfront hy with hy' | hy'
   · have hR₁y : R₁ ≤ ‖y‖ := hy' ▸ le_max_left _ _
@@ -136,5 +146,39 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
   · have h₁ := hbdry y hy'
     rw [← hbar, hy', sub_self, mul_zero, neg_zero, Real.exp_zero, mul_one]
     linarith
+
+/-- **Exponential decay of subsolutions of `-Δ + c²`.** Let `u` be continuous on the exterior
+`‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `c² u ≤ Δ u` there for some `c ≥ 0`
+and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
+`u x ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`. -/
+theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
+    (hM : 0 ≤ M) (hcont : ContinuousOn u {x | R ≤ ‖x‖})
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hsub : ∀ x, R < ‖x‖ → c ^ 2 * u x ≤ Δ u x)
+    (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    u x ≤ M * Real.exp (-(c * (‖x‖ - R))) :=
+  le_mul_exp_of_mul_le_laplacian (V := fun _ ↦ c ^ 2) hR hc hM hcont hcd (fun _ _ ↦ le_rfl) hsub
+    hbdry hlim hx
+
+/-- A continuous function bounded by `K exp (-c ‖x‖)` outside a compact set is bounded by
+`K' exp (-c ‖x‖)` everywhere, for some constant `K'`. -/
+theorem exists_forall_le_mul_exp_of_eventually_le {f : E → ℝ} (hf : Continuous f) {c K : ℝ}
+    (h : ∀ᶠ x in cocompact E, f x ≤ K * Real.exp (-(c * ‖x‖))) :
+    ∃ K', ∀ x, f x ≤ K' * Real.exp (-(c * ‖x‖)) := by
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp
+    (cobounded_eq_cocompact (α := E) ▸ h)
+  -- Inside the ball, bound `f x exp (c ‖x‖)` by compactness.
+  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn
+    (f := fun x ↦ f x * Real.exp (c * ‖x‖)) (by fun_prop)
+  refine ⟨max K M, fun x ↦ ?_⟩
+  have he : 0 < Real.exp (-(c * ‖x‖)) := Real.exp_pos _
+  rcases le_or_gt R ‖x‖ with hx | hx
+  · exact (hR hx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) he.le)
+  · have hb := hM x (mem_closedBall_zero_iff.mpr hx.le)
+    rw [Real.norm_eq_abs] at hb
+    calc f x = f x * Real.exp (c * ‖x‖) * Real.exp (-(c * ‖x‖)) := by
+          rw [mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+      _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
+          mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
 
 end TauCeti
