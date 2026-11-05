@@ -16,7 +16,7 @@ unit-radius semicircle law. This identifies the geometric marginal with the affi
 Beta realization, so the elementary semicircle density and cdf apply directly to
 disk coordinates.
 
-The proof specializes `map_eval_uniformBallMeasure` to dimension two.
+This is the two-dimensional case of the ball-coordinate law `map_eval_uniformBallMeasure`.
 
 ## References
 
@@ -33,7 +33,7 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 
 /-- A coordinate of a uniform point in the planar unit disk has the semicircle law. -/
-theorem map_eval_uniformBallMeasure_eq_semicircleMeasure
+@[simp] theorem map_eval_uniformBallMeasure_eq_semicircleMeasure
     {ι : Type*} [Fintype ι] (hι : Fintype.card ι = 2) (i : ι) :
     (uniformBallMeasure (0 : EuclideanSpace ℝ ι) 1).map (fun x ↦ x i) =
       semicircleMeasure := by

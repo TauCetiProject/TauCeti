@@ -18,8 +18,9 @@ construction. These measure identities connect the Beta realization of the arcsi
 law to uniform directions, and allow its density, cdf and quantiles to be used for
 circular observables.
 
-The proofs specialize `map_add_one_div_two_eval_uniformSphereMeasure` and transport
-through `circleSphereHomeomorph`.
+The circle-coordinate law is the two-dimensional case of
+`map_add_one_div_two_eval_uniformSphereMeasure`. The homeomorphism
+`circleSphereHomeomorph` identifies angles with planar unit vectors.
 
 ## References
 
@@ -36,7 +37,7 @@ open MeasureTheory ProbabilityTheory Real AddCircle
 namespace TauCeti.Probability
 
 /-- A rescaled coordinate of a uniform unit vector in two dimensions is arcsine. -/
-theorem map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
+@[simp] theorem map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
     {ι : Type*} [Fintype ι] (hι : Fintype.card ι = 2) (i : ι) :
     (uniformSphereMeasure (EuclideanSpace ℝ ι)).map (fun x ↦ (x.val i + 1) / 2) =
       arcsineMeasure := by
@@ -45,7 +46,7 @@ theorem map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
   norm_num [hι]
 
 /-- A Haar-uniform angle gives an arcsine variable by rescaling its cosine to `[0, 1]`. -/
-theorem map_add_one_div_two_cos_haarAddCircle :
+@[simp] theorem map_add_one_div_two_cos_haarAddCircle :
     (@haarAddCircle (2 * π) ⟨two_pi_pos⟩).map
       (fun θ ↦ (cos_periodic.lift θ + 1) / 2) = arcsineMeasure := by
   have h := map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
@@ -59,7 +60,7 @@ theorem map_add_one_div_two_cos_haarAddCircle :
   simp
 
 /-- A Haar-uniform angle gives an arcsine variable by rescaling its sine to `[0, 1]`. -/
-theorem map_add_one_div_two_sin_haarAddCircle :
+@[simp] theorem map_add_one_div_two_sin_haarAddCircle :
     (@haarAddCircle (2 * π) ⟨two_pi_pos⟩).map
       (fun θ ↦ (sin_periodic.lift θ + 1) / 2) = arcsineMeasure := by
   have h := map_add_one_div_two_eval_uniformSphereMeasure_eq_arcsineMeasure
