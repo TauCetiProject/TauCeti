@@ -79,43 +79,8 @@ namespace TauCeti
 section General
 
 variable {𝕜 E H M F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-
-/-- The range of `mvfderiv I i x` agrees with the range of `mfderiv I 𝓘(𝕜, F) i x` read in `F`. -/
-theorem range_mvfderiv (I : ModelWithCorners 𝕜 E H) (i : M → F) (x : M) :
-    (mvfderiv I i x).range = (mfderiv I 𝓘(𝕜, F) i x : E →L[𝕜] F).range := by
-  ext w
-  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨v, rfl⟩
-    exact ⟨tangentSpaceCastModel I x v, by rw [mvfderiv_apply_eq_mfderiv_apply]; rfl⟩
-  · rintro ⟨v, rfl⟩
-    exact ⟨(tangentSpaceCastModel I x).symm v, by rw [mvfderiv_apply_eq_mfderiv_apply]; rfl⟩
-
-/-- On a boundaryless manifold, `mvfderiv I i x`, read on the model space `E`, agrees with the
-Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
-differentiability hypothesis (both vanish when `i` is not differentiable at `x`). -/
-theorem mvfderiv_comp_tangentSpaceCastModel_symm [I.Boundaryless] (i : M → F) (x : M) :
-    (mvfderiv I i x).comp ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x) =
-      fderiv 𝕜 (i ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  by_cases hi : MDifferentiableAt I 𝓘(𝕜, F) i x
-  · ext v
-    exact DFunLike.congr_fun hi.mvfderiv_eq_fderiv_comp_extChartAt_symm v
-  · have hi' : ¬DifferentiableAt 𝕜 (i ∘ (extChartAt I x).symm) (extChartAt I x x) :=
-      hi ∘ mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.mpr
-    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hi, ContinuousLinearMap.comp_zero,
-      ContinuousLinearMap.zero_comp, fderiv_zero_of_not_differentiableAt hi']
-
-/-- On a boundaryless manifold, the range of `mvfderiv I i x` equals the range of the Fréchet
-derivative of the preferred coordinate expression at `extChartAt I x x`. -/
-theorem range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm [I.Boundaryless] (i : M → F) (x : M) :
-    (mvfderiv I i x).range = (fderiv 𝕜 (i ∘ (extChartAt I x).symm) (extChartAt I x x)).range := by
-  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.range_comp_of_range_eq_top]
-  exact LinearMap.range_eq_top.mpr (tangentSpaceCastModel I x).symm.surjective
-
-variable [FiniteDimensional 𝕜 E] {i j : M → F} {x : M}
+  [FiniteDimensional 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
+  [ChartedSpace H M] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {i j : M → F} {x : M}
 
 /-- The **second fundamental form** of a map `i : M → F` from a manifold into an inner product
 space at `x : M`: the second fundamental form of the preferred coordinate expression

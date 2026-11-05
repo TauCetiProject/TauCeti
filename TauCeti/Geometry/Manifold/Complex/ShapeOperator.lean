@@ -121,28 +121,6 @@ theorem _root_.MDifferentiableAt.I_smul_mem_normalSubspace_iff
   exact ⟨fun h ↦ by simpa [smul_smul] using Submodule.smul_mem _ (-I) h,
     fun h ↦ Submodule.smul_mem _ I h⟩
 
-/-- For a complex-differentiable map into a normed space, injectivity of the real manifold
-derivative is equivalent to injectivity of the complex manifold derivative. -/
-theorem _root_.MDifferentiableAt.injective_mvfderiv_restrictScalars_iff
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] {g : M → G}
-    (hg : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, G) g x) :
-    Injective (mvfderiv 𝓘(ℝ, E) g x) ↔ Injective (mvfderiv 𝓘(ℂ, E) g x) := by
-  have hextC : ((extChartAt 𝓘(ℂ, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
-  have hextC' : extChartAt 𝓘(ℂ, E) x x = chartAt E x x := by simp
-  have hd : DifferentiableAt ℂ (g ∘ (chartAt E x).symm) (chartAt E x x) := by
-    simpa only [hextC, hextC'] using hg.differentiableAt_comp_extChartAt_symm
-  have hR : Injective (mvfderiv 𝓘(ℝ, E) g x) ↔
-      Injective (fderiv ℝ (g ∘ (chartAt E x).symm) (chartAt E x x)) := by
-    rw [(hg.restrictScalars ℝ).fderiv_comp_chartAt_symm]
-    -- `TangentSpace 𝓘(ℝ, E) x` and `E` are definitionally the same type.
-    rfl
-  have hC : Injective (mvfderiv 𝓘(ℂ, E) g x) ↔
-      Injective (fderiv ℂ (g ∘ (chartAt E x).symm) (chartAt E x x)) := by
-    rw [hg.fderiv_comp_chartAt_symm]
-    -- `TangentSpace 𝓘(ℂ, E) x` and `E` are definitionally the same type.
-    rfl
-  exact hR.trans ((hd.injective_fderiv_restrictScalars_iff ℝ).trans hC.symm)
-
 end NormalSpace
 
 section FiniteDimensional
@@ -161,6 +139,16 @@ private theorem manifoldShapeOperator_self_apply (i : M → F) (x : M) (ν : F) 
     (I := 𝓘(ℝ, E)) (i := i) (x := x) ν v).trans ?_
   rw [hext, hext']
   rfl
+
+private theorem manifoldShapeOperator_eq_shapeOperator_comp_chartAt_symm
+    (i : M → F) (x : M) (ν : F) :
+    (manifoldShapeOperator 𝓘(ℝ, E) i x ν : Module.End ℝ E) =
+      shapeOperator (i ∘ (chartAt E x).symm) (chartAt E x x) ν := by
+  ext v
+  -- On `𝓘(ℝ, E)`, `tangentSpaceCastModel 𝓘(ℝ, E) x` is the identity on `E`.
+  have hcast : (manifoldShapeOperator 𝓘(ℝ, E) i x ν : Module.End ℝ E) v =
+      tangentSpaceCastModel 𝓘(ℝ, E) x (manifoldShapeOperator 𝓘(ℝ, E) i x ν v) := rfl
+  exact hcast.trans (manifoldShapeOperator_self_apply (E := E) i x ν v)
 
 /-! ### Complex bilinearity of `manifoldSecondFundamentalForm` -/
 
@@ -286,47 +274,34 @@ theorem _root_.ContMDiffAt.manifoldShapeOperator_I_smul_apply_eq_ofComplexManifo
   rw [hw]
   exact hi.manifoldShapeOperator_I_smul_apply ν v₀
 
-/-- Multiplication by `I` on `E`, viewed as a real linear equivalence of
-`TangentSpace 𝓘(ℝ, E) x`. -/
-private def complexMulEquiv (x : M) : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, E) x :=
-  (LinearEquiv.smulOfNeZero ℂ E I I_ne_zero).restrictScalars ℝ
-
-private theorem manifoldShapeOperator_mul_add_mul_eq_zero
-    (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (ν : F) :
-    manifoldShapeOperator 𝓘(ℝ, E) i x ν * (complexMulEquiv (E := E) (M := M) x :
-        Module.End ℝ (TangentSpace 𝓘(ℝ, E) x)) +
-      (complexMulEquiv (E := E) (M := M) x : Module.End ℝ (TangentSpace 𝓘(ℝ, E) x)) *
-        manifoldShapeOperator 𝓘(ℝ, E) i x ν = 0 := by
-  ext v
-  let v₀ : E := v
-  rw [LinearMap.add_apply, LinearMap.zero_apply, mul_eq_comp, mul_eq_comp,
-    LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe]
-  refine (tangentSpaceCastModel 𝓘(ℝ, E) x).injective ?_
-  -- On `𝓘(ℝ, E)`, `complexMulEquiv x` is multiplication by `I` and `tangentSpaceCastModel` is `id`.
-  have h1 : tangentSpaceCastModel 𝓘(ℝ, E) x
-      (manifoldShapeOperator 𝓘(ℝ, E) i x ν (complexMulEquiv (E := E) (M := M) x v)) =
-      tangentSpaceCastModel 𝓘(ℝ, E) x (manifoldShapeOperator 𝓘(ℝ, E) i x ν (I • v₀)) := rfl
-  have h2 : tangentSpaceCastModel 𝓘(ℝ, E) x
-      (complexMulEquiv (E := E) (M := M) x (manifoldShapeOperator 𝓘(ℝ, E) i x ν v)) =
-      I • tangentSpaceCastModel 𝓘(ℝ, E) x (manifoldShapeOperator 𝓘(ℝ, E) i x ν v₀) := rfl
-  rw [map_add, map_zero, h1, h2, hi.manifoldShapeOperator_apply_I_smul, neg_add_cancel]
-
 /-- **Paired principal curvatures on a complex manifold.** For a map `i : M → F` which is `C²` over
 `ℂ` at `x`, the generalized `κ`- and `-κ`-eigenspaces of `manifoldShapeOperator 𝓘(ℝ, E) i x ν` have
 the same real dimension. -/
 theorem _root_.ContMDiffAt.finrank_genEigenspace_manifoldShapeOperator_neg
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (ν : F) (κ : ℝ) (k : ℕ∞) :
     finrank ℝ (genEigenspace (manifoldShapeOperator 𝓘(ℝ, E) i x ν) (-κ) k) =
-      finrank ℝ (genEigenspace (manifoldShapeOperator 𝓘(ℝ, E) i x ν) κ k) :=
-  finrank_genEigenspace_neg_of_anticommute _ (manifoldShapeOperator_mul_add_mul_eq_zero hi ν) κ k
+      finrank ℝ (genEigenspace (manifoldShapeOperator 𝓘(ℝ, E) i x ν) κ k) := by
+  -- `TangentSpace 𝓘(ℝ, E) x` and `E` are definitionally the same real vector space.
+  let S : Module.End ℝ E := manifoldShapeOperator 𝓘(ℝ, E) i x ν
+  have hS : S = shapeOperator (i ∘ (chartAt E x).symm) (chartAt E x x) ν :=
+    manifoldShapeOperator_eq_shapeOperator_comp_chartAt_symm i x ν
+  exact (congrArg (fun T : Module.End ℝ E ↦ finrank ℝ (genEigenspace T (-κ) k)) hS).trans
+    ((hi.contDiffAt_comp_chartAt_symm.finrank_genEigenspace_shapeOperator_neg ν κ k).trans
+      (congrArg (fun T : Module.End ℝ E ↦ finrank ℝ (genEigenspace T κ k)) hS.symm))
 
 /-- For a map `i : M → F` which is `C²` over `ℂ` at `x`, `-κ` is an eigenvalue of
 `manifoldShapeOperator 𝓘(ℝ, E) i x ν` if and only if `κ` is. -/
 theorem _root_.ContMDiffAt.hasEigenvalue_manifoldShapeOperator_neg_iff
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (ν : F) {κ : ℝ} :
     (manifoldShapeOperator 𝓘(ℝ, E) i x ν).HasEigenvalue (-κ) ↔
-      (manifoldShapeOperator 𝓘(ℝ, E) i x ν).HasEigenvalue κ :=
-  hasEigenvalue_neg_iff_of_anticommute _ (manifoldShapeOperator_mul_add_mul_eq_zero hi ν)
+      (manifoldShapeOperator 𝓘(ℝ, E) i x ν).HasEigenvalue κ := by
+  -- `TangentSpace 𝓘(ℝ, E) x` and `E` are definitionally the same real vector space.
+  let S : Module.End ℝ E := manifoldShapeOperator 𝓘(ℝ, E) i x ν
+  have hS : S = shapeOperator (i ∘ (chartAt E x).symm) (chartAt E x x) ν :=
+    manifoldShapeOperator_eq_shapeOperator_comp_chartAt_symm i x ν
+  exact (congrArg (fun T : Module.End ℝ E ↦ T.HasEigenvalue (-κ)) hS).to_iff.trans
+    ((hi.contDiffAt_comp_chartAt_symm.hasEigenvalue_shapeOperator_neg_iff ν).trans
+      (congrArg (fun T : Module.End ℝ E ↦ T.HasEigenvalue κ) hS.symm).to_iff)
 
 /-- For a map `i : M → F` which is `C²` over `ℂ` at `x`, the generalized `0`-eigenspaces of
 `manifoldShapeOperator 𝓘(ℝ, E) i x ν` (in particular its kernel) are invariant under `I • ·`. -/
@@ -334,9 +309,8 @@ theorem _root_.ContMDiffAt.I_smul_mem_genEigenspace_manifoldShapeOperator_zero
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (ν : F) (k : ℕ∞) {v : E}
     (hv : v ∈ genEigenspace (manifoldShapeOperator 𝓘(ℝ, E) i x ν : Module.End ℝ E) 0 k) :
     I • v ∈ genEigenspace (manifoldShapeOperator 𝓘(ℝ, E) i x ν : Module.End ℝ E) 0 k := by
-  have h := mapsTo_genEigenspace_neg_of_anticommute
-    (manifoldShapeOperator_mul_add_mul_eq_zero hi ν) 0 k hv
-  rwa [neg_zero] at h
+  rw [manifoldShapeOperator_eq_shapeOperator_comp_chartAt_symm] at hv ⊢
+  exact hi.contDiffAt_comp_chartAt_symm.I_smul_mem_genEigenspace_shapeOperator_zero ν k hv
 
 /-- On a smooth complex manifold, the generalized `0`-eigenspaces of
 `manifoldShapeOperator 𝓘(ℝ, E) i x ν` are preserved by
@@ -375,7 +349,7 @@ theorem _root_.ContMDiffAt.finrank_ker_criticalHessian_norm_sq_sub_sub_comp
           TangentSpace 𝓘(ℝ, E) x →ₗ[ℝ] TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ)) := by
   have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by simpa using hi.restrictScalars ℝ
   have hR : Injective (mvfderiv 𝓘(ℝ, E) i x) :=
-    (hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff.mpr h
+    ((hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff ℝ).mpr h
   rw [ker_criticalHessian_norm_sq_sub_comp hiR hR (by simpa [sub_sub_cancel] using hν),
     ker_criticalHessian_norm_sq_sub_comp hiR hR
       (by simpa [sub_add_cancel_left] using Submodule.neg_mem _ hν),
@@ -392,13 +366,12 @@ theorem _root_.ContMDiffAt.isManifoldNondegenerateCriticalPoint_norm_sq_sub_sub_
       IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) (fun y ↦ ‖i y - (i x + ν)‖ ^ 2) x := by
   have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by simpa using hi.restrictScalars ℝ
   have hR : Injective (mvfderiv 𝓘(ℝ, E) i x) :=
-    (hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff.mpr h
+    ((hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff ℝ).mpr h
   rw [isManifoldNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR,
-    isManifoldNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR, sub_sub_cancel,
-    sub_add_cancel_left, Submodule.neg_mem_iff, sub_sub_cancel_left, add_sub_cancel_left,
-    manifoldShapeOperator_neg, Module.End.hasEigenvalue_iff, Module.End.hasEigenvalue_iff,
-    eigenspace, eigenspace, genEigenspace_neg, ← Module.End.hasEigenvalue_iff,
-    ← Module.End.hasEigenvalue_iff, hi.hasEigenvalue_manifoldShapeOperator_neg_iff]
+    isManifoldNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR]
+  simp only [sub_sub_cancel, sub_add_cancel_left, Submodule.neg_mem_iff, sub_sub_cancel_left,
+    add_sub_cancel_left, manifoldShapeOperator_neg]
+  rw [Module.End.hasEigenvalue_neg_iff, hi.hasEigenvalue_manifoldShapeOperator_neg_iff]
 
 /-- **Symmetric Morse indices along a normal line on a complex manifold.** For a `C²` holomorphic
 immersion `i : M → F` and a normal vector `ν ∈ normalSubspace 𝓘(ℝ, E) i x`, the squared-distance
@@ -411,7 +384,7 @@ theorem _root_.ContMDiffAt.manifoldMorseIndex_norm_sq_sub_sub_comp
       manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - (i x + ν)‖ ^ 2) x := by
   have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by simpa using hi.restrictScalars ℝ
   have hR : Injective (mvfderiv 𝓘(ℝ, E) i x) :=
-    (hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff.mpr h
+    ((hi.mdifferentiableAt two_ne_zero).injective_mvfderiv_restrictScalars_iff ℝ).mpr h
   have ha₁ : i x - (i x - ν) ∈ normalSubspace 𝓘(ℝ, E) i x := by rwa [sub_sub_cancel]
   have ha₂ : i x - (i x + ν) ∈ normalSubspace 𝓘(ℝ, E) i x := by
     simpa [sub_add_cancel_left] using Submodule.neg_mem _ hν

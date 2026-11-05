@@ -27,6 +27,8 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `TauCeti.range_mvfderiv`: the range of `mvfderiv I g x` agrees with the range of
+  `mfderiv I 𝓘(𝕜, F) g x` read in `F`.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
@@ -68,6 +70,17 @@ theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
     mvfderiv I f x v = mfderiv I 𝓘(𝕜, F) f x v := by
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
+
+/-- The range of `mvfderiv I g x` agrees with the range of `mfderiv I 𝓘(𝕜, F) g x` read in `F`. -/
+theorem range_mvfderiv (I : ModelWithCorners 𝕜 E H) (g : M → F) (x : M) :
+    (mvfderiv I g x).range = (mfderiv I 𝓘(𝕜, F) g x : E →L[𝕜] F).range := by
+  ext w
+  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨v, rfl⟩
+    exact ⟨tangentSpaceCastModel I x v, by rw [mvfderiv_apply_eq_mfderiv_apply]; rfl⟩
+  · rintro ⟨v, rfl⟩
+    exact ⟨(tangentSpaceCastModel I x).symm v, by rw [mvfderiv_apply_eq_mfderiv_apply]; rfl⟩
 
 /-- The derivative at `x` of a vector-valued function, read in the target space, depends only on
 the germ of the function at `x`. -/

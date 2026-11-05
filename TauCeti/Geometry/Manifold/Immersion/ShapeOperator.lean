@@ -27,10 +27,11 @@ unique endomorphism `S` of `TangentSpace I x` satisfying the Weingarten / defini
 
 `⟪mvfderiv I i x (S v), mvfderiv I i x w⟫ = ⟪ν, manifoldSecondFundamentalForm I i x v w⟫`
 
-for the induced metric on `TangentSpace I x`. It is linear in `ν`, depends only on the orthogonal
-projection of `ν` onto `TauCeti.normalSubspace I i x`, is self-adjoint for the induced metric when
-`i` is `C²` at `x`, is independent of the choice of chart in `IsManifold.maximalAtlas I 2 M`, and
-transforms equivariantly under `C²` local diffeomorphisms and diffeomorphisms.
+for the induced metric on `TangentSpace I x`. It is linear in `ν` and depends only on the
+orthogonal projection of `ν` onto `TauCeti.normalSubspace I i x`. When `i` is `C²` at `x`
+(`ContMDiffAt I 𝓘(ℝ, V) 2 i x`), it is self-adjoint for the induced metric, is independent of the
+choice of chart in `IsManifold.maximalAtlas I 2 M`, and transforms equivariantly under `C²` local
+diffeomorphisms and diffeomorphisms.
 
 For the squared-distance function `ρ_a(y) = ‖i y - a‖²` along a `C²` immersion `i : M → V`:
 
@@ -102,9 +103,9 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 `tangentSpaceCastModel I x`.
 
 When `I` is boundaryless and `mvfderiv I i x` is injective, it is characterized intrinsically by
-`TauCeti.eq_manifoldShapeOperator_iff` and is independent of the choice of `C²` chart
-(`ContMDiffAt.mvfderiv_extend_manifoldShapeOperator_apply_of_mem_maximalAtlas`). When
-`mvfderiv I i x` is not injective it is `0`. -/
+`TauCeti.eq_manifoldShapeOperator_iff`; when `mvfderiv I i x` is not injective it is `0`. When `I`
+is boundaryless and `ContMDiffAt I 𝓘(ℝ, V) 2 i x`, it is independent of the choice of `C²` chart
+(`ContMDiffAt.mvfderiv_extend_manifoldShapeOperator_apply_of_mem_maximalAtlas`). -/
 def manifoldShapeOperator (I : ModelWithCorners ℝ E H) (i : M → V) (x : M) (ν : V) :
     Module.End ℝ (TangentSpace I x) :=
   (tangentSpaceCastModel I x).toLinearEquiv.symm.conj
@@ -185,28 +186,6 @@ theorem manifoldShapeOperator_sub (ν ν' : V) :
 section Boundaryless
 
 variable [I.Boundaryless]
-
-omit [FiniteDimensional ℝ E] in
-/-- On a boundaryless manifold, `mvfderiv I i x` evaluated on `v` equals the Fréchet derivative of
-the preferred coordinate expression evaluated on `tangentSpaceCastModel I x v` (without any
-differentiability assumption). -/
-private theorem mvfderiv_apply_eq_fderiv_comp_extChartAt_symm (i : M → V) (x : M)
-    (v : TangentSpace I x) :
-    mvfderiv I i x v =
-      fderiv ℝ (i ∘ (extChartAt I x).symm) (extChartAt I x x) (tangentSpaceCastModel I x v) := by
-  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
-
-omit [FiniteDimensional ℝ E] in
-/-- On a boundaryless manifold, injectivity of `mvfderiv I i x` is equivalent to injectivity of the
-Fréchet derivative of the preferred coordinate expression. -/
-private theorem injective_fderiv_comp_extChartAt_symm_iff :
-    Injective (fderiv ℝ (i ∘ (extChartAt I x).symm) (extChartAt I x x)) ↔
-      Injective (mvfderiv I i x) := by
-  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe]
-  refine ⟨fun h u w huw ↦ ?_, fun h ↦ h.comp (tangentSpaceCastModel I x).symm.injective⟩
-  exact (tangentSpaceCastModel I x).injective (h (by simpa using huw))
 
 /-- **The defining identity of `manifoldShapeOperator`.** When `mvfderiv I i x` is injective, the
 induced metric pairs `manifoldShapeOperator I i x ν v` with `w` as `ν` pairs with

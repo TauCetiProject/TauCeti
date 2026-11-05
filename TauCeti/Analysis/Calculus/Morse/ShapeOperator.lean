@@ -267,12 +267,10 @@ theorem _root_.ContDiffAt.isNondegenerateCriticalPoint_norm_sq_sub_sub_comp_iff
   have hiR : ContDiffAt ℝ 2 i x := hi.restrict_scalars ℝ
   have hR := ((hi.differentiableAt (by norm_num)).injective_fderiv_restrictScalars_iff ℝ).2 h
   rw [isNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR,
-    isNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR,
-    sub_sub_cancel, sub_sub_cancel_left, add_sub_cancel_left, sub_add_cancel_left,
-    Submodule.neg_mem_iff, shapeOperator_neg, Module.End.hasEigenvalue_iff,
-    Module.End.hasEigenvalue_iff, eigenspace, eigenspace, genEigenspace_neg,
-    ← Module.End.hasEigenvalue_iff, ← Module.End.hasEigenvalue_iff,
-    hi.hasEigenvalue_shapeOperator_neg_iff]
+    isNondegenerateCriticalPoint_norm_sq_sub_comp_iff hiR hR]
+  simp only [sub_sub_cancel, sub_add_cancel_left, Submodule.neg_mem_iff, sub_sub_cancel_left,
+    add_sub_cancel_left, shapeOperator_neg]
+  rw [Module.End.hasEigenvalue_neg_iff, hi.hasEigenvalue_shapeOperator_neg_iff]
 
 /-- **Symmetric Morse indices along normal lines.** For a `C²` holomorphic immersion `i` and a
 normal vector `ν`, the squared-distance functions from `i x - ν` and from `i x + ν` have the same

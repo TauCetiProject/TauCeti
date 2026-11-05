@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 
@@ -42,8 +43,10 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
-* `MDifferentiableAt.injective_mfderiv_restrictScalars`: an immersion for the models over `𝕜'` is
-  an immersion for the models over `𝕜`.
+* `MDifferentiableAt.injective_mfderiv_restrictScalars`,
+  `MDifferentiableAt.injective_mvfderiv_restrictScalars_iff`: an immersion for the models over
+  `𝕜'` is an immersion for the models over `𝕜`, and for a vector-valued map injectivity of
+  `mvfderiv` over `𝕜` and over `𝕜'` are equivalent.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
   (`TauCeti.tangentCoordChange_smul`), and so is the derivative of the inverse of a chart
@@ -199,6 +202,24 @@ theorem MDifferentiableAt.injective_mfderiv_restrictScalars
   -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
   -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
   exact hinj (hv.symm.trans (hvw ▸ hw))
+
+/-- At a point where a vector-valued map `g : M → E'` is differentiable for the models over `𝕜'`,
+its vector-valued derivative over the smaller field `𝕜` is injective if and only if its
+vector-valued derivative over `𝕜'` is injective. For instance, a holomorphic map into a complex
+normed space is a real immersion at `x` exactly when it is a complex immersion there. -/
+theorem MDifferentiableAt.injective_mvfderiv_restrictScalars_iff {g : M → E'}
+    (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') g x) :
+    Function.Injective (mvfderiv 𝓘(𝕜, E) g x) ↔ Function.Injective (mvfderiv 𝓘(𝕜', E) g x) := by
+  rw [mvfderiv, mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (g x)).injective.of_comp_iff,
+    (NormedSpace.fromTangentSpace (𝕜 := 𝕜') (g x)).injective.of_comp_iff]
+  refine ⟨fun hinj v w hvw ↦ ?_, h.injective_mfderiv_restrictScalars 𝕜⟩
+  have hv := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) v
+  have hw := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) w
+  -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
+  -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
+  exact hinj (hv.trans (hvw ▸ hw.symm))
 
 namespace TauCeti
 
