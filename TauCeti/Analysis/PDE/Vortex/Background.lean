@@ -14,16 +14,18 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 /-!
 # The background amplitude of the prescribed-zero vortex problem
 
-A plane vortex with zero divisor given by a monic polynomial `P` of degree `m` is reconstructed as
-`amplitudeField u P.eval`, with section `α = exp(u) P`, from a solution `u` of the regularized
-scalar equation
+Let `P` be a monic polynomial of degree `m`. A field of the form `amplitudeField u P.eval`, with
+section `α = exp(u) P` and zero divisor `P`, is a vortex with the degree-`m` end framing exactly
+when `u` solves the regularized scalar equation
 
 `Δu = (exp(2u) |P|² - 1) / 8`,    `u + m log |z| → 0` at infinity
 
 (`TauCeti.Vortex.equation_amplitudeField_eq_zero_iff`,
-`TauCeti.Vortex.tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log`). The solution grows
-logarithmically, so it lies in no Sobolev space. Following Taubes, this file subtracts an explicit
-smooth background with the same growth. Here the background is
+`TauCeti.Vortex.tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log`, for `C²` amplitudes
+`u`). Bringing an arbitrary vortex with zero divisor `P` into this form is a gauge choice that is
+not treated here. The solution `u` grows logarithmically, so it lies in no Sobolev space.
+Following Taubes, this file subtracts an explicit smooth background with the same growth. Here the
+background is
 
 `u₀ = -log (1 + |P|²) / 2`    (`TauCeti.Vortex.backgroundAmplitude`),
 
@@ -35,15 +37,16 @@ correction `w`:
   `Δw = (exp(2w) h - 1) / 8 + g`,    `h = |P|² / (1 + |P|²)`,    `g = 2 |P'|² / (1 + |P|²)²`;
 
   here `g = -Δu₀` and `h = exp(2u₀) |P|²` is the squared modulus of the background section;
-* for every `w`, the reconstructed section has the degree-`m` end framing exactly when `w → 0`
-  at infinity.
+* if `m ≥ 1`, then for every `w` the reconstructed section has the degree-`m` end framing
+  exactly when `w → 0` at infinity.
 
-So a vortex with zero divisor `P` whose amplitude is `C²` is the same as a `C²` solution of the
-reduced equation that tends to zero at infinity, and the reduced equation has smooth coefficients
-with `0 ≤ h < 1`. The defect `1 - h = (1 + |P|²)⁻¹` is square integrable
-(`Polynomial.memLp_inv_one_add_norm_eval_sq`) and the source `g` is integrable; these are the
-integrability properties of the coefficients that a variational treatment of the reduced
-equation on `H¹(ℂ)` uses. Existence of a solution of the reduced equation is not proved here.
+So, for `m ≥ 1` and `C²` corrections `w`, the field `amplitudeField (u₀ + w) P.eval` is a vortex
+with the degree-`m` end framing exactly when `w` solves the reduced equation and tends to zero at
+infinity. The reduced equation has smooth coefficients with `0 ≤ h < 1`. The defect
+`1 - h = (1 + |P|²)⁻¹` is square integrable (`Polynomial.memLp_inv_one_add_norm_eval_sq`) and the
+source `g` is integrable; these are the integrability properties of the coefficients that a
+variational treatment of the reduced equation on `H¹(ℂ)` uses. Existence of a solution of the
+reduced equation is not proved here.
 
 ## Main results
 
