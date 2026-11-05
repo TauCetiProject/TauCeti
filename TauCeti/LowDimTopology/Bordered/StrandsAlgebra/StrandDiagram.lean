@@ -33,6 +33,7 @@ product is associative in the form needed for the associativity of the strands a
 * `TauCeti.StrandDiagram α`: an upward partial bijection of the linear order `α`.
 * `TauCeti.StrandDiagram.trans`: the composite of two diagrams, first `φ` and then `ψ`.
 * `TauCeti.StrandDiagram.idOn`: the identity diagram on a finite set, with horizontal strands.
+* `TauCeti.StrandDiagram.single`: the diagram with a single strand.
 * `TauCeti.StrandDiagram.source`, `TauCeti.StrandDiagram.target`: the starting and ending points.
 * `TauCeti.StrandDiagram.inversions`, `TauCeti.StrandDiagram.inversionCount`: the crossings.
 * `TauCeti.StrandDiagram.Composable`: the target of `φ` is the source of `ψ` and the inversion
@@ -133,6 +134,20 @@ theorem idOn_apply (s : Finset α) (i : α) : idOn s i = if i ∈ s then some i 
 theorem mem_idOn {s : Finset α} {i j : α} : j ∈ idOn s i ↔ i = j ∧ i ∈ s := by
   rw [Option.mem_def, idOn_apply]
   split_ifs with h <;> simp [h]
+
+/-- The diagram with a single strand, from `i` up to `j`. -/
+def single (i j : α) (h : i ≤ j) : StrandDiagram α where
+  toPEquiv := PEquiv.single i j
+  le_of_mem' _ _ hk := by
+    obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
+    exact h
+
+theorem mem_single {i j : α} {h : i ≤ j} {k l : α} : l ∈ single i j h k ↔ k = i ∧ l = j :=
+  PEquiv.mem_single_iff _ _ _ _
+
+theorem single_trans_single {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
+    (single i j hij).trans (single j k hjk) = single i k (hij.trans hjk) :=
+  toPEquiv_injective (PEquiv.single_trans_single _ _ _)
 
 section Finite
 
@@ -334,6 +349,34 @@ theorem composable_idOn_right_iff {s : Finset α} {φ : StrandDiagram α} :
     φ.Composable (idOn s) ↔ φ.target = s := by
   refine ⟨fun h ↦ by simpa using h.target_eq, fun h ↦ ⟨by simpa using h, ?_⟩⟩
   rw [trans_idOn_of_target_eq h, inversionCount_idOn, add_zero]
+
+@[simp]
+theorem source_single (i j : α) (h : i ≤ j) : (single i j h).source = {i} := by
+  ext k
+  rw [mem_source, mem_singleton]
+  simp only [mem_single]
+  exact ⟨fun ⟨_, hk, _⟩ ↦ hk, fun hk ↦ ⟨j, hk, rfl⟩⟩
+
+@[simp]
+theorem target_single (i j : α) (h : i ≤ j) : (single i j h).target = {j} := by
+  ext l
+  rw [mem_target, mem_singleton]
+  simp only [mem_single]
+  exact ⟨fun ⟨_, _, hl⟩ ↦ hl, fun hl ↦ ⟨i, rfl, hl⟩⟩
+
+/-- A single strand has no crossing. -/
+@[simp]
+theorem inversionCount_single (i j : α) (h : i ≤ j) : (single i j h).inversionCount = 0 := by
+  rw [inversionCount_def, card_eq_zero, eq_empty_iff_forall_notMem]
+  rintro ⟨a, b⟩ hab
+  obtain ⟨hlt, _, ha, _, hb, -⟩ := mem_inversions.1 hab
+  rw [mem_single] at ha hb
+  exact hlt.ne (ha.1.trans hb.1.symm)
+
+/-- Two single strands meeting end to start are composable. -/
+theorem composable_single_single {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
+    (single i j hij).Composable (single j k hjk) :=
+  composable_iff.2 ⟨by simp, by simp [single_trans_single]⟩
 
 end Finite
 
