@@ -228,12 +228,9 @@ private theorem volume_normSlab_inter_coordCylinder_unitFundamentalDomain :
       (Module.finrank ℚ K : ℝ≥0∞)⁻¹ * 2 ^ (nrRealPlaces K + nrComplexPlaces K - 1) := by
   classical
   have hn : (0 : ℝ) < Module.finrank ℚ K := Nat.cast_pos.mpr Module.finrank_pos
-  rw [normSlab_inter_coordCylinder_unitFundamentalDomain, volume_pi_pi,
-    ← Finset.mul_prod_erase _ _ (Finset.mem_univ w₀), ite_eq_left rfl,
-    Finset.prod_congr rfl fun w hw ↦ by rw [ite_eq_right (Finset.ne_of_mem_erase hw)],
-    Finset.prod_const, Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
-    card_eq_nrRealPlaces_add_nrComplexPlaces, Real.volume_Icc, Real.volume_Ico, sub_zero, sub_zero,
-    ENNReal.ofReal_ofNat, ENNReal.ofReal_inv_of_pos hn, ENNReal.ofReal_natCast]
+  rw [normSlab_inter_coordCylinder_unitFundamentalDomain, volume_pi_pi]
+  simp [apply_ite volume, Fintype.prod_eq_mul_prod_compl w₀, Finset.prod_ite_of_false,
+    Finset.card_compl, card_eq_nrRealPlaces_add_nrComplexPlaces, ENNReal.ofReal_inv_of_pos hn]
 
 /-- The translations of the coordinates of `expMapBasis` by the lattice `2 c`, `c` integral with
 `c_{w₀} = 0`, through which the units act on the archimedean parameters
@@ -315,10 +312,12 @@ theorem surfaceHaar_of_isUnitFundamentalDomain {D : Set (realSpace K)}
       (isAddFundamentalDomain_coordCylinder isUnitFundamentalDomain_unitFundamentalDomain)
       measurableSet_normSlab hslab,
     volume_normSlab_inter_coordCylinder_unitFundamentalDomain,
-    ENNReal.ofReal_div_of_pos (by positivity), ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat,
-    div_eq_mul_inv, ← ENNReal.inv_pow, mul_assoc _ (Module.finrank ℚ K : ℝ≥0∞), ← mul_assoc _ _⁻¹,
-    ENNReal.mul_inv_cancel (by simpa using hn.ne') (ENNReal.natCast_ne_top _), one_mul]
-  ring
+    ENNReal.ofReal_div_of_pos (by positivity), ENNReal.ofReal_mul (by positivity)]
+  have hn' : (Module.finrank ℚ K : ℝ≥0∞) ≠ 0 := by simpa using hn.ne'
+  simp only [ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, div_eq_mul_inv, ENNReal.inv_pow]
+  calc _ = (Module.finrank ℚ K * (Module.finrank ℚ K : ℝ≥0∞)⁻¹) *
+        (2⁻¹ ^ nrComplexPlaces K * ENNReal.ofReal (regulator K) *
+          2 ^ (nrRealPlaces K + nrComplexPlaces K - 1)) := by ring
+    _ = _ := by rw [ENNReal.mul_inv_cancel hn' (ENNReal.natCast_ne_top _), one_mul]; ring
 
 end TauCeti.LFunctions

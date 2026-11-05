@@ -76,6 +76,8 @@ units. -/
 theorem expMapBasis_intCoord (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) :
     expMapBasis (intCoord c) =
       fun w ↦ w ((∏ i, fundSystem K (equivFinRank.symm i) ^ c i : (𝓞 K)ˣ) : K) := by
+  -- Mathlib has no `coe_prod` for the coercion `(𝓞 K)ˣ → K`, so we write it as a bundled monoid
+  -- hom (by definition, as Mathlib's `NumberField.Units.coe_zpow` does) to use `map_prod`.
   let φ : (𝓞 K)ˣ →* K := (Units.coeHom K).comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)
   have hφ (x : (𝓞 K)ˣ) : (x : K) = φ x := rfl
   ext w
