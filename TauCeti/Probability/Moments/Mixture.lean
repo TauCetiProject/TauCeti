@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Bind
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
-public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.Moments.Covariance

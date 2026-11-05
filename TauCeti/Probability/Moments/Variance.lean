@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.Probability.Moments.Mixture
 
 /-!

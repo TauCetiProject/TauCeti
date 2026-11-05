@@ -5,10 +5,6 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.Pi
-public import Mathlib.MeasureTheory.Integral.Prod
-public import TauCeti.MeasureTheory.Function.Lp.Iterated
-public import TauCeti.Probability.Moments.Mixture
 public import TauCeti.Probability.Moments.Variance
 
 /-!
