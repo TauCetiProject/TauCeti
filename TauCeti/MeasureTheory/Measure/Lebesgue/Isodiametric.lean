@@ -39,16 +39,17 @@ Brunn–Minkowski for `H` and `-H` with weight `1 / 2` is an equality. For conve
 volume this makes `-H` a translate `v +ᵥ H`, so `H` is symmetric about `-(1 / 2) • v`; a symmetric
 set of diameter `d` lies in the closed ball of radius `d / 2` about its center of symmetry. Hence
 `s` lies in a closed ball of radius `d / 2`
-(`TauCeti.exists_subset_closedBall_diam_div_two_of_addHaar_ge`), a containment that fails for
-general sets of diameter `d`, such as equilateral triangles.
+(`MeasureTheory.Measure.exists_subset_closedBall_diam_div_two_of_addHaar_ge`), a containment
+that fails for general sets of diameter `d`, such as equilateral triangles.
 
 For a null-measurable bounded set, equality holds exactly when the set agrees a.e. with a
 closed ball of radius `diam s / 2`
-(`TauCeti.addHaar_eq_addHaar_closedBall_diam_div_two_iff_exists_ae_eq`). The radius is tied to the
-diameter of `s` itself: a null modification can enlarge the diameter without changing the measure.
+(`MeasureTheory.Measure.addHaar_eq_addHaar_closedBall_diam_div_two_iff_exists_ae_eq`). The
+radius is tied to the diameter of `s` itself: a null modification can enlarge the diameter
+without changing the measure.
 For a nonempty closed bounded set, in particular a convex body, equality holds exactly when the
 set is a closed ball of radius `diam s / 2`
-(`TauCeti.addHaar_eq_addHaar_closedBall_diam_div_two_iff_exists_eq`).
+(`MeasureTheory.Measure.addHaar_eq_addHaar_closedBall_diam_div_two_iff_exists_eq`).
 
 ## References
 
@@ -61,10 +62,10 @@ set is a closed ball of radius `diam s / 2`
 
 public section
 
-open MeasureTheory Metric Set
+open MeasureTheory Metric Set TauCeti
 open scoped ENNReal Pointwise
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
@@ -241,4 +242,4 @@ theorem addHaar_eq_addHaar_closedBall_diam_div_two_iff_exists_eq {s : Set E} (hs
     exact closure_minimal hball hsc
   · rw [Measure.addHaar_closedBall_center μ x, ← Measure.addHaar_closedBall_center μ c, ← hc]
 
-end TauCeti
+end MeasureTheory.Measure
