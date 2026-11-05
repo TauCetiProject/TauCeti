@@ -79,6 +79,24 @@ theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F �
   -- `MDifferentiableAt.mvfderiv` is the identification of that chart derivative with `mvfderiv`.
   exact congrArg (c x).comp hu.mvfderiv.symm
 
+/-- Applying a differentiable family of continuous linear maps to a fixed vector commutes with the
+vector-valued manifold derivative: `d (fun z ↦ c z w) x v = (d c x v) w`. -/
+theorem mvfderiv_clm_apply_const {c : M → F →L[𝕜] F'}
+    (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F') c x) (w : F) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ c z w) x v = mvfderiv I c x v w := by
+  have hg : MDifferentiableAt 𝓘(𝕜, F →L[𝕜] F') 𝓘(𝕜, F') (fun A : F →L[𝕜] F' ↦ A w) (c x) :=
+    (ContinuousLinearMap.apply 𝕜 F' w).differentiableAt.mdifferentiableAt
+  have h := mvfderiv_comp_apply (g := fun A : F →L[𝕜] F' ↦ A w) x hg hc v
+  have hd : mvfderiv 𝓘(𝕜, F →L[𝕜] F') (fun A : F →L[𝕜] F' ↦ A w) (c x) =
+      ContinuousLinearMap.apply 𝕜 F' w := by
+    ext A
+    simp only [mvfderiv, mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
+    rw [show (fun A : F →L[𝕜] F' ↦ A w) = ⇑(ContinuousLinearMap.apply 𝕜 F' w) from rfl,
+      ContinuousLinearMap.fderiv]
+    rfl
+  rw [hd] at h
+  exact h
+
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
 `L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative
 applied to `L v`. No norm is required on the source of `L`. -/
