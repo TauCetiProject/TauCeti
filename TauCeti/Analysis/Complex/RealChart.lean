@@ -16,8 +16,8 @@ public import Mathlib.Analysis.Complex.Basic
 A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ ≃ ℂ` given by
 `Complex.equivRealProdCLM`, is `TauCeti.Complex.realChart f`. When `f` has complex derivative
 `f'`, the real derivative of its real chart is multiplication by `f'`
-(`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), and a
-holomorphic map is smooth in real coordinates (`TauCeti.Complex.contDiff_realChart`).
+(`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), and a map
+that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
 -/
 
 public section
@@ -50,7 +50,7 @@ theorem fderiv_realChart_apply {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
   rw [(hasFDerivAt_realChart hf).fderiv]
   simp [mul_comm]
 
-/-- A holomorphic map is smooth in real coordinates. -/
+/-- A map that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates. -/
 theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff ℂ n f) :
     ContDiff ℝ n (realChart f) :=
   Complex.equivRealProdCLM.contDiff.comp
