@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Regular
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -57,6 +58,10 @@ integral of the lower limit of the majorants.
 * `LocallyLipschitzOn.ae_hausdorffMeasure_inter_preimage_eq_zero` and
   `LocallyLipschitzOn.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero`: almost every fiber is
   null for maps locally Lipschitz on `A` in a second-countable domain.
+* `LocallyLipschitzOn.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_iff_forall_isCompact`:
+  for a map locally Lipschitz on a Lebesgue measurable subset `A` of an `n`-dimensional real inner
+  product space with `n ≤ m + k`, almost every fiber of `A` is `μHE[k]`-null if and only if almost
+  every fiber of every compact subset of `A` is `μHE[k]`-null.
 
 ## References
 
@@ -272,5 +277,35 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschi
   rw [euclideanHausdorffMeasure_eq_zero_iff, Nat.cast_add] at hA
   filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_eq_zero μ k.cast_nonneg hA] with y hy
   exact euclideanHausdorffMeasure_eq_zero_iff.2 hy
+
+/-- For a map `f` locally Lipschitz on a Lebesgue measurable subset `A` of an `n`-dimensional real
+inner product space with values in an `m`-dimensional real normed space carrying an additive Haar
+measure `μ`, if `n ≤ m + k`, then `μ`-almost every fiber `A ∩ f ⁻¹' {y}` is `μHE[k]`-null if and
+only if `μ`-almost every fiber `K ∩ f ⁻¹' {y}` is `μHE[k]`-null for every compact `K ⊆ A`. -/
+theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_iff_forall_isCompact {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : E → Y} {A : Set E}
+    (hf : LocallyLipschitzOn A f) (hA : NullMeasurableSet A) {k : ℕ}
+    (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
+    (∀ᵐ y ∂μ, μHE[k] (A ∩ f ⁻¹' {y}) = 0) ↔
+      ∀ K ⊆ A, IsCompact K → ∀ᵐ y ∂μ, μHE[k] (K ∩ f ⁻¹' {y}) = 0 := by
+  refine ⟨fun h K hKA _ ↦ h.mono fun _ ↦ measure_mono_null (inter_subset_inter_left _ hKA),
+    fun hK ↦ ?_⟩
+  obtain ⟨S, hSA, ⟨K, hKc, rfl⟩, hSA'⟩ := hA.exists_isSigmaCompact_subset_ae_eq
+  have hvol : μHE[finrank ℝ Y + k] (A \ ⋃ m, K m) = 0 := by
+    have h : μHE[finrank ℝ E] (A \ ⋃ m, K m) = 0 := by
+      rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+      exact (ae_eq_set.1 hSA').2
+    rw [euclideanHausdorffMeasure_eq_zero_iff] at h ⊢
+    exact nonpos_iff_eq_zero.1 ((hausdorffMeasure_mono (by exact_mod_cast hk) _).trans h.le)
+  have hrem := (hf.mono sdiff_subset).ae_euclideanHausdorffMeasure_inter_preimage_eq_zero μ hvol
+  have hcomp := ae_all_iff.2 fun m ↦ hK (K m) ((subset_iUnion K m).trans hSA) (hKc m)
+  filter_upwards [hrem, hcomp] with y hy_rem hy_comp
+  refine measure_mono_null (fun x ⟨hxA, hxy⟩ ↦ ?_)
+    (measure_union_null hy_rem (measure_iUnion_null hy_comp))
+  by_cases hxK : x ∈ ⋃ m, K m
+  · obtain ⟨m, hxm⟩ := mem_iUnion.1 hxK
+    exact Or.inr (mem_iUnion.2 ⟨m, hxm, hxy⟩)
+  · exact Or.inl ⟨⟨hxA, hxK⟩, hxy⟩
 
 end LocallyLipschitzOn

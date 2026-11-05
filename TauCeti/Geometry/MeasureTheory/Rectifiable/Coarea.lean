@@ -9,6 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Subspace
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -20,8 +21,8 @@ the fibre-rectifiability statements accompanying the coarea formula:
 * **Near a surjective linear map.** If `f` is approximated on `s` up to `δ` by a continuous linear
   map `L` with a continuous linear right inverse `M` satisfying `δ ‖M‖ < 1`, then every fibre
   `s ∩ f ⁻¹' {y}` is countably `(n - m)`-rectifiable: the straightening map from
-  `TauCeti.MeasureTheory.Function.Coarea.Basic` exhibits `s ∩ f ⁻¹' {y}` as a Lipschitz image of a
-  slice of the linear fibre `L ⁻¹' {y}`.
+  `TauCeti.Analysis.Calculus.ApproximatesLinearOn` exhibits `s ∩ f ⁻¹' {y}` as a Lipschitz image of
+  a slice of the linear fibre `L ⁻¹' {y}`.
 * **On the regular locus.** If `f` has a surjective derivative within `s` at every point of `s`,
   then every fibre `s ∩ f ⁻¹' {y}` is countably `(n - m)`-rectifiable, without any measurability or
   Lipschitz assumption on `s`.

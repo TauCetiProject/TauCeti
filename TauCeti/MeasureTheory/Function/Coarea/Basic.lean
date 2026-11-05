@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Coarea.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
@@ -35,10 +36,11 @@ measurable set.
 Suppose that `f` is approximated on `s` by a linear map `L` up to `δ`, in the sense of
 `ApproximatesLinearOn`, and that `M` is a continuous linear right inverse of `L`. The map
 `h x = x + M (f x - L x)` satisfies `L ∘ h = f`, and it is approximated on `s` by the identity up to
-`c = δ ‖M‖`. When `c < 1`, it distorts distances on `s` by factors between `1 - c` and `1 + c`,
-and it maps each fibre `s ∩ f ⁻¹' {y}` onto the fibre `h '' s ∩ L ⁻¹' {y}` of the linear map `L`.
-The linear coarea formula `LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton`
-for `h '' s` then gives the coarea formula for `f` on `s` up to factors close to `1`
+`c = δ ‖M‖` (`TauCeti.Analysis.Calculus.ApproximatesLinearOn`). When `c < 1`, it distorts distances
+on `s` by factors between `1 - c` and `1 + c`, and it maps each fibre `s ∩ f ⁻¹' {y}` onto the
+fibre `h '' s ∩ L ⁻¹' {y}` of the linear map `L`. The linear coarea formula
+`LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton` for `h '' s` then gives the
+coarea formula for `f` on `s` up to factors close to `1`
 (`ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,
 `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`).
 
@@ -55,8 +57,6 @@ The structure follows the proof of the area formula in
 
 ## Main declarations
 
-* `ApproximatesLinearOn.exists_lipschitzOnWith_eq_image_inter_preimage`: near a linear map with a
-  right inverse, the fibres of `f` are Lipschitz images of slices of the linear fibres.
 * `ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,
   `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`: the coarea formula up to a
   controlled factor for a map approximated by a linear map with a right inverse.
@@ -80,105 +80,25 @@ open scoped NNReal ENNReal Topology
 
 namespace ApproximatesLinearOn
 
-/-! ### Straightening a map along a right inverse of its linear approximation -/
+/-! ### The coarea formula near a linear map -/
 
 section NormedSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
-  {s : Set E} {δ : ℝ≥0}
-
-/-- The map `x ↦ x + M (f x - L x)` is approximated on `s` by the identity up to `δ ‖M‖`. -/
-private theorem approximatesLinearOn_straighten (hf : ApproximatesLinearOn f L s δ) :
-    ApproximatesLinearOn (fun x ↦ x + M (f x - L x))
-      (ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) s (δ * ‖M‖₊) := by
-  refine LipschitzOnWith.approximatesLinearOn ?_
-  have h : (fun x ↦ x + M (f x - L x)) - ⇑(ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) =
-      M ∘ (f - ⇑L) := by
-    ext x
-    simp
-  rw [h, mul_comm]
-  exact M.lipschitzWith.comp_lipschitzOnWith hf.lipschitzOnWith
-
-/-- The map `x ↦ x + M (f x - L x)` is `(1 + δ ‖M‖)`-Lipschitz on `s`. -/
-private theorem lipschitzOnWith_straighten (hf : ApproximatesLinearOn f L s δ) :
-    LipschitzOnWith (1 + δ * ‖M‖₊) (fun x ↦ x + M (f x - L x)) s := by
-  refine lipschitzOnWith_iff_restrict.2
-    ((approximatesLinearOn_straighten hf).lipschitzWith.weaken ?_)
-  gcongr
-  rw [ContinuousLinearEquiv.coe_refl, ← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
-  exact ContinuousLinearMap.norm_id_le
-
-/-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` expands distances on `s` by at least the
-factor `1 - δ ‖M‖`. -/
-private theorem antilipschitzWith_straighten (hf : ApproximatesLinearOn f L s δ)
-    (hδ : δ * ‖M‖₊ < 1) :
-    AntilipschitzWith (1 - δ * ‖M‖₊)⁻¹ (s.domRestrict fun x ↦ x + M (f x - L x)) := by
-  -- The identity has norm `1` unless `E` is trivial.
-  cases subsingleton_or_nontrivial E
-  · exact AntilipschitzWith.of_subsingleton
-  simpa using (approximatesLinearOn_straighten hf).antilipschitzWith (Or.inr (by simpa using hδ))
-
-/-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` is injective on `s`. -/
-private theorem injOn_straighten (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) :
-    InjOn (fun x ↦ x + M (f x - L x)) s :=
-  injOn_iff_injective.2 (antilipschitzWith_straighten hf hδ).injective
-
-/-- The map `x ↦ x + M (f x - L x)` sends the fibre `s ∩ f ⁻¹' {y}` onto the fibre of the linear
-map `L` through its image. -/
-private theorem image_straighten_inter_preimage (hM : RightInverse M L) (y : F) :
-    (fun x ↦ x + M (f x - L x)) '' (s ∩ f ⁻¹' {y}) =
-      (fun x ↦ x + M (f x - L x)) '' s ∩ L ⁻¹' {y} := by
-  have hL (x : E) : L (x + M (f x - L x)) = f x := by rw [map_add, hM, add_sub_cancel]
-  ext z
-  simp only [mem_image, mem_inter_iff, mem_preimage, mem_singleton_iff]
-  constructor
-  · rintro ⟨x, ⟨hx, rfl⟩, rfl⟩
-    exact ⟨⟨x, hx, rfl⟩, hL x⟩
-  · rintro ⟨⟨x, hx, rfl⟩, hy⟩
-    exact ⟨x, ⟨hx, (hL x).symm.trans hy⟩, rfl⟩
-
-/-- If `δ ‖M‖ < 1`, the straightening map `h x = x + M (f x - L x)` admits a
-`(1 - δ ‖M‖)⁻¹`-Lipschitz left inverse on `h '' s`. -/
-private theorem exists_lipschitzOnWith_leftInvOn_straighten (hf : ApproximatesLinearOn f L s δ)
-    (hδ : δ * ‖M‖₊ < 1) :
-    ∃ g : E → E, LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g ((fun x ↦ x + M (f x - L x)) '' s) ∧
-      LeftInvOn g (fun x ↦ x + M (f x - L x)) s :=
-  ⟨invFunOn (fun x ↦ x + M (f x - L x)) s,
-    lipschitzOnWith_iff_restrict.2 ((antilipschitzWith_straighten hf hδ).to_rightInvOn'
-      (surjOn_image _ s).mapsTo_invFunOn (surjOn_image _ s).rightInvOn_invFunOn),
-    (injOn_straighten hf hδ).leftInvOn_invFunOn⟩
-
-/-- If `f` is approximated on `s` up to `δ` by a continuous linear map `L` with a continuous linear
-right inverse `M` satisfying `δ ‖M‖ < 1`, then there are a set `t` and a `(1 - δ ‖M‖)⁻¹`-Lipschitz
-map `g` on `t` that maps each linear slice `t ∩ L ⁻¹' {y}` onto the fibre `s ∩ f ⁻¹' {y}`. -/
-theorem exists_lipschitzOnWith_eq_image_inter_preimage (hf : ApproximatesLinearOn f L s δ)
-    (hM : RightInverse M L) (hδ : δ * ‖M‖₊ < 1) :
-    ∃ (t : Set E) (g : E → E), LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g t ∧
-      ∀ y, s ∩ f ⁻¹' {y} = g '' (t ∩ L ⁻¹' {y}) := by
-  obtain ⟨g, hlip, hg⟩ := exists_lipschitzOnWith_leftInvOn_straighten hf hδ
-  refine ⟨(fun x ↦ x + M (f x - L x)) '' s, g, hlip, fun y ↦ ?_⟩
-  rw [← image_straighten_inter_preimage hM, image_image]
-  exact ((image_congr fun x (hx : x ∈ s ∩ f ⁻¹' {y}) ↦ hg hx.1).trans (image_id' _)).symm
-
-variable [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] [BorelSpace E]
+  {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E} {s : Set E} {δ : ℝ≥0}
 
 /-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` shrinks the `d`-dimensional measure of
 subsets of `s` by at most the factor `(1 - δ ‖M‖)ᵈ`. -/
 private theorem euclideanHausdorffMeasure_le_image_straighten
     (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) {t : Set E} (ht : t ⊆ s) (d : ℕ) :
     μHE[d] t ≤ ((1 - δ * ‖M‖₊)⁻¹ ^ d : ℝ≥0) * μHE[d] ((fun x ↦ x + M (f x - L x)) '' t) := by
-  obtain ⟨g, hlip, hg⟩ := exists_lipschitzOnWith_leftInvOn_straighten hf hδ
-  have himage : t = g '' ((fun x ↦ x + M (f x - L x)) '' t) := by
-    rw [image_image]
-    exact ((image_congr fun x hx ↦ hg (ht hx)).trans (image_id' t)).symm
+  obtain ⟨g, hlip, hg⟩ := hf.exists_lipschitzOnWith_leftInvOn_id_add_comp_sub hδ
   rw [ENNReal.coe_pow]
-  conv_lhs => rw [himage]
+  conv_lhs => rw [← hg.image_image' ht]
   exact (hlip.mono (image_mono ht)).euclideanHausdorffMeasure_image_le d
 
 end NormedSpace
-
-/-! ### The coarea formula near a linear map -/
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
@@ -198,15 +118,22 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_le
   set h : E → E := fun x ↦ x + M (f x - L x)
   set k := finrank ℝ E - finrank ℝ F
   set T := toMeasurable volume (h '' s)
+  have hpre (y : F) : f ⁻¹' {y} = h ⁻¹' (L ⁻¹' {y}) := by
+    ext x
+    simp only [mem_preimage, h]
+    rw [map_add, hM, add_sub_cancel]
   have hfib (y : F) : μHE[k] (s ∩ f ⁻¹' {y}) ≤
       ((1 - δ * ‖M‖₊)⁻¹ ^ k : ℝ≥0) * μHE[k] (T ∩ (L : E →ₗ[ℝ] F) ⁻¹' {y}) := by
-    refine (euclideanHausdorffMeasure_le_image_straighten hf hδ inter_subset_left k).trans ?_
-    rw [image_straighten_inter_preimage hM, ContinuousLinearMap.coe_coe]
+    have hle : μHE[k] (s ∩ f ⁻¹' {y}) ≤
+        ((1 - δ * ‖M‖₊)⁻¹ ^ k : ℝ≥0) * μHE[k] (h '' (s ∩ f ⁻¹' {y})) :=
+      euclideanHausdorffMeasure_le_image_straighten hf hδ inter_subset_left k
+    refine hle.trans ?_
+    rw [hpre y, image_inter_preimage, ContinuousLinearMap.coe_coe]
     gcongr
     exact subset_toMeasurable _ _
   have hvol : volume (h '' s) ≤ ((1 + δ * ‖M‖₊) ^ finrank ℝ E : ℝ≥0) * volume s := by
     rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume, ENNReal.coe_pow]
-    exact (lipschitzOnWith_straighten hf).euclideanHausdorffMeasure_image_le _
+    exact (hf.lipschitzOnWith_id_add_comp_sub M).euclideanHausdorffMeasure_image_le _
   calc ∫⁻ y, μHE[k] (s ∩ f ⁻¹' {y})
       ≤ ∫⁻ y, ((1 - δ * ‖M‖₊)⁻¹ ^ k : ℝ≥0) * μHE[k] (T ∩ (L : E →ₗ[ℝ] F) ⁻¹' {y}) :=
         lintegral_mono hfib
@@ -232,7 +159,11 @@ theorem ofReal_normDet_adjoint_mul_volume_le
         ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) := by
   set h : E → E := fun x ↦ x + M (f x - L x)
   set k := finrank ℝ E - finrank ℝ F
-  have hlip := lipschitzOnWith_straighten (M := M) hf
+  have hlip := hf.lipschitzOnWith_id_add_comp_sub M
+  have hpre (y : F) : f ⁻¹' {y} = h ⁻¹' (L ⁻¹' {y}) := by
+    ext x
+    simp only [mem_preimage, h]
+    rw [map_add, hM, add_sub_cancel]
   -- `h '' s` is Lebesgue measurable: `h` is a continuous injection on a Borel subset of `s` of
   -- full measure, and Lipschitz on the null remainder.
   have hmeas : NullMeasurableSet (h '' s) := by
@@ -244,14 +175,14 @@ theorem ofReal_normDet_adjoint_mul_volume_le
       rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume, (ae_eq_set.1 hst).2, mul_zero]
     rw [← union_sdiff_cancel hts, image_union]
     exact (ht.image_of_continuousOn_injOn (hlip.continuousOn.mono hts)
-      ((injOn_straighten hf hδ).mono hts)).nullMeasurableSet.union
+      ((hf.injOn_id_add_comp_sub hδ).mono hts)).nullMeasurableSet.union
       (NullMeasurableSet.of_null hnull)
   have hvol : volume s ≤ ((1 - δ * ‖M‖₊)⁻¹ ^ finrank ℝ E : ℝ≥0) * volume (h '' s) := by
     simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
       euclideanHausdorffMeasure_le_image_straighten hf hδ subset_rfl (finrank ℝ E)
   have hfib (y : F) : μHE[k] (h '' s ∩ (L : E →ₗ[ℝ] F) ⁻¹' {y}) ≤
       ((1 + δ * ‖M‖₊) ^ k : ℝ≥0) * μHE[k] (s ∩ f ⁻¹' {y}) := by
-    rw [ContinuousLinearMap.coe_coe, ← image_straighten_inter_preimage hM, ENNReal.coe_pow]
+    rw [ContinuousLinearMap.coe_coe, hpre y, ← image_inter_preimage, ENNReal.coe_pow]
     exact (hlip.mono inter_subset_left).euclideanHausdorffMeasure_image_le k
   calc ENNReal.ofReal L.adjoint.normDet * volume s
       ≤ ENNReal.ofReal L.adjoint.normDet *

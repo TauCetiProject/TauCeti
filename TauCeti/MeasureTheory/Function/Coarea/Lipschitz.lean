@@ -18,7 +18,6 @@ import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Hausdorff
-import TauCeti.MeasureTheory.Measure.Regular
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -381,34 +380,12 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_normDet_adjoint_f
       (fun x hx ↦ hx.1.1.hasFDerivAt.hasFDerivWithinAt) (fun _ ↦ 1) (fun _ ↦ one_ne_zero)
   let P (p : ℕ × ℕ) : Set E := T p.1 ∩ t p.1 p.2
   have hPnull (p : ℕ × ℕ) : ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (P p ∩ f ⁻¹' {y}) = 0 := by
-    have hPm : MeasurableSet (P p) := (hTm p.1).inter (ht_meas p.1 p.2)
-    have hPlip : LipschitzOnWith _ f (P p) :=
-      lipschitzOnWith_iff_restrict.2 (ht_approx p.1 p.2).lipschitzWith
-    obtain ⟨S, hSP, hSsig, hSP_ae⟩ :=
-      (hPm.nullMeasurableSet (μ := volume)).exists_isSigmaCompact_subset_ae_eq
-    obtain ⟨K, hKc, rfl⟩ := hSsig
-    -- On the null remainder `P p \ ⋃ m, K m`, Eilenberg's inequality gives null fibres a.e.
-    have hrem : ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] ((P p \ ⋃ m, K m) ∩ f ⁻¹' {y}) = 0 := by
-      have hvol : μHE[finrank ℝ F + (finrank ℝ E - finrank ℝ F)] (P p \ ⋃ m, K m) = 0 := by
-        rw [Nat.add_sub_of_le hEF, InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
-        exact (ae_eq_set.1 hSP_ae).2
-      exact (hPlip.mono sdiff_subset).ae_euclideanHausdorffMeasure_inter_preimage_eq_zero
-        volume hvol
-    -- On each compact piece `K m`, the compact critical-rank lemma gives null fibres a.e.
-    have hcomp : ∀ᵐ y : F, ∀ m, μHE[finrank ℝ E - finrank ℝ F] (K m ∩ f ⁻¹' {y}) = 0 :=
-      ae_all_iff.2 fun m ↦
-        ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact (hKc m) p.1 hEF
-          (fun x hx ↦ (hSP (subset_iUnion K m hx)).1.1.1)
-          (fun x hx ↦ (hSP (subset_iUnion K m hx)).1.1.2)
-          (fun x hx ↦ (hSP (subset_iUnion K m hx)).1.2)
-    filter_upwards [hrem, hcomp] with y hy_rem hy_comp
-    have hsub : P p ∩ f ⁻¹' {y} ⊆ ((P p \ ⋃ m, K m) ∩ f ⁻¹' {y}) ∪ ⋃ m, K m ∩ f ⁻¹' {y} := by
-      intro x ⟨hxP, hxy⟩
-      by_cases hxK : x ∈ ⋃ m, K m
-      · obtain ⟨m, hxm⟩ := mem_iUnion.1 hxK
-        exact Or.inr (mem_iUnion.2 ⟨m, hxm, hxy⟩)
-      · exact Or.inl ⟨⟨hxP, hxK⟩, hxy⟩
-    exact measure_mono_null hsub (measure_union_null hy_rem (measure_iUnion_null hy_comp))
+    have hPlip : LocallyLipschitzOn (P p) f :=
+      (lipschitzOnWith_iff_restrict.2 (ht_approx p.1 p.2).lipschitzWith).locallyLipschitzOn
+    exact (hPlip.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_iff_forall_isCompact volume
+      ((hTm p.1).inter (ht_meas p.1 p.2)).nullMeasurableSet le_add_tsub).2 fun K hKP hKc ↦
+        ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact hKc p.1 hEF
+          (fun x hx ↦ (hKP hx).1.1.1) (fun x hx ↦ (hKP hx).1.1.2) (fun x hx ↦ (hKP hx).1.2)
   filter_upwards [ae_all_iff.2 hPnull] with y hy
   refine measure_mono_null (t := ⋃ p, P p ∩ f ⁻¹' {y}) (fun x ⟨hxs, hxy⟩ ↦ ?_)
     (measure_iUnion_null hy)
