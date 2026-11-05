@@ -47,6 +47,8 @@ smoothness theorem `MeasureTheory.contDiff_convolution_left_of_dominated`. In ti
 * `TauCeti.norm_iteratedFDeriv_heatKernel_convolution_le`,
   `TauCeti.norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith`: bounds on these
   derivatives for bounded and for Hölder data.
+* `TauCeti.exists_norm_laplacian_heatKernel_convolution_le`: the bound
+  `‖Δ (K_t ⋆ g)(x)‖ ≤ C H t^((α - 2)/2)` for bounded `α`-Hölder data.
 * `TauCeti.norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith`: the corresponding
   bound on their differences between two times, for Hölder data.
 * `TauCeti.laplacian_heatKernel_convolution`: `Δ (K_t ⋆ g) = ΔK_t ⋆ g`.
@@ -214,6 +216,30 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith [CompleteSpa
     ((integrable_norm_iteratedFDeriv_heatKernel_mul_rpow ht m α.coe_nonneg).const_mul _)
     (ae_of_all _ fun z => by simpa using hH.norm_smulRight_sub_le _ (x - z) x)
 
+/-- **Hölder bound on the Laplacian of a heat convolution.** The Laplacian of the heat convolution
+of a bounded `α`-Hölder function with constant `H` is `O(H τ^((α - 2)/2))`, uniformly in the
+function. -/
+theorem exists_norm_laplacian_heatKernel_convolution_le [CompleteSpace F] {α : ℝ≥0} :
+    ∃ C ≥ 0, ∀ {g : E → F} {M τ : ℝ} {H : ℝ≥0}, AEStronglyMeasurable g → (∀ᵐ y, ‖g y‖ ≤ M) →
+      HolderWith H α g → 0 < τ → ∀ x,
+        ‖Δ (heatKernel τ ⋆ g) x‖ ≤ C * H * τ ^ (((α : ℝ) - 2) / 2) := by
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) 2 α.coe_nonneg
+  refine ⟨finrank ℝ E * C, by positivity, fun {g M τ H} hg hM hH hτ x => ?_⟩
+  have h₁ := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hτ hg hM hH
+    two_ne_zero x
+  have h₂ := mul_le_mul_of_nonneg_left (hC τ hτ) H.coe_nonneg
+  push_cast at h₂
+  have h₃ : ‖fderiv ℝ (fderiv ℝ (heatKernel τ ⋆ g)) x‖ =
+      ‖iteratedFDeriv ℝ 2 (heatKernel τ ⋆ g) x‖ := by
+    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  refine (norm_laplacian_le _ x).trans ?_
+  calc _ ≤ (finrank ℝ E : ℝ) * (H * (C * τ ^ (((α : ℝ) - 2) / 2))) := by
+        rw [h₃]
+        gcongr
+        linarith
+    _ = _ := by ring
+
 /-- **Time differences of the derivatives of a heat convolution.** If `g` is bounded and
 `α`-Hölder with constant `H`, then for `m ≥ 1` and times `a, b > 0`,
 `‖D^m (K_b ⋆ g)(x) - D^m (K_a ⋆ g)(x)‖ ≤ H ∫ ‖D^m K_b(z) - D^m K_a(z)‖ ‖z‖^α dz`. By
@@ -255,21 +281,14 @@ theorem laplacian_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) :
     Δ (heatKernel t ⋆ g) x = (Δ (heatKernel t : E → ℝ) ⋆ g) x := by
   have hD₂ := integrable_iteratedFDeriv_heatKernel (E := E) ht 2
-  -- The Laplacian is the continuous linear functional `Λ A = ∑ i, A (bᵢ, bᵢ)` of the Hessian.
-  set Λ : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F →L[ℝ] F :=
-    ∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
-      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]
-  have hΛ : ∀ A, Λ A = ∑ i, A ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i] :=
-    fun A => by simp [Λ]
-  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-  dsimp only
-  rw [iteratedFDeriv_convolution_left_of_dominated
+  -- The Laplacian is a continuous linear functional of the Hessian.
+  rw [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_convolution_left_of_dominated
     (lsmul ℝ ℝ) (N := ⊤) (contDiff_heatKernel t)
     (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k 1) hg hM le_top,
-    ← hΛ, convolution_def, ← integral_comp_comm Λ
+    convolution_def, ← integral_comp_comm _
       (convolutionExists_of_integrable_of_ae_norm_le _ hD₂ hg hM x), convolution_def]
   congr 1 with y
-  rw [hΛ, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, lsmul_apply, Finset.sum_smul]
+  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, lsmul_apply, Finset.sum_smul]
   simp
 
 /-- **The heat equation.** For `t > 0` and `g` measurable and essentially bounded, the function
