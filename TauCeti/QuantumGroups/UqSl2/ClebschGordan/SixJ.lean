@@ -137,13 +137,15 @@ theorem invSixJ_eq_invRecouplingCoeff (hq : IsGenericQuantumParameter q) (ε δ 
     (by simp [hu₂.index_eq_of_eq hk'])
 
 /-- `sixJ` vanishes when any of its four binary channel conditions fails. -/
-theorem sixJ_eq_zero_of_not (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {m n p k u v : ℕ}
+@[simp] theorem sixJ_eq_zero_of_not (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
+    {m n p k u v : ℕ}
     (h : ¬ ((IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k) ∧
       (IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k))) :
     sixJ hq ε δ ζ m n p k u v = 0 := by simp [sixJ, h]
 
 /-- `invSixJ` vanishes when any of its four binary channel conditions fails. -/
-theorem invSixJ_eq_zero_of_not (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {m n p k v u : ℕ}
+@[simp] theorem invSixJ_eq_zero_of_not (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ)
+    {m n p k v u : ℕ}
     (h : ¬ ((IsClebschGordanChannel n p v ∧ IsClebschGordanChannel m v k) ∧
       (IsClebschGordanChannel m n u ∧ IsClebschGordanChannel u p k))) :
     invSixJ hq ε δ ζ m n p k v u = 0 := by simp [invSixJ, h]
@@ -312,7 +314,7 @@ theorem sum_sixJ_mul_invSixJ (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤ�
 
 /-- When the first factor is `L_0^ε`, `sixJ` on any admissible channel `k` of `L_n^δ ⊗ L_p^ζ`
 equals `1`. -/
-theorem sixJ_zero_left (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {n p k : ℕ}
+@[simp] theorem sixJ_zero_left (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {n p k : ℕ}
     (hk : IsClebschGordanChannel n p k) : sixJ hq ε δ ζ 0 n p k n k = 1 := by
   let : Fact (q ≠ 0) := ⟨hq.ne_zero⟩
   let j₀ : Fin (min (0 + n - 2 * ↑(0 : Fin (min 0 n + 1))) p + 1) := hk.index.cast (by simp)
@@ -338,7 +340,7 @@ theorem sixJ_zero_left (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {n 
 
 /-- When the third factor is `L_0^ζ`, `sixJ` on an admissible channel `k` of `L_m^ε ⊗ L_n^δ`
 equals `ζ^((m + n - k) / 2)`, reflecting the `K⁻¹` factor in `ΔF = F ⊗ K⁻¹ + 1 ⊗ F`. -/
-theorem sixJ_zero_right (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {m n k : ℕ}
+@[simp] theorem sixJ_zero_right (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) {m n k : ℕ}
     (hk : IsClebschGordanChannel m n k) :
     sixJ hq ε δ ζ m n 0 k k n = (ζ : ℂ) ^ ((m + n - k) / 2) := by
   let : Fact (q ≠ 0) := ⟨hq.ne_zero⟩
