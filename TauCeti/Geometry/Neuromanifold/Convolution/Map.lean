@@ -170,6 +170,32 @@ parameter product: filters and the shared bias are both mapped. -/
   rw [realize_def, realize_def]
   exact A.evalPrefix_polynomial_map q φ p x (Fin.last L) a
 
+/-- Reconstructing affine parameters from mapped scalar coordinates maps each filter and
+shared bias. -/
+@[simp] theorem parameterEquiv_polynomial_map (A : ConvolutionSpec S L)
+    (q : Fin (L - 1) → Polynomial K) (φ : K →+* R) (p : (A.polynomial q).Parameters) :
+    (A.polynomial (Polynomial.map φ ∘ q)).parameterEquiv
+        (φ ∘ (A.polynomial q).parameterEquiv.symm p) =
+      (fun i => (φ ∘ (p i).1, φ (p i).2)) := by
+  -- Explicit projection lemmas keep the dependent index types aligned across scalar universes.
+  funext i
+  apply Prod.ext
+  · funext j
+    exact ((A.polynomial (Polynomial.map φ ∘ q)).parameterEquiv_apply_fst _ i j).trans
+      (congrArg φ ((A.polynomial q).parameterEquiv_symm_apply_inl p i j))
+  · exact ((A.polynomial (Polynomial.map φ ∘ q)).parameterEquiv_apply_snd _ i).trans
+      (congrArg φ ((A.polynomial q).parameterEquiv_symm_apply_inr p i ()))
+
+/-- Mapping filters commutes with including them as affine parameters with zero biases. -/
+@[simp] theorem zeroBias_polynomial_map (A : ConvolutionSpec S L)
+    (q : Fin (L - 1) → Polynomial K) (φ : K →+* R) (w : (A.polynomial q).Weights) :
+    (A.polynomial (Polynomial.map φ ∘ q)).zeroBias (fun i => φ ∘ w i) =
+      (fun i => (φ ∘ ((A.polynomial q).zeroBias w i).1,
+        φ ((A.polynomial q).zeroBias w i).2)) := by
+  dsimp only [polynomial] at w ⊢
+  funext i
+  simp
+
 /-- Scalar transport commutes with bias-free convolutional realization on the filter-only
 parameter product. -/
 @[simp] theorem realizeWeights_polynomial_map (A : ConvolutionSpec S L)
@@ -177,13 +203,8 @@ parameter product. -/
     (x : Fin (A.width 0) → K) :
     (A.polynomial (Polynomial.map φ ∘ q)).realizeWeights
         (fun i => φ ∘ w i) (φ ∘ x) = φ ∘ (A.polynomial q).realizeWeights w x := by
-  have hz : (A.polynomial (Polynomial.map φ ∘ q)).zeroBias (fun i => φ ∘ w i) =
-      (fun i => (φ ∘ ((A.polynomial q).zeroBias w i).1,
-        φ ((A.polynomial q).zeroBias w i).2)) := by
-    dsimp only [polynomial] at w ⊢
-    funext i
-    simp
-  rw [realizeWeights_def, realizeWeights_def, Function.comp_apply, Function.comp_apply, hz]
+  rw [realizeWeights_def, realizeWeights_def, Function.comp_apply, Function.comp_apply,
+    zeroBias_polynomial_map]
   exact A.realize_polynomial_map q φ ((A.polynomial q).zeroBias w) x
 
 end Evaluation
@@ -225,40 +246,25 @@ theorem realize_polynomial_map_eq_iff (A : ConvolutionSpec S L)
       (A.polynomial (Polynomial.map φ ∘ q)).polynomialRealize (Polynomial.map φ ∘ q) := by
     dsimp only [polynomial]
     exact funext ((A.polynomial q).map_polynomialRealize q φ)
-  have hp (w : (A.polynomial q).Parameters) :
-      (A.polynomial (Polynomial.map φ ∘ q)).parameterEquiv
-          (φ ∘ (A.polynomial q).parameterEquiv.symm w) =
-        (fun i => (φ ∘ (w i).1, φ (w i).2)) := by
-    funext i
-    apply Prod.ext
-    · funext j
-      exact ((A.polynomial (Polynomial.map φ ∘ q)).parameterEquiv_apply_fst _ i j).trans
-        (congrArg φ ((A.polynomial q).parameterEquiv_symm_apply_inl w i j))
-    · exact ((A.polynomial (Polynomial.map φ ∘ q)).parameterEquiv_apply_snd _ i).trans
-        (congrArg φ ((A.polynomial q).parameterEquiv_symm_apply_inr w i ()))
   have heval := (A.polynomial q).polynomialRealization_polynomialRealize q
     (polynomial_activation A q)
   have heval' := (A.polynomial (Polynomial.map φ ∘ q)).polynomialRealization_polynomialRealize
     (Polynomial.map φ ∘ q) (polynomial_activation A (Polynomial.map φ ∘ q))
   have hsource (w : (A.polynomial q).Parameters) :
       polynomialRealization ((A.polynomial q).polynomialRealize q)
-          ((A.polynomial q).parameterEquiv.symm w) = (A.polynomial q).realize w :=
-    (congrFun heval _).trans
-      (congrArg (A.polynomial q).realize ((A.polynomial q).parameterEquiv.apply_symm_apply w))
+          ((A.polynomial q).parameterEquiv.symm w) = (A.polynomial q).realize w := by
+    simp only [heval, Function.comp_apply, Equiv.apply_symm_apply]
   have htarget (w : (A.polynomial q).Parameters) :
       polynomialRealization (MvPolynomial.map φ ∘ (A.polynomial q).polynomialRealize q)
           (φ ∘ (A.polynomial q).parameterEquiv.symm w) =
         (A.polynomial (Polynomial.map φ ∘ q)).realize
-          (fun i => (φ ∘ (w i).1, φ (w i).2)) :=
-    (congrArg (fun P => polynomialRealization P
-      (φ ∘ (A.polynomial q).parameterEquiv.symm w)) hmap).trans
-        ((congrFun heval' _).trans
-          (congrArg (A.polynomial (Polynomial.map φ ∘ q)).realize (hp w)))
-  have H := polynomialRealization_map_eq_iff hφ
-    ((A.polynomial q).polynomialRealize q)
-    ((A.polynomial q).parameterEquiv.symm p) ((A.polynomial q).parameterEquiv.symm v)
-  exact (iff_of_eq (congrArg₂ Eq (htarget p) (htarget v))).symm.trans
-    (H.trans (iff_of_eq (congrArg₂ Eq (hsource p) (hsource v))))
+          (fun i => (φ ∘ (w i).1, φ (w i).2)) := by
+    have hp := A.parameterEquiv_polynomial_map q φ w
+    -- Compute the common index types before rewriting between the two scalar universes.
+    dsimp only [polynomial] at hmap heval' hp ⊢
+    rw [hmap, heval', Function.comp_apply, hp]
+  rw [← htarget p, ← htarget v, ← hsource p, ← hsource v]
+  exact polynomialRealization_map_eq_iff hφ _ _ _
 
 /-- The same all-input function comparison holds on the filter-only parameter space, with
 no artificial bias coordinates. -/
@@ -268,26 +274,8 @@ theorem realizeWeights_polynomial_map_eq_iff (A : ConvolutionSpec S L)
     (A.polynomial (Polynomial.map φ ∘ q)).realizeWeights (fun i => φ ∘ w i) =
       (A.polynomial (Polynomial.map φ ∘ q)).realizeWeights (fun i => φ ∘ v i) ↔
       (A.polynomial q).realizeWeights w = (A.polynomial q).realizeWeights v := by
-  have hz (u : (A.polynomial q).Weights) :
-      (A.polynomial (Polynomial.map φ ∘ q)).zeroBias (fun i => φ ∘ u i) =
-        (fun i => (φ ∘ ((A.polynomial q).zeroBias u i).1,
-          φ ((A.polynomial q).zeroBias u i).2)) := by
-    dsimp only [polynomial] at u ⊢
-    funext i
-    simp
-  have H := A.realize_polynomial_map_eq_iff q φ hφ
-    ((A.polynomial q).zeroBias w) ((A.polynomial q).zeroBias v)
-  have heq (u : (A.polynomial q).Weights) :
-      (A.polynomial (Polynomial.map φ ∘ q)).realizeWeights (fun i => φ ∘ u i) =
-        (A.polynomial (Polynomial.map φ ∘ q)).realize
-          (fun i => (φ ∘ ((A.polynomial q).zeroBias u i).1,
-            φ ((A.polynomial q).zeroBias u i).2)) :=
-    (congrFun (realizeWeights_def _) _).trans
-      (congrArg (A.polynomial (Polynomial.map φ ∘ q)).realize (hz u))
-  exact (iff_of_eq (congrArg₂ Eq (heq w) (heq v))).trans
-    (H.trans (iff_of_eq (congrArg₂ Eq
-      (congrFun (realizeWeights_def (A.polynomial q)) w)
-      (congrFun (realizeWeights_def (A.polynomial q)) v))).symm)
+  simp only [realizeWeights_def, Function.comp_apply, zeroBias_polynomial_map]
+  exact A.realize_polynomial_map_eq_iff q φ hφ _ _
 
 end Fibres
 
