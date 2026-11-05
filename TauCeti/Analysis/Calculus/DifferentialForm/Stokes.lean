@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
+import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -23,7 +24,9 @@ closed annulus is its positively oriented boundary integral. Zero inner radius g
 formula. Only C¹ regularity near the region of integration is required; in the annular
 case no regularity on the missing inner disc is needed. On a rectangle the formula is stated both
 for the set integral over `Icc a b` (`TauCeti.integral_extDeriv_prod_Icc`) and for the iterated
-integral over oriented intervals (`TauCeti.integral2_extDeriv`).
+integral over oriented intervals (`TauCeti.integral2_extDeriv`). For a scalar one-form
+`f_s ds + f_t dt` it is Green's theorem `TauCeti.integral_fderiv_sub_fderiv_Icc`, written in
+terms of the partial derivatives `∂_s f_t - ∂_t f_s`.
 
 One dimension up, the integral of a closed two-form over the boundary of a cube vanishes: its
 integrals over the top and bottom faces differ by the signed integrals over the four side faces
@@ -96,6 +99,43 @@ theorem integral_extDeriv_prod_Icc
   simp only [f, g, intervalIntegral.integral_neg] at h
   rw [h]
   abel
+
+section Green
+
+variable {U : Set (ℝ × ℝ)} {fs ft : ℝ × ℝ → ℝ} {a b : ℝ × ℝ}
+
+/-- The exterior derivative `∂_s f_t - ∂_t f_s` of a one-form `f_s ds + f_t dt` that is `C¹` over
+an open neighbourhood of a rectangle is integrable over the rectangle. -/
+theorem integrableOn_fderiv_sub_fderiv_Icc (hU : IsOpen U) (hfs : ContDiffOn ℝ 1 fs U)
+    (hft : ContDiffOn ℝ 1 ft U) (habU : Icc a b ⊆ U) :
+    IntegrableOn (fun z ↦ fderiv ℝ ft z (1, 0) - fderiv ℝ fs z (0, 1)) (Icc a b) :=
+  ((((hft.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).sub
+    ((hfs.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const)).mono
+      habU).integrableOn_compact isCompact_Icc
+
+/-- **Green's theorem on a rectangle.** For a one-form `f_s ds + f_t dt` that is `C¹` over an
+open neighbourhood of a rectangle `[a₁, b₁] × [a₂, b₂]`, the integral of its exterior derivative
+`∂_s f_t - ∂_t f_s` over the rectangle is its integral over the positively oriented boundary. -/
+theorem integral_fderiv_sub_fderiv_Icc (hU : IsOpen U) (hfs : ContDiffOn ℝ 1 fs U)
+    (hft : ContDiffOn ℝ 1 ft U) (hab : a ≤ b) (habU : Icc a b ⊆ U) :
+    ∫ z in Icc a b, (fderiv ℝ ft z (1, 0) - fderiv ℝ fs z (0, 1)) =
+      (∫ s in a.1..b.1, fs (s, a.2)) + (∫ t in a.2..b.2, ft (b.1, t)) -
+        (∫ s in a.1..b.1, fs (s, b.2)) - ∫ t in a.2..b.2, ft (a.1, t) := by
+  -- Stokes' formula for the one-form `f_s dx + f_t dy`.
+  have hω (z) (hz : z ∈ Icc a b) :
+      ContDiffAt ℝ 1 (fun z ↦ fs z • Prod.realPlaneDx z + ft z • Prod.realPlaneDy z) z :=
+    ((hfs.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDx.contDiffAt).add
+      ((hft.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDy.contDiffAt)
+  have h := integral_extDeriv_prod_Icc hab hω
+  rw [setIntegral_congr_fun measurableSet_Icc fun z hz ↦
+    extDeriv_apply_pair_of_differentiableAt ((hω z hz).differentiableAt one_ne_zero) _ _] at h
+  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+    Prod.realPlaneDx_apply, Prod.realPlaneDy_apply, smul_eq_mul, mul_zero, mul_one, add_zero,
+    zero_add] at h
+  rw [h]
+  ring
+
+end Green
 
 /-- Stokes' formula on a rectangle, as an iterated integral over oriented intervals, for a one-form
 that is C¹ near the closed rectangle. The corners may come in either order. -/

@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Manifold.Distribution.Horizontal
 public import TauCeti.Geometry.Manifold.Distribution.Levi
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
+import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -47,6 +50,11 @@ the Levi form of `D` is nondegenerate at `x`
 (`TauCeti.RoughForm.isContactFormAt_iff_bijective_distributionLeviForm`). This applies to local
 defining forms of a hyperplane field, which need not extend to global one-forms.
 
+Consequently the Levi form of a `C¹` hyperplane field vanishes on the tangent images of every `C²`
+map horizontal for it (`TauCeti.IsHorizontalMap.distributionLeviForm_eq_zero`). The proof pulls
+back a local defining form `α` of the hyperplane field near `f y`: since `f^* α` vanishes near
+`y`, so does `f^* dα = d(f^* α)`, and `α` carries the Levi form to `dα`.
+
 ## Main results
 
 * `TauCeti.SmoothForm.exists_isDistributionFrameOn_kerDistribution`: near a point where `α` does
@@ -61,6 +69,8 @@ defining forms of a hyperplane field, which need not extend to global one-forms.
 * `TauCeti.SmoothForm.isContactFormAt_iff_bijective_distributionLeviForm` and
   `TauCeti.SmoothForm.isContactForm_iff_forall_bijective_distributionLeviForm`: the contact
   condition is Levi nondegeneracy of the kernel.
+* `TauCeti.IsHorizontalMap.distributionLeviForm_eq_zero`: the Levi form vanishes on the tangent
+  images of a horizontal map.
 
 ## References
 
@@ -289,5 +299,61 @@ theorem isContactForm_iff_forall_bijective_distributionLeviForm [FiniteDimension
   exact forall_congr' fun _ ↦ isContactFormAt_iff_bijective_distributionLeviForm
 
 end SmoothForm
+
+/-! ### Horizontal maps -/
+
+section Horizontal
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 2 M]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
+  {D : Π x : M, Submodule ℝ (TangentSpace I x)} {f : N → M} {n : ℕ∞ω} {k : ℕ}
+
+/-- **The Levi form vanishes on horizontal tangent images.** Let `D` be a `C^n` hyperplane field,
+with `1 ≤ n`, and let `f` be horizontal for `D` and of class `C²` at `y`. Then the Levi form
+`L_D (u, v) = -[U, V] mod D` vanishes on any two vectors of the tangent image `df_y(T_y N)`. -/
+theorem IsHorizontalMap.distributionLeviForm_eq_zero [IsManifold I (n + 1) M]
+    (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank ℝ E) (hn : 1 ≤ n)
+    (hf : IsHorizontalMap J D f) {y : N} (hfy : ContMDiffAt J I 2 f y) (v w : TangentSpace J y) :
+    distributionLeviForm D (f y) ⟨mfderiv J I f y v, hf.mfderiv_mem y v⟩
+      ⟨mfderiv J I f y w, hf.mfderiv_mem y w⟩ = 0 := by
+  obtain ⟨U, hU, hyU, α, hα, hαD⟩ := hD.exists_roughForm_ker_eq hk (f y)
+  have hαy : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) 1
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) x (α x)) (f y) :=
+    ((hα _ hyU).contMDiffAt (hU.mem_nhds hyU)).of_le hn
+  -- The pulled-back form `f^* α` vanishes near `y`, since `f` maps into `D = ker α` there.
+  have hpull : ∀ᶠ y' in 𝓝 y, mpullback J I f α y' = 0 := by
+    filter_upwards [hfy.continuousAt.preimage_mem_nhds (hU.mem_nhds hyU)] with y' hy'
+    ext u
+    rw [mpullback_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+    have hu : (fun i ↦ mfderiv J I f y' (u i)) = ![mfderiv J I f y' (u 0)] := by
+      ext i
+      fin_cases i
+      rfl
+    rw [hu, ← RoughForm.mem_ker, (hαD _ hy').2]
+    exact hf.mfderiv_mem y' (u 0)
+  -- Hence `dα` vanishes on the tangent image at `y`.
+  have hdα : mextDeriv α (f y) ![mfderiv J I f y v, mfderiv J I f y w] = 0 := by
+    have h := congr($(mpullback_mextDeriv_at hfy hαy) ![v, w])
+    rw [mextDeriv_congr_of_eventuallyEq (η := 0) hpull, mextDeriv_zero, Pi.zero_apply,
+      ContinuousAlternatingMap.coe_zero, Pi.zero_apply, mpullback_apply] at h
+    rw [← h]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+  -- The defining form carries the Levi form to `dα`, and is injective on `TM ⧸ D`.
+  obtain ⟨V, hV, hyV, X, hX⟩ := isContMDiffDistribution_iff.1 hD (f y)
+  obtain ⟨z, hz⟩ := (D (f y)).mkQ_surjective (distributionLeviForm D (f y)
+    ⟨mfderiv J I f y v, hf.mfderiv_mem y v⟩ ⟨mfderiv J I f y w, hf.mfderiv_mem y w⟩)
+  have hαz := RoughForm.apply_eq_mextDeriv_of_mkQ_eq_distributionLeviForm (hX.of_le hn)
+    (hV.mem_nhds hyV) (hαy.mdifferentiableAt one_ne_zero)
+    (eventually_of_mem (hU.mem_nhds hyU) fun x hx ↦ (hαD x hx).2.ge) hz
+  rw [hdα, ← RoughForm.mem_ker, (hαD _ hyU).2] at hαz
+  rw [← hz, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+  exact hαz
+
+end Horizontal
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Carrier
-public import TauCeti.LinearAlgebra.Matrix.UnipotentCommutator
+public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.NestedCommutator
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.ChevalleyRelations
 
 /-!
@@ -113,21 +113,6 @@ section NestedCommutators
 
 open scoped commutatorElement
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-private theorem adjacent_ne {i j : Fin 7} (hij : CM i j = -1) : i ≠ j := by
-  rintro rfl
-  rw [CartanMatrix.E_diag] at hij
-  norm_num at hij
-
-private theorem raising_lie_lie_eq_zero {i j : Fin 7} (hij : CM i j = -1) :
-    ⁅raisingMatrix i, ⁅raisingMatrix i, raisingMatrix j⁆⁆ = 0 := by
-  simpa [hij] using isSerreSystem.ad_pow_lie_E_E i j
-
-private theorem lowering_lie_lie_eq_zero {i j : Fin 7} (hij : CM i j = -1) :
-    ⁅loweringMatrix i, ⁅loweringMatrix i, loweringMatrix j⁆⁆ = 0 := by
-  simpa [hij] using isSerreSystem.ad_pow_lie_F_F i j
-
 /-- **The nested commutator relation of positive simple-root points at adjacent nodes**:
 `⁅⁅xᵢ(t), xⱼ(s)⁆, x₋ⱼ(r)⁆ = xᵢ(t * s * r)` over every commutative ring. -/
 theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl {i j : Fin 7}
@@ -138,20 +123,16 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl {i j : Fin 7}
         rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (t * s * r)) := by
   have hji : CM j i = -1 := by
     rw [(CartanMatrix.E_isSymm 7).apply, hij]
-  have hAC := isSerreSystem.lie_E_F_of_ne i j (adjacent_ne hij)
-  have hABC : ⁅⁅raisingMatrix i, raisingMatrix j⁆, loweringMatrix j⁆ = raisingMatrix i := by
-    rw [isSerreSystem.lie_lie_E_E_F_of_ne (adjacent_ne hij), hji, neg_one_zsmul, neg_neg]
   apply (points A).subtype_injective
   simp only [map_commutatorElement, Subgroup.subtype_apply]
   apply Units.ext
-  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd]
-  exact Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul (raisingMatrix i)
-    (raisingMatrix j) (loweringMatrix j) (raisingMatrix_mul_self i) (raisingMatrix_mul_self j)
-    (loweringMatrix_mul_self j) hAC hABC (raising_lie_lie_eq_zero hij)
-    (raising_lie_lie_eq_zero hji) t s r _ _ _
-    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd])
+  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, ← weightTable_raisingMatrix]
+  exact weightTable.coe_commutatorElement_commutatorElement_raisingMatrix
+    (by simpa only [weightTable_cartanMatrix] using hij)
+    (by simpa only [weightTable_cartanMatrix] using hji) t s r _ _ _
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
 
 /-- **The nested commutator relation of negative simple-root points at adjacent nodes**:
 `⁅⁅x₋ᵢ(t), x₋ⱼ(s)⁆, xⱼ(r)⁆ = x₋ᵢ(t * s * r)` over every commutative ring. -/
@@ -163,21 +144,16 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inr {i j : Fin 7}
         rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd (t * s * r)) := by
   have hji : CM j i = -1 := by
     rw [(CartanMatrix.E_isSymm 7).apply, hij]
-  have hAC : ⁅loweringMatrix i, raisingMatrix j⁆ = 0 := by
-    rw [← lie_skew, isSerreSystem.lie_E_F_of_ne j i (adjacent_ne hji), neg_zero]
-  have hABC : ⁅⁅loweringMatrix i, loweringMatrix j⁆, raisingMatrix j⁆ = loweringMatrix i := by
-    rw [isSerreSystem.lie_lie_F_F_E_of_ne (adjacent_ne hij), hji, neg_one_zsmul, neg_neg]
   apply (points A).subtype_injective
   simp only [map_commutatorElement, Subgroup.subtype_apply]
   apply Units.ext
-  rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd]
-  exact Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul (loweringMatrix i)
-    (loweringMatrix j) (raisingMatrix j) (loweringMatrix_mul_self i) (loweringMatrix_mul_self j)
-    (raisingMatrix_mul_self j) hAC hABC (lowering_lie_lie_eq_zero hij)
-    (lowering_lie_lie_eq_zero hji) t s r _ _ _
-    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd])
-    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd])
+  rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, ← weightTable_loweringMatrix]
+  exact weightTable.coe_commutatorElement_commutatorElement_loweringMatrix
+    (by simpa only [weightTable_cartanMatrix] using hij)
+    (by simpa only [weightTable_cartanMatrix] using hji) t s r _ _ _
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
+    (by rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, weightTable_loweringMatrix])
+    (by rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, weightTable_raisingMatrix])
 
 end NestedCommutators
 

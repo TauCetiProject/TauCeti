@@ -37,6 +37,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
 * `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
+* `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
+  `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
+  `cosh α * cosh θ ≠ 0`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -51,6 +54,9 @@ The formula `Real.tanh_add` is the quotient of the other two, both sides carryin
 Where it is used: `TauCeti/Analysis/SpecialFunctions/Artanh.lean` inverts it into the additive
 law of `Real.artanh`, which carries the Möbius addition of `(-1, 1)` to the addition of `ℝ`;
 that law is in turn what makes the hyperbolic distance of the complex unit disc a metric.
+The complex identity `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` rewrites the
+projection parameter at which the two stabilization constants of the Ocneanu trace agree, in
+`TauCeti/Algebra/TypeAHeckeAlgebra/Hyperbolic.lean`.
 -/
 
 public section
@@ -183,6 +189,16 @@ theorem _root_.Real.tendsto_tanh_atTop : Filter.Tendsto Real.tanh Filter.atTop (
 theorem _root_.Real.tendsto_tanh_atBot : Filter.Tendsto Real.tanh Filter.atBot (nhds (-1)) := by
   simpa [Function.comp_def, Real.tanh_neg] using
     (Real.tendsto_tanh_atTop.comp Filter.tendsto_neg_atBot_atTop).neg
+
+/-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
+with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
+`(cosh α * cosh θ - sinh α * sinh θ) / (2 * cosh α * cosh θ)` by `Complex.cosh_sub`. -/
+theorem _root_.Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
+    (hα : Complex.cosh α ≠ 0) (hθ : Complex.cosh θ ≠ 0) :
+    Complex.cosh (α - θ) / (2 * Complex.cosh α * Complex.cosh θ) =
+      (1 - Complex.tanh α * Complex.tanh θ) / 2 := by
+  rw [Complex.cosh_sub, Complex.tanh_eq_sinh_div_cosh, Complex.tanh_eq_sinh_div_cosh]
+  field_simp
 
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/

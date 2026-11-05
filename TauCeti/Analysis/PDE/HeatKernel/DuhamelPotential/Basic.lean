@@ -11,6 +11,7 @@ import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
