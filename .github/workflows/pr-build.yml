@@ -151,14 +151,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@af17a368e29ff57a9511576539c265cbac0439c1
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+          tools-ref: af17a368e29ff57a9511576539c265cbac0439c1
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@af17a368e29ff57a9511576539c265cbac0439c1
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1072,6 +1072,29 @@ jobs:
           LAKE_CACHE_MAX_REVS: ${{ env.TOOLCHAIN_CHANGED == '1' && '1' || '1000' }}
         run: bash gate/scripts/lake-cache-get.sh pr
 
+      # A Bors/queue staging candidate is usually a tip the queue's repair worker built green on
+      # its host (under the same bwrap sandbox) and published to the repair cache
+      # ([services.repair_cache] in tauceti.toml), or that tip replayed onto a newer main, which
+      # changes every commit SHA but hardly any module's inputs. Lake reuses outputs by content
+      # trace, never by commit, so the trusted script tries several candidate revisions in order:
+      # the exact staging head, then the revisions the queue lists in the dispatch payload's
+      # `repair_outputs_revs` (the batch's earlier published tips; absent means none), then the
+      # base, and fetches the outputs of each that has them, on top of the base cache, so the
+      # offline build below reuses them. Lake still checks every trace and recompiles what
+      # differs, and the audits and lints run as for any build, so the verdict is this job's. No
+      # outputs for any candidate is the normal case for an unrepaired head: the script logs it
+      # and leaves the base cache exactly as the step above restored it, as it does for a fetch
+      # that never completes. The payload list reaches the script only through the environment,
+      # and the script skips any entry that is not a full SHA. Anonymous reads; no token, no PR
+      # code.
+      - name: Fetch the repair worker's outputs for the staging candidates (network, no token; no PR code)
+        id: repair_cache
+        if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' && github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+        env:
+          STAGING_HEAD: ${{ steps.pr.outputs.sha }}
+          REPAIR_OUTPUTS_REVS: ${{ format('{0} {1} {2}', steps.pr.outputs.sha, join(github.event.client_payload.repair_outputs_revs || fromJSON('[]'), ' '), steps.pr.outputs.base_sha) }}
+        run: bash gate/scripts/repair-cache-get.sh pr "$STAGING_HEAD"
+
       - name: Save verified Lake archive records before candidate code runs
         if: ${{ env.INFRA != '1' && env.STAGE_LAKE_CACHE == '1' }}
         # gate/ is mounted read-only below. Candidate builds overwrite the live
@@ -1238,7 +1261,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@af17a368e29ff57a9511576539c265cbac0439c1
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1381,6 +1404,13 @@ jobs:
           else
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           fi
+          # Say whether the build started from the repair worker's outputs (staging only; the
+          # fetch step above sets these). Every description stays well under GitHub's 140.
+          case "${REPAIR_OUTPUTS_STATE:-}" in
+            used) desc="$desc; reused ${REPAIR_OUTPUTS_REUSED:-0} repair outputs" ;;
+            absent) desc="$desc; no repair outputs" ;;
+            failed) desc="$desc; repair outputs incomplete, not used" ;;
+          esac
           {
             echo "build-state=$state"
             echo "build-description=$desc"
@@ -1593,14 +1623,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@af17a368e29ff57a9511576539c265cbac0439c1
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+          tools-ref: af17a368e29ff57a9511576539c265cbac0439c1
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@af17a368e29ff57a9511576539c265cbac0439c1
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
