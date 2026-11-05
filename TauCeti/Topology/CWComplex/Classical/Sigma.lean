@@ -18,7 +18,10 @@ nor a separation assumption is required.
 
 The absolute construction is an instance. In particular, disjoint unions of spaces
 with CW structures again carry CW structures. This allows componentwise constructions
-of CW models to be assembled without a connectedness hypothesis.
+of CW models to be assembled without a connectedness hypothesis. Likewise, a disjoint
+union of spaces, each a relative CW complex on the whole space, is a relative CW complex
+on the whole disjoint union, relative to the disjoint union of the bases
+(`Topology.RelCWComplex.sigmaUniv`).
 
 ## References
 
@@ -157,6 +160,37 @@ theorem cellFrontier_sigma (n : ℕ) (i : ι) (j : cell (C i) n) :
     @cellFrontier _ _ _ _ (sigma C D) n ((sigmaCellEquiv C D n).symm ⟨i, j⟩) =
       Sigma.mk i '' cellFrontier n j :=
   sigmaCellMap_image C D n i j _
+
+section Univ
+
+variable [∀ i, RelCWComplex (univ : Set (X i)) (D i)]
+
+/-- The relative CW structure on the whole of a disjoint union of spaces, each a relative CW
+complex on the whole space, relative to the disjoint union of the bases. Cells retain their
+summand index. This is not an instance, since the base of a relative CW structure is an output
+parameter. -/
+@[instance_reducible]
+def sigmaUniv : RelCWComplex (univ : Set (Σ i, X i)) (univ.sigma D) :=
+  let S := sigma (fun i ↦ (univ : Set (X i))) D
+  { S with
+    closed' A _ hA := S.closed' A (by simp) hA
+    union' := by simpa using S.union' }
+
+/-- The cells of `RelCWComplex.sigmaUniv` are the cells of its summands, with their summand
+indices. -/
+def sigmaUnivCellEquiv (n : ℕ) :
+    @cell _ _ (univ : Set (Σ i, X i)) (univ.sigma D) (sigmaUniv D) n ≃
+      Σ i, cell (univ : Set (X i)) n :=
+  Equiv.refl _
+
+/-- A characteristic map of `RelCWComplex.sigmaUniv` is followed by its summand inclusion. -/
+@[simp]
+theorem coe_map_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    ⇑(@map _ _ _ _ (sigmaUniv D) n ((sigmaUnivCellEquiv D n).symm ⟨i, j⟩)) =
+      Sigma.mk i ∘ map n j :=
+  coe_map_sigma (fun i ↦ (univ : Set (X i))) D n i j
+
+end Univ
 
 end Topology.RelCWComplex
 
