@@ -24,8 +24,17 @@ theta series of an orthogonal direct sum `L ⊕ M` is the product of a term for 
 and `Θ_{L ⊕ M} = Θ_L · Θ_M`. For instance `Θ_{E₈ ⊕ E₈} = Θ_{E₈}²`.
 
 The reindexing uses Mathlib's `ZLattice.comap_equiv` and `Submodule.equivMapOfInjective`.
-For the classical theta-series conventions see Serre, *A Course in Arithmetic*, Ch. VII §6,
-and Ebeling, *Lattices and Codes*, Ch. 2.
+
+## Main statements
+
+* `ZLattice.thetaCoset_comap`, `ZLattice.thetaSeries_comap`: invariance under linear isometries.
+* `ZLattice.thetaCoset_smul`, `ZLattice.thetaSeries_smul`: `Θ_{c • L}(τ) = Θ_L(c² τ)`.
+* `ZLattice.thetaCoset_orthSum`, `ZLattice.thetaSeries_orthSum`: `Θ_{L ⊕ M} = Θ_L · Θ_M`.
+
+## References
+
+* J.-P. Serre, *A Course in Arithmetic*, Ch. VII §6.
+* W. Ebeling, *Lattices and Codes*, Ch. 2.
 -/
 
 public section
