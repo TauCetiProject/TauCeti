@@ -47,6 +47,8 @@ given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially norme
 * `TauCeti.NormedRing.norm_units_inv_of_norm_mul` and
   `TauCeti.NormedRing.norm_units_zpow_smul_of_norm_mul`: the inverse norm formula and exact
   scaling `‖u ^ n • m‖ = ‖u‖ ^ n * ‖m‖` for a unit `u` scaling the norm exactly.
+* `TauCeti.NormedRing.norm_smul_of_isUnit_of_norm_eq_one`: a unit of norm one of a ring with
+  multiplicative norm acts isometrically.
 * `TauCeti.NormedRing.PseudoUniformizer.norm_zpow_smul`: exact scaling
   `‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * ‖m‖` on modules with contractive action.
 * `TauCeti.NormedRing.PseudoUniformizer.existsUnique_norm_zpow_smul_mem_Ioc`: the shell
@@ -129,6 +131,20 @@ theorem norm_units_pow_of_norm_mul (n : ℕ) : ‖(u : R) ^ n‖ = ‖(u : R)‖
   simpa using norm_units_zpow_of_norm_mul hu0 hu n
 
 end Units
+
+section NormOne
+
+variable {R M : Type*} [SeminormedRing R] [NormMulClass R] [SeminormedAddGroup M]
+  [MulActionWithZero R M] [IsBoundedSMul R M]
+
+/-- A unit of norm one of a ring with multiplicative norm acts isometrically under a contractive
+scalar action. -/
+theorem norm_smul_of_isUnit_of_norm_eq_one {u : R} (hu : IsUnit u) (h1 : ‖u‖ = 1) (m : M) :
+    ‖u • m‖ = ‖m‖ := by
+  obtain ⟨v, rfl⟩ := hu
+  rw [norm_units_smul_of_norm_mul (h1 ▸ one_pos) (fun x ↦ norm_mul _ _), h1, one_mul]
+
+end NormOne
 
 /-- A **multiplicative pseudo-uniformiser** of a seminormed ring `R`: a unit `ϖ` with
 `0 < ‖ϖ‖ < 1` by which left multiplication scales the norm exactly, `‖ϖ * x‖ = ‖ϖ‖ * ‖x‖`.
