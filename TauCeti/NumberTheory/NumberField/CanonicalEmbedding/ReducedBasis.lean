@@ -126,19 +126,9 @@ private theorem prod_successiveMin_integerLattice_le :
         exact mul_le_mul_of_nonneg_left (two_pow_mul_two_pow_le_volume_real_closedBall K) hprod_nn
     _ ≤ 2 ^ finrank ℝ (mixedSpace K) * ZLattice.covolume (mixedEmbedding.integerLattice K) := hmink
     _ = √|(discr K : ℝ)| * C := by
-        rw [hdim, covolume_integerLattice, pow_add, pow_mul]
-        have h4 : ((2 : ℝ) ^ 2) ^ nrComplexPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K =
-            2 ^ nrComplexPlaces K := by
-          rw [← mul_pow]
-          norm_num
-        calc 2 ^ nrRealPlaces K * (2 ^ 2) ^ nrComplexPlaces K *
-              ((2 : ℝ)⁻¹ ^ nrComplexPlaces K * √|(discr K : ℝ)|)
-            = 2 ^ nrRealPlaces K *
-                (((2 : ℝ) ^ 2) ^ nrComplexPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K) *
-                √|(discr K : ℝ)| := by ring
-          _ = √|(discr K : ℝ)| * C := by
-            rw [h4]
-            ring
+        rw [hdim, covolume_integerLattice, two_mul, pow_add, pow_add, inv_pow]
+        dsimp [C]
+        field_simp
 
 /-- **Existence of an integral basis of bounded house.** Every number field `K` has a `ℤ`-basis
 `b` of `𝓞 K` indexed by `Fin (finrank ℚ K)` such that `b i` has house at most
@@ -244,11 +234,8 @@ theorem normAtPlace_mixedEmbedding_reducedIntegralBasis_le (w : InfinitePlace K)
     (i : Fin (finrank ℚ K)) :
     normAtPlace w (mixedEmbedding K (reducedIntegralBasis K i : K)) ≤ integralBasisHouse K := by
   classical
-  refine (le_trans ?_ (norm_mixedEmbedding (reducedIntegralBasis K i : K)).le).trans
-    (house_reducedIntegralBasis_le i)
-  rw [norm_eq_sup'_normAtPlace]
-  exact Finset.le_sup' (fun u ↦ normAtPlace u (mixedEmbedding K (reducedIntegralBasis K i : K)))
-    (Finset.mem_univ w)
+  exact (normAtPlace_le_norm w _).trans
+    ((norm_mixedEmbedding _).trans_le (house_reducedIntegralBasis_le i))
 
 /-- `integralBasisHouse K` is at least `1`. -/
 theorem one_le_integralBasisHouse : 1 ≤ integralBasisHouse K := by
