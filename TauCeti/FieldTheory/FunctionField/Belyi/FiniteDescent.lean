@@ -16,8 +16,8 @@ import TauCeti.FieldTheory.RatFunc.Transcendental
 Let `k` be a field of characteristic zero which is algebraic over a subfield `K₀`; the case of
 interest is `k = AlgebraicClosure ℚ` and `K₀ = ℚ`. Every algebraic Belyi pair `X = (F, t)` over
 `k` has a model over a finite extension of `K₀` inside `k`
-(`TauCeti.AlgebraicBelyiPair.exists_finiteDimensional_model`). So every Belyi pair over `ℚ̄` is
-defined over a number field.
+(`TauCeti.AlgebraicBelyiPair.exists_finiteDimensional_model`). So every Belyi pair over
+`AlgebraicClosure ℚ` is defined over a number field.
 
 The model is explicit. Choose finitely many elements `S` of `F` generating it over `k`, and let
 `E = K₀(t, S)` be the subfield of `F` they generate together with `t` over `K₀`. It is a function
