@@ -32,7 +32,7 @@ with an independently pinned simply connected group scheme.
 
 * `corootCocharacter`: the cocharacters associated to the named simple coroots.
 * `cartanVector_eq_derivationComp_corootCocharacter`: the opposite-root bracket normalization.
-* `range_derivationCompLieHom_weightTorus_eq_span`: the toral tangent image.
+* `range_derivationCompLieHom_weightTorusIntegralCoordinateMap_eq_span`: the toral tangent image.
 * `cartanBasis`: the basis of that image given by the normalized Cartan vectors.
 
 The cocharacter calculation adapts
@@ -168,7 +168,7 @@ theorem cartanVector_eq_derivationComp_corootCocharacter (i : Fin 6) :
   rw [tangentMatrixLieHom_cartanVector, tangentMatrixLieHom_derivationComp_corootCocharacter]
 
 /-- The weight-torus differential sends its coordinate basis to the normalized Cartan vectors. -/
-theorem derivationCompLieHom_weightTorus_tangentBasis (i : Fin 6) :
+theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_tangentBasis (i : Fin 6) :
     derivationCompLieHom (B := B) weightTorusIntegralCoordinateMap.hom
         (SplitTorus.tangentBasis (R := ℤ) (B := B) i) = cartanVector (B := B) i := by
   rw [SplitTorus.derivationCompLieHom_tangentBasis,
@@ -176,7 +176,7 @@ theorem derivationCompLieHom_weightTorus_tangentBasis (i : Fin 6) :
     derivationCompLieHom_apply]
 
 /-- The tangent image of the integral weight torus is the span of the Cartan vectors. -/
-theorem range_derivationCompLieHom_weightTorus_eq_span :
+theorem range_derivationCompLieHom_weightTorusIntegralCoordinateMap_eq_span :
     LinearMap.range
         (derivationCompLieHom (B := B) weightTorusIntegralCoordinateMap.hom).toLinearMap =
       Submodule.span B (Set.range (cartanVector (B := B))) := by
@@ -188,7 +188,7 @@ theorem range_derivationCompLieHom_weightTorus_eq_span :
     derivationCompLieHom_apply]
 
 /-- The integral weight-torus differential is injective, including over nonreduced value rings. -/
-theorem derivationCompLieHom_weightTorus_injective :
+theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_injective :
     Function.Injective
       (derivationCompLieHom (B := B) weightTorusIntegralCoordinateMap.hom) := by
   apply derivationCompLieHom_injective_of_surjective
@@ -200,11 +200,14 @@ theorem derivationCompLieHom_weightTorus_injective :
 
 /-- The six normalized Cartan vectors are independent over every commutative value ring. -/
 theorem linearIndependent_cartanVector : LinearIndependent B (cartanVector (B := B)) := by
+  -- Eta-expand the family so that simp can rewrite each Cartan vector under the binder;
+  -- without the lambda, the pointwise normalization lemma does not match the bare family.
   change LinearIndependent B (fun i : Fin 6 ↦ cartanVector (B := B) i)
   simpa only [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
     derivationCompLieHom_apply] using
     SplitTorus.linearIndependent_derivationComp_cocharacter (B := B)
-      weightTorusIntegralCoordinateMap.hom derivationCompLieHom_weightTorus_injective
+      weightTorusIntegralCoordinateMap.hom
+      derivationCompLieHom_weightTorusIntegralCoordinateMap_injective
 
 /-- The normalized Cartan vectors form a basis of their span, the toral tangent image. -/
 def cartanBasis :
