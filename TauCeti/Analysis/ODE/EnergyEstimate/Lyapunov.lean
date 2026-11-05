@@ -63,8 +63,8 @@ is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `
   cokernel of `D_A` is finite dimensional.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`: `D_A` is Fredholm.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: combined with the degenerate-limit
-  results of `TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit`, for a continuous family of
-  symmetric operators `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
+  results of `TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit`, for a continuous family
+  with symmetric limits `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_of_hasLyapunovForm`: its index is
   `dim ker D_A - dim ker D_{-A†}`.
 
@@ -218,12 +218,12 @@ theorem isFredholm_trajectoryOperator_of_hasLyapunovForm
       hAL)
 
 /-- **The trajectory operator is Fredholm exactly when its limits are invertible.** Let `A` be a
-continuous family of symmetric operators on a finite-dimensional real inner product space with
+continuous family of operators on a finite-dimensional real inner product space with symmetric
 limits `A±` at `±∞`. Then `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and
-only if `A⁻` and `A⁺` are injective. The coefficient of the operator is any `L∞` class `AL` of
-`A`. -/
-theorem isFredholm_trajectoryOperator_iff (hA : Continuous A)
-    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {Aminus Aplus : E →L[ℝ] E}
+only if `A⁻` and `A⁺` are injective. Only the limits need to be symmetric. The coefficient of the
+operator is any `L∞` class `AL` of `A`. -/
+theorem isFredholm_trajectoryOperator_iff (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
+    (hminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
@@ -234,17 +234,17 @@ theorem isFredholm_trajectoryOperator_iff (hA : Continuous A)
     exact not_isFredholm_trajectoryOperator_of_not_injective_of_tendsto_atBot AL hAL hbot h hF
   · by_contra h
     exact not_isFredholm_trajectoryOperator_of_not_injective_of_tendsto_atTop AL hAL htop h hF
-  -- Injective operators on a finite-dimensional space are bounded below, and a symmetric limit
+  -- Injective operators on a finite-dimensional space are bounded below, and a symmetric operator
   -- bounded below has a Lyapunov form.
-  have hlyap {B : E →L[ℝ] E} {l : Filter ℝ} [l.NeBot] (hl : Tendsto A l (𝓝 B))
+  have hlyap {B : E →L[ℝ] E} (hBsym : (B : E →ₗ[ℝ] E).IsSymmetric)
       (hB : Function.Injective B) : B.HasLyapunovForm := by
     obtain ⟨K, -, hK⟩ := (B : E →ₗ[ℝ] E).injective_iff_antilipschitz.1 hB
-    refine ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hl
+    refine ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hBsym
       (α := ((K : ℝ) + 1)⁻¹) (by positivity) fun v ↦ ?_
     rw [inv_mul_le_iff₀ (by positivity)]
     calc ‖v‖ ≤ K * ‖B v‖ := ZeroHomClass.bound_of_antilipschitz (B : E →ₗ[ℝ] E) hK v
       _ ≤ ((K : ℝ) + 1) * ‖B v‖ := by gcongr; linarith
-  exact isFredholm_trajectoryOperator_of_hasLyapunovForm hA (hlyap hbot hm) (hlyap htop hp) hbot
+  exact isFredholm_trajectoryOperator_of_hasLyapunovForm hA (hlyap hminus hm) (hlyap hplus hp) hbot
     htop AL hAL
 
 /-- **The index of the trajectory operator with hyperbolic limits.** Under the hypotheses of

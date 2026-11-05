@@ -25,7 +25,7 @@ because `A` has a limit `A⁺` with `A⁺ v = 0`, then the trajectory operator
 
 is not Fredholm. Together with
 `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`, this shows that for a
-continuous family of symmetric operators on a finite-dimensional inner product space with limits
+continuous family of operators on a finite-dimensional inner product space with symmetric limits
 `A±`, `D_A` is Fredholm exactly when both limits are injective, that is, invertible
 (`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`, in
 `TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov`).
