@@ -168,6 +168,16 @@ def monomialHomogeneousCoefficientMap (d : Fin (L + 1) → ℕ) (r : Fin (L - 1)
     ((monomial d r).isHomogeneous_inputPolynomial_polynomialRealizeWeights_monomial r)
     ((monomial d r).weightEquiv.symm w)
 
+/-- The monomial MLP coefficient map is the generic homogeneous coefficient map evaluated
+at the coordinates of its weight tuple. -/
+theorem monomialHomogeneousCoefficientMap_def (d : Fin (L + 1) → ℕ)
+    (r : Fin (L - 1) → ℕ) (w : (monomial (K := K) d r).Weights) :
+    monomialHomogeneousCoefficientMap d r w =
+      polynomialHomogeneousCoefficientMap
+        ((monomial d r).polynomialRealizeWeights fun j => Polynomial.X ^ r j)
+        ((monomial d r).isHomogeneous_inputPolynomial_polynomialRealizeWeights_monomial r)
+        ((monomial d r).weightEquiv.symm w) := (rfl)
+
 /-- Forgetting homogeneity gives the input polynomial with the weights specialized to `w`. -/
 @[simp] theorem monomialHomogeneousCoefficientMap_coe (d : Fin (L + 1) → ℕ)
     (r : Fin (L - 1) → ℕ) (w : (monomial (K := K) d r).Weights)
