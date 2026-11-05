@@ -162,13 +162,6 @@ theorem quotientSheafGlobalSectionsIso_inv_comp_quotientMap (hK : IsAdic K) (hL 
   rw [quotientSheafGlobalSectionsIso_inv, quotientSheafGlobalSectionsIso_inv, quotientMap_hom_app]
   exact StructureSheaf.toOpen_comp_comap _ _
 
-include hφ in
-/-- Some power of an ideal of definition `J` of `B` is mapped by `φ` into a given ideal of
-definition `L` of `A`. -/
-private theorem exists_pow_succ_le_comap (hJ : IsAdic J) (hL : IsAdic L) :
-    ∃ n : ℕ, J ^ (n + 1) ≤ L.comap φ :=
-  hJ.exists_pow_succ_le (by simpa using (hL.isOpen_pow 1).preimage hφ)
-
 end QuotientMap
 
 section StructureSheaf
@@ -180,8 +173,8 @@ to a thickening `O_{J ^ (n + 1)}` with `φ(J ^ (n + 1)) ⊆ L`, followed by `quo
 private noncomputable def toPushforwardQuotientSheaf (hJ : IsAdic J) (hL : IsAdic L) :
     structureSheaf hJ ⟶
       (TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap φ hφ))).obj (quotientSheaf hL) :=
-  quotientProjection hJ (exists_pow_succ_le_comap φ hφ hJ hL).choose ≫
-    quotientMap φ hφ _ hL (exists_pow_succ_le_comap φ hφ hJ hL).choose_spec
+  quotientProjection hJ (hJ.exists_pow_succ_le_comap hL hφ).choose ≫
+    quotientMap φ hφ _ hL (hJ.exists_pow_succ_le_comap hL hφ).choose_spec
 
 omit [IsTopologicalRing A] in
 /-- Reducing to a smaller thickening `O_N` before mapping to `(Spf φ)_* O_L` does not change
@@ -201,7 +194,7 @@ private theorem toPushforwardQuotientSheaf_eq (hJ : IsAdic J) (hK : IsAdic K) (h
     toPushforwardQuotientSheaf φ hφ hJ hL =
       toQuotientSheaf hJ hK ≫ quotientMap φ hφ hK hL hKL := by
   obtain ⟨n, hn⟩ := hJ.exists_pow_succ_le (by simpa using hK.isOpen_pow 1)
-  set c := (exists_pow_succ_le_comap φ hφ hJ hL).choose
+  set c := (hJ.exists_pow_succ_le_comap hL hφ).choose
   have hN := is_ideal_adic_pow hJ (c + n).succ_pos
   rw [toPushforwardQuotientSheaf, ← toQuotientSheaf_pow_succ,
     toQuotientSheaf_comp_quotientMap_of_le φ hφ hJ hN _ hL
@@ -291,7 +284,7 @@ theorem structureSheafMap_comp_toQuotientSheaf (hJ : IsAdic J) (hI : IsAdic I) (
           (toQuotientSheaf hI hL) =
       toQuotientSheaf hJ hK ≫ quotientMap φ hφ hK hL hKL := by
   obtain ⟨n, hn⟩ := hI.exists_pow_succ_le (by simpa using hL.isOpen_pow 1)
-  obtain ⟨m, hm⟩ := exists_pow_succ_le_comap φ hφ hJ (is_ideal_adic_pow hI n.succ_pos)
+  obtain ⟨m, hm⟩ := hJ.exists_pow_succ_le_comap (is_ideal_adic_pow hI n.succ_pos) hφ
   have hN := is_ideal_adic_pow hJ m.succ_pos
   rw [toQuotientSheaf_eq hI hL hn, Functor.map_comp, ← Category.assoc,
     structureSheafMap_comp_quotientProjection φ hφ hJ hI hN n hm, Category.assoc,
@@ -308,7 +301,7 @@ theorem structureSheafMap_comp_structureSheafIso_hom {I' : Ideal A} {J' : Ideal 
           (structureSheafIso hI hI').hom =
       (structureSheafIso hJ hJ').hom ≫ structureSheafMap φ hφ hJ' hI' := by
   refine structureSheaf.pushforward_hom_ext φ hφ hI' fun n ↦ ?_
-  obtain ⟨m, hm⟩ := exists_pow_succ_le_comap φ hφ hJ' (is_ideal_adic_pow hI' n.succ_pos)
+  obtain ⟨m, hm⟩ := hJ'.exists_pow_succ_le_comap (is_ideal_adic_pow hI' n.succ_pos) hφ
   have hN := is_ideal_adic_pow hJ' m.succ_pos
   rw [Category.assoc, ← Functor.map_comp, structureSheafIso_hom_comp_quotientProjection,
     structureSheafMap_comp_toQuotientSheaf φ hφ hJ hI hN _ hm, Category.assoc,
@@ -336,7 +329,7 @@ theorem structureSheafMap_hom_app_top_comp_globalSectionsIso_hom (hJ : IsAdic J)
     exact h
   rw [← cancel_epi (globalSectionsIso hJ).inv, Iso.inv_hom_id_assoc]
   refine (IsAdicComplete.isLimitQuotientPowSuccCone I).hom_ext fun n ↦ ?_
-  obtain ⟨m, hm⟩ := exists_pow_succ_le_comap φ hφ hJ (is_ideal_adic_pow hI n.unop.succ_pos)
+  obtain ⟨m, hm⟩ := hJ.exists_pow_succ_le_comap (is_ideal_adic_pow hI n.unop.succ_pos) hφ
   have hN := is_ideal_adic_pow hJ m.succ_pos
   obtain ⟨Q, hQ⟩ : ∃ Q : (quotientSheaf hN).obj.obj (op ⊤) ⟶
       (quotientSheaf (is_ideal_adic_pow hI n.unop.succ_pos)).obj.obj (op ⊤),
