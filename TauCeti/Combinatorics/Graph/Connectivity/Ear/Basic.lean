@@ -201,6 +201,31 @@ theorem base_le_add (e : G.Ear H) : H ≤ e.add :=
 theorem toGraph_le_add (e : G.Ear H) : e.toGraph ≤ e.add :=
   e.compatible.right_le_union
 
+/-- Every edge traversed by an ear belongs to the graph obtained by adjoining the ear. -/
+theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
+    (hf : f ∈ e.toWalk.2.2.edges) : f ∈ E(e.add) := by
+  rw [edgeSet_add, edgeSet_toGraph]
+  exact Or.inr hf
+
+/-- The interiors of an open ear and an oppositely directed path in its base are disjoint. -/
+theorem open_support_tail_disjoint {s t : α} (hHG : H ≤ G) {p : G.Walk s t}
+    (hp : p.IsPath) (ht : t ∈ V(H))
+    (hinter : ∀ z ∈ p.support, z ≠ s → z ≠ t → z ∉ V(H))
+    {q : H.Walk t s} (hq : q.IsPath) :
+    p.support.tail.Disjoint (q.mapLe hHG).support.tail := by
+  rw [List.disjoint_left]
+  intro z hzp hzq
+  have hzq' : z ∈ q.support.tail := by
+    simpa only [Walk.support_mapLe_eq_support] using hzq
+  have hpNodup := hp.support_nodup
+  rw [← p.cons_tail_support] at hpNodup
+  have hqNodup := hq.support_nodup
+  rw [← q.cons_tail_support] at hqNodup
+  have hzs : z ≠ s := fun hzs ↦ (List.nodup_cons.mp hpNodup).1 (hzs ▸ hzp)
+  have hzt : z ≠ t := fun hzt ↦ (List.nodup_cons.mp hqNodup).1 (hzt ▸ hzq')
+  exact hinter z (List.mem_of_mem_tail hzp) hzs hzt
+    (q.support_subset_vertexSet ht z (List.mem_of_mem_tail hzq'))
+
 /-- Adjoining an ear still gives a subgraph of the ambient graph. -/
 theorem add_le (e : G.Ear H) : e.add ≤ G :=
   IsSubgraph.union_le e.base_le e.toGraph_le
@@ -211,6 +236,14 @@ theorem edge_notMem_base (e : G.Ear H) {f : β} (hf : f ∈ e.toWalk.2.2.edges) 
   cases e with
   | «open» _ _ _ _ _ _ _ edges_new => exact edges_new f hf
   | «closed» _ _ _ _ _ edges_new => exact edges_new f hf
+
+/-- The edges of an ear are disjoint from those of a walk in its base graph. -/
+theorem edges_disjoint_of_le_base (e : G.Ear H) {x y : α} (q : H.Walk x y) :
+    e.toWalk.2.2.edges.Disjoint (q.mapLe e.base_le).edges := by
+  rw [List.disjoint_left]
+  intro f hfe hfq
+  exact e.edge_notMem_base hfe
+    (q.edges_subset_edgeSet (by simpa only [Walk.edges_mapLe_eq_edges] using hfq))
 
 /-- An open ear has distinct endpoints. -/
 theorem endpoints_ne (e : G.Ear H) (he : e.kind = .open) : e.toWalk.1 ≠ e.toWalk.2.1 := by

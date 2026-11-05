@@ -77,35 +77,24 @@ theorem exists_isCycle_add_of_mem_edgeSet_toGraph (hH : H.Connected) {e : β}
       obtain ⟨q, hq⟩ := (hH.reachable ht hs).exists_isPath
       let qG := q.mapLe hHG
       have hqG : qG.IsPath := (Walk.isPath_mapLe hHG q).mpr hq
-      have hv : p.support.tail.Disjoint qG.support.tail := by
-        rw [List.disjoint_left]
-        intro z hzp hzq
-        have hzq' : z ∈ q.support.tail := by
-          simpa only [qG, Walk.support_mapLe_eq_support] using hzq
-        have hpNodup := hp.support_nodup
-        rw [← p.cons_tail_support] at hpNodup
-        have hqNodup := hq.support_nodup
-        rw [← q.cons_tail_support] at hqNodup
-        have hzs : z ≠ s := fun hzs ↦ (List.nodup_cons.mp hpNodup).1 (hzs ▸ hzp)
-        have hzt : z ≠ t := fun hzt ↦ (List.nodup_cons.mp hqNodup).1 (hzt ▸ hzq')
-        exact hinter z (List.mem_of_mem_tail hzp) hzs hzt
-          (q.support_subset_vertexSet ht z (List.mem_of_mem_tail hzq'))
+      have hv : p.support.tail.Disjoint qG.support.tail :=
+        open_support_tail_disjoint hHG hp ht hinter hq
       have hedisj : p.edges.Disjoint qG.edges := by
-        rw [List.disjoint_left]
-        intro f hfp hfq
-        apply hedges f hfp
-        apply q.edges_subset_edgeSet
-        simpa only [qG, Walk.edges_mapLe_eq_edges] using hfq
+        have h := edges_disjoint_of_le_base
+          (Ear.open hHG p hp hs ht hst hinter hedges) q
+        rw [Ear.toWalk_open] at h
+        exact h
       have hcycle : (p.append qG).IsCycle := hp.isCycle_append hqG hv hedisj
         (Or.inl (Nat.pos_of_ne_zero fun h ↦ hst (p.eq_of_length_eq_zero h)))
       let c := (p.append qG).transfer
         (Ear.open hHG p hp hs ht hst hinter hedges).add_le fun f hf ↦ by
           rw [Walk.edges_append] at hf
-          rw [edgeSet_add]
           rcases List.mem_append.mp hf with hfp | hfq
-          · exact Or.inr (by
-              simpa only [Ear.toGraph_open] using (p.mem_edgeSet_walkGraph f).mpr hfp)
-          · exact Or.inl (q.edges_subset_edgeSet (by
+          · exact edges_toWalk_subset_edgeSet_add
+              (Ear.open hHG p hp hs ht hst hinter hedges)
+              (by rw [Ear.toWalk_open]; exact hfp)
+          · rw [edgeSet_add]
+            exact Or.inl (q.edges_subset_edgeSet (by
               simpa only [qG, Walk.edges_mapLe_eq_edges] using hfq))
       have hc : c.IsCycle := (Walk.isCycle_transfer
         (Ear.open hHG p hp hs ht hst hinter hedges).add_le (p.append qG) _).mpr hcycle
@@ -115,10 +104,9 @@ theorem exists_isCycle_add_of_mem_edgeSet_toGraph (hH : H.Connected) {e : β}
         exact Or.inl heP⟩
   | @«closed» hHG s p hp hs hinter hedges =>
       rw [Ear.toGraph_closed] at he
-      let c := p.transfer (Ear.closed hHG p hp hs hinter hedges).add_le fun f hf ↦ by
-        rw [edgeSet_add]
-        exact Or.inr (by
-          simpa only [Ear.toGraph_closed] using (p.mem_edgeSet_walkGraph f).mpr hf)
+      let c := p.transfer (Ear.closed hHG p hp hs hinter hedges).add_le fun _ hf ↦
+        edges_toWalk_subset_edgeSet_add (Ear.closed hHG p hp hs hinter hedges)
+          (by rw [Ear.toWalk_closed]; exact hf)
       have hc : c.IsCycle := (Walk.isCycle_transfer
         (Ear.closed hHG p hp hs hinter hedges).add_le p _).mpr hp
       exact ⟨s, c, hc, by
@@ -137,10 +125,7 @@ theorem not_isBridge_add (hH : H.Connected) (hbridge : ∀ e, ¬ H.IsBridge e) (
 
 /-- Adjoining an ear preserves `2`-edge-connectivity. -/
 theorem isEdgeConnected_two_add (hH : H.IsEdgeConnected 2) : ear.add.IsEdgeConnected 2 := by
-  have hV : V(H).Nonempty := by
-    cases ear with
-    | «open» _ _ _ hs => exact ⟨_, hs⟩
-    | «closed» _ _ _ hs => exact ⟨_, hs⟩
+  have hV : V(H).Nonempty := ⟨_, ear.toWalk_fst_mem⟩
   rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge hV] at hH
   rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge
     (ear.connected_add hH.1).nonempty]
