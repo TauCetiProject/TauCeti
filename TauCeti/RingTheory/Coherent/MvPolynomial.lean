@@ -78,8 +78,10 @@ theorem isCoherentRing_of_forall_fin {R : Type*} [CommRing R]
     simp only [Set.mem_range, Function.comp_apply, Subtype.exists]
     exact ⟨fun ⟨a, ha, hax⟩ ↦ (hq ⟨a, ha⟩ ▸ hax) ▸ ha, fun hx ↦ ⟨x, hx, hq ⟨x, hx⟩⟩⟩
   let _ : Algebra (MvPolynomial V R) (MvPolynomial σ R) := ι.toAlgebra
-  have : Module.Flat (MvPolynomial V R) (MvPolynomial σ R) := hflat
-  have hmap' : I₀.map (algebraMap (MvPolynomial V R) (MvPolynomial σ R)) = I := hmap
+  have : Module.Flat (MvPolynomial V R) (MvPolynomial σ R) := by
+    rwa [← RingHom.flat_algebraMap_iff, ι.algebraMap_toAlgebra]
+  have hmap' : I₀.map (algebraMap (MvPolynomial V R) (MvPolynomial σ R)) = I := by
+    rwa [ι.algebraMap_toAlgebra]
   exact .of_equiv <|
     LinearEquiv.ofBijective _ (Ideal.liftBaseChange_idealMap_bijective (MvPolynomial σ R) I₀) ≪≫ₗ
       LinearEquiv.ofEq _ _ hmap'

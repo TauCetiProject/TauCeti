@@ -7,7 +7,8 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Basic
 
-import Mathlib.Algebra.MvPolynomial.Variables
+import TauCeti.RingTheory.MvPolynomial.Evaluation.Single
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Noetherianity of multivariate polynomial rings
@@ -34,34 +35,21 @@ namespace MvPolynomial
 Noetherian. -/
 theorem not_isNoetherianRing {R σ : Type*} [CommRing R] [Nontrivial R] [Infinite σ] :
     ¬ IsNoetherianRing (MvPolynomial σ R) := by
-  -- Any finite generating set for `(X_i)_{i : σ}` misses some variable `X_i`.
+  -- Any finite generating set for `idealOfVars σ R` misses some variable `X_i`.
   intro hnoeth
   classical
-  let I : Ideal (MvPolynomial σ R) := Ideal.span (Set.range (MvPolynomial.X : σ → MvPolynomial σ R))
-  obtain ⟨s, hs⟩ := (isNoetherianRing_iff_ideal_fg (MvPolynomial σ R)).mp hnoeth I
-  let V : Finset σ := s.biUnion MvPolynomial.vars
-  obtain ⟨i, hi⟩ := Infinite.exists_notMem_finset V
-  have hI_const : I ≤ RingHom.ker (MvPolynomial.constantCoeff (R := R) (σ := σ)) := by
-    refine Ideal.span_le.mpr ?_
-    rintro _ ⟨j, rfl⟩
-    simp
-  let ev : MvPolynomial σ R →+* R :=
-    MvPolynomial.eval₂Hom (RingHom.id R) (fun j ↦ if j = i then 1 else 0)
-  have hI_ev : I ≤ RingHom.ker ev := by
-    rw [← hs, Submodule.span_le]
-    intro g hg
-    rw [SetLike.mem_coe, RingHom.mem_ker]
-    have hg0 : MvPolynomial.constantCoeff g = 0 :=
-      RingHom.mem_ker.mp (hI_const (hs ▸ Submodule.subset_span hg))
-    have hvars : ∀ j ∈ g.vars, (if j = i then (1 : R) else 0) = 0 := by
-      intro j hj
-      simp only [ite_eq_right_iff]
-      rintro rfl
-      exact absurd (Finset.mem_biUnion.mpr ⟨g, hg, hj⟩) hi
-    simpa [ev, hg0] using MvPolynomial.eval₂Hom_eq_constantCoeff_of_vars (RingHom.id R) hvars
-  have hXi : ev (MvPolynomial.X i) = 0 :=
-    RingHom.mem_ker.mp (hI_ev (Ideal.subset_span ⟨i, rfl⟩))
-  simp [ev] at hXi
+  obtain ⟨s, hs⟩ := (isNoetherianRing_iff_ideal_fg (MvPolynomial σ R)).mp hnoeth
+    (MvPolynomial.idealOfVars σ R)
+  obtain ⟨i, hi⟩ := Infinite.exists_notMem_finset (s.biUnion MvPolynomial.vars)
+  have hle : MvPolynomial.idealOfVars σ R ≤
+      RingHom.ker (MvPolynomial.eval₂Hom (RingHom.id R) (Pi.single i 1)) := by
+    rw [← hs]
+    refine MvPolynomial.span_le_ker_eval₂Hom_single (RingHom.id R) 1 (fun g hg ↦ ?_)
+      (fun g hg hgi ↦ hi (Finset.mem_biUnion.mpr ⟨g, hg, hgi⟩))
+    rw [← RingHom.mem_ker, MvPolynomial.ker_constantCoeff, ← hs]
+    exact Submodule.subset_span hg
+  have hXi := RingHom.mem_ker.mp (hle (Ideal.subset_span ⟨i, rfl⟩))
+  simp at hXi
 
 /-- Over a nontrivial commutative ring `R`, `MvPolynomial σ R` is Noetherian if and only if `R` is
 Noetherian and `σ` is finite. -/

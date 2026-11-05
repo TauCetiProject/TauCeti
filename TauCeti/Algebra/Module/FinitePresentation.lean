@@ -8,7 +8,13 @@ module
 public import Mathlib.Algebra.Module.FinitePresentation
 
 /-!
-# Scalar restriction for finitely presented modules
+# Kernels, quotients, and scalar restriction for finitely presented modules
+
+Over any ring `R`, factoring a linear map `f : M →ₗ[R] N` from a finitely generated module `M`
+through `LinearMap.range f` shows that `LinearMap.ker f` is finitely generated whenever
+`LinearMap.range f` is finitely presented (`Module.FinitePresentation.fg_ker_of_range`), and
+presenting `M ⧸ N` by `Submodule.mkQ` shows that the quotient of a finitely presented module by a
+finitely generated submodule is finitely presented (`Module.FinitePresentation.quotient`).
 
 If an `S`-module `P` is finitely presented as an `R`-module along a ring extension where `S` is
 finite as a left `R`-module, then `P` is also finitely presented over `S`: `P` is finite over `S`,
@@ -19,6 +25,10 @@ presented over `S` if and only if it is finitely presented over `R`.
 
 ## Main results
 
+* `Module.FinitePresentation.fg_ker_of_range`: if `M` is finitely generated and `LinearMap.range f`
+  is finitely presented, then `LinearMap.ker f` is finitely generated.
+* `Module.FinitePresentation.quotient`: the quotient `M ⧸ N` of a finitely presented module by a
+  finitely generated submodule `N` is finitely presented.
 * `Module.FinitePresentation.of_restrictScalars_finitePresentation`: if `S` is finite as a left
   `R`-module and `P` is finitely presented over `R`, then `P` is finitely presented over `S`.
 * `Module.finitePresentation_iff_of_finitePresentation`: over a commutative `R`-algebra `S` that is
@@ -31,6 +41,22 @@ presented over `S` if and only if it is finitely presented over `R`.
 -/
 
 public section
+
+/-- If the range of a linear map from a finitely generated module is finitely presented, then its
+kernel is finitely generated. -/
+theorem Module.FinitePresentation.fg_ker_of_range {R M N : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Finite R M]
+    (f : M →ₗ[R] N) [Module.FinitePresentation R (LinearMap.range f)] :
+    (LinearMap.ker f).FG := by
+  rw [← LinearMap.ker_rangeRestrict f]
+  exact Module.FinitePresentation.fg_ker f.rangeRestrict f.surjective_rangeRestrict
+
+/-- The quotient of a finitely presented module by a finitely generated submodule is finitely
+presented. -/
+theorem Module.FinitePresentation.quotient {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [Module.FinitePresentation R M] {N : Submodule R M} (hN : N.FG) :
+    Module.FinitePresentation R (M ⧸ N) :=
+  Module.finitePresentation_of_surjective N.mkQ N.mkQ_surjective (by rwa [Submodule.ker_mkQ])
 
 /-- If `S` is finite as a left `R`-module and `P` is finitely presented as an `R`-module, then `P`
 is finitely presented as an `S`-module (Stacks, Lemma 10.6.4, Tag 0519). -/

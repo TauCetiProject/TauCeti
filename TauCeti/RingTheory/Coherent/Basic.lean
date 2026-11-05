@@ -200,8 +200,7 @@ theorem Module.isCoherent_iff_forall_fg_ker :
   refine ⟨fun h ↦ ⟨h.toFinite, fun n f ↦ ?_⟩, fun ⟨hfin, hker⟩ ↦ ⟨fun N hN ↦ ?_⟩⟩
   · have : Module.FinitePresentation R (LinearMap.range f) :=
       h.finitePresentation_of_fg (Submodule.fg_range f)
-    have hfg := Module.FinitePresentation.fg_ker f.rangeRestrict f.surjective_rangeRestrict
-    rwa [LinearMap.ker_rangeRestrict] at hfg
+    exact Module.FinitePresentation.fg_ker_of_range f
   · -- Present `N` by a finite coordinate map and restrict its kernel from `M`.
     have : Module.Finite R N := Module.Finite.iff_fg.mpr hN
     obtain ⟨m, p, hp⟩ := Module.Finite.exists_fin' R N
@@ -222,10 +221,8 @@ theorem of_exact_left [Module.IsCoherent R N] [hP : Module.IsCoherent R P]
     Module.IsCoherent R M := by
   have : Module.FinitePresentation R (LinearMap.range g) :=
     hP.finitePresentation_of_fg (Submodule.fg_range g)
-  have hker : (LinearMap.ker g).FG := by
-    rw [← LinearMap.ker_rangeRestrict g]
-    exact Module.FinitePresentation.fg_ker g.rangeRestrict g.surjective_rangeRestrict
-  have hrf : (LinearMap.range f).FG := LinearMap.exact_iff.mp hfg ▸ hker
+  have hrf : (LinearMap.range f).FG :=
+    LinearMap.exact_iff.mp hfg ▸ Module.FinitePresentation.fg_ker_of_range g
   have : Module.Finite R (LinearMap.range f) := Module.Finite.iff_fg.mpr hrf
   have : Module.Finite R M := Module.Finite.equiv (LinearEquiv.ofInjective f hf).symm
   exact of_injective f hf
@@ -589,8 +586,7 @@ and only if it is coherent over `R` (Stacks, Lemma 10.90.6, Tag 05CU). -/
 theorem Ideal.Quotient.isCoherent_iff {I : Ideal R} (hI : I.FG)
     {P : Type*} [AddCommGroup P] [Module R P] [Module (R ⧸ I) P] [IsScalarTower R (R ⧸ I) P] :
     Module.IsCoherent (R ⧸ I) P ↔ Module.IsCoherent R P := by
-  have : Module.FinitePresentation R (R ⧸ I) :=
-    Module.finitePresentation_of_surjective I.mkQ I.mkQ_surjective (by rwa [Submodule.ker_mkQ])
+  have := Module.FinitePresentation.quotient hI
   exact Module.isCoherent_iff_of_surjective Ideal.Quotient.mk_surjective
 
 /-- The quotient of a coherent commutative ring by a finitely generated ideal is a coherent ring
@@ -600,7 +596,7 @@ theorem TauCeti.IsCoherentRing.quotient [TauCeti.IsCoherentRing R] {I : Ideal R}
     TauCeti.IsCoherentRing (R ⧸ I) := by
   rw [TauCeti.isCoherentRing_iff, Ideal.Quotient.isCoherent_iff hI,
     TauCeti.IsCoherentRing.isCoherent_iff_finitePresentation]
-  exact Module.finitePresentation_of_surjective I.mkQ I.mkQ_surjective (by rwa [Submodule.ker_mkQ])
+  exact Module.FinitePresentation.quotient hI
 
 /-! ### Localization of coherent modules and rings -/
 

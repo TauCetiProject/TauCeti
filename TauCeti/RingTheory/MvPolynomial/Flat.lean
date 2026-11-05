@@ -36,10 +36,11 @@ theorem flat_rename {R σ τ : Type*} [CommRing R] {f : τ → σ} (hf : Functio
   -- Split `σ` into `Set.range f` and its complement to realize `MvPolynomial σ R` as a polynomial
   -- algebra over `MvPolynomial τ R`, which is free and hence flat.
   classical
-  let S₁ := {x : σ // x ∉ Set.range f}
+  let S₁ := ↥(Set.range f)ᶜ
   let e : S₁ ⊕ τ ≃ σ :=
-    ((Equiv.refl S₁).sumCongr (Equiv.ofInjective f hf)).trans
-      ((Equiv.sumComm S₁ _).trans (Equiv.sumCompl (· ∈ Set.range f)))
+    (Equiv.sumComm S₁ τ).trans
+      (((Equiv.ofInjective f hf).sumCongr (Equiv.refl S₁)).trans
+        (Equiv.Set.sumCompl (Set.range f)))
   let ψ : MvPolynomial S₁ (MvPolynomial τ R) ≃ₐ[R] MvPolynomial σ R :=
     (MvPolynomial.sumAlgEquiv R S₁ τ).symm.trans (MvPolynomial.renameEquiv R e)
   let φ₀ : MvPolynomial τ R →ₐ[R] MvPolynomial S₁ (MvPolynomial τ R) :=
@@ -47,8 +48,11 @@ theorem flat_rename {R σ τ : Type*} [CommRing R] {f : τ → σ} (hf : Functio
   have hφ₀ : φ₀.toRingHom.Flat := RingHom.flat_algebraMap_iff.mpr inferInstance
   have heq : MvPolynomial.rename f = ψ.toAlgHom.comp φ₀ :=
     MvPolynomial.algHom_ext fun t ↦ by
-      simp [ψ, φ₀, e, MvPolynomial.algebraMap_eq]
-      rfl
+      simp only [ψ, φ₀, e, S₁, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.trans_apply,
+        IsScalarTower.toAlgHom_apply, MvPolynomial.algebraMap_eq,
+        MvPolynomial.sumAlgEquiv_symm_C_X, MvPolynomial.renameEquiv_apply, MvPolynomial.rename_X,
+        Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inr, Equiv.sumCongr_apply, Sum.map_inl,
+        Equiv.Set.sumCompl_apply_inl, Equiv.ofInjective_apply]
   rw [heq]
   exact hφ₀.comp (RingHom.Flat.of_bijective ψ.bijective)
 
