@@ -14,7 +14,8 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Embedding
 The elements `jucysMurphy q i` and `additiveJucysMurphy q i`, for `i : Fin n`, live in the
 finite presentation on `n` strands. They are the preimages of the corresponding infinite
 Jucys–Murphy elements under the proved stage isomorphism. Their recursion, pairwise
-commutation and compatibility with adding a last strand are consequently independent of any
+commutation, commutation with the simple generators away from their strands, and compatibility
+with adding a last strand are consequently independent of any
 choice of reduced words or basis.
 
 With `Q = q²`, the additive elements satisfy `J_i = 1 + (Q - 1) L_i`. They are defined even
@@ -154,6 +155,24 @@ theorem commute_additiveJucysMurphy (i j : Fin n) :
   apply toInfinite_injective R q n
   simpa only [map_mul, toInfinite_additiveJucysMurphy] using
     (InfiniteTypeAHeckeAlgebra.commute_additiveJucysMurphy (q := q) i j).eq
+
+/-- A simple generator commutes with an additive element unless it crosses its strand. -/
+theorem commute_T_additiveJucysMurphy {i : Fin (n - 1)} {k : Fin n}
+    (h : (i : ℕ) + 1 < k ∨ (k : ℕ) < i) :
+    Commute (T q i) (additiveJucysMurphy q k) := by
+  apply (toInfinite_injective R q n)
+  simpa only [map_mul, toInfinite_T, toInfinite_additiveJucysMurphy] using
+    (InfiniteTypeAHeckeAlgebra.commute_T_additiveJucysMurphy (q := q) h).eq
+
+/-- A simple generator commutes with the sum of the additive elements of the two strands
+it crosses. -/
+theorem commute_T_additiveJucysMurphy_add (i : Fin n) :
+    Commute (T (n := n + 1) q i)
+      (additiveJucysMurphy q i.castSucc + additiveJucysMurphy q i.succ) := by
+  apply toInfinite_injective R q (n + 1)
+  simpa only [map_mul, map_add, toInfinite_T, toInfinite_additiveJucysMurphy,
+    Fin.val_castSucc, Fin.val_succ] using
+    (InfiniteTypeAHeckeAlgebra.commute_T_additiveJucysMurphy_add (q := q) i).eq
 
 /-- The last additive Jucys–Murphy element centralizes the preceding finite stage. -/
 theorem commute_additiveJucysMurphy_last_strandIncl (x : TypeAHeckeAlgebra R q n) :
