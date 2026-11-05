@@ -275,7 +275,6 @@ theorem residueClass_ne_zero {Φ : LinearMap.BilinForm R L}
 
 /-- A multiple `t • [c_Φ]` of a residue class vanishes exactly when `t • Φ` does, over every
 commutative ring. -/
-@[simp]
 theorem smul_residueClass_eq_zero_iff_smul_eq_zero {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (t : R) :
     t • residueClass R L Φ hΦ hΦs = 0 ↔ t • Φ = 0 := by
