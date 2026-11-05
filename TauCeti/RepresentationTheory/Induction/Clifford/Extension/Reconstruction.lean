@@ -209,6 +209,7 @@ noncomputable def cliffordBalancedTensorRepresentation : Representation k (inert
       reconstruction_projection_ker_le A ρ hsmul hinl⟩)
 
 /-- Any implementer computes the descended balanced tensor action. -/
+@[simp↓]
 theorem cliffordBalancedTensorRepresentation_projection_tmul (p : implementers A) (m : M) (x : V) :
     cliffordBalancedTensorRepresentation A ρ hsmul hinl (projection A p)
         (BalancedTensorProduct.tmul k (End A) (N := V) m x) =
@@ -236,6 +237,7 @@ noncomputable def cliffordReconstructionRepresentation : Representation k (inert
 
 /-- The reconstructed action is the tensor of the extended multiplicity operator and the
 implementing operator; it needs no realization of the multiplicity module as a Hom space. -/
+@[simp↓]
 theorem cliffordReconstructionRepresentation_projection_tmul
     (p : implementers A) (m : M) (x : V) :
     cliffordReconstructionRepresentation A s hs U (projection A p)
@@ -247,6 +249,7 @@ theorem cliffordReconstructionRepresentation_projection_tmul
 
 /-- On the normal subgroup the reconstructed action fixes the multiplicity factor and
 acts by the original representation on the vector factor. -/
+@[simp]
 theorem cliffordReconstructionRepresentation_inclusion_tmul (n : N) (m : M) (x : V) :
     cliffordReconstructionRepresentation A s hs U (Subgroup.inclusion (le_inertia A) n)
         (BalancedTensorProduct.tmul k (End A) (N := V) m x) =
