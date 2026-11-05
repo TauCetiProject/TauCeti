@@ -80,13 +80,13 @@ sums of sheets over each point. -/
 theorem permutationRepMap_id_app_hom_apply (x : FundamentalGroupoid B) (v : p ⁻¹' {x.as} →₀ k) :
     ((hG.permutationRepMap k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ rfl) (𝟙 B) rfl).app x).hom
       v = v := by
-  induction v using Finsupp.induction_linear with
-  | zero => exact map_zero _
-  | add v₁ v₂ h₁ h₂ => exact (map_add _ v₁ v₂).trans (congrArg₂ (· + ·) h₁ h₂)
-  | single e r =>
-    exact (hG.permutationRepMap_app_hom_single k hG (φ := MonoidHom.id G) (𝟙 E) (fun _ _ ↦ rfl)
-      (𝟙 B) rfl x e r).trans
-      (congrArg (Finsupp.single · r) (Subtype.ext (CommSq.fiberMap_apply_coe _ _ _)))
+  have hid : ⇑((CommSq.mk rfl : CommSq (𝟙 E) p p (𝟙 B)).fiberMap x.as) = _root_.id :=
+    (congrArg (fun m ↦ ⇑(TopCat.Hom.hom m))
+      (CommSq.fiberMap_id (CommSq.mk rfl : CommSq (𝟙 E) p p (𝟙 B)) x.as)).trans (TopCat.coe_id _)
+  exact (hG.permutationRepMap_app_hom_apply k hG (φ := MonoidHom.id G) (𝟙 E) (fun _ _ ↦ rfl)
+    (𝟙 B) rfl x v).trans
+    (LinearMap.congr_fun
+      ((congrArg (Finsupp.lmapDomain k k) hid).trans (Finsupp.lmapDomain_id k k)) v)
 
 /-- Along a composite of maps of quotient covers, `permutationRepMap` acts on formal sums of sheets
 as the composite of the two fibre maps. -/
@@ -106,29 +106,21 @@ theorem permutationRepMap_comp_app_hom_apply
         (((hG.permutationRepMap k hH f hf b hb).app x).hom v) := by
   have hcomp : p ≫ (b ≫ b') = (f ≫ f') ≫ r := by
     rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]
-  let m₁ := ((hG.permutationRepMap k hK (f ≫ f') (φ := φ'.comp φ)
-    (fun g e ↦ by simp [hf, hf']) (b ≫ b') hcomp).app x).hom
-  let m₂ := ((hG.permutationRepMap k hH f hf b hb).app x).hom
-  let m₃ := ((hH.permutationRepMap k hK f' hf' b' hb').app
-    ((FundamentalGroupoid.map b.hom).obj x)).hom
-  induction v using Finsupp.induction_linear with
-  | zero =>
-    exact (map_zero m₁).trans ((map_zero m₃).symm.trans (congrArg m₃ (map_zero m₂).symm))
-  | add v₁ v₂ h₁ h₂ =>
-    exact (map_add m₁ v₁ v₂).trans <| (congrArg₂ (· + ·) h₁ h₂).trans <|
-      (map_add m₃ (m₂ v₁) (m₂ v₂)).symm.trans (congrArg m₃ (map_add m₂ v₁ v₂).symm)
-  | single e s =>
-    have he : (CommSq.mk hcomp.symm).fiberMap x.as e =
-        (CommSq.mk hb'.symm).fiberMap (b x.as) ((CommSq.mk hb.symm).fiberMap x.as e) :=
-      Subtype.ext <| (CommSq.fiberMap_apply_coe (CommSq.mk hcomp.symm) x.as e).trans <|
-        (congrArg f'.hom (CommSq.fiberMap_apply_coe (CommSq.mk hb.symm) x.as e).symm).trans
-          (CommSq.fiberMap_apply_coe (CommSq.mk hb'.symm) (b x.as) _).symm
-    exact (hG.permutationRepMap_app_hom_single k hK (φ := φ'.comp φ) (f ≫ f') _ (b ≫ b')
-      hcomp x e s).trans <|
-      (congrArg (Finsupp.single · s) he).trans <|
-      (hH.permutationRepMap_app_hom_single k hK f' hf' b' hb'
-        ((FundamentalGroupoid.map b.hom).obj x) ((CommSq.mk hb.symm).fiberMap x.as e) s).symm.trans
-        (congrArg m₃ (hG.permutationRepMap_app_hom_single k hH f hf b hb x e s).symm)
+  have hfib : ⇑((CommSq.mk hcomp.symm).fiberMap x.as) =
+      ⇑((CommSq.mk hb'.symm).fiberMap (b x.as)) ∘ ⇑((CommSq.mk hb.symm).fiberMap x.as) :=
+    (congrArg (fun m ↦ ⇑(TopCat.Hom.hom m))
+      (CommSq.fiberMap_comp_fiberMap (CommSq.mk hb.symm) (CommSq.mk hb'.symm) x.as).symm).trans
+      (TopCat.coe_comp _ _)
+  have hlmap := LinearMap.congr_fun
+    ((congrArg (Finsupp.lmapDomain k k) hfib).trans (Finsupp.lmapDomain_comp k k _ _)) v
+  exact (hG.permutationRepMap_app_hom_apply k hK (φ := φ'.comp φ) (f ≫ f')
+      (fun g e ↦ by simp [hf, hf']) (b ≫ b') hcomp x v).trans <|
+    hlmap.trans <|
+    (hH.permutationRepMap_app_hom_apply k hK f' hf' b' hb'
+      ((FundamentalGroupoid.map b.hom).obj x) _).symm.trans
+      (congrArg ((hH.permutationRepMap k hK f' hf' b' hb').app
+          ((FundamentalGroupoid.map b.hom).obj x)).hom
+        (hG.permutationRepMap_app_hom_apply k hH f hf b hb x v).symm)
 
 end Permutation
 
@@ -151,22 +143,8 @@ theorem associatedLocalSystemMapOver_app_coinvariantsTensorMk
       Rep.coinvariantsTensorMk D
         ((hH.permutationRepFunctor k).obj ((FundamentalGroupoid.map b.hom).obj x)) (ξ.hom a)
         (((hG.permutationRepMap k hH f hf b hb).app x).hom v) := by
-  let L := ((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom
-  let mk₁ := Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a
-  let mk₂ := Rep.coinvariantsTensorMk D
-    ((hH.permutationRepFunctor k).obj ((FundamentalGroupoid.map b.hom).obj x)) (ξ.hom a)
-  let P := ((hG.permutationRepMap k hH f hf b hb).app x).hom
-  induction v using Finsupp.induction_linear with
-  | zero =>
-    exact (congrArg L (map_zero mk₁)).trans <|
-      (map_zero L).trans ((map_zero mk₂).symm.trans (congrArg mk₂ (map_zero P).symm))
-  | add v₁ v₂ h₁ h₂ =>
-    exact (congrArg L (map_add mk₁ v₁ v₂)).trans <| (map_add L (mk₁ v₁) (mk₁ v₂)).trans <|
-      (congrArg₂ (· + ·) h₁ h₂).trans <|
-      (map_add mk₂ (P v₁) (P v₂)).symm.trans (congrArg mk₂ (map_add P v₁ v₂).symm)
-  | single e r =>
-    exact (hG.associatedLocalSystemMapOver_app_mk_single k hH f hf b hb ξ x a e r).trans
-      (congrArg mk₂ (hG.permutationRepMap_app_hom_single k hH f hf b hb x e r).symm)
+  rw [associatedLocalSystemMapOver_app]
+  exact φ.coinvariantsTensorMap_mk ξ ((hG.permutationRepMap k hH f hf b hb).app x) a v
 
 /-- Under the sheet identifications at `e` and its image `e'` over `b.hom x.as`,
 `associatedLocalSystemMapOver` is the underlying linear map of `ξ`. -/
@@ -346,13 +324,7 @@ theorem associatedLocalSystemMapOver_comp_pullback_map
         (ξ ≫ (Rep.resFunctor φ).map β) := by
   refine NatTrans.ext <| funext fun x ↦
     Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a v ↦ ?_)
-  -- Evaluate both composites on a pure tensor class `⟦a ⊗ v⟧`.
-  change (((hH.associatedLocalSystemMap k β).app ((FundamentalGroupoid.map b.hom).obj x)).hom
-      (((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom
-        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a v))) =
-    ((hG.associatedLocalSystemMapOver k hH f hf b hb
-      (ξ ≫ (Rep.resFunctor φ).map β)).app x).hom
-        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a v)
+  simp only [LinearMap.compr₂_apply, NatTrans.comp_app, LocalCoefficientSystem.pullback_map_app]
   exact (congrArg ((hH.associatedLocalSystemMap k β).app _).hom
     (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hH f hf b hb ξ x a v)).trans
     ((hH.associatedLocalSystemMap_app_coinvariantsTensorMk k β _ (ξ.hom a) _).trans
