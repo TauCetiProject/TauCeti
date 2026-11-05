@@ -365,14 +365,10 @@ theorem simplyConnectedSpace_spinGroup_of_three_le_finrank {V : Type*} [AddCommG
     [Module ℂ V] [FiniteDimensional ℂ V] {Q : QuadraticForm ℂ V} (hQ : Q.Nondegenerate)
     (hV : 3 ≤ finrank ℂ V) : SimplyConnectedSpace (spinGroup Q) := by
   have := simplyConnectedSpace_spinGroup_baseChange_realCliffordForm_zero _ hV
-  -- Both forms are nondegenerate of dimension `finrank ℂ V`, so both are sums of squares.
-  obtain ⟨e⟩ := (QuadraticForm.equivalent_weightedSumSquares_one_iff_finrank_eq Q hQ _).2 rfl
-  obtain ⟨e'⟩ := (QuadraticForm.equivalent_weightedSumSquares_one_iff_finrank_eq
-    ((realCliffordForm (finrank ℂ V) 0).baseChange ℂ)
-    (QuadraticForm.Nondegenerate.baseChange (nondegenerate_realCliffordForm _ 0)) (finrank ℂ V)).2
-    (by simp)
-  exact (e.trans e'.symm).spinGroupContinuousMulEquiv.toHomeomorph.toHomotopyEquiv
-    |>.simplyConnectedSpace
+  obtain ⟨e⟩ := QuadraticForm.equivalent_of_finrank_eq_of_isSepClosed Q
+    ((realCliffordForm (finrank ℂ V) 0).baseChange ℂ) hQ
+    (QuadraticForm.Nondegenerate.baseChange (nondegenerate_realCliffordForm _ 0)) (by simp)
+  exact e.spinGroupContinuousMulEquiv.toHomeomorph.toHomotopyEquiv.simplyConnectedSpace
 
 /-- **Simple connectivity of complex Spin groups**: the Spin group of a nondegenerate quadratic
 form on a finite-dimensional complex space is simply connected exactly when the dimension is zero
