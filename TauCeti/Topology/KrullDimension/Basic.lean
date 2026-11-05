@@ -36,8 +36,8 @@ have codimension at least two.
 * `TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one`: on a T₀ space all
   of whose points have codimension at most one for the specialization order, a point of
   codimension one is closed.
-* `TauCeti.coheight_le_topologicalKrullDim`: on a T₀ space, the codimension of a point is at
-  most the Krull dimension of the space.
+* `TauCeti.coheight_le_topologicalKrullDim`: the codimension of a point for the specialization
+  preorder is at most the Krull dimension of the space.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober T₀ space, the Krull dimension
   is the supremum of the codimensions of the points.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober T₀ space, the height
@@ -45,7 +45,7 @@ have codimension at least two.
 * `GeneralizingMap.coheight_apply_le_coheight`: a continuous generalizing map cannot increase
   the codimension of a point.
 * `GeneralizingMap.topologicalKrullDim_le_of_surjective`: the target of a continuous, surjective,
-  generalizing map from a T₀ space to a quasi-sober T₀ space has dimension at most its source.
+  generalizing map to a quasi-sober T₀ space has dimension at most its source.
 -/
 
 public section
@@ -87,19 +87,18 @@ theorem isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one {α : Ty
   refine absurd (hdim y) (not_le.mpr ?_)
   simpa [hx] using Order.coheight_strictAnti (lt_of_le_of_ne hyx hne) (by simp [hx])
 
-attribute [local instance] specializationOrder in
-/-- On a T₀ topological space, the codimension of a point for the specialization order is at most
-the Krull dimension of the space. -/
-theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] [T0Space α] (x : α) :
+attribute [local instance] specializationPreorder in
+/-- The codimension of a point for the specialization preorder is at most the Krull dimension of
+the space. -/
+theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] (x : α) :
     (coheight x : WithBot ℕ∞) ≤ topologicalKrullDim α := by
-  -- A chain of specializations `y₀ ⤳ … ⤳ yₙ` gives the chain of irreducible closed sets
-  -- `closure {yₙ} ⊆ … ⊆ closure {y₀}`, strictly increasing since `α` is T₀.
+  -- A chain of proper specializations `y₀ ⤳ … ⤳ yₙ` gives the chain of irreducible closed sets
+  -- `closure {yₙ} ⊆ … ⊆ closure {y₀}`, strictly increasing since the specializations are proper.
   let c : α → IrreducibleCloseds α :=
     fun y ↦ ⟨closure {y}, isIrreducible_singleton.closure, isClosed_closure⟩
-  have hc : StrictMono c := by
-    refine Monotone.strictMono_of_injective (fun y z hyz ↦ ?_) fun y z hyz ↦ ?_
-    · exact specializes_iff_closure_subset.mp hyz
-    · exact (inseparable_iff_closure_eq.mpr (congrArg SetLike.coe hyz)).eq
+  have hc : StrictMono c := fun y z hyz ↦
+    lt_of_le_of_ne (specializes_iff_closure_subset.mp hyz.le) fun h ↦ hyz.not_ge
+      (specializes_iff_closure_subset.mpr (congrArg SetLike.coe h).ge)
   exact (coheight_le_krullDim x).trans (krullDim_le_of_strictMono c hc)
 
 attribute [local instance] specializationOrder in
@@ -152,15 +151,16 @@ theorem GeneralizingMap.coheight_apply_le_coheight {X Y : Type*}
     exact coheight_add_one_le hx
 
 attribute [local instance] specializationOrder in
-/-- The target of a continuous, surjective, generalizing map from a T₀ space to a quasi-sober T₀
-space has Krull dimension at most that of the source. -/
+/-- The target of a continuous, surjective, generalizing map to a quasi-sober T₀ space has Krull
+dimension at most that of the source. -/
 theorem GeneralizingMap.topologicalKrullDim_le_of_surjective {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] [T0Space X] [QuasiSober Y] [T0Space Y]
+    [TopologicalSpace X] [TopologicalSpace Y] [QuasiSober Y] [T0Space Y]
     {f : X → Y} (hf : GeneralizingMap f) (hcont : Continuous f)
     (hsurj : Function.Surjective f) : topologicalKrullDim Y ≤ topologicalKrullDim X := by
   rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
   refine iSup_le fun y ↦ ?_
   obtain ⟨x, rfl⟩ := hsurj y
+  let := specializationPreorder X
   exact (WithBot.coe_le_coe.mpr (hf.coheight_apply_le_coheight hcont x)).trans
     (TauCeti.coheight_le_topologicalKrullDim x)
 
