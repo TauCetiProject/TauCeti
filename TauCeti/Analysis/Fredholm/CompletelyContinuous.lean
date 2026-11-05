@@ -84,28 +84,27 @@ theorem IsCompletelyContinuous.index_one_sub_eq_zero (hu : u.IsCompletelyContinu
   rw [← he, index_add_of_hasFiniteRange e.isFredholm hw, e.index_eq_zero]
 
 omit [CompleteSpace K] in
-/-- For a completely continuous `u`, injectivity of `1 - u` is equivalent to invertibility. -/
-theorem IsCompletelyContinuous.isUnit_one_sub_iff_injective (hu : u.IsCompletelyContinuous) :
-    IsUnit (1 - u) ↔ Function.Injective (1 - u : E →L[K] E) := by
-  refine ⟨fun h ↦ (isUnit_iff_bijective.mp h).injective, fun hinj ↦ ?_⟩
+/-- For a completely continuous `u`, `1 - u` is injective if and only if it is surjective. -/
+theorem IsCompletelyContinuous.injective_one_sub_iff_surjective (hu : u.IsCompletelyContinuous) :
+    Function.Injective (1 - u : E →L[K] E) ↔ Function.Surjective (1 - u : E →L[K] E) := by
   obtain ⟨e, w, hw, he⟩ := TauCeti.exists_equiv_add_hasFiniteRange hu
   have hcoe : ⇑(1 - u : E →L[K] E) = ⇑((e.toLinearEquiv : E →ₗ[K] E) + w) := by
-    rw [← he]; rfl
-  exact isUnit_iff_bijective.mpr ⟨hinj, by
-    rw [hcoe] at hinj ⊢
-    exact (hw.injective_equiv_add_iff_surjective).mp hinj⟩
+    rw [← he, FunLike.coe_add, LinearMap.coe_add, ContinuousLinearEquiv.coe_coe,
+      LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, coe_coe]
+  rw [hcoe]
+  exact hw.injective_equiv_add_iff_surjective
+
+omit [CompleteSpace K] in
+/-- For a completely continuous `u`, injectivity of `1 - u` is equivalent to invertibility. -/
+theorem IsCompletelyContinuous.isUnit_one_sub_iff_injective (hu : u.IsCompletelyContinuous) :
+    IsUnit (1 - u) ↔ Function.Injective (1 - u : E →L[K] E) :=
+  isUnit_iff_bijective.trans ⟨And.left, fun h ↦ ⟨h, hu.injective_one_sub_iff_surjective.mp h⟩⟩
 
 omit [CompleteSpace K] in
 /-- For a completely continuous `u`, surjectivity of `1 - u` is equivalent to invertibility. -/
 theorem IsCompletelyContinuous.isUnit_one_sub_iff_surjective (hu : u.IsCompletelyContinuous) :
-    IsUnit (1 - u) ↔ Function.Surjective (1 - u : E →L[K] E) := by
-  refine ⟨fun h ↦ (isUnit_iff_bijective.mp h).surjective, fun hsurj ↦ ?_⟩
-  obtain ⟨e, w, hw, he⟩ := TauCeti.exists_equiv_add_hasFiniteRange hu
-  have hcoe : ⇑(1 - u : E →L[K] E) = ⇑((e.toLinearEquiv : E →ₗ[K] E) + w) := by
-    rw [← he]; rfl
-  exact isUnit_iff_bijective.mpr ⟨by
-    rw [hcoe] at hsurj ⊢
-    exact (hw.injective_equiv_add_iff_surjective).mpr hsurj, hsurj⟩
+    IsUnit (1 - u) ↔ Function.Surjective (1 - u : E →L[K] E) :=
+  isUnit_iff_bijective.trans ⟨And.right, fun h ↦ ⟨hu.injective_one_sub_iff_surjective.mpr h, h⟩⟩
 
 omit [CompleteSpace K] in
 /-- Every nonzero spectral value of a completely continuous operator is an eigenvalue.

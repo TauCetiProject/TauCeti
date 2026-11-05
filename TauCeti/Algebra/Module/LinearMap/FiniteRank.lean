@@ -27,6 +27,12 @@ addition, negation, scalar multiplication and composition on either side by arbi
 over any ring. Over a Noetherian ring the two notions coincide
 (`LinearMap.isFiniteRank_iff_hasFiniteRange`).
 
+Over a division ring, a finite-rank perturbation of the identity, or more generally of a linear
+equivalence, is injective if and only if it is surjective: it restricts to an endomorphism of the
+finite-dimensional range of the perturbation. This algebraic Fredholm alternative gives the
+equivalence of injectivity, surjectivity and invertibility for `1 - u` with `u` completely
+continuous (`ContinuousLinearMap.IsCompletelyContinuous.injective_one_sub_iff_surjective`).
+
 ## Main definitions
 
 * `LinearMap.IsFiniteRank`: the range of `f` is contained in a finitely generated submodule.
@@ -38,6 +44,10 @@ over any ring. Over a Noetherian ring the two notions coincide
   finitely generated range.
 * `LinearMap.IsFiniteRank.add`, `LinearMap.IsFiniteRank.smul`, `LinearMap.IsFiniteRank.comp_left`,
   `LinearMap.IsFiniteRank.comp_right`: the closure properties, with no Noetherian hypothesis.
+* `LinearMap.HasFiniteRange.injective_one_add_iff_surjective`: over a division ring, `1 + F` is
+  injective if and only if it is surjective when `F` has finitely generated range.
+* `LinearMap.HasFiniteRange.injective_equiv_add_iff_surjective`: the same for `e + w` with `e` a
+  linear equivalence and `w` of finitely generated range.
 
 ## References
 
@@ -143,9 +153,9 @@ theorem isFiniteRank_iff_hasFiniteRange [IsNoetherianRing R] {f : M →ₗ[R] N}
 
 end Ring
 
-section Field
+section DivisionRing
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 /-- For a linear map `F` with finitely generated range, `1 + F` is injective if and only if it is
 surjective (the Fredholm alternative for finite-rank perturbations of the identity). -/
@@ -194,6 +204,6 @@ theorem HasFiniteRange.injective_equiv_add_iff_surjective {e : V ≃ₗ[K] V} {w
   refine (e.toEquiv.comp_injective _).trans (Iff.trans ?_ (e.toEquiv.comp_surjective _).symm)
   exact (hw.comp_left _).injective_one_add_iff_surjective
 
-end Field
+end DivisionRing
 
 end LinearMap
