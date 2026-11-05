@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -32,6 +33,8 @@ distinct, a discrete valuation ring is also infinite.
   elements of additive valuation `1`.
 * `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow`: the quotient by `𝔪 ^ n`
   has cardinality `Nat.card (ResidueField S) ^ n`.
+* `TauCeti.IsDiscreteValuationRing.hasFiniteQuotients`: if the residue field is finite, so is
+  the quotient by any nonzero ideal.
 * `TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add`: `𝔪 ^ (k + e)` has index
   `Nat.card (ResidueField S) ^ e` in `𝔪 ^ k`.
 * `TauCeti.IsDiscreteValuationRing.natCard_map_maximalIdeal_pow`: the graded piece
@@ -51,6 +54,13 @@ open IsLocalRing
 namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
+
+/-- Any multiple of the `n`-th power of a uniformizer lies in the `n`-th power of the maximal
+ideal. -/
+theorem mul_pow_mem_maximalIdeal_pow {ϖ : S} (hϖ : Irreducible ϖ) (n : ℕ) (c : S) :
+    c * ϖ ^ n ∈ maximalIdeal S ^ n :=
+  (maximalIdeal S ^ n).mul_mem_left c
+    (Ideal.pow_mem_pow ((mem_maximalIdeal ϖ).2 hϖ.not_isUnit) n)
 
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
@@ -84,6 +94,15 @@ theorem natCard_quotient_maximalIdeal_pow (n : ℕ) :
     (_root_.IsDiscreteValuationRing.not_a_field S), Submodule.cardQuot_apply]
   -- The residue field is defined as the quotient by the maximal ideal.
   rfl
+
+/-- **A discrete valuation ring with finite residue field has finite quotients**: a nonzero ideal
+is a power of the maximal ideal. -/
+instance hasFiniteQuotients [Finite (ResidueField S)] : Ring.HasFiniteQuotients S where
+  finiteQuotient {I} hI := by
+    obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+    obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+    rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+    infer_instance
 
 /-- The index of `𝔪 ^ (k + e)` in `𝔪 ^ k` is `Nat.card (ResidueField S) ^ e`: multiplication by
 the `k`-th power of a uniformizer carries `S ⊇ 𝔪 ^ e` isomorphically onto `𝔪 ^ k ⊇ 𝔪 ^ (k + e)`.

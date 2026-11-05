@@ -48,9 +48,12 @@ range, so the value is a `dite` rather than a plain application.
   an involution.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
+* `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
+  determined by whether the index plus one equals `n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
+* `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
@@ -166,6 +169,13 @@ theorem card_filter_castSucc_lt_succ {n : ℕ} (S : Finset (Fin n)) (i : Fin n) 
     tauto
   rw [h, card_union_of_disjoint (disjoint_filter.mpr fun s _ h h' ↦ by simp [h'] at h)]
   split_ifs with hi <;> simp [filter_eq', hi]
+
+/-- At most `j` elements of a set of indices have value below `j`. -/
+theorem card_filter_val_lt_le {n : ℕ} (S : Finset (Fin n)) (j : ℕ) : #{s ∈ S | s.val < j} ≤ j :=
+  calc #{s ∈ S | s.val < j} ≤ #{s : Fin n | s.val < j} :=
+        card_le_card (filter_subset_filter _ (subset_univ S))
+    _ = min n j := Fin.card_filter_val_lt
+    _ ≤ j := min_le_right n j
 
 end Finset
 
@@ -307,6 +317,16 @@ theorem coe_finRotate_of_add_one_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n
     (finRotate n i : ℕ) = i + 1 := by
   have := coe_finRotate_pow 1 i
   rwa [pow_one, Nat.mod_eq_of_lt h] at this
+
+/-- The cyclic rotation `finRotate n` adds one to the value of an index, except that it sends the
+last index `n - 1` to `0`. -/
+theorem coe_finRotate_eq_ite {n : ℕ} (i : Fin n) :
+    (finRotate n i : ℕ) = if (i : ℕ) + 1 = n then 0 else (i : ℕ) + 1 := by
+  cases n with
+  | zero => exact i.elim0
+  | succ m =>
+    rw [coe_finRotate]
+    simp [Fin.ext_iff]
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/

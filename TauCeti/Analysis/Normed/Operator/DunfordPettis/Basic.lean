@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
-public import TauCeti.Analysis.Normed.Operator.WeaklyCompact
+public import TauCeti.Analysis.Normed.Operator.WeaklyCompact.Basic
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.Compact.Basic

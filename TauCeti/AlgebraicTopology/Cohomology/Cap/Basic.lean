@@ -38,6 +38,7 @@ Section 3.3.
 * `TopCat.ιChainComplex_capChain_alexanderWhitneyDiagonal`: the cap product of a singular simplex
   and a singular cochain.
 * `TopCat.singularCap`: the cap product `Hᵖ(X; R, M) ⟶ (Hₙ(X; T) ⟶ H_q(X; P))`, with
+  `TopCat.singularCap_def` exhibiting it as a cap product of chains and cochains,
   `TopCat.singularCap_homologyπ` computing it on classes of cycles and cocycles and
   `TopCat.singularCap_naturality` its naturality.
 
@@ -104,6 +105,15 @@ def singularCap (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] [MonoidalLine
       (((singularHomologyFunctor C n).obj T).obj X ⟶ ((singularHomologyFunctor C q).obj P).obj X) :=
   TauCeti.ChainComplex.cap k (X.alexanderWhitneyDiagonal u) ((toSSet.obj X).chainComplexPairing μ)
     p q n h
+
+/-- The singular cap product is the cap product of chains and cochains along the
+Alexander–Whitney diagonal and the chain map induced by the coefficient pairing. -/
+lemma singularCap_def (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] [MonoidalLinear k C]
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (p q n : ℕ) (h : p + q = n) :
+    X.singularCap k u μ p q n h =
+      TauCeti.ChainComplex.cap k (X.alexanderWhitneyDiagonal u)
+        ((toSSet.obj X).chainComplexPairing μ) p q n h :=
+  (rfl)
 
 /-- The cap product of the class of a singular cycle with the class of a singular cocycle is the
 class of their cap product. -/

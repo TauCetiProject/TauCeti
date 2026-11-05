@@ -62,17 +62,25 @@ theorem _root_.ContMDiffAt.exists_norm_mgradient_le_mul_norm_extChartAt_sub
   have hg0 : fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p p) = 0 := by
     rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
   obtain ⟨A, hA, hupper⟩ := hg.exists_norm_fderiv_le_mul_norm_sub hg0
-  obtain ⟨B, hB, hmetric⟩ :=
+  let ℓ := (trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p
+  have hmetric :=
     eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm (I := I) p
+      (by norm_num : (1 : ℝ) < 2)
   have hdiff : ∀ᶠ z in 𝓝 (extChartAt I p p),
       DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) z := by
     filter_upwards [hg.eventually (by simp)] with z hz
     exact hz.differentiableAt two_ne_zero
-  refine ⟨B * A, mul_pos hB hA, ?_⟩
+  refine ⟨(2 * ‖ℓ‖ + 1) * A, by positivity, ?_⟩
   filter_upwards [hmetric, (continuousAt_extChartAt (I := I) p).eventually hupper,
     (continuousAt_extChartAt (I := I) p).eventually hdiff] with y hym hyu hyd
-  exact (hym f hyd).trans (by
-    simpa only [mul_assoc] using mul_le_mul_of_nonneg_left hyu hB.le)
+  set L := fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
+  calc
+    ‖mgradient I f y‖ ≤ 2 * ‖L ∘L ℓ‖ := hym f hyd
+    _ ≤ (2 * ‖ℓ‖ + 1) * ‖L‖ := by
+      nlinarith [ContinuousLinearMap.opNorm_comp_le L ℓ, norm_nonneg L]
+    _ ≤ (2 * ‖ℓ‖ + 1) * (A * ‖extChartAt I p y - extChartAt I p p‖) := by
+      gcongr
+    _ = (2 * ‖ℓ‖ + 1) * A * ‖extChartAt I p y - extChartAt I p p‖ := by ring
 
 omit [I.Boundaryless] in
 /-- Near a nondegenerate critical point, coordinate displacement is bounded by the gradient
