@@ -86,48 +86,10 @@ variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [TopologicalSpace X]
   {j : M → X} {F : X → ℝ} {n : ℕ}
 
-/-- Around a level `c` in `(a, b)` where all critical points of `F ∘ j` in `F⁻¹[a, b]` have Morse
-index at least `n`, find `0 < ε ≤ δ` isolating `c` and a finite relative CW complex
-`(C', {F ≤ c - ε})` inside `{F ≤ c + ε}` with no cells of dimension `< n` onto which `{F ≤ c + ε}`
-strongly deformation retracts. -/
-private theorem IsMorse.exists_relCWComplex_sublevel_isEmpty_cell (hj : IsOpenEmbedding j)
-    (hF : Continuous F) (hf : IsMorse I (F ∘ j)) {a b c δ : ℝ} (hδ : 0 < δ) (hδa : a < c - δ)
-    (hδb : c + δ < b) (hcpt : IsCompact (F ⁻¹' Icc (c - δ) (c + δ)))
-    (hAc : ∀ x ∉ range j, F x < c - δ)
-    (hindex : ∀ p ∈ criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc a b,
-      n ≤ manifoldMorseIndex I (F ∘ j) p) :
-    ∃ ε, ∃ _ : 0 < ε, ε ≤ δ ∧
-      criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc (c - ε) (c + ε) ⊆ (F ∘ j) ⁻¹' {c} ∧
-      ∃ (C' : Set X) (_ : RelCWComplex C' {x | F x ≤ c - ε})
-        (_ : RelCWComplex.Finite C') (hC' : C' ⊆ {x | F x ≤ c + ε}),
-        (∀ m < n, IsEmpty (cell C' m)) ∧
-        ∃ r : C({x | F x ≤ c + ε}, C'),
-          LeftInverse r (ContinuousMap.inclusion hC') ∧
-          Nonempty (((ContinuousMap.inclusion hC').comp r).HomotopyRel
-            (ContinuousMap.id _) {y | (y : X) ∈ C'}) := by
-  obtain ⟨δ', hδ', hδ'δ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ
-    (hj.isInducing.isCompact_comp_preimage_Icc hAc hcpt)
-  have hcpt' : IsCompact (F ⁻¹' Icc (c - δ') (c + δ')) :=
-    hcpt.of_isClosed_subset (isClosed_Icc.preimage hF)
-      (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
-  obtain ⟨ε, hε, hεδ', C', instCW, instFin, hC', hcell, r, hri, hG⟩ :=
-    hf.exists_relCWComplex_sublevel_of_isOpenEmbedding hj hF hδ' hcpt'
-      fun x hx ↦ (hAc x hx).trans_le (by linarith)
-  refine ⟨ε, hε, hεδ'.trans hδ'δ,
-    fun p hp ↦ hsub ⟨hp.1, Icc_subset_Icc (by linarith) (by linarith) hp.2⟩,
-    C', instCW, instFin, hC', fun m hm ↦ (hcell m).some.isEmpty_congr.2
-      ⟨fun ⟨⟨p, hp, hpc⟩, hpm⟩ ↦ ?_⟩, r, hri, hG⟩
-  have hpc' : F (j p) = c := hpc
-  have := hindex p ⟨hp, by
-    simp only [mem_preimage, mem_Icc, Function.comp_apply]
-    constructor <;> linarith⟩
-  dsimp only at hpm
-  omega
-
 /-- Induction across the finitely many critical levels in a compact band `F⁻¹[a, b]` between regular
 values of `F ∘ j` whose critical points all have Morse index at least `n`, supplying the strong
 deformation retraction on regular bands and the finite high-index relative CW complex across each
-critical level. -/
+critical level via `IsMorse.band_induction`. -/
 private theorem IsMorse.sublevelBand_induction (hj : IsOpenEmbedding j) (hF : Continuous F)
     (hf : IsMorse I (F ∘ j)) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (F ⁻¹' Icc a b))
     (hA : ∀ x ∉ range j, F x < a) (ha : IsRegularValue I 𝓘(ℝ) (F ∘ j) a)
@@ -150,62 +112,40 @@ private theorem IsMorse.sublevelBand_induction (hj : IsOpenEmbedding j) (hF : Co
     (htrans : ∀ {s m t : ℝ} (hsm : s ≤ m) (hmt : m ≤ t),
       P s m hsm → P m t hmt → P s t (hsm.trans hmt)) :
     P a b hab := by
-  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha hb
   have hcompact_sub {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (F ⁻¹' Icc s t) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hF) (preimage_mono (Icc_subset_Icc hs ht))
-  have hreg_band {s t : ℝ} (hst : s ≤ t) (hs : a ≤ s) (ht : t ≤ b)
-      (hAs : ∀ x ∉ range j, F x < s)
-      (hcrit : ∀ p ∈ criticalPoints I (F ∘ j), F (j p) ∉ Icc s t) : P s t hst := by
-    obtain ⟨r, hri, ⟨G⟩⟩ := exists_sublevelDeformation_of_isOpenEmbedding hj hF hf.contMDiff hst
+  refine hf.band_induction (P := fun s t hst ↦ a ≤ s → t ≤ b → P s t hst) hab
+    (hj.isInducing.isCompact_comp_preimage_Icc hA hcompact) ha hb
+    (fun s t hst _ hcrit hs ht ↦ ?_)
+    (fun p _ hac hcb δ hδ _ ↦ ?_)
+    (fun s m t hsm hmt _ h₁ h₂ hs ht ↦
+      htrans hsm hmt (h₁ hs (hmt.trans ht)) (h₂ (hs.trans hsm) ht))
+    le_rfl le_rfl
+  · obtain ⟨r, hri, ⟨G⟩⟩ := exists_sublevelDeformation_of_isOpenEmbedding hj hF hf.contMDiff hst
       (hcompact_sub hs ht)
-      (fun p hsp hpt hp ↦ hcrit p (mem_criticalPoints_iff_mfderiv_eq_zero.2 hp) ⟨hsp, hpt⟩) hAs
+      (fun p hsp hpt hp ↦ hcrit p (mem_criticalPoints_iff_mfderiv_eq_zero.2 hp) ⟨hsp, hpt⟩)
+      fun x hx ↦ (hA x hx).trans_le hs
     rw [sublevelInclusion_eq_inclusion] at hri G
     exact hreg hst r hri G
-  suffices ∀ K : ℕ, ∀ s, ∀ has : a ≤ s, ∀ hsb : s ≤ b,
-      (criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc s b).ncard = K →
-      s ∉ (F ∘ j) '' criticalPoints I (F ∘ j) → P s b hsb from
-    this _ a le_rfl hab rfl ha
-  intro K
-  induction K using Nat.strong_induction_on with
-  | _ K ih =>
-  intro s has hsb hK hs
-  have hAs (x : X) (hx : x ∉ range j) : F x < s := (hA x hx).trans_le has
-  have hS := hf.finite_criticalPoints_inter
-    (hj.isInducing.isCompact_comp_preimage_Icc hAs (hcompact_sub has le_rfl))
-  rcases (criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc s b).eq_empty_or_nonempty with hS₀ | hSne
-  · exact hreg_band hsb has le_rfl hAs fun p hp hpb ↦ hS₀.subset ⟨hp, hpb⟩
-  -- Cut the band around the lowest critical value `c = F (j p)` in `[s, b]`.
-  obtain ⟨p, ⟨hp, hpsb⟩, hpmin⟩ :=
-    hS.isCompact.exists_isMinOn hSne hf.contMDiff.continuous.continuousOn
-  have hsc : s < F (j p) := hpsb.1.lt_of_ne fun h ↦ hs ⟨p, hp, h.symm⟩
-  have hcb : F (j p) < b := hpsb.2.lt_of_ne fun h ↦ hb ⟨p, hp, h⟩
-  set δ : ℝ := min (F (j p) - s) (b - F (j p)) / 2 with hδ_def
-  have hδ : 0 < δ := half_pos (lt_min (sub_pos.2 hsc) (sub_pos.2 hcb))
-  have hδs : s < F (j p) - δ := by linarith [hδ_def, min_le_left (F (j p) - s) (b - F (j p))]
-  have hδb : F (j p) + δ < b := by linarith [hδ_def, min_le_right (F (j p) - s) (b - F (j p))]
-  obtain ⟨ε, hε, hεδ, hsub, C', _, _, hC', hempty, r, hri, ⟨G⟩⟩ :=
-    hf.exists_relCWComplex_sublevel_isEmpty_cell hj hF hδ (has.trans_lt hδs) hδb
-      (hcompact_sub (has.trans hδs.le) hδb.le) (fun x hx ↦ (hAs x hx).trans hδs) hindex
-  have hmid : P (F (j p) - ε) (F (j p) + ε) (by linarith) :=
-    hcell hε C' hC' hempty r hri G
-  have hlow : P s (F (j p) - ε) (by linarith) :=
-    hreg_band _ has (by linarith) hAs fun q hq hqI ↦ by
-      have : F (j p) ≤ F (j q) := hpmin ⟨hq, hqI.1, hqI.2.trans (by linarith)⟩
-      linarith [hqI.2]
-  have hlt : (criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc (F (j p) + ε) b).ncard < K := by
-    rw [← hK]
-    refine ncard_lt_ncard ⟨fun q hq ↦ ⟨hq.1, by linarith [hq.2.1], hq.2.2⟩, fun h ↦ ?_⟩ hS
-    have : F (j p) + ε ≤ F (j p) := (h ⟨hp, hpsb⟩).2.1
-    linarith
-  have hup : P (F (j p) + ε) b (by linarith) :=
-    ih _ hlt _ (by linarith) (by linarith) rfl fun ⟨q, hq, hqc⟩ ↦ by
-      have hqc' : F (j q) = F (j p) + ε := hqc
-      have : F (j q) = F (j p) := hsub ⟨hq, by
-        simp only [mem_preimage, mem_Icc, Function.comp_apply]
-        constructor <;> linarith⟩
-      linarith
-  exact htrans (by linarith) (by linarith)
-    (htrans (by linarith) (by linarith) hlow hmid) hup
+  · set δ₀ : ℝ := min δ (min (F (j p) - a) (b - F (j p)) / 2) with hδ₀_def
+    have hδ₀ : 0 < δ₀ := lt_min hδ (half_pos (lt_min (sub_pos.2 hac) (sub_pos.2 hcb)))
+    have hδ₀a : a < F (j p) - δ₀ := by
+      linarith [hδ₀_def, min_le_right δ (min (F (j p) - a) (b - F (j p)) / 2),
+        min_le_left (F (j p) - a) (b - F (j p))]
+    have hδ₀b : F (j p) + δ₀ < b := by
+      linarith [hδ₀_def, min_le_right δ (min (F (j p) - a) (b - F (j p)) / 2),
+        min_le_right (F (j p) - a) (b - F (j p))]
+    obtain ⟨ε, hε, hεδ₀, C', _, _, hC', hcell', r, hri, ⟨G⟩⟩ :=
+      hf.exists_relCWComplex_sublevel_of_isOpenEmbedding hj hF hδ₀ (hcompact_sub hδ₀a.le hδ₀b.le)
+        fun x hx ↦ (hA x hx).trans hδ₀a
+    refine ⟨ε, hε, hεδ₀.trans (min_le_left _ _), fun _ _ ↦ hcell hε C' hC' (fun m hm ↦ ?_) r hri G⟩
+    refine (hcell' m).some.isEmpty_congr.2 ⟨fun ⟨⟨q, hq, hqc⟩, hqm⟩ ↦ ?_⟩
+    have hqc' : F (j q) = F (j p) := hqc
+    have := hindex q ⟨hq, by
+      simp only [mem_preimage, mem_Icc, Function.comp_apply]
+      constructor <;> linarith⟩
+    dsimp only at hqm
+    omega
 
 end BandInduction
 
@@ -436,34 +376,22 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_isOpenEmbedding (hj : Is
       n ≤ manifoldMorseIndex I (F ∘ j) p)
     (R : A_cat) {k : ℕ} (hk : k < n) :
     IsZero ((sublevelPair F hab).singularHomology R k) := by
-  revert k
   refine hf.sublevelBand_induction hj hF hab hcompact hA ha hb hindex
-    (P := fun s t hst ↦ ∀ {k : ℕ}, k < n → IsZero ((sublevelPair F hst).singularHomology R k))
-    (fun {_ _} hst r _ G {k} _ ↦ ?_)
-    (fun {_ _} _ C' _ _ hC' hempty r _ G {k} hk ↦ ?_)
-    (fun {_ _ _} hsm hmt h₁ h₂ {k} hk ↦ ?_)
-  · refine TopPair.isZero_singularHomology_of_homotopy (f := TopPair.ofInclusionMap
-        (X := TopCat.of X) (sublevel_mono F hst) (sublevel_mono F hst)
-        ((ContinuousMap.inclusion (sublevel_mono F hst)).comp r) fun x _ ↦ (r x).2)
-      ?_ (TopCat.ofHom r) (by ext x; exact (TopPair.ofInclusionMap_fst_apply
-        (hst := sublevel_mono F hst) (hst' := sublevel_mono F hst) _ _ x).symm) R k
-    rw [← TopPair.ofInclusionMap_id]
-    refine TopPair.ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
-    have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
-    rw [h]
-    exact hx
-  · have : IsEmpty (cell C' k) := hempty k hk
-    have : ∀ m, HasExactColimitsOfShape (Discrete (cell C' m)) A_cat := fun m ↦
-      have : _root_.Finite (cell C' m) := FiniteType.finite_cell m
-      @hasExactColimitsOfShape_discrete_finite A_cat _ _ Abelian.hasFiniteBiproducts _ _
-    have hzero := isZero_singularHomology_complexBasePair_of_isEmpty_cell C' R k
-    rw [complexBasePair_eq_ofInclusion] at hzero
-    have hiso := TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel
-      (X := TopCat.of X) base_subset_complex hC' r G R k
-    exact hzero.of_iso (@asIso _ _ _ _ _ hiso).symm
-  · let T := TopTriple.ofInclusions (X := TopCat.of X) (sublevel_mono F hsm) (sublevel_mono F hmt)
-    exact (T.singularHomology_exact_total R k).isZero_X₂
-      ((h₁ hk).eq_of_src _ _) ((h₂ hk).eq_of_tgt _ _)
+    (P := fun s t hst ↦ IsZero ((sublevelPair F hst).singularHomology R k))
+    (fun hst r _ G ↦ TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel
+      (X := TopCat.of X) (sublevel_mono F hst) r G R k)
+    (fun _ C' _ _ hC' hempty r _ G ↦ ?_)
+    fun hsm hmt h₁ h₂ ↦ (TopTriple.ofInclusions (X := TopCat.of X) (sublevel_mono F hsm)
+      (sublevel_mono F hmt)).isZero_singularHomology_totalPair R k h₁ h₂
+  have : IsEmpty (cell C' k) := hempty k hk
+  have : ∀ m, HasExactColimitsOfShape (Discrete (cell C' m)) A_cat := fun m ↦
+    have : _root_.Finite (cell C' m) := FiniteType.finite_cell m
+    @hasExactColimitsOfShape_discrete_finite A_cat _ _ Abelian.hasFiniteBiproducts _ _
+  have hzero := isZero_singularHomology_complexBasePair_of_isEmpty_cell C' R k
+  rw [complexBasePair_eq_ofInclusion] at hzero
+  have hiso := TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel
+    (X := TopCat.of X) base_subset_complex hC' r G R k
+  exact hzero.of_iso (@asIso _ _ _ _ _ hiso).symm
 
 /-- **Epimorphism on `H_k` for `k < n` across a Morse band.** -/
 theorem IsMorse.epi_homologyMap_sublevelInclusion_of_isOpenEmbedding (hj : IsOpenEmbedding j)

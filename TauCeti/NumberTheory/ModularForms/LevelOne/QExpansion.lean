@@ -226,13 +226,14 @@ theorem exists_discriminant_qExpansion_coeff_eq_intCast (n : ℕ) :
   -- With `E₄ = 1 + 240 A`, `E₆ = 1 - 504 B`, `A = ∑ σ₃(n) qⁿ` and `B = ∑ σ₅(n) qⁿ`, one has
   -- `(E₄³ - E₆²) / 1728 = (5 A + 7 B) / 12 + 100 A² + 8000 A³ - 147 B²`, and `C = (5 A + 7 B) / 12`
   -- is integral by the congruence `12 ∣ 5 σ₃(n) + 7 σ₅(n)`
-  -- (`TauCeti.twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`).
+  -- (`TauCeti.twelve_dvd_five_mul_sigma_add_seven_mul_sigma_add_two` at `k = 3`).
   let A := TauCeti.divisorSumSeries 3
   let B := TauCeti.divisorSumSeries 5
   let C : PowerSeries ℤ := PowerSeries.mk fun n ↦ ((5 * σ 3 n + 7 * σ 5 n) / 12 : ℕ)
   have hC : 12 * C = 5 * A + 7 * B := by
     ext n
-    have := Nat.mul_div_cancel' (twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five n)
+    have := Nat.mul_div_cancel'
+      (twelve_dvd_five_mul_sigma_add_seven_mul_sigma_add_two (k := 3) (by norm_num) n)
     simp only [PowerSeries.coeff_ofNat_mul, map_add, PowerSeries.coeff_mk,
       TauCeti.coeff_divisorSumSeries, C, A, B]
     exact_mod_cast this
