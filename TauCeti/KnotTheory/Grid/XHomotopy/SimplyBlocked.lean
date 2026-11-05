@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Homology.Linear
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
 /-!
@@ -247,7 +247,7 @@ theorem finite_simplyBlockedHomology [IsNoetherianRing R] (i : Fin n) :
   have : Module.Finite (MvPolynomial {c : Fin n // c ≠ i} R)
       ((G.simplyBlockedComplex R i).X ()) :=
     Module.Finite.equiv (G.simplyBlockedChainEquiv R i).symm
-  exact Module.Finite.of_surjective _ (hG.simplyBlockedHomologyClass_surjective R i)
+  exact Module.Finite.of_surjective _ (G.oneVariableSpecializationHomologyClass_surjective R i)
 
 /-- Over a Noetherian coefficient ring `R`, the simply blocked grid homology of a knot grid is a
 finitely generated `R`-module; in particular it is finite-dimensional over a field. -/

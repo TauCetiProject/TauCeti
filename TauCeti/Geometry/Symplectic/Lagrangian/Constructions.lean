@@ -35,7 +35,8 @@ symplectic-form API in `TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
 * `TauCeti.SymplecticForm.orthogonal_prod`, `isIsotropic_prod_iff`, `isCoisotropic_prod_iff`,
   `isLagrangian_prod_iff`, `isSymplectic_prod_iff`, and the one-way `IsIsotropic.prod`,
   `IsCoisotropic.prod`, `IsLagrangian.prod`, `IsSymplectic.prod`: the product API.
-* `TauCeti.SymplecticForm.orthogonal_map_transport`, `isIsotropic_map_transport_iff`,
+* `TauCeti.SymplecticForm.orthogonal_map_transport`, `IsSymplectomorphism.map_orthogonal`,
+  `isIsotropic_map_transport_iff`,
   `isCoisotropic_map_transport_iff`, `isLagrangian_map_transport_iff`,
   `isSymplectic_map_transport_iff`, and the one-way `IsIsotropic.map_transport`,
   `IsCoisotropic.map_transport`, `IsLagrangian.map_transport`, `IsSymplectic.map_transport`: the
@@ -170,6 +171,12 @@ lemma orthogonal_map_transport :
     subst hvw
     subst hxy
     simpa [SymplecticForm.transport_apply] using (mem_orthogonal_iff.1 hv x hx)
+
+/-- A linear symplectomorphism carries symplectic complements to symplectic complements. -/
+lemma IsSymplectomorphism.map_orthogonal {ω' : SymplecticForm W} (he : IsSymplectomorphism ω ω' e)
+    (L : Submodule ℝ V) :
+    (ω.orthogonal L).map e.toLinearMap = ω'.orthogonal (L.map e.toLinearMap) := by
+  rw [← isSymplectomorphism_iff_transport_eq.1 he, orthogonal_map_transport]
 
 /-- Isotropy is invariant under transporting both the symplectic form and the subspace along a
 linear equivalence. -/

@@ -40,8 +40,8 @@ The conclusion is packaged as a multiplicative equivalence `π_n(E, e) ≃* π_n
   preserves) homotopy of generalized loops.
 * `GenLoop.map_surjective`: in dimension `≥ 2`, every generalized loop in the base
   lifts to a generalized loop in the total space based at a prescribed point of the fibre.
-* `HomotopyGroup.map_injective`, `HomotopyGroup.map_surjective`: the induced
-  map on homotopy classes.
+* `HomotopyGroup.map_injective`, `HomotopyGroup.map_surjective`, `HomotopyGroup.map_bijective`:
+  the induced map on homotopy classes.
 * `IsCoveringMap.homotopyGroupMulEquiv`: the isomorphism
   `HomotopyGroup N E e ≃* HomotopyGroup N X (p e)` for `[Nontrivial N]`.
 * `IsCoveringMap.homotopyGroupPiMulEquiv`: its `π_(n + 2)` form.
@@ -145,6 +145,13 @@ theorem map_surjective [Nontrivial N] (hp : IsCoveringMap p) :
   refine Quotient.ind fun f => ?_
   obtain ⟨F, hF⟩ := GenLoop.map_surjective hp f
   exact ⟨⟦F⟧, by rw [map_mk, hF]⟩
+
+/-- A covering map is bijective on homotopy groups in dimensions `≥ 2`, read at any basepoint of
+the base equal to the image of the basepoint of the total space. -/
+theorem map_bijective [Nontrivial N] (hp : IsCoveringMap p) {x : X} (hx : p e = x) :
+    Function.Bijective (map (N := N) (⟨p, hp.continuous⟩ : C(E, X)) hx) := by
+  subst hx
+  exact ⟨map_injective hp, map_surjective hp⟩
 
 end HomotopyGroup
 

@@ -28,6 +28,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   scalars of the codomain.
 * `ContinuousLinearMap.compContinuousAlternatingMapSemilinear`: postcomposition with a semilinear
   map as a semilinear map of alternating maps.
+* `ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one`: an alternating map of one vector
+  vanishes exactly when it vanishes on every vector.
 -/
 
 public section
@@ -64,6 +66,17 @@ def compContinuousLinearMapLinear (f : M →L[A] M') :
 theorem compContinuousLinearMapLinear_apply (f : M →L[A] M') (g : M' [⋀^ι]→L[A] N) :
     compContinuousLinearMapLinear S f g = g.compContinuousLinearMap f :=
   (rfl)
+
+/-- A continuous alternating map of one vector vanishes exactly when it vanishes on every
+vector. -/
+theorem eq_zero_iff_forall_apply_fin_one {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (α : M [⋀^Fin 1]→L[R] N) : α = 0 ↔ ∀ v, α ![v] = 0 := by
+  refine ⟨fun h v ↦ by simp [h], fun h ↦ ?_⟩
+  ext w
+  obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl⟩
+  exact h v
 
 end ContinuousAlternatingMap
 
