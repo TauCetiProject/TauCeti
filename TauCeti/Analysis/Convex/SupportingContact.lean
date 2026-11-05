@@ -65,7 +65,8 @@ theorem exists_mem_fderiv_sub_eq_smul_fderiv_and_supporting {S K : Set E} {v : E
     exact (hs.sub hf).sub (hg.clm_apply (continuous_snd.sub continuous_fst).continuousOn)
   have hgap_pos : ∀ p ∈ T, 0 < gap p := by
     rintro ⟨z, y⟩ ⟨hz, hy⟩
-    have hzy : z ≠ y := fun h => (show y ∉ S from (hSo.frontier_eq ▸ hy).2) (h ▸ hKS hz)
+    have hyS : y ∉ S := (hSo.frontier_eq ▸ hy).2
+    have hzy : z ≠ y := fun h => hyS (h ▸ hKS hz)
     exact sub_pos.mpr (hvs.fderiv_lt_sub_of_mem_closure hSo hv (hKS hz)
       (frontier_subset_closure hy) hzy
       ((hvD z (hKS hz)).differentiableAt (hSo.mem_nhds (hKS hz))))

@@ -47,8 +47,9 @@ theorem StrictConvexOn.fderiv_lt_sub_of_mem_closure {S : Set E} {v : E → ℝ}
   have hs := hvs.comp_affineMap_of_injective A hA
   have h0 : (0 : ℝ) ∈ A ⁻¹' S := by simpa [A] using hz
   have hAhalf : A (1 / 2) = (1 / 2 : ℝ) • z + (1 / 2 : ℝ) • y := by
+    have hhalf : (1 : ℝ) - 1 / 2 = 1 / 2 := by norm_num
     dsimp only [A]
-    rw [AffineMap.lineMap_apply_module, show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num]
+    rw [AffineMap.lineMap_apply_module, hhalf]
   have hmidseg : A (1 / 2) ∈ openSegment ℝ z y := by
     refine ⟨(1 / 2 : ℝ), (1 / 2 : ℝ), by norm_num, by norm_num, by norm_num, ?_⟩
     exact hAhalf.symm
@@ -64,8 +65,8 @@ theorem StrictConvexOn.fderiv_lt_sub_of_mem_closure {S : Set E} {v : E → ℝ}
     exact hvA.comp_hasDerivAt 0 hL
   have hstrict := hs.lt_slope_of_hasDerivAt h0 hmid (by norm_num) hD
   have hchord : v (A (1 / 2)) ≤ (1 / 2 : ℝ) * v z + (1 / 2 : ℝ) * v y := by
-    have h := hv.2 (subset_closure hz) hy (show (0 : ℝ) ≤ 1 / 2 by norm_num)
-      (show (0 : ℝ) ≤ 1 / 2 by norm_num) (by norm_num)
+    have hhalf : (0 : ℝ) ≤ 1 / 2 := by norm_num
+    have h := hv.2 (subset_closure hz) hy hhalf hhalf (by norm_num)
     simpa only [hAhalf, smul_eq_mul] using h
   simp only [slope_def_field, Function.comp_apply, sub_zero, A,
     AffineMap.lineMap_apply_zero] at hstrict
