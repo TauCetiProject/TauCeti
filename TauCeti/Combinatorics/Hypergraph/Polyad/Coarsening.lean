@@ -16,6 +16,11 @@ parent. When the projection recovers the original pair coloring, each fine pair 
 the corresponding coarse pair graph. The fine supports with a given parent partition its
 support, including when cells repeat. These facts let local slicing estimates be summed over
 a refined skeleton without charging the same coarse exceptional support more than once.
+
+The construction also compares two colorings of the pairs on the same vertex cells. A triple
+keeps its polyad, up to the color map, whenever its three coordinate pairs keep their colors
+(`Polyad3.coarsen_ofTriple_of_color_coordPair`), and an injective color map then sends distinct
+polyads to distinct polyads (`Polyad3.coarsen_injective`).
 -/
 
 public section
@@ -64,6 +69,43 @@ theorem coarsen_color₀₂ (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart)
 theorem coarsen_color₁₂ (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ) :
     (P.coarsen hV f).color₁₂ = f P.color₁₂ := by simp [coarsen]
 
+/-- If the two skeletons have the same vertex cells, the coarse parent along an injective color
+map determines the polyad. -/
+theorem coarsen_injective (hV : T.vertexPart = S.vertexPart) {f : κ' → κ}
+    (hf : Function.Injective f) : Function.Injective fun P : Polyad3 T ↦ P.coarsen hV.le f := by
+  have hcell : ∀ A (hA : A ∈ T.vertexPart.parts),
+      (Finpartition.refinementParent hV.le ⟨A, hA⟩).val = A := fun A hA ↦
+    congrArg Subtype.val
+      ((Finpartition.refinementParent_eq_iff hV.le (A := ⟨A, hV ▸ hA⟩)).2 le_rfl)
+  intro P Q h
+  have h₀ := congrArg c₀ h
+  have h₁ := congrArg c₁ h
+  have h₂ := congrArg c₂ h
+  simp only [coarsen_c₀, coarsen_c₁, coarsen_c₂, hcell] at h₀ h₁ h₂
+  exact ext_data h₀ h₁ h₂ (hf (by simpa using congrArg color₀₁ h))
+    (hf (by simpa using congrArg color₀₂ h)) (hf (by simpa using congrArg color₁₂ h))
+
+/-- The coarse parent of the polyad of a triple is its polyad over the coarse skeleton as soon
+as the color map recovers the coarse colors of its three coordinate pairs. Other pairs are
+unconstrained. -/
+theorem coarsen_ofTriple_of_color_coordPair (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
+    {x : {x : Fin 3 → V // Function.Injective x}}
+    (h₀₁ : S.pairColors.color (coordPair x 0 1 (by decide)) =
+      f (T.pairColors.color (coordPair x 0 1 (by decide))))
+    (h₀₂ : S.pairColors.color (coordPair x 0 2 (by decide)) =
+      f (T.pairColors.color (coordPair x 0 2 (by decide))))
+    (h₁₂ : S.pairColors.color (coordPair x 1 2 (by decide)) =
+      f (T.pairColors.color (coordPair x 1 2 (by decide)))) :
+    (ofTriple T x).coarsen hV f = ofTriple S x := by
+  obtain ⟨k₀, k₁, k₂, -⟩ := ((ofTriple T x).mem_support x).1 (mem_support_ofTriple x)
+  refine mem_support_iff_eq_ofTriple.1 ((mem_support _ x).2 ⟨?_, ?_, ?_, ?_, ?_, ?_⟩)
+  · exact (coarsen_c₀ _ hV f).symm ▸ Finpartition.le_refinementParent hV _ k₀
+  · exact (coarsen_c₁ _ hV f).symm ▸ Finpartition.le_refinementParent hV _ k₁
+  · exact (coarsen_c₂ _ hV f).symm ▸ Finpartition.le_refinementParent hV _ k₂
+  · exact (S.pairColors.color_coordPair_eq_iff _).1 (by simpa using h₀₁)
+  · exact (S.pairColors.color_coordPair_eq_iff _).1 (by simpa using h₀₂)
+  · exact (S.pairColors.color_coordPair_eq_iff _).1 (by simpa using h₁₂)
+
 variable (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
   (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))
 include hf
@@ -106,7 +148,7 @@ theorem support_subset_coarsen (P : Polyad3 T) : P.support ⊆ (P.coarsen hV f).
 @[simp]
 theorem coarsen_ofTriple (x : {x : Fin 3 → V // Function.Injective x}) :
     (ofTriple T x).coarsen hV f = ofTriple S x :=
-  mem_support_iff_eq_ofTriple.1 (support_subset_coarsen hV f hf _ (mem_support_ofTriple x))
+  coarsen_ofTriple_of_color_coordPair hV f (hf _) (hf _) (hf _)
 
 open Classical in
 /-- The fine supports with a given coarse parent partition that parent's support. -/
