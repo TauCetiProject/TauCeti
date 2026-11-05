@@ -170,12 +170,14 @@ theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.
 
 /-- The first `n + 1` vertices of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`,
 are `x`. -/
+@[simp]
 theorem map_const_castSucc {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌)
     (j : Fin (n + 1)) :
     X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op (s.1 : X _⦋n + 1⦌) = x :=
   map_const_castSucc_of_δ_last ((mem_rightMappingSpace_iff _).1 s.2).1 j
 
 /-- The last vertex of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`, is `y`. -/
+@[simp]
 theorem map_const_last {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
     X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op (s.1 : X _⦋n + 1⦌) = y :=
   ((mem_rightMappingSpace_iff _).1 s.2).2
@@ -516,6 +518,7 @@ variable {Y : SSet.{u}} {x₀ x₁ : X _⦋0⦌} {y₀ y₁ : Y _⦋0⦌}
 
 /-- A simplex of `joinVertex.op ⋙ (X ⊗ Y)` lies in `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁))` exactly
 when its two components lie in `Hom^R_X(x₀, x₁)` and `Hom^R_Y(y₀, y₁)`. -/
+@[simp]
 theorem mem_tensor_iff {m : SimplexCategoryᵒᵖ} (σ : (joinVertex.op ⋙ (X ⊗ Y)).obj m) :
     σ ∈ ((X ⊗ Y).rightMappingSpace (x₀, y₀) (x₁, y₁)).obj m ↔
       σ.1 ∈ (X.rightMappingSpace x₀ x₁).obj m ∧ σ.2 ∈ (Y.rightMappingSpace y₀ y₁).obj m :=
