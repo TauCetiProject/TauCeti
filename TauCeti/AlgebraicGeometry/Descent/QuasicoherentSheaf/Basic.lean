@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Adj
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat.ObjectProperty
+public import Mathlib.CategoryTheory.Sites.Descent.IsPrestack
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Stack.Basic
 
@@ -107,6 +108,27 @@ lemma modulesPseudofunctor_mapComp_inv_toNatTrans {T T' T'' : LocallyDiscrete Sc
       (Scheme.Modules.pullbackComp g.as.unop f.as.unop).hom := by
   ext M
   exact Category.id_comp _
+
+/-- The pullback `pullHom φ g gf₁ gf₂` of a morphism `φ : f₁^* M₁ ⟶ f₂^* M₂` of modules along `g`,
+the restriction map of Mathlib's presheaves of morphisms `Pseudofunctor.presheafHom`, is `g^* φ`
+read through the composition isomorphisms of pullback and the identifications
+`(g ≫ fᵢ)^* ≅ gfᵢ^*`. -/
+lemma modulesPseudofunctor_pullHom {X₁ X₂ Y Y' : Scheme.{u}} {M₁ : X₁.Modules} {M₂ : X₂.Modules}
+    {f₁ : Y ⟶ X₁} {f₂ : Y ⟶ X₂}
+    (φ : (Scheme.Modules.pullback f₁).obj M₁ ⟶ (Scheme.Modules.pullback f₂).obj M₂)
+    (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (hgf₁ : g ≫ f₁ = gf₁) (hgf₂ : g ≫ f₂ = gf₂) :
+    Pseudofunctor.LocallyDiscreteOpToCat.pullHom (F := modulesPseudofunctor) φ g gf₁ gf₂ hgf₁
+        hgf₂ =
+      (Scheme.Modules.pullbackCongr hgf₁).inv.app M₁ ≫
+        (Scheme.Modules.pullbackComp g f₁).inv.app M₁ ≫ (Scheme.Modules.pullback g).map φ ≫
+          (Scheme.Modules.pullbackComp g f₂).hom.app M₂ ≫
+            (Scheme.Modules.pullbackCongr hgf₂).hom.app M₂ := by
+  subst hgf₁ hgf₂
+  simp [Pseudofunctor.LocallyDiscreteOpToCat.pullHom, Pseudofunctor.mapComp'_eq_mapComp,
+    Scheme.Modules.pullbackCongr]
+  -- The remaining sides agree up to the identification of `modulesPseudofunctor.map` with
+  -- `Scheme.Modules.pullback` (`modulesPseudofunctor_map_toFunctor`), which holds by definition.
+  rfl
 
 /-- Quasi-coherence of modules, as a property of the objects of `modulesPseudofunctor`. -/
 -- Exposed so that `isQuasicoherent.prop T M` unfolds to `M.IsQuasicoherent` for consumers.
