@@ -22,6 +22,9 @@ function theorem in coordinates, back to the manifold.
 
 * `TauCeti.conj_chartAt_mem_maximalAtlas`: a chart of the model vector space, read through the
   preferred chart at a point, is a chart of the manifold's maximal atlas.
+* `TauCeti.conj_chartAt_source` and `TauCeti.comp_conj_chartAt`: the domain of that chart is
+  where the extended chart lands in the domain of `c`, and in the model vector space it reads as
+  `c ∘ extChartAt I x`.
 -/
 
 public section
@@ -33,6 +36,23 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
   {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+/-- On a boundaryless model, the domain of a chart `c` of the model vector space read through the
+preferred chart at `x` is the set of points of the domain of `extChartAt I x` that it sends into
+the domain of `c`. -/
+theorem conj_chartAt_source [I.Boundaryless] (x : M) (c : OpenPartialHomeomorph E E) :
+    ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+      I.toHomeomorph.symm).source = (extChartAt I x).source ∩ extChartAt I x ⁻¹' c.source := by
+  ext y
+  simp [extChartAt]
+
+/-- On a boundaryless model, a chart `c` of the model vector space read through the preferred
+chart at `x` is `c ∘ extChartAt I x` in the model vector space. -/
+theorem comp_conj_chartAt [I.Boundaryless] (x : M) (c : OpenPartialHomeomorph E E) :
+    I ∘ ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+      I.toHomeomorph.symm) = c ∘ extChartAt I x := by
+  ext y
+  simp [extChartAt, I.right_inv (I.range_eq_univ ▸ Set.mem_univ _)]
 
 /-- A chart of the model vector space, read through the preferred chart at `x` of a manifold with
 a boundaryless model, is a chart of the manifold's maximal atlas. -/
