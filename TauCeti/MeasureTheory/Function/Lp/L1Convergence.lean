@@ -19,8 +19,6 @@ an integral identity to a limit.
 
 * `TauCeti.tendsto_lintegral_enorm_sub_of_tendsto_Lp`: `Lᵖ` convergence gives
   `∫⁻ ‖f i - g‖ₑ → 0`.
-* `TauCeti.lintegral_enorm_sub_le_add_lintegral_enorm_sub`: the triangle inequality for the `L¹`
-  distance written as a lower Lebesgue integral.
 -/
 
 public section
@@ -48,17 +46,5 @@ theorem tendsto_lintegral_enorm_sub_of_tendsto_Lp {α G ι : Type*} [MeasurableS
   filter_upwards [Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q (f i),
     Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q g] with x hfi hg
   rw [Pi.sub_apply, hfi, hg]
-
-/-- The triangle inequality for `∫⁻ ‖f - h‖ₑ`, through an intermediate function `g` for which
-`f - g` is a.e. strongly measurable. -/
-theorem lintegral_enorm_sub_le_add_lintegral_enorm_sub {α G : Type*} [MeasurableSpace α]
-    {ν : Measure α} [NormedAddCommGroup G] {f g h : α → G}
-    (hfg : AEStronglyMeasurable (f - g) ν) :
-    ∫⁻ x, ‖f x - h x‖ₑ ∂ν ≤ ∫⁻ x, ‖f x - g x‖ₑ ∂ν + ∫⁻ x, ‖g x - h x‖ₑ ∂ν := by
-  calc ∫⁻ x, ‖f x - h x‖ₑ ∂ν
-      ≤ ∫⁻ x, ‖f x - g x‖ₑ + ‖g x - h x‖ₑ ∂ν :=
-        lintegral_mono fun x => by
-          simpa only [sub_add_sub_cancel] using enorm_add_le (f x - g x) (g x - h x)
-    _ = _ := lintegral_add_left' hfg.enorm _
 
 end TauCeti

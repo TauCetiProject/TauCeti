@@ -157,8 +157,13 @@ theorem exists_contDiff_hasCompactSupport_strict_approximation (hu : Integrable 
     rw [add_zero] at hsum
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
       (fun _ => zero_le) fun n => ?_
-    exact (TauCeti.lintegral_enorm_sub_le_add_lintegral_enorm_sub
-      (hwi n).aestronglyMeasurable).trans (add_le_add (hk n).le le_rfl)
+    have htri := lintegral_edist_triangle (μ := μ) (f := w n - v n) (g := u - v n) (h := 0)
+      (hwi n).aestronglyMeasurable aestronglyMeasurable_zero
+    simp only [edist_eq_enorm_sub, Pi.sub_apply, sub_sub_sub_cancel_right, sub_zero,
+      Pi.zero_apply] at htri
+    refine htri.trans (add_le_add (hk n).le ?_)
+    simp only [enorm_sub_rev (u _)]
+    exact le_rfl
   -- Lower semicontinuity and the upper estimate give equality in the limit.
   refine ⟨w, hw, hwlim, TauCeti.tendsto_totalVariationOn_of_le_add
     (fun n => (hw n).1.continuous.locallyIntegrable.locallyIntegrableOn ⊤)
