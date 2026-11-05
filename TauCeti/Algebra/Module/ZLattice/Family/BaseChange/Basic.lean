@@ -18,9 +18,10 @@ its projection to `Z`, it identifies the quotient for `P ∘ f` with the literal
 
 For continuous `f` and continuous periods this identification is a homeomorphism for the
 inherited product and subtype topologies. No choice of basis, injectivity, discreteness,
-or fullness is needed. In particular, the construction applies to varying full period
-lattices without replacing them by a constant family. This is a topological comparison;
-it makes no assertion of holomorphic local triviality.
+or fullness is needed. When the periods of `P` are discrete or form full lattices, the pulled-back
+family `P ∘ f` inherits those properties (`TauCeti.discreteTopology_range_baseChange`,
+`TauCeti.isZLattice_range_baseChange`). This is a topological comparison; it makes no assertion of
+holomorphic local triviality.
 
 ## References
 
@@ -33,6 +34,20 @@ public section
 open Set Function Topology
 
 namespace TauCeti
+
+/-- Pulling back a family of discrete period subgroups along `f : Z → Y` preserves discreteness. -/
+instance discreteTopology_range_baseChange {Y Z Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
+    [TopologicalSpace E] (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+    (f : Z → Y) (z : Z) : DiscreteTopology (LinearMap.range ((P ∘ f) z)) :=
+  inferInstanceAs (DiscreteTopology (LinearMap.range (P (f z))))
+
+/-- Pulling back a family of full lattices along `f : Z → Y` preserves fullness. -/
+instance isZLattice_range_baseChange {K Y Z Λ E : Type*} [NormedField K] [AddCommGroup Λ]
+    [NormedAddCommGroup E] [NormedSpace K E]
+    (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+    [∀ y, IsZLattice K (LinearMap.range (P y))]
+    (f : Z → Y) (z : Z) : IsZLattice K (LinearMap.range ((P ∘ f) z)) :=
+  inferInstanceAs (IsZLattice K (LinearMap.range (P (f z))))
 
 variable {Y Z W Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
   (P : Y → Λ →ₗ[ℤ] E) (f : Z → Y)

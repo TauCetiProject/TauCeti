@@ -6,6 +6,7 @@ Authors: Kim Morrison
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import Mathlib.CategoryTheory.IsConnected
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
@@ -38,8 +39,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   exactly when the image of the loop is nullhomotopic.
 * `FundamentalGroup.mapOfEq_mapOfEq_of_comp_eq_id`: the induced map of a map whose composite
   with `f` is the identity undoes the induced map of `f`.
-* `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
-  space is connected.
+* `FundamentalGroupoid.nonempty_hom`, `FundamentalGroupoid.instIsConnected`: the fundamental
+  groupoid of a path-connected space has nonempty hom-sets and is connected as a category.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
   when every loop at the basepoint becomes nullhomotopic in the target.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_of_subsingleton`: if the source fundamental group
@@ -63,6 +64,11 @@ every other one, so the groupoid is connected. -/
 theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
     [PathConnectedSpace Y] (x y : FundamentalGroupoid Y) : Nonempty (x ⟶ y) :=
   ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)⟩
+
+/-- The fundamental groupoid of a path-connected space is connected as a category. -/
+instance instIsConnected {Y : Type*} [TopologicalSpace Y] [PathConnectedSpace Y] :
+    CategoryTheory.IsConnected (FundamentalGroupoid Y) :=
+  zigzag_isConnected fun x y ↦ .of_hom (nonempty_hom x y).some
 
 end FundamentalGroupoid
 

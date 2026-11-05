@@ -37,6 +37,9 @@ the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is a
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
+* `ZLattice.instDiscreteTopologyRangeCompEquiv`, `ZLattice.instIsZLatticeRangeCompEquiv`:
+  precomposing a linear map with a linear equivalence preserves discreteness and fullness of its
+  range.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -153,6 +156,25 @@ instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
   comap_discreteTopology K L continuous_subtype_val V.injective_subtype
+
+/-- Precomposing a linear map with a linear equivalence leaves its range unchanged, hence preserves
+discreteness of the range. -/
+instance instDiscreteTopologyRangeCompEquiv {R Λ Λ' E : Type*} [Semiring R]
+    [AddCommMonoid Λ] [AddCommMonoid Λ'] [AddCommMonoid E]
+    [Module R Λ] [Module R Λ'] [Module R E] [TopologicalSpace E]
+    (f : Λ →ₗ[R] E) (α : Λ' ≃ₗ[R] Λ) [DiscreteTopology (LinearMap.range f)] :
+    DiscreteTopology (LinearMap.range (f.comp α.toLinearMap)) :=
+  α.range_comp f ▸ inferInstance
+
+/-- Precomposing a `ℤ`-linear map with a `ℤ`-linear equivalence leaves its range unchanged, hence
+preserves `IsZLattice`. -/
+instance instIsZLatticeRangeCompEquiv {K Λ Λ' E : Type*} [NormedField K]
+    [AddCommMonoid Λ] [AddCommMonoid Λ'] [Module ℤ Λ] [Module ℤ Λ']
+    [NormedAddCommGroup E] [NormedSpace K E]
+    (f : Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ) [DiscreteTopology (LinearMap.range f)]
+    [IsZLattice K (LinearMap.range f)] :
+    IsZLattice K (LinearMap.range (f.comp α.toLinearMap)) where
+  span_top := by rw [α.range_comp f]; exact IsZLattice.span_top
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
