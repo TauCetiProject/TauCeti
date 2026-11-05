@@ -158,12 +158,14 @@ abbrev cohomologyOnMap {M N : X.Modules} (f : M ⟶ N)
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).app (Opposite.op U)
 
 @[simp]
-lemma cohomologyOnMap_id (n : ℕ) (U : Opens X) : cohomologyOnMap (𝟙 M) n U = 𝟙 _ :=
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_id (n : ℕ) (U : Opens X) :
+    cohomologyOnMap (𝟙 M) n U = 𝟙 _ :=
   NatTrans.congr_app ((_root_.SheafOfModules.toSheaf X.ringCatSheaf ⋙
     CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n : X.Modules ⥤ _).map_id M) (Opposite.op U)
 
 @[simp, reassoc]
-lemma cohomologyOnMap_comp {N P : X.Modules} (f : M ⟶ N) (g : N ⟶ P) (n : ℕ) (U : Opens X) :
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_comp {N P : X.Modules}
+    (f : M ⟶ N) (g : N ⟶ P) (n : ℕ) (U : Opens X) :
     cohomologyOnMap (f ≫ g) n U = cohomologyOnMap f n U ≫ cohomologyOnMap g n U :=
   NatTrans.congr_app ((_root_.SheafOfModules.toSheaf X.ringCatSheaf ⋙
     CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n : X.Modules ⥤ _).map_comp f g)
