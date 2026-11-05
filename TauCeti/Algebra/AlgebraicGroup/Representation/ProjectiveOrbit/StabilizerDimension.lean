@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Dimension
 import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
+import TauCeti.AlgebraicGeometry.Fibers.Dimension
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dimension
 import TauCeti.Topology.KrullDimension.Basic
 
