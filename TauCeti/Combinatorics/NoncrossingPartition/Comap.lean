@@ -165,7 +165,6 @@ theorem mem_part_union_part_of_sup_comap_bot_eq_top (hf : MonotoneOn f s) {i j :
       rcases hx' with rfl | rfl
       · rfl
       · exact hji
-    change w ∈ (Finpartition.pairPartition s i j hpair).part x
     rw [hxi]
     exact hmem hw'
   have htop := top_le_iff.1 (hπ ▸ sup_le_sup_left hσ π)
