@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 # The positive-definite cone of real symmetric matrices is measurable
 
 On the symmetric subspace, positive definiteness cuts out an open subset by
-`Matrix.isOpen_setOf_posDef_selfAdjoint`.
+`Matrix.isOpen_setOfPred_posDef_selfAdjoint`.
 
 The Wishart densities are supported on this cone, so its measurability is part of the
 carrier API.
@@ -47,7 +47,7 @@ theorem measurableSet_posDefMatrix (p : ℕ) :
   -- The selfAdjoint subgroup and its real submodule have definitionally equal carriers
   -- and induced topologies, so the openness theorem applies to this subtype.
   have h : IsOpen {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := Matrix.isOpen_setOf_posDef_selfAdjoint
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := Matrix.isOpen_setOfPred_posDef_selfAdjoint
   exact h.measurableSet
 
 end TauCeti

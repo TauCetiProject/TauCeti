@@ -192,10 +192,9 @@ private theorem exists_closedBall_subset_posDef_bounds (B : Matrix (Fin p) (Fin 
             (B * (A : Matrix (Fin p) (Fin p) ℝ)).trace ≤ τ := by
   let A₀ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
     ⟨1, Matrix.isHermitian_iff_isSelfAdjoint.1 Matrix.isHermitian_one⟩
-  -- The selfAdjoint subgroup and its real submodule have definitionally equal carriers
-  -- and induced topologies, so the openness theorem applies at A₀.
-  obtain ⟨ε, hε, hball⟩ :=
-    Metric.isOpen_iff.1 Matrix.isOpen_setOf_posDef_selfAdjoint A₀ Matrix.PosDef.one
+  have hopen : IsOpen {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := Matrix.isOpen_setOfPred_posDef_selfAdjoint
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hopen A₀ Matrix.PosDef.one
   set r := min (ε / 2) (δ / 3)
   have hr0 : 0 < r := lt_min (half_pos hε) (by positivity)
   set K := Metric.closedBall A₀ r

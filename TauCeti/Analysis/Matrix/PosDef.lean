@@ -32,11 +32,11 @@ with that open one.
 ## Main declarations
 
 * `TauCeti.convex_setOfPred_posDef` — the positive-definite matrices form a convex set;
-* `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` — positivity of the quadratic form on nonzero
+* `TauCeti.isOpen_setOfPred_re_dotProduct_pos` — positivity of the quadratic form on nonzero
   vectors is an open condition on real or complex square matrices;
 * `TauCeti.measurableSet_setOfPred_posDef` — the positive-definite real matrices form a
   measurable set.
-* `Matrix.isOpen_setOf_posDef_selfAdjoint` — the positive-definite cone is open in the
+* `Matrix.isOpen_setOfPred_posDef_selfAdjoint` — the positive-definite cone is open in the
   Hermitian subspace over `ℝ` or `ℂ`.
 -/
 
@@ -63,7 +63,7 @@ theorem convex_setOfPred_posDef {𝕜 R n : Type*} [CommSemiring 𝕜] [PartialO
 
 /-- Positivity of the real part of the quadratic form on nonzero vectors is an open condition
 on square real or complex matrices, Hermitian or not. -/
-theorem isOpen_setOfPred_dotProduct_mulVec_pos {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜] :
+theorem isOpen_setOfPred_re_dotProduct_pos {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜] :
     IsOpen {M : Matrix ι ι 𝕜 | ∀ x : ι → 𝕜, x ≠ 0 →
       0 < RCLike.re (star x ⬝ᵥ M *ᵥ x)} := by
   rw [isOpen_iff_mem_nhds]
@@ -94,7 +94,7 @@ theorem measurableSet_setOfPred_posDef {ι : Type*} [Finite ι] :
   simp only [Matrix.posDef_iff_dotProduct_mulVec, star_trivial, Set.ofPred_and]
   exact (isClosed_eq continuous_id.matrix_conjTranspose continuous_id).measurableSet.inter
     (by simpa only [star_trivial, RCLike.re_to_real] using
-      (isOpen_setOfPred_dotProduct_mulVec_pos (𝕜 := ℝ) (ι := ι)).measurableSet)
+      (isOpen_setOfPred_re_dotProduct_pos (𝕜 := ℝ) (ι := ι)).measurableSet)
 
 end TauCeti
 
@@ -104,12 +104,12 @@ open scoped ComplexOrder
 
 /-- Positive definiteness is open in the real vector space of Hermitian matrices, over either
 the real or the complex scalars. -/
-theorem isOpen_setOf_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
+theorem isOpen_setOfPred_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
     [RCLike 𝕜] :
     IsOpen {A : selfAdjoint (Matrix n n 𝕜) | (A : Matrix n n 𝕜).PosDef} := by
   classical
   let : Fintype n := Fintype.ofFinite n
-  have hopen := (TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos (ι := n) (𝕜 := 𝕜)).preimage
+  have hopen := (TauCeti.isOpen_setOfPred_re_dotProduct_pos (ι := n) (𝕜 := 𝕜)).preimage
     (continuous_subtype_val : Continuous (fun A : selfAdjoint (Matrix n n 𝕜) ↦
       (A : Matrix n n 𝕜)))
   convert hopen using 1
