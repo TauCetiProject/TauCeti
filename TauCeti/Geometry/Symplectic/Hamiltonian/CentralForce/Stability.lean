@@ -26,14 +26,15 @@ the circular orbits of radius `r₀`. This file classifies them at the extrema o
 
 * **Minima are Lyapunov stable.** For `m > 0`, a strict local minimum `r₀ > 0` of `U_ℓ` makes
   `(r₀, 0)` a strict local minimum of the conserved energy `H_ℓ`
-  (`TauCeti.eventually_centralForceHamiltonian_effectivePotential_lt`), so radial motions starting
-  near `(r₀, 0)` stay near it at all times at which they are defined
+  (`TauCeti.eventually_centralForceHamiltonian_effectivePotential_lt`). If moreover `U` is
+  continuous near `r₀`, radial motions along which `U` is differentiable and which start near
+  `(r₀, 0)` stay near it at all times at which they are defined
   (`TauCeti.eventually_forall_mem_of_strictLocalMin_effectivePotential`). This holds in particular
-  at a nondegenerate minimum, `U_ℓ'(r₀) = 0 < U_ℓ''(r₀)`
+  at a nondegenerate minimum, `U_ℓ'(r₀) = 0 < U_ℓ''(r₀)`, with `U` differentiable near `r₀`
   (`TauCeti.eventually_forall_mem_of_deriv_effectivePotential_eq_zero_of_pos`).
-* **The linearization.** At every point `(r₀, p_r)` with `r₀ > 0`, the derivative of the reduced
-  Hamiltonian vector field `X(r, p_r) = (p_r / m, -U_ℓ'(r))` is
-  `A(δr, δp) = (δp / m, -U_ℓ''(r₀) δr)`
+* **The linearization.** Let `r₀ > 0`, with `U` differentiable near `r₀` and `U_ℓ'` differentiable
+  at `r₀`. At every point `(r₀, p_r)`, the derivative of the reduced Hamiltonian vector field
+  `X(r, p_r) = (p_r / m, -U_ℓ'(r))` is `A(δr, δp) = (δp / m, -U_ℓ''(r₀) δr)`
   (`TauCeti.hasFDerivAt_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`),
   and `A² = -(U_ℓ''(r₀) / m)`.
 * **Minima are elliptic.** If `U_ℓ''(r₀) / m = ν² > 0`, as at a nondegenerate minimum for
