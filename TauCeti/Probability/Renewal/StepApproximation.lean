@@ -10,11 +10,12 @@ public import TauCeti.Probability.Renewal.Equation
 /-!
 # Darboux bounds for renewal convolutions
 
-A decreasing forcing function, truncated to ages below a finite cutoff, is squeezed
-between its left- and right-endpoint step functions. After convolution these become
-finite sums of reflected interval masses. These bounds reduce compactly supported
-monotone forcing to interval increments, without requiring continuity of the forcing
-or absence of atoms in the measure.
+An integrable forcing function, truncated to ages below a finite cutoff, is squeezed
+between step functions given by lower and upper bounds on each age cell. After
+convolution these become finite sums of reflected interval masses. For decreasing
+forcing, the cell bounds are its right- and left-endpoint values. These bounds reduce
+compactly supported monotone forcing to interval increments, without requiring
+continuity of the forcing or absence of atoms in the measure.
 
 Age cells are left-closed and right-open. Reflection turns them into left-open,
 right-closed intervals, so an arrival exactly at the observation time is retained.
@@ -88,50 +89,84 @@ theorem renewalConv_indicator_Iio_eq_sum
   rw [he, renewalConv_indicator_Ico zero_le hNt, tsub_zero]
   exact hsplit N le_rfl
 
-/-- The right-endpoint Darboux sum bounds a truncated decreasing forcing convolution from
-below. Repeated partition points contribute empty intervals. -/
-theorem sum_mul_measureReal_Ioc_le_renewalConv (hh : Antitone h)
+/-- Lower bounds on each age cell give a lower bound on the truncated convolution.
+Integrability is required only on the reflected truncation. -/
+theorem sum_mul_measureReal_Ioc_le_renewalConv
     (hμ : μ (Iic t) ≠ ∞) (p : ℕ → ℝ≥0) (hp : Monotone p) (hp0 : p 0 = 0)
-    (N : ℕ) (hNt : p N ≤ t) :
+    (N : ℕ) (hNt : p N ≤ t)
+    (hint : IntegrableOn (fun s ↦ h (t - s)) (Ioc (t - p N) t) μ)
+    (m : ℕ → ℝ) (hm : ∀ k < N, ∀ s ∈ Ico (p k) (p (k + 1)), m k ≤ h s) :
+    (∑ k ∈ Finset.range N,
+      m k * μ.real (Ioc (t - p (k + 1)) (t - p k))) ≤
+      renewalConv ((Iio (p N)).indicator h) μ t := by
+  rw [renewalConv_indicator_Iio_eq_sum p hp hp0 N hNt hint]
+  apply Finset.sum_le_sum
+  intro k hk
+  have hkN := Finset.mem_range.mp hk
+  have hkt : p (k + 1) ≤ t := (hp hkN).trans hNt
+  have hfin : μ (Ioc (t - p (k + 1)) (t - p k)) ≠ ∞ :=
+    ne_top_of_le_ne_top hμ (measure_mono fun s hs ↦ hs.2.trans tsub_le_self)
+  have hi := hint.mono_set (s := Ioc (t - p (k + 1)) (t - p k))
+    (fun s hs ↦ ⟨(tsub_le_tsub_left (hp hkN) t).trans_lt hs.1,
+      hs.2.trans tsub_le_self⟩)
+  simpa [mul_comm] using setIntegral_mono_on (integrableOn_const hfin) hi
+    measurableSet_Ioc (fun s hs ↦ hm k hkN (t - s) ⟨
+      (le_tsub_iff_right (hs.2.trans tsub_le_self)).2
+        ((le_tsub_iff_left ((hp (Nat.le_succ k)).trans hkt)).1 hs.2),
+      (tsub_lt_iff_left (hs.2.trans tsub_le_self)).2
+        ((tsub_lt_iff_right hkt).1 hs.1)⟩)
+
+/-- Upper bounds on each age cell give an upper bound on the truncated convolution.
+No monotonicity or sign condition on the forcing is needed. -/
+theorem renewalConv_le_sum_mul_measureReal_Ioc
+    (hμ : μ (Iic t) ≠ ∞) (p : ℕ → ℝ≥0) (hp : Monotone p) (hp0 : p 0 = 0)
+    (N : ℕ) (hNt : p N ≤ t)
+    (hint : IntegrableOn (fun s ↦ h (t - s)) (Ioc (t - p N) t) μ)
+    (M : ℕ → ℝ) (hM : ∀ k < N, ∀ s ∈ Ico (p k) (p (k + 1)), h s ≤ M k) :
+    renewalConv ((Iio (p N)).indicator h) μ t ≤
+      ∑ k ∈ Finset.range N,
+        M k * μ.real (Ioc (t - p (k + 1)) (t - p k)) := by
+  rw [renewalConv_indicator_Iio_eq_sum p hp hp0 N hNt hint]
+  apply Finset.sum_le_sum
+  intro k hk
+  have hkN := Finset.mem_range.mp hk
+  have hkt : p (k + 1) ≤ t := (hp hkN).trans hNt
+  have hfin : μ (Ioc (t - p (k + 1)) (t - p k)) ≠ ∞ :=
+    ne_top_of_le_ne_top hμ (measure_mono fun s hs ↦ hs.2.trans tsub_le_self)
+  have hi := hint.mono_set (s := Ioc (t - p (k + 1)) (t - p k))
+    (fun s hs ↦ ⟨(tsub_le_tsub_left (hp hkN) t).trans_lt hs.1,
+      hs.2.trans tsub_le_self⟩)
+  simpa [mul_comm] using setIntegral_mono_on hi (integrableOn_const hfin)
+    measurableSet_Ioc (fun s hs ↦ hM k hkN (t - s) ⟨
+      (le_tsub_iff_right (hs.2.trans tsub_le_self)).2
+        ((le_tsub_iff_left ((hp (Nat.le_succ k)).trans hkt)).1 hs.2),
+      (tsub_lt_iff_left (hs.2.trans tsub_le_self)).2
+        ((tsub_lt_iff_right hkt).1 hs.1)⟩)
+
+/-- The right-endpoint Darboux sum bounds the truncated convolution from below when
+forcing is decreasing up to the cutoff. Repeated partition points contribute empty intervals. -/
+theorem sum_mul_measureReal_Ioc_le_renewalConv_of_antitoneOn
+    (hμ : μ (Iic t) ≠ ∞) (p : ℕ → ℝ≥0) (hp : Monotone p) (hp0 : p 0 = 0)
+    (N : ℕ) (hNt : p N ≤ t) (hh : AntitoneOn h (Iic (p N))) :
     (∑ k ∈ Finset.range N,
       h (p (k + 1)) * μ.real (Ioc (t - p (k + 1)) (t - p k))) ≤
       renewalConv ((Iio (p N)).indicator h) μ t := by
-  have hC : ∀ s ≤ t, |h s| ≤ max |h t| |h 0| :=
-    fun s hs ↦ abs_le_max_abs_abs (hh hs) (hh zero_le)
-  have hi := integrableOn_Iic_sub hh.measurable hC hμ
-  rw [renewalConv_indicator_Iio_eq_sum p hp hp0 N hNt (hi.mono_set Ioc_subset_Iic_self)]
-  apply Finset.sum_le_sum
-  intro k hk
-  have hkt : p (k + 1) ≤ t := (hp (Finset.mem_range.mp hk)).trans hNt
-  have hfin : μ (Ioc (t - p (k + 1)) (t - p k)) ≠ ∞ :=
-    ne_top_of_le_ne_top hμ (measure_mono fun s hs ↦ hs.2.trans tsub_le_self)
-  have hint := hi.mono_set (s := Ioc (t - p (k + 1)) (t - p k))
-    (fun s hs ↦ hs.2.trans tsub_le_self)
-  simpa [mul_comm] using setIntegral_mono_on (integrableOn_const hfin) hint
-    measurableSet_Ioc (fun s hs ↦ hh ((tsub_le_iff_left).2
-      (le_of_lt ((tsub_lt_iff_right hkt).1 hs.1))))
+  refine sum_mul_measureReal_Ioc_le_renewalConv hμ p hp hp0 N hNt
+    (integrableOn_Ioc_sub_of_antitoneOn hh hμ) (fun k ↦ h (p (k + 1))) ?_
+  intro k hk s hs
+  exact hh (hs.2.le.trans (hp hk)) (hp hk) hs.2.le
 
-/-- The left-endpoint Darboux sum bounds a truncated decreasing forcing convolution from
-above. No nonnegativity or continuity hypothesis on the forcing is needed. -/
-theorem renewalConv_le_sum_mul_measureReal_Ioc (hh : Antitone h)
+/-- The left-endpoint Darboux sum bounds the truncated convolution from above when
+forcing is decreasing up to the cutoff. No global measurability assumption is needed. -/
+theorem renewalConv_le_sum_mul_measureReal_Ioc_of_antitoneOn
     (hμ : μ (Iic t) ≠ ∞) (p : ℕ → ℝ≥0) (hp : Monotone p) (hp0 : p 0 = 0)
-    (N : ℕ) (hNt : p N ≤ t) :
+    (N : ℕ) (hNt : p N ≤ t) (hh : AntitoneOn h (Iic (p N))) :
     renewalConv ((Iio (p N)).indicator h) μ t ≤
       ∑ k ∈ Finset.range N,
         h (p k) * μ.real (Ioc (t - p (k + 1)) (t - p k)) := by
-  have hC : ∀ s ≤ t, |h s| ≤ max |h t| |h 0| :=
-    fun s hs ↦ abs_le_max_abs_abs (hh hs) (hh zero_le)
-  have hi := integrableOn_Iic_sub hh.measurable hC hμ
-  rw [renewalConv_indicator_Iio_eq_sum p hp hp0 N hNt (hi.mono_set Ioc_subset_Iic_self)]
-  apply Finset.sum_le_sum
-  intro k hk
-  have hkt : p k ≤ t := (hp (le_of_lt (Finset.mem_range.mp hk))).trans hNt
-  have hfin : μ (Ioc (t - p (k + 1)) (t - p k)) ≠ ∞ :=
-    ne_top_of_le_ne_top hμ (measure_mono fun s hs ↦ hs.2.trans tsub_le_self)
-  have hint := hi.mono_set (s := Ioc (t - p (k + 1)) (t - p k))
-    (fun s hs ↦ hs.2.trans tsub_le_self)
-  simpa [mul_comm] using setIntegral_mono_on hint (integrableOn_const hfin)
-    measurableSet_Ioc (fun s hs ↦ hh ((le_tsub_iff_right (hs.2.trans tsub_le_self)).2
-      ((le_tsub_iff_left hkt).1 hs.2)))
+  refine renewalConv_le_sum_mul_measureReal_Ioc hμ p hp hp0 N hNt
+    (integrableOn_Ioc_sub_of_antitoneOn hh hμ) (fun k ↦ h (p k)) ?_
+  intro k hk s hs
+  exact hh ((hp (Nat.le_succ k)).trans (hp hk)) (hs.2.le.trans (hp hk)) hs.1
 
 end TauCeti.Probability

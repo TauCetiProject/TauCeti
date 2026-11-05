@@ -121,6 +121,20 @@ theorem integrableOn_Iic_sub (hh : Measurable h) (hC : ∀ s ≤ t, |h s| ≤ C)
     (M := C) ?_
   exact (ae_restrict_iff' measurableSet_Iic).2 (ae_of_all _ fun s _ ↦ hC _ tsub_le_self)
 
+/-- The reflected integrand is integrable on a truncated age interval when the forcing
+is decreasing up to the cutoff and the measure is finite on the observation interval.
+No global measurability assumption on the forcing is needed. -/
+theorem integrableOn_Ioc_sub_of_antitoneOn {b : ℝ≥0} (hh : AntitoneOn h (Iic b))
+    (hμ : μ (Iic t) ≠ ∞) :
+    IntegrableOn (fun s ↦ h (t - s)) (Ioc (t - b) t) μ := by
+  have hmem : ∀ s ∈ Icc (t - b) t, t - s ∈ Iic b :=
+    fun s hs ↦ (tsub_le_iff_right).2 ((tsub_le_iff_left).1 hs.1)
+  have hmono : MonotoneOn (fun s ↦ h (t - s)) (Icc (t - b) t) :=
+    fun s hs u hu hsu ↦ hh (hmem u hu) (hmem s hs) (tsub_le_tsub_left hsu t)
+  exact (hmono.integrableOn_of_measure_ne_top (isLeast_Icc tsub_le_self)
+    (isGreatest_Icc tsub_le_self) (ne_top_of_le_ne_top hμ (measure_mono Icc_subset_Iic_self))
+    measurableSet_Icc).mono_set Ioc_subset_Icc_self
+
 /-- The convolution is measurable in time. No boundedness of `h` is needed. -/
 @[fun_prop]
 theorem measurable_renewalConv (hh : Measurable h) (μ : Measure ℝ≥0) [SFinite μ] :
