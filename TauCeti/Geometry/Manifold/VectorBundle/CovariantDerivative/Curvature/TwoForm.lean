@@ -134,7 +134,7 @@ variable [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
 
 /-- Curvature coefficients in the metric-dual chart frame are smooth on the
 tangent-trivialization base set. The last two arguments are constant in that trivialization. -/
-theorem contMDiffAt_inner_curvatureTensor_chartDualFrame (x : M) {y : M}
+private theorem contMDiffAt_inner_curvatureTensor_chartDualFrame (x : M) {y : M}
     (hy : y ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (i j : Fin (finrank ℝ E)) (w w' : E) :
     ContMDiffAt I 𝓘(ℝ) ∞ (fun z ↦
