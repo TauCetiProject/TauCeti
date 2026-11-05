@@ -89,42 +89,6 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L]
   (ι : L →ₐ[K] AlgebraicClosure K)
 
-omit [FiniteDimensional K L] in
-/-- An element `τ` of the inertia group `G_0` of a finite extension `M/L` fixes every point `Q` of
-`W(M)` such that `τ` fixes `n • Q`, for an integer `n` that is nonzero in the residue field of `K`,
-provided `W` acquires good reduction over `L`: for a change of variables `C` over `L`, the equation
-`C • W` has coefficients in `𝒪[L]` and unit discriminant. Here `τ` acts on `W(M)` as an automorphism
-of `M` over `K`. -/
-theorem Affine.Point.map_restrictScalars_eq_self_of_mem_lowerRamificationGroup_zero
-    {M : Type*} [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
-    [Algebra L M] [Algebra K M] [IsScalarTower K L M] [ValuativeExtension L M] [Module.Finite L M]
-    (C : VariableChange L) [IsIntegral 𝒪[L] (C • W⁄L)] [(integralModel 𝒪[L] (C • W⁄L)).IsElliptic]
-    [DecidableEq M] {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) {τ : M ≃ₐ[L] M}
-    (hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup L M 0) {Q : (W⁄M).toAffine.Point}
-    (hQ : Affine.Point.map (τ.restrictScalars K).toAlgHom (n • Q) = n • Q) :
-    Affine.Point.map (τ.restrictScalars K).toAlgHom Q = Q := by
-  -- Transport `Q` to the model `C • W` over `L`, which has good reduction.
-  have hbc : W⁄M = (W⁄L)⁄M :=
-    (WeierstrassCurve.map_baseChange W (IsScalarTower.toAlgHom K L M)).symm
-  set e := AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.toAffine.Point) hbc
-  set pv := (W⁄L).pointEquivVariableChange M C
-  have key (R : (W⁄M).toAffine.Point) :
-      Affine.Point.map τ.toAlgHom (pv.symm (e R)) =
-        pv.symm (e (Affine.Point.map (τ.restrictScalars K).toAlgHom R)) := by
-    rw [map_pointEquivVariableChange_symm]
-    congr 1
-    -- Both sides apply `τ` to the coordinates of `R`.
-    rcases R with _ | ⟨x, y, hxy⟩
-    · simp only [← Affine.Point.zero_def, _root_.map_zero]
-    · rw [AddEquiv.cast_apply, Affine.Point.cast_some hbc, Affine.Point.map_some,
-        Affine.Point.map_some, AddEquiv.cast_apply, Affine.Point.cast_some hbc]
-      simp only [AlgEquiv.toAlgHom_apply, AlgEquiv.coe_restrictScalars]
-  have hn' : (n : 𝓀[L]) ≠ 0 := by
-    rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[L]), map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
-  have hQ' := Affine.Point.map_eq_self_of_mem_lowerRamificationGroup_zero (W := C • W⁄L) hn' hτ
-    (P := pv.symm (e Q)) (by rw [← map_nsmul, ← map_nsmul, key, hQ])
-  rwa [key, pv.symm.injective.eq_iff, e.injective.eq_iff] at hQ'
-
 /-- **Inertia over a field of good reduction fixes the division points prime to `p`.** Let `L` be
 a finite extension of `K`, embedded in `K^{alg}` by `ι`, over which `W` acquires good reduction:
 for a change of variables `C` over `L`, the equation `C • W` has coefficients in `𝒪[L]` and unit
