@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Probability.Distributions.ChiSquared.Basic
+public import TauCeti.Probability.Distributions.InverseGamma.Quantile
 public import TauCeti.Probability.Distributions.Wishart.Inverse.Moments
 
 import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
@@ -18,7 +19,10 @@ has the inverse-gamma law of shape `(n - p + 1) / 2` and scale `S i i / 2`. Equi
 is Wishart of degree `n > p - 1` and scale `S⁻¹`, the reciprocal of the diagonal entry
 `(W⁻¹) i i` — the Schur complement of the complementary principal block of `W` — is `(S i i)⁻¹`
 times a chi-squared variable with `n - p + 1` degrees of freedom. These scalar laws are what the
-inverse-Wishart family offers to one-dimensional observables, such as its diagonal quantiles.
+inverse-Wishart family offers to one-dimensional observables. In particular, for degree
+`n > p - 1` the diagonal quantile at an interior level `u` is
+`(S i i / 2) / inverseRegularizedGamma ((n - p + 1) / 2) (1 - u)`, with endpoint limits zero and
+infinity.
 The identification of `((W⁻¹) i i)⁻¹` with the scalar Schur complement is
 `Matrix.PosDef.inv_inv_apply_self_eq_sub`.
 The general-scale laws extend the standard-scale case
@@ -33,6 +37,7 @@ law of nonpositive shape, so the inverse-gamma statement needs no hypothesis on 
   inverse-Wishart matrix are inverse gamma.
 * `TauCeti.Probability.map_inv_inv_apply_nonsingularWishartMeasure`: the reciprocal diagonal
   entries of the inverse of a Wishart matrix are scaled chi-squared.
+* `TauCeti.Probability.quantile_map_coe_apply_inverseWishartMeasure`: the diagonal quantiles.
 * `TauCeti.Probability.hasLaw_coe_apply_inverseWishartMeasure` and
   `TauCeti.Probability.hasLaw_inv_inv_apply_nonsingularWishartMeasure`: the corresponding
   statements for random matrices.
@@ -144,6 +149,43 @@ theorem map_inv_inv_apply_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : �
           gammaMeasure_map_const_mul (by linarith) (by norm_num) (inv_pos.2 hSii)]
         congr 1
         field_simp
+
+/-! ### Diagonal quantiles -/
+
+/-- The quantile of a diagonal entry of an inverse-Wishart matrix of degree `n > p - 1` and
+positive-definite scale `S` is the inverse-gamma quantile of shape `(n - p + 1) / 2` and scale
+`S i i / 2`. -/
+@[simp]
+theorem quantile_map_coe_apply_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
+    (i : Fin p) {u : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    ((inverseWishartMeasure n S).map
+        (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (B : Matrix (Fin p) (Fin p) ℝ) i i)).quantile u =
+      S i i / 2 / inverseRegularizedGamma ((n - p + 1) / 2) (1 - u) := by
+  rw [map_coe_apply_inverseWishartMeasure hS i,
+    quantile_inverseGammaMeasure (by linarith) (half_pos hS.diag_pos) hu]
+
+/-- The diagonal quantiles of an inverse-Wishart matrix tend to zero as the level tends to zero
+from above. -/
+theorem tendsto_quantile_map_coe_apply_inverseWishartMeasure_nhdsGT_zero (hS : S.PosDef)
+    (hn : (p : ℝ) - 1 < n) (i : Fin p) :
+    Filter.Tendsto (fun u ↦ (((inverseWishartMeasure n S).map
+        (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (B : Matrix (Fin p) (Fin p) ℝ) i i)).quantile u : EReal))
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
+  rw [map_coe_apply_inverseWishartMeasure hS i]
+  exact tendsto_quantile_inverseGammaMeasure_nhdsGT_zero (by linarith) (half_pos hS.diag_pos)
+
+/-- The diagonal quantiles of an inverse-Wishart matrix tend to positive infinity as the level
+tends to one from below. -/
+theorem tendsto_quantile_map_coe_apply_inverseWishartMeasure_nhdsLT_one (hS : S.PosDef)
+    (hn : (p : ℝ) - 1 < n) (i : Fin p) :
+    Filter.Tendsto (fun u ↦ (((inverseWishartMeasure n S).map
+        (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (B : Matrix (Fin p) (Fin p) ℝ) i i)).quantile u : EReal))
+      (nhdsWithin 1 (Set.Iio 1)) (nhds ⊤) := by
+  rw [map_coe_apply_inverseWishartMeasure hS i]
+  exact tendsto_quantile_inverseGammaMeasure_nhdsLT_one (by linarith) (half_pos hS.diag_pos)
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 

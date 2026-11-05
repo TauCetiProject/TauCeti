@@ -111,13 +111,7 @@ end Comparison
 
 section Resolution
 
--- Tensor induction uses the direct-sum scalar action of the total resolution, rather than
--- the fallback integer action on its underlying additive group.
-private noncomputable local instance (K : Type u) [Group K] [TopologicalSpace K]
-    [IsTopologicalGroup K] : Module ℤ (trivialF2 K).gradedResolutionModule :=
-  @DirectSum.instModule ℤ _ ℕ
-    (fun n ↦ (TopRep.resolutionX (trivialF2 K) (n + 1)).V)
-    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 K) (n + 1)).hV2)
+open scoped TopRep.GradedResolution
 
 /-- The trivial `𝔽₂` coefficients, as a smooth discrete representation. -/
 private noncomputable abbrev coeffs (K : Type u) [Group K] [TopologicalSpace K] :
