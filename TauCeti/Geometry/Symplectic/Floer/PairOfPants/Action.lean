@@ -233,9 +233,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   have hTS (n : ℕ) : T n ⊆ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1} :=
     fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-  have hmono : Monotone T := fun m n hmn z hz ↦ by
-    obtain ⟨h₀, h₁, h⟩ := mem_truncation.1 hz
-    exact mem_truncation.2 ⟨h₀, h₁, fun q ↦ (h q).trans (by gcongr)⟩
+  have hmono : Monotone T := fun m n hmn ↦ preimage_mono (truncation_mono (by gcongr))
   have hunion : ⋃ n, T n = {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1} := by
     refine (iUnion_subset hTS).antisymm fun z hz ↦ ?_
@@ -274,22 +272,6 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     (tendsto_integral_floerEnergyDensity_truncation ω hH hHs hu ha)
 
-/-- The integrated curvature of the pair-of-pants perturbation over `S` is at most
-`B_0 + B_1 + B_∞` in absolute value, if `|H_q| ≤ B_q`. -/
-private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → V) :
-    |∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)| ≤ ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u))
-
 /-- **The energy bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
 `|H_q| ≤ B_q`, then the energy of `u` is at most `a_0 + a_1 - a_∞ + B_0 + B_1 + B_∞`. -/
@@ -322,7 +304,8 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_le (ω : Symplectic
         Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)), abs_integral_hamiltonianCurvature_le ω hH hHs hB u]
+      z (u z)), abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u
+      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}]
 
 /-- **The action bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
@@ -353,7 +336,8 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
     fun n ↦ setIntegral_nonneg (measurableSet_truncation _) fun z hz ↦
       ω.floerEnergyDensity_nonneg (hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
         (hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
-  have hcurv := abs_integral_hamiltonianCurvature_le ω hH hHs hB u
+  have hcurv := abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u
+    {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}
   rw [sum_univ, endSign_zero, endSign_one, endSign_inf] at hnonneg
   linarith [neg_abs_le (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
