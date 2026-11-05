@@ -49,6 +49,7 @@ concatenation in the matching direction.
   `π_M (Ω^ N X x) const ≃* π_(M ⊕ N) X x`.**
 * `HomotopyGroup.piLoopSpaceMulEquiv`, `HomotopyGroup.pathLoopSpaceMulEquiv`: its `π_n` forms,
   the latter for Mathlib's loop space `Ω X x`.
+* `HomotopyGroup.pi2MulEquivFundamentalGroupLoopSpace`: `π_2(X, x) ≃* π_1(Ω X x, refl x)`.
 
 ## References
 
@@ -369,6 +370,13 @@ theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
           (GenLoop.homeomorphOfUnique_const (Fin 1)) a)
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
       (homeomorphMulEquivOfEq_apply _ _ _).trans (map_mk _ _ _)
+
+/-- **The second homotopy group is the fundamental group of the loop space**:
+`π_2(X, x) ≃* π_1(Ω X x, refl x)`. This is the case `m = 0` of `pathLoopSpaceMulEquiv`, read
+through Mathlib's `pi1MulEquivFundamentalGroup`. -/
+noncomputable def pi2MulEquivFundamentalGroupLoopSpace :
+    π_ 2 X x ≃* FundamentalGroup (Ω X x) (Path.refl x) :=
+  (pathLoopSpaceMulEquiv 0).symm.trans pi1MulEquivFundamentalGroup
 
 section Natural
 

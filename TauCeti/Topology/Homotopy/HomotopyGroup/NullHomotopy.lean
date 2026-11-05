@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.Topology.Homotopy.Product
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+public import TauCeti.Topology.Homotopy.Path
+public import TauCeti.Topology.PathSpace.Prepend
 
 /-!
 # Null-homotopies of a loop as a torsor under the second homotopy group
@@ -39,7 +41,6 @@ to the constant loop (`Path.Homotopic.Quotient.cast_map_trans_prod_refl`,
 
 ## Main declarations
 
-* `HomotopyGroup.pi2MulEquivFundamentalGroupLoopSpace`: `π_2(X, x) ≃* π_1(Ω X x, refl x)`.
 * `Path.NullHomotopyClass γ`: homotopy classes of null-homotopies of the loop `γ`.
 * `Path.NullHomotopyClass.instAddTorsor`: for contractible `γ`, these classes form a torsor under
   `π_2(X, x)`.
@@ -59,34 +60,9 @@ noncomputable section
 
 open scoped unitInterval Topology Topology.Homotopy
 
-namespace HomotopyGroup
-
-variable {X : Type*} [TopologicalSpace X] {x : X}
-
-/-- **The second homotopy group is the fundamental group of the loop space**:
-`π_2(X, x) ≃* π_1(Ω X x, refl x)`. This is the case `m = 0` of `pathLoopSpaceMulEquiv`, read
-through Mathlib's `pi1MulEquivFundamentalGroup`. -/
-def pi2MulEquivFundamentalGroupLoopSpace : π_ 2 X x ≃* FundamentalGroup (Ω X x) (Path.refl x) :=
-  (pathLoopSpaceMulEquiv 0).symm.trans pi1MulEquivFundamentalGroup
-
-end HomotopyGroup
-
 namespace Path
 
 variable {X : Type*} [TopologicalSpace X] {x : X}
-
-/-- The constant path followed by `p` is a reparametrization of `p`, the counterpart of
-`Path.Homotopy.trans_refl_reparam`. -/
-theorem refl_trans_eq_reparam {y z : X} (p : Path y z) :
-    (Path.refl y).trans p =
-      p.reparam (fun t => Set.projIcc 0 1 zero_le_one (2 * (t : ℝ) - 1)) (by fun_prop)
-        (Subtype.ext (by norm_num)) (Subtype.ext (by norm_num)) := by
-  ext t
-  rw [Path.trans_apply, Path.coe_reparam, Function.comp_apply]
-  split_ifs with h
-  · rw [Path.refl_apply, Set.projIcc_of_le_left _ (by linarith)]
-    exact p.source.symm
-  · exact congrArg p (Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.2.2]⟩).symm
 
 /-- The homotopy classes of **null-homotopies** of a loop `γ` at `x`: paths in the loop space
 `Ω X x` from the constant loop to `γ`, up to homotopy relative to the endpoints. They model
@@ -153,38 +129,6 @@ instance instAddTorsor [Nonempty γ.NullHomotopyClass] :
 
 section Glue
 
-/-- Reparametrizing every loop of a loop of loops by the same map `f` of the interval fixing `0`
-and `1` does not change its homotopy class: the straight-line homotopy from the identity to `f`
-acts on all loops at once and fixes the constant loop. -/
-private theorem homotopic_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I → I}
-    (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
-    L.Homotopic
-      { toFun := fun s => (L s).reparam f hf hf₀ hf₁
-        continuous_toFun := Path.continuous_uncurry_iff.1 <|
-          continuous_eval.comp ((L.continuous.comp continuous_fst).prodMk (hf.comp continuous_snd))
-        source' := by simp [Path.refl_reparam]
-        target' := by simp [Path.refl_reparam] } := by
-  -- the straight-line homotopy `t ↦ σ r * t + r * f t` from the identity of `I` to `f`
-  let g : I × I → I := fun p => ⟨σ p.1 * p.2 + p.1 * f p.2,
-    show (σ p.1 : ℝ) • (p.2 : ℝ) + (p.1 : ℝ) • (f p.2 : ℝ) ∈ I from
-      convex_Icc _ _ p.2.2 (f p.2).2 (unitInterval.nonneg _) (unitInterval.nonneg _) (by simp)⟩
-  have hg : Continuous g := by fun_prop
-  have hg₀ (r : I) : g (r, 0) = 0 := Subtype.ext (by simp [g, hf₀])
-  have hg₁ (r : I) : g (r, 1) = 1 := Subtype.ext (by simp [g, hf₁])
-  refine ⟨{
-    toFun := fun p => (L p.2).reparam (fun t => g (p.1, t)) (by fun_prop) (hg₀ p.1) (hg₁ p.1)
-    continuous_toFun := Path.continuous_uncurry_iff.1 <| continuous_eval.comp
-      ((L.continuous.comp (continuous_snd.comp continuous_fst)).prodMk
-        (hg.comp ((continuous_fst.comp continuous_fst).prodMk continuous_snd)))
-    map_zero_left := fun s => Path.ext (funext fun t => congrArg (L s) (Subtype.ext (by simp [g])))
-    map_one_left := fun s => Path.ext (funext fun t => congrArg (L s) (Subtype.ext (by simp [g])))
-    prop' := fun r s hs => ?_ }⟩
-  rcases hs with rfl | hs
-  · simp [Path.refl_reparam]
-  · rw [Set.mem_singleton_iff] at hs
-    subst hs
-    simp [Path.refl_reparam]
-
 /-- Concatenating every loop of a loop of loops `L` at the constant loop with the constant loop
 does not change its homotopy class. -/
 theorem _root_.Path.Homotopic.Quotient.cast_map_trans_prod_refl
@@ -196,8 +140,8 @@ theorem _root_.Path.Homotopic.Quotient.cast_map_trans_prod_refl
   | mk L =>
     rw [← Path.Homotopic.Quotient.mk_refl, Path.Homotopic.prod_lift,
       ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
-    refine Quotient.sound (Path.Homotopic.symm ?_)
-    convert homotopic_reparam L
+    refine Quotient.sound (show Path.Homotopic _ _ from ?_)
+    convert Path.Homotopic.cast_map_reparam L
       (f := fun t =>
         ⟨Path.Homotopy.transReflReparamAux t, Path.Homotopy.transReflReparamAux_mem_I t⟩)
       (by fun_prop) (Subtype.ext Path.Homotopy.transReflReparamAux_zero)
@@ -216,22 +160,12 @@ theorem _root_.Path.Homotopic.Quotient.cast_map_trans_refl_prod
   | mk L =>
     rw [← Path.Homotopic.Quotient.mk_refl, Path.Homotopic.prod_lift,
       ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
-    refine Quotient.sound (Path.Homotopic.symm ?_)
-    convert homotopic_reparam L (f := fun t => Set.projIcc 0 1 zero_le_one (2 * (t : ℝ) - 1))
-      (by fun_prop) (Subtype.ext (by norm_num))
-      (Subtype.ext (by norm_num)) using 1
+    refine Quotient.sound (show Path.Homotopic _ _ from ?_)
+    convert Path.Homotopic.cast_map_reparam L
+      (f := fun t => Set.projIcc 0 1 zero_le_one (2 * (t : ℝ) - 1))
+      (by fun_prop) (Subtype.ext (by norm_num)) (Subtype.ext (by norm_num)) using 1
     ext s : 2
     exact Path.refl_trans_eq_reparam (L s)
-
-private theorem map_trans_cast {a b c : Path x x × Path x x} {f : C(Path x x × Path x x, Path x x)}
-    (A : Path.Homotopic.Quotient a b) (B : Path.Homotopic.Quotient b c) {y : Path x x}
-    (ha : y = f a) (hb : y = f b) :
-    ((A.trans B).map f).cast ha rfl = ((A.map f).cast ha hb).trans ((B.map f).cast hb rfl) := by
-  induction A, B using Path.Homotopic.Quotient.ind₂ with
-  | mk A B =>
-    simp only [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_map,
-      ← Path.Homotopic.Quotient.mk_cast, Path.map_trans]
-    rfl
 
 variable {γ₁ γ₂ γ₀ : Path x x}
 
@@ -257,7 +191,8 @@ theorem glue_vadd_left (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
     glue u (a +ᵥ D₁) D₂ = a +ᵥ glue u D₁ D₂ := by
   rw [glue_def, glue_def, vadd_def, vadd_def]
   conv_lhs => rw [← Path.Homotopic.Quotient.refl_trans D₂,
-    ← Path.Homotopic.comp_prod_eq_prod_comp, map_trans_cast _ _ _ Path.refl_trans_refl.symm,
+    ← Path.Homotopic.comp_prod_eq_prod_comp,
+    Path.Homotopic.Quotient.map_trans_cast _ _ _ Path.refl_trans_refl.symm rfl,
     Path.Homotopic.Quotient.cast_map_trans_prod_refl]
   exact Path.Homotopic.Quotient.trans_assoc _ _ u
 
@@ -267,7 +202,8 @@ theorem glue_vadd_right (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
     glue u D₁ (a +ᵥ D₂) = a +ᵥ glue u D₁ D₂ := by
   rw [glue_def, glue_def, vadd_def, vadd_def]
   conv_lhs => rw [← Path.Homotopic.Quotient.refl_trans D₁,
-    ← Path.Homotopic.comp_prod_eq_prod_comp, map_trans_cast _ _ _ Path.refl_trans_refl.symm,
+    ← Path.Homotopic.comp_prod_eq_prod_comp,
+    Path.Homotopic.Quotient.map_trans_cast _ _ _ Path.refl_trans_refl.symm rfl,
     Path.Homotopic.Quotient.cast_map_trans_refl_prod]
   exact Path.Homotopic.Quotient.trans_assoc _ _ u
 
