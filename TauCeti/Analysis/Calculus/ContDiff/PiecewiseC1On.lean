@@ -41,6 +41,7 @@ curve for which these hypotheses can be established.
 * `TauCeti.IsPiecewiseC1On.of_contDiffOn` — a `C¹` curve is piecewise `C¹`, with no breakpoints.
 * `TauCeti.IsPiecewiseC1On.of_breakpoints`, `TauCeti.IsPiecewiseC1On.exists_breakpoints` —
   introduce the predicate from, and eliminate it to, a finite breakpoint witness.
+* `TauCeti.IsPiecewiseC1On.congr` — transfer the regularity across curves agreeing on `[[a, b]]`.
 * `TauCeti.IsPiecewiseC1On.mono` — restrict the regularity to a subinterval `[[c, d]] ⊆ [[a, b]]`.
 * `TauCeti.isPiecewiseC1On_comm`, `TauCeti.IsPiecewiseC1On.symm` — endpoint-swap invariance.
 * `TauCeti.IsPiecewiseC1On.add`, `TauCeti.IsPiecewiseC1On.sub`,
@@ -130,6 +131,13 @@ theorem IsPiecewiseC1On.exists_breakpoints (h : IsPiecewiseC1On γ a b) :
       ∀ c d : ℝ, Icc c d ⊆ uIcc a b → Disjoint (↑p : Set ℝ) (Ioo c d) →
         ContDiffOn ℝ 1 γ (Icc c d) :=
   h.2
+
+/-- Piecewise-`C¹` regularity on `[[a, b]]` transfers across curves agreeing on `[[a, b]]`. -/
+theorem IsPiecewiseC1On.congr {γ' : ℝ → E} (h : IsPiecewiseC1On γ a b)
+    (heq : EqOn γ' γ (uIcc a b)) : IsPiecewiseC1On γ' a b := by
+  obtain ⟨p, hp, hC1⟩ := h.exists_breakpoints
+  exact ⟨h.continuousOn.congr heq, p, hp,
+    fun c d hcd hdisj => (hC1 c d hcd hdisj).congr (heq.mono hcd)⟩
 
 /-- Piecewise-`C¹` regularity restricts to any subinterval: if `γ` is piecewise `C¹` on `[[a, b]]`
 and `[[c, d]] ⊆ [[a, b]]`, then `γ` is piecewise `C¹` on `[[c, d]]`, with the breakpoint set cut

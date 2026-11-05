@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.Analysis.Fourier.Monomial
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -60,12 +62,16 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   characters.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
+* `TauCeti.exists_polynomial_of_mem_span_fourier`: every trigonometric polynomial on `AddCircle T`
+  factors as `fourier (-N) x * P.eval (fourier 1 x)`.
 * `ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero`: a continuous function on the circle all
   of whose Fourier coefficients vanish is the zero function.
 * `AddChar.exists_fourierAddChar_eq`: **every continuous additive character of the circle is a
   Fourier monomial.**
 * `AddChar.norm_apply_eq_one_of_continuous`: consequently a continuous additive character of the
   circle takes values of modulus one.
+* `TauCeti.norm_fourierLp`, `TauCeti.fourierLp_smul_fourierLp`, `TauCeti.star_fourierLp`: norm,
+  multiplication, and conjugation of `Lᵖ` Fourier monomials.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
@@ -184,6 +190,29 @@ theorem fourierAddChar_injective (hT : T ≠ 0) :
     Function.Injective (fourierAddChar (T := T)) := fun _ _ h =>
   fourier_injective hT (ContinuousMap.ext fun x => DFunLike.congr_fun h x)
 
+/-- Every trigonometric polynomial on `AddCircle T` has the form
+`x ↦ fourier (-N) x * P.eval (fourier 1 x)` for some `N : ℕ` and `P : Polynomial ℂ`. -/
+theorem exists_polynomial_of_mem_span_fourier
+    {q : C(AddCircle T, ℂ)} (hq : q ∈ Submodule.span ℂ (Set.range (fourier (T := T)))) :
+    ∃ (N : ℕ) (P : Polynomial ℂ), ∀ x, q x = fourier (-N) x * P.eval (fourier 1 x) := by
+  rw [Finsupp.mem_span_range_iff_exists_finsupp] at hq
+  obtain ⟨c, rfl⟩ := hq
+  let N : ℕ := c.support.sup fun k => (-k).toNat
+  let P : Polynomial ℂ := ∑ k ∈ c.support, Polynomial.C (c k) * Polynomial.X ^ (k + N).toNat
+  have heval (z : ℂ) : P.eval z = ∑ k ∈ c.support, c k * z ^ (k + N).toNat := by
+    simp [P, Polynomial.eval_finsetSum]
+  refine ⟨N, P, fun x => ?_⟩
+  rw [Finsupp.sum, ContinuousMap.coe_sum, Finset.sum_apply, heval, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  simp only [ContinuousMap.smul_apply, smul_eq_mul]
+  have hkN : 0 ≤ k + (N : ℤ) := by
+    have hle : (-k).toNat ≤ N := Finset.le_sup (f := fun k : ℤ => (-k).toNat) hk
+    omega
+  rw [← ContinuousMap.pow_apply, fourier_one_pow, Int.toNat_of_nonneg hkN,
+    mul_left_comm (fourier (T := T) (-↑N) x), ← fourier_add]
+  have hsub : -(N : ℤ) + (k + N) = k := by omega
+  rw [hsub]
+
 end TauCeti
 
 open TauCeti
@@ -216,6 +245,22 @@ theorem ae_norm_fourierLp_eq_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
   rw [hx]
   exact Circle.norm_coe _
 
+/-- Every `Lp` Fourier monomial on `AddCircle T` (`1 ≤ p`) has `Lp` norm `1` with respect to
+normalized Haar measure. -/
+@[simp]
+theorem norm_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
+    ‖fourierLp (T := T) p n‖ = 1 := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  have hae : (fun x => ‖fourierLp (T := T) p n x‖) =ᵐ[haarAddCircle (T := T)]
+      fun x => ‖Lp.const p (haarAddCircle (T := T)) (1 : ℂ) x‖ := by
+    filter_upwards [ae_norm_fourierLp_eq_one (T := T) p n,
+      Lp.coeFn_const p (haarAddCircle (T := T)) (1 : ℂ)] with x hx h1
+    rw [hx, h1, Function.const_apply, norm_one]
+  rw [Lp.norm_def,
+    eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) hae,
+    ← Lp.norm_def, Lp.norm_const p (haarAddCircle (T := T)) (1 : ℂ) hp0]
+  simp
+
 /-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` multiplies it pointwise
 by `fourier n`, almost everywhere. -/
 theorem coeFn_fourierLp_smul {p : ℝ≥0∞} (n : ℤ)
@@ -225,6 +270,26 @@ theorem coeFn_fourierLp_smul {p : ℝ≥0∞} (n : ℤ)
   filter_upwards [Lp.coeFn_lpSMul (r := p) (fourierLp (T := T) ∞ n) f,
     coeFn_fourierLp (T := T) ∞ n] with x h hn
   rw [h, Pi.smul_apply', hn, smul_eq_mul]
+
+/-- Multiplying the `Lᵖ` Fourier monomial `fourierLp p n` by the bounded monomial `fourierLp ∞ m`
+gives `fourierLp p (m + n)`. -/
+theorem fourierLp_smul_fourierLp {p : ℝ≥0∞} [Fact (1 ≤ p)] (m n : ℤ) :
+    (fourierLp (T := T) ∞ m • fourierLp (T := T) p n : Lp ℂ p (haarAddCircle (T := T))) =
+      fourierLp (T := T) p (m + n) := by
+  apply Lp.ext
+  filter_upwards [coeFn_fourierLp_smul m (fourierLp (T := T) p n),
+    coeFn_fourierLp (T := T) p n, coeFn_fourierLp (T := T) p (m + n)] with x hx hn hmn
+  rw [hx, hn, hmn, fourier_add]
+
+/-- The `Lp` star (pointwise complex conjugate) of the Fourier monomial `fourierLp p k` is
+`fourierLp p (-k)`. -/
+@[simp]
+theorem star_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℤ) :
+    star (fourierLp (T := T) p k) = fourierLp (T := T) p (-k) := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_star (fourierLp (T := T) p k),
+    coeFn_fourierLp (T := T) p k, coeFn_fourierLp (T := T) p (-k)] with x hstar hk hneg
+  rw [hstar, Pi.star_apply, hk, hneg, fourier_neg, RCLike.star_def]
 
 /-- Multiplying the `L²` Fourier mode `e_n` by the bounded monomial `e_m` gives `e_(m+n)`. -/
 theorem fourierLp_smul_fourierBasis (m n : ℤ) :

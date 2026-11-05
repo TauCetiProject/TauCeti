@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.Basic
+public import TauCeti.MeasureTheory.Function.Lp.ContinuousFunctions
 
 /-!
 # Toeplitz operators on boundary Hardy space
@@ -17,12 +18,17 @@ space `H²`, where `P` is the orthogonal projection onto `H²`. This file bundle
 
 * `TauCeti.inner_hardyBasis_toeplitz_hardyBasis`: in the Hardy basis `e₀, e₁, …` the matrix
   entry `(i, j)` of `T_a` is the Fourier coefficient `â(i - j)`;
-* `TauCeti.adjoint_toeplitz`: the adjoint of `T_a` is the Toeplitz operator of the complex
-  conjugate symbol;
-* `TauCeti.toeplitz_const`: a constant symbol acts by scalar multiplication;
-* `TauCeti.toeplitz_fourierLp_natCast_hardyBasis`, `TauCeti.toeplitz_fourierLp_one_hardyBasis`:
-  the Toeplitz operator of `e_m`, `m ≥ 0`, raises the Hardy basis by `m`; in particular the
-  forward shift `S = T_z` sends `eₙ` to `eₙ₊₁`;
+* `TauCeti.adjoint_toeplitz`, `TauCeti.adjoint_toeplitz_fourierLp`: the adjoint of `T_a` is the
+  Toeplitz operator of the complex conjugate symbol, so `(T_(e_k))† = T_(e_{-k})`;
+* `TauCeti.toeplitz_const`, `TauCeti.toeplitz_fourierLp_zero`, `TauCeti.toeplitz_toLp_one`:
+  a constant symbol acts by scalar multiplication, and `e_0` or `1 : C(UnitAddCircle, ℂ)` induces
+  the identity operator;
+* `TauCeti.toeplitz_fourierLp_natCast_hardyBasis`, `TauCeti.toeplitz_fourierLp_one_hardyBasis`,
+  `TauCeti.toeplitz_fourierLp_natCast_eq_pow`: the Toeplitz operator of `e_m`, `m ≥ 0`, raises the
+  Hardy basis by `m` and equals the `m`-th power of the forward shift `S = T_(e_1)`;
+* `TauCeti.toeplitz_fourierLp_neg_one_hardyBasis_zero`,
+  `TauCeti.toeplitz_fourierLp_neg_one_hardyBasis_succ`: the backward shift `S† = T_(e_{-1})`
+  annihilates `e₀` and sends `eₙ₊₁` to `eₙ`;
 * `TauCeti.norm_toeplitz`: the operator norm of `T_a` is exactly `‖a‖∞`, so the symbol map is an
   isometry (`TauCeti.isometry_toeplitz`) and in particular injective
   (`TauCeti.toeplitz_injective`).
@@ -129,6 +135,12 @@ theorem adjoint_toeplitz (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     Submodule.adjoint_orthogonalProjectionOnto, Lp.adjoint_multiplicationOperator,
     ContinuousLinearMap.comp_assoc]
 
+/-- The adjoint of the monomial Toeplitz operator `T_(e_k)` is `T_(e_{-k})`. -/
+theorem adjoint_toeplitz_fourierLp (k : ℤ) :
+    ContinuousLinearMap.adjoint (toeplitz (fourierLp (T := 1) ∞ k)) =
+      toeplitz (fourierLp (T := 1) ∞ (-k)) := by
+  rw [adjoint_toeplitz, star_fourierLp]
+
 /-- A constant symbol acts on Hardy space by scalar multiplication. -/
 @[simp]
 theorem toeplitz_const (c : ℂ) :
@@ -137,6 +149,26 @@ theorem toeplitz_const (c : ℂ) :
   ext f : 2
   rw [coe_toeplitz_apply, ← Lp.multiplicationOperator_apply, Lp.multiplicationOperator_const]
   simp [Submodule.starProjection_eq_self_iff.mpr (hardySubmodule.smul_mem c f.property)]
+
+/-- The Toeplitz operator of the constant mode `e_0` is the identity on `HardySpace`. -/
+@[simp]
+theorem toeplitz_fourierLp_zero :
+    toeplitz (fourierLp (T := 1) ∞ 0) = ContinuousLinearMap.id ℂ HardySpace := by
+  have h0 : fourierLp (T := 1) ∞ 0 = Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) (1 : ℂ) := by
+    apply Lp.ext
+    filter_upwards [coeFn_fourierLp (T := 1) ∞ 0,
+      Lp.coeFn_const ∞ (AddCircle.haarAddCircle (T := 1)) (1 : ℂ)] with x hx hc
+    rw [hx, hc, Function.const_apply, fourier_zero]
+  rw [h0, toeplitz_const, one_smul]
+
+/-- The continuous symbol `1` induces the identity Toeplitz operator on `HardySpace`.
+
+Not `@[simp]`, because `simp` already reduces the left-hand side via `ContinuousMap.toLp_one`,
+`toeplitz_const`, and `one_smul`. -/
+theorem toeplitz_toLp_one :
+    toeplitz (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ (1 : C(UnitAddCircle, ℂ))) =
+      ContinuousLinearMap.id ℂ HardySpace := by
+  rw [ContinuousMap.toLp_one, toeplitz_const, one_smul]
 
 /-- The Toeplitz operator of the Fourier monomial `e_m`, `m ≥ 0`, raises the Hardy basis by
 `m`. -/
@@ -154,6 +186,46 @@ theorem toeplitz_fourierLp_natCast_hardyBasis (m n : ℕ) :
 theorem toeplitz_fourierLp_one_hardyBasis (n : ℕ) :
     toeplitz (fourierLp (T := 1) ∞ 1) (hardyBasis n) = hardyBasis (n + 1) := by
   simpa [add_comm] using toeplitz_fourierLp_natCast_hardyBasis 1 n
+
+/-- For `m : ℕ`, the analytic monomial Toeplitz operator `T_(e_m)` is the `m`-th power of the
+forward shift `T_(e_1)`. -/
+theorem toeplitz_fourierLp_natCast_eq_pow (m : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ (m : ℤ)) = (toeplitz (fourierLp (T := 1) ∞ 1)) ^ m := by
+  induction m with
+  | zero =>
+    rw [Nat.cast_zero, pow_zero, ContinuousLinearMap.one_def, toeplitz_fourierLp_zero]
+  | succ m ih =>
+    apply ContinuousLinearMap.ext_on (s := Set.range hardyBasis) (by
+      rw [dense_iff_closure_eq, ← Submodule.topologicalClosure_coe, hardyBasis.dense_span]
+      rfl)
+    rintro _ ⟨n, rfl⟩
+    rw [pow_succ, mul_apply_eq_comp, ← ih, toeplitz_fourierLp_natCast_hardyBasis,
+      toeplitz_fourierLp_one_hardyBasis, toeplitz_fourierLp_natCast_hardyBasis]
+    congr 1
+    omega
+
+/-- The backward shift `T_(e_{-1})` annihilates the constant Hardy mode `hardyBasis 0`. -/
+@[simp]
+theorem toeplitz_fourierLp_neg_one_hardyBasis_zero :
+    toeplitz (fourierLp (T := 1) ∞ (-1)) (hardyBasis 0) = 0 := by
+  apply hardyBasis.repr.injective
+  rw [hardyBasis.repr.map_zero]
+  apply lp.ext
+  funext i
+  rw [lp.coeFn_zero, Pi.zero_apply, hardyBasis_repr_toeplitz_apply, coe_hardyBasis,
+    fourierLp_smul_fourierBasis, Nat.cast_zero, add_zero, coe_fourierBasis,
+    fourierCoeff_fourierLp, ite_eq_right (by omega)]
+
+/-- The backward shift `T_(e_{-1})` lowers every positive Hardy basis mode by `1`. -/
+@[simp]
+theorem toeplitz_fourierLp_neg_one_hardyBasis_succ (n : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ (-1)) (hardyBasis (n + 1)) = hardyBasis n := by
+  apply hardyBasis.repr.injective
+  apply lp.ext
+  funext i
+  have hidx : (-1 : ℤ) + ((n + 1 : ℕ) : ℤ) = (n : ℤ) := by omega
+  rw [hardyBasis_repr_toeplitz_apply, coe_hardyBasis, fourierLp_smul_fourierBasis, hidx,
+    ← coe_hardyBasis, ← hardyBasis_repr]
 
 /-- The operator norm of the Toeplitz operator `T_a` is at most the `L∞` norm of its symbol. -/
 theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :

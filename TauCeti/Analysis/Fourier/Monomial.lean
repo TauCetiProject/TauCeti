@@ -22,6 +22,10 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 
 ## Main statements
 
+* `TauCeti.fourier_ne_zero`, `TauCeti.norm_fourier_apply`: every Fourier monomial is nowhere zero
+  and has pointwise modulus `1`.
+* `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
+  `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`: `fourier n (x + y) = fourier n x * fourier n y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
@@ -39,6 +43,36 @@ open Complex Real
 namespace TauCeti
 
 variable {T : ℝ}
+
+/-- Every Fourier monomial on `AddCircle T` is nowhere zero. -/
+theorem fourier_ne_zero (k : ℤ) (x : AddCircle T) : fourier k x ≠ 0 := by
+  rw [fourier_apply]
+  exact Circle.coe_ne_zero _
+
+/-- Every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
+
+Not `@[simp]`, because `simp` already reduces the left-hand side via `fourier_apply` and
+`Circle.norm_coe`. -/
+theorem norm_fourier_apply (k : ℤ) (x : AddCircle T) : ‖fourier k x‖ = 1 := by
+  rw [fourier_apply]
+  exact Circle.norm_coe _
+
+/-- Raising a Fourier monomial to the `m`-th power multiplies its frequency by `m`. -/
+theorem fourier_pow (k : ℤ) (m : ℕ) :
+    fourier (T := T) k ^ m = fourier (T := T) (m * k) := by
+  induction m with
+  | zero =>
+    ext x
+    simp
+  | succ m ih =>
+    ext x
+    rw [pow_succ, ContinuousMap.mul_apply, ih, Nat.cast_add, Nat.cast_one, add_mul, one_mul,
+      fourier_add]
+
+/-- The `m`-th power of the fundamental Fourier monomial `fourier 1` is `fourier m`. -/
+theorem fourier_one_pow (m : ℕ) :
+    fourier (T := T) 1 ^ m = fourier (T := T) (m : ℤ) := by
+  simpa using fourier_pow (T := T) 1 m
 
 /-- A Fourier monomial turns a sum of points into a product:
 `fourier n (x + y) = fourier n x * fourier n y`. -/

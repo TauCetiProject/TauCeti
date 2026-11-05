@@ -39,6 +39,8 @@ check.
 * `TauCeti.isFredholm_iff_finite_ker_coker`: over Banach spaces over an
   `IsRCLikeNormedField`, the Fredholm predicate is equivalent to finite dimensionality of the
   kernel and cokernel.
+* `ContinuousLinearMap.IsFredholm.of_comp_left_right`: over Banach spaces over an
+  `IsRCLikeNormedField`, if `S₁.comp T` and `T.comp S₂` are Fredholm then `T` is Fredholm.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
 A.1, where a Fredholm operator has finite-dimensional kernel and cokernel; the closed-range
@@ -134,5 +136,31 @@ theorem isFredholm_iff_finite_ker_coker (T : E →L[𝕜] F) :
         FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) :=
   ⟨fun h => ⟨h.finite_ker, h.finite_coker⟩,
     fun h => .of_finite_ker_coker T h.1 h.2⟩
+
+/-- Over Banach spaces over an `IsRCLikeNormedField`, a continuous linear map `T : E →L[𝕜] F` is
+Fredholm whenever it admits a left composite `S₁.comp T` and a right composite `T.comp S₂` that are
+both Fredholm: `ker T ≤ ker (S₁.comp T)` bounds the kernel and `range (T.comp S₂) ≤ range T` bounds
+the cokernel, with closed range automatic. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.of_comp_left_right
+    {G H : Type*} [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
+    [AddCommGroup H] [Module 𝕜 H] [TopologicalSpace H]
+    {T : E →L[𝕜] F} {S₁ : F →L[𝕜] G} {S₂ : H →L[𝕜] E}
+    (h₁ : ContinuousLinearMap.IsFredholm (S₁.comp T))
+    (h₂ : ContinuousLinearMap.IsFredholm (T.comp S₂)) :
+    ContinuousLinearMap.IsFredholm T := by
+  refine .of_finite_ker_coker T ?_ ?_
+  · have hker : LinearMap.ker (T : E →ₗ[𝕜] F) ≤ LinearMap.ker (S₁.comp T : E →ₗ[𝕜] G) := by
+      intro x hx
+      rw [LinearMap.mem_ker] at hx ⊢
+      simpa only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, map_zero] using
+        congrArg S₁ hx
+    have := h₁.finite_ker
+    exact Submodule.finiteDimensional_of_le hker
+  · have hrange : LinearMap.range (T.comp S₂ : H →ₗ[𝕜] F) ≤ LinearMap.range (T : E →ₗ[𝕜] F) := by
+      rintro y ⟨z, rfl⟩
+      exact ⟨S₂ z, rfl⟩
+    have := h₂.finite_coker
+    exact FiniteDimensional.of_surjective (Submodule.factor hrange)
+      (Submodule.factor_surjective hrange)
 
 end TauCeti
