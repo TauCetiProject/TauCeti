@@ -28,8 +28,6 @@ equivariant and `SO(3)` acts simply transitively on unit tangent vectors of the 
 
 ## Main declarations
 
-* `TauCeti.mem_stiefel_two_euclideanSpace_iff`: orthonormality of a pair of vectors of a Euclidean
-  space, in terms of dot products of coordinates.
 * `TauCeti.stiefelTwoHomeomorphSpecialOrthogonalGroup`: the homeomorphism `UT(S²) ≃ₜ SO(3)`.
 * `TauCeti.stiefelTwoHomeomorphSpecialOrthogonalGroup_symm_one`: the identity is the standard
   frame.
@@ -48,19 +46,6 @@ open Matrix WithLp TauCeti.Matrix.SpecialOrthogonalGroup
 namespace TauCeti
 
 noncomputable section
-
-/-- A pair of vectors of `EuclideanSpace ℝ ι` is orthonormal exactly when the dot products of their
-coordinates are those of an orthonormal pair. -/
-theorem mem_stiefel_two_euclideanSpace_iff {ι : Type*} [Fintype ι]
-    {v : Fin 2 → EuclideanSpace ℝ ι} :
-    v ∈ stiefel (EuclideanSpace ℝ ι) 2 ↔
-      ofLp (v 0) ⬝ᵥ ofLp (v 0) = 1 ∧ ofLp (v 1) ⬝ᵥ ofLp (v 1) = 1 ∧
-        ofLp (v 0) ⬝ᵥ ofLp (v 1) = 0 := by
-  have hnorm (x : EuclideanSpace ℝ ι) : ‖x‖ = 1 ↔ ofLp x ⬝ᵥ ofLp x = 1 := by
-    rw [← pow_eq_one_iff_of_nonneg (norm_nonneg x) two_ne_zero, ← real_inner_self_eq_norm_sq,
-      EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
-  rw [mem_stiefel_two_iff, hnorm, hnorm, EuclideanSpace.inner_eq_star_dotProduct, star_trivial,
-    dotProduct_comm (ofLp (v 1)) (ofLp (v 0))]
 
 /-- **The unit tangent bundle of the round two-sphere is `SO(3)`.** An orthonormal pair `(x, v)`
 of `ℝ³`, a unit tangent vector `v` of the round sphere at `x`, goes to the rotation whose columns
@@ -118,9 +103,8 @@ theorem coe_stiefelTwoHomeomorphSpecialOrthogonalGroup_symm_apply
 theorem stiefelTwoHomeomorphSpecialOrthogonalGroup_symm_one :
     (stiefelTwoHomeomorphSpecialOrthogonalGroup.symm 1 : Fin 2 → EuclideanSpace ℝ (Fin 3)) =
       ![EuclideanSpace.single 0 1, EuclideanSpace.single 1 1] := by
-  rw [coe_stiefelTwoHomeomorphSpecialOrthogonalGroup_symm_apply, OneMemClass.coe_one,
-    ← mulVec_single_one, ← mulVec_single_one, one_mulVec, one_mulVec, PiLp.toLp_single,
-    PiLp.toLp_single]
+  simp only [coe_stiefelTwoHomeomorphSpecialOrthogonalGroup_symm_apply, OneMemClass.coe_one,
+    ← mulVec_single_one, one_mulVec, PiLp.toLp_single]
 
 /-- **The homeomorphism is equivariant**: the frame of `g * A` is the frame of `A` rotated by
 `g`. -/

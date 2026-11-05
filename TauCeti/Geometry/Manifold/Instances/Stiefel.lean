@@ -46,6 +46,8 @@ manifold structure.
 * `TauCeti.mem_stiefel_iff`: the points of `TauCeti.stiefel E k` are the orthonormal families.
 * `TauCeti.mem_stiefel_two_iff`: the points of `TauCeti.stiefel E 2` are the pairs of orthogonal
   unit vectors.
+* `TauCeti.mem_stiefel_two_euclideanSpace_iff`: orthonormality of a pair of vectors of a Euclidean
+  space, in terms of dot products of coordinates.
 * `TauCeti.nonempty_stiefel`: the Stiefel manifold is nonempty exactly when `k ≤ finrank ℝ E`.
 * `TauCeti.gramSym2Deriv_surjective` and `TauCeti.index_gramSym2Deriv`: the Gram map is regular
   along the Stiefel manifold, with derivative of index `k n - (k + 1).choose 2`.
@@ -176,6 +178,20 @@ theorem mem_stiefel_two_iff {v : Fin 2 → E} :
     v ∈ stiefel E 2 ↔ ‖v 0‖ = 1 ∧ ‖v 1‖ = 1 ∧ ⟪v 0, v 1⟫ = 0 := by
   simp [mem_stiefel_iff, Orthonormal, Pairwise, Fin.forall_fin_two, real_inner_comm (v 0),
     and_assoc]
+
+open WithLp in
+/-- A pair of vectors of `EuclideanSpace ℝ ι` is orthonormal exactly when the dot products of their
+coordinates are those of an orthonormal pair. -/
+theorem mem_stiefel_two_euclideanSpace_iff {ι : Type*} [Fintype ι]
+    {v : Fin 2 → EuclideanSpace ℝ ι} :
+    v ∈ stiefel (EuclideanSpace ℝ ι) 2 ↔
+      ofLp (v 0) ⬝ᵥ ofLp (v 0) = 1 ∧ ofLp (v 1) ⬝ᵥ ofLp (v 1) = 1 ∧
+        ofLp (v 0) ⬝ᵥ ofLp (v 1) = 0 := by
+  have hnorm (x : EuclideanSpace ℝ ι) : ‖x‖ = 1 ↔ ofLp x ⬝ᵥ ofLp x = 1 := by
+    rw [← pow_eq_one_iff_of_nonneg (norm_nonneg x) two_ne_zero, ← real_inner_self_eq_norm_sq,
+      EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+  rw [mem_stiefel_two_iff, hnorm, hnorm, EuclideanSpace.inner_eq_star_dotProduct, star_trivial,
+    dotProduct_comm (ofLp (v 1)) (ofLp (v 0))]
 
 /-- The vectors of a frame in the Stiefel manifold are unit vectors. -/
 theorem norm_eq_one_of_mem_stiefel {v : Fin k → E} (hv : v ∈ stiefel E k) (i : Fin k) :

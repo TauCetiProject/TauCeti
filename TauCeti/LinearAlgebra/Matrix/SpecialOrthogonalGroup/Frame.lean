@@ -12,23 +12,25 @@ public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 /-!
 # Rotations of `R³` as oriented orthonormal frames
 
-A rotation `A ∈ SO(3)` is determined by its first two columns `u = A e₀` and `v = A e₁`, which are
-orthonormal, and its third column is their cross product `u ⨯₃ v`: the frame `(u, v, u ⨯₃ v)` is
-the unique positively oriented orthonormal basis starting with `u` and `v`. Conversely, for any
-pair of orthonormal vectors the matrix `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame u v` with
-columns `u`, `v` and `u ⨯₃ v` is a rotation. So `SO(3)` is the space of orthonormal pairs of `R³`,
-that is, of unit tangent vectors `v` at points `u` of the unit sphere; the topological form of this
-identification over `ℝ` is `TauCeti.stiefelTwoHomeomorphSpecialOrthogonalGroup`.
+Over a commutative ring `R`, call `u, v ∈ R³` orthonormal when `u ⬝ᵥ u = v ⬝ᵥ v = 1` and
+`u ⬝ᵥ v = 0`. A rotation `A ∈ SO(3, R)`, that is, a matrix with `Aᵀ * A = 1` and `det A = 1`, is
+determined by its first two columns `u = A e₀` and `v = A e₁`, which are orthonormal, and its third
+column is their cross product `u ⨯₃ v`. Conversely, for any orthonormal pair the matrix
+`TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame u v` with columns `u`, `v` and `u ⨯₃ v` lies in
+`SO(3, R)`. So `SO(3, R)` is the set of orthonormal pairs of `R³`. Multiplying a frame matrix on
+the left by `g ∈ SO(3, R)` multiplies both vectors of the pair by `g`, since such matrices preserve
+the cross product (`Matrix.mulVec_cross_mulVec_of_mem_specialOrthogonalGroup`).
 
-This works over any commutative ring `R`, with orthonormality measured by the dot product. Rotating
-a frame by `g ∈ SO(3)` multiplies its matrix by `g` on the left, since rotations preserve the cross
-product (`Matrix.mulVec_cross_mulVec_of_mem_specialOrthogonalGroup`).
+For `R = ℝ` the dot product is the Euclidean inner product: `(u, v, u ⨯₃ v)` is then the unique
+positively oriented orthonormal basis starting with `u` and `v`, and an orthonormal pair is a unit
+tangent vector `v` at the point `u` of the unit sphere. The topological form of this identification
+is `TauCeti.stiefelTwoHomeomorphSpecialOrthogonalGroup`.
 
 ## Main declarations
 
 * `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame`: the matrix with columns `u`, `v`, `u ⨯₃ v`.
-* `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_mem_iff`: it is a rotation exactly when `u` and
-  `v` are orthonormal.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_mem_iff`: it lies in `SO(3, R)` exactly when
+  `u` and `v` are orthonormal.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_col_zero_col_one`: every rotation is the matrix
   of the frame of its first two columns.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_mulVec_mulVec`: rotating the frame by `g`
@@ -45,8 +47,8 @@ variable {R : Type*} [CommRing R]
 
 attribute [local instance] starRingOfComm
 
-/-- The `3 × 3` matrix whose columns are `u`, `v` and `u ⨯₃ v`. When `u` and `v` are orthonormal it
-is the rotation carrying the standard basis to the oriented orthonormal frame `(u, v, u ⨯₃ v)`
+/-- The `3 × 3` matrix whose columns are `u`, `v` and `u ⨯₃ v`. When `u` and `v` are orthonormal
+for the dot product it lies in `SO(3, R)` and carries the standard basis to `(u, v, u ⨯₃ v)`
 (`TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_mem_iff`). -/
 def ofFrame (u v : Fin 3 → R) : Matrix (Fin 3) (Fin 3) R :=
   (of ![u, v, u ⨯₃ v])ᵀ
@@ -78,16 +80,18 @@ theorem transpose_ofFrame_mul_ofFrame (u v : Fin 3 → R) :
   rw [mul_apply', ofFrame, transpose_transpose]
   rfl
 
-/-- The determinant of `ofFrame u v` is `‖u ⨯₃ v‖²`. -/
+/-- The determinant of `ofFrame u v` is the dot product of `u ⨯₃ v` with itself (over `ℝ`, the
+squared norm of `u ⨯₃ v`). -/
 theorem det_ofFrame (u v : Fin 3 → R) : (ofFrame u v).det = (u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) := by
   have h := triple_product_eq_det u v (u ⨯₃ v)
   rw [triple_product_permutation, triple_product_permutation] at h
   rw [ofFrame, det_transpose]
   exact h.symm
 
-/-- **A frame matrix is a rotation exactly when the frame starts with two orthonormal vectors.**
-The third vector `u ⨯₃ v` is then automatically a unit vector orthogonal to both, and the frame is
-positively oriented. -/
+/-- **A frame matrix lies in `SO(3, R)` exactly when the frame starts with two orthonormal
+vectors**, that is, `u ⬝ᵥ u = v ⬝ᵥ v = 1` and `u ⬝ᵥ v = 0`. The third vector `w = u ⨯₃ v` then
+automatically satisfies `w ⬝ᵥ w = 1` and `u ⬝ᵥ w = v ⬝ᵥ w = 0`, and the matrix has determinant
+one; over `ℝ` this says the frame is orthonormal and positively oriented. -/
 theorem ofFrame_mem_iff {u v : Fin 3 → R} :
     ofFrame u v ∈ specialOrthogonalGroup (Fin 3) R ↔
       u ⬝ᵥ u = 1 ∧ v ⬝ᵥ v = 1 ∧ u ⬝ᵥ v = 0 := by
