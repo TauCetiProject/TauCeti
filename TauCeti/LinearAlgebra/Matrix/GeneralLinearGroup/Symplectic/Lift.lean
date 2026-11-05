@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import Mathlib.Data.Fintype.EquivFin
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 public import TauCeti.LinearAlgebra.SymplecticGroup
