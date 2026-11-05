@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Basic
+import Mathlib.Algebra.Ring.Parity
 
 /-!
 # Seifert circles of an oriented PD-code
@@ -51,6 +52,10 @@ and that circle, travelled in this direction, is a single orbit of the traversal
   smoothing preserves the orientation of half-edges.
 * `TauCeti.OrientedPDCode.seifertCircle_mk_eq_mk_iff_sameCycle`: two half-edges of the same
   orientation lie on one Seifert circle exactly when they lie on one directed traversal orbit.
+* `TauCeti.OrientedPDCode.seifertPermOutgoing`: the outgoing Seifert traversal, with one orbit
+  for each crossing-bearing Seifert circle.
+* `TauCeti.OrientedPDCode.even_seifertCircleCount_sub_crossingCount_add_componentCount`: the
+  Seifert circle count `s`, crossing count `n`, and component count `c` satisfy `s - n + c` even.
 
 ## References
 
@@ -213,6 +218,116 @@ theorem seifertCircle_mk_eq_mk_iff_sameCycle {x y : Fin (4 * n)}
   have := D.orientation_eq_of_sameCycle_statePerm_seifertState h'
   rw [orientation_edgePair, ← hxy] at this
   cases hx : D.orientation x <;> simp [hx] at this
+
+/-! ### Outgoing traversal and component parity -/
+
+/-- The Seifert traversal restricted to outgoing half-edges. Each orbit traverses one
+crossing-bearing Seifert circle in its induced orientation. -/
+noncomputable def seifertPermOutgoing :
+    Perm {h : Fin (4 * n) // D.orientation h = true} :=
+  (D.statePerm D.seifertState).subtypePerm (fun h ↦ by
+    simp only [orientation_statePerm_seifertState])
+
+/-- Outgoing Seifert traversal has the same underlying half-edge as unrestricted traversal. -/
+@[simp]
+theorem seifertPermOutgoing_apply_val (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    (D.seifertPermOutgoing h).val = D.statePerm D.seifertState h :=
+  (rfl)
+
+/-- Two outgoing half-edges are in the same Seifert traversal orbit exactly when they
+represent the same Seifert circle. -/
+@[simp]
+theorem sameCycle_seifertPermOutgoing_iff
+    (h k : {h : Fin (4 * n) // D.orientation h = true}) :
+    D.seifertPermOutgoing.SameCycle h k ↔
+      (⟦h.val⟧ : D.CrossingCircle D.seifertState) = ⟦k.val⟧ :=
+  sameCycle_subtypePerm.trans
+    (D.seifertCircle_mk_eq_mk_iff_sameCycle (h.property.trans k.property.symm)).symm
+
+/-- There is one outgoing Seifert traversal orbit per crossing-bearing Seifert circle. -/
+theorem orbitCount_seifertPermOutgoing :
+    orbitCount D.seifertPermOutgoing = Fintype.card (D.CrossingCircle D.seifertState) := by
+  classical
+  let f : {h : Fin (4 * n) // D.orientation h = true} → D.CrossingCircle D.seifertState :=
+    fun h ↦ ⟦h.val⟧
+  have hf : Function.Surjective f := by
+    intro C
+    induction C using Quotient.inductionOn with | _ h =>
+      cases ho : D.orientation h with
+      | false =>
+        exact ⟨⟨D.edgePair.val h, by simp [ho]⟩, CrossingCircle.mk_edgePair h⟩
+      | true => exact ⟨⟨h, ho⟩, rfl⟩
+  let e : Quotient (SameCycle.setoid D.seifertPermOutgoing) ≃
+      D.CrossingCircle D.seifertState :=
+    Equiv.ofBijective (Quotient.lift f (fun x y h ↦
+      (D.sameCycle_seifertPermOutgoing_iff x y).1 h)) ⟨?_, Quotient.lift_surjective _ _ hf⟩
+  · rw [orbitCount_def, Nat.card_eq_fintype_card]
+    exact Fintype.card_congr e
+  · intro x y h
+    induction x using Quotient.inductionOn with | _ x =>
+      induction y using Quotient.inductionOn with | _ y =>
+        exact Quotient.sound ((D.sameCycle_seifertPermOutgoing_iff x y).2 h)
+
+/-- Switching the outgoing continuation at every crossing changes link traversal into
+Seifert traversal. The two outgoing half-edges at each crossing are paired with each other. -/
+noncomputable def seifertSwitch :
+    Perm {h : Fin (4 * n) // D.orientation h = true} :=
+  (D.smoothingTurn (D.smoothingChoice D.seifertState) * D.crossingTurn).subtypePerm
+    (fun h ↦ by simp [Perm.mul_apply])
+
+/-- The switch acts by crossing to the opposite slot and then following the Seifert smoothing. -/
+@[simp]
+theorem seifertSwitch_apply_val (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    (D.seifertSwitch h).val =
+      D.smoothingTurn (D.smoothingChoice D.seifertState) (D.crossingTurn h) :=
+  (rfl)
+
+/-- The outgoing switches form a perfect matching, one transposition at each crossing. -/
+theorem isPerfectMatching_seifertSwitch : IsPerfectMatching D.seifertSwitch := by
+  rw [isPerfectMatching_iff]
+  constructor
+  · intro h
+    apply Subtype.ext
+    exact (D.toPDCode.isPerfectMatching_smoothingTurn_mul_crossingTurn _).apply_apply h
+  · intro h he
+    exact (D.toPDCode.isPerfectMatching_smoothingTurn_mul_crossingTurn _).apply_ne h
+      (congrArg Subtype.val he)
+
+/-- The outgoing switch carries original component traversal to Seifert traversal. -/
+theorem seifertSwitch_mul_componentPermOutgoing :
+    D.seifertSwitch * D.componentPermOutgoing = D.seifertPermOutgoing := by
+  ext h
+  simp [Perm.mul_apply, PDCode.componentPerm_apply, PDCode.statePerm_apply,
+    PDCode.crossingTurn_apply_apply]
+
+/-- Switching the continuation at all `n` crossings changes permutation sign by `(-1)^n`. -/
+theorem sign_seifertPermOutgoing :
+    sign D.seifertPermOutgoing = (-1 : ℤˣ) ^ n * sign D.componentPermOutgoing := by
+  classical
+  rw [← seifertSwitch_mul_componentPermOutgoing, map_mul,
+    D.isPerfectMatching_seifertSwitch.sign_eq, D.card_outgoingHalfEdges,
+    Nat.mul_div_cancel_left _ (by decide : 0 < 2)]
+
+/-- The Seifert circle count `s`, crossing count `n`, and link component count `c` satisfy
+`s - n + c ≡ 0 (mod 2)`. Crossing-free components contribute to both `s` and `c`.
+This identity does not require planarity. -/
+theorem even_seifertCircleCount_sub_crossingCount_add_componentCount :
+    Even ((D.stateLoopCount D.seifertState : ℤ) - n + D.componentCount) := by
+  classical
+  have hsign : sign D.seifertPermOutgoing *
+      ((-1 : ℤˣ) ^ n * sign D.componentPermOutgoing) = 1 := by
+    rw [← D.sign_seifertPermOutgoing]
+    exact Int.units_mul_self _
+  simp only [sign_eq_neg_one_pow_card_sub_orbitCount, ← pow_add] at hsign
+  obtain ⟨k, hk⟩ := (neg_one_pow_eq_one_iff_even (R := ℤˣ) (by decide)).mp hsign
+  have hs := D.seifertPermOutgoing.orbitCount_le_card
+  have hc := D.componentPermOutgoing.orbitCount_le_card
+  simp only [Nat.card_eq_fintype_card] at hs hc
+  simp only [D.orbitCount_seifertPermOutgoing, D.orbitCount_componentPermOutgoing] at hk hs hc
+  have hcircles := D.toPDCode.card_resolvedCircle D.seifertState
+  rw [Fintype.card_sum, Fintype.card_fin] at hcircles
+  rw [Int.even_iff, PDCode.componentCount_eq]
+  omega
 
 end OrientedPDCode
 

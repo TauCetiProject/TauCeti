@@ -83,7 +83,7 @@ theorem coinKernel_apply_true (p : I) :
 
 /-- The two-point kernel is measurable in the bias, so it can direct a mixture. -/
 theorem measurable_coinKernel : Measurable coinKernel :=
-  (measurable_bernoulliMeasure true false).subtype_mk
+  (measurable_const.bernoulliMeasure measurable_const measurable_id).subtype_mk
 
 variable (π : Measure I)
 

@@ -122,6 +122,11 @@ being tested. The label is a readiness hint; admission still checks the current 
 reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
 Initial candidate scans after a bot restart are omitted when their incompleteness is recorded.
 Older snapshots without that marker can briefly undercount.
+The latest complete count and its snapshot time appear below the chart. "Chart published"
+is when the chart was generated; its newest complete snapshot can be older, especially
+while a new scan is incomplete. During later scans, bors may reuse the previous complete
+snapshot. The ready-labelled backlog can differ from the active-batch total reported by
+`tauceti-fleet status`, which counts PRs already assigned to bors batches.
 
 :::blob queueSizeGraph
 :::

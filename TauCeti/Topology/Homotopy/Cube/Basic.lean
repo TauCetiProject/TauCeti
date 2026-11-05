@@ -59,11 +59,16 @@ at `0` while releasing the first.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
+* `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
+  value stays on the boundary.
 * `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
   coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
   of `I^(Option N)`.
 * `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
   `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
+* `GenLoop.ofProd`: a map `I × I^N → X` taking the value `x` on `TauCeti.Cube.prodBoundary N`,
+  read as a generalized loop in `Ω^ (Option N) X x`; conversely
+  `GenLoop.apply_symm_of_mem_prodBoundary` evaluates such a loop on that boundary.
 * `TauCeti.cubeSplitHomeomorph`: the homeomorphism `I^(Fin (n + 1)) ≃ₜ I × I^(Fin n)` splitting
   off the first coordinate, matching the boundaries by
   `TauCeti.cubeSplitHomeomorph_mem_prodBoundary_iff`.
@@ -82,6 +87,18 @@ theorem Cube.boundary_option_iff {N : Type*} {y : I^(Option N)} :
     exacts [Or.inl hk, Or.inr ⟨k, hk⟩]
   · rintro (h | ⟨k, hk⟩)
     exacts [⟨none, h⟩, ⟨some k, hk⟩]
+
+open scoped Topology unitInterval in
+/-- Changing the coordinate `j` of a point on the boundary of `I^N` keeps it on the boundary,
+provided an endpoint value of that coordinate is changed to an endpoint value. -/
+theorem Cube.update_mem_boundary {N : Type*} [DecidableEq N] {t : I^N}
+    (ht : t ∈ Cube.boundary N) {j : N} {v : I} (hv : t j = 0 ∨ t j = 1 → v = 0 ∨ v = 1) :
+    Function.update t j v ∈ Cube.boundary N := by
+  obtain ⟨k, hk⟩ := ht
+  by_cases hkj : k = j
+  · subst hkj
+    exact ⟨k, by simpa using hv hk⟩
+  · exact ⟨k, by simpa [Function.update_of_ne hkj] using hk⟩
 
 open scoped Topology unitInterval in
 /-- The cube over an empty index type is a point, and its boundary is empty. -/
@@ -113,7 +130,7 @@ theorem Cube.boundary_fin_one_iff {y : I^(Fin 1)} :
 
 namespace TauCeti
 
-open scoped Topology
+open scoped Topology Topology.Homotopy
 open unitInterval
 
 variable {N : Type*}
@@ -148,6 +165,26 @@ theorem piOptionEquivProdHomeomorph_symm_mem_boundary {y : I × I^N}
     (h : y ∈ Cube.prodBoundary N) :
     (piOptionEquivProdHomeomorph fun _ : Option N => I).symm y ∈ Cube.boundary (Option N) :=
   piOptionEquivProdHomeomorph_mem_prodBoundary_iff.1 (by rwa [Homeomorph.apply_symm_apply])
+
+/-- A generalized loop on `I^(Option N)` takes its basepoint at every point `(s, t)` of `I × I^N`
+with `s = 0`, `s = 1` or `t` on the boundary of `I^N`. -/
+theorem _root_.GenLoop.apply_symm_of_mem_prodBoundary {X : Type*} [TopologicalSpace X] {x : X}
+    (γ : Ω^ (Option N) X x) {y : I × I^N} (hy : y ∈ Cube.prodBoundary N) :
+    γ ((piOptionEquivProdHomeomorph fun _ => I).symm y) = x :=
+  GenLoop.boundary γ _ (piOptionEquivProdHomeomorph_symm_mem_boundary hy)
+
+/-- A map `I × I^N → X` taking the value `x` on the boundary of `I × I^N`, read as a generalized
+loop on `I^(Option N)` through `TauCeti.piOptionEquivProdHomeomorph`. -/
+def _root_.GenLoop.ofProd {X : Type*} [TopologicalSpace X] {x : X} (c : C(I × I^N, X))
+    (hc : ∀ y ∈ Cube.prodBoundary N, c y = x) : Ω^ (Option N) X x :=
+  ⟨c.comp (piOptionEquivProdHomeomorph fun _ : Option N => I), fun _ hz =>
+    hc _ (piOptionEquivProdHomeomorph_mem_prodBoundary_iff.2 hz)⟩
+
+@[simp]
+theorem _root_.GenLoop.ofProd_apply {X : Type*} [TopologicalSpace X] {x : X} (c : C(I × I^N, X))
+    (hc : ∀ y ∈ Cube.prodBoundary N, c y = x) (z : I^(Option N)) :
+    GenLoop.ofProd c hc z = c (piOptionEquivProdHomeomorph (fun _ => I) z) :=
+  (rfl)
 
 /-- The homeomorphism `Iⁿ⁺¹ ≃ₜ I × Iⁿ` splitting a point into its first coordinate and the
 remaining ones, `Fin.consEquiv` as a homeomorphism. -/
