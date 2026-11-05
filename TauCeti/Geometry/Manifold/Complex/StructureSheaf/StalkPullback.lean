@@ -17,7 +17,8 @@ near the chosen point. Unlike the sheaf morphism `stalkPrecomp`, this requires n
 holomorphic extension of the map. Equality, evaluation and composition are characterized
 through the injective comparison with function germs. The two pullbacks agree when both apply.
 Pullback along a map with a local analytic inverse, such as a chart, is bijective
-(`stalkPullback_bijective`).
+(`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
+(`stalkPullback_continuousLinearEquiv_bijective`).
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -158,5 +159,19 @@ theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), Cont
     rw [toFilterGerm_stalkPullback, ht _ le_rfl, hu, Germ.coe_compTendsto, Germ.coe_eq]
     filter_upwards [hgf] with x hx
     simp [hx]
+
+section ContinuousLinearEquiv
+
+variable {V W : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W]
+
+/-- Pullback along a continuous linear equivalence is bijective on holomorphic stalks. -/
+theorem stalkPullback_continuousLinearEquiv_bijective (e : V ≃L[ℂ] W) (x : V) :
+    Function.Bijective (stalkPullback (I := 𝓘(ℂ, V)) (J := 𝓘(ℂ, W)) (a := x)
+      (Eventually.of_forall fun _ ↦ e.contDiff.contMDiff.contMDiffAt)) :=
+  stalkPullback_bijective _ (Eventually.of_forall fun _ ↦ e.symm.contDiff.contMDiff.contMDiffAt)
+    (Eventually.of_forall e.symm_apply_apply) (Eventually.of_forall e.apply_symm_apply)
+
+end ContinuousLinearEquiv
 
 end TauCeti.holomorphicStructureSheaf

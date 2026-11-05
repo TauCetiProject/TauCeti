@@ -63,13 +63,6 @@ section NormedSpace
 variable {V W : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W]
 
-/-- Pullback along a continuous linear equivalence is bijective on holomorphic stalks. -/
-private theorem stalkPullback_continuousLinearEquiv_bijective (e : V ≃L[ℂ] W) (x : V) :
-    Function.Bijective (stalkPullback (I := 𝓘(ℂ, V)) (J := 𝓘(ℂ, W)) (a := x)
-      (Eventually.of_forall fun _ ↦ e.contDiff.contMDiff.contMDiffAt)) :=
-  stalkPullback_bijective _ (Eventually.of_forall fun _ ↦ e.symm.contDiff.contMDiff.contMDiffAt)
-    (Eventually.of_forall e.symm_apply_apply) (Eventually.of_forall e.apply_symm_apply)
-
 /-- On a zero-dimensional space, evaluation identifies every holomorphic stalk with `ℂ`. -/
 private theorem isNoetherianRing_stalk_of_finrank_eq_zero [FiniteDimensional ℂ V]
     (hV : finrank ℂ V = 0) (x : V) :
