@@ -38,10 +38,15 @@ concatenated, and it does not change the piecewise-linear path that the list pre
 * `TauCeti.LSPath.linked_iff_getElem`: a list is linked exactly when each of its breaks carries an
   `a`-chain at the total duration before it.
 * `TauCeti.LSPath.Linked.split`: subdividing an entry keeps a list linked.
+* `TauCeti.LSPath.Linked.exists_sum_take_sub_mul_eq_intCast`: along a linked list, the height at a
+  break `a` before the direction `τ` differs from `a ⟨τ λ, -⟩` by an integer.
 * `TauCeti.LSPath.linked_dirDurations` and `TauCeti.LSPath.map_snd_timed`: the directions and
   durations of an LS path form a linked list presenting its path.
 * `TauCeti.LSPath.toPLPath_ofLinked`: **the LS path of a linked list presents the path of the
   list**.
+* `TauCeti.LSPath.dirDurations_ofLinked` and `TauCeti.LSPath.ofLinked_dirDurations`: on lists with
+  positive durations and distinct consecutive directions, `TauCeti.LSPath.ofLinked` inverts
+  `TauCeti.LSPath.dirDurations`.
 
 ## References
 
@@ -190,6 +195,17 @@ private theorem ofSegments_map_mergeDirs (f : M →+ V) {l : List (P.weylGroup �
           (Rat.cast_nonneg.mpr (hpos List.mem_cons_self).le)]
       · simp [consMergeDir, hp, hpr]
 
+private theorem mergeDirs_eq_self {l : List (P.weylGroup × ℚ)} (hpos : ∀ p ∈ l, 0 < p.2)
+    (hne : l.IsChain fun p q ↦ p.1 ≠ q.1) : mergeDirs l = l := by
+  induction l with
+  | nil => rfl
+  | cons p l ih =>
+    rw [mergeDirs_cons, ih (fun q hq ↦ hpos q (List.mem_cons_of_mem _ hq)) hne.tail]
+    have hp : p.2 ≠ 0 := (hpos p List.mem_cons_self).ne'
+    cases l with
+    | nil => simp [consMergeDir, hp]
+    | cons q l => simp [consMergeDir, hp, (List.isChain_cons_cons.mp hne).1]
+
 private theorem length_mergeDirs_pos {l : List (P.weylGroup × ℚ)}
     (hsum : (l.map Prod.snd).sum = 1) : 0 < (mergeDirs l).length :=
   List.length_pos_iff.mpr fun h ↦ by simpa [h] using (sum_map_snd_mergeDirs l).trans hsum
@@ -281,6 +297,42 @@ theorem Linked.split {t : ℚ} {l₁ l₂ : List (P.weylGroup × ℚ)} {w : P.we
     rw [List.cons_append, linked_cons_iff] at h ⊢
     refine ⟨?_, ih h.2⟩
     cases l₁ <;> simpa using h.1
+
+/-- **Heights at breaks, up to integers.** Along a linked list starting at time `0`, the height
+`∑_{m < j} d_m g(τ_m λ)` at the `j`-th break differs by an integer from `a_j g(τ_j λ)`, where
+`a_j = ∑_{m < j} d_m`, for every integral linear form `g`. This is
+`TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain` for the break times of the list. -/
+theorem Linked.exists_sum_take_sub_mul_eq_intCast [P.flip.IsReduced]
+    (hlam : lam ∈ dominantChamber P b) {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam 0 l)
+    (g : Module.Dual ℤ M) {j : ℕ} (hj : j < l.length) :
+    ∃ z : ℤ, ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum -
+      ((l.take j).map Prod.snd).sum * g (l[j].1 • lam) = z := by
+  set t : ℕ → ℚ := fun k ↦ ((l.take k).map Prod.snd).sum with ht
+  set τ : ℕ → P.weylGroup := fun k ↦ (l.getD k (1, 0)).1 with hτ
+  have hτl : ∀ k (hk : k < l.length), τ k = l[k].1 := fun k hk ↦ by
+    simp [τ, List.getElem?_eq_getElem hk]
+  have ht_succ : ∀ k (hk : k < l.length), t (k + 1) = t k + l[k].2 := fun k hk ↦ by
+    simp only [t]
+    rw [List.take_succ_eq_append_getElem hk, List.map_append, List.sum_append]
+    simp
+  -- The height at a break is the sum over the segments before it.
+  have hhgt : ∀ k ≤ l.length, ((l.take k).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum =
+      ∑ m ∈ Finset.range k, (t (m + 1) - t m) * g (τ m • lam) := by
+    intro k hk
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [List.take_succ_eq_append_getElem (by omega), List.map_append, List.sum_append,
+        ih (by omega), Finset.sum_range_succ, ht_succ k (by omega), hτl k (by omega)]
+      simp
+  obtain ⟨z, hz⟩ := exists_sum_sub_mul_eq_intCast_of_isAChain hlam (s := l.length) (τ := τ)
+    (t := t) (by simp [t])
+    (fun k hk ↦ by
+      obtain ⟨C, h₁, h₂, h₃⟩ := linked_iff_getElem.mp hl k hk
+      exact ⟨C, by rw [hτl k (by omega), h₁], by rw [hτl (k + 1) hk, h₂], by simpa [t] using h₃⟩)
+    g hj
+  rw [Finset.sum_range_succ, ← hhgt j hj.le, hτl j hj, ht_succ j hj] at hz
+  exact ⟨z, by linear_combination hz⟩
 
 /-! ### Merging linked lists -/
 
@@ -451,7 +503,7 @@ private theorem dir_ofLinked (l : List (P.weylGroup × ℚ))
   rfl
 
 /-- The directions and durations of `TauCeti.LSPath.ofLinked l` are those of `l` after merging. -/
-private theorem dirDurations_ofLinked (l : List (P.weylGroup × ℚ))
+private theorem dirDurations_ofLinked_eq_mergeDirs (l : List (P.weylGroup × ℚ))
     (hmin : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
     (hnonneg : ∀ p ∈ l, 0 ≤ p.2) (hsum : (l.map Prod.snd).sum = 1) (hl : Linked P b lam 0 l) :
     (ofLinked l hmin hnonneg hsum hl).dirDurations = mergeDirs l := by
@@ -462,12 +514,48 @@ private theorem dirDurations_ofLinked (l : List (P.weylGroup × ℚ))
     List.sum_append]
   simp
 
+/-- An LS path is determined by its directions and durations. -/
+theorem dirDurations_injective :
+    Function.Injective (dirDurations : LSPath P b lam → List (P.weylGroup × ℚ)) := by
+  intro π π' h
+  have hlen : π.length = π'.length := by simpa using congrArg List.length h
+  have hget : ∀ k (hk : k < π.length + 1), π.dirDurations[k]'(by simpa using hk) =
+      π'.dirDurations[k]'(by simpa [← hlen] using hk) := fun k hk ↦ by simp only [h]
+  refine ext (List.ext_getElem (by simp [hlen]) fun k hk₁ hk₂ ↦ ?_)
+    (List.ext_getElem (by simp [hlen]) fun k hk₁ hk₂ ↦ ?_)
+  · simp only [List.getElem_ofFn]
+    exact Subtype.ext (by simpa using congrArg Prod.fst (hget k (by simpa using hk₁)))
+  · simp only [List.getElem_ofFn]
+    rw [← sum_map_snd_take_dirDurations π k (by simp at hk₁; omega),
+      ← sum_map_snd_take_dirDurations π' k (by simp at hk₂; omega), h]
+
+/-- The directions and durations of the LS path of a linked list with positive durations and
+distinct consecutive directions are those of the list. -/
+theorem dirDurations_ofLinked (l : List (P.weylGroup × ℚ))
+    (hmin : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
+    (hnonneg : ∀ p ∈ l, 0 ≤ p.2) (hsum : (l.map Prod.snd).sum = 1) (hl : Linked P b lam 0 l)
+    (hpos : ∀ p ∈ l, 0 < p.2) (hne : l.IsChain fun p q ↦ p.1 ≠ q.1) :
+    (ofLinked l hmin hnonneg hsum hl).dirDurations = l := by
+  rw [dirDurations_ofLinked_eq_mergeDirs, mergeDirs_eq_self hpos hne]
+
+/-- An LS path is the LS path of its directions and durations. -/
+@[simp]
+theorem ofLinked_dirDurations (π : LSPath P b lam)
+    (hmin : ∀ p ∈ π.dirDurations,
+      (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
+    (hnonneg : ∀ p ∈ π.dirDurations, 0 ≤ p.2) (hsum : (π.dirDurations.map Prod.snd).sum = 1)
+    (hl : Linked P b lam 0 π.dirDurations) : ofLinked π.dirDurations hmin hnonneg hsum hl = π := by
+  refine dirDurations_injective (dirDurations_ofLinked _ _ _ _ _
+    (fun _ hp ↦ π.pos_of_mem_dirDurations hp) (List.isChain_iff_getElem.mpr fun k hk ↦ ?_))
+  simpa using fun h ↦ π.dir_succ_ne ⟨k, by simpa using hk⟩ (Subtype.ext h.symm)
+
 /-- The path of `TauCeti.LSPath.ofLinked l` is presented by the segments `d • τ λ` of the list. -/
 theorem toPLPath_ofLinked (f : M →+ V) (l : List (P.weylGroup × ℚ))
     (hmin : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
     (hnonneg : ∀ p ∈ l, 0 ≤ p.2) (hsum : (l.map Prod.snd).sum = 1) (hl : Linked P b lam 0 l) :
     (ofLinked l hmin hnonneg hsum hl).toPLPath 𝕜 f =
       PLPath.ofSegments 𝕜 (l.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)) := by
-  rw [toPLPath_def, map_snd_timed, dirDurations_ofLinked, ofSegments_map_mergeDirs f hnonneg]
+  rw [toPLPath_def, map_snd_timed, dirDurations_ofLinked_eq_mergeDirs,
+    ofSegments_map_mergeDirs f hnonneg]
 
 end TauCeti.LSPath

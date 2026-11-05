@@ -35,7 +35,7 @@ are Littelmann's, proved in `TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectedChai
 * at `t₁` the height `h + 1` is an integer, so the cover `τ_{j₁} ⋖ sᵢ τ_{j₁}` is a `t₁`-chain.
 
 The integrality statements use that the height at a break `a` before the direction `τ` differs from
-`a ⟨τ λ, αᵢ^∨⟩` by an integer.
+`a ⟨τ λ, αᵢ^∨⟩` by an integer (`TauCeti.LSPath.Linked.exists_sum_take_sub_mul_eq_intCast`).
 
 ## Main results
 
@@ -58,28 +58,6 @@ open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M}
-
-/-- Along a linked list starting at time `0`, the height `∑_{m < j} d_m g(τ_m λ)` at the `j`-th
-break differs by an integer from `a_j g(τ_j λ)`, where `a_j = ∑_{m < j} d_m`, for every integral
-linear form `g`. -/
-private theorem exists_sum_take_sub_mul_eq_intCast (hlam : lam ∈ dominantChamber P b)
-    {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam 0 l) (g : Module.Dual ℤ M) {j : ℕ}
-    (hj : j < l.length) :
-    ∃ z : ℤ, ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum -
-      ((l.take j).map Prod.snd).sum * g (l[j].1 • lam) = z := by
-  induction j with
-  | zero => exact ⟨0, by simp⟩
-  | succ j ih =>
-    obtain ⟨z₁, hz₁⟩ := ih (by omega)
-    obtain ⟨C, hhead, hlast, hC⟩ := linked_iff_getElem.mp hl j hj
-    obtain ⟨z₂, hz₂⟩ := hC.exists_mul_sub_eq_intCast hlam g
-    rw [hhead, hlast, zero_add] at hz₂
-    refine ⟨z₁ + z₂, ?_⟩
-    rw [List.take_succ_eq_append_getElem (by omega)] at hz₂ ⊢
-    simp only [List.map_append, List.sum_append, List.map_cons, List.map_nil, List.sum_cons,
-      List.sum_nil, add_zero] at hz₂ ⊢
-    push_cast at hz₂ ⊢
-    linear_combination hz₁ + hz₂
 
 /-- **Reflecting a rising window of a linked list.** Let `[k₀, j₁]` be a window of entries of a
 linked list along which the heights `⟨τ λ, αᵢ^∨⟩` of the directions are positive, with
@@ -406,7 +384,7 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
     exact nonpos_of_mul_nonpos_right (by linarith) (hdpos k hk)
   -- Heights at breaks are congruent to `a_k ⟨τ_k λ, αᵢ^∨⟩` modulo integers.
   have hcong : ∀ k (hk : k < D.length), ∃ m : ℤ, hgt k - cum k * H D[k].1 = m := fun k hk ↦
-    exists_sum_take_sub_mul_eq_intCast hlam π.linked_dirDurations (P.coroot' i) hk
+    π.linked_dirDurations.exists_sum_take_sub_mul_eq_intCast hlam (P.coroot' i) hk
   refine ⟨k₀, j₁, hj₁lt, θ, hk₀j₁, hθpos.le, hθle, fun k hk hk₀ hkj ↦ ?_, fun k hk hk₀ hkj ↦ ?_,
     fun k hk hkk ↦ ?_, ?_, ?_⟩
   · have := hposH k hk hk₀ hkj
