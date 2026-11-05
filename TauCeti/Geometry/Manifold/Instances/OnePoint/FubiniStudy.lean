@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
 
 /-!
@@ -25,9 +24,9 @@ the **Fubini–Study form** `ω_FS = (i / 2π) ∂ ∂bar log (1 + |z|²)`. In t
 `ω_FS = ρ(z) dx ∧ dy`, with density `ρ(z) = 1 / (π (1 + |z|²)²)`
 (`OnePoint.fubiniStudyDensity`).
 
-The density satisfies `ρ(z⁻¹) = |z|⁴ ρ(z)`, which is exactly the transformation law of a two-form
-under the chart transition `z ↦ z⁻¹`, whose derivative is multiplication by `-z⁻²`. So in the
-inverted coordinate `w = 1 / z` the form reads `ρ(w) du ∧ dv` again, and the two coordinate
+For `z ≠ 0` the density satisfies `ρ(z⁻¹) = |z|⁴ ρ(z)`, which is exactly the transformation law of
+a two-form under the chart transition `z ↦ z⁻¹`, whose derivative is multiplication by `-z⁻²`. So in
+the inverted coordinate `w = 1 / z` the form reads `ρ(w) du ∧ dv` again, and the two coordinate
 expressions glue to a smooth two-form `OnePoint.fubiniStudyForm` on the whole sphere, including
 the point `∞`. On a tangent space, identified with `ℂ` through the preferred chart, it is
 
@@ -109,8 +108,9 @@ theorem contDiff_fubiniStudyDensity {n : WithTop ℕ∞} : ContDiff ℝ n fubini
   (contDiff_const.mul ((contDiff_const.add (contDiff_norm_sq ℝ)).pow 2)).inv fun z ↦ by positivity
 
 /-- **The transformation law of the density under `z ↦ z⁻¹`.** The density at `z⁻¹` is `|z|⁴`
-times the density at `z`, the factor `|z|⁴` being the Jacobian of `z ↦ z⁻¹`. This is what makes
-the coordinate expressions of the Fubini–Study form in the two charts of the sphere agree. -/
+times the density at `z`, the factor `|z|⁴` being the reciprocal of the Jacobian determinant
+`|z|⁻⁴` of `z ↦ z⁻¹` at `z`. This is what makes the coordinate expressions of the Fubini–Study
+form in the two charts of the sphere agree. -/
 theorem fubiniStudyDensity_inv {z : ℂ} (hz : z ≠ 0) :
     fubiniStudyDensity z⁻¹ = ‖z‖ ^ 4 * fubiniStudyDensity z := by
   have hz' : ‖z‖ ≠ 0 := norm_ne_zero_iff.2 hz
@@ -145,25 +145,12 @@ theorem integral_fubiniStudyDensity : ∫ z : ℂ, fubiniStudyDensity z = 1 := b
   have h := integral_fun_norm_addHaar (volume : Measure ℂ)
     (fun r : ℝ ↦ (Real.pi * (1 + r ^ 2) ^ 2)⁻¹)
   simp only [Complex.finrank_real_complex, Measure.real, Complex.volume_ball] at h
-  rw [show (fun z : ℂ ↦ fubiniStudyDensity z) =
-      fun z ↦ (Real.pi * (1 + ‖z‖ ^ 2) ^ 2)⁻¹ from rfl, h]
+  simp only [fubiniStudyDensity_def]
+  rw [h]
   simp only [Nat.add_one_sub_one, pow_one, smul_eq_mul, integral_Ioi_mul_fubiniStudyDensity]
   simp only [ENNReal.ofReal_one, one_pow, one_mul, ENNReal.coe_toReal, NNReal.coe_real_pi]
   field_simp
   norm_num
-
-/-! ### Tangent coordinate changes of the Riemann sphere -/
-
-/-- On the Riemann sphere regarded as a real surface, the tangent coordinate change from the chart
-at `∞` to the chart at a nonzero finite point `z` is multiplication by `-z²`, the derivative of
-the chart transition `w ↦ w⁻¹` at `w = z⁻¹`. -/
-theorem tangentCoordChange_infty_coe {z : ℂ} (hz : z ≠ 0) (v : ℂ) :
-    tangentCoordChange 𝓘(ℝ, ℂ) (∞ : OnePoint ℂ) (z : OnePoint ℂ) (z : OnePoint ℂ) v =
-      -z ^ 2 * v := by
-  have h : HasFDerivAt (fun w : ℂ ↦ w⁻¹)
-      ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (-(z⁻¹ ^ 2)⁻¹)).restrictScalars ℝ) z⁻¹ :=
-    (hasDerivAt_inv (inv_ne_zero hz)).hasFDerivAt.restrictScalars ℝ
-  simp [affineChart_comp_invChart_symm, h.fderiv, mul_comm]
 
 /-! ### The Fubini–Study form -/
 
@@ -199,8 +186,8 @@ private theorem fubiniStudyRough_tangentCoordChange {x y : OnePoint ℂ}
       have hz : z ≠ 0 := by rintro rfl; simp at hy
       -- Multiplying both vectors by `c` scales their area `Im (conj v * w)` by `|c|²`.
       have hscale (v w c : ℂ) : (conj (c * v) * (c * w)).im = ‖c‖ ^ 2 * (conj v * w).im := by
-        rw [map_mul, show conj c * conj v * (c * w) = (conj c * c) * (conj v * w) by ring,
-          Complex.conj_mul', ← Complex.ofReal_pow, Complex.im_ofReal_mul]
+        have hassoc : conj c * conj v * (c * w) = (conj c * c) * (conj v * w) := by ring
+        rw [map_mul, hassoc, Complex.conj_mul', ← Complex.ofReal_pow, Complex.im_ofReal_mul]
       rw [tangentCoordChange_infty_coe hz, tangentCoordChange_infty_coe hz, hscale,
         chartAt_infty, invChart_coe, fubiniStudyDensity_inv hz]
       simp only [chartAt_coe, affineChart_coe, norm_neg, norm_pow]
