@@ -15,6 +15,9 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitaryGroup` records that
 permutation matrices are unitary. Accordingly `Matrix.permutationUnitary` is
 `Matrix.permMatrixHom` with values in the unitary group.
+
+`Matrix.conjTranspose_mul_mul_mem_unitary` transfers unitarity along a possibly rectangular
+matrix whose conjugate transpose is a two-sided inverse.
 -/
 
 public section
@@ -35,6 +38,24 @@ theorem toLinearEquiv_apply (U : Matrix.unitaryGroup n R) (x : n → R) :
 end Matrix.UnitaryGroup
 
 namespace Matrix
+
+/-- Conjugation by a possibly rectangular matrix with conjugate-transpose inverse preserves
+unitarity over a possibly noncommutative star semiring. -/
+theorem conjTranspose_mul_mul_mem_unitary
+    {R m n : Type*} [Semiring R] [StarRing R]
+    [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+    (P : Matrix m n R) (hP : Pᴴ * P = 1) (hP' : P * Pᴴ = 1)
+    {X : Matrix m m R} (hX : X ∈ unitary (Matrix m m R)) :
+    Pᴴ * X * P ∈ unitary (Matrix n n R) := by
+  have hcancel (Y Z : Matrix m m R) :
+      (Pᴴ * Y * P) * (Pᴴ * Z * P) = Pᴴ * (Y * Z) * P := by
+    calc
+      _ = Pᴴ * (Y * (P * Pᴴ) * Z) * P := by simp only [Matrix.mul_assoc]
+      _ = _ := by rw [hP', Matrix.mul_one]
+  rw [Unitary.mem_iff, star_eq_conjTranspose] at hX ⊢
+  constructor <;>
+    simp only [conjTranspose_mul, conjTranspose_conjTranspose,
+      ← Matrix.mul_assoc Pᴴ Xᴴ P, hcancel, hX.1, hX.2, Matrix.mul_one, hP]
 
 variable {R : Type u} [CommRing R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]

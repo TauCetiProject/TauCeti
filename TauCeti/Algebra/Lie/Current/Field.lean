@@ -100,8 +100,7 @@ include hσ
 private theorem exists_forall_apply_single_tmul_eq_zero (m : M) :
     ∃ N : ℤ, ∀ x : L, ∀ n, N ≤ n → σ (HahnSeries.single n 1 ⊗ₜ x) m = 0 := by
   obtain ⟨N, hN⟩ := isSmooth_iff.1 hσ m
-  exact ⟨N, fun x n hn ↦ hN _ (tmul_mem_orderSubmodule R L N
-    ((HahnSeries.orderTop_single_le).trans' (by exact_mod_cast hn)) x)⟩
+  exact ⟨N, fun x n hn ↦ hN _ (single_tmul_mem_orderSubmodule R L hn 1 x)⟩
 
 /-- The coefficients `z^k ↦ σ(x_{-k-1})` of a current field have support bounded below at each
 vector. -/

@@ -205,9 +205,9 @@ theorem zigzagGrade_zero_eq_span_range_vertexIdempotent :
         (Set.range fun i : V => zigzagMk k G (vertexIdempotent k (vertex G i))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 0)
-      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G)) ?_ hw
+      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G))).2 ?_ hw
     rintro z ⟨v, rfl⟩
     rw [← zigzagMk_apply k G]
     exact Submodule.subset_span ⟨(vertexEquiv G).symm v, by simp⟩
@@ -222,9 +222,9 @@ theorem zigzagGrade_one_eq_span_range_ofArrow :
         zigzagMk k G (ofArrow (arrow G d.adj))) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 1)
-      (PathAlgebra.grade_one_eq_span_range_ofArrow) ?_ hw
+      (PathAlgebra.grade_one_eq_span_range_ofArrow)).2 ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
     rw [← zigzagMk_apply k G]
     obtain ⟨i, rfl⟩ : ∃ i, a = vertex G i :=
@@ -247,9 +247,9 @@ theorem zigzagGrade_two_eq_span_range_zigzagVolume :
       Submodule.span k (Set.range fun i : V => zigzagVolume k G i) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (zigzagIdeal k G).asIdeal (i := 2)
-      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2) ?_ hw
+      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2)).2 ?_ hw
     rintro z ⟨t, ht, rfl⟩
     rw [← zigzagMk_apply k G]
     simp only [coe_pathAlgebraBasis]
@@ -285,9 +285,8 @@ theorem zigzagGrade_eq_bot_of_three_le {n : ℕ} (hn : 3 ≤ n) : zigzagGrade k 
     simp only [coe_pathAlgebraBasis]
     exact TwoSidedIdeal.mem_asIdeal.mpr
       (mem_zigzagIdeal_of_isZigzagRelator k G (IsZigzagRelator.long_path t (hn.trans ht'.symm.le)))
-  refine TauCeti.GradedAlgebra.quotientPiece_eq_bot_of_le (grade k (DoubledQuiver G))
-    (zigzagIdeal k G).asIdeal fun y hy => ?_
-  exact hle hy
+  exact (TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff (grade k (DoubledQuiver G))
+    (zigzagIdeal k G).asIdeal).2 fun _ hy => hle hy
 
 /-! ### Integer-indexed grading -/
 
