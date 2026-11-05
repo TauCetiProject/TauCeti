@@ -141,27 +141,18 @@ theorem range_rankOnePoints :
     (rankOnePoints K i).range = Subgroup.closure
       (Set.range (rootSubgroupPoints (.inl i) K) ∪
         Set.range (rootSubgroupPoints (.inr i) K)) := by
-  apply le_antisymm
-  · rintro _ ⟨g, rfl⟩
-    rw [← Subgroup.mem_map_iff_mem (points K).subtype_injective,
-      Subgroup.subtype_apply, coe_rankOnePoints]
-    apply weightTable.sl2BlockSL_mem_of_transvection_mem i
-    · intro t
-      rw [sl2BlockSL_upper_transvection]
-      exact Subgroup.mem_map.mpr ⟨_,
-        Subgroup.subset_closure (Set.mem_union_left _ (Set.mem_range_self _)), rfl⟩
-    · intro t
-      rw [sl2BlockSL_lower_transvection]
-      exact Subgroup.mem_map.mpr ⟨_,
-        Subgroup.subset_closure (Set.mem_union_right _ (Set.mem_range_self _)), rfl⟩
-  · rw [Subgroup.closure_le]
-    rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
-    · refine ⟨Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1)
-        (Multiplicative.toAdd t), ?_⟩
-      rw [rankOnePoints_upper_transvection, ofAdd_toAdd]
-    · refine ⟨Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0)
-        (Multiplicative.toAdd t), ?_⟩
-      rw [rankOnePoints_lower_transvection, ofAdd_toAdd]
+  apply Subgroup.map_injective (points K).subtype_injective
+  have h : (points K).subtype.comp (rankOnePoints K i) = weightTable.sl2BlockSL i :=
+    MonoidHom.ext (coe_rankOnePoints K i)
+  rw [MonoidHom.map_range, h, weightTable.range_sl2BlockSL, MonoidHom.map_closure,
+    Set.image_union, ← Set.range_comp, ← Set.range_comp]
+  simp only [sl2BlockSL_upper_transvection, sl2BlockSL_lower_transvection]
+  apply congrArg Subgroup.closure
+  apply congrArg₂ Set.union
+  · exact (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
+      ((points K).subtype ∘ rootSubgroupPoints (.inl i) K)
+  · exact (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
+      ((points K).subtype ∘ rootSubgroupPoints (.inr i) K)
 
 end
 
