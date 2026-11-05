@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.DGNerve.Boundary
 public import TauCeti.AlgebraicTopology.DGNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Terminal vertices of the differential graded nerve
@@ -266,9 +268,10 @@ private lemma dgDifferential_sphereCoh_of_ne_zero (z : DGHom R (-(m + 1 : ℕ) +
       boundary R (sphereCoh z) i j S p hij hS hp := by
   have he := Fin.strictMono_succ (n := m + 2)
   have hi₀ := Fin.pos_iff_ne_zero.2 hi
-  obtain ⟨i, j, S, rfl, rfl, rfl, hij', hS', hp'⟩ := exists_image_eq_of_strictMono he hij hS hp
+  obtain ⟨i, j, S, rfl, rfl, rfl, hij', hS'⟩ := he.exists_image_eq_of_subset_Ioo hij hS
     (Fin.exists_succ_eq.2 hi) (Fin.exists_succ_eq.2 (hi₀.trans_le hij).ne')
     fun s hs ↦ Fin.exists_succ_eq.2 (hi₀.trans (mem_Ioo.1 (hS hs)).1).ne'
+  have hp' : p + #S = 0 := by rwa [card_image_of_injective _ he.injective] at hp
   rw [← Coherences.comap_apply (sphereCoh z) he hij' hS' hp',
     ← boundary_comap (sphereCoh z) he hij' hS' hp', sphereCoh_comap_succ]
   exact (degenerate Y m).dgDifferential_coh i j S p hij' hS' hp'
@@ -345,9 +348,10 @@ private lemma exists_simplex_of_isTerminalVertex (f : Coherences R V)
   -- A coherence missing the vertex `l` is a coherence of the face opposite to `l`.
   rintro i j S d hij hS hd ⟨l, hli, hlj, hlS⟩
   have he := Fin.strictMono_succAbove l
-  obtain ⟨i', j', S', rfl, rfl, rfl, hij', hS', hd'⟩ := exists_image_eq_of_strictMono he hij hS hd
+  obtain ⟨i', j', S', rfl, rfl, rfl, hij', hS'⟩ := he.exists_image_eq_of_subset_Ioo hij hS
     (Fin.exists_succAbove_eq (Ne.symm hli)) (Fin.exists_succAbove_eq (Ne.symm hlj))
     fun s hs ↦ Fin.exists_succAbove_eq fun h ↦ hlS (h ▸ hs)
+  have hd' : d + #S' = 0 := by rwa [card_image_of_injective _ he.injective] at hd
   refine (heq_of_eq (x.map_coh_of_strictMono (α := (SimplexCategory.δ l).toOrderHom) he hij'
     hS' hd' hS)).symm.trans ?_
   exact (congr_arg_heq (fun s : Simplex R C (m + 1) ↦ s.coh i' j' S' d hij' hS' hd')

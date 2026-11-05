@@ -175,34 +175,6 @@ theorem boundary_two {X : Fin 3 → C} (f : Coherences R X) :
   exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide) (by simp) (by simp))
     (Coherences.congr _ (by decide))
 
-/-- A strictly monotone map sends elements strictly between `a` and `b` to elements strictly
-between their images. -/
-theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [LocallyFiniteOrder α]
-    [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β} (he : StrictMono e)
-    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) := fun _ hx ↦ by
-  obtain ⟨s, hs, rfl⟩ := mem_image.1 hx
-  have := mem_Ioo.1 (hS hs)
-  exact mem_Ioo.2 ⟨he this.1, he this.2⟩
-
-/-- An index of a coherence, vertices `i ≤ j` with interior vertices `S ⊆ Ioo i j` and a degree `d`
-with `d + #S = 0`, all of whose vertices are values of a strictly monotone map `e`, is the image
-under `e` of an index of the same degree. -/
-theorem exists_image_eq_of_strictMono {m : ℕ} {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e)
-    {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} {d : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j)
-    (hd : d + #S = 0) (hi : ∃ i', e i' = i) (hj : ∃ j', e j' = j)
-    (hSe : ∀ s ∈ S, ∃ s', e s' = s) :
-    ∃ i' j' S', e i' = i ∧ e j' = j ∧ S'.image e = S ∧ i' ≤ j' ∧ S' ⊆ Ioo i' j' ∧
-      d + #S' = 0 := by
-  obtain ⟨i', rfl⟩ := hi
-  obtain ⟨j', rfl⟩ := hj
-  obtain ⟨S', rfl⟩ : ∃ S', S'.image e = S := ⟨S.preimage e he.injective.injOn, by
-    rw [image_preimage]
-    exact filter_true_of_mem hSe⟩
-  refine ⟨i', j', S', rfl, rfl, rfl, he.le_iff_le.1 hij, fun s hs ↦ ?_,
-    by rwa [card_image_of_injective _ he.injective] at hd⟩
-  have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
-  exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
-
 /-- Coherences pulled back along a strictly monotone map `e`: the coherence indexed by `i`, `S`
 and `j` is the one indexed by their images under `e`. -/
 noncomputable def Coherences.comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
