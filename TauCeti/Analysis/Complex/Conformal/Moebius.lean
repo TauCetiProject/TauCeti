@@ -106,7 +106,7 @@ lemma differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖
   have hden :
       1 - (starRingEnd ℂ) a * z ≠ 0 :=
     one_sub_conj_mul_ne_zero_of_norm_lt_one
-      (by simpa [mem_ball_zero_iff] using hz) ha
+      (mem_ball_zero_iff.mp hz).le ha
   have hnum :
       DifferentiableWithinAt ℂ (fun z : ℂ => z - a) (ball (0 : ℂ) 1) z :=
     differentiableWithinAt_id.sub (differentiableWithinAt_const (c := a))

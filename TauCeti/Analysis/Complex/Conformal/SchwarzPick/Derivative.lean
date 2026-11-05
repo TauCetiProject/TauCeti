@@ -120,7 +120,7 @@ theorem norm_deriv_div_one_sub_norm_sq_le {f : ℂ → ℂ}
     (hf.differentiableAt (isOpen_ball.mem_nhds hz)).hasDerivAt
   have hnorm_dg : ‖deriv (schwarzPickConjugate f z) 0‖
       = ‖deriv f z‖ * (1 - ‖z‖ ^ 2) / (1 - ‖f z‖ ^ 2) :=
-    norm_deriv_schwarzPickConjugate_zero (one_sub_conj_mul_ne_zero_of_norm_lt_one hfz1 hfz1)
+    norm_deriv_schwarzPickConjugate_zero (one_sub_conj_mul_ne_zero_of_norm_lt_one hfz1.le hfz1)
       hz1.le hfz1.le hf_at
   have hkey : ‖deriv f z‖ * (1 - ‖z‖ ^ 2) / (1 - ‖f z‖ ^ 2) ≤ 1 := hnorm_dg ▸ hschwarz
   rw [div_le_one hden_fz] at hkey
