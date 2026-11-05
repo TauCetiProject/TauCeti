@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.E
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.E
 
 /-!
 # Higher Hochschild classes of zigzag algebras containing affine `E₆`, `E₇` and `E₈`
@@ -35,7 +34,8 @@ through `1`, `2`, `4`, `4`, `4`, `2` for `E₈`, in product order, with the labe
 `TauCeti.AffineDynkinType.graph`. The integer matrix representations of the signless
 preprojective algebras of the three diagrams constructed in
 `TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.E` send these products of
-backtracks to matrices of trace one; this is how the nonzero cyclic classes
+backtracks to matrices of trace one (`TauCeti.trace_affineE6Matrix_backtracks` and its `E₇` and
+`E₈` companions); this is how the nonzero cyclic classes
 `TauCeti.exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule` and its `eight` and
 `twelve` companions are detected. The diagrams are trees, hence bipartite, so the trace twisted by
 the bipartition is anticyclic on the arrows and detects the loop operation of the same walk
@@ -97,8 +97,9 @@ theorem not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra [Nontrivial k]
     (by norm_num) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
       AffineDynkinType.isBipartite_graph_E6 affineE6Matrix
-      (by simp only [AffineDynkinType.graph_E6_adj]; decide)
-      (by decide) (by norm_num) (w := affineE6Walk) (by decide) (by decide))
+      (fun _ _ ↦ affineE6Matrix_eq_zero_of_not_adj) sum_affineE6Matrix_mul_affineE6Matrix
+      (by norm_num) (w := affineE6Walk) (by decide)
+      (by simpa [List.ofFn_succ, affineE6Walk, mul_assoc] using trace_affineE6Matrix_backtracks))
 
 /-! ### Affine `E₇` -/
 
@@ -127,8 +128,9 @@ theorem not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra [Nontrivial 
     (by norm_num) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
       AffineDynkinType.isBipartite_graph_E7 affineE7Matrix
-      (by simp only [AffineDynkinType.graph_E7_adj]; decide)
-      (by decide) (by norm_num) (w := affineE7Walk) (by decide) (by decide))
+      (fun _ _ ↦ affineE7Matrix_eq_zero_of_not_adj) sum_affineE7Matrix_mul_affineE7Matrix
+      (by norm_num) (w := affineE7Walk) (by decide)
+      (by simpa [List.ofFn_succ, affineE7Walk, mul_assoc] using trace_affineE7Matrix_backtracks))
 
 /-! ### Affine `E₈` -/
 
@@ -162,7 +164,8 @@ theorem not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra [Nontrivial
     (by norm_num) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
       AffineDynkinType.isBipartite_graph_E8 affineE8Matrix
-      (by simp only [AffineDynkinType.graph_E8_adj]; decide)
-      (by decide) (by norm_num) (w := affineE8Walk) (by decide) (by decide))
+      (fun _ _ ↦ affineE8Matrix_eq_zero_of_not_adj) sum_affineE8Matrix_mul_affineE8Matrix
+      (by norm_num) (w := affineE8Walk) (by decide)
+      (by simpa [List.ofFn_succ, affineE8Walk, mul_assoc] using trace_affineE8Matrix_backtracks))
 
 end TauCeti
