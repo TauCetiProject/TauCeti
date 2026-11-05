@@ -36,9 +36,7 @@ oriented real vector bundle, read in local trivializations: on the overlap of tw
 the fibre transition is such an automorphism. Accordingly, for an orientation of a topological
 vector space `V` that need not be normed, pulling back along `f : V ≃L[ℝ] F` the generator selected
 by the transported orientation does not depend on `f`
-(`Orientation.singularCohomologyMap_localCohomologyClass_map_eq`). In odd dimension the antipodal
-map reverses every orientation (`Orientation.map_neg_eq_neg`) and so negates the generators
-(`Orientation.singularCohomologyMap_neg_localCohomologyClass`).
+(`Orientation.singularCohomologyMap_localCohomologyClass_map_eq`).
 
 ## References
 
@@ -306,32 +304,6 @@ theorem singularCohomologyMap_localCohomologyClass (f : F ≃L[ℝ] G)
   rw [eq_localCohomologyClass_iff, TopPair.singularKronecker_naturality, ModuleCat.hom_comp,
     LinearMap.comp_apply, ← LocalOrientation.coe_map, ← localOrientation_map f ω hF hG]
   exact (ω.map _ f.toLinearEquiv).kronecker_localCohomologyClass hG
-
-/-- In odd dimension `n + 1`, the antipodal map `x ↦ -x` reverses every orientation. -/
-theorem map_neg_eq_neg (ω : Orientation ℝ F (Fin (n + 1))) (hF : finrank ℝ F = n + 1)
-    (hn : Even n) : ω.map _ (LinearEquiv.neg ℝ) = -ω := by
-  have := FiniteDimensional.of_finrank_eq_succ hF
-  have hneg : ((LinearEquiv.neg ℝ : F ≃ₗ[ℝ] F) : F →ₗ[ℝ] F) = (-1 : ℝ) • LinearMap.id := by
-    ext; simp
-  rw [Orientation.map_eq_neg_iff_det_neg ω _ (by rw [Fintype.card_fin, hF]), hneg,
-    LinearMap.det_smul, LinearMap.det_id, mul_one, hF, (hn.add_one).neg_one_pow]
-  exact neg_one_lt_zero
-
-/-- **The antipodal map in odd dimension negates the selected generators.** For an orientation `ω`
-of a real normed space of odd dimension `n + 1`, pulling back the generator of
-`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` selected by `ω` along `x ↦ -x` gives its negative. -/
-theorem singularCohomologyMap_neg_localCohomologyClass (ω : Orientation ℝ F (Fin (n + 1)))
-    (hF : finrank ℝ F = n + 1) (hn : Even n) :
-    TopPair.singularCohomologyMap (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
-        (n + 1) (ω.localCohomologyClass hF) =
-      -ω.localCohomologyClass hF := by
-  have h := singularCohomologyMap_localCohomologyClass (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F)
-    (-ω) hF hF
-  have hmap : (-ω).map _ (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).toLinearEquiv = ω := by
-    rw [Orientation.map_neg]
-    exact (congrArg Neg.neg (ω.map_neg_eq_neg hF hn)).trans (neg_neg ω)
-  rw [hmap, localCohomologyClass_neg] at h
-  exact h
 
 /-- **The selected generator read through a linear equivalence.** Let `ω` be an orientation of a
 real topological vector space `V`, not necessarily normed. Pulling back, along a continuous linear

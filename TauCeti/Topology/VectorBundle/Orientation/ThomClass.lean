@@ -535,10 +535,11 @@ theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
     have h₁ : TopPair.Hom.fst t.complZeroPairIso.inv
         (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
           (TopPair.Hom.fst t.complZeroPairIso.hom x)) = (-1 : ℝ) • x := by
-      rw [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
-        ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
-        ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply,
-        ← neg_one_smul ℝ (t x), ← map_smul, ContinuousLinearEquiv.symm_apply_apply]
+      have h : t.symm (-t x) = (-1 : ℝ) • x := by
+        simpa using t.symm_apply_apply ((-1 : ℝ) • x)
+      simp only [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
+        ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply]
+      exact h
     -- The ambient map of a composite of maps of pairs is the composite of the ambient maps; the
     -- `change` writes both sides as iterated applications so that the evaluation lemmas apply.
     change TopPair.Hom.fst (negThomPairMap F E) (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
@@ -550,11 +551,40 @@ theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
       ((negThomPairMap_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b _).symm)
   rw [← TopPair.singularCohomologyMap_comp_apply, hφ]
   simp only [TopPair.singularCohomologyMap_comp_apply]
-  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb,
-    ← TopPair.singularCohomologyMap_comp_apply t.complZeroPairIso.inv, Iso.inv_hom_id,
-    TopPair.singularCohomologyMap_id, ModuleCat.id_apply,
-    Orientation.singularCohomologyMap_neg_localCohomologyClass _ hF hn, map_neg, neg_apply,
-    Trivialization.mapOrientation_neg, Orientation.localCohomologyClass_neg, map_neg]
+  -- Restriction: on the fibre over `b`, the Thom class is the generator selected through `t`.
+  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb]
+  -- The inverse of `t` cancels against `t`.
+  rw [← TopPair.singularCohomologyMap_comp_apply t.complZeroPairIso.inv, Iso.inv_hom_id,
+    TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
+  -- Antipodal action: `x ↦ -x` acts by the sign of `det (-1) = (-1) ^ (n + 1) = -1`.
+  have hdet : ((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F).det = -1 := by
+    have hneg : (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : F →ₗ[ℝ] F) =
+        (-1 : ℝ) • LinearMap.id := by
+      ext; simp
+    rw [ContinuousLinearMap.det, hneg, LinearMap.det_smul, LinearMap.det_id, mul_one, hF,
+      hn.add_one.neg_one_pow]
+  have : FiniteDimensional ℝ F := .of_finrank_eq_succ hF
+  have hf : Set.MapsTo ((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) ({0}ᶜ : Set F)
+      {0}ᶜ :=
+    (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).mapsTo_compl_zero
+  have hneg : (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom =
+      TopPair.ofSubsetMap
+        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : C(F, F))) hf :=
+    ContinuousLinearEquiv.complZeroPairIso_hom _
+  -- The determinant-sign action, stated with the `ℤ`-linear structure used by the Thom class.
+  have hact : TopPair.singularCohomologyMap (R := ModuleCat.of ℤ (ULift.{w} ℤ)) (k := ℤ)
+      (M := ModuleCat.of ℤ (ULift.{w} ℤ))
+      (TopPair.ofSubsetMap
+        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : C(F, F))) hf)
+      (n + 1) = -𝟙 _ := by
+    refine (singularCohomologyMap_continuousLinearMap_compl_zero
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) (ModuleCat.of ℤ (ULift.{w} ℤ)) _ hf (n + 1)).trans ?_
+    simp [hdet]
+    -- The two sides differ only in the `ℤ`-linear structure on the hom groups used to negate.
+    rfl
+  rw [hneg, hact]
+  -- Sign cleanup: the generator selected by the opposite orientation is the negative one.
+  simp [t, Trivialization.mapOrientation_neg, Orientation.localCohomologyClass_neg]
 
 /-- **The Thom class of an oriented bundle is a Thom class**: transported to the degree
 `finrank ℝ F = n + 1`, it restricts to a generator of the integral cohomology of every fibre
