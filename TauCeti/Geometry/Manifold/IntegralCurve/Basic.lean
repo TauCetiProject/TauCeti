@@ -27,8 +27,9 @@ continuously differentiable.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
-* `IsMIntegralCurveOn.hasDerivAt_extChartAt`: conversely, an integral curve read in a fixed
-  extended chart solves the coordinate equation there.
+  Conversely, `HasMFDerivAt.hasDerivAt_extChartAt_comp` shows that a curve read in a fixed
+  extended chart has the coordinate expression of its velocity as velocity, so an integral curve
+  solves the coordinate equation there.
 * `IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt`: uniqueness of integral curves on an open
   interval, with the field regular in one fixed chart only.
 
@@ -177,25 +178,6 @@ theorem IsMIntegralCurveAt.of_extChartAt_symm
   rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
   exact hasFDerivWithinAt_model_tangent_spaces hd'
 
-/-- An integral curve, read in any fixed extended chart containing its value, solves the
-corresponding coordinate ODE. This is the converse direction of
-`IsMIntegralCurveAt.of_extChartAt_symm`. -/
-theorem IsMIntegralCurveOn.hasDerivAt_extChartAt
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    {v : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ} {x : M} {t : ℝ}
-    (hγ : IsMIntegralCurveOn γ v s) (ht : t ∈ s) (hs : s ∈ 𝓝 t)
-    (hsrc : γ t ∈ (extChartAt I x).source) :
-    HasDerivAt ((extChartAt I x) ∘ γ)
-      (tangentCoordChange I (γ t) x (γ t) (v (γ t))) t := by
-  replace hsrc := extChartAt_source I x ▸ hsrc
-  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) hsrc) ((hγ t ht).hasMFDerivAt hs)
-  convert hderiv using 1
-  simp only [mvfderiv]
-  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
-    mfderiv_chartAt_eq_tangentCoordChange hsrc]
-  rfl
-
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which
 take the same value at one time of that interval agree on it, as soon as one of them stays in a
 fixed extended chart, over an open set on which the coordinate expression of the field is
@@ -257,13 +239,14 @@ theorem IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt
       hδat.continuousAt.eventually_mem ((isOpen_extChartAt_source x₀).mem_nhds hδst)
     have hγderiv : ∀ᶠ r in 𝓝 t, HasDerivAt (φ ∘ γ) (w ((φ ∘ γ) r)) r := by
       filter_upwards [hJ] with r hr
-      have hd := hγ.hasDerivAt_extChartAt hr (Ioo_mem_nhds hr.1 hr.2) (hγsrc r hr)
+      have hd := ((hγ r hr).hasMFDerivAt (Ioo_mem_nhds hr.1 hr.2)).hasDerivAt_extChartAt_comp
+        (hγsrc r hr)
       convert hd using 1
       simp only [w, Function.comp_apply]
       rw [φ.left_inv (hγsrc r hr)]
     have hδderiv : ∀ᶠ r in 𝓝 t, HasDerivAt (φ ∘ δ) (w ((φ ∘ δ) r)) r := by
       filter_upwards [hJ, hδsrc] with r hr hrsrc
-      have hd := hδ.hasDerivAt_extChartAt hr (Ioo_mem_nhds hr.1 hr.2) hrsrc
+      have hd := ((hδ r hr).hasMFDerivAt (Ioo_mem_nhds hr.1 hr.2)).hasDerivAt_extChartAt_comp hrsrc
       convert hd using 1
       simp only [w, Function.comp_apply]
       rw [φ.left_inv hrsrc]
