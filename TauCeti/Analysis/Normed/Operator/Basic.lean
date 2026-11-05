@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Basic facts about bounded operators
@@ -23,11 +24,13 @@ In particular, it supplies the common continuity step for
 `StronglyContinuousGroup.tendsto_apply`.
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`), an invertible operator `A` on a normed space
-cancels against its inverse (`ContinuousLinearMap.ringInverse_apply_apply`,
-`ContinuousLinearMap.apply_ringInverse_apply`) and is bounded below by `‖A⁻¹‖⁻¹`
-(`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`), and conversely a lower bound
-`‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
+(`ContinuousLinearMap.injective_of_forall_norm_le`), and invertible if it is also surjective
+(`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
+same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
+operator `A` on a normed space cancels against its inverse
+(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
+and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
+and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
@@ -110,6 +113,27 @@ theorem injective_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F] [Norm
     {f : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : Function.Injective f := by
   refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
   simpa [hx] using h x
+
+/-- A surjective continuous linear map that is bounded below, `‖x‖ ≤ C * ‖L x‖`, is invertible.
+Neither space needs to be complete. -/
+theorem isInvertible_of_surjective_of_forall_norm_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {L : E →L[𝕜] F} {C : ℝ}
+    (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖) : L.IsInvertible := by
+  let e := LinearEquiv.ofBijective (L : E →ₗ[𝕜] F) ⟨injective_of_forall_norm_le hC, hL⟩
+  have he : ∀ x, e x = L x := fun x ↦ LinearEquiv.ofBijective_apply _ x
+  -- `toContinuousLinearEquivOfBounds` has no coercion lemma; it applies as `e` by definition.
+  refine ⟨e.toContinuousLinearEquivOfBounds ‖L‖ C L.le_opNorm fun y ↦ ?_, ext he⟩
+  calc ‖e.symm y‖ ≤ C * ‖e (e.symm y)‖ := hC (e.symm y)
+    _ = C * ‖y‖ := by rw [e.apply_symm_apply]
+
+/-- The inverse of a surjective continuous linear map with `‖x‖ ≤ C * ‖L x‖` satisfies
+`‖L⁻¹ y‖ ≤ C * ‖y‖`. -/
+theorem norm_inverse_apply_le_of_forall_norm_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {L : E →L[𝕜] F} {C : ℝ}
+    (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖) (y : F) :
+    ‖L.inverse y‖ ≤ C * ‖y‖ := by
+  simpa [(isInvertible_of_surjective_of_forall_norm_le hL hC).self_apply_inverse]
+    using hC (L.inverse y)
 
 /-- The inverse of an invertible operator undoes the operator. -/
 @[simp]
