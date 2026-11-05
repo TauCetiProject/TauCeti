@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Manifold derivatives of continuous-linear-map applications
@@ -84,17 +85,9 @@ vector-valued manifold derivative: `d (fun z ↦ c z w) x v = (d c x v) w`. -/
 theorem mvfderiv_clm_apply_const {c : M → F →L[𝕜] F'}
     (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F') c x) (w : F) (v : TangentSpace I x) :
     mvfderiv I (fun z ↦ c z w) x v = mvfderiv I c x v w := by
-  have hg : MDifferentiableAt 𝓘(𝕜, F →L[𝕜] F') 𝓘(𝕜, F') (fun A : F →L[𝕜] F' ↦ A w) (c x) :=
-    (ContinuousLinearMap.apply 𝕜 F' w).differentiableAt.mdifferentiableAt
-  have h := mvfderiv_comp_apply (g := fun A : F →L[𝕜] F' ↦ A w) x hg hc v
-  have hd : mvfderiv 𝓘(𝕜, F →L[𝕜] F') (fun A : F →L[𝕜] F' ↦ A w) (c x) =
-      ContinuousLinearMap.apply 𝕜 F' w := by
-    ext A
-    simp only [mvfderiv, mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
-    rw [show (fun A : F →L[𝕜] F' ↦ A w) = ⇑(ContinuousLinearMap.apply 𝕜 F' w) from rfl,
-      ContinuousLinearMap.fderiv]
-    rfl
-  rw [hd] at h
+  have h := mvfderiv_comp_apply_of_differentiableAt (g := c) (x := x)
+    (ContinuousLinearMap.apply 𝕜 F' w).differentiableAt hc v
+  rw [ContinuousLinearMap.fderiv, ContinuousLinearMap.apply_apply] at h
   exact h
 
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
