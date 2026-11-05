@@ -46,6 +46,8 @@ noncommutative ring are allowed.
   shift map.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
+* `TauCeti.ModuleTower.limEquivOfIso`, `TauCeti.ModuleTower.limOneEquivOfIso`: the linear
+  equivalences on `lim` and `lim¹` induced by an isomorphism of towers.
 * `TauCeti.ModuleTower.limMap_inj`: a morphism out of a tower with surjective transitions is
   determined by the map it induces on `lim`.
 * `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.limOneMap_surjective`: levelwise
@@ -506,6 +508,21 @@ theorem limMap_injective {f : F ⟶ G} (hf : ∀ n, Function.Injective (f.app (o
   Subtype.ext <| productMap_injective hf <| by
     rw [← coe_limMap_apply, ← coe_limMap_apply, hxy]
 
+/-- The linear equivalence `lim A ≃ lim B` induced by an isomorphism of towers. -/
+def limEquivOfIso (e : F ≅ G) : F.lim ≃ₗ[R] G.lim :=
+  LinearEquiv.ofLinearMap (limMap e.hom) (limMap e.inv)
+    (by rw [← limMap_comp, e.inv_hom_id, limMap_id])
+    (by rw [← limMap_comp, e.hom_inv_id, limMap_id])
+
+@[simp]
+theorem limEquivOfIso_apply (e : F ≅ G) (x : F.lim) : limEquivOfIso e x = limMap e.hom x :=
+  (rfl)
+
+@[simp]
+theorem limEquivOfIso_symm_apply (e : F ≅ G) (x : G.lim) :
+    (limEquivOfIso e).symm x = limMap e.inv x :=
+  (rfl)
+
 /-- A morphism of towers maps the image of the shift map into the image of the shift map. -/
 theorem range_shift_le_comap (f : F ⟶ G) :
     LinearMap.range F.shift ≤ (LinearMap.range G.shift).comap (productMap f) := by
@@ -550,6 +567,22 @@ theorem limOneMap_surjective {g : G ⟶ H} (hg : ∀ n, Function.Surjective (g.a
   obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
   obtain ⟨y, rfl⟩ := productMap_surjective hg z
   exact ⟨Submodule.Quotient.mk y, limOneMap_mk g y⟩
+
+/-- The linear equivalence `lim¹ A ≃ lim¹ B` induced by an isomorphism of towers. -/
+def limOneEquivOfIso (e : F ≅ G) : F.limOne ≃ₗ[R] G.limOne :=
+  LinearEquiv.ofLinearMap (limOneMap e.hom) (limOneMap e.inv)
+    (by rw [← limOneMap_comp, e.inv_hom_id, limOneMap_id])
+    (by rw [← limOneMap_comp, e.hom_inv_id, limOneMap_id])
+
+@[simp]
+theorem limOneEquivOfIso_apply (e : F ≅ G) (x : F.limOne) :
+    limOneEquivOfIso e x = limOneMap e.hom x :=
+  (rfl)
+
+@[simp]
+theorem limOneEquivOfIso_symm_apply (e : F ≅ G) (x : G.limOne) :
+    (limOneEquivOfIso e).symm x = limOneMap e.inv x :=
+  (rfl)
 
 end Functoriality
 
