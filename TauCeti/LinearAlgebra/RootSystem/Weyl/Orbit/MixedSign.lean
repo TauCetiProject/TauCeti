@@ -52,6 +52,9 @@ on a root system over an ordered field.
   neither in the positive root cone nor in its negative.
 * `RootPairing.exists_weylGroup_smul_eq_smul_root_or_notMem_posRootCone`: the Weyl orbit of every
   nonzero vector meets the line of a simple root or the complement of `Q⁺ ∪ -Q⁺`.
+* `RootPairing.exists_weylGroup_smul_notMem_posRootCone_or_eq_nsmul_root`: a nonzero vector that is
+  not a root has a Weyl translate outside `Q⁺ ∪ -Q⁺`, or is a multiple `n • α` of a root with
+  `2 ≤ n`.
 
 ## References
 
@@ -186,5 +189,45 @@ theorem exists_weylGroup_smul_eq_smul_root_or_notMem_posRootCone {x : M} (hx₀ 
     rw [← P.weylGroup_apply_root, smul_comm, inv_smul_smul]
   · push Not at h
     exact .inr (P.exists_weylGroup_smul_notMem_posRootCone_and_neg_notMem b hx₀ h)
+
+/-- **A vector other than a root leaves `Q⁺ ∪ -Q⁺` under the Weyl group, unless it is a proper
+multiple of a root.** For a nonzero vector `x` of a finite crystallographic reduced root system over
+a linearly ordered field that is not a root, either some Weyl translate of `x` lies neither in the
+positive root cone nor in its negative, or `x` is a natural multiple `n • α` of a root with
+`2 ≤ n`. -/
+theorem exists_weylGroup_smul_notMem_posRootCone_or_eq_nsmul_root {x : M} (hx₀ : x ≠ 0)
+    (hx : ∀ i : ι, x ≠ P.root i) :
+    (∃ w : P.weylGroup, w • x ∉ posRootCone P b ∧ -(w • x) ∉ posRootCone P b) ∨
+      ∃ (j : ι) (n : ℕ), 2 ≤ n ∧ x = n • P.root j := by
+  have htwo {j : ι} {n : ℕ} (hn : x = n • P.root j) : 2 ≤ n := by
+    have h₀ : n ≠ 0 := by
+      rintro rfl
+      exact hx₀ (by simpa using hn)
+    have h₁ : n ≠ 1 := by
+      rintro rfl
+      exact hx j (by simpa using hn)
+    omega
+  -- The height of a multiple of a simple root is its coefficient, a natural number on `Q⁺`.
+  have hheight {i : ι} (hi : i ∈ b.support) (c : R) (hc : c • P.root i ∈ posRootCone P b) :
+      ∃ n : ℕ, c = n := by
+    obtain ⟨n, hn⟩ := exists_natCast_eq_heightLinearMap_of_mem_posRootCone P b hc
+    rw [map_smul, heightLinearMap_simpleRoot P b ⟨i, hi⟩, smul_eq_mul, mul_one] at hn
+    exact ⟨n, hn⟩
+  obtain ⟨w, i, hi, c, hc⟩ | h := P.exists_weylGroup_smul_eq_smul_root_or_notMem_posRootCone b hx₀
+  · have hxc : x = c • P.root (P.weylGroupToPerm w⁻¹ i) := by
+      rw [← P.weylGroup_apply_root, ← smul_comm, ← hc, inv_smul_smul]
+    by_cases h₁ : w • x ∈ posRootCone P b
+    · obtain ⟨n, rfl⟩ := hheight hi c (hc ▸ h₁)
+      rw [Nat.cast_smul_eq_nsmul] at hxc
+      exact .inr ⟨_, n, htwo hxc, hxc⟩
+    by_cases h₂ : -(w • x) ∈ posRootCone P b
+    · obtain ⟨n, hn⟩ := hheight hi (-c) (by rwa [hc, ← neg_smul] at h₂)
+      have hxn : x = n • P.root (P.reflectionPerm (P.weylGroupToPerm w⁻¹ i)
+          (P.weylGroupToPerm w⁻¹ i)) := by
+        rw [hxc, root_reflectionPerm, reflection_apply_self, ← Nat.cast_smul_eq_nsmul R, ← hn,
+          neg_smul, smul_neg, neg_neg]
+      exact .inr ⟨_, n, htwo hxn, hxn⟩
+    · exact .inl ⟨w, h₁, h₂⟩
+  · exact .inl h
 
 end RootPairing
