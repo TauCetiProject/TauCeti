@@ -239,10 +239,8 @@ theorem tendsto_setIntegral_norm_of_pairwise_disjoint {h : ℕ → α → 𝕜}
         ∫ x in B n \ {x | 0 ≤ RCLike.re (h' n x)}, RCLike.re (h' n x) ∂μ) +
       (∫ x in B n ∩ {x | 0 ≤ RCLike.im (h' n x)}, RCLike.im (h' n x) ∂μ -
         ∫ x in B n \ {x | 0 ≤ RCLike.im (h' n x)}, RCLike.im (h' n x) ∂μ) := by
-    rw [← TauCeti.setIntegral_abs_eq_sub (hh' n).re.integrableOn
-        (RCLike.continuous_re.measurable.comp (hm n)),
-      ← TauCeti.setIntegral_abs_eq_sub (hh' n).im.integrableOn
-        (RCLike.continuous_im.measurable.comp (hm n)),
+    rw [← TauCeti.setIntegral_abs_eq_sub (hh' n).re.integrableOn,
+      ← TauCeti.setIntegral_abs_eq_sub (hh' n).im.integrableOn,
       ← integral_add (hh' n).re.abs.integrableOn (hh' n).im.abs.integrableOn]
     exact setIntegral_mono (hh' n).norm.integrableOn
       ((hh' n).re.abs.add (hh' n).im.abs).integrableOn fun x ↦ RCLike.norm_le_abs_re_add_abs_im _

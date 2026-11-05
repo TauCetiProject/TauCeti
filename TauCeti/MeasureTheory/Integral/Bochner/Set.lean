@@ -58,15 +58,16 @@ theorem integrable_indicator_Ico_one {α : Type*} [MeasurableSpace α] [Topologi
 /-- The integral of `|f|` over a set `s` is the integral of `f` over the part of `s` where `f` is
 nonnegative minus the integral of `f` over the part where it is negative. -/
 theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ}
-    {s : Set α} (hf : IntegrableOn f s μ) (hfm : Measurable f) :
+    {s : Set α} (hf : IntegrableOn f s μ) :
     ∫ x in s, |f x| ∂μ = ∫ x in s ∩ {x | 0 ≤ f x}, f x ∂μ - ∫ x in s \ {x | 0 ≤ f x}, f x ∂μ := by
   have hneg : {x | f x < 0} ∩ s = s \ {x | 0 ≤ f x} := by
     ext x
     simp [and_comm]
   simp_rw [← Real.norm_eq_abs]
   rw [integral_norm_eq_pos_sub_neg hf, ← setIntegral_neg_eq_setIntegral_nonpos hf.1,
-    Measure.restrict_restrict (measurableSet_le measurable_const hfm),
-    Measure.restrict_restrict (measurableSet_lt hfm measurable_const), inter_comm _ s, hneg]
+    Measure.restrict_restrict₀ (aestronglyMeasurable_const.nullMeasurableSet_le hf.1),
+    Measure.restrict_restrict₀ (hf.1.nullMeasurableSet_lt aestronglyMeasurable_const),
+    inter_comm _ s, hneg]
 
 end TauCeti
 
