@@ -21,10 +21,10 @@ The map is the canonical one: `Symⁿ M` is the sheafification of the presheaf o
 `V ↦ Symⁿ_{Γ(X, V)} Γ(M, V)`, and the map is the sheafification unit at `U`. No finiteness,
 freeness or flatness assumption on `M` is needed.
 
-It is an instance of `AlgebraicGeometry.IsAffineOpen.bijective_app_of_isLocalizedModule`, since the
-restrictions of the sectionwise symmetric powers from `U` to its basic opens are localizations
-(`Scheme.Modules.isLocalizedModule_symmetricPower_map_basicOpen`). This extends the affine
-computation `TauCeti.AlgebraicGeometry.tildeSymmetricPowerIso` on `Spec R` to the sections
+It is an instance of `AlgebraicGeometry.IsAffineOpen.bijective_sheafificationAdjunction_unit_app`,
+since the restrictions of the sectionwise symmetric powers from `U` to its basic opens are
+localizations (`Scheme.Modules.isLocalizedModule_symmetricPower_map_basicOpen`). This extends the
+affine computation `TauCeti.AlgebraicGeometry.tildeSymmetricPowerIso` on `Spec R` to the sections
 over every affine open of an arbitrary scheme. The modules `Γ(Symⁿ M, U)` are the homogeneous
 components of the graded ring of sections over `U` of the graded symmetric algebra of `M`.
 
@@ -62,22 +62,10 @@ theorem bijective_symmetricPower_unit_app (hU : IsAffineOpen U) (n : ℕ) :
         ((PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val)).app
           (op U)) := by
   let P := (PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val
-  let S : X.Modules := (PresheafOfModules.sheafification (𝟙 X.ringCatSheaf.obj)).obj P
-  have : S.IsQuasicoherent := (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
-    (SheafOfModules.symmetricPowerIso n M) inferInstance
-  let η : P ⟶ S.val :=
-    (PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app P
-  have : Presheaf.IsLocallyInjective (Opens.grothendieckTopology X)
-      ((PresheafOfModules.toPresheaf (X.presheaf ⋙ forget₂ CommRingCat RingCat)).map η) :=
-    (PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app
-      (𝟙 X.ringCatSheaf.obj) P).symm ▸
-      Presheaf.isLocallyInjective_toSheafify' (J := Opens.grothendieckTopology X) P.presheaf
-  have : Presheaf.IsLocallySurjective (Opens.grothendieckTopology X)
-      ((PresheafOfModules.toPresheaf (X.presheaf ⋙ forget₂ CommRingCat RingCat)).map η) :=
-    (PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app
-      (𝟙 X.ringCatSheaf.obj) P).symm ▸
-      Presheaf.isLocallySurjective_toSheafify' (J := Opens.grothendieckTopology X) P.presheaf
-  exact hU.bijective_app_of_isLocalizedModule (M := S) η fun f ↦
+  have : ((PresheafOfModules.sheafification (𝟙 X.ringCatSheaf.obj)).obj P).IsQuasicoherent :=
+    (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
+      (SheafOfModules.symmetricPowerIso n M) inferInstance
+  exact hU.bijective_sheafificationAdjunction_unit_app fun f ↦
     M.isLocalizedModule_symmetricPower_map_basicOpen hU f n
 
 /-- **Sections of symmetric powers over affine opens.** For a quasi-coherent `M` and an affine
