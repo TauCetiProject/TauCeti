@@ -23,9 +23,10 @@ transported to the formal spectra. By continuity of `φ`, every ideal of definit
 receives some power of `J`, so composing the projection `O_{Spf B} → O_{J ^ (m + 1)}` with these
 maps gives maps `O_{Spf B} → (Spf φ)_* O_L` compatible with the reduction maps of `A`. Since
 `O_{Spf A}` is the limit of its thickenings and pushforward along `Spf φ` is a right adjoint, they
-assemble to the structure-sheaf map. On global sections it is `φ` itself, under the
-identifications of the global sections with `B` and `A` (EGA I, Ch. I, 10.2.2), and it does not
-depend on the choice of the ideals of definition `J` and `I`.
+assemble to the structure-sheaf map. It does not depend on the choice of the ideals of definition
+`J` and `I`, and when `B` is `J`-adically complete and `A` is `I`-adically complete it is `φ`
+itself on global sections, under the identifications of the global sections with `B` and `A`
+(EGA I, Ch. I, 10.2.2).
 
 ## Main definitions
 
@@ -48,8 +49,8 @@ depend on the choice of the ideals of definition `J` and `I`.
   of `O_{Spf A}` are determined by their projections to the thickenings.
 * `TauCeti.FormalScheme.Spf.structureSheafMap_comp_structureSheafIso_hom`: the structure-sheaf map
   commutes with the comparison isomorphisms for different ideals of definition.
-* `TauCeti.FormalScheme.Spf.structureSheafMap_hom_app_top_comp_globalSectionsIso_hom`: on global
-  sections the structure-sheaf map is `φ`.
+* `TauCeti.FormalScheme.Spf.structureSheafMap_hom_app_top_comp_globalSectionsIso_hom`: for
+  adically complete `A` and `B`, on global sections the structure-sheaf map is `φ`.
 
 ## References
 
@@ -235,8 +236,9 @@ private theorem homEquiv_symm_comp_quotientTransition (hJ : IsAdic J) (hI : IsAd
 /-- The **structure-sheaf map** `O_{Spf B} → (Spf φ)_* O_{Spf A}` of the morphism
 `Spf A → Spf B` induced by a continuous ring homomorphism `φ : B → A`
 (EGA I, Ch. I, 10.2.1). On every thickening it is induced by the maps `B ⧸ K → A ⧸ L` for
-ideals of definition with `φ(K) ⊆ L` (`structureSheafMap_comp_toQuotientSheaf`), these
-projections determine it (`structureSheaf.pushforward_hom_ext`), and on global sections it is `φ`
+ideals of definition with `φ(K) ⊆ L` (`structureSheafMap_comp_toQuotientSheaf`), and these
+projections determine it (`structureSheaf.pushforward_hom_ext`). When `A` and `B` are adically
+complete, it is `φ` on global sections
 (`structureSheafMap_hom_app_top_comp_globalSectionsIso_hom`). -/
 noncomputable def structureSheafMap (hJ : IsAdic J) (hI : IsAdic I) :
     structureSheaf hJ ⟶
@@ -310,9 +312,9 @@ theorem structureSheafMap_comp_structureSheafIso_hom {I' : Ideal A} {J' : Ideal 
 
 variable [IsAdicComplete I A] [IsAdicComplete J B]
 
-/-- On global sections, the structure-sheaf map of `φ` is `φ`: under the identifications of the
-global sections of `O_{Spf B}` and `O_{Spf A}` with `B` and `A`, it sends `b` to `φ b`
-(EGA I, Ch. I, 10.2.2). -/
+/-- For adically complete `A` and `B`, the structure-sheaf map of `φ` is `φ` on global sections:
+under the identifications of the global sections of `O_{Spf B}` and `O_{Spf A}` with `B` and `A`,
+it sends `b` to `φ b` (EGA I, Ch. I, 10.2.2). -/
 @[reassoc]
 theorem structureSheafMap_hom_app_top_comp_globalSectionsIso_hom (hJ : IsAdic J)
     (hI : IsAdic I) :
