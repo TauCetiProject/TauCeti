@@ -110,11 +110,13 @@ theorem continuationHomotopy_def (z : ℝ × ℝ) (x : V) :
   (rfl)
 
 /-- The continuation homotopy is `H₀` for `s ≤ 0`. -/
+@[simp]
 theorem continuationHomotopy_of_nonpos {z : ℝ × ℝ} (hz : z.1 ≤ 0) (x : V) :
     continuationHomotopy H₀ H₁ z x = H₀ z.2 x := by
   simp [continuationHomotopy_def, smoothTransition.zero_of_nonpos hz]
 
 /-- The continuation homotopy is `H₁` for `s ≥ 1`. -/
+@[simp]
 theorem continuationHomotopy_of_one_le {z : ℝ × ℝ} (hz : 1 ≤ z.1) (x : V) :
     continuationHomotopy H₀ H₁ z x = H₁ z.2 x := by
   simp [continuationHomotopy_def, smoothTransition.one_of_one_le hz]
@@ -160,17 +162,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {H : ℝ × ℝ → V → ℝ} {H₀ H₁ : ℝ → V → ℝ} {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)} {a b : ℝ}
 
 section Homotopy
-
-/-- The Floer energy density of a solution of the Floer equation
-`∂_s u + J (∂_t u - X_{H_z}(u)) = 0` at `z`, for the perturbation `K = H_z dt` with a
-domain-dependent Hamiltonian, is nonnegative when `J` is tamed by `ω`. -/
-theorem floerEnergyDensity_zero_left_nonneg (ω : SymplecticForm V)
-    {J : AlmostComplexStructure V} (hJ : ω.Tames J) {z : ℝ × ℝ}
-    (hfloer : fderiv ℝ u z stdComplexLineReal +
-      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z) (u z)) = 0) :
-    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) H u z :=
-  ω.floerEnergyDensity_nonneg hJ <|
-    (ω.isComplexLinearMap_perturbedFDeriv_iff J _ _ u z).2 (by simpa using hfloer)
 
 /-- **The energy identity of a continuation cylinder.** Let `H_{(s, t)}` be a `C¹` family of
 Hamiltonians and let `u` be `C²` on an open neighbourhood `U` of `[a, b] × [0, 1]`, with

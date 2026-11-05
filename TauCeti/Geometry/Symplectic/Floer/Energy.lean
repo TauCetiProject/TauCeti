@@ -379,6 +379,17 @@ theorem floerEnergyDensity_nonneg (ω : SymplecticForm V) {J : AlmostComplexStru
   simpa only [floerEnergyDensity_def, ContinuousLinearMap.coe_coe] using
     h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
 
+/-- The Floer energy density of a solution of the Floer equation
+`∂_s u + J (∂_t u - X_{K_t}(u)) = 0` at `z`, for the perturbation `K = K_t dt` with a
+domain-dependent Hamiltonian `K_t`, is nonnegative when `J` is tamed by `ω`. -/
+theorem floerEnergyDensity_zero_left_nonneg (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V} (hJ : ω.Tames J)
+    (hfloer : fderiv ℝ u z stdComplexLineReal +
+      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) = 0) :
+    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z :=
+  ω.floerEnergyDensity_nonneg hJ <|
+    (ω.isComplexLinearMap_perturbedFDeriv_iff J _ _ u z).2 (by simpa using hfloer)
+
 /-- For a solution of the Floer equation at `z`, the `t`-component of the perturbed derivative is
 `J` applied to its `s`-component `a = ∂_s u - X_{K_s}`, so the Floer energy density is
 `ω(a, J a)`. -/
