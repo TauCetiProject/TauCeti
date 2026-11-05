@@ -130,21 +130,10 @@ theorem walkGraph_le_walkGraph_iff (p : G.Walk x y) (q : G.Walk z w) :
 /-- Every visited vertex of a walk is reachable from its starting point within its traced graph. -/
 theorem reachable_walkGraph_of_mem_support {a : α} (p : G.Walk x y) (ha : a ∈ p.support) :
     (G.walkGraph p).Reachable x a := by
-  induction p with
-  | nil =>
-      simp only [support_nil, List.mem_singleton] at ha
-      subst a
-      exact Reachable.refl (by simp)
-  | @cons x u y e h p ih =>
-      simp only [support_cons, List.mem_cons] at ha
-      rcases ha with rfl | ha
-      · exact Reachable.refl (by simp)
-      · have hxu : (G.walkGraph (.cons e h p)).Reachable x u :=
-          IsLink.reachable (((Walk.cons e h p).walkGraph_isLink e x u).mpr ⟨h, by simp⟩)
-        have hle : G.walkGraph p ≤ G.walkGraph (.cons e h p) :=
-          (walkGraph_le_walkGraph_iff p (.cons e h p)).mpr
-            ⟨fun _ hb ↦ by simp [hb], fun _ hf ↦ by simp [hf]⟩
-        exact hxu.trans ((ih ha).mono hle)
+  classical
+  exact (p.takeUntil a ha).reachable_walkGraph.mono <|
+    (walkGraph_le_walkGraph_iff (p.takeUntil a ha) p).mpr
+      ⟨p.support_takeUntil_subset_support ha, p.edges_takeUntil_subset_edges ha⟩
 
 /-- Any two visited vertices of a walk are reachable from each other within its traced graph. -/
 theorem reachable_walkGraph_of_mem_support_of_mem_support {a b : α} (p : G.Walk x y)

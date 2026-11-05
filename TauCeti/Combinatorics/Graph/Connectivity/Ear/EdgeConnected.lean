@@ -14,13 +14,15 @@ import Mathlib.Data.Set.Card
 # Ear decompositions and `2`-edge-connectivity of multigraphs
 
 This file proves the ear-decomposition characterization of `2`-edge-connected multigraphs. Every
-allowed initial graph of an ear decomposition (a single actual vertex or a cycle) is connected and
-`2`-edge-connected, and adjoining either an open or a closed ear preserves connectedness and
-`2`-edge-connectivity without any finiteness hypothesis. Conversely, if `G` is `2`-edge-connected
-and `H < G` is a proper subgraph with at least one actual vertex, then `G` admits an open or closed
-ear over `H` (`Graph.IsEdgeConnected.nonempty_ear`); when `E(G)` is finite, iterating ear addition
+allowed initial graph of an ear decomposition (a single actual vertex or a cycle) is
+`2`-edge-connected, and adjoining either an open or a closed ear preserves `2`-edge-connectivity
+without any finiteness hypothesis (building on the stage-connectedness results in
+`TauCeti.Combinatorics.Graph.Connectivity.Ear.Basic`). Conversely, if `G` is `2`-edge-connected and
+`H < G` is a proper subgraph with at least one actual vertex, then `G` admits an open or closed ear
+over `H` (`Graph.IsEdgeConnected.nonempty_ear`); when `E(G)` is finite, iterating ear addition
 completes any partial ear decomposition `G.EarDecomposition H` to a full ear decomposition
-`G.EarDecomposition G` (`Graph.EarDecomposition.extend`).
+`G.EarDecomposition G` (`Graph.EarDecomposition.extend`) preserving the given partial decomposition
+as a prefix (`Graph.EarDecomposition.prefix_extend`).
 
 Loops and parallel edges are preserved throughout: an unused loop at a vertex of `H` is added as a
 one-edge closed ear (`Graph.Ear.ofIsLoopAt`), and an unused parallel edge between distinct vertices
@@ -36,14 +38,14 @@ problem of traffic control*, Amer. Math. Monthly 46, 281–283; the presentation
 
 ## Main declarations
 
-* `Graph.Ear.connected_add`, `Graph.Ear.isEdgeConnected_two_add`: adjoining an ear preserves
-  connectedness and `2`-edge-connectivity.
-* `Graph.EarDecomposition.connected`, `Graph.EarDecomposition.isEdgeConnected_two`: any graph
-  admitting an ear decomposition in `G` is connected and `2`-edge-connected.
+* `Graph.Ear.isEdgeConnected_two_add`: adjoining an ear preserves `2`-edge-connectivity.
+* `Graph.EarDecomposition.isEdgeConnected_two`: any graph admitting an ear decomposition in `G` is
+  `2`-edge-connected.
 * `Graph.IsEdgeConnected.nonempty_ear`: in a `2`-edge-connected multigraph, every proper subgraph
   with an actual vertex admits an ear.
-* `Graph.EarDecomposition.extend`: with finitely many actual edges, any partial ear decomposition
-  in a `2`-edge-connected multigraph extends to an ear decomposition of the whole multigraph.
+* `Graph.EarDecomposition.extend`, `Graph.EarDecomposition.prefix_extend`: with finitely many
+  actual edges, any partial ear decomposition in a `2`-edge-connected multigraph extends to an ear
+  decomposition of the whole multigraph having the original decomposition as a prefix.
 * `Graph.isEdgeConnected_two_iff_exists_earDecomposition_not_isCycle`,
   `Graph.isEdgeConnected_two_iff_nonempty_earDecomposition`: a multigraph with an actual vertex and
   finitely many actual edges is `2`-edge-connected if and only if it admits a (vertex-started) ear
@@ -67,16 +69,6 @@ variable {α : Type u} {β : Type v} {G H : Graph α β}
 
 namespace EarStart
 
-/-- Every allowed initial graph of an ear decomposition is connected. -/
-theorem connected : ∀ _start : G.EarStart H, H.Connected
-  | .vertex v =>
-      connected_iff_forall_reachable.mpr
-        ⟨⟨v.1, by simp⟩, fun x y hx hy ↦ by
-          simp only [vertexSet_noEdge, mem_singleton_iff] at hx hy
-          subst hx hy
-          exact Reachable.refl (by simp)⟩
-  | .cycle walk _ => walk.connected_walkGraph
-
 /-- Every allowed initial graph of an ear decomposition is `2`-edge-connected. -/
 theorem isEdgeConnected_two : ∀ _start : G.EarStart H, H.IsEdgeConnected 2
   | .vertex _ => IsEdgeConnected.of_subsingleton (by simp [Set.subsingleton_singleton])
@@ -85,11 +77,6 @@ theorem isEdgeConnected_two : ∀ _start : G.EarStart H, H.IsEdgeConnected 2
 end EarStart
 
 namespace Ear
-
-/-- Adjoining an ear to a connected subgraph yields a connected subgraph. -/
-theorem connected_add (ear : G.Ear H) (hH : H.Connected) : ear.add.Connected :=
-  ear.compatible.connected_union hH ear.toWalk.2.2.connected_walkGraph
-    ⟨ear.toWalk.1, ear.start_mem_base, by simp [Ear.vertexSet_toGraph]⟩
 
 /-- Adjoining an ear to a `2`-edge-connected subgraph yields a `2`-edge-connected subgraph. -/
 theorem isEdgeConnected_two_add (ear : G.Ear H) (hH : H.IsEdgeConnected 2) :
@@ -121,19 +108,6 @@ theorem isEdgeConnected_two_add (ear : G.Ear H) (hH : H.IsEdgeConnected 2) :
 end Ear
 
 namespace EarDecomposition
-
-/-- Every stage graph of an ear decomposition is connected. -/
-theorem connected_graphAfter (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
-    (d.graphAfter i).Connected := by
-  induction i using Fin.induction with
-  | zero => exact d.start.connected
-  | succ k ih =>
-      rw [d.graphAfter_succ]
-      exact (d.earAt k).2.connected_add ((d.earAt_fst k).symm ▸ ih)
-
-/-- The final graph of any ear decomposition is connected. -/
-theorem connected (d : G.EarDecomposition H) : H.Connected :=
-  d.graphAfter_last ▸ d.connected_graphAfter (Fin.last d.length)
 
 /-- Every stage graph of an ear decomposition is `2`-edge-connected. -/
 theorem isEdgeConnected_two_graphAfter (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
@@ -197,30 +171,127 @@ noncomputable def extend [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α 
       Classical.choice (hG.nonempty_ear (lt_of_le_of_ne d.final_le h) d.nonempty)
     (d.snoc ear).extend hG
 termination_by (E(G) \ E(H)).ncard
-decreasing_by
-  simpa only [← Ear.edgeSet_toGraph, ← Ear.edgeSet_add] using ncard_sdiff_add_lt _
+decreasing_by exact ncard_sdiff_add_lt _
+
+private theorem extend_spec [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
+    (d : G.EarDecomposition H) :
+    ∃ hle : d.length ≤ (d.extend hG).length,
+      (∀ i : Fin (d.length + 1),
+        (d.extend hG).graphAfter (Fin.castLE (Nat.succ_le_succ hle) i) = d.graphAfter i) ∧
+      (∀ i : Fin d.length,
+        (d.extend hG).earAt (Fin.castLE hle i) = d.earAt i) ∧
+      HEq (d.extend hG).start d.start := by
+  fun_induction d.extend hG with
+  | case1 d =>
+      refine ⟨(d.length_copy rfl).ge, fun i ↦ ?_, fun i ↦ ?_, d.heq_start_copy rfl⟩
+      · have hi : Fin.castLE (Nat.succ_le_succ (d.length_copy rfl).ge) i =
+            Fin.cast (congrArg (· + 1) (d.length_copy rfl).symm) i := Fin.ext rfl
+        rw [hi, d.graphAfter_copy]
+      · have hi : Fin.castLE (d.length_copy rfl).ge i =
+            Fin.cast (d.length_copy rfl).symm i := Fin.ext rfl
+        rw [hi, d.earAt_copy]
+  | case2 H d h ear ih =>
+      obtain ⟨hle', hgraph', hear', hstart'⟩ := ih
+      have hle₀ : d.length ≤ (d.snoc ear).length :=
+        (Nat.le_succ d.length).trans_eq (d.length_snoc ear).symm
+      have hle : d.length ≤ ((d.snoc ear).extend hG).length := hle₀.trans hle'
+      refine ⟨hle, fun i ↦ ?_, fun i ↦ ?_, hstart'.trans (d.heq_start_snoc ear)⟩
+      · let i' : Fin ((d.snoc ear).length + 1) :=
+          (Fin.cast (d.length_snoc ear).symm i).castSucc
+        have hi : Fin.castLE (Nat.succ_le_succ hle) i =
+            Fin.castLE (Nat.succ_le_succ hle') i' := Fin.ext (by simp [i'])
+        rw [hi, hgraph' i']
+        dsimp only [i']
+        exact d.graphAfter_snoc_castSucc ear i
+      · let i' : Fin (d.snoc ear).length :=
+          Fin.cast (d.length_snoc ear).symm i.castSucc
+        have hi : Fin.castLE hle i = Fin.castLE hle' i' := Fin.ext (by simp [i'])
+        rw [hi, hear' i']
+        dsimp only [i']
+        exact d.earAt_snoc_castSucc ear i
+
+/-- Completing a partial ear decomposition does not decrease its length. -/
+theorem length_le_length_extend [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
+    (d : G.EarDecomposition H) : d.length ≤ (d.extend hG).length :=
+  let ⟨hle, _⟩ := d.extend_spec hG
+  hle
+
+/-- Completing a partial ear decomposition preserves all of its stage graphs. -/
+@[simp]
+theorem graphAfter_extend_castLE [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
+    (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
+    (d.extend hG).graphAfter
+      (Fin.castLE (Nat.succ_le_succ (d.length_le_length_extend hG)) i) = d.graphAfter i :=
+  let ⟨_, hgraph, _, _⟩ := d.extend_spec hG
+  hgraph i
 
 /-- Completing a partial ear decomposition preserves its initial graph. -/
 theorem initial_extend [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
     (d : G.EarDecomposition H) : (d.extend hG).initial = d.initial := by
-  rw [extend]
-  split_ifs with h
-  · exact d.initial_copy h
-  · rw [initial_extend, d.initial_snoc]
-termination_by (E(G) \ E(H)).ncard
-decreasing_by
-  simpa only [← Ear.edgeSet_toGraph, ← Ear.edgeSet_add] using ncard_sdiff_add_lt _
+  simpa only [initial_eq_graphAfter, Fin.castLE_zero] using d.graphAfter_extend_castLE hG 0
 
+/-- Completing a partial ear decomposition preserves all of its displayed ears. -/
+@[simp]
+theorem earAt_extend_castLE [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
+    (d : G.EarDecomposition H) (i : Fin d.length) :
+    (d.extend hG).earAt (Fin.castLE (d.length_le_length_extend hG) i) = d.earAt i :=
+  let ⟨_, _, hear, _⟩ := d.extend_spec hG
+  hear i
+
+/-- Completing a partial ear decomposition preserves its initial stage data. -/
+theorem heq_start_extend [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
+    (d : G.EarDecomposition H) : HEq (d.extend hG).start d.start :=
+  let ⟨_, _, _, hstart⟩ := d.extend_spec hG
+  hstart
+
+private theorem isCycle_iff_of_heq {K₁ K₂ : Graph α β} {s₁ : G.EarStart K₁}
+    {s₂ : G.EarStart K₂} (hK : K₁ = K₂) (hs : HEq s₁ s₂) : s₁.IsCycle ↔ s₂.IsCycle := by
+  subst hK; cases eq_of_heq hs; rfl
+
+/-- Completing a partial ear decomposition preserves whether it starts from a cycle. -/
 @[simp]
 theorem start_isCycle_extend [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
-    (d : G.EarDecomposition H) : (d.extend hG).start.IsCycle ↔ d.start.IsCycle := by
-  have hdef := extend.eq_1 hG d
-  split_ifs at hdef with h
-  · rw [hdef, d.start_isCycle_copy h]
-  · rw [hdef, start_isCycle_extend, d.start_isCycle_snoc]
-termination_by (E(G) \ E(H)).ncard
-decreasing_by
-  simpa only [← Ear.edgeSet_toGraph, ← Ear.edgeSet_add] using ncard_sdiff_add_lt _
+    (d : G.EarDecomposition H) : (d.extend hG).start.IsCycle ↔ d.start.IsCycle :=
+  isCycle_iff_of_heq (by simpa using d.graphAfter_extend_castLE hG 0) (d.heq_start_extend hG)
+
+/-- Taking the prefix of `d.extend hG` of length `d.length` recovers `d`. -/
+theorem prefix_extend [Finite E(G)] (hG : G.IsEdgeConnected 2) {H : Graph α β}
+    (d : G.EarDecomposition H) :
+    ((d.extend hG).prefix
+      (Fin.castLE (Nat.succ_le_succ (d.length_le_length_extend hG)) (Fin.last d.length))).copy
+      ((d.graphAfter_extend_castLE hG (Fin.last d.length)).trans d.graphAfter_last) = d := by
+  let i₀ : Fin ((d.extend hG).length + 1) :=
+    Fin.castLE (Nat.succ_le_succ (d.length_le_length_extend hG)) (Fin.last d.length)
+  let hH : (d.extend hG).graphAfter i₀ = H :=
+    (d.graphAfter_extend_castLE hG (Fin.last d.length)).trans d.graphAfter_last
+  let p := ((d.extend hG).prefix i₀).copy hH
+  have hi₀ : i₀.val = d.length := by simp [i₀]
+  have hlen : p.length = d.length := by simp [p, hi₀]
+  refine (ext d p hlen.symm
+    ((Fin.heq_fun_iff (congrArg (· + 1) hlen.symm)).mpr fun j ↦ ?_)
+    (((heq_start_copy _ hH).trans (heq_start_prefix (d.extend hG) i₀)).trans
+      (d.heq_start_extend hG)).symm
+    ((Fin.heq_fun_iff hlen.symm).mpr fun j ↦ ?_)).symm
+  · let j' : Fin (i₀.val + 1) := Fin.cast (congrArg (· + 1) hi₀.symm) j
+    have hj₁ : (⟨j, congrArg (· + 1) hlen.symm ▸ j.2⟩ : Fin (p.length + 1)) =
+        Fin.cast (congrArg (· + 1) (length_copy _ hH).symm)
+          (Fin.cast (congrArg (· + 1) (length_prefix (d.extend hG) i₀).symm) j') :=
+      Fin.ext (by simp [j'])
+    have hj₂ : Fin.castLE (Nat.succ_le_iff.mpr i₀.isLt) j' =
+        Fin.castLE (Nat.succ_le_succ (d.length_le_length_extend hG)) j :=
+      Fin.ext (by simp [j'])
+    dsimp only [p]
+    rw [hj₁, graphAfter_copy, graphAfter_prefix, hj₂, d.graphAfter_extend_castLE]
+  · let j' : Fin i₀.val := Fin.cast hi₀.symm j
+    have hj₁ : (⟨j, hlen.symm ▸ j.2⟩ : Fin p.length) =
+        Fin.cast (length_copy _ hH).symm
+          (Fin.cast (length_prefix (d.extend hG) i₀).symm j') :=
+      Fin.ext (by simp [j'])
+    have hj₂ : Fin.castLE (Nat.le_of_lt_succ i₀.isLt) j' =
+        Fin.castLE (d.length_le_length_extend hG) j :=
+      Fin.ext (by simp [j'])
+    dsimp only [p]
+    rw [hj₁, earAt_copy, earAt_prefix, hj₂, d.earAt_extend_castLE]
 
 end EarDecomposition
 

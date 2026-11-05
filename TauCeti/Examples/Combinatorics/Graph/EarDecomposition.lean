@@ -242,10 +242,12 @@ example :
     refine (Compatible.of_le_le ear.add_le le_rfl).ext ?_ ?_
     · ext x
       dsimp only [ear, G]
+      rw [Ear.vertexSet_add, Ear.vertexSet_toGraph, Ear.toWalk_ofIsLoopAt]
       simp
     · ext e
       dsimp only [ear, G]
-      simp
+      rw [Ear.edgeSet_add, Ear.edgeSet_toGraph, Ear.toWalk_ofIsLoopAt]
+      simp [IsLink.edges_toWalk]
   let d0 : G.EarDecomposition (Graph.noEdge {0} ℕ) :=
     EarDecomposition.vertex ⟨0, by simp [G]⟩
   let d : G.EarDecomposition G := (d0.snoc ear).copy hadd
