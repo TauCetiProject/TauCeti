@@ -98,6 +98,7 @@ theorem linkDegree_singleFace [DecidableEq Γ.E] (e : Γ.E) :
     (singleFace Γ w hw hclosed).linkDegree e = w.count (Γ.rev e) + w.count e := by
   rw [linkDegree_eq_sideCount_rev_add_sideCount, sideCount_singleFace, sideCount_singleFace]
 
+/-- A complex with a single face has Euler characteristic `|V| - |GeomEdge| + 1`. -/
 theorem eulerChar_singleFace :
     (singleFace Γ w hw hclosed).eulerChar = Nat.card Γ.V - Nat.card Γ.GeomEdge + 1 := by
   rw [eulerChar_def, Nat.card_unique (α := Unit), Nat.cast_one]
@@ -159,10 +160,11 @@ abbrev polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) : Polygonal
 /-- The link degree of a dart in `polygon w` counts its occurrences and those of its reverse in
 `w`. -/
 theorem linkDegree_polygon {α : Type u} [DecidableEq α] (w : List (α × Bool)) (hw : w ≠ [])
-    (e : α × Bool) : (polygon w hw).linkDegree e = w.count (e.1, !e.2) + w.count e := by
-  let _ : DecidableEq (SerreGraph.rose α).E := inferInstanceAs (DecidableEq (α × Bool))
-  exact linkDegree_singleFace (Γ := SerreGraph.rose α) e
+    (e : α × Bool) : (polygon w hw).linkDegree e = w.count (e.1, !e.2) + w.count e :=
+  linkDegree_singleFace (Γ := SerreGraph.rose α) e
 
+/-- The one-vertex polygon on the rose `α` has one vertex, one edge per petal and one face, so its
+Euler characteristic is `2 - |α|`. -/
 theorem eulerChar_polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) :
     (polygon w hw).eulerChar = 2 - Nat.card α := by
   refine (eulerChar_singleFace (Γ := SerreGraph.rose α) (w := w) (hw := hw)).trans ?_
@@ -191,7 +193,6 @@ theorem hasSurfaceLink_polygon {α : Type u} [DecidableEq α] {w : List (α × B
         w.count (e₂.1, !e₂.2) + w.count e₂ = 1 ∧
           ∀ e : α × Bool, e ≠ e₁ → e ≠ e₂ → w.count (e.1, !e.2) + w.count e = 2)
     (v : (polygon w hw).graph.V) : (polygon w hw).HasSurfaceLink v := by
-  let _ : DecidableEq (SerreGraph.rose α).E := inferInstanceAs (DecidableEq (α × Bool))
   refine hasSurfaceLink_singleFace (Γ := SerreGraph.rose α) v a rfl (fun b _ => hpath b) ?_
   rcases hdeg with hcirc | ⟨e₁, e₂, hne, h₁, h₂, h⟩
   · exact .inl fun e _ => hcirc e

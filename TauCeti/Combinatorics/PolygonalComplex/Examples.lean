@@ -253,7 +253,6 @@ def sphere : SurfaceModel.{0, 0, 0} where
       · exact ⟨.nil⟩
       · exact ⟨(SerreGraph.segment.dart false).toPath⟩⟩
   hasSurfaceLink v := by
-    let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
     refine hasSurfaceLink_singleFace v v (SerreGraph.segment_src v) (fun b hb => ?_)
       (.inl fun e _ => by cases e <;> decide)
     obtain rfl : b = v := (SerreGraph.segment_src b).symm.trans hb
@@ -274,7 +273,6 @@ theorem eulerChar_sphere : sphere.eulerChar = 2 := by
 /-- The sphere has no boundary: its edge lies on both sides of the digon. -/
 theorem boundaryDarts_sphere : sphere.boundaryDarts = ∅ :=
   Set.eq_empty_of_forall_notMem fun e => linkDegree_eq_two_iff_notMem_boundaryDarts.1 <| by
-    let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
     refine (linkDegree_singleFace (Γ := SerreGraph.segment) (w := [false, true])
       (hw := List.cons_ne_nil _ _) e).trans ?_
     cases e <;> decide

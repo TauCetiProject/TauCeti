@@ -378,6 +378,11 @@ abbrev point : SerreGraph.{u, v} where
 /-- A rose has a single vertex. -/
 instance (α : Type w) : Unique (rose α).V := inferInstanceAs (Unique PUnit)
 
+/-- The darts of a rose, being pairs of a petal and a direction, have decidable equality when
+the petals do. -/
+instance (α : Type w) [DecidableEq α] : DecidableEq (rose α).E :=
+  inferInstanceAs (DecidableEq (α × Bool))
+
 /-- The geometric edges of a rose are its petals. -/
 def roseGeomEdgeEquiv (α : Type w) : (rose α).GeomEdge ≃ α where
   toFun := GeomEdge.lift (rose α) Prod.fst fun _ => rfl
@@ -429,6 +434,9 @@ vertex `b` to the vertex `!b`. -/
 
 /-- The vertices of the segment are the Booleans. -/
 def segmentVEquiv : segment.V ≃ Bool := Equiv.refl Bool
+
+/-- The darts of the segment, being Booleans, have decidable equality. -/
+instance : DecidableEq segment.E := inferInstanceAs (DecidableEq Bool)
 
 /-- The segment has a single geometric edge. -/
 instance : Unique segment.GeomEdge where
