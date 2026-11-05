@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 
--- Proof-only: integer support bounds, independent families, and tensor coordinates.
+-- Proof-only: integer support bounds and independent families.
 import Mathlib.Data.Int.Interval
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Scalar extension and module-valued Hahn series
@@ -187,22 +187,26 @@ theorem _root_.TauCeti.HahnModule.linearMap_ext_smul_single_zero
   | tmul a v => simpa using h a v
   | add z w hz hw => simp only [map_add, hz, hw]
 
+/-- In any basis of the coefficient module, scalar-series coordinates agree with the
+coordinates of the coefficients of the scalar-extension comparison. -/
+theorem coeff_equivFinsuppOfBasisRight {ι : Type*} [DecidableEq ι]
+    (b : Module.Basis ι R V) (z : HahnSeries Γ R ⊗[R] V) (i : ι) (g : Γ) :
+    (TensorProduct.equivFinsuppOfBasisRight b z i).coeff g =
+      b.repr (((of R).symm (tensorProductToHahnModule Γ R V z)).coeff g) i := by
+  induction z using TensorProduct.inductionOn with
+  | tmul f v => simp [mul_comm]
+  | add z w hz hw => simp [hz, hw]
+
 /-- The scalar-extension comparison is injective for free coefficient modules, without any
 finiteness assumption on a basis. -/
 theorem tensorProductToHahnModule_injective [Module.Free R V] :
     Function.Injective (tensorProductToHahnModule Γ R V) := by
   classical
   let b := Module.Free.chooseBasis R V
-  have hc (z : HahnSeries Γ R ⊗[R] V) (i : Module.Free.ChooseBasisIndex R V) (g : Γ) :
-      (TensorProduct.equivFinsuppOfBasisRight b z i).coeff g =
-        b.repr (((of R).symm (tensorProductToHahnModule Γ R V z)).coeff g) i := by
-    induction z using TensorProduct.inductionOn with
-    | tmul f v => simp [mul_comm]
-    | add z w hz hw => simp [hz, hw]
   intro z w h
   apply (TensorProduct.equivFinsuppOfBasisRight b).injective
   ext i g
-  simp only [hc, h]
+  simp only [coeff_equivFinsuppOfBasisRight, h]
 
 /-- All coefficients of a tensor current lie in one finitely generated submodule. This is the
 finite-rank obstruction to representing arbitrary vector-valued series by tensor currents. -/
