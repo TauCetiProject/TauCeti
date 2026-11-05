@@ -62,6 +62,23 @@ theorem _root_.IsCompact.image_connectedComponentIn {Y : Type*} [TopologicalSpac
   · have hfx : f x ∉ f '' A := fun ⟨w, hwA, hw⟩ => hxA (hinj (hA hwA) hx hw ▸ hwA)
     rw [connectedComponentIn_eq_empty hxA, connectedComponentIn_eq_empty hfx, image_empty]
 
+/-- A preconnected noncompact space has no compact connected component: its only component is the
+whole space. -/
+theorem not_isCompact_connectedComponent [PreconnectedSpace X] [NoncompactSpace X]
+    (x : X) : ¬IsCompact (connectedComponent x) := by
+  rw [PreconnectedSpace.connectedComponent_eq_univ]
+  exact noncompact_univ X
+
+/-- The component in `Sᶜ` of a point of `S` is empty, so its closure is compact. -/
+theorem isCompact_closure_connectedComponentIn_compl_of_mem {S : Set X} {x : X} (hx : x ∈ S) :
+    IsCompact (closure (connectedComponentIn Sᶜ x)) := by
+  simp [connectedComponentIn_eq_empty (notMem_compl_iff.2 hx)]
+
+/-- A point whose component in `Sᶜ` has noncompact closure lies outside `S`. -/
+theorem notMem_of_not_isCompact_closure_connectedComponentIn_compl {S : Set X} {x : X}
+    (hx : ¬IsCompact (closure (connectedComponentIn Sᶜ x))) : x ∉ S :=
+  fun hxS ↦ hx (isCompact_closure_connectedComponentIn_compl_of_mem hxS)
+
 /-- The union of two σ-compact sets is σ-compact. -/
 theorem _root_.IsSigmaCompact.union {s t : Set X} (hs : IsSigmaCompact s)
     (ht : IsSigmaCompact t) : IsSigmaCompact (s ∪ t) := by
