@@ -184,6 +184,21 @@ theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [Norm
         (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
           ((hU.prod isOpen_univ).mem_nhds (hmem hz))
 
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
+space, the Hamiltonian vector field `X_{K z}(x)` is continuous jointly in the parameter `z ∈ U` and
+the point `x`. -/
+theorem continuousOn_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {U : Set W} (hU : IsOpen U)
+    (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
+    ContinuousOn (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) (U ×ˢ Set.univ) := by
+  -- View `(z, x) ↦ K z` as a family over the parameter space `W × V`, evaluated at `x`.
+  have hK' : ContDiffOn ℝ 1 (Function.uncurry fun p : W × V ↦ K p.1)
+      ((U ×ˢ Set.univ) ×ˢ Set.univ) :=
+    hK.comp (contDiff_fst.fst.prodMk contDiff_snd).contDiffOn
+      fun _ hq ↦ ⟨hq.1.1, Set.mem_univ _⟩
+  exact ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (hU.prod isOpen_univ)
+    continuousOn_snd hK'
+
 section PoissonBracket
 
 /-- The Poisson bracket `{F, G}(x) = ω(X_F x, X_G x)` of two Hamiltonians. -/
