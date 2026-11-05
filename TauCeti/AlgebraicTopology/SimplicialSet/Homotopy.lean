@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.SSetPair
 public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
+public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
 /-!
 # Homotopies of morphisms of pairs of simplicial sets
@@ -34,7 +35,10 @@ cylinder `X ⊗ Δ[1]` with prescribed ends, identifies these ends with the face
 `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` (`SSet.whiskerLeft_stdSimplex_δ_one`) and records that they are disjoint
 (`SSet.range_ι₀_inf_range_ι₁`). Homotopies can be precomposed and postcomposed with maps
 (`SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`), and they correspond under the
-tensor-hom adjunction (`SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`).
+tensor-hom adjunction (`SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`). Through this adjunction,
+the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` of maps are the maps `X ⟶ Z`
+(`SSet.ihomObj₀Equiv`), and its edges between two such vertices are the homotopies between them
+(`SSet.ihomEdgeEquiv`).
 -/
 
 @[expose] public section
@@ -58,6 +62,20 @@ after the projection `X ⊗ Δ[0] ⟶ X`. -/
 lemma whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
     X ◁ stdSimplex.δ (0 : Fin 2) = fst X Δ[0] ≫ ι₁ := by
   ext : 1 <;> simp [ι₁, stdSimplex.δ_zero_eq_const]
+
+/-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
+inclusion of `A ⊗ (X ⊗ {0})` to that of `(A ⊗ X) ⊗ {0}`. -/
+@[reassoc (attr := simp)]
+lemma whiskerLeft_ι₀_associator_inv (A X : SSet.{w}) :
+    A ◁ ι₀ ≫ (α_ A X Δ[1]).inv = ι₀ := by
+  ext : 1 <;> [ext : 1; skip] <;> simp [ι₀]
+
+/-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
+inclusion of `A ⊗ (X ⊗ {1})` to that of `(A ⊗ X) ⊗ {1}`. -/
+@[reassoc (attr := simp)]
+lemma whiskerLeft_ι₁_associator_inv (A X : SSet.{w}) :
+    A ◁ ι₁ ≫ (α_ A X Δ[1]).inv = ι₁ := by
+  ext : 1 <;> [ext : 1; skip] <;> simp [ι₁]
 
 /-- The two ends `X ⊗ {0}` and `X ⊗ {1}` of the cylinder `X ⊗ Δ[1]` are disjoint. -/
 lemma range_ι₀_inf_range_ι₁ {X : SSet.{w}} :
@@ -89,6 +107,7 @@ def mk' (h : X ⊗ Δ[1] ⟶ Y) (h₀ : ι₀ ≫ h = f) (h₁ : ι₁ ≫ h = g
 
 /-- Precomposing a homotopy from `f` to `g` with `e : W ⟶ X` gives a homotopy from `e ≫ f` to
 `e ≫ g`. This is the absolute case of `SSet.RelativeMorphism.Homotopy.precomp`. -/
+@[no_expose]
 noncomputable def precomp {W : SSet.{w}} (H : SSet.Homotopy f g) (e : W ⟶ X) :
     SSet.Homotopy (e ≫ f) (e ≫ g) :=
   RelativeMorphism.Homotopy.precomp H (RelativeMorphism.botEquiv.symm e)
@@ -98,10 +117,11 @@ noncomputable def precomp {W : SSet.{w}} (H : SSet.Homotopy f g) (e : W ⟶ X) :
 @[simp]
 lemma precomp_h {W : SSet.{w}} (H : SSet.Homotopy f g) (e : W ⟶ X) :
     (H.precomp e).h = e ▷ Δ[1] ≫ H.h :=
-  rfl
+  (rfl)
 
 /-- Postcomposing a homotopy from `f` to `g` with `e : Y ⟶ Z` gives a homotopy from `f ≫ e` to
 `g ≫ e`. This is the absolute case of `SSet.RelativeMorphism.Homotopy.postcomp`. -/
+@[no_expose]
 noncomputable def postcomp {Z : SSet.{w}} (H : SSet.Homotopy f g) (e : Y ⟶ Z) :
     SSet.Homotopy (f ≫ e) (g ≫ e) :=
   RelativeMorphism.Homotopy.postcomp H (RelativeMorphism.botEquiv.symm e)
@@ -111,34 +131,26 @@ noncomputable def postcomp {Z : SSet.{w}} (H : SSet.Homotopy f g) (e : Y ⟶ Z) 
 @[simp]
 lemma postcomp_h {Z : SSet.{w}} (H : SSet.Homotopy f g) (e : Y ⟶ Z) :
     (H.postcomp e).h = H.h ≫ e :=
-  rfl
-
-/-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
-inclusion of `A ⊗ (X ⊗ {0})` to that of `(A ⊗ X) ⊗ {0}`. -/
-@[reassoc (attr := simp)]
-lemma whiskerLeft_ι₀_associator_inv (A X : SSet.{w}) :
-    A ◁ ι₀ ≫ (α_ A X Δ[1]).inv = ι₀ := by
-  ext : 1 <;> [ext : 1; skip] <;> simp [ι₀]
-
-/-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
-inclusion of `A ⊗ (X ⊗ {1})` to that of `(A ⊗ X) ⊗ {1}`. -/
-@[reassoc (attr := simp)]
-lemma whiskerLeft_ι₁_associator_inv (A X : SSet.{w}) :
-    A ◁ ι₁ ≫ (α_ A X Δ[1]).inv = ι₁ := by
-  ext : 1 <;> [ext : 1; skip] <;> simp [ι₁]
+  (rfl)
 
 /-- A homotopy between maps `A ⊗ X ⟶ Y` curries to a homotopy between the adjoint maps
 `X ⟶ Fun(A, Y)`. -/
-@[simps! h]
+@[no_expose]
 noncomputable def curry {A : SSet.{w}} {f g : A ⊗ X ⟶ Y} (H : SSet.Homotopy f g) :
     SSet.Homotopy (MonoidalClosed.curry f) (MonoidalClosed.curry g) :=
   mk' (MonoidalClosed.curry ((α_ A X Δ[1]).inv ≫ H.h))
     (by rw [← MonoidalClosed.curry_natural_left, whiskerLeft_ι₀_associator_inv_assoc, H.h₀])
     (by rw [← MonoidalClosed.curry_natural_left, whiskerLeft_ι₁_associator_inv_assoc, H.h₁])
 
+/-- The curried homotopy is the curried map on the reassociated cylinder. -/
+@[simp]
+lemma curry_h {A : SSet.{w}} {f g : A ⊗ X ⟶ Y} (H : SSet.Homotopy f g) :
+    H.curry.h = MonoidalClosed.curry ((α_ A X Δ[1]).inv ≫ H.h) :=
+  (rfl)
+
 /-- A homotopy between maps `X ⟶ Fun(A, Y)` uncurries to a homotopy between the adjoint maps
 `A ⊗ X ⟶ Y`. -/
-@[simps! h]
+@[no_expose]
 noncomputable def uncurry {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.Homotopy f g) :
     SSet.Homotopy (MonoidalClosed.uncurry f) (MonoidalClosed.uncurry g) :=
   mk' ((α_ A X Δ[1]).hom ≫ MonoidalClosed.uncurry H.h)
@@ -146,6 +158,12 @@ noncomputable def uncurry {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.
       ← MonoidalClosed.uncurry_natural_left, H.h₀])
     (by rw [← whiskerLeft_ι₁_associator_inv, Category.assoc, Iso.inv_hom_id_assoc,
       ← MonoidalClosed.uncurry_natural_left, H.h₁])
+
+/-- The uncurried homotopy is the reassociated uncurried map. -/
+@[simp]
+lemma uncurry_h {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.Homotopy f g) :
+    H.uncurry.h = (α_ A X Δ[1]).hom ≫ MonoidalClosed.uncurry H.h :=
+  (rfl)
 
 /-- The combinatorial homotopy extracted from a simplicial homotopy sends an `n`-simplex `x` to
 the value of the homotopy at the pair formed by the `i`-th degeneracy of `x` and the `n + 1`-simplex
@@ -226,6 +244,121 @@ lemma map_mkOfLe_toSimplicialObjectHomotopy_h_zero (H : SSet.Homotopy f g) {n : 
     fin_cases k <;> rfl
 
 end SSet.Homotopy
+
+namespace SSet
+
+section MappingSpace
+
+open MonoidalClosed
+
+variable {X Z : SSet.{w}}
+
+variable (X Z) in
+/-- The vertices of the simplicial set `Fun(X, Z)` of maps are the maps `X ⟶ Z`: a vertex `v`
+corresponds to the map evaluating at `v`, and a map `f` to the vertex adjoint to
+`X ⊗ Δ[0] ⟶ X ⟶ Z`. It is the composite of `SSet.unitHomEquiv` with
+`MonoidalClosed.curryHomEquiv'`. -/
+@[no_expose]
+noncomputable def ihomObj₀Equiv : ((ihom X).obj Z) _⦋0⦌ ≃ (X ⟶ Z) :=
+  ((ihom X).obj Z).unitHomEquiv.symm.trans curryHomEquiv'.symm
+
+/-- The map corresponding to a vertex of `Fun(X, Z)` evaluates at that vertex. -/
+lemma ihomObj₀Equiv_apply (v : ((ihom X).obj Z) _⦋0⦌) :
+    ihomObj₀Equiv X Z v = lift (𝟙 X) (const v) ≫ (ihom.ev X).app Z := by
+  have h : (ρ_ X).inv ≫ X ◁ ((ihom X).obj Z).unitHomEquiv.symm v = lift (𝟙 X) (const v) := by
+    ext : 1
+    · simp
+    · ext
+      rfl
+  rw [ihomObj₀Equiv, Equiv.trans_apply, curryHomEquiv'_symm_apply, uncurry', uncurry_eq,
+    reassoc_of% h]
+
+/-- The vertex of `Fun(X, Z)` corresponding to a map `f : X ⟶ Z` is adjoint to
+`X ⊗ Δ[0] ⟶ X ⟶ Z`. -/
+lemma yonedaEquiv_symm_ihomObj₀Equiv_symm (f : X ⟶ Z) :
+    yonedaEquiv.symm ((ihomObj₀Equiv X Z).symm f) = curry (fst X Δ[0] ≫ f) := by
+  suffices (ihomObj₀Equiv X Z).symm f = yonedaEquiv (curry (fst X Δ[0] ≫ f)) by
+    rw [this, Equiv.symm_apply_apply]
+  have h : (const (yonedaEquiv (curry (fst X Δ[0] ≫ f))) : X ⟶ (ihom X).obj Z) =
+      stdSimplex.isTerminalObj₀.from X ≫ curry (fst X Δ[0] ≫ f) := by
+    conv_rhs => rw [← yonedaEquiv.symm_apply_apply (curry (fst X Δ[0] ≫ f)),
+      yonedaEquiv_symm_zero]
+    exact (comp_const _ _).symm
+  rw [Equiv.symm_apply_eq, ihomObj₀Equiv_apply, h, lift_curry_ihom_ev_app, lift_fst_assoc,
+    Category.id_comp]
+
+/-- Precomposition `Fun(Y, Z) ⟶ Fun(X, Z)` with `f : X ⟶ Y` acts on vertices by precomposition. -/
+@[simp]
+lemma pre_app_app_ihomObj₀Equiv_symm {Y : SSet.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    ((pre f).app Z).app _ ((ihomObj₀Equiv Y Z).symm g) = (ihomObj₀Equiv X Z).symm (f ≫ g) := by
+  apply yonedaEquiv.symm.injective
+  rw [← yonedaEquiv_symm_comp, yonedaEquiv_symm_ihomObj₀Equiv_symm,
+    yonedaEquiv_symm_ihomObj₀Equiv_symm, curry_pre_app, whiskerRight_fst_assoc]
+
+/-- Restricting the homotopy defined by a `1`-simplex `s` of `Fun(X, Z)` to an end of the cylinder
+gives the map corresponding to the matching face of `s`. -/
+lemma whiskerLeft_δ_uncurry_yonedaEquiv_symm (s : ((ihom X).obj Z) _⦋1⦌) (i : Fin 2) :
+    X ◁ stdSimplex.δ i ≫ uncurry (yonedaEquiv.symm s) =
+      fst X Δ[0] ≫ ihomObj₀Equiv X Z (((ihom X).obj Z).δ i s) := by
+  rw [← uncurry_natural_left, stdSimplex.δ_comp_yonedaEquiv_symm,
+    ← (ihomObj₀Equiv X Z).symm_apply_apply (((ihom X).obj Z).δ i s),
+    yonedaEquiv_symm_ihomObj₀Equiv_symm, uncurry_curry, Equiv.apply_symm_apply]
+
+/-- A face of the `1`-simplex of `Fun(X, Z)` defined by a map `h : X ⊗ Δ[1] ⟶ Z` is adjoint to
+the restriction of `h` along the matching face of `Δ[1]`. -/
+lemma yonedaEquiv_symm_δ_yonedaEquiv_curry (h : X ⊗ Δ[1] ⟶ Z) (i : Fin 2) :
+    yonedaEquiv.symm (((ihom X).obj Z).δ i (yonedaEquiv (curry h))) =
+      curry (X ◁ stdSimplex.δ i ≫ h) := by
+  rw [← stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.symm_apply_apply, curry_natural_left]
+
+variable (f g : X ⟶ Z)
+
+/-- The edges of `Fun(X, Z)` between the vertices corresponding to maps `f` and `g` are the
+simplicial homotopies from `f` to `g`, through the tensor-hom adjunction. -/
+@[no_expose]
+noncomputable def ihomEdgeEquiv :
+    Edge ((ihomObj₀Equiv X Z).symm f) ((ihomObj₀Equiv X Z).symm g) ≃ Homotopy f g where
+  toFun e := Homotopy.mk' (uncurry (yonedaEquiv.symm e.edge))
+    (by
+      have h := whiskerLeft_δ_uncurry_yonedaEquiv_symm e.edge 1
+      rw [e.src_eq, Equiv.apply_symm_apply, whiskerLeft_stdSimplex_δ_one, Category.assoc] at h
+      simpa using lift (𝟙 X) (stdSimplex.isTerminalObj₀.from X) ≫= h)
+    (by
+      have h := whiskerLeft_δ_uncurry_yonedaEquiv_symm e.edge 0
+      rw [e.tgt_eq, Equiv.apply_symm_apply, whiskerLeft_stdSimplex_δ_zero, Category.assoc] at h
+      simpa using lift (𝟙 X) (stdSimplex.isTerminalObj₀.from X) ≫= h)
+  invFun H := Edge.mk (yonedaEquiv (curry H.h))
+    (by
+      apply yonedaEquiv.symm.injective
+      rw [yonedaEquiv_symm_δ_yonedaEquiv_curry, whiskerLeft_stdSimplex_δ_one, Category.assoc,
+        H.h₀, yonedaEquiv_symm_ihomObj₀Equiv_symm])
+    (by
+      apply yonedaEquiv.symm.injective
+      rw [yonedaEquiv_symm_δ_yonedaEquiv_curry, whiskerLeft_stdSimplex_δ_zero, Category.assoc,
+        H.h₁, yonedaEquiv_symm_ihomObj₀Equiv_symm])
+  left_inv e := by
+    ext
+    simp
+  right_inv H := by
+    apply RelativeMorphism.Homotopy.ext
+    simp
+
+/-- The homotopy defined by an edge of `Fun(X, Z)` is its uncurried `1`-simplex. -/
+@[simp]
+lemma ihomEdgeEquiv_apply_h
+    (e : Edge ((ihomObj₀Equiv X Z).symm f) ((ihomObj₀Equiv X Z).symm g)) :
+    (ihomEdgeEquiv f g e).h = uncurry (yonedaEquiv.symm e.edge) :=
+  (rfl)
+
+/-- The edge defined by a homotopy is its curried form. -/
+@[simp]
+lemma ihomEdgeEquiv_symm_apply_edge (H : Homotopy f g) :
+    ((ihomEdgeEquiv f g).symm H).edge = yonedaEquiv (curry H.h) :=
+  (rfl)
+
+end MappingSpace
+
+end SSet
 
 namespace SSetPair
 
