@@ -144,6 +144,28 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_ε
   rw [Functor.LaxMonoidal.comp_ε, hε]
   rfl
 
+variable {X} in
+/-- The tensor map `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) ⟶ Γ(M ⊗ N, U)` of the sections functor is the
+sheafification unit at `U` of the sectionwise tensor product, followed by the identification
+`SheafOfModules.tensorUnderlyingIso` of its sheafification with `M ⊗ N`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_μ (U : X.Opens)
+    (M N : X.Modules) :
+    Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N =
+      ((SheafOfModules.sheafificationForgetAdjunction X.sheaf).unit.app
+          (M.val ⊗ N.val)).app (Opposite.op U) ≫
+        (_root_.SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M N).inv.val.app
+          (Opposite.op U) := by
+  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf :=
+    _root_.SheafOfModules.forget _
+  let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
+  -- The sections functor is `F` followed by evaluation at `U`, whose tensor map is the identity.
+  change (Functor.LaxMonoidal.μ F M N).app (Opposite.op U) = _
+  -- `forget_μ` is stated for sheaves of modules over `ringCatSheaf X.sheaf`, which `rw` does not
+  -- match against `X.Modules`, so it is first instantiated at the goal's `μ`.
+  rw [show Functor.LaxMonoidal.μ F M N = _ from SheafOfModules.forget_μ (R := X.sheaf) M N,
+    PresheafOfModules.comp_app]
+  rfl
+
 end
 
 end TauCeti
