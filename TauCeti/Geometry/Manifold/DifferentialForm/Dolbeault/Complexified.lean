@@ -43,12 +43,14 @@ the `(0,2)`-form `∂bar ∂bar f` takes the value `∂bar ∂bar f(v, w)` on th
 * `TauCeti.SmoothAlmostComplexStructure.liftBaseChangeFinTwo_delBar_delBar_eq_zero_of_mem_left`
   and its companions: the vanishing of `∂bar ∂bar f` and `∂∂f` off the vectors of type `(0,1)`,
   respectively `(1,0)`.
-* `SmoothAlmostComplexStructure.delBar_delBar_apply_eq_liftBaseChangeFinOne_holomorphicPart`
-  and `SmoothAlmostComplexStructure.del_del_apply_eq_liftBaseChangeFinOne_antiholomorphicPart`:
+* `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_apply_eq_liftBaseChangeFinOne_holomorphicPart`
+  and
+  `TauCeti.SmoothAlmostComplexStructure.del_del_apply_eq_liftBaseChangeFinOne_antiholomorphicPart`:
   the formulas on real tangent vectors through their `(0,1)`- and `(1,0)`-parts.
-* `SmoothAlmostComplexStructure.liftBaseChangeFinTwo_delBar_delBar_apply_inv_four_smul_nijenhuis`
-  and `SmoothAlmostComplexStructure.liftBaseChangeFinTwo_del_del_apply_inv_four_smul_nijenhuis`:
-  the formulas for the normalization `N' = N_J / 4`.
+* In the namespace `TauCeti.SmoothAlmostComplexStructure`,
+  `liftBaseChangeFinTwo_delBar_delBar_apply_inv_four_smul_nijenhuis` and
+  `liftBaseChangeFinTwo_del_del_apply_inv_four_smul_nijenhuis`: the formulas for the
+  normalization `N' = N_J / 4`.
 
 ## References
 
@@ -100,9 +102,7 @@ theorem liftBaseChangeFinTwo_del_del_apply (f : SmoothForm I M F 0) (x : M)
 
 /-- **`∂bar²` on real tangent vectors through their `(0,1)`-parts.** For a smooth function `f`
 and real tangent vectors `v` and `w`, `∂bar ∂bar f(v, w) = -∂f(N_J(v, w)^(1,0)) / 4`, with `∂f`
-extended complex-linearly. This is the formula on two complexified vectors of type `(0,1)`,
-evaluated at `v^(0,1)` and `w^(0,1)`: the `(0,2)`-form `∂bar ∂bar f` takes the value
-`∂bar ∂bar f(v, w)` there, and `N_J(v^(0,1), w^(0,1)) = N_J(v, w)^(1,0)`. -/
+extended complex-linearly. -/
 theorem delBar_delBar_apply_eq_liftBaseChangeFinOne_holomorphicPart (f : SmoothForm I M F 0)
     (x : M) (v w : TangentSpace I x) :
     (J.delBar (J.delBar f)).1 x ![v, w] =
@@ -116,9 +116,7 @@ theorem delBar_delBar_apply_eq_liftBaseChangeFinOne_holomorphicPart (f : SmoothF
 
 /-- **`∂²` on real tangent vectors through their `(1,0)`-parts.** For a smooth function `f` and
 real tangent vectors `v` and `w`, `∂∂f(v, w) = -∂bar f(N_J(v, w)^(0,1)) / 4`, with `∂bar f`
-extended complex-linearly. This is the formula on two complexified vectors of type `(1,0)`,
-evaluated at `v^(1,0)` and `w^(1,0)`: the `(2,0)`-form `∂∂f` takes the value `∂∂f(v, w)` there,
-and `N_J(v^(1,0), w^(1,0)) = N_J(v, w)^(0,1)`. -/
+extended complex-linearly. -/
 theorem del_del_apply_eq_liftBaseChangeFinOne_antiholomorphicPart (f : SmoothForm I M F 0)
     (x : M) (v w : TangentSpace I x) :
     (J.del (J.del f)).1 x ![v, w] =
@@ -139,9 +137,7 @@ theorem liftBaseChangeFinTwo_delBar_delBar_apply_inv_four_smul_nijenhuis (f : Sm
         (BilinMap.baseChange ℂ ((4 : ℝ)⁻¹ • J.nijenhuis x).toLinearMap₁₂ X Y) := by
   rw [← neg_one_smul ℂ]
   refine ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (fun v w ↦ ?_) X Y
-  have h := ((J.del f).1 x).toAlternatingMap.map_vecCons_smul ![] (4⁻¹ : ℝ) (J.nijenhuis x v w)
-  rw [ContinuousAlternatingMap.coe_toAlternatingMap] at h
-  simp [delBar_delBar_apply, h, ← Complex.coe_smul]
+  simp [delBar_delBar_apply, ContinuousAlternatingMap.vecCons_smul, ← Complex.coe_smul]
 
 /-- **`∂²` for the normalized Nijenhuis tensor.** With the convention `N' = N_J / 4`, for a
 smooth function `f` and complexified tangent vectors `X` and `Y`, in particular two vectors of
@@ -153,9 +149,7 @@ theorem liftBaseChangeFinTwo_del_del_apply_inv_four_smul_nijenhuis (f : SmoothFo
         (BilinMap.baseChange ℂ ((4 : ℝ)⁻¹ • J.nijenhuis x).toLinearMap₁₂ X Y) := by
   rw [← neg_one_smul ℂ]
   refine ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (fun v w ↦ ?_) X Y
-  have h := ((J.delBar f).1 x).toAlternatingMap.map_vecCons_smul ![] (4⁻¹ : ℝ) (J.nijenhuis x v w)
-  rw [ContinuousAlternatingMap.coe_toAlternatingMap] at h
-  simp [del_del_apply, h, ← Complex.coe_smul]
+  simp [del_del_apply, ContinuousAlternatingMap.vecCons_smul, ← Complex.coe_smul]
 
 variable {x : M} {X Y : ℂ ⊗[ℝ] TangentSpace I x}
 
