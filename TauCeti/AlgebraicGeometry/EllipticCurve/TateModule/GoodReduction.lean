@@ -89,11 +89,15 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
     (h : Nat.card (AddSubgroup.torsionBy (W⁄L).toAffine.Point n) = n ^ 2) :
     n ≤ s.componentCount := by
   -- Over the valuation ring `A = 𝒪[L]` the integral model of `W⁄L` is that of `W`, and `ϖ` is
-  -- still a uniformiser, since `L/K` is unramified.
+  -- still a uniformiser, since `L/K` is unramified. `A` is `𝒪[L]` packaged as a valuation
+  -- subring: its underlying subring is `Valuation.integer (valuation L)` by definition, so the
+  -- `𝒪[L]` facts below (its Henselian structure and algebra, `maximalIdeal_eq` for its uniformiser
+  -- and `algebraMap_integerRing_dvd_iff`) apply to `A` as they stand.
   set A := (valuation L).valuationSubring
   have : HenselianLocalRing A := inferInstanceAs (HenselianLocalRing 𝒪[L])
   let : Algebra 𝒪[K] A := inferInstanceAs (Algebra 𝒪[K] 𝒪[L])
-  have hmodel := integralModel_baseChange (R := 𝒪[K]) (S := A) (L := L) rfl W
+  have hmodel := integralModel_baseChange (R := 𝒪[K]) (S := A) (L := L)
+    (RingHom.ext coe_algebraMap_integerRing) W
   have hϖA : maximalIdeal A = Ideal.span {algebraMap 𝒪[K] A ϖ} :=
     (IsUnramified.irreducible_algebraMap hϖ).maximalIdeal_eq
   -- Tate's algorithm stops at `s` on the integral model over `A`: divisibility by powers of `ϖ`

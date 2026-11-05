@@ -14,8 +14,7 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Reduction
 -- Proof-only: a multiplicative reduction is a nodal cubic.
 import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
--- Proof-only: local-field structures on finite subextensions, descent of points to them, and the
--- integral model over the valuation ring of the maximal ideal of `𝒪[L]`.
+-- Proof-only: local-field structures on finite subextensions, and descent of points to them.
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 
 /-!
@@ -102,21 +101,6 @@ Dedekind domain to the discrete valuation ring `𝒪[L]`, at its maximal ideal
 `WeierstrassCurve.integralModel_valuationSubring_maximalPrime` gives the integral model of `W` over
 `B`. The private declarations below supply its reduction and the action of a Frobenius on the
 residues of `B`. -/
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K L] in
-variable (K L) in
-/-- The map from `𝒪[K]` to the valuation ring of `L` is local. -/
-private theorem isLocalHom_algebraMap_valuationSubringMaximalPrime :
-    IsLocalHom (algebraMap 𝒪[K] ((maximalPrime L).valuation L).valuationSubring) :=
-  ⟨fun r hr ↦ by
-    by_contra hr'
-    rw [Valuation.Integer.not_isUnit_iff_valuation_lt_one] at hr'
-    rw [(Valuation.valuationSubring.integers _).isUnit_iff_valuation_eq_one] at hr
-    have h₁ : valuation L (algebraMap K L r) < 1 :=
-      (Valuation.HasExtension.val_map_lt_one_iff (vR := valuation K) (vA := valuation L) _).mpr hr'
-    exact ((isEquiv_valuation_maximalPrime L).lt_one_iff_lt_one.mpr h₁).ne hr⟩
-
-attribute [local instance] isLocalHom_algebraMap_valuationSubringMaximalPrime
 
 omit [Module.Finite K L] in
 /-- The reduction of the base change of `W` over the valuation ring of `L` is the reduction of `W`

@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Inertia
-public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Galois
-public import TauCeti.NumberTheory.LocalField.MaximalPrime
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 
 /-!
@@ -69,32 +68,6 @@ public section
 open ValuativeRel IsLocalRing TauCeti
 
 namespace WeierstrassCurve
-
-section MaximalPrime
-
-/-! The statements over the fraction field of a Dedekind domain apply over a local field `L` at the
-maximal ideal `TauCeti.maximalPrime L` of `𝒪[L]`. The valuation ring of its adic valuation is
-`𝒪[L]` again, and the declarations below supply the integral model of `W` over it. -/
-
-variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] (W : WeierstrassCurve K)
-  [IsIntegral 𝒪[K] W]
-
-/-- The base change of an equation integral over `𝒪[K]` is integral over the valuation ring of the
-adic valuation of the maximal ideal of `𝒪[L]`. -/
-instance isIntegral_valuationSubring_maximalPrime :
-    IsIntegral ((maximalPrime L).valuation L).valuationSubring (W⁄L) :=
-  IsIntegral.baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
-
-/-- The integral model of the base change of `W` over the valuation ring of the adic valuation of
-the maximal ideal of `𝒪[L]` is the image of the integral model of `W` over `𝒪[K]`. -/
-theorem integralModel_valuationSubring_maximalPrime :
-    integralModel ((maximalPrime L).valuation L).valuationSubring (W⁄L) =
-      (integralModel 𝒪[K] W).map
-        (algebraMap 𝒪[K] ((maximalPrime L).valuation L).valuationSubring) :=
-  integralModel_baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
-
-end MaximalPrime
 
 section FiniteExtension
 
