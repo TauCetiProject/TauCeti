@@ -51,6 +51,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `TauCeti.intervalIntegrable_one_sub_rpow_rpow` and `TauCeti.integral_one_sub_rpow_rpow` — the
   power-substituted form `∫ t in 0..1, (1 - t ^ p) ^ (b - 1) = Β(p⁻¹, b) / p` of the beta
   integral, obtained by substituting `u = t ^ p`;
+* `TauCeti.intervalIntegrable_one_sub_sq_rpow` and `TauCeti.integral_one_sub_sq_rpow` — its
+  symmetric form `∫ z in -1..1, (1 - z ^ 2) ^ (b - 1) = Β(1 / 2, b)`;
 * `TauCeti.integrableOn_rpow_mul_one_add_rpow_iff` and
   `TauCeti.integral_rpow_mul_one_add_rpow` — Euler's second beta integral and its sharp
   integrability criterion,
@@ -309,6 +311,36 @@ theorem integral_one_sub_rpow_rpow (hp : 0 < p) (hb : 0 < b) :
     ← intervalIntegral.integral_of_le zero_le_one,
     integral_rpow_mul_one_sub_rpow (inv_pos.2 hp) hb] at h
   rw [h, mul_div_cancel_left₀ _ hp.ne']
+
+private lemma intervalIntegrable_one_sub_sq_rpow_zero_one (hb : 0 < b) :
+    IntervalIntegrable (fun z : ℝ => (1 - z ^ 2) ^ (b - 1)) volume 0 1 := by
+  simpa only [Real.rpow_two] using intervalIntegrable_one_sub_rpow_rpow two_pos hb
+
+/-- The integrand `(1 - z ^ 2) ^ (b - 1)` is interval integrable on `[-1, 1]` for positive
+`b`. -/
+theorem intervalIntegrable_one_sub_sq_rpow (hb : 0 < b) :
+    IntervalIntegrable (fun z : ℝ => (1 - z ^ 2) ^ (b - 1)) volume (-1) 1 := by
+  have h := intervalIntegrable_one_sub_sq_rpow_zero_one hb
+  refine IntervalIntegrable.trans (b := 0) ?_ h
+  simpa only [neg_zero, neg_sq] using (IntervalIntegrable.iff_comp_neg (by simp)).1 h.symm
+
+/-- **Euler's beta integral over `[-1, 1]`**: for positive `b`,
+`∫ z in -1..1, (1 - z ^ 2) ^ (b - 1) = Β(1 / 2, b)`. -/
+theorem integral_one_sub_sq_rpow (hb : 0 < b) :
+    ∫ z in (-1 : ℝ)..1, (1 - z ^ 2) ^ (b - 1) = beta (1 / 2) b := by
+  have h := intervalIntegrable_one_sub_sq_rpow_zero_one hb
+  have h1 : ∫ z in (0 : ℝ)..1, (1 - z ^ 2) ^ (b - 1) = beta (1 / 2) b / 2 := by
+    simpa only [Real.rpow_two, one_div] using integral_one_sub_rpow_rpow two_pos hb
+  have hneg : IntervalIntegrable (fun z : ℝ => (1 - z ^ 2) ^ (b - 1)) volume (-1) 0 := by
+    simpa only [neg_zero, neg_sq] using (IntervalIntegrable.iff_comp_neg (by simp)).1 h.symm
+  have h2 : ∫ z in (-1 : ℝ)..0, (1 - z ^ 2) ^ (b - 1) =
+      ∫ z in (0 : ℝ)..1, (1 - z ^ 2) ^ (b - 1) := by
+    have hc := intervalIntegral.integral_comp_neg (a := 0) (b := 1)
+      fun z : ℝ => (1 - z ^ 2) ^ (b - 1)
+    simp only [neg_sq, neg_zero] at hc
+    exact hc.symm
+  rw [← intervalIntegral.integral_add_adjacent_intervals hneg h, h2, h1]
+  ring
 
 end PowerSubstitution
 
