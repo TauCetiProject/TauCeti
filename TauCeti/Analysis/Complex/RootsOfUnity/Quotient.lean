@@ -152,6 +152,11 @@ theorem coe_rootsOfUnityBall (r : ℝ) :
 theorem mem_rootsOfUnityBall {r : ℝ} {u : ℂ} : u ∈ rootsOfUnityBall m r ↔ ‖u‖ < r := by
   rw [← SetLike.mem_coe, coe_rootsOfUnityBall, mem_ball_zero_iff]
 
+/-- The rotations do not change the coordinate `u ↦ u ^ m` of a point of the disc. -/
+theorem coe_smul_rootsOfUnityBall_pow {r : ℝ} (ζ : rootsOfUnity m ℂ) (u : rootsOfUnityBall m r) :
+    ((ζ • u : rootsOfUnityBall m r) : ℂ) ^ m = (u : ℂ) ^ m := by
+  rw [SubMulAction.val_smul, rootsOfUnity.smul_pow]
+
 /-- For `0 ≤ r`, the map `u ↦ u ^ m` sends the disc of radius `r` about `0` onto the disc of
 radius `r ^ m`. -/
 theorem image_pow_ball {r : ℝ} (hr : 0 ≤ r) :
