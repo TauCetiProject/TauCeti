@@ -47,7 +47,9 @@ which gives the energy bound `E(u) ≤ a_0 + a_1 - a_∞ + B_0 + B_1 + B_∞`
 `a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞` for the output
 (`SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction`): the potential bound under which
 the counts of such solutions form a supported product kernel
-(`TauCeti.NovikovModule.kernelProduct`).
+(`TauCeti.NovikovModule.kernelProduct`). The same bound already holds for the actions of the end
+loops on each truncation `S_R` with `R ≥ 2`, without any convergence of the actions
+(`SymplecticForm.hamiltonianAction_le_add_add_sum`).
 
 ## References
 
@@ -324,12 +326,59 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_le (ω : Symplectic
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z (u z)), abs_integral_hamiltonianCurvature_le ω hH hHs hB u]
 
+/-- **The action bound on a truncated pair of pants.** Let `K` be the pair-of-pants perturbation
+of period-one `C¹` Hamiltonians `H_q` with `|H_q| ≤ B_q`, and let `u` be a map which is `C²` on
+`S = ℂ ∖ {0, 1}` and solves the Floer equation `(du - X_K)^{0,1} = 0` there for almost complex
+structures `J(z)` tamed by `ω`. For every `R ≥ 2`, the action of the output loop
+`ℓ_∞(t) = u(φ_∞(-R + i t))` is at most the sum of the actions of the input loops
+`ℓ_q(t) = u(φ_q(R + i t))` plus `B_0 + B_1 + B_∞`:
+
+`A_{H_∞}(ℓ_∞) ≤ A_{H_0}(ℓ_0) + A_{H_1}(ℓ_1) + B_0 + B_1 + B_∞`.
+
+No convergence of the actions as `R → ∞` is assumed. -/
+theorem hamiltonianAction_le_add_add_sum (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J z) (ω.perturbedFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z : ℝ × ℝ →ₗ[ℝ] V))
+    {R : ℝ} (hR : 2 ≤ R) :
+    ω.hamiltonianAction (H inf) (fun t ↦ u (Complex.equivRealProdCLM
+        (inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) ≤
+      ω.hamiltonianAction (H zero) (fun t ↦ u (Complex.equivRealProdCLM
+          (zero.cylindricalEndLift (↑R + ↑t * Complex.I)))) +
+        ω.hamiltonianAction (H one) (fun t ↦ u (Complex.equivRealProdCLM
+          (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) + ∑ q, B q := by
+  -- The energy over `S_R` is nonnegative.
+  have hnonneg := (setIntegral_nonneg (measurableSet_truncation R) fun z hz ↦
+      ω.floerEnergyDensity_nonneg (hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
+        (hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)).trans_eq
+    (integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
+      ω hH hHs hu hR)
+  simp only [sum_univ, endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul]
+    at hnonneg
+  linarith [neg_abs_le (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)), abs_integral_hamiltonianCurvature_le ω hH hHs hB u]
+
 /-- **The action bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
 `|H_q| ≤ B_q`, then the limiting action of the output end is at most the sum of the limiting
 actions of the input ends plus `B_0 + B_1 + B_∞`:
 
-`a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞`. -/
+`a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞`.
+
+This is the limit `R → ∞` of `SymplecticForm.hamiltonianAction_le_add_add_sum`. -/
 theorem le_add_add_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
@@ -348,18 +397,12 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
     (ha : ∀ q, Tendsto (fun R ↦ ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) atTop (𝓝 (a q))) :
     a inf ≤ a zero + a one + ∑ q, B q := by
-  -- The energy over each truncation is nonnegative, hence so is its limit.
-  have hnonneg := ge_of_tendsto' (tendsto_integral_floerEnergyDensity_truncation ω hH hHs hu ha)
-    fun n ↦ setIntegral_nonneg (measurableSet_truncation _) fun z hz ↦
-      ω.floerEnergyDensity_nonneg (hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
-        (hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
-  have hcurv := abs_integral_hamiltonianCurvature_le ω hH hHs hB u
-  rw [sum_univ, endSign_zero, endSign_one, endSign_inf] at hnonneg
-  linarith [neg_abs_le (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z))]
+  have h₀ := ha zero
+  have h₁ := ha one
+  have hinf := ha inf
+  simp only [endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul] at h₀ h₁ hinf
+  exact le_of_tendsto_of_tendsto hinf ((h₀.add h₁).add_const _) <| eventually_atTop.2
+    ⟨2, fun R hR ↦ hamiltonianAction_le_add_add_sum ω hH hHs hB hu hJ hfloer hR⟩
 
 end SymplecticForm
 
