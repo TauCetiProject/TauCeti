@@ -263,14 +263,8 @@ theorem hilbertClassField_le_narrowHilbertClassField :
 there are no real places at which a narrow class field could allow extra ramification. -/
 @[simp]
 theorem narrowHilbertClassField_eq_hilbertClassField [IsTotallyComplex K] :
-    narrowHilbertClassField K = hilbertClassField K := by
-  have h : narrowModulus K = Modulus.one K := by
-    apply Modulus.ext
-    · simp
-    · apply Finset.ext
-      rintro ⟨w, hw⟩
-      exact (InfinitePlace.not_isReal_iff_isComplex.mpr (IsTotallyComplex.isComplex w) hw).elim
-  exact congrArg rayClassField h
+    narrowHilbertClassField K = hilbertClassField K :=
+  congrArg rayClassField (narrowModulus_eq_one K)
 
 /-- **Reciprocity for the Hilbert class field**: the Artin map identifies the class group of `K`
 with the Galois group of the Hilbert class field: `rayClassArtinEquiv` at the trivial modulus, read
@@ -380,6 +374,18 @@ theorem fieldRange_le_hilbertClassField_iff (ι : L →ₐ[K] SeparableClosure K
       (∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal) ∧
         IsUnramifiedAtInfinitePlaces K L := by
   rw [← isAdmissibleModulus_iff_le_rayClassField, isAdmissibleModulus_one_iff]
+
+variable {K} in
+/-- An everywhere-unramified abelian extension whose degree equals the class number is the
+Hilbert class field, for every embedding into the separable closure of the base. -/
+theorem fieldRange_eq_hilbertClassField_of_unramified_of_finrank_eq_classNumber
+    (ι : L →ₐ[K] SeparableClosure K)
+    (hfin : ∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
+    (hinf : IsUnramifiedAtInfinitePlaces K L) (hdeg : Module.finrank K L = classNumber K) :
+    ι.fieldRange = hilbertClassField K := by
+  apply IntermediateField.eq_of_le_of_finrank_eq
+  · exact (fieldRange_le_hilbertClassField_iff ι).2 ⟨hfin, hinf⟩
+  · rw [← ι.equivFieldRange.toLinearEquiv.finrank_eq, finrank_hilbertClassField, hdeg]
 
 /-- **The narrow Hilbert class field is unramified at every finite prime**: every prime of the
 narrow Hilbert class field of `K` is unramified over `𝓞 K`. -/

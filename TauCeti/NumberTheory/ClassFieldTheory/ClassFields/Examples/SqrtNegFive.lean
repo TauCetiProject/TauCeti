@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
+public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.GenusField
 public import TauCeti.NumberTheory.Multiquadratic.MinusFive.GenusField
 import TauCeti.NumberTheory.Multiquadratic.MinusFive.ClassNumber
 
@@ -39,6 +39,7 @@ variable (hd : Squarefree (-5 : ℤ))
 
 -- The generic intermediate-field shortcuts search for an action of the genus field on the
 -- separable closure of its base. Supply the intended base action directly to avoid that search.
+-- These shortcuts are definitionally equal to the corresponding global instances.
 /-- The canonical action of the quadratic base on its separable closure. -/
 local instance : Algebra (candidateGenusFieldBase hd)
     (SeparableClosure (candidateGenusFieldBase hd)) :=
@@ -71,16 +72,10 @@ theorem fieldRange_candidateGenusField_neg_five_eq_hilbertClassField
     (ι : candidateGenusField hd →ₐ[candidateGenusFieldBase hd]
       SeparableClosure (candidateGenusFieldBase hd)) :
     ι.fieldRange = hilbertClassField (candidateGenusFieldBase hd) := by
-  apply IntermediateField.eq_of_le_of_finrank_eq
-  · apply (fieldRange_le_hilbertClassField_iff ι).2
-    refine ⟨fun w ↦ ?_, isUnramifiedAtInfinitePlaces_candidateGenusField hd (by norm_num)⟩
-    exact isUnramifiedIn_candidateGenusField hd (by norm_num)
-      (w.asIdeal.under (𝓞 (candidateGenusFieldBase hd))) w.asIdeal inferInstance inferInstance
-  · rw [← ι.equivFieldRange.toLinearEquiv.finrank_eq,
-      finrank_hilbertClassField_sqrt_neg_five,
-      finrank_candidateGenusField_over_candidateGenusFieldBase hd (by norm_num),
-      genusPrimeDiscriminants_neg_five]
-    norm_num
+  apply fieldRange_candidateGenusField_eq_hilbertClassField hd (by norm_num) ?_ ι
+  rw [← finrank_hilbertClassField, finrank_hilbertClassField_sqrt_neg_five,
+    genusPrimeDiscriminants_neg_five]
+  norm_num
 
 /-- **`H(ℚ(√-5)) ≃ ℚ(i, √5)`.** The abstract Hilbert class field, defined by global class-field
 correspondence, has the concrete complex presentation as the compositum of `i` and `√5`. -/
