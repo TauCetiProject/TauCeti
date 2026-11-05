@@ -19,7 +19,8 @@ and, for complete codomains, constant forcing `c` produces exactly `t • c`.
 This is the value component of the classical inhomogeneous heat solution operator. Spatial
 Hölder regularity of the forcing controls the value's parabolic seminorm; time regularity is
 not needed for that estimate. Derivative fields and the heat equation are separate assertions,
-not part of this map's codomain.
+not part of this map's codomain; the spatial slices of the potential are nevertheless `C²`,
+including the initial slice (`TauCeti.contDiff_spatialSlice_heatDuhamelPotentialHolderL`).
 
 ## References
 
@@ -151,5 +152,16 @@ theorem norm_heatDuhamelPotentialHolderL_le (hα : 0 < α) (hα₂ : α ≤ 2) :
     ‖heatDuhamelPotentialHolderL (E := E) (F := F) (T := T) hα hα₂‖ ≤
       (T * (2 + heatKernelMoment E α) + max 1 T : ℝ≥0) :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_potential_le hα hα₂)
+
+/-- Every spatial slice of the bounded Hölder Duhamel potential is `C²`, including time zero.
+Only positivity of the spatial Hölder exponent is needed for this regularity. -/
+theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL [CompleteSpace F] (hα : 0 < α)
+    (hα₂ : α ≤ 2) (f : HolderSpace α (slab (E := E) 0 T) F) (t : Icc (0 : ℝ) T) :
+    ContDiff ℝ 2 (fun x => heatDuhamelPotentialHolderL hα hα₂ f (slabMk x t)) := by
+  simp only [heatDuhamelPotentialHolderL_apply, time_slabMk, space_slabMk]
+  exact contDiff_heatDuhamelPotential_of_forall_holderWith
+    (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
+    (fun s _ x => norm_timeExtension_le T.coe_nonneg f s x)
+    (fun s _ => holderWith_timeExtension_holderSpace T.coe_nonneg f s) hα t.2
 
 end TauCeti

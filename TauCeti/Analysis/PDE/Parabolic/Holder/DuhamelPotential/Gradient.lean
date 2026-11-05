@@ -13,11 +13,12 @@ import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Gradient
 
 For forcing `f` in the bounded parabolic Hölder space `C_b^{α,α/2}` on the slab `E × [0, T]`, with
 `0 < α < 2`, the spatial slices of the Duhamel potential `heatDuhamelPotentialHolderL f` are `C²`,
-including the initial slice, and their gradients form a bounded continuous field on the closed
-slab. Taking this field is a continuous linear map `heatDuhamelPotentialGradientL` into
-`slab →ᵇ (E →L[ℝ] F)`, with `‖D w‖_∞ ≤ C √T ‖f‖` for a constant `C` independent of the horizon
-`T`. This is the gradient field of the order-two parabolic Hölder space `ParabolicC2HolderSpace`,
-together with the derivative identity that its constructor `ParabolicC2HolderSpace.mk` requires.
+including the initial slice (`TauCeti.contDiff_spatialSlice_heatDuhamelPotentialHolderL`), and
+their gradients form a bounded continuous field on the closed slab. Taking this field is a
+continuous linear map `heatDuhamelPotentialGradientL` into `slab →ᵇ (E →L[ℝ] F)`, with
+`‖D w‖_∞ ≤ C √T ‖f‖` for a constant `C` independent of the horizon `T`. This is the gradient
+field of the order-two parabolic Hölder space `ParabolicC2HolderSpace`, together with the
+derivative identity that its constructor `ParabolicC2HolderSpace.mk` requires.
 
 The bound on the gradient is `TauCeti.exists_norm_fderiv_heatDuhamelPotential_le`, and its joint
 continuity on `[0, T] × E` is `TauCeti.continuousOn_fderiv_heatDuhamelPotential`, transported to
@@ -25,7 +26,6 @@ the slab along the continuous coordinate map.
 
 ## Main declarations
 
-* `TauCeti.contDiff_spatialSlice_heatDuhamelPotentialHolderL`: the spatial slices are `C²`.
 * `TauCeti.heatDuhamelPotentialGradientL`: the gradient of the Duhamel potential, as a continuous
   linear map from `C_b^{α,α/2}` to bounded continuous gradient fields.
 * `TauCeti.hasFDerivAt_heatDuhamelPotentialHolderL`: the field is the spatial derivative of the
@@ -86,15 +86,6 @@ private theorem gradient_eq (hα : 0 < α) (hα₂ : α ≤ 2) (f : HolderSpace 
   rw [slice_eq, gradient, coe_slabTime]
 
 variable [CompleteSpace F]
-
-/-- Every spatial slice of the bounded Hölder Duhamel potential is `C²`, including time zero.
-Only positivity of the spatial Hölder exponent is needed for this regularity. -/
-theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL (hα : 0 < α) (hα₂ : α ≤ 2)
-    (f : HolderSpace α (slab (E := E) 0 T) F) (t : Icc (0 : ℝ) T) :
-    ContDiff ℝ 2 (fun x => heatDuhamelPotentialHolderL hα hα₂ f (slabMk x t)) := by
-  rw [slice_eq]
-  exact contDiff_heatDuhamelPotential_of_forall_holderWith (stronglyMeasurable_forcing f)
-    (norm_forcing_le f) (fun r _ => holderWith_timeExtension_holderSpace T.coe_nonneg f r) hα t.2
 
 private theorem differentiableAt_spatialSlice (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) (t : Icc (0 : ℝ) T) (x : E) :

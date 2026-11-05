@@ -14,10 +14,9 @@ import TauCeti.Analysis.Holder.Interpolation
 Let `w(t, x) = ∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds` be the Duhamel heat potential of a jointly
 measurable forcing `f` whose slices `f(r, ·)`, `0 ≤ r ≤ T`, are bounded by `M` and `α`-Hölder with
 constant `H`, where `α > 0`. This file controls the gradient `D w` on the closed slab
-`[0, T] × E`, including the initial time:
+`[0, T] × E`, including the initial time, where every slice `w(t, ·)` is `C²`
+(`TauCeti.contDiff_heatDuhamelPotential_of_forall_holderWith`):
 
-* every slice `w(t, ·)` is `C²`
-  (`TauCeti.contDiff_heatDuhamelPotential_of_forall_holderWith`);
 * `D w(t, ·)` is Lipschitz with constant `C H T^(α/2)`
   (`TauCeti.exists_lipschitzWith_fderiv_heatDuhamelPotential`);
 * for `α < 2`, at each point `x` the gradient `t ↦ D w(t, ·)(x)` is `α/2`-Hölder on `[0, T]`,
@@ -61,21 +60,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {f : ℝ → E → F} {T M H α : ℝ≥0}
-
-/-- Every slice `w(t, ·)`, `0 ≤ t ≤ T`, of the Duhamel potential of a forcing with bounded,
-uniformly Hölder slices is `C²`, including the initial slice `w(0, ·) = 0`. -/
-theorem contDiff_heatDuhamelPotential_of_forall_holderWith
-    (hf : StronglyMeasurable (Function.uncurry f)) (hM : ∀ r ∈ Icc (0 : ℝ) T, ∀ y, ‖f r y‖ ≤ M)
-    (hH : ∀ r ∈ Icc (0 : ℝ) T, HolderWith H α (f r)) (hα : 0 < α) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) T) : ContDiff ℝ 2 (heatDuhamelPotential f t) := by
-  rcases ht.1.eq_or_lt with h0 | hpos
-  · rw [← h0, heatDuhamelPotential_zero]
-    exact contDiff_const
-  · exact contDiff_heatDuhamelPotential_of_holderWith hf
-      (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr =>
-        ae_of_all _ (hM r ⟨hr.1.le, hr.2.le.trans ht.2⟩))
-      (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr => hH r ⟨hr.1.le, hr.2.le.trans ht.2⟩)
-      hα hpos
 
 /-- **Temporal Hölder continuity of the gradient of the Duhamel potential.** For `0 < α < 2`
 there is a constant `C`, depending only on `α` and the dimension, with the following property.

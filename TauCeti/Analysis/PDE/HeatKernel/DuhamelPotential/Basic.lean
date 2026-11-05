@@ -79,6 +79,9 @@ the kernel at the cost of a factor `(t' - s)⁻¹`), which integrates to `O(H h^
 * `TauCeti.iteratedFDeriv_heatDuhamelPotential_of_holderWith`,
   `TauCeti.contDiff_heatDuhamelPotential_of_holderWith`: the spatial derivatives up to order two
   under the time integral, for forcing Hölder in space.
+* `TauCeti.contDiff_heatDuhamelPotential_of_forall_holderWith`: every slice `w(t, ·)`,
+  `0 ≤ t ≤ T`, including the initial one, is `C²` for forcing with uniformly bounded, uniformly
+  Hölder slices on `[0, T]`.
 * `TauCeti.exists_norm_iteratedFDeriv_two_heatDuhamelPotential_le`: the bound
   `‖D² w(t, x)‖ ≤ C H t^(α / 2)`.
 * `TauCeti.exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential`: for `0 < α < 1`,
@@ -425,6 +428,22 @@ theorem contDiff_heatDuhamelPotential_of_holderWith
   rw [heatDuhamelPotential_eq_fun]
   exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 2)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub
+
+/-- Every slice `w(t, ·)`, `0 ≤ t ≤ T`, of the Duhamel potential of a jointly measurable forcing
+whose slices `f(r, ·)`, `0 ≤ r ≤ T`, are bounded by `M` and `α`-Hölder with constant `H`, with
+`α > 0`, is `C²`, including the initial slice `w(0, ·) = 0`. -/
+theorem contDiff_heatDuhamelPotential_of_forall_holderWith {T : ℝ}
+    (hf : StronglyMeasurable (Function.uncurry f)) (hM : ∀ r ∈ Icc 0 T, ∀ y, ‖f r y‖ ≤ M)
+    {H α : ℝ≥0} (hH : ∀ r ∈ Icc 0 T, HolderWith H α (f r)) (hα : 0 < α) (ht : t ∈ Icc 0 T) :
+    ContDiff ℝ 2 (heatDuhamelPotential f t) := by
+  rcases ht.1.eq_or_lt with h0 | hpos
+  · rw [← h0, heatDuhamelPotential_zero]
+    exact contDiff_const
+  · exact contDiff_heatDuhamelPotential_of_holderWith hf
+      (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr =>
+        ae_of_all _ (hM r ⟨hr.1.le, hr.2.le.trans ht.2⟩))
+      (ae_restrict_of_forall_mem measurableSet_Ioo fun r hr => hH r ⟨hr.1.le, hr.2.le.trans ht.2⟩)
+      hα hpos
 
 /-- **The gradient bound for the Duhamel potential.** There is a constant `C`, depending only on
 the dimension, such that `‖D w(t, x)‖ ≤ C M √t` whenever `f` is jointly measurable and
