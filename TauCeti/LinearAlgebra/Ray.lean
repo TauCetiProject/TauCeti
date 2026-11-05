@@ -11,6 +11,9 @@ import Mathlib.Order.Preorder.Finite
 /-!
 # Vectors in the same ray: sums, finite orbits, and durations of segments
 
+Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`), complementing
+Mathlib's `Module.Ray.neg_units_smul`.
+
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
 direction. A vector lies in the same ray as such a sum exactly when it lies in the same ray as the
@@ -21,7 +24,9 @@ what makes the velocity of each segment of a path with velocities in a Weyl orbi
 the segment alone: if no two distinct points of a set `S ∌ 0` lie in the same ray, a segment `v`
 traversed in a positive time `d` at a velocity `d⁻¹ • v ∈ S` determines `d`
 (`Set.Pairwise.eq_of_snd_eq_of_inv_smul_mem`), and a list of such segments determines its list
-of durations (`Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem`).
+of durations (`Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem`). Two pairs `(d, v)` and `(e, w)`
+of positive durations lie in the same ray exactly when they have the same velocity
+(`Prod.sameRay_iff_inv_fst_smul_snd_eq`).
 -/
 
 public section
@@ -39,6 +44,18 @@ theorem SameRay.trans_of_ne_zero (hxy : SameRay R x y) (hyz : SameRay R y z) (hy
   hxy.trans hyz fun h ↦ absurd h hy
 
 end Semiring
+
+section Neg
+
+variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M]
+
+/-- Scaling a ray by a unit commutes with negating it. -/
+theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by
+  induction v using Module.Ray.ind with | h v hv =>
+    simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
+
+end Neg
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [IsTorsionFree R M] {x y z : M}
@@ -137,5 +154,30 @@ theorem Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem
       rw [List.map_cons, List.map_cons, List.cons.injEq] at h
       rw [List.forall_mem_cons] at hp hq
       rw [hS.eq_of_snd_eq_of_inv_smul_mem h0 hp.1 hq.1 h.1, ih hp.2 hq.2 h.2]
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
+/-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
+theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
+    (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
+  rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
+
+/-- Two pairs `(d, v)` and `(e, w)` with `0 < d` and `0 < e` lie in the same ray exactly when they
+have the same velocity, `d⁻¹ • v = e⁻¹ • w`. -/
+theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz : 0 < z.1) :
+    SameRay R y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
+  constructor
+  · intro h
+    obtain ⟨r, hr, rfl⟩ := h.exists_pos_left (fun h0 ↦ hy.ne' (by simp [h0]))
+      (fun h0 ↦ hz.ne' (by simp [h0]))
+    exact (inv_fst_smul_snd_smul hr.ne' y).symm
+  · intro h
+    -- Both pairs are positive multiples of `(1, u)`, where `u` is their common velocity.
+    have hy' : y = y.1 • ((1 : R), z.1⁻¹ • z.2) := by
+      ext <;> simp [← h, smul_inv_smul₀ hy.ne']
+    have hz' : z = z.1 • ((1 : R), z.1⁻¹ • z.2) := by
+      ext <;> simp [smul_inv_smul₀ hz.ne']
+    have h := ((SameRay.refl (R := R) ((1 : R), z.1⁻¹ • z.2)).nonneg_smul_left
+      hy.le).nonneg_smul_right hz.le
+    rwa [← hy', ← hz'] at h
 
 end Duration

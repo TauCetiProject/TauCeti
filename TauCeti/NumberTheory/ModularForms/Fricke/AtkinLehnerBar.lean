@@ -26,14 +26,15 @@ The relation is that conjugating the bar by `W` deletes the transpose and leaves
 Nothing here is deep — in size two, `adjugate` is itself a conjugated transpose, `adjugate g =
 J · gᵀ · J⁻¹` for `J = !![0, -1; 1, 0]`, so bar and adjugate differ by conjugation by `J · w⁻¹`,
 and that matrix is `W` up to a scalar, which conjugation does not see. What the identity buys is
-a translation: the Petersson adjoint produces `adjugateGL`, the `α ↦ (det α) · α⁻¹` involution of
-`TauCeti/NumberTheory/ModularForms/SlashAdjugate.lean`, while the Hecke ring's commutativity
-argument is phrased in the bar. The two layers can now be moved between.
+a translation: the Petersson adjoint produces `Matrix.GeneralLinearGroup.adjugate`, the
+`α ↦ (det α) · α⁻¹` involution of `TauCeti/NumberTheory/ModularForms/SlashAdjugate.lean`, while
+the Hecke ring's commutativity argument is phrased in the bar. The two layers can now be moved
+between.
 
 ## Main results
 
-* `TauCeti.adjugateGL_eq_frickeGL_conj_bar`: `adjugate x = W · bar x · W⁻¹` for `x ∈ Δ₀(N)`.
-* `TauCeti.bar_eq_inv_frickeGL_conj_adjugateGL`: the same read the other way,
+* `TauCeti.adjugate_eq_frickeGL_conj_bar`: `adjugate x = W · bar x · W⁻¹` for `x ∈ Δ₀(N)`.
+* `TauCeti.bar_eq_inv_frickeGL_conj_adjugate`: the same read the other way,
   `bar x = W⁻¹ · adjugate x · W`.
 
 ## References
@@ -57,20 +58,20 @@ The two "Atkin–Lehner" matrices of this development are the diagonal `w = diag
 conjugates the transpose to give the Hecke-ring bar, and `W`, the Fricke matrix. Since in size
 two the adjugate is itself a conjugated transpose, the bar and the adjugate differ by a single
 conjugation, and this identifies it. -/
-theorem adjugateGL_eq_frickeGL_conj_bar [NeZero N] {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
-    adjugateGL x = frickeGL ℚ N * (atkinLehnerAntiInvolution N).bar x hx * (frickeGL ℚ N)⁻¹ := by
+theorem adjugate_eq_frickeGL_conj_bar [NeZero N] {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
+    x.adjugate = frickeGL ℚ N * (atkinLehnerAntiInvolution N).bar x hx * (frickeGL ℚ N)⁻¹ := by
   obtain ⟨A, hA, -, ⟨c, hc⟩, -⟩ := (mem_Delta0_iff N).mp hx
   refine eq_mul_inv_of_mul_eq (Units.ext ?_)
-  rw [Units.val_mul, Units.val_mul, adjugateGL_val, hA, Matrix.adjugate_fin_two,
-    atkinLehnerAntiInvolution_bar_val N hx A hA c hc]
+  rw [Units.val_mul, Units.val_mul, GeneralLinearGroup.coe_adjugate, hA,
+    Matrix.adjugate_fin_two, atkinLehnerAntiInvolution_bar_val N hx A hA c hc]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, hc, mul_comm]
 
 /-- **The Atkin–Lehner bar, recovered from the adjugate**: `bar x = W⁻¹ · adjugate x · W`. This
-is `adjugateGL_eq_frickeGL_conj_bar` read in the other direction. -/
-theorem bar_eq_inv_frickeGL_conj_adjugateGL [NeZero N] {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
-    (atkinLehnerAntiInvolution N).bar x hx = (frickeGL ℚ N)⁻¹ * adjugateGL x * frickeGL ℚ N := by
-  rw [adjugateGL_eq_frickeGL_conj_bar N hx]
+is `adjugate_eq_frickeGL_conj_bar` read in the other direction. -/
+theorem bar_eq_inv_frickeGL_conj_adjugate [NeZero N] {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
+    (atkinLehnerAntiInvolution N).bar x hx = (frickeGL ℚ N)⁻¹ * x.adjugate * frickeGL ℚ N := by
+  rw [adjugate_eq_frickeGL_conj_bar N hx]
   group
 
 end TauCeti
