@@ -6,21 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
-public import TauCeti.Combinatorics.Quiver.Prefunctor
+public import TauCeti.CategoryTheory.ComposableArrows.Basic
 
 /-!
 # Arrows and faces of simplices of the nerve, and the images of its degeneracies
 
 An `n`-simplex of the nerve `CategoryTheory.nerve C` of a category is a string
 `F : ComposableArrows C n` of composable arrows. For positions `i ≤ j` its arrow from the `i`-th
-to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij`, and the string is
-determined by these arrows (`CategoryTheory.ComposableArrows.ext_of_totalArrow`); the simplicial
-operators of the nerve reindex these arrows
-(`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`), prepending an arrow with
-`CategoryTheory.ComposableArrows.precomp` shifts them
-(`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`), and applying a functor to the
-string maps its arrows along the functor
-(`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`).
+to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij` (defined in
+`TauCeti.CategoryTheory.ComposableArrows.Basic`), and the simplicial operators of the nerve
+reindex these arrows (`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`).
 
 An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its
 `i`-th arrow is an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
@@ -34,7 +29,6 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
 
 ## Main declarations
 
-* `CategoryTheory.ComposableArrows.totalArrow`: the arrow of a string between two positions.
 * `CategoryTheory.nerve.σ_δ_castSucc_eq_self`: a string whose `i`-th arrow is an identity is the
   `i`-th degeneracy of its `i`-th face.
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
@@ -48,97 +42,6 @@ public section
 open CategoryTheory Simplicial
 
 universe v u
-
-namespace CategoryTheory.ComposableArrows
-
-variable {C : Type u} [Category.{v} C] {n : ℕ}
-
-/-- The arrow of a string of composable arrows from its `i`-th to its `j`-th object, as a total
-arrow of `C`. For `i = j` this is the identity arrow of the `i`-th object. -/
-def totalArrow (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) : Quiver.Total C :=
-  ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩
-
-@[simp]
-theorem totalArrow_left (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.totalArrow i j hij).left = F.obj i := (rfl)
-
-@[simp]
-theorem totalArrow_right (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.totalArrow i j hij).right = F.obj j := (rfl)
-
-theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    F.totalArrow i j hij = ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩ := (rfl)
-
-/-- The arrow of a string of composable arrows from a position to itself is an identity arrow. -/
-@[simp]
-theorem totalArrow_self (F : ComposableArrows C n) (i : Fin (n + 1)) :
-    F.totalArrow i i le_rfl = ⟨F.obj i, F.obj i, 𝟙 (F.obj i)⟩ := by
-  simp [totalArrow_def]
-
-/-- The first arrow of a string obtained by prepending an arrow is that arrow, including
-when its target is identified with the first vertex by an equality. -/
-@[simp]
-theorem totalArrow_precomp_zero_one {n : ℕ} (a : Quiver.Total C)
-    (F : ComposableArrows C n) (h : a.right = F.left) :
-    (F.precomp (a.hom ≫ eqToHom h)).totalArrow 0 1 (Fin.zero_le _) = a := by
-  rcases a with ⟨x, z, f⟩
-  dsimp only at h
-  subst z
-  rw [totalArrow_def]
-  simp only [precomp, Precomp.obj_zero, Precomp.obj_one, Precomp.map_zero_one,
-    eqToHom_refl, Category.comp_id]
-
-/-- An arrow from the new first vertex to a later vertex is the prepended arrow followed by
-an arrow of the original string. -/
-@[simp]
-theorem totalArrow_precomp_zero_succ_succ (F : ComposableArrows C n) {X : C}
-    (f : X ⟶ F.left) (j : ℕ) (hj : j + 2 < n + 1 + 1) :
-    (F.precomp f).totalArrow 0 ⟨j + 2, hj⟩ (Nat.zero_le _) =
-      ⟨X, F.obj' (j + 1) (by omega), f ≫ F.map' 0 (j + 1) (by omega) (by omega)⟩ := by
-  -- At these indices precomp inserts f before the original arrow from vertex 0 to j + 1.
-  rfl
-
-/-- Arrows between shifted vertices of a prepended string are the arrows of the original
-string. -/
-@[simp]
-theorem totalArrow_precomp_succ_succ (F : ComposableArrows C n) {X : C}
-    (f : X ⟶ F.left) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.precomp f).totalArrow i.succ j.succ (Fin.succ_le_succ_iff.mpr hij) =
-      F.totalArrow i j hij := by
-  -- Both endpoints lie in the shifted tail, where precomp retains the original map.
-  rfl
-
-/-- Reindexing a string of composable arrows along a functor `Φ` of the indexing posets reindexes
-its arrows. -/
-@[simp]
-theorem totalArrow_whiskerLeft {m : ℕ} (F : ComposableArrows C m)
-    (Φ : Fin (n + 1) ⥤ Fin (m + 1)) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.whiskerLeft Φ).totalArrow i j hij = F.totalArrow (Φ.obj i) (Φ.obj j) (Φ.monotone hij) := by
-  -- Morphisms in the poset `Fin (m + 1)` are unique, so `Φ` sends `homOfLE hij` to `homOfLE _`.
-  have h : Φ.map (homOfLE hij) = homOfLE (Φ.monotone hij) := Subsingleton.elim _ _
-  simp only [totalArrow, whiskerLeft, Functor.comp_obj, Functor.comp_map, h]
-
-/-- An arrow of the image of a string under a functor is the image of the arrow of the string. -/
-@[simp]
-theorem totalArrow_mapComposableArrows_obj {D : Type*} [Category D] (Φ : C ⥤ D)
-    (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    ((Φ.mapComposableArrows n).obj F).totalArrow i j hij =
-      Φ.toPrefunctor.mapTotal (F.totalArrow i j hij) := by
-  rw [totalArrow_def, totalArrow_def]
-  rfl
-
-/-- A string of composable arrows is determined by its arrows. -/
-theorem ext_of_totalArrow {F G : ComposableArrows C n}
-    (h : ∀ i j (hij : i ≤ j), F.totalArrow i j hij = G.totalArrow i j hij) : F = G := by
-  refine Functor.hext (fun i ↦ congrArg Quiver.Total.left (h i i le_rfl)) fun i j g ↦ ?_
-  -- Morphisms in the poset `Fin (n + 1)` are unique, so `g` is the morphism `homOfLE g.le` that
-  -- `totalArrow` uses, and the hypothesis `h i j g.le` applies to it.
-  rw [show g = homOfLE g.le from Subsingleton.elim _ _]
-  have := h i j g.le
-  simp only [totalArrow, Quiver.Total.mk.injEq] at this
-  exact this.2.2
-
-end CategoryTheory.ComposableArrows
 
 namespace CategoryTheory.nerve
 
