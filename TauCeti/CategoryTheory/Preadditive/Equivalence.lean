@@ -10,14 +10,16 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
-# Equivalences of preadditive categories are additive
+# Right adjoints between preadditive categories are additive
 
-A functor between preadditive categories that is an equivalence preserves binary products and zero
-morphisms, so it is additive as soon as its source has binary products. Mathlib records this fact
-only for the functor of a `MoritaEquivalence`; this file records it as an instance for every
-functor that is an equivalence, in particular for both directions `e.functor` and `e.inverse` of
-an equivalence `e`. It lets additive constructions such as finite biproducts be transported along
-equivalences of module categories, as in the Krull-Schmidt theorem for quiver representations.
+A right adjoint between preadditive categories preserves binary products and zero morphisms, so
+it is additive as soon as its source has binary products. Mathlib records this fact only for the
+functor of a `MoritaEquivalence`; this file records it as an instance for every right adjoint. In
+particular it applies to every functor that is an equivalence, through Mathlib's
+`CategoryTheory.Functor.isRightAdjoint_of_isEquivalence`, and so to both directions `e.functor`
+and `e.inverse` of an equivalence `e`. This makes the Grothendieck groups of module categories and
+the Cartan map functorial along equivalences of module categories, and lets finite biproducts be
+transported along them, as in the Krull-Schmidt theorem for quiver representations.
 
 Some hypothesis on the source is needed: an equivalence between one-object preadditive categories
 is an isomorphism of the multiplicative monoids of their endomorphism rings, which need not be
@@ -34,10 +36,10 @@ universe v₁ v₂ u₁ u₂
 
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
-/-- A functor between preadditive categories that is an equivalence is additive, provided its
-source has binary products. -/
-instance additive_of_isEquivalence [Preadditive C] [Preadditive D] [HasBinaryProducts C]
-    (F : C ⥤ D) [F.IsEquivalence] : F.Additive :=
+/-- A right adjoint between preadditive categories is additive, provided its source has binary
+products. -/
+instance additive_of_isRightAdjoint [Preadditive C] [Preadditive D] [HasBinaryProducts C]
+    (F : C ⥤ D) [F.IsRightAdjoint] : F.Additive :=
   F.additive_of_preserves_binary_products
 
 end CategoryTheory.Functor
