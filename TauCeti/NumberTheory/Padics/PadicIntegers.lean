@@ -56,6 +56,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
+  contractive scalar action.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
   (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
@@ -65,6 +67,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `pℤ_p` form an open set.
 * `Int.associated_iff_forall_associated_padicInt`: two integers have equal absolute values
   exactly when they are associated in every `ℤ_[p]`.
+* `Int.ideal_eq_iff_forall_map_padicInt_eq`: two ideals of `ℤ` are equal exactly when their
+  extensions to every `ℤ_[p]` agree.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
@@ -163,6 +167,16 @@ theorem units_neg_one_ne_one : (-1 : ℤ_[p]ˣ) ≠ 1 := fun h ↦ by
 theorem range_units_val : Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p]) = {x | ‖x‖ = 1} :=
   -- `IsUnit x` is by definition `∃ u : ℤ_[p]ˣ, ↑u = x`, that is `x ∈ Set.range Units.val`.
   Set.ext fun _ ↦ isUnit_iff
+
+/-- A unit of `ℤ_p` acts isometrically on every module with contractive scalar action. -/
+theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] {u : ℤ_[p]} (hu : IsUnit u) (e : E) : ‖u • e‖ = ‖e‖ := by
+  obtain ⟨u, rfl⟩ := hu
+  have h1 (v : ℤ_[p]ˣ) : ‖(v : ℤ_[p])‖ = 1 := isUnit_iff.1 v.isUnit
+  refine le_antisymm ((norm_smul_le _ _).trans_eq (by rw [h1, one_mul])) ?_
+  calc ‖e‖ = ‖((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • (u : ℤ_[p]) • e‖ := by
+        rw [smul_smul, Units.inv_mul, one_smul]
+    _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
 
 /-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
 theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
@@ -280,6 +294,21 @@ theorem Int.associated_iff_forall_associated_padicInt {a b : ℤ} :
   exact Nat.dvd_antisymm
     ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mp)
     ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mpr)
+
+/-- Two ideals of `ℤ` are equal exactly when their extensions to `ℤ_[p]` agree for every prime
+`p`. -/
+theorem Int.ideal_eq_iff_forall_map_padicInt_eq {I J : Ideal ℤ} :
+    I = J ↔ ∀ (p : ℕ) [Fact p.Prime],
+      I.map (algebraMap ℤ ℤ_[p]) = J.map (algebraMap ℤ ℤ_[p]) := by
+  refine ⟨fun h p _ ↦ h ▸ rfl, fun h ↦ ?_⟩
+  rw [← Submodule.IsPrincipal.span_singleton_generator I,
+    ← Submodule.IsPrincipal.span_singleton_generator J] at h ⊢
+  refine Ideal.span_singleton_eq_span_singleton.mpr
+    (Int.associated_iff_forall_associated_padicInt.mpr fun p _ ↦ ?_)
+  have hp := h p
+  rw [Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton,
+    Ideal.span_singleton_eq_span_singleton] at hp
+  simpa only [algebraMap_int_eq, eq_intCast] using hp
 
 namespace Padic
 

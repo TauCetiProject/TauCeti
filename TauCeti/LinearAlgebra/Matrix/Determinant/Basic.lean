@@ -18,9 +18,16 @@ by `m ⊕ n` with `m` and `n` singletons, for instance as `fromBlocks` of four `
 the `l ⊕ l` index of the standard symplectic form `Matrix.J l R`. `Matrix.det_sum_unique` gives
 its determinant in coordinates, so that such a matrix need not be reindexed along `Fin 2` by hand.
 
+If every row of a matrix `B` with `n + 2` rows and `n + 1` columns sums to `1`, then deleting the
+rows of `B` one at a time gives `n + 2` square matrices, and the alternating sum of their
+determinants vanishes. Indeed, it is the expansion along the first column of the square matrix
+obtained from `B` by adjoining a first column of ones, and that column is the sum of the others.
+
 ## Main results
 
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
+* `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
+  minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
 -/
 
 public section
@@ -41,5 +48,30 @@ theorem det_sum_unique (A : Matrix (m ⊕ n) (m ⊕ n) R) :
   rw [← det_submatrix_equiv_self (finSumFinEquiv.symm.trans <|
     (Equiv.ofUnique (Fin 1) m).sumCongr (Equiv.ofUnique (Fin 1) n)) A, det_fin_two]
   rfl
+
+end Matrix
+
+namespace Matrix
+
+variable {R : Type*} [CommRing R] {n : ℕ}
+
+/-- **The alternating sum of the maximal minors of a matrix whose rows sum to one vanishes.** If
+every row of a matrix `B` with `n + 2` rows and `n + 1` columns sums to `1`, then deleting the row
+`p` of `B` for each `p` gives square matrices whose determinants have vanishing alternating sum. -/
+theorem sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero
+    (B : Matrix (Fin (n + 2)) (Fin (n + 1)) R) (hB : ∀ j, ∑ i, B j i = 1) :
+    ∑ p : Fin (n + 2), (-1 : R) ^ (p : ℕ) * (B.submatrix p.succAbove id).det = 0 := by
+  let A : Matrix (Fin (n + 2)) (Fin (n + 2)) R := of fun j ↦ Fin.cons 1 (B j)
+  -- the first column of `A` is the sum of the others
+  have hcol : A.updateCol 0 (fun k ↦ ∑ i, (Fin.cons 0 fun _ ↦ 1 : Fin (n + 2) → R) i • A k i) =
+      A := by
+    refine (congrArg (A.updateCol 0) (funext fun k ↦ ?_)).trans (updateCol_eq_self A 0)
+    simp [A, Fin.sum_univ_succ, hB]
+  have hsub (p : Fin (n + 2)) : A.submatrix p.succAbove Fin.succ = B.submatrix p.succAbove id := by
+    ext j i
+    simp [A]
+  have hA := det_updateCol_sum A 0 (Fin.cons 0 fun _ ↦ 1)
+  rw [hcol, Fin.cons_zero, zero_smul, det_succ_column_zero] at hA
+  simpa [A, hsub] using hA
 
 end Matrix

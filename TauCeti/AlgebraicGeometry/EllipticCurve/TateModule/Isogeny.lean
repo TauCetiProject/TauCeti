@@ -8,12 +8,12 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.PotentialGoodReduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Frobenius
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: the dual isogeny, with `φ̂ ∘ φ = [deg φ]` on points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 -- Proof-only: a nonzero morphism is onto on points over an algebraically closed field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
--- Proof-only: base change of morphisms commutes with the Galois action on points.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: an isogeny compares quadratic relations of a field endomorphism at `P` and `φ P`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.QuadraticRelation
 -- Proof-only: isogenous curves have isogenous minimal equations.
@@ -24,8 +24,8 @@ import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.Torsion
 -- Proof-only: a prime different from the residue characteristic is nonzero in `K^{alg}`.
 import TauCeti.NumberTheory.LocalField.NatCastValuation
--- Proof-only: Frobenius satisfies `X² - a_q X + q` on prime-to-`p` torsion at good reduction.
-import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Frobenius
+-- Proof-only: the order of the residue field is prime to the integers nonzero in it.
+import TauCeti.FieldTheory.Finite.Card
 -- Proof-only: `E[ℓ]` is free of rank two over `ℤ/ℓ`, so it has a point of order `ℓ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
 
@@ -62,8 +62,18 @@ curves have the same local polynomial there. At bad reduction that is
 potentially good the local polynomial is `1`
 (`WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction`),
 so **isogenous curves have the same local polynomial wherever they have potential good
-reduction**. This file does not separate split from nonsplit multiplicative reduction, the case
-of reduction that is not potentially good.
+reduction**.
+
+At multiplicative reduction the local polynomial is `1 - a_q T`, with `a_q = 1` at a split and
+`a_q = -1` at a nonsplit node. Over a finite extension `L/K`, an automorphism `τ` acting on the
+residue field of `L` as the `q`-power map acts as `a_q q` on the torsion of order prime to `p` with
+nonsingular reduction
+(`WeierstrassCurve.Affine.Point.map_eq_zsmul_of_hasMultiplicativeReduction`). If `P` is such a
+point of `W₁(L)`, of odd order, and `φ P ≠ 0` also has nonsingular reduction, then applying `φ` to
+`τ P = (a₁ q) • P` and comparing with `τ (φ P) = (a₂ q) • φ P` shows that `(a₁ - a₂) q` kills
+`φ P`. Since `a₁ - a₂` is `0` or `±2` and `q` is a power of `p`, this forces `a₁ = a₂`: the two
+multiplicative reductions are both split or both nonsplit. This file does not produce such a point
+`P`.
 
 ## Main results
 
@@ -84,10 +94,14 @@ of reduction that is not potentially good.
   have the same local polynomial.
 * `TauCeti.Isogeny.localPolynomial_eq_of_hasPotentialGoodReduction`: at potential good reduction,
   isogenous curves have the same local polynomial.
+* `TauCeti.Isogeny.frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction`: isogenous minimal
+  equations with multiplicative reduction have reductions with the same Frobenius trace, given a
+  point of odd order prime to `p` over a finite extension such that it and its nonzero image both
+  have nonsingular reduction.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6.1, V.2.3.1,
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6.1, V.2.3.1, VII.5,
   VII.7.1–VII.7.3.
 -/
 
@@ -281,5 +295,70 @@ theorem localPolynomial_eq_of_hasPotentialGoodReduction (φ : Isogeny W₁.toAff
       (φ.hasPotentialGoodReduction_iff.1 h) (φ.hasGoodReduction_minimal_iff.not.1 hb)]
 
 end LocalField
+
+section FiniteExtension
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+  [DecidableEq L] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
+
+/-- **Isogenous curves with multiplicative reduction have reductions with the same Frobenius
+trace, given a point with nonsingular reduction on both.** Let `W₁` and `W₂` be elliptic curves
+over a nonarchimedean local field `K` whose residue field has `q` elements, given by minimal
+equations with multiplicative reduction, and let `φ : W₁ → W₂` be an isogeny. Let `L/K` be a finite
+extension with an automorphism `τ` acting on the residue field of `L` as `x ↦ x ^ q`, and let `P`
+be a point of `W₁(L)` killed by an odd integer `n` nonzero in the residue field of `K`. If `P` and
+`φ P ≠ 0` both have nonsingular reduction, then the reductions of `W₁` and `W₂` have the same
+Frobenius trace, so the two reductions are both split or both nonsplit. -/
+theorem frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction
+    (h₁ : W₁.HasMultiplicativeReduction 𝒪[K]) (h₂ : W₂.HasMultiplicativeReduction 𝒪[K])
+    (φ : Isogeny W₁.toAffine W₂.toAffine) {τ : Gal(L/K)}
+    (hτ : ∀ x : 𝓀[L], τ • x = x ^ Nat.card 𝓀[K]) {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) (hodd : Odd n)
+    {P : (W₁⁄L).toAffine.Point} (hP : n • P = 0)
+    (hP₀ : P ∈ (W₁⁄L).toAffine.nonsingularReduction (valuation L))
+    (hφP₀ : ((Hom.ofIsogeny φ).map (algebraMap K L)).pointMap P ∈
+      (W₂⁄L).toAffine.nonsingularReduction (valuation L))
+    (hφP : ((Hom.ofIsogeny φ).map (algebraMap K L)).pointMap P ≠ 0) :
+    (W₁.reduction 𝒪[K]).frobeniusTrace = (W₂.reduction 𝒪[K]).frobeniusTrace := by
+  set f := (Hom.ofIsogeny φ).map (algebraMap K L)
+  set Q := f.pointMap P
+  set a₁ := (W₁.reduction 𝒪[K]).frobeniusTrace
+  set a₂ := (W₂.reduction 𝒪[K]).frobeniusTrace
+  set q := Nat.card 𝓀[K]
+  have hQ : n • Q = 0 :=
+    (f.pointMap_nsmul n P).symm.trans ((congrArg f.pointMap hP).trans f.pointMap_zero)
+  -- `τ` acts as `a₁ q` at `P` and as `a₂ q` at `Q`, and commutes with `φ`, so `(a₁ - a₂) q`
+  -- kills `Q`
+  have hQ₀ : ((a₁ - a₂) * q) • Q = 0 := by
+    have e := Hom.pointMap_map_algebraMap_map (Hom.ofIsogeny φ) τ.toAlgHom P
+    rw [Affine.Point.map_eq_zsmul_of_hasMultiplicativeReduction h₁ hτ hn hP₀ hP,
+      Affine.Point.map_eq_zsmul_of_hasMultiplicativeReduction h₂ hτ hn hφP₀ hQ] at e
+    rw [sub_mul, sub_zsmul]
+    exact sub_eq_zero.2 ((f.pointMap_zsmul _ P).symm.trans e)
+  -- the traces are `±1`, so if they differ then `2 q` kills `Q`, which is prime to its order `n`
+  have htrace {W : WeierstrassCurve K} [IsMinimal 𝒪[K] W] (h : W.HasMultiplicativeReduction 𝒪[K]) :
+      (W.reduction 𝒪[K]).frobeniusTrace = 1 ∨ (W.reduction 𝒪[K]).frobeniusTrace = -1 := by
+    by_cases hs : W.HasSplitMultiplicativeReduction 𝒪[K]
+    · exact .inl (hs.frobeniusTrace_reduction_eq_one 𝒪[K])
+    · exact .inr (h.frobeniusTrace_reduction_eq_neg_one 𝒪[K] hs)
+  by_contra hne
+  have ha₁ : a₁ = 1 ∨ a₁ = -1 := htrace h₁
+  have ha₂ : a₂ = 1 ∨ a₂ = -1 := htrace h₂
+  have hnat : ((a₁ - a₂) * q).natAbs = 2 * q := by
+    rcases ha₁ with ha₁ | ha₁ <;> rcases ha₂ with ha₂ | ha₂ <;>
+      rw [ha₁, ha₂] at hne ⊢ <;> first | exact absurd rfl hne | norm_num [Int.natAbs_mul]
+  have hcop : Nat.Coprime (2 * q) n :=
+    Nat.Coprime.mul_left (Nat.coprime_two_left.2 hodd)
+      (TauCeti.FiniteField.natCard_coprime_of_natCast_ne_zero hn)
+  have hdvd : addOrderOf Q ∣ 1 := by
+    rw [← hcop.gcd_eq_one]
+    refine Nat.dvd_gcd ?_ (addOrderOf_dvd_of_nsmul_eq_zero hQ)
+    rw [← hnat, ← Int.natCast_dvd]
+    exact addOrderOf_dvd_iff_zsmul_eq_zero.2 hQ₀
+  exact hφP (AddMonoid.addOrderOf_eq_one_iff.1 (Nat.dvd_one.1 hdvd))
+
+end FiniteExtension
 
 end TauCeti.Isogeny

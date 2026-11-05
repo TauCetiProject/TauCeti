@@ -33,6 +33,8 @@ the two valuative topologies.
 * `TauCeti.ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
 * `ValuativeExtension.valuationHasExtension`: the canonical valuation on `B` extends the
   canonical valuation on `A`.
+* `ValuativeRel.IsNontrivial.of_valuativeExtension`: a compatible extension of a nontrivial
+  valuative relation is nontrivial.
 * `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
 * `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
 * `TauCeti.aroots_eq_map_roots_integerRing`: the roots in `L` of a monic polynomial over the
@@ -57,6 +59,17 @@ instance valuationHasExtension :
     Valuation.HasExtension (valuation A) (valuation B) where
   val_isEquiv_comap :=
     (ValuativeRel.isEquiv ((valuation B).comap (algebraMap A B)) (valuation A)).symm
+
+variable (A) in
+/-- A compatible extension of a nontrivial valuative relation is nontrivial: the map of value
+groups is strictly monotone, so it carries a value other than `0` and `1` to another such value.
+-/
+theorem _root_.ValuativeRel.IsNontrivial.of_valuativeExtension [IsNontrivial A] :
+    IsNontrivial B := by
+  obtain ⟨γ, h0, h1⟩ := IsNontrivial.condition (R := A)
+  have hinj := (mapValueGroupWithZero_strictMono (A := A) (B := B)).injective
+  exact ⟨mapValueGroupWithZero A B γ, by rwa [← map_zero (mapValueGroupWithZero A B), hinj.ne_iff],
+    by rwa [← map_one (mapValueGroupWithZero A B), hinj.ne_iff]⟩
 
 end ValuativeExtension
 

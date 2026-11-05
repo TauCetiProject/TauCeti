@@ -392,13 +392,14 @@ theorem vectorFieldEnvelopingDerivation_ι (h : R⸨X⸩) (x : ofTwoCocycle c) :
     vectorFieldExtensionDerivation_ofProd, ι_ofProd, Algebra.algebraMap_eq_smul_one, map_smul,
     derivationLieAlgebra.apply_one_eq_zero, smul_zero, map_zero, mul_zero, map_zero]
 
-/-- If the vector field `h d/dt` maps the currents of order at least `N` into themselves, its lift
-carries the left ideal `I_N = U · ι(a_N)` into itself. -/
-theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo {h : R⸨X⸩} {N : ℤ}
-    (hN : Set.MapsTo (vectorFieldDerivation R L h) (orderSubmodule R L N) (orderSubmodule R L N))
+/-- If the vector field `h d/dt` maps the currents of order at least `N` into those of order at
+least `M ≤ N`, its lift carries the left ideal `I_N = U · ι(a_N)` into `I_M`. -/
+theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo {h : R⸨X⸩} {M N : ℤ}
+    (hMN : M ≤ N)
+    (hN : Set.MapsTo (vectorFieldDerivation R L h) (orderSubmodule R L N) (orderSubmodule R L M))
     {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
     (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
-      orderLeftIdeal Φ hΦ hΦs a N := by
+      orderLeftIdeal Φ hΦ hΦs a M := by
   rw [orderLeftIdeal_def] at hx
   induction hx using Submodule.span_induction with
   | mem x hx =>
@@ -409,7 +410,19 @@ theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo {h : R⸨X�
   | add x y _ _ hx hy => simpa only [map_add] using add_mem hx hy
   | smul y x hx' hx =>
     rw [smul_eq_mul, derivationLieAlgebra.leibniz]
-    exact add_mem (Submodule.smul_mem _ _ (by rwa [orderLeftIdeal_def])) (Submodule.smul_mem _ y hx)
+    exact add_mem (Submodule.smul_mem _ _
+      (orderLeftIdeal_antitone Φ hΦ hΦs a hMN (by rwa [orderLeftIdeal_def])))
+      (Submodule.smul_mem _ y hx)
+
+/-- A vector field of order at least `P` carries `I_N` into `I_(min N (P + N - 1))`.
+The minimum accounts for differentiating the left factor in a left-ideal generator. -/
+theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_min {P N : ℤ} {h : R⸨X⸩}
+    (hh : (P : WithTop ℤ) ≤ h.orderTop) {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
+    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
+      orderLeftIdeal Φ hΦ hΦs a (min N (P + N - 1)) :=
+  vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo Φ hΦ hΦs a (min_le_left _ _)
+    (fun _ hu ↦ orderSubmodule_antitone R L (min_le_right _ _)
+      (vectorFieldDerivation_mem_orderSubmodule hh hu)) hx
 
 /-- **Vector fields of positive order preserve the left ideals.** If `h` has order at least one,
 for instance for the degree derivation `t d/dt`, the lift carries each `I_N = U · ι(a_N)` into
@@ -417,9 +430,8 @@ itself. -/
 theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal {h : R⸨X⸩}
     (hh : (1 : WithTop ℤ) ≤ h.orderTop) {N : ℤ} {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
     (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
-      orderLeftIdeal Φ hΦ hΦs a N :=
-  vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo Φ hΦ hΦs a (fun _ hu ↦ by
-    simpa using vectorFieldDerivation_mem_orderSubmodule (P := 1) (by exact_mod_cast hh) hu) hx
+      orderLeftIdeal Φ hΦ hΦs a N := by
+  simpa using vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_min Φ hΦ hΦs a hh hx
 
 /-- **Vector fields regular at the origin preserve `I₀`.** If `h` has order at least `0`, for
 instance for the translation `d/dt`, the lift carries the left ideal `I₀ = U · ι(L[[t]])` into
@@ -428,7 +440,7 @@ theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_zero {h : R⸨X⸩} (
     {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a 0) :
     (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
       orderLeftIdeal Φ hΦ hΦs a 0 :=
-  vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo Φ hΦ hΦs a
+  vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo Φ hΦ hΦs a le_rfl
     (fun _ hu ↦ vectorFieldDerivation_mem_orderSubmodule_zero hh hu) hx
 
 /-- **The lifts of vector fields satisfy the commutator relations of vector fields**:
