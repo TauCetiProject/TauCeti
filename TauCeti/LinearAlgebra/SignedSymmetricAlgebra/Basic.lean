@@ -217,10 +217,33 @@ theorem congr_generator (e : V ≃ₗ[R] W) (he) (x : V) :
     congr G H e he (generator G x) = generator H (e x) :=
   map_generator G H e.toLinearMap he x
 
+/-- The induced algebra equivalence respects the identity. -/
 @[simp]
-theorem congr_symm_generator (e : V ≃ₗ[R] W) (he) (y : W) :
-    (congr G H e he).symm (generator H y) = generator G (e.symm y) := by
+theorem congr_refl :
+    congr G G (LinearEquiv.refl R V) (LinearMap.isHomogeneous_id G.piece) =
+      AlgEquiv.refl := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  exact map_id G
+
+/-- The induced algebra equivalence respects inverses. -/
+@[simp]
+theorem congr_symm (e : V ≃ₗ[R] W) (he) :
+    (congr G H e he).symm = congr H G e.symm he.linearEquiv_symm := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply hom_ext
+  intro y
   apply (congr G H e he).injective
+  simp
+
+/-- The induced algebra equivalences respect composition. -/
+theorem congr_trans (K : InternalGrading R U) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
+    (hf : LinearMap.IsHomogeneous f.toLinearMap H.piece K.piece 0) :
+    congr G K (e.trans f) (by simpa using hf.comp he) =
+      (congr G H e he).trans (congr H K f hf) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply hom_ext
+  intro x
   simp
 
 end Map
