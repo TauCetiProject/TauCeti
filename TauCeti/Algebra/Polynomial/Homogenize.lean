@@ -74,6 +74,8 @@ roots of `F(X, 1)` multiplied by `a`.
 * `Polynomial.aeval_homogenize_eq_sum`, `Polynomial.aeval_homogenize`: the value of the
   homogenization of degree `n` at `(a, b)`, as a sum of terms and, for `b ≠ 0` in a semifield
   algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
+* `Polynomial.aeval_homogenize_of_eq_zero`, `Polynomial.aeval_homogenize_reflect`: the value
+  at `(a, 0)` is `p_n a ^ n`, and reflecting `p` at `n` exchanges the two coordinates.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
@@ -291,6 +293,37 @@ theorem aeval_homogenize {K : Type*} [Semifield K] [Algebra S K] {p : S[X]} {n :
     MvPolynomial.aeval x (p.homogenize n) = aeval (x 0 / x 1) p * x 1 ^ n := by
   rw [MvPolynomial.aeval_def, ← MvPolynomial.eval_map, ← homogenize_map,
     eval_homogenize (natDegree_map_le.trans hn) x hx, eval_map_algebraMap]
+
+/-- At a point whose second coordinate vanishes, the homogenization of degree `n` of `p` takes
+the value `p_n (x 0) ^ n`: only the monomial `X₀ ^ n` survives. -/
+theorem aeval_homogenize_of_eq_zero {A : Type*} [CommSemiring A] [Algebra S A] (p : S[X])
+    (n : ℕ) (x : Fin 2 → A) (hx : x 1 = 0) :
+    MvPolynomial.aeval x (p.homogenize n) = algebraMap S A (p.coeff n) * x 0 ^ n := by
+  have hx' : x = ![x 0, 0] := by
+    ext i
+    fin_cases i <;> simp [hx]
+  rw [hx', aeval_homogenize_eq_sum, Finset.sum_eq_single (n, 0)]
+  · simp
+  · rintro ⟨k, l⟩ hkl hne
+    have hl : l ≠ 0 := by
+      rintro rfl
+      exact hne (by simpa using hkl)
+    simp [hl]
+  · simp
+
+/-- Reflecting `p` at `n` exchanges the two variables of its homogenization of degree `n`: the
+homogenization of `p.reflect n` takes at `(a, b)` the value that the homogenization of `p`
+takes at `(b, a)`. -/
+theorem aeval_homogenize_reflect {A : Type*} [CommSemiring A] [Algebra S A] (p : S[X]) (n : ℕ)
+    (a b : A) :
+    MvPolynomial.aeval ![a, b] ((p.reflect n).homogenize n) =
+      MvPolynomial.aeval ![b, a] (p.homogenize n) := by
+  rw [aeval_homogenize_eq_sum, aeval_homogenize_eq_sum,
+    ← Finset.Nat.sum_antidiagonal_swap (n := n)]
+  refine Finset.sum_congr rfl fun kl hkl => ?_
+  rw [Finset.mem_antidiagonal] at hkl
+  rw [Prod.fst_swap, Prod.snd_swap, coeff_reflect, revAt_le (by omega),
+    show n - kl.2 = kl.1 by omega, mul_comm (a ^ kl.2)]
 
 end Evaluation
 
