@@ -21,6 +21,13 @@ products of a multiplier with an element of `A` are again elements of `A`, and t
 map `A → 𝓜(𝕜, A)` is injective. For regular normed algebras (`RegularNormedAlgebra`), including
 real and complex C⋆-algebras, this map is isometric.
 
+With a proper involution a multiplier is determined by its left centralizer,
+`DoubleCentralizer.ext_fst`. Conversely, a bounded operator `L` with an adjoint `L'` for the
+pairing `(x, y) ↦ star x * y` is the left centralizer of the multiplier
+`DoubleCentralizer.ofAdjoint L L'`, whose right centralizer is `star ∘ L' ∘ star`. This is how
+multipliers are built from left actions on a dense subalgebra, such as the canonical multipliers
+of a crossed product.
+
 A star-algebra equivalence `e : A ≃⋆ₐ[ℂ] B` of complex C⋆-algebras extends to a star-algebra
 equivalence `DoubleCentralizer.congr e : 𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, B)`, sending `(L, R)` to
 `(e ∘ L ∘ e⁻¹, e ∘ R ∘ e⁻¹)`. It is compatible with the inclusions of `A` and `B`, and it is
@@ -102,6 +109,17 @@ theorem coe_star [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGro
 
 end NontriviallyNormed
 
+section Unital
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- The inclusion of a unital algebra into its multiplier algebra sends `1` to `1`. -/
+@[simp, norm_cast]
+theorem coe_one : ((1 : A) : 𝓜(𝕜, A)) = 1 :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+end Unital
+
 section ProperStar
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
@@ -150,7 +168,50 @@ theorem snd_mul (m : 𝓜(𝕜, A)) (a b : A) : m.snd (a * b) = a * m.snd b := b
 theorem coe_mul_eq_coe_snd (a : A) (m : 𝓜(𝕜, A)) : (a : 𝓜(𝕜, A)) * m = (m.snd a : 𝓜(𝕜, A)) :=
   ext_fst_snd (fun _ => by simp [m.central]) (fun _ => by simp [snd_mul])
 
+/-- A multiplier is determined by its left centralizer. -/
+theorem ext_fst {m n : 𝓜(𝕜, A)} (h : ∀ a, m.fst a = n.fst a) : m = n := by
+  refine ext_fst_snd h fun a => ?_
+  have hz : ∀ y : A, (m.snd a - n.snd a) * y = 0 := fun y => by
+    simp [sub_mul, m.central, n.central, h]
+  have hs : star (m.snd a - n.snd a) = 0 :=
+    star_mul_self_eq_zero.mp (by simpa only [star_star] using hz (star _))
+  exact sub_eq_zero.mp (star_mul_self_eq_zero.mp (by rw [hs, zero_mul]))
+
 end InvolutiveStar
+
+section Adjoint
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A]
+  [StarRing A] [NormedStarGroup A] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A]
+  [IsScalarTower 𝕜 A A] [StarModule 𝕜 A]
+
+/-- A bounded operator `L` on `A` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y`,
+that is `star (L' x) * y = star x * L y`, is the left centralizer of the multiplier
+`(L, star ∘ L' ∘ star)`. -/
+def ofAdjoint (L L' : A →L[𝕜] A) (h : ∀ x y, star (L' x) * y = star x * L y) : 𝓜(𝕜, A) where
+  fst := L
+  snd := (((starₗᵢ 𝕜 : A ≃ₗᵢ⋆[𝕜] A) : A →L⋆[𝕜] A).comp L').comp
+    ((starₗᵢ 𝕜 : A ≃ₗᵢ⋆[𝕜] A) : A →L⋆[𝕜] A)
+  central x y := by simpa using h (star x) y
+
+variable {L L' : A →L[𝕜] A} {h : ∀ x y, star (L' x) * y = star x * L y}
+
+@[simp]
+theorem ofAdjoint_fst : (ofAdjoint L L' h).fst = L :=
+  (rfl)
+
+@[simp]
+theorem ofAdjoint_snd_apply (x : A) : (ofAdjoint L L' h).snd x = star (L' (star x)) :=
+  (rfl)
+
+/-- The adjoint of the multiplier with left centralizer `L` has left centralizer `L'`. -/
+@[simp]
+theorem star_ofAdjoint :
+    star (ofAdjoint L L' h) =
+      ofAdjoint L' L fun x y => by simpa using congr(star $(h y x)).symm :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+end Adjoint
 
 section RegularNormedAlgebra
 
