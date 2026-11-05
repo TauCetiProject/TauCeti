@@ -26,21 +26,15 @@ with `ε i` as a multiplier in `EReal`, where `0 * ⊥ = 0`, so a speed `ε i = 
 * `TauCeti.Probability.IsGoodRateFunction I`: `I` is lower semicontinuous with compact sublevel
   sets `{x | I x ≤ α}` for `α < ∞`.
 * `TauCeti.Probability.HasLDP l ε μ I`: the open-set lower and closed-set upper bounds.
-* `TauCeti.Probability.ExponentiallyTight l ε μ`: for each `M` there is a compact `K` with
-  `limsup ε i * log (μ i Kᶜ) ≤ -M`.
-* `TauCeti.Probability.ExponentiallyEquivalent l ε P Z Y`: two families of random variables in a
-  pseudo-emetric space are exponentially equivalent.
-
 The contraction principle is in `TauCeti.Probability.LargeDeviations.Contraction`, and the
-Dirac-mass example in `TauCeti.Probability.LargeDeviations.Dirac`. The Gaussian sample-mean
-example (Cramér for `N(0,1)`) is not included.
+Dirac-mass example in `TauCeti.Probability.LargeDeviations.Dirac`.
 
 ## References
 
 * Dembo–Zeitouni, *Large Deviations Techniques and Applications*, §1.2 and §4.2.
 -/
 
-@[expose] public section
+public section
 
 open Filter Topology MeasureTheory
 open scoped ENNReal NNReal
@@ -68,22 +62,5 @@ structure HasLDP [TopologicalSpace X] [MeasurableSpace X] (l : Filter ι) (ε : 
   upper_bound : ∀ F : Set X, IsClosed F →
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i F)) l ≤
       -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal)
-
-/-- The family `μ i` is *exponentially tight* at speed `ε`: for every `M` there is a compact set
-`K` whose complement has `limsup ε i * log (μ i Kᶜ) ≤ -M`. -/
-def ExponentiallyTight [TopologicalSpace X] [MeasurableSpace X] (l : Filter ι) (ε : ι → ℝ≥0)
-    (μ : ι → Measure X) : Prop :=
-  ∀ M : ℝ≥0, ∃ K : Set X, IsCompact K ∧
-    limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i Kᶜ)) l ≤ -((M : ℝ) : EReal)
-
-/-- Two families of random variables `Z i, Y i : Ω i → X` on measure spaces `P i` are
-*exponentially equivalent* at speed `ε` if for every `δ > 0`,
-`limsup ε i * log (P i {δ < edist (Z i) (Y i)}) = ⊥`. -/
-def ExponentiallyEquivalent [PseudoEMetricSpace X] (l : Filter ι) (ε : ι → ℝ≥0)
-    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)] (P : ∀ i, Measure (Ω i))
-    (Z Y : ∀ i, Ω i → X) : Prop :=
-  ∀ δ : ℝ≥0∞, 0 < δ →
-    limsup (fun i => ((ε i : ℝ) : EReal) *
-      ENNReal.log (P i {ω | δ < edist (Z i ω) (Y i ω)})) l = ⊥
 
 end TauCeti.Probability
