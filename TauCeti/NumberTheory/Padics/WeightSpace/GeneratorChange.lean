@@ -66,7 +66,7 @@ theorem coe_weightCoordChangeEquiv_apply (u : ℤ_[p]ˣ)
   simp [weightCoordChangeEquiv, PadicInt.continuousAddCharEquiv_apply]
 
 /-- The binomial character in the new coordinate is the original one evaluated at `u * s`. -/
-theorem addChar_weightCoordChangeEquiv (u : ℤ_[p]ˣ)
+theorem addChar_of_value_at_one_weightCoordChangeEquiv (u : ℤ_[p]ˣ)
     (t : {t : R // Tendsto (t ^ ·) atTop (𝓝 0)}) (s : ℤ_[p]) :
     PadicInt.addChar_of_value_at_one (weightCoordChangeEquiv p R u t).1
       (weightCoordChangeEquiv p R u t).2 s =
@@ -99,7 +99,7 @@ theorem weightCoordChangeEquiv_mul (u v : ℤ_[p]ˣ)
       weightCoordChangeEquiv p R v (weightCoordChangeEquiv p R u t) := by
   apply Subtype.ext
   rw [coe_weightCoordChangeEquiv_apply, coe_weightCoordChangeEquiv_apply,
-    addChar_weightCoordChangeEquiv]
+    addChar_of_value_at_one_weightCoordChangeEquiv]
   rw [Units.val_mul]
 
 /-- The inverse coordinate change uses the reciprocal exponent. -/
@@ -153,10 +153,10 @@ theorem coordAt_eq_weightCoordChangeEquiv (κ : WeightSpace p R) (u : ℤ_[p]ˣ)
     κ.principalChar_eq_addChar_of_value_at_one]
 
 /-- The original coordinate is recovered from the new one by the inverse binomial exponent. -/
-theorem coord_eq_addChar_coordAt_inv (κ : WeightSpace p R) (u : ℤ_[p]ˣ) :
+theorem coord_eq_addChar_of_value_at_one_coordAt_inv (κ : WeightSpace p R) (u : ℤ_[p]ˣ) :
     κ.coord = PadicInt.addChar_of_value_at_one (κ.coordAt u) (κ.tendsto_coordAt_pow u)
       (↑u⁻¹ : ℤ_[p]) - 1 := by
-  have h := addChar_weightCoordChangeEquiv u ⟨κ.coord, κ.tendsto_coord_pow⟩
+  have h := addChar_of_value_at_one_weightCoordChangeEquiv u ⟨κ.coord, κ.tendsto_coord_pow⟩
     (↑u⁻¹ : ℤ_[p])
   simp only [Units.mul_inv, PadicInt.addChar_of_value_at_one_def] at h
   simpa only [← coordAt_eq_weightCoordChangeEquiv, add_sub_cancel_left] using
