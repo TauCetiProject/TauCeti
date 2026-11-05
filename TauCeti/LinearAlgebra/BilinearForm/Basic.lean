@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # Basic identities for bilinear forms
@@ -49,6 +51,10 @@ maps valued in an arbitrary module.
   torsion by a hyperbolic pair is even.
 * `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: the value of a left-separating
   alternating bilinear map on a two-element basis has trivial scalar annihilator.
+* `LinearMap.IsAlt.apply_smul_add_smul`: an alternating bilinear map on two combinations of a
+  pair of vectors is the determinant of the coefficient matrix times its value on the pair, and
+  `LinearMap.IsAlt.apply_smul_add_smul_det` its form with coefficients the columns of an
+  endomorphism of `R × R`.
 -/
 
 public section
@@ -66,6 +72,25 @@ theorem eq_zero_of_smul_apply_basis_eq_zero {R M N : Type*} [CommSemiring R]
     simp only [Fin.sum_univ_two, map_add, map_smul, LinearMap.smul_apply, halt (b 0), hr, smul_zero,
       add_zero]
   simpa using congr(b.repr $hb 0)
+
+/-- An alternating bilinear map on two combinations `a v + b w` and `c v + d w` of a pair of
+vectors is the determinant `a d - b c` of the coefficient matrix times its value on the pair. -/
+theorem apply_smul_add_smul {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (v w : M)
+    (a b c d : R) :
+    ω (a • v + b • w) (c • v + d • w) = (a * d - b * c) • ω v w := by
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, halt.self_eq_zero,
+    smul_zero, zero_add, add_zero, ← halt.neg v w, smul_neg, sub_smul, mul_smul]
+  rw [smul_comm d a, smul_comm c b, add_comm, ← sub_eq_add_neg]
+
+/-- `LinearMap.IsAlt.apply_smul_add_smul` with coefficients the images of the coordinate
+directions under an endomorphism `B` of `R × R`: the coefficient is `det B`. -/
+theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt)
+    (B : (R × R) →ₗ[R] R × R) (v w : M) :
+    ω ((B (1, 0)).1 • v + (B (1, 0)).2 • w) ((B (0, 1)).1 • v + (B (0, 1)).2 • w) =
+      LinearMap.det B • ω v w := by
+  rw [halt.apply_smul_add_smul, LinearMap.det_finTwoProd]
 
 end LinearMap.IsAlt
 

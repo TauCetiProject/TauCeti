@@ -155,6 +155,11 @@ theorem tmul_mem_orderSubmodule (N : ℤ) {f : R⸨X⸩}
     f ⊗ₜ[R] x ∈ orderSubmodule R L N :=
   Submodule.subset_span ⟨f, x, hf, rfl⟩
 
+/-- A mode `r tᵐ ⊗ x` has order at least `N` whenever `N ≤ m`. -/
+theorem single_tmul_mem_orderSubmodule {N m : ℤ} (h : N ≤ m) (r : R) (x : L) :
+    HahnSeries.single m r ⊗ₜ[R] x ∈ orderSubmodule R L N :=
+  tmul_mem_orderSubmodule R L N ((WithTop.coe_le_coe.mpr h).trans HahnSeries.orderTop_single_le) x
+
 /-- A current of order at least `N` has zero coefficients below `N`. -/
 theorem coeff_eq_zero_of_mem_orderSubmodule {N n : ℤ} {u : currentAlgebra R L}
     (hu : u ∈ orderSubmodule R L N) (hn : n < N) : coeff R L n u = 0 := by
@@ -262,6 +267,28 @@ theorem lie_mem_orderSubmodule {M N : ℤ} {u v : currentAlgebra R L}
   rw [LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LieAlgebra.ExtendScalars.bracket_tmul]
   simpa only [TensorProduct.smul_tmul', smul_eq_mul] using
     smul_mem_orderSubmodule R L hf (tmul_mem_orderSubmodule R L N hg ⁅x, y⁆)
+
+/-- The Lie subalgebra of currents of order at least the nonnegative integer `n`. -/
+def orderLieSubalgebra (n : ℕ) : LieSubalgebra R (currentAlgebra R L) where
+  toSubmodule := orderSubmodule R L n
+  lie_mem' {u v} hu hv := orderSubmodule_antitone R L (by omega : (n : ℤ) ≤ n + n)
+    (lie_mem_orderSubmodule R L hu hv)
+
+/-- The underlying submodule of `a_n` is the order submodule. -/
+@[simp]
+theorem orderLieSubalgebra_toSubmodule (n : ℕ) :
+    (orderLieSubalgebra R L n).toSubmodule = orderSubmodule R L n :=
+  (rfl)
+
+/-- Membership in `a_n` is the order condition. -/
+@[simp]
+theorem mem_orderLieSubalgebra (n : ℕ) (u : currentAlgebra R L) :
+    u ∈ orderLieSubalgebra R L n ↔ u ∈ orderSubmodule R L n :=
+  (Iff.rfl)
+
+/-- The current Lie subalgebras decrease with the order. -/
+theorem orderLieSubalgebra_antitone : Antitone (orderLieSubalgebra R L) :=
+  fun m n h u hu ↦ orderSubmodule_antitone R L (by exact_mod_cast h) hu
 
 /-- **Currents of a perfect Lie algebra are sums of brackets of higher-order currents.** If `L` is
 perfect, every current of order at least `M + N` is a linear combination of brackets of currents

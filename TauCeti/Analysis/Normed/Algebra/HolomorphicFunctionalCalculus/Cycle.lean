@@ -8,7 +8,8 @@ module
 public import Mathlib.Topology.Algebra.Polynomial
 public import TauCeti.Algebra.Algebra.Resolvent
 public import TauCeti.Analysis.Contour.Cycle.Circle
-public import TauCeti.Analysis.Contour.Cycle.HomologyCauchy
+public import TauCeti.Analysis.Contour.Cycle.Fubini
+public import TauCeti.Analysis.Contour.Cycle.Residue
 public import TauCeti.Analysis.Normed.Algebra.Resolvent
 
 /-!
@@ -20,8 +21,8 @@ Let `a` be an element of a complex Banach algebra `A`. The holomorphic functiona
 
 for `f` holomorphic on an open neighbourhood `U` of the spectrum `σ(a)` and `Γ` a cycle in
 `U \ σ(a)` that is null-homologous in `U` and winds once around every point of `σ(a)`. This file
-proves the basic properties of these resolvent integrals for a fixed cycle `Γ`, written with
-Mathlib's `resolvent a z = (z1 - a)⁻¹` as `Cycle.integral (fun z ↦ f z • resolvent a z) Γ`.
+proves the basic properties of these resolvent integrals, written with Mathlib's
+`resolvent a z = (z1 - a)⁻¹` as `Cycle.integral (fun z ↦ f z • resolvent a z) Γ`.
 
 * The integral does not depend on `Γ`: by the homology Cauchy theorem, two such cycles give the
   same value.
@@ -30,6 +31,10 @@ Mathlib's `resolvent a z = (z1 - a)⁻¹` as `Cycle.integral (fun z ↦ f z • 
   case then follows from `z (z1 - a)⁻¹ = 1 + a (z1 - a)⁻¹`, since the integrals of polynomials
   vanish.
 * Every element commuting with `a` commutes with the integral.
+* The integrals are multiplicative: for cycles `Γ₁` and `Γ₂` with `Γ₂` winding once around `Γ₁`
+  and `Γ₁` not winding around `Γ₂`, the product of the integrals of `f(z) (z1 - a)⁻¹` over `Γ₁`
+  and of `g(z) (z1 - a)⁻¹` over `Γ₂` is `2πi` times the integral of `f(z) g(z) (z1 - a)⁻¹` over
+  `Γ₁`.
 
 No normalization `‖1‖ = 1` of the norm is assumed.
 
@@ -40,6 +45,8 @@ No normalization `‖1‖ = 1` of the norm is assumed.
 * `TauCeti.Contour.Cycle.integral_resolvent`: `∫_Γ (z1 - a)⁻¹ dz = 2πi · 1`.
 * `TauCeti.Contour.Cycle.integral_pow_smul_resolvent`: `∫_Γ zⁿ (z1 - a)⁻¹ dz = 2πi · aⁿ`.
 * `TauCeti.Contour.Cycle.integral_eval_smul_resolvent`: `∫_Γ p(z) (z1 - a)⁻¹ dz = 2πi · p(a)`.
+* `TauCeti.Contour.Cycle.integral_smul_resolvent_mul_integral_smul_resolvent`: multiplicativity
+  over nested cycles.
 * `Commute.integral_smul_resolvent_right`: elements commuting with `a` commute with the resolvent
   integral.
 
@@ -194,6 +201,106 @@ theorem integral_eval_smul_resolvent (hΓ : IsIn Γ (resolventSet ℂ a))
     simp only [Polynomial.eval_monomial, mul_smul c, Polynomial.aeval_monomial,
       ← Algebra.smul_def]
     rw [integral_smul, integral_pow_smul_resolvent hΓ hwind, smul_comm]
+
+/-- **Multiplicativity of resolvent integrals over nested cycles.** Let `f` and `g` be holomorphic
+on an open set `U`, and let `Γ₁` and `Γ₂` be cycles in `U \ σ(a)` that are null-homologous in `U`,
+with disjoint traces, such that `Γ₂` winds once around each point of `Γ₁` and `Γ₁` does not wind
+around any point of `Γ₂`. Then
+
+`(∫_Γ₁ f(z) (z1 - a)⁻¹ dz) (∫_Γ₂ g(w) (w1 - a)⁻¹ dw) = 2πi ∫_Γ₁ f(z) g(z) (z1 - a)⁻¹ dz`.
+
+After normalization by `(2πi)⁻¹`, this is the multiplicativity of the holomorphic functional
+calculus. No winding condition around the spectrum is needed for this identity. -/
+theorem integral_smul_resolvent_mul_integral_smul_resolvent {U : Set ℂ} (hU : IsOpen U)
+    {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U) {Γ₁ Γ₂ : Cycle}
+    (h₁ : IsIn Γ₁ (U \ spectrum ℂ a)) (h₂ : IsIn Γ₂ (U \ spectrum ℂ a))
+    (hU₁ : IsNullHomologous Γ₁ U) (hU₂ : IsNullHomologous Γ₂ U)
+    (h₁₂ : Disjoint (trace Γ₁) (trace Γ₂)) (hw₁ : ∀ w ∈ trace Γ₂, windingNumber w Γ₁ = 0)
+    (hw₂ : ∀ z ∈ trace Γ₁, windingNumber z Γ₂ = 1) :
+    integral (fun z ↦ f z • resolvent a z) Γ₁ * integral (fun w ↦ g w • resolvent a w) Γ₂ =
+      (2 * π * I) • integral (fun z ↦ (f z * g z) • resolvent a z) Γ₁ := by
+  have hΓ₁U : IsIn Γ₁ U := isIn_iff.mpr fun z hz ↦ (isIn_iff.mp h₁ hz).1
+  have hΓ₂U : IsIn Γ₂ U := isIn_iff.mpr fun w hw ↦ (isIn_iff.mp h₂ hw).1
+  have hR₁ : IsIn Γ₁ (resolventSet ℂ a) :=
+    isIn_iff.mpr fun z hz ↦ spectrum.notMem_iff.mp (isIn_iff.mp h₁ hz).2
+  have hR₂ : IsIn Γ₂ (resolventSet ℂ a) :=
+    isIn_iff.mpr fun w hw ↦ spectrum.notMem_iff.mp (isIn_iff.mp h₂ hw).2
+  have hf₁ : ContinuousOn f (trace Γ₁) := hf.continuousOn.mono (isIn_iff.mp hΓ₁U)
+  have hg₁ : ContinuousOn g (trace Γ₁) := hg.continuousOn.mono (isIn_iff.mp hΓ₁U)
+  have hg₂ : ContinuousOn g (trace Γ₂) := hg.continuousOn.mono (isIn_iff.mp hΓ₂U)
+  have hfR₁ : ContinuousOn (fun z ↦ f z • resolvent a z) (trace Γ₁) :=
+    hf₁.smul (continuousOn_resolvent hR₁)
+  have hgR₂ : ContinuousOn (fun w ↦ g w • resolvent a w) (trace Γ₂) :=
+    hg₂.smul (continuousOn_resolvent hR₂)
+  -- The product is a double integral over both cycles, which the first resolvent identity splits
+  -- into two parts; Fubini's theorem for cycles and Cauchy's integral formula evaluate each.
+  set I₂ := integral (fun w ↦ g w • resolvent a w) Γ₂
+  -- The part of the double integrand carrying the resolvent at the point `w` of `Γ₂`.
+  set B : ℂ → ℂ → A := fun z w ↦ (f z / (w - z)) • (g w • resolvent a w) with hB
+  -- Integrating out `w`: by the resolvent identity and Cauchy's formula over `Γ₂`, around which
+  -- every point of `Γ₁` has winding number one.
+  have hinner : ∀ z ∈ trace Γ₁, integral (B z) Γ₂ =
+      (2 * π * I * g z) • (f z • resolvent a z) - (f z • resolvent a z) * I₂ := by
+    intro z hz
+    have hz₂ : z ∉ trace Γ₂ := disjoint_left.mp h₁₂ hz
+    have hsub : ∀ w ∈ trace Γ₂, w - z ≠ 0 := fun w hw ↦ sub_ne_zero.mpr fun h ↦ hz₂ (h ▸ hw)
+    have hgz : ContinuousOn (fun w ↦ g w / (w - z)) (trace Γ₂) :=
+      hg₂.div (continuousOn_id.sub continuousOn_const) hsub
+    have hBz : ContinuousOn (B z) (trace Γ₂) :=
+      (continuousOn_const.div (continuousOn_id.sub continuousOn_const) hsub).smul hgR₂
+    have hmul := integral_comp_comm (f := fun w ↦ g w • resolvent a w)
+      (fun _ ↦ intervalIntegrable_of_mem_support hgR₂)
+      (ContinuousLinearMap.mul ℂ A (f z • resolvent a z))
+    simp only [ContinuousLinearMap.mul_apply'] at hmul
+    have hsplit : integral (fun w ↦ (f z • resolvent a z) * (g w • resolvent a w)) Γ₂ =
+        integral (fun w ↦ (g w / (w - z)) • (f z • resolvent a z)) Γ₂ - integral (B z) Γ₂ := by
+      rw [← integral_sub (f := fun w ↦ (g w / (w - z)) • (f z • resolvent a z)) (g := B z)
+        (hgz.smul continuousOn_const) hBz]
+      refine integral_congr fun w hw ↦ ?_
+      have hres : resolvent a z * resolvent a w =
+          (w - z)⁻¹ • (resolvent a z - resolvent a w) := by
+        rw [spectrum.resolvent_sub_resolvent_eq_smul_mul (isIn_iff.mp hR₁ hz)
+          (isIn_iff.mp hR₂ hw), smul_smul, inv_mul_cancel₀ (hsub w hw), one_smul]
+      simp only [hB]
+      rw [smul_mul_smul_comm, hres]
+      module
+    rw [← hmul, hsplit, integral_smul_const,
+      cauchyIntegralFormula_nullHomologous hU hg hΓ₂U hU₂ (isIn_iff.mp hΓ₁U hz) hz₂, hw₂ z hz,
+      mul_one, sub_sub_cancel]
+  -- Integrating out `z` first instead gives zero, by Cauchy's formula over `Γ₁`, which does not
+  -- wind around any point of `Γ₂`.
+  have hB₀ : integral (fun z ↦ integral (B z) Γ₂) Γ₁ = 0 := by
+    have hne : ∀ p ∈ trace Γ₁ ×ˢ trace Γ₂, p.2 - p.1 ≠ 0 := fun p hp ↦
+      sub_ne_zero.mpr fun h ↦ disjoint_left.mp h₁₂ (mem_prod.mp hp).1 (h ▸ (mem_prod.mp hp).2)
+    have hcont : ContinuousOn (Function.uncurry B) (trace Γ₁ ×ˢ trace Γ₂) :=
+      ((hf₁.comp continuousOn_fst fun _ hp ↦ (mem_prod.mp hp).1).div
+        (continuousOn_snd.sub continuousOn_fst) hne).smul
+        (hgR₂.comp continuousOn_snd fun _ hp ↦ (mem_prod.mp hp).2)
+    rw [integral_integral_swap hcont]
+    have hzero : ∀ w ∈ trace Γ₂, integral (fun z ↦ B z w) Γ₁ = (0 : ℂ) • (g w • resolvent a w) := by
+      intro w hw
+      have hw₁' : w ∉ trace Γ₁ := disjoint_right.mp h₁₂ hw
+      have hcauchy : integral (fun z ↦ f z / (w - z)) Γ₁ = 0 := by
+        rw [integral_congr (g := fun z ↦ (-1 : ℂ) • (f z / (z - w))) fun z _ ↦ by
+            simp only [smul_eq_mul, ← neg_sub z w, div_neg, neg_one_mul], integral_smul,
+          cauchyIntegralFormula_nullHomologous hU hf hΓ₁U hU₁ (isIn_iff.mp hΓ₂U hw) hw₁',
+          hw₁ w hw]
+        simp
+      rw [← hcauchy, ← integral_smul_const]
+    rw [integral_congr hzero, integral_smul, zero_smul]
+  -- Comparing the two evaluations of the double integral gives the identity.
+  have hI₁ := integral_comp_comm (f := fun z ↦ f z • resolvent a z)
+    (fun _ ↦ intervalIntegrable_of_mem_support hfR₁) ((ContinuousLinearMap.mul ℂ A).flip I₂)
+  simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] at hI₁
+  have hJ : integral (fun z ↦ (2 * π * I * g z) • (f z • resolvent a z)) Γ₁ =
+      (2 * π * I) • integral (fun z ↦ (f z * g z) • resolvent a z) Γ₁ := by
+    rw [← integral_smul]
+    exact integral_congr fun z _ ↦ by module
+  rw [integral_congr hinner,
+    integral_sub (f := fun z ↦ (2 * π * I * g z) • (f z • resolvent a z))
+      (g := fun z ↦ (f z • resolvent a z) * I₂) ((continuousOn_const.mul hg₁).smul hfR₁)
+      (hfR₁.mul continuousOn_const), hJ, hI₁, sub_eq_zero] at hB₀
+  exact hB₀.symm
 
 end TauCeti.Contour.Cycle
 
