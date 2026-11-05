@@ -428,10 +428,13 @@ theorem IsSymm.exists_isModular_restrict_isCompl_orthogonal [IsLocalRing R] (hB 
 finite free module has a nonzero direct summand `S`, complementary to its orthogonal
 `B.orthogonal S`, on which the form is `π ^ k`-modular for some `k`. -/
 theorem IsSymm.exists_ne_bot_isModular_pow_isCompl_orthogonal [IsDomain R]
-    [IsDiscreteValuationRing R] [Free R M] [Module.Finite R M] [Nontrivial M] (hB : B.IsSymm)
-    (hB0 : B ≠ 0) {π : R} (hπ : Irreducible π) :
+    [IsDiscreteValuationRing R] [Free R M] [Module.Finite R M] (hB : B.IsSymm) (hB0 : B ≠ 0)
+    {π : R} (hπ : Irreducible π) :
     ∃ (S : Submodule R M) (k : ℕ), S ≠ ⊥ ∧ IsCompl S (B.orthogonal S) ∧
       (B.restrict S).IsModular (π ^ k) := by
+  have : Nontrivial M := by
+    by_contra! h
+    exact hB0 (LinearMap.ext₂ fun x y ↦ by simp [Subsingleton.elim x 0])
   -- A Gram entry of minimal valuation divides every value of the form.
   let b := Free.chooseBasis R M
   have : Nonempty (Free.ChooseBasisIndex R M) := b.index_nonempty
