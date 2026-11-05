@@ -124,6 +124,8 @@ theorem tangentMatrix_generatedCartanVector (i : Fin n) :
   simp only [zsmul_eq_mul, mul_one]
 
 /-- The coordinate cocharacter differential is the numbered Cartan vector. -/
+-- Rewrite before `derivationCompLieHom_apply` unfolds the differential.
+@[simp↓]
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : Fin n) :
     derivationCompLieHom
         ((generatedWeightTorusCoordinateMap n hn R).hom.cocharacter
@@ -134,6 +136,8 @@ theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : 
 
 /-- The differential of the torus generator sends its coordinate tangent basis to the
 numbered Cartan vectors. -/
+-- Rewrite before `derivationCompLieHom_apply` unfolds the differential.
+@[simp↓]
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis (i : Fin n) :
     derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom
         (SplitTorus.tangentBasis (R := R) (B := B) i) =
