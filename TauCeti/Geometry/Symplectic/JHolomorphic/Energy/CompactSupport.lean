@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The energy identity for a compactly supported map from the plane
@@ -70,6 +71,26 @@ public section
 namespace TauCeti
 
 open MeasureTheory
+
+section DirectionalEnergy
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {u : ℝ × ℝ → V}
+
+/-- The full value and directional derivative energy of a compactly supported `C¹` map is
+integrable against any measure finite on compact sets. -/
+theorem _root_.ContDiff.integrable_norm_sq_add_partialDeriv_sq
+    {μ : Measure (ℝ × ℝ)} [IsFiniteMeasureOnCompacts μ]
+    (hu : ContDiff ℝ 1 u) (hc : HasCompactSupport u) :
+    Integrable (fun z ↦ ‖u z‖ ^ 2 + (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2)) μ := by
+  have hdu := hu.continuous_fderiv one_ne_zero
+  exact (hu.continuous.integrable_norm_sq_of_hasCompactSupport hc).fun_add
+    (((hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply ℝ stdComplexLineReal)).fun_add
+    ((hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply ℝ stdComplexLineImag)))
+
+end DirectionalEnergy
 
 namespace SymplecticForm
 

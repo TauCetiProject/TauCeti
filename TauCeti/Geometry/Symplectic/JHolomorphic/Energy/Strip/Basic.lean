@@ -178,6 +178,39 @@ theorem integral_norm_partialDeriv_sq_strip_eq_integral_norm_cauchyRiemann_sq
     SymplecticForm.associatedBilinForm_apply, ContinuousLinearMap.coe_coe,
     hg, real_inner_self_eq_norm_sq] using h
 
+/-- Disjoint linear boundary subspaces allow the directional derivative energy to control
+also the value energy on the strip, uniformly over compactly supported `C¹` maps. No isotropy
+or choice of complex structure is needed for this Poincaré step. -/
+theorem exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul_integral_partialDeriv_sq
+    (hL : Disjoint L₀ L₁) :
+    ∃ C > 0, ∀ (u : ℝ × ℝ → V), ContDiff ℝ 1 u → HasCompactSupport u →
+      (∀ s, u (s, 0) ∈ L₀) → (∀ s, u (s, 1) ∈ L₁) →
+      (∫ z in univ ×ˢ Icc (0 : ℝ) 1,
+        ‖u z‖ ^ 2 + (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2)) ≤
+      C * ∫ z in univ ×ˢ Icc (0 : ℝ) 1,
+        ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2 := by
+  obtain ⟨C, hC, hPoincare⟩ :=
+    L₀.exists_integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_disjoint L₁ hL
+  refine ⟨C + 1, by linarith, ?_⟩
+  intro u hu hc hbottom htop
+  have hi : Integrable (fun z ↦ ‖u z‖ ^ 2) :=
+    hu.continuous.integrable_norm_sq_of_hasCompactSupport hc
+  have hdu := hu.continuous_fderiv one_ne_zero
+  have hti : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) :=
+    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply ℝ stdComplexLineImag)
+  have henergy := (integrable_add_iff_integrable_right' hi).mp
+    (hu.integrable_norm_sq_add_partialDeriv_sq hc)
+  have hvalue := hPoincare u hu hc hbottom htop
+  rw [← stdComplexLineImag_eq] at hvalue
+  have htbound := integral_mono
+    (hti.integrableOn (s := univ ×ˢ Icc (0 : ℝ) 1)) henergy.integrableOn
+    (fun z ↦ le_add_of_nonneg_left (sq_nonneg ‖fderiv ℝ u z stdComplexLineReal‖))
+  rw [integral_add hi.integrableOn henergy.integrableOn]
+  nlinarith [mul_le_mul_of_nonneg_left htbound hC.le]
+
 /-- With disjoint linear isotropic boundary subspaces, the Cauchy--Riemann defect controls the
 full value and directional derivative energy on the strip. The constant is uniform over all
 compactly supported `C²` maps satisfying the boundary conditions. -/
@@ -191,34 +224,11 @@ theorem exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul
           ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2)) ≤
       C * ∫ z in univ ×ˢ Icc (0 : ℝ) 1,
         ‖fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)‖ ^ 2 := by
-  obtain ⟨C, hC, hPoincare⟩ :=
-    L₀.exists_integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_disjoint L₁ hL
-  refine ⟨C + 1, by linarith, ?_⟩
-  intro u hu hc hbottom htop
-  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  have hi : Integrable (fun z ↦ ‖u z‖ ^ 2) :=
-    hu.continuous.integrable_norm_sq_of_hasCompactSupport hc
-  have hsi : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) :=
-    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-      (hc.fderiv_apply ℝ stdComplexLineReal)
-  have hti : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) :=
-    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-      (hc.fderiv_apply ℝ stdComplexLineImag)
-  have henergy : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) := hsi.fun_add hti
-  have hvalue := hPoincare u (hu.of_le (by norm_num)) hc hbottom htop
-  have htbound : (∫ z in univ ×ˢ Icc (0 : ℝ) 1,
-      ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) ≤
-      ∫ z in univ ×ˢ Icc (0 : ℝ) 1,
-        ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2 :=
-    integral_mono hti.integrableOn henergy.integrableOn
-      (fun z ↦ le_add_of_nonneg_left (sq_nonneg _))
-  have hidentity := integral_norm_partialDeriv_sq_strip_eq_integral_norm_cauchyRiemann_sq
-    hg hu hc hL₀ hL₁ hbottom htop
-  rw [integral_add hi.integrableOn henergy.integrableOn, ← hidentity]
-  have hscaled := mul_le_mul_of_nonneg_left htbound hC.le
-  rw [← stdComplexLineImag_eq] at hvalue
-  nlinarith
+  obtain ⟨C, hC, hfull⟩ :=
+    exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul_integral_partialDeriv_sq hL
+  refine ⟨C, hC, fun u hu hc hbottom htop ↦ ?_⟩
+  have h := hfull u (hu.of_le (by norm_num)) hc hbottom htop
+  rwa [integral_norm_partialDeriv_sq_strip_eq_integral_norm_cauchyRiemann_sq
+    hg hu hc hL₀ hL₁ hbottom htop] at h
 
 end TauCeti
