@@ -36,7 +36,7 @@ open scoped ContDiff
 /-- Smooth matrix coefficients act on integer-order plane-vortex Sobolev fields whenever
 each entry and its derivatives through order `k` are bounded. This includes coordinate changes
 which mix connection and section variations. -/
-theorem matrix_mul_mem_sobolevFields_natCast (k : ℕ)
+theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
     {A : Fin 4 → Fin 4 → ℂ → ℝ} (hA : ∀ i j, ContDiff ℝ ∞ (A i j))
     (hbound : ∀ i j, ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (A i j) z‖ ≤ M)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
@@ -83,7 +83,7 @@ theorem smul_mem_sobolevFields_natCast (k : ℕ) {ψ : ℂ → ℝ}
     by_cases hij : i = j
     · simpa only [ite_eq_left hij] using hbound n hn z
     · simpa only [ite_eq_right hij, iteratedFDeriv_fun_zero, Pi.zero_apply, norm_zero] using hM
-  have h := matrix_mul_mem_sobolevFields_natCast k hdiag hdiag_bound hy
+  have h := mulVec_mem_sobolevFields_natCast k hdiag hdiag_bound hy
   have hfield : (fun z ↦ WithLp.toLp 2 (fun i ↦
       ∑ j : Fin 4, (if i = j then ψ z else 0) * y z j)) = fun z ↦ ψ z • y z := by
     ext z i
