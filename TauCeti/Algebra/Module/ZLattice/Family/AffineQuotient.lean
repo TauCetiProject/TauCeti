@@ -101,6 +101,18 @@ theorem torusFamilyAffineQuotientLift_mk {Z : Type*} (f : Y → Z)
       f (torusFamilyProjection P x) :=
   (rfl)
 
+/-- The affine quotient projection induced by a continuous invariant base map is continuous. -/
+theorem continuous_torusFamilyAffineQuotientLift [TopologicalSpace Y] [TopologicalSpace E]
+    {Z : Type*} [TopologicalSpace Z] {f : Y → Z}
+    {hf : ∀ (g : Γ) y, f (g • y) = f y} (hfc : Continuous f) :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    Continuous (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul f hf) := by
+  apply isQuotientMap_quot_mk.continuous_iff.2
+  convert hfc.comp (continuous_torusFamilyProjection P) using 1
+  funext x
+  exact torusFamilyAffineQuotientLift_mk P R ρ hequiv b hb hone hmul hbone hbmul f hf x
+
 end Lift
 
 section Topology
