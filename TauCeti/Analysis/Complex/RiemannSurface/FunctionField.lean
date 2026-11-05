@@ -240,6 +240,14 @@ theorem eq_of_eventuallyEq_finitePart (h : ∀ x, f.finitePart =ᶠ[𝓝[≠] x]
   filter_upwards [h x, f.eventually_ne_infty x, g.eventually_ne_infty x] with y hy hf hg
   rw [← coe_finitePart hf, ← coe_finitePart hg, hy]
 
+/-- **A meromorphic function on a compact preconnected Riemann surface has finitely many poles.** -/
+theorem finite_setOf_eq_infty [CompactSpace X] (f : MeromorphicFunction X) :
+    {x | f x = ∞}.Finite := by
+  have h : {x | f x ≠ ∞} ∈ Filter.codiscrete X :=
+    eventually_codiscrete_iff_forall_eventually_nhdsNE.2 f.eventually_ne_infty
+  exact (isCompact_univ.finite_sdiff_of_mem_codiscreteWithin h).subset fun y hy ↦
+    ⟨mem_univ y, (· hy)⟩
+
 end Preconnected
 
 /-! ### Meromorphic functions from functions `X → ℂ` -/
@@ -720,13 +728,6 @@ theorem inv_apply_of_eq_infty (hf : f x = ∞) : f⁻¹ x = ((0 : ℂ) : OnePoin
 section Compact
 
 variable [CompactSpace X]
-
-/-- **A meromorphic function on a compact connected Riemann surface has finitely many poles.** -/
-theorem finite_setOf_eq_infty (f : MeromorphicFunction X) : {x | f x = ∞}.Finite := by
-  have h : {x | f x ≠ ∞} ∈ Filter.codiscrete X :=
-    eventually_codiscrete_iff_forall_eventually_nhdsNE.2 f.eventually_ne_infty
-  exact (isCompact_univ.finite_sdiff_of_mem_codiscreteWithin h).subset fun y hy ↦
-    ⟨mem_univ y, (· hy)⟩
 
 /-- **A nonzero meromorphic function on a compact connected Riemann surface has finitely many
 zeros.** -/
