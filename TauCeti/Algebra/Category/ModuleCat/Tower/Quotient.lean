@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Topology
 
+import Mathlib.LinearAlgebra.Isomorphisms
+
 /-!
 # Completion of a module along a decreasing family of submodules
 
@@ -30,15 +32,18 @@ whose `n`-th coordinate is the class of `f b` for any representative `b` of such
 coordinate. It extends `f`, it is the only continuous map extending `f`, and it is compatible with
 identities and composition.
 
-The ideal-power filtrations `Iⁿ⁺¹ M` of a commutative ring are handled by the dedicated tower
-`TauCeti.ModuleTower.reduction`, whose limit is Mathlib's `AdicCompletion`. The present
-construction allows arbitrary decreasing families over noncommutative rings, such as the left
-ideals of high-order currents in an enveloping algebra of an affine Lie algebra at a fixed level.
+The tower of the ideal-power filtration `Iⁿ⁺¹ M` of a module over a commutative ring, whose limit
+is Mathlib's `AdicCompletion`, is `TauCeti.ModuleTower.reduction` in
+`TauCeti.Algebra.Category.ModuleCat.Tower.Reduction`. The present construction allows arbitrary
+decreasing families over noncommutative rings, such as the left ideals of high-order currents in an
+enveloping algebra of an affine Lie algebra at a fixed level.
 
 ## Main definitions
 
 * `TauCeti.ModuleTower.quotients`: the tower of quotients `M ⧸ Jₙ`.
-* `TauCeti.ModuleTower.quotientsπ`: the quotient maps `M → M ⧸ Jₙ`.
+* `TauCeti.ModuleTower.quotientsπ`, `TauCeti.ModuleTower.quotientsLift`,
+  `TauCeti.ModuleTower.quotientsLiftEquiv`: the quotient maps `M → M ⧸ Jₙ` and their universal
+  property.
 * `TauCeti.ModuleTower.toLimQuotients`: the canonical map `M → lim M ⧸ Jₙ`.
 * `TauCeti.ModuleTower.limQuotientsMap`: the map of completions induced by a continuous
   semilinear map.
@@ -104,6 +109,44 @@ theorem ker_quotientsπ (n : ℕ) : LinearMap.ker (quotientsπ J hJ n) = J n :=
 @[simp]
 theorem quotientsπ_eq_zero_iff {n : ℕ} {x : M} : quotientsπ J hJ n x = 0 ↔ x ∈ J n := by
   rw [← LinearMap.mem_ker, ker_quotientsπ]
+
+theorem quotientsπ_eq_quotientsπ_iff {n : ℕ} {x y : M} :
+    quotientsπ J hJ n x = quotientsπ J hJ n y ↔ x - y ∈ J n := by
+  rw [← sub_eq_zero, ← map_sub, quotientsπ_eq_zero_iff]
+
+/-- Linear maps out of a term of the tower of quotients agree once they agree on `M`. -/
+@[ext]
+theorem quotients_hom_ext {P : Type*} [AddCommGroup P] [Module R P] {n : ℕ}
+    {f g : (quotients J hJ).obj (op n) →ₗ[R] P}
+    (h : f ∘ₗ quotientsπ J hJ n = g ∘ₗ quotientsπ J hJ n) : f = g :=
+  Submodule.linearMap_qext _ h
+
+/-- The universal property of the `n`-th term of the tower of quotients: a linear map `M → P`
+killing `Jₙ` factors through `M ⧸ Jₙ`. -/
+def quotientsLift {P : Type*} [AddCommGroup P] [Module R P] (n : ℕ) (f : M →ₗ[R] P)
+    (hf : J n ≤ LinearMap.ker f) : (quotients J hJ).obj (op n) →ₗ[R] P :=
+  (J n).liftQ f hf
+
+@[simp]
+theorem quotientsLift_quotientsπ {P : Type*} [AddCommGroup P] [Module R P] (n : ℕ)
+    (f : M →ₗ[R] P) (hf : J n ≤ LinearMap.ker f) (x : M) :
+    quotientsLift J hJ n f hf (quotientsπ J hJ n x) = f x :=
+  Submodule.liftQ_apply _ f x
+
+/-- A surjective linear map `f : M → P` with kernel `Jₙ` identifies the `n`-th term `M ⧸ Jₙ` of the
+tower of quotients with `P`. -/
+def quotientsLiftEquiv {P : Type*} [AddCommGroup P] [Module R P] (n : ℕ) (f : M →ₗ[R] P)
+    (hf : LinearMap.ker f = J n) (hs : Function.Surjective f) :
+    (quotients J hJ).obj (op n) ≃ₗ[R] P :=
+  (Submodule.quotEquivOfEq _ _ hf.symm).trans (f.quotKerEquivOfSurjective hs)
+
+@[simp]
+theorem quotientsLiftEquiv_quotientsπ {P : Type*} [AddCommGroup P] [Module R P] (n : ℕ)
+    (f : M →ₗ[R] P) (hf : LinearMap.ker f = J n) (hs : Function.Surjective f) (x : M) :
+    quotientsLiftEquiv J hJ n f hf hs (quotientsπ J hJ n x) = f x :=
+  -- `quotientsπ` is the quotient map `Submodule.mkQ`, on which both factors of the equivalence
+  -- are the identity on representatives.
+  (rfl)
 
 @[simp]
 theorem transitionOfLE_quotientsπ {n k : ℕ} (h : n ≤ k) (x : M) :
