@@ -170,12 +170,6 @@ theorem integral_realKernel_mul_sin {x : ℝ} (hx : 1 ≤ |x|) :
   simp [this, reciprocalKernel_def, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im,
     mul_comm]
 
-/-- The real Haagerup–Zsidó kernel times a sine is integrable. -/
-theorem integrable_realKernel_mul_sin (x : ℝ) :
-    Integrable fun t ↦ realKernel t * Real.sin (x * t) :=
-  integrable_realKernel.mul_bdd (c := 1) (by fun_prop)
-    (.of_forall fun t ↦ by simpa using Real.abs_sin_le_one _)
-
 /-- **The reciprocal sine identity at scale `δ`.** For `0 < δ ≤ |a|`, the real Haagerup–Zsidó
 kernel satisfies `∫ r(t) sin (a t / δ) dt = δ / a`: the rescaled form of
 `TauCeti.HaagerupZsido.integral_realKernel_mul_sin`. -/
