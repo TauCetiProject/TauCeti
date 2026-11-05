@@ -126,9 +126,8 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
     loopZeroChainToGroupAlgebra X x R
         (NormalizedCubicalChain.ofCube (MooreLoopSpace X x) R c) =
       MonoidAlgebra.single (MooreLoopSpace.fundamentalGroupHom x (c 0)) 1 := by
-  rw [show c = SingularCube.point (c 0) from ContinuousMap.ext fun t ↦ by
-    rw [SingularCube.point_apply, Subsingleton.elim t 0], SingularCube.point_apply]
-  let γ := c 0
+  rw [SingularCube.eq_point c, SingularCube.point_apply]
+  let γ := c fun i ↦ i.elim0
   let T := TopCat.of (MooreLoopSpace X x)
   let L := (TopCat.toSSet.obj T).chainComplex (ModuleCat.of R R)
   let σ := (TopCat.toSSetObj₀Equiv (X := T)).symm γ
