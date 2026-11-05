@@ -220,17 +220,17 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · exact DFunLike.congr_fun h (L w)
 
 open Filter in
-/-- If the critical point of the coordinate expression `fun v ↦ F (q.1, (extChartAt I x).symm v)`
+/-- If the critical point of the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)`
 of a `C¹` family is, near `(p, extChartAt I x x)`, uniquely `η q.1`, then the zero of the manifold
-derivative of `fun y ↦ F (q.1, y)` near `(p, x)` is uniquely `(extChartAt I x).symm (η q.1)`. -/
+derivative of `fun y ↦ f (q.1, y)` near `(p, x)` is uniquely `(extChartAt I x).symm (η q.1)`. -/
 theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace 𝕜 P] {F : P × M → 𝕜} {p : P} {x : M} {η : P → E}
-    (hG : ContDiffAt 𝕜 1 (fun q : P × E ↦ F (q.1, (extChartAt I x).symm q.2))
+    [NormedSpace 𝕜 P] {f : P × M → F} {p : P} {x : M} {η : P → E}
+    (hG : ContDiffAt 𝕜 1 (fun q : P × E ↦ f (q.1, (extChartAt I x).symm q.2))
       (p, extChartAt I x x))
     (htarget : ∀ᶠ q in 𝓝 p, η q ∈ (extChartAt I x).target)
     (huniq : ∀ᶠ q in 𝓝 (p, extChartAt I x x),
-      fderiv 𝕜 (fun v ↦ F (q.1, (extChartAt I x).symm v)) q.2 = 0 ↔ η q.1 = q.2) :
-    ∀ᶠ q in 𝓝 (p, x), mfderiv I 𝓘(𝕜) (fun y ↦ F (q.1, y)) q.2 = 0 ↔
+      fderiv 𝕜 (fun v ↦ f (q.1, (extChartAt I x).symm v)) q.2 = 0 ↔ η q.1 = q.2) :
+    ∀ᶠ q in 𝓝 (p, x), mfderiv I 𝓘(𝕜, F) (fun y ↦ f (q.1, y)) q.2 = 0 ↔
       (extChartAt I x).symm (η q.1) = q.2 := by
   let φ := extChartAt I x
   have hmap : ContinuousAt (fun q : P × M ↦ (q.1, φ q.2)) (p, x) :=
@@ -240,7 +240,7 @@ theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [NormedAddCom
     continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds x)
   filter_upwards [hmap.eventually huniq, hGnear, hsnear,
     continuousAt_fst.preimage_mem_nhds htarget] with q hu hg hs ht
-  have hslice : DifferentiableAt 𝕜 ((fun y ↦ F (q.1, y)) ∘ φ.symm) (φ q.2) :=
+  have hslice : DifferentiableAt 𝕜 ((fun y ↦ f (q.1, y)) ∘ φ.symm) (φ q.2) :=
     (hg.comp (φ q.2) (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt one_ne_zero
   rw [mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hs hslice]
   exact hu.trans (φ.symm_apply_eq hs ht).symm
