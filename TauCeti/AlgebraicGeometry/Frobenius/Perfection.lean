@@ -255,7 +255,6 @@ def perfection : Scheme.{u} :=
   (X.perfectionGluingData p hX).glued
 
 /-- The structure morphism `X^perf ⟶ X` of the perfection. -/
-@[expose]
 def fromPerfection : X.perfection p hX ⟶ X :=
   (X.perfectionGluingData p hX).toBase
 
