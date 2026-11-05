@@ -23,12 +23,6 @@ the invariant differential
 (`TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`), so
 `c u₂ / u₁` is the constant of `φ` read between the global minimal equations of `E₁` and `E₂`.
 
-The proof base changes `φ` to `ℝ`, where the constant becomes the image of `c`
-(`TauCeti.Isogeny.map_pullbackDifferential_invariantDifferential_eq_smul`), applies the real
-transformation formula `TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul`, and
-converts the real periods of the equations into those of the curves with
-`WeierstrassCurve.minimalRealPeriod_eq_abs_mul`.
-
 ## Main results
 
 * `TauCeti.Isogeny.abs_mul_minimalRealPeriod_mul_index_eq_card_ker_mul`: **the real period of an
@@ -91,9 +85,9 @@ theorem abs_mul_minimalRealPeriod_mul_index_eq_card_ker_mul_of_isGlobalMinimal
     |(c : ℝ)| * E₁.minimalRealPeriod *
         (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.range.index =
       Nat.card (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.ker * E₂.minimalRealPeriod := by
-  have h := abs_mul_minimalRealPeriod_mul_index_eq_card_ker_mul φ hc
-    (C₁ := 1) (C₂ := 1) (by simpa only [one_smul] using h₁) (by simpa only [one_smul] using h₂)
-  simpa [VariableChange.one_def] using h
+  rw [h₁.minimalRealPeriod_eq, h₂.minimalRealPeriod_eq]
+  simpa only [eq_ratCast] using abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ.baseChange ℝ)
+    (map_pullbackDifferential_invariantDifferential_eq_smul φ (algebraMap ℚ ℝ) hc)
 
 end TauCeti.Isogeny
 
