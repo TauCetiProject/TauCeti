@@ -270,9 +270,9 @@ theorem rpow_two_div_one_add_le_exp_mul_sq {s c h δ K : ℝ} (hc : 0 < c) (hh :
   -- With `L = -log s ≥ 0`, the claim is `L δ / (1 + δ) ≤ K (1 + |log c|)`.
   have hL : 0 ≤ -Real.log s := neg_nonneg.2 (Real.log_nonpos hs0.le hs1)
   have hLM : -Real.log s ≤ -Real.log c - Real.log h := by
-    rw [show -Real.log c - Real.log h = -Real.log (c * h) by
-      rw [Real.log_mul hc.ne' hh.ne']; ring, neg_le_neg_iff]
-    exact Real.log_le_log hch hs
+    have := Real.log_le_log hch hs
+    rw [Real.log_mul hc.ne' hh.ne'] at this
+    linarith
   have hhlog : -(h * Real.log h) ≤ 1 := by linarith [Real.self_sub_one_le_mul_log hh.le]
   have hclog : -(h * Real.log c) ≤ |Real.log c| := by
     calc -(h * Real.log c) = h * -Real.log c := by ring
