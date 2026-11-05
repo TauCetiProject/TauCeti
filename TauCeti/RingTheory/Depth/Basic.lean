@@ -27,9 +27,10 @@ Mathlib defines the depth `IsLocalRing.depth M` of a module over a local ring `R
 vanishing of `Ext (R ⧸ 𝔪) M`, and identifies it, for a finite nonzero module over a Noetherian local
 ring, with the supremum of the lengths of `M`-regular sequences in `𝔪`. This file relates depth
 to dimension, quotients by regular sequences, short exact sequences and modules of linear maps,
-and, after localization, to associated primes. The short exact sequence bounds hold for
-`Ideal.depth I` over any commutative ring; the other results are for Noetherian local rings
-or, after localization, Noetherian rings.
+and, after localization, to associated primes. The short exact sequence bounds for
+`Ideal.depth I`, and the bound on the length of a regular sequence on a finite module, hold over
+any commutative ring; the other results are for Noetherian local rings or, after localization,
+Noetherian rings.
 The regular-sequence transfer lemmas for linear maps live in
 `TauCeti.RingTheory.Regular.LinearMap`.
 
@@ -37,7 +38,7 @@ The regular-sequence transfer lemmas for linear maps live in
 
 * `RingTheory.Sequence.IsRegular.mem_maximalIdeal`: over a local ring, every element of an
   `M`-regular sequence lies in the maximal ideal.
-* `RingTheory.Sequence.IsRegular.length_le_supportDim`: over a Noetherian ring, the length
+* `RingTheory.Sequence.IsRegular.length_le_supportDim`: over any commutative ring, the length
   of an `M`-regular sequence on a finite module `M` is at most the dimension of its support.
 * `IsLocalRing.depth_le_supportDim`: the depth of a finite nonzero module over a Noetherian local
   ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)).
@@ -114,10 +115,10 @@ theorem RingTheory.Sequence.IsRegular.mem_maximalIdeal {R : Type*} [CommRing R] 
   rw [Ideal.eq_top_of_isUnit_mem (Ideal.ofList rs) (Ideal.subset_span hr)
     (notMem_maximalIdeal.1 h), Submodule.top_smul]
 
-/-- Over a Noetherian ring, the length of an `M`-regular sequence on a finite module `M` is at most
-the dimension of the support of `M`. -/
+/-- Over any commutative ring, the length of an `M`-regular sequence on a finite module `M` is at
+most the dimension of the support of `M`. -/
 theorem RingTheory.Sequence.IsRegular.length_le_supportDim {R : Type*} [CommRing R]
-    [IsNoetherianRing R] {M : Type*} [AddCommGroup M] [Module R M] [Module.Finite R M]
+    {M : Type*} [AddCommGroup M] [Module R M] [Module.Finite R M]
     {rs : List R} (reg : IsRegular M rs) :
     (rs.length : WithBot ℕ∞) ≤ Module.supportDim R M := by
   induction rs generalizing M with
