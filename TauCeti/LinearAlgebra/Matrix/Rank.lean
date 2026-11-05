@@ -46,6 +46,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
   `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
+* `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
+  preserves rank.
 * `LinearMap.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
 * `Matrix.natCard_range_mulVec_eq_pow_rank`: the column space of a matrix over a field `K` has
   `|K| ^ rank` elements.
@@ -212,6 +214,14 @@ theorem rank_left_factor_eq {ι : Type*} [Fintype ι]
     _ ≤ L.rank := Matrix.rank_mul_le_left L C
 
 end ExactRankFactorization
+
+/-- Left multiplication by a full-column-rank matrix preserves matrix rank. -/
+theorem rank_mul_eq_right_of_rank_eq_card {R m r o : Type*} [CommRing R] [IsDomain R]
+    [Fintype r] [Fintype o] (A : Matrix m r R) (B : Matrix r o R)
+    (hA : A.rank = Fintype.card r) : (A * B).rank = B.rank := by
+  apply le_antisymm (rank_mul_le_right A B)
+  have h := rank_mul_ge A B
+  omega
 
 section ExactRankFactorRange
 

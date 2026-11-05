@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 public import TauCeti.Topology.MetricSpace.Holder
 
 /-!

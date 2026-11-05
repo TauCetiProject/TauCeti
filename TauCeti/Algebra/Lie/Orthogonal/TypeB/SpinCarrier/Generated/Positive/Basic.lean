@@ -165,6 +165,19 @@ theorem mem_carrierDefiningIdeal
     x ∈ carrierDefiningIdeal n A ↔ (restriction n A).hom x = 0 := by
   rw [← kerOfSurjective_restriction, HopfIdeal.mem_kerOfSurjective]
 
+/-- Pulling an overgroup of the positive subgroup back to the ambient general linear group
+preserves its containment of the positive subgroup. This holds over every commutative ring. -/
+theorem carrier_comap_le_definingIdeal
+    (I : HopfIdeal A (TypeBSpinCarrier.generatedCoordinateHopfAlgebra n A))
+    (hI : I ≤ carrierDefiningIdeal n A) :
+    I.comapOfSurjective (TypeBSpinCarrier.generatedCoordinateMap n A).hom
+      (TypeBSpinCarrier.generatedCoordinateMap_surjective n A) ≤ definingIdeal n A := by
+  apply (TypeBSpinCarrier.generatedCoordinateMap n A).comapOfSurjective_le_of_comp_eq_mkQuotient
+    (TypeBSpinCarrier.generatedCoordinateMap_surjective n A) (definingIdeal n A)
+    (restriction n A) (generatedCoordinateMap_comp_restriction n A) I
+  intro z hz
+  exact (mem_carrierDefiningIdeal n A z).mp (hI hz)
+
 /-- Each positive numbered-root and weight-torus lift of the full generated carrier factors
 through restriction to the positive subgroup, followed by that subgroup's generator lift. -/
 @[reassoc (attr := simp)]

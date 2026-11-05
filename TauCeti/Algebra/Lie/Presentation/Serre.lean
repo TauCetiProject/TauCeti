@@ -433,9 +433,45 @@ end Stability
 
 /-! ### Nested brackets
 
+At a Cartan entry of minus one, the higher Serre relation says that the bracket of two
+raising (or lowering) generators commutes with the first generator. Applying this at the
+reversed entry gives commutation with the second generator.
+
 The bracket relations of a Serre system determine the nested bracket of two raising elements at
 distinct nodes with the lowering element at the second node, and, through the signed exchange
 `TauCeti.IsSerreSystem.neg_swap`, its lowering counterpart. -/
+
+section SingleBond
+
+variable {R CM} {H E F : B → L}
+
+omit [DecidableEq B] in
+/-- At a Cartan entry of minus one, the raising bracket commutes with its first generator. -/
+theorem IsSerreSystem.lie_E_lie_E_E_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hij : CM i j = -1) : ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
+  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_E_E i j
+
+omit [DecidableEq B] in
+/-- At the reversed Cartan entry of minus one, the raising bracket commutes with its
+second generator. -/
+theorem IsSerreSystem.lie_E_lie_E_E_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hji : CM j i = -1) : ⁅E j, ⁅E i, E j⁆⁆ = 0 := by
+  rw [← lie_skew (E i) (E j), lie_neg, h.lie_E_lie_E_E_of_eq_neg_one hji, neg_zero]
+
+omit [DecidableEq B] in
+/-- At a Cartan entry of minus one, the lowering bracket commutes with its first generator. -/
+theorem IsSerreSystem.lie_F_lie_F_F_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hij : CM i j = -1) : ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
+  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_F_F i j
+
+omit [DecidableEq B] in
+/-- At the reversed Cartan entry of minus one, the lowering bracket commutes with its
+second generator. -/
+theorem IsSerreSystem.lie_F_lie_F_F_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
+    {i j : B} (hji : CM j i = -1) : ⁅F j, ⁅F i, F j⁆⁆ = 0 := by
+  rw [← lie_skew (F i) (F j), lie_neg, h.lie_F_lie_F_F_of_eq_neg_one hji, neg_zero]
+
+end SingleBond
 
 section NestedBrackets
 
@@ -455,6 +491,20 @@ theorem IsSerreSystem.lie_lie_F_F_E_of_ne (h : IsSerreSystem R CM H E F) {i j : 
   have hswap := h.neg_swap.lie_lie_E_E_F_of_ne hij
   simp only [neg_lie, lie_neg, neg_neg, smul_neg] at hswap
   exact neg_eq_iff_eq_neg.mp hswap
+
+omit [DecidableEq B] in
+/-- The higher raising Serre relation at an entry equal to `-1` is a double bracket. -/
+theorem IsSerreSystem.lie_E_lie_E_E_eq_zero_of_eq_neg_one
+    (h : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j = -1) :
+    ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
+  simpa [hij] using h.ad_pow_lie_E_E i j
+
+omit [DecidableEq B] in
+/-- The higher lowering Serre relation at an entry equal to `-1` is a double bracket. -/
+theorem IsSerreSystem.lie_F_lie_F_F_eq_zero_of_eq_neg_one
+    (h : IsSerreSystem R CM H E F) {i j : B} (hij : CM i j = -1) :
+    ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
+  simpa [hij] using h.ad_pow_lie_F_F i j
 
 end NestedBrackets
 

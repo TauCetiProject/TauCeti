@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Tangent.Differential
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 public import TauCeti.Geometry.Lie.Exponential.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Monoid
@@ -27,6 +28,8 @@ Lie-group exponential.
 ## Main results
 
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
+* `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
+  homomorphism preserves the Lie bracket.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
@@ -61,16 +64,11 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
-private noncomputable def lieMapTangent
-    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
-    GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I' G' :=
-  mfderiv I I' φ 1
-
 private theorem mfderiv_monoidHom_mulInvariantVectorField
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
     (X : GroupLieAlgebra I G) :
     mfderiv I I' φ g (mulInvariantVectorField X g) =
-      mulInvariantVectorField (mfderiv I I' φ 1 X) (φ g) := by
+      mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) (φ g) := by
   simp only [mulInvariantVectorField]
   have hfun : (φ : G → G') ∘ (fun y : G ↦ g * y) =
       (fun z : G' ↦ φ g * z) ∘ φ := by
@@ -88,50 +86,50 @@ private theorem mfderiv_monoidHom_mulInvariantVectorField
     (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
   rw [hleft, hright] at h
   rw [mul_one, map_one] at h
+  rw [φ.toMonoidHom.groupLieAlgebraMap_apply I X]
   exact h
 
 private theorem tangent_comp_monoidHom
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
     (X : GroupLieAlgebra I G) (f : G' → ℝ) (hf : ContMDiff I' 𝓘(ℝ, ℝ) ∞ f) :
-    mvfderiv I' f (φ g) (mulInvariantVectorField (lieMapTangent φ X) (φ g)) =
+    mvfderiv I' f (φ g) (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) (φ g)) =
       mvfderiv I (f ∘ φ) g (mulInvariantVectorField X g) := by
-  have hfield := mfderiv_monoidHom_mulInvariantVectorField φ g X
-  -- `lieMapTangent` is the identity differential already present in `hfield`; expose that private
-  -- abbreviation so the manifold chain rule can rewrite the pushed-forward direction.
-  change mfderiv I I' φ g (mulInvariantVectorField X g) =
-      mulInvariantVectorField (lieMapTangent φ X) (φ g) at hfield
-  rw [← hfield]
+  rw [← mfderiv_monoidHom_mulInvariantVectorField φ g X]
   exact (mfderiv_comp_apply g
     (hf.mdifferentiable (by simp)).mdifferentiableAt
     (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
     (mulInvariantVectorField X g)).symm
 
-private theorem lieMapTangent_map_lie
+/-- The differential at the identity of a smooth homomorphism preserves the Lie bracket of the
+tangent Lie algebras. -/
+theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (X Y : GroupLieAlgebra I G) :
-    lieMapTangent φ ⁅X, Y⁆ = ⁅lieMapTangent φ X, lieMapTangent φ Y⁆ := by
+    φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆ =
+      ⁅φ.toMonoidHom.groupLieAlgebraMap I I' X, φ.toMonoidHom.groupLieAlgebraMap I I' Y⁆ := by
   let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   apply tangentToPointDerivation_injective (I := I') (1 : G')
   ext f
   let F : C^∞⟮I', G'; ℝ⟯ := f
   -- The separating point derivations evaluate by `mvfderiv`; expose those applications so the
   -- bracket computation can use the public directional-derivative API.
-  change mvfderiv I' F 1 (lieMapTangent φ ⁅X, Y⁆) =
-    mvfderiv I' F 1 ⁅lieMapTangent φ X, lieMapTangent φ Y⁆
+  change mvfderiv I' F 1 (φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆) =
+    mvfderiv I' F 1
+      ⁅φ.toMonoidHom.groupLieAlgebraMap I I' X, φ.toMonoidHom.groupLieAlgebraMap I I' Y⁆
   rw [GroupLieAlgebra.bracket_def (v := X) (w := Y)]
   rw [GroupLieAlgebra.bracket_def
-    (v := lieMapTangent φ X) (w := lieMapTangent φ Y)]
+    (v := φ.toMonoidHom.groupLieAlgebraMap I I' X) (w := φ.toMonoidHom.groupLieAlgebraMap I I' Y)]
   have hsourceBracket :
       mlieBracket I (mulInvariantVectorField X) (mulInvariantVectorField Y) 1 = ⁅X, Y⁆ :=
     (GroupLieAlgebra.bracket_def X Y).symm
   rw [hsourceBracket]
   have htarget :
-      mlieBracket I' (mulInvariantVectorField (lieMapTangent φ X))
-          (mulInvariantVectorField (lieMapTangent φ Y)) 1 =
+      mlieBracket I' (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
+          (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) 1 =
         mulInvariantVectorField
-          (mlieBracket I' (mulInvariantVectorField (lieMapTangent φ X))
-            (mulInvariantVectorField (lieMapTangent φ Y)) 1) 1 := by
+          (mlieBracket I' (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
+            (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) 1) 1 := by
     rw [mulInvariantVectorField_one]
   rw [htarget]
   have hsource := tangent_comp_monoidHom φ 1 ⁅X, Y⁆ F F.contMDiff
@@ -139,7 +137,7 @@ private theorem lieMapTangent_map_lie
   simp only [mulInvariantVectorField_one] at hsource
   -- `hsource` still presents the target direction through its invariant field at one; expose its
   -- canonical tangent representative before rewriting by the chain-rule equality.
-  change mvfderiv I' F 1 (lieMapTangent φ ⁅X, Y⁆) = _ at hsource
+  change mvfderiv I' F 1 (φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆) = _ at hsource
   rw [hsource, ← hsourceBracket, mulInvariantVectorField_one]
   rw [mvfderiv_mlieBracket
     (f := (F : G' → ℝ) ∘ φ)
@@ -150,22 +148,22 @@ private theorem lieMapTangent_map_lie
     ((contMDiff_mulInvariantVectorField_infty Y).mdifferentiable (by simp)).mdifferentiableAt]
   rw [mvfderiv_mlieBracket
     (f := (F : G' → ℝ))
-    (V := mulInvariantVectorField (lieMapTangent φ X))
-    (W := mulInvariantVectorField (lieMapTangent φ Y)) (x := (1 : G'))
+    (V := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
+    (W := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) (x := (1 : G'))
     F.contMDiff.contMDiffAt
     (by simp)
-    ((contMDiff_mulInvariantVectorField_infty (lieMapTangent φ X)).mdifferentiable
-      (by simp)).mdifferentiableAt
-    ((contMDiff_mulInvariantVectorField_infty (lieMapTangent φ Y)).mdifferentiable
-      (by simp)).mdifferentiableAt]
+    ((contMDiff_mulInvariantVectorField_infty
+      (φ.toMonoidHom.groupLieAlgebraMap I I' X)).mdifferentiable (by simp)).mdifferentiableAt
+    ((contMDiff_mulInvariantVectorField_infty
+      (φ.toMonoidHom.groupLieAlgebraMap I I' Y)).mdifferentiable (by simp)).mdifferentiableAt]
   let FY : G' → ℝ := fun y ↦
-    mvfderiv I' F y (mulInvariantVectorField (lieMapTangent φ Y) y)
+    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) y)
   let FX : G' → ℝ := fun y ↦
-    mvfderiv I' F y (mulInvariantVectorField (lieMapTangent φ X) y)
+    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) y)
   have hFY : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FY :=
-    contMDiff_mvfderiv_mulInvariantVectorField (lieMapTangent φ Y) F
+    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) F
   have hFX : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FX :=
-    contMDiff_mvfderiv_mulInvariantVectorField (lieMapTangent φ X) F
+    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) F
   have hYfun : FY ∘ φ = fun y ↦
       mvfderiv I (F ∘ φ) y (mulInvariantVectorField Y y) := by
     funext g
@@ -185,10 +183,10 @@ noncomputable def lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
     LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
   let tangentMap : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I' G' :=
-    { toLinearMap := lieMapTangent φ
+    { toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
       map_lie' := by
         intro X Y
-        exact lieMapTangent_map_lie φ X Y }
+        exact φ.groupLieAlgebraMap_lie X Y }
   (leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := I') (G := G') (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).symm.toLieHom.comp
     (tangentMap.comp
@@ -213,9 +211,9 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
   let e' := leftInvariantDerivationLieEquivGroupLieAlgebra hG'
   -- Unfold the transported `LieHom` application once to expose the two canonical Lie
   -- equivalences; their inverse law then characterizes `lieMap` without exposing its body publicly.
-  change e' (e'.symm (lieMapTangent φ (e D))) = _
+  change e' (e'.symm (φ.toMonoidHom.groupLieAlgebraMap I I' (e D))) = _
   rw [e'.apply_symm_apply]
-  rfl
+  exact φ.toMonoidHom.groupLieAlgebraMap_apply I (e D)
 
 /-- The Lie map of the identity homomorphism is the identity Lie-algebra homomorphism. -/
 @[simp]
@@ -262,14 +260,11 @@ theorem lieMap_comp
   have hψD : e'' (lieMap ψ (lieMap φ D)) =
       mfderiv I' I'' ψ 1 (e' (lieMap φ D)) :=
     leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap _ _
-  have hchain := mfderiv_comp_apply (I := I) (I' := I') (I'' := I'') (x := (1 : G))
-    (g := (ψ : G' → G'')) (f := (φ : G → G'))
-    (ψ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
-    (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt (e D)
   have hchain' : mfderiv I I'' (ψ.comp φ) 1 (e D) =
       mfderiv I' I'' ψ 1 (mfderiv I I' φ 1 (e D)) := by
     rw [ContMDiffMonoidMorphism.coe_comp]
-    exact hchain.trans (by rw [map_one])
+    exact mfderiv_comp_apply_of_eq 1 (ψ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
+      (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt (map_one φ) (e D)
   have hright : mfderiv I' I'' ψ 1 (mfderiv I I' φ 1 (e D)) =
       e'' (lieMap ψ (lieMap φ D)) := by
     rw [← hφD, ← hψD]
@@ -283,11 +278,11 @@ private theorem monoidHom_mulInvariantExp
     let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
     φ (mulInvariantExp (I := I) (G := G) X) =
       mulInvariantExp (I := I') (G := G')
-        (lieMapTangent φ X) := by
+        (φ.toMonoidHom.groupLieAlgebraMap I I' X) := by
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   dsimp only
-  let Y := lieMapTangent φ X
+  let Y := φ.toMonoidHom.groupLieAlgebraMap I I' X
   let γ := mulInvariantIntegralCurve (I := I) (G := G) X 1
   have hcurve : IsMIntegralCurve (φ ∘ γ)
       (mulInvariantVectorField (I := I') (G := G') Y) := by
@@ -298,8 +293,7 @@ private theorem monoidHom_mulInvariantExp
       (W := mulInvariantVectorField (I := I') (G := G') Y)
       (γ := γ) (s := Set.univ)
       (fun t _ => φ.contMDiff_toFun.mdifferentiable (by simp) (γ t))
-      (fun t _ => mfderiv_monoidHom_mulInvariantVectorField
-        (I := I) (I' := I') φ (γ t) X)
+      (fun t _ => mfderiv_monoidHom_mulInvariantVectorField (I := I) (I' := I') φ (γ t) X)
       ((isMIntegralCurve_mulInvariantIntegralCurve
         (I := I) (G := G) X 1).isMIntegralCurveOn Set.univ)
   have hzero : (φ ∘ γ) 0 = (1 : G') := by simp [γ]
@@ -325,7 +319,7 @@ theorem map_lieExp [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
   rw [monoidHom_mulInvariantExp (I := I) (I' := I') φ]
   congr 1
   rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_apply,
-    ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply]
+    ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply, MonoidHom.groupLieAlgebraMap_apply]
   exact (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
     (I := I) (I' := I') φ X).symm
 

@@ -38,6 +38,8 @@ function divided by its parameter is completely monotone.
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
 * `TauCeti.iteratedDeriv_div_id`: the formula for the `n`-th derivative of `t ↦ f t / t`.
+* `TauCeti.abs_sub_taylorWithinEval_le`: a bound on the Taylor remainder when the next derivative
+  is bounded, with the error proportional to `|x - x₀|^(n+1)`.
 -/
 
 public section
@@ -46,6 +48,28 @@ open Set Filter
 open scoped ContDiff Topology Nat
 
 namespace TauCeti
+
+/-- **Taylor's theorem with a bounded remainder.** If `f` is `C^(n+1)` and its `(n+1)`st
+derivative is bounded in absolute value by `M`, then its Taylor polynomial of order `n` about `x₀`
+approximates `f x` with error at most `M * |x - x₀|^(n+1) / (n+1)!`. -/
+theorem abs_sub_taylorWithinEval_le {f : ℝ → ℝ} {n : ℕ} (hf : ContDiff ℝ (n + 1) f)
+    {M : ℝ} (hM : ∀ t, |iteratedDeriv (n + 1) f t| ≤ M) (x₀ x : ℝ) :
+    |f x - taylorWithinEval f n Set.univ x₀ x| ≤ M * |x - x₀| ^ (n + 1) / (n + 1)! := by
+  rcases eq_or_ne x x₀ with rfl | hx
+  · simp
+  obtain ⟨y, -, hy⟩ := taylor_mean_remainder_lagrange_iteratedDeriv (x₀ := x₀) (x := x)
+    hx.symm (hf.contDiffOn)
+  have htay : taylorWithinEval f n (Set.uIcc x₀ x) x₀ x =
+      taylorWithinEval f n Set.univ x₀ x := by
+    simp only [taylor_within_apply]
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hx.symm)
+      ((hf.of_le (by norm_cast; simp at hk; omega)).contDiffAt) Set.left_mem_uIcc]
+    simp only [iteratedDerivWithin_univ]
+  rw [htay] at hy
+  rw [hy, abs_div, abs_mul, abs_pow, Nat.abs_cast]
+  gcongr
+  exact hM y
 
 /-- **The Taylor remainder has a sign.** Let `f` be `C^(n+1)` on an open set `s` containing
 `[x, y]`, with `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`. Then the Taylor polynomial of order `n` of `f`
