@@ -52,7 +52,7 @@ structure IntFiniteSlopeData (Γ : Type*) [Preorder Γ] where
 namespace IntFiniteSlopeData
 
 /-- Read the relative slope data at the natural-number anchor zero. -/
-def toNat (d : IntFiniteSlopeData Γ) : FiniteSlopeData Γ where
+def toFiniteSlopeData (d : IntFiniteSlopeData Γ) : FiniteSlopeData Γ where
   start := 0
   initialHeight := d.initialHeight
   length := d.length
@@ -60,20 +60,22 @@ def toNat (d : IntFiniteSlopeData Γ) : FiniteSlopeData Γ where
   monotone := d.monotone
 
 @[simp]
-theorem toNat_start (d : IntFiniteSlopeData Γ) : d.toNat.start = 0 := (rfl)
+theorem toFiniteSlopeData_start (d : IntFiniteSlopeData Γ) :
+    d.toFiniteSlopeData.start = 0 := (rfl)
 @[simp]
-theorem toNat_initialHeight (d : IntFiniteSlopeData Γ) :
-    d.toNat.initialHeight = d.initialHeight := (rfl)
+theorem toFiniteSlopeData_initialHeight (d : IntFiniteSlopeData Γ) :
+    d.toFiniteSlopeData.initialHeight = d.initialHeight := (rfl)
 @[simp]
-theorem toNat_length (d : IntFiniteSlopeData Γ) : d.toNat.length = d.length := (rfl)
+theorem toFiniteSlopeData_length (d : IntFiniteSlopeData Γ) :
+    d.toFiniteSlopeData.length = d.length := (rfl)
 @[simp]
-theorem toNat_slope (d : IntFiniteSlopeData Γ) (i : Fin d.toNat.length) :
-    d.toNat.slope i = d.slope (i.cast d.toNat_length) := (rfl)
+theorem toFiniteSlopeData_slope (d : IntFiniteSlopeData Γ) (i : Fin d.toFiniteSlopeData.length) :
+    d.toFiniteSlopeData.slope i = d.slope (i.cast d.toFiniteSlopeData_length) := (rfl)
 
 /-- The integer anchor together with the relative natural-indexed data determines a presentation. -/
 @[ext]
 theorem ext {d e : IntFiniteSlopeData Γ} (hs : d.start = e.start)
-    (hd : d.toNat = e.toNat) : d = e := by
+    (hd : d.toFiniteSlopeData = e.toFiniteSlopeData) : d = e := by
   cases d
   cases e
   cases hs
@@ -101,8 +103,8 @@ theorem translate_slope (d : IntFiniteSlopeData Γ) (k : ℤ)
 
 /-- Anchor translation preserves the relative natural-indexed data. -/
 @[simp]
-theorem toNat_translate (d : IntFiniteSlopeData Γ) (k : ℤ) :
-    (d.translate k).toNat = d.toNat := (rfl)
+theorem toFiniteSlopeData_translate (d : IntFiniteSlopeData Γ) (k : ℤ) :
+    (d.translate k).toFiniteSlopeData = d.toFiniteSlopeData := (rfl)
 
 section AddCommMonoid
 
@@ -110,37 +112,43 @@ variable [AddCommMonoid Γ] [AddCommMonoid Γ'] (d : IntFiniteSlopeData Γ)
 
 /-- Cumulative-sum heights on the finite domain, extended by infinity outside it. -/
 noncomputable def heights (n : ℤ) : WithTop Γ :=
-  Function.extend ((↑) : ℕ → ℤ) d.toNat.heights ⊤ (n - d.start)
+  Function.extend ((↑) : ℕ → ℤ) d.toFiniteSlopeData.heights ⊤ (n - d.start)
 
 /-- The defining extension-and-translation formula for the represented heights. -/
 theorem heights_def (n : ℤ) : d.heights n =
-    Function.extend ((↑) : ℕ → ℤ) d.toNat.heights ⊤ (n - d.start) := (rfl)
+    Function.extend ((↑) : ℕ → ℤ) d.toFiniteSlopeData.heights ⊤ (n - d.start) := (rfl)
 
 /-- Translating the anchor translates the represented integer heights. -/
 @[simp]
 theorem heights_translate (k n : ℤ) : (d.translate k).heights n = d.heights (n - k) := by
-  simp only [heights, translate_start, toNat_translate]
-  congr 1
-  omega
+  simp only [heights_def, translate_start, toFiniteSlopeData_translate, sub_add_eq_sub_sub,
+    sub_right_comm]
 
 /-- At an offset from the anchor, the heights agree with the natural-indexed construction. -/
 @[simp]
-theorem heights_start_add (n : ℕ) : d.heights (d.start + n) = d.toNat.heights n := by
+theorem heights_start_add (n : ℕ) : d.heights (d.start + n) = d.toFiniteSlopeData.heights n := by
   simp only [heights, add_sub_cancel_left, Nat.cast_injective.extend_apply]
 
 /-- The heights are infinite strictly before the anchor. -/
-theorem heights_of_lt {n : ℤ} (hn : n < d.start) : d.heights n = ⊤ :=
+theorem heights_eq_top_of_lt {n : ℤ} (hn : n < d.start) : d.heights n = ⊤ :=
   Function.extend_natCast_of_neg _ _ (sub_neg.mpr hn)
 
 /-- The finite domain is exactly the interval from `start` to `start + length`. -/
 theorem heights_ne_top_iff {n : ℤ} :
     d.heights n ≠ ⊤ ↔ d.start ≤ n ∧ n ≤ d.start + d.length := by
-  rcases lt_or_ge n d.start with hn | hn
-  · simp [d.heights_of_lt hn, not_le.mpr hn]
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = d.start + k := ⟨(n - d.start).toNat, by omega⟩
-    rw [heights_start_add, FiniteSlopeData.heights_ne_top_iff]
-    simp only [toNat_start, toNat_length, zero_add]
+  refine Function.extend_natCast_sub_induction d.toFiniteSlopeData.heights ⊤ d.start n
+    (P := fun n y => y ≠ ⊤ ↔ d.start ≤ n ∧ n ≤ d.start + d.length) ?_ ?_
+  · intro n hn
+    simp [not_le.mpr hn]
+  · intro k
+    rw [FiniteSlopeData.heights_ne_top_iff]
+    simp only [toFiniteSlopeData_start, toFiniteSlopeData_length, zero_add]
     omega
+
+/-- The finite domain of the represented integer heights. -/
+theorem setOf_heights_ne_top :
+    {n | d.heights n ≠ ⊤} = Set.Icc d.start (d.start + d.length) :=
+  Set.ext fun _ => d.heights_ne_top_iff
 
 /-- The represented heights are infinite precisely outside the finite domain. -/
 @[simp]
@@ -152,9 +160,9 @@ theorem heights_eq_top_iff {n : ℤ} :
 /-- The height at the anchor is the initial height. -/
 @[simp]
 theorem heights_start : d.heights d.start = (d.initialHeight : WithTop Γ) := by
-  calc d.heights d.start = d.toNat.heights d.toNat.start := by
+  calc d.heights d.start = d.toFiniteSlopeData.heights d.toFiniteSlopeData.start := by
          simpa using d.heights_start_add 0
-       _ = (d.initialHeight : WithTop Γ) := d.toNat.heights_start
+       _ = (d.initialHeight : WithTop Γ) := d.toFiniteSlopeData.heights_start
 
 /-- Transport the heights and slopes along an order-preserving additive map. -/
 def map (f : Γ →+o Γ') : IntFiniteSlopeData Γ' where
@@ -177,7 +185,8 @@ theorem map_slope (f : Γ →+o Γ') (i : Fin (d.map f).length) :
 
 /-- Reading relative data commutes with an additive order-preserving map. -/
 @[simp]
-theorem toNat_map (f : Γ →+o Γ') : (d.map f).toNat = d.toNat.map f := by
+theorem toFiniteSlopeData_map (f : Γ →+o Γ') :
+    (d.map f).toFiniteSlopeData = d.toFiniteSlopeData.map f := by
   refine FiniteSlopeData.ext_of_slope (by simp) (by simp) (by simp) ?_
   intro i
   simp
@@ -186,11 +195,13 @@ theorem toNat_map (f : Γ →+o Γ') : (d.map f).toNat = d.toNat.map f := by
 @[simp]
 theorem heights_map (f : Γ →+o Γ') (n : ℤ) :
     (d.map f).heights n = WithTop.map f (d.heights n) := by
-  rcases lt_or_ge n d.start with hn | hn
-  · rw [heights_of_lt _ (by simpa using hn), heights_of_lt _ hn, WithTop.map_top]
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = d.start + k := ⟨(n - d.start).toNat, by omega⟩
-    rw [← map_start d f, heights_start_add, map_start, heights_start_add]
-    rw [toNat_map, FiniteSlopeData.heights_map]
+  refine Function.extend_natCast_sub_induction d.toFiniteSlopeData.heights ⊤ d.start n
+    (P := fun n y => (d.map f).heights n = WithTop.map f y) ?_ ?_
+  · intro n hn
+    rw [heights_eq_top_of_lt _ (by simpa using hn), WithTop.map_top]
+  · intro k
+    rw [← map_start d f, heights_start_add, toFiniteSlopeData_map,
+      FiniteSlopeData.heights_map]
 
 end AddCommMonoid
 
@@ -210,15 +221,17 @@ theorem heights_injective [AddCancelCommMonoid Γ] :
 /-- Every finite unit edge has exactly the slope stored in the presentation. -/
 theorem sub_heights_start_add (d : IntFiniteSlopeData ℝ) (i : Fin d.length) :
     (d.heights (d.start + i + 1)).untop₀ - (d.heights (d.start + i)).untop₀ = d.slope i := by
-  have hi := d.toNat.unitSlope_heights (i.cast d.toNat_length.symm)
+  have hi := d.toFiniteSlopeData.unitSlope_heights (i.cast d.toFiniteSlopeData_length.symm)
   rw [unitSlope_def] at hi
-  simpa only [toNat_start, zero_add, toNat_slope, Fin.val_cast, Fin.cast_cast,
+  simpa only [toFiniteSlopeData_start, zero_add, toFiniteSlopeData_slope,
+    Fin.val_cast, Fin.cast_cast,
     Fin.cast_eq_self, ← heights_start_add, Nat.cast_add, Nat.cast_one, ← add_assoc] using hi
 
 /-- The integer-anchored heights are convex. -/
 theorem isIntConvexSeq_heights (d : IntFiniteSlopeData ℝ) : IsIntConvexSeq d.heights := by
   -- Extend the zero-anchored heights, then translate the index by the negative anchor.
-  exact (isIntConvexSeq_extend_iff.mpr d.toNat.isConvexSeq_heights).comp_add_right (-d.start)
+  exact (isIntConvexSeq_extend_iff.mpr
+    d.toFiniteSlopeData.isConvexSeq_heights).comp_add_right (-d.start)
 
 /-- Extract finite slopes from a convex integer-indexed sequence on `[l,l+k]`. -/
 noncomputable def ofIsIntConvexSeq {h : ℤ → WithTop ℝ} (hh : IsIntConvexSeq h)
@@ -250,15 +263,18 @@ theorem ofIsIntConvexSeq_length : (ofIsIntConvexSeq hh hdom).length = k := by
 theorem ofIsIntConvexSeq_slope (i : Fin (ofIsIntConvexSeq hh hdom).length) :
     (ofIsIntConvexSeq hh hdom).slope i =
       (h (l + i + 1)).untop₀ - (h (l + i)).untop₀ := by
+  -- Expose the finite index so the slope accessor can identify its dependent domain.
   rcases i with ⟨i, hi⟩
-  dsimp only [ofIsIntConvexSeq] at *
+  dsimp only [ofIsIntConvexSeq]
   rw [FiniteSlopeData.ofIsConvexSeq_slope, unitSlope_def]
   simp [add_assoc]
 
-private theorem toNat_ofIsIntConvexSeq :
-    (ofIsIntConvexSeq hh hdom).toNat =
+private theorem toFiniteSlopeData_ofIsIntConvexSeq :
+    (ofIsIntConvexSeq hh hdom).toFiniteSlopeData =
       FiniteSlopeData.ofIsConvexSeq (hh.isConvexSeq l)
         (l := 0) (k := k) (fun n => by simpa using hdom (l + n)) := by
+  -- The extraction constructor copies the natural data. Its initial height and slopes,
+  -- including the reindexed Fin arguments, therefore agree by unfolding the constructors.
   refine FiniteSlopeData.ext_of_slope (by simp) (by rfl) (by rfl) ?_
   intro i
   rfl
@@ -267,13 +283,14 @@ private theorem toNat_ofIsIntConvexSeq :
 @[simp]
 theorem heights_ofIsIntConvexSeq : (ofIsIntConvexSeq hh hdom).heights = h := by
   funext n
-  rcases lt_or_ge n l with hn | hn
-  · rw [heights_of_lt _ (by simpa using hn)]
+  refine Function.extend_natCast_sub_induction
+    (ofIsIntConvexSeq hh hdom).toFiniteSlopeData.heights ⊤ l n
+    (P := fun n y => y = h n) ?_ ?_
+  · intro n hn
     exact (not_ne_iff.mp ((hdom n).not.mpr (by omega))).symm
-  · obtain ⟨i, rfl⟩ : ∃ i : ℕ, n = l + i := ⟨(n - l).toNat, by omega⟩
-    simpa only [ofIsIntConvexSeq_start, toNat_ofIsIntConvexSeq,
-      FiniteSlopeData.heights_ofIsConvexSeq] using
-      heights_start_add (ofIsIntConvexSeq hh hdom) i
+  · intro i
+    simp only [toFiniteSlopeData_ofIsIntConvexSeq,
+      FiniteSlopeData.heights_ofIsConvexSeq]
 
 /-- Extracting the slopes of reconstructed heights recovers the finite presentation. -/
 @[simp]
@@ -298,25 +315,26 @@ structure IntInfiniteSlopeData (Γ : Type*) [Preorder Γ] where
 namespace IntInfiniteSlopeData
 
 /-- Read the relative slope data at the natural-number anchor zero. -/
-def toNat (d : IntInfiniteSlopeData Γ) : InfiniteSlopeData Γ where
+def toInfiniteSlopeData (d : IntInfiniteSlopeData Γ) : InfiniteSlopeData Γ where
   start := 0
   initialHeight := d.initialHeight
   slope := d.slope
   monotone := d.monotone
 
 @[simp]
-theorem toNat_start (d : IntInfiniteSlopeData Γ) : d.toNat.start = 0 := (rfl)
+theorem toInfiniteSlopeData_start (d : IntInfiniteSlopeData Γ) :
+    d.toInfiniteSlopeData.start = 0 := (rfl)
 @[simp]
-theorem toNat_initialHeight (d : IntInfiniteSlopeData Γ) :
-    d.toNat.initialHeight = d.initialHeight := (rfl)
+theorem toInfiniteSlopeData_initialHeight (d : IntInfiniteSlopeData Γ) :
+    d.toInfiniteSlopeData.initialHeight = d.initialHeight := (rfl)
 @[simp]
-theorem toNat_slope (d : IntInfiniteSlopeData Γ) (i : ℕ) :
-    d.toNat.slope i = d.slope i := (rfl)
+theorem toInfiniteSlopeData_slope (d : IntInfiniteSlopeData Γ) (i : ℕ) :
+    d.toInfiniteSlopeData.slope i = d.slope i := (rfl)
 
 /-- The integer anchor together with the relative natural-indexed data determines a presentation. -/
 @[ext]
 theorem ext {d e : IntInfiniteSlopeData Γ} (hs : d.start = e.start)
-    (hd : d.toNat = e.toNat) : d = e := by
+    (hd : d.toInfiniteSlopeData = e.toInfiniteSlopeData) : d = e := by
   cases d
   cases e
   cases hs
@@ -340,8 +358,8 @@ theorem translate_slope (d : IntInfiniteSlopeData Γ) (k : ℤ) (i : ℕ) :
 
 /-- Anchor translation preserves the relative natural-indexed data. -/
 @[simp]
-theorem toNat_translate (d : IntInfiniteSlopeData Γ) (k : ℤ) :
-    (d.translate k).toNat = d.toNat := (rfl)
+theorem toInfiniteSlopeData_translate (d : IntInfiniteSlopeData Γ) (k : ℤ) :
+    (d.translate k).toInfiniteSlopeData = d.toInfiniteSlopeData := (rfl)
 
 section AddCommMonoid
 
@@ -349,36 +367,42 @@ variable [AddCommMonoid Γ] [AddCommMonoid Γ'] (d : IntInfiniteSlopeData Γ)
 
 /-- Cumulative-sum heights on the finite domain, extended by infinity outside it. -/
 noncomputable def heights (n : ℤ) : WithTop Γ :=
-  Function.extend ((↑) : ℕ → ℤ) d.toNat.heights ⊤ (n - d.start)
+  Function.extend ((↑) : ℕ → ℤ) d.toInfiniteSlopeData.heights ⊤ (n - d.start)
 
 /-- The defining extension-and-translation formula for the represented heights. -/
 theorem heights_def (n : ℤ) : d.heights n =
-    Function.extend ((↑) : ℕ → ℤ) d.toNat.heights ⊤ (n - d.start) := (rfl)
+    Function.extend ((↑) : ℕ → ℤ) d.toInfiniteSlopeData.heights ⊤ (n - d.start) := (rfl)
 
 /-- Translating the anchor translates the represented integer heights. -/
 @[simp]
 theorem heights_translate (k n : ℤ) : (d.translate k).heights n = d.heights (n - k) := by
-  simp only [heights, translate_start, toNat_translate]
-  congr 1
-  omega
+  simp only [heights_def, translate_start, toInfiniteSlopeData_translate, sub_add_eq_sub_sub,
+    sub_right_comm]
 
 /-- At an offset from the anchor, the heights agree with the natural-indexed construction. -/
 @[simp]
-theorem heights_start_add (n : ℕ) : d.heights (d.start + n) = d.toNat.heights n := by
+theorem heights_start_add (n : ℕ) : d.heights (d.start + n) = d.toInfiniteSlopeData.heights n := by
   simp only [heights, add_sub_cancel_left, Nat.cast_injective.extend_apply]
 
 /-- The heights are infinite strictly before the anchor. -/
-theorem heights_of_lt {n : ℤ} (hn : n < d.start) : d.heights n = ⊤ :=
+theorem heights_eq_top_of_lt {n : ℤ} (hn : n < d.start) : d.heights n = ⊤ :=
   Function.extend_natCast_of_neg _ _ (sub_neg.mpr hn)
 
 /-- The finite domain is exactly the half-line starting at the anchor. -/
 theorem heights_ne_top_iff {n : ℤ} :
     d.heights n ≠ ⊤ ↔ d.start ≤ n := by
-  rcases lt_or_ge n d.start with hn | hn
-  · simp [d.heights_of_lt hn, not_le.mpr hn]
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = d.start + k := ⟨(n - d.start).toNat, by omega⟩
-    rw [heights_start_add, InfiniteSlopeData.heights_ne_top_iff]
+  refine Function.extend_natCast_sub_induction d.toInfiniteSlopeData.heights ⊤ d.start n
+    (P := fun n y => y ≠ ⊤ ↔ d.start ≤ n) ?_ ?_
+  · intro n hn
+    simp [not_le.mpr hn]
+  · intro k
+    rw [InfiniteSlopeData.heights_ne_top_iff]
     simp
+
+/-- The finite domain of the represented integer heights. -/
+theorem setOf_heights_ne_top :
+    {n | d.heights n ≠ ⊤} = Set.Ici d.start :=
+  Set.ext fun _ => d.heights_ne_top_iff
 
 /-- The represented heights are infinite precisely outside the finite domain. -/
 @[simp]
@@ -390,9 +414,9 @@ theorem heights_eq_top_iff {n : ℤ} :
 /-- The height at the anchor is the initial height. -/
 @[simp]
 theorem heights_start : d.heights d.start = (d.initialHeight : WithTop Γ) := by
-  calc d.heights d.start = d.toNat.heights d.toNat.start := by
+  calc d.heights d.start = d.toInfiniteSlopeData.heights d.toInfiniteSlopeData.start := by
          simpa using d.heights_start_add 0
-       _ = (d.initialHeight : WithTop Γ) := d.toNat.heights_start
+       _ = (d.initialHeight : WithTop Γ) := d.toInfiniteSlopeData.heights_start
 
 /-- Transport the heights and slopes along an order-preserving additive map. -/
 def map (f : Γ →+o Γ') : IntInfiniteSlopeData Γ' where
@@ -412,18 +436,21 @@ theorem map_slope (f : Γ →+o Γ') (i : ℕ) :
 
 /-- Reading relative data commutes with an additive order-preserving map. -/
 @[simp]
-theorem toNat_map (f : Γ →+o Γ') : (d.map f).toNat = d.toNat.map f := by
+theorem toInfiniteSlopeData_map (f : Γ →+o Γ') :
+    (d.map f).toInfiniteSlopeData = d.toInfiniteSlopeData.map f := by
   ext <;> simp
 
 /-- Transporting the values commutes with constructing the represented heights. -/
 @[simp]
 theorem heights_map (f : Γ →+o Γ') (n : ℤ) :
     (d.map f).heights n = WithTop.map f (d.heights n) := by
-  rcases lt_or_ge n d.start with hn | hn
-  · rw [heights_of_lt _ (by simpa using hn), heights_of_lt _ hn, WithTop.map_top]
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = d.start + k := ⟨(n - d.start).toNat, by omega⟩
-    rw [← map_start d f, heights_start_add, map_start, heights_start_add]
-    rw [toNat_map, InfiniteSlopeData.heights_map]
+  refine Function.extend_natCast_sub_induction d.toInfiniteSlopeData.heights ⊤ d.start n
+    (P := fun n y => (d.map f).heights n = WithTop.map f y) ?_ ?_
+  · intro n hn
+    rw [heights_eq_top_of_lt _ (by simpa using hn), WithTop.map_top]
+  · intro k
+    rw [← map_start d f, heights_start_add, toInfiniteSlopeData_map,
+      InfiniteSlopeData.heights_map]
 
 end AddCommMonoid
 
@@ -443,15 +470,16 @@ theorem heights_injective [AddCancelCommMonoid Γ] :
 /-- Every unit edge has exactly the slope stored in the presentation. -/
 theorem sub_heights_start_add (d : IntInfiniteSlopeData ℝ) (i : ℕ) :
     (d.heights (d.start + i + 1)).untop₀ - (d.heights (d.start + i)).untop₀ = d.slope i := by
-  have hi := d.toNat.unitSlope_heights i
+  have hi := d.toInfiniteSlopeData.unitSlope_heights i
   rw [unitSlope_def] at hi
-  simpa only [toNat_start, zero_add, toNat_slope, ← heights_start_add,
+  simpa only [toInfiniteSlopeData_start, zero_add, toInfiniteSlopeData_slope, ← heights_start_add,
     Nat.cast_add, Nat.cast_one, ← add_assoc] using hi
 
 /-- The integer-anchored heights are convex. -/
 theorem isIntConvexSeq_heights (d : IntInfiniteSlopeData ℝ) : IsIntConvexSeq d.heights := by
   -- Extend the zero-anchored heights, then translate the index by the negative anchor.
-  exact (isIntConvexSeq_extend_iff.mpr d.toNat.isConvexSeq_heights).comp_add_right (-d.start)
+  exact (isIntConvexSeq_extend_iff.mpr
+    d.toInfiniteSlopeData.isConvexSeq_heights).comp_add_right (-d.start)
 
 /-- Extract unit slopes from a convex integer-indexed sequence on `[l,∞)`. -/
 noncomputable def ofIsIntConvexSeq {h : ℤ → WithTop ℝ} (hh : IsIntConvexSeq h) {l : ℤ}
@@ -480,23 +508,24 @@ theorem ofIsIntConvexSeq_slope (i : ℕ) :
       (h (l + i + 1)).untop₀ - (h (l + i)).untop₀ := by
   simp [ofIsIntConvexSeq, InfiniteSlopeData.ofIsConvexSeq_slope, unitSlope_def, add_assoc]
 
-private theorem toNat_ofIsIntConvexSeq :
-    (ofIsIntConvexSeq hh hdom).toNat =
+private theorem toInfiniteSlopeData_ofIsIntConvexSeq :
+    (ofIsIntConvexSeq hh hdom).toInfiniteSlopeData =
       InfiniteSlopeData.ofIsConvexSeq (hh.isConvexSeq l)
         (l := 0) (fun n => by simpa using hdom (l + n)) := by
-  ext <;> simp [toNat, ofIsIntConvexSeq]
+  ext <;> simp [toInfiniteSlopeData, ofIsIntConvexSeq]
 
 /-- Reconstructing extracted infinite slope data recovers all integer heights. -/
 @[simp]
 theorem heights_ofIsIntConvexSeq : (ofIsIntConvexSeq hh hdom).heights = h := by
   funext n
-  rcases lt_or_ge n l with hn | hn
-  · rw [heights_of_lt _ (by simpa using hn)]
+  refine Function.extend_natCast_sub_induction
+    (ofIsIntConvexSeq hh hdom).toInfiniteSlopeData.heights ⊤ l n
+    (P := fun n y => y = h n) ?_ ?_
+  · intro n hn
     exact (not_ne_iff.mp ((hdom n).not.mpr (by omega))).symm
-  · obtain ⟨i, rfl⟩ : ∃ i : ℕ, n = l + i := ⟨(n - l).toNat, by omega⟩
-    simpa only [ofIsIntConvexSeq_start, toNat_ofIsIntConvexSeq,
-      InfiniteSlopeData.heights_ofIsConvexSeq] using
-      heights_start_add (ofIsIntConvexSeq hh hdom) i
+  · intro i
+    simp only [toInfiniteSlopeData_ofIsIntConvexSeq,
+      InfiniteSlopeData.heights_ofIsConvexSeq]
 
 /-- Extracting the slopes of reconstructed heights recovers the infinite presentation. -/
 @[simp]
@@ -515,9 +544,7 @@ theorem exists_heights_eq_iff {h : ℤ → WithTop ℝ} :
       IsIntConvexSeq h ∧ {n | h n ≠ ⊤}.Nonempty ∧ {n | h n ≠ ⊤}.Finite := by
   constructor
   · rintro ⟨d, rfl⟩
-    have hset : {n | d.heights n ≠ ⊤} = Set.Icc d.start (d.start + d.length) :=
-      Set.ext fun _ => d.heights_ne_top_iff
-    rw [hset]
+    rw [d.setOf_heights_ne_top]
     exact ⟨d.isIntConvexSeq_heights, Set.nonempty_Icc.mpr (by omega), Set.finite_Icc _ _⟩
   · rintro ⟨hh, hne, hfin⟩
     have hset := (hne.ordConnected_iff_of_bdd hfin.bddBelow hfin.bddAbove).mp hh.ordConnected
@@ -550,9 +577,7 @@ theorem exists_heights_eq_iff {h : ℤ → WithTop ℝ} :
       IsIntConvexSeq h ∧ {n | h n ≠ ⊤}.Infinite ∧ BddBelow {n | h n ≠ ⊤} := by
   constructor
   · rintro ⟨d, rfl⟩
-    have hset : {n | d.heights n ≠ ⊤} = Set.Ici d.start :=
-      Set.ext fun _ => d.heights_ne_top_iff
-    rw [hset]
+    rw [d.setOf_heights_ne_top]
     exact ⟨d.isIntConvexSeq_heights, Set.Ici_infinite _, bddBelow_Ici⟩
   · rintro ⟨hh, hinf, hbdd⟩
     have hfirst := Int.csInf_mem hinf.nonempty hbdd
@@ -571,5 +596,98 @@ theorem intLowerConvexEnvelope_heights (d : IntInfiniteSlopeData ℝ) :
   d.isIntConvexSeq_heights.intLowerConvexEnvelope_eq
 
 end IntInfiniteSlopeData
+
+namespace FiniteSlopeData
+
+/-- Preserve a natural-anchored presentation while viewing its anchor as an integer. -/
+def toInt (d : FiniteSlopeData Γ) : IntFiniteSlopeData Γ where
+  start := d.start
+  initialHeight := d.initialHeight
+  length := d.length
+  slope := d.slope
+  monotone := d.monotone
+
+@[simp]
+theorem toInt_start (d : FiniteSlopeData Γ) : d.toInt.start = (d.start : ℤ) := (rfl)
+@[simp]
+theorem toInt_initialHeight (d : FiniteSlopeData Γ) :
+    d.toInt.initialHeight = d.initialHeight := (rfl)
+@[simp]
+theorem toInt_length (d : FiniteSlopeData Γ) : d.toInt.length = d.length := (rfl)
+@[simp]
+theorem toInt_slope (d : FiniteSlopeData Γ) (i : Fin d.toInt.length) :
+    d.toInt.slope i = d.slope (i.cast d.toInt_length) := (rfl)
+
+/-- Reading relative data after casting the anchor resets the natural anchor to zero. -/
+@[simp]
+theorem toFiniteSlopeData_toInt (d : FiniteSlopeData Γ) :
+    d.toInt.toFiniteSlopeData = { d with start := 0 } := (rfl)
+
+/-- Casting the anchor commutes with an additive order-preserving map. -/
+@[simp]
+theorem toInt_map [AddCommMonoid Γ] [AddCommMonoid Γ'] (d : FiniteSlopeData Γ)
+    (f : Γ →+o Γ') : (d.map f).toInt = d.toInt.map f := by
+  refine IntFiniteSlopeData.ext (by simp) ?_
+  simp only [IntFiniteSlopeData.toFiniteSlopeData_map, toFiniteSlopeData_toInt]
+  refine ext_of_slope (by simp) (by simp) (by simp) ?_
+  intro i
+  simp
+
+/-- Casting the anchor extends the original natural-indexed heights by infinity. -/
+theorem heights_toInt [AddCommMonoid Γ] (d : FiniteSlopeData Γ) :
+    d.toInt.heights = Function.extend ((↑) : ℕ → ℤ) d.heights ⊤ := by
+  have htail : d.toInt.toFiniteSlopeData.heights = fun k => d.heights (d.start + k) := by
+    funext k
+    simp [toFiniteSlopeData_toInt, FiniteSlopeData.heights_def]
+  funext n
+  rw [IntFiniteSlopeData.heights_def, toInt_start, htail]
+  exact Function.extend_natCast_sub_natCast d.heights ⊤ d.start
+    (fun k hk => d.heights_eq_top_iff.mpr (Or.inl hk)) n
+
+end FiniteSlopeData
+
+namespace InfiniteSlopeData
+
+/-- Preserve a natural-anchored presentation while viewing its anchor as an integer. -/
+def toInt (d : InfiniteSlopeData Γ) : IntInfiniteSlopeData Γ where
+  start := d.start
+  initialHeight := d.initialHeight
+  slope := d.slope
+  monotone := d.monotone
+
+@[simp]
+theorem toInt_start (d : InfiniteSlopeData Γ) : d.toInt.start = (d.start : ℤ) := (rfl)
+@[simp]
+theorem toInt_initialHeight (d : InfiniteSlopeData Γ) :
+    d.toInt.initialHeight = d.initialHeight := (rfl)
+@[simp]
+theorem toInt_slope (d : InfiniteSlopeData Γ) (i : ℕ) :
+    d.toInt.slope i = d.slope i := (rfl)
+
+/-- Reading relative data after casting the anchor resets the natural anchor to zero. -/
+@[simp]
+theorem toInfiniteSlopeData_toInt (d : InfiniteSlopeData Γ) :
+    d.toInt.toInfiniteSlopeData = { d with start := 0 } := (rfl)
+
+/-- Casting the anchor commutes with an additive order-preserving map. -/
+@[simp]
+theorem toInt_map [AddCommMonoid Γ] [AddCommMonoid Γ'] (d : InfiniteSlopeData Γ)
+    (f : Γ →+o Γ') : (d.map f).toInt = d.toInt.map f := by
+  refine IntInfiniteSlopeData.ext (by simp) ?_
+  simp only [IntInfiniteSlopeData.toInfiniteSlopeData_map, toInfiniteSlopeData_toInt]
+  ext <;> simp
+
+/-- Casting the anchor extends the original natural-indexed heights by infinity. -/
+theorem heights_toInt [AddCommMonoid Γ] (d : InfiniteSlopeData Γ) :
+    d.toInt.heights = Function.extend ((↑) : ℕ → ℤ) d.heights ⊤ := by
+  have htail : d.toInt.toInfiniteSlopeData.heights = fun k => d.heights (d.start + k) := by
+    funext k
+    simp [toInfiniteSlopeData_toInt, InfiniteSlopeData.heights_def]
+  funext n
+  rw [IntInfiniteSlopeData.heights_def, toInt_start, htail]
+  exact Function.extend_natCast_sub_natCast d.heights ⊤ d.start
+    (fun k hk => d.heights_eq_top_iff.mpr hk) n
+
+end InfiniteSlopeData
 
 end TauCeti
