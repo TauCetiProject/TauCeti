@@ -28,8 +28,8 @@ uniquely `r`-divisible abelian group into a module over `R[r⁻¹]`.
 
 * `IsLocalizedModule.Away.pow_smul_eq_zero_of_pow_smul_eq`: if `fᵏ σ = φ x` and `(f g)ⁿ x = 0`,
   then `gⁿ σ = 0`.
-* `isLocalizedModule_id_of_bijective_smul`: if every element of a submonoid `S` acts bijectively,
-  the identity is a localization map at `S`.
+* `TauCeti.isLocalizedModule_id_of_bijective_smul`: if every element of a submonoid `S` acts
+  bijectively, the identity is a localization map at `S`.
 * `Function.Bijective.isLocalizedModule_id_powers`: if multiplication by `r` is bijective, the
   identity is a localization map at the powers of `r`.
 * `Function.Bijective.localizationAwayModule`: the induced `Localization.Away r`-module structure,
@@ -58,6 +58,8 @@ end IsLocalizedModule.Away
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
+namespace TauCeti
+
 /-- If every element of a submonoid `S` acts bijectively on `M`, the identity of `M` is a
 localization map at `S`. -/
 theorem isLocalizedModule_id_of_bijective_smul {S : Submonoid R}
@@ -69,6 +71,8 @@ theorem isLocalizedModule_id_of_bijective_smul {S : Submonoid R}
   surj x := ⟨⟨x, 1⟩, by simp⟩
   exists_of_eq hxy := ⟨1, by simpa using hxy⟩
 
+end TauCeti
+
 namespace Function.Bijective
 
 variable {r : R}
@@ -77,7 +81,7 @@ variable {r : R}
 map at the powers of `r`. -/
 theorem isLocalizedModule_id_powers (h : Function.Bijective fun x : M ↦ r • x) :
     IsLocalizedModule (Submonoid.powers r) (LinearMap.id : M →ₗ[R] M) :=
-  isLocalizedModule_id_of_bijective_smul fun _ ⟨n, hn⟩ ↦ hn ▸ by
+  TauCeti.isLocalizedModule_id_of_bijective_smul fun _ ⟨n, hn⟩ ↦ hn ▸ by
     rw [← smul_iterate]
     exact h.iterate n
 
