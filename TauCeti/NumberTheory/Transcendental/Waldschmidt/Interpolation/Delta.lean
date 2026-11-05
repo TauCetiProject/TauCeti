@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Denominator
-import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Algebra.MvPolynomial.Polynomial
 import TauCeti.RingTheory.Subring.Basic
 
@@ -51,9 +50,6 @@ at most the degree of `τ`.
 
 * `TauCeti.eval_waldschmidtDelta_mem_range_intCast`: the delta polynomials are integer-valued at
   the points `x` with all `q xᵢ` integral.
-* `TauCeti.waldschmidtOperatorEntry_prod_aeval_X`: the entry of a separated row `∏ᵢ Qᵢ(zᵢ)`.
-* `Subring.mul_waldschmidtOperatorEntry_prod_aeval_X_mem`: denominators of the entries of a
-  separated row, in terms of the denominators of the operator and of the factors `Qᵢ`.
 * `TauCeti.waldschmidtDelta_mem_restrictTotalDegree` and
   `TauCeti.span_image_waldschmidtOperatorEntry_waldschmidtDelta`: the delta rows have total degree
   at most `|τ|`, and they span the same rows as the monomials.
@@ -79,35 +75,7 @@ open Finset MvPolynomial
 
 namespace TauCeti
 
-variable {n : ℕ} {K : Type*} [Field K]
-
-/-- **The entry of a separated row.** For one-variable polynomials `Q₀, …, Q_{m-1}`, the entry of
-the operator `P(∂/∂z₀)` on the row `∏ᵢ Qᵢ(zᵢ)` at the grid point `x = s · y` is
-`(∑ₖ P⁽ᵏ⁾(t) Q₀^{[k]}(x₀)) Q₁(x₁) ⋯ Q_{m-1}(x_{m-1}) α₁^(t s₁) ⋯ αₘ^(t sₘ)`, where `P⁽ᵏ⁾` is the
-`k`-th derivative of `P` and `Q₀^{[k]}` the `k`-th Hasse derivative of `Q₀`. -/
-theorem waldschmidtOperatorEntry_prod_aeval_X (α b : Fin (n + 1) → K) (t : ℤ)
-    (s : Fin (n + 1) → ℤ) (Q : Fin (n + 1) → Polynomial K) (P : Polynomial K) :
-    waldschmidtOperatorEntry α b t s (∏ i, Polynomial.aeval (X i) (Q i)) P =
-      (∑ k ∈ range (P.natDegree + 1), (Polynomial.derivative^[k] P).eval (t : K) *
-          (Polynomial.hasseDeriv k (Q 0)).eval (waldschmidtPoint b s 0)) *
-        (∏ i : Fin n, (Q i.succ).eval (waldschmidtPoint b s i.succ)) * ∏ j, α j ^ (t * s j) := by
-  classical
-  have herase : ∏ i ∈ univ.erase (0 : Fin (n + 1)), (Q i).eval (waldschmidtPoint b s i) =
-      ∏ i : Fin n, (Q i.succ).eval (waldschmidtPoint b s i.succ) := by
-    simp only [Fin.univ_succ, erase_cons, prod_map, Function.Embedding.coeFn_mk]
-  rw [waldschmidtOperatorEntry_eq_sum_hasseDeriv]
-  congr 1
-  rw [sum_mul]
-  refine sum_congr rfl fun k _ ↦ ?_
-  have hd (p : Polynomial K) (x : K) :
-      (Polynomial.derivative^[k] p).eval x = k.factorial * (Polynomial.hasseDeriv k p).eval x := by
-    rw [← Polynomial.factorial_smul_hasseDeriv, LinearMap.smul_apply, Polynomial.eval_smul,
-      nsmul_eq_mul]
-  rw [iterate_pderiv_prod_aeval_X (mem_univ (0 : Fin (n + 1)))]
-  simp only [map_mul, map_prod, eval_polynomial_aeval, eval_X, hd, ← herase]
-  ring
-
-variable [CharZero K]
+variable {n : ℕ} {K : Type*} [Field K] [CharZero K]
 
 /-- The integer-valued delta polynomial `∏ᵢ Δ(q zᵢ; τᵢ)` on `Kᵐ`, for an integer `q` and an
 exponent `τ ∈ ℕᵐ`, where `Δ(X; k) = (X + 1) (X + 2) ⋯ (X + k) / k!` is Baker's binomial
@@ -124,13 +92,20 @@ theorem waldschmidtDelta_def (q : ℤ) (τ : Fin (n + 1) →₀ ℕ) :
         (τ i)).comp (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K)) :=
   (rfl)
 
+/-- **The values of the delta polynomials.** At a point `x`, `∏ᵢ Δ(q zᵢ; τᵢ)` takes the value
+`∏ᵢ Δ(q xᵢ; τᵢ)`. -/
+@[simp]
+theorem eval_waldschmidtDelta (q : ℤ) (τ : Fin (n + 1) →₀ ℕ) (x : Fin (n + 1) → K) :
+    eval x (waldschmidtDelta q τ) = ∏ i, (((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ)
+      (τ i)).comp (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K)).eval (x i) := by
+  simp only [waldschmidtDelta_def, map_prod, eval_polynomial_aeval, eval_X]
+
 /-- **The delta polynomials are integer-valued.** If `q xᵢ` is an integer for every coordinate
 of the point `x`, then `∏ᵢ Δ(q xᵢ; τᵢ)` is an integer. -/
 theorem eval_waldschmidtDelta_mem_range_intCast {q : ℤ} {x : Fin (n + 1) → K}
     (hx : ∀ i, (q : K) * x i ∈ Set.range (Int.cast : ℤ → K)) (τ : Fin (n + 1) →₀ ℕ) :
     eval x (waldschmidtDelta q τ) ∈ Set.range (Int.cast : ℤ → K) := by
-  rw [waldschmidtDelta_def, map_prod]
-  simp only [eval_polynomial_aeval, eval_X]
+  rw [eval_waldschmidtDelta]
   exact Subring.mem_bot.1 (prod_mem fun i _ ↦ Subring.mem_bot.2
     (eval_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast (τ i) q (hx i)))
 
@@ -138,22 +113,6 @@ theorem eval_waldschmidtDelta_mem_range_intCast {q : ℤ} {x : Fin (n + 1) → K
 @[simp]
 theorem waldschmidtDelta_zero (q : ℤ) : waldschmidtDelta (K := K) (n := n) q 0 = 1 := by
   simp [waldschmidtDelta_def]
-
-/-- For `q ≠ 0`, the polynomials `Δ(q X; k)`, mapped to `K[X]`, form a polynomial sequence. -/
-private noncomputable def deltaSequence {q : ℤ} (hq : q ≠ 0) : Polynomial.Sequence K where
-  elems' k := ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) k).comp
-    (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K)
-  degree_eq' k := by
-    have hlin : (Polynomial.C (q : ℚ) * Polynomial.X).degree = 1 :=
-      Polynomial.degree_C_mul_X (Int.cast_ne_zero.2 hq)
-    rw [Polynomial.degree_map_eq_of_injective (algebraMap ℚ K).injective,
-      Polynomial.degree_comp (by rw [hlin]; exact zero_lt_one), hlin,
-      TauCeti.degree_multichoose_X_add_one, mul_one]
-
-/-- The leading coefficients of the polynomials `Δ(q X; k)` are units of `K`. -/
-private theorem isUnit_leadingCoeff_deltaSequence {q : ℤ} (hq : q ≠ 0) (k : ℕ) :
-    IsUnit ((deltaSequence (K := K) hq) k).leadingCoeff :=
-  isUnit_iff_ne_zero.2 (Polynomial.leadingCoeff_ne_zero.2 ((deltaSequence hq).ne_zero k))
 
 /-- The delta polynomial `∏ᵢ Δ(q zᵢ; τᵢ)` has total degree at most the degree
 `τ₀ + ⋯ + τ_{m-1}` of `τ`. -/
@@ -163,9 +122,10 @@ theorem waldschmidtDelta_mem_restrictTotalDegree (q : ℤ) {τ : Fin (n + 1) →
   rcases eq_or_ne q 0 with rfl | hq
   · -- For `q = 0` the delta polynomial is a constant.
     simp [waldschmidtDelta_def, mem_restrictTotalDegree, ← map_prod]
-  rw [← (deltaSequence hq).span_prod_aeval_X_eq_restrictTotalDegree fun k _ ↦
-    isUnit_leadingCoeff_deltaSequence hq k]
-  exact Submodule.subset_span ⟨τ, hτ, rfl⟩
+  rw [← (bakerDeltaSequence K hq).span_prod_aeval_X_eq_restrictTotalDegree fun k _ ↦
+    isUnit_leadingCoeff_bakerDeltaSequence K hq k]
+  exact Submodule.subset_span
+    ⟨τ, hτ, by simp only [bakerDeltaSequence_apply, waldschmidtDelta_def]⟩
 
 /-- **Change of basis to the delta polynomials.** Fix a family of columns, the `c`-th built from
 the operator `P c` and the grid point `s c`, an integer `t` and an integer `q ≠ 0`. The rows of
@@ -177,8 +137,9 @@ theorem span_image_waldschmidtOperatorEntry_waldschmidtDelta {κ : Type*}
     Submodule.span K ((fun (τ : Fin (n + 1) →₀ ℕ) c ↦ waldschmidtOperatorEntry α b t (s c)
         (waldschmidtDelta q τ) (P c)) '' {τ | τ.degree ≤ T}) =
       Submodule.span K ((fun (τ : Fin (n + 1) →₀ ℕ) c ↦ waldschmidtOperatorEntry α b t (s c)
-        (monomial τ 1) (P c)) '' {τ | τ.degree ≤ T}) :=
-  span_image_waldschmidtOperatorEntry_prod_sequence α b P t s (deltaSequence hq) T
+        (monomial τ 1) (P c)) '' {τ | τ.degree ≤ T}) := by
+  simpa only [bakerDeltaSequence_apply, waldschmidtDelta_def] using
+    span_image_waldschmidtOperatorEntry_prod_sequence α b P t s (bakerDeltaSequence K hq) T
 
 end TauCeti
 
@@ -186,36 +147,7 @@ namespace Subring
 
 open TauCeti
 
-variable {n : ℕ} {K : Type*} [Field K] (A : Subring K)
-
-/-- **Denominators of the entries of a separated row.** Let `x = s · y`. Suppose that `u` clears
-the denominators of the derivatives of the operator, `u P⁽ᵏ⁾(t) ∈ A`, and `c` those of the Hasse
-derivatives of the first factor, `c Q₀^{[k]}(x₀) ∈ A`, for `k ≤ deg Q₀`; that `dᵢ Qᵢ(xᵢ) ∈ A` for
-the other factors; and that `e` clears the denominator of the exponential factor
-`α₁^(t s₁) ⋯ αₘ^(t sₘ)`. Then `u c (∏ᵢ dᵢ) e γ_P ∈ A` for the entry `γ_P` of the operator
-`P(∂/∂z₀)` on the row `∏ᵢ Qᵢ(zᵢ)`. -/
-theorem mul_waldschmidtOperatorEntry_prod_aeval_X_mem {α b : Fin (n + 1) → K} {t : ℤ}
-    {s : Fin (n + 1) → ℤ} {Q : Fin (n + 1) → Polynomial K} {P : Polynomial K} {u c e : K}
-    {d : Fin n → K}
-    (hP : ∀ k ≤ (Q 0).natDegree, u * (Polynomial.derivative^[k] P).eval (t : K) ∈ A)
-    (hQ₀ : ∀ k ≤ (Q 0).natDegree,
-      c * (Polynomial.hasseDeriv k (Q 0)).eval (waldschmidtPoint b s 0) ∈ A)
-    (hQ : ∀ i : Fin n, d i * (Q i.succ).eval (waldschmidtPoint b s i.succ) ∈ A)
-    (he : e * ∏ j, α j ^ (t * s j) ∈ A) :
-    u * c * (∏ i, d i) * e *
-      waldschmidtOperatorEntry α b t s (∏ i, Polynomial.aeval (X i) (Q i)) P ∈ A := by
-  have h (x y z : K) : u * c * (∏ i, d i) * e * (x * y * z) =
-      u * c * x * ((∏ i, d i) * y) * (e * z) := by ring
-  rw [waldschmidtOperatorEntry_prod_aeval_X, h, mul_sum, ← prod_mul_distrib]
-  refine mul_mem (mul_mem (sum_mem fun k _ ↦ ?_) (prod_mem fun i _ ↦ hQ i)) he
-  rcases le_or_gt k (Q 0).natDegree with hk | hk
-  · rw [mul_mul_mul_comm]
-    exact mul_mem (hP k hk) (hQ₀ k hk)
-  · rw [Polynomial.hasseDeriv_eq_zero_of_lt_natDegree _ _ hk, Polynomial.eval_zero, mul_zero,
-      mul_zero]
-    exact zero_mem A
-
-variable [CharZero K]
+variable {n : ℕ} {K : Type*} [Field K] [CharZero K] (A : Subring K)
 
 /-- **Denominators of the delta-polynomial entries.** Let `q` be an integer with `q βᵢ ∈ ℤ` for
 every coefficient `βᵢ`, so that every grid point `x = s · y` has integral coordinates `q xᵢ`, and
@@ -254,7 +186,8 @@ theorem mul_waldschmidtOperatorEntry_waldschmidtDelta_mem {α b : Fin (n + 1) �
     exact intCast_mem A z
 
 /-- **Denominators of the delta-polynomial derivative entries.** For the iterated derivatives
-`∂^σ/∂z₀^σ`, whose derivatives `σ! / (σ - k)! t^(σ - k)` at `t` are integers,
+`∂^σ/∂z₀^σ`, whose `k`-th derivatives `σ (σ - 1) ⋯ (σ - k + 1) t^(σ - k)` at `t` are integers
+(zero for `k > σ`),
 `L ^ τ₀ e γ ∈ A` under the hypotheses of
 `Subring.mul_waldschmidtOperatorEntry_waldschmidtDelta_mem` on `q`, `L` and `e`. -/
 theorem mul_waldschmidtEntry_waldschmidtDelta_mem {α b : Fin (n + 1) → K} {t : ℤ}

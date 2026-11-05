@@ -155,7 +155,7 @@ theorem iterate_pderiv_prod_aeval_X [DecidableEq σ] {s : Finset σ} {i : σ} (h
   induction k with
   | zero => rfl
   | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, Derivation.leibniz, hg, smul_zero, zero_add, smul_eq_mul,
-      mul_comm, Function.iterate_succ_apply']
+    rw [Function.iterate_succ_apply', ih, Derivation.leibniz, Function.iterate_succ_apply']
+    simp [hg, mul_comm]
 
 end MvPolynomial

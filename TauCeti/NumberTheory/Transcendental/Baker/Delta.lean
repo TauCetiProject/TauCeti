@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Lifts
+public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.RingTheory.Binomial
 import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Data.Nat.Choose.Bounds
@@ -60,6 +61,8 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
   `q x` integral.
 * `TauCeti.eval_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast`: its case `m = 0`,
   `Δ(q x; k) ∈ ℤ`.
+* `TauCeti.bakerDeltaSequence`: for `q ≠ 0`, the polynomials `Δ(q X; k)` over a field of
+  characteristic zero form a polynomial sequence.
 * `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_le`: the size bound.
 
 ## References
@@ -252,6 +255,29 @@ theorem eval_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast {K : Type*
   simpa using pow_mul_eval_hasseDeriv_map_multichoose_X_add_one_comp_C_mul_X_mem_range_intCast
     (L := (k.factorial : ℤ)) (fun j hj ↦ Int.natCast_dvd_natCast.2
       (Nat.dvd_factorial (Finset.mem_Icc.1 hj).1 (Finset.mem_Icc.1 hj).2)) q hx 0
+
+/-- For an integer `q ≠ 0`, Baker's binomial polynomials `Δ(q X; k)`, mapped to `K[X]` for a
+field `K` of characteristic zero, form a polynomial sequence: `Δ(q X; k)` has degree `k`. -/
+noncomputable def bakerDeltaSequence (K : Type*) [Field K] [CharZero K] {q : ℤ} (hq : q ≠ 0) :
+    Polynomial.Sequence K where
+  elems' k := ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (q : ℚ) * X)).map (algebraMap ℚ K)
+  degree_eq' k := by
+    have hlin : (C (q : ℚ) * X).degree = 1 := degree_C_mul_X (Int.cast_ne_zero.2 hq)
+    rw [degree_map_eq_of_injective (algebraMap ℚ K).injective,
+      degree_comp (by rw [hlin]; exact zero_lt_one), hlin, degree_multichoose_X_add_one, mul_one]
+
+/-- The `k`-th term of `TauCeti.bakerDeltaSequence K hq` is `Δ(q X; k)`. -/
+@[simp]
+theorem bakerDeltaSequence_apply (K : Type*) [Field K] [CharZero K] {q : ℤ} (hq : q ≠ 0)
+    (k : ℕ) :
+    bakerDeltaSequence K hq k =
+      ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (q : ℚ) * X)).map (algebraMap ℚ K) :=
+  (rfl)
+
+/-- The leading coefficients of the polynomials `Δ(q X; k)` are units. -/
+theorem isUnit_leadingCoeff_bakerDeltaSequence (K : Type*) [Field K] [CharZero K] {q : ℤ}
+    (hq : q ≠ 0) (k : ℕ) : IsUnit (bakerDeltaSequence K hq k).leadingCoeff :=
+  isUnit_iff_ne_zero.2 (leadingCoeff_ne_zero.2 ((bakerDeltaSequence K hq).ne_zero k))
 
 /-- The coefficient length of the translate `Δ(X + x; k)` is at most `(n + k + 1 choose k)`
 whenever `|x| ≤ n`. -/
