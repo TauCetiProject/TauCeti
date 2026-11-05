@@ -23,7 +23,8 @@ form the submodule `TauCeti.AlmostComplexStructure.tangent`. A complex structure
 exactly when it is skew-adjoint for `ω`, so if every structure of the family preserves `ω`, then
 `Y` is skew-adjoint for `ω` as well: `ω(Y v, w) + ω(v, Y w) = 0`. The antilinear and
 infinitesimally symplectic endomorphisms form the submodule
-`TauCeti.SymplecticForm.compatibleTangent`.
+`TauCeti.SymplecticForm.compatibleTangent`, both defined in
+`TauCeti.Geometry.Symplectic.AlmostComplex`.
 
 Both conditions are also sufficient, and they are distinct. For an antilinear `Y` put
 `B = ½ J Y`. Then `t ↦ exp(t B) J exp(-t B)` is a smooth path of complex structures through `J`
@@ -65,63 +66,6 @@ open NormedSpace Filter Topology Metric Manifold
 namespace TauCeti
 
 variable {V : Type*}
-
-namespace AlmostComplexStructure
-
-section Algebra
-
-variable [AddCommGroup V] [Module ℝ V]
-
-/-- The tangent space at `J` to the linear complex structures: the `J`-antilinear endomorphisms
-`Y`, those with `J Y + Y J = 0`. Every differentiable family of complex structures through `J`
-has its velocity here (`TauCeti.AlmostComplexStructure.mem_tangent_of_hasDerivAt`), and every
-element is such a velocity (`TauCeti.AlmostComplexStructure.hasDerivAt_tangentPath`). -/
-def tangent (J : AlmostComplexStructure V) : Submodule ℝ (Module.End ℝ V) :=
-  LinearMap.ker (LinearMap.mulLeft ℝ J.toLinearMap + LinearMap.mulRight ℝ J.toLinearMap)
-
-@[simp]
-theorem mem_tangent {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
-    Y ∈ J.tangent ↔ J.toLinearMap * Y + Y * J.toLinearMap = 0 := by
-  simp [tangent]
-
-theorem mem_tangent_iff_apply {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
-    Y ∈ J.tangent ↔ ∀ v, J (Y v) = -Y (J v) := by
-  rw [mem_tangent, LinearMap.ext_iff]
-  simp [eq_neg_iff_add_eq_zero]
-
-/-- An antilinear endomorphism anticommutes with `J`. -/
-theorem mul_eq_neg_mul_of_mem_tangent {J : AlmostComplexStructure V} {Y : Module.End ℝ V}
-    (hY : Y ∈ J.tangent) : J.toLinearMap * Y = -(Y * J.toLinearMap) :=
-  eq_neg_of_add_eq_zero_left (mem_tangent.1 hY)
-
-end Algebra
-
-end AlmostComplexStructure
-
-namespace SymplecticForm
-
-variable [AddCommGroup V] [Module ℝ V]
-
-/-- The tangent space at `J` to the `ω`-compatible complex structures: the `J`-antilinear
-endomorphisms `Y` that are infinitesimally symplectic, `ω(Y v, w) + ω(v, Y w) = 0`. For an
-`ω`-compatible `J` these are exactly the velocities of differentiable families of
-`ω`-compatible structures through `J`
-(`TauCeti.SymplecticForm.Compatible.mem_compatibleTangent_iff_exists`). -/
-def compatibleTangent (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
-    Submodule ℝ (Module.End ℝ V) :=
-  J.tangent ⊓ ω.toBilinForm.skewAdjointSubmodule
-
-@[simp]
-theorem mem_compatibleTangent {ω : SymplecticForm V} {J : AlmostComplexStructure V}
-    {Y : Module.End ℝ V} :
-    Y ∈ ω.compatibleTangent J ↔ Y ∈ J.tangent ∧ ω.toBilinForm.IsSkewAdjoint Y := by
-  rw [compatibleTangent, Submodule.mem_inf, LinearMap.mem_skewAdjointSubmodule]
-
-theorem compatibleTangent_le_tangent (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
-    ω.compatibleTangent J ≤ J.tangent :=
-  fun _ hY => hY.1
-
-end SymplecticForm
 
 section Normed
 
@@ -296,6 +240,27 @@ theorem hasDerivAt_tangentPath {J : AlmostComplexStructure V} {Y : V →L[ℝ] V
 
 end AlmostComplexStructure
 
+/-- The exponential of an endomorphism that is skew-adjoint for a real bilinear form `β`
+preserves `β`. For a symplectic form this says that the exponential of an infinitesimally
+symplectic endomorphism is symplectic. -/
+theorem _root_.LinearMap.IsSkewAdjoint.apply_exp_apply_exp {β : LinearMap.BilinForm ℝ V}
+    {B : V →L[ℝ] V} (hB : β.IsSkewAdjoint B) (v w : V) :
+    β (exp B v) (exp B w) = β v w := by
+  let βc := β.toContinuousBilinearMap
+  have hβc (v w : V) : βc v w = β v w := LinearMap.toContinuousBilinearMap_apply _ _ _
+  have hB0 (a b : V) : β (B a) b + β a (B b) = 0 := by
+    have := hB a b
+    rw [Pi.neg_apply, map_neg] at this
+    linarith
+  let f : ℝ → ℝ := fun t => βc (exp (t • B) v) (exp (t • B) w)
+  have hexp (t : ℝ) (u : V) : HasDerivAt (fun s : ℝ => exp (s • B) u) (B (exp (t • B) u)) t := by
+    simpa using (hasDerivAt_exp_smul_const' B t).clm_apply (hasDerivAt_const t u)
+  have hf (t : ℝ) : HasDerivAt f 0 t := by
+    have := βc.hasDerivAt_of_bilinear (fun _ => hexp t v) (fun _ => hexp t w)
+    rwa [hβc, hβc, add_comm, hB0] at this
+  have := is_const_of_deriv_eq_zero (fun t => (hf t).differentiableAt) (fun t => (hf t).deriv) 1 0
+  simpa [f, hβc] using this
+
 namespace AlmostComplexStructure
 
 /-- The tangent path is smooth in time, structure and tangent vector jointly: for families
@@ -337,26 +302,6 @@ namespace SymplecticForm
 
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
-/-- The exponential of an infinitesimally symplectic endomorphism is symplectic: if `B` is
-skew-adjoint for `ω`, then `exp B` preserves `ω`. -/
-theorem apply_exp_apply_exp {B : V →L[ℝ] V} (hB : ω.toBilinForm.IsSkewAdjoint B) (v w : V) :
-    ω (exp B v) (exp B w) = ω v w := by
-  let ωc := ω.toBilinForm.toContinuousBilinearMap
-  have hωc (v w : V) : ωc v w = ω v w := LinearMap.toContinuousBilinearMap_apply _ _ _
-  have hB0 (a b : V) : ω (B a) b + ω a (B b) = 0 := by
-    have := hB a b
-    dsimp only at this ⊢
-    rw [Pi.neg_apply, map_neg] at this
-    linarith
-  let f : ℝ → ℝ := fun t => ωc (exp (t • B) v) (exp (t • B) w)
-  have hexp (t : ℝ) (u : V) : HasDerivAt (fun s : ℝ => exp (s • B) u) (B (exp (t • B) u)) t := by
-    simpa using (hasDerivAt_exp_smul_const' B t).clm_apply (hasDerivAt_const t u)
-  have hf (t : ℝ) : HasDerivAt f 0 t := by
-    have := ωc.hasDerivAt_of_bilinear (fun _ => hexp t v) (fun _ => hexp t w)
-    rwa [hωc, hωc, add_comm, hB0] at this
-  have := is_const_of_deriv_eq_zero (fun t => (hf t).differentiableAt) (fun t => (hf t).deriv) 1 0
-  simpa [f, hωc] using this
-
 /-- Conjugating an `ω`-compatible structure by the exponential of an infinitesimally symplectic
 endomorphism gives an `ω`-compatible structure. -/
 theorem Compatible.expConj (hJ : ω.Compatible J) {B : V →L[ℝ] V}
@@ -370,11 +315,14 @@ theorem Compatible.expConj (hJ : ω.Compatible J) {B : V →L[ℝ] V}
       rw [← exp_add_of_commute (Commute.refl B).neg_right, add_neg_cancel, exp_zero]
     simpa using congrArg (fun A : V →L[ℝ] V => A v) h
   refine Compatible.of_tames ((ω.invariant_iff _).2 fun v w => ?_) fun v hv => ?_
-  · rw [AlmostComplexStructure.expConj_apply, AlmostComplexStructure.expConj_apply,
-      apply_exp_apply_exp hB, hJ.invariant_apply, apply_exp_apply_exp hB']
+  · have h := hJ.invariant_apply (exp (-B) v) (exp (-B) w)
+    dsimp only at h ⊢
+    rw [AlmostComplexStructure.expConj_apply, AlmostComplexStructure.expConj_apply,
+      hB.apply_exp_apply_exp, h, hB'.apply_exp_apply_exp]
   · have hv' : exp (-B) v ≠ 0 := fun h => hv (by rw [← hee v, h, map_zero])
     have h := hJ.tames _ hv'
-    rw [← apply_exp_apply_exp hB, hee] at h
+    dsimp only at h ⊢
+    rw [← hB.apply_exp_apply_exp, hee] at h
     rwa [AlmostComplexStructure.expConj_apply]
 
 /-- The tangent path of an `ω`-compatible structure in a direction satisfying the compatible
@@ -430,7 +378,8 @@ theorem Compatible.mem_compatibleTangent_iff_exists (hJ : ω.Compatible J) {Y : 
       ContDiff ℝ (⊤ : ℕ∞) (fun t => LinearMap.toContinuousLinearMap (J' t).toLinearMap) ∧
       HasDerivAt (fun t => LinearMap.toContinuousLinearMap (J' t).toLinearMap) Y 0 := by
   refine ⟨fun hY => ⟨J.tangentPath Y, J.tangentPath_zero Y, hJ.tangentPath hY,
-    J.contDiff_tangentPath Y, AlmostComplexStructure.hasDerivAt_tangentPath hY.1⟩, ?_⟩
+    J.contDiff_tangentPath Y,
+    AlmostComplexStructure.hasDerivAt_tangentPath (mem_compatibleTangent.1 hY).1⟩, ?_⟩
   rintro ⟨J', rfl, hc, -, hd⟩
   exact mem_compatibleTangent_of_hasDerivAt (Eventually.of_forall fun t => (hc t).invariant) hd
 

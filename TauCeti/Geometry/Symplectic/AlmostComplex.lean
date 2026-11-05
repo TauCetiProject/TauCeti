@@ -37,6 +37,9 @@ on tangent fibers rather than restating the linear algebra.
   hyperbolic partner for every nonzero vector.
 * `TauCeti.SymplecticForm.Tames`: the positivity condition `0 < ω v (J v)` for `v ≠ 0`.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
+* `TauCeti.AlmostComplexStructure.tangent`: the `J`-antilinear endomorphisms, the tangent space
+  at `J` to the linear complex structures, and `TauCeti.SymplecticForm.compatibleTangent`: those
+  that are also skew-adjoint for `ω`, the tangent space to the `ω`-compatible structures.
 * `TauCeti.AlmostComplexStructure.product`: the standard almost complex structure on
   `V × V`, sending `(x, y)` to `(-y, x)`.
 * `TauCeti.cayleyFormula`: the Cayley coordinate expression `-(1 + A B)(1 - A B)⁻¹` in any ring,
@@ -273,6 +276,28 @@ def restrict (J : AlmostComplexStructure V) (L : Submodule ℝ V) (hL : ∀ x �
 lemma coe_restrict_apply (J : AlmostComplexStructure V) (L : Submodule ℝ V)
     (hL : ∀ x ∈ L, J x ∈ L) (x : L) : (J.restrict L hL x : V) = J x :=
   (rfl)
+
+/-- The tangent space at `J` to the linear complex structures: the `J`-antilinear endomorphisms
+`Y`, those with `J Y + Y J = 0`. Every differentiable family of complex structures through `J`
+has its velocity here (`TauCeti.AlmostComplexStructure.mem_tangent_of_hasDerivAt`), and every
+element is such a velocity (`TauCeti.AlmostComplexStructure.hasDerivAt_tangentPath`). -/
+def tangent (J : AlmostComplexStructure V) : Submodule ℝ (Module.End ℝ V) :=
+  LinearMap.ker (LinearMap.mulLeft ℝ J.toLinearMap + LinearMap.mulRight ℝ J.toLinearMap)
+
+@[simp]
+theorem mem_tangent {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
+    Y ∈ J.tangent ↔ J.toLinearMap * Y + Y * J.toLinearMap = 0 := by
+  simp [tangent]
+
+theorem mem_tangent_iff_apply {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
+    Y ∈ J.tangent ↔ ∀ v, J (Y v) = -Y (J v) := by
+  rw [mem_tangent, LinearMap.ext_iff]
+  simp [eq_neg_iff_add_eq_zero]
+
+/-- An antilinear endomorphism anticommutes with `J`. -/
+theorem mul_eq_neg_mul_of_mem_tangent {J : AlmostComplexStructure V} {Y : Module.End ℝ V}
+    (hY : Y ∈ J.tangent) : J.toLinearMap * Y = -(Y * J.toLinearMap) :=
+  eq_neg_of_add_eq_zero_left (mem_tangent.1 hY)
 
 end AlmostComplexStructure
 
@@ -677,6 +702,25 @@ lemma associatedBilinForm_apply_apply_self_eq (ω : SymplecticForm V)
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=
   h.tames v hv
+
+/-- The tangent space at `J` to the `ω`-compatible complex structures: the `J`-antilinear
+endomorphisms `Y` that are infinitesimally symplectic, `ω(Y v, w) + ω(v, Y w) = 0`. For an
+`ω`-compatible `J` these are exactly the velocities of differentiable families of
+`ω`-compatible structures through `J`
+(`TauCeti.SymplecticForm.Compatible.mem_compatibleTangent_iff_exists`). -/
+def compatibleTangent (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
+    Submodule ℝ (Module.End ℝ V) :=
+  J.tangent ⊓ ω.toBilinForm.skewAdjointSubmodule
+
+@[simp]
+theorem mem_compatibleTangent {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    {Y : Module.End ℝ V} :
+    Y ∈ ω.compatibleTangent J ↔ Y ∈ J.tangent ∧ ω.toBilinForm.IsSkewAdjoint Y := by
+  rw [compatibleTangent, Submodule.mem_inf, LinearMap.mem_skewAdjointSubmodule]
+
+theorem compatibleTangent_le_tangent (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
+    ω.compatibleTangent J ≤ J.tangent :=
+  fun _ hY => hY.1
 
 end SymplecticForm
 
