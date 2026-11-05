@@ -59,14 +59,11 @@ private theorem representation_matrix_ι (X : Matrix n n ℚ) :
   LinearMap.ext fun v => by
     rw [representation_ι_apply, Matrix.lie_apply, Matrix.toLinAlgEquiv'_apply]
 
-private theorem matrixIntCastLieHom_eq_mapMatrix (X : Matrix n n ℤ) :
-    matrixIntCastLieHom ℚ X = (Int.castRingHom ℚ).mapMatrix X := by
-  rw [TauCeti.matrixIntCastLieHom_eq_map, RingHom.mapMatrix_apply, Int.coe_castRingHom]
-
 /-- An integral matrix that cubes to zero acts with vanishing cube on `n → ℚ`. -/
 theorem pow_three_representation_matrix_eq_zero {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
     representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ X)) ^ 3 = 0 := by
-  rw [representation_matrix_ι, matrixIntCastLieHom_eq_mapMatrix, ← map_pow, ← map_pow, hcube]; simp
+  rw [representation_matrix_ι, ← map_pow, pow_three, ← TauCeti.matrixIntCastLieHom_mul,
+    ← TauCeti.matrixIntCastLieHom_mul, ← pow_three, hcube, map_zero, map_zero]
 
 /-- An integral matrix that cubes to zero acts nilpotently on `n → ℚ`. -/
 theorem isNilpotent_representation_matrix {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
@@ -77,11 +74,11 @@ private theorem dividedPower_two_representation_matrix_apply {X D : Matrix n n �
     (hsq : X * X = 2 • D) (v : n → ℚ) :
     Associative.dividedPower 2
       (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ X))) v =
-      D.map (Int.castRingHom ℚ) *ᵥ v := by
+      matrixIntCastLieHom ℚ D *ᵥ v := by
   have hsq' : representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ X)) ^ 2 =
-      (2 : ℕ) • Matrix.toLinAlgEquiv' (D.map (Int.castRingHom ℚ)) := by
-    rw [representation_matrix_ι, matrixIntCastLieHom_eq_mapMatrix, ← map_pow, ← map_pow, pow_two,
-      hsq, map_nsmul, map_nsmul, RingHom.mapMatrix_apply]
+      (2 : ℕ) • Matrix.toLinAlgEquiv' (matrixIntCastLieHom ℚ D) := by
+    rw [representation_matrix_ι, ← map_pow, sq, ← TauCeti.matrixIntCastLieHom_mul, hsq,
+      map_nsmul, map_nsmul]
   rw [Associative.dividedPower_def, LinearMap.smul_apply, hsq', LinearMap.smul_apply,
     Matrix.toLinAlgEquiv'_apply, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
   norm_num [Nat.factorial]
@@ -103,8 +100,7 @@ theorem kostantForm_integralMatrix_mem_coordinateLattice {I : Type*}
   · simpa using hw
   · rw [Associative.dividedPower_one, representation_ι_apply, Matrix.lie_apply]
     exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (E i) hw
-  · rw [dividedPower_two_representation_matrix_apply (hsq i), ← RingHom.mapMatrix_apply,
-      ← matrixIntCastLieHom_eq_mapMatrix]
+  · rw [dividedPower_two_representation_matrix_apply (hsq i)]
     exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (D i) hw
 
 /-- **The Kostant root subgroup of a cube-zero integral matrix family** in the standard coordinate
@@ -140,15 +136,15 @@ theorem integralMatrixRootSubgroup_apply {I : Type*}
   have hact₁ : ∀ s, representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ (E i)))
         ((coordinateLatticeBasis n s : coordinateLattice n) : n → ℚ) =
       ∑ r, E i r s • ((coordinateLatticeBasis n r : coordinateLattice n) : n → ℚ) := fun s => by
-    rw [representation_ι_apply, Matrix.lie_apply, matrixIntCastLieHom_eq_mapMatrix,
-      RingHom.mapMatrix_apply]
-    exact Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (E i) s
+    simpa only [representation_ι_apply, Matrix.lie_apply, TauCeti.matrixIntCastLieHom_eq_map,
+      Int.coe_castRingHom] using Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (E i) s
   have hact₂ : ∀ s, Associative.dividedPower 2
         (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (matrixIntCastLieHom ℚ (E i))))
         ((coordinateLatticeBasis n s : coordinateLattice n) : n → ℚ) =
       ∑ r, D i r s • ((coordinateLatticeBasis n r : coordinateLattice n) : n → ℚ) := fun s => by
     rw [dividedPower_two_representation_matrix_apply (hsq i)]
-    exact Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (D i) s
+    simpa only [TauCeti.matrixIntCastLieHom_eq_map, Int.coe_castRingHom] using
+      Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (D i) s
   simpa only [integralMatrixRootSubgroup_apply, MulEquiv.apply_symm_apply] using
     kostantRootSubgroupMatrix_eq_one_add_smul_add_smul (fun k => matrixIntCastLieHom ℚ (E k))
       Empty.elim (representation ℚ (Matrix n n ℚ) (n → ℚ)) (coordinateLattice n).toAddSubgroup
