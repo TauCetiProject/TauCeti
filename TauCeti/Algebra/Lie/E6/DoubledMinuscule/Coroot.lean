@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Matrix
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent.Map
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
@@ -64,20 +65,19 @@ variable {B : Type*} [CommRing B]
 /-- The differential of the integral carrier's closed immersion into `GL₅₄`, in matrix form. -/
 def tangentMatrixLieHom :
     Derivation ℤ H (Bialgebra.CounitAlgebra ℤ H B) →ₗ⁅B⁆ Matrix (Fin 54) (Fin 54) B :=
-  (GeneralLinear.tangentLieEquivMatrix (R := ℤ) (B := B) 54).toLieHom.comp
-    (HopfIdeal.quotientLieHom definingIdeal)
+  GeneralLinear.tangentMatrixLieHom (Bialgebra.Quotient.mkBialgHom definingIdeal.toIdeal)
 
 /-- The tangent inclusion evaluates a derivation on the generic matrix after the quotient map. -/
 theorem tangentMatrixLieHom_apply (d : Derivation ℤ H (Bialgebra.CounitAlgebra ℤ H B)) :
     tangentMatrixLieHom d = GeneralLinear.tangentMatrix 54
       (HopfIdeal.quotientLieHom definingIdeal d) := by
-  simp only [tangentMatrixLieHom, LieHom.comp_apply, LieEquiv.coe_toLieHom,
-    GeneralLinear.tangentLieEquivMatrix_apply]
+  simpa only [tangentMatrixLieHom, HopfIdeal.quotientLieHom_apply] using
+    GeneralLinear.tangentMatrixLieHom_apply
+      (Bialgebra.Quotient.mkBialgHom definingIdeal.toIdeal) d
 
 /-- The matrix realization of the tangent algebra is injective over every value ring. -/
 theorem tangentMatrixLieHom_injective : Function.Injective (tangentMatrixLieHom (B := B)) :=
-  (GeneralLinear.tangentLieEquivMatrix (R := ℤ) (B := B) 54).injective.comp
-    (HopfIdeal.quotientLieHom_injective definingIdeal)
+  GeneralLinear.tangentMatrixLieHom_injective_of_surjective _ Ideal.Quotient.mk_surjective
 
 /-- The matrix of a normalized root differential is its integral root operator. -/
 @[simp↓]
@@ -200,16 +200,11 @@ theorem derivationCompLieHom_weightTorus_injective :
 
 /-- The six normalized Cartan vectors are independent over every commutative value ring. -/
 theorem linearIndependent_cartanVector : LinearIndependent B (cartanVector (B := B)) := by
-  have h := (SplitTorus.tangentBasis (R := ℤ) (B := B) (I := Fin 6)).linearIndependent.map_injOn
-    (derivationCompLieHom (B := B) weightTorusIntegralCoordinateMap.hom).toLinearMap
-    derivationCompLieHom_weightTorus_injective.injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := B) weightTorusIntegralCoordinateMap.hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := ℤ) (B := B) (I := Fin 6) =
-        cartanVector (B := B) := by
-    funext i
-    exact derivationCompLieHom_weightTorus_tangentBasis i
-  rwa [heq] at h
+  change LinearIndependent B (fun i : Fin 6 ↦ cartanVector (B := B) i)
+  simpa only [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
+    derivationCompLieHom_apply] using
+    SplitTorus.linearIndependent_derivationComp_cocharacter (B := B)
+      weightTorusIntegralCoordinateMap.hom derivationCompLieHom_weightTorus_injective
 
 /-- The normalized Cartan vectors form a basis of their span, the toral tangent image. -/
 def cartanBasis :
