@@ -51,29 +51,44 @@ variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
   {lam : M} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V]
 
-/-- Extend the finite list of directions constantly past its last entry, for the chain-height
-summation lemmas. Only indices within the original list occur in the proofs below. -/
-private def natDir (π : LSPath P b lam) (k : ℕ) : P.weylGroup :=
+/-- The directions `τ₀, …, τ_l` of an LS path as a sequence indexed by `ℕ`, extended constantly
+past its last entry, in the form taken by the chain-height lemmas of
+`TauCeti.LinearAlgebra.RootSystem.Weyl.ChainBond`. -/
+def natDir (π : LSPath P b lam) (k : ℕ) : P.weylGroup :=
   (π.dir ⟨min k π.length, by omega⟩).1
 
-/-- Extend the finite list of break times constantly past its last entry. -/
-private def natTime (π : LSPath P b lam) (k : ℕ) : ℚ :=
+/-- The break times `a₀, …, a_{l+1}` of an LS path as a sequence indexed by `ℕ`, extended
+constantly past its last entry. -/
+def natTime (π : LSPath P b lam) (k : ℕ) : ℚ :=
   π.time ⟨min k (π.length + 1), by omega⟩
 
-private theorem natTime_zero (π : LSPath P b lam) : π.natTime 0 = 0 :=
+theorem natDir_of_le (π : LSPath P b lam) {k : ℕ} (hk : k ≤ π.length) :
+    π.natDir k = (π.dir ⟨k, Nat.lt_succ_of_le hk⟩).1 := by
+  simp only [natDir, min_eq_left hk]
+
+theorem natTime_of_le (π : LSPath P b lam) {k : ℕ} (hk : k ≤ π.length + 1) :
+    π.natTime k = π.time ⟨k, Nat.lt_succ_of_le hk⟩ := by
+  simp only [natTime, min_eq_left hk]
+
+theorem isMinimalCosetRep_natDir (π : LSPath P b lam) (k : ℕ) :
+    (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (π.natDir k) :=
+  (π.dir _).2
+
+theorem natTime_zero (π : LSPath P b lam) : π.natTime 0 = 0 :=
   π.time_zero
 
-private theorem natTime_last (π : LSPath P b lam) : π.natTime (π.length + 1) = 1 := by
+theorem natTime_last (π : LSPath P b lam) : π.natTime (π.length + 1) = 1 := by
   simpa only [natTime, min_self, Fin.last] using π.time_last
 
-private theorem natTime_strictMono (π : LSPath P b lam) (k : ℕ) (hk : k < π.length + 1) :
+theorem natTime_strictMono (π : LSPath P b lam) (k : ℕ) (hk : k < π.length + 1) :
     π.natTime k < π.natTime (k + 1) := by
   apply π.strictMono_time
   simp only [Fin.mk_lt_mk, min_eq_left (by omega : k ≤ π.length + 1),
     min_eq_left (by omega : k + 1 ≤ π.length + 1)]
   omega
 
-private theorem natDir_chain (π : LSPath P b lam) (k : ℕ) (hk : k + 1 < π.length + 1) :
+/-- Consecutive directions of an LS path are joined by chains for the break between them. -/
+theorem natDir_chain (π : LSPath P b lam) (k : ℕ) (hk : k + 1 < π.length + 1) :
     ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
       C.head.1 = π.natDir k ∧ C.last.1 = π.natDir (k + 1) ∧
         IsAChain (π.natTime (k + 1)) lam C := by
