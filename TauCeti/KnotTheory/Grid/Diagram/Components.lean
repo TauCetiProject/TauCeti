@@ -25,6 +25,11 @@ grid-diagram disjointness condition makes the component permutation fixed-point-
 Mathlib's cycle decomposition accounts for every marking, and the component count is also the
 number of orbits `TauCeti.orbitCount` of the component permutation.
 
+On a knot grid the component permutation is a single cycle through all columns, so it leads from
+any base column to any other column; the least number of steps is the traversal index
+`TauCeti.GridDiagram.IsKnot.traversalIndex`, which is less than the grid number and injective in
+the target column.
+
 Row relabeling leaves the component permutation unchanged, while column relabeling conjugates it.
 Consequently the cycle type, component count, and knot predicate are preserved by both
 relabelings, as well as by diagonal reflection, half-turn rotation, and exchanging `O` with `X`.
@@ -37,6 +42,8 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.componentCycleType`: the multiset of component sizes.
 * `TauCeti.GridDiagram.componentCount`: the number of represented link components.
 * `TauCeti.GridDiagram.IsKnot`: the represented link has exactly one component.
+* `TauCeti.GridDiagram.IsKnot.traversalIndex`: on a knot grid, the number of steps of the
+  component permutation from a base column to a column.
 
 ## References
 
@@ -210,6 +217,55 @@ theorem not_isKnot_of_zero (G : GridDiagram 0) : ¬G.IsKnot := by
 theorem IsKnot.ne_zero {G : GridDiagram n} (hG : G.IsKnot) : n ≠ 0 := by
   rintro rfl
   exact not_isKnot_of_zero G hG
+
+/-- On a knot grid the component permutation, a single cycle through all columns, leads from any
+column to any other. -/
+theorem IsKnot.exists_pow_componentPerm_apply_eq {G : GridDiagram n} (hG : G.IsKnot)
+    (c₀ c : Fin n) : ∃ k : ℕ, (G.componentPerm ^ k) c₀ = c :=
+  (G.isKnot_iff_componentPerm_isCycle.mp hG).exists_pow_eq (G.componentPerm_apply_ne_self c₀)
+    (G.componentPerm_apply_ne_self c)
+
+/-- The **traversal index** of a column `c` from a base column `c₀` of a knot grid: the least
+number of steps of the component permutation leading from `c₀` to `c`. -/
+def IsKnot.traversalIndex {G : GridDiagram n} (hG : G.IsKnot) (c₀ c : Fin n) : ℕ :=
+  Nat.find (hG.exists_pow_componentPerm_apply_eq c₀ c)
+
+section traversalIndex
+
+variable {G} (hG : G.IsKnot) (c₀ : Fin n)
+
+/-- The component permutation leads from the base column to `c` in `traversalIndex c₀ c` steps. -/
+@[simp]
+theorem IsKnot.pow_traversalIndex_apply (c : Fin n) :
+    (G.componentPerm ^ hG.traversalIndex c₀ c) c₀ = c :=
+  Nat.find_spec (hG.exists_pow_componentPerm_apply_eq c₀ c)
+
+/-- The traversal index is at most any number of steps leading from the base column to `c`. -/
+theorem IsKnot.traversalIndex_le {c : Fin n} {k : ℕ} (hk : (G.componentPerm ^ k) c₀ = c) :
+    hG.traversalIndex c₀ c ≤ k :=
+  Nat.find_min' _ hk
+
+/-- The base column has traversal index `0`. -/
+@[simp]
+theorem IsKnot.traversalIndex_self : hG.traversalIndex c₀ c₀ = 0 :=
+  Nat.le_zero.mp (hG.traversalIndex_le c₀ (pow_zero G.componentPerm ▸ rfl))
+
+/-- The traversal index is less than the grid number. -/
+theorem IsKnot.traversalIndex_lt (c : Fin n) : hG.traversalIndex c₀ c < n := by
+  have hcyc := G.isKnot_iff_componentPerm_isCycle.mp hG
+  have horder : orderOf G.componentPerm = n := by
+    rw [hcyc.orderOf, support_componentPerm, Finset.card_univ, Fintype.card_fin]
+  have hn : 0 < n := Nat.pos_of_ne_zero hG.ne_zero
+  have hk := hG.pow_traversalIndex_apply c₀ c
+  rw [← pow_mod_orderOf, horder] at hk
+  exact (hG.traversalIndex_le c₀ hk).trans_lt (Nat.mod_lt _ hn)
+
+/-- Distinct columns have distinct traversal indices. -/
+theorem IsKnot.traversalIndex_injective : Function.Injective (hG.traversalIndex c₀) :=
+  fun c c' h => by
+    rw [← hG.pow_traversalIndex_apply c₀ c, ← hG.pow_traversalIndex_apply c₀ c', h]
+
+end traversalIndex
 
 /-- Every `2 × 2` grid diagram represents a knot. Its fixed-point-free component permutation is
 the transposition of the two columns. -/
