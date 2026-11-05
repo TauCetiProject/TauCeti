@@ -24,9 +24,9 @@ steps, so such a vector generates a copy of the signed ladder module `L_m^ε`.
 The vanishing holds more generally for a generalized weight vector `w` of weight `ε q^m` killed by
 `E`: the commutator formula
 `E F^(r+1) = F^(r+1) E + [r+1]_q F^r (q^(-r) K - q^r K⁻¹) / (q - q⁻¹)` shows that `F^r w ≠ 0` for
-`w ≠ 0` and `r ≤ m`, and that `F^(m+1) w = 0`. If `E` kills the whole generalized weight space of
-weight `ε q^m`, then `K` acts on it by the scalar `ε q^m`. No diagonalizability of `K` is assumed;
-these are the weight-space inputs to complete reducibility.
+`w ≠ 0` and `r ≤ m`, and that `F^(m+1) w = 0`. Moreover `K` acts on such a `w` by the scalar
+`ε q^m`, so `w` is an honest weight vector. No diagonalizability of `K` is assumed; these are the
+weight-space inputs to complete reducibility.
 
 ## Main results
 
@@ -37,8 +37,8 @@ these are the weight-space inputs to complete reducibility.
 * `TauCeti.UqSl2.f_pow_smul_eq_zero_of_e_smul_eq_zero`: a generalized weight vector of weight
   `ε q^m` killed by `E` is killed by `F^(m+1)`; its special case for honest weight vectors is
   `TauCeti.UqSl2.f_pow_succ_smul_eq_zero_of_highest_weight_vector`.
-* `TauCeti.UqSl2.genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero`: if `E` kills the
-  generalized weight space of weight `ε q^m`, then `K` acts on it by `ε q^m`.
+* `TauCeti.UqSl2.mem_weightSpace_of_e_smul_eq_zero`: a generalized weight vector of weight
+  `ε q^m` killed by `E` is an honest weight vector.
 
 The calculation follows A. Virelizier, *Quantum groups*, Section 2.4.
 -/
@@ -213,22 +213,22 @@ theorem f_pow_succ_smul_eq_zero_of_highest_weight_vector {v : V}
     (hv : v ∈ weightSpace q V (ε * q ^ m)) (hev : e q • v = 0) : f q ^ (m + 1) • v = 0 :=
   f_pow_smul_eq_zero_of_e_smul_eq_zero hq (weightSpace_le_genWeightSpace _ hv) hev
 
-/-- At a generic parameter, if `E` kills the generalized weight space of weight `ε q^m` in a
-finite-dimensional module, then `K` acts on it by the scalar `ε q^m`: the generalized weight
-space is an honest weight space. -/
-theorem genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero
-    (hE : ∀ w ∈ genWeightSpace q V (ε * q ^ m), e q • w = 0) :
-    genWeightSpace q V (ε * q ^ m) = weightSpace q V (ε * q ^ m) := by
-  refine le_antisymm (fun w hw => ?_) (weightSpace_le_genWeightSpace _)
+/-- At a generic parameter, in a finite-dimensional module, a generalized weight vector of weight
+`ε q^m` killed by `E` is an honest weight vector: `K` acts on it by the scalar `ε q^m`. -/
+theorem mem_weightSpace_of_e_smul_eq_zero {w : V} (hw : w ∈ genWeightSpace q V (ε * q ^ m))
+    (he : e q • w = 0) : w ∈ weightSpace q V (ε * q ^ m) := by
   have hq0 := hq.ne_zero
-  -- `X w = q^(-m) K w - q^m K⁻¹ w` lies in the generalized weight space and is killed by `F^m`.
+  -- `X = q^(-m) K w - q^m K⁻¹ w` lies in the generalized weight space, is killed by `E` since
+  -- `E` commutes with `K` and `K⁻¹` up to scalars, and is killed by `F^m`.
   have hX : q⁻¹ ^ m • k q • w - q ^ m • kInv q • w ∈ genWeightSpace q V (ε * q ^ m) :=
     sub_mem (Submodule.smul_mem _ _ (k_smul_mem_genWeightSpace hw))
       (Submodule.smul_mem _ _ (kInv_smul_mem_genWeightSpace hw))
-  have hX0 := eq_zero_of_f_pow_smul_eq_zero hq le_rfl hX (hE _ hX)
-    (f_pow_smul_k_smul_sub_kInv_smul hq (hE w hw)
-      (f_pow_smul_eq_zero_of_e_smul_eq_zero hq hw (hE w hw)))
-  -- Applying `K` to `X w = 0` gives `K² w = q^(2m) w = (ε q^m)² w`.
+  have heX : e q • (q⁻¹ ^ m • k q • w - q ^ m • kInv q • w) = 0 := by
+    simp only [smul_sub, smul_comm (e q), ← mul_smul (e q), e_mul_k, e_mul_kInv, smul_assoc,
+      mul_smul, he, smul_zero, sub_zero]
+  have hX0 := eq_zero_of_f_pow_smul_eq_zero hq le_rfl hX heX
+    (f_pow_smul_k_smul_sub_kInv_smul hq he (f_pow_smul_eq_zero_of_e_smul_eq_zero hq hw he))
+  -- Applying `K` to `X = 0` gives `K² w = q^(2m) w = (ε q^m)² w`.
   have hk2 : k q ^ 2 • w = ((ε : ℂ) * q ^ m) ^ 2 • w := by
     have h := congrArg (fun x => q ^ m • k q • x) hX0
     simp only [smul_sub, smul_comm (k q) (q⁻¹ ^ m), smul_comm (k q) (q ^ m), ← mul_smul (k q),

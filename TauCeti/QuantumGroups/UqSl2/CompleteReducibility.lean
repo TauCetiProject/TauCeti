@@ -25,10 +25,10 @@ The proof splits a finite-dimensional module into the generalized eigenspaces of
 Casimir element `Ω`. Every highest-weight vector in such a Casimir block has weight `ε q^m` for one
 fixed pair `(m, ε)`, so `E` kills the generalized weight space `W` of weight `ε q^m`. By the
 highest-weight results `F^(m+1)` vanishes on `W` and `K` acts on `W` by the scalar `ε q^m`
-(`TauCeti.UqSl2.genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero`). Every vector of `W` is
-therefore the image of `v₀` under a module map from the ladder module `L_m^ε`, and these images
-span a semisimple submodule `U ⊇ W`. Taking generalized weight spaces is exact, so the quotient
-by `U` has no generalized weight `ε q^m`; being a Casimir block with the same scalar, it is zero.
+(`TauCeti.UqSl2.mem_weightSpace_of_e_smul_eq_zero`). Every vector of `W` is therefore the image
+of `v₀` under a module map from the ladder module `L_m^ε`, and these images span a semisimple
+submodule `U ⊇ W`. Taking generalized weight spaces is exact, so the quotient by `U` has no
+generalized weight `ε q^m`; being a Casimir block with the same scalar, it is zero.
 
 ## Main results
 
@@ -115,9 +115,8 @@ private theorem isSemisimpleModule_of_casimirBlock_casimirScalar_eq_top :
   have hE (w : V) (hw : w ∈ genWeightSpace q V (ε * q ^ m)) : e q • w = 0 :=
     e_smul_eq_zero_of_casimirBlock_eq_top hq hc hw
   -- Each vector of `W` is the image of `v₀` under a module map from `L_m^ε`.
-  have hW (w : genWeightSpace q V (ε * q ^ m)) : (w : V) ∈ weightSpace q V (ε * q ^ m) := by
-    rw [← genWeightSpace_eq_weightSpace_of_forall_e_smul_eq_zero hq hE]
-    exact w.2
+  have hW (w : genWeightSpace q V (ε * q ^ m)) : (w : V) ∈ weightSpace q V (ε * q ^ m) :=
+    mem_weightSpace_of_e_smul_eq_zero hq w.2 (hE w w.2)
   let L (w : genWeightSpace q V (ε * q ^ m)) : Submodule (UqSl2 q) V :=
     LinearMap.range (LadderModule.lift hq (hW w) (hE w w.2)
       (f_pow_smul_eq_zero_of_e_smul_eq_zero hq w.2 (hE w w.2)))
