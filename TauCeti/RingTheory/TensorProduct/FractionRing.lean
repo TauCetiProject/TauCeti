@@ -51,12 +51,10 @@ theorem adjoin_range_right_eq_top_of_isFractionRing_tensorProduct :
     IntermediateField.adjoin F (Set.range (algebraMap K Q)) = ⊤ := by
   have hleft : (algebraMap (F ⊗[k] K) Q) ∘
       (Algebra.TensorProduct.includeLeft : F →ₐ[k] F ⊗[k] K) = algebraMap F Q := by
-    funext f
-    exact (IsScalarTower.algebraMap_apply F (F ⊗[k] K) Q f).symm
+    exact congrArg DFunLike.coe (IsScalarTower.algebraMap_eq F (F ⊗[k] K) Q).symm
   have hright : (algebraMap (F ⊗[k] K) Q) ∘
       (Algebra.TensorProduct.includeRight : K →ₐ[k] F ⊗[k] K) = algebraMap K Q := by
-    funext c
-    exact (IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q c).symm
+    exact congrArg DFunLike.coe (IsScalarTower.algebraMap_eq K (F ⊗[k] K) Q).symm
   have hs : (algebraMap (F ⊗[k] K) Q).range =
       Subring.closure (Set.range (algebraMap F Q) ∪ Set.range (algebraMap K Q)) := by
     rw [RingHom.range_eq_map,
@@ -88,11 +86,11 @@ theorem linearDisjoint_of_isFractionRing_tensorProduct :
   have H := (Subalgebra.LinearDisjoint.include_range k F K).map i hi
   rw [IntermediateField.linearDisjoint_iff, AlgHom.fieldRange_toSubalgebra]
   have hleft : i.comp Algebra.TensorProduct.includeLeft = IsScalarTower.toAlgHom k F Q := by
-    ext f
-    exact (IsScalarTower.algebraMap_apply F (F ⊗[k] K) Q f).symm
+    apply AlgHom.toRingHom_injective
+    exact (IsScalarTower.algebraMap_eq F (F ⊗[k] K) Q).symm
   have hright : i.comp Algebra.TensorProduct.includeRight = IsScalarTower.toAlgHom k K Q := by
-    ext c
-    exact (IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q c).symm
+    apply AlgHom.toRingHom_injective
+    exact (IsScalarTower.algebraMap_eq K (F ⊗[k] K) Q).symm
   simpa only [← AlgHom.range_comp, hleft, hright] using H.symm
 
 end TauCeti
