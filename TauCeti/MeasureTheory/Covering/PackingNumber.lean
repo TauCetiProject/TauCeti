@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
-public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Topology.MetricSpace.CoveringNumbers
 
 /-!
@@ -29,13 +28,7 @@ closed balls of radius `ε / 2` are pairwise disjoint.
 The typical application is a lower density bound `μ (closedBall x ρ) ≥ c ρ ^ d` at the points
 `x ∈ A`, valid on a window of radii `a ≤ ρ ≤ b`. Then for every `ε` with `2 a ≤ ε ≤ 2 b`,
 `A` is covered by at most `2 ^ d μ (cthickening (ε / 2) A) / (c ε ^ d)` balls of radius `ε`
-centred in `A`. In the large-parameter analysis of the Seiberg–Witten equations on a symplectic
-four-manifold, `μ` is the defect energy `r |1 - |χ|²| / 4` of a solution, whose total mass is
-bounded independently of `r`, and `A` is the zero set of the component `α` of its spinor.
-Taubes's monotonicity estimate bounds the defect energy of a ball of radius `ρ` centred at a zero
-below by `c ρ ²` for `c₀ r^(-1/2) ≤ ρ ≤ ρ₀`, with constants independent of `r`. The zero set is then
-covered by `N(σ) ≤ C σ⁻²` balls of radius `σ` centred at zeros, with disjoint half-balls, as soon
-as `σ ≤ 2 ρ₀` and `r ≥ (2 c₀ / σ) ²`.
+centred in `A`.
 
 ## Main results
 
@@ -50,13 +43,6 @@ as `σ ≤ 2 ρ₀` and `r ≥ (2 c₀ / σ) ²`.
   cardinality times `m` is at most `μ (cthickening (ε / 2) A)`.
 * `TauCeti.coveringNumber_le_of_mul_pow_le_measure_closedBall`: the covering number bound from a
   lower density bound `c ρ ^ d` on a window of radii.
-* `TauCeti.coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le`: the quadratic
-  large-parameter form, valid for `r ≥ (2 c₀ / σ) ²`.
-
-## References
-
-* C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
-  J. Amer. Math. Soc. 9 (1996), 845–918.
 -/
 
 public section
@@ -158,28 +144,5 @@ theorem coveringNumber_le_of_mul_pow_le_measure_closedBall {a b c : ℝ} {d : �
     (.inl ENNReal.ofReal_ne_top), ENNReal.div_eq_inv_mul, ← ENNReal.ofReal_inv_of_pos hpos] at h
   convert h using 3
   rw [div_pow, mul_div_assoc', inv_div]
-
-/-- **Covering bound in the large-parameter form.** Suppose that for some `r` the measure
-satisfies `μ (closedBall x ρ) ≥ c ρ ^ 2` for every `x ∈ A` and every radius
-`c₀ / √r ≤ ρ ≤ ρ₀`, with `c > 0`. Then for every `σ > 0` with `σ ≤ 2 ρ₀`, as soon as
-`r ≥ (2 c₀ / σ) ^ 2`, the set `A` is covered by at most `4 μ (cthickening (σ / 2) A) / (c σ ^ 2)`
-closed balls of radius `σ` centred in `A`. The bound does not depend on `r`. -/
-theorem coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le {c c₀ ρ₀ r : ℝ} {σ : ℝ≥0}
-    (hc : 0 < c)
-    (hA : ∀ x ∈ A, ∀ ρ, c₀ / √r ≤ ρ → ρ ≤ ρ₀ → ENNReal.ofReal (c * ρ ^ 2) ≤ μ (closedBall x ρ))
-    (hσ : σ ≠ 0) (hσρ₀ : σ ≤ 2 * ρ₀) (hrσ : (2 * c₀ / σ) ^ 2 ≤ r) :
-    (coveringNumber σ A : ℝ≥0∞) ≤
-      ENNReal.ofReal (4 / (c * σ ^ 2)) * μ (cthickening (σ / 2) A) := by
-  have hσ₀ : (0 : ℝ) < σ := by positivity
-  -- The threshold `r ≥ (2 c₀ / σ) ^ 2` says that the half-radius `σ / 2` is at least `c₀ / √r`.
-  have hsqrt : 2 * c₀ / σ ≤ √r := Real.le_sqrt_of_sq_le hrσ
-  have hlow : 2 * (c₀ / √r) ≤ σ := by
-    rcases (Real.sqrt_nonneg r).eq_or_lt with hr | hr
-    · simp [← hr]
-    rw [div_le_iff₀ hσ₀] at hsqrt
-    rw [← mul_div_assoc, div_le_iff₀ hr]
-    linarith
-  convert coveringNumber_le_of_mul_pow_le_measure_closedBall (d := 2) hc hA hσ hlow hσρ₀ using 4
-  norm_num
 
 end TauCeti
