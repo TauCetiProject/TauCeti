@@ -14,10 +14,12 @@ public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 For a smooth homomorphism of finite-dimensional real Lie groups, taking the Lie algebra of
 a closed subgroup commutes with taking its preimage. In particular, the Lie algebra of a
 homomorphism kernel is the kernel of the induced Lie-algebra homomorphism. Neither group is
-required to be connected.
+required to be connected. For an arbitrary subgroup, the Lie algebra of its preimage is
+contained in the preimage of its Lie algebra.
 
 ## Main results
 
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_comap_le`: the preimage inclusion for any subgroup.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_comap`: the Lie algebra of a closed-subgroup preimage.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_ker`: the Lie algebra of a homomorphism kernel.
 
@@ -46,19 +48,33 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
   [FiniteDimensional ℝ E'] [LieGroup I' ∞ G'] [T2Space G']
 
+/-- The Lie algebra of a subgroup's preimage is contained in the preimage of its Lie algebra
+under the Lie map. -/
+theorem lieSubalgebraOfSubgroup_comap_le (f : ContMDiffMonoidMorphism I I' ∞ G G')
+    (K : Subgroup G') :
+    lieSubalgebraOfSubgroup (I := I) (K.comap f.toMonoidHom) ≤
+      (lieSubalgebraOfSubgroup (I := I') K).comap (lieMap f) := by
+  apply lieSubalgebraOfSubgroup_le_iff.mpr
+  intro X hX
+  rw [LieSubalgebra.mem_comap]
+  apply mem_lieSubalgebraOfSubgroup_of_forall
+  intro t
+  simpa only [Subgroup.mem_comap, ContMDiffMonoidMorphism.coe_toMonoidHom,
+    map_lieExp, map_smul] using hX t
+
 /-- The Lie algebra of a closed subgroup's preimage is the preimage of its Lie algebra
 under the Lie map. -/
 theorem lieSubalgebraOfSubgroup_comap (f : ContMDiffMonoidMorphism I I' ∞ G G') {K : Subgroup G'}
     (hK : IsClosed (K : Set G')) :
     lieSubalgebraOfSubgroup (I := I) (K.comap f.toMonoidHom) =
       (lieSubalgebraOfSubgroup (I := I') K).comap (lieMap f) := by
-  ext X
-  rw [mem_lieSubalgebraOfSubgroup (hK.preimage f.contMDiff_toFun.continuous),
-    LieSubalgebra.mem_comap, mem_lieSubalgebraOfSubgroup hK]
-  simp only [Subgroup.mem_comap, ContMDiffMonoidMorphism.coe_toMonoidHom]
-  apply forall_congr'
+  refine le_antisymm (lieSubalgebraOfSubgroup_comap_le f K) ?_
+  intro X hX
+  rw [mem_lieSubalgebraOfSubgroup (hK.preimage f.contMDiff_toFun.continuous)]
+  rw [LieSubalgebra.mem_comap, mem_lieSubalgebraOfSubgroup hK] at hX
   intro t
-  rw [map_lieExp, map_smul]
+  simpa only [Subgroup.mem_comap, ContMDiffMonoidMorphism.coe_toMonoidHom,
+    map_lieExp, map_smul] using hX t
 
 /-- The Lie algebra of a smooth homomorphism kernel is the kernel of its Lie map. -/
 @[simp]
