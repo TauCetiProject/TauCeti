@@ -35,15 +35,14 @@ namespace TauCeti
 If a field `P` of invertible matrices has `(C, r)`-Hölder entries and inverse entries bounded by
 `L`, every entry of `P⁻¹` is `(n² L² C, r)`-Hölder. The constant is fixed before the entries
 and the points. -/
-theorem holderWith_matrix_inv_apply {X : Type*} [PseudoMetricSpace X] (P : X → Matrix ι ι ℝ)
+theorem holderWith_matrix_inv_apply (P : X → Matrix ι ι ℝ)
     (C r L : ℝ≥0) (hP : ∀ x, IsUnit (P x)) (hb : ∀ x i j, |(P x)⁻¹ i j| ≤ L)
     (hc : ∀ i j, HolderWith C r (fun x => P x i j)) (i j : ι) :
     HolderWith ((Fintype.card ι : ℝ≥0) ^ 2 * L ^ 2 * C) r (fun x => (P x)⁻¹ i j) := by
   refine holderOnWith_univ.1 (HolderOnWith.of_dist_le ?_)
   intro x _ y _
   have h :=
-    Matrix.abs_inv_sub_inv_apply_le (hP x) (hP y) L.coe_nonneg
-      (mul_nonneg C.coe_nonneg (Real.rpow_nonneg dist_nonneg _)) (hb x) (hb y)
+    Matrix.abs_inv_sub_inv_apply_le (hP x) (hP y) (hb x) (hb y)
       (fun a b => by simpa only [Real.dist_eq] using (hc a b).dist_le x y) i j
   simpa only [Real.dist_eq, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_natCast, mul_assoc] using
     h

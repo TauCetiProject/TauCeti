@@ -123,7 +123,7 @@ theorem continuousAt_inv_segment {X : Type*} [TopologicalSpace X]
 
 section CompactPositiveFields
 
-variable {ι X : Type*} [Fintype ι] [DecidableEq ι] [TopologicalSpace X]
+variable {X : Type*} [TopologicalSpace X]
 
 /-- The inverse segment depends continuously on both endpoints in a positive-definite field
 and on the unit-interval parameter. -/

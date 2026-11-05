@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
-import Mathlib.Analysis.Matrix.Normed
 import TauCeti.Analysis.Holder.Integral
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Matrix.Holder
@@ -37,8 +36,8 @@ public section
 
 noncomputable section
 
-open Set Metric MeasureTheory Matrix
-open scoped NNReal ENNReal Matrix.Norms.Elementwise ComplexOrder
+open Set MeasureTheory Matrix
+open scoped NNReal
 
 namespace Matrix
 
@@ -178,7 +177,7 @@ variable {ι X : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The quadratic form of the averaged inverse is the integral of the inverse quadratic forms. -/
 theorem _root_.Matrix.segmentAveragedInverse_toQuadraticForm' (A B : Matrix ι ι ℝ)
-    (hA : A.PosDef) (hB : B.PosDef) (ξ : EuclideanSpace ℝ ι) :
+    (hA : A.PosDef) (hB : B.PosDef) (ξ : ι → ℝ) :
     (segmentAveragedInverse A B).toQuadraticForm' ξ =
       ∫ t in (0 : ℝ)..1, (((1 - t) • A + t • B)⁻¹).toQuadraticForm' ξ := by
   symm
@@ -211,13 +210,13 @@ theorem _root_.Matrix.posDef_segmentAveragedInverse (A B : Matrix ι ι ℝ)
       (Matrix.isHermitian_iff_isSymm.mp hB.isHermitian)), ?_⟩
   intro ξ hξ
   have h := intervalIntegral.intervalIntegral_pos_of_pos_on
-    (hA.intervalIntegrable_inv_segment_toQuadraticForm' hB (WithLp.toLp 2 ξ))
+    (hA.intervalIntegrable_inv_segment_toQuadraticForm' hB ξ)
     (fun t ht => by
       rw [Matrix.toQuadraticForm'_apply]
       exact (hA.one_sub_smul_add_smul hB ⟨ht.1.le, ht.2.le⟩).inv.dotProduct_mulVec_pos hξ)
     zero_lt_one
-  rw [← Matrix.segmentAveragedInverse_toQuadraticForm' A B hA hB] at h
-  simpa only [Matrix.toQuadraticForm'_apply, WithLp.ofLp_toLp] using h
+  rwa [← Matrix.segmentAveragedInverse_toQuadraticForm' A B hA hB,
+    Matrix.toQuadraticForm'_apply] at h
 
 /-- A continuous positive definite matrix field on a compact set gives uniform quadratic lower
 and upper bounds for the segment-averaged inverse of all endpoint pairs. -/

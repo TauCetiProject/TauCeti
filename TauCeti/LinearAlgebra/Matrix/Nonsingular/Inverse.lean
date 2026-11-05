@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Ring
 
@@ -27,8 +26,8 @@ inverse computed over `ℚ` is the inverse over `ℝ`.
 
 `LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 
-For invertible real matrices `A`, `B`, inverse entries bounded by `L ≥ 0` and entrywise
-difference bounded by `d ≥ 0` give `|A⁻¹ i j - B⁻¹ i j| ≤ (card ι)² L² d`
+For invertible matrices `A`, `B` over a linearly ordered field, inverse entries bounded by `L`
+and entrywise difference bounded by `d` give `|A⁻¹ i j - B⁻¹ i j| ≤ (card ι)² L² d`
 (`Matrix.abs_inv_sub_inv_apply_le`). This estimate supplies the inverse-entry Hölder modulus.
 It is adapted from the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
@@ -68,18 +67,21 @@ end LinearMap
 
 section InverseBound
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
+  [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /--
-**Entrywise modulus of the inverse.** For invertible `A`, `B` whose inverse entries are bounded
-by `L ≥ 0` and whose entrywise difference is bounded by `d ≥ 0`,
+**Entrywise modulus of the inverse.** For invertible `A`, `B` over a linearly ordered field
+whose inverse entries are bounded by `L` and whose entrywise difference is bounded by `d`,
 `|A⁻¹ᵢⱼ − B⁻¹ᵢⱼ| ≤ n² L² d` with `n = card ι`. -/
-theorem Matrix.abs_inv_sub_inv_apply_le {A B : Matrix ι ι ℝ} {L d : ℝ}
+theorem Matrix.abs_inv_sub_inv_apply_le {A B : Matrix ι ι R} {L d : R}
     (hA : IsUnit A) (hB : IsUnit B)
-    (hL : 0 ≤ L) (hd : 0 ≤ d) (ha : ∀ i j, |A⁻¹ i j| ≤ L) (hb : ∀ i j, |B⁻¹ i j| ≤ L)
+    (ha : ∀ i j, |A⁻¹ i j| ≤ L) (hb : ∀ i j, |B⁻¹ i j| ≤ L)
     (hab : ∀ i j, |A i j - B i j| ≤ d) (i j : ι) :
-    |A⁻¹ i j - B⁻¹ i j| ≤ (Fintype.card ι : ℝ) ^ 2 * L ^ 2 * d := by
+    |A⁻¹ i j - B⁻¹ i j| ≤ (Fintype.card ι : R) ^ 2 * L ^ 2 * d := by
   classical
+  have hL : 0 ≤ L := (abs_nonneg _).trans (ha i i)
+  have hd : 0 ≤ d := (abs_nonneg _).trans (hab i i)
   have hi : A⁻¹ - B⁻¹ = A⁻¹ * (B - A) * B⁻¹ := Matrix.inv_sub_inv ⟨fun _ => hB, fun _ => hA⟩
   calc
     |A⁻¹ i j - B⁻¹ i j| = |∑ k : ι, ∑ l : ι, A⁻¹ i l * (B l k - A l k) * B⁻¹ k j| := by
