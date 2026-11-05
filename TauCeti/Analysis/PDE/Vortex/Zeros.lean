@@ -61,6 +61,9 @@ theorem conjWirtingerDeriv_apply_one_section_eq_mul {z : ℂ}
   apply Complex.ext <;>
     simp [smul_eq_mul, Complex.ofRealCLM_apply] <;> linarith
 
+private theorem sectionValue_eq (w : ℂ) : sectionValue x w = 2 * ((x w 2 : ℂ) + I * x w 3) := by
+  rw [sectionValue_apply, mul_comm (x w 3 : ℂ) I]
+
 section LocalFactor
 
 variable {k : ℕ∞} (hn : 1 ≤ k) (hb₁ : ContDiff ℝ k (fun w ↦ x w 0))
@@ -85,23 +88,23 @@ include hn
 
 /-- A nontrivial plane vortex section factors locally as a nonnegative integral power
 times a factor `Cᵏ` at `z` and nonzero there, including at repeated zeros. -/
-theorem exists_contDiffAt_section_eq_pow_mul
-    (hne : ∃ w, (x w 2 : ℂ) + I * x w 3 ≠ 0) (z : ℂ) :
+theorem exists_contDiffAt_sectionValue_eq_pow_mul
+    (hne : ∃ w, sectionValue x w ≠ 0) (z : ℂ) :
     ∃ (n : ℕ) (v : ℂ → ℂ), ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, 2 * ((x w 2 : ℂ) + I * x w 3) = (w - z) ^ n * v w := by
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * v w := by
   obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
   have hneα : ∃ w ∈ (univ : Set ℂ), 2 * ((x w 2 : ℂ) + I * x w 3) ≠ 0 := by
-    simpa only [mem_univ, true_and, mul_ne_zero_iff, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true] using hne
+    simpa only [mem_univ, true_and, sectionValue_eq] using hne
+  simp only [sectionValue_eq]
   exact exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
     ha.contDiffOn hα.differentiableOn (fun w _ ↦ heq w) (mem_univ z)
     (not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
       isPreconnected_univ ha.contDiffOn hα.differentiableOn (fun w _ ↦ heq w) hneα (mem_univ z))
 
 /-- A plane vortex section approaching unit modulus has finitely many zeros. -/
-theorem finite_setOfPred_section_eq_zero
+theorem finite_setOfPred_sectionValue_eq_zero
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    {w | (x w 2 : ℂ) + I * x w 3 = 0}.Finite := by
+    {w | sectionValue x w = 0}.Finite := by
   let α := fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)
   obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
   have htail : ∀ᶠ w in cocompact ℂ, α w ≠ 0 := by
@@ -110,7 +113,8 @@ theorem finite_setOfPred_section_eq_zero
     have hr : x w 2 = 0 := by simpa [α] using congrArg Complex.re hz
     have hi : x w 3 = 0 := by simpa [α] using congrArg Complex.im hz
     simp [hr, hi] at hw
-  simpa [α] using finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn ha hα heq htail
+  simpa only [sectionValue_eq] using
+    finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn ha hα heq htail
 
 end LocalFactor
 
@@ -120,14 +124,9 @@ section Quotient
 
 variable {k : ℕ∞} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The section in the form used by `exists_contDiffAt_section_eq_pow_mul`. -/
-private theorem sectionValue_eq_two_mul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ) :
-    sectionValue x w = 2 * ((x w 2 : ℂ) + I * x w 3) := by
-  rw [sectionValue_apply, mul_comm I]
-
 /-- A local factorization of a vortex section with a factor only continuous at `z` can be
 replaced by one with the same exponent and a `Cᵏ` factor. -/
-private theorem exists_contDiffAt_sectionValue_eq_pow_mul (hk : 1 ≤ k)
+private theorem exists_contDiffAt_sectionValue_eq_pow_mul_of_continuousAt (hk : 1 ≤ k)
     (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
     (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {z : ℂ} {n : ℕ}
@@ -137,18 +136,18 @@ private theorem exists_contDiffAt_sectionValue_eq_pow_mul (hk : 1 ≤ k)
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * V w := by
   obtain ⟨v, hv, hv₀, hfac⟩ := hn
   -- The factorization makes the section nonzero at points near `z` other than `z`.
-  have hne : ∃ w, (x w 2 : ℂ) + I * x w 3 ≠ 0 := by
+  have hne : ∃ w, sectionValue x w ≠ 0 := by
     obtain ⟨w, ⟨hw, hvw⟩, hwz⟩ :=
       (((hfac.and (hv.eventually_ne hv₀)).filter_mono nhdsWithin_le_nhds).and
         (eventually_mem_nhdsWithin (s := {z}ᶜ))).exists
-    refine ⟨w, fun h0 ↦ mul_ne_zero
-      (pow_ne_zero n (sub_ne_zero.mpr (Set.mem_compl_singleton_iff.mp hwz))) hvw ?_⟩
-    rw [← hw, sectionValue_eq_two_mul, h0, mul_zero]
-  obtain ⟨m, V, hV, hV₀, hfacV⟩ := exists_contDiffAt_section_eq_pow_mul hk hb₁ hb₂ hp hq hhol hne z
+    rw [hw]
+    exact mul_ne_zero (pow_ne_zero n (sub_ne_zero.mpr (Set.mem_compl_singleton_iff.mp hwz))) hvw
+  obtain ⟨m, V, hV, hV₀, hfacV⟩ :=
+    exists_contDiffAt_sectionValue_eq_pow_mul hk hb₁ hb₂ hp hq hhol hne z
   obtain rfl : m = n := eq_of_eventually_sub_pow_mul_eq hV.continuousAt hV₀ hv hv₀ <| by
     filter_upwards [hfac, hfacV] with w hw hwV
-    rw [← hwV, ← hw, sectionValue_eq_two_mul]
-  exact ⟨V, hV, hV₀, by simpa only [sectionValue_eq_two_mul] using hfacV⟩
+    rw [← hwV, ← hw]
+  exact ⟨V, hV, hV₀, hfacV⟩
 
 /-- **Vortex sections with the same zero multiplicities differ by a nowhere-vanishing `Cᵏ`
 factor.** Let `x` and `y` be fields with `Cᵏ` connections (`k ≥ 1`) and differentiable sections
@@ -170,9 +169,9 @@ theorem exists_contDiff_sectionValue_eq_mul (hk : 1 ≤ k)
     ∃ h : ℂ → ℂ, ContDiff ℝ k h ∧ (∀ z, h z ≠ 0) ∧
       ∀ z, sectionValue x z = h z * sectionValue y z := by
   choose V hV hV₀ hfacV using fun z ↦
-    exists_contDiffAt_sectionValue_eq_pow_mul hk hxb₁ hxb₂ hxp hxq hxhol (hnx z)
+    exists_contDiffAt_sectionValue_eq_pow_mul_of_continuousAt hk hxb₁ hxb₂ hxp hxq hxhol (hnx z)
   choose W hW hW₀ hfacW using fun z ↦
-    exists_contDiffAt_sectionValue_eq_pow_mul hk hyb₁ hyb₂ hyp hyq hyhol (hny z)
+    exists_contDiffAt_sectionValue_eq_pow_mul_of_continuousAt hk hyb₁ hyb₂ hyp hyq hyhol (hny z)
   -- Off the zeros of `α_y` take the quotient of the sections; at a zero `z` take the quotient of
   -- the two factors at `z`.
   let h : ℂ → ℂ := fun w ↦

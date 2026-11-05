@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
-public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.DirichletCharacter.Even
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.Conj
@@ -16,14 +14,12 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 /-!
 # Completed Dirichlet L-functions
 
-These results supplement Mathlib's continued Dirichlet functions with meromorphy, conjugation,
-and the unit norm of the Gauss-sum root number. The functions themselves are Mathlib's, without
-any change of representative. The conjugation comparison is asserted only away from the possible
-poles at zero and one.
+These results supplement Mathlib's continued Dirichlet functions with meromorphy and conjugation.
+The functions themselves are Mathlib's, without any change of representative. The conjugation
+comparison is asserted only away from the possible poles at zero and one.
 
 The analytic input is David Loeffler and Michael Stoll's development in
-`Mathlib.NumberTheory.LSeries.DirichletContinuation`; the Gauss-sum norm uses the primitive
-Gauss-sum product identity in `TauCeti.NumberTheory.DirichletCharacter.GaussSum`.
+`Mathlib.NumberTheory.LSeries.DirichletContinuation`.
 -/
 
 public section
@@ -121,16 +117,5 @@ theorem rootNumber_inv : χ⁻¹.rootNumber = conj χ.rootNumber := by
     simp [even_inv_iff, he, hneg]
   · have hneg : χ (-1) = -1 := by simpa only [map_one] using Odd.eval_neg χ 1 ho
     simp [even_inv_iff, ho.not_even, hneg]
-
-/-- The root number of a primitive Dirichlet character has absolute value one. -/
-theorem IsPrimitive.norm_rootNumber {χ : DirichletCharacter ℂ N}
-    (hχ : χ.IsPrimitive) : ‖χ.rootNumber‖ = 1 := by
-  classical
-  rw [rootNumber, norm_div, norm_div, norm_pow, norm_I, one_pow, div_one,
-    hχ.norm_gaussSum (ZMod.isPrimitive_stdAddChar N),
-    Complex.norm_natCast_cpow_of_pos (NeZero.pos N)]
-  have hre : (1 / 2 : ℂ).re = (1 / 2 : ℝ) := by norm_num
-  rw [hre, ← Real.sqrt_eq_rpow]
-  exact div_self (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (NeZero.pos N))).ne'
 
 end DirichletCharacter

@@ -231,6 +231,19 @@ noncomputable def componentPermOutgoing (D : OrientedPDCode n) :
     D.toPDCode.componentPerm.subtypePerm (fun h => by
       simp only [orientation_componentPerm])
 
+/-- There are two outgoing half-edges at every crossing. -/
+theorem card_outgoingHalfEdges (D : OrientedPDCode n) :
+    Fintype.card {h : Fin (4 * n) // D.orientation h = true} = 2 * n := by
+  classical
+  let p := fun h ↦ D.orientation h = true
+  let e : {h // p h} ≃ {h // ¬p h} :=
+    D.edgePair.val.subtypeEquiv (fun h ↦ by simp [p])
+  have h := Fintype.card_congr (Equiv.sumCompl p)
+  have he := Fintype.card_congr e
+  rw [Fintype.card_sum, Fintype.card_fin] at h
+  dsimp [p] at h he
+  omega
+
 /-- The identity on half-edge labels identifies outgoing half-edges before and after mirroring. -/
 def mirrorOutgoingEquiv (D : OrientedPDCode n) :
     {h : Fin (4 * n) // D.orientation h = true} ≃
