@@ -22,7 +22,7 @@ embedding has the Krull dimension of the part of the set lying in the range.
 
 For the specialization preorder, defined on any topological space, the codimension
 `Order.coheight x` of a point is the supremum of the lengths of the chains of proper
-specializations of `x`. On a T₀ space the specialization preorder is a partial order; there, on a
+generalizations of `x`. On a T₀ space the specialization preorder is a partial order; there, on a
 space all of whose points have codimension at most one, a point of codimension exactly one is
 closed, since a proper specialization of such a point would have codimension at least two.
 
