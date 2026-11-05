@@ -255,21 +255,13 @@ theorem laplacian_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) :
     Δ (heatKernel t ⋆ g) x = (Δ (heatKernel t : E → ℝ) ⋆ g) x := by
   have hD₂ := integrable_iteratedFDeriv_heatKernel (E := E) ht 2
-  -- The Laplacian is the continuous linear functional `Λ A = ∑ i, A (bᵢ, bᵢ)` of the Hessian.
-  set Λ : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F →L[ℝ] F :=
-    ∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
-      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]
-  have hΛ : ∀ A, Λ A = ∑ i, A ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i] :=
-    fun A => by simp [Λ]
-  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-  dsimp only
-  rw [iteratedFDeriv_convolution_left_of_dominated
+  rw [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_convolution_left_of_dominated
     (lsmul ℝ ℝ) (N := ⊤) (contDiff_heatKernel t)
     (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k 1) hg hM le_top,
-    ← hΛ, convolution_def, ← integral_comp_comm Λ
+    convolution_def, ← integral_comp_comm _
       (convolutionExists_of_integrable_of_ae_norm_le _ hD₂ hg hM x), convolution_def]
   congr 1 with y
-  rw [hΛ, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, lsmul_apply, Finset.sum_smul]
+  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, lsmul_apply, Finset.sum_smul]
   simp
 
 /-- **The heat equation.** For `t > 0` and `g` measurable and essentially bounded, the function

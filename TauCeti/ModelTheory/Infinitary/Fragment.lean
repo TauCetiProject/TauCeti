@@ -439,6 +439,29 @@ theorem ofTheory_countable {T : Set L.Sentenceω} (hT : T.Countable) :
     ((ofTheory T : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)).Countable :=
   generated_countable (hT.image _)
 
+/-! ### Arity slices -/
+
+/-- The formulas of `A` with exactly `n` bound-variable slots. -/
+def slice (A : Fragment L) (n : ℕ) : Set (L.BoundedFormulaω Empty n) :=
+  Sigma.mk n ⁻¹' (A : Set (Σ n, L.BoundedFormulaω Empty n))
+
+/-- Membership in an arity slice is membership of the tagged formula in the fragment. -/
+@[simp]
+theorem mem_slice {A : Fragment L} {n : ℕ} {φ : L.BoundedFormulaω Empty n} :
+    φ ∈ A.slice n ↔ (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
+  Iff.rfl
+
+/-- Inclusion of fragments induces inclusion of each arity slice. The corresponding map on
+slice subtypes is `Set.inclusion (slice_mono hAB n)`. -/
+theorem slice_mono {A B : Fragment L} (hAB : A ≤ B) (n : ℕ) : A.slice n ⊆ B.slice n :=
+  fun _ hφ => hAB hφ
+
+/-- Every arity slice of a countable fragment is countable. -/
+theorem slice_countable {A : Fragment L}
+    (hA : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) (n : ℕ) :
+    (A.slice n).Countable :=
+  hA.preimage sigma_mk_injective
+
 end Fragment
 
 end Language

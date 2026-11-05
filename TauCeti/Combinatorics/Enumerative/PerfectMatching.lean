@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Cycle.Reversal
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.SwapFactors
 
 /-!
@@ -42,6 +43,7 @@ travel.
 
 * `TauCeti.IsPerfectMatching f`: the permutation `f` is an involution with no fixed point.
 * `TauCeti.PerfectMatching α`: the type of perfect matchings of `α`.
+* `TauCeti.PerfectMatching.ofInvolutive`: the perfect matching from a fixed-point-free involution.
 * `TauCeti.PerfectMatching.congr`: transporting a perfect matching along an equivalence.
 * `TauCeti.PerfectMatching.reconnect`: cutting two arcs and joining their ends the other way.
 * `TauCeti.PerfectMatching.restrict`: the perfect matching induced on the complement of an arc.
@@ -71,7 +73,9 @@ travel.
   equivalence relation they generate has half as many classes as their product has orbits.
 * `TauCeti.PerfectMatching.orbitCount_mul_reconnect`: reconnecting a perfect matching so that it
   joins a point to its partner under an involution `T` cuts off a new two-point circle, adding
-  two orbits to the product with `T`.
+  two orbits to the product with `T`. When `T` and the matching attain the Euler bound
+  `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, so does the reconnected matching
+  (`TauCeti.PerfectMatching.orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq`).
 
 ## References
 
@@ -92,7 +96,7 @@ variable {α : Type u} {β : Type v} {γ : Type w}
 /-- A permutation of `α` is a **perfect matching** when it is an involution with no fixed
 point, so that it pairs off the elements of `α`. -/
 def IsPerfectMatching (f : Equiv.Perm α) : Prop :=
-  (∀ a, f (f a) = a) ∧ ∀ a, f a ≠ a
+  Function.Involutive f ∧ ∀ a, f a ≠ a
 
 /-- A permutation is a perfect matching exactly when it is an involution with no fixed
 point. -/
@@ -140,6 +144,18 @@ def mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) 
 @[simp]
 theorem val_mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) :
     (mk f hinv hne).val = f := (rfl)
+
+/-- A fixed-point-free involution gives a perfect matching. -/
+def ofInvolutive {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a) :
+    PerfectMatching α :=
+  .mk (hinv.toPerm _) (fun a ↦ by rw [Function.Involutive.coe_toPerm]; exact hinv a)
+    (fun a h ↦ hne a (by rwa [Function.Involutive.coe_toPerm] at h))
+
+@[simp]
+theorem ofInvolutive_apply {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a)
+    (a : α) :
+    (ofInvolutive hinv hne).val a = f a := by
+  simp [ofInvolutive]
 
 variable {a b : α} {D : PerfectMatching α}
 
@@ -330,8 +346,9 @@ section Congr
 without fixed points. -/
 theorem isPerfectMatching_permCongr (e : α ≃ β) {f : Equiv.Perm α} (hf : IsPerfectMatching f) :
     IsPerfectMatching (e.permCongr f) := by
-  refine ⟨fun b => by simp [hf.1], fun b hb => hf.2 (e.symm b) ?_⟩
-  simpa using congrArg e.symm hb
+  refine ⟨fun b ↦ ?_, fun b hb ↦ hf.2 (e.symm b) ?_⟩
+  · simpa using congrArg e (hf.1 (e.symm b))
+  · simpa using congrArg e.symm hb
 
 /-- A permutation is a perfect matching exactly when its transport along an equivalence is. -/
 theorem isPerfectMatching_permCongr_iff (e : α ≃ β) {f : Equiv.Perm α} :
@@ -762,6 +779,47 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
     ⟨1, by simp [swap_apply_of_ne_of_ne (D.apply_ne a) h₂]⟩
   rw [hval, ← mul_assoc, ← mul_assoc, orbitCount_mul_swap_of_sameCycle hD hs₂,
     orbitCount_mul_swap_of_sameCycle h₁ hs₁.symm]
+
+/-- **Suppressing a vertex of degree two keeps a sphere a sphere.** Let `T` and `D.val` attain the
+Euler bound `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, and let `T` exchange `a`
+with `T a ≠ a`, a vertex of degree two. Reconnecting `D` so that it joins `a` to `T a` detaches
+this vertex as a loop of its own, joining the two arcs that ended there; the bound is attained
+again. -/
+theorem orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
+    (D : PerfectMatching α) {T : Perm α} {a : α} (hT : T (T a) = a) (ha : T a ≠ a)
+    (h : orbitCount T + orbitCount D.val + orbitCount (D.val * T) =
+      Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient (Subgroup.closure {T, D.val}) α)) :
+    orbitCount T + orbitCount (D.reconnect a (T a)).val +
+        orbitCount ((D.reconnect a (T a)).val * T) =
+      Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient
+        (Subgroup.closure {T, (D.reconnect a (T a)).val}) α) := by
+  by_cases hD : D.val a = T a
+  · rwa [← hD, reconnect_partner]
+  have hbound := T.orbitCount_add_orbitCount_add_orbitCount_mul_le (D.reconnect a (T a)).val
+  set K := Subgroup.closure {T, (D.reconnect a (T a)).val}
+  -- The new loop adds two faces, its two sides.
+  have hface := D.orbitCount_mul_reconnect hT ha hD
+  rw [orbitCount_mul_comm T, orbitCount_mul_comm T] at hface
+  have hedge : orbitCount (D.reconnect a (T a)).val = orbitCount D.val := by
+    rw [reconnect_val, orbitCount_permCongr]
+  -- Reconnecting back by the same transposition recovers `D`, so at most one component is added.
+  have hle : Subgroup.closure {T, D.val} ≤
+      Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) := by
+    have hK : K ≤ Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
+      fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
+    have hs := Subgroup.subset_closure (Set.mem_insert (swap (D.val a) (T a)) (K : Set (Perm α)))
+    have hr : (D.reconnect a (T a)).val ∈ K := Subgroup.subset_closure (by simp)
+    have hval : swap (D.val a) (T a) * (D.reconnect a (T a)).val * swap (D.val a) (T a) =
+        D.val := by
+      simp [reconnect_val, permCongr_eq_mul, mul_assoc]
+    have hm := mul_mem (mul_mem hs (hK hr)) hs
+    rw [hval] at hm
+    exact (Subgroup.closure_le _).2
+      (Set.pair_subset_iff.2 ⟨hK (Subgroup.subset_closure (by simp)), hm⟩)
+  have hanti := MulAction.card_orbitRelQuotient_anti (X := α) hle
+  have := K.card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_one
+    (D.val a) (T a)
+  omega
 
 end PinchOff
 
