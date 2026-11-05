@@ -81,8 +81,8 @@ theorem finite_quotient [Finite (O ⧸ Ideal.span {(Nat.card G : O)})] :
     (Module.Finite.fg_top (R := O) (M := Ψ → O))
   exact Finite.of_surjective (Submodule.factor hle) (Submodule.factor_surjective hle)
 
-/-- In a character group ring of full rank, the non-zero-divisors are exactly the elements
-whose character coordinates are all nonzero. -/
+/-- When the group order is nonzero in the coefficient domain, the non-zero-divisors of the
+character group ring are exactly the elements whose character coordinates are all nonzero. -/
 theorem mem_nonZeroDivisors_iff (hG : (Nat.card G : O) ≠ 0) (x : charGroupRing Ψ) :
     x ∈ nonZeroDivisors (charGroupRing Ψ) ↔ ∀ ψ : Ψ, (x : Ψ → O) ψ ≠ 0 := by
   classical
