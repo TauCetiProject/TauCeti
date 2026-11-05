@@ -46,23 +46,28 @@ the financial interpretation of this total function is restricted to positive sp
 def weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s t : ℝ) : ℝ :=
   (1 + s) * timeExtension hab.le u (log s) t
 
+/-- Reconstruction in terms of the canonical time extension at any time. -/
+theorem weightedLogSpotPrice_def (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s t : ℝ) :
+    weightedLogSpotPrice u s t = (1 + s) * timeExtension hab.le u (log s) t := (rfl)
+
 /-- Reconstruction at a time in the closed slab. -/
+@[simp]
 theorem weightedLogSpotPrice_of_mem (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     (s : ℝ) (t : Icc a b) :
     weightedLogSpotPrice u s t = (1 + s) * u (slabMk (log s) t) := by
-  rw [weightedLogSpotPrice, timeExtension_of_mem]
+  rw [weightedLogSpotPrice_def, timeExtension_of_mem]
 
 /-- Weighting and unweighting in log-spot coordinates are inverse operations. -/
 @[simp]
 theorem weightedLogSpotPrice_exp_div (u : ParabolicC2HolderSpace α ℝ ℝ hab) (y t : ℝ) :
     weightedLogSpotPrice u (exp y) t / (1 + exp y) = timeExtension hab.le u y t := by
-  rw [weightedLogSpotPrice, log_exp, mul_div_cancel_left₀ _ (by positivity)]
+  rw [weightedLogSpotPrice_def, log_exp, mul_div_cancel_left₀ _ (by positivity)]
 
 /-- The reconstructed price has linear growth, uniformly over all times. -/
 theorem abs_weightedLogSpotPrice_le (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     {s : ℝ} (hs : 0 ≤ s) (t : ℝ) :
     |weightedLogSpotPrice u s t| ≤ ‖u‖ * (1 + s) := by
-  rw [weightedLogSpotPrice, abs_mul, abs_of_nonneg (by positivity : 0 ≤ 1 + s), mul_comm]
+  rw [weightedLogSpotPrice_def, abs_mul, abs_of_nonneg (by positivity : 0 ≤ 1 + s), mul_comm]
   exact mul_le_mul_of_nonneg_right
     ((norm_timeExtension_le hab.le (valueL u) t (log s)).trans (norm_valueL_le u))
     (by positivity)
@@ -129,7 +134,7 @@ theorem hasDerivWithinAt_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ
       ((1 + s) * timeDerivL u (slabMk (log s) t)) (Icc a b) t := by
   convert (u.hasTimeDerivWithinAt (log s) t).const_mul (1 + s) using 1
   ext v
-  simp only [weightedLogSpotPrice]
+  simp only [weightedLogSpotPrice_def]
 
 /-- Terminal data in weighted log-spot coordinates become the specified payoff. -/
 theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab)
@@ -142,7 +147,7 @@ theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab
 /-- The financial pricing operator is the bounded weighted log-spot operator multiplied by
 `1+s`. The identity uses ordinary time derivatives of the canonical extension, even at
 the time endpoints, and allows arbitrary rate and volatility values. -/
-theorem pricingOperator_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     {s t : ℝ} (hs : 0 < s) (ht : t ∈ Icc a b) (σ r : ℝ) :
     deriv (weightedLogSpotPrice u s) t +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => weightedLogSpotPrice u x t) s +
@@ -164,7 +169,7 @@ theorem pricingOperator_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ 
   have hu : (fun v => weightedLogSpotPrice u s v / (1 + s)) =
       timeExtension hab.le u (log s) := by
     ext v
-    rw [weightedLogSpotPrice, mul_div_cancel_left₀ _ (by positivity)]
+    rw [weightedLogSpotPrice_def, mul_div_cancel_left₀ _ (by positivity)]
   simp only [weightedLogSpotPrice_exp_div, exp_log hs, hu] at h
   rw [congrFun hu t] at h
   simpa only [mul_comm] using ((eq_div_iff (by positivity : 1 + s ≠ 0)).mp h).symm
