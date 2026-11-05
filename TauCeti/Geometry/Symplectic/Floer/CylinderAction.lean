@@ -116,10 +116,12 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
   have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
   -- The symplectic area density is the integrand of the rectangle integral.
   let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area := ω.continuous_eval₂_mfderiv hu
+  have harea_cont : Continuous area := (hω₀.continuous_apply_mfderiv hu).congr fun z ↦ by
+    simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
   -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
   have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
     contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
@@ -139,7 +141,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
     (hE.continuousOn.integrableOn_compact isCompact_Icc)
     (by simp [hamiltonianCurvature_cylindrical])
   simp only [hamiltonianCurvature_cylindrical, intervalIntegral.integral_zero, integral_zero] at h
-  rw [hR, h, ω.setIntegral_eval₂_eq_rectangleIntegral hu hab']
+  rw [hR, h, ← hω₀.setIntegral_eq_rectangleIntegral hu hab']
+  simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
   ring
 
 /-- **The energy of a Floer cylinder is the drop of the contractible action.** Let `ω` be a

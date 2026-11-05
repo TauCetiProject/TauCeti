@@ -72,8 +72,7 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   `SymplecticForm.hamiltonianCurvature_cylindrical`,
   `SymplecticForm.hamiltonianCurvature_continuation`: the curvature of perturbations without `ds`
   component, and `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, its local form
-  along a line near which the perturbation is cylindrical. The vanishing for `K = H_t dt` is
-  `TauCeti.fderiv_comp_snd_stdComplexLineReal`, shared with manifold targets.
+  along a line near which the perturbation is cylindrical.
 * `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
   commutes with domain translations, and likewise for the perturbed derivative
@@ -94,27 +93,6 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 public section
 
 open Filter Function MeasureTheory Set Topology
-
-namespace TauCeti
-
-/-- A function of the second coordinate of the plane has zero derivative along the first
-coordinate vector. No differentiability is needed: otherwise the derivative is zero. -/
-theorem fderiv_comp_snd_stdComplexLineReal {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (f : ℝ → F) (z : ℝ × ℝ) : fderiv ℝ (fun w : ℝ × ℝ ↦ f w.2) z stdComplexLineReal = 0 := by
-  by_cases hf : DifferentiableAt ℝ f z.2
-  · have h : HasFDerivAt (fun w : ℝ × ℝ ↦ f w.2)
-        ((fderiv ℝ f z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-      hf.hasFDerivAt.comp z hasFDerivAt_snd
-    simp [h.fderiv, stdComplexLineReal_eq]
-  · have hf' : ¬DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ f w.2) z := by
-      intro h
-      have hz : DifferentiableAt ℝ (fun t : ℝ ↦ ((z.1, t) : ℝ × ℝ)) z.2 :=
-        (differentiableAt_const z.1).prodMk differentiableAt_id
-      have h' : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ f w.2) (z.1, z.2) := h
-      exact hf (h'.comp z.2 hz)
-    simp [fderiv_zero_of_not_differentiableAt hf']
-
-end TauCeti
 
 namespace TauCeti.SymplecticForm
 
@@ -147,8 +125,8 @@ theorem hamiltonianCurvature_zero_left (ω : SymplecticForm V) (Kt : ℝ × ℝ 
 theorem hamiltonianCurvature_cylindrical (ω : SymplecticForm V) (H : ℝ → V → ℝ) (z : ℝ × ℝ)
     (x : V) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
-  rw [hamiltonianCurvature_zero_left]
-  exact fderiv_comp_snd_stdComplexLineReal (fun t ↦ H t x) z
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
 
 /-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
 theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → ℝ} {H : ℝ → V → ℝ}
