@@ -13,7 +13,6 @@ public import Mathlib.Topology.Irreducible
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
 public import Mathlib.Topology.Order.OrderClosed
-public import Mathlib.Topology.Sets.Opens
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
@@ -30,8 +29,6 @@ space by them.
   to connected components.
 * `ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq`: points of a set lie in the same
   connected component of the subspace exactly when they have the same component in the set.
-* `ConnectedComponents.opens`: in a locally connected space, the connected component indexed by a
-  point of the quotient, as an open set; these open sets partition the space.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
@@ -56,8 +53,9 @@ space by them.
   preconnected.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
   space is a T1 space.
-* `TauCeti.connectedComponentsSigmaHomeomorph`: a locally connected space is homeomorphic
-  to the disjoint union of its connected components.
+* `TauCeti.connectedComponentsSigmaHomeomorph`: a space whose connected components form a
+  discrete space, for example a locally connected space, is homeomorphic to the disjoint union of
+  its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
 * `TauCeti.isClopen_of_finite_pairwiseDisjoint_closed_cover`: each member of a finite pairwise
@@ -111,48 +109,6 @@ theorem coe_eq_coe_iff_connectedComponentIn_eq {F : Set X} {a b : X} (ha : a ∈
       connectedComponentIn F a = connectedComponentIn F b := by
   rw [connectedComponentIn_eq_image ha, connectedComponentIn_eq_image hb,
     Subtype.val_injective.image_injective.eq_iff, coe_eq_coe]
-
-section Opens
-
-open TopologicalSpace
-
-variable [LocallyConnectedSpace X]
-
-/-- In a locally connected space, the connected component indexed by `C`, as an open set. It is
-the fibre of the quotient map `ConnectedComponents.mk` over `C`. -/
-def opens (C : ConnectedComponents X) : Opens X :=
-  ⟨ConnectedComponents.mk ⁻¹' {C}, (isOpen_discrete {C}).preimage continuous_coe⟩
-
-@[simp]
-theorem mem_opens {C : ConnectedComponents X} {x : X} :
-    x ∈ C.opens ↔ ConnectedComponents.mk x = C :=
-  Iff.rfl
-
-theorem coe_opens (C : ConnectedComponents X) :
-    (C.opens : Set X) = ConnectedComponents.mk ⁻¹' {C} :=
-  (rfl)
-
-/-- The open set of the component of `x` is the connected component of `x`. -/
-@[simp]
-theorem coe_opens_mk (x : X) :
-    ((mk x : ConnectedComponents X).opens : Set X) = connectedComponent x :=
-  connectedComponents_preimage_singleton
-
-/-- Each connected component of a locally connected space is clopen. -/
-theorem isClopen_opens (C : ConnectedComponents X) : IsClopen (C.opens : Set X) :=
-  (isClopen_discrete {C}).preimage continuous_coe
-
-/-- Distinct connected components are disjoint. -/
-theorem pairwise_disjoint_opens :
-    Pairwise (Disjoint on (opens : ConnectedComponents X → Opens X)) :=
-  fun _ _ h ↦ Opens.coe_disjoint.mp <| disjoint_left.mpr fun _ hC hD ↦ h (hC.symm.trans hD)
-
-/-- The connected components cover the space. -/
-@[simp]
-theorem iSup_opens : ⨆ C : ConnectedComponents X, C.opens = ⊤ :=
-  eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨mk x, rfl⟩
-
-end Opens
 
 end ConnectedComponents
 
@@ -467,11 +423,13 @@ instance instLocallyPathConnectedSpaceConnectedComponentsFiber [LocallyPathConne
   rw [connectedComponents_preimage_singleton, ← pathComponent_eq_connectedComponent]
   infer_instance
 
-/-- **A locally connected space is the disjoint union of its connected components.**
+/-- **A space whose connected components form a discrete space is the disjoint union of its
+connected components.** This applies to locally connected spaces and to spaces with finitely many
+connected components.
 
 The summand indexed by `C : ConnectedComponents X` is the fibre of the canonical quotient map
 over `C`, so this decomposition does not require choosing representatives. -/
-noncomputable def connectedComponentsSigmaHomeomorph [LocallyConnectedSpace X] :
+noncomputable def connectedComponentsSigmaHomeomorph [DiscreteTopology (ConnectedComponents X)] :
     (Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) ≃ₜ X := by
   let e : (Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) ≃ X :=
     Equiv.sigmaPreimageEquiv ConnectedComponents.mk
@@ -481,13 +439,14 @@ noncomputable def connectedComponentsSigmaHomeomorph [LocallyConnectedSpace X] :
       ((isOpen_discrete {C}).preimage ConnectedComponents.continuous_coe).isOpenMap_subtype_val)
 
 @[simp]
-theorem connectedComponentsSigmaHomeomorph_apply [LocallyConnectedSpace X]
+theorem connectedComponentsSigmaHomeomorph_apply [DiscreteTopology (ConnectedComponents X)]
     (z : Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) :
     connectedComponentsSigmaHomeomorph z = z.2 :=
   (rfl)
 
 @[simp]
-theorem connectedComponentsSigmaHomeomorph_symm_apply [LocallyConnectedSpace X] (x : X) :
+theorem connectedComponentsSigmaHomeomorph_symm_apply
+    [DiscreteTopology (ConnectedComponents X)] (x : X) :
     connectedComponentsSigmaHomeomorph.symm x =
       ⟨ConnectedComponents.mk x, ⟨x, Set.mem_singleton _⟩⟩ :=
   (rfl)

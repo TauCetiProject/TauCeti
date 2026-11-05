@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.RegularValue
-public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
@@ -33,11 +32,13 @@ critical point, and so does each nonempty compact sublevel of a continuous funct
 manifold with at least two points it has at least two critical points, a maximum and a minimum.
 The critical set of a `C¹` function is closed, and a nondegenerate critical point is isolated in
 it, so a Morse function has finitely many critical points in every compact set; for a proper
-function bounded below, this applies to every sublevel set.
+function bounded below, this applies to every sublevel set. A compact band between regular
+values therefore holds finitely many critical levels, along which properties of the band can be
+proved one level at a time.
 
-Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
-critical count is additive over a finite partition of `M` into open sets, such as its connected
-components. In dimension zero every point is critical.
+Restricting `f` to an open submanifold `U` keeps exactly the critical points lying in `U`; no
+regularity of `f` is needed, since `f` and its restriction are differentiable at the same points of
+`U`. In dimension zero every point is critical.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -51,7 +52,9 @@ polynomial in the Morse inequalities.
   and, on boundaryless manifolds,
   `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
-* `TauCeti.criticalPoints_comp_subtypeVal`: the critical set of a restriction to an open subset.
+* `TauCeti.criticalPoints_eq_univ_of_subsingleton`: in dimension zero every point is critical.
+* `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
+  critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
@@ -65,12 +68,15 @@ polynomial in the Morse inequalities.
   sublevel sets of proper functions bounded below.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
+* `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
+  from its validity across bands without critical points, across single critical levels, and
+  along triples of levels.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
-* `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
-  additivity of the total count over finite open partitions and over connected components.
+* `TauCeti.totalCriticalCount_eq_finsum_connectedComponents`: the total count is the sum of the
+  counts in the connected components, when there are finitely many.
 
 ## References
 
@@ -80,7 +86,8 @@ polynomial in the Morse inequalities.
 
 public section
 
-open Function Set Filter Topology TopologicalSpace
+open Function Set Filter Topology
+open TopologicalSpace (Opens)
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -141,14 +148,21 @@ theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by
   ext x
   rw [mem_criticalPoints, mem_criticalPoints, mvfderiv_neg, neg_eq_zero]
 
-/-- On an open subset `U`, the critical points of the restriction of `f` are the critical points
-of `f` lying in `U`. No regularity of `f` is needed. -/
+/-! ### Restriction to an open submanifold -/
+
+/-- A point of an open submanifold `U` is a critical point of the restriction of `f` to `U` exactly
+when it is a critical point of `f`. -/
+theorem mem_criticalPoints_comp_subtypeVal {U : Opens M} {x : U} :
+    x ∈ criticalPoints I (f ∘ Subtype.val : U → ℝ) ↔ (x : M) ∈ criticalPoints I f := by
+  simp only [mem_criticalPoints_iff_mfderiv_eq_zero]
+  exact Manifold.mfderiv_comp_subtype_val_eq_zero_iff
+
+/-- The critical points of the restriction of `f` to an open submanifold `U` are the critical
+points of `f` lying in `U`. -/
 @[simp]
-theorem criticalPoints_comp_subtypeVal (U : Opens M) :
-    criticalPoints I (f ∘ (Subtype.val : U → M)) = Subtype.val ⁻¹' criticalPoints I f :=
-  Set.ext fun _ ↦ by
-    simp only [mem_preimage, mem_criticalPoints_iff_mfderiv_eq_zero]
-    exact Manifold.mfderiv_comp_subtype_val_eq_zero_iff
+theorem criticalPoints_comp_subtypeVal {U : Opens M} :
+    criticalPoints I (f ∘ Subtype.val : U → ℝ) = Subtype.val ⁻¹' criticalPoints I f :=
+  Set.ext fun _ ↦ mem_criticalPoints_comp_subtypeVal
 
 /-! ### Critical points read in the preferred chart -/
 
@@ -355,6 +369,79 @@ theorem IsMorse.exists_criticalPoints_inter_preimage_Icc_subset (hf : IsMorse I 
   by_contra hyc
   exact hball hyball ⟨⟨y, ⟨hy, hyδ⟩, rfl⟩, hyc⟩
 
+/-- **Induction over the critical levels of a compact band.** Let `f` be a Morse function and
+`a ≤ b` regular values of `f` with compact band `f⁻¹[a, b]`. A property `P s t` of intervals holds
+for `[a, b]` if it holds across every compact band `f⁻¹[s, t]` without critical points, across
+some `[c - ε, c + ε]` inside any compact band `f⁻¹[c - δ, c + δ]` around a critical value
+`c ∈ (a, b)`, and passes from `[s, m]` and `[m, t]` to `[s, t]` when `f⁻¹[s, t]` is compact.
+
+The proof cuts the band just above its lowest critical value and inducts on the number of critical
+points in it. This is the induction along which Milnor's cell attachments across single critical
+levels assemble into statements about a whole band. -/
+theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t → Prop} {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b)
+    (hregular : ∀ s t (hst : s ≤ t), IsCompact (f ⁻¹' Icc s t) →
+      (∀ x ∈ criticalPoints I f, f x ∉ Icc s t) → P s t hst)
+    (hlevel : ∀ p ∈ criticalPoints I f, a < f p → f p < b → ∀ δ, 0 < δ →
+      IsCompact (f ⁻¹' Icc (f p - δ) (f p + δ)) →
+        ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ P (f p - ε) (f p + ε) (by linarith))
+    (htrans : ∀ s m t (hsm : s ≤ m) (hmt : m ≤ t), IsCompact (f ⁻¹' Icc s t) → P s m hsm →
+      P m t hmt → P s t (hsm.trans hmt)) :
+    P a b hab := by
+  have hfc : Continuous f := hf.contMDiff.continuous
+  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha hb
+  -- Induct on the lower end `a' ≥ a` of the band, which shrinks at each cut.
+  replace hlevel (p) (hp : p ∈ criticalPoints I f) {a' : ℝ} (haa' : a ≤ a') (hac : a' < f p) :=
+    hlevel p hp (haa'.trans_lt hac)
+  suffices ∀ N : ℕ, ∀ a', a ≤ a' → ∀ hab : a' ≤ b,
+      (criticalPoints I f ∩ f ⁻¹' Icc a' b).ncard = N → IsCompact (f ⁻¹' Icc a' b) →
+        a' ∉ f '' criticalPoints I f → P a' b hab
+    from this _ a le_rfl hab rfl hcompact ha
+  clear ha hcompact hab
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N ih =>
+  intro a' haa' hab hN hcompact ha
+  have hS := hf.finite_criticalPoints_inter hcompact
+  rcases (criticalPoints I f ∩ f ⁻¹' Icc a' b).eq_empty_or_nonempty with hS₀ | hSne
+  · exact hregular a' b hab hcompact fun x hx hxab ↦ hS₀.subset ⟨hx, hxab⟩
+  -- Cut the band just above the lowest critical value `c` in it.
+  obtain ⟨p, ⟨hp, hpab⟩, hpmin⟩ := hS.isCompact.exists_isMinOn hSne hfc.continuousOn
+  have hac : a' < f p := hpab.1.lt_of_ne fun h ↦ ha ⟨p, hp, h.symm⟩
+  have hcb : f p < b := hpab.2.lt_of_ne fun h ↦ hb ⟨p, hp, h⟩
+  have hcompact' {s t : ℝ} (hs : a' ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
+      (preimage_mono (Icc_subset_Icc hs ht))
+  -- Some `[c - δ, c + δ]` lies in `(a', b)` and contains no critical value other than `c`.
+  obtain ⟨δ, hδ, hδa, hδb⟩ : ∃ δ, 0 < δ ∧ a' < f p - δ ∧ f p + δ < b :=
+    ⟨min (f p - a') (b - f p) / 2, half_pos (lt_min (sub_pos.2 hac) (sub_pos.2 hcb)),
+      by linarith [min_le_left (f p - a') (b - f p)],
+      by linarith [min_le_right (f p - a') (b - f p)]⟩
+  obtain ⟨δ', hδ', hδ'δ, hsub⟩ :=
+    hf.exists_criticalPoints_inter_preimage_Icc_subset hδ (hcompact' hδa.le hδb.le)
+  obtain ⟨ε, hε, hεδ', hmid⟩ :=
+    hlevel p hp haa' hac hcb δ' hδ' (hcompact' (by linarith) (by linarith))
+  -- Below `c - ε` the band holds no critical point, since `c` is the lowest critical value.
+  have hlow : P a' (f p - ε) (by linarith) :=
+    hregular _ _ _ (hcompact' le_rfl (by linarith)) fun x hx hxI ↦ by
+      have : f p ≤ f x := hpmin ⟨hx, hxI.1, by linarith [hxI.2]⟩
+      linarith [hxI.2]
+  -- Above `c + ε` the band holds fewer critical points, missing `p`.
+  have hlt : (criticalPoints I f ∩ f ⁻¹' Icc (f p + ε) b).ncard < N := by
+    rw [← hN]
+    refine ncard_lt_ncard ⟨fun x hx ↦ ⟨hx.1, by linarith [hx.2.1], hx.2.2⟩,
+      fun h ↦ ?_⟩ hS
+    have := (h ⟨hp, hpab⟩).2.1
+    linarith
+  have hup : P (f p + ε) b (by linarith) :=
+    ih _ hlt _ (by linarith) _ rfl (hcompact' (by linarith) le_rfl) fun ⟨x, hx, hxc⟩ ↦ by
+      have := hsub ⟨hx, by rw [hxc]; linarith, by rw [hxc]; linarith⟩
+      rw [mem_preimage, mem_singleton_iff, hxc] at this
+      linarith
+  exact htrans _ _ _ _ _ hcompact
+    (htrans _ _ _ _ _ (hcompact' le_rfl (by linarith)) hlow hmid) hup
+
 end IsManifold
 
 end Boundaryless
@@ -392,36 +479,25 @@ theorem criticalCount_le_totalCriticalCount (j : ℕ) :
 theorem totalCriticalCount_neg : totalCriticalCount I (-f) = totalCriticalCount I f := by
   rw [totalCriticalCount_def, totalCriticalCount_def, criticalPoints_neg]
 
-/-- The number of critical points of the restriction of `f` to an open subset `U` is the number of
-critical points of `f` in `U`. -/
-theorem totalCriticalCount_comp_subtypeVal (U : Opens M) :
-    totalCriticalCount I (f ∘ (Subtype.val : U → M)) = (criticalPoints I f ∩ U).encard := by
+/-- The number of critical points of the restriction of `f` to an open submanifold `U` is the
+number of critical points of `f` in `U`. -/
+@[simp]
+theorem totalCriticalCount_comp_subtypeVal {U : Opens M} :
+    totalCriticalCount I (f ∘ Subtype.val : U → ℝ) = (criticalPoints I f ∩ U).encard := by
   rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal,
-    ← Subtype.val_injective.encard_image, image_preimage_eq_inter_range, Subtype.range_coe]
+    ← Subtype.val_injective.encard_image, image_preimage_eq_inter_range, Subtype.range_val]
 
-/-- **Additivity of the critical count.** If finitely many pairwise disjoint open subsets `U i`
-cover `M`, for instance the connected components of a compact manifold, then the number of
-critical points of `f` is the sum of the numbers of critical points of its restrictions to the
-`U i`. -/
-theorem totalCriticalCount_eq_sum {ι : Type*} [Fintype ι] (U : ι → Opens M)
-    (hd : Pairwise (Disjoint on U)) (hU : ⨆ i, U i = ⊤) :
-    totalCriticalCount I f = ∑ i, totalCriticalCount I (f ∘ (Subtype.val : U i → M)) := by
-  have hd' : Pairwise (Disjoint on fun i ↦ criticalPoints I f ∩ U i) := fun i j hij ↦
-    (Opens.coe_disjoint.mpr (hd hij)).inter_left' _ |>.inter_right' _
-  simp_rw [totalCriticalCount_comp_subtypeVal, ← finsum_eq_sum_of_fintype,
-    ← encard_iUnion_of_finite hd', ← inter_iUnion, ← Opens.coe_iSup, hU, Opens.coe_top,
-    inter_univ, totalCriticalCount_def]
-
-/-- **The component sum formula for critical points.** If `M` is locally connected with finitely
-many connected components, for instance compact and boundaryless, then the number of critical
-points of `f` is the sum over the components `C` of the numbers of critical points of the
-restrictions of `f` to `C`, each component carrying its structure as an open submanifold. -/
-theorem totalCriticalCount_eq_sum_connectedComponents [LocallyConnectedSpace M]
-    [Fintype (ConnectedComponents M)] :
-    totalCriticalCount I f =
-      ∑ C : ConnectedComponents M, totalCriticalCount I (f ∘ (Subtype.val : C.opens → M)) :=
-  totalCriticalCount_eq_sum _ ConnectedComponents.pairwise_disjoint_opens
-    ConnectedComponents.iSup_opens
+/-- **The critical count is additive over components.** If `M` has finitely many connected
+components, the number of critical points of `f` is the sum over the components of the numbers of
+critical points of `f` in each. -/
+theorem totalCriticalCount_eq_finsum_connectedComponents [Finite (ConnectedComponents M)] :
+    totalCriticalCount I f = ∑ᶠ C : ConnectedComponents M,
+      (criticalPoints I f ∩ ConnectedComponents.mk ⁻¹' {C}).encard := by
+  have hd : Pairwise (Disjoint on fun C : ConnectedComponents M ↦
+      criticalPoints I f ∩ ConnectedComponents.mk ⁻¹' {C}) := fun _ _ h ↦
+    ((disjoint_singleton.2 h).preimage _).mono inter_subset_right inter_subset_right
+  rw [totalCriticalCount_def, ← encard_iUnion_of_finite hd, ← inter_iUnion, ← preimage_iUnion,
+    iUnion_of_singleton, preimage_univ, inter_univ]
 
 /-- A continuous function on a compact boundaryless manifold with at least two points has at least
 two critical points: a point of maximum and a point of minimum, which can coincide only for a
