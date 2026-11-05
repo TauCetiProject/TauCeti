@@ -578,7 +578,8 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
 
 /-- A suitable square multiple of a nonsquare is a nonsquare uniformizer or a unit whose defect
 exponent is `2 v_K(2)` or positive odd and strictly below `2 v_K(2)`. At odd residue
-characteristic only the maximal-defect unit alternative remains. -/
+characteristic the odd-defect alternative is empty, leaving a uniformizer or a unit of defect
+exponent `0`. -/
 theorem exists_mul_sq_cases_of_not_isSquare
     (h2 : (2 : K) ≠ 0) (a : Kˣ) (ha : ¬IsSquare a) :
     ∃ b c : Kˣ, b = a * c ^ 2 ∧ ¬IsSquare b ∧
