@@ -67,7 +67,8 @@ Frobenius splittings are built from anticanonical sections.
 * `MvPolynomial.sum_monomial_mul_expand_cartier`: the decomposition of a polynomial into
   its Cartier components.
 * `MvPolynomial.frobeniusTrace_pow_mul`, `MvPolynomial.frobeniusTrace_C_mul`: the
-  trace is `p⁻¹`-linear.
+  trace is `p⁻¹`-linear, and so is `f ↦ frobeniusTrace σ R p (h * f)`
+  (`MvPolynomial.frobeniusTrace_mul_pow_mul`).
 * `TauCeti.MvPolynomial.frobeniusTrace_prod_X_pow`: the trace sends `(X₁ ⋯ Xₙ) ^ (p - 1)` to `1`.
 * `MvPolynomial.frobeniusTrace_frobeniusTraceDual_mul`: `φ` is
   `f ↦ frobeniusTrace σ R p (frobeniusTraceDual p φ * f)`.
@@ -242,6 +243,11 @@ theorem _root_.MvPolynomial.frobeniusTrace_C_mul (c : R) (f : MvPolynomial σ R)
     frobeniusTrace σ R p (C c * f) = C ((frobeniusEquiv R p).symm c) * frobeniusTrace σ R p f := by
   rw [← frobeniusTrace_pow_mul, ← C_pow, frobeniusEquiv_symm_pow_p]
 
+/-- The twisted trace `f ↦ frobeniusTrace p (h * f)` is `p⁻¹`-linear. -/
+theorem _root_.MvPolynomial.frobeniusTrace_mul_pow_mul (h g f : MvPolynomial σ R) :
+    frobeniusTrace σ R p (h * (g ^ p * f)) = g * frobeniusTrace σ R p (h * f) := by
+  rw [mul_left_comm, frobeniusTrace_pow_mul]
+
 /-- A polynomial `h` is determined by the map `f ↦ frobeniusTrace p (h * f)`. -/
 theorem eq_of_forall_frobeniusTrace_mul_eq {h h' : MvPolynomial σ R}
     (hh : ∀ f, frobeniusTrace σ R p (h * f) = frobeniusTrace σ R p (h' * f)) : h = h' := by
@@ -386,11 +392,10 @@ theorem _root_.MvPolynomial.frobeniusTrace_frobeniusTraceDual_mul
         φ (monomial (β.mapRange Fin.val (Fin.val_zero p)) 1) := by
     simp [frobeniusTraceDual, Finset.sum_mul, mul_assoc, frobeniusTrace_pow_mul,
       monomial_mul_monomial, frobeniusTrace_monomial_tsub_add]
-  have := eq_sum_of_map_pow_mul
+  have := eq_sum_of_map_pow_mul (p := p)
     ((frobeniusTrace σ R p).comp (AddMonoidHom.mulLeft (frobeniusTraceDual p φ)))
-    (fun g f ↦ by
-      simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulLeft]
-      rw [mul_left_comm, frobeniusTrace_pow_mul]) f
+    (fun g f ↦ by simp only [AddMonoidHom.coe_comp, Function.comp_apply,
+      AddMonoidHom.coe_mulLeft, frobeniusTrace_mul_pow_mul]) f
   simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulLeft, hdual] at this
   rw [this, eq_sum_of_map_pow_mul φ hφ f]
 
@@ -398,9 +403,9 @@ theorem _root_.MvPolynomial.frobeniusTrace_frobeniusTraceDual_mul
 @[simp]
 theorem _root_.MvPolynomial.frobeniusTraceDual_frobeniusTrace_comp_mulLeft (h : MvPolynomial σ R) :
     frobeniusTraceDual p ((frobeniusTrace σ R p).comp (AddMonoidHom.mulLeft h)) = h :=
-  eq_of_forall_frobeniusTrace_mul_eq fun f ↦ frobeniusTrace_frobeniusTraceDual_mul (fun g f ↦ by
-    simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulLeft]
-    rw [mul_left_comm, frobeniusTrace_pow_mul]) f
+  eq_of_forall_frobeniusTrace_mul_eq fun f ↦
+    frobeniusTrace_frobeniusTraceDual_mul (fun g f ↦ by simp only [AddMonoidHom.coe_comp,
+      Function.comp_apply, AddMonoidHom.coe_mulLeft, frobeniusTrace_mul_pow_mul]) f
 
 end Fintype
 
