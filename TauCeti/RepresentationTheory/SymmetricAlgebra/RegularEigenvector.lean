@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Charpoly.Dual
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.RegularEigenvector
-public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 
 /-!
