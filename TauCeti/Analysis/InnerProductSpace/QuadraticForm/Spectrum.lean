@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
-public import TauCeti.Analysis.Normed.Operator.RealAlgebra
 
 /-!
 # Spectral bounds and quadratic forms
@@ -48,15 +47,7 @@ theorem re_inner_le_of_spectrum_subset_Iic
     rw [← ContinuousLinearMap.nonneg_iff_isPositive]
     exact sub_nonneg.mpr hle
   have hx := hpos.re_inner_nonneg_left x
-  have hcOp : algebraMap ℝ (H →L[𝕜] H) c =
-      (algebraMap ℝ 𝕜 c) • (1 : H →L[𝕜] H) := by
-    rw [Algebra.algebraMap_eq_smul_one, ← IsScalarTower.algebraMap_smul 𝕜]
-  have hcx : RCLike.re ⟪(algebraMap ℝ 𝕜 c) • x, x⟫_𝕜 = c * ‖x‖ ^ 2 := by
-    rw [inner_smul_left, RCLike.algebraMap_eq_ofReal, RCLike.conj_ofReal,
-      RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
-  rw [hcOp] at hx
-  simp only [sub_apply, smul_apply, one_apply_eq_self, inner_sub_left, map_sub] at hx
-  rw [hcx] at hx
+  simp only [sub_apply, inner_sub_left, map_sub, re_inner_algebraMap_apply] at hx
   linarith
 
 /-- A spectral lower bound implies a quadratic-form lower bound. -/
@@ -70,15 +61,7 @@ theorem le_re_inner_of_spectrum_subset_Ici
     rw [← ContinuousLinearMap.nonneg_iff_isPositive]
     exact sub_nonneg.mpr hle
   have hx := hpos.re_inner_nonneg_left x
-  have hcOp : algebraMap ℝ (H →L[𝕜] H) c =
-      (algebraMap ℝ 𝕜 c) • (1 : H →L[𝕜] H) := by
-    rw [Algebra.algebraMap_eq_smul_one, ← IsScalarTower.algebraMap_smul 𝕜]
-  have hcx : RCLike.re ⟪(algebraMap ℝ 𝕜 c) • x, x⟫_𝕜 = c * ‖x‖ ^ 2 := by
-    rw [inner_smul_left, RCLike.algebraMap_eq_ofReal, RCLike.conj_ofReal,
-      RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
-  rw [hcOp] at hx
-  simp only [sub_apply, smul_apply, one_apply_eq_self, inner_sub_left, map_sub] at hx
-  rw [hcx] at hx
+  simp only [sub_apply, inner_sub_left, map_sub, re_inner_algebraMap_apply] at hx
   linarith
 
 

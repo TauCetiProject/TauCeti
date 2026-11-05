@@ -6,6 +6,7 @@ Authors: Jon Crall, GPT 5.6 High
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Analysis.Normed.Operator.RealAlgebra
 
 /-!
 # Quadratic-form bounds on subspaces
@@ -100,5 +101,18 @@ theorem isPositive_of_lowerFormBoundOn_top {A : E →L[𝕜] E} (hsym : A.IsSymm
   ⟨hsym, fun x => by
     simpa [ContinuousLinearMap.reApplyInnerSelf] using
       (lowerFormBoundOn_iff A ⊤ 0).1 h x Submodule.mem_top⟩
+
+section RealScalar
+
+attribute [local instance] realAlgebra realIsScalarTower
+
+/-- The real quadratic form of a real scalar operator is the scalar times the squared norm. -/
+@[simp] theorem re_inner_algebraMap_apply (c : ℝ) (x : E) :
+    RCLike.re ⟪(algebraMap ℝ (E →L[𝕜] E) c) x, x⟫_𝕜 = c * ‖x‖ ^ 2 := by
+  rw [Algebra.algebraMap_eq_smul_one, ← IsScalarTower.algebraMap_smul 𝕜,
+    smul_apply, one_apply_eq_self, inner_smul_left, RCLike.algebraMap_eq_ofReal,
+    RCLike.conj_ofReal, RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
+
+end RealScalar
 
 end ContinuousLinearMap
