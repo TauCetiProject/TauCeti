@@ -84,27 +84,18 @@ section SegmentInverse
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- Every entry of the inverse segment between positive-definite endpoints is interval
-integrable on the unit interval. -/
-theorem _root_.Matrix.PosDef.intervalIntegrable_inv_segment_apply {A B : Matrix ι ι ℝ}
-    (hA : A.PosDef) (hB : B.PosDef) (i j : ι) :
-    IntervalIntegrable (fun t : ℝ => ((1 - t) • A + t • B)⁻¹ i j) volume 0 1 := by
-  refine ContinuousOn.intervalIntegrable_of_Icc zero_le_one (fun t ht => ?_)
-  have hc := continuousAt_inv_segment (P := fun _ : ℝ => A) (Q := fun _ : ℝ => B)
-    (t := id) continuousAt_const continuousAt_const continuousAt_id hA hB ht
-  exact ((continuous_apply_apply i j).continuousAt.comp hc).continuousWithinAt
-
 variable {X : Type*} [PseudoMetricSpace X]
 
 /-- Uniform entry bounds on the inverse segments transfer the Hölder modulus of the endpoints
 to the entries of the averaged inverse. -/
-private theorem holderWith_averaged_inverse_entries (P Q : X → Matrix ι ι ℝ) (C r L : ℝ≥0)
+theorem holderWith_segmentAveragedInverse_apply (P Q : X → Matrix ι ι ℝ) (C r L : ℝ≥0)
     (hP : ∀ i j, HolderWith C r (fun x => P x i j))
     (hQ : ∀ i j, HolderWith C r (fun x => Q x i j))
     (hp : ∀ x, (P x).PosDef) (hq : ∀ x, (Q x).PosDef)
     (hb : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x i j, |((1 - t) • P x + t • Q x)⁻¹ i j| ≤ L) (i j : ι) :
     HolderWith ((Fintype.card ι : ℝ≥0) ^ 2 * L ^ 2 * C) r
-      (fun x => ∫ t in (0 : ℝ)..1, ((1 - t) • P x + t • Q x)⁻¹ i j) := by
+      (fun x => segmentAveragedInverse (P x) (Q x) i j) := by
+  simp only [segmentAveragedInverse_apply]
   have hh : ∀ t ∈ uIoc (0 : ℝ) 1,
       HolderWith ((Fintype.card ι : ℝ≥0) ^ 2 * L ^ 2 * C) r
         (fun x => ((1 - t) • P x + t • Q x)⁻¹ i j) := by
@@ -169,7 +160,7 @@ theorem exists_uniform_segmentAveragedInverse_holderOnWith (H : E → Matrix ι 
     |((1 - θ) • P x + θ • Q x)⁻¹ k l| ≤ L :=
     hcap x (ha x.property) (x + d) (hshift x x.property) θ hθ k l
   exact
-    HolderWith.restrict_iff.mp (holderWith_averaged_inverse_entries P Q C r L hP hQ
+    HolderWith.restrict_iff.mp (holderWith_segmentAveragedInverse_apply P Q C r L hP hQ
       (fun x => hpos x (ha x.property)) (fun x => hpos (x + d) (hshift x x.property)) hB i j)
 
 end HolderTranslations
@@ -178,12 +169,12 @@ section Ellipticity
 
 variable {ι X : Type*} [Fintype ι] [DecidableEq ι]
 
-private theorem integral_quadratic {A B : Matrix ι ι ℝ} (hA : A.PosDef) (hB : B.PosDef)
-    (ξ : EuclideanSpace ℝ ι) :
-    IntervalIntegrable (fun t : ℝ => (((1 - t) • A + t • B)⁻¹).toQuadraticForm' ξ)
-        volume 0 1 ∧
-      (∫ t in (0 : ℝ)..1, (((1 - t) • A + t • B)⁻¹).toQuadraticForm' ξ) =
-        (segmentAveragedInverse A B).toQuadraticForm' ξ := by
+/-- The quadratic form of the averaged inverse is the integral of the inverse quadratic forms. -/
+theorem _root_.Matrix.segmentAveragedInverse_toQuadraticForm' (A B : Matrix ι ι ℝ)
+    (hA : A.PosDef) (hB : B.PosDef) (ξ : EuclideanSpace ℝ ι) :
+    (segmentAveragedInverse A B).toQuadraticForm' ξ =
+      ∫ t in (0 : ℝ)..1, (((1 - t) • A + t • B)⁻¹).toQuadraticForm' ξ := by
+  symm
   simp only [Matrix.toQuadraticForm'_apply, dotProduct, Matrix.mulVec, Finset.mul_sum]
   have hi := hA.intervalIntegrable_inv_segment_apply hB
   have hm (i j : ι) := ((hi i j).mul_const (ξ j)).const_mul (ξ i)
@@ -193,32 +184,14 @@ private theorem integral_quadratic {A B : Matrix ι ι ℝ} (hA : A.PosDef) (hB 
     convert IntervalIntegrable.sum Finset.univ (fun j _ => hm i j) using 1
     funext t
     simp only [Finset.sum_apply]
-  refine ⟨?_, ?_⟩
-  · convert IntervalIntegrable.sum Finset.univ (fun i _ => hr i) using 1
-    funext t
-    simp only [Finset.sum_apply]
-  · rw [intervalIntegral.integral_finsetSum (s := Finset.univ)
-      (f := fun i t => ∑ j, ξ i * (((1 - t) • A + t • B)⁻¹ i j * ξ j)) (fun i _ => hr i)]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [intervalIntegral.integral_finsetSum (s := Finset.univ)
-      (f := fun j t => ξ i * (((1 - t) • A + t • B)⁻¹ i j * ξ j)) (fun j _ => hm i j)]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_mul_const,
-      segmentAveragedInverse_apply]
-
-/-- The inverse segment's quadratic form is interval integrable for positive-definite endpoints. -/
-theorem _root_.Matrix.PosDef.intervalIntegrable_inv_segment_toQuadraticForm'
-    {A B : Matrix ι ι ℝ} (hA : A.PosDef) (hB : B.PosDef) (ξ : EuclideanSpace ℝ ι) :
-    IntervalIntegrable (fun t : ℝ => (((1 - t) • A + t • B)⁻¹).toQuadraticForm' ξ)
-      volume 0 1 :=
-  (integral_quadratic hA hB ξ).1
-
-/-- The quadratic form of the averaged inverse is the integral of the inverse quadratic forms. -/
-theorem _root_.Matrix.segmentAveragedInverse_toQuadraticForm' (A B : Matrix ι ι ℝ)
-    (hA : A.PosDef) (hB : B.PosDef) (ξ : EuclideanSpace ℝ ι) :
-    (segmentAveragedInverse A B).toQuadraticForm' ξ =
-      ∫ t in (0 : ℝ)..1, (((1 - t) • A + t • B)⁻¹).toQuadraticForm' ξ :=
-  (integral_quadratic hA hB ξ).2.symm
+  rw [intervalIntegral.integral_finsetSum (s := Finset.univ)
+    (f := fun i t => ∑ j, ξ i * (((1 - t) • A + t • B)⁻¹ i j * ξ j)) (fun i _ => hr i)]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [intervalIntegral.integral_finsetSum (s := Finset.univ)
+    (f := fun j t => ξ i * (((1 - t) • A + t • B)⁻¹ i j * ξ j)) (fun j _ => hm i j)]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_mul_const,
+    segmentAveragedInverse_apply]
 
 /-- Positive-definite endpoints give a positive-definite segment-averaged inverse. -/
 theorem _root_.Matrix.posDef_segmentAveragedInverse (A B : Matrix ι ι ℝ)
@@ -255,7 +228,9 @@ theorem exists_uniform_segmentAveragedInverse_ellipticity [TopologicalSpace X]
     (continuous_inv_segment_pairs H hH hpos) hposSegment
   refine ⟨a, b, ha, hb, ?_⟩
   intro x hx y hy ξ
-  obtain ⟨hi, heq⟩ := integral_quadratic (hpos x hx) (hpos y hy) ξ
+  have hi := (hpos x hx).intervalIntegrable_inv_segment_toQuadraticForm' (hpos y hy) ξ
+  have heq := (Matrix.segmentAveragedInverse_toQuadraticForm' (H x) (H y)
+    (hpos x hx) (hpos y hy) ξ).symm
   have he (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) := hbound ((⟨x, hx⟩, ⟨y, hy⟩), ⟨t, ht⟩) ξ
   have hlo := intervalIntegral.integral_mono_on zero_le_one intervalIntegrable_const hi
     (fun t ht => (he t ht).1)

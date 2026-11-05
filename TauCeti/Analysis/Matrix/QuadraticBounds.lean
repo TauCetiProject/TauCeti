@@ -13,10 +13,11 @@ import Mathlib.Analysis.Normed.Module.Normalize
 /-!
 # Uniform quadratic bounds for compact positive-definite matrix families
 
-The lower bound uses `IsCompact.exists_pos_forall_mul_norm_sq_le` for continuous bilinear
-forms on a compact family.
-The upper bound follows by compactness on the unit sphere and homogeneity. These bounds
-are used for segment-averaged inverse matrices.
+For a continuous family `A : X → Matrix ι ι ℝ` of positive-definite matrices, with compact
+parameter space `X` and finite index type `ι`, there are constants `a, b > 0` such that
+`a * ‖ξ‖² ≤ (A x).toQuadraticForm' ξ ≤ b * ‖ξ‖²` for every parameter `x` and vector `ξ`.
+The same constants work across all parameters and vectors, including in dimension zero.
+These uniform ellipticity bounds are used for segment-averaged inverse matrices.
 
 The statement is adapted from the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
