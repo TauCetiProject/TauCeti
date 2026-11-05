@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
+public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+public import TauCeti.Analysis.Pseudodifferential.Symbol
 
 /-!
 # Kohn–Nirenberg quantization on Schwartz functions
@@ -26,9 +29,12 @@ Fourier integral
 written with Mathlib's Fourier transform `𝓕`, whose phase is `exp(-2πi ⟪x, ζ⟫)`, after the change
 of frequency `ξ = 2πζ`, which converges absolutely at `x` whenever `ξ ↦ a(x, ξ)` is a.e. strongly
 measurable and of polynomial growth. This file defines `TauCeti.quantizeSchwartzValue` by this
-formula and proves its basic properties for such coefficients. Only the
-size of `a` enters: no derivative bounds are used, so the results apply to every symbol class
-`S^m` through the estimate `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` with `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)`.
+formula and proves its basic properties for such coefficients. Apart from the differentiation
+results, only the size of `a` enters, so they apply to every symbol class `S^m` through the
+estimate `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` with `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)`. Differentiating in the
+position also uses the growth of the partial derivative of `a` in the position; for a symbol
+`a ∈ S^m_{1,0}` (`TauCeti.Symbol`) every such derivative is again a symbol of order `m`, so
+`Op(a) u` is smooth.
 
 ## Main results
 
@@ -41,6 +47,13 @@ size of `a` enters: no derivative bounds are used, so the results apply to every
   growth bounds locally uniform in `x`.
 * `TauCeti.quantizeSchwartzCLM`: for continuous `a` with growth bounds uniform in `x`, the
   quantization is a continuous linear map from Schwartz space to bounded continuous functions.
+* `TauCeti.differentiable_quantizeSchwartzValue` and
+  `TauCeti.fderiv_quantizeSchwartzValue_apply`: if `a` has a continuous partial derivative `a'`
+  in the position, and `a` and `a'` have growth bounds locally uniform in `x`, then `Op(a) u` is
+  differentiable with `∂_v Op(a) u = Op(a'(·) v) u + Op(a) (∂_v u)`.
+* `TauCeti.Symbol.coordinateDeriv_quantizeSchwartzValue` and
+  `TauCeti.Symbol.contDiff_quantizeSchwartzValue`: for a symbol `a`,
+  `∂_j Op(a) u = Op(∂_{x_j} a) u + Op(a) (∂_j u)`, and `Op(a) u` is smooth.
 * `TauCeti.quantizeSchwartzValue_id`, `TauCeti.quantizeSchwartzValue_comp_fst`,
   `TauCeti.quantizeSchwartzValue_eq_fourierMultiplierCLM` and
   `TauCeti.quantizeSchwartzValue_inner_eq_lineDerivOp`: the quantization of `1` is the
@@ -58,7 +71,7 @@ size of `a` enters: no derivative bounds are used, so the results apply to every
 
 public section
 
-open scoped FourierTransform SchwartzMap RealInnerProductSpace LineDeriv
+open scoped FourierTransform SchwartzMap RealInnerProductSpace LineDeriv ContDiff
 open MeasureTheory Real FourierTransform Module
 
 noncomputable section
@@ -166,23 +179,26 @@ theorem integrable_quantizeSchwartzValue_integrand
   ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
     (aestronglyMeasurable_integrand hmeas f) (ae_of_all _ (norm_integrand_le_pow_neg hC f))
 
+/-- The weight `⟨2πζ⟩ ^ m` times the norm of a Schwartz function is integrable. -/
+private lemma integrable_weight_mul_norm (m : ℝ) (f : 𝓢(E, V)) :
+    Integrable (fun ζ : E ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖f ζ‖) :=
+  ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
+    ((((continuous_const.add ((continuous_const_smul _).norm.pow 2)).rpow_const
+      fun ζ ↦ Or.inl (by positivity : (1 : ℝ) + ‖(2 * π) • ζ‖ ^ 2 ≠ 0)).mul
+        f.continuous.norm).aestronglyMeasurable)
+    (ae_of_all _ fun ζ ↦ by
+      rw [Real.norm_of_nonneg (by positivity)]
+      exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℂ) (2 * π) m
+        (volume : Measure E).integrablePower ζ)
+
 /-- **Pointwise bound.** If `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` at the point `x`, then
 `‖Op(a) u (x)‖ ≤ C ∫ ⟨2πζ⟩ ^ m ‖𝓕 u ζ‖ dζ`. -/
 theorem norm_quantizeSchwartzValue_le (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (u : 𝓢(E, V)) :
     ‖quantizeSchwartzValue a u x‖ ≤
       C * ∫ ζ, (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ := by
-  have hint : Integrable (fun ζ : E ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) :=
-    ((Measure.integrable_pow_neg_integrablePower volume).const_mul _).mono'
-      ((((continuous_const.add ((continuous_const_smul _).norm.pow 2)).rpow_const
-        fun ζ ↦ Or.inl (by positivity : (1 : ℝ) + ‖(2 * π) • ζ‖ ^ 2 ≠ 0)).mul
-          (𝓕 u).continuous.norm).aestronglyMeasurable)
-      (ae_of_all _ fun ζ ↦ by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact (𝓕 u).one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℂ) (2 * π) m
-          (volume : Measure E).integrablePower ζ)
   rw [quantizeSchwartzValue_def, ← integral_const_mul]
-  exact norm_integral_le_of_norm_le (hint.const_mul C)
+  exact norm_integral_le_of_norm_le ((integrable_weight_mul_norm m (𝓕 u)).const_mul C)
     (ae_of_all _ (norm_integrand_le hC (𝓕 u)))
 
 private lemma integral_integrand_add (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
@@ -288,6 +304,213 @@ theorem continuous_quantizeSchwartzValue (ha : Continuous a)
   exact continuous_integral_integrand ha hC (𝓕 u)
 
 end Continuity
+
+section Derivative
+
+/-! ### Differentiation in the position
+
+Differentiating `exp(2πi ⟪ζ, x⟫) a(x, 2πζ)` in `x` gives `a'(x, 2πζ) v + 2πi ⟪ζ, v⟫ a(x, 2πζ)`
+in the direction `v`, and on the Fourier side the factor `2πi ⟪ζ, v⟫` is the derivative `∂_v` of
+the input (`SchwartzMap.fourier_lineDerivOp_apply`). Hence
+`∂_v Op(a) u = Op(∂_v a) u + Op(a) (∂_v u)`, where `∂_v a` is the partial derivative of the
+coefficient in the position. -/
+
+variable {a : E × E → V →L[ℂ] W} {a' : E × E → E →L[ℝ] (V →L[ℂ] W)} {m m' : ℝ}
+
+/-- The partial derivative in the position `x` of the quantization integrand, for a coefficient
+`a` with partial derivative `a'` in the position. -/
+private def integrandFDeriv (a : E × E → V →L[ℂ] W) (a' : E × E → E →L[ℝ] (V →L[ℂ] W))
+    (f : 𝓢(E, V)) (x ζ : E) : E →L[ℝ] W :=
+  (𝐞 ⟪ζ, x⟫ : ℂ) • ((ContinuousLinearMap.apply ℂ W (f ζ)).restrictScalars ℝ ∘L a' (x, (2 * π) • ζ)
+    + ContinuousLinearMap.smulRightL ℝ E W (innerSL ℝ ζ)
+      ((2 * π * Complex.I) • a (x, (2 * π) • ζ) (f ζ)))
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private lemma integrandFDeriv_apply (f : 𝓢(E, V)) (x ζ v : E) :
+    integrandFDeriv a a' f x ζ v = 𝐞 ⟪ζ, x⟫ • a' (x, (2 * π) • ζ) v (f ζ) +
+      𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) ((2 * π * Complex.I * ⟪ζ, v⟫) • f ζ) := by
+  simp only [integrandFDeriv, smul_apply, add_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.apply_apply,
+    ContinuousLinearMap.smulRightL_apply_apply, ContinuousLinearMap.smulRight_apply,
+    innerSL_apply_apply, map_smul, smul_add, Circle.smul_def, ← Complex.coe_smul, smul_smul]
+  congr 2
+  ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The quantization integrand has the partial derivative `integrandFDeriv` in the position. -/
+private lemma hasFDerivAt_integrand
+    (hda : ∀ x ξ, HasFDerivAt (fun y ↦ a (y, ξ)) (a' (x, ξ)) x) (f : 𝓢(E, V)) (x ζ : E) :
+    HasFDerivAt (fun y ↦ 𝐞 ⟪ζ, y⟫ • a (y, (2 * π) • ζ) (f ζ)) (integrandFDeriv a a' f x ζ) x := by
+  have hc : HasFDerivAt (fun y : E ↦ (𝐞 ⟪ζ, y⟫ : ℂ))
+      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (2 * π * Complex.I * 𝐞 ⟪ζ, x⟫)).comp
+        (innerSL ℝ ζ)) x :=
+    (Real.hasDerivAt_fourierChar ⟪ζ, x⟫).hasFDerivAt.comp x (innerSL ℝ ζ).hasFDerivAt
+  have hg : HasFDerivAt (fun y ↦ a (y, (2 * π) • ζ) (f ζ))
+      ((ContinuousLinearMap.apply ℂ W (f ζ)).restrictScalars ℝ ∘L a' (x, (2 * π) • ζ)) x :=
+    ((ContinuousLinearMap.apply ℂ W (f ζ)).restrictScalars ℝ).hasFDerivAt.comp x
+      (hda x ((2 * π) • ζ))
+  simp only [Circle.smul_def]
+  refine (hc.smul hg).congr_fderiv ?_
+  ext v
+  rw [integrandFDeriv_apply]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.apply_apply,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, one_apply_eq_self,
+    Circle.smul_def, map_smul, ← Complex.coe_smul, smul_smul]
+  congr 2
+  ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The operator norm bound on the partial derivative of the integrand. -/
+private lemma norm_integrandFDeriv_le (f : 𝓢(E, V)) (x ζ : E) :
+    ‖integrandFDeriv a a' f x ζ‖ ≤
+      (‖a' (x, (2 * π) • ζ)‖ + ‖(2 * π) • ζ‖ * ‖a (x, (2 * π) • ζ)‖) * ‖f ζ‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [integrandFDeriv_apply]
+  refine (norm_add_le _ _).trans ?_
+  rw [Circle.norm_smul, Circle.norm_smul]
+  have h₁ : ‖a' (x, (2 * π) • ζ) v (f ζ)‖ ≤ ‖a' (x, (2 * π) • ζ)‖ * ‖v‖ * ‖f ζ‖ :=
+    ((a' _ v).le_opNorm _).trans
+      (mul_le_mul_of_nonneg_right ((a' _).le_opNorm v) (norm_nonneg _))
+  have h₂ : ‖a (x, (2 * π) • ζ) ((2 * π * Complex.I * ⟪ζ, v⟫) • f ζ)‖ ≤
+      ‖(2 * π) • ζ‖ * ‖a (x, (2 * π) • ζ)‖ * ‖v‖ * ‖f ζ‖ := by
+    refine ((a _).le_opNorm _).trans ?_
+    rw [norm_smul, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+    have hi : ‖(2 * π * Complex.I * ⟪ζ, v⟫ : ℂ)‖ ≤ 2 * π * (‖ζ‖ * ‖v‖) := by
+      have h := abs_real_inner_le_norm ζ v
+      simp only [norm_mul, Complex.norm_I, Complex.norm_real, Real.norm_eq_abs, Complex.norm_ofNat,
+        abs_of_pos pi_pos, mul_one]
+      gcongr
+    calc ‖a (x, (2 * π) • ζ)‖ * (‖(2 * π * Complex.I * ⟪ζ, v⟫ : ℂ)‖ * ‖f ζ‖)
+        ≤ ‖a (x, (2 * π) • ζ)‖ * ((2 * π * (‖ζ‖ * ‖v‖)) * ‖f ζ‖) := by gcongr
+      _ = 2 * π * ‖ζ‖ * ‖a (x, (2 * π) • ζ)‖ * ‖v‖ * ‖f ζ‖ := by ring
+  nlinarith [h₁, h₂]
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A norm is at most the weight `⟨·⟩ = (1 + ‖·‖²) ^ (1 / 2)`, so multiplying by it raises the
+order of the weight by one. -/
+private lemma norm_mul_weight_le (ξ : E) (m : ℝ) :
+    ‖ξ‖ * (1 + ‖ξ‖ ^ 2) ^ (m / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ ((m + 1) / 2) := by
+  have hpos : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  have hle : ‖ξ‖ ≤ (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) := by
+    rw [← Real.sqrt_eq_rpow]
+    exact Real.le_sqrt_of_sq_le (by linarith)
+  calc ‖ξ‖ * (1 + ‖ξ‖ ^ 2) ^ (m / 2)
+      ≤ (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by gcongr
+    _ = (1 + ‖ξ‖ ^ 2) ^ ((m + 1) / 2) := by
+        rw [← Real.rpow_add hpos]
+        ring_nf
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- At a point where `a` and `a'` satisfy growth bounds, the partial derivative of the integrand is
+dominated by an integrable function independent of the point. -/
+private lemma norm_integrandFDeriv_le_weight {x : E} {C C' : ℝ} (hC0 : 0 ≤ C)
+    (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hC' : ∀ ξ, ‖a' (x, ξ)‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m' / 2)) (f : 𝓢(E, V)) (ζ : E) :
+    ‖integrandFDeriv a a' f x ζ‖ ≤ C * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) * ‖f ζ‖) +
+      C' * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m' / 2) * ‖f ζ‖) := by
+  refine (norm_integrandFDeriv_le f x ζ).trans ?_
+  have h₁ := hC ((2 * π) • ζ)
+  have h₂ := hC' ((2 * π) • ζ)
+  have h₃ := norm_mul_weight_le ((2 * π) • ζ) m
+  have hf := norm_nonneg (f ζ)
+  have hn := norm_nonneg ((2 * π) • ζ)
+  calc (‖a' (x, (2 * π) • ζ)‖ + ‖(2 * π) • ζ‖ * ‖a (x, (2 * π) • ζ)‖) * ‖f ζ‖
+      ≤ (C' * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m' / 2) +
+          ‖(2 * π) • ζ‖ * (C * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2))) * ‖f ζ‖ := by gcongr
+    _ ≤ _ := by nlinarith [mul_le_mul_of_nonneg_left h₃ hC0]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private lemma continuous_integrandFDeriv (ha : Continuous a) (ha' : Continuous a') (f : 𝓢(E, V))
+    (x : E) : Continuous fun ζ ↦ integrandFDeriv a a' f x ζ := by
+  refine continuous_clm_apply.2 fun v ↦ ?_
+  simp only [integrandFDeriv_apply]
+  have he : Continuous fun ζ : E ↦ 𝐞 ⟪ζ, x⟫ :=
+    Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)
+  exact (he.smul (((ha'.comp (continuous_const.prodMk (continuous_const_smul _))).clm_apply
+    continuous_const).clm_apply f.continuous)).add
+    (he.smul ((ha.comp (continuous_const.prodMk (continuous_const_smul _))).clm_apply
+      ((continuous_const.mul (Complex.continuous_ofReal.comp
+        (continuous_id.inner continuous_const))).smul f.continuous)))
+
+/-- **Differentiation under the integral.** For continuous `a` and `a'` with growth bounds uniform
+on compact sets of positions, the quantization has the derivative
+`∫ integrandFDeriv a a' (𝓕 u) x₀ ζ dζ` at `x₀`, and this integrand is integrable. -/
+private lemma hasFDerivAt_quantizeSchwartzValue_and_integrable (ha : Continuous a)
+    (ha' : Continuous a') (hda : ∀ x ξ, HasFDerivAt (fun y ↦ a (y, ξ)) (a' (x, ξ)) x)
+    (hC : ∀ K : Set E, IsCompact K →
+      ∃ C, ∀ x ∈ K, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hC' : ∀ K : Set E, IsCompact K →
+      ∃ C, ∀ x ∈ K, ∀ ξ, ‖a' (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (u : 𝓢(E, V)) (x₀ : E) :
+    HasFDerivAt (quantizeSchwartzValue a u) (∫ ζ, integrandFDeriv a a' (𝓕 u) x₀ ζ) x₀ ∧
+      Integrable (integrandFDeriv a a' (𝓕 u) x₀) := by
+  obtain ⟨C, hC⟩ := hC _ (isCompact_closedBall x₀ 1)
+  obtain ⟨C', hC'⟩ := hC' _ (isCompact_closedBall x₀ 1)
+  have hx₀ := Metric.mem_closedBall_self (x := x₀) zero_le_one
+  have hC0 : 0 ≤ C := nonneg_of_norm_le (hC x₀ hx₀)
+  have hcont (x : E) : Continuous fun ζ : E ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 u ζ) :=
+    (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
+      ((ha.comp (continuous_const.prodMk (continuous_const_smul _))).clm_apply (𝓕 u).continuous)
+  have hbound : Integrable fun ζ ↦ C * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) * ‖𝓕 u ζ‖) +
+      C' * ((1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m' / 2) * ‖𝓕 u ζ‖) :=
+    ((integrable_weight_mul_norm _ _).const_mul _).add
+      ((integrable_weight_mul_norm _ _).const_mul _)
+  refine ⟨?_, hbound.mono' (continuous_integrandFDeriv ha ha' _ x₀).aestronglyMeasurable
+    (ae_of_all _ (norm_integrandFDeriv_le_weight hC0 (hC x₀ hx₀) (hC' x₀ hx₀) _))⟩
+  simp only [funext (quantizeSchwartzValue_def a u)]
+  exact hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.closedBall_mem_nhds x₀ one_pos)
+    (Filter.Eventually.of_forall fun x ↦ (hcont x).aestronglyMeasurable)
+    (integrable_quantizeSchwartzValue_integrand (ha.comp (continuous_const.prodMk continuous_id)
+      ).aestronglyMeasurable (hC x₀ hx₀) (𝓕 u))
+    (continuous_integrandFDeriv ha ha' _ x₀).aestronglyMeasurable
+    (ae_of_all _ fun ζ x hx ↦ norm_integrandFDeriv_le_weight hC0 (hC x hx) (hC' x hx) _ ζ)
+    hbound (ae_of_all _ fun ζ x _ ↦ hasFDerivAt_integrand hda (𝓕 u) x ζ)
+
+/-- **Differentiability.** If the coefficient `a` has a partial derivative `a'` in the position,
+both are continuous, and both satisfy growth bounds `‖a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m` and
+`‖a'(x, ξ)‖ ≤ C'_K ⟨ξ⟩ ^ m'` uniform for `x` in each compact set `K`, then the quantization
+`Op(a) u` of a Schwartz function is differentiable. -/
+theorem differentiable_quantizeSchwartzValue (ha : Continuous a) (ha' : Continuous a')
+    (hda : ∀ x ξ, HasFDerivAt (fun y ↦ a (y, ξ)) (a' (x, ξ)) x)
+    (hC : ∀ K : Set E, IsCompact K →
+      ∃ C, ∀ x ∈ K, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hC' : ∀ K : Set E, IsCompact K →
+      ∃ C, ∀ x ∈ K, ∀ ξ, ‖a' (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (u : 𝓢(E, V)) : Differentiable ℝ (quantizeSchwartzValue a u) := fun x ↦
+  (hasFDerivAt_quantizeSchwartzValue_and_integrable ha ha' hda hC hC' u x).1.differentiableAt
+
+/-- **The derivative of a quantization.** Under the hypotheses of
+`differentiable_quantizeSchwartzValue`, the derivative of `Op(a) u` in the direction `v` is
+`∂_v Op(a) u = Op(∂_v a) u + Op(a) (∂_v u)`, where `∂_v a = a'(·) v` is the partial derivative of
+the coefficient in the position. -/
+theorem fderiv_quantizeSchwartzValue_apply (ha : Continuous a) (ha' : Continuous a')
+    (hda : ∀ x ξ, HasFDerivAt (fun y ↦ a (y, ξ)) (a' (x, ξ)) x)
+    (hC : ∀ K : Set E, IsCompact K →
+      ∃ C, ∀ x ∈ K, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hC' : ∀ K : Set E, IsCompact K →
+      ∃ C, ∀ x ∈ K, ∀ ξ, ‖a' (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (u : 𝓢(E, V)) (x v : E) :
+    fderiv ℝ (quantizeSchwartzValue a u) x v =
+      quantizeSchwartzValue (fun p ↦ a' p v) u x + quantizeSchwartzValue a (∂_{v} u) x := by
+  obtain ⟨hd, hint⟩ := hasFDerivAt_quantizeSchwartzValue_and_integrable ha ha' hda hC hC' u x
+  obtain ⟨C, hCx⟩ := hC {x} isCompact_singleton
+  obtain ⟨C', hC'x⟩ := hC' {x} isCompact_singleton
+  have hmeas {b : E × E → V →L[ℂ] W} (hb : Continuous b) :
+      AEStronglyMeasurable (fun ξ ↦ b (x, ξ)) :=
+    (hb.comp (continuous_const.prodMk continuous_id)).aestronglyMeasurable
+  rw [hd.fderiv, ContinuousLinearMap.integral_apply hint, quantizeSchwartzValue_def,
+    quantizeSchwartzValue_def]
+  simp only [integrandFDeriv_apply, ← SchwartzMap.fourier_lineDerivOp_apply]
+  refine integral_add (integrable_quantizeSchwartzValue_integrand
+    (hmeas ((ha'.clm_apply continuous_const : Continuous fun p ↦ a' p v))) (C := C' * ‖v‖)
+    (m := m') (fun ξ ↦ ?_) _) (integrable_quantizeSchwartzValue_integrand (hmeas ha)
+      (hCx x rfl) _)
+  calc ‖a' (x, ξ) v‖ ≤ ‖a' (x, ξ)‖ * ‖v‖ := (a' (x, ξ)).le_opNorm v
+    _ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * ‖v‖ := by gcongr; exact hC'x x rfl ξ
+    _ = C' * ‖v‖ * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) := by ring
+
+end Derivative
 
 section CLM
 
@@ -412,5 +635,105 @@ theorem quantizeSchwartzValue_inner_eq_lineDerivOp (v : E) (u : 𝓢(E, V)) (x :
         rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
 
 end Examples
+
+/-! ### Quantization of symbols
+
+A symbol `a ∈ S^m_{1,0}` satisfies the hypotheses of `differentiable_quantizeSchwartzValue`, and
+its partial derivatives in the position are again symbols of order `m`. Iterating
+`∂_j Op(a) u = Op(∂_{x_j} a) u + Op(a) (∂_j u)` shows that `Op(a) u` is smooth. -/
+
+namespace Symbol
+
+variable {n : ℕ} {m : ℝ}
+
+/-- The growth bound of a symbol, uniform on compact sets of positions. -/
+private lemma exists_norm_coefficient_le (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+
+private lemma hasFDerivAt_coefficient_fst (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    HasFDerivAt (fun y ↦ a.coefficient (y, ξ)) (fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x) x :=
+  ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).differentiable (by simp)
+    x).hasFDerivAt
+
+private lemma continuous_fderiv_coefficient_fst (a : Symbol n V W m) :
+    Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
+      fderiv ℝ (fun y ↦ a.coefficient (y, p.2)) p.1 :=
+  (ContDiff.fderiv (𝕜 := ℝ) (f := fun p y ↦ a.coefficient (y, p.2)) (n := 0)
+    (a.contDiff_coefficient.comp (contDiff_snd.prodMk (contDiff_snd.comp contDiff_fst)))
+    contDiff_fst (by simp)).continuous
+
+/-- The partial derivative of a symbol in the position along a coordinate vector is the
+coefficient of its spatial derivative. -/
+private lemma fderiv_coefficient_fst_single (a : Symbol n V W m) (j : Fin n) :
+    (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      fderiv ℝ (fun y ↦ a.coefficient (y, p.2)) p.1 (EuclideanSpace.single j 1)) =
+      (spatialDeriv j a).coefficient := by
+  funext ⟨x, ξ⟩
+  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
+/-- The partial derivative of a symbol in the position satisfies the growth bound of order `m`,
+uniformly on compact sets of positions. -/
+private lemma exists_norm_fderiv_coefficient_fst_le (a : Symbol n V W m)
+    (K : Set (CoordinateSpace n)) (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose C hC0 hC using fun j : Fin n ↦ (spatialDeriv j a).exists_bound K hK [] []
+  set b := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+  refine ⟨Fintype.card (Fin n) • ‖b.equivFunL.toContinuousLinearMap‖ * ∑ j, C j,
+    fun x hx ξ ↦ ?_⟩
+  have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by positivity
+  refine (b.opNorm_le (M := (∑ j, C j) * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) hw) fun j ↦ ?_).trans_eq (by ring)
+  have hj := hC j x hx ξ
+  simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at hj
+  simp only [b, OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
+  rw [← congrFun (fderiv_coefficient_fst_single a j) (x, ξ)] at hj
+  exact hj.trans (mul_le_mul_of_nonneg_right
+    (Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)) hw)
+
+/-- The quantization `Op(a) u` of a symbol applied to a Schwartz function is differentiable. -/
+theorem differentiable_quantizeSchwartzValue (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) : Differentiable ℝ (quantizeSchwartzValue a.coefficient u) :=
+  TauCeti.differentiable_quantizeSchwartzValue a.contDiff_coefficient.continuous
+    a.continuous_fderiv_coefficient_fst a.hasFDerivAt_coefficient_fst
+    a.exists_norm_coefficient_le a.exists_norm_fderiv_coefficient_fst_le u
+
+/-- **Leibniz rule for a quantization.** The coordinate derivative of `Op(a) u` is
+`∂_j Op(a) u = Op(∂_{x_j} a) u + Op(a) (∂_j u)`. -/
+theorem coordinateDeriv_quantizeSchwartzValue (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (j : Fin n) (x : CoordinateSpace n) :
+    coordinateDeriv [j] (quantizeSchwartzValue a.coefficient u) x =
+      quantizeSchwartzValue (spatialDeriv j a).coefficient u x +
+        quantizeSchwartzValue a.coefficient (∂_{EuclideanSpace.single j (1 : ℝ)} u) x := by
+  rw [coordinateDeriv_cons, coordinateDeriv_nil,
+    TauCeti.fderiv_quantizeSchwartzValue_apply a.contDiff_coefficient.continuous
+      a.continuous_fderiv_coefficient_fst a.hasFDerivAt_coefficient_fst
+      a.exists_norm_coefficient_le a.exists_norm_fderiv_coefficient_fst_le,
+    fderiv_coefficient_fst_single]
+
+/-- **Smoothness of a quantization.** The quantization `Op(a) u` of a symbol applied to a
+Schwartz function is smooth. -/
+theorem contDiff_quantizeSchwartzValue (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) :
+    ContDiff ℝ ∞ (quantizeSchwartzValue a.coefficient u) := by
+  refine contDiff_infty.2 fun k ↦ ?_
+  induction k generalizing a u with
+  | zero => exact contDiff_zero.2 (a.differentiable_quantizeSchwartzValue u).continuous
+  | succ k ih =>
+    rw [Nat.cast_succ, contDiff_succ_iff_fderiv_apply]
+    refine ⟨a.differentiable_quantizeSchwartzValue u, by simp, fun y ↦ ?_⟩
+    have hy : (fun x ↦ fderiv ℝ (quantizeSchwartzValue a.coefficient u) x y) = fun x ↦
+        ∑ j, y j • (quantizeSchwartzValue (spatialDeriv j a).coefficient u x +
+          quantizeSchwartzValue a.coefficient (∂_{EuclideanSpace.single j (1 : ℝ)} u) x) := by
+      funext x
+      conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr y]
+      simp only [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply, map_sum, map_smul,
+        ← coordinateDeriv_quantizeSchwartzValue, coordinateDeriv_cons, coordinateDeriv_nil]
+    rw [hy]
+    exact ContDiff.sum fun j _ ↦ ((ih (spatialDeriv j a) u).add (ih a _)).const_smul (y j)
+
+end Symbol
 
 end TauCeti
