@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.HahnSeries.Multiplication
 -- Proof-only: integer support bounds, independent families, and tensor coordinates.
 import Mathlib.Data.Int.Interval
 import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -31,9 +32,10 @@ module-valued Laurent series used in residue duality.
 
 In arbitrary dimension the comparison is injective for free coefficients. Over a field its
 image consists exactly of series whose coefficients lie in a single finite-dimensional
-subspace. For integer exponents it is surjective if and only if the coefficient space is
-finite-dimensional: a series with an independent sequence of coefficients cannot be a finite
-sum of scalar series times vectors. This distinguishes tensor currents from their
+subspace. For integer exponents and free coefficients over a nontrivial commutative ring, it
+is surjective if and only if the coefficient module is finitely generated (equivalently,
+finite-dimensional over a field): a series with an independent sequence of coefficients cannot
+be a finite sum of scalar series times vectors. This distinguishes tensor currents from their
 coefficientwise completion.
 
 ## References
@@ -250,49 +252,57 @@ theorem mem_range_tensorProductToHahnModule_iff (x : HahnModule Γ K V) :
     apply HahnModule.ext
     funext g
     rw [coeff_tensorProductToHahnModule_map, ← tensorProductEquiv_apply, hz]
-    rfl
+    simp [y]
+
+end Field
+
+section Ring
+
+variable {Γ R V : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+  [IsOrderedCancelAddMonoid Γ] [CommRing R] [Nontrivial R] [AddCommGroup V] [Module R V]
 
 /-- A series with an infinite independent family of coefficients is not a tensor current. -/
-theorem not_mem_range_tensorProductToHahnModule_of_linearIndependent
-    {ι : Type*} [Infinite ι] (x : HahnModule Γ K V) (e : ι → Γ)
-    (h : LinearIndependent K (fun i ↦ ((of K).symm x).coeff (e i))) :
-    x ∉ Set.range (tensorProductToHahnModule Γ K V) := by
-  rintro hx
-  obtain ⟨S, hS, hx⟩ := (mem_range_tensorProductToHahnModule_iff x).mp hx
-  let := hS
-  exact Module.Finite.not_linearIndependent_of_infinite _ (h.codRestrict S fun i ↦ hx (e i))
+theorem notMem_range_tensorProductToHahnModule_of_linearIndependent
+    {ι : Type*} [Infinite ι] (x : HahnModule Γ R V) (e : ι → Γ)
+    (h : LinearIndependent R (fun i ↦ ((of R).symm x).coeff (e i))) :
+    x ∉ Set.range (tensorProductToHahnModule Γ R V) := by
+  rintro ⟨z, rfl⟩
+  obtain ⟨S, hS, hz⟩ := exists_fg_coeff_tensorProductToHahnModule z
+  let := Module.Finite.iff_fg.mpr hS
+  exact Module.Finite.not_linearIndependent_of_infinite _ (h.codRestrict S fun i ↦ hz (e i))
 
-/-- Scalar extension to Laurent series captures every vector-valued Laurent series if and only
-if the coefficient space is finite-dimensional. No characteristic-zero hypothesis is needed. -/
-theorem tensorProductToHahnModule_int_surjective_iff :
-    Function.Surjective (tensorProductToHahnModule ℤ K V) ↔ FiniteDimensional K V := by
+/-- For free coefficients over a nontrivial commutative ring, scalar extension to Laurent series
+is surjective exactly when the coefficient module is finitely generated. Over a field this is
+finite-dimensionality, with no characteristic-zero hypothesis. -/
+theorem tensorProductToHahnModule_int_surjective_iff [Module.Free R V] :
+    Function.Surjective (tensorProductToHahnModule ℤ R V) ↔ Module.Finite R V := by
   classical
   constructor
   · intro hsurj
     by_contra hfinite
-    let b := Module.Free.chooseBasis K V
-    have : Infinite (Module.Free.ChooseBasisIndex K V) := by
+    let b := Module.Free.chooseBasis R V
+    have : Infinite (Module.Free.ChooseBasisIndex R V) := by
       apply not_finite_iff_infinite.mp
       intro h
       let := h
-      exact hfinite b.finiteDimensional_of_finite
-    let e := Infinite.natEmbedding (Module.Free.ChooseBasisIndex K V)
+      exact hfinite (Module.Finite.of_basis b)
+    let e := Infinite.natEmbedding (Module.Free.ChooseBasisIndex R V)
     let c : ℤ → V := fun n ↦ if 0 ≤ n then b (e n.toNat) else 0
     have hc : BddBelow (Function.support c) := by
       refine ⟨0, fun n hn ↦ ?_⟩
       by_contra h
       exact hn (by simp [c, h])
-    let x : HahnModule ℤ K V := of K (HahnSeries.ofSuppBddBelow c hc)
-    have hx (n : ℕ) : ((of K).symm x).coeff (n : ℤ) = b (e n) := by
+    let x : HahnModule ℤ R V := of R (HahnSeries.ofSuppBddBelow c hc)
+    have hx (n : ℕ) : ((of R).symm x).coeff (n : ℤ) = b (e n) := by
       simp [x, c]
-    have hli : LinearIndependent K (fun n : ℕ ↦ ((of K).symm x).coeff (n : ℤ)) := by
+    have hli : LinearIndependent R (fun n : ℕ ↦ ((of R).symm x).coeff (n : ℤ)) := by
       simpa only [hx, Function.comp_def] using b.linearIndependent.comp e e.injective
-    exact not_mem_range_tensorProductToHahnModule_of_linearIndependent x
+    exact notMem_range_tensorProductToHahnModule_of_linearIndependent x
       (fun n : ℕ ↦ (n : ℤ)) hli (hsurj x)
   · intro h
     let := h
-    exact (tensorProductToHahnModule_bijective_of_basis (Module.Free.chooseBasis K V)).surjective
+    exact (tensorProductToHahnModule_bijective_of_basis (Module.Free.chooseBasis R V)).surjective
 
-end Field
+end Ring
 
 end HahnModule
