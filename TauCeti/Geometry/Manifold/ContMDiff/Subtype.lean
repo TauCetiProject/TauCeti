@@ -30,8 +30,9 @@ there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_
   `TauCeti.ContMDiffOn.subtypeVal_comp_iff`, and `TauCeti.ContMDiff.subtypeVal_comp_iff`: a map
   into an open submanifold is `C^n` (within a set, at a point, on a set, globally) iff its
   composition with the inclusion is.
-* `ContMDiffAt.extend_subtypeVal`, `contMDiffAt_extend_subtypeVal_iff`: an extension to `M` of a
-  map on an open submanifold is `C^n` at a point of the submanifold exactly when the map is.
+* `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`: an extension
+  to `M` of a map on an open submanifold is `C^n` at a point of the submanifold exactly when the
+  map is.
 * `TopologicalSpace.Opens.contMDiffOn_convexSegment`: the affine segment in a convex open subset
   of a normed real space is smooth on `[0, 1]` at every regularity.
 
@@ -113,7 +114,7 @@ theorem ContMDiffAt.extend_subtypeVal {U : Opens M} {g : U → M'} {x : U}
 
 /-- A map on an open submanifold `U` is `C^n` at a point of `U` exactly when any of its extensions
 to all of `M` is. -/
-theorem contMDiffAt_extend_subtypeVal_iff {U : Opens M} {g : U → M'} {x : U} (e : M → M') :
+theorem TauCeti.contMDiffAt_extend_subtypeVal_iff {U : Opens M} {g : U → M'} {x : U} (e : M → M') :
     ContMDiffAt I I' n (Subtype.val.extend g e) x ↔ ContMDiffAt I I' n g x := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.extend_subtypeVal e⟩
   rw [← contMDiffAt_subtype_iff] at h
