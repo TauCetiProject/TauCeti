@@ -64,7 +64,6 @@ private theorem gelfond_value_bound_le {c H : ℝ} {m n q r : ℕ} (hm : 1 ≤ m
   have hnr' : (n : ℝ) ≤ r := by exact_mod_cast hnr
   have hr : 1 ≤ r := hn.trans hnr
   have hr' : (1 : ℝ) ≤ r := by exact_mod_cast hr
-  have hq₀ : 1 ≤ q := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq; omega
   set c' := max 1 |c|
   have hc' : 1 ≤ c' := le_max_left _ _
   -- The five factors, each bounded in terms of `r`.
@@ -79,29 +78,16 @@ private theorem gelfond_value_bound_le {c H : ℝ} {m n q r : ℕ} (hm : 1 ≤ m
   have h₃ : (n : ℝ) ^ (((n : ℝ) + 1) / 2) ≤ (r : ℝ) ^ (((r : ℝ) + 1) / 2) :=
     (Real.rpow_le_rpow (by positivity) hnr' (by positivity)).trans
       (Real.rpow_le_rpow_of_exponent_le hr' (by linarith))
-  have h₄ : (q : ℝ) ^ r ≤ (2 * m) ^ r * (r : ℝ) ^ ((r : ℝ) / 2) := by
-    have hqq : (q : ℝ) ^ r = (((q * q : ℕ) : ℝ)) ^ ((r : ℝ) / 2) := by
-      rw [Nat.cast_mul, ← sq, ← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul
-        (by positivity)]
-      congr 1
-      push_cast
-      ring
-    rw [hqq]
-    calc (((q * q : ℕ) : ℝ)) ^ ((r : ℝ) / 2) ≤ (2 * m * r : ℝ) ^ ((r : ℝ) / 2) :=
-          Real.rpow_le_rpow (by positivity) h₁ (by positivity)
-      _ = (2 * m : ℝ) ^ ((r : ℝ) / 2) * (r : ℝ) ^ ((r : ℝ) / 2) :=
-          Real.mul_rpow (by positivity) (by positivity)
-      _ ≤ (2 * m) ^ r * (r : ℝ) ^ ((r : ℝ) / 2) := by
-          gcongr
-          calc (2 * m : ℝ) ^ ((r : ℝ) / 2) ≤ (2 * m : ℝ) ^ (r : ℝ) :=
-                Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-            _ = (2 * m) ^ r := Real.rpow_natCast _ _
+  have h₄ : (q : ℝ) ^ r ≤ (2 * m) ^ r * (r : ℝ) ^ ((r : ℝ) / 2) :=
+    (gelfond_natCast_pow_le (k := r) (j := r) hm hq (by omega)).trans
+      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (by positivity) hnr' (by positivity))
+        (by positivity))
   have h₅ : H ^ (r + 2 * q * m) ≤ (H ^ (1 + 4 * m ^ 2)) ^ r := by
     rw [← pow_mul]
     refine pow_le_pow_right₀ hH ?_
-    have : q ≤ 2 * m * n := hq ▸ Nat.le_mul_of_pos_left q hq₀
-    have : 2 * q * m ≤ 4 * m ^ 2 * r := by nlinarith
-    nlinarith
+    have := gelfond_two_mul_mul_le hq hnr
+    rw [add_mul, one_mul]
+    omega
   -- The powers of `r`: `r r ^ ((r + 1) / 2) r ^ (r / 2) = r ^ (r + 3 / 2) ≤ 4 ^ r r ^ r`.
   have h₆ : (r : ℝ) * (r : ℝ) ^ (((r : ℝ) + 1) / 2) * (r : ℝ) ^ ((r : ℝ) / 2) ≤
       4 ^ r * (r : ℝ) ^ r := by
@@ -181,13 +167,8 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
   -- `x = c₀ ^ N ρ` is a nonzero algebraic integer, each of whose terms is `η_{ab}` times an
   -- algebraic integer of house at most `q ^ r H ^ N`.
   set N := r + 2 * q * m
-  have hs (a b : Fin q) : r + ((a : ℕ) + 1) * t₀ + ((b : ℕ) + 1) * t₀ ≤ N := by
-    have h₁ : ((a : ℕ) + 1) * t₀ ≤ q * m := Nat.mul_le_mul a.is_lt ht₀
-    have h₂ : ((b : ℕ) + 1) * t₀ ≤ q * m := Nat.mul_le_mul b.is_lt ht₀
-    simp only [N]
-    rw [mul_assoc, two_mul]
-    omega
-  have ht (a b : Fin q) := hterm r _ _ t₀ N q hq₀ a.is_lt b.is_lt (hs a b)
+  have ht (a b : Fin q) :=
+    hterm r _ _ t₀ N q hq₀ a.is_lt b.is_lt (gelfond_index_le a b ht₀ le_rfl)
   have hx : (c₀ : K) ^ N * ρ = ∑ a, ∑ b, (η a b : K) * ((c₀ : K) ^ N *
       ((((a : ℕ) + 1 : ℕ) + (((b : ℕ) + 1 : ℕ) : K) * β) ^ r *
         (α ^ (((a : ℕ) + 1) * t₀) * γ ^ (((b : ℕ) + 1) * t₀)))) := by
@@ -220,10 +201,9 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
       _ ≤ H' ^ r := by
         rw [← pow_mul]
         refine pow_le_pow_right₀ hH ?_
-        have : q ≤ 2 * m * n := hq ▸ Nat.le_mul_of_pos_left q hq₀
-        have : 2 * q * m ≤ 4 * m ^ 2 * r := by nlinarith
-        simp only [N]
-        nlinarith
+        have := gelfond_two_mul_mul_le hq hnr
+        rw [add_mul, one_mul]
+        omega
   have hX : X ^ r * (r : ℝ) ^ r ≤ max 1 X ^ r * (r : ℝ) ^ r :=
     mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity) (le_max_right _ _) r)
       (by positivity)

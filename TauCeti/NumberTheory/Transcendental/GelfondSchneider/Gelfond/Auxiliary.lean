@@ -133,6 +133,43 @@ open Module NumberField
 
 open scoped Matrix
 
+/-- The exponent bound behind Gelfond's constants: if `q ^ 2 = 2 m n` and `n ≤ r`, then
+`2 q m ≤ 4 m ^ 2 r`, because `q ≤ q ^ 2 = 2 m n`. -/
+theorem gelfond_two_mul_mul_le {m n q r : ℕ} (hq : q * q = 2 * m * n) (hnr : n ≤ r) :
+    2 * q * m ≤ 4 * m ^ 2 * r := by
+  have : q ≤ 2 * m * n := hq ▸ Nat.le_mul_self q
+  nlinarith
+
+/-- The power bound behind Gelfond's constants: if `q ^ 2 = 2 m n` with `m ≥ 1` and `k ≤ 2 j`, then
+`q ^ k = (2 m n) ^ (k / 2) ≤ (2 m) ^ j n ^ (k / 2)`. -/
+theorem gelfond_natCast_pow_le {m n q k j : ℕ} (hm : 1 ≤ m) (hq : q * q = 2 * m * n)
+    (hkj : k ≤ 2 * j) : (q : ℝ) ^ k ≤ (2 * m) ^ j * (n : ℝ) ^ ((k : ℝ) / 2) := by
+  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
+  have hkj' : (k : ℝ) / 2 ≤ j := by
+    have : (k : ℝ) ≤ 2 * j := by exact_mod_cast hkj
+    linarith
+  have hqq : (q : ℝ) ^ k = ((2 * m : ℝ) * n) ^ ((k : ℝ) / 2) := by
+    have : ((2 * m : ℝ) * n) = (q : ℝ) ^ (2 : ℝ) := by
+      rw [Real.rpow_two, sq]
+      exact_mod_cast hq.symm
+    rw [this, ← Real.rpow_mul (by positivity), ← Real.rpow_natCast]
+    congr 1
+    ring
+  rw [hqq, Real.mul_rpow (by positivity) (by positivity)]
+  gcongr
+  calc (2 * m : ℝ) ^ ((k : ℝ) / 2) ≤ (2 * m : ℝ) ^ (j : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (by linarith) hkj'
+    _ = (2 * m) ^ j := Real.rpow_natCast _ _
+
+/-- The index bound for the terms of Gelfond's values: for `a, b < q`, `t ≤ m` and `k ≤ K₀`, the
+exponent `k + (a + 1) t + (b + 1) t` is at most `K₀ + 2 q m`. -/
+theorem gelfond_index_le {q m t k K₀ : ℕ} (a b : Fin q) (ht : t ≤ m) (hk : k ≤ K₀) :
+    k + ((a : ℕ) + 1) * t + ((b : ℕ) + 1) * t ≤ K₀ + 2 * q * m := by
+  have h₁ : ((a : ℕ) + 1) * t ≤ q * m := Nat.mul_le_mul a.is_lt ht
+  have h₂ : ((b : ℕ) + 1) * t ≤ q * m := Nat.mul_le_mul b.is_lt ht
+  rw [mul_assoc, two_mul]
+  omega
+
 /-- The coefficient bound of Gelfond's auxiliary function: if `q ^ 2 = 2 m n` with `m, n ≥ 1`,
 then the bound `C (C q ^ 2 A)` of Siegel's lemma, for entries of house at most
 `A = q ^ (n - 1) H ^ (n - 1 + 2 q m)`, is at most `c ^ n n ^ ((n + 1) / 2)` with
@@ -141,28 +178,10 @@ private theorem gelfond_siegel_bound_le {C H : ℝ} {m n q : ℕ} (hm : 1 ≤ m)
     (hq : q * q = 2 * m * n) (hH : 1 ≤ H) :
     C * (C * ((q * q : ℕ) : ℝ) * ((q : ℝ) ^ (n - 1) * H ^ (n - 1 + 2 * q * m))) ≤
       (max 1 (C ^ 2) * (2 * m) * H ^ (1 + 4 * m ^ 2)) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
-  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
-  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-  have hq₀ : 1 ≤ q := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq; omega
-  -- `q ^ (n + 1) = (2 m n) ^ ((n + 1) / 2) ≤ (2 m) ^ n n ^ ((n + 1) / 2)`.
   have hqpow : (q : ℝ) ^ (n + 1) ≤ (2 * m) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
-    have hqq : ((q : ℝ) ^ (n + 1)) = ((2 * m : ℝ) * n) ^ (((n : ℝ) + 1) / 2) := by
-      have : ((2 * m : ℝ) * n) = (q : ℝ) ^ (2 : ℝ) := by
-        rw [Real.rpow_two, sq]
-        exact_mod_cast hq.symm
-      rw [this, ← Real.rpow_mul (by positivity), ← Real.rpow_natCast]
-      congr 1
-      push_cast
-      ring
-    rw [hqq, Real.mul_rpow (by positivity) (by positivity)]
-    gcongr
-    calc (2 * m : ℝ) ^ (((n : ℝ) + 1) / 2) ≤ (2 * m : ℝ) ^ (n : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-      _ = (2 * m) ^ n := Real.rpow_natCast _ _
-  -- `n - 1 + 2 q m ≤ (1 + 4 m ^ 2) n`, because `q ≤ q ^ 2 = 2 m n`.
+    simpa using gelfond_natCast_pow_le (k := n + 1) (j := n) hm hq (by omega)
   have hexp : n - 1 + 2 * q * m ≤ (1 + 4 * m ^ 2) * n := by
-    have : q ≤ 2 * m * n := hq ▸ Nat.le_mul_of_pos_left q hq₀
-    have : 2 * q * m ≤ 4 * m ^ 2 * n := by nlinarith
+    have := gelfond_two_mul_mul_le hq le_rfl
     rw [add_mul, one_mul]
     omega
   have hC : C * C ≤ max 1 (C ^ 2) ^ n := by
@@ -236,6 +255,47 @@ theorem exists_intCast_pow_mul_gelfond_term (α β γ : K) :
   simp only [mul_pow]
   ring
 
+variable (K) in
+/-- Siegel's lemma for Gelfond's system: there is `C` such that whenever `q ^ 2 = 2 m n` with
+`m, n ≥ 1`, every `m n × q ^ 2` matrix over `𝓞 K` with entries of house at most `A` has a nonzero
+kernel vector `ξ` with `house ξ_u ≤ max(1, C (C q ^ 2 A))`. This is Mathlib's Siegel lemma
+(`NumberField.house.exists_ne_zero_int_vec_house_le`), whose exponent is `1` here, with the
+constant vector `1` covering the zero matrix. -/
+private theorem exists_ne_zero_mulVec_eq_zero_house_le (m : ℕ) :
+    ∃ C : ℝ, ∀ (n q : ℕ) (e : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K)) (A : ℝ),
+      1 ≤ m → 1 ≤ n → q * q = 2 * m * n →
+      (∀ i j, house (algebraMap (𝓞 K) K (e i j)) ≤ A) →
+      ∃ ξ : Fin q × Fin q → 𝓞 K, ξ ≠ 0 ∧ e *ᵥ ξ = 0 ∧
+        ∀ u, house (ξ u : K) ≤ max 1 (C * (C * ((q * q : ℕ) : ℝ) * A)) := by
+  classical
+  -- Mathlib's constant depends only on `K` but is not exported by name, so it is quantified
+  -- here before `n` and `q` are chosen.
+  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ (n q : ℕ) (e : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K))
+      (A : ℝ), e ≠ 0 → 0 < n * m → n * m < q * q →
+      (∀ i j, house (algebraMap (𝓞 K) K (e i j)) ≤ A) →
+      ∃ ξ : Fin q × Fin q → 𝓞 K, ξ ≠ 0 ∧ e *ᵥ ξ = 0 ∧
+        ∀ j, house (ξ j : K) ≤ C * (C * (q * q : ℕ) * A) ^ ((n * m : ℕ) / ((q * q : ℕ) -
+          (n * m : ℕ)) : ℝ) :=
+    ⟨_, fun n q e A he h0 hlt hA ↦ house.exists_ne_zero_int_vec_house_le K e he h0 hlt
+      (by simp) hA (by simp)⟩
+  refine ⟨C, fun n q e A hm hn hq hA ↦ ?_⟩
+  have hq₀ : 1 ≤ q := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq; omega
+  by_cases he : e = 0
+  · refine ⟨fun _ ↦ 1, fun h ↦ ?_, by rw [he, Matrix.zero_mulVec], fun _ ↦ ?_⟩
+    · exact one_ne_zero (congr_fun h (⟨0, hq₀⟩, ⟨0, hq₀⟩))
+    · have hone : house ((1 : 𝓞 K) : K) = 1 := by simpa using house_intCast (K := K) 1
+      exact hone.trans_le (le_max_left _ _)
+  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC n q e A he (Nat.mul_pos hn hm) (by nlinarith) hA
+  refine ⟨ξ, hξ0, hξ, fun u ↦ (hξle u).trans (le_of_eq_of_le ?_ (le_max_right _ _))⟩
+  -- Siegel's exponent is `n m / (q ^ 2 - n m) = 1`, since `q ^ 2 = 2 n m`.
+  have hexp : (((n * m : ℕ) : ℝ) / ((q * q : ℕ) - (n * m : ℕ)) : ℝ) = 1 := by
+    have : ((q * q : ℕ) : ℝ) = 2 * ((n * m : ℕ) : ℝ) := by
+      rw [hq]
+      push_cast
+      ring
+    rw [this, two_mul, add_sub_cancel_right, div_self (by positivity)]
+  rw [hexp, Real.rpow_one]
+
 /-- **Gelfond's auxiliary function, algebraic form** (Karatarakis–Wiedijk, §3). Let `K` be a
 number field, `α, β, γ ∈ K` and `m ≥ 1`. There is `c ≥ 1` such that for all positive integers `n`
 and `q` with `q ^ 2 = 2 m n` there are algebraic integers `η_{ab} ∈ 𝓞 K`, `a, b < q`, not all
@@ -251,16 +311,7 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
             (α ^ ((a + 1 : ℕ) * t) * γ ^ ((b + 1 : ℕ) * t)) = 0 := by
   classical
   obtain ⟨c₀, hc₀, H, hH, -, hterm⟩ := exists_intCast_pow_mul_gelfond_term α β γ
-  -- Siegel's lemma over `𝓞 K` (Mathlib). Its constant depends only on `K` but is not exported by
-  -- name, so it is quantified here before `n` and `q` are chosen.
-  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ (n q : ℕ) (e : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K))
-      (A : ℝ), e ≠ 0 → 0 < n * m → n * m < q * q →
-      (∀ i j, house (algebraMap (𝓞 K) K (e i j)) ≤ A) →
-      ∃ ξ : Fin q × Fin q → 𝓞 K, ξ ≠ 0 ∧ e *ᵥ ξ = 0 ∧
-        ∀ j, house (ξ j : K) ≤ C * (C * (q * q : ℕ) * A) ^ ((n * m : ℕ) / ((q * q : ℕ) -
-          (n * m : ℕ)) : ℝ) :=
-    ⟨_, fun n q e A he h0 hlt hA ↦ house.exists_ne_zero_int_vec_house_le K e he h0 hlt
-      (by simp) hA (by simp)⟩
+  obtain ⟨C, hC⟩ := exists_ne_zero_mulVec_eq_zero_house_le K m
   set c := max 1 (C ^ 2) * (2 * m) * H ^ (1 + 4 * m ^ 2)
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
   have hc : 1 ≤ c := one_le_mul_of_one_le_of_one_le
@@ -274,42 +325,17 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
   let e : Fin n × Fin m → Fin q × Fin q → K := fun p u ↦
     (c₀ : K) ^ N * ((((u.1 : ℕ) + 1 : ℕ) + (((u.2 : ℕ) + 1 : ℕ) : K) * β) ^ (p.1 : ℕ) *
       (α ^ (((u.1 : ℕ) + 1) * ((p.2 : ℕ) + 1)) * γ ^ (((u.2 : ℕ) + 1) * ((p.2 : ℕ) + 1))))
-  have hs (p : Fin n × Fin m) (u : Fin q × Fin q) :
-      (p.1 : ℕ) + ((u.1 : ℕ) + 1) * ((p.2 : ℕ) + 1) + ((u.2 : ℕ) + 1) * ((p.2 : ℕ) + 1) ≤ N := by
-    have h₁ : ((u.1 : ℕ) + 1) * ((p.2 : ℕ) + 1) ≤ q * m := Nat.mul_le_mul u.1.is_lt p.2.is_lt
-    have h₂ : ((u.2 : ℕ) + 1) * ((p.2 : ℕ) + 1) ≤ q * m := Nat.mul_le_mul u.2.is_lt p.2.is_lt
-    have := p.1.is_lt
-    simp only [N]
-    rw [mul_assoc, two_mul]
-    omega
-  have he (p u) := hterm p.1 _ _ _ N q hq₀ u.1.is_lt u.2.is_lt (hs p u)
+  have he (p : Fin n × Fin m) (u : Fin q × Fin q) := hterm p.1 _ _ _ N q hq₀ u.1.is_lt u.2.is_lt
+    (gelfond_index_le u.1 u.2 p.2.is_lt (Nat.le_sub_one_of_lt p.1.is_lt))
   have heA (p u) : house (e p u) ≤ (q : ℝ) ^ (n - 1) * H ^ N :=
     (he p u).2.trans (by gcongr; exacts [by exact_mod_cast hq₀, by have := p.1.is_lt; omega])
   let e' : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K) := fun p u ↦ ⟨e p u, (he p u).1⟩
-  -- A nonzero solution `ξ` of the system with the required house bound. If the system is
-  -- trivial, the constant vector `1` will do.
-  obtain ⟨ξ, hξ0, hξ, hξle⟩ : ∃ ξ : Fin q × Fin q → 𝓞 K, ξ ≠ 0 ∧ e' *ᵥ ξ = 0 ∧
-      ∀ u, house (ξ u : K) ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
-    by_cases he' : e' = 0
-    · refine ⟨fun _ ↦ 1, fun h ↦ ?_, by rw [he', Matrix.zero_mulVec], fun _ ↦ ?_⟩
-      · exact one_ne_zero (congr_fun h (⟨0, hq₀⟩, ⟨0, hq₀⟩))
-      · have hone : house ((1 : 𝓞 K) : K) = 1 := by simpa using house_intCast (K := K) 1
-        rw [hone]
-        have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-        exact one_le_mul_of_one_le_of_one_le (one_le_pow₀ hc)
-          (Real.one_le_rpow hn' (by positivity))
-    obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC n q e' ((q : ℝ) ^ (n - 1) * H ^ N) he'
-      (Nat.mul_pos hn hm) (by nlinarith) heA
-    refine ⟨ξ, hξ0, hξ, fun u ↦ (hξle u).trans ?_⟩
-    -- Siegel's exponent is `n m / (q ^ 2 - n m) = 1`, since `q ^ 2 = 2 n m`.
-    have hexp : (((n * m : ℕ) : ℝ) / ((q * q : ℕ) - (n * m : ℕ)) : ℝ) = 1 := by
-      have : ((q * q : ℕ) : ℝ) = 2 * ((n * m : ℕ) : ℝ) := by
-        rw [hq]
-        push_cast
-        ring
-      rw [this, two_mul, add_sub_cancel_right, div_self (by positivity)]
-    rw [hexp, Real.rpow_one]
-    exact gelfond_siegel_bound_le hm hn hq hH
+  -- A nonzero solution `ξ` of the system with the required house bound.
+  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC n q e' ((q : ℝ) ^ (n - 1) * H ^ N) hm hn hq heA
+  replace hξle (u) : house (ξ u : K) ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) :=
+    (hξle u).trans (max_le (one_le_mul_of_one_le_of_one_le (one_le_pow₀ hc)
+      (Real.one_le_rpow (by exact_mod_cast hn) (by positivity)))
+      (gelfond_siegel_bound_le hm hn hq hH))
   refine ⟨fun a b ↦ ξ (a, b), fun h ↦ hξ0 (funext fun u ↦ congr_fun₂ h u.1 u.2),
     fun a b ↦ hξle (a, b), fun k hk t ht ↦ ?_⟩
   -- The equation of `(k, t)`, divided by `c₀ ^ N`.
