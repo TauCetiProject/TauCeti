@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
@@ -32,6 +33,9 @@ only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, 
 `f (γ b) ≤ c`, it was in `{f < c}` at every earlier time. This is how the trajectories of a vector
 field pointing out of a domain `{f ≤ c}` along its boundary are shown never to re-enter it.
 
+Finally, an integral curve along which the vector field vanishes does not move at all: it is a
+constant curve.
+
 ## Main declarations
 
 * `IsMIntegralCurve.antitone_comp`: `f` is antitone along `γ`.
@@ -41,6 +45,8 @@ field pointing out of a domain `{f ≤ c}` along its boundary are shown never to
   `df(v) = 0` along it.
 * `IsMIntegralCurveOn.lt_apply_of_le_apply`, `IsMIntegralCurveOn.apply_lt_of_apply_le`: `γ` crosses
   a level of `f` only upwards when `df(v) > 0` along that level.
+* `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
+  vanishes is constant.
 -/
 
 public section
@@ -80,6 +86,16 @@ theorem lt_of_mvfderiv_apply_lt_zero (hγ : IsMIntegralCurve γ v)
     · linarith [hzt.1]
     · linarith
   exact (hγ.antitone_comp hf hvf hzt.2.le).trans_lt hzs
+
+/-- **An integral curve along which the field vanishes is constant.** If `v (γ t) = 0` for every
+`t`, then the integral curve `γ` of `v` has zero derivative everywhere, so it is constant. -/
+theorem apply_eq_of_forall_eq_zero [IsManifold I 1 M] (hγ : IsMIntegralCurve γ v)
+    (hv : ∀ t, v (γ t) = 0) (s t : ℝ) : γ t = γ s :=
+  MDifferentiable.apply_eq_of_mfderiv_eq_zero (fun u ↦ (hγ u).mdifferentiableAt)
+    (fun u ↦ by
+      rw [(hγ u).mfderiv, hv u, ContinuousLinearMap.smulRight_zero]
+      -- The two zeros live in the tangent-space and the model-space spelling of one type.
+      rfl) t s
 
 end IsMIntegralCurve
 

@@ -66,9 +66,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 * `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`: the integral over the complementary region,
   where `c * t` is at least `a`, evaluated to `c ^ (-(s + 1)) / (-(s + 1)) * a ^ (s + 1)` for
   `s < -1`.
-* `TauCeti.setLIntegral_Ioc_ite_rpow_le`: an upper-tail bound for a negative power restricted by
-  a linear threshold.
-* `TauCeti.setLIntegral_Ioc_rpow_mul_ite_le`: the same bound with constant and linear weights.
+* `TauCeti.setLIntegral_Ioi_rpow_mul_ite_le`: an upper bound for the kernel `t ^ (-s - 1)`
+  restricted by a linear threshold, with constant and linear weights.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
@@ -112,76 +111,11 @@ to be integrable at the origin or at infinity, according as `s ≤ -1` or `-1 < 
 theorem lintegral_ofReal_rpow_Ioi (s : ℝ) :
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) = ∞ := by
   by_contra hne
-  have hmeas : Measurable fun t : ℝ => t ^ s := measurable_id.pow measurable_const
   have hnn : 0 ≤ᵐ[volume.restrict (Ioi (0 : ℝ))] fun t : ℝ => t ^ s := by
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-    exact Real.rpow_nonneg (le_of_lt ht) s
+    exact Real.rpow_nonneg ht.le s
   exact not_integrableOn_Ioi_rpow s
-    ⟨hmeas.aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal hnn).2 (lt_top_iff_ne_top.2 hne)⟩
-
-/-- The tail integral `∫_{r / D}^∞ t ^ (-n - 1) dt = D ^ n r ^ (-n) / n` bounds the integral of
-`t ^ (-n - 1)` over those `t ∈ (0, 1]` with `r ≤ t * D`. -/
-theorem setLIntegral_Ioc_ite_rpow_le {n : ℕ} (hn : 0 < n) {r D : ℝ} (hr : 0 < r) :
-    ∫⁻ t in Ioc (0 : ℝ) 1, (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) ≤
-      ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
-  rcases le_or_gt D 0 with hD | hD
-  · have hzero : ∀ t ∈ Ioc (0 : ℝ) 1,
-        (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) = 0 := fun t ht =>
-      ite_eq_right (by nlinarith [ht.1])
-    rw [setLIntegral_congr_fun measurableSet_Ioc hzero]
-    simp
-  have hc : 0 < r / D := div_pos hr hD
-  have hn' : -(n : ℝ) - 1 < -1 := by
-    have : (0 : ℝ) < n := by exact_mod_cast hn
-    linarith
-  calc
-    _ ≤ ∫⁻ t, (Ici (r / D)).indicator (fun t => ENNReal.ofReal (t ^ (-(n : ℝ) - 1))) t := by
-      refine (setLIntegral_le_lintegral _ _).trans (lintegral_mono fun t => ?_)
-      split_ifs with h
-      · have hmem : t ∈ Ici (r / D) := mem_Ici.2 ((div_le_iff₀ hD).2 h)
-        rw [indicator_of_mem hmem]
-      · exact bot_le
-    _ = ∫⁻ t in Ioi (r / D), ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) := by
-      rw [lintegral_indicator measurableSet_Ici, setLIntegral_congr Ioi_ae_eq_Ici]
-    _ = ENNReal.ofReal (∫ t in Ioi (r / D), t ^ (-(n : ℝ) - 1)) := by
-      rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hn' hc)]
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-      exact Real.rpow_nonneg (hc.trans ht).le _
-    _ = ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
-      rw [integral_Ioi_rpow_of_lt hn' hc, ← ENNReal.ofReal_mul (by positivity)]
-      congr 1
-      have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
-      have hexp : -(n : ℝ) - 1 + 1 = -(n : ℝ) := by ring
-      rw [hexp, Real.div_rpow hr.le hD.le, Real.rpow_neg hD.le, Real.rpow_natCast]
-      field_simp
-
-/-- The bound of `setLIntegral_Ioc_ite_rpow_le`, multiplied by the length `r` of a segment and by
-a weight `a`, gives the kernel `r ^ (1 - n)`. -/
-theorem setLIntegral_Ioc_rpow_mul_ite_le {n : ℕ} (hn : 0 < n) (a : ℝ≥0∞) {r : ℝ}
-    (hr : 0 ≤ r) (D : ℝ) :
-    ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
-        (a * if r ≤ t * D then ENNReal.ofReal r else 0) ≤
-      ENNReal.ofReal (D ^ n / n) * (a * ENNReal.ofReal r ^ (1 - (n : ℝ))) := by
-  have hL : ∀ t : ℝ, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
-      (a * if r ≤ t * D then ENNReal.ofReal r else 0) = a * ENNReal.ofReal r *
-        if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0 := by
-    intro t
-    split_ifs <;> ring
-  simp_rw [hL]
-  rw [lintegral_const_mul _ (Measurable.ite (measurableSet_le measurable_const (by fun_prop))
-    (by fun_prop) measurable_const)]
-  rcases hr.eq_or_lt with rfl | hr
-  · simp
-  calc
-    _ ≤ a * ENNReal.ofReal r *
-        (ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ)))) := by
-      gcongr
-      exact setLIntegral_Ioc_ite_rpow_le hn hr
-    _ = _ := by
-      have hexp : (1 : ℝ) - n = 1 + -(n : ℝ) := by ring
-      rw [ENNReal.ofReal_rpow_of_pos hr, hexp, Real.rpow_add hr, Real.rpow_one,
-        ENNReal.ofReal_mul hr.le]
-      ring
+    ((lintegral_ofReal_ne_top_iff_integrable (by fun_prop) hnn).1 hne)
 
 /-- **A finite threshold on `c * t` cuts `(0, ∞)` down to a bounded interval.** For `0 < c` and
 `a ≠ ∞`, the indicator of `{t | ENNReal.ofReal (c * t) < a}` agrees at every positive `t` with the
@@ -195,9 +129,7 @@ private theorem indicator_ofReal_mul_lt_eq_indicator_Ioo {a : ℝ≥0∞} (ha : 
     rw [Set.mem_ofPred, Set.mem_Ioo, ENNReal.ofReal_lt_iff_lt_toReal (by positivity) ha,
       lt_div_iff₀ hc, mul_comm c t]
     exact ⟨fun h => ⟨ht', h⟩, fun h => h.2⟩
-  by_cases hmem : t ∈ Ioo (0 : ℝ) (a.toReal / c)
-  · rw [Set.indicator_of_mem (hiff.2 hmem), Set.indicator_of_mem hmem]
-  · rw [Set.indicator_of_notMem fun h => hmem (hiff.1 h), Set.indicator_of_notMem hmem]
+  simp only [Set.indicator_apply, hiff]
 
 /-- The lower integral of `t ^ s` over `(0, ∞)`, truncated at the height where `c * t` reaches a
 threshold `a : ℝ≥0∞`: for `-1 < s` and `0 < c`,
@@ -253,9 +185,7 @@ private theorem indicator_le_ofReal_mul_eq_indicator_Ici {a : ℝ≥0∞} (ha : 
   have hiff : t ∈ {t : ℝ | a ≤ ENNReal.ofReal (c * t)} ↔ t ∈ Ici (a.toReal / c) := by
     rw [Set.mem_ofPred, Set.mem_Ici,
       ENNReal.le_ofReal_iff_toReal_le ha (by positivity), div_le_iff₀ hc, mul_comm c t]
-  by_cases hmem : t ∈ Ici (a.toReal / c)
-  · rw [Set.indicator_of_mem (hiff.2 hmem), Set.indicator_of_mem hmem]
-  · rw [Set.indicator_of_notMem fun h => hmem (hiff.1 h), Set.indicator_of_notMem hmem]
+  simp only [Set.indicator_apply, hiff]
 
 /-- The lower integral of `t ^ s` over `(0, ∞)`, restricted to the heights at which `c * t` has
 already reached a threshold `a : ℝ≥0∞`: for `s < -1` and `0 < c`,
@@ -311,6 +241,43 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
     integral_Ioi_rpow_of_lt hs hbc, hreal, hab, ENNReal.ofReal_rpow_of_pos hb0,
     ← ENNReal.ofReal_mul hconst.le]
 
+/-- The kernel `t ^ (-s - 1)`, integrated against the weight `a * r` over those `t ∈ (0, ∞)` with
+`r ≤ t * D`, is at most `D ^ s / s * a * r ^ (1 - s)`, for `0 < s` and `0 ≤ r`. For `0 < D` and
+`0 < r` the region is the half-line `[r / D, ∞)` and the bound is attained, the tail integral
+`∫_{r / D}^∞ t ^ (-s - 1) dt` being `D ^ s r ^ (-s) / s`; for `D ≤ 0` and `0 < r` the region is
+empty. For `r = 0` the weight `a * r` vanishes, so the integral is `0`. -/
+theorem setLIntegral_Ioi_rpow_mul_ite_le (hs : 0 < s) (a : ℝ≥0∞) {r : ℝ} (hr : 0 ≤ r) (D : ℝ) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (-s - 1)) *
+        (a * if r ≤ t * D then ENNReal.ofReal r else 0) ≤
+      ENNReal.ofReal (D ^ s / s) * (a * ENNReal.ofReal r ^ (1 - s)) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · simp
+  rcases le_or_gt D 0 with hD | hD
+  · -- No positive `t` reaches the threshold.
+    rw [setLIntegral_congr_fun measurableSet_Ioi (g := fun _ => 0) fun t (ht : 0 < t) => by
+      simp [show ¬r ≤ t * D by nlinarith]]
+    simp
+  have hpt : ∀ t ∈ Ioi (0 : ℝ), ENNReal.ofReal (t ^ (-s - 1)) *
+      (a * if r ≤ t * D then ENNReal.ofReal r else 0) = a * ENNReal.ofReal r *
+        {t : ℝ | ENNReal.ofReal r ≤ ENNReal.ofReal (D * t)}.indicator
+          (fun t => ENNReal.ofReal (t ^ (-s - 1))) t := fun t _ => by
+    simp only [indicator_apply, mem_ofPred_eq, ENNReal.ofReal_le_ofReal_iff', hr.not_ge, or_false,
+      mul_comm D t]
+    split_ifs <;> ring
+  have hmeas : Measurable ({t : ℝ | ENNReal.ofReal r ≤ ENNReal.ofReal (D * t)}.indicator
+      fun t => ENNReal.ofReal (t ^ (-s - 1))) :=
+    (by fun_prop : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (-s - 1))).indicator
+      (measurableSet_le measurable_const (by fun_prop))
+  -- Evaluate the integral with the tail-integral formula.
+  rw [setLIntegral_congr_fun measurableSet_Ioi hpt, lintegral_const_mul _ hmeas,
+    lintegral_indicator_le_ofReal_rpow_Ioi (by linarith) hD]
+  -- What remains is algebra; splitting `r ^ (1 - s)` needs `r ≠ 0, ∞` in `ℝ≥0∞`.
+  have hsplit : ENNReal.ofReal r ^ (1 - s) = ENNReal.ofReal r * ENNReal.ofReal r ^ (-s) := by
+    rw [sub_eq_add_neg, ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 hr).ne' ENNReal.ofReal_ne_top,
+      ENNReal.rpow_one]
+  simp only [sub_add_cancel, neg_neg, hsplit]
+  exact le_of_eq (by ring)
+
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ≥0∞} {p : ℝ}
 
 /-- A function with a finite `L^p` norm is carried by a σ-finite part of the measure: the level
@@ -318,46 +285,28 @@ sets `{f ≥ 1 / (n + 1)}` have finite measure by Chebyshev's inequality applied
 exhaust `{f > 0}`. -/
 theorem sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top (hf : AEMeasurable f μ)
     (hp : 0 < p) (htop : ∫⁻ x, f x ^ p ∂μ ≠ ∞) : SigmaFinite (μ.restrict {x | 0 < f x}) := by
-  let g := hf.mk f
-  have hfg : f =ᵐ[μ] g := hf.ae_eq_mk
-  have htopg : ∫⁻ x, g x ^ p ∂μ ≠ ∞ := by
-    have heq : ∫⁻ x, f x ^ p ∂μ = ∫⁻ x, g x ^ p ∂μ :=
-      lintegral_congr_ae (hfg.fun_comp fun z => z ^ p)
-    rwa [← heq]
-  have hsigma : SigmaFinite (μ.restrict {x | 0 < g x}) := by
-    have hg : Measurable g := hf.measurable_mk
-    have hsmeas : MeasurableSet {x | 0 < g x} := measurableSet_lt measurable_const hg
-    have hlevel : ∀ n : ℕ, μ {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ g x} ≠ ∞ := by
-      intro n
-      have hne : ((n : ℝ≥0∞) + 1)⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (by simp)
-      have hpos : (0 : ℝ≥0∞) < ((n : ℝ≥0∞) + 1)⁻¹ :=
-        ENNReal.inv_pos.2 (by simp [ENNReal.natCast_ne_top])
-      have hεpos : (0 : ℝ≥0∞) < ((n : ℝ≥0∞) + 1)⁻¹ ^ p := ENNReal.rpow_pos hpos hne
-      have hset : {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ g x} =
-          {x | ((n : ℝ≥0∞) + 1)⁻¹ ^ p ≤ g x ^ p} :=
-        Set.ext fun x => (ENNReal.rpow_le_rpow_iff hp).symm
-      rw [hset]
-      refine ne_top_of_le_ne_top (ENNReal.div_lt_top htopg hεpos.ne').ne
-        (meas_ge_le_lintegral_div (hg.pow_const p).aemeasurable hεpos.ne'
-          (ENNReal.rpow_ne_top_of_nonneg hp.le hne))
-    refine ⟨⟨⟨fun n => {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ g x} ∪ {x | 0 < g x}ᶜ,
-      fun _ => trivial, ?_, ?_⟩⟩⟩
-    · intro n
-      have hcompl : μ.restrict {x | 0 < g x} {x | 0 < g x}ᶜ = 0 := by
-        rw [Measure.restrict_apply hsmeas.compl, Set.compl_inter_self, measure_empty]
-      refine lt_of_le_of_lt (measure_union_le _ _) ?_
-      rw [hcompl, add_zero]
-      exact lt_of_le_of_lt (Measure.restrict_apply_le _ _) (lt_top_iff_ne_top.2 (hlevel n))
-    · refine Set.eq_univ_of_forall fun x => ?_
-      rcases eq_or_ne (g x) 0 with hx | hx
-      · exact Set.mem_iUnion.2 ⟨0, Set.mem_union_right _ (by simp [hx])⟩
-      · obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hx
-        exact Set.mem_iUnion.2
-          ⟨n, Set.mem_union_left _ ((ENNReal.inv_le_inv' le_self_add).trans hn.le)⟩
-  have hpos : {x | 0 < f x} =ᵐ[μ] {x | 0 < g x} :=
-    hfg.mono fun _ hx => by simp only [Set.mem_ofPred_eq]; rw [hx]
-  rw [Measure.restrict_congr_set hpos]
-  exact hsigma
+  have hlevel : ∀ n : ℕ, μ {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ f x} < ∞ := by
+    intro n
+    have hne : ((n : ℝ≥0∞) + 1)⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (by simp)
+    have hε : ((n : ℝ≥0∞) + 1)⁻¹ ^ p ≠ 0 := (ENNReal.rpow_pos (by simp) hne).ne'
+    have hset : {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ f x} = {x | ((n : ℝ≥0∞) + 1)⁻¹ ^ p ≤ f x ^ p} :=
+      Set.ext fun x => (ENNReal.rpow_le_rpow_iff hp).symm
+    rw [hset]
+    exact (meas_ge_le_lintegral_div (hf.pow_const p) hε
+      (ENNReal.rpow_ne_top_of_nonneg hp.le hne)).trans_lt (ENNReal.div_lt_top htop hε)
+  have hs : NullMeasurableSet {x | 0 < f x} μ := nullMeasurableSet_lt aemeasurable_const hf
+  refine ⟨⟨⟨fun n => {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ f x} ∪ {x | 0 < f x}ᶜ,
+    fun _ => trivial, fun n => ?_, ?_⟩⟩⟩
+  · rw [Measure.restrict_apply₀' hs]
+    refine (measure_mono ?_).trans_lt (hlevel n)
+    rintro x ⟨hx | hx, hx'⟩
+    exacts [hx, absurd hx' hx]
+  · refine Set.eq_univ_of_forall fun x => ?_
+    rcases eq_or_ne (f x) 0 with hx | hx
+    · exact Set.mem_iUnion.2 ⟨0, Set.mem_union_right _ (by simp [hx])⟩
+    · obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hx
+      exact Set.mem_iUnion.2
+        ⟨n, Set.mem_union_left _ ((ENNReal.inv_le_inv' le_self_add).trans hn.le)⟩
 
 variable {β : Type*} [MeasurableSpace β]
 
@@ -405,7 +354,7 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
           = ν {y | u y = ∞} * ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (p - 1)) := by
             rw [lintegral_ofReal_rpow_Ioi (p - 1), ENNReal.mul_top hnull]
         _ = ∫⁻ t in Ioi (0 : ℝ), ν {y | u y = ∞} * ENNReal.ofReal (t ^ (p - 1)) :=
-            (lintegral_const_mul _ ((measurable_id.pow measurable_const).ennreal_ofReal)).symm
+            (lintegral_const_mul _ (by fun_prop)).symm
         _ ≤ _ := lintegral_mono fun t => mul_le_mul_left (measure_mono hsub) _
     rw [hL, hR, ENNReal.mul_top (ENNReal.ofReal_pos.2 hp).ne']
 

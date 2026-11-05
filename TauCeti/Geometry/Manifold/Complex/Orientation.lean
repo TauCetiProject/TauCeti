@@ -62,7 +62,10 @@ product orientation is the canonical one: the derivative of every product `Prod.
 holomorphic charts carries it to the canonical real orientation of `E × E'`
 (`TauCeti.map_orientationAt_prod_complexManifoldOrientation`), and this property of the preferred
 product charts characterizes it (`TauCeti.eq_prod_complexManifoldOrientation_iff`). The linear
-input is `TauCeti.prod_complexOrientation`.
+input is `TauCeti.prod_complexOrientation`. Exchanging factors of real dimensions `m` and `n`
+multiplies product orientations by `(-1) ^ (m * n)`; both real dimensions are even here, so
+`Prod.swap : M × M' → M' × M` carries the canonical orientation of `M × M'` to that of `M' × M`
+(`TauCeti.isOrientationPreservingAt_swap_prod_complexManifoldOrientation`).
 
 ## Main declarations
 
@@ -92,6 +95,8 @@ input is `TauCeti.prod_complexOrientation`.
   the product of canonical orientations to the canonical orientation of the product model.
 * `TauCeti.eq_prod_complexManifoldOrientation_iff`: this property of the preferred product charts
   characterizes the product of canonical orientations.
+* `TauCeti.isOrientationPreservingAt_swap_prod_complexManifoldOrientation`: exchanging the factors
+  preserves the products of canonical orientations, with no sign.
 
 ## Implementation notes
 
@@ -512,6 +517,16 @@ theorem eq_prod_complexManifoldOrientation_iff
     ext x
     obtain ⟨L, hL, hmap⟩ := h x
     exact (Orientation.map _ L.toLinearEquiv).injective (hmap.trans (hmem x L hL).symm)
+
+/-- Exchanging the factors of a product of complex manifolds, `Prod.swap : M × M' → M' × M`,
+preserves the products of the canonical orientations at every point. No sign occurs because both
+real dimensions are even. -/
+theorem isOrientationPreservingAt_swap_prod_complexManifoldOrientation (x : M × M') :
+    Manifold.Orientation.IsOrientationPreservingAt
+      ((complexManifoldOrientation E M).prod (complexManifoldOrientation E' M'))
+      (((complexManifoldOrientation E' M').prod (complexManifoldOrientation E M)).reindex
+        (finCongr (add_comm _ _))) Prod.swap x :=
+  Manifold.Orientation.isOrientationPreservingAt_swap_prod _ _ ((even_two_mul _).mul_right _) x
 
 end Prod
 

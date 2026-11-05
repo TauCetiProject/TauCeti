@@ -52,8 +52,9 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
-  `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp`, and `pullbackObjUnitIso_congr` comparing it
-  with identity, composition, and equality of scheme morphisms;
+  `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
+  `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
+  composition, and equality of scheme morphisms;
 * `AlgebraicGeometry.Scheme.Modules.pushforwardLaxMonoidal` and
   `AlgebraicGeometry.Scheme.Modules.pullbackOplaxMonoidal`: the lax monoidal structure of
   pushforward and the oplax monoidal structure of pullback, with unit maps computed by
@@ -65,7 +66,8 @@ local data on the preimage cover.
   and pullback respect the lax and oplax monoidal structures;
 * `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
   `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
-  without its inverse;
+  without its inverse, and `AlgebraicGeometry.Scheme.Modules.inv_δ_comp_pullbackComp_hom_app`, its
+  form for invertible tensor comparisons;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` identifies the restriction of `f^* M` to
   an open `W ⊆ f⁻¹ V` with the pullback of `M|_V` along `f.resLE V W e`, naturally in `M`;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
@@ -269,6 +271,17 @@ lemma pullbackObjUnitIso_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom]
   exact (Category.assoc _ _ _).trans (unitToPushforwardObjUnit_comp f g)
 
+/-- The composite `𝒪_X ≅ f^* 𝒪_Y ≅ f^* g^* 𝒪_Z ≅ (f ≫ g)^* 𝒪_Z` is the inverse of the
+identification `(f ≫ g)^* 𝒪_Z ≅ 𝒪_X`. This is `pullbackObjUnitIso_comp` read through inverses. -/
+@[reassoc]
+lemma pullbackObjUnitIso_inv_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (pullbackObjUnitIso f).inv ≫ (pullback f).map (pullbackObjUnitIso g).inv ≫
+        (pullbackComp f g).hom.app _ =
+      (pullbackObjUnitIso (f ≫ g)).inv := by
+  refine (Iso.inv_ext ?_).symm
+  rw [← pullbackObjUnitIso_comp]
+  simp only [Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id_map_assoc, Iso.inv_hom_id_app]
+
 /-- The canonical identification of a pulled-back structure sheaf is unchanged when the
 scheme morphism is replaced by an equal morphism. -/
 lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
@@ -391,6 +404,24 @@ lemma _root_.TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ (M N : Z.Mod
         Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) := by
   rw [pullback_comp_δ, Iso.hom_inv_id_app_assoc]
+
+/-- When the tensor comparisons are invertible, the inverse tensor comparisons of `f^*` and
+`g^*` composed with the composition isomorphism give the inverse tensor comparison of
+`(f ≫ g)^*`. This is `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ` read through
+inverses. -/
+@[reassoc]
+lemma inv_δ_comp_pullbackComp_hom_app (M N : Z.Modules)
+    [IsIso (Functor.OplaxMonoidal.δ (pullback f) ((pullback g).obj M) ((pullback g).obj N))]
+    [IsIso (Functor.OplaxMonoidal.δ (pullback g) M N)]
+    [IsIso (Functor.OplaxMonoidal.δ (pullback (f ≫ g)) M N)] :
+    inv (Functor.OplaxMonoidal.δ (pullback f) ((pullback g).obj M) ((pullback g).obj N)) ≫
+        (pullback f).map (inv (Functor.OplaxMonoidal.δ (pullback g) M N)) ≫
+          (pullbackComp f g).hom.app (M ⊗ N) =
+      ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) ≫
+        inv (Functor.OplaxMonoidal.δ (pullback (f ≫ g)) M N) := by
+  rw [IsIso.eq_comp_inv, Category.assoc, Category.assoc,
+    TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ, ← Functor.map_comp_assoc,
+    IsIso.inv_hom_id, CategoryTheory.Functor.map_id, Category.id_comp, IsIso.inv_hom_id_assoc]
 
 /-- The identification of the pullbacks along equal morphisms is compatible with their tensor
 comparisons `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`. -/

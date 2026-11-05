@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
@@ -655,5 +655,52 @@ theorem singularValues_sinThetaEmbedding :
   simpa only [sinThetaEmbedding, toLinearMap_subtypeL, range_subtype] using
     (U.principalSines_range_eq_singularValues
       (X := Z.subtypeL) Z.subtypeₗᵢ.isometry).symm
+
+end Submodule
+
+namespace Submodule
+
+open Module
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- The ambient adjoint of the trial map acts on a sine left singular vector
+by the same singular relation, including at a zero singular value.
+
+Adapted from the Kitware DKPS formalization,
+`DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
+Apache-2.0). -/
+theorem adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
+    (X : F →ₗ[𝕜] E) {i : Fin (finrank 𝕜 F)} :
+    X.adjoint
+        (LinearMap.leftSingularVector ((Uᗮ.starProjection.toLinearMap ∘ₗ X)) i) =
+      (((((Uᗮ.starProjection.toLinearMap ∘ₗ X)).singularValues i : ℝ) : 𝕜) •
+        LinearMap.rightSingularBasis ((Uᗮ.starProjection.toLinearMap ∘ₗ X)) i) := by
+  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X)
+  let y := LinearMap.leftSingularVector S i
+  have hSadj : S.adjoint y = ((S.singularValues i : ℝ) : 𝕜) •
+      LinearMap.rightSingularBasis S i := LinearMap.adjoint_leftSingularVector S i
+  have hyUperp : y ∈ Uᗮ := by
+    dsimp [y]
+    rw [LinearMap.leftSingularVector_def]
+    exact Uᗮ.smul_mem _
+      (Uᗮ.starProjection_apply_mem (X (LinearMap.rightSingularBasis S i)))
+  apply ext_inner_right 𝕜
+  intro z
+  calc
+    ⟪X.adjoint y, z⟫_𝕜 = ⟪y, X z⟫_𝕜 :=
+      LinearMap.adjoint_inner_left X z y
+    _ = ⟪y, Uᗮ.starProjection (X z)⟫_𝕜 := by
+      rw [← Uᗮ.inner_starProjection_left_eq_right,
+        Submodule.starProjection_eq_self_iff.mpr hyUperp]
+    _ = ⟪S.adjoint y, z⟫_𝕜 := by
+      rw [LinearMap.adjoint_inner_left]
+      rfl
+    _ = ⟪((S.singularValues i : ℝ) : 𝕜) •
+          LinearMap.rightSingularBasis S i, z⟫_𝕜 := by rw [hSadj]
 
 end Submodule
