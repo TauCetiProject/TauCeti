@@ -356,21 +356,11 @@ private theorem sq_le_mul_rpow_div_one_add_mul {t b C β : ℝ} (ht0 : 0 < t) (h
 private theorem exp_neg_mul_rpow_div_one_add_mul_le_sq {a C ε A : ℝ} (ha : 0 < a) (ha1 : a ≤ 1)
     (hC : 0 ≤ C) (hε : 0 ≤ ε) (hεa : ε ≤ A * a) :
     Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ (2 / (1 + ε)) ≤ a ^ 2 := by
-  have hA : 0 ≤ A := (mul_nonneg_iff_of_pos_right ha).1 (hε.trans hεa)
-  have h2β := two_sub_two_div_one_add_le hε
-  set β := 2 / (1 + ε) with hβ_def
-  have hβ : 0 < β := by positivity
-  have hae : Real.exp (-(2 * A)) ≤ a ^ (2 - β) := by
-    calc Real.exp (-(2 * A)) = (Real.exp (2 * A))⁻¹ := Real.exp_neg _
-      _ ≤ (a ^ (-(2 * ε)))⁻¹ :=
-          inv_anti₀ (Real.rpow_pos_of_pos ha _) (rpow_neg_le_exp ha ha1 (by positivity)
-            (by linarith))
-      _ = a ^ (2 * ε) := by rw [Real.rpow_neg ha.le, inv_inv]
-      _ ≤ a ^ (2 - β) := Real.rpow_le_rpow_of_exponent_ge ha ha1 h2β
-  calc Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ β ≤ a ^ (2 - β) * a ^ β :=
-        mul_le_mul hae (Real.rpow_le_rpow (by positivity) (div_le_self ha.le (by nlinarith))
-          hβ.le) (by positivity) (by positivity)
-    _ = a ^ 2 := by rw [← Real.rpow_add ha, sub_add_cancel, Real.rpow_two]
+  calc Real.exp (-(2 * A)) * (a / (1 + C * a)) ^ (2 / (1 + ε))
+      ≤ Real.exp (-(2 * A)) * (Real.exp (2 * A) * a ^ 2) := by
+        gcongr
+        exact rpow_div_one_add_mul_le_exp_mul_sq ha le_rfl ha1 hC hε hεa
+    _ = a ^ 2 := by rw [← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul]
 
 /-- **Quadratic upper bound from a monotonicity inequality.** Let `f` be monotone on `[a, b]` with
 `0 < a`, `b ≤ 1` and `0 ≤ f a`, and suppose that at almost every `t ∈ (a, b)`
@@ -378,9 +368,9 @@ private theorem exp_neg_mul_rpow_div_one_add_mul_le_sq {a C ε A : ℝ} (ha : 0 
 `f t ≤ K t ^ 2` on `[a, b]`, where `K = (f b + D b ^ 4) ((1 + C b) / b) ^ 2 e ^ (2 A)` depends on
 `ε` and `a` only through `A`.
 
-For the defect energy `E(σ)` of balls of radius `σ`, with `ε = C r ^ (-1/2)` and
-`a = c r ^ (-1/2)`, this is the bound `E(σ) ≤ K σ ^ 2` with `K` controlled by `E(b)`
-independently of the large parameter `r`. -/
+For the defect energy `E(σ)` of balls of radius `σ`, with `ε = C₀ r ^ (-1/2)` and
+`a = c₀ r ^ (-1/2)` (so that `A = C₀ / c₀`), this is the bound `E(σ) ≤ K σ ^ 2` with `K`
+controlled by `E(b)` independently of the large parameter `r`. -/
 theorem le_mul_sq_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C D ε A t : ℝ}
     (ha : 0 < a) (hb : b ≤ 1) (hC : 0 ≤ C) (hD : 0 ≤ D) (hε : 0 ≤ ε)
     (hεa : ε ≤ A * a) (hf : MonotoneOn f (Icc a b)) (hfa : 0 ≤ f a)
@@ -410,10 +400,10 @@ theorem le_mul_sq_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C
 `f` has quadratic size `c a ^ 2 ≤ f a` at the inner radius, with `c ≥ 0`, then on `[a, b]`
 `(c e ^ (-2 A) / (1 + C b) ^ 2 - D b ^ 2) t ^ 2 ≤ f t`.
 
-For the defect energy `E(σ)` of balls of radius `σ` centered at a zero, with `ε = C r ^ (-1/2)`
-and `a = c r ^ (-1/2)`, this propagates a lower bound at the microscopic radius to the bound
-`E(σ) ≥ c' σ ^ 2` up to a fixed radius `b`, once `b` is small enough that the constant is
-positive. -/
+For the defect energy `E(σ)` of balls of radius `σ` centered at a zero, with
+`ε = C₀ r ^ (-1/2)` and `a = c₀ r ^ (-1/2)` (so that `A = C₀ / c₀`), this propagates a lower
+bound at the microscopic radius to the bound `E(σ) ≥ c' σ ^ 2` up to a fixed radius `b`, once `b`
+is small enough that the constant is positive. -/
 theorem mul_sq_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C D ε A c t : ℝ}
     (ha : 0 < a) (hb : b ≤ 1) (hC : 0 ≤ C) (hD : 0 ≤ D) (hε : 0 ≤ ε)
     (hεa : ε ≤ A * a) (hf : MonotoneOn f (Icc a b)) (hc : 0 ≤ c) (hfa : c * a ^ 2 ≤ f a)

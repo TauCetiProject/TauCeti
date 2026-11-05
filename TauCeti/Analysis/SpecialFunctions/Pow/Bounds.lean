@@ -50,7 +50,7 @@ bound `1 / (q (q + q')) < |ξ - p / q|`.
 
 If `0 < t ≤ 1` and `ε ≤ A t` with `0 ≤ A`, then `t ^ (-ε) ≤ exp A`. This makes factors such as
 `a ^ (-ε)` uniformly bounded when the exponent `ε` shrinks with the radius `a`, as in Taubes's
-monotonicity inequality with `ε = C r ^ (-1/2)` and `a = c r ^ (-1/2)`.
+monotonicity inequality with `ε = C₀ r ^ (-1/2)` and `a = c₀ r ^ (-1/2)`.
 
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
@@ -303,13 +303,9 @@ theorem rpow_neg_le_exp {t ε A : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) (hA : 0 ≤ 
     t ^ (-ε) ≤ Real.exp A := by
   rw [Real.rpow_def_of_pos ht, Real.exp_le_exp]
   have hlog : 0 ≤ -Real.log t := neg_nonneg.2 (Real.log_nonpos ht.le ht1)
-  -- `-log t = log t⁻¹ ≤ t⁻¹ - 1`, so `t (-log t) ≤ 1 - t ≤ 1`.
   have htlog : t * -Real.log t ≤ 1 := by
-    have h := Real.log_le_sub_one_of_pos (inv_pos.2 ht)
-    rw [Real.log_inv] at h
-    have := mul_le_mul_of_nonneg_left h ht.le
-    rw [mul_sub, mul_inv_cancel₀ ht.ne', mul_one] at this
-    linarith
+    rw [mul_neg, mul_comm]
+    exact (neg_le_abs _).trans (Real.abs_log_mul_self_lt t ht ht1).le
   calc Real.log t * -ε = -Real.log t * ε := by ring
     _ ≤ -Real.log t * (A * t) := mul_le_mul_of_nonneg_left hε hlog
     _ = A * (t * -Real.log t) := by ring
