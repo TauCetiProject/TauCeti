@@ -139,6 +139,16 @@ theorem holderWith_timeExtension_holderSpace (hab : a ≤ b)
   simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
     f.memHolder.holderWith.mono f.nnHolderNorm_le
 
+omit [NormedSpace ℝ E] in
+/-- The clamped extension of a bounded Hölder map is pointwise bounded by its bounded
+Hölder norm. -/
+theorem norm_timeExtension_holderSpace_le (hab : a ≤ b)
+    (f : HolderSpace α (slab (E := E) a b) F) (s : ℝ) (x : E) :
+    ‖timeExtension hab f x s‖ ≤ ‖f‖ := by
+  simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
+    (norm_timeExtension_le hab f.toBoundedContinuousFunction s x).trans
+      f.norm_toBoundedContinuousFunction_le
+
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 @[simp]
 theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)

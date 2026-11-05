@@ -52,10 +52,8 @@ theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL [CompleteSpace F]
     exact contDiff_const
   · exact contDiff_heatDuhamelPotential_of_holderWith
       (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
-      (ae_of_all _ fun s => ae_of_all _ fun x => by
-        simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-          (norm_timeExtension_le T.coe_nonneg f.toBoundedContinuousFunction s x).trans
-            f.norm_toBoundedContinuousFunction_le)
+      (ae_of_all _ fun s => ae_of_all _ fun x =>
+        norm_timeExtension_holderSpace_le T.coe_nonneg f s x)
       (ae_of_all _ fun s => holderWith_timeExtension_holderSpace T.coe_nonneg f s) hα hpos
 
 private def hessian (hα : 0 < α) (hα₂ : α ≤ 2)
@@ -83,10 +81,8 @@ private theorem exists_holderWith_hessian (hα : 0 < α) (hα₁ : α < 1) :
   rw [show hessian hα (hα₁.le.trans (by norm_num)) f = _ from
     funext (hessian_apply _ _ f)]
   exact hC (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
-    (ae_of_all _ fun s => ae_of_all _ fun x => by
-      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-        (norm_timeExtension_le T.coe_nonneg f.toBoundedContinuousFunction s x).trans
-          f.norm_toBoundedContinuousFunction_le)
+    (ae_of_all _ fun s => ae_of_all _ fun x =>
+      norm_timeExtension_holderSpace_le T.coe_nonneg f s x)
     (ae_of_all _ fun s => holderWith_timeExtension_holderSpace T.coe_nonneg f s)
 
 private def hessianConstant (hα : 0 < α) (hα₁ : α < 1) : ℝ≥0 :=
