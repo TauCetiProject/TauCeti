@@ -205,6 +205,14 @@ theorem globalFlowDiffeomorph_apply {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n 
     Flow.toHomeomorph_apply]
 
 omit hv in
+/-- As a function, `globalFlowDiffeomorph` is the time-`t` map of the flow. -/
+theorem coe_globalFlowDiffeomorph {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hvn : ContMDiff I I.tangent n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (t : ℝ) :
+    ⇑(globalFlowDiffeomorph hcomplete hn hvn t) =
+      globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete t :=
+  funext (globalFlowDiffeomorph_apply hcomplete hn hvn t)
+
+omit hv in
 /-- The inverse of `globalFlowDiffeomorph` at time `t` is the time-`(-t)` map of the flow. -/
 @[simp]
 theorem globalFlowDiffeomorph_symm_apply {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]

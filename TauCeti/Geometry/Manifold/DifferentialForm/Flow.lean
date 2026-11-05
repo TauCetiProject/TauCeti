@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
@@ -27,8 +28,11 @@ in the alternating maps on `T_x M`, and its velocity is the pullback of the Lie 
 defined in charts with no reference to flows, so this is the flow characterization of the Lie
 derivative of forms. At `t = 0` it reads `d/dt|₀ (ψₜ^* α)ₓ = (L_Z α)ₓ`.
 
-Integrating it: if `L_Z α = c • α` for a real number `c`, then `ψₜ^* α = e^{ct} α` for every
-time `t` (`TauCeti.mpullback_globalFlow_eq_exp_smul`). This is how a Liouville flow rescales the
+Integrating it: if `L_Z α = g • α` for a continuous function `g`, then
+`(ψₜ^* α)ₓ = exp (∫₀ᵗ g (ψₛ x) ds) • αₓ`
+(`TauCeti.mpullback_globalFlow_apply_eq_exp_integral_smul`). In particular, if `L_Z α = c • α` for a
+real number `c`, then `ψₜ^* α = e^{ct} α` for every time `t`
+(`TauCeti.mpullback_globalFlow_eq_exp_smul`). This is how a Liouville flow rescales the
 symplectic form and its primitive, which turns hypersurfaces of contact type and the boundary of a
 Liouville domain into one-parameter families with conjugate characteristic foliations. For a
 closed form with closed contraction `ι_Z α`, Cartan's formula gives `L_Z α = 0`, so the flow
@@ -42,6 +46,8 @@ reduces to its flat counterpart `TauCeti.hasDerivAt_compContinuousLinearMap_fder
 
 * `TauCeti.hasDerivAt_mpullback_globalFlow_zero`: the velocity of `ψₜ^* α` at `t = 0` is `L_Z α`.
 * `TauCeti.hasDerivAt_mpullback_globalFlow`: the time derivative of `ψₜ^* α` is `ψₜ^* L_Z α`.
+* `TauCeti.mpullback_globalFlow_apply_eq_exp_integral_smul`: if `L_Z α = g • α`, then
+  `(ψₜ^* α)ₓ = exp (∫₀ᵗ g (ψₛ x) ds) • αₓ`.
 * `TauCeti.mpullback_globalFlow_eq_exp_smul`: if `L_Z α = c • α`, then `ψₜ^* α = e^{ct} α`.
 * `TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero`: if `α` is closed and `ι_Z α` is
   closed, then `ψₜ^* α = α`.
@@ -250,6 +256,43 @@ theorem hasDerivAt_mpullback_globalFlow (x : M) (t : ℝ)
   · ext v
     exact (mpullback_apply (ψ t) (mlieDerivForm Z α) x v).symm
 
+/-- **Rescaling along a flow.** If the Lie derivative of a differentiable form `α` along a
+complete `C²` vector field `Z` is `g • α` for a continuous function `g`, then the time-`t` map of
+the flow `ψ` of `Z` pulls `α` back at `x` to `exp (∫₀ᵗ g (ψₛ x) ds) • α x`. -/
+theorem mpullback_globalFlow_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Continuous g)
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)))
+    (hL : mlieDerivForm Z α = fun y ↦ g y • α y) (t : ℝ) (x : M) :
+    mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc t) α x =
+      Real.exp (∫ s in 0..t, g (globalFlow Z (hZ.of_le one_le_two) hc s x)) • α x := by
+  set ψ := globalFlow Z (hZ.of_le one_le_two) hc
+  -- The pullbacks at `x`, as alternating maps on the model space, and the integrated rate.
+  set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun s ↦ mpullback I I (ψ s) α x
+  set G : ℝ → ℝ := fun s ↦ ∫ τ in 0..s, g (ψ τ x)
+  have hG (s : ℝ) : HasDerivAt G (g (ψ s x)) s :=
+    ((hg.comp (ψ.continuous continuous_id continuous_const)).integral_hasStrictDerivAt
+      0 s).hasDerivAt
+  have hderivP (s : ℝ) : HasDerivAt P (g (ψ s x) • P s) s := by
+    have h := hasDerivAt_mpullback_globalFlow hc hZ x s (hα _)
+    rwa [hL, mpullback_fun_smul] at h
+  -- `s ↦ e^{-G s} P s` has zero derivative, so it is constant.
+  have hderiv (s : ℝ) : HasDerivAt (fun s ↦ Real.exp (-G s) • P s) 0 s := by
+    refine ((hG s).neg.exp.smul (hderivP s)).congr_deriv ?_
+    module
+  have hconst := is_const_of_deriv_eq_zero (fun s ↦ (hderiv s).differentiableAt)
+    (fun s ↦ (hderiv s).deriv) t 0
+  have hG0 : G 0 = 0 := intervalIntegral.integral_same
+  have hP0 : P 0 = α x := by
+    have h : mpullback I I (ψ 0) α = α := by
+      rw [ψ.map_zero, mpullback_id]
+    exact congrFun h x
+  rw [hG0, neg_zero, Real.exp_zero, one_smul, hP0] at hconst
+  have hPt : P t = Real.exp (G t) • (Real.exp (-G t) • P t) := by
+    rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+  rw [hconst] at hPt
+  -- The value at `x` of the pulled-back form is `P t`.
+  exact hPt
+
 /-- **Exponential rescaling along a flow.** If the Lie derivative of a differentiable form `α`
 along a complete `C²` vector field `Z` is `c • α`, then the time-`t` map of the flow of `Z` pulls
 `α` back to `e^{ct} α`. -/
@@ -258,31 +301,9 @@ theorem mpullback_globalFlow_eq_exp_smul {c : ℝ}
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)))
     (hL : mlieDerivForm Z α = c • α) (t : ℝ) :
     mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc t) α = Real.exp (c * t) • α := by
-  set ψ := globalFlow Z (hZ.of_le one_le_two) hc
   funext x
-  -- The pullbacks at `x`, as alternating maps on the model space.
-  set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun s ↦ mpullback I I (ψ s) α x
-  have hderivP (s : ℝ) : HasDerivAt P (c • P s) s := by
-    have h := hasDerivAt_mpullback_globalFlow hc hZ x s (hα _)
-    rw [hL, mpullback_smul] at h
-    -- The value at `x` of the form `c • ψₛ^* α` is `c • P s`.
-    exact h
-  -- `s ↦ e^{-cs} P s` has zero derivative, so it is constant.
-  have hderiv (s : ℝ) : HasDerivAt (fun s ↦ Real.exp (-(c * s)) • P s) 0 s := by
-    refine (((hasDerivAt_id' s).const_mul c).neg.exp.smul (hderivP s)).congr_deriv ?_
-    module
-  have hconst := is_const_of_deriv_eq_zero (fun s ↦ (hderiv s).differentiableAt)
-    (fun s ↦ (hderiv s).deriv) t 0
-  simp only [mul_zero, neg_zero, Real.exp_zero, one_smul] at hconst
-  have hP0 : P 0 = α x := by
-    have h : mpullback I I (ψ 0) α = α := by
-      rw [ψ.map_zero, mpullback_id]
-    exact congrFun h x
-  have hPt : P t = Real.exp (c * t) • P 0 := by
-    rw [← hconst, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
-  rw [hP0] at hPt
-  -- The value at `x` of the form `e^{ct} • α` is `e^{ct} • α x`.
-  exact hPt
+  rw [mpullback_globalFlow_apply_eq_exp_integral_smul hc hZ continuous_const hα hL t x,
+    intervalIntegral.integral_const, sub_zero, smul_eq_mul, mul_comm, Pi.smul_apply]
 
 /-- **Flows preserve closed forms with closed contraction.** For a closed smooth form `β` whose
 contraction `ι_Z β` with a complete `C²` vector field `Z` is closed, the flow `ψ` of `Z` satisfies
