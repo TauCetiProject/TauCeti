@@ -394,6 +394,24 @@ theorem iteratedGradient_ae_eq_zero_of_value_ae_eq_zero (k : ℕ) (u : Wkp mu Om
         hasWeakFDerivOn_zero.congr_ae (by filter_upwards [hprev] with x hx; exact hx.symm)
       exact ((hasWeakFDerivOn_iteratedGradient k u).mono hV).ae_eq hzero
 
+/-- A variant of `TauCeti.Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero` for an open set
+`t` that need not lie in `Ω`: if `u ∈ W^{k+1,p}(Ω)` vanishes almost everywhere on `Ω ∩ t`, then
+so does its highest weak derivative `iteratedGradient k u`. Taking `t = sᶜ` for a closed set `s`,
+the weak derivatives of a function vanishing outside `s` vanish outside `s`. -/
+theorem iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen (k : ℕ)
+    (u : Wkp mu Omega p (k + 1)) {t : Set E} (ht : IsOpen t)
+    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∈ t → value (k + 1) u x = 0) :
+    ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∈ t → iteratedGradient k u x = 0 := by
+  let V : Opens E := Omega ⊓ ⟨t, ht⟩
+  have hVm : MeasurableSet (V : Set E) := V.isOpen.measurableSet
+  have hval : ∀ᵐ x ∂mu.restrict (V : Set E), value (k + 1) u x = 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inf_le_left hu, ae_restrict_mem hVm]
+      with x hx hxV using hx hxV.2
+  have hV := (ae_restrict_iff' hVm).1
+    (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero k u inf_le_left hval)
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet, ae_restrict_of_ae hV]
+    with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
+
 /-- Two positive-order Sobolev functions are equal when their lower-order components are equal;
 uniqueness of weak derivatives determines the highest components. -/
 theorem ext_lowerOrder (k : ℕ) {u v : Wkp mu Omega p (k + 1)}
