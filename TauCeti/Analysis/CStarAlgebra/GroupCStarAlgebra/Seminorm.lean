@@ -7,33 +7,36 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Translate
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Multiplier
 public import TauCeti.RepresentationTheory.Continuous.Integrated.CompactlySupported
-import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Multiplier
 import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 
 /-!
 # Group convolution algebras, integrated unitary representations and the full group C⋆-seminorm
 
-For a locally compact group `G : Type u` and a left Haar measure `μ`, `GroupConvolutionAlgebra G μ`
-equips `C_c(G, ℂ)` with convolution `(f * g) s = ∫ r, f r * g (r⁻¹ * s) ∂μ`, the modular-weighted
-involution `f⋆ s = c(s) • conj (f s⁻¹)` (`c = Measure.modularCharacter`), and the `L¹(μ)` norm,
-realizing the trivial-action specialization of `CStarAction`. Left translation `(r • f) s =
-f (r⁻¹ * s)` acts by `L¹` linear isometries with continuous orbits.
+For a locally compact group `G : Type u` and a measure `μ`, `GroupConvolutionAlgebra G μ` is the
+convolution ⋆-algebra `CStarAction.ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ`
+on `C_c(G, ℂ)` with convolution `(f * g) s = ∫ r, f r * g (r⁻¹ * s) ∂μ`, the modular-weighted
+involution `f⋆ s = c(s) • conj (f s⁻¹)` (`c = Measure.modularCharacter`), the `L¹(μ)` norm, and
+isometric left translation `CStarAction.ConvolutionAlgebra.translateLIE`.
 
-Integrating a strongly continuous unitary representation `U : ContRepresentation ℂ G H` yields an
-`L¹`-contractive nonunital ⋆-homomorphism `ContRepresentation.IsUnitary.integratedStarAlgHom` on
-`GroupConvolutionAlgebra G μ`. Taking `‖f‖ᵤ = sup ‖U(f)‖` over `H : Type u` defines the definite
-C⋆-seminorm `GroupConvolutionAlgebra.fullSeminorm G μ` for every left Haar measure `μ`.
+Integrating a strongly continuous unitary representation `U : ContRepresentation ℂ G H` against a
+left Haar measure `μ` yields an `L¹`-contractive nonunital ⋆-homomorphism
+`ContRepresentation.IsUnitary.integratedStarAlgHom` on `GroupConvolutionAlgebra G μ`. Taking
+`‖f‖ᵤ = sup ‖U(f)‖` over `H : Type u` defines the definite C⋆-seminorm
+`GroupConvolutionAlgebra.fullSeminorm G μ` for every left Haar measure `μ`, and rescaling by
+`Measure.haarScalarFactor` identifies `GroupConvolutionAlgebra` and its universal C⋆-seminorm across
+choices of left Haar measure.
 
 ## Main definitions
 
-* `TauCeti.GroupConvolutionAlgebra`: the convolution ⋆-algebra on `C_c(G, ℂ)` with its `L¹` norm.
-* `TauCeti.GroupConvolutionAlgebra.translateLIE`: left translation as an `L¹` linear isometry.
+* `TauCeti.GroupConvolutionAlgebra`: abbreviation for
+  `CStarAction.ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ`.
 * `ContRepresentation.IsUnitary.integratedStarAlgHom`: the integrated nonunital ⋆-homomorphism on
   `GroupConvolutionAlgebra G μ`.
 * `TauCeti.GroupConvolutionAlgebra.fullSeminorm`: the universal group C⋆-seminorm `‖·‖ᵤ`.
+* `TauCeti.GroupConvolutionAlgebra.haarMeasureEquiv`: Haar-measure rescaling ⋆-isomorphism on
+  `GroupConvolutionAlgebra`.
 
 ## Main statements
 
@@ -41,6 +44,8 @@ C⋆-seminorm `GroupConvolutionAlgebra.fullSeminorm G μ` for every left Haar me
   `ContRepresentation.IsUnitary.integratedOperator_star`: multiplicativity and ⋆-compatibility.
 * `TauCeti.GroupConvolutionAlgebra.fullSeminorm_star_mul_self` and
   `TauCeti.GroupConvolutionAlgebra.fullSeminorm_eq_zero_iff`: the C⋆-identity and definiteness.
+* `TauCeti.GroupConvolutionAlgebra.fullSeminorm_haarMeasureEquiv`: preservation of `fullSeminorm`
+  under change of left Haar measure.
 
 ## References
 
@@ -55,272 +60,16 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Topology Function
-open scoped CompactlySupported Pointwise InnerProductSpace ENNReal
+open scoped CompactlySupported Pointwise InnerProductSpace ENNReal NNReal
 
 namespace TauCeti
 
-/-- The group convolution ⋆-algebra on `C_c(G, ℂ)` with respect to a measure `μ`, with convolution
-as product, the modular-weighted involution as star, and the `L¹(μ)` norm. -/
-structure GroupConvolutionAlgebra (G : Type*) [Group G] [TopologicalSpace G]
-    [MeasurableSpace G] (μ : Measure G) where
-  /-- Regard a compactly supported continuous function as a group convolution algebra element. -/
-  toConv ::
-  /-- Extract the underlying compactly supported continuous function. -/
-  ofConv : C_c(G, ℂ)
+/-- The group convolution ⋆-algebra on `C_c(G, ℂ)` with respect to a measure `μ`, realized as the
+convolution algebra `CStarAction.ConvolutionAlgebra` of the trivial action of `G` on `ℂ`. -/
+abbrev GroupConvolutionAlgebra (G : Type*) [Group G] [TopologicalSpace G]
+    [MeasurableSpace G] (μ : Measure G) :=
+  CStarAction.ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ
 
-namespace GroupConvolutionAlgebra
-
-section Basic
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] {μ : Measure G}
-
-@[simp] theorem ofConv_toConv (f : C_c(G, ℂ)) :
-    (toConv f : GroupConvolutionAlgebra G μ).ofConv = f := (rfl)
-@[simp] theorem toConv_ofConv (f : GroupConvolutionAlgebra G μ) : toConv f.ofConv = f := (rfl)
-
-theorem ofConv_injective : Function.Injective (ofConv : GroupConvolutionAlgebra G μ → C_c(G, ℂ)) :=
-  fun f _ h => by rw [← toConv_ofConv f, h, toConv_ofConv]
-theorem toConv_injective : Function.Injective (toConv : C_c(G, ℂ) → GroupConvolutionAlgebra G μ) :=
-  fun f _ h => by rw [← ofConv_toConv (μ := μ) f, h, ofConv_toConv]
-
-@[ext] theorem ext {f g : GroupConvolutionAlgebra G μ} (h : f.ofConv = g.ofConv) : f = g :=
-  ofConv_injective h
-
-instance : AddCommGroup (GroupConvolutionAlgebra G μ) :=
-  (⟨ofConv, toConv, fun _ => rfl, fun _ => rfl⟩ :
-    GroupConvolutionAlgebra G μ ≃ C_c(G, ℂ)).addCommGroup
-instance : Module ℂ (GroupConvolutionAlgebra G μ) :=
-  (⟨⟨ofConv, toConv, fun _ => rfl, fun _ => rfl⟩, fun _ _ => rfl⟩ :
-    GroupConvolutionAlgebra G μ ≃+ C_c(G, ℂ)).module ℂ
-
-@[simp] theorem ofConv_zero : (0 : GroupConvolutionAlgebra G μ).ofConv = 0 := (rfl)
-@[simp] theorem ofConv_add (f g : GroupConvolutionAlgebra G μ) :
-    (f + g).ofConv = f.ofConv + g.ofConv := (rfl)
-@[simp] theorem ofConv_neg (f : GroupConvolutionAlgebra G μ) : (-f).ofConv = -f.ofConv := (rfl)
-@[simp] theorem ofConv_sub (f g : GroupConvolutionAlgebra G μ) :
-    (f - g).ofConv = f.ofConv - g.ofConv := (rfl)
-@[simp] theorem ofConv_smul (c : ℂ) (f : GroupConvolutionAlgebra G μ) :
-    (c • f).ofConv = c • f.ofConv := (rfl)
-@[simp] theorem toConv_zero : (toConv 0 : GroupConvolutionAlgebra G μ) = 0 := (rfl)
-@[simp] theorem toConv_add (f g : C_c(G, ℂ)) :
-    (toConv (f + g) : GroupConvolutionAlgebra G μ) = toConv f + toConv g := (rfl)
-@[simp] theorem toConv_neg (f : C_c(G, ℂ)) :
-    (toConv (-f) : GroupConvolutionAlgebra G μ) = -toConv f := (rfl)
-@[simp] theorem toConv_sub (f g : C_c(G, ℂ)) :
-    (toConv (f - g) : GroupConvolutionAlgebra G μ) = toConv f - toConv g := (rfl)
-@[simp] theorem toConv_smul (c : ℂ) (f : C_c(G, ℂ)) :
-    (toConv (c • f) : GroupConvolutionAlgebra G μ) = c • toConv f := (rfl)
-
-end Basic
-
-/-! ### Convolution product and involution -/
-
-section Mul
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [MeasurableSpace G] [OpensMeasurableSpace G] {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
-
-/-- The convolution integrand `r ↦ f r * g (r⁻¹ * s)` is integrable on `G`. -/
-theorem integrable_mul_integrand (f g : C_c(G, ℂ)) (s : G) :
-    Integrable (fun r => f r * g (r⁻¹ * s)) μ := by
-  simpa using (CStarAction.trivial (G := G) (A := ℂ)).integrable_integrand f g μ s
-
-instance : Mul (GroupConvolutionAlgebra G μ) where
-  mul f g := toConv ((CStarAction.trivial (G := G) (A := ℂ)).convolution μ f.ofConv g.ofConv)
-
-theorem ofConv_mul (f g : GroupConvolutionAlgebra G μ) :
-    (f * g).ofConv =
-      (CStarAction.trivial (G := G) (A := ℂ)).convolution μ f.ofConv g.ofConv := (rfl)
-@[simp] theorem ofConv_mul_apply (f g : GroupConvolutionAlgebra G μ) (s : G) :
-    (f * g).ofConv s = ∫ r, f.ofConv r * g.ofConv (r⁻¹ * s) ∂μ := by simp [ofConv_mul]
-
-/-- A convolution product is supported in the product of the supports. -/
-theorem support_ofConv_mul_subset (f g : GroupConvolutionAlgebra G μ) :
-    support (f * g).ofConv ⊆ support f.ofConv * support g.ofConv :=
-  (CStarAction.trivial (G := G) (A := ℂ)).support_convolution_subset μ f.ofConv g.ofConv
-
-instance : NonUnitalNonAssocRing (GroupConvolutionAlgebra G μ) where
-  left_distrib _ g h := ext (map_add _ g.ofConv h.ofConv)
-  right_distrib f g h := ext (LinearMap.map_add₂ _ f.ofConv g.ofConv h.ofConv)
-  zero_mul g := ext (LinearMap.map_zero₂ _ g.ofConv)
-  mul_zero _ := ext (map_zero _)
-
-instance : IsScalarTower ℂ (GroupConvolutionAlgebra G μ) (GroupConvolutionAlgebra G μ) where
-  smul_assoc c f g := ext (LinearMap.map_smul₂ _ c f.ofConv g.ofConv)
-instance : SMulCommClass ℂ (GroupConvolutionAlgebra G μ) (GroupConvolutionAlgebra G μ) where
-  smul_comm c f g :=
-    ext (map_smul ((CStarAction.trivial (G := G) (A := ℂ)).convolution μ f.ofConv) c g.ofConv).symm
-instance [MeasurableMul G] [μ.IsMulLeftInvariant] :
-    NonUnitalRing (GroupConvolutionAlgebra G μ) where
-  mul_assoc f g h :=
-    ext ((CStarAction.trivial (G := G) (A := ℂ)).convolution_assoc μ f.ofConv g.ofConv h.ofConv)
-
-end Mul
-
-section Star
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
-  [MeasurableSpace G] {μ : Measure G}
-
-instance : Star (GroupConvolutionAlgebra G μ) where
-  star f := toConv ((CStarAction.trivial (G := G) (A := ℂ)).twistedInvolution f.ofConv)
-
-theorem ofConv_star (f : GroupConvolutionAlgebra G μ) :
-    (star f).ofConv = (CStarAction.trivial (G := G) (A := ℂ)).twistedInvolution f.ofConv := (rfl)
-@[simp] theorem ofConv_star_apply (f : GroupConvolutionAlgebra G μ) (s : G) :
-    (star f).ofConv s = (Measure.modularCharacter s : ℝ) • star (f.ofConv s⁻¹) := by
-  rw [ofConv_star, CStarAction.twistedInvolution_apply, CStarAction.trivial_apply, Complex.coe_smul]
-
-instance : InvolutiveStar (GroupConvolutionAlgebra G μ) where
-  star_involutive f :=
-    ext ((CStarAction.trivial (G := G) (A := ℂ)).twistedInvolution_twistedInvolution f.ofConv)
-instance : StarModule ℂ (GroupConvolutionAlgebra G μ) where
-  star_smul c f := ext (map_smulₛₗ _ c f.ofConv)
-
-variable [OpensMeasurableSpace G] [MeasurableMul G] [IsFiniteMeasureOnCompacts μ]
-  [μ.IsMulLeftInvariant]
-
-instance : StarRing (GroupConvolutionAlgebra G μ) where
-  star_mul f g := ext (CStarAction.twistedInvolution_convolution _ μ f.ofConv g.ofConv)
-  star_add f g := ext (map_add _ f.ofConv g.ofConv)
-
-end Star
-
-/-! ### The `L¹` norm and left translation -/
-
-section Normed
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
-  {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
-
-/-- Realize an element of the group convolution algebra as an `L¹(G, μ)` equivalence class. -/
-def toL1 : GroupConvolutionAlgebra G μ →ₗ[ℂ] Lp ℂ 1 μ where
-  toFun f := f.ofConv.integrable.toL1 f.ofConv
-  map_add' f g := by
-    simpa only [ofConv_add, CompactlySupportedContinuousMap.coe_add] using
-      Integrable.toL1_add _ _ f.ofConv.integrable g.ofConv.integrable
-  map_smul' c f := by
-    simpa only [ofConv_smul, CompactlySupportedContinuousMap.coe_smul, RingHom.id_apply] using
-      Integrable.toL1_smul' _ f.ofConv.integrable c
-
-/-- A representative of `toL1 f` agrees almost everywhere with `f.ofConv`. -/
-theorem coeFn_toL1 (f : GroupConvolutionAlgebra G μ) : toL1 f =ᵐ[μ] f.ofConv :=
-  f.ofConv.integrable.coeFn_toL1
-
-instance : SeminormedAddCommGroup (GroupConvolutionAlgebra G μ) :=
-  .induced _ _ (toL1 (G := G) (μ := μ)).toAddMonoidHom
-instance : NormedSpace ℂ (GroupConvolutionAlgebra G μ) := .induced ℂ _ _ (toL1 (G := G) (μ := μ))
-
-/-- The norm on `GroupConvolutionAlgebra G μ` is the `L¹(μ)` integral norm. -/
-theorem norm_eq_integral_norm (f : GroupConvolutionAlgebra G μ) : ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ :=
-  (L1.norm_eq_integral_norm (toL1 f)).trans (integral_congr_ae ((coeFn_toL1 f).fun_comp norm))
-@[simp] theorem norm_toConv (f : C_c(G, ℂ)) :
-    ‖(toConv f : GroupConvolutionAlgebra G μ)‖ = ∫ s, ‖f s‖ ∂μ := norm_eq_integral_norm _
-
-variable (G μ) in
-/-- The linear isometry from `GroupConvolutionAlgebra G μ` into `L¹(G, μ)`. -/
-def toL1LI : GroupConvolutionAlgebra G μ →ₗᵢ[ℂ] Lp ℂ 1 μ := { toL1 with norm_map' _ := (rfl) }
-@[simp] theorem toL1LI_apply (f : GroupConvolutionAlgebra G μ) : toL1LI G μ f = toL1 f := (rfl)
-
-instance [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant] :
-    NonUnitalSeminormedRing (GroupConvolutionAlgebra G μ) where
-  __ : SeminormedAddCommGroup (GroupConvolutionAlgebra G μ) := inferInstance
-  __ : NonUnitalRing (GroupConvolutionAlgebra G μ) := inferInstance
-  norm_mul_le f g := by
-    simp only [norm_eq_integral_norm, ofConv_mul]
-    exact (CStarAction.trivial (G := G) (A := ℂ)).integral_norm_convolution_le μ f.ofConv g.ofConv
-
-section OpenPos
-
-variable [μ.IsOpenPosMeasure]
-
-/-- On an open-positive measure, `toL1` is injective. -/
-theorem toL1_injective : Function.Injective (toL1 (G := G) (μ := μ)) := fun f g h =>
-  ext <| CompactlySupportedContinuousMap.ext fun s => congrFun
-    (Measure.eq_of_ae_eq ((coeFn_toL1 f).symm.trans (h ▸ coeFn_toL1 g))
-      f.ofConv.continuous g.ofConv.continuous) s
-
-instance : NormedAddCommGroup (GroupConvolutionAlgebra G μ) :=
-  .ofSeparation fun f hf => toL1_injective <| by
-    rw [map_zero]; exact norm_eq_zero.1 (((toL1LI G μ).norm_map f).trans hf)
-instance [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant] :
-    NonUnitalNormedRing (GroupConvolutionAlgebra G μ) where
-  __ : NonUnitalSeminormedRing (GroupConvolutionAlgebra G μ) := inferInstance
-  __ : NormedAddCommGroup (GroupConvolutionAlgebra G μ) := inferInstance
-
-end OpenPos
-
-section StarNorm
-
-variable [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsMulLeftInvariant]
-
-/-- The modular-weighted involution is isometric for the `L¹(μ)` norm. -/
-theorem norm_star (f : GroupConvolutionAlgebra G μ) : ‖star f‖ = ‖f‖ := by
-  rw [norm_eq_integral_norm, norm_eq_integral_norm, ofConv_star]
-  simpa only [CStarAction.ConvolutionAlgebra.norm_eq_integral_norm,
-    CStarAction.ConvolutionAlgebra.ofConv_star] using
-    CStarAction.ConvolutionAlgebra.norm_star (α := CStarAction.trivial) (μ := μ) ⟨f.ofConv⟩
-
-instance : NormedStarGroup (GroupConvolutionAlgebra G μ) := ⟨fun f => (norm_star f).le⟩
-
-end StarNorm
-
-section Translate
-
-variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
-
-/-- Left translation `(r • f) s = f (r⁻¹ * s)` as an `L¹` linear isometric equivalence. -/
-def translateLIE (r : G) : GroupConvolutionAlgebra G μ ≃ₗᵢ[ℂ] GroupConvolutionAlgebra G μ where
-  toFun f := toConv ((CStarAction.trivial (G := G) (A := ℂ)).translate r f.ofConv)
-  invFun f := toConv ((CStarAction.trivial (G := G) (A := ℂ)).translate r⁻¹ f.ofConv)
-  left_inv f := ext <| by
-    rw [ofConv_toConv, ← CStarAction.translate_mul, inv_mul_cancel, CStarAction.translate_one]
-  right_inv f := ext <| by
-    rw [ofConv_toConv, ← CStarAction.translate_mul, mul_inv_cancel, CStarAction.translate_one]
-  map_add' f g := ext (map_add _ f.ofConv g.ofConv)
-  map_smul' c f := ext (map_smul _ c f.ofConv)
-  norm_map' f := (norm_toConv _).trans <| by
-    simp only [CStarAction.translate_apply, CStarAction.trivial_apply, norm_eq_integral_norm]
-    exact integral_mul_left_eq_self (μ := μ) (fun s => ‖f.ofConv s‖) r⁻¹
-
-theorem ofConv_translateLIE (r : G) (f : GroupConvolutionAlgebra G μ) :
-    (translateLIE r f).ofConv = (CStarAction.trivial (G := G) (A := ℂ)).translate r f.ofConv :=
-  (rfl)
-@[simp] theorem ofConv_translateLIE_apply (r : G) (f : GroupConvolutionAlgebra G μ) (s : G) :
-    (translateLIE r f).ofConv s = f.ofConv (r⁻¹ * s) := by simp [ofConv_translateLIE]
-@[simp] theorem ofConv_translateLIE_symm_apply (r : G) (f : GroupConvolutionAlgebra G μ) (s : G) :
-    ((translateLIE r).symm f).ofConv s = f.ofConv (r * s) := by
-  change ((CStarAction.trivial (G := G) (A := ℂ)).translate r⁻¹ f.ofConv) s = f.ofConv (r * s)
-  simp
-
-@[simp] theorem translateLIE_one : translateLIE (G := G) (μ := μ) 1 = 1 := by
-  ext f : 1; apply ext; ext s; simp
-theorem translateLIE_symm (r : G) :
-    (translateLIE (G := G) (μ := μ) r).symm = translateLIE r⁻¹ := by
-  ext f : 1; apply ext; ext s; simp
-theorem translateLIE_mul (r t : G) :
-    translateLIE (G := G) (μ := μ) (r * t) = translateLIE r * translateLIE t := by
-  ext f : 1; apply ext; ext s; simp [mul_assoc]
-
-/-- Left translation associates with convolution on the left: `(r • f) * g = r • (f * g)`. -/
-theorem translateLIE_apply_mul (r : G) (f g : GroupConvolutionAlgebra G μ) :
-    translateLIE r (f * g) = translateLIE r f * g :=
-  ext <| by simp [ofConv_mul, ofConv_translateLIE, CStarAction.translate_convolution]
-
-/-- Group orbits of compactly supported functions are continuous in the `L¹` topology. -/
-theorem continuous_translateLIE [LocallyCompactSpace G] (f : GroupConvolutionAlgebra G μ) :
-    Continuous fun r : G => translateLIE r f := by
-  refine continuous_iff_continuousAt.2 fun r₀ => tendsto_iff_norm_sub_tendsto_zero.2 <|
-    (tendsto_iff_norm_sub_tendsto_zero.1
-      ((CStarAction.ConvolutionAlgebra.continuous_translateLIE
-        (α := CStarAction.trivial (G := G) (A := ℂ)) (μ := μ) ⟨f.ofConv⟩).tendsto r₀)).congr
-      fun r => ?_
-  simp only [norm_eq_integral_norm, CStarAction.ConvolutionAlgebra.norm_eq_integral_norm]
-  congr 1 with s; simp
-
-end Translate
-end Normed
-end GroupConvolutionAlgebra
 end TauCeti
 
 /-! ### Integrated ⋆-homomorphisms on the group convolution algebra -/
@@ -335,26 +84,41 @@ variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+/-- For a left-invariant measure, the integrated form turns scalar convolution into composition. -/
+@[simp] theorem integratedOperator_convolution {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+    (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [μ.IsMulLeftInvariant] (f g : C_c(G, ℂ)) :
+    hU.integratedOperator hcont μ ((CStarAction.trivial (G := G) (A := ℂ)).convolution μ f g) =
+      hU.integratedOperator hcont μ f * hU.integratedOperator hcont μ g := by
+  rw [← hU.integratedOperator_toTrivialCovariant hcont μ,
+    CStarAction.CovariantRepresentation.integratedOperator_convolution,
+    hU.integratedOperator_toTrivialCovariant, hU.integratedOperator_toTrivialCovariant]
+
+/-- Left translation of `f : C_c(G, ℂ)` corresponds to left multiplication of `U(f)` by `U r`. -/
+@[simp] theorem integratedOperator_translate {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+    (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [μ.IsMulLeftInvariant] (r : G) (f : C_c(G, ℂ)) :
+    hU.integratedOperator hcont μ ((CStarAction.trivial (G := G) (A := ℂ)).translate r f) =
+      U r * hU.integratedOperator hcont μ f := by
+  rw [← hU.integratedOperator_toTrivialCovariant hcont μ,
+    CStarAction.CovariantRepresentation.integratedOperator_translate,
+    toTrivialCovariant_group, hU.integratedOperator_toTrivialCovariant]
+
 /-- For a left-invariant measure, the integrated form turns convolution into composition. -/
-@[simp] theorem integratedOperator_mul {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+theorem integratedOperator_mul {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
     [μ.IsMulLeftInvariant] (f g : GroupConvolutionAlgebra G μ) :
     hU.integratedOperator hcont μ (f * g).ofConv =
       hU.integratedOperator hcont μ f.ofConv * hU.integratedOperator hcont μ g.ofConv := by
-  rw [GroupConvolutionAlgebra.ofConv_mul, ← hU.integratedOperator_toTrivialCovariant hcont μ,
-    CStarAction.CovariantRepresentation.integratedOperator_convolution,
-    hU.integratedOperator_toTrivialCovariant, hU.integratedOperator_toTrivialCovariant]
+  simp
 
 /-- Left translation of `f` corresponds to left multiplication of `U(f)` by `U r`. -/
-@[simp] theorem integratedOperator_translateLIE {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+theorem integratedOperator_translateLIE {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
     [μ.IsMulLeftInvariant] (r : G) (f : GroupConvolutionAlgebra G μ) :
-    hU.integratedOperator hcont μ (GroupConvolutionAlgebra.translateLIE r f).ofConv =
+    hU.integratedOperator hcont μ (CStarAction.ConvolutionAlgebra.translateLIE r f).ofConv =
       U r * hU.integratedOperator hcont μ f.ofConv := by
-  rw [GroupConvolutionAlgebra.ofConv_translateLIE,
-    ← hU.integratedOperator_toTrivialCovariant hcont μ,
-    CStarAction.CovariantRepresentation.integratedOperator_translate,
-    toTrivialCovariant_group, hU.integratedOperator_toTrivialCovariant]
+  simp
 
 end Convolution
 
@@ -364,16 +128,25 @@ variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+/-- Against a left Haar measure, the integrated form intertwines the modular-weighted involution on
+`C_c(G, ℂ)` with the Hilbert-space adjoint. -/
+@[simp] theorem integratedOperator_twistedInvolution {U : ContRepresentation ℂ G H}
+    (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure]
+    (f : C_c(G, ℂ)) :
+    hU.integratedOperator hcont μ ((CStarAction.trivial (G := G) (A := ℂ)).twistedInvolution f) =
+      star (hU.integratedOperator hcont μ f) := by
+  rw [← hU.integratedOperator_toTrivialCovariant hcont μ,
+    CStarAction.CovariantRepresentation.integratedOperator_twistedInvolution,
+    hU.integratedOperator_toTrivialCovariant]
+
 /-- Against a left Haar measure, the integrated form intertwines the modular-weighted involution
 with the Hilbert-space adjoint. -/
-@[simp] theorem integratedOperator_star {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
+theorem integratedOperator_star {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure]
     (f : GroupConvolutionAlgebra G μ) :
     hU.integratedOperator hcont μ (star f).ofConv =
       star (hU.integratedOperator hcont μ f.ofConv) := by
-  rw [GroupConvolutionAlgebra.ofConv_star, ← hU.integratedOperator_toTrivialCovariant hcont μ,
-    CStarAction.CovariantRepresentation.integratedOperator_twistedInvolution,
-    hU.integratedOperator_toTrivialCovariant]
+  simp
 
 /-- The integrated form of a strongly continuous unitary representation as a nonunital complex
 ⋆-algebra homomorphism out of `GroupConvolutionAlgebra G μ`. -/
@@ -396,13 +169,14 @@ def integratedStarAlgHom {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
 theorem norm_integratedStarAlgHom_le_norm {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure]
     (f : GroupConvolutionAlgebra G μ) : ‖hU.integratedStarAlgHom hcont μ f‖ ≤ ‖f‖ := by
-  simpa only [integratedStarAlgHom_apply, GroupConvolutionAlgebra.norm_eq_integral_norm] using
+  simpa only [integratedStarAlgHom_apply,
+    CStarAction.ConvolutionAlgebra.norm_eq_integral_norm] using
     hU.norm_integratedOperator_le hcont μ f.ofConv
 
 theorem integratedStarAlgHom_translateLIE {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
     (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure]
     (r : G) (f : GroupConvolutionAlgebra G μ) :
-    hU.integratedStarAlgHom hcont μ (GroupConvolutionAlgebra.translateLIE r f) =
+    hU.integratedStarAlgHom hcont μ (CStarAction.ConvolutionAlgebra.translateLIE r f) =
       U r * hU.integratedStarAlgHom hcont μ f :=
   hU.integratedOperator_translateLIE hcont μ r f
 
@@ -429,6 +203,8 @@ end ContRepresentation.IsUnitary
 namespace TauCeti.GroupConvolutionAlgebra
 
 universe u
+
+section FullSeminorm
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsHaarMeasure]
@@ -518,7 +294,7 @@ theorem fullSeminorm_star_mul_self (f : GroupConvolutionAlgebra G μ) :
 assumptions on `μ`, via comparison with `Measure.haar` and the left regular representation). -/
 @[simp] theorem fullSeminorm_eq_zero_iff {f : GroupConvolutionAlgebra G μ} :
     fullSeminorm G μ f = 0 ↔ f = 0 := by
-  refine ⟨fun hf => ext ?_, fun hf => hf ▸ map_zero _⟩
+  refine ⟨fun hf => CStarAction.ConvolutionAlgebra.ext ?_, fun hf => hf ▸ map_zero _⟩
   have hU := (Measure.haar : Measure G).isUnitary_leftRegular (𝕜 := ℂ) (E := ℂ)
   have hcont := (Measure.haar : Measure G).continuous_leftRegular_apply
     (𝕜 := ℂ) (E := ℂ) 2 ENNReal.ofNat_ne_top
@@ -529,21 +305,121 @@ assumptions on `μ`, via comparison with `Measure.haar` and the left regular rep
   have hhaar := (smul_eq_zero.1 hzero).resolve_left <|
     NNReal.coe_ne_zero.2 (Measure.haarScalarFactor_pos_of_isHaarMeasure μ Measure.haar).ne'
   exact (Measure.haar : Measure G).injective_integratedOperator_leftRegular
-    (by simpa only [ofConv_zero, map_zero] using hhaar)
+    (by simpa only [CStarAction.ConvolutionAlgebra.ofConv_zero, map_zero] using hhaar)
 
 /-- Left translation preserves the full group C⋆-seminorm. -/
 @[simp] theorem fullSeminorm_translateLIE (r : G) (f : GroupConvolutionAlgebra G μ) :
-    fullSeminorm G μ (translateLIE r f) = fullSeminorm G μ f := by
+    fullSeminorm G μ (CStarAction.ConvolutionAlgebra.translateLIE r f) = fullSeminorm G μ f := by
   have h (t : G) (g : GroupConvolutionAlgebra G μ) :
-      fullSeminorm G μ (translateLIE t g) ≤ fullSeminorm G μ g :=
+      fullSeminorm G μ (CStarAction.ConvolutionAlgebra.translateLIE t g) ≤ fullSeminorm G μ g :=
     (fullSeminorm_le_iff (apply_nonneg _ _)).2 fun _ _ _ _ _ hU hcont => by
       rw [hU.integratedStarAlgHom_translateLIE, CStarRing.norm_mem_unitary_mul _ (hU.mem_unitary t)]
       exact norm_integratedStarAlgHom_le_fullSeminorm hU hcont g
-  have hinv : translateLIE r⁻¹ (translateLIE r f) = f := by apply ext; ext s; simp
-  refine le_antisymm (h r f) ?_
-  conv_lhs => rw [← hinv]
-  exact h r⁻¹ (translateLIE r f)
+  exact le_antisymm (h r f) (by simpa using h r⁻¹ (CStarAction.ConvolutionAlgebra.translateLIE r f))
 
+end FullSeminorm
+
+/-! ### Independence of the choice of Haar measure on the group convolution algebra -/
+
+section HaarMeasureEquiv
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+
+omit [LocallyCompactSpace G] in
+private theorem smul_haarScalarFactor_smul (μ ν κ : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    [κ.IsHaarMeasure] (f : C_c(G, ℂ)) :
+    ((Measure.haarScalarFactor ν κ : ℝ) : ℂ) • (((Measure.haarScalarFactor μ ν : ℝ) : ℂ) • f) =
+      ((Measure.haarScalarFactor μ κ : ℝ) : ℂ) • f := by
+  ext s; simp [smul_eq_mul, ← mul_assoc, ← Complex.ofReal_mul, ← NNReal.coe_mul,
+    mul_comm (Measure.haarScalarFactor ν κ), ← Measure.haarScalarFactor_eq_mul μ ν κ]
+
+variable (G) in
+/-- Rescaling by `Measure.haarScalarFactor μ ν` identifies `GroupConvolutionAlgebra G μ` with
+`GroupConvolutionAlgebra G ν` as a complex ⋆-algebra for any two left Haar measures `μ` and `ν`. -/
+def haarMeasureEquiv (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] :
+    GroupConvolutionAlgebra G μ ≃⋆ₐ[ℂ] GroupConvolutionAlgebra G ν where
+  toFun f := .toConv (((Measure.haarScalarFactor μ ν : ℝ) : ℂ) • f.ofConv)
+  invFun f := .toConv (((Measure.haarScalarFactor ν μ : ℝ) : ℂ) • f.ofConv)
+  left_inv f := CStarAction.ConvolutionAlgebra.ext <|
+    (smul_haarScalarFactor_smul μ ν μ f.ofConv).trans (by simp)
+  right_inv f := CStarAction.ConvolutionAlgebra.ext <|
+    (smul_haarScalarFactor_smul ν μ ν f.ofConv).trans (by simp)
+  map_add' f g := CStarAction.ConvolutionAlgebra.ext <| by simp [smul_add]
+  map_smul' z f := CStarAction.ConvolutionAlgebra.ext <|
+    CompactlySupportedContinuousMap.ext fun _ => by simp [smul_eq_mul]; ring
+  map_mul' f g := CStarAction.ConvolutionAlgebra.ext <|
+      CompactlySupportedContinuousMap.ext fun s => by
+    simp only [CStarAction.ConvolutionAlgebra.ofConv_mul, CStarAction.convolution_apply,
+      CStarAction.trivial_apply, CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply,
+      smul_eq_mul]
+    rw [TauCeti.integral_isMulLeftInvariant_eq_haarScalarFactor_smul μ ν (by fun_prop)
+      (f.ofConv.hasCompactSupport.mono fun _ hr hz => hr (by simp [hz])), Complex.real_smul]
+    simp_rw [mul_mul_mul_comm ((Measure.haarScalarFactor μ ν : ℝ) : ℂ)]
+    rw [integral_const_mul]; ring
+  map_star' f := CStarAction.ConvolutionAlgebra.ext <|
+      CompactlySupportedContinuousMap.ext fun s => by
+    simp [CStarAction.twistedInvolution_apply, smul_eq_mul, Complex.real_smul]; ring
+
+@[simp] theorem ofConv_haarMeasureEquiv (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    (f : GroupConvolutionAlgebra G μ) :
+    (haarMeasureEquiv G μ ν f).ofConv = ((Measure.haarScalarFactor μ ν : ℝ) : ℂ) • f.ofConv := (rfl)
+theorem ofConv_haarMeasureEquiv_apply (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    (f : GroupConvolutionAlgebra G μ) (s : G) :
+    (haarMeasureEquiv G μ ν f).ofConv s =
+      ((Measure.haarScalarFactor μ ν : ℝ) : ℂ) * f.ofConv s := (rfl)
+@[simp] theorem haarMeasureEquiv_symm (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] :
+    (haarMeasureEquiv G μ ν).symm = haarMeasureEquiv G ν μ := (rfl)
+@[simp] theorem haarMeasureEquiv_refl (μ : Measure G) [μ.IsHaarMeasure] :
+    haarMeasureEquiv G μ μ = StarAlgEquiv.refl ℂ (GroupConvolutionAlgebra G μ) := by
+  ext f : 1; apply CStarAction.ConvolutionAlgebra.ext; ext s; simp
+@[simp] theorem haarMeasureEquiv_apply_haarMeasureEquiv (μ ν κ : Measure G) [μ.IsHaarMeasure]
+    [ν.IsHaarMeasure] [κ.IsHaarMeasure] (f : GroupConvolutionAlgebra G μ) :
+    haarMeasureEquiv G ν κ (haarMeasureEquiv G μ ν f) = haarMeasureEquiv G μ κ f :=
+  CStarAction.ConvolutionAlgebra.ext (smul_haarScalarFactor_smul μ ν κ f.ofConv)
+theorem haarMeasureEquiv_trans (μ ν κ : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    [κ.IsHaarMeasure] :
+    (haarMeasureEquiv G μ ν).trans (haarMeasureEquiv G ν κ) = haarMeasureEquiv G μ κ :=
+  StarAlgEquiv.ext (haarMeasureEquiv_apply_haarMeasureEquiv μ ν κ)
+
+/-- Rescaling by `Measure.haarScalarFactor μ ν` is an `L¹` isometry. -/
+@[simp] theorem norm_haarMeasureEquiv (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    (f : GroupConvolutionAlgebra G μ) : ‖haarMeasureEquiv G μ ν f‖ = ‖f‖ := by
+  rw [CStarAction.ConvolutionAlgebra.norm_eq_integral_norm,
+    CStarAction.ConvolutionAlgebra.norm_eq_integral_norm,
+    TauCeti.integral_isMulLeftInvariant_eq_haarScalarFactor_smul μ ν
+      (f := fun s => ‖f.ofConv s‖) (by fun_prop) f.ofConv.hasCompactSupport.norm,
+    smul_eq_mul, ← integral_const_mul]
+  congr 1 with s; simp [abs_of_nonneg (NNReal.coe_nonneg _)]
+
+@[simp] theorem translateLIE_haarMeasureEquiv (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    (r : G) (f : GroupConvolutionAlgebra G μ) :
+    CStarAction.ConvolutionAlgebra.translateLIE r (haarMeasureEquiv G μ ν f) =
+      haarMeasureEquiv G μ ν (CStarAction.ConvolutionAlgebra.translateLIE r f) :=
+  CStarAction.ConvolutionAlgebra.ext <| CompactlySupportedContinuousMap.ext fun _ => by simp
+
+/-- Rescaling by `haarMeasureEquiv` intertwines `integratedStarAlgHom` across Haar measures. -/
+theorem _root_.ContRepresentation.IsUnitary.integratedStarAlgHom_haarMeasureEquiv {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {U : ContRepresentation ℂ G H} (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] (f : GroupConvolutionAlgebra G μ) :
+    hU.integratedStarAlgHom hcont ν (haarMeasureEquiv G μ ν f) =
+      hU.integratedStarAlgHom hcont μ f := by
+  rw [hU.integratedStarAlgHom_apply, ofConv_haarMeasureEquiv, map_smul, Complex.coe_smul,
+    hU.integratedStarAlgHom_apply, hU.integratedOperator_eq_haarScalarFactor_smul hcont μ ν]
+
+/-- `haarMeasureEquiv` preserves the universal group C⋆-seminorm. -/
+@[simp] theorem fullSeminorm_haarMeasureEquiv (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    (f : GroupConvolutionAlgebra G μ) :
+    fullSeminorm G ν (haarMeasureEquiv G μ ν f) = fullSeminorm G μ f := by
+  have h {α β : Measure G} [α.IsHaarMeasure] [β.IsHaarMeasure] (g : GroupConvolutionAlgebra G α) :
+      fullSeminorm G β (haarMeasureEquiv G α β g) ≤ fullSeminorm G α g :=
+    (fullSeminorm_le_iff (apply_nonneg _ g)).2 fun H _ _ _ U hU hcont => by
+      rw [hU.integratedStarAlgHom_haarMeasureEquiv hcont α β]
+      exact norm_integratedStarAlgHom_le_fullSeminorm hU hcont g
+  exact le_antisymm (h f) (by simpa using h (α := ν) (β := μ) (haarMeasureEquiv G μ ν f))
+
+end HaarMeasureEquiv
 end TauCeti.GroupConvolutionAlgebra
 
 end

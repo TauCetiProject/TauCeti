@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
-public import TauCeti.MeasureTheory.Group.ModularCharacter
+public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular
 import Mathlib.MeasureTheory.Integral.Prod
@@ -149,21 +149,21 @@ theorem dense_span_integratedOperator [LocallyCompactSpace G] [R1Space G]
     simpa [Set.preimage, dist_eq_norm] using
       (hcont v).tendsto 1 (Metric.closedBall_mem_nhds (U 1 v) (half_pos hε))
   obtain ⟨φ, hφ0, hφV, hφ1⟩ := TauCeti.exists_nonneg_tsupport_subset_integral_eq_one μ hV
-  let f : C_c(G, ℂ) := ⟨⟨fun g => (φ g : ℂ), Complex.continuous_ofReal.comp φ.continuous⟩,
-    φ.hasCompactSupport.comp_left Complex.ofReal_zero⟩
+  let f : C_c(G, ℂ) := φ.compLeft Complex.ofRealCLM
+  have hf_apply (g : G) : f g = φ g := by
+    dsimp only [f]; rw [CompactlySupportedContinuousMap.compLeft_apply] <;> simp
   let fL1 : G →₁[μ] ℂ := f.integrable.toL1 f
   have hfL1 : fL1 =ᵐ[μ] f := f.integrable.coeFn_toL1
   have hf_int : ∫ g, fL1 g ∂μ = 1 := by
     rw [integral_congr_ae hfL1]
-    simpa [f, hφ1] using Complex.ofRealCLM.integral_comp_comm (φ.integrable (μ := μ))
+    simpa [hf_apply, hφ1] using Complex.ofRealCLM.integral_comp_comm (φ.integrable (μ := μ))
   have hf_norm : ‖fL1‖ = 1 := by
     rw [L1.norm_eq_integral_norm, integral_congr_ae (hfL1.mono fun g hg => congrArg norm hg)]
     refine (integral_congr_ae (.of_forall fun g => ?_)).trans hφ1
-    change ‖(φ g : ℂ)‖ = φ g; rw [Complex.norm_real, Real.norm_of_nonneg (hφ0 g)]
+    simp [hf_apply, abs_of_nonneg (hφ0 g)]
   have hf_supp : ∀ᵐ g ∂μ, g ∉ {g : G | ‖U g v - v‖ ≤ ε / 2} → fL1 g = 0 := by
     filter_upwards [hfL1] with g hg hgV
-    rw [hg]; change (φ g : ℂ) = 0
-    rw [image_eq_zero_of_notMem_tsupport fun h => hgV (hφV h), Complex.ofReal_zero]
+    simp [hg, hf_apply, image_eq_zero_of_notMem_tsupport fun h => hgV (hφV h)]
   have hle := TauCeti.norm_integral_smul_sub_le hf_int hf_supp
     ((U.integrable_integrand hcont μ f v).aestronglyMeasurable.congr
       (hfL1.symm.mono fun g hg => congrArg (· • U g v) hg)) (fun _ hg => hg)

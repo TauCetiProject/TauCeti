@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
 # Integration on groups
@@ -22,12 +24,19 @@ additive Haar measure, and the function need not be integrable.
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
 
+For a topological group with Borel σ-algebra, integrating a compactly supported continuous
+vector-valued function against any left-invariant measure finite on compacts scales its integral
+against a Haar measure by `Measure.haarScalarFactor`.
+
 ## Main declarations
 
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
+* `TauCeti.integral_isMulLeftInvariant_eq_haarScalarFactor_smul`: comparing Bochner integrals of
+  compactly supported continuous functions against a left-invariant locally finite measure and a
+  Haar measure via `Measure.haarScalarFactor`.
 -/
 
 public section
@@ -81,5 +90,25 @@ theorem setIntegral_smul_set {g : G} {f : α → E} (hf : ∀ x, f (g • x) = f
   simp_rw [hf]
 
 end SMulSet
+
+/-- **Uniqueness of left-invariant Bochner integrals**: integrating a compactly supported
+continuous vector-valued function against any left-invariant measure `μ'` finite on compacts
+scales the integral against a Haar measure `μ` by `Measure.haarScalarFactor μ' μ`. -/
+theorem integral_isMulLeftInvariant_eq_haarScalarFactor_smul {G E : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G] [BorelSpace G]
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (μ' μ : Measure G) [μ.IsHaarMeasure] [IsFiniteMeasureOnCompacts μ'] [μ'.IsMulLeftInvariant]
+    {f : G → E} (hf : Continuous f) (hfc : HasCompactSupport f) :
+    ∫ x, f x ∂μ' = (Measure.haarScalarFactor μ' μ : ℝ) • ∫ x, f x ∂μ := by
+  -- Pass from real-valued integrands to `E`-valued ones by testing against the dual of `E`.
+  by_cases hE : CompleteSpace E
+  · refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
+    have hfi' : Integrable f μ' := hf.integrable_of_hasCompactSupport hfc
+    have hfi : Integrable f μ := hf.integrable_of_hasCompactSupport hfc
+    rw [map_smul, ← φ.integral_comp_comm hfi', ← φ.integral_comp_comm hfi,
+      Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ' μ
+        (f := fun x => φ (f x)) (φ.continuous.comp hf) (hfc.comp_left φ.map_zero),
+      integral_smul_nnreal_measure, NNReal.smul_def]
+  · simp [integral_of_not_completeSpace hE]
 
 end TauCeti

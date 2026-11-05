@@ -11,16 +11,17 @@ public import TauCeti.Analysis.CStarAlgebra.GroupCStarAlgebra.Full
 /-!
 # Isomorphism between `ℂ ⋊_id G` and the full group C⋆-algebra `C⋆(G)`
 
-Under the trivial action `CStarAction.trivial (G := G) (A := ℂ)`, the `L¹`-isometric ⋆-isomorphism
-`ConvolutionAlgebra.trivialComplexEquiv G μ` preserves universal C⋆-seminorms (by restricting any
-covariant representation `(π, U)` to `ker(id - π(1))`), yielding `ℂ ⋊_id G ≃⋆ₐ[ℂ] C⋆(G)`.
+Under the trivial action `CStarAction.trivial (G := G) (A := ℂ)`, the full crossed-product seminorm
+`ConvolutionAlgebra.fullSeminorm` agrees with `GroupConvolutionAlgebra.fullSeminorm` on
+`GroupConvolutionAlgebra G μ` (by restricting any covariant representation `(π, U)` to
+`ker(id - π(1))`), yielding the canonical isometric ⋆-isomorphism `ℂ ⋊_id G ≃⋆ₐ[ℂ] C⋆(G)`.
 
 ## Main definitions and statements
 
-* `TauCeti.CStarAction.ConvolutionAlgebra.trivialComplexEquiv` and
-  `fullSeminorm_trivialComplexEquiv`: `L¹` and universal-seminorm ⋆-isomorphism on `C_c(G, ℂ)`.
 * `ContRepresentation.IsUnitary.integratedStarAlgHom_toTrivialCovariant`: agreement of integrated
-  ⋆-homomorphisms along `trivialComplexEquiv`.
+  ⋆-homomorphisms on `GroupConvolutionAlgebra G μ`.
+* `TauCeti.CStarAction.ConvolutionAlgebra.fullSeminorm_trivialComplex`: equality of the
+  crossed-product and group universal C⋆-seminorms for `(ℂ, G, id)`.
 * `TauCeti.CStarAction.FullCrossedProduct.trivialComplexEquiv`: `ℂ ⋊_id G ≃⋆ₐ[ℂ] C⋆(G)`, with
   compatibility for `of`, `groupMultiplier`, `coefficientMultiplier` and `integratedFull`.
 
@@ -36,80 +37,19 @@ noncomputable section
 open MeasureTheory
 open scoped CStarAlgebra MultiplierAlgebra
 
-namespace TauCeti.CStarAction
-
-universe u
-
-namespace ConvolutionAlgebra
-
-section Basic
-
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
-
-variable (G μ) in
-/-- For the trivial action of `G` on `ℂ`, `ConvolutionAlgebra (CStarAction.trivial) μ` is
-canonically ⋆-isomorphic to `GroupConvolutionAlgebra G μ`. -/
-def trivialComplexEquiv :
-    ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ ≃⋆ₐ[ℂ]
-      GroupConvolutionAlgebra G μ where
-  toFun f := GroupConvolutionAlgebra.toConv f.ofConv
-  invFun f := toConv f.ofConv
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := GroupConvolutionAlgebra.ext <| by simp
-  map_smul' _ _ := GroupConvolutionAlgebra.ext <| by simp
-  map_mul' _ _ := GroupConvolutionAlgebra.ext <| CompactlySupportedContinuousMap.ext fun _ => by
-    simp [GroupConvolutionAlgebra.ofConv_mul_apply]
-  map_star' _ := GroupConvolutionAlgebra.ext <| CompactlySupportedContinuousMap.ext fun _ => by
-    simp [twistedInvolution_apply]
-
-@[simp] theorem ofConv_trivialComplexEquiv
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
-    (trivialComplexEquiv G μ f).ofConv = f.ofConv := (rfl)
-@[simp] theorem ofConv_trivialComplexEquiv_symm (f : GroupConvolutionAlgebra G μ) :
-    ((trivialComplexEquiv G μ).symm f).ofConv = f.ofConv := (rfl)
-@[simp] theorem trivialComplexEquiv_toConv (f : CompactlySupportedContinuousMap G ℂ) :
-    trivialComplexEquiv G μ (toConv f) = GroupConvolutionAlgebra.toConv f := (rfl)
-@[simp] theorem trivialComplexEquiv_symm_toConv (f : CompactlySupportedContinuousMap G ℂ) :
-    (trivialComplexEquiv G μ).symm (GroupConvolutionAlgebra.toConv f) = toConv f := (rfl)
-
-/-- `trivialComplexEquiv` is an isometry for the `L¹(μ)` norms. -/
-@[simp] theorem norm_trivialComplexEquiv
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
-    ‖trivialComplexEquiv G μ f‖ = ‖f‖ := by
-  rw [GroupConvolutionAlgebra.norm_eq_integral_norm, norm_eq_integral_norm,
-    ofConv_trivialComplexEquiv]
-
-@[simp] theorem trivialComplexEquiv_translateLIE [μ.IsMulLeftInvariant] (r : G)
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
-    trivialComplexEquiv G μ (translateLIE r f) =
-      GroupConvolutionAlgebra.translateLIE r (trivialComplexEquiv G μ f) :=
-  GroupConvolutionAlgebra.ext <| CompactlySupportedContinuousMap.ext fun _ => by simp
-@[simp] theorem trivialComplexEquiv_coefficientMul (z : ℂ)
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
-    trivialComplexEquiv G μ (coefficientMul z f) = z • trivialComplexEquiv G μ f :=
-  GroupConvolutionAlgebra.ext <| CompactlySupportedContinuousMap.ext fun _ => by simp
-
-end Basic
-end ConvolutionAlgebra
-end TauCeti.CStarAction
-
 namespace ContRepresentation.IsUnitary
 
 open TauCeti TauCeti.CStarAction
 
-/-- Integrating `hU.toTrivialCovariant hcont` on `ConvolutionAlgebra` agrees with
-`hU.integratedStarAlgHom` along `ConvolutionAlgebra.trivialComplexEquiv`. -/
-theorem integratedStarAlgHom_toTrivialCovariant {G H : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+/-- Integrating `hU.toTrivialCovariant hcont` on `GroupConvolutionAlgebra G μ` recovers
+`hU.integratedStarAlgHom hcont μ`. -/
+@[simp] theorem integratedStarAlgHom_toTrivialCovariant {G H : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G]
+    [BorelSpace G] [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
     {U : ContRepresentation ℂ G H} (hU : U.IsUnitary)
-    (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure]
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
-    (hU.toTrivialCovariant hcont).integratedStarAlgHom μ f =
-      hU.integratedStarAlgHom hcont μ (ConvolutionAlgebra.trivialComplexEquiv G μ f) := by
+    (hcont : ∀ v, Continuous fun g => U g v) (μ : Measure G) [μ.IsHaarMeasure] :
+    (hU.toTrivialCovariant hcont).integratedStarAlgHom μ = hU.integratedStarAlgHom hcont μ := by
+  ext f v
   simp [CovariantRepresentation.integratedStarAlgHom_apply]
 
 end ContRepresentation.IsUnitary
@@ -128,9 +68,8 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 private theorem norm_integratedStarAlgHom_le_groupFullSeminorm {H : Type u} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H]
     (P : CovariantRepresentation (CStarAction.trivial (G := G) (A := ℂ)) H)
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
-    ‖P.integratedStarAlgHom μ f‖ ≤
-      GroupConvolutionAlgebra.fullSeminorm G μ (trivialComplexEquiv G μ f) := by
+    (f : GroupConvolutionAlgebra G μ) :
+    ‖P.integratedStarAlgHom μ f‖ ≤ GroupConvolutionAlgebra.fullSeminorm G μ f := by
   let p : H →L[ℂ] H := P.coefficient 1
   have hp_mul : p * p = p := by simp [p, ← map_mul]
   have hp_idem (v : H) : p (p v) = p v := by rw [← mul_apply_eq_comp, hp_mul]
@@ -155,8 +94,7 @@ private theorem norm_integratedStarAlgHom_le_groupFullSeminorm {H : Type u} [Nor
   refine ContinuousLinearMap.opNorm_le_bound _
     (apply_nonneg (GroupConvolutionAlgebra.fullSeminorm G μ) _) fun v => ?_
   have hint_eq : P.integratedStarAlgHom μ f v = K.subtypeL
-      (hU_K.integratedStarAlgHom hcont_K μ (trivialComplexEquiv G μ f)
-        ⟨p v, mem_K_iff.2 (hp_idem v)⟩) := by
+      (hU_K.integratedStarAlgHom hcont_K μ f ⟨p v, mem_K_iff.2 (hp_idem v)⟩) := by
     rw [CovariantRepresentation.integratedStarAlgHom_apply,
       CovariantRepresentation.integratedOperator_apply,
       ContRepresentation.IsUnitary.integratedStarAlgHom_apply,
@@ -164,31 +102,26 @@ private theorem norm_integratedStarAlgHom_le_groupFullSeminorm {H : Type u} [Nor
       ← K.subtypeL.integral_comp_comm (U_K.integrable_integrand hcont_K μ _ _)]
     refine integral_congr_ae (.of_forall fun g => ?_)
     dsimp only
-    rw [ofConv_trivialComplexEquiv, map_smul, Submodule.subtypeL_apply,
-      ContRepresentation.coe_subrepresentation_apply, hp_comm, hp_coeff, smul_apply]
+    rw [map_smul, Submodule.subtypeL_apply, ContRepresentation.coe_subrepresentation_apply,
+      hp_comm, hp_coeff, smul_apply]
   rw [hint_eq, Submodule.subtypeL_apply, Submodule.norm_coe]
   exact (ContinuousLinearMap.le_opNorm _ _).trans <|
     (mul_le_mul_of_nonneg_right
       (GroupConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm hU_K hcont_K _)
       (norm_nonneg _)).trans (mul_le_mul_of_nonneg_left (hp_norm v) (apply_nonneg _ _))
 
-/-- Under `trivialComplexEquiv`, the full crossed-product seminorm of `(ℂ, G, id)` equals the
-universal group C⋆-seminorm on `GroupConvolutionAlgebra G μ`. -/
-@[simp] theorem fullSeminorm_trivialComplexEquiv
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
-    GroupConvolutionAlgebra.fullSeminorm G μ (trivialComplexEquiv G μ f) =
-      fullSeminorm (CStarAction.trivial (G := G) (A := ℂ)) μ f :=
-  le_antisymm
-    ((GroupConvolutionAlgebra.fullSeminorm_le_iff (apply_nonneg _ f)).2 fun _ _ _ _ _ hU hcont => by
-      rw [← hU.integratedStarAlgHom_toTrivialCovariant hcont μ f]
-      exact norm_integratedStarAlgHom_le_fullSeminorm (hU.toTrivialCovariant hcont) f)
+/-- For the trivial action of `G` on `ℂ`, the full crossed-product seminorm equals the universal
+group C⋆-seminorm `GroupConvolutionAlgebra.fullSeminorm G μ`. -/
+@[simp] theorem fullSeminorm_trivialComplex :
+    fullSeminorm (CStarAction.trivial (G := G) (A := ℂ)) μ =
+      GroupConvolutionAlgebra.fullSeminorm G μ := by
+  ext f
+  exact le_antisymm
     ((fullSeminorm_le_iff (apply_nonneg _ _)).2 fun _ _ _ _ P =>
       norm_integratedStarAlgHom_le_groupFullSeminorm P f)
-
-@[simp] theorem fullSeminorm_trivialComplexEquiv_symm (f : GroupConvolutionAlgebra G μ) :
-    fullSeminorm (CStarAction.trivial (G := G) (A := ℂ)) μ ((trivialComplexEquiv G μ).symm f) =
-      GroupConvolutionAlgebra.fullSeminorm G μ f := by
-  simpa using (fullSeminorm_trivialComplexEquiv ((trivialComplexEquiv G μ).symm f)).symm
+    ((GroupConvolutionAlgebra.fullSeminorm_le_iff (apply_nonneg _ f)).2 fun _ _ _ _ _ hU hcont => by
+      rw [← congrFun (congrArg DFunLike.coe (hU.integratedStarAlgHom_toTrivialCovariant hcont μ)) f]
+      exact norm_integratedStarAlgHom_le_fullSeminorm (hU.toTrivialCovariant hcont) f)
 
 end FullSeminorm
 end ConvolutionAlgebra
@@ -201,14 +134,11 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 private def trivialComplexToGroup (μ : Measure G) [μ.IsHaarMeasure] :
     FullCrossedProduct (CStarAction.trivial (G := G) (A := ℂ)) μ →⋆ₙₐ[ℂ]
       FullGroupCStarAlgebra G μ :=
-  lift ((FullGroupCStarAlgebra.of G μ).comp
-    (ConvolutionAlgebra.trivialComplexEquiv G μ).toNonUnitalStarAlgHom) fun _ => by simp
+  lift (FullGroupCStarAlgebra.of G μ) fun _ => by simp
 private def groupToTrivialComplex (μ : Measure G) [μ.IsHaarMeasure] :
     FullGroupCStarAlgebra G μ →⋆ₙₐ[ℂ]
       FullCrossedProduct (CStarAction.trivial (G := G) (A := ℂ)) μ :=
-  FullGroupCStarAlgebra.lift
-    ((of (CStarAction.trivial (G := G) (A := ℂ)) μ).comp
-      (ConvolutionAlgebra.trivialComplexEquiv G μ).symm.toNonUnitalStarAlgHom) fun _ => by simp
+  FullGroupCStarAlgebra.lift (of (CStarAction.trivial (G := G) (A := ℂ)) μ) fun _ => by simp
 
 variable (G) in
 /-- **Canonical isomorphism `ℂ ⋊_id G ≃⋆ₐ[ℂ] C⋆(G)`**: the full crossed product of `ℂ` by the
@@ -223,14 +153,13 @@ def trivialComplexEquiv (μ : Measure G) [μ.IsHaarMeasure] :
       simp [trivialComplexToGroup, groupToTrivialComplex])
 
 @[simp] theorem trivialComplexEquiv_of (μ : Measure G) [μ.IsHaarMeasure]
-    (f : ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ) :
+    (f : GroupConvolutionAlgebra G μ) :
     trivialComplexEquiv G μ (of (CStarAction.trivial (G := G) (A := ℂ)) μ f) =
-      FullGroupCStarAlgebra.of G μ (ConvolutionAlgebra.trivialComplexEquiv G μ f) := lift_of _ _ f
+      FullGroupCStarAlgebra.of G μ f := lift_of _ _ f
 @[simp] theorem trivialComplexEquiv_symm_of (μ : Measure G) [μ.IsHaarMeasure]
     (f : GroupConvolutionAlgebra G μ) :
     (trivialComplexEquiv G μ).symm (FullGroupCStarAlgebra.of G μ f) =
-      of (CStarAction.trivial (G := G) (A := ℂ)) μ
-        ((ConvolutionAlgebra.trivialComplexEquiv G μ).symm f) := FullGroupCStarAlgebra.lift_of _ _ f
+      of (CStarAction.trivial (G := G) (A := ℂ)) μ f := FullGroupCStarAlgebra.lift_of _ _ f
 
 /-- `trivialComplexEquiv` intertwines the crossed-product and group-C⋆ unitary generator maps
 `groupMultiplier`. -/
@@ -249,9 +178,11 @@ of the identity multiplier in `𝓜(ℂ, C⋆(G))`. -/
     (z : ℂ) :
     DoubleCentralizer.congr (trivialComplexEquiv G μ)
         (coefficientMultiplier (CStarAction.trivial (G := G) (A := ℂ)) μ z) =
-      algebraMap ℂ 𝓜(ℂ, FullGroupCStarAlgebra G μ) z :=
-  DoubleCentralizer.ext_fst fun x => FullGroupCStarAlgebra.induction_on x
-    (isClosed_eq (by fun_prop) (by fun_prop)) fun _ => by simp [Algebra.algebraMap_eq_smul_one]
+      algebraMap ℂ 𝓜(ℂ, FullGroupCStarAlgebra G μ) z := by
+  have hz (f : GroupConvolutionAlgebra G μ) :
+      ConvolutionAlgebra.coefficientMul z f = z • f := by ext s; simp
+  exact DoubleCentralizer.ext_fst fun x => FullGroupCStarAlgebra.induction_on x
+    (isClosed_eq (by fun_prop) (by fun_prop)) fun _ => by simp [hz, Algebra.algebraMap_eq_smul_one]
 
 /-- `trivialComplexEquiv` intertwines the extended integrated representation on `ℂ ⋊_id G` with
 `integratedGroupCStar` on `C⋆(G)`. -/
@@ -262,8 +193,7 @@ of the identity multiplier in `𝓜(ℂ, C⋆(G))`. -/
     (x : FullCrossedProduct (CStarAction.trivial (G := G) (A := ℂ)) μ) :
     (hU.toTrivialCovariant hcont).integratedFull μ x =
       hU.integratedGroupCStar hcont μ (trivialComplexEquiv G μ x) :=
-  FullCrossedProduct.induction_on x (isClosed_eq (by fun_prop) (by fun_prop)) fun _ => by
-    simp [hU.integratedStarAlgHom_toTrivialCovariant]
+  FullCrossedProduct.induction_on x (isClosed_eq (by fun_prop) (by fun_prop)) fun _ => by simp
 
 end FullCrossedProduct
 end TauCeti.CStarAction
