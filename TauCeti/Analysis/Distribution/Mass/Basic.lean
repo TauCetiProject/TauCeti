@@ -157,6 +157,11 @@ theorem localMass_sub_le : localMass (f - g) U ≤ localMass f U + localMass g U
 theorem mass_sub_le : mass (f - g) ≤ mass f + mass g := by
   simpa [sub_eq_add_neg] using mass_add_le (f := f) (g := -g)
 
+/-- The mass of a finite sum is at most the sum of the masses. -/
+theorem mass_sum_le {ι : Type*} (s : Finset ι) (f : ι → 𝓓^{n}(Ω, F) → V) :
+    mass (∑ i ∈ s, f i) ≤ ∑ i ∈ s, mass (f i) :=
+  Finset.le_sum_of_subadditive _ mass_zero.le (fun _ _ ↦ mass_add_le) s f
+
 /-- Changing the values of test functions by a linear isometric equivalence preserves mass. -/
 @[simp]
 theorem mass_comp_postcompCLM_linearIsometryEquiv {G : Type*} [NormedAddCommGroup G]
