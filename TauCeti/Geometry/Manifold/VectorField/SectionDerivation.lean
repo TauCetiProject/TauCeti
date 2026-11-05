@@ -43,7 +43,7 @@ namespace ContMDiffSection
 
 /-- Differentiation along a smooth vector field `X`: the derivation of `C^∞(M, 𝕜)` sending `f` to
 `x ↦ df_x(X_x)`. -/
-@[expose] def toDerivation (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+def toDerivation (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
     Derivation 𝕜 C^∞⟮I, M; 𝕜⟯ C^∞⟮I, M; 𝕜⟯ :=
   -- In each proof below, both sides evaluated at `x` unfold definitionally to the corresponding
   -- identity for `mvfderiv` applied to `X x`.
@@ -67,7 +67,7 @@ namespace ContMDiffSection
 theorem toDerivation_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
     (f : C^∞⟮I, M; 𝕜⟯) (x : M) :
     X.toDerivation f x = mvfderiv I f x (X x) :=
-  rfl
+  (rfl)
 
 end ContMDiffSection
 

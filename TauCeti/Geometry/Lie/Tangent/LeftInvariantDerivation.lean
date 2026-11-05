@@ -106,6 +106,12 @@ private noncomputable def mulInvariantDerivation [ContMDiffMul I ∞ G]
   ContMDiffSection.toDerivation
     ⟨mulInvariantVectorField v, contMDiff_mulInvariantVectorField_infty v⟩
 
+/-- `mulInvariantDerivation v` differentiates along the left-invariant vector field of `v`. -/
+private theorem mulInvariantDerivation_apply [ContMDiffMul I ∞ G]
+    (v : GroupLieAlgebra I G) (f : C^∞⟮I, G; 𝕜⟯) (g : G) :
+    mulInvariantDerivation v f g = mvfderiv I f g (mulInvariantVectorField v g) :=
+  ContMDiffSection.toDerivation_apply _ f g
+
 /-- `mulInvariantDerivation v` is left invariant: differentiating along a left-invariant
 vector field commutes with left translation. -/
 private theorem mulInvariantDerivation_left_invariant [ContMDiffMul I ∞ G]
@@ -113,12 +119,13 @@ private theorem mulInvariantDerivation_left_invariant [ContMDiffMul I ∞ G]
     (𝒅ₕ (smoothLeftMul_one I g)) (Derivation.evalAt 1 (mulInvariantDerivation v)) =
       Derivation.evalAt g (mulInvariantDerivation v) := by
   ext f
-  -- The calculation endpoints unfold `hfdifferential`, `evalAt` and `mulInvariantDerivation`.
+  -- The calculation endpoints unfold `hfdifferential` and `evalAt`, then evaluate
+  -- `mulInvariantDerivation`.
   calc
     ((𝒅ₕ (smoothLeftMul_one I g))
         (Derivation.evalAt 1 (mulInvariantDerivation v))) f =
         mvfderiv I ((show C^∞⟮I, G; 𝕜⟯ from f).comp (smoothLeftMul I g)) 1
-          (mulInvariantVectorField v 1) := rfl
+          (mulInvariantVectorField v 1) := mulInvariantDerivation_apply v _ 1
     _ = mvfderiv I ((show C^∞⟮I, G; 𝕜⟯ from f).comp (smoothLeftMul I g)) 1 v := by
       rw [mulInvariantVectorField_one]
     _ = mvfderiv I (show C^∞⟮I, G; 𝕜⟯ from f) g
@@ -135,7 +142,8 @@ private theorem mulInvariantDerivation_left_invariant [ContMDiffMul I ∞ G]
       change ((mfderiv I (modelWithCornersSelf 𝕜 𝕜)
         ((show G → 𝕜 from f) ∘ fun x ↦ g * x) 1) v) = _
       exact h
-    _ = (Derivation.evalAt g (mulInvariantDerivation v)) f := rfl
+    _ = (Derivation.evalAt g (mulInvariantDerivation v)) f :=
+      (mulInvariantDerivation_apply v f g).symm
 
 /-- The left-invariant derivation associated to a tangent vector at the identity. At every point it
 acts by differentiating along Mathlib's corresponding left-invariant vector field. -/
@@ -147,19 +155,17 @@ noncomputable def tangentToLeftInvariantDerivation
       left_invariant'' := mulInvariantDerivation_left_invariant v }
   map_add' v w := by
     apply LeftInvariantDerivation.evalAt_one_injective
-    ext f
-    -- Evaluation unfolds both constructed derivations to directional derivatives.
-    change mvfderiv I f 1 (mulInvariantVectorField (v + w) 1) =
-      mvfderiv I f 1 (mulInvariantVectorField v 1) +
-        mvfderiv I f 1 (mulInvariantVectorField w 1)
-    simp only [mulInvariantVectorField_add, Pi.add_apply, map_add]
+    refine Derivation.ext fun (f : C^∞⟮I, G; 𝕜⟯) ↦ ?_
+    -- Evaluation at the identity unfolds to the underlying derivations.
+    change mulInvariantDerivation (v + w) f 1 =
+      mulInvariantDerivation v f 1 + mulInvariantDerivation w f 1
+    simp only [mulInvariantDerivation_apply, mulInvariantVectorField_add, Pi.add_apply, map_add]
   map_smul' c v := by
     apply LeftInvariantDerivation.evalAt_one_injective
-    ext f
-    -- Evaluation unfolds both constructed derivations to directional derivatives.
-    change mvfderiv I f 1 (mulInvariantVectorField (c • v) 1) =
-      c • mvfderiv I f 1 (mulInvariantVectorField v 1)
-    simp
+    refine Derivation.ext fun (f : C^∞⟮I, G; 𝕜⟯) ↦ ?_
+    -- Evaluation at the identity unfolds to the underlying derivations.
+    change mulInvariantDerivation (c • v) f 1 = c • mulInvariantDerivation v f 1
+    simp [mulInvariantDerivation_apply]
 
 /-- The derivation built from a tangent vector acts pointwise along its invariant vector field. -/
 @[simp]
@@ -168,7 +174,7 @@ theorem tangentToLeftInvariantDerivation_apply
     (f : C^∞⟮I, G; 𝕜⟯) (g : G) :
     tangentToLeftInvariantDerivation v f g =
       mvfderiv I f g (mulInvariantVectorField v g) :=
-  by rfl
+  mulInvariantDerivation_apply v f g
 
 /-- Evaluating the derivation associated to `v` at the identity gives directional differentiation
 along `v`. -/
@@ -177,10 +183,10 @@ theorem LeftInvariantDerivation.evalAt_one_tangentToLeftInvariantDerivation
     [ContMDiffMul I ∞ G] (v : GroupLieAlgebra I G) :
     LeftInvariantDerivation.evalAt (I := I) (1 : G) (tangentToLeftInvariantDerivation v) =
       tangentToPointDerivation (1 : G) v := by
-  ext f
-  -- Unfold evaluation and the two directional-derivative constructors.
-  change mvfderiv I f 1 (mulInvariantVectorField v 1) = mvfderiv I f 1 v
-  rw [mulInvariantVectorField_one]
+  refine Derivation.ext fun (f : C^∞⟮I, G; 𝕜⟯) ↦ ?_
+  -- Unfold evaluation and the point-derivation constructor.
+  change mulInvariantDerivation v f 1 = mvfderiv I f 1 v
+  rw [mulInvariantDerivation_apply, mulInvariantVectorField_one]
 
 end Construction
 
