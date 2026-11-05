@@ -59,9 +59,9 @@ gcd. The empty family has a single Plücker coordinate, equal to `1`, and a fami
   multiplies the Plücker coordinates by the determinant of that matrix.
 * `TauCeti.det_mul_transpose_eq_sum_plucker_mul`: the Cauchy–Binet formula.
 * `Matrix.det_mul_transpose_eq_sum_plucker_sq`: its Gram-determinant form for a matrix.
-* `Matrix.det_mul_transpose_nonneg` and `Matrix.det_mul_transpose_pos_iff`: over a linearly
-  ordered commutative ring, the Gram determinant of a matrix is nonnegative, and positive exactly
-  when the rows are linearly independent.
+* `Matrix.det_mul_transpose_nonneg` and `Matrix.det_mul_transpose_pos_iff`: over a commutative
+  ring with a compatible linear order, the Gram determinant of a matrix is nonnegative; over a
+  linearly ordered commutative ring, it is positive exactly when the rows are linearly independent.
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over an integral domain, the Plücker coordinates of a family are
   not all zero exactly when the family is linearly independent.
@@ -260,10 +260,10 @@ theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matr
     (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
   simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
 
-/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of a
-matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/
+/-- Over a commutative ring with a compatible linear order, the Gram determinant `det (A * Aᵀ)` of
+the rows of a matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/
 theorem _root_.Matrix.det_mul_transpose_nonneg {R m n : Type*} [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix m n R) :
+    [IsOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix m n R) :
     0 ≤ (A * A.transpose).det := by
   -- Reindex the rows and columns by `Fin`, where the Cauchy–Binet formula applies.
   set e := Fintype.equivFin m

@@ -226,14 +226,14 @@ its normal Hessian. -/
 theorem sigNeg_normalHessian (s : S) :
     sigNeg (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I f (i s) := by
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, h.toQuadraticMap_normalHessian hn s]
-  exact QuadraticForm.sigNeg_lift_of_eq_radical _ _ (h.radical_criticalHessian hn s).symm
+  exact QuadraticForm.sigNeg_lift _ _ (h.radical_criticalHessian hn s).ge
 
 /-- The positive index of inertia of the normal Hessian of a Morse–Bott critical submanifold is the
 Morse index of `-f`. -/
 theorem sigPos_normalHessian (s : S) :
     sigPos (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I (-f) (i s) := by
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian, h.toQuadraticMap_normalHessian hn s]
-  exact QuadraticForm.sigPos_lift_of_eq_radical _ _ (h.radical_criticalHessian hn s).symm
+  exact QuadraticForm.sigPos_lift _ _ (h.radical_criticalHessian hn s).ge
 
 include hn in
 /-- **Index plus coindex is the codimension.** At each point of a Morse–Bott critical
