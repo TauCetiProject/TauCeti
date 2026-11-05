@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import TauCeti.MeasureTheory.Integral.ExpDecay
 import TauCeti.Analysis.Complex.Coordinates
-import TauCeti.Analysis.SpecialFunctions.Complex.ExpSlope
+import TauCeti.Analysis.SpecialFunctions.Exp.Oscillation
 
 /-!
 # The Fourier transform of the two-sided exponential
