@@ -10,18 +10,25 @@ public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
 
 /-!
-# The first two basic orbits of the Higman--Sims model
+# Basic orbits of the Higman--Sims model
 
 The ATLAS permutation model `TauCeti.Sporadic.HS` is transitive on its 100 points. The
-stabilizer of `0` has an orbit of length 77 containing `1`. Consequently the order of `HS` is
-7700 times the order of its pointwise stabilizer of `{0, 1}`. These are the first two factors
-in an order calculation along the points `0, 1, 2, 3, 4`.
+stabilizer of `0` has an orbit of length 77 containing `1`, and the pointwise stabilizer of
+`{0, 1}` has an orbit of length 60 containing `2`. Consequently the order of `HS` is
+462000 times the order of its pointwise stabilizer of `{0, 1, 2}`. These are the first three
+factors in an order calculation along the points `0, 1, 2, 3, 4`.
 
-Explicit words in the ATLAS generators witness both lower bounds. For the second upper bound,
+Explicit words in the ATLAS generators witness the lower bounds. For the upper bounds,
 a binary relation is checked to be invariant under both generators, hence under their closure.
-Its row at `0` contains exactly the 77 points reached by the second set of words. The relation
-and words are finite proof data; neither the group order nor the orbit computation is assumed.
-All finite checks are performed in the Lean kernel.
+Its row at `0` gives the second orbit; the intersection of its rows at `0` and `1` gives the
+third. The relation and words are finite proof data; neither the group order nor the orbit
+computation is assumed. All finite checks are performed in the Lean kernel.
+
+The pointwise stabilizer of `0, 1, 2` has a 32-point orbit containing `3`, giving the fourth
+factor in the order calculation. Its upper bound uses the invariant pair of common neighbors
+of the three fixed points: the orbit consists of the points related to all three fixed points
+and to exactly one member of that pair. Explicit words fixing the three points reach every
+point in this set.
 
 ## References
 
@@ -468,5 +475,409 @@ theorem card_eq_7700_mul_card_stabilizerChain :
     h0, h1, ncard_orbit_stabilizerChain_zero, ncard_orbit_stabilizerChain_one,
     Nat.reduceMul] using
     (HS.prod_ncard_orbit_mul_card_stabilizerChain pointSequence 2).symm
+
+/-! ### The orbit of the two-point stabilizer -/
+
+private def twoPointOrbit : Finset (Fin 100) :=
+  {2, 3, 5, 6, 7, 13, 14, 15, 16, 18, 19, 21, 22, 23, 25, 27, 29, 30, 31, 33, 34, 36, 41,
+    43, 45, 48, 51, 53, 54, 56, 58, 60, 62, 63, 64, 65, 68, 72, 73, 75, 76, 77, 79, 80,
+    81, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99}
+
+private theorem twoPointOrbit_eq : (twoPointOrbit : Set (Fin 100)) =
+    (↑({2, 3, 5, 6, 7, 13, 14, 15, 16, 18, 19, 21, 22, 23, 25, 27, 29, 30, 31, 33, 34, 36,
+      41, 43, 45, 48, 51, 53, 54, 56, 58, 60, 62, 63, 64, 65, 68, 72, 73, 75, 76, 77,
+      79, 80, 81, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99} :
+      Finset (Fin 100)) : Set (Fin 100)) := (rfl)
+
+private theorem mem_twoPointOrbit_iff : ∀ x,
+    x ∈ twoPointOrbit ↔ related 0 x = true ∧ related 1 x = true := by
+  decide +kernel
+
+-- Breadth-first paths from (0, 1, 2) to (0, 1, x), in the same word convention as orbitWords.
+-- Entries outside twoPointOrbit are unused. The empty word at 2 is the identity witness.
+private def twoPointWords : Fin 100 → List ℕ :=
+  ![[],
+    [],
+    [],
+    [1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0],
+    [],
+    [1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1],
+    [1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0],
+    [0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+    [],
+    [0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [1, 1, 0, 1, 1, 1],
+    [],
+    [1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0],
+    [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+    [0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0],
+    [],
+    [0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+    [],
+    [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [],
+    [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+    [1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+    [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1],
+    [],
+    [1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+    [0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1],
+    [],
+    [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0],
+    [],
+    [],
+    [],
+    [],
+    [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [],
+    [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
+    [],
+    [0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0],
+    [],
+    [],
+    [1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1],
+    [],
+    [],
+    [0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1],
+    [],
+    [1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+    [1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+    [],
+    [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+    [],
+    [0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1],
+    [],
+    [0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0],
+    [],
+    [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0],
+    [],
+    [],
+    [1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1],
+    [],
+    [],
+    [],
+    [0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [],
+    [0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0],
+    [1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+    [1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1],
+    [],
+    [1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1],
+    [0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+    [1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+    [],
+    [],
+    [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+    [0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0],
+    [1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0],
+    [0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0],
+    [0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1],
+    [0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+    [],
+    [0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+    [1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+    [0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0],
+    [1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+    [1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1],
+    [0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1],
+    [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]]
+
+private theorem twoPointWords_apply : ∀ x ∈ twoPointOrbit,
+    wordValue (twoPointWords x) 0 = 0 ∧ wordValue (twoPointWords x) 1 = 1 ∧
+      wordValue (twoPointWords x) 2 = x := by
+  decide +kernel
+
+/-- The complete orbit of `2` under the pointwise stabilizer of `{0, 1}` in the ATLAS model. -/
+theorem orbit_stabilizerChain_two :
+    orbit (HS.stabilizerChain pointSequence 2) (2 : Fin 100) =
+      (↑({2, 3, 5, 6, 7, 13, 14, 15, 16, 18, 19, 21, 22, 23, 25, 27, 29, 30, 31, 33, 34, 36,
+        41, 43, 45, 48, 51, 53, 54, 56, 58, 60, 62, 63, 64, 65, 68, 72, 73, 75, 76, 77,
+        79, 80, 81, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99} :
+        Finset (Fin 100)) : Set (Fin 100)) := by
+  rw [← twoPointOrbit_eq]
+  ext x
+  constructor
+  · rintro ⟨g, rfl⟩
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.2
+    have h0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := hfix 0 (by decide)
+    have h1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := hfix 1 (by decide)
+    apply (mem_twoPointOrbit_iff _).mpr
+    constructor
+    · simpa only [h0, Subgroup.smul_def, Equiv.Perm.smul_def] using
+        (related_apply hg 0 2).trans (by decide +kernel)
+    · simpa only [h1, Subgroup.smul_def, Equiv.Perm.smul_def] using
+        (related_apply hg 1 2).trans (by decide +kernel)
+  · intro hx
+    obtain ⟨h0, h1, h2⟩ := twoPointWords_apply x hx
+    have hw : wordValue (twoPointWords x) ∈ HS.stabilizerChain pointSequence 2 := by
+      apply (Subgroup.mem_stabilizerChain_iff HS pointSequence).mpr
+      refine ⟨wordValue_mem _, fun j hj => ?_⟩
+      have hj' : j = 0 ∨ j = 1 := by omega
+      rcases hj' with rfl | rfl
+      · exact h0
+      · exact h1
+    exact mem_orbit_iff.mpr ⟨⟨_, hw⟩, h2⟩
+
+/-- The third basic orbit along `0, 1, 2` has length 60. -/
+@[simp]
+theorem ncard_orbit_stabilizerChain_two :
+    (orbit (HS.stabilizerChain pointSequence 2) (2 : Fin 100)).ncard = 60 := by
+  rw [orbit_stabilizerChain_two, Set.ncard_coe_finset]
+  decide +kernel
+
+/-- The order of the ATLAS Higman--Sims model is 462000 times the order of its three-point
+stabilizer. Determining that remaining order to be 96 gives order 44352000. -/
+theorem card_eq_462000_mul_card_stabilizerChain :
+    Nat.card HS = 462000 * Nat.card (HS.stabilizerChain pointSequence 3) := by
+  have hstep := HS.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 2
+  have h2 : pointSequence 2 = 2 := rfl
+  rw [h2, ncard_orbit_stabilizerChain_two] at hstep
+  calc
+    Nat.card HS = 7700 * (60 * Nat.card (HS.stabilizerChain pointSequence 3)) := by
+      rw [card_eq_7700_mul_card_stabilizerChain, ← hstep]
+    _ = 462000 * Nat.card (HS.stabilizerChain pointSequence 3) :=
+      (mul_assoc 7700 60 _).symm
+
+/-! ### The fourth basic orbit -/
+
+-- The two points unrelated to all of 0, 1, 2 form an invariant pair under their stabilizer.
+private def commonNeighbors : Finset (Fin 100) := {38, 49}
+
+private theorem mem_commonNeighbors : ∀ x : Fin 100,
+    x ∈ commonNeighbors ↔
+      related 0 x = false ∧ related 1 x = false ∧ related 2 x = false := by
+  decide +kernel
+
+private theorem commonNeighbors_apply {g : Equiv.Perm (Fin 100)}
+    (hg : g ∈ HS.stabilizerChain pointSequence 3) {x : Fin 100}
+    (hx : x ∈ commonNeighbors) : g x ∈ commonNeighbors := by
+  obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp hg
+  have h0 : g 0 = 0 := hfix 0 (by omega)
+  have h1 : g 1 = 1 := hfix 1 (by omega)
+  have h2 : g 2 = 2 := hfix 2 (by omega)
+  have hr0 := related_apply hg 0 x
+  have hr1 := related_apply hg 1 x
+  have hr2 := related_apply hg 2 x
+  rw [h0] at hr0
+  rw [h1] at hr1
+  rw [h2] at hr2
+  rw [mem_commonNeighbors] at hx ⊢
+  simpa only [hr0, hr1, hr2] using hx
+
+private def fourthOrbit : Finset (Fin 100) :=
+  {3, 13, 14, 15, 19, 22, 23, 25, 31, 33, 36, 48, 53, 56, 58, 60, 62, 63, 64, 65, 72, 77,
+    79, 80, 84, 87, 88, 90, 92, 94, 97, 99}
+
+-- Among the points related to 0, 1, 2, these are exactly those related to one member of the
+-- invariant pair and unrelated to the other.
+private theorem mem_fourthOrbit : ∀ x : Fin 100,
+    x ∈ fourthOrbit ↔ related 0 x = true ∧ related 1 x = true ∧ related 2 x = true ∧
+      related x 38 ≠ related x 49 := by
+  decide +kernel
+
+-- Words from (0, 1, 2, 3) to (0, 1, 2, x), with 0 denoting a and 1 denoting b.
+-- They were found by collisions in a breadth-first search on ordered triples. Only the word
+-- equations below, rather than correctness of the search, enter the proof.
+private def fourthOrbitWords : Fin 100 → List ℕ :=
+  ![[],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0,
+      1, 1, 1, 1],
+    [0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1,
+      0, 1, 1, 1, 1, 0, 1, 0],
+    [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1,
+      1, 0, 1, 1, 1, 0],
+    [],
+    [],
+    [],
+    [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1,
+      0, 1, 0, 1, 1, 1, 1],
+    [],
+    [],
+    [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1],
+    [0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0,
+      1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    [],
+    [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1,
+      1],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+    [],
+    [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1,
+      0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1],
+    [],
+    [],
+    [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1,
+      1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0],
+    [],
+    [],
+    [],
+    [],
+    [1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1,
+      1],
+    [],
+    [],
+    [1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
+      0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0],
+    [],
+    [1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1,
+      1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0],
+    [],
+    [1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1,
+      1, 0, 1, 0, 1],
+    [],
+    [0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0,
+      1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+    [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+    [0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0,
+      1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0],
+    [0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1,
+      1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0,
+      1, 0, 1, 0, 1, 1, 1, 0],
+    [],
+    [],
+    [],
+    [],
+    [0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0,
+      1, 0, 1, 1, 1, 0],
+    [],
+    [1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0,
+      1, 1, 1, 0],
+    [0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1,
+      1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0],
+    [],
+    [],
+    [],
+    [0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1,
+      0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0],
+    [],
+    [],
+    [1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1,
+      1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+    [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1,
+      0, 1, 1, 1, 1, 0, 1, 1, 0],
+    [],
+    [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1,
+      0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+    [],
+    [0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1,
+      0],
+    [],
+    [0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0,
+      1, 1, 1, 1, 0],
+    [],
+    [],
+    [0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1,
+      0, 1, 0, 1, 1, 0, 1, 1],
+    [],
+    [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1]]
+
+private theorem fourthOrbitWords_apply : ∀ x ∈ fourthOrbit,
+    wordValue (fourthOrbitWords x) 0 = 0 ∧ wordValue (fourthOrbitWords x) 1 = 1 ∧
+      wordValue (fourthOrbitWords x) 2 = 2 ∧ wordValue (fourthOrbitWords x) 3 = x := by
+  decide +kernel
+
+/-- The complete orbit of `3` under the pointwise stabilizer of `0, 1, 2` in the ATLAS model. -/
+theorem orbit_stabilizerChain_three :
+    orbit (HS.stabilizerChain pointSequence 3) (3 : Fin 100) =
+      (↑({3, 13, 14, 15, 19, 22, 23, 25, 31, 33, 36, 48, 53, 56, 58, 60, 62, 63, 64, 65, 72, 77,
+        79, 80, 84, 87, 88, 90, 92, 94, 97, 99} : Finset (Fin 100)) : Set (Fin 100)) := by
+  suffices orbit (HS.stabilizerChain pointSequence 3) (3 : Fin 100) =
+      (↑fourthOrbit : Set (Fin 100)) by
+    simpa only [fourthOrbit] using this
+  ext x
+  constructor
+  · rintro ⟨g, rfl⟩
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
+    have h0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := hfix 0 (by omega)
+    have h1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := hfix 1 (by omega)
+    have h2 : (g : Equiv.Perm (Fin 100)) 2 = 2 := hfix 2 (by omega)
+    have hr0 := related_apply hg 0 3
+    have hr1 := related_apply hg 1 3
+    have hr2 := related_apply hg 2 3
+    rw [h0] at hr0
+    rw [h1] at hr1
+    rw [h2] at hr2
+    have h38 := commonNeighbors_apply g.2 (x := 38) (by decide)
+    have h49 := commonNeighbors_apply g.2 (x := 49) (by decide)
+    have hne : related ((g : Equiv.Perm (Fin 100)) 3) ((g : Equiv.Perm (Fin 100)) 38) ≠
+        related ((g : Equiv.Perm (Fin 100)) 3) ((g : Equiv.Perm (Fin 100)) 49) := by
+      rw [related_apply hg, related_apply hg]
+      decide +kernel
+    simp only [commonNeighbors, Finset.mem_insert, Finset.mem_singleton] at h38 h49
+    have hx : related ((g : Equiv.Perm (Fin 100)) 3) 38 ≠
+        related ((g : Equiv.Perm (Fin 100)) 3) 49 := by
+      rcases h38 with h38 | h38 <;> rcases h49 with h49 | h49 <;> grind
+    exact (mem_fourthOrbit _).mpr ⟨hr0.trans (by decide +kernel),
+      hr1.trans (by decide +kernel), hr2.trans (by decide +kernel), hx⟩
+  · intro hx
+    obtain ⟨h0, h1, h2, h3⟩ := fourthOrbitWords_apply x hx
+    refine mem_orbit_iff.mpr ⟨⟨wordValue (fourthOrbitWords x), ?_⟩, h3⟩
+    refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨wordValue_mem _, ?_⟩
+    intro j hj
+    interval_cases j <;> assumption
+
+/-- The fourth basic orbit along `0, 1, 2, 3` has length 32. -/
+@[simp]
+theorem ncard_orbit_stabilizerChain_three :
+    (orbit (HS.stabilizerChain pointSequence 3) (3 : Fin 100)).ncard = 32 := by
+  rw [orbit_stabilizerChain_three, Set.ncard_coe_finset]
+  decide +kernel
+
+/-- The three-point stabilizer has order 32 times the order of the four-point stabilizer. -/
+theorem card_stabilizerChain_three_eq :
+    Nat.card (HS.stabilizerChain pointSequence 3) =
+      32 * Nat.card (HS.stabilizerChain pointSequence 4) := by
+  simpa only [pointSequence_apply, Fin.reduceOfNat, ncard_orbit_stabilizerChain_three] using
+    (HS.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 3).symm
 
 end TauCeti.Sporadic.HS

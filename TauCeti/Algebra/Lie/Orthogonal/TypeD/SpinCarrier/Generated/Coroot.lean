@@ -158,7 +158,7 @@ theorem linearIndependent_generatedCartanVector :
     (B := B)] using
     SplitTorus.linearIndependent_derivationComp_cocharacter (B := B)
       (generatedWeightTorusCoordinateMap n hn R).hom
-      (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective n hn R B)
+      (Generated.derivationCompLieHom_generatedWeightTorusCoordinateMap_injective n hn R B)
 
 /-- The Cartan vectors form a basis of their span, the toral tangent image. -/
 def generatedCartanBasis :
