@@ -144,6 +144,10 @@ private theorem one_add_weightedNormSq_one_mul_model (a : ℝ) (ν : Fin n → �
     (1 + weightedNormSq 1 z) * model 𝕜 a ν z = a + weightedNormSq ν z :=
   mul_div_cancel₀ _ (one_add_weightedNormSq_one_pos z).ne'
 
+private theorem one_add_weightedNormSq_one_mul_model_eq (a : ℝ) (ν : Fin n → ℝ) :
+    (fun z : Fin n → 𝕜 ↦ 1 + weightedNormSq 1 z) * model 𝕜 a ν = fun z ↦ a + weightedNormSq ν z :=
+  funext (one_add_weightedNormSq_one_mul_model a ν)
+
 @[simp]
 theorem model_zero (a : ℝ) (ν : Fin n → ℝ) : model 𝕜 a ν 0 = a := by
   simp [model, weightedNormSq]
@@ -161,15 +165,19 @@ private theorem two_smul_weightedInner_eq (a : ℝ) (ν : Fin n → ℝ) (z : Fi
   have hg := ((contDiff_model (𝕜 := 𝕜) a ν (r := 1)).differentiable one_ne_zero z).hasFDerivAt
   have hN := (hasFDerivAt_weightedNormSq ν z).const_add a
   have hmul := hD.mul hg
-  rw [show ((fun z ↦ 1 + weightedNormSq 1 z) * model 𝕜 a ν) = fun z ↦ a + weightedNormSq ν z from
-    funext (one_add_weightedNormSq_one_mul_model a ν)] at hmul
+  rw [one_add_weightedNormSq_one_mul_model_eq] at hmul
   exact hN.unique hmul
+
+@[simp]
+theorem fderiv_model_zero (a : ℝ) (ν : Fin n → ℝ) : fderiv ℝ (model 𝕜 a ν) 0 = 0 := by
+  have h := two_smul_weightedInner_eq (𝕜 := 𝕜) a ν 0
+  simp only [map_zero, smul_zero, add_zero] at h
+  exact (smul_eq_zero.mp h.symm).resolve_left (one_add_weightedNormSq_one_pos 0).ne'
 
 /-- If no weight `ν j` equals `a`, the origin is the only critical point of the chart model. -/
 theorem fderiv_model_eq_zero_iff {a : ℝ} {ν : Fin n → ℝ} (hν : ∀ j, ν j ≠ a) {z : Fin n → 𝕜} :
     fderiv ℝ (model 𝕜 a ν) z = 0 ↔ z = 0 := by
   have h := two_smul_weightedInner_eq (𝕜 := 𝕜) a ν z
-  have hD := (one_add_weightedNormSq_one_pos (𝕜 := 𝕜) z).ne'
   refine ⟨fun hz ↦ ?_, ?_⟩
   · set r := model 𝕜 a ν z with hr
     rw [hz, smul_zero, zero_add] at h
@@ -188,14 +196,7 @@ theorem fderiv_model_eq_zero_iff {a : ℝ} {ν : Fin n → ℝ} (hν : ∀ j, ν
     have hzero : (ν j - a) * ‖z j‖ ^ 2 = 0 := by rw [← hra]; linarith
     simpa [sub_ne_zero.mpr (hν j)] using hzero
   · rintro rfl
-    simp only [map_zero, smul_zero, add_zero] at h
-    exact (smul_eq_zero.mp h.symm).resolve_left hD
-
-@[simp]
-theorem fderiv_model_zero (a : ℝ) (ν : Fin n → ℝ) : fderiv ℝ (model 𝕜 a ν) 0 = 0 := by
-  have h := two_smul_weightedInner_eq (𝕜 := 𝕜) a ν 0
-  simp only [map_zero, smul_zero, add_zero] at h
-  exact (smul_eq_zero.mp h.symm).resolve_left (one_add_weightedNormSq_one_pos 0).ne'
+    exact fderiv_model_zero a ν
 
 /-- The second derivative of the chart model at the origin is twice the weighted inner product with
 the weights `ν j - a`. -/
@@ -205,8 +206,7 @@ private theorem fderiv_fderiv_model_zero (a : ℝ) (ν : Fin n → ℝ) :
   have hD : ContDiffAt ℝ 2 (fun z : Fin n → 𝕜 ↦ 1 + weightedNormSq 1 z) 0 :=
     (contDiff_const.add (contDiff_weightedNormSq 1)).contDiffAt
   have hmul := fderiv_fderiv_mul_apply hD (contDiff_model (𝕜 := 𝕜) a ν).contDiffAt v w
-  rw [show ((fun z ↦ 1 + weightedNormSq 1 z) * model 𝕜 a ν) = fun z ↦ a + weightedNormSq ν z from
-    funext (one_add_weightedNormSq_one_mul_model a ν)] at hmul
+  rw [one_add_weightedNormSq_one_mul_model_eq] at hmul
   have hN : fderiv ℝ (fun z : Fin n → 𝕜 ↦ a + weightedNormSq ν z) = ⇑(2 • weightedInner 𝕜 ν) := by
     ext z : 1
     rw [fderiv_const_add, fderiv_weightedNormSq]
@@ -381,8 +381,8 @@ theorem mem_criticalPoints_projectiveMomentFunction_iff {w : Fin (n + 1) → ℝ
     rw [← affineChart_symm_zero, ← h]
     exact ((affineChart k).left_inv (by simpa using hx)).symm
   · rintro rfl
-    rw [← affineChart_symm_zero]
-    exact (affineChart k).right_inv (by simp)
+    rw [← extend_apply]
+    exact extend_mk_single k
 
 /-- **The critical points of the moment function.** For pairwise distinct weights, the critical
 points of the moment function are exactly the `n + 1` coordinate points `[eₖ]`. -/
@@ -443,8 +443,7 @@ theorem totalCriticalCount_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (h
     totalCriticalCount 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) = n + 1 := by
   rw [totalCriticalCount_def, criticalPoints_projectiveMomentFunction hw,
     mk_single_injective.encard_range, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
-  push_cast
-  rfl
+  norm_cast
 
 /-- For pairwise distinct weights, the number of critical points of index `j` of the moment
 function is the number of coordinates `k` with `j` equal to the real dimension of `𝕜` times the
