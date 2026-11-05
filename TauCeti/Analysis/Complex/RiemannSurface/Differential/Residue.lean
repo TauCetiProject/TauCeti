@@ -62,22 +62,25 @@ theorem residue_congr (h : ∀ᶠ y in 𝓝[≠] x, ω y = η y) : ω.residue x 
   Contour.residue_congr_nhdsNE (coeff_chartAt_eventuallyEq h)
 
 /-- A `1`-form which is not meromorphic at `x` has residue the junk value `0`. -/
+@[simp]
 theorem residue_of_not_meromorphicAt (h : ¬ ω.MeromorphicAt x) : ω.residue x = 0 :=
   Contour.residue_of_not_meromorphicAt ((meromorphicAt_def ω x).not.1 h)
 
 /-- A `1`-form of nonnegative order at `x` has residue `0`. -/
+@[simp]
 theorem residue_eq_zero_of_order_nonneg (h : 0 ≤ ω.order x) : ω.residue x = 0 :=
   Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg ((order_def ω x) ▸ h)
 
 /-- A `1`-form holomorphic at `x` has residue `0`. -/
+@[simp]
 theorem HolomorphicAt.residue_eq_zero (h : ω.HolomorphicAt x) : ω.residue x = 0 :=
   residue_eq_zero_of_order_nonneg h.order_nonneg
 
-@[simp]
 theorem residue_zero (x : X) : (0 : OneForm X).residue x = 0 :=
   (holomorphicAt_zero x).residue_eq_zero
 
 /-- The residue is additive on `1`-forms meromorphic at `x`. -/
+@[simp]
 theorem residue_add (hω : ω.MeromorphicAt x) (hη : η.MeromorphicAt x) :
     (ω + η).residue x = ω.residue x + η.residue x := by
   rw [residue_def, coeff_add]
@@ -95,6 +98,7 @@ theorem residue_neg (ω : OneForm X) (x : X) : (-ω).residue x = -ω.residue x :
   rw [← neg_one_smul ℂ ω, residue_const_smul, neg_one_mul]
 
 /-- The residue is subtractive on `1`-forms meromorphic at `x`. -/
+@[simp]
 theorem residue_sub (hω : ω.MeromorphicAt x) (hη : η.MeromorphicAt x) :
     (ω - η).residue x = ω.residue x - η.residue x := by
   rw [residue_def, coeff_sub]
@@ -118,6 +122,7 @@ theorem residue_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (
 variable {f : X → ℂ}
 
 /-- **The differential of a meromorphic function has residue `0`.** -/
+@[simp]
 theorem residue_mvfderiv (hf : RiemannSurface.MeromorphicAt f x) :
     residue (mvfderiv 𝓘(ℂ) f) x = 0 := by
   rw [residue_def, Contour.residue_congr_nhdsNE (coeff_mvfderiv_eventuallyEq hf)]
