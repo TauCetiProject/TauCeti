@@ -53,7 +53,8 @@ defined from it.
 * `ZLattice.mem_dual`: `x ∈ dual L` if and only if `⟪x, y⟫` is an integer for every `y ∈ L`.
 * `ZLattice.dual_span_basis`: the dual of the `ℤ`-span of an `ℝ`-basis is the `ℤ`-span of its
   dual basis.
-* `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
+* `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual. It is
+  a full lattice (`ZLattice.instIsZLatticeSpanOrthonormalBasis`).
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
 * `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
@@ -111,6 +112,20 @@ theorem dual_span_basis {ι : Type*} [Finite ι] [DecidableEq ι] (b : Basis ι 
     dual (span ℤ (Set.range b)) =
       span ℤ (Set.range (BilinForm.dualBasis (innerₗ E) TauCeti.nondegenerate_inner b)) :=
   BilinForm.dualSubmodule_span_of_basis (innerₗ E) TauCeti.nondegenerate_inner b
+
+/-- The `ℤ`-span of an orthonormal basis is discrete, as the `ℤ`-span of the underlying basis
+`b.toBasis` is. -/
+instance instDiscreteTopologySpanOrthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) : DiscreteTopology (span ℤ (Set.range b)) := by
+  rw [← b.coe_toBasis]
+  infer_instance
+
+/-- The `ℤ`-span of an orthonormal basis is a full lattice, a copy of `ℤⁿ ⊆ ℝⁿ`. -/
+instance instIsZLatticeSpanOrthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) : IsZLattice ℝ (span ℤ (Set.range b)) where
+  span_top := by
+    rw [← b.coe_toBasis]
+    exact IsZLattice.span_top
 
 /-- The `ℤ`-span of an orthonormal basis is its own dual. -/
 @[simp]
