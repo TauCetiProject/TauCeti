@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+import Mathlib.Algebra.BigOperators.Field
 
 /-!
 # Gram-matrix lattices on the standard rational coordinate space
@@ -38,6 +39,11 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff`: the carrier is `ℤⁿ`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_iff`: the dual carrier consists of
   the vectors whose row combinations against `G` are integers.
+* `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_weight_basisFun`,
+  `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_weight_self` and
+  `TauCeti.IntegralLattice.weight_mem_ofGramMatrix_basisFun_dualCarrier`: if `G c = d • e_{i₀}`
+  over `ℤ`, the vector `c / d` pairs to `δ_{i, i₀}` with the coordinate vectors, has self-pairing
+  `c i₀ / d`, and is dual-integral.
 
 ## References
 
@@ -175,6 +181,55 @@ theorem mem_ofGramMatrix_basisFun_dualCarrier_iff (x : ι → ℚ) :
     | smul c a _ ha =>
         rw [map_zsmul]
         exact Submodule.smul_mem (1 : Submodule ℤ ℚ) c ha
+
+section Weight
+
+variable [DecidableEq ι] (c : ι → ℤ) (d : ℤ) (hd : d ≠ 0) (i₀ : ι)
+include hd
+
+/-- If `G c = d • e_{i₀}` over `ℤ`, the rational vector `c / d` has row combinations
+`δ_{i, i₀}` against `G`. -/
+theorem sum_gram_mul_div_eq (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) (i : ι) :
+    ∑ j, ((G i j : ℤ) : ℚ) * ((c j : ℚ) / d) = if i = i₀ then 1 else 0 := by
+  have hcast := congrArg (fun z : ℤ => (z : ℚ)) (h i)
+  simp only [Int.cast_sum, Int.cast_mul] at hcast
+  have hd' : (d : ℚ) ≠ 0 := by exact_mod_cast hd
+  have hsum : ∑ j, ((G i j : ℤ) : ℚ) * ((c j : ℚ) / d) =
+      (∑ j, ((G i j : ℤ) : ℚ) * (c j : ℚ)) / d := by
+    rw [Finset.sum_div]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [hsum, hcast]
+  split_ifs <;> simp [hd']
+
+/-- If `G c = d • e_{i₀}` over `ℤ`, the vector `c / d` pairs to `δ_{i, i₀}` with the standard
+coordinate vectors. -/
+theorem form_ofGramMatrix_basisFun_weight_basisFun
+    (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) (i : ι) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form (fun j ↦ (c j : ℚ) / d) (Pi.basisFun ℚ ι i) =
+      if i = i₀ then 1 else 0 := by
+  rw [form_ofGramMatrix_basisFun_right]
+  exact sum_gram_mul_div_eq G c d hd i₀ h i
+
+/-- If `G c = d • e_{i₀}` over `ℤ`, the self-pairing of `c / d` is `c i₀ / d`. -/
+theorem form_ofGramMatrix_basisFun_weight_self
+    (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form (fun j ↦ (c j : ℚ) / d) (fun j ↦ (c j : ℚ) / d) =
+      (c i₀ : ℚ) / d := by
+  rw [form_ofGramMatrix_basisFun_apply]
+  simp_rw [sum_gram_mul_div_eq G c d hd i₀ h]
+  simp
+
+/-- If `G c = d • e_{i₀}` over `ℤ`, the vector `c / d` lies in the dual of the Gram-matrix
+lattice. -/
+theorem weight_mem_ofGramMatrix_basisFun_dualCarrier
+    (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) :
+    (fun j ↦ (c j : ℚ) / d) ∈ (ofGramMatrix (Pi.basisFun ℚ ι) G hG).dualCarrier := by
+  rw [mem_ofGramMatrix_basisFun_dualCarrier_iff]
+  intro i
+  rw [sum_gram_mul_div_eq G c d hd i₀ h]
+  exact ⟨if i = i₀ then 1 else 0, by split_ifs <;> simp⟩
+
+end Weight
 
 end StandardCoordinates
 
