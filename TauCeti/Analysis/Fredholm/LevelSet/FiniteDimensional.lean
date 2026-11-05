@@ -23,12 +23,14 @@ in `U` and `f` is sufficiently smooth there. The regular parameters are then den
 This is the finite-dimensional parametric transversality theorem in its measure-theoretic form
 (Guillemin--Pollack, *Differential Topology*, Chapter 2 §3, the transversality theorem; Hirsch,
 *Differential Topology*, Chapter 3 Theorem 2.7). It is not a special case of
-`TauCeti.dense_setOf_isRegularParameter`, for two reasons. That theorem concludes that the
-non-regular parameters are meagre, which in finite dimensions neither implies nor is implied by
-measure zero; the applications here, to the Morse--Smale condition for almost every small
-perturbation of a Morse function, need the measure statement. And its hypotheses are imposed at
-every solution of an equation defined on all of `E × Λ`, while the universal equations of those
-applications are only smooth, and only transverse, on a subset of their domain.
+`TauCeti.isMeagre_setOf_not_isRegularParameter` and its corollary
+`TauCeti.dense_setOf_isRegularParameter`, for two reasons. Those theorems conclude that the
+non-regular parameters are meagre and the regular ones dense, and in finite dimensions meagreness
+neither implies nor is implied by measure zero; the applications here, to the Morse--Smale
+condition for almost every small perturbation of a Morse function, need the measure statement. And
+their hypotheses are imposed at every solution of an equation defined on all of `E × Λ`, while the
+universal equations of those applications are only smooth, and only transverse, on a subset of
+their domain.
 
 ## The proof
 
@@ -93,7 +95,16 @@ def IsRegularParameterOn (f : E × Λ → F) (U : Set (E × Λ)) (c : F) (l : Λ
     Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ))
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
+/-- A parameter is regular on `U` exactly when the fixed-parameter derivatives are surjective at
+all solutions of the level equation in `U`. -/
+theorem isRegularParameterOn_iff {f : E × Λ → F} {U : Set (E × Λ)} {c : F} {l : Λ} :
+    IsRegularParameterOn f U c l ↔ ∀ x, (x, l) ∈ U → f (x, l) = c →
+      Surjective ((fderiv ℝ f (x, l)).comp (ContinuousLinearMap.inl ℝ E Λ)) :=
+  (Iff.rfl)
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ Λ] [FiniteDimensional ℝ F] in
 /-- Regularity on the whole space is regularity. -/
+@[simp]
 theorem isRegularParameterOn_univ {f : E × Λ → F} {c : F} {l : Λ} :
     IsRegularParameterOn f univ c l ↔ IsRegularParameter f c l := by
   rw [isRegularParameter_iff]
@@ -145,63 +156,20 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
     rw [hcop]
   have hnull : ν (g '' (V ∩ {y | ¬ Surjective (fderiv ℝ g y)})) = 0 :=
     TauCeti.addHaar_image_criticalPoints_eq_zero ν (fun y hy ↦ hVC y hy) hkV
-  -- Points of the chart near the origin at which `f` is differentiable and the chart is the
-  -- implicit-function coordinate.
-  have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
-    filter_upwards [(hcont.of_le hn).eventually hkω] with w hw
-    exact hw.differentiableAt hk0
-  have hsource : hstrict.implicitCoordSource (LinearMap.range_eq_top.mpr hsurj) hker ∈
-      𝓝 ((x, l) : E × Λ) :=
-    (hstrict.isOpen_implicitCoordSource _ _).mem_nhds (hstrict.mem_implicitCoordSource _ _)
-  have hval0 : ((Φ.symm 0 : ↥{z | f z = c}) : E × Λ) = (x, l) := by
-    rw [hΦ, levelSetChart_symm_zero]
-  have hcontAt : ContinuousAt (fun y ↦ ((Φ.symm y : ↥{z | f z = c}) : E × Λ)) 0 :=
-    (hasStrictFDerivAt_coe_levelSetChart_symm hstrict (LinearMap.range_eq_top.mpr hsurj) hker
-      hxl).continuousAt
-  have hW : (fun y ↦ ((Φ.symm y : ↥{z | f z = c}) : E × Λ)) ⁻¹'
-      (hstrict.implicitCoordSource (LinearMap.range_eq_top.mpr hsurj) hker ∩
-        {w | DifferentiableAt ℝ f w}) ∈ 𝓝 (0 : (D₁.coprod D₂).ker) := by
-    refine hcontAt.preimage_mem_nhds ?_
-    rw [hval0]
-    exact inter_mem hsource hdiff
-  set N : Set (D₁.coprod D₂).ker := V ∩ Φ.target ∩
-    (fun y ↦ ((Φ.symm y : ↥{z | f z = c}) : E × Λ)) ⁻¹'
-      (hstrict.implicitCoordSource (LinearMap.range_eq_top.mpr hsurj) hker ∩
-        {w | DifferentiableAt ℝ f w})
-  have hNnhds : N ∈ 𝓝 (0 : (D₁.coprod D₂).ker) :=
-    inter_mem (inter_mem (hVopen.mem_nhds hV0)
-      (Φ.open_target.mem_nhds (mem_levelSetChart_target hstrict _ hker hxl))) hW
-  -- The chart source, pulled back to a neighbourhood of `(x, l)` in `E × Λ`.
-  have hz0 : (⟨(x, l), hxl⟩ : ↥{z | f z = c}) ∈ Φ.source :=
-    mem_levelSetChart_source hstrict (LinearMap.range_eq_top.mpr hsurj) hker hxl
-  have hΦ0 : Φ ⟨(x, l), hxl⟩ = 0 :=
-    levelSetChart_apply_self hstrict (LinearMap.range_eq_top.mpr hsurj) hker hxl
-  have hQ' : Φ.source ∩ Φ ⁻¹' N ∈ 𝓝 (⟨(x, l), hxl⟩ : ↥{z | f z = c}) :=
-    inter_mem (Φ.open_source.mem_nhds hz0) (Φ.continuousAt hz0 (hΦ0 ▸ hNnhds))
-  obtain ⟨Q, hQnhds, hQsub⟩ := (mem_nhds_subtype _ _ _).1 hQ'
+  -- Near the chart origin, criticality of the parameter map is failure of regularity; pull both
+  -- neighbourhoods back to a neighbourhood of `(x, l)`.
+  obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
+    (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hstrict hcont hn0 hsurj
+      hker hxl)
+  obtain ⟨Q, hQnhds, hQ⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict hsurj
+    hker hxl (inter_mem (hVopen.mem_nhds hV0) (hWopen.mem_nhds hW0))
   refine ⟨Q, hQnhds, measure_mono_null ?_ hnull⟩
   rintro l' ⟨x', hx'Q, hx'c, hx'bad⟩
-  set w : ↥{z | f z = c} := ⟨(x', l'), hx'c⟩
-  have hwQ : w ∈ Φ.source ∩ Φ ⁻¹' N := hQsub hx'Q
-  obtain ⟨hwsource, hwN⟩ := hwQ
-  obtain ⟨⟨hwV, hwtarget⟩, hwcoord, hwdiff⟩ := hwN
-  have hwback : Φ.symm (Φ w) = w := Φ.left_inv hwsource
-  refine ⟨Φ w, ⟨hwV, ?_⟩, levelSetParameterMap_levelSetChart hstrict hsurj hker hxl hwsource⟩
-  -- Criticality of the parameter map at `Φ w` is failure of regularity at `w`.
-  have hA : HasFDerivAt f
-      (((fderiv ℝ f ((Φ.symm (Φ w) : ↥{z | f z = c}) : E × Λ)).comp
-          (ContinuousLinearMap.inl ℝ E Λ)).coprod
-        ((fderiv ℝ f ((Φ.symm (Φ w) : ↥{z | f z = c}) : E × Λ)).comp
-          (ContinuousLinearMap.inr ℝ E Λ)))
-      ((Φ.symm (Φ w) : ↥{z | f z = c}) : E × Λ) := by
-    rw [ContinuousLinearMap.coprod_comp_inl_inr]
-    exact hwdiff.hasFDerivAt
-  have hiff : Surjective (fderiv ℝ g (Φ w)) ↔
-      Surjective ((fderiv ℝ f ((Φ.symm (Φ w) : ↥{z | f z = c}) : E × Λ)).comp
-        (ContinuousLinearMap.inl ℝ E Λ)) :=
-    surjective_fderiv_levelSetParameterMap_iff_of_mem hstrict hsurj hker hxl hwtarget hwcoord hA
-  rw [hwback] at hiff
-  exact fun hs ↦ hx'bad (hiff.1 hs)
+  obtain ⟨hwsource, hwV, hwW⟩ := hQ ⟨(x', l'), hx'c⟩ hx'Q
+  refine ⟨Φ ⟨(x', l'), hx'c⟩, ⟨hwV, fun hs ↦ hx'bad ?_⟩,
+    levelSetParameterMap_levelSetChart hstrict hsurj hker hxl hwsource⟩
+  have h := (hW _ hwW).2.1 hs
+  rwa [Φ.left_inv hwsource] at h
 
 /-- **Parametric transversality in finite dimensions, measure form.** For a parametrized equation
 between finite-dimensional real normed spaces, the parameters that are not regular on a set `U`
@@ -209,10 +177,7 @@ form a set of additive Haar measure zero, provided the total linearization is su
 every solution in `U` and the smoothness order meets the Morse--Sard threshold `(dim)² + 1` for
 the kernel of the total linearization there.
 
-The hypotheses are imposed only along the level set `f⁻¹(c)` inside `U`. Countably many of the
-neighbourhoods of the local theorem
-`TauCeti.exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_zero` cover that
-level set, which is second countable. -/
+The hypotheses are imposed only along the level set `f⁻¹(c)` inside `U`. -/
 theorem addHaar_setOf_not_isRegularParameterOn_eq_zero {f : E × Λ → F} {U : Set (E × Λ)}
     {c : F} {n : ℕ∞ω}
     (hcont : ∀ z ∈ U, f z = c → ContDiffAt ℝ n f z)
@@ -235,7 +200,7 @@ theorem addHaar_setOf_not_isRegularParameterOn_eq_zero {f : E × Λ → F} {U : 
     (f := Q) (s := S) fun z hz ↦ nhdsWithin_le_nhds (hQnhds z hz)
   refine measure_mono_null (fun l hl ↦ ?_)
     ((measure_biUnion_null_iff (s := B) htcount).2 fun z hz ↦ hQnull z (hts hz))
-  simp only [mem_ofPred_eq, IsRegularParameterOn, not_forall] at hl
+  simp only [mem_ofPred_eq, isRegularParameterOn_iff, not_forall] at hl
   obtain ⟨x, hxU, hxc, hxbad⟩ := hl
   obtain ⟨z, hzt, hwQ⟩ := mem_iUnion₂.1 (htcover ⟨hxU, hxc⟩)
   exact mem_iUnion₂.2 ⟨z, hzt, x, hwQ, hxc, hxbad⟩
@@ -250,8 +215,8 @@ theorem ae_isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F} 
   ae_iff.2 (addHaar_setOf_not_isRegularParameterOn_eq_zero ν hcont htotal hn)
 
 omit [MeasurableSpace Λ] [BorelSpace Λ] in
-/-- The parameters that are regular on a set `U` are dense. This form carries no
-measure-theoretic data; the Haar measure used to prove it is chosen inside the proof. -/
+/-- The parameters that are regular on a set `U` are dense. The statement needs no measurable
+structure on `Λ`. -/
 theorem dense_setOf_isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F}
     {n : ℕ∞ω} (hcont : ∀ z ∈ U, f z = c → ContDiffAt ℝ n f z)
     (htotal : ∀ z ∈ U, f z = c → Surjective (fderiv ℝ f z))

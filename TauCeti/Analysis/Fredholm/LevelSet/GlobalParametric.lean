@@ -124,23 +124,16 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
       (hfixed.closedComplemented_ker_coprod hsurj) z.2
     let g := levelSetParameterMap hstrict hsurj
       (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    let Q : Set S := Φ.source ∩ Φ ⁻¹' N
+    obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
+      hstrict hsurj (hfixed.closedComplemented_ker_coprod hsurj) z.2 hNnhds
+    let Q : Set S := Subtype.val ⁻¹' Q₀
     let B : Set Λ := g ''
       (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : S) : E × Λ)).comp
         (ContinuousLinearMap.inl ℝ E Λ))})
-    have hzsource : z ∈ Φ.source :=
-      mem_levelSetChart_source hstrict (LinearMap.range_eq_top.mpr hsurj)
-        (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    have hΦz : Φ z = 0 :=
-      levelSetChart_apply_self hstrict (LinearMap.range_eq_top.mpr hsurj)
-        (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    have hQnhds : Q ∈ 𝓝 z := by
-      refine Filter.inter_mem (Φ.open_source.mem_nhds hzsource) ?_
-      exact Φ.continuousAt hzsource (hΦz ▸ hNnhds)
+    have hQnhds : Q ∈ 𝓝 z := continuous_subtype_val.continuousAt.preimage_mem_nhds hQ₀nhds
     refine ⟨Q, hQnhds, B, hNnowhere, ?_⟩
     intro w hwQ hwbad
-    have hwsource : w ∈ Φ.source := hwQ.1
-    have hwN : Φ w ∈ N := hwQ.2
+    obtain ⟨hwsource, hwN⟩ := hQ₀ w hwQ
     have hwback : Φ.symm (Φ w) = w := Φ.left_inv hwsource
     have hwbad' : ¬ Surjective ((fderiv ℝ f ((Φ.symm (Φ w) : S) : E × Λ)).comp
         (ContinuousLinearMap.inl ℝ E Λ)) := by
