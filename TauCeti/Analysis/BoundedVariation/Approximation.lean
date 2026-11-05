@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
 
@@ -92,9 +91,10 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
     hu.bdd_mul (hχ n).continuous.aestronglyMeasurable (.of_forall (hχnorm n))
   -- Dominated convergence controls the discarded L¹ mass.
   have hlim := tendsto_lintegral_enorm_mul_sub_of_eventually_eq_one (l := atTop) hu
-    (fun n x => hχ01 n (mem_range_self x)) (fun n => (hχ n).continuous.aestronglyMeasurable)
-    fun x => (tendsto_natCast_atTop_atTop.eventually_ge_atTop ‖x‖).mono fun n hn =>
-      hχone n (by simpa using hn.trans (by linarith : (n : ℝ) ≤ n + 1))
+    (fun n => .of_forall fun x => hχ01 n (mem_range_self x))
+    (fun n => (hχ n).continuous.aestronglyMeasurable)
+    (.of_forall fun x => (tendsto_natCast_atTop_atTop.eventually_ge_atTop ‖x‖).mono fun n hn =>
+      hχone n (by simpa using hn.trans (by linarith : (n : ℝ) ≤ n + 1)))
   -- The product estimate bounds the additional variation by the L¹ mass times c / (n + 1).
   let b (n : ℕ) : ℝ≥0∞ := ENNReal.ofReal (c / (n + 1)) * ∫⁻ x, ‖u x‖ₑ ∂μ
   have hb : Tendsto b atTop (𝓝 0) := by
