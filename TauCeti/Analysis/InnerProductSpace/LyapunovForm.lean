@@ -42,7 +42,8 @@ which needs the spectral splitting of `A`, is not proved here.
 * `ContinuousLinearMap.HasLyapunovForm.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul`: `A` has no
   purely imaginary eigenvalue, and in particular is injective.
 * `ContinuousLinearMap.HasLyapunovForm.neg_adjoint`: in finite dimensions, `-A†` has a Lyapunov
-  form whenever `A` does. This is the operator of the formal adjoint `-d/ds + A†` of `d/ds + A`.
+  form whenever `A` does. The formal adjoint of `d/ds + A` is `-d/ds + A†`; multiplying it by `-1`
+  gives `d/ds - A†`, whose coefficient is `-A†`.
 
 ## References
 
@@ -136,8 +137,9 @@ theorem HasLyapunovForm.injective (h : A.HasLyapunovForm) : Function.Injective A
   exact (h.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul (ω := 0) (w := 0) (by simp [hv])
     (by simp)).1
 
-/-- **The formal adjoint operator has a Lyapunov form.** In finite dimensions, if `A` has the
-Lyapunov form `S`, then `-A†` has the Lyapunov form `-S⁻¹`. -/
+/-- **The negated adjoint has a Lyapunov form.** In finite dimensions, if `A` has the Lyapunov
+form `S`, then `-A†` has the Lyapunov form `-S⁻¹`. The operator `-A†` is the coefficient of
+`d/ds - A†`, the negative of the formal adjoint `-d/ds + A†` of `d/ds + A`. -/
 theorem HasLyapunovForm.neg_adjoint [FiniteDimensional ℝ E] (h : A.HasLyapunovForm) :
     (-adjoint A).HasLyapunovForm := by
   obtain ⟨S, hS, c, hc, hcS⟩ := h
