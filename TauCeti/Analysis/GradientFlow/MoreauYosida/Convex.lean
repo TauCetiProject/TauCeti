@@ -39,8 +39,8 @@ from `y` to `v` (`TauCeti.ConvexAlong.apply_add_le_of_forall_le`). Read as
 `(d(y, v)² - d(x, v)²) / (2τ) + (m / 2) d(y, v)² ≤ φ v - φ y - d(x, y)² / (2τ)`, this is the
 implicit Euler discretization of the evolution variational inequality
 `(1/2) d/dt d(u t, v)² + (m / 2) d(u t, v)² ≤ φ v - φ (u t)` (`TauCeti.IsEVISolution`). In
-particular the resolvent has at most one point when `1 + m τ > 0`
-(`TauCeti.PenalizedConvex.subsingleton_moreauYosidaResolvent`).
+particular, when `1 + m τ > 0` and `φ` never takes the value `⊥` and is finite somewhere, the
+resolvent has at most one point (`TauCeti.PenalizedConvex.subsingleton_moreauYosidaResolvent`).
 
 Along a minimizing movement sequence `U` with `U (n + 1) ∈ J_τ (U n)`, the discrete variational
 inequality reads `r d(U (n + 1), v)² - d(U n, v)² ≤ 2τ (φ v - φ (U (n + 1)))` with
@@ -54,10 +54,11 @@ This is the discrete form of the integrated evolution variational inequality
 `τ ∑_{n < N} r ^ n` replaces `∫₀^{Nτ} e^{m s} ds`. It gives the energy regularization estimate
 `φ (U N) ≤ φ v + (d(U 0, v)² - r ^ N d(U N, v)²) / (2τ ∑_{n < N} r ^ n)` for `N ≥ 1`
 (`TauCeti.PenalizedConvex.apply_le`), which for `m = 0` is the rate
-`φ (U N) ≤ φ v + d(U 0, v)² / (2 N τ)`, and the convergence `r ^ N d(U N, v)² ≤ d(U 0, v)²` of
-the scheme towards a point `v` of smaller energy, such as a minimizer of `φ`
-(`TauCeti.PenalizedConvex.pow_mul_dist_sq_le`). These are the a priori estimates on which the
-convergence of minimizing movements to the `EVI_m` flow rests.
+`φ (U N) ≤ φ v + d(U 0, v)² / (2 N τ)`, and the weighted distance estimate
+`r ^ N d(U N, v)² ≤ d(U 0, v)²` towards a point `v` of smaller energy, such as a minimizer of `φ`
+(`TauCeti.PenalizedConvex.pow_mul_dist_sq_le`). For `m > 0` and a fixed minimizer `v` of finite
+energy, this is geometric convergence of the scheme to `v`. These are the a priori estimates on
+which the convergence of minimizing movements to the `EVI_m` flow rests.
 
 ## Main definitions
 
@@ -70,12 +71,13 @@ convergence of minimizing movements to the `EVI_m` flow rests.
   inequality.
 * `TauCeti.PenalizedConvex.eq_of_mem_moreauYosidaResolvent` and
   `TauCeti.PenalizedConvex.subsingleton_moreauYosidaResolvent`: uniqueness of the resolvent step
-  when `1 + m τ > 0`.
+  when `1 + m τ > 0`, for a resolvent step of finite energy, respectively for an energy that
+  never takes the value `⊥` and is finite somewhere.
 * `TauCeti.PenalizedConvex.pow_mul_dist_sq_sub_le`: the discrete integrated evolution variational
   inequality along a minimizing movement sequence.
 * `TauCeti.PenalizedConvex.apply_le`: the discrete energy regularization estimate.
-* `TauCeti.PenalizedConvex.pow_mul_dist_sq_le`: convergence of a minimizing movement sequence
-  towards points of smaller energy.
+* `TauCeti.PenalizedConvex.pow_mul_dist_sq_le`: the weighted distance estimate of a minimizing
+  movement sequence towards points of smaller energy.
 * `TauCeti.GeodesicallyConvex.penalizedConvex`: on a CAT(0) space, an `m`-geodesically convex
   energy satisfies the hypothesis for every time step.
 
@@ -306,15 +308,15 @@ theorem PenalizedConvex.apply_le (h : PenalizedConvex m τ φ) (hτ : 0 < τ) (h
         le_div_iff₀ (by positivity)]
       nlinarith
 
-/-- **Convergence towards points of smaller energy.** Let `φ` be penalized convex with parameter
-`m` and time step `τ > 0` with `1 + m τ ≥ 0`, and let `U` be a minimizing movement sequence,
-`U (n + 1) ∈ J_τ (U n)`. If `v` has finite energy `φ v ≤ φ (U N)`, for instance if `v` minimizes
-`φ`, then
+/-- **Weighted distance estimate towards points of smaller energy.** Let `φ` be penalized convex
+with parameter `m` and time step `τ > 0` with `1 + m τ ≥ 0`, and let `U` be a minimizing movement
+sequence, `U (n + 1) ∈ J_τ (U n)`. If `v` has finite energy `φ v ≤ φ (U N)`, for instance if `v`
+minimizes `φ`, then
 
 `(1 + m τ) ^ N d(U N, v)² ≤ d(U 0, v)²`.
 
-For `m > 0` the scheme converges geometrically to the minimizer of `φ`; this is the discrete
-form of the contraction of the `EVI_m` flow. -/
+For `m > 0` and a fixed minimizer `v` of finite energy, the scheme therefore converges
+geometrically to `v`; this is the discrete form of the contraction of the `EVI_m` flow. -/
 theorem PenalizedConvex.pow_mul_dist_sq_le (h : PenalizedConvex m τ φ) (hτ : 0 < τ)
     (hmτ : 0 ≤ 1 + m * τ) (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
     (hv : φ v ≠ ⊤) (hv' : φ v ≠ ⊥) {N : ℕ} (hvN : φ v ≤ φ (U N)) :
