@@ -281,16 +281,13 @@ private theorem involutive_partnerTime (hs : poly.IsSimple ℝ)
 private noncomputable def crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) :
     PerfectMatching (poly.crossingTimes p₀ d) :=
-  .mk ((involutive_partnerTime hs hπ).toPerm _)
-    (fun t ↦ by rw [Involutive.coe_toPerm]; exact involutive_partnerTime hs hπ t)
-    (fun t h ↦ partnerTime_ne t.2 <| by
-      rw [Involutive.coe_toPerm] at h
-      exact congrArg Subtype.val h)
+  .ofInvolutive (involutive_partnerTime hs hπ)
+    (fun t h ↦ partnerTime_ne t.2 (congrArg Subtype.val h))
 
 private theorem coe_crossingMatching_apply (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :
     ((crossingMatching hs hπ).val t : ℝ) = partnerTime poly p₀ d t := by
-  rw [crossingMatching, PerfectMatching.val_mk, Involutive.coe_toPerm]
+  rw [crossingMatching, PerfectMatching.ofInvolutive_apply]
 
 private theorem crossingOver_crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :

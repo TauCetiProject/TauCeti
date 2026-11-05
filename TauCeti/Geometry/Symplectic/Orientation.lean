@@ -10,6 +10,9 @@ public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
+import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -34,6 +37,16 @@ preserves it, while `-ω` has the opposite orientation exactly when `n` is odd. 
 orientation of a direct sum `ω₁ ⊕ ω₂` is the product of the symplectic orientations of the
 summands (`TauCeti.SymplecticForm.orientation_prod`).
 
+The symplectic orientation is also determined by any almost complex structure `J` that `ω` tames,
+`ω(v, J v) > 0` for `v ≠ 0`: every `J`-adapted basis `(v₁, J v₁, …, vₙ, J vₙ)` is positive
+(`TauCeti.SymplecticForm.Tames.orientation_reindex`). The proof is the symplectic Gram–Schmidt
+process: the span of the first `i` adapted pairs is `J`-invariant, hence symplectic, and projecting
+the next pair onto its symplectic complement yields a Darboux basis whose matrix in the adapted
+basis is triangular with positive diagonal. Hence two symplectic forms taming a common `J` have the
+same orientation (`TauCeti.SymplecticForm.Tames.orientation_eq`). Taming a fixed `J` is an open
+condition on `ω`, so this is the input for the local constancy of the tangent symplectic
+orientations of a symplectic manifold.
+
 This is the linear model for the orientation of a symplectic manifold, read on each tangent
 space, and the product law computes the orientation of a product such as
 `(ℝ², ds ∧ dt) × (V, ω)`.
@@ -42,6 +55,13 @@ space, and the product law computes the orientation of a product such as
 
 * `TauCeti.SymplecticForm.orientation ω hk`: the symplectic orientation of `V`, indexed by
   `Fin k` where `finrank ℝ V = k`.
+
+## Main results
+
+* `TauCeti.SymplecticForm.Tames.orientation_reindex`: if `ω` tames `J`, every `J`-adapted basis is
+  positive for the symplectic orientation.
+* `TauCeti.SymplecticForm.Tames.orientation_eq`: symplectic forms taming a common almost complex
+  structure have the same symplectic orientation.
 
 ## References
 
@@ -166,6 +186,126 @@ theorem orientation_prod [FiniteDimensional ℝ W] (ω₁ : SymplecticForm V) (�
   conv_lhs => rw [Basis.reindex_apply, Basis.reindex_apply, hF, Equiv.symm_apply_apply,
     Equiv.symm_apply_apply]
   rcases p with p | p <;> simp [F, Basis.reindex_apply, Basis.prod_apply]
+
+/-! ### Tamed almost complex structures -/
+
+variable {J : AlmostComplexStructure V}
+
+/-- One step of the symplectic Gram–Schmidt process for a tamed almost complex structure. If `S`
+is `J`-invariant and `v ∉ S`, there is a pair `(x, y)` in the symplectic complement of `S` with
+`ω x y = 1`, `x ≡ v` and `y ≡ c • J v` modulo `S` for some `c > 0`. -/
+private theorem Tames.exists_pair (hJ : ω.Tames J) {S : Submodule ℝ V}
+    (hS : S ∈ Module.End.invtSubmodule J.toLinearMap) {v : V} (hv : v ∉ S) :
+    ∃ x y : V, x ∈ ω.orthogonal S ∧ y ∈ ω.orthogonal S ∧ ω x y = 1 ∧ x - v ∈ S ∧
+      ∃ c : ℝ, 0 < c ∧ y - c • J v ∈ S := by
+  have hc := (hJ.isSymplectic_of_mem_invtSubmodule hS).isCompl.symm
+  set π := (ω.orthogonal S).projection S hc
+  -- `x` is the component of `v` in the symplectic complement, and `z` that of `J x`.
+  set x := π v
+  set z := π (J x)
+  have hxv : v - x ∈ S := Submodule.sub_projection_mem hc v
+  have hzx : J x - z ∈ S := Submodule.sub_projection_mem hc (J x)
+  have hxo : x ∈ ω.orthogonal S := Submodule.projection_apply_mem hc v
+  have hx0 : x ≠ 0 := by
+    rintro hx
+    rw [hx, sub_zero] at hxv
+    exact hv hxv
+  have hpos : 0 < ω x (J x) := hJ x hx0
+  -- `ω x z = ω x (J x)`, because `J x - z ∈ S` and `x ∈ S^ω`.
+  have hxz : ω x z = ω x (J x) := by
+    have := (mem_orthogonal_iff'.1 hxo) _ hzx
+    simp only [map_sub] at this
+    linarith
+  refine ⟨x, (ω x (J x))⁻¹ • z, hxo, Submodule.smul_mem _ _ (Submodule.projection_apply_mem hc _),
+    ?_, ?_, (ω x (J x))⁻¹, inv_pos.2 hpos, ?_⟩
+  · simp only [map_smul, smul_eq_mul, hxz]
+    exact inv_mul_cancel₀ hpos.ne'
+  · rw [← neg_sub]
+    exact neg_mem hxv
+  · rw [← smul_sub]
+    refine Submodule.smul_mem _ _ ?_
+    have : z - J v = -(J x - z) - J (v - x) := by
+      rw [map_sub]
+      abel
+    rw [this]
+    exact sub_mem (neg_mem hzx) ((Module.End.mem_invtSubmodule _).1 hS hxv)
+
+/-- **A tamed almost complex structure determines the symplectic orientation.** If `ω` tames `J`,
+then every `J`-adapted basis `(v₁, J v₁, …, vₙ, J vₙ)`, listed in this interleaved order, is
+positive for the symplectic orientation of `ω`. -/
+theorem Tames.orientation_reindex (hJ : ω.Tames J) (hb : ∀ i, b (i, 1) = J (b (i, 0)))
+    (hk : finrank ℝ V = k) (h : n * 2 = k) :
+    (b.reindex (finProdFinEquiv.trans (finCongr h))).orientation = ω.orientation hk := by
+  -- `S i` is spanned by the first `i` adapted pairs; it is `J`-invariant.
+  set S : Fin n → Submodule ℝ V := fun i ↦ Submodule.span ℝ (b '' {r | r.1 < i})
+  have hbS {r : Fin n × Fin 2} {i : Fin n} (h : r.1 < i) : b r ∈ S i :=
+    Submodule.subset_span ⟨r, h, rfl⟩
+  have hSmono {i j : Fin n} (h : i ≤ j) : S i ≤ S j :=
+    Submodule.span_mono (Set.image_mono fun _ hr ↦ lt_of_lt_of_le hr h)
+  have hS (i : Fin n) : S i ∈ Module.End.invtSubmodule J.toLinearMap :=
+    J.span_image_fst_lt_mem_invtSubmodule hb i
+  have hv (i : Fin n) : b (i, 0) ∉ S i := fun h ↦
+    lt_irrefl i ((Basis.mem_span_image b).1 h (by simp : (i, 0) ∈ (b.repr (b (i, 0))).support))
+  choose x y hx hy hxy hxv c hc hyv using fun i ↦ hJ.exists_pair (hS i) (hv i)
+  set d : Fin n × Fin 2 → V := fun p ↦ ![x p.1, y p.1] p.2
+  -- The pairs before the `i`-th lie in `S i`, and the `i`-th pair lies in its complement.
+  have hdS (p : Fin n × Fin 2) {i : Fin n} (hi : p.1 < i) : d p ∈ S i := by
+    obtain ⟨j, a⟩ := p
+    fin_cases a
+    · simpa [d] using add_mem (hSmono hi.le (hxv j)) (hbS (r := (j, 0)) hi)
+    · simpa [d, hb] using
+        add_mem (hSmono hi.le (hyv j)) (Submodule.smul_mem _ (c j) (hbS (r := (j, 1)) hi))
+  have hdo (p : Fin n × Fin 2) : d p ∈ ω.orthogonal (S p.1) := by
+    obtain ⟨j, a⟩ := p
+    fin_cases a
+    · simpa [d] using hx j
+    · simpa [d] using hy j
+  have hcross (p q : Fin n × Fin 2) (hpq : p.1 ≠ q.1) : ω (d p) (d q) = 0 := by
+    rcases lt_or_gt_of_ne hpq with h | h
+    · exact (mem_orthogonal_iff.1 (hdo q)) _ (hdS p h)
+    · exact (mem_orthogonal_iff'.1 (hdo p)) _ (hdS q h)
+  -- In the basis `b`, the family `d` is triangular with diagonal entries `1` and `c i`.
+  have hcoef (p : Fin n × Fin 2) : 0 < ![1, c p.1] p.2 := by
+    obtain ⟨j, a⟩ := p
+    fin_cases a
+    · simp
+    · simpa using hc j
+  have htri (p : Fin n × Fin 2) :
+      d p - ![1, c p.1] p.2 • b p ∈ Submodule.span ℝ (b '' {r | r.1 < p.1}) := by
+    obtain ⟨j, a⟩ := p
+    fin_cases a
+    · simpa [d] using hxv j
+    · simpa [d, hb] using hyv j
+  -- Listed lexicographically, `d` is triangular in the sense of
+  -- `Module.Basis.det_pos_of_sub_smul_mem_span`.
+  have hdet : 0 < b.det d := by
+    rw [show b.det d = (b.reindex toLex).det (d ∘ ofLex) by rw [Basis.det_reindex]; rfl]
+    refine (b.reindex toLex).det_pos_of_sub_smul_mem_span (fun p ↦ hcoef (ofLex p)) fun p ↦ ?_
+    refine Submodule.span_mono ?_ (by simpa using htri (ofLex p))
+    rintro _ ⟨q, hq, rfl⟩
+    exact ⟨toLex q, Prod.Lex.toLex_lt_toLex.2 (.inl hq), by simp⟩
+  have hbasis := b.is_basis_iff_det.2 hdet.ne'.isUnit
+  set D := Basis.mk hbasis.1 hbasis.2.ge
+  have hDd : ⇑D = d := Basis.coe_mk _ _
+  have hD : ω.IsDarbouxBasis D := by
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;> rw [hDd] <;>
+      rcases eq_or_ne i j with rfl | hij
+    · simp
+    · exact hcross (i, 0) (j, 0) hij
+    · simp
+    · exact hcross (i, 1) (j, 1) hij
+    · simpa [d] using hxy i
+    · simpa [hij] using hcross (i, 0) (j, 1) hij
+  rw [← hD.orientation_reindex hk h, Basis.orientation_reindex, Basis.orientation_reindex,
+    (b.orientation_eq_iff_det_pos D).2 (by rwa [hDd])]
+
+/-- **Symplectic forms taming a common almost complex structure have the same symplectic
+orientation.** -/
+theorem Tames.orientation_eq (hJ : ω.Tames J) {ω' : SymplecticForm V} (hJ' : ω'.Tames J)
+    (hk : finrank ℝ V = k) : ω.orientation hk = ω'.orientation hk := by
+  obtain ⟨n, b, hb⟩ := J.exists_basis_apply_one_eq
+  have h : n * 2 = k := by simp [← hk, Module.finrank_eq_card_basis b]
+  rw [← hJ.orientation_reindex hb hk h, hJ'.orientation_reindex hb hk h]
 
 end SymplecticForm
 
