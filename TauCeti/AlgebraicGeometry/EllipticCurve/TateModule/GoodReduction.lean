@@ -71,6 +71,48 @@ open ValuativeRel IsLocalRing TauCeti
 
 namespace WeierstrassCurve
 
+section ValuationSubring
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] in
+/-- Divisibility by a power of `ϖ` is the same in `𝒪[K]` as in the valuation ring of any
+valuation `v` on `L` equivalent to the standard one: `L` and `K` compare valuations alike. -/
+theorem pow_dvd_algebraMap_iff_valuationSubring {Γ : Type*} [LinearOrderedCommGroupWithZero Γ]
+    {v : Valuation L Γ} (hv : v.IsEquiv (valuation L)) [Algebra 𝒪[K] v.valuationSubring]
+    (hcompat : ∀ r : 𝒪[K], (algebraMap v.valuationSubring L (algebraMap 𝒪[K] _ r)) =
+      algebraMap K L (algebraMap 𝒪[K] K r))
+    (ϖ : 𝒪[K]) (k : ℕ) (x : 𝒪[K]) :
+    algebraMap 𝒪[K] v.valuationSubring ϖ ^ k ∣ algebraMap 𝒪[K] v.valuationSubring x ↔
+      ϖ ^ k ∣ x := by
+  rw [← map_pow, (Valuation.valuationSubring.integers _).dvd_iff_le,
+    (Valuation.integer.integers _).dvd_iff_le, hv.le_iff_le]
+  simp only [hcompat]
+  exact Valuation.HasExtension.val_map_le_iff (vR := valuation K) (vA := valuation L) _ _
+
+variable [IsUnramified K L]
+
+/-- Over an unramified extension `L/K`, a uniformiser `ϖ` of `K` generates the maximal ideal of
+any valuation subring `B` of `L` equal to that of the standard valuation. -/
+theorem maximalIdeal_eq_span_algebraMap_of_valuationSubring_eq {B : ValuationSubring L}
+    (hB : B = (valuation L).valuationSubring) [Algebra 𝒪[K] B]
+    (hcompat : ∀ r : 𝒪[K], (algebraMap B L (algebraMap 𝒪[K] B r)) =
+      algebraMap K L (algebraMap 𝒪[K] K r))
+    {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
+    maximalIdeal B = Ideal.span {algebraMap 𝒪[K] B ϖ} := by
+  have : IsDiscreteValuationRing B := hB ▸ inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
+  refine Irreducible.maximalIdeal_eq ?_
+  let e : B ≃+* 𝒪[L] := RingEquiv.subringCongr (congrArg ValuationSubring.toSubring hB)
+  have he : e (algebraMap 𝒪[K] B ϖ) = algebraMap 𝒪[K] 𝒪[L] ϖ := by
+    ext
+    exact hcompat ϖ
+  exact (MulEquiv.irreducible_iff e.toMulEquiv).1 (he ▸ IsUnramified.irreducible_algebraMap hϖ)
+
+end ValuationSubring
+
 section FiniteExtension
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -110,20 +152,9 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
   have := IsIntegral.baseChange hRS W
   have hmodel := integralModel_baseChange hRS W
   -- Divisibility by powers of `ϖ` is read off valuations, which `L` and `K` compare alike.
-  have hf (k : ℕ) (x : 𝒪[K]) :
-      algebraMap 𝒪[K] B ϖ ^ k ∣ algebraMap 𝒪[K] B x ↔ ϖ ^ k ∣ x := by
-    rw [← map_pow, (Valuation.valuationSubring.integers _).dvd_iff_le,
-      (Valuation.integer.integers _).dvd_iff_le, hequiv.le_iff_le]
-    exact Valuation.HasExtension.val_map_le_iff (vR := valuation K) (vA := valuation L) _ _
+  have hf := pow_dvd_algebraMap_iff_valuationSubring (K := K) hequiv (fun _ ↦ rfl) ϖ
   -- Since `L/K` is unramified, `ϖ` is still a uniformiser of `B`.
-  have hϖB : maximalIdeal B = Ideal.span {algebraMap 𝒪[K] B ϖ} := by
-    have : IsDiscreteValuationRing B := hB ▸ inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
-    refine Irreducible.maximalIdeal_eq ?_
-    let e : B ≃+* 𝒪[L] := RingEquiv.subringCongr (congrArg ValuationSubring.toSubring hB)
-    have he : e (algebraMap 𝒪[K] B ϖ) = algebraMap 𝒪[K] 𝒪[L] ϖ := by
-      ext
-      rfl
-    exact (MulEquiv.irreducible_iff e.toMulEquiv).1 (he ▸ IsUnramified.irreducible_algebraMap hϖ)
+  have hϖB := maximalIdeal_eq_span_algebraMap_of_valuationSubring_eq (K := K) hB (fun _ ↦ rfl) hϖ
   -- Tate's algorithm stops at `s` on the integral model over `B`.
   have hsB : (integralModel B (W⁄L)).IsTateTerminal (algebraMap 𝒪[K] B ϖ) s := by
     rw [hmodel]
@@ -140,11 +171,9 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
     exact (hint.le_of_dvd hdvd).trans_lt <| lt_of_le_of_ne (hint.2 _)
       (mt hint.isUnit_iff_valuation_eq_one.2 hunit)
   -- `n` is nonzero in the residue field of `L`, so it lies outside `u`.
-  have hn' : (n : A) ∉ u.asIdeal := by
-    have hnL : (n : 𝓀[L]) ≠ 0 := by
-      rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[L]),
-        map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
-    rwa [← map_natCast (residue 𝒪[L]), ne_eq, residue_eq_zero_iff] at hnL
+  have hn' : (n : A) ∉ u.asIdeal := fun h ↦
+    ((Valuation.mem_maximalIdeal_iff (v := valuation L)).mp h).ne
+      (by simpa using valuation_natCast_eq_one_of_residueField_natCast_ne_zero (L := L) hn)
   have hfin := Affine.finiteIndex_nonsingularReduction_of_isTateTerminal (u.valuation L) hϖB hsB
   exact (Nat.le_of_dvd (Nat.pos_of_ne_zero hfin.index_ne_zero)
     (Affine.Point.dvd_index_nonsingularReduction u hΔ hn' h)).trans
