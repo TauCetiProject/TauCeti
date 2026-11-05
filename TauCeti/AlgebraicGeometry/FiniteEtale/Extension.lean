@@ -50,8 +50,8 @@ sections are finite étale over `A`. Applied to the restriction of `Spec B` for 
   étale for every prime `𝔭` other than the maximal ideal.
 * `TauCeti.IsLocalRing.finite_sections`: over a Noetherian local domain of depth at least two,
   they are a finite `A`-module.
-
-  spectrum extends across the closed point if and only if its sections are finite étale.
+* `TauCeti.IsLocalRing.isEtaleAt_sections`: over the same base, the sections algebra is étale
+  at every prime not over the closed point.
 * `TauCeti.Algebra.etale_of_purityHolds_of_bijective`: over a Noetherian local ring of depth at
   least two for which purity holds, a finite algebra is étale, provided it is étale at every prime
   not lying over the closed point and is recovered from its sections over the preimage of the
@@ -245,6 +245,36 @@ theorem finite_sections [IsDomain A] (hdepth : 2 ≤ depth (ModuleCat.of A A))
   have := isTorsionFree_sections A V
   finite_of_finiteEtale_localization hdepth _ fun p _ hp ↦
     finiteEtale_tensorProduct_sections A hdepth V p hp
+
+/-- The sections of a finite étale cover of the punctured spectrum of a Noetherian local
+domain of depth at least two are étale over the base at every prime not over the closed point.
+The algebra structure is induced by the cover's structure morphism. -/
+theorem isEtaleAt_sections [IsDomain A] (hdepth : 2 ≤ depth (ModuleCat.of A A))
+    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    letI := (((Scheme.ΓSpecIso (.of A)).inv ≫
+      (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop).hom).toAlgebra
+    ∀ (q : Ideal Γ(V.obj.left, ⊤)) [q.IsPrime], q.under A ≠ maximalIdeal A →
+      Algebra.IsEtaleAt A q := by
+  let φ := (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop
+  let := φ.hom.toAlgebra
+  have := finite_sections A hdepth V
+  have : Algebra.FinitePresentation A Γ(V.obj.left, ⊤) :=
+    Algebra.FinitePresentation.of_finiteType.mp inferInstance
+  let g := Spec.map (CommRingCat.ofHom (algebraMap A Γ(V.obj.left, ⊤)))
+  let U := puncturedSpectrum A
+  have hpb := isPullback_puncturedSpectrum_toSpecΓ A hdepth V.obj.hom
+  let e := hpb.isoIsPullback _ _ (isPullback_morphismRestrict g U)
+  have : MorphismProperty.RespectsIso @Etale.{u} :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  have : Etale (g ∣_ U) := by
+    rw [← MorphismProperty.cancel_left_of_respectsIso @Etale e.hom, hpb.isoIsPullback_hom_fst]
+    infer_instance
+  intro q _ hq
+  let x : Spec Γ(V.obj.left, ⊤) := ⟨q, inferInstance⟩
+  have hx : x ∈ g ⁻¹ᵁ U := (mem_preimage_puncturedSpectrum_iff A x).mpr hq
+  exact (Scheme.Hom.etaleAt_spec_iff x).mp ⟨g ⁻¹ᵁ U, hx, by
+    rw [← morphismRestrict_ι]
+    infer_instance⟩
 
 end TauCeti.IsLocalRing
 
