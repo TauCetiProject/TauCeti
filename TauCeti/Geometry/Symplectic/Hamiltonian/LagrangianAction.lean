@@ -31,8 +31,10 @@ integral sign and the symmetry of the mixed partial derivatives of `Q` give
 `d/ds S(Q s)|₀ = ∫_a^b DL_t(q, q')(η, η') dt` (`TauCeti.hasDerivAt_lagrangianAction`),
 
 the integral of the derivative of `L` along the first prolongation `(η, η')` of the variation
-field. When `L` is moreover `C²` along `q`, the momentum `p(t) = ∂_v L(t, q, q')` is `C¹`, and an
-integration by parts produces the **first variation formula with its endpoint boundary term**
+field. When `L` is moreover `C²` along a `C²` curve `q`, the momentum `p(t) = ∂_v L(t, q, q')` is
+`C¹` (`TauCeti.contDiffAt_momentum`) and the force `∂_q L(t, q, q')` is continuous
+(`TauCeti.continuousAt_force`), and an integration by parts produces the **first variation
+formula with its endpoint boundary term**
 
 `d/ds S(Q s)|₀ = p(b)(η(b)) - p(a)(η(a)) + ∫_a^b (∂_q L(t, q, q') - p'(t))(η(t)) dt`
 
@@ -73,6 +75,8 @@ regularity of the curve as a field, follows the Riemannian first variation of en
 
 ## Main results
 
+* `TauCeti.contDiffAt_momentum`, `TauCeti.continuousAt_force`: regularity of the momentum and the
+  force along a `C²` curve.
 * `TauCeti.hasDerivAt_lagrangianAction`: the derivative of the action along a variation.
 * `TauCeti.hasDerivAt_lagrangianAction_of_contDiffAt_two`: the first variation formula with the
   endpoint boundary term.
@@ -132,7 +136,7 @@ section Curve
 variable {L : ℝ → E × E → ℝ} {q : ℝ → E} {t : ℝ}
 
 /-- Along a `C²` curve, where `L` is `C²`, the momentum `t ↦ ∂_v L(t, q, q')` is `C¹`. -/
-private theorem contDiffAt_momentum (hq : ContDiffAt ℝ 2 q t)
+theorem contDiffAt_momentum (hq : ContDiffAt ℝ 2 q t)
     (hL : ContDiffAt ℝ 2 (uncurry L) (t, (q t, deriv q t))) :
     ContDiffAt ℝ 1 (fun r ↦ fderiv ℝ (fun u ↦ L r (q r, u)) (deriv q r)) t := by
   refine ContDiffAt.fderiv (f := fun r u ↦ L r (q r, u)) ?_
@@ -141,7 +145,7 @@ private theorem contDiffAt_momentum (hq : ContDiffAt ℝ 2 q t)
     (contDiffAt_fst.prodMk ((hq.comp _ contDiffAt_fst).prodMk contDiffAt_snd))
 
 /-- Along a `C²` curve, where `L` is `C²`, the force `t ↦ ∂_q L(t, q, q')` is continuous. -/
-private theorem continuousAt_force (hq : ContDiffAt ℝ 2 q t)
+theorem continuousAt_force (hq : ContDiffAt ℝ 2 q t)
     (hL : ContDiffAt ℝ 2 (uncurry L) (t, (q t, deriv q t))) :
     ContinuousAt (fun r ↦ fderiv ℝ (fun y ↦ L r (y, deriv q r)) (q r)) t := by
   refine (ContDiffAt.fderiv (f := fun r y ↦ L r (y, deriv q r)) (m := 0) ?_
