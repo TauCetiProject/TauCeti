@@ -50,6 +50,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
   continuous metric, the differential of `f` read in a chart is locally bounded by a multiple of
   the length of the gradient. This is how coordinate estimates for `df` become metric estimates.
+* `TauCeti.Manifold.eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`: the
+  reverse comparison, bounding the gradient by the coordinate differential for a continuous metric.
 -/
 
 public section
@@ -359,5 +361,36 @@ theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
         gcongr
         exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
     _ = C * ‖mvfderiv I f y‖ * ‖w‖ := by ring
+
+/-- **The gradient is controlled by the differential in a chart.** Near `p`, the Riemannian
+length of the gradient is bounded by a fixed multiple of the coordinate differential. The
+constant and neighbourhood depend only on the continuous metric, uniformly for all functions
+whose coordinate expression is differentiable at the point in question. -/
+theorem eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
+      DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) →
+      ‖mgradient I f y‖ ≤
+        C * ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ := by
+  obtain ⟨C, hC, hchart⟩ :=
+    eventually_norm_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) p
+  refine ⟨C, hC, ?_⟩
+  filter_upwards [hchart, chart_source_mem_nhds H p] with y hy hys f hd
+  set e := trivializationAt E (TangentSpace I) p
+  have hmf := TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt
+    (by rwa [extChartAt_source]) hd
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hys] at hmf
+  rw [norm_mgradient_eq_norm_mvfderiv]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [mvfderiv_apply_eq_mfderiv_apply, DFunLike.congr_fun hmf v]
+  calc
+    ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
+        (e.continuousLinearMapAt ℝ y v)‖ ≤
+        ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ *
+          ‖e.continuousLinearMapAt ℝ y v‖ := ContinuousLinearMap.le_opNorm _ _
+    _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ * (C * ‖v‖) := by
+      gcongr
+      exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
+    _ = C * ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ * ‖v‖ := by ring
 
 end TauCeti.Manifold
