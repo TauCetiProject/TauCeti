@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Module
 public import TauCeti.RepresentationTheory.FDRep.BalancedEvaluation
 public import TauCeti.GroupTheory.GroupExtension.Lift
+public import TauCeti.Algebra.Module.Opposite
 
 /-!
 # Reconstruction from arbitrary Clifford multiplicity modules
@@ -47,21 +48,9 @@ variable {k : Type u} {G : Type v} [Field k] [Group G]
   [IsScalarTower k (End A)ᵐᵒᵖ M]
   (U : CrossedSystem.SemilinearAction (cliffordCrossedSystem A s hs).opInv M)
 
-private noncomputable def inverseRightAction : (End A)ˣ →* Module.End k M where
-  toFun d := Algebra.lsmul k k M (op (↑d⁻¹ : End A))
-  map_one' := by ext m; simp
-  map_mul' d e := by
-    ext m
-    simp only [mul_inv_rev, Units.val_mul, Algebra.lsmul_apply,
-      mul_apply_eq_comp, op_mul, mul_smul]
-
-omit [N.Normal] in
-private theorem inverseRightAction_apply (d : (End A)ˣ) (m : M) :
-    inverseRightAction A d m = op (↑d⁻¹ : End A) • m := (rfl)
-
 private theorem reconstruction_conj (q : Quotient A) (d : (End A)ˣ) :
-    U.operator q * inverseRightAction A d =
-      inverseRightAction A ((groupExtension A).conjAct (s q) d) * U.operator q := by
+    U.operator q * inverseRightAction k (End A) M d =
+      inverseRightAction k (End A) M ((groupExtension A).conjAct (s q) d) * U.operator q := by
   ext m
   simp only [mul_apply_eq_comp, inverseRightAction_apply, U.operator_smul,
     CrossedSystem.opInv_action, cliffordCrossedSystem_action]
@@ -71,7 +60,8 @@ private theorem reconstruction_conj (q : Quotient A) (d : (End A)ˣ) :
 
 private theorem reconstruction_mul (q r : Quotient A) :
     U.operator q * U.operator r =
-      inverseRightAction A (GroupExtension.factorSetFun s (q, r)) * U.operator (q * r) := by
+      inverseRightAction k (End A) M (GroupExtension.factorSetFun s (q, r)) *
+        U.operator (q * r) := by
   ext m
   simpa only [mul_apply_eq_comp, inverseRightAction_apply, CrossedSystem.opInv_factor,
     cliffordCrossedSystem_factor] using U.operator_mul q r m
@@ -80,7 +70,7 @@ private theorem reconstruction_mul (q r : Quotient A) :
 Clifford extension, whose kernel acts by inverse right multiplication. -/
 noncomputable def cliffordReconstructionMultiplicityRepresentation :
     Representation k (Carrier A) M :=
-  s.lift hs (inverseRightAction A) U.operator U.operator_one
+  s.lift hs (inverseRightAction k (End A) M) U.operator U.operator_one
     (reconstruction_conj A s hs U) (reconstruction_mul A s hs U)
 
 /-- On the chosen section the extended representation is the given semilinear operator. -/
@@ -96,7 +86,7 @@ theorem cliffordReconstructionMultiplicityRepresentation_inl (d : (End A)ˣ) (m 
       op (↑d⁻¹ : End A) • m := by
   simpa only [cliffordReconstructionMultiplicityRepresentation, groupExtension_inl,
     inverseRightAction_apply] using congrArg (fun f : Module.End k M => f m)
-      (s.lift_inl hs (inverseRightAction A) U.operator U.operator_one
+      (s.lift_inl hs (inverseRightAction k (End A) M) U.operator U.operator_one
         (reconstruction_conj A s hs U) (reconstruction_mul A s hs U) d)
 
 /-- The extension action is semilinear for its full commutant action, not merely for the
