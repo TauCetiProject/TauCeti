@@ -38,6 +38,9 @@ of a connection on the tangent bundle.
   `CovariantDerivative.curvatureOperator_smul_second`, and
   `CovariantDerivative.curvatureOperator_smul_section`: curvature is linear over smooth
   functions in each argument.
+* `CovariantDerivative.covariantDerivative_smul_section_vectorField` and
+  `CovariantDerivative.covariantDerivative_covariantDerivative_smul_section`: the Leibniz rule for
+  the first and second covariant derivative of a function multiple of a section.
 * `CovariantDerivative.curvatureOperator_congr`: on finite-rank smooth bundles over
   finite-dimensional Hausdorff manifolds, curvature at a point depends only on the values of
   its three inputs there.
@@ -313,6 +316,23 @@ theorem curvatureOperator_neg_section
   rw [← curvatureOperator_add_section hX hY hσ.neg_section hσ, neg_add_cancel,
     curvatureOperator_zero_section]
 
+omit [CompleteSpace E] [IsManifold I ∞ M] [VectorBundle ℝ F V]
+  [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞] in
+/-- **Leibniz rule along a vector field.** The covariant derivative of `f • σ` along a vector
+field `Z` is `f` times the covariant derivative of `σ` along `Z`, plus the derivative of `f` along
+`Z` times `σ`, for a differentiable function `f` and a differentiable section `σ`. -/
+theorem covariantDerivative_smul_section_vectorField {Z : Π x : M, TangentSpace I x}
+    (hf : MDiff f) (hσ : MDiff (T% σ)) :
+    (fun y ↦ cov (f • σ) y (Z y)) =
+      f • (fun y ↦ cov σ y (Z y)) + (fun y ↦ d% f y (Z y)) • σ := by
+  funext y
+  have h := cov.isCovariantDerivativeOnUniv.leibniz (hσ y) (hf y)
+  -- `h` is an equality of continuous linear maps; expose its value at `Z y` through the
+  -- pointwise `Pi` operations before rewriting by it.
+  change cov (f • σ) y (Z y) = f y • cov σ y (Z y) + d% f y (Z y) • σ y
+  rw [h]
+  simp [add_apply, ContinuousLinearMap.smulRight_apply]
+
 /-- Curvature is linear over smooth functions in its first vector-field argument. -/
 @[simp]
 theorem curvatureOperator_smul_first
@@ -354,6 +374,33 @@ theorem curvatureOperator_smul_second
     curvatureOperator_smul_first hf hY hσ, curvatureOperator_antisymm cov Y X σ]
   simp
 
+omit [CompleteSpace E] in
+/-- **Second covariant derivative of a function multiple.** For a vector field `X`, a smooth
+vector field `Y`, a smooth function `f` and a smooth section `σ`,
+`∇_X ∇_Y (f σ) = f ∇_X ∇_Y σ + (X f) ∇_Y σ + (Y f) ∇_X σ + (X (Y f)) σ`. -/
+theorem covariantDerivative_covariantDerivative_smul_section
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+    cov (fun y ↦ cov (f • σ) y (Y y)) x (X x) =
+      f x • cov (fun y ↦ cov σ y (Y y)) x (X x) + d% f x (X x) • cov σ x (Y x) +
+        (d% f x (Y x) • cov σ x (X x) + d% (fun y ↦ d% f y (Y y)) x (X x) • σ x) := by
+  have hfd : MDiff f := hf.mdifferentiable (by simp)
+  have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
+  have hYσ := cov.contMDiff_apply hY hσ
+  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
+  have hgY : ContMDiff I 𝓘(ℝ) ∞ fun y ↦ d% f y (Y y) :=
+    (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
+      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hY
+  have hgYd : MDiff fun y ↦ d% f y (Y y) := hgY.mdifferentiable (by simp)
+  have hfYσd : MDiff (T% (f • fun y ↦ cov σ y (Y y))) :=
+    (hf.smul_section hYσ).mdifferentiable (by simp)
+  have hgYσd : MDiff (T% ((fun y ↦ d% f y (Y y)) • σ)) :=
+    (hgY.smul_section hσ).mdifferentiable (by simp)
+  rw [covariantDerivative_smul_section_vectorField hfd hσd,
+    cov.isCovariantDerivativeOnUniv.add (hfYσd x) (hgYσd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hYσd x) (hfd x),
+    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgYd x)]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
+
 /-- Curvature is linear over smooth functions in its section argument. -/
 @[simp]
 theorem curvatureOperator_smul_section
@@ -363,64 +410,21 @@ theorem curvatureOperator_smul_section
   funext x
   -- The pointwise `Pi` action on the right hides the applied curvature operator from `rw`.
   change curvatureOperator cov X Y (f • σ) x = f x • curvatureOperator cov X Y σ x
-  let gX : M → ℝ := fun y ↦ d% f y (X y)
-  let gY : M → ℝ := fun y ↦ d% f y (Y y)
   have hfd : MDiff f := hf.mdifferentiable (by simp)
   have hXd : MDiff (T% X) := hX.mdifferentiable (by simp)
   have hYd : MDiff (T% Y) := hY.mdifferentiable (by simp)
   have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
-  have hXσ := cov.contMDiff_apply hX hσ
-  have hYσ := cov.contMDiff_apply hY hσ
-  have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) := hXσ.mdifferentiable (by simp)
-  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
-  have hgX : ContMDiff I 𝓘(ℝ) ∞ gX := by
-    exact (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hX
-  have hgY : ContMDiff I 𝓘(ℝ) ∞ gY := by
-    exact (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hY
-  have hgXd : MDiff gX := hgX.mdifferentiable (by simp)
-  have hgYd : MDiff gY := hgY.mdifferentiable (by simp)
-  have hinnerX : (fun y ↦ cov (f • σ) y (X y)) =
-      f • (fun y ↦ cov σ y (X y)) + gX • σ := by
-    funext y
-    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
-    -- `h` is an equality of continuous linear maps; expose its value at `X y` through the
-    -- pointwise `Pi` operations before rewriting by it.
-    change cov (f • σ) y (X y) = f y • cov σ y (X y) + gX y • σ y
-    rw [h]
-    simp [gX, add_apply, ContinuousLinearMap.smulRight_apply]
-  have hinnerY : (fun y ↦ cov (f • σ) y (Y y)) =
-      f • (fun y ↦ cov σ y (Y y)) + gY • σ := by
-    funext y
-    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
-    -- `h` is an equality of continuous linear maps; expose its value at `Y y` through the
-    -- pointwise `Pi` operations before rewriting by it.
-    change cov (f • σ) y (Y y) = f y • cov σ y (Y y) + gY y • σ y
-    rw [h]
-    simp [gY, add_apply, ContinuousLinearMap.smulRight_apply]
-  have hfXσd : MDiff (T% (f • fun y ↦ cov σ y (X y))) :=
-    (hf.smul_section hXσ).mdifferentiable (by simp)
-  have hfYσd : MDiff (T% (f • fun y ↦ cov σ y (Y y))) :=
-    (hf.smul_section hYσ).mdifferentiable (by simp)
-  have hgXσd : MDiff (T% (gX • σ)) := (hgX.smul_section hσ).mdifferentiable (by simp)
-  have hgYσd : MDiff (T% (gY • σ)) := (hgY.smul_section hσ).mdifferentiable (by simp)
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) (by simp)
   -- The commutator identity below cancels the second-derivative terms.
   have hcomm := mvfderiv_mlieBracket (f := f) (V := X) (W := Y) (x := x)
     (hf.contMDiffAt) (by simp) (hXd x) (hYd x)
-  rw [curvatureOperator_apply, curvatureOperator_apply, hinnerY, hinnerX,
-    cov.isCovariantDerivativeOnUniv.add (hfYσd x) (hgYσd x),
-    cov.isCovariantDerivativeOnUniv.add (hfXσd x) (hgXσd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hYσd x) (hfd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgYd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hXσd x) (hfd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgXd x),
+  rw [curvatureOperator_apply, curvatureOperator_apply,
+    covariantDerivative_covariantDerivative_smul_section (X := X) hf hY hσ x,
+    covariantDerivative_covariantDerivative_smul_section (X := Y) hf hX hσ x,
     cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hfd x)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
   rw [hcomm]
-  simp only [gX, gY]
   simp only [sub_smul, smul_sub]
   -- Fold the expanded vector expressions into local names: rewriting cannot target these
   -- abbreviations, while `change` recognizes their definitional equality before `abel`.
