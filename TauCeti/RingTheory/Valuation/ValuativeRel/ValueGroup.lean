@@ -83,6 +83,18 @@ section Ring
 variable {A B : Type*} [CommRing A] [Ring B] [ValuativeRel A] [ValuativeRel B]
   [Algebra A B] [ValuativeExtension A B]
 
+/-- A compatible extension preserves and reflects `valuation · ≤ 1`. -/
+theorem valuation_algebraMap_le_one_iff (x : A) :
+    valuation B (algebraMap A B x) ≤ 1 ↔ valuation A x ≤ 1 := by
+  rw [← mapValueGroupWithZero_valuation, ← map_one (mapValueGroupWithZero A B),
+    (mapValueGroupWithZero_strictMono (A := A) (B := B)).le_iff_le]
+
+/-- A compatible extension preserves and reflects `valuation · < 1`. -/
+theorem valuation_algebraMap_lt_one_iff (x : A) :
+    valuation B (algebraMap A B x) < 1 ↔ valuation A x < 1 := by
+  rw [← mapValueGroupWithZero_valuation, ← map_one (mapValueGroupWithZero A B),
+    (mapValueGroupWithZero_strictMono (A := A) (B := B)).lt_iff_lt]
+
 /-- When `mapValueGroupWithZero A B` is surjective, it upgrades to an order-monoid isomorphism
 between the value groups with zero of `A` and `B`. -/
 noncomputable def valueGroupWithZeroOrderMonoidIsoOfSurjective
@@ -110,11 +122,9 @@ theorem _root_.ValuativeRel.IsDiscrete.of_mapValueGroupWithZero_surjective [IsDi
     (h : Function.Surjective (mapValueGroupWithZero A B)) : IsDiscrete B := by
   let e := valueGroupWithZeroOrderMonoidIsoOfSurjective h
   obtain ⟨γ, hγ1, hγmax⟩ := IsDiscrete.has_maximal_element (R := A)
-  refine ⟨⟨e γ, ?_, fun δ hδ ↦ ?_⟩⟩
-  · rwa [← map_one e, map_lt_map_iff]
-  · rw [← e.apply_symm_apply δ, map_le_map_iff]
-    refine hγmax _ ?_
-    rwa [← map_lt_map_iff e, e.apply_symm_apply, map_one]
+  refine ⟨⟨e γ, by rwa [← map_one e, map_lt_map_iff], fun δ hδ ↦ ?_⟩⟩
+  rw [← e.apply_symm_apply δ, map_le_map_iff]
+  exact hγmax _ (by rwa [← map_lt_map_iff e, e.apply_symm_apply, map_one])
 
 /-- Rank at most one passes along an extension whose value-group map is surjective. -/
 theorem _root_.ValuativeRel.IsRankLeOne.of_mapValueGroupWithZero_surjective [IsRankLeOne A]
@@ -138,8 +148,7 @@ theorem mapValueGroupWithZero_surjective_iff :
   refine ⟨fun h y ↦ ?_, fun h γ ↦ ?_⟩
   · obtain ⟨γ, hγ⟩ := h (valuation L y)
     obtain ⟨x, rfl⟩ := valuation_surjective γ
-    rw [mapValueGroupWithZero_valuation] at hγ
-    exact ⟨x, ((valuation L).veq_iff_eq).2 hγ⟩
+    exact ⟨x, ((valuation L).veq_iff_eq).2 (by rwa [mapValueGroupWithZero_valuation] at hγ)⟩
   · obtain ⟨y, rfl⟩ := valuation_surjective γ
     obtain ⟨x, hxy⟩ := h y
     exact ⟨valuation K x, by rw [mapValueGroupWithZero_valuation, ((valuation L).veq_iff_eq).1 hxy]⟩
@@ -152,8 +161,7 @@ theorem exists_ne_zero_vle_of_mapValueGroupWithZero_surjective
   obtain ⟨x, hxy⟩ := mapValueGroupWithZero_surjective_iff.1 h y
   refine ⟨x, ?_, hxy.1⟩
   rintro rfl
-  exact hy (((valuation L).zero_iff).1
-    (((valuation L).veq_iff_eq).1 hxy.symm |>.trans (by simp)))
+  exact hy (((valuation L).zero_iff).1 (((valuation L).veq_iff_eq).1 hxy.symm |>.trans (by simp)))
 
 /-- When `mapValueGroupWithZero K L` is surjective, the maximal ideal of `𝒪[K]` generates the
 maximal ideal of `𝒪[L]`. -/
@@ -163,37 +171,27 @@ theorem map_maximalIdeal_eq_of_mapValueGroupWithZero_surjective
   refine le_antisymm ?_ fun z hz ↦ ?_
   · rw [Ideal.map_le_iff_le_comap]
     intro x hx
-    rw [Ideal.mem_comap]
-    refine (valuation L).mem_maximalIdeal_iff.2 ?_
-    rw [TauCeti.coe_algebraMap_integerRing]
-    have hx' : valuation K (x : K) < 1 := (valuation K).mem_maximalIdeal_iff.1 hx
-    rw [← map_one (valuation K), ← (valuation K).vlt_iff_lt] at hx'
-    rw [← map_one (valuation L), ← (valuation L).vlt_iff_lt, ← (algebraMap K L).map_one]
-    exact vlt_iff_vlt.2 hx'
+    exact (valuation L).mem_maximalIdeal_iff.2 <| by
+      rw [TauCeti.coe_algebraMap_integerRing, valuation_algebraMap_lt_one_iff]
+      exact (valuation K).mem_maximalIdeal_iff.1 hx
   · rcases eq_or_ne z 0 with rfl | hz0
     · exact Ideal.zero_mem _
     have hzl0 : (z : L) ≠ 0 := ZeroMemClass.coe_eq_zero.not.2 hz0
     obtain ⟨x, hxz⟩ := mapValueGroupWithZero_surjective_iff.1 h (z : L)
     have hval : valuation L (algebraMap K L x) = valuation L (z : L) :=
       ((valuation L).veq_iff_eq).1 hxz
-    have hxlt1 : valuation K x < 1 := by
-      have hzlt1 : valuation L (z : L) < 1 := (valuation L).mem_maximalIdeal_iff.1 hz
-      rw [← hval, ← mapValueGroupWithZero_valuation, ← map_one (mapValueGroupWithZero K L)] at hzlt1
-      exact (mapValueGroupWithZero_strictMono (A := K) (B := L)).lt_iff_lt.1 hzlt1
-    let x₀ : 𝒪[K] := ⟨x, hxlt1.le⟩
-    have hx₀m : x₀ ∈ 𝓂[K] := (valuation K).mem_maximalIdeal_iff.2 hxlt1
-    have hax0 : algebraMap K L x ≠ 0 := by
-      intro h0
-      exact hzl0 (((valuation L).zero_iff).1 (hval.symm.trans (by simp [h0])))
+    have hxlt1 : valuation K x < 1 := (valuation_algebraMap_lt_one_iff x).1 <|
+      hval.trans_lt ((valuation L).mem_maximalIdeal_iff.1 hz)
+    have hax0 : algebraMap K L x ≠ 0 :=
+      (valuation L).ne_zero_iff.1 (hval.trans_ne ((valuation L).ne_zero_iff.2 hzl0))
     have hu_le : valuation L ((z : L) / algebraMap K L x) ≤ 1 := by
       rw [map_div₀, hval, div_self ((valuation L).ne_zero_iff.2 hzl0)]
-    let u : 𝒪[L] := ⟨(z : L) / algebraMap K L x, hu_le⟩
-    have hzu : z = algebraMap 𝒪[K] 𝒪[L] x₀ * u := by
-      ext
-      rw [Subring.coe_mul, TauCeti.coe_algebraMap_integerRing]
-      exact (mul_div_cancel₀ (z : L) hax0).symm
-    rw [hzu]
-    exact Ideal.mul_mem_right u _ (Ideal.mem_map_of_mem _ hx₀m)
+    have hzu : z = algebraMap 𝒪[K] 𝒪[L] ⟨x, hxlt1.le⟩ * ⟨(z : L) / algebraMap K L x, hu_le⟩ :=
+      Subtype.ext <| by
+        rw [Subring.coe_mul, TauCeti.coe_algebraMap_integerRing]
+        exact (mul_div_cancel₀ (z : L) hax0).symm
+    exact hzu ▸ Ideal.mul_mem_right _ _
+      (Ideal.mem_map_of_mem _ ((valuation K).mem_maximalIdeal_iff.2 hxlt1))
 
 /-- When `𝒪[K]` is a discrete valuation ring, the canonical valuation of `K` is rank-one
 discrete. -/
@@ -208,6 +206,17 @@ theorem _root_.Irreducible.isUniformizer_valuation [IsDiscreteValuationRing 𝒪
     (hϖ : Irreducible ϖ) : (valuation K).IsUniformizer (ϖ : K) :=
   Valuation.isUniformizer_of_maximalIdeal_eq_span (valuation K) hϖ.maximalIdeal_eq
 
+/-- An element of `𝒪[K]` is a uniformizer for `valuation K` if and only if it is irreducible. -/
+theorem isUniformizer_valuation_coe_iff [IsDiscreteValuationRing 𝒪[K]] {ϖ : 𝒪[K]} :
+    (valuation K).IsUniformizer (ϖ : K) ↔ Irreducible ϖ :=
+  ⟨fun h ↦ (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).2
+    (Valuation.IsUniformizer.is_generator (π := ϖ) h), fun h ↦ h.isUniformizer_valuation⟩
+
+private theorem valueGroup_valuation_eq_top (F : Type*) [Field F] [ValuativeRel F] :
+    MonoidWithZeroHom.valueGroup (valuation F : F →*₀ ValueGroupWithZero F) = ⊤ :=
+  (Subgroup.eq_top_iff' _).2 fun u ↦
+    MonoidWithZeroHom.mem_valueGroup _ (valuation_surjective (K := F) u.1)
+
 /-- When `𝒪[K]` is a discrete valuation ring and `mapValueGroupWithZero K L` is surjective, the
 canonical valuation of `L` is rank-one discrete. -/
 theorem isRankOneDiscrete_valuation_of_mapValueGroupWithZero_surjective
@@ -218,22 +227,14 @@ theorem isRankOneDiscrete_valuation_of_mapValueGroupWithZero_surjective
   let e := valueGroupWithZeroOrderMonoidIsoOfSurjective h
   let eu : (ValueGroupWithZero K)ˣ ≃* (ValueGroupWithZero L)ˣ := Units.mapEquiv e.toMulEquiv
   refine ⟨⟨eu γ, ?_, ?_⟩⟩
-  · have htopK : MonoidWithZeroHom.valueGroup (valuation K : K →*₀ ValueGroupWithZero K) = ⊤ :=
-      (Subgroup.eq_top_iff' _).2 fun u ↦
-        MonoidWithZeroHom.mem_valueGroup _ (valuation_surjective (K := K) u.1)
-    have htopL : MonoidWithZeroHom.valueGroup (valuation L : L →*₀ ValueGroupWithZero L) = ⊤ :=
-      (Subgroup.eq_top_iff' _).2 fun u ↦
-        MonoidWithZeroHom.mem_valueGroup _ (valuation_surjective (K := L) u.1)
-    rw [htopL]
+  · rw [valueGroup_valuation_eq_top L]
     refine (Subgroup.eq_top_iff' _).2 fun x ↦ ?_
-    obtain ⟨n, hn⟩ :=
-      Subgroup.mem_zpowers_iff.1 (hγgen.symm ▸ htopK.symm ▸ Subgroup.mem_top (eu.symm x))
+    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1
+      (hγgen.symm ▸ (valueGroup_valuation_eq_top K).symm ▸ Subgroup.mem_top (eu.symm x))
     exact Subgroup.mem_zpowers_iff.2 ⟨n, by rw [← map_zpow, hn, eu.apply_symm_apply]⟩
   · rw [← Units.val_lt_val]
-    have hcoe : ((eu γ : (ValueGroupWithZero L)ˣ) : ValueGroupWithZero L) =
-        mapValueGroupWithZero K L γ := by
-      simp [eu, e]
-    rw [hcoe, Units.val_one, ← map_one (mapValueGroupWithZero K L)]
+    change mapValueGroupWithZero K L γ.1 < 1
+    rw [← map_one (mapValueGroupWithZero K L)]
     exact (mapValueGroupWithZero_strictMono (A := K) (B := L)) (Units.val_lt_val.2 hγ1)
 
 /-- When `𝒪[K]` is a discrete valuation ring and `mapValueGroupWithZero K L` is surjective, `𝒪[L]`
@@ -241,9 +242,20 @@ is also a discrete valuation ring. -/
 theorem isDiscreteValuationRing_of_mapValueGroupWithZero_surjective
     [IsDiscreteValuationRing 𝒪[K]] (h : Function.Surjective (mapValueGroupWithZero K L)) :
     IsDiscreteValuationRing 𝒪[L] := by
-  have : (valuation L).IsRankOneDiscrete :=
-    isRankOneDiscrete_valuation_of_mapValueGroupWithZero_surjective h
+  have := isRankOneDiscrete_valuation_of_mapValueGroupWithZero_surjective h
   exact Valuation.valuationSubring_isDiscreteValuationRing (valuation L)
+
+/-- When `𝒪[K]` is a discrete valuation ring and `mapValueGroupWithZero K L` is surjective, every
+irreducible element (uniformizer) of `𝒪[K]` stays irreducible in `𝒪[L]`. -/
+theorem irreducible_algebraMap_of_mapValueGroupWithZero_surjective
+    [IsDiscreteValuationRing 𝒪[K]] (h : Function.Surjective (mapValueGroupWithZero K L))
+    {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
+    Irreducible (algebraMap 𝒪[K] 𝒪[L] ϖ) := by
+  have := isDiscreteValuationRing_of_mapValueGroupWithZero_surjective h
+  rw [IsDiscreteValuationRing.irreducible_iff_uniformizer,
+    ← map_maximalIdeal_eq_of_mapValueGroupWithZero_surjective h,
+    (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.map_span,
+    Set.image_singleton]
 
 /-- When `𝒪[K]` is a discrete valuation ring and `mapValueGroupWithZero K L` is surjective, an
 element of `𝒪[K]` is irreducible if and only if its image in `𝒪[L]` is irreducible. -/
@@ -251,43 +263,21 @@ theorem irreducible_algebraMap_iff_of_mapValueGroupWithZero_surjective
     [IsDiscreteValuationRing 𝒪[K]] (h : Function.Surjective (mapValueGroupWithZero K L))
     {ϖ : 𝒪[K]} :
     Irreducible (algebraMap 𝒪[K] 𝒪[L] ϖ) ↔ Irreducible ϖ := by
-  have : IsDiscreteValuationRing 𝒪[L] :=
-    isDiscreteValuationRing_of_mapValueGroupWithZero_surjective h
-  refine ⟨fun hL ↦ ?_, fun hϖ ↦ ?_⟩
-  · have hvalL : valuation L (algebraMap K L (ϖ : K)) =
-        (Valuation.IsRankOneDiscrete.generator (valuation L) : ValueGroupWithZero L) := by
-      have hu := hL.isUniformizer_valuation
-      rwa [TauCeti.coe_algebraMap_integerRing, Valuation.IsUniformizer.iff] at hu
-    obtain ⟨ϖ₀, hϖ₀⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-    have hL₀ : Irreducible (algebraMap 𝒪[K] 𝒪[L] ϖ₀) := by
-      rw [IsDiscreteValuationRing.irreducible_iff_uniformizer,
-        ← map_maximalIdeal_eq_of_mapValueGroupWithZero_surjective h,
-        (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ₀).1 hϖ₀,
-        Ideal.map_span, Set.image_singleton]
-    have hvalL₀ : valuation L (algebraMap K L (ϖ₀ : K)) =
-        (Valuation.IsRankOneDiscrete.generator (valuation L) : ValueGroupWithZero L) := by
-      have hu := hL₀.isUniformizer_valuation
-      rwa [TauCeti.coe_algebraMap_integerRing, Valuation.IsUniformizer.iff] at hu
-    have heqL : valuation L (algebraMap K L (ϖ : K)) = valuation L (algebraMap K L (ϖ₀ : K)) :=
-      hvalL.trans hvalL₀.symm
-    rw [← mapValueGroupWithZero_valuation, ← mapValueGroupWithZero_valuation] at heqL
-    have heqK : valuation K (ϖ : K) = valuation K (ϖ₀ : K) :=
-      (mapValueGroupWithZero_strictMono (A := K) (B := L)).injective heqL
-    have hv := Valuation.integer.integers (valuation K)
-    exact (associated_of_dvd_dvd (hv.dvd_iff_le.2 heqK.le) (hv.dvd_iff_le.2 heqK.ge)).irreducible
-      hϖ₀
-  · rw [IsDiscreteValuationRing.irreducible_iff_uniformizer,
-      ← map_maximalIdeal_eq_of_mapValueGroupWithZero_surjective h,
-      (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ,
-      Ideal.map_span, Set.image_singleton]
-
-/-- When `𝒪[K]` is a discrete valuation ring and `mapValueGroupWithZero K L` is surjective, every
-irreducible element (uniformizer) of `𝒪[K]` stays irreducible in `𝒪[L]`. -/
-theorem irreducible_algebraMap_of_mapValueGroupWithZero_surjective
-    [IsDiscreteValuationRing 𝒪[K]] (h : Function.Surjective (mapValueGroupWithZero K L))
-    {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
-    Irreducible (algebraMap 𝒪[K] 𝒪[L] ϖ) :=
-  (irreducible_algebraMap_iff_of_mapValueGroupWithZero_surjective h).2 hϖ
+  have := isDiscreteValuationRing_of_mapValueGroupWithZero_surjective h
+  refine ⟨fun hL ↦ ?_, irreducible_algebraMap_of_mapValueGroupWithZero_surjective h⟩
+  obtain ⟨ϖ₀, hϖ₀⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have hval {x : 𝒪[K]} (hx : Irreducible (algebraMap 𝒪[K] 𝒪[L] x)) :
+      valuation L (algebraMap K L x) = Valuation.IsRankOneDiscrete.generator (valuation L) := by
+    simpa [TauCeti.coe_algebraMap_integerRing, Valuation.IsUniformizer.iff] using
+      hx.isUniformizer_valuation
+  have heqL : mapValueGroupWithZero K L (valuation K ϖ) =
+      mapValueGroupWithZero K L (valuation K ϖ₀) := by
+    simp only [mapValueGroupWithZero_valuation]
+    exact (hval hL).trans
+      (hval (irreducible_algebraMap_of_mapValueGroupWithZero_surjective h hϖ₀)).symm
+  have heqK := (mapValueGroupWithZero_strictMono (A := K) (B := L)).injective heqL
+  have hv := Valuation.integer.integers (valuation K)
+  exact (associated_of_dvd_dvd (hv.dvd_iff_le.2 heqK.le) (hv.dvd_iff_le.2 heqK.ge)).irreducible hϖ₀
 
 /-- The induced map on residue fields of a `ValuativeExtension` intertwines the residue maps. -/
 theorem residueField_algebraMap_residue (x : 𝒪[K]) :

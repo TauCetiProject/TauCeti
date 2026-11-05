@@ -90,9 +90,7 @@ theorem continuous_algebraMap_of_coinitial
   refine ((IsValuativeTopology.hasBasis_nhds_zero K).tendsto_iff
     (IsValuativeTopology.hasBasis_nhds_zero L)).mpr fun γ _ ↦ ?_
   obtain ⟨y, hy⟩ := valuation_surjective γ.val
-  have hy0 : y ≠ 0 := by
-    intro h0
-    exact γ.ne_zero (by simpa [h0] using hy.symm)
+  have hy0 : y ≠ 0 := fun h0 ↦ γ.ne_zero (by simpa [h0] using hy.symm)
   obtain ⟨x, hx0, hxy⟩ := h y hy0
   refine ⟨Units.mk0 (valuation K x) (by simpa using hx0), trivial, fun z hz ↦ ?_⟩
   have hz' : z <ᵥ x := (valuation K).vlt_iff_lt.mpr hz
@@ -111,12 +109,9 @@ theorem isInducing_algebraMap_of_coinitial
     rwa [map_zero, tendsto_iff_comap] at h0
   · obtain ⟨γ, -, hγ⟩ := (IsValuativeTopology.hasBasis_nhds_zero K).mem_iff.mp hU
     obtain ⟨x, hx⟩ := valuation_surjective γ.val
-    have hx0 : x ≠ 0 := by
-      rintro rfl
-      exact γ.ne_zero (by simpa using hx.symm)
-    have hax0 : algebraMap K L x ≠ 0 := by
-      simpa using (algebraMap K L).injective.ne hx0
-    let δ : (ValueGroupWithZero L)ˣ := Units.mk0 (valuation L (algebraMap K L x)) (by simpa)
+    have hx0 : x ≠ 0 := fun h0 ↦ γ.ne_zero (by simpa [h0] using hx.symm)
+    let δ : (ValueGroupWithZero L)ˣ :=
+      Units.mk0 (valuation L (algebraMap K L x)) (by simpa using (algebraMap K L).injective.ne hx0)
     refine ⟨{w : L | valuation L w < δ},
       (IsValuativeTopology.hasBasis_nhds_zero L).mem_of_mem (i := δ) trivial, fun z hz ↦ hγ ?_⟩
     have hz' : algebraMap K L z <ᵥ algebraMap K L x := (valuation L).vlt_iff_lt.mpr hz

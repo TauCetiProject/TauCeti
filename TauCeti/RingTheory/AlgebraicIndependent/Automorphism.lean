@@ -56,42 +56,31 @@ private theorem pow_algHom_mem_rootSet {p : Polynomial R} (hp0 : p ≠ 0) {x : A
         Polynomial.map_ne_zero_iff (FaithfulSMul.algebraMap_injective R A)]
       exact ⟨hp0, hx⟩
   | n + 1 => by
-      have hn := pow_algHom_mem_rootSet hp0 hx σ n
-      have hmul : (σ ^ (n + 1)) x = σ ((σ ^ n) x) := by
-        rw [pow_succ', AlgHom.mul_apply]
-      rw [hmul]
-      exact Polynomial.rootSet_maps_to' (fun h ↦ h) σ hn
+      rw [pow_succ', AlgHom.mul_apply]
+      exact Polynomial.rootSet_maps_to' id σ (pow_algHom_mem_rootSet hp0 hx σ n)
 
 /-- In a domain `A` faithful over `R`, the iterates of an `R`-algebra endomorphism `σ : A →ₐ[R] A`
 on an algebraic element `x` eventually repeat. -/
 theorem exists_pow_apply_eq_of_algHom {x : A} (hx : IsAlgebraic R x) (σ : A →ₐ[R] A) :
     ∃ i j : ℕ, i < j ∧ (σ ^ i) x = (σ ^ j) x := by
   obtain ⟨p, hp0, hpx⟩ := hx
-  let f : ℕ → p.rootSet A := fun n ↦ ⟨(σ ^ n) x, pow_algHom_mem_rootSet hp0 hpx σ n⟩
-  obtain ⟨i, j, hij⟩ := Finite.exists_ne_map_eq_of_infinite f
-  have heq : (σ ^ i) x = (σ ^ j) x := congrArg Subtype.val hij.2
+  obtain ⟨i, j, hij⟩ := Finite.exists_ne_map_eq_of_infinite
+    (fun n : ℕ ↦ (⟨(σ ^ n) x, pow_algHom_mem_rootSet hp0 hpx σ n⟩ : p.rootSet A))
   rcases lt_or_gt_of_ne hij.1 with hlt | hgt
-  · exact ⟨i, j, hlt, heq⟩
-  · exact ⟨j, i, hgt, heq.symm⟩
+  · exact ⟨i, j, hlt, congrArg Subtype.val hij.2⟩
+  · exact ⟨j, i, hgt, (congrArg Subtype.val hij.2).symm⟩
 
 /-- In a domain `A` faithful over `R`, every element algebraic over `R` is fixed by some nonzero
 power of any `R`-algebra automorphism `σ : A ≃ₐ[R] A`. -/
 theorem exists_pow_apply_eq_self_of_algEquiv {x : A} (hx : IsAlgebraic R x) (σ : A ≃ₐ[R] A) :
     ∃ n : ℕ, n ≠ 0 ∧ (σ ^ n) x = x := by
-  have hpow : ∀ (m : ℕ) (y : A), (σ.toAlgHom ^ m) y = (σ ^ m) y := by
-    intro m
-    induction m with
-    | zero => intro y; rfl
-    | succ m ih =>
-        intro y
-        rw [pow_succ', pow_succ', AlgHom.mul_apply, AlgEquiv.mul_apply, ih, AlgEquiv.coe_toAlgHom]
+  have hpow (m : ℕ) (y : A) : (σ.toAlgHom ^ m) y = (σ ^ m) y := by
+    induction m generalizing y with
+    | zero => rfl
+    | succ m ih => rw [pow_succ', pow_succ', AlgHom.mul_apply, AlgEquiv.mul_apply, ih]; rfl
   obtain ⟨i, j, hij, heq⟩ := hx.exists_pow_apply_eq_of_algHom σ.toAlgHom
-  rw [hpow, hpow] at heq
-  refine ⟨j - i, Nat.sub_ne_zero_of_lt hij, ?_⟩
-  apply (σ ^ i).injective
-  have hmul : (σ ^ i * σ ^ (j - i)) x = (σ ^ j) x := by
-    rw [← pow_add, Nat.add_sub_of_le hij.le]
-  rw [← AlgEquiv.mul_apply, hmul, ← heq]
+  refine ⟨j - i, Nat.sub_ne_zero_of_lt hij, (σ ^ i).injective ?_⟩
+  rw [← AlgEquiv.mul_apply, ← pow_add, Nat.add_sub_of_le hij.le, ← hpow, ← hpow, heq]
 
 end IsAlgebraic
 
@@ -104,10 +93,8 @@ variable {R A : Type*} [CommRing R] [CommRing A] [IsDomain A] [Algebra R A] [Fai
 /-- In a domain `A` faithful over `R`, an element moved by every positive power of an `R`-algebra
 automorphism `σ : A ≃ₐ[R] A` is transcendental over `R`. -/
 theorem transcendental_of_forall_pow_algEquiv_ne_self (σ : A ≃ₐ[R] A) {x : A}
-    (h : ∀ n : ℕ, n ≠ 0 → (σ ^ n) x ≠ x) : Transcendental R x := by
-  intro hx
-  obtain ⟨n, hn0, hnx⟩ := hx.exists_pow_apply_eq_self_of_algEquiv σ
-  exact h n hn0 hnx
+    (h : ∀ n : ℕ, n ≠ 0 → (σ ^ n) x ≠ x) : Transcendental R x :=
+  fun hx ↦ let ⟨n, hn0, hnx⟩ := hx.exists_pow_apply_eq_self_of_algEquiv σ; h n hn0 hnx
 
 end Orbit
 
@@ -124,8 +111,7 @@ private theorem map_aeval_monomial_of_eigenvectors (σ : A →ₐ[R] A) {u : ι 
   have hprod : (d.prod fun i k ↦ σ (y i ^ k)) =
       (d.prod fun i k ↦ algebraMap R A (u i ^ k)) * d.prod fun i k ↦ y i ^ k := by
     rw [← Finsupp.prod_mul]
-    refine Finsupp.prod_congr fun i _ ↦ ?_
-    rw [map_pow, hσ, mul_pow, map_pow]
+    exact Finsupp.prod_congr fun i _ ↦ by rw [map_pow, hσ, mul_pow, map_pow]
   rw [hprod, ← map_finsuppProd]
   ring
 
@@ -143,57 +129,45 @@ theorem algebraicIndependent_of_algHom_eigenvectors [IsDomain A] [FaithfulSMul R
   let μ : (ι →₀ ℕ) → R := fun d ↦ d.prod fun i k ↦ u i ^ k
   have hinjR : Function.Injective (algebraMap R A) := FaithfulSMul.algebraMap_injective R A
   rw [algebraicIndependent_iff]
-  suffices ∀ n : ℕ, ∀ P : MvPolynomial ι R, P.support.card = n →
-      MvPolynomial.aeval y P = 0 → P = 0 by
-    intro P hP
-    exact this P.support.card P rfl hP
+  suffices ∀ n (P : MvPolynomial ι R), P.support.card = n → MvPolynomial.aeval y P = 0 → P = 0 from
+    fun P ↦ this _ P rfl
   intro n
   induction n using Nat.strongRecOn with
   | ind n ih =>
     intro P hcard hP
-    by_cases hP0 : P = 0
-    · exact hP0
+    by_contra hP0
     obtain ⟨d₀, hd₀⟩ := MvPolynomial.support_nonempty.2 hP0
     let P' : MvPolynomial ι R :=
       ∑ d ∈ P.support, MvPolynomial.monomial d ((μ d - μ d₀) * P.coeff d)
-    have hcoeff : ∀ d, P'.coeff d = (μ d - μ d₀) * P.coeff d := by
-      intro d
+    have hcoeff (d) : P'.coeff d = (μ d - μ d₀) * P.coeff d := by
       rw [MvPolynomial.coeff_sum]
       simp only [MvPolynomial.coeff_monomial, Finset.sum_ite_eq']
-      by_cases hd : d ∈ P.support
-      · simp [hd]
-      · simp [hd, MvPolynomial.notMem_support_iff.1 hd]
-    have hsupp_sub : P'.support ⊆ P.support := by
-      intro d hd
-      rw [MvPolynomial.mem_support_iff, hcoeff] at hd
-      exact MvPolynomial.mem_support_iff.2 (right_ne_zero_of_mul hd)
+      split_ifs with hd
+      · rfl
+      · exact (mul_eq_zero_of_right _ (MvPolynomial.notMem_support_iff.1 hd)).symm
+    have hsupp_sub : P'.support ⊆ P.support := fun d hd ↦
+      MvPolynomial.mem_support_iff.2
+        (right_ne_zero_of_mul (hcoeff d ▸ MvPolynomial.mem_support_iff.1 hd))
     have hd₀_notMem : d₀ ∉ P'.support := by
       rw [MvPolynomial.mem_support_iff, hcoeff, sub_self, zero_mul, not_not]
-    have hcard_lt : P'.support.card < n := by
-      rw [← hcard]
-      exact Finset.card_lt_card
+    have hcard_lt : P'.support.card < n :=
+      hcard ▸ Finset.card_lt_card
         (Finset.ssubset_iff_of_subset hsupp_sub |>.2 ⟨d₀, hd₀, hd₀_notMem⟩)
     have haeval' : MvPolynomial.aeval y P' = 0 := by
-      have hdecomp : MvPolynomial.aeval y P =
-          ∑ d ∈ P.support, MvPolynomial.aeval y (MvPolynomial.monomial d (P.coeff d)) := by
-        conv_lhs => rw [P.as_sum]
-        rw [map_sum]
-      have hsum : MvPolynomial.aeval y P' =
-          σ (MvPolynomial.aeval y P) - algebraMap R A (μ d₀) * MvPolynomial.aeval y P := by
-        simp only [P', map_sum]
-        rw [hdecomp, map_sum σ, Finset.mul_sum, ← Finset.sum_sub_distrib]
-        refine Finset.sum_congr rfl fun d _ ↦ ?_
-        rw [map_aeval_monomial_of_eigenvectors σ hσ d (P.coeff d),
-          MvPolynomial.aeval_monomial, MvPolynomial.aeval_monomial]
-        simp only [μ, map_mul, map_sub]
-        ring
-      rw [hsum, hP, map_zero, mul_zero, sub_zero]
+      suffices MvPolynomial.aeval y P' =
+          σ (MvPolynomial.aeval y P) - algebraMap R A (μ d₀) * MvPolynomial.aeval y P by
+        simp [this, hP]
+      conv_rhs => rw [P.as_sum]
+      simp only [P', map_sum, Finset.mul_sum, ← Finset.sum_sub_distrib]
+      refine Finset.sum_congr rfl fun d _ ↦ ?_
+      rw [map_aeval_monomial_of_eigenvectors σ hσ, MvPolynomial.aeval_monomial,
+        MvPolynomial.aeval_monomial]
+      simp only [μ, map_mul, map_sub]
+      ring
     have hP'0 : P' = 0 := ih P'.support.card hcard_lt P' rfl haeval'
     have hsingleton : P.support = {d₀} := by
-      refine Finset.eq_singleton_iff_unique_mem.2 ⟨hd₀, fun d hd ↦ ?_⟩
-      by_contra hne
-      have h0 : (μ d - μ d₀) * P.coeff d = 0 := by
-        simpa [hP'0] using (hcoeff d).symm
+      refine Finset.eq_singleton_iff_unique_mem.2 ⟨hd₀, fun d hd ↦ by_contra fun hne ↦ ?_⟩
+      have h0 : (μ d - μ d₀) * P.coeff d = 0 := by simpa [hP'0] using (hcoeff d).symm
       have h0A : algebraMap R A (μ d - μ d₀) * algebraMap R A (P.coeff d) = 0 := by
         rw [← map_mul, h0, map_zero]
       rcases mul_eq_zero.1 h0A with hμ | hc
@@ -202,12 +176,10 @@ theorem algebraicIndependent_of_algHom_eigenvectors [IsDomain A] [FaithfulSMul R
     have hPmon : P = MvPolynomial.monomial d₀ (P.coeff d₀) := by
       conv_lhs => rw [P.as_sum, hsingleton, Finset.sum_singleton]
     rw [hPmon, MvPolynomial.aeval_monomial] at hP
-    have hyprod : (d₀.prod fun i k ↦ y i ^ k) ≠ 0 := by
-      rw [Finsupp.prod]
-      exact Finset.prod_ne_zero_iff.2 fun i _ ↦ pow_ne_zero _ (hy0 i)
     rcases mul_eq_zero.1 hP with hc0 | hprod0
-    · exact absurd (hinjR (hc0.trans (map_zero _).symm)) (MvPolynomial.mem_support_iff.1 hd₀)
-    · exact absurd hprod0 hyprod
+    · exact (MvPolynomial.mem_support_iff.1 hd₀) (hinjR (hc0.trans (map_zero _).symm))
+    · rw [Finsupp.prod] at hprod0
+      exact Finset.prod_ne_zero_iff.2 (fun i _ ↦ pow_ne_zero _ (hy0 i)) hprod0
 
 end Eigenvectors
 

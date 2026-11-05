@@ -153,21 +153,16 @@ theorem denseRange_algebraMap_integer :
   intro x
   rw [mem_closure_iff_nhds]
   intro U hU
-  rw [nhds_induced, mem_comap] at hU
-  obtain ⟨V, hV, hVU⟩ := hU
+  rw [nhds_induced] at hU
+  obtain ⟨V, hV, hVU⟩ := mem_comap.1 hU
   obtain ⟨r, hrV, hrv⟩ := (valuation K).exists_coe_mem_extension_eq hV
+  have hx1 : (x : Completion K) ≤ᵥ 1 := by
+    simpa using (valuation (Completion K)).vle_iff_le.2 x.2
   have hr1 : valuation K r ≤ 1 := by
     rw [← hrv]
-    have hx1 : (x : Completion K) ≤ᵥ 1 := by
-      have hx' : valuation (Completion K) (x : Completion K) ≤ 1 := x.2
-      rwa [← map_one (valuation (Completion K)), ← (valuation (Completion K)).vle_iff_le] at hx'
-    simpa [map_one] using ((valuation K).extension).vle_iff_le.1 hx1
-  let r₀ : 𝒪[K] := ⟨r, hr1⟩
-  refine ⟨algebraMap 𝒪[K] 𝒪[Completion K] r₀, hVU ?_, r₀, rfl⟩
-  have hcoe : ((algebraMap 𝒪[K] 𝒪[Completion K] r₀ : 𝒪[Completion K]) : Completion K) =
-      (r : Completion K) :=
-    TauCeti.coe_algebraMap_integerRing r₀
-  simpa [hcoe] using hrV
+    simpa using ((valuation K).extension).vle_iff_le.1 hx1
+  refine ⟨algebraMap 𝒪[K] 𝒪[Completion K] ⟨r, hr1⟩, hVU ?_, ⟨r, hr1⟩, rfl⟩
+  simpa [TauCeti.coe_algebraMap_integerRing, Completion.algebraMap_def] using hrV
 
 /-- The canonical algebra map from the residue field of `K` to the residue field of `Completion K`
 is bijective. -/
@@ -177,20 +172,13 @@ theorem algebraMap_residueField_bijective :
   obtain ⟨x, rfl⟩ := residue_surjective z
   have hball : {u : Completion K | valuation (Completion K) u < 1} ∈ 𝓝 (0 : Completion K) := by
     simpa using (IsValuativeTopology.hasBasis_nhds_zero (Completion K)).mem_of_mem (i := 1) trivial
-  have hsub : Continuous fun y : Completion K ↦ y - (x : Completion K) :=
-    continuous_id.sub continuous_const
-  have hVx : ((fun y : Completion K ↦ y - (x : Completion K)) ⁻¹'
-      {u : Completion K | valuation (Completion K) u < 1}) ∈ 𝓝 (x : Completion K) := by
-    refine (hsub.continuousAt (x := (x : Completion K))).preimage_mem_nhds ?_
-    simpa using hball
-  have hU : (((↑) : 𝒪[Completion K] → Completion K) ⁻¹'
-      ((fun y : Completion K ↦ y - (x : Completion K)) ⁻¹'
-        {u : Completion K | valuation (Completion K) u < 1})) ∈ 𝓝 x :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds hVx
+  have hU : {y : 𝒪[Completion K] | valuation (Completion K) ((y : Completion K) - x) < 1} ∈ 𝓝 x :=
+    (continuous_subtype_val.sub continuous_const).continuousAt.preimage_mem_nhds
+      ((sub_self (x : Completion K)).symm ▸ hball)
   obtain ⟨_, hmem, r₀, rfl⟩ := mem_closure_iff_nhds.1 (denseRange_algebraMap_integer K x) _ hU
   refine ⟨residue 𝒪[K] r₀, ?_⟩
-  rw [ValuativeExtension.residueField_algebraMap_residue]
-  refine (Ideal.Quotient.mk_eq_mk_iff_sub_mem _ _).2 ?_
+  rw [ValuativeExtension.residueField_algebraMap_residue, ← sub_eq_zero, ← map_sub,
+    residue_eq_zero_iff]
   exact (valuation (Completion K)).mem_maximalIdeal_iff.2 hmem
 
 /-- The canonical ring isomorphism between the residue fields of `K` and `Completion K`. -/
@@ -218,14 +206,10 @@ theorem valuation_eq_of_continuous {g : Completion K → Completion K} (hg : Con
     valuation (Completion K) (g x) = valuation (Completion K) x := by
   rcases eq_or_ne x 0 with rfl | hx0
   · rw [(hg0 0).2 rfl]
-  have hgx0 : g x ≠ 0 := (hg0 x).not.2 hx0
-  have hloc := (valuation K).extension_locally_const hgx0
-  have hpre := hg.continuousAt.preimage_mem_nhds hloc
-  obtain ⟨r, hr, hvr⟩ := (valuation K).exists_coe_mem_extension_eq hpre
-  refine ((valuation (Completion K)).veq_iff_eq).1
-    (((valuation K).extension).veq_iff_eq.2 ?_)
-  have hr' : (valuation K).extension (g (r : Completion K)) =
-      (valuation K).extension (g x) := hr
+  obtain ⟨r, hr, hvr⟩ := (valuation K).exists_coe_mem_extension_eq
+    (hg.continuousAt.preimage_mem_nhds ((valuation K).extension_locally_const ((hg0 x).not.2 hx0)))
+  refine ((valuation (Completion K)).veq_iff_eq).1 (((valuation K).extension).veq_iff_eq.2 ?_)
+  have hr' : (valuation K).extension (g (r : Completion K)) = (valuation K).extension (g x) := hr
   rw [← hr', hcoe, Valuation.extension_apply_coe, hval, hvr]
 
 /-- If a continuous map `h : 𝒪[Completion K] → Completion K` sends the image of every `y : 𝒪[K]`

@@ -294,6 +294,43 @@ theorem frobenius_ne_one : frobenius E ≠ 1 := by
 
 /-! ### Value group, discreteness, uniformizers, and closed embedding -/
 
+section LevelInstances
+
+variable (E : Type*) [Field E] [ValuativeRel E] [TopologicalSpace E]
+  [IsNonarchimedeanLocalField E] (f : ℕ)
+
+private instance : ValuativeRel (unramifiedExtension E (AlgebraicClosure E) f) :=
+  finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) _
+
+private instance : TopologicalSpace (unramifiedExtension E (AlgebraicClosure E) f) :=
+  finiteIntermediateFieldTopology E (AlgebraicClosure E) _
+
+private instance : IsNonarchimedeanLocalField (unramifiedExtension E (AlgebraicClosure E) f) :=
+  finiteIntermediateField_isNonarchimedeanLocalField E (AlgebraicClosure E) _
+
+private instance : ValuativeExtension E (unramifiedExtension E (AlgebraicClosure E) f) :=
+  finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) _
+
+@[instance_reducible]
+private def levelAlgebra : Algebra (unramifiedExtension E (AlgebraicClosure E) f) (Unramified E) :=
+  (IntermediateField.inclusion
+    (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) f)).toAlgebra
+
+private theorem levelScalarTower :
+    letI := levelAlgebra E f
+    IsScalarTower E (unramifiedExtension E (AlgebraicClosure E) f) (Unramified E) := by
+  let _ := levelAlgebra E f
+  exact .of_algebraMap_eq fun _ ↦ rfl
+
+private theorem levelValuativeExtension :
+    letI := levelAlgebra E f
+    ValuativeExtension (unramifiedExtension E (AlgebraicClosure E) f) (Unramified E) := by
+  let _ := levelAlgebra E f
+  exact (IntermediateField.inclusion
+    (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) f)).valuativeExtension
+
+end LevelInstances
+
 variable (E) in
 /-- Every finite subextension of `E^{ur}/E` is unramified, so the map of value groups with zero
 from `E` to `E^{ur}` is surjective. -/
@@ -304,29 +341,19 @@ theorem mapValueGroupWithZero_unramified_surjective :
   · exact ⟨0, by simp⟩
   obtain ⟨f, hf, hyf⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
   let L := unramifiedExtension E (AlgebraicClosure E) f
-  let _ := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) L
-  let _ := finiteIntermediateFieldTopology E (AlgebraicClosure E) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField E (AlgebraicClosure E) L
-  have := finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) L
+  let _ := levelAlgebra E f; have := levelScalarTower E f; have := levelValuativeExtension E f
   have : IsUnramified E L := isUnramified_unramifiedExtension hf
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[E]
-  have hϖL : Irreducible (algebraMap 𝒪[E] 𝒪[L] ϖ) := IsUnramified.irreducible_algebraMap hϖ
   let yL : L := ⟨y.1, hyf⟩
   have hyL0 : yL ≠ 0 :=
     fun h ↦ hy0 (Subtype.ext (congrArg (Subtype.val : L → AlgebraicClosure E) h))
-  obtain ⟨n, hn⟩ := exists_eq_valuation_zpow_of_irreducible hϖL
+  obtain ⟨n, hn⟩ := exists_eq_valuation_zpow_of_irreducible (IsUnramified.irreducible_algebraMap hϖ)
     (Units.mk0 (valuation L yL) ((valuation L).ne_zero_iff.2 hyL0))
-  have hveqL : algebraMap E L ((ϖ : E) ^ n) =ᵥ yL := by
-    refine ((valuation L).veq_iff_eq).2 ?_
-    rw [map_zpow₀, ← coe_algebraMap_integerRing]
-    simpa using hn.symm
-  let ι : L →ₐ[E] Unramified E := IntermediateField.inclusion
-    (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) f)
-  let _ := ι.toAlgebra
-  have : ValuativeExtension L (Unramified E) := ι.valuativeExtension
+  have hveqL : algebraMap E L ((ϖ : E) ^ n) =ᵥ yL := ((valuation L).veq_iff_eq).2
+    (by rw [map_zpow₀, ← coe_algebraMap_integerRing]; simpa using hn.symm)
   have hy_eq : algebraMap L (Unramified E) yL = y := Subtype.ext rfl
   refine ⟨(ϖ : E) ^ n, ?_⟩
-  rw [← ι.commutes, ← hy_eq]
+  rw [IsScalarTower.algebraMap_apply E L (Unramified E), ← hy_eq]
   exact ValuativeExtension.veq_iff_veq.2 hveqL
 
 variable (E) in
@@ -403,29 +430,16 @@ theorem irreducible_algebraMap_iff {ϖ : 𝒪[E]} :
 for the canonical valuation of `Breve E`. -/
 theorem isUniformizer_algebraMap_iff {π : Eˣ} :
     (valuation (Breve E)).IsUniformizer (algebraMap E (Breve E) (π : E)) ↔ IsUniformizer E π := by
+  have := breveIsDiscreteValuationRing E
   refine ⟨fun hπ ↦ ?_, fun hπ ↦ ?_⟩
-  · obtain ⟨ϖ₀, hϖ₀⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[E]
-    have hϖ₀B : Irreducible (algebraMap 𝒪[E] 𝒪[Breve E] ϖ₀) :=
-      irreducible_algebraMap_iff.2 hϖ₀
-    have hvπ : valuation (Breve E) (algebraMap E (Breve E) (π : E)) =
-        (Valuation.IsRankOneDiscrete.generator (valuation (Breve E)) :
-          ValueGroupWithZero (Breve E)) :=
-      Valuation.IsUniformizer.iff.1 hπ
-    have hvϖ₀ : valuation (Breve E) (algebraMap E (Breve E) (ϖ₀ : E)) =
-        (Valuation.IsRankOneDiscrete.generator (valuation (Breve E)) :
-          ValueGroupWithZero (Breve E)) := by
-      have hu := hϖ₀B.isUniformizer_valuation
-      rwa [coe_algebraMap_integerRing, Valuation.IsUniformizer.iff] at hu
-    have heqB : valuation (Breve E) (algebraMap E (Breve E) (π : E)) =
-        valuation (Breve E) (algebraMap E (Breve E) (ϖ₀ : E)) :=
-      hvπ.trans hvϖ₀.symm
-    rw [← ValuativeExtension.mapValueGroupWithZero_valuation,
-      ← ValuativeExtension.mapValueGroupWithZero_valuation] at heqB
-    have heqE : valuation E (π : E) = valuation E (ϖ₀ : E) :=
-      (ValuativeExtension.mapValueGroupWithZero_strictMono (A := E) (B := Breve E)).injective heqB
-    have hπ1 : valuation E (π : E) ≤ 1 := heqE.trans_le ϖ₀.2
+  · have hπ1 : valuation E (π : E) ≤ 1 :=
+      (ValuativeExtension.valuation_algebraMap_le_one_iff (π : E)).1 hπ.val_lt_one.le
+    let ϖ : 𝒪[E] := ⟨(π : E), hπ1⟩
+    have hϖB : (valuation (Breve E)).IsUniformizer (algebraMap 𝒪[E] 𝒪[Breve E] ϖ : Breve E) := by
+      rwa [coe_algebraMap_integerRing]
     exact (isUniformizer_iff_exists_irreducible E π).2
-      ⟨⟨(π : E), hπ1⟩, irreducible_of_valuation_eq hϖ₀ heqE, rfl⟩
+      ⟨ϖ, irreducible_algebraMap_iff.1 (ValuativeExtension.isUniformizer_valuation_coe_iff.1 hϖB),
+        rfl⟩
   · obtain ⟨ϖ, hϖ, hϖπ⟩ := (isUniformizer_iff_exists_irreducible E π).1 hπ
     have hu := (irreducible_algebraMap_iff.2 hϖ).isUniformizer_valuation
     rwa [coe_algebraMap_integerRing, hϖπ] at hu
@@ -445,9 +459,8 @@ theorem not_isSquare_algebraMap_of_irreducible {ϖ : 𝒪[E]} (hϖ : Irreducible
     rw [← map_pow, sq, ← hz, ← coe_algebraMap_integerRing]
     exact (algebraMap 𝒪[E] 𝒪[Breve E] ϖ).2
   let z₀ : 𝒪[Breve E] := ⟨z, hz1⟩
-  have hsq : algebraMap 𝒪[E] 𝒪[Breve E] ϖ = z₀ * z₀ := by
-    ext
-    simpa [z₀, coe_algebraMap_integerRing] using hz
+  have hsq : algebraMap 𝒪[E] 𝒪[Breve E] ϖ = z₀ * z₀ :=
+    Subtype.ext (by simpa [z₀, coe_algebraMap_integerRing] using hz)
   have hirr : Irreducible (algebraMap 𝒪[E] 𝒪[Breve E] ϖ) := irreducible_algebraMap_iff.2 hϖ
   rcases hirr.isUnit_or_isUnit hsq with hu | hu <;>
     exact hirr.not_isUnit (hsq ▸ hu.mul hu)
@@ -484,85 +497,56 @@ instance unramifiedResidueField_isAlgClosed : IsAlgClosed 𝓀[Unramified E] := 
   let N : ℕ := ∏ i ∈ Finset.range (p.natDegree + 1), f i
   have hN0 : N ≠ 0 := Finset.prod_ne_zero_iff.2 fun i _ ↦ hf0 i
   let L := unramifiedExtension E (AlgebraicClosure E) N
-  let _ := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) L
-  let _ := finiteIntermediateFieldTopology E (AlgebraicClosure E) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField E (AlgebraicClosure E) L
-  have := finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) L
+  let _ := levelAlgebra E N; have := levelValuativeExtension E N
   have : IsUnramified E L := isUnramified_unramifiedExtension hN0
-  let ιL : L →ₐ[E] Unramified E := IntermediateField.inclusion
-    (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) N)
-  let _ := ιL.toAlgebra
-  have : ValuativeExtension L (Unramified E) := ιL.valuativeExtension
   have hlifts : p ∈ Polynomial.lifts (algebraMap 𝓀[L] 𝓀[Unramified E]) := by
     refine (Polynomial.lifts_iff_coeff_lifts _).2 fun i ↦ ?_
     by_cases hi : p.natDegree < i
     · exact ⟨0, by rw [map_zero, Polynomial.coeff_eq_zero_of_natDegree_lt hi]⟩
-    · have hi' : i ∈ Finset.range (p.natDegree + 1) :=
-        Finset.mem_range_succ_iff.2 (not_lt.1 hi)
-      have hdvd : f i ∣ N := Finset.dvd_prod_of_mem f hi'
-      have hmemL : ((c i : Unramified E) : AlgebraicClosure E) ∈ L :=
-        unramifiedExtension_le_of_dvd hN0 hdvd (hcf i)
-      let y : L := ⟨((c i : Unramified E) : AlgebraicClosure E), hmemL⟩
+    · have hdvd : f i ∣ N := Finset.dvd_prod_of_mem f (Finset.mem_range_succ_iff.2 (not_lt.1 hi))
+      let y : L := ⟨((c i : Unramified E) : AlgebraicClosure E),
+        unramifiedExtension_le_of_dvd hN0 hdvd (hcf i)⟩
       have hy_eq : algebraMap L (Unramified E) y = (c i : Unramified E) := Subtype.ext rfl
-      have hy1 : valuation L y ≤ 1 := by
-        have hc1 : (c i : Unramified E) ≤ᵥ 1 := by
-          have hc' : valuation (Unramified E) (c i : Unramified E) ≤ 1 := (c i).2
-          rwa [← map_one (valuation (Unramified E)), ← (valuation (Unramified E)).vle_iff_le] at hc'
-        rw [← map_one (valuation L), ← (valuation L).vle_iff_le]
-        refine (ValuativeExtension.vle_iff_vle (A := L) (B := Unramified E)).1 ?_
-        rwa [hy_eq, (algebraMap L (Unramified E)).map_one]
-      let y₀ : 𝒪[L] := ⟨y, hy1⟩
-      have hy₀ : algebraMap 𝒪[L] 𝒪[Unramified E] y₀ = c i := Subtype.ext hy_eq
-      exact ⟨IsLocalRing.residue 𝒪[L] y₀,
+      have hy1 : valuation L y ≤ 1 :=
+        (ValuativeExtension.valuation_algebraMap_le_one_iff y).1 (by rw [hy_eq]; exact (c i).2)
+      have hy₀ : algebraMap 𝒪[L] 𝒪[Unramified E] ⟨y, hy1⟩ = c i := Subtype.ext hy_eq
+      exact ⟨IsLocalRing.residue 𝒪[L] ⟨y, hy1⟩,
         by rw [ValuativeExtension.residueField_algebraMap_residue, hy₀, hc]⟩
   obtain ⟨q₀, hq₀_map, hq₀_deg, _⟩ := Polynomial.lifts_and_natDegree_eq_and_monic hlifts hp_mon
-  have hq₀_pos : 0 < q₀.natDegree := hq₀_deg ▸ hp_irr.natDegree_pos
-  obtain ⟨r, hr_irr, hr_dvd⟩ := Polynomial.exists_irreducible_of_natDegree_pos hq₀_pos
+  obtain ⟨r, hr_irr, hr_dvd⟩ :=
+    Polynomial.exists_irreducible_of_natDegree_pos (hq₀_deg ▸ hp_irr.natDegree_pos)
   have hr_X : r ∣ Polynomial.X ^ Nat.card 𝓀[L] ^ r.natDegree - Polynomial.X :=
     hr_irr.natDegree_dvd_iff_dvd_X_pow_card_pow_sub_X.mp dvd_rfl
   let M : ℕ := N * r.natDegree
   have hM0 : M ≠ 0 := mul_ne_zero hN0 hr_irr.natDegree_pos.ne'
   let LM := unramifiedExtension E (AlgebraicClosure E) M
-  let _ := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) LM
-  let _ := finiteIntermediateFieldTopology E (AlgebraicClosure E) LM
-  have := finiteIntermediateField_isNonarchimedeanLocalField E (AlgebraicClosure E) LM
-  have := finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) LM
   have : IsUnramified E LM := isUnramified_unramifiedExtension hM0
-  let ιLM : LM →ₐ[E] Unramified E := IntermediateField.inclusion
-    (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) M)
-  let _ := ιLM.toAlgebra
-  have : ValuativeExtension LM (Unramified E) := ιLM.valuativeExtension
   have hcard : Nat.card 𝓀[LM] = Nat.card 𝓀[L] ^ r.natDegree := by
     rw [natCard_residueField E LM, IsUnramified.inertiaDegree_eq_finrank,
       finrank_unramifiedExtension hM0, natCard_residueField E L,
       IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension hN0, pow_mul]
   let _ : Fintype 𝓀[LM] := Fintype.ofFinite 𝓀[LM]
-  have hsplit_LM : (Polynomial.X ^ Nat.card 𝓀[LM] - Polynomial.X : 𝓀[LM][X]).Splits := by
+  have hsplit_ur : (Polynomial.X ^ Nat.card 𝓀[L] ^ r.natDegree - Polynomial.X :
+      𝓀[Unramified E][X]).Splits := by
+    let _ := levelAlgebra E M; have := levelValuativeExtension E M
     have : Polynomial.IsSplittingField 𝓀[LM] 𝓀[LM]
         (Polynomial.X ^ Fintype.card 𝓀[LM] - Polynomial.X) :=
       FiniteField.isSplittingField_sub 𝓀[LM] 𝓀[LM]
     have hs := Polynomial.IsSplittingField.splits 𝓀[LM]
       (Polynomial.X ^ Fintype.card 𝓀[LM] - Polynomial.X : 𝓀[LM][X])
-    rwa [Algebra.algebraMap_self, Polynomial.map_id, Fintype.card_eq_nat_card] at hs
-  have hsplit_ur : (Polynomial.X ^ Nat.card 𝓀[L] ^ r.natDegree - Polynomial.X :
-      𝓀[Unramified E][X]).Splits := by
+    rw [Algebra.algebraMap_self, Polynomial.map_id, Fintype.card_eq_nat_card] at hs
     rw [← hcard]
-    simpa using hsplit_LM.map (algebraMap 𝓀[LM] 𝓀[Unramified E])
-  have hr_dvd_ur : r.map (algebraMap 𝓀[L] 𝓀[Unramified E]) ∣
-      (Polynomial.X ^ Nat.card 𝓀[L] ^ r.natDegree - Polynomial.X : 𝓀[Unramified E][X]) := by
-    simpa using Polynomial.map_dvd (algebraMap 𝓀[L] 𝓀[Unramified E]) hr_X
-  have hX_ne : (Polynomial.X ^ Nat.card 𝓀[L] ^ r.natDegree - Polynomial.X :
-      𝓀[Unramified E][X]) ≠ 0 :=
-    Polynomial.X_pow_sub_X_ne_zero (Nat.one_lt_pow hr_irr.natDegree_pos.ne' Finite.one_lt_card)
+    simpa using hs.map (algebraMap 𝓀[LM] 𝓀[Unramified E])
   have hr_split : (r.map (algebraMap 𝓀[L] 𝓀[Unramified E])).Splits :=
-    hsplit_ur.of_dvd hX_ne hr_dvd_ur
+    hsplit_ur.of_dvd
+      (Polynomial.X_pow_sub_X_ne_zero (Nat.one_lt_pow hr_irr.natDegree_pos.ne' Finite.one_lt_card))
+      (by simpa using Polynomial.map_dvd (algebraMap 𝓀[L] 𝓀[Unramified E]) hr_X)
   have hr_deg : (r.map (algebraMap 𝓀[L] 𝓀[Unramified E])).degree ≠ 0 := by
     rw [Polynomial.degree_map_eq_of_injective (algebraMap 𝓀[L] 𝓀[Unramified E]).injective]
     exact (Polynomial.degree_pos_of_irreducible hr_irr).ne'
   obtain ⟨z, hz⟩ := hr_split.exists_eval_eq_zero hr_deg
-  have hr_dvd_p : r.map (algebraMap 𝓀[L] 𝓀[Unramified E]) ∣ p :=
-    hq₀_map ▸ Polynomial.map_dvd (algebraMap 𝓀[L] 𝓀[Unramified E]) hr_dvd
-  exact ⟨z, Polynomial.eval_eq_zero_of_dvd_of_eval_eq_zero hr_dvd_p hz⟩
+  exact ⟨z, Polynomial.eval_eq_zero_of_dvd_of_eval_eq_zero
+    (hq₀_map ▸ Polynomial.map_dvd (algebraMap 𝓀[L] 𝓀[Unramified E]) hr_dvd) hz⟩
 
 variable (E) in
 /-- **The residue field of `Breve E` is algebraically closed.** -/
@@ -625,24 +609,12 @@ theorem unramifiedFrobenius_congr {x : Unramified E} (hx : x ∈ 𝒪[Unramified
     valuation (Unramified E) (unramifiedFrobenius E x - x ^ Nat.card 𝓀[E]) < 1 := by
   obtain ⟨f, hf, hxf⟩ := mem_maximalUnramifiedExtension_iff.1 x.2
   let L := unramifiedExtension E (AlgebraicClosure E) f
-  let _ := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) L
-  let _ := finiteIntermediateFieldTopology E (AlgebraicClosure E) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField E (AlgebraicClosure E) L
-  have := finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) L
+  let _ := levelAlgebra E f; have := levelValuativeExtension E f
   have : IsUnramified E L := isUnramified_unramifiedExtension hf
-  let ι : L →ₐ[E] Unramified E := IntermediateField.inclusion
-    (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) f)
-  let _ := ι.toAlgebra
-  have : ValuativeExtension L (Unramified E) := ι.valuativeExtension
   let xL : L := ⟨x.1, hxf⟩
   have hxL_eq : algebraMap L (Unramified E) xL = x := Subtype.ext rfl
-  have hxL1 : valuation L xL ≤ 1 := by
-    have hx' : x ≤ᵥ 1 := by
-      have h1 : valuation (Unramified E) x ≤ 1 := hx
-      rwa [← map_one (valuation (Unramified E)), ← (valuation (Unramified E)).vle_iff_le] at h1
-    rw [← map_one (valuation L), ← (valuation L).vle_iff_le]
-    refine (ValuativeExtension.vle_iff_vle (A := L) (B := Unramified E)).1 ?_
-    rwa [hxL_eq, (algebraMap L (Unramified E)).map_one]
+  have hxL1 : valuation L xL ≤ 1 :=
+    (ValuativeExtension.valuation_algebraMap_le_one_iff xL).1 (by rw [hxL_eq]; exact hx)
   have hsub_eq : unramifiedFrobenius E x - x ^ Nat.card 𝓀[E] =
       algebraMap L (Unramified E)
         (frobeniusAlgEquiv (K := E) (L := L) xL - xL ^ Nat.card 𝓀[E]) := by
@@ -652,15 +624,10 @@ theorem unramifiedFrobenius_congr {x : Unramified E} (hx : x ∈ 𝒪[Unramified
     have hx_pair : (⟨x.1, unramifiedExtension_le_maximalUnramifiedExtension E
         (AlgebraicClosure E) f hxf⟩ : Unramified E) = x := Subtype.ext rfl
     rw [hx_pair] at hcoe
-    simp only [AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow]
-    rw [hcoe]
+    simp only [AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, hcoe]
     rfl
-  have hvL : valuation L (frobeniusAlgEquiv (K := E) (L := L) xL - xL ^ Nat.card 𝓀[E]) < 1 :=
-    valuation_frobeniusAlgEquiv_sub_pow (K := E) (L := L) ⟨xL, hxL1⟩
-  rw [hsub_eq, ← map_one (valuation (Unramified E)), ← (valuation (Unramified E)).vlt_iff_lt,
-    ← (algebraMap L (Unramified E)).map_one]
-  refine ValuativeExtension.vlt_iff_vlt.2 ?_
-  rwa [(valuation L).vlt_iff_lt, map_one]
+  rw [hsub_eq, ValuativeExtension.valuation_algebraMap_lt_one_iff]
+  exact valuation_frobeniusAlgEquiv_sub_pow (K := E) (L := L) ⟨xL, hxL1⟩
 
 /-- **Congruence of Frobenius on `𝒪[Breve E]`.** For every integer `x` of `Breve E`,
 `σ(x) − x^q` has valuation strictly less than `1`, i.e., lies in `𝓂[Breve E]`. -/
@@ -741,13 +708,9 @@ theorem fixedPoints_integerFrobenius :
   · have hxB : frobenius E (x : Breve E) = (x : Breve E) :=
       (coe_integerFrobenius_apply x).symm.trans (congrArg Subtype.val hx)
     obtain ⟨c, hc⟩ := frobenius_eq_self_iff.1 hxB
-    have hc1 : valuation E c ≤ 1 := by
-      have hx' : (x : Breve E) ≤ᵥ 1 := by
-        have h1 : valuation (Breve E) (x : Breve E) ≤ 1 := x.2
-        rwa [← map_one (valuation (Breve E)), ← (valuation (Breve E)).vle_iff_le] at h1
-      rw [← map_one (valuation E), ← (valuation E).vle_iff_le]
-      refine (ValuativeExtension.vle_iff_vle (A := E) (B := Breve E)).1 ?_
-      rwa [hc, (algebraMap E (Breve E)).map_one]
+    have hc1 : valuation E c ≤ 1 :=
+      (ValuativeExtension.valuation_algebraMap_le_one_iff (B := Breve E) c).1
+        ((Valuation.mem_integer_iff _ _).1 (hc ▸ x.2))
     exact ⟨⟨c, hc1⟩, Subtype.ext (by rw [coe_algebraMap_integerRing, hc])⟩
   · rintro ⟨c, rfl⟩
     exact (integerFrobenius E).commutes c
@@ -766,18 +729,10 @@ theorem fixedPoints_frobenius_pow {n : ℕ} (hn : n ≠ 0) :
       Set.range ((↑) ∘ IntermediateField.inclusion
         (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) n)) := by
   let L := unramifiedExtension E (AlgebraicClosure E) n
-  let _ := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) L
-  let _ := finiteIntermediateFieldTopology E (AlgebraicClosure E) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField E (AlgebraicClosure E) L
-  have := finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) L
+  let _ := levelAlgebra E n; have := levelScalarTower E n; have := levelValuativeExtension E n
   have : IsUnramified E L := isUnramified_unramifiedExtension hn
   let _ := IsTopologicalAddGroup.rightUniformSpace L
   have := isUniformAddGroup_of_addCommGroup (G := L)
-  let ιU : L →ₐ[E] Unramified E := IntermediateField.inclusion
-    (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) n)
-  let _ : Algebra L (Unramified E) := ιU.toAlgebra
-  have : IsScalarTower E L (Unramified E) := .of_algebraMap_eq fun r ↦ (ιU.commutes r).symm
-  have : ValuativeExtension L (Unramified E) := ιU.valuativeExtension
   have : ContinuousConstSMul L (Unramified E) :=
     IsScalarTower.continuousConstSMul L (Unramified E) (Unramified E)
   have : UniformContinuousConstSMul L (Unramified E) :=
@@ -791,37 +746,28 @@ theorem fixedPoints_frobenius_pow {n : ℕ} (hn : n ≠ 0) :
       exact mapValueGroupWithZero_surjective E
     rw [MonoidWithZeroHom.coe_comp] at hcomp
     exact hcomp.of_comp
-  have hfixL : ∀ z : L,
+  have hfixL (z : L) :
       (frobenius E ^ n) (algebraMap L (Breve E) z) = algebraMap L (Breve E) z := by
-    intro z
     have hord : orderOf (frobeniusAlgEquiv (K := E) (L := L)) = n := by
       rw [orderOf_frobeniusAlgEquiv, IsUnramified.inertiaDegree_eq_finrank,
         finrank_unramifiedExtension hn]
     have hpowL : (frobeniusAlgEquiv (K := E) (L := L) ^ n) z = z := by
-      have h1 : frobeniusAlgEquiv (K := E) (L := L) ^
-          orderOf (frobeniusAlgEquiv (K := E) (L := L)) = 1 :=
-        pow_orderOf_eq_one _
-      rw [hord] at h1
+      have h1 := hord ▸ pow_orderOf_eq_one (frobeniusAlgEquiv (K := E) (L := L))
       exact congr($h1 z)
     have hcoe := coe_maximalUnramifiedFrobenius_zpow_apply_of_mem (K := E)
       (Ω := AlgebraicClosure E) (f := n) (n : ℤ) z.2
     rw [zpow_natCast, zpow_natCast, hpowL] at hcoe
-    have hU : (unramifiedFrobenius E ^ n) (ιU z) = ιU z := Subtype.ext hcoe
-    have hcoeB : algebraMap L (Breve E) z = (ιU z : Breve E) := rfl
+    have hU : (unramifiedFrobenius E ^ n) (algebraMap L (Unramified E) z) =
+        algebraMap L (Unramified E) z := Subtype.ext hcoe
+    have hcoeB : algebraMap L (Breve E) z = (algebraMap L (Unramified E) z : Breve E) := rfl
     rw [hcoeB, frobenius_pow_coe, hU]
-  let σL : Breve E ≃ₐ[L] Breve E :=
-    { (frobenius E ^ n).toRingEquiv with commutes' := hfixL }
+  let σL : Breve E ≃ₐ[L] Breve E := { (frobenius E ^ n).toRingEquiv with commutes' := hfixL }
   have hcardL : Nat.card 𝓀[L] = Nat.card 𝓀[E] ^ n := by
     rw [natCard_residueField E L, IsUnramified.inertiaDegree_eq_finrank,
       finrank_unramifiedExtension hn]
-  have hcongrL : ∀ z : Breve E, z ∈ 𝒪[Breve E] →
-      valuation (Breve E) (σL z - z ^ Nat.card 𝓀[L]) < 1 := by
-    intro z hz
-    rw [hcardL]
-    exact frobenius_pow_congr n hz
   ext x
   exact ValuativeExtension.eq_self_iff_mem_range_algebraMap_of_valuation_sub_pow_lt_one
-    hsurjL σL hcongrL x
+    hsurjL σL (fun _ hz ↦ hcardL ▸ frobenius_pow_congr n hz) x
 
 /-! ### Algebraic elements and transcendence of `Breve E` -/
 
@@ -837,8 +783,8 @@ theorem isAlgebraic_iff_mem_range_coe {x : Breve E} :
   · rintro ⟨y, rfl⟩
     obtain ⟨p, hp0, hpy⟩ := Algebra.IsAlgebraic.isAlgebraic (R := E) y
     refine ⟨p, hp0, ?_⟩
-    have hcoe : (y : Breve E) = IsScalarTower.toAlgHom E (Unramified E) (Breve E) y := rfl
-    rw [hcoe, Polynomial.aeval_algHom_apply, hpy, map_zero]
+    change Polynomial.aeval (IsScalarTower.toAlgHom E (Unramified E) (Breve E) y) p = 0
+    rw [Polynomial.aeval_algHom_apply, hpy, map_zero]
 
 variable (E) in
 /-- **`Breve E` contains elements transcendental over `E` in every characteristic.** -/
@@ -872,87 +818,59 @@ theorem transcendenceDegree_infinite [CharZero E] :
   let p : ℕ := ringChar 𝓀[E]
   let _ : Fintype 𝓀[E] := Fintype.ofFinite 𝓀[E]
   let q : ℕ := Nat.card 𝓀[E]
-  have hq1 : 1 < q := Finite.one_lt_card
-  have hq_sub : q - 1 ≠ 0 := Nat.sub_ne_zero_of_lt hq1
+  have hq_sub : q - 1 ≠ 0 := Nat.sub_ne_zero_of_lt Finite.one_lt_card
   let ι := {ℓ : ℕ // Nat.Prime ℓ ∧ p < ℓ}
   have hinf : Infinite ι := by
-    rw [← not_finite_iff_infinite]
-    intro hfin
-    let _ : Fintype ι := Fintype.ofFinite ι
-    let B : ℕ := max p (Finset.univ.sup fun x : ι ↦ x.1) + 1
-    obtain ⟨ℓ, hBℓ, hℓprime⟩ := Nat.exists_infinite_primes B
-    have hpℓ : p < ℓ := (Nat.le_max_left _ _).trans_lt ((Nat.lt_succ_self _).trans_le hBℓ)
-    have hle : ℓ ≤ Finset.univ.sup fun x : ι ↦ x.1 :=
-      Finset.le_sup (f := fun x : ι ↦ x.1) (Finset.mem_univ (⟨ℓ, hℓprime, hpℓ⟩ : ι))
-    have : B ≤ Finset.univ.sup fun x : ι ↦ x.1 := hBℓ.trans hle
-    have : max p (Finset.univ.sup fun x : ι ↦ x.1) < Finset.univ.sup fun x : ι ↦ x.1 :=
-      (Nat.lt_succ_self _).trans_le this
-    exact (Nat.le_max_right p _).not_gt this
+    have hs : {ℓ : ℕ | Nat.Prime ℓ ∧ p < ℓ}.Infinite := by
+      refine (Nat.infinite_setOfPred_prime.sdiff (Set.finite_le_nat p)).mono ?_
+      exact fun _ h ↦ ⟨h.1, not_le.1 h.2⟩
+    exact hs.to_subtype
   let u₀ : ι → 𝒪[E] := fun ℓ ↦ (ℓ.1 : 𝒪[E]) ^ (q - 1)
-  have hu₀_mem : ∀ ℓ : ι, u₀ ℓ - 1 ∈ 𝓂[E] := by
-    intro ℓ
+  have hu₀_mem (ℓ : ι) : u₀ ℓ - 1 ∈ 𝓂[E] := by
     let ψ := IsLocalRing.residue 𝒪[E]
     refine (IsLocalRing.residue_eq_zero_iff _).1 ?_
-    have hp_prime : Nat.Prime p := CharP.char_is_prime 𝓀[E] p
-    have hℓ_ne : (ℓ.1 : 𝓀[E]) ≠ 0 := by
-      intro h0
-      have hdvd : p ∣ ℓ.1 := (CharP.cast_eq_zero_iff 𝓀[E] p ℓ.1).1 h0
-      rcases (Nat.dvd_prime ℓ.2.1).1 hdvd with hp1 | hp_eq
-      · exact hp_prime.ne_one hp1
+    have hℓ_ne : (ℓ.1 : 𝓀[E]) ≠ 0 := fun h0 ↦ by
+      rcases (Nat.dvd_prime ℓ.2.1).1 ((CharP.cast_eq_zero_iff 𝓀[E] p ℓ.1).1 h0) with hp1 | hp_eq
+      · exact (CharP.char_is_prime 𝓀[E] p).ne_one hp1
       · exact ℓ.2.2.ne hp_eq
-    rw [ψ.map_sub, ψ.map_one, ψ.map_pow, map_natCast, sub_eq_zero]
-    have hcard_eq : q = Fintype.card 𝓀[E] := Nat.card_eq_fintype_card
-    rw [hcard_eq]
+    rw [ψ.map_sub, ψ.map_one, ψ.map_pow, map_natCast, sub_eq_zero,
+      show q = Fintype.card 𝓀[E] from Nat.card_eq_fintype_card]
     exact FiniteField.pow_card_sub_one_eq_one (ℓ.1 : 𝓀[E]) hℓ_ne
   choose y hy0 hy_frob using fun ℓ : ι ↦ exists_frobenius_eq_mul_of_sub_one_mem (hu₀_mem ℓ)
   let u : ι → E := fun ℓ ↦ ((u₀ ℓ : 𝒪[E]) : E)
-  have hσ_y : ∀ ℓ : ι, (frobenius E).toAlgHom (y ℓ) = algebraMap E (Breve E) (u ℓ) * y ℓ :=
-    fun ℓ ↦ hy_frob ℓ
   have hu_inj : Function.Injective fun d : ι →₀ ℕ ↦ d.prod fun ℓ k ↦ u ℓ ^ k := by
-    intro d₁ d₂ hd
-    dsimp only at hd
-    have hcast : ∀ d : ι →₀ ℕ,
-        (d.prod fun ℓ k ↦ u ℓ ^ k) =
-          ((d.prod fun ℓ k ↦ ℓ.1 ^ ((q - 1) * k) : ℕ) : E) := by
-      intro d
+    intro d₁ d₂ hd; dsimp only at hd
+    have hcast (d : ι →₀ ℕ) :
+        (d.prod fun ℓ k ↦ u ℓ ^ k) = ((d.prod fun ℓ k ↦ ℓ.1 ^ ((q - 1) * k) : ℕ) : E) := by
       have hhom := map_finsuppProd (Nat.castRingHom E) d fun ℓ k ↦ ℓ.1 ^ ((q - 1) * k)
       simp only [Nat.coe_castRingHom] at hhom
       refine (Finsupp.prod_congr fun ℓ _ ↦ ?_).trans hhom.symm
       simp only [u, u₀, pow_mul]
-      push_cast
-      rfl
-    rw [hcast, hcast] at hd
+      push_cast; rfl
     have hnat : (d₁.prod fun ℓ k ↦ ℓ.1 ^ ((q - 1) * k)) =
-        d₂.prod fun ℓ k ↦ ℓ.1 ^ ((q - 1) * k) := Nat.cast_injective hd
-    have hfact : ∀ (d : ι →₀ ℕ) (ℓ₀ : ι),
+        d₂.prod fun ℓ k ↦ ℓ.1 ^ ((q - 1) * k) := Nat.cast_injective (by rwa [hcast, hcast] at hd)
+    have hfact (d : ι →₀ ℕ) (ℓ₀ : ι) :
         (d.prod fun ℓ k ↦ ℓ.1 ^ ((q - 1) * k)).factorization ℓ₀.1 = (q - 1) * d ℓ₀ := by
-      intro d ℓ₀
       rw [Finsupp.prod, Nat.factorization_prod_apply fun ℓ _ ↦ pow_ne_zero _ ℓ.2.1.ne_zero]
       have hsum : (∑ ℓ ∈ d.support, (ℓ.1 ^ ((q - 1) * d ℓ)).factorization ℓ₀.1) =
-          ∑ ℓ ∈ d.support, if ℓ = ℓ₀ then (q - 1) * d ℓ else 0 := by
-        refine Finset.sum_congr rfl fun ℓ _ ↦ ?_
-        rw [ℓ.2.1.factorization_pow, Finsupp.single_apply]
-        by_cases hℓ : ℓ = ℓ₀
-        · subst hℓ
-          simp
-        · have hval : ℓ.1 ≠ ℓ₀.1 := fun hv ↦ hℓ (Subtype.ext hv)
-          simp [hℓ, hval]
+          ∑ ℓ ∈ d.support, if ℓ = ℓ₀ then (q - 1) * d ℓ else 0 :=
+        Finset.sum_congr rfl fun ℓ _ ↦ by
+          rw [ℓ.2.1.factorization_pow, Finsupp.single_apply]
+          by_cases hℓ : ℓ = ℓ₀
+          · subst hℓ; simp
+          · simp [hℓ, show ℓ.1 ≠ ℓ₀.1 from fun hv ↦ hℓ (Subtype.ext hv)]
       rw [hsum, Finset.sum_ite_eq']
-      by_cases hmem : ℓ₀ ∈ d.support
-      · simp [hmem]
-      · simp [hmem, Finsupp.notMem_support_iff.1 hmem]
+      split_ifs with hmem
+      · rfl
+      · exact (mul_eq_zero_of_right _ (Finsupp.notMem_support_iff.1 hmem)).symm
     ext ℓ₀
-    have heq : (q - 1) * d₁ ℓ₀ = (q - 1) * d₂ ℓ₀ := by
-      rw [← hfact d₁ ℓ₀, ← hfact d₂ ℓ₀, hnat]
-    exact mul_left_cancel₀ hq_sub heq
+    exact mul_left_cancel₀ hq_sub (by rw [← hfact d₁ ℓ₀, ← hfact d₂ ℓ₀, hnat])
   have hind : AlgebraicIndependent E y :=
-    algebraicIndependent_of_algHom_eigenvectors (frobenius E).toAlgHom hy0 hσ_y hu_inj
+    algebraicIndependent_of_algHom_eigenvectors (frobenius E).toAlgHom hy0 hy_frob hu_inj
   have hle : Cardinal.lift.{_, 0} (Cardinal.mk ι) ≤ Algebra.trdeg E (Breve E) := by
     simpa only [Cardinal.lift_uzero] using hind.lift_cardinalMk_le_trdeg
-  calc Cardinal.aleph0
-      = Cardinal.lift.{_, 0} Cardinal.aleph0 := Cardinal.lift_aleph0.symm
-    _ ≤ Cardinal.lift.{_, 0} (Cardinal.mk ι) := Cardinal.lift_le.2 (Cardinal.aleph0_le_mk ι)
-    _ ≤ Algebra.trdeg E (Breve E) := hle
+  exact Cardinal.lift_aleph0.symm.trans_le
+    ((Cardinal.lift_le.2 (Cardinal.aleph0_le_mk ι)).trans hle)
 
 variable (E) in
 /-- **In characteristic zero, `Breve E` has infinite transcendence degree over `E^{ur}`.** -/
