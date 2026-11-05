@@ -277,15 +277,11 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
     ⟨_, (EReal.coe_toReal (ne_top_of_le_ne_top htop hmono) hbot').symm⟩
   -- A minimizing sequence `v`, with penalized energies below `M + 1 / (n + 1)`.
   have hseq : ∀ n : ℕ, ∃ v, edist x v ≠ ⊤ ∧
-      φ v + (edist x v ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + 1 / (n + 1) : ℝ) : EReal) := by
-    intro n
+      φ v + (edist x v ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + 1 / (n + 1) : ℝ) : EReal) := fun n ↦ by
     have hlt : moreauYosida φ τ x < ((M + 1 / (n + 1) : ℝ) : EReal) := by
       rw [hM, EReal.coe_lt_coe_iff]
       linarith [Nat.one_div_pos_of_nat (α := ℝ) (n := n)]
-    rw [moreauYosida_def] at hlt
-    obtain ⟨v, hv⟩ := iInf_lt_iff.1 hlt
-    obtain ⟨hvx, hv⟩ := iInf_lt_iff.1 hv
-    exact ⟨v, hvx, hv⟩
+    simpa only [moreauYosida_def, iInf_lt_iff, exists_prop] using hlt
   choose v hvx hv using hseq
   have hle : ∀ n, φ (v n) + (edist x (v n) ^ 2 / (2 * τ) : ℝ≥0∞) ≤ ((M + 1 : ℝ) : EReal) :=
     fun n ↦ (hv n).le.trans <| EReal.coe_le_coe_iff.2 <| add_le_add le_rfl <|
@@ -304,8 +300,6 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
     exact (edist_triangle_left _ _ x).trans (add_le_add (hR i) (hR j))
   obtain ⟨y, ψ, hψ, hy⟩ := hcpt (M + 1) hdiam fun n ↦
     (le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _)).trans (hle n)
-  have hdiam' : Metric.ediam (range (v ∘ ψ)) ≠ ⊤ :=
-    ne_top_of_le_ne_top hdiam (Metric.ediam_mono (range_comp_subset_range ψ v))
   -- The limit `y` is at finite distance from `x`.
   have hyx : edist x y ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top <|
     (hd hy).trans (liminf_le_of_frequently_le' (Frequently.of_forall fun k ↦ hR (ψ k)))
@@ -316,7 +310,8 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
   refine ⟨y, mem_moreauYosidaResolvent_iff_eq_moreauYosida.2
     ⟨hyx, le_antisymm ?_ (moreauYosida_le φ τ hyx)⟩⟩
   rw [hM, ← hlim.liminf_eq]
-  exact (le_liminf_apply_add_edist_sq_div (hd hy) (hφ hdiam' hy)).trans
+  exact (le_liminf_apply_add_edist_sq_div (hd hy)
+    (hφ (ne_top_of_le_ne_top hdiam (Metric.ediam_mono (range_comp_subset_range ψ v))) hy)).trans
     (liminf_le_liminf (Eventually.of_forall fun k ↦ (hv (ψ k)).le))
 
 /-- **Existence of minimizing movement sequences** (Ambrosio–Gigli–Savaré, Corollary 2.2.2).
