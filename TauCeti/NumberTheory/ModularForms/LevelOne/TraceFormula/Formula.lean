@@ -139,7 +139,7 @@ private lemma fibreWeight_pair (n : ℕ) (hn : 0 < n) (t : ℤ) :
       12 * ∑ p ∈ n.divisorsAntidiagonal with p.1 < p.2,
         if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0 := by
   classical
-  set s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2) with hs
+  set s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)
   -- In the elliptic range no increasing factor pair can have trace ±t.
   by_cases hD : t ^ 2 ≤ 4 * n
   · have hz : ∑ p ∈ s,
@@ -187,7 +187,7 @@ private lemma sum_split_trace_mul_dickson (n w : ℕ) (hw : Even w) (p : ℕ × 
   classical
   set I := Finset.Icc (-4 * (n : ℤ)) (4 * n)
   let P (t : ℤ) : ℚ := (dickson 2 (n : ℚ) w).eval t
-  obtain ⟨hp, hlt⟩ := Finset.mem_filter.mp hp
+  have hp := (Finset.mem_filter.mp hp).1
   have ha := Nat.pos_of_mem_divisors (Nat.fst_mem_divisors_of_mem_antidiagonal hp)
   have hm := (Nat.mem_divisorsAntidiagonal.mp hp).1
   have hs : (0 : ℤ) < (p.1 : ℤ) + p.2 := by omega
