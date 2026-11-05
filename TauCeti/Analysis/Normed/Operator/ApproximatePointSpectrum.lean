@@ -158,8 +158,13 @@ theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
   have huw : IsUnit (algebraMap 𝕜 (E →L[𝕜] E) w - T) := by
     have hnotw : w ∉ spectrum 𝕜 T := hw
     simpa only [spectrum.mem_iff, not_not] using hnotw
-  have hzunit := isUnit_sub_of_nearby_resolvent T hc hbound huw
-    (by simpa only [dist_eq_norm] using hzw)
+  have hdist : ‖(algebraMap 𝕜 (E →L[𝕜] E) z - T) -
+      (algebraMap 𝕜 (E →L[𝕜] E) w - T)‖ < c / 2 := by
+    rw [sub_sub_sub_cancel_right, ← map_sub, norm_algebraMap', ← dist_eq_norm]
+    linarith
+  have hzunit := isUnit_of_forall_mul_norm_le_of_norm_sub_lt hc
+    (fun x ↦ by simpa only [sub_apply, algebraMap_apply, norm_sub_rev] using hbound x)
+    huw hdist
   exact (spectrum.mem_iff.mp ((spectrum.isClosed T).frontier_subset hz)) hzunit
 
 end ContinuousLinearMap
