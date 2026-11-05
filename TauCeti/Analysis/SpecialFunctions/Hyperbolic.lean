@@ -12,14 +12,15 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
-# The addition formula and the monotonicity of the hyperbolic tangent, and bounds on `sinh`
+# Hyperbolic tangent identities and regularity, and bounds on `sinh`
 
 Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh` and `Real.tanh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
-itself, nor its continuity or smoothness. This file supplies these, together with the square of
-`Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
+itself, nor its continuity or smoothness. This file supplies these, together with the identity
+`√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the square of `Real.sinh (r / 2)` in terms of the exponentials
+`exp (± r / 2)`, and the Gaussian bound
 `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of Mathlib's
 `Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l)) / l`.
 
@@ -31,6 +32,10 @@ itself, nor its continuity or smoothness. This file supplies these, together wit
   compares two real numbers exactly as they compare, and is positive on the positive reals.
 * `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
   `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
+* `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
+* `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
+  `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
+  `cosh α * cosh θ ≠ 0`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -45,6 +50,9 @@ The formula `Real.tanh_add` is the quotient of the other two, both sides carryin
 Where it is used: `TauCeti/Analysis/SpecialFunctions/Artanh.lean` inverts it into the additive
 law of `Real.artanh`, which carries the Möbius addition of `(-1, 1)` to the addition of `ℝ`;
 that law is in turn what makes the hyperbolic distance of the complex unit disc a metric.
+The complex identity `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` rewrites the
+projection parameter at which the two stabilization constants of the Ocneanu trace agree, in
+`TauCeti/Algebra/TypeAHeckeAlgebra/Hyperbolic.lean`.
 -/
 
 public section
@@ -77,6 +85,14 @@ theorem _root_.Real.tanh_add (a b : ℝ) :
     exact div_ne_zero hc (mul_ne_zero ha hb)
   rw [eq_div_iff hne, hnum, hden, Real.tanh_eq_sinh_div_cosh (a + b)]
   field_simp
+
+/-- The positive square root of `1 - tanh x ^ 2` is the hyperbolic secant. -/
+@[simp]
+theorem _root_.Real.sqrt_one_sub_tanh_sq (x : ℝ) :
+    √(1 - Real.tanh x ^ 2) = (Real.cosh x)⁻¹ := by
+  simpa only [Real.artanh_tanh, one_div, inv_inv] using
+    (congrArg (fun y : ℝ ↦ y⁻¹)
+      (Real.cosh_artanh ⟨Real.neg_one_lt_tanh x, Real.tanh_lt_one x⟩)).symm
 
 /-- **The hyperbolic tangent is strictly monotone.** It is inverted on its range `(-1, 1)` by
 the strictly monotone `Real.artanh`, so it cannot reverse a strict inequality. -/
@@ -118,6 +134,16 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
 theorem _root_.Real.contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
   simp_rw [funext Real.tanh_eq_sinh_div_cosh]
   exact Real.contDiff_sinh.div Real.contDiff_cosh fun x ↦ (Real.cosh_pos x).ne'
+
+/-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
+with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
+`(cosh α * cosh θ - sinh α * sinh θ) / (2 * cosh α * cosh θ)` by `Complex.cosh_sub`. -/
+theorem _root_.Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
+    (hα : Complex.cosh α ≠ 0) (hθ : Complex.cosh θ ≠ 0) :
+    Complex.cosh (α - θ) / (2 * Complex.cosh α * Complex.cosh θ) =
+      (1 - Complex.tanh α * Complex.tanh θ) / 2 := by
+  rw [Complex.cosh_sub, Complex.tanh_eq_sinh_div_cosh, Complex.tanh_eq_sinh_div_cosh]
+  field_simp
 
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/

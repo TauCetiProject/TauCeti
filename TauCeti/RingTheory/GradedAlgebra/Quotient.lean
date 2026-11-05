@@ -28,6 +28,9 @@ The quotient-piece construction follows Antoine Chambert-Loir's
 
 * `TauCeti.GradedAlgebra.quotientPiece_mul_quotientPiece_le`: multiplication respects the family.
 * `TauCeti.GradedAlgebra.quotientPiece_eq_span_image`: taking quotient pieces commutes with spans.
+* `TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span`: a piece lies in a submodule of the
+  quotient exactly when the classes of a spanning set of the original piece do.
+* `TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff`: a piece vanishes exactly when it lies in `I`.
 * `TauCeti.GradedAlgebra.iSup_quotientPiece_eq_top`: a spanning family spans the quotient.
 -/
 
@@ -65,24 +68,16 @@ theorem quotientPiece_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodul
   rw [quotientPiece_def, hs, Submodule.map_span]
   simp only [AlgHom.coe_toLinearMap, Ideal.Quotient.mkₐ_eq_mk]
 
-/-- A member of a descended piece lies in the span of `t` if the images of a spanning family of
-the original piece lie in that span. -/
-theorem mem_span_of_mem_quotientPiece {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s)
-    {t : Set (A ⧸ I)}
-    (hmem : ∀ z ∈ s, Ideal.Quotient.mk I z ∈ Submodule.span R t)
-    {w : A ⧸ I} (hw : w ∈ quotientPiece 𝒜 I i) :
-    w ∈ Submodule.span R t := by
-  have heq := quotientPiece_eq_span_image 𝒜 I (i := i) hs
-  rw [heq] at hw
-  refine (Submodule.span_le.2 ?_) hw
-  rintro u ⟨z, hz, rfl⟩
-  exact hmem z hz
+/-- If `s` spans `𝒜 i`, the descended piece lies in a submodule `N` of the quotient exactly when
+the classes of the elements of `s` lie in `N`. -/
+theorem quotientPiece_le_iff_of_eq_span {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s)
+    {N : Submodule R (A ⧸ I)} :
+    quotientPiece 𝒜 I i ≤ N ↔ ∀ z ∈ s, Ideal.Quotient.mk I z ∈ N := by
+  simp [quotientPiece_eq_span_image 𝒜 I hs, Submodule.span_le, Set.subset_def]
 
-/-- A piece contained in `I` vanishes in the quotient. -/
-theorem quotientPiece_eq_bot_of_le {i : ι} (hle : ∀ y ∈ 𝒜 i, y ∈ I) : quotientPiece 𝒜 I i = ⊥ := by
-  refine eq_bot_iff.2 fun x hx => ?_
-  obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.1 hx
-  exact Ideal.Quotient.eq_zero_iff_mem.2 (hle y hy)
+/-- A piece vanishes in the quotient exactly when it is contained in `I`. -/
+theorem quotientPiece_eq_bot_iff {i : ι} : quotientPiece 𝒜 I i = ⊥ ↔ ∀ y ∈ 𝒜 i, y ∈ I := by
+  simp [← le_bot_iff, quotientPiece_def, IsConcreteLE.le_iff, Ideal.Quotient.eq_zero_iff_mem]
 
 /-- Multiplication adds degrees, as an inclusion of products of pieces. -/
 theorem quotientPiece_mul_quotientPiece_le [Add ι] [SetLike.GradedMul 𝒜] (m n : ι) :
@@ -111,6 +106,5 @@ theorem iSup_quotientPiece_eq_top (h𝒜 : ⨆ i, 𝒜 i = ⊤) : ⨆ i, quotien
   simp only [quotientPiece]
   rw [← Submodule.map_iSup, h𝒜, Submodule.map_top, LinearMap.range_eq_top]
   exact Ideal.Quotient.mkₐ_surjective R I
-
 
 end TauCeti.GradedAlgebra

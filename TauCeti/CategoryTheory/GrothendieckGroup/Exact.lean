@@ -87,6 +87,9 @@ biproduct, and degreewise-conflation formulas.
 * `TauCeti.ExactK0.fromSplitEquiv`: if every conflation splits, the canonical comparison from
   split `K₀` is an equivalence.
 * `TauCeti.ExactK0.map_comp_ofLE`: naturality of the comparison in a conflation-exact functor.
+* `TauCeti.ExactK0.map_surjective`: an essentially surjective conflation-exact functor induces a
+  surjection of exact `K₀`; `TauCeti.ExactK0.map_lift_surjective` is the version for the
+  restriction to extension-closed full subcategories.
 
 ## References
 
@@ -575,6 +578,27 @@ lemma map_of (hF : E.IsConflationExact E' F) (X : C) :
 theorem map_unique (hF : E.IsConflationExact E' F) (f : ExactK0 E →+ ExactK0 E')
     (hf : ∀ X : C, f (of X) = (of (F.obj X) : ExactK0 E')) : f = map F hF :=
   hom_ext fun X => by rw [hf, map_of]
+
+/-- An essentially surjective conflation-exact functor induces a surjection of exact `K₀`. -/
+theorem map_surjective [F.EssSurj] (hF : E.IsConflationExact E' F) :
+    Function.Surjective (map F hF) :=
+  surjective_of_forall_of_mem_range fun Y =>
+    ⟨of (F.objPreimage Y), by rw [map_of, of_congr (F.objObjPreimageIso Y)]⟩
+
+omit [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D] in
+/-- The restriction of a conflation-exact functor to extension-closed full subcategories induces a
+surjection of exact `K₀` when every object of the target property is isomorphic to the image of an
+object of the source property. -/
+theorem map_lift_surjective {P : ObjectProperty C} [EssentiallySmall.{w} P.FullSubcategory]
+    [P.ContainsZero] [P.IsClosedUnderBinaryProducts] (hP : E.IsExtensionClosed P)
+    {P' : ObjectProperty D} [EssentiallySmall.{w'} P'.FullSubcategory] [P'.ContainsZero]
+    [P'.IsClosedUnderBinaryProducts] (hP' : E'.IsExtensionClosed P')
+    (hF : E.IsConflationExact E' F) (hFP : ∀ X : P.FullSubcategory, P' (F.obj X.obj))
+    (hP'F : P' ≤ P.map F) :
+    Function.Surjective (map (P'.lift (P.ι ⋙ F) hFP) (E.isConflationExact_lift hP hP' F hF hFP)) :=
+  have : (P'.lift (P.ι ⋙ F) hFP).EssSurj := by
+    rwa [ObjectProperty.essSurj_lift_iff, Functor.essImage_ι_comp]
+  map_surjective _ _
 
 variable (E) in
 /-- The identity functor induces the identity of exact `K₀`. -/

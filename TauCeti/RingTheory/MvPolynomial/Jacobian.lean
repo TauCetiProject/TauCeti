@@ -52,6 +52,8 @@ products, as the multiplicativity of evaluation then replaces the Leibniz rule.
 * `TauCeti.rank_jacobiMatrixAt_lt_card`,
   `TauCeti.card_lt_card_of_mulVec_surjective_jacobiMatrixAt`: at a nonzero zero, the rank is less
   than the number of variables, so full rank needs fewer equations than variables.
+* `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero`: a single equation
+  has full rank exactly where some partial derivative does not vanish.
 
 ## References
 
@@ -258,6 +260,21 @@ theorem card_lt_card_of_mulVec_surjective_jacobiMatrixAt [Fintype ι] [Fintype �
     (hv : v ≠ 0) (hpv : ∀ i, eval v (p i) = 0) (hJ : (jacobiMatrixAt p v).mulVec.Surjective) :
     Fintype.card ι < Fintype.card σ :=
   mulVec_surjective_iff_rank_eq_card.mp hJ ▸ rank_jacobiMatrixAt_lt_card hp hv hpv
+
+/-- **The Jacobian criterion for a single equation**: the Jacobian matrix of a hypersurface
+equation has full rank at a point exactly when some partial derivative of the equation is nonzero
+there. -/
+theorem mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero [Unique ι] [Fintype σ]
+    {p : ι → MvPolynomial σ K} {v : σ → K} :
+    (jacobiMatrixAt p v).mulVec.Surjective ↔ ∃ j, eval v (pderiv j (p default)) ≠ 0 := by
+  classical
+  refine ⟨fun h ↦ ?_, fun ⟨j, hj⟩ y ↦ ⟨Pi.single j (y default / eval v (pderiv j (p default))),
+    funext fun i ↦ ?_⟩⟩
+  · obtain ⟨x, hx⟩ := h 1
+    by_contra! h0
+    simpa [Matrix.mulVec, dotProduct, h0] using congrFun hx default
+  · simp only [Unique.eq_default i, Matrix.mulVec_single]
+    simp [field]
 
 end Field
 
