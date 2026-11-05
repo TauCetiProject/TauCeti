@@ -88,7 +88,7 @@ theorem eq_and_eq_of_mul_eq_mul_of_equation {A₄ A₆ x y X Y : K} (hA₄ : ‖
   exact mul_left_cancel₀ hx0 h
 
 /-- On a curve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖ ≤ 1` and `‖A₆‖ < 1`, a solution with `‖x‖ < 1`
-has `‖y‖ < 1`: it reduces to the node. -/
+has `‖y‖ < 1`: it reduces to the origin, which is the node of the reduction when `‖A₄‖ < 1`. -/
 theorem norm_lt_one_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ ≤ 1) (hA₆ : ‖A₆‖ < 1)
     (hx : ‖x‖ < 1) (h : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆) : ‖y‖ < 1 := by
   by_contra! hy
