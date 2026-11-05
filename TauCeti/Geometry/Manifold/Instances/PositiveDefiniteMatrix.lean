@@ -43,15 +43,15 @@ variable (n 𝕜 : Type*) [Finite n] [RCLike 𝕜]
 
 /-- The positive-definite cone, as an open subset of the real space of Hermitian matrices.
 Its subtype carries the standard open-submanifold structure. -/
-def positiveDefiniteMatrices : Opens (selfAdjoint (Matrix n n 𝕜)) :=
+def posDefOpens : Opens (selfAdjoint (Matrix n n 𝕜)) :=
   ⟨{A | (A : Matrix n n 𝕜).PosDef}, isOpen_setOf_posDef_selfAdjoint⟩
 
 variable {n 𝕜}
 
 /-- Membership in the positive-definite cone is positive definiteness of the underlying matrix. -/
 @[simp]
-theorem mem_positiveDefiniteMatrices (A : selfAdjoint (Matrix n n 𝕜)) :
-    A ∈ positiveDefiniteMatrices n 𝕜 ↔ (A : Matrix n n 𝕜).PosDef := Iff.rfl
+theorem mem_posDefOpens (A : selfAdjoint (Matrix n n 𝕜)) :
+    A ∈ posDefOpens n 𝕜 ↔ (A : Matrix n n 𝕜).PosDef := Iff.rfl
 
 end Cone
 
@@ -61,31 +61,37 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 variable (n 𝕜) in
 /-- Exponential coordinates on the positive-definite cone: a global real diffeomorphism from
-Hermitian matrices (symmetric matrices over `ℝ`), with inverse the matrix logarithm. -/
-def hermitianExpDiffeomorph :
-    selfAdjoint (Matrix n n 𝕜) ≃ₘ^∞⟮𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)),
-      𝓘(ℝ, selfAdjoint (Matrix n n 𝕜))⟯ positiveDefiniteMatrices n 𝕜 where
+Hermitian matrices (symmetric matrices over `ℝ`), with inverse the matrix logarithm.
+The regularity order `k` can be arbitrary, including analytic. -/
+def hermitianExpDiffeomorph (k : ℕ∞ω) :
+    selfAdjoint (Matrix n n 𝕜) ≃ₘ^k⟮𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)),
+      𝓘(ℝ, selfAdjoint (Matrix n n 𝕜))⟯ posDefOpens n 𝕜 where
   toFun X := ⟨⟨exp (X : Matrix n n 𝕜), X.prop.exp⟩,
     (isHermitian_iff_isSelfAdjoint.mpr X.prop).posDef_exp⟩
   invFun P := ⟨cfc Real.log (P.1 : Matrix n n 𝕜), cfc_predicate _ _⟩
   left_inv X := Subtype.ext ((isHermitian_iff_isSelfAdjoint.mpr X.prop).cfc_log_exp)
   right_inv P := Subtype.ext (Subtype.ext P.prop.exp_cfc_log)
   contMDiff_toFun := by
-    apply (ContMDiff.subtypeVal_comp_iff (positiveDefiniteMatrices n 𝕜) _).mp
-    have hexp : ContDiff ℝ ∞ (exp : Matrix n n 𝕜 → Matrix n n 𝕜) :=
-      contDiff_iff_contDiffAt.mpr fun X ↦ (exp_analytic (𝕂 := ℝ) X).contDiffAt.of_le le_top
+    intro X₀
+    -- Use the local-property lemma: the ContMDiff wrapper fixes the order at ∞.
+    apply (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ X₀).mp
+    have hexp : ContDiff ℝ k (exp : Matrix n n 𝕜 → Matrix n n 𝕜) :=
+      NormedSpace.contDiff_exp ℝ
+    -- The selfAdjoint subgroup and its real submodule have definitionally equal carriers
+    -- and induced topologies, so subtypeL is the coercion from selfAdjoint.
     have h := (selfAdjointPartL ℝ (Matrix n n 𝕜)).contDiff.comp
       (hexp.comp (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtypeL.contDiff)
-    refine h.contMDiff.congr fun X ↦ ?_
+    refine (h.contMDiff.congr fun X ↦ ?_).contMDiffAt
     exact (X.prop.exp.selfAdjointPart_apply ℝ).symm
   contMDiff_invFun := by
-    have hlog := (Matrix.contDiffOn_cfc_log (n := n) (𝕜 := 𝕜) (k := ∞)).restrict_scalars ℝ
-    have hι : ContDiff ℝ ∞ (fun X : selfAdjoint (Matrix n n 𝕜) ↦
+    have hlog := (Matrix.contDiffOn_cfc_log (n := n) (𝕜 := 𝕜) (k := k)).restrict_scalars ℝ
+    -- As above, the real submodule has the same carrier and topology as selfAdjoint.
+    have hι : ContDiff ℝ k (fun X : selfAdjoint (Matrix n n 𝕜) ↦
         (X : Matrix n n 𝕜)) :=
       (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtypeL.contDiff
     have hval : ContMDiff 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜))
-        𝓘(ℝ, Matrix n n 𝕜) ∞
-        (fun P : positiveDefiniteMatrices n 𝕜 ↦ (P.1 : Matrix n n 𝕜)) :=
+        𝓘(ℝ, Matrix n n 𝕜) k
+        (fun P : posDefOpens n 𝕜 ↦ (P.1 : Matrix n n 𝕜)) :=
       hι.contMDiff.comp contMDiff_subtype_val
     have h := (selfAdjointPartL ℝ (Matrix n n 𝕜)).contDiff.contMDiff.comp
       (hlog.contMDiffOn.comp_contMDiff hval fun P ↦ P.prop)
@@ -94,14 +100,14 @@ def hermitianExpDiffeomorph :
 
 /-- The underlying matrix of exponential coordinates is the matrix exponential. -/
 @[simp]
-theorem coe_hermitianExpDiffeomorph_apply (X : selfAdjoint (Matrix n n 𝕜)) :
-    (((hermitianExpDiffeomorph n 𝕜 X).1 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
+theorem coe_hermitianExpDiffeomorph_apply (k : ℕ∞ω) (X : selfAdjoint (Matrix n n 𝕜)) :
+    (((hermitianExpDiffeomorph n 𝕜 k X).1 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
       exp (X : Matrix n n 𝕜) := (rfl)
 
 /-- The inverse coordinates are the continuous-functional-calculus matrix logarithm. -/
 @[simp]
-theorem coe_hermitianExpDiffeomorph_symm_apply (P : positiveDefiniteMatrices n 𝕜) :
-    ((hermitianExpDiffeomorph n 𝕜).symm P : Matrix n n 𝕜) =
+theorem coe_hermitianExpDiffeomorph_symm_apply (k : ℕ∞ω) (P : posDefOpens n 𝕜) :
+    ((hermitianExpDiffeomorph n 𝕜 k).symm P : Matrix n n 𝕜) =
       cfc Real.log (P.1 : Matrix n n 𝕜) := (rfl)
 
 end Matrix

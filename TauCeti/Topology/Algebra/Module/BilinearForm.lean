@@ -303,7 +303,8 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
       simpa only [A, LinearMap.BilinForm.dotProduct_toMatrix_mulVec,
         LinearEquiv.symm_apply_apply, ContinuousLinearMap.toBilinForm_apply] using h
   rw [heq]
-  exact isOpen_setOfPred_dotProduct_mulVec_pos.preimage hA
+  simpa only [star_trivial, RCLike.re_to_real] using
+    (isOpen_setOfPred_dotProduct_mulVec_pos (𝕜 := ℝ)).preimage hA
 
 /-- **Uniform coercivity over a compact family.** On a finite-dimensional real normed space, let
 `b x` be a family of continuous bilinear forms, continuous on a compact set `K`, such that

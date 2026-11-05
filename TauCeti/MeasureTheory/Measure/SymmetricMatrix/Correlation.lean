@@ -299,6 +299,8 @@ theorem mem_posDefCorrelationRegion {x : strictLowerTriangle p → ℝ} :
 
 variable (p) in
 theorem isOpen_posDefCorrelationRegion : IsOpen (posDefCorrelationRegion p) :=
+  -- The real selfAdjoint submodule, the codomain of correlationMatrix, has definitionally
+  -- the same carrier and induced topology as the selfAdjoint subgroup.
   Matrix.isOpen_setOf_posDef_selfAdjoint.preimage (correlationMatrix p).continuous
 
 variable (p) in

@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
-# The positive-definite cone is open and measurable
+# The positive-definite cone of real symmetric matrices is measurable
 
 On the symmetric subspace, positive definiteness cuts out an open subset by
 `Matrix.isOpen_setOf_posDef_selfAdjoint`.
@@ -44,6 +44,8 @@ abbrev PosDefMatrix (p : ℕ) :=
 theorem measurableSet_posDefMatrix (p : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
+  -- The selfAdjoint subgroup and its real submodule have definitionally equal carriers
+  -- and induced topologies, so the openness theorem applies to this subtype.
   have h : IsOpen {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := Matrix.isOpen_setOf_posDef_selfAdjoint
   exact h.measurableSet
