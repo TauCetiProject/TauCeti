@@ -36,23 +36,6 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X]
   [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
   [μ.OuterRegular] [IsFiniteMeasureOnCompacts μ]
 
-/-- A σ-compact set has a σ-compact Baire-measurable hull with null excess, inside any
-prescribed open neighbourhood. No σ-finiteness assumption on the measure is needed. -/
-theorem IsSigmaCompact.exists_baire_hull {s U : Set X} (hs : IsSigmaCompact s)
-    (hU : IsOpen U) (hsU : s ⊆ U) :
-    ∃ B : Set X, s ⊆ B ∧ B ⊆ U ∧ IsSigmaCompact B ∧ MeasurableSet[TauCeti.baire X] B ∧
-      μ (B \ s) = 0 := by
-  obtain ⟨K, hK, rfl⟩ := hs
-  have hhull (n : ℕ) := (hK n).exists_baire_hull (μ := μ) (hK n).measure_ne_top hU
-    ((subset_iUnion K n).trans hsU)
-  choose B hKB hBU hBc hBm hBμ using hhull
-  refine ⟨⋃ n, B n, iUnion_mono hKB, iUnion_subset hBU,
-    isSigmaCompact_iUnion_of_isCompact B hBc, MeasurableSet.iUnion hBm, ?_⟩
-  refine measure_mono_null ?_ (measure_iUnion_null hBμ)
-  intro x hx
-  obtain ⟨n, hn⟩ := mem_iUnion.1 hx.1
-  exact mem_iUnion.2 ⟨n, hn, fun hxn => hx.2 (mem_iUnion.2 ⟨n, hxn⟩)⟩
-
 namespace MeasureTheory
 
 /-- For a σ-finite measure finite on compact sets, outer regular and inner regular on
