@@ -584,6 +584,24 @@ section CommonKernelIso
 
 variable {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
 
+/-- Under arbitrary scalar extension, an ambient base-change isomorphism carries the base
+change of a common-kernel Hopf ideal into the common kernel of a target family, when each
+target map is obtained from the base-changed generator by an isomorphism of its codomain. -/
+theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
+    {H' : _root_.CommHopfAlgCat.{max w v} K} {N' : ι → _root_.CommHopfAlgCat.{max w v} K}
+    (f : ∀ i, H ⟶ N i) (ambient : baseChange (K := K) H ≅ H')
+    (e : ∀ i, baseChange (K := K) (N i) ≅ N' i) (g : ∀ i, H' ⟶ N' i)
+    (h : ∀ i, (ambient.inv ≫ baseChangeMap (K := K) (f i)) ≫ (e i).hom = g i) :
+    (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).map ambient.hom.hom ≤
+      commonKernelHopfIdeal g := by
+  calc
+    _ ≤ (commonKernelHopfIdeal (fun i ↦ baseChangeMap (K := K) (f i))).map ambient.hom.hom :=
+      HopfIdeal.map_mono _ (baseChangeHopfIdeal_commonKernelHopfIdeal_le f)
+    _ = _ := by
+      rw [map_commonKernelHopfIdeal, ← funext h,
+        commonKernelHopfIdeal_comp_of_injective _ _ fun i ↦
+          (ConcreteCategory.bijective_of_isIso (e i).hom).1]
+
 /-- An ambient base-change isomorphism carries the base change of a common-kernel Hopf ideal to
 the common kernel of a target family, when each target map is obtained from the base-changed
 generator by an isomorphism of its codomain. -/
