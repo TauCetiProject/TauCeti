@@ -19,9 +19,12 @@ contained in the preimage of its Lie algebra.
 
 ## Main results
 
-* `TauCeti.Lie.lieSubalgebraOfSubgroup_comap_le`: the preimage inclusion for any subgroup.
-* `TauCeti.Lie.lieSubalgebraOfSubgroup_comap`: the Lie algebra of a closed-subgroup preimage.
-* `TauCeti.Lie.lieSubalgebraOfSubgroup_ker`: the Lie algebra of a homomorphism kernel.
+* `ContMDiffMonoidMorphism.lieSubalgebraOfSubgroup_comap_le`:
+  the preimage inclusion for any subgroup.
+* `ContMDiffMonoidMorphism.lieSubalgebraOfSubgroup_comap`:
+  the Lie algebra of a closed-subgroup preimage.
+* `ContMDiffMonoidMorphism.lieSubalgebraOfSubgroup_ker`:
+  the Lie algebra of a homomorphism kernel.
 
 ## References
 
@@ -31,12 +34,13 @@ contained in the preimage of its Lie algebra.
 
 public section
 
+open TauCeti.Lie
 open scoped ContDiff Manifold
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-namespace TauCeti.Lie
+namespace ContMDiffMonoidMorphism
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -87,4 +91,4 @@ theorem lieSubalgebraOfSubgroup_ker (f : ContMDiffMonoidMorphism I I' ∞ G G') 
   simp only [LieSubalgebra.mem_comap, LieSubalgebra.mem_bot,
     LieIdeal.mem_toLieSubalgebra, LieHom.mem_ker]
 
-end TauCeti.Lie
+end ContMDiffMonoidMorphism
