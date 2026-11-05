@@ -17,8 +17,9 @@ completely reducible: its distinct torus characters extract coordinate lines, ro
 connect each of the two minuscule blocks, and its matrix coefficients preserve those blocks.
 
 This concerns the subgroup generated over the coefficient ring, not the specialization of the
-integral toral closure. No equality between these subgroup schemes or identification with the
-pinned simply connected group scheme of type `E₆` is asserted.
+integral toral closure. The carrier restriction and its injective point map compare the two
+representations over every value algebra. No equality between these subgroup schemes or
+identification with the pinned simply connected group scheme of type `E₆` is asserted.
 
 ## References
 
@@ -43,6 +44,56 @@ namespace TauCeti.E6DoubledMinuscule
 universe u v
 
 variable (R : Type u) [CommRing R]
+
+namespace Generated
+
+/-- Restriction of integral-carrier coordinates to the generated subgroup, over any ring. -/
+noncomputable def carrierRestriction :
+    coordinateHopfAlgebra R ⟶ generatedCoordinateHopfAlgebra R :=
+  CommHopfAlgCat.liftQuotient (baseChangeDefiningIdeal R) (generatedCoordinateMap R) (by
+    intro x hx
+    have hmem : x ∈ (generatedDefiningIdeal R).toIdeal :=
+      baseChangeDefiningIdeal_le_generatedDefiningIdeal R hx
+    rw [← generatedCoordinateMap_ker] at hmem
+    exact hmem)
+
+/-- Restricting carrier coordinates recovers the generated subgroup's ambient coordinate map. -/
+@[reassoc (attr := simp)]
+theorem coordinateMap_comp_carrierRestriction :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R 54)
+        (baseChangeDefiningIdeal R) ≫ carrierRestriction R = generatedCoordinateMap R := by
+  unfold carrierRestriction
+  exact CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
+
+/-- Inclusion of generated-carrier points into integral-carrier points over any value algebra. -/
+noncomputable def carrierPointsHom (A : CommAlgCat.{v} R) :
+    HopfAlgebra.points (R := R) (H := generatedCoordinateHopfAlgebra R) A →* points A :=
+  (specializedPointsMulEquiv R A).toMonoidHom.comp
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction R)).app A).hom
+
+/-- The carrier inclusion preserves the ambient `GL₅₄` matrix of a generated-carrier point. -/
+@[simp]
+theorem coe_carrierPointsHom (A : CommAlgCat.{v} R)
+    (g : HopfAlgebra.points (R := R) (H := generatedCoordinateHopfAlgebra R) A) :
+    (carrierPointsHom R A g : Matrix.GeneralLinearGroup (Fin 54) A) =
+      GeneralLinear.pointsMulEquiv 54
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap R)).app A g) := by
+  exact (coe_specializedPointsMulEquiv_apply R A
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction R)).app A g)).trans
+    (congrArg (GeneralLinear.pointsMulEquiv 54)
+      (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+        (baseChangeDefiningIdeal R) (carrierRestriction R) (generatedCoordinateMap R)
+        (coordinateMap_comp_carrierRestriction R) A g).symm)
+
+/-- The inclusion of generated-carrier points is injective over every value algebra. -/
+theorem carrierPointsHom_injective (A : CommAlgCat.{v} R) :
+    Function.Injective (carrierPointsHom R A) :=
+  (specializedPointsMulEquiv R A).injective.comp
+    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective _
+      (CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
+        (generatedCoordinateMap_surjective R)) A)
+
+end Generated
 
 /-- The weight torus factored through the subgroup generated over the coefficient ring. -/
 noncomputable def generatedWeightTorusCoordinateMap :

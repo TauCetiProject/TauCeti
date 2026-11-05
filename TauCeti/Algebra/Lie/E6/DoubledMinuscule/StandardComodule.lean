@@ -44,7 +44,7 @@ open scoped Matrix
 
 namespace TauCeti.E6DoubledMinuscule
 
-universe u
+universe u v
 
 variable (R : Type u) [CommRing R]
 
@@ -121,30 +121,27 @@ theorem isCompl_summandSubcomodule :
   exact (Pi.basisFun R (Fin 54)).linearIndependent.isCompl_span_image
     (Pi.basisFun R (Fin 54)).span_eq isCompl_compl
 
-/-- Base-valued points of the specialized coordinate algebra, identified with points of the
-integral minuscule carrier after base change. -/
-noncomputable def specializedPointsMulEquiv :
-    HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R) (CommAlgCat.of R R) ≃*
-      points R :=
-  (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso R)
-      (CommAlgCat.of R R)).trans
-    (pointsPresentation
-      (CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
+/-- Points of the specialized coordinate algebra, identified with integral-carrier points
+over any value algebra. -/
+noncomputable def specializedPointsMulEquiv (A : CommAlgCat.{v} R) :
+    HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R) A ≃* points A :=
+  (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso R) A).trans
+    (pointsPresentation (CommAlgCat.restrictScalarsObj (algebraMap ℤ R) A)).mulEquiv
 
 /-- The specialized point equivalence preserves the ambient invertible matrix. -/
 @[simp]
-theorem coe_specializedPointsMulEquiv_apply
-    (q : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R) (CommAlgCat.of R R)) :
-    (specializedPointsMulEquiv R q : Matrix.GeneralLinearGroup (Fin 54) R) =
+theorem coe_specializedPointsMulEquiv_apply (A : CommAlgCat.{v} R)
+    (q : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R) A) :
+    (specializedPointsMulEquiv R A q : Matrix.GeneralLinearGroup (Fin 54) A) =
       GeneralLinear.pointsMulEquiv 54
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 54) (baseChangeDefiningIdeal R)
-          (CommAlgCat.of R R) q) := by
+          A q) := by
   rw [specializedPointsMulEquiv, MulEquiv.trans_apply,
     GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
   exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
     54 definingIdeal (baseChangeDefiningIdeal R) (baseChangeCoordinateIso R)
-    (mkQuotient_comp_baseChangeCoordinateIso_hom R) (CommAlgCat.of R R) q
+    (mkQuotient_comp_baseChangeCoordinateIso_hom R) A q
 
 /-- Under the specialized point equivalence, the quotient point is represented by the carrier
 point's ambient general-linear matrix. -/
@@ -152,10 +149,11 @@ point's ambient general-linear matrix. -/
 theorem quotientPointsHom_specializedPointsMulEquiv_symm (g : points R) :
     CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R 54) (baseChangeDefiningIdeal R)
-        (CommAlgCat.of R R) ((specializedPointsMulEquiv R).symm g) =
+        (CommAlgCat.of R R) ((specializedPointsMulEquiv R (CommAlgCat.of R R)).symm g) =
       (GeneralLinear.pointsMulEquiv (R := R) 54).symm
         (g : Matrix.GeneralLinearGroup (Fin 54) R) := by
-  have h := coe_specializedPointsMulEquiv_apply R ((specializedPointsMulEquiv R).symm g)
+  have h := coe_specializedPointsMulEquiv_apply R (CommAlgCat.of R R)
+    ((specializedPointsMulEquiv R (CommAlgCat.of R R)).symm g)
   rw [MulEquiv.apply_symm_apply] at h
   rw [h, MulEquiv.symm_apply_apply]
 
@@ -166,9 +164,9 @@ theorem points_mulVec_mem
     (g : points R) {w : Fin 54 → R} (hw : w ∈ N) :
     ((g : Matrix.GeneralLinearGroup (Fin 54) R) : Matrix (Fin 54) (Fin 54) R) *ᵥ w ∈ N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 54
-    (coordinateMap R).hom N ((specializedPointsMulEquiv R).symm g) hw
+    (coordinateMap R).hom N ((specializedPointsMulEquiv R (CommAlgCat.of R R)).symm g) hw
   have hpoint : BialgHom.mapDomain (coordinateMap R).hom
-      ((specializedPointsMulEquiv R).symm g) = _ :=
+      ((specializedPointsMulEquiv R (CommAlgCat.of R R)).symm g) = _ :=
     mapPointsFunctor_coordinateMap_app R _
   rw [hpoint] at h
   rw [quotientPointsHom_specializedPointsMulEquiv_symm,

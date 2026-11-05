@@ -74,18 +74,19 @@ theorem isMaximalTorus_iff (k : Type u) [Field k] (H : _root_.CommHopfAlgCat.{u}
             J ≤ I → I ≤ J :=
   Iff.rfl
 
-/-- A torus over an algebraically closed field is maximal if its points embed as a maximal
+/-- A torus is maximal if its points over an algebraically closed extension embed as a maximal
 commutative subgroup of a group. -/
-theorem isMaximalTorus_of_maximal_points {k : Type u} [Field k] [IsAlgClosed k]
+theorem isMaximalTorus_of_maximal_points {k : Type u} [Field k]
+    {K : Type*} [Field K] [Algebra k K] [IsAlgClosed K]
     {H : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
     (T : HopfIdeal k H)
     (hT : torusCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient
         ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ T))
     {G : Type*} [Group G]
-    (φ : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) →* G)
+    (φ : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k K) →* G)
     (hφ : Function.Injective φ) {S : Subgroup G}
-    (hpoints : (CommHopfAlgCat.quotientPointsSubgroup H T (CommAlgCat.of k k)).map φ = S)
+    (hpoints : (CommHopfAlgCat.quotientPointsSubgroup H T (CommAlgCat.of k K)).map φ = S)
     (hmax : ∀ (P : Subgroup G) [IsMulCommutative P], S ≤ P → P = S) :
     IsMaximalTorus k H T := by
   rw [isMaximalTorus_iff]

@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.WeightTorus
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.Lie.E6.DoubledMinuscule.MaximalTorus
-import TauCeti.Algebra.Lie.E6.DoubledMinuscule.StandardComodule
 
 /-!
 # The maximal torus of the generated doubled E₆ group
@@ -45,50 +44,17 @@ noncomputable section
 
 variable (k : Type u) [Field k]
 
--- Only the inclusion in the integral specialization is used, not equality of the carriers.
-private def carrierRestriction : coordinateHopfAlgebra k ⟶ generatedCoordinateHopfAlgebra k :=
-  CommHopfAlgCat.liftQuotient (baseChangeDefiningIdeal k) (generatedCoordinateMap k) (by
-    intro x hx
-    have hmem : x ∈ (generatedDefiningIdeal k).toIdeal :=
-      baseChangeDefiningIdeal_le_generatedDefiningIdeal k hx
-    rw [← generatedCoordinateMap_ker] at hmem
-    exact hmem)
-
-private def carrierPointsHom :
-    HopfAlgebra.points (R := k) (H := generatedCoordinateHopfAlgebra k) (CommAlgCat.of k k) →*
-      points k :=
-  (specializedPointsMulEquiv k).toMonoidHom.comp
-    ((CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction k)).app (CommAlgCat.of k k)).hom
-
-private theorem coe_carrierPointsHom
-    (g : HopfAlgebra.points (R := k) (H := generatedCoordinateHopfAlgebra k)
-      (CommAlgCat.of k k)) :
-    (carrierPointsHom k g : Matrix.GeneralLinearGroup (Fin 54) k) =
-      GeneralLinear.pointsMulEquiv 54
-        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap k)).app
-          (CommAlgCat.of k k) g) := by
-  exact (coe_specializedPointsMulEquiv_apply k
-    ((CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction k)).app (CommAlgCat.of k k) g)).trans
-    (congrArg (GeneralLinear.pointsMulEquiv 54)
-      (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-        (baseChangeDefiningIdeal k) (carrierRestriction k) (generatedCoordinateMap k)
-        (CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _) (CommAlgCat.of k k) g).symm)
-
-private theorem carrierPointsHom_injective : Function.Injective (carrierPointsHom k) :=
-  (specializedPointsMulEquiv k).injective.comp
-    (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective _
-      (CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
-        (generatedCoordinateMap_surjective k)) (CommAlgCat.of k k))
-
 private theorem map_torus_carrierPointsHom :
     (CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra k)
-        (weightTorusDefiningIdeal k) (CommAlgCat.of k k)).map (carrierPointsHom k) =
+        (weightTorusDefiningIdeal k) (CommAlgCat.of k k)).map
+        (carrierPointsHom k (CommAlgCat.of k k)) =
       (weightTorusPoints k).range := by
   apply Subgroup.map_injective (points k).subtype_injective
-  have hcomp : (points k).subtype.comp (carrierPointsHom k) =
+  have hcomp : (points k).subtype.comp (carrierPointsHom k (CommAlgCat.of k k)) =
       (GeneralLinear.pointsMulEquiv 54).toMonoidHom.comp
         ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap k)).app
-          (CommAlgCat.of k k)).hom := MonoidHom.ext (coe_carrierPointsHom k)
+          (CommAlgCat.of k k)).hom :=
+    MonoidHom.ext (coe_carrierPointsHom k (CommAlgCat.of k k))
   rw [Subgroup.map_map, hcomp]
   -- The underlying algebra of `CommAlgCat.of k k` is `k`, so the matrix subgroups agree.
   exact map_quotientPointsSubgroup_weightTorusDefiningIdeal k (CommAlgCat.of k k)
@@ -101,7 +67,8 @@ theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
     [Coalgebra.IsCocomm k (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I)]
     (hI : I ≤ weightTorusDefiningIdeal k) : I = weightTorusDefiningIdeal k := by
   exact HopfIdeal.eq_of_le_of_isCocomm_of_maximal_points (weightTorusDefiningIdeal k)
-    (carrierPointsHom k) (carrierPointsHom_injective k) (map_torus_carrierPointsHom k)
+    (carrierPointsHom k (CommAlgCat.of k k)) (carrierPointsHom_injective k (CommAlgCat.of k k))
+    (map_torus_carrierPointsHom k)
     (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative k P hP) I hI
 
 private theorem isMaximalTorus_weightTorusDefiningIdeal_of_isAlgClosed [IsAlgClosed k] :
@@ -109,7 +76,8 @@ private theorem isMaximalTorus_weightTorusDefiningIdeal_of_isAlgClosed [IsAlgClo
       (weightTorusDefiningIdeal k) :=
   HopfIdeal.isMaximalTorus_of_maximal_points (weightTorusDefiningIdeal k)
     ((splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal k).torus k _)
-    (carrierPointsHom k) (carrierPointsHom_injective k) (map_torus_carrierPointsHom k)
+    (carrierPointsHom k (CommAlgCat.of k k)) (carrierPointsHom_injective k (CommAlgCat.of k k))
+    (map_torus_carrierPointsHom k)
     (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative k P hP)
 
 /-- Over every field, the closed rank-six weight torus is a maximal torus of the generated
