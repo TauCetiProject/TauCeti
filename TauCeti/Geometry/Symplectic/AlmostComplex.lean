@@ -112,6 +112,28 @@ theorem toLinearMap_injective :
 instance : CoeFun (AlmostComplexStructure V) fun _ => V → V :=
   ⟨fun J => J.toLinearMap⟩
 
+/-- An almost complex structure preserves addition. -/
+@[simp]
+lemma apply_add (J : AlmostComplexStructure V) (v w : V) :
+    J (v + w) = J v + J w :=
+  J.toLinearMap.map_add v w
+
+/-- An almost complex structure preserves subtraction. -/
+@[simp]
+lemma apply_sub (J : AlmostComplexStructure V) (v w : V) :
+    J (v - w) = J v - J w :=
+  J.toLinearMap.map_sub v w
+
+/-- An almost complex structure preserves real scalar multiplication. -/
+lemma apply_smul (J : AlmostComplexStructure V) (c : ℝ) (v : V) :
+    J (c • v) = c • J v :=
+  J.toLinearMap.map_smul c v
+
+/-- An almost complex structure sends zero to zero. -/
+@[simp]
+lemma apply_zero (J : AlmostComplexStructure V) : J 0 = 0 :=
+  J.toLinearMap.map_zero
+
 /-- Applying `J` twice gives `-v`. -/
 @[simp]
 lemma apply_apply (J : AlmostComplexStructure V) (v : V) : J (J v) = -v := by
