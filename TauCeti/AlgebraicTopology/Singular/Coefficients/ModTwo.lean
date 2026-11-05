@@ -11,10 +11,8 @@ public import TauCeti.Algebra.Category.ModuleCat.ModTwo
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.Bockstein
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
 
-import Mathlib.Algebra.Category.ModuleCat.Products
-import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
-import Mathlib.LinearAlgebra.DirectSum.Basis
 import TauCeti.Algebra.Category.ModuleCat.AB
+import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # Integral and mod-two singular homology
@@ -172,12 +170,7 @@ theorem surjective_singularHomologyReductionModTwo_succ_iff (X : TopCat.{u}) (n 
 group, so multiplication by two is injective on it. -/
 theorem surjective_singularHomologyReductionModTwo_one (X : TopCat.{u}) :
     Function.Surjective (X.singularHomologyReductionModTwo 1) := by
-  classical
-  -- the zeroth integral homology is a direct sum of copies of `ℤ`, one for each path component
-  have : Module.Free ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) 0).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) :=
-    .of_equiv (X.singularHomology₀Iso (C := ModuleCat.{u} ℤ) (ModuleCat.of ℤ (ULift.{u} ℤ)) ≪≫
-      ModuleCat.coprodIsoDirectSum _).toLinearEquiv.symm
+  -- the zeroth integral homology is free (`ModuleCat.free_singularHomology_zero`)
   exact (X.surjective_singularHomologyReductionModTwo_succ_iff 0).2
     (smul_right_injective _ (two_ne_zero : (2 : ℤ) ≠ 0))
 
