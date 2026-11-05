@@ -187,6 +187,48 @@ end InnerProductSpace
 
 end WithLp
 
+namespace Submodule
+
+open WithLp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The complex subspace whose real and imaginary parts lie in a given real subspace,
+on the Hilbert-norm complexification. -/
+def complexifyL2 (S : Submodule ℝ E) : Submodule ℂ (WithLp 2 (Complexification E)) where
+  carrier := {z | z.ofLp.re ∈ S ∧ z.ofLp.im ∈ S}
+  zero_mem' := ⟨S.zero_mem, S.zero_mem⟩
+  add_mem' hx hy := ⟨S.add_mem hx.1 hy.1, S.add_mem hx.2 hy.2⟩
+  smul_mem' c _ hz := ⟨S.sub_mem (S.smul_mem c.re hz.1) (S.smul_mem c.im hz.2),
+    S.add_mem (S.smul_mem c.im hz.1) (S.smul_mem c.re hz.2)⟩
+
+@[simp]
+theorem mem_complexifyL2 (S : Submodule ℝ E) (z : WithLp 2 (Complexification E)) :
+    z ∈ S.complexifyL2 ↔ z.ofLp.re ∈ S ∧ z.ofLp.im ∈ S := Iff.rfl
+
+/-- Complexifying a real subspace preserves and reflects density. -/
+@[simp]
+theorem dense_complexifyL2_iff (S : Submodule ℝ E) :
+    Dense (S.complexifyL2 : Set (WithLp 2 (Complexification E))) ↔ Dense (S : Set E) := by
+  let e := (complexificationEquivProd E).toHomeomorph.trans
+    (prodContinuousLinearEquiv 2 ℝ E E).toHomeomorph
+  have he_apply (w : WithLp 2 (Complexification E)) : e w = (w.ofLp.re, w.ofLp.im) := by
+    simp [e, complexificationEquivProd_apply]
+  have he : e '' (S.complexifyL2 : Set (WithLp 2 (Complexification E))) =
+      (S : Set E) ×ˢ (S : Set E) := by
+    ext z
+    simp only [Set.mem_image, Set.mem_prod, SetLike.mem_coe]
+    constructor
+    · rintro ⟨w, hw, rfl⟩
+      simpa only [he_apply] using (mem_complexifyL2 S w).1 hw
+    · intro hz
+      exact ⟨toLp 2 ⟨z.1, z.2⟩, hz, by simp [he_apply]⟩
+  rw [← e.isDenseEmbedding.dense_image, he]
+  exact ⟨fun h ↦ (Prod.fst_surjective : Function.Surjective (Prod.fst : E × E → E)).denseRange
+    |>.dense_of_mapsTo continuous_fst h (fun _ hx ↦ hx.1), fun h ↦ h.prod h⟩
+
+end Submodule
+
 namespace ContinuousLinearMap
 
 open Complexification WithLp

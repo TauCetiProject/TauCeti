@@ -192,6 +192,13 @@ theorem coe_mackeySubgroupSelfEquiv_apply (hs : s ∈ H)
     (mackeySubgroupSelfEquiv hs y : H) = (y : H) :=
   (rfl)
 
+/-- For a representative in `H`, the canonical Mackey-subgroup inclusion covers all of `H`. -/
+theorem mackeySubgroup_subgroupOf_subtype_surjective (hs : s ∈ H) :
+    Function.Surjective ((mackeySubgroup s H H).subgroupOf H).subtype := by
+  intro h
+  obtain ⟨y, hy⟩ := (mackeySubgroupSelfEquiv hs).surjective h
+  exact ⟨y, (coe_mackeySubgroupSelfEquiv_apply hs y).symm.trans hy⟩
+
 /-- For a normal `H` the Mackey subgroup does not depend on the representative at all: it is
 `K ⊓ H` for every `s`.  This is why Clifford theory over a normal subgroup only ever sees the one
 intersection. -/

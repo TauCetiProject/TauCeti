@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Basic
 
 import Mathlib.Data.Fin.Tuple.Sort
+import Mathlib.LinearAlgebra.Finsupp.Pi
 import TauCeti.Data.Fintype.CardFilterOrder
 
 /-!
@@ -170,6 +171,35 @@ theorem edgewiseSubdivisionRealizationMap_comp_faceInclusion (ρ : Face (K.edgew
   apply Subtype.ext
   simp only [Function.comp_apply, edgewiseSubdivisionRealizationMap_val, faceInclusion_val,
     edgewiseSubdivisionFaceMap_val]
+
+open Set in
+/-- In the original coordinates, the image of a closed subdivided simplex is the convex hull
+of the points assigned to its vertices. This statement does not require finitely many original
+vertices. -/
+theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
+    (ρ : Face (K.edgewiseSubdivision k)) :
+    range (fun x : StandardSimplex ρ.1 =>
+      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1 : ι → ℝ)) =
+      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)) := by
+  classical
+  let L : (K.EdgewiseVertex k →₀ ℝ) →ₗ[ℝ] (ι → ℝ) :=
+    (Finsupp.lcoeFun : (ι →₀ ℝ) →ₗ[ℝ] (ι → ℝ)).comp
+      (Finsupp.linearCombination ℝ fun a : K.EdgewiseVertex k => edgewisePoint a.1)
+  have hformula : (fun x : StandardSimplex ρ.1 =>
+      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1 : ι → ℝ)) =
+      L ∘ Subtype.val := by
+    funext x
+    simp [L]
+  simp only [hformula, range_comp, Subtype.range_coe]
+  rw [L.image_convexHull]
+  congr 1
+  have hsingle (a : K.EdgewiseVertex k) :
+      L (Finsupp.single a 1) = (edgewisePoint a.1 : ι → ℝ) := by simp [L]
+  simp only [Finset.coe_image, Set.image_image]
+  simp only [hsingle, image_eq_range]
+  -- The subtype of the coerced set `(ρ.1 : Set _)` and the finset subtype `ρ.1` are
+  -- definitionally equal (as in `Finset.coe_sort_coe`), with the same value projection.
+  rfl
 
 /-- The edgewise realization map is continuous for the weak topologies on both realizations. -/
 theorem continuous_edgewiseSubdivisionRealizationMap :

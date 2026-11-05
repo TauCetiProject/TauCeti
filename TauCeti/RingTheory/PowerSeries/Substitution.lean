@@ -36,7 +36,10 @@ Substitution of series of zero constant coefficient is compatible with congruenc
 powers of `X`, in both the substituted series and the series substituted into. This makes
 truncation modulo `X ^ n` compatible with composition of formal coordinates. Substituting a
 multivariate series `φ` of zero constant coefficient into `f = c Xⁿ + ⋯` gives
-`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. For a family of
+`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. In one variable
+this reads `[Xⁿ] f (a) = c a₁ ^ n`, and symmetrically `[Xⁿ] f (a) = f₁ c` when `a = c Xⁿ + ⋯` and
+`f = f₁ X + ⋯` have no constant terms; together these compare the lowest terms of the two sides of
+an equation `f ∘ g = h ∘ f`. For a family of
 series substituted into a multivariate series `G`, a perturbation `X ^ m * r` of the entry `a s`
 is invisible below degree `m` and acts in degree `m` through the coefficient of `Xₛ` alone;
 this drives degree-by-degree solutions of equations such as `G(f(X), X) = 0`.
@@ -91,6 +94,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
+* `PowerSeries.coeff_subst_eq_sum_range_degree`: the coefficient of `X^d` in `f (a)`, for `a` of
+  zero constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
+* `PowerSeries.coeff_subst_mem`: if `f` and `a` have coefficients in a subring, so does `f (a)`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
@@ -244,6 +250,39 @@ theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧)
   · exact absurd rfl hd
   · simp [mul_pow, coeff_X_pow_mul']
 
+/-- **The lowest coefficient of a substitution into a series of large order.** If `f` has order
+at least `n` and `a` has zero constant coefficient, then the coefficient of `Xⁿ` in `f (a)` is
+`c a₁ ^ n`, where `c` is the coefficient of `Xⁿ` in `f` and `a₁` is the linear coefficient of
+`a`. -/
+theorem coeff_subst_eq_mul_pow {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X⟧} {n : ℕ}
+    (hn : n ≤ f.order) : coeff n (f.subst a) = algebraMap R S (coeff n f) * coeff 1 a ^ n := by
+  obtain ⟨b, rfl⟩ := X_dvd_iff.mpr ha
+  rw [coeff_subst' (.of_constantCoeff_zero' ha), finsum_eq_single _ n, Algebra.smul_def]
+  · simp [mul_pow, coeff_X_pow_mul']
+  -- below degree `n` the coefficients of `f` vanish, above it `(X * b) ^ d` has no `Xⁿ` term
+  intro d hd
+  rcases lt_or_gt_of_ne hd with h | h
+  · rw [coeff_of_lt_order d ((Nat.cast_lt.mpr h).trans_le hn), zero_smul]
+  · simp [mul_pow, coeff_X_pow_mul', h.not_ge]
+
+/-- **The lowest coefficient of a substitution of a series of large order.** If `f` and `a` have
+zero constant coefficient and `a` has order at least `n`, then the coefficient of `Xⁿ` in `f (a)`
+is `f₁ c`, where `f₁` is the linear coefficient of `f` and `c` is the coefficient of `Xⁿ` in
+`a`. -/
+theorem coeff_subst_eq_mul {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X⟧}
+    (hf : constantCoeff f = 0) {n : ℕ} (hn : n ≤ a.order) :
+    coeff n (f.subst a) = algebraMap R S (coeff 1 f) * coeff n a := by
+  rw [coeff_subst' (.of_constantCoeff_zero' ha), finsum_eq_single _ 1, pow_one, Algebra.smul_def]
+  rintro (_ | _ | d) hd
+  · simp [hf]
+  · exact absurd rfl hd
+  -- `a ^ (d + 2)` is divisible by `Xⁿ * X`, so it has no `Xⁿ` term
+  · have hdvd : X ^ (n + 1) ∣ a ^ (d + 2) := by
+      rw [pow_succ]
+      refine (mul_dvd_mul (X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m
+        ((Nat.cast_lt.mpr hm).trans_le hn)) (X_dvd_iff.mpr ha)).trans ⟨a ^ d, by ring⟩
+    rw [X_pow_dvd_iff.mp hdvd n (Nat.lt_succ_self n), smul_zero]
+
 /-- An `R`-algebra map `σ : R⟦X⟧ → S⟦X⟧` such that `σ X` can be substituted is the
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
 theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst (σ X)) :
@@ -339,6 +378,35 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
   simp only [add_zero, mul_one] at hmul hpow
   rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
   simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
+
+/-- The coefficient of `X^d` in `f (a)`, for `a` of zero constant coefficient, is the finite sum
+`∑_{n ≤ |d|} fₙ [X^d] aⁿ`: the powers `aⁿ` with `n > |d|` have order greater than `|d|`. This is the
+finite form of Mathlib's `PowerSeries.coeff_subst`. -/
+theorem coeff_subst_eq_sum_range_degree {τ : Type*} {a : MvPowerSeries τ S}
+    (ha : MvPowerSeries.constantCoeff a = 0) (f : R⟦X⟧) (d : τ →₀ ℕ) :
+    MvPowerSeries.coeff d (f.subst a) =
+      ∑ n ∈ Finset.range (d.degree + 1), coeff n f • MvPowerSeries.coeff d (a ^ n) := by
+  rw [coeff_subst (.of_constantCoeff_zero ha)]
+  refine finsum_eq_sum_of_support_subset _ fun n hn ↦ ?_
+  rw [Finset.coe_range, Set.mem_Iio, Nat.lt_succ_iff]
+  by_contra! h
+  refine hn ?_
+  dsimp only
+  rw [MvPowerSeries.coeff_of_lt_order, smul_zero]
+  exact (Nat.cast_lt.mpr h).trans_le (MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero n ha)
+
+/-- If `f` and the substitutable series `a` have coefficients in a subring `A`, then so does
+`f (a)`: it is the image of the substitution computed over `A`. -/
+theorem coeff_subst_mem {τ : Type*} {A : Subring S} {a : MvPowerSeries τ S} (ha : HasSubst a)
+    (ha' : ∀ d, MvPowerSeries.coeff d a ∈ A) {f : S⟦X⟧} (hf : ∀ n, coeff n f ∈ A)
+    (d : τ →₀ ℕ) : MvPowerSeries.coeff d (f.subst a) ∈ A := by
+  obtain ⟨aA, rfl⟩ : ∃ aA, MvPowerSeries.map A.subtype aA = a :=
+    ⟨_, MvPowerSeries.map_toSubring a A ha'⟩
+  obtain ⟨fA, rfl⟩ : ∃ fA, map A.subtype fA = f := ⟨_, map_toSubring f A hf⟩
+  have haA : HasSubst aA := by
+    rwa [HasSubst, MvPowerSeries.constantCoeff_map, IsNilpotent.map_iff A.subtype_injective] at ha
+  rw [← map_subst haA, MvPowerSeries.coeff_map]
+  exact Subtype.mem _
 
 end Algebra
 

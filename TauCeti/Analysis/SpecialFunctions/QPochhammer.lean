@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
+public import Mathlib.Analysis.Complex.Periodic
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
 public import TauCeti.Analysis.Normed.Ring.InfiniteProd
@@ -34,10 +36,16 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   converges.
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
+* `TauCeti.tendsto_tprod_one_sub_pow_mul`: `∏_{n ≥ 1} (1 - qⁿ w) → 1` when `q → 0` and
+  `q w → 0`; `w` may be unbounded, and no completeness assumption is needed.
 * `TauCeti.tprod_one_sub_pow_ne_zero`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero.
 * `TauCeti.norm_tprod_one_sub_pow_mul_le`, `TauCeti.norm_qTheta_le`: the bounds
   `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))` and
   `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))` for `‖q‖ < 1`.
+* `TauCeti.norm_tprod_one_sub_pow_mul_sub_one_le`, `TauCeti.norm_tprod_one_add_pow_sub_one_le`:
+  the product is close to `1` for small `q`,
+  `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖)) - 1`, and
+  `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)` for `‖q‖ < 1/2`.
 * `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd`,
   `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1` the products `∏_{n ≥ 1} (1 + qⁿ)` and
   `∏_{n ≥ 0} (1 ∓ q^{2n+1})` converge.
@@ -55,8 +63,13 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow_odd`: **Euler's identity**
   `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`, the analytic form of the
   equinumerosity of partitions into distinct parts and into odd parts.
+* `TauCeti.tprod_one_sub_pow_odd_ne_zero`: `∏_{n ≥ 0} (1 - q^{2n+1}) ≠ 0` for `‖q‖ < 1`.
 * `TauCeti.hasDerivAt_tprod_one_sub_pow_odd`: the odd product `∏_{n ≥ 0} (1 - s^{2n+1})` has
   derivative `-1` at `s = 0`.
+* `TauCeti.tendsto_tprod_one_sub_pow_odd_pow_sub_neg_div`: for `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`,
+  `(P(s)ᵏ - P(-s)ᵏ) / s → -2k` as `s → 0`.
+* `TauCeti.tendsto_tprod_one_sub_qParam_pow_odd_pow`: `P(q)ᵏ → 1` at `i∞`, for
+  `q = e^{2π i τ}` on the upper half-plane.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `q` and `w` continuous on an open set
   `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
@@ -77,16 +90,45 @@ theorem summable_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
   simpa [norm_pow, pow_succ, mul_assoc] using
     (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_right (‖q‖ * ‖w‖)
 
+/-- For `‖q‖ < 1`, `∑_{n ≥ 1} ‖qⁿ w‖ = ‖q‖ ‖w‖ / (1 - ‖q‖)`. -/
+theorem tsum_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ∑' n : ℕ, ‖q ^ (n + 1) * w‖ = ‖q‖ * ‖w‖ / (1 - ‖q‖) := by
+  simp only [norm_mul, norm_pow, pow_succ]
+  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg q) hq]
+  ring
+
 /-- For `‖q‖ < 1`, `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))`. -/
 theorem norm_tprod_one_sub_pow_mul_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     ‖∏' n : ℕ, (1 - q ^ (n + 1) * w)‖ ≤ Real.exp (‖q‖ * ‖w‖ / (1 - ‖q‖)) := by
   have h := norm_tprod_one_add_le_exp_tsum (f := fun n : ℕ ↦ -(q ^ (n + 1) * w))
     (by simpa only [norm_neg] using summable_norm_pow_succ_mul hq w)
-  simp only [← sub_eq_add_neg, norm_neg] at h
-  refine h.trans_eq (congrArg Real.exp ?_)
-  simp only [norm_mul, norm_pow, pow_succ]
-  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg q) hq]
-  ring
+  simpa only [← sub_eq_add_neg, norm_neg, tsum_norm_pow_succ_mul hq] using h
+
+/-- For `‖q‖ < 1`, `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖)) - 1`. -/
+theorem norm_tprod_one_sub_pow_mul_sub_one_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ‖∏' n : ℕ, (1 - q ^ (n + 1) * w) - 1‖ ≤ Real.exp (‖q‖ * ‖w‖ / (1 - ‖q‖)) - 1 := by
+  have h := norm_tprod_one_add_sub_one_le (f := fun n : ℕ ↦ -(q ^ (n + 1) * w))
+    (by simpa only [norm_neg] using summable_norm_pow_succ_mul hq w)
+  simpa only [← sub_eq_add_neg, norm_neg, tsum_norm_pow_succ_mul hq] using h
+
+/-- For `‖q‖ < 1/2`, `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)`. -/
+theorem norm_tprod_one_add_pow_sub_one_le {q : 𝕜} (hq : 2 * ‖q‖ < 1) :
+    ‖∏' n : ℕ, (1 + q ^ (n + 1)) - 1‖ ≤ ‖q‖ / (1 - 2 * ‖q‖) := by
+  set A := ‖q‖
+  have hA : 0 ≤ A := norm_nonneg q
+  have h₁ : 0 < 1 - 2 * A := by linarith
+  have h := norm_tprod_one_sub_pow_mul_sub_one_le (by linarith : A < 1) (-1)
+  simp only [mul_neg, mul_one, sub_neg_eq_add, norm_neg, norm_one] at h
+  -- `e^y ≤ 1 / (1 - y)` with `y = A / (1 - A)`, and `1 / (1 - y) - 1 = A / (1 - 2A)`.
+  have hy : A / (1 - A) < 1 := by rw [div_lt_one (by linarith)]; linarith
+  have hexp := Real.exp_bound_div_one_sub_of_interval (div_nonneg hA (by linarith)) hy
+  have heq : 1 / (1 - A / (1 - A)) - 1 = A / (1 - 2 * A) := by
+    have h₂ : 1 - A / (1 - A) = (1 - 2 * A) / (1 - A) := by
+      field_simp [show 1 - A ≠ 0 by linarith]
+      ring
+    rw [h₂, one_div_div, div_sub_one h₁.ne']
+    ring
+  linarith
 
 /-- The **theta product** `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞`, written as
 `(1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`. The product converges for `‖q‖ < 1`; otherwise the
@@ -106,6 +148,35 @@ variable [CompleteSpace 𝕜]
 theorem multipliable_one_sub_pow_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) * w :=
   multipliable_one_sub_of_summable (summable_norm_pow_succ_mul hq w)
+
+omit [CompleteSpace 𝕜] in
+/-- The product `∏_{n ≥ 1} (1 - qⁿ w)` tends to `1` whenever `q → 0` and `q w → 0`.
+The argument `w` itself need not converge or remain bounded. -/
+theorem tendsto_tprod_one_sub_pow_mul {α : Type*} {l : Filter α} {q w : α → 𝕜}
+    (hq : Filter.Tendsto q l (nhds 0))
+    (hqw : Filter.Tendsto (fun x ↦ q x * w x) l (nhds 0)) :
+    Filter.Tendsto (fun x ↦ ∏' n : ℕ, (1 - q x ^ (n + 1) * w x)) l (nhds 1) := by
+  have hsmall : ∀ᶠ x in l, ‖q x‖ < 1 := hq.norm.eventually (gt_mem_nhds (by norm_num))
+  have hqnorm : Filter.Tendsto (fun x ↦ ‖q x‖) l (nhds 0) := by simpa using hq.norm
+  have hqwnorm : Filter.Tendsto (fun x ↦ ‖q x * w x‖) l (nhds 0) := by
+    simpa using hqw.norm
+  have hbound : Filter.Tendsto
+      (fun x ↦ Real.exp (‖q x * w x‖ / (1 - ‖q x‖)) - 1) l (nhds 0) := by
+    have hdiv := hqwnorm.div (tendsto_const_nhds.sub hqnorm)
+      (by norm_num : (1 : ℝ) - 0 ≠ 0)
+    simpa using ((Real.continuous_exp.tendsto _).comp hdiv).sub_const 1
+  refine tendsto_iff_norm_sub_tendsto_zero.mpr <|
+    squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hbound
+  filter_upwards [hsmall] with x hx
+  have h := norm_tprod_one_add_sub_one_le (f := fun n : ℕ ↦ -(q x ^ (n + 1) * w x))
+    (by simpa only [norm_neg] using summable_norm_pow_succ_mul hx (w x))
+  simp only [← sub_eq_add_neg, norm_neg, norm_mul, norm_pow, pow_succ] at h
+  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg _) hx] at h
+  convert h using 1
+  · simp only [pow_succ]
+  · rw [norm_mul]
+    congr 2
+    ring
 
 /-- Shifting the product: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`. -/
 theorem tprod_one_sub_pow_mul_eq {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
@@ -234,6 +305,12 @@ theorem tprod_one_add_pow_mul_tprod_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1
   exact mul_right_cancel₀ (tprod_one_sub_pow_ne_zero (norm_pow_lt_one hq two_ne_zero))
     (hmul.trans (one_mul _).symm)
 
+/-- For `‖q‖ < 1` the product `∏_{n ≥ 0} (1 - q^{2n+1})` over the odd powers of `q` does not
+vanish: by Euler's identity it is the inverse of `∏_{n ≥ 1} (1 + qⁿ)`. -/
+theorem tprod_one_sub_pow_odd_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 - q ^ (2 * n + 1)) ≠ 0 :=
+  right_ne_zero_of_mul_eq_one (tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq)
+
 /-- The theta product at `w = -1`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` for `‖q‖ < 1`. -/
 theorem qTheta_neg_one {q : 𝕜} (hq : ‖q‖ < 1) :
     qTheta q (-1) = 2 * (∏' n : ℕ, (1 + q ^ (n + 1))) ^ 2 := by
@@ -321,7 +398,31 @@ theorem hasDerivAt_tprod_one_sub_pow_odd :
         rw [norm_pow]
         nlinarith [mul_le_mul_of_nonneg_left hs (pow_nonneg (norm_nonneg s) 2)]
 
+open Filter Topology in
+/-- The odd difference quotient of a power `P(s)ᵏ` of the odd product
+`P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})` tends to `-2k` at `s = 0`: `(P(s)ᵏ - P(-s)ᵏ) / s → -2k`, since
+`P(s)ᵏ = 1 - k s + O(s²)`. -/
+theorem tendsto_tprod_one_sub_pow_odd_pow_sub_neg_div (k : ℕ) :
+    Tendsto (fun s : 𝕜 ↦ ((∏' n : ℕ, (1 - s ^ (2 * n + 1))) ^ k -
+      (∏' n : ℕ, (1 - (-s) ^ (2 * n + 1))) ^ k) / s) (𝓝[≠] 0) (𝓝 (-(2 * k))) := by
+  have hP : HasDerivAt (fun s : 𝕜 ↦ (∏' n : ℕ, (1 - s ^ (2 * n + 1))) ^ k) (-k) 0 := by
+    simpa using (hasDerivAt_tprod_one_sub_pow_odd (𝕜 := 𝕜)).fun_pow k
+  have hPneg := (neg_zero (G := 𝕜) ▸ hP).comp (0 : 𝕜) (hasDerivAt_neg (0 : 𝕜))
+  convert hP.tendsto_slope_zero.sub hPneg.tendsto_slope_zero using 2 with s
+  · simp only [zero_add, Function.comp_apply, neg_zero, smul_eq_mul]
+    ring
+  · ring
+
 end NontriviallyNormedField
+
+open Filter Topology UpperHalfPlane in
+/-- `(∏_{n ≥ 0} (1 - q^{2n+1}))ᵏ → 1` at `i∞`, for `q = e^{2π i τ}`. -/
+theorem tendsto_tprod_one_sub_qParam_pow_odd_pow (k : ℕ) :
+    Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - Function.Periodic.qParam 1 τ ^ (2 * n + 1))) ^ k)
+      atImInfty (𝓝 1) := by
+  simpa using ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp
+    (((Function.Periodic.qParam_tendsto one_pos).mono_right nhdsWithin_le_nhds).comp
+      tendsto_coe_atImInfty)).pow k
 
 section LocallyUniform
 

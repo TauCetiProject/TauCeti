@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
@@ -19,7 +20,13 @@ map `⋀ⁿ f` induced by a linear isometry `f` preserves it, so that rotations 
 act isometrically on its forms, and that infinitesimal rotations, the skew-adjoint endomorphisms,
 act skew-adjointly on forms of every degree. It also records that the norm of a wedge
 `v₁ ∧ ⋯ ∧ vₙ` is the volume of the parallelepiped spanned by the `vᵢ`, bounded by Hadamard's
-inequality.
+inequality. Finally, it packages the skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the
+operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
+
+## Main definitions
+
+* `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
+  `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
 
 ## Main results
 
@@ -35,6 +42,10 @@ inequality.
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
 * `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`.
+* `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
+  `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
+  `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
+  `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
 -/
 
 public section
@@ -182,3 +193,93 @@ theorem sum_norm_sq_ιMulti_two (b : OrthonormalBasis ι ℝ E) (u : E) :
   ring
 
 end OrthonormalBasis
+
+namespace TauCeti
+
+open exteriorPower
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+section TwoVectorContraction
+
+open CliffordAlgebra
+
+/-- The **skew endomorphism of a two-vector** `F ∈ ⋀² V`: the contraction `u ↦ u ⌟ F` of `F` by
+the functional `⟪u, ·⟫`, read as a vector of `V` with `ExteriorAlgebra.ιInv`. It is the operator
+`A` with `⟪A u, w⟫ = ω(u, w)` for the two-form `ω(u, w) = ⟪F, u ∧ w⟫` that `F` represents
+(`TauCeti.inner_twoVectorContraction_apply`). -/
+noncomputable def twoVectorContraction (F : ⋀[ℝ]^2 V) : V →ₗ[ℝ] V where
+  toFun u := ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V))
+  map_add' u v := by simp
+  map_smul' c u := by simp
+
+omit [FiniteDimensional ℝ V] in
+theorem twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u : V) :
+    twoVectorContraction F u =
+      ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_zero : twoVectorContraction (0 : ⋀[ℝ]^2 V) = 0 := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_add (F G : ⋀[ℝ]^2 V) :
+    twoVectorContraction (F + G) = twoVectorContraction F + twoVectorContraction G := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_smul (c : ℝ) (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction (c • F) = c • twoVectorContraction F := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_neg (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction (-F) = -twoVectorContraction F := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+/-- **The contraction represents the two-form of `F`**: `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`. Equivalently,
+on two-forms, wedging with `u` is adjoint to contracting with `⟪u, ·⟫`. -/
+@[simp]
+theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
+    ⟪twoVectorContraction F u, w⟫ = ⟪F, ιMulti ℝ 2 ![u, w]⟫ := by
+  -- Both sides are linear in `F`, so it suffices to compare them on `p ∧ q`.
+  have key : innerₗ (⋀[ℝ]^2 V) (ιMulti ℝ 2 ![u, w]) =
+      innerₗ V w ∘ₗ ExteriorAlgebra.ιInv ∘ₗ contractLeft (Q := (0 : QuadraticForm ℝ V))
+        (innerₗ V u) ∘ₗ (⋀[ℝ]^2 V).subtype := by
+    refine exteriorPower.linearMap_ext ?_
+    ext v
+    simp [inner_ιMulti_ιMulti, Matrix.det_fin_two, ExteriorAlgebra.ιMulti_apply,
+      contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _,
+      inner_sub_right, real_inner_smul_right, Matrix.vecTail]
+    ring
+  rw [real_inner_comm w, real_inner_comm _ F, twoVectorContraction_apply]
+  simpa using (LinearMap.congr_fun key F).symm
+
+/-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
+theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
+    ⟪twoVectorContraction F u, u⟫ = 0 := by
+  rw [inner_twoVectorContraction_apply,
+    (ιMulti ℝ 2).map_eq_zero_of_eq ![u, u] (i := 0) (j := 1) rfl (by decide), inner_zero_right]
+
+/-- **The contraction by a two-vector is skew-adjoint**: `⟪u ⌟ F, w⟫ = -⟪u, w ⌟ F⟫`. -/
+theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
+    ⟪twoVectorContraction F u, w⟫ = -⟪u, twoVectorContraction F w⟫ := by
+  have h := inner_twoVectorContraction_apply_self F (u + w)
+  rw [map_add, inner_add_left, inner_add_right, inner_add_right,
+    inner_twoVectorContraction_apply_self, inner_twoVectorContraction_apply_self] at h
+  rw [real_inner_comm _ u]
+  linarith
+
+end TwoVectorContraction
+
+end TauCeti
