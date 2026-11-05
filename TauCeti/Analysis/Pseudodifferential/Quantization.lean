@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
@@ -109,50 +110,6 @@ theorem quantizeSchwartzValue_eq_smul_integral (a : E × E → V →L[ℂ] W)
 
 section Bounds
 
-/-- The polynomial decay of a Schwartz function absorbs the rescaled weight `⟨2πζ⟩ ^ m`, leaving
-an integrable weight `(1 + ‖ζ‖) ^ (-N)` times a finite supremum of Schwartz seminorms. -/
-private lemma one_add_norm_smul_sq_rpow_mul_norm_le (m : ℝ) (f : 𝓢(E, V)) (ζ : E) :
-    (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖f ζ‖ ≤
-      (2 * π) ^ ⌈m⌉₊ * 2 ^ (⌈m⌉₊ + (volume : Measure E).integrablePower) *
-        (Finset.Iic (⌈m⌉₊ + (volume : Measure E).integrablePower, 0)).sup
-          (fun k ↦ SchwartzMap.seminorm ℂ k.1 k.2) f *
-        (1 + ‖ζ‖) ^ (-((volume : Measure E).integrablePower : ℝ)) := by
-  set K := ⌈m⌉₊
-  set N := (volume : Measure E).integrablePower
-  set S := (Finset.Iic (K + N, 0)).sup (fun k ↦ SchwartzMap.seminorm ℂ k.1 k.2) f
-  set t := ‖(2 * π) • ζ‖
-  have ht : t = 2 * π * ‖ζ‖ := by
-    simp [t, norm_smul]
-  have hζ : 0 < 1 + ‖ζ‖ := by positivity
-  -- The bracket of order `m` is dominated by a polynomial weight of degree `K = ⌈m⌉₊`.
-  have hweight : (1 + t ^ 2) ^ (m / 2) ≤ (2 * π) ^ K * (1 + ‖ζ‖) ^ K := by
-    calc (1 + t ^ 2) ^ (m / 2) ≤ (1 + t ^ 2) ^ ((K : ℝ) / 2) :=
-          Real.rpow_le_rpow_of_exponent_le (by nlinarith)
-            (by gcongr; exact Nat.le_ceil m)
-      _ ≤ ((1 + t) ^ 2) ^ ((K : ℝ) / 2) := by
-          gcongr
-          nlinarith [norm_nonneg ((2 * π) • ζ)]
-      _ = (1 + t) ^ K := by
-          rw [← Real.rpow_natCast (1 + t) 2, ← Real.rpow_mul (by positivity),
-            show ((2 : ℕ) : ℝ) * ((K : ℝ) / 2) = (K : ℝ) by push_cast; ring, Real.rpow_natCast]
-      _ ≤ (2 * π * (1 + ‖ζ‖)) ^ K := by
-          gcongr
-          rw [ht]
-          nlinarith [Real.two_le_pi, norm_nonneg ζ]
-      _ = (2 * π) ^ K * (1 + ‖ζ‖) ^ K := mul_pow _ _ _
-  -- The Schwartz function decays like `(1 + ‖ζ‖) ^ (-(K + N))`.
-  have hdecay : (1 + ‖ζ‖) ^ (K + N) * ‖f ζ‖ ≤ 2 ^ (K + N) * S := by
-    simpa using f.one_add_le_sup_seminorm_apply (𝕜 := ℂ) (m := (K + N, 0)) le_rfl le_rfl ζ
-  have hsplit : (1 + ‖ζ‖) ^ K =
-      (1 + ‖ζ‖) ^ (-(N : ℝ)) * (1 + ‖ζ‖) ^ (K + N) := by
-    rw [Real.rpow_neg hζ.le, Real.rpow_natCast, pow_add]
-    field_simp
-  calc (1 + t ^ 2) ^ (m / 2) * ‖f ζ‖ ≤ (2 * π) ^ K * (1 + ‖ζ‖) ^ K * ‖f ζ‖ := by gcongr
-    _ = (2 * π) ^ K * (1 + ‖ζ‖) ^ (-(N : ℝ)) * ((1 + ‖ζ‖) ^ (K + N) * ‖f ζ‖) := by
-        rw [hsplit]; ring
-    _ ≤ (2 * π) ^ K * (1 + ‖ζ‖) ^ (-(N : ℝ)) * (2 ^ (K + N) * S) := by gcongr
-    _ = _ := by ring
-
 variable {a : E × E → V →L[ℂ] W} {x : E} {C m : ℝ}
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
@@ -182,8 +139,11 @@ private lemma norm_integrand_le_pow_neg (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1
         (1 + ‖ζ‖) ^ (-((volume : Measure E).integrablePower : ℝ)) := by
   refine (norm_integrand_le hC f ζ).trans ?_
   rw [mul_assoc]
-  exact mul_le_mul_of_nonneg_left (one_add_norm_smul_sq_rpow_mul_norm_le m f ζ)
-    (nonneg_of_norm_le hC)
+  refine mul_le_mul_of_nonneg_left ?_ (nonneg_of_norm_le hC)
+  have h2π : max 1 |2 * π| = 2 * π := by
+    rw [abs_of_pos two_pi_pos, max_eq_right (by linarith [two_le_pi])]
+  simpa only [h2π] using f.one_add_norm_smul_sq_rpow_mul_norm_le (2 * π) m
+    (volume : Measure E).integrablePower ζ
 
 private lemma aestronglyMeasurable_integrand (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
     (f : 𝓢(E, V)) :
@@ -219,7 +179,8 @@ theorem norm_quantizeSchwartzValue_le (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 +
           (𝓕 u).continuous.norm).aestronglyMeasurable)
       (ae_of_all _ fun ζ ↦ by
         rw [Real.norm_of_nonneg (by positivity)]
-        exact one_add_norm_smul_sq_rpow_mul_norm_le m (𝓕 u) ζ)
+        exact (𝓕 u).one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℂ) (2 * π) m
+          (volume : Measure E).integrablePower ζ)
   rw [quantizeSchwartzValue_def, ← integral_const_mul]
   exact norm_integral_le_of_norm_le (hint.const_mul C)
     (ae_of_all _ (norm_integrand_le hC (𝓕 u)))
