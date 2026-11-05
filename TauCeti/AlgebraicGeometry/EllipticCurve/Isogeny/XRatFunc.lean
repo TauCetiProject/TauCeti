@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Adjoi
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
+-- Proof-only: `x ∘ φ` has a pole at the point at infinity.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
 
 /-!
 # The `x`-coordinate of an isogeny is a rational function of `x`
@@ -41,6 +43,8 @@ point with `x`-coordinate `r(x₀)`. This is what makes `φ` a morphism of degre
 * `TauCeti.Isogeny.algebraMap_xRatFunc`: `x ∘ φ = r(x)`, with `eq_xRatFunc_iff` for uniqueness,
   and `fieldPullback_genericX_eq_aeval_div` its form `x ∘ φ = N(x) / D(x)` for `r = N / D`.
 * `TauCeti.Isogeny.degree_eq_max_natDegree_xRatFunc`: `deg φ` is the degree of `r`.
+* `TauCeti.Isogeny.natDegree_denom_lt_natDegree_num_xRatFunc`: the numerator of `r` has larger
+  degree than its denominator, as `x ∘ φ` has a pole at infinity.
 * `TauCeti.Isogeny.pointMap_ofIsogeny_some_eq_zero_iff`: `φ` sends `(x₀, y₀)` to the point at
   infinity exactly when the denominator of `r` vanishes at `x₀`.
 * `TauCeti.Isogeny.xCoord_pointMap_ofIsogeny_some`: otherwise the image has `x`-coordinate `r(x₀)`.
@@ -155,6 +159,23 @@ theorem degree_eq_max_natDegree_xRatFunc (φ : Isogeny W₁ W₂) :
     φ.degree = max φ.xRatFunc.num.natDegree φ.xRatFunc.denom.natDegree := by
   rw [degree_def, finrank_fieldRange_of_apply_X_eq W₁ φ.fieldPullback (g := φ.xRatFunc)
     (by rw [← genericX_eq_algebraMap, algebraMap_xRatFunc]), RatFunc.finrank_eq_max_natDegree]
+
+open scoped Classical in
+/-- **The numerator of the `x`-coordinate of an isogeny has larger degree than its denominator**:
+`x ∘ φ` has a pole at the point at infinity of `W₁`, since `φ` maps it to the point at infinity of
+`W₂`, and a rational function `r` of `x` has a pole there exactly when its degree is positive. -/
+theorem natDegree_denom_lt_natDegree_num_xRatFunc (φ : Isogeny W₁ W₂) :
+    φ.xRatFunc.denom.natDegree < φ.xRatFunc.num.natDegree := by
+  have h := φ.one_lt_infinityPlace_pullback_X
+  rw [← fieldPullback_algebraMap, ← CoordinateRing.mk_C_eq_algebraMap, ← genericX_def,
+    ← algebraMap_xRatFunc] at h
+  have h0 : φ.xRatFunc ≠ 0 := by
+    rintro h0
+    rw [h0, map_zero, map_zero] at h
+    exact not_lt_of_ge zero_le_one h
+  rw [infinityPlace_algebraMap_ratFunc _ h0, ← WithZero.exp_zero, WithZero.exp_lt_exp,
+    RatFunc.intDegree] at h
+  omega
 
 /-! ### The action on points -/
 
