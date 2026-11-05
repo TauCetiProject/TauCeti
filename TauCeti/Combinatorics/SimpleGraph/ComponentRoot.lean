@@ -58,6 +58,7 @@ theorem isPath_componentPath (v : V) : (componentPath G v).IsPath :=
   (reachable_componentRoot G v).exists_isPath.choose_spec
 
 /-- Two vertices have the same root if and only if they lie in the same connected component. -/
+@[simp]
 theorem componentRoot_eq_componentRoot_iff {v w : V} :
     componentRoot G v = componentRoot G w ↔ G.Reachable v w :=
   ⟨fun h => (reachable_componentRoot G v).symm.trans (h ▸ reachable_componentRoot G w),
