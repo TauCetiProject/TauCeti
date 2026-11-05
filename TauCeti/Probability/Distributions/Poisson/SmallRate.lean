@@ -45,15 +45,18 @@ theorem poissonMeasure_real_Ici_le (r : ℝ≥0) (k : ℕ) :
   have hmoment : ∫ n : ℕ, (n.descFactorial k : ℝ) ∂poissonMeasure r = (r : ℝ) ^ k := by
     simpa only [mixedPoissonMeasure_dirac, integral_dirac] using
       integral_descFactorial_mixedPoissonMeasure (Measure.dirac r) k
-  have hle := integral_mono ((integrable_const (k ! : ℝ)).indicator
-    (measurableSet_Ici (a := k))) hint (fun n => ?_)
-  · rw [integral_indicator_const _ measurableSet_Ici, hmoment, smul_eq_mul] at hle
-    exact (le_div_iff₀ (by positivity : (0 : ℝ) < k !)).2 hle
-  · by_cases hn : n ∈ Set.Ici k
-    · simp only [Set.indicator_of_mem hn]
+  have hle := mul_meas_ge_le_integral_of_nonneg
+    (ae_of_all _ fun n : ℕ => Nat.cast_nonneg (n.descFactorial k)) hint (k ! : ℝ)
+  rw [hmoment] at hle
+  refine (le_div_iff₀ (by positivity : (0 : ℝ) < k !)).2 ?_
+  calc
+    (poissonMeasure r).real (Set.Ici k) * k ! ≤
+        (poissonMeasure r).real {n : ℕ | (k ! : ℝ) ≤ n.descFactorial k} * k ! := by
+      apply mul_le_mul_of_nonneg_right _ (by positivity)
+      refine measureReal_mono ?_
+      intro n hn
       exact_mod_cast (Nat.descFactorial_self k ▸ Nat.descFactorial_le k hn)
-    · simp only [Set.indicator_of_notMem hn]
-      positivity
+    _ ≤ (r : ℝ) ^ k := by simpa only [mul_comm] using hle
 
 /-- Two or more occurrences have probability at most half the squared rate. -/
 theorem poissonMeasure_real_Ici_two_le (r : ℝ≥0) :
