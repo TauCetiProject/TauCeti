@@ -72,10 +72,7 @@ theorem corootCocharacter_eq_cocharacter_coroot_simpleIndex (i : Fin 2) :
   rw [corootCocharacter_def]
   congr 1
   apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin 2 → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
+  have heval := SplitTorus.cocharEquiv_applyAddHom i
   exact heval.trans (DynkinType.G2.coroot_simpleIndex DynkinType.valid_G2 i).symm
 
 variable (B : Type*) [CommRing B] [Algebra (ZMod 3) B]
