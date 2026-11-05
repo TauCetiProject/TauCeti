@@ -245,6 +245,8 @@ theorem radical_criticalHessian (s : S) :
 theorem ker_normalHessian (s : S) : LinearMap.ker (h.normalHessian hn s) = ⊥ :=
   (h.toIsCriticalSubmanifold.ker_normalHessian_eq_bot_iff hn s).mpr (h.ker_criticalHessian_le s)
 
+variable [FiniteDimensional ℝ E]
+
 include hn in
 /-- **Index plus coindex is the codimension.** At each point of a Morse–Bott critical
 submanifold modelled on `E'`, the Morse indices of `f` and `-f` and the dimension of the
@@ -386,7 +388,7 @@ theorem isNondegenerateCriticalSubmanifold_comp_snd {g : N → ℝ} {c : N}
   · rw [ofIsSmoothEmbedding_apply]
     exact hg2.comp _ contMDiffAt_snd
   · rw [ofIsSmoothEmbedding_apply, mem_criticalPoints, mvfderiv_comp (x, c)
-      (hg2.mdifferentiableAt two_ne_zero) mdifferentiableAt_snd, mem_criticalPoints.mp hg0,
+      (hg2.mdifferentiableAt two_ne_zero) mdifferentiableAt_snd, hg0,
       ContinuousLinearMap.zero_comp]
   · rw [ofIsSmoothEmbedding_apply] at hv
     -- Pairing `v` with the vectors `(0, z)` shows that `v.2` is in the kernel of the invertible
