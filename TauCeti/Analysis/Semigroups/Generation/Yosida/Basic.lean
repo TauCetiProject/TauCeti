@@ -8,15 +8,14 @@ module
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.Yosida
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 public import TauCeti.Analysis.Semigroups.Dissipative.Basic
-import TauCeti.Analysis.Normed.Operator.Dense
 import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Yosida approximations
 
-The algebraic Yosida approximation, its commutation laws and its strong convergence criterion
-are defined over any nontrivially normed field. For real parameters, the bounded approximations
-are used in generation theorems for strongly continuous semigroups.
+The generic Yosida definition, algebraic laws and convergence criteria come from
+`TauCeti.Analysis.Normed.Operator.LinearPMap.Yosida`. This file develops their real-parameter
+semigroup consequences.
 For an operator `A` whose resolvent at `lambda > 0` satisfies the
 contraction bound, its Yosida approximation is
 
@@ -27,10 +26,9 @@ Splitting the exponential of `t A_lambda` into the commuting scalar and resolven
 that `exp (t A_lambda)` is a contraction for every `t ≥ 0`. Thus each approximation generates a
 uniformly continuous contraction semigroup. This is the bounded stage of the Yosida construction.
 
-The general convergence criterion applies along any scalar family and filter: norm decay
-of the resolvents and a uniform bound on the normalized resolvents imply strong convergence.
-The real `_atTop` statements specialize this criterion to `lambda → +∞`, using a resolvent bound
-`‖R(lambda, A)‖ ≤ M / lambda` rather than against dissipativity, because the Hille--Yosida
+The real `_atTop` convergence statements specialize the criteria from
+`TauCeti.Analysis.Normed.Operator.LinearPMap.Yosida` to `lambda → +∞`, using the bound
+`‖R(lambda, A)‖ ≤ M / lambda` rather than assuming dissipativity, because the Hille--Yosida
 generation theorem needs the same estimates at a growth constant larger than one: for a densely
 defined operator with that bound, `lambda R(lambda, A)` converges strongly to the identity, hence
 `A_lambda x` converges to `A x` on `D(A)`.
@@ -48,16 +46,8 @@ the limit of the approximating semigroups.
 
 ## Main results
 
-* `yosidaApproximation`: the bounded operator `A_lambda`.
-* `LinearPMap.yosidaApproximation_apply_eq_smul_apply_resolvent`: the identity
-  `A_lambda x = lambda A R(lambda, A) x`.
 * `TauCeti.Semigroups.yosidaSemigroup`: the uniformly continuous contraction semigroup generated
   by `A_lambda`.
-* `LinearPMap.tendsto_smul_resolvent_apply`: strong convergence of normalized resolvents
-  along any scalar family whose resolvents decay in norm and whose normalized resolvents are
-  uniformly bounded, for an operator with dense domain.
-* `LinearPMap.tendsto_yosidaApproximation_apply`: convergence of Yosida approximations
-  on the domain from convergence of the normalized resolvents there.
 * `TauCeti.Semigroups.tendsto_smul_resolvent_apply_atTop`: the strong convergence
   `lambda R(lambda, A) x -> x` for a densely defined operator obeying the resolvent bound.
 * `TauCeti.Semigroups.tendsto_yosidaApproximation_apply_atTop`: the convergence
