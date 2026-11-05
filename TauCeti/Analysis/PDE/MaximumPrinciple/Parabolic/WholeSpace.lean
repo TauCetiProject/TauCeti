@@ -164,6 +164,24 @@ private theorem not_forall_sub_mul_exp_mul_le
   have hpos : 0 < ε * e * (1 + q ^ 2) := by positivity
   nlinarith [mul_le_mul_of_nonneg_left htr' hεe.le, mul_le_mul_of_nonneg_left hinner hεe.le]
 
+/-- The barrier `ε * (exp (K * s) * (1 + n ^ 2))` dominates an upper bound `r ≤ Mu` once the
+radius `n` exceeds `|Mu| / ε + 1`. This is the real arithmetic behind the decay of the perturbed
+solution at infinity in `le_mul_exp_mul_of_deriv_le_of_nonpos`; it is stated for the specific
+barrier of that proof, so it is private. -/
+private theorem sub_mul_exp_mul_neg_of_lt {K ε Mu s r n : ℝ} (hK : 0 ≤ K) (hε : 0 < ε)
+    (hs : 0 ≤ s) (hr : r ≤ Mu) (hn : |Mu| / ε + 1 < n) :
+    r - ε * (Real.exp (K * s) * (1 + n ^ 2)) < 0 := by
+  have h1 : 1 ≤ Real.exp (K * s) := Real.one_le_exp (mul_nonneg hK hs)
+  have h2 : |Mu| < ε * n := by
+    rw [← div_lt_iff₀' hε]
+    linarith
+  have h3 : n ≤ n ^ 2 := by
+    have : 0 ≤ |Mu| / ε := by positivity
+    nlinarith
+  have h4 : ε * (1 + n ^ 2) ≤ ε * (Real.exp (K * s) * (1 + n ^ 2)) :=
+    mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) h1) hε.le
+  nlinarith [le_abs_self Mu]
+
 /-- The perturbed bound behind the maximum principle: if `c ≤ 0`, `P u ≤ 0` and `u(·, 0) ≤ 0`,
 then `u ≤ ε exp (K t) (1 + ‖x‖²)` below the top slice, for every `ε > 0`, where
 `K = 2 |Λ| + 3 |β| + 1`. -/
@@ -190,20 +208,8 @@ private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
   have hsub' : Icc 0 t₁ ⊆ Icc 0 T := Icc_subset_Icc_right ht₁.2.le
   -- Outside the ball of radius `R`, the perturbation dominates the bound on `u`, so `w < 0`.
   set R := |Mu| / ε + 1
-  have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := by
-    intro s hs y hy
-    have h1 : 1 ≤ Real.exp (K * s) := Real.one_le_exp (mul_nonneg hK.le hs.1)
-    have h2 : |Mu| < ε * ‖y‖ := by
-      rw [← div_lt_iff₀' hε]
-      linarith
-    have h3 : ‖y‖ ≤ ‖y‖ ^ 2 := by
-      have : 0 ≤ |Mu| / ε := by positivity
-      nlinarith
-    have h4 : ε * (1 + ‖y‖ ^ 2) ≤ ε * (Real.exp (K * s) * (1 + ‖y‖ ^ 2)) :=
-      mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) h1) hε.le
-    have h5 : u s y ≤ Mu := hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩
-    simp only [w]
-    nlinarith [le_abs_self Mu]
+  have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := fun s hs y hy ↦
+    sub_mul_exp_mul_neg_of_lt hK.le hε hs.1 (hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩) hy
   by_contra hlt
   have hw₁ : 0 < w (t₁, x₁) := by simp only [w]; linarith
   have hx₁ : x₁ ∈ Metric.closedBall 0 R := by
