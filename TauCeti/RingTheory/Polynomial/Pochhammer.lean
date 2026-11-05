@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.Algebra.Polynomial.Smeval
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.RingTheory.Polynomial.Pochhammer
@@ -27,6 +28,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.descPochhammer_degree`: `(descPochhammer R n).degree = n` for nontrivial `R`.
 * `TauCeti.descPochhammer_succ_eval_add_one`: the falling factorial of degree `m + 1` at `x + 1` is
   `x + 1` times the one of degree `m` at `x`.
+* `TauCeti.descPochhammer_succ_smeval_of_sq_eq_zero`: at a square-zero element `ε`, the falling
+  factorial of degree `n + 1` is `(-1) ^ n n! ε`.
 * `TauCeti.sum_Ico_descPochhammer_eval`: its sum over a half-open integer interval is the endpoint
   difference of the next falling factorial, after clearing the denominator.
 * `TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`: the odd polynomial
@@ -82,6 +85,19 @@ theorem descPochhammer_succ_eval_add_one {R : Type*} [Ring R] (m : ℕ) (x : R) 
   rw [← descPochhammer_map (Int.castRingHom R), ← descPochhammer_map (Int.castRingHom R) m,
     eval_map, eval_map, ← algebraMap_int_eq, ← aeval_def, ← aeval_def, descPochhammer_succ_left,
     map_mul, aeval_X, aeval_comp, map_sub, aeval_X, map_one, add_sub_cancel_right]
+
+/-- The descending Pochhammer polynomial at a square-zero element keeps only its linear term:
+`ε (ε - 1) ⋯ (ε - n) = (-1) ^ n n! ε`. -/
+theorem descPochhammer_succ_smeval_of_sq_eq_zero {R : Type*} [Ring R] {ε : R} (hε : ε ^ 2 = 0)
+    (n : ℕ) : (descPochhammer ℤ (n + 1)).smeval ε = ((-1) ^ n * n.factorial : ℤ) • ε := by
+  induction n with
+  | zero => simp [Polynomial.smeval_X]
+  | succ n ih =>
+    -- Multiplying by `ε - n` kills the square term and scales by `-n`.
+    rw [descPochhammer_succ_right, Polynomial.smeval_mul, ih]
+    simp [Polynomial.smeval_X, Polynomial.smeval_natCast, -zsmul_eq_mul, mul_sub, ← sq, hε,
+      Nat.factorial_succ, mul_add_one, -nsmul_eq_mul, ← nsmul_eq_mul' ε n]
+    module
 
 /-! ### Sums over integer intervals -/
 

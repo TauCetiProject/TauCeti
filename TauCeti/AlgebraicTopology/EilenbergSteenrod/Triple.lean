@@ -161,8 +161,9 @@ lemma map_innerToTotal_comp_map_totalToOuter (i : ι) (T : TopTriple.{u}) :
         (TopPair.ofHom T.outerMap (𝟙 T.snd) : diag.obj T.snd ⟶ outerPair.obj T) :=
     MorphismProperty.Arrow.Hom.ext ((Category.id_comp _).trans (Category.comp_id _).symm)
       ((Category.comp_id _).trans (Category.id_comp _).symm)
+  have : IsIso (diag.obj T.snd).map := inferInstanceAs (IsIso (𝟙 T.snd))
   rw [← CategoryTheory.Functor.map_comp, h, CategoryTheory.Functor.map_comp,
-    (HP.isZero_Hₚ_diag i T.snd).eq_of_tgt
+    (HP.isZero_Hₚ_of_isIso_map i (diag.obj T.snd)).eq_of_tgt
     ((HP.Hₚ i).map _) 0, zero_comp]
 
 end Preadditive

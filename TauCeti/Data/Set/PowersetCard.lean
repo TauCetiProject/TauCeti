@@ -8,10 +8,13 @@ module
 public import Mathlib.Data.Set.PowersetCard
 
 /-!
-# Coercions from fixed-cardinality subsets
+# Coercions and enumerations of fixed-cardinality subsets
 
 `Set.powersetCard.coe_ofSingleton` identifies the finite set underlying the singleton
 equivalence. It lets computations with fixed-cardinality subsets use the usual singleton API.
+
+`Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
+`Fin (m.choose j)`.
 -/
 
 public section
@@ -22,5 +25,11 @@ namespace Set.powersetCard
 @[simp]
 theorem coe_ofSingleton {α : Type*} (a : α) :
     ((ofSingleton a : powersetCard α 1) : Finset α) = {a} := rfl
+
+/-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
+noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
+  Fintype.equivFinOfCardEq <| by
+    rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card,
+      Fintype.card_fin]
 
 end Set.powersetCard
