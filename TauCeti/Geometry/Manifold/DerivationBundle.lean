@@ -103,21 +103,6 @@ theorem tangentToPointDerivation_apply (x : M) (v : TangentSpace I x)
     (f : C^∞⟮I, M; 𝕜⟯) : tangentToPointDerivation x v f = mvfderiv I f x v :=
   rfl
 
-/-- **A globally smooth map with the germ of the extended chart.** There is a `C^∞` map `M → E`
-that agrees with `extChartAt I x` on a neighbourhood of `x`. -/
-theorem TauCeti.exists_contMDiffMap_eventuallyEq_extChartAt
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] (x : M) :
-    ∃ F : C^∞⟮I, M; modelWithCornersSelf ℝ E, E⟯,
-      Filter.EventuallyEq (nhds x) (F : M → E) (extChartAt I x) := by
-  -- Multiplying the chart by a bump function at `x` leaves its germ there and makes the product
-  -- smooth everywhere.
-  let b : SmoothBumpFunction I x := Classical.choice inferInstance
-  refine ⟨⟨fun y ↦ b y • extChartAt I x y, b.contMDiff_smul contMDiffOn_extChartAt⟩, ?_⟩
-  filter_upwards [b.eventuallyEq_one] with y hy
-  simp [hy]
-
 /-- On a finite-dimensional Hausdorff real manifold, smooth scalar-valued functions distinguish
 tangent vectors. -/
 theorem tangentToPointDerivation_injective

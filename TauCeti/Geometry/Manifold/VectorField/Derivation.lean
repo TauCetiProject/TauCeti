@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Derivation.Lie
 public import TauCeti.Geometry.Manifold.DerivationBundle
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Geometry.Manifold.Algebra.Monoid
-import Mathlib.Geometry.Manifold.BumpFunction
+import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -83,15 +83,9 @@ def vectorFieldDerivation :
             (g.contMDiff.mdifferentiable (by simp)).mdifferentiableAt) (X x))
         map_smul' := fun c f ↦ by
           ext x
-          have hc : MDiffAt (fun _ : M ↦ c) x := mdifferentiableAt_const
-          -- Unfold the smooth-function wrappers to use the product rule for `mvfderiv`.
-          change mvfderiv I ((fun _ : M ↦ c) • ⇑f) x (X x) = c • mvfderiv I f x (X x)
-          have h := congr($(mvfderiv_smul hc
-            (f.contMDiff.mdifferentiable (by simp)).mdifferentiableAt) (X x))
-          calc
-            _ = (c • mvfderiv I f x + (mvfderiv I (fun _ : M ↦ c) x).smulRight (f x))
-                (X x) := h
-            _ = _ := by simp [mvfderiv_const] }
+          -- Unfold the smooth-function wrappers to use homogeneity of `mvfderiv`.
+          change mvfderiv I (c • ⇑f) x (X x) = c • mvfderiv I f x (X x)
+          exact congr($(mvfderiv_const_smul_field (I := I) (⇑f) x c) (X x)) }
       fun f g ↦ by
         ext x
         -- Unfold the smooth-function wrappers to use the product rule for `mvfderiv`.
@@ -162,8 +156,7 @@ theorem mvfderiv_vectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I
   have h := congrArg (fun D : PointDerivation I x ↦ D f)
     (tangentToPointDerivation_pointDerivationEquivTangentSpace x
       BoundarylessManifold.isInteriorPoint (Derivation.evalAt x δ))
-  -- Unfold the point derivation of a tangent vector and evaluation of a global derivation.
-  exact h
+  simpa only [vectorField, tangentToPointDerivation_apply, Derivation.evalAt_apply] using h
 
 /-- The value of the vector field of a derivation at `x` is the unique tangent vector along which
 every smooth function is differentiated by the derivation at `x`. -/
@@ -172,9 +165,8 @@ theorem eq_vectorField_iff {δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, 
     v = δ.vectorField x ↔ ∀ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x v = δ f x := by
   refine ⟨fun h f ↦ h ▸ mvfderiv_vectorField δ f x, fun h ↦ ?_⟩
   apply tangentToPointDerivation_injective (I := I) x
-  ext f
-  -- Unfold the point derivations of the two tangent vectors on the pointed smooth function.
-  change mvfderiv I f x v = mvfderiv I f x (δ.vectorField x)
+  ext (f : C^∞⟮I, M; ℝ⟯)
+  rw [tangentToPointDerivation_apply, tangentToPointDerivation_apply]
   exact (h f).trans (mvfderiv_vectorField δ f x).symm
 
 /-- The vector field of a sum of derivations is the sum of their vector fields. -/
@@ -187,9 +179,8 @@ theorem vectorField_add (δ₁ δ₂ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞
 @[simp]
 theorem vectorField_const_smul (r : ℝ) (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯)
     (x : M) : (r • δ).vectorField x = r • δ.vectorField x := by
-  have h : Derivation.evalAt x (r • δ) = r • Derivation.evalAt x δ := by
-    ext f
-    rfl
+  have h : Derivation.evalAt x (r • δ) = r • Derivation.evalAt x δ :=
+    LinearMap.map_smul_of_tower _ r δ
   simp only [vectorField, h, _root_.map_smul]
 
 /-- **Smoothness of the vector field of a derivation.** In the chart at `x₀`, the coordinates of
@@ -222,10 +213,9 @@ theorem contMDiff_vectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮
     change mvfderiv I (φ i ∘ F) y (δ.vectorField y) = _
     rw [mvfderiv_comp y (φ i).mdifferentiableAt hFd, ContinuousLinearMap.comp_apply,
       mvfderiv_eq_fderiv, (φ i).fderiv]
-    rw [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap']
-    -- `mvfderiv` is by definition the manifold derivative read in the model space through
-    -- `NormedSpace.fromTangentSpace`, which is the left-hand side.
-    rfl
+    rw [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
+      mvfderiv_apply_eq_mfderiv_apply, ContinuousLinearEquiv.coe_coe,
+      NormedSpace.fromTangentSpace_apply]
   have htriv : (trivializationAt E (TangentSpace I) x₀ (T% δ.vectorField y)).2 =
       mvfderiv I (extChartAt I x₀) y (δ.vectorField y) := by
     have h := Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ)
