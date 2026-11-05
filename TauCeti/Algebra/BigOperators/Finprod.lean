@@ -22,8 +22,9 @@ finitely supported factor whose product is `1`. Shifting the index of an alterna
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
 function, is a finite sum over the support of the weights.
-Finally, a product over a finset is compared with the `finprod` of a finitely supported family
-whose factors off the finset are all at least `1`, or all at most `1`.
+A product over a finset is compared with the `finprod` of a finitely supported family whose
+factors off the finset are all at least `1`, or all at most `1`. Finally, left multiplication by a
+left-regular element commutes with `finsum` even when the support is infinite.
 
 ## Main results
 
@@ -49,6 +50,8 @@ whose factors off the finset are all at least `1`, or all at most `1`.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
+* `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
+  `finsum`, whatever the support.
 -/
 
 public section
@@ -240,3 +243,11 @@ theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f
 end OrderedWithZero
 
 end Finset
+
+/-- Multiplication on the left by a left-regular element commutes with `finsum`, without any
+finiteness assumption on the support. This generalizes `mul_finsum`, which assumes that the ring
+has no zero divisors. -/
+theorem IsLeftRegular.mul_finsum {ι R : Type*} [NonUnitalNonAssocSemiring R] {r : R}
+    (hr : IsLeftRegular r) (f : ι → R) : r * ∑ᶠ i, f i = ∑ᶠ i, r * f i :=
+  (AddMonoidHom.mulLeft r).map_finsum_of_injective hr f
+
