@@ -38,9 +38,15 @@ the coefficients of `(1 + t) Q(t)` are the coefficients of `Q`, which are natura
 weak inequalities and the Euler--Poincaré equality alone do not imply it: the counts
 `c = (2, 0, 0, 2)` and `b = (1, 0, 0, 1)` satisfy both, while `c₁ - c₀ < b₁ - b₀`.
 
+For sequences of natural numbers `b` and `c`, `TauCeti.eq_of_forall_sum_range_neg_one_pow_mul_le`
+is **the lacunary principle**: if the strong inequalities hold in every degree and no two
+consecutive `cᵢ` are both nonzero, then `b = c`.
+
 ## References
 
 * J. Milnor, *Morse Theory*, Section 5.
+* R. Bott, *Lectures on Morse theory, old and new*, Bulletin of the American Mathematical
+  Society 7 (1982), 331--358, Section 1.
 -/
 
 public section
@@ -48,6 +54,55 @@ public section
 open CategoryTheory Module Polynomial
 
 universe u v
+
+namespace TauCeti
+
+/-- The gap `(cₘ - cₘ₋₁ + ⋯ ± c₀) - (bₘ - bₘ₋₁ + ⋯ ± b₀)` in the `m`-th strong Morse inequality
+for sequences `b` and `c` of natural numbers. -/
+private def strongGap (b c : ℕ → ℕ) (m : ℕ) : ℤ :=
+  ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * c j -
+    ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * b j
+
+/-- The gap in the `0`-th strong Morse inequality is `c₀ - b₀`. -/
+private theorem strongGap_zero (b c : ℕ → ℕ) : strongGap b c 0 = c 0 - b 0 := by
+  simp [strongGap]
+
+/-- The gaps `sₘ` in the strong Morse inequalities satisfy `sₘ₊₁ = cₘ₊₁ - bₘ₊₁ - sₘ`. -/
+private theorem strongGap_succ (b c : ℕ → ℕ) (m : ℕ) :
+    strongGap b c (m + 1) = c (m + 1) - b (m + 1) - strongGap b c m := by
+  rw [strongGap, strongGap, sum_range_succ_neg_one_pow_sub_mul,
+    sum_range_succ_neg_one_pow_sub_mul]
+  abel
+
+/-- **The lacunary principle.**  Let `b` and `c` be sequences of natural numbers satisfying the
+strong Morse inequalities `bₘ - bₘ₋₁ + ⋯ ± b₀ ≤ cₘ - cₘ₋₁ + ⋯ ± c₀` in every degree `m`.  If no two
+consecutive `cᵢ` are both nonzero, then `b = c`. -/
+theorem eq_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
+    (hstrong : ∀ m, ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * b i ≤
+      ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * c i)
+    (hc : ∀ i, c i = 0 ∨ c (i + 1) = 0) : b = c := by
+  set s : ℕ → ℤ := strongGap b c with hs_def
+  have hs₀ : s 0 = c 0 - b 0 := strongGap_zero b c
+  have hsucc (m : ℕ) : s (m + 1) = c (m + 1) - b (m + 1) - s m := strongGap_succ b c m
+  have hpos (m : ℕ) : 0 ≤ s m := sub_nonneg.2 (hstrong m)
+  clear_value s
+  -- The gap `sₘ` is at most `cₘ` and at most `cₘ₊₁`, so it vanishes.
+  have hzero (m : ℕ) : s m = 0 := by
+    have hle : s m ≤ c m := by
+      cases m with
+      | zero => rw [hs₀]; omega
+      | succ m => have := hsucc m; have := hpos m; omega
+    have := hsucc m
+    have := hpos m
+    have := hpos (m + 1)
+    have := hc m
+    omega
+  funext i
+  cases i with
+  | zero => have := hzero 0; omega
+  | succ i => have := hsucc i; have := hzero i; have := hzero (i + 1); omega
+
+end TauCeti
 
 section
 
