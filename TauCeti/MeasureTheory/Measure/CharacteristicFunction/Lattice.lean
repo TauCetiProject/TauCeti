@@ -22,10 +22,8 @@ one at `2π/a` exactly when the law is concentrated on `a ℕ`, for `a > 0`. Con
 nonlattice laws are precisely those for which zero is the only such frequency. These
 criteria require no moment assumption and permit an atom at zero.
 
-The argument uses Mathlib's `integral_eq_iff_of_ae_le` and
-`Complex.exp_eq_one_iff`. See W. Feller, *An Introduction to Probability Theory and Its
-Applications*, volume II, second edition (1971), Chapter XI, for the renewal-theoretic use
-of the lattice obstruction.
+See W. Feller, *An Introduction to Probability Theory and Its Applications*, volume II,
+second edition (1971), Chapter XI, for the renewal-theoretic use of the lattice obstruction.
 -/
 
 public section
