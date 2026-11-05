@@ -100,10 +100,14 @@ theorem closure_interior_fullSimplex (p : ℕ) :
   ((convex_fullSimplex p).closure_interior_eq_closure_of_nonempty_interior
     (nonempty_interior_fullSimplex p)).trans (isClosed_fullSimplex p).closure_eq
 
+/-- In dimension zero, the full-dimensional simplex is the whole single-point ambient space. -/
+theorem fullSimplex_zero_eq_univ : fullSimplex 0 = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ by simp
+
 /-- In dimension one, the full-dimensional simplex is the unit interval read through the unique
 coordinate. -/
-theorem preimage_proj_zero_Icc :
-    (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0) ⁻¹' Set.Icc 0 1 = fullSimplex 1 := by
+theorem fullSimplex_one_eq_preimage_proj_zero_Icc :
+    fullSimplex 1 = (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0) ⁻¹' Set.Icc 0 1 := by
   ext x
   simp
 

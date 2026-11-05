@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Affine
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.FullSimplex
 
 /-!
 # Integration of differential forms over smooth singular simplices
@@ -337,7 +338,6 @@ image point of the simplex. The coefficient space is complete, as Bochner integr
 @[simp]
 theorem integral_ofFunction [CompleteSpace F] (σ : SmoothSimplex I M 0) (a : M → F) :
     σ.integral (RoughForm.ofFunction I a) = a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 0⟩) := by
-  have hs : fullSimplex 0 = univ := eq_univ_of_forall fun x ↦ by simp
   have hx : ∀ x : EuclideanSpace ℝ (Fin 0), x = 0 := fun x ↦ Subsingleton.elim x 0
   rw [integral_eq_setIntegral_mpullbackWithin σ _ (g := fun _ ↦ σ.toContinuousMap
     ⟨0, zero_mem_fullSimplex 0⟩) fun x ↦ congrArg σ.toContinuousMap (Subtype.ext (hx x.1).symm)]
@@ -345,10 +345,7 @@ theorem integral_ofFunction [CompleteSpace F] (σ : SmoothSimplex I M 0) (a : M 
   refine (setIntegral_congr_fun (isClosed_fullSimplex 0).measurableSet
     (g := fun _ ↦ a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 0⟩))
     fun x _ ↦ RoughForm.ofFunction_apply (M := EuclideanSpace ℝ (Fin 0)) _ _ _).trans ?_
-  have hvol : volume.real (fullSimplex 0) = 1 := by
-    rw [hs, volume_euclideanSpace_eq_dirac]
-    simp
-  rw [setIntegral_const, hvol, one_smul]
+  rw [setIntegral_const, volume_real_fullSimplex_zero, one_smul]
 
 /-- Integrating the `0`-form of a function over the smooth `0`-simplex of `x₀` evaluates the
 function at `x₀`. -/

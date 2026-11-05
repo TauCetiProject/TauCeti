@@ -297,6 +297,18 @@ theorem toContinuousMap_ofContMDiff_apply {g : EuclideanSpace ℝ (Fin p) → M}
     (ofContMDiff hg).toContinuousMap x = g x :=
   toContinuousMap_ofContMDiffOn_apply hg.contMDiffOn Filter.univ_mem x
 
+/-- Reading `TauCeti.TopCat.simplex₁` of the restriction of `γ : ℝ → M` to `I` through
+`fullSimplexEquivStdSimplex 1` evaluates `γ` at the unique coordinate. -/
+private theorem toSSetObjEquiv_simplex₁_fullSimplexEquivStdSimplex_apply {γ : ℝ → M}
+    (hγ : Continuous fun t : unitInterval ↦ γ t) (x : fullSimplex 1) :
+    (TopCat.of M).toSSetObjEquiv _
+      (TauCeti.TopCat.simplex₁ (X := TopCat.of M) ⟨fun t ↦ γ t, hγ⟩)
+      (fullSimplexEquivStdSimplex 1 x) = γ (x.1 0) := by
+  rw [TauCeti.TopCat.toSSetObjEquiv_simplex₁]
+  -- `(0 : Fin 1).succ` is definitionally `1 : Fin 2`.
+  simpa [StdSimplex.homeomorphI_apply_coe] using
+    congrArg γ (fullSimplexEquivStdSimplex_weights_succ x 0)
+
 /-- A smooth curve `γ : ℝ → M` defines a smooth `1`-simplex `x ↦ γ (x 0)`, lifting
 `TauCeti.TopCat.simplex₁`. -/
 def ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) : SmoothSimplex I M 1 :=
@@ -304,11 +316,8 @@ def ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) : SmoothS
       ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtype_val⟩,
     mem_smoothSingularSubcomplex_of_contMDiffOn _ (g := fun y ↦ γ (y 0))
       (hγ.comp (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff).contMDiffOn
-      Filter.univ_mem fun x ↦ by
-        rw [TauCeti.TopCat.toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
-          ContinuousMap.coe_mk, ContinuousMap.coe_ofClass, StdSimplex.homeomorphI_apply_coe]
-        -- `(0 : Fin 1).succ` is definitionally `1 : Fin 2`.
-        exact congrArg γ (fullSimplexEquivStdSimplex_weights_succ x 0)⟩
+      Filter.univ_mem
+      (toSSetObjEquiv_simplex₁_fullSimplexEquivStdSimplex_apply _)⟩
 
 /-- The underlying singular `1`-simplex of `SmoothSimplex.ofCurve` is `TauCeti.TopCat.simplex₁`. -/
 @[simp]
@@ -322,11 +331,8 @@ theorem coe_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
 theorem toContinuousMap_ofCurve_apply {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ)
     (x : fullSimplex 1) :
     (ofCurve hγ).toContinuousMap x = γ (x.1 0) := by
-  rw [toContinuousMap_apply, coe_ofCurve, TauCeti.TopCat.toSSetObjEquiv_simplex₁,
-    ContinuousMap.comp_apply, ContinuousMap.coe_mk, ContinuousMap.coe_ofClass,
-    StdSimplex.homeomorphI_apply_coe]
-  -- `(0 : Fin 1).succ` is definitionally `1 : Fin 2`.
-  exact congrArg γ (fullSimplexEquivStdSimplex_weights_succ x 0)
+  rw [toContinuousMap_apply, coe_ofCurve]
+  exact toSSetObjEquiv_simplex₁_fullSimplexEquivStdSimplex_apply _ x
 
 /-- The `0`-th face of the smooth `1`-simplex of `γ` is the smooth vertex `γ 1`. -/
 @[simp]
