@@ -26,8 +26,10 @@ contracts the covariant derivative of its curvature, the tensor
 `(∇_v R)(Y, Z) σ = ∇_v (R(Y, Z) σ) - R(∇_v Y, Z) σ - R(Y, ∇_v Z) σ - R(Y, Z) (∇_v σ)`
 
 (`CovariantDerivative.derivCurvatureTensor_apply`). It shows that the trace defining the Ricci
-tensor commutes with covariant differentiation and, for a metric-compatible torsion-free
-connection, pair symmetry of `⟪(∇_v R)(Y, Z) σ, U⟫`.
+tensor commutes with covariant differentiation. For a metric-compatible torsion-free connection,
+the contractions use pair symmetry of `⟪(∇_v R)(Y, Z) σ, U⟫`, from
+`CovariantDerivative.IsMetricCompatible.inner_derivCurvatureTensor_swap_pairs` in
+`DifferentiatedSymmetries`.
 
 The trace is taken in a local frame at the point: the frame of a trivialization, cut off by a
 bump function to globally smooth vector fields. Differentiating the frame coefficients by the

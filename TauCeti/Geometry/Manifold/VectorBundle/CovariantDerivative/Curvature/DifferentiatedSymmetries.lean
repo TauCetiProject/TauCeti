@@ -23,10 +23,11 @@ On a real metric vector bundle, `(∇_d R)(u, v)` is skew-adjoint whenever the b
 is metric-compatible. The auxiliary connection differentiating the two tangent slots need not
 be metric-compatible or torsion-free. On the tangent bundle these identities, together with
 antisymmetry in the two curvature slots, give the algebraic symmetries needed to manipulate
-the curvature derivative in normal-coordinate expansions. For a metric-compatible torsion-free
-connection on the tangent bundle,
+the curvature derivative in normal-coordinate expansions. For a metric-compatible connection on a
+metric bundle,
 `CovariantDerivative.IsMetricCompatible.inner_derivCurvatureTensor` expresses the metric lowering
-of `∇R` as the derivative of the metric-lowered curvature, which gives pair interchange
+of `∇R` as the derivative of the metric-lowered curvature; on the tangent bundle with a
+torsion-free connection this gives pair interchange
 `CovariantDerivative.IsMetricCompatible.inner_derivCurvatureTensor_swap_pairs`.
 
 The proofs differentiate the existing first Bianchi and metric-curvature identities using
@@ -129,6 +130,36 @@ theorem IsMetricCompatible.inner_derivCurvatureTensor_eq_neg (hcov : cov.IsMetri
   simp only [inner_sub_left, inner_sub_right, hcov.inner_curvatureTensor_eq_neg] at hd ⊢
   linarith
 
+/-- For a metric-compatible connection, pairing `(∇_v R)(Y, Z) σ` with a section `U` gives
+the covariant derivative of the metric-lowered curvature `⟪R(Y, Z) σ, U⟫`. The connection `covT`
+differentiating the two tangent slots is arbitrary. -/
+theorem IsMetricCompatible.inner_derivCurvatureTensor (hcov : cov.IsMetricCompatible)
+    (covT : CovariantDerivative I E (TangentSpace I : M → Type _))
+    (x : M) (v : TangentSpace I x) {Y Z : Π y : M, TangentSpace I y} {σ U : Π y : M, V y}
+    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ))
+    (hU : CMDiff ∞ (T% U)) :
+    inner ℝ (cov.derivCurvatureTensor covT x v (Y x) (Z x) (σ x)) (U x) =
+      mvfderiv I (fun y ↦ inner ℝ (cov.curvatureTensor y (Y y) (Z y) (σ y)) (U y)) x v -
+        inner ℝ (cov.curvatureTensor x (covT Y x v) (Z x) (σ x)) (U x) -
+          inner ℝ (cov.curvatureTensor x (Y x) (covT Z x v) (σ x)) (U x) -
+            inner ℝ (cov.curvatureTensor x (Y x) (Z x) (cov σ x v)) (U x) -
+              inner ℝ (cov.curvatureTensor x (Y x) (Z x) (σ x)) (cov U x v) := by
+  have hfun : (fun y ↦ inner ℝ (cov.curvatureTensor y (Y y) (Z y) (σ y)) (U y)) =
+      fun y ↦ inner ℝ (cov.curvatureOperator Y Z σ y) (U y) := by
+    funext y
+    rw [curvatureTensor_apply cov y hY hZ hσ]
+  have hd : mvfderiv I (fun y ↦ inner ℝ (cov.curvatureOperator Y Z σ y) (U y)) x v =
+      inner ℝ (cov (cov.curvatureOperator Y Z σ) x v) (U x) +
+        inner ℝ (cov.curvatureOperator Y Z σ x) (cov U x v) := by
+    simpa only [FiberBundle.extend_apply_self] using
+      hcov.mvfderiv_inner_eq (FiberBundle.extend E v)
+        ((cov.contMDiff_curvatureOperator hY hZ hσ).mdifferentiableAt (by simp) (x := x))
+        (hU.mdifferentiableAt (by simp))
+  rw [derivCurvatureTensor_apply cov covT x v hY hZ hσ, hfun, hd,
+    ← curvatureTensor_apply cov x hY hZ hσ]
+  simp only [inner_sub_left]
+  ring
+
 end Metric
 
 section TangentMetric
@@ -142,35 +173,6 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
   (V := TangentSpace I)
-
-/-- For a metric-compatible connection, pairing `(∇_v R)(Y, Z) σ` with a vector field `U` gives
-the covariant derivative of the metric-lowered curvature `⟪R(Y, Z) σ, U⟫`. -/
-theorem IsMetricCompatible.inner_derivCurvatureTensor
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    (x : M) (v : TangentSpace I x) {Y Z σ U : Π y : M, TangentSpace I y}
-    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ))
-    (hU : CMDiff ∞ (T% U)) :
-    ⟪cov.derivCurvatureTensor cov x v (Y x) (Z x) (σ x), U x⟫_ℝ =
-      mvfderiv I (fun y ↦ ⟪curvature y (Y y) (Z y) (σ y), U y⟫_ℝ) x v -
-        ⟪curvature x (cov Y x v) (Z x) (σ x), U x⟫_ℝ -
-          ⟪curvature x (Y x) (cov Z x v) (σ x), U x⟫_ℝ -
-            ⟪curvature x (Y x) (Z x) (cov σ x v), U x⟫_ℝ -
-              ⟪curvature x (Y x) (Z x) (σ x), cov U x v⟫_ℝ := by
-  have hfun : (fun y ↦ ⟪curvature y (Y y) (Z y) (σ y), U y⟫_ℝ) =
-      fun y ↦ ⟪curvatureOperator cov Y Z σ y, U y⟫_ℝ := by
-    funext y
-    rw [curvatureTensor_apply cov y hY hZ hσ]
-  have hd : mvfderiv I (fun y ↦ ⟪curvatureOperator cov Y Z σ y, U y⟫_ℝ) x v =
-      ⟪cov (curvatureOperator cov Y Z σ) x v, U x⟫_ℝ +
-        ⟪curvatureOperator cov Y Z σ x, cov U x v⟫_ℝ := by
-    simpa only [FiberBundle.extend_apply_self] using
-      hcov.mvfderiv_inner_eq (FiberBundle.extend E v)
-        ((cov.contMDiff_curvatureOperator hY hZ hσ).mdifferentiableAt (by simp) (x := x))
-        (hU.mdifferentiableAt (by simp))
-  rw [derivCurvatureTensor_apply cov cov x v hY hZ hσ, hfun, hd,
-    ← curvatureTensor_apply cov x hY hZ hσ]
-  simp only [inner_sub_left]
-  ring
 
 /-- Pair interchange for the metric-lowered covariant derivative of curvature:
 `(∇_d Rm)(u, v, w, z) = (∇_d Rm)(w, z, u, v)`. -/
@@ -190,8 +192,8 @@ theorem IsMetricCompatible.inner_derivCurvatureTensor_swap_pairs
   have hfun : (fun y ↦ inner ℝ (cov.curvatureTensor y (U y) (V y) (W y)) (Z y)) =
       fun y ↦ inner ℝ (cov.curvatureTensor y (W y) (Z y) (U y)) (V y) :=
     funext fun y ↦ hs y _ _ _ _
-  rw [hcov.inner_derivCurvatureTensor x d hU hV hW hZ,
-    hcov.inner_derivCurvatureTensor x d hW hZ hU hV, hfun, hs x (cov U x d),
+  rw [hcov.inner_derivCurvatureTensor cov x d hU hV hW hZ,
+    hcov.inner_derivCurvatureTensor cov x d hW hZ hU hV, hfun, hs x (cov U x d),
     hs x (U x) (cov V x d), hs x (U x) (V x) (cov W x d), hs x (U x) (V x) (W x) (cov Z x d)]
   ring
 
