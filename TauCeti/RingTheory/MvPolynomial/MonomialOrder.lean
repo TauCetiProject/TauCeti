@@ -15,9 +15,10 @@ This file collects facts about leading monomials of multivariate polynomials for
 `m` on `σ →₀ ℕ`: comparisons of degrees with their `WithBot` forms, the degree of a monomial
 multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
 under a change of coefficients, leading data of the weighted homogeneous component containing
-the leading monomial, leading data of renamed polynomials, elimination orders and the
-lexicographic ones among them, agreement of leading exponents under two monomial orders, leading
-data of substitutions of monic families, and algebraic independence from leading monomials.
+the leading monomial, the top weighted part of a binomial lifted by terms of lower weight, leading
+data of renamed polynomials, elimination orders and the lexicographic ones among them, agreement
+of leading exponents under two monomial orders, leading data of substitutions of monic families,
+and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -60,6 +61,11 @@ the images of the generators of the Lazard ring in a polynomial ring.
   coefficients, leading terms and S-polynomials.
 * `MonomialOrder.leadingTerm_weightedHomogeneousComponent_weight_degree`: the weighted
   homogeneous component of `f` containing its leading monomial has the leading term of `f`.
+* `MonomialOrder.weightedHomogeneousComponent_monomial_sub_monomial_sub`,
+  `MonomialOrder.linearCombination_le_of_mem_support_monomial_sub_monomial_sub`: for weights
+  `A w = ∑ i, w i • a i`, if `A u = A v` and all exponents `w` of `Q` satisfy `A w ≺ A u`, then the
+  part of `Y^u - Y^v - Q` of weight `A u` is `Y^u - Y^v`, and all its exponents `w` satisfy
+  `A w ≼ A u`.
 * `MonomialOrder.degree_rename`, `MonomialOrder.leadingCoeff_rename` and
   `MonomialOrder.leadingTerm_rename`: renaming the variables along a relabeling which carries one
   monomial order to another commutes with leading monomials, coefficients and terms; such a
@@ -313,6 +319,43 @@ theorem isWeightedHomogeneous_weightedHomogeneousComponent_weight_degree (f : Mv
   exact weightedHomogeneousComponent_isWeightedHomogeneous _ _
 
 end WeightedHomogeneous
+
+section Relation
+
+variable {m} {ι : Type*} [CommRing R] {a : ι → σ →₀ ℕ} {u v : ι →₀ ℕ} {Q : MvPolynomial ι R}
+
+/-- Let `A w = ∑ i, w i • a i`. If `A u = A v` and every exponent `w` of `Q` satisfies
+`A w ≺ A u`, then the part of the lifted relation `Y^u - Y^v - Q` of weight `A u` is the binomial
+`Y^u - Y^v`. -/
+theorem weightedHomogeneousComponent_monomial_sub_monomial_sub
+    (huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v)
+    (hQ : ∀ w ∈ Q.support, Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a u) :
+    weightedHomogeneousComponent a (Finsupp.linearCombination ℕ a u)
+        (monomial u (1 : R) - monomial v 1 - Q) =
+      monomial u 1 - monomial v 1 := by
+  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = Finsupp.linearCombination ℕ a w := by
+    rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
+  rw [map_sub, weightedHomogeneousComponent_eq_zero' _ _ fun w hw ↦ (hA w).trans_ne
+      fun h ↦ (hQ w hw).ne (congrArg m.toSyn h), sub_zero,
+    weightedHomogeneousComponent_eq_self ((isWeightedHomogeneous_monomial _ _ _ (hA u)).sub
+      (isWeightedHomogeneous_monomial _ _ _ ((hA v).trans huv.symm)))]
+
+/-- Let `A w = ∑ i, w i • a i`. If `A u = A v` and every exponent `w` of `Q` satisfies
+`A w ≺ A u`, then every exponent `w` of the lifted relation `Y^u - Y^v - Q` satisfies `A w ≼ A u`:
+its part of weight `A u` is its top part. -/
+theorem linearCombination_le_of_mem_support_monomial_sub_monomial_sub
+    (huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v)
+    (hQ : ∀ w ∈ Q.support, Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a u)
+    {w : ι →₀ ℕ} (hw : w ∈ (monomial u (1 : R) - monomial v 1 - Q).support) :
+    Finsupp.linearCombination ℕ a w ≼[m] Finsupp.linearCombination ℕ a u := by
+  classical
+  rcases Finset.mem_union.1 (support_sub _ _ _ hw) with hw | hw
+  · rcases Finset.mem_union.1 (support_sub _ _ _ hw) with hw | hw
+    · rw [Finset.mem_singleton.1 (support_monomial_subset hw)]
+    · rw [Finset.mem_singleton.1 (support_monomial_subset hw), huv]
+  · exact (hQ w hw).le
+
+end Relation
 
 section Rename
 
