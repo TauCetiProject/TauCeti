@@ -11,7 +11,7 @@ public import Mathlib.Order.SupIndep
 public import Mathlib.LinearAlgebra.Span.Basic
 
 /-!
-# Finite families of submodules under a linear map
+# Submodules under a linear map
 
 `Submodule.map` preserves arbitrary suprema (`Submodule.map_iSup`), and along an injective map it
 also preserves infima (`Submodule.map_inf`) and hence disjointness (`Submodule.disjoint_map`).  This
@@ -21,6 +21,12 @@ and along an injective map it leaves an independent family independent.
 
 The finite-set form is what a decomposition of a module into a `Finset` of submodules needs, as in
 `TauCeti/RingTheory/KrullSchmidt/Existence.lean`, when it is transported along a linear map.
+
+The file also describes two maps between submodule lattices: the inverse of the interval
+isomorphism `Submodule.mapIic` is the inverse image along the inclusion, and an injective map
+restricted to `B` carries the trace `A.comap B.subtype` of `A` in `B` onto the trace of `A.map f`
+in `B.map f`. The subquotient identifications in `TauCeti/Algebra/Module/Submodule/Quotient.lean`
+use both.
 
 ## Main results
 

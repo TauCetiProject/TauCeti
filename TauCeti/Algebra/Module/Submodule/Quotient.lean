@@ -124,7 +124,8 @@ theorem mk_mem_iccOrderIsoQuotientOfMapEq_iff {p q : Submodule R M} (r : Submodu
     (hr : r.map q.subtype = p) (N : Set.Icc p q) (x : q) :
     Submodule.Quotient.mk x ∈ iccOrderIsoQuotientOfMapEq r hr N ↔
       (x : M) ∈ N.1 := by
-  have hcomap : (iccOrderIsoQuotientOfMapEq r hr N).comap r.mkQ =
+  rw [iccOrderIsoQuotientOfMapEq, OrderIso.trans_apply]
+  have hcomap : ((comapMkQRelIso r).symm ((iciSubmoduleOrderIsoIcc r hr).symm N)).comap r.mkQ =
       (((iciSubmoduleOrderIsoIcc r hr).symm N).1 : Submodule R q) :=
     congrArg Subtype.val
       ((comapMkQRelIso r).apply_symm_apply ((iciSubmoduleOrderIsoIcc r hr).symm N))
@@ -360,6 +361,9 @@ theorem quotientEquivPiZModOfBasis_mk_apply (N : Submodule ℤ M)
     (hdiag : ∀ i, (bN i : M) = a i • b i) (x : M) (i : ι) :
     N.quotientEquivPiZModOfBasis b bN a hdiag (Quotient.mk x) i =
       ((b.repr x i : ℤ) : ZMod (a i).natAbs) := by
+  -- `simp` rewrites with `quotientEquivPiSpanOfBasis_mk_apply`; then `eq_intCast` identifies
+  -- `Ideal.Quotient.mk` on `ℤ` with the integer cast, and `map_intCast` moves the ring
+  -- equivalence `Int.quotientSpanEquivZMod` past that cast. Nothing is unfolded.
   simp [quotientEquivPiZModOfBasis]
 
 end DiagonalQuotient
