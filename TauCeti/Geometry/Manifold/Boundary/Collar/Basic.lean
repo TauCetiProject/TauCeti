@@ -28,6 +28,8 @@ coordinates on an arbitrary manifold and is not proved here.
 
 ## Main definitions
 
+* `EuclideanHalfSpace.collarAmbientEquiv`: the ambient linear equivalence `ℝⁿ × ℝ¹ ≃ ℝⁿ⁺¹` putting
+  the normal coordinate in coordinate zero.
 * `EuclideanHalfSpace.collarDiffeomorph`: the same identification as a diffeomorphism of manifolds
   with corners.
 * `EuclideanHalfSpace.collarModelChartedSpace`: the model half-space charted over the product,
@@ -40,8 +42,15 @@ coordinates on an arbitrary manifold and is not proved here.
 * `EuclideanHalfSpace.collarDiffeomorph_symm_apply_fst`: the inverse recovers the boundary
   projection.
 * `EuclideanHalfSpace.collarDiffeomorph_apply_zero`: the inward normal is coordinate zero.
+* `EuclideanHalfSpace.model_collarDiffeomorph`: read in the models with corners, the collar
+  diffeomorphism is `collarAmbientEquiv`.
+* `EuclideanHalfSpace.contMDiff_collarDiffeomorph_modelProd` and
+  `EuclideanHalfSpace.contMDiff_collarDiffeomorph_symm_modelProd`: its smoothness for the product
+  model charted over itself, the chart structure used by charts of product manifolds.
 * `EuclideanHalfSpace.collarModelChartedSpace_chartAt` and
   `EuclideanHalfSpace.collarModelChartedSpace_atlas`: its preferred chart and its atlas.
+* `EuclideanHalfSpace.exists_continuousLinearEquiv_image_range_prod`: the product model
+  `ℝⁿ × [0, ∞)` and the half-space model are linearly equivalent, with matching ranges.
 
 ## Downstream target
 
@@ -60,7 +69,10 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.EuclideanHalfSpace
 
-private def collarAmbientEquiv (n : ℕ) :
+/-- The ambient linear equivalence `ℝⁿ × ℝ¹ ≃ ℝⁿ⁺¹` underlying the collar identification: the
+boundary coordinates go to the positive-index coordinates and the normal coordinate to coordinate
+zero. -/
+def collarAmbientEquiv (n : ℕ) :
     (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1)) ≃L[ℝ]
       EuclideanSpace ℝ (Fin (n + 1)) :=
   ((ContinuousLinearEquiv.refl ℝ (EuclideanSpace ℝ (Fin n))).prodCongr
@@ -68,33 +80,44 @@ private def collarAmbientEquiv (n : ℕ) :
         (ContinuousLinearEquiv.piUnique ℝ (fun _ : Fin 1 ↦ ℝ)))).trans
     (euclideanHalfSpaceBoundaryNormalEquiv n)
 
+/-- The ambient collar equivalence sends the normal coordinate to coordinate zero. -/
 @[simp]
-private theorem collarAmbientEquiv_apply_zero (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
+theorem collarAmbientEquiv_apply_zero (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
     (t : EuclideanSpace ℝ (Fin 1)) : collarAmbientEquiv n (x, t) 0 = t 0 := by
   simp [collarAmbientEquiv]
 
+/-- The ambient collar equivalence sends the boundary coordinates to the positive-index
+coordinates. -/
 @[simp]
-private theorem collarAmbientEquiv_apply_succ (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
+theorem collarAmbientEquiv_apply_succ (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
     (t : EuclideanSpace ℝ (Fin 1)) (i : Fin n) :
     collarAmbientEquiv n (x, t) i.succ = x i := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_apply_zero_eq_boundaryParam (n : ℕ)
+/-- At normal coordinate zero, the ambient collar equivalence is the boundary parametrization. -/
+theorem collarAmbientEquiv_apply_zero_eq_boundaryParam (n : ℕ)
     (x : EuclideanSpace ℝ (Fin n)) :
     collarAmbientEquiv n (x, 0) = euclideanHalfSpaceBoundaryParam n x := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_symm_apply_fst (n : ℕ)
+/-- The boundary component of the inverse ambient collar equivalence is the boundary
+projection. -/
+@[simp]
+theorem collarAmbientEquiv_symm_apply_fst (n : ℕ)
     (y : EuclideanSpace ℝ (Fin (n + 1))) :
     ((collarAmbientEquiv n).symm y).1 = euclideanHalfSpaceBoundaryProj n y := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_symm_apply_snd_apply_zero (n : ℕ)
+/-- The inverse ambient collar equivalence recovers coordinate zero as the normal coordinate. -/
+@[simp]
+theorem collarAmbientEquiv_symm_apply_snd_apply_zero (n : ℕ)
     (y : EuclideanSpace ℝ (Fin (n + 1))) :
     ((collarAmbientEquiv n).symm y).2 0 = y 0 := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_symm_apply_snd_apply_zero_nonneg (n : ℕ)
+/-- On the half-space, the normal coordinate recovered by the inverse ambient collar equivalence
+is nonnegative. -/
+theorem collarAmbientEquiv_symm_apply_snd_apply_zero_nonneg (n : ℕ)
     (y : EuclideanHalfSpace (n + 1)) :
     0 ≤ ((collarAmbientEquiv n).symm y.1).2 0 := by
   rw [collarAmbientEquiv_symm_apply_snd_apply_zero]
@@ -175,6 +198,56 @@ def collarDiffeomorph (n : ℕ) {k : WithTop ℕ∞} :
     rw [modelWithCornersEuclideanHalfSpace_apply]
     rfl
 
+/-- Read in the ambient Euclidean spaces, the collar diffeomorphism is the linear equivalence
+`collarAmbientEquiv`. -/
+theorem coe_collarDiffeomorph_apply (n : ℕ) {k : WithTop ℕ∞}
+    (p : EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) :
+    (collarDiffeomorph (k := k) n p).1 = collarAmbientEquiv n (p.1, p.2.1) :=
+  (rfl)
+
+/-- Read in the ambient Euclidean spaces, the inverse collar diffeomorphism is the inverse of the
+linear equivalence `collarAmbientEquiv`. -/
+theorem collarDiffeomorph_symm_apply_coe (n : ℕ) {k : WithTop ℕ∞}
+    (y : EuclideanHalfSpace (n + 1)) :
+    (((collarDiffeomorph (k := k) n).symm y).1, ((collarDiffeomorph (k := k) n).symm y).2.1) =
+      (collarAmbientEquiv n).symm y.1 :=
+  (rfl)
+
+/-- The collar diffeomorphism is smooth from the product model `ModelProd` charted over itself,
+the chart structure of charts of manifolds modelled on `(𝓡 n).prod (𝓡∂ 1)`. -/
+theorem contMDiff_collarDiffeomorph_modelProd (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
+      (fun p : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1) ↦
+        collarDiffeomorph (k := ⊤) n p) := by
+  have h := (collarDiffeomorph (k := k) n).contMDiff
+  -- Restate `h` for `collarEquiv`, whose type, unlike that of the diffeomorphism, does not mention
+  -- the product charted space, so that the charted space can be rewritten.
+  change ContMDiff _ _ _ (collarEquiv n) at h
+  rw [chartedSpaceSelf_prod] at h
+  exact h
+
+/-- The inverse collar diffeomorphism is smooth to the product model `ModelProd` charted over
+itself, the chart structure of charts of manifolds modelled on `(𝓡 n).prod (𝓡∂ 1)`. -/
+theorem contMDiff_collarDiffeomorph_symm_modelProd (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1))
+      (M' := ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1)) k
+      (fun y ↦ (collarDiffeomorph (k := ⊤) n).symm y) := by
+  have h := (collarDiffeomorph (k := k) n).symm.contMDiff
+  -- As above, restate `h` for `collarEquiv` so that the charted space can be rewritten.
+  change ContMDiff _ _ _ (collarEquiv n).symm at h
+  rw [chartedSpaceSelf_prod] at h
+  exact h
+
+/-- The collar diffeomorphism intertwines the models with corners: read through the model of the
+half-space and the product model of `ℝⁿ × [0, ∞)`, it is the linear equivalence
+`collarAmbientEquiv`. -/
+theorem model_collarDiffeomorph (n : ℕ) {k : WithTop ℕ∞}
+    (p : EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) :
+    (𝓡∂ (n + 1)) (collarDiffeomorph (k := k) n p) =
+      collarAmbientEquiv n (((𝓡 n).prod (𝓡∂ 1)) p) := by
+  simp only [modelWithCornersEuclideanHalfSpace_apply, coe_collarDiffeomorph_apply,
+    modelWithCorners_prod_coe, modelWithCornersSelf_coe, Prod.map_apply', id_eq]
+
 /-- The collar diffeomorphism sends the inward normal coordinate to coordinate zero. -/
 @[simp]
 theorem collarDiffeomorph_apply_zero (n : ℕ) {k : WithTop ℕ∞}
@@ -242,5 +315,17 @@ theorem collarModelChartedSpace_atlas (n : ℕ) :
         (collarModelChartedSpace n) =
       {(collarDiffeomorph (k := ⊤) n).symm.toHomeomorph.toOpenPartialHomeomorph} :=
   (rfl)
+
+/-- The product model `ℝⁿ × [0, ∞)` is linearly the half-space model of dimension `n + 1`: a
+continuous linear equivalence of the ambient spaces carries the range of `(𝓡 n).prod (𝓡∂ 1)` onto
+the range `{y | 0 ≤ y 0}` of `𝓡∂ (n + 1)`. -/
+theorem exists_continuousLinearEquiv_image_range_prod (n : ℕ) :
+    ∃ A : (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1)) ≃L[ℝ]
+      EuclideanSpace ℝ (Fin (n + 1)), A '' range ((𝓡 n).prod (𝓡∂ 1)) = range (𝓡∂ (n + 1)) := by
+  refine ⟨collarAmbientEquiv n, ?_⟩
+  ext y
+  rw [ContinuousLinearEquiv.image_eq_preimage_symm, mem_preimage, ModelWithCorners.range_prod,
+    range_modelWithCornersEuclideanHalfSpace, range_modelWithCornersEuclideanHalfSpace]
+  simp [collarAmbientEquiv_symm_apply_snd_apply_zero]
 
 end TauCeti.EuclideanHalfSpace

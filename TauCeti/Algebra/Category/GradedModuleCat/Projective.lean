@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
+public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 
 /-!
@@ -24,6 +25,10 @@ ring need not be a field, and no finite-generation or boundedness hypothesis is 
 Underlying projectivity after restriction along a ring homomorphism is invariant under graded
 isomorphisms, and holds for a zero graded module. These statements use the explicit restricted
 action, so they also apply to either factor of a tensor-product algebra.
+
+Projectivity is stable under the grading shifts, since these are autoequivalences. Consequently
+a projective graded module lifts not only degree-zero maps but maps of every degree `p` along
+graded epimorphisms: such a map is a degree-zero map into the shift by `-p`.
 
 ## References
 
@@ -64,6 +69,32 @@ theorem projective_restrictScalars_of_isZero {R : Type*} [Ring R] (φ : R →+* 
   let := Module.compHom M φ
   let : Subsingleton M := ModuleCat.subsingleton_of_isZero (toModuleCat.map_isZero hM)
   infer_instance
+
+/-- A grading shift of a projective graded module is projective. -/
+instance projective_shiftObj (P : GradedModuleCat.{v} 𝒜) [Projective P] (n : ℤ) :
+    Projective (P.shiftObj n) :=
+  Projective.of_iso ((shiftPowIso 𝒜 n).app P) ((((shift 𝒜) ^ n).map_projective_iff P).2 ‹_›)
+
+/-- **Lifting maps of any degree out of a projective graded module.** Along a graded
+epimorphism `g : L ⟶ M`, every `A`-linear map of degree `p` from a projective graded module to `M`
+lifts to a map of degree `p` into `L`. -/
+theorem exists_isHomogeneous_comp_eq_of_epi (P : GradedModuleCat.{v} 𝒜) [Projective P]
+    {L M : GradedModuleCat.{v} 𝒜} (g : L ⟶ M) [Epi g] {p : ℤ} (u : P →ₗ[A] M)
+    (hu : LinearMap.IsHomogeneous u P.grading.piece M.grading.piece p) :
+    ∃ v : P →ₗ[A] L, LinearMap.IsHomogeneous v P.grading.piece L.grading.piece p ∧
+      g.hom ∘ₗ v = u := by
+  -- A map of degree `p` into `N` is a map of degree zero into the shift `N{-p}`.
+  have hdeg {N : GradedModuleCat.{v} 𝒜} (f : P →ₗ[A] N) :
+      LinearMap.IsHomogeneous f P.grading.piece N.grading.piece p ↔
+        LinearMap.IsHomogeneous f P.grading.piece (N.shiftObj (-p)).grading.piece 0 := by
+    simp only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece, neg_neg, add_zero]
+  have : Epi ((shiftFunctor (-p)).map g) :=
+    (epi_iff_surjective _).2 ((epi_iff_surjective g).1 ‹_›)
+  let u' : P ⟶ M.shiftObj (-p) := ofHom u ((hdeg u).1 hu)
+  refine ⟨(Projective.factorThru u' ((shiftFunctor (-p)).map g)).hom,
+    (hdeg (N := L) _).2 (Projective.factorThru u' ((shiftFunctor (-p)).map g)).isHomogeneous, ?_⟩
+  have hl := congrArg Hom.hom (Projective.factorThru_comp u' ((shiftFunctor (-p)).map g))
+  rwa [hom_comp, hom_shiftFunctor_map] at hl
 
 variable [DirectSum.Decomposition 𝒜]
 

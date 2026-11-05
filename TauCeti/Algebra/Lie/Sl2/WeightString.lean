@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Semisimple.Defs
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
@@ -36,6 +37,12 @@ the adjoint module of `sl₃` is irreducible over `sl₃` and contains a primiti
 for the `sl₂` triple of a simple root, yet has dimension `8`, not `2`. The two hypotheses agree
 when `t.toLieSubalgebra K = ⊤`, which `TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top`
 verifies for the standard triple of `sl (Fin 2) K`.
+
+The lowest-weight calculus also allows zero vectors: `IsSl2Triple.lie_f_pow_succ_toEnd_e`
+gives the lowering coefficient on any raising string, and
+`IsSl2Triple.pow_ad_apply_eq_zero_of_weight_neg_nat` gives its endpoint when the raising adjoint
+is nilpotent, without a finite-dimensionality assumption. The coefficient induction follows
+Mathlib's `IsSl2Triple.HasPrimitiveVectorWith.lie_e_pow_succ_toEnd_f`.
 
 ## Main definitions
 
@@ -81,6 +88,63 @@ This is Layer 0 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.
 -/
 
 public section
+
+namespace IsSl2Triple
+
+section StringCoefficients
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+  {h e f : L} {y : M} {μ : R}
+
+/-- Lowering a raised lowest-weight vector gives the usual string coefficient, without any
+nonvanishing assumption on the vector. -/
+lemma lie_f_pow_succ_toEnd_e (t : IsSl2Triple h e f)
+    (hyh : ⁅h, y⁆ = μ • y) (hyf : ⁅f, y⁆ = 0) (n : ℕ) :
+    ⁅f, (LieModule.toEnd R L M e ^ (n + 1)) y⁆ =
+      ((n + 1) * (-μ - n)) • (LieModule.toEnd R L M e ^ n) y := by
+  induction n with
+  | zero =>
+    simp [leibniz_lie, ← lie_skew f e, t.lie_e_f, hyh, hyf]
+  | succ n ih =>
+    rw [pow_succ', mul_apply_eq_comp, LieModule.toEnd_apply_apply, leibniz_lie, ih]
+    simp [← lie_skew f e, t.lie_e_f, t.lie_h_pow_toEnd_e hyh, lie_e_pow_toEnd_e]
+    module
+
+end StringCoefficients
+
+open LieAlgebra
+
+/-- A lowest-weight vector of weight minus `n` is killed by `n + 1` raising operations
+when the raising adjoint is nilpotent. -/
+lemma pow_ad_apply_eq_zero_of_weight_neg_nat
+    {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
+    {h e f : L} (t : IsSl2Triple h e f)
+    (he : IsNilpotent (ad K L e)) {y : L} (n : ℕ)
+    (hyh : ⁅h, y⁆ = -(n : ℚ) • y) (hyf : ⁅f, y⁆ = 0) :
+    (ad K L e ^ (n + 1)) y = 0 := by
+  -- Both powers iterate the same bracket function, independently of the scalar ring.
+  have powers (m : ℕ) : (LieModule.toEnd ℚ L L e ^ m) y = (ad K L e ^ m) y := by
+    rw [← ad_eq_toEnd, TauCeti.ad_pow_apply_eq_ad_pow_apply ℚ K]
+  obtain ⟨N, hN⟩ := he
+  have top : (ad K L e ^ (N + (n + 1))) y = 0 := by
+    simp [pow_add, hN]
+  have step (k : ℕ) (_ : k < N)
+      (hk : (ad K L e ^ (k + 1 + (n + 1))) y = 0) :
+      (ad K L e ^ (k + (n + 1))) y = 0 := by
+    have coeff := t.lie_f_pow_succ_toEnd_e hyh hyf (k + (n + 1))
+    rw [powers, powers, show k + (n + 1) + 1 = k + 1 + (n + 1) by omega,
+      hk, lie_zero] at coeff
+    have hc : (((k + (n + 1) : ℕ) : ℚ) + 1) *
+        (-(-(n : ℚ)) - (k + (n + 1) : ℕ)) ≠ 0 := by
+      push_cast
+      nlinarith [sq_nonneg (k : ℚ)]
+    exact (smul_eq_zero.mp coeff.symm).resolve_left hc
+  simpa using Nat.decreasingInduction
+    (motive := fun k _ => (ad K L e ^ (k + (n + 1))) y = 0)
+    step top (Nat.zero_le N)
+
+end IsSl2Triple
 
 namespace TauCeti
 

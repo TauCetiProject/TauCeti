@@ -28,6 +28,8 @@ extension `L / K` of degree `n`.
   `σ_K(n)` that are `K`-isomorphic to `L`, times `#Aut_K(L)`, is `n`.
 * `TauCeti.setOf_isomorphic_eq_singleton_of_normal`: a Galois member of `σ_K(n)` is alone in its
   isomorphism class.
+* `TauCeti.natCard_algEquiv_of_normal`: a Galois member of `σ_K(n)` has exactly `n`
+  automorphisms over `K`.
 
 ## References
 
@@ -78,5 +80,12 @@ theorem setOf_isomorphic_eq_singleton_of_normal {n : ℕ}
     [Normal K L] : {M ∈ totallyRamifiedOfDegree K n | Nonempty (L ≃ₐ[K] M)} = {L} := by
   rw [setOf_mem_totallyRamifiedOfDegree_isomorphic hL,
     IntermediateField.setOf_isomorphic_eq_singleton_of_normal]
+
+/-- **The Galois case of the orbit count**: a member `L` of `σ_K(n)` that is normal over `K` has
+exactly `n` automorphisms over `K`. -/
+theorem natCard_algEquiv_of_normal {n : ℕ} {L : IntermediateField K (SeparableClosure K)}
+    (hL : L ∈ totallyRamifiedOfDegree K n) [Normal K L] : Nat.card (L ≃ₐ[K] L) = n := by
+  have h := ncard_isomorphic_mul_natCard_algEquiv hL
+  rwa [setOf_isomorphic_eq_singleton_of_normal hL, Set.ncard_singleton, one_mul] at h
 
 end TauCeti
