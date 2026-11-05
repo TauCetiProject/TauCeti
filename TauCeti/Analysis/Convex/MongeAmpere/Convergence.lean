@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
-public import TauCeti.Analysis.Convex.FunctionTopology
+public import TauCeti.Analysis.Convex.Function.Topology
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Extrema

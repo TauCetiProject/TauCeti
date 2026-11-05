@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.Convex.Continuous
+import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.Convex.StrictTangent
 import TauCeti.Analysis.Convex.SubgradientImage
 

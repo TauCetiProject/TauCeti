@@ -6,17 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.FunctionTopology
+public import Mathlib.Analysis.Convex.Continuous
+public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Topology.Order.OrderClosed
 public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Algebra.Order.Field
 
 /-!
-# Limits of convex functions
+# Limits and continuous extensions of convex functions
 
 A pointwise limit, on a set `s`, of functions that are eventually convex on `s` is convex on `s`.
 This is the closedness of the set of convex functions (`isClosed_setOfPred_convexOn`) applied to
 functions that are only known to converge on `s`.
+
+A function convex on `s` and continuous on `closure s` remains convex on that closure
+(`ConvexOn.closure_of_continuousOn`).
 
 A convex function on `(0, ∞)` bounded above by `L` stays convex when extended by the value `L` at
 `0` (`ConvexOn.apply_mul_le_of_forall_le`), as the limit of convex combinations approaching `0`.
@@ -77,3 +83,27 @@ theorem ConvexOn.apply_mul_le_of_forall_le {φ : ℝ → ℝ} (hφ : ConvexOn �
   have hεL := mul_le_mul_of_nonneg_left (hL _ (mul_pos hε.1 hx)) hl₁
   simp only [F]
   linarith
+
+/-- A convex function that is continuous on the closure remains convex on that closure. -/
+theorem ConvexOn.closure_of_continuousOn {𝕜 E F : Type*} [Field 𝕜] [PartialOrder 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousConstSMul 𝕜 E] [AddCommMonoid F] [PartialOrder F] [SMul 𝕜 F]
+    [TopologicalSpace F] [ContinuousAdd F] [ContinuousConstSMul 𝕜 F] [OrderClosedTopology F]
+    {s : Set E} {f : E → F} (hf : ConvexOn 𝕜 s f) (hc : ContinuousOn f (closure s)) :
+    ConvexOn 𝕜 (closure s) f := by
+  refine ⟨hf.1.closure, ?_⟩
+  intro x hx y hy a b ha hb hab
+  have hl : ContinuousOn (fun p : E × E => f (a • p.1 + b • p.2)) (closure (s ×ˢ s)) := by
+    rw [closure_prod_eq]
+    exact hc.comp ((continuous_fst.const_smul a).add
+      (continuous_snd.const_smul b)).continuousOn
+      (fun _ hp => hf.1.closure hp.1 hp.2 ha hb hab)
+  have hr : ContinuousOn (fun p : E × E => a • f p.1 + b • f p.2) (closure (s ×ˢ s)) := by
+    rw [closure_prod_eq]
+    exact ((hc.comp continuousOn_fst
+      fun _ (hp : _ ∈ closure s ×ˢ closure s) => hp.1).const_smul a).add
+      ((hc.comp continuousOn_snd
+        fun _ (hp : _ ∈ closure s ×ˢ closure s) => hp.2).const_smul b)
+  exact le_on_closure (s := s ×ˢ s) (x := (x, y))
+    (fun _ (hp : _ ∈ s ×ˢ s) => hf.2 hp.1 hp.2 ha hb hab) hl hr
+    (by rw [closure_prod_eq]; exact ⟨hx, hy⟩)

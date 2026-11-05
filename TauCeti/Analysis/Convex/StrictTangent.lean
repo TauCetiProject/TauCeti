@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import TauCeti.Analysis.Convex.Function
+import TauCeti.Analysis.Convex.Function.Basic
 
 /-!
 # Strict tangent inequalities on the closure of a convex domain
