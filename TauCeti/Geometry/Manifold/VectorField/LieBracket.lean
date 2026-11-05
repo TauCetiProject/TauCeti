@@ -103,6 +103,7 @@ theorem mlieBracket_eq_lieBracket {V W : ∀ y : F, TangentSpace 𝓘(𝕜, F) y
 
 /-- The manifold Lie bracket of a constant vector field `a` with a vector field `W` on a normed
 space is the derivative of `W` in the direction `a`. -/
+@[simp]
 theorem mlieBracket_const_left_model_space (a : F) (W : ∀ y : F, TangentSpace 𝓘(𝕜, F) y)
     (x : F) :
     VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) W x = fderiv 𝕜 W x a := by
@@ -117,6 +118,7 @@ theorem mlieBracket_const_left_model_space (a : F) (W : ∀ y : F, TangentSpace 
 
 /-- The manifold Lie bracket of a vector field `V` with a constant vector field `b` on a normed
 space is minus the derivative of `V` in the direction `b`. -/
+@[simp]
 theorem mlieBracket_const_right_model_space (V : ∀ y : F, TangentSpace 𝓘(𝕜, F) y) (b x : F) :
     VectorField.mlieBracket 𝓘(𝕜, F) V (fun _ : F ↦ b) x = -fderiv 𝕜 V x b := by
   let B : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ b
