@@ -65,6 +65,9 @@ proof is independent of the source's.
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
   leaves sums over all row vectors unchanged.
+* `Matrix.SpecialLinearGroup.vecMul_map_mul` and
+  `Matrix.SpecialLinearGroup.vecMul_map_inv_vecMul_map`: through a ring hom of the entries,
+  the right action on row vectors composes as a right action, and `g⁻¹` is undone by `g`.
 * `Matrix.SpecialLinearGroup.intCast_comp_vecCons_eq_zsmul_vecMul_inv`: the bottom row of
   `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
   `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
@@ -192,6 +195,21 @@ theorem sum_comp_vecMul {R : Type*} [CommRing R] [Fintype R] {n : Type*} [Fintyp
       left_inv a := ((vecMul_eq_iff_eq_vecMul_inv g a _).mp rfl).symm
       right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl }
     _ _ fun _ ↦ rfl
+
+/-- The right action of a special linear group on row vectors, through a ring homomorphism of the
+entries, composes as a right action: `r (g h) = (r g) h`. -/
+theorem vecMul_map_mul {A R : Type*} [CommRing A] [Ring R] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : A →+* R) (r : n → R) (g h : SpecialLinearGroup n A) :
+    r ᵥ* (↑(g * h) : Matrix n n A).map f =
+      (r ᵥ* (g : Matrix n n A).map f) ᵥ* (h : Matrix n n A).map f := by
+  rw [vecMul_vecMul, ← Matrix.map_mul, ← coe_mul]
+
+/-- Acting on a row vector by `g⁻¹` and then by `g` gives back the row vector: `(r g⁻¹) g = r`. -/
+theorem vecMul_map_inv_vecMul_map {A R : Type*} [CommRing A] [Ring R] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : A →+* R) (r : n → R) (g : SpecialLinearGroup n A) :
+    (r ᵥ* (↑g⁻¹ : Matrix n n A).map f) ᵥ* (g : Matrix n n A).map f = r := by
+  rw [← vecMul_map_mul, inv_mul_cancel, coe_one,
+    Matrix.map_one _ (map_zero _) (map_one _), vecMul_one]
 
 /-- For `γ = [a, b; c, d] ∈ SL₂(ℤ)`, the bottom row of `γ⁻¹` is `(-c, a)`: its `n`-th multiple,
 cast to any commutative ring `R`, is `n • ((0, 1) ᵥ* γ⁻¹)`. -/
