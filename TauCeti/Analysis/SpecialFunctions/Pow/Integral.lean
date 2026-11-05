@@ -14,6 +14,10 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 -- interval integral of `t ^ s`, used only inside the proof of
 -- `TauCeti.lintegral_ofReal_rpow_Ioo`.
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+-- `TauCeti.MeasureTheory.Integral.Average` is imported privately: it supplies
+-- `setLIntegral_comp_preimage_of_map_eq_smul`, used only inside the proof of
+-- `TauCeti.setLIntegral_comp_mul_left_mul_rpow`.
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Lower integrals of a real power, and the layer cake formula in `ℝ≥0∞`
@@ -69,6 +73,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 * `TauCeti.setLIntegral_Ioc_ite_rpow_le`: an upper-tail bound for a negative power restricted by
   a linear threshold.
 * `TauCeti.setLIntegral_Ioc_rpow_mul_ite_le`: the same bound with constant and linear weights.
+* `TauCeti.setLIntegral_comp_mul_left_mul_rpow`: the substitution `t = c s` in a lower integral
+  against the weight `t ^ q`.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
@@ -310,6 +316,45 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
     ← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hs hbc) hnn,
     integral_Ioi_rpow_of_lt hs hbc, hreal, hab, ENNReal.ofReal_rpow_of_pos hb0,
     ← ENNReal.ofReal_mul hconst.le]
+
+/-- Substituting `t = c s`, for `c > 0`, in a lower integral against the weight `t ^ q` over a set
+of nonnegative reals: the weight is homogeneous of degree `q`, so the substitution costs the factor
+`c ^ (-(q + 1))`. Here `T` is the preimage of `S` under `s ↦ c s`. -/
+theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (hc : 0 < c)
+    {S T : Set ℝ} (hT : MeasurableSet T) (hST : ∀ s, s ∈ T ↔ c * s ∈ S) (hT0 : T ⊆ Ici 0)
+    (q : ℝ) :
+    ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q) =
+      ENNReal.ofReal (c ^ (-(q + 1))) * ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
+  set e := (Homeomorph.mulLeft₀ c hc.ne').toMeasurableEquiv
+  set G : ℝ → ℝ≥0∞ := fun t => g t * ENNReal.ofReal (t ^ q)
+  have he : volume.map e = ENNReal.ofReal |c⁻¹| • volume := Real.map_volume_mul_left hc.ne'
+  have h : ∫⁻ s in e ⁻¹' S, G (e s) = ENNReal.ofReal |c⁻¹| * ∫⁻ t in S, G t :=
+    setLIntegral_comp_preimage_of_map_eq_smul he G S
+  have hT' : e ⁻¹' S = T := by
+    ext s
+    exact (hST s).symm
+  rw [hT'] at h
+  simp only [e, G, Homeomorph.toMeasurableEquiv_coe, Homeomorph.coe_mulLeft₀, abs_inv,
+    abs_of_pos hc] at h
+  have hcongr : ∫⁻ s in T, g (c * s) * ENNReal.ofReal ((c * s) ^ q) =
+      ∫⁻ s in T, ENNReal.ofReal (c ^ q) * (g (c * s) * ENNReal.ofReal (s ^ q)) :=
+    setLIntegral_congr_fun hT fun s hs => by
+      rw [Real.mul_rpow hc.le (hT0 hs), ENNReal.ofReal_mul (Real.rpow_nonneg hc.le q)]
+      ring
+  rw [hcongr, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top] at h
+  have hinv : ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal (c ^ q) = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add hc]
+    simp
+  calc ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q)
+      = ENNReal.ofReal (c ^ (-q)) *
+          (ENNReal.ofReal (c ^ q) * ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q)) := by
+        rw [← mul_assoc, hinv, one_mul]
+    _ = ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal c⁻¹ *
+          ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
+        rw [h, mul_assoc]
+    _ = ENNReal.ofReal (c ^ (-(q + 1))) * ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
+        rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_neg_one, ← Real.rpow_add hc,
+          neg_add]
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ≥0∞} {p : ℝ}
 
