@@ -17,10 +17,11 @@ associated twists is equivalent to preserving the pivotal isomorphisms. The same
 holds in the reverse direction, for the pivotal structures induced by chosen twists.
 Together these give the functor-level preservation criterion for `pivotalBalancedEquiv`.
 
-The proof uses the existing chosen-dual comparisons `Functor.mapRightDualIso` and the
-Drinfeld compatibility theorem `Functor.map_drinfeldIso_hom_comp_mapRightDualIso_hom`.
-It does not identify chosen double duals with the original objects, or assume ribbon
-compatibility. Preservation also transports along natural isomorphisms of braided functors.
+Writing `δ_X = F.mapRightDualIso X : F.obj Xᘁ ≅ (F.obj X)ᘁ`, the pivotal preservation equation
+is `F.map j_X ≫ δ_{Xᘁ} = j_{F X} ≫ (δ_X)ᘁ`, where `j` denotes the pivotal isomorphisms.
+This retains the chosen duals without identifying double duals with the original objects or
+assuming ribbon compatibility. Preservation also transports along natural isomorphisms of
+braided functors, with no monoidality assumption on the isomorphism.
 
 ## References
 
@@ -54,6 +55,7 @@ theorem map_balancedOfBraidedPivotal_twist_iff (X : C) :
         (balancedOfBraidedPivotal D).twist.hom.app (F.obj X) ↔
       F.map (pivotalIsoApp X).hom ≫ (F.mapRightDualIso Xᘁ).hom =
         (pivotalIsoApp (F.obj X)).hom ≫ ((F.mapRightDualIso X).hom)ᘁ := by
+  -- Use mapRightDualIso and map_drinfeldIso_hom_comp_mapRightDualIso_hom.
   -- Postcompose with the image Drinfeld isomorphism and the dual comparison, so that
   -- inverse Drinfeld factors cancel on both sides of the twist equation.
   rw [← cancel_mono (F.map (drinfeldIso X).hom ≫ (F.mapRightDualIso Xᘁ).hom)]
@@ -82,8 +84,9 @@ theorem isBalanced_iff_isPivotal :
 variable {F} {G : C ⥤ D} [G.Braided]
 
 /-- Naturally isomorphic braided functors preserve the pivotal structures simultaneously.
-This follows from the twist criterion without any extra equation on the isomorphism. -/
+No monoidality assumption on the natural isomorphism is required. -/
 theorem isPivotal_iff_of_iso (e : F ≅ G) : F.IsPivotal ↔ G.IsPivotal := by
+  -- Transport twist preservation, then apply the pivotal preservation criterion.
   let := balancedOfBraidedPivotal C
   let := balancedOfBraidedPivotal D
   exact (F.isBalanced_iff_isPivotal).symm.trans
