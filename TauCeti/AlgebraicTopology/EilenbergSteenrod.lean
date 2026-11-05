@@ -14,7 +14,8 @@ public import Mathlib.AlgebraicTopology.EilenbergSteenrod
 Mathlib supplies the exactness, additivity and dimension axioms for homology
 pretheories. This file proves naturality of the ambient-to-relative map, its
 compatibility with morphisms of pretheories, and vanishing of relative homology
-for a diagonal pair `(A, A)` under the pair-sequence axiom.
+of a pair `(X, A)` whose inclusion `A ⟶ X` is an isomorphism (for instance a diagonal pair
+`(A, A)`) under the pair-sequence axiom.
 
 ## References
 
@@ -37,32 +38,26 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : Comple
   (HP : HomologyPretheory.{u} C c)
 
 /-- The map `Hᵢ(X) ⟶ Hᵢ(X, A)` is natural in the pair `(X, A)`. -/
--- `hFstToHₚ` is now an abbreviation; general functor and naturality rules simplify its body.
 @[reassoc]
 lemma hFstToHₚ_naturality {X Y : TopPair.{u}} (f : X ⟶ Y) (i : ι) :
     HP.hFstToHₚ i X ≫ (HP.Hₚ i).map f = (HP.H i).map (Hom.fst f) ≫ HP.hFstToHₚ i Y := by
   have h : X.j ≫ f = incl.map (Hom.fst f) ≫ Y.j :=
     MorphismProperty.Arrow.Hom.ext (TopCat.isInitialPEmpty.hom_ext _ _) (by cat_disch)
-  rw [hFstToHₚ, hFstToHₚ, Category.assoc, ← CategoryTheory.Functor.map_comp, h,
-    CategoryTheory.Functor.map_comp]
-  exact ((HP.iso i).hom.naturality_assoc (Hom.fst f) _).symm
+  simp [← CategoryTheory.Functor.map_comp, h]
 
 /-- A morphism of homology pretheories commutes with the maps `Hᵢ(X) ⟶ Hᵢ(X, A)`. -/
 @[reassoc]
 lemma Hom.hFstToHₚ_comm {HP' : HomologyPretheory.{u} C c} (f : HP ⟶ HP') (i : ι)
     (X : TopPair.{u}) :
     HP.hFstToHₚ i X ≫ (f.homₚ i).app X = (f.hom i).app X.fst ≫ HP'.hFstToHₚ i X := by
-  rw [hFstToHₚ, hFstToHₚ, Category.assoc, (f.homₚ i).naturality, ← Category.assoc]
-  exact (Hom.iso_comm_app f i X.fst =≫ _).trans (Category.assoc _ _ _)
+  simp [Hom.iso_comm_app_assoc]
 
 /-- When `i` has no successor in the complex shape, the map `Hᵢ(X) ⟶ Hᵢ(X, A)` of a pretheory
 with the long exact sequence of pairs is an epimorphism. -/
 lemma epi_hFstToHₚ_of_not_rel [HP.HasPairSequence] (i : ι) (hi : ∀ j, ¬ c.Rel i j)
-    (X : TopPair.{u}) : Epi (HP.hFstToHₚ i X) := by
+    (X : TopPair.{u}) : Epi (HP.hFstToHₚ i X) :=
   have := HasPairSequence.epi_map_of_not_rel (HP := HP) X i hi
-  rw [hFstToHₚ]
-  infer_instance
-
+  epi_comp _ _
 
 end
 
@@ -72,30 +67,24 @@ variable {C : Type*} [Category* C] [Preadditive C] {ι : Type*} {c : ComplexShap
   (HP : HomologyPretheory.{u} C c)
 
 /-- In a homology pretheory with the long exact sequence of pairs, the relative homology of a
-pair `(A, A)` vanishes. -/
-lemma isZero_Hₚ_diag [HP.HasPairSequence] (i : ι) (A : TopCat.{u}) :
-    IsZero ((HP.Hₚ i).obj (diag.obj A)) := by
-  -- The map `Hᵢ(A) ⟶ Hᵢ(A, A)` vanishes, since it follows the identity of `Hᵢ(A)`.
-  have h₀ : HP.hFstToHₚ i (diag.obj A) = 0 := by
-    have h : (HP.H i).map (𝟙 A) ≫ HP.hFstToHₚ i (diag.obj A) = 0 :=
-      (HP.exact_fst (diag.obj A) i).toIsComplex.zero 0
-    rw [CategoryTheory.Functor.map_id] at h
-    exact (Category.id_comp _).symm.trans h
+pair `(X, A)` whose inclusion `A ⟶ X` is an isomorphism vanishes. -/
+lemma isZero_Hₚ_of_isIso_map [HP.HasPairSequence] (i : ι) (X : TopPair.{u}) [IsIso X.map] :
+    IsZero ((HP.Hₚ i).obj X) := by
+  -- The map `Hᵢ(X) ⟶ Hᵢ(X, A)` vanishes, since it follows the isomorphism `Hᵢ(A) ⟶ Hᵢ(X)`.
+  have h₀ : HP.hFstToHₚ i X = 0 := by
+    rw [← cancel_epi ((HP.H i).map X.map), comp_zero]
+    exact (HP.exact_fst X i).toIsComplex.zero 0
   by_cases hi : ∃ j, c.Rel i j
-  · -- The boundary `Hᵢ(A, A) ⟶ Hⱼ(A)` is then a monomorphism, and it vanishes, since it is
-    -- followed by the identity of `Hⱼ(A)`.
-    obtain ⟨j, hij⟩ := hi
-    have hδ : (HP.δ i j).app (diag.obj A) = 0 := by
-      have h : (HP.δ i j).app (diag.obj A) ≫ (HP.H j).map (𝟙 _) = 0 :=
-        (HP.exact_snd (diag.obj A) i j hij).toIsComplex.zero 0
-      rw [CategoryTheory.Functor.map_id] at h
-      exact (Category.comp_id _).symm.trans h
-    have : Mono ((HP.δ i j).app (diag.obj A)) :=
-      ((HP.exact_pair (diag.obj A) i j hij).exact 0).mono_g h₀
-    exact IsZero.of_mono_eq_zero _ hδ
-  · -- Otherwise `Hᵢ(A) ⟶ Hᵢ(A, A)` is an epimorphism.
+  · obtain ⟨j, hij⟩ := hi
+    -- The boundary `Hᵢ(X, A) ⟶ Hⱼ(A)` vanishes, since it precedes the isomorphism
+    -- `Hⱼ(A) ⟶ Hⱼ(X)`; with `h₀`, exactness at `Hᵢ(X, A)` makes that object zero.
+    have hδ : (HP.δ i j).app X = 0 :=
+      (cancel_mono ((HP.H j).map X.map)).mp
+        (((HP.exact_snd X i j hij).toIsComplex.zero 0).trans zero_comp.symm)
+    exact ((HP.exact_pair X i j hij).exact 0).isZero_X₂ h₀ hδ
+  · -- Otherwise `Hᵢ(X) ⟶ Hᵢ(X, A)` is an epimorphism.
     push Not at hi
-    have := HP.epi_hFstToHₚ_of_not_rel i hi (diag.obj A)
+    have := HP.epi_hFstToHₚ_of_not_rel i hi X
     exact IsZero.of_epi_eq_zero _ h₀
 
 end Preadditive

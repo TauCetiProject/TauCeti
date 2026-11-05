@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Convex.Integral
 
 /-!
@@ -32,7 +34,10 @@ bound above this compares mean oscillations on nested sets, as in the theory of 
 bounded mean oscillation. In square mean the comparison with a constant reads
 `∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure; in an inner product space the
 factor `4` drops to `1`, by the orthogonal splitting
-`∫_s ‖f - c‖² = ∫_s ‖f - f_s‖² + μ s ‖f_s - c‖²`.
+`∫_s ‖f - c‖² = ∫_s ‖f - f_s‖² + μ s ‖f_s - c‖²`. Consequently, on nested sets `s ⊆ t`, the square
+mean oscillation of `f` inherits any decay from `t` to `s` of the square mean oscillation of a
+comparison function `H`, up to the distance `∫_t ‖f - H‖²`; this is the comparison step of
+Campanato's method.
 
 Averages are unchanged when the measure is multiplied by a positive finite scalar. They are also
 unchanged by a change of variables that rescales the measure by a constant factor,
@@ -59,6 +64,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   average over it is at most the integral of the extended norm over it.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
+* `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
+  `TauCeti.setLAverage_enorm_add_sub_le`: the mean oscillation is infinite off integrability on a
+  set of finite measure, ignores constants and is subadditive.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
 * `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset`: the average of a nonnegative function
@@ -74,6 +82,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
+* `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
+  oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
@@ -93,7 +103,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory
+open _root_.MeasureTheory
 open scoped ENNReal InnerProductSpace
 
 section ENorm
@@ -212,6 +222,70 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
         rw [setLAverage_eq μ (fun x => ‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ) s,
           lintegral_add_right _ measurable_const, setLIntegral_const,
           ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, ← setLAverage_eq, two_mul]
+
+omit [NormedSpace ℝ F] [CompleteSpace F] in
+/-- On a set of finite measure, the average of `‖f - b‖ₑ` is infinite for an `f` that is a.e.
+strongly measurable but not integrable there, whatever the constant `b`. -/
+theorem setLAverage_enorm_sub_const_eq_top (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hs : μ s ≠ ∞)
+    (hfs : ¬IntegrableOn f s μ) (b : F) :
+    ⨍⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hint : ∫⁻ y in s, ‖f y - b‖ₑ ∂μ = ∞ := by
+    by_contra h
+    have hsub : IntegrableOn (fun y => f y - b) s μ :=
+      ⟨hf.sub aestronglyMeasurable_const,
+        hasFiniteIntegral_iff_enorm.2 (lt_top_iff_ne_top.2 h)⟩
+    simp_rw [sub_eq_add_neg] at hsub
+    exact hfs (integrable_add_const_iff.1 hsub)
+  rw [setLAverage_eq, hint, ENNReal.top_div_of_ne_top hs]
+
+/-- The mean oscillation of `f + b` on a set is that of `f`, for a constant `b`. -/
+theorem setLAverage_enorm_add_const_sub (hf : AEStronglyMeasurable f (μ.restrict s)) (b : F) :
+    ⨍⁻ y in s, ‖f y + b - ⨍ z in s, (f z + b) ∂μ‖ₑ ∂μ =
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 htop
+  by_cases hfs : IntegrableOn f s μ
+  · have havg : ⨍ z in s, (f z + b) ∂μ = ⨍ z in s, f z ∂μ + b := by
+      have h := average_add hfs (integrable_const b)
+      simp only [Pi.add_apply] at h
+      rw [h, setAverage_const h0 htop]
+    simp_rw [havg, add_sub_add_right_eq_sub]
+  · have hfbs : ¬IntegrableOn (fun y => f y + b) s μ := fun h =>
+      hfs (integrable_add_const_iff.1 h)
+    rw [setLAverage_enorm_sub_const_eq_top hf htop hfs,
+      setLAverage_enorm_sub_const_eq_top (f := fun y => f y + b)
+        (hf.add aestronglyMeasurable_const) htop hfbs]
+
+omit [CompleteSpace F] in
+/-- The mean oscillation of `f + g` on a set is at most the sum of those of `f` and `g`. -/
+theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hg : AEStronglyMeasurable g (μ.restrict s)) :
+    ⨍⁻ y in s, ‖f y + g y - ⨍ z in s, (f z + g z) ∂μ‖ₑ ∂μ ≤
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ + ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
+  rcases eq_or_ne (μ s) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  -- Off integrability, one of the oscillations on the right is already infinite.
+  by_cases hfs : IntegrableOn f s μ
+  swap
+  · simp [setLAverage_enorm_sub_const_eq_top hf htop hfs]
+  by_cases hgs : IntegrableOn g s μ
+  swap
+  · simp [setLAverage_enorm_sub_const_eq_top hg htop hgs]
+  have havg : ⨍ z in s, (f z + g z) ∂μ = ⨍ z in s, f z ∂μ + ⨍ z in s, g z ∂μ :=
+    average_add hfs hgs
+  rw [havg, setLAverage_eq, setLAverage_eq, setLAverage_eq, ← ENNReal.add_div]
+  gcongr
+  calc ∫⁻ y in s, ‖f y + g y - (⨍ z in s, f z ∂μ + ⨍ z in s, g z ∂μ)‖ₑ ∂μ
+      ≤ ∫⁻ y in s, (‖f y - ⨍ z in s, f z ∂μ‖ₑ + ‖g y - ⨍ z in s, g z ∂μ‖ₑ) ∂μ :=
+        lintegral_mono fun y => by
+          rw [add_sub_add_comm]
+          exact enorm_add_le _ _
+    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).enorm _
 
 end Oscillation
 
@@ -379,6 +453,47 @@ theorem setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq (hs : μ s
     ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ ≤ ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
   rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hf hfc]
   exact le_add_of_nonneg_right (by positivity)
+
+/-- **Comparison of square mean oscillations on nested sets.** Let `s ⊆ t` with `μ t < ∞`, let `f`
+and `H` be square integrable on `t`, and suppose the square mean oscillation of `H` decays from
+`t` to `s` with factor `K ≥ 0`, measured about the average of `f` on `t`:
+`∫_s ‖H - H_s‖² ≤ K ∫_t ‖H - f_t‖²`. Then the square mean oscillation of `f` decays with the same
+factor, up to the distance between `f` and `H`:
+`∫_s ‖f - f_s‖² ≤ 4K ∫_t ‖f - f_t‖² + (4K + 2) ∫_t ‖f - H‖²`. -/
+theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X → F}
+    (hst : s ⊆ t) (ht : μ t ≠ ⊤) (hf : MemLp f 2 (μ.restrict t)) (hH : MemLp H 2 (μ.restrict t))
+    {K : ℝ} (hK : 0 ≤ K)
+    (hdecay : ∫ x in s, ‖H x - ⨍ y in s, H y ∂μ‖ ^ 2 ∂μ ≤
+      K * ∫ x in t, ‖H x - ⨍ y in t, f y ∂μ‖ ^ 2 ∂μ) :
+    ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ ≤
+      4 * K * ∫ x in t, ‖f x - ⨍ y in t, f y ∂μ‖ ^ 2 ∂μ +
+        (4 * K + 2) * ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := by
+  have hs : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
+  have hHint : ∀ c, IntegrableOn (fun x => ‖H x - c‖ ^ 2) t μ :=
+    hH.integrableOn_norm_sub_sq_of_subset subset_rfl ht
+  have hfH : IntegrableOn (fun x => ‖f x - H x‖ ^ 2) t μ :=
+    (hf.sub hH).integrable_norm_pow two_ne_zero
+  have hE0 : 0 ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := integral_nonneg fun _ => by positivity
+  -- On `s`, compare `f` with the average of `H`, then split off `f - H`.
+  have step1 := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs
+    (hf.integrableOn_of_subset one_le_two hst hs)
+    (hf.integrableOn_norm_sub_sq_of_subset hst hs (⨍ y in s, H y ∂μ))
+  have step2 : ∫ x in s, ‖f x - ⨍ y in s, H y ∂μ‖ ^ 2 ∂μ ≤
+      2 * (∫ x in s, ‖H x - ⨍ y in s, H y ∂μ‖ ^ 2 ∂μ) + 2 * ∫ x in s, ‖f x - H x‖ ^ 2 ∂μ := by
+    simpa only [sub_add_sub_cancel'] using
+      MeasureTheory.setIntegral_norm_add_sq_le ((hHint _).mono_set hst) (hfH.mono_set hst)
+  -- On `t`, compare `H` with the average of `f`.
+  have step3 : ∫ x in t, ‖H x - ⨍ y in t, f y ∂μ‖ ^ 2 ∂μ ≤
+      2 * (∫ x in t, ‖f x - ⨍ y in t, f y ∂μ‖ ^ 2 ∂μ) + 2 * ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := by
+    have hHf : IntegrableOn (fun x => ‖H x - f x‖ ^ 2) t μ := by
+      simpa only [norm_sub_rev (f _)] using hfH
+    simpa only [sub_add_sub_cancel', norm_sub_rev (H _)] using
+      MeasureTheory.setIntegral_norm_add_sq_le
+        (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _) hHf
+  have step4 : ∫ x in s, ‖f x - H x‖ ^ 2 ∂μ ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ :=
+    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+  have := mul_le_mul_of_nonneg_left step3 hK
+  linarith
 
 end InnerProduct
 

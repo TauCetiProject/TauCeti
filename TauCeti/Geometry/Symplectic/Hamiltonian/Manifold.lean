@@ -39,13 +39,17 @@ needed to integrate it to a Hamiltonian flow. Rescaling the form by `c ≠ 0` re
 Hamiltonian vector field by `c⁻¹`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`), and post-composing the
 Hamiltonian with a real function `φ` rescales it pointwise by `φ'`, `X_{φ ∘ f} = φ'(f) X_f`
-(`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`).
+(`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`). The value of `X_f` at `x` only depends on the
+germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
-(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). For a constant
-symplectic form on a vector space, the construction recovers the Hamiltonian vector field of the
-linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
+(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). The orbits of
+`G + f ∘ F`, where `G` is supported in `{F < s}` and `f` is constant on `(-∞, s]`, either stay in
+`{F < s}` as orbits of `G` or lie in a level of `F` as orbits of `f'(c) X_F`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`).
+For a constant symplectic form on a vector space, the construction recovers the Hamiltonian vector
+field of the linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
 
 The **Poisson bracket** of two functions is `{f, g} = σ(X_f, X_g)`
 (`TauCeti.SmoothTwoForm.poissonBracket`), which is `df(X_g)` for a nondegenerate form on a
@@ -81,6 +85,8 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on open preconnected sets of times, with the global case
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`:
+  the dichotomy for the integral curves of `X_{G + f ∘ F}`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback`,
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.prod`: Hamiltonian vector fields under pullback
   along related fields and on products.
@@ -107,7 +113,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -184,12 +190,25 @@ theorem hamiltonianVectorField_def (σ : SmoothTwoForm I M) (f : M → ℝ) (x :
     σ.hamiltonianVectorField f x = (σ.flat x).inverse (mvfderiv I f x) :=
   (rfl)
 
+/-- **The Hamiltonian vector field is local**: at `x` it depends only on the germ of the
+Hamiltonian at `x`. -/
+theorem _root_.Filter.EventuallyEq.hamiltonianVectorField_eq (σ : SmoothTwoForm I M) {x : M}
+    (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg.mvfderiv_eq]
+
 /-- The Hamiltonian vector field of a constant function vanishes. -/
 @[simp]
 theorem hamiltonianVectorField_const (σ : SmoothTwoForm I M) (c : ℝ) :
     σ.hamiltonianVectorField (fun _ ↦ c) = 0 := by
   funext x
   simp [hamiltonianVectorField_def, mvfderiv_const]
+
+/-- The Hamiltonian vector field vanishes at every point near which the Hamiltonian is constant,
+for instance outside the topological support of the Hamiltonian. -/
+theorem hamiltonianVectorField_eq_zero_of_eventuallyEq {x : M} {c : ℝ}
+    (h : f =ᶠ[nhds x] fun _ ↦ c) : σ.hamiltonianVectorField f x = 0 := by
+  rw [hamiltonianVectorField_def, h.mvfderiv_eq]
+  simp [mvfderiv_const]
 
 /-- The Hamiltonian vector field is additive on differentiable functions. -/
 theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
@@ -329,6 +348,68 @@ theorem hamiltonianVectorField_smul_smul {c : ℝ} (hc : c ≠ 0) (f : M → ℝ
     smul_inv_smul₀ hc]
 
 end IsNondegenerate
+
+/-- **Orbits of a Hamiltonian enlarged along the levels of `F`.** Let `G` be supported in
+`{F < s}`, let `f` be constant on `(-∞, s]`, and let `γ` be an integral curve of the Hamiltonian
+vector field of `G + f ∘ F`. Either `γ` stays in `{F < s}` and is an integral curve of `X_G`, or it
+lies in a level `F⁻¹(c)` with `c ≥ s`, along which `X_G` vanishes, and is an integral curve of
+`f'(c) X_F`. -/
+theorem IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp
+    [FiniteDimensional ℝ E]
+    (hσ : σ.IsNondegenerate) {F G : M → ℝ} {f : ℝ → ℝ} (hG : MDifferentiable I 𝓘(ℝ) G)
+    (hF : MDifferentiable I 𝓘(ℝ) F) (hf : Differentiable ℝ f) {s : ℝ}
+    (hGs : tsupport G ⊆ {x | F x < s}) (hfs : ∀ r ≤ s, f r = f s) {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (G + f ∘ F))) :
+    ((∀ t, F (γ t) < s) ∧ IsMIntegralCurve γ (σ.hamiltonianVectorField G)) ∨
+      ∃ c, s ≤ c ∧ (∀ t, F (γ t) = c) ∧ (∀ t, σ.hamiltonianVectorField G (γ t) = 0) ∧
+        IsMIntegralCurve γ (deriv f c • σ.hamiltonianVectorField F) := by
+  have hXH (x : M) : σ.hamiltonianVectorField (G + f ∘ F) x =
+      σ.hamiltonianVectorField G x + deriv f (F x) • σ.hamiltonianVectorField F x := by
+    rw [hamiltonianVectorField_add (hG x) ((hf _).comp_mdifferentiableAt (hF x)),
+      hamiltonianVectorField_comp (hf _) (hF x)]
+  -- `X_G` vanishes off the support of `G`, and `X_{f ∘ F}` vanishes on `{F < s}`.
+  have hXG (x : M) (hx : x ∉ tsupport G) : σ.hamiltonianVectorField G x = 0 :=
+    hamiltonianVectorField_eq_zero_of_eventuallyEq (c := 0)
+      (notMem_tsupport_iff_eventuallyEq.1 hx)
+  have hXf (x : M) (hx : F x < s) : deriv f (F x) • σ.hamiltonianVectorField F x = 0 := by
+    rw [← hamiltonianVectorField_comp (hf _) (hF x)]
+    refine hamiltonianVectorField_eq_zero_of_eventuallyEq (c := f s) ?_
+    filter_upwards [(isOpen_lt hF.continuous continuous_const).mem_nhds hx] with y hy
+    exact hfs _ (le_of_lt hy)
+  by_cases hlt : ∀ t, F (γ t) < s
+  · refine Or.inl ⟨hlt, fun t ↦ ?_⟩
+    have h := hγ t
+    rwa [hXH, hXf _ (hlt t), add_zero] at h
+  push Not at hlt
+  obtain ⟨t₀, ht₀⟩ := hlt
+  -- Off the support of `G`, the field is `f'(F) X_F`, which is tangent to the levels of `F`. So
+  -- the set of times at which `γ` lies in the level of `γ t₀`, which is off the support, is open.
+  have hconst : ∀ t, F (γ t) = F (γ t₀) := by
+    have hγc := hγ.continuous
+    have hopen : IsOpen {t | F (γ t) = F (γ t₀)} := by
+      refine isOpen_iff_mem_nhds.2 fun t ht ↦ ?_
+      have hmem : γ t ∈ (tsupport G)ᶜ := fun h ↦ (hGs h).not_ge (ht.symm ▸ ht₀)
+      obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1
+        ((isClosed_tsupport G).isOpen_compl.preimage hγc) t hmem
+      refine Filter.mem_of_superset (Metric.ball_mem_nhds t hε) fun u hu ↦ ?_
+      have h := (hγ.isMIntegralCurveOn (Metric.ball t ε)).apply_eq_of_mvfderiv_apply_eq_zero
+        Metric.isOpen_ball (convex_ball t ε).isPreconnected (fun v _ ↦ hF _) (fun v hv ↦ ?_)
+        (Metric.mem_ball_self hε) hu
+      · exact h.trans ht
+      rw [hXH, hXG _ (hball hv), zero_add, map_smul,
+        (hσ.isHamiltonianVectorField_hamiltonianVectorField F).mvfderiv_apply_self, smul_zero]
+    have hclosed : IsClosed {t | F (γ t) = F (γ t₀)} :=
+      isClosed_eq (hF.continuous.comp hγc) continuous_const
+    have huniv := IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨t₀, rfl⟩
+    exact fun t ↦ (Set.ext_iff.1 huniv t).2 trivial
+  have hXG' (t : ℝ) : σ.hamiltonianVectorField G (γ t) = 0 :=
+    hXG _ fun h ↦ (hGs h).not_ge ((hconst t).symm ▸ ht₀)
+  refine Or.inr ⟨F (γ t₀), ht₀, hconst, hXG', fun t ↦ ?_⟩
+  have h : σ.hamiltonianVectorField (G + f ∘ F) (γ t) =
+      (deriv f (F (γ t₀)) • σ.hamiltonianVectorField F) (γ t) := by
+    rw [hXH, hXG', zero_add, hconst, Pi.smul_apply]
+  rw [← h]
+  exact hγ t
 
 /-! ### The Poisson bracket -/
 

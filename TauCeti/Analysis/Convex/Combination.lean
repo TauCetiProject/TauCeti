@@ -6,10 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Combination
+public import Mathlib.Analysis.Convex.Between
+public import Mathlib.Basic.Real.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.Topology.Instances.Sign
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Convex combinations: sub-convex combinations and the centroid
@@ -48,8 +54,14 @@ The closed interior of a simplex is the convex hull of its vertices
 of a vector space under an injective affine map `f`, the closed interior is the image under `f` of
 the convex hull of the `x i` (`Affine.Simplex.closedInterior_eq_image_convexHull`, and
 `Affine.Triangle.closedInterior_eq_image_convexHull` for triangles), so questions about a simplex
-can be settled in coordinates. In coordinates, a bound `f x ≤ w` by a linear map `f` that holds
-at the vertices holds on the whole convex hull (`IsLinearMap.le_of_mem_convexHull`).
+can be settled in coordinates. For instance, the closed interior of a simplex in an affine
+space contains the segment between any two of its points
+(`Affine.Simplex.lineMap_mem_closedInterior`). Over `ℝ` this means that a point moving
+linearly in the closed interior and a point moving linearly along a segment disjoint from it never
+meet, so their difference, when parallel to a fixed vector `d`, keeps its sign
+(`Affine.Simplex.pos_iff_pos_of_disjoint`). In coordinates, a bound `f x ≤ w` by a linear map
+`f` that holds at the vertices holds on the whole convex hull
+(`IsLinearMap.le_of_mem_convexHull`).
 
 ## References
 
@@ -286,6 +298,54 @@ theorem closedInterior_eq_image_convexHull {V P : Type*} [AddCommGroup V] [Modul
   have hind : AffineIndependent 𝕜 x := AffineIndependent.of_comp f (hx ▸ s.independent)
   have hmap : s = (⟨x, hind⟩ : Simplex 𝕜 E n).map f hf := Simplex.ext fun j => congrFun hx j
   rw [hmap, closedInterior_map, ← convexHull_eq_closedInterior]
+
+/-- The closed interior of a simplex in an affine space contains the segment between any two of its
+points. -/
+theorem lineMap_mem_closedInterior {V P : Type*} [AddCommGroup V] [Module 𝕜 V] [AddTorsor V P]
+    {n : ℕ} (s : Simplex 𝕜 P n) {x y : P} (hx : x ∈ s.closedInterior)
+    (hy : y ∈ s.closedInterior) {t : 𝕜} (ht : t ∈ Set.Icc (0 : 𝕜) 1) :
+    AffineMap.lineMap x y t ∈ s.closedInterior := by
+  -- Read the simplex in the vector space `V`, through the translation by its first vertex.
+  set e := AffineEquiv.vaddConst 𝕜 (s.points 0)
+  rw [s.closedInterior_eq_image_convexHull (f := e.toAffineMap) e.injective
+    (x := fun k => s.points k -ᵥ s.points 0) (funext fun k => (vsub_vadd _ _).symm)] at hx hy ⊢
+  obtain ⟨u, hu, rfl⟩ := hx
+  obtain ⟨v, hv, rfl⟩ := hy
+  exact ⟨_, (convex_convexHull 𝕜 _).lineMap_mem hu hv ht, e.toAffineMap.apply_lineMap u v t⟩
+
+/-- **Heights over a segment disjoint from a simplex keep their sign.** Let `x`, `y` be points of
+the closed interior of a real simplex and `x'`, `y'` points of a segment disjoint from it, with
+`x - x' = h₀ • d` and `y - y' = h₁ • d`. Then `h₀` and `h₁` have the same sign: moving `x` to `y`
+and `x'` to `y'` linearly, the two moving points never meet, so their height `h₀ + μ (h₁ - h₀)`
+never vanishes. -/
+theorem pos_iff_pos_of_disjoint {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P]
+    {n : ℕ} (s : Simplex ℝ P n) {p₁ p₂ x y x' y' : P} {d : V}
+    (hdisj : ∀ z ∈ s.closedInterior, z ∉ affineSegment ℝ p₁ p₂) (hx : x ∈ s.closedInterior)
+    (hy : y ∈ s.closedInterior) (hx' : x' ∈ affineSegment ℝ p₁ p₂)
+    (hy' : y' ∈ affineSegment ℝ p₁ p₂) {h₀ h₁ : ℝ} (h₀d : h₀ • d = x -ᵥ x')
+    (h₁d : h₁ • d = y -ᵥ y') : 0 < h₀ ↔ 0 < h₁ := by
+  -- The height of the moving point of the simplex over the moving point of the segment.
+  have key (μ : ℝ) (hμ : μ ∈ Set.Icc (0 : ℝ) 1) : h₀ + μ * (h₁ - h₀) ≠ 0 := by
+    intro h
+    obtain ⟨a, ha, rfl⟩ := hx'
+    obtain ⟨a', ha', rfl⟩ := hy'
+    have hq : AffineMap.lineMap (AffineMap.lineMap p₁ p₂ a) (AffineMap.lineMap p₁ p₂ a') μ ∈
+        affineSegment ℝ p₁ p₂ :=
+      ⟨AffineMap.lineMap a a' μ, (convex_Icc (0 : ℝ) 1).lineMap_mem ha ha' hμ,
+        (AffineMap.lineMap p₁ p₂ : ℝ →ᵃ[ℝ] P).apply_lineMap a a' μ⟩
+    have heq : AffineMap.lineMap x y μ =
+        AffineMap.lineMap (AffineMap.lineMap p₁ p₂ a) (AffineMap.lineMap p₁ p₂ a') μ := by
+      rw [← vsub_eq_zero_iff_eq, AffineMap.lineMap_vsub_lineMap, ← h₀d, ← h₁d,
+        AffineMap.lineMap_apply_module, smul_smul, smul_smul, ← add_smul]
+      convert zero_smul ℝ d using 2
+      linear_combination h
+    exact hdisj _ (s.lineMap_mem_closedInterior hx hy hμ) (heq ▸ hq)
+  -- The height never vanishes on the connected interval `[0, 1]`, so it keeps its sign.
+  have hsign := isPreconnected_Icc.sign_eq_of_continuousOn
+    (f := fun μ : ℝ => h₀ + μ * (h₁ - h₀)) (by fun_prop) key
+    (Set.left_mem_Icc.2 zero_le_one) (Set.right_mem_Icc.2 zero_le_one)
+  simp only [zero_mul, add_zero, one_mul, add_sub_cancel] at hsign
+  rw [← sign_eq_one_iff, ← sign_eq_one_iff, hsign]
 
 end Affine.Simplex
 
