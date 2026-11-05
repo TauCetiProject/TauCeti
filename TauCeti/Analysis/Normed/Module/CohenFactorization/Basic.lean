@@ -25,7 +25,8 @@ proves:
 
 * the Cohen–Hewitt factorization theorem: every `x` in the essential part factors as `x = a · y`
   with `‖a‖ ≤ C`, `y` in the closure of `A · x`, and `y` arbitrarily close to `x`;
-* consequently `A · E` is already a closed linear subspace: it equals the essential part.
+* consequently `A · E` is already a closed linear subspace: it equals the essential part;
+* in particular, every element of `A` is a product of two elements of `A`.
 
 ## Implementation notes
 
@@ -42,6 +43,8 @@ Choosing `eₙ` to nearly fix `aₙ⁻¹ · x` as well makes `yₙ = aₙ⁻¹ �
 * `ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span`: the Cohen–Hewitt
   factorization theorem.
 * `ContinuousLinearMap.coe_topologicalClosure_span_range_eq`: the essential part is `A · E`.
+* `TauCeti.exists_mul_eq_of_tendsto_mul_right`: every element of `A` factors as `a * y` with
+  `‖a‖ ≤ C`.
 
 ## References
 
@@ -288,3 +291,24 @@ theorem coe_topologicalClosure_span_range_eq (L : A →L[𝕜] E →L[𝕜] E)
   exact ⟨(a, y), h⟩
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+variable {A : Type*} [NonUnitalNormedRing A] [CompleteSpace A]
+
+/-- **Cohen's factorization theorem** for Banach algebras: if `A` has a left approximate identity
+bounded by `C`, then every element of `A` is a product `a * y` with `‖a‖ ≤ C`. -/
+theorem exists_mul_eq_of_tendsto_mul_right (𝕜 : Type*) [RCLike 𝕜] [NormedSpace 𝕜 A]
+    [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (x : A) :
+    ∃ a y, ‖a‖ ≤ C ∧ a * y = x := by
+  have hL : ∀ a b z : A, ContinuousLinearMap.mul 𝕜 A (a * b) z =
+      ContinuousLinearMap.mul 𝕜 A a (ContinuousLinearMap.mul 𝕜 A b z) := fun a b z ↦ by
+    simp [mul_assoc]
+  have hx := (ContinuousLinearMap.tendsto_apply_iff_mem_topologicalClosure_span _ hL hC hl).1
+    (by simpa using hl x)
+  obtain ⟨a, y, ha, -, -, h⟩ :=
+    ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span _ hL hC hl hx one_pos
+  exact ⟨a, y, ha, by simpa using h⟩
+
+end TauCeti

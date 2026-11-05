@@ -128,7 +128,7 @@ noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMo
     (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
 
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
-theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
+private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient
         (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -452,8 +452,7 @@ theorem coe_weightTorusPoints_pointsMulEquiv (A : Type v) [CommRing A] [Algebra 
   rw [weightTorusPoints]
   exact congrArg _ (congrArg _ (MulEquiv.symm_apply_apply _ q))
 
-/-- The coordinate lift of a numbered root generator induces its named matrix-valued
-root homomorphism over every coefficient algebra. -/
+/-- A lifted numbered root coordinate map evaluates to the named matrix root point. -/
 theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
     (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
@@ -666,21 +665,47 @@ theorem coe_pointsMap {A : Type v} {B : Type w} [CommRing A] [CommRing B] [Algeb
   TauCeti.GeneralLinear.coe_mapHopfIdealPointsSubgroupCongr 7 definingIdeal
     (points_eq_hopfIdealPointsSubgroup A) (points_eq_hopfIdealPointsSubgroup B) f g
 
-/-- The quotient-coordinate equivalence commutes with change of coefficient algebra. -/
--- Match the named equivalence before its composite presentation is simplified.
+/-- Extending a prime-field point applies the structure map to every matrix entry. -/
+theorem coe_pointsMap_ofId (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
+    (g : points (ZMod 3)) :
+    ((pointsMap (Algebra.ofId (ZMod 3) A) g :
+        _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
+      ((g : _root_.Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) :
+        Matrix (Fin 7) (Fin 7) (ZMod 3)).map (algebraMap (ZMod 3) A) := by
+  rw [coe_pointsMap, Algebra.toRingHom_ofId]
+  ext a b
+  exact _root_.Matrix.GeneralLinearGroup.map_apply _ _ _ _
+
+/-- The coordinate-point equivalence is natural in the value algebra. -/
+-- Match the point equivalence before `AlgHom.mapValue_apply` expands its argument.
 @[simp↓]
-theorem pointsMulEquiv_mapPoints {A : Type v} {B : Type w}
-    [CommRing A] [CommRing B] [Algebra (ZMod 3) A] [Algebra (ZMod 3) B]
-    (f : A →ₐ[ZMod 3] B)
-    (q : HopfAlgebra.points (H := carrierAlgebra) (CommAlgCat.of (ZMod 3) A)) :
-    pointsMulEquiv (CommAlgCat.of (ZMod 3) B) (WithConv.toConv (f.comp q.ofConv)) =
+theorem pointsMulEquiv_mapValue {A : Type v} {B : Type w} [CommRing A] [CommRing B]
+    [Algebra (ZMod 3) A] [Algebra (ZMod 3) B] (f : A →ₐ[ZMod 3] B)
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra) (CommAlgCat.of (ZMod 3) A)) :
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) B) (AlgHom.mapValue f q) =
       pointsMap f (pointsMulEquiv (CommAlgCat.of (ZMod 3) A) q) := by
   apply Subtype.ext
-  rw [coe_pointsMulEquiv_apply, coe_pointsMap, coe_pointsMulEquiv_apply]
-  -- Unfold the categorical point homomorphisms to use commutation of the two point maps.
-  erw [CommHopfAlgCat.quotientPointsHom_apply, CommHopfAlgCat.quotientPointsHom_apply]
-  rw [← GeneralLinear.pointsMulEquiv_mapValue]
-  simp only [AlgHom.mapValue_apply, AlgHom.comp_assoc]
+  apply Units.ext
+  rw [coe_pointsMap, coe_pointsMulEquiv_eq_map_carrierGenericMatrix]
+  ext a b
+  rw [Matrix.map_apply, Matrix.GeneralLinearGroup.map_apply]
+  have h := congrFun (congrFun (coe_pointsMulEquiv_eq_map_carrierGenericMatrix q) a) b
+  rw [h, AlgHom.mapValue_apply, Matrix.map_apply]
+  rw [WithConv.ofConv_toConv, _root_.AlgHom.comp_apply, _root_.AlgHom.coe_toRingHom]
+
+/-- Extending a prime-field coordinate point agrees with coefficient change on matrix-valued
+carrier points. -/
+@[simp]
+theorem pointsMulEquiv_extendPoint (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) (ZMod 3))) :
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
+        (HopfAlgebra.extendPoint carrierAlgebra (CommAlgCat.of (ZMod 3) A) q) =
+      pointsMap (Algebra.ofId (ZMod 3) A)
+        (pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3)) q) := by
+  rw [← HopfAlgebra.mapValue_extendPoint _ (A := CommAlgCat.of (ZMod 3) (ZMod 3))
+      (Algebra.ofId (ZMod 3) A),
+    HopfAlgebra.extendPoint_self, pointsMulEquiv_mapValue]
 
 /-- The identity algebra homomorphism induces the identity on carrier points. -/
 @[simp]

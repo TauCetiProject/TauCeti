@@ -75,48 +75,12 @@ namespace TauCeti.WeakDerivStep
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E}
 
-/-! ### Norms of a path with a smooth compactly supported representative -/
+/-! ### Restriction of a path with a smooth compactly supported representative -/
 
 section Smooth
 
 variable {u : WeakDerivStep volume ⊤ 2
   (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → E}
-
-/-- The squared `L²` norm of a path is the integral of the squared norm of a representative. -/
-private theorem norm_prev_sq_eq_integral
-    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    ‖prev _ u‖ ^ 2 = ∫ s, ‖φ s‖ ^ 2 := by
-  rw [← Lp.integral_norm_sq_eq_norm_sq,
-    integral_congr_ae (g := fun s ↦ ‖φ s‖ ^ 2) (hu.mono fun s hs ↦ by rw [hs])]
-  simp
-
-/-- The squared `L²` norm of the weak derivative is that of the classical derivative of a `C¹`
-representative. -/
-private theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
-    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    ‖weakFDeriv _ u‖ ^ 2 = ∫ s, ‖deriv φ s‖ ^ 2 := by
-  have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
-    ((hφ.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-    fun s _ ↦ hφ.differentiable one_ne_zero s
-  rw [← Lp.integral_norm_sq_eq_norm_sq,
-    integral_congr_ae (g := fun s ↦ ‖fderiv ℝ φ s‖ ^ 2) (hw.mono fun s hs ↦ by rw [hs])]
-  simp [← toSpanSingleton_deriv]
-
-/-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
-`∫ ‖φ' + A φ‖²`. -/
-private theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
-    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ)
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    ‖trajectoryOperator AL u‖ ^ 2 = ∫ s, ‖deriv φ s + A s (φ s)‖ ^ 2 := by
-  have hTu := trajectoryOperator_apply_ae_eq_deriv_add AL u hu
-    ((hφ.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-    fun s _ ↦ hφ.differentiable one_ne_zero s
-  rw [← Lp.integral_norm_sq_eq_norm_sq,
-    integral_congr_ae (g := fun s ↦ ‖deriv φ s + A s (φ s)‖ ^ 2) (by
-      filter_upwards [hTu, hAL] with s hs hAs
-      rw [hs, hAs])]
-  simp
 
 /-- Restriction to `(-R', R')` controls the `L²` norm of a representative on `[-R, R]`. -/
 private theorem integral_Icc_le_norm_restrictBaseL_sq (hφ : Continuous φ)

@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import Mathlib.Algebra.Lie.Derivation.BaseChange
+public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.LinearAlgebra.LinearMap.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
-# Lie derivations after extension of scalars
+# Derivations after extension of scalars
 
 Let `L` be a Lie algebra over a commutative ring `R` and let `A` be a commutative `R`-algebra.
 A Lie derivation of `L` with values in a Lie `L`-module `M` extends to an `A`-linear derivation
@@ -55,6 +56,25 @@ The core construction, additive compatibility, pure-tensor formula, underlying-m
 and injectivity apply to
 any Lie `L`-module `M`. The comparison with Mathlib's endomorphism extension, the Lie-homomorphism
 bundle, inner derivations, and ideal descent specialize to `M = L`.
+
+## Derivations of algebras
+
+The same extension applies to the derivations `TauCeti.derivationLieAlgebra R A` of an arbitrary
+non-unital non-associative `R`-algebra `A`: for a commutative `R`-algebra `S`, a derivation `D` of
+`A` extends to the `S`-linear derivation `s ⊗ a ↦ s ⊗ D a` of `S ⊗[R] A`, which is the unique
+`S`-linear derivation sending `1 ⊗ a` to `1 ⊗ D a`. For a finite coefficient algebra such as the
+dual numbers `S = R[ε]/(ε²)`, this is how a derivation of `A` acts on the deformation `S ⊗[R] A`,
+where `1 + ε D` is a first-order automorphism.
+
+* `TauCeti.derivationLieAlgebra.baseChange`: the extension of `D` to `S ⊗[R] A`.
+* `TauCeti.derivationLieAlgebra.eq_baseChange_iff`: the extension is determined by its values on
+  `1 ⊗ a`.
+* `TauCeti.derivationLieAlgebra.baseChangeHom`: extension of scalars as an `R`-linear homomorphism
+  of Lie algebras.
+* `TauCeti.derivationLieAlgebra.baseChange_innerDerivation`: for associative `A`, the inner
+  derivation at `z` extends to the inner derivation at `1 ⊗ z`.
+* `TauCeti.derivationLieAlgebra.baseChange_injective`: over a faithfully flat coefficient algebra,
+  no information is lost.
 -/
 
 public section
@@ -239,3 +259,130 @@ theorem mapsTo_baseChange_lieIdeal_iff (I J : LieIdeal R L) :
 end FaithfullyFlat
 
 end LieDerivation
+
+namespace TauCeti
+
+namespace derivationLieAlgebra
+
+universe u v w
+
+section NonAssoc
+
+variable {R : Type u} {A : Type v} [CommRing R] [NonUnitalNonAssocRing A] [Module R A]
+  [SMulCommClass R A A] [IsScalarTower R A A]
+variable (S : Type w) [CommRing S] [Algebra R S]
+
+/-- **Extension of scalars of a derivation**: a derivation `D` of the `R`-algebra `A` extends to
+the `S`-linear derivation `s ⊗ a ↦ s ⊗ D a` of `S ⊗[R] A`, whose underlying map is
+`LinearMap.baseChange`. -/
+def baseChange (D : derivationLieAlgebra R A) : derivationLieAlgebra S (S ⊗[R] A) :=
+  ⟨(D : Module.End R A).baseChange S, mem_derivationLieAlgebra.2 fun x y => by
+    induction x using TensorProduct.inductionOn with
+    | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']; abel
+    | tmul s a =>
+      induction y using TensorProduct.inductionOn with
+      | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']; abel
+      | tmul t b => simp [tmul_add]⟩
+
+/-- The linear map underlying the extension of `D` is the extension of the linear map underlying
+`D`. -/
+theorem coe_baseChange (D : derivationLieAlgebra R A) :
+    (baseChange S D : Module.End S (S ⊗[R] A)) = (D : Module.End R A).baseChange S :=
+  (rfl)
+
+/-- The extended derivation differentiates the second factor of a pure tensor. -/
+@[simp]
+theorem baseChange_tmul (D : derivationLieAlgebra R A) (s : S) (a : A) :
+    (baseChange S D : Module.End S (S ⊗[R] A)) (s ⊗ₜ[R] a) = s ⊗ₜ[R] (D : Module.End R A) a := by
+  rw [coe_baseChange, LinearMap.baseChange_tmul]
+
+variable {S} in
+/-- **Uniqueness of the extension**: an `S`-linear derivation of `S ⊗[R] A` is the extension of
+`D` exactly when it sends each `1 ⊗ a` to `1 ⊗ D a`. -/
+theorem eq_baseChange_iff {D : derivationLieAlgebra R A} {E : derivationLieAlgebra S (S ⊗[R] A)} :
+    E = baseChange S D ↔
+      ∀ a : A, (E : Module.End S (S ⊗[R] A)) (1 ⊗ₜ[R] a) = 1 ⊗ₜ[R] (D : Module.End R A) a := by
+  refine ⟨fun h a => by rw [h, baseChange_tmul], fun h => ?_⟩
+  ext z
+  induction z using TensorProduct.inductionOn with
+  | add z z' hz hz' => rw [map_add, map_add, hz, hz']
+  | tmul s a =>
+    have hs : s ⊗ₜ[R] a = s • (1 : S) ⊗ₜ[R] a := by rw [smul_tmul', smul_eq_mul, mul_one]
+    rw [hs, map_smul, map_smul, h a, baseChange_tmul]
+
+/-- The zero derivation extends to the zero derivation. -/
+@[simp]
+theorem baseChange_zero : baseChange S (0 : derivationLieAlgebra R A) = 0 :=
+  (eq_baseChange_iff.2 fun a => by simp).symm
+
+/-- Extension of scalars is additive in the derivation. -/
+@[simp]
+theorem baseChange_add (D E : derivationLieAlgebra R A) :
+    baseChange S (D + E) = baseChange S D + baseChange S E :=
+  (eq_baseChange_iff.2 fun a => by simp [tmul_add]).symm
+
+/-- Extension of scalars turns scalars of `R` into their images in `S`. -/
+@[simp]
+theorem baseChange_smul (r : R) (D : derivationLieAlgebra R A) :
+    baseChange S (r • D) = algebraMap R S r • baseChange S D :=
+  (eq_baseChange_iff.2 fun a => by simp [algebraMap_smul, tmul_smul]).symm
+
+/-- Extension of scalars is compatible with the commutator bracket of derivations. -/
+@[simp]
+theorem baseChange_lie (D E : derivationLieAlgebra R A) :
+    baseChange S ⁅D, E⁆ = ⁅baseChange S D, baseChange S E⁆ :=
+  (eq_baseChange_iff.2 fun a => by simp [Ring.lie_def, tmul_sub]).symm
+
+/-- Extension of scalars commutes with negation of derivations. -/
+@[simp]
+theorem baseChange_neg (D : derivationLieAlgebra R A) :
+    baseChange S (-D) = -baseChange S D :=
+  (eq_baseChange_iff.2 fun a => by simp [tmul_neg]).symm
+
+/-- Extension of scalars commutes with subtraction of derivations. -/
+@[simp]
+theorem baseChange_sub (D E : derivationLieAlgebra R A) :
+    baseChange S (D - E) = baseChange S D - baseChange S E :=
+  (eq_baseChange_iff.2 fun a => by simp [tmul_sub]).symm
+
+/-- Extension of scalars as an `R`-linear homomorphism of Lie algebras. The extended derivations
+are `S`-linear, and their coefficient scalars are restricted to `R` for this homomorphism. -/
+def baseChangeHom : derivationLieAlgebra R A →ₗ⁅R⁆
+    RestrictScalars R S (derivationLieAlgebra S (S ⊗[R] A)) where
+  toFun := baseChange S
+  map_add' := baseChange_add S
+  map_smul' := baseChange_smul S
+  map_lie' := baseChange_lie S _ _
+
+/-- The bundled homomorphism applies as the extended derivation. -/
+@[simp]
+theorem baseChangeHom_apply (D : derivationLieAlgebra R A) :
+    baseChangeHom S D = baseChange S D :=
+  (rfl)
+
+variable [Module.FaithfullyFlat R S]
+
+/-- Over a faithfully flat coefficient algebra no information is lost by extending a derivation:
+two derivations agreeing after extension of scalars are equal. -/
+theorem baseChange_injective :
+    Function.Injective (baseChange S : derivationLieAlgebra R A → _) := fun D E h =>
+  Subtype.ext <| LinearMap.baseChange_injective (A := S) <| by
+    rw [← coe_baseChange, ← coe_baseChange, h]
+
+end NonAssoc
+
+section Associative
+
+variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A]
+variable (S : Type w) [CommRing S] [Algebra R S]
+
+/-- The extension of the inner derivation at `z` is the inner derivation at `1 ⊗ z`. -/
+@[simp]
+theorem baseChange_innerDerivation (z : A) :
+    baseChange S (innerDerivation R z) = innerDerivation S ((1 : S) ⊗ₜ[R] z) :=
+  (eq_baseChange_iff.2 fun a => by simp [Ring.lie_def, tmul_sub]).symm
+
+end Associative
+
+end derivationLieAlgebra
+end TauCeti

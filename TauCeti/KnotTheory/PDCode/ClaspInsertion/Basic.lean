@@ -204,15 +204,11 @@ private theorem claspFun_ne (he : IsPerfectMatching e) (hqp : q ≠ p) (hqe : q 
 of the old half-edges and the eight new slots. -/
 private def claspMatching (e : Perm α) (he : IsPerfectMatching e) (p q : α) (hqp : q ≠ p)
     (hqe : q ≠ e p) : PerfectMatching ((α ⊕ Fin 4) ⊕ Fin 4) :=
-  PerfectMatching.mk (Function.Involutive.toPerm _ (claspFun_involutive he hqp hqe))
-    (claspFun_involutive he hqp hqe) (claspFun_ne he hqp hqe)
+  PerfectMatching.ofInvolutive (claspFun_involutive he hqp hqe) (claspFun_ne he hqp hqe)
 
 private theorem claspMatching_val_apply (he : IsPerfectMatching e) (hqp : q ≠ p) (hqe : q ≠ e p)
     (y : (α ⊕ Fin 4) ⊕ Fin 4) : (claspMatching e he p q hqp hqe).val y = claspFun e p q y := by
-  have h : (claspMatching e he p q hqp hqe).val =
-      Function.Involutive.toPerm _ (claspFun_involutive he hqp hqe) :=
-    PerfectMatching.val_mk _ _ _
-  rw [h, Function.Involutive.coe_toPerm]
+  rw [claspMatching, PerfectMatching.ofInvolutive_apply]
 
 section Smoothing
 

@@ -7,18 +7,30 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Compact operators on quotients and bounded sequences
 
 This file records sequential consequences of compactness for bounded sequences in seminormed
 spaces. These give the subsequence and separation arguments used in Riesz theory for compact
-perturbations of the identity. It also shows that a compact operator descends to a compact
-operator on the quotient by a submodule of its kernel, and characterizes compact operators into
-complete spaces by total boundedness of the image of a closed ball.
+perturbations of the identity. It also shows that the compact operators form a two-sided ideal of
+the algebra of bounded operators, that a compact operator descends to a compact operator on the
+quotient by a submodule of its kernel, and characterizes compact operators into complete spaces by
+total boundedness of the image of a closed ball.
+
+The ideal property also controls perturbations that are compact only relative to an operator `T`:
+if `K T` is compact, then replacing `F` by `F + K` keeps `(F² - 1) T` compact, provided `[F, T]`
+is compact, and keeps `[F, T]` compact when `T K` is compact as well. These are the rules behind
+the compact perturbations of Fredholm modules.
 
 ## Main declarations
 
+* `IsCompactOperator.mul_left`, `IsCompactOperator.mul_right`: products of a compact operator
+  with a bounded operator, on either side, are compact.
+* `ContinuousLinearMap.isCompactOperator_add_commutator`,
+  `ContinuousLinearMap.isCompactOperator_add_mul_self_sub_one_mul`: the conditions `[F, T]` and
+  `(F² - 1) T` compact survive perturbing `F` by an operator `K` compact relative to `T`.
 * `IsCompactOperator.exists_subseq_tendsto`: a compact operator sends a bounded sequence
   to a sequence with a convergent subsequence.
 * `IsCompactOperator.exists_dist_lt_of_norm_le`: a compact operator cannot keep the
@@ -37,6 +49,24 @@ namespace IsCompactOperator
 
 open Filter
 open scoped Topology
+
+section Mul
+
+variable {R : Type*} [Semiring R] {M : Type*} [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+
+/-- A bounded operator times a compact operator is compact. -/
+theorem mul_left {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
+    IsCompactOperator (S * T) := by
+  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
+  exact hT.clm_comp S
+
+/-- A compact operator times a bounded operator is compact. -/
+theorem mul_right {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
+    IsCompactOperator (T * S) := by
+  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
+  exact hT.comp_clm S
+
+end Mul
 
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
@@ -83,6 +113,37 @@ theorem liftQL {S : Submodule R₁ M} {f : M →SL[σ] N} (hf : IsCompactOperato
 end Quotient
 
 end IsCompactOperator
+
+namespace ContinuousLinearMap
+
+section Perturbation
+
+variable {R : Type*} [Ring R] {M : Type*} [TopologicalSpace M] [AddCommGroup M]
+  [IsTopologicalAddGroup M] [Module R M]
+
+/-- If `[F, T]` is compact and so are `K T` and `T K`, then `[F + K, T]` is compact. -/
+theorem isCompactOperator_add_commutator {F K T : M →L[R] M}
+    (hc : IsCompactOperator ⇑(F * T - T * F)) (hK : IsCompactOperator ⇑(K * T))
+    (hK' : IsCompactOperator ⇑(T * K)) : IsCompactOperator ⇑((F + K) * T - T * (F + K)) := by
+  have e : (F + K) * T - T * (F + K) = (F * T - T * F) + K * T - T * K := by
+    noncomm_ring
+  rw [e, FunLike.coe_sub, FunLike.coe_add]
+  exact (hc.add hK).sub hK'
+
+/-- If `[F, T]`, `(F² - 1) T` and `K T` are compact, then `((F + K)² - 1) T` is compact. -/
+theorem isCompactOperator_add_mul_self_sub_one_mul {F K T : M →L[R] M}
+    (hc : IsCompactOperator ⇑(F * T - T * F)) (hs : IsCompactOperator ⇑((F * F - 1) * T))
+    (hK : IsCompactOperator ⇑(K * T)) : IsCompactOperator ⇑(((F + K) * (F + K) - 1) * T) := by
+  have e : ((F + K) * (F + K) - 1) * T = (F * F - 1) * T + F * (K * T) + (K * T) * F +
+      K * (F * T - T * F) + K * (K * T) := by
+    noncomm_ring
+  simp only [e, FunLike.coe_add]
+  exact ((((hs.add (hK.mul_left F)).add (hK.mul_right F)).add (hc.mul_left K)).add
+    (hK.mul_left K))
+
+end Perturbation
+
+end ContinuousLinearMap
 
 section TotallyBounded
 

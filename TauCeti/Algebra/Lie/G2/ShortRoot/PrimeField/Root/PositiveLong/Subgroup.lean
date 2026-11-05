@@ -238,7 +238,7 @@ theorem pointsMulEquiv_positiveLongRootSubgroupCoordinateMap (i : Fin 2)
     CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom]
   -- The functor composite and the native point group use definitionally equal group instances.
   erw [HopfAlgebra.innerConjugationPointNatIso_hom_app_apply, map_mul, map_mul, map_inv]
-  erw [HopfAlgebra.extendPoint_apply, pointsMulEquiv_mapPoints, MulEquiv.apply_symm_apply,
+  erw [pointsMulEquiv_extendPoint, MulEquiv.apply_symm_apply,
     pointsMap_positiveLongRootConjugator, pointsMulEquiv_commonKernelLift_root]
   exact (positiveLongRootSubgroupPoints_apply i A _).symm
 

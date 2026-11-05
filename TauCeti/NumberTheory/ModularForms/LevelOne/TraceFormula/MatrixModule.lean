@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
@@ -170,6 +171,17 @@ theorem toGL_traceFormulaMatrixRight (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceF
   rw [Units.val_mul, FixedDetMatrices.coe_toGL, FixedDetMatrices.coe_toGL,
     Matrix.SpecialLinearGroup.mapGL_coe_matrix, val_traceFormulaMatrixRight]
   exact Matrix.map_mul (f := Int.castRingHom ℚ)
+
+/-- For `n ≠ 0`, a determinant-`n` matrix and its negative act in the same way on the cusps
+`ℙ¹(ℚ)`. -/
+theorem toGL_neg_smul (hn : n ≠ 0) (A : TraceFormulaMatrix n) (α : OnePoint ℚ) :
+    FixedDetMatrices.toGL hn (-A) • α = FixedDetMatrices.toGL hn A • α := by
+  cases α with
+  | infty => simp [OnePoint.smul_infty_eq_ite, neg_div_neg_eq]
+  | coe c =>
+    simp only [OnePoint.smul_some_eq_ite, FixedDetMatrices.coe_toGL, TraceFormulaMatrix.val_neg,
+      Matrix.map_apply, Matrix.neg_apply, Int.cast_neg, neg_mul, ← neg_add, neg_eq_zero,
+      neg_div_neg_eq]
 
 /-- Left multiplication makes `ℳₙ` an `SL(2, ℤ)`-set. -/
 instance (n : ℤ) : SMul SL(2, ℤ) (TraceFormulaMatrixModule n) where
