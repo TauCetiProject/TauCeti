@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Complex.Basic
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Nat.Choose.Cast
-public import Mathlib.Basic.Real.Basic
 import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NormNum
@@ -23,7 +22,7 @@ when the graded complex contains all vertices. Thus an isolated vertex is retain
 ambient vertex type rather than by extra data in the carrier.
 
 The complete complex contains every pair and triple. Its face counts are provided both as
-binomial coefficients and as real polynomial formulas, for use in normalizing sums over
+binomial coefficients and as polynomial formulas in division rings, for use in normalizing sums over
 edges and triangles.
 -/
 
@@ -193,14 +192,14 @@ theorem card_triangles_complete : (complete V).triangles.card = (Fintype.card V)
   classical
   exact card_powersetCard 3 univ
 
-/-- The real edge count, with subtraction in `ℝ` rather than in `ℕ`. -/
-theorem card_edges_complete_cast :
-    ((complete V).edges.card : ℝ) = Fintype.card V * (Fintype.card V - 1) / 2 := by
+/-- The edge count in a division ring, with subtraction there rather than in `ℕ`. -/
+theorem natCast_card_edges_complete {K : Type*} [DivisionRing K] [NeZero (2 : K)] :
+    ((complete V).edges.card : K) = Fintype.card V * (Fintype.card V - 1) / 2 := by
   rw [card_edges_complete, Nat.cast_choose_two]
 
-/-- The real triangle count, valid also when fewer than three vertices are available. -/
-theorem card_triangles_complete_cast :
-    ((complete V).triangles.card : ℝ) =
+/-- The triangle count in a characteristic-zero division ring, valid also below three vertices. -/
+theorem natCast_card_triangles_complete {K : Type*} [DivisionRing K] [CharZero K] :
+    ((complete V).triangles.card : K) =
       Fintype.card V * (Fintype.card V - 1) * (Fintype.card V - 2) / 6 := by
   rw [card_triangles_complete, Nat.cast_choose_eq_descPochhammer_div]
   norm_num [descPochhammer_succ_eval, Nat.factorial_succ]
