@@ -35,17 +35,16 @@ theorem bivector_mul_self (a b : M) :
     bivector Q a b * bivector Q a b =
       algebraMap R (CliffordAlgebra Q) ((⅟(2 : R) * QuadraticMap.polar Q a b) ^ 2 - Q a * Q b) := by
   set s := algebraMap R (CliffordAlgebra Q) (⅟(2 : R) * QuadraticMap.polar Q a b) with hs
-  have hscomm (x : CliffordAlgebra Q) : s * x = x * s := Algebra.commutes _ x
+  have hscomm : s * (ι Q a * ι Q b) = ι Q a * ι Q b * s := Algebra.commutes _ _
   have hpolar : algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q a b) = s + s := by
     rw [hs, ← map_add, ← add_mul, invOf_two_add_invOf_two, one_mul]
   have hbiv : bivector Q a b = ι Q a * ι Q b - s := by
     rw [ι_mul_ι_eq_bivector_add, hs, map_mul, ← Algebra.smul_def, add_sub_cancel_right]
   have habab : ι Q a * ι Q b * (ι Q a * ι Q b) =
       (s + s) * (ι Q a * ι Q b) - algebraMap R (CliffordAlgebra Q) (Q a * Q b) := by
-    rw [← mul_assoc, ι_mul_ι_mul_ι, map_sub, map_smul, map_smul, sub_mul, smul_mul_assoc,
-      smul_mul_assoc, ι_sq_scalar, Algebra.smul_def, hpolar, Algebra.smul_def,
-      ← map_mul (algebraMap R (CliffordAlgebra Q))]
-  rw [map_sub, map_pow, sq, hbiv, sub_mul, mul_sub, mul_sub, habab, ← hscomm (ι Q a * ι Q b)]
-  noncomm_ring
+    rw [← mul_assoc, ι_mul_ι_mul_ι]
+    simp [sub_mul, mul_assoc, Algebra.smul_def, hpolar]
+  rw [map_sub, map_pow, sq, hbiv]
+  noncomm_ring [habab, hscomm]
 
 end CliffordAlgebra

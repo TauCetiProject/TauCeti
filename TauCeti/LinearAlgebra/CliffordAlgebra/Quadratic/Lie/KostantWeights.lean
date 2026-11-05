@@ -108,9 +108,8 @@ private theorem exists_rootInvolution_eq_bivector {χ : Weight K H L} (hχ : χ.
 private theorem rootInvolution_mul_self {χ : Weight K H L} (hχ : χ.IsNonZero) :
     rootInvolution H χ * rootInvolution H χ = 1 := by
   obtain ⟨e, he, f, hf, hef, hX⟩ := exists_rootInvolution_eq_bivector H hχ
-  rw [hX, bivector_mul_self, killingQuadraticForm_eq_zero_of_mem_rootSpace H hχ he,
-    killingQuadraticForm_eq_zero_of_mem_rootSpace H (Weight.IsNonZero.neg hχ) hf,
-    polar_killingQuadraticForm, hef, mul_one, invOf_mul_self, one_pow, mul_zero, sub_zero, map_one]
+  simp [hX, bivector_mul_self, killingQuadraticForm_eq_zero_of_mem_rootSpace H hχ he,
+    killingQuadraticForm_eq_zero_of_mem_rootSpace H (Weight.IsNonZero.neg hχ) hf, hef]
 
 /-- The elements `X_χ` and `X_ψ` commute unless `ψ = ± χ`: they are bivectors of mutually orthogonal
 hyperbolic pairs. -/
