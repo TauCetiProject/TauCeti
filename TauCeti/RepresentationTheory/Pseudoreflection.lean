@@ -42,9 +42,9 @@ group of every codimension-one point of `Spec Sym(V*)`, so the residual quotient
 * `Representation.fixedSubmodule_inv`: an element and its inverse have the same fixed space.
 * `Representation.finrank_fixedSubmodule_eq_iff_mem_ker`: in finite dimension, the fixed space of
   an element is the whole space exactly when the element acts trivially.
-* `Representation.finrank_quotient_fixedSubmodule_dual`: the fixed spaces of `g` on `V` and on the
-  dual `V*` have the same codimension, so `ρ` and its contragredient `ρ.dual` have the same
-  pseudoreflections.
+* `Representation.finrank_quotient_fixedSubmodule_dual`: the quotients of `V` and of the dual `V*`
+  by the fixed spaces of `g` have the same `finrank`, so `ρ` and its contragredient `ρ.dual` have
+  the same pseudoreflections.
 * `Representation.pseudoreflectionSubgroup_le_iff`: a subgroup contains the pseudoreflection
   subgroup exactly when it contains every pseudoreflection.
 * `Representation.normal_pseudoreflectionSubgroup`: the pseudoreflection subgroup is normal.
@@ -90,9 +90,9 @@ theorem finrank_fixedSubmodule_eq_iff_mem_ker [FiniteDimensional K V] {g : G} :
   rw [MonoidHom.mem_ker, Module.End.one_eq_id, ← LinearMap.fixedSubmodule_eq_top_iff]
   exact ⟨Submodule.eq_top_of_finrank_eq, fun h ↦ by rw [h, finrank_top]⟩
 
-/-- The fixed spaces of `g` on `V` and on the dual space `V*`, acted on by the contragredient
-representation, have the same codimension. Thus `ρ` and `ρ.dual` have the same
-pseudoreflections. -/
+/-- The quotients of `V` and of the dual space `V*`, acted on by the contragredient representation,
+by the fixed spaces of `g` have the same `finrank`. In finite dimension the two fixed spaces thus
+have the same codimension, and `ρ` and `ρ.dual` have the same pseudoreflections. -/
 theorem finrank_quotient_fixedSubmodule_dual (g : G) :
     Module.finrank K (Module.Dual K V ⧸ (ρ.dual g).fixedSubmodule) =
       Module.finrank K (V ⧸ (ρ g).fixedSubmodule) := by
