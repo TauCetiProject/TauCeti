@@ -11,6 +11,7 @@ import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Combinatorics.Enumerative.DyckWord
 public import TauCeti.Data.List.OfFn
 
 /-!
@@ -81,6 +82,9 @@ def par (w : ℕ → ℕ) (v : ℕ) : ℕ := w (v - 1)
 /-- The number of up steps among the first `n` steps. -/
 def ups (s : ℕ → Bool) (n : ℕ) : ℕ := #{i ∈ range n | s i}
 
+/-- There are no up steps in an empty prefix. -/
+@[simp] theorem ups_zero (s : ℕ → Bool) : ups s 0 = 0 := by simp [ups]
+
 private theorem depth_succ_of_le {w : ℕ → ℕ} {t : ℕ} (h : w t ≤ t) :
     depth w (t + 1) = depth w (w t) + 1 := by
   rw [depth, min_eq_left h]
@@ -97,7 +101,8 @@ variable (s : ℕ → Bool)
 @[simp] theorem walkOf_up {j : ℕ} (h : s j = true) : walkOf s (j + 1) = j + 1 := by
   simp [walkOf, h]
 
-private theorem walkOf_le : ∀ j, walkOf s j ≤ j := by
+/-- The vertex visited at time `j` has label at most `j`. -/
+theorem walkOf_le : ∀ j, walkOf s j ≤ j := by
   intro j
   induction j using Nat.strong_induction_on with
   | _ j ih =>
@@ -110,7 +115,8 @@ private theorem walkOf_le : ∀ j, walkOf s j ≤ j := by
       · exact (ih _ (Nat.lt_succ_of_le (min_le_right _ _))).trans
           ((min_le_right _ _).trans (Nat.le_succ _))
 
-private theorem walkOf_down {j : ℕ} (h : s j = false) :
+/-- A down step returns to the parent of the current vertex. -/
+theorem walkOf_down {j : ℕ} (h : s j = false) :
     walkOf s (j + 1) = walkOf s (walkOf s j - 1) := by
   have : walkOf s j - 1 ≤ j := (Nat.sub_le _ _).trans (walkOf_le s j)
   simp [walkOf, h, min_eq_left this]
@@ -120,7 +126,8 @@ private theorem walkOf_succ_le_of_down {j : ℕ} (h : s j = false) : walkOf s (j
   rw [walkOf_down s h]
   exact (walkOf_le s _).trans this
 
-@[simp] private theorem walkOf_succ_eq_iff {j : ℕ} : walkOf s (j + 1) = j + 1 ↔ s j = true := by
+/-- A step discovers a new vertex exactly when it is marked as an up step. -/
+@[simp] theorem walkOf_succ_eq_iff {j : ℕ} : walkOf s (j + 1) = j + 1 ↔ s j = true := by
   constructor
   · intro h
     by_contra hs
@@ -144,7 +151,8 @@ private theorem walkOf_succ_le_of_down {j : ℕ} (h : s j = false) : walkOf s (j
 
 end WalkOf
 
-private theorem ups_succ (s : ℕ → Bool) (n : ℕ) :
+/-- The number of up steps in a prefix after one more step. -/
+theorem ups_succ (s : ℕ → Bool) (n : ℕ) :
     ups s (n + 1) = ups s n + if s n then 1 else 0 := by
   unfold ups
   rw [range_add_one, filter_insert]
@@ -152,7 +160,8 @@ private theorem ups_succ (s : ℕ → Bool) (n : ℕ) :
   · rw [card_insert_of_notMem (by simp)]
   · simp
 
-private theorem ups_le (s : ℕ → Bool) (n : ℕ) : ups s n ≤ n := by
+/-- A prefix of length `n` contains at most `n` up steps. -/
+theorem ups_le (s : ℕ → Bool) (n : ℕ) : ups s n ≤ n := by
   unfold ups
   exact (card_filter_le _ _).trans (by simp)
 
@@ -166,6 +175,7 @@ namespace IsDyckPattern
 
 variable {k : ℕ} {s : ℕ → Bool}
 
+/-- The depth after `n` steps is the number of up steps minus the number of down steps so far. -/
 theorem depth_walkOf (hs : IsDyckPattern k s) :
     ∀ n ≤ 2 * k, (depth (walkOf s) (walkOf s n) : ℤ) = 2 * ups s n - n := by
   intro n
@@ -204,11 +214,13 @@ private theorem one_le_walkOf (hs : IsDyckPattern k s) {n : ℕ} (hn : n < 2 * k
   have hd : 1 ≤ depth (walkOf s) (walkOf s n) := by omega
   exact Nat.one_le_iff_ne_zero.mpr fun h => by simp [h, depth] at hd
 
+/-- The walk of a Dyck pattern returns to the root at time `2 * k`. -/
 theorem walkOf_two_mul (hs : IsDyckPattern k s) : walkOf s (2 * k) = 0 := by
   have := hs.depth_walkOf (2 * k) le_rfl
   rw [hs.ups_eq] at this
   exact (depth_eq_zero_iff (w := walkOf s)).mp (by omega)
 
+/-- After the endpoint at time `2 * k`, the walk of a Dyck pattern remains at the root. -/
 theorem walkOf_eq_zero (hs : IsDyckPattern k s) {i : ℕ} (hi : 2 * k ≤ i) : walkOf s i = 0 := by
   induction i, hi using Nat.le_induction with
   | base => exact hs.walkOf_two_mul
@@ -525,6 +537,7 @@ theorem step_down {j : ℕ} (hj : j < 2 * k) (hn : ¬ w (j + 1) = j + 1) :
   simp only [nsmul_eq_mul, mul_neg, mul_one] at hlt
   linarith
 
+/-- Up steps reconstruct the original tree walk on its full interval of definition. -/
 theorem walkOf_upSteps : ∀ j ≤ 2 * k, walkOf (upSteps k w) j = w j := by
   intro j
   induction j using Nat.strong_induction_on with
@@ -571,7 +584,8 @@ private theorem depth_eq_ups : ∀ n ≤ 2 * k,
       push_cast
       omega
 
-private theorem isDyckPattern_upSteps : IsDyckPattern k (upSteps k w) where
+/-- The up-step pattern of a tree walk is a Dyck pattern. -/
+theorem isDyckPattern_upSteps : IsDyckPattern k (upSteps k w) where
   ups_eq := by
     unfold ups
     refine Eq.trans ?_ hw.card_up
@@ -607,12 +621,6 @@ private theorem count_take_U (l : List DyckStep) (n : ℕ) :
     | none => simp [stepsOf, hl]
     | some x => cases x <;> simp [stepsOf, hl, List.count_append]
 
-private theorem count_U_add_count_D (l : List DyckStep) :
-    l.count DyckStep.U + l.count DyckStep.D = l.length := by
-  induction l with
-  | nil => simp
-  | cons a l ih => cases a <;> simp <;> omega
-
 private theorem isDyckPattern_stepsOf (p : DyckWord) :
     IsDyckPattern p.semilength (stepsOf p.toList) where
   ups_eq := by
@@ -620,7 +628,7 @@ private theorem isDyckPattern_stepsOf (p : DyckWord) :
     rfl
   le_two_mul_ups n hn := by
     have h1 := p.count_D_le_count_U n
-    have h2 := count_U_add_count_D (p.toList.take n)
+    have h2 := TauCeti.DyckWord.count_U_add_count_D (p.toList.take n)
     have h3 := p.two_mul_semilength_eq_length
     rw [List.length_take] at h2
     rw [← count_take_U]
@@ -638,20 +646,11 @@ private theorem stepsOf_ofFn {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k 
 private theorem count_U_ofFn {k : ℕ} {s : ℕ → Bool} {n : ℕ} (hn : n ≤ 2 * k) :
     ((List.ofFn (fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D)).take n).count
       DyckStep.U = ups s n := by
-  rw [List.count_take_ofFn]
-  unfold ups
-  refine Finset.card_bij (fun i _ => (i : ℕ)) ?_ ?_ ?_
-  · intro i hi
-    simp only [Finset.mem_filter, Finset.mem_range] at hi ⊢
-    rcases hi with ⟨_, hi_lt, hi_up⟩
-    exact ⟨hi_lt, by simpa using hi_up⟩
-  · intro i hi j hj hij
-    exact Fin.ext hij
-  · intro i hi
-    simp only [Finset.mem_filter, Finset.mem_range] at hi
-    refine ⟨⟨i, by omega⟩, ?_, rfl⟩
-    simp only [Finset.mem_filter]
-    exact ⟨Finset.mem_univ _, hi.1, by simp [hi.2]⟩
+  rw [count_take_U]
+  apply ups_congr
+  intro j hj
+  have hj' : j < 2 * k := hj.trans_le hn
+  cases hsj : s j <;> simp [stepsOf, hj', hsj]
 
 /-- The Dyck word whose `U` steps are the up steps of a Dyck pattern. -/
 private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : DyckWord where
@@ -663,7 +662,7 @@ private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : D
     rw [← hl] at h1
     rw [hs.ups_eq] at h1
     rw [List.take_of_length_le (by omega)] at h1
-    have h2 := count_U_add_count_D l
+    have h2 := TauCeti.DyckWord.count_U_add_count_D l
     omega
   count_D_le_count_U n := by
     set l := List.ofFn fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D with hl
@@ -672,9 +671,9 @@ private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : D
     rw [← hl] at h1
     rw [hs.ups_eq] at h1
     rw [List.take_of_length_le (by omega)] at h1
-    have h2 := count_U_add_count_D l
+    have h2 := TauCeti.DyckWord.count_U_add_count_D l
     rcases le_total n (2 * k) with hn | hn
-    · have h3 := count_U_add_count_D (l.take n)
+    · have h3 := TauCeti.DyckWord.count_U_add_count_D (l.take n)
       have h4 := count_U_ofFn (k := k) (s := s) (n := n) hn
       rw [← hl] at h4
       have h5 := hs.le_two_mul_ups n hn
@@ -694,6 +693,7 @@ private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : D
       (List.ofFn fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D).length = 2 * k :=
     by simp
   rw [List.take_of_length_le (by omega), hs.ups_eq] at h1
+  -- `semilength` is the count of `U` steps, and `dyckWordOf` stores this `ofFn` list.
   change (List.ofFn fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D).count
       DyckStep.U = k
   exact h1
