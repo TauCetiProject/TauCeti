@@ -21,7 +21,9 @@ Nested subsets `s ⊆ t` of a topological space form the topological pair
 special case `t = X`; the general form is the one a filtration of a space, such as the skeletal
 filtration of a CW complex, produces.  A continuous map `t → t'` carrying `s` into `s'` induces a
 map of such pairs `TopPair.ofInclusionMap`, and a homotopy that keeps `s` inside `s'` at every
-time induces a homotopy of maps of pairs `TopPair.ofInclusionHomotopy`.
+time induces a homotopy of maps of pairs `TopPair.ofInclusionHomotopy`.  The pair `(t, s)` is
+isomorphic to the pair `TopPair.ofSubset` of `t` and the preimage of `s` in `t`
+(`TopPair.ofSubsetPreimageValIso`).
 
 A map of pairs which is an isomorphism of the ambient spaces and is surjective on the subspaces is
 an isomorphism of pairs (`TopPair.isIso_of_isIso_fst_of_surjective_snd`): the inverse on the
@@ -180,6 +182,17 @@ def ofInclusionHomotopy {g₀ g₁ : C(t, t')} (F : g₀.Homotopy g₁)
       continuous_toFun := by fun_prop
       map_zero_left x := Subtype.ext (congrArg Subtype.val (F.apply_zero ⟨x.1, hst x.2⟩) :)
       map_one_left x := Subtype.ext (congrArg Subtype.val (F.apply_one ⟨x.1, hst x.2⟩) :) }
+
+variable (hst) in
+/-- The pair of `t` and the preimage of `s` in `t` is isomorphic to the pair `(t, s)`: the two
+pairs have the same ambient space, and their subspaces are identified by the coercion to `X`. -/
+@[expose]
+def ofSubsetPreimageValIso :
+    ofSubset (X := TopCat.of t) (Subtype.val ⁻¹' s) ≅ ofInclusion hst where
+  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨⟨x.1, hst x.2⟩, x.2⟩, by fun_prop⟩)
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
 
 end ofInclusion
 

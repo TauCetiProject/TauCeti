@@ -105,13 +105,13 @@ theorem isZero_singularHomology_preimage_skeletonLT (hp : serreFibrations p) (R 
       Subsingleton (RelHomotopyGroup (Fin j) ⟨TopPair.ofSubset A, a⟩) := by
     have := subsingleton_relHomotopyGroup_skeletonLT (N := Fin j) (by simpa using hj) hts hst
       ⟨a.1.1, a.2⟩
-    -- The pairs `(t, A)` and `(t, s)` have the same ambient space and the same subspace.
+    -- The pairs `(t, A)` and `(t, s)` are isomorphic, by a basepoint-preserving isomorphism.
+    let e := TopPair.ofSubsetPreimageValIso hst
     let f : (⟨TopPair.ofSubset A, a⟩ : BasedTopPair) ⟶ ⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ :=
-      ⟨TopPair.ofHom (𝟙 _) (_root_.TopCat.ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩), rfl⟩
+      ⟨e.hom, rfl⟩
     let g : (⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ : BasedTopPair) ⟶ ⟨TopPair.ofSubset A, a⟩ :=
-      ⟨TopPair.ofHom (𝟙 _) (_root_.TopCat.ofHom ⟨fun x ↦ ⟨⟨x.1, hst x.2⟩, x.2⟩, by fun_prop⟩),
-        rfl⟩
-    have hfg : f ≫ g = 𝟙 _ := by ext : 3 <;> rfl
+      ⟨e.inv, rfl⟩
+    have hfg : f ≫ g = 𝟙 _ := BasedTopPair.hom_ext e.hom_inv_id
     refine Function.LeftInverse.injective (g := RelHomotopyGroup.map g)
       (f := RelHomotopyGroup.map f) (fun x ↦ ?_) |>.subsingleton
     rw [RelHomotopyGroup.map_map, hfg, RelHomotopyGroup.map_id, id]
@@ -121,13 +121,9 @@ theorem isZero_singularHomology_preimage_skeletonLT (hp : serreFibrations p) (R 
     (mem_serreFibrations_restrictPreimage hp t) h₀ h R (Nat.lt_succ_of_le hm)
   -- That preimage pair is the pair `(p⁻¹(t), p⁻¹(s))`, up to the identification of the preimage
   -- of `A` in `p⁻¹(t)` with `p⁻¹(s)`.
-  let φ : TopPair.ofSubset ((_root_.TopCat.ofHom (p.hom.restrictPreimage t)) ⁻¹' A) ⟶
-      TopPair.ofInclusion (X := E) (preimage_mono (f := p) hst) :=
-    TopPair.ofHom (𝟙 _) (_root_.TopCat.ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
-  have : IsIso (TopPair.Hom.fst φ) := inferInstanceAs (IsIso (𝟙 _))
-  have : IsIso φ := TopPair.isIso_of_isIso_fst_of_surjective_snd _
-    fun x ↦ ⟨⟨⟨x.1, hst x.2⟩, x.2⟩, rfl⟩
-  exact hz.of_iso (asIso (TopPair.singularHomologyMap φ (ModuleCat.of R R) m)).symm
+  exact hz.of_iso (asIso (TopPair.singularHomologyMap
+    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hst)).hom
+    (ModuleCat.of R R) m)).symm
 
 end TopCat
 
