@@ -5,24 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.HopfAlgebroid
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
 /-!
-# Smooth projections of the Weierstrass groupoid
+# Smooth projection of the Weierstrass coordinate-change scheme
 
 The ring of Weierstrass coordinate changes over a ring `B` is
 `ChangeRing B = B[u, u⁻¹, r, s, t]`. Its projection to `Spec B` is smooth of relative
 dimension four and faithfully flat. The identity change gives a section, so the projection
 is surjective even over rings with nilpotents and in characteristics two and three.
 
-For the universal coefficient ring, the two projections of the represented Weierstrass
-groupoid are the spectra of the left and right units of its Hopf algebroid. Inversion
-exchanges them. This file constructs their identity section and inversion isomorphism,
-and proves that both projections are smooth of relative dimension four and surjective.
-These are properties of the affine groupoid; identifying its quotient with a moduli stack
-requires the separate moduli and descent comparisons.
+These results hold over an arbitrary commutative coefficient ring. Their application to the
+source and target projections of the Weierstrass groupoid is in
+`TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/Groupoid.lean`.
 
 The smoothness proof uses Mathlib's standard-smooth presentations of polynomial algebras
 and principal localizations.
@@ -73,100 +70,10 @@ instance smooth_specMap :
     Smooth (Spec.map (CommRingCat.ofHom (algebraMap B (ChangeRing B)))) :=
   SmoothOfRelativeDimension.smooth 4 _
 
+/-- Every coefficient-ring point has a coordinate change above it. -/
+instance surjective_specMap :
+    Surjective (Spec.map (CommRingCat.ofHom (algebraMap B (ChangeRing B)))) :=
+  ((flat_and_surjective_SpecMap_iff _).mpr
+    (RingHom.faithfullyFlat_algebraMap_iff.mpr (faithfullyFlat B))).2
+
 end TauCeti.WeierstrassChange.ChangeRing
-
-namespace TauCeti.WeierstrassHopfAlgebroid
-
-open WeierstrassCurve TauCeti.WeierstrassChange
-
-/-- The source projection of the affine Weierstrass groupoid. -/
-def source : Spec (.of ArrowRing) ⟶ Spec (.of (MvPolynomial Coeff ℤ)) :=
-  Spec.map (CommRingCat.ofHom (algebraMap (MvPolynomial Coeff ℤ) ArrowRing))
-
-/-- The target projection of the affine Weierstrass groupoid. -/
-def target : Spec (.of ArrowRing) ⟶ Spec (.of (MvPolynomial Coeff ℤ)) :=
-  Spec.map (CommRingCat.ofHom rightUnit)
-
-/-- The identity section of the affine Weierstrass groupoid. -/
-def identity : Spec (.of (MvPolynomial Coeff ℤ)) ⟶ Spec (.of ArrowRing) :=
-  Spec.map (CommRingCat.ofHom counit)
-
-/-- Inversion of arrows in the affine Weierstrass groupoid, as an isomorphism of schemes. -/
-def inversion : Spec (.of ArrowRing) ≅ Spec (.of ArrowRing) :=
-  Scheme.Spec.mapIso (RingEquiv.ofBijective conjugation
-    (Function.Involutive.bijective conjugation_conjugation)).toCommRingCatIso.op
-
-/-- The source projection is induced by the left unit of the Hopf algebroid. -/
-theorem source_def : source =
-    Spec.map (CommRingCat.ofHom (algebraMap (MvPolynomial Coeff ℤ) ArrowRing)) := (rfl)
-
-/-- The target projection is induced by the right unit of the Hopf algebroid. -/
-theorem target_def : target = Spec.map (CommRingCat.ofHom rightUnit) := (rfl)
-
-/-- The identity section is induced by the counit of the Hopf algebroid. -/
-theorem identity_def : identity = Spec.map (CommRingCat.ofHom counit) := (rfl)
-
-/-- Inversion is induced by conjugation in the Hopf algebroid. -/
-theorem inversion_hom : inversion.hom = Spec.map (CommRingCat.ofHom conjugation) := (rfl)
-
-/-- The inverse of inversion is also induced by conjugation in the Hopf algebroid. -/
-theorem inversion_inv : inversion.inv = Spec.map (CommRingCat.ofHom conjugation) := by
-  apply (cancel_mono inversion.hom).1
-  rw [inversion.inv_hom_id, inversion_hom, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-    conjugation_comp_conjugation]
-  simp
-
-/-- The source of an identity arrow is the original curve. -/
-@[simp]
-theorem identity_source : identity ≫ source = 𝟙 _ := by
-  simp [identity_def, source_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-
-/-- The target of an identity arrow is the original curve. -/
-@[simp]
-theorem identity_target : identity ≫ target = 𝟙 _ := by
-  simp [identity_def, target_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-
-/-- Inversion exchanges the source and target projections. -/
-@[simp]
-theorem inversion_hom_source : inversion.hom ≫ source = target := by
-  rw [inversion_hom, source_def, target_def, ← Spec.map_comp]
-  exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) conjugation_comp_algebraMap
-
-/-- Inversion exchanges the target and source projections. -/
-@[simp]
-theorem inversion_hom_target : inversion.hom ≫ target = source := by
-  rw [inversion_hom, source_def, target_def, ← Spec.map_comp]
-  exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) conjugation_comp_rightUnit
-
-/-- Inversion fixes identity arrows. -/
-@[simp]
-theorem identity_inversion_hom : identity ≫ inversion.hom = identity := by
-  simp [identity_def, inversion_hom, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-
-/-- The source projection is smooth of relative dimension four. -/
-instance smoothOfRelativeDimension_source : SmoothOfRelativeDimension 4 source := by
-  rw [source_def]
-  infer_instance
-
-/-- The target projection is smooth of relative dimension four. -/
-instance smoothOfRelativeDimension_target : SmoothOfRelativeDimension 4 target := by
-  rw [← inversion_hom_source]
-  exact inferInstanceAs (SmoothOfRelativeDimension (0 + 4) (inversion.hom ≫ source))
-
-/-- The source projection is smooth. -/
-instance smooth_source : Smooth source := SmoothOfRelativeDimension.smooth 4 _
-
-/-- The target projection is smooth. -/
-instance smooth_target : Smooth target := SmoothOfRelativeDimension.smooth 4 _
-
-/-- Every curve is the source of an arrow, namely its identity. -/
-instance surjective_source : Surjective source := by
-  have : Surjective (identity ≫ source) := identity_source ▸ inferInstance
-  exact Surjective.of_comp identity source
-
-/-- Every curve is the target of an arrow, namely its identity. -/
-instance surjective_target : Surjective target := by
-  have : Surjective (identity ≫ target) := identity_target ▸ inferInstance
-  exact Surjective.of_comp identity target
-
-end TauCeti.WeierstrassHopfAlgebroid
