@@ -58,9 +58,9 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   atlas gives the local-model condition.
 * `TauCeti.AlgebraicGeometry.nonempty_pointedWeierstrassAtlas_iff`: a pointed Weierstrass atlas
   exists if and only if the local-model condition holds.
-* `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas.prop`: a property of morphisms that is
-  Zariski-local on the target and holds for projective Weierstrass models holds for a morphism
-  with a pointed Weierstrass atlas; hence such a morphism is proper and smooth of relative
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas.of_projModelOver`: a property of morphisms
+  that is Zariski-local on the target and holds for projective Weierstrass models holds for a
+  morphism with a pointed Weierstrass atlas; hence such a morphism is proper and smooth of relative
   dimension one, and its point is a section (`PointedWeierstrassAtlas.isProper`,
   `PointedWeierstrassAtlas.smoothOfRelativeDimension`, `PointedWeierstrassAtlas.zero_comp`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.smooth`, `EllipticCurveGeom.proper` and
@@ -580,15 +580,32 @@ namespace PointedWeierstrassAtlas
 variable {S X : Scheme.{u}} {π : X ⟶ S} {zero : S ⟶ X}
 
 /-- The bases of the charts of an atlas, as an open cover of `S`. -/
+@[expose, simps! I₀]
 noncomputable def openCover (A : PointedWeierstrassAtlas π zero) : S.OpenCover :=
   .mkOfCovers A.index (fun i ↦ (A.chart i).base) (fun i ↦ (A.chart i).baseMap) A.covers
 
+-- `openCover_X` and `openCover_f` are stated for an index of the cover rather than of the atlas,
+-- so that they apply to the goals produced by `Scheme.Cover.hom_ext` and similar lemmas.
+
+/-- The scheme of `A.openCover` at an index is the base of the corresponding chart. -/
+@[simp]
+theorem openCover_X (A : PointedWeierstrassAtlas π zero) (i : A.openCover.I₀) :
+    A.openCover.X i = (A.chart i).base :=
+  rfl
+
+/-- The map of `A.openCover` at an index is the base map of the corresponding chart. -/
+@[simp]
+theorem openCover_f (A : PointedWeierstrassAtlas π zero) (i : A.openCover.I₀) :
+    A.openCover.f i = (A.chart i).baseMap :=
+  rfl
+
 /-- A property of morphisms that is local on the target and holds for the projective models of the
 equations of the charts of an atlas holds for `π`. -/
-theorem prop (A : PointedWeierstrassAtlas π zero) (P : MorphismProperty Scheme.{u})
+theorem of_projModelOver (A : PointedWeierstrassAtlas π zero) (P : MorphismProperty Scheme.{u})
     [IsZariskiLocalAtTarget P]
     (hP : ∀ i, P (A.chart i).equation.projModelOver) : P π := by
   refine IsZariskiLocalAtTarget.of_openCover A.openCover fun i ↦ ?_
+  dsimp only [Scheme.Cover.pullbackHom, openCover_X, openCover_f]
   have hw : ((A.chart i).modelIso.inv ≫ (A.chart i).isPullback.isoPullback.hom) ≫
       pullback.snd π (A.chart i).baseMap =
         (A.chart i).equation.projModelOver ≫ (A.chart i).baseIso.inv := by
@@ -599,24 +616,24 @@ theorem prop (A : PointedWeierstrassAtlas π zero) (P : MorphismProperty Scheme.
 
 /-- A morphism with a pointed Weierstrass atlas is proper. -/
 theorem isProper (A : PointedWeierstrassAtlas π zero) : IsProper π :=
-  A.prop _ fun _ ↦ inferInstance
+  A.of_projModelOver _ fun _ ↦ inferInstance
 
-/-- A morphism with a pointed Weierstrass atlas is smooth of relative dimension one. The
-`IsZariskiLocalAtTarget` instance is passed by hand: instance search does not unify
-`@SmoothOfRelativeDimension 1` with the property argument of
-`HasRingHomProperty.instIsZariskiLocalAtTarget`. -/
+/-- A morphism with a pointed Weierstrass atlas is smooth of relative dimension one. -/
 theorem smoothOfRelativeDimension (A : PointedWeierstrassAtlas π zero) :
     SmoothOfRelativeDimension 1 π :=
-  @prop _ _ _ _ A (@SmoothOfRelativeDimension 1)
+  -- The `IsZariskiLocalAtTarget` instance is passed by hand: instance search does not unify
+  -- `@SmoothOfRelativeDimension 1` with the property argument of
+  -- `HasRingHomProperty.instIsZariskiLocalAtTarget`.
+  @of_projModelOver _ _ _ _ A (@SmoothOfRelativeDimension 1)
     (HasRingHomProperty.instIsZariskiLocalAtTarget (P := @SmoothOfRelativeDimension 1))
     fun _ ↦ inferInstance
 
 /-- The point of a pointed Weierstrass atlas is a section. -/
 theorem zero_comp (A : PointedWeierstrassAtlas π zero) : zero ≫ π = 𝟙 S :=
-  A.openCover.hom_ext _ _ fun (i : A.index) ↦
-    show (A.chart i).baseMap ≫ zero ≫ π = (A.chart i).baseMap ≫ 𝟙 S by
-      rw [← (A.chart i).pulledZero_toTotal_assoc, (A.chart i).isPullback.w,
-        (A.chart i).pulledZero_toBase_assoc, Category.comp_id]
+  A.openCover.hom_ext _ _ fun i ↦ by
+    dsimp only [openCover_X, openCover_f]
+    rw [← (A.chart i).pulledZero_toTotal_assoc, (A.chart i).isPullback.w,
+      (A.chart i).pulledZero_toBase_assoc, Category.comp_id]
 
 end PointedWeierstrassAtlas
 
