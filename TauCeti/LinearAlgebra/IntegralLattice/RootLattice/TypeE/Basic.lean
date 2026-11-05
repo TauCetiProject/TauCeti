@@ -203,7 +203,7 @@ private theorem sum_cartanMatrixE₆_mul_minusculeWeight :
     ∀ i : Fin 6, ∑ j, (((CartanMatrix.E 6) i j : ℤ) : ℚ) * typeE₆MinusculeWeight j =
       if i = 0 then 1 else 0 := by
   rw [typeE₆MinusculeWeight_eq_div]
-  exact sum_gram_mul_div_eq _ typeE₆WeightCoeff 3 (by norm_num) 0
+  exact Matrix.sum_mul_div_eq_ite _ typeE₆WeightCoeff 3 (by norm_num) 0
     sum_cartanMatrixE₆_mul_weightCoeff
 
 /-- **The minuscule weight `ϖ₁` pairs to `1` with the first simple root and to `0` with the
@@ -219,7 +219,7 @@ theorem form_typeE₆MinusculeWeight_typeE₆SimpleRoot (i : Fin 6) :
 theorem form_typeE₆MinusculeWeight_self :
     typeE₆RootLattice.form typeE₆MinusculeWeight typeE₆MinusculeWeight = 4 / 3 := by
   rw [typeE₆RootLattice]
-  refine (form_ofGramMatrix_basisFun_apply_weight _ _ _ 0
+  refine (form_ofGramMatrix_basisFun_of_sum_eq_ite _ _ _ 0
     sum_cartanMatrixE₆_mul_minusculeWeight _).trans ?_
   have hcoeff : typeE₆WeightCoeff 0 = 4 := by decide
   rw [typeE₆MinusculeWeight_eq_div]
@@ -232,7 +232,7 @@ root, hence with the whole lattice. -/
 theorem typeE₆MinusculeWeight_mem_dualCarrier :
     typeE₆MinusculeWeight ∈ typeE₆RootLattice.dualCarrier := by
   rw [typeE₆RootLattice]
-  exact weight_mem_ofGramMatrix_basisFun_dualCarrier _ _ _ 0
+  exact mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite _ _ _ 0
     sum_cartanMatrixE₆_mul_minusculeWeight
 
 /-- The minuscule weight `ϖ₁` of type `E₆`, as a vector of the dual lattice. -/
@@ -484,7 +484,7 @@ private theorem sum_cartanMatrixE₇_mul_minusculeWeight :
     ∀ i : Fin 7, ∑ j, (((CartanMatrix.E 7) i j : ℤ) : ℚ) * typeE₇MinusculeWeight j =
       if i = 6 then 1 else 0 := by
   rw [typeE₇MinusculeWeight_eq_div]
-  exact sum_gram_mul_div_eq _ typeE₇WeightCoeff 2 (by norm_num) 6
+  exact Matrix.sum_mul_div_eq_ite _ typeE₇WeightCoeff 2 (by norm_num) 6
     sum_cartanMatrixE₇_mul_weightCoeff
 
 /-- **The minuscule weight `ϖ₇` pairs to `1` with the seventh simple root and to `0` with the
@@ -500,7 +500,7 @@ theorem form_typeE₇MinusculeWeight_typeE₇SimpleRoot (i : Fin 7) :
 theorem form_typeE₇MinusculeWeight_self :
     typeE₇RootLattice.form typeE₇MinusculeWeight typeE₇MinusculeWeight = 3 / 2 := by
   rw [typeE₇RootLattice]
-  refine (form_ofGramMatrix_basisFun_apply_weight _ _ _ 6
+  refine (form_ofGramMatrix_basisFun_of_sum_eq_ite _ _ _ 6
     sum_cartanMatrixE₇_mul_minusculeWeight _).trans ?_
   have hcoeff : typeE₇WeightCoeff 6 = 3 := by decide
   rw [typeE₇MinusculeWeight_eq_div]
@@ -513,7 +513,7 @@ root, hence with the whole lattice. -/
 theorem typeE₇MinusculeWeight_mem_dualCarrier :
     typeE₇MinusculeWeight ∈ typeE₇RootLattice.dualCarrier := by
   rw [typeE₇RootLattice]
-  exact weight_mem_ofGramMatrix_basisFun_dualCarrier _ _ _ 6
+  exact mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite _ _ _ 6
     sum_cartanMatrixE₇_mul_minusculeWeight
 
 /-- The minuscule weight `ϖ₇` of type `E₇`, as a vector of the dual lattice. -/
