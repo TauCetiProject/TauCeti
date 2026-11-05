@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.FDeriv.Pi
 public import TauCeti.Analysis.Calculus.Morse.Index
 
 /-!
@@ -22,10 +23,11 @@ This is the calculus behind the standard Morse function `∑ i, cos (2π xᵢ / 
 `∀ i, AddCircle (p i)`, whose charts have the real coordinates of the factors as coordinates. The
 binary analogue for two arbitrary summands is `TauCeti.Analysis.Calculus.Morse.Prod`.
 
+The first-derivative calculus of separated sums, including their critical points
+`TauCeti.fderiv_sum_comp_eval_eq_zero_iff`, is in `TauCeti.Analysis.Calculus.FDeriv.Pi`.
+
 ## Main declarations
 
-* `TauCeti.hasFDerivAt_sum_comp_eval`, `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the
-  derivative of a separated sum, and its critical points.
 * `TauCeti.fderiv_fderiv_sum_comp_eval_apply`, `TauCeti.hessianQuadraticForm_sum_comp_eval`: its
   second derivative is diagonal, and its Hessian quadratic form is a weighted sum of squares.
 * `TauCeti.isNondegenerateCriticalPoint_sum_comp_eval_iff`: its nondegenerate critical points.
@@ -44,37 +46,6 @@ open Filter Topology ContinuousLinearMap
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] {φ : ι → ℝ → ℝ} {y : ι → ℝ}
-
-/-- The derivative of the separated sum `z ↦ ∑ i, φ i (z i)` at `y` is `∑ i, φ i' (y i) • dzᵢ`. -/
-theorem hasFDerivAt_sum_comp_eval {φ' : ι → ℝ} (hφ : ∀ i, HasDerivAt (φ i) (φ' i) (y i)) :
-    HasFDerivAt (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) (∑ i, φ' i • (proj i : (ι → ℝ) →L[ℝ] ℝ)) y :=
-  HasFDerivAt.fun_sum fun i _ ↦ (hφ i).comp_hasFDerivAt y (hasFDerivAt_apply i y)
-
-/-- The derivative of a separated sum of differentiable functions. -/
-theorem fderiv_sum_comp_eval (hφ : ∀ i, DifferentiableAt ℝ (φ i) (y i)) :
-    fderiv ℝ (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) y =
-      ∑ i, deriv (φ i) (y i) • (proj i : (ι → ℝ) →L[ℝ] ℝ) :=
-  (hasFDerivAt_sum_comp_eval fun i ↦ (hφ i).hasDerivAt).fderiv
-
-/-- **Critical points of a separated sum.** For differentiable summands, `y` is a critical point
-of `z ↦ ∑ i, φ i (z i)` exactly when every `y i` is a critical point of `φ i`. -/
-theorem fderiv_sum_comp_eval_eq_zero_iff (hφ : ∀ i, DifferentiableAt ℝ (φ i) (y i)) :
-    fderiv ℝ (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) y = 0 ↔ ∀ i, deriv (φ i) (y i) = 0 := by
-  classical
-  rw [fderiv_sum_comp_eval hφ]
-  refine ⟨fun h i ↦ ?_, fun h ↦ by simp [h]⟩
-  simpa [Pi.single_apply] using DFunLike.congr_fun h (Pi.single i 1)
-
-/-- Near a point at which every summand is twice continuously differentiable, the derivative of a
-separated sum is given by the formula of `TauCeti.fderiv_sum_comp_eval`. -/
-private theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i)) :
-    fderiv ℝ (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) =ᶠ[𝓝 y]
-      fun z ↦ ∑ i, deriv (φ i) (z i) • (proj i : (ι → ℝ) →L[ℝ] ℝ) := by
-  have hdiff : ∀ i, ∀ᶠ z : ι → ℝ in 𝓝 y, DifferentiableAt ℝ (φ i) (z i) := fun i ↦
-    (continuous_apply i).continuousAt.eventually
-      (((hφ i).eventually (by simp)).mono fun t ht ↦ ht.differentiableAt (by simp))
-  filter_upwards [eventually_all.2 hdiff] with z hz
-  exact fderiv_sum_comp_eval hz
 
 /-- **The second derivative of a separated sum is diagonal**: at a point at which every summand is
 twice continuously differentiable, it sends `v` and `w` to `∑ i, φ i'' (y i) * v i * w i`. -/
@@ -98,6 +69,7 @@ theorem fderiv_fderiv_sum_comp_eval_apply (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) 
 
 /-- **The Hessian of a separated sum is a weighted sum of squares**, with weights the second
 derivatives of the summands. -/
+@[simp]
 theorem hessianQuadraticForm_sum_comp_eval (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i)) :
     hessianQuadraticForm (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) y =
       QuadraticMap.weightedSumSquares ℝ fun i ↦ deriv (deriv (φ i)) (y i) := by
@@ -108,6 +80,7 @@ theorem hessianQuadraticForm_sum_comp_eval (hφ : ∀ i, ContDiffAt ℝ 2 (φ i)
 differentiable at the coordinates of `y`, the separated sum `z ↦ ∑ i, φ i (z i)` has a
 nondegenerate critical point at `y` exactly when every `y i` is a critical point of `φ i` at which
 the second derivative of `φ i` does not vanish. -/
+@[simp]
 theorem isNondegenerateCriticalPoint_sum_comp_eval_iff
     (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i)) :
     IsNondegenerateCriticalPoint (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) y ↔
@@ -131,6 +104,7 @@ theorem isNondegenerateCriticalPoint_sum_comp_eval_iff
 
 /-- **The Morse index of a separated sum** at a point at which every summand is twice continuously
 differentiable is the number of summands whose second derivative is negative there. -/
+@[simp]
 theorem morseIndex_sum_comp_eval (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i)) :
     morseIndex (fun z : ι → ℝ ↦ ∑ i, φ i (z i)) y =
       {i | deriv (deriv (φ i)) (y i) < 0}.ncard := by
