@@ -88,6 +88,14 @@ theorem residuePairing_tmul (f g : R⸨X⸩) (x y : L) :
     residuePairing R L Φ (f ⊗ₜ x) (g ⊗ₜ y) = LaurentSeries.residuePairing R f g * Φ x y := by
   rw [residuePairing, LinearMap.BilinForm.tensorDistrib_tmul, smul_eq_mul, mul_comm]
 
+variable {R L} in
+/-- The residue pairing of `X⁻¹ ⊗ x` with `X ⊗ y` exceeds that of `1 ⊗ x` with `1 ⊗ y` by
+`Φ(x, y)`. -/
+lemma residuePairing_single_neg_one_sub (x y : L) :
+    residuePairing R L Φ (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y) -
+      residuePairing R L Φ (HahnSeries.single 0 1 ⊗ₜ x) (HahnSeries.single 0 1 ⊗ₜ y) = Φ x y := by
+  simp [residuePairing_tmul, LaurentSeries.residuePairing_single]
+
 /-- The residue pairing of the zero form is zero. -/
 @[simp]
 theorem residuePairing_zero : residuePairing R L 0 = 0 := by
@@ -357,14 +365,6 @@ theorem twoCochainOfBilinearSMulRight_mem_twoCocycle (Φ : LinearMap.BilinForm R
       add_smul, map_add]
 
 end Coefficients
-
-variable {R L} in
-/-- The residue pairing of `X⁻¹ ⊗ x` with `X ⊗ y` exceeds that of `1 ⊗ x` with `1 ⊗ y` by
-`Φ(x, y)`. -/
-lemma residuePairing_single_neg_one_sub (Φ : LinearMap.BilinForm R L) (x y : L) :
-    residuePairing R L Φ (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y) -
-      residuePairing R L Φ (HahnSeries.single 0 1 ⊗ₜ x) (HahnSeries.single 0 1 ⊗ₜ y) = Φ x y := by
-  simp [residuePairing_tmul, LaurentSeries.residuePairing_single]
 
 variable {R L} in
 /-- **A trivial-coefficient coboundary cannot equal a residue cocycle.** If `-F [u, v]` is
