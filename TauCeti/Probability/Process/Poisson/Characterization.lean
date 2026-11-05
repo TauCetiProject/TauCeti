@@ -11,8 +11,8 @@ public import Mathlib.Probability.Independence.Integration
 /-!
 # Poisson marginals from microscopic increment probabilities
 
-For a nondecreasing process, stationary increments independent of the current count give
-a convolution semigroup of probability laws on `ℕ`. Applying
+For a process almost surely nondecreasing at each fixed pair of times, stationary increments
+independent of the current count give a convolution semigroup of probability laws on `ℕ`. Applying
 `eq_poissonMeasure_of_small_time`, the microscopic conditions determine every marginal law,
 without a canonical sample space, moment assumptions, or sample-path continuity. This result
 does not by itself assert independence of arbitrary collections of increments or simplicity
@@ -31,14 +31,15 @@ open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
 
-/-- A nondecreasing natural-valued process starting at zero has Poisson marginals if its
-increments are stationary and independent of the current count and satisfy the microscopic
-one- and multiple-occurrence limits. Full independence of all increments is not needed for
-this marginal conclusion. -/
+/-- A natural-valued process starting at zero and almost surely nondecreasing at each fixed
+pair of times has Poisson marginals if its increments are stationary and independent of the
+current count and satisfy the microscopic one- and multiple-occurrence limits. Full independence
+of all increments and a common full-measure event of monotonicity are not needed for this marginal
+conclusion. -/
 theorem hasLaw_poissonMeasure_of_small_time {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsProbabilityMeasure P] {N : ℝ≥0 → Ω → ℕ}
     (h0 : N 0 =ᵐ[P] fun _ ↦ 0)
-    (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω))
+    (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω)
     (hind : ∀ s t, IndepFun (N s) (fun ω ↦ N (s + t) ω - N s ω) P)
     (hstat : ∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P)
     (r : ℝ≥0)
@@ -55,8 +56,8 @@ theorem hasLaw_poissonMeasure_of_small_time {Ω : Type*} [MeasurableSpace Ω]
     simp
   have hadd (s u : ℝ≥0) : P.map (N (s + u)) = P.map (N s) ∗ P.map (N u) := by
     have hae : N s + (fun ω ↦ N (s + u) ω - N s ω) =ᵐ[P] N (s + u) := by
-      filter_upwards [hmono] with ω hω
-      exact Nat.add_sub_of_le (hω (le_add_right le_rfl))
+      filter_upwards [hmono s (s + u) (le_add_right le_rfl)] with ω hω
+      exact Nat.add_sub_of_le hω
     calc
       P.map (N (s + u)) = P.map (N s + (fun ω ↦ N (s + u) ω - N s ω)) :=
         Measure.map_congr hae.symm
