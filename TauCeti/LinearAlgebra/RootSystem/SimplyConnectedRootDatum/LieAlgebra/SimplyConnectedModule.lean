@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.LinearAlgebra.DirectSum.Finite
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Basic
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.Weights.Faithful
+import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
 /-!
 # The full-weight module of the pinned rational Lie algebra
@@ -21,7 +23,7 @@ For a valid Dynkin type `t`, the **full-weight module** `V_sc(t)` of the pinned 
 built: its weights generate the whole weight lattice, so the torus of the associated group has
 the full weight lattice as character lattice.
 
-This file proves the two properties of `V_sc(t)` that make it suitable for this:
+This file proves the properties of `V_sc(t)` that make it suitable for this:
 
 * every fundamental weight `ϖᵢ` is a weight of `V_sc(t)`, carried by the highest weight vector
   `v⁺ᵢ` of the `i`-th summand, so the weights of `V_sc(t)` span the integral weight lattice over
@@ -29,7 +31,10 @@ This file proves the two properties of `V_sc(t)` that make it suitable for this:
 * the representation of the pinned Lie algebra on `V_sc(t)` is faithful. An element `x` of the
   Cartan subalgebra acting by zero has `ϖᵢ(x) = 0` for every `i`, so `x = 0`, and faithfulness on
   the Cartan subalgebra implies faithfulness
-  (`TauCeti.isFaithful_of_isFaithful_cartanSubalgebra`).
+  (`TauCeti.isFaithful_of_isFaithful_cartanSubalgebra`);
+* the numbered raising and lowering generators act nilpotently on `V_sc(t)`, since each is an
+  eigenvector of nonzero eigenvalue for the adjoint action of its own Cartan generator
+  (`TauCeti.isNilpotent_apply_of_lie_eq_smul`).
 
 ## Main declarations
 
@@ -42,6 +47,8 @@ This file proves the two properties of `V_sc(t)` that make it suitable for this:
   span the integral weight lattice over `ℤ`.
 * `TauCeti.DynkinType.instIsFaithfulScModule`: the pinned Lie algebra acts faithfully on
   `V_sc(t)`.
+* `TauCeti.DynkinType.isNilpotent_representation_scModule_rootGenerator`: the numbered raising and
+  lowering generators act nilpotently on `V_sc(t)`.
 
 ## References
 
@@ -114,6 +121,33 @@ instance instIsFaithfulScModule : IsFaithful ℚ (t.lieAlgebra ht) (t.scModule h
     rw [← (t.fundamentalWeight ht).sum_repr f]
     simp only [LinearMap.sum_apply, LinearMap.smul_apply, hϖ, smul_zero, Finset.sum_const_zero]
   exact isFaithful_of_isFaithful_cartanSubalgebra (H := t.cartanSubalgebra ht)
+
+section
+
+-- Associative algebras carry the commutator Lie bracket locally.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+open _root_.TauCeti.UniversalEnvelopingAlgebra
+
+/-- **The numbered raising and lowering generators act nilpotently on `V_sc(t)`**: each has a
+nonzero eigenvalue `±2` under the adjoint action of its own Cartan generator, and `V_sc(t)` is
+finite dimensional. This is the nilpotency hypothesis of the divided-power root subgroups of the
+full-weight lattice. -/
+theorem isNilpotent_representation_scModule_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
+    IsNilpotent (representation ℚ (t.lieAlgebra ht) (t.scModule ht)
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
+  have hk : ∃ k, (t.lieBasis ht).rootGeneratorWeight i k ≠ 0 := by
+    cases i with
+    | inl k => exact ⟨k, by
+        rw [LieAlgebra.Basis.rootGeneratorWeight_inl, lieBasis_A_eq]; simp⟩
+    | inr k => exact ⟨k, by
+        rw [LieAlgebra.Basis.rootGeneratorWeight_inr, lieBasis_A_eq]; simp⟩
+  exact hk.elim fun k hk => isNilpotent_apply_of_lie_eq_smul
+    (ρ := ((representation ℚ (t.lieAlgebra ht) (t.scModule ht)).toLieHom).comp
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+    (Int.cast_ne_zero.mpr hk) ((t.lieBasis ht).lie_h_rootGenerator i k)
+
+end
 
 end
 
