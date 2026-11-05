@@ -92,19 +92,15 @@ namespace TauCeti
 open Finset MvPolynomial
 
 /-- For an alphabet with at least `n` letters, every partition of `n` indexes a Schur basis
-vector. -/
+vector: a partition of `n` has at most `n` parts, so the subtype condition always holds. -/
 def partitionEquivSchurIndex (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ) :
-    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card σ} where
-  toFun μ := ⟨μ, μ.card_parts_le.trans h⟩
-  invFun μ := μ.1
-  left_inv _ := rfl
-  right_inv _ := Subtype.ext rfl
+    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card σ} :=
+  (Equiv.subtypeUnivEquiv fun μ : n.Partition => μ.card_parts_le.trans h).symm
 
 /-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
 @[simp]
 theorem partitionEquivSchurIndex_apply (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ)
-    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).1 = μ := by
-  simp [partitionEquivSchurIndex]
+    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).1 = μ := (rfl)
 
 /-- The inverse reindexing from the Schur basis returns the underlying partition. -/
 @[simp]
