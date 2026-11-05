@@ -112,9 +112,6 @@ abbrev ofSubset {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) : TopTriple.{u} :=
 
 variable {T} {T' : TopTriple.{u}}
 
-/-- Morphisms of triples of topological spaces. -/
-abbrev Hom (T T' : TopTriple.{u}) : Type _ := T ⟶ T'
-
 /-- The map between the ambient spaces induced by a morphism of triples. -/
 abbrev Hom.fst (φ : T ⟶ T') : T.fst ⟶ T'.fst := φ.hom.app 2
 
