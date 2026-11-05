@@ -6,6 +6,7 @@ Authors: Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5, OpenAI GPT-6
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
+public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Block
@@ -59,14 +60,12 @@ theorem projectionGap_lt_sqrt_two_div_two_of_reflection_spectrum
     have hpoly : W + star W = (2 : ℂ) • 1 - (4 : ℂ) • (D * D) := by
       dsimp only [W]
       rw [star_mul, U.isSelfAdjoint_reflection.star_eq, V.isSelfAdjoint_reflection.star_eq]
-      simpa only [← ContinuousLinearMap.mul_def, D] using reflection_comp_add_comp_reflection U V
+      simpa only [D] using reflection_mul_add_mul_reflection U V
     rw [hpoly] at hpos
     have hDsq : RCLike.re ⟪D (D x), x⟫_ℂ = ‖D x‖ ^ 2 := by
-      calc
-        RCLike.re ⟪D (D x), x⟫_ℂ = RCLike.re ⟪(star D) (D x), x⟫_ℂ := by rw [hDstar.star_eq]
-        _ = RCLike.re ⟪D x, D x⟫_ℂ := by
-          rw [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
-        _ = ‖D x‖ ^ 2 := by rw [inner_self_eq_norm_sq]
+      simpa only [← ContinuousLinearMap.star_eq_adjoint, hDstar.star_eq,
+        ContinuousLinearMap.comp_apply] using
+        (ContinuousLinearMap.apply_norm_sq_eq_inner_adjoint_left D x).symm
     simp only [sub_apply, smul_apply, one_apply_eq_self, inner_sub_left, inner_smul_left,
       mul_apply_eq_comp, map_sub] at hpos
     have htwo : RCLike.re ((starRingEnd ℂ) (2 : ℂ) * ⟪x, x⟫_ℂ) = 2 * ‖x‖ ^ 2 := by
@@ -98,17 +97,14 @@ theorem projectionGap_lt_sqrt_two_div_two_of_orderedFormGap
     (hAU : ∀ x ∈ U, A x ∈ U)
     (hAplusH_V : ∀ x ∈ V, (A + H) x ∈ V)
     (hab : a < b)
-    (hUhigh : ∀ x ∈ U,
-      b * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_ℂ)
-    (hUperpLow : ∀ x ∈ Uᗮ,
-      RCLike.re ⟪A x, x⟫_ℂ ≤ a * ‖x‖ ^ 2)
-    (hVhigh : ∀ x ∈ V,
-      b * ‖x‖ ^ 2 ≤ RCLike.re ⟪(A + H) x, x⟫_ℂ)
-    (hVperpLow : ∀ x ∈ Vᗮ,
-      RCLike.re ⟪(A + H) x, x⟫_ℂ ≤ a * ‖x‖ ^ 2)
+    (hUhigh : A.LowerFormBoundOn U b)
+    (hUperpLow : A.UpperFormBoundOn Uᗮ a)
+    (hVhigh : (A + H).LowerFormBoundOn V b)
+    (hVperpLow : (A + H).UpperFormBoundOn Vᗮ a)
     (hHU : ∀ x ∈ U, H x ∈ Uᗮ)
     (hHUperp : ∀ x ∈ Uᗮ, H x ∈ U) :
     U.projectionGap V < Real.sqrt 2 / 2 := by
+  -- Center the ordered bounds and reflect the two invariant splittings.
   let c : ℝ := (a + b) / 2
   let δ : ℝ := (b - a) / 2
   let J : E →L[ℂ] E := U.reflection
@@ -135,22 +131,24 @@ theorem projectionGap_lt_sqrt_two_div_two_of_orderedFormGap
     rw [isSelfAdjoint_iff]
     simp only [C, star_mul, hSstar.star_eq, hKstar]
     exact hKcommS.eq.symm
-  have hBcoer : ∀ x, δ * ‖x‖ ^ 2 ≤ (⟪B x, x⟫_ℂ).re := by
-    intro x
+  -- The reflected forms are positive, and the second weight is invertible.
+  have hBcoer : B.LowerFormBoundOn ⊤ δ := by
+    apply (ContinuousLinearMap.lowerFormBoundOn_iff B ⊤ δ).2
+    intro x _
     exact reflection_centered_form_lower U A hAsym hAU hUhigh hUperpLow x
-  have hCcoer : ∀ x, δ * ‖x‖ ^ 2 ≤ (⟪C x, x⟫_ℂ).re := by
-    intro x
+  have hCcoer : C.LowerFormBoundOn ⊤ δ := by
+    apply (ContinuousLinearMap.lowerFormBoundOn_iff C ⊤ δ).2
+    intro x _
     exact reflection_centered_form_lower V (A + H) hAHsym hAplusH_V hVhigh hVperpLow x
-  have hCnonneg : (0 : E →L[ℂ] E) ≤ C := by
-    rw [ContinuousLinearMap.nonneg_iff_isPositive]
-    refine ⟨ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mp hCstar, ?_⟩
-    intro x
-    rw [ContinuousLinearMap.reApplyInnerSelf_apply]
-    exact (mul_nonneg hδ.le (sq_nonneg ‖x‖)).trans (hCcoer x)
-  have hCunit := ContinuousLinearMap.isUnit_of_coercive C hδ hCcoer
-  have hJH : J * H = -(H * J) := by
-    simpa only [J, ContinuousLinearMap.mul_def] using
-      reflection_comp_eq_neg_comp_of_maps_orthogonal U H hHU hHUperp
+  have hCnonneg : (0 : E →L[ℂ] E) ≤ C :=
+    ContinuousLinearMap.nonneg_iff_isPositive.mpr
+      (ContinuousLinearMap.isPositive_of_lowerFormBoundOn_top
+        (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mp hCstar) (hCcoer.mono_const hδ.le))
+  have hCunit := ContinuousLinearMap.isUnit_of_coercive C hδ fun x =>
+    (ContinuousLinearMap.lowerFormBoundOn_iff C ⊤ δ).mp hCcoer x Submodule.mem_top
+  have hJH : J * H = -(H * J) :=
+    reflection_mul_eq_neg_mul_of_maps_orthogonal U H hHU hHUperp
+  -- Off-diagonality supplies the Lyapunov identity for the reflection product.
   have hS : S = T + H := by dsimp [S, T]; abel
   have hKSK : K * S * K = S := by
     rw [hKcommS.eq, mul_assoc, V.reflection_mul_self, mul_one]
@@ -163,12 +161,13 @@ theorem projectionGap_lt_sqrt_two_div_two_of_orderedFormGap
       _ = J * T + J * T := by
         rw [hS, add_mul, mul_add, ← hJcommT.eq, hJH]
         abel
+  -- Square-root similarity gives the spectral bound needed by the gap criterion.
   let α := δ / (1 + ‖C ^ (1 / 2 : ℝ)‖ ^ 2)
   have hα : 0 < α := div_pos hδ (by positivity)
   apply projectionGap_lt_sqrt_two_div_two_of_reflection_spectrum U V hα
   intro z hz
   exact ContinuousLinearMap.le_re_of_mem_spectrum_of_positive_lyapunov B C W
-    ⟨hCnonneg, hCunit⟩ (by simpa only [ContinuousLinearMap.mul_def] using hlyap) hδ.le hBcoer hz
+    ⟨hCnonneg, hCunit⟩ hlyap hδ.le hBcoer hz
 
 end
 

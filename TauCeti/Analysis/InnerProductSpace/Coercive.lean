@@ -5,7 +5,8 @@ Authors: Jon Crall, Claude Fable 5, OpenAI GPT-5.6 Thinking, Claude Opus 5, Open
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
@@ -58,6 +59,25 @@ theorem isUnit_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
   intro x
   exact (mul_comm _ _).le.trans ((hcoer x).trans (RCLike.re_le_norm _))
 
+/-- Conjugating a Lyapunov identity by an inverse self-adjoint square root gives the
+Hermitian part of the similar operator. -/
+theorem conj_add_star_of_lyapunov [CompleteSpace E]
+    (B C W R Rinv : E →L[𝕜] E)
+    (hR : IsSelfAdjoint R) (hRinv : IsSelfAdjoint Rinv)
+    (hRR : R * R = C) (hRinvR : Rinv * R = 1) (hRRinv : R * Rinv = 1)
+    (hlyap : C * W + star W * C = B + B) :
+    R * W * Rinv + star (R * W * Rinv) =
+      Rinv * B * Rinv + Rinv * B * Rinv := by
+  have hleft : Rinv * C = R := by rw [← hRR, ← mul_assoc, hRinvR, one_mul]
+  have hright : C * Rinv = R := by rw [← hRR, mul_assoc, hRRinv, mul_one]
+  have hconj : Rinv * (C * W + star W * C) * Rinv =
+      R * W * Rinv + Rinv * star W * R := by
+    calc
+      _ = (Rinv * C) * W * Rinv + Rinv * star W * (C * Rinv) := by noncomm_ring
+      _ = _ := by rw [hleft, hright]
+  rw [hlyap, mul_add, add_mul] at hconj
+  simpa only [star_mul, hR.star_eq, hRinv.star_eq, mul_assoc] using hconj.symm
+
 /-- If `C = R²`, `Rinv` is the two-sided inverse of the self-adjoint `R`, and
 `C W + W† C = 2 B`, a quadratic-form lower bound `δ` for `B` gives the lower bound
 `δ / (1 + ‖R‖²)` for `R W Rinv`. No positivity of `R` or nontriviality of the space
@@ -65,77 +85,45 @@ is required, and `δ = 0` is allowed. -/
 theorem coercive_conj_of_lyapunov [CompleteSpace E]
     (B C W R Rinv : E →L[𝕜] E)
     (hR : IsSelfAdjoint R) (hRinv : IsSelfAdjoint Rinv)
-    (hRR : R ∘L R = C)
-    (hRinvR : Rinv ∘L R = ContinuousLinearMap.id 𝕜 E)
-    (hRRinv : R ∘L Rinv = ContinuousLinearMap.id 𝕜 E)
-    (hlyap : C ∘L W + star W ∘L C = B + B)
-    {δ : ℝ} (hδ : 0 ≤ δ)
-    (hBcoer : ∀ x, δ * ‖x‖ ^ 2 ≤ RCLike.re ⟪B x, x⟫_𝕜) :
+    (hRR : R * R = C) (hRinvR : Rinv * R = 1) (hRRinv : R * Rinv = 1)
+    (hlyap : C * W + star W * C = B + B)
+    {δ : ℝ} (hδ : 0 ≤ δ) (hBcoer : B.LowerFormBoundOn ⊤ δ) :
     ∀ x, δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
-      RCLike.re ⟪(R ∘L W ∘L Rinv) x, x⟫_𝕜 := by
-  let Z := R ∘L W ∘L Rinv
-  have hRstar := hR.star_eq
-  have hRinvstar := hRinv.star_eq
-  have hZstar : star Z = Rinv ∘L star W ∘L R := by
-    dsimp [Z]
-    simp only [← ContinuousLinearMap.mul_def, star_mul, hRstar, hRinvstar, mul_assoc]
-  have hleft : Rinv ∘L C = R := by
-    rw [← hRR, ← ContinuousLinearMap.comp_assoc, hRinvR, ContinuousLinearMap.id_comp]
-  have hright : C ∘L Rinv = R := by
-    rw [← hRR, ContinuousLinearMap.comp_assoc, hRRinv, ContinuousLinearMap.comp_id]
-  have hZherm :
-      Z + star Z = (Rinv ∘L B ∘L Rinv) + (Rinv ∘L B ∘L Rinv) := by
-    have hconj := congrArg (fun T : E →L[𝕜] E => Rinv ∘L T ∘L Rinv) hlyap
-    simp only [ContinuousLinearMap.comp_add, ContinuousLinearMap.add_comp] at hconj
-    simp only [← ContinuousLinearMap.comp_assoc, hleft] at hconj
-    rw [ContinuousLinearMap.comp_assoc (Rinv ∘L star W) C Rinv, hright] at hconj
-    rw [hZstar]
-    simpa only [Z, ContinuousLinearMap.comp_assoc] using hconj
+      RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 := by
   intro x
-  let y : E := Rinv x
+  let y := Rinv x
   have hxy : R y = x := by
-    dsimp [y]
-    have := DFunLike.congr_fun hRRinv x
-    simpa only [ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.id_apply] using this
-  have hreal : RCLike.re ⟪Z x, x⟫_𝕜 = RCLike.re ⟪B y, y⟫_𝕜 := by
-    have hsum := congrArg
-      (fun T : E →L[𝕜] E => RCLike.re ⟪T x, x⟫_𝕜) hZherm
-    simp only [add_apply, inner_add_left, map_add,
-      ContinuousLinearMap.comp_apply] at hsum
-    have hstarReal : RCLike.re ⟪star Z x, x⟫_𝕜 =
-        RCLike.re ⟪Z x, x⟫_𝕜 := by
-      rw [ContinuousLinearMap.star_eq_adjoint,
-        ContinuousLinearMap.adjoint_inner_left]
-      exact inner_re_symm x (Z x)
-    have hRinvAdj : ContinuousLinearMap.adjoint Rinv = Rinv := by
-      rw [← ContinuousLinearMap.star_eq_adjoint]
-      exact hRinvstar
-    have hRinvInner : RCLike.re ⟪Rinv (B y), x⟫_𝕜 =
-        RCLike.re ⟪B y, y⟫_𝕜 := by
-      rw [← hRinvAdj, ContinuousLinearMap.adjoint_inner_left]
-    rw [hstarReal, hRinvInner] at hsum
+    simpa only [y, mul_apply_eq_comp, one_apply_eq_self] using DFunLike.congr_fun hRRinv x
+  -- Transfer the quadratic form using the conjugated Lyapunov identity.
+  have hreal : RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 = RCLike.re ⟪B y, y⟫_𝕜 := by
+    have hsum := congrArg (fun T : E →L[𝕜] E => RCLike.re ⟪T x, x⟫_𝕜)
+      (conj_add_star_of_lyapunov B C W R Rinv hR hRinv hRR hRinvR hRRinv hlyap)
+    simp only [add_apply, inner_add_left, map_add, re_inner_star_apply_self,
+      mul_apply_eq_comp] at hsum
+    have hRinvAdj : Rinv.adjoint = Rinv := by
+      rw [← star_eq_adjoint]; exact hRinv.star_eq
+    have hinner : RCLike.re ⟪Rinv (B y), x⟫_𝕜 = RCLike.re ⟪B y, y⟫_𝕜 := by
+      rw [← hRinvAdj, adjoint_inner_left]
+    rw [hinner] at hsum
+    simp only [mul_apply_eq_comp]
     linarith
-  have hB := hBcoer y
-  have hnorm : ‖x‖ ≤ ‖R‖ * ‖y‖ := by
-    rw [← hxy]
-    exact R.le_opNorm y
+  -- The inverse change of variables costs at most the square of the operator norm.
+  have hnorm : ‖x‖ ≤ ‖R‖ * ‖y‖ := by rw [← hxy]; exact R.le_opNorm y
   have hsq : ‖x‖ ^ 2 ≤ ‖R‖ ^ 2 * ‖y‖ ^ 2 := by
     nlinarith [hnorm, norm_nonneg x, norm_nonneg R, norm_nonneg y]
-  rw [hreal]
   have hden : 0 < 1 + ‖R‖ ^ 2 := by positivity
   have hcoef : δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2 ≤ δ := by
     rw [div_mul_eq_mul_div]
     apply (div_le_iff₀ hden).2
     nlinarith [hδ]
-  have hscaled : δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤ δ * ‖y‖ ^ 2 := by
-    calc
-      δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
-          δ / (1 + ‖R‖ ^ 2) * (‖R‖ ^ 2 * ‖y‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left hsq (div_nonneg hδ hden.le)
-      _ = (δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2) * ‖y‖ ^ 2 := by ring
-      _ ≤ δ * ‖y‖ ^ 2 := mul_le_mul_of_nonneg_right hcoef (sq_nonneg ‖y‖)
-  exact hscaled.trans hB
+  rw [hreal]
+  calc
+    δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
+        δ / (1 + ‖R‖ ^ 2) * (‖R‖ ^ 2 * ‖y‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left hsq (div_nonneg hδ hden.le)
+    _ = (δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2) * ‖y‖ ^ 2 := by ring
+    _ ≤ δ * ‖y‖ ^ 2 := mul_le_mul_of_nonneg_right hcoef (sq_nonneg ‖y‖)
+    _ ≤ RCLike.re ⟪B y, y⟫_𝕜 := (lowerFormBoundOn_iff B ⊤ δ).mp hBcoer y Submodule.mem_top
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
@@ -161,28 +149,26 @@ theorem le_re_of_mem_spectrum_of_coercive (N : E →L[ℂ] E) {c : ℝ}
 half-plane bound, with the square-root similarity made explicit in the constant. -/
 theorem le_re_of_mem_spectrum_of_positive_lyapunov
     (B C W : E →L[ℂ] E) (hC : IsStrictlyPositive C)
-    (hlyap : C ∘L W + star W ∘L C = B + B) {δ : ℝ} (hδ : 0 ≤ δ)
-    (hB : ∀ x, δ * ‖x‖ ^ 2 ≤ (⟪B x, x⟫_ℂ).re)
+    (hlyap : C * W + star W * C = B + B) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hB : B.LowerFormBoundOn ⊤ δ)
     {z : ℂ} (hz : z ∈ spectrum ℂ W) :
     δ / (1 + ‖C ^ (1 / 2 : ℝ)‖ ^ 2) ≤ z.re := by
   let R := C ^ (1 / 2 : ℝ)
   let Rinv := C ^ (-(1 / 2 : ℝ))
-  have hRinvR : Rinv ∘L R = ContinuousLinearMap.id ℂ E := by
-    simpa only [R, Rinv, ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using
-      CFC.rpow_neg_mul_rpow (1 / 2 : ℝ) hC
-  have hRRinv : R ∘L Rinv = ContinuousLinearMap.id ℂ E := by
-    simpa only [R, Rinv, ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using
-      CFC.rpow_mul_rpow_neg (1 / 2 : ℝ) hC
-  have hRR : R ∘L R = C := by
-    simpa only [CFC.sqrt_eq_rpow, R, ContinuousLinearMap.mul_def] using
-      CFC.sqrt_mul_sqrt_self C hC.nonneg
-  let e := ContinuousLinearEquiv.equivOfInverse' R Rinv hRRinv hRinvR
-  have he : e.conjContinuousAlgEquiv.toAlgEquiv W = R ∘L W ∘L Rinv := by
+  have hRinvR : Rinv * R = 1 := CFC.rpow_neg_mul_rpow (1 / 2 : ℝ) hC
+  have hRRinv : R * Rinv = 1 := CFC.rpow_mul_rpow_neg (1 / 2 : ℝ) hC
+  have hRR : R * R = C := by
+    simpa only [CFC.sqrt_eq_rpow, R] using CFC.sqrt_mul_sqrt_self C hC.nonneg
+  -- The inverse-equivalence constructor uses composition; translate at this boundary only.
+  let e := ContinuousLinearEquiv.equivOfInverse' R Rinv
+    (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRRinv)
+    (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRinvR)
+  have he : e.conjContinuousAlgEquiv.toAlgEquiv W = R * W * Rinv := by
     ext x
     simp only [ContinuousAlgEquiv.coe_toAlgEquiv,
       ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
       ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.symm_equivOfInverse',
-      ContinuousLinearMap.comp_apply, e]
+      mul_apply_eq_comp, e]
   have hz' : z ∈ spectrum ℂ (e.conjContinuousAlgEquiv.toAlgEquiv W) := by
     rwa [AlgEquiv.spectrum_eq]
   rw [he] at hz'

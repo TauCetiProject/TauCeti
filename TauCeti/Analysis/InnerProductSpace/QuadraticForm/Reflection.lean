@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Reflection
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
+public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 
 /-!
 # Reflected quadratic-form bounds
@@ -33,10 +34,8 @@ theorem reflection_centered_form_lower
     (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (A : E →L[𝕜] E)
     (hA : A.toLinearMap.IsSymmetric) (hAU : ∀ x ∈ U, A x ∈ U)
     {a b : ℝ}
-    (hUhigh : ∀ x ∈ U,
-      b * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
-    (hUperpLow : ∀ x ∈ Uᗮ,
-      RCLike.re ⟪A x, x⟫_𝕜 ≤ a * ‖x‖ ^ 2)
+    (hUhigh : A.LowerFormBoundOn U b)
+    (hUperpLow : A.UpperFormBoundOn Uᗮ a)
     (x : E) :
     (b - a) / 2 * ‖x‖ ^ 2 ≤
       RCLike.re ⟪((U.reflection : E →L[𝕜] E) *
@@ -44,11 +43,14 @@ theorem reflection_centered_form_lower
   have hUperp : ∀ y ∈ Uᗮ, A y ∈ Uᗮ := by
     intro y hy
     exact LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hA (p := U) hAU hy
+  -- Split into the invariant subspace and its orthogonal complement.
   let p : E := U.starProjection x
   let m : E := x - U.starProjection x
   have hp : p ∈ U := U.starProjection_apply_mem x
   have hm : m ∈ Uᗮ := U.sub_starProjection_mem_orthogonal x
-  have hxpm : x = p + m := by simp only [p, m]; abel
+  have hxpm : x = p + m := by
+    simpa only [p, m, starProjection_orthogonal_val] using
+      (U.starProjection_add_starProjection_orthogonal x).symm
   have hAp : A p - (((a + b) / 2 : ℝ) : 𝕜) • p ∈ U :=
     U.sub_mem (hAU p hp) (U.smul_mem _ hp)
   have hAm : A m - (((a + b) / 2 : ℝ) : 𝕜) • m ∈ Uᗮ :=
@@ -59,15 +61,8 @@ theorem reflection_centered_form_lower
         (A m - (((a + b) / 2 : ℝ) : 𝕜) • m) := by
     rw [hxpm, map_add, smul_add]
     module
-  have hJAp :
-      (U.reflection : E →L[𝕜] E) (A p - (((a + b) / 2 : ℝ) : 𝕜) • p) =
-        A p - (((a + b) / 2 : ℝ) : 𝕜) • p := by
-    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hAp
-  have hJAm :
-      (U.reflection : E →L[𝕜] E) (A m - (((a + b) / 2 : ℝ) : 𝕜) • m) =
-        -(A m - (((a + b) / 2 : ℝ) : 𝕜) • m) := by
-    simpa only [LinearIsometryEquiv.coe_coe''] using
-      U.reflection_mem_subspace_orthogonalComplement_eq_neg hAm
+  have hJAp := U.coe_reflection_apply_of_mem hAp
+  have hJAm := U.coe_reflection_apply_of_mem_orthogonal hAm
   have hreflect :
       (U.reflection : E →L[𝕜] E)
           (A x - (((a + b) / 2 : ℝ) : 𝕜) • x) =
@@ -75,6 +70,7 @@ theorem reflection_centered_form_lower
         (A m - (((a + b) / 2 : ℝ) : 𝕜) • m) := by
     rw [hsplit, map_add, hJAp, hJAm]
     module
+  -- Orthogonality removes the cross terms of the reflected centered form.
   have hAp_m :
       ⟪A p - (((a + b) / 2 : ℝ) : 𝕜) • p, m⟫_𝕜 = 0 :=
     Submodule.inner_right_of_mem_orthogonal hAp hm
@@ -85,8 +81,9 @@ theorem reflection_centered_form_lower
   rw [hreflect, hxpm, inner_sub_left, inner_add_right,
     inner_add_right, hAp_m, hAm_p]
   simp only [add_zero, zero_add, inner_sub_left, inner_smul_left, map_sub]
-  have hpBound := hUhigh p hp
-  have hmBound := hUperpLow m hm
+  -- Apply the two diagonal bounds and native Pythagoras.
+  have hpBound := (ContinuousLinearMap.lowerFormBoundOn_iff A U b).mp hUhigh p hp
+  have hmBound := (ContinuousLinearMap.upperFormBoundOn_iff A Uᗮ a).mp hUperpLow m hm
   have hpyth := (Submodule.norm_sq_eq_add_norm_sq_starProjection x U).symm
   rw [Submodule.starProjection_orthogonal_val] at hpyth
   -- Name the projection components in the native Pythagoras identity.
