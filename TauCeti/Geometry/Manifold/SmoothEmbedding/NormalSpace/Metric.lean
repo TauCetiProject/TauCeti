@@ -197,29 +197,4 @@ theorem isContMDiffRiemannianBundle_normalRiemannianMetric
   refine ⟨g.inner, g.contMDiff, fun x v w => ?_⟩
   exact congrArg (fun a : RiemannianMetric ν => a.inner x v w) hg.symm
 
-/-- The fibrewise normal metric is continuous in the intrinsic normal bundle atlas. -/
-theorem isContinuousRiemannianBundle_normalRiemannianMetric
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
-    haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-    letI := f.normalSpaceFiberBundle hn hdim
-    letI := f.normalSpaceVectorBundle hn hdim
-    let ν : M → Type _ := fun x => f.NormalSpace x hn
-    letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
-    letI : ∀ x, NormedAddCommGroup (ν x) := fun _ => inferInstance
-    letI : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
-    IsContinuousRiemannianBundle P ν := by
-  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let := f.normalSpaceFiberBundle hn hdim
-  let := f.normalSpaceVectorBundle hn hdim
-  let ν : M → Type _ := fun x => f.NormalSpace x hn
-  let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
-  let : ∀ x, NormedAddCommGroup (ν x) := fun _ => inferInstance
-  let : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
-  let := f.isContMDiffRiemannianBundle_normalRiemannianMetric hn hm hdim
-  obtain ⟨g, hg, hinner⟩ :=
-    IsContMDiffRiemannianBundle.exists_contMDiff (IB := I) (n := m) (F := P)
-      (E := ν)
-  exact ⟨g, hg.continuous, hinner⟩
-
 end TauCeti.SmoothEmbedding
