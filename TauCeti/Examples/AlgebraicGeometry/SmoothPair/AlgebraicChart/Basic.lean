@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.SmoothPair.AlgebraicChart
+import TauCeti.AlgebraicGeometry.SmoothPair.AlgebraicChart.Basic
 
 /-!
 # Checks for relative algebraic normal crossings charts
