@@ -149,20 +149,14 @@ theorem hasLaw_markovChainLaw_partialSums (hU : ∀ n, Measurable (U n))
     let η := μ.additiveWalk.comap
       (fun w : Fin (n + 1) → α => w (Fin.last n)) (measurable_pi_apply _)
     let step (w : Fin (n + 1) → α) (u : α) := w (Fin.last n) + u
-    have hstep := η.map_prod_eq_compProd_of_map (μ := P.map W) μ step (by fun_prop)
-      (fun w => by simp [η, step, Kernel.comap_apply])
-    have hpair := hi'.map_prod_eq_prod_map_map hW.aemeasurable (hU n).aemeasurable
-    rw [(hlaw n).map_eq] at hpair
     calc
       _ = P.map (fun ω => (W ω, step (W ω) (U n ω))) := by
         rw [Measure.map_map (by fun_prop) hX]
         congr 1
         funext ω
         simp [W, X, step, Finset.sum_range_succ, add_assoc]
-      _ = ((P.map W).prod μ).map (fun p => (p.1, step p.1 p.2)) := by
-        rw [← hpair, Measure.map_map (by fun_prop) (hW.prodMk (hU n))]
-        rfl
-      _ = (P.map W) ⊗ₘ η := hstep
+      _ = (P.map W) ⊗ₘ η := hi'.map_prodMk_eq_compProd_of_map hW (hU n) (hlaw n)
+        η step (by fun_prop) (fun w => by simp [η, step, Kernel.comap_apply])
       _ = _ := by
         rw [Measure.map_map (by fun_prop) hX]
         rfl
