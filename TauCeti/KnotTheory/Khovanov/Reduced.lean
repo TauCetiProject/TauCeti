@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.Khovanov.Mark
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-import Mathlib.CategoryTheory.Abelian.Exact
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
@@ -295,6 +294,30 @@ def reducedKhovanovQuotientπ (j : ℤ) :
     D.khovanovComplex hD R (j + 1) ⟶ D.reducedKhovanovQuotientComplex p hD R j :=
   cokernel.π (D.khovanovComplexMarkX p hD R (j := j + 3) (j' := j + 1) (by omega)) ≫
     eqToHom (D.reducedKhovanovQuotientComplex_apply p hD R j).symm
+
+/-- The quotient projection is the native cokernel projection followed by the identification
+with the quotient model. -/
+theorem reducedKhovanovQuotientπ_def (j : ℤ) :
+    D.reducedKhovanovQuotientπ p hD R j =
+      cokernel.π (D.khovanovComplexMarkX p hD R (j := j + 3) (j' := j + 1)
+        (by omega)) ≫
+          eqToHom (D.reducedKhovanovQuotientComplex_apply p hD R j).symm := (rfl)
+
+/-- The incoming marked action vanishes after projection to the quotient model. -/
+@[reassoc (attr := simp)]
+theorem khovanovComplexMarkX_comp_reducedKhovanovQuotientπ (j : ℤ) :
+    D.khovanovComplexMarkX p hD R (j := j + 3) (j' := j + 1) (by omega) ≫
+      D.reducedKhovanovQuotientπ p hD R j = 0 := by
+  simp [reducedKhovanovQuotientπ_def]
+
+/-- The quotient projection exhibits the quotient model as the cokernel of the incoming
+marked action, so maps annihilating that action descend uniquely to the quotient. -/
+def reducedKhovanovQuotientπIsCokernel (j : ℤ) :
+    IsColimit (CokernelCofork.ofπ (D.reducedKhovanovQuotientπ p hD R j)
+      (D.khovanovComplexMarkX_comp_reducedKhovanovQuotientπ p hD R j)) :=
+  IsCokernel.cokernelIso _ _ (cokernelIsCokernel _)
+    (eqToIso (D.reducedKhovanovQuotientComplex_apply p hD R j).symm)
+    (D.reducedKhovanovQuotientπ_def p hD R j).symm
 
 /-- The canonical quotient map is surjective as a map of cochain complexes. -/
 instance (j : ℤ) : Epi (D.reducedKhovanovQuotientπ p hD R j) := by
