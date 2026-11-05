@@ -21,13 +21,14 @@ where `H` is the Hurwitz class number, with `H(0) = -1/12`, and the weight `P_k(
 value at `t` of the second-kind Dickson polynomial of degree `k - 2` and parameter `n`, the
 coefficient of `x^(k-2)` in `(1 - t x + n x²)⁻¹`.
 
-This is Popa and Zagier's proof. Their explicit element `T̃ₙ` of the group ring of the integral
-matrices of determinant `n` acts on the period polynomials `W_w`, `w = k - 2`, and its trace there
-is the class-number expression `σ_{k-1}(n) - ∑ min(d, d')^(k-1) - ∑ P_k(t, n) H(4n - t²)`
+This is Popa and Zagier's proof. Their explicit element `popaZagierElement` of the group ring of
+the integral matrices of determinant `n` acts on the period polynomials `W_w`, `w = k - 2`, and its
+trace there is the class-number expression
+`σ_{k-1}(n) - ∑ min(d, d')^(k-1) - ∑ P_k(t, n) H(4n - t²)`
 (the main theorem of `TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Formula`).
 By the Eichler–Shimura theorem, `W_w` is isomorphic to `S_k × ℂ × S_k`, the factor `ℂ` spanned by
-the Eisenstein polynomial `X^w - Y^w`, and `T̃ₙ` acts there as `Tₙ`, `σ_{k-1}(n)` and `Tₙ`. So the
-same trace is `2 tr(Tₙ | S_k) + σ_{k-1}(n)`
+the Eisenstein polynomial `X^w - Y^w`, and `popaZagierElement` acts there as `Tₙ`, `σ_{k-1}(n)`
+and `Tₙ`. So the same trace is `2 tr(Tₙ | S_k) + σ_{k-1}(n)`
 (`TauCeti.TraceFormulaMatrixModule.PeriodRelation.trace_restrict_periodPolynomials`). Comparing
 the two gives the formula.
 
