@@ -72,19 +72,14 @@ theorem notMem_approximatePointSpectrum_iff (T : E →L[𝕜] E) (z : 𝕜) :
   push Not
   constructor
   · rintro ⟨c, hc, hbound⟩
+    have hanti := antilipschitz_of_bound_of_norm_one (𝕜 := 𝕜)
+      (T - z • 1 : E →L[𝕜] E) (K := ⟨c⁻¹, by positivity⟩) (fun x hx ↦ by
+        rw [sub_apply, smul_apply, one_apply_eq_self]
+        exact (one_le_inv_mul₀ hc).mpr (hbound x hx))
     refine ⟨c, hc, fun x ↦ ?_⟩
-    by_cases hx : x = 0
-    · simp [hx]
-    · have h := hbound ((‖x‖⁻¹ : 𝕜) • x) (norm_smul_inv_norm hx)
-      have hres : ‖T ((‖x‖⁻¹ : 𝕜) • x) - z • ((‖x‖⁻¹ : 𝕜) • x)‖ =
-          ‖x‖⁻¹ * ‖T x - z • x‖ := by
-        rw [map_smul, smul_comm z, ← smul_sub, norm_smul]
-        simp
-      rw [hres] at h
-      have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr hx
-      calc c * ‖x‖ ≤ (‖x‖⁻¹ * ‖T x - z • x‖) * ‖x‖ :=
-            mul_le_mul_of_nonneg_right h hxpos.le
-        _ = ‖T x - z • x‖ := by field_simp
+    have h := hanti.le_mul_dist x 0
+    simp only [dist_zero_right, map_zero, sub_apply, smul_apply, one_apply_eq_self] at h
+    exact (le_inv_mul_iff₀ hc).mp h
   · rintro ⟨c, hc, hbound⟩
     exact ⟨c, hc, fun x hx ↦ by simpa only [hx, mul_one] using hbound x⟩
 
