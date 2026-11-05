@@ -53,6 +53,9 @@ rectangles or rectangles sharing exactly one side column.
   side column means the two side pairs differ.
 * `TauCeti.GridRectangleDecomposition.hasOneCommonSide_of_mem_commonSideColumns`: a nondiagonal
   decomposition with a common side column has exactly one.
+* `TauCeti.GridRectangleDecomposition.hasOneCommonSide_of_right_eq_left_of_ne` and
+  `TauCeti.GridRectangleDecomposition.hasOneCommonSide_of_left_eq_right_of_ne`: off the diagonal,
+  two rectangles sharing a grid line with opposite orientations share no other side.
 * `TauCeti.GridRectangleDecomposition.target_apply_ne_iff_mem_sideColumns_union`: when exactly
   one side is common, the three side columns are precisely the columns moved between the endpoint
   states.
@@ -471,6 +474,20 @@ theorem hasOneCommonSide_of_mem_commonSideColumns (D : GridRectangleDecompositio
     {c : Fin n} (hc : c ∈ D.commonSideColumns) (hzx : z ≠ x) : D.HasOneCommonSide :=
   (D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left fun hdisjoint =>
     Finset.eq_empty_iff_forall_notMem.mp (D.commonSideColumns_eq_empty_iff.mpr hdisjoint) c hc
+
+/-- Off the diagonal, when the terminal side of the first rectangle is the initial side of the
+second, this grid line is their unique common side. -/
+theorem hasOneCommonSide_of_right_eq_left_of_ne (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.left) (hzx : z ≠ x) : D.HasOneCommonSide :=
+  D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.right)
+    (by simp [D.mem_commonSideColumns, GridRectangleBetween.mem_sideColumns, hcommon]) hzx
+
+/-- Off the diagonal, when the initial side of the first rectangle is the terminal side of the
+second, this grid line is their unique common side. -/
+theorem hasOneCommonSide_of_left_eq_right_of_ne (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.right) (hzx : z ≠ x) : D.HasOneCommonSide :=
+  D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.left)
+    (by simp [D.mem_commonSideColumns, GridRectangleBetween.mem_sideColumns, hcommon]) hzx
 
 /-- A two-step rectangle decomposition is nondiagonal exactly when its side pairs are disjoint or
 share exactly one column. -/

@@ -69,6 +69,20 @@ theorem setOf_isomorphismClassesMk_eq_eq_range :
   · rintro ⟨a, rfl⟩
     exact isomorphismClassesMk_eq_iff.mpr ⟨a.hom⟩
 
+/-- Let `r` be a relation on a set `U` of objects that relates any two objects joined by an
+arrow, for instance the restriction of `isIsomorphicSetoid C`. A map from `U / r` to the
+isomorphism classes sending the class of each `y` to the isomorphism class of `y` is injective.
+Such a map exists only if `r` relates no other objects, so `r` is then the restriction of
+`isIsomorphicSetoid C`. -/
+theorem injective_of_mk_eq_isomorphismClassesMk {U : Set C} {r : Setoid U}
+    {φ : Quotient r → Quotient (isIsomorphicSetoid C)}
+    (hr : ∀ y y' : U, Nonempty ((y : C) ⟶ y') → r y y')
+    (hφ : ∀ y, φ (Quotient.mk r y) = Quotient.mk (isIsomorphicSetoid C) (y : C)) :
+    Function.Injective φ := by
+  rintro ⟨y⟩ ⟨y'⟩ h
+  exact Quotient.sound (hr y y' (isomorphismClassesMk_eq_iff.mp ((hφ y).symm.trans
+    (h.trans (hφ y')))))
+
 variable [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
 
 /-- With continuous source and open target, the projection to isomorphism classes is an
@@ -111,5 +125,28 @@ theorem paracompactSpace_isomorphismClasses [LocallyCompactSpace C] [SecondCount
   let := hq.secondCountableTopology
   let := t2Space_isomorphismClasses hs ht hc
   infer_instance
+
+/-- **Open subsets give open pieces of the coarse space.** Let `r` be a relation on an open set
+`U` of objects that relates any two objects joined by an arrow. With continuous source and
+open target, a map from `U / r` to the isomorphism classes sending the class of each `y` to the
+isomorphism class of `y` is an open embedding. So the coarse space of the full subgroupoid on `U`
+is an open subspace of the coarse space. -/
+theorem isOpenEmbedding_of_mk_eq_isomorphismClassesMk {U : Set C} {r : Setoid U}
+    {φ : Quotient r → Quotient (isIsomorphicSetoid C)} (hU : IsOpen U)
+    (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total C → C))
+    (hr : ∀ y y' : U, Nonempty ((y : C) ⟶ y') → r y y')
+    (hφ : ∀ y, φ (Quotient.mk r y) = Quotient.mk (isIsomorphicSetoid C) (y : C)) :
+    IsOpenEmbedding φ := by
+  have hcomp : φ ∘ Quotient.mk r = Quotient.mk (isIsomorphicSetoid C) ∘ Subtype.val := funext hφ
+  refine .of_continuous_injective_isOpenMap ?_ (injective_of_mk_eq_isomorphismClassesMk hr hφ) ?_
+  · rw [isQuotientMap_quotient_mk'.continuous_iff]
+    exact hcomp ▸ continuous_quotient_mk'.comp continuous_subtype_val
+  · intro W hW
+    rw [← Quotient.mk_surjective.image_preimage W, image_image]
+    simp only [hφ]
+    rw [← image_image]
+    exact (isOpenQuotientMap_isomorphismClassesMk hs ht).isOpenMap _
+      (hU.isOpenMap_subtype_val _ (hW.preimage continuous_quotient_mk'))
 
 end TauCeti
