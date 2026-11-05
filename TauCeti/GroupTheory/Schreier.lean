@@ -216,9 +216,11 @@ theorem _root_.Subgroup.exists_finset_card_le_one_add_index_mul (H : Subgroup G)
   obtain ⟨R, hR⟩ := H.exists_finset_isPredecessorTransversal hS
   have hRcard : R.card = H.index := by
     rw [← hR.isComplement.card_right, ← Nat.card_eq_finsetCard, Finset.coe_sort_coe]
-  -- The Schreier generator attached to `g ∈ R * S`.
-  let f : G → H := fun g ↦ ⟨g * (hR.isComplement.toRightFun g : G)⁻¹,
-    hR.isComplement.mul_inv_toRightFun_mem g⟩
+  -- Schreier's lemma: the Schreier generators at all of `R * S` generate `H`.
+  have hgen := closure_mul_image_eq_top' hR.isComplement hR.one_mem hS
+  -- The Schreier generator attached to `g ∈ R * S`; `set` also folds it in `hgen`.
+  set f : G → H := fun g ↦ ⟨g * (hR.isComplement.toRightFun g : G)⁻¹,
+    hR.isComplement.mul_inv_toRightFun_mem g⟩ with hf
   refine ⟨((R * S) \ R).image f, ?_, ?_⟩
   · -- Count: `R * S` has at most `n * d` elements, and by the predecessor condition at least
     -- `n - 1` of them lie in `R`, namely every `r ≠ 1`.
@@ -235,15 +237,13 @@ theorem _root_.Subgroup.exists_finset_card_le_one_add_index_mul (H : Subgroup G)
       _ ≤ 1 + H.index * (S.card - 1) := by
         rw [Nat.mul_sub_one, ← hRcard]
         omega
-  · -- Generation: Schreier's lemma gives the generators at all of `R * S`, and the ones at
-    -- `R * S ∩ R` are trivial.
-    have hgen := closure_mul_image_eq_top' hR.isComplement hR.one_mem hS
+  · -- Generation: by `hgen` it suffices to see that the generators at `R * S ∩ R` are trivial.
     rw [eq_top_iff, ← hgen, closure_le]
     intro x hx
     obtain ⟨g, hg, rfl⟩ := Finset.mem_image.mp hx
-    change f g ∈ _
     by_cases hgR : g ∈ R
-    · exact (show f g = 1 from Subtype.ext (by simp [f, hgR])) ▸ one_mem _
+    · rw [show f g = 1 from Subtype.ext (by simp [hf, hgR])]
+      exact one_mem _
     · exact subset_closure (Finset.mem_image_of_mem f (Finset.mem_sdiff.mpr ⟨hg, hgR⟩))
 
 /-- **Schreier's index formula for `Group.rank`:** `rank H ≤ 1 + [G : H] * (rank G - 1)` for a
