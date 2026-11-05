@@ -17,11 +17,11 @@ restriction to the scalar subalgebra vanishes. Thus they are the kernel of restr
 unit-preserving scalar inclusion `R → A`. The Hochschild coboundary preserves this kernel and
 defines the reduced cyclic cochain complex.
 
-This construction is different from relative cyclic cohomology of a possibly nonunital algebra.
-The latter first passes to the forced unitization and takes the kernel of its augmentation
-splitting; the reduced theory here uses the given unit of `A`. In particular, the reduced complex
-of the ground ring is zero, whereas relative forced-unitization cohomology recovers the full cyclic
-theory of a unital algebra.
+The relative cyclic cohomology of a possibly nonunital algebra `A`
+(`TauCeti.relativeCyclicCohomology`) is the reduced cyclic cohomology of its forced unitization
+`Unitization R A`. It is a different functor of `A` from the reduced theory here, which uses the
+given unit of `A`: the reduced complex of the ground ring is zero, whereas the relative
+forced-unitization cohomology of a unital algebra recovers its full cyclic theory.
 
 ## Main definitions
 
@@ -312,26 +312,10 @@ end reducedCyclicCohomology
 
 end ComplexMap
 
-section ComplexKernel
+section Inclusion
 
-variable (R A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
   [AddCommGroup M] [Module R M]
-
-/-- Restriction of cyclic cochain complexes along the scalar inclusion. -/
-def scalarCyclicRestrictionComplexMap :
-    cyclicCochainComplex R A M ⟶ cyclicCochainComplex R R M :=
-  cyclicCochainComplexMap M (Algebra.ofId R A).toNonUnitalAlgHom
-
-/-- The components of scalar restriction of cyclic cochain complexes are scalar restriction of
-cyclic cochains. -/
-@[reassoc, elementwise]
-theorem scalarCyclicRestrictionComplexMap_f (n : ℕ) :
-    (scalarCyclicRestrictionComplexMap R A M).f n ≫
-        (cyclicCochainComplexXIso R R M n).hom =
-      (cyclicCochainComplexXIso R A M n).hom ≫
-        ModuleCat.ofHom (scalarCyclicRestriction R A M n) := by
-  rw [scalarCyclicRestrictionComplexMap, cyclicCochainComplexMap_f,
-    scalarCyclicRestriction]
 
 /-- The inclusion of the reduced cyclic cochain complex into the full cyclic cochain complex. -/
 def reducedCyclicCochainComplexι :
@@ -356,6 +340,29 @@ theorem reducedCyclicCochainComplexι_f (n : ℕ) :
       (reducedCyclicCochainComplexXIso R A M n).hom ≫
         ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype := by
   simp [reducedCyclicCochainComplexι, Category.assoc]
+
+end Inclusion
+
+section ComplexKernel
+
+variable (R A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
+  [AddCommGroup M] [Module R M]
+
+/-- Restriction of cyclic cochain complexes along the scalar inclusion. -/
+def scalarCyclicRestrictionComplexMap :
+    cyclicCochainComplex R A M ⟶ cyclicCochainComplex R R M :=
+  cyclicCochainComplexMap M (Algebra.ofId R A).toNonUnitalAlgHom
+
+/-- The components of scalar restriction of cyclic cochain complexes are scalar restriction of
+cyclic cochains. -/
+@[reassoc, elementwise]
+theorem scalarCyclicRestrictionComplexMap_f (n : ℕ) :
+    (scalarCyclicRestrictionComplexMap R A M).f n ≫
+        (cyclicCochainComplexXIso R R M n).hom =
+      (cyclicCochainComplexXIso R A M n).hom ≫
+        ModuleCat.ofHom (scalarCyclicRestriction R A M n) := by
+  rw [scalarCyclicRestrictionComplexMap, cyclicCochainComplexMap_f,
+    scalarCyclicRestriction]
 
 /-- The reduced-complex inclusion followed by scalar restriction is zero. -/
 @[reassoc (attr := simp)]
