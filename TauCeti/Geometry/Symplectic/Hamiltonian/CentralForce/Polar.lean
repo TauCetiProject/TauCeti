@@ -522,13 +522,6 @@ end Orthonormal
 
 variable (b : OrthonormalBasis (Fin 2) ℝ V)
 
-private theorem norm_basis_zero : ‖b 0‖ = 1 := b.orthonormal.1 0
-
-private theorem norm_basis_one : ‖b 1‖ = 1 := b.orthonormal.1 1
-
-private theorem inner_basis_zero_one : ⟪b 0, b 1⟫_ℝ = 0 :=
-  b.orthonormal.2 (show (0 : Fin 2) ≠ 1 by decide)
-
 /-- **Every point off the collision set is the image of its polar coordinates**: for `q ≠ 0` and
 every lift `θ` of the polar angle of `q`, the point with polar coordinates
 `(‖q‖, p_r, θ, L)`, where `p_r` is the radial momentum and `L` the angular momentum of `(q, p)`, is
@@ -568,15 +561,16 @@ noncomputable def polarCanonicalEquiv :
     {x : (ℝ × ℝ) × (Real.Angle × ℝ) // 0 < x.1.1} ≃ puncturedPhaseSpace V where
   toFun x := ⟨polarCanonical (b 0) (b 1) (x.1.1, (x.1.2.1.toReal, x.1.2.2)), by
     rw [mem_puncturedPhaseSpace, ← norm_ne_zero_iff,
-      norm_fst_polarCanonical (norm_basis_zero b) (norm_basis_one b) (inner_basis_zero_one b)]
+      norm_fst_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
+        (b.inner_eq_zero (by decide))]
     exact (abs_pos.2 x.2.ne').ne'⟩
   invFun y := ⟨((‖y.1.1‖, radialMomentum y.1), (polarAngle (b 0) (b 1) y.1.1,
     angularMomentum (b 0) (b 1) y.1)), norm_pos_iff.2 (mem_puncturedPhaseSpace.1 y.2)⟩
   left_inv x := by
     obtain ⟨⟨⟨r, pᵣ⟩, ⟨θ, L⟩⟩, hr⟩ := x
-    have h0 := norm_basis_zero b
-    have h1 := norm_basis_one b
-    have h01 := inner_basis_zero_one b
+    have h0 := b.norm_eq_one 0
+    have h1 := b.norm_eq_one 1
+    have h01 : ⟪b 0, b 1⟫_ℝ = 0 := b.inner_eq_zero (by decide)
     have hr' : 0 < ((r, pᵣ), (θ.toReal, L)).1.1 := hr
     simp only [Subtype.mk.injEq, Prod.mk.injEq]
     refine ⟨⟨?_, radialMomentum_polarCanonical h0 h1 h01 hr'⟩, ?_,
