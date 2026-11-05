@@ -73,9 +73,9 @@ composite is not built here.
   injective exactly when the centre is trivial
   (`TauCeti.LieAlgebra.adSkewAdjoint_injective_iff`); the same for the polar-form and Killing
   specializations (`TauCeti.LieAlgebra.ker_adjointSO`, `TauCeti.LieAlgebra.ker_killingAdjointSO`).
-* `TauCeti.LieAlgebra.polarBilin_killingQuadraticForm`: the polar form of the Killing quadratic
+* `TauCeti.LieAlgebra.polarBilin_killingQuadraticForm` and
+  `TauCeti.LieAlgebra.polar_killingQuadraticForm`: the polar form of the Killing quadratic
   form is `2 • killingForm`.
-* `TauCeti.LieAlgebra.polar_killingQuadraticForm`: the same statement, pointwise.
 * `TauCeti.LieAlgebra.associated_killingQuadraticForm`: over a ring in which `2` is invertible, the
   associated bilinear form of the Killing quadratic form is `killingForm`.
 * `TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate`: over a ring in which `2` is invertible,
@@ -319,12 +319,13 @@ theorem polarBilin_killingQuadraticForm :
   rw [killingQuadraticForm]
   exact LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip (LieModule.traceForm_flip R L L)
 
-/-- The polar form of the Killing quadratic form, pointwise: `polar Q x y = 2 * κ(x, y)`. -/
+/-- The pointwise form of `polarBilin_killingQuadraticForm`: the polar form of the Killing quadratic
+form at `x` and `y` is `2 * κ(x, y)`. -/
 @[simp]
 theorem polar_killingQuadraticForm (x y : L) :
     QuadraticMap.polar (killingQuadraticForm R L) x y = 2 * killingForm R L x y := by
-  have h := LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm R L) x y
-  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using h
+  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using
+    LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm R L) x y
 
 /-- The associated bilinear form of the Killing quadratic form is the Killing form, since the
 Killing form is symmetric. -/

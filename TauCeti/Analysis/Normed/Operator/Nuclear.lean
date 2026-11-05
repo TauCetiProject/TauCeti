@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.TensorProduct.Approximable
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Series
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Analysis.Normed.Group.Quotient
@@ -21,6 +22,8 @@ Let `E` be a normed space and `F` a Banach space over a nontrivially normed fiel
 projective tensor product sends `f ⊗ₜ y` to the rank-one operator `x ↦ f x • y`. It is the
 contraction `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E F`, and its kernel is
 closed. Its range is the submodule `TauCeti.nuclearOperators 𝕜 E F` of *nuclear operators*.
+Over `ℝ` or `ℂ` it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding
+of `E* ⊗̂ε F` into the bounded operators, so it is injective exactly when that contraction is.
 
 The *nuclear norm* `ν(T)` of a bounded operator `T` is the infimum of the projective norms of the
 tensors representing `T`, and `∞` when `T` is not nuclear. As `TauCeti.nuclearGauge 𝕜 E F` it is
@@ -54,6 +57,11 @@ factors appear in the order `F ⊗ E*`.
 * `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap`: the canonical operator
   `E* ⊗̂π F → (E →L[𝕜] F)`.
 * `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap_mapL`: its naturality.
+* `TauCeti.CompletedProjectiveTensor.toOperator_comp_toCompletedInjectiveTensor`: over `ℝ` and
+  `ℂ`, it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding of
+  `E* ⊗̂ε F` into the bounded operators.
+* `TauCeti.CompletedProjectiveTensor.injective_toContinuousLinearMap_iff`: hence it is injective
+  exactly when that contraction is.
 * `TauCeti.nuclearOperators`: the submodule of nuclear operators.
 * `TauCeti.nuclearGauge`: the nuclear norm as an operator gauge.
 * `TauCeti.nuclearGauge_toContinuousLinearMap`: the nuclear norm is the quotient norm.
@@ -479,3 +487,29 @@ theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) : ‖smulRight f y‖ = �
 end NuclearOperator
 
 end TauCeti
+
+/-! ### Factorization through the injective tensor product -/
+
+namespace TauCeti.CompletedProjectiveTensor
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+variable (𝕜 E F) in
+/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is the contraction `E* ⊗̂π F → E* ⊗̂ε F`
+followed by the isometric embedding of `E* ⊗̂ε F` into the bounded operators. -/
+theorem toOperator_comp_toCompletedInjectiveTensor :
+    (CompletedInjectiveTensor.toOperator 𝕜 E F).toContinuousLinearMap ∘L
+        toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F =
+      toContinuousLinearMap 𝕜 E F :=
+  continuousLinearMap_ext fun f y ↦ by simp [ProjectiveTensor.toInjectiveTensor_apply]
+
+/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is injective exactly when the contraction
+`E* ⊗̂π F → E* ⊗̂ε F` is. -/
+theorem injective_toContinuousLinearMap_iff :
+    Function.Injective (toContinuousLinearMap 𝕜 E F) ↔
+      Function.Injective (toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F) := by
+  rw [← toOperator_comp_toCompletedInjectiveTensor, ContinuousLinearMap.coe_comp]
+  exact (CompletedInjectiveTensor.toOperator 𝕜 E F).injective.of_comp_iff _
+
+end TauCeti.CompletedProjectiveTensor

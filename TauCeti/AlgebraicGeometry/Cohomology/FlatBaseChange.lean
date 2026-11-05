@@ -59,7 +59,9 @@ those in degree `n` for `I` and `Q` are.
   (`TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv_toLinearMap`);
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
-  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field.
+  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field, and
+  `TauCeti.AlgebraicGeometry.eulerCharBelow_pullback_eq_of_isPullback`: the same invariance of the
+  truncated Euler characteristic `Scheme.Modules.eulerCharBelow`.
 
 ## References
 
@@ -289,6 +291,20 @@ theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
   Module.Finite.equiv (cohomologyBaseChangeLinearEquiv H M n)
+
+include H in
+/-- The truncated Euler characteristic `∑_{i < n} (-1)ⁱ dim Hⁱ(X, M)` of a quasi-coherent sheaf
+does not change under extension of the base field, on a quasi-compact scheme over a field with
+affine diagonal. -/
+theorem eulerCharBelow_pullback_eq_of_isPullback [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) :
+    eulerCharBelow K Y ((Scheme.Modules.pullback g).obj M) n = eulerCharBelow k X M n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [eulerCharBelow_succ, eulerCharBelow_succ, ih,
+      finrank_cohomology_pullback_eq_of_isPullback H]
 
 end Field
 
