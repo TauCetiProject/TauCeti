@@ -41,6 +41,14 @@ noncomputable def invariantRoot (negative : Bool) (o : Fin 6) :
   ∑ i : Fin 12 with orbit i = o,
     orbitCoeff i • ShellLieAlgebra.root (CartanMatrix.D 4) (root negative i)
 
+/-- Each signed root orbit vector `invariantRoot negative o` is the `orbitCoeff`-weighted sum of
+the ambient root vectors along orbit `o`. -/
+theorem invariantRoot_eq_sum (negative : Bool) (o : Fin 6) :
+    invariantRoot negative o =
+      ∑ i : Fin 12 with orbit i = o,
+        orbitCoeff i • ShellLieAlgebra.root (CartanMatrix.D 4) (root negative i) :=
+  (rfl)
+
 /-- Each displayed signed orbit vector is fixed by the actual pinned triality. -/
 @[simp]
 theorem reindex_invariantRoot (negative : Bool) (o : Fin 6) :
