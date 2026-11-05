@@ -82,7 +82,8 @@ variable {i j : ι} {h₀ : L}
 variable (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
 variable (t : IsSl2Triple h₀ (e i) (e j))
-variable (hai : IsNilpotent (ad ℚ L (e i))) (haj : IsNilpotent (ad ℚ L (e j)))
+variable (hai : ∀ y, ∃ k, ((ad ℚ L (e i)) ^ k) y = 0)
+  (haj : ∀ y, ∃ k, ((ad ℚ L (e j)) ^ k) y = 0)
 
 /-- **The Weyl element conjugates the action of `x` to that of its Weyl transform.** For the Weyl
 automorphism `w` of an `sl₂` triple `(h₀, eᵢ, eⱼ)` of `L` and every `x ∈ L`,
@@ -130,12 +131,8 @@ theorem kostantWeylPoints_conj_baseChangeExp_weylAut {x : L}
         (kostantWeylPoints e h ρ M hM hi hj A).symm.toLinearMap =
       baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (weylAut t hai haj x))) M
         (fun n => dividedPower_weylAut_smul_mem e h ρ M hM hi hj t hai haj n (hx n)) u := by
-  have hrestrict : kostantWeylRestrict e h ρ M hM hi hj =
-      integralUnitRestrict (weylUnit hi hj) M
-        (fun _ hv => weylUnit_smul_mem e h ρ M hM hi hj hv)
-        (fun _ hv => inv_weylUnit_smul_mem e h ρ M hM hi hj hv) :=
-    LinearEquiv.ext fun v => Subtype.ext (by simp)
-  rw [kostantWeylPoints_toLinearMap, kostantWeylPoints_symm_toLinearMap, hrestrict,
+  rw [kostantWeylPoints_toLinearMap, kostantWeylPoints_symm_toLinearMap,
+    kostantWeylRestrict_eq_integralUnitRestrict,
     baseChange_integralUnitRestrict_conj_baseChangeExp (R := A) _ M _ _ _ _ hxnil u]
   exact baseChangeExp_congr (apply_ι_weylAut_eq_weylUnit_conj e ρ hi hj t hai haj x).symm M _ _ u
 
