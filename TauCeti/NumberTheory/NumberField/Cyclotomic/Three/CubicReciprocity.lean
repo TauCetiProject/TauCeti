@@ -89,8 +89,7 @@ theorem gaussSum_powerResidueSymbol_three_pow_three_eq [Fintype (𝓞 K ⧸ P)] 
   let _ := Ideal.Quotient.field P
   have hP : (absNorm P).Coprime 3 := hπ ▸ hπ'.absNorm_span_singleton_coprime_three
   have hχ : orderOf ((powerResidueSymbol P 3).ringHomComp f) = 3 := by
-    rw [← MulChar.ringHomCompHom_apply, orderOf_injective _ (MulChar.injective_ringHomComp hf),
-      orderOf_powerResidueSymbol hP]
+    rw [MulChar.orderOf_ringHomComp hf, orderOf_powerResidueSymbol hP]
   rw [gaussSum_pow_three_eq_card_mul_jacobiSum hχ hψ, jacobiSum_ringHomComp,
     jacobiSum_powerResidueSymbol_three_eq hP hπ hπ', ← Nat.card_eq_fintype_card,
     ← absNorm_eq_natCard]
