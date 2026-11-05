@@ -14,7 +14,8 @@ import Mathlib.Tactic.NormNum
 
 These importing examples distinguish empty and zero presentations from a unit equation,
 compute the derivative ideal of a hypersurface, and exhibit strict growth under reduction
-of coefficients. In characteristic two a square equation has zero Jacobian ideal.
+of coefficients. The non-zero-divisor `X^2 - 1` over `ZMod 2` has vanishing derivative
+and zero Elkik ideal.
 -/
 
 public section
