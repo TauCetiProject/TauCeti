@@ -60,4 +60,28 @@ def cohomologyZeroTrivialSpecLinearEquiv :
       rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_Spec_app_apply]
       exact (Scheme.ΓSpecIso A).inv_hom_id_apply (algebraMap R A r)).toLinearEquiv
 
+/-- Under `cohomologyZeroTrivialSpecLinearEquiv`, a cohomology class is sent to its global section,
+viewed as an element of `A` through `Scheme.ΓSpecIso`. -/
+@[simp]
+theorem cohomologyZeroTrivialSpecLinearEquiv_apply
+    (x : Cohomology (InvertibleSheaf.trivial (Spec A)).obj 0) :
+    cohomologyZeroTrivialSpecLinearEquiv R A x = (Scheme.ΓSpecIso A).hom
+      (cohomologyZeroBaseLinearEquiv R _ (SheafOfModules.unit (Spec A).ringCatSheaf)
+        (trivialCohomologyBaseLinearEquiv R _ 0 x)) := by
+  simp only [cohomologyZeroTrivialSpecLinearEquiv, LinearEquiv.trans_apply,
+    structureSheafSectionsBaseLinearEquiv_apply]
+  rfl
+
+/-- Under `cohomologyZeroTrivialSpecLinearEquiv`, an element `a` of `A` is the class of the global
+function on `Spec A` corresponding to `a` through `Scheme.ΓSpecIso`. -/
+@[simp]
+theorem cohomologyZeroTrivialSpecLinearEquiv_symm_apply (a : A) :
+    (cohomologyZeroTrivialSpecLinearEquiv R A).symm a =
+      (trivialCohomologyBaseLinearEquiv R _ 0).symm
+        ((cohomologyZeroBaseLinearEquiv R _ (SheafOfModules.unit (Spec A).ringCatSheaf)).symm
+          ((Scheme.ΓSpecIso A).inv a)) := by
+  simp only [cohomologyZeroTrivialSpecLinearEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    structureSheafSectionsBaseLinearEquiv_symm_apply]
+  rfl
+
 end TauCeti.AlgebraicGeometry
