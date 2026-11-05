@@ -29,8 +29,10 @@ of the initial vertex `x₀` of `x`.  These are what a construction transporting
 initial vertices of simplices, such as twisted chains, needs to lift the combinatorial homotopy.
 
 It also provides the constructor `SSet.Homotopy.mk'` of a homotopy from a morphism on the
-cylinder `X ⊗ Δ[1]` with prescribed ends, and records that these two ends are disjoint
-(`SSet.range_ι₀_inf_range_ι₁`).
+cylinder `X ⊗ Δ[1]` with prescribed ends, records that these two ends are disjoint
+(`SSet.range_ι₀_inf_range_ι₁`), and names the edge `{v} × Δ[1]` of the cylinder over a vertex `v`
+(`SSet.verticalEdge`), along which a homotopy moves the image of `v`; its endpoints are
+`(v, 0)` and `(v, 1)` (`SSet.δ_one_verticalEdge` and `SSet.δ_zero_verticalEdge`).
 -/
 
 @[expose] public section
@@ -165,3 +167,37 @@ structure Homotopy {P P' : SSetPair.{w}} (f g : P ⟶ P') where
   w : P.hom ▷ Δ[1] ≫ right.h = left.h ≫ P'.hom
 
 end SSetPair
+
+end
+
+public section
+
+open CategoryTheory MonoidalCategory
+
+open scoped Simplicial
+
+namespace SSet
+
+variable {X : SSet.{w}}
+
+/-- The edge `{v} × Δ[1]` of the cylinder `X ⊗ Δ[1]` over a vertex `v` of `X`, from `(v, 0)` to
+`(v, 1)`. -/
+noncomputable def verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1] : SSet.{w}) _⦋1⦌ :=
+  (X.σ 0 v, stdSimplex.edge 1 0 1 (by decide))
+
+/-- The component of `verticalEdge v` in `X` is the degenerate edge at `v`. -/
+lemma verticalEdge_fst (v : X _⦋0⦌) : (verticalEdge v).1 = X.σ 0 v := (rfl)
+
+/-- The component of `verticalEdge v` in `Δ[1]` is the edge from `0` to `1`. -/
+lemma verticalEdge_snd (v : X _⦋0⦌) :
+    (verticalEdge v).2 = stdSimplex.edge 1 0 1 (by decide) := (rfl)
+
+/-- The vertical edge over `v` starts at `(v, 0)`. -/
+lemma δ_one_verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1]).δ 1 (verticalEdge v) = ι₀.app _ v :=
+  Prod.ext (δ_comp_σ_succ_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
+
+/-- The vertical edge over `v` ends at `(v, 1)`. -/
+lemma δ_zero_verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1]).δ 0 (verticalEdge v) = ι₁.app _ v :=
+  Prod.ext (δ_comp_σ_self_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
+
+end SSet

@@ -8,7 +8,10 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
+public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Groupoid
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
@@ -29,6 +32,12 @@ vertex when `K` is empty, while the empty simplicial set is a Kan complex withou
 map from it to a Kan complex is homotopic to a constant map, and testing this against its map to
 the discrete simplicial set on its connected components shows that it is connected.
 
+Connectedness does not suffice: the boundary `∂Δ[2]` is connected, but the map from it to the
+nerve of the group `ℤ`, viewed as a category with one object, which sends the edges `0 → 1` and
+`1 → 2` to `0` and the edge `0 → 2` to `1` is not homotopic to a constant map. Indeed, a homotopy
+from a constant map to a map `φ` into the nerve of a group assigns to each vertex `k` an element
+`w k` with `w b = φ (a → b) * w a` for every edge, forcing `φ (0 → 2) = φ (1 → 2) * φ (0 → 1)`.
+
 The comparison with the weak equivalences of
 `TauCeti/AlgebraicTopology/SimplicialSet/WeakEquivalence.lean`, namely that `K` is weakly
 contractible exactly when `K ⟶ Δ[0]` is a weak homotopy equivalence, needs the homotopy theory
@@ -47,6 +56,8 @@ of the Kan–Quillen model structure and is not proved here.
 * `SSet.IsWeaklyContractible.exists_homotopy_const`: maps to Kan complexes are homotopic to
   constant maps.
 * `SSet.IsWeaklyContractible.isConnected`: weakly contractible simplicial sets are connected.
+* `SSet.not_isWeaklyContractible_boundary_two`: the connected simplicial set `∂Δ[2]` is not
+  weakly contractible.
 
 ## References
 
@@ -236,5 +247,81 @@ instance isConnected : K.IsConnected where
     simpa [mapπ₀_mk, toπ₀_app_zero] using this.symm
 
 end IsWeaklyContractible
+
+section Boundary
+
+/-! ### The boundary of the `2`-simplex is not weakly contractible -/
+
+variable {G : Type u} [Group G]
+
+/-- The element of `G` assigned to the edge from `a` to `b` of `∂Δ[2]` by the map `boundaryLoop g`:
+`g` on the edge from `0` to `2`, and `1` on all other edges. -/
+private def loopCocycle (g : G) (a b : Fin 3) : G := if a = 0 ∧ b = 2 then g else 1
+
+private lemma loopCocycle_comp (g : G) {a b c : Fin 3} (hab : a ≤ b) (hbc : b ≤ c)
+    (h : ¬ (a = 0 ∧ b = 1 ∧ c = 2)) :
+    loopCocycle g a c = loopCocycle g b c * loopCocycle g a b := by
+  unfold loopCocycle
+  fin_cases a <;> fin_cases b <;> fin_cases c <;> simp_all
+
+/-- The map from `∂Δ[2]` to the nerve of `G`, viewed as a category with one object, sending the
+edge from `0` to `2` to `g` and the other edges to `1`. A simplex of `∂Δ[2]` misses a vertex, so
+it never contains all three edges at once. -/
+private noncomputable def boundaryLoop (g : G) : (∂Δ[2] : SSet.{u}) ⟶ nerve (SingleObj G) where
+  app n := ↾fun s ↦
+    { obj _ := SingleObj.star G
+      map {a b} _ := loopCocycle g (stdSimplex.asOrderHom s.1 a) (stdSimplex.asOrderHom s.1 b)
+      map_id a := by
+        rw [SingleObj.id_as_one, loopCocycle, ite_eq_right_iff]
+        rintro ⟨h₀, h₂⟩
+        exact absurd (h₀.symm.trans h₂) (by decide)
+      map_comp {a b c} hab hbc := by
+        rw [SingleObj.comp_as_mul]
+        refine loopCocycle_comp g ((stdSimplex.asOrderHom s.1).monotone (leOfHom hab))
+          ((stdSimplex.asOrderHom s.1).monotone (leOfHom hbc)) ?_
+        rintro ⟨ha, hb, hc⟩
+        apply s.2
+        intro k
+        fin_cases k
+        exacts [⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩] }
+  -- The value on a simplex only depends on its vertices, so it commutes with reindexing.
+  naturality n m θ := by
+    ext s
+    exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
+      (fun _ _ _ ↦ by simp only [eqToHom_refl, Category.id_comp, Category.comp_id]; rfl)
+
+/-- The boundary `∂Δ[2]` is connected (`SSet.boundary.isConnected`) but not weakly contractible:
+its map to the nerve of `ℤ` sending the edge from `0` to `2` to `1` and the other edges to `0` is
+not homotopic to a constant map. -/
+theorem not_isWeaklyContractible_boundary_two : ¬ IsWeaklyContractible (∂Δ[2] : SSet.{u}) := by
+  intro hK
+  let g : Multiplicative (ULift.{u} ℤ) := Multiplicative.ofAdd (ULift.up 1)
+  obtain ⟨z, ⟨H⟩⟩ := hK.exists_homotopy_const (boundaryLoop g)
+  -- The edge of `∂Δ[2]` from `a` to `b`.
+  let e (a b : Fin 3) (hab : a ≤ b) : (∂Δ[2] : SSet.{u}) _⦋1⦌ :=
+    ⟨stdSimplex.edge 2 a b hab, by simp [boundary_obj_eq_univ]⟩
+  -- Over each edge, the vertical edges of `H` differ by the value of `boundaryLoop g`, since the
+  -- edges of the constant map represent `1`.
+  have h₀₁ := nerve.edgeElem_homotopy H (e 0 1 (by decide))
+  have h₁₂ := nerve.edgeElem_homotopy H (e 1 2 (by decide))
+  have h₀₂ := nerve.edgeElem_homotopy H (e 0 2 (by decide))
+  simp only [nerve.edgeElem_const_app, mul_one] at h₀₁ h₁₂ h₀₂
+  -- The three edges share their endpoints, and the values of `boundaryLoop g` on them are `1`,
+  -- `1` and `g`, by evaluating `loopCocycle` on their vertices.
+  have v₀ : (∂Δ[2] : SSet.{u}).δ 1 (e 0 1 (by decide)) =
+      (∂Δ[2] : SSet.{u}).δ 1 (e 0 2 (by decide)) := by decide
+  have v₁ : (∂Δ[2] : SSet.{u}).δ 0 (e 0 1 (by decide)) =
+      (∂Δ[2] : SSet.{u}).δ 1 (e 1 2 (by decide)) := by decide
+  have v₂ : (∂Δ[2] : SSet.{u}).δ 0 (e 1 2 (by decide)) =
+      (∂Δ[2] : SSet.{u}).δ 0 (e 0 2 (by decide)) := by decide
+  have c₀₁ : nerve.edgeElem ((boundaryLoop g).app _ (e 0 1 (by decide))) = 1 := rfl
+  have c₁₂ : nerve.edgeElem ((boundaryLoop g).app _ (e 1 2 (by decide))) = 1 := rfl
+  have c₀₂ : nerve.edgeElem ((boundaryLoop g).app _ (e 0 2 (by decide))) = g := rfl
+  rw [v₀, v₁, c₀₁, one_mul] at h₀₁
+  rw [v₂, c₁₂, one_mul] at h₁₂
+  rw [c₀₂, h₁₂, h₀₁] at h₀₂
+  exact absurd (mul_eq_right.1 h₀₂.symm) (by decide)
+
+end Boundary
 
 end SSet

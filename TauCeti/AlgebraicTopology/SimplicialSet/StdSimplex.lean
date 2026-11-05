@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
+public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 
@@ -33,6 +34,7 @@ an initial and a final segment.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
   `Δ[n]` to its identity.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
+* `SSet.boundary.isConnected`: the boundary `∂Δ[n + 2]` is connected.
 -/
 
 public section
@@ -172,5 +174,24 @@ lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀E
   rw [stdSimplex.obj₀Equiv_symm_apply]
   -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
   exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
+
+/-- The boundary `∂Δ[n + 2]` is connected: it contains every edge of `Δ[n + 2]`, in particular
+the edge from `0` to each vertex. -/
+instance boundary.isConnected (n : ℕ) : (∂Δ[n + 2] : SSet.{u}).IsConnected where
+  nonempty := ⟨⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩⟩
+  allEq := π₀.rec fun x ↦ π₀.rec fun y ↦ by
+    -- Every vertex and every edge of `Δ[n + 2]` lies in its boundary.
+    let v (k : Fin (n + 3)) : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌ :=
+      ⟨stdSimplex.obj₀Equiv.symm k, by simp [boundary_obj_eq_univ]⟩
+    suffices h : ∀ k, π₀.mk (v k) = π₀.mk (v 0) by
+      have hv (z : (∂Δ[n + 2] : SSet.{u}) _⦋0⦌) : z = v (stdSimplex.obj₀Equiv z.1) :=
+        Subtype.ext (stdSimplex.obj₀Equiv.symm_apply_apply _).symm
+      rw [hv x, hv y]
+      exact (h _).trans (h _).symm
+    intro k
+    exact (π₀.sound (Edge.mk (x₀ := v 0) (x₁ := v k)
+      ⟨stdSimplex.edge.{u} _ 0 k (Fin.zero_le k), by simp [boundary_obj_eq_univ]⟩
+      (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl))
+      (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)))).symm
 
 end SSet
