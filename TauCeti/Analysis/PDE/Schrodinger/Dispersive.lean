@@ -37,7 +37,7 @@ this symbol is convolution with its inverse Fourier transform
 
 `(π / b)^(n/2) exp(-π² ‖x‖² / b)`
 
-(`fourier_gaussian_innerProductSpace`). These kernels are bounded by `(4π|t|)^(-n/2)` uniformly in
+(`SchwartzMap.fourierInv_gaussian`). These kernels are bounded by `(4π|t|)^(-n/2)` uniformly in
 `ε`, because `|b| ≥ 4π²|t|` and `Re (1 / b) > 0`, and they converge pointwise to `K_t` as `ε → 0`.
 As `ε → 0` the multipliers converge strongly to `S(t)` on `L²`
 (`MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`), hence almost everywhere along a
@@ -168,13 +168,6 @@ private theorem tendsto_gaussianKernel {t : ℝ} (ht : t ≠ 0) (x : E) :
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-private theorem fourierInv_gaussian {b : ℂ} (hb : 0 < b.re) (x : E) :
-    𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ)) x = gaussianKernel b x := by
-  rw [SchwartzMap.fourierInv_coe, fourierInv_eq_fourier_neg]
-  have h : ((SchwartzMap.gaussian hb : 𝓢(E, ℂ)) : E → ℂ) = fun v ↦ cexp (-b * ‖v‖ ^ 2) :=
-    funext fun v ↦ SchwartzMap.gaussian_apply hb v
-  rw [h, fourier_gaussian_innerProductSpace hb, norm_neg, gaussianKernel]
-
 /-! ### The kernel representation and the dispersive estimate -/
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
@@ -202,14 +195,9 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
     refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun k ↦
       SchwartzMap.norm_toLp_top_le.trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _ zero_le_one
         fun ξ ↦ ?_)) ?_ f
-    · simp only [pow_zero, norm_iteratedFDeriv_zero, one_mul, σ, SchwartzMap.gaussian_apply,
-        norm_exp]
-      refine Real.exp_le_one_iff.2 ?_
-      have : (-b k * (‖ξ‖ : ℂ) ^ 2).re = -((b k).re * ‖ξ‖ ^ 2) := by
-        rw [← ofReal_pow, mul_comm, re_ofReal_mul, neg_re]
-        ring
-      rw [this]
-      exact neg_nonpos.2 (mul_nonneg (hbre k).le (sq_nonneg _))
+    · simp only [pow_zero, norm_iteratedFDeriv_zero, one_mul, σ, SchwartzMap.gaussian_apply]
+      rw [norm_cexp_neg_mul_sq, Real.exp_le_one_iff]
+      exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (hbre k).le) (sq_nonneg _)
     · filter_upwards [ae_all_iff.2 fun k ↦ (σ k).coeFn_toLp ∞ volume,
         (memLp_schrodingerSymbol (E := E) t).coeFn_toLp] with ξ h₁ h₂
       simp only [h₁, h₂, σ, SchwartzMap.gaussian_apply]
@@ -226,7 +214,7 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
   have hconv : ∀ k, Lp.fourierMultiplierCLM F ((σ k).toLp ∞) f =ᵐ[volume]
       fun x ↦ ∫ y, gaussianKernel (b k) (x - y) • f y := fun k ↦ by
     filter_upwards [SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ k) f] with x hx
-    simp only [hx, σ, fourierInv_gaussian]
+    simp only [hx, σ, SchwartzMap.fourierInv_gaussian, gaussianKernel]
   -- For integrable `f`, the convolution integrals converge at every point.
   have hlim : ∀ x, Tendsto (fun k ↦ ∫ y, gaussianKernel (b k) (x - y) • f y) atTop
       (𝓝 (∫ y, schrodingerKernel t (x - y) • f y)) := fun x ↦ by
