@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Star.SelfAdjoint
 
 /-!
-# Nilpotent self-adjoint elements
+# Nilpotent self-adjoint elements and anticommutation
 
 In a star monoid with zero whose star is proper (`IsProperStar`: `star x * x = 0` forces
 `x = 0`), such as a matrix ring over a star-ordered ring like `ℝ` or `ℂ`, a self-adjoint element
@@ -17,12 +17,19 @@ self-adjoint, peeling off squares shows that a nilpotent self-adjoint element is
 what rules out nonzero nilpotent ideals in an algebra of matrices closed under conjugate
 transposition.
 
+In a star ring, taking adjoints shows that an element anticommuting with a self-adjoint `γ` has an
+adjoint anticommuting with `γ`, as needed for gradings.
+
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
+* `IsSelfAdjoint.mul_star_eq_neg_star_mul`: if `γ * x = -(x * γ)` for a self-adjoint `γ`, then
+  `γ * star x = -(star x * γ)`.
 -/
 
 public section
+
+section Nilpotent
 
 variable {R : Type*} [MonoidWithZero R] [StarMul R] [IsProperStar R]
 
@@ -40,3 +47,13 @@ theorem IsSelfAdjoint.eq_zero_of_isNilpotent {x : R} (hx : IsSelfAdjoint x)
       refine ih (star_mul_self_eq_zero.mp ?_)
       rwa [(hx.pow (2 ^ j)).star_eq, ← pow_add, ← two_mul, ← pow_succ']
   exact key m (pow_eq_zero_of_le m.lt_two_pow_self.le hm)
+
+end Nilpotent
+
+/-- An element anticommuting with a self-adjoint `γ` has an adjoint anticommuting with `γ`. -/
+theorem IsSelfAdjoint.mul_star_eq_neg_star_mul {R : Type*} [NonUnitalNonAssocRing R]
+    [StarRing R] {γ x : R} (hγ : IsSelfAdjoint γ) (h : γ * x = -(x * γ)) :
+    γ * star x = -(star x * γ) := by
+  have h' := congrArg star h
+  rw [star_mul, star_neg, star_mul, hγ.star_eq] at h'
+  rw [h', neg_neg]

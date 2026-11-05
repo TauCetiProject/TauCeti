@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FreeModule.Basic
@@ -25,16 +26,22 @@ the vector.
 For a free integer module, every nonzero vector is a positive integer multiple of a
 primitive vector. This is the coordinate-free form of dividing a nonzero integer vector by the
 greatest common divisor of its coordinates. It supplies primitive representatives whenever a
-rational ray is initially described by arbitrary nonzero lattice vectors.
+rational ray is initially described by arbitrary nonzero lattice vectors. Applied to the
+torsion-free quotient of a finitely generated abelian group, it gives a surjective integral
+coordinate taking a nontorsion class to its positive divisibility.
 
 ## Main declarations
 
 * `TauCeti.IsPrimitive`: some integer-valued linear functional takes the value one on the vector.
 * `TauCeti.IsPrimitive.eq_one_of_eq_nsmul`: a natural multiplier of a primitive vector
   is one.
+* `TauCeti.IsPrimitive.exists_eq_nsmul_iff_dvd`: the natural multipliers of `d • p`, for
+  primitive `p`, are exactly the divisors of `d`.
 * `LinearEquiv.isPrimitive_iff`: primitivity is invariant under integer-linear equivalences.
 * `TauCeti.exists_eq_zsmul_isPrimitive`: a nonzero vector in a free integer module is a
   positive integer multiple of a primitive vector.
+* `TauCeti.exists_integral_coordinate_of_notMem_torsion`: a nontorsion class in a finitely
+  generated abelian group has a surjective integral coordinate taking its divisibility as value.
 * `Module.Basis.isPrimitive`: a vector of an integral basis is primitive.
 * `TauCeti.IsPrimitive.exists_basis`: conversely, a primitive vector of a finite free integer
   module belongs to some integral basis of it.
@@ -71,6 +78,18 @@ theorem IsPrimitive.eq_one_of_eq_nsmul {v w : M} (hv : IsPrimitive v) {m : ℕ}
   rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hf with h | h
   · exact_mod_cast h.1
   · omega
+
+/-- A multiple `d • p` of a primitive vector is an `n`-fold multiple exactly when `n ∣ d`. -/
+theorem IsPrimitive.exists_eq_nsmul_iff_dvd {p : M} (hp : IsPrimitive p) (d n : ℕ) :
+    (∃ x : M, d • p = n • x) ↔ n ∣ d := by
+  obtain ⟨g, hg⟩ := isPrimitive_def.1 hp
+  constructor
+  · rintro ⟨x, hx⟩
+    have heq := congrArg g hx
+    simp only [map_nsmul, hg, nsmul_eq_mul, mul_one] at heq
+    exact Int.natCast_dvd_natCast.1 (Dvd.intro (g x) heq.symm)
+  · rintro ⟨m, hm⟩
+    exact ⟨m • p, by rw [smul_smul, ← hm]⟩
 
 /-- The zero vector is not primitive. -/
 @[simp]
@@ -174,6 +193,36 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
   simp only [f, LinearMap.sum_apply, LinearMap.smul_apply, w, b.coord_repr_symm, qf,
     Finsupp.ofSupportFinite_coe, smul_eq_mul]
   simpa only [mul_comm] using (hqgcd.symm.trans ha).symm
+
+/-- A nontorsion element of a finitely generated abelian group admits a surjective integral
+coordinate taking its positive divisibility as value. Divisibility is measured in the actual
+torsion-free quotient, not in the original group: every natural multiplier of the quotient
+class divides `d`, and conversely. -/
+theorem exists_integral_coordinate_of_notMem_torsion {H : Type*} [AddCommGroup H] [AddGroup.FG H]
+    {h : H} (hh : h ∉ AddCommGroup.torsion H) :
+    ∃ (d : ℕ) (f : H →+ ℤ), 0 < d ∧ Function.Surjective f ∧ f h = d ∧
+      ∀ n : ℕ, (∃ x : H ⧸ AddCommGroup.torsion H,
+        QuotientAddGroup.mk' (AddCommGroup.torsion H) h = n • x) ↔ n ∣ d := by
+  let q := QuotientAddGroup.mk' (AddCommGroup.torsion H)
+  have hq : q h ≠ 0 := by simpa [q] using hh
+  obtain ⟨d, p, hd, hp, hdp⟩ := exists_eq_zsmul_isPrimitive hq
+  obtain ⟨g, hg⟩ := isPrimitive_def.1 hp
+  let f := g.toAddMonoidHom.comp q
+  have hfh : f h = d := by simp [f, hdp, hg]
+  refine ⟨d.toNat, f, by omega, ?_, by simpa [Int.toNat_of_nonneg hd.le] using hfh, ?_⟩
+  · intro z
+    obtain ⟨x, hx⟩ := QuotientAddGroup.mk'_surjective (AddCommGroup.torsion H) (z • p)
+    refine ⟨x, ?_⟩
+    have hx' : q x = z • p := hx
+    calc
+      f x = g (q x) := rfl
+      _ = g (z • p) := congrArg g hx'
+      _ = z := by simp [hg]
+  · intro n
+    have hdp' : q h = d.toNat • p := by
+      simpa only [← natCast_zsmul, Int.toNat_of_nonneg hd.le] using hdp
+    rw [hdp']
+    exact hp.exists_eq_nsmul_iff_dvd d.toNat n
 
 /-- A primitive vector of a finite free integer module belongs to an integral basis of it. -/
 theorem IsPrimitive.exists_basis [Module.Free ℤ M] [Module.Finite ℤ M] {v : M}

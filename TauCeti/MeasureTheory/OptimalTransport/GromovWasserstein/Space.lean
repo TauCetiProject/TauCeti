@@ -25,7 +25,9 @@ This includes `p = ∞`, where finite size means essential boundedness.
 
 One-point kernels give an isometric embedding of `Z` into this space. Comparing with these
 kernels proves finiteness of all distances without requiring a globally separable or complete
-target. Carrier universes are fixed independently of the target universe.
+target. Common-parametrization bounds and filter convergence criteria transfer `L^p` convergence of
+pulled-back kernels on an auxiliary space directly to convergence of presentations and weak
+isomorphism classes. Carrier universes are fixed independently of the target universe.
 
 ## References
 
@@ -38,8 +40,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory
-open scoped ENNReal
+open Filter MeasureTheory
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -147,6 +149,62 @@ instance instPseudoMetricSpace [Fact (1 ≤ p)] :
 theorem edist_eq [Fact (1 ≤ p)] (K L : GromovWassersteinPresentation.{u} p Z) :
     edist K L = gromovWassersteinEDist p K.measure K.kernel L.measure L.kernel := (rfl)
 
+/-- **The common-parametrization bound** for presentations along a.e.-measurable maps: if `f` and
+`g` push an s-finite measure `γ` forward to `K.measure` and `L.measure`, the GW distance of `K` and
+`L` is at most the `L^p (γ ⊗ γ)` discrepancy of their pulled-back kernels. -/
+theorem edist_le_eLpNorm_of_hasLaw [Fact (1 ≤ p)] {Ω : Type*} [MeasurableSpace Ω]
+    {γ : Measure Ω} [SFinite γ] {K L : GromovWassersteinPresentation.{u} p Z}
+    {f : Ω → K.Carrier} {g : Ω → L.Carrier}
+    (hf : ProbabilityTheory.HasLaw f K.measure γ)
+    (hg : ProbabilityTheory.HasLaw g L.measure γ) :
+    edist K L ≤ eLpNorm
+      (fun q : Ω × Ω ↦ edist (K.kernel (f q.1, f q.2)) (L.kernel (g q.1, g q.2)))
+      p (γ.prod γ) :=
+  gromovWassersteinEDist_le_eLpNorm_of_aemeasurable hf.aemeasurable hg.aemeasurable
+    hf.map_eq hg.map_eq K.aestronglyMeasurable_kernel L.aestronglyMeasurable_kernel p
+
+/-- **The common-parametrization bound** for presentations along measure-preserving maps. -/
+theorem edist_le_eLpNorm [Fact (1 ≤ p)] {Ω : Type*} [MeasurableSpace Ω]
+    {γ : Measure Ω} [SFinite γ] {K L : GromovWassersteinPresentation.{u} p Z}
+    {f : Ω → K.Carrier} {g : Ω → L.Carrier}
+    (hf : MeasurePreserving f γ K.measure) (hg : MeasurePreserving g γ L.measure) :
+    edist K L ≤ eLpNorm
+      (fun q : Ω × Ω ↦ edist (K.kernel (f q.1, f q.2)) (L.kernel (g q.1, g q.2)))
+      p (γ.prod γ) :=
+  edist_le_eLpNorm_of_hasLaw hf.hasLaw hg.hasLaw
+
+/-- **Convergence of presentations from a common parametrization.** Along any filter `l`, if
+a.e.-measurable maps `f i` (eventually along `l`) and `g` push an s-finite measure `γ` forward to
+`(Ks i).measure` and `L.measure`, and the `L^p (γ ⊗ γ)` discrepancy between the pulled-back kernels
+tends to zero, then `Ks` tends to `L` in the GW pseudometric. -/
+theorem tendsto_of_tendsto_eLpNorm_of_hasLaw [Fact (1 ≤ p)] {ι Ω : Type*} {l : Filter ι}
+    [MeasurableSpace Ω] {γ : Measure Ω} [SFinite γ]
+    {Ks : ι → GromovWassersteinPresentation.{u} p Z} {L : GromovWassersteinPresentation.{u} p Z}
+    {f : (i : ι) → Ω → (Ks i).Carrier} {g : Ω → L.Carrier}
+    (hf : ∀ᶠ i in l, ProbabilityTheory.HasLaw (f i) (Ks i).measure γ)
+    (hg : ProbabilityTheory.HasLaw g L.measure γ)
+    (hlim : Tendsto (fun i ↦ eLpNorm
+      (fun q : Ω × Ω ↦ edist ((Ks i).kernel (f i q.1, f i q.2)) (L.kernel (g q.1, g q.2)))
+      p (γ.prod γ)) l (𝓝 0)) :
+    Tendsto Ks l (𝓝 L) := by
+  rw [tendsto_iff_edist_tendsto_0]
+  exact tendsto_gromovWassersteinEDist_zero_of_tendsto_eLpNorm_of_aemeasurable
+    (hf.mono fun _ h ↦ h.aemeasurable) hg.aemeasurable (hf.mono fun _ h ↦ h.map_eq) hg.map_eq
+    (.of_forall fun i ↦ (Ks i).aestronglyMeasurable_kernel) L.aestronglyMeasurable_kernel hlim
+
+/-- **Convergence of presentations from measure-preserving common parametrizations.** -/
+theorem tendsto_of_tendsto_eLpNorm [Fact (1 ≤ p)] {ι Ω : Type*} {l : Filter ι}
+    [MeasurableSpace Ω] {γ : Measure Ω} [SFinite γ]
+    {Ks : ι → GromovWassersteinPresentation.{u} p Z} {L : GromovWassersteinPresentation.{u} p Z}
+    {f : (i : ι) → Ω → (Ks i).Carrier} {g : Ω → L.Carrier}
+    (hf : ∀ᶠ i in l, MeasurePreserving (f i) γ (Ks i).measure)
+    (hg : MeasurePreserving g γ L.measure)
+    (hlim : Tendsto (fun i ↦ eLpNorm
+      (fun q : Ω × Ω ↦ edist ((Ks i).kernel (f i q.1, f i q.2)) (L.kernel (g q.1, g q.2)))
+      p (γ.prod γ)) l (𝓝 0)) :
+    Tendsto Ks l (𝓝 L) :=
+  tendsto_of_tendsto_eLpNorm_of_hasLaw (hf.mono fun _ h ↦ h.hasLaw) hg.hasLaw hlim
+
 end GromovWassersteinPresentation
 
 /-- Finite-size standard Borel measured kernels modulo weak isomorphism, with the full
@@ -176,6 +234,10 @@ theorem edist_mk (K L : GromovWassersteinPresentation.{u} p Z) :
     edist (mk K) (mk L) = gromovWassersteinEDist p K.measure K.kernel L.measure L.kernel :=
   SeparationQuotient.edist_mk K L
 
+/-- Passing from presentations to weak-isomorphism classes is an isometry. -/
+theorem isometry_mk : Isometry (mk.{u} (p := p) (Z := Z)) :=
+  fun K L ↦ edist_mk K L
+
 /-- The real metric is the finite raw GW value read in `ℝ`. -/
 @[simp]
 theorem dist_mk (K L : GromovWassersteinPresentation.{u} p Z) :
@@ -191,6 +253,35 @@ theorem mk_eq_mk_iff (K L : GromovWassersteinPresentation.{u} p Z) :
   rw [← edist_eq_zero, edist_mk]
   exact gromovWassersteinEDist_eq_zero_iff K.aestronglyMeasurable_kernel
     L.aestronglyMeasurable_kernel (ne_of_gt (lt_of_lt_of_le zero_lt_one Fact.out))
+
+/-- **Convergence in GW space from a common parametrization.** Along any filter `l`, if
+a.e.-measurable maps `f i` (eventually along `l`) and `g` push an s-finite measure `γ` forward to
+`(Ks i).measure` and `L.measure`, and the `L^p (γ ⊗ γ)` discrepancy between the pulled-back kernels
+tends to zero, then `mk (Ks i)` tends to `mk L`. -/
+theorem tendsto_mk_of_tendsto_eLpNorm_of_hasLaw {ι Ω : Type*} {l : Filter ι} [MeasurableSpace Ω]
+    {γ : Measure Ω} [SFinite γ] {Ks : ι → GromovWassersteinPresentation.{u} p Z}
+    {L : GromovWassersteinPresentation.{u} p Z} {f : (i : ι) → Ω → (Ks i).Carrier}
+    {g : Ω → L.Carrier} (hf : ∀ᶠ i in l, ProbabilityTheory.HasLaw (f i) (Ks i).measure γ)
+    (hg : ProbabilityTheory.HasLaw g L.measure γ)
+    (hlim : Tendsto (fun i ↦ eLpNorm
+      (fun q : Ω × Ω ↦ edist ((Ks i).kernel (f i q.1, f i q.2)) (L.kernel (g q.1, g q.2)))
+      p (γ.prod γ)) l (𝓝 0)) :
+    Tendsto (fun i ↦ mk (Ks i)) l (𝓝 (mk L)) :=
+  (isometry_mk.continuous.tendsto L).comp
+    (GromovWassersteinPresentation.tendsto_of_tendsto_eLpNorm_of_hasLaw hf hg hlim)
+
+/-- **Convergence in GW space from measure-preserving common parametrizations.** -/
+theorem tendsto_mk_of_tendsto_eLpNorm {ι Ω : Type*} {l : Filter ι} [MeasurableSpace Ω]
+    {γ : Measure Ω} [SFinite γ] {Ks : ι → GromovWassersteinPresentation.{u} p Z}
+    {L : GromovWassersteinPresentation.{u} p Z} {f : (i : ι) → Ω → (Ks i).Carrier}
+    {g : Ω → L.Carrier} (hf : ∀ᶠ i in l, MeasurePreserving (f i) γ (Ks i).measure)
+    (hg : MeasurePreserving g γ L.measure)
+    (hlim : Tendsto (fun i ↦ eLpNorm
+      (fun q : Ω × Ω ↦ edist ((Ks i).kernel (f i q.1, f i q.2)) (L.kernel (g q.1, g q.2)))
+      p (γ.prod γ)) l (𝓝 0)) :
+    Tendsto (fun i ↦ mk (Ks i)) l (𝓝 (mk L)) :=
+  (isometry_mk.continuous.tendsto L).comp
+    (GromovWassersteinPresentation.tendsto_of_tendsto_eLpNorm hf hg hlim)
 
 /-- Descend any weak-isomorphism-invariant function on presentations to GW classes. -/
 def lift {β : Type*} (f : GromovWassersteinPresentation.{u} p Z → β)
