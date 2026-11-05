@@ -18,20 +18,22 @@ import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 # The Aleksandrov–Bakelman–Pucci maximum principle
 
 Let `Ω` be a bounded open subset of `ℝⁿ = EuclideanSpace ℝ ι`, `n ≥ 1`, and let `u` be continuous
-on `closure Ω` and `C²` in `Ω`. Let `a` be a field of symmetric positive definite matrices and `f`
-a function with
+on `closure Ω` and `C²` in `Ω`. Let `a` be a field of matrices and `f` a function such that, on
+the upper contact set `Γ⁺ = TauCeti.PDE.upperContactSet u Ω`, the matrices `a` are positive
+definite and
 
-`f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu`
+`f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu`,
 
-on the upper contact set `Γ⁺ = TauCeti.PDE.upperContactSet u Ω`, and let `m` bound `u` on
-`frontier Ω`. The Aleksandrov–Bakelman–Pucci estimate bounds `u` on `Ω` by
+and let `m` bound `u` on `frontier Ω`. Write `D* = (det a)^{1/n}`, `f⁻ = max (-f) 0` and `ωₙ`
+for the volume of the unit ball, and suppose that `f⁻ / D*` lies in `Lⁿ(Γ⁺)`. The
+Aleksandrov–Bakelman–Pucci estimate bounds `u` on `Ω` by
 
-`u ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Γ⁺)}`,
+`u ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Γ⁺)}`
 
-where `D* = (det a)^{1/n}`, `f⁻ = max (-f) 0` and `ωₙ` is the volume of the unit ball
 (Gilbarg–Trudinger, Lemma 9.3 and Theorem 9.1, for operators without drift). Nothing is assumed
-of `a` and `f` off the contact set, not even measurability, and the coefficients need no
-regularity.
+of `a` and `f` off the contact set, and the coefficients need no regularity. The measure form
+`TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet` needs no measurability of `a` or `f`
+at all; the `Lⁿ` form needs only the integrability of `f⁻ / D*` on `Γ⁺` stated above.
 
 The proof combines the Aleksandrov measure estimate
 `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator` with a pointwise bound on the
@@ -49,7 +51,8 @@ determinant–trace inequality `det a det M ≤ (tr (a M) / n)ⁿ` and `tr (a M)
   Aleksandrov–Bakelman–Pucci estimate in measure form,
   `|B(0, (u x - m) / diam Ω)| ≤ ∫_{Γ⁺} (f⁻ / n)ⁿ / det a`.
 * `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow`: **the Aleksandrov–Bakelman–Pucci
-  estimate** `u ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / (det a)^{1/n}‖_{Lⁿ(Γ⁺)}`.
+  estimate** `u ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / (det a)^{1/n}‖_{Lⁿ(Γ⁺)}`, for
+  `f⁻ / (det a)^{1/n} ∈ Lⁿ(Γ⁺)`.
 
 ## References
 
