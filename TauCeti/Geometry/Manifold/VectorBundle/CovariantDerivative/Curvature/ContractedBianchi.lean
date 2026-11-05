@@ -15,7 +15,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
-import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Contracting the covariant derivative of the curvature
@@ -304,7 +304,7 @@ theorem exists_frame_sum_derivCurvature (x : M) :
   let e := trivializationAt E (TangentSpace I : M → Type _) x
   let b := Module.finBasis ℝ E
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  obtain ⟨F, hF, hFeq⟩ := TauCeti.Manifold.exists_contMDiff_eventuallyEq_localFrame (I := I) e b hx
+  obtain ⟨F, hF, hFeq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
   have hFx (k : Fin (Module.finrank ℝ E)) : F k x = e.basisAt b hx k := by
     rw [(hFeq k).self_of_nhds, e.localFrame_apply_of_mem_baseSet b hx]
   let c (k : Fin (Module.finrank ℝ E)) : TangentSpace I x →ₗ[ℝ] ℝ := e.localFrameCoeff I b k x

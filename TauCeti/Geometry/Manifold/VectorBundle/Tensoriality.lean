@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Tensoriality of globally smooth operations
@@ -39,26 +39,6 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- Cutting off the local frame of a trivialization by a smooth bump function equal to one near
-`x` gives globally smooth sections which agree with the local frame near `x`. -/
-theorem exists_contMDiff_eventuallyEq_localFrame
-    [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
-    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
-    {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
-    {x : M} (hx : x ∈ e.baseSet) :
-    ∃ F : ι → Π y : M, W y, (∀ i, CMDiff ∞ (T% (F i))) ∧
-      ∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y := by
-  have hnhds : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
-  obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
-  refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_⟩
-  · exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
-      (e.contMDiffOn_localFrame_baseSet _ b i)
-  · filter_upwards [ρ.eventuallyEq_one] with y hy
-    simp [hy]
 
 /-- On a finite-rank smooth real vector bundle over a finite-dimensional Hausdorff manifold,
 a local operation which is additive and linear over globally smooth functions on globally
