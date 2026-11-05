@@ -30,6 +30,8 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 * `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
   `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
   `r T = (r₁, r₁ + r₂)`.
+* `TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul`: a function on an
+  `SL₂(ℤ)`-set that is invariant under `S` and `T` is invariant under all of `SL₂(ℤ)`.
 -/
 
 public section
@@ -84,5 +86,21 @@ theorem vecMul_map_modularGroup_T {R : Type u} [Ring R] (r : Fin 2 → R) :
       ![r 0, r 0 + r 1] := by
   ext i
   fin_cases i <;> simp [ModularGroup.coe_T, vecMul, dotProduct, Fin.sum_univ_two]
+
+open ModularGroup in
+/-- A function on an `SL₂(ℤ)`-set that is invariant under the generators `S` and `T` is invariant
+under all of `SL₂(ℤ)`. -/
+theorem apply_smul_eq_of_S_smul_of_T_smul {X α : Type*} [MulAction SL(2, ℤ) X] {f : X → α}
+    (hS : ∀ x, f (S • x) = f x) (hT : ∀ x, f (T • x) = f x) (γ : SL(2, ℤ)) (x : X) :
+    f (γ • x) = f x := by
+  have hγ : γ ∈ Subgroup.closure {S, T} := by simp [SpecialLinearGroup.SL2Z_generators]
+  induction hγ using Subgroup.closure_induction generalizing x with
+  | one => rw [one_smul]
+  | mem g hg =>
+    rcases hg with rfl | rfl
+    · exact hS x
+    · exact hT x
+  | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
+  | inv g _ hg => rw [← hg, smul_inv_smul]
 
 end TauCeti.Matrix.SpecialLinearGroup

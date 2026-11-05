@@ -15,7 +15,8 @@ The equivalence omitting the last finite index embeds preceding indices by `Fin.
 The quotient-remainder equivalence identifies a natural number with a block number and a
 position inside that block. This file records the induced block permutations and compatibility
 of nested blocks with the finite-product indexing equivalence.
-It also concatenates two finite blocks with the second block read in reverse order.
+It also concatenates two finite blocks with the second block read in reverse order, and splits
+the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`.
 -/
 
 public section
@@ -45,6 +46,23 @@ theorem finSumFinRevEquiv_inr_val (p q n : ℕ) (hpq : p + q = n) (i : Fin q) :
     (finSumFinRevEquiv p q n hpq (Sum.inr i) : ℕ) = p + (q - 1 - i) := by
   simp [finSumFinRevEquiv, Fin.rev]
   omega
+
+/-- The family `(b (0, 0), b (0, 1), b (1, 0), b (1, 1), …)` of a doubly indexed family, listed
+pair by pair through `finProdFinEquiv`, splits off its first pair. -/
+theorem comp_finProdFinEquiv_symm_succ {α : Type*} {m : ℕ} (b : Fin (m + 1) × Fin 2 → α) :
+    (fun r : Fin (2 * (m + 1)) ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r))) =
+      Matrix.vecCons (b (0, 0)) (Matrix.vecCons (b (0, 1))
+        (fun r : Fin (2 * m) ↦
+          (b ∘ Prod.map Fin.succ id) (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) r)))) := by
+  ext r
+  refine Fin.cases ?_ (fun r ↦ Fin.cases ?_ (fun r ↦ ?_) r) r
+  · congr 1
+    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat]
+  · congr 1
+    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat, fun k ↦ Nat.lt_succ_of_le (Nat.mod_le 1 k)]
+  · simp only [Matrix.cons_val_succ]
+    congr 1
+    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat] <;> omega
 
 end TauCeti
 
