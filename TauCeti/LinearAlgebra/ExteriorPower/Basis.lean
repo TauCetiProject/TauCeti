@@ -218,16 +218,16 @@ end exteriorPower
 
 namespace Module.Basis
 
-variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [LinearOrder I] [Fintype I]
+variable {R M N I J : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [LinearOrder I] [Fintype I] [LinearOrder J] [Finite J]
 
 /-- The matrix of an exterior-power map consists of the corresponding minors. -/
 @[simp]
-theorem toMatrix_exteriorPower_map (b : Basis I R M) (n : ℕ) (f : M →ₗ[R] M)
-    (s t : Set.powersetCard I n) :
-    LinearMap.toMatrix (b.exteriorPower n) (b.exteriorPower n) (exteriorPower.map n f) s t =
+theorem toMatrix_exteriorPower_map (b : Basis I R M) (c : Basis J R N) (n : ℕ) (f : M →ₗ[R] N)
+    (s : Set.powersetCard J n) (t : Set.powersetCard I n) :
+    LinearMap.toMatrix (b.exteriorPower n) (c.exteriorPower n) (exteriorPower.map n f) s t =
       (Matrix.of fun i j : Fin n ↦
-        LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s j)
+        LinearMap.toMatrix b c f (Set.powersetCard.ofFinEmbEquiv.symm s j)
           (Set.powersetCard.ofFinEmbEquiv.symm t i)).det := by
   simp [LinearMap.toMatrix_apply, exteriorPower.basis_repr_apply,
     exteriorPower.basis_apply, exteriorPower.ιMulti_family,

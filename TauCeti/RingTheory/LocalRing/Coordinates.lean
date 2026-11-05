@@ -46,6 +46,8 @@ as for the local ring at a point of a complete intersection curve in affine `n`-
   generate `𝔪`.
 * `TauCeti.span_residue_apply_eq_top_of_le_span_sup_sq`: conversely, elements of `𝔪` that span
   `𝔪` modulo `𝔪²` have gradients spanning `κⁿ`.
+* `TauCeti.card_le_card_of_le_span_sup_sq`: elements of `𝔪` that span `𝔪` modulo `𝔪²` are at
+  least as many as the coordinates.
 * `TauCeti.linearIndependent_residue_apply_sum_elim`: completing elements with independent
   gradients by elements independent modulo them and `𝔪²` keeps the gradients independent.
 * `TauCeti.exists_coordinates`: a coordinate system exists when `Ω[Q⁄K]` has a finite basis, `𝔪`
@@ -180,6 +182,22 @@ theorem span_residue_apply_eq_top_of_le_span_sup_sq [Finite ι]
     simp [← huv, congr_fun (residue_apply_eq_zero_of_mem_sq (D := D) hv) i']
   rw [← hxi, hgrad]
   exact residue_apply_mem_span_range_of_mem_span hw hu
+
+/-- Elements of `𝔪` that span `𝔪` modulo `𝔪²` are at least as many as the coordinates: the dual
+derivations make the classes of the coordinates `xᵢ` linearly independent in the cotangent space
+`𝔪/𝔪²`, whose dimension is therefore at least `Fintype.card ι`. -/
+theorem card_le_card_of_le_span_sup_sq [Fintype ι] [Fintype κ]
+    (hx : ∀ i, x i ∈ maximalIdeal Q)
+    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {w : κ → Q}
+    (hw : ∀ k, w k ∈ maximalIdeal Q)
+    (h : maximalIdeal Q ≤ Ideal.span (Set.range w) ⊔ maximalIdeal Q ^ 2) :
+    Fintype.card ι ≤ Fintype.card κ := by
+  have := span_residue_apply_eq_top_of_le_span_sup_sq hx hD hw h
+  calc Fintype.card ι = finrank (ResidueField Q) (ι → ResidueField Q) :=
+        (finrank_fintype_fun_eq_card _).symm
+    _ = finrank (ResidueField Q) (Submodule.span (ResidueField Q)
+          (Set.range fun k i ↦ residue Q (D i (w k)))) := by rw [this, finrank_top]
+    _ ≤ Fintype.card κ := finrank_range_le_card _
 
 /-- Let `wₖ ∈ 𝔪` have linearly independent gradients, and let `yⱼ ∈ 𝔪` be linearly independent
 modulo `(wₖ) + 𝔪²`: a combination `∑ cⱼ yⱼ` lies in `(wₖ) + 𝔪²` only if every `cⱼ ∈ 𝔪`. Then the
