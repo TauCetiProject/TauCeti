@@ -165,7 +165,7 @@ theorem weightParabolicDefiningHopfIdeal_toIdeal (w : Fin N → α) :
 
 /-- A morphism out of the coordinate algebra of `GL_N` kills the weight-parabolic defining Hopf
 ideal as soon as it kills every forbidden matrix coordinate. -/
-theorem weightParabolicDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [CommRing A] [Algebra R A]
+theorem weightParabolicDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [Semiring A] [Algebra R A]
     (w : Fin N → α) (f : coordinateHopfAlgebra R N →ₐ[R] A)
     (hf : ∀ i j, w i < w j → f (coordinateHopfAlgebraAlgEquiv R N
       (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :

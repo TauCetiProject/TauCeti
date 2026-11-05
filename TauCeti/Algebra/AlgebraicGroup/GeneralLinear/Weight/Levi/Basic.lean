@@ -64,7 +64,7 @@ theorem weightLeviDefiningHopfIdeal_def (w : Fin N → ℤ) :
 
 /-- A morphism out of the coordinate algebra of `GL_N` kills the weight-Levi defining Hopf ideal
 as soon as it kills every matrix coordinate between distinct weight blocks. -/
-theorem weightLeviDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [CommRing A] [Algebra R A]
+theorem weightLeviDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [Semiring A] [Algebra R A]
     (w : Fin N → ℤ) (f : coordinateHopfAlgebra R N →ₐ[R] A)
     (hf : ∀ i j, w i ≠ w j → f (coordinateHopfAlgebraAlgEquiv R N
       (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :
