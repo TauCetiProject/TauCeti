@@ -15,14 +15,13 @@ public import TauCeti.RingTheory.MvPowerSeries.Substitution
 # Renaming the variables of a multivariate power series
 
 Gaps in Mathlib's `rename` API, in three groups. The first compares a renaming with another
-operation on the same series — substitution, evaluation, or reading a single-variable
-coefficient — together with one consequence of those comparisons: that reindexing a two-variable
-series along `unitSumUnitEquivFinTwo` carries an associativity identity with it. The second says
-where a renamed series *vanishes*: at every exponent that is nonzero at a variable outside the
-image of the renaming. The third is about two renamings at once — along embeddings with disjoint
-images, a common value forces both series to be the same constant. Finally, renaming along an
-equivalence reindexes the weighted coefficient norms from which Gauss norms and restrictedness
-are computed.
+operation on the same series — substitution, evaluation, or reading a single-variable coefficient —
+together with one consequence of those comparisons: that reindexing a two-variable series along
+`TauCeti.unitSumUnitEquivFinTwo` carries an associativity identity with it. The second says where a
+renamed series *vanishes*: at every exponent that is nonzero at a variable outside the image of the
+renaming. The third is about two renamings at once — along embeddings with disjoint images, a common
+value forces both series to be the same constant. Finally, renaming along an equivalence reindexes
+the weighted coefficient norms from which Gauss norms and restrictedness are computed.
 
 Substituting after renaming is the substitution along the renamed index, and evaluating after
 renaming is the evaluation at the reindexed family: Mathlib has all these operations and the law
@@ -39,7 +38,8 @@ the same coefficient is recorded in the `PowerSeries.coeff` spelling.
 Associativity is where the two spellings of a two-variable series genuinely diverge: the named
 form substitutes an already-substituted series through `pairSubstitution`, the `Fin 2` form
 through a `Matrix.cons` family over `Fin 3`. Transporting the identity therefore means
-reindexing the three-variable ambient ring as well, along `unitSumUnitSumUnitEquivFinThree`.
+reindexing the three-variable ambient ring as well, along
+`TauCeti.unitSumUnitSumUnitEquivFinThree`.
 
 ## Main results
 
@@ -74,7 +74,7 @@ public section
 
 namespace MvPowerSeries
 
-open Filter Finsupp
+open Filter Finsupp TauCeti
 
 variable {σ τ υ R : Type*}
 
