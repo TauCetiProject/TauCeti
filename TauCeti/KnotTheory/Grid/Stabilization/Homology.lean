@@ -93,6 +93,27 @@ theorem stabilizeXChainMap_apply (c : GridChainMinus R (n + 1)) :
       (G.stabilizeXOffCenterToCenter s R (G.stabilizeXOffCenterProjection s R c)) :=
   (rfl)
 
+/-- `stabilizeXChainMap` carries multiplication by `V_j` to multiplication by `V_{s.predAbove j}`,
+merging the two stabilization variables `V_{s.castSucc}` and `V_{s.succ}` into `V_s`.
+
+Not a `simp` lemma: `LinearMap.map_smulₛₗ` and `MvPolynomial.rename_X` already simplify the
+left-hand side. -/
+theorem stabilizeXChainMap_X_smul (j : Fin (n + 1)) (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXChainMap s R ((MvPolynomial.X j : S) • c) =
+      (MvPolynomial.X (s.predAbove j) : A) • G.stabilizeXChainMap s R c := by
+  rw [(G.stabilizeXChainMap s R).map_smulₛₗ]
+  simp
+
+/-- For any column `i` of `G`, `stabilizeXChainMap` carries multiplication by the variable
+`V_{s.castSucc.succAbove i}` of the transported old `O`-marking in `G'` to multiplication by `V_i`.
+
+Not a `simp` lemma: `LinearMap.map_smulₛₗ`, `MvPolynomial.rename_X`, and `Fin.predAbove_succAbove`
+already simplify the left-hand side. -/
+theorem stabilizeXChainMap_X_succAbove_smul (i : Fin n) (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXChainMap s R ((MvPolynomial.X (s.castSucc.succAbove i) : S) • c) =
+      (MvPolynomial.X i : A) • G.stabilizeXChainMap s R c := by
+  rw [G.stabilizeXChainMap_X_smul, Fin.predAbove_succAbove]
+
 variable [CharP R 2]
 
 /-- `GC⁻(G')` with scalars restricted to `A`, with its object and differential spelled out. -/
@@ -157,7 +178,7 @@ theorem stabilizeXChainMap_mem_ker {c : GridChainMinus R (n + 1)}
   rw [← stabilizeXChainMap_unblockedDifferential, hc, map_zero]
 
 /-- Every cycle of `GC⁻(G)` differs from the image of a cycle of `GC⁻(G')` by a boundary. -/
-private theorem exists_sub_stabilizeXChainMap_mem_range {c : GridChainMinus R n}
+theorem exists_sub_stabilizeXChainMap_mem_range {c : GridChainMinus R n}
     (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
     ∃ m ∈ LinearMap.ker ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedDifferential R),
       c - G.stabilizeXChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R) := by
@@ -168,7 +189,7 @@ private theorem exists_sub_stabilizeXChainMap_mem_range {c : GridChainMinus R n}
   exact ⟨m, hm, G.stabilizeXMap'_f_apply s R m ▸ hcm⟩
 
 /-- A cycle of `GC⁻(G')` whose image in `GC⁻(G)` is a boundary is itself a boundary. -/
-private theorem mem_range_of_stabilizeXChainMap_mem_range {m : GridChainMinus R (n + 1)}
+theorem mem_range_of_stabilizeXChainMap_mem_range {m : GridChainMinus R (n + 1)}
     (hm : m ∈ LinearMap.ker ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedDifferential R))
     (h : G.stabilizeXChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R)) :
     m ∈ LinearMap.range ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedDifferential R) := by
