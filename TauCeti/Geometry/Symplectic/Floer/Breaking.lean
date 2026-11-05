@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.Floer.Translation
+import TauCeti.MeasureTheory.Integral.Lebesgue.ApproximateBound
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Limits of translated Floer cylinders
@@ -88,27 +90,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 section Segments
 
-/-- The Hamiltonian vector field `X_{H_t}(x)` of a jointly `C¹` time-dependent Hamiltonian is
-jointly continuous in `(t, x)`. -/
-private theorem continuous_hamiltonianVectorField_uncurry (hH : ContDiff ℝ 1 (uncurry H)) :
-    Continuous fun p : ℝ × V ↦ ω.hamiltonianVectorField (H p.1) p.2 := by
-  have h := ω.continuousOn_uncurry_hamiltonianVectorField isOpen_univ hH.contDiffOn
-  rw [univ_prod_univ] at h
-  exact continuousOn_univ.1 h
-
-/-- For `K = H_t dt` the `s`-component of the perturbed derivative is `∂_s u`. -/
-private theorem perturbedFDeriv_cylindrical_apply_stdComplexLineReal (z : ℝ × ℝ) :
-    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineReal =
-      fderiv ℝ u z (1, 0) := by
-  rw [perturbedFDeriv_apply_stdComplexLineReal, stdComplexLineReal_eq,
-    hamiltonianVectorField_const, Pi.zero_apply, sub_zero]
-
-/-- For `K = H_t dt` the `t`-component of the perturbed derivative is `∂_t u - X_{H_t}(u)`. -/
-private theorem perturbedFDeriv_cylindrical_apply_stdComplexLineImag (z : ℝ × ℝ) :
-    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag =
-      fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z) := by
-  rw [perturbedFDeriv_apply_stdComplexLineImag, stdComplexLineImag_eq]
-
 /-- For `K = H_t dt` the `s`-component of the perturbed derivative of a `C¹` map is continuous. -/
 private theorem continuousOn_perturbedFDeriv_cylindrical_stdComplexLineReal (hU : IsOpen U)
     (hu : ContDiffOn ℝ 1 u U) :
@@ -125,7 +106,7 @@ private theorem continuousOn_perturbedFDeriv_cylindrical_stdComplexLineImag
       (fun z ↦ ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag) U := by
   simp_rw [perturbedFDeriv_cylindrical_apply_stdComplexLineImag]
   exact ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).sub
-    ((continuous_hamiltonianVectorField_uncurry hH).comp_continuousOn
+    ((ω.continuous_uncurry_hamiltonianVectorField hH).comp_continuousOn
       (continuousOn_snd.prodMk hu.continuousOn))
 
 /-- Along a horizontal segment the variation of `u` is the integral of the `s`-component
@@ -145,12 +126,9 @@ private theorem lintegral_edist_le (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {
   refine setLIntegral_mono' measurableSet_Icc fun t ht ↦ ?_
   have hmem {r : ℝ} (hr : r ∈ uIcc α β) : (r, t) ∈ U := hR ⟨by rwa [uIcc_of_le hαβ] at hr, ht⟩
   -- The fundamental theorem of calculus along the segment `[α, β] × {t}`.
-  have hderiv : ∀ r ∈ uIcc α β, HasDerivAt (fun r ↦ u (r, t)) (fderiv ℝ u (r, t) (1, 0)) r := by
-    intro r hr
-    have hd := HasFDerivAt.comp_hasDerivAt r ((hu.differentiableOn one_ne_zero _
-      (hmem hr)).differentiableAt (hU.mem_nhds (hmem hr))).hasFDerivAt
-      ((hasDerivAt_id r).prodMk (hasDerivAt_const r t))
-    simpa [Function.comp_def] using hd
+  have hderiv : ∀ r ∈ uIcc α β, HasDerivAt (fun r ↦ u (r, t)) (fderiv ℝ u (r, t) (1, 0)) r :=
+    fun r hr ↦ hasDerivAt_slice_left
+      ((hu.differentiableOn one_ne_zero _ (hmem hr)).differentiableAt (hU.mem_nhds (hmem hr)))
   have hint : IntervalIntegrable (fun r ↦ fderiv ℝ u (r, t) (1, 0)) volume α β :=
     (hcont.comp (by fun_prop) fun r hr ↦ hmem hr).intervalIntegrable
   rw [edist_eq_enorm_sub, ← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
@@ -168,7 +146,7 @@ private theorem lintegral_enorm_sub_sub_integral_le (hH : ContDiff ℝ 1 (uncurr
         ∫ t in t₁..t₂, ω.hamiltonianVectorField (H t) (u (r, t))‖ₑ ≤
       ∫⁻ z in Icc α β ×ˢ Icc 0 1,
         ‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag‖ₑ := by
-  have hX := continuous_hamiltonianVectorField_uncurry (ω := ω) hH
+  have hX := ω.continuous_uncurry_hamiltonianVectorField hH
   have hcont : ContinuousOn (fun z ↦ fderiv ℝ u z (0, 1)) U :=
     (hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const
   have hcontX : ContinuousOn (fun z : ℝ × ℝ ↦ ω.hamiltonianVectorField (H z.2) (u z)) U :=
@@ -178,17 +156,13 @@ private theorem lintegral_enorm_sub_sub_integral_le (hH : ContDiff ℝ 1 (uncurr
     (fun z ↦ ‖fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z)‖ₑ)
     (((hcont.sub hcontX).mono hR).enorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
   refine setLIntegral_mono' measurableSet_Icc fun r hr ↦ ?_
-  have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := by
-    rw [uIcc_of_le ht]
-    exact Icc_subset_Icc ht₁ ht₂
+  dsimp only
+  have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := uIcc_subset_Icc ⟨ht₁, ht.trans ht₂⟩ ⟨ht₁.trans ht, ht₂⟩
   have hmem {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : (r, t) ∈ U := hR ⟨hr, hsub htm⟩
   -- The fundamental theorem of calculus along the segment `{r} × [t₁, t₂]`.
-  have hderiv : ∀ t ∈ uIcc t₁ t₂, HasDerivAt (fun t ↦ u (r, t)) (fderiv ℝ u (r, t) (0, 1)) t := by
-    intro t htm
-    have hd := HasFDerivAt.comp_hasDerivAt t ((hu.differentiableOn one_ne_zero _
-      (hmem htm)).differentiableAt (hU.mem_nhds (hmem htm))).hasFDerivAt
-      ((hasDerivAt_const t r).prodMk (hasDerivAt_id t))
-    simpa [Function.comp_def] using hd
+  have hderiv : ∀ t ∈ uIcc t₁ t₂, HasDerivAt (fun t ↦ u (r, t)) (fderiv ℝ u (r, t) (0, 1)) t :=
+    fun t htm ↦ hasDerivAt_slice_right
+      ((hu.differentiableOn one_ne_zero _ (hmem htm)).differentiableAt (hU.mem_nhds (hmem htm)))
   have hint : IntervalIntegrable (fun t ↦ fderiv ℝ u (r, t) (0, 1)) volume t₁ t₂ :=
     (hcont.comp (by fun_prop) fun t htm ↦ hmem htm).intervalIntegrable
   have hintX :
@@ -196,9 +170,8 @@ private theorem lintegral_enorm_sub_sub_integral_le (hH : ContDiff ℝ 1 (uncurr
     (hcontX.comp (by fun_prop) fun t htm ↦ hmem htm).intervalIntegrable
   rw [← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
     ← intervalIntegral.integral_sub hint hintX, intervalIntegral.integral_of_le ht]
-  refine (enorm_integral_le_lintegral_enorm _).trans
-    ((lintegral_mono_set (Ioc_subset_Icc_self.trans (Icc_subset_Icc ht₁ ht₂))).trans_eq ?_)
-  rfl
+  exact (enorm_integral_le_lintegral_enorm _).trans
+    (lintegral_mono_set (Ioc_subset_Icc_self.trans (Icc_subset_Icc ht₁ ht₂)))
 
 end Segments
 
@@ -206,26 +179,6 @@ section Limit
 
 variable {E : Set (ℝ × ℝ)} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ} {s : ℕ → ℝ}
   {v : ℝ × ℝ → V}
-
-/-- A lower integral over `[0, 1]` vanishes if, for every `ε > 0`, its integrand is eventually
-bounded by integrands `f k` up to `ε`, whose integrals are bounded by quantities tending to zero. -/
-private theorem setLIntegral_Icc_eq_zero_of_forall_eventually {g : ℝ → ℝ≥0∞}
-    {f : ℕ → ℝ → ℝ≥0∞} {F : ℕ → ℝ≥0∞} (hF : Tendsto F atTop (𝓝 0))
-    (hfF : ∀ᶠ k in atTop, ∫⁻ x in Icc (0 : ℝ) 1, f k x ≤ F k)
-    (h : ∀ ε : ℝ≥0, 0 < ε → ∀ᶠ k in atTop, ∀ x ∈ Icc (0 : ℝ) 1, g x ≤ f k x + ε) :
-    ∫⁻ x in Icc (0 : ℝ) 1, g x = 0 := by
-  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_) zero_le
-  rw [zero_add]
-  have hlim : Tendsto (fun k ↦ F k + ε) atTop (𝓝 (0 + ε)) := hF.add tendsto_const_nhds
-  rw [zero_add] at hlim
-  refine ge_of_tendsto hlim ?_
-  filter_upwards [hfF, h ε hε] with k hk hgk
-  calc ∫⁻ x in Icc (0 : ℝ) 1, g x ≤ ∫⁻ x in Icc (0 : ℝ) 1, (f k x + ε) :=
-        setLIntegral_mono' measurableSet_Icc hgk
-    _ = (∫⁻ x in Icc (0 : ℝ) 1, f k x) + ε := by
-        rw [lintegral_add_right _ measurable_const, setLIntegral_const, Real.volume_Icc]
-        simp
-    _ ≤ F k + ε := add_le_add_left hk _
 
 /-- The windows `[a + s_k, b + s_k] × [0, 1]` eventually lie in `E` and outside every band
 `|s| < R`, when `s_k` tends to infinity and every translated window eventually lies in `E`. -/
@@ -378,16 +331,18 @@ theorem eq_of_tendstoLocallyUniformlyOn_comp_add
     have hα : α ∈ Icc α β := ⟨le_rfl, hαβ⟩
     -- The mean distance between the two sides vanishes.
     have hzero : ∫⁻ t in Icc (0 : ℝ) 1, edist (v (β, t)) (v (α, t)) = 0 := by
-      refine setLIntegral_Icc_eq_zero_of_forall_eventually
+      refine lintegral_eq_zero_of_eventually_le_add
         (f := fun k t ↦ edist (u (β + s k, t)) (u (α + s k, t)))
-        (tendsto_lintegral_enorm_perturbedFDeriv hEU hW (Or.inl rfl)
-          (continuousOn_perturbedFDeriv_cylindrical_stdComplexLineReal hU hu)
-          (tendsto_lintegral_norm_sq_perturbedFDeriv hc hJc hJM hfloer hfin hs hW α β)) ?_ ?_
+        (tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+          (tendsto_lintegral_enorm_perturbedFDeriv hEU hW (Or.inl rfl)
+            (continuousOn_perturbedFDeriv_cylindrical_stdComplexLineReal hU hu)
+            (tendsto_lintegral_norm_sq_perturbedFDeriv hc hJc hJM hfloer hfin hs hW α β))
+          (Eventually.of_forall fun _ ↦ zero_le) ?_) fun ε hε ↦ ?_
       · filter_upwards [hW α β] with k hk
         exact lintegral_edist_le hU hu (by linarith) (hk.trans hEU)
-      · intro ε hε
-        filter_upwards [EMetric.tendstoUniformlyOn_iff.1 hUC (ε / 2)
-          (ENNReal.half_pos (by exact_mod_cast hε.ne'))] with k hk t ht
+      · filter_upwards [EMetric.tendstoUniformlyOn_iff.1 hUC (ε / 2)
+          (ENNReal.half_pos (by exact_mod_cast hε.ne'))] with k hk
+        refine ae_restrict_of_forall_mem measurableSet_Icc fun t ht ↦ ?_
         have h₁ := hk (β, t) ⟨hβ, ht⟩
         have h₂ := hk (α, t) ⟨hα, ht⟩
         simp only [Prod.mk_add_mk, add_zero] at h₁ h₂
@@ -408,9 +363,120 @@ theorem eq_of_tendstoLocallyUniformlyOn_comp_add
   · exact (key hr t ht).symm
   · exact key hr t ht
 
+omit [FiniteDimensional ℝ V] in
+/-- The defect `a₂ - a₁ - ∫ g` from an integral equation over an interval of length at most one
+moves by at most `3 δ` when the endpoint values and the integrand move by at most `δ`. -/
+private theorem norm_sub_sub_integral_le {a₁ a₂ b₁ b₂ : V} {g g' : ℝ → V} {t₁ t₂ δ : ℝ}
+    (ht : t₁ ≤ t₂) (ht₁₂ : t₂ - t₁ ≤ 1) (hg : IntervalIntegrable g volume t₁ t₂)
+    (hg' : IntervalIntegrable g' volume t₁ t₂) (h₁ : ‖a₁ - b₁‖ ≤ δ) (h₂ : ‖a₂ - b₂‖ ≤ δ)
+    (hgg : ∀ t ∈ uIoc t₁ t₂, ‖g t - g' t‖ ≤ δ) :
+    ‖a₂ - a₁ - ∫ t in t₁..t₂, g t‖ ≤ ‖b₂ - b₁ - ∫ t in t₁..t₂, g' t‖ + 3 * δ := by
+  have hδ : 0 ≤ δ := (norm_nonneg _).trans h₁
+  have hI : ‖∫ t in t₁..t₂, (g t - g' t)‖ ≤ δ :=
+    (intervalIntegral.norm_integral_le_of_norm_le_const hgg).trans
+      (mul_le_of_le_one_right hδ (by rwa [abs_of_nonneg (sub_nonneg.2 ht)]))
+  have hsplit : a₂ - a₁ - ∫ t in t₁..t₂, g t = (b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂) -
+      (a₁ - b₁) - ∫ t in t₁..t₂, (g t - g' t) := by
+    rw [intervalIntegral.integral_sub hg hg']
+    abel
+  rw [hsplit]
+  linarith [norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂) - (a₁ - b₁))
+      (∫ t in t₁..t₂, (g t - g' t)),
+    norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
+    norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
+/-- Under the hypotheses of `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and
+for a jointly `C¹` Hamiltonian `H`, the path `x(t) = v(0, t)` satisfies the integral equation
+`x(t₂) - x(t₁) = ∫_{t₁}^{t₂} X_{H_t}(x(t)) dt` of the Hamiltonian flow for `0 ≤ t₁ ≤ t₂ ≤ 1`. -/
+private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
+    (hH : ContDiff ℝ 1 (uncurry H))
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hEU : E ⊆ U) (hc : 0 < c)
+    (hJc : ∀ z ∈ E, ∀ w, c * ‖w‖ ^ 2 ≤ ω w (J z w)) (hJM : ∀ z ∈ E, ∀ w, ‖J z w‖ ≤ M * ‖w‖)
+    (hfloer : ∀ z ∈ E, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hfin : ∫⁻ z in E,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hs : Tendsto s atTop (cocompact ℝ))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E)
+    (hv : TendstoLocallyUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1)) {t₁ t₂ : ℝ} (ht₁ : 0 ≤ t₁) (ht : t₁ ≤ t₂) (ht₂ : t₂ ≤ 1) :
+    v (0, t₂) - v (0, t₁) - ∫ t in t₁..t₂, ω.hamiltonianVectorField (H t) (v (0, t)) = 0 := by
+  have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add hU hu hEU hc hJc hJM hfloer hfin hs hW hv
+  set Φ : ℝ × V → V := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2
+  have hΦ : Continuous Φ := ω.continuous_uncurry_hamiltonianVectorField hH
+  obtain ⟨hUC, hFc, hvK⟩ := tendstoUniformlyOn_window hu hEU hW hv 0 1
+  -- The vector field along the translates converges uniformly on `[0, 1] × [0, 1]`, since `Φ` is
+  -- continuous on the compact set of values of the limit.
+  have hΦUC : TendstoUniformlyOn (fun k z ↦ Φ (z.2, u (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
+      atTop (Icc 0 1 ×ˢ Icc 0 1) := by
+    have hpair : TendstoUniformlyOn (fun k z ↦ (z.2, u (z + (s k, 0)))) (fun z ↦ (z.2, v z))
+        atTop (Icc 0 1 ×ˢ Icc 0 1) := by
+      rw [Metric.tendstoUniformlyOn_iff] at hUC ⊢
+      intro ε hε
+      filter_upwards [hUC ε hε] with k hk z hz
+      simpa [Prod.dist_eq] using hk z hz
+    exact ((isCompact_Icc.prod isCompact_Icc).image_of_continuousOn
+      (continuousOn_snd.prodMk hvK)).comp_tendstoUniformlyOn (fun _ _ ↦ hΦ.continuousAt) hpair
+  have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := uIcc_subset_Icc ⟨ht₁, ht.trans ht₂⟩ ⟨ht₁.trans ht, ht₂⟩
+  set A := v (0, t₂) - v (0, t₁) - ∫ t in t₁..t₂, Φ (t, v (0, t))
+  -- The defects of the translates along the segments `{r} × [t₁, t₂]` tend to zero in `L¹`, and
+  -- they converge uniformly in `r ∈ [0, 1]` to the defect `A` of the limit.
+  have hzero : ∫⁻ r in Icc (0 : ℝ) 1, ‖A‖ₑ = 0 := by
+    refine lintegral_eq_zero_of_eventually_le_add
+      (f := fun k r ↦ ‖u (r + s k, t₂) - u (r + s k, t₁) -
+        ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ₑ)
+      (tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+        (tendsto_lintegral_enorm_perturbedFDeriv hEU hW (Or.inr rfl)
+          (continuousOn_perturbedFDeriv_cylindrical_stdComplexLineImag hH hU hu)
+          (tendsto_lintegral_norm_sq_perturbedFDeriv hc hJc hJM hfloer hfin hs hW 0 1))
+        (Eventually.of_forall fun _ ↦ zero_le) ?_) fun ε hε ↦ ?_
+    · filter_upwards [hW 0 1] with k hk
+      refine le_of_eq_of_le ?_ (lintegral_enorm_sub_sub_integral_le hH hU hu ht₁ ht ht₂
+        (hk.trans hEU))
+      -- Translate the segments `{r} × [t₁, t₂]` back to `r ∈ [0, 1]`.
+      have hT := (measurePreserving_add_right volume (s k)).setLIntegral_comp_preimage_emb
+        (measurableEmbedding_addRight _)
+        (fun r ↦ ‖u (r, t₂) - u (r, t₁) - ∫ t in t₁..t₂, Φ (t, u (r, t))‖ₑ)
+        (Icc (0 + s k) (1 + s k))
+      rwa [preimage_add_const_Icc, add_sub_cancel_right, add_sub_cancel_right] at hT
+    · set δ : ℝ := ε / 3 with hδε
+      have hδ : 0 < δ := by positivity
+      filter_upwards [Metric.tendstoUniformlyOn_iff.1 hUC δ hδ,
+        Metric.tendstoUniformlyOn_iff.1 hΦUC δ hδ, hFc] with k hk hkΦ hkc
+      refine ae_restrict_of_forall_mem measurableSet_Icc fun r hr ↦ ?_
+      have hmem {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : (r, t) ∈ Icc (0 : ℝ) 1 ×ˢ Icc 0 1 :=
+        ⟨hr, hsub htm⟩
+      have hF (t : ℝ) : u ((r, t) + (s k, 0)) = u (r + s k, t) := by simp
+      -- Along the segment the limit is `v(0, ·)`, and the translates are uniformly close to it.
+      have hxv : ∫ t in t₁..t₂, Φ (t, v (0, t)) = ∫ t in t₁..t₂, Φ (t, v (r, t)) :=
+        intervalIntegral.integral_congr fun t htm ↦ by
+          simp only [hstat r t (hsub htm)]
+      have hcv : ContinuousOn (fun t ↦ Φ (t, v (r, t))) (uIcc t₁ t₂) :=
+        hΦ.comp_continuousOn (continuousOn_id.prodMk
+          (hvK.comp (continuousOn_const.prodMk continuousOn_id) fun t htm ↦ hmem htm))
+      have hcu : ContinuousOn (fun t ↦ Φ (t, u (r + s k, t))) (uIcc t₁ t₂) := by
+        refine hΦ.comp_continuousOn (continuousOn_id.prodMk ?_)
+        simp_rw [← hF]
+        exact hkc.comp (continuousOn_const.prodMk continuousOn_id) fun t htm ↦ hmem htm
+      have hend {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : ‖v (0, t) - u (r + s k, t)‖ ≤ δ := by
+        have h := hk (r, t) (hmem htm)
+        rw [dist_eq_norm, hF, hstat r t (hsub htm)] at h
+        exact h.le
+      have hA := norm_sub_sub_integral_le ht (by linarith) hcv.intervalIntegrable
+        hcu.intervalIntegrable (hend left_mem_uIcc) (hend right_mem_uIcc) fun t htm ↦ by
+          have h := hkΦ (r, t) (hmem (uIoc_subset_uIcc htm))
+          rw [dist_eq_norm, hF] at h
+          exact h.le
+      rw [← hxv, show 3 * δ = ε by rw [hδε]; ring] at hA
+      rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
+        ← ENNReal.ofReal_add (norm_nonneg _) ε.coe_nonneg]
+      exact ENNReal.ofReal_le_ofReal hA
+  rw [setLIntegral_const, Real.volume_Icc, sub_zero, ENNReal.ofReal_one, mul_one] at hzero
+  exact enorm_eq_zero.1 hzero
+
 /-- **The limit of translated Floer cylinders is a Hamiltonian orbit.** Under the hypotheses of
 `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and for a jointly `C¹`
-Hamiltonian `H`, the loop `x(t) = v(0, t)`,
+Hamiltonian `H`, the path `x(t) = v(0, t)`,
 along which the limit `v(s, t) = x(t)` is stationary, solves `x'(t) = X_{H_t}(x(t))` on
 `[0, 1]`. -/
 theorem hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add (hH : ContDiff ℝ 1 (uncurry H))
@@ -426,125 +492,22 @@ theorem hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add (hH : ContDiff �
       ((univ : Set ℝ) ×ˢ Icc 0 1)) :
     ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt (fun t ↦ v (0, t))
       (ω.hamiltonianVectorField (H t) (v (0, t))) (Icc 0 1) t := by
-  have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add hU hu hEU hc hJc hJM hfloer hfin hs hW hv
-  set x : ℝ → V := fun t ↦ v (0, t)
-  set Φ : ℝ × V → V := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2
-  have hΦ : Continuous Φ := continuous_hamiltonianVectorField_uncurry hH
-  obtain ⟨hUC, hFc, hvK⟩ := tendstoUniformlyOn_window hu hEU hW hv 0 1
-  have hrow {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) : ContinuousOn (fun t ↦ v (r, t)) (Icc 0 1) :=
-    hvK.comp (continuousOn_const.prodMk continuousOn_id) fun t ht ↦ ⟨hr, ht⟩
-  have hx : ContinuousOn x (Icc 0 1) := hrow ⟨le_rfl, zero_le_one⟩
-  have hf : ContinuousOn (fun t ↦ Φ (t, x t)) (Icc 0 1) :=
-    hΦ.comp_continuousOn (continuousOn_id.prodMk hx)
-  -- The vector field along the translates converges uniformly on `[0, 1] × [0, 1]`, since
-  -- `Φ` is uniformly continuous on a compact neighbourhood of the image of the limit.
-  have hΦUC : TendstoUniformlyOn (fun k z ↦ Φ (z.2, u (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
-      atTop (Icc 0 1 ×ˢ Icc 0 1) := by
-    obtain ⟨B, hB⟩ := (isCompact_Icc.prod isCompact_Icc).exists_bound_of_continuousOn hvK
-    have hpair : TendstoUniformlyOn (fun k z ↦ (z.2, u (z + (s k, 0)))) (fun z ↦ (z.2, v z))
-        atTop (Icc 0 1 ×ˢ Icc 0 1) := by
-      rw [Metric.tendstoUniformlyOn_iff] at hUC ⊢
-      intro ε hε
-      filter_upwards [hUC ε hε] with k hk z hz
-      simpa [Prod.dist_eq] using hk z hz
-    have hC : IsCompact (Icc (0 : ℝ) 1 ×ˢ Metric.closedBall (0 : V) (B + 1)) :=
-      isCompact_Icc.prod (isCompact_closedBall _ _)
-    refine (hC.uniformContinuousOn_of_continuous hΦ.continuousOn).comp_tendstoUniformlyOn_eventually
-      ?_ ?_ hpair
-    · filter_upwards [Metric.tendstoUniformlyOn_iff.1 hUC 1 one_pos] with k hk z hz
-      refine ⟨hz.2, ?_⟩
-      have h₁ := hk z hz
-      rw [dist_eq_norm] at h₁
-      rw [mem_closedBall_zero_iff]
-      linarith [hB z hz, norm_le_norm_add_norm_sub' (u (z + (s k, 0))) (v z),
-        norm_sub_rev (v z) (u (z + (s k, 0)))]
-    · intro z hz
-      exact ⟨hz.2, by rw [mem_closedBall_zero_iff]; linarith [hB z hz]⟩
-  -- The integral equation of the Hamiltonian flow holds along `x`.
-  have hint {t₁ t₂ : ℝ} (ht₁ : 0 ≤ t₁) (ht : t₁ ≤ t₂) (ht₂ : t₂ ≤ 1) :
-      x t₂ - x t₁ - ∫ t in t₁..t₂, Φ (t, x t) = 0 := by
-    set A := x t₂ - x t₁ - ∫ t in t₁..t₂, Φ (t, x t) with hA
-    have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := by
-      rw [uIcc_of_le ht]
-      exact Icc_subset_Icc ht₁ ht₂
-    have hzero : ∫⁻ r in Icc (0 : ℝ) 1, ‖A‖ₑ = 0 := by
-      refine setLIntegral_Icc_eq_zero_of_forall_eventually
-        (f := fun k r ↦ ‖u (r + s k, t₂) - u (r + s k, t₁) -
-          ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ₑ)
-        (tendsto_lintegral_enorm_perturbedFDeriv hEU hW (Or.inr rfl)
-          (continuousOn_perturbedFDeriv_cylindrical_stdComplexLineImag hH hU hu)
-          (tendsto_lintegral_norm_sq_perturbedFDeriv hc hJc hJM hfloer hfin hs hW 0 1)) ?_ ?_
-      · filter_upwards [hW 0 1] with k hk
-        refine le_of_eq_of_le ?_ (lintegral_enorm_sub_sub_integral_le hH hU hu ht₁ ht ht₂
-          (hk.trans hEU))
-        -- Translate the segments `{r} × [t₁, t₂]` back to `r ∈ [0, 1]`.
-        have hT := (measurePreserving_add_right volume (s k)).setLIntegral_comp_preimage_emb
-          (measurableEmbedding_addRight _)
-          (fun r ↦ ‖u (r, t₂) - u (r, t₁) - ∫ t in t₁..t₂, Φ (t, u (r, t))‖ₑ)
-          (Icc (0 + s k) (1 + s k))
-        rwa [preimage_add_const_Icc, add_sub_cancel_right, add_sub_cancel_right] at hT
-      · intro ε hε
-        set δ : ℝ := ε / 3 with hδε
-        have hδ : 0 < δ := by positivity
-        filter_upwards [Metric.tendstoUniformlyOn_iff.1 hUC δ hδ,
-          Metric.tendstoUniformlyOn_iff.1 hΦUC δ hδ, hFc] with k hk hkΦ hkc r hr
-        have hmem {t : ℝ} (htm : t ∈ uIcc t₁ t₂) : (r, t) ∈ Icc (0 : ℝ) 1 ×ˢ Icc 0 1 :=
-          ⟨hr, hsub htm⟩
-        have hF (t : ℝ) : u ((r, t) + (s k, 0)) = u (r + s k, t) := by simp
-        -- Along the segment the limit is `x`, and the translates are uniformly close to it.
-        have hxv : ∫ t in t₁..t₂, Φ (t, x t) = ∫ t in t₁..t₂, Φ (t, v (r, t)) :=
-          intervalIntegral.integral_congr fun t htm ↦ by
-            simp only [x, hstat r t (hsub htm)]
-        have hcv : ContinuousOn (fun t ↦ Φ (t, v (r, t))) (uIcc t₁ t₂) :=
-          hΦ.comp_continuousOn (continuousOn_id.prodMk ((hrow hr).mono hsub))
-        have hcu : ContinuousOn (fun t ↦ Φ (t, u (r + s k, t))) (uIcc t₁ t₂) := by
-          refine hΦ.comp_continuousOn (continuousOn_id.prodMk ?_)
-          simp_rw [← hF]
-          exact hkc.comp (continuousOn_const.prodMk continuousOn_id) fun t htm ↦ hmem htm
-        have hI : ‖∫ t in t₁..t₂, (Φ (t, v (r, t)) - Φ (t, u (r + s k, t)))‖ ≤ δ := by
-          refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := δ)
-            fun t htm ↦ ?_).trans ?_
-          · have h := hkΦ (r, t) (hmem (uIoc_subset_uIcc htm))
-            rw [dist_eq_norm, hF] at h
-            exact h.le
-          · rw [abs_of_nonneg (sub_nonneg.2 ht)]
-            nlinarith
-        have h₁ : ‖x t₁ - u (r + s k, t₁)‖ < δ := by
-          have h := hk (r, t₁) (hmem left_mem_uIcc)
-          rwa [dist_eq_norm, hF, hstat r t₁ (hsub left_mem_uIcc)] at h
-        have h₂ : ‖x t₂ - u (r + s k, t₂)‖ < δ := by
-          have h := hk (r, t₂) (hmem right_mem_uIcc)
-          rwa [dist_eq_norm, hF, hstat r t₂ (hsub right_mem_uIcc)] at h
-        have hsplit : A - (u (r + s k, t₂) - u (r + s k, t₁) - ∫ t in t₁..t₂, Φ (t, u (r + s k, t)))
-            = (x t₂ - u (r + s k, t₂)) - (x t₁ - u (r + s k, t₁)) -
-              ∫ t in t₁..t₂, (Φ (t, v (r, t)) - Φ (t, u (r + s k, t))) := by
-          rw [intervalIntegral.integral_sub hcv.intervalIntegrable hcu.intervalIntegrable, ← hxv,
-            hA]
-          abel
-        have hA : ‖A‖ ≤ ‖u (r + s k, t₂) - u (r + s k, t₁) -
-            ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ + ε := by
-          have := norm_le_norm_add_norm_sub' A
-            (u (r + s k, t₂) - u (r + s k, t₁) - ∫ t in t₁..t₂, Φ (t, u (r + s k, t)))
-          rw [hsplit] at this
-          linarith [norm_sub_le ((x t₂ - u (r + s k, t₂)) - (x t₁ - u (r + s k, t₁)))
-            (∫ t in t₁..t₂, (Φ (t, v (r, t)) - Φ (t, u (r + s k, t)))),
-            norm_sub_le (x t₂ - u (r + s k, t₂)) (x t₁ - u (r + s k, t₁)), hI]
-        rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
-          ← ENNReal.ofReal_add (norm_nonneg _) ε.coe_nonneg]
-        exact ENNReal.ofReal_le_ofReal hA
-    rw [setLIntegral_const, Real.volume_Icc, sub_zero, ENNReal.ofReal_one, mul_one] at hzero
-    exact enorm_eq_zero.1 hzero
-  -- Hence `x` is a primitive of the vector field along it.
+  obtain ⟨-, -, hvK⟩ := tendstoUniformlyOn_window hu hEU hW hv 0 1
+  have hx : ContinuousOn (fun t ↦ v (0, t)) (Icc 0 1) :=
+    hvK.comp (continuousOn_const.prodMk continuousOn_id) fun t ht ↦
+      ⟨left_mem_Icc.2 zero_le_one, ht⟩
+  have hf : ContinuousOn (fun t ↦ ω.hamiltonianVectorField (H t) (v (0, t))) (Icc 0 1) :=
+    (ω.continuous_uncurry_hamiltonianVectorField hH).comp_continuousOn
+      (continuousOn_id.prodMk hx)
+  -- By the integral equation, `x(t) = v(0, t)` is a primitive of the vector field along it.
   intro t ht
   have : Fact (t ∈ Icc (0 : ℝ) 1) := ⟨ht⟩
-  have hsub : uIcc 0 t ⊆ Icc (0 : ℝ) 1 := by
-    rw [uIcc_of_le ht.1]
-    exact Icc_subset_Icc le_rfl ht.2
   have hd := intervalIntegral.integral_hasDerivWithinAt_right (a := 0) (s := Icc 0 1)
-    (t := Icc 0 1) (hf.mono hsub).intervalIntegrable
+    (t := Icc 0 1) (hf.mono (uIcc_subset_Icc (left_mem_Icc.2 zero_le_one) ht)).intervalIntegrable
     (hf.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Icc t) (hf t ht)
-  refine (hd.const_add (x 0)).congr_of_mem (fun τ hτ ↦ ?_) ht
-  have h := hint le_rfl hτ.1 hτ.2
+  refine (hd.const_add (v (0, 0))).congr_of_mem (fun τ hτ ↦ ?_) ht
+  have h := sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add hH hU hu hEU hc hJc
+    hJM hfloer hfin hs hW hv le_rfl hτ.1 hτ.2
   rw [← sub_eq_zero, ← h]
   abel
 
@@ -595,12 +558,11 @@ theorem perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
   have hev : v =ᶠ[𝓝 z] fun w ↦ v (0, w.2) :=
     Filter.mem_of_superset ((isOpen_univ.prod isOpen_Ioo).mem_nhds hz)
       fun w hw ↦ hstat w.1 w.2 (Ioo_subset_Icc_self hw.2)
-  have hd := (hder.hasDerivAt (Icc_mem_nhds hz.2.1 hz.2.2)).hasFDerivAt.comp z hasFDerivAt_snd
+  have hd := hder.hasDerivAt (Icc_mem_nhds hz.2.1 hz.2.2)
   rw [ω.perturbedFDeriv_congr_of_eventuallyEq _ _ hev]
   refine ContinuousLinearMap.ext fun w ↦ ?_
-  rw [perturbedFDeriv_apply,
-    show (fun w : ℝ × ℝ ↦ v (0, w.2)) = (fun t ↦ v (0, t)) ∘ Prod.snd from rfl, hd.fderiv]
-  simp [hamiltonianVectorField_const]
+  rw [perturbedFDeriv_comp_snd_apply hd.differentiableAt, hd.deriv]
+  simp
 
 end Limit
 

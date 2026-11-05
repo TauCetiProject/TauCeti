@@ -39,6 +39,8 @@ variable vanishes everywhere is constant along every horizontal line.
   derivatives of its summands.
 * `TauCeti.hasDerivAt_prodMk_left`, `TauCeti.hasDerivAt_prodMk_right`: the coordinate lines
   through a point have velocities `(1, 0)` and `(0, 1)`.
+* `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
+  a function along the coordinate lines.
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
@@ -186,6 +188,11 @@ theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
     HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
   (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
 
+/-- The derivative of `u` along the horizontal line `s ↦ (s, b)` is `fderiv 𝕜 u (s, b) (1, 0)`. -/
+theorem hasDerivAt_slice_left {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 u (s, b)) :
+    HasDerivAt (fun s ↦ u (s, b)) (fderiv 𝕜 u (s, b) (1, 0)) s := by
+  simpa [Function.comp_def] using hu.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
+
 /-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(1, 0)`. -/
 theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (s, b))
@@ -196,6 +203,12 @@ theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt �
       (hasDerivAt_prodMk_left s b)
 
 end CoordinateLines
+
+/-- The derivative of `u` along the vertical line `t ↦ (a, t)` is `fderiv 𝕜 u (a, t) (0, 1)`. -/
+theorem hasDerivAt_slice_right {u : E × 𝕜 → G} {a : E} {t : 𝕜}
+    (hu : DifferentiableAt 𝕜 u (a, t)) :
+    HasDerivAt (fun t ↦ u (a, t)) (fderiv 𝕜 u (a, t) (0, 1)) t := by
+  simpa [Function.comp_def] using hu.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right a t)
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/
@@ -213,8 +226,7 @@ theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGr
     (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0) (s : ℝ) (b : F) :
     u (s, b) = u (0, b) := by
   have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
-    simpa [h, Function.comp_def] using
-      (hu _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
+    simpa [h] using hasDerivAt_slice_left (hu (s, b))
   exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
 
 end TauCeti

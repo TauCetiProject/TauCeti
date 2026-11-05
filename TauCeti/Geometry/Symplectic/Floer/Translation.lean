@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
@@ -26,8 +27,14 @@ This file identifies the fixed points of this action of `ℝ` on finite-energy s
 that it is free elsewhere, so that the quotient by translations is taken only away from the
 stationary cylinders.
 
-The *stationary* cylinders `u(s, t) = x(t)` are fixed by every translation. Such a cylinder solves
-the Floer equation exactly when `x' = X_{H_t}(x)`, that is, when `x` is a Hamiltonian orbit
+For this perturbation the two components of the perturbed derivative are `∂_s u` and
+`∂_t u - X_{H_t}(u)` (`SymplecticForm.perturbedFDeriv_cylindrical_apply_stdComplexLineReal` and
+`SymplecticForm.perturbedFDeriv_cylindrical_apply_stdComplexLineImag`).
+
+The *stationary* cylinders `u(s, t) = x(t)` are fixed by every translation. The perturbed
+derivative of such a cylinder sends `(a, b)` to `b (x' - X_{H_t}(x))`
+(`SymplecticForm.perturbedFDeriv_comp_snd_apply`), so it solves the Floer equation exactly when
+`x' = X_{H_t}(x)`, that is, when `x` is a Hamiltonian orbit
 (`SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_snd_iff`), and its energy density
 vanishes (`SymplecticForm.floerEnergyDensity_comp_snd`). Conversely, for almost complex structures
 tamed by `ω`, a `C¹` solution has zero energy exactly when it is stationary
@@ -86,9 +93,22 @@ private theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticFo
 
 variable {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {z : ℝ × ℝ}
 
+/-- For `K = H_t dt` the `s`-component of the perturbed derivative is `∂_s u`. -/
+theorem perturbedFDeriv_cylindrical_apply_stdComplexLineReal (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineReal =
+      fderiv ℝ u z (1, 0) := by
+  rw [perturbedFDeriv_apply_stdComplexLineReal, stdComplexLineReal_eq,
+    hamiltonianVectorField_const, Pi.zero_apply, sub_zero]
+
+/-- For `K = H_t dt` the `t`-component of the perturbed derivative is `∂_t u - X_{H_t}(u)`. -/
+theorem perturbedFDeriv_cylindrical_apply_stdComplexLineImag (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag =
+      fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z) := by
+  rw [perturbedFDeriv_apply_stdComplexLineImag, stdComplexLineImag_eq]
+
 /-- The perturbed derivative of a stationary map `(s, t) ↦ x(t)` for `K = H_t dt` sends `(a, b)`
 to `b (x'(t) - X_{H_t}(x(t)))`. -/
-private theorem perturbedFDeriv_comp_snd_apply (hx : DifferentiableAt ℝ x z.2) (v : ℝ × ℝ) :
+theorem perturbedFDeriv_comp_snd_apply (hx : DifferentiableAt ℝ x z.2) (v : ℝ × ℝ) :
     ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z v =
       v.2 • (deriv x z.2 - ω.hamiltonianVectorField (H z.2) (x z.2)) := by
   have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
@@ -161,12 +181,10 @@ private theorem eq_of_forall_floerEnergyDensity_eq_zero (ω : SymplecticForm V)
   intro s t ht
   have hline (r : ℝ) : HasDerivAt (fun r ↦ u (r, t)) 0 r := by
     have hr : (r, t) ∈ U := hRU ⟨mem_univ r, ht⟩
-    have hd := HasFDerivAt.comp_hasDerivAt r
-      ((hu.differentiableOn one_ne_zero _ hr).differentiableAt (hU.mem_nhds hr)).hasFDerivAt
-      ((hasDerivAt_id r).prodMk (hasDerivAt_const r t))
     have h0 := hds' (show (r, t) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 from ⟨mem_univ r, ht⟩)
     rw [stdComplexLineReal_eq] at h0
-    simpa [Function.comp_def, h0] using hd
+    simpa [h0] using hasDerivAt_slice_left
+      ((hu.differentiableOn one_ne_zero _ hr).differentiableAt (hU.mem_nhds hr))
   exact is_const_of_deriv_eq_zero (fun r ↦ (hline r).differentiableAt)
     (fun r ↦ (hline r).deriv) s 0
 

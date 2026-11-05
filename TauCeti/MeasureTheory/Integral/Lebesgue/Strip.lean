@@ -143,16 +143,16 @@ zero. For the energy density of a half-cylinder of finite energy, this says that
 a window translated towards the end tends to zero. No measurability of `f`, `E` or `A i` is
 assumed. -/
 theorem tendsto_setLIntegral_of_eventually_subset {ι β : Type*} [MeasurableSpace β]
-    {μ : Measure (ℝ × β)} [SFinite μ] {E : Set (ℝ × β)} {f : ℝ × β → ℝ≥0∞}
+    {μ : Measure (ℝ × β)} {E : Set (ℝ × β)} {f : ℝ × β → ℝ≥0∞}
     (hE : ∫⁻ z in E, f z ∂μ ≠ ∞) {l : Filter ι} {A : ι → Set (ℝ × β)}
     (hA : ∀ R : ℝ, ∀ᶠ i in l, A i ⊆ E ∩ {z | R ≤ |z.1|}) :
     Tendsto (fun i ↦ ∫⁻ z in A i, f z ∂μ) l (𝓝 0) := by
-  set ν := (μ.withDensity f).restrict E
+  set ν := (μ.restrict E).withDensity f
   set C : ℕ → Set (ℝ × β) := fun n ↦ {z | (n : ℝ) ≤ |z.1|}
   have hC (n : ℕ) : MeasurableSet (C n) :=
     measurableSet_le measurable_const (continuous_abs.measurable.comp measurable_fst)
   have hν (n : ℕ) : ν (C n) = ∫⁻ z in C n ∩ E, f z ∂μ := by
-    rw [Measure.restrict_apply (hC n), withDensity_apply']
+    rw [withDensity_apply _ (hC n), Measure.restrict_restrict (hC n)]
   -- The integrals over `E` outside the bands `|z.1| < n` decrease to zero.
   have hlim : Tendsto (fun n ↦ ν (C n)) atTop (𝓝 0) := by
     have hanti : Antitone C := fun m n hmn z (hz : (n : ℝ) ≤ |z.1|) ↦
