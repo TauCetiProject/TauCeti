@@ -67,6 +67,9 @@ its attainment give actual finite categorical covers of compact locally contract
 * `TauCeti.lsCategoryCount_eq_sum_inter`: additivity over finitely many pairwise disjoint clopen
   sets, and `TauCeti.lsCategoryCount_sigma`, `TauCeti.lsCategoryCount_univ_sigma`: the count of a
   finite disjoint union is the sum of the counts of its summands.
+* `TauCeti.lsCategoryCount_preimage_subtypeVal`: a clopen subspace computes the counts of its
+  subsets as the ambient space does, and `TauCeti.lsCategoryCount_eq_sum_preimage_subtypeVal`: the
+  count is the sum of the counts in the subspaces of a finite clopen partition.
 * `TauCeti.lsCategoryCount_univ_eq_finsum_connectedComponents`: the count of a space with
   finitely many components is the sum of the counts of its components.
 * `TauCeti.lsCategoryCount_univ_of_contractibleSpace` and
@@ -543,6 +546,35 @@ theorem lsCategoryCount_eq_sum_inter {ι : Type*} [Fintype ι] {C : ι → Set X
         Finset.sum_le_sum fun i _ ↦ hJ i
     _ = (Finset.univ.biUnion J).card := by rw [Finset.card_biUnion hJd, Nat.cast_sum]
     _ ≤ n := by exact_mod_cast (Finset.card_le_univ _).trans (by simp)
+
+/-- On a clopen set `C`, the Lusternik–Schnirelmann count of a subset `A ⊆ C` is the same whether
+it is computed in the subspace `C` or in `X`. -/
+theorem lsCategoryCount_preimage_subtypeVal {C : Set X} (hC : IsClopen C) (hA : A ⊆ C) :
+    lsCategoryCount C (Subtype.val ⁻¹' A) = lsCategoryCount X A := by
+  refine le_antisymm ?_ ?_
+  · obtain rfl | ⟨y, hy⟩ := A.eq_empty_or_nonempty
+    · simp
+    classical
+    -- Collapsing the complement of `C` to `y` gives a retraction of `X` onto `C`.
+    have hmem (x : X) : (if x ∈ C then x else y) ∈ C := by split_ifs with h; exacts [h, hA hy]
+    let r : C(X, C) := ⟨fun x ↦ ⟨_, hmem x⟩,
+      (continuous_id'.if (by simp [hC.frontier_eq]) continuous_const).subtype_mk hmem⟩
+    have hr : r.comp ⟨Subtype.val, continuous_subtype_val⟩ = ContinuousMap.id C :=
+      ContinuousMap.ext fun x ↦ Subtype.ext (by simp [r, x.2])
+    exact lsCategoryCount_le_of_mapsTo _ r (by rw [hr]) (mapsTo_preimage _ _)
+  · simpa [image_preimage_eq_of_subset (hA.trans Subtype.range_coe.superset)] using
+      hC.isOpen.isOpenEmbedding_subtypeVal.lsCategoryCount_image_le (Subtype.val ⁻¹' A)
+
+/-- **Additivity over a finite clopen partition.** If finitely many pairwise disjoint clopen sets
+`C i` cover `A`, the Lusternik–Schnirelmann count of `A` is the sum of the counts of its parts,
+each computed in the subspace `C i`. -/
+theorem lsCategoryCount_eq_sum_preimage_subtypeVal {ι : Type*} [Fintype ι] {C : ι → Set X}
+    (hC : ∀ i, IsClopen (C i)) (hd : Pairwise (Disjoint on C)) (hA : A ⊆ ⋃ i, C i) :
+    lsCategoryCount X A = ∑ i, lsCategoryCount (C i) (Subtype.val ⁻¹' A) := by
+  rw [lsCategoryCount_eq_sum_inter hC hd hA]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← lsCategoryCount_preimage_subtypeVal (hC i) inter_subset_right, preimage_inter,
+    Subtype.coe_preimage_self, inter_univ]
 
 section Sigma
 

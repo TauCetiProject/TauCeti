@@ -70,6 +70,7 @@ polynomial in the Morse inequalities.
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.totalCriticalCount_eq_sum`: additivity of the total count over finite open partitions.
 * `TauCeti.totalCriticalCount_eq_finsum_connectedComponents`: the total count is the sum of the
   counts in the connected components, when there are finitely many.
 
@@ -489,6 +490,18 @@ theorem totalCriticalCount_comp_subtypeVal {U : Opens M} :
     totalCriticalCount I (f ∘ Subtype.val : U → ℝ) = (criticalPoints I f ∩ U).encard := by
   rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal,
     ← Subtype.val_injective.encard_image, image_preimage_eq_inter_range, Subtype.range_val]
+
+/-- **Additivity of the critical count.** If finitely many pairwise disjoint open subsets `U i`
+cover `M`, then the number of critical points of `f` is the sum of the numbers of critical points of
+its restrictions to the `U i`. -/
+theorem totalCriticalCount_eq_sum {ι : Type*} [Fintype ι] (U : ι → Opens M)
+    (hd : Pairwise (Disjoint on U)) (hU : ⨆ i, U i = ⊤) :
+    totalCriticalCount I f = ∑ i, totalCriticalCount I (f ∘ Subtype.val : U i → ℝ) := by
+  have hd' : Pairwise (Disjoint on fun i ↦ criticalPoints I f ∩ U i) := fun i j hij ↦
+    (Opens.coe_disjoint.mpr (hd hij)).inter_left' _ |>.inter_right' _
+  simp_rw [totalCriticalCount_comp_subtypeVal, ← finsum_eq_sum_of_fintype,
+    ← encard_iUnion_of_finite hd', ← inter_iUnion, ← Opens.coe_iSup, hU, Opens.coe_top,
+    inter_univ, totalCriticalCount_def]
 
 /-- **The critical count is additive over components.** If `M` has finitely many connected
 components, the number of critical points of `f` is the sum over the components of the numbers of
