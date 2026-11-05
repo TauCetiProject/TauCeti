@@ -28,6 +28,8 @@ the codimension of its image, and the dimension of the source is at most that of
 
 * `AlgebraicGeometry.LocallyQuasiFinite.of_formallyUnramified`: a formally unramified morphism
   locally of finite type is locally quasi-finite.
+* `AlgebraicGeometry.LocallyQuasiFinite.finite_residueField`: the residue field extensions of a
+  locally quasi-finite morphism are finite.
 * `AlgebraicGeometry.Scheme.Hom.strictMono`: a locally quasi-finite morphism
   is strictly monotone for the specialization order.
 * `AlgebraicGeometry.Scheme.Hom.coheight_le_coheight_apply`: under a locally quasi-finite morphism
@@ -44,6 +46,7 @@ the codimension of its image, and the dimension of the source is at most that of
 
 ## References
 
+* The Stacks Project, Tag 00PK (a quasi-finite ring map has finite residue field extensions).
 * The strict monotonicity is a scheme form of `Pcf.height_eq_one_of_liesOver_heightOne` in
   T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -69,6 +72,31 @@ instance (priority := low) LocallyQuasiFinite.of_formallyUnramified {X Y : Schem
   have htype := htype.finiteType_appLE hU hV e
   algebraize [(f.appLE U V e).hom]
   exact RingHom.quasiFinite_algebraMap.mpr inferInstance
+
+/-- **Residue field extensions of a quasi-finite morphism are finite.** If `f` is locally
+quasi-finite, then `κ(x)` is a finite extension of `κ(f x)` at every point `x`. This is Stacks,
+Lemma 00PK, at the stalk map of `f` at `x`, which is quasi-finite by `Scheme.Hom.quasiFiniteAt`:
+the residue field of the stalk at `x` is quasi-finite over the stalk at `f x`, hence over its
+residue field, and a quasi-finite extension of a field is finite. -/
+instance LocallyQuasiFinite.finite_residueField {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [LocallyQuasiFinite f] (x : X) :
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    Module.Finite (Y.residueField (f x)) (X.residueField x) := by
+  algebraize [(f.stalkMap x).hom]
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
+  have : Algebra.QuasiFinite (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := f.quasiFiniteAt x
+  have : Algebra.QuasiFinite (Y.presheaf.stalk (f x))
+      (IsLocalRing.ResidueField (X.presheaf.stalk x)) :=
+    inferInstanceAs (Algebra.QuasiFinite (Y.presheaf.stalk (f x))
+      (X.presheaf.stalk x ⧸ IsLocalRing.maximalIdeal (X.presheaf.stalk x)))
+  have : Algebra.QuasiFinite (IsLocalRing.ResidueField (Y.presheaf.stalk (f x)))
+      (IsLocalRing.ResidueField (X.presheaf.stalk x)) :=
+    .of_restrictScalars (Y.presheaf.stalk (f x)) _ _
+  -- `κ(f x) ⟶ κ(x)` is the map of residue fields of the local homomorphism of stalks.
+  exact RingHom.finite_algebraMap.mpr (Module.Finite.of_quasiFinite :
+    Module.Finite (IsLocalRing.ResidueField (Y.presheaf.stalk (f x)))
+      (IsLocalRing.ResidueField (X.presheaf.stalk x)))
 
 /-- A locally quasi-finite morphism is strictly monotone for the specialization order. -/
 theorem Scheme.Hom.strictMono {X Y : Scheme.{u}} (f : X ⟶ Y)
