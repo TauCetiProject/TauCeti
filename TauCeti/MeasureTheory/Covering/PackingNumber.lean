@@ -5,27 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.ENatENNReal
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.Analysis.Real.Sqrt
-public import Mathlib.Topology.MetricSpace.CoveringNumbers
--- Private: `ENat.toENNReal_iSup` is used only in a proof.
-import Mathlib.Algebra.Order.Floor.Extended
+public import TauCeti.Topology.MetricSpace.CoveringNumbers
 
 /-!
 # Packing and covering numbers from lower bounds on the measure of balls
 
 Let `μ` be a measure on a pseudometric space and `A` a set. If every closed ball of radius `ε / 2`
-centred at a point of `A` has measure at least `m`, then a set of points of `A` any two of which
-are more than `ε` apart has at most `μ (cthickening (ε / 2) A) / m` elements. Indeed the closed
-balls of radius `ε / 2` around such points are pairwise disjoint, and they lie in the closed
-`ε / 2`-thickening of `A`. Consequently
+centred at a point of `A` has measure at least `m`, then the number of points of a finite subset
+of `A` any two of which are more than `ε` apart, times `m`, is at most `μ (cthickening (ε / 2) A)`.
+Indeed the closed balls of radius `ε / 2` around such points are pairwise disjoint, and they lie
+in the closed `ε / 2`-thickening of `A`. Consequently
 
 `packingNumber ε A * m ≤ μ (cthickening (ε / 2) A)`,
 
-and the same bound holds for the covering number. A maximal `ε`-separated subset of `A` realizes
-this bound by a cover: it is a finite set of centres in `A` whose closed balls of radius `ε` cover
-`A` and whose closed balls of radius `ε / 2` are pairwise disjoint.
+and the same bound holds for the covering number. When moreover `m ≠ 0` and the thickening has
+finite measure, these bounds say that the packing and covering numbers are at most
+`μ (cthickening (ε / 2) A) / m`, and a maximal `ε`-separated subset of `A` realizes this bound by
+a cover: it is a finite set of centres in `A` whose closed balls of radius `ε` cover `A` and whose
+closed balls of radius `ε / 2` are pairwise disjoint.
 
 The typical application is a lower density bound `μ (closedBall x ρ) ≥ c ρ ^ d` at the points
 `x ∈ A`, valid on a window of radii `a ≤ ρ ≤ b`. Then for every `ε` with `2 a ≤ ε ≤ 2 b`,
@@ -40,18 +39,15 @@ as `σ ≤ 2 ρ₀` and `r ≥ (2 c₀ / σ) ²`.
 
 ## Main results
 
-* `TauCeti.packingNumber_le_of_forall_finset_card_le`: a finite bound on the sizes of the finite
-  `ε`-separated subsets of a set bounds its packing number.
-* `Metric.IsSeparated.pairwiseDisjoint_closedBall`: the closed balls of radius `ε / 2` around
-  the points of an `ε`-separated set are pairwise disjoint.
-* `Metric.IsSeparated.card_mul_le_measure_cthickening`: hence a finite `ε`-separated subset of `A`
-  has at most `μ (cthickening (ε / 2) A) / m` points.
+* `Metric.IsSeparated.card_mul_le_measure_cthickening`: the cardinality of a finite
+  `ε`-separated subset of `A`, times `m`, is at most `μ (cthickening (ε / 2) A)`.
 * `TauCeti.packingNumber_mul_le_measure_cthickening`,
   `TauCeti.coveringNumber_mul_le_measure_cthickening`: the packing and covering numbers at scale
   `ε` times a lower bound for the measure of the balls of radius `ε / 2` centred in `A` are at
   most the measure of the closed `ε / 2`-thickening of `A`.
-* `TauCeti.exists_finset_isCover_pairwiseDisjoint_closedBall`: an `ε`-net of `A` by points of
-  `A` with pairwise disjoint half-balls, of at most `μ (cthickening (ε / 2) A) / m` points.
+* `TauCeti.exists_finset_isCover_pairwiseDisjoint_closedBall`: if `m ≠ 0` and the thickening has
+  finite measure, an `ε`-net of `A` by points of `A` with pairwise disjoint half-balls, whose
+  cardinality times `m` is at most `μ (cthickening (ε / 2) A)`.
 * `TauCeti.coveringNumber_le_of_mul_pow_le_measure_closedBall`: the covering number bound from a
   lower density bound `c ρ ^ d` on a window of radii.
 * `TauCeti.coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le`: the quadratic
@@ -68,48 +64,16 @@ public section
 open MeasureTheory Metric Set
 open scoped ENNReal NNReal
 
-namespace TauCeti
-
-/-- If every finite `ε`-separated subset of `A` has at most `B ≠ ∞` elements, then the packing
-number of `A` at scale `ε` is at most `B`. -/
-theorem packingNumber_le_of_forall_finset_card_le {X : Type*} [PseudoEMetricSpace X] {ε : ℝ≥0}
-    {A : Set X} {B : ℝ≥0∞} (hB : B ≠ ∞)
-    (h : ∀ s : Finset X, (s : Set X) ⊆ A → IsSeparated ε (s : Set X) → (s.card : ℝ≥0∞) ≤ B) :
-    (packingNumber ε A : ℝ≥0∞) ≤ B := by
-  rw [packingNumber]
-  simp only [ENat.toENNReal_iSup]
-  refine iSup₂_le fun C hCA ↦ iSup_le fun hC ↦ ?_
-  rcases C.finite_or_infinite with hCf | hCi
-  · rw [hCf.encard_eq_coe_toFinset_card, ENat.toENNReal_coe]
-    exact h hCf.toFinset (by simpa using hCA) (by simpa using hC)
-  · -- An infinite separated subset would contain finite separated subsets of every size.
-    exfalso
-    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hB
-    obtain ⟨s, hsC, rfl⟩ := hCi.exists_subset_card_eq n
-    exact (h s (hsC.trans hCA) (hC.subset hsC)).not_gt hn
-
-end TauCeti
-
 variable {X : Type*} [PseudoMetricSpace X]
 
 namespace Metric
 
-/-- The closed balls of radius `ε / 2` around the points of an `ε`-separated set are pairwise
-disjoint. -/
-theorem IsSeparated.pairwiseDisjoint_closedBall {ε : ℝ≥0} {C : Set X}
-    (hC : IsSeparated ε C) : C.PairwiseDisjoint fun x ↦ closedBall x (ε / 2) := by
-  intro x hx y hy hxy
-  refine closedBall_disjoint_closedBall ?_
-  have h : (ε : ℝ≥0∞) < edist x y := hC hx hy hxy
-  rw [edist_nndist, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nndist] at h
-  linarith
-
 variable [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} {A : Set X} {ε : ℝ≥0}
   {m : ℝ≥0∞}
 
-/-- An `ε`-separated finite subset `s` of `A` has at most `μ (cthickening (ε / 2) A) / m`
-points, if every closed ball of radius `ε / 2` centred at a point of `s` has measure at least
-`m`. -/
+/-- If every closed ball of radius `ε / 2` centred at a point of an `ε`-separated finite subset `s`
+of `A` has measure at least `m`, then the cardinality of `s` times `m` is at most
+`μ (cthickening (ε / 2) A)`. -/
 theorem IsSeparated.card_mul_le_measure_cthickening {s : Finset X} (hs : IsSeparated ε (s : Set X))
     (hsA : (s : Set X) ⊆ A) (hm : ∀ x ∈ s, m ≤ μ (closedBall x (ε / 2))) :
     s.card * m ≤ μ (cthickening (ε / 2) A) :=
