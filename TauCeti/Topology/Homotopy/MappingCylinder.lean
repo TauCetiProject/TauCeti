@@ -44,7 +44,8 @@ and its companions record.
   through which `TauCeti.MappingCylinder.proj_comp_subtypeVal_comp_inclHomeomorph` factors `f`.
 * `TauCeti.MappingCylinder.deformation`: **the mapping cylinder deformation retracts onto its
   base**, with `TauCeti.MappingCylinder.homotopyEquiv` the resulting homotopy equivalence with
-  the target.
+  the target, and `TauCeti.MappingCylinder.incl_homotopic_mkBase_comp` the resulting homotopy
+  from the bottom face inclusion to `f` followed by the base inclusion.
 * `TauCeti.MappingCylinder.exists_mem_range_incl_joined`: when `f` is surjective on path
   components, every point of the mapping cylinder is joined by a path to the bottom face.
 
@@ -437,6 +438,14 @@ lemma homotopyEquiv_toFun : (homotopyEquiv f).toFun = proj f := (rfl)
 /-- The homotopy inverse of the projection is the base inclusion. -/
 @[simp]
 lemma homotopyEquiv_symm_apply (y : Y) : (homotopyEquiv f).symm y = mkBase f y := (rfl)
+
+/-- The inclusion of the bottom face is homotopic to `f` followed by the base inclusion: follow the
+deformation onto the base. -/
+theorem incl_homotopic_mkBase_comp : (incl f).Homotopic ((mkBase f).comp f) := by
+  have h : (ContinuousMap.id (MappingCylinder f)).Homotopic ((mkBase f).comp (proj f)) :=
+    ⟨(deformation f).toHomotopy⟩
+  replace h := h.comp (ContinuousMap.Homotopic.refl (incl f))
+  rwa [ContinuousMap.id_comp, ContinuousMap.comp_assoc, proj_comp_incl] at h
 
 /-- Every point of the mapping cylinder is joined by a path to the point of the base below it:
 follow the deformation onto the base. -/

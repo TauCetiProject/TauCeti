@@ -15,7 +15,9 @@ These examples exercise the Borel reducibility API from a downstream module, thr
 statements only:
 
 * equality on `ℝ` is smooth, and Borel bireducible with equality on Cantor space;
-* equality of first coordinates on Cantor space is smooth, as a pullback of equality on `Bool`;
+* equality of first coordinates on Cantor space is smooth, and has finite normal form `Fin 2`;
+* equality of first coordinates on Baire space has countably infinite normal form `ℕ`;
+* finite equality relations are classified by their size, including the empty space;
 * `E₀` is Borel and not smooth, equality on Cantor space reduces to it, and no relation above it
   is smooth.
 -/
@@ -36,6 +38,39 @@ example : (⊥ : Setoid ℝ).BorelBireducible (⊥ : Setoid (ℕ → Bool)) :=
 -- first coordinate, so it is smooth.
 example : (Setoid.comap (fun x : ℕ → Bool => x 0) ⊥).IsSmooth :=
   (borelReducible_comap (measurable_pi_apply 0) ⊥).isSmooth (isSmooth_bot_iff.2 inferInstance)
+
+-- The quotient of equality of first coordinates is `Bool`, hence the finite normal form is
+-- equality on `Fin 2`. Constant sequences give a right inverse to evaluation.
+example : (Setoid.ker (fun x : ℕ → Bool ↦ x 0)).BorelBireducible (⊥ : Setoid (Fin 2)) := by
+  refine (borelBireducible_bot_iff_nonempty_equiv_of_countable ?_).2
+    ⟨(quotientKerEquivOfRightInverse (fun x : ℕ → Bool ↦ x 0) (fun b _ ↦ b)
+      (fun _ ↦ rfl)).trans finTwoEquiv.symm⟩
+  intro x
+  simpa only [ker_def] using
+    (measurableSet_eq_fun measurable_const (measurable_pi_apply 0) :
+      MeasurableSet {y : ℕ → Bool | x 0 = y 0})
+
+-- The same computation for Baire space gives the countably infinite normal form.
+example : (Setoid.ker (fun x : ℕ → ℕ ↦ x 0)).BorelBireducible (⊥ : Setoid ℕ) := by
+  refine (borelBireducible_bot_iff_nonempty_equiv_of_countable ?_).2
+    ⟨quotientKerEquivOfRightInverse (fun x : ℕ → ℕ ↦ x 0) (fun n _ ↦ n) (fun _ ↦ rfl)⟩
+  intro x
+  simpa only [ker_def] using
+    (measurableSet_eq_fun measurable_const (measurable_pi_apply 0) :
+      MeasurableSet {y : ℕ → ℕ | x 0 = y 0})
+
+-- The normal forms have no repetitions, including at `n = 0`.
+example (m n : ℕ) :
+    (⊥ : Setoid (Fin m)).BorelBireducible (⊥ : Setoid (Fin n)) ↔ m = n := by
+  rw [borelBireducible_bot_iff_nonempty_equiv_of_countable
+    (fun x ↦ by simpa only [bot_def] using
+      (measurableSet_eq_fun measurable_const measurable_id :
+        MeasurableSet {y : Fin m | x = y}))]
+  constructor
+  · rintro ⟨e⟩
+    exact Fin.equiv_iff_eq.1 ⟨quotientBotEquiv.symm.trans e⟩
+  · rintro rfl
+    exact ⟨quotientBotEquiv⟩
 
 -- `E₀` is Borel, equality on Cantor space reduces to it, and it is not smooth.
 example : MeasurableSet {p : (ℕ → Bool) × (ℕ → Bool) | TauCeti.eZero p.1 p.2} ∧

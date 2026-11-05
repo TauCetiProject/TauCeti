@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 
 /-!
@@ -386,22 +387,11 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [No
     calc _ ≤ ((C : ℝ≥0∞) * A * eLpNorm (φ : V → F) p volume).toReal :=
           ENNReal.toReal_mono (by finiteness) h
       _ = _ := by simp [ENNReal.toReal_mul]
-  -- Extend `φ ↦ (T φ).toLp p` from the dense Schwartz functions to all of `Lᵖ`, by the bound.
-  set e : 𝓢(V, F) →ₗ[ℂ] Lp F p (volume : Measure V) :=
-    (SchwartzMap.toLpCLM ℂ F p (volume : Measure V)).toLinearMap
-  have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := volume) hp_top
-  set S : 𝓢(V, F) →ₗ[ℂ] Lp F p (volume : Measure V) := e ∘ₗ T.toLinearMap
-  have hSe : ∀ φ, ‖S φ‖ ≤ C * A * ‖e φ‖ := hS
-  refine ⟨S.extendOfNorm e f, ?_, LinearMap.norm_extendOfNorm_apply_le he _ hSe f⟩
-  -- Both sides are continuous in `f` and agree on the dense Schwartz functions.
-  refine congrFun (he.equalizer (g := fun f ↦ TemperedDistribution.fourierMultiplierCLM F m
-    (f : 𝓢'(V, F))) (h := fun f ↦ ((S.extendOfNorm e f : Lp F p volume) : 𝓢'(V, F)))
-    (TemperedDistribution.fourierMultiplierCLM F m ∘L
-      Lp.toTemperedDistributionCLM F volume p).continuous
-    ((Lp.toTemperedDistributionCLM F volume p).continuous.comp (S.extendOfNorm e).continuous)
-    (funext fun φ ↦ ?_)) f
-  simp only [Function.comp_apply, LinearMap.extendOfNorm_eq he ⟨_, hSe⟩]
-  simp only [S, e, T, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, SchwartzMap.toLpCLM_apply,
+  -- The bound passes from the dense Schwartz functions to all of `Lᵖ`.
+  refine (TemperedDistribution.fourierMultiplierCLM F m ∘L
+    Lp.toTemperedDistributionCLM F volume p).exists_apply_eq_toTemperedDistribution_and_norm_le
+      hp_top T (fun φ ↦ ?_) hS f
+  simp only [T, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply,
     Lp.toTemperedDistribution_toLp_eq,
     TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
 

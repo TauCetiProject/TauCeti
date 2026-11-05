@@ -105,7 +105,8 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
         CommHopfAlgCat.baseChangeMap (K := K)
           (CommHopfAlgCat.mkQuotient _ (generatedDefiningIdeal k)) := by
     rw [← CommHopfAlgCat.baseChangeFunctor_map, ← F.map_comp,
-      generatedCoordinateMap_comp_eqToHom, CommHopfAlgCat.baseChangeFunctor_map]
+      ← eqToIso.hom, generatedCoordinateMap_comp_eqToIso_hom,
+      CommHopfAlgCat.baseChangeFunctor_map]
   have hquot :
       CommHopfAlgCat.baseChangeMap (K := K)
           (CommHopfAlgCat.mkQuotient _ (generatedDefiningIdeal k)) ≫
@@ -150,9 +151,11 @@ theorem generatedCoordinateHopfAlgebraBaseChangeHom_surjective :
   exact Function.Surjective.of_comp hsurj
 
 /-- Every numbered root-subgroup and weight-torus coordinate lift commutes with the
-arbitrary-extension comparison. -/
+arbitrary-extension comparison. This is the form of
+`baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom`
+that needs no freeness assumption. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom'
     (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
     CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Comap
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
@@ -34,6 +35,12 @@ function field, containing exactly the constants in `K`. For the principal congr
 `Γ(N)`, its cusp `∞` in the identity scaling, of width `N`, and `K = ℚ(ζ_N)`, this is the field
 `F_N` of modular functions of level `N` whose Fourier coefficients lie in `ℚ(ζ_N)`.
 
+For an inclusion `Δ ≤ Γ` and cusp data `D` of `Δ` and `E` of `Γ` with the same scaling, the width
+of `D` is a multiple `d` of that of `E`, and the expansion at `D` of the pullback of `F` along the
+map of compactified quotients is the expansion of `F` at `E` in the variable `q ^ d`. So the
+pullback has its coefficients in `K` exactly when `F` does; these are the level maps between the
+fields `F_N`.
+
 ## Main declarations
 
 * `Subgroup.CompactifiedQuotient.laurentQExpansion`: the Laurent `q`-expansion at a cusp datum, as a
@@ -48,6 +55,9 @@ function field, containing exactly the constants in `K`. For the principal congr
 * `Subgroup.CompactifiedQuotient.coeffSubfield`, `Subgroup.CompactifiedQuotient.mem_coeffSubfield`
   and `Subgroup.CompactifiedQuotient.mem_coeffSubfield_iff_exists_mapRingHom_eq`: the subfield of
   functions with coefficients in a subfield of `ℂ`.
+* `Subgroup.CompactifiedQuotient.laurentQExpansion_compactifiedQuotientComap` and
+  `Subgroup.CompactifiedQuotient.compactifiedQuotientComap_mem_coeffSubfield_iff`: the expansion
+  and the coefficients of a pullback along the map induced by an inclusion of subgroups.
 
 ## References
 
@@ -94,6 +104,16 @@ theorem meromorphicAt_cuspFunction_finitePart (F : MeromorphicFunction Γ.Compac
   have h := (meromorphicAt_ofCusp_iff (F := F.finitePart) D fun _ ↦ rfl).mp
     (F.meromorphicAt_finitePart _)
   rwa [TauCeti.Subgroup.CuspDatum.cuspExtension_def] at h
+
+/-- The pullback of a meromorphic function on the compactified quotient, read in the scaling of
+`D`, is periodic with the width of `D` as a period. -/
+private theorem periodic_finitePart (F : MeromorphicFunction Γ.CompactifiedQuotient) :
+    Periodic ((fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z)))) ∘ ofComplex)
+      D.width :=
+  TauCeti.Subgroup.CuspDatum.periodic_comp_ofComplex_inv_smul D
+    (fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ z))) fun g z ↦
+      congrArg (fun p ↦ F.finitePart (ofQuotient p))
+        (Quotient.sound (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit z (g : Γ))))
 
 /-- **The Laurent `q`-expansion at a cusp datum.** A meromorphic function `F` on the compactified
 quotient is sent to the Laurent expansion in `q = exp (2 π i z / w)` of its pullback
@@ -180,12 +200,8 @@ evaluated at `q = exp (2 π i z / w)`. -/
 theorem hasSum_laurentQExpansion (F : MeromorphicFunction Γ.CompactifiedQuotient) :
     ∀ᶠ z : ℍ in atImInfty, HasSum
       (fun n : ℤ ↦ (laurentQExpansion D F).coeff n * Periodic.qParam D.width z ^ n)
-      (F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z)))) := by
-  have hper := TauCeti.Subgroup.CuspDatum.periodic_comp_ofComplex_inv_smul D
-    (fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ z))) fun g z ↦
-      congrArg (fun p ↦ F.finitePart (ofQuotient p))
-        (Quotient.sound (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit z (g : Γ))))
-  exact TauCeti.UpperHalfPlane.hasSum_laurentQExpansion D.width_pos hper
+      (F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z)))) :=
+  TauCeti.UpperHalfPlane.hasSum_laurentQExpansion D.width_pos (periodic_finitePart D F)
     (meromorphicAt_cuspFunction_finitePart D F)
 
 /-- The Laurent `q`-expansion of the meromorphic function defined by a function `H` on the
@@ -245,5 +261,45 @@ theorem coeffSubfield_mono {K L : Subfield ℂ} (h : K ≤ L) : coeffSubfield D 
 @[simp]
 theorem coeffSubfield_top : coeffSubfield D (⊤ : Subfield ℂ) = ⊤ :=
   eq_top_iff.mpr fun _ _ ↦ (mem_coeffSubfield D).mpr fun _ ↦ Subfield.mem_top _
+
+/-! ### Pullback along maps of compactified quotients -/
+
+section Comap
+
+variable {Δ : Subgroup PSL(2, ℝ)} [DiscreteTopology Δ] (h : Δ ≤ Γ) {D : Δ.CuspDatum}
+  {E : Γ.CuspDatum}
+
+/-- **The Laurent `q`-expansion of a pullback.** Let `Δ ≤ Γ` be discrete subgroups, and let `D`
+and `E` be cusp data of `Δ` and of `Γ` with the same scaling, so that they have the same cusp and
+the width of `D` is a multiple `d` of the width of `E`. Then the expansion at `D` of the pullback
+of `F` to the compactified quotient of `Δ` is the expansion of `F` at `E` in the variable
+`q ^ d`. -/
+theorem laurentQExpansion_compactifiedQuotientComap (hσ : D.scaling = E.scaling) {d : ℕ+}
+    (hw : D.width = d * E.width) (F : MeromorphicFunction Γ.CompactifiedQuotient) :
+    laurentQExpansion D (compactifiedQuotientComap h F) =
+      LaurentSeries.expand ℂ d (laurentQExpansion E F) := by
+  rw [laurentQExpansion_apply, laurentQExpansion_apply, finitePart_compactifiedQuotientComap, hσ,
+    hw, ← TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul E.width_pos (periodic_finitePart E F)
+      (meromorphicAt_cuspFunction_finitePart E F)]
+  simp only [comp_apply, compactifiedQuotientMap_ofQuotient, TauCeti.Setoid.map_of_le_mk]
+
+/-- **Coefficients of a pullback.** For cusp data `D` of `Δ ≤ Γ` and `E` of `Γ` with the same
+scaling, the pullback of `F` has its coefficients at `D` in a subfield `K` of `ℂ` exactly when
+`F` has its coefficients at `E` in `K`. -/
+theorem compactifiedQuotientComap_mem_coeffSubfield_iff (hσ : D.scaling = E.scaling)
+    {K : Subfield ℂ} :
+    compactifiedQuotientComap h F ∈ coeffSubfield D K ↔ F ∈ coeffSubfield E K := by
+  obtain ⟨d, hd, hw⟩ := TauCeti.Subgroup.CuspDatum.exists_width_eq_nat_mul h D E
+    (D.cusp_eq_of_scaling_eq E hσ) hσ
+  lift d to ℕ+ using hd
+  rw [mem_coeffSubfield, mem_coeffSubfield, laurentQExpansion_compactifiedQuotientComap h hσ hw]
+  refine ⟨fun hF n ↦ by simpa using hF (d * n), fun hF n ↦ ?_⟩
+  by_cases hn : ((d : ℕ) : ℤ) ∣ n
+  · obtain ⟨k, rfl⟩ := hn
+    simpa using hF k
+  · rw [LaurentSeries.coeff_expand_of_not_dvd _ _ hn]
+    exact K.zero_mem
+
+end Comap
 
 end Subgroup.CompactifiedQuotient

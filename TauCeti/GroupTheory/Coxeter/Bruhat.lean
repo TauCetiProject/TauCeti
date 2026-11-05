@@ -66,7 +66,8 @@ comparisons change when both endpoints are multiplied by the same simple reflect
 * `CoxeterSystem.BruhatLE.bruhatLE_mul_simple`: the lifting property in the form `u ≤ w * s` when
   `u ≤ w` and `s` lengthens `u`.
 * `CoxeterSystem.BruhatLE.simple_mul_of_isLeftDescent`,
-  `CoxeterSystem.BruhatLE.simple_mul_of_not_isLeftDescent` and
+  `CoxeterSystem.BruhatLE.simple_mul_of_not_isLeftDescent`,
+  `CoxeterSystem.BruhatLE.simple_mul_simple_mul_of_isLeftDescent` and
   `CoxeterSystem.BruhatLE.bruhatLE_simple_mul`: the left-multiplication forms of the lifting
   property.
 * `CoxeterSystem.IsMinimalCosetRep.bruhatLE_mul` and
@@ -528,6 +529,14 @@ theorem BruhatLE.bruhatLE_simple_mul (h : cs.BruhatLE u w) {i : B}
     (hu : ¬cs.IsLeftDescent u i) : cs.BruhatLE u (cs.simple i * w) := by
   simpa only [mul_inv_rev, cs.inv_simple, inv_inv] using
     (h.inv.bruhatLE_mul_simple (cs.isRightDescent_inv_iff.not.mpr hu)).inv
+
+/-- At a common left descent of both endpoints, left multiplication by that simple reflection
+preserves Bruhat order. -/
+theorem BruhatLE.simple_mul_simple_mul_of_isLeftDescent (h : cs.BruhatLE u w) {i : B}
+    (hu : cs.IsLeftDescent u i) (hw : cs.IsLeftDescent w i) :
+    cs.BruhatLE (cs.simple i * u) (cs.simple i * w) :=
+  (h.simple_mul_of_isLeftDescent i hw).bruhatLE_simple_mul
+    (cs.isLeftDescent_iff_not_isLeftDescent_mul.mp hu)
 
 end
 

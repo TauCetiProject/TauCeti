@@ -15,6 +15,16 @@ import Mathlib.LinearAlgebra.Matrix.SchurComplement
 This file computes the determinant of Mathlib's `Module.reflection` on a finite free module, and
 records that a reflection negates the linear form defining it. Consequently a finite free module
 of positive rank has a linear automorphism of determinant `-1`.
+
+It also computes the fixed vectors of a product of reflections `y ↦ y - fᵢ(y) • vᵢ` along
+linearly independent vectors `vᵢ`, each used at most once: they are exactly the common zeros of the
+linear forms `fᵢ` (`Module.list_prod_map_preReflection_apply_eq_self_iff`). Applied to the simple
+roots of a base of a root pairing, this computes the fixed vectors of a Coxeter element.
+
+## References
+
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge University Press (1990),
+  § 3.16, for the argument by linear independence in the case of the simple roots.
 -/
 
 public section
@@ -75,5 +85,52 @@ theorem exists_det_eq_neg_one [Module.Free R M] [Module.Finite R M] [StrongRankC
   let i : Fin (finrank R M) := ⟨0, hM⟩
   have hf : (2 • b.coord i) (b i) = 2 := by simp
   exact ⟨reflection hf, det_reflection hf⟩
+
+section ListProd
+
+variable {ι : Type*} {v : ι → M} {g : ι → Dual R M}
+
+/-- A product of reflections along the vectors `v i`, `i ∈ l`, moves every vector by an element of
+the span of those vectors. -/
+theorem list_prod_map_preReflection_apply_sub_mem_span (l : List ι) (y : M) :
+    (l.map fun i ↦ preReflection (v i) (g i)).prod y - y ∈
+      Submodule.span R (v '' {i | i ∈ l}) := by
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp, preReflection_apply, sub_right_comm]
+    refine sub_mem (Submodule.span_mono (Set.image_mono fun j hj ↦ ?_) ih)
+      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, by simp, rfl⟩))
+    exact List.mem_cons_of_mem i hj
+
+/-- **Fixed vectors of a product of reflections in linearly independent vectors.** Let `l` list
+distinct indices, and let the vectors `v i` be linearly independent. The product of the
+reflections `y ↦ y - g i y • v i` over `i ∈ l`, in the order of `l`, fixes `y` exactly when every
+linear form `g i` with `i ∈ l` vanishes on `y`. Thus its fixed space is the intersection of the
+kernels of the `g i`. -/
+theorem list_prod_map_preReflection_apply_eq_self_iff (hv : LinearIndependent R v) {l : List ι}
+    (hl : l.Nodup) {y : M} :
+    (l.map fun i ↦ preReflection (v i) (g i)).prod y = y ↔ ∀ i ∈ l, g i y = 0 := by
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+    rw [List.nodup_cons] at hl
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp, preReflection_apply, List.forall_mem_cons,
+      ← ih hl.2]
+    set z := (l.map fun i ↦ preReflection (v i) (g i)).prod y
+    -- The vectors `g i z • v i` and `z - y` lie in the spans of disjoint sets of the `v j`.
+    have hdisj := hv.disjoint_span_image (s := {i}) (t := {j | j ∈ l})
+      (Set.disjoint_singleton_left.mpr hl.1)
+    refine ⟨fun h ↦ ?_, fun ⟨hi, hz⟩ ↦ by rw [hz, hi, zero_smul, sub_zero]⟩
+    have hzero : g i z • v i = 0 := by
+      refine Submodule.disjoint_def.mp hdisj _
+        (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl, rfl⟩)) ?_
+      rw [show g i z • v i = z - y by rw [← h, sub_sub_cancel]]
+      exact list_prod_map_preReflection_apply_sub_mem_span l y
+    have hgz : g i z = 0 := hv.smul_left_injective i (by simp only [hzero, zero_smul])
+    rw [hgz, zero_smul, sub_zero] at h
+    exact ⟨h ▸ hgz, h⟩
+
+end ListProd
 
 end Module
