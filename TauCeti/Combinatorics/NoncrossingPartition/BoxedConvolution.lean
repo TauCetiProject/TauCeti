@@ -108,15 +108,6 @@ theorem coeff_one_boxedConvolution (f g : R⟦X⟧) :
     ← hbt]
   simp
 
-/-- Products over the parts of `K(K(π))` of a function of the part sizes are the products over the
-parts of `π`: `K(K(π))` is a rotation of `π`. -/
-private theorem prod_parts_kreweras_kreweras {M : Type*} [CommMonoid M] {n : ℕ}
-    (π : NoncrossingPartition (univ : Finset (Fin n))) (h : ℕ → M) :
-    ∏ B ∈ (kreweras (kreweras π)).1.parts, h #B = ∏ B ∈ π.1.parts, h #B := by
-  rw [kreweras_kreweras, parts_rotate_symm,
-    prod_image fun B _ C _ hBC => Finset.map_injective _ hBC]
-  simp_rw [card_map]
-
 /-- *Commutativity of boxed convolution*. -/
 theorem boxedConvolution_comm (f g : R⟦X⟧) : boxedConvolution f g = boxedConvolution g f := by
   ext n
