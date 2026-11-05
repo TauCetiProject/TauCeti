@@ -8,13 +8,13 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
-public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Finset.Card
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Fintype.Lattice
 
 /-!
 # Sums under a weakened triangle inequality
@@ -26,7 +26,8 @@ it is nonarchimedean. Iterating this inequality bounds a sum of `n` terms of siz
 
 The same inequality bounds one step of elimination with partial pivoting: subtracting from `a` the
 multiple `p / q * b` of a pivot column, whose pivot `q` dominates `b` relative to the row weights,
-costs only the factor `c` (`AbsoluteValue.apply_sub_div_mul_le`).
+costs only the factor `c` (`AbsoluteValue.apply_sub_div_mul_le`), and a maximizing pivot exists
+(`AbsoluteValue.exists_pos_forall_apply_div_le`).
 -/
 
 public section
@@ -83,17 +84,31 @@ theorem apply_sub_div_mul_le {K F : Type*} [DivisionRing K] [Field F] [LinearOrd
 /-- **The growth factor of one addition**: a choice of constant `c v ∈ [1, 2]` with
 `v (a + b) ≤ c v * max (v a) (v b)`, namely `1` at a nonarchimedean absolute value and `2`
 otherwise. -/
-theorem exists_forall_apply_add_le_mul_max {R : Type*} [Semiring R] :
-    ∃ c : AbsoluteValue R ℝ → ℝ, (∀ v, 1 ≤ c v) ∧
-    (∀ v, c v ≤ 2) ∧ (∀ (v : AbsoluteValue R ℝ) a b, v (a + b) ≤ c v * max (v a) (v b)) ∧
-    ∀ v : AbsoluteValue R ℝ, IsNonarchimedean v → c v = 1 := by
+theorem exists_forall_apply_add_le_mul_max :
+    ∃ c : AbsoluteValue R S → S, (∀ v, 1 ≤ c v) ∧
+    (∀ v, c v ≤ 2) ∧ (∀ (v : AbsoluteValue R S) a b, v (a + b) ≤ c v * max (v a) (v b)) ∧
+    ∀ v : AbsoluteValue R S, IsNonarchimedean v → c v = 1 := by
   classical
   refine ⟨fun v ↦ if IsNonarchimedean v then 1 else 2,
-    fun v ↦ by dsimp only; split_ifs <;> norm_num, fun v ↦ by dsimp only; split_ifs <;> norm_num,
+    fun v ↦ by dsimp only; split_ifs; exacts [le_rfl, one_le_two],
+    fun v ↦ by dsimp only; split_ifs; exacts [one_le_two, le_rfl],
     fun v a b ↦ ?_, fun v h ↦ by simp [h]⟩
   by_cases h : IsNonarchimedean v
   · simpa [h] using h a b
   · simp only [h, ↓reduceIte]
-    linarith [v.add_le a b, le_max_left (v a) (v b), le_max_right (v a) (v b)]
+    rw [two_mul]
+    exact (v.add_le a b).trans (add_le_add (le_max_left _ _) (le_max_right _ _))
+
+/-- **Partial pivoting at one place**: a nonzero family of elements of a field has an index `r₀`
+maximizing `v (f r) / ν r` for positive weights `ν`, and the value there is positive. -/
+theorem exists_pos_forall_apply_div_le {K ρ : Type*} [Field K] [Finite ρ]
+    {S : Type*} [Field S] [LinearOrder S] [IsStrictOrderedRing S] (v : AbsoluteValue K S)
+    {f : ρ → K} (hf : ∃ r, f r ≠ 0) {ν : ρ → S} (hν : ∀ r, 0 < ν r) :
+    ∃ r₀, 0 < v (f r₀) ∧ ∀ r, v (f r) / ν r ≤ v (f r₀) / ν r₀ := by
+  obtain ⟨r₁, hr₁⟩ := hf
+  have : Nonempty ρ := ⟨r₁⟩
+  obtain ⟨r₀, hr₀⟩ := Finite.exists_max fun r ↦ v (f r) / ν r
+  exact ⟨r₀, (div_pos_iff_of_pos_right (hν r₀)).mp
+    ((div_pos (v.pos hr₁) (hν r₁)).trans_le (hr₀ r₁)), hr₀⟩
 
 end AbsoluteValue

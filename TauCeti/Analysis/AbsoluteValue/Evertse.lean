@@ -81,20 +81,6 @@ private theorem Iio_eq_setOf_val_lt {n : ℕ} (j : Fin n) :
     Set.Iio j = {l : Fin n | l.val < j.val} :=
   Set.ext fun _ ↦ Fin.lt_def
 
-/-- **Partial pivoting at one place**: a nonzero vector has a row `r₀` maximizing
-`v (L r y) / ν r`, and the value there is positive. -/
-private theorem exists_pivot {ρ : Type*} [Finite ρ] (v : AbsoluteValue K ℝ)
-    (L : ρ → Module.Dual K V) (hL : ∀ z, (∀ r, L r z = 0) → z = 0) {ν : ρ → ℝ}
-    (hν : ∀ r, 0 < ν r) {y : V} (hy : y ≠ 0) :
-    ∃ r₀, 0 < v (L r₀ y) ∧ ∀ r, v (L r y) / ν r ≤ v (L r₀ y) / ν r₀ := by
-  obtain ⟨r₁, hr₁⟩ : ∃ r, L r y ≠ 0 := by
-    by_contra! h
-    exact hy (hL _ h)
-  have : Nonempty ρ := ⟨r₁⟩
-  obtain ⟨r₀, hr₀⟩ := Finite.exists_max fun r ↦ v (L r y) / ν r
-  exact ⟨r₀, (div_pos_iff_of_pos_right (hν r₀)).mp
-    ((div_pos (v.pos hr₁) (hν r₁)).trans_le (hr₀ r₁)), hr₀⟩
-
 /-- **Elimination with partial pivoting at one place.** If the forms `L r` separate the points of
 `V` and `x 0, …, x (n - 1)` are independent in the triangular sense, then there are vectors
 `z j ∈ x j + span (x l, l < j)` and rows `π j` with `L (π i) (z j) = 0` for `i < j` and
@@ -111,7 +97,10 @@ private theorem exists_triangular {ρ : Type*} [Finite ρ] (v : AbsoluteValue K 
       fun j ↦ j.elim0⟩
   | n + 1, x, hx, M, hM => by
     -- Pivot: the row maximizing `v (L r (x 0)) / ν r`, where `L r (x 0) ≠ 0`.
-    obtain ⟨r₀, hpos, hr₀⟩ := exists_pivot v L hL hν (y := x 0) fun h ↦ hx 0 (h ▸ zero_mem _)
+    obtain ⟨r₀, hpos, hr₀⟩ := v.exists_pos_forall_apply_div_le (f := fun r ↦ L r (x 0))
+      (by
+        by_contra! h
+        exact hx 0 (hL _ h ▸ zero_mem _)) hν
     have hp : L r₀ (x 0) ≠ 0 := fun h ↦ by simp [h] at hpos
     -- Eliminate the pivot row from the later vectors.
     set t : Fin n → K := fun j ↦ L r₀ (x j.succ) / L r₀ (x 0) with ht
@@ -278,16 +267,6 @@ private theorem apply_add_sum_le {m : ℕ} {v : AbsoluteValue K ℝ} {c : ℝ} (
         rw [hB]
         ring
 
-/-- The pivot rows of a triangular family are distinct. -/
-private theorem injective_of_triangular {m : ℕ} {ρ : Type*} {L : ρ → Module.Dual K V}
-    {z : Fin m → V} {π : Fin m → ρ} (h₀ : ∀ i j, i < j → L (π i) (z j) = 0)
-    (hp : ∀ j, L (π j) (z j) ≠ 0) : Function.Injective π := by
-  intro i j hij
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with h | h
-  · exact hp j (hij ▸ h₀ i j h)
-  · exact hp i (hij.symm ▸ h₀ j i h)
-
 /-- **Evertse's lemma** (Evertse; Bombieri–Gubler, Lemma 7.5.29), for a field `K` with a set `T`
 of absolute values at which a subset `R` approximates every family of targets simultaneously,
 `v (ξ + γ v) ≤ A v`. Let `x 0, …, x (m - 1)` be linearly independent in `V`, and at each `v ∈ T`
@@ -314,7 +293,7 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
           ν v (π v i) * min (μ v i) (μ v j) := by
   classical
   have hxI (j : Fin m) : x j ∉ span K (x '' Set.Iio j) := hx.notMem_span_image (lt_irrefl j)
-  obtain ⟨c, hc, hc₂, hcv, hc₁⟩ := exists_forall_apply_add_le_mul_max (R := K)
+  obtain ⟨c, hc, hc₂, hcv, hc₁⟩ := exists_forall_apply_add_le_mul_max (R := K) (S := ℝ)
   -- Step 1: an exactly triangular family at each place of `T`.
   have hloc (v : AbsoluteValue K ℝ) : ∃ (z : Fin m → V) (π : Fin m → Fin m),
       (∀ j, z j - x j ∈ span K (x '' Set.Iio j)) ∧ (v ∈ T →
@@ -327,7 +306,7 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
     · exact ⟨x, id, fun j ↦ by simp, fun h ↦ absurd h hv⟩
   choose z π hzx hz using hloc
   have hπ (v : AbsoluteValue K ℝ) (hv : v ∈ T) : Function.Injective (π v) :=
-    injective_of_triangular (hz v hv).1 (hz v hv).2.1
+    injective_of_triangular (f := fun r z ↦ L v r z) (hz v hv).1 (hz v hv).2.1
   set σ : AbsoluteValue K ℝ → Equiv.Perm (Fin m) := fun v ↦
     if hv : v ∈ T then Equiv.ofBijective (π v) (Finite.injective_iff_bijective.mp (hπ v hv))
     else 1 with hσ_def
