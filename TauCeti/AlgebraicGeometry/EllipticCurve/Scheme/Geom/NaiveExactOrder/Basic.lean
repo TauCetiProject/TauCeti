@@ -36,9 +36,10 @@ Unlike the Drinfeld notion `EllipticCurveGeom.IsOfExactOrder`, which works over 
 naive notion behaves poorly where `N` is not invertible: over a field of characteristic `p`, a
 supersingular curve has no point of naive exact order `p`, while its zero section has exact order
 `p` in Drinfeld's sense. Accordingly the scheme of points of naive exact order `N` below is open in
-`E[N]` for every `N ≠ 0`, but closed in `E[N]`, and so finite over `S`, only where `N` is
-invertible. Points of naive exact order `N` are stable under base change, both along morphisms
-`Z' ⟶ Z` (`EllipticCurveGeom.IsOfNaiveExactOrder.comp`) and along base change of the elliptic curve
+`E[N]` for every `N ≠ 0`, and it is closed in `E[N]`, and so finite over `S`, whenever
+`N` is invertible; closedness need not hold over an arbitrary base. Points of naive exact order `N`
+are stable under base change, both along morphisms `Z' ⟶ Z`
+(`EllipticCurveGeom.IsOfNaiveExactOrder.comp`) and along base change of the elliptic curve
 (`EllipticCurveGeom.IsOfNaiveExactOrder.pointsPullback`).
 
 A point of `E[N]` with values in `Z` has naive exact order `N` exactly when it maps `Z` into the
