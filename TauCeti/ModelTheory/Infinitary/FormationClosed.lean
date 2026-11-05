@@ -31,10 +31,11 @@ uses it.
 
 Unlike a fragment, a formation-closed fragment determines the size of the language: every function
 and relation symbol occurs in an atomic member. So a formation-closed fragment has at least as many
-members as there are function symbols, and the formation closure of a countable set is countable
-exactly over languages with countably many function and relation symbols. A formation-closed
-fragment is also infinite, whatever the language: formulas are tagged with their arity, so the
-members `⊥` at different arities are distinct.
+members as there are function symbols, and at least as many as there are relation symbols, and the
+formation closure of a countable set is countable exactly over languages with countably many
+function and relation symbols. A formation-closed fragment is also infinite, whatever the
+language: formulas are tagged with their arity, so the members `⊥` at different arities are
+distinct.
 
 ## Main definitions
 
@@ -54,8 +55,9 @@ members `⊥` at different arities are distinct.
   function and relation symbols, a countable set has a countable formation closure.
 * `FirstOrder.Language.Fragment.FormationClosed.aleph0_le_mk`: a formation-closed fragment is
   infinite.
-* `FirstOrder.Language.Fragment.FormationClosed.lift_mk_functions_le`: a formation-closed fragment
-  has at least as many members as there are function symbols.
+* `FirstOrder.Language.Fragment.FormationClosed.lift_mk_functions_le` and
+  `FirstOrder.Language.Fragment.FormationClosed.lift_mk_relations_le`: a formation-closed fragment
+  has at least as many members as there are function symbols, and as there are relation symbols.
 * `FirstOrder.Language.Fragment.FormationClosed.countable_functions` and
   `FirstOrder.Language.Fragment.FormationClosed.countable_relations`: conversely, a countable
   formation-closed fragment forces countably many function and relation symbols.
@@ -270,17 +272,26 @@ theorem countable_functions (hc : (A : Set (Σ n, L.BoundedFormulaω Empty n)).C
     Countable (Σ l, L.Functions l) :=
   mk_le_aleph0_iff.1 (lift_le_aleph0.1 (hA.lift_mk_functions_le.trans hc.le_aleph0))
 
+open Cardinal in
+/-- **The relation symbols are absorbed by a formation-closed fragment.** There are at most as many
+relation symbols as members: a symbol `R` of arity `l` is recovered from the atomic member
+`R(x₀, …, xₗ₋₁)`. -/
+theorem lift_mk_relations_le : lift.{u} #(Σ l, L.Relations l) ≤ #A := by
+  have h : Function.Injective fun R : Σ l, L.Relations l =>
+      (⟨⟨R.1, rel R.2 fun i => .var (.inr i)⟩, hA.atomic_mem (.rel _ _)⟩ : A) := by
+    rintro ⟨l, R⟩ ⟨l', R'⟩ h
+    simp only [Subtype.mk.injEq, Sigma.mk.inj_iff] at h
+    obtain ⟨rfl, h⟩ := h
+    simp_all
+  have h' := lift_mk_le_lift_mk_of_injective h
+  rwa [lift_umax.{v, u}, lift_id'.{v, u}] at h'
+
+open Cardinal in
 /-- A countable formation-closed fragment forces countably many relation symbols: each occurs in
 an atomic member. -/
 theorem countable_relations (hc : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
-    Countable (Σ l, L.Relations l) := by
-  have h : (Set.univ : Set (Σ l, L.Relations l)) ⊆
-      ⋃ p ∈ (A : Set (Σ n, L.BoundedFormulaω Empty n)), p.2.relationsIn := by
-    rintro ⟨l, R⟩ -
-    refine Set.mem_iUnion₂.2
-      ⟨⟨l, rel R fun i => .var (.inr i)⟩, hA.atomic_mem (.rel R _), ?_⟩
-    simp
-  exact Set.countable_univ_iff.1 ((hc.biUnion fun p _ => p.2.relationsIn_countable).mono h)
+    Countable (Σ l, L.Relations l) :=
+  mk_le_aleph0_iff.1 (lift_le_aleph0.1 (hA.lift_mk_relations_le.trans hc.le_aleph0))
 
 end FormationClosed
 
