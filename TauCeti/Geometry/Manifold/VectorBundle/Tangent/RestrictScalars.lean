@@ -165,7 +165,7 @@ theorem contMDiff_restrictScalarsHomeomorph (n : ℕ∞ω) :
     ContMDiff (𝓘(𝕜, E).prod 𝓘(𝕜, E)) (𝓘(𝕜, E).prod 𝓘(𝕜, E)) n
       (restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') (E := E) M) := by
   intro p
-  rw [contMDiffAt_totalSpace]
+  rw [contMDiffAt_totalSpace_iff]
   simp only [restrictScalarsHomeomorph_proj]
   refine ⟨contMDiffAt_proj (TangentSpace 𝓘(𝕜', E)), ?_⟩
   have h := Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (IB := 𝓘(𝕜, E)) (n := n) p
@@ -179,7 +179,7 @@ theorem contMDiff_restrictScalarsHomeomorph_symm (n : ℕ∞ω) :
     ContMDiff (𝓘(𝕜, E).prod 𝓘(𝕜, E)) (𝓘(𝕜, E).prod 𝓘(𝕜, E)) n
       (restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') (E := E) M).symm := by
   intro p
-  rw [contMDiffAt_totalSpace]
+  rw [contMDiffAt_totalSpace_iff]
   simp only [restrictScalarsHomeomorph_symm_proj]
   refine ⟨contMDiffAt_proj (TangentSpace 𝓘(𝕜, E)), ?_⟩
   have h := Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (IB := 𝓘(𝕜, E)) (n := n) p

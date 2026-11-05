@@ -166,10 +166,10 @@ def compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯) 
   right_inv _ := rfl
   -- Both total spaces are charted at `p` by the trivialization of `E` at `g (f p.proj)`, so in
   -- these coordinates the map is the identity, whatever the regularity of `f` and `g`.
-  contMDiff_toFun p := contMDiffAt_totalSpace.2
-    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
-  contMDiff_invFun p := contMDiffAt_totalSpace.2
-    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
+  contMDiff_toFun p := contMDiffAt_totalSpace_iff.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2⟩
+  contMDiff_invFun p := contMDiffAt_totalSpace_iff.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2⟩
 
 @[simp]
 theorem compDiffeomorph_apply (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯)

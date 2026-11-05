@@ -462,7 +462,8 @@ theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [IsManifold I
       (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
   rw [isSmoothForm_def]
   refine forall_congr' fun x ↦ ?_
-  simp only [contMDiffAt_section_iff, FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+  simp only [contMDiffAt_section_iff,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     contMDiffAt_continuousAlternatingMap_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply]
 

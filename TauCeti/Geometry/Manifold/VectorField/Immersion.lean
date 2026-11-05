@@ -71,10 +71,10 @@ theorem ContMDiffAt.vectorField_of_mfderiv
       (f x₀) hy).hasLeftInverse.comp
       (hinj.comp ((trivializationAt E (TangentSpace I) x₀).continuousLinearEquivAt 𝕜
         x₀ hx).symm.hasLeftInverse)
-  rw [Bundle.contMDiffAt_section]
+  rw [Bundle.contMDiffAt_section_iff]
   apply ContMDiffAt.of_clm_apply (A := inTangentCoordinates I J id f (mfderiv I J f) x₀)
     (hA := hA) (h := hleft)
-  refine (Bundle.contMDiffAt_totalSpace.mp hX).2.congr_of_eventuallyEq ?_
+  refine (Bundle.contMDiffAt_totalSpace_iff.mp hX).2.congr_of_eventuallyEq ?_
   have hsrc := (trivializationAt E (TangentSpace I) x₀).open_baseSet.mem_nhds hx
   have htgt := hf.continuousAt.preimage_mem_nhds
     ((trivializationAt F (TangentSpace J) (f x₀)).open_baseSet.mem_nhds hy)
