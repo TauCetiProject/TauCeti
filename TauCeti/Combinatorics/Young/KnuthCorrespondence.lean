@@ -159,6 +159,20 @@ private theorem le_of_mem_flatten_snd {ws : List (α × β)} {w : α × β}
     (((sortedLE_concat (l := ws.map toLex) (a := toLex w)).mp (by simpa using h)).1 _
       (mem_map_of_mem hv))
 
+/-- The earlier pairs of a two-line array form a two-line array. -/
+private theorem sortedLE_of_append_singleton {ws : List (α × β)} {w : α × β}
+    (h : ((ws ++ [w]).map toLex).SortedLE) : (ws.map toLex).SortedLE :=
+  (sortedLE_append_singleton.mp (by rwa [map_append] at h)).1
+
+/-- The entries of the recording tableau of a two-line array are at most the last top letter. -/
+private theorem le_of_mem_flatten_snd_append {ws : List (α × β)} {w : α × β}
+    (h : ((ws ++ [w]).map toLex).SortedLE) {x : α}
+    (hx : x ∈ (robinsonSchenstedKnuth (ws ++ [w])).2.flatten) : x ≤ w.1 := by
+  rw [robinsonSchenstedKnuth_append_singleton] at hx
+  rcases mem_append.mp ((flatten_appendToRow_perm _ _ _).subset hx) with hx | hx
+  · exact le_of_mem_flatten_snd h hx
+  · exact (mem_singleton.mp hx).le
+
 /-- **The cells recorded with the last top letter form a horizontal strip**: in the recording
 tableau of the earlier pairs of a two-line array ending in `(a, b)`, every cell containing `a` lies
 strictly to the left of the cell added by inserting `b`. -/
@@ -276,27 +290,16 @@ theorem robinsonSchenstedKnuth_injOn :
     · have := hlen (ws ++ [w])
       rw [h] at this
       simp at this
-    have hw := hws
-    have hv := hvs
-    simp only [Set.mem_ofPred_eq] at hw hv
     obtain ⟨a, b⟩ := w
     obtain ⟨a', b'⟩ := v
-    obtain ⟨hlastw, hminw⟩ := getLast?_getD_robinsonSchenstedKnuth_snd ws a b hw
-    obtain ⟨hlastv, hminv⟩ := getLast?_getD_robinsonSchenstedKnuth_snd vs a' b' hv
+    obtain ⟨hlastw, hminw⟩ := getLast?_getD_robinsonSchenstedKnuth_snd ws a b hws
+    obtain ⟨hlastv, hminv⟩ := getLast?_getD_robinsonSchenstedKnuth_snd vs a' b' hvs
     -- Both last top letters are the largest entry of the common recording tableau.
-    have hmax {us : List (α × β)} {u : α × β} (hu : ((us ++ [u]).map toLex).SortedLE) {x : α}
-        (hx : x ∈ (robinsonSchenstedKnuth (us ++ [u])).2.flatten) : x ≤ u.1 := by
-      obtain ⟨v, hv, rfl⟩ := mem_map.mp ((flatten_robinsonSchenstedKnuth_snd_perm _).subset hx)
-      rcases mem_append.mp hv with hv | hv
-      · exact Prod.Lex.monotone_fst _ _
-          (((sortedLE_concat (l := us.map toLex) (a := toLex u)).mp (by simpa using hu)).1 _
-            (mem_map_of_mem hv))
-      · simp [mem_singleton.mp hv]
     have hmem {x : α} {rows : List (List α)} {i : ℕ}
         (hrow : (rows.getD i []).getLast? = some x) : x ∈ rows.flatten :=
       mem_flatten_of_mem_getD (mem_of_getLast? hrow)
-    have haa' : a = a' := le_antisymm (hmax hv (h ▸ hmem hlastw))
-      (hmax hw (h ▸ hmem hlastv))
+    have haa' : a = a' := le_antisymm (le_of_mem_flatten_snd_append hvs (h ▸ hmem hlastw))
+      (le_of_mem_flatten_snd_append hws (h ▸ hmem hlastv))
     subst haa'
     -- The rows of the two last new cells agree: each is the highest row ending in `a`.
     have hk : rowInsertIndex b (robinsonSchenstedKnuth ws).1 =
@@ -316,15 +319,13 @@ theorem robinsonSchenstedKnuth_injOn :
     simp only [Prod.mk.injEq, Subtype.mk.injEq] at this
     obtain ⟨hP, rfl⟩ := this
     have hQ : (robinsonSchenstedKnuth ws).2 = (robinsonSchenstedKnuth vs).2 := by
-      have hws' := (sortedLE_append_singleton.mp (by rwa [map_append] at hw)).1
-      have hvs' := (sortedLE_append_singleton.mp (by rwa [map_append] at hv)).1
       rw [← dropLastOfRow_appendToRow a
-          (isTableauRows_robinsonSchenstedKnuth_snd hws').nil_notMem
+          (isTableauRows_robinsonSchenstedKnuth_snd (sortedLE_of_append_singleton hws)).nil_notMem
           (rowInsertIndex_le_length_snd ws b), hrec, ← hk,
-        dropLastOfRow_appendToRow a (isTableauRows_robinsonSchenstedKnuth_snd hvs').nil_notMem
+        dropLastOfRow_appendToRow a
+          (isTableauRows_robinsonSchenstedKnuth_snd (sortedLE_of_append_singleton hvs)).nil_notMem
           (hk ▸ rowInsertIndex_le_length_snd vs b)]
-    rw [ih (sortedLE_append_singleton.mp (by rwa [map_append] at hw)).1
-      (sortedLE_append_singleton.mp (by rwa [map_append] at hv)).1 (Prod.ext hP hQ)]
+    rw [ih (sortedLE_of_append_singleton hws) (sortedLE_of_append_singleton hvs) (Prod.ext hP hQ)]
 
 /-- **Recovering the order of a two-line array**: appending `(a, b)` to a two-line array gives a
 two-line array if `a` is at least every top letter so far, and no row of the recording tableau
@@ -381,48 +382,27 @@ theorem exists_robinsonSchenstedKnuth_eq_iff {p : List (List β) × List (List �
         exact absurd this (isTableauRows_cons.mp hP).1
     exact ⟨[], by simpa using sortedLE_nil (α := α ×ₗ β), rfl⟩
   -- The largest entry `a` of `Q` ends some row; the highest such row `k` ends in a corner.
-  have hflat : Q.flatten ≠ [] := by
-    obtain ⟨row, rows, rfl⟩ := exists_cons_of_ne_nil hQnil
-    simp [(isTableauRows_cons.mp hQ).1]
-  obtain ⟨a, ha, hmax⟩ : ∃ a ∈ Q.flatten, ∀ x ∈ Q.flatten, x ≤ a := by
-    obtain ⟨a, ha⟩ := Option.ne_none_iff_exists'.mp (mt (argmax_eq_none (f := id)).mp hflat)
-    exact ⟨a, argmax_mem ha, fun x hx => le_of_mem_argmax (f := id) hx ha⟩
-  have hex := hQ.exists_getLast?_getD_eq_some ha hmax
-  classical
-  have hk : (Q.getD (Nat.find hex) []).getLast? = some a := Nat.find_spec hex
+  obtain ⟨a, k, hmax, hk, hkmin⟩ := hQ.exists_forall_le_getLast?_getD_eq_some hQnil
   have hcornerQ := hQ.length_getD_succ_lt_of_getLast?_eq_some hmax hk
-  have hcornerP : (P.getD (Nat.find hex + 1) []).length < (P.getD (Nat.find hex) []).length := by
-    rw [hshape, hshape]
-    exact hcornerQ
+  have hcornerP : (P.getD (k + 1) []).length < (P.getD k []).length := by rwa [hshape, hshape]
   -- Undo the last step: reverse insertion in `P`, and removal of the last `a` from row `k` of `Q`.
   obtain ⟨b, -, hins, hidx⟩ := rowInsert_reverseRowInsert hP hcornerP
   have hQeq := appendToRow_dropLastOfRow hQ hcornerQ hk
-  have hgetQ' := getD_dropLastOfRow hQ hcornerQ
-  have hshape' (i : ℕ) : ((reverseRowInsert (Nat.find hex) P).1.getD i []).length =
-      ((dropLastOfRow (Nat.find hex) Q).getD i []).length := by
-    have h1 := length_getD_rowInsert b (reverseRowInsert (Nat.find hex) P).1 i
-    rw [hins, hidx, hshape] at h1
-    rw [hgetQ' i]
-    split_ifs at h1 ⊢ with hik
-    · subst hik
-      rw [length_dropLast]
-      omega
-    · omega
-  have hperm := flatten_appendToRow_perm a (Nat.find hex) (dropLastOfRow (Nat.find hex) Q)
+  have hperm := flatten_appendToRow_perm a k (dropLastOfRow k Q)
   rw [hQeq] at hperm
-  have hlen' : (dropLastOfRow (Nat.find hex) Q).flatten.length < n := by
+  have hlen' : (dropLastOfRow k Q).flatten.length < n := by
     rw [← hn, hperm.length_eq, length_append, length_singleton]
     omega
   obtain ⟨ws, hws, hrsk⟩ := ih _ hlen' _ _ (hP.reverseRowInsert hcornerP)
-    (hQ.dropLastOfRow hcornerQ) hshape' rfl
+    (hQ.dropLastOfRow hcornerQ) (length_getD_reverseRowInsert_fst hP hQ hshape hcornerQ) rfl
   refine ⟨ws ++ [(a, b)], sortedLE_map_toLex_append_singleton_of_forall hws
     (fun x hx => hmax x (hperm.symm.subset (mem_append_left [a] (by rwa [hrsk] at hx))))
     fun i hi => ?_, ?_⟩
   · -- The rows above row `k` are unchanged, and none of them ends in `a` by the choice of `k`.
     rw [hrsk] at hi ⊢
     rw [hidx] at hi
-    simp only [hgetQ' i, hi.ne, ite_false]
-    exact Nat.find_min hex hi
+    simp only [getD_dropLastOfRow hQ hcornerQ i, hi.ne, ite_false]
+    exact hkmin i hi
   · rw [robinsonSchenstedKnuth_append_singleton, hrsk]
     simp only
     rw [hidx, hins, hQeq]
