@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Ring
@@ -23,6 +24,8 @@ Locality is needed: `ℤ →+* ℚ` is not local, and the `1 × 1` matrix `2` ov
 while its image in `ℚ` has inverse `1 / 2`. Every ring homomorphism from a field to a nontrivial
 ring is local, so the statement applies, for instance, to the casts `ℚ → ℝ` and `ℝ → ℂ`: an
 inverse computed over `ℚ` is the inverse over `ℝ`.
+
+`LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 
 For invertible real matrices `A`, `B`, inverse entries bounded by `L ≥ 0` and entrywise
 difference bounded by `d ≥ 0` give `|A⁻¹ i j - B⁻¹ i j| ≤ (card ι)² L² d`
@@ -49,6 +52,19 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
   simp
 
 end Matrix
+
+namespace LinearMap
+
+variable {ι R M : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- The matrix of the ring inverse of an endomorphism is the inverse of its matrix. -/
+theorem toMatrix_ringInverse (b : Module.Basis ι R M) (A : M →ₗ[R] M) :
+    toMatrix b b (Ring.inverse A) = (toMatrix b b A)⁻¹ := by
+  rw [Matrix.nonsing_inv_eq_ringInverse]
+  simpa only [toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply] using
+    map_ringInverse (toMatrixAlgEquiv b) A
+
+end LinearMap
 
 section InverseBound
 

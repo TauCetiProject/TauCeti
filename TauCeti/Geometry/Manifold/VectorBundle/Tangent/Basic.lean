@@ -41,6 +41,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 
 ## Main results
 
+* `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
+  chart at `x` maps its target into the base set of the canonical trivialization at `x`.
 * `TauCeti.Manifold.mfderiv_atlas_eq_continuousLinearMapAt`: the derivative of an atlas chart
   is the actual continuous linear map of its tangent-core trivialization.
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
@@ -137,6 +139,14 @@ theorem trivializationAt_apply_tangentCoordChange [IsManifold I 1 M] {x y : M}
       tangentCoordChange I y x y v := by
   rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
   rfl
+
+/-- The inverse of the extended chart at `x` sends its target into the base set of the canonical
+tangent-bundle trivialization at `x`. -/
+theorem extChartAt_symm_mem_trivializationAt_baseSet [IsManifold I 1 M] {x : M} {z : E}
+    (hz : z ∈ (extChartAt I x).target) :
+    (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+  rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  exact (extChartAt I x).map_target hz
 
 end TangentBundle
 

@@ -68,6 +68,8 @@ the discreteness of its image is used, and the exponent group may have torsion.
 * `TauCeti.NovikovSeries.orbitZeta_eq_eulerProduct`: the product formula.
 * `TauCeti.NovikovSeries.orbitZeta_eq_mapRingHom_eulerProduct`: integrality of the orbit zeta
   function.
+* `TauCeti.NovikovSeries.orbitLog_sigma`, `TauCeti.NovikovSeries.orbitZeta_sigma`: listing the
+  `i`-th orbit `c i` times multiplies its signs by `c i`.
 
 ## References
 
@@ -85,11 +87,10 @@ open Filter Topology
 
 namespace TauCeti.NovikovSeries
 
-variable {ι H : Type*} [AddCommMonoid H] {N : H →+ ℝ} {γ : ι → H}
-
 section OrbitZeta
 
-variable {K : Type*} [CommRing K] [Algebra ℚ K]
+variable {ι H : Type*} [AddCommMonoid H] {N : H →+ ℝ} {γ : ι → H} {K : Type*} [CommRing K]
+  [Algebra ℚ K]
 
 /-- The **orbit logarithm** `∑ᵢ ∑ₖ ε i (k + 1) / (k + 1) · e^((k + 1) • γ i)`: for primitive
 periodic orbits of classes `γ i`, with `ε i n` the sign of the `n`-fold iterate of the `i`-th
@@ -268,6 +269,52 @@ theorem orbitZeta_eq_mapRingHom_eulerProduct (hpos : ∀ i, 0 < N (γ i))
       (eulerProduct γ hpos (fun i => (σ i : ℤ)) (fun i => -(ε i 1 * σ i))) := by
   rw [orbitZeta_eq_eulerProduct hpos hfin ε σ hε, mapRingHom_eulerProduct _ _ _ hpos hfin]
   simp
+
+/-- A natural multiple of a monomial with rational coefficient is the monomial whose rational
+coefficient is scaled by that multiple. -/
+private theorem nsmul_single_algebraMap (n : ℕ) (h : H) (q : ℚ) :
+    n • (single h (algebraMap ℚ K q) : NovikovSeries K H N) =
+      single h (algebraMap ℚ K (n * q)) := by
+  rw [smul_single, nsmul_eq_mul, ← map_natCast (algebraMap ℚ K) n, ← _root_.map_mul]
+
+/-- **Repeated orbits.** The orbit logarithm of the family in which the `i`-th orbit is listed
+`c i` times is the orbit logarithm of the original family with the signs of the `i`-th orbit
+multiplied by `c i`. -/
+theorem orbitLog_sigma (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
+    orbitLog K N (fun p : (i : ι) × Fin (c i) => γ p.1) (fun p => ε p.1) =
+      orbitLog K N γ (fun i n => c i * ε i n) := by
+  have hfin' : Tendsto (fun p : (i : ι) × Fin (c i) => N (γ p.1)) cofinite atTop :=
+    hfin.comp (Tendsto.cofinite_of_finite_preimage_singleton fun i => by
+      rw [← Set.range_sigmaMk]
+      exact (Set.finite_range _).to_subtype)
+  -- Group the terms of the repeated family by orbit and iterate: each group has `c i` equal terms.
+  let e : ((p : ι × ℕ) × Fin (c p.1)) ≃ ((i : ι) × Fin (c i)) × ℕ :=
+    { toFun q := (⟨q.1.1, q.2⟩, q.1.2)
+      invFun q := ⟨(q.1.1, q.2), q.1.2⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  have h := e.hasSum_iff.2 (hasSum_orbitLog (K := K) (fun p => hpos p.1) hfin' fun p => ε p.1)
+  refine (h.sigma fun p => ?_).unique (hasSum_orbitLog hpos hfin fun i n => c i * ε i n)
+  have hc : (single ((p.2 + 1) • γ p.1)
+      (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
+        NovikovSeries K H N) = ∑ _j : Fin (c p.1),
+      single ((p.2 + 1) • γ p.1) (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_single_algebraMap]
+    congr 2
+    push_cast
+    ring
+  rw [hc]
+  exact hasSum_fintype _
+
+/-- **Repeated orbits.** The orbit zeta function of the family in which the `i`-th orbit is listed
+`c i` times is the orbit zeta function of the original family with the signs of the `i`-th orbit
+multiplied by `c i`. -/
+theorem orbitZeta_sigma (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
+    orbitZeta K N (fun p : (i : ι) × Fin (c i) => γ p.1) (fun p => ε p.1) =
+      orbitZeta K N γ (fun i n => c i * ε i n) := by
+  rw [orbitZeta_def, orbitZeta_def, orbitLog_sigma hpos hfin]
 
 end OrbitZeta
 

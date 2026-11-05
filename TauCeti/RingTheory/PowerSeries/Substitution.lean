@@ -36,7 +36,10 @@ Substitution of series of zero constant coefficient is compatible with congruenc
 powers of `X`, in both the substituted series and the series substituted into. This makes
 truncation modulo `X ^ n` compatible with composition of formal coordinates. Substituting a
 multivariate series `φ` of zero constant coefficient into `f = c Xⁿ + ⋯` gives
-`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. For a family of
+`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. In one variable
+this reads `[Xⁿ] f (a) = c a₁ ^ n`, and symmetrically `[Xⁿ] f (a) = f₁ c` when `a = c Xⁿ + ⋯` and
+`f = f₁ X + ⋯` have no constant terms; together these compare the lowest terms of the two sides of
+an equation `f ∘ g = h ∘ f`. For a family of
 series substituted into a multivariate series `G`, a perturbation `X ^ m * r` of the entry `a s`
 is invisible below degree `m` and acts in degree `m` through the coefficient of `Xₛ` alone;
 this drives degree-by-degree solutions of equations such as `G(f(X), X) = 0`.
@@ -243,6 +246,39 @@ theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧)
   · simp
   · exact absurd rfl hd
   · simp [mul_pow, coeff_X_pow_mul']
+
+/-- **The lowest coefficient of a substitution into a series of large order.** If `f` has order
+at least `n` and `a` has zero constant coefficient, then the coefficient of `Xⁿ` in `f (a)` is
+`c a₁ ^ n`, where `c` is the coefficient of `Xⁿ` in `f` and `a₁` is the linear coefficient of
+`a`. -/
+theorem coeff_subst_eq_mul_pow {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X⟧} {n : ℕ}
+    (hn : n ≤ f.order) : coeff n (f.subst a) = algebraMap R S (coeff n f) * coeff 1 a ^ n := by
+  obtain ⟨b, rfl⟩ := X_dvd_iff.mpr ha
+  rw [coeff_subst' (.of_constantCoeff_zero' ha), finsum_eq_single _ n, Algebra.smul_def]
+  · simp [mul_pow, coeff_X_pow_mul']
+  -- below degree `n` the coefficients of `f` vanish, above it `(X * b) ^ d` has no `Xⁿ` term
+  intro d hd
+  rcases lt_or_gt_of_ne hd with h | h
+  · rw [coeff_of_lt_order d ((Nat.cast_lt.mpr h).trans_le hn), zero_smul]
+  · simp [mul_pow, coeff_X_pow_mul', h.not_ge]
+
+/-- **The lowest coefficient of a substitution of a series of large order.** If `f` and `a` have
+zero constant coefficient and `a` has order at least `n`, then the coefficient of `Xⁿ` in `f (a)`
+is `f₁ c`, where `f₁` is the linear coefficient of `f` and `c` is the coefficient of `Xⁿ` in
+`a`. -/
+theorem coeff_subst_eq_mul {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X⟧}
+    (hf : constantCoeff f = 0) {n : ℕ} (hn : n ≤ a.order) :
+    coeff n (f.subst a) = algebraMap R S (coeff 1 f) * coeff n a := by
+  rw [coeff_subst' (.of_constantCoeff_zero' ha), finsum_eq_single _ 1, pow_one, Algebra.smul_def]
+  rintro (_ | _ | d) hd
+  · simp [hf]
+  · exact absurd rfl hd
+  -- `a ^ (d + 2)` is divisible by `Xⁿ * X`, so it has no `Xⁿ` term
+  · have hdvd : X ^ (n + 1) ∣ a ^ (d + 2) := by
+      rw [pow_succ]
+      refine (mul_dvd_mul (X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m
+        ((Nat.cast_lt.mpr hm).trans_le hn)) (X_dvd_iff.mpr ha)).trans ⟨a ^ d, by ring⟩
+    rw [X_pow_dvd_iff.mp hdvd n (Nat.lt_succ_self n), smul_zero]
 
 /-- An `R`-algebra map `σ : R⟦X⟧ → S⟦X⟧` such that `σ X` can be substituted is the
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/

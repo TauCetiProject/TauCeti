@@ -66,7 +66,7 @@ namespace TauCeti
 
 /-- **The Tate curve** `y² + xy = x³ + a₄ x + a₆` over `ℤ⟦q⟧`, with `a₄ = -5 s₃` and
 `a₆ = -(5 s₃ + 7 s₅) / 12`. The `n`-th coefficient of `a₆` is `-(5 σ₃(n) + 7 σ₅(n)) / 12`, an
-integer by `twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`; use
+integer by `twelve_dvd_five_mul_sigma_add_seven_mul_sigma_add_two`; use
 `coeff_tateCurve_a₆` and `twelve_mul_tateCurve_a₆` rather than the definition. -/
 noncomputable def tateCurve : WeierstrassCurve ℤ⟦X⟧ where
   a₁ := 1
@@ -94,7 +94,8 @@ theorem coeff_tateCurve_a₆ (n : ℕ) :
 theorem twelve_mul_coeff_tateCurve_a₆ (n : ℕ) :
     12 * coeff n tateCurve.a₆ = -(5 * σ 3 n + 7 * σ 5 n) := by
   have h : (12 : ℤ) * (((5 * σ 3 n + 7 * σ 5 n) / 12 : ℕ) : ℤ) = 5 * σ 3 n + 7 * σ 5 n := by
-    exact_mod_cast Nat.mul_div_cancel' (twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five n)
+    exact_mod_cast Nat.mul_div_cancel'
+      (twelve_dvd_five_mul_sigma_add_seven_mul_sigma_add_two (k := 3) (by norm_num) n)
   simp only [tateCurve, coeff_mk]
   linear_combination -h
 
