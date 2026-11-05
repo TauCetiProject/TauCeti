@@ -70,6 +70,7 @@ variable {A : Fragment L} (hA : A.NegationClosed) {n : ℕ}
 include hA
 
 /-- In a negation-closed fragment, a negation is a member exactly when the formula is. -/
+@[simp]
 theorem not_mem_iff {φ : L.BoundedFormulaω Empty n} :
     (⟨n, φ.not⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ↔
       (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
