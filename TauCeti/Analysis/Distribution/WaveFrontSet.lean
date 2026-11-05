@@ -81,7 +81,7 @@ off by a complex test function `φ`, where `e_η x = 𝐞 (-⟪x, η⟫)`. It is
 the compactly supported distribution `φ T`. -/
 def localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) : ℂ :=
   T.complexPairing
-    (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierChar_neg_inner η) φ)
+    (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
 
 /-- The localized Fourier transform at `η` pairs `T` with any test function equal to
 `x ↦ φ x * 𝐞 (-⟪x, η⟫)`. -/
@@ -90,7 +90,7 @@ theorem localFourier_eq (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {η : E} {ψ :
   rw [localFourier]
   congr 1
   ext x
-  simp [hψ]
+  simp [hψ, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply]
 
 /-- The localized Fourier transform is additive in the distribution. -/
 @[simp]
@@ -120,9 +120,10 @@ theorem localFourier_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ ψ : 𝓓(Ω, ℂ)) (η
 theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, ℂ)) (η : E) :
     T.localFourier (c • φ) η = c * T.localFourier φ η := by
   rw [localFourier_eq T (c • φ) (ψ := c • bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-    (TauCeti.contDiff_fourierChar_neg_inner η) φ) fun x => ?_, map_smul, smul_eq_mul,
+    (TauCeti.contDiff_fourierAtom η) φ) fun x => ?_, map_smul, smul_eq_mul,
     localFourier]
-  simp [bilinLeftCLM_apply, mul_assoc]
+  simp [bilinLeftCLM_apply, mul_assoc, TauCeti.fourierAtom_eq_fourierChar,
+    -TauCeti.fourierAtom_apply]
 
 /-- The localized Fourier transform with zero cutoff vanishes. -/
 @[simp]
@@ -229,9 +230,10 @@ localized Fourier transform at the opposite frequency, with conjugate cutoff. -/
 theorem localFourier_conj (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
     (mapCLM conjCLE.toContinuousLinearMap T).localFourier φ η =
       conj (T.localFourier (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) (-η)) := by
-  set ψ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierChar_neg_inner η) φ
+  set ψ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ
   set ψ' := postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap ψ
-  rw [localFourier_eq _ _ (ψ := ψ) fun x => rfl, localFourier_eq _ _ (ψ := ψ') fun x => ?_]
+  rw [localFourier_eq _ _ (ψ := ψ) fun x => TauCeti.fourierAtom_eq_fourierChar η x ▸ rfl,
+    localFourier_eq _ _ (ψ := ψ') fun x => ?_]
   · have hre : postcompCLM (𝕜 := ℝ) reCLM ψ' = postcompCLM (𝕜 := ℝ) reCLM ψ := by
       ext x
       simp [ψ']
@@ -243,7 +245,7 @@ theorem localFourier_conj (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
     ring
   · simp only [ψ', postcompCLM_apply, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
       conjCLE_apply, ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', map_mul,
-      inner_neg_right, neg_neg]
+      TauCeti.fourierAtom_eq_fourierChar, inner_neg_right, neg_neg]
     rw [← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv, neg_neg]
 
 /-- The complex conjugate of `T` is microlocally smooth at `(x, ξ)` exactly when `T` is
@@ -293,7 +295,7 @@ theorem isMicrolocallySmoothAt_of_forall_decay {T : 𝓓'(Ω, ℂ)} {x : E} {φ 
 @[simp]
 theorem localFourier_delta (x₀ : E) (φ : 𝓓(Ω, ℂ)) (η : E) :
     (mapCLM ofRealCLM (delta x₀ : 𝓓'(Ω, ℝ))).localFourier φ η = φ x₀ * 𝐞 (-⟪x₀, η⟫) := by
-  simp [localFourier]
+  simp [localFourier, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply]
 
 section FiniteDimensional
 
@@ -370,11 +372,12 @@ theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U)
     (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) {φ : 𝓓(Ω, ℂ)}
     (hφ : tsupport φ ⊆ U) (η : E) : T.localFourier φ η = 𝓕 (fun y => φ y * f y) η := by
   have hψ : tsupport (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-      (TauCeti.contDiff_fourierChar_neg_inner η) φ) ⊆ U := by
+      (TauCeti.contDiff_fourierAtom η) φ) ⊆ U := by
     rw [bilinLeftCLM_apply]
     exact (tsupport_mul_subset_left (f := φ)).trans hφ
   rw [localFourier, complexPairing_eq_integral hU hf hT hψ, Real.fourier_eq]
-  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', Circle.smul_def, smul_eq_mul]
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', Circle.smul_def, smul_eq_mul,
+    TauCeti.fourierAtom_eq_fourierChar]
   exact MeasureTheory.integral_congr_ae (Eventually.of_forall fun y => by ring)
 
 /-- For a locally integrable function `f` on `Ω`, the localized Fourier transform of `f` cut off by
