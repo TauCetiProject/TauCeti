@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -210,5 +210,14 @@ noncomputable instance pullbackMapGrp_preservesFiniteLimits (s : Y ⟶ X) :
       (Limits.PreservesLimitsOfShape J (Grp.forget (Over X) ⋙ Over.pullback s))⟩
   have : Limits.ReflectsFiniteLimits (Grp.forget (Over Y)) := ⟨fun _ _ _ ↦ inferInstance⟩
   Limits.preservesFiniteLimits_of_reflects_of_preserves _ (Grp.forget (Over Y))
+
+/-- Restriction along a map of test schemes commutes with the point-group equivalence. -/
+theorem baseChangePointMulEquiv_naturality_left
+    (s : Y ⟶ X) (G : Grp (Over X)) {T U : Over Y} (f : U ⟶ T)
+    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
+    baseChangePointMulEquiv s G U (f ≫ p) =
+      (Over.map s).map f ≫ baseChangePointMulEquiv s G T p := by
+  simp only [baseChangePointMulEquiv_apply]
+  exact (Over.mapPullbackAdj s).homEquiv_naturality_left_symm f p
 
 end TauCeti.GroupScheme
