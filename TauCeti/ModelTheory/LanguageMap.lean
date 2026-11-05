@@ -29,7 +29,12 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
 
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
-(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`).
+(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), symbol sets of `L[[γ]]` avoiding the
+added constants lie in the range of `lhomWithConstants`
+(`FirstOrder.Language.subset_range_lhomWithConstants_onFunction`,
+`FirstOrder.Language.subset_range_lhomWithConstants_onRelation`), and every `L[[γ]]`-structure is
+the expansion of its `L`-reduct by the interpretations of the added constants
+(`FirstOrder.Language.withConstantsStructure_reduct_eq`).
 -/
 
 public section
@@ -100,5 +105,37 @@ theorem lhomWithConstants_onRelation_sumEmpty {l : ℕ} (R : L[[γ]].Relations l
   cases R with
   | inl R => rfl
   | inr R => exact R.elim
+
+/-- Any set of arity-tagged function symbols of `L[[γ]]` containing none of the added constants
+`L.con c` lies in the range of `(L.lhomWithConstants γ).onFunction`. -/
+theorem subset_range_lhomWithConstants_onFunction {X : Set (Σ k, L[[γ]].Functions k)}
+    (hX : ∀ c, (⟨0, L.con c⟩ : Σ k, L[[γ]].Functions k) ∉ X) :
+    X ⊆ Set.range fun s : Σ k, L.Functions k =>
+      (⟨s.1, (L.lhomWithConstants γ).onFunction s.2⟩ : Σ k, L[[γ]].Functions k) := by
+  rintro ⟨k, f | c⟩ hf
+  · exact ⟨⟨k, f⟩, rfl⟩
+  · cases k with
+    | zero => exact (hX c hf).elim
+    | succ k => exact c.elim
+
+/-- Every set of arity-tagged relation symbols of `L[[γ]]` lies in the range of
+`(L.lhomWithConstants γ).onRelation`. -/
+theorem subset_range_lhomWithConstants_onRelation (Y : Set (Σ k, L[[γ]].Relations k)) :
+    Y ⊆ Set.range fun s : Σ k, L.Relations k =>
+      (⟨s.1, (L.lhomWithConstants γ).onRelation s.2⟩ : Σ k, L[[γ]].Relations k) := by
+  rintro ⟨k, R | R⟩ -
+  · exact ⟨⟨k, R⟩, rfl⟩
+  · exact R.elim
+
+/-- Every `L[[γ]]`-structure on `M` is the expansion of its `L`-reduct interpreting each `c : γ`
+as `(L.con c : M)`. -/
+theorem withConstantsStructure_reduct_eq (M : Type*) [S : L[[γ]].Structure M] :
+    @withConstantsStructure L M ((L.lhomWithConstants γ).reduct M) γ
+      (constantsOn.structure fun c => (L.con c : M)) = S := by
+  refine Structure.ext (funext fun k => funext fun f => funext fun xs => ?_)
+    (funext fun _ => funext fun | .inl _ => funext fun _ => rfl | .inr R => R.elim)
+  rcases f with f | c
+  · rfl
+  · cases k with | zero => rw [Unique.eq_default xs]; rfl | succ _ => exact c.elim
 
 end FirstOrder.Language

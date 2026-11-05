@@ -22,6 +22,8 @@ sides vanish when `f` is not differentiable at `x`.
 
 * `TauCeti.fderiv_ofReal_comp_apply`: the real derivative of `y ↦ (f y : ℂ)` is the
   complexification of the real derivative of `f`.
+* `DifferentiableAt.ofReal_comp`, `TauCeti.norm_fderiv_ofReal_comp_le`: `y ↦ (f y : ℂ)` is
+  differentiable where `f` is, and its real derivative has norm at most `‖Df(x)‖`.
 * `ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply`: at a `C²` point of `f`, the complexified
   directional derivative `y ↦ D(↑f)(y) u` has derivative `w ↦ ↑(D²f(x)(w, u))`.
 -/
@@ -47,6 +49,19 @@ theorem fderiv_ofReal_comp_apply (f : E → ℝ) (x v : E) :
       have hre := reCLM.differentiableAt.comp x h
       exact hf (by simpa [Function.comp_def] using hre)
     simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hf']
+
+/-- A real function differentiable at `x` stays differentiable at `x` after composing with the
+inclusion `ℝ → ℂ`. -/
+theorem _root_.DifferentiableAt.ofReal_comp {f : E → ℝ} {x : E} (hf : DifferentiableAt ℝ f x) :
+    DifferentiableAt ℝ (fun y ↦ (f y : ℂ)) x :=
+  ofRealCLM.differentiableAt.comp x hf
+
+/-- The real derivative of `y ↦ (f y : ℂ)` has norm at most that of the real derivative of `f`. -/
+theorem norm_fderiv_ofReal_comp_le (f : E → ℝ) (x : E) :
+    ‖fderiv ℝ (fun y ↦ (f y : ℂ)) x‖ ≤ ‖fderiv ℝ f x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_
+  rw [fderiv_ofReal_comp_apply, Complex.norm_real]
+  exact (fderiv ℝ f x).le_opNorm w
 
 /-- At a `C²` point of a real function `f`, the complexified directional derivative
 `y ↦ D(↑f)(y) u` has derivative `w ↦ ↑(D²f(x)(w, u))`. -/

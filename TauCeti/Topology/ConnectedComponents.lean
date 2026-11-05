@@ -53,8 +53,9 @@ space by them.
   preconnected.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
   space is a T1 space.
-* `TauCeti.connectedComponentsSigmaHomeomorph`: a locally connected space is homeomorphic
-  to the disjoint union of its connected components.
+* `TauCeti.connectedComponentsSigmaHomeomorph`: a space whose connected components form a
+  discrete space, for example a locally connected space, is homeomorphic to the disjoint union of
+  its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
 * `TauCeti.isClopen_of_finite_pairwiseDisjoint_closed_cover`: each member of a finite pairwise
@@ -422,11 +423,13 @@ instance instLocallyPathConnectedSpaceConnectedComponentsFiber [LocallyPathConne
   rw [connectedComponents_preimage_singleton, ← pathComponent_eq_connectedComponent]
   infer_instance
 
-/-- **A locally connected space is the disjoint union of its connected components.**
+/-- **A space whose connected components form a discrete space is the disjoint union of its
+connected components.** This applies to locally connected spaces and to spaces with finitely many
+connected components.
 
 The summand indexed by `C : ConnectedComponents X` is the fibre of the canonical quotient map
 over `C`, so this decomposition does not require choosing representatives. -/
-noncomputable def connectedComponentsSigmaHomeomorph [LocallyConnectedSpace X] :
+noncomputable def connectedComponentsSigmaHomeomorph [DiscreteTopology (ConnectedComponents X)] :
     (Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) ≃ₜ X := by
   let e : (Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) ≃ X :=
     Equiv.sigmaPreimageEquiv ConnectedComponents.mk
@@ -436,13 +439,14 @@ noncomputable def connectedComponentsSigmaHomeomorph [LocallyConnectedSpace X] :
       ((isOpen_discrete {C}).preimage ConnectedComponents.continuous_coe).isOpenMap_subtype_val)
 
 @[simp]
-theorem connectedComponentsSigmaHomeomorph_apply [LocallyConnectedSpace X]
+theorem connectedComponentsSigmaHomeomorph_apply [DiscreteTopology (ConnectedComponents X)]
     (z : Σ C : ConnectedComponents X, (ConnectedComponents.mk ⁻¹' {C} : Set X)) :
     connectedComponentsSigmaHomeomorph z = z.2 :=
   (rfl)
 
 @[simp]
-theorem connectedComponentsSigmaHomeomorph_symm_apply [LocallyConnectedSpace X] (x : X) :
+theorem connectedComponentsSigmaHomeomorph_symm_apply
+    [DiscreteTopology (ConnectedComponents X)] (x : X) :
     connectedComponentsSigmaHomeomorph.symm x =
       ⟨ConnectedComponents.mk x, ⟨x, Set.mem_singleton _⟩⟩ :=
   (rfl)

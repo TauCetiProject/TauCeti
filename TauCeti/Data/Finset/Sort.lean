@@ -27,14 +27,15 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 `s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
 pairs.
 
+The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
+elements of `s` below it.
+
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
 `Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
 
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
-
-The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
 -/
 
 public section
@@ -137,6 +138,16 @@ theorem _root_.StrictAntiOn.map_finsetSort {e : α ↪ β} (he : StrictAntiOn e 
   rw [List.SortedLT.eq_of_mem_iff (sortedLT_sort (s.map e)) hgt.reverse fun x => by simp,
     List.reverse_reverse]
 
+/-- The `m`-th element of `s` in increasing order has exactly `m` elements of `s` below it. -/
+theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k) :
+    #{j ∈ s | j < s.orderEmbOfFin h m} = m := by
+  have e := map_orderEmbOfFin_univ s h
+  generalize s.orderEmbOfFin h = a at e ⊢
+  subst e
+  rw [filter_map, card_map]
+  simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
+    filter_gt_eq_Iio, Fin.card_Iio]
+
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
 theorem sort_map_revPerm {n : ℕ} (B : Finset (Fin n)) :
@@ -184,22 +195,6 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
       rw [hBC, hBC']
       simpa using List.isRotated_append (l := C.sort.map (finRotate (n + 1))) (l' := [0])
     · rw [hsort hB]
-
-/-- Exactly `i` elements of `s` lie below the `i`-th smallest element `s.orderEmbOfFin h i`. -/
-@[simp]
-theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (i : Fin k) :
-    #{x ∈ s | x < s.orderEmbOfFin h i} = i := by
-  have : {x ∈ s | x < s.orderEmbOfFin h i} = (Iio i).map (s.orderEmbOfFin h).toEmbedding := by
-    ext x
-    simp only [mem_filter, mem_map, mem_Iio, RelEmbedding.coe_toEmbedding]
-    constructor
-    · rintro ⟨hx, hlt⟩
-      obtain ⟨j, rfl⟩ : x ∈ Set.range (s.orderEmbOfFin h) := by
-        rwa [range_orderEmbOfFin]
-      exact ⟨j, (s.orderEmbOfFin h).lt_iff_lt.1 hlt, rfl⟩
-    · rintro ⟨j, hj, rfl⟩
-      exact ⟨s.orderEmbOfFin_mem h j, (s.orderEmbOfFin h).lt_iff_lt.2 hj⟩
-  rw [this, card_map, Fin.card_Iio]
 
 end LinearOrder
 
