@@ -61,6 +61,8 @@ to `y`. (That it is a homotopy equivalence when `X` is a quasicategory is not pr
   edges induced by `f`.
 * `SSet.rightMappingSpace.obj₀Equiv_toMorphismSpace_app`: the right-pinch inclusion is the
   identity on vertices.
+* `SSet.rightMappingSpace.objEquiv_toMorphismSpace_app_coe_app`: the right-pinch inclusion on
+  simplices, as the restriction along `Δ[1] ⊗ Δ[n] ⟶ Δ[n + 1]`.
 
 ## References
 
@@ -454,6 +456,36 @@ lemma obj₀Equiv_toMorphismSpace_app (σ : (X.rightMappingSpace x y : SSet) _�
   change X.map (pinch (𝟙 ⦋1⦌)).op (X.map (joinVertex.map (⦋1⦌.const ⦋0⦌ 0)).op σ.1) = σ.1
   rw [← Functor.map_comp_apply, ← op_comp, pinch_id_comp]
   exact ConcreteCategory.congr_hom (X.map_id (op (joinVertex.obj ⦋0⦌))) σ.1
+
+/-- **The right-pinch inclusion on simplices**: the map `Δ[1] ⊗ Δ[n] ⟶ X` attached to the image
+of an `n`-simplex `s` of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`, sends a pair of
+`m`-simplices `a` of `Δ[1]` and `b` of `Δ[n]` to the face of `s` along the map
+`g : ⦋m⦌ ⟶ ⦋n + 1⦌` which is `b` on the vertices `a` sends to `0` and the final vertex on those
+it sends to `1`. -/
+lemma objEquiv_toMorphismSpace_app_coe_app {n m : ℕ} (s : (X.rightMappingSpace x y : SSet) _⦋n⦌)
+    (a : Δ[1] _⦋m⦌) (b : Δ[n] _⦋m⦌) (g : ⦋m⦌ ⟶ ⦋n + 1⦌)
+    (hg : ∀ k, g.toOrderHom k = if (stdSimplex.objEquiv a).toOrderHom k = 0 then
+      ((stdSimplex.objEquiv b).toOrderHom k).castSucc else Fin.last _) :
+    (morphismSpace.objEquiv ((toMorphismSpace x y).app _ s)).1.app _ (a, b) =
+      X.map g.op (s.1 : X _⦋n + 1⦌) := by
+  have h : (morphismSpace.objEquiv ((toMorphismSpace x y).app _ s)).1 =
+      Δ[1] ◁ yonedaEquiv.symm s ≫ pinchMap x y := by
+    -- `toMorphismSpace` is by definition the curried form of `pinchMap`.
+    have h' : ((toMorphismSpace x y).app _ s).1 = (curry (pinchMap x y)).app _ s := (rfl)
+    rw [morphismSpace.objEquiv_apply_coe, h', ihomObjEquiv_apply, ← yonedaEquiv_symm_comp,
+      uncurry_natural_left, uncurry_curry]
+  have hg' : pinch (stdSimplex.objEquiv a) ≫ joinVertex.map (stdSimplex.objEquiv b) = g := by
+    ext k : 3
+    refine Eq.trans ?_ (hg k).symm
+    rw [comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply, pinch_toOrderHom_apply]
+    split_ifs
+    exacts [joinVertex_map_castSucc _ _, joinVertex_map_last _]
+  rw [h]
+  -- `change` unfolds the components of `pinchMap` and of the action of `b` on `Hom^R_X(x, y)`.
+  change X.map (pinch (stdSimplex.objEquiv a)).op
+      (X.map (joinVertex.map (stdSimplex.objEquiv b)).op s.1) = _
+  rw [← Functor.map_comp_apply, ← op_comp]
+  exact congrArg (fun f ↦ X.map (Quiver.Hom.op f) s.1) hg'
 
 end rightMappingSpace
 
