@@ -178,8 +178,8 @@ namespace SlashAction
 then `f ∣[k] x = f ∣[k] y`, because `y = (y x⁻¹) x` with `y x⁻¹ ∈ H₁` and the slash by that
 factor is trivial on `f`.
 
-This is the whole role invariance plays in the choice-freeness below: everything else is a
-comparison of two enumerations of the same set of cosets. -/
+It is used in `HeckeSlash/Independence.lean` to show that Hecke slash sums do not depend on the
+choice of right-coset representatives. -/
 lemma slash_eq_of_rightCoset_eq {β H A : Type*} [Group H] [AddMonoid A] [SlashAction β H A]
     {H₁ : Subgroup H} (k : β) {f : A} (hf : ∀ γ ∈ H₁, f ∣[k] γ = f) {x y : H}
     (h : MulOpposite.op x • (H₁ : Set H) = MulOpposite.op y • (H₁ : Set H)) :
