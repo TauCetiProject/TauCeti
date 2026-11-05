@@ -339,6 +339,14 @@ theorem exists_dotProduct_JFin_mulVec_ne_zero {x : Fin (m + m) → R} (hx : x �
   obtain ⟨i, hi⟩ := Function.ne_iff.mp hJx
   exact ⟨Pi.single i 1, by simpa using hi⟩
 
+/-- **The standard alternating form is nondegenerate**: a vector pairing trivially with every
+vector is zero. -/
+theorem eq_zero_of_forall_dotProduct_JFin_mulVec_eq_zero {x : Fin (m + m) → R}
+    (h : ∀ z, z ⬝ᵥ (JFin m R *ᵥ x) = 0) : x = 0 := by
+  by_contra hx
+  obtain ⟨z, hz⟩ := exists_dotProduct_JFin_mulVec_ne_zero hx
+  exact hz (h z)
+
 /-- Two nonzero vectors have a common vector pairing nontrivially with both, over any
 commutative ring. In particular, this includes the field with two elements. -/
 theorem exists_dotProduct_JFin_mulVec_ne_zero_pair {x y : Fin (m + m) → R}
