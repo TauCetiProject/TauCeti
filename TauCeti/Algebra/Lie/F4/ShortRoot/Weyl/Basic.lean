@@ -15,7 +15,9 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLatt
 The pinned word `xᵢ(1) x₋ᵢ(-1) xᵢ(1)` normalizes the weight torus of the
 twenty-six-dimensional integral carrier. Its action is the simple reflection of the
 simply connected type-F₄ root datum, and it sends the corresponding positive
-root subgroup to the negative one, negating the parameter. All equations hold over every
+root subgroup to the negative one, negating the parameter. Its square is the simple coroot
+at `-1`, the rank-one relation controlling repeated simple reflections in Weyl words.
+All equations hold over every
 commutative ring, including rings with nilpotents and rings of characteristic two.
 
 These explicit representatives allow simple root subgroups to be transported along
@@ -103,6 +105,42 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 4) (A : Type v) [CommRi
     coe_rootSubgroupPoints, coe_kostantToralRootSubgroupPoints] using
     congrArg Subtype.val h
 
+-- Specialize the named diagram's rank to four before rewriting weights of the concrete
+-- Serre generators. These two transports serve both the square and conjugation relations.
+private theorem lie_cartanGen_raising (i q : Fin 4) :
+    ⁅cartanGen q, rootGen (.inl i)⁆ = ((CartanMatrix.F₄ i q : ℤ) : ℚ) • rootGen (.inl i) := by
+  have hpos : rootWeight (.inl i) q = CartanMatrix.F₄ i q := by
+    simpa only [rank_F4, cartanMatrix_F4] using
+      F4.rootGeneratorWeight_inl (ht := valid_F4) i q
+  rw [← hpos]
+  exact lie_cartanGenerator_rootGenerator (.inl i) q
+
+private theorem lie_cartanGen_lowering (i q : Fin 4) :
+    ⁅cartanGen q, rootGen (.inr i)⁆ = -(((CartanMatrix.F₄ i q : ℤ) : ℚ) • rootGen (.inr i)) := by
+  have hneg : rootWeight (.inr i) q = -CartanMatrix.F₄ i q := by
+    simpa only [rank_F4, cartanMatrix_F4] using
+      F4.rootGeneratorWeight_inr (ht := valid_F4) i q
+  calc
+    ⁅cartanGen q, rootGen (.inr i)⁆ =
+        ((rootWeight (.inr i) q : ℤ) : ℚ) • rootGen (.inr i) :=
+      lie_cartanGenerator_rootGenerator (.inr i) q
+    _ = -((CartanMatrix.F₄ i q : ℤ) : ℚ) • rootGen (.inr i) := by rw [hneg, Int.cast_neg]
+    _ = _ := neg_smul _ _
+
+/-- The square of a pinned Weyl representative is the simple coroot evaluated at `-1`.
+This need not be the identity over a general commutative ring. -/
+@[simp]
+theorem simpleWeylPoint_sq (i : Fin 4) (A : Type v) [CommRing A] :
+    simpleWeylPoint i A ^ 2 = weightTorusPoints A (Pi.mulSingle i (-1)) := by
+  have h := kostantToralWeylPoint_sq (α := fun q ↦ CartanMatrix.F₄ i q)
+    rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
+    isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight
+    (isSl2Triple_rep_serreRootGenerator i) (lie_cartanGen_raising i)
+    (lie_cartanGen_lowering i) isCartanWeightVector_latticeBasis A
+  apply Subtype.ext
+  simpa only [Subgroup.coe_pow, coe_simpleWeylPoint,
+    coe_weightTorusPoints, coe_kostantToralWeightTorusPoints] using congrArg Subtype.val h
+
 /-- Conjugation by the pinned Weyl representative acts on the weight torus through the
 matching simple reflection of the simply connected root datum. -/
 @[simp]
@@ -114,27 +152,13 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 4) (A : Type v) [CommRin
     F4.root_simpleIndex valid_F4 i]
   dsimp (config := { instances := true }) only [rank]
   simp only [cartanMatrix_F4]
-  have hpos (q : Fin 4) : rootWeight (.inl i) q = CartanMatrix.F₄ i q := by
-    simpa only [rank_F4, cartanMatrix_F4] using
-      F4.rootGeneratorWeight_inl (ht := valid_F4) i q
-  have hneg (q : Fin 4) : rootWeight (.inr i) q = -CartanMatrix.F₄ i q := by
-    simpa only [rank_F4, cartanMatrix_F4] using
-      F4.rootGeneratorWeight_inr (ht := valid_F4) i q
   have h := kostantToralWeylPoint_conj_weightTorusPoints
     (i := Sum.inl i) (j := Sum.inr i) (c := i)
     (α := fun j : Fin 4 ↦ CartanMatrix.F₄ i j)
     rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
     isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight
     (isSl2Triple_rep_serreRootGenerator i)
-    (fun q ↦ by rw [← hpos q]; exact lie_cartanGenerator_rootGenerator (.inl i) q)
-    (fun q ↦ by
-      calc
-        ⁅cartanGen q, rootGen (.inr i)⁆ =
-            ((rootWeight (.inr i) q : ℤ) : ℚ) • rootGen (.inr i) :=
-          lie_cartanGenerator_rootGenerator (.inr i) q
-        _ = -((CartanMatrix.F₄ i q : ℤ) : ℚ) • rootGen (.inr i) := by
-          rw [hneg q, Int.cast_neg]
-        _ = _ := neg_smul _ _)
+    (lie_cartanGen_raising i) (lie_cartanGen_lowering i)
     isCartanWeightVector_latticeBasis A s
   apply Subtype.ext
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint,
