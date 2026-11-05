@@ -275,33 +275,14 @@ private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
     simp [assembleState_local]
   · exact Finset.prod_congr rfl (fun i _ ↦ congrArg (f i) (assembleState_outside c q r i))
 
-private def rawState (D : PDCode n) (u : Fin n → Bool) : Fin n → Bool :=
-  fun i ↦ u i == D.overPair i
-
-private theorem rawState_smoothingChoice (D : PDCode n) (u : Fin n → Bool) :
-    D.smoothingChoice (rawState D u) = u := by
-  funext i
-  cases hu : u i <;> cases ho : D.overPair i <;>
-    simp [rawState, hu, ho, smoothingChoice_of_true, smoothingChoice_of_false]
-
-private theorem rawState_injective (D : PDCode n) : Function.Injective (rawState D) := by
-  intro u v huv
-  have := congrArg D.smoothingChoice huv
-  simpa only [rawState_smoothingChoice] using this
-
-private theorem rawState_surjective (D : PDCode n) : Function.Surjective (rawState D) := by
-  intro s
-  refine ⟨D.smoothingChoice s, ?_⟩
-  funext i
-  cases hs : s i <;> cases ho : D.overPair i <;>
-    simp [rawState, hs, ho, smoothingChoice_of_true, smoothingChoice_of_false]
-
 private noncomputable def rawLoopCount (D : PDCode n) (u : Fin n → Bool) : ℕ :=
   orbitCount (D.smoothingTurn u * D.edgePair.val) / 2 + D.crossinglessComponentCount
 
+/-- The state whose smoothing choice is `u` is `D.smoothingChoice u`, as `smoothingChoice` is an
+involution; its loop count is `rawLoopCount D u`. -/
 private theorem rawLoopCount_eq (D : PDCode n) (u : Fin n → Bool) :
-    rawLoopCount D u = D.stateLoopCount (rawState D u) := by
-  rw [stateLoopCount_def, statePerm_def, rawState_smoothingChoice]
+    rawLoopCount D u = D.stateLoopCount (D.smoothingChoice u) := by
+  rw [stateLoopCount_def, statePerm_def, smoothingChoice_smoothingChoice]
   rfl
 
 include c in
@@ -459,23 +440,22 @@ private theorem localSumFin3 {R : Type*} [CommRing R] (a : Rˣ) (ba bb bc : Bool
     Matrix.cons_val_two]
   exact localSum a ba bb bc height P Q Rv S I
 
-private theorem rawState_weight {R : Type*} [CommRing R] (D : PDCode n)
+private theorem stateWeight_smoothingChoice {R : Type*} [CommRing R] (D : PDCode n)
     (a : Rˣ) (u : Fin n → Bool) :
-    (stateWeight (rawState D u) a : R) = ∏ i, smoothingWeight a (D.overPair i) (u i) := by
+    (stateWeight (D.smoothingChoice u) a : R) = ∏ i, smoothingWeight a (D.overPair i) (u i) := by
   rw [stateWeight_def, Units.coe_prod]
   apply Finset.prod_congr rfl
   intro i _
-  cases hu : u i <;> cases ho : D.overPair i <;>
-    simp [rawState, smoothingWeight, overWeight, hu, ho]
+  cases hu : u i <;> cases ho : D.overPair i <;> simp [smoothingWeight, overWeight, hu, ho]
 
 private theorem kauffmanBracket_raw {R : Type*} [CommRing R] (D : PDCode n) (a : Rˣ) :
     D.kauffmanBracket a = ∑ u : Fin n → Bool,
       (∏ i, smoothingWeight a (D.overPair i) (u i)) * jonesDelta a ^ (rawLoopCount D u - 1) := by
   rw [kauffmanBracket_def]
   symm
-  refine Fintype.sum_bijective (rawState D)
-    ⟨rawState_injective D, rawState_surjective D⟩ _ _ fun u ↦ ?_
-  rw [rawState_weight, ← rawLoopCount_eq]
+  refine Fintype.sum_bijective D.smoothingChoice D.smoothingChoice_involutive.bijective _ _
+    fun u ↦ ?_
+  rw [stateWeight_smoothingChoice, ← rawLoopCount_eq]
 
 private theorem localLoopValue {R : Type*} [CommRing R] (δ : R) (K : Fin 5 → ℕ)
     (side : Bool) (q : Fin 3 → Bool) :
