@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.QuadraticAlgebra.UnitMatrix
 public import Mathlib.Data.ZMod.Basic
-import Mathlib.Algebra.GroupWithZero.Units.Fintype
 
 /-!
 # Quadratic multiplication matrices at level two
