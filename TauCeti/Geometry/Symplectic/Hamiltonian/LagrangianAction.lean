@@ -31,9 +31,9 @@ integral sign and the symmetry of the mixed partial derivatives of `Q` give
 `d/ds S(Q s)|₀ = ∫_a^b DL_t(q, q')(η, η') dt` (`TauCeti.hasDerivAt_lagrangianAction`),
 
 the integral of the derivative of `L` along the first prolongation `(η, η')` of the variation
-field. When `L` is moreover `C²` along a `C²` curve `q`, the momentum `p(t) = ∂_v L(t, q, q')` is
-`C¹` (`TauCeti.contDiffAt_momentum`) and the force `∂_q L(t, q, q')` is continuous
-(`TauCeti.continuousAt_force`), and an integration by parts produces the **first variation
+field. Along a `C²` curve `q`, the force `∂_q L(t, q, q')` is continuous
+(`TauCeti.continuousAt_force`). When `L` is moreover `C²`, the momentum `p(t) = ∂_v L(t, q, q')` is
+`C¹` (`TauCeti.contDiffAt_momentum`), and an integration by parts produces the **first variation
 formula with its endpoint boundary term**
 
 `d/ds S(Q s)|₀ = p(b)(η(b)) - p(a)(η(a)) + ∫_a^b (∂_q L(t, q, q') - p'(t))(η(t)) dt`
@@ -144,13 +144,13 @@ theorem contDiffAt_momentum (hq : ContDiffAt ℝ 2 q t)
   exact hL.comp (t, deriv q t)
     (contDiffAt_fst.prodMk ((hq.comp _ contDiffAt_fst).prodMk contDiffAt_snd))
 
-/-- Along a `C²` curve, where `L` is `C²`, the force `t ↦ ∂_q L(t, q, q')` is continuous. -/
+/-- Along a `C²` curve, where `L` is `C¹`, the force `t ↦ ∂_q L(t, q, q')` is continuous. -/
 theorem continuousAt_force (hq : ContDiffAt ℝ 2 q t)
-    (hL : ContDiffAt ℝ 2 (uncurry L) (t, (q t, deriv q t))) :
+    (hL : ContDiffAt ℝ 1 (uncurry L) (t, (q t, deriv q t))) :
     ContinuousAt (fun r ↦ fderiv ℝ (fun y ↦ L r (y, deriv q r)) (q r)) t := by
   refine (ContDiffAt.fderiv (f := fun r y ↦ L r (y, deriv q r)) (m := 0) ?_
     (hq.of_le (by norm_num)) le_rfl).continuousAt
-  exact (hL.of_le one_le_two).comp (t, q t) (contDiffAt_fst.prodMk (contDiffAt_snd.prodMk
+  exact hL.comp (t, q t) (contDiffAt_fst.prodMk (contDiffAt_snd.prodMk
     ((hq.derivWithin le_rfl).comp _ contDiffAt_fst)))
 
 end Curve
@@ -277,9 +277,10 @@ theorem hasDerivAt_lagrangianAction_of_contDiffAt_two
   have hint₁ : IntervalIntegrable (fun t ↦ (fderiv ℝ (fun y ↦ L t (y, deriv (Q 0) t)) (Q 0 t) -
       deriv (fun r ↦ fderiv ℝ (fun u ↦ L r (Q 0 r, u)) (deriv (Q 0) r)) t)
         (deriv (fun s ↦ Q s t) 0)) volume a b :=
-    ContinuousOn.intervalIntegrable fun t ht ↦ (((continuousAt_force (hq t ht) (hL t ht)).sub
-      (((hp t ht).derivWithin (m := 0) (by norm_num)).continuousAt)).clm_apply
-        (hη t ht).continuousAt).continuousWithinAt
+    ContinuousOn.intervalIntegrable fun t ht ↦
+      (((continuousAt_force (hq t ht) ((hL t ht).of_le one_le_two)).sub
+        (((hp t ht).derivWithin (m := 0) (by norm_num)).continuousAt)).clm_apply
+          (hη t ht).continuousAt).continuousWithinAt
   have hint₂ : IntervalIntegrable (fun t ↦
       deriv (fun r ↦ fderiv ℝ (fun u ↦ L r (Q 0 r, u)) (deriv (Q 0) r)) t
           (deriv (fun s ↦ Q s t) 0) +
@@ -407,7 +408,7 @@ theorem isActionStationary_iff_eulerLagrange (hn : 2 ≤ n) (hn' : n ≤ ∞)
     have hgcont : ContinuousOn g (uIoo a b) := fun t ht ↦ by
       have ht' := uIoo_subset_uIcc_self ht
       rw [hg]
-      exact (((continuousAt_force (hq₂ t ht') (hL t ht')).sub
+      exact (((continuousAt_force (hq₂ t ht') ((hL t ht').of_le one_le_two)).sub
         ((hp t ht').derivWithin (m := 0) (by norm_num)).continuousAt).clm_apply
           continuousAt_const).continuousWithinAt
     -- The integrals of `g` against test functions on the open interval vanish.
