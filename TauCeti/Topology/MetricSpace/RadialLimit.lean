@@ -16,6 +16,9 @@ If the images of small spheres about a point have diameter tending to zero, conv
 along one radius determines convergence along every approach to the point. Boundedness of
 those images is explicit: the real-valued diameter of an unbounded set has junk value zero.
 
+The file also records that a sphere of positive radius below `R` lies in the ball of radius `R`
+(`Metric.sphere_abs_subset_ball`).
+
 This is the metric step in continuous removal of isolated singularities, separating radial
 convergence from the estimates controlling angular oscillation. It works in any real normed
 source and any pseudo-metric target.
@@ -52,3 +55,10 @@ theorem tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere
       (mem_image_of_mem u hrs)) le_rfl)
 
 end TauCeti
+
+/-- A sphere of positive radius `r < R` lies in the open ball of radius `R` about the same
+centre; the radius is written `|r|`, as in circle integrals. -/
+theorem Metric.sphere_abs_subset_ball {X : Type*} [PseudoMetricSpace X] {x : X} {r R : ℝ}
+    (hr : r ∈ Set.Ioo 0 R) : sphere x |r| ⊆ ball x R := by
+  rw [abs_of_pos hr.1]
+  exact sphere_subset_ball hr.2
