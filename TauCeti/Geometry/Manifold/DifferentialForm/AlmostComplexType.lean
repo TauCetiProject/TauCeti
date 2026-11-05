@@ -413,6 +413,13 @@ theorem IsOfType.sum_typeProjection_eq {G : Type*} [AddCommMonoid G]
   · intro hpq
     exact absurd (by simpa using h.add_eq) hpq
 
+/-- Transporting a form across an equality of total degrees preserves its type. -/
+theorem IsOfType.cast {l : ℕ} {φ : SmoothForm I M F k} {p q : ℕ}
+    (hφ : φ.IsOfType J p q) (h : k = l) :
+    (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ).IsOfType J p q := by
+  subst l
+  exact hφ
+
 end SmoothForm
 
 namespace SmoothAlmostComplexStructure
