@@ -614,9 +614,12 @@ end CoordGroup
 radical of the original system. -/
 theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
-    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom :=
-  fun w hw => mem_Rad.2 fun v hv => by
-    simpa [eval_wordMap] using mem_Rad.1 hw _ (wordMap_mem_V ι σ S v hv)
+    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
+  have h := CoordGroup.Rad_le_comap_of_mapsToWordMap ι S (σ ⁻¹' S)
+    (fun y => σ (inr (FreeGroup.of y))) (fun v hv => wordMap_mem_V ι σ S v hv)
+  have heval : eval (inl : G →* GX G X) (fun y => σ (inr (FreeGroup.of y))) =
+      σ.toMonoidHom := eval_eq_of_comp_inl σ.comp_coeff
+  rwa [heval] at h
 
 variable (G) in
 /-- The group `G_S = G[X] ⧸ ncl(S)` presented over `G` by the system `S` of equations. -/
