@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!

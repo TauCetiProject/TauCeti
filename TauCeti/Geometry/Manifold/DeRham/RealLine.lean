@@ -104,31 +104,12 @@ theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   · rw [map_sub, hg, (mem_closedForms_iff_mextDerivₗ_eq_zero _ _).mp κ.2, sub_zero]
 
-/-- The standard orientation of `ℝ`, in which the unit vector `1` is positive. -/
-private def standardOrientation : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
-  Manifold.Orientation.model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
-
-/-- Against the standard orientation of `ℝ`, the oriented integral of a compactly supported
-continuous `1`-form is the Lebesgue integral of its value on the unit vector. -/
-private theorem integralTopForm_standard {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
-    (hφ : IsSmoothForm 𝓘(ℝ, ℝ) 0 φ)
-    (hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) φ)) :
-    integralTopForm standardOrientation φ = ∫ t, φ t fun _ ↦ 1 := by
-  have hvol : (Module.Basis.singleton (Fin 1) ℝ).addHaar = volume := by
-    rw [← OrthonormalBasis.toBasis_singleton]
-    exact OrthonormalBasis.addHaar_eq_volume _
-  rw [standardOrientation,
-    integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl, hvol,
-    Module.Basis.coe_singleton]
-  -- Mathlib's unit tangent vector `1 : TangentSpace 𝓘(ℝ) t` is defined to be `1 : ℝ`.
-  rfl
-
 /-- Integration `H¹_c(ℝ) → ℝ` against the standard orientation is bijective. -/
 private theorem bijective_integral_standard :
-    Function.Bijective (compactlySupportedDeRhamCohomology.integral standardOrientation) := by
+    Function.Bijective (compactlySupportedDeRhamCohomology.integral Manifold.Orientation.real) := by
   obtain ⟨φ₁, hφ₁⟩ : ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1,
-      integralTopForm standardOrientation φ.1.1 = 1 := by
-    rw [standardOrientation]
+      integralTopForm Manifold.Orientation.real φ.1.1 = 1 := by
+    rw [Manifold.Orientation.real_eq_model]
     exact Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one
       (Module.Basis.singleton (Fin 1) ℝ) _
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦
@@ -136,7 +117,7 @@ private theorem bijective_integral_standard :
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ 1 x
   have hφ := (mem_compactlySupportedClosedForms _).mp φ.2
   rw [compactlySupportedDeRhamCohomology.integral_mk,
-    integralTopForm_standard (φ.1.isSmoothForm.of_le (by simp))
+    integralTopForm_real_eq_integral (φ.1.isSmoothForm.of_le (by simp))
       ((mem_compactlySupportedForms _).mp hφ.1)] at hx
   exact (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ 1 φ).mpr
     (mem_exactCompactlySupportedForms_one_real hφ.1 hx)
@@ -147,7 +128,7 @@ theorem compactlySupportedDeRhamCohomology.bijective_integral_real
     (o : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1)) :
     Function.Bijective (compactlySupportedDeRhamCohomology.integral o) := by
   obtain ⟨hi, hs⟩ := bijective_integral_standard
-  rcases Manifold.Orientation.eq_or_eq_neg o standardOrientation with rfl | rfl
+  rcases Manifold.Orientation.eq_or_eq_neg o Manifold.Orientation.real with rfl | rfl
   · exact ⟨hi, hs⟩
   · rw [compactlySupportedDeRhamCohomology.integral_neg]
     exact ⟨fun x y hxy ↦ hi (neg_injective hxy),

@@ -52,6 +52,8 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
+* `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
+  no farther from `1` than `x`.
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 -/
 
@@ -289,6 +291,15 @@ theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R]
     _ ≤ max ‖a * (b - 1)‖ ‖a - 1‖ := IsUltrametricDist.norm_add_le_max _ _
     _ < ε := max_lt ((norm_mul_le _ _).trans_lt
       ((mul_le_of_le_one_left (norm_nonneg _) hnorm).trans_lt hb)) ha
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1`, a power of an element `x` of norm at most
+one is no farther from `1` than `x` is: `‖x ^ n - 1‖ ≤ ‖x - 1‖`. -/
+theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : R} (hx : ‖x‖ ≤ 1) (n : ℕ) : ‖x ^ n - 1‖ ≤ ‖x - 1‖ := by
+  rw [← geom_sum_mul]
+  refine (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦
+    (norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg x) hx)
 
 /-- In an ultrametric normed commutative ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1` (for `0 < ε`). -/

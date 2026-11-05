@@ -10,6 +10,7 @@ import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Formal group laws of infinite height are additive
@@ -124,8 +125,10 @@ private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p :
       rw [F.homDefect_𝔾ₐ_sub hg hXn₀]
       exact le_order_sub hn (F.le_order_homDefect_𝔾ₐ hXn₀ hXn)
     refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
-    rw [F.homDefect_𝔾ₐ_sub hg hXn₀, map_sub,
-      F.homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow c (by omega), hc, sub_self]
+    have hcX := homogeneousComponent_homDefect_add_sub (F := F) (G := 𝔾ₐ) (map_zero _)
+      (show n ≠ 0 by omega) c
+    rw [_root_.zero_add, homDefect_zero, sub_zero] at hcX
+    rw [F.homDefect_𝔾ₐ_sub hg hXn₀, map_sub, hcX, hc, sub_self]
 
 end PSeries
 
@@ -136,31 +139,6 @@ section Construction
 private noncomputable def approx (c : ℕ → PowerSeries R → R) : ℕ → PowerSeries R
   | 0 => PowerSeries.X
   | n + 1 => approx c n - c (n + 2) (approx c n) • PowerSeries.X ^ (n + 2)
-
-/-- The approximations stabilise: `approx c n` and `approx c n'` agree below degree
-`min n n' + 2`. -/
-private theorem coeff_approx_eq_coeff_approx (c : ℕ → PowerSeries R → R) {m n n' : ℕ}
-    (hm : m < n + 2) (hm' : m < n' + 2) :
-    PowerSeries.coeff m (approx c n) = PowerSeries.coeff m (approx c n') := by
-  wlog h : n ≤ n' generalizing n n'
-  · exact (this hm' hm (by omega)).symm
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h
-  induction j with
-  | zero => rfl
-  | succ j ih =>
-    rw [ih (by omega) (by omega), ← add_assoc, approx, map_sub, PowerSeries.coeff_smul,
-      PowerSeries.coeff_X_pow]
-    simp [show m ≠ n + j + 2 by omega]
-
-/-- The limit of the approximations. -/
-private noncomputable def approxLimit (c : ℕ → PowerSeries R → R) : PowerSeries R :=
-  PowerSeries.mk fun m ↦ PowerSeries.coeff m (approx c m)
-
-/-- The limit agrees with `approx c n` below degree `n + 2`. -/
-private theorem coeff_approxLimit (c : ℕ → PowerSeries R → R) {m n : ℕ} (hm : m < n + 2) :
-    PowerSeries.coeff m (approxLimit c) = PowerSeries.coeff m (approx c n) := by
-  rw [approxLimit, PowerSeries.coeff_mk]
-  exact coeff_approx_eq_coeff_approx c (by omega) hm
 
 /-- **Existence of the normalised logarithm**, by passing to the limit of the approximations. -/
 private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsmulSeries p = 0) :
@@ -190,22 +168,28 @@ private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsm
       split_ifs with h
       · simp [hc₀ k h.symm]
       · simp
-  have h₀ : PowerSeries.constantCoeff (approxLimit c) = 0 := by
-    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_approxLimit c (n := 0) (by omega),
-      PowerSeries.coeff_zero_eq_constantCoeff_apply, (key 0).1]
-  refine ⟨approxLimit c, h₀, ?_, fun k hk ↦ ?_, ?_⟩
-  · rw [coeff_approxLimit c (n := 0) (by omega)]
+  -- the limit of the approximations
+  obtain ⟨g, hlim⟩ := PowerSeries.exists_forall_le_order_sub (f := approx c) fun n ↦ by
+    rw [approx, sub_sub_cancel_left, PowerSeries.order_neg]
+    refine PowerSeries.nat_le_order _ _ fun i hi ↦ ?_
+    simp [PowerSeries.coeff_X_pow, show i ≠ n + 2 by omega]
+  have hcoeff {m n : ℕ} (hm : m < n) :
+      PowerSeries.coeff m g = PowerSeries.coeff m (approx c n) := by
+    rw [← sub_eq_zero, ← map_sub]
+    exact PowerSeries.coeff_of_lt_order m ((hlim n).trans_lt' (by exact_mod_cast hm))
+  have h₀ : PowerSeries.constantCoeff g = 0 := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, hcoeff (n := 1) one_pos,
+      PowerSeries.coeff_zero_eq_constantCoeff_apply, (key 1).1]
+  refine ⟨g, h₀, ?_, fun k hk ↦ ?_, ?_⟩
+  · rw [hcoeff (n := 2) one_lt_two]
     simp [approx]
-  · rw [coeff_approxLimit c (n := p ^ k) (by omega), (key _).2.2 k hk]
+  · rw [hcoeff (Nat.lt_succ_self (p ^ k)), (key _).2.2 k hk]
   · -- the additivity defect of the limit vanishes below every degree
     refine order_eq_top_iff.mp (top_le_iff.mp (ENat.forall_natCast_le_iff_le.mp fun m _ ↦ ?_))
-    have hlim : ((m + 2 : ℕ) : ℕ∞) ≤ (approxLimit c - approx c m).order :=
-      PowerSeries.nat_le_order _ _ fun i hi ↦ by rw [map_sub, coeff_approxLimit c hi, sub_self]
-    have hdiff := le_order_homDefect_𝔾ₐ F (by rw [map_sub, h₀, (key m).1, sub_zero]) hlim
+    have hdiff := le_order_homDefect_𝔾ₐ F (by rw [map_sub, h₀, (key m).1, sub_zero]) (hlim m)
     rw [homDefect_𝔾ₐ_sub F h₀ (key m).1] at hdiff
-    have h := le_order_add (key m).2.1 hdiff
-    rw [add_sub_cancel] at h
-    exact (Nat.cast_le.mpr (by omega : m ≤ m + 2)).trans h
+    have h := le_order_add ((key m).2.1.trans' (by exact_mod_cast (by omega : m ≤ m + 2))) hdiff
+    rwa [add_sub_cancel] at h
 
 end Construction
 
