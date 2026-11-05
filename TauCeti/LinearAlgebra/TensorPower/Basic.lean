@@ -12,21 +12,25 @@ public import Mathlib.LinearAlgebra.TensorProduct.Associator
 # Basic operations on tensor powers
 
 Mathlib's `TensorPower.mulEquiv` identifies `⨂[R]^k M ⊗[R] ⨂[R]^m M` with `⨂[R]^(k + m) M`.  This
-file records the inverse operation: `TensorPower.splitAt` cuts a tensor power of length `n` after
-its first `k` factors, landing in `⨂[R]^k M ⊗[R] ⨂[R]^(n - k) M`, together with its value on pure
-tensors and the fact that it is injective. It also identifies the first tensor power with the
-underlying module, and shows that `TensorPower.mulEquiv` is natural with respect to tensor-power
-maps.
+file records the inverse operation: `TauCeti.TensorPower.splitAt` cuts a tensor power of length `n`
+after its first `k` factors, landing in `⨂[R]^k M ⊗[R] ⨂[R]^(n - k) M`, together with its value on
+pure tensors, the fact that it is injective, and the unit and associativity laws of the inverse of
+`TensorPower.mulEquiv`. It also identifies the first tensor power with the underlying module, and
+shows that `TensorPower.mulEquiv` is natural with respect to tensor-power maps.
 
 ## Main definitions
 
-* `TensorPower.splitAt`: split a tensor power at a specified position.
+* `TauCeti.TensorPower.splitAt`: split a tensor power at a specified position.
 * `TauCeti.TensorPower.oneEquiv`: identify the first tensor power with the underlying module.
 
 ## Main results
 
 * `TauCeti.TensorPower.mulEquiv_comp_map`: `TensorPower.mulEquiv` intertwines tensor-power maps
   with the tensor-power map of the appended family.
+* `TauCeti.TensorPower.lid_map_algebraMap₀_symm`, `TauCeti.TensorPower.rid_map_algebraMap₀_symm`:
+  an empty block on either side is absorbed by the scalar identification of `⨂[R]^0 M`.
+* `TauCeti.TensorPower.mulEquiv_symm_assoc`: cutting a tensor power into three blocks does not
+  depend on the order of the two cuts.
 
 -/
 
@@ -65,9 +69,8 @@ variable {R M} {N : Type*} [AddCommMonoid N] [Module R N]
 theorem oneEquiv_symm_comp (f : M →ₗ[R] N) :
     (oneEquiv R N).symm.toLinearMap ∘ₗ f =
       PiTensorProduct.map (fun _ : Fin 1 ↦ f) ∘ₗ (oneEquiv R M).symm.toLinearMap := by
-  ext x
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, oneEquiv_symm_apply,
-    PiTensorProduct.map_tprod]
+  ext
+  simp
 
 /-- Concatenating tensor powers intertwines the tensor product of two tensor-power maps with the
 tensor-power map of the appended family of factors. -/
@@ -104,30 +107,25 @@ theorem mulEquiv_conj_map {d e : ℕ} (f : Fin d → M →ₗ[R] M) (g : Fin e �
 
 end map
 
-end TauCeti.TensorPower
-
-namespace TensorPower
-
 /-- Split a tensor power after its first `k` factors. -/
 noncomputable def splitAt (n k : ℕ) (hk : k ≤ n) :
     TensorPower R n M →ₗ[R] TensorPower R k M ⊗[R] TensorPower R (n - k) M :=
   (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
     (TensorPower.cast R M (Nat.add_sub_of_le hk).symm).toLinearMap
 
+/-- Concatenating the two blocks produced by `splitAt` recovers the original tensor, up to the
+cast identifying `k + (n - k)` with `n`. -/
 @[simp]
 theorem mulEquiv_splitAt (n k : ℕ) (hk : k ≤ n) (x : TensorPower R n M) :
     TensorPower.mulEquiv (splitAt R M n k hk x) =
       TensorPower.cast R M (Nat.add_sub_of_le hk).symm x := by
   simp [splitAt]
 
-/-- Splitting a tensor power at a fixed position loses no information: it is the composite of two
-linear equivalences. -/
+/-- Splitting a tensor power at a fixed position loses no information. -/
 theorem splitAt_injective (n k : ℕ) (hk : k ≤ n) :
     Function.Injective (splitAt R M n k hk) := by
-  intro x y hxy
-  have := congrArg (TensorPower.mulEquiv (R := R) (M := M)) hxy
-  rw [mulEquiv_splitAt, mulEquiv_splitAt] at this
-  exact (TensorPower.cast R M (Nat.add_sub_of_le hk).symm).injective this
+  rw [splitAt, LinearMap.coe_comp]
+  exact (LinearEquiv.injective _).comp (LinearEquiv.injective _)
 
 /-- Splitting a pure tensor separates its first `k` entries from the remaining entries. -/
 @[simp]
@@ -138,18 +136,10 @@ theorem splitAt_tprod (n k : ℕ) (hk : k ≤ n) (x : Fin n → M) :
   apply TensorPower.mulEquiv.injective
   rw [mulEquiv_splitAt, TensorPower.cast_tprod, ← TensorPower.gMul_def,
     TensorPower.tprod_mul_tprod]
-  congr 1
-  funext i
-  simp only [Function.comp_apply]
-  by_cases hi : i.1 < k
-  · let j : Fin k := ⟨i.1, hi⟩
-    have hij : Fin.castAdd (n - k) j = i := by ext; rfl
-    rw [← hij, Fin.append_left]
-    congr 1
-  · let j : Fin (n - k) := ⟨i.1 - k, by omega⟩
-    have hij : Fin.natAdd k j = i := by ext; simp [j]; omega
-    rw [← hij, Fin.append_right]
-    congr 1
+  congr 1 with i
+  refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) i <;>
+    simp only [Function.comp_apply, Fin.append_left, Fin.append_right] <;>
+    exact congrArg x (Fin.ext (by simp))
 
 /-- Identifying the empty left tensor block with scalars agrees with concatenation. -/
 theorem lid_map_algebraMap₀_symm (n : ℕ) (z : TensorPower R 0 M ⊗[R] TensorPower R n M) :
@@ -205,4 +195,4 @@ theorem mulEquiv_symm_assoc (p q r : ℕ) (x : TensorPower R (p + q + r) M) :
       simp only [TensorPower.gMul_def, LinearEquiv.symm_apply_apply,
         TensorProduct.map_tmul, LinearMap.id_apply, LinearEquiv.coe_coe]
 
-end TensorPower
+end TauCeti.TensorPower
