@@ -101,11 +101,16 @@ theorem exists_mem_fderiv_sub_eq_smul_fderiv_and_supporting {S K : Set E} {v : E
   simpa only [r, p, smul_apply, smul_eq_mul] using hsupp y hy
 
 /-- Points of `S` where the affine function of slope `fderiv ℝ u x` through `(x, u x)`
-supports the graph of `u` on the closure. -/
+supports the graph of `u` on the closure. This is a tangent support at differentiable points.
+At a nondifferentiable point, `fderiv ℝ u x = 0`, so membership means that `x ∈ S` and
+`x` minimizes `u` on `closure S`. In the supporting-gradient-image theorem below, the residual
+is differentiable on `S`, so every member has the tangent interpretation. -/
 def supportingTangentSet (S : Set E) (u : E → ℝ) : Set E :=
   {x ∈ S | ∀ y ∈ closure S, u x + fderiv ℝ u x (y - x) ≤ u y}
 
-/-- Membership means that the point lies in `S` and its tangent supports `u` on the closure. -/
+/-- Membership means that the point lies in `S` and its affine support of slope `fderiv ℝ u x`
+lies below `u` on the closure. This is its tangent where `u` is differentiable; otherwise
+`fderiv ℝ u x = 0`, and the condition says that `x` minimizes `u` on `closure S`. -/
 @[simp] theorem mem_supportingTangentSet {S : Set E} {u : E → ℝ} {x : E} :
     x ∈ supportingTangentSet S u ↔
       x ∈ S ∧ ∀ y ∈ closure S, u x + fderiv ℝ u x (y - x) ≤ u y := by
