@@ -64,6 +64,8 @@ by restriction to `𝔫`, and its zero level is
 ## Main results
 
 * `TauCeti.Toric.hamiltonianVectorField_delzantMomentMap`: `μ` is a moment map for the action.
+* `TauCeti.Toric.hasFDerivAt_delzantMomentMap`, `TauCeti.Toric.contDiff_delzantMomentMap`: the
+  derivative of `μ`, and its smoothness.
 * `TauCeti.Toric.mem_delzantLevel_iff`: `z ∈ Z` exactly when `μ(z) = β_ℝ^* y` for some `y ∈ V*`.
 * `TauCeti.Toric.setOf_exists_mem_delzantLevel`: these values `y` form the polytope `Δ`.
 * `TauCeti.Toric.isCompact_delzantLevel`: `Z` is compact when `Δ` is bounded.
@@ -109,6 +111,45 @@ theorem delzantMomentMap_apply (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ 
     ContinuousLinearMap.proj_apply, FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul,
     Pi.smul_apply, smul_eq_mul, Finset.mul_sum, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
+
+variable (c) in
+/-- The derivative of the moment map at `x`: `d⟨μ, t⟩ = Σ_j t_j (q_j dq_j + p_j dp_j)`. -/
+theorem hasFDerivAt_delzantMomentMap (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    HasFDerivAt (delzantMomentMap c)
+      (∑ j, ContinuousLinearMap.smulRight
+        (x.1 j • (PiLp.proj 2 (fun _ ↦ ℝ) j).comp (ContinuousLinearMap.fst ℝ _ _) +
+          x.2 j • (PiLp.proj 2 (fun _ ↦ ℝ) j).comp (ContinuousLinearMap.snd ℝ _ _) :
+            EuclideanSpace ℝ ι × EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        (ContinuousLinearMap.proj j : StrongDual ℝ (ι → ℝ)))
+      x := by
+  refine ((hasFDerivAt_weightMomentMap (fun j ↦ -ContinuousLinearMap.proj j) x).add_const
+    (∑ j, c j • ContinuousLinearMap.proj j : StrongDual ℝ (ι → ℝ))).congr_fderiv
+      (Finset.sum_congr rfl fun j _ ↦ ?_)
+  ext v t <;> simp
+
+variable (c) in
+/-- The moment map is smooth. -/
+theorem contDiff_delzantMomentMap {n : WithTop ℕ∞} :
+    ContDiff ℝ n (delzantMomentMap (ι := ι) c) := by
+  have h : delzantMomentMap (ι := ι) c = fun x ↦
+      ∑ j, ((x.1 j ^ 2 + x.2 j ^ 2) / 2 + c j) • ContinuousLinearMap.proj j := by
+    funext x
+    ext t
+    simp [mul_comm]
+  rw [h]
+  refine ContDiff.sum fun j _ ↦ (ContDiff.add ?_ contDiff_const).smul_const _
+  have h1 : ContDiff ℝ n fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ x.1 j :=
+    ((PiLp.proj 2 (fun _ ↦ ℝ) j).comp
+      (ContinuousLinearMap.fst ℝ (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι))).contDiff
+  have h2 : ContDiff ℝ n fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ x.2 j :=
+    ((PiLp.proj 2 (fun _ ↦ ℝ) j).comp
+      (ContinuousLinearMap.snd ℝ (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι))).contDiff
+  exact ((h1.pow 2).add (h2.pow 2)).div_const 2
+
+variable (c) in
+/-- The moment map is continuous. -/
+theorem continuous_delzantMomentMap : Continuous (delzantMomentMap (ι := ι) c) :=
+  (contDiff_delzantMomentMap c (n := 0)).continuous
 
 /-- The moment map is invariant under the action of the torus. -/
 @[simp]
@@ -228,9 +269,6 @@ theorem setOf_exists_mem_delzantLevel :
 particular for a Delzant polytope. -/
 theorem isCompact_delzantLevel [FiniteDimensional ℝ V]
     (hb : Bornology.IsBounded (facetPolyhedron i u c)) : IsCompact (delzantLevel i u c) := by
-  have hμ : Continuous (delzantMomentMap (ι := ι) c) :=
-    continuous_iff_continuousAt.2 fun x ↦
-      ((hasFDerivAt_weightMomentMap _ x).continuousAt.add continuousAt_const)
   have hclosed : IsClosed (delzantLevel i u c) := by
     have : delzantLevel i u c = ⋂ t ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)),
         {x | delzantMomentMap c x t = 0} := by
@@ -238,7 +276,8 @@ theorem isCompact_delzantLevel [FiniteDimensional ℝ V]
       simp [mem_delzantLevel]
     rw [this]
     exact isClosed_biInter fun t _ ↦
-      isClosed_eq ((ContinuousLinearMap.apply ℝ ℝ t).continuous.comp hμ) continuous_const
+      isClosed_eq ((ContinuousLinearMap.apply ℝ ℝ t).continuous.comp
+        (continuous_delzantMomentMap c)) continuous_const
   -- Bound `|z_j|² = 2 (⟨y, u_j⟩ - c_j)` using a bound `R` on the polytope.
   obtain ⟨R, hR⟩ := hb.subset_closedBall 0
   set M : ι → ℝ := fun j ↦ 2 * (R * ‖i (u j)‖ + |c j|)
@@ -281,7 +320,7 @@ private theorem exists_isSmoothVertex_of_mem_delzantLevel
       ∀ j ∉ activeSet (facetPairing i u) c v, x.1 j ≠ 0 ∨ x.2 j ≠ 0 := by
   obtain ⟨y, hy⟩ := mem_delzantLevel_iff.1 hx
   obtain ⟨v, hv, hsub⟩ :=
-    hΔ.exists_mem_extremePoints_activeSet_subset (mem_facetPolyhedron_of_forall_eq c hy)
+    exists_mem_extremePoints_activeSet_subset hΔ.isCompact (mem_facetPolyhedron_of_forall_eq c hy)
   refine ⟨v, hΔ.isSmoothVertex v hv, fun j hj ↦ ?_⟩
   have hj' : j ∉ activeSet (facetPairing i u) c y := fun h ↦ hj (hsub h)
   rw [activeSet_eq_of_forall_eq hy, mem_ofPred_eq, not_and_or] at hj'
