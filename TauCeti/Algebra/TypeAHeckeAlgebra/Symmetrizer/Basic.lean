@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Parabolic.Basic
 public import TauCeti.Algebra.Ring.QuadraticPow
 
 /-!
@@ -52,6 +52,16 @@ theorem parabolicEigenSum_eq_sum [Fintype (cs.parabolic J)] (a : R) :
       ∑ w : cs.parabolic J, a ^ cs.length w • Tw q cs w := by
   rw [parabolicEigenSum, Subsingleton.elim (Fintype.ofFinite (cs.parabolic J))
     (inferInstance : Fintype (cs.parabolic J))]
+
+/-- A parabolic weighted sum lies in the corresponding parabolic Hecke subalgebra,
+regardless of whether its weight satisfies the Hecke quadratic. -/
+theorem parabolicEigenSum_mem_parabolic (a : R) :
+    parabolicEigenSum (q := q) cs J a ∈ parabolic q J := by
+  classical
+  let := Fintype.ofFinite (cs.parabolic J)
+  rw [parabolicEigenSum_eq_sum]
+  exact Subalgebra.sum_mem _ fun w _ ↦
+    Subalgebra.smul_mem _ (Tw_mem_parabolic cs w.2) _
 
 open scoped Classical in
 /-- The PBW coefficients of a parabolic weighted sum, extended by zero off the subgroup. -/
