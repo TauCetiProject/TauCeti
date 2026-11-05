@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Carrier
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 
 /-!
 # Integral rank-one actions at the short F₄ nodes
@@ -129,10 +129,10 @@ private theorem rootDividedSquareMatrix_shortBlock (s : Bool) (i : Fin 2) :
 
 private theorem shortBlockMatrixHom_transvection (s : Bool) (t : R) :
     shortBlockMatrixHom
-        (if s then (Matrix.SpecialLinearGroup.transvection
-            (by decide : (0 : Fin 2) ≠ 1) t : Matrix (Fin 2) (Fin 2) R)
-          else (Matrix.SpecialLinearGroup.transvection
-            (by decide : (1 : Fin 2) ≠ 0) t : Matrix (Fin 2) (Fin 2) R)) =
+        ((if s then Matrix.SpecialLinearGroup.transvection
+            (by decide : (0 : Fin 2) ≠ 1) t
+          else Matrix.SpecialLinearGroup.transvection
+            (by decide : (1 : Fin 2) ≠ 0) t) : SL(2, R)) =
       1 + t • (shortLinearBlock s).map (Int.cast : ℤ → R) +
         t ^ 2 • (shortQuadraticBlock s).map (Int.cast : ℤ → R) := by
   cases s <;> ext a b
@@ -152,6 +152,28 @@ private theorem shortBlockMatrixHom_transvection (s : Bool) (t : R) :
   all_goals fin_cases a <;> fin_cases b <;> simp
   all_goals ring
 
+private theorem shortRankOneGL_transvection (s : Bool) (i : Fin 2) (t : R) :
+    shortRankOneGL i (if s then Matrix.SpecialLinearGroup.transvection
+        (by decide : (0 : Fin 2) ≠ 1) t
+      else Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t) =
+        (rootSubgroupPoints (if s then .inl (i.natAdd 2) else .inr (i.natAdd 2)) R
+          (Multiplicative.ofAdd t) : GL (Fin 26) R) := by
+  apply Units.ext
+  ext a b
+  obtain ⟨a, rfl⟩ := (shortBlockEquiv i).surjective a
+  obtain ⟨b, rfl⟩ := (shortBlockEquiv i).surjective b
+  have hb := congr_fun₂ (shortBlockMatrixHom_transvection (R := R) s t) a b
+  have hr := congr_fun₂ (rootMatrix_shortBlock s i) a b
+  have hq := congr_fun₂ (rootDividedSquareMatrix_shortBlock s i) a b
+  have hg := congr_fun₂ (shortRankOneGL_submatrix i
+    (if s then Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) t
+      else Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t)) a b
+  simp only [Matrix.submatrix_apply] at hr hq hg
+  rw [hg, hb, coe_rootSubgroupPoints_eq]
+  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, toAdd_ofAdd,
+    Matrix.one_apply, smul_eq_mul, shortBlockEquiv, Equiv.ofBijective_apply,
+    (shortBlockNumber_bijective i).injective.eq_iff, hr, hq]
+
 /-- The upper transvection is the positive short-root point, with its integral quadratic
 coefficient and the same root parameter. -/
 @[simp]
@@ -159,20 +181,7 @@ theorem shortRankOneGL_upper_transvection (i : Fin 2) (t : R) :
     shortRankOneGL i (Matrix.SpecialLinearGroup.transvection
       (by decide : (0 : Fin 2) ≠ 1) t) =
         (rootSubgroupPoints (.inl (i.natAdd 2)) R (Multiplicative.ofAdd t) : GL (Fin 26) R) := by
-  apply Units.ext
-  ext a b
-  obtain ⟨a, rfl⟩ := (shortBlockEquiv i).surjective a
-  obtain ⟨b, rfl⟩ := (shortBlockEquiv i).surjective b
-  have hb := congr_fun₂ (shortBlockMatrixHom_transvection (R := R) true t) a b
-  have hr := congr_fun₂ (rootMatrix_shortBlock true i) a b
-  have hq := congr_fun₂ (rootDividedSquareMatrix_shortBlock true i) a b
-  have hg := congr_fun₂ (shortRankOneGL_submatrix i
-    (Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) t)) a b
-  simp only [ite_true, Matrix.submatrix_apply] at hb hr hq hg
-  rw [hg, hb, coe_rootSubgroupPoints_eq]
-  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, toAdd_ofAdd,
-    Matrix.one_apply, smul_eq_mul, shortBlockEquiv, Equiv.ofBijective_apply,
-    (shortBlockNumber_bijective i).injective.eq_iff, hr, hq]
+  simpa only [ite_true] using shortRankOneGL_transvection true i t
 
 /-- The lower transvection is the negative short-root point, with the same root parameter. -/
 @[simp]
@@ -180,20 +189,7 @@ theorem shortRankOneGL_lower_transvection (i : Fin 2) (t : R) :
     shortRankOneGL i (Matrix.SpecialLinearGroup.transvection
       (by decide : (1 : Fin 2) ≠ 0) t) =
         (rootSubgroupPoints (.inr (i.natAdd 2)) R (Multiplicative.ofAdd t) : GL (Fin 26) R) := by
-  apply Units.ext
-  ext a b
-  obtain ⟨a, rfl⟩ := (shortBlockEquiv i).surjective a
-  obtain ⟨b, rfl⟩ := (shortBlockEquiv i).surjective b
-  have hb := congr_fun₂ (shortBlockMatrixHom_transvection (R := R) false t) a b
-  have hr := congr_fun₂ (rootMatrix_shortBlock false i) a b
-  have hq := congr_fun₂ (rootDividedSquareMatrix_shortBlock false i) a b
-  have hg := congr_fun₂ (shortRankOneGL_submatrix i
-    (Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t)) a b
-  simp only [Bool.false_eq_true, ite_false, Matrix.submatrix_apply] at hb hr hq hg
-  rw [hg, hb, coe_rootSubgroupPoints_eq]
-  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, toAdd_ofAdd,
-    Matrix.one_apply, smul_eq_mul, shortBlockEquiv, Equiv.ofBijective_apply,
-    (shortBlockNumber_bijective i).injective.eq_iff, hr, hq]
+  simpa only [Bool.false_eq_true, ite_false] using shortRankOneGL_transvection false i t
 
 /-- The short-node SL₂ representation is faithful over every commutative ring, including
 characteristic two: any of its eight standard blocks recovers the original matrix. -/
