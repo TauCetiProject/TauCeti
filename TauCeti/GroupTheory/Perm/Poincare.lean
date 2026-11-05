@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.GroupTheory.Coxeter.Poincare
-public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
@@ -18,9 +17,9 @@ geometric sums `1 + x + ⋯ + x^(d-1)` for `1 ≤ d ≤ n`. The formula holds ov
 commutative semiring, including at parameters where a factor vanishes. In particular,
 at `x = q²` it gives the quantum factorial used to normalize Hecke symmetrizers.
 
-The combinatorial step uses Mathlib's `Equiv.Perm.decomposeFin'`: inserting the value `i`
-at the first position creates exactly `i` new inversions and preserves the inversions
-between all remaining positions.
+The combinatorial step uses the inversion and Coxeter-length insertion formulas for
+Mathlib's `Equiv.Perm.decomposeFin'`: inserting the value `i` at the first position creates
+exactly `i` new inversions and preserves the inversions between all remaining positions.
 
 ## References
 
@@ -31,49 +30,6 @@ between all remaining positions.
 public section
 
 open Finset
-
-namespace Equiv.Perm
-
-/-- Inserting `i` at the first position creates exactly `i` additional inversions. -/
-theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
-    (i : Fin (n + 2)) :
-    (univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
-      p.1 < p.2 ∧ decomposeFin'Symm i σ p.2 < decomposeFin'Symm i σ p.1).card =
-      i.val + (univ.filter fun p : Fin (n + 1) × Fin (n + 1) =>
-        p.1 < p.2 ∧ σ p.2 < σ p.1).card := by
-  have hcount : (univ.filter fun j : Fin (n + 1) => j.castSucc < i).card = i.val := by
-    simp only [Fin.lt_def, Fin.val_castSucc]
-    rw [Fin.card_filter_val_lt, Nat.min_eq_right (by omega)]
-  have hfirst : (∑ j : Fin (n + 1), if i.succAbove (σ j) < i then 1 else 0) = i.val := by
-    simp only [Fin.succAbove_lt_iff]
-    rw [Equiv.sum_comp σ (fun j => if j.castSucc < i then (1 : ℕ) else 0), sum_boole]
-    exact hcount
-  have hzero : (∑ y : Fin (n + 2), if (0 : Fin (n + 2)) < y ∧
-      decomposeFin'Symm i σ y < decomposeFin'Symm i σ 0 then 1 else 0) = i.val := by
-    rw [Fin.sum_univ_succ]
-    simpa using hfirst
-  have hsucc (x : Fin (n + 1)) :
-      (∑ y : Fin (n + 2), if x.succ < y ∧
-        decomposeFin'Symm i σ y < decomposeFin'Symm i σ x.succ then 1 else 0) =
-      ∑ y : Fin (n + 1), if x < y ∧ σ y < σ x then 1 else 0 := by
-    rw [Fin.sum_univ_succ]
-    simp
-  simp only [card_filter, Fintype.sum_prod_type]
-  rw [Fin.sum_univ_succ, hzero]
-  simp_rw [hsucc]
-
-open TauCeti
-
-/-- The length of the permutation obtained by inserting `i` at the first position is
-`i` plus the length of the original permutation. -/
-theorem permCoxeterSystem_length_decomposeFin'Symm {n : ℕ}
-    (σ : Equiv.Perm (Fin (n + 1))) (i : Fin (n + 2)) :
-    (permCoxeterSystem (n + 2)).length (Equiv.Perm.decomposeFin'Symm i σ) =
-      i.val + (permCoxeterSystem (n + 1)).length σ := by
-  simp only [permCoxeterSystem_length_eq_card_inversion,
-    Equiv.Perm.card_inversion_decomposeFin'Symm]
-
-end Equiv.Perm
 
 namespace TauCeti
 
