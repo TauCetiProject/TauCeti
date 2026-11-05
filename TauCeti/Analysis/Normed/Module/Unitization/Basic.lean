@@ -98,36 +98,29 @@ theorem norm_unitizationActionL_le (M : A →L[𝕜] E →L[𝕜] E) :
 noncomputable def unitizationAction (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) :
     WithLp 1 (Unitization 𝕜 A) →ₐ[𝕜] (E →L[𝕜] E) :=
-  (NonUnitalAlgHom.toAlgHom
-    { toFun := L
-      map_smul' := map_smul L
-      map_zero' := map_zero L
-      map_add' := map_add L
-      map_mul' := fun a b ↦ ContinuousLinearMap.ext fun z ↦ hL a b z }).comp
-    (unitizationAlgEquiv 𝕜).toAlgHom
+  AlgHom.ofLinearMap L.unitizationActionL.toLinearMap L.unitizationActionL_one fun u v ↦ by
+    ext x
+    simp [snd_mul, map_add, map_smul, smul_add, smul_smul, hL,
+      mul_comm, add_assoc, add_comm, add_left_comm]
 
 /-- The unitized action of `(λ, a)` is `λ • id + L a`. -/
 @[simp]
 lemma unitizationAction_apply (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) (u : WithLp 1 (Unitization 𝕜 A)) (z : E) :
-    unitizationAction L hL u z = (ofLp u).fst • z + L (ofLp u).snd z := by
-  simp [unitizationAction, Algebra.algebraMap_eq_smul_one]
+    unitizationAction L hL u z = (ofLp u).fst • z + L (ofLp u).snd z := (rfl)
 
 /-- The unitized action agrees with `L` on `A`. -/
 @[simp]
 lemma unitizationAction_toLp_inr (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) (a : A) :
-    unitizationAction L hL (toLp 1 (a : Unitization 𝕜 A)) = L a := by
-  ext z
-  simp
+    unitizationAction L hL (toLp 1 (a : Unitization 𝕜 A)) = L a :=
+  L.unitizationActionL_toLp_inr a
 
 /-- For an associative left action, the bounded extension agrees with its unital
 algebra-homomorphism extension. -/
 theorem unitizationActionL_eq_unitizationAction (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b x, L (a * b) x = L a (L b x)) (u : WithLp 1 (Unitization 𝕜 A)) :
-    L.unitizationActionL u = L.unitizationAction hL u := by
-  ext x
-  simp
+    L.unitizationActionL u = L.unitizationAction hL u := (rfl)
 
 /-- The unitized action is bounded: `‖u · z‖ ≤ (1 + ‖L‖) * ‖u‖ * ‖z‖`. -/
 lemma norm_unitizationAction_apply_le (L : A →L[𝕜] E →L[𝕜] E)
