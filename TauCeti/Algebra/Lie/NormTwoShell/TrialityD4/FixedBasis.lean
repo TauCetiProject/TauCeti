@@ -11,27 +11,27 @@ public import TauCeti.Algebra.Lie.BaseChange.Hom
 public import TauCeti.Algebra.Lie.NormTwoShell.BaseChange
 public import TauCeti.Algebra.Lie.NormTwoShell.TrialityD4.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Folding.TrialityD4
 
 /-!
 # Integral fixed basis and scalar extension for D₄ triality
 
 For the pinned triality action `Matrix.ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix`
-on `Matrix.ShellLieAlgebra (CartanMatrix.D 4)`, this file identifies the vertex orbits, proves that
-all twelve root cycles have positive monodromy, constructs the concrete fourteen-element integral
-basis of the fixed Lie subring, and proves that scalar extension commutes unconditionally with
-taking triality fixed points over every commutative ring.
+on `Matrix.ShellLieAlgebra (CartanMatrix.D 4)`, this file proves that all twelve root cycles have
+positive monodromy, constructs the concrete fourteen-element integral basis of the fixed Lie
+subring, and proves that scalar extension commutes unconditionally with taking triality fixed points
+over every commutative ring.
 
 Specifically:
-* `TauCeti.D4Triality.vertexOrbitEquiv` enumerates the two `trialityPermD4`-orbits on `Fin 4`:
-  index `0` is the outer three-cycle `{0, 2, 3}` and index `1` is the fixed central node `{1}`.
 * `TauCeti.D4Triality.monodromy_eq_one` shows that `Matrix.ShellLieAlgebra.monodromy` equals `1`
   on every root cycle of `D₄` triality, both on the three-element outer orbits and on the fixed
   roots.
-* `TauCeti.D4Triality.fixedBasis` is the concrete `ℤ`-basis of
-  `trialityLieEquiv.toLieHom.fixedSubalgebra` indexed by `Fin 2 ⊕ (Bool × Fin 6)` whose vectors are
-  the two Cartan orbit sums `TauCeti.D4Triality.invariantCartan` and the twelve signed root orbit
-  sums `TauCeti.D4Triality.invariantRoot`.
+* `TauCeti.D4Triality.invariantCartan` embeds the primitive invariant Cartan coordinate vectors
+  `TauCeti.D4Triality.invariantCartanVec` (from
+  `TauCeti.LinearAlgebra.Matrix.Cartan.Folding.TrialityD4`) into the shell Lie algebra, and
+  `TauCeti.D4Triality.fixedBasis` assembles `invariantCartan` and `TauCeti.D4Triality.invariantRoot`
+  into a `ℤ`-basis of `trialityLieEquiv.toLieHom.fixedSubalgebra` indexed by
+  `Fin 2 ⊕ (Bool × Fin 6)`.
 * `TauCeti.D4Triality.fixedSubalgebraBaseChangeLieEquiv` specializes
   `Matrix.ShellLieAlgebra.fixedSubalgebraBaseChangeLieEquiv` to an isomorphism of `A`-Lie algebras
   `A ⊗[ℤ] trialityLieEquiv.toLieHom.fixedSubalgebra ≃ₗ⁅A⁆
@@ -66,77 +66,6 @@ scoped instance instFactEvenDiagCartanMatrix : Fact (∀ i, Even (CartanMatrix.D
 /-- Finiteness of the `D₄` norm-two shell as a scoped instance. -/
 scoped instance instFiniteNormTwoShell : Finite (CartanMatrix.D 4).normTwoShell :=
   (posDef_cartanMatrix_D 4).finite_normTwoShell
-
-/-! ### Vertex orbits of `trialityPermD4` -/
-
-/-- Orbit labels for `trialityPermD4`: `0` is the outer three-cycle `{0, 2, 3}` and `1` is the
-central fixed vertex `{1}`. -/
-@[expose] def vertexOrbit : Fin 4 → Fin 2 := ![0, 1, 0, 0]
-
-/-- Chosen representatives `0` and `1` of the two `trialityPermD4`-orbits on `Fin 4`. -/
-@[expose] def vertexRepresentative : Fin 2 → Fin 4 := ![0, 1]
-
-@[simp]
-theorem vertexOrbit_vertexRepresentative (k : Fin 2) :
-    vertexOrbit (vertexRepresentative k) = k := by
-  decide +revert
-
-@[simp]
-theorem vertexOrbit_trialityPermD4 (i : Fin 4) :
-    vertexOrbit (trialityPermD4 i) = vertexOrbit i := by
-  fin_cases i <;> simp [vertexOrbit]
-
-/-- `vertexOrbit` distinguishes exactly the cycles of `trialityPermD4`. -/
-theorem sameCycle_trialityPermD4_iff (i j : Fin 4) :
-    trialityPermD4.SameCycle i j ↔ vertexOrbit i = vertexOrbit j := by
-  constructor
-  · exact fun h ↦ h.apply_eq_of_apply_eq vertexOrbit_trialityPermD4
-  · intro h
-    have h02 : trialityPermD4.SameCycle 0 2 := ⟨1, by simp⟩
-    have h23 : trialityPermD4.SameCycle 2 3 := ⟨1, by simp⟩
-    have h03 : trialityPermD4.SameCycle 0 3 := h02.trans h23
-    fin_cases i <;> fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk] at h ⊢
-    all_goals first
-      | exact Equiv.Perm.SameCycle.refl _ _
-      | exact h02 | exact h02.symm | exact h23 | exact h23.symm | exact h03 | exact h03.symm
-      | exact absurd h (by decide)
-
-/-- Explicit enumeration of the two vertex orbits of `trialityPermD4`: `0` corresponds to the
-outer three-cycle `{0, 2, 3}` and `1` to the central fixed vertex `{1}`. -/
-def vertexOrbitEquiv : Fin 2 ≃ Quotient (Equiv.Perm.SameCycle.setoid trialityPermD4) where
-  toFun k := Quotient.mk _ (vertexRepresentative k)
-  invFun O := Quotient.liftOn O vertexOrbit fun _ _ h ↦ (sameCycle_trialityPermD4_iff _ _).mp h
-  left_inv := vertexOrbit_vertexRepresentative
-  right_inv O := Quotient.inductionOn O fun _ ↦
-    Quotient.sound ((sameCycle_trialityPermD4_iff _ _).mpr (vertexOrbit_vertexRepresentative _))
-
-theorem vertexOrbitEquiv_apply (k : Fin 2) :
-    vertexOrbitEquiv k = Quotient.mk _ (vertexRepresentative k) :=
-  (rfl)
-
-@[simp]
-theorem vertexOrbitEquiv_symm_mk (i : Fin 4) :
-    vertexOrbitEquiv.symm (Quotient.mk _ i) = vertexOrbit i :=
-  (rfl)
-
-@[simp]
-theorem vertexOrbit_out_vertexOrbitEquiv (k : Fin 2) :
-    vertexOrbit (vertexOrbitEquiv k).out = k := by
-  have h := congrArg vertexOrbitEquiv.symm (Quotient.out_eq (vertexOrbitEquiv k))
-  rwa [vertexOrbitEquiv_symm_mk, Equiv.symm_apply_apply] at h
-
-@[simp]
-theorem sameCycle_vertexOrbitEquiv_out_iff (i : Fin 4) (k : Fin 2) :
-    trialityPermD4.SameCycle i (vertexOrbitEquiv k).out ↔ vertexOrbit i = k := by
-  rw [sameCycle_trialityPermD4_iff, vertexOrbit_out_vertexOrbitEquiv]
-
-private theorem existsUnique_sameCycle_vertexRepresentative (i : Fin 4) :
-    ∃! k : Fin 2, trialityPermD4.SameCycle (vertexRepresentative k) i := by
-  refine ⟨vertexOrbit i, ?_, fun k hk ↦ ?_⟩
-  · dsimp only
-    rw [sameCycle_trialityPermD4_iff, vertexOrbit_vertexRepresentative]
-  · dsimp only at hk
-    rwa [sameCycle_trialityPermD4_iff, vertexOrbit_vertexRepresentative] at hk
 
 /-! ### Root cycles and positive monodromy -/
 
@@ -247,19 +176,6 @@ private theorem toSubmodule_fixedSubalgebra :
       (ShellLieAlgebra.reindex trialityPermD4 reindex_cartanMatrix).toLinearMap.fixedSubmodule :=
   ShellLieAlgebra.toSubmodule_fixedSubalgebra_reindexLieEquiv trialityPermD4 reindex_cartanMatrix
 
-/-- Coordinates of the two primitive `trialityPermD4`-invariant Cartan vectors:
-`![1, 0, 1, 1]` for the outer three-cycle and `![0, 1, 0, 0]` for the central vertex. -/
-@[expose] def invariantCartanVec : Fin 2 → Fin 4 → ℤ :=
-  ![![1, 0, 1, 1], ![0, 1, 0, 0]]
-
-@[simp]
-theorem invariantCartanVec_comp_trialityPermD4_symm (k : Fin 2) :
-    invariantCartanVec k ∘ trialityPermD4.symm = invariantCartanVec k := by
-  ext i
-  obtain ⟨i, rfl⟩ := trialityPermD4.surjective i
-  simp only [Function.comp_apply, Equiv.symm_apply_apply]
-  fin_cases k <;> fin_cases i <;> simp [invariantCartanVec]
-
 /-- The two `trialityPermD4`-invariant Cartan basis vectors in
 `Matrix.ShellLieAlgebra (CartanMatrix.D 4)`. -/
 noncomputable def invariantCartan (k : Fin 2) : ShellLieAlgebra (CartanMatrix.D 4) :=
@@ -298,6 +214,14 @@ theorem basis_repr_invariantCartan_inr (k : Fin 2) (a : (CartanMatrix.D 4).normT
   rw [invariantCartan_def, ShellLieAlgebra.basis_repr_cartan_inr]
 
 /-! ### The concrete 14-element integral fixed basis -/
+
+private theorem existsUnique_sameCycle_vertexRepresentative (i : Fin 4) :
+    ∃! k : Fin 2, trialityPermD4.SameCycle (vertexRepresentative k) i := by
+  refine ⟨vertexOrbit i, ?_, fun k hk ↦ ?_⟩
+  · dsimp only
+    rw [sameCycle_trialityPermD4_iff, vertexOrbit_vertexRepresentative]
+  · dsimp only at hk
+    rwa [sameCycle_trialityPermD4_iff, vertexOrbit_vertexRepresentative] at hk
 
 private noncomputable abbrev fixedBasisRep :
     Fin 2 ⊕ (Bool × Fin 6) → Fin 4 ⊕ (CartanMatrix.D 4).normTwoShell :=
