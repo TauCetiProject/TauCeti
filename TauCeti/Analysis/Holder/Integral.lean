@@ -24,6 +24,8 @@ public section
 open Set MeasureTheory
 open scoped NNReal
 
+namespace TauCeti
+
 /-- Integrating a uniformly Hölder family over an interval multiplies its Hölder constant
 by the interval length. -/
 theorem holderWith_intervalIntegral {X Y : Type*} [PseudoMetricSpace X]
@@ -41,3 +43,5 @@ theorem holderWith_intervalIntegral {X Y : Type*} [PseudoMetricSpace X]
   refine h.trans_eq ?_
   simp only [NNReal.coe_mul, coe_nnnorm, Real.norm_eq_abs]
   ring
+
+end TauCeti

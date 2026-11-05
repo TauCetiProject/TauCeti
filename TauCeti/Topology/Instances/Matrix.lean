@@ -222,11 +222,13 @@ theorem Matrix.abs_inv_sub_inv_apply_le {A B : Matrix ι ι ℝ} {L d : ℝ}
       simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
       ring
 
+namespace TauCeti
+
 /--
 If a field `P` of invertible matrices has `(C, r)`-Hölder entries and inverse entries bounded by
 `L`, every entry of
 `P⁻¹` is `(n² L² C, r)`-Hölder; the constant is fixed before the entries and the points. -/
-theorem holderWith_matrix_inv_entries {X : Type*} [PseudoMetricSpace X] (P : X → Matrix ι ι ℝ)
+theorem holderWith_matrix_inv_apply {X : Type*} [PseudoMetricSpace X] (P : X → Matrix ι ι ℝ)
     (C r L : ℝ≥0) (hP : ∀ x, IsUnit (P x)) (hb : ∀ x i j, |(P x)⁻¹ i j| ≤ L)
     (hc : ∀ i j, HolderWith C r (fun x => P x i j)) (i j : ι) :
     HolderWith ((Fintype.card ι : ℝ≥0) ^ 2 * L ^ 2 * C) r (fun x => (P x)⁻¹ i j) := by
@@ -243,7 +245,7 @@ omit [Fintype ι] [DecidableEq ι] in
 /--
 For `t ∈ [0, 1]`, the entries of `(1 − t) P + t Q` are `(C, r)`-Hölder when those of `P` and `Q`
 are. -/
-theorem holderWith_one_sub_smul_add_smul_matrix_entries (P Q : X → Matrix ι ι ℝ) (C r : ℝ≥0)
+theorem holderWith_one_sub_smul_add_smul_apply (P Q : X → Matrix ι ι ℝ) (C r : ℝ≥0)
     (hP : ∀ i j, HolderWith C r (fun x => P x i j))
     (hQ : ∀ i j, HolderWith C r (fun x => Q x i j)) {t : ℝ} (ht : t ∈ Icc 0 1) (i j : ι) :
     HolderWith C r (fun x => ((1 - t) • P x + t • Q x) i j) := by
@@ -257,5 +259,7 @@ theorem holderWith_one_sub_smul_add_smul_matrix_entries (P Q : X → Matrix ι �
   convert h using 1
   funext x
   simp only [Matrix.add_apply, Matrix.smul_apply, Pi.add_apply, Pi.smul_apply]
+
+end TauCeti
 
 end InverseHolder

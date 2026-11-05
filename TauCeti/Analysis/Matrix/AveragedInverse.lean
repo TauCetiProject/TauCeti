@@ -67,7 +67,7 @@ theorem segmentAveragedInverse_comm {ι : Type*} [Fintype ι] [DecidableEq ι]
   simpa only [sub_sub_cancel, sub_zero, sub_self, add_comm] using h.symm
 
 /-- Symmetric endpoints give a symmetric segment-averaged inverse, even when singular. -/
-theorem segmentAveragedInverse_isSymm {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem isSymm_segmentAveragedInverse {ι : Type*} [Fintype ι] [DecidableEq ι]
     {A B : Matrix ι ι ℝ} (hA : A.IsSymm) (hB : B.IsSymm) :
     (segmentAveragedInverse A B).IsSymm := by
   ext i j
@@ -84,21 +84,13 @@ section SegmentInverse
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-private theorem continuousAt_segment_inverse {X : Type*} [TopologicalSpace X]
-    {P Q : X → Matrix ι ι ℝ} {t : X → ℝ} {x : X}
-    (hP : ContinuousAt P x) (hQ : ContinuousAt Q x) (ht : ContinuousAt t x)
-    (hp : (P x).PosDef) (hq : (Q x).PosDef) (hx : t x ∈ Icc 0 1) :
-    ContinuousAt (fun y => ((1 - t y) • P y + t y • Q y)⁻¹) x := by
-  have hc : ContinuousAt (fun y => (1 - t y) • P y + t y • Q y) x := by fun_prop
-  exact hc.matrix_inv (hp.one_sub_smul_add_smul hq hx).det_pos.ne'
-
 /-- Every entry of the inverse segment between positive-definite endpoints is interval
 integrable on the unit interval. -/
 theorem _root_.Matrix.PosDef.intervalIntegrable_inv_segment_apply {A B : Matrix ι ι ℝ}
     (hA : A.PosDef) (hB : B.PosDef) (i j : ι) :
     IntervalIntegrable (fun t : ℝ => ((1 - t) • A + t • B)⁻¹ i j) volume 0 1 := by
   refine ContinuousOn.intervalIntegrable_of_Icc zero_le_one (fun t ht => ?_)
-  have hc := continuousAt_segment_inverse (P := fun _ : ℝ => A) (Q := fun _ : ℝ => B)
+  have hc := continuousAt_inv_segment (P := fun _ : ℝ => A) (Q := fun _ : ℝ => B)
     (t := id) continuousAt_const continuousAt_const continuousAt_id hA hB ht
   exact ((continuous_apply_apply i j).continuousAt.comp hc).continuousWithinAt
 
@@ -119,9 +111,9 @@ private theorem holderWith_averaged_inverse_entries (P Q : X → Matrix ι ι �
     intro t ht
     have ht' : t ∈ Icc (0 : ℝ) 1 := by
       simpa only [uIcc_of_le zero_le_one] using uIoc_subset_uIcc ht
-    exact holderWith_matrix_inv_entries (fun x => (1 - t) • P x + t • Q x) C r L
+    exact holderWith_matrix_inv_apply (fun x => (1 - t) • P x + t • Q x) C r L
       (fun x => ((hp x).one_sub_smul_add_smul (hq x) ht').isUnit) (hb t ht')
-      (holderWith_one_sub_smul_add_smul_matrix_entries P Q C r hP hQ ht') i j
+      (holderWith_one_sub_smul_add_smul_apply P Q C r hP hQ ht') i j
   simpa only [sub_zero, nnnorm_one, one_mul] using
     holderWith_intervalIntegral (fun t x => ((1 - t) • P x + t • Q x)⁻¹ i j)
       ((Fintype.card ι : ℝ≥0) ^ 2 * L ^ 2 * C) r
@@ -129,44 +121,9 @@ private theorem holderWith_averaged_inverse_entries (P Q : X → Matrix ι ι �
 
 end SegmentInverse
 
-section CompactPositiveFields
-
-variable {ι X : Type*} [Fintype ι] [DecidableEq ι] [TopologicalSpace X]
-
-private theorem continuous_pair_segment_inverse {s : Set X} (H : X → Matrix ι ι ℝ)
-    (hH : ContinuousOn H s) (hpos : ∀ x ∈ s, (H x).PosDef) :
-    Continuous (fun z : (s × s) × Icc (0 : ℝ) 1 =>
-      ((1 - (z.2 : ℝ)) • H z.1.1 + (z.2 : ℝ) • H z.1.2)⁻¹) := by
-  rw [continuous_iff_continuousAt]
-  intro z
-  exact continuousAt_segment_inverse
-    (hH.domRestrict.comp (continuous_fst.comp continuous_fst)).continuousAt
-    (hH.domRestrict.comp (continuous_snd.comp continuous_fst)).continuousAt
-    (continuous_subtype_val.comp continuous_snd).continuousAt
-    (hpos z.1.1 z.1.1.property) (hpos z.1.2 z.1.2.property) z.2.property
-
-private theorem exists_pair_inverse_cap (H : X → Matrix ι ι ℝ) {s : Set X} (hs : IsCompact s)
-    (hH : ContinuousOn H s) (hpos : ∀ x ∈ s, (H x).PosDef) :
-    ∃ L : ℝ≥0,
-      0 < L ∧
-        ∀ x ∈ s, ∀ y ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, ∀ i j, |((1 - t) • H x + t • H y)⁻¹ i j| ≤ L := by
-  let : CompactSpace s := isCompact_iff_compactSpace.mp hs
-  have hcompact := isCompact_range (continuous_pair_segment_inverse H hH hpos)
-  obtain ⟨R, hR⟩ := hcompact.isBounded.exists_norm_le
-  let L : ℝ≥0 := (max R 0 + 1).toNNReal
-  have hL : (L : ℝ) = max R 0 + 1 := Real.coe_toNNReal _ (by positivity)
-  have hLpos : (0 : ℝ) < (L : ℝ) := by rw [hL]; positivity
-  refine ⟨L, by exact_mod_cast hLpos, ?_⟩
-  intro x hx y hy t ht i j
-  have hcap := hR _ ⟨((⟨x, hx⟩, ⟨y, hy⟩), ⟨t, ht⟩), rfl⟩
-  rw [← Real.norm_eq_abs, hL]
-  exact Matrix.norm_apply_le_norm _ |>.trans (hcap.trans (by linarith [le_max_left R 0]))
-
-end CompactPositiveFields
-
 section HolderTranslations
 
-variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E]
+variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [SeminormedAddCommGroup E]
 
 /-- One entry bound works for all endpoint pairs in `s`. For every displacement preserving both
 endpoints in `s`, the translated averaged field has entrywise Hölder constant `(card ι)^2 L^2 C`. -/
@@ -184,7 +141,7 @@ theorem exists_uniform_segmentAveragedInverse_holderOnWith (H : E → Matrix ι 
                     (fun x => segmentAveragedInverse (H x) (H (x + d)) i j) a := by
   have hc : ContinuousOn H s :=
     continuousOn_pi.mpr fun i => continuousOn_pi.mpr fun j => (hH i j).continuousOn hr
-  obtain ⟨L, hL, hcap⟩ := exists_pair_inverse_cap H hs hc hpos
+  obtain ⟨L, hL, hcap⟩ := exists_uniform_inv_segment_apply_bound H hs hc hpos
   have hmean (x : E) (hx : x ∈ s) (y : E) (hy : y ∈ s) (i j : ι) :
       |segmentAveragedInverse (H x) (H y) i j| ≤ (L : ℝ) := by
     have h := intervalIntegral.norm_integral_le_of_norm_le_const
@@ -264,12 +221,12 @@ theorem _root_.Matrix.segmentAveragedInverse_toQuadraticForm' (A B : Matrix ι �
   (integral_quadratic hA hB ξ).2.symm
 
 /-- Positive-definite endpoints give a positive-definite segment-averaged inverse. -/
-theorem _root_.Matrix.segmentAveragedInverse_posDef (A B : Matrix ι ι ℝ)
+theorem _root_.Matrix.posDef_segmentAveragedInverse (A B : Matrix ι ι ℝ)
     (hA : A.PosDef) (hB : B.PosDef) : (segmentAveragedInverse A B).PosDef := by
   rw [Matrix.posDef_iff_dotProduct_mulVec]
   simp only [star_trivial]
   refine ⟨Matrix.isHermitian_iff_isSymm.mpr
-    (Matrix.segmentAveragedInverse_isSymm
+    (Matrix.isSymm_segmentAveragedInverse
       (Matrix.isHermitian_iff_isSymm.mp hA.isHermitian)
       (Matrix.isHermitian_iff_isSymm.mp hB.isHermitian)), ?_⟩
   intro ξ hξ
@@ -295,7 +252,7 @@ theorem exists_uniform_segmentAveragedInverse_ellipticity [TopologicalSpace X]
       (((1 - (z.2 : ℝ)) • H z.1.1 + (z.2 : ℝ) • H z.1.2)⁻¹).PosDef :=
     ((hpos z.1.1 z.1.1.property).one_sub_smul_add_smul (hpos z.1.2 z.1.2.property) z.2.property).inv
   obtain ⟨a, b, ha, hb, hbound⟩ := exists_uniform_quadratic_bounds _
-    (continuous_pair_segment_inverse H hH hpos) hposSegment
+    (continuous_inv_segment_pairs H hH hpos) hposSegment
   refine ⟨a, b, ha, hb, ?_⟩
   intro x hx y hy ξ
   obtain ⟨hi, heq⟩ := integral_quadratic (hpos x hx) (hpos y hy) ξ
