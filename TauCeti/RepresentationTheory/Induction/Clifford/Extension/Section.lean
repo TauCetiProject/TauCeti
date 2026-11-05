@@ -56,19 +56,11 @@ The comparison from the `t`-algebra to the `s`-algebra fixes coefficients and se
 `[q]` to `op (sectionDiff t s q)⁻¹ [q]`. -/
 noncomputable def cliffordMultiplicityAlgebraEquiv :
     CrossedSystem.Algebra (cliffordCrossedSystem A t ht).opInv ≃ₐ[k]
-      CrossedSystem.Algebra (cliffordCrossedSystem A s hs).opInv := by
-  let b := sectionDiff t s
-  have hb : b 1 = 1 := by
-    apply (groupExtension A).inl_injective
-    simp only [b, inl_sectionDiff, hs, ht, inv_one, one_mul, map_one]
-  have hst : s.gauge b = t := s.gauge_sectionDiff t
-  refine CrossedSystem.Algebra.opInvGaugeEquiv _ _ b hb ?_ ?_
-  · intro q f
-    simpa only [cliffordCrossedSystem_action, hst] using commutantAction_gauge A s b q f
-  · intro q r
-    have h := congrArg (fun d : (End A)ˣ => (d : End A))
-      (factorSetFun_clifford_gauge A s b q r)
-    simpa [hst] using h
+      CrossedSystem.Algebra (cliffordCrossedSystem A s hs).opInv :=
+  CrossedSystem.Algebra.opInvGaugeEquiv _ _ (sectionDiff t s)
+    ((s.gauge_one_eq_one_iff hs _).mp (by simpa using ht))
+    (cliffordCrossedSystem_action_sectionDiff A s t hs ht)
+    (cliffordCrossedSystem_factor_sectionDiff A s t hs ht)
 
 /-- The multiplicity-algebra comparison fixes the opposite commutant. -/
 @[simp]
@@ -105,7 +97,7 @@ theorem cliffordMultiplicityAlgebraEquiv_symm_basis (q : Quotient A) :
   simp [cliffordMultiplicityAlgebraEquiv]
 
 /-- The two multiplicity algebra actions agree through the section comparison. -/
-theorem cliffordMultiplicity_toAlgHom_section (W : FDRep k (inertia A)) :
+theorem cliffordMultiplicitySemilinearAction_toAlgHom_section (W : FDRep k (inertia A)) :
     (cliffordMultiplicitySemilinearAction A t ht W).toAlgHom =
       (cliffordMultiplicitySemilinearAction A s hs W).toAlgHom.comp
         (cliffordMultiplicityAlgebraEquiv A s t hs ht).toAlgHom := by
@@ -139,8 +131,13 @@ private noncomputable def multiplicitySectionIsoApp (W : FDRep k (inertia A)) :
       right_inv _ := rfl
       map_add' _ _ := rfl
       map_smul' a f := by
-        -- Each bundled scalar action evaluates its semilinear algebra homomorphism.
-        exact congrArg (fun F => F a f) (cliffordMultiplicity_toAlgHom_section A s t hs ht W) }
+        exact (CrossedSystem.SemilinearAction.module_smul
+          (cliffordMultiplicitySemilinearAction A t ht W) a f).trans
+          ((congrArg (fun F => F a f)
+            (cliffordMultiplicitySemilinearAction_toAlgHom_section A s t hs ht W)).trans
+            ((CrossedSystem.SemilinearAction.module_smul
+              (cliffordMultiplicitySemilinearAction A s hs W) _ _).symm.trans
+              (ModuleCat.restrictScalars.smul_def (E).toRingHom (M := (Cs).obj W) a f).symm)) }
   exact e.toModuleIso
 
 /-- Changing the normalized Clifford section leaves the multiplicity functor naturally
