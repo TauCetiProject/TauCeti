@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndCurvature
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.SMul
@@ -323,7 +323,7 @@ datum along the end chart, evaluated on a tangent vector `v = (v₁, v₂)` of t
 theorem perturbationPullback_endChart_cappedPerturbation {q : Puncture}
     (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ} (hz : 0 < q.endSign * z.1) (v : ℝ × ℝ)
     (x : M) :
-    perturbationPullback q.endChart
+    perturbationPullback (endChart q)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
       v.2 * (a * cappedEndProfile L (q.endSign * z.1) * H q z.2 x) :=
@@ -501,11 +501,11 @@ theorem hamiltonianCurvature_perturbationPullback_endChart_cappedPerturbation
     {z : ℝ × ℝ} (hz : 0 < q.endSign * z.1) {x : V}
     (hHx : DifferentiableAt ℝ (fun t ↦ H q t x) z.2) :
     ω.hamiltonianCurvature
-        (perturbationPullback q.endChart
+        (perturbationPullback (endChart q)
           (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
           stdComplexLineReal)
-        (perturbationPullback q.endChart
+        (perturbationPullback (endChart q)
           (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
           stdComplexLineImag) z x =
@@ -523,7 +523,7 @@ private theorem setLIntegral_image_endChart_cappedPerturbation_le [FiniteDimensi
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
     (u : ℝ × ℝ → V) (q : Puncture) :
-    ∫⁻ z in q.endChart '' q.endStrip, ‖ω.hamiltonianCurvature
+    ∫⁻ z in endChart q '' endStrip q, ‖ω.hamiltonianCurvature
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (2 * |a|) * ENNReal.ofReal (B q) := by
