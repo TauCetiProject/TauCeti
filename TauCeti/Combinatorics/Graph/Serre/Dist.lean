@@ -16,7 +16,7 @@ public import Mathlib.Order.Lattice.Nat
 The distance between two vertices of a Serre graph is the least length of a path joining them,
 and `0` when there is no such path, following Mathlib's `SimpleGraph.dist`. Between joined
 vertices it vanishes exactly on the diagonal, is symmetric, and satisfies the triangle
-inequality. Graph morphisms do not increase it.
+inequality. Graph morphisms do not increase the distance between joined vertices.
 
 In an acyclic graph the unique reduced path between two vertices realizes their distance, since
 free reduction never lengthens a path.
