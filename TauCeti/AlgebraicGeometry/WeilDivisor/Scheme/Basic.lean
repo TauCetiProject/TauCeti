@@ -16,9 +16,9 @@ This file specializes the combinatorial type `WeilDivisor` to schemes. A prime d
 represented by its generic point, which is a point of codimension one, and a scheme-theoretic
 Weil divisor is a finite formal integer sum of such points. This is the usual group `Div X` of
 Hartshorne II.6 (the free abelian group on the prime divisors) for Noetherian `X`, and it agrees
-with Stacks 0BE2 only when `X` is quasi-compact: on a non-quasi-compact scheme the Stacks Project
-allows locally finite, possibly infinite, sums of prime divisors, and these finite sums form a
-proper subgroup.
+with Stacks 0BE2 when `X` is quasi-compact. In general the Stacks Project allows locally finite,
+possibly infinite, sums of prime divisors, and these finite sums form a subgroup of that group,
+which can be proper.
 
 Mathlib's `AlgebraicCycle X ℤ` allows locally finite support in every codimension. The map
 `SchemeWeilDivisor.toAlgebraicCycle` extends a Weil divisor by zero away from codimension one.
