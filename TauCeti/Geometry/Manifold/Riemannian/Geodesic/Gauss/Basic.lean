@@ -209,15 +209,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     exact h
   have hQone : Q 1 0 =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w := by
-    have hfun : (fun q : ℝ ↦ F q 1) =
-        fun q : ℝ ↦ riemannianExp I M p (v + q • w) := by
-      funext q
-      simp only [F, one_smul]
-    have h := curveVelocity_riemannianExp_add_smul (I := I) (M := M) (v := v) (w := w) (u := 0)
-      (by simpa using hv)
-    rw [zero_smul, add_zero] at h
-    dsimp only [Q]
-    rw [hfun]
+    have h := variationField_radialVariation hF (mem_expDomain_iff.mp hv)
+    rw [one_smul, one_smul, variationField_apply] at h
     exact h
   rw [one_mul, sub_eq_zero, hPone, hQone] at hone
   have hbaseeq : F 0 1 = riemannianExp I M p v := by
