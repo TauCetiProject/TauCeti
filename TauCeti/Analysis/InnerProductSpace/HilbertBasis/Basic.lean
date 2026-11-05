@@ -15,10 +15,11 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-It also records that a continuous linear map vanishing on all but finitely many vectors of a
-Hilbert basis has finite rank, since every vector is the sum of its basis expansion, and that a
-continuous linear map is determined by its matrix entries in Hilbert bases of its source and
-target (`HilbertBasis.ext_inner_apply`).
+It also expands the value of a continuous linear map in a Hilbert basis,
+`T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a continuous
+linear map vanishing on all but finitely many vectors of a Hilbert basis has finite rank, since
+every vector is the sum of its basis expansion, and that a continuous linear map is determined by
+its matrix entries in Hilbert bases of its source and target (`HilbertBasis.ext_inner_apply`).
 -/
 
 public section
@@ -50,6 +51,12 @@ theorem _root_.HilbertBasis.ext_inner_apply {iota kappa F : Type*} [NormedAddCom
   rintro _ ⟨j, rfl⟩
   exact c.repr.injective (lp.ext (funext fun i ↦ by
     simp only [_root_.HilbertBasis.repr_apply_apply, h]))
+
+/-- **Expansion of an operator in a Hilbert basis.** `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ`. -/
+theorem _root_.HilbertBasis.hasSum_inner_smul_apply {iota F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    [TopologicalSpace F] (b : _root_.HilbertBasis iota 𝕜 E) (T : E →L[𝕜] F) (x : E) :
+    HasSum (fun i ↦ ⟪b i, x⟫_𝕜 • T (b i)) (T x) := by
+  simpa only [map_smul, b.repr_apply_apply] using T.hasSum (b.hasSum_repr x)
 
 /-- A continuous linear map that vanishes on every vector of a Hilbert basis outside a finite set
 of indices has finite rank: its range is spanned by the images of the remaining basis vectors. -/

@@ -5,378 +5,227 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
-public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.CurvatureDimension.Dynamic
+
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.CurvatureDimension.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.DistortionCoefficient
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.RenyiEntropy
-import TauCeti.Analysis.Convex.McCannCondition
-import TauCeti.Data.EReal.Operations
-import TauCeti.MeasureTheory.OptimalTransport.Brenier
-import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
-import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.DisplacementConvexity
-import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+public import TauCeti.Topology.MetricSpace.Length
 
 /-!
-# The curvature-dimension condition `CD(K, N)`
+# The curvature-dimension conditions `CD(K, N)` and `CD*(K, N)`
 
 Let `M` be a metric-measure space (`TauCeti.MetricMeasureSpace`): a complete separable metric
 space `X` with its Borel structure and a reference measure `m` finite on bounded sets. For a
-curvature bound `K : ℝ` and a dimension bound `N ≥ 1`, `M` satisfies Sturm's
-*curvature-dimension condition* `CD(K, N)` when `m` has full support and, for any two probability
-laws `μ₀ = ρ₀ m` and `μ₁ = ρ₁ m` with bounded support, some quadratic optimal dynamic plan `η`
-from `μ₀` to `μ₁`, with laws `μ_t = (e_t)_# η`, satisfies for every `t ∈ [0, 1]` and every
-`N' ≥ N`
+curvature bound `K : ℝ` and a dimension bound `N`, Sturm's *curvature-dimension condition*
+`CD(K, N)` compares the Rényi entropy `S_N(μ | m) = -∫ ρ^{1-1/N} dm`
+(`TauCeti.renyiEntropy`) along Wasserstein geodesics with the model space of curvature
+`K / (N - 1)` and dimension `N`. For a plan `q` on `X × X` whose marginals have densities `ρ₀`,
+`ρ₁` with respect to `m`, and a family `β^{(s)}(θ)` of distortion coefficients, write
 
-`S_{N'}(μ_t | m) ≤ -∫ [τ_{K,N'}^{(1-t)}(d(γ₀, γ₁)) ρ₀(γ₀)^{-1/N'} +
-  τ_{K,N'}^{(t)}(d(γ₀, γ₁)) ρ₁(γ₁)^{-1/N'}] dη(γ)`.
+`T_β^{(t)}(q | m) = -∫ [β^{(1-t)}(d(x₀, x₁)) ρ₀(x₀)^{-1/N} + β^{(t)}(d(x₀, x₁)) ρ₁(x₁)^{-1/N}] dq`
 
-Here `S_{N'}(μ | m) = -∫ ρ^{1-1/N'} dm` is the Rényi entropy (`TauCeti.renyiEntropy`), taken over
-the absolutely continuous part of `μ`, and `τ_{K,N'}` is the distortion coefficient
-`TauCeti.distortionTau`. This is the synthetic form of the bounds `Ric ≥ K` and `dim ≤ N`: the
-coefficients compare the contraction of volume along the transport with the model space of
-constant curvature `K / (N - 1)`. The quantification over all `N' ≥ N` follows Sturm and makes the
-condition weaker as `N` grows; the condition weakens as `K` decreases since the coefficients
-increase with the curvature bound (`TauCeti.MetricMeasureSpace.DynamicCurvatureDimension.mono`).
+(`TauCeti.distortedRenyiEntropy`). The full-support distorted condition requires that `m` has full
+support and
+any two laws `μ₀`, `μ₁` of bounded support, absolutely continuous with respect to `m` (Sturm's space
+`P_∞(X, d, m)`), admit an optimal coupling `q` for the quadratic cost and a `W₂`-geodesic `(μ_t)`
+in `P_∞(X, d, m)` such that
 
-The endpoint laws are those of Sturm's space `P_∞(X, m)`: absolutely continuous with respect to
-`m`, with bounded support. Sturm asks for an optimal coupling `q` and a geodesic `(μ_t)` of such
-laws, integrating the right side against `q`. Here, as in the dynamic formulation of
-Cavalletti–Mondino, one dynamic plan concentrated on constant-speed geodesics carries both: its
-endpoint law is the coupling and its time marginals are the geodesic. The plan is not required to
-be unique or to be selected measurably in the endpoints, and the intermediate laws are not
-required to be absolutely continuous: as in `TauCeti.renyiEntropy`, the entropy ignores their
-singular part.
+`S_{N'}(μ_t | m) ≤ T_{τ_{K,N'}}^{(t)}(q | m)` for all `t ∈ [0, 1]` and all `N' ≥ N`,
 
-In the flat case the coefficients are `τ_{0,N'}^{(s)}(θ) = s`, and since `μ₀ ≪ m` the right side
-is `(1 - t) S_{N'}(μ₀ | m) + t S_{N'}(μ₁ | m)`
-(`TauCeti.renyiEntropy_eq_neg_lintegral_rpow_neg`). So `CD(0, N)` is the convexity of every
-Rényi entropy `S_{N'}`, `N' ≥ N`, along a common optimal dynamic plan
-(`TauCeti.MetricMeasureSpace.dynamicCurvatureDimension_zero_iff`).
+where `τ_{K,N'}` is the distortion coefficient `TauCeti.distortionTau`. The *reduced*
+curvature-dimension condition `CD*(K, N)` of Bacher and Sturm is the same inequality with the
+coefficient `σ_{K,N'}` (`TauCeti.distortionSigma`) in place of `τ_{K,N'}`. The full-support
+distorted and reduced conditions are instances of one condition for a general
+family of coefficients, stated once with its monotonicity and diameter bound. The canonical
+`CurvatureDimension` condition is defined on the measure support in the imported `Basic` module. By
+theorems of Sturm and of Bacher–Sturm, not formalized here, on an `n`-dimensional
+weighted Riemannian manifold with `N > n` both conditions are equivalent to the lower bound
+`Ric + Hess V - dV ⊗ dV / (N - n) ≥ K` on the Bakry–Émery Ricci tensor; on general
+metric-measure spaces they are two distinct predicates. Full support follows the convention of
+`TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity`; a reference measure without full support
+is handled by passing to `TauCeti.MetricMeasureSpace.supportSpace`.
 
-On a real inner product space of finite dimension `n ≥ 1` with an additive Haar measure, the
-Rényi integrand `U(r) = -r^{1-1/N'}` satisfies McCann's condition for `N' ≥ n`: here
-`sⁿ U(s⁻ⁿ) = -s^{n/N'}` is convex and nonincreasing. McCann's displacement convexity
-(`TauCeti.internalEnergy_map_smul_add_smul_gradient_le`) along the Brenier interpolation therefore
-gives `CD(0, N)` for every `N ≥ n`, and hence `CD(K, N)` for every `K ≤ 0`
-(`TauCeti.MetricMeasureSpace.dynamicCurvatureDimension_of_nonpos_of_finrank_le`). Conversely, for
-`N ≥ 1`, `CD(0, N)` forces `N ≥ n`, already on a finite-dimensional real normed space with an
-additive Haar measure: transporting the uniform law on the unit ball to the uniform
-law on a ball of radius `δ`, the law at time `1 / 2` is carried by the ball of radius
-`1 / 2 + 3 δ / 2`, so Hölder's bound `TauCeti.neg_rpow_mul_rpow_le_renyiEntropy` and the convexity
-inequality give `1 / 2 ≤ (1 / 2 + 3 δ / 2)^{n/N}`; letting `δ → 0` gives `n ≤ N`. Thus Haar
-measure satisfies `CD(0, N)` exactly when `N ≥ n`
-(`TauCeti.MetricMeasureSpace.dynamicCurvatureDimension_zero_iff_finrank_le`).
+The coefficients `τ_{K,N}^{(s)}(θ)` and `σ_{K,N}^{(s)}(θ)` are infinite at every time `s` once
+`θ` exceeds `π √((N - 1) / K)`, respectively `π √(N / K)`, for `K > 0`. With this convention the
+condition at time `t = 0` alone gives the **Bonnet–Myers diameter bound**: if two points were
+farther apart, the uniform laws on two small balls about them would have
+`T^{(0)}(q | m) = -∞` for every coupling `q`, while their Rényi entropy is finite.
 
 ## Main definitions
 
-* `TauCeti.MetricMeasureSpace.DynamicCurvatureDimension M K N`: the curvature-dimension condition
-  `CD(K, N)` of the metric-measure space `M`.
+* `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension M β N`: the curvature-dimension
+  condition for a family `β` of distortion coefficients.
+* `TauCeti.MetricMeasureSpace.ReducedCurvatureDimension M K N`: the condition `CD*(K, N)`.
 
 ## Main statements
 
-* `TauCeti.MetricMeasureSpace.DynamicCurvatureDimension.mono`: `CD(K, N)` implies `CD(K', N')` for
-  `K' ≤ K` and `N ≤ N'`.
-* `TauCeti.MetricMeasureSpace.dynamicCurvatureDimension_zero_iff`: `CD(0, N)` is the convexity of
-  the Rényi entropies `S_{N'}`, `N' ≥ N`, along a common optimal dynamic plan.
-* `TauCeti.MetricMeasureSpace.dynamicCurvatureDimension_of_nonpos_of_finrank_le`: Haar measure on a
-  real inner product space of dimension `n ≥ 1` satisfies `CD(K, N)` for `K ≤ 0` and `N ≥ n`.
-* `TauCeti.MetricMeasureSpace.finrank_le_of_dynamicCurvatureDimension_zero`,
-  `TauCeti.MetricMeasureSpace.dynamicCurvatureDimension_zero_iff_finrank_le`: for `N ≥ 1`, Haar
-  measure on a real normed space of dimension `n` satisfies `CD(0, N)` only for `N ≥ n`, and, on an
-  inner product space with `n ≥ 1`, exactly then.
+* `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension.mono`,
+  `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension.dist_le`: the general condition weakens
+  for smaller coefficients and larger `N`, and bounds distances by any `D` beyond which the
+  coefficients at time `1` are infinite.
+* `TauCeti.MetricMeasureSpace.ReducedCurvatureDimension.mono`: the reduced condition weakens
+  as `K` decreases and `N` increases.
+* `TauCeti.MetricMeasureSpace.ReducedCurvatureDimension.dist_le`,
+  `TauCeti.MetricMeasureSpace.ReducedCurvatureDimension.diam_univ_le`: the weaker bound
+  `diam X ≤ π √(N / K)` under `CD*(K, N)` with `K > 0` and `N > 0`.
 
 ## References
 
 * K.-T. Sturm, *On the geometry of metric measure spaces. II*, Acta Math. 196 (2006), 133–177,
-  Definition 1.3 and Proposition 1.6.
-* F. Cavalletti and A. Mondino, *Optimal maps in essentially non-branching spaces*, Commun.
-  Contemp. Math. 19 (2017), 1750007, §2.
-* R. J. McCann, *A convexity principle for interacting gases*, Adv. Math. 128 (1997), 153–179.
-* C. Villani, *Optimal Transport: Old and New*, Springer 2009, Chapters 17 and 29.
+  Definition 1.3 and the generalized Bonnet–Myers theorem.
+* K. Bacher and K.-T. Sturm, *Localization and tensorization properties of the
+  curvature-dimension condition for metric measure spaces*, J. Funct. Anal. 259 (2010), 28–56,
+  for `CD*(K, N)` and its diameter bound.
+* C. Villani, *Optimal Transport: Old and New*, Springer 2009, Chapter 29.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set Module Metric
-open scoped ENNReal unitInterval Gradient
+open MeasureTheory ProbabilityTheory Set Metric
+open scoped ENNReal Real
 
 namespace TauCeti
 
 namespace MetricMeasureSpace
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [CompleteSpace X]
-  [SecondCountableTopology X] [BorelSpace X] {M : MetricMeasureSpace X} {K K' N N' : ℝ}
+  [SecondCountableTopology X] [BorelSpace X] {M : MetricMeasureSpace X}
+  {β β' : ℝ → ℝ → ℝ → ℝ≥0∞} {K K' N N' D : ℝ}
 
-/-- The **curvature-dimension condition** `CD(K, N)` of Sturm for the metric-measure space `M`:
-the reference measure `m` has full support, and any two probability laws `μ₀ = ρ₀ m`,
-`μ₁ = ρ₁ m` with bounded support are joined by a quadratic optimal dynamic plan `η` such that, for
-every time `t` and every `N' ≥ N`, the Rényi entropy of the law `μ_t` at time `t` satisfies
-`S_{N'}(μ_t | m) ≤ -∫ [τ_{K,N'}^{(1-t)}(d(γ₀, γ₁)) ρ₀(γ₀)^{-1/N'} +
-τ_{K,N'}^{(t)}(d(γ₀, γ₁)) ρ₁(γ₁)^{-1/N'}] dη(γ)`.
+/-- The **curvature-dimension condition for a family of distortion coefficients** `β`, where
+`β N' s θ = β_{N'}^{(s)}(θ)`: the reference measure `m` has full support, and any two laws `μ₀`,
+`μ₁` of bounded support, absolutely continuous with respect to `m`, admit an optimal coupling `q`
+for the quadratic cost and a `W₂`-geodesic `(μ_t)` of laws of bounded support, absolutely
+continuous with respect to `m`, along which `S_{N'}(μ_t | m) ≤ T_{β_{N'}}^{(t)}(q | m)` for every
+`t ∈ [0, 1]` and every `N' ≥ N`. Here `S_{N'}` is the Rényi entropy and `T` the distorted Rényi
+entropy (`TauCeti.distortedRenyiEntropy`). The laws range over Sturm's space `P_∞(X, d, m)`.
 
-It is meaningful for `N ≥ 1`. This is the dynamic-plan form of the condition, with full support
-of the reference measure; `TauCeti.MetricMeasureSpace.CurvatureDimension` is the form with an
-optimal coupling and a `W₂`-geodesic. -/
-structure DynamicCurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop where
+With `β = τ_K` this is `CD(K, N)` (`TauCeti.MetricMeasureSpace.CurvatureDimension`), with
+`β = σ_K` it is `CD*(K, N)` (`TauCeti.MetricMeasureSpace.ReducedCurvatureDimension`). -/
+structure DistortedCurvatureDimension (M : MetricMeasureSpace X) (β : ℝ → ℝ → ℝ → ℝ≥0∞)
+    (N : ℝ) : Prop where
   /-- The reference measure has full support. -/
   support_eq_univ : M.support = univ
-  /-- Any two absolutely continuous laws with bounded support are joined by a quadratic optimal
-  dynamic plan along which the Rényi entropies satisfy the distorted convexity inequality. -/
-  exists_isQuadraticOptimalDynamicPlan_renyiEntropy_le : ∀ ⦃μ₀ μ₁ : ProbabilityMeasure X⦄,
-    (μ₀ : Measure X) ≪ M.reference → (μ₁ : Measure X) ≪ M.reference →
-    Bornology.IsBounded (μ₀ : Measure X).support → Bornology.IsBounded (μ₁ : Measure X).support →
-    ∃ η : Measure C(I, X), η.IsQuadraticOptimalDynamicPlan μ₀ μ₁ ∧ ∀ t : I, ∀ N', N ≤ N' →
-      renyiEntropy N' M.reference (η.timeMarginal t) ≤
-        -((∫⁻ γ, distortionTau K N' (1 - t) (dist (γ 0) (γ 1)) *
-              (μ₀ : Measure X).rnDeriv M.reference (γ 0) ^ (-N'⁻¹) +
-            distortionTau K N' t (dist (γ 0) (γ 1)) *
-              (μ₁ : Measure X).rnDeriv M.reference (γ 1) ^ (-N'⁻¹) ∂η : ℝ≥0∞) : EReal)
+  /-- Any two absolutely continuous laws of bounded support are joined by an optimal coupling and
+  a `W₂`-geodesic of absolutely continuous laws of bounded support satisfying the distorted Rényi
+  inequalities for all dimensions `N' ≥ N`. -/
+  exists_isOptimalCoupling_isGeodesicSegment : ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
+    Bornology.IsBounded ((μ₀ : ProbabilityMeasure X) : Measure X).support →
+    ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
+    Bornology.IsBounded ((μ₁ : ProbabilityMeasure X) : Measure X).support →
+    ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
+    ∃ q : Measure (X × X), IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ ENNReal.toReal 2) q
+        ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
+      ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
+        ∀ t ∈ Icc (0 : ℝ) 1,
+          Bornology.IsBounded ((γ t : ProbabilityMeasure X) : Measure X).support ∧
+          ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
+          ∀ N' ≥ N, renyiEntropy N' M.reference ((γ t : ProbabilityMeasure X) : Measure X) ≤
+            distortedRenyiEntropy (β N') N' M.reference q t
 
-/-- `CD(K, N)` implies `CD(K', N')` whenever `K' ≤ K` and `N ≤ N'`: the distortion coefficients
-increase with the curvature bound, and the condition already quantifies over all larger
-dimension bounds. -/
-theorem DynamicCurvatureDimension.mono (h : M.DynamicCurvatureDimension K N) (hK : K' ≤ K)
-    (hN : N ≤ N') :
-    M.DynamicCurvatureDimension K' N' := by
-  refine ⟨h.support_eq_univ, fun μ₀ μ₁ h₀ h₁ hb₀ hb₁ ↦ ?_⟩
-  obtain ⟨η, hη, hle⟩ := h.exists_isQuadraticOptimalDynamicPlan_renyiEntropy_le h₀ h₁ hb₀ hb₁
-  refine ⟨η, hη, fun t N'' hN'' ↦ (hle t N'' (hN.trans hN'')).trans ?_⟩
-  rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
-  refine lintegral_mono fun γ ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
-  · exact distortionTau_left_monotone (sub_nonneg.2 t.2.2) (sub_le_self _ t.2.1) hK
-  · exact distortionTau_left_monotone t.2.1 t.2.2 hK
+/-- The **reduced curvature-dimension condition** `CD*(K, N)` of Bacher and Sturm: the condition
+`CD(K, N)` (`TauCeti.MetricMeasureSpace.CurvatureDimension`) with the distortion coefficient
+`σ_{K,N'}` (`TauCeti.distortionSigma`) in place of `τ_{K,N'}`. That is, `m` has full support, and
+any two laws `μ₀`, `μ₁` of bounded support, absolutely continuous with respect to `m`, admit an
+optimal coupling `q` for the quadratic cost and a `W₂`-geodesic `(μ_t)` of such laws along which
+`S_{N'}(μ_t | m) ≤ T_{σ_{K,N'}}^{(t)}(q | m)` for every `t ∈ [0, 1]` and every `N' ≥ N`.
 
-/-- In the flat case, the right side of the curvature-dimension inequality is the convex
-combination of the endpoint Rényi entropies. -/
-private theorem neg_lintegral_distortionTau_zero {μ₀ μ₁ : ProbabilityMeasure X}
-    {η : Measure C(I, X)} (hη : η.IsQuadraticOptimalDynamicPlan μ₀ μ₁)
-    (h₀ : (μ₀ : Measure X) ≪ M.reference) (h₁ : (μ₁ : Measure X) ≪ M.reference) (hN' : 0 < N')
-    (t : I) :
-    -((∫⁻ γ, distortionTau 0 N' (1 - t) (dist (γ 0) (γ 1)) *
-          (μ₀ : Measure X).rnDeriv M.reference (γ 0) ^ (-N'⁻¹) +
-        distortionTau 0 N' t (dist (γ 0) (γ 1)) *
-          (μ₁ : Measure X).rnDeriv M.reference (γ 1) ^ (-N'⁻¹) ∂η : ℝ≥0∞) : EReal) =
-      ((1 - t : ℝ) : EReal) * renyiEntropy N' M.reference μ₀ +
-        (t : ℝ) * renyiEntropy N' M.reference μ₁ := by
-  have hf (μ : Measure X) : Measurable fun x ↦ μ.rnDeriv M.reference x ^ (-N'⁻¹) :=
-    (Measure.measurable_rnDeriv _ _).pow_const _
-  have heval (μ : Measure X) (s : I) :
-      ∫⁻ γ, μ.rnDeriv M.reference (γ s) ^ (-N'⁻¹) ∂η =
-        ∫⁻ x, μ.rnDeriv M.reference x ^ (-N'⁻¹) ∂(η.timeMarginal s) := by
-    rw [Measure.timeMarginal_def, lintegral_map (hf μ) (ContinuousMap.measurable_eval s)]
-  have hf₀ : Measurable fun γ : C(I, X) ↦ (μ₀ : Measure X).rnDeriv M.reference (γ 0) ^ (-N'⁻¹) :=
-    (hf _).comp (ContinuousMap.measurable_eval 0)
-  have hf₁ : Measurable fun γ : C(I, X) ↦ (μ₁ : Measure X).rnDeriv M.reference (γ 1) ^ (-N'⁻¹) :=
-    (hf _).comp (ContinuousMap.measurable_eval 1)
-  -- The integral against `η` splits into integrals against the endpoint laws.
-  have hint : ∫⁻ γ, ENNReal.ofReal (1 - t) * (μ₀ : Measure X).rnDeriv M.reference (γ 0) ^ (-N'⁻¹) +
-        ENNReal.ofReal t * (μ₁ : Measure X).rnDeriv M.reference (γ 1) ^ (-N'⁻¹) ∂η =
-      ENNReal.ofReal (1 - t) * ∫⁻ x, (μ₀ : Measure X).rnDeriv M.reference x ^ (-N'⁻¹) ∂μ₀ +
-        ENNReal.ofReal t * ∫⁻ x, (μ₁ : Measure X).rnDeriv M.reference x ^ (-N'⁻¹) ∂μ₁ := by
-    rw [lintegral_add_left (hf₀.const_mul _), lintegral_const_mul _ hf₀,
-      lintegral_const_mul _ hf₁, heval, heval, hη.timeMarginal_zero, hη.timeMarginal_one]
-  simp only [distortionTau_zero_left]
-  rw [hint, renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₀,
-    renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₁]
-  exact EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul (sub_nonneg.2 t.2.2) t.2.1 _ _
+The condition is meant for `N ≥ 1`, where the coefficients carry their geometric meaning. -/
+def ReducedCurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
+  M.DistortedCurvatureDimension (distortionSigma K) N
 
-/-- **The flat curvature-dimension condition.** For `N > 0`, `CD(0, N)` holds exactly when the
-reference measure has full support and any two absolutely continuous laws with bounded support
-are joined by a quadratic optimal dynamic plan along which every Rényi entropy `S_{N'}`,
-`N' ≥ N`, is convex:
-`S_{N'}(μ_t | m) ≤ (1 - t) S_{N'}(μ₀ | m) + t S_{N'}(μ₁ | m)`. -/
-theorem dynamicCurvatureDimension_zero_iff (hN : 0 < N) :
-    M.DynamicCurvatureDimension 0 N ↔ M.support = univ ∧
-      ∀ ⦃μ₀ μ₁ : ProbabilityMeasure X⦄,
-        (μ₀ : Measure X) ≪ M.reference → (μ₁ : Measure X) ≪ M.reference →
-        Bornology.IsBounded (μ₀ : Measure X).support →
-        Bornology.IsBounded (μ₁ : Measure X).support →
-        ∃ η : Measure C(I, X), η.IsQuadraticOptimalDynamicPlan μ₀ μ₁ ∧ ∀ t : I, ∀ N', N ≤ N' →
-          renyiEntropy N' M.reference (η.timeMarginal t) ≤
-            ((1 - t : ℝ) : EReal) * renyiEntropy N' M.reference μ₀ +
-              (t : ℝ) * renyiEntropy N' M.reference μ₁ := by
-  refine ⟨fun h ↦ ⟨h.support_eq_univ, fun μ₀ μ₁ h₀ h₁ hb₀ hb₁ ↦ ?_⟩,
-    fun h ↦ ⟨h.1, fun μ₀ μ₁ h₀ h₁ hb₀ hb₁ ↦ ?_⟩⟩
-  · obtain ⟨η, hη, hle⟩ := h.exists_isQuadraticOptimalDynamicPlan_renyiEntropy_le h₀ h₁ hb₀ hb₁
-    exact ⟨η, hη, fun t N' hN' ↦ (hle t N' hN').trans_eq
-      (neg_lintegral_distortionTau_zero hη h₀ h₁ (hN.trans_le hN') t)⟩
-  · obtain ⟨η, hη, hle⟩ := h.2 h₀ h₁ hb₀ hb₁
-    exact ⟨η, hη, fun t N' hN' ↦ (hle t N' hN').trans_eq
-      (neg_lintegral_distortionTau_zero hη h₀ h₁ (hN.trans_le hN') t).symm⟩
+/-- `CD*(K, N)` is the curvature-dimension condition for the coefficients `σ_{K,N'}`. -/
+theorem reducedCurvatureDimension_iff :
+    M.ReducedCurvatureDimension K N ↔ M.DistortedCurvatureDimension (distortionSigma K) N :=
+  (Iff.rfl)
 
-section NormedSpace
+/-- The condition for the coefficients `β` implies the condition for `N ≤ N'` and any smaller
+coefficients `β' ≤ β` on the times `[0, 1]`. -/
+theorem DistortedCurvatureDimension.mono (h : M.DistortedCurvatureDimension β N) (hN : N ≤ N')
+    (hβ : ∀ N'' ≥ N', ∀ s ∈ Icc (0 : ℝ) 1, ∀ θ, β' N'' s θ ≤ β N'' s θ) :
+    M.DistortedCurvatureDimension β' N' := by
+  refine ⟨h.support_eq_univ, fun μ₀ μ₁ hb₀ h₀ hb₁ h₁ ↦ ?_⟩
+  obtain ⟨q, hq, γ, hγ, hle⟩ := h.exists_isOptimalCoupling_isGeodesicSegment hb₀ h₀ hb₁ h₁
+  refine ⟨q, hq, γ, hγ, fun t ht ↦ ⟨(hle t ht).1, (hle t ht).2.1, fun N'' hN'' ↦ ?_⟩⟩
+  exact ((hle t ht).2.2 N'' (hN.trans hN'')).trans (distortedRenyiEntropy_anti
+    (hβ N'' hN'' _ ⟨sub_nonneg.2 ht.2, sub_le_self _ ht.1⟩) (hβ N'' hN'' t ht))
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {M : MetricMeasureSpace E} [M.reference.IsAddHaarMeasure]
+/-- `CD*(K, N)` implies `CD*(K', N')` for `K' ≤ K` and `0 ≤ N ≤ N'`. -/
+theorem ReducedCurvatureDimension.mono (h : M.ReducedCurvatureDimension K N) (hK : K' ≤ K)
+    (hN : N ≤ N') (hN₀ : 0 ≤ N) : M.ReducedCurvatureDimension K' N' :=
+  DistortedCurvatureDimension.mono h hN fun _ hN'' _ hs _ ↦
+    distortionSigma_left_monotone hs.1 hs.2 (hN₀.trans (hN.trans hN'')) hK
 
-/-- The uniform law on a closed ball of positive radius about `0`. -/
-private theorem exists_coe_eq_cond_closedBall {r : ℝ} (hr : 0 < r) :
-    ∃ μ : ProbabilityMeasure E, (μ : Measure E) = M.reference[|closedBall 0 r] :=
-  ⟨⟨_, cond_isProbabilityMeasure_of_finite (measure_closedBall_pos _ _ hr).ne'
-    (M.finite_bounded _ isBounded_closedBall).ne⟩, rfl⟩
+/-- **The Bonnet–Myers mechanism.** Let `β_N^{(1)}(θ) = ∞` for every distance `θ > D`. Under the
+curvature-dimension condition for the coefficients `β`, any two points are at distance at most `D`:
+otherwise the uniform laws on two small balls about them would violate the inequality at time `0`,
+since `T_{β_N}^{(0)}(q | m) = -∞` for every coupling `q` while their Rényi entropy is finite. -/
+theorem DistortedCurvatureDimension.dist_le (h : M.DistortedCurvatureDimension β N) (hN : 0 < N)
+    (hβ : ∀ θ, D < θ → β N 1 θ = ⊤) (x y : X) : dist x y ≤ D := by
+  by_contra! hlt
+  set r := (dist x y - D) / 2 with hr_def
+  have hr : 0 < r := by rw [hr_def]; linarith
+  set m := M.reference
+  -- Balls of positive radius have positive, finite measure, and their uniform laws are absolutely
+  -- continuous with bounded support.
+  have hball : ∀ z, m (ball z r) ≠ 0 ∧ m (ball z r) ≠ ∞ := fun z ↦
+    ⟨((M.mem_support_iff z).1 (h.support_eq_univ ▸ mem_univ z) _ (ball_mem_nhds z hr)).ne',
+      (M.finite_bounded _ isBounded_ball).ne⟩
+  obtain ⟨hpos, hm⟩ := hball x
+  obtain ⟨μ₀, hμ₀, hb₀, hac₀⟩ :=
+    WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball isBounded_ball hpos hm
+  obtain ⟨μ₁, hμ₁, hb₁, hac₁⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+    isBounded_ball (hball y).1 (hball y).2
+  obtain ⟨q, hq, γ, hγ, hle⟩ :=
+    h.exists_isOptimalCoupling_isGeodesicSegment hb₀ hac₀ hb₁ hac₁
+  replace hq := hq.toIsCoupling
+  replace hle : renyiEntropy N m ((μ₀ : ProbabilityMeasure X) : Measure X) ≤
+      distortedRenyiEntropy (β N) N m q 0 := by
+    simpa only [hγ.source] using (hle 0 (left_mem_Icc.2 zero_le_one)).2.2 N le_rfl
+  have : IsProbabilityMeasure q := hq.isProbabilityMeasure
+  -- Almost every pair of `q` is beyond the distance `D` and has a finite first density; there the
+  -- integrand is infinite.
+  have hae : ∀ᵐ z ∂q, β N (1 - 0) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
+      β N 0 (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹) = ⊤ := by
+    have hD := hq.ae_lt_dist (hμ₀ ▸ ae_cond_mem measurableSet_ball)
+      (hμ₁ ▸ ae_cond_mem measurableSet_ball) (by linarith : D + r + r ≤ dist x y)
+    have hρ : ∀ᵐ x' ∂((μ₀ : ProbabilityMeasure X) : Measure X),
+        ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv m x' < ∞ :=
+      hac₀.ae_le (Measure.rnDeriv_lt_top _ _)
+    rw [hq.fst_eq]
+    filter_upwards [hq.measurePreserving_fst.quasiMeasurePreserving.ae hρ, hD] with z hzρ hzD
+    have hne : ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv m z.1 ^ (-N⁻¹) ≠ 0 := by
+      rw [Ne, ENNReal.rpow_eq_zero_iff]
+      rintro (⟨-, h⟩ | ⟨h, -⟩)
+      · linarith [inv_pos.2 hN]
+      · exact hzρ.ne h
+    rw [sub_zero, hβ _ hzD, ENNReal.top_mul hne, top_add]
+  rw [distortedRenyiEntropy_eq_bot_of_ae (IsProbabilityMeasure.ne_zero q) hae, le_bot_iff] at hle
+  exact (hμ₀ ▸ renyiEntropy_cond_ne_bot hN measurableSet_ball) hle
 
-/-- Since `m(B_r)^{1/N} = r^{n/N} m(B_1)^{1/N}` for an additive Haar measure `m` on a space of
-dimension `n`, the bound `c m(B_1)^{1/N} ≤ m(B_r)^{1/N}` gives `c ≤ r^{n/N}`. -/
-private theorem le_rpow_of_ofReal_mul_le_measure_closedBall_rpow {c r : ℝ} (hr : 0 < r)
-    (hN : 0 < N)
-    (h : ENNReal.ofReal c * M.reference (closedBall 0 1) ^ N⁻¹ ≤
-      M.reference (closedBall 0 r) ^ N⁻¹) :
-    c ≤ r ^ ((finrank ℝ E : ℝ) / N) := by
-  have h₀ : M.reference (closedBall 0 1) ^ N⁻¹ ≠ 0 :=
-    (ENNReal.rpow_pos (measure_closedBall_pos _ _ one_pos)
-      (M.finite_bounded _ isBounded_closedBall).ne).ne'
-  have hfin : M.reference (closedBall 0 1) ^ N⁻¹ ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN.le) (M.finite_bounded _ isBounded_closedBall).ne
-  rw [Measure.addHaar_closedBall' _ _ hr.le,
-    ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hN.le)] at h
-  have h' := (ENNReal.mul_le_mul_iff_left h₀ hfin).1 h
-  -- `ofReal (rⁿ)^(1/N) = ofReal (r^(n/N))`.
-  have hpow : ENNReal.ofReal (r ^ finrank ℝ E) ^ N⁻¹ =
-      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / N)) := by
-    rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (inv_nonneg.2 hN.le), ← Real.rpow_natCast,
-      ← Real.rpow_mul hr.le, div_eq_mul_inv]
-  rwa [hpow, ENNReal.ofReal_le_ofReal_iff (by positivity)] at h'
+/-- **The Bonnet–Myers diameter bound** for the coefficients `β`: if `β_N^{(1)}(θ) = ∞` for every
+distance `θ > D ≥ 0`, the space has diameter at most `D`. -/
+theorem DistortedCurvatureDimension.diam_univ_le (h : M.DistortedCurvatureDimension β N)
+    (hN : 0 < N) (hD : 0 ≤ D) (hβ : ∀ θ, D < θ → β N 1 θ = ⊤) : diam (univ : Set X) ≤ D :=
+  diam_le_of_forall_dist_le hD fun x _ y _ ↦ h.dist_le hN hβ x y
 
-/-- Under `CD(0, N)` with `N ≥ 1`, transporting the uniform law on the unit ball to the uniform law
-on the ball of radius `δ` gives `1 / 2 ≤ (1 / 2 + 3 δ / 2)^{n/N}`. At time `1 / 2` the law is
-carried by the ball of radius `1 / 2 + 3 δ / 2`, which bounds its Rényi entropy below, while the
-convexity inequality bounds it above by half the entropy of the uniform law on the unit ball. -/
-private theorem half_le_rpow_of_dynamicCurvatureDimension_zero
-    (h : M.DynamicCurvatureDimension 0 N) (hN : 1 ≤ N) {δ : ℝ} (hδ : 0 < δ) :
-    1 / 2 ≤ (1 / 2 + 3 / 2 * δ) ^ ((finrank ℝ E : ℝ) / N) := by
-  have hN₀ : 0 < N := one_pos.trans_le hN
-  have hr : 0 < 1 / 2 + 3 / 2 * δ := by positivity
-  obtain ⟨μ₀, hμ₀⟩ := exists_coe_eq_cond_closedBall (M := M) one_pos
-  obtain ⟨μ₁, hμ₁⟩ := exists_coe_eq_cond_closedBall (M := M) hδ
-  have hcarr {μ : ProbabilityMeasure E} {s : ℝ}
-      (hμ : (μ : Measure E) = M.reference[|closedBall 0 s]) :
-      ∀ᵐ x ∂(μ : Measure E), x ∈ closedBall (0 : E) s :=
-    hμ ▸ ae_cond_mem measurableSet_closedBall
-  have hbdd {μ : ProbabilityMeasure E} {s : ℝ}
-      (hμ : (μ : Measure E) = M.reference[|closedBall 0 s]) :
-      Bornology.IsBounded (μ : Measure E).support :=
-    isBounded_closedBall.subset (Measure.support_subset_of_isClosed isClosed_closedBall (hcarr hμ))
-  have hent {s : ℝ} (hs : 0 < s) : renyiEntropy N M.reference M.reference[|closedBall 0 s] =
-      -((M.reference (closedBall 0 s) ^ N⁻¹ : ℝ≥0∞) : EReal) := by
-    rw [ProbabilityTheory.cond]
-    exact renyiEntropy_smul_restrict hN₀ measurableSet_closedBall
-      (measure_closedBall_pos _ _ hs).ne' (M.finite_bounded _ isBounded_closedBall).ne
-  obtain ⟨η, hη, hle⟩ :=
-    ((dynamicCurvatureDimension_zero_iff hN₀).1 h).2 (hμ₀ ▸ cond_absolutelyContinuous)
-    (hμ₁ ▸ cond_absolutelyContinuous) (hbdd hμ₀) (hbdd hμ₁)
-  have : IsProbabilityMeasure η := hη.isProbabilityMeasure
-  set t : I := ⟨1 / 2, by norm_num, by norm_num⟩
-  have ht : (t : ℝ) = 1 / 2 := rfl
-  -- At time `1 / 2` almost every path is within `1 / 2 + 3 δ / 2` of `0`.
-  have hcarr_t : η.timeMarginal t (closedBall (0 : E) (1 / 2 + 3 / 2 * δ))ᶜ = 0 := by
-    have h := mem_ae_iff.1 (ae_timeMarginal_mem_closedBall hη.ae_mem_geodesicPaths
-      (hη.timeMarginal_zero ▸ hcarr hμ₀) (hη.timeMarginal_one ▸ hcarr hμ₁) t)
-    rwa [ht, show (1 - 1 / 2 : ℝ) * (1 + δ) + δ = 1 / 2 + 3 / 2 * δ by ring] at h
-  have hmass : η.timeMarginal t univ = 1 := by
-    simp [Measure.timeMarginal_apply η t MeasurableSet.univ]
-  have hlow := neg_rpow_mul_rpow_le_renyiEntropy (m := M.reference) hN hcarr_t
-  rw [hmass, ENNReal.one_rpow, mul_one] at hlow
-  have hup := hle t N le_rfl
-  rw [hμ₀, hμ₁, hent one_pos, hent hδ, ht, show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num] at hup
-  -- Dropping the nonpositive entropy of the small ball leaves half that of the unit ball.
-  have hhalf : ((1 / 2 : ℝ) : EReal) ≥ 0 := EReal.coe_nonneg.2 (by norm_num)
-  have hdrop : ((1 / 2 : ℝ) : EReal) * -((M.reference (closedBall 0 δ) ^ N⁻¹ : ℝ≥0∞) : EReal) ≤
-      0 := by
-    rw [mul_neg, EReal.neg_le_zero]
-    exact mul_nonneg hhalf (EReal.coe_ennreal_nonneg _)
-  have hcoe : ((1 / 2 : ℝ) : EReal) = ((ENNReal.ofReal (1 / 2) : ℝ≥0∞) : EReal) := by
-    rw [EReal.coe_ennreal_ofReal, max_eq_left (by norm_num : (0 : ℝ) ≤ 1 / 2)]
-  have key := hlow.trans (hup.trans (add_le_of_nonpos_right hdrop))
-  rw [mul_neg, hcoe, ← EReal.coe_ennreal_mul, EReal.neg_le_neg_iff,
-    EReal.coe_ennreal_le_coe_ennreal_iff] at key
-  exact le_rpow_of_ofReal_mul_le_measure_closedBall_rpow hr hN₀ key
+/-- **The diameter bound under `CD*(K, N)`.** If `M` satisfies `CD*(K, N)` with `K > 0` and
+`N > 0`, any two points are at distance at most `π √(N / K)`. -/
+theorem ReducedCurvatureDimension.dist_le (h : M.ReducedCurvatureDimension K N) (hK : 0 < K)
+    (hN : 0 < N) (x y : X) : dist x y ≤ π * √(N / K) :=
+  DistortedCurvatureDimension.dist_le h hN (fun _ hθ ↦ distortionSigma_eq_top_of_lt hK hN hθ) x y
 
-/-- **`CD(0, N)` forces `N ≥ n` for Haar measure.** If an additive Haar reference measure on a
-real normed space of finite dimension `n` satisfies `CD(0, N)` with `N ≥ 1`, then `N ≥ n`. -/
-theorem finrank_le_of_dynamicCurvatureDimension_zero (h : M.DynamicCurvatureDimension 0 N)
-    (hN : 1 ≤ N) : (finrank ℝ E : ℝ) ≤ N := by
-  have hlim : Filter.Tendsto (fun δ : ℝ ↦ (1 / 2 + 3 / 2 * δ) ^ ((finrank ℝ E : ℝ) / N))
-      (nhdsWithin 0 (Ioi 0)) (nhds ((1 / 2 : ℝ) ^ ((finrank ℝ E : ℝ) / N))) := by
-    have hc : Filter.Tendsto (fun δ : ℝ ↦ 1 / 2 + 3 / 2 * δ) (nhds 0) (nhds (1 / 2)) :=
-      (by fun_prop : Continuous fun δ : ℝ ↦ 1 / 2 + 3 / 2 * δ).tendsto' 0 _ (by norm_num)
-    exact (hc.rpow_const (.inl (by norm_num))).mono_left nhdsWithin_le_nhds
-  have hge : (1 / 2 : ℝ) ^ (1 : ℝ) ≤ (1 / 2 : ℝ) ^ ((finrank ℝ E : ℝ) / N) := by
-    rw [Real.rpow_one]
-    exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun δ hδ ↦
-      half_le_rpow_of_dynamicCurvatureDimension_zero h hN hδ)
-  exact (div_le_one (one_pos.trans_le hN)).1
-    ((Real.rpow_le_rpow_left_iff_of_base_lt_one (by norm_num) (by norm_num)).1 hge)
-
-end NormedSpace
-
-section Euclidean
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {M : MetricMeasureSpace E} [M.reference.IsAddHaarMeasure]
-
-/-- **Haar measure satisfies `CD(0, N)` for `N ≥ n`.** On a real inner product space of finite
-dimension `n ≥ 1`, an additive Haar reference measure satisfies `CD(0, N)` for every `N ≥ n`. The
-dynamic plan is the Brenier interpolation, along which every Rényi entropy `S_{N'}`, `N' ≥ n`, is
-convex by McCann's displacement convexity. -/
-theorem dynamicCurvatureDimension_zero_of_finrank_le [Nontrivial E] (hN : (finrank ℝ E : ℝ) ≤ N) :
-    M.DynamicCurvatureDimension 0 N := by
-  have hn : (1 : ℝ) ≤ finrank ℝ E := Nat.one_le_cast.2 finrank_pos
-  refine (dynamicCurvatureDimension_zero_iff (zero_lt_one.trans_le (hn.trans hN))).2
-    ⟨by rw [support_def, Measure.support_eq_univ], fun μ₀ μ₁ h₀ h₁ hb₀ hb₁ ↦ ?_⟩
-  -- Bounded supports give finite second moments, hence a finite quadratic transport cost.
-  have hm (μ : ProbabilityMeasure E) (hb : Bornology.IsBounded (μ : Measure E).support) :
-      HasFiniteMoment 2 (μ : Measure E) :=
-    hasFiniteMoment_of_ae_mem_of_isBounded 0 hb Measure.support_mem_ae
-  have hfin := transportCost_norm_sub_sq_div_two_ne_top (WassersteinSpace.mk μ₀ (hm μ₀ hb₀))
-    (WassersteinSpace.mk μ₁ (hm μ₁ hb₁))
-  simp only [WassersteinSpace.coe_mk] at hfin
-  -- The Brenier map `∇u` from `μ₀` to `μ₁` induces the optimal plan.
-  obtain ⟨u, hconv, -, hbot, hdiff, hT, hiff, -⟩ :=
-    exists_isKantorovichOptimalTransportMap_gradient h₀ hfin
-  have hopt := isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two
-    ((hiff (graphPlan (∇ fun x ↦ (u x).toReal) (μ₀ : Measure E))).2 rfl)
-  refine ⟨(graphPlan (∇ fun x ↦ (u x).toReal) (μ₀ : Measure E)).map segmentPath,
-    ⟨Measure.ae_mem_geodesicPaths_map_segmentPath _, by rwa [Measure.endpointLaw_map_segmentPath]⟩,
-    fun t N' hN' ↦ ?_⟩
-  have hν : (μ₁ : Measure E) = (μ₀ : Measure E).map (∇ fun x ↦ (u x).toReal) :=
-    hT.toHasLaw.map_eq.symm
-  have hμD : ∀ᵐ x ∂(μ₀ : Measure E), x ∈ interior {x | u x ≠ ⊤} :=
-    hdiff.mono fun x hx ↦ mem_interior_iff_mem_nhds.2 hx.1
-  have hN'₁ : 1 ≤ N' := hn.trans (hN.trans hN')
-  -- Bounded supports have finite reference mass, so the endpoint entropies are finite.
-  have hbot' (μ : ProbabilityMeasure E) (hb : Bornology.IsBounded (μ : Measure E).support) :
-      renyiEntropy N' M.reference μ ≠ ⊥ :=
-    renyiEntropy_ne_bot_of_measure_compl_eq_zero hN'₁ Measure.measure_compl_support
-      (M.finite_bounded _ hb).ne
-  have key := internalEnergy_map_smul_add_smul_gradient_le M.reference
-    (U := fun r ↦ -(r * r ^ (-N'⁻¹))) (by simp)
-    (convexOn_pow_mul_neg_mul_rpow_neg (zero_lt_one.trans_le hN'₁) (hN.trans hN'))
-    (antitoneOn_pow_mul_neg_mul_rpow_neg (zero_lt_one.trans_le hN'₁)) hconv hbot h₀ hμD
-    (by rw [← renyiEntropy_def]; exact hbot' μ₀ hb₀)
-    (by rw [← renyiEntropy_def, ← hν]; exact hbot' μ₁ hb₁) ⟨t.2.1, t.2.2⟩
-  rw [Measure.timeMarginal_map_segmentPath,
-    map_graphPlan (measurable_gradient _).aemeasurable (by fun_prop), hν]
-  simpa only [← renyiEntropy_def] using key
-
-/-- **Haar measure satisfies `CD(K, N)` for `K ≤ 0` and `N ≥ n`.** On a real inner product space
-of finite dimension `n ≥ 1`, an additive Haar reference measure satisfies `CD(K, N)` for every
-`K ≤ 0` and `N ≥ n`. -/
-theorem dynamicCurvatureDimension_of_nonpos_of_finrank_le [Nontrivial E] (hK : K ≤ 0)
-    (hN : (finrank ℝ E : ℝ) ≤ N) : M.DynamicCurvatureDimension K N :=
-  (dynamicCurvatureDimension_zero_of_finrank_le hN).mono hK le_rfl
-
-/-- **Haar measure satisfies `CD(0, N)` exactly when `N ≥ n`.** On a real inner product space of
-finite dimension `n ≥ 1`, an additive Haar reference measure satisfies `CD(0, N)`, for `N ≥ 1`, if
-and only if `N ≥ n`. -/
-theorem dynamicCurvatureDimension_zero_iff_finrank_le [Nontrivial E] (hN : 1 ≤ N) :
-    M.DynamicCurvatureDimension 0 N ↔ (finrank ℝ E : ℝ) ≤ N :=
-  ⟨fun h ↦ finrank_le_of_dynamicCurvatureDimension_zero h hN,
-    dynamicCurvatureDimension_zero_of_finrank_le⟩
-
-end Euclidean
+/-- **The diameter bound under `CD*(K, N)`**, for `K > 0` and `N > 0`: the space has diameter at
+most `π √(N / K)`. -/
+theorem ReducedCurvatureDimension.diam_univ_le (h : M.ReducedCurvatureDimension K N)
+    (hK : 0 < K) (hN : 0 < N) : diam (univ : Set X) ≤ π * √(N / K) :=
+  DistortedCurvatureDimension.diam_univ_le h hN (by positivity)
+    fun _ hθ ↦ distortionSigma_eq_top_of_lt hK hN hθ
 
 end MetricMeasureSpace
 

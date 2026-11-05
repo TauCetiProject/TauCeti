@@ -36,7 +36,7 @@ and have a von Neumann bounded unit set form a convex set. These are the fibrewi
 Riemannian metric, and convexity is what lets local metrics be glued by partitions of unity; the
 statement itself involves no manifolds, so it is recorded here with the other facts about
 continuous bilinear forms. In finite dimensions, strict diagonal positivity is open, by
-transporting `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` from matrices through a basis, and
+transporting `TauCeti.isOpen_setOfPred_re_dotProduct_pos` from matrices through a basis, and
 strict diagonal positivity along a compact family is uniform: one constant bounds the whole family
 below by a multiple of the squared norm. This gives the uniform coercivity constants of tamed
 almost complex structures over compact windows that energy estimates for pseudoholomorphic maps
@@ -153,6 +153,21 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_separatingLeft
     (hsep : L.toBilinForm.SeparatingLeft) : L.IsInvertible :=
   ContinuousLinearMap.isInvertible_of_injective
     ((L.separatingLeft_toBilinForm_iff_injective).1 hsep)
+
+omit [CompleteSpace 𝕜] in
+/-- In finite dimensions, the bilinear form of a continuous linear map into the dual is
+nondegenerate exactly when the map is injective. -/
+theorem _root_.ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective
+    (L : E →L[𝕜] E →L[𝕜] 𝕜) : L.toBilinForm.Nondegenerate ↔ Function.Injective L :=
+  ⟨fun h ↦ L.separatingLeft_toBilinForm_iff_injective.1 h.1, fun h ↦
+    .ofSeparatingLeft (L.separatingLeft_toBilinForm_iff_injective.2 h)⟩
+
+variable (𝕜 E) in
+/-- In finite dimensions, the continuous bilinear forms that are nondegenerate form an open set. -/
+theorem isOpen_setOfPred_nondegenerate_toBilinForm :
+    IsOpen {L : E →L[𝕜] E →L[𝕜] 𝕜 | L.toBilinForm.Nondegenerate} := by
+  simpa only [ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective] using
+    ContinuousLinearMap.isOpen_injective
 
 /-- Contraction with a bilinear form on a finite-dimensional space is an invertible
 continuous linear map to the continuous dual exactly when the form is left-separating. -/
@@ -324,7 +339,8 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
       simpa only [A, LinearMap.BilinForm.dotProduct_toMatrix_mulVec,
         LinearEquiv.symm_apply_apply, ContinuousLinearMap.toBilinForm_apply] using h
   rw [heq]
-  exact isOpen_setOfPred_dotProduct_mulVec_pos.preimage hA
+  simpa only [star_trivial, RCLike.re_to_real] using
+    (isOpen_setOfPred_re_dotProduct_pos (𝕜 := ℝ)).preimage hA
 
 /-- **Uniform coercivity over a compact family.** On a finite-dimensional real normed space, let
 `b x` be a family of continuous bilinear forms, continuous on a compact set `K`, such that
