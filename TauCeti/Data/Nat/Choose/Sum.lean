@@ -35,6 +35,9 @@ The partial-sum complement identity partitions subsets according to the position
 element. Its recurrence follows from Pascal's identity, and the initial value is Mathlib's
 `Nat.add_choose_eq`.
 
+Weighting a binomial antidiagonal sum by its first index lowers its order by one. This identity
+applies to sums in any additive commutative monoid, including coefficient sums for formal fields.
+
 ## Main results
 
 * `Nat.sum_antidiagonal_choose_add_mul_choose_add`: the upper-index Vandermonde convolution.
@@ -52,6 +55,20 @@ element. Its recurrence follows from Pascal's identity, and the initial value is
 public section
 
 open Finset
+
+namespace Finset
+
+/-- Weighting a binomial antidiagonal sum by its first index lowers its order by one. -/
+theorem sum_antidiagonal_choose_succ_nsmul_nsmul {M : Type*} [AddCommMonoid M]
+    (f : ℕ → ℕ → M) (N : ℕ) :
+    ∑ ij ∈ antidiagonal (N + 1), (N + 1).choose ij.1 • ij.1 • f ij.1 ij.2 =
+      (N + 1) • ∑ ij ∈ antidiagonal N, N.choose ij.1 • f (ij.1 + 1) ij.2 := by
+  rw [Nat.sum_antidiagonal_succ]
+  simp only [zero_smul, smul_zero, zero_add]
+  simp_rw [← mul_smul, ← Nat.add_one_mul_choose_eq, mul_smul]
+  rw [smul_sum]
+
+end Finset
 
 namespace Nat
 

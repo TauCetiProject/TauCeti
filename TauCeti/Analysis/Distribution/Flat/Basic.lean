@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti Contributors.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti Contributors
 -/
 module
 
@@ -9,152 +9,139 @@ public import TauCeti.Analysis.Distribution.Mass.Normal
 public import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
-# Extended flat mass with real normal decompositions
+# Real normal flat mass in an open subset of a normed space
 
-The extended flat mass of a Euclidean current is the infimum of `M(R) + M(S)` over
-real normal decompositions `T = R + ∂S`. No support restriction is imposed on the
-pieces. It is finite precisely for normal currents. In particular this is not the
-integral-decomposition flat mass, nor a flat mass with prescribed filling supports.
+`ContinuousLinearMap.normalFlatMass T` is the infimum of `M(R) + M(S)` over real
+normal decompositions `T = R + ∂S`. The fillings live in the same open set as `T`;
+no compact-support constraint is imposed. This is not an integral-decomposition
+flat mass. It is finite precisely on normal currents, and its completion is not
+constructed here.
 
-The test-form estimate proves nondegeneracy without any finite-mass assumption on
-the current. The triangle inequality, real homogeneity and boundary estimate give
-the basic quantitative tools for comparing normal currents and their boundaries.
-Degree zero uses the ordinary current complex: there is no boundary below degree zero.
+We prove nondegeneracy, the triangle inequality, real homogeneity, contraction
+under boundary and open restriction, and the test-form estimate with the maximum
+of the sup norms of `ω` and `dω`. These estimates allow flat approximation to be
+compared with evaluation on smooth tests. Everything uses the existing continuous
+real-linear maps on native test forms, allowing arbitrary real normed coefficient
+and value spaces. The pointwise form norm is the native alternating operator norm,
+hence the comass in an inner-product space. Boundary contraction is stated in positive
+degree; degree-zero currents have zero boundary in the ordinary current complex.
 
 ## References
 
-* H. Federer, *Geometric Measure Theory*, §4.1.12 (flat seminorms).
-* L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6.
+* H. Federer, *Geometric Measure Theory*, §4.1.12 (the real flat norm).
+* L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §2.
 -/
 
 public section
 
 noncomputable section
 
-open TopologicalSpace TestFunction ContinuousLinearMap Filter
-open scoped Distributions ENNReal BoundedContinuousFunction Topology
+open Distribution TestFunction TopologicalSpace Filter
+open scoped Distributions ENNReal NNReal BoundedContinuousFunction Topology
 
-namespace Distribution
+namespace ContinuousLinearMap
 
 variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {Ω : Opens E} {k : ℕ}
 
-/-- Extended flat mass using real normal remainder and filling currents, without support
-constraints. This is distinct from the flat mass using integral decompositions. -/
+/-- Extended real flat mass using normal residuals and normal fillings in `Ω`.
+There is no compact-support or integrality constraint on the decomposition. -/
 def normalFlatMass (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) : ℝ≥0∞ :=
-  ⨅ (R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
-    (S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V)
-    (_ : IsNormal R) (_ : IsNormal S) (_ : T = R + S ∘L extDerivCLM), mass R + mass S
+  ⨅ (S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V)
+    (_ : IsNormal S) (_ : IsNormal (T - S ∘L extDerivCLM)),
+    mass (T - S ∘L extDerivCLM) + mass S
 
-variable {T U : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+variable (T U : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
+
+/-- The defining infimum over normal fillings and normal residuals. -/
+theorem normalFlatMass_def : T.normalFlatMass =
+    ⨅ (S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V)
+      (_ : IsNormal S) (_ : IsNormal (T - S ∘L extDerivCLM)),
+      mass (T - S ∘L extDerivCLM) + mass S := (rfl)
 
 /-- The infimum defining normal flat mass, in its universal lower-bound form. -/
-theorem le_normalFlatMass_iff {a : ℝ≥0∞} : a ≤ normalFlatMass T ↔
+theorem le_normalFlatMass_iff {a : ℝ≥0∞} : a ≤ T.normalFlatMass ↔
     ∀ (R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
       (S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V),
       IsNormal R → IsNormal S → T = R + S ∘L extDerivCLM → a ≤ mass R + mass S := by
-  simp only [normalFlatMass, le_iInf_iff]
+  simp only [normalFlatMass_def, le_iInf_iff]
+  constructor
+  · intro h R S hR hS heq
+    have hres : T - S ∘L extDerivCLM = R := by rw [heq]; abel
+    simpa only [hres] using h S hS (hres ▸ hR)
+  · intro h S hS hR
+    exact h _ S hR hS (by abel)
+
+/-- Every normal decomposition gives an upper bound for flat mass. -/
+theorem normalFlatMass_le_of_eq_add_comp_extDerivCLM
+    {R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+    {S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V}
+    (hR : IsNormal R) (hS : IsNormal S) (h : T = R + S ∘L extDerivCLM) :
+    T.normalFlatMass ≤ mass R + mass S :=
+  (T.le_normalFlatMass_iff.mp le_rfl) R S hR hS h
 
 /-- A strict flat-mass bound is witnessed by an actual normal decomposition. -/
-theorem normalFlatMass_lt_iff {a : ℝ≥0∞} : normalFlatMass T < a ↔
+theorem normalFlatMass_lt_iff {c : ℝ≥0∞} : T.normalFlatMass < c ↔
     ∃ (R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
       (S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V),
-      IsNormal R ∧ IsNormal S ∧ T = R + S ∘L extDerivCLM ∧ mass R + mass S < a := by
-  simp only [normalFlatMass, iInf_lt_iff, exists_prop]
+      IsNormal R ∧ IsNormal S ∧ T = R + S ∘L extDerivCLM ∧ mass R + mass S < c := by
+  simp only [normalFlatMass_def, iInf_lt_iff]
+  constructor
+  · rintro ⟨S, hS, hR, hc⟩
+    exact ⟨T - S ∘L extDerivCLM, S, hR, hS, by abel, hc⟩
+  · rintro ⟨R, S, hR, hS, h, hc⟩
+    have heq : T - S ∘L extDerivCLM = R := by rw [h]; abel
+    exact ⟨S, hS, heq ▸ hR, by simpa only [heq] using hc⟩
 
-/-- Every admissible normal decomposition bounds the flat mass from above. -/
-theorem normalFlatMass_le (R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
-    (S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V)
-    (hR : IsNormal R) (hS : IsNormal S) (h : T = R + S ∘L extDerivCLM) :
-    normalFlatMass T ≤ mass R + mass S :=
-  iInf_le_of_le R <| iInf_le_of_le S <| iInf_le_of_le hR <| iInf_le_of_le hS <|
-    iInf_le_of_le h le_rfl
+/-- Flat mass is bounded by mass for a normal current. -/
+theorem normalFlatMass_le_mass (hT : IsNormal T) : T.normalFlatMass ≤ mass T := by
+  simpa using T.normalFlatMass_le_of_eq_add_comp_extDerivCLM hT
+    (isNormal_zero (k := k + 1)) (by simp)
 
-/-- A normal current has flat mass at most its mass. -/
-theorem IsNormal.normalFlatMass_le_mass (hT : IsNormal T) : normalFlatMass T ≤ mass T := by
-  simpa using normalFlatMass_le T 0 hT isNormal_zero (by simp)
-
+/-- The flat mass of zero is zero, in every nonnegative degree. -/
 @[simp]
 theorem normalFlatMass_zero :
-    normalFlatMass (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) = 0 := by
-  exact le_antisymm (by simpa using (IsNormal.normalFlatMass_le_mass
-    (T := (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)) isNormal_zero)) bot_le
+    (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V).normalFlatMass = 0 := by
+  apply le_antisymm _ zero_le
+  simpa using (normalFlatMass_le_mass
+    (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) isNormal_zero)
 
-/-- Finite normal flat mass is equivalent to normality. No compact support is required. -/
-theorem normalFlatMass_ne_top_iff : normalFlatMass T ≠ ⊤ ↔ IsNormal T := by
-  constructor
-  · intro h
-    obtain ⟨R, S, hR, hS, heq, _⟩ := normalFlatMass_lt_iff.mp (lt_top_iff_ne_top.mpr h)
-    exact heq ▸ hR.add hS.comp_extDerivCLM
-  · intro hT
-    exact ne_top_of_le_ne_top hT.mass_ne_top hT.normalFlatMass_le_mass
+/-- A nonnormal current has no normal decomposition. -/
+theorem normalFlatMass_of_not_isNormal (hT : ¬IsNormal T) : T.normalFlatMass = ⊤ := by
+  apply top_unique
+  refine T.le_normalFlatMass_iff.mpr fun R S hR hS heq => ?_
+  exact False.elim (hT (heq ▸ hR.add hS.comp_extDerivCLM))
 
-/-- Non-normal currents have infinite flat mass for normal decompositions. -/
+/-- Finiteness characterizes the domain of the real normal flat norm. -/
 @[simp]
-theorem normalFlatMass_eq_top_iff : normalFlatMass T = ⊤ ↔ ¬ IsNormal T := by
-  simpa only [not_not] using (not_congr (normalFlatMass_ne_top_iff (T := T)))
+theorem normalFlatMass_ne_top_iff : T.normalFlatMass ≠ ⊤ ↔ IsNormal T := by
+  refine ⟨fun h => by_contra fun hn => h (T.normalFlatMass_of_not_isNormal hn), fun h => ?_⟩
+  exact ne_top_of_le_ne_top h.mass_ne_top (T.normalFlatMass_le_mass h)
 
-/-- The triangle inequality, including infinite flat masses. -/
-theorem normalFlatMass_add_le : normalFlatMass (T + U) ≤ normalFlatMass T + normalFlatMass U := by
+/-- The flat mass satisfies the triangle inequality. -/
+theorem normalFlatMass_add_le :
+    (T + U).normalFlatMass ≤ T.normalFlatMass + U.normalFlatMass := by
   rw [← tsub_le_iff_right]
-  refine le_normalFlatMass_iff.mpr fun R S hR hS hT => ?_
+  refine T.le_normalFlatMass_iff.mpr fun R S hR hS hT => ?_
   rw [tsub_le_iff_right, ← tsub_le_iff_left]
-  refine le_normalFlatMass_iff.mpr fun R' S' hR' hS' hU => ?_
+  refine U.le_normalFlatMass_iff.mpr fun R' S' hR' hS' hU => ?_
   rw [tsub_le_iff_left]
   have hdecomp : T + U = (R + R') + (S + S') ∘L extDerivCLM := by
     rw [hT, hU, add_comp]
     abel
-  have hmassR : mass (R + R') ≤ mass R + mass R' := mass_add_le
-  have hmassS : mass (S + S') ≤ mass S + mass S' := mass_add_le
   calc
-    normalFlatMass (T + U) ≤ mass (R + R') + mass (S + S') :=
-      normalFlatMass_le _ _ (hR.add hR') (hS.add hS') hdecomp
-    _ ≤ (mass R + mass R') + (mass S + mass S') := add_le_add hmassR hmassS
+    (T + U).normalFlatMass ≤ mass (R + R') + mass (S + S') :=
+      normalFlatMass_le_of_eq_add_comp_extDerivCLM _ (hR.add hR') (hS.add hS') hdecomp
+    _ ≤ (mass R + mass R') + (mass S + mass S') := add_le_add mass_add_le mass_add_le
     _ = (mass R + mass S) + (mass R' + mass S') := by ac_rfl
 
-/-- Scaling a normal decomposition bounds the scaled flat mass. -/
-private theorem normalFlatMass_smul_le (a : ℝ) :
-    normalFlatMass (a • T) ≤ ‖a‖ₑ * normalFlatMass T := by
-  by_cases ha : a = 0
-  · simp [ha]
-  have ha0 : ‖a‖ₑ ≠ 0 := by simpa using ha
-  apply (ENNReal.div_le_iff' ha0 enorm_ne_top).mp
-  refine le_normalFlatMass_iff.mpr fun R S hR hS hT => ?_
-  apply (ENNReal.div_le_iff' ha0 enorm_ne_top).mpr
-  have h := normalFlatMass_le (a • R) (a • S) (hR.smul a) (hS.smul a) (T := a • T)
-    (by rw [hT, smul_add, smul_comp])
-  simpa only [FunLike.coe_smul, mass_smul, mul_add] using h
-
-/-- Real homogeneity of normal flat mass, also at zero and at infinite mass. -/
-@[simp]
-theorem normalFlatMass_smul (a : ℝ) : normalFlatMass (a • T) = ‖a‖ₑ * normalFlatMass T := by
-  refine le_antisymm (normalFlatMass_smul_le a) ?_
-  by_cases ha : a = 0
-  · simp [ha]
-  have h := normalFlatMass_smul_le (T := a • T) a⁻¹
-  have hcancel : a⁻¹ • (a • T) = T := inv_smul_smul₀ ha T
-  calc
-    ‖a‖ₑ * normalFlatMass T ≤ ‖a‖ₑ * (‖a⁻¹‖ₑ * normalFlatMass (a • T)) :=
-      mul_le_mul' le_rfl (by simpa only [hcancel] using h)
-    _ = normalFlatMass (a • T) := by
-      simp [← mul_assoc, -enorm_inv, ← enorm_mul, ha]
-
-@[simp]
-theorem normalFlatMass_neg : normalFlatMass (-T) = normalFlatMass T := by
-  simpa using normalFlatMass_smul (T := T) (-1)
-
-/-- The flat mass of a difference is bounded by the sum of flat masses. -/
-theorem normalFlatMass_sub_le : normalFlatMass (T - U) ≤ normalFlatMass T + normalFlatMass U := by
-  simpa only [sub_eq_add_neg, normalFlatMass_neg] using
-    (normalFlatMass_add_le (T := T) (U := -U))
-
-/-- The test-form bound for extended normal flat mass. The two supremum norms are finite,
-but the flat mass may be infinite. -/
-theorem enorm_apply_le_normalFlatMass_mul (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
+/-- Evaluation is controlled by flat mass and both the test and its exterior derivative. -/
+theorem enorm_apply_le_normalFlatMass_mul
     (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
-    ‖T ω‖ₑ ≤ normalFlatMass T * max ‖(ω : E →ᵇ (E [⋀^Fin k]→L[ℝ] F))‖ₑ
-      ‖(extDerivCLM ω : E →ᵇ (E [⋀^Fin (k + 1)]→L[ℝ] F))‖ₑ := by
+    ‖T ω‖ₑ ≤ T.normalFlatMass *
+      max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ
+        ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] F)‖ₑ := by
   let C := max ‖(ω : E →ᵇ (E [⋀^Fin k]→L[ℝ] F))‖ₑ
     ‖(extDerivCLM ω : E →ᵇ (E [⋀^Fin (k + 1)]→L[ℝ] F))‖ₑ
   by_cases hC : C = 0
@@ -163,7 +150,7 @@ theorem enorm_apply_le_normalFlatMass_mul (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F
     simp [hω]
   have hCtop : C ≠ ⊤ := by simp [C]
   apply (ENNReal.div_le_iff hC hCtop).mp
-  refine le_normalFlatMass_iff.mpr fun R S _ _ heq => ?_
+  refine T.le_normalFlatMass_iff.mpr fun R S _ _ heq => ?_
   apply (ENNReal.div_le_iff hC hCtop).mpr
   rw [heq, add_apply, comp_apply]
   calc
@@ -174,49 +161,85 @@ theorem enorm_apply_le_normalFlatMass_mul (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F
         (mul_le_mul' le_rfl (le_max_right _ _)))
     _ = (mass R + mass S) * C := (add_mul _ _ _).symm
 
-/-- Normal flat mass separates all currents, not just normal currents. -/
+/-- Vanishing flat mass detects the zero current, including in degree zero. -/
 @[simp]
-theorem normalFlatMass_eq_zero_iff : normalFlatMass T = 0 ↔ T = 0 := by
+theorem normalFlatMass_eq_zero_iff : T.normalFlatMass = 0 ↔ T = 0 := by
   refine ⟨fun h => ?_, fun h => h ▸ normalFlatMass_zero⟩
   ext ω
-  exact enorm_eq_zero.mp (le_antisymm
-    (by simpa only [h, zero_mul] using enorm_apply_le_normalFlatMass_mul T ω) bot_le)
+  have hb := T.enorm_apply_le_normalFlatMass_mul ω
+  simpa [h] using hb
 
-/-- Taking the boundary does not increase normal flat mass. This is stated only in positive
-degree; degree-zero currents have zero boundary in the ordinary current complex. -/
+/-- The one-sided rescaling estimate used to prove exact homogeneity. -/
+private theorem normalFlatMass_smul_le (a : ℝ) :
+    (a • T).normalFlatMass ≤ ‖a‖ₑ * T.normalFlatMass := by
+  by_cases ha : a = 0
+  · simp [ha]
+  have ha0 : ‖a‖ₑ ≠ 0 := by simpa using ha
+  apply (ENNReal.div_le_iff' ha0 enorm_ne_top).mp
+  refine T.le_normalFlatMass_iff.mpr fun R S hR hS hT => ?_
+  apply (ENNReal.div_le_iff' ha0 enorm_ne_top).mpr
+  have h := normalFlatMass_le_of_eq_add_comp_extDerivCLM (a • T) (hR.smul a) (hS.smul a)
+    (by rw [hT, smul_add, smul_comp])
+  simpa only [FunLike.coe_smul, mass_smul, mul_add] using h
+
+/-- Exact real homogeneity of the normal flat mass. -/
+@[simp]
+theorem normalFlatMass_smul (a : ℝ) :
+    (a • T).normalFlatMass = ‖a‖ₑ * T.normalFlatMass := by
+  by_cases ha : a = 0
+  · simp [ha]
+  refine le_antisymm (T.normalFlatMass_smul_le a) ?_
+  have h := (a • T).normalFlatMass_smul_le a⁻¹
+  have hnorm : ‖a‖ₑ * ‖a⁻¹‖ₑ = 1 := by rw [← enorm_mul, mul_inv_cancel₀ ha]; simp
+  simpa [smul_smul, inv_mul_cancel₀ ha, ← mul_assoc, hnorm] using mul_le_mul' (le_refl ‖a‖ₑ) h
+
+/-- Reversing a current preserves its flat mass. -/
+@[simp]
+theorem normalFlatMass_neg : (-T).normalFlatMass = T.normalFlatMass := by
+  have h := T.normalFlatMass_smul (-1 : ℝ)
+  rw [_root_.neg_one_smul ℝ T] at h
+  simpa only [enorm_neg, enorm_one, one_mul] using h
+
+/-- The flat mass of a difference is bounded by the sum of flat masses. -/
+theorem normalFlatMass_sub_le :
+    (T - U).normalFlatMass ≤ T.normalFlatMass + U.normalFlatMass := by
+  simpa only [sub_eq_add_neg, normalFlatMass_neg] using normalFlatMass_add_le T (-U)
+
+/-- Boundary is a contraction for the normal flat mass in positive degrees. -/
 theorem normalFlatMass_comp_extDerivCLM_le
-    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) :
-    normalFlatMass (T ∘L extDerivCLM) ≤ normalFlatMass T := by
-  refine le_normalFlatMass_iff.mpr fun R S hR _ heq => ?_
-  have hb : T ∘L extDerivCLM = 0 + R ∘L extDerivCLM := by
+    (W : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) :
+    (W ∘L extDerivCLM).normalFlatMass ≤ W.normalFlatMass := by
+  refine W.le_normalFlatMass_iff.mpr fun R S hR _ heq => ?_
+  have hb : W ∘L extDerivCLM = 0 + R ∘L extDerivCLM := by
     simp [heq, add_comp, comp_assoc, extDerivCLM_comp_extDerivCLM]
-  exact (normalFlatMass_le 0 R isNormal_zero hR hb).trans (by simp)
+  exact (normalFlatMass_le_of_eq_add_comp_extDerivCLM _ isNormal_zero hR hb).trans (by simp)
 
-/-- Restriction to an open subset does not increase normal flat mass. This is restriction
-as a distribution, not restriction to a Borel set, whose boundary may have infinite mass. -/
+/-- Restriction to an open subset is a contraction; fillings are restricted as well.
+This is distributional restriction, not restriction to a Borel set. -/
 theorem normalFlatMass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
-    normalFlatMass (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ≤
-      normalFlatMass T := by
-  refine le_normalFlatMass_iff.mpr fun R S hR hS heq => ?_
+    (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)).normalFlatMass ≤
+      T.normalFlatMass := by
+  refine T.le_normalFlatMass_iff.mpr fun R S hR hS heq => ?_
   have hdecomp : T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) =
       (R ∘L monoCLM ℝ) + (S ∘L monoCLM ℝ) ∘L extDerivCLM := by
     rw [comp_monoCLM_comp_extDerivCLM h, ← add_comp, heq]
-  exact (normalFlatMass_le _ _ (hR.comp_monoCLM h) (hS.comp_monoCLM h) hdecomp).trans
+  exact (normalFlatMass_le_of_eq_add_comp_extDerivCLM _
+    (hR.comp_monoCLM h) (hS.comp_monoCLM h) hdecomp).trans
     (add_le_add (mass_comp_monoCLM_le h) (mass_comp_monoCLM_le h))
 
-/-- Flat convergence implies convergence on each fixed test form. No operator topology on
-continuous linear maps is used for this weak-convergence statement. -/
-theorem tendsto_apply_of_tendsto_normalFlatMass_sub_zero {ι : Type*} {l : Filter ι}
+/-- Convergence in normal flat mass implies convergence on every fixed smooth test form.
+No uniform support bound is needed for this implication. -/
+theorem tendsto_apply_of_normalFlatMass_sub_tendsto_zero {ι : Type*} {l : Filter ι}
     {Ts : ι → 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
-    (h : Tendsto (fun i => normalFlatMass (Ts i - T)) l (𝓝 0))
-    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) : Tendsto (fun i => Ts i ω) l (𝓝 (T ω)) := by
+    (h : Tendsto (fun i => (Ts i - T).normalFlatMass) l (𝓝 0))
+    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    Tendsto (fun i => Ts i ω) l (𝓝 (T ω)) := by
   rw [tendsto_iff_enorm_sub_tendsto_zero]
-  have hlim := ENNReal.Tendsto.mul_const h (b :=
-    max ‖(ω : E →ᵇ (E [⋀^Fin k]→L[ℝ] F))‖ₑ
-      ‖(extDerivCLM ω : E →ᵇ (E [⋀^Fin (k + 1)]→L[ℝ] F))‖ₑ) (Or.inr (by finiteness))
-  apply tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (by simpa using hlim)
-  · exact fun _ => bot_le
-  · intro i
-    exact enorm_apply_le_normalFlatMass_mul (Ts i - T) ω
+  have hb : Tendsto (fun i => (Ts i - T).normalFlatMass *
+      max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ
+        ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] F)‖ₑ) l (𝓝 0) := by
+    simpa only [zero_mul] using ENNReal.Tendsto.mul_const h (Or.inr (by finiteness))
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hb
+    (fun _ => zero_le) (fun i => (Ts i - T).enorm_apply_le_normalFlatMass_mul ω)
 
-end Distribution
+end ContinuousLinearMap

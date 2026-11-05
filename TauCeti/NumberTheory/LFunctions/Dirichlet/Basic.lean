@@ -19,7 +19,8 @@ gamma factor but not the conductor factor. The gamma shift is zero for an even c
 one for an odd character. Only conductor one has poles, at zero and one; its card is exactly
 `riemannZetaData`, including the coefficient at zero.
 
-All three analytic-card predicates hold. The functional equation uses the conjugate card,
+Dirichlet agreement, meromorphic continuation, the functional equation and average absolute
+coefficient growth hold. The functional equation uses the conjugate card,
 so non-real characters are not implicitly identified with their inverses. The analytic functions
 and Gauss-sum root number come from Mathlib's Dirichlet continuation, by David Loeffler and
 Michael Stoll. The normalization follows Iwaniec–Kowalski, *Analytic Number Theory*, §5.1.
@@ -61,6 +62,15 @@ theorem dirichletData_coeff_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
 @[simp]
 theorem dirichletData_coeff_zero : (dirichletData χ hχ).coeff 0 = 0 := by
   simp only [dirichletData_coeff, ArithmeticFunction.map_zero]
+
+/-- Primitive Dirichlet cards satisfy average absolute coefficient growth, since
+Dirichlet character values have norm at most one. -/
+theorem dirichletData_hasAverageCoefficientGrowth :
+    (dirichletData χ hχ).HasAverageCoefficientGrowth := by
+  apply AnalyticLFunctionData.hasAverageCoefficientGrowth_of_norm_coeff_le
+  refine ⟨1, fun n hn ↦ ?_⟩
+  rw [dirichletData_coeff_of_ne_zero χ hχ hn]
+  exact χ.norm_le_one _
 
 @[simp]
 theorem dirichletData_conductor : (dirichletData χ hχ).conductor = ⟨N, NeZero.pos N⟩ := by

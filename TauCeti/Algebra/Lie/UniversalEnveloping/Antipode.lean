@@ -187,6 +187,15 @@ theorem antipode_pow (a : UniversalEnvelopingAlgebra R L) (n : ℕ) :
     antipode R (a ^ n) = antipode R a ^ n := by
   rw [antipode_apply, map_pow, MulOpposite.unop_pow, antipode_apply]
 
+/-- The antipode reverses a word in canonical Lie generators, with one minus sign per factor. -/
+theorem antipode_prod_map_ι (l : List L) :
+    antipode R (l.map (ι R)).prod =
+      (-1 : R) ^ l.length • (l.reverse.map (ι R)).prod := by
+  induction l with
+  | nil => simp
+  | cons x l ih =>
+    simp [List.reverse_cons, ih, pow_succ]
+
 /-- Applying the opposite-valued antipode and then its opposite transform is the identity. -/
 private theorem opComm_antipodeOp_comp_antipodeOp :
     (AlgHom.opComm (antipodeOp R)).comp (antipodeOp R) =
