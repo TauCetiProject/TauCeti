@@ -24,9 +24,10 @@ which fixes no representatives at all.
 
 Two families of representatives of the same right cosets differ, coset by coset, by a factor of
 `Γ₁` on the **left**, and `f ∣[k] (γ₁ x) = (f ∣[k] γ₁) ∣[k] x = f ∣[k] x` for `γ₁ ∈ Γ₁` when `f`
-is `Γ₁`-invariant: that is `SlashAction.slash_eq_of_rightCoset_eq`, and it is the only place
-invariance is used. Everything else is a comparison of two enumerations of the same finite set
-of right cosets: `DoubleCoset.doubleCoset_eq_iUnion_rightCosets` says the chosen representatives
+is `Γ₁`-invariant: that is `SlashAction.slash_eq_of_rightCoset_eq` (in `ModularForms/Basic.lean`),
+and it is the only place invariance is used. Everything else is a comparison of two
+enumerations of the same finite set of right cosets:
+`DoubleCoset.doubleCoset_eq_iUnion_rightCosets` says the chosen representatives
 cover the double coset and `DoubleCoset.op_mul_out_inv_smul_injective` says they do so without
 repetition, which are exactly the two hypotheses demanded of the family `(aᵢ)`, so the two
 enumerations are matched by a bijection and the sums agree term by term.
@@ -52,8 +53,6 @@ double coset contributes to the multiplicity-weighted composite `∑_D m(D₁, D
 
 ## Main results
 
-* `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `Γ₁`-invariant element by `x` depends
-  only on the right coset `Γ₁ x`, for any slash action.
 * `HeckeRing.GL2.heckeSlashSum_eq_sum_of_rightCosets`: **the choice-free description of the
   slash sum.** For `Γ₁`-invariant `f`, `heckeSlashSum k D f = ∑ᵢ f ∣[k] aᵢ` for any family
   `(aᵢ)` whose right cosets `Γ₁ aᵢ` are distinct and cover the double coset.
@@ -81,25 +80,6 @@ public section
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane DoubleCoset
 
 open scoped MatrixGroups ModularForm Pointwise
-
-namespace SlashAction
-
-/-- **Slashing a `H₁`-invariant element depends only on the right coset.** If `H₁ x = H₁ y`
-then `f ∣[k] x = f ∣[k] y`, because `y = (y x⁻¹) x` with `y x⁻¹ ∈ H₁` and the slash by that
-factor is trivial on `f`.
-
-This is the whole role invariance plays in the choice-freeness below: everything else is a
-comparison of two enumerations of the same set of cosets. -/
-lemma slash_eq_of_rightCoset_eq {β H A : Type*} [Group H] [AddMonoid A] [SlashAction β H A]
-    {H₁ : Subgroup H} (k : β) {f : A} (hf : ∀ γ ∈ H₁, f ∣[k] γ = f) {x y : H}
-    (h : MulOpposite.op x • (H₁ : Set H) = MulOpposite.op y • (H₁ : Set H)) :
-    f ∣[k] x = f ∣[k] y := by
-  have hγ : y * x⁻¹ ∈ H₁ := (rightCoset_eq_iff H₁).mp h
-  calc f ∣[k] x = (f ∣[k] (y * x⁻¹)) ∣[k] x := by rw [hf _ hγ]
-    _ = f ∣[k] (y * x⁻¹ * x) := (SlashAction.slash_mul k (y * x⁻¹) x f).symm
-    _ = f ∣[k] y := by rw [inv_mul_cancel_right]
-
-end SlashAction
 
 namespace HeckeRing.GL2
 
