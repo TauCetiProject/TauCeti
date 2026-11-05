@@ -72,8 +72,9 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
-* `TauCeti.laplacian_eq_traceL`, `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the Laplacian as
-  the trace of the second Fréchet derivative, and of the second iterated derivative.
+* `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
+* `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
+  of the second iterated Fréchet derivative.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
   differences are bounded by `dim E` times the second derivative and its differences.
 * `ContDiffOn.continuousOn_laplacian`: the Laplacian of a `C²` function on an open set is
@@ -115,8 +116,8 @@ theorem laplacian_eq_traceL (f : E → F) (x : E) :
         (fderiv ℝ (fderiv ℝ f) x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
 
-/-- The Laplacian is the trace functional `A ↦ ∑ᵢ A (bᵢ, bᵢ)`, a continuous linear map, applied to
-the second iterated derivative. Here `b` is the standard orthonormal basis. -/
+/-- The Laplacian of a function is the trace of its second iterated Fréchet derivative, expressed
+as a continuous linear functional of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/
 theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
     Δ f x = (∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
       ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (iteratedFDeriv ℝ 2 f x) := by
