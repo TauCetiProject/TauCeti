@@ -30,7 +30,7 @@ and `g₃ = b`.
 
 The lattice is determined by the curve up to homothety: two lattices give isomorphic curves, or
 just curves with the same `j`-invariant, exactly when they are homothetic. This follows from the
-fact that `j(τ) = j(τ')` exactly when `τ' ∈ SL(2, ℤ) τ` (`TauCeti.ModularForm.j_eq_j_iff`), since
+fact that `j(τ) = j(τ')` exactly when `τ' ∈ SL(2, ℤ) τ` (`TauCeti.ModularGroup.j_eq_j_iff`), since
 the lattice of `γ τ` is `(c τ + d)⁻¹ (ℤ τ + ℤ)`.
 
 ## Main results
@@ -73,7 +73,7 @@ theorem weierstrassCurve_j_eq_iff :
   obtain ⟨c₂, τ', h₂⟩ := L'.exists_lattice_eq_smul_periodPair
   rw [weierstrassCurve_j_eq_of_lattice_eq_smul h₁, weierstrassCurve_j_eq_of_lattice_eq_smul h₂,
     weierstrassCurve_j_periodPair, weierstrassCurve_j_periodPair,
-    TauCeti.ModularForm.j_eq_j_iff] at hj
+    TauCeti.ModularGroup.j_eq_j_iff] at hj
   obtain ⟨γ, rfl⟩ := hj
   -- Then `Λ' = c₂ (c τ + d)⁻¹ (ℤ τ + ℤ) = c₂ (c τ + d)⁻¹ c₁⁻¹ Λ`.
   have h₁' : τ.periodPair.lattice = (c₁⁻¹ • L).lattice := by

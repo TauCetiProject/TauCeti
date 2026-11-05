@@ -16,7 +16,8 @@ The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonze
 nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
 `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `θ ∈ [0, φ]`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Cosine is positive strictly between two
-angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`).
+angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
+`(-π / 2, π / 2)` the square of the sine is less than `1`, so `sin (x / 2) ^ 2 < 1` for `|x| < π`.
 
 For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
@@ -66,6 +67,15 @@ theorem one_sub_sq_le_one_sub_sq_mul_sin_sq (k θ : ℝ) :
 /-- For every real `k`, `1 - k² sin² θ ≤ 1`. -/
 theorem one_sub_sq_mul_sin_sq_le_one (k θ : ℝ) : 1 - k ^ 2 * sin θ ^ 2 ≤ 1 := by
   nlinarith [sq_nonneg (sin θ), sq_nonneg k]
+
+/-- The square of the sine is less than `1` on `(-π / 2, π / 2)`. -/
+theorem sin_sq_lt_one_of_abs_lt {x : ℝ} (hx : |x| < π / 2) : sin x ^ 2 < 1 := by
+  have h := cos_pos_of_mem_Ioo ⟨neg_lt_of_abs_lt hx, lt_of_abs_lt hx⟩
+  nlinarith [sin_sq_add_cos_sq x]
+
+/-- The square of `sin (x / 2)` is less than `1` for `|x| < π`. -/
+theorem sin_half_sq_lt_one_of_abs_lt {x : ℝ} (hx : |x| < π) : sin (x / 2) ^ 2 < 1 :=
+  sin_sq_lt_one_of_abs_lt (by rw [abs_div, abs_two]; linarith)
 
 /-- If `x` is nonzero and strictly between `-1` and `1`, then `sin (π * x)` is nonzero. -/
 theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
