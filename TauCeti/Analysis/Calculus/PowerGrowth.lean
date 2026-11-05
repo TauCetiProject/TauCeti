@@ -30,8 +30,8 @@ is the integration step of the lower density estimates for sets of finite perime
 
 Finally, a monotone nonnegative `f` with `f(t) ≤ t (1 + C t) / β · f'(t) + D t ^ p` at almost every
 `t` satisfies an almost-monotonicity formula: `(f(t) + β D / (p - β) · t ^ p) / (t / (1 + C t)) ^ β`
-is nondecreasing (`TauCeti.monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add`). This is the
-integrated form of Taubes's monotonicity inequality
+is nondecreasing (`TauCeti.monotoneOn_add_mul_rpow_div_rpow_div_one_add_mul_of_le_mul_deriv_add`).
+This is the integrated form of Taubes's monotonicity inequality
 `E(σ) ≤ (σ / 2) (1 + C σ) (1 + ε) E'(σ) + D σ ^ 4` for the energy `E(σ)` of balls of radius `σ`.
 When `ε` is at most a fixed multiple of the inner radius `a`, it gives the two-sided quadratic
 bounds `E(σ) ≤ K σ ^ 2` (`TauCeti.le_mul_sq_of_le_half_mul_deriv_add_mul_pow_four`) and, from
@@ -194,8 +194,8 @@ private theorem mul_log_sub_log_le_log_sub_log {f : ℝ → ℝ} {x y β C : ℝ
 on `[a, b]`, with `0 < a` and `0 ≤ f a`. If `β f(t) ≤ t (1 + C t) f'(t)` at almost every
 `t ∈ (a, b)`, where `C ≥ 0`, then `f(t) / (t / (1 + C t)) ^ β` is nondecreasing on `[a, b]`.
 No continuity of `f` is assumed. -/
-theorem monotoneOn_div_rpow_of_mul_le_mul_deriv_ae {f : ℝ → ℝ} {a b β C : ℝ} (ha : 0 < a)
-    (hC : 0 ≤ C) (hf : MonotoneOn f (Icc a b)) (hfa : 0 ≤ f a)
+theorem monotoneOn_div_rpow_div_one_add_mul_of_mul_le_mul_deriv_ae {f : ℝ → ℝ} {a b β C : ℝ}
+    (ha : 0 < a) (hC : 0 ≤ C) (hf : MonotoneOn f (Icc a b)) (hfa : 0 ≤ f a)
     (h : ∀ᵐ t, t ∈ Ioo a b → β * f t ≤ t * (1 + C * t) * deriv f t) :
     MonotoneOn (fun t ↦ f t / (t / (1 + C * t)) ^ β) (Icc a b) := by
   intro x hx y hy hxy
@@ -225,7 +225,8 @@ by `(t / (1 + C t)) ^ β` is nondecreasing on `[a, b]`.
 
 This is the integrated form of a monotonicity inequality
 `E(σ) ≤ (σ / 2) (1 + C σ) (1 + ε) E'(σ) + D σ ^ 4` for the energy `E(σ)` in balls of radius `σ`. -/
-theorem monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add {f : ℝ → ℝ} {a b β C D p : ℝ}
+theorem monotoneOn_add_mul_rpow_div_rpow_div_one_add_mul_of_le_mul_deriv_add {f : ℝ → ℝ}
+    {a b β C D p : ℝ}
     (ha : 0 < a) (hC : 0 ≤ C) (hD : 0 ≤ D) (hβ : 0 < β) (hβp : β < p)
     (hf : MonotoneOn f (Icc a b)) (hfa : 0 ≤ f a)
     (h : ∀ᵐ t, t ∈ Ioo a b → f t ≤ t * (1 + C * t) / β * deriv f t + D * t ^ p) :
@@ -235,7 +236,8 @@ theorem monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add {f : ℝ → ℝ} {
   set D' := β * D / (p - β) with hD'_def
   have hD' : 0 ≤ D' := by positivity
   have hp : 0 < p := hβ.trans hβp
-  refine monotoneOn_div_rpow_of_mul_le_mul_deriv_ae (f := fun t ↦ f t + D' * t ^ p) ha hC
+  refine monotoneOn_div_rpow_div_one_add_mul_of_mul_le_mul_deriv_ae
+    (f := fun t ↦ f t + D' * t ^ p) ha hC
     (fun s hs t ht hst => add_le_add (hf hs ht hst)
       (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (ha.le.trans hs.1) hst hp.le) hD'))
     (add_nonneg hfa (mul_nonneg hD' (Real.rpow_nonneg ha.le _))) ?_
@@ -266,8 +268,8 @@ theorem monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add {f : ℝ → ℝ} {
   nlinarith
 
 /-- The normalization `β = 2 / (1 + ε)`, `p = 4` of
-`monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add`, with denominators cleared and the forcing
-correction bounded by the forcing term: for `x ≤ y` in `[a, b]`,
+`monotoneOn_add_mul_rpow_div_rpow_div_one_add_mul_of_le_mul_deriv_add`, with denominators
+cleared and the forcing correction bounded by the forcing term: for `x ≤ y` in `[a, b]`,
 `f x ψ(y) ≤ (f y + D y ^ 4) ψ(x)`, where `ψ(s) = (s / (1 + C s)) ^ (2 / (1 + ε))`. -/
 private theorem mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C D ε x y : ℝ}
     (ha : 0 < a) (hC : 0 ≤ C) (hD : 0 ≤ D) (hε : 0 ≤ ε) (hf : MonotoneOn f (Icc a b))
@@ -277,7 +279,7 @@ private theorem mul_rpow_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → �
     f x * (y / (1 + C * y)) ^ (2 / (1 + ε)) ≤
       (f y + D * y ^ 4) * (x / (1 + C * x)) ^ (2 / (1 + ε)) := by
   have hβ2 : 2 / (1 + ε) ≤ 2 := div_le_self zero_le_two (by linarith)
-  have hmono := monotoneOn_add_mul_rpow_div_rpow_of_le_mul_deriv_add
+  have hmono := monotoneOn_add_mul_rpow_div_rpow_div_one_add_mul_of_le_mul_deriv_add
     (β := 2 / (1 + ε)) (p := 4) ha hC hD (by positivity) (by linarith) hf hfa (by
       filter_upwards [h] with t ht htI
       convert ht htI using 2
