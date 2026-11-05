@@ -6,10 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.LSum
-public import Mathlib.Data.Finsupp.Order
-public import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
 
 /-!
 # Linear maps out of free modules in terms of their values on the basis
@@ -19,16 +15,11 @@ A linear map out of the free module `ι →₀ A` is determined by its values on
 coordinatewise form for maps between free modules, where the values `f (Finsupp.single i 1) j`
 are the matrix coefficients of `f`.
 
-Over a linearly ordered field, a linear functional on `ι →₀ 𝕜` that is bounded below on the
-nonnegative functions is nonnegative on them, since the nonnegative functions form a cone.
-
 ## Main results
 
 * `LinearMap.apply_eq_finsuppSum_smul`: `f z = z.sum fun i a ↦ a • f (Finsupp.single i 1)`.
 * `LinearMap.apply_apply_eq_finsuppSum_mul`: the `j`-th coordinate of `f z` is
   `z.sum fun i a ↦ a * f (Finsupp.single i 1) j`.
-* `LinearMap.apply_nonneg_of_forall_le`: a linear functional bounded below on the
-  nonnegative functions is nonnegative on them.
 -/
 
 public section
@@ -52,20 +43,5 @@ theorem apply_apply_eq_finsuppSum_mul (f : (ι →₀ A) →ₗ[A] (κ →₀ A)
     f z j = z.sum fun i a ↦ a * f (Finsupp.single i 1) j := by
   rw [f.apply_eq_finsuppSum_smul, Finsupp.sum_apply]
   rfl
-
-/-- A linear functional on `ι →₀ 𝕜` that is bounded below on the nonnegative functions is
-nonnegative on them. -/
-theorem apply_nonneg_of_forall_le {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] (ψ : (ι →₀ 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜} (hψ : ∀ w : ι →₀ 𝕜, 0 ≤ w → u ≤ ψ w)
-    {w : ι →₀ 𝕜} (hw : 0 ≤ w) : 0 ≤ ψ w := by
-  have hu : u ≤ 0 := (hψ 0 le_rfl).trans_eq (map_zero ψ)
-  -- `t • w` is nonnegative, so `u ≤ t ψ w`, for every `t ≥ 0`.
-  by_contra! hneg
-  have ht : 0 ≤ u / ψ w := div_nonneg_of_nonpos hu hneg.le
-  have hle := hψ ((u / ψ w + 1) • w) (smul_nonneg (by linarith) hw)
-  rw [map_smul, smul_eq_mul] at hle
-  have hcancel : (u / ψ w + 1) * ψ w = u + ψ w := by
-    field_simp [hneg.ne]
-  linarith
 
 end LinearMap

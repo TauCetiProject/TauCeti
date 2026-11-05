@@ -9,10 +9,10 @@ public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
 public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Algebra.Order.Module.Field
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
 import TauCeti.Analysis.Normed.Module.WeakDual.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.LinearAlgebra.Finsupp.LSum
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Compact
 import TauCeti.Topology.ContinuousMap.Compact
 
