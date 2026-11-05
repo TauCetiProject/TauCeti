@@ -23,13 +23,12 @@ already forces `B x y = B 1 (x * y)`, so the form is multiplication followed by 
 functional `B 1`, the Frobenius trace; perfectness is nondegeneracy in the strong form which also
 makes every functional on `A` of the shape `B · a`.
 
-Three general facts about retracts and idempotent corners are proved along the way. A retract of a
-Baer module is Baer (`Module.Baer.of_leftInverse`), and a retract of an injective module in the same
-universe is injective (`Module.Injective.of_leftInverse`), straight from the class. Consequently
-the left ideal cut out by an idempotent is Baer over a self-injective ring
-(`Module.Baer.of_isIdempotentElem`): over a self-injective ring the principal projective modules
-are injective. More generally, every finitely generated projective module over a self-injective
-ring is injective (`Module.Injective.of_finite_projective`). The Baer facts are stated for
+Two general facts about retracts and idempotent corners are proved along the way. A retract of a
+Baer module is Baer (`Module.Baer.of_leftInverse`). Consequently the left ideal cut out by an
+idempotent is Baer over a self-injective ring (`Module.Baer.of_isIdempotentElem`): over a
+self-injective ring the principal projective modules are injective. More generally, every finitely
+generated projective module over a self-injective ring is injective
+(`Module.Injective.of_finite_projective`). The Baer facts are stated for
 `Module.Baer` because `Module.Baer.of_isIdempotentElem` is a statement about ideals and the
 conversion `Module.Baer.of_injective` from injective modules costs a smallness hypothesis on the
 ring.
@@ -39,8 +38,6 @@ ring.
 * `Function.Bijective.moduleBaer_self` and `Function.Bijective.moduleInjective_self`: an algebra
   over a field carrying an associative bilinear form whose flip is bijective is self-injective.
 * `Module.Baer.of_leftInverse`: a retract of a Baer module is Baer.
-* `Module.Injective.of_leftInverse`: a retract of an injective module of the same universe is
-  injective.
 * `Module.Baer.of_isIdempotentElem`: over a self-injective ring, a left ideal consisting of the
   elements fixed by right multiplication by an idempotent is Baer.
 * `Module.Injective.of_finite_projective`: every finitely generated projective module over a
@@ -72,15 +69,6 @@ theorem _root_.Module.Baer.of_leftInverse (hQ : Module.Baer R Q) (s : M →ₗ[R
     (hrs : ∀ m, r (s m) = m) : Module.Baer R M := fun I g => by
   obtain ⟨g', hg'⟩ := hQ I (s ∘ₗ g)
   exact ⟨r ∘ₗ g', fun x hx => by rw [LinearMap.comp_apply, hg' x hx, LinearMap.comp_apply, hrs]⟩
-
-/-- **Injective modules are closed under retracts.** If `M` admits a split inclusion into an
-injective module `Q` of the same universe, then `M` is injective. -/
-theorem _root_.Module.Injective.of_leftInverse {M : Type v} [AddCommGroup M] [Module R M]
-    [Module.Injective R Q] (s : M →ₗ[R] Q) (r : Q →ₗ[R] M) (hrs : ∀ m, r (s m) = m) :
-    Module.Injective R M :=
-  ⟨fun X Y _ _ _ _ f hf g => by
-    obtain ⟨h, hh⟩ := Module.Injective.out f hf (s ∘ₗ g)
-    exact ⟨r ∘ₗ h, fun x => by simp only [LinearMap.comp_apply, hh, hrs]⟩⟩
 
 end Retract
 
