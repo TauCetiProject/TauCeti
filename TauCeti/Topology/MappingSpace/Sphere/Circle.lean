@@ -22,6 +22,9 @@ homeomorphic to the loop space `ΩY`, naturally in `Y`.
 * `TauCeti.BasedTopologicalSpace.basedMapCircleHomeomorph`: `Map_*(S¹, Y) ≃ₜ ΩY`.
 * `TauCeti.BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_basedMapCircleHomeomorph`: the value
   of the loop of a based map `φ` at `t` is `φ (circleLoop t)`.
+* `TauCeti.BasedTopologicalSpace.basedMapCircleHomeomorph_const`,
+  `TauCeti.BasedTopologicalSpace.basedMapCircleHomeomorph_symm_refl`: compatibility with constant
+  based maps and `Path.refl`.
 * `TauCeti.BasedTopologicalSpace.basedMapCircleHomeomorph_map`: naturality in `Y`.
 -/
 
@@ -50,6 +53,29 @@ theorem iteratedLoopSpaceHomeomorph_basedMapCircleHomeomorph (Y : BasedTopologic
     iteratedLoopSpaceHomeomorph 1 Y (basedMapCircleHomeomorph Y φ) t = φ.1 (circleLoop t) := by
   rw [basedMapCircleHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
   exact BasedMap.homeomorphGenLoop_apply _ _ _ _ _ _ _
+
+/-- `basedMapCircleHomeomorph` sends the constant based map from `Sphere1` to the basepoint of
+`Ω Y`. -/
+@[simp]
+theorem basedMapCircleHomeomorph_const (Y : BasedTopologicalSpace.{u}) :
+    basedMapCircleHomeomorph Y ⟨ContinuousMap.const Sphere1 Y.basepoint, rfl⟩ =
+      (Y.iteratedLoopSpace 1).basepoint := by
+  apply (iteratedLoopSpaceHomeomorph 1 Y).injective
+  ext t
+  rw [iteratedLoopSpaceHomeomorph_basedMapCircleHomeomorph,
+    iteratedLoopSpaceHomeomorph_basepoint, ContinuousMap.const_apply, GenLoop.const_apply]
+
+-- `Ω^[1] Y` is `Y.loopSpace` (`iteratedLoopSpace_succ`, `iteratedLoopSpace_zero`), whose carrier
+-- is `Path Y.basepoint Y.basepoint` with basepoint `Path.refl Y.basepoint` (`loopSpace_basepoint`).
+/-- The inverse of `basedMapCircleHomeomorph` sends `Path.refl Y.basepoint` to the constant based
+map from `Sphere1`. -/
+@[simp]
+theorem basedMapCircleHomeomorph_symm_refl (Y : BasedTopologicalSpace.{u}) :
+    (basedMapCircleHomeomorph Y).symm (Path.refl Y.basepoint) =
+      ⟨ContinuousMap.const Sphere1 Y.basepoint, rfl⟩ := by
+  have hbp : (Y.iteratedLoopSpace 1).basepoint = Path.refl Y.basepoint := rfl
+  exact (basedMapCircleHomeomorph Y).symm_apply_eq.2
+    (hbp.symm.trans (basedMapCircleHomeomorph_const Y).symm)
 
 variable {X Y : BasedTopologicalSpace.{u}}
 

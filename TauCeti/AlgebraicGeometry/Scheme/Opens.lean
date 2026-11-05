@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
+public import TauCeti.CategoryTheory.Limits.Lattice
 
 /-!
 # Open subsets of schemes
@@ -19,6 +20,15 @@ This file records general-purpose facts about open subsets of schemes.
   subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
+* `AlgebraicGeometry.Scheme.Hom.preimage_finset_inf` and
+  `AlgebraicGeometry.Scheme.Hom.preimage_finite_product`: inverse images commute with finite
+  intersections, written as `Finset.inf` or as finite products of opens.
+* `AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom`: the comparison morphism from the product
+  of the inverse images to the inverse image of the product, the hypothesis of
+  `TauCeti.CategoryTheory.cechComplexCompIso` for `f⁻¹`.
+* `AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage`: along an affine morphism, the
+  inverse images of a family of opens with affine nonempty finite intersections, such as the covers
+  used to compute cohomology by Čech complexes, again have affine nonempty finite intersections.
 * `AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top`: the affine opens of `X`
   which a morphism `X ⟶ Y` maps into an affine open of `Y` cover `X`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
@@ -43,6 +53,8 @@ This file records general-purpose facts about open subsets of schemes.
   `V i`.
 * `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
   intersections of affine opens are affine.
+* `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
+  if its preimage in every chart of an open cover contains a dense subset.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -66,6 +78,42 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
     (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :
     f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
   rw [← f.preimage_sup, hUV, f.preimage_top]
+
+/-- Taking inverse images under a morphism of schemes commutes with finite intersections. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_finset_inf {Y : Scheme.{u}} (f : X ⟶ Y)
+    {ι : Type*} (s : Finset ι) (U : ι → Y.Opens) :
+    f ⁻¹ᵁ s.inf U = s.inf fun i ↦ f ⁻¹ᵁ U i :=
+  Finset.apply_inf_eq_inf_comp (f ⁻¹ᵁ ·) (fun _ _ ↦ rfl) rfl
+
+open Limits in
+/-- Taking inverse images under a morphism of schemes commutes with finite products of opens,
+which are their intersections. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_finite_product {Y : Scheme.{u}} (f : X ⟶ Y)
+    {J : Type*} [Finite J] (U : J → Y.Opens) :
+    f ⁻¹ᵁ ∏ᶜ U = ∏ᶜ fun j ↦ f ⁻¹ᵁ U j := by
+  classical
+  have := Fintype.ofFinite J
+  exact (congrArg (f ⁻¹ᵁ ·) (CompleteLattice.finite_product_eq_finset_image_inf U id)).trans <|
+    (f.preimage_finset_inf _ U).trans
+      (CompleteLattice.finite_product_eq_finset_image_inf (fun j ↦ f ⁻¹ᵁ U j) id).symm
+
+open Limits in
+/-- The finite product of the inverse images of opens maps to the inverse image of their product,
+as both are the same open (`preimage_finite_product`). This is the hypothesis of
+`TauCeti.CategoryTheory.cechComplexCompIso` for the functor `f⁻¹`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom {Y : Scheme.{u}} (f : X ⟶ Y)
+    {J : Type*} [Finite J] (U : J → Y.Opens) :
+    Nonempty ((∏ᶜ fun j ↦ f ⁻¹ᵁ U j) ⟶ f ⁻¹ᵁ ∏ᶜ U) :=
+  ⟨homOfLE (f.preimage_finite_product U).ge⟩
+
+/-- Along an affine morphism, the inverse images of a family of opens whose nonempty finite
+intersections are affine again have affine nonempty finite intersections. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage {Y : Scheme.{u}}
+    (f : X ⟶ Y) [IsAffineHom f] {ι : Type*} {U : ι → Y.Opens}
+    (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (s : Finset ι) (hs : s.Nonempty) :
+    IsAffineOpen (s.inf fun i ↦ f ⁻¹ᵁ U i) :=
+  f.preimage_finset_inf s U ▸ (hU s hs).preimage f
 
 /-- For a morphism `f : X ⟶ Y`, the affine opens of `X` which `f` maps into an affine open of `Y`
 cover `X`. -/
@@ -269,6 +317,16 @@ public instance instNonemptyTop {X : Scheme.{u}} [Nonempty X] :
     Nonempty ((⊤ : X.Opens) : Type u) :=
   let ⟨x⟩ := ‹Nonempty X›
   ⟨⟨x, trivial⟩⟩
+
+/-- Let `𝒰` be an open cover of `X`. A subset `U` of `X` is dense if its preimage in every chart
+of `𝒰` contains a dense subset. -/
+public theorem _root_.AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset
+    {X : Scheme.{u}} {U : Set X} (𝒰 : X.OpenCover) {s : ∀ i, Set (𝒰.X i)}
+    (hs : ∀ i, Dense (s i)) (hsU : ∀ i, s i ⊆ 𝒰.f i ⁻¹' U) : Dense U := by
+  refine dense_iff_inter_open.mpr fun V hV ⟨x, hxV⟩ ↦ ?_
+  obtain ⟨i, y, rfl⟩ := 𝒰.exists_eq x
+  obtain ⟨z, hzV, hzs⟩ := (hs i).inter_open_nonempty _ (hV.preimage (𝒰.f i).continuous) ⟨y, hxV⟩
+  exact ⟨_, hzV, hsU i hzs⟩
 
 end Scheme
 
