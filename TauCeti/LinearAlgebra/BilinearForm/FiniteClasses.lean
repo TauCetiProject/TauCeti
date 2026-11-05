@@ -11,9 +11,10 @@ import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Transvection.Basic
 import Mathlib.Data.Int.Interval
+import TauCeti.LinearAlgebra.Basis.Fin
+import TauCeti.LinearAlgebra.BilinearForm.Condensation
 import TauCeti.LinearAlgebra.BilinearForm.Hermite
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
-import TauCeti.LinearAlgebra.Matrix.Condensation
 
 /-!
 # Finitely many classes of positive definite integral forms

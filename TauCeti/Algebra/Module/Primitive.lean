@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Int.Basic
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.LinearAlgebra.Transvection.Basic
+import TauCeti.LinearAlgebra.Basis.Fin
 
 /-!
 # Primitive vectors in integer modules
@@ -48,8 +49,6 @@ coordinate taking a nontorsion class to its positive divisibility.
 * `Module.Basis.exists_basis_eq_iff`: the relative version. The vectors `b 0, …, b (i - 1)` of a
   basis `b` followed by `v` extend to a basis exactly when some integer-valued linear functional
   vanishes on `b 0, …, b (i - 1)` and takes the value one on `v`.
-* `Module.Basis.exists_basis_finCons_of_apply_eq_one`: if a linear functional takes the value one
-  on `v`, then `v` followed by a basis of its kernel is a basis.
 -/
 
 public section
@@ -117,20 +116,6 @@ variable {ι M : Type*} [AddCommGroup M] [Module ℤ M]
 one: all of them agree with the canonical structure, through which primitivity is defined. -/
 theorem isPrimitive (b : Module.Basis ι ℤ M) (j : ι) : TauCeti.IsPrimitive (b j) :=
   TauCeti.isPrimitive_def.2 ⟨(b.coord j).toAddMonoidHom.toIntLinearMap, by simp⟩
-
-end Module.Basis
-
-namespace Module.Basis
-
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-
-/-- If a linear functional `f` takes the value one on `v`, then `v` followed by any basis `b` of
-the kernel of `f` is a basis: `M` is the direct sum of `R v` and the kernel of `f`. -/
-theorem exists_basis_finCons_of_apply_eq_one {f : M →ₗ[R] R} {v : M} (hf : f v = 1) {m : ℕ}
-    (b : Basis (Fin m) R (LinearMap.ker f)) :
-    ∃ c : Basis (Fin (m + 1)) R M, c 0 = v ∧ ∀ i, c i.succ = b i := by
-  refine ⟨.mkFinCons v b (fun a x hx hax ↦ ?_) (fun z ↦ ⟨-f z, by simp [hf]⟩), by simp, by simp⟩
-  simpa [hf, LinearMap.mem_ker.1 hx] using congrArg f hax
 
 end Module.Basis
 

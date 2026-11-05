@@ -9,8 +9,9 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Data.Int.Round
+import TauCeti.LinearAlgebra.Basis.Fin
+import TauCeti.LinearAlgebra.BilinearForm.Condensation
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
-import TauCeti.LinearAlgebra.Matrix.Condensation
 
 /-!
 # Hermite's inequality for positive definite integral forms
