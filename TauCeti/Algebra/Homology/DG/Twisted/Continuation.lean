@@ -42,8 +42,9 @@ theorems take the degree and continuation equations as hypotheses, and the bundl
 * `TauCeti.continuationMap_mem_twistedTotalGrading`: the continuation map has total degree zero.
 * `TauCeti.continuationMap_twistedDifferential`: the continuation map is a chain map,
   `Ψ ∘ D_P = D_Q ∘ Ψ`, for a differential graded right module.
-* `TauCeti.continuationMap_kronecker`, `TauCeti.continuationMap_matMul`: the Kronecker matrix
-  induces the identity and the matrix product induces the composite.
+* `TauCeti.continuationMap_kronecker`, `TauCeti.continuationMap_matMul`,
+  `TauCeti.continuationMap_mul`: the Kronecker matrix induces the identity and the matrix product
+  induces the composite.
 * `TauCeti.continuation_kronecker`, `TauCeti.continuation_matMul`: the Kronecker matrix and the
   matrix product satisfy the continuation equation.
 
@@ -90,19 +91,19 @@ theorem continuationMap_apply (f : P → M) (y : Q) :
   (rfl)
 
 /-- The continuation map is additive in the matrix. -/
-theorem continuationMap_add (ν₁ ν₂ : P → Q → A) :
-    continuationMap R M (ν₁ + ν₂) = continuationMap R M ν₁ + continuationMap R M ν₂ :=
-  LinearMap.ext fun f ↦ funext fun y ↦ by
-    simp only [LinearMap.add_apply, Pi.add_apply, continuationMap_apply, op_add, add_smul,
-      Finset.sum_add_distrib]
+theorem continuationMap_add (F G : Matrix P Q A) :
+    continuationMap R M (F + G) = continuationMap R M F + continuationMap R M G :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (F + G) f y).trans <| by
+    simp only [LinearMap.add_apply, Pi.add_apply, continuationMap_apply F,
+      continuationMap_apply G, Matrix.add_apply, op_add, add_smul, Finset.sum_add_distrib]
 
 variable (R M P Q) in
 /-- The zero matrix induces the zero map. -/
 @[simp]
-theorem continuationMap_zero : continuationMap R M (0 : P → Q → A) = 0 :=
-  LinearMap.ext fun f ↦ funext fun y ↦ by
-    simp only [continuationMap_apply, Pi.zero_apply, op_zero, zero_smul, Finset.sum_const_zero,
-      LinearMap.zero_apply]
+theorem continuationMap_zero : continuationMap R M (0 : Matrix P Q A) = 0 :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (0 : Matrix P Q A) f y).trans <| by
+    simp only [Matrix.zero_apply, op_zero, zero_smul, Finset.sum_const_zero, LinearMap.zero_apply,
+      Pi.zero_apply]
 
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]
@@ -146,6 +147,11 @@ theorem continuationMap_matMul (ν₁ : P → Q → A) (ν₂ : Q → S → A) :
   simp only [continuationMap_apply, Matrix.mul_apply, Matrix.of_apply, Finset.op_sum,
     Finset.sum_smul, Finset.smul_sum, op_mul, mul_smul]
   exact Finset.sum_comm
+
+/-- The matrix product induces the composite of the continuation maps, stated for matrices. -/
+theorem continuationMap_mul (F : Matrix P Q A) (G : Matrix Q S A) :
+    continuationMap R M (F * G) = (continuationMap R M G).comp (continuationMap R M F) :=
+  continuationMap_matMul F G
 
 end MapMatrix
 

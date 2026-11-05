@@ -16,7 +16,7 @@ inverse. Consequently addition is cancellative, even when the given semiring str
 additive cancellation. This supplies the cancellation needed by the grid commutation chain-map
 criterion. The same holds in any module over a semiring of characteristic two
 (`TauCeti.add_self_eq_zero_of_charTwo`), which is how terms appearing twice cancel in sign-free
-differentials.
+differentials, and there `a + b = 0` exactly when `a = b` (`TauCeti.add_eq_zero_iff_eq_of_charTwo`).
 -/
 
 public section
@@ -36,5 +36,11 @@ theorem isCancelAdd_of_charTwo (R : Type*) [NonAssocSemiring R] [CharP R 2] : Is
 theorem add_self_eq_zero_of_charTwo (R : Type*) {M : Type*} [Semiring R] [CharP R 2]
     [AddCommMonoid M] [Module R M] (x : M) : x + x = 0 := by
   rw [← two_smul R, CharTwo.two_eq_zero, zero_smul]
+
+/-- In a module over a semiring of characteristic two, `a + b = 0` exactly when `a = b`. -/
+theorem add_eq_zero_iff_eq_of_charTwo (R : Type*) {M : Type*} [Semiring R] [CharP R 2]
+    [AddCommMonoid M] [Module R M] {a b : M} : a + b = 0 ↔ a = b := by
+  refine ⟨fun h => ?_, fun h => h ▸ add_self_eq_zero_of_charTwo R a⟩
+  rw [← add_zero a, ← add_self_eq_zero_of_charTwo R b, ← add_assoc, h, zero_add]
 
 end TauCeti

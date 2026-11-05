@@ -47,7 +47,7 @@ on matrices entrywise.
   `∂ (φ ⬝ F) + (∂ φ) ⬝ F = φ ⬝ ∂F` (`TauCeti.TypeDStructure.boxDifferential_continuationMap`). So
   homomorphisms induce chain maps, a morphism `H` with `∂H = F + G` induces a chain homotopy
   between the maps of `F` and `G`, composition is preserved
-  (`TauCeti.continuationMap_matMul`), and the identity morphism acts as the identity on `M ⊗ N`.
+  (`TauCeti.continuationMap_mul`), and the identity morphism acts as the identity on `M ⊗ N`.
 
 Over a ring of characteristic two the type `D` structure equation, the box tensor product and the
 morphism complex need no signs; this is the setting of bordered Heegaard Floer homology over `𝔽₂`.
@@ -213,11 +213,8 @@ theorem morphismDifferential_apply (F : Matrix X X' A) :
 variable (N) in
 /-- In characteristic two the structure equation reads `d δ = δ * δ`. -/
 theorem map_coeff_eq_coeff_mul_coeff [CharP R 2] :
-    N.coeff.map d = N.coeff * N.coeff := by
-  have h := N.map_coeff_add_coeff_mul_coeff
-  calc N.coeff.map d = N.coeff.map d + (N.coeff * N.coeff + N.coeff * N.coeff) := by
-        rw [add_self_eq_zero_of_charTwo R, add_zero]
-    _ = N.coeff * N.coeff := by rw [← add_assoc, h, zero_add]
+    N.coeff.map d = N.coeff * N.coeff :=
+  (add_eq_zero_iff_eq_of_charTwo R).mp N.map_coeff_add_coeff_mul_coeff
 
 /-- **The morphism differential squares to zero.** -/
 @[simp]
@@ -335,16 +332,9 @@ and the axioms of the differential module `M`. -/
 theorem boxDifferential_boxDifferential [CharP R 2] {dM : M →ₗ[R] M}
     (hM : IsUngradedDGRightModule d dM) (φ : X → M) :
     N.boxDifferential dM (N.boxDifferential dM φ) = 0 := by
-  have hadd : continuationMap R M (N.coeff.map d + N.coeff * N.coeff) =
-      continuationMap R M (N.coeff.map d) + continuationMap R M (N.coeff * N.coeff) :=
-    continuationMap_add _ _
-  have hmul : continuationMap R M (N.coeff * N.coeff) =
-      (continuationMap R M N.coeff).comp (continuationMap R M N.coeff) :=
-    continuationMap_matMul N.coeff N.coeff
-  have hzero : continuationMap R M (0 : Matrix X X A) = 0 := continuationMap_zero R M X X
   have h := congrArg (fun F => continuationMap R M F φ) N.map_coeff_add_coeff_mul_coeff
-  simp only [hadd, hmul, hzero, LinearMap.add_apply, LinearMap.comp_apply,
-    LinearMap.zero_apply] at h
+  simp only [continuationMap_add, continuationMap_mul, continuationMap_zero, LinearMap.add_apply,
+    LinearMap.comp_apply, LinearMap.zero_apply] at h
   ext z
   have hz := congrFun h z
   simp only [Pi.add_apply, Pi.zero_apply] at hz
@@ -395,21 +385,10 @@ theorem boxDifferential_continuationMap [CharP R 2] {dM : M →ₗ[R] M}
     N'.boxDifferential dM (continuationMap R M F φ) +
         continuationMap R M F (N.boxDifferential dM φ) =
       continuationMap R M (morphismDifferential N N' F) φ := by
-  have hFN : continuationMap R M (F * N'.coeff) =
-      (continuationMap R M N'.coeff).comp (continuationMap R M F) :=
-    continuationMap_matMul F N'.coeff
-  have hNF : continuationMap R M (N.coeff * F) =
-      (continuationMap R M F).comp (continuationMap R M N.coeff) :=
-    continuationMap_matMul N.coeff F
-  have hadd₁ : continuationMap R M (F.map d + F * N'.coeff + N.coeff * F) =
-      continuationMap R M (F.map d + F * N'.coeff) + continuationMap R M (N.coeff * F) :=
-    continuationMap_add _ _
-  have hadd₂ : continuationMap R M (F.map d + F * N'.coeff) =
-      continuationMap R M (F.map d) + continuationMap R M (F * N'.coeff) :=
-    continuationMap_add _ _
   ext z
-  simp only [boxDifferential_apply, morphismDifferential_apply, hadd₁, hadd₂, hFN, hNF,
-    map_add, LinearMap.add_apply, LinearMap.comp_apply, Pi.add_apply, hM.map_continuationMap]
+  simp only [boxDifferential_apply, morphismDifferential_apply, continuationMap_add,
+    continuationMap_mul, map_add, LinearMap.add_apply, LinearMap.comp_apply, Pi.add_apply,
+    hM.map_continuationMap]
   calc _ = (continuationMap R M F (fun x => dM (φ x)) z +
         continuationMap R M F (fun x => dM (φ x)) z) +
         (continuationMap R M (F.map d) φ z +
@@ -423,14 +402,9 @@ theorem boxDifferential_continuationMap_of_morphismDifferential_eq_zero [CharP R
     (hF : morphismDifferential N N' F = 0) (φ : X → M) :
     N'.boxDifferential dM (continuationMap R M F φ) =
       continuationMap R M F (N.boxDifferential dM φ) := by
-  have hzero : continuationMap R M (0 : Matrix X X' A) = 0 := continuationMap_zero R M X X'
   have h := boxDifferential_continuationMap (N := N) (N' := N') hM F φ
-  rw [hF, hzero, LinearMap.zero_apply] at h
-  calc _ = N'.boxDifferential dM (continuationMap R M F φ) +
-        (continuationMap R M F (N.boxDifferential dM φ) +
-          continuationMap R M F (N.boxDifferential dM φ)) := by
-        rw [add_self_eq_zero_of_charTwo R, add_zero]
-    _ = _ := by rw [← add_assoc, h, zero_add]
+  rw [hF, continuationMap_zero, LinearMap.zero_apply] at h
+  exact (add_eq_zero_iff_eq_of_charTwo R).mp h
 
 end BoxTensor
 
