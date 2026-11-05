@@ -45,7 +45,7 @@ variable {K G V : Type*} [Field K] [Group G] [Finite G] [AddCommGroup V] [Module
 
 /-- For a faithful representation, forgetting the reflecting hyperplane identifies the
 nonidentity elements of its inertia groups with the pseudoreflections. -/
-noncomputable def sigmaInertiaNeOneEquivPseudoreflections
+private noncomputable def sigmaInertiaNeOneEquivPseudoreflections
     (hρ : Function.Injective ρ)
     (ℓ : (H : ρ.reflectingHyperplanes) → Module.Dual K V)
     (hker : ∀ H, LinearMap.ker (ℓ H) = H.val) :
