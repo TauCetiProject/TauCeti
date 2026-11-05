@@ -53,7 +53,8 @@ the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum
   so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
 * `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
-* `ZLattice.summable_thetaCoset`: the series converge at every `τ : ℍ`.
+* `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
+  absolutely at every `τ : ℍ`.
 * `ZLattice.hasSum_thetaCoset_add_out`, `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`, `θ_{γ+L}`
   is the sum of the `θ_{γ+y+M}`, and `Θ_L` the sum of the `θ_{y+M}`, over the classes `y` of `L`
   modulo `M`.
@@ -188,12 +189,19 @@ theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
+/-- The theta series of a translate of a discrete subgroup converges absolutely at every point
+of the upper half-plane: the norms `exp (-π ‖γ + v‖² im τ)` of its terms are summable. -/
+theorem summable_norm_thetaCoset (γ : E) (τ : ℍ) :
+    Summable fun v : L => ‖cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ)‖ :=
+  .of_nonneg_of_le (fun _ => norm_nonneg _)
+    (fun _ => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) le_rfl)
+    (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) γ)
+
 /-- The theta series of a translate of a discrete subgroup converges at every point of
 the upper half-plane. -/
 theorem summable_thetaCoset (γ : E) (τ : ℍ) :
     Summable fun v : L => cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
-  .of_norm_bounded (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) γ)
-    fun v => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) le_rfl
+  (summable_norm_thetaCoset L γ τ).of_norm
 
 /-- The theta series of a discrete subgroup converges at every point of the upper
 half-plane. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 
 /-!
 # Extending bounded-operator convergence from dense subsets
@@ -17,6 +18,10 @@ pointwise convergence everywhere, and uniform Cauchy convergence on a parameter 
 Both rest on the same estimate
 `ContinuousLinearMap.norm_sub_apply_le_of_norm_le`, which moves the point at which a
 difference of two uniformly bounded operators is evaluated to a nearby point of the dense subset.
+
+For series, the same kind of estimate shows that if the finite partial sums `∑ i ∈ s, T i` of a
+family of operators into a complete space are uniformly bounded, then the vectors `x` for which
+`∑ i, T i x` converges form a closed set (`ContinuousLinearMap.isClosed_setOf_summable_apply`).
 -/
 
 public section
@@ -111,5 +116,28 @@ theorem uniformCauchySeqOn_apply_of_dense {ι Z : Type*} {p : Filter ι}
     simpa only [dist_eq_norm] using hm z hz
   linarith
 
+/-- If the finite partial sums of a family of operators into a complete space are uniformly
+bounded, then the vectors `x` for which the series `∑ i, T i x` converges form a closed set. -/
+theorem isClosed_setOf_summable_apply [CompleteSpace Y] {ι : Type*} {T : ι → X →L[𝕜] Y} {A : ℝ}
+    (hT : ∀ s : Finset ι, ‖∑ i ∈ s, T i‖ ≤ A) : IsClosed {x | Summable fun i ↦ T i x} := by
+  refine isClosed_of_closure_subset fun x hx ↦ summable_iff_vanishing_norm.mpr fun ε hε ↦ ?_
+  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.mp hx (ε / (2 * (|A| + 1))) (by positivity)
+  obtain ⟨s, hs⟩ := summable_iff_vanishing_norm.mp hy (ε / 2) (half_pos hε)
+  refine ⟨s, fun t ht ↦ ?_⟩
+  have hdist : (|A| + 1) * ‖x - y‖ < ε / 2 := by
+    rw [← dist_eq_norm]
+    calc (|A| + 1) * dist x y < (|A| + 1) * (ε / (2 * (|A| + 1))) := by gcongr
+      _ = ε / 2 := by field_simp
+  calc ‖∑ i ∈ t, T i x‖ = ‖(∑ i ∈ t, T i) (x - y) + ∑ i ∈ t, T i y‖ := by
+        simp [sum_apply, map_sub]
+    _ ≤ ‖∑ i ∈ t, T i‖ * ‖x - y‖ + ‖∑ i ∈ t, T i y‖ :=
+        norm_add_le_of_le (le_opNorm _ _) le_rfl
+    _ < ε / 2 + ε / 2 := by
+        gcongr ?_ + ?_
+        · calc ‖∑ i ∈ t, T i‖ * ‖x - y‖ ≤ (|A| + 1) * ‖x - y‖ := by
+                gcongr; linarith [hT t, le_abs_self A]
+            _ < ε / 2 := hdist
+        · exact hs t ht
+    _ = ε := add_halves ε
 
 end ContinuousLinearMap

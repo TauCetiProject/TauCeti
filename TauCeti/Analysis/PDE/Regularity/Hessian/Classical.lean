@@ -22,7 +22,9 @@ The Hölder estimates for weak second derivatives in `Hessian.Holder` alone do n
 classical differentiability of the solution. Here continuous representatives of these fields
 first give `C¹` representatives of the first derivatives, by
 `HasWeakFDerivOn.exists_contDiffOn_one_ae_eq`. Their assembly into a `C¹` weak derivative of
-`u` then gives a `C²` representative. This requires no extra derivatives of the data.
+`u` then gives a `C²` representative. This requires no extra derivatives of the data. Where
+the data is locally Hölder, this `C²` representative is the precise representative of `u`, so
+the precise representative is a classical solution there.
 
 The result is a regularity statement, not a quantitative Schauder estimate: no estimate of
 the `C^{2,α}` norm in terms of the data and the value of `u` is asserted here.
@@ -150,5 +152,32 @@ theorem exists_contDiffOn_two_ae_eq_and_neg_laplacian_eq_of_locally_holderOnWith
     (hfT.mono (hSV.trans (ball_subset_closedBall.trans (hrOT.trans inter_subset_right))))
     (by positivity) hSV
   exact ⟨S, ball_mem_nhds x (by positivity), g, hg, hug⟩
+
+/-- **The precise representative is a classical solution.** Let `u ∈ H¹(Ω)` be a weak solution
+of `-Δu = f` with `f ∈ L²(Ω)`, and let `U ⊆ Ω` be open. If `f` is locally `α`-Hölder on `U`, with
+`0 < α < 1`, then the precise representative of `u` is of class `C²` on `U` and solves
+`-Δu = f` at every point of `U`. -/
+theorem contDiffOn_preciseRepresentative_and_neg_laplacian_eq
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    {u : W1p volume Omega 2} {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hf : MemLp f 2 (volume.restrict Omega))
+    (hu : ∀ v : W1p0 volume Omega 2,
+      energyFormH1 (fun _ => 1) 0 0 u (v : W1p volume Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x)
+    {U : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hUO : U ≤ Omega)
+    (hfK : ∀ x ∈ U, ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α f T) :
+    ContDiffOn ℝ 2 (preciseRepresentative volume (W1p.value u)) U ∧
+      ∀ x ∈ U, -Δ (preciseRepresentative volume (W1p.value u)) x = f x := by
+  obtain ⟨g, hg, hug, hΔg⟩ :=
+    exists_contDiffOn_two_ae_eq_and_neg_laplacian_eq_of_locally_holderOnWith hα hα1
+      (hf.mono_measure (Measure.restrict_mono hUO le_rfl)) hfK
+      (energyFormH1_restrictL_eq_setIntegral hUO hu)
+  have heq : EqOn (preciseRepresentative volume (W1p.value u)) g U :=
+    eqOn_preciseRepresentative_of_continuousOn U.isOpen
+      ((W1p.hasWeakFDerivOn u).locallyIntegrableOn.mono_set hUO)
+      ((W1p.value_restrictL_ae hUO u).symm.trans hug) hg.continuousOn
+  refine ⟨hg.congr fun x hx => heq hx, fun x hx => ?_⟩
+  rw [← hΔg x hx, (laplacian_congr_nhds (Filter.eventually_of_mem (U.isOpen.mem_nhds hx)
+    fun y hy => heq hy)).self_of_nhds]
 
 end TauCeti.PDE
