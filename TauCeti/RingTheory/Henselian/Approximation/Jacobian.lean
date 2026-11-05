@@ -58,12 +58,36 @@ theorem jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal
         elkikJacobianIdeal f := by
   exact (elkikJacobianIdeal_le_iff f _).mp le_rfl s
 
+/-- A minor-ideal element times a multiplier carrying all relations into the selected
+relation ideal belongs to Elkik's ideal. -/
+theorem mul_mem_elkikJacobianIdeal (f : σ → MvPolynomial ι R) (s : Finset σ)
+    {a b : MvPolynomial ι R} (ha : a ∈ jacobianMinorsIdeal f s)
+    (hb : b ∈ (Ideal.span (f '' (s : Set σ))).colon (Ideal.span (Set.range f))) :
+    a * b ∈ elkikJacobianIdeal f :=
+  jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f s (Ideal.mul_mem_mul ha hb)
+
+/-- The empty selection contributes precisely the annihilator of all relations. -/
+theorem jacobianMinorsIdeal_empty_mul_colon (f : σ → MvPolynomial ι R) :
+    jacobianMinorsIdeal f ∅ *
+      (Ideal.span (f '' ((∅ : Finset σ) : Set σ))).colon (Ideal.span (Set.range f)) =
+        (Ideal.span (Set.range f)).annihilator := by
+  simp only [Finset.coe_empty, Set.image_empty, Ideal.span_empty, jacobianMinorsIdeal_empty,
+    Ideal.top_mul, Submodule.bot_colon]
+
+/-- If one equation generates all relations, its contribution is its partial-derivative ideal. -/
+theorem jacobianMinorsIdeal_singleton_mul_colon (f : σ → MvPolynomial ι R) (a : σ)
+    (hf : Ideal.span (Set.range f) ≤ Ideal.span {f a}) :
+    jacobianMinorsIdeal f {a} *
+      (Ideal.span (f '' (({a} : Finset σ) : Set σ))).colon (Ideal.span (Set.range f)) =
+        Ideal.span (Set.range fun i => pderiv i (f a)) := by
+  rw [Finset.coe_singleton, Set.image_singleton, Submodule.colon_eq_top_iff_le.mpr hf,
+    Ideal.mul_top, jacobianMinorsIdeal_singleton]
+
 /-- The empty-subset contribution is the annihilator of the relation ideal. -/
 theorem annihilator_span_range_le_elkikJacobianIdeal (f : σ → MvPolynomial ι R) :
     (Ideal.span (Set.range f)).annihilator ≤ elkikJacobianIdeal f := by
   have h := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f ∅
-  simpa only [Finset.coe_empty, Set.image_empty, Ideal.span_empty, jacobianMinorsIdeal_empty,
-    Ideal.top_mul, Submodule.bot_colon] using h
+  simpa only [jacobianMinorsIdeal_empty_mul_colon] using h
 
 /-- With no equations, Elkik's ideal is the unit ideal. -/
 @[simp] theorem elkikJacobianIdeal_isEmpty [IsEmpty σ] (f : σ → MvPolynomial ι R) :
@@ -98,25 +122,22 @@ theorem elkikJacobianIdeal_unique [Unique σ] (f : σ → MvPolynomial ι R) :
     elkikJacobianIdeal f = (Ideal.span {f default}).annihilator ⊔
       Ideal.span (Set.range fun i => pderiv i (f default)) := by
   have hrange : Set.range f = {f default} := Set.range_unique
-  have hsingle : f '' (({default} : Finset σ) : Set σ) = {f default} := by simp
+  have hspan : Ideal.span (Set.range f) ≤ Ideal.span {f default} := by rw [hrange]
   apply le_antisymm
   · rw [elkikJacobianIdeal_le_iff]
     intro s
     by_cases hs : s = ∅
     · subst s
-      simp only [jacobianMinorsIdeal_empty, Finset.coe_empty, Set.image_empty,
-        Ideal.span_empty, Submodule.bot_colon, Ideal.top_mul, hrange]
+      rw [jacobianMinorsIdeal_empty_mul_colon, hrange]
       exact le_sup_left
     · have hs' : s = {default} :=
         (Finset.nonempty_iff_ne_empty.mpr hs).eq_singleton_default
-      rw [hs', jacobianMinorsIdeal_singleton, hsingle, hrange,
-        Submodule.colon_eq_top_iff_le.mpr le_rfl, Ideal.mul_top]
+      rw [hs', jacobianMinorsIdeal_singleton_mul_colon f default hspan]
       exact le_sup_right
   · refine sup_le ?_ ?_
     · simpa only [hrange] using annihilator_span_range_le_elkikJacobianIdeal f
     · have h := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {default}
-      simpa only [jacobianMinorsIdeal_singleton, hsingle, hrange,
-        Submodule.colon_eq_top_iff_le.mpr le_rfl, Ideal.mul_top] using h
+      simpa only [jacobianMinorsIdeal_singleton_mul_colon f default hspan] using h
 
 /-- For a single equation that is a non-zero-divisor, only its partials contribute. -/
 theorem elkikJacobianIdeal_unique_of_mem_nonZeroDivisors [Unique σ]

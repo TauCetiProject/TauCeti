@@ -107,20 +107,33 @@ example :
 example : elkikJacobianIdeal (fun i : Fin 2 => (X i : MvPolynomial (Fin 2) ℤ)) = ⊤ := by
   let f : Fin 2 → MvPolynomial (Fin 2) ℤ := X
   let s : Finset (Fin 2) := Finset.univ
-  have hminor : jacobianMinorsIdeal f s = ⊤ := by
-    apply (Ideal.eq_top_iff_one _).mpr
-    rw [jacobianMinorsIdeal_eq_span]
-    have hm : Matrix.of (fun i j : s =>
-        pderiv (j : Fin 2) (f i)) = 1 := by
-      ext i j
-      simp only [f, pderiv_X, Matrix.of_apply, Matrix.one_apply,
-        Pi.single_apply, Subtype.ext_iff]
-    apply Ideal.subset_span
-    exact ⟨(fun j => j.val), by simp only [hm, Matrix.det_one]⟩
-  have h := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f s
+  have hm : Matrix.of (fun i j : s => pderiv (j : Fin 2) (f i)) = 1 := by
+    ext i j
+    simp only [f, pderiv_X, Matrix.of_apply, Matrix.one_apply,
+      Pi.single_apply, Subtype.ext_iff]
+  have hminor : (1 : MvPolynomial (Fin 2) ℤ) ∈ jacobianMinorsIdeal f s := by
+    simpa only [hm, Matrix.det_one] using
+      det_mem_jacobianMinorsIdeal f s (fun j => j.val)
   have hs : f '' (s : Set (Fin 2)) = Set.range f := by simp [s]
-  rw [hminor, hs, Submodule.colon_eq_top_iff_le.mpr le_rfl, Ideal.top_mul] at h
-  exact top_unique h
+  have hcolon : (1 : MvPolynomial (Fin 2) ℤ) ∈
+      (Ideal.span (f '' (s : Set (Fin 2)))).colon (Ideal.span (Set.range f)) := by
+    rw [hs, Submodule.colon_eq_top_iff_le.mpr le_rfl]
+    trivial
+  apply (Ideal.eq_top_iff_one _).mpr
+  simpa only [mul_one] using mul_mem_elkikJacobianIdeal f s hminor hcolon
+
+/-- Singleton minor ideals simplify with the caller's equality decision. -/
+example {R σ ι : Type*} [CommRing R] [DecidableEq σ]
+    (f : σ → MvPolynomial ι R) (a : σ) :
+    jacobianMinorsIdeal f {a} = Ideal.span (Set.range fun i => pderiv i (f a)) := by
+  simp
+
+/-- Coefficient change simplifies with the caller's equality decision. -/
+example {R S σ ι : Type*} [CommRing R] [CommRing S] [DecidableEq σ]
+    (g : R →+* S) (f : σ → MvPolynomial ι R) (s : Finset σ) :
+    Ideal.map (MvPolynomial.map g) (jacobianMinorsIdeal f s) =
+      jacobianMinorsIdeal (fun j => MvPolynomial.map g (f j)) s := by
+  simp
 
 /-- The one-equation API preserves an arbitrary caller equality decision on the equations. -/
 example {R σ ι : Type*} [CommRing R] [DecidableEq σ] [Unique σ]
