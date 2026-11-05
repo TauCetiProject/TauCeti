@@ -144,6 +144,32 @@ theorem apply_eq_zero_of_mem_biSup (B : LinearMap.BilinForm K V) {ι : Type*}
       simpa only [Submodule.mem_iInf, LinearMap.mem_ker, flip_apply] using fun y hy ↦ hker hy
   simpa using (Submodule.mem_iInf _).mp ((Submodule.mem_iInf _).mp (hle hx) y) hy
 
+/-- Adjoining a submodule `S` to one member `N k` of a pairwise orthogonal family of submodules of
+the orthogonal complement of `S` keeps the family pairwise orthogonal. -/
+theorem apply_eq_zero_update_sup {B : LinearMap.BilinForm K V} (hB : B.IsRefl) {ι : Type*}
+    [DecidableEq ι] {S : Submodule K V} {N : ι → Submodule K V} (hN : ∀ i, N i ≤ B.orthogonal S)
+    (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0) (k : ι) :
+    ∀ i j, i ≠ j → ∀ x ∈ Function.update N k (S ⊔ N k) i,
+      ∀ y ∈ Function.update N k (S ⊔ N k) j, B x y = 0 := by
+  have hSN {s : V} (hs : s ∈ S) {i : ι} {y : V} (hy : y ∈ N i) : B s y = 0 :=
+    mem_orthogonal_iff.mp (hN i hy) s hs
+  intro i j hij x hx y hy
+  by_cases hi : i = k <;> by_cases hj : j = k
+  · exact absurd (hi.trans hj.symm) hij
+  · subst hi
+    rw [Function.update_self] at hx
+    rw [Function.update_of_ne hj] at hy
+    obtain ⟨s, hs, x', hx', rfl⟩ := Submodule.mem_sup.mp hx
+    rw [map_add, LinearMap.add_apply, hSN hs hy, hO _ j hij x' hx' y hy, add_zero]
+  · subst hj
+    rw [Function.update_of_ne hi] at hx
+    rw [Function.update_self] at hy
+    obtain ⟨s, hs, y', hy', rfl⟩ := Submodule.mem_sup.mp hy
+    rw [map_add, hB.eq_zero (hSN hs hx), hO i _ hij x hx y' hy', add_zero]
+  · rw [Function.update_of_ne hi] at hx
+    rw [Function.update_of_ne hj] at hy
+    exact hO i j hij x hx y hy
+
 /-- The self-pairing of the sum of a finite orthogonal family is the sum of the self-pairings. -/
 theorem iIsOrtho.apply_sum_sum {B : LinearMap.BilinForm K V} {ι : Type*} [Fintype ι]
     {v : ι → V} (hv : B.iIsOrtho v) : B (∑ i, v i) (∑ i, v i) = ∑ i, B (v i) (v i) := by
@@ -316,6 +342,17 @@ theorem restrict_nondegenerate_iff_disjoint_orthogonal {B : LinearMap.BilinForm 
     (B.restrict W).Nondegenerate ↔ Disjoint W (B.orthogonal W) :=
   ⟨disjoint_orthogonal_of_restrict_nondegenerate,
     B.nondegenerate_restrict_of_disjoint_orthogonal hB⟩
+
+/-- For a nondegenerate reflexive form, the restriction to the orthogonal complement of a submodule
+complementary to its orthogonal complement is again nondegenerate. -/
+theorem nondegenerate_restrict_orthogonal_of_isCompl {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) (hnd : B.Nondegenerate) {S : Submodule R M}
+    (hS : IsCompl S (B.orthogonal S)) : (B.restrict (B.orthogonal S)).Nondegenerate := by
+  refine B.nondegenerate_restrict_of_disjoint_orthogonal hB
+    (Submodule.disjoint_def.mpr fun x hx hx' ↦ hnd.2 x fun m ↦ ?_)
+  obtain ⟨s, hs, y, hy, rfl⟩ := Submodule.mem_sup.mp (hS.sup_eq_top ▸ Submodule.mem_top (x := m))
+  rw [map_add, LinearMap.add_apply, mem_orthogonal_iff.mp hx s hs,
+    mem_orthogonal_iff.mp hx' y hy, add_zero]
 
 /-- A submodule with perfect flipped restricted pairing is complementary to its right orthogonal
 complement. -/
