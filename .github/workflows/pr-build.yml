@@ -47,14 +47,15 @@ permissions:
   actions: read  # fence status publication against obsolete run attempts
 
 concurrency:
-  # Bors batch IDs identify one base branch. Incomplete dispatch identities use
-  # the run ID so they cannot displace another candidate.
+  # Bors batch IDs identify one base branch. The group is keyed by batch ID
+  # alone: a replay of the same batch onto a moved base carries a new head and
+  # base SHA and must cancel the superseded run. Incomplete dispatch identities
+  # use the run ID so they cannot displace another candidate.
   group: >-
     pr-build-${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
       github.event.client_payload.batch_id && github.event.client_payload.head_sha &&
       github.event.client_payload.base_sha && github.event.client_payload.base_ref &&
-      format('bors-staging-{0}-{1}-{2}-{3}-{4}', github.repository_id, github.event.client_payload.batch_id,
-        github.event.client_payload.head_sha, github.event.client_payload.base_sha, github.event.client_payload.base_ref)
+      format('bors-staging-{0}', github.event.client_payload.batch_id)
       || format('bors-staging-run-{0}', github.run_id)
     ) || github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha }}
   cancel-in-progress: true
