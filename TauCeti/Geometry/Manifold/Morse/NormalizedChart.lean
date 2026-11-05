@@ -30,9 +30,9 @@ transport this holds for every boundaryless model, not only for self-modelled ma
 the coordinate form in which handles are attached to sublevel sets.
 
 As a first application, a nondegenerate critical point of index `0` is a strict local minimum,
-and one of index `dim M` is a strict local maximum. For every other index, two coordinate axes of a
-normalized chart give curves through the critical point, smooth near it, along which `f` takes
-values below and above the critical value; in dimension two this is the index-one saddle model
+and one of index `dim M` is a strict local maximum. For every other index, there are curves
+through the critical point, smooth near the parameter `0`, along which `f` takes values below and
+above the critical value; in dimension two this is the index-one saddle model
 `f = f x - u² + v²`.
 
 ## Main declarations
@@ -304,8 +304,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart
 /-- At a nondegenerate critical point whose Morse index is neither `0` nor `dim M`, there are two
 curves through the critical point, smooth near the parameter `0`, along which the function is
 strictly below, respectively strictly above, its critical value at every sufficiently small nonzero
-parameter. The curves are defined on all of `ℝ`; the proof takes the preimages of the first and
-last coordinate axes of a normalized Morse chart. -/
+parameter. The curves are defined on all of `ℝ`. -/
 theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
     (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
     (h : IsManifoldNondegenerateCriticalPoint I f x) (hpos : 0 < manifoldMorseIndex I f x)
