@@ -13,7 +13,8 @@ public import TauCeti.RingTheory.Cyclotomic.Integral
 # Exact cyclotomic representatives of character-table entries
 
 Both the ordinary and central character tables of a finite group have entries in the image of
-the distinguished embedding of `TauCeti.Cyclotomic e`, where `e` is the group exponent.
+the distinguished embedding of `TauCeti.Cyclotomic e`, where `e` is a multiple of the group
+exponent.
 Ordinary character values are sums of roots of unity. Central-character values are integral
 and are rational multiples of ordinary values, so they belong to the ring of integers of the
 same cyclotomic field. These representatives supply the exact tables needed for reconstruction
@@ -24,7 +25,7 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] (e : ℕ) [NeZero e] (he : e = Monoid.exponent G)
+variable {G : Type*} [Group G] (e : ℕ) [NeZero e] (he : Monoid.exponent G ∣ e)
 
 include he
 
@@ -32,8 +33,8 @@ section Finite
 
 variable [Finite G]
 
-/-- Every ordinary character-table entry has an exact cyclotomic representative at the group
-exponent. -/
+/-- Every ordinary character-table entry has an exact cyclotomic representative at any multiple
+of the group exponent. -/
 theorem characterTable_mem_range_complexEmbedding
     (i : Fin (Nat.card (ConjClasses G))) (C : ConjClasses G) :
     characterTable ℂ G i C ∈ Set.range (Cyclotomic.complexEmbedding (e := e)) := by
@@ -41,15 +42,15 @@ theorem characterTable_mem_range_complexEmbedding
   rw [Cyclotomic.mem_range_complexEmbedding_iff, characterTable_apply,
     ← character_irreducibleRepresentation]
   exact Representation.char_mem_adjoin_of_isPrimitiveRoot (irreducibleRepresentation ℂ i)
-    Cyclotomic.isPrimitiveRoot_complexRoot (he ▸ Monoid.pow_exponent_eq_one g)
+    Cyclotomic.isPrimitiveRoot_complexRoot (Monoid.exponent_dvd_iff_forall_pow_eq_one.mp he g)
 
 end Finite
 
 variable [Fintype G] [DecidableEq G]
 
-/-- Every central character-table entry has an exact cyclotomic representative at the group
-exponent, including when its expression in terms of ordinary values involves division by the
-character degree. -/
+/-- Every central character-table entry has an exact cyclotomic representative at any multiple
+of the group exponent, including when its expression in terms of ordinary values involves division
+by the character degree. -/
 theorem centralCharacterTable_mem_range_complexEmbedding
     (i : Fin (Nat.card (ConjClasses G))) (C : ConjClasses G) :
     centralCharacterTable ℂ G i C ∈ Set.range (Cyclotomic.complexEmbedding (e := e)) := by

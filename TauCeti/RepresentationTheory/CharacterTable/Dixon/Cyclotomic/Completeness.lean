@@ -56,9 +56,9 @@ theorem exists_isCyclotomicCharacterTableSpec :
   have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   let τ := finCongr d.numClasses_eq_card_conjClasses
   choose omega homega using fun i k ↦ centralCharacterTable_mem_range_complexEmbedding
-    e he (τ i) (d.classOf k)
+    e he.symm.dvd (τ i) (d.classOf k)
   choose table htable using fun i k ↦ characterTable_mem_range_complexEmbedding
-    e he (τ i) (d.classOf k)
+    e he.symm.dvd (τ i) (d.classOf k)
   refine ⟨omega, table, fun i ↦ characterDegree ℂ (τ i), ?_⟩
   -- Reflect the exact identities through the injective complex embedding.
   refine
