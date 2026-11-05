@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Matrix.HermitianSignature.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import Mathlib.Analysis.Matrix.Normed
-import TauCeti.Analysis.Matrix.PosDef
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Local constancy of the Hermitian signature
@@ -42,7 +42,7 @@ negative index of any continuous family of bilinear forms is lower semicontinuou
 public section
 
 open Filter Topology
-open scoped Matrix Matrix.Norms.Operator
+open scoped Matrix.Norms.Operator
 
 namespace Matrix.IsHermitian
 
@@ -164,29 +164,20 @@ theorem eventually_sigNeg_toBilinForm_le_of_continuousAt {X : Type*} [Topologica
     ∀ᶠ y in 𝓝 x,
       sigNeg (V x).toBilinForm.toQuadraticMap ≤ sigNeg (V y).toBilinForm.toQuadraticMap := by
   -- A maximal negative-definite subspace `W` for `V x` stays negative-definite for the forms
-  -- near `V x`: in a basis of `W`, this is openness of positive definiteness of Gram matrices.
+  -- near `V x`, by openness of strict diagonal positivity of the negated restrictions to `W`.
   obtain ⟨W, hW, hneg⟩ :=
     exists_finrank_eq_sigNeg_and_negDef (V x).toBilinForm.toQuadraticMap
-  let b := Module.finBasis ℝ W
-  let B : X → LinearMap.BilinForm ℝ W := fun y ↦ -(V y).toBilinForm.compl₁₂ W.subtype W.subtype
-  have hB (y : X) (v : Fin (Module.finrank ℝ W) → ℝ) :
-      v ⬝ᵥ (B y).toMatrix b *ᵥ v = -V y (b.equivFun.symm v) (b.equivFun.symm v) := by
-    rw [LinearMap.BilinForm.dotProduct_toMatrix_mulVec]
-    simp [B]
-  have hA : ContinuousAt (fun y ↦ (B y).toMatrix b) x := by
-    refine continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
-    simpa [B, LinearMap.BilinForm.toMatrix_apply] using
-      ((hc.clm_apply continuousAt_const).clm_apply continuousAt_const).neg
-  have hAx : ∀ v, v ≠ 0 → 0 < v ⬝ᵥ (B x).toMatrix b *ᵥ v := fun v hv ↦ by
-    rw [hB]
-    simpa using hneg (b.equivFun.symm v) (b.equivFun.symm.map_ne_zero_iff.mpr hv)
-  filter_upwards [hA.eventually (TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos.mem_nhds hAx)]
+  let C : X → W →L[ℝ] W →L[ℝ] ℝ := fun y ↦ -(V y).bilinearComp W.subtypeL W.subtypeL
+  have hC : ContinuousAt C x := by
+    refine continuousAt_clm_apply.2 fun v ↦ continuousAt_clm_apply (f := fun y ↦ C y v) |>.2
+      fun w ↦ ?_
+    simpa [C] using ((hc.clm_apply continuousAt_const).clm_apply continuousAt_const).neg
+  have hCx : C x ∈ {b : W →L[ℝ] W →L[ℝ] ℝ | ∀ w, w ≠ 0 → 0 < b w w} := fun w hw ↦ by
+    simpa [C] using hneg w (by simpa using hw)
+  filter_upwards [hC.eventually (TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds hCx)]
     with y hy
   rw [← hW]
-  refine le_sigNeg_of_negDef _ fun w hw ↦ ?_
-  have h := hy (b.equivFun w) (b.equivFun.map_ne_zero_iff.mpr hw)
-  rw [hB, LinearEquiv.symm_apply_apply] at h
-  simpa using h
+  exact le_sigNeg_of_negDef _ fun w hw ↦ by simpa [C] using hy w hw
 
 /-- **The negative index is constant between crossings.** Along a family of symmetric continuous
 bilinear forms, continuous and nondegenerate on a preconnected set `s`, the negative index takes

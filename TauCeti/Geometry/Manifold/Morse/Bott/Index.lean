@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
-public import TauCeti.Geometry.Manifold.Morse.Persistence
-import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # The critical value and the index of a Morse–Bott critical submanifold
@@ -19,7 +17,8 @@ Morse–Bott case, the Morse index of `f` are locally constant. Hence on each co
 attachment of negative disc bundles: the negative normal bundle of a component has constant rank
 equal to its index.
 
-The value is locally constant because `d(f ∘ i) = df ∘ di` vanishes on `S`. For the index, recall
+The value is locally constant because `d(f ∘ i) = df ∘ di` vanishes on `S`
+(`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isLocallyConstant_comp`). For the index, recall
 from `TauCeti.Geometry.Manifold.Morse.Bott.Basic` that at each point the Morse indices of `f` and
 `-f` add up to the codimension of `S`
 (`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank`).
@@ -31,8 +30,6 @@ jump along a degenerate critical submanifold.
 
 ## Main declarations
 
-* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isLocallyConstant_comp`: a function is locally
-  constant along each of its critical submanifolds.
 * `IsNondegenerateCriticalSubmanifold.eventually_manifoldMorseIndex_eq` and
   `IsNondegenerateCriticalSubmanifold.isLocallyConstant_manifoldMorseIndex`, in the namespace
   `TauCeti.SmoothEmbedding`: the Morse index is locally constant along a Morse–Bott critical
@@ -60,20 +57,6 @@ namespace SmoothEmbedding
 
 variable {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
 include hn
-
-/-- **A function is locally constant along a critical submanifold.** The differential of `f ∘ i`
-is `df ∘ di`, which vanishes because every point of the submanifold is critical. In particular `f`
-takes a single value, the critical value, on each connected component of `S`. -/
-theorem IsCriticalSubmanifold.isLocallyConstant_comp [IsManifold J 1 S]
-    (h : i.IsCriticalSubmanifold f) : IsLocallyConstant (f ∘ i) := by
-  have hf (s : S) : MDifferentiableAt I 𝓘(ℝ) f (i s) :=
-    (h.contMDiffAt s).mdifferentiableAt two_ne_zero
-  have hi (s : S) : MDifferentiableAt J I i s := (i.contMDiff s).mdifferentiableAt hn
-  refine MDifferentiable.isLocallyConstant_of_mfderiv_eq_zero (fun s ↦ (hf s).comp s (hi s))
-    fun s ↦ ?_
-  rw [mfderiv_comp s (hf s) (hi s),
-    mem_criticalPoints_iff_mfderiv_eq_zero.1 (h.mem_criticalPoints s),
-    ContinuousLinearMap.zero_comp]
 
 namespace IsNondegenerateCriticalSubmanifold
 

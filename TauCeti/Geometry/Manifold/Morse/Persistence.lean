@@ -49,11 +49,6 @@ balls cover `K`. Consequently the smooth functions which are Morse on `K` form a
 (`TauCeti.isOpen_setOf_isMorseOn`), and on a compact manifold so do the Morse functions
 (`TauCeti.isOpen_setOf_isMorse`). This is the openness half of the genericity of Morse functions.
 
-Without nondegeneracy, the Morse index is still lower semicontinuous on the critical set: critical
-points near `x` have index at least that of `x` (`TauCeti.eventually_manifoldMorseIndex_le`). This
-is read off from the vector-space statement `TauCeti.eventually_morseIndex_le` in the preferred
-chart at `x`.
-
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
@@ -141,27 +136,6 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_criticalPoint_perturbation_m
         (TauCeti.mem_criticalPoints.1 hcrit)
     rw [hright hz] at hzero
     rw [huniq z hz hzero]
-
-/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless
-finite-dimensional manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
-the Morse index is at least the Morse index at `x`. The point `x` need not be critical, nor
-nondegenerate. -/
-theorem eventually_manifoldMorseIndex_le [IsManifold I 2 M] {f : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
-    ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → manifoldMorseIndex I f x ≤ manifoldMorseIndex I f y := by
-  -- Both indices are read in the preferred chart at `x`: at `x` by definition, and at nearby
-  -- critical points because there the Morse index may be computed in any chart.
-  set e := chartAt H x
-  have he : e ∈ IsManifold.maximalAtlas I 2 M := IsManifold.chart_mem_maximalAtlas x
-  have hx : x ∈ e.source := mem_chart_source H x
-  have hg := (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).1 hf
-  have hcont : ContinuousAt (e.extend I) x := e.continuousAt_extend hx
-  filter_upwards [hcont.eventually (eventually_morseIndex_le hg),
-    hcont.eventually (hg.eventually (by simp)), e.open_source.mem_nhds hx]
-    with y hidx hreg hy hcrit
-  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hy
-    ((contMDiffAt_iff_contDiffAt_comp_extend_symm he hy).2 hreg) (mem_criticalPoints.1 hcrit)]
-  simpa only [manifoldMorseIndex_def, extChartAt] using hidx
 
 section WeakWhitney
 
