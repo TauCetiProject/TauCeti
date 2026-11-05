@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import TauCeti.LinearAlgebra.BilinearForm.Contact
+public import TauCeti.LinearAlgebra.BilinearForm.Contact.NormalForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
@@ -22,7 +22,10 @@ is then a field of hyperplanes, the contact distribution. Pointwise, this is the
 This intrinsic formulation needs no dimension index. In finite dimension it forces the model
 space to have odd dimension `2 n + 1` (`TauCeti.SmoothForm.IsContactForm.odd_finrank`), and the
 contact distribution then has rank `2 n`
-(`TauCeti.SmoothForm.IsContactForm.finrank_kerDistribution_add_one`).
+(`TauCeti.SmoothForm.IsContactForm.finrank_kerDistribution_add_one`). At each point the form
+and its exterior derivative are then the standard `dz` and `Σᵢ dqᵢ ∧ dpᵢ` in suitable linear
+coordinates on the tangent space
+(`TauCeti.SmoothForm.IsContactForm.exists_linearEquiv_eq_stdContact`).
 
 Only the hyperplane field `ξ` is invariant: multiplying `α` by a nowhere vanishing `C¹` function
 `f` leaves `ξ` unchanged and gives again a contact form
@@ -49,6 +52,8 @@ condition whenever its value at `x` is nonzero (`TauCeti.isContactFormAt_fun_smu
 * `TauCeti.SmoothForm.isContactForm_smul_iff`, `TauCeti.SmoothForm.isContactForm_neg_iff`:
   rescaling by a nonzero constant.
 * `TauCeti.SmoothForm.IsContactForm.odd_finrank`: contact manifolds are odd-dimensional.
+* `TauCeti.SmoothForm.IsContactForm.exists_linearEquiv_eq_stdContact`: at each point, a contact
+  form and its exterior derivative are standard in suitable linear coordinates.
 * `TauCeti.IsContactFormAt`: the pointwise contact condition for a rough one-form, with
   `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff` and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
@@ -84,6 +89,13 @@ theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpac
     v ∈ α.kerDistribution x ↔ α.1 x ![v] = 0 := by
   exact RoughForm.mem_ker
 
+/-- The kernel distribution of a smooth one-form is the pointwise kernel of its underlying rough
+form. -/
+theorem kerDistribution_eq_ker (α : SmoothForm I M ℝ 1) (x : M) :
+    α.kerDistribution x = RoughForm.ker α.1 x := by
+  ext
+  rw [mem_kerDistribution, RoughForm.mem_ker]
+
 /-- At each point, `kerDistribution α` is the kernel of the covector `α_x`. -/
 theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
     α.kerDistribution x = LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by
@@ -112,13 +124,26 @@ theorem isContactForm_iff {α : SmoothForm I M ℝ 1} :
           (∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) → v = 0 := by
   refine forall_congr' fun x ↦ ?_
   rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
-  simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
-    mextDerivₗ_apply, ne_eq, LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
+  simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq, LinearMap.ext_iff,
+    LinearMap.zero_apply, not_forall]
 
 /-- A contact form does not vanish. -/
 theorem IsContactForm.exists_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
     ∃ v : TangentSpace I x, α.1 x ![v] ≠ 0 :=
   (isContactForm_iff.1 hα x).1
+
+/-- A contact form vanishes nowhere. -/
+theorem IsContactForm.apply_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
+    α.1 x ≠ 0 := fun h ↦
+  let ⟨_, hv⟩ := hα.exists_ne_zero x
+  hv (by simp [h])
+
+/-- Two one-forms with the same kernels vanish at the same points: a covector vanishes exactly
+when its kernel is the whole tangent space. -/
+theorem apply_eq_zero_iff_of_kerDistribution_eq {α β : SmoothForm I M ℝ 1}
+    (hker : β.kerDistribution = α.kerDistribution) (x : M) : β.1 x = 0 ↔ α.1 x = 0 := by
+  rw [← RoughForm.ker_eq_top_iff, ← RoughForm.ker_eq_top_iff]
+  exact Eq.congr_left (congrFun hker x)
 
 /-- If `β = f α` for a nowhere vanishing function `f`, then `α` and `β` have the same kernel. -/
 theorem kerDistribution_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
@@ -146,8 +171,7 @@ theorem isContactForm_iff_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → �
     intro v w hv hw
     have hβ' : β.1 = fun y ↦ f y • α.1 y := funext hβ
     rw [ha] at hv hw
-    simp only [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
-      LinearMap.smul_apply, smul_eq_mul, hβ',
+    simp only [← mextDeriv_eq_bilinFormAt, LinearMap.smul_apply, smul_eq_mul, hβ',
       mextDeriv_fun_smul_apply ((hf x).mdifferentiableAt one_ne_zero) (α.mdifferentiableAt x),
       hv, hw, mul_zero, sub_zero, zero_add]
   rw [hb, Module.Dual.isContact_smul_iff (hf₀ x), Module.Dual.isContact_congr hdβ,
@@ -191,6 +215,21 @@ manifold is nonempty. -/
 theorem IsContactForm.odd_finrank [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1}
     (hα : α.IsContactForm) (x : M) : Odd (finrank ℝ E) :=
   (hα x).odd_finrank (isAlt_bilinFormAt _ x)
+
+/-- **Linear normal form of a contact form at a point.** At each point `x`, there are linear
+coordinates `e : T_x M ≃ ℝⁿ × ℝⁿ × ℝ` on the tangent space in which `α_x` is the standard contact
+covector `dz` and `dα_x` is the standard form `Σᵢ dqᵢ ∧ dpᵢ`. These are the values at the origin
+of the standard contact form `dz - Σᵢ pᵢ dqᵢ` and of its exterior derivative. -/
+theorem IsContactForm.exists_linearEquiv_eq_stdContact [FiniteDimensional ℝ E]
+    {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
+    ∃ (n : ℕ) (e : TangentSpace I x ≃ₗ[ℝ] (Fin n → ℝ) × (Fin n → ℝ) × ℝ),
+      (∀ v, α.1 x ![v] = stdContactCovector ℝ n (e v)) ∧
+        ∀ v w, mextDeriv α.1 x ![v, w] = stdContactBilinForm ℝ n (e v) (e w) := by
+  obtain ⟨n, e, ha, hB⟩ := (hα x).exists_linearEquiv_eq_stdContact (isAlt_bilinFormAt _ x)
+  refine ⟨n, e, fun v ↦ ?_, fun v w ↦ ?_⟩
+  · rw [← degreeOneEquiv_coe_apply, ← ha, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  · simpa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] using
+      (LinearMap.congr_fun₂ hB v w).symm
 
 end SmoothForm
 

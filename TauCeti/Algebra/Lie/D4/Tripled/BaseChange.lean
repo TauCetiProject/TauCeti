@@ -506,6 +506,16 @@ theorem mkQuotient_comp_weightTorusIntegralCoordinateMap :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight definingIdeal_def
 
+/-- Composing the integral weight-torus bialgebra map with the quotient map recovers the
+represented weight-torus bialgebra map inside `GL₂₄`. -/
+theorem weightTorusIntegralCoordinateMap_comp_quotient :
+    weightTorusIntegralCoordinateMap.hom.comp
+        (Bialgebra.Quotient.mkBialgHom definingIdeal.toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := ℤ) d4TripledWeight := by
+  rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_weightTorusIntegralCoordinateMap,
+    GeneralLinear.hom_weightTorusCoordinateMap]
+
 /-- On points, the integral factored coordinate map is the named weight torus. -/
 @[simp]
 theorem mulEquiv_mapPointsFunctor_weightTorusIntegralCoordinateMap

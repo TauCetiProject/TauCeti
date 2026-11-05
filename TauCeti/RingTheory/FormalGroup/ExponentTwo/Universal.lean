@@ -150,6 +150,12 @@ instance : formalGroup.IsComm :=
 theorem nsmulSeries_two_formalGroup : formalGroup.nsmulSeries 2 = 0 :=
   FormalGroup.nsmulSeries_smul_𝔾ₐ_eq_zero log⁻¹ (CharP.cast_eq_zero _ 2)
 
+/-- Every base change of the universal formal group law of exponent two has exponent two. -/
+@[simp]
+theorem nsmulSeries_two_map_formalGroup (f : ExponentTwoLazardRing →+* R) :
+    (formalGroup.map f).nsmulSeries 2 = 0 := by
+  rw [← FormalGroup.map_nsmulSeries, nsmulSeries_two_formalGroup, map_zero]
+
 /-- The normalised logarithm of the universal formal group law is the universal normalised
 logarithm. -/
 @[simp]
@@ -209,10 +215,9 @@ logarithm of `F` (`TauCeti.ExponentTwoLazardRing.lift_X`), and the formal group 
 def lift : {F : FormalGroup R // F.IsComm ∧ F.nsmulSeries 2 = 0} ≃ (ExponentTwoLazardRing →+* R)
     where
   toFun F := have := F.2.1; liftHom F.1 F.2.2
-  invFun f := ⟨formalGroup.map f, inferInstance, by
-    rw [← FormalGroup.map_nsmulSeries, nsmulSeries_two_formalGroup, map_zero]⟩
+  invFun f := ⟨formalGroup.map f, inferInstance, nsmulSeries_two_map_formalGroup f⟩
   left_inv F := have := F.2.1; Subtype.ext (map_liftHom F.1 F.2.2)
-  right_inv f := hom_ext (map_liftHom _ _)
+  right_inv _ := hom_ext (map_liftHom _ _)
 
 /-- The homomorphism classifying `F` sends `aᵢ` to the coefficient of `X^(i + 1)` in the
 normalised logarithm of `F`. -/

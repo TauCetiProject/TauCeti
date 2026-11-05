@@ -125,6 +125,9 @@ groups, is divisible by `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, with the monic even poly
   `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, a positive integer
   (`TauCeti.prod_add_one_mul_factorial_two_mul_add_one_pos`), the value of the product at the
   nodes `n - 1, …, 1, 0` (`TauCeti.prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial`).
+* `TauCeti.exists_lt_card_sum_mul_pow_ne_zero`: **nonvanishing power sums.** For pairwise
+  distinct nodes `θᵢ` and weights `wᵢ`, not all zero, in a domain, one of the power sums
+  `∑ᵢ wᵢ θᵢ ^ k` with `k` less than the number of nodes is nonzero.
 -/
 
 public section
@@ -553,5 +556,24 @@ theorem prod_factorial_dvd_prod_two_mul_add_one_mul_prod_sub_mul_add_add_one (m 
         factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one j (b i)
   convert h using 3 with k _
   exact Finset.prod_congr rfl fun l _ => by ring
+
+/-! ### Nonvanishing power sums -/
+
+/-- **Nonvanishing power sums.** Let `θ` be pairwise distinct on a finite set `s` of indices of a
+domain, and let `w` be nonzero somewhere on `s`. Then one of the power sums
+`∑ i ∈ s, w i * θ i ^ k` with `k < #s` is nonzero, since the Vandermonde matrix of the nodes has
+nonzero determinant, so it has trivial kernel. -/
+theorem exists_lt_card_sum_mul_pow_ne_zero {ι R : Type*} [CommRing R] [IsDomain R]
+    {s : Finset ι} {θ w : ι → R} (hθ : Set.InjOn θ s) (hw : ∃ i ∈ s, w i ≠ 0) :
+    ∃ k < #s, ∑ i ∈ s, w i * θ i ^ k ≠ 0 := by
+  by_contra! h
+  obtain ⟨i₀, hi₀, hw₀⟩ := hw
+  let e := s.equivFin
+  have hv := eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j ↦ θ (e.symm j))
+    (v := fun j ↦ w (e.symm j))
+    (fun j j' hj ↦ e.symm.injective (Subtype.ext (hθ (e.symm j).2 (e.symm j').2 hj))) fun k ↦ by
+      rw [← h k k.isLt, ← s.sum_coe_sort]
+      exact e.symm.sum_comp fun i : s ↦ w i * θ i ^ (k : ℕ)
+  exact hw₀ (by simpa using congrFun hv (e ⟨i₀, hi₀⟩))
 
 end TauCeti

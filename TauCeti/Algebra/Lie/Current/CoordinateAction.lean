@@ -72,6 +72,7 @@ noncomputable section
 
 open scoped LaurentSeries
 open PowerSeries LieAlgebra TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι envelopingι_apply algHom_ext_envelopingι)
 
 namespace TauCeti.CurrentAlgebra
 
@@ -121,7 +122,7 @@ theorem coordinateExtensionLieEquiv_central (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧)
 central element `K`. -/
 @[simp]
 theorem coordinateExtensionLieEquiv_centralElement (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) :
-    coordinateExtensionLieEquiv Φ hΦ hΦs σ (centralElement Φ hΦ hΦs) = centralElement Φ hΦ hΦs :=
+    coordinateExtensionLieEquiv Φ hΦ hΦs σ (centralElement cΦ) = centralElement cΦ :=
   (ofProd _).symm.injective (by simp)
 
 /-- The identity power-series automorphism acts identically on the residue extension. -/
@@ -161,7 +162,7 @@ section Aut
 
 variable (a : K)
 
-local notation "UK" => CentralQuotient K (centralElement Φ hΦ hΦs) a
+local notation "UK" => CentralQuotient K (centralElement cΦ) a
 
 /-- **Coordinate changes on the level enveloping algebra.** An algebra automorphism `σ` of `K⟦X⟧`
 induces the algebra automorphism of `U(ĝ) / (ι K - a)` which substitutes `σ X` in the current
@@ -177,15 +178,15 @@ def coordinateEnvelopingAut : (K⟦X⟧ ≃ₐ[K] K⟦X⟧) →* (UK ≃ₐ[K] U
 `coordinateExtensionLieEquiv`. -/
 @[simp]
 theorem coordinateEnvelopingAut_ι (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) (x : EΦ) :
-    coordinateEnvelopingAut Φ hΦ hΦs a σ (CentralQuotient.ι (centralElement Φ hΦ hΦs) a x) =
-      CentralQuotient.ι (centralElement Φ hΦ hΦs) a (coordinateExtensionLieEquiv Φ hΦ hΦs σ x) :=
+    coordinateEnvelopingAut Φ hΦ hΦs a σ (CentralQuotient.ι (centralElement cΦ) a x) =
+      CentralQuotient.ι (centralElement cΦ) a (coordinateExtensionLieEquiv Φ hΦ hΦs σ x) :=
   CentralQuotient.mapEquiv_ι _ _ x
 
 /-- **The lift substitutes in the current generators:** `σ̂ (ι u) = ι (u(σ X))`. -/
 @[simp]
 theorem coordinateEnvelopingAut_envelopingι (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) (u : currentAlgebra K L) :
-    coordinateEnvelopingAut Φ hΦ hΦs a σ (envelopingι Φ hΦ hΦs a u) =
-      envelopingι Φ hΦ hΦs a (substLieEquiv (FormalCoordinate.ofAlgEquiv σ) u) := by
+    coordinateEnvelopingAut Φ hΦ hΦs a σ (envelopingι cΦ a u) =
+      envelopingι cΦ a (substLieEquiv (FormalCoordinate.ofAlgEquiv σ) u) := by
   rw [envelopingι_apply, coordinateEnvelopingAut_ι, coordinateExtensionLieEquiv_ofProd,
     envelopingι_apply]
 
@@ -214,14 +215,16 @@ section Level
 
 variable {Φ} {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) {k : K}
 
+local notation "cΨ" => twoCocycleOfBilinear K L Ψ hΨ hΨs
+
 /-- **Coordinate changes commute with the level comparison.** If `Ψ = k • Φ`, the isomorphism
 `levelEnvelopingEquiv` from `U(ĝ_Ψ) / (ι K - 1)` to `U(ĝ_Φ) / (ι K - k)` intertwines the lifts of
 every power-series algebra automorphism, for every `k`, including `k = 0`. -/
 theorem levelEnvelopingEquiv_coordinateEnvelopingAut (h : Ψ = k • Φ) (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧)
-    (x : CentralQuotient K (centralElement Ψ hΨ hΨs) 1) :
+    (x : CentralQuotient K (centralElement cΨ) 1) :
     levelEnvelopingEquiv hΦ hΦs hΨ hΨs h (coordinateEnvelopingAut Ψ hΨ hΨs 1 σ x) =
       coordinateEnvelopingAut Φ hΦ hΦs k σ (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h x) :=
-  AlgHom.congr_fun (algHom_ext_envelopingι Ψ hΨ hΨs 1
+  AlgHom.congr_fun (algHom_ext_envelopingι cΨ 1
     (g₁ := (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h).toAlgHom.comp
       (coordinateEnvelopingAut Ψ hΨ hΨs 1 σ).toAlgHom)
     (g₂ := (coordinateEnvelopingAut Φ hΦ hΦs k σ).toAlgHom.comp

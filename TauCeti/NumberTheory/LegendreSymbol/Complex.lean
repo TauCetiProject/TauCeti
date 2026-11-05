@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.Complex
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.Analysis.SpecialFunctions.Complex.Circle
+public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 
 /-!
 # Complex values of characters of finite fields

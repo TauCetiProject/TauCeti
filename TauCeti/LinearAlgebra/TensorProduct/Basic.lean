@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
 # Tensor-product naturality, contractions and trace identities
@@ -25,11 +27,15 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
+* `LinearMap.sum_tensorComponent_tmul`: reconstruct a tensor from a dual family.
+* `LinearMap.tensorComponent_eq_liftBaseChange`: contraction as scalar-linear extension.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
 * `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
   reassociation.
+* `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
+  functional which splits on products splits the contraction accordingly.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
@@ -98,6 +104,27 @@ theorem tensorComponent_tmul (phi : N →ₗ[R] R) (m : M) (n : N) :
     tensorComponent (R := R) (M := M) phi (m ⊗ₜ[R] n) = phi n • m := by
   simp [tensorComponent]
 
+/-- A family of vectors and functionals that reconstructs each vector also reconstructs
+any tensor, by contracting its second factor. The family need not be linearly independent. -/
+theorem sum_tensorComponent_tmul {ι : Type*} [Fintype ι]
+    (b : ι → N) (φ : ι → N →ₗ[R] R)
+    (hb : ∀ x, ∑ i, φ i x • b i = x) (z : M ⊗[R] N) :
+    ∑ i, tensorComponent (φ i) z ⊗ₜ[R] b i = z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul m n =>
+    simpa only [tensorComponent_tmul, smul_tmul, ← tmul_sum] using
+      congrArg (fun n ↦ m ⊗ₜ[R] n) (hb n)
+  | add z w hz hw => simp [add_tmul, Finset.sum_add_distrib, hz, hw]
+
+/-- Over an algebra, contraction is the scalar-linear extension of the functional followed
+by the algebra map. This expresses contraction as a linear map over the larger scalar ring. -/
+theorem tensorComponent_eq_liftBaseChange {S : Type*} [CommSemiring S] [Algebra R S]
+    (φ : N →ₗ[R] R) (z : S ⊗[R] N) :
+    tensorComponent φ z = ((Algebra.linearMap R S).comp φ).liftBaseChange S z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul s n => simp [Algebra.smul_def, mul_comm]
+  | add z w hz hw => simp only [map_add, hz, hw]
+
 /-- Taking a right tensor component commutes with a map on both tensor factors. -/
 @[simp]
 theorem tensorComponent_map {M' : Type x} {N' : Type y}
@@ -129,6 +156,19 @@ theorem tensorComponent_assoc_symm (phi : P →ₗ[R] R) (u : M ⊗[R] (N ⊗[R]
       simp only [TensorProduct.assoc_symm_tmul, LinearMap.tensorComponent_tmul,
         LinearMap.lTensor_tmul, TensorProduct.tmul_smul]
 
+/-- Contracting the middle factor after reassociation is contraction of the left factor of the
+second tensor factor, followed by the left unitor. -/
+@[simp]
+theorem rTensor_tensorComponent_assoc_symm (phi : N →ₗ[R] R) (u : M ⊗[R] (N ⊗[R] P)) :
+    (LinearMap.tensorComponent phi).rTensor P ((TensorProduct.assoc R M N P).symm u) =
+      (TensorProduct.lid R P ∘ₗ phi.rTensor P).lTensor M u := by
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [map_add, hu, hv]
+  | tmul m v =>
+    induction v using TensorProduct.inductionOn with
+    | add v w hv hw => simp only [tmul_add, map_add, hv, hw]
+    | tmul n p => simp [TensorProduct.smul_tmul]
+
 /-- Applying two tensor components successively is contraction by the composed functional
 on the last two factors, after reassociation. -/
 theorem tensorComponent_comp_tensorComponent (phi : N →ₗ[R] R) (psi : P →ₗ[R] R) :
@@ -146,6 +186,28 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
   simp only [LinearMap.comp_apply, LinearMap.tensorComponent_tmul, map_smul,
     smul_eq_mul, LinearMap.rTensor_tmul, LinearEquiv.coe_coe, TensorProduct.lid_tmul,
     mul_comm]
+
+/-- Contracting the coefficient of a product in an algebra tensor product `A ⊗ C` against a
+functional which splits on products as `θ (a * b) = φ a * ψ b + φ' a * ψ' b` splits the
+contraction accordingly. For a comodule algebra this computes the contraction of the coaction of
+a product. -/
+theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C] [Algebra R C]
+    {θ φ ψ φ' ψ' : C →ₗ[R] R} (hθ : ∀ a b, θ (a * b) = φ a * ψ b + φ' a * ψ' b)
+    (x y : A ⊗[R] C) :
+    tensorComponent θ (x * y) =
+      tensorComponent φ x * tensorComponent ψ y + tensorComponent φ' x * tensorComponent ψ' y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' =>
+    simp only [add_mul, map_add, hx, hx']
+    abel
+  | tmul a c =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' =>
+      simp only [mul_add, map_add, hy, hy']
+      abel
+    | tmul b c' =>
+      simp only [Algebra.TensorProduct.tmul_mul_tmul, tensorComponent_tmul, hθ, add_smul,
+        smul_mul_smul_comm]
 
 end
 

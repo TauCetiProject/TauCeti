@@ -36,8 +36,10 @@ gives the cylindrical end in coordinates: every point `x` outside `W` is `ψ_t(y
 point `y` of the boundary `∂W` and one time `t > 0`, where `ψ` is the Liouville flow
 (`TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`). So `M` is the disjoint union of `W` and
 the flow-out `(y, t) ↦ ψ_t(y)` of `∂W × (0, ∞)`, which is the end `∂W × (1, ∞)` of the completion
-in the coordinate `r = e^t`. This file proves this point-set description of the end; the
-identification of the primitive on it with `r α|∂W` is not treated here.
+in the coordinate `r = e^t`: the map `(t, y) ↦ ψ_t(y)` is a bijection from `(0, ∞) × ∂W` onto
+`M \ W` (`TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ioi_prod_frontier`). This file proves this
+point-set description of the end; the identification of the primitive on it with `r α|∂W` is in
+`TauCeti.Geometry.Symplectic.Liouville.Symplectization`.
 
 ## Main definitions
 
@@ -49,8 +51,14 @@ identification of the primitive on it with `r α|∂W` is not treated here.
   interior of a Liouville domain stays outside the domain.
 * `TauCeti.IsLiouvilleDomain.injOn_flowOf`: for a complete Liouville field, the trajectories
   through the boundary are disjoint.
+* `TauCeti.IsLiouvilleDomain.preimage_flowOf`: for a complete Liouville field, the images of a
+  Liouville domain under the Liouville flow are Liouville domains.
 * `TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`: the cylindrical end of a completion,
   each point outside `W` lies on exactly one outgoing Liouville trajectory from `∂W`.
+* `TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ioi_prod_frontier`,
+  `TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ici_prod_frontier`: the Liouville flow map of a
+  completion is a bijection from `(0, ∞) × ∂W` onto `M \ W`, and from `[0, ∞) × ∂W` onto
+  `M \ int W`.
 * `TauCeti.IsLiouvilleCompletion.flowOf_flowOf`: the Liouville flow of a completion is a global
   flow, satisfying the group law.
 * `TauCeti.IsLiouvilleCompletion.flowOf_neg_mem_interior`: the backward Liouville flow carries
@@ -114,8 +122,7 @@ theorem injOn_flowOf [FiniteDimensional ℝ E] (h : IsLiouvilleDomain ω α W)
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   -- On a complete field, `flowOf` is the global flow `ψ`, which satisfies the group law.
   set ψ := globalFlow Z hZs hc
-  have hψ : ∀ t y, flowOf Z t y = ψ t y := fun t y ↦
-    (flowOf_apply Z t y).trans (globalFlow_apply hZs hc t y).symm
+  have hψ : ∀ t y, flowOf Z t y = ψ t y := fun t y ↦ congrFun₂ (flowOf_eq_globalFlow hZs hc) t y
   -- If the times differ, the boundary point with the earlier time is the other one flowed forward
   -- for a positive time, which leaves `W`; so the times agree, and then so do the points.
   have hlt : ∀ ⦃p q : M × ℝ⦄, p.1 ∈ frontier W → q.1 ∈ frontier W → ψ p.2 p.1 = ψ q.2 q.1 →
@@ -132,6 +139,34 @@ theorem injOn_flowOf [FiniteDimensional ℝ E] (h : IsLiouvilleDomain ω α W)
   refine Prod.ext ?_ h₂
   rw [← ψ.map_zero_apply p.1, ← ψ.map_zero_apply q.1, ← neg_add_cancel p.2, Flow.map_add,
     Flow.map_add, hpq, h₂]
+
+omit [CompleteSpace E] in
+/-- **The Liouville flow carries Liouville domains to Liouville domains.** If the Liouville field
+`Z` of a Liouville domain `W` is complete, then for every time `t` the preimage of `W` under the
+time-`t` Liouville flow `ψ_t`, which is the image `ψ_{-t}(W)`, is again a Liouville domain for the
+same form and primitive: `ψ_{-t}(W) = {f ∘ ψ_t ≤ c}` when `W = {f ≤ c}`, and since `ψ_t` preserves
+`Z`, the field `Z` crosses the level of `f ∘ ψ_t` outwards. -/
+theorem preimage_flowOf [FiniteDimensional ℝ E] (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z) (t : ℝ) :
+    IsLiouvilleDomain ω α (flowOf Z t ⁻¹' W) := by
+  have hZs : ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) := h.contMDiff_of_interior_eq hZ
+  have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZs.of_le (by simp)
+  set ψ := globalFlow Z hZ1 hc
+  have hψ : flowOf Z t = ψ t := congrFun (flowOf_eq_globalFlow hZ1 hc) t
+  have hψs : ContMDiff I I (⊤ : ℕ∞) (ψ t) := contMDiff_globalFlow_apply hc le_top hZs t
+  obtain ⟨f, c, hf, rfl, hfc⟩ := h.exists_sublevel_of_interior_eq hZ
+  rw [hψ]
+  refine ⟨h.isNondegenerate, h.mextDeriv_eq, ?_, by simp [ModelWithCorners.interior_eq_univ],
+    Z, hZs, hZ, f ∘ ψ t, c, hf.comp (ψ.continuous_toFun t), rfl, fun x hx ↦ ?_⟩
+  · -- The preimage under `ψ_t` is the image under `ψ_{-t}` of the compact set `W`.
+    rw [← neg_neg t, ← ψ.image_eq_preimage_symm]
+    exact h.isCompact.image (ψ.continuous continuous_const continuous_id)
+  · -- `d(f ∘ ψ_t)_x (Z x) = df_{ψ_t x} (dψ_t (Z x)) = df_{ψ_t x} (Z (ψ_t x)) > 0`.
+    obtain ⟨hfs, hpos⟩ := hfc _ hx
+    refine ⟨hfs.comp x hψs.contMDiffAt, ?_⟩
+    rw [mvfderiv_comp_apply x (hfs.mdifferentiableAt (by simp)) (hψs.mdifferentiableAt (by simp)),
+      mfderiv_globalFlow_apply_self hZ1 hc]
+    exact hpos
 
 end IsLiouvilleDomain
 
@@ -173,8 +208,7 @@ private theorem exists_flowOf_eq (h : IsLiouvilleCompletion ω α W)
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   have hc := h.isCompleteVectorField hZ
   set ψ := globalFlow Z hZs hc
-  have hψ : ∀ t y, flowOf Z t y = ψ t y := fun t y ↦
-    (flowOf_apply Z t y).trans (globalFlow_apply hZs hc t y).symm
+  have hψ : ∀ t y, flowOf Z t y = ψ t y := fun t y ↦ congrFun₂ (flowOf_eq_globalFlow hZs hc) t y
   obtain ⟨t₀, ht₀⟩ := h.exists_flowOf_mem hZ x
   -- The time `t₀` is negative: the forward flow of `x ∉ W` stays outside `W`.
   have ht₀neg : t₀ < 0 := by
@@ -216,7 +250,7 @@ theorem exists_flow_eq (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) : ∃ ψ : Flow ℝ M, ∀ t x, flowOf Z t x = ψ t x := by
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   exact ⟨globalFlow Z hZs (h.isCompleteVectorField hZ), fun t x ↦
-    (flowOf_apply Z t x).trans (globalFlow_apply hZs (h.isCompleteVectorField hZ) t x).symm⟩
+    congrFun₂ (flowOf_eq_globalFlow hZs (h.isCompleteVectorField hZ)) t x⟩
 
 /-- The Liouville flow of a completion fixes every point at time zero. -/
 theorem flowOf_zero (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
@@ -266,6 +300,40 @@ theorem exists_mem_frontier_flowOf_eq (h : IsLiouvilleCompletion ω α W)
     exact ⟨hxW, hx⟩
   · obtain ⟨⟨y, s⟩, ⟨hy, hs, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hxW
     exact ⟨y, hy, s, hs.le, hyx⟩
+
+/-- The Liouville flow map of a completion is injective on `ℝ × ∂W`. -/
+private theorem injOn_flowOf_prod_frontier (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) {s : Set ℝ} :
+    InjOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (s ×ˢ frontier W) := by
+  intro p hp q hq hpq
+  have := h.injOn_flowOf hZ (h.isCompleteVectorField hZ) (x₁ := p.swap) (x₂ := q.swap)
+    ⟨hp.2, mem_univ _⟩ ⟨hq.2, mem_univ _⟩ hpq
+  exact Prod.swap_injective this
+
+/-- **The cylindrical end of a completion.** Let `M` be a completion of the Liouville domain `W`,
+with Liouville flow `ψ`. The map `(t, y) ↦ ψₜ(y)` is a bijection from `(0, ∞) × ∂W` onto the
+complement of `W`. -/
+theorem bijOn_flowOf_Ioi_prod_frontier (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    BijOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (Ioi 0 ×ˢ frontier W) Wᶜ := by
+  refine ⟨fun p hp ↦ ?_, h.injOn_flowOf_prod_frontier hZ, fun x hx ↦ ?_⟩
+  · exact fun hW ↦ (not_le.2 hp.1) ((h.flowOf_mem_iff_of_mem_frontier hZ hp.2).1 hW)
+  · obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
+    exact ⟨(t, y), ⟨ht, hy⟩, hyx⟩
+
+/-- **The closed cylindrical end of a completion.** Let `M` be a completion of the Liouville
+domain `W`, with Liouville flow `ψ`. The map `(t, y) ↦ ψₜ(y)` is a bijection from `[0, ∞) × ∂W`
+onto the complement of the interior of `W`. -/
+theorem bijOn_flowOf_Ici_prod_frontier (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    BijOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (Ici 0 ×ˢ frontier W) (interior W)ᶜ := by
+  refine ⟨fun p hp ↦ ?_, h.injOn_flowOf_prod_frontier hZ, fun x hx ↦ ?_⟩
+  · rcases hp.1.eq_or_lt' with h0 | hpos
+    · simpa only [h0, h.flowOf_zero hZ, mem_compl_iff] using hp.2.2
+    · exact fun hW ↦ (not_le.2 hpos)
+        ((h.flowOf_mem_iff_of_mem_frontier hZ hp.2).1 (interior_subset hW))
+  · obtain ⟨y, hy, t, ht, hyx⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
+    exact ⟨(t, y), ⟨ht, hy⟩, hyx⟩
 
 end IsLiouvilleCompletion
 

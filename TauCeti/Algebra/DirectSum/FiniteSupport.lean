@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.DirectSum.Finite
 
@@ -61,13 +60,12 @@ def DirectSum.restrictLinearEquiv (s : Finset ι) (hs : ∀ i ∉ s, Subsingleto
       if h : i ∈ s then DirectSum.lof R s (fun j : s ↦ M j) ⟨i, h⟩ else 0)
     (DirectSum.toModule R s _ fun i ↦ DirectSum.lof R ι M i)
     (DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ by
-      simp [DirectSum.toModule_lof, i.2])
+      simp [i.2])
     (DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ by
       by_cases h : i ∈ s
-      · simp [DirectSum.toModule_lof, h]
+      · simp [h]
       · have := hs i h
-        rw [Subsingleton.elim x 0]
-        simp)
+        simp [Subsingleton.elim x 0])
 
 /-- The restriction equivalence sends the summand at an index of `s` to the same summand. -/
 @[simp]
@@ -75,18 +73,14 @@ theorem DirectSum.restrictLinearEquiv_lof (s : Finset ι) (hs : ∀ i ∉ s, Sub
     {i : ι} (hi : i ∈ s) (x : M i) :
     DirectSum.restrictLinearEquiv (R := R) M s hs (DirectSum.lof R ι M i x) =
       DirectSum.lof R s (fun j : s ↦ M j) ⟨i, hi⟩ x := by
-  refine (DirectSum.toModule_lof (φ := fun i ↦
-    if h : i ∈ s then DirectSum.lof R s (fun j : s ↦ M j) ⟨i, h⟩ else 0) R i x).trans ?_
-  simp [hi]
+  simp [DirectSum.restrictLinearEquiv, hi]
 
 /-- The restriction equivalence sends a summand outside `s` to zero. -/
 @[simp]
 theorem DirectSum.restrictLinearEquiv_lof_of_notMem (s : Finset ι)
     (hs : ∀ i ∉ s, Subsingleton (M i)) {i : ι} (hi : i ∉ s) (x : M i) :
     DirectSum.restrictLinearEquiv (R := R) M s hs (DirectSum.lof R ι M i x) = 0 := by
-  refine (DirectSum.toModule_lof (φ := fun i ↦
-    if h : i ∈ s then DirectSum.lof R s (fun j : s ↦ M j) ⟨i, h⟩ else 0) R i x).trans ?_
-  simp [hi]
+  simp [DirectSum.restrictLinearEquiv, hi]
 
 /-- The restriction equivalence is inverse to the evident inclusion of the summands indexed by
 `s`. -/
@@ -94,8 +88,8 @@ theorem DirectSum.restrictLinearEquiv_lof_of_notMem (s : Finset ι)
 theorem DirectSum.restrictLinearEquiv_symm_lof (s : Finset ι) (hs : ∀ i ∉ s, Subsingleton (M i))
     (i : s) (x : M i) :
     (DirectSum.restrictLinearEquiv (R := R) M s hs).symm
-        (DirectSum.lof R s (fun j : s ↦ M j) i x) = DirectSum.lof R ι M i x :=
-  DirectSum.toModule_lof (φ := fun i : s ↦ DirectSum.lof R ι M i) R i x
+        (DirectSum.lof R s (fun j : s ↦ M j) i x) = DirectSum.lof R ι M i x := by
+  simp [DirectSum.restrictLinearEquiv]
 
 /-- **A direct sum concentrated in a single index is that summand.**  This is the extreme case of
 `TauCeti.DirectSum.restrictLinearEquiv`, in the form in which a grading concentrated in one degree
@@ -105,12 +99,10 @@ def DirectSum.componentLinearEquiv (d : ι) (hd : ∀ i, i ≠ d → Subsingleto
   LinearEquiv.ofLinearMap (DirectSum.component R ι M d) (DirectSum.lof R ι M d)
     (LinearMap.ext fun x ↦ by simp)
     (DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ by
-      by_cases h : i = d
-      · subst h
-        simp
+      obtain rfl | h := eq_or_ne i d
+      · simp
       · have := hd i h
-        rw [Subsingleton.elim x 0]
-        simp)
+        simp [Subsingleton.elim x 0])
 
 /-- The equivalence with a single surviving summand is the projection to that summand. -/
 @[simp]
@@ -135,24 +127,18 @@ theorem DirectSum.finite_of_subsingleton_notMem (s : Finset ι)
   classical
   exact Module.Finite.equiv (DirectSum.restrictLinearEquiv M s hs).symm
 
-end Restriction
-
-section Finrank
-
-variable {K : Type u} [DivisionRing K] (M : ι → Type w) [∀ i, AddCommGroup (M i)]
-  [∀ i, Module K (M i)]
-
 omit [DecidableEq ι] in
 /-- **The dimension of a direct sum with finitely many nonzero summands.**  Unlike
 `Module.finrank_directSum`, the index type here may be infinite; what is asked instead is a finite
-set of finite-dimensional summands outside which the summands are trivial. -/
-theorem finrank_directSum_eq_sum (s : Finset ι) [∀ i : s, Module.Finite K (M i)]
+set of finite free summands outside which the summands are trivial. -/
+theorem finrank_directSum_eq_sum [StrongRankCondition R] (s : Finset ι)
+    [∀ i : s, Module.Free R (M i)] [∀ i : s, Module.Finite R (M i)]
     (hs : ∀ i ∉ s, Subsingleton (M i)) :
-    Module.finrank K (⨁ i, M i) = ∑ i ∈ s, Module.finrank K (M i) := by
+    Module.finrank R (⨁ i, M i) = ∑ i ∈ s, Module.finrank R (M i) := by
   classical
-  rw [(DirectSum.restrictLinearEquiv M s hs).finrank_eq, Module.finrank_directSum]
-  exact Finset.sum_coe_sort s fun i ↦ Module.finrank K (M i)
+  rw [(DirectSum.restrictLinearEquiv M s hs).finrank_eq, Module.finrank_directSum,
+    Finset.sum_coe_sort s fun i ↦ Module.finrank R (M i)]
 
-end Finrank
+end Restriction
 
 end TauCeti
