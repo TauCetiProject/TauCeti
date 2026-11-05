@@ -65,6 +65,32 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] {F : ℝ≥0 × V → ℂ}
 
+omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [BorelSpace V] in
+/-- Redefining an almost everywhere completely monotone family of time profiles to be `0` on a
+measurable null set gives a family that is completely monotone and bounded by `1` at time `0`
+everywhere, and agrees with the original almost everywhere. -/
+theorem exists_isContinuousCompletelyMonotoneOnIoi_ae_eq {ν : Measure V}
+    (φ : V → ℝ → ℝ) (hφ : ∀ᵐ q ∂ν, IsContinuousCompletelyMonotoneOnIoi (φ q) ∧ φ q 0 ≤ 1)
+    (hφmeas : ∀ n : ℕ, Measurable fun q => φ q n) :
+    ∃ (g : V → ℝ → ℝ) (_ : ∀ q, IsContinuousCompletelyMonotoneOnIoi (g q))
+      (_ : ∀ n : ℕ, Measurable fun q => g q n), (∀ q, g q 0 ≤ 1) ∧ ∀ᵐ q ∂ν, g q = φ q := by
+  classical
+  set N := toMeasurable ν {q | ¬(IsContinuousCompletelyMonotoneOnIoi (φ q) ∧ φ q 0 ≤ 1)}
+  have hgood (q : V) (hq : q ∉ N) : IsContinuousCompletelyMonotoneOnIoi (φ q) ∧ φ q 0 ≤ 1 :=
+    not_not.1 fun hcon => hq (subset_toMeasurable _ _ hcon)
+  refine ⟨fun q => if q ∈ N then 0 else φ q, fun q => ?_, fun n => ?_, fun q => ?_, ?_⟩
+  · dsimp only
+    split_ifs with hq
+    exacts [representsLaplace_zero.isContinuousCompletelyMonotoneOnIoi, (hgood q hq).1]
+  · simp only [apply_ite (fun h : ℝ → ℝ => h n), Pi.zero_apply]
+    exact Measurable.ite (measurableSet_toMeasurable _ _) measurable_const (hφmeas n)
+  · dsimp only
+    split_ifs with hq
+    exacts [zero_le_one, (hgood q hq).2]
+  · filter_upwards [measure_eq_zero_iff_ae_notMem.1
+      ((measure_toMeasurable _).trans (ae_iff.1 hφ))] with q hq
+    exact ite_eq_right_iff.2 fun h => absurd h hq
+
 /-- **The existence half of the Berg--Christensen--Ressel representation theorem.** A bounded
 continuous positive-definite function on the involutive semigroup `ℝ≥0 × V` is the Laplace--Fourier
 transform of a finite measure on `ℝ≥0 × V`.
@@ -74,65 +100,23 @@ Bernstein measures of the fibres of `TauCeti.timeSliceDensity`. -/
 theorem exists_representsLaplaceFourier (hFpd : IsSemigroupGroupPD F) (hFcont : Continuous F)
     (hFbdd : Bornology.IsBounded (range F)) :
     ∃ μ : Measure (ℝ≥0 × V), RepresentsLaplaceFourier μ F := by
-  classical
-  -- The fibres that are completely monotone in time and normalized at time `0` are almost all of
-  -- them; the others are absorbed into a measurable null set.
-  have hae : ∀ᵐ q ∂(bochnerMeasure fun a => F (0, a)),
-      IsContinuousCompletelyMonotoneOnIoi
-          (fun s : ℝ => (timeSliceDensity F s.toNNReal q).toReal)
-        ∧ timeSliceDensity F 0 q = 1 :=
-    (ae_isContinuousCompletelyMonotoneOnIoi_timeSliceDensity hFpd hFcont hFbdd).and
-      (ae_timeSliceDensity_zero_eq_one hFpd hFcont hFbdd)
-  set B : Set V := {q | ¬(IsContinuousCompletelyMonotoneOnIoi
-    (fun s : ℝ => (timeSliceDensity F s.toNNReal q).toReal) ∧ timeSliceDensity F 0 q = 1)}
-  set N : Set V := toMeasurable (bochnerMeasure fun a => F (0, a)) B with hN
-  have hNmeas : MeasurableSet N := measurableSet_toMeasurable _ _
-  have hN0 : (bochnerMeasure fun a => F (0, a)) N = 0 := by
-    rw [hN, measure_toMeasurable]
-    exact ae_iff.1 hae
-  have hgood : ∀ q ∈ Nᶜ, IsContinuousCompletelyMonotoneOnIoi
-      (fun s : ℝ => (timeSliceDensity F s.toNNReal q).toReal) ∧ timeSliceDensity F 0 q = 1 :=
-    fun q hq => not_not.1 fun hcon => hq (subset_toMeasurable _ B hcon)
-  -- The corrected family of time profiles, one for each spatial frequency.
-  set g : V → ℝ → ℝ := fun q s =>
-    Nᶜ.indicator (fun q' => (timeSliceDensity F s.toNNReal q').toReal) q
-  have hg_mem : ∀ q ∈ Nᶜ, ∀ s : ℝ, g q s = (timeSliceDensity F s.toNNReal q).toReal :=
-    fun q hq s => Set.indicator_of_mem hq _
-  have hg_notMem : ∀ q ∉ Nᶜ, ∀ s : ℝ, g q s = 0 := fun q hq s => Set.indicator_of_notMem hq _
-  have hcm : ∀ q, IsContinuousCompletelyMonotoneOnIoi (g q) := by
-    intro q
-    by_cases hq : q ∈ Nᶜ
-    · have hfun : g q = fun s : ℝ => (timeSliceDensity F s.toNNReal q).toReal :=
-        funext (hg_mem q hq)
-      rw [hfun]
-      exact (hgood q hq).1
-    · have hfun : g q = 0 := funext (hg_notMem q hq)
-      rw [hfun]
-      exact representsLaplace_zero.isContinuousCompletelyMonotoneOnIoi
-  have hmeas : ∀ n : ℕ, Measurable fun q => g q (n : ℝ) := fun n =>
-    Measurable.indicator (by fun_prop) hNmeas.compl
-  have hmass : ∀ q, g q 0 ≤ 1 := by
-    intro q
-    by_cases hq : q ∈ Nᶜ
-    · rw [hg_mem q hq, Real.toNNReal_zero, (hgood q hq).2]
-      simp
-    · rw [hg_notMem q hq]
-      exact zero_le_one
+  have h0 := ae_timeSliceDensity_zero_eq_one hFpd hFcont hFbdd
+  -- The time profiles are completely monotone and normalized for almost every frequency; correct
+  -- them on a null set.
+  obtain ⟨g, hcm, hmeas, hmass, hg⟩ := exists_isContinuousCompletelyMonotoneOnIoi_ae_eq
+    (fun q s => (timeSliceDensity F s.toNNReal q).toReal)
+    (((ae_isContinuousCompletelyMonotoneOnIoi_timeSliceDensity hFpd hFcont hFbdd).and h0).mono
+      fun q h => ⟨h.1, by simp [h.2]⟩) fun n => by fun_prop
   have _ : IsFiniteKernel (bernsteinMeasureKernel g hcm hmeas) :=
     isFiniteKernel_bernsteinMeasureKernel hcm hmeas hmass
   refine ⟨_, representsLaplaceFourier_swapCompProd_of_ae_rnDeriv hFpd hFcont hFbdd
     (bernsteinMeasureKernel g hcm hmeas) fun t => ?_⟩
-  have hcompl : ∀ᵐ q ∂(bochnerMeasure fun a => F (0, a)), q ∈ Nᶜ := by
-    rw [ae_iff]
-    simpa using hN0
-  filter_upwards [timeSliceDensity_ae_eq_rnDeriv hFpd hFcont hFbdd t, hcompl] with q hq hqN
-  have hle : timeSliceDensity F t q ≤ 1 := by
-    rw [← (hgood q hqN).2]
-    exact timeSliceDensity_antitone F q (zero_le : (0 : ℝ≥0) ≤ t)
+  filter_upwards [timeSliceDensity_ae_eq_rnDeriv hFpd hFcont hFbdd t, hg, h0] with q hq hgq hq0
+  have hle : timeSliceDensity F t q ≤ 1 :=
+    hq0 ▸ timeSliceDensity_antitone F q (zero_le : (0 : ℝ≥0) ≤ t)
   rw [← hq, Kernel.laplaceTransform_apply,
-    (representsLaplace_bernsteinMeasureKernel hcm hmeas q).laplaceTransformENN_eq t,
-    hg_mem q hqN, Real.toNNReal_coe,
-    ENNReal.ofReal_toReal (hle.trans_lt ENNReal.one_lt_top).ne]
+    (representsLaplace_bernsteinMeasureKernel hcm hmeas q).laplaceTransformENN_eq t, congrFun hgq,
+    Real.toNNReal_coe, ENNReal.ofReal_toReal (hle.trans_lt ENNReal.one_lt_top).ne]
 
 /-- **The Berg--Christensen--Ressel representation theorem** (Berg--Christensen--Ressel 4.1.13).
 A function on the involutive semigroup `ℝ≥0 × V`, for `V` a finite-dimensional real inner-product
