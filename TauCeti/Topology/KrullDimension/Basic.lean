@@ -20,11 +20,11 @@ length in any open subset containing a point of its smallest member. For schemes
 reduces dimension computations to affine opens. Similarly, the preimage of a set under an
 embedding has the Krull dimension of the part of the set lying in the range.
 
-On a T₀ topological space the specialization order is a partial order, so the codimension
-`Order.coheight x` of a point is defined: it is the supremum of the lengths of the chains of
-proper specializations of `x`. On a space all of whose points have codimension at most one, a
-point of codimension exactly one is closed, since a proper specialization of such a point would
-have codimension at least two.
+For the specialization preorder, defined on any topological space, the codimension
+`Order.coheight x` of a point is the supremum of the lengths of the chains of proper
+specializations of `x`. On a T₀ space the specialization preorder is a partial order; there, on a
+space all of whose points have codimension at most one, a point of codimension exactly one is
+closed, since a proper specialization of such a point would have codimension at least two.
 
 ## Main declarations
 
