@@ -7,9 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.SSetPair
-public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
-public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
 /-!
 # Homotopies of morphisms of pairs of simplicial sets
@@ -255,47 +253,7 @@ section MappingSpace
 
 open MonoidalClosed
 
-variable {X Z : SSet.{w}}
-
-/-- The map corresponding to a vertex of `Fun(X, Z)` evaluates at that vertex. -/
-lemma ihomObj₀Equiv_apply (v : ((ihom X).obj Z) _⦋0⦌) :
-    ihomObj₀Equiv X Z v = lift (𝟙 X) (const v) ≫ (ihom.ev X).app Z := by
-  obtain ⟨f, rfl⟩ := (ihomObj₀Equiv X Z).symm.surjective v
-  rw [Equiv.apply_symm_apply, const_ihomObj₀Equiv_symm,
-    ← Category.id_comp (curry (fst X X ≫ f)), lift_curry_ihom_ev_app, lift_fst_assoc,
-    Category.id_comp]
-
-/-- The vertex of `Fun(X, Z)` corresponding to a map `f : X ⟶ Z` is adjoint to
-`X ⊗ Δ[0] ⟶ X ⟶ Z`. -/
-lemma yonedaEquiv_symm_ihomObj₀Equiv_symm (f : X ⟶ Z) :
-    yonedaEquiv.symm ((ihomObj₀Equiv X Z).symm f) = curry (fst X Δ[0] ≫ f) := by
-  rw [← ihomObjEquiv_ihomObj₀Equiv_symm, ihomObjEquiv_apply, curry_uncurry]
-
-/-- Precomposition `Fun(Y, Z) ⟶ Fun(X, Z)` with `f : X ⟶ Y` acts on vertices by precomposition. -/
-@[simp]
-lemma pre_app_app_ihomObj₀Equiv_symm {Y : SSet.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    ((pre f).app Z).app _ ((ihomObj₀Equiv Y Z).symm g) = (ihomObj₀Equiv X Z).symm (f ≫ g) := by
-  apply yonedaEquiv.symm.injective
-  rw [← yonedaEquiv_symm_comp, yonedaEquiv_symm_ihomObj₀Equiv_symm,
-    yonedaEquiv_symm_ihomObj₀Equiv_symm, curry_pre_app, whiskerRight_fst_assoc]
-
-/-- Restricting the homotopy defined by a `1`-simplex `s` of `Fun(X, Z)` to an end of the cylinder
-gives the map corresponding to the matching face of `s`. -/
-lemma whiskerLeft_δ_uncurry_yonedaEquiv_symm (s : ((ihom X).obj Z) _⦋1⦌) (i : Fin 2) :
-    X ◁ stdSimplex.δ i ≫ uncurry (yonedaEquiv.symm s) =
-      fst X Δ[0] ≫ ihomObj₀Equiv X Z (((ihom X).obj Z).δ i s) := by
-  rw [← uncurry_natural_left, stdSimplex.δ_comp_yonedaEquiv_symm,
-    ← (ihomObj₀Equiv X Z).symm_apply_apply (((ihom X).obj Z).δ i s),
-    yonedaEquiv_symm_ihomObj₀Equiv_symm, uncurry_curry, Equiv.apply_symm_apply]
-
-/-- A face of the `1`-simplex of `Fun(X, Z)` defined by a map `h : X ⊗ Δ[1] ⟶ Z` is adjoint to
-the restriction of `h` along the matching face of `Δ[1]`. -/
-lemma yonedaEquiv_symm_δ_yonedaEquiv_curry (h : X ⊗ Δ[1] ⟶ Z) (i : Fin 2) :
-    yonedaEquiv.symm (((ihom X).obj Z).δ i (yonedaEquiv (curry h))) =
-      curry (X ◁ stdSimplex.δ i ≫ h) := by
-  rw [← stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.symm_apply_apply, curry_natural_left]
-
-variable (f g : X ⟶ Z)
+variable {X Z : SSet.{w}} (f g : X ⟶ Z)
 
 /-- The edges of `Fun(X, Z)` between the vertices corresponding to maps `f` and `g` are the
 simplicial homotopies from `f` to `g`, through the tensor-hom adjunction. -/
