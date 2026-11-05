@@ -124,6 +124,7 @@ theorem mem_domain_weakGradientPMap_iff {f : Lp ℝ p (mu.restrict Omega)} :
   exact ⟨fun ⟨_, u, hu, _⟩ => ⟨u, hu⟩, fun ⟨u, hu⟩ => ⟨_, u, hu, rfl⟩⟩
 
 /-- The value of a Sobolev function lies in the domain of the weak gradient. -/
+@[simp]
 theorem value_mem_domain_weakGradientPMap (u : W1p mu Omega p) :
     W1p.value u ∈ (weakGradientPMap mu Omega p).domain :=
   mem_domain_weakGradientPMap_iff.2 ⟨u, rfl⟩
