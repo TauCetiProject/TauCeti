@@ -82,16 +82,6 @@ theorem realize_scottSentence_iff (N : Type w') [L.Structure N] [Countable N] :
 
 end Relational
 
-/-- Over graph expansions, the back-translation of a sentence of the graph language is realized
-exactly when the sentence is. -/
-private theorem realize_backTranslate_sentence {M : Type w} [L.Structure M]
-    (τ : L.graphLanguage.Sentenceω) :
-    letI := graphExpansion L M
-    SentenceInf.Realize τ.backTranslate M ↔ SentenceInf.Realize τ M := by
-  let := graphExpansion L M
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def]
-  exact BoundedFormulaInf.realize_backTranslate τ _ _
-
 /-- Two structures are isomorphic exactly when their graph expansions are. -/
 private theorem nonempty_equiv_graphExpansion_iff {M : Type w} {N : Type w'} [L.Structure M]
     [L.Structure N] :
@@ -138,10 +128,14 @@ theorem scott_isomorphism [Countable (Σ k, L.Functions k)] [Countable (Σ k, L.
       ∀ (N : Type w') [L.Structure N] [Countable N],
         (SentenceInf.Realize σ N ↔ Nonempty (M ≃[L] N)) := by
   let := graphExpansion L M
-  refine ⟨(scottSentence (L := L.graphLanguage) M).backTranslate,
-    (realize_backTranslate_sentence _).mpr (realize_scottSentence_self M), fun N _ _ => ?_⟩
+  refine ⟨(scottSentence (L := L.graphLanguage) M).backTranslate, ?_, fun N _ _ => ?_⟩
+  · have h := realize_scottSentence_self (L := L.graphLanguage) M
+    rw [SentenceInf.realize_def, FormulaInf.realize_def] at h ⊢
+    exact (BoundedFormulaInf.realize_backTranslate _ _ _).mpr h
   let := graphExpansion L N
-  rw [realize_backTranslate_sentence, realize_scottSentence_iff M N]
-  exact nonempty_equiv_graphExpansion_iff
+  rw [← nonempty_equiv_graphExpansion_iff, ← realize_scottSentence_iff M N,
+    SentenceInf.realize_def, FormulaInf.realize_def, SentenceInf.realize_def,
+    FormulaInf.realize_def]
+  exact BoundedFormulaInf.realize_backTranslate _ _ _
 
 end TauCeti
