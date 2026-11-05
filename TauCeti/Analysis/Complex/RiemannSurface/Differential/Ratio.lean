@@ -14,9 +14,10 @@ Two `1`-forms `η` and `ω` on a Riemann surface have, at every point, coefficie
 ratio does not depend on the chart: changing chart multiplies both coefficients by the same
 nonzero derivative of the transition map. This ratio is the function `η / ω`
 (`TauCeti.RiemannSurface.OneForm.ratio`). Where `ω` does not vanish it is the unique scalar `c`
-with `η = c ω` (`TauCeti.RiemannSurface.OneForm.ratio_eq_iff`); it is meromorphic where `η` and `ω`
-are, of order `ord_x η - ord_x ω`
-(`TauCeti.RiemannSurface.OneForm.meromorphicOrderAt_ratio_add_order`).
+with `η = c ω` (`TauCeti.RiemannSurface.OneForm.ratio_eq_iff`). It is meromorphic where `η` and
+`ω` are, and at a point where `ω` has finite order its order is `ord_x η - ord_x ω`
+(`TauCeti.RiemannSurface.OneForm.meromorphicOrderAt_ratio_add_order`). The finite-order hypothesis
+is needed: if `ω` vanishes near `x`, the ratio is `0` near `x`.
 
 ## References
 

@@ -15,7 +15,8 @@ Two `1`-forms `η` and `ω` on a Riemann surface have, at every point, coefficie
 ratio does not depend on the chart: changing chart multiplies both coefficients by the same
 nonzero derivative of the transition map. This ratio is the function `η / ω`
 (`TauCeti.RiemannSurface.OneForm.ratio`), meromorphic where `η` and `ω` are, and of order
-`ord_x η - ord_x ω` (`TauCeti.RiemannSurface.OneForm.meromorphicOrderAt_ratio_add_order`).
+`ord_x η - ord_x ω` at every point where `ω` has finite order
+(`TauCeti.RiemannSurface.OneForm.meromorphicOrderAt_ratio_add_order`).
 
 On a compact connected Riemann surface it follows that any two `1`-forms which are meromorphic and
 of finite order everywhere differ by a nonzero meromorphic function, so their divisors differ by
