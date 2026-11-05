@@ -15,28 +15,30 @@ import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!
-# The dimension formula for flat morphisms
+# The dimension formula for generalizing morphisms
 
-Let `f : X ⟶ Y` be a flat morphism of locally Noetherian schemes, and let `x` be a point of `X`.
-The codimension of `x` in `X` is the codimension of `f x` in `Y` plus the codimension of `x` in
-its fibre `f ⁻¹' {f x}`. Codimensions are coheights for the specialization order, so by
-`AlgebraicGeometry.ringKrullDim_stalk_eq_coheight` this is the scheme form of the dimension formula
-`dim 𝒪_{X,x} = dim 𝒪_{Y,f x} + dim 𝒪_{X_{f x},x}` for flat local homomorphisms. It expresses
-the dimension of a fibre as a difference of dimensions, as in the computation of the dimension of
-an orbit from that of its stabilizer.
+Let `f : X ⟶ Y` be a morphism of locally Noetherian schemes whose underlying map is generalizing,
+for instance a flat morphism, and let `x` be a point of `X`. The codimension of `x` in `X` is the
+codimension of `f x` in `Y` plus the codimension of `x` in its fibre `f ⁻¹' {f x}`. Codimensions
+are coheights for the specialization order, so by `AlgebraicGeometry.ringKrullDim_stalk_eq_coheight`
+this is the scheme form of the dimension formula `dim 𝒪_{X,x} = dim 𝒪_{Y,f x} + dim 𝒪_{X_{f x},x}`
+for local homomorphisms satisfying going down, such as flat ones. It expresses the dimension of a
+fibre as a difference of dimensions, as in the computation of the dimension of an orbit from that
+of its stabilizer.
 
 The proof passes to compatible affine charts `Spec S → X` and `Spec R → Y` and applies Mathlib's
-`Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown`: flat algebras satisfy going down. The
-generizations of a point of `Spec S` lying over a prime `q` of `R` are exactly its generizations
-in the closed subset `V(q S)`, and the codimension of a point of `Spec A` inside a closed subset
-`V(I)` is its height in `A ⧸ I`.
+`Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown`: the chart map `Spec S → Spec R` is
+generalizing, which is going down for `R → S`. The generizations of a point of `Spec S` lying
+over a prime `q` of `R` are exactly its generizations in the closed subset `V(q S)`, and the
+codimension of a point of `Spec A` inside a closed subset `V(I)` is its height in `A ⧸ I`.
 
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.coheight_zeroLocus_eq_height_map`: the codimension of a point of
   `Spec A` inside `V(I)` is the height of its image in `A ⧸ I`.
-* `AlgebraicGeometry.Scheme.Hom.coheight_eq_coheight_add_coheight_preimage`: for a flat morphism,
-  the codimension of a point is that of its image plus that in its fibre.
+* `AlgebraicGeometry.Scheme.Hom.coheight_eq_coheight_add_coheight_preimage`: for a generalizing
+  morphism, such as a flat one, the codimension of a point is that of its image plus that in its
+  fibre.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le_of_flat_of_surjective`: a flat,
   surjective morphism of schemes cannot increase dimension.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective`: a flat,
@@ -79,11 +81,13 @@ namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}}
 
-/-- **Dimension formula for flat morphisms.** For a flat morphism `f : X ⟶ Y` of locally
-Noetherian schemes, the codimension of a point `x` is the codimension of `f x` plus the codimension
-of `x` in the fibre `f ⁻¹' {f x}`, the latter for the specialization order induced from `X`. -/
+/-- **Dimension formula for generalizing morphisms.** For a morphism `f : X ⟶ Y` of locally
+Noetherian schemes whose underlying map is generalizing, the codimension of a point `x` is the
+codimension of `f x` plus the codimension of `x` in the fibre `f ⁻¹' {f x}`, the latter for the
+specialization order induced from `X`. A flat morphism is generalizing by
+`AlgebraicGeometry.Flat.generalizingMap`. -/
 theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetherian X]
-    [IsLocallyNoetherian Y] (f : X ⟶ Y) [Flat f] (x : X) :
+    [IsLocallyNoetherian Y] (f : X ⟶ Y) (hf : GeneralizingMap f) (x : X) :
     coheight x = coheight (f x) + coheight (⟨x, rfl⟩ : f ⁻¹' {f x}) := by
   -- Choose an affine chart `Spec S` around `x` mapping into an affine chart `Spec R` of `Y`.
   obtain ⟨U, hU, hxU, -⟩ :=
@@ -103,7 +107,12 @@ theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetheri
   have := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
   have := IsLocallyNoetherian.component_noetherian ⟨V, hV⟩
   let _ : Algebra R S := φ.hom.toAlgebra
-  have : Module.Flat R S := HasRingHomProperty.appLE @Flat f ‹_› ⟨U, hU⟩ ⟨V, hV⟩ hVU
+  have : Algebra.HasGoingDown R S := by
+    have := HasRingHomProperty.of_isZariskiLocalAtSource_of_isZariskiLocalAtTarget.{u}
+      (topologically GeneralizingMap)
+    have hf : topologically GeneralizingMap f := hf
+    rw [HasRingHomProperty.iff_appLE (P := topologically GeneralizingMap)] at hf
+    exact Algebra.HasGoingDown.iff_generalizingMap_primeSpectrumComap.mpr (hf ⟨U, hU⟩ ⟨V, hV⟩ hVU)
   let Q : Ideal S := x'.asIdeal
   let q : Ideal R := (Spec.map φ x').asIdeal
   have : Q.IsPrime := x'.isPrime
