@@ -13,39 +13,45 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FunctorCategory
 public import TauCeti.CategoryTheory.Bicategory.Equivalence
 
 /-!
-# Categorical equivalences of quasicategories
+# Equivalences of quasicategories
 
 Mathlib's strict bicategory `SSet.QCat.bicategory` has quasicategories as objects, maps of
 simplicial sets as `1`-morphisms, and as hom-categories the homotopy categories of the
-simplicial internal homs `Fun(X, Y)`. A map `f : X ⟶ Y` of quasicategories is a *categorical
-equivalence* when it is an equivalence in this bicategory: it has a quasi-inverse `g` together
+simplicial internal homs `Fun(X, Y)`. A map `f : X ⟶ Y` of quasicategories is an *equivalence of
+`∞`-categories* when it is an equivalence in this bicategory: it has a quasi-inverse `g` together
 with invertible natural transformations `𝟙 ≅ f ≫ g` and `g ≫ f ≅ 𝟙` in the homotopy categories
-of `Fun(X, X)` and `Fun(Y, Y)`.
+of `Fun(X, X)` and `Fun(Y, Y)` (Kerodon, Definition 4.5.1.10).
 
-Equivalence of homotopy categories alone is weaker, since categorical equivalences also identify
-the higher mapping spaces. The comparison in the other direction is supplied here: the homotopy
-category functor acts on hom-categories through `SSet.ihomHoFunctor`, so every categorical
-equivalence induces an equivalence of homotopy categories. For nerves of ordinary categories the
-two notions agree with equivalence of categories.
+The name *categorical equivalence* is kept for the notion defined for all simplicial sets, through
+the cores of `Fun(−, C)` for `∞`-categories `C` (Kerodon, Definition 4.5.4.1, equivalently HTT's
+definition through `hC[−]`, HTT Definition 1.1.5.14). For maps of quasicategories the two notions
+agree; that comparison is not proved here.
+
+Equivalence of homotopy categories alone is weaker, since equivalences of `∞`-categories also
+identify the higher mapping spaces. The comparison in the other direction is supplied here: the
+homotopy category functor acts on hom-categories through `SSet.ihomHoFunctor`, so every
+equivalence of `∞`-categories induces an equivalence of homotopy categories. For nerves of
+ordinary categories the two notions agree with equivalence of categories.
 
 ## Main declarations
 
 * `SSet.QCat.homotopyCategoryFunctor X Y`: the functor from the hom-category `X ⟶ Y` of the
   bicategory of quasicategories to `ho X ⥤ ho Y`, which sends `f` to `mapHomotopyCategory f.hom`.
-* `SSet.QCat.IsCategoricalEquivalence`: categorical equivalences of quasicategories, with
-  `SSet.QCat.isCategoricalEquivalence_iff_exists_equivalence` identifying them with the
+* `SSet.QCat.IsEquivalence`: equivalences of quasicategories, with
+  `SSet.QCat.isEquivalence_iff_exists_equivalence` identifying them with the
   `1`-morphisms underlying equivalences in the bicategory. They contain the identities and are
   closed under composition.
-* `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
-  equivalence induces an equivalence of homotopy categories.
+* `SSet.QCat.IsEquivalence.isEquivalence_mapHomotopyCategory`: an equivalence of quasicategories
+  induces an equivalence of homotopy categories.
 * `CategoryTheory.Iso.nerveMap`: a natural isomorphism of functors gives an invertible natural
   transformation between their nerves, with components computed by
   `CategoryTheory.Iso.nerveMap_hom_base` and `CategoryTheory.Iso.nerveMap_inv_base`.
-* `SSet.QCat.isCategoricalEquivalence_homMk_nerveMap_iff`: a functor between categories is an
-  equivalence exactly when its nerve is a categorical equivalence.
+* `SSet.QCat.isEquivalence_homMk_nerveMap_iff`: a functor between categories is an
+  equivalence exactly when its nerve is an equivalence of quasicategories.
 
 ## References
 
+* J. Lurie, *Kerodon*, Definition 4.5.1.10 and Definition 4.5.4.1.
 * J. Lurie, *Higher Topos Theory*, §1.2.10.
 * E. Riehl and D. Verity, *The 2-category theory of quasi-categories*, Adv. Math. 280 (2015).
 -/
@@ -99,36 +105,35 @@ lemma homotopyCategoryFunctor_map {f g : X ⟶ Y} (α : f ⟶ g) :
         eqToHom (homotopyCategoryFunctor_obj_eq_ihomHoFunctor_obj g).symm :=
   ((Category.id_comp _).trans (Category.comp_id _)).symm
 
-/-- A map of quasicategories is a categorical equivalence when it is an equivalence in the
-bicategory of quasicategories: it admits a quasi-inverse together with invertible natural
+/-- A map of quasicategories is an *equivalence of `∞`-categories* when it is an equivalence in
+the bicategory of quasicategories: it admits a quasi-inverse together with invertible natural
 transformations relating the two composites with the identities. -/
-def IsCategoricalEquivalence (f : X ⟶ Y) : Prop :=
+def IsEquivalence (f : X ⟶ Y) : Prop :=
   ∃ g : Y ⟶ X, Nonempty (𝟙 X ≅ f ≫ g) ∧ Nonempty (g ≫ f ≅ 𝟙 Y)
 
-/-- Categorical equivalences are the `1`-morphisms underlying equivalences in the bicategory of
-quasicategories. -/
-lemma isCategoricalEquivalence_iff_exists_equivalence (f : X ⟶ Y) :
-    IsCategoricalEquivalence f ↔ ∃ e : Bicategory.Equivalence X Y, e.hom = f :=
+/-- Equivalences of quasicategories are the `1`-morphisms underlying equivalences in the bicategory
+of quasicategories. -/
+lemma isEquivalence_iff_exists_equivalence (f : X ⟶ Y) :
+    IsEquivalence f ↔ ∃ e : Bicategory.Equivalence X Y, e.hom = f :=
   ⟨fun ⟨_, ⟨η⟩, ⟨ε⟩⟩ ↦ ⟨.mkOfAdjointifyCounit η ε, rfl⟩,
     fun ⟨e, he⟩ ↦ he ▸ ⟨e.inv, ⟨e.unit⟩, ⟨e.counit⟩⟩⟩
 
-namespace IsCategoricalEquivalence
+namespace IsEquivalence
 
-/-- The identity of a quasicategory is a categorical equivalence. -/
-lemma id (X : QCat.{u}) : IsCategoricalEquivalence (𝟙 X) :=
-  (isCategoricalEquivalence_iff_exists_equivalence _).2 ⟨.id X, rfl⟩
+/-- The identity of a quasicategory is an equivalence. -/
+lemma id (X : QCat.{u}) : IsEquivalence (𝟙 X) :=
+  (isEquivalence_iff_exists_equivalence _).2 ⟨.id X, rfl⟩
 
-/-- Categorical equivalences are closed under composition. -/
-lemma comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsCategoricalEquivalence f)
-    (hg : IsCategoricalEquivalence g) : IsCategoricalEquivalence (f ≫ g) := by
-  obtain ⟨e, rfl⟩ := (isCategoricalEquivalence_iff_exists_equivalence f).1 hf
-  obtain ⟨e', rfl⟩ := (isCategoricalEquivalence_iff_exists_equivalence g).1 hg
-  exact (isCategoricalEquivalence_iff_exists_equivalence _).2
+/-- Equivalences of quasicategories are closed under composition. -/
+lemma comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsEquivalence f)
+    (hg : IsEquivalence g) : IsEquivalence (f ≫ g) := by
+  obtain ⟨e, rfl⟩ := (isEquivalence_iff_exists_equivalence f).1 hf
+  obtain ⟨e', rfl⟩ := (isEquivalence_iff_exists_equivalence g).1 hg
+  exact (isEquivalence_iff_exists_equivalence _).2
     ⟨e.trans e', Bicategory.Equivalence.trans_hom e e'⟩
 
-/-- A categorical equivalence of quasicategories induces an equivalence of homotopy
-categories. -/
-lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsCategoricalEquivalence f) :
+/-- An equivalence of quasicategories induces an equivalence of homotopy categories. -/
+lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsEquivalence f) :
     (mapHomotopyCategory f.hom).IsEquivalence := by
   obtain ⟨g, ⟨η⟩, ⟨ε⟩⟩ := hf
   have hid (Z : QCat.{u}) : mapHomotopyCategory (𝟙 Z.obj) = 𝟭 _ :=
@@ -145,7 +150,7 @@ lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsCategoricalEquival
     (eqToIso (hid X).symm ≪≫ e η ≪≫ eqToIso (hcomp f g))
     (eqToIso (hcomp g f).symm ≪≫ e ε ≪≫ eqToIso (hid Y))).isEquivalence_functor
 
-end IsCategoricalEquivalence
+end IsEquivalence
 
 end SSet.QCat
 
@@ -223,10 +228,10 @@ end CategoryTheory.Iso
 
 namespace SSet.QCat
 
-/-- A functor between categories is an equivalence exactly when its nerve is a categorical
-equivalence of quasicategories. -/
-lemma isCategoricalEquivalence_homMk_nerveMap_iff (F : C ⥤ D) :
-    IsCategoricalEquivalence (X := ⟨nerve C, inferInstance⟩) (Y := ⟨nerve D, inferInstance⟩)
+/-- A functor between categories is an equivalence exactly when its nerve is an equivalence of
+quasicategories. -/
+lemma isEquivalence_homMk_nerveMap_iff (F : C ⥤ D) :
+    IsEquivalence (X := ⟨nerve C, inferInstance⟩) (Y := ⟨nerve D, inferInstance⟩)
       (ObjectProperty.homMk (nerveMap F)) ↔ F.IsEquivalence := by
   refine ⟨fun h ↦ ?_, fun _ ↦ ⟨ObjectProperty.homMk (nerveMap F.inv),
     ⟨F.asEquivalence.unitIso.nerveMap⟩, ⟨F.asEquivalence.counitIso.nerveMap⟩⟩⟩
