@@ -23,10 +23,10 @@ The construction is measurable into Mathlib's space of measures with its evaluat
 increments. Its intensity, expressed using `Measure.bind`, is `F ∗ F.renewalMeasure`, not
 the renewal measure itself: the latter also includes the artificial initial arrival.
 
-For exponential increments the random measure is almost surely locally finite, has no
-mass at zero, and has singleton masses at most one. Its counts on `(0,t]` agree with the
-existing natural-valued renewal counts and therefore have Poisson laws. No independent
-increment or Poisson random-measure characterization is asserted here.
+Pointwise positivity lemmas rule out mass at zero and bound singleton masses by one.
+For exponential increments, counts on `(0,t]` almost surely agree with the existing
+natural-valued renewal counts; the corresponding natural-valued counts have Poisson laws.
+No independent increment or Poisson random-measure characterization is asserted here.
 
 ## References
 
