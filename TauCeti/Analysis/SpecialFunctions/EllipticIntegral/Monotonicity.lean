@@ -16,6 +16,7 @@ larger squared modulus is below `1`, and decreases `legendreE` for all real modu
 For positive amplitude these comparisons are strict. In particular, `legendreK` is strictly
 increasing on `[0, 1)`, and `legendreEc` is strictly decreasing on `[0, ∞)`. Consequently
 `legendreEc k ≤ π / 2 ≤ legendreK k` on the nonsingular range, with equality only at zero.
+We also have the lower bound `(1 - k²) K(k) ≤ E(k)` for `k² < 1`.
 Squared-modulus comparisons also apply directly to negative moduli.
 
 These order properties follow by comparing the defining integrands, without differentiating
@@ -170,8 +171,7 @@ theorem legendreEc_eq_pi_div_two_iff {k : ℝ} :
   · rintro rfl
     exact legendreEc_zero
 
-/-- The lower comparison `(1 - k²) K(k) ≤ E(k)` controls the normalized second-kind
-error near modulus zero. -/
+/-- For `k² < 1`, the complete integrals satisfy `(1 - k²) K(k) ≤ E(k)`. -/
 theorem one_sub_sq_mul_legendreK_le_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
     (1 - k ^ 2) * legendreK k ≤ legendreEc k := by
   rw [legendreEc_def, legendreE_def, legendreK_def, legendreF_def,

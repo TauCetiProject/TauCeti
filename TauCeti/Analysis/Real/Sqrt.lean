@@ -36,6 +36,9 @@ squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluatio
 * `Real.sq_two_mul_sqrt_div_one_add_lt_one`: this square is less than `1` for `0 ≤ k ≠ 1`.
 * `Real.two_mul_sqrt_div_one_add_eq_abs`: the two rational square-root transformations
   compose to the absolute value on `[-1, 1]`.
+* `Real.sq_sqrt_one_sub_sq`: `√(1 - t²)² = 1 - t²` for `|t| ≤ 1`.
+* `Real.sq_sqrt_one_sub_sq_div`: the same identity for `t = b / a` when `0 ≤ b ≤ a`.
+* `Real.sq_sqrt_one_sub_sq_lt_one`: `√(1 - t²)² < 1` for nonzero `t`.
 -/
 
 public section

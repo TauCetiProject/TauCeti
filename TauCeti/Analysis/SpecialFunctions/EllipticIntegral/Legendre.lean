@@ -348,6 +348,11 @@ theorem legendreK_le_pi_div_two_div_sqrt {k : ℝ} (hk : k ^ 2 < 1) :
 @[simp]
 theorem legendreK_neg (k : ℝ) : legendreK (-k) = legendreK k := legendreF_neg_modulus _ k
 
+/-- Taking the absolute value of the modulus leaves the complete first kind unchanged. -/
+@[simp]
+theorem legendreK_abs (k : ℝ) : legendreK |k| = legendreK k := by
+  rcases abs_choice k with h | h <;> simp only [h, legendreK_neg]
+
 @[simp]
 theorem legendreK_zero : legendreK 0 = π / 2 := legendreF_zero_modulus _
 
@@ -451,6 +456,11 @@ theorem legendreEc_pos (k : ℝ) : 0 < legendreEc k :=
 
 @[simp]
 theorem legendreEc_neg (k : ℝ) : legendreEc (-k) = legendreEc k := legendreE_neg_modulus _ k
+
+/-- Taking the absolute value of the modulus leaves the complete second kind unchanged. -/
+@[simp]
+theorem legendreEc_abs (k : ℝ) : legendreEc |k| = legendreEc k := by
+  rcases abs_choice k with h | h <;> simp only [h, legendreEc_neg]
 
 @[simp]
 theorem legendreEc_zero : legendreEc 0 = π / 2 := legendreE_zero_modulus _

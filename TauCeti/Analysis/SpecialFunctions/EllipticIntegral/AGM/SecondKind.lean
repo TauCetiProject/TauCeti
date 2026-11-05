@@ -98,10 +98,8 @@ private theorem agm_secondKind_bounds {a b : ℝ≥0} (ha : 0 < a) (hb : 0 < b) 
       secondKindError (NNReal.agmSequences a b n).2 (NNReal.agmSequences a b n).1 ≤
         ((NNReal.agmSequences a b n).2 : ℝ) ^ 2 -
           ((NNReal.agmSequences a b n).1 : ℝ) ^ 2 := by
-  have hpos : 0 < (NNReal.agmSequences a b 0).1 := by
-    simpa only [NNReal.agmSequences_zero] using NNReal.sqrt_pos.2 (mul_pos ha hb)
   exact secondKindError_bounds
-    (by exact_mod_cast hpos.trans_le (NNReal.agmSequences_fst_monotone (Nat.zero_le n)))
+    (NNReal.coe_pos.2 (NNReal.agmSequences_fst_pos ha hb n))
     (NNReal.coe_le_coe.2 (NNReal.agmSequences_fst_le_snd n n))
 
 private theorem agm_secondKind_step {a b : ℝ≥0} (ha : 0 < a) (hb : 0 < b) (n : ℕ) :
@@ -110,13 +108,15 @@ private theorem agm_secondKind_step {a b : ℝ≥0} (ha : 0 < a) (hb : 0 < b) (n
         (NNReal.agmSequences a b (n + 1)).1 +
       (((NNReal.agmSequences a b n).2 : ℝ) ^ 2 -
         ((NNReal.agmSequences a b n).1 : ℝ) ^ 2) / 2 := by
-  have hpos : 0 < (NNReal.agmSequences a b 0).1 := by
-    simpa only [NNReal.agmSequences_zero] using NNReal.sqrt_pos.2 (mul_pos ha hb)
   have h := secondKindError_step
-    (by exact_mod_cast hpos.trans_le (NNReal.agmSequences_fst_monotone (Nat.zero_le n)))
+    (NNReal.coe_pos.2 (NNReal.agmSequences_fst_pos ha hb n))
     (NNReal.coe_le_coe.2 (NNReal.agmSequences_fst_le_snd n n))
-  simpa only [NNReal.agmSequences_succ', NNReal.coe_div, NNReal.coe_add,
-    NNReal.coe_ofNat, Real.coe_sqrt, NNReal.coe_mul, add_comm, mul_comm] using h
+  rw [NNReal.agmSequences_succ']
+  simp only [NNReal.coe_div, NNReal.coe_add, NNReal.coe_ofNat, Real.coe_sqrt,
+    NNReal.coe_mul]
+  rw [add_comm ((NNReal.agmSequences a b n).1 : ℝ),
+    mul_comm ((NNReal.agmSequences a b n).1 : ℝ)]
+  exact h
 
 /-- The weighted squared differences of the AGM means sum to
 `(a² + b²)/2 - a² E(√(1 - (b/a)²))/K(√(1 - (b/a)²))`.
@@ -148,14 +148,13 @@ theorem hasSum_agmSequences_secondKind {a b : ℝ≥0} (hb : 0 < b) (hba : b ≤
       (((NNReal.agmSequences a b n).2 : ℝ) ^ 2 -
         ((NNReal.agmSequences a b n).1 : ℝ) ^ 2)) (R 0) := by
     apply (hasSum_iff_tendsto_nat_of_nonneg (fun n ↦ mul_nonneg (by positivity)
-      (sub_nonneg.2 (pow_le_pow_left₀ (by positivity)
-        (NNReal.coe_le_coe.2 (NNReal.agmSequences_fst_le_snd n n)) 2))) _).2
+      (sub_nonneg.2 (NNReal.agmSequences_fst_sq_le_snd_sq a b n n))) _).2
     simp_rw [htel, Finset.sum_range_sub']
     simpa using hR.const_sub (R 0)
   convert hsum using 1
   have h := secondKindError_step (NNReal.coe_pos.2 hb) (NNReal.coe_le_coe.2 hba)
   simp only [R, NNReal.agmSequences_zero, NNReal.coe_div, NNReal.coe_add,
-    NNReal.coe_ofNat, Real.coe_sqrt, NNReal.coe_mul, pow_one, zero_add] at *
+    NNReal.coe_ofNat, Real.coe_sqrt, NNReal.coe_mul, pow_one, zero_add] at h ⊢
   dsimp only [secondKindError] at h ⊢
   linear_combination h
 
@@ -173,15 +172,9 @@ theorem legendreEc_eq_agmSeries {k : ℝ} (hk : k ^ 2 < 1) :
   have h := hasSum_agmSequences_secondKind (a := 1)
     (b := (√(1 - k ^ 2)).toNNReal) (toNNReal_pos.2 hc)
     (by simpa only [← NNReal.coe_le_coe, coe_toNNReal _ hc.le, NNReal.coe_one] using hc₁)
-  have he : legendreEc √(k ^ 2) = legendreEc k := by
-    rw [sqrt_sq_eq_abs]
-    rcases abs_choice k with h | h <;> simp [h]
-  have hκ : legendreK √(k ^ 2) = legendreK k := by
-    rw [sqrt_sq_eq_abs]
-    rcases abs_choice k with h | h <;> simp [h]
   simp only [NNReal.coe_one, coe_toNNReal _ hc.le, one_pow, div_one,
     sq_sqrt (by linarith : 0 ≤ 1 - k ^ 2),
-    sub_sub_cancel, he, hκ, one_mul] at h
+    sub_sub_cancel, sqrt_sq_eq_abs, legendreEc_abs, legendreK_abs, one_mul] at h
   rw [h.tsum_eq]
   field_simp [(legendreK_pos hk).ne']
   ring
