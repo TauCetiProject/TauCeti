@@ -6,20 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Basic
+public import TauCeti.Algebra.Module.ZLattice.OrthSum
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Module.ZLattice.Basic
 
 /-!
-# Isometries and rescaling of theta series
+# Isometries, rescaling and orthogonal direct sums of theta series
 
 An isometry preserves the theta series of a lattice and its translates. Multiplying a lattice
 and a translate by a nonzero real scalar multiplies the upper-half-plane parameter by its square.
 These statements use only reindexing, without discreteness or finite-dimensionality assumptions.
-
 The reindexing uses Mathlib's `ZLattice.comap_equiv` and `Submodule.equivMapOfInjective`.
-For the classical theta-series conventions see Serre, *A Course in Arithmetic*, Ch. VII §6,
-and Ebeling, *Lattices and Codes*, Ch. 2.
+
+The theta series of an orthogonal direct sum `L ⊕ M ⊆ WithLp 2 (E × F)` (`ZLattice.orthSum`) is
+the product of the theta series of the summands, `Θ_{L ⊕ M} = Θ_L Θ_M`, and more generally
+`θ_{(γ, δ) + (L ⊕ M)} = θ_{γ+L} θ_{δ+M}` for every translate `(γ, δ)`. Since
+`‖(x, y)‖² = ‖x‖² + ‖y‖²`, the term of index `(v, w) ∈ L × M` is the product of the terms of
+index `v` and `w`, and the double series is the product of the two series because both converge
+absolutely. Here `L` and `M` are discrete subgroups of finite-dimensional spaces, so that the
+series converge.
+
+## Main statements
+
+* `ZLattice.thetaCoset_comap`, `ZLattice.thetaSeries_comap`: invariance under linear isometries.
+* `ZLattice.thetaCoset_smul`, `ZLattice.thetaSeries_smul`: `Θ_{c • L}(τ) = Θ_L(c² τ)`.
+* `ZLattice.thetaCoset_orthSum`, `ZLattice.thetaSeries_orthSum`: `Θ_{L ⊕ M} = Θ_L Θ_M`.
+
+## References
+
+* J.-P. Serre, *A Course in Arithmetic*, Ch. VII §6.
+* W. Ebeling, *Lattices and Codes*, Ch. 2.
 -/
 
 public section
@@ -75,5 +92,37 @@ theorem thetaSeries_smul (L : Submodule ℤ E) {c : ℝ} (hc : c ≠ 0) (τ : �
     thetaSeries (c • L) τ =
       thetaSeries L ((⟨c ^ 2, sq_pos_of_ne_zero hc⟩ : {r : ℝ // 0 < r}) • τ) := by
   simpa using thetaCoset_smul L hc 0 τ
+
+section OrthSum
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] (L : Submodule ℤ E) (M : Submodule ℤ F)
+  [DiscreteTopology L] [DiscreteTopology M]
+
+/-- **The theta series of a translate of an orthogonal direct sum** is the product of the theta
+series of the translates of the summands by the components: `θ_{x + (L ⊕ M)} = θ_{x₁+L} θ_{x₂+M}`
+for `x = (x₁, x₂)`. -/
+@[simp]
+theorem thetaCoset_orthSum (x : WithLp 2 (E × F)) (τ : ℍ) :
+    thetaCoset (orthSum L M) x τ = thetaCoset L x.fst τ * thetaCoset M x.snd τ := by
+  rw [thetaCoset_apply, ← (orthSumEquivProd L M).symm.toEquiv.tsum_eq, thetaCoset_apply,
+    thetaCoset_apply, tsum_mul_tsum_of_summable_norm (summable_norm_thetaCoset L x.fst τ)
+      (summable_norm_thetaCoset M x.snd τ)]
+  refine tsum_congr fun p ↦ ?_
+  simp only [LinearEquiv.coe_toEquiv, coe_orthSumEquivProd_symm_apply,
+    WithLp.prod_norm_sq_eq_of_L2, WithLp.add_fst, WithLp.add_snd, WithLp.toLp_fst,
+    WithLp.toLp_snd, ← exp_add]
+  congr 1
+  push_cast
+  ring
+
+/-- **The theta series of an orthogonal direct sum** is the product of the theta series of the
+summands: `Θ_{L ⊕ M} = Θ_L Θ_M`. -/
+@[simp]
+theorem thetaSeries_orthSum (τ : ℍ) :
+    thetaSeries (orthSum L M) τ = thetaSeries L τ * thetaSeries M τ := by
+  rw [← thetaCoset_zero, thetaCoset_orthSum]
+  simp
+
+end OrthSum
 
 end ZLattice
