@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
-public import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.Algebra.Regular.SMul
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
@@ -19,7 +18,7 @@ import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 The blowup of the product of two ideal sheaves maps canonically to the blowup of either
 factor. Both ideals become effective Cartier on this common blowup. Consequently a map
 on which both centres become effective Cartier lifts compatibly to all three blowups.
-On a locally Noetherian scheme these comparison maps are proper, and centres avoiding a
+For centres of finite type these comparison maps are proper, and centres avoiding a
 specified open give a proper common modification which leaves that open unchanged.
 
 The calculation uses the affine charts of the product centre indexed by products `a * b`.
@@ -30,8 +29,9 @@ statements.
 
 ## References
 
-* The Stacks Project, Lemma 31.33.12, on blowing up a product of ideals.
-* The Stacks Project, Lemma 38.33.4, for the common blowup used in gluing modifications.
+* The Stacks Project, Lemma 31.33.12 (Tag 080A), on blowing up a product of ideals.
+* The Stacks Project, Lemma 38.33.4 (Tag 0F3X), for the common blowup used in gluing
+  modifications.
 
 The construction uses `Scheme.IdealSheafData.blowupLift` and the affine-chart calculation
 `Ideal.map_algebraMap_affineBlowup_mul_left`.
@@ -144,7 +144,7 @@ instance isProper_blowupMulSnd [IsProper (I * J).blowupToBase] :
   exact IsProper.of_comp _ J.blowupToBase
 
 /-- A lift to the product-centre blowup is compatible with the lift to the first factor. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem blowupLift_blowupMulFst (f : T ⟶ X)
     (hI : (I.comap f).IsEffectiveCartier) (hIJ : ((I * J).comap f).IsEffectiveCartier) :
     (I * J).blowupLift f hIJ ≫ I.blowupMulFst J = I.blowupLift f hI := by
@@ -152,16 +152,18 @@ theorem blowupLift_blowupMulFst (f : T ⟶ X)
   simp
 
 /-- A lift to the product-centre blowup is compatible with the lift to the second factor. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem blowupLift_blowupMulSnd (f : T ⟶ X)
     (hJ : (J.comap f).IsEffectiveCartier) (hIJ : ((I * J).comap f).IsEffectiveCartier) :
     (I * J).blowupLift f hIJ ≫ I.blowupMulSnd J = J.blowupLift f hJ := by
   apply J.eq_blowupLift hJ
   simp
 
-/-- Two centres on a locally Noetherian scheme avoiding `U` admit a proper common blowup
-which still avoids `U`. The maps to both original blowups are proper and lie over `X`. -/
-theorem exists_blowup_common_refinement [IsLocallyNoetherian X] (U : X.Opens)
+/-- Two centres of finite type avoiding `U` admit a proper common blowup which still avoids
+`U`. The maps to both original blowups are proper and lie over `X`. -/
+theorem exists_blowup_common_refinement
+    (hIfg : ∀ V : X.affineOpens, (I.ideal V).FG)
+    (hJfg : ∀ V : X.affineOpens, (J.ideal V).FG) (U : X.Opens)
     (hI : Disjoint (U : Set X) (I.support : Set X))
     (hJ : Disjoint (U : Set X) (J.support : Set X)) :
     ∃ (K : X.IdealSheafData) (a : K.blowup ⟶ I.blowup) (b : K.blowup ⟶ J.blowup),
@@ -171,8 +173,8 @@ theorem exists_blowup_common_refinement [IsLocallyNoetherian X] (U : X.Opens)
   have hK : IsProper (I * J).blowupToBase := by
     apply isProper_blowupToBase
     intro V
-    have := IsLocallyNoetherian.component_noetherian V
-    exact IsNoetherian.noetherian _
+    rw [ideal_mul, Pi.mul_apply]
+    exact (hIfg V).mul (hJfg V)
   have hU : Disjoint (U : Set X) ((I * J).support : Set X) := by
     simpa only [support_mul, TopologicalSpace.Closeds.coe_sup, Set.disjoint_union_right]
       using And.intro hI hJ
