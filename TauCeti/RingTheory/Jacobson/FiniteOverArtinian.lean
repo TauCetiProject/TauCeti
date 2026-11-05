@@ -28,38 +28,37 @@ via `IsArtinianRing.of_finite`. The mathematical inputs are:
 
 ## Main results
 
-* `TauCeti.isSemisimpleRing_iff_jacobson_eq_bot`: such a ring is semisimple if and only if its
-  Jacobson radical is zero.
-* `TauCeti.isNilpotent_jacobson`: the Jacobson radical of such a ring is nilpotent.
-* `TauCeti.isSemisimpleRing_quotient_jacobson`: the quotient of such a ring by its Jacobson radical
-  is semisimple.
+* `TauCeti.isSemisimpleRing_iff_jacobson_eq_bot_of_finite`: such a ring is semisimple if and only
+  if its Jacobson radical is zero.
+* `TauCeti.isNilpotent_jacobson_of_finite`: the Jacobson radical of such a ring is nilpotent.
+* `TauCeti.isSemisimpleRing_quotient_jacobson_of_finite`: the quotient of such a ring by its
+  Jacobson radical is semisimple.
 -/
 
 public section
 
 namespace TauCeti
 
-universe u v
-
-variable {K : Type u} {A : Type v} [Ring K] [IsArtinianRing K] [Ring A] [Module K A]
+variable (K A : Type*) [Ring K] [IsArtinianRing K] [Ring A] [Module K A]
   [IsScalarTower K A A] [Module.Finite K A]
 
 include K
 
 /-- A ring finite over an Artinian ring is semisimple if and only if its Jacobson radical
 vanishes. -/
-theorem isSemisimpleRing_iff_jacobson_eq_bot :
+theorem isSemisimpleRing_iff_jacobson_eq_bot_of_finite :
     IsSemisimpleRing A ↔ Ring.jacobson A = ⊥ :=
   have := IsArtinianRing.of_finite K A
   IsArtinianRing.isSemisimpleRing_iff_jacobson
 
 /-- The Jacobson radical of a ring finite over an Artinian ring is nilpotent. -/
-theorem isNilpotent_jacobson : IsNilpotent (Ring.jacobson A) :=
+theorem isNilpotent_jacobson_of_finite : IsNilpotent (Ring.jacobson A) :=
   have := IsArtinianRing.of_finite K A
   IsSemiprimaryRing.isNilpotent
 
 /-- The quotient of a ring finite over an Artinian ring by its Jacobson radical is semisimple. -/
-theorem isSemisimpleRing_quotient_jacobson : IsSemisimpleRing (A ⧸ Ring.jacobson A) :=
+theorem isSemisimpleRing_quotient_jacobson_of_finite :
+    IsSemisimpleRing (A ⧸ Ring.jacobson A) :=
   have := IsArtinianRing.of_finite K A
   IsSemiprimaryRing.isSemisimpleRing
 

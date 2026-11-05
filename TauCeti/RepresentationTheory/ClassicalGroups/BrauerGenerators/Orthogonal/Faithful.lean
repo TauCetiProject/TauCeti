@@ -132,8 +132,8 @@ theorem BrauerAlgebra.isSemisimpleRing_of_le {K : Type*} [Field K] [PartialOrder
     simp [Φ, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
   have hinj : Function.Injective Φ :=
     (LinearMap.toMatrixAlgEquiv _).injective.comp (brauerActionOrth_injective K n k hk)
-  rw [isSemisimpleRing_iff_jacobson_eq_bot (K := K)]
-  obtain ⟨m, hm⟩ := isNilpotent_jacobson (K := K) (A := BrauerAlgebra K (n : K) k)
+  rw [isSemisimpleRing_iff_jacobson_eq_bot_of_finite K]
+  obtain ⟨m, hm⟩ := isNilpotent_jacobson_of_finite K (BrauerAlgebra K (n : K) k)
   refine eq_bot_iff.mpr fun x hx => ?_
   -- the reflected diagrams with conjugate coefficients act by the conjugate transpose of `Φ x`
   let y : BrauerAlgebra K (n : K) k :=

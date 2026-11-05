@@ -70,7 +70,7 @@ variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [FiniteDimensional K A]
 in the Jacobson radical of a finite-dimensional algebra, then `tr(L_{yx}) = 0` for every `y`. -/
 theorem regularTraceForm_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobson A) (y : A) :
     regularTraceForm K A y x = 0 := by
-  obtain ⟨m, hm⟩ := isNilpotent_jacobson (K := K) (A := A)
+  obtain ⟨m, hm⟩ := isNilpotent_jacobson_of_finite K A
   have hyx : IsNilpotent (y * x) := by
     refine ⟨m, ?_⟩
     have hpow := Ideal.pow_mem_pow ((Ring.jacobson A).smul_mem y hx) m
@@ -82,7 +82,7 @@ theorem regularTraceForm_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobs
 holds over every field. -/
 theorem isSemisimpleRing_of_nondegenerate_regularTraceForm
     (h : (regularTraceForm K A).Nondegenerate) : IsSemisimpleRing A := by
-  rw [isSemisimpleRing_iff_jacobson_eq_bot (K := K)]
+  rw [isSemisimpleRing_iff_jacobson_eq_bot_of_finite K]
   exact eq_bot_iff.mpr fun x hx =>
     (Submodule.mem_bot _).mpr (h.2 x (regularTraceForm_eq_zero_of_mem_jacobson hx))
 
