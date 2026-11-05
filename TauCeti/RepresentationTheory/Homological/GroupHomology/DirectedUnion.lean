@@ -159,7 +159,7 @@ theorem exists_map_inclusion_eq_zero {ι : Type*} {S : ι → Subgroup G}
       chainsMap_f_map_mono _ (𝟙 (res (S j).subtype A)) (S j).subtype_injective _)
     (ChainComplex.prev ℕ n) (P := fun j ↦ S i ≤ S j)
     (fun _ hj ↦ chainsMap (Subgroup.inclusion hj) (Rep.resInclusionHom A hj))
-    (fun _ hj ↦ TauCeti.groupHomology.chainsMap_inclusion_comp_chainsMap_subtype A hj)
+    (fun _ hj ↦ A.chainsMap_inclusion_comp_chainsMap_subtype hj)
     (TauCeti.groupHomology.exists_le_chainsMap_subtype_f_eq_of_directed hS hG i) y hy
 
 end groupHomology

@@ -27,9 +27,9 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
   and a coefficient map act as `Abelianization.map f ⊗ φ`.
-* `TauCeti.groupHomology.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
+* `Rep.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
   chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
-* `TauCeti.groupHomology.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
+* `Rep.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
 -/
 
 public noncomputable section
@@ -105,9 +105,32 @@ theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.I
 
 end IsTrivial
 
-section Subgroup
+end TauCeti.groupHomology
 
-open _root_.groupHomology Rep
+namespace groupHomology
+
+variable {R G : Type u} [CommRing R] [Group G]
+
+/-- The map on group homology induced by the multiple `c • 𝟙` of the identity of a representation
+is multiplication by `c`. -/
+@[simp]
+theorem map_id_nsmul_id (A : Rep R G) (c n : ℕ) :
+    map (MonoidHom.id G) (c • 𝟙 A) n = c • 𝟙 _ := by
+  -- `Hₙ(G, -)` is the composite of two additive functors.
+  have h : map (MonoidHom.id G) (c • 𝟙 A) n =
+      (HomologicalComplex.homologyFunctor _ _ n).map ((chainsFunctor R G).map (c • 𝟙 A)) := by
+    rw [map, HomologicalComplex.homologyFunctor_map, chainsFunctor_map]
+    rfl
+  rw [h, Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
+  exact congrArg (c • ·) (CategoryTheory.Functor.map_id _ _)
+
+end groupHomology
+
+namespace Rep
+
+variable {R G : Type u} [CommRing R] [Group G]
+
+open groupHomology
 
 /-- The maps of inhomogeneous chains induced by inclusions of subgroups compose: the inclusion of
 `S` into `T` followed by that of `T` into `G` is the inclusion of `S` into `G`. -/
@@ -133,25 +156,4 @@ theorem map_inclusion_comp_map_subtype (A : Rep R G) {S T : Subgroup G} (h : S �
   ext a
   exact resInclusionHom_hom_apply A h a
 
-end Subgroup
-
-end TauCeti.groupHomology
-
-namespace groupHomology
-
-variable {R G : Type u} [CommRing R] [Group G]
-
-/-- The map on group homology induced by the multiple `c • 𝟙` of the identity of a representation
-is multiplication by `c`. -/
-@[simp]
-theorem map_id_nsmul_id (A : Rep R G) (c n : ℕ) :
-    map (MonoidHom.id G) (c • 𝟙 A) n = c • 𝟙 _ := by
-  -- `Hₙ(G, -)` is the composite of two additive functors.
-  have h : map (MonoidHom.id G) (c • 𝟙 A) n =
-      (HomologicalComplex.homologyFunctor _ _ n).map ((chainsFunctor R G).map (c • 𝟙 A)) := by
-    rw [map, HomologicalComplex.homologyFunctor_map, chainsFunctor_map]
-    rfl
-  rw [h, Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
-  exact congrArg (c • ·) (CategoryTheory.Functor.map_id _ _)
-
-end groupHomology
+end Rep

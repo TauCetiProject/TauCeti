@@ -536,8 +536,14 @@ theorem exists_homologyMap_eq_zero_of_injective {κ : Type*}
   have hd : ∀ (M : HomologicalComplex (ModuleCat R) c) (x : M.X m),
       M.iCycles n (M.toCycles m n x) = M.d m n x := fun M x ↦ by
     rw [← ModuleCat.comp_apply, toCycles_i]
-  rw [hd, hi, ← ModuleCat.comp_apply ((ψ j hj).f n), ← comp_f, hψ, ← hi, ← hw, hd,
-    Hom.comm_apply]
+  -- push both cycles into `K`: naturality of the differential, then `hw` and compatibility `hψ`
+  calc (φ j).f n ((L j).iCycles n ((L j).toCycles m n w'))
+      = (φ j).f n ((L j).d m n w') := by rw [hd]
+    _ = K.d m n ((φ j).f m w') := (Hom.comm_apply _ _ _ _).symm
+    _ = K.iCycles n (K.toCycles m n ((φ j).f m w')) := (hd K _).symm
+    _ = (φ i).f n ((L i).iCycles n z) := by rw [hw, hi]
+    _ = (φ j).f n ((L j).iCycles n (cyclesMap (ψ j hj) n z)) := by
+      rw [hi, ← ModuleCat.comp_apply ((ψ j hj).f n), ← comp_f, hψ]
 
 variable {K} in
 /-- A chain map of complexes of modules sends the class of a cycle to the class of its image. -/
