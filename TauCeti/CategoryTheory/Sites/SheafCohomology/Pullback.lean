@@ -284,18 +284,6 @@ lemma pullback_apply (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V : D}
       (Ext.mapExactFunctor pb x) (zero_add n) :=
   (rfl)
 
-/-- The restriction maps of the cohomology presheaf are precomposition with the induced maps of
-free abelian sheaves. This is `Sheaf.cohomologyPresheaf_map_apply` with the identification
-`Sheaf.H'AddEquivExt` left implicit, as in `pullback_apply`: that identification is not exposed,
-so it cannot be removed outside its defining file. -/
-private lemma cohomologyPresheaf_map_apply_ext {E : Type*} [Category.{v} E]
-    {L : GrothendieckTopology E} [HasSheafify L AddCommGrpCat.{v}]
-    [HasExt.{w} (Sheaf L AddCommGrpCat.{v})] (F : Sheaf L AddCommGrpCat.{v}) (n : ℕ) {U V : E}
-    (i : U ⟶ V) (x : Ext ((freeYonedaSheafFunctor L).obj V) F n) :
-    (F.cohomologyPresheaf n).map i.op x =
-      (Ext.mk₀ ((freeYonedaSheafFunctor L).map i)).comp x (zero_add n) :=
-  (rfl)
-
 /-- Restricting the pullback along `j : V' ⟶ V` is pulling back along `j ≫ ψ`. -/
 @[reassoc]
 lemma pullback_comp_map (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V V' : D}
@@ -304,7 +292,7 @@ lemma pullback_comp_map (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V V' 
       pullback pb c G n (j ≫ ψ) := by
   refine AddCommGrpCat.ext fun x ↦ ?_
   rw [ConcreteCategory.comp_apply, pullback_apply, pullback_apply,
-    cohomologyPresheaf_map_apply_ext, Ext.mk₀_comp_mk₀_assoc, Functor.map_comp, Category.assoc]
+    Sheaf.cohomologyPresheaf_map_apply, Ext.mk₀_comp_mk₀_assoc, Functor.map_comp, Category.assoc]
 
 /-- Pulling back after restricting along `i : U₁ ⟶ U₂` is pulling back along `ψ ≫ u(i)`. -/
 @[reassoc]
@@ -314,7 +302,7 @@ lemma map_comp_pullback (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U₁ U₂ : C
       pullback pb c G n (ψ ≫ u.map i) := by
   refine AddCommGrpCat.ext fun x ↦ ?_
   rw [ConcreteCategory.comp_apply, pullback_apply, pullback_apply,
-    cohomologyPresheaf_map_apply_ext G n i x]
+    Sheaf.cohomologyPresheaf_map_apply G i n x]
   -- The class `x` lies in `Hⁿ(U₂, G)`, which is `Ext` from the free sheaf only up to unfolding, so
   -- `Ext.mapExactFunctor_comp` is applied through `congrArg` rather than by rewriting.
   refine (congrArg (Ext.comp _ · (zero_add n)) (Ext.mapExactFunctor_comp pb _ _ _)).trans ?_
@@ -398,6 +386,12 @@ lemma δ_comp_pullback (G : Sheaf J AddCommGrpCat.{v}) (n₀ n₁ : ℕ) (h : n�
   -- The connecting maps are precomposition with the extension classes of the short exact
   -- sequences of free sheaves, and `pullback` is precomposition after applying `pb`; the
   -- extension classes are compatible along the morphism `φ` of short exact sequences.
+  -- The `change` unfolds `MayerVietorisSquare.δ` (`ofHom` of `hS.extClass.precomp`), `pullback`
+  -- (`pullback_apply`), and the fields `φ.τ₁`, `φ.τ₃`. It also reads `Hⁿ(S.X₁, G)` as `Ext` out of
+  -- `S.shortComplex.X₁`, which is `ℤ[S.X₁]` only after unfolding `Sheaf.H'` and
+  -- `MayerVietorisSquare.shortComplex`. Rewriting with `(rfl)` lemmas for these steps does not
+  -- work: after each one the goal mixes the two typings of `x`, so it is not type-correct at
+  -- instance transparency and `rw` and `simp` reject it.
   change (Ext.mk₀ φ.τ₃).comp ((hS.extClass.comp x (by lia)).mapExactFunctor pb) (zero_add n₁) =
     hS'.extClass.comp ((Ext.mk₀ φ.τ₁).comp (x.mapExactFunctor pb) (zero_add n₀)) (by lia)
   rw [Ext.mapExactFunctor_comp, Ext.mapExactFunctor_extClass,

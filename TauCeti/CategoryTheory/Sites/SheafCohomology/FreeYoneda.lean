@@ -161,20 +161,23 @@ section
 variable {J} [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
 
 /-- Mathlib's sheaf cohomology `Hⁿ(U, F)` is additively equivalent to `Ext` from the free abelian
-sheaf on `U`. This is the identity, and transports elements between the two forms. -/
+sheaf on `U`. This is the identity, and transports elements between the two forms.
+
+The body is exposed so that lemmas stated on `Ext` from the free abelian sheaf, such as
+`Sheaf.cohomologyPresheaf_map_apply`, apply to classes transported along this equivalence. -/
+@[expose]
 def _root_.CategoryTheory.Sheaf.H'AddEquivExt
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (n : ℕ) (U : C) :
     F.H' n U ≃+ Abelian.Ext ((freeYonedaSheafFunctor J).obj U) F n :=
   AddEquiv.refl _
 
 /-- The restriction maps of Mathlib's cohomology presheaf are precomposition with the induced maps
-of free abelian sheaves. -/
+of free abelian sheaves, on classes written as `Ext` from the free abelian sheaf. -/
 lemma _root_.CategoryTheory.Sheaf.cohomologyPresheaf_map_apply
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V) (n : ℕ)
-    (x : F.H' n V) :
-    F.H'AddEquivExt n U ((F.cohomologyPresheaf n).map i.op x) =
-      (Abelian.Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp (F.H'AddEquivExt n V x)
-        (zero_add n) :=
+    (x : Abelian.Ext ((freeYonedaSheafFunctor J).obj V) F n) :
+    (F.cohomologyPresheaf n).map i.op x =
+      (Abelian.Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp x (zero_add n) :=
   (rfl)
 
 /-- If restriction of sections along `i : U ⟶ V` is surjective, then so is the restriction map
@@ -189,9 +192,9 @@ theorem _root_.CategoryTheory.Sheaf.cohomologyPresheaf_zero_map_surjective
   refine ⟨(F.H'AddEquivExt 0 V).symm
     (Abelian.Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V F).symm t)), ?_⟩
   apply (F.H'AddEquivExt 0 U).injective
-  refine (F.cohomologyPresheaf_map_apply i 0 _).trans ?_
-  rw [AddEquiv.apply_symm_apply, Abelian.Ext.mk₀_comp_mk₀, ← Abelian.Ext.mk₀_addEquiv₀_apply
-    (F.H'AddEquivExt 0 U y)]
+  refine (F.cohomologyPresheaf_map_apply i 0
+    (Abelian.Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V F).symm t))).trans ?_
+  rw [Abelian.Ext.mk₀_comp_mk₀, ← Abelian.Ext.mk₀_addEquiv₀_apply (F.H'AddEquivExt 0 U y)]
   congr 1
   apply (freeYonedaSheafSectionsEquiv J U F).injective
   rw [freeYonedaSheafSectionsEquiv_naturality_left, AddEquiv.apply_symm_apply]
