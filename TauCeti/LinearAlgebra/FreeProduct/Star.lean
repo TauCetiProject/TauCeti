@@ -59,7 +59,7 @@ private def starAux : FreeProduct R A →+* (FreeProduct R A)ᵐᵒᵖ := by
 private theorem starAux_ι (i : I) (a : A i) :
     starAux R A (ι R A i a) = op (ι R A i (star a)) := by
   let := Algebra.compHom (FreeProduct R A)ᵐᵒᵖ (starRingEnd R)
-  exact AlgHom.congr_fun (lift_comp_ι R A _ (i := i)) a
+  exact lift_ι_apply R A _ i a
 
 private theorem starAux_algebraMap (r : R) :
     starAux R A (algebraMap R _ r) = op (algebraMap R _ (star r)) := by
@@ -75,13 +75,8 @@ private theorem starAux_involutive (x : FreeProduct R A) :
       map_zero' := by simp
       map_add' x y := by simp
       commutes' r := by simp [starAux_algebraMap] }
-  have hf : f = AlgHom.id R (FreeProduct R A) := by
-    apply (lift R A).symm.injective
-    funext i
-    apply AlgHom.ext
-    intro a
-    simp only [lift_symm_apply, AlgHom.comp_apply, AlgHom.id_apply]
-    simp [f, starAux_ι]
+  have hf : f = AlgHom.id R (FreeProduct R A) :=
+    algHom_ext fun i a ↦ by simp [f, starAux_ι]
   exact AlgHom.congr_fun hf x
 
 /-- The involution extending the factor involutions to the algebraic free product. -/
@@ -131,13 +126,8 @@ theorem _root_.AlgHom.map_star_of_comp_freeProduct_ι (f : FreeProduct R A →�
       map_zero' := by simp
       map_add' x y := by simp
       commutes' r := by simp [← algebraMap_star_comm] }
-  have hg : g = f := by
-    apply (lift R A).symm.injective
-    funext i
-    apply AlgHom.ext
-    intro a
-    simp only [lift_symm_apply, AlgHom.comp_apply]
-    simp [g, hf]
+  have hg : g = f :=
+    algHom_ext fun i a ↦ by simp [g, hf]
   have := AlgHom.congr_fun hg x
   simpa [g] using congrArg star this
 
@@ -145,17 +135,14 @@ theorem _root_.AlgHom.map_star_of_comp_freeProduct_ι (f : FreeProduct R A →�
 def liftStar : ({i : I} → A i →⋆ₐ[R] B) ≃ (FreeProduct R A →⋆ₐ[R] B) where
   toFun maps :=
     { lift R A (fun {i} => (maps (i := i)).toAlgHom) with
-      map_star' x := AlgHom.map_star_of_comp_freeProduct_ι _ (fun i a => by
-        have h := lift_comp_ι R A (fun {i} => (maps (i := i)).toAlgHom) (i := i)
-        simpa only [AlgHom.comp_apply, StarAlgHom.coe_toAlgHom] using
-          (AlgHom.congr_fun h (star a)).trans ((map_star (maps (i := i)) a).trans
-            (congrArg star (AlgHom.congr_fun h a).symm))) x }
+      map_star' x := AlgHom.map_star_of_comp_freeProduct_ι _
+        (fun i a => by simp [map_star (maps (i := i))]) x }
   invFun f := fun {i} => f.comp (ιStar R A i)
   left_inv maps := by
     funext i
     apply StarAlgHom.ext
     intro a
-    exact AlgHom.congr_fun (lift_comp_ι R A _) a
+    exact lift_ι_apply R A _ i a
   right_inv f := by
     apply StarAlgHom.ext
     intro x
@@ -174,7 +161,7 @@ theorem liftStar_symm_apply (i : I) (f : FreeProduct R A →⋆ₐ[R] B) :
 @[simp]
 theorem liftStar_ι (maps : {i : I} → A i →⋆ₐ[R] B) (i : I) (a : A i) :
     liftStar maps (ι R A i a) = maps a :=
-  AlgHom.congr_fun (lift_comp_ι R A _) a
+  lift_ι_apply R A _ i a
 
 /-- Star algebra homomorphisms out of a free product are determined on its factors. -/
 @[ext]

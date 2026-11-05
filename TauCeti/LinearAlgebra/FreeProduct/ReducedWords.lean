@@ -697,6 +697,12 @@ private noncomputable def toReducedWords (φ : ∀ k, A k →ₗ[R] R) (hφ : �
   map_add' _ _ := by simp
   map_smul' _ _ := by simp
 
+private theorem toReducedWords_apply (φ : ∀ k, A k →ₗ[R] R) (hφ : ∀ i, φ i 1 = 1)
+    (u : FreeProduct R A) :
+    toReducedWords φ hφ u = leftActionAlgHom φ hφ u
+      (DirectSum.lof R (ReducedWord I) (WordTensor φ) .nil ((wordTensorNilEquiv φ).symm 1)) :=
+  (rfl)
+
 private theorem toReducedWords_wordMul (φ : ∀ k, A k →ₗ[R] R) (hφ : ∀ i, φ i 1 = 1)
     (w : ReducedWord I) :
     ∀ z : WordTensor φ w,
@@ -705,20 +711,17 @@ private theorem toReducedWords_wordMul (φ : ∀ k, A k →ₗ[R] R) (hφ : ∀ 
   induction w using ReducedWord.cons_induction_on with
   | nil =>
     intro z
-    simp [toReducedWords, Algebra.algebraMap_eq_smul_one, ← map_smul]
+    rw [wordMul_nil, toReducedWords_apply, AlgHom.commutes]
+    simp [Algebra.algebraMap_eq_smul_one, ← map_smul]
   | @cons i u hu ih =>
     intro z
     rw [← (wordTensorConsEquiv φ u hu).apply_symm_apply z]
     generalize (wordTensorConsEquiv φ u hu).symm z = t
     induction t using TensorProduct.inductionOn with
     | tmul x y =>
-      have ihu : leftActionAlgHom φ hφ (wordMul φ u y)
-          (DirectSum.lof R (ReducedWord I) (WordTensor φ) .nil
-            ((wordTensorNilEquiv φ).symm 1)) =
-        DirectSum.lof R (ReducedWord I) (WordTensor φ) u y := ih y
-      rw [wordMul_wordTensorConsEquiv_tmul]
-      simp only [toReducedWords, LinearMap.coe_mk, AddHom.coe_mk, map_mul,
-        Module.End.mul_eq_comp, LinearMap.comp_apply, ihu]
+      simp_rw [toReducedWords_apply] at ih
+      rw [wordMul_wordTensorConsEquiv_tmul, toReducedWords_apply]
+      simp only [map_mul, Module.End.mul_eq_comp, LinearMap.comp_apply, ih y]
       rw [leftActionAlgHom, lift_ι_apply]
       simp only [factorEndAlgHom_apply,
         factorTensorComplEquiv_symm_lof_of_head_ne φ (hφ i) u hu,
@@ -741,7 +744,7 @@ noncomputable def equivReducedWords (φ : ∀ k, A k →ₗ[R] R) (hφ : ∀ i, 
       simp only [LinearMap.comp_apply, LinearMap.id_apply, reducedWordsToFreeProduct_lof]
       exact toReducedWords_wordMul φ hφ w z)
     (LinearMap.ext fun u ↦ by
-      simp [toReducedWords, reducedWordsToFreeProduct_leftActionAlgHom])
+      simp [toReducedWords_apply, reducedWordsToFreeProduct_leftActionAlgHom])
 
 @[simp]
 theorem equivReducedWords_symm_toLinearMap (φ : ∀ k, A k →ₗ[R] R) (hφ : ∀ i, φ i 1 = 1) :

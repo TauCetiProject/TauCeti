@@ -606,7 +606,9 @@ private theorem apply_reverse_prod_mul_prod [DecidableEq ι]
       have hwφ' : ∀ z ∈ w, φ z.2 = 0 := fun z hz ↦ hwφ z (by simp [hz])
       have hvφ' : ∀ z ∈ v, φ z.2 = 0 := fun z hz ↦ hvφ z (by simp [hz])
       by_cases hxy : x.1 = y.1
-      · have hcB : x.2 * y.2 ∈ B x.1 :=
+      · -- Center the product of the two leading letters. Its centered part gives a reduced
+        -- word with zero expectation; its scalar part leaves the pairing of the tails.
+        have hcB : x.2 * y.2 ∈ B x.1 :=
           (B x.1).mul_mem (hwB x (by simp)) (hxy ▸ hvB y (by simp))
         have hz := h.apply_reverse_prod_mul_middle_mul_prod_eq_zero w v hw
           (hxy ▸ hv) hwB' hvB' hwφ' hvφ'
@@ -621,7 +623,8 @@ private theorem apply_reverse_prod_mul_prod [DecidableEq ι]
             List.prod_append, List.prod_cons, List.prod_nil, mul_one, mul_assoc] using hz
         rw [hz', hrec]
         simp [hxy]
-      · have hz := h.apply_reverse_prod_mul_middle_mul_prod_eq_zero w (y :: v) hw
+      · -- Distinct leading labels leave the entire concatenation reduced.
+        have hz := h.apply_reverse_prod_mul_middle_mul_prod_eq_zero w (y :: v) hw
           (by simpa using And.intro hxy hv) hwB' hvB hwφ' hvφ
           (hwB x (by simp)) (hwφ x (by simp))
         simpa [List.reverse_cons, List.map_append, List.prod_append, mul_assoc, hxy] using hz
