@@ -24,6 +24,8 @@ The coordinate vectors are the differentials of its coordinate cocharacters.
 * `tangentBasis_apply`: the basis vectors are the coordinate-cocharacter differentials.
 * `tangentLinearEquiv_symm_apply`: the finite coordinate decomposition.
 * `range_derivationCompLieHom`: the tangent image is spanned by the cocharacter differentials.
+* `linearIndependent_derivationComp_cocharacter`: those differentials are linearly
+  independent when the torus differential is injective.
 -/
 
 public section
