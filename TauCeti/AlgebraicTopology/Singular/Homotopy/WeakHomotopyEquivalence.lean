@@ -22,7 +22,7 @@ Topology*, Proposition 4.21). No CW structure on `X` or `Y` is needed. The carri
 the universe of `X` and `Y`, as in the local-coefficient statement below; `R` may lie in any
 universe.
 
-The proof factors `f` through its mapping cylinder `M_f` as
+The proof of the cubical statement factors `f` through its mapping cylinder `M_f` as
 
   `X ≃ₜ (bottom face of M_f) ↪ M_f → Y`.
 
