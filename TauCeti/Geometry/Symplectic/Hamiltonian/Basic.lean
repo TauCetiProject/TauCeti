@@ -154,6 +154,36 @@ theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {
   rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
   simp [map_add, map_smul]
 
+/-- The Hamiltonian vector field is additive on finite sums of Hamiltonians differentiable at
+the point: `X_{∑ Fᵢ} = ∑ X_{Fᵢ}`. -/
+theorem hamiltonianVectorField_fun_sum (ω : SymplecticForm V) {ι : Type*} {s : Finset ι}
+    {F : ι → V → ℝ} {x : V} (hF : ∀ i ∈ s, DifferentiableAt ℝ (F i) x) :
+    ω.hamiltonianVectorField (fun y ↦ ∑ i ∈ s, F i y) x =
+      ∑ i ∈ s, ω.hamiltonianVectorField (F i) x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_fun_sum hF]
+  simp [map_sum]
+
+/-- The Hamiltonian vector field of `-H` is `-X_H`. -/
+@[simp]
+theorem hamiltonianVectorField_neg (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField (-H) x = -ω.hamiltonianVectorField H x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  simp [fderiv_neg]
+
+/-- The Hamiltonian vector field of a difference of Hamiltonians differentiable at the point:
+`X_{F - G} = X_F - X_G`. -/
+theorem hamiltonianVectorField_sub (ω : SymplecticForm V) {F G : V → ℝ} {x : V}
+    (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) :
+    ω.hamiltonianVectorField (F - G) x =
+      ω.hamiltonianVectorField F x - ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_sub hF hG]
+  simp [map_sub]
+
 section Continuity
 
 variable {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {u : X → V} {s : Set X}
@@ -246,6 +276,18 @@ theorem poissonBracket_const_mul_left (ω : SymplecticForm V) (c : ℝ) (F G : V
 theorem poissonBracket_const_mul_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
     (x : V) : ω.poissonBracket F (fun y ↦ c * G y) x = c * ω.poissonBracket F G x := by
   simp [poissonBracket_def, map_smul]
+
+/-- Negating the first argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_left (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket (-F) G x = -ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- Negating the second argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_right (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket F (-G) x = -ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
 
 end PoissonBracket
 
