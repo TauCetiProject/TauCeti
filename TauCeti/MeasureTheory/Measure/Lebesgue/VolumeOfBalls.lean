@@ -14,8 +14,9 @@ Mathlib computes the volume of a ball in a finite-dimensional real inner product
 extended nonnegative real (`InnerProductSpace.volume_ball`). This file records the real volume of
 the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimension, which is the
 form used in normalizing constants. It also shows that every finite-dimensional real inner
-product space has a closed ball of volume one about the origin, and that a closed ball of
-radius `r` in a one-dimensional space has volume `2 * r`.
+product space has a closed ball of volume one about the origin, that a closed ball of
+radius `r` in a one-dimensional space has volume `2 * r`, and that a disc of radius `r` in `ℂ` has
+real volume `π * r ^ 2`.
 -/
 
 public section
@@ -68,3 +69,13 @@ theorem volume_real_closedBall_of_finrank_eq_one (h : finrank ℝ V = 1) (x : V)
   simp [ENNReal.toReal_ofReal hr, mul_comm]
 
 end TauCeti
+
+namespace Complex
+
+open MeasureTheory Metric Real
+
+/-- A disc of radius `r ≥ 0` in `ℂ` has real volume `π * r ^ 2`. -/
+theorem volume_real_ball (a : ℂ) {r : ℝ} (hr : 0 ≤ r) : volume.real (ball a r) = π * r ^ 2 := by
+  simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hr, mul_comm]
+
+end Complex

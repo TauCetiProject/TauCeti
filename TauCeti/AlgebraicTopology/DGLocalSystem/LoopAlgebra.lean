@@ -89,6 +89,11 @@ theorem loopChain_isDGAlgebra :
 def loopChainAugmentation : DGAlgAugmentation (loopChain_isDGAlgebra B b R) :=
   cubicalChainAugmentation (MooreLoopSpace B b) R
 
+/-- The augmentation of `C_*(Ω_b B; R)` is the augmentation of the chains of the monoid `Ω_b B`. -/
+theorem loopChainAugmentation_def :
+    loopChainAugmentation B b R = cubicalChainAugmentation (MooreLoopSpace B b) R :=
+  (rfl)
+
 variable {B b R}
 
 /-- The augmentation of a `0`-chain of Moore loops. -/
