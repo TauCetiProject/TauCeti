@@ -7,9 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
-public import TauCeti.Algebra.Module.Projective.Semilinear
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
-public import Mathlib.RingTheory.Finiteness.Cardinality
+
+import TauCeti.Algebra.Module.Projective.Semilinear
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
