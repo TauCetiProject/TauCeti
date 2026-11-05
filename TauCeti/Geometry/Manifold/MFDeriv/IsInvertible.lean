@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
-public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Invertible manifold derivatives of composites
@@ -21,10 +20,6 @@ manifolds is assumed.
 Conversely, between manifolds modelled on finite-dimensional spaces of the same dimension over a
 complete field, if a composite of differentiable maps has invertible manifold derivative then so do
 both factors (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`).
-
-Without any finite-dimensionality, a differentiable map with a differentiable left inverse near a
-point has a manifold derivative admitting a continuous linear left inverse there
-(`hasLeftInverse_mfderiv_of_comp_eventuallyEq_id`).
 -/
 
 public section
@@ -74,19 +69,5 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp [CompleteSpace 𝕜]
       (mfderiv I' I'' g (f x) : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))
       ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim').2 hsurj, hsurj⟩
       ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩⟩
-
-/-- A map with a differentiable left inverse near a point has a manifold derivative admitting a
-continuous linear left inverse there: if `g ∘ f` agrees with the identity near `x`, then
-`mfderiv g (f x) ∘ mfderiv f x` is the identity. -/
-theorem hasLeftInverse_mfderiv_of_comp_eventuallyEq_id {f : M → M'} {g : M' → M} {x : M}
-    (hf : MDifferentiableAt I I' f x) (hg : MDifferentiableAt I' I g (f x))
-    (hgf : g ∘ f =ᶠ[nhds x] id) : (mfderiv I I' f x).HasLeftInverse := by
-  have h := mfderiv_comp x hg hf
-  rw [hgf.mfderiv_eq, mfderiv_id] at h
-  -- Transport the derivative of `g` back to the tangent space at `x`.
-  let C := tangentSpaceCast I x (g (f x))
-  refine ⟨C.symm.toContinuousLinearMap.comp (mfderiv I' I g (f x)), fun v => ?_⟩
-  simpa [C, ContinuousLinearMap.comp_apply] using
-    congrArg C.symm (DFunLike.congr_fun h.symm v)
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.EReal.Operations
+import Mathlib.Data.EReal.Inv
 
 /-!
 # Operations on extended real numbers
@@ -17,7 +18,8 @@ subtraction in the ways recorded here. The first two results below have a real s
 the last two a real minuend. The file also records that adding a finite extended nonnegative real
 to a real number is real addition, how the positive part `ENNReal.ofReal` of a real number
 compares with the number itself in `EReal`, that the coercion from `ℝ≥0∞` commutes with
-infima, and how combinations `s a + t b - r` with real weights and subtrahend behave. The named
+infima, how combinations `s a + t b - r` with real weights and subtrahend behave, and that
+negation distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
 installing a coercion; it is additive.
 
@@ -49,8 +51,16 @@ installing a coercion; it is additive.
   when neither `a` nor `b` is `⊥` and one of them is `⊤`.
 * `EReal.coe_mul_add_coe_mul_sub_coe_ne_top` — a combination `s a + t b - r` with nonnegative
   real weights and a real subtrahend is `≠ ⊤` when `a` and `b` are.
+* `EReal.coe_mul_add_coe_mul_sub_le_of_le` — such weighted combinations are monotone in their
+  endpoint values.
 * `EReal.coe_mul_add_coe_mul_sub_add_sub_comm` — two such combinations with the same weights add
   termwise.
+* `EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul` — negating a nonnegative combination
+  `a x + b y` of extended nonnegative reals gives the same combination of `-x` and `-y`.
+
+* `EReal.coe_mul_coe_mul_add_coe_mul_sub` — nonnegative real scaling distributes through a
+  weighted sum with a real subtrahend.
+* `EReal.ne_top_of_coe_mul_ne_top` — a positive real multiple can be `≠ ⊤` only if its operand is.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -245,6 +255,15 @@ theorem _root_.EReal.coe_mul_add_coe_mul_sub_coe_ne_top {a b : EReal} (ha : a �
   exact EReal.add_ne_top (EReal.add_ne_top (by simp [EReal.mul_ne_top, hs, ha])
     (by simp [EReal.mul_ne_top, ht, hb])) (EReal.coe_ne_top _)
 
+/-- A weighted sum with nonnegative real weights and a fixed subtrahend is monotone in both
+endpoint values. -/
+theorem _root_.EReal.coe_mul_add_coe_mul_sub_le_of_le {a b a' b' : EReal}
+    (ha : a ≤ a') (hb : b ≤ b') {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) (r : EReal) :
+    (s : EReal) * a + (t : EReal) * b - r ≤ (s : EReal) * a' + (t : EReal) * b' - r :=
+  EReal.sub_le_sub (add_le_add
+    (mul_le_mul_of_nonneg_left ha (EReal.coe_nonneg.2 hs))
+    (mul_le_mul_of_nonneg_left hb (EReal.coe_nonneg.2 ht))) le_rfl
+
 /-- Two combinations `s a + t b - r` with the same nonnegative real weights `s`, `t` and real
 subtrahends add termwise, as in `sub_add_sub_comm` for groups. -/
 theorem _root_.EReal.coe_mul_add_coe_mul_sub_add_sub_comm (a b a' b' : EReal) {s t : ℝ}
@@ -256,6 +275,32 @@ theorem _root_.EReal.coe_mul_add_coe_mul_sub_add_sub_comm (a b a' b' : EReal) {s
   simp only [sub_eq_add_neg, ← EReal.coe_neg]
   rw [neg_add, EReal.coe_add]
   abel
+
+/-- The negative of a nonnegative combination `a x + b y` in `ℝ≥0∞`, read in `EReal`, is the
+same combination of `-x` and `-y`. -/
+theorem _root_.EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha : 0 ≤ a)
+    (hb : 0 ≤ b) (x y : ℝ≥0∞) :
+    -((ENNReal.ofReal a * x + ENNReal.ofReal b * y : ℝ≥0∞) : EReal) =
+      (a : EReal) * -(x : EReal) + (b : EReal) * -(y : EReal) := by
+  rw [EReal.coe_ennreal_add,
+    EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _))]
+  simp [EReal.coe_ennreal_ofReal, ha, hb, sub_eq_add_neg]
+
+/-- Nonnegative real scaling distributes through a weighted sum with a real subtrahend. -/
+theorem _root_.EReal.coe_mul_coe_mul_add_coe_mul_sub (a b : EReal) {c : ℝ} (hc : 0 ≤ c)
+    (s t r : ℝ) :
+    (c : EReal) * ((s : EReal) * a + (t : EReal) * b - (r : EReal)) =
+      (s : EReal) * ((c : EReal) * a) + (t : EReal) * ((c : EReal) * b) -
+        ((c * r : ℝ) : EReal) := by
+  rw [EReal.mul_sub_of_nonneg_of_ne_top (EReal.coe_nonneg.2 hc) (EReal.coe_ne_top _),
+    EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 hc) (EReal.coe_ne_top _),
+    mul_left_comm, mul_left_comm (c : EReal) (t : EReal), ← EReal.coe_mul]
+
+/-- If a positive real multiple is not `⊤`, neither is the original extended real. -/
+theorem _root_.EReal.ne_top_of_coe_mul_ne_top {c : ℝ} (hc : 0 < c) {d : EReal}
+    (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
+  rintro rfl
+  exact hd (EReal.coe_mul_top_of_pos hc)
 
 end TauCeti
 

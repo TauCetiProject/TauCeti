@@ -35,6 +35,9 @@ infinite. Equivalently `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`
 (`MeasureTheory.NullMeasurableSet.ofReal_mul_volume_real_rpow_mul_le_perimeter`), which is also
 stated in real numbers when the perimeter is finite
 (`MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`).
+In dimension `n ≥ 2` the inequality holds for every set of finite volume, the volume-zero case
+being trivial
+(`NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le`).
 Balls attain equality (`TauCeti.perimeter_ball_pow`), so the constant is sharp. Finite volume
 cannot be dropped: the complement of a ball has finite perimeter.
 
@@ -63,6 +66,8 @@ the perimeter with surface measure or Minkowski content is used.
 
 * `MeasureTheory.NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`:
   the sharp isoperimetric inequality `n^n ω_n |s|^(n-1) ≤ P(s)^n` in `ℝ≥0∞`.
+* `NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le`:
+  the same inequality in dimension `n ≥ 2` for every set of finite volume.
 * `MeasureTheory.NullMeasurableSet.ofReal_mul_volume_real_rpow_mul_le_perimeter`: the equivalent
   form `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)` in `ℝ≥0∞`, with no hypothesis on the perimeter.
 * `MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`: its real form
@@ -470,5 +475,19 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
   rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity)]
   exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0) _
+
+/-- **The sharp isoperimetric inequality in dimension `n ≥ 2`.** In a Euclidean space of
+dimension `n ≥ 2`, every null-measurable set `s` of finite volume satisfies
+`P(s)^n ≥ n^n ω_n |s|^(n-1)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the perimeter of `s`
+in the whole space, finite or infinite. Sets of volume zero satisfy it trivially, since then
+`n^n ω_n |s|^(n-1) = 0`. -/
+theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : 2 ≤ finrank ℝ E) :
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) * volume s ^ (finrank ℝ E - 1) ≤
+      perimeter volume ⊤ s ^ finrank ℝ E := by
+  rcases eq_or_ne (volume s) 0 with hs0 | hs0
+  · rw [hs0, zero_pow (by omega), mul_zero]
+    exact zero_le
+  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hμs (by omega) hs0
 
 end MeasureTheory.NullMeasurableSet

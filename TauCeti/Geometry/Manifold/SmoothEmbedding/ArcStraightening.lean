@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Immersion.Differential
-public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 public import TauCeti.Topology.Circle.Arc
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
@@ -152,11 +151,15 @@ private theorem contMDiffAt_ofCyl {z₀ : Circle} {x : Circle × ℝ}
 
 private theorem injective_mfderiv_ofCyl {z₀ : Circle} {x : Circle × ℝ}
     (hx : |angle z₀ x.1| < Real.pi) :
-    Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ) (ofCyl z₀) x) :=
-  (hasLeftInverse_mfderiv_of_comp_eventuallyEq_id
+    Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ) (ofCyl z₀) x) := by
+  refine (IsDiffImmersionAt.of_comp
     ((contMDiffAt_ofCyl hx).mdifferentiableAt (by simp))
     ((contMDiff_toCyl z₀).mdifferentiableAt (by simp))
-    (Eventually.of_forall fun x => toCyl_ofCyl z₀ x)).injective
+    ?_).mfderiv_injective
+  have hid : IsDiffImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) id x := by
+    rw [isDiffImmersionAt_iff, mfderiv_id]
+    exact ⟨ContinuousLinearMap.id ℝ _, fun _ => rfl⟩
+  exact hid.congr (Eventually.of_forall fun x => toCyl_ofCyl z₀ x)
 
 end Coordinates
 
@@ -398,19 +401,28 @@ private theorem exists_hasFDerivAt_prodMap_comp {F : Circle × ℝ → M × ℝ}
   refine ⟨DΦ.comp (DF.comp Dc), ?_, hk.hasFDerivAt, hl.hasFDerivAt⟩
   -- Each factor has a left inverse near its point.
   have hΦi : Injective DΦ := by
-    refine (hasLeftInverse_mfderiv_of_comp_eventuallyEq_id (g := Prod.map φ.symm id)
+    refine (IsDiffImmersionAt.of_comp (I := 𝓘(ℝ, E).prod 𝓘(ℝ)) (I' := 𝓘(ℝ, E × ℝ))
+      (J := 𝓘(ℝ, E).prod 𝓘(ℝ)) (g := Prod.map φ.symm id)
       ((contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ hFx).mdifferentiableAt (by simp))
-      ?_ ?_).injective
+      ?_ ?_).mfderiv_injective
     · exact (contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas hφ (y := Prod.map φ id (F x))
         (φ.map_source hFx)).mdifferentiableAt (by simp)
-    · filter_upwards [(φ.open_source.preimage continuous_fst).mem_nhds hFx] with y hy
+    · have hid : IsDiffImmersionAt (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) id (F x) := by
+        rw [isDiffImmersionAt_iff, mfderiv_id]
+        exact ⟨ContinuousLinearMap.id ℝ _, fun _ => rfl⟩
+      apply hid.congr
+      filter_upwards [(φ.open_source.preimage continuous_fst).mem_nhds hFx] with y hy
       ext <;> simp [φ.left_inv hy]
   have hFi : Injective DF := (hF.isImmersion.isImmersionAt x).mfderiv_injective (by simp)
   have hci : Injective Dc := by
-    refine (hasLeftInverse_mfderiv_of_comp_eventuallyEq_id (g := ofCyl z₀)
+    refine (IsDiffImmersionAt.of_comp (g := ofCyl z₀)
       ((contMDiff_toCyl z₀).mdifferentiableAt (by simp))
       ((contMDiffAt_ofCyl (by rw [toCyl_zero, angle_self, abs_zero]; exact Real.pi_pos)
-        ).mdifferentiableAt (by simp)) ?_).injective
+        ).mdifferentiableAt (by simp)) ?_).mfderiv_injective
+    have hid : IsDiffImmersionAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) id ((0 : ℝ), t) := by
+      rw [isDiffImmersionAt_iff, mfderiv_id]
+      exact ⟨ContinuousLinearMap.id ℝ _, fun _ => rfl⟩
+    apply hid.congr
     have hzero : |((0 : ℝ), t).1| < Real.pi := by simpa using Real.pi_pos
     filter_upwards [(isOpen_lt (continuous_abs.comp continuous_fst) continuous_const).mem_nhds
       hzero] with u hu

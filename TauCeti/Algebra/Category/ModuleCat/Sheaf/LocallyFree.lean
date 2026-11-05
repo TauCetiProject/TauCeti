@@ -117,6 +117,14 @@ instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsLocallyFreeDat
     exact (q.generators _).isIso_ofEpi_π (f.over (q.X _))
       (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) _)
 
+/-- Local generators data transported along an isomorphism is of finite type if the original
+data is. -/
+instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsFiniteType] :
+    (q.ofIsIso f).IsFiniteType where
+  isFiniteType i := by
+    rw [LocalGeneratorsData.ofIsIso_generators]
+    exact ⟨(LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) _).finite⟩
+
 variable (R) in
 /-- Local freeness of sheaves of modules, as a property of objects. -/
 abbrev _root_.SheafOfModules.isLocallyFree : ObjectProperty (SheafOfModules.{u} R) :=
