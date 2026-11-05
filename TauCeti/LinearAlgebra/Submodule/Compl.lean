@@ -122,14 +122,9 @@ theorem finrank_lt_of_isCompl_of_ne_bot {R M : Type*} [CommRing R] [IsDomain R]
   have : Nontrivial S := Submodule.nontrivial_iff_ne_bot.mpr hS
   have : Module.Finite R S := .equiv (Submodule.quotientEquivOfIsCompl _ _ h.symm)
   have : Module.Finite R T := .equiv (Submodule.quotientEquivOfIsCompl _ _ h)
-  have hr := rank_quotient_add_rank_of_isDomain S
-  rw [(Submodule.quotientEquivOfIsCompl _ _ h).rank_eq] at hr
-  have hS0 : 0 < Module.rank R S := rank_pos
-  simp only [Module.finrank]
-  rw [← hr, Cardinal.toNat_add (Module.rank_lt_aleph0 R T) (Module.rank_lt_aleph0 R S)]
-  have : 0 < (Module.rank R S).toNat := by
-    rw [Cardinal.toNat_pos]
-    exact ⟨hS0.ne', Module.rank_lt_aleph0 R S⟩
+  have hr := S.finrank_quotient_add_finrank
+  rw [(Submodule.quotientEquivOfIsCompl _ _ h).finrank_eq] at hr
+  have hs : 0 < Module.finrank R S := Module.finrank_pos
   omega
 
 end Submodule

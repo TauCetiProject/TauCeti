@@ -424,12 +424,12 @@ theorem IsSymm.exists_isModular_restrict_isCompl_orthogonal [IsLocalRing R] (hB 
     ?_, hmod, hmod.isCompl_orthogonal hB hd hdvd⟩
   exact Submodule.span_mono (Set.range_subset_iff.mpr fun i ↦ by fin_cases i <;> simp)
 
-/-- Over a discrete valuation ring with uniformizer `π`, a nondegenerate symmetric bilinear form on
-a nontrivial finite free module has a nonzero orthogonal direct summand on which it is
-`π ^ k`-modular, where `k` is the valuation of a Gram entry. -/
+/-- Over a discrete valuation ring with uniformizer `π`, a nonzero symmetric bilinear form on a
+finite free module has a nonzero direct summand `S`, complementary to its orthogonal
+`B.orthogonal S`, on which the form is `π ^ k`-modular for some `k`. -/
 theorem IsSymm.exists_ne_bot_isModular_pow_isCompl_orthogonal [IsDomain R]
     [IsDiscreteValuationRing R] [Free R M] [Module.Finite R M] [Nontrivial M] (hB : B.IsSymm)
-    (hnd : B.Nondegenerate) {π : R} (hπ : Irreducible π) :
+    (hB0 : B ≠ 0) {π : R} (hπ : Irreducible π) :
     ∃ (S : Submodule R M) (k : ℕ), S ≠ ⊥ ∧ IsCompl S (B.orthogonal S) ∧
       (B.restrict S).IsModular (π ^ k) := by
   -- A Gram entry of minimal valuation divides every value of the form.
@@ -440,7 +440,7 @@ theorem IsSymm.exists_ne_bot_isModular_pow_isCompl_orthogonal [IsDomain R]
   have hdvd : ∀ x y, B (b i₀) (b j₀) ∣ B x y :=
     dvd_apply_of_forall_dvd_basis b fun k l ↦ hij (k, l)
   have hd0 : B (b i₀) (b j₀) ≠ 0 := fun h ↦
-    hnd.ne_zero (LinearMap.ext₂ fun x y ↦ zero_dvd_iff.mp (h ▸ hdvd x y))
+    hB0 (LinearMap.ext₂ fun x y ↦ zero_dvd_iff.mp (h ▸ hdvd x y))
   obtain ⟨S, hS0, -, hSmod, hSc⟩ := hB.exists_isModular_restrict_isCompl_orthogonal
     (mem_nonZeroDivisors_of_ne_zero hd0) hdvd
   obtain ⟨k, u, hku⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hd0 hπ

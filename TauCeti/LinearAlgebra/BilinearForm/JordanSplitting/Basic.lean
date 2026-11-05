@@ -311,7 +311,8 @@ private theorem exists_isJordanSplitting_of_free [Free R M] [Module.Finite R M] 
     rw [(Submodule.mem_bot R).mp hx, map_zero, LinearMap.zero_apply]
   -- Split off a modular summand `S` of scale `π ^ k`; its orthogonal complement `N'` is
   -- finite free of smaller rank, with a nondegenerate form.
-  obtain ⟨S, k, hS0, hSc, hSk⟩ := hB.exists_ne_bot_isModular_pow_isCompl_orthogonal hnd hπ
+  obtain ⟨S, k, hS0, hSc, hSk⟩ :=
+    hB.exists_ne_bot_isModular_pow_isCompl_orthogonal hnd.ne_zero hπ
   obtain ⟨N'', htop', horth', hmod'⟩ := ih _ (hn ▸ S.finrank_lt_of_isCompl_of_ne_bot hSc hS0)
     (hB.restrict _) (B.nondegenerate_restrict_orthogonal_of_isCompl hB.isRefl hnd hSc) rfl
   -- Put `S` into the constituent of index `k` of the splitting of `N'`.
