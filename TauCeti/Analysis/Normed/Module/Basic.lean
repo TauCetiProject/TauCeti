@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 
 /-!
-# Basic facts about normed modules
+# The integer cast into a normed ring
 
 In a seminormed ring in which `ℤ` acts isometrically and `‖1‖ = 1`, such as `ℝ` or `ℂ`, the
 cast `Int.castRingHom R` preserves norms. This makes lemmas stated for a `RingHomIsometric`
