@@ -120,6 +120,36 @@ private lemma volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero {ρ : ℕ → ℝ
     exact (periodic_circleMap c r).zsmul k |>.sub_eq θ
   simp [Set.mem_vadd_set_iff_neg_vadd_mem, AddSubgroup.vadd_def, hθ]
 
+/-- A circle about `c` of positive radius `r < R` lies in the disc `ball c R`. -/
+theorem sphere_abs_subset_ball (hr : r ∈ Ioo 0 R) : sphere c |r| ⊆ ball c R := by
+  rw [abs_of_pos hr.1]
+  exact sphere_subset_ball hr.2
+
+/-- `log⁺ ‖f‖` is integrable over every circle inside a disc on which `f` is holomorphic. -/
+theorem circleIntegrable_posLog_norm_of_differentiableOn_ball
+    (hf : DifferentiableOn ℂ f (ball c R)) (hr : r ∈ Ioo 0 R) :
+    CircleIntegrable (fun z ↦ log⁺ ‖f z‖) c r :=
+  ((hf.analyticOnNhd isOpen_ball).mono
+    (sphere_abs_subset_ball hr)).meromorphicOn.circleIntegrable_posLog_norm
+
+/-- Circle averages of `log⁺ ‖f - a‖` are at most those of `log⁺ ‖f‖` plus `log⁺ ‖a‖ + log 2`,
+for `f` holomorphic on the disc and a circle inside it. -/
+theorem circleAverage_posLog_norm_sub_const_le (hf : DifferentiableOn ℂ f (ball c R))
+    (hr : r ∈ Ioo 0 R) (a : ℂ) :
+    circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤
+      circleAverage (fun z ↦ log⁺ ‖f z‖) c r + (log⁺ ‖a‖ + Real.log 2) := by
+  have hint := circleIntegrable_posLog_norm_of_differentiableOn_ball hf hr
+  have hadd := circleAverage_add hint (circleIntegrable_const (log⁺ ‖a‖ + Real.log 2) c r)
+  rw [circleAverage_const] at hadd
+  rw [← hadd]
+  refine circleAverage_mono
+    (circleIntegrable_posLog_norm_of_differentiableOn_ball (hf.sub_const a) hr)
+    (hint.add (circleIntegrable_const _ _ _)) fun z _ ↦ ?_
+  have := Real.posLog_norm_add_le (f z) (-a)
+  simp only [norm_neg, ← sub_eq_add_neg] at this
+  simp only [Pi.add_apply]
+  linarith
+
 /-- By Jensen's inequality, the circle averages of `log ‖f‖` of a function analytic on `ball c R`
 are bounded below on the circles about `c` with radii in `[s, R)`, for any `s > 0`. -/
 theorem _root_.AnalyticOnNhd.exists_forall_le_circleAverage_log_norm
@@ -152,9 +182,7 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le
   -- By Jensen's inequality the averages of `log ‖f‖` are at least `L` on the circles.
   obtain ⟨L, hL⟩ := han.exists_forall_le_circleAverage_log_norm hs
   have hρ0 : ∀ n, 0 < ρ n := fun n ↦ hs.trans_le (hρ n).1
-  have hsphere : ∀ n, sphere c |ρ n| ⊆ ball c R := fun n ↦ by
-    rw [abs_of_pos (hρ0 n)]
-    exact sphere_subset_ball (hρ n).2
+  have hmem : ∀ n, ρ n ∈ Ioo 0 R := fun n ↦ ⟨hρ0 n, (hρ n).2⟩
   -- Up to the zeros of `f` on the circles, the angles in one period with limit `0` are angles
   -- along which `f` tends to `0` through nonzero values; Fatou's lemma makes these null, as the
   -- averages of `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖` on the circles are at most `C - L`.
@@ -162,13 +190,14 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le
     measure_union_null (measure_iUnion_null fun n ↦
       han.volume_setOf_circleMap_eq_zero hw hfw (hρ0 n) (hρ n).2)
     (volume_setOf_tendsto_circleMap_nhdsNE_zero (B := C - L)
-      (fun n ↦ (han.mono (hsphere n)).meromorphicOn.circleIntegrable_posLog_inv_norm)
+      (fun n ↦
+        (han.mono (sphere_abs_subset_ball (hmem n))).meromorphicOn.circleIntegrable_posLog_inv_norm)
       fun n ↦ ?_)
   · rintro θ ⟨hθ, hθI⟩
     refine or_iff_not_imp_left.2 fun hθN ↦ ⟨hθI, ?_⟩
     exact tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hθ
       (.of_forall fun n h ↦ hθN (mem_iUnion.2 ⟨n, h⟩))
-  · rw [(han.mono (hsphere n)).meromorphicOn.circleAverage_posLog_inv_norm]
+  · rw [(han.mono (sphere_abs_subset_ball (hmem n))).meromorphicOn.circleAverage_posLog_inv_norm]
     linarith [hC n, hL (ρ n) (hρ n)]
 
 /-- **F. and M. Riesz uniqueness theorem.** Let `f` be holomorphic on the disc `ball c R`, with
@@ -212,23 +241,7 @@ theorem eqOn_const_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_
   have hC' : ∃ᶠ r in 𝓝[<] R,
       circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤ C + (log⁺ ‖a‖ + Real.log 2) := by
     refine (hC.and_eventually (Ioo_mem_nhdsLT hR)).mono fun r ⟨hr, hr0⟩ ↦ ?_
-    have hsphere : sphere c |r| ⊆ ball c R := by
-      rw [abs_of_pos hr0.1]
-      exact sphere_subset_ball hr0.2
-    have hint :=
-      ((hf.analyticOnNhd isOpen_ball).mono hsphere).meromorphicOn.circleIntegrable_posLog_norm
-    have hadd := circleAverage_add hint (circleIntegrable_const (log⁺ ‖a‖ + Real.log 2) c r)
-    rw [circleAverage_const] at hadd
-    calc circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r
-        ≤ circleAverage (fun z ↦ log⁺ ‖f z‖ + (log⁺ ‖a‖ + Real.log 2)) c r := by
-          refine circleAverage_mono
-            ((hg.analyticOnNhd isOpen_ball).mono hsphere).meromorphicOn.circleIntegrable_posLog_norm
-            (hint.add (circleIntegrable_const _ _ _)) fun z _ ↦ ?_
-          have := Real.posLog_norm_add_le (f z) (-a)
-          simp only [norm_neg, ← sub_eq_add_neg] at this
-          linarith
-      _ = circleAverage (fun z ↦ log⁺ ‖f z‖) c r + (log⁺ ‖a‖ + Real.log 2) := hadd
-      _ ≤ C + (log⁺ ‖a‖ + Real.log 2) := by linarith
+    exact (circleAverage_posLog_norm_sub_const_le hf hr0 a).trans (by linarith)
   intro z hz
   exact sub_eq_zero.1 <| eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le
     hg hC' hE (fun θ hθ ↦ by simpa using (hlim θ hθ).sub_const a) hz
@@ -248,11 +261,9 @@ theorem eqOn_const_ball_of_tendsto_circleMap {a : ℂ} {M : ℝ} {E : Set ℝ}
   refine eqOn_const_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le (C := log⁺ M)
     hf (Eventually.frequently ?_) hE hlim
   filter_upwards [Ioo_mem_nhdsLT hR] with r hr
-  have hsphere : sphere c |r| ⊆ ball c R := by
-    rw [abs_of_pos hr.1]
-    exact sphere_subset_ball hr.2
   exact circleAverage_mono_on_of_le_circle
-    ((hf.analyticOnNhd isOpen_ball).mono hsphere).meromorphicOn.circleIntegrable_posLog_norm
-    fun z hz ↦ posLog_le_posLog (by linarith [norm_nonneg (f z)]) (hM z (hsphere hz))
+    (circleIntegrable_posLog_norm_of_differentiableOn_ball hf hr)
+    fun z hz ↦ posLog_le_posLog (by linarith [norm_nonneg (f z)])
+      (hM z (sphere_abs_subset_ball hr hz))
 
 end TauCeti
