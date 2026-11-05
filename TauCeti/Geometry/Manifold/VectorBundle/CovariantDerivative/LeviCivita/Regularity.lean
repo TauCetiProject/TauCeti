@@ -227,8 +227,7 @@ field `Z` with one derivative lost, on an open subset `s` of a chart domain. Eac
 connection is the Riesz dual of half the Koszul functional. -/
 private theorem contMDiffOn_leviCivitaConnection_apply [IsManifold I (n + 1) M]
     [IsManifold I (n + 1 + 1) M]
-    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
-    [ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I] {s : Set M} {a : M}
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] {s : Set M} {a : M}
     (hs : IsOpen s) (hsub : s ⊆ (chartAt H a).source) (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
     {σ Z : Π x : M, TangentSpace I x}
     (hσ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (σ y)) s)
