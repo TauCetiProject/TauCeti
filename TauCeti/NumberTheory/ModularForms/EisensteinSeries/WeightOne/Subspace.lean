@@ -183,11 +183,14 @@ private theorem two_mul_finrank_span_image_weightOneForm {T : Set (CharIndex N 1
     refine Set.disjoint_left.mpr fun a ha ⟨b, hb, hba⟩ ↦ hS b hb ?_
     rwa [hba]
   have := Fintype.ofFinite S
-  rw [himage, Set.image_eq_range, finrank_span_eq_card (linearIndepOn_weightOneForm hS),
-    hcard, Nat.card_coe_set_eq, Set.ncard_union_eq hdisj,
-    Set.ncard_image_of_injective _ swap_involutive.injective, ← Nat.card_coe_set_eq,
-    Nat.card_eq_fintype_card]
-  ring
+  -- The span has dimension `#S`, and `T` has `2 * #S` elements.
+  have hdim : Module.finrank ℂ (Submodule.span ℂ (weightOneForm '' T)) = Nat.card S := by
+    rw [himage, Set.image_eq_range, finrank_span_eq_card (linearIndepOn_weightOneForm hS),
+      Nat.card_eq_fintype_card]
+  have hT2 : Nat.card T = 2 * Nat.card S := by
+    rw [hcard, Nat.card_coe_set_eq, Set.ncard_union_eq hdisj,
+      Set.ncard_image_of_injective _ swap_involutive.injective, ← Nat.card_coe_set_eq, two_mul]
+  omega
 
 variable {χ : (ZMod N)ˣ →* ℂˣ}
 
@@ -204,7 +207,7 @@ theorem coe_weightOneInCharSpace (hχ : a.nebentypus = χ) :
 
 end CharIndex
 
-/-- **The weight-one Eisenstein series span a space of half the number of cusps**: twice the
+/-- **The weight-one Eisenstein series span a space of half the number of indices**: twice the
 dimension of the span of all the weight-one series in `M₁(Γ₁(N))` is the number of indices. -/
 theorem two_mul_finrank_span_range_weightOneForm {N : ℕ} [NeZero N] :
     2 * Module.finrank ℂ (Submodule.span ℂ (Set.range (CharIndex.weightOneForm (N := N)))) =
