@@ -73,6 +73,14 @@ paired with Hochschild classes of `Z`.
 The backtrack pairing `TauCeti.zigzagBacktrackPairing` is the word pairing of length four with
 weights supported on backtrack walks.
 
+## Loop operations
+
+On the loop operation of a closed walk `w` of length `n + 2 ≥ 3`, the operation of arity `n + 2` of
+the loop deformation `TauCeti.zigzagLoopAInfinityAlgebra` with coefficient one on `w`, the word
+pairing takes the value `± a w`, the sign coming from the suspension. So when the weights come from
+an anticyclic functional `f` with `f (β (w 0) ⋯ β (w (n + 1))) ≠ 0`, this loop operation is a
+Hochschild cocycle which is not a coboundary, and `HH^{n + 2, -n}(Z, Z) ≠ 0`.
+
 ## Main definitions
 
 * `TauCeti.zigzagWordPairing`: the word pairing `Λ_a` on suspended Hochschild cochains.
@@ -85,6 +93,10 @@ weights supported on backtrack walks.
   weights given by an anticyclic functional on an algebra receiving the signless relations.
 * `TauCeti.not_exists_hochschildDifferential_eq_of_zigzagWordPairing_ne_zero`: a cochain on which
   such a pairing is nonzero is not a Hochschild coboundary of degree zero.
+* `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic`
+  and `TauCeti.not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_anticyclic`: the loop
+  operation of a closed walk detected by an anticyclic functional is not a coboundary, so
+  `HH^{n + 2, -n}(Z, Z) ≠ 0`.
 
 ## References
 
@@ -296,5 +308,71 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic {n : ℕ}
       _ = 0 := by rw [hβ, mul_zero, zero_mul, map_zero]
 
 end Anticyclic
+
+/-! ### Loop operations -/
+
+section Loop
+
+/-- The sign by which the suspension twists `n + 2` letters of path length one squares to one. -/
+private theorem prod_negOnePow_mul_self (n : ℕ) :
+    (∏ i : Fin (n + 2), (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k)) *
+      ∏ i : Fin (n + 2), (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k) = 1 := by
+  rw [← Finset.prod_mul_distrib]
+  exact Finset.prod_eq_one fun i _ ↦ by
+    rw [← Int.cast_mul, Int.isUnit_mul_self (Units.isUnit _), Int.cast_one]
+
+variable [Fintype G.Dart] [DecidableEq V] {B : Type*} [Semiring B] [Module k B]
+
+/-- **Loop operations detected by anticyclic functionals are not coboundaries.** Let `β` send the
+darts of `G` to a semiring `B` with a `k`-module structure, satisfying the signless relation
+`∑_{d.snd = v} β d * β d.symm = 0` at every vertex `v`, and let `f` be a linear functional on `B`
+which is anticyclic on these elements. If `w` is a closed walk of length `n + 2 ≥ 3`, read in
+product order, with `f (β (w 0) ⋯ β (w (n + 1))) ≠ 0`, then the loop operation of `w`, a
+Hochschild cocycle of the strict zigzag algebra
+(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), is not the Hochschild
+differential of any suspended cochain of degree zero. -/
+theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
+    {n : ℕ} (hn : 1 ≤ n) (β : G.Dart → B)
+    (hβ : ∀ v : V, ∑ d : G.Dart with d.snd = v, β d * β d.symm = 0)
+    (f : B →ₗ[k] k) (hf : ∀ (e : G.Dart) (y : B), f (y * β e) = -f (β e * y))
+    {w : Fin (n + 2) → G.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd)
+    (hfw : f (List.ofFn fun t ↦ β (w t)).prod ≠ 0) :
+    ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
+        nonisolatedZigzagQuotient k G,
+      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+          ((𝒵).grading.shift 1).piece 0 ∧
+        (𝒵).hochschildDifferential 0 φ =
+          (zigzagLoopAInfinityAlgebra hns _
+            (fst_eq_snd_of_mem_support_single hw (1 : k))).obstruction 𝒵 ⟨n + 2, by omega⟩ := by
+  rintro ⟨φ, hφ, hφc⟩
+  have h0 := zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic (n := n) β hβ f hf hφ
+  rw [hφc, zigzagWordPairing_apply] at h0
+  simp only [zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_ofArrow hn, Finsupp.single_apply,
+    mul_ite, mul_one, mul_zero, eq_comm (a := w), Finset.sum_ite_eq', Finset.mem_univ,
+    ite_true] at h0
+  rw [← mul_one (f _), ← prod_negOnePow_mul_self (k := k) n, ← mul_assoc, h0, zero_mul] at hfw
+  exact hfw rfl
+
+/-- **The Hochschild cohomology `HH^{n + 2, -n}` of a zigzag algebra is nonzero** when some closed
+walk `w` of length `n + 2 ≥ 3` is detected by an anticyclic functional on an algebra receiving the
+signless relations: `f (β (w 0) ⋯ β (w (n + 1))) ≠ 0`. The loop operation of `w` is a Hochschild
+cocycle concentrated on the words of length `n + 2` which is not a coboundary. -/
+theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_anticyclic {n : ℕ} (hn : 1 ≤ n)
+    (β : G.Dart → B) (hβ : ∀ v : V, ∑ d : G.Dart with d.snd = v, β d * β d.symm = 0)
+    (f : B →ₗ[k] k) (hf : ∀ (e : G.Dart) (y : B), f (y * β e) = -f (β e * y))
+    {w : Fin (n + 2) → G.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd)
+    (hfw : f (List.ofFn fun t ↦ β (w t)).prod ≠ 0) :
+    ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
+  intro hvan
+  have hc := fst_eq_snd_of_mem_support_single hw (1 : k)
+  obtain ⟨φ, hφ, -, hφc⟩ := AInfinityAlgebra.hochschildVanishesAt_iff.mp hvan _
+    (AInfinityAlgebra.isHomogeneous_obstruction
+      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
+    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
+    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra hn _ hc)
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
+    hn β hβ f hf hw hfw ⟨φ, hφ, hφc⟩
+
+end Loop
 
 end TauCeti
