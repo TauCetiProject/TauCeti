@@ -10,6 +10,7 @@ public import Mathlib.Data.FunLike.Fintype
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
+public import TauCeti.GroupTheory.GroupExtension.Basic
 
 /-!
 # Group extensions built from a factor set
@@ -63,6 +64,10 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   extension.
 * `TauCeti.FactorSet.mul_inl`: conjugation moves the copy of `M` by the action of the image in `G`.
 * `TauCeti.FactorSet.inl_range_le_center`: when `G` acts trivially the extension is central.
+* `TauCeti.FactorSet.characterTwist_groupExtension_left` and
+  `TauCeti.FactorSet.characterTwist_groupExtension_right`: when the extension is central, a
+  character twist multiplies the `M`-component by the character value and keeps the
+  `G`-component.
 * `TauCeti.FactorSet.commutatorElement_eq_inl`: for commutative `G` acting trivially, the
   commutator of `x` and `y` is the ratio of the values of `α` on their images in the two orders.
 * `TauCeti.FactorSet.forall_canonicalSection_mul_iff`: the canonical section is a homomorphism
@@ -401,6 +406,21 @@ theorem inl_range_le_center (h : ∀ (g : G) (a : M), g • a = a) :
   rw [Subgroup.mem_center_iff]
   intro x
   rw [mul_inl, h]
+
+/-- A character twist of a central twisted product keeps the `G`-component. -/
+theorem characterTwist_groupExtension_right
+    (h : α.groupExtension.inl.range ≤ Subgroup.center α.Extension) (χ : G →* M)
+    (x : α.Extension) :
+    (GroupExtension.characterTwist α.groupExtension h χ x).right = x.right := by
+  simp [GroupExtension.characterTwist_apply]
+
+/-- A character twist of a central twisted product multiplies the `M`-component by the value of
+the character at the `G`-component. -/
+theorem characterTwist_groupExtension_left
+    (h : α.groupExtension.inl.range ≤ Subgroup.center α.Extension) (χ : G →* M)
+    (x : α.Extension) :
+    (GroupExtension.characterTwist α.groupExtension h χ x).left = χ x.right * x.left := by
+  simp [GroupExtension.characterTwist_apply]
 
 end
 
