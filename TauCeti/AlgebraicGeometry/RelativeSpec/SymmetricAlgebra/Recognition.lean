@@ -59,8 +59,7 @@ def specSymmetricAlgebraHomEquiv (S : CommAlgCat.{u} R) :
 theorem specSymmetricAlgebraHomEquiv_symm_apply (S : CommAlgCat.{u} R) (g : M →ₗ[R] S) :
     (specSymmetricAlgebraHomEquiv M S).symm g =
       (algSpec R).map (CommAlgCat.ofHom (SymmetricAlgebra.lift g)).op := by
-  exact algSpecHomEquivAlgHom_symm_apply (A := CommAlgCat.of R (SymmetricAlgebra R M))
-    (B := S) (SymmetricAlgebra.lift g)
+  simp [specSymmetricAlgebraHomEquiv, algSpecHomEquivAlgHom_symm_apply (R := R)]
 
 /-- The spectrum of the lift of a functional has that functional as its point coordinates. -/
 @[simp]
@@ -77,9 +76,8 @@ theorem specSymmetricAlgebraHomEquiv_apply (S : CommAlgCat.{u} R)
     specSymmetricAlgebraHomEquiv M S p m =
       algSpecHomEquivAlgHom (CommAlgCat.of R (SymmetricAlgebra R M)) S p
         (SymmetricAlgebra.ι R M m) := by
-  exact (SymmetricAlgebra.lift_ι_apply _ m).symm.trans
-    (congrArg (fun f : SymmetricAlgebra R M →ₐ[R] S ↦ f (SymmetricAlgebra.ι R M m))
-      (SymmetricAlgebra.lift.apply_symm_apply _))
+  rw [specSymmetricAlgebraHomEquiv, Equiv.trans_apply,
+    ← SymmetricAlgebra.lift_ι_apply, Equiv.apply_symm_apply]
 
 /-- The coordinates of an arbitrary point are its pullbacks of the symmetric-algebra
 generators, transported from global functions to the test algebra. -/
@@ -208,17 +206,16 @@ theorem specSymmetricAlgebraPointsMap_injective :
 
 /-- The transformation induced by the spectrum of `Sym f` is precomposition with `f`. -/
 @[simp]
-theorem specSymmetricAlgebraPointsMap_map (f : N →ₗ[R] M) :
+theorem specSymmetricAlgebraPointsMap_specSymmetricAlgebraMap (f : N →ₗ[R] M) :
     specSymmetricAlgebraPointsMap (specSymmetricAlgebraMap f) =
       SymmetricAlgebra.linearPointsMap R f := by
   apply NatTrans.ext
   funext S
   apply ConcreteCategory.hom_ext
   intro g
-  rw [SymmetricAlgebra.linearPointsMap_app_apply]
-  exact (specSymmetricAlgebraHomEquiv_comp_specSymmetricAlgebraMap f S _).trans
-    (congrArg (fun g : M →ₗ[R] S ↦ g.comp f)
-      ((specSymmetricAlgebraHomEquiv M S).apply_symm_apply g))
+  simp only [specSymmetricAlgebraPointsMap_app (R := R),
+    specSymmetricAlgebraHomEquiv_comp_specSymmetricAlgebraMap (R := R),
+    Equiv.apply_symm_apply, SymmetricAlgebra.linearPointsMap_app_apply R f]
 
 /-- A scheme morphism of affine linear spectra whose action on points commutes with all
 test-algebra scalars is induced by a unique linear map. In particular this criterion works
@@ -233,10 +230,10 @@ theorem existsUnique_specSymmetricAlgebraMap_of_smul
   obtain ⟨f, hf, hu⟩ := SymmetricAlgebra.existsUnique_linearMap_of_linearPoints_smul
     R (specSymmetricAlgebraPointsMap ψ) hψ
   refine ⟨f, specSymmetricAlgebraPointsMap_injective (hf.trans
-    (specSymmetricAlgebraPointsMap_map f).symm), ?_⟩
+    (specSymmetricAlgebraPointsMap_specSymmetricAlgebraMap f).symm), ?_⟩
   intro g hg
   apply hu
-  rw [hg, specSymmetricAlgebraPointsMap_map]
+  rw [hg, specSymmetricAlgebraPointsMap_specSymmetricAlgebraMap]
 
 /-- The scalar-equivariance criterion is equivalent to being induced by a linear map. -/
 theorem specSymmetricAlgebraPointsMap_smul_iff_exists_specSymmetricAlgebraMap
@@ -250,7 +247,7 @@ theorem specSymmetricAlgebraPointsMap_smul_iff_exists_specSymmetricAlgebraMap
   · intro h
     exact (existsUnique_specSymmetricAlgebraMap_of_smul ψ h).exists
   · rintro ⟨f, rfl⟩ S c g
-    rw [specSymmetricAlgebraPointsMap_map]
+    rw [specSymmetricAlgebraPointsMap_specSymmetricAlgebraMap]
     exact SymmetricAlgebra.linearPointsMap_app_smul R f S c g
 
 /-- Scalar equivariance of a scheme morphism forces additivity on every test algebra. -/

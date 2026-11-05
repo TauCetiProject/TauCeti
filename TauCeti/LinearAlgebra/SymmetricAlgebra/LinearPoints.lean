@@ -239,6 +239,6 @@ theorem linearPoints_add_of_smul (τ : linearPoints R M ⟶ linearPoints R N)
     (S : CommAlgCat.{max u v} R) (p q : M →ₗ[R] S) :
     τ.app S (p + q) = τ.app S p + τ.app S q := by
   obtain ⟨f, rfl⟩ := (linearPoints_smul_iff_exists_linearMap R τ).mp hτ
-  exact LinearMap.add_comp f q p
+  simp only [linearPointsMap_app_apply R f, LinearMap.add_comp]
 
 end TauCeti.SymmetricAlgebra
