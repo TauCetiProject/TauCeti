@@ -9,8 +9,6 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Interval.Set.Group
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Order.ToIntervalMod
-import Mathlib.Order.SuccPred.IntervalSucc
-import Mathlib.Tactic.Linarith
 
 /-!
 # Uniform interval grids on the real line
@@ -23,7 +21,9 @@ from a point to the cell's left endpoint is bounded by the width.
 Pairwise disjointness follows from Mathlib's `Set.pairwise_disjoint_Ico_zsmul`.
 Coverage follows from Mathlib's `iUnion_Ico_zsmul`.
 The named grid-cell results provide a partition API for constructions that
-operate on this family. Borel measurability is developed in
+operate on this family. Finite grids are available too: a bounded interval `[a, b]` can be
+subdivided into `N` equal pieces of width below any positive bound
+(`Real.exists_nat_step_lt_of_lt`). Borel measurability is developed in
 `TauCeti.MeasureTheory.Constructions.BorelSpace.Real`.
 
 Adapted from the Kitware DKPS formalization,
@@ -111,32 +111,20 @@ theorem abs_le_of_mem_gridCell {ε : ℝ} {k : ℤ} {s : ℝ}
     _ = (|(k : ℝ)| + 1) * ε := by
       rw [add_mul, one_mul, add_comm]
 
+/-- A positive step `delta` and an interval `[a, b]` admit a subdivision of `[a, b]` into `N > 0`
+equal pieces of width `w < delta`. -/
+theorem exists_nat_step_lt_of_lt {a b delta : ℝ} (hab : a < b) (hdelta : 0 < delta) :
+    ∃ (N : ℕ) (w : ℝ), 0 < N ∧ 0 < w ∧ w < delta ∧ b = a + N * w := by
+  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / delta)
+  have hNpos : 0 < N := by
+    by_contra h
+    rw [Nat.pos_iff_ne_zero, not_not] at h
+    rw [h, Nat.cast_zero] at hN
+    exact absurd hN (not_lt.2 (div_nonneg (by linarith) hdelta.le))
+  have hNposR : (0 : ℝ) < N := by exact_mod_cast hNpos
+  refine ⟨N, (b - a) / N, hNpos, by have := sub_pos.2 hab; positivity, ?_, by field_simp; ring⟩
+  rw [div_lt_iff₀ hNposR]
+  rw [div_lt_iff₀ hdelta] at hN
+  linarith
+
 end Real
-
-namespace Set
-
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-
-/-- The closed interval `[a, a + N h]` is covered by the `N` consecutive closed intervals
-`[a + k h, a + (k + 1) h]`, `k < N`, of step `h > 0`. -/
-theorem Icc_subset_biUnion_range_Icc {a b h : K} {N : ℕ} (hN : 0 < N) (hh : 0 < h)
-    (hb : b = a + N * h) :
-    Icc a b ⊆ ⋃ k ∈ Finset.range N, Icc (a + k * h) (a + (k + 1) * h) := by
-  have hmono : Monotone (fun k : ℕ ↦ a + k * h) := by
-    intro k l hkl
-    have hklR : (k : K) ≤ l := by exact_mod_cast hkl
-    nlinarith [mul_nonneg (sub_nonneg.mpr hklR) hh.le]
-  intro x hx
-  rcases hx.1.eq_or_lt with hxa | hxa
-  · subst x
-    simp only [Set.mem_iUnion, Finset.mem_range]
-    exact ⟨0, hN, by constructor <;> simp [hh.le]⟩
-  · have hx' : x ∈ ⋃ k ∈ Ico 0 N, Ioc (a + k * h) (a + (Order.succ k : ℕ) * h) := by
-      rw [hmono.biUnion_Ico_Ioc_map_succ]
-      simpa only [Nat.cast_zero, zero_mul, add_zero, ← hb] using ⟨hxa, hx.2⟩
-    simp only [Set.mem_iUnion, mem_Ico] at hx'
-    obtain ⟨k, ⟨-, hkN⟩, hxk⟩ := hx'
-    simp only [Set.mem_iUnion, Finset.mem_range]
-    exact ⟨k, hkN, Ioc_subset_Icc_self (by simpa using hxk)⟩
-
-end Set

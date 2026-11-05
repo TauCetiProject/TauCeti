@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+import Mathlib.Order.Interval.Set.Union
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Order.Interval.Set.RealGrid
 
@@ -117,22 +118,6 @@ theorem measureReal_Icc_le_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu] (hbet
     _ ≤ 2 * v * (F z).im := by
         exact mul_le_mul_of_nonneg_left hkey (by positivity)
 
-/-- A positive number `delta` and an interval `[a, b]` admit a partition of `[a, b]` into `N`
-intervals of half-width `v < delta`. -/
-private theorem exists_nat_halfWidth {a b delta : ℝ} (hab : a < b) (hdelta : 0 < delta) :
-    ∃ (N : ℕ) (v : ℝ), 0 < N ∧ 0 < v ∧ v < delta ∧ b = a + 2 * (N : ℝ) * v := by
-  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / (2 * delta))
-  have hNpos : 0 < N := by
-    by_contra h
-    have hzero : N = 0 := by omega
-    rw [hzero, Nat.cast_zero] at hN
-    exact absurd hN (not_lt.2 (div_nonneg (by linarith) (by positivity)))
-  have hNposR : (0 : ℝ) < N := by exact_mod_cast hNpos
-  refine ⟨N, (b - a) / (2 * N), hNpos, by positivity, ?_, by field_simp; ring⟩
-  rw [div_lt_iff₀ (by positivity)]
-  rw [div_lt_iff₀ (by positivity)] at hN
-  nlinarith
-
 /-- The covering estimate behind the Stieltjes--Perron vanishing theorem.  If the imaginary part
 of the represented function stays below `eps` at every height smaller than `delta` over `[a, b]`,
 the Nevanlinna measure of `[a, b]` is at most `(b - a) * eps`: cover `[a, b]` by `N` intervals of
@@ -144,11 +129,24 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
     (hd : ∀ u ∈ Icc a b, ∀ v : ℝ, 0 < v → v < delta →
       (F ((u : ℂ) + (v : ℂ) * I)).im < eps) :
     mu.real (Icc a b) ≤ (b - a) * eps := by
-  obtain ⟨N, v, hNpos, hvpos, hvlt, hbeq⟩ := exists_nat_halfWidth hab hdelta
+  obtain ⟨N, w, hNpos, hwpos, hwlt, hbeq⟩ :=
+    Real.exists_nat_step_lt_of_lt hab (by positivity : 0 < 2 * delta)
+  obtain ⟨v, rfl⟩ : ∃ v, w = 2 * v := ⟨w / 2, by ring⟩
+  have hvpos : 0 < v := by linarith
+  have hvlt : v < delta := by linarith
   have hcover : Icc a b ⊆ ⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v) := by
-    have h := Set.Icc_subset_biUnion_range_Icc hNpos (by positivity : 0 < 2 * v)
-      (by rw [hbeq]; ring : b = a + N * (2 * v))
-    convert h using 5 <;> ring
+    intro x hx
+    simp only [Set.mem_iUnion, Finset.mem_range]
+    rcases hx.1.eq_or_lt with hxa | hxa
+    · subst x
+      exact ⟨0, hNpos, by constructor <;> simp [hvpos.le]⟩
+    · have hxb : x ≤ a + 2 * (N : ℝ) * v := by have := hx.2; rw [hbeq] at this; linarith
+      have h := Ioc_subset_biUnion_Ioc N (fun k : ℕ ↦ a + 2 * k * v)
+        ⟨by simpa using hxa, hxb⟩
+      simp only [Set.mem_iUnion, Finset.mem_range] at h
+      obtain ⟨k, hk, hxk⟩ := h
+      push_cast at hxk
+      exact ⟨k, hk, Ioc_subset_Icc_self hxk⟩
   have hstep : ∀ k ∈ Finset.range N,
       mu.real (Icc (a + 2 * k * v) (a + 2 * (k + 1) * v)) ≤ 2 * v * eps := by
     intro k hk
