@@ -30,7 +30,7 @@ the codimension of its image, and the dimension of the source is at most that of
   locally of finite type is locally quasi-finite.
 * `AlgebraicGeometry.Scheme.Hom.QuasiFiniteAt.finite_residueField`: the residue field extension
   at a point where a morphism is quasi-finite is finite;
-  `AlgebraicGeometry.LocallyQuasiFinite.finite_residueField` is the instance for a locally
+  `AlgebraicGeometry.Scheme.Hom.finite_residueField` is the instance for a locally
   quasi-finite morphism.
 * `AlgebraicGeometry.Scheme.Hom.strictMono`: a locally quasi-finite morphism
   is strictly monotone for the specialization order.
@@ -106,7 +106,7 @@ theorem Scheme.Hom.QuasiFiniteAt.finite_residueField {X Y : Scheme.{u}} {f : X �
 /-- **Residue field extensions of a locally quasi-finite morphism are finite.** If `f` is locally
 quasi-finite, then `κ(x)` is a finite extension of `κ(f x)` at every point `x`. Stacks,
 Lemma 00PK. -/
-instance LocallyQuasiFinite.finite_residueField {X Y : Scheme.{u}} (f : X ⟶ Y)
+instance Scheme.Hom.finite_residueField {X Y : Scheme.{u}} (f : X ⟶ Y)
     [LocallyQuasiFinite f] (x : X) :
     letI := (f.residueFieldMap x).hom.toAlgebra
     Module.Finite (Y.residueField (f x)) (X.residueField x) :=

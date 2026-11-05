@@ -275,7 +275,7 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
     have hle := (Subring.closure_le (t := R.toSubring)).mpr
       (Set.union_subset (Set.range_subset_iff.mpr h₁) (Set.range_subset_iff.mpr h₂))
     rw [Scheme.Pullback.closure_range_residueFieldMap_eq_top y'
-      (RingHom.Finite.to_isIntegral (LocallyQuasiFinite.finite_residueField f y))] at hle
+      (RingHom.Finite.to_isIntegral (Scheme.Hom.finite_residueField f y))] at hle
     exact fun z ↦ (AlgHom.mem_range _).mp (hle (Subring.mem_top z))
   exact hfy.baseChange _ hφ
 
