@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicNumbers
+public import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import TauCeti.Analysis.Normed.Ring.DualNumber
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DivMod
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
@@ -79,11 +80,6 @@ example : IsUnit (polynomialToRestricted 1 (1 + C eps * X : (MaxDualNumber K)[X]
 
 end Units
 
-/-- `X ^ 2 - a` is monic of degree two over a nontrivial ring. -/
-theorem isMonicOfDegree_X_sq_sub_C {R : Type*} [Ring R] [Nontrivial R] (a : R) :
-    (X ^ 2 - C a : R[X]).IsMonicOfDegree 2 :=
-  (isMonicOfDegree_X_pow R 2).sub (by rw [natDegree_C]; norm_num)
-
 section Weierstrass
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R] {c : ℝ}
@@ -94,12 +90,13 @@ theorem isMulDistinguished_X_sq_sub_C (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c ^
     IsMulDistinguished c 2 (polynomialToRestricted c (X ^ 2 - C a) : PowerSeries R) := by
   have := NormOneClass.nontrivial (G := R)
   rw [coe_polynomialToRestricted]
-  refine ⟨isDistinguished_of_isMonicOfDegree hc (isMonicOfDegree_X_sq_sub_C a) fun k hk ↦ ?_, ?_⟩
+  refine ⟨isDistinguished_of_isMonicOfDegree hc (isMonicOfDegree_X_pow_sub_C two_ne_zero a)
+    fun k hk ↦ ?_, ?_⟩
   · interval_cases k
     · simpa [coeff_X_pow, coeff_C] using ha
     · simp only [coeff_sub, coeff_X_pow, coeff_C]
       simp [sq_nonneg]
-  · rw [(isMonicOfDegree_X_sq_sub_C a).coeff_coe_self]
+  · rw [(isMonicOfDegree_X_pow_sub_C two_ne_zero a).coeff_coe_self]
     exact isNormMulUnit_one
 
 /-- If `a` is a multiplicative unit and `c ^ 2 < ‖a‖`, then `X ^ 2 - a` is multiplicatively
@@ -146,7 +143,7 @@ example (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c ^ 2) {e : PowerSeries.IsRestric
     (h : (e : PowerSeries R) * ω = (X ^ 2 - C a : R[X])) : e = 1 ∧ ω = X ^ 2 - C a :=
   have := NormOneClass.nontrivial (G := R)
   (isMulDistinguished_X_sq_sub_C hc ha).eq_and_eq_of_mul_eq_of_mul_eq hc he isUnit_one hω
-    (isMonicOfDegree_X_sq_sub_C a) (by simpa using h) (by simp)
+    (isMonicOfDegree_X_pow_sub_C two_ne_zero a) (by simpa using h) (by simp)
 
 /-- Where the constant term of `X ^ 2 - a` strictly dominates, division by it is in degree zero:
 every remainder vanishes, so `X ^ 2 - a` is a unit of the restricted series. -/
