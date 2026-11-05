@@ -183,6 +183,11 @@ variable (Ψ) in
 theorem proj_surjective : Function.Surjective (proj Ψ) :=
   AlgHom.rangeRestrict_surjective _
 
+variable (Ψ) in
+/-- A character group ring of a finite group is a finite coefficient module. -/
+instance [Finite G] : Module.Finite O (charGroupRing Ψ) :=
+  Module.Finite.of_surjective (proj Ψ).toLinearMap (proj_surjective Ψ)
+
 /-- Two elements of `O[G]` have the same image in `R_Ψ` exactly when they have the same value at
 every member of `Ψ`. -/
 theorem proj_eq_proj_iff {x y : MonoidAlgebra O G} :
@@ -223,6 +228,30 @@ theorem charEval_subgroupCharSum_eq_zero (χ ψ : G →* Oˣ) (H : Subgroup G) [
     refine hH fun g hg ↦ Units.val_eq_one.mp ?_
     simpa using DFunLike.congr_fun h ⟨g, hg⟩
   simpa [TauCeti.subgroupCharSum_def, map_sum] using sum_hom_units_eq_zero _ hne
+
+variable [Fintype (⊤ : Subgroup G)] in
+open Classical in
+/-- The integral character sum associated to `χ` evaluates to the group order at `χ` and to
+zero at each other character. It is the scaled character idempotent, with no division in `O`. -/
+@[simp]
+theorem charEval_subgroupCharSum_inv_top (χ ψ : G →* Oˣ) :
+    ψ.charEval (TauCeti.subgroupCharSum ((Units.coeHom O).comp χ⁻¹) ⊤) =
+      if χ = ψ then (Nat.card G : O) else 0 := by
+  classical
+  by_cases h : χ = ψ
+  · subst ψ
+    simpa using charEval_subgroupCharSum_of_le_ker χ⁻¹ χ ⊤ (by
+      rw [top_le_iff, MonoidHom.ker_eq_top_iff]
+      ext g
+      simp)
+  · rw [ite_eq_right h]
+    apply charEval_subgroupCharSum_eq_zero
+    intro hker
+    apply h
+    have heq := MonoidHom.ker_eq_top_iff.mp (top_le_iff.mp hker)
+    ext g
+    have := DFunLike.congr_fun heq g
+    exact congrArg Units.val (inv_mul_eq_one.mp this)
 
 /-- The norm element `∑_{h ∈ H} h` of a finite subgroup `H` on which `ψ` is nontrivial evaluates
 to `0` at `ψ` when `O` is a domain. For `H = G` this is the vanishing of a nontrivial character
