@@ -78,13 +78,13 @@ private theorem contMDiff_curvatureAlternatingMap :
   have he : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
   have hs (i : Fin 2) : ContMDiffAt I (I.prod 𝓘(ℝ, E)) ∞
       (fun y ↦ TotalSpace.mk' E y (e.symm y (v i))) x := by
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     refine (contMDiffAt_const (c := v i)).congr_of_eventuallyEq ?_
     filter_upwards [e.open_baseSet.mem_nhds he] with y hy
     exact congr(Prod.snd $(e.apply_mk_symm hy (v i)))
   have h := ((cov.contMDiff_curvatureTensorCLM x).clm_bundle_apply (hs 0)).clm_bundle_apply
     (hs 1)
-  have hc := (contMDiffAt_totalSpace.1 h).2
+  have hc := (contMDiffAt_totalSpace_iff.1 h).2
   refine hc.congr_of_eventuallyEq ?_
   let e' := trivializationAt (F →L[ℝ] F) (fun y ↦ V y →L[ℝ] V y) x
   have he' : x ∈ e'.baseSet := mem_baseSet_trivializationAt _ _ x
