@@ -125,7 +125,7 @@ theorem khovanovComplexMarkX_exact {a b c : ℤ} (hab : b = a - 2) (hbc : c = b 
   exact D.exists_khovanovComplexMarkX_eq p hD R hab hbc i
 
 /-- The reduced Khovanov complex at a mark, with the quantum normalization
-`C̃_j = image(X : C_{j+1} → C_{j-1})`. In particular the reduced unknot lies in quantum degree
+`C_red_j = image(X : C_{j+1} → C_{j-1})`. In particular the reduced unknot lies in quantum degree
 zero. The image is taken in the native abelian category of cochain complexes. -/
 def reducedKhovanovComplex : GradedObject ℤ (CochainComplex (ModuleCat.{u} R) ℤ) :=
   fun j ↦ image (D.khovanovComplexMarkX p hD R (j := j + 1) (j' := j - 1) (by omega))
@@ -161,14 +161,14 @@ private def reducedKhovanovComplexSubOneIso (j : ℤ) :
       (by omega) rfl (by omega) (by omega))
 
 /-- Inclusion of the quantum-shifted reduced complex in the unreduced complex:
-`C̃⟨−1⟩_j → C_j`. -/
+`C_red⟨−1⟩_j → C_j`. -/
 def reducedKhovanovComplexι (j : ℤ) :
     D.reducedKhovanovComplex p hD R (j + 1) ⟶ D.khovanovComplex hD R j :=
   (D.reducedKhovanovComplexAddOneIso p hD R j).hom ≫
     image.ι (D.khovanovComplexMarkX p hD R (j := j + 2) (j' := j) (by omega))
 
 /-- Projection from the unreduced complex onto the oppositely shifted reduced complex:
-`C_j → C̃⟨1⟩_j`. -/
+`C_j → C_red⟨1⟩_j`. -/
 def reducedKhovanovComplexπ (j : ℤ) :
     D.khovanovComplex hD R j ⟶ D.reducedKhovanovComplex p hD R (j - 1) :=
   factorThruImage (D.khovanovComplexMarkX p hD R (j := j) (j' := j - 2) rfl) ≫
@@ -225,7 +225,7 @@ theorem reducedKhovanovComplexι_π (j : ℤ) :
   simp
 
 /-- The reduced/unreduced sequence in quantum degree `j`:
-`0 → C̃_{j+1} → C_j → C̃_{j-1} → 0`. -/
+`0 → C_red_{j+1} → C_j → C_red_{j-1} → 0`. -/
 def reducedKhovanovShortComplex (j : ℤ) :
     ShortComplex (CochainComplex (ModuleCat.{u} R) ℤ) :=
   ShortComplex.mk (D.reducedKhovanovComplexι p hD R j)
