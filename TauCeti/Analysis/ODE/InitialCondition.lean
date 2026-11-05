@@ -37,7 +37,7 @@ therefore smooth directions.
 * `ODE.contDiffAt_globalSolution`: the global solution of a globally Lipschitz `C^(n+1)` field is
   `C^(n+1)` in time and initial condition near time `0`, for `n` finite or infinite.
 * `ODE.contDiff_globalSolution`: the global solution is `C^(n+1)` jointly in its initial condition
-  and time, for every finite `n`.
+  and time, for `n` finite or infinite.
 * `ODE.contDiff_globalSolution_apply`: every time-`t` map is `C^(n+1)`.
 * `ODE.exists_contDiffAt_localFlow`: a vector field which is `C^(n+1)` on a neighbourhood of a
   point has a local flow through the nearby points which is `C^(n+1)` in time and initial
@@ -132,11 +132,24 @@ theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv :
 /-- **The global solution of a globally Lipschitz `C^(n+1)` field is `C^(n+1)` jointly in its
 initial condition and time.**
 
-For every finite positive regularity order, the global solution has the same joint regularity as
-the vector field. -/
-theorem contDiff_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
+For every positive regularity order, finite or infinite, the global solution has the same joint
+regularity as the vector field. -/
+theorem contDiff_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) :
     ContDiff ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) := by
+  -- It suffices to treat finite orders: a `C^∞` field is `C^(k+1)` for every `k`.
+  suffices H : ∀ n : ℕ, ContDiff ℝ (n + 1) v →
+      ContDiff ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) by
+    induction n using ENat.recTopCoe with
+    | top =>
+      have htop : ((⊤ : ℕ∞) : WithTop ℕ∞) + 1 = ∞ := by
+        rw [← WithTop.coe_one, ← WithTop.coe_add, top_add]
+      rw [htop] at hvs ⊢
+      exact contDiff_infty.2 fun k ↦ (H k (hvs.of_le (by exact_mod_cast le_top))).of_le
+        (by exact_mod_cast le_self_add)
+    | coe k => exact_mod_cast H k (by exact_mod_cast hvs)
+  clear hvs n
+  intro n hvs
   -- For a fixed initial condition, the smooth times form a nonempty clopen subset of `ℝ`:
   -- the flow law propagates smoothness locally, including at limit points.
   let G : E × ℝ → E := fun p ↦ globalSolution v hv p.1 p.2
@@ -199,10 +212,10 @@ theorem contDiff_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : Lips
 
 /-- At every fixed time, the global solution of a globally Lipschitz `C^(n+1)` field is a
 `C^(n+1)` function of its initial condition. -/
-theorem contDiff_globalSolution_apply (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
+theorem contDiff_globalSolution_apply {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) (t : ℝ) :
     ContDiff ℝ (n + 1) fun x ↦ globalSolution v hv x t :=
-  (contDiff_globalSolution n v hv hvs).comp (contDiff_id.prodMk contDiff_const)
+  (contDiff_globalSolution v hv hvs).comp (contDiff_id.prodMk contDiff_const)
 
 end
 
