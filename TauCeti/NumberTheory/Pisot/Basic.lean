@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Real.GoldenRatio
 
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib.Analysis.Polynomial.MahlerMeasure
+import TauCeti.NumberTheory.Real.GoldenRatio
 
 /-!
 # Pisot numbers
@@ -113,26 +114,6 @@ theorem isPisot_natCast_iff {n : ℕ} : IsPisot n ↔ 2 ≤ n := by
 @[simp]
 theorem isPisot_ofNat (n : ℕ) [n.AtLeastTwo] : IsPisot (ofNat(n) : ℝ) :=
   isPisot_natCast_iff.mpr Nat.AtLeastTwo.prop
-
-/-- The complex roots of `X² - X - 1` are the golden ratio `φ` and its conjugate `ψ`. -/
-private theorem aroots_X_sq_sub_X_sub_one :
-    (X ^ 2 - X - 1 : ℤ[X]).aroots ℂ = {(Real.goldenRatio : ℂ), (Real.goldenConj : ℂ)} := by
-  have hsum : ((Real.goldenRatio : ℂ) + Real.goldenConj) = 1 := by
-    exact_mod_cast Real.goldenRatio_add_goldenConj
-  have hprod : ((Real.goldenRatio : ℂ) * Real.goldenConj) = -1 := by
-    exact_mod_cast Real.goldenRatio_mul_goldenConj
-  have hfac : (X ^ 2 - X - 1 : ℤ[X]).map (algebraMap ℤ ℂ) =
-      (X - C (Real.goldenRatio : ℂ)) * (X - C (Real.goldenConj : ℂ)) := by
-    have : (X - C (Real.goldenRatio : ℂ)) * (X - C (Real.goldenConj : ℂ)) =
-        X ^ 2 - C ((Real.goldenRatio : ℂ) + Real.goldenConj) * X +
-          C ((Real.goldenRatio : ℂ) * Real.goldenConj) := by
-      simp only [map_add, map_mul]
-      ring
-    rw [this, hsum, hprod]
-    simp [sub_eq_add_neg]
-  rw [aroots_def, hfac, roots_mul (mul_ne_zero (X_sub_C_ne_zero _) (X_sub_C_ne_zero _)),
-    roots_X_sub_C, roots_X_sub_C]
-  rfl
 
 /-- The golden ratio `φ = (1 + √5) / 2` is a Pisot number: its conjugate `ψ = (1 - √5) / 2`
 satisfies `|ψ| < 1`. -/
