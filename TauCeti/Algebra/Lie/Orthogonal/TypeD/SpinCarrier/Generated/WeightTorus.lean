@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.Positive.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.WeightTorus
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 
@@ -16,8 +17,9 @@ import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 
 For `4 ≤ n`, restriction from the ground-ring-generated full spin subgroup to its weight
 torus is surjective. Its kernel defines a closed rank-`n` split torus contained in the
-generated positive subgroup. Its algebra-valued points are the named spin weight-torus
-matrices, and its defining ideal commutes with free scalar extension.
+generated positive subgroup. Its differential is injective over every commutative coefficient
+algebra. Its algebra-valued points are the named spin weight-torus matrices, and its defining
+ideal commutes with free scalar extension.
 
 This is a torus in the subgroup generated over the ground ring, not the specialization of the
 integral carrier. Neither equality of those carriers nor maximality of the torus is asserted.
@@ -54,6 +56,14 @@ theorem generatedWeightTorusCoordinateMap_surjective :
   rw [← generatedCoordinateMap_comp_generatedCoordinateLift] at h
   rw [generatedWeightTorusCoordinateMap_def]
   exact Function.Surjective.of_comp h
+
+/-- The weight-torus differential is injective over every commutative coefficient algebra. -/
+theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
+    (B : Type v) [CommRing B] [Algebra R B] :
+    Function.Injective
+      (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom) :=
+  derivationCompLieHom_injective_of_surjective _
+    (generatedWeightTorusCoordinateMap_surjective n hn R)
 
 /-- The defining ideal of the weight torus inside the ground-ring-generated spin group. -/
 def weightTorusDefiningIdeal : HopfIdeal R (generatedCoordinateHopfAlgebra n hn R) :=
