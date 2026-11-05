@@ -52,8 +52,7 @@ theorem contDiff_spatialSlice (f : ParabolicC2HolderSpace α E F hab) (t : Icc a
   have hxx : _root_.fderiv ℝ (_root_.fderiv ℝ fun x ↦ f (slabMk x t)) =
       fun x ↦ spatialSecondFDerivL f (slabMk x t) :=
     funext (f.fderiv_fderiv_eq t)
-  have hc : Continuous (fun x : E ↦ slabMk x t) :=
-    continuous_slabMk.comp (continuous_id.prodMk continuous_const)
+  have hc : Continuous (fun x : E ↦ slabMk x t) := by fun_prop
   rw [← one_add_one_eq_two, contDiff_succ_iff_fderiv]
   refine ⟨fun x ↦ (f.hasSpatialFDerivAt t x).differentiableAt, by simp, ?_⟩
   rw [contDiff_one_iff_fderiv, hxx, hx]

@@ -28,8 +28,8 @@ finite presentations, without assuming any recognition theorem for the presented
 
 ## Main results
 
-* `TauCeti.classificationStatement_of_zero`: the universe-zero statement implies the statement in
-  every universe.
+* `TauCeti.ClassificationStatement.of_universe`: the statement in one universe implies the
+  statement in every universe.
 
 -/
 
@@ -47,7 +47,7 @@ abbrev CFSGIndex.Group : CFSGIndex → Type
 noncomputable instance (i : CFSGIndex) : Group i.Group := by
   cases i <;> infer_instance
 
-universe u
+universe u v
 
 /-- **Classification of finite simple groups, statement only.** Every finite simple group is
 isomorphic to one of the explicitly constructed groups on the classification list. -/
@@ -63,8 +63,9 @@ theorem classificationStatement_iff :
         ∃ i : CFSGIndex, Nonempty (G ≃* i.Group) :=
   Iff.rfl
 
-/-- The universe-zero classification statement implies the statement in every universe. -/
-theorem classificationStatement_of_zero (h : ClassificationStatement.{0}) :
+/-- The classification statement in one universe implies the statement in every universe: a
+finite group can be transported to a carrier in any universe. -/
+theorem ClassificationStatement.of_universe (h : ClassificationStatement.{v}) :
     ClassificationStatement.{u} :=
   exists_mulEquiv_of_forall_finite_isSimpleGroup CFSGIndex.Group h
 

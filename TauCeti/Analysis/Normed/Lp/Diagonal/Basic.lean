@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Lp.Basic
+public import TauCeti.Analysis.Normed.Lp.MapCLM
 public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
 /-!
@@ -60,19 +61,15 @@ theorem algebraMap_sub_diagonalCLM_apply (d : ℓ^∞(ι, 𝕜)) (c : 𝕜) (x :
 @[simp]
 theorem diagonalCLM_single [DecidableEq ι] (d : ℓ^∞(ι, 𝕜)) (i : ι) (a : 𝕜) :
     diagonalCLM d (lp.single p i a) = lp.single p i (d i * a) := by
-  ext j
-  by_cases h : j = i
-  · subst j; simp
-  · simp [lp.single_apply, h]
+  simp [diagonalCLM]
 
 /-- The operator norm of a diagonal multiplier equals the supremum norm of its coefficients. -/
 @[simp]
 theorem norm_diagonalCLM (d : ℓ^∞(ι, 𝕜)) : ‖diagonalCLM (p := p) d‖ = ‖d‖ := by
-  classical
   refine le_antisymm (norm_mapCLM_le _ _ _ _) ?_
   refine norm_le_of_forall_le (norm_nonneg _) fun i ↦ ?_
-  have h := (diagonalCLM (p := p) d).le_opNorm (lp.single p i 1)
-  simpa [lp.norm_single (zero_lt_one.trans_le (Fact.out : 1 ≤ p))] using h
+  have h : _ ≤ ‖diagonalCLM (p := p) d‖ := norm_le_norm_mapCLM (p := p) _ _ _ i
+  rwa [norm_smul, ContinuousLinearMap.norm_id, mul_one] at h
 
 /-- The diagonal multiplier with all coefficients zero is zero. -/
 @[simp]
