@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.LinearAlgebra.Dimension.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.NotSimplyConnected
 import TauCeti.Geometry.Manifold.Connected
 import TauCeti.Topology.Closure
 import TauCeti.Topology.OpenPartialHomeomorph.SimplyConnected
