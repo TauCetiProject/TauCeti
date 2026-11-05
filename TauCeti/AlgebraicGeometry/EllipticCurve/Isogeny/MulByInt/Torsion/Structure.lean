@@ -119,7 +119,8 @@ private noncomputable def primaryDecompositionEquiv (W : WeierstrassCurve K) [W.
     primePowerComponentEquiv W N hN p
   have hinternal : DirectSum.IsInternal fun p : N.primeFactors ↦
       Submodule.torsionBy ℤ G (q p : ℤ) :=
-    TauCeti.AddSubgroup.torsionBy_primeFactors_isInternal N (NeZero.ne N)
+    TauCeti.Submodule.torsionBy_primeFactors_isInternal (NeZero.ne N)
+      (Submodule.torsionBy_isTorsionBy (N : ℤ))
   letI := hinternal.chooseDecomposition
   exact (DirectSum.decomposeAddEquiv fun p : N.primeFactors ↦
     Submodule.torsionBy ℤ G (q p : ℤ)).trans <|

@@ -221,6 +221,20 @@ theorem _root_.CommHopfAlgCat.mkQuotient_comp_eqToHom {I J : HopfIdeal R H} (hIJ
   subst J
   rfl
 
+/-- If restriction after a surjective morphism is a quotient map, an ideal killed by
+restriction pulls back into that quotient's defining ideal. -/
+theorem _root_.CommHopfAlgCat.Hom.comapOfSurjective_le_of_comp_eq_mkQuotient
+    (f : H ⟶ K) (hf : Function.Surjective f.hom) (D : HopfIdeal R H)
+    (r : K ⟶ quotient H D) (hr : f ≫ r = mkQuotient H D)
+    (I : HopfIdeal R K) (hI : I.toIdeal ≤ RingHom.ker r.hom.toAlgHom.toRingHom) :
+    I.comapOfSurjective f.hom hf ≤ D := by
+  intro z hz
+  apply (mkQuotient_eq_zero_iff H D z).mp
+  have hcomp := congrArg _root_.CommHopfAlgCat.Hom.hom hr
+  have hzero := RingHom.mem_ker.mp (hI (HopfIdeal.mem_comapOfSurjective.mp hz))
+  simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] using
+    (BialgHom.congr_fun hcomp z).symm.trans hzero
+
 /-- A surjective morphism of commutative Hopf algebras identifies the quotient by the
 inverse-image Hopf ideal with the corresponding quotient of the target. -/
 noncomputable def _root_.CommHopfAlgCat.Hom.quotientIsoOfSurjective

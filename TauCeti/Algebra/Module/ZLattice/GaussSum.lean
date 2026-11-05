@@ -78,6 +78,7 @@ multiple `t` of the level prime to `a`.
 
 ## Main statements
 
+* `ZLattice.norm_gaussSumTwisted_le`: `‖G_L(a, c; m)‖ ≤ |L / cL|`.
 * `ZLattice.gaussSumTwisted_eq_of_modEq`, `ZLattice.gaussSum_eq_of_modEq`: the Gauss sums depend
   on `a` only modulo `c`.
 * `ZLattice.gaussSumTwisted_one`, `ZLattice.gaussSum_one`: `G_L(a, 1; m) = G_L(a, 1) = 1`.
@@ -88,6 +89,10 @@ multiple `t` of the level prime to `a`.
   for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
+* `ZLattice.dualGaussSum_one`: for `c = 1` the Gauss sum over `L^∨ / cL` is the sum
+  `∑_{γ ∈ L^∨ / L} e(a ‖γ‖² / 2)` over the discriminant group.
+* `ZLattice.conj_dualGaussSum`: complex conjugation negates the coefficient of the Gauss sum over
+  `L^∨ / cL`.
 * `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
   `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
 * `ZLattice.IsEven.gaussSum_eq_jacobiSym`: for odd `c` prime to `a` and to `det L`,
@@ -160,6 +165,13 @@ theorem gaussTerm_mk (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L) (v : L) :
       cexp (2 * π * I * (((a * ‖(v : E)‖ ^ 2 / 2 + ⟪(v : E), (m : E)⟫) / c : ℝ) : ℂ)) :=
   (rfl)
 
+/-- The Gauss summand has absolute value `1`. -/
+@[simp]
+theorem norm_gaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L)
+    (y : L ⧸ ((c : ℝ) • L).submoduleOf L) : ‖gaussTerm L hL a c m y‖ = 1 := by
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [gaussTerm_mk, norm_exp_two_pi_mul_I_mul_ofReal]
+
 end GaussTerm
 
 /-! ### Gauss sums -/
@@ -186,6 +198,11 @@ theorem gaussSumTwisted_def (a : ℤ) (c : ℕ) [Fintype (L ⧸ ((c : ℝ) • L
 theorem gaussSum_def (a : ℤ) (c : ℕ) [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] :
     gaussSum L hL a c = ∑ y, gaussTerm L hL a c 0 y :=
   (rfl)
+
+/-- The twisted Gauss sum is bounded by the number of classes of `L / cL`. -/
+theorem norm_gaussSumTwisted_le (a : ℤ) (c : ℕ) [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
+    (m : dual L) : ‖gaussSumTwisted L hL a c m‖ ≤ Fintype.card (L ⧸ ((c : ℝ) • L).submoduleOf L) :=
+  (norm_sum_le _ _).trans_eq <| by simp
 
 /-- The twisted Gauss sum at `m = 0` is the Gauss sum. -/
 @[simp]
@@ -453,6 +470,37 @@ noncomputable def dualGaussSum (hL : IsEven L) (a : ℤ) (c : ℕ)
 theorem dualGaussSum_def (a : ℤ) (c : ℕ) [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
     dualGaussSum L hL a c = ∑ y, dualGaussTerm L hL a c y :=
   (rfl)
+
+/-- For `c = 1` the Gauss sum over `L^∨ / cL` is the sum `∑_{γ ∈ L^∨ / L} e(a ‖γ‖² / 2)` over the
+discriminant group, computed with any function `f` on `L^∨ / L` taking the value
+`e(a ‖v‖² / 2)` at the class of each `v ∈ L^∨`. -/
+theorem dualGaussSum_one (a : ℤ) [Fintype (dual L ⧸ (((1 : ℕ) : ℝ) • L).submoduleOf (dual L))]
+    [Fintype (DiscriminantGroup L)] (f : DiscriminantGroup L → ℂ)
+    (hf : ∀ v : dual L,
+      f (Submodule.Quotient.mk v) = cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / 2 : ℝ) : ℂ))) :
+    dualGaussSum L hL a 1 = ∑ γ, f γ := by
+  have h : (((1 : ℕ) : ℝ) • L).submoduleOf (dual L) = L.submoduleOf (dual L) := by
+    rw [Nat.cast_one, one_smul]
+  rw [dualGaussSum_def]
+  refine Fintype.sum_equiv (Submodule.quotEquivOfEq _ _ h).toEquiv _ _ fun y ↦ ?_
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [LinearEquiv.coe_toEquiv, Submodule.quotEquivOfEq_mk, hf, dualGaussTerm_mk, Nat.cast_one,
+    mul_one]
+
+/-- Complex conjugation negates the coefficient of the Gauss sum over `L^∨ / cL`:
+`conj (∑_y e(a ‖y‖² / (2c))) = ∑_y e(-a ‖y‖² / (2c))`. -/
+@[simp]
+theorem conj_dualGaussSum (a : ℤ) (c : ℕ)
+    [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
+    starRingEnd ℂ (dualGaussSum L hL a c) = dualGaussSum L hL (-a) c := by
+  rw [dualGaussSum_def, dualGaussSum_def, map_sum]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [dualGaussTerm_mk, dualGaussTerm_mk, ← exp_conj]
+  simp only [map_mul, map_ofNat, conj_ofReal, conj_I]
+  congr 1
+  push_cast
+  ring
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 

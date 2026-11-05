@@ -63,8 +63,8 @@ nonzero singular part makes `Ent_m(μ) = ⊤`, and the left side tends to `⊤` 
 
 ## Main results
 
-* `TauCeti.renyiEntropy_eq_neg_lintegral`, `TauCeti.renyiEntropy_eq_neg_lintegral_rpow`: the
-  integral formulas for `S_N`.
+* `TauCeti.renyiEntropy_eq_neg_lintegral`, `TauCeti.renyiEntropy_eq_neg_lintegral_rpow`,
+  `TauCeti.renyiEntropy_eq_neg_lintegral_rpow_neg`: the integral formulas for `S_N`.
 * `TauCeti.renyiEntropy_nonpos`, `TauCeti.renyiEntropy_ne_top`, `TauCeti.renyiEntropy_eq_bot_iff`:
   the entropy lies in `[-∞, 0]`, and is `-∞` exactly when `∫ ρ · ρ^{-1/N} dm` diverges.
 * `TauCeti.renyiEntropy_of_mutuallySingular`: singular measures have Rényi entropy `0`.
@@ -160,6 +160,15 @@ theorem renyiEntropy_eq_neg_lintegral_rpow [SigmaFinite μ] (hN : 1 < N) :
   rcases eq_or_ne (μ.rnDeriv m x) 0 with h₀ | h₀
   · simp [h₀, ENNReal.zero_rpow_of_pos hq]
   · simp only [sub_eq_add_neg, ENNReal.rpow_add _ _ h₀ hx.ne, ENNReal.rpow_one]
+
+/-- **Sturm's form of the Rényi entropy.** For `N > 0` and `μ ≪ m`, the Rényi entropy is
+`S_N(μ | m) = -∫⁻ ρ^{-1/N} dμ`, where `ρ` is the Radon–Nikodym derivative of `μ` with respect
+to `m`. -/
+theorem renyiEntropy_eq_neg_lintegral_rpow_neg [μ.HaveLebesgueDecomposition m] (hN : 0 < N)
+    (hμ : μ ≪ m) :
+    renyiEntropy N m μ = -((∫⁻ x, μ.rnDeriv m x ^ (-N⁻¹) ∂μ : ℝ≥0∞) : EReal) := by
+  rw [renyiEntropy_eq_neg_lintegral hN,
+    lintegral_rnDeriv_mul hμ ((Measure.measurable_rnDeriv μ m).pow_const _).aemeasurable]
 
 /-- For `N > 0`, the Rényi entropy is nonpositive. -/
 theorem renyiEntropy_nonpos (hN : 0 < N) : renyiEntropy N m μ ≤ 0 := by

@@ -40,6 +40,9 @@ convolution `ρ ⋆ u` with a continuous compactly supported `ψ` only involves 
 `tsupport ψ - tsupport ρ`, and Fubini moves the kernel outside:
 `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for `u` locally integrable near that set.
 
+Against a kernel `f` of integral zero supported in `ball 0 R`, the constant `g x₀` convolves to
+zero, so `(f ⋆ g) x₀` is bounded by `‖L‖ (∫ ‖f‖)` times the oscillation of `g` on `ball x₀ R`.
+
 ## Main declarations
 
 * `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
@@ -62,6 +65,8 @@ convolution `ρ ⋆ u` with a continuous compactly supported `ψ` only involves 
   set containing `x - support f` does not change `(f ⋆ g) x`.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
   `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
+* `MeasureTheory.norm_convolution_le_of_integral_eq_zero`: convolution with a kernel of integral
+  zero is bounded by the oscillation of the other factor.
 -/
 
 public section
@@ -293,5 +298,32 @@ theorem integral_mul_convolution_eq_integral_mul_integral_comp_sub [SFinite μ]
         rw [Set.indicator_of_mem (hmem hx ht), mul_left_comm]
 
 end Fubini
+
+section ZeroIntegral
+
+variable {𝕜 G E E' F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] [SeminormedAddCommGroup G]
+  [MeasurableSpace G] [BorelSpace G] [SecondCountableTopology G] {μ : Measure G}
+  [μ.IsAddLeftInvariant] [SFinite μ]
+
+/-- **Convolution with a kernel of integral zero.** If `f` is integrable with `∫ f = 0` and
+supported in `ball 0 R`, and `g` stays within `w` of `g x₀` on `ball x₀ R`, then
+`‖(f ⋆ g) x₀‖ ≤ ‖L‖ (∫ ‖f‖) w`. Only the oscillation of `g` near `x₀` enters, not its size:
+applied to the derivatives of a mollifier, this bounds the derivatives of a mollification by the
+local oscillation of the mollified function. -/
+theorem norm_convolution_le_of_integral_eq_zero (L : E →L[𝕜] E' →L[𝕜] F) {f : G → E}
+    {g : G → E'} {x₀ : G} {R w : ℝ} (hw : 0 ≤ w) (hif : Integrable f μ)
+    (hf0 : ∫ t, f t ∂μ = 0) (hf : Function.support f ⊆ Metric.ball 0 R)
+    (hmg : AEStronglyMeasurable g μ) (hg : ∀ x ∈ Metric.ball x₀ R, dist (g x) (g x₀) ≤ w) :
+    ‖(f ⋆[L, μ] g) x₀‖ ≤ (‖L‖ * ∫ t, ‖f t‖ ∂μ) * w := by
+  have h0 : ∫ t, L (f t) (g x₀) ∂μ = 0 := by
+    by_cases hF : CompleteSpace F
+    · simpa only [ContinuousLinearMap.flip_apply, hf0, map_zero] using
+        (L.flip (g x₀)).integral_comp_comm hif
+    · exact integral_of_not_completeSpace hF
+  simpa only [h0, dist_zero_right] using dist_convolution_le' L hw hif hf hmg hg
+
+end ZeroIntegral
 
 end MeasureTheory

@@ -161,7 +161,8 @@ private theorem contMDiff_cayleyPathEnd_family {K₀ K₁ : P → SmoothAlmostCo
         (coord x₀ ((K₁ q₀.1).toEndomorphism x₀))) := by
     rw [hconj hx₀, hconj hx₀, ← map_cayleyFormula, ← map_smul, ← map_one φ₀, ← map_sub]
     exact (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      ((hc₀ q₀.1).compatibleAt x₀) ((hc₁ q₀.1).compatibleAt x₀) (τ q₀.1)
+      ((hc₀ q₀.1).compatibleAt x₀) ((hc₁ q₀.1).compatibleAt x₀).tames
+      ⟨smoothTransition.nonneg (τ q₀.1), smoothTransition.le_one (τ q₀.1)⟩
       ((K₀ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm
       ((K₁ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
   -- Near `q₀`, the path in coordinates is the Cayley path expression of the endpoints in

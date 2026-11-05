@@ -29,6 +29,9 @@ stated for a finite monoid.
 * `TauCeti.ConstantGroup.coordinateRing`: the Hopf algebra of functions on a finite group.
 * `TauCeti.ConstantGroup.functionAlgEquiv`: its canonical equivalence with `G → R`.
 * `TauCeti.ConstantGroup.eval`: evaluation at a group element as an algebra homomorphism.
+* `TauCeti.ConstantGroup.delta`: the indicator function of a group element.
+* `TauCeti.ConstantGroup.comul_delta`, `TauCeti.ConstantGroup.ofConv_delta_one`: the coalgebra
+  structure on indicator functions, with the counit in its simp-normal form.
 * `TauCeti.ConstantGroup.toPoints`: the monoid homomorphism from `G` to its algebra points.
 * `TauCeti.ConstantGroup.coordinateBialgHom`: contravariant pullback along a group homomorphism.
 
@@ -100,6 +103,26 @@ theorem eval_apply (g : G) (f : coordinateRing R G) :
     eval R G g f = functionAlgEquiv R G f g := by
   simp [eval]
 
+/-- The indicator function of `g`, as an element of the coordinate ring of the constant group:
+the coordinate functional of `g` on the group algebra. -/
+noncomputable def delta (g : G) : coordinateRing R G :=
+  WithConv.toConv ((MonoidAlgebra.basis G R).coord g)
+
+/-- Under the identification of the coordinate ring with `G → R`, the element `delta R G g` is the
+indicator function of `g`. -/
+@[simp]
+theorem functionAlgEquiv_delta [DecidableEq G] (g : G) :
+    functionAlgEquiv R G (delta R G g) = Pi.single g 1 := by
+  ext h
+  simp [delta, ← MonoidAlgebra.basis_apply, Finsupp.single_apply, Pi.single_apply]
+
+/-- The indicator function of `g` takes the value `1` at `g` and `0` elsewhere. This is the
+simp-normal form of its values. -/
+@[simp]
+theorem ofConv_delta_single [DecidableEq G] (g h : G) :
+    (delta R G g).ofConv (MonoidAlgebra.single h 1) = if h = g then 1 else 0 := by
+  rw [← functionAlgEquiv_apply, functionAlgEquiv_delta, Pi.single_apply]
+
 section Monoid
 
 variable [Monoid G]
@@ -117,6 +140,14 @@ theorem counit_apply (f : coordinateRing R G) :
     Coalgebra.counit (R := R) f = functionAlgEquiv R G f 1 := by
   rw [ConvolutionDual.counit_apply, functionAlgEquiv_apply]
   rw [MonoidAlgebra.one_def]
+
+/-- The indicator function of `g` takes the value `1` at the identity exactly when `g = 1`. This is
+the simp-normal form of its counit. -/
+@[simp]
+theorem ofConv_delta_one [DecidableEq G] (g : G) :
+    (delta R G g).ofConv 1 = if g = 1 then 1 else 0 := by
+  rw [MonoidAlgebra.one_def, ofConv_delta_single]
+  simp only [eq_comm]
 
 omit [Monoid G] in
 private theorem dualDistribEquiv_apply_single
@@ -147,6 +178,13 @@ theorem eval_one : WithConv.toConv (eval R G (1 : G)) = 1 := by
   apply WithConv.ofConv_injective
   ext f
   rw [eval_apply, AlgHom.convOne_apply]
+  simpa using (counit_apply R G f).symm
+
+/-- Evaluation at the identity is the counit of the coordinate ring. -/
+@[simp]
+theorem eval_one_eq_counitAlgHom :
+    eval R G (1 : G) = Bialgebra.counitAlgHom R (coordinateRing R G) := by
+  ext f
   simpa using (counit_apply R G f).symm
 
 /-- A finite monoid maps canonically to the monoid of algebra points of its constant monoid. -/
@@ -181,6 +219,20 @@ theorem antipode_apply (f : coordinateRing R G) (g : G) :
   rw [functionAlgEquiv_apply, ConvolutionDual.antipode_apply,
     MonoidAlgebra.antipode_single, functionAlgEquiv_apply]
   simp
+
+/-- The comultiplication of the indicator function of `g` splits `g` into all products
+`h * (h⁻¹ * g)`. -/
+theorem comul_delta [Fintype G] (g : G) :
+    Coalgebra.comul (R := R) (delta R G g) =
+      ∑ h, delta R G h ⊗ₜ[R] delta R G (h⁻¹ * g) := by
+  classical
+  apply (ConvolutionDual.dualDistribEquiv R (MonoidAlgebra R G)).injective
+  refine ((MonoidAlgebra.basis G R).tensorProduct (MonoidAlgebra.basis G R)).ext fun x ↦ ?_
+  rw [Module.Basis.tensorProduct_apply', MonoidAlgebra.basis_apply, MonoidAlgebra.basis_apply,
+    comul_apply, map_sum, LinearMap.sum_apply]
+  simp only [ConvolutionDual.dualDistribEquiv_tmul_apply, ← functionAlgEquiv_apply,
+    functionAlgEquiv_delta, Pi.single_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true, eq_inv_mul_iff_mul_eq]
 
 section Functoriality
 

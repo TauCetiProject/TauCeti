@@ -61,6 +61,8 @@ file supplies the sign cocycle and the facts specific to it.
   diagonal, `orderedSignForm B a b + orderedSignForm B b a` and `a ⬝ᵥ B *ᵥ b` have the same parity.
 * `Matrix.orderedSign_div_orderedSign_swap`: for symmetric `B` with even diagonal,
   `ε(a, b) / ε(b, a) = (-1) ^ (a ⬝ᵥ B *ᵥ b)`.
+* `Matrix.SignCover.inl_range_le_center`: the copy of `ℤˣ` in `Q̂` is central, the hypothesis
+  under which `Q̂` admits character twists.
 * `Matrix.SignCover.inv_canonicalSection`: the inverse lift `⟨1, a⟩⁻¹ = ε(a, a) ⟨1, -a⟩`.
 * `Matrix.commutatorElement_signCover`: the commutator formula in `Q̂`.
 * `Matrix.forall_canonicalSection_signFactorSet_mul_iff`: the section `a ↦ (a, 1)` is a
@@ -205,6 +207,12 @@ theorem SignCover.tau_ne_one : SignCover.tau B ≠ 1 := by
 
 theorem SignCover.tau_mem_center : SignCover.tau B ∈ Subgroup.center (SignCover B) :=
   FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨-1, rfl⟩
+
+/-- The copy of `ℤˣ` in the ordered sign cover is central. -/
+theorem SignCover.inl_range_le_center :
+    (signFactorSet B).groupExtension.inl.range ≤ Subgroup.center (SignCover B) := by
+  rw [FactorSet.groupExtension_inl]
+  exact FactorSet.inl_range_le_center (signFactorSet B) trivialMulDistribMulAction_smul
 
 /-- **The inverse lift** in the ordered sign cover: the inverse of the section value `⟨1, a⟩` lies
 over `-a` with the sign `ε(a, a)`, that is, `⟨1, a⟩⁻¹ = ε(a, a) ⟨1, -a⟩`. -/

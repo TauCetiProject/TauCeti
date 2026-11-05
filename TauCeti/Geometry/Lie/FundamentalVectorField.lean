@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 import TauCeti.Geometry.Manifold.VectorField.Related
 
 /-!
@@ -39,12 +40,18 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_mulRightInvariantVectorField`: each orbit map `g ↦ g • x` relates the
   right-invariant vector field of `ξ` on `G` to `ξ_M`.
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
+* `MonoidHom.fundamentalVectorField_groupLieAlgebraMap`: for an action through a homomorphism
+  `φ : K →* G`, the fundamental vector field of `ξ ∈ Lie(K)` is that of `dφ ξ ∈ Lie(G)`.
 * `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
   `ξ_M` to `ξ_N`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
+* `TauCeti.mulInvariantExp_smul_smul_eq_iff`: `exp (t ξ) • x = x` for every `t` exactly when
+  `ξ_M(x) = 0`.
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
   antihomomorphism of Lie algebras.
+* `TauCeti.adjointContinuousLinearMap_mem_isotropy_smul_iff`: the isotropy algebras along an orbit
+  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`.
 
 ## References
 
@@ -230,6 +237,25 @@ theorem fundamentalVectorField_prod
   · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_snd, Prod.smul_def] using
       congrArg Prod.snd h
 
+/-- **Fundamental vector fields along a homomorphism.** Let `K` act on `M` through a homomorphism
+`φ : K →* G` that is differentiable at the identity, `k • x = φ k • x`. Then the fundamental vector
+field of `ξ ∈ Lie(K)` is that of its image `dφ ξ ∈ Lie(G)`. For instance, the fundamental vector
+fields of the restriction of an action to a Lie subgroup are those of the ambient action. -/
+theorem _root_.MonoidHom.fundamentalVectorField_groupLieAlgebraMap
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [MulAction K M] [ContMDiffSMul I I' 1 G M] (φ : K →* G) (hφ : MDifferentiableAt J I φ 1)
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (ξ : GroupLieAlgebra J K) :
+    fundamentalVectorField I' (φ.groupLieAlgebraMap J I ξ) =
+      (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x) := by
+  funext x
+  have horbit : (fun k : K ↦ k • x) = (fun g : G ↦ g • x) ∘ φ := funext fun k ↦ hsmul k x
+  have hcomp := mfderiv_comp_apply_of_eq (1 : K) ((ContMDiffSMul.contMDiff_smul_const (I := I)
+    (I' := I') (n := 1) x).mdifferentiableAt one_ne_zero) hφ (map_one φ) ξ
+  rw [fundamentalVectorField_apply, fundamentalVectorField_apply, φ.groupLieAlgebraMap_apply,
+    horbit]
+  exact hcomp.symm
+
 end Field
 
 section Bracket
@@ -350,6 +376,44 @@ theorem isMIntegralCurve_mulInvariantExp_smul_smul [CompleteSpace E]
 
 end Real
 
+section OneParameter
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G] [BoundarylessManifold I G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M]
+
+/-- **The one-parameter subgroups fixing a point.** For a `C²` action on a Hausdorff manifold
+without boundary, the one-parameter subgroup `t ↦ exp (t ξ)` fixes `x` exactly when the fundamental
+vector field `ξ_M` vanishes at `x`. The curve `t ↦ exp (t ξ) • x` is an integral curve of `ξ_M`
+through `x`; it is constant exactly when `ξ_M(x) = 0`, by uniqueness of integral curves. -/
+theorem mulInvariantExp_smul_smul_eq_iff [IsManifold I' 1 M] [T2Space M]
+    [BoundarylessManifold I' M] [ContMDiffSMul I I' 2 G M] {ξ : GroupLieAlgebra I G} {x : M} :
+    (∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) • x = x) ↔ fundamentalVectorField I' ξ x = 0 := by
+  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) one_le_two
+  have hcurve := isMIntegralCurve_mulInvariantExp_smul_smul (I' := I') ξ x
+  constructor
+  · -- If the integral curve is constant, its velocity `ξ_M(x)` at time `0` vanishes.
+    intro h
+    have hconst : (fun t : ℝ ↦ mulInvariantExp (I := I) (t • ξ) • x) = fun _ ↦ x := funext h
+    have hderiv := DFunLike.congr_fun (hcurve 0).mfderiv 1
+    rw [hconst, mfderiv_const] at hderiv
+    -- Both sides are evaluated at `1`: `smulRight 1 v` sends `1` to `1 • v` by definition, and the
+    -- zero map sends it to `0`. The rewriting lemmas do not fire through the tangent-space types.
+    have h1 : (1 : ℝ) • fundamentalVectorField I' ξ x = 0 := hderiv.symm
+    rwa [one_smul] at h1
+  · -- If `ξ_M(x) = 0`, the constant curve at `x` is an integral curve of `ξ_M` through `x` too.
+    intro h
+    have heq := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0)
+      (contMDiff_fundamentalVectorField (m := 1) (n := 2) (by norm_num) ξ) hcurve
+      (isMIntegralCurve_const h) (by simp)
+    exact fun t ↦ congrFun heq t
+
+end OneParameter
+
 section InfinitesimalAction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -395,6 +459,33 @@ theorem InfinitesimalAction.fundamental_prod
   ext ξ
   simp only [InfinitesimalAction.fundamental_apply, InfinitesimalAction.prod_apply,
     fundamentalVectorField_prod]
+
+/-- The tangent adjoint maps only need a `C¹` Lie group. -/
+local instance lieGroupOne : LieGroup I 1 G :=
+  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
+    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
+
+/-- **Isotropy algebras along an orbit are conjugate.** `Ad_g ξ` lies in the isotropy algebra of
+`g • x` exactly when `ξ` lies in that of `x`, matching the conjugation `G_{g • x} = g G_x g⁻¹` of
+the stabilizers. This follows from the equivariance `g_* ξ_M = (Ad_g ξ)_M` of fundamental vector
+fields (`TauCeti.mfderiv_smul_fundamentalVectorField`). -/
+theorem adjointContinuousLinearMap_mem_isotropy_smul_iff {g : G} {ξ : GroupLieAlgebra I G}
+    {x : M} :
+    Lie.adjointContinuousLinearMap (I := I) g ξ ∈
+        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) ↔
+      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x := by
+  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
+  -- The forward implication for every `g`, pushing `ξ_M(x) = 0` forward along `y ↦ g • y`.
+  have key (g : G) (ξ : GroupLieAlgebra I G) (x : M)
+      (h : ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x) :
+      Lie.adjointContinuousLinearMap (I := I) g ξ ∈
+        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) := by
+    rw [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply] at h ⊢
+    rw [← mfderiv_smul_fundamentalVectorField, h, map_zero]
+  refine ⟨fun h ↦ ?_, key g ξ x⟩
+  have := key g⁻¹ _ _ h
+  rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul,
+    inv_mul_cancel, Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
 
 end InfinitesimalAction
 
