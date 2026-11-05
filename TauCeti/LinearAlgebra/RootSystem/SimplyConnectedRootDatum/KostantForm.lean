@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.Algebra.Module.IntegralOrbit
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
+import TauCeti.LinearAlgebra.RootSystem.RankTwo
 
 /-!
 # A simple-generator Kostant form of the pinned split Lie algebra of a Dynkin type
@@ -191,6 +192,14 @@ def rootGeneratorWeight : Fin t.rank ⊕ Fin t.rank → Fin t.rank → ℤ :=
 @[simp] theorem rootGeneratorWeight_inr (i j : Fin t.rank) :
     t.rootGeneratorWeight ht (.inr i) j = -t.cartanMatrix i j := by
   rw [rootGeneratorWeight, LieAlgebra.Basis.rootGeneratorWeight_inr, lieBasis_A_eq]
+
+/-- The numbered raising-generator weights of `G₂` are the rows of its Bourbaki Cartan
+matrix, with the short simple root first. -/
+theorem G2.rootGeneratorWeight_inl_eq (i : Fin 2) :
+    G2.rootGeneratorWeight valid_G2 (.inl i) =
+      fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
+  funext j
+  simpa only [rank_G2, cartanMatrix_G2_eq] using G2.rootGeneratorWeight_inl valid_G2 i j
 
 /-! The two identifications below read those Cartan-matrix rows as the simple roots of
 `TauCeti.DynkinType.simplyConnectedRootDatum`. They are deliberately not `simp` lemmas: both sides
