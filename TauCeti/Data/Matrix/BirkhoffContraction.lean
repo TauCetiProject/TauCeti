@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Fintype.Lattice
+import Mathlib.Tactic.FinCases
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
 
@@ -257,6 +258,32 @@ theorem projectiveDiameter_le {K : Matrix ι κ ℝ} {C : ℝ}
     (h : ∀ i i' j j', log (K i j * K i' j' / (K i j' * K i' j)) ≤ C) (hC : 0 ≤ C) :
     K.projectiveDiameter ≤ C :=
   Real.iSup_le (fun j ↦ Real.iSup_le (fun j' ↦ hilbertProjectiveDist_le (h · · j j') hC) hC) hC
+
+/-- The projective diameter of a positive two-by-two kernel is the absolute logarithm of its
+cross ratio. -/
+theorem projectiveDiameter_fin_two {K : Matrix (Fin 2) (Fin 2) ℝ}
+    (hK : ∀ i j, 0 < K i j) :
+    K.projectiveDiameter = |log (K 0 0 * K 1 1 / (K 0 1 * K 1 0))| := by
+  have hlog (i i' j j' : Fin 2) :
+      log (K i j * K i' j' / (K i j' * K i' j)) =
+        log (K i j) + log (K i' j') - (log (K i j') + log (K i' j)) := by
+    rw [log_div (mul_pos (hK i j) (hK i' j')).ne'
+      (mul_pos (hK i j') (hK i' j)).ne', log_mul (hK i j).ne' (hK i' j').ne',
+      log_mul (hK i j').ne' (hK i' j).ne']
+  rw [hlog]
+  apply le_antisymm
+  · apply projectiveDiameter_le _ (abs_nonneg _)
+    intro i i' j j'
+    rw [hlog]
+    fin_cases i <;> fin_cases i' <;> fin_cases j <;> fin_cases j' <;>
+      dsimp <;> linarith [le_abs_self (log (K 0 0) + log (K 1 1) -
+        (log (K 0 1) + log (K 1 0))), neg_le_abs (log (K 0 0) + log (K 1 1) -
+        (log (K 0 1) + log (K 1 0)))]
+  · rw [abs_le]
+    have h₁ := log_le_projectiveDiameter K 0 1 1 0
+    have h₂ := log_le_projectiveDiameter K 0 1 0 1
+    rw [hlog] at h₁ h₂
+    constructor <;> linarith
 
 omit [Finite ι] [Finite κ] in
 /-- The projective diameter of a matrix whose entries lie between `m > 0` and `M` is at most
