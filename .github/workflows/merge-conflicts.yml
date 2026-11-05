@@ -36,12 +36,13 @@ name: Merge conflicts
 # labelled. scripts/pr_status/conflicts.py skips an unknown PR and keeps going.
 
 on:
+  push:
+    branches: [main]
   schedule:
-    # Every 15 minutes, on the quarter -- the offsets furthest from pr-labels
-    # (:05), housekeeping (:20), merge-sweep (:40) and stuck-alerts (:50). The gap
-    # to housekeeping matters: labelling bumps updatedAt, which its stale timer
-    # reads as freshness, so the two overlapping is a race worth not inviting.
-    - cron: "0,15,30,45 * * * *"
+    # Every 15 minutes, away from the start-of-hour scheduling peak. The :12
+    # run leaves eight minutes before housekeeping (:20): labelling bumps the
+    # updatedAt timestamp that housekeeping's stale timer reads.
+    - cron: "12,27,42,57 * * * *"
   workflow_dispatch:
     inputs:
       dry-run:

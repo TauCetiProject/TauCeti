@@ -33,7 +33,6 @@ theorem isIntegral_quotient_pow_of_isIntegral_quotient {I : Ideal A} [I.IsTwoSid
     IsIntegral R (Ideal.Quotient.mk (I ^ n) x) := by
   obtain ⟨p, hp, hpI⟩ := (isIntegral_quotient_iff x I).1 hx
   refine (isIntegral_quotient_iff x (I ^ n)).2 ⟨p ^ n, hp.pow n, ?_⟩
-  rw [← Polynomial.aeval_def] at hpI ⊢
   rw [map_pow]
   exact Ideal.pow_mem_pow hpI n
 
@@ -47,7 +46,6 @@ theorem isIntegral_quotient_mul_of_isIntegral_quotient {I J : Ideal A} [I.IsTwoS
   obtain ⟨p, hp, hpI⟩ := (isIntegral_quotient_iff x I).1 hI
   obtain ⟨q, hq, hqJ⟩ := (isIntegral_quotient_iff x J).1 hJ
   refine (isIntegral_quotient_iff x (I * J)).2 ⟨p * q, hp.mul hq, ?_⟩
-  rw [← Polynomial.aeval_def] at hpI hqJ ⊢
   rw [map_mul]
   exact Ideal.mul_mem_mul hpI hqJ
 

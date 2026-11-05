@@ -33,7 +33,7 @@ variable {G X : Type*} [SMul G X] [IsLeftCancelSMul G X] [DecidableEq X]
 /-- A translate `g • F` of a finite set has as many points outside `F` as `F` has outside `g • F`,
 so its symmetric difference with `F` has twice as many points as `g • F \ F`. -/
 theorem card_smul_finset_symmDiff (g : G) (F : Finset X) : #((g • F) ∆ F) = 2 * #(g • F \ F) := by
-  rw [symmDiff_def, sup_eq_union, card_union_of_disjoint disjoint_sdiff_sdiff,
+  rw [symmDiff_def, card_union_of_disjoint disjoint_sdiff_sdiff,
     ← card_sdiff_comm (card_smul_finset g F), Nat.two_mul]
 
 end Finset

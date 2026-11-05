@@ -407,7 +407,7 @@ theorem artinMap_congr (e : K ≃+* K') (he : Continuous e)
   let _ : Algebra K' K := e.symm.toRingHom.toAlgebra
   let eA : K' ≃ₐ[K'] K := AlgEquiv.ofRingEquiv (f := e.symm) fun _ ↦ rfl
   have : FiniteDimensional K' K := eA.toLinearEquiv.finiteDimensional
-  have : ValuativeExtension K' K := ⟨fun a b ↦ by
+  have : ValuativeExtension K' K := ⟨fun {a b} ↦ by
     rw [RingHom.algebraMap_toAlgebra, ← e.toRingHom.map_vle_map_iff_of_continuous he]
     simp⟩
   let iota : K →ₐ[K'] SeparableClosure K' := (Algebra.ofId K' (SeparableClosure K')).comp eA.symm

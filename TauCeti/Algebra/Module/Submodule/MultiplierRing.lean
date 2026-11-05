@@ -120,7 +120,7 @@ theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (
     induction n with
     | zero => simp
     | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, pow_succ', mul_assoc, ← ih]
+      rw [pow_succ', mul_apply_eq_comp, pow_succ', mul_assoc, ← ih]
       exact LinearMap.coe_restrict_apply _ _
   obtain ⟨p, hp, hpf⟩ := LinearMap.exists_monic_and_aeval_eq_zero R f
   refine ⟨p, hp, ?_⟩

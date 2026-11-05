@@ -52,7 +52,7 @@ theorem atomMixture_apply {α : Type*} [MeasurableSpace α]
     atomMixture μ c w s =
       ENNReal.ofReal (w : ℝ) * s.indicator 1 c +
         ENNReal.ofReal (1 - (w : ℝ)) * μ s := by
-  simp [atomMixture, Measure.add_apply, Measure.smul_apply, Measure.dirac_apply' _ hs]
+  simp [atomMixture, _root_.add_apply, _root_.smul_apply, Measure.dirac_apply' _ hs]
 
 /-- The mass of an atom mixture at a singleton. -/
 -- Evaluate a singleton before expanding the mixture measure.

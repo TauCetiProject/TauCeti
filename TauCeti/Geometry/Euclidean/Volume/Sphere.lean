@@ -119,7 +119,7 @@ theorem euclideanHausdorffMeasure_restrict_sphere_eq_smul_map (d : ℕ) (c : E) 
     simp [ENNReal.smul_def, ← enorm_eq_nnnorm, Real.enorm_eq_ofReal hr.le]
   rw [← hφ]
   ext s hs
-  rw [restrict_apply hs, Measure.smul_apply, φ.map_apply,
+  rw [restrict_apply hs, _root_.smul_apply, φ.map_apply,
     restrict_apply' isClosed_sphere.measurableSet, ← hpre, ← preimage_inter, smul_eq_mul, ← himage,
     φ.image_preimage]
 
@@ -368,7 +368,7 @@ theorem euclideanHausdorffMeasure_sphere (c : E) {r : ℝ} (hr : 0 < r) :
     μHE[finrank ℝ E - 1] (sphere c r) =
       finrank ℝ E * volume (ball (0 : E) 1) * ENNReal.ofReal r ^ (finrank ℝ E - 1) := by
   rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
-    Measure.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
+    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
     restrict_apply_univ, euclideanHausdorffMeasure_sphere_zero_one, smul_eq_mul, mul_comm]
 
 /-- The area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`: the normalized `n`-dimensional Hausdorff

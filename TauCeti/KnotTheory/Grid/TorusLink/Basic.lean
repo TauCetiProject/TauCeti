@@ -47,6 +47,8 @@ that lane runs, the classical names are labels for these diagrams, not theorems 
   the `X` marking in column `c` sits in row `c + (q + 1)` for `c ≤ p` and in row `c - (p + 1)`
   for `c > p`.
 * `TauCeti.GridDiagram.torusLink_zero_right`: with `q = 0` this is the standard unknot grid.
+* `TauCeti.GridDiagram.transpose_torusLink`: the diagonal reflection of the `(p + 1, q + 1)` grid is
+  the `(q + 1, p + 1)` grid, transported to the same grid number.
 * `TauCeti.GridDiagram.componentPerm_torusLink`: the component permutation is the inverse of the
   `(q + 1)`-st power of the cyclic shift.
 * `TauCeti.GridDiagram.componentCycleType_torusLink` and
@@ -182,6 +184,22 @@ theorem relabelRows_relabelColumns_torusLink :
       Equiv.apply_symm_apply]
   · rw [relabelColumns_X_apply, relabelRows_X_apply, torusLink_X_apply, torusLink_X_apply,
       ← Equiv.Perm.mul_apply, hcomm.eq, Equiv.Perm.mul_apply, Equiv.apply_symm_apply]
+
+/-- The diagonal reflection of the standard `(p + 1, q + 1)` torus link grid is the standard
+`(q + 1, p + 1)` torus link grid, transported to the same grid number: the inverse of the shift
+by `q + 1` is the shift by `p + 1` on a grid of size `(p + 1) + (q + 1)`. -/
+theorem transpose_torusLink :
+    (torusLink p q).transpose = (torusLink q p).cast (Nat.add_comm (q + 1) (p + 1)) := by
+  refine GridDiagram.ext (GridState.ext fun c => ?_) (GridState.ext fun c => ?_)
+  · rw [transpose_O, GridState.transpose_apply, Equiv.symm_apply_eq, torusLink_O_toPerm,
+      cast_O_apply, torusLink_O_apply]
+    simp
+  · rw [transpose_X, GridState.transpose_apply, Equiv.symm_apply_eq, Fin.ext_iff,
+      torusLink_X_toPerm, cast_X_apply, torusLink_X_apply]
+    simp only [Fin.coe_finRotate_pow, Fin.val_cast]
+    -- Shifting by `p + 1` and then by `q + 1` is the identity modulo `(p + 1) + (q + 1)`.
+    rw [Nat.add_comm (q + 1) (p + 1), Nat.mod_add_mod, Nat.add_assoc c, Nat.add_mod_right,
+      Nat.mod_eq_of_lt c.isLt]
 
 /-! ### The represented link and its components -/
 

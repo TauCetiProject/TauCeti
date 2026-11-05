@@ -154,7 +154,7 @@ private theorem gaussSum_oddCyclic_prime {p : ℕ} [Fact p.Prime] (hp : Odd p) {
   have hψ : ψ.IsPrimitive := by
     refine AddChar.IsPrimitive.of_ne_one fun h ↦ one_ne_zero (α := ZMod p) ?_
     have h1 := DFunLike.congr_fun h 1
-    rwa [AddChar.one_apply, AddChar.compAddMonoidHom_apply, expCircle_eq_one_iff,
+    rwa [_root_.one_apply, AddChar.compAddMonoidHom_apply, expCircle_eq_one_iff,
       ZMod.toRatAddCircle_eq_zero] at h1
   set h : ZMod p := (((p + 1) / 2 : ℕ) : ZMod p) with hh
   have h2 : (2 : ZMod p) * h = 1 := by
@@ -319,7 +319,7 @@ theorem gaussSum_oddCyclic_eq_legendreSym_pow_mul {p : ℕ} [Fact p.Prime] (hp :
     (oddCyclic (p ^ e) hp.pow θ).gaussSum =
       legendreSym p θ ^ e * (oddCyclic (p ^ e) hp.pow 1).gaussSum := by
   -- By Nikulin's values, the Gauss-sum invariants differ by `4eη`, where `(θ/p) = (-1)^η`.
-  have hθ0 : (θ : ZMod p) ≠ 0 := ((ZMod.coe_int_isUnit_iff_isCoprime θ p).2 hθ).ne_zero
+  have hθ0 : (θ : ZMod p) ≠ 0 := ((ZMod.isUnit_intCast_iff_isCoprime θ p).2 hθ).ne_zero
   have hnd (t : ℤ) (ht : IsCoprime (p : ℤ) t) : (oddCyclic (p ^ e) hp.pow t).IsNondegenerate := by
     rw [isNondegenerate_oddCyclic_iff]
     simpa only [Nat.cast_pow] using ht.pow_left

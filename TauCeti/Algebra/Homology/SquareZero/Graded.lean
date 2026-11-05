@@ -29,6 +29,17 @@ A bilinear map `μ : M₁ → M₂ → M₀` which shifts degree by `ε` and obe
 cocycle, and a cocycle and a coboundary, in either order, to a coboundary. Hence it descends to a
 bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyProduct`).
 
+A linear map `f : M₁ → M₀` which preserves degrees and commutes with the endomorphisms on
+homogeneous elements, `D₀ (f a) = f (D₁ a)`, sends cocycles to cocycles and coboundaries to
+coboundaries, so it induces a linear map on cohomology in each degree (`LinearMap.cohomologyMap`).
+If three such maps intertwine two products up to coboundaries on cocycles, then the induced maps
+intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduct`).
+Likewise, if the two composites `μ' (μ a b) c` and `ν' a (ν b c)` of products differ by a
+coboundary on cocycles, then the induced products on cohomology are associative
+(`LinearMap.cohomologyProduct_assoc`), and if `μ a b - (-1)^(i j) μ' b a` is a coboundary on
+cocycles of degrees `i` and `j`, then they are graded commutative
+(`LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`).
+
 ## Main definitions
 
 * `LinearMap.cocycles`, `LinearMap.coboundaries`: the degree-`i` cocycles and coboundaries of a
@@ -36,6 +47,8 @@ bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyPro
 * `LinearMap.cohomology`: the degree-`i` cohomology.
 * `LinearMap.cohomologyProduct`: the product on cohomology induced by a bilinear map obeying the
   Leibniz rule.
+* `LinearMap.cohomologyMap`: the map on cohomology induced by a degree-preserving linear map
+  commuting with the endomorphisms.
 
 ## Main results
 
@@ -48,6 +61,17 @@ bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyPro
   with a coboundary are coboundaries.
 * `LinearMap.cohomologyProduct_mk`: the product on cohomology is computed on representing
   cocycles.
+* `LinearMap.cohomologyMap_mk`: the induced map on cohomology is computed on representing cocycles.
+* `LinearMap.cohomologyMap_id`, `LinearMap.cohomologyMap_comp`: functoriality of the induced maps.
+* `LinearMap.cohomologyMap_comp_cohomologyMap`, `LinearMap.cohomologyMap_cohomologyMap`: composites
+  of induced maps, in the orientation used by `simp`.
+* `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
+  intertwine the products on cohomology.
+* `LinearMap.cohomologyProduct_assoc`: products whose two composites differ by coboundaries on
+  cocycles induce associative products on cohomology.
+* `LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`: products which commute
+  up to the Koszul sign and coboundaries on cocycles induce graded-commutative products on
+  cohomology.
 -/
 
 public section
@@ -194,5 +218,210 @@ theorem cohomologyProduct_mk (a : D₁.cocycles G₁ i) (b : D₂.cocycles G₂ 
   (rfl)
 
 end Product
+
+section Map
+
+variable {R M₁ M₀ : Type*} [Ring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₀]
+  [Module R M₀] {D₁ : M₁ →ₗ[R] M₁} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₀ : ℤ → Submodule R M₀} (f : M₁ →ₗ[R] M₀)
+  (hdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → f a ∈ G₀ i)
+  (hD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₀ (f a) = f (D₁ a)) {i : ℤ}
+
+include hdeg hD
+
+/-- A degree-preserving map commuting with the endomorphisms sends cocycles to cocycles. -/
+theorem apply_mem_cocycles_of_mem_cocycles {a : M₁} (ha : a ∈ D₁.cocycles G₁ i) :
+    f a ∈ D₀.cocycles G₀ i := by
+  rw [mem_cocycles_iff] at ha ⊢
+  exact ⟨by rw [hD ha.2, ha.1, map_zero], hdeg ha.2⟩
+
+/-- A degree-preserving map commuting with the endomorphisms sends coboundaries to
+coboundaries. -/
+theorem apply_mem_coboundaries_of_mem_coboundaries {a : M₁} (ha : a ∈ D₁.coboundaries G₁ i) :
+    f a ∈ D₀.coboundaries G₀ i := by
+  obtain ⟨x, hx, rfl⟩ := mem_coboundaries_iff.1 ha
+  exact mem_coboundaries_iff.2 ⟨f x, hdeg hx, hD hx⟩
+
+variable (i) in
+/-- **The map on cohomology.** A linear map which preserves degrees and commutes with the
+endomorphisms on homogeneous elements induces a linear map on degree-`i` cohomology. -/
+def cohomologyMap : D₁.cohomology G₁ i →ₗ[R] D₀.cohomology G₀ i :=
+  Submodule.mapQ _ _ (f.restrict fun _ ha => apply_mem_cocycles_of_mem_cocycles f hdeg hD ha)
+    fun _ ha => apply_mem_coboundaries_of_mem_coboundaries (i := i) f hdeg hD ha
+
+/-- The induced map on cohomology sends the class of a cocycle to the class of its image. -/
+@[simp]
+theorem cohomologyMap_mk (a : D₁.cocycles G₁ i) :
+    cohomologyMap f hdeg hD i (Submodule.Quotient.mk a) =
+      Submodule.Quotient.mk ⟨f a, apply_mem_cocycles_of_mem_cocycles f hdeg hD a.2⟩ :=
+  (rfl)
+
+omit hdeg hD in
+/-- The identity induces the identity on cohomology. -/
+@[simp]
+theorem cohomologyMap_id :
+    cohomologyMap (LinearMap.id : M₁ →ₗ[R] M₁) (G₀ := G₁) (D₀ := D₁) (fun ha => ha)
+      (fun _ => rfl) i = LinearMap.id := by
+  ext a
+  rfl
+
+variable {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {D₂ : M₂ →ₗ[R] M₂}
+  {G₂ : ℤ → Submodule R M₂} (g : M₀ →ₗ[R] M₂)
+  (hgdeg : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → g a ∈ G₂ i)
+  (hgD : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → D₂ (g a) = g (D₀ a))
+
+/-- The map induced on cohomology by a composite is the composite of the induced maps. -/
+theorem cohomologyMap_comp {hgfdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → (g ∘ₗ f) a ∈ G₂ i}
+    {hgfD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₂ ((g ∘ₗ f) a) = (g ∘ₗ f) (D₁ a)} :
+    cohomologyMap (G₁ := G₁) (G₀ := G₂) (g ∘ₗ f) hgfdeg hgfD i =
+      cohomologyMap g hgdeg hgD i ∘ₗ cohomologyMap f hdeg hD i := by
+  ext a
+  rfl
+
+include hgdeg hgD
+
+/-- The composite of two induced maps on cohomology is the map induced by the composite. This is
+`cohomologyMap_comp` read right to left, the orientation usable by `simp`: its left-hand side
+mentions the intermediate grading `G₀` and endomorphism `D₀`, which the left-hand side of
+`cohomologyMap_comp` does not. -/
+@[simp]
+theorem cohomologyMap_comp_cohomologyMap :
+    cohomologyMap g hgdeg hgD i ∘ₗ cohomologyMap f hdeg hD i =
+      cohomologyMap (G₁ := G₁) (G₀ := G₂) (g ∘ₗ f) (fun ha => hgdeg (hdeg ha))
+        (fun ha => (hgD (hdeg ha)).trans (congrArg g (hD ha))) i :=
+  (cohomologyMap_comp f hdeg hD g hgdeg hgD).symm
+
+/-- Applying two induced maps on cohomology in turn is applying the map induced by the
+composite. -/
+@[simp]
+theorem cohomologyMap_cohomologyMap (c : D₁.cohomology G₁ i) :
+    cohomologyMap g hgdeg hgD i (cohomologyMap f hdeg hD i c) =
+      cohomologyMap (G₁ := G₁) (G₀ := G₂) (g ∘ₗ f) (fun ha => hgdeg (hdeg ha))
+        (fun ha => (hgD (hdeg ha)).trans (congrArg g (hD ha))) i c :=
+  congr($(cohomologyMap_comp_cohomologyMap f hdeg hD g hgdeg hgD) c)
+
+end Map
+
+section Naturality
+
+variable {R M₁ M₂ M₀ N₁ N₂ N₀ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₁] [Module R N₁]
+  [AddCommGroup N₂] [Module R N₂] [AddCommGroup N₀] [Module R N₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₀ : M₀ →ₗ[R] M₀}
+  {E₁ : N₁ →ₗ[R] N₁} {E₂ : N₂ →ₗ[R] N₂} {E₀ : N₀ →ₗ[R] N₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₀ : ℤ → Submodule R M₀}
+  {H₁ : ℤ → Submodule R N₁} {H₂ : ℤ → Submodule R N₂} {H₀ : ℤ → Submodule R N₀}
+  {μ : M₁ →ₗ[R] M₂ →ₗ[R] M₀} {ν : N₁ →ₗ[R] N₂ →ₗ[R] N₀} {ε : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₀ (i + j + ε)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hνdeg : ∀ {i j : ℤ} {a : N₁} {b : N₂}, a ∈ H₁ i → b ∈ H₂ j → ν a b ∈ H₀ (i + j + ε)}
+  {hνL : ∀ {i : ℤ} {a : N₁}, a ∈ H₁ i → ∀ b,
+    E₀ (ν a b) = ν (E₁ a) b + negOnePowCast R i • ν a (E₂ b)}
+  {f₁ : M₁ →ₗ[R] N₁} {f₂ : M₂ →ₗ[R] N₂} {f₀ : M₀ →ₗ[R] N₀}
+  {hf₁ : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → f₁ a ∈ H₁ i}
+  {hf₁D : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → E₁ (f₁ a) = f₁ (D₁ a)}
+  {hf₂ : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → f₂ a ∈ H₂ i}
+  {hf₂D : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → E₂ (f₂ a) = f₂ (D₂ a)}
+  {hf₀ : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → f₀ a ∈ H₀ i}
+  {hf₀D : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → E₀ (f₀ a) = f₀ (D₀ a)}
+
+/-- **Naturality of the product on cohomology.** Let `μ` and `ν` be products inducing products on
+cohomology, and let `f₁`, `f₂`, `f₀` be degree-preserving maps commuting with the endomorphisms.
+If `f₀ (μ a b) - ν (f₁ a) (f₂ b)` is a coboundary for all cocycles `a` and `b`, then the induced
+maps on cohomology intertwine the two products. -/
+theorem cohomologyMap_cohomologyProduct {i j k : ℤ} (hk : i + j + ε = k)
+    (hnat : ∀ {a : M₁} {b : M₂}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      f₀ (μ a b) - ν (f₁ a) (f₂ b) ∈ E₀.coboundaries H₀ k)
+    (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j) :
+    cohomologyMap f₀ hf₀ hf₀D k (cohomologyProduct μ hμdeg hμL hk x y) =
+      cohomologyProduct ν hνdeg hνL hk (cohomologyMap f₁ hf₁ hf₁D i x)
+        (cohomologyMap f₂ hf₂ hf₂D j y) := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  rw [cohomologyProduct_mk, cohomologyMap_mk, cohomologyMap_mk, cohomologyMap_mk,
+    cohomologyProduct_mk, cohomology_mk_eq_mk_iff]
+  exact hnat a.2 b.2
+
+end Naturality
+
+section Associativity
+
+variable {R M₁ M₂ M₃ M₁₂ M₂₃ M₀ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
+  [AddCommGroup M₁₂] [Module R M₁₂] [AddCommGroup M₂₃] [Module R M₂₃]
+  [AddCommGroup M₀] [Module R M₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₃ : M₃ →ₗ[R] M₃} {D₁₂ : M₁₂ →ₗ[R] M₁₂}
+  {D₂₃ : M₂₃ →ₗ[R] M₂₃} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₃ : ℤ → Submodule R M₃}
+  {G₁₂ : ℤ → Submodule R M₁₂} {G₂₃ : ℤ → Submodule R M₂₃} {G₀ : ℤ → Submodule R M₀}
+  {μ : M₁ →ₗ[R] M₂ →ₗ[R] M₁₂} {μ' : M₁₂ →ₗ[R] M₃ →ₗ[R] M₀}
+  {ν : M₂ →ₗ[R] M₃ →ₗ[R] M₂₃} {ν' : M₁ →ₗ[R] M₂₃ →ₗ[R] M₀} {ε ε' η η' : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₁₂ (i + j + ε)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₁₂ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hμ'deg : ∀ {i j : ℤ} {a : M₁₂} {b : M₃}, a ∈ G₁₂ i → b ∈ G₃ j → μ' a b ∈ G₀ (i + j + ε')}
+  {hμ'L : ∀ {i : ℤ} {a : M₁₂}, a ∈ G₁₂ i → ∀ b,
+    D₀ (μ' a b) = μ' (D₁₂ a) b + negOnePowCast R i • μ' a (D₃ b)}
+  {hνdeg : ∀ {i j : ℤ} {a : M₂} {b : M₃}, a ∈ G₂ i → b ∈ G₃ j → ν a b ∈ G₂₃ (i + j + η)}
+  {hνL : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → ∀ b,
+    D₂₃ (ν a b) = ν (D₂ a) b + negOnePowCast R i • ν a (D₃ b)}
+  {hν'deg : ∀ {i j : ℤ} {a : M₁} {b : M₂₃}, a ∈ G₁ i → b ∈ G₂₃ j → ν' a b ∈ G₀ (i + j + η')}
+  {hν'L : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (ν' a b) = ν' (D₁ a) b + negOnePowCast R i • ν' a (D₂₃ b)}
+
+/-- **Associativity on cohomology.** Let `μ`, `μ'` and `ν`, `ν'` be products inducing products on
+cohomology, composed in the two orders `μ' (μ a b) c` and `ν' a (ν b c)`. If the two composites
+differ by a coboundary on cocycles of degrees `i`, `j`, `k`, then the induced products on
+cohomology are associative: `([a] [b]) [c] = [a] ([b] [c])`. -/
+theorem cohomologyProduct_assoc {i j k l l' m : ℤ} (hl : i + j + ε = l) (hm : l + k + ε' = m)
+    (hl' : j + k + η = l') (hm' : i + l' + η' = m)
+    (hassoc : ∀ {a : M₁} {b : M₂} {c : M₃}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      c ∈ D₃.cocycles G₃ k → μ' (μ a b) c - ν' a (ν b c) ∈ D₀.coboundaries G₀ m)
+    (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j) (z : D₃.cohomology G₃ k) :
+    cohomologyProduct μ' hμ'deg hμ'L hm (cohomologyProduct μ hμdeg hμL hl x y) z =
+      cohomologyProduct ν' hν'deg hν'L hm' x (cohomologyProduct ν hνdeg hνL hl' y z) := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  induction z using Submodule.Quotient.induction_on with | H c => ?_
+  simp only [cohomologyProduct_mk]
+  rw [cohomology_mk_eq_mk_iff]
+  exact hassoc a.2 b.2 c.2
+
+end Associativity
+
+section Commutativity
+
+variable {R M₁ M₂ M₀ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₀] [Module R M₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₀ : ℤ → Submodule R M₀}
+  {μ : M₁ →ₗ[R] M₂ →ₗ[R] M₀} {μ' : M₂ →ₗ[R] M₁ →ₗ[R] M₀} {ε ε' : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₀ (i + j + ε)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hμ'deg : ∀ {i j : ℤ} {a : M₂} {b : M₁}, a ∈ G₂ i → b ∈ G₁ j → μ' a b ∈ G₀ (i + j + ε')}
+  {hμ'L : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → ∀ b,
+    D₀ (μ' a b) = μ' (D₂ a) b + negOnePowCast R i • μ' a (D₁ b)}
+
+/-- **Graded commutativity on cohomology.** Let `μ` and `μ'` be products inducing products on
+cohomology, with their inputs in the two orders. If `μ a b - (-1)^(i j) μ' b a` is a coboundary
+for all cocycles `a` and `b` of degrees `i` and `j`, then the induced products on cohomology
+satisfy `[a] [b] = (-1)^(i j) [b] [a]`. -/
+theorem cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct {i j k : ℤ}
+    (hk : i + j + ε = k) (hk' : j + i + ε' = k)
+    (hcomm : ∀ {a : M₁} {b : M₂}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      μ a b - negOnePowCast R (i * j) • μ' b a ∈ D₀.coboundaries G₀ k)
+    (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j) :
+    cohomologyProduct μ hμdeg hμL hk x y =
+      negOnePowCast R (i * j) • cohomologyProduct μ' hμ'deg hμ'L hk' y x := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  rw [cohomologyProduct_mk, cohomologyProduct_mk, ← Submodule.Quotient.mk_smul,
+    cohomology_mk_eq_mk_iff]
+  exact hcomm a.2 b.2
+
+end Commutativity
 
 end LinearMap

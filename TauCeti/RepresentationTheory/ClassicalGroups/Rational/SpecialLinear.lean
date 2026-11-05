@@ -231,7 +231,7 @@ private theorem toMatrix_apply_eq_sum_homogeneousComponent [NeZero n]
       smul_eq_mul, mul_comm]
   have hact : ρ (s * t) = (ζ ^ k) ^ a • ρ s := by
     ext v
-    rw [map_mul, Module.End.mul_apply, ha _ _ ht, map_smul, LinearMap.smul_apply,
+    rw [map_mul, _root_.mul_apply_eq_comp, ha _ _ ht, map_smul, LinearMap.smul_apply,
       Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
   rw [hent, ← hQ, hact, map_smul, Matrix.smul_apply, smul_eq_mul, hQ]
 
@@ -273,7 +273,8 @@ private theorem toMatrix_extendToGL_apply [NeZero n]
     exact (Finset.mem_filter.mp hd).2
   rw [map_mul, SpecialLinearGroup.coeToGL_det, one_mul,
     _root_.Matrix.GeneralLinearGroup.det_scalar, Fintype.card_fin, ← zpow_natCast z n,
-    ← zpow_mul, Int.mul_ediv_cancel' hdvd, zpow_sub, Units.val_mul, Units.val_inv_eq_inv_val,
+    ← _root_.zpow_mul, Int.mul_ediv_cancel' hdvd, _root_.zpow_sub, Units.val_mul,
+      Units.val_inv_eq_inv_val,
     zpow_natCast, Units.val_pow_eq_pow_val, inv_pow]
 
 /-- **The extension of a rational representation of `SL n ℂ` to `GL n ℂ` is rational.** If the

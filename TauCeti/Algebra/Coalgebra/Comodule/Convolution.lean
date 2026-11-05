@@ -58,7 +58,7 @@ noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.
     rfl
   map_mul' f g := by
     ext m
-    rw [Module.End.mul_apply, coactComponent_coactComponent]
+    rw [_root_.mul_apply_eq_comp, coactComponent_coactComponent]
     have hp : f.ofConv ∘ₗ LinearMap.tensorComponent g.ofConv =
         LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
       ext c d

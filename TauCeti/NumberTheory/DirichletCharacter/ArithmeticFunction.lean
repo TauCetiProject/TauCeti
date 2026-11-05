@@ -58,7 +58,7 @@ theorem toArithmeticFunction_pmul_mul (χ : DirichletCharacter R M)
   ext n
   by_cases hn : n = 0
   · simp [hn]
-  rw [pmul_apply, mul_apply, Finset.mul_sum, mul_apply]
+  rw [pmul_apply, ArithmeticFunction.mul_apply, Finset.mul_sum, ArithmeticFunction.mul_apply]
   apply Finset.sum_congr rfl
   intro d hd
   have hdn := (Nat.mem_divisorsAntidiagonal.mp hd).1

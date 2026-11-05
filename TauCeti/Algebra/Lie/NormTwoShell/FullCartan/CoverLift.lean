@@ -517,7 +517,8 @@ theorem reindex_iterate_eq_id (hB : B.IsSymm) {n : ℕ} (hσn : σ ^ n = 1) (hγ
   have key : ∀ (τ : Equiv.Perm I) (hτ : B.reindex τ τ = B), τ = 1 → reindex D D τ hτ 1 = 1 := by
     rintro τ hτ rfl
     exact reindex_refl D
-  rw [← LinearEquiv.coe_pow, reindex_pow D σ hσ γ hB, hγn, key _ _ hσn, LinearEquiv.coe_one]
+  rw [← FunLike.coe_pow_eq_iterate, reindex_pow D σ hσ γ hB, hγn, key _ _ hσn,
+    FunLike.coe_one_eq_id]
 
 end Pow
 

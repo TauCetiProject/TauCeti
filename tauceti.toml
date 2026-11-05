@@ -59,7 +59,7 @@ url = "https://bors.taucetiproject.org"
 repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
 deployment = "cloudflare"
 
-# Shared machine ceilings apply across both job classes. The Namespace ceiling
+# Registered runners advertise each machine's slots and CI classes. The Namespace ceiling
 # counts queued/running builds; simultaneous picker decisions can exceed it briefly.
 [services.fleet]
 mode = "hosted"
@@ -68,25 +68,18 @@ namespace_build_cap = 20
 pr_order = ["github", "chris", "tauchonki", "yael", "brett", "namespace"]
 staging_order = ["tauchonki", "chris", "yael", "brett", "namespace", "github"]
 
+# Slot counts and CI classes come from the runners each host registers.
 [services.fleet.machines.chris]
 enrollment_name = "chris-server"
-max_jobs = 3
-kinds = ["pr", "staging"]
 
 [services.fleet.machines.tauchonki]
 machine_id = "11e2756fc11042d798f759410573a935"
-max_jobs = 12
-kinds = ["pr", "staging"]
 
 [services.fleet.machines.yael]
 enrollment_name = "yael-server"
-max_jobs = 12
-kinds = ["pr", "staging"]
 
 [services.fleet.machines.brett]
 enrollment_name = "brett-server"
-max_jobs = 24
-kinds = ["pr", "staging"]
 
 [services.cache]
 mode = "hosted"
@@ -107,7 +100,7 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="a8b16c3dd0c0730a1963052cb520808e161222ef"
+ref="f55cc9c29f9e9d124c9ce571efd8df3c15aef3de"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
 ref="32ce2069308080df4e08df14c2160012a51c8152"

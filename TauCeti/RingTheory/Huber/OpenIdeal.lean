@@ -367,8 +367,8 @@ theorem exists_forall_isOpen_span_of_sub_mem_idealImage (P : PairOfDefinition A)
     rw [map_sub, Subring.subtype_apply, Subring.subtype_apply, hcomb]
     exact sum_mem fun t ht ↦ Ideal.mul_mem_right _ _ (Ideal.subset_span (hu t ht))
   -- Nakayama's lemma: `I` lies in the Jacobson radical of the `I`-adically complete ring `A₀`.
-  have hpow : P.idealOfDefinition ^ n ≤ a := Submodule.le_of_le_smul_of_le_jacobson_bot
-    P.fg_idealOfDefinition.pow (IsAdicComplete.le_jacobson_bot _) hle
+  have hpow : P.idealOfDefinition ^ n ≤ a := Submodule.le_of_le_smul_of_le_jacobson
+    P.fg_idealOfDefinition.pow (IsAdicComplete.le_jacobson _) hle
   rw [P.extendedIdealOfDefinition_pow, Ideal.span_le]
   rintro x hx
   obtain ⟨y, hy, rfl⟩ := (P.mem_idealImage n).mp hx

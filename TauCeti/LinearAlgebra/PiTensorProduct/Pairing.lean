@@ -14,7 +14,10 @@ Mathlib's `PiTensorProduct.map₂` applies a family of bilinear pairings factorw
 It preserves total degree when the factor pairings add degrees, and satisfies the unsigned
 Leibniz rule for slot-sum differentials when the factor pairings do. These statements let
 pairings of complexes in characteristic two pass to their tensor powers, including the
-resolutions used for multiplicative cohomological norms.
+resolutions used for multiplicative cohomological norms. Pairing on the left with a tensor power
+of elements whose factor pairings commute with a contraction commutes with its slot homotopy
+(`TauCeti.PiTensorProduct.slotHomotopy_map₂_map`), which is how the classes of such products are
+compared with cup products.
 -/
 
 public section
@@ -98,5 +101,36 @@ theorem map₂_mem_totalDegreePiece {A : Type z} [AddCommMonoid A]
   rintro q y hy rfl
   simp only [Submodule.mem_comap, map₂_tprod_tprod, ← Finset.sum_add_distrib]
   exact tprod_mem_totalDegreePiece fun i ↦ hf i _ _ _ _ (hx i) (hy i)
+
+omit [Fintype ι] in
+/-- Pairing with a pure tensor applies the factor pairings with its entries. -/
+theorem map₂_tprod (f : ∀ i, M i →ₗ[R] N i →ₗ[R] P i) (a : ∀ i, M i) :
+    map₂ f (tprod R a) = map fun i ↦ f i (a i) := by
+  ext b
+  simp only [LinearMap.compMultilinearMap_apply, map₂_tprod_tprod, map_tprod]
+
+section SlotHomotopy
+
+variable [LinearOrder ι] {M₀ : Type w} {N₀ : Type x} {P₀ : Type y} {M' : Type z}
+  [AddCommMonoid M₀] [Module R M₀] [AddCommMonoid N₀] [Module R N₀]
+  [AddCommMonoid P₀] [Module R P₀] [AddCommMonoid M'] [Module R M']
+
+/-- Pairing on the left with a tensor power of elements in the image of `g` commutes with slot
+homotopies, provided that pairing with each such element intertwines the endomorphisms `e`, `e'`
+and the homotopies `h`, `h'`. -/
+theorem slotHomotopy_map₂_map (f : M₀ →ₗ[R] N₀ →ₗ[R] P₀) (g : M' →ₗ[R] M₀)
+    {e h : Module.End R N₀} {e' h' : Module.End R P₀}
+    (he : ∀ m n, e' (f (g m) n) = f (g m) (e n)) (hh : ∀ m n, h' (f (g m) n) = f (g m) (h n))
+    (x : ⨂[R] _ : ι, M') (w : ⨂[R] _ : ι, N₀) :
+    slotHomotopy ι (fun _ ↦ e') (fun _ ↦ h') (map₂ (fun _ ↦ f) (map (fun _ ↦ g) x) w) =
+      map₂ (fun _ ↦ f) (map (fun _ ↦ g) x) (slotHomotopy ι (fun _ ↦ e) (fun _ ↦ h) w) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r x =>
+    simp only [map_smul, LinearMap.smul_apply, map_tprod, map₂_tprod]
+    exact congrArg (r • ·) (LinearMap.congr_fun (slotHomotopy_comp_map _
+      (fun i ↦ LinearMap.ext (he (x i))) (fun i ↦ LinearMap.ext (hh (x i)))) w)
+  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy]
+
+end SlotHomotopy
 
 end TauCeti.PiTensorProduct
