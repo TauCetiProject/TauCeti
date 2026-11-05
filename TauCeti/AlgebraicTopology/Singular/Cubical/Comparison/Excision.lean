@@ -42,8 +42,6 @@ of `TauCeti.AlgebraicTopology.Singular.Excision`.
 ## Main definitions
 
 * `TopPair.cubicalHomologyδ`: the connecting morphism `Hₙ(X, A) ⟶ Hₘ(A)` of cubical homology.
-* `TopPair.cubicalBoundaryChainOfCube`, `TopPair.cubicalBoundaryCycleOfCube`: the boundary of a
-  cube sending the boundary of the cube into `A`, as a chain and as a cycle of `A`.
 
 ## Main results
 
@@ -251,90 +249,7 @@ theorem exists_boundary_eq_of_singularHomologyδ_eq (m : ℕ)
   -- and `((singularChains k).obj A).homology`.
   exact ModuleCat.comp_apply _ _ _
 
-/-! ### The boundary of a relative cube -/
-
-variable {P} in
-/-- The faces of a cube sending the boundary of the cube into the subspace take values in the
-subspace. -/
-private lemma face_mem_range_map {m : ℕ} {c : SingularCube P.fst (m + 1)}
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) (i : Fin (m + 1))
-    {t : unitInterval} (ht : t = 0 ∨ t = 1) (x : Fin m → unitInterval) :
-    SingularCube.face i t c x ∈ Set.range P.map := by
-  rw [SingularCube.face_apply]
-  exact hc ⟨i, by simpa using ht⟩
-
-variable {P} in
-/-- The **boundary of a relative cube**, read in the subspace. A singular cube `c` of `X` sending
-the boundary of the cube into `A` has its faces in `A`, and this is the signed sum
-`∑ᵢ (-1)ⁱ (cᵢ⁰ - cᵢ¹)` of these faces as a normalized cubical chain of `A`. Its image in `X` is
-the boundary of `c` (`TopPair.map_cubicalBoundaryChainOfCube`). -/
-def cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
-    NormalizedCubicalChain P.snd k m :=
-  ∑ i : Fin (m + 1), (-1 : k) ^ (i : ℕ) •
-    (NormalizedCubicalChain.ofCube P.snd k
-        (P.liftSnd (SingularCube.face i 0 c) (face_mem_range_map hc i (.inl rfl))) -
-      NormalizedCubicalChain.ofCube P.snd k
-        (P.liftSnd (SingularCube.face i 1 c) (face_mem_range_map hc i (.inr rfl))))
-
-variable {P} in
-/-- The boundary of a relative cube, read in the subspace, is carried to the boundary of the cube
-by the inclusion of the subspace. -/
-theorem map_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
-    NormalizedCubicalChain.map k P.map.hom m (cubicalBoundaryChainOfCube k c hc) =
-      NormalizedCubicalChain.boundary P.fst k m (NormalizedCubicalChain.ofCube P.fst k c) := by
-  have h (g : SingularCube P.fst m) (hg : ∀ x, g x ∈ Set.range P.map) :
-      P.map.hom.comp (P.liftSnd g hg) = g := ContinuousMap.ext (map_liftSnd g hg)
-  simp [cubicalBoundaryChainOfCube, NormalizedCubicalChain.boundary_ofCube,
-    NormalizedCubicalChain.map_ofCube, h]
-
-variable {P} in
-/-- The boundary of a relative cube, read in the subspace, is a cycle. -/
-theorem boundary_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 2))
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 2))) (Set.range P.map)) :
-    NormalizedCubicalChain.boundary P.snd k m (cubicalBoundaryChainOfCube k c hc) = 0 := by
-  -- The inclusion of the subspace is injective on normalized chains and carries the chain to the
-  -- boundary of `c`, whose boundary vanishes.
-  apply NormalizedCubicalChain.map_injective k P.map.hom P.isEmbedding_map.injective m
-  rw [← LinearMap.comp_apply, NormalizedCubicalChain.map_boundary, LinearMap.comp_apply,
-    map_cubicalBoundaryChainOfCube, map_zero]
-  rw [← LinearMap.comp_apply, NormalizedCubicalChain.boundary_boundary, LinearMap.zero_apply]
-
-variable {P} in
-/-- The boundary of a relative cube, read in the subspace, is killed by every differential of the
-normalized cubical chain complex of the subspace. -/
-theorem d_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) (j : ℕ) :
-    ((normalizedCubicalChainComplex k).obj P.snd).d m j (cubicalBoundaryChainOfCube k c hc) =
-      0 := by
-  -- Only `d (m + 1) m` can be nonzero; it is the cubical boundary.
-  rcases m with _ | m
-  · rw [HomologicalComplex.shape _ _ _ (by simp)]
-    exact LinearMap.zero_apply _
-  · by_cases hj : j = m
-    · subst hj
-      rw [normalizedCubicalChainComplex_obj_d_apply]
-      exact boundary_cubicalBoundaryChainOfCube k c hc
-    · rw [HomologicalComplex.shape _ _ _ (by simpa using hj)]
-      exact LinearMap.zero_apply _
-
-variable {P} in
-/-- The boundary of a singular cube `c` of `X` sending the boundary of the cube into `A`, as a
-normalized cubical cycle of `A`. -/
-def cubicalBoundaryCycleOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
-    ((normalizedCubicalChainComplex k).obj P.snd).cycles m :=
-  HomologicalComplex.moduleCatCyclesMk _ (cubicalBoundaryChainOfCube k c hc) _ rfl
-    (d_cubicalBoundaryChainOfCube k c hc _)
-
-variable {P} in
-@[simp]
-theorem iCycles_cubicalBoundaryCycleOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
-    (((normalizedCubicalChainComplex k).obj P.snd).iCycles m).hom
-        (cubicalBoundaryCycleOfCube k c hc) = cubicalBoundaryChainOfCube k c hc :=
-  HomologicalComplex.iCycles_moduleCatCyclesMk ..
+/-! ### The connecting morphism of a relative cube -/
 
 variable {P} in
 /-- **The connecting morphism of a relative cube is its boundary.** For a singular cube `c` of `X`
@@ -364,11 +279,8 @@ instance isIso_cubicalHomologyδ_of_contractibleSpace [ContractibleSpace P.fst] 
       IsZero (((normalizedCubicalChainComplex k).obj P.fst).homology n) :=
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) P.fst hn).of_iso
       (TauCeti.singularCubicalHomologyIso k P.fst n).symm
-  have := (P.cubicalHomology_exact_relative k (m + 2) (m + 1)).mono_g
-    ((hX (m + 2) (by lia)).eq_of_src _ _)
-  have := (P.cubicalHomology_exact_subspace k (m + 2) (m + 1)).epi_f
-    ((hX (m + 1) (by lia)).eq_of_tgt _ _)
-  exact isIso_of_mono_of_epi _
+  exact (shortExact_cubicalChainComplexShortComplex k P).isIso_δ (m + 2) (m + 1) rfl
+    (hX _ (by lia)) (hX _ (by lia))
 
 /-! ### Excision -/
 

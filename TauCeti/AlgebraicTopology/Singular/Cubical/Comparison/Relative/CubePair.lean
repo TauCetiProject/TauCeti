@@ -244,6 +244,15 @@ def cubeBoundaryCycle (m : ℕ) :
     ((normalizedCubicalChainComplex k).obj (cubeBoundaryPair.{u} (m + 1)).snd).cycles m :=
   TopPair.cubicalBoundaryCycleOfCube k _ (mapsTo_upCube_boundary (m + 1))
 
+/-- The underlying chain of the fundamental cycle of `∂Iᵐ⁺¹` is the boundary of the identity
+cube, read in `∂Iᵐ⁺¹`. -/
+@[simp]
+theorem iCycles_cubeBoundaryCycle (m : ℕ) :
+    (((normalizedCubicalChainComplex k).obj (cubeBoundaryPair.{u} (m + 1)).snd).iCycles m).hom
+        (cubeBoundaryCycle k m) =
+      TopPair.cubicalBoundaryChainOfCube k _ (mapsTo_upCube_boundary.{u} (m + 1)) :=
+  TopPair.iCycles_cubicalBoundaryCycleOfCube ..
+
 /-- The connecting morphism `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ Hₘ(∂Iᵐ⁺¹)` sends the class of the fundamental
 cycle of the cube pair to the class of the fundamental cycle of the boundary. -/
 theorem cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle (m : ℕ) :
