@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Lp.lpSpace
+import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 import Mathlib.Analysis.Normed.Operator.Bilinear
@@ -35,7 +36,8 @@ These are the finite-family estimates used for absolutely summing operators.
 At exponent `1` the weak norm controls unconditional summability. The finite subfamilies of an
 unconditionally summable family have uniformly bounded weak `L¹` norms, by the uniform boundedness
 principle on the complete dual. Conversely, in a complete space, finite blocks whose weak `L¹`
-norms are summable assemble into an unconditionally summable family.
+norms are summable assemble into an unconditionally summable family; in any space, these blocks,
+each followed by its negative, form a family summing to zero.
 
 ## References
 
@@ -296,6 +298,24 @@ theorem summable_sigma_of_summable_weakLpNorm [CompleteSpace E] {κ : Type*} {β
         Finset.sum_le_sum fun k _ ↦ norm_eval_le_weakLpNorm 1 (y k) f
       _ = _ := (Finset.sum_mul _ _ _).symm
   exact hle.trans_lt ((le_abs_self _).trans_lt (Real.norm_eq_abs _ ▸ hs _ hu))
+
+/-- Finite blocks whose weak `L¹` norms are summable, each followed by its negative, form a family
+summing to zero, even when `E` is not complete. -/
+theorem hasSum_elim_neg_zero_of_summable_weakLpNorm {κ : Type*} {β : κ → Type*}
+    [∀ k, Fintype (β k)] {y : (k : κ) → β k → E}
+    (hy : Summable fun k ↦ weakLpNorm (𝕜 := 𝕜) 1 (y k)) :
+    HasSum (Sum.elim (fun j : Σ k, β k ↦ y j.1 j.2) fun j : Σ k, β k ↦ -y j.1 j.2) 0 := by
+  -- The blocks are summable in the completion of `E`, which induces the topology of `E`.
+  set ι : E →L[𝕜] UniformSpace.Completion E := UniformSpace.Completion.toComplL
+  have hι : ‖ι‖ ≤ 1 := ι.opNorm_le_bound zero_le_one fun v ↦ by simp [ι]
+  have hz : Summable fun j : (Σ k, β k) ↦ ι (y j.1 j.2) :=
+    summable_sigma_of_summable_weakLpNorm (𝕜 := 𝕜) (y := fun k i ↦ ι (y k i)) <|
+      hy.of_nonneg_of_le (fun _ ↦ apply_nonneg _ _) fun k ↦ (weakLpNorm_comp_le 1 ι (y k)).trans
+        (mul_le_of_le_one_left (apply_nonneg _ _) hι)
+  have hi : Topology.IsInducing ι := (UniformSpace.Completion.isUniformInducing_coe E).isInducing
+  rw [← hi.hasSum_iff, map_zero, ← add_neg_cancel (∑' j : Σ k, β k, ι (y j.1 j.2))]
+  refine hz.hasSum.sum ?_
+  simpa only [Function.comp_def, Sum.elim_inr, map_neg] using hz.hasSum.neg
 
 end Summable
 

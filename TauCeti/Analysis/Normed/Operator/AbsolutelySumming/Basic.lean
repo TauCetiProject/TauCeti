@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Lp.Weak
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
-import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Basic.Denumerable
 import Mathlib.Topology.Algebra.InfiniteSum.Real
@@ -531,24 +530,6 @@ private theorem exists_norm_toLp_eq_one_weakLpNorm_le {T : E →L[𝕜] F}
         rw [mul_comm, ← mul_assoc, ← mul_pow]
         norm_num
       _ ≤ a * (1 / 2) ^ k := by gcongr
-
-/-- Finite blocks whose weak `L¹` norms are summable, each followed by its negative, form a family
-summing to zero, even when `E` is not complete: the blocks are summable in the completion of `E`,
-which induces the topology of `E`. -/
-private theorem hasSum_elim_neg_zero_of_summable_weakLpNorm {n : ℕ → ℕ}
-    {y : (k : ℕ) → Fin (n k) → E} (hy : Summable fun k ↦ weakLpNorm (𝕜 := 𝕜) 1 (y k)) :
-    HasSum (Sum.elim (fun j : Σ k, Fin (n k) ↦ y j.1 j.2) fun j : Σ k, Fin (n k) ↦ -y j.1 j.2)
-      0 := by
-  set ι : E →L[𝕜] UniformSpace.Completion E := UniformSpace.Completion.toComplL
-  have hι : ‖ι‖ ≤ 1 := ι.opNorm_le_bound zero_le_one fun v ↦ by simp [ι]
-  have hz : Summable fun j : (Σ k, Fin (n k)) ↦ ι (y j.1 j.2) :=
-    summable_sigma_of_summable_weakLpNorm (𝕜 := 𝕜) (y := fun k i ↦ ι (y k i)) <|
-      hy.of_nonneg_of_le (fun _ ↦ apply_nonneg _ _) fun k ↦ (weakLpNorm_comp_le 1 ι (y k)).trans
-        (mul_le_of_le_one_left (apply_nonneg _ _) hι)
-  have hi : Topology.IsInducing ι := (UniformSpace.Completion.isUniformInducing_coe E).isInducing
-  rw [← hi.hasSum_iff, map_zero, ← add_neg_cancel (∑' j : Σ k, Fin (n k), ι (y j.1 j.2))]
-  refine hz.hasSum.sum ?_
-  simpa only [Function.comp_def, Sum.elim_inr, map_neg] using hz.hasSum.neg
 
 /-- **Absolutely `1`-summing operators and series.** An operator is absolutely `1`-summing exactly
 when it sends unconditionally convergent series to absolutely convergent series. This is usually
