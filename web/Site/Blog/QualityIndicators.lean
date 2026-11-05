@@ -25,7 +25,8 @@ private def unnecessaryHypotheses : Html := resultsTable "Unnecessary hypotheses
     #[{{"Lean Pool"}}, {{"150/1,000 · "<strong>"15.0%"</strong>" [12.9%, 17.3%]"}}, {{"39/300 · "<strong>"13.0%"</strong>" [9.7%, 17.3%]"}}],
     #[{{"Anthropic FLT"}}, {{"203/1,000 · "<strong>"20.3%"</strong>" [17.9%, 22.9%]"}}, {{"52/300 · "<strong>"17.3%"</strong>" [13.5%, 22.0%]"}}],
     #[{{"OpenAI Math"}}, {{"17/100 · "<strong>"17.0%"</strong>" [10.9%, 25.5%]"}}, {{"48/300 · "<strong>"16.0%"</strong>" [12.3%, 20.6%]"}}],
-    #[{{"AxiomMath CFSG"}}, {{"—"}}, {{"70/300 · "<strong>"23.3%"</strong>" [18.9%, 28.4%]"}}]
+    #[{{"AxiomMath CFSG"}}, {{"—"}}, {{"70/300 · "<strong>"23.3%"</strong>" [18.9%, 28.4%]"}}],
+    #[{{"AxiomMath Stacks"}}, {{"103/1,000 · "<strong>"10.3%"</strong>" [8.6%, 12.3%]"}}, {{"—"}}]
   ]
 
 private def mathlibDuplicates : Html := resultsTable "Results already available in Mathlib"
@@ -35,18 +36,20 @@ private def mathlibDuplicates : Html := resultsTable "Results already available 
     #[{{"Lean Pool"}}, {{"68/1,000 · "<strong>"6.8%"</strong>" [5.4%, 8.5%]"}}, {{"58/1,000 · "<strong>"5.8%"</strong>" [4.5%, 7.4%]"}}],
     #[{{"Anthropic FLT"}}, {{"137/1,000 · "<strong>"13.7%"</strong>" [11.7%, 16.0%]"}}, {{"118/1,000 · "<strong>"11.8%"</strong>" [9.9%, 13.9%]"}}],
     #[{{"OpenAI Math"}}, {{"1/100 · "<strong>"1.0%"</strong>" [0.2%, 5.4%]"}}, {{"8/300 · "<strong>"2.7%"</strong>" [1.4%, 5.2%]"}}],
-    #[{{"AxiomMath CFSG"}}, {{"—"}}, {{"15/300 · "<strong>"5.0%"</strong>" [3.1%, 8.1%]"}}]
+    #[{{"AxiomMath CFSG"}}, {{"—"}}, {{"15/300 · "<strong>"5.0%"</strong>" [3.1%, 8.1%]"}}],
+    #[{{"AxiomMath Stacks"}}, {{"64/1,000 · "<strong>"6.4%"</strong>" [5.0%, 8.1%]"}}, {{"—"}}]
   ]
 
 private def repeatedProofs : Html := resultsTable "Repeated proof machinery in a file"
-  #["Library", "Sonnet"] #[
-    #[{{"Mathlib"}}, {{"60/372 · "<strong>"16.1%"</strong>" [12.7%, 20.2%]"}}],
-    #[{{"Tau Ceti"}}, {{"64/372 · "<strong>"17.2%"</strong>" [13.7%, 21.4%]"}}],
-    #[{{"Formal Frontier"}}, {{"128/372 · "<strong>"34.4%"</strong>" [29.8%, 39.4%]"}}],
-    #[{{"Lean Pool"}}, {{"180/372 · "<strong>"48.4%"</strong>" [43.4%, 53.5%]"}}],
-    #[{{"Anthropic FLT"}}, {{"189/372 · "<strong>"50.8%"</strong>" [45.7%, 55.9%]"}}],
-    #[{{"OpenAI Math"}}, {{"154/372 · "<strong>"41.4%"</strong>" [36.5%, 46.5%]"}}],
-    #[{{"AxiomMath CFSG"}}, {{"162/300 · "<strong>"54.0%"</strong>" [48.3%, 59.6%]"}}]
+  #["Library", "Opus", "Sonnet"] #[
+    #[{{"Mathlib"}}, {{"—"}}, {{"60/372 · "<strong>"16.1%"</strong>" [12.7%, 20.2%]"}}],
+    #[{{"Tau Ceti"}}, {{"—"}}, {{"64/372 · "<strong>"17.2%"</strong>" [13.7%, 21.4%]"}}],
+    #[{{"Formal Frontier"}}, {{"—"}}, {{"128/372 · "<strong>"34.4%"</strong>" [29.8%, 39.4%]"}}],
+    #[{{"Lean Pool"}}, {{"—"}}, {{"180/372 · "<strong>"48.4%"</strong>" [43.4%, 53.5%]"}}],
+    #[{{"Anthropic FLT"}}, {{"—"}}, {{"189/372 · "<strong>"50.8%"</strong>" [45.7%, 55.9%]"}}],
+    #[{{"OpenAI Math"}}, {{"—"}}, {{"154/372 · "<strong>"41.4%"</strong>" [36.5%, 46.5%]"}}],
+    #[{{"AxiomMath CFSG"}}, {{"—"}}, {{"162/300 · "<strong>"54.0%"</strong>" [48.3%, 59.6%]"}}],
+    #[{{"AxiomMath Stacks"}}, {{"161/372 · "<strong>"43.3%"</strong>" [38.3%, 48.4%]"}}, {{"—"}}]
   ]
 
 end Site.Blog.QualityIndicators
@@ -68,6 +71,8 @@ There are many aspects of quality, and some are captured by mechanical checks li
 3) are there parts of proofs that appear several times in a file and could be turned into lemmas?
 
 We evaluated Mathlib, Tau Ceti, Formal Frontier, Lean Pool, Anthropic's FLT, OpenAI's mathematical corpus and Axiom's CFSG proof (with more partial results for the last two).
+
+Edit (2026-11-05): we've extended the audits to include Axiom's Stacks library.
 
 For each of the indicators, we sample randomly theorems (for the first two) or files (for the third one) from the library, and ask an AI judge to answer the question. We then compute the percentage of theorems/files that are flagged by the AI judge, and also report 95% confidence intervals for the true rate.
 We found that the exact percentages depend on the AI model used (more expensive models report more issues), but that the groups and relative gaps are consistent across models.
