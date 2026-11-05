@@ -7,20 +7,21 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
 public import TauCeti.RingTheory.PowerSeries.Entire.Taylor
+import TauCeti.RingTheory.PowerSeries.Restricted.Taylor
 
 /-!
 # Taylor translation on an open nonarchimedean disc
 
-Over a complete ultrametric normed commutative ring with `‖1‖ = 1`, translation by a point `a`
+Over a complete ultrametric normed commutative ring, translation by a point `a`
 with `‖a‖ < R₀` preserves the algebra of series on the open disc of radius `R₀`.
 Its coefficients are the values at `a` of the Hasse derivatives, using the same
 `PowerSeries.taylor` as for entire series. Translation is continuous for the topology of all
 smaller-radius Gauss norms, composes by addition, and has inverse translation by `-a`.
 Evaluation of the translate at `b` is evaluation of the original series at `b + a`.
 
-The estimate at a closed radius `r` containing `a` is contractive whenever the weighted
-coefficients are bounded. To prove open-disc restrictedness, apply that estimate at a slightly
-larger radius still inside the open disc. No radius needs to be realized by a scalar and no
+Translation preserves restrictedness on every closed disc containing `a`, by
+`PowerSeries.IsRestricted.taylor`. Applying this at a slightly larger radius inside the open
+disc proves open-disc restrictedness. No radius needs to be realized by a scalar and no
 factorial is inverted. Translation preserves the Gauss norm on every closed disc of positive
 radius `r` with `‖a‖ ≤ r < R₀`.
 
@@ -57,7 +58,7 @@ open scoped Topology
 
 namespace PowerSeries
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
   {f g : R⟦X⟧} {R₀ : ℝ} {a : R}
 
 /-- Translation by an interior point preserves series on the open disc. -/
@@ -66,14 +67,14 @@ theorem OnOpenDisc.taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) :
   refine onOpenDisc_iff.2 fun r hr hrR ↦ ?_
   obtain ⟨s, hs, hsR⟩ := exists_between (max_lt hrR ha)
   have hs0 : 0 < s := hr.trans (lt_of_le_of_lt (le_max_left _ _) hs)
-  exact ((TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-    (hf.isRestricted (by rwa [abs_of_pos hs0]))).taylor hs0
-    (le_max_right r ‖a‖ |>.trans hs.le)).onOpenDisc.isRestricted
-      (by rw [abs_of_pos hr]; exact (le_max_left _ _).trans_lt hs)
+  exact (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
+    ((hf.isRestricted (by rwa [abs_of_pos hs0])).taylor
+      (le_max_right r ‖a‖ |>.trans hs.le))).onOpenDisc.isRestricted
+        (by rw [abs_of_pos hr]; exact (le_max_left _ _).trans_lt hs)
 
 variable [CompleteSpace R]
 
-omit [IsUltrametricDist R] [NormOneClass R] in
+omit [IsUltrametricDist R] in
 /-- Taylor translation is additive on open-disc series. -/
 theorem OnOpenDisc.taylor_add (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
     (ha : ‖a‖ < R₀) :
@@ -81,7 +82,7 @@ theorem OnOpenDisc.taylor_add (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
   taylor_add_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow ha)
     (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow ha)
 
-omit [IsUltrametricDist R] [NormOneClass R] in
+omit [IsUltrametricDist R] in
 /-- Taylor translation is multiplicative on open-disc series. -/
 theorem OnOpenDisc.taylor_mul (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
     (ha : ‖a‖ < R₀) :
@@ -93,7 +94,7 @@ end PowerSeries
 
 namespace TauCeti.PowerSeries.OnOpenDisc
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] {R₀ : ℝ} {a b : R}
 
 attribute [local instance] radius_pos
@@ -137,7 +138,8 @@ theorem norm_restrict_taylorHom_le (ha : ‖a‖ < R₀) (r s : Set.Ioo (0 : ℝ
     _ ≤ (f : R⟦X⟧).gaussNorm norm s := by
       have hf := hasGaussNorm_of_isRestricted (restrict s f).2
       rw [coe_restrict] at hf
-      exact norm_coeff_taylor_mul_pow_le hf s.2.1 has n
+      simpa only [coeff_taylor] using
+        norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm s.2.1 hf has n
     _ = ‖restrict s f‖ := by rw [norm_eq_gaussNorm, coe_restrict]
 
 /-- Translation is continuous for all smaller-radius Gauss norms. -/
@@ -194,11 +196,9 @@ theorem taylorEquiv_symm_apply (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R
 theorem norm_restrict_taylorHom (ha : ‖a‖ < R₀) (r : Set.Ioo (0 : ℝ) R₀)
     (har : ‖a‖ ≤ r) (f : OnOpenDisc.subring R R₀) :
     ‖restrict r (taylorHom ha f)‖ = ‖restrict r f‖ := by
-  refine le_antisymm (norm_restrict_taylorHom_le ha r r le_rfl har f) ?_
-  have h := norm_restrict_taylorHom_le (a := -a) (by simpa using ha)
-    r r le_rfl (by simpa using har) (taylorHom ha f)
-  have : Fact (0 < R₀) := ⟨r.2.1.trans r.2.2⟩
-  simpa [taylorHom_taylorHom] using h
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_taylorHom]
+  exact (OnOpenDisc.mem_subring.mp f.2 |>.isRestricted
+    (by simpa only [abs_of_pos r.2.1] using r.2.2)).gaussNorm_taylor r.2.1 har
 
 /-- Evaluating a translate at an algebra point `b` evaluates the original series at
 `b + algebraMap R A a`. -/

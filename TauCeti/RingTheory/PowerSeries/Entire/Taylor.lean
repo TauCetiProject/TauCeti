@@ -26,9 +26,6 @@ translation by `a` and Taylor translation is injective on entire series. These e
 results invert no factorial and use no ultrametric hypothesis, so they hold in every characteristic
 and over `ℂ` as well as over nonarchimedean rings.
 
-Over an ultrametric normed commutative ring with norm-one unit, translation also preserves
-`HasGaussNorm` at any positive radius `r ≥ ‖a‖`, with the Gauss norm not increasing.
-
 Injectivity is what controls the zeros of entire series over a field: a nonzero entire series has a
 nonvanishing Hasse derivative at every point, so each of its zeros has a finite order
 (`PowerSeries.IsEntire.exists_isGoodZero`).
@@ -41,11 +38,6 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 * `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
 * `taylor_add_of_summable_norm`, `taylor_mul_of_summable_norm`: translation is additive and
   multiplicative when all Hasse derivatives have absolutely summable terms at the centre.
-* `norm_coeff_taylor_mul_pow_le`: weighted translated coefficients are bounded by the original
-  Gauss norm at any positive radius containing the centre, under the ultrametric norm-one
-  hypotheses.
-* `PowerSeries.HasGaussNorm.taylor`: translation preserves bounded weighted coefficients at such
-  a radius under the same hypotheses.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
   converges.
@@ -231,32 +223,5 @@ theorem IsEntire.hasSum_taylor [CompleteSpace R] (hf : f.IsEntire) (a b : R) :
   simpa [smul_eq_mul, hf.evalAt_taylor] using (hf.taylor a).hasSum_evalAt b
 
 end Normed
-
-section Ultrametric
-
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
-  {f : R⟦X⟧} {r : ℝ} {a : R}
-
-/-- A weighted coefficient of a Taylor translate is bounded by the original Gauss norm at
-any positive radius containing the translation point. -/
-theorem norm_coeff_taylor_mul_pow_le (hf : f.HasGaussNorm norm r) (hr : 0 < r)
-    (ha : ‖a‖ ≤ r) (n : ℕ) :
-    ‖coeff n (taylor a f)‖ * r ^ n ≤ f.gaussNorm norm r := by
-  rw [coeff_taylor]
-  calc
-    ‖(hasseDeriv n f).evalAt a‖ * r ^ n ≤
-        (r⁻¹ ^ n * f.gaussNorm norm r) * r ^ n :=
-      mul_le_mul_of_nonneg_right
-        ((norm_evalAt_le_gaussNorm (hf.hasseDeriv hr n) ha).trans
-          (gaussNorm_hasseDeriv_le hr hf n)) (by positivity)
-    _ = f.gaussNorm norm r := by rw [inv_pow]; field_simp
-
-/-- Taylor translation preserves bounded weighted coefficients on a closed disc containing
-its translation point. -/
-theorem HasGaussNorm.taylor (hf : f.HasGaussNorm norm r) (hr : 0 < r) (ha : ‖a‖ ≤ r) :
-    (taylor a f).HasGaussNorm norm r :=
-  ⟨f.gaussNorm norm r, Set.forall_mem_range.mpr (norm_coeff_taylor_mul_pow_le hf hr ha)⟩
-
-end Ultrametric
 
 end PowerSeries
