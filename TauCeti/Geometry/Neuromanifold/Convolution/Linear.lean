@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Neuromanifold.Convolution.Composition
 public import TauCeti.Geometry.Neuromanifold.Convolution.Polynomial
 public import TauCeti.Geometry.Neuromanifold.MLP.Linear
 
@@ -21,7 +20,10 @@ consequence for the jointly polynomial presentation.
 The product of the first `i` convolution matrices is `MLPSpec.weightProduct` of the structured
 dense weights `A.denseWeights w`, with the identity matrix at layer `0`; by
 `MLPSpec.weightProduct_succ` and `ConvolutionSpec.denseWeights_apply`, layer `i + 1` multiplies by
-`convolutionMatrix (A.length_eq i) (w i)` on the left. When every hidden activation of `A` is `id`:
+`convolutionMatrix (A.length_eq i) (w i)` on the left. The prefix formulas below are
+`MLPSpec.evalPrefix_zeroBias_eq_mulVec_of_activation_eq_id` and
+`MLPSpec.evalPrefix_eq_mulVec_add_of_activation_eq_id` at the structured dense parameters. When
+every hidden activation of `A` is `id`:
 
 * every bias-free prefix evaluates the product of the convolution matrices below it, so the
   bias-free realization is `Matrix.mulVec` of the full product, and the bias-free neuromanifold is
@@ -64,12 +66,8 @@ theorem evalPrefix_zeroBias_eq_mulVec_of_activation_eq_id (A : ConvolutionSpec K
     (h : ∀ j, A.activation j = id) (w : A.Weights) (x : Fin (A.width 0) → K)
     (i : Fin (L + 1)) :
     A.evalPrefix (A.zeroBias w) x i = A.toMLPSpec.weightProduct (A.denseWeights w) i *ᵥ x := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    simp only [evalPrefix_zeroBias_succ_eq_activation_convolution,
-      A.toMLPSpec.layerActivation_eq_id_of_activation_eq_id h, activation_id, id_eq]
-    rw [ih, ← mulVec_denseWeights, mulVec_mulVec, MLPSpec.weightProduct_succ]
+  rw [evalPrefix_eq_mlp, denseParameters_zeroBias,
+    A.toMLPSpec.evalPrefix_zeroBias_eq_mulVec_of_activation_eq_id h]
 
 /-- With identity hidden activations, each prefix with shared biases is affine: its linear part
 is the product of the convolution matrices of the filters below it, and its translation is the
@@ -79,13 +77,11 @@ theorem evalPrefix_eq_mulVec_add_of_activation_eq_id (A : ConvolutionSpec K L)
     (i : Fin (L + 1)) :
     A.evalPrefix p x i =
       A.toMLPSpec.weightProduct (A.denseWeights fun j => (p j).1) i *ᵥ x + A.evalPrefix p 0 i := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    simp only [evalPrefix_succ_eq_activation_affineConvolution,
-      A.toMLPSpec.layerActivation_eq_id_of_activation_eq_id h, activation_id, id_eq,
-      affineConvolution_eq_mulVec_add, ih, mulVec_add, mulVec_mulVec, MLPSpec.weightProduct_succ,
-      denseWeights_apply, add_assoc]
+  rw [evalPrefix_eq_mlp, evalPrefix_eq_mlp,
+    A.toMLPSpec.evalPrefix_eq_mulVec_add_of_activation_eq_id h]
+  congr 3
+  funext j
+  simp only [denseParameters_apply, denseWeights_apply]
 
 /-- With identity hidden activations, the bias-free realization is evaluation at the product of
 the convolution matrices of all filters. -/
