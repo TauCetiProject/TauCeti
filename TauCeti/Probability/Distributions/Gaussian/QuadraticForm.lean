@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.Matrix.Sqrt
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
+import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 
 /-!
 # Moment-generating functions of Gaussian quadratic forms
@@ -46,7 +47,9 @@ of squares of independent standard Gaussian coordinates, live in
 * `TauCeti.Probability.mem_integrableExpSet_inner_toEuclideanLin_stdGaussian_iff` and
   `TauCeti.Probability.mgf_inner_toEuclideanLin_stdGaussian` — the same results for the standard
   Gaussian,
-  in terms of the eigenvalues of the symmetric matrix.
+  in terms of the eigenvalues of the symmetric matrix;
+* `Matrix.integral_exp_mul_sum_mulVec_sq_pi_gaussianReal_le` — exponential-moment upper bound for
+  `∑ i, ((M *ᵥ g) i) ^ 2` under a standard Gaussian product measure.
 
 ## References
 
@@ -60,7 +63,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped RealInnerProductSpace MatrixOrder Matrix.Norms.L2Operator
+open scoped RealInnerProductSpace Matrix MatrixOrder Matrix.Norms.L2Operator
 
 namespace TauCeti.Probability
 
@@ -177,3 +180,73 @@ theorem cgf_inner_toEuclideanLin_multivariateGaussian (hS : S.PosSemidef)
 end multivariateGaussian
 
 end TauCeti.Probability
+
+namespace Matrix
+
+/-- Exponential-moment upper bound for `∑ i, ((M *ᵥ g) i) ^ 2` under a standard Gaussian product
+measure. -/
+theorem integral_exp_mul_sum_mulVec_sq_pi_gaussianReal_le {ι κ : Type*} [Fintype ι] [Fintype κ]
+    [DecidableEq κ] (M : Matrix ι κ ℝ) {s : ℝ} (hs_nonneg : 0 ≤ s)
+    (hs_bound : 2 * s * ‖M‖ ^ 2 ≤ 1 / 2) :
+    Integrable (fun g : κ → ℝ ↦ Real.exp (s * ∑ i, ((M *ᵥ g) i) ^ 2))
+        (Measure.pi fun _ : κ ↦ gaussianReal 0 1) ∧
+      ∫ g : κ → ℝ, Real.exp (s * ∑ i, ((M *ᵥ g) i) ^ 2)
+          ∂(Measure.pi fun _ : κ ↦ gaussianReal 0 1) ≤
+        Real.exp (2 * s * ∑ i, ∑ j, M i j ^ 2) := by
+  let ν : Measure (κ → ℝ) := Measure.pi fun _ : κ ↦ gaussianReal 0 1
+  let Θ : Matrix κ κ ℝ := Mᴴ * M; have hΘ_psd : Θ.PosSemidef := posSemidef_conjTranspose_mul_self M
+  have hΘ : Θ.IsHermitian := hΘ_psd.isHermitian
+  have hM_conj : Mᴴ = Mᵀ := conjTranspose_eq_transpose_of_trivial M
+  have hquad (g : κ → ℝ) :
+      ⟪WithLp.toLp 2 g, Θ.toEuclideanLin (WithLp.toLp 2 g)⟫ = ∑ i, ((M *ᵥ g) i) ^ 2 := by
+    simp only [Θ, hM_conj, toLpLin_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+    calc ∑ j, ((Mᵀ * M) *ᵥ g) j * g j = g ⬝ᵥ (Mᵀ *ᵥ (M *ᵥ g)) := by
+          rw [← mulVec_mulVec, ← dotProduct_comm]; rfl
+      _ = ∑ i, ((M *ᵥ g) i) ^ 2 := by
+          rw [dotProduct_mulVec, vecMul_transpose]; simp [dotProduct, sq]
+  have h2s_eig (j : κ) : 2 * s * hΘ.eigenvalues j ≤ 1 / 2 := by
+    let e : EuclideanSpace ℝ κ := hΘ.eigenvectorBasis j
+    have heig : hΘ.eigenvalues j ≤ ‖M‖ ^ 2 := by
+      calc hΘ.eigenvalues j = ⟪e, (toEuclideanCLM (𝕜 := ℝ) Θ) e⟫ := by
+            rw [hΘ.eigenvalues_eq j]
+            simp only [e, PiLp.inner_apply, RCLike.inner_apply, conj_trivial, RCLike.re_to_real,
+              dotProduct, Pi.star_apply, star_trivial]
+            exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
+        _ ≤ ‖e‖ * (‖toEuclideanCLM (𝕜 := ℝ) Θ‖ * ‖e‖) :=
+            (real_inner_le_norm _ _).trans
+              (mul_le_mul_of_nonneg_left ((toEuclideanCLM (𝕜 := ℝ) Θ).le_opNorm e) (norm_nonneg e))
+        _ = ‖M‖ ^ 2 := by
+            rw [hΘ.eigenvectorBasis.orthonormal.1 j, l2_opNorm_toEuclideanCLM, sq,
+              ← l2_opNorm_conjTranspose_mul_self M]; ring
+    exact (mul_le_mul_of_nonneg_left heig (by positivity)).trans hs_bound
+  have h2s_lt (j : κ) : 2 * s * hΘ.eigenvalues j < 1 := by linarith [h2s_eig j]
+  have htoLp_meas : Measurable (WithLp.toLp 2 : (κ → ℝ) → EuclideanSpace ℝ κ) := by fun_prop
+  have hint_map : Integrable (fun x : EuclideanSpace ℝ κ ↦ Real.exp (s * ⟪x, Θ.toEuclideanLin x⟫))
+      (ν.map (WithLp.toLp 2)) := by
+    rw [map_pi_eq_stdGaussian]
+    exact (TauCeti.Probability.mem_integrableExpSet_inner_toEuclideanLin_stdGaussian_iff hΘ s).2
+      h2s_lt
+  have hint_pi : Integrable (fun g : κ → ℝ ↦ Real.exp (s * ∑ i, ((M *ᵥ g) i) ^ 2)) ν :=
+    ((integrable_map_measure hint_map.aestronglyMeasurable htoLp_meas.aemeasurable).mp
+      hint_map).congr (.of_forall fun g ↦ by dsimp only [Function.comp_def]; rw [hquad g])
+  have htrace : ∑ j, hΘ.eigenvalues j = ∑ i, ∑ j, M i j ^ 2 := by
+    calc ∑ j, hΘ.eigenvalues j = Θ.trace := by simpa using hΘ.trace_eq_sum_eigenvalues.symm
+      _ = ∑ i, ∑ j, M i j ^ 2 := by
+          simp only [Θ, hM_conj, trace, diag_apply, sq]; exact Finset.sum_comm
+  refine ⟨hint_pi, ?_⟩
+  calc ∫ g : κ → ℝ, Real.exp (s * ∑ i, ((M *ᵥ g) i) ^ 2) ∂ν
+      = mgf (fun x : EuclideanSpace ℝ κ ↦ ⟪x, Θ.toEuclideanLin x⟫)
+          (stdGaussian (EuclideanSpace ℝ κ)) s := by
+          rw [← map_pi_eq_stdGaussian, mgf_map htoLp_meas.aemeasurable
+            hint_map.aestronglyMeasurable, mgf]
+          exact integral_congr_ae
+            (.of_forall fun g ↦ by dsimp only [Function.comp_def]; rw [hquad g])
+    _ = ∏ j, (1 - 2 * s * hΘ.eigenvalues j) ^ (-1 / 2 : ℝ) :=
+          TauCeti.Probability.mgf_inner_toEuclideanLin_stdGaussian hΘ h2s_lt
+    _ ≤ ∏ j, Real.exp (2 * s * hΘ.eigenvalues j) :=
+          Finset.prod_le_prod₀ (fun j _ ↦ Real.rpow_nonneg (by linarith [h2s_lt j]) _) fun j _ ↦
+            Real.one_sub_rpow_neg_half_le_exp
+              (mul_nonneg (by positivity) (hΘ_psd.eigenvalues_nonneg j)) (h2s_eig j)
+    _ = Real.exp (2 * s * ∑ i, ∑ j, M i j ^ 2) := by rw [← Real.exp_sum, ← Finset.mul_sum, htrace]
+
+end Matrix

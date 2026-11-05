@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Probability.Moments.Pi
 import Mathlib.MeasureTheory.Integral.Gamma
 
 /-!
@@ -23,6 +25,8 @@ Distributions*, volume 1, Chapter 13.
 
 * `integral_abs_sub_pow_gaussianReal` evaluates every absolute centered moment.
 * `centralMoment_id_two_mul_gaussianReal` evaluates the even centered moments.
+* `TauCeti.integral_exp_mul_dotProduct_pi_gaussianReal` evaluates the exponential moment of a
+  linear form `y ⬝ᵥ g` on a finite product of centred real Gaussian laws.
 * `centralMoment_id_two_mul_add_one_gaussianReal` says that every odd centered moment vanishes.
 * `integral_sq_gaussianReal` evaluates the second raw moment.
 -/
@@ -187,3 +191,32 @@ theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
   linarith
 
 end TauCeti.Probability
+
+namespace TauCeti
+
+open MeasureTheory ProbabilityTheory
+
+/-- Exponential moment of a linear form `y ⬝ᵥ g` on a finite product of centred real Gaussian
+laws `gaussianReal 0 v`. -/
+theorem integral_exp_mul_dotProduct_pi_gaussianReal {γ : Type*} [Fintype γ]
+    (y : γ → ℝ) (v : ℝ≥0) (r : ℝ) :
+    Integrable (fun g : γ → ℝ ↦ Real.exp (r * (y ⬝ᵥ g)))
+        (Measure.pi fun _ : γ ↦ gaussianReal 0 v) ∧
+      ∫ g : γ → ℝ, Real.exp (r * (y ⬝ᵥ g)) ∂(Measure.pi fun _ : γ ↦ gaussianReal 0 v) =
+        Real.exp ((v : ℝ) * r ^ 2 / 2 * ∑ l, y l ^ 2) := by
+  let ν : Measure (γ → ℝ) := Measure.pi fun _ : γ ↦ gaussianReal 0 v
+  have hrew (g : γ → ℝ) : r * (y ⬝ᵥ g) = 1 * ∑ l, (r * y l) * g l := by
+    simp only [dotProduct, one_mul, Finset.mul_sum, mul_assoc]
+  have hmgf : mgf (fun g : γ → ℝ ↦ ∑ l, (r * y l) * g l) ν 1 =
+      Real.exp ((v : ℝ) * r ^ 2 / 2 * ∑ l, y l ^ 2) := by
+    rw [TauCeti.mgf_sum_pi (fun l u ↦ (r * y l) * u) 1]
+    have hcoord (l : γ) : mgf (fun u : ℝ ↦ (r * y l) * u) (gaussianReal 0 v) 1 =
+        Real.exp ((v : ℝ) * r ^ 2 / 2 * y l ^ 2) := by
+      rw [mgf_const_mul, mgf_fun_id_gaussianReal]; dsimp only; congr 1; ring
+    simp_rw [hcoord, ← Real.exp_sum, ← Finset.mul_sum]
+  have hint : Integrable (fun g : γ → ℝ ↦ Real.exp (1 * ∑ l, (r * y l) * g l)) ν :=
+    mgf_pos_iff.mp (hmgf ▸ Real.exp_pos _)
+  exact ⟨hint.congr (.of_forall fun g ↦ by dsimp only; rw [← hrew g]),
+    (integral_congr_ae (.of_forall fun g ↦ by dsimp only; rw [hrew g])).trans hmgf⟩
+
+end TauCeti

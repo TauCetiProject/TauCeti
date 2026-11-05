@@ -40,6 +40,9 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
   integral of `∏ i, g (x i)` over the half-space `∑ i, x i ≤ s`, by the `card ι`-th power of the
   one-dimensional integral of `exp (-(l * x)) * g x`.
+* `TauCeti.ae_slice_pi_eq_zero`: for a jointly measurable binary kernel whose second-variable
+  slices are a.e. integrable with integral zero, fixing one coordinate and integrating another
+  against `Measure.pi μ` yields an a.e. integrable function with integral zero.
 -/
 
 public section
@@ -197,5 +200,25 @@ theorem setIntegral_prod_le_exp_mul_pow {ι : Type*} [Fintype ι] {g : ℝ → �
     _ = _ := by
       rw [integral_const_mul,
         integral_fintype_prod_volume_eq_pow fun x ↦ Real.exp (-(l * x)) * g x]
+
+/-- Given a binary kernel `g : α a → α b → F` with `StronglyMeasurable (uncurry g)` whose slices
+`g x` are integrable with integral zero for `μ a`-a.e. `x`, for `Measure.pi μ`-a.e. `z` the map
+`w ↦ g (z a) (w b)` is `Measure.pi μ`-integrable with integral zero. -/
+theorem ae_slice_pi_eq_zero {ι : Type*} [Fintype ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ι}
+    {g : α a → α b → F} (hg : StronglyMeasurable (uncurry g))
+    (hae_int : ∀ᵐ x ∂μ a, Integrable (g x) (μ b)) (hae_zero : ∀ᵐ x ∂μ a, ∫ y, g x y ∂μ b = 0) :
+    ∀ᵐ z ∂Measure.pi μ, Integrable (fun w : ∀ i, α i ↦ g (z a) (w b)) (Measure.pi μ) ∧
+      ∫ w : ∀ i, α i, g (z a) (w b) ∂Measure.pi μ = 0 := by
+  filter_upwards [(measurePreserving_eval μ a).quasiMeasurePreserving.ae hae_int,
+    (measurePreserving_eval μ a).quasiMeasurePreserving.ae hae_zero] with z hz_int hz_zero
+  have hm : StronglyMeasurable (g (z a)) :=
+    hg.comp_measurable (measurable_const.prodMk measurable_id)
+  have heval := (measurePreserving_eval μ b).map_eq
+  have ha : AEMeasurable (fun w : ∀ i, α i ↦ w b) (Measure.pi μ) :=
+    (measurable_pi_apply b).aemeasurable
+  exact ⟨(integrable_map_measure hm.aestronglyMeasurable ha).mp (heval.symm ▸ hz_int),
+    (heval ▸ integral_map ha hm.aestronglyMeasurable).symm.trans hz_zero⟩
 
 end TauCeti

@@ -117,11 +117,16 @@ private theorem toEuclideanLin_realify_reImToLp {m : Type*} [Fintype n] [Decidab
 @[simp]
 theorem l2_opNorm_realify {m : Type*} [Fintype m] [Fintype n] [DecidableEq n] (A : Matrix m n 𝕜) :
     ‖A.realify‖ = ‖A‖ := by
-  let TR := (toEuclideanLin (𝕜 := ℝ) (m := m ⊕ m) (n := n ⊕ n)).trans
+  rw [Matrix.l2_opNorm_def A.realify, Matrix.l2_opNorm_def A]
+  set TR := (toEuclideanLin (𝕜 := ℝ) (m := m ⊕ m) (n := n ⊕ n)).trans
     LinearMap.toContinuousLinearMap A.realify
-  let TK := (toEuclideanLin (𝕜 := 𝕜) (m := m) (n := n)).trans LinearMap.toContinuousLinearMap A
-  refine le_antisymm (TR.opNorm_le_bound (norm_nonneg A) fun w ↦ ?_)
-    (TK.opNorm_le_bound (norm_nonneg A.realify) fun z ↦ ?_)
+  set TK := (toEuclideanLin (𝕜 := 𝕜) (m := m) (n := n)).trans LinearMap.toContinuousLinearMap A
+  have hTR_apply (w : EuclideanSpace ℝ (n ⊕ n)) : TR w = A.realify.toEuclideanLin w := by
+    simp [TR]
+  have hTK_apply (z : EuclideanSpace 𝕜 n) : TK z = WithLp.toLp 2 (A *ᵥ z.ofLp) := by
+    simp [TK, toLpLin_apply]
+  refine le_antisymm (TR.opNorm_le_bound (norm_nonneg TK) fun w ↦ ?_)
+    (TK.opNorm_le_bound (norm_nonneg TR) fun z ↦ ?_)
   · obtain hI | hI := RCLike.I_eq_zero_or_im_I_eq_one (K := 𝕜)
     · let w₁ : EuclideanSpace 𝕜 n := WithLp.toLp 2 fun j ↦ (w.ofLp (.inl j) : 𝕜)
       let w₂ : EuclideanSpace 𝕜 n := WithLp.toLp 2 fun j ↦ (w.ofLp (.inr j) : 𝕜)
@@ -134,26 +139,25 @@ theorem l2_opNorm_realify {m : Type*} [Fintype m] [Fintype n] [DecidableEq n] (A
         simp only [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type]
         congr 1 <;> refine Finset.sum_congr rfl fun i _ ↦ ?_
         · rw [hsq_eq, show (TR w).ofLp (.inl i) = RCLike.re ((TK w₁).ofLp i) by
-            simp [TR, TK, w₁, toLpLin_apply, mulVec, dotProduct, Fintype.sum_sum_type,
-              RCLike.im_eq_zero hI], Real.norm_eq_abs, sq_abs]
+            simp [hTR_apply, hTK_apply, toLpLin_apply, w₁, mulVec, dotProduct,
+              Fintype.sum_sum_type, RCLike.im_eq_zero hI], Real.norm_eq_abs, sq_abs]
         · rw [hsq_eq, show (TR w).ofLp (.inr i) = RCLike.re ((TK w₂).ofLp i) by
-            simp [TR, TK, w₂, toLpLin_apply, mulVec, dotProduct, Fintype.sum_sum_type,
-              RCLike.im_eq_zero hI], Real.norm_eq_abs, sq_abs]
+            simp [hTR_apply, hTK_apply, toLpLin_apply, w₂, mulVec, dotProduct,
+              Fintype.sum_sum_type, RCLike.im_eq_zero hI], Real.norm_eq_abs, sq_abs]
       refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp (hTR_sq.trans_le ?_)
       exact (add_le_add (pow_le_pow_left₀ (norm_nonneg _) (TK.le_opNorm w₁) 2)
         (pow_le_pow_left₀ (norm_nonneg _) (TK.le_opNorm w₂) 2)).trans_eq
-        (by simp_rw [show ‖TK‖ = ‖A‖ from rfl, mul_pow, ← hw_sq]; ring)
+        (by simp_rw [mul_pow, ← hw_sq]; ring)
     · let z : n → 𝕜 := fun j ↦ (w.ofLp (.inl j) : 𝕜) + (w.ofLp (.inr j) : 𝕜) * RCLike.I
       have hw : w = reImToLp z := by
         ext (j | j) <;> simp [reImToLp, z, RCLike.mul_re, RCLike.mul_im, hI]
       rw [show ‖TR w‖ = ‖TK (WithLp.toLp 2 z)‖ by
-          simpa [TR, TK, hw, toEuclideanLin_realify_reImToLp] using norm_reImToLp (A *ᵥ z),
+          simpa [hTR_apply, hTK_apply, hw, toEuclideanLin_realify_reImToLp] using
+            norm_reImToLp (A *ᵥ z),
         hw, norm_reImToLp]
       exact TK.le_opNorm (WithLp.toLp 2 z)
-  · rw [show TK z = WithLp.toLp 2 (A *ᵥ z.ofLp) from rfl, ← norm_reImToLp (A *ᵥ z.ofLp),
-      ← show TR (reImToLp z.ofLp) = reImToLp (A *ᵥ z.ofLp) from
-        toEuclideanLin_realify_reImToLp A z.ofLp,
-      ← show ‖reImToLp z.ofLp‖ = ‖z‖ from norm_reImToLp z.ofLp]
+  · rw [hTK_apply, ← norm_reImToLp (A *ᵥ z.ofLp), ← toEuclideanLin_realify_reImToLp A z.ofLp,
+      ← hTR_apply, ← norm_reImToLp z.ofLp]
     exact TR.le_opNorm (reImToLp z.ofLp)
 
 end Matrix
