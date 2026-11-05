@@ -17,8 +17,8 @@ independently of `r`, and `A` is the zero set of the component `α` of its spino
 monotonicity estimate bounds the defect energy of a ball of radius `ρ` centred at a zero below by
 `c ρ ²` for `c₀ r^(-1/2) ≤ ρ ≤ ρ₀`, with constants independent of `r`. By the maximal disjoint
 half-ball argument (`TauCeti.coveringNumber_le_of_mul_pow_le_measure_closedBall`), the zero set is
-then covered by `N(σ) ≤ C σ⁻²` balls of radius `σ` centred at zeros, with disjoint half-balls, as
-soon as `σ ≤ 2 ρ₀` and `r ≥ (2 c₀ / σ) ²`.
+then covered by `N(σ) ≤ C σ⁻²` balls of radius `σ` centred at zeros, as soon as `σ ≤ 2 ρ₀` and
+`r ≥ (2 c₀ / σ) ²`.
 
 ## Main results
 
