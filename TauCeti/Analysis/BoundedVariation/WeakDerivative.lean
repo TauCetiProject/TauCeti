@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.MeasureTheory.Measure.Subtype
 
 /-!
 # Weak derivatives and absolutely continuous derivative measures
@@ -63,11 +64,6 @@ open scoped ENNReal Distributions RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {Ω : Opens E} {u : E → ℝ}
-
-/-- The measure `μ_Ω` induced by `μ` on an open set `Ω` is finite on compact sets. -/
-local instance [IsFiniteMeasureOnCompacts μ] :
-    IsFiniteMeasureOnCompacts (μ.comap ((↑) : Ω → E)) :=
-  .comap' μ continuous_subtype_val (.subtype_coe Ω.isOpen.measurableSet)
 
 /-- **The variation measure of a weakly differentiable function.** If `u` has weak derivative `U`
 on `Ω`, then against an additive Haar measure `|Du| = ‖U‖ μ_Ω`: the variation measure has the
