@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.FreeProbability.Independence
 public import TauCeti.Analysis.CStarAlgebra.GNS
 public import Mathlib.Algebra.Star.Subalgebra
-import Mathlib.Algebra.BigOperators.Group.List.Lemmas
+import TauCeti.Algebra.Star.BigOperators
 
 /-!
 # Inner products of reduced words
@@ -62,8 +62,8 @@ theorem apply_star_prod_mul_prod
         (List.zipWith (fun x y => φ (star x.2 * y.2)) w v).prod else 0 := by
   let u : List (ι × A) := (w.map fun x => (x.1, star x.2)).reverse
   have hs : star (w.map Prod.snd).prod = (u.map Prod.snd).prod := by
-    simpa [u, List.map_reverse, List.map_map, Function.comp_def] using
-      unop_map_list_prod (starMulEquiv : A ≃* Aᵐᵒᵖ) (w.map Prod.snd)
+    rw [star_list_prod]
+    simp [u, List.map_reverse, Function.comp_def]
   have hu : (u.map Prod.fst).IsChain (· ≠ ·) := by
     simpa [u, List.map_reverse, List.map_map, Function.comp_def, List.isChain_reverse,
       ne_comm] using hw

@@ -132,12 +132,6 @@ noncomputable def isEmptyAlgEquiv [IsEmpty I] : FreeProduct R A ≃ₐ[R] R :=
     (AlgHom.ext fun r ↦ lift_algebraMap R A _ r)
     (algHom_ext fun i ↦ isEmptyElim i)
 
-/-- On scalars, `isEmptyAlgEquiv` is the identity (`simp` already discharges this via
-`AlgEquiv.commutes`). -/
-theorem isEmptyAlgEquiv_algebraMap [IsEmpty I] (r : R) :
-    isEmptyAlgEquiv R A (algebraMap R (FreeProduct R A) r) = r :=
-  lift_algebraMap R A _ r
-
 @[simp]
 theorem isEmptyAlgEquiv_symm_apply [IsEmpty I] (r : R) :
     (isEmptyAlgEquiv R A).symm r = algebraMap R (FreeProduct R A) r :=

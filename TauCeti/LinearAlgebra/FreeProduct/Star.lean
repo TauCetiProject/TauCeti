@@ -213,17 +213,9 @@ variable (R A)
 /-- The star-subalgebra images of the factor embeddings generate `FreeProduct R A`. -/
 theorem iSup_range_ιStar :
     (⨆ i, (ιStar R A i).range) = (⊤ : StarSubalgebra R (FreeProduct R A)) := by
-  let S : StarSubalgebra R (FreeProduct R A) := ⨆ i, (ιStar R A i).range
-  let s : FreeProduct R A →⋆ₐ[R] S :=
-    liftStar fun {i} ↦ (ιStar R A i).codRestrict S fun a ↦
-      le_iSup (fun j ↦ (ιStar R A j).range) i ⟨a, rfl⟩
-  have hs : S.subtype.comp s = StarAlgHom.id R (FreeProduct R A) := by
-    refine starAlgHom_ext fun i a ↦ ?_
-    simp [s]
-  rw [eq_top_iff]
-  intro x _
-  have hx : S.subtype (s x) = x := DFunLike.congr_fun hs x
-  exact hx ▸ (s x).2
+  rw [← StarSubalgebra.toSubalgebra_eq_top, eq_top_iff, ← iSup_range_ι R A, iSup_le_iff]
+  rintro i _ ⟨a, rfl⟩
+  exact le_iSup (fun j ↦ (ιStar R A j).range) i ⟨a, rfl⟩
 
 /-- The unital star-algebraic free product over an empty index type is canonically star-isomorphic
 to the base star semiring `R`. -/
@@ -241,11 +233,6 @@ theorem isEmptyStarAlgEquiv_toAlgEquiv [IsEmpty I] :
   AlgEquiv.ext fun x ↦ AlgHom.congr_fun
     (algHom_ext (f := (isEmptyStarAlgEquiv R A).toAlgEquiv.toAlgHom)
       (g := (isEmptyAlgEquiv R A).toAlgHom) fun i ↦ isEmptyElim i) x
-
-@[simp]
-theorem isEmptyStarAlgEquiv_algebraMap [IsEmpty I] (r : R) :
-    isEmptyStarAlgEquiv R A (algebraMap R (FreeProduct R A) r) = r :=
-  AlgHomClass.commutes (isEmptyStarAlgEquiv R A) r
 
 @[simp]
 theorem isEmptyStarAlgEquiv_symm_apply [IsEmpty I] (r : R) :
