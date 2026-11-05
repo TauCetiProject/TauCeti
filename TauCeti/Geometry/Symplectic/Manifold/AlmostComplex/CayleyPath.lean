@@ -144,7 +144,8 @@ private theorem contMDiff_cayleyPathEnd :
       (coord x₀ (J₁.toEndomorphism x₀))) := by
     rw [hconj hx₀, hconj hx₀, ← map_cayleyFormula, ← map_smul, ← map_one φ₀, ← map_sub]
     exact (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      (h₀.compatibleAt x₀) (h₁.compatibleAt x₀) p₀.1
+      (h₀.compatibleAt x₀) (h₁.compatibleAt x₀).tames
+      ⟨smoothTransition.nonneg p₀.1, smoothTransition.le_one p₀.1⟩
       (J₀.almostComplexStructureAt_toLinearMap x₀).symm
       (J₁.almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
   -- Near `p₀`, the path in coordinates is the Cayley path expression of `J₀` and `J₁` in

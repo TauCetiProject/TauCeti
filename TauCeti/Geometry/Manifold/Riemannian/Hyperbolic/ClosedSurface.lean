@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.CurvatureEquation
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Volume
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
 import TauCeti.Geometry.Manifold.ContMDiff.Log
+import TauCeti.Geometry.Manifold.Riemannian.TotalCurvature
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 
 /-!
@@ -27,7 +31,8 @@ distance of a compact manifold is complete (`TauCeti.HyperbolicMetric.ofCompactS
 volume then follows separately (`TauCeti.HyperbolicMetric.hasFiniteVolume_of_compactSpace`).
 So the existence of a hyperbolic metric in the conformal class of `g` is equivalent to the
 solvability of the curvature equation, and by the maximum principle there is at most one such
-metric.
+metric. Since total curvature is a conformal invariant of a closed surface, the area of this
+metric is `-∫ K dV_g`.
 
 ## Main results
 
@@ -36,6 +41,8 @@ metric.
   smooth solution.
 * `TauCeti.HyperbolicMetric.eq_of_metric_eq_rescale`: two hyperbolic metrics conformal to `g`
   are equal.
+* `TauCeti.HyperbolicMetric.hypVolumeOfMetric_eq_of_metric_eq_rescale`: a hyperbolic metric
+  conformal to `g` has area `-∫ K dV_g`.
 
 ## References
 
@@ -104,16 +111,29 @@ theorem eq_of_metric_eq_rescale [I.Boundaryless] (hE : finrank ℝ E = 2)
     G₁ = G₂ := by
   -- Both conformal metrics have scalar curvature `-2`, so the maximum principle identifies the
   -- conformal factors.
-  have hscal {G : HyperbolicMetric (I := I) (M := M)} {f : M → ℝ}
-      {hf : ContMDiff I 𝓘(ℝ) ∞ f} {hf_pos : ∀ x, 0 < f x}
-      (h : G.metric = g.rescale f hf hf_pos) (x : M) :
-      (g.rescale f hf hf_pos).scalarCurvature x = -2 := by
-    have hc : (g.rescale f hf hf_pos).IsConstantCurvatureTensor (-1) := h ▸ G.curvature
-    rw [ContMDiffRiemannianMetric.isConstantCurvatureTensor_iff_scalarCurvature_eq_of_finrank_eq_two
-      _ hE] at hc
-    linarith [hc x]
   obtain rfl := g.eq_of_scalarCurvature_rescale_eq hE hf₁ hf₁_pos hf₂ hf₂_pos (by norm_num)
-    (hscal h₁) (hscal h₂)
+    (h₁ ▸ G₁.scalarCurvature_metric_of_finrank_eq_two hE)
+    (h₂ ▸ G₂.scalarCurvature_metric_of_finrank_eq_two hE)
   exact HyperbolicMetric.ext (h₁.trans h₂.symm)
+
+/-- **Area of the hyperbolic metric in a conformal class.** On a closed surface, a hyperbolic
+metric conformal to `g` has area `-∫ K dV_g`, where `K = Scal^g / 2` is the Gaussian curvature of
+`g`. -/
+theorem hypVolumeOfMetric_eq_of_metric_eq_rescale [I.Boundaryless] [MeasurableSpace M]
+    [BorelSpace M] (hE : finrank ℝ E = 2)
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (G : HyperbolicMetric (I := I) (M := M)) {f : M → ℝ} {hf : ContMDiff I 𝓘(ℝ) ∞ f}
+    {hf_pos : ∀ x, 0 < f x} (h : G.metric = g.rescale f hf hf_pos) :
+    hypVolumeOfMetric G =
+      -(∫ x, g.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric g)) / 2 := by
+  -- The volume of `G` is that of the metric-indexed copy `WithMetric G.metric`.
+  have hvol : hypVolumeOfMetric G = riemannianTotalVolume I (WithMetric G.metric) := by
+    have h1 := WithMetric.integral_comp_ofWithMetric G.metric fun _ ↦ (1 : ℝ)
+    simp only [MeasureTheory.integral_const, smul_eq_mul, mul_one] at h1
+    simp only [hypVolumeOfMetric_def, riemannianTotalVolume_def]
+    exact h1.symm
+  rw [hvol, h, ← g.mul_riemannianTotalVolume_rescale_of_finrank_eq_two hE hf hf_pos
+    (h ▸ G.scalarCurvature_metric_of_finrank_eq_two hE)]
+  ring
 
 end TauCeti.HyperbolicMetric
