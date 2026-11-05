@@ -41,8 +41,8 @@ their product type. -/
 @[to_additive /-- A nested filtered sum over two finite types is the corresponding filtered sum
 over their product type. -/]
 theorem _root_.Finset.prod_prod_filter {ι κ M : Type*} [Fintype ι] [Fintype κ] [CommMonoid M]
-    (P : ι → κ → Prop) [DecidableRel P] (f : κ → M) :
-    (∏ i : ι, ∏ k : κ with P i k, f k) = ∏ ik : ι × κ with P ik.1 ik.2, f ik.2 := by
+    (P : ι → κ → Prop) [DecidableRel P] (f : ι → κ → M) :
+    (∏ i : ι, ∏ k : κ with P i k, f i k) = ∏ ik : ι × κ with P ik.1 ik.2, f ik.1 ik.2 := by
   simp_rw [Finset.prod_filter]
   rw [← Fintype.prod_prod_type']
 

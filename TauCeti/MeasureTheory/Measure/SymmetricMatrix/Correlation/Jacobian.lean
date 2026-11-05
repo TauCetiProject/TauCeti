@@ -90,23 +90,23 @@ private theorem partialCorrelationResidual_self (z : strictLowerTriangle p → �
   · intro _ _
     rfl
 
-/-- The below-diagonal Cholesky entry, expressed using the residual product used throughout this
-proof. This isolates the definitional identification between the two product presentations. -/
-private theorem partialCorrelationCholesky_apply_of_gt_residual
-    (z : strictLowerTriangle p → ℝ) {i j : Fin p} (h : j < i) :
-    partialCorrelationCholesky z i j =
-      z ⟨(i, j), h⟩ * partialCorrelationResidual z i j := by
-  rw [partialCorrelationCholesky_apply_of_gt]
-  rfl
-
 private theorem partialCorrelationCholesky_update_of_lt
     (z : strictLowerTriangle p → ℝ) (a : strictLowerTriangle p) (t : ℝ)
     {i j : Fin p} (hja : j < a.1.2) :
     partialCorrelationCholesky (Function.update z a t) i j =
       partialCorrelationCholesky z i j := by
   rcases lt_trichotomy j i with hji | rfl | hij
-  · rw [partialCorrelationCholesky_apply_of_gt_residual _ hji,
-      partialCorrelationCholesky_apply_of_gt_residual _ hji]
+  · have hupdateCholesky :
+        partialCorrelationCholesky (Function.update z a t) i j =
+          Function.update z a t ⟨(i, j), hji⟩ *
+            partialCorrelationResidual (Function.update z a t) i j := by
+      simpa only [partialCorrelationResidual] using
+        partialCorrelationCholesky_apply_of_gt (Function.update z a t) hji
+    have hCholesky : partialCorrelationCholesky z i j =
+        z ⟨(i, j), hji⟩ * partialCorrelationResidual z i j := by
+      simpa only [partialCorrelationResidual] using
+        partialCorrelationCholesky_apply_of_gt z hji
+    rw [hupdateCholesky, hCholesky]
     rw [partialCorrelationResidual_update_of_le _ _ _ _ _ hja.le]
     rw [Function.update_apply, ite_eq_right]
     intro h
@@ -123,8 +123,17 @@ private theorem partialCorrelationCholesky_update_of_ne
     partialCorrelationCholesky (Function.update z a t) i j =
       partialCorrelationCholesky z i j := by
   rcases lt_trichotomy j i with hji | rfl | hij
-  · rw [partialCorrelationCholesky_apply_of_gt_residual _ hji,
-      partialCorrelationCholesky_apply_of_gt_residual _ hji]
+  · have hupdateCholesky :
+        partialCorrelationCholesky (Function.update z a t) i j =
+          Function.update z a t ⟨(i, j), hji⟩ *
+            partialCorrelationResidual (Function.update z a t) i j := by
+      simpa only [partialCorrelationResidual] using
+        partialCorrelationCholesky_apply_of_gt (Function.update z a t) hji
+    have hCholesky : partialCorrelationCholesky z i j =
+        z ⟨(i, j), hji⟩ * partialCorrelationResidual z i j := by
+      simpa only [partialCorrelationResidual] using
+        partialCorrelationCholesky_apply_of_gt z hji
+    rw [hupdateCholesky, hCholesky]
     rw [partialCorrelationResidual_update_of_ne _ _ _ _ _ hia,
       Function.update_apply, ite_eq_right]
     intro h
@@ -139,7 +148,13 @@ private theorem partialCorrelationCholesky_update_self
     (z : strictLowerTriangle p → ℝ) (a : strictLowerTriangle p) (t : ℝ) :
     partialCorrelationCholesky (Function.update z a t) a.1.1 a.1.2 =
       t * partialCorrelationResidual z a.1.1 a.1.2 := by
-  rw [partialCorrelationCholesky_apply_of_gt_residual _ a.2]
+  have hCholesky :
+      partialCorrelationCholesky (Function.update z a t) a.1.1 a.1.2 =
+        Function.update z a t ⟨(a.1.1, a.1.2), a.2⟩ *
+          partialCorrelationResidual (Function.update z a t) a.1.1 a.1.2 := by
+    simpa only [partialCorrelationResidual] using
+      partialCorrelationCholesky_apply_of_gt (Function.update z a t) a.2
+  rw [hCholesky]
   rw [partialCorrelationResidual_update_of_le _ _ _ _ _ le_rfl]
   simp
 
@@ -190,9 +205,13 @@ private theorem partialCorrelationGram_update_self
     · rw [partialCorrelationCholesky_apply_of_lt _ hak,
         partialCorrelationCholesky_apply_of_lt _ hak]
       simp
+  have hCholesky : partialCorrelationCholesky z a.1.1 a.1.2 =
+      z ⟨(a.1.1, a.1.2), a.2⟩ * partialCorrelationResidual z a.1.1 a.1.2 := by
+    simpa only [partialCorrelationResidual] using
+      partialCorrelationCholesky_apply_of_gt z a.2
   rw [herase, partialCorrelationCholesky_update_self,
     partialCorrelationCholesky_update_of_ne _ _ _ a.2.ne,
-    partialCorrelationCholesky_apply_of_gt_residual _ a.2,
+    hCholesky,
     partialCorrelationCholesky_apply_self,
     ← partialCorrelationResidual_self]
   have ha : (⟨(a.1.1, a.1.2), a.2⟩ : strictLowerTriangle p) = a := Subtype.ext rfl
@@ -218,12 +237,7 @@ private theorem hasDerivAt_correlationCoordinatesOfPartialCorrelation_update
     (contDiffOn_correlationCoordinatesOfPartialCorrelation.contDiffAt
       (isOpen_partialCorrelationCube.mem_nhds hz)).differentiableAt (by simp)
   have hu := hasDerivAt_update z a (z a)
-  have hupdate : Function.update z a (z a) = z := by
-    funext i
-    by_cases h : i = a
-    · subst i
-      simp
-    · simp [h]
+  have hupdate := Function.update_eq_self a z
   have hdiff' : HasFDerivAt F (fderiv ℝ F z) (Function.update z a (z a)) := by
     simpa [hupdate] using hdiff.hasFDerivAt
   have hcomp := hdiff'.comp (z a) hu.hasFDerivAt
@@ -443,13 +457,13 @@ private theorem prod_partialCorrelationFilters_eq_pairProduct
           ∏ b : strictLowerTriangle p with b.1.1 = a.1.1 ∧ b.1.2 < a.1.2, q b) =
         ∏ ab : strictLowerTriangle p × strictLowerTriangle p with
           ab.2.1.1 = ab.1.1.1 ∧ ab.2.1.2 < ab.1.1.2, q ab.2 :=
-    Finset.prod_prod_filter _ q
+    Finset.prod_prod_filter _ (fun _ b ↦ q b)
   have hsecond' :
       (∏ a : strictLowerTriangle p,
           ∏ b : strictLowerTriangle p with b.1.1 = a.1.2, q b) =
         ∏ ab : strictLowerTriangle p × strictLowerTriangle p with
           ab.2.1.1 = ab.1.1.2, q ab.2 :=
-    Finset.prod_prod_filter _ q
+    Finset.prod_prod_filter _ (fun _ b ↦ q b)
   rw [hfirst, hsecond']
   have hdisjoint : Disjoint
       (Finset.univ.filter fun ab : strictLowerTriangle p × strictLowerTriangle p ↦
