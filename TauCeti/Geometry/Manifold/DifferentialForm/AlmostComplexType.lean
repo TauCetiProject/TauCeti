@@ -58,6 +58,8 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.sum_typeProjection`,
   `TauCeti.SmoothAlmostComplexStructure.typeProjection_eq_of_sum_eq`: existence and uniqueness of
   the type decomposition.
+* `TauCeti.SmoothAlmostComplexStructure.typeForms`: the complex subspace of smooth forms of type
+  `(p,q)`, the range of the type projection.
 * `TauCeti.SmoothAlmostComplexStructure.map_eq_of_forall_isOfType`: additive maps agreeing on the
   forms of each type agree.
 * `TauCeti.SmoothForm.isOfType_one_zero_iff_eigenspace_le_ker`,
@@ -432,6 +434,38 @@ theorem typeProjection_one_zero_add_zero_one (α : SmoothForm I M F 1) :
     J.typeProjection 1 0 α + J.typeProjection 0 1 α = α := by
   conv_rhs => rw [← J.sum_typeProjection α]
   simp [Finset.Nat.sum_antidiagonal_succ, add_comm]
+
+/-! ### The subspaces of forms of a fixed type -/
+
+variable (F) in
+/-- The complex subspace of complex-valued smooth `(p+q)`-forms of type `(p,q)` for `J`. -/
+def typeForms (p q : ℕ) : Submodule ℂ (SmoothForm I M F (p + q)) where
+  carrier := {φ | φ.IsOfType J p q}
+  add_mem' := SmoothForm.IsOfType.add
+  zero_mem' := SmoothForm.isOfType_zero_iff.2 rfl
+  smul_mem' c _ h := h.smul c
+
+variable {J} in
+/-- A smooth form lies in `J.typeForms F p q` exactly when it has type `(p,q)`. -/
+@[simp]
+theorem mem_typeForms {p q : ℕ} {φ : SmoothForm I M F (p + q)} :
+    φ ∈ J.typeForms F p q ↔ φ.IsOfType J p q :=
+  Iff.rfl
+
+variable (F) in
+/-- The forms of type `(p,q)` are the range of the type projection onto them. -/
+theorem range_typeProjection (p q : ℕ) :
+    LinearMap.range (J.typeProjection (F := F) (k := p + q) p q) = J.typeForms F p q := by
+  ext φ
+  refine ⟨?_, fun h ↦ ⟨φ, (mem_typeForms.1 h).typeProjection_self⟩⟩
+  rintro ⟨ψ, rfl⟩
+  exact J.isOfType_typeProjection rfl ψ
+
+variable (F) in
+/-- Every smooth function is a form of type `(0,0)`. -/
+@[simp]
+theorem typeForms_zero_zero : J.typeForms F 0 0 = ⊤ :=
+  eq_top_iff.2 fun φ _ ↦ SmoothForm.isOfType_zero_zero φ J
 
 end SmoothAlmostComplexStructure
 

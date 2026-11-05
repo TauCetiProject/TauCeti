@@ -47,6 +47,9 @@ shows that the alternation of the derivative, the exterior derivative, has compo
   `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_ofComplexManifold`,
   `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del_ofComplexManifold`:
   `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0` on a complex manifold.
+* `TauCeti.delBarTypeForms_comp_delBarTypeForms_ofComplexManifold`,
+  `TauCeti.delBarExactForms_le_delBarClosedForms_ofComplexManifold`: `∂bar` restricted to forms of
+  a fixed type squares to zero, so `∂bar`-exact forms are `∂bar`-closed.
 
 ## References
 
@@ -176,5 +179,28 @@ theorem del_delBar_add_delBar_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E
     mextDerivₗ_eq_del_add_delBar_ofComplexManifold mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
 end SmoothAlmostComplexStructure
+
+/-- On a complex manifold, `∂bar` on forms of type `(p,q)` and on forms of type `(p,q+1)` compose
+to zero. -/
+theorem delBarTypeForms_comp_delBarTypeForms_ofComplexManifold (p q : ℕ) :
+    (ofComplexManifold E M).delBarTypeForms F p (q + 1) ∘ₗ
+      (ofComplexManifold E M).delBarTypeForms F p q = 0 :=
+  LinearMap.ext fun φ ↦ Subtype.ext <| by
+    rw [LinearMap.comp_apply, coe_delBarTypeForms, coe_delBarTypeForms,
+      delBar_delBar_ofComplexManifold, LinearMap.zero_apply, Submodule.coe_zero]
+
+/-- On a complex manifold, every `∂bar`-exact form of type `(p,q)` is `∂bar`-closed. -/
+theorem delBarExactForms_le_delBarClosedForms_ofComplexManifold (p q : ℕ) :
+    (ofComplexManifold E M).delBarExactForms F p q ≤
+      (ofComplexManifold E M).delBarClosedForms F p q := by
+  intro φ hφ
+  cases q with
+  | zero =>
+    rw [delBarExactForms_zero, Submodule.mem_bot] at hφ
+    rw [hφ]
+    exact zero_mem _
+  | succ q =>
+    obtain ⟨ψ, hψ, rfl⟩ := mem_delBarExactForms_succ.1 hφ
+    exact mem_delBarClosedForms.2 ⟨hψ.delBar, delBar_delBar_ofComplexManifold ψ⟩
 
 end TauCeti
