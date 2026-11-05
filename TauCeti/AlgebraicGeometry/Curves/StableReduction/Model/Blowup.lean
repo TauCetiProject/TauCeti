@@ -13,13 +13,14 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 # Blowing up a model in a centre of its special fibre
 
 Let `R` be a discrete valuation ring with fraction field `K`, let `M` be a model over `R` of a
-scheme `C` over `K`, and let `I` be an ideal sheaf of finite type on the total space `X` of `M`
-whose support `V(I)` does not meet the generic fibre `C ⊆ X`; for instance the ideal sheaf of a
-closed point of the special fibre. The blowup `Bl_I X ⟶ X` is again a model of `C`:
+scheme `C` over `K`, and let `I` be an ideal sheaf on the total space `X` of `M` whose support
+`V(I)` does not meet the generic fibre `C ⊆ X`; for instance the ideal sheaf of a closed point of
+the special fibre. The blowup `Bl_I X ⟶ X` is again a model of `C`:
 
 * it is flat over `R`, since blowups of flat schemes over a discrete valuation ring are flat
   (`AlgebraicGeometry.Scheme.IdealSheafData.flat_blowupToBase_comp`);
-* it is of finite presentation over `R`, since `I` is of finite type and `R` is noetherian;
+* it is of finite presentation over `R`, since `X` is locally noetherian, so that `I` is of finite
+  type and the blowup is proper over `X`;
 * its generic fibre is still `C`, since the blowup is an isomorphism over the open `X ∖ V(I)`,
   which contains `C`.
 
@@ -30,8 +31,8 @@ curve.
 
 ## Main definitions
 
-* `TauCeti.Model.blowup M I hI hC`: the blowup of the model `M` along `I`, as a model of `C`.
-* `TauCeti.Model.blowupHom M I hI hC`: the blowup morphism, as a morphism of models.
+* `TauCeti.Model.blowup M I hC`: the blowup of the model `M` along `I`, as a model of `C`.
+* `TauCeti.Model.blowupHom M I hC`: the blowup morphism, as a morphism of models.
 * `TauCeti.Model.blowupLift`: the morphism of models into the blowup given by the universal
   property of the blowup.
 
@@ -70,8 +71,14 @@ variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 variable (M : Model R K C toK) (I : M.total.IdealSheafData)
-  (hI : ∀ U : M.total.affineOpens, (I.ideal U).FG)
   (hC : Disjoint (Set.range M.genericι) (I.support : Set M.total))
+
+/-- Every ideal sheaf on the total space of a model is of finite type, since the total space is
+locally of finite type over the noetherian ring `R`. -/
+private lemma ideal_fg (U : M.total.affineOpens) : (I.ideal U).FG := by
+  have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
+  have := IsLocallyNoetherian.component_noetherian U
+  exact IsNoetherian.noetherian _
 
 /-- The generic fibre `C` of `M` lies in the open complement `X ∖ V(I)` of the centre. -/
 private def genericToCompl : C ⟶ I.support.compl :=
@@ -116,37 +123,37 @@ with `C`, when the support of `I` does not meet the generic fibre. -/
 def blowupGenericFiberIso : genericFiber R K (I.blowupToBase ≫ M.toBase) ≅ Over.mk toK :=
   Over.isoMk (isPullback_genericLift_toBase M I hC).isoPullback.symm (by simp)
 
-/-- **The blowup of a model in a centre of its special fibre.** For an ideal sheaf `I` of finite
-type on the total space of `M` whose support does not meet the generic fibre, the blowup of the
-total space along `I` is a model of `C`, with structure morphism through the blowup morphism. -/
+/-- **The blowup of a model in a centre of its special fibre.** For an ideal sheaf `I` on the total
+space of `M` whose support does not meet the generic fibre, the blowup of the total space along `I`
+is a model of `C`, with structure morphism through the blowup morphism. -/
 abbrev blowup : Model R K C toK where
   total := I.blowup
   toBase := I.blowupToBase ≫ M.toBase
   flat := I.flat_blowupToBase_comp M.toBase
   locallyOfFinitePresentation := by
-    have := I.isProper_blowupToBase hI
+    have := I.isProper_blowupToBase (ideal_fg M I)
     infer_instance
   quasiCompact := by
-    have := I.isProper_blowupToBase hI
+    have := I.isProper_blowupToBase (ideal_fg M I)
     infer_instance
   quasiSeparated := by
-    have := I.isProper_blowupToBase hI
+    have := I.isProper_blowupToBase (ideal_fg M I)
     infer_instance
   genericFiberIso := M.blowupGenericFiberIso I hC
 
 /-- The total space of the blowup model is the blowup of the total space. -/
 @[simp]
-lemma blowup_total : (M.blowup I hI hC).total = I.blowup :=
+lemma blowup_total : (M.blowup I hC).total = I.blowup :=
   (rfl)
 
 /-- The structure morphism of the blowup model factors through the blowup morphism. -/
 @[simp]
-lemma blowup_toBase : (M.blowup I hI hC).toBase = I.blowupToBase ≫ M.toBase :=
+lemma blowup_toBase : (M.blowup I hC).toBase = I.blowupToBase ≫ M.toBase :=
   (rfl)
 
 /-- The blowup of a proper model is a proper model. -/
-lemma isProper_blowup [hM : M.IsProper] : (M.blowup I hI hC).IsProper := by
-  have := I.isProper_blowupToBase hI
+lemma isProper_blowup [hM : M.IsProper] : (M.blowup I hC).IsProper := by
+  have := I.isProper_blowupToBase (ideal_fg M I)
   have : AlgebraicGeometry.IsProper M.toBase := hM
   rw [Model.IsProper, blowup_toBase]
   infer_instance
@@ -155,8 +162,8 @@ lemma isProper_blowup [hM : M.IsProper] : (M.blowup I hI hC).IsProper := by
 blowup model maps to that of `M` by the identity. -/
 @[reassoc (attr := simp)]
 lemma genericι_blowupToBase :
-    (M.blowup I hI hC).genericι ≫ I.blowupToBase = M.genericι := by
-  have h : (M.blowup I hI hC).genericι = genericLift M I hC := by
+    (M.blowup I hC).genericι ≫ I.blowupToBase = M.genericι := by
+  have h : (M.blowup I hC).genericι = genericLift M I hC := by
     simp only [genericι_def, blowup, blowupGenericFiberIso, Over.isoMk_inv_left, Iso.symm_inv]
     exact IsPullback.isoPullback_hom_fst _
   rw [h]
@@ -164,49 +171,39 @@ lemma genericι_blowupToBase :
 
 /-- **The blowup morphism of models.** The blowup morphism `Bl_I X ⟶ X` is a morphism from the
 blowup model to `M`. -/
-def blowupHom : M.blowup I hI hC ⟶ M where
+def blowupHom : M.blowup I hC ⟶ M where
   hom := I.blowupToBase
   overBase := (rfl)
-  genericFiber := by
-    have : Mono M.genericι := by
-      have := M.isOpenImmersion_genericι
-      infer_instance
-    rw [← cancel_mono M.genericι, Category.assoc, genericFiberIso_hom_left_genericι,
-      baseChangeHom_genericFiberι, ← genericι_blowupToBase M I hI hC,
-      genericFiberIso_hom_left_genericι_assoc]
+  genericFiber := baseChangeHom_genericFiberIso_hom_left _ _ (genericι_blowupToBase M I hC)
 
 /-- The blowup morphism of models has the blowup morphism as underlying morphism. -/
 @[simp]
-lemma blowupHom_hom : (M.blowupHom I hI hC).hom = I.blowupToBase :=
+lemma blowupHom_hom : (M.blowupHom I hC).hom = I.blowupToBase :=
   (rfl)
 
 /-- The blowup morphism of models is an isomorphism exactly when the centre `V(I)` is already an
 effective Cartier divisor on the total space of `M`. -/
-theorem isIso_blowupHom_iff : IsIso (M.blowupHom I hI hC) ↔ I.IsEffectiveCartier := by
+theorem isIso_blowupHom_iff : IsIso (M.blowupHom I hC) ↔ I.IsEffectiveCartier := by
   rw [isIso_iff_isIso_hom, blowupHom_hom, I.isIso_blowupToBase_iff]
 
-variable {M I hI hC} {N : Model R K C toK}
+variable {M I hC} {N : Model R K C toK}
 
 /-- **The universal property of the blowup model: the lift.** A morphism of models `f : N ⟶ M`
 along which the centre `V(I)` pulls back to an effective Cartier divisor factors through the
 blowup model. -/
 def blowupLift (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
-    N ⟶ M.blowup I hI hC where
+    N ⟶ M.blowup I hC where
   hom := I.blowupLift f.hom hf
   overBase := by
     rw [blowup_toBase, I.blowupLift_blowupToBase_assoc, f.overBase]
   genericFiber := by
-    have : Mono (M.blowup I hI hC).genericι := by
-      have := (M.blowup I hI hC).isOpenImmersion_genericι
-      infer_instance
-    rw [← cancel_mono (M.blowup I hI hC).genericι, Category.assoc,
-      genericFiberIso_hom_left_genericι, baseChangeHom_genericFiberι]
+    refine baseChangeHom_genericFiberIso_hom_left _ _ ?_
     -- Two morphisms to the blowup agree once they agree over `X` and pull the centre back to an
     -- effective Cartier divisor; the generic fibre of `N` is open in `N`, hence flat over it.
-    have := isOpenImmersion_genericFiberι R K N.toBase
+    have := N.isOpenImmersion_genericι
     refine I.blowup_hom_ext ?_ ?_
-    · rw [Category.assoc, Category.assoc, Scheme.IdealSheafData.blowupLift_blowupToBase,
-        genericι_blowupToBase, ← genericι_hom f, genericFiberIso_hom_left_genericι_assoc]
+    · rw [Category.assoc, Scheme.IdealSheafData.blowupLift_blowupToBase, genericι_blowupToBase,
+        genericι_hom f]
     · rw [Category.assoc, Scheme.IdealSheafData.blowupLift_blowupToBase,
         Scheme.IdealSheafData.comap_comp]
       exact hf.comap _
@@ -214,19 +211,19 @@ def blowupLift (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
 /-- The lift to the blowup model has the lift to the blowup as underlying morphism. -/
 @[simp]
 lemma blowupLift_hom (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
-    (blowupLift (hI := hI) (hC := hC) f hf).hom = I.blowupLift f.hom hf :=
+    (blowupLift (hC := hC) f hf).hom = I.blowupLift f.hom hf :=
   (rfl)
 
 /-- The lift to the blowup model is a morphism over `M`. -/
 @[reassoc (attr := simp)]
 lemma blowupLift_blowupHom (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
-    blowupLift (hI := hI) (hC := hC) f hf ≫ M.blowupHom I hI hC = f :=
+    blowupLift (hC := hC) f hf ≫ M.blowupHom I hC = f :=
   Hom.ext (by simp)
 
 /-- **The universal property of the blowup model: uniqueness.** Every morphism of models to the
 blowup model lifting `f` is the lift `blowupLift`. -/
 theorem eq_blowupLift {f : N ⟶ M} (hf : (I.comap f.hom).IsEffectiveCartier)
-    {g : N ⟶ M.blowup I hI hC} (hg : g ≫ M.blowupHom I hI hC = f) : g = blowupLift f hf := by
+    {g : N ⟶ M.blowup I hC} (hg : g ≫ M.blowupHom I hC = f) : g = blowupLift f hf := by
   refine Hom.ext (I.eq_blowupLift hf ?_)
   rw [← hg, comp_hom, blowupHom_hom]
 

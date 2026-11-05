@@ -18,16 +18,16 @@ generic-fibre inclusion.
 Consequently, two morphisms into a separated target agree whenever their restrictions to this
 fibre agree. Neither reducedness nor finite presentation of the source is needed.
 
+This is the density argument used for uniqueness of extensions on flat models over valuation
+rings; see Q. Liu, *Algebraic Geometry and Arithmetic Curves*, §4.3. The construction uses
+Mathlib's stability of schematic dominance under flat base change.
+
 Over a Bezout domain `R`, for instance a discrete valuation ring, the converse holds: a scheme over
 `R` whose generic fibre is scheme-theoretically dense is flat, because it is then the
 scheme-theoretic image of a scheme over the fraction field. Hence flatness over `R` passes from
 a flat scheme to the target of any scheme-theoretically dominant morphism out of it; for instance,
-from the complement of an effective Cartier divisor to the whole scheme.
-
-This is the density argument used for uniqueness of extensions on flat models over valuation
-rings; see Q. Liu, *Algebraic Geometry and Arithmetic Curves*, §4.3 (Proposition 4.3.9 for the
-flatness criterion over Dedekind schemes). The construction uses Mathlib's stability of schematic
-dominance under flat base change.
+from the complement of an effective Cartier divisor to the whole scheme. Over Dedekind schemes,
+this flatness criterion is Liu, *op. cit.*, Proposition 4.3.9.
 -/
 
 public section
@@ -73,18 +73,21 @@ theorem flat_of_isSchemeTheoreticallyDominant_genericFiberι {R : Type u} (K : T
     Flat toBase := by
   have := (genericFiberι R K toBase).flat_imageι_comp toBase (genericFiber R K toBase).hom
     (genericFiberι_toBase R K toBase)
-  -- A scheme-theoretically dominant morphism has trivial kernel, so its image is everything.
-  have : IsIso (genericFiberι R K toBase).imageι := by
-    delta Scheme.Hom.imageι Scheme.Hom.image
-    rw [(genericFiberι R K toBase).ker_eq_bot]
-    infer_instance
   rw [← IsIso.inv_hom_id_assoc (genericFiberι R K toBase).imageι toBase]
   infer_instance
+
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti
+
+universe u
 
 /-- Over a Bezout domain `R`, the target of a scheme-theoretically dominant morphism from a flat
 scheme over `R` is flat over `R`. -/
 theorem flat_of_isSchemeTheoreticallyDominant_of_flat_comp {R : Type u} [CommRing R] [IsDomain R]
-    [IsBezout R] {Z : Scheme.{u}} (h : Z ⟶ X) [IsSchemeTheoreticallyDominant h]
+    [IsBezout R] {X Z : Scheme.{u}} (h : Z ⟶ X) [IsSchemeTheoreticallyDominant h]
     (toBase : X ⟶ Spec (.of R)) [Flat (h ≫ toBase)] : Flat toBase := by
   let K := FractionRing R
   have := isSchemeTheoreticallyDominant_genericFiberι R K
@@ -99,4 +102,4 @@ theorem flat_of_isSchemeTheoreticallyDominant_of_flat_comp {R : Type u} [CommRin
   have := IsSchemeTheoreticallyDominant.of_comp m (genericFiberι R K toBase)
   exact flat_of_isSchemeTheoreticallyDominant_genericFiberι K toBase
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

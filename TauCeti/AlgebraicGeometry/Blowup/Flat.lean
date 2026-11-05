@@ -21,8 +21,8 @@ Indeed, the exceptional divisor of `Bl_I X` is an effective Cartier divisor, so 
 complement is scheme-theoretically dense in `Bl_I X`. That complement is isomorphic to the open
 `X ∖ V(I)` of `X`, which is flat over `R`. Over a Bezout domain, flatness passes from a
 scheme-theoretically dense open to the whole scheme
-(`TauCeti.flat_of_isSchemeTheoreticallyDominant_of_flat_comp`). No hypothesis on `I` is needed: no
-finite type condition, and no condition on where its support lies.
+(`AlgebraicGeometry.Scheme.Hom.flat_of_isSchemeTheoreticallyDominant_of_flat_comp`). No hypothesis
+on `I` is needed: no finite type condition, and no condition on where its support lies.
 
 Over a discrete valuation ring this is what lets blowups of models in centres of the special
 fibre remain flat models.
@@ -61,7 +61,7 @@ theorem flat_blowupToBase_comp {R : Type u} [CommRing R] [IsDomain R] [IsBezout 
   have : Flat ((I.blowupToBase ⁻¹ᵁ I.support.compl).ι ≫ I.blowupToBase ≫ toBase) := by
     rw [← Category.assoc, ← morphismRestrict_ι]
     infer_instance
-  exact flat_of_isSchemeTheoreticallyDominant_of_flat_comp
+  exact Scheme.Hom.flat_of_isSchemeTheoreticallyDominant_of_flat_comp
     (I.blowupToBase ⁻¹ᵁ I.support.compl).ι _
 
 end AlgebraicGeometry.Scheme.IdealSheafData
