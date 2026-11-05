@@ -195,6 +195,7 @@ theorem frameCovariantDerivative_eq_symmL_comp {g : M → F}
 
 /-- The section `z ↦ e.symmL z v` has constant coefficients in the frame of `e`, so its flat frame
 derivative at a point of the base set vanishes. -/
+@[simp]
 theorem frameCovariantDerivative_symmL_const (hx : x ∈ e.baseSet) (v : F) :
     frameCovariantDerivative I b e (fun z ↦ e.symmL 𝕜 z v) x = 0 := by
   have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ v) x
