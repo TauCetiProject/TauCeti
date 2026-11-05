@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Pair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Torus
 
 import TauCeti.RingTheory.Huber.Padic.Field

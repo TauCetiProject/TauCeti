@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Pair
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Integral
 
