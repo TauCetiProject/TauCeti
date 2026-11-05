@@ -243,6 +243,24 @@ theorem _root_.ProbabilityTheory.HasLaw.prefix_processShift_markovChainLaw [IsFi
   exact (hasLaw_map ((by fun_prop : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.1).prodMk
     (measurable_shift_iterate n)).aemeasurable).comp h
 
+/-- On an event determined by the history through `n`, the future of a realization has the
+chain law started from its time-`n` distribution restricted to that event. -/
+theorem _root_.ProbabilityTheory.HasLaw.markovChainLaw_restrict_map_processShift
+    [IsFiniteMeasure ν] (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ)
+    (hXm : ∀ n, Measurable (X n)) (n : ℕ) {A : Set Ω}
+    (hA : MeasurableSet[MeasurableSpace.comap
+      (fun ω (i : Fin (n + 1)) => X i ω) inferInstance] A) :
+    (μ.restrict A).map (processShift X n) =
+      markovChainLaw ((μ.restrict A).map (X n)) κ := by
+  obtain ⟨B, hB, rfl⟩ := hA
+  have hpath : Measurable (fun ω n => X n ω) := Measurable.of_eval hXm
+  have hcan := Measure.markovChainLaw_restrict_map_shift_iterate ν κ n hB
+  rw [← hX.map_eq, Measure.restrict_map hpath (hB.preimage (by fun_prop)),
+    Measure.map_map (measurable_shift_iterate n) hpath,
+    Measure.map_map (measurable_pi_apply n) hpath] at hcan
+  rw [processShift_eq_shift_iterate]
+  simpa only [Set.preimage_preimage, Function.comp_def] using hcan
+
 end Process
 
 end TauCeti.Probability

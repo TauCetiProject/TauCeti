@@ -44,24 +44,6 @@ variable {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω]
   {P : Measure Ω} {ν : Measure α} [IsFiniteMeasure ν]
   {κ : Kernel α α} [IsMarkovKernel κ] {X : ℕ → Ω → α}
 
-/-- On an event determined by the history through `n`, the future of a realization has the
-chain law started from its time-`n` distribution restricted to that event. -/
-theorem markovChainLaw_restrict_map_processShift
-    (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
-    (hXm : ∀ n, Measurable (X n)) (n : ℕ) {A : Set Ω}
-    (hA : MeasurableSet[MeasurableSpace.comap
-      (fun ω (i : Fin (n + 1)) => X i ω) inferInstance] A) :
-    (P.restrict A).map (processShift X n) =
-      markovChainLaw ((P.restrict A).map (X n)) κ := by
-  obtain ⟨B, hB, rfl⟩ := hA
-  have hpath : Measurable (fun ω n => X n ω) := Measurable.of_eval hXm
-  have hcan := Measure.markovChainLaw_restrict_map_shift_iterate ν κ n hB
-  rw [← hX.map_eq, Measure.restrict_map hpath (hB.preimage (by fun_prop)),
-    Measure.map_map (measurable_shift_iterate n) hpath,
-    Measure.map_map (measurable_pi_apply n) hpath] at hcan
-  rw [processShift_eq_shift_iterate]
-  simpa only [Set.preimage_preimage, Function.comp_def] using hcan
-
 /-- **Strong Markov law on an arbitrary sample space.** If the filtration is contained in the
 coordinate history, the future on `A ∩ {τ < ∞}` has the chain law started from the stopped-state
 law on that event. No adaptation, topology or countability assumption on the state space is
