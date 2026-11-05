@@ -135,29 +135,42 @@ theorem mem_part_union_part_of_sup_comap_bot_eq_top (hf : MonotoneOn f s) {i j :
     {π : NoncrossingPartition s} (hπ : π ⊔ comap hf ⊥ = ⊤) {z : α}
     (hz : z ∈ s) :
     z ∈ π.1.part i ∪ π.1.part j := by
-  obtain ⟨Q, hQ, hπQ, hQi⟩ := π.2.exists_part_eq_union hi hj hij hadj
-  have hiQ : ∀ {u}, u = i ∨ u = j → u ∈ Q.part i := by
-    rintro u (rfl | rfl) <;> rw [hQi]
-    exacts [mem_union_left _ (π.1.mem_part_self.2 hi), mem_union_right _ (π.1.mem_part_self.2 hj)]
-  -- The fibres of `f` lie in the parts of `Q`.
-  have hσQ : (comap hf ⊥ : Finpartition s) ≤ Q := by
-    intro b hb
-    obtain ⟨x, hx⟩ := Finpartition.nonempty_of_mem_parts _ hb
-    have hxs := Finpartition.le _ hb hx
-    refine ⟨Q.part x, Q.part_mem.2 hxs, fun w hw => ?_⟩
-    rw [← Finpartition.part_eq_of_mem _ hb hx, coe_comap, coe_bot,
-      Finpartition.part_comap_bot hxs] at hw
+  have hpair : {i, j} ⊆ s := fun u hu => by
+    rcases mem_insert.1 hu with rfl | hu
+    exacts [hi, (mem_singleton.1 hu) ▸ hj]
+  have hji : (Finpartition.pairPartition s i j hpair).part j =
+      (Finpartition.pairPartition s i j hpair).part i :=
+    ((Finpartition.pairPartition s i j hpair).mem_part_iff_part_eq_part hj hi).1 (by
+      rw [Finpartition.part_pairPartition]; exact mem_insert_of_mem (mem_singleton_self j))
+  -- The fibres of `f` lie in the parts of `pairPartition s i j`.
+  have hσ : comap hf ⊥ ≤ (⟨Finpartition.pairPartition s i j hpair,
+      Finpartition.isNoncrossing_pairPartition hpair⟩ : NoncrossingPartition s) := by
+    refine Finpartition.le_iff_forall_part_subset.2 fun x w hw => ?_
+    by_cases hxs : x ∈ s
+    swap
+    · rw [Finpartition.part_eq_empty _ |>.2 hxs] at hw
+      exact absurd hw (notMem_empty _)
+    rw [coe_comap, coe_bot, Finpartition.part_comap_bot hxs] at hw
     obtain ⟨hws, hwx⟩ := mem_filter.1 hw
     rcases eq_or_ne w x with rfl | hne
-    · exact Q.mem_part_self.2 hxs
+    · exact Finpartition.mem_part_self _ |>.2 hws
     obtain ⟨hw', hx'⟩ := hfeq hws hxs hwx hne
-    rw [Q.part_eq_of_mem (Q.part_mem.2 hi) (hiQ hx')]
-    exact hiQ hw'
-  have htop : Q = ⊤ := congrArg Subtype.val
-    (top_le_iff.1 (hπ ▸ sup_le hπQ hσQ) : (⟨Q, hQ⟩ : NoncrossingPartition s) = ⊤)
-  rw [← hQi, htop, Finpartition.part_eq_of_mem _ (by
-    rw [Finpartition.parts_top (nonempty_of_ne_empty (ne_empty_of_mem hi)).ne_empty]
-    exact mem_singleton_self s) hi]
+    have hmem : ∀ {u}, u = i ∨ u = j →
+        u ∈ (Finpartition.pairPartition s i j hpair).part i := by
+      rintro u (rfl | rfl)
+      · rw [Finpartition.part_pairPartition]; exact mem_insert_self _ _
+      · rw [Finpartition.part_pairPartition]; exact mem_insert_of_mem (mem_singleton_self _)
+    have hxi : (Finpartition.pairPartition s i j hpair).part x =
+        (Finpartition.pairPartition s i j hpair).part i := by
+      rcases hx' with rfl | rfl
+      · rfl
+      · exact hji
+    change w ∈ (Finpartition.pairPartition s i j hpair).part x
+    rw [hxi]
+    exact hmem hw'
+  have htop := top_le_iff.1 (hπ ▸ sup_le_sup_left hσ π)
+  have hu := (sup_pairPartition_eq_top_iff hpair hij hadj π).1 htop
+  rw [hu]
   exact hz
 
 end TauCeti.NoncrossingPartition
