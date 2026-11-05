@@ -47,6 +47,12 @@ lemma adjointifyCounit_eq_of_left_triangle {f : a ⟶ b} {g : b ⟶ a} {η : �
   ext
   simp
 
+/-- The inverse and the left unitor of `𝟙 a` satisfy the left triangle identity, as the unit and
+counit of an adjoint equivalence from `𝟙 a` to itself. -/
+lemma leftZigzag_leftUnitor_inv_leftUnitor_hom (a : B) :
+    leftZigzag (λ_ (𝟙 a)).inv (λ_ (𝟙 a)).hom = (λ_ (𝟙 a)).hom ≫ (ρ_ (𝟙 a)).inv := by
+  bicategory
+
 namespace Equivalence
 
 /-- The inverse of an adjoint equivalence in a bicategory: its `1`-morphisms are exchanged, and

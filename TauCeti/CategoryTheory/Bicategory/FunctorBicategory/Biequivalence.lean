@@ -15,8 +15,10 @@ public import TauCeti.CategoryTheory.Bicategory.FunctorBicategory.Precomp
 
 For a bicategory `B` and a functor `f : Γ ⥤ Λ`, the pseudofunctor
 `precomp B f.toPseudofunctor : (LocallyDiscrete Λ ⥤ᵖ B) ⥤ᵖ (LocallyDiscrete Γ ⥤ᵖ B)` pulls
-families of objects of `B` indexed by `Λ` back to `Γ`. This file shows that pulling back is
-pseudofunctorial in `f`, and deduces that an equivalence `e : Γ ≌ Λ` induces a biequivalence
+families of objects of `B` indexed by `Λ` back to `Γ`. This file constructs the identity and
+composition comparisons of pulling back, `precomp B (𝟭 Γ).toPseudofunctor ≌ Pseudofunctor.id _`
+and `precomp B (f ⋙ g).toPseudofunctor ≌ (precomp B g.toPseudofunctor).comp (precomp B
+f.toPseudofunctor)`, and deduces that an equivalence `e : Γ ≌ Λ` induces a biequivalence
 
 `precompBiequivalence B e :
   TauCeti.Biequivalence (LocallyDiscrete Γ ⥤ᵖ B) (LocallyDiscrete Λ ⥤ᵖ B)`
@@ -199,25 +201,24 @@ lemma precompIdEquiv_unit_inv_as_app_as_app (F : LocallyDiscrete Γ ⥤ᵖ B) (x
 @[simp]
 lemma precompIdEquiv_counit_hom_as_app_as_app (F : LocallyDiscrete Γ ⥤ᵖ B) (x : LocallyDiscrete Γ) :
     (((precompIdEquiv B Γ).counit.hom.as.app F).as.app x) = (λ_ (𝟙 (F.obj x))).hom := by
-  simp only [precompIdEquiv, Equivalence.mkOfAdjointifyCounit, adjointifyCounit, Iso.trans_hom,
-    Iso.symm_hom, whiskerLeftIso_hom, rightZigzagIso_hom, rightZigzag, bicategoricalComp,
-    BicategoricalCoherence.assoc'_iso, BicategoricalCoherence.refl_iso,
-    BicategoricalCoherence.whiskerRight_iso, whiskerRightIso_hom, Iso.refl_hom,
-    Bicategory.id_whiskerRight, Category.id_comp]
-  -- The component is a composite of unitors and an associator of `𝟙 X`, for `X` the object
-  -- of `F` at `x`.
-  have h (X : B) : 𝟙 X ◁ ((ρ_ (𝟙 X)).inv ≫ (𝟙 X ◁ (λ_ (𝟙 X)).inv ≫ (α_ (𝟙 X) (𝟙 X) (𝟙 X)).inv ≫
-      (λ_ (𝟙 X)).hom ▷ 𝟙 X) ≫ (λ_ (𝟙 X)).hom) ≫ (λ_ (𝟙 X)).hom = (λ_ (𝟙 X)).hom := by
-    bicategory
-  exact h _
+  dsimp only [precompIdEquiv, Equivalence.mkOfAdjointifyCounit]
+  -- The given counit satisfies the left triangle identity componentwise, so adjointifying it
+  -- does not change it.
+  rw [adjointifyCounit_eq_of_left_triangle (by
+    ext G y
+    exact leftZigzag_leftUnitor_inv_leftUnitor_hom _)]
+  rfl
 
 @[simp]
 lemma precompIdEquiv_counit_inv_as_app_as_app (F : LocallyDiscrete Γ ⥤ᵖ B) (x : LocallyDiscrete Γ) :
     (((precompIdEquiv B Γ).counit.inv.as.app F).as.app x) = (λ_ (𝟙 (F.obj x))).inv := by
-  have h := congrArg (fun t => (t.as.app F).as.app x) (precompIdEquiv B Γ).counit.hom_inv_id
-  simp only [homCategory_comp_as_app, homCategory_id_as_app,
-    precompIdEquiv_counit_hom_as_app_as_app] at h
-  exact (Iso.hom_comp_eq_id _).1 h
+  dsimp only [precompIdEquiv, Equivalence.mkOfAdjointifyCounit]
+  -- The given counit satisfies the left triangle identity componentwise, so adjointifying it
+  -- does not change it.
+  rw [adjointifyCounit_eq_of_left_triangle (by
+    ext G y
+    exact leftZigzag_leftUnitor_inv_leftUnitor_hom _)]
+  rfl
 
 /-! ### Pulling back along a composite functor -/
 
@@ -388,27 +389,26 @@ lemma precompCompEquiv_counit_hom_as_app_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
     (F : LocallyDiscrete Λ' ⥤ᵖ B) (x : LocallyDiscrete Γ) :
     (((precompCompEquiv B f g).counit.hom.as.app F).as.app x) =
       (λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))).hom := by
-  simp only [precompCompEquiv, Equivalence.mkOfAdjointifyCounit, adjointifyCounit, Iso.trans_hom,
-    Iso.symm_hom, whiskerLeftIso_hom, rightZigzagIso_hom, rightZigzag, bicategoricalComp,
-    BicategoricalCoherence.assoc'_iso, BicategoricalCoherence.refl_iso,
-    BicategoricalCoherence.whiskerRight_iso, whiskerRightIso_hom, Iso.refl_hom,
-    Bicategory.id_whiskerRight, Category.id_comp]
-  -- The component is a composite of unitors and an associator of `𝟙 X`, for `X` the object
-  -- of `F` at `x`.
-  have h (X : B) : 𝟙 X ◁ ((ρ_ (𝟙 X)).inv ≫ (𝟙 X ◁ (λ_ (𝟙 X)).inv ≫ (α_ (𝟙 X) (𝟙 X) (𝟙 X)).inv ≫
-      (λ_ (𝟙 X)).hom ▷ 𝟙 X) ≫ (λ_ (𝟙 X)).hom) ≫ (λ_ (𝟙 X)).hom = (λ_ (𝟙 X)).hom := by
-    bicategory
-  exact h _
+  dsimp only [precompCompEquiv, Equivalence.mkOfAdjointifyCounit]
+  -- The given counit satisfies the left triangle identity componentwise, so adjointifying it
+  -- does not change it.
+  rw [adjointifyCounit_eq_of_left_triangle (by
+    ext G y
+    exact leftZigzag_leftUnitor_inv_leftUnitor_hom _)]
+  rfl
 
 @[simp]
 lemma precompCompEquiv_counit_inv_as_app_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
     (F : LocallyDiscrete Λ' ⥤ᵖ B) (x : LocallyDiscrete Γ) :
     (((precompCompEquiv B f g).counit.inv.as.app F).as.app x) =
       (λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))).inv := by
-  have h := congrArg (fun t => (t.as.app F).as.app x) (precompCompEquiv B f g).counit.hom_inv_id
-  simp only [homCategory_comp_as_app, homCategory_id_as_app,
-    precompCompEquiv_counit_hom_as_app_as_app] at h
-  exact (Iso.hom_comp_eq_id _).1 h
+  dsimp only [precompCompEquiv, Equivalence.mkOfAdjointifyCounit]
+  -- The given counit satisfies the left triangle identity componentwise, so adjointifying it
+  -- does not change it.
+  rw [adjointifyCounit_eq_of_left_triangle (by
+    ext G y
+    exact leftZigzag_leftUnitor_inv_leftUnitor_hom _)]
+  rfl
 
 /-! ### The biequivalence induced by an equivalence of indexing categories -/
 
