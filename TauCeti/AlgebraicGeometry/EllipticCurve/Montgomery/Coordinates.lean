@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Pair
+public import TauCeti.GroupTheory.GroupAction.Orbit.IntUnits
 import TauCeti.Data.Int.Round
 
 /-!
@@ -35,9 +36,11 @@ the second stage of the elliptic-curve factorization method: the coordinate pair
 `Int.exists_two_mul_abs_sub_mul_le`) makes the cross difference of the coordinate pairs of
 `[i w] Q` and `[j] Q` vanish.
 
-The projective `x`-coordinate need not be surjective: when `model A B` is elliptic (`2 ≠ 0`,
-`B ≠ 0` and `A² ≠ 4`, so every solution is nonsingular), `(r : 1)` comes from a `K`-rational
-point exactly when `(r³ + A r² + r) / B` is a square in `K`.
+Since negation is the only identification it makes, the projective `x`-coordinate identifies
+the quotient of the native point group by negation, the orbit quotient of the sign action of
+`ℤˣ`, with its image. That image need not be the whole projective line: when `model A B` is
+elliptic (`2 ≠ 0`, `B ≠ 0` and `A² ≠ 4`, so every solution is nonsingular), `(r : 1)` comes from
+a `K`-rational point exactly when `(r³ + A r² + r) / B` is a square in `K`.
 
 ## Main definitions
 
@@ -45,6 +48,9 @@ point exactly when `(r³ + A r² + r) / B` is a square in `K`.
   `model A B`.
 * `TauCeti.Montgomery.projectiveX A hB P`: the projective `x`-coordinate of `P` over a field,
   for `hB : B ≠ 0`.
+* `TauCeti.Montgomery.orbitRelQuotientEquivRangeProjectiveX`: the identification of the
+  quotient of the native point group by negation with the image of the projective
+  `x`-coordinate.
 
 ## Main results
 
@@ -56,7 +62,11 @@ point exactly when `(r³ + A r² + r) / B` is a square in `K`.
 * `TauCeti.Montgomery.cross_coordinates_eq_zero_iff`: over a domain, the coordinate pairs of `P`
   and `Q` have vanishing cross difference exactly when `P = Q` or `P = -Q`.
 * `TauCeti.Montgomery.projectiveX_eq_projectiveX_iff`: the fibres of the projective
-  `x`-coordinate are the sets `{P, -P}`.
+  `x`-coordinate are the sets `{P, -P}`;
+  `TauCeti.Montgomery.projectiveX_eq_projectiveX_iff_orbitRel` says the same with the orbits of
+  `ℤˣ`.
+* `TauCeti.Montgomery.toProj_mem_range_projectiveX_iff`: for an elliptic model, `(r : 1)` lies in
+  the image of the projective `x`-coordinate exactly when `(r³ + A r² + r) / B` is a square.
 * `TauCeti.Montgomery.cross_coordinates_zsmul_eq_zero_iff`: the coordinate pairs of `[m] Q` and
   `[n] Q` have vanishing cross difference exactly when `[m - n] Q = 0` or `[m + n] Q = 0`.
 * `TauCeti.Montgomery.exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero`: the stage-2
@@ -131,6 +141,12 @@ section Domain
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {A B : R}
 
+/-- The coordinate pair of the distinguished point of order two is `(0, B)`. -/
+@[simp]
+theorem coordinates_twoTorsionPoint (hB : B ≠ 0) :
+    coordinates A B (twoTorsionPoint A hB) = ⟨0, B⟩ := by
+  simp [twoTorsionPoint_def]
+
 /-- For `B ≠ 0`, the first field of the coordinate pair vanishes exactly at the distinguished
 point of order two `(0, 0)`. -/
 @[simp]
@@ -167,6 +183,17 @@ section Field
 
 variable {K : Type*} [Field K] {A B : K}
 
+/-- The coordinate pairs of multiples of the distinguished point of order two alternate
+between infinity and that point. This includes characteristic two. -/
+theorem coordinates_nsmul_twoTorsionPoint [DecidableEq K] (hB : B ≠ 0) (k : ℕ) :
+    coordinates A B (k • twoTorsionPoint A hB) =
+      if k % 2 = 0 then ⟨1, 0⟩ else ⟨0, B⟩ := by
+  rw [← mod_addOrderOf_nsmul, addOrderOf_twoTorsionPoint]
+  by_cases hk : k % 2 = 0
+  · simp [hk]
+  · have hk' : k % 2 = 1 := by omega
+    simp [hk']
+
 /-- The **projective `x`-coordinate** of a native point of `model A B` over a field, for
 `B ≠ 0`: the point of the projective line `ℙ K (Fin 2 → K)` defined by its coordinate pair. It is
 `(1 : 0)` at infinity and `(x' : B)` at the affine point `(x', y')`. -/
@@ -189,6 +216,29 @@ theorem projectiveX_eq_projectiveX_iff (hB : B ≠ 0) {P Q : (model A B).toAffin
 theorem projectiveX_neg (hB : B ≠ 0) (P : (model A B).toAffine.Point) :
     projectiveX A hB (-P) = projectiveX A hB P :=
   (projectiveX_eq_projectiveX_iff hB).mpr (.inr rfl)
+
+/-- **The rational points of the projective line that lift to the curve.** For an elliptic
+model, the point `(r : 1)` is the projective `x`-coordinate of a native point exactly when
+`(r³ + A r² + r) / B` is a square in `K`; the point `(1 : 0)` is always that of infinity. -/
+theorem toProj_mem_range_projectiveX_iff [(model A B).IsElliptic] (hB : B ≠ 0) (r : K) :
+    Pair.toProj ⟨r, 1⟩ (Pair.ne_zero_iff.mpr (.inr one_ne_zero)) ∈ Set.range (projectiveX A hB) ↔
+      IsSquare ((r ^ 3 + A * r ^ 2 + r) / B) := by
+  constructor
+  · rintro ⟨_ | ⟨x, y, h⟩, hP⟩
+    · rw [projectiveX_def, Pair.toProj_eq_toProj_iff] at hP
+      simp [← Affine.Point.zero_def, Pair.cross_def] at hP
+    · rw [projectiveX_def, Pair.toProj_eq_toProj_iff, coordinates_some, Pair.cross_def] at hP
+      obtain rfl : x = B * r := by linear_combination hP
+      obtain ⟨t, rfl⟩ : ∃ t, y = B ^ 2 * t := ⟨y / B ^ 2, by field_simp⟩
+      refine ⟨t, ?_⟩
+      rw [← (equation_model_iff hB r t).mp h.1]
+      field_simp
+  · rintro ⟨t, ht⟩
+    have he : (model A B).toAffine.Equation (B * r) (B ^ 2 * t) :=
+      (equation_model_iff hB r t).mpr (by rw [div_eq_iff hB] at ht; linear_combination -ht)
+    refine ⟨.some _ _ ((model A B).toAffine.equation_iff_nonsingular.mp he), ?_⟩
+    rw [projectiveX_def, Pair.toProj_eq_toProj_iff, coordinates_some, Pair.cross_def]
+    ring
 
 variable [DecidableEq K]
 
@@ -224,6 +274,30 @@ theorem exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero (hB : B ≠ 
   refine ⟨i, hi, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hB hq ?_⟩
   rcases abs_choice (q - i * w) with h | h <;> rw [h]
   exacts [.inl (by ring), .inr (by ring)]
+
+/-- **The fibres of the projective `x`-coordinate are the orbits of `ℤˣ`**, the sign action of
+`±1` on the native point group. -/
+theorem projectiveX_eq_projectiveX_iff_orbitRel (hB : B ≠ 0)
+    {P Q : (model A B).toAffine.Point} :
+    projectiveX A hB P = projectiveX A hB Q ↔ MulAction.orbitRel ℤˣ _ P Q := by
+  rw [projectiveX_eq_projectiveX_iff hB, MulAction.orbitRel_intUnits_iff]
+
+/-- **The quotient of the native point group by negation is the image of the projective
+`x`-coordinate**: `projectiveX` induces a bijection from the orbit quotient of the sign action of
+`ℤˣ` onto its range. -/
+noncomputable def orbitRelQuotientEquivRangeProjectiveX (hB : B ≠ 0) :
+    MulAction.orbitRel.Quotient ℤˣ (model A B).toAffine.Point ≃ Set.range (projectiveX A hB) :=
+  (Quotient.congrRight fun _ _ ↦ (projectiveX_eq_projectiveX_iff_orbitRel hB).symm).trans
+    (Setoid.quotientKerEquivRange _)
+
+/-- The identification of the quotient by negation with the image of the projective
+`x`-coordinate sends the class of `P` to the projective `x`-coordinate of `P`. -/
+@[simp]
+theorem coe_orbitRelQuotientEquivRangeProjectiveX_mk (hB : B ≠ 0)
+    (P : (model A B).toAffine.Point) :
+    (orbitRelQuotientEquivRangeProjectiveX hB (Quotient.mk _ P) : ℙ K (Fin 2 → K)) =
+      projectiveX A hB P :=
+  (rfl)
 
 end Field
 

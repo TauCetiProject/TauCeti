@@ -7,8 +7,14 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Wedge
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
+public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
+import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -34,6 +40,11 @@ representative formula pairs it with the class of the constant function `1` to g
   manifold, the exterior derivative of a compactly supported form integrates to zero.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral`: integration `H^n_c(M) → ℝ`, computed on
   classes by `TauCeti.compactlySupportedDeRhamCohomology.integral_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZero`: integration commutes with
+  extension by zero `H^n_c(U) → H^n_c(W)` along open subsets `U ≤ W`.
+* `Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`: on a
+  finite-dimensional real normed space, a compactly supported closed top form with integral one,
+  so integration `H^n_c(E) → ℝ` is nonzero.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`.
@@ -49,6 +60,7 @@ public section
 
 noncomputable section
 
+open TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -117,6 +129,19 @@ theorem integral_neg (o : Manifold.Orientation I M (Fin n)) : integral (-o) = -i
   obtain ⟨φ, rfl⟩ := mk_surjective I n x
   rw [LinearMap.neg_apply, integral_mk, integral_mk, integralTopForm_neg]
 
+omit [SigmaCompactSpace M] in
+/-- Integration on compactly supported cohomology commutes with extension by zero: for open
+subsets `U ≤ W`, `∫_W ext x = ∫_U x` for the orientations restricted from `M`. -/
+@[simp]
+theorem integral_extendByZero (o : Manifold.Orientation I M (Fin n)) {U W : Opens M}
+    [SigmaCompactSpace U] [SigmaCompactSpace W] (h : U ≤ W)
+    (x : compactlySupportedDeRhamCohomology I U n) :
+    integral (o.restrict W) (extendByZero h n x) = integral (o.restrict U) x := by
+  obtain ⟨φ, rfl⟩ := mk_surjective I n x
+  rw [extendByZero_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_extendByZero]
+  exact integralTopForm_extendByZero o h ((mem_compactlySupportedForms I).mp
+    ((mem_compactlySupportedClosedForms I).mp φ.2).1)
+
 end compactlySupportedDeRhamCohomology
 
 variable (I M) in
@@ -148,3 +173,40 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
 
 end TauCeti
+
+namespace Module.Basis
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- On a finite-dimensional real normed space `E`, there is a compactly supported closed top form
+whose integral against the constant orientation of the basis `b` is one. -/
+theorem exists_compactlySupportedClosedForms_integralTopForm_model_eq_one {n : ℕ}
+    (b : Basis (Fin n) ℝ E) (hn : Fintype.card (Fin n) = Module.finrank ℝ E) :
+    ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, E) E n,
+      integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, E)) b.orientation hn) φ.1.1 = 1 := by
+  -- The form is a normalized bump function times the determinant of `b`.
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  let f : E → ℝ := (⟨1, 2, one_pos, one_lt_two⟩ : ContDiffBump (0 : E)).normed b.addHaar
+  let φ : RoughForm 𝓘(ℝ, E) E ℝ n := fun x ↦ f x • b.continuousDet
+  have hs : IsSmoothForm 𝓘(ℝ, E) ∞ φ :=
+    isSmoothForm_modelSpace_iff.mpr ((ContDiffBump.contDiff_normed _).smul contDiff_const)
+  have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ) :=
+    (ContDiffBump.hasCompactSupport_normed _).isCompact.of_isClosed_subset
+      (isClosed_tsupport _) (tsupport_smul_subset_left f fun _ ↦ b.continuousDet)
+  -- Every form of degree above the dimension vanishes, so `φ` is closed.
+  have hcl : mextDeriv φ = 0 := mextDeriv_eq_zero_of_finrank_le (by simp [← hn]) φ
+  refine ⟨⟨⟨φ, hs.mem_smoothBundleForms⟩, (mem_compactlySupportedClosedForms _).mpr
+    ⟨(mem_compactlySupportedForms _).mpr hc, (mem_closedForms _ _).mpr hcl⟩⟩, ?_⟩
+  rw [integralTopForm_model_eq_integral _ hn (hs.of_le (by simp)) hc b rfl]
+  have hφf (x : E) : φ x b = f x := by
+    have h : (f x • b.continuousDet) b = f x := by
+      simp [continuousDet_apply, det_self]
+    -- `φ x` is `f x • b.continuousDet` read in the tangent fibre, which is `E` by definition.
+    exact h
+  simp_rw [hφf]
+  exact ContDiffBump.integral_normed _
+
+end Module.Basis

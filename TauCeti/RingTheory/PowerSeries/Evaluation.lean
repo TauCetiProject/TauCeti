@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Evaluation
+public import TauCeti.RingTheory.MvPowerSeries.Evaluation
 
 /-!
 # Evaluation of power series and division by `X - C c`
@@ -40,8 +41,12 @@ of `f` evaluable at `c`, and it already excludes the units. For a unit `c` the s
 is a unit of `A⟦X⟧`, so it divides everything, while `f(c)` need not vanish; and a unit is
 topologically nilpotent only in the zero ring.
 
+A fixed series is also continuous in a continuously varying admissible argument under a linear
+topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multivariate result.
+
 ## Main results
 
+* `PowerSeries.continuous_eval₂_of_continuous`: continuity in the admissible evaluation point.
 * `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
   on polynomials to the polynomial evaluation at the image of `X`.
 * `PowerSeries.aeval_X`, `PowerSeries.aeval_C`: the values of evaluation on the generators.
@@ -50,6 +55,9 @@ topologically nilpotent only in the zero ring.
 * `PowerSeries.exists_aeval_eq_mul_of_constantCoeff_eq_zero`,
   `PowerSeries.isTopologicallyNilpotent_aeval_of_constantCoeff_eq_zero`: a series without
   constant term evaluates at `a` to a multiple of `a`, hence to a topologically nilpotent element.
+* `PowerSeries.aeval_mem_of_constantCoeff_eq_zero`: a series without constant term evaluates at a
+  point of an ideal to an element of that ideal.
+* `PowerSeries.aeval_rescale`: the rescaled series `f(r X)` evaluates at `a` to `f(r • a)`.
 * `PowerSeries.divXSubC`: the quotient of a power series on division by `X - C c`, with its
   coefficients `PowerSeries.coeff_divXSubC` and their series expansion
   `PowerSeries.hasSum_coeff_divXSubC`.
@@ -65,6 +73,18 @@ topologically nilpotent only in the zero ring.
 public section
 
 namespace PowerSeries
+
+/-- A fixed power series is continuous in a continuously varying admissible argument.
+No common ideal of definition for the arguments is required. -/
+theorem continuous_eval₂_of_continuous {R S X : Type*} [CommRing R] [UniformSpace R]
+    [IsTopologicalSemiring R] [IsUniformAddGroup R] [CommRing S] [UniformSpace S]
+    [IsUniformAddGroup S] [CompleteSpace S] [T2Space S] [IsTopologicalRing S]
+    [IsLinearTopology S S] [TopologicalSpace X] {φ : R →+* S} (hφ : Continuous φ)
+    {a : X → S} (ha : Continuous a) (heval : ∀ x, HasEval (a x)) (f : PowerSeries R) :
+    Continuous (fun x ↦ eval₂ φ (a x) f) := by
+  simp only [eval₂]
+  exact MvPowerSeries.continuous_eval₂_of_continuous hφ (fun _ ↦ ha)
+    (fun x ↦ hasEval (heval x)) f
 
 section AlgHom
 
@@ -112,12 +132,26 @@ theorem exists_aeval_eq_mul_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X
   obtain ⟨g, rfl⟩ := X_dvd_iff.2 hf
   exact ⟨_, by rw [map_mul, aeval_X]⟩
 
+/-- A power series without constant term evaluates at a point `a` of an ideal `I` to an element
+of `I`. -/
+theorem aeval_mem_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X⟧}
+    (hf : constantCoeff f = 0) {I : Ideal S} (haI : a ∈ I) : aeval ha f ∈ I := by
+  obtain ⟨c, hc⟩ := exists_aeval_eq_mul_of_constantCoeff_eq_zero ha hf
+  exact hc ▸ I.mul_mem_right c haI
+
 /-- A power series without constant term evaluates at a topologically nilpotent `a` to a
 topologically nilpotent element. -/
 theorem isTopologicallyNilpotent_aeval_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X⟧}
     (hf : constantCoeff f = 0) : IsTopologicallyNilpotent (aeval ha f) := by
   obtain ⟨c, hc⟩ := exists_aeval_eq_mul_of_constantCoeff_eq_zero ha hf
   exact hc ▸ IsTopologicallyNilpotent.mul_right ha c
+
+/-- Evaluating the rescaled series `f(r X)` at `a` is evaluating `f` at `r • a`. -/
+theorem aeval_rescale (ha : HasEval a) (r : R) (hra : HasEval (r • a)) (f : R⟦X⟧) :
+    aeval ha (rescale r f) = aeval hra f := by
+  refine (hasSum_aeval ha (rescale r f)).unique ?_
+  convert hasSum_aeval hra f using 2 with d
+  rw [coeff_rescale, smul_pow, smul_smul, mul_comm]
 
 end Aeval
 

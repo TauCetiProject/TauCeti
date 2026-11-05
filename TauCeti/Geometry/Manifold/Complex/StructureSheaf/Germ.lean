@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Filter.Germ.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import Mathlib.Algebra.Category.Ring.FilteredColimits
+import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 
 /-!
 # Holomorphic germs as germs of functions
@@ -24,11 +25,20 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
-  germs of the functions which are complex analytic (`ContMDiffAt` at order `ω`) near `x`;
+  germs of the functions which are complex analytic (`ContMDiffAt` at order `ω`) near `x` (and on a
+  complex normed space, `exists_analyticAt_toFilterGerm_eq`, `exists_toFilterGerm_eq_of_analyticAt`,
+  and `exists_toFilterGerm_nhds_eq_iff_analyticAt` express this directly via `AnalyticAt`);
 * `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
   with the same germ;
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
-  is composition of germs with `f`.
+  is composition of germs with `f`;
+* `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
+  of the germs vanishing along a local holomorphic section `σ` through `p` of a holomorphic map
+  `π`, then pulling back along `π` identifies the germs at `π p` with the quotient by that ideal.
+  This computes local rings of analytic subsets that are locally graphs.
+  The inverse is composition with `σ` (`toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq`).
+
+The holomorphic germ of a globally analytic function is `germOfContMDiff`.
 
 This is the bridge between the categorical stalk and concrete function germs, used to compare
 holomorphic germs with meromorphic germs on punctured neighbourhoods.
@@ -114,6 +124,18 @@ theorem toFilterGerm_germ {x : X} {l : Filter X} (hl : l ≤ 𝓝 x) {U : Opens 
   rw [toFilterGerm, ← CommRingCat.comp_apply, germ_toFilterGermHom]
   exact coe_extend_eq I X hx hl f g hfg
 
+/-- The holomorphic germ at `x` of a function which is complex analytic on all of `X`. -/
+def germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ ⊤ x trivial)
+    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtype_val))
+
+/-- The holomorphic germ of a globally analytic function `f` is the germ of `f`. -/
+@[simp]
+theorem toFilterGerm_germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) {x : X}
+    {l : Filter X} (hl : l ≤ 𝓝 x) : toFilterGerm I X x l hl (germOfContMDiff f hf x) = f :=
+  toFilterGerm_germ hl trivial _ f fun y ↦ ofContMDiff_apply _ _ y
+
 /-- Every holomorphic germ at `x` is represented by a function which is complex analytic near
 `x`, simultaneously along every filter finer than `𝓝 x`. -/
 theorem exists_toFilterGerm_eq (x : X)
@@ -139,6 +161,20 @@ theorem exists_toFilterGerm_eq_of_eventually_contMDiffAt {x : X} {f : X → ℂ}
     ofContMDiff (fun y : U ↦ f y) fun y ↦ contMDiffAt_subtype_iff.2 (ht y y.2)
   exact ⟨ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ U x hxt) fU,
     fun l hl ↦ toFilterGerm_germ hl hxt fU f fun y ↦ ofContMDiff_apply _ _ y⟩
+
+/-- Every holomorphic germ on the complex line has an analytic representative, simultaneously
+along every filter finer than the neighbourhood filter. -/
+theorem exists_toFilterGerm_eq_analyticAt (a : ℂ)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) :
+    ∃ f : ℂ → ℂ, AnalyticAt ℂ f a ∧
+      ∀ (l : Filter ℂ) (hl : l ≤ 𝓝 a), toFilterGerm 𝓘(ℂ) ℂ a l hl s = f := by
+  obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq a s
+  exact ⟨f, (contMDiffAt_iff_contDiffAt.mp hf.self_of_nhds).analyticAt, hfs⟩
+
+/-- A function analytic at a point of the complex line is manifold analytic near that point. -/
+theorem eventually_contMDiffAt_of_analyticAt {f : ℂ → ℂ} {a : ℂ} (hf : AnalyticAt ℂ f a) :
+    ∀ᶠ z in 𝓝 a, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f z :=
+  hf.eventually_analyticAt.mono fun _ hz ↦ contMDiffAt_iff_contDiffAt.mpr hz.contDiffAt
 
 /-- A holomorphic germ is determined by its germ along `𝓝 x`. -/
 theorem toFilterGerm_nhds_injective (x : X) :
@@ -191,6 +227,12 @@ theorem eval_eq_of_toFilterGerm_eq {x : X} {s : (holomorphicStructureSheaf I X).
   rw [eval_germ, ← h.eq_of_nhds]
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (⟨x, hx⟩ : U)).symm
 
+/-- The value of the holomorphic germ of a globally analytic function `f` at `x` is `f x`. -/
+@[simp]
+theorem eval_germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
+    eval I X x (germOfContMDiff f hf x) = f x :=
+  eval_eq_of_toFilterGerm_eq (toFilterGerm_germOfContMDiff f hf le_rfl)
+
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
@@ -208,5 +250,119 @@ theorem toFilterGerm_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X
   exact (toFilterGerm_germ (U := (Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) le_rfl hx _
     _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.1, y.2⟩)).trans
     (Germ.coe_compTendsto _ _).symm
+
+/-- Pulling back the holomorphic germ of a globally analytic function `g` along a complex analytic
+map `f` gives the holomorphic germ of `g ∘ f`. -/
+@[simp]
+theorem stalkPrecomp_germOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → ℂ)
+    (hg : ContMDiff J 𝓘(ℂ) ω g) (x : X) :
+    stalkPrecomp I X f hf x (germOfContMDiff g hg (f x)) =
+      germOfContMDiff (g ∘ f) (hg.comp hf) x :=
+  toFilterGerm_nhds_injective x <| by
+    rw [toFilterGerm_stalkPrecomp, toFilterGerm_germOfContMDiff, toFilterGerm_germOfContMDiff,
+      Germ.coe_compTendsto]
+
+section NormedSpace
+
+variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- On a complex normed space, every holomorphic germ at `p` is represented by a function
+analytic at `p`, simultaneously along every filter finer than `𝓝 p`. -/
+theorem exists_analyticAt_toFilterGerm_eq (p : V)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) :
+    ∃ φ : V → ℂ, AnalyticAt ℂ φ p ∧
+      ∀ (l : Filter V) (hl : l ≤ 𝓝 p), toFilterGerm 𝓘(ℂ, V) V p l hl s = φ := by
+  obtain ⟨φ, hφ_cm, hφ⟩ := exists_toFilterGerm_eq p s
+  exact ⟨φ, contMDiffAt_modelSpace_omega_iff_analyticAt.1 hφ_cm.self_of_nhds, hφ⟩
+
+/-- On a complex normed space, a function analytic at `p` has a holomorphic germ at `p`, with
+the same germ along every filter finer than `𝓝 p`. -/
+theorem exists_toFilterGerm_eq_of_analyticAt {p : V} {φ : V → ℂ} (hφ : AnalyticAt ℂ φ p) :
+    ∃ s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p,
+      ∀ (l : Filter V) (hl : l ≤ 𝓝 p), toFilterGerm 𝓘(ℂ, V) V p l hl s = φ :=
+  exists_toFilterGerm_eq_of_eventually_contMDiffAt
+    (hφ.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2)
+
+/-- On a complex normed space, a function has a holomorphic germ at `p` with the same germ
+along `𝓝 p` exactly when it is analytic at `p`. -/
+theorem exists_toFilterGerm_nhds_eq_iff_analyticAt {p : V} {φ : V → ℂ} :
+    (∃ s, toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl s = φ) ↔ AnalyticAt ℂ φ p :=
+  exists_toFilterGerm_nhds_eq_iff.trans
+    ⟨fun h ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.1 h.self_of_nhds,
+      fun h ↦ h.eventually_analyticAt.mono fun _ ↦ contMDiffAt_modelSpace_omega_iff_analyticAt.2⟩
+
+end NormedSpace
+
+/-! ### Germs along a holomorphic section -/
+
+section HolomorphicSection
+
+variable {V W : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+/-- **Inverting pullback along a holomorphic section.** Let `σ` be a local section of `π : V → W`
+near `π p`, and `J` an ideal of the holomorphic germs at `p` consisting exactly of the germs
+vanishing along `σ`. If the pullback along `π` of a germ `h` at `π p` agrees modulo `J` with a
+germ represented by `G`, then `h` is represented by `G ∘ σ`. -/
+theorem toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq {π : V → W}
+    (hπ : ContMDiff 𝓘(ℂ, V) 𝓘(ℂ, W) ω π) {σ : W → V} {p : V}
+    (hπσ : ∀ᶠ w in 𝓝 (π p), π (σ w) = w)
+    (J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p))
+    (hJ : ∀ (g : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) (G : V → ℂ),
+      toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl g = G →
+        (g ∈ J ↔ ∀ᶠ w in 𝓝 (π p), G (σ w) = 0))
+    {h : (holomorphicStructureSheaf 𝓘(ℂ, W) W).presheaf.stalk (π p)}
+    {g : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p} {G : V → ℂ}
+    (hgG : toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl g = G)
+    (hhg : Ideal.Quotient.mk J (stalkPrecomp 𝓘(ℂ, V) V π hπ p h) = Ideal.Quotient.mk J g) :
+    toFilterGerm 𝓘(ℂ, W) W (π p) (𝓝 (π p)) le_rfl h = G ∘ σ := by
+  obtain ⟨H, -, hH⟩ := exists_toFilterGerm_eq (π p) h
+  rw [Ideal.Quotient.eq] at hhg
+  have hHG := (hJ _ (H ∘ π - G) (by
+    rw [map_sub, toFilterGerm_stalkPrecomp, hH, hgG, Germ.coe_compTendsto, ← Germ.coe_sub])).1 hhg
+  rw [hH, Germ.coe_eq]
+  filter_upwards [hHG, hπσ] with w hw hπw
+  rwa [Pi.sub_apply, Function.comp_apply, hπw, sub_eq_zero] at hw
+
+/-- **Germs on the image of a holomorphic section.** Let `π : V → W` be holomorphic and `σ` a
+local holomorphic section of `π` near `π p` through `p`. If an ideal `J` of the holomorphic germs
+at `p` consists exactly of the germs vanishing along `σ`, then pulling back along `π` identifies
+the holomorphic germs at `π p` with the germs at `p` modulo `J`. -/
+theorem quotientMk_comp_stalkPrecomp_bijective {π : V → W} (hπ : ContMDiff 𝓘(ℂ, V) 𝓘(ℂ, W) ω π)
+    {σ : W → V} {p : V} (hσ : ContDiffAt ℂ ω σ (π p)) (hσp : σ (π p) = p)
+    (hπσ : ∀ᶠ w in 𝓝 (π p), π (σ w) = w)
+    (J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p))
+    (hJ : ∀ (g : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) (G : V → ℂ),
+      toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl g = G →
+        (g ∈ J ↔ ∀ᶠ w in 𝓝 (π p), G (σ w) = 0)) :
+    Bijective ((Ideal.Quotient.mk J).comp (stalkPrecomp 𝓘(ℂ, V) V π hπ p)) := by
+  constructor
+  · -- A germ at `π p` whose pullback vanishes along `σ` vanishes, since `π ∘ σ = id`.
+    rw [injective_iff_map_eq_zero]
+    intro h hh
+    apply toFilterGerm_nhds_injective (π p)
+    rw [toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq hπ hπσ J hJ (G := 0)
+      (by rw [map_zero, Germ.coe_zero]) (hh.trans (map_zero _).symm), map_zero]
+    rfl
+  · -- A germ `G` at `p` agrees along `σ` with the pullback of `G ∘ σ`.
+    intro z
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective z
+    obtain ⟨G, hG, hGg⟩ := exists_toFilterGerm_eq p g
+    have hσt : Tendsto σ (𝓝 (π p)) (𝓝 p) := by
+      simpa only [hσp] using hσ.continuousAt.tendsto
+    have hGσ : ∀ᶠ w in 𝓝 (π p), ContMDiffAt 𝓘(ℂ, W) 𝓘(ℂ) ω (G ∘ σ) w := by
+      filter_upwards [hσt.eventually hG, hσ.eventually (by simp)] with w hGw hσw
+      rw [contMDiffAt_iff_contDiffAt] at hGw ⊢
+      exact hGw.comp w hσw
+    obtain ⟨h, hh⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt hGσ
+    refine ⟨h, ?_⟩
+    rw [RingHom.comp_apply, Ideal.Quotient.eq]
+    refine (hJ _ (G ∘ σ ∘ π - G) ?_).2 ?_
+    · rw [map_sub, toFilterGerm_stalkPrecomp, hh, hGg, Germ.coe_compTendsto, ← Germ.coe_sub]
+      rfl
+    · filter_upwards [hπσ] with w hw
+      simp [hw]
+
+end HolomorphicSection
 
 end TauCeti.holomorphicStructureSheaf

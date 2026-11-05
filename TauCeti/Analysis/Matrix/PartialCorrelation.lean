@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Algebra.Order.BigOperators.Sum.IioIci
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Order.Interval.Finset.Fin
@@ -23,6 +24,11 @@ diagonal and unit-length rows. Its Gram matrix is therefore positive definite wi
 diagonal. The determinant factors as the product of `1 - zᵢⱼ²`. These formulas are the
 algebraic part of the partial-correlation change of variables for correlation matrices.
 The unit-diagonal and determinant identities also hold on the closed cube.
+
+Conversely, `Matrix.partialCorrelationOfCholesky` reads partial correlations off a triangular
+factor, `zᵢⱼ = Lᵢⱼ / √(1 - ∑ k<j, Lᵢₖ²)`. Every lower-triangular matrix with positive diagonal and
+unit-length rows arises from exactly one point of the open cube in this way, so the triangular
+construction is a bijection from the open cube onto such matrices.
 
 ## References
 
@@ -247,7 +253,7 @@ theorem injOn_partialCorrelationCholesky :
       partialCorrelationRow z i j = partialCorrelationRow w i j := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro j hj i
       by_cases hji : j < i
       · have hprod : (∏ k ∈ Finset.Iio j, Real.sqrt (1 - partialCorrelationRow z i k ^ 2)) =
@@ -272,6 +278,105 @@ theorem injOn_partialCorrelationGram :
   exact (isLowerTriangular_partialCorrelationCholesky z).eq_of_mul_transpose_self_eq
     (isLowerTriangular_partialCorrelationCholesky w)
     (partialCorrelationCholesky_diag_pos hz) (partialCorrelationCholesky_diag_pos hw) heq
+
+/-- Partial correlations read off a triangular factor: the coordinate at `(i, j)`, `j < i`, is
+`L i j / √(1 - ∑ k < j, L i k ^ 2)`. For a lower-triangular `L` with positive diagonal and
+unit-length rows these lie in the open cube and their triangular factor is `L`
+(`TauCeti.partialCorrelationCholesky_partialCorrelationOfCholesky`); on the open cube this
+inverts `TauCeti.partialCorrelationCholesky`
+(`TauCeti.partialCorrelationOfCholesky_partialCorrelationCholesky`). -/
+def _root_.Matrix.partialCorrelationOfCholesky (L : Matrix (Fin p) (Fin p) ℝ) :
+    strictLowerTriangle p → ℝ :=
+  fun ij ↦ L ij.1.1 ij.1.2 / Real.sqrt (1 - ∑ k ∈ Finset.Iio ij.1.2, L ij.1.1 k ^ 2)
+
+theorem _root_.Matrix.partialCorrelationOfCholesky_apply (L : Matrix (Fin p) (Fin p) ℝ)
+    (ij : strictLowerTriangle p) :
+    L.partialCorrelationOfCholesky ij =
+      L ij.1.1 ij.1.2 / Real.sqrt (1 - ∑ k ∈ Finset.Iio ij.1.2, L ij.1.1 k ^ 2) := (rfl)
+
+section OfCholesky
+
+variable {L : Matrix (Fin p) (Fin p) ℝ}
+
+private theorem partialCorrelationOfCholesky_sq (hdiag : ∀ i, L i i ≠ 0)
+    (hrow : ∀ i, ∑ j, L i j ^ 2 = 1) {i j : Fin p} (hji : j < i) :
+    L.partialCorrelationOfCholesky ⟨(i, j), hji⟩ ^ 2 =
+      L i j ^ 2 / (1 - ∑ k ∈ Finset.Iio j, L i k ^ 2) := by
+  rw [Matrix.partialCorrelationOfCholesky_apply, div_pow,
+    Real.sq_sqrt (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i) hji.le).le]
+
+/-- The partial correlations of a factor with nonzero diagonal and unit-length rows lie in
+the open cube. -/
+theorem abs_partialCorrelationOfCholesky_lt_one (hdiag : ∀ i, L i i ≠ 0)
+    (hrow : ∀ i, ∑ j, L i j ^ 2 = 1) (ij : strictLowerTriangle p) :
+    |L.partialCorrelationOfCholesky ij| < 1 := by
+  obtain ⟨⟨i, j⟩, hji⟩ := ij
+  rw [← sq_lt_one_iff_abs_lt_one, partialCorrelationOfCholesky_sq hdiag hrow hji,
+    div_lt_one (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i) hji.le)]
+  have := Finset.sq_add_sq_le_one_sub_sum_Iio_sq (hrow i) hji
+  have := sq_pos_of_ne_zero (hdiag i)
+  linarith
+
+/-- The residual products of the recovered partial correlations telescope to the residual
+`1 - ∑ k < j, L i k ^ 2` of row `i`. -/
+private theorem prod_one_sub_sq_partialCorrelationOfCholesky (hdiag : ∀ i, L i i ≠ 0)
+    (hrow : ∀ i, ∑ j, L i j ^ 2 = 1) (i j : Fin p) (hji : j ≤ i) :
+    ∏ k ∈ Finset.Iio j, (1 - partialCorrelationRow L.partialCorrelationOfCholesky i k ^ 2) =
+      1 - ∑ k ∈ Finset.Iio j, L i k ^ 2 := by
+  induction j using WellFoundedLT.induction with
+  | _ j ih =>
+    rw [Finset.prod_one_sub_ordered]
+    congr 1
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    have hkj := Finset.mem_Iio.1 hk
+    have hki := hkj.trans_le hji
+    have hfilter : {m ∈ Finset.Iio j | m < k} = Finset.Iio k := by
+      simpa only [min_eq_right hkj.le] using Finset.Iio_filter_lt j k
+    rw [hfilter, ih k hkj hki.le]
+    simp only [partialCorrelationRow, hki, ↓reduceDIte]
+    rw [partialCorrelationOfCholesky_sq hdiag hrow hki,
+      div_mul_cancel₀ _ (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i) hki.le).ne']
+
+/-- A lower-triangular matrix with positive diagonal and unit-length rows is the triangular
+factor of its recovered partial correlations. -/
+@[simp]
+theorem partialCorrelationCholesky_partialCorrelationOfCholesky (hL : L.IsLowerTriangular)
+    (hdiag : ∀ i, 0 < L i i) (hrow : ∀ i, ∑ j, L i j ^ 2 = 1) :
+    partialCorrelationCholesky L.partialCorrelationOfCholesky = L := by
+  have hsqrt (i j : Fin p) (hji : j ≤ i) :
+      (∏ k ∈ Finset.Iio j,
+        Real.sqrt (1 - partialCorrelationRow L.partialCorrelationOfCholesky i k ^ 2)) =
+        Real.sqrt (1 - ∑ k ∈ Finset.Iio j, L i k ^ 2) := by
+    rw [← Real.sqrt_prod _ fun k _ ↦ (sub_pos.2 (row_sq_lt_one
+      (abs_partialCorrelationOfCholesky_lt_one (fun i ↦ (hdiag i).ne') hrow) i k)).le,
+      prod_one_sub_sq_partialCorrelationOfCholesky (fun i ↦ (hdiag i).ne') hrow i j hji]
+  ext i j
+  rcases lt_trichotomy j i with hji | rfl | hij
+  · simp only [partialCorrelationCholesky, hji, ↓reduceIte]
+    rw [hsqrt i j hji.le]
+    simp only [partialCorrelationRow, hji, ↓reduceDIte]
+    rw [Matrix.partialCorrelationOfCholesky_apply, div_mul_cancel₀ _
+      (Real.sqrt_pos.2 (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le)).ne']
+  · simp only [partialCorrelationCholesky, lt_self_iff_false, ↓reduceIte, one_mul]
+    rw [hsqrt j j le_rfl, Finset.one_sub_sum_Iio_sq (hrow j),
+      Finset.sum_eq_single_of_mem j (Finset.mem_Ici.2 le_rfl) fun k hk hkj ↦ by
+        have hjk : j < k := lt_of_le_of_ne (Finset.mem_Ici.1 hk) (Ne.symm hkj)
+        simp [hL hjk]]
+    exact Real.sqrt_sq (hdiag j).le
+  · rw [partialCorrelationCholesky_apply_of_lt _ hij, hL hij]
+
+end OfCholesky
+
+/-- On the open cube, the partial correlations are recovered from their triangular factor. -/
+@[simp]
+theorem partialCorrelationOfCholesky_partialCorrelationCholesky {z : strictLowerTriangle p → ℝ}
+    (hz : ∀ ij, |z ij| < 1) : (partialCorrelationCholesky z).partialCorrelationOfCholesky = z := by
+  have hdiag := partialCorrelationCholesky_diag_pos hz
+  have hrow := sum_sq_partialCorrelationCholesky fun ij ↦ (hz ij).le
+  exact injOn_partialCorrelationCholesky
+    (abs_partialCorrelationOfCholesky_lt_one (fun i ↦ (hdiag i).ne') hrow) hz
+    (partialCorrelationCholesky_partialCorrelationOfCholesky
+      (isLowerTriangular_partialCorrelationCholesky z) hdiag hrow)
 
 private theorem continuous_partialCorrelationRow (i j : Fin p) :
     Continuous (fun z : strictLowerTriangle p → ℝ ↦ partialCorrelationRow z i j) := by

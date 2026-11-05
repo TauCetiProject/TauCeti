@@ -72,6 +72,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
+* `Matrix.SpecialLinearGroup.coe_mapGL_int`: the matrix of `mapGL S` on `SL(n, ℤ)` is the
+  entrywise integer cast.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
@@ -127,6 +129,14 @@ again a single induced map. -/
 theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Type*} [Fintype n]
     [DecidableEq n] (f : R →+* S) (g : S →+* T) :
     (map (n := n) g).comp (map f) = map (g.comp f) := rfl
+
+/-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
+@[simp]
+theorem map_intCast_coe {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n ℤ) :
+    map f (g : SpecialLinearGroup n R) = (g : SpecialLinearGroup n S) := by
+  rw [← MonoidHom.comp_apply, map_comp,
+    RingHom.ext_int (f.comp (Int.castRingHom R)) (Int.castRingHom S)]
 
 /-- The inclusion into the general linear group commutes with entrywise ring maps. -/
 theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
@@ -210,6 +220,13 @@ lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
 lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2, ℤ)) :
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
+
+/-- The matrix of `mapGL S σ` for an integral `σ` is its entrywise integer cast: this is
+`mapGL_coe_matrix` with `algebraMap ℤ S` written as `Int.cast`. -/
+lemma coe_mapGL_int {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
+    (σ : SpecialLinearGroup n ℤ) :
+    (↑(mapGL S σ) : Matrix n n S) = (σ : Matrix n n ℤ).map (Int.cast : ℤ → S) := by
+  simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
 
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -482,11 +499,11 @@ lemma inv_apply_zero_one (M : SpecialLinearGroup (Fin 2) R) :
 
 private lemma mul_apply_one_zero (M g : SpecialLinearGroup (Fin 2) R) :
     (M * g) 1 0 = M 1 0 * g 0 0 + M 1 1 * g 1 0 := by
-  simp [coe_mul, mul_apply, Fin.sum_univ_two]
+  simp [coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
 
 private lemma mul_apply_zero_zero (M g : SpecialLinearGroup (Fin 2) R) :
     (M * g) 0 0 = M 0 0 * g 0 0 + M 0 1 * g 1 0 := by
-  simp [coe_mul, mul_apply, Fin.sum_univ_two]
+  simp [coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
 
 private lemma inv_mul_one_zero_eq_zero
     (M g : SpecialLinearGroup (Fin 2) R)

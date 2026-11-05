@@ -12,15 +12,17 @@ public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 
 Mathlib records that a semisimple endomorphism of a finite-dimensional vector space over an
 algebraically closed field is diagonalizable
-(`Module.End.IsSemisimple.iSup_eigenspace_eq_top`). This file proves the converse, which needs no
-hypothesis on the field and no finiteness hypothesis on the space: an endomorphism whose
-eigenspaces span is, as a `K[X]`-module, the sum of those eigenspaces, and on each of them `X` acts
-by a scalar, so each is annihilated by the squarefree polynomial `X - C μ` and is semisimple.
+(`Module.End.IsSemisimple.iSup_eigenspace_eq_top`). This file proves the converse, which needs
+neither of those hypotheses: over a commutative ring `R`, an endomorphism of a semisimple
+`R`-module whose eigenspaces span is semisimple. As an `R[X]`-module the space is the sum of the
+eigenspaces, and on the `μ`-eigenspace `X` acts by the scalar `μ`, so that eigenspace is
+semisimple over `R[X]` because it is semisimple over `R`. Over a field every module is
+semisimple, so there the eigenspaces spanning is the only hypothesis.
 
 ## Main results
 
-* `TauCeti.isSemisimple_of_iSup_eigenspace_eq_top`: an endomorphism whose eigenspaces span the
-  space is semisimple.
+* `TauCeti.isSemisimple_of_iSup_eigenspace_eq_top`: an endomorphism of a semisimple module whose
+  eigenspaces span the module is semisimple.
 -/
 
 public section
@@ -29,53 +31,32 @@ namespace TauCeti
 
 open Module Polynomial
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {f : End K V}
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
+  {f : End R M}
 
-/-- **An eigenspace is semisimple as a `K[X]`-module.** Carried through `AEval` along a proof
-`hinv` that it is invariant, the `μ`-eigenspace of `f` is a semisimple `K[X]`-module. -/
-private theorem isSemisimpleModule_mapSubmodule_eigenspace (f : End K V) (μ : K)
-    (hinv : f.eigenspace μ ∈ (Algebra.lsmul K K V f).invtSubmodule) :
-    IsSemisimpleModule K[X] (AEval.mapSubmodule K V f ⟨f.eigenspace μ, hinv⟩) := by
-  -- `AEval.restrict_equiv_mapSubmodule` restricts `Algebra.lsmul K K V f` rather than `f`
-  have hlsmul : LinearMap.restrict (p := f.eigenspace μ) (q := f.eigenspace μ)
-      (Algebra.lsmul K K V f) hinv =
-        f.restrict (p := f.eigenspace μ) (q := f.eigenspace μ) hinv := rfl
-  have hres : LinearMap.restrict (p := f.eigenspace μ) (q := f.eigenspace μ)
-      (Algebra.lsmul K K V f) hinv = μ • LinearMap.id :=
-    hlsmul.trans (Module.End.restrict_eigenspace f μ)
-  refine (AEval.restrict_equiv_mapSubmodule f _ hinv).isSemisimpleModule_iff.mp ?_
-  refine End.isSemisimple_of_squarefree_aeval_eq_zero (p := X - C μ)
-    (irreducible_X_sub_C μ).squarefree ?_
-  rw [hres, map_sub, aeval_X, aeval_C, Module.algebraMap_end_eq_smul_id, sub_self]
-
-/-- **A diagonalizable endomorphism is semisimple.** If the eigenspaces of `f` span the space then
-`f` is semisimple.
-
-Semisimplicity of `f` is semisimplicity of `V` as a `K[X]`-module, and the eigenspaces are
-`K[X]`-submodules spanning it, so it is enough that each is semisimple. On the `μ`-eigenspace `X`
-acts by the scalar `μ`, so the restriction of `f` is annihilated by the squarefree polynomial
-`X - C μ` and `Module.End.isSemisimple_of_squarefree_aeval_eq_zero` applies. Neither algebraic
-closure nor finite dimension is needed; the converse
+/-- **A diagonalizable endomorphism is semisimple.** An endomorphism of a semisimple module whose
+eigenspaces span the module is semisimple. Over a field the semisimplicity of the module is
+automatic, and neither algebraic closure nor finite dimension is needed; the converse
 `Module.End.IsSemisimple.iSup_eigenspace_eq_top` is where both enter. -/
-theorem isSemisimple_of_iSup_eigenspace_eq_top (hf : ⨆ μ : K, f.eigenspace μ = ⊤) :
+theorem isSemisimple_of_iSup_eigenspace_eq_top (hf : ⨆ μ : R, f.eigenspace μ = ⊤) :
     f.IsSemisimple := by
-  -- `f` acts on its `μ`-eigenspace as multiplication by `μ`, so that eigenspace is invariant
-  have hinv : ∀ μ : K, f.eigenspace μ ∈ (Algebra.lsmul K K V f).invtSubmodule := fun μ v hv ↦ by
-    rw [End.mem_eigenspace_iff] at hv
-    simp [hv]
-  have hss : ∀ μ : K,
-      IsSemisimpleModule K[X] (AEval.mapSubmodule K V f ⟨f.eigenspace μ, hinv μ⟩) :=
-    fun μ ↦ isSemisimpleModule_mapSubmodule_eigenspace f μ (hinv μ)
-  have htop : ⨆ μ : K, AEval.mapSubmodule K V f ⟨f.eigenspace μ, hinv μ⟩ = ⊤ := by
-    set Q := ⨆ μ : K, AEval.mapSubmodule K V f ⟨f.eigenspace μ, hinv μ⟩
-    have hle : (⊤ : Submodule K V) ≤ (Q.restrictScalars K).comap (AEval'.of f).toLinearMap := by
-      rw [← hf]
-      refine iSup_le fun μ v hv ↦ ?_
-      -- membership in the comap of `Q` is membership of the image in `Q`
-      rw [Submodule.mem_comap, Submodule.restrictScalars_mem]
-      exact Submodule.mem_iSup_of_mem μ (by simpa using hv)
-    refine Submodule.eq_top_iff'.2 fun m ↦ ?_
-    simpa using hle (Submodule.mem_top (x := (AEval'.of f).symm m))
-  exact isSemisimpleModule_of_isSemisimpleModule_submodule' hss htop
+  -- `AEval.mapSubmodule` indexes invariant submodules of `Algebra.lsmul R R M f`, defeq to `f`
+  have hinv (μ : R) : f.eigenspace μ ∈ (Algebra.lsmul R R M f).invtSubmodule :=
+    f.eigenspace_mem_invtSubmodule μ
+  set e := AEval.mapSubmodule R M f
+  have hss (μ : R) : IsSemisimpleModule R[X] (e ⟨f.eigenspace μ, hinv μ⟩) := by
+    refine (AEval.restrict_equiv_mapSubmodule f _ (hinv μ)).isSemisimpleModule_iff.mp ?_
+    -- `f` restricts to the scalar `μ` on its `μ`-eigenspace
+    have : End.IsSemisimple (f.restrict (f.mem_invtSubmodule_iff_forall_mem_of_mem.mp
+        (f.eigenspace_mem_invtSubmodule μ))) := by
+      rw [End.restrict_eigenspace, ← Module.algebraMap_end_eq_smul_id,
+        ← End.isSemisimple_sub_algebraMap_iff (μ := μ), sub_self]
+      exact End.isSemisimple_zero
+    -- the restriction of `Algebra.lsmul R R M f` is defeq to the restriction of `f`
+    exact this
+  refine isSemisimpleModule_of_isSemisimpleModule_submodule' hss ?_
+  rw [eq_top_iff, ← e.map_top, ← e.le_symm_apply, ← Subtype.coe_le_coe]
+  exact hf.ge.trans <| iSup_le fun μ ↦ Subtype.coe_le_coe.2 <| e.le_symm_apply.2 <|
+    le_iSup (fun μ ↦ e ⟨_, hinv μ⟩) μ
 
 end TauCeti

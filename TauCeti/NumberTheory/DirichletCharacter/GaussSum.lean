@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
 # Primitive Dirichlet Gauss sums in characteristic zero
@@ -77,6 +78,16 @@ theorem gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive
         simp [sub_eq_zero, hb]
       · simp
 
+/-- The absolute value of a primitive complex Dirichlet Gauss sum is the square root of
+its level, for any primitive additive character. -/
+theorem IsPrimitive.norm_gaussSum {n : ℕ} [NeZero n]
+    {χ : DirichletCharacter ℂ n} (hχ : χ.IsPrimitive)
+    {e : AddChar (ZMod n) ℂ} (he : e.IsPrimitive) : ‖gaussSum χ e‖ = Real.sqrt n := by
+  have hg := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχ he
+  rw [← star_gaussSum_eq, ← starRingEnd_apply, Complex.mul_conj', ZMod.card] at hg
+  rw [← Real.sqrt_sq (norm_nonneg (gaussSum χ e))]
+  exact congrArg Real.sqrt (by exact_mod_cast hg)
+
 /-- For a primitive Dirichlet character and a primitive additive character, the Gauss sums of
 the character and its inverse against the same additive character multiply to the character's
 value at `-1` times the level. -/
@@ -89,15 +100,12 @@ theorem gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive
     rw [e.inv_mulShift, ← Units.coe_neg_one, gaussSum_mulShift_eq, inv_inv]
   have hprod := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχ he
   rw [hshift] at hprod
-  have hsign : χ (-1) * χ (-1) = 1 := by
-    rw [← map_mul]
-    simp
   calc
     _ = χ (-1) * (gaussSum χ e * (χ (-1) * gaussSum χ⁻¹ e)) := by
       symm
       calc
         _ = (χ (-1) * χ (-1)) * (gaussSum χ e * gaussSum χ⁻¹ e) := by ring
-        _ = _ := by rw [hsign, one_mul]
+        _ = _ := by rw [χ.apply_neg_one_mul_self, one_mul]
     _ = _ := by rw [hprod]
 
 /-- If the level `n` is nonzero in `R`, the Gauss sum of a primitive Dirichlet character against
@@ -118,7 +126,7 @@ theorem gaussSum_inv_ne_zero_of_isPrimitive
     {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
     {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
     gaussSum χ⁻¹ e ≠ 0 :=
-  gaussSum_ne_zero_of_isPrimitive hn (by rwa [isPrimitive_def, conductor_inv]) he
+  gaussSum_ne_zero_of_isPrimitive hn hχ.inv he
 
 /-- The square of the Gauss sum of a primitive quadratic Dirichlet character is its value at
 `-1` times the level. -/

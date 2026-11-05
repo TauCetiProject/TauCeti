@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.FirstHomology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.OneDimensional
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 
 /-!
@@ -41,10 +42,17 @@ Through Milnor's model, the singular homology of the wedge of circles with coeff
 commutative ring `k` is the group homology of the free group with trivial coefficients `k`, in
 every degree (`TauCeti.wedgeCirclesSingularHomologyIsoGroupHomology`). The wedge has no cells of
 dimension at least `2`, so its homology vanishes in those degrees
-(`TauCeti.WedgeSum.isZero_singularHomology_circle`), and therefore so does the group homology
-`Hₙ(FreeGroup S, k)` for `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`). In degree one, the
-class of the loop around the `i`-th circle corresponds to the class of the generator `i`, both in
-the abelianization of the free group and in its first group homology
+(`TauCeti.WedgeSum.isZero_singularHomology_circle`). Therefore so does the singular homology of
+`classifyingSpace (FreeGroup S)`, with coefficients in any abelian category with exact coproducts
+(`TauCeti.isZero_classifyingSpace_singularHomology_freeGroup`), and the group homology
+`Hₙ(FreeGroup S, k)` for `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`). The same holds for
+an infinite cyclic subgroup of any group (`TauCeti.isZero_groupHomology_res_zpowers`), and hence,
+since every class of a directed union of subgroups comes from a member, for a group which is the
+directed union of infinite cyclic subgroups (`TauCeti.isZero_groupHomology_of_directed_zpowers`).
+In degree one, the Hurewicz class of a loop corresponds to the class of the element of the free
+group it represents, both in the abelianization of the free group and in its first group homology
+(`FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`); in
+particular the loop around the `i`-th circle corresponds to the generator `i`
 (`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop`). The
 statements are for `S : Type`, the universe in which the wedge of circles is a `K(F, 1)`.
 
@@ -68,12 +76,18 @@ statements are for `S : Type`, the universe in which the wedge of circles is a `
 * `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv_mapOfEq_wedgeCircles`: the inclusion
   of the wedge of circles into the cellular model induces the quotient map from the free group to
   the presented group without relators.
+* `TauCeti.isZero_classifyingSpace_singularHomology_freeGroup`: the singular homology of the
+  classifying space of a free group vanishes in every degree at least `2`.
 * `TauCeti.isZero_groupHomology_freeGroup`: the group homology of a free group with trivial
   coefficients in a commutative ring vanishes in every degree at least `2`.
+* `TauCeti.isZero_groupHomology_of_directed_zpowers`: so does that of a directed union of
+  infinite cyclic subgroups.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace`,
-  `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop`: on first
+  `FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`: on first
   homology, the equivalence sends the class of a loop to the class of the element of the free
   group it represents.
+* `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop`: the loop
+  around the `i`-th circle goes to the class of the generator `i` in `H₁(FreeGroup S, ℤ)`.
 
 ## References
 
@@ -229,12 +243,48 @@ theorem wedgeCirclesSingularHomologyIsoGroupHomology_hom (k : Type) [CommRing k]
   congrArg (· ≫ (classifyingSpaceSingularHomologyIsoGroupHomology k (FreeGroup S) n).hom)
     ((wedgeCirclesHomotopyEquivClassifyingSpace S).singularHomologyIso_hom (ModuleCat.of k k) n)
 
+/-- **The homology of the classifying space of a free group vanishes in degrees at least `2`.**
+Milnor's classifying space of `FreeGroup S` is homotopy equivalent to the wedge of circles indexed
+by `S`, so its singular homology vanishes in every degree `n ≥ 2`, with coefficients in any
+abelian category with exact coproducts. -/
+theorem isZero_classifyingSpace_singularHomology_freeGroup {A : Type w} [Category.{v} A]
+    [HasCoproducts.{0} A] [Abelian A] [AB4OfSize.{0} A] (R : A) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor.{0} A n).obj R).obj
+      (TopCat.of (classifyingSpace (FreeGroup S)))) :=
+  (WedgeSum.isZero_singularHomology_circle S R hn).of_iso
+    ((wedgeCirclesHomotopyEquivClassifyingSpace S).singularHomologyIso R n).symm
+
 /-- **The group homology of a free group vanishes in degrees at least `2`**, with trivial
 coefficients in any commutative ring `k`: it is the homology of a wedge of circles. -/
 theorem isZero_groupHomology_freeGroup (k : Type) [CommRing k] {n : ℕ} (hn : 2 ≤ n) :
     IsZero (groupHomology (Rep.trivial k (FreeGroup S) k) n) :=
-  (WedgeSum.isZero_singularHomology_circle S k hn).of_iso
-    (wedgeCirclesSingularHomologyIsoGroupHomology S k n).symm
+  (isZero_classifyingSpace_singularHomology_freeGroup S (ModuleCat.of k k) hn).of_iso
+    (classifyingSpaceSingularHomologyIsoGroupHomology k (FreeGroup S) n).symm
+
+/-- An infinite cyclic subgroup has no group homology with trivial coefficients in degrees
+`n ≥ 2`, since it is free on one generator. -/
+theorem isZero_groupHomology_res_zpowers (k : Type) [CommRing k] {G : Type} [Group G] {g : G}
+    (hg : ¬IsOfFinOrder g) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (groupHomology (Rep.res (Subgroup.zpowers g).subtype (Rep.trivial k G k)) n) := by
+  have hinj : Function.Injective (zpowersHom G g) :=
+    injective_zpow_iff_not_isOfFinOrder.2 hg
+  let e : FreeGroup Unit ≃* Subgroup.zpowers g :=
+    FreeGroup.mulEquivIntOfUnique.trans (MonoidHom.ofInjective hinj)
+  refine (isZero_groupHomology_freeGroup Unit k hn).of_iso
+    (groupHomology.mapIso e (LinearEquiv.refl k k) (fun _ ↦ ?_) n).symm
+  ext
+  simp
+
+/-- **Homology of a directed union of infinite cyclic subgroups.** If `G` is the union of a
+directed family of infinite cyclic subgroups, then its group homology with trivial coefficients
+vanishes in degrees `n ≥ 2`. -/
+theorem isZero_groupHomology_of_directed_zpowers (k : Type) [CommRing k] {G : Type} [Group G]
+    {ι : Type*} [Nonempty ι] {g : ι → G} (hg : ∀ i, ¬IsOfFinOrder (g i))
+    (hS : Directed (· ≤ ·) fun i ↦ Subgroup.zpowers (g i))
+    (hG : ⨆ i, Subgroup.zpowers (g i) = ⊤) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (groupHomology (Rep.trivial k G k) n) :=
+  groupHomology.isZero_groupHomology_of_directed hS hG fun i ↦
+    isZero_groupHomology_res_zpowers k (hg i) hn
 
 variable {S}
 
@@ -254,9 +304,29 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClass
     classifyingSpaceFundamentalGroupMulEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace]
 
 /-- **The first homology of a wedge of circles agrees with the first group homology of the free
-group.** Under `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, the class of the loop
-going once around the `i`-th circle is the class in `H₁(FreeGroup S, ℤ)` of the `1`-cycle at the
-generator `i` with coefficient `1`. -/
+group.** Under `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, the Hurewicz class of
+a loop `a` at the wedge point is the class in `H₁(FreeGroup S, ℤ)` of the `1`-cycle, with
+coefficient `1`, at the element of the free group that `a` represents under
+`TauCeti.WedgeSum.circleFundamentalGroupMulEquiv`. -/
+-- Not a simp lemma: singularChainComplexFunctor_obj_map rewrites the chain map first.
+theorem _root_.FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles
+    (a : FundamentalGroup (WedgeSum fun _ : S ↦ (1 : Circle)) (base _)) :
+    classifyingSpaceFirstHomologyAddEquivGroupHomology (FreeGroup S)
+      ((HomologicalComplex.homologyMap ((singularChains ℤ).map
+        (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) 1).hom
+          (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
+            (Additive.ofMul (Abelianization.of a)))) =
+      groupHomology.H1π (Rep.trivial ℤ (FreeGroup S) ℤ)
+        ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (FreeGroup S) ℤ)).inv
+          (Finsupp.single (circleFundamentalGroupMulEquiv S a) 1)) := by
+  rw [classifyingSpaceFirstHomologyAddEquivGroupHomology_apply,
+    classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace]
+  exact groupHomology.H1AddEquivOfIsTrivial_symm_tmul
+    (A := Rep.trivial ℤ (FreeGroup S) ℤ) _ 1
+
+/-- The loop going once around the `i`-th circle of the wedge corresponds, under
+`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, to the class in `H₁(FreeGroup S, ℤ)`
+of the `1`-cycle at the generator `i` with coefficient `1`. -/
 theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop (i : S) :
     classifyingSpaceFirstHomologyAddEquivGroupHomology (FreeGroup S)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
@@ -268,10 +338,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expL
       groupHomology.H1π (Rep.trivial ℤ (FreeGroup S) ℤ)
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (FreeGroup S) ℤ)).inv
           (Finsupp.single (FreeGroup.of i) 1)) := by
-  rw [classifyingSpaceFirstHomologyAddEquivGroupHomology_apply,
-    classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace,
+  rw [FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles,
     circleFundamentalGroupMulEquiv_expLoop]
-  exact groupHomology.H1AddEquivOfIsTrivial_symm_tmul
-    (A := Rep.trivial ℤ (FreeGroup S) ℤ) _ 1
 
 end TauCeti

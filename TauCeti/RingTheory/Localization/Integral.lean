@@ -24,6 +24,9 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
 
 * `TauCeti.isLocalization_algebraMapSubmonoid_of_isIntegralClosure`: an integral closure of a
   localization is the corresponding localization of an integral closure.
+* `TauCeti.IsIntegralClosure.isLocalization_of_isIntegral`: an integral algebra `L` over a
+  localization `M⁻¹R` is the localization at `M` of the integral closure of `R` in `L`; for a
+  domain `R` and its fraction field, `L` is the generic fibre of that integral closure.
 * `TauCeti.finite_integralClosure_of_isLocalization`: finiteness of the integral closure passes
   to localizations.
 * `TauCeti.finite_integralClosure_of_span_eq_top`: conversely, finiteness of the integral closure
@@ -34,6 +37,9 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
   `isScalarTower_integralClosureMapAlgebra_left` and
   `isScalarTower_integralClosureMapAlgebra_right`; this is the structure Mathlib's
   `IsLocalization.integralClosure` asks its caller to supply.
+* `TauCeti.exists_isIntegral_pow_smul_of_isLocalization`: if `R_x` is integral over `A_x` for an
+  `A`-algebra `R`, every element of `R` becomes integral over `A` after multiplication by a power
+  of `x`.
 * `TauCeti.IsLocalization.isIntegrallyClosedIn`: if `R` is integrally closed in `S`, then `M⁻¹R` is
   integrally closed in `M⁻¹S`. Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -97,6 +103,19 @@ theorem isLocalization_algebraMapSubmonoid_of_isIntegralClosure :
     apply IsIntegralClosure.algebraMap_injective S R L
     have h := congrArg (algebraMap Sₘ L) hxy
     simpa only [IsScalarTower.algebraMap_apply S Sₘ L] using h
+
+variable (Rₘ) in
+/-- **The generic fibre of an integral closure.** If `Rₘ` is a localization of `R` at `M` and `L`
+is an integral `Rₘ`-algebra, not necessarily a domain, then `L` is the localization at `M` of an
+integral closure of `R` in `L`. This is the case `Sₘ = L` of
+`isLocalization_algebraMapSubmonoid_of_isIntegralClosure`; Mathlib's
+`IsIntegralClosure.isLocalization` is the case of a domain `R` with fraction field `Rₘ` and a
+field `L`. -/
+theorem IsIntegralClosure.isLocalization_of_isIntegral [Algebra.IsIntegral Rₘ L] :
+    IsLocalization (Algebra.algebraMapSubmonoid S M) L :=
+  have : IsIntegralClosure L Rₘ L :=
+    ⟨Function.injective_id, fun {x} ↦ ⟨fun _ ↦ ⟨x, rfl⟩, fun _ ↦ Algebra.IsIntegral.isIntegral x⟩⟩
+  isLocalization_algebraMapSubmonoid_of_isIntegralClosure (Rₘ := Rₘ) (Sₘ := L) (L := L)
 
 end IsIntegralClosure
 
@@ -241,6 +260,29 @@ theorem IsLocalization.isIntegrallyClosedIn (M : Submonoid R) [IsLocalization M 
     exact e'.symm
 
 end IsIntegrallyClosedIn
+
+section PowSMul
+
+variable {A R : Type*} [CommRing A] [CommRing R] [Algebra A R] {x : A}
+  (Ax Rx : Type*) [CommRing Ax] [CommRing Rx] [Algebra A Ax] [Algebra Ax Rx]
+  [Algebra A Rx] [Algebra R Rx] [IsScalarTower A Ax Rx] [IsScalarTower A R Rx]
+  [IsLocalization.Away x Ax] [IsLocalization.Away (algebraMap A R x) Rx]
+
+/-- If the localization `R_x` is integral over `A_x`, every element of `R` becomes integral over
+`A` after multiplication by a power of `x`. -/
+theorem exists_isIntegral_pow_smul_of_isLocalization [Algebra.IsIntegral Ax Rx] (r : R) :
+    ∃ n : ℕ, IsIntegral A (x ^ n • r) := by
+  obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
+    (.powers x) (Rₘ := Ax) (algebraMap R Rx r) (Algebra.IsIntegral.isIntegral _)
+  have : IsLocalization (Algebra.algebraMapSubmonoid R (.powers x)) Rx := by
+    rwa [Algebra.algebraMapSubmonoid_powers]
+  -- Descend integrality from `R_x` to `R` at the cost of another power of `x`.
+  obtain ⟨_, ⟨m, rfl⟩, hm⟩ := IsLocalization.exists_isIntegral_smul_of_isIntegral_map (Sₘ := Rx)
+    (.powers x) (x := x ^ n • r) <| by
+      simpa [Submonoid.smul_def, Algebra.smul_def, IsScalarTower.algebraMap_apply A R Rx] using hn
+  exact ⟨m + n, by rwa [pow_add, mul_smul]⟩
+
+end PowSMul
 
 end TauCeti
 

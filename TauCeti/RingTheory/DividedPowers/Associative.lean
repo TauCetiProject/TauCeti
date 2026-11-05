@@ -44,6 +44,8 @@ the generally noncommutative universal enveloping algebra.
   a unit.
 * `TauCeti.Associative.dividedPower_conj_smul_mem`: conjugation by a set-preserving unit transports
   divided-power stability for any semigroup action.
+* `TauCeti.Associative.dividedPower_neg_smul_mem`: negation preserves divided-power stability of a
+  subgroup.
 * `LinearMap.map_dividedPower_smul_of_intertwines`: a rational linear intertwiner transports
   divided-power actions between modules.
 * `LinearEquiv.dividedPower_smul_mem_of_intertwines`: an equivalence transports divided-power
@@ -141,7 +143,7 @@ theorem pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
     (f : Module.End ℚ V) (n : ℕ) (v : V)
     (h : dividedPower n f • v = 0) : (f ^ (n + 1)) v = 0 := by
   have hz := (dividedPower_apply_eq_zero_iff f n v).mp h
-  rw [pow_succ', Module.End.mul_apply, hz, map_zero]
+  rw [pow_succ', _root_.mul_apply_eq_comp, hz, map_zero]
 
 /-- Divided powers of a nilpotent endomorphism preserve a set containing zero if all terms below
 the nilpotency bound preserve it. -/
@@ -200,6 +202,16 @@ theorem dividedPower_smul (q : ℚ) (n : ℕ) (x : A) :
     dividedPower n (q • x) = q ^ n • dividedPower n x := by
   simpa only [Algebra.smul_def, map_pow] using
     dividedPower_mul_left (Algebra.commutes q x) n
+
+/-- Scaling an element by a natural number scales its `n`-th divided power by the `n`-th power
+of that number.
+
+This is deliberately not a `simp` lemma: `nsmul_eq_mul` rewrites the argument `m • x` of the
+left-hand side to `↑m * x`, so the statement is not in simp-normal form. -/
+theorem dividedPower_nsmul (m n : ℕ) (x : A) :
+    dividedPower n (m • x) = (m ^ n : ℕ) • dividedPower n x := by
+  simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_pow] using
+    dividedPower_smul (m : ℚ) n x
 
 /-- Divided powers are equivariant for conjugation by a unit.
 
@@ -338,6 +350,19 @@ theorem dividedPower_zsmul (d : ℤ) (n : ℕ) (x : A) :
 theorem dividedPower_neg (n : ℕ) (x : A) :
     dividedPower n (-x) = (-1 : ℚ) ^ n • dividedPower n x := by
   simpa only [neg_one_smul] using dividedPower_smul (-1) n x
+
+/-- A divided power of `-x` preserves a subgroup whenever the same divided power of `x` does: the
+two differ by the sign `(-1) ^ n`. -/
+theorem dividedPower_neg_smul_mem {V : Type*} [AddCommGroup V] [Module A V] {S : Type*}
+    [SetLike S V] [NegMemClass S V] (x : A) (M : S) {n : ℕ}
+    (hM : ∀ v ∈ M, dividedPower n x • v ∈ M) :
+    ∀ v ∈ M, dividedPower n (-x) • v ∈ M := by
+  intro v hv
+  rcases Nat.even_or_odd n with hn | hn
+  · rw [dividedPower_neg, hn.neg_one_pow, one_smul]
+    exact hM v hv
+  · rw [dividedPower_neg, hn.neg_one_pow, neg_one_smul, neg_smul]
+    exact neg_mem (hM v hv)
 
 /-- The signed divided-power binomial formula for commuting elements of an associative algebra. -/
 theorem dividedPower_sub {x y : A} (hxy : Commute x y) (n : ℕ) :

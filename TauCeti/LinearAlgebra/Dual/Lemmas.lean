@@ -17,8 +17,10 @@ count for the trace of `ker f` on a subspace on which `f` does not vanish. A bas
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
 algebra is finite-dimensional is itself finite-dimensional.
-Linearly independent functionals, as many as the dimension, span the dual space and
-so separate points.
+Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
+and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
+family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
+and so separate points.
 
 ## Main results
 
@@ -36,8 +38,14 @@ so separate points.
   is the kernel of a nonzero functional.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is.
+* `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
+  has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
+* `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
+  independent family of functionals has a biorthogonal family of vectors.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
+* `LinearIndependent.exists_sum_smul_eq_proj`: `#ι` linearly independent forms on `Kⁱ` express
+  every coordinate projection.
 -/
 
 public section
@@ -76,6 +84,14 @@ theorem finrank_ker_inf_add_one {f : Dual K V} {U : Submodule K V} [FiniteDimens
     rw [LinearMap.ker_domRestrict, Submodule.comap_inf, Submodule.comap_subtype_self, inf_top_eq]
   have hfin := finrank_ker_add_one_of_ne_zero hne
   rwa [hker, (Submodule.comapSubtypeEquivOfLe inf_le_right).finrank_eq] at hfin
+
+/-- A hyperplane contained in the kernel of a nonzero functional equals that kernel. -/
+theorem ker_eq_of_le_of_finrank_add_one [FiniteDimensional K V] (f : Dual K V)
+    (hf : f ≠ 0) {S : Submodule K V} (hle : S ≤ LinearMap.ker f)
+    (hdim : finrank K S + 1 = finrank K V) : LinearMap.ker f = S := by
+  apply (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  have hker := finrank_ker_add_one_of_ne_zero hf
+  omega
 
 /-- The kernel of a nonzero functional has codimension one. The ambient vector space need not be
 finite-dimensional. -/
@@ -159,6 +175,40 @@ end Module.Finite
 
 namespace LinearIndependent
 
+open Module
+
+section Biorthogonal
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [DecidableEq ι]
+
+/-- A linearly independent family of vectors has a **biorthogonal family of functionals**:
+`f i (v j)` is `1` for `i = j` and `0` otherwise. The functional `f i` extends the `i`-th
+coordinate on the span of the family. -/
+theorem exists_dual_forall_apply_eq_ite {v : ι → V} (hv : LinearIndependent K v) :
+    ∃ f : ι → Dual K V, ∀ i j, f i (v j) = if i = j then 1 else 0 := by
+  choose f hf using fun i ↦ LinearMap.exists_extend ((Finsupp.lapply i).comp hv.repr)
+  refine ⟨f, fun i j ↦ ?_⟩
+  have hj : v j ∈ Submodule.span K (Set.range v) := Submodule.subset_span ⟨j, rfl⟩
+  have := LinearMap.congr_fun (hf i) ⟨v j, hj⟩
+  rw [LinearMap.comp_apply, Submodule.subtype_apply] at this
+  rw [this, LinearMap.comp_apply, hv.repr_eq_single j _ rfl,
+    Finsupp.lapply_apply, Finsupp.single_apply]
+  exact if_congr eq_comm rfl rfl
+
+/-- On a finite-dimensional space, a linearly independent family of functionals has a
+**biorthogonal family of vectors**: `f i (v j)` is `1` for `i = j` and `0` otherwise. -/
+theorem exists_forall_apply_eq_ite_of_dual [FiniteDimensional K V] {f : ι → Dual K V}
+    (hf : LinearIndependent K f) :
+    ∃ v : ι → V, ∀ i j, f i (v j) = if i = j then 1 else 0 := by
+  obtain ⟨g, hg⟩ := hf.exists_dual_forall_apply_eq_ite
+  refine ⟨fun j ↦ (evalEquiv K V).symm (g j), fun i j ↦ ?_⟩
+  rw [apply_evalEquiv_symm_apply, hg]
+  exact if_congr eq_comm rfl rfl
+
+end Biorthogonal
+
+section Separation
+
 variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [Fintype ι]
 
@@ -172,5 +222,18 @@ theorem eq_zero_of_forall_apply_eq_zero {L : ι → Module.Dual K V} (hL : Linea
     exact hz i
   rw [hspan] at hz'
   simpa using hz'
+
+end Separation
+
+/-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate projection is a
+combination of them. -/
+theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ a : ι → ι → K, ∀ j, ∑ i, a j i • l i = LinearMap.proj j := by
+  have hspan : Submodule.span K (Set.range l) = ⊤ :=
+    hl.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
+    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  exact ⟨a, ha⟩
 
 end LinearIndependent

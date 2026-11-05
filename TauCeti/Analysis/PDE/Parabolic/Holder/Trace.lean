@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Tactic.IntervalCases
@@ -17,7 +18,9 @@ import Mathlib.Tactic.Linarith
 Every time slice of a bounded order-two parabolic Hölder map belongs to the spatial space
 `C_b^{2,α}`. The restriction operator `ParabolicC2HolderSpace.spatialTraceL` has norm at most
 one, uniformly over the closed time slab. In particular it supplies both the initial and the
-terminal trace, including the endpoints without any extension in time.
+terminal trace, including the endpoints without any extension in time. Under the time reversal
+`R (x, s) = (x, T - s)`, the trace of `u ∘ R` at `t` is the trace of `u` at `T - t`; in particular
+the initial trace of `u ∘ R` is the terminal trace of `u`.
 
 The target is `CkHolderSpace 2`, with its sum of the supremum norms of the iterated Fréchet
 derivatives and the Hölder seminorm of the Hessian. The continuous multilinear operator norm
@@ -49,8 +52,7 @@ theorem contDiff_spatialSlice (f : ParabolicC2HolderSpace α E F hab) (t : Icc a
   have hxx : _root_.fderiv ℝ (_root_.fderiv ℝ fun x ↦ f (slabMk x t)) =
       fun x ↦ spatialSecondFDerivL f (slabMk x t) :=
     funext (f.fderiv_fderiv_eq t)
-  have hc : Continuous (fun x : E ↦ slabMk x t) :=
-    continuous_slabMk.comp (continuous_id.prodMk continuous_const)
+  have hc : Continuous (fun x : E ↦ slabMk x t) := by fun_prop
   rw [← one_add_one_eq_two, contDiff_succ_iff_fderiv]
   refine ⟨fun x ↦ (f.hasSpatialFDerivAt t x).differentiableAt, by simp, ?_⟩
   rw [contDiff_one_iff_fderiv, hxx, hx]
@@ -224,5 +226,34 @@ theorem spatialTrace_zero (t : Icc a b) :
 theorem norm_spatialTraceL_le_one (t : Icc a b) :
     ‖spatialTraceL (α := α) (E := E) (F := F) (hab := hab) t‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-! ### Traces of a time reversal -/
+
+section TimeReversal
+
+variable {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
+
+/-- The spatial trace of the time reversal `u ∘ R` at time `t` is the spatial trace of `u` at
+time `T - t`. -/
+@[simp]
+theorem spatialTrace_timeReverseLIE (f : ParabolicC2HolderSpace α E F hab) (t : Icc a' b') :
+    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace ⟨T - t, by
+      obtain ⟨h₁, h₂⟩ := t.2
+      subst ha hb
+      constructor <;> linarith⟩ := by
+  ext x
+  simp
+
+/-- The initial trace of the time reversal `u ∘ R`, at `T - b`, is the terminal trace of `u`
+at `b`. -/
+theorem spatialTrace_timeReverseLIE_left (f : ParabolicC2HolderSpace α E F hab) :
+    (timeReverseLIE T ha hb f).spatialTrace
+        ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩ =
+      f.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
+  rw [spatialTrace_timeReverseLIE]
+  congr
+  simp [ha]
+
+end TimeReversal
 
 end TauCeti.ParabolicC2HolderSpace

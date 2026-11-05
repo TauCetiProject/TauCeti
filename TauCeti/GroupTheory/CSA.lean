@@ -15,13 +15,17 @@ public import TauCeti.GroupTheory.TrivialIntersection
 A group is CSA if its maximal abelian subgroups are malnormal. The centralizer of a nonidentity
 element in such a group is its unique maximal abelian subgroup containing that element. In
 particular, commutation is transitive through a nonidentity element. In a torsion-free
-commutative-transitive group no nonidentity element is conjugate to its inverse. A group is CSA
-exactly when it is commutative transitive and every nonidentity element commuting with one of its
-conjugates `g * x * g⁻¹` commutes with `g`. A failure of either condition is witnessed by a
-nonidentity element together with a nontrivial commutator, so both conditions pass to any group
-in which every pair of nonidentity elements survives under one homomorphism to a CSA group. This
-is how fully residually free groups inherit the CSA property from free groups. These properties
-are useful for the centralizers and equations of free groups and limit groups.
+commutative-transitive group roots are unique and no nonidentity element is conjugate to its
+inverse. In a torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of
+different cosets of the centralizer of `u` do not commute. A group is CSA exactly when it is
+commutative transitive and every nonidentity element commuting with one of its conjugates
+`g * x * g⁻¹` commutes with `g`. Consequently, given two noncommuting elements `a` and `b`, the
+disjunction `x = 1 ∨ y = 1` is equivalent to `x` commuting with `y`, `a * y * a⁻¹` and
+`b * y * b⁻¹`. A failure of either condition is witnessed by a nonidentity element together with a
+nontrivial commutator, so both conditions pass to any group in which every pair of nonidentity
+elements survives under one homomorphism to a CSA group. This is how fully residually free groups
+inherit the CSA property from free groups. These properties are useful for the centralizers and
+equations of free groups and limit groups.
 
 The definition follows Baumslag, Myasnikov and Remeslennikov, *Algebraic geometry over groups I*,
 §§1–2.
@@ -149,6 +153,22 @@ theorem isCSA_iff_isCommTransitive_and_commute_conj :
     rw [hMC, Subgroup.mem_centralizer_singleton_iff]
     exact (hconj x g hx ((commute_iff_eq _ _).2 (setLike_mul_comm hxM hgxM))).eq.symm
 
+/-- In a CSA group with two noncommuting elements `a` and `b`, an element `x` is trivial or `y`
+is trivial exactly when `x` commutes with `y`, `a * y * a⁻¹` and `b * y * b⁻¹`. This expresses
+the disjunction `x = 1 ∨ y = 1` by three equations. -/
+theorem IsCSA.eq_one_or_eq_one_iff_commute_conj (hG : IsCSA G) {a b x y : G}
+    (hab : ¬Commute a b) :
+    x = 1 ∨ y = 1 ↔ Commute x y ∧ Commute x (a * y * a⁻¹) ∧ Commute x (b * y * b⁻¹) := by
+  refine ⟨by rintro (rfl | rfl) <;> simp, fun ⟨hxy, hxa, hxb⟩ => ?_⟩
+  by_contra! h
+  obtain ⟨hx, hy⟩ := h
+  have hT := hG.isCommTransitive
+  have hconj := (isCSA_iff_isCommTransitive_and_commute_conj.1 hG).2
+  -- `y` commutes with its conjugates by `a` and by `b` through `x`, hence with `a` and `b`.
+  have hya : Commute y a := hconj y a hy (hT y x _ hx hxy.symm hxa)
+  have hyb : Commute y b := hconj y b hy (hT y x _ hx hxy.symm hxb)
+  exact hab (hT a y b hy hya.symm hyb)
+
 /-- In a torsion-free commutative-transitive group, a nonidentity element is not conjugate to its
 inverse. -/
 theorem IsCommTransitive.not_isConj_inv [IsMulTorsionFree G] (hG : IsCommTransitive G) {x : G}
@@ -173,6 +193,45 @@ theorem IsCommTransitive.not_isConj_inv [IsMulTorsionFree G] (hG : IsCommTransit
     · exact hG g (g ^ 2) x hg1 (Commute.self_pow g 2) hg2
   rw [hgx.eq, mul_inv_cancel_right] at hg
   exact hxx (mul_eq_one_iff_eq_inv.2 hg)
+
+/-- A torsion-free commutative-transitive group has unique roots: for all `x` and `y`, if
+`x ^ n = y ^ n` with `n ≠ 0`, then `x = y`. -/
+theorem IsCommTransitive.hasUniqueRoots [IsMulTorsionFree G] (hG : IsCommTransitive G) :
+    HasUniqueRoots G where
+  pow_left_injective n hn x y hxy := by
+    dsimp only at hxy
+    obtain rfl | hy := eq_or_ne y 1
+    · rwa [one_pow, pow_eq_one_iff_left hn] at hxy
+    -- Both `x` and `y` commute with the nonidentity element `y ^ n`, hence with each other.
+    have hyn : y ^ n ≠ 1 := (pow_eq_one_iff_left hn).not.2 hy
+    have hcomm : Commute x y :=
+      hG x (y ^ n) y hyn (by rw [← hxy]; exact Commute.self_pow x n) (Commute.pow_self y n)
+    exact hcomm.eq_of_pow_eq_pow hn hxy
+
+/-- In a torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements `a` and
+`b` in different cosets of the centralizer of `u` do not commute. -/
+theorem IsCSA.not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u : G}
+    (hu : u ≠ 1) {a b : G} {e f : ℤ} (he : e ≠ 0) (hf : f ≠ 0)
+    (hab : a⁻¹ * b ∉ Subgroup.centralizer {u}) :
+    ¬Commute (a * u ^ e * a⁻¹) (b * u ^ f * b⁻¹) := by
+  intro h
+  -- Conjugate by `a⁻¹` to move the first factor to `u ^ e` and the second to a conjugate of
+  -- `u ^ f` by `a⁻¹ * b`, so that both factors are stated relative to `u`.
+  have h₁ : Commute (u ^ e) (((a⁻¹ * b) * u * (a⁻¹ * b)⁻¹) ^ f) := by
+    have := h.map (MulAut.conj a⁻¹).toMonoidHom
+    rw [conj_zpow]
+    rwa [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, MulAut.conj_apply,
+      show a⁻¹ * (a * u ^ e * a⁻¹) * a⁻¹⁻¹ = u ^ e by group,
+      show a⁻¹ * (b * u ^ f * b⁻¹) * a⁻¹⁻¹ = (a⁻¹ * b) * u ^ f * (a⁻¹ * b)⁻¹ by group] at this
+  have hT := hG.isCommTransitive
+  have h₂ : Commute u (((a⁻¹ * b) * u * (a⁻¹ * b)⁻¹) ^ f) :=
+    hT _ _ _ (by simpa [IsMulTorsionFree.zpow_eq_one_iff] using ⟨hu, he⟩)
+      ((Commute.refl u).zpow_right e) h₁
+  have h₃ : Commute u ((a⁻¹ * b) * u * (a⁻¹ * b)⁻¹) :=
+    hT _ _ _ (by rw [Ne, IsMulTorsionFree.zpow_eq_one_iff, conj_eq_one_iff]; tauto)
+      h₂ ((Commute.refl _).zpow_left f)
+  exact hab (Subgroup.mem_centralizer_singleton_iff.2
+    ((isCSA_iff_isCommTransitive_and_commute_conj.1 hG).2 u _ hu h₃).symm.eq)
 
 /-- A nonabelian commutative-transitive group has trivial center. -/
 theorem IsCommTransitive.center_eq_bot (hG : IsCommTransitive G)

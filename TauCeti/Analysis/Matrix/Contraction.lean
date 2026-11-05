@@ -24,6 +24,8 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
+* `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
+  `∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ` of a continuous bilinear form `B`, such as a second derivative.
 -/
 
 public section
@@ -80,7 +82,7 @@ theorem contraction_one :
   ext H
   rw [contraction_apply, TauCeti.traceCLM_apply,
     LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
-  simp [one_apply, real_inner_comm]
+  simp [Matrix.one_apply, real_inner_comm]
 
 /-- If every entry of `M` is at most `ε` in absolute value, then
 `|∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫| ≤ n² ε ‖H‖`. -/
@@ -100,6 +102,26 @@ theorem abs_contraction_le {M : Matrix (Fin n) (Fin n) ℝ} {ε : ℝ}
         exact (H.le_opNorm_of_le (h1 i).le).trans_eq (mul_one _)
     _ = n ^ 2 * ε * ‖H‖ := by
         simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
+
+/-- If every entry of `M` is at most `ε` in absolute value, then for a continuous bilinear form
+`B` on `EuclideanSpace ℝ ι`, `|∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ| ≤ (card ι)² ε ‖B‖`. Applied to the second
+derivative of a function, this bounds the principal part `∑ᵢⱼ Mᵢⱼ ∂ᵢ∂ⱼh` of a
+non-divergence-form operator by the operator norm of the Hessian. -/
+theorem abs_sum_sum_mul_apply_single_single_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {M : Matrix ι ι ℝ} {ε : ℝ} (hM : ∀ i j, |M i j| ≤ ε)
+    (B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :
+    |∑ i, ∑ j, M i j * B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤
+      Fintype.card ι ^ 2 * ε * ‖B‖ := by
+  calc |∑ i, ∑ j, M i j * B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)|
+      ≤ ∑ _i : ι, ∑ _j : ι, ε * ‖B‖ := by
+        refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+        refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+        rw [abs_mul]
+        refine mul_le_mul (hM i j) ?_ (abs_nonneg _) ((abs_nonneg _).trans (hM i j))
+        simpa using B.le_opNorm₂ (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+    _ = Fintype.card ι ^ 2 * ε * ‖B‖ := by
+        simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
         ring
 
 end Matrix

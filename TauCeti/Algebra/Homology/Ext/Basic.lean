@@ -34,6 +34,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   `TauCeti.exact_precompOfLinear₃`) are the same repackaging one step further along the
   contravariant sequence, where the outgoing (respectively incoming) map is precomposition with
   the extension class;
+* dimension shifting: the connecting map `Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` of a short exact
+  sequence `S` is bijective when `Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish
+  (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`);
 * extension of morphisms along a short exact sequence `S` whose cokernel `S.X₃` has
   `Ext¹(S.X₃, Y) = 0` (`CategoryTheory.ShortComplex.ShortExact.exists_f_comp_eq_of_ext_eq_zero`).
 * the vanishing of morphisms from `X` placed in degree `n` to `Y` placed in degree zero in the
@@ -309,6 +312,17 @@ open CategoryTheory.Abelian
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {S : ShortComplex C}
   (hS : S.ShortExact)
 include hS
+
+/-- **Dimension shifting.** If `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is short exact and
+`Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish, then the connecting map
+`Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` is bijective. -/
+theorem extClass_postcomp_bijective (P : C) {n m : ℕ} (h : n + 1 + 1 = m)
+    (h₁ : Subsingleton (Ext.{w} P S.X₂ (n + 1))) (h₂ : Subsingleton (Ext.{w} P S.X₂ m)) :
+    Function.Bijective (hS.extClass.postcomp P h) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₃ P hS x h hx
+    rw [Subsingleton.elim z 0, Ext.zero_comp]
+  · exact Ext.covariant_sequence_exact₁ P hS x (Subsingleton.elim _ _) h
 
 /-- **Extension along a monomorphism with orthogonal cokernel**: if `S` is short exact and
 `Ext¹(S.X₃, Y) = 0`, every morphism `S.X₁ ⟶ Y` extends along `S.f`. -/

@@ -129,7 +129,7 @@ theorem valuation_infty_apply {f : RatFunc k} (hf : f ≠ 0) :
     (infty k).valuation f = WithZero.exp f.intDegree := by
   classical
   rw [valuation_infty, RatFunc.inftyValuation_apply,
-    RatFunc.inftyValuation_of_nonzero (F := k) hf]
+    RatFunc.inftyValuation_of_ne_zero (F := k) hf]
 
 /-- The order function of the place at infinity is minus the degree. The junk values
 `ord_∞ 0 = 0` and `RatFunc.intDegree 0 = 0` match, so no nonvanishing hypothesis is needed. -/
@@ -287,9 +287,7 @@ theorem adicOfIrreducible_eq_adicOfIrreducible_iff {q r : k[X]} (hq : Irreducibl
     (hr : Irreducible r) :
     adicOfIrreducible hq = adicOfIrreducible hr ↔ Associated q r := by
   rw [adicOfIrreducible_def, adicOfIrreducible_def, (ofPrime_injective k (RatFunc k)).eq_iff,
-    ← Ideal.span_singleton_eq_span_singleton, ← HeightOneSpectrum.ofIrreducible_asIdeal hq,
-    ← HeightOneSpectrum.ofIrreducible_asIdeal hr]
-  exact ⟨congrArg HeightOneSpectrum.asIdeal, HeightOneSpectrum.ext⟩
+    HeightOneSpectrum.ofIrreducible_eq_ofIrreducible_iff]
 
 /-- **The residue field of the finite place of an irreducible polynomial `q` is `k[X] / (q)`**
 (Stichtenoth, Proposition 1.2.1(a)). -/

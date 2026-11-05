@@ -35,6 +35,10 @@ unit `η`, as for a circle born from nothing. The map depends only on `f`, so it
 any ordering of the circles or parenthesization of the tensor product, and it is functorial in `f`
 (`PiTensorProduct.fiberwiseMul_comp`).
 
+Multiplication by `X` in the factor of one circle, `TauCeti.Khovanov.circleX`, has square zero and
+quantum degree `-2`, and merging carries it to `X` on the image circle. This is the action of a
+marked circle used for reduced Khovanov homology.
+
 ## Main definitions
 
 * `TauCeti.Khovanov.labelBasis`: the basis `1, ε` of `R[ε]` indexed by the labels `false, true`.
@@ -43,6 +47,9 @@ any ordering of the circles or parenthesization of the tensor product, and it is
 * `TauCeti.Khovanov.circleQuantumGrading`: the quantum grading of the circle tensor.
 * `TauCeti.Khovanov.circlePieceBasis`: the basis of its degree-`p` piece indexed by the labellings
   of degree `p`, so that every piece is finite free.
+* `TauCeti.Khovanov.circlePieceEquivOfUnique`: a piece with a single labelling of its degree is
+  identified with `R`.
+* `TauCeti.Khovanov.circleX`: multiplication by `X` in the factor of one circle.
 
 ## Main results
 
@@ -55,8 +62,11 @@ any ordering of the circles or parenthesization of the tensor product, and it is
   carries two `X`s.
 * `TauCeti.Khovanov.isHomogeneous_fiberwiseMul`: the merge map along `f : σ → τ` has quantum
   degree `|τ| - |σ|`; in particular merging two circles into one has degree `-1`.
-* `TauCeti.Khovanov.isHomogeneous_reindex`: relabelling the circle factors preserves quantum
-  degree.
+* `TauCeti.Khovanov.circleX_circleX`, `TauCeti.Khovanov.isHomogeneous_circleX`: the `X` action on
+  a circle squares to zero and has quantum degree `-2`.
+* `TauCeti.Khovanov.isHomogeneous_reindex`,
+  `TauCeti.Khovanov.map_reindex_circleQuantumGrading_piece`: relabelling the circle factors
+  preserves quantum degree, and carries each quantum piece onto the piece of the same degree.
 
 ## References
 
@@ -214,6 +224,60 @@ theorem fiberwiseMul_circleBasis [Fintype τ] (f : σ → τ) (l : σ → Bool) 
 
 end Merge
 
+section X
+
+variable [DecidableEq ι]
+
+variable (R) in
+/-- The action of `X` on the circle `i`: multiplication by `X = ε` placed in the factor `i`. -/
+noncomputable def circleX (i : ι) : CircleTensor R ι →ₗ[R] CircleTensor R ι :=
+  LinearMap.mulLeft R (singleAlgHom (A := fun _ ↦ R[ε]) i ε)
+
+/-- The `X` action on the circle `i` is multiplication by `X` in the factor `i`. -/
+theorem circleX_apply (i : ι) (x : CircleTensor R ι) :
+    circleX R i x = singleAlgHom (A := fun _ ↦ R[ε]) i ε * x := (rfl)
+
+/-- On the labelling basis, `X` on the circle `i` relabels `i` from `1` to `X`, and kills the
+labellings already carrying `X` on `i`. -/
+@[simp↓]
+theorem circleX_circleBasis [Finite ι] (i : ι) (l : ι → Bool) :
+    circleX R i (circleBasis R ι l) =
+      if l i then 0 else circleBasis R ι (Function.update l i true) := by
+  rw [circleX_apply, circleBasis_apply, singleAlgHom_apply, tprod_mul_tprod]
+  split_ifs with h
+  · exact MultilinearMap.map_coord_zero _ i (by simp [h])
+  · rw [circleBasis_apply]
+    congr 1
+    funext k
+    by_cases hk : k = i
+    · subst hk
+      simp [h]
+    · simp [hk]
+
+/-- The `X` action on a circle squares to zero, since `X² = 0`. -/
+@[simp]
+theorem circleX_circleX (i : ι) (x : CircleTensor R ι) : circleX R i (circleX R i x) = 0 := by
+  rw [circleX_apply, circleX_apply, ← mul_assoc, ← map_mul, eps_mul_eps, map_zero, zero_mul]
+
+variable {σ τ : Type*} [DecidableEq σ] [DecidableEq τ]
+
+/-- Merging along `f` carries `X` on the circle `i` to `X` on the circle `f i`. -/
+theorem fiberwiseMul_circleX [Fintype σ] (f : σ → τ) (i : σ) (x : CircleTensor R σ) :
+    fiberwiseMul (A := fun _ ↦ R[ε]) f (circleX R i x) =
+      circleX R (f i) (fiberwiseMul (A := fun _ ↦ R[ε]) f x) := by
+  rw [circleX_apply, circleX_apply, map_mul, fiberwiseMul_singleAlgHom]
+
+/-- Reindexing along `e` carries `X` on the circle `i` to `X` on the circle `e i`. -/
+theorem reindex_circleX [Finite σ] (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
+    reindex R (fun _ ↦ R[ε]) e (circleX R i x) =
+      circleX R (e i) (reindex R (fun _ ↦ R[ε]) e x) := by
+  have := Fintype.ofFinite σ
+  have h := toLinearMap_fiberwiseMul_equiv (R := R) (B := R[ε]) e
+  rw [← LinearEquiv.coe_coe, ← h, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
+    fiberwiseMul_circleX]
+
+end X
+
 end Basis
 
 section Grading
@@ -302,6 +366,47 @@ instance (p : ℤ) : Module.Free R ((circleQuantumGrading R ι).piece p) :=
 instance (p : ℤ) : Module.Finite R ((circleQuantumGrading R ι).piece p) :=
   .of_basis (circlePieceBasis R ι p)
 
+/-- When `l₀` is the only labelling of degree `p`, the labellings of degree `p` form a singleton
+with element `l₀`. -/
+@[instance_reducible]
+private def uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
+  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+
+private theorem coe_default_uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    ((uniqueLabelingOfDegree h).default : ι → Bool) = l₀ :=
+  rfl
+
+variable (R) in
+/-- When `l₀` is the only labelling of degree `p`, the degree-`p` piece of the circle tensor is free
+of rank one: the coordinate along `l₀` identifies it with `R`. -/
+noncomputable def circlePieceEquivOfUnique {p : ℤ} (l₀ : ι → Bool)
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    (circleQuantumGrading R ι).piece p ≃ₗ[R] R :=
+  letI := uniqueLabelingOfDegree h
+  (circlePieceBasis R ι p).equivFun ≪≫ₗ LinearEquiv.funUnique _ R R
+
+/-- The identification of a rank-one piece with `R` reads off the coordinate along the unique
+labelling of that degree. -/
+@[simp]
+theorem circlePieceEquivOfUnique_apply {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (x : (circleQuantumGrading R ι).piece p) :
+    circlePieceEquivOfUnique R l₀ h x = (circleBasis R ι).repr x l₀ := by
+  simp [circlePieceEquivOfUnique, circlePieceBasis_repr_apply, coe_default_uniqueLabelingOfDegree]
+
+/-- The inverse identification sends a scalar to that multiple of the basis vector of the unique
+labelling of that degree. -/
+@[simp]
+theorem coe_circlePieceEquivOfUnique_symm_apply {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (r : R) :
+    ((circlePieceEquivOfUnique R l₀ h).symm r : CircleTensor R ι) = r • circleBasis R ι l₀ := by
+  have hl₀ : circleBasis R ι l₀ ∈ (circleQuantumGrading R ι).piece p :=
+    (h l₀).2 rfl ▸ circleBasis_mem_circleQuantumGrading_piece l₀
+  have hr : r = circlePieceEquivOfUnique R l₀ h (r • ⟨_, hl₀⟩) := by simp
+  rw [(LinearEquiv.symm_apply_eq _).2 hr, Submodule.coe_smul]
+
 /-- The pure tensor of the labels of a labelling is homogeneous of the degree of the labelling.
 This is the simp-normal form of `TauCeti.Khovanov.circleBasis_mem_circleQuantumGrading_piece`. -/
 @[simp]
@@ -349,6 +454,27 @@ theorem isHomogeneous_fiberwiseMul (f : σ → τ) :
     exact circleBasis_mem_circleQuantumGrading_piece _
   · exact zero_mem _
 
+/-- The `X` action on a circle has quantum degree `-2`. -/
+theorem isHomogeneous_circleX [DecidableEq ι] (i : ι) :
+    TauCeti.LinearMap.IsHomogeneous (circleX R i)
+      (circleQuantumGrading R ι).piece (circleQuantumGrading R ι).piece (-2) := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  rw [mem_circleQuantumGrading_piece_iff] at hx
+  rw [← (circleBasis R ι).sum_repr x, map_sum]
+  refine Submodule.sum_mem _ fun l _ ↦ ?_
+  rw [map_smul]
+  by_cases hl : (circleBasis R ι).repr x l = 0
+  · rw [hl, zero_smul]
+    exact zero_mem _
+  refine Submodule.smul_mem _ _ ?_
+  rw [circleX_circleBasis]
+  split_ifs with h
+  · exact zero_mem _
+  · rw [← hx l hl, ← sub_eq_add_neg,
+      ← labelingQuantumDegree_update_true (by simpa using h)]
+    exact circleBasis_mem_circleQuantumGrading_piece _
+
 omit [DecidableEq τ] in
 /-- Reindexing the circle factors preserves their total quantum degree. -/
 theorem isHomogeneous_reindex (e : σ ≃ τ) :
@@ -357,6 +483,18 @@ theorem isHomogeneous_reindex (e : σ ≃ τ) :
   classical
   simpa only [toLinearMap_fiberwiseMul_equiv, Fintype.card_congr e, sub_self] using
     (isHomogeneous_fiberwiseMul (R := R) e)
+
+omit [DecidableEq τ] in
+/-- Reindexing the circle factors carries each quantum piece onto the piece of the same
+degree. -/
+theorem map_reindex_circleQuantumGrading_piece (e : σ ≃ τ) (p : ℤ) :
+    ((circleQuantumGrading R σ).piece p).map (reindex R (fun _ ↦ R[ε]) e).toLinearMap =
+      (circleQuantumGrading R τ).piece p := by
+  classical
+  refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun x hx ↦ ?_) fun x hx ↦ ?_
+  · simpa using (isHomogeneous_reindex (R := R) e).map_mem hx
+  · refine ⟨reindex R (fun _ ↦ R[ε]) e.symm x, ?_, by simp [← reindex_symm]⟩
+    simpa using (isHomogeneous_reindex (R := R) e.symm).map_mem hx
 
 end Grading
 

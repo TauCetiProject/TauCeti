@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.lpSpace
 import Mathlib.Analysis.Normed.Group.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFunc
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
@@ -178,6 +179,11 @@ theorem exists_bound (f : BoundedBorelFunction X) :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ x, ‖f x‖ ≤ M :=
   ⟨‖f‖, norm_nonneg f, norm_coe_le_norm f⟩
 
+/-- A symbol is integrable against every finite measure. -/
+theorem integrable (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
+    [MeasureTheory.IsFiniteMeasure μ] : MeasureTheory.Integrable f μ :=
+  .of_bound f.measurable.aestronglyMeasurable ‖f‖ (.of_forall (norm_coe_le_norm f))
+
 /-- Bundle a measurable function with its everywhere bound. -/
 def ofFunction (f : X → ℂ) (hf : Measurable f)
     (hbound : ∃ M : ℝ, 0 ≤ M ∧ ∀ x, ‖f x‖ ≤ M) : BoundedBorelFunction X :=
@@ -285,7 +291,7 @@ theorem indicator_mul_indicator (s t : Set X) (hs : MeasurableSet s) (ht : Measu
     (f g : BoundedBorelFunction X) :
     indicator s hs f * indicator t ht g = indicator (s ∩ t) (hs.inter ht) (f * g) := by
   ext x
-  simp only [mul_apply, indicator_apply]
+  simp only [TauCeti.BoundedBorelFunction.mul_apply, indicator_apply]
   exact (Set.inter_indicator_mul _ _ x).symm
 
 /-- Pullback commutes with restriction and extension by zero. -/

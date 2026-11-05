@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.ConstantForm
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The full-weight type-C carrier preserves the standard alternating form
@@ -167,30 +169,6 @@ private theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1))
 
 /-! ### The two generator matrices preserve the form -/
 
-private theorem diagonal_mul_mul_transpose_diagonal {N : ℕ} {A : Type*} [CommRing A]
-    (d : Fin N → A) (Jm : Matrix (Fin N) (Fin N) A)
-    (hd : ∀ r c, d r * Jm r c * d c = Jm r c) :
-    Matrix.diagonal d * Jm * (Matrix.diagonal d)ᵀ = Jm := by
-  ext r c
-  rw [Matrix.diagonal_transpose, Matrix.mul_diagonal, Matrix.diagonal_mul]
-  exact hd r c
-
-private theorem one_add_smul_mul_mul_transpose {N : ℕ} {A : Type*} [CommRing A]
-    (Jm Y : Matrix (Fin N) (Fin N) A) (t : A)
-    (hskew : Y * Jm + Jm * Yᵀ = 0) (hsq : Y * Y = 0) :
-    (1 + t • Y) * Jm * (1 + t • Y)ᵀ = Jm := by
-  have hYJ : Y * Jm = -(Jm * Yᵀ) := by
-    rw [eq_neg_iff_add_eq_zero]
-    exact hskew
-  have hcube : Y * Jm * Yᵀ = 0 := by
-    rw [hYJ, Matrix.neg_mul, Matrix.mul_assoc, ← Matrix.transpose_mul, hsq,
-      Matrix.transpose_zero, Matrix.mul_zero, neg_zero]
-  simp only [Matrix.transpose_add, Matrix.transpose_one, Matrix.transpose_smul,
-    Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul,
-    Matrix.mul_smul]
-  rw [hcube, smul_zero, add_zero, hYJ, smul_neg]
-  abel
-
 /-- **A numbered root generator is skew-adjoint for the transported alternating form**, over every
 value ring: `X J + J Xᵀ = 0`. -/
 theorem rootIntMatrix_map_mul_JFin_add_eq_zero {A : Type*} [CommRing A]
@@ -243,21 +221,10 @@ private theorem rootCoordinateMap_symplectic (k : Fin (n + 1) ⊕ Fin (n + 1)) :
       (isNilpotent_rep_rootGenerator n k) (latticeBasis n) (rootIntMatrix n k)
       (nilpotencyClass_rep_rootGenerator n k).le (rep_rootGenerator_latticeBasis_eq_sum n k)
   rw [ht, TauCeti.JFin_map (n + 1) (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))]
-  exact one_add_smul_mul_mul_transpose _ _ _ (rootIntMatrix_map_mul_JFin_add_eq_zero n k)
+  exact Matrix.one_add_smul_mul_mul_transpose _ _ _ (rootIntMatrix_map_mul_JFin_add_eq_zero n k)
     (rootIntMatrix_map_mul_self_eq_zero n k)
 
 /-! ### The weight torus preserves the form -/
-
-private theorem map_genericMatrix_weightTorusCoordinateMap :
-    (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
-        (GeneralLinear.weightTorusCoordinateMap (R := ℤ) (basisWeight n)).hom.toAlgHom =
-      Matrix.diagonal fun a => MonoidAlgebra.single
-        (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (basisWeight n a))) 1 := by
-  apply Matrix.ext
-  intro a c
-  rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply]
-  simp only [BialgHom.coe_toAlgHom]
-  rw [GeneralLinear.weightTorusCoordinateMap_X, Matrix.diagonal_apply]
 
 /-- The weight at the symplectic partner of a coordinate is the negative of the weight at the
 coordinate: the standard weights come in the pairs `ε_a` and `-ε_a`. -/
@@ -266,22 +233,6 @@ private theorem basisWeight_inr_eq_neg (x : Fin (n + 1)) :
       -basisWeight n (finSumFinEquiv (Sum.inl x)) := by
   rw [basisWeight_apply, basisWeight_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
     weight_inr, weight_inl]
-
-/-- The weight-torus characters at a coordinate and at its symplectic partner are inverse to
-each other, because their weights sum to zero. -/
-private theorem torusCharacter_mul_partner (x : Fin (n + 1)) :
-    (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
-        (basisWeight n (finSumFinEquiv (Sum.inl x))))) (1 : ℤ)) *
-      (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
-        (basisWeight n (finSumFinEquiv (Sum.inr x))))) (1 : ℤ)) = 1 := by
-  rw [MonoidAlgebra.single_mul_single, mul_one, ← ofAdd_add]
-  have hz : Finsupp.equivFunOnFinite.symm (basisWeight n (finSumFinEquiv (Sum.inl x))) +
-      Finsupp.equivFunOnFinite.symm (basisWeight n (finSumFinEquiv (Sum.inr x))) = 0 := by
-    rw [basisWeight_inr_eq_neg]
-    ext j
-    simp
-  rw [hz]
-  rfl
 
 private theorem torusCoordinateMap_symplectic :
     (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
@@ -296,11 +247,11 @@ private theorem torusCoordinateMap_symplectic :
         (algebraMap ℤ
           (DiagonalizableGroup.coordinateRing ℤ
             (SplitTorus.characterGroup (Fin (n + 1)))).obj) := by
-  rw [map_genericMatrix_weightTorusCoordinateMap,
+  rw [GeneralLinear.map_genericMatrix_weightTorusCoordinateMap,
     TauCeti.JFin_map (n + 1)
       (algebraMap ℤ
         (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin (n + 1)))).obj)]
-  refine diagonal_mul_mul_transpose_diagonal _ _ ?_
+  refine Matrix.diagonal_mul_mul_transpose_diagonal _ _ ?_
   intro r c
   -- Name the two indices through the enumeration of the coordinate basis, so that the entry of
   -- the transported form is an entry of Mathlib's `Matrix.J`.
@@ -321,15 +272,16 @@ private theorem torusCoordinateMap_symplectic :
       rcases eq_or_ne x y with rfl | hxy
       · simp only [Matrix.J, Matrix.fromBlocks_apply₁₂, Matrix.neg_apply, Matrix.one_apply_eq,
           mul_neg, mul_one, neg_mul, neg_inj]
-        exact torusCharacter_mul_partner n x
+        rw [basisWeight_inr_eq_neg]
+        exact SplitTorus.single_weightCharacter_mul_single_weightCharacter_neg _
       · simp [Matrix.J, hxy]
   | inr x =>
     cases b with
     | inl y =>
       rcases eq_or_ne x y with rfl | hxy
       · simp only [Matrix.J, Matrix.fromBlocks_apply₂₁, Matrix.one_apply_eq, mul_one]
-        rw [mul_comm]
-        exact torusCharacter_mul_partner n x
+        rw [mul_comm, basisWeight_inr_eq_neg]
+        exact SplitTorus.single_weightCharacter_mul_single_weightCharacter_neg _
       · simp [Matrix.J, hxy]
     | inr y => simp [Matrix.J]
 
@@ -340,12 +292,9 @@ private theorem torusCoordinateMap_symplectic :
 factor through `Sp_(2n+2)`. -/
 theorem symplecticDefiningHopfIdeal_le_definingIdeal :
     Symplectic.definingHopfIdeal ℤ (n + 1) ≤ definingIdeal n := by
-  rw [definingIdeal_def, TauCeti.UniversalEnvelopingAlgebra.le_kostantToralDefiningIdeal_iff]
-  refine ⟨fun k => ?_, ?_⟩
-  · exact (ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff ℤ _ _ _).2
-      (rootCoordinateMap_symplectic n k)
-  · exact (ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff ℤ _ _ _).2
-      (torusCoordinateMap_symplectic n)
+  rw [definingIdeal_def]
+  exact UniversalEnvelopingAlgebra.constantFormDefiningHopfIdeal_le_kostantToralDefiningIdeal
+    _ _ _ _ _ _ _ _ _ (rootCoordinateMap_symplectic n) (torusCoordinateMap_symplectic n)
 
 /-- Every matrix-valued point of the full-weight type `C_(n+1)` carrier preserves the standard
 alternating form. -/
@@ -353,18 +302,11 @@ theorem mem_GLSymplecticFin_of_mem_points {A : Type v} [CommRing A]
     {g : Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A} (hg : g ∈ points n A) :
     g ∈ TauCeti.GLSymplecticFin (n + 1) A := by
   rw [points_def] at hg
-  have hsp := GeneralLinear.hopfIdealPointsSubgroup_le_of_le ((n + 1) + (n + 1))
-    (symplecticDefiningHopfIdeal_le_definingIdeal n) A hg
-  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff] at hsp
-  have hmem : ((GeneralLinear.pointsMulEquiv (R := ℤ) ((n + 1) + (n + 1))).symm g) ∈
-      CommHopfAlgCat.quotientPointsSubgroup
-        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
-        (Symplectic.definingHopfIdeal ℤ (n + 1)) (CommAlgCat.of ℤ A) :=
-    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr hsp
-  rw [ConstantForm.mem_definingPointsSubgroup_iff, TauCeti.JFin_map,
-    MulEquiv.apply_symm_apply] at hmem
+  have h := ConstantForm.mul_mul_transpose_of_mem_hopfIdealPointsSubgroup
+    (symplecticDefiningHopfIdeal_le_definingIdeal n) hg
+  rw [TauCeti.JFin_map] at h
   rw [TauCeti.GLSymplecticFin.mem_iff]
-  exact hmem
+  exact h
 
 /-- The canonical morphism from the full-weight type `C_(n+1)` carrier to `Sp_(2n+2)`, induced by
 the containment of defining Hopf ideals. -/

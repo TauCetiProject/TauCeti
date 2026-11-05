@@ -17,22 +17,35 @@ import TauCeti.LinearAlgebra.Matrix.Range
 /-!
 # Existence of the Hermite normal form
 
+Every sublattice `L` of `ℤ^m` is the column lattice of exactly one matrix in (column-style, upper)
+Hermite normal form, the *Hermite basis* of `L`; it has `finrank ℤ L` columns. It is the canonical
+basis with which sublattices of `ℤ^m`, such as ideals of a number field in a fixed integral basis,
+are recorded and compared.
+
 Every integer matrix `A` with `m` rows and `n` columns has a Hermite decomposition: there are
-`k ≤ n`, an `m × k` matrix `H` in (column-style, upper) Hermite normal form and `U ∈ GL_n(ℤ)` with
-`A * U = [H | 0]`. By the uniqueness of the Hermite normal form the pair `(k, H)` depends only on
-the column lattice of `A`, and `k` is the rank of `A`; we call `H` the *Hermite basis* of `A`. It
-is the canonical basis of the column lattice of `A`, with which sublattices of `ℤ^m`, such as
-ideals of a number field in a fixed integral basis, are recorded and compared.
+`k ≤ n`, an `m × k` matrix `H` in Hermite normal form and `U ∈ GL_n(ℤ)` with `A * U = [H | 0]`.
+Here `H` is the Hermite basis of the column lattice of `A`, which we also call the Hermite basis of
+`A`, and `k` is the rank of `A`.
 
 ## Main definitions
 
-* `Matrix.hermiteBasis A`: the unique matrix in Hermite normal form whose column lattice is that
-  of `A`; it has `A.rank` columns.
+* `Submodule.hermiteBasis L`: the unique matrix in Hermite normal form whose column lattice is the
+  sublattice `L` of `ℤ^m`; it has `finrank ℤ L` columns.
+* `Matrix.hermiteBasis A`: the Hermite basis of the column lattice of `A`; it has `A.rank`
+  columns.
 
 ## Main results
 
 * `Matrix.exists_isHermiteNormalForm_range_mulVecLin_eq`: every sublattice of `ℤ^m` is the column
   lattice of a matrix in Hermite normal form.
+* `Matrix.existsUnique_isHermiteNormalForm_range_mulVecLin_eq`: every sublattice of `ℤ^m` is the
+  column lattice of exactly one matrix in Hermite normal form, with a uniquely determined number of
+  columns.
+* `Submodule.hermiteBasis_eq_iff`, `Submodule.sigma_mk_hermiteBasis_eq_iff`: a matrix is the
+  Hermite basis of `L` if and only if it is in Hermite normal form with column lattice `L`.
+* `Submodule.mem_iff_hermite`: a vector lies in `L` if and only if it has unique coordinates in the
+  Hermite basis of `L`.
+* `Submodule.sigma_mk_hermiteBasis_inj`: sublattices are determined by their Hermite bases.
 * `Matrix.IsHermiteNormalForm.exists_isHermiteDecomposition`: if `H` is in Hermite normal form and
   has the column lattice of `A`, then `A * U = [H | 0]` for some `U ∈ GL_n(ℤ)`.
 * `Matrix.exists_isHermiteDecomposition`: every integer matrix has a Hermite decomposition.
@@ -62,6 +75,9 @@ followed by a basis of the kernel of `A`, which is free since `ℤ` is a princip
 
 * Daniele Micciancio, *CSE 206A: Lattice Algorithms and Applications*, lecture 1, Theorem 8, and
   lecture 4 (Basic algorithms), Definition 1: every lattice has a basis in Hermite normal form.
+* Karim Belabas, *Topics in computational algebraic number theory*, J. Théor. Nombres Bordeaux 16
+  (2004), Section 5.3.1: every sublattice of `ℤ^m` has a unique basis in Hermite normal form, the
+  canonical representation of ideals in a fixed integral basis.
 -/
 
 public section
@@ -147,6 +163,109 @@ theorem exists_isHermiteNormalForm_range_mulVecLin_eq :
         simp
     · exact ⟨k + 1, exists_isHermiteNormalForm_of_pos hp htail hvL hv hd₀ hd⟩
 
+/-- **Every sublattice of `ℤ^m` has a unique Hermite basis.** For every sublattice `L` of `ℤ^m`
+there is exactly one pair `⟨k, H⟩` of a number `k` and a matrix `H` with `m` rows and `k` columns
+in Hermite normal form whose column lattice is `L`. -/
+theorem existsUnique_isHermiteNormalForm_range_mulVecLin_eq (L : Submodule ℤ (Fin m → ℤ)) :
+    ∃! H : Σ k, Matrix (Fin m) (Fin k) ℤ,
+      H.2.IsHermiteNormalForm ∧ LinearMap.range H.2.mulVecLin = L := by
+  obtain ⟨k, H, hH, hHL⟩ := exists_isHermiteNormalForm_range_mulVecLin_eq L
+  exact ⟨⟨k, H⟩, ⟨hH, hHL⟩, fun H' hH' ↦
+    hH'.1.sigma_mk_eq_of_range_mulVecLin_eq hH (hH'.2.trans hHL.symm)⟩
+
+/-- Some matrix in Hermite normal form with `finrank ℤ L` columns has column lattice `L`. -/
+private theorem exists_isHermiteNormalForm_finrank (L : Submodule ℤ (Fin m → ℤ)) :
+    ∃ H : Matrix (Fin m) (Fin (Module.finrank ℤ L)) ℤ,
+      H.IsHermiteNormalForm ∧ LinearMap.range H.mulVecLin = L := by
+  obtain ⟨k, H, hH, rfl⟩ := exists_isHermiteNormalForm_range_mulVecLin_eq L
+  have hk : Module.finrank ℤ (LinearMap.range H.mulVecLin) = k := by
+    rw [← rank]
+    exact hH.rank_eq
+  generalize Module.finrank ℤ (LinearMap.range H.mulVecLin) = k' at hk ⊢
+  subst hk
+  exact ⟨H, hH, rfl⟩
+
+end Matrix
+
+/-! ### The Hermite basis of a sublattice -/
+
+namespace Submodule
+
+open Matrix
+
+variable {m k : ℕ} (L : Submodule ℤ (Fin m → ℤ)) {L' : Submodule ℤ (Fin m → ℤ)}
+
+/-- The *Hermite basis* of a sublattice `L` of `ℤ^m`: the unique matrix in Hermite normal form
+whose column lattice is `L`, see `Submodule.hermiteBasis_eq_iff`. It has `finrank ℤ L` columns,
+which form a basis of `L`. -/
+noncomputable def hermiteBasis : Matrix (Fin m) (Fin (Module.finrank ℤ L)) ℤ :=
+  (exists_isHermiteNormalForm_finrank L).choose
+
+/-- The Hermite basis of `L` is in Hermite normal form. -/
+@[simp]
+theorem isHermiteNormalForm_hermiteBasis : L.hermiteBasis.IsHermiteNormalForm :=
+  (exists_isHermiteNormalForm_finrank L).choose_spec.1
+
+/-- The column lattice of the Hermite basis of `L` is `L`. -/
+@[simp]
+theorem range_mulVecLin_hermiteBasis : LinearMap.range L.hermiteBasis.mulVecLin = L :=
+  (exists_isHermiteNormalForm_finrank L).choose_spec.2
+
+variable {L}
+
+/-- A vector lies in `L` if and only if it is an integer combination of the columns of the Hermite
+basis of `L`, with unique coefficients. -/
+theorem mem_iff_hermite {x : Fin m → ℤ} : x ∈ L ↔ ∃! c, L.hermiteBasis *ᵥ c = x := by
+  conv_lhs => rw [← L.range_mulVecLin_hermiteBasis]
+  exact (mulVec_injective_iff.mpr
+    L.isHermiteNormalForm_hermiteBasis.linearIndependent_cols).mem_range_iff_existsUnique
+
+/-- **Characterisation of the Hermite basis.** A matrix `H` with `k` columns is, together with
+`k`, the Hermite basis of `L` if and only if it is in Hermite normal form with column lattice
+`L`. -/
+theorem sigma_mk_hermiteBasis_eq_iff {H : Matrix (Fin m) (Fin k) ℤ} :
+    (⟨_, L.hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨k, H⟩ ↔
+      H.IsHermiteNormalForm ∧ LinearMap.range H.mulVecLin = L := by
+  refine ⟨fun h ↦ ?_, fun ⟨hH, hHL⟩ ↦
+    L.isHermiteNormalForm_hermiteBasis.sigma_mk_eq_of_range_mulVecLin_eq hH
+      (L.range_mulVecLin_hermiteBasis.trans hHL.symm)⟩
+  obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.mp h
+  obtain rfl := eq_of_heq h
+  exact ⟨L.isHermiteNormalForm_hermiteBasis, L.range_mulVecLin_hermiteBasis⟩
+
+/-- **Characterisation of the Hermite basis.** A matrix with `finrank ℤ L` columns is the Hermite
+basis of `L` if and only if it is in Hermite normal form with column lattice `L`. -/
+theorem hermiteBasis_eq_iff {H : Matrix (Fin m) (Fin (Module.finrank ℤ L)) ℤ} :
+    L.hermiteBasis = H ↔ H.IsHermiteNormalForm ∧ LinearMap.range H.mulVecLin = L := by
+  rw [← sigma_mk_hermiteBasis_eq_iff, Sigma.mk.inj_iff]
+  simp
+
+/-- Sublattices of `ℤ^m` are determined by their Hermite bases. -/
+theorem sigma_mk_hermiteBasis_inj :
+    (⟨_, L.hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨_, L'.hermiteBasis⟩ ↔ L = L' := by
+  rw [sigma_mk_hermiteBasis_eq_iff]
+  simp [eq_comm]
+
+/-- The zero sublattice has the empty Hermite basis. -/
+@[simp]
+theorem sigma_mk_hermiteBasis_bot :
+    (⟨_, (⊥ : Submodule ℤ (Fin m → ℤ)).hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨0, 0⟩ :=
+  sigma_mk_hermiteBasis_eq_iff.mpr ⟨isHermiteNormalForm_of_fin_zero _, by
+    ext x
+    simp⟩
+
+/-- The full lattice `ℤ^m` has the identity matrix as its Hermite basis. -/
+@[simp]
+theorem sigma_mk_hermiteBasis_top :
+    (⟨_, (⊤ : Submodule ℤ (Fin m → ℤ)).hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨m, 1⟩ :=
+  sigma_mk_hermiteBasis_eq_iff.mpr ⟨IsHermiteNormalForm.one, by simp⟩
+
+end Submodule
+
+namespace Matrix
+
+variable {m n k : ℕ}
+
 /-! ### Hermite decompositions -/
 
 /-- If the column lattice of `A` is that of a matrix `H` in Hermite normal form, then `A` has a
@@ -198,7 +317,7 @@ theorem IsHermiteNormalForm.exists_isHermiteDecomposition {A : Matrix (Fin m) (F
   refine ⟨U, hkr ▸ Nat.le_add_right k r, hH, U.mul_inv, U.inv_mul, ?_⟩
   ext i j
   have hAU : (A * (U : Matrix (Fin n) (Fin n) ℤ)) i j = (A *ᵥ b' j) i := by
-    simp [U, mul_apply, mulVec, dotProduct, Module.Basis.toMatrix_apply]
+    simp [U, Matrix.mul_apply, mulVec, dotProduct, Module.Basis.toMatrix_apply]
   rw [hAU]
   obtain ⟨a | a, rfl⟩ := e.surjective j
   · simp [b', b₀, e, hs, hermitePad_apply]
@@ -214,19 +333,12 @@ theorem exists_isHermiteDecomposition (A : Matrix (Fin m) (Fin n) ℤ) :
 
 /-! ### The Hermite basis of an integer matrix -/
 
-/-- Some matrix in Hermite normal form with `A.rank` columns has the column lattice of `A`. -/
-private theorem exists_isHermiteNormalForm_rank (A : Matrix (Fin m) (Fin n) ℤ) :
-    ∃ H : Matrix (Fin m) (Fin A.rank) ℤ,
-      H.IsHermiteNormalForm ∧ LinearMap.range H.mulVecLin = LinearMap.range A.mulVecLin := by
-  obtain ⟨k, H, U, h⟩ := A.exists_isHermiteDecomposition
-  obtain rfl := h.rank_eq
-  exact ⟨H, h.isHermiteNormalForm, h.range_mulVecLin_eq.symm⟩
-
 /-- The *Hermite basis* of an integer matrix `A`: the unique matrix in Hermite normal form whose
-column lattice is that of `A`, see `Matrix.IsHermiteNormalForm.sigma_mk_hermiteBasis_eq`. It has
-`A.rank` columns. -/
+column lattice is that of `A`, see `Matrix.IsHermiteNormalForm.sigma_mk_hermiteBasis_eq`. It is the
+Hermite basis `Submodule.hermiteBasis` of the column lattice of `A`, and has `A.rank` columns,
+which is by definition the rank of that lattice. -/
 noncomputable def hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) : Matrix (Fin m) (Fin A.rank) ℤ :=
-  (exists_isHermiteNormalForm_rank A).choose
+  (LinearMap.range A.mulVecLin).hermiteBasis
 
 variable {A : Matrix (Fin m) (Fin n) ℤ}
 
@@ -234,13 +346,13 @@ variable {A : Matrix (Fin m) (Fin n) ℤ}
 @[simp]
 theorem isHermiteNormalForm_hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) :
     A.hermiteBasis.IsHermiteNormalForm :=
-  (exists_isHermiteNormalForm_rank A).choose_spec.1
+  (LinearMap.range A.mulVecLin).isHermiteNormalForm_hermiteBasis
 
 /-- The column lattice of the Hermite basis of `A` is that of `A`. -/
 @[simp]
 theorem range_mulVecLin_hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) :
     LinearMap.range A.hermiteBasis.mulVecLin = LinearMap.range A.mulVecLin :=
-  (exists_isHermiteNormalForm_rank A).choose_spec.2
+  (LinearMap.range A.mulVecLin).range_mulVecLin_hermiteBasis
 
 /-- The Hermite basis of `A` is the Hermite matrix of a Hermite decomposition of `A`. -/
 theorem exists_isHermiteDecomposition_hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) :
@@ -251,11 +363,8 @@ theorem exists_isHermiteDecomposition_hermiteBasis (A : Matrix (Fin m) (Fin n) �
 /-- A vector lies in the column lattice of `A` if and only if it is an integer combination of the
 columns of the Hermite basis of `A`, with unique coefficients. -/
 theorem mem_range_iff_hermite {x : Fin m → ℤ} :
-    x ∈ LinearMap.range A.mulVecLin ↔ ∃! c, A.hermiteBasis *ᵥ c = x := by
-  rw [← range_mulVecLin_hermiteBasis]
-  refine ⟨fun ⟨c, hc⟩ ↦ ⟨c, hc, fun c' hc' ↦ ?_⟩, fun ⟨c, hc, _⟩ ↦ ⟨c, hc⟩⟩
-  exact mulVec_injective_iff.mpr (isHermiteNormalForm_hermiteBasis A).linearIndependent_cols
-    (hc'.trans hc.symm)
+    x ∈ LinearMap.range A.mulVecLin ↔ ∃! c, A.hermiteBasis *ᵥ c = x :=
+  Submodule.mem_iff_hermite
 
 /-- **Uniqueness of the Hermite basis.** Every matrix in Hermite normal form with the column
 lattice of `A` is the Hermite basis of `A`, with the same number of columns. -/
@@ -292,6 +401,16 @@ theorem sigma_mk_hermiteBasis_eq_iff {n' : ℕ} {B : Matrix (Fin m) (Fin n') ℤ
   simpa using congrArg (fun H : Σ k, Matrix (Fin m) (Fin k) ℤ ↦ LinearMap.range H.2.mulVecLin) h
 
 /-! ### Examples -/
+
+/-- The sublattice `2ℤ` of `ℤ` has the Hermite basis `(2)`. -/
+example : (⟨_, (Submodule.span ℤ {![2]} : Submodule ℤ (Fin 1 → ℤ)).hermiteBasis⟩ :
+    Σ k, Matrix (Fin 1) (Fin k) ℤ) = ⟨1, !![2]⟩ := by
+  refine Submodule.sigma_mk_hermiteBasis_eq_iff.mpr ⟨IsHermitePivotedBy.isHermiteNormalForm
+    (p := id) ⟨strictMono_id, by decide, by decide, by decide, by decide⟩, ?_⟩
+  rw [range_mulVecLin, Set.range_unique]
+  congr
+  ext i
+  simp [Fin.fin_one_eq_zero i]
 
 /-- An invertible integer matrix has the identity as its Hermite basis. -/
 example (U : GL (Fin n) ℤ) :

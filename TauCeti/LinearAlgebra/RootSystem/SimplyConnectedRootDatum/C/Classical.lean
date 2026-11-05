@@ -70,7 +70,7 @@ private def coweightMatrix (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
 private lemma weightMatrix_mul_transpose_coweightMatrix :
     weightMatrix n * (coweightMatrix n)ᵀ = 1 := by
   ext a c
-  rw [mul_apply, one_apply]
+  rw [Matrix.mul_apply, Matrix.one_apply]
   simpa [weightMatrix, coweightMatrix, dotProduct, Fin.ext_iff] using
     weight_dotProduct_coweight (n := n) (a := (a : ℕ)) (c := (c : ℕ)) a.isLt
 

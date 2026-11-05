@@ -30,6 +30,11 @@ cover bond `b_λ(x, y)` of Chirivì–Fang–Littelmann, studied in
 * `RootPairing.reflectionBond_eq_zero_of_not_exists` says the bond of two weights not related by a
   positive reflection is `0`, and `RootPairing.reflectionBond_self` says the bond of a weight with
   itself is `0`.
+* `RootPairing.reflectionBond_reflection`: the bond of `x` and `s_β x` is `-⟨x, β^∨⟩`.
+* `RootPairing.reflectionBond_dvd_sub`: when `y = s_β x` for a positive root `β`, the bond of `x`
+  and `y` divides `f x - f y` for every linear form `f`.
+* `RootPairing.abs_reflectionBond_smul_smul`: the bond is invariant under the Weyl group, up to
+  sign.
 
 ## References
 
@@ -87,6 +92,66 @@ theorem reflectionBond_self [NoZeroDivisors R] (x : M) : P.reflectionBond b x x 
     rw [h.choose_spec.2] at hc
     exact CharZero.eq_neg_self_iff.mp hc
   · exact reflectionBond_eq_zero_of_not_exists h
+
+/-- The bond of a weight `x` and its reflection `s_β x` in a positive root `β` is `-⟨x, β^∨⟩`. This
+holds also when `s_β x = x`, where both sides vanish. -/
+theorem reflectionBond_reflection [P.IsReduced] [NoZeroDivisors R] {β : ι} (hβ : b.IsPos β)
+    (x : M) : P.reflectionBond b x (P.reflection β x) = -P.coroot' β x := by
+  by_cases hne : P.reflection β x = x
+  · have hc := coroot'_reflection_self P β x
+    rw [hne] at hc
+    rw [hne, reflectionBond_self, CharZero.eq_neg_self_iff.mp hc, neg_zero]
+  · exact reflectionBond_eq_neg_coroot' hβ rfl hne
+
+/-- **The bond divides the change of every linear form.** If `y = s_β x` for a positive root `β`,
+then `x - y = -⟨y, β^∨⟩ β`, so the bond of `x` and `y` divides `f x - f y` for every linear form
+`f`. -/
+theorem reflectionBond_dvd_sub [P.IsReduced] {β : ι} (hβ : b.IsPos β) {x y : M}
+    (h : P.reflection β x = y) (f : Module.Dual R M) : P.reflectionBond b x y ∣ f x - f y := by
+  rcases eq_or_ne y x with rfl | hne
+  · rw [sub_self]
+    exact dvd_zero _
+  rw [reflectionBond_eq_neg_coroot' hβ h hne, ← h, P.reflection_apply, map_sub, sub_sub_cancel,
+    map_smul, smul_eq_mul]
+  exact ⟨-f (P.root β), by ring⟩
+
+/-- **The bond is invariant under the Weyl group, up to sign.** If `y = s_β x ≠ x` for a positive
+root `β`, then `|b(w x, w y)| = |b(x, y)|` for every element `w` of the Weyl group: `w y` is the
+reflection of `w x` in the root `w β`, of which either `w β` or `-w β` is positive. -/
+theorem abs_reflectionBond_smul_smul [LinearOrder R] [P.IsReduced] {β : ι}
+    (hβ : b.IsPos β) {x y : M} (h : P.reflection β x = y) (hne : y ≠ x) (w : P.weylGroup) :
+    |P.reflectionBond b (w • x) (w • y)| = |P.reflectionBond b x y| := by
+  have hne' : w • y ≠ w • x := fun h' ↦ hne (smul_left_cancel w h')
+  -- `w y` is the reflection of `w x` in the root `w β`.
+  have hγ : P.reflection (P.weylGroupToPerm w β) (w • x) = w • y := by
+    rw [reflection_weylGroupToPerm_smul, h]
+  rw [reflectionBond_eq_coroot' hβ h hne]
+  let := P.indexNeg
+  rcases Base.IsPos.or_neg b (P.weylGroupToPerm w β) with hpos | hneg
+  · rw [reflectionBond_eq_coroot' hpos hγ hne', coroot'_weylGroupToPerm_smul]
+  · -- The reflection in `-w β` is the reflection in `w β`, and its coroot is `-(w β)^∨`.
+    rw [reflectionBond_eq_coroot' hneg (by rwa [reflection_indexNeg_neg]) hne', indexNeg_neg,
+      ← coroot'_reflection, coroot'_reflection_self, coroot'_weylGroupToPerm_smul, abs_neg]
+
+/-- Scaling both weights scales their reflection bond. The zero scalar is allowed. -/
+theorem reflectionBond_smul [IsDomain R] [P.IsReduced] (c : R) (x y : M) :
+    P.reflectionBond b (c • x) (c • y) = c * P.reflectionBond b x y := by
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  rcases eq_or_ne y x with rfl | hyx
+  · simp
+  have hinj := smul_right_injective (M := M) hc
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
+  · obtain ⟨β, hβ, hxy⟩ := h
+    have hscaled : P.reflection β (c • x) = c • y := by
+      rw [map_smul, hxy]
+    rw [reflectionBond_eq_coroot' hβ hscaled (fun h ↦ hyx (hinj h)),
+      reflectionBond_eq_coroot' hβ hxy hyx, map_smul, smul_eq_mul]
+  · rw [reflectionBond_eq_zero_of_not_exists h, mul_zero,
+      reflectionBond_eq_zero_of_not_exists]
+    rintro ⟨β, hβ, hxy⟩
+    exact h ⟨β, hβ, hinj (by simpa only [map_smul] using hxy)⟩
 
 /-- **Translating by a weight on every wall leaves bonds unchanged.** If every coroot vanishes on
 `χ`, as for a central weight, every reflection fixes `χ`, so `s_β (x + χ) = y + χ` exactly when

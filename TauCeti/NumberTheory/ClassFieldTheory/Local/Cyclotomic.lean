@@ -298,7 +298,7 @@ theorem abelianizedLocalCyclotomicCharacter_artinMap_congr (p : ℕ) [Fact p.Pri
   let eA : K' ≃ₐ[K'] K := AlgEquiv.ofRingEquiv (f := e.symm) fun _ ↦ rfl
   have : FiniteDimensional K' K := eA.toLinearEquiv.finiteDimensional
   have : Algebra.IsSeparable K' K := Algebra.IsSeparable.of_algHom K' K' eA.symm.toAlgHom
-  have : ValuativeExtension K' K := ⟨fun a b ↦ by
+  have : ValuativeExtension K' K := ⟨fun {a b} ↦ by
     rw [RingHom.algebraMap_toAlgebra, ← e.toRingHom.map_vle_map_iff_of_continuous he]
     simp⟩
   have hnorm : Algebra.normUnits K' x = Units.map e.toMonoidHom x := by

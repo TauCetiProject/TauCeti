@@ -14,7 +14,14 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Order.SuccPred.Int
 
 /-!
-# Split maps between coproducts, and cokernels of maps between coproducts
+# Split maps between (co)products, and cokernels of maps between coproducts
+
+## Products of split epimorphisms are split
+
+A product `Limits.Pi.map p : ∏ᶜ f ⟶ ∏ᶜ g` of split epimorphisms `p b : f b ⟶ g b`, indexed by a
+type of any size, is a split epimorphism, with section the product of the sections
+(`TauCeti.isSplitEpi_piMap`). Unlike `CategoryTheory.Limits.Pi.map_epi`, this needs no finiteness
+and no biproducts; it is how products of skyscraper presheaves are shown to be flasque.
 
 ## Reindexing a coproduct along an injection is split
 
@@ -26,6 +33,10 @@ the one indexed by `j`, and kills the summands indexed outside the range of `f`.
 Mathlib's `CategoryTheory.Limits.MonoCoprod.mono_map'_of_injective` proves the same map is a
 monomorphism in a category satisfying `MonoCoprod`; the splitting below needs zero morphisms
 instead, and is the stronger statement in the situations where both apply.
+
+Dually, reindexing a product `∏ X ⟶ ∏ (X ∘ f)` along an injective `f` is a split epimorphism
+(`TauCeti.isSplitEpi_piMap'`): the section extends by zero on the factors indexed outside the range
+of `f`.
 
 Chain complexes built as coproducts over a set of simplices, singular or simplicial, get their
 degreewise splittings this way: for a pair of spaces the singular simplices of the subspace form a
@@ -88,6 +99,18 @@ universe w
 
 namespace TauCeti
 
+section PiMap
+
+variable {C : Type*} [Category* C] {β : Type*} {f g : β → C} [HasProduct f] [HasProduct g]
+
+/-- A product of split epimorphisms is a split epimorphism, with section the product of the
+sections. -/
+instance isSplitEpi_piMap (p : ∀ b, f b ⟶ g b) [∀ b, IsSplitEpi (p b)] :
+    IsSplitEpi (Limits.Pi.map p) :=
+  IsSplitEpi.mk' { section_ := Limits.Pi.map fun b ↦ section_ (p b), id := by ext; simp }
+
+end PiMap
+
 section Reindex
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasCoproducts.{w} C]
@@ -110,6 +133,29 @@ instance isSplitMono_sigmaMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono 
         exact Sigma.eqToHom_comp_ι (X ∘ f) hj }
 
 end Reindex
+
+section ReindexPi
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasProducts.{w} C]
+
+open scoped Classical in
+/-- Reindexing a product along an injective map of index types is a split epimorphism. -/
+instance isSplitEpi_piMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono f] :
+    IsSplitEpi (Pi.map' f fun j ↦ 𝟙 ((X ∘ f) j)) :=
+  IsSplitEpi.mk'
+    { section_ := Pi.lift fun i ↦
+        if h : i ∈ Set.range f then
+          Pi.π (X ∘ f) h.choose ≫ eqToHom (congrArg X h.choose_spec)
+        else 0
+      id := by
+        refine Pi.hom_ext _ _ fun j ↦ ?_
+        have h : f j ∈ Set.range f := ⟨j, rfl⟩
+        have hj : h.choose = j := (mono_iff_injective f).1 ‹_› h.choose_spec
+        simp only [Category.assoc, Pi.map'_comp_π, Function.comp_apply, Category.comp_id,
+          Pi.lift_comp_π, dite_eq_left h, Category.id_comp]
+        exact Pi.π_comp_eqToHom (X ∘ f) hj }
+
+end ReindexPi
 
 noncomputable section Codiagonal
 

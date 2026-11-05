@@ -94,6 +94,13 @@ theorem differenceRootMatrix_def (i j : ι) :
       Matrix.fromBlocks A 0 0 (-A.transpose) :=
   (rfl)
 
+/-- A difference-root matrix has one entry in each diagonal block, with opposite signs. -/
+theorem differenceRootMatrix_eq_single_sub_single (i j : ι) :
+    differenceRootMatrix (K := K) i j =
+      Matrix.single (.inl i) (.inl j) 1 - Matrix.single (.inr j) (.inr i) 1 := by
+  ext (a | a) (b | b) <;>
+    simp [differenceRootMatrix_def, Matrix.single_apply]
+
 /-- The block formula for a positive sum-root matrix. -/
 theorem sumRootMatrix_def (i j : ι) :
     sumRootMatrix (K := K) i j =
@@ -268,7 +275,7 @@ theorem lie_differenceRootGenerator_differenceRootGenerator_eq_ite (i j k l : ι
       neg_neg, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- The bracket of a difference-root generator and a positive sum-root generator. -/
 theorem lie_differenceRootGenerator_sumRootGenerator_eq_ite (i j k l : ι) :
@@ -285,7 +292,7 @@ theorem lie_differenceRootGenerator_sumRootGenerator_eq_ite (i j k l : ι) :
       Matrix.mul_neg, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- The bracket of a difference-root generator and a negative sum-root generator. -/
 theorem lie_differenceRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
@@ -302,7 +309,7 @@ theorem lie_differenceRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
       Matrix.neg_mul, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- The bracket of opposite sum-root families, with their native matrix signs. -/
 theorem lie_sumRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
@@ -322,7 +329,7 @@ theorem lie_sumRootGenerator_negSumRootGenerator_eq_ite (i j k l : ι) :
       Matrix.sub_mul, Matrix.single_mul_single_eq_ite, one_mul, zero_mul, mul_zero,
       zero_add, add_zero]
     ext (a | a) (b | b) <;> simp_all [eq_comm]
-  all_goals abel
+  abel
 
 /-- Any two positive sum-root generators commute. -/
 @[simp]
@@ -354,6 +361,40 @@ theorem lie_differenceRootGenerator_differenceRootGenerator (i j k : ι) (hik : 
       differenceRootGenerator (K := K) i k := by
   simp only [lie_differenceRootGenerator_differenceRootGenerator_eq_ite, ↓reduceIte,
     hik.symm, sub_zero]
+
+/-- A Lie subalgebra containing both orientations of the adjacent difference-root matrices
+contains both orientations of every off-diagonal difference-root matrix. -/
+theorem _root_.LieSubalgebra.differenceRootMatrix_mem_of_lt {n : ℕ}
+    (S : LieSubalgebra K
+      (Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) K))
+    (hpos : ∀ i : Fin n, differenceRootMatrix i.castSucc i.succ ∈ S)
+    (hneg : ∀ i : Fin n, differenceRootMatrix i.succ i.castSucc ∈ S)
+    (i j : Fin (n + 1)) (hij : i < j) :
+    differenceRootMatrix i j ∈ S ∧ differenceRootMatrix j i ∈ S := by
+  let k : Fin (n + 1) := ⟨i + 1, by omega⟩
+  have hkval : (k : ℕ) = (i : ℕ) + 1 := rfl
+  let a : Fin n := ⟨i, by omega⟩
+  have hai : a.castSucc = i := Fin.ext rfl
+  have hak : a.succ = k := Fin.ext rfl
+  have hforward : differenceRootMatrix i k ∈ S := by simpa only [hai, hak] using hpos a
+  have hbackward : differenceRootMatrix k i ∈ S := by simpa only [hai, hak] using hneg a
+  by_cases hkj : k = j
+  · simpa only [hkj] using And.intro hforward hbackward
+  · have hkj' : k < j := by omega
+    obtain ⟨h₁, h₂⟩ := S.differenceRootMatrix_mem_of_lt hpos hneg k j hkj'
+    constructor
+    · convert S.lie_mem hforward h₁ using 1
+      simpa only [LieSubalgebra.coe_bracket, val_differenceRootGenerator] using
+        (congrArg (fun x : LieAlgebra.Orthogonal.typeD (Fin (n + 1)) K ↦
+            (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) K))
+          (lie_differenceRootGenerator_differenceRootGenerator i k j hij.ne)).symm
+    · convert S.lie_mem h₂ hbackward using 1
+      simpa only [LieSubalgebra.coe_bracket, val_differenceRootGenerator] using
+        (congrArg (fun x : LieAlgebra.Orthogonal.typeD (Fin (n + 1)) K ↦
+            (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) K))
+          (lie_differenceRootGenerator_differenceRootGenerator j k i hij.ne')).symm
+termination_by (j : ℕ) - (i : ℕ)
+decreasing_by omega
 
 /-- Bracketing a difference-root vector with a consecutive sum-root vector moves the latter's
 first coordinate. The condition prevents the sum-root vector on the left from degenerating. -/
@@ -398,7 +439,7 @@ theorem sumRootGenerator_mem_rootSpace (i j : ι) :
   intro a b hab
   rcases a with a | a <;> rcases b with b | b <;>
     simp [sumRootGenerator, sumRootMatrix, Matrix.fromBlocks, Matrix.single_apply] at hab ⊢
-  all_goals split_ifs with h <;> simp_all [typeDWeightAdd_comm]
+  split_ifs with h <;> simp_all [typeDWeightAdd_comm]
 
 /-- The standard negative sum-root generator has weight `-εᵢ - εⱼ`. -/
 theorem negSumRootGenerator_mem_rootSpace (i j : ι) :
@@ -408,7 +449,7 @@ theorem negSumRootGenerator_mem_rootSpace (i j : ι) :
   intro a b hab
   rcases a with a | a <;> rcases b with b | b <;>
     simp [negSumRootGenerator, negSumRootMatrix, Matrix.fromBlocks, Matrix.single_apply] at hab ⊢
-  all_goals split_ifs with h <;> simp_all [typeDWeightAdd_comm]
+  split_ifs with h <;> simp_all [typeDWeightAdd_comm]
 
 /-! ## Compatibility with the numbered simple generators -/
 

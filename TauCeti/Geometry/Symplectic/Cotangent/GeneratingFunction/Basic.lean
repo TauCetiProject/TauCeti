@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.Calculus.DifferentialForm.Exact
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -300,13 +301,26 @@ theorem isInvertible_fderiv_cotangentGeneratingSource_iff
       ContinuousLinearMap.ext fun z ↦ ?_⟩
     simpa [he', add_comm] using (hA z.1 z.2).symm
 
+/-- **The mixed Hessian of the transposed function.** For `S` which is `C²` at `x`, interchanging
+the two factors transposes the mixed Hessian: `∂_q ∂_Q (S ∘ swap) = ∂_Q ∂_q S`, by the symmetry of
+the second derivative. -/
+theorem cotangentMixedHessian_comp_swap_apply (hS : ContDiffAt ℝ 2 S x) (a : V) (b : W) :
+    cotangentMixedHessian (S ∘ Prod.swap) x.swap a b = cotangentMixedHessian S x b a := by
+  -- `Prod.swap` is the continuous linear map `(snd, fst)`, so its derivative is constant.
+  have hd (y : W × V) : fderiv ℝ Prod.swap y = (snd ℝ W V).prod (fst ℝ W V) :=
+    (hasFDerivAt_snd.prodMk hasFDerivAt_fst).fderiv
+  rw [cotangentMixedHessian_apply_apply, cotangentMixedHessian_apply_apply,
+    fderiv_fderiv_comp_apply (φ := Prod.swap) (by simpa using hS)
+      (contDiff_snd.prodMk contDiff_fst).contDiffAt, funext hd]
+  simpa using hS.isSymmSndFDerivAt (by simp) (a, 0) (0, b)
+
 /-! ### The generated map -/
 
 /-- A `C²` function has a source projection which is strictly differentiable. -/
 theorem hasStrictFDerivAt_cotangentGeneratingSource (hS : ContDiffAt ℝ 2 S x) :
     HasStrictFDerivAt (cotangentGeneratingSource S)
       (fderiv ℝ (cotangentGeneratingSource S) x) x :=
-  (contDiffAt_cotangentGeneratingSource (n := 1) hS).hasStrictFDerivAt one_ne_zero
+  (contDiffAt_cotangentGeneratingSource (n := 1) hS).hasStrictFDerivAt_fderiv one_ne_zero
 
 /-- The derivative of the source projection, as a continuous linear equivalence, when the mixed
 Hessian is invertible. -/

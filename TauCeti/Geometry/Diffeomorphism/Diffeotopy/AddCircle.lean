@@ -11,8 +11,11 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
+import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
 # Interpolating circle diffeomorphisms to the identity
@@ -35,6 +38,12 @@ map `(s, x) ↦ (s, L (s, x))` of the plane is a bijection whose derivative is i
 so it is an open map, hence a homeomorphism, and its inverse is `C^n` by the inverse function
 theorem; the inverse is again a family of lifts and descends to the circle.
 
+Every `C^n` diffeomorphism `φ` of the circle, `n ≠ 0`, has such a presentation, or the mirror
+one: by `Diffeomorph.exists_addCircle_lift` it has a `C^n` lift with either
+`F (x + T) = F x + T` and `F' > 0` or `F (x + T) = F x - T` and `F' < 0`. Hence every
+diffeomorphism of the circle is the final map of a diffeotopy, or is so after composing with the
+reflection `θ ↦ -θ`.
+
 ## Main definitions
 
 * `AddCircle.prodDiffeomorphOfLift`: the level-preserving diffeomorphism
@@ -48,6 +57,8 @@ theorem; the inverse is again a family of lifts and descends to the circle.
 
 * `AddCircle.diffeotopyOfLift_final_apply_coe`: every orientation-preserving `C^n` diffeomorphism
   of the circle, `n ≠ 0`, presented by a lift, is the final map of a diffeotopy.
+* `Diffeomorph.exists_diffeotopy_final_eq_or_final_eq_comp_neg`: every `C^n` diffeomorphism `φ` of
+  the circle, `n ≠ 0`, is the final map of a diffeotopy, or `φ ∘ (θ ↦ -θ)` is.
 * `AddCircle.collarDiffeomorphOfLift_apply_coe_of_nonpos` and
   `AddCircle.collarDiffeomorphOfLift_apply_of_one_le`: the collar diffeomorphism is
   `(r, θ) ↦ (r, φ θ)` for `r ≤ 0` and the identity for `r ≥ 1`; similarly for its inverse
@@ -58,6 +69,8 @@ theorem; the inverse is again a family of lifts and descends to the circle.
 
 * M. W. Hirsch, *Differential Topology*, Springer GTM 33 (1976), Chapter 8, §§1–2, for
   diffeotopies and their extension across collars.
+* B. Farb, D. Margalit, *A Primer on Mapping Class Groups*, Section 2.1, for lifts of circle
+  homeomorphisms and the two isotopy classes of homeomorphisms of the circle.
 -/
 
 public section
@@ -129,7 +142,7 @@ private theorem hasStrictFDerivAt_plane (p : ℝ × ℝ) :
       (planeDerivEquiv hL hn hpos p : ℝ × ℝ →L[ℝ] ℝ × ℝ) p := by
   have hd : HasFDerivAt (fun p : ℝ × ℝ ↦ (p.1, L p)) (planeDeriv p) p :=
     hasFDerivAt_fst.prodMk ((hL.differentiable hn) p).hasFDerivAt
-  have hs := ((contDiff_fst.prodMk hL).contDiffAt (x := p)).hasStrictFDerivAt hn
+  have hs := ((contDiff_fst.prodMk hL).contDiffAt (x := p)).hasStrictFDerivAt_fderiv hn
   rwa [hd.fderiv, ← coe_planeDerivEquiv hL hn hpos] at hs
 
 /-- The map `(s, x) ↦ (s, L (s, x))` as a homeomorphism of the plane: a continuous bijection which
@@ -262,24 +275,18 @@ private theorem contDiff_interpolate (hw : ContDiff ℝ n w) (hF : ContDiff ℝ 
 
 omit [Fact (0 < T)] in
 private theorem interpolate_add_period (hper : ∀ x, F (x + T) = F x + T) (s x : ℝ) :
-    interpolate w F (s, x + T) = interpolate w F (s, x) + T := by
-  simp only [interpolate, hper]
-  ring
+    interpolate w F (s, x + T) = interpolate w F (s, x) + T :=
+  add_mul_sub_add_period hper (w s) x
 
 /-- For a weight in `[0, 1]`, the interpolating lifts have positive derivative
-`(1 - w s) + w s * F'`. -/
+`1 - w s + w s * F'` (`AddCircle.one_sub_add_mul_pos`). -/
 private theorem deriv_interpolate_pos (hw : ∀ s, w s ∈ Icc 0 1) (hF : ContDiff ℝ n F)
     (hn : n ≠ 0) (hpos : ∀ x, 0 < deriv F x) (s x : ℝ) :
     0 < deriv (fun y ↦ interpolate w F (s, y)) x := by
-  have hd : HasDerivAt (fun y ↦ interpolate w F (s, y)) (1 + w s * (deriv F x - 1)) x :=
-    (hasDerivAt_id x).add
-      ((((hF.differentiable hn) x).hasDerivAt.sub (hasDerivAt_id x)).const_mul (w s))
+  have hd : HasDerivAt (fun y ↦ interpolate w F (s, y)) (1 - w s + w s * deriv F x) x :=
+    hasDerivAt_add_mul_sub ((hF.differentiable hn) x).hasDerivAt (w s)
   rw [hd.deriv]
-  obtain ⟨hw₀, hw₁⟩ := hw s
-  rcases hw₁.eq_or_lt with h | h
-  · rw [h]
-    linarith [hpos x]
-  · nlinarith [mul_nonneg hw₀ (hpos x).le]
+  exact one_sub_add_mul_pos (hw s).1 (hw s).2 (hpos x)
 
 /-- The weight `sin (π t / 2) ^ 2`, rising analytically from `0` at `t = 0` to `1` at `t = 1`. -/
 private def sinSqWeight (t : ℝ) : ℝ := Real.sin (Real.pi * t / 2) ^ 2
@@ -386,3 +393,33 @@ theorem collarDiffeomorphOfLift_symm_apply_of_one_le {r : ℝ} (hr : 1 ≤ r) (�
 end Collar
 
 end AddCircle
+
+namespace Diffeomorph
+
+variable {T : ℝ} [Fact (0 < T)] {n : ℕ∞ω}
+
+/-- **Diffeotopy classes of circle diffeomorphisms.** A `C^n` diffeomorphism `φ` of `AddCircle T`,
+`n ≠ 0`, is the final map of a diffeotopy starting at the identity, or its composite
+`θ ↦ φ (-θ)` with the reflection is. -/
+theorem exists_diffeotopy_final_eq_or_final_eq_comp_neg
+    (φ : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T) (hn : n ≠ 0) :
+    ∃ Ψ : TauCeti.Diffeotopy 𝓘(ℝ) n (AddCircle T), ⇑Ψ.final = φ ∨ ⇑Ψ.final = φ ∘ Neg.neg := by
+  obtain ⟨F, hF, hφ, ⟨hper, hpos⟩ | ⟨hper, hneg⟩⟩ := φ.exists_addCircle_lift hn
+  · refine ⟨AddCircle.diffeotopyOfLift hF hn hper hpos, .inl (funext fun θ ↦ ?_)⟩
+    induction θ using QuotientAddGroup.induction_on with
+    | H x => rw [AddCircle.diffeotopyOfLift_final_apply_coe, hφ]
+  · -- `x ↦ F (-x)` lifts `θ ↦ φ (-θ)`, has degree one and positive derivative
+    have hper' (x : ℝ) : F (-(x + T)) = F (-x) + T := by
+      have := hper (-(x + T))
+      rw [show -(x + T) + T = -x by ring] at this
+      linarith
+    have hpos' (x : ℝ) : 0 < deriv (fun y ↦ F (-y)) x := by
+      rw [deriv_comp_neg]
+      linarith [hneg (-x)]
+    refine ⟨AddCircle.diffeotopyOfLift (hF.comp contDiff_neg) hn hper' hpos',
+      .inr (funext fun θ ↦ ?_)⟩
+    induction θ using QuotientAddGroup.induction_on with
+    | H x => simp only [AddCircle.diffeotopyOfLift_final_apply_coe, Function.comp_apply,
+        ← AddCircle.coe_neg, hφ]
+
+end Diffeomorph

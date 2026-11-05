@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Bialgebra
-public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # The general linear coordinate Hopf algebra
@@ -139,7 +139,7 @@ private theorem comulBase_determinant_isUnit :
           (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R)))) :=
     h.map includeRight
   convert hl.mul hr using 1
-  all_goals simp
+  simp
 
 /-- The matrix-multiplication comultiplication extended across the determinant localization. -/
 noncomputable def comul :

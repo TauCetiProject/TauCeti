@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -24,10 +25,24 @@ for set and probability integrals.
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
 
+## Counting measures of multisets
+
+* `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
+  integrable against the counting measure `∑_{x ∈ s} δₓ` of a multiset `s`, with integral the sum
+  of its values over `s`. Its measure-level facts are in `TauCeti.MeasureTheory.Measure.Dirac`.
+
+## Measures carried by the roots of a polynomial
+
+* `measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero`: a measure against which the
+  integrable function `|p|²` has integral zero is carried by the roots of the nonzero
+  polynomial `p`.
+
 ## Positive parts
 
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
+* `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
+  integral one) total extended mass one.
 
 ## Exponentials
 
@@ -117,6 +132,31 @@ theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
     ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
   simpa only [AddMonoidHom.coe_toRealLinearMap] using
     (T.toRealLinearMap hT).integral_comp_comm hf
+
+namespace Multiset
+
+variable {X E : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [NormedAddCommGroup E]
+
+/-- Every function is integrable against the counting measure `∑_{x ∈ s} δₓ` of a multiset. -/
+theorem integrable_sum_map_dirac (s : Multiset X) (g : X → E) :
+    Integrable g (s.map Measure.dirac).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    simpa only [map_cons, sum_cons] using (integrable_dirac enorm_lt_top).add_measure ih
+
+/-- The integral against the counting measure of a multiset is the sum over the multiset. -/
+@[simp]
+theorem integral_sum_map_dirac [NormedSpace ℝ E] [CompleteSpace E] (s : Multiset X) (g : X → E) :
+    ∫ x, g x ∂(s.map Measure.dirac).sum = (s.map g).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    simp only [map_cons, sum_cons]
+    rw [integral_add_measure (integrable_dirac enorm_lt_top) (integrable_sum_map_dirac s g),
+      integral_dirac, ih]
+
+end Multiset
 
 namespace TauCeti
 
@@ -260,6 +300,14 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
   · rw [integral_undef hf]
     simp
 
+/-- A probability density `ρ`, almost everywhere nonnegative with `∫ ρ = 1`, has total extended
+mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
+theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {ρ : α → ℝ} (hρ0 : 0 ≤ᵐ[μ] ρ) (hρ1 : ∫ t, ρ t ∂μ = 1) :
+    ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
+    ENNReal.ofReal_one]
+
 /-- **`L¹` convergence in Bochner form is `eLpNorm _ 1` convergence.** If `∫ ‖f i - g‖ → 0` along
 `l` and the differences `f i - g` are eventually integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/
 theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [MeasurableSpace Ω]
@@ -384,6 +432,18 @@ theorem integral_biUnion_finset₀ {X E ι : Type*} [MeasurableSpace X] [NormedA
   rw [integral_iUnion_ae (s := fun i : (↑s : Set ι) ↦ t (i : ι))
     (fun i ↦ hm (i : ι) i.2) (hd.subtype _ _) hf]
   exact Finset.tsum_subtype' s fun i ↦ ∫ x in t i, f x ∂μ
+
+open Polynomial in
+/-- A measure against which the integrable function `|p|²` has integral zero is carried by the
+roots of the nonzero polynomial `p`. -/
+theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Type*} [NormedField 𝕜]
+    [DecidableEq 𝕜] [MeasurableSpace 𝕜] {ρ : Measure 𝕜} {p : 𝕜[X]} (hp : p ≠ 0)
+    (hint : Integrable (fun w ↦ ‖p.eval w‖ ^ 2) ρ) (h : ∫ w, ‖p.eval w‖ ^ 2 ∂ρ = 0) :
+    ρ (↑p.roots.toFinset)ᶜ = 0 := by
+  have hae := (integral_eq_zero_iff_of_nonneg (fun w ↦ by positivity) hint).1 h
+  refine measure_mono_null (fun w hw ↦ ?_) (ae_iff.1 hae)
+  have hw' : p.eval w ≠ 0 := fun h0 ↦ hw (by simp [mem_roots hp, h0])
+  simpa using hw'
 
 end MeasureTheory
 

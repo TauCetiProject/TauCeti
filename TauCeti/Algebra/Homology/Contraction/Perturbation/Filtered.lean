@@ -85,14 +85,14 @@ operator `X = (1 + δ h)⁻¹ δ` differs from the partial sum
 theorem perturbationSeries_apply_sub_sum_mem {m : ℕ} {z : M} (hz : z ∈ F m) (n : ℕ) :
     c.perturbationSeries δ z - ∑ j ∈ Finset.range n, ((-(δ * c.homotopy)) ^ j) (δ z) ∈
       F (m + 1 + n) := by
-  rw [perturbationSeries_def, Module.End.mul_apply]
+  rw [perturbationSeries_def, mul_apply_eq_comp]
   exact Module.End.ringInverse_one_add_apply_sub_sum_mem hanti hF0
     (c.map_mul_homotopy_le δ hh hδ) hU (hδ m ⟨z, hz, rfl⟩) n
 
 /-- The perturbation operator `X = (1 + δ h)⁻¹ δ` raises the filtration. -/
 theorem perturbationSeries_apply_mem {m : ℕ} {z : M} (hz : z ∈ F m) :
     c.perturbationSeries δ z ∈ F (m + 1) := by
-  rw [perturbationSeries_def, Module.End.mul_apply]
+  rw [perturbationSeries_def, mul_apply_eq_comp]
   exact Module.End.ringInverse_one_add_apply_mem hanti hF0 (c.map_mul_homotopy_le δ hh hδ) hU
     (hδ m ⟨z, hz, rfl⟩)
 

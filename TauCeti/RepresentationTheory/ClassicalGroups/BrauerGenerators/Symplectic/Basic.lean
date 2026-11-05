@@ -111,6 +111,8 @@ orthogonal file consumes the pointwise `Matrix.piTensorProductMap_tprod_single` 
 * `TauCeti.commute_symplecticCupCap_tensorPower` and
   `TauCeti.commute_symplecticCrossing_tensorPower`: both generators commute with the diagonal
   action of the symplectic group.
+* `TauCeti.symplecticCrossing_mem_centralizer` and `TauCeti.symplecticCupCap_mem_centralizer`: both
+  generators lie in the commutant of the symplectic group on two strands.
 
 ## References
 
@@ -305,7 +307,7 @@ loop. -/
 theorem symplecticCupCap_mul_self :
     symplecticCupCap k n * symplecticCupCap k n = -(2 * n : k) • symplecticCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  rw [Module.End.mul_apply, LinearMap.smul_apply, symplecticCupCap_apply, symplecticCupCap_apply,
+  rw [mul_apply_eq_comp, LinearMap.smul_apply, symplecticCupCap_apply, symplecticCupCap_apply,
     symplecticCap_comp_symplecticCup_apply, ← smul_eq_mul, map_smul]
 
 /-- **The Brauer crossing `s`** on two strands: *minus* the flip of the two tensor factors. The
@@ -328,7 +330,7 @@ theorem symplecticCrossing_mul_self :
   have h : symplecticCrossing k n * symplecticCrossing k n
       = symplecticFlip k n * symplecticFlip k n := by
     refine LinearMap.ext fun x => ?_
-    simp only [Module.End.mul_apply, symplecticCrossing, LinearMap.neg_apply, map_neg, neg_neg]
+    simp only [mul_apply_eq_comp, symplecticCrossing, LinearMap.neg_apply, map_neg, neg_neg]
   rw [h, symplecticFlip_mul_self]
 
 /-- The flip **anti**fixes the cup: swapping the two top points of the arc reverses its
@@ -383,7 +385,7 @@ theorem symplecticCap_comp_symplecticCrossing :
 theorem symplecticCrossing_mul_symplecticCupCap :
     symplecticCrossing k n * symplecticCupCap k n = symplecticCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  simpa only [Module.End.mul_apply, symplecticCupCap_apply, LinearMap.coe_comp,
+  simpa only [mul_apply_eq_comp, symplecticCupCap_apply, LinearMap.coe_comp,
     Function.comp_apply] using
     LinearMap.congr_fun (symplecticCrossing_comp_symplecticCup k n) (symplecticCap k n x)
 
@@ -392,7 +394,7 @@ theorem symplecticCrossing_mul_symplecticCupCap :
 theorem symplecticCupCap_mul_symplecticCrossing :
     symplecticCupCap k n * symplecticCrossing k n = symplecticCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  simpa only [Module.End.mul_apply, symplecticCupCap_apply, LinearMap.coe_comp,
+  simpa only [mul_apply_eq_comp, symplecticCupCap_apply, LinearMap.coe_comp,
     Function.comp_apply] using
     congrArg (symplecticCup k n)
       (LinearMap.congr_fun (symplecticCap_comp_symplecticCrossing k n) x)
@@ -456,7 +458,7 @@ theorem commute_symplecticCupCap_tensorPower (g : Matrix.symplecticGroup (Fin n)
   have hcup := LinearMap.congr_fun (tensorPower_comp_symplecticCup k n g)
   simp only [LinearMap.coe_comp, Function.comp_apply] at hcap hcup
   refine LinearMap.ext fun x => ?_
-  rw [Module.End.mul_apply, Module.End.mul_apply, symplecticCupCap_apply, symplecticCupCap_apply,
+  rw [mul_apply_eq_comp, mul_apply_eq_comp, symplecticCupCap_apply, symplecticCupCap_apply,
     hcap x, hcup (symplecticCap k n x)]
 
 /-- The flip commutes with the diagonal action of the symplectic group: permuting the tensor
@@ -472,8 +474,28 @@ theorem commute_symplecticCrossing_tensorPower (g : Matrix.symplecticGroup (Fin 
     Commute (symplecticCrossing k n) ((stdSymplecticRep k n).tensorPower 2 g) := by
   refine LinearMap.ext fun x => ?_
   have h := LinearMap.congr_fun (commute_symplecticFlip_tensorPower k n g) x
-  simp only [Module.End.mul_apply] at h ⊢
+  simp only [mul_apply_eq_comp] at h ⊢
   simp only [symplecticCrossing, LinearMap.neg_apply, map_neg, h]
+
+variable {k n}
+
+/-- The crossing commutes with the symplectic group, so it lies in the commutant of the symplectic
+group on two strands. -/
+theorem symplecticCrossing_mem_centralizer :
+    symplecticCrossing k n ∈
+      Subalgebra.centralizer k (Set.range ((stdSymplecticRep k n).tensorPower 2)) := by
+  rw [Subalgebra.mem_centralizer_iff]
+  rintro _ ⟨g, rfl⟩
+  exact (commute_symplecticCrossing_tensorPower k n g).symm.eq
+
+/-- The cap-cup diagram commutes with the symplectic group, so it lies in the commutant of the
+symplectic group on two strands. -/
+theorem symplecticCupCap_mem_centralizer :
+    symplecticCupCap k n ∈
+      Subalgebra.centralizer k (Set.range ((stdSymplecticRep k n).tensorPower 2)) := by
+  rw [Subalgebra.mem_centralizer_iff]
+  rintro _ ⟨g, rfl⟩
+  exact (commute_symplecticCupCap_tensorPower k n g).symm.eq
 
 end Group
 
