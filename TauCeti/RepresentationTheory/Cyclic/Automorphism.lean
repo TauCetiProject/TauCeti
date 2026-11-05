@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import TauCeti.Algebra.Group.Prod
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import Mathlib.Tactic.Abel
 
@@ -32,6 +33,10 @@ Its group cohomology is read off in
 * `AddMonoidHom.cyclicRepHom f hA hB hf`: an additive map `f` with `f ∘ A = B ∘ f`, as a morphism
   of cyclic representations; it is compatible with composition
   (`AddMonoidHom.cyclicRepHom_comp`).
+* `AddEquiv.cyclicRepBinaryBicone hA hB`: the cyclic representation of the product automorphism
+  `A × B` of `T × M`, with the projections and inclusions of `T × M`, as a binary bicone of the
+  cyclic representations of `A` and `B`; it is a biproduct
+  (`AddEquiv.cyclicRepBinaryBiconeIsBilimit`).
 
 ## Main results
 
@@ -225,6 +230,51 @@ theorem cyclicRepHom_comp {N : Type u} [AddCommGroup N] {C : N ≃+ N} (g : M �
     coe_comp]
 
 end AddMonoidHom
+
+/-! ### Products -/
+
+namespace AddEquiv
+
+universe u
+
+open CategoryTheory Limits
+
+variable {T M : Type u} [AddCommGroup T] [AddCommGroup M] {m : ℕ} {A : T ≃+ T} {B : M ≃+ M}
+  (hA : (⇑A)^[m] = id) (hB : (⇑B)^[m] = id)
+
+variable [NeZero m]
+
+/-- The cyclic representation of the product automorphism `A × B` of `T × M`, with the morphisms
+of cyclic representations defined by the projections `T × M → T`, `T × M → M` and the inclusions
+`T → T × M`, `M → T × M`, is a binary bicone of the cyclic representations of `A` and `B`. It is
+a biproduct (`AddEquiv.cyclicRepBinaryBiconeIsBilimit`). Its body is exposed, so that its cone
+point is the cyclic representation of `A × B` and its structure maps are the morphisms defined by
+the projections and inclusions by definition, as the cohomology of the cyclic representation of
+`A × B` is read through this bicone. -/
+@[expose]
+noncomputable def cyclicRepBinaryBicone : BinaryBicone (A.cyclicRep hA) (B.cyclicRep hB) where
+  pt := (A.prodCongr B).cyclicRep (iterate_prodCongr_eq_id hA hB)
+  fst := (AddMonoidHom.fst T M).cyclicRepHom _ hA fun _ ↦ rfl
+  snd := (AddMonoidHom.snd T M).cyclicRepHom _ hB fun _ ↦ rfl
+  inl := (AddMonoidHom.inl T M).cyclicRepHom hA _ fun _ ↦ by simp [prodCongr]
+  inr := (AddMonoidHom.inr T M).cyclicRepHom hB _ fun _ ↦ by simp [prodCongr]
+  inl_fst := by ext; simp [AddMonoidHom.cyclicRepHom]
+  inl_snd := by ext; simp [AddMonoidHom.cyclicRepHom]
+  inr_fst := by ext; simp [AddMonoidHom.cyclicRepHom]
+  inr_snd := by ext; simp [AddMonoidHom.cyclicRepHom]
+
+/-- The cyclic representation of `A × B` is the biproduct of the cyclic representations of `A`
+and `B`, with the projections and inclusions of `T × M` as structure maps. -/
+noncomputable def cyclicRepBinaryBiconeIsBilimit : (cyclicRepBinaryBicone hA hB).IsBilimit :=
+  isBinaryBilimitOfTotal _ <| by
+    ext1
+    rw [Rep.add_hom]
+    ext x
+    -- On underlying groups the structure maps are `Prod.fst`, `Prod.inl`, `Prod.snd` and
+    -- `Prod.inr`, so the total map sends `x` to `(x.1, 0) + (0, x.2)`.
+    exact Prod.fst_add_snd x
+
+end AddEquiv
 
 namespace AddMonoidHom
 

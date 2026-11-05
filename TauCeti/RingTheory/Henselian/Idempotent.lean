@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Henselian
+public import Mathlib.RingTheory.Idempotents
 public import TauCeti.RingTheory.Ideal.GoingUp
 public import TauCeti.RingTheory.Idempotents.Jacobson
 import Mathlib.RingTheory.Nakayama
@@ -42,6 +43,9 @@ local rings.
 * `TauCeti.HenselianRing.bijOn_quotient_mk_isIdempotentElem`: for a Henselian pair `(S, J)`, the
   quotient map `S → S ⧸ J` is a bijection on idempotents (Stacks, Lemma 15.11.6 (09XI), condition
   (3) for the algebra `S` itself).
+* `CompleteOrthogonalIdempotents.existsUnique_lift_of_henselianRing`: a finite complete family
+  of orthogonal idempotents of `S ⧸ J` lifts uniquely to such a family in `S` for a Henselian
+  pair `(S, J)`.
 * `TauCeti.HenselianRing.injOn_quotient_mk_map_isIdempotentElem`: for a Henselian pair `(S, J)`
   and an integral `S`-algebra `T`, the quotient map `T → T ⧸ JT` is injective on idempotents (the
   injectivity half of conditions (3) and (4) of 09XI).
@@ -137,11 +141,27 @@ theorem existsUnique_isIdempotentElem_mk_eq (J : Ideal S) [HenselianRing S J] {t
     (ht : IsIdempotentElem t) : ∃! e : S, IsIdempotentElem e ∧ Ideal.Quotient.mk J e = t := by
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective t
   obtain ⟨e, he, hea⟩ := exists_isIdempotentElem_sub_mem J
-    (Ideal.Quotient.eq_zero_iff_mem.mp (by rw [map_sub, map_mul, ht.eq, sub_self]))
+    (Ideal.Quotient.isIdempotentElem_mk_iff.mp ht)
   refine ⟨e, ⟨he, Ideal.Quotient.eq.mpr hea⟩, fun e' ⟨he', h⟩ ↦ ?_⟩
   exact Ideal.injOn_quotient_mk_isIdempotentElem
     (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))) he' he
     (h.trans (Ideal.Quotient.eq.mpr hea).symm)
+
+/-- A finite complete family of orthogonal idempotents lifts uniquely through a henselian
+quotient. In particular, a finite clopen decomposition of the closed fibre lifts to the ring. -/
+theorem _root_.CompleteOrthogonalIdempotents.existsUnique_lift_of_henselianRing
+    {ι : Type*} [Fintype ι] {J : Ideal S} [HenselianRing S J] {e : ι → S ⧸ J}
+    (he : CompleteOrthogonalIdempotents e) :
+    ∃! f : ι → S, CompleteOrthogonalIdempotents f ∧ ∀ i, Ideal.Quotient.mk J (f i) = e i := by
+  choose f hf hfe using fun i ↦ (existsUnique_isIdempotentElem_mk_eq J (he.idem i)).exists
+  have hinj := Ideal.injOn_quotient_mk_isIdempotentElem
+    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J)))
+  have hortho : OrthogonalIdempotents f := ⟨hf, fun i j hij ↦
+    hinj ((hf i).mul (hf j)) .zero (by simp [hfe, he.ortho hij])⟩
+  refine ⟨f, ⟨⟨hortho, ?_⟩, hfe⟩, ?_⟩
+  · exact hinj hortho.isIdempotentElem_sum .one (by simp [hfe, he.complete])
+  · rintro g ⟨hg, hge⟩
+    exact funext fun i ↦ hinj (hg.idem i) (hf i) ((hge i).trans (hfe i).symm)
 
 /-- **Locality from the idempotents.** A nontrivial commutative ring that is Henselian along an
 ideal `J` with `S ⧸ J` Artinian, and whose only idempotents are `0` and `1`, is local. -/

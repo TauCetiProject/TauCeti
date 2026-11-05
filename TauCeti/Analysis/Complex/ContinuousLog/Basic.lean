@@ -239,6 +239,23 @@ theorem eq_of_isPreconnected_of_forall_exp_eq_one {P : Set ℂ} (hP : IsPreconne
       exact ⟨mem_ball_self Real.pi_pos, hy⟩
   exact hP.constant_of_mapsTo hdisc continuousOn_id (fun w hw => h w hw) h₁ h₂
 
+/-- **Two continuous logarithms differ by a constant multiple of `2πi`.** On a preconnected space,
+two continuous functions with the same exponential differ by `k * (2 * π * I)` for a single
+integer `k`. -/
+theorem exists_int_forall_eq_add_of_exp_eq [PreconnectedSpace X] {u v : X → ℂ}
+    (hu : Continuous u) (hv : Continuous v) (h : ∀ x, Complex.exp (u x) = Complex.exp (v x)) :
+    ∃ k : ℤ, ∀ x, v x = u x + k * (2 * π * Complex.I) := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact ⟨0, fun x => isEmptyElim x⟩
+  have h1 (x : X) : Complex.exp (v x - u x) = 1 := by
+    rw [Complex.exp_sub, h x, div_self (Complex.exp_ne_zero _)]
+  obtain ⟨k, hk⟩ := Complex.exp_eq_one_iff.1 (h1 x₀)
+  refine ⟨k, fun x => ?_⟩
+  have := eq_of_isPreconnected_of_forall_exp_eq_one (isPreconnected_range (hv.sub hu))
+    (by rintro _ ⟨y, rfl⟩; exact h1 y) (mem_range_self x) (mem_range_self x₀)
+  simp only [Pi.sub_apply] at this
+  linear_combination this + hk
+
 /-- Two logarithms of `g` on `S` and on `T` with preconnected overlap combine into one function that
 is a logarithm of `g` on `S ∪ T` and is continuous on each of the two pieces. Two logarithms of `g`
 differ, on the overlap, by a logarithm of `1`; that difference is constant there by
