@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import TauCeti.MeasureTheory.Function.Lp.Order
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
@@ -33,11 +34,13 @@ almost everywhere strongly measurable because `y ↦ L_y f` is continuous
 
 Since the definition never evaluates `h ⋆ f` at a point, its algebraic properties need no Fubini
 theorem. Left translation passes through the integral, and a left translation of the variable
-`y` turns `L_g (h ⋆ f)` into `(L_g h) ⋆ f`. Applied to the operator `u ↦ u ⋆ f`, which is
-continuous and linear in `u`, the same identity gives associativity. The positive cone of real
-`Lᵖ` is closed, so convolution of nonnegative functions is nonnegative. Integration over `G` is
-a continuous linear functional on `L¹` invariant under left translation, so integrals multiply.
-In particular, convolution preserves nonnegative `L¹` functions of integral one.
+`y` turns `L_g (h ⋆ f)` into `(L_g h) ⋆ f`, while on a locally compact group with a regular Haar
+measure right translation passes directly to the second factor, `R_g (h ⋆ f) = h ⋆ (R_g f)`.
+Applied to the operator `u ↦ u ⋆ f`, which is continuous and linear in `u`, left equivariance
+gives associativity. The positive cone of real `Lᵖ` is closed, so convolution of nonnegative
+functions is nonnegative. Integration over `G` is a continuous linear functional on `L¹` invariant
+under left translation, so integrals multiply. In particular, convolution preserves nonnegative
+`L¹` functions of integral one.
 
 The integrated form `ContRepresentation.integratedOperatorL1` is the corresponding construction
 for an arbitrary strongly continuous representation in place of left translation; it is stated
@@ -57,6 +60,7 @@ vector space with an additive Haar measure.
 * `MeasureTheory.Lp.integrable_smul_leftTranslation`: its integrand is integrable.
 * `MeasureTheory.Lp.norm_convolutionL_apply_le`: Young's inequality `‖h ⋆ f‖_p ≤ ‖h‖₁ ‖f‖_p`.
 * `MeasureTheory.Lp.leftTranslation_convolutionL`: `L_g (h ⋆ f) = (L_g h) ⋆ f`.
+* `MeasureTheory.Lp.rightTranslation_convolutionL`: `R_g (h ⋆ f) = h ⋆ (R_g f)`.
 * `MeasureTheory.Lp.convolutionL_assoc`: associativity, `(h ⋆ k) ⋆ f = h ⋆ (k ⋆ f)`.
 * `MeasureTheory.Lp.convolutionL_nonneg`: `h ⋆ f ≥ 0` when `h ≥ 0` and `f ≥ 0`.
 * `MeasureTheory.Lp.integral_convolutionL`: `∫ (h ⋆ f) = (∫ h) • ∫ f`.
@@ -76,6 +80,8 @@ open Filter
 open scoped ENNReal
 
 namespace MeasureTheory.Lp
+
+section LeftInvariant
 
 variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G]
   [BorelSpace G] {μ : Measure G} [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ]
@@ -214,5 +220,31 @@ theorem integral_convolutionL [CompleteSpace E] (h : Lp 𝕜 1 μ) (f : Lp E 1 �
     integral_smul_const]
 
 end RCLike
+
+end LeftInvariant
+
+section RightTranslation
+
+variable {G E 𝕜 : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
+  [μ.IsHaarMeasure] [μ.Regular] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)] {hp : p ≠ ∞}
+  [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+
+/-- Convolution commutes with right translation on the second factor:
+`R_g (h ⋆ f) = h ⋆ (R_g f)`. -/
+theorem rightTranslation_convolutionL (g : G) (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
+    rightTranslation μ p 𝕜 g (convolutionL μ p hp h f) =
+      convolutionL μ p hp h (rightTranslation μ p 𝕜 g f) := by
+  have hg : ⇑(rightTranslation μ p ℝ g) = ⇑(rightTranslation μ p 𝕜 (E := E) g) :=
+    funext fun u ↦ Lp.ext <| (coeFn_rightTranslation (𝕜 := ℝ) g u).trans
+      (coeFn_rightTranslation (𝕜 := 𝕜) g u).symm
+  have hcomm := (rightTranslation μ p ℝ g).toContinuousLinearEquiv.integral_comp_comm
+    (μ := μ) fun y ↦ h y • leftTranslation μ p 𝕜 y f
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, hg] at hcomm
+  rw [convolutionL_apply, ← hcomm, convolutionL_apply]
+  simp_rw [map_smul, leftTranslation_rightTranslation]
+
+end RightTranslation
 
 end MeasureTheory.Lp
