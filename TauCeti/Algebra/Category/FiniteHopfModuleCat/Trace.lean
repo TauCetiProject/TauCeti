@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Pivotal
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Trace
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Spherical
 public import Mathlib.LinearAlgebra.Trace
 
 /-!
@@ -19,6 +19,26 @@ pivotal-category traces with linear algebra on the original module carriers.
 
 The rigid and pivotal structures are selected explicitly in each statement, so the traces
 use the inverse-antipode left duals and the double-dual comparison belonging to the same data.
+
+Identifying a scalar `c : k` with the endomorphism `c • 𝟙` of the unit object, the traces are
+`rightTrace f = tr_M(g f)` and `leftTrace f = tr_M(S(g) f)`, so the right and left dimensions
+of `M` are `tr_M(g)` and `tr_M(S(g))`, and the pivotal structure is spherical exactly when
+`tr_M(S(g) f) = tr_M(g f)` for every endomorphism `f` of every finite-dimensional module. These
+statements parallel the trace formula `FGModuleCat.trace_eq_smul` for finite-dimensional vector
+spaces.
+
+## Main results
+
+* `TauCeti.FiniteHopfModuleCat.rightTrace_apply` and
+  `TauCeti.FiniteHopfModuleCat.leftTrace_apply`: the pivotal traces as twisted linear traces,
+  elementwise on the unit object.
+* `TauCeti.FiniteHopfModuleCat.rightTrace_eq_smul` and
+  `TauCeti.FiniteHopfModuleCat.leftTrace_eq_smul`: the same, as scalar endomorphisms of the unit.
+* `TauCeti.FiniteHopfModuleCat.rightDim_eq_smul` and
+  `TauCeti.FiniteHopfModuleCat.leftDim_eq_smul`: the pivotal dimensions are `tr_M(g)` and
+  `tr_M(S(g))`.
+* `TauCeti.FiniteHopfModuleCat.sphericalCategory_iff`: the pivotal structure is spherical exactly
+  when the two twisted traces of every module endomorphism agree.
 
 ## References
 
@@ -115,5 +135,75 @@ theorem leftTrace_apply {M : FiniteHopfModuleCat k H} (f : M ⟶ M)
     rw [he, hf, LinearEquiv.apply_symm_apply]
   rw [← LinearMap.trace_conj' _ e, heq, LinearMap.trace_transpose',
     LinearMap.trace_comp_comm']
+
+/-- The right trace of an endomorphism `f` of a finite-dimensional module `M` is the scalar
+`tr_M(g f)`, as an endomorphism of the unit object. -/
+theorem rightTrace_eq_smul {M : FiniteHopfModuleCat k H} (f : M ⟶ M) :
+    letI := rigidCategory hS
+    letI := pivotalCategory hS g hg
+    rightTrace f =
+      LinearMap.trace k M (Algebra.lsmul k k M (g : H) ∘ₗ f.hom.hom.restrictScalars k) •
+        𝟙 (𝟙_ (FiniteHopfModuleCat k H)) := by
+  let := rigidCategory hS
+  let := pivotalCategory hS g hg
+  refine eq_smul_id_iff.mpr fun r => ?_
+  rw [rightTrace_apply hS g hg, LinearEquiv.apply_symm_apply]
+
+/-- The left trace of an endomorphism `f` of a finite-dimensional module `M` is the scalar
+`tr_M(S(g) f)`, as an endomorphism of the unit object. -/
+theorem leftTrace_eq_smul {M : FiniteHopfModuleCat k H} (f : M ⟶ M) :
+    letI := rigidCategory hS
+    letI := pivotalCategory hS g hg
+    leftTrace f =
+      LinearMap.trace k M (Algebra.lsmul k k M (HopfAlgebra.antipode k (g : H)) ∘ₗ
+        f.hom.hom.restrictScalars k) • 𝟙 (𝟙_ (FiniteHopfModuleCat k H)) := by
+  let := rigidCategory hS
+  let := pivotalCategory hS g hg
+  refine eq_smul_id_iff.mpr fun r => ?_
+  rw [leftTrace_apply hS g hg, LinearEquiv.apply_symm_apply]
+
+/-- The right dimension of a finite-dimensional module `M` is the trace of `g` on `M`. -/
+@[simp]
+theorem rightDim_eq_smul (M : FiniteHopfModuleCat k H) :
+    letI := rigidCategory hS
+    letI := pivotalCategory hS g hg
+    rightDim M = LinearMap.trace k M (Algebra.lsmul k k M (g : H)) •
+      𝟙 (𝟙_ (FiniteHopfModuleCat k H)) := by
+  let := rigidCategory hS
+  let := pivotalCategory hS g hg
+  rw [← rightTrace_id, rightTrace_eq_smul hS g hg, hom_hom_id, LinearMap.restrictScalars_id,
+    LinearMap.comp_id]
+
+/-- The left dimension of a finite-dimensional module `M` is the trace of `S(g)` on `M`. -/
+@[simp]
+theorem leftDim_eq_smul (M : FiniteHopfModuleCat k H) :
+    letI := rigidCategory hS
+    letI := pivotalCategory hS g hg
+    leftDim M = LinearMap.trace k M (Algebra.lsmul k k M (HopfAlgebra.antipode k (g : H))) •
+      𝟙 (𝟙_ (FiniteHopfModuleCat k H)) := by
+  let := rigidCategory hS
+  let := pivotalCategory hS g hg
+  rw [← leftTrace_id, leftTrace_eq_smul hS g hg, hom_hom_id, LinearMap.restrictScalars_id,
+    LinearMap.comp_id]
+
+/-- The pivotal structure of the group-like element `g` is spherical exactly when the traces of
+`S(g) f` and of `g f` agree for every endomorphism `f` of every finite-dimensional module. -/
+theorem sphericalCategory_iff :
+    letI := rigidCategory hS
+    letI := pivotalCategory hS g hg
+    SphericalCategory (FiniteHopfModuleCat k H) ↔
+      ∀ (M : FiniteHopfModuleCat k H) (f : M ⟶ M),
+        LinearMap.trace k M (Algebra.lsmul k k M (HopfAlgebra.antipode k (g : H)) ∘ₗ
+          f.hom.hom.restrictScalars k) =
+          LinearMap.trace k M (Algebra.lsmul k k M (g : H) ∘ₗ f.hom.hom.restrictScalars k) := by
+  let := rigidCategory hS
+  let := pivotalCategory hS g hg
+  refine ⟨fun h M f => ?_, fun h => ⟨fun f => ?_⟩⟩
+  · -- Evaluate the equal scalars `leftTrace f` and `rightTrace f` at the unit of `k`.
+    have := eq_smul_id_iff.mp ((leftTrace_eq_smul hS g hg f).symm.trans
+      ((h.leftTrace_eq_rightTrace f).trans (rightTrace_eq_smul hS g hg f)))
+      ((trivialEquiv k H).symm 1)
+    simpa using this
+  · rw [leftTrace_eq_smul hS g hg, rightTrace_eq_smul hS g hg, h]
 
 end TauCeti.FiniteHopfModuleCat
