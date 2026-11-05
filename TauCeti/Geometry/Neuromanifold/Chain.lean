@@ -101,9 +101,11 @@ theorem realizedFunctions_chain_succ {X : Fin (n + 2) → Type u}
     realizedFunctions (chain f) =
       Set.image2 (fun a b => b ∘ a) (realizedFunctions (f 0))
         (realizedFunctions (chain (X := fun i => X i.succ) (fun i => f i.succ))) := by
-  refine realizedFunctions_eq_image2_of_equiv (Fin.consEquiv W).symm id fun w v => ?_
-  -- The product equivalence computes to `Fin.cons`; its tail is eta-equal to `v`.
-  exact chain_succ f (Fin.cons w v)
+  calc
+    _ = realizedFunctions (chain f ∘ Fin.consEquiv W) := by
+      simp only [realizedFunctions_def, (Fin.consEquiv W).surjective.range_comp]
+    _ = _ := (congrArg realizedFunctions (chain_comp_consEquiv f)).trans
+      (realizedFunctions_compose _ _)
 
 /-- The functions realized by a nonempty chain are the composites of a function realized by
 its prefix and a last-layer function. -/
@@ -113,16 +115,23 @@ theorem realizedFunctions_chain_succ_last {X : Fin (n + 2) → Type u}
       Set.image2 (fun a b => b ∘ a)
         (realizedFunctions (chain (X := fun i => X i.castSucc) (fun i => f i.castSucc)))
         (realizedFunctions (f (Fin.last n))) := by
-  refine realizedFunctions_eq_image2_of_equiv
-    ((Fin.snocEquiv W).symm.trans (Equiv.prodComm _ _)) id fun w v => ?_
-  -- The swapped product equivalence computes to `Fin.snoc`, with prefix `w` and last value `v`.
-  have h := chain_succ_last f (Fin.snoc w v)
-  simp only [Fin.snoc_last, Fin.snoc_castSucc] at h
-  exact h
+  have hswap :
+      realizedFunctions
+        (compose (chain (X := fun i => X i.castSucc) (fun i => f i.castSucc))
+          (f (Fin.last n)) ∘ Equiv.prodComm _ _) =
+      realizedFunctions
+        (compose (chain (X := fun i => X i.castSucc) (fun i => f i.castSucc))
+          (f (Fin.last n))) := by
+    simp only [realizedFunctions_def, (Equiv.prodComm _ _).surjective.range_comp]
+  have hparams : realizedFunctions (chain f) =
+      realizedFunctions (chain f ∘ Fin.snocEquiv W) := by
+    simp only [realizedFunctions_def, (Fin.snocEquiv W).surjective.range_comp]
+  exact hparams.trans ((congrArg realizedFunctions (chain_comp_snocEquiv f)).trans
+    (hswap.trans (realizedFunctions_compose _ _)))
 
 /-- Reparametrizing every layer reparametrizes the chain by the induced map of parameter
 products. The parameter maps need not be injective or surjective. -/
-theorem chain_reparametrize {V : Fin n → Type t}
+theorem chain_eq_chain_comp_piMap {V : Fin n → Type t}
     (f : ∀ i, W i → X i.castSucc → X i.succ) (r : ∀ i, V i → W i) :
     chain (fun i v => f i (r i v)) = chain f ∘ Pi.map r := by
   funext v
