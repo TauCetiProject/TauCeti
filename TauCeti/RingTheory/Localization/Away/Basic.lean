@@ -66,6 +66,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
   through compatible algebra towers.
+* `Localization.isScalarTower_awayMap`: the algebra structure on `B_z` over `A_z` given by
+  `Localization.awayMap` is compatible with the maps from `A`.
 
 ## Provenance
 
@@ -97,6 +99,9 @@ directly from Mathlib's `mk'` API.
 `IsLocalization.Away.isSMulRegular_algebraMap`, which says when an element stays a
 nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
 here directly from Mathlib's `mk'` API.
+
+`Localization.isScalarTower_awayMap` is **also a later addition with no AINTLIB analogue**, proved
+here directly from Mathlib's `IsLocalization.map_eq`.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -493,3 +498,18 @@ theorem map_comp_algebraMap_eq_algebraMap_comp_awayMap (f : R →+* S) (M : Subm
     ← IsScalarTower.algebraMap_apply S (Localization.Away (f a)) Sm]
 
 end RingHom
+
+namespace Localization
+
+/-- The algebra structure on `B_z` over `A_z` given by `Localization.awayMap` is compatible with
+the maps from `A`. -/
+theorem isScalarTower_awayMap {A : Type*} [CommRing A] (B : Type*) [CommRing B]
+    [Algebra A B] (z : A) :
+    letI := (Localization.awayMap (algebraMap A B) z).toAlgebra
+    IsScalarTower A (Localization.Away z) (Localization.Away (algebraMap A B z)) :=
+  letI := (Localization.awayMap (algebraMap A B) z).toAlgebra
+  .of_algebraMap_eq fun a ↦ by
+    simp only [RingHom.algebraMap_toAlgebra, IsLocalization.Away.map, IsLocalization.map_eq]
+    exact IsScalarTower.algebraMap_apply A B _ a
+
+end Localization
