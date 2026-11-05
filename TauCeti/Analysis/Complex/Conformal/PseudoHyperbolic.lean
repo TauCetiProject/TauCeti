@@ -151,8 +151,8 @@ lemma one_sub_conj_mul_ne_zero_unitDisc (z w : Complex.UnitDisc) :
   one_sub_conj_mul_ne_zero_of_norm_lt_one z.norm_lt_one.le w.norm_lt_one
 
 /-- On the open unit disc, the hyperbolic defect `1 - ‖z‖ ^ 2` is positive. -/
-lemma one_sub_sq_norm_pos_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 0 < 1 - ‖z‖ ^ 2 := by
-  nlinarith [norm_nonneg z]
+lemma one_sub_sq_norm_pos_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 0 < 1 - ‖z‖ ^ 2 :=
+  sub_pos.2 (pow_lt_one₀ (norm_nonneg z) hz two_ne_zero)
 
 /-- When `z` lies in the closed unit disc and `w` in the open unit disc, the denominator in the
 pseudo-hyperbolic expression has positive norm. This is a positivity side condition used when
