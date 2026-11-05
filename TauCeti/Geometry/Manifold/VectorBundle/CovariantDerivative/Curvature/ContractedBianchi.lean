@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.DifferentiatedSymmetries
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 import Mathlib.Geometry.Manifold.BumpFunction
@@ -60,8 +61,6 @@ trace of `derivCurvatureTensor`.
 
 * `CovariantDerivative.exists_frame_sum_derivCurvatureTensor`: contracting `(∇_v R)(·, B) C`
   against the output gives `(∇_v Ric)(B, C)`.
-* `CovariantDerivative.IsMetricCompatible.inner_derivCurvatureTensor`: for a metric-compatible
-  connection, `⟪(∇_v R)(Y, Z) σ, U⟫` is the covariant derivative of `⟪R(Y, Z) σ, U⟫`.
 * `CovariantDerivative.derivRicciTensor`: the covariant derivative of Ricci curvature, with
   its direction of differentiation last.
 * `CovariantDerivative.derivRicciTensor_eq_trace`: covariant differentiation commutes with
@@ -69,8 +68,6 @@ trace of `derivCurvatureTensor`.
 * `CovariantDerivative.trace_derivCurvatureTensor_eq_sub`: the metric-free first contracted
   second Bianchi identity.
 * `CovariantDerivative.sum_inner_derivCurvatureTensor_eq_sub`: its orthonormal-basis form.
-* `CovariantDerivative.IsMetricCompatible.inner_derivCurvatureTensor_swap_pairs`: pair
-  interchange for the metric-lowered tensor `∇R`.
 * `CovariantDerivative.IsMetricCompatible.sum_inner_derivCurvatureTensor_self_eq_sub`: the
   Riemannian divergence formula.
 * `CovariantDerivative.IsMetricCompatible.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature`:
@@ -230,35 +227,6 @@ theorem exists_frame_sum_derivCurvatureTensor (x : M) :
   simp only [mul_comm]
   ring
 
-/-- For a metric-compatible connection, pairing `(∇_v R)(Y, Z) σ` with a vector field `U` gives
-the covariant derivative of the metric-lowered curvature `⟪R(Y, Z) σ, U⟫`. -/
-theorem IsMetricCompatible.inner_derivCurvatureTensor
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    (x : M) (v : TangentSpace I x) {Y Z σ U : Π y : M, TangentSpace I y}
-    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ))
-    (hU : CMDiff ∞ (T% U)) :
-    ⟪cov.derivCurvatureTensor cov x v (Y x) (Z x) (σ x), U x⟫_ℝ =
-      mvfderiv I (fun y ↦ ⟪curvature y (Y y) (Z y) (σ y), U y⟫_ℝ) x v -
-        ⟪curvature x (cov Y x v) (Z x) (σ x), U x⟫_ℝ -
-          ⟪curvature x (Y x) (cov Z x v) (σ x), U x⟫_ℝ -
-            ⟪curvature x (Y x) (Z x) (cov σ x v), U x⟫_ℝ -
-              ⟪curvature x (Y x) (Z x) (σ x), cov U x v⟫_ℝ := by
-  have hfun : (fun y ↦ ⟪curvature y (Y y) (Z y) (σ y), U y⟫_ℝ) =
-      fun y ↦ ⟪curvatureOperator cov Y Z σ y, U y⟫_ℝ := by
-    funext y
-    rw [curvatureTensor_apply cov y hY hZ hσ]
-  have hd : mvfderiv I (fun y ↦ ⟪curvatureOperator cov Y Z σ y, U y⟫_ℝ) x v =
-      ⟪cov (curvatureOperator cov Y Z σ) x v, U x⟫_ℝ +
-        ⟪curvatureOperator cov Y Z σ x, cov U x v⟫_ℝ := by
-    simpa only [FiberBundle.extend_apply_self] using
-      hcov.mvfderiv_inner_eq (FiberBundle.extend E v)
-        ((cov.contMDiff_curvatureOperator hY hZ hσ).mdifferentiableAt (by simp) (x := x))
-        (hU.mdifferentiableAt (by simp))
-  rw [derivCurvatureTensor_apply cov cov x v hY hZ hσ, hfun, hd,
-    ← curvatureTensor_apply cov x hY hZ hσ]
-  simp only [inner_sub_left]
-  ring
-
 end VectorFields
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -372,29 +340,6 @@ theorem IsMetricCompatible.derivRicciTensor_comm
   simp only [derivRicciTensor_def]
   exact cov.derivBilinearTensor_apply_comm
     (fun y a b ↦ IsMetricCompatible.ricciTensor_comm (cov := cov) hcov ht y a b) u v
-
-/-- Pair interchange for the metric-lowered covariant derivative of curvature:
-`(∇_d Rm)(u, v, w, z) = (∇_d Rm)(w, z, u, v)`. -/
-theorem IsMetricCompatible.inner_derivCurvatureTensor_swap_pairs
-    (hcov : CovariantDerivative.IsMetricCompatible
-      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0)
-    (x : M) (d u v w z : TangentSpace I x) :
-    inner ℝ (cov.derivCurvatureTensor cov x d u v w) z =
-      inner ℝ (cov.derivCurvatureTensor cov x d w z u) v := by
-  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
-  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
-  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
-  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ z
-  have hs (y : M) (a b c d : TangentSpace I y) :
-      inner ℝ (cov.curvatureTensor y a b c) d = inner ℝ (cov.curvatureTensor y c d a) b :=
-    hcov.inner_curvatureTensor_swap_pairs ht y a b c d
-  have hfun : (fun y ↦ inner ℝ (cov.curvatureTensor y (U y) (V y) (W y)) (Z y)) =
-      fun y ↦ inner ℝ (cov.curvatureTensor y (W y) (Z y) (U y)) (V y) :=
-    funext fun y ↦ hs y _ _ _ _
-  rw [hcov.inner_derivCurvatureTensor x d hU hV hW hZ,
-    hcov.inner_derivCurvatureTensor x d hW hZ hU hV, hfun, hs x (cov U x d),
-    hs x (U x) (cov V x d), hs x (U x) (V x) (cov W x d), hs x (U x) (V x) (W x) (cov Z x d)]
-  ring
 
 /-- The divergence of the metric-lowered Riemann tensor is the antisymmetrized derivative of
 Ricci curvature. The sign uses `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩`. -/
