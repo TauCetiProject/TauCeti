@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
+public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.Multiplicity
 public import TauCeti.Algebra.Lie.Weights.FormalCharacter
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
@@ -84,6 +85,8 @@ multiplicity the sum omits is zero.
   labelled by a dominant integral `λ` are counted by the multiplicity of `L(λ)`.**
 * `TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`: **the packaged isotypic
   decomposition** `M ≃ ⨁_λ L(λ)^{m λ}`.
+* `TauCeti.iSup_isotypicComponent_irreducibleQuotient_eq_top`: a finite-dimensional module is the
+  sum of its `L(λ)`-isotypic components over the dominant integral weights `λ`.
 * `TauCeti.isotypicMultiplicity_irreducibleQuotient_eq_zero_of_not_isDominantIntegral`: `L(λ)` of
   a non-dominant weight `λ` has multiplicity zero in every finite-dimensional module.
 * `TauCeti.genWeightSpace_ne_bot_of_isotypicMultiplicity_irreducibleQuotient_ne_zero`:
@@ -185,6 +188,20 @@ theorem nonempty_lieModuleEquiv_directSum_irreducibleQuotient [FiniteDimensional
       ↔ c i = (s : Dual K H) := fun _ ↦ Subtype.ext_iff
   rw [Nat.card_congr (Equiv.subtypeEquivRight hiff)]
   exact natCard_eq_isotypicMultiplicity_irreducibleQuotient b N hint hirr c hcequiv s.2
+
+variable (M) in
+/-- **A finite-dimensional module is the sum of its `L(lam)`-isotypic components**, `lam` running
+over the dominant integral weights. -/
+theorem iSup_isotypicComponent_irreducibleQuotient_eq_top [FiniteDimensional K M] :
+    ⨆ lam : {l : Dual K H // IsDominantIntegral b l},
+      isotypicComponent K L M (irreducibleQuotient b lam.1) = ⊤ := by
+  obtain ⟨k, N, hint, hirr⟩ := exists_isInternal_isIrreducible_of_isKilling K L M
+  refine top_unique <| LieSubmodule.iSup_toSubmodule_eq_top.mp hint.submodule_iSup_eq_top ▸
+    iSup_le fun i ↦ ?_
+  have := hirr i
+  obtain ⟨lam, hlam, e⟩ :=
+    exists_isDominantIntegral_nonempty_lieModuleEquiv_irreducibleQuotient (M := N i) b
+  exact le_iSup_of_le ⟨lam, hlam⟩ ((N i).le_isotypicComponent_of_equiv e)
 
 /-! ### The character of the irreducible module of a dominant integral weight -/
 

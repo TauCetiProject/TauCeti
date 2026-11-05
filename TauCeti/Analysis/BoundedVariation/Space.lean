@@ -51,6 +51,12 @@ def MemBV (μ : Measure E) (Ω : Opens E) (u : E → ℝ) : Prop :=
 theorem memBV_iff {u : E → ℝ} : MemBV μ Ω u ↔
     IntegrableOn u Ω μ ∧ totalVariationOn μ Ω u < ∞ := (Iff.rfl)
 
+/-- Restriction to an open subset preserves BV membership. -/
+theorem MemBV.mono {U : Opens E} {u : E → ℝ} (hu : MemBV μ Ω u) (hU : U ≤ Ω) :
+    MemBV μ U u :=
+  memBV_iff.mpr ⟨(memBV_iff.mp hu).1.mono_set hU,
+    (totalVariationOn_mono hU).trans_lt (memBV_iff.mp hu).2⟩
+
 /-- BV membership is unchanged by equality almost everywhere on the domain. -/
 theorem memBV_congr_ae {u v : E → ℝ} (h : u =ᵐ[μ.restrict Ω] v) :
     MemBV μ Ω u ↔ MemBV μ Ω v := by

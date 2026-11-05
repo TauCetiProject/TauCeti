@@ -59,6 +59,8 @@ analysis on these pairings for three root vectors, in which no division by `2` o
 
 ## Main results
 
+* `Matrix.ShellLieAlgebra.cartan_add_sum_root_eq`: the decomposition of an element into its
+  Cartan part and root vectors.
 * `Matrix.ShellLieAlgebra.cartan_lie_root`, `Matrix.ShellLieAlgebra.root_lie_root`: the
   bracket on Cartan and root vectors.
 * `Matrix.ShellLieAlgebra.cartan_lie_rootBracket`: `⁅x_a, x_b⁆` has weight `a + b`.
@@ -141,6 +143,42 @@ theorem basis_inl [DecidableEq I] (i : I) : basis B (.inl i) = cartan B (Pi.sing
 theorem basis_inr (a : B.normTwoShell) : basis B (.inr a) = root B a := by
   simp [basis, root, Basis.prod_apply]
 
+/-- The signed shell Lie algebra is free over `ℤ`, with basis `Matrix.ShellLieAlgebra.basis`. -/
+instance : Module.Free ℤ (ShellLieAlgebra B) :=
+  .of_basis (basis B)
+
+/-- The signed shell Lie algebra is finite over `ℤ` when its norm-two shell is finite, as it is for
+a positive definite `B` (`Matrix.PosDef.finite_normTwoShell`). -/
+instance [Finite B.normTwoShell] : Module.Finite ℤ (ShellLieAlgebra B) :=
+  .of_basis (basis B)
+
+/-- Every element `x` of `ShellLieAlgebra B` is the sum `H_h + ∑_(a ∈ Φ) c_a x_a` of the Cartan
+vector of its Cartan part `h` and the root vectors weighted by its root coefficients `c`. -/
+theorem cartan_add_sum_root_eq [Fintype B.normTwoShell] (x : ShellLieAlgebra B) :
+    cartan B (equivProd B x).1 + ∑ a, (equivProd B x).2 a • root B a = x := by
+  apply (equivProd B).injective
+  ext
+  · simp [map_sum, Prod.fst_sum]
+  · simp [map_sum, Prod.snd_sum]
+
+/-- A Cartan vector has its original lattice coordinates in the Cartan part of the shell basis. -/
+@[simp]
+theorem basis_repr_cartan_inl (h : I → ℤ) (i : I) :
+    (basis B).repr (cartan B h) (.inl i) = h i := by
+  simp [basis, Basis.map_repr, Basis.prod_repr_inl]
+
+/-- The coordinates of an integral root vector in the Cartan-and-root basis. -/
+@[simp]
+theorem basis_repr_root (a : B.normTwoShell) :
+    (basis B).repr (root B a) = Finsupp.single (.inr a) 1 := by
+  rw [← basis_inr, Basis.repr_self]
+
+/-- The coordinates of an integral Cartan vector vanish on every root index. -/
+@[simp]
+theorem basis_repr_cartan_inr (h : I → ℤ) (a : B.normTwoShell) :
+    (basis B).repr (cartan B h) (.inr a) = 0 := by
+  simp [basis, cartan]
+
 variable [LinearOrder I]
 
 /-- The bracket `⁅x_a, x_b⁆` of two root vectors: `ε(a, b) x_(a + b)` if `a + b` is in the norm-two
@@ -174,6 +212,37 @@ theorem rootBracket_of_notMem_of_add_ne_zero {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∉ B.normTwoShell) (h' : (a : I → ℤ) + b ≠ 0) :
     rootBracket B a b = 0 := by
   rw [rootBracket, dite_eq_right h, ite_eq_right h', smul_zero]
+
+variable {B} in
+/-- Only opposite roots contribute to the Cartan coordinates of a root bracket. -/
+@[simp]
+theorem basis_repr_rootBracket_inl (a b : B.normTwoShell) (i : I) :
+    (basis B).repr (rootBracket B a b) (.inl i) =
+      if (a : I → ℤ) + b = 0 then
+        ((B.orderedSignForm a b).negOnePow : ℤ) * a.val i else 0 := by
+  classical
+  by_cases hm : (a : I → ℤ) + b ∈ B.normTwoShell
+  · have hz : (a : I → ℤ) + b ≠ 0 := ne_zero_of_mem_normTwoShell hm
+    simp [rootBracket_of_mem hm, Units.smul_def, ← basis_inr, hz]
+  · by_cases hz : (a : I → ℤ) + b = 0
+    · simp [Units.smul_def, hz]
+    · simp [rootBracket_of_notMem_of_add_ne_zero hm hz, hz]
+
+variable {B} in
+/-- The coefficient of `x_c` in a root bracket is its ordered sign exactly when the two roots
+sum to `c`. -/
+@[simp]
+theorem basis_repr_rootBracket_inr (a b c : B.normTwoShell) :
+    (basis B).repr (rootBracket B a b) (.inr c) =
+      if (a : I → ℤ) + b = c then ((B.orderedSignForm a b).negOnePow : ℤ) else 0 := by
+  classical
+  by_cases hm : (a : I → ℤ) + b ∈ B.normTwoShell
+  · simp [rootBracket_of_mem hm, Units.smul_def, ← basis_inr,
+      Finsupp.single_apply, Subtype.ext_iff, eq_comm]
+  · have hc : (a : I → ℤ) + b ≠ c := fun hc ↦ hm (hc ▸ c.property)
+    by_cases hz : (a : I → ℤ) + b = 0
+    · simp [rootBracket_of_add_eq_zero hz, Units.smul_def, hc]
+    · simp [rootBracket_of_notMem_of_add_ne_zero hm hz, hc]
 
 variable {B} in
 /-- For a symmetric `B`, two root vectors whose roots have nonnegative pairing have bracket zero:
@@ -660,8 +729,8 @@ protected theorem leibniz_lie (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
   abel
 
 /-- **The signed Lie ring of the norm-two shell** of a positive definite integer matrix `B` with
-even diagonal. It is not an instance, since it depends on these two hypotheses; install it
-locally when needed. -/
+even diagonal. Install it locally from explicit hypotheses, or use `instLieRingOfFact` when the
+hypotheses are available as typeclass facts. -/
 @[expose, instance_reducible]
 noncomputable def lieRing (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) :
     LieRing (ShellLieAlgebra B) where
@@ -669,6 +738,11 @@ noncomputable def lieRing (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) :
   lie_add := ShellLieAlgebra.lie_add
   lie_self := ShellLieAlgebra.lie_self hB.isHermitian.isSymm hdiag
   leibniz_lie := ShellLieAlgebra.leibniz_lie hB hdiag
+
+/-- The signed shell Lie ring, with positivity and evenness supplied as typeclass facts. -/
+noncomputable instance instLieRingOfFact [hB : Fact B.PosDef]
+    [hev : Fact (∀ i, Even (B i i))] : LieRing (ShellLieAlgebra B) :=
+  lieRing hB.out hev.out
 
 end ShellLieAlgebra
 

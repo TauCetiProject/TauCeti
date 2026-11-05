@@ -70,6 +70,14 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
 
+/-- Each coordinate of a multivariate Gaussian has as mean the corresponding coordinate of the
+mean parameter. No hypothesis on the covariance parameter is needed. -/
+@[simp]
+theorem integral_eval_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    (S : Matrix ι ι ℝ) (i : ι) : ∫ x, x i ∂multivariateGaussian m S = m i := by
+  simpa using (EuclideanSpace.proj (𝕜 := ℝ) i).integral_comp_comm
+    (IsGaussian.integrable_id (μ := multivariateGaussian m S))
+
 /-- The Bochner mean of a random variable with a multivariate Gaussian law is its Gaussian mean. -/
 theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}

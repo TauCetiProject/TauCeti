@@ -21,7 +21,7 @@ toral closure, not an identification with an independently pinned group scheme.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IX.
 
 The rank-one-word construction follows
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.NegativeLong`.
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.NegativeLong.Basic`.
 The coefficient matrices use the weight basis of `TauCeti.Algebra.Lie.G2.ShortRoot.Basic`.
 -/
 

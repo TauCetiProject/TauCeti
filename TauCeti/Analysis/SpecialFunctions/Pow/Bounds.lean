@@ -13,12 +13,18 @@ import Mathlib.Topology.Order.Compact
 /-!
 # Elementary bounds on real powers
 
+If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
+powers of a level confined to an interval bounded away from zero.
+
 A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
 denominator `1 - y ^ (-s)` stays bounded below.
 
 For any `θ < 1` and any exponent `β`, some base `τ ∈ (0, 1)` has `θ < τ ^ β`. This is how a
 geometric ratio is chosen in iteration arguments, such as the absorption lemma.
+
+For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`. This is
+how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates.
 
 For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
 `v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. This is
@@ -39,6 +45,10 @@ condition.
 If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`: an approximation of quality
 `d ^ (-p)` meets the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
 
+For `0 ≤ p ≤ 1`, a nonnegative quantity `r ≤ 2 h` has `r ^ p ≤ 2 h ^ p`. This is how, in a
+temporal Hölder estimate with exponent `p`, a time at most twice the time step `h` is bounded by
+a multiple of `h ^ p`.
+
 If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 `(p - 1) log q < log 2 + log q'`. Hence `t < log q' / log q` once `log 2 < (p - 1 - t) log q`.
 This reads off the growth of consecutive continued-fraction denominators from the lower error
@@ -56,6 +66,7 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 
 ## Main results
 
+* `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
@@ -65,6 +76,8 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
   `C ^ (D / (n - D)) < B + 1`.
 * `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
+* `Real.rpow_le_two_mul_rpow_of_le_two_mul`: `r ^ p ≤ 2 h ^ p` for `0 ≤ r ≤ 2 h` and
+  `0 ≤ p ≤ 1`.
 * `Real.lt_log_div_log_of_rpow_lt`: `t < log q' / log q` for `2 ≤ q ≤ q'`,
   `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
 * `Real.min_rpow_lt_two_rpow_sub_one_mul`: `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`
@@ -78,6 +91,17 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 public section
 
 namespace Real
+
+/-- If both a positive base and its reciprocal are at most `R`, every real power of that
+base is bounded by `R` raised to the absolute value of the exponent. -/
+theorem rpow_le_rpow_abs {x R : ℝ} (hx : 0 < x) (hxR : x ≤ R) (hinvR : x⁻¹ ≤ R)
+    (a : ℝ) : x ^ a ≤ R ^ |a| := by
+  rcases le_or_gt 0 a with ha | ha
+  · rw [abs_of_nonneg ha]
+    exact rpow_le_rpow hx.le hxR ha
+  · calc x ^ a = x⁻¹ ^ (-a) := by rw [← rpow_neg_eq_inv_rpow, neg_neg]
+         _ ≤ R ^ (-a) := rpow_le_rpow (inv_nonneg.mpr hx.le) hinvR (neg_nonneg.mpr ha.le)
+         _ = R ^ |a| := by rw [abs_of_neg ha]
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
@@ -97,6 +121,18 @@ theorem exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :
     refine ⟨c ^ β⁻¹, rpow_pos_of_pos hc0 _, rpow_lt_one hc0.le hc1 (inv_pos.2 hβ), ?_⟩
     rw [← rpow_mul hc0.le, inv_mul_cancel₀ hβ.ne', rpow_one]
     exact lt_max_of_lt_left (by linarith)
+
+/-- For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`, since
+`r ^ α → 0` as `r → 0`. -/
+theorem exists_pos_le_one_mul_rpow_le (c : ℝ) {α b : ℝ} (hα : 0 < α) (hb : 0 < b) :
+    ∃ r : ℝ, 0 < r ∧ r ≤ 1 ∧ c * r ^ α ≤ b := by
+  have ht : Filter.Tendsto (fun r : ℝ => c * r ^ α) (nhds 0) (nhds (c * 0 ^ α)) :=
+    ((continuous_rpow_const hα.le).tendsto 0).const_mul c
+  rw [zero_rpow hα.ne', mul_zero] at ht
+  obtain ⟨r, ⟨hrb, hr1⟩, hr⟩ := ((eventually_nhdsWithin_of_eventually_nhds
+    (s := Set.Ioi 0) ((ht.eventually (eventually_le_nhds hb)).and (eventually_le_nhds one_pos))).and
+    self_mem_nhdsWithin).exists
+  exact ⟨r, hr, hr1, hrb⟩
 
 /-- **The strict tangent-line inequality for real powers.** For `1 < p` and distinct `u, v ≥ 0`,
 `u ↦ u ^ p` lies strictly above its tangent line at `v`. -/
@@ -177,6 +213,16 @@ theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (hd : 0 < d) (h2 : 2 ≤ d ^ 
     ring
   rw [hsplit, one_div, mul_inv]
   gcongr
+
+/-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
+theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
+    (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) : r ^ p ≤ 2 * h ^ p := by
+  have hh : 0 ≤ h := by linarith
+  calc r ^ p ≤ (2 * h) ^ p := by gcongr
+    _ = 2 ^ p * h ^ p := mul_rpow (by norm_num) hh
+    _ ≤ 2 * h ^ p := by
+        gcongr
+        exact (rpow_le_rpow_of_exponent_le (by norm_num) hp₁).trans (rpow_one 2).le
 
 /-- The logarithmic form of `q ^ p < q (q + q')`: if moreover `2 ≤ q ≤ q'` and
 `log 2 < (p - 1 - t) log q`, then `t < log q' / log q`. -/

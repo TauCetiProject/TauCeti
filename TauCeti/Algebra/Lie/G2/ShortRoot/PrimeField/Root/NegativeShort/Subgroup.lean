@@ -28,7 +28,7 @@ group scheme, is asserted.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IX.
 
 The rank-one-word construction follows the negative long-root tangent construction in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.NegativeLong`. The coefficient matrices
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.NegativeLong.Basic`. The coefficient matrices
 use the weight basis of `TauCeti.Algebra.Lie.G2.ShortRoot.Basic`.
 -/
 

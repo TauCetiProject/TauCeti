@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
-public import TauCeti.LinearAlgebra.BilinearForm.DualLattice
+public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 
 /-!
 # Duals of integral lattices
