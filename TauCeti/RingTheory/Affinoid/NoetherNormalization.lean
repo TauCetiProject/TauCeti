@@ -73,7 +73,8 @@ private theorem exists_finite_map_of_not_injective {σ : Type*} [Finite σ]
     intro a
     obtain ⟨g, rfl⟩ := hπ a
     exact ⟨Ideal.Quotient.mk I (Φ g), (hqmk _).trans (by simp [ψ])⟩
-  have : Module.Finite R (S ⧸ I) := hd.finite_quotient zero_lt_one hu
+  have : Module.Finite R (S ⧸ I) :=
+    (PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩).finite_quotient zero_lt_one
   let ι : R →ₐ[K] Tate (Option σ) := Φ.symm.toAlgHom.comp (IsScalarTower.toAlgHom K R S)
   -- The change of variables `Φ` preserves Gauss norms.
   have hΦ (z : Tate (Option σ)) : ‖Φ z‖ = ‖z‖ :=

@@ -90,7 +90,7 @@ variable {F : Type u} [Field F]
 order of `a` at a discrete valuation `v`, then `X ^ n - C a` is irreducible. No root of unity and
 no hypothesis on the characteristic is needed. For `a = 0` the order is the junk value `0`, so the
 hypothesis forces `n = 1`, where the statement holds trivially. See Andrew Yang's
-`X_pow_sub_C_irreducible_of_prime` in `Mathlib/FieldTheory/KummerPolynomial.lean`. -/
+`irreducible_X_pow_sub_C_of_prime` in `Mathlib/FieldTheory/KummerPolynomial.lean`. -/
 theorem _root_.Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one (v : Valuation F ℤᵐ⁰)
     {n : ℕ} (hn : n ≠ 0) {a : F} (h : Int.gcd n (v.ord a) = 1) :
     Irreducible (X ^ n - C a) := by

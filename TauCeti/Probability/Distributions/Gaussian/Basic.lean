@@ -21,15 +21,25 @@ belongs here rather than in any of the families that consume it (the Hermite ort
 relation and the Gaussian Hermite basis both do).
 
 The file also extends the density to extended real points, by its limit `0` at `±∞`, and
-differentiates it in the mean, for formulas over intervals whose bounds may be infinite.
+differentiates it in the mean, for formulas over intervals whose bounds may be infinite. It also
+differentiates the density in its real argument and turns integrability against `gaussianReal μ v`
+into Lebesgue integrability of the density-weighted function, the inputs to Gaussian integration
+by parts.
 
 ## Main statements
 
 * `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
 * `TauCeti.Probability.gaussianPDFReal_eq_gaussianPDFReal_zero_one` — standardization:
   `gaussianPDFReal m v x = φ ((x - m) / √v) / √v` with `φ = gaussianPDFReal 0 1`.
+* `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
+  mean.
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
   `|x| → ∞`, for the standard Gaussian density `φ`.
+* `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
+  its real argument is `-(x - μ) / v` times the density, for every variance.
+* `TauCeti.Probability.integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul` — at positive
+  variance, integrability against `gaussianReal μ v` is equivalent to Lebesgue integrability of
+  the function weighted by the density.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFRealEReal` — as a function of the mean `μ`, the
   density at an extended point `e` has derivative `(e - μ) / v` times the density.
 
@@ -67,6 +77,13 @@ theorem gaussianPDFReal_eq_gaussianPDFReal_zero_one (m : ℝ) (v : ℝ≥0) (x :
     Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * π)]
   field_simp
 
+/-- The Gaussian density of `N(m, v)` decreases to the right of its mean. -/
+theorem antitoneOn_gaussianPDFReal (m : ℝ) (v : ℝ≥0) :
+    AntitoneOn (gaussianPDFReal m v) (Set.Ici m) := fun x hx y _ hxy => by
+  have hx : 0 ≤ x - m := sub_nonneg.2 hx
+  simp only [gaussianPDFReal]
+  gcongr
+
 /-- The standard Gaussian density decays faster than `1 / |x|`: `x φ(x) → 0` as `|x| → ∞`. -/
 theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
     Tendsto (fun x => x * gaussianPDFReal 0 1 x) (cocompact ℝ) (𝓝 0) := by
@@ -77,6 +94,37 @@ theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
   simp only [gaussianPDFReal_zero_one, rpow_one, norm_mul, norm_eq_abs, abs_exp,
     abs_of_pos (inv_pos.2 (sqrt_pos.2 (by positivity : (0 : ℝ) < 2 * π)))]
   ring_nf
+
+/-- The derivative of the Gaussian density in its real argument is `-(x - μ) / v` times the
+density. At zero variance both sides vanish. -/
+theorem hasDerivAt_gaussianPDFReal (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
+    HasDerivAt (gaussianPDFReal μ v) (-(x - μ) / (v : ℝ) * gaussianPDFReal μ v x) x := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [gaussianPDFReal_zero_var]
+  rw [gaussianPDFReal_def]
+  have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hv
+  have hq :
+      HasDerivAt (fun x : ℝ => -(x - μ) ^ 2 / (2 * (v : ℝ)))
+        (-(x - μ) / (v : ℝ)) x := by
+    convert ((((hasDerivAt_id x).sub_const μ).pow 2).neg.div_const (2 * (v : ℝ))) using 1
+    · ext y
+      simp only [id_eq, Pi.neg_apply, Pi.pow_apply]
+    · simp only [id_eq]
+      field_simp [hv']
+      ring_nf
+  convert hq.exp.const_mul (Real.sqrt (2 * π * (v : ℝ)))⁻¹ using 1
+  · ring_nf
+
+/-- At positive variance, a function is integrable against `gaussianReal μ v` if and only if its
+product with the Gaussian density is Lebesgue integrable. -/
+theorem integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : ℝ} {v : ℝ≥0} (hv : v ≠ 0) {g : ℝ → E} :
+    MeasureTheory.Integrable g (gaussianReal μ v) ↔
+      MeasureTheory.Integrable (fun x => gaussianPDFReal μ v x • g x) := by
+  rw [gaussianReal_of_var_ne_zero μ hv,
+    MeasureTheory.integrable_withDensity_iff_integrable_smul' (measurable_gaussianPDF μ v)
+      (MeasureTheory.ae_of_all _ fun _ => gaussianPDF_lt_top)]
+  simp only [toReal_gaussianPDF]
 
 /-! ### The Gaussian density at an extended point -/
 
@@ -114,14 +162,14 @@ theorem hasDerivAt_gaussianPDFRealEReal (v : ℝ≥0) (e : EReal) (μ : ℝ) :
   | bot => simpa using hasDerivAt_const μ (0 : ℝ)
   | top => simpa using hasDerivAt_const μ (0 : ℝ)
   | coe x =>
-    simp only [gaussianPDFRealEReal_coe, EReal.toReal_coe, gaussianPDFReal]
-    have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hv
-    have hq : HasDerivAt (fun μ : ℝ => -(x - μ) ^ 2 / (2 * (v : ℝ))) ((x - μ) / v) μ := by
-      convert ((((hasDerivAt_id' μ).const_sub x).fun_pow 2).fun_neg).div_const (2 * (v : ℝ))
-        using 1
-      field_simp
+    simp only [gaussianPDFRealEReal_coe, EReal.toReal_coe]
+    have hshift (m : ℝ) : gaussianPDFReal m v x = gaussianPDFReal 0 v (x - m) := by
+      simpa only [zero_add] using (gaussianPDFReal_sub (μ := 0) (v := v) x m).symm
+    rw [hshift μ, funext hshift]
+    convert (hasDerivAt_gaussianPDFReal 0 v (x - μ)).comp μ
+      ((hasDerivAt_id μ).const_sub x) using 1
+    · simp only [Function.comp_def]
+    · field_simp
       ring
-    convert hq.exp.const_mul (√(2 * π * v))⁻¹ using 1
-    ring
 
 end TauCeti.Probability

@@ -17,6 +17,11 @@ zero terms: the span of a zero vector is the zero subspace. In particular, the P
 identity `OrthogonalFamily.norm_sum` gives `‖∑ i ∈ s, v i‖² = ∑ i ∈ s, ‖v i‖²` for pairwise
 orthogonal vectors. Applied to the images of an orthonormal basis under a linear map `T`, it gives
 `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²` whenever these images are pairwise orthogonal.
+
+Orthogonality also gives linear independence: a nonzero vector followed by a linearly independent
+family of vectors orthogonal to it is linearly independent
+(`LinearIndependent.finCons_of_inner_eq_zero`), as for an outward normal followed by a basis of a
+tangent space.
 -/
 
 public section
@@ -67,3 +72,21 @@ theorem norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero (T : E →ₗ[𝕜] F)
   simp [norm_smul, mul_pow]
 
 end LinearMap
+
+namespace LinearIndependent
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A nonzero vector followed by a linearly independent family of vectors orthogonal to it is
+linearly independent. -/
+theorem finCons_of_inner_eq_zero {n : ℕ} {p : E} (hp : p ≠ 0) {v : Fin n → E}
+    (hv : LinearIndependent 𝕜 v) (horth : ∀ i, inner 𝕜 p (v i) = 0) :
+    LinearIndependent 𝕜 (Fin.cons p v : Fin (n + 1) → E) := by
+  refine hv.finCons fun hmem ↦ hp ?_
+  have hle : Submodule.span 𝕜 (Set.range v) ≤ (𝕜 ∙ p)ᗮ := by
+    rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth i)
+  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle hmem))
+
+end LinearIndependent

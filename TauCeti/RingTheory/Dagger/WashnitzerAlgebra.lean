@@ -329,10 +329,11 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
 /-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
 `c` into the Monsky–Washnitzer algebra. -/
 noncomputable def ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
-    IsRestricted.subring (R := R) c →+* washnitzerAlgebra σ R :=
-  (IsRestricted.subring (R := R) c).subtype.codRestrict (washnitzerAlgebra σ R).toSubring
-    fun f ↦ mem_washnitzerAlgebra.mpr
+    IsRestricted.subring (R := R) c →ₐ[R] washnitzerAlgebra σ R where
+  toRingHom := (IsRestricted.subring (R := R) c).subtype.codRestrict
+    (washnitzerAlgebra σ R).toSubring fun f ↦ mem_washnitzerAlgebra.mpr
       ⟨ρ, hρ, isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hc⟩
+  commutes' _ := (rfl)
 
 /-- The inclusion of a restricted subring does not change the underlying series. -/
 @[simp]

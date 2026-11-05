@@ -282,7 +282,7 @@ private theorem prod_ite_swapColumns_OSet (S : Finset (Fin n × Fin n)) :
 
 /-- The weight of a pentagon of the exchanged diagram, read in `G` by exchanging the columns `a`
 and `b`. -/
-private theorem pentagonWeight_withTurnRow {u v : GridState n}
+theorem swapColumns_pentagonWeight_withTurnRow {u v : GridState n}
     (Q : GridPentagonBetween a t u v) :
     (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q =
       ∏ c ∈ G.OColumnsOfSquares
@@ -293,7 +293,7 @@ private theorem pentagonWeight_withTurnRow {u v : GridState n}
 
 /-- The weight of an initial-side pentagon of the exchanged diagram, read in `G` by exchanging the
 columns `a` and `b`. -/
-private theorem initialPentagonWeight_withTurnRow {u v : GridState n}
+theorem swapColumns_initialPentagonWeight_withTurnRow {u v : GridState n}
     (Q : GridInitialPentagonBetween a t u v) :
     (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q =
       ∏ c ∈ G.OColumnsOfSquares
@@ -424,7 +424,8 @@ theorem rename_pentagonWeight_mul_pentagonWeight_eq_crossingChangeAnnulusWeight
     rename (Equiv.swap a b) (G.pentagonWeight R C P) *
         (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q =
       G.crossingChangeAnnulusWeight R C t := by
-  rw [rename_pentagonWeight, prod_ite_OSet_eq_prod_OColumnsOfSquares, pentagonWeight_withTurnRow]
+  rw [rename_pentagonWeight, prod_ite_OSet_eq_prod_OColumnsOfSquares,
+    swapColumns_pentagonWeight_withTurnRow]
   exact prod_OColumnsOfSquares_mul_prod_eq R (pentagon_squares P Q h)
 
 /-- An empty returning pair of initial-side pentagons, of `G` turning in the turn row of `C` and
@@ -437,7 +438,7 @@ theorem rename_initialPentagonWeight_mul_initialPentagonWeight_eq_crossingChange
         (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q =
       G.crossingChangeAnnulusWeight R C t := by
   rw [rename_initialPentagonWeight, prod_ite_OSet_eq_prod_OColumnsOfSquares,
-    initialPentagonWeight_withTurnRow]
+    swapColumns_initialPentagonWeight_withTurnRow]
   exact prod_OColumnsOfSquares_mul_prod_eq R (initialPentagon_squares P Q h)
 
 /-! ### Interleaving columns -/

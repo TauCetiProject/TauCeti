@@ -49,6 +49,8 @@ fundamental annulus `‖q‖ < ‖u‖ ≤ 1` includes the unit circle, where th
 * `TauCeti.exists_tateTheta_mul_tateTheta_eq`: `θ(a u) θ(a⁻¹ u) = α θ(u)² (X(u) - X(a))`.
 * `TauCeti.tateUniformizationX_eq_tateUniformizationX_iff`: the fibres of `X` are the cosets
   `a^{±1} q^ℤ`.
+* `TauCeti.tateQuotientCoordinates_fst_eq_iff`: the same on `Kˣ / q^ℤ`, where the fibre of a
+  nonidentity class `x` is `{x, x⁻¹}`.
 * `TauCeti.tateUniformization_eq_tateUniformization_iff`: the fibres of the uniformisation map.
 
 ## References
@@ -501,6 +503,26 @@ theorem tateUniformizationX_eq_tateUniformizationX_iff (q : Kˣ) (hq : ‖(q : K
   rw [← tateTheta_eq_zero_iff q _ hq, ← tateTheta_eq_zero_iff q _ hq, ← mul_eq_zero, h u hu]
   simp [hα, hθ, sub_eq_zero]
 
+/-- **The fibres of the first Tate coordinate on the quotient.** Two nonidentity classes in
+`Kˣ / q^ℤ` have the same first Tate coordinate exactly when they are equal or mutually
+inverse. -/
+theorem tateQuotientCoordinates_fst_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+    {x y : Kˣ ⧸ Subgroup.zpowers q} (hx : x ≠ 1) (hy : y ≠ 1) :
+    (tateQuotientCoordinates q x).1 = (tateQuotientCoordinates q y).1 ↔ x = y ∨ x = y⁻¹ := by
+  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl) <;> simp [tateQuotientCoordinates_inv q hq]⟩
+  induction x using QuotientGroup.induction_on with | H u => ?_
+  induction y using QuotientGroup.induction_on with | H v => ?_
+  have hu : u ∉ Subgroup.zpowers q := fun h ↦ hx ((QuotientGroup.eq_one_iff u).mpr h)
+  have hv : v ∉ Subgroup.zpowers q := fun h ↦ hy ((QuotientGroup.eq_one_iff v).mpr h)
+  rcases (tateUniformizationX_eq_tateUniformizationX_iff q hq hu hv).mp (by simpa using h) with
+    h' | h'
+  · right
+    rw [← QuotientGroup.mk_inv, eq_comm, QuotientGroup.eq, inv_inv]
+    exact h'
+  · left
+    rw [eq_comm, QuotientGroup.eq]
+    exact h'
+
 /-- **The fibres of the Tate uniformisation map.** Two parameters in `Kˣ / q^ℤ` have the same
 image on the Tate curve exactly when they are equal, or mutually inverse with a common image of
 order at most two. -/
@@ -517,26 +539,14 @@ theorem tateUniformization_eq_tateUniformization_iff (q : Kˣ) (hq : ‖(q : K)�
     · subst hy
       left
       exact (tateUniformization_eq_zero_iff q hq x).mp (h.trans (tateUniformization_one q hq))
-    induction x using QuotientGroup.induction_on with | H u => ?_
-    induction y using QuotientGroup.induction_on with | H v => ?_
-    have hu : u ∉ Subgroup.zpowers q := fun h ↦ hx ((QuotientGroup.eq_one_iff u).mpr h)
-    have hv : v ∉ Subgroup.zpowers q := fun h ↦ hy ((QuotientGroup.eq_one_iff v).mpr h)
-    have hX : tateUniformizationX q u = tateUniformizationX q v := by
+    have hX : (tateQuotientCoordinates q x).1 = (tateQuotientCoordinates q y).1 := by
       have h' := h
-      rw [tateUniformization_mk_of_notMem_zpowers q u hq hu,
-        tateUniformization_mk_of_notMem_zpowers q v hq hv] at h'
+      rw [tateUniformization_of_ne_one q hq hx, tateUniformization_of_ne_one q hq hy] at h'
       simp only [WeierstrassCurve.Affine.Point.mk, WeierstrassCurve.Affine.Point.some.injEq] at h'
       exact h'.1
-    rcases (tateUniformizationX_eq_tateUniformizationX_iff q hq hu hv).mp hX with h' | h'
-    · right
-      have hinv : (u : Kˣ ⧸ Subgroup.zpowers q) = (v : Kˣ ⧸ Subgroup.zpowers q)⁻¹ := by
-        rw [← QuotientGroup.mk_inv, QuotientGroup.eq, ← mul_inv]
-        exact inv_mem (by rwa [mul_comm])
-      refine ⟨hinv, ?_⟩
-      rw [← tateUniformization_inv, ← hinv, h]
-    · left
-      rw [QuotientGroup.eq]
-      simpa [mul_comm] using inv_mem h'
+    refine ((tateQuotientCoordinates_fst_eq_iff q hq hx hy).mp hX).imp_right fun hinv ↦
+      ⟨hinv, ?_⟩
+    rw [← tateUniformization_inv, ← hinv, h]
   · rintro (rfl | ⟨rfl, h⟩)
     · rfl
     · rwa [tateUniformization_inv]

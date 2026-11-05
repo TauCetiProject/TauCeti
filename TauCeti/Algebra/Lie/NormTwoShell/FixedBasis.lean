@@ -177,13 +177,33 @@ theorem existsUnique_sameCycle_basis (x : I ⊕ B.normTwoShell) :
 
 /-- The monodromy of the pinned action at the representative of a root cycle is the monodromy of
 that cycle. -/
-private theorem monodromy_basis_inr
+theorem monodromy_basis_inr
     (C : Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCongr hσ))) :
     (Equiv.Perm.sumCongr σ (normTwoShellCongr hσ)).monodromy
       (Sum.elim (1 : I → ℤˣ) (fun a : B.normTwoShell ↦ inversionSign B σ a))
       (Sum.map Quotient.out Quotient.out
         (.inr C : Quotient (Equiv.Perm.SameCycle.setoid σ) ⊕ _)) = monodromy σ hσ C :=
   Equiv.Perm.monodromy_sumCongr_inr _ _ _ _ C.out
+
+/-- The negative cycles of the pinned action on the integral basis are exactly the root cycles
+of monodromy `-1`; the Cartan cycles all have monodromy `1`. -/
+noncomputable def negativeCycleEquiv :
+    {j : Quotient (Equiv.Perm.SameCycle.setoid σ) ⊕
+        Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCongr hσ)) //
+      (Equiv.Perm.sumCongr σ (normTwoShellCongr hσ)).monodromy
+        (Sum.elim (1 : I → ℤˣ) (fun a : B.normTwoShell ↦ inversionSign B σ a))
+        (Sum.map Quotient.out Quotient.out j) = -1} ≃
+      {C : Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCongr hσ)) //
+        monodromy σ hσ C = -1} where
+  toFun
+    | ⟨.inl O, hO⟩ => by simp at hO
+    | ⟨.inr C, hC⟩ => ⟨C, (monodromy_basis_inr σ hσ C).symm.trans hC⟩
+  invFun C := ⟨.inr C.val, (monodromy_basis_inr σ hσ C.val).trans C.property⟩
+  left_inv := by
+    rintro ⟨O | C, hC⟩
+    · simp at hC
+    · rfl
+  right_inv := by intro C; rfl
 
 /-- The positive cycles of the pinned action on the integral basis are the vertex orbits and the
 root cycles of monodromy `1`. -/

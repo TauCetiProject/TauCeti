@@ -213,7 +213,7 @@ socle shifted down by two. -/
 instance isIso_zigzagGradedHeadToSocle (i : V) :
     IsIso (zigzagGradedHeadToSocle k G hns i) := by
   let _ : Simple (zigzagGradedSimple k G i) := simple_zigzagGradedSimple k G i
-  have := mono_of_nonzero_from_simple (headToSocle_ne_zero k G hns i)
+  have := CategoryTheory.mono_of_ne_zero_from_simple (headToSocle_ne_zero k G hns i)
   have := (GradedModuleCat.epi_iff_surjective _).2 (headToSocle_surjective k G hns i)
   exact isIso_of_mono_of_epi _
 

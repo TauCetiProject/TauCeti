@@ -37,7 +37,7 @@ private theorem natCard_isometryMatrices_one_zmod_eight :
   let e := (uniqueEquiv : Matrix (Fin 1) (Fin 1) (ZMod (2 ^ 3)) ≃ ZMod (2 ^ 3)).subtypeEquiv
     (p := fun X => X ∈ isometryMatrices (1 : Matrix (Fin 1) (Fin 1) (ZMod (2 ^ 3))))
     (q := fun x => x * x = 1) fun X => by
-      simp [mem_isometryMatrices, ← Matrix.ext_iff, Fin.forall_fin_one, mul_apply]
+      simp [mem_isometryMatrices, ← Matrix.ext_iff, Fin.forall_fin_one, Matrix.mul_apply]
   rw [Nat.card_congr e, Nat.card_eq_fintype_card]
   decide
 
@@ -72,7 +72,7 @@ private theorem natCard_isometryMatrices_hyperbolic_zmod_eight :
       x.2.2 * x.1.1 + x.1.2 * x.2.1 = 1 ∧
       x.2.2 * x.1.2 + x.1.2 * x.2.2 = 0) fun X => by
       simp only [mem_isometryMatrices, ← Matrix.ext_iff, Fin.forall_fin_two,
-        mul_apply, Fin.sum_univ_two, transpose_apply]
+        Matrix.mul_apply, Fin.sum_univ_two, transpose_apply]
       -- Read the row-wise function equivalence in matrix coordinates.
       have he : e X = ((X 0 0, X 0 1), (X 1 0, X 1 1)) := rfl
       rw [he]

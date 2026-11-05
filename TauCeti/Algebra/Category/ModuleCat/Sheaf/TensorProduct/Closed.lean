@@ -77,7 +77,7 @@ instance monoidalClosed : MonoidalClosed (SheafOfModules.{u} (ringCatSheaf R)) :
 
 /-- The tensor product of sheaves of modules is additive in each variable. -/
 instance monoidalPreadditive : MonoidalPreadditive (SheafOfModules.{u} (ringCatSheaf R)) :=
-  monoidalPreadditive_of_monoidalClosed _
+  monoidalPreadditive_of_isLeftAdjoint _
 
 variable {R}
 

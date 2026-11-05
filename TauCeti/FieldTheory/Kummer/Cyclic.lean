@@ -239,7 +239,7 @@ variable [NeZero n]
 
 /-- **Irreducibility of `Xⁿ - b` with roots of unity**: if `K` contains a primitive `n`-th root of
 unity and `b` is not a `p`-th power in `K` for any prime `p` dividing `n`, then `Xⁿ - b` is
-irreducible over `K`. Unlike Mathlib's `X_pow_sub_C_irreducible_of_odd`, `n` may be even. -/
+irreducible over `K`. Unlike Mathlib's `irreducible_X_pow_sub_C_of_odd`, `n` may be even. -/
 theorem X_pow_sub_C_irreducible_of_isPrimitiveRoot
     (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b) : Irreducible (X ^ n - C b) := by
   let L := SplittingField (X ^ n - C b)

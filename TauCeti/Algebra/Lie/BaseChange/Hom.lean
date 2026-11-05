@@ -39,6 +39,8 @@ complex Lie algebra.
 
 * `LieHom.baseChange`: the extension of scalars `A ⊗[R] L →ₗ⁅A⁆ A ⊗[R] L'` of a homomorphism of
   Lie algebras.
+* `LieEquiv.baseChange`: the extension of scalars `A ⊗[R] L ≃ₗ⁅A⁆ A ⊗[R] L'` of an isomorphism of
+  Lie algebras.
 * `LieHom.liftBaseChange`: the extension `A ⊗[R] L →ₗ⁅A⁆ L'` of a homomorphism into a Lie algebra
   over `A`.
 * `IsBaseChange.lieEquiv`: if `f` is a base change, the Lie algebra equivalence
@@ -46,7 +48,8 @@ complex Lie algebra.
 
 ## Main results
 
-* `LieHom.baseChange_id` and `LieHom.baseChange_comp`: extension of scalars is functorial.
+* `LieHom.baseChange_id` and `LieHom.baseChange_comp`: extension of scalars is functorial, and so
+  is its version `LieEquiv.baseChange_refl`, `LieEquiv.baseChange_trans` for isomorphisms.
 * `LieHom.baseChange_surjective`: extension of scalars preserves surjectivity.
 * `LieHom.ker_baseChange` and `LieHom.ker_baseChange_of_surjective`: **the kernel of an extended
   homomorphism is the extension of its kernel**, over a flat coefficient algebra, respectively for
@@ -143,6 +146,48 @@ theorem ker_baseChange_of_surjective (hf : Function.Surjective f) :
   exact LinearMap.ker_baseChange_of_surjective A (f : L →ₗ[R] L') hf
 
 end LieHom
+
+namespace LieEquiv
+
+variable {R L L' L'' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
+  [LieAlgebra R L'] [LieRing L''] [LieAlgebra R L'']
+variable (A : Type*) [CommRing A] [Algebra R A]
+
+/-- **The extension of scalars of an isomorphism of Lie algebras**, as an isomorphism of Lie
+algebras over the extended coefficients.  Its forward map is `LieHom.baseChange`, and its
+underlying linear equivalence is `LinearEquiv.baseChange`. -/
+def baseChange (e : L ≃ₗ⁅R⁆ L') : A ⊗[R] L ≃ₗ⁅A⁆ A ⊗[R] L' where
+  __ := LieHom.baseChange A (e : L →ₗ⁅R⁆ L')
+  __ := e.toLinearEquiv.baseChange R A L L'
+
+@[simp]
+theorem baseChange_tmul (e : L ≃ₗ⁅R⁆ L') (a : A) (x : L) :
+    baseChange A e (a ⊗ₜ[R] x) = a ⊗ₜ[R] e x :=
+  (rfl)
+
+@[simp]
+theorem toLieHom_baseChange (e : L ≃ₗ⁅R⁆ L') :
+    (baseChange A e).toLieHom = LieHom.baseChange A (e : L →ₗ⁅R⁆ L') :=
+  (rfl)
+
+@[simp]
+theorem toLinearEquiv_baseChange (e : L ≃ₗ⁅R⁆ L') :
+    (baseChange A e).toLinearEquiv = e.toLinearEquiv.baseChange R A L L' :=
+  (rfl)
+
+@[simp]
+theorem baseChange_symm (e : L ≃ₗ⁅R⁆ L') : (baseChange A e).symm = baseChange A e.symm :=
+  (rfl)
+
+@[simp]
+theorem baseChange_refl : baseChange A (LieEquiv.refl : L ≃ₗ⁅R⁆ L) = LieEquiv.refl :=
+  toLinearEquiv_injective (LinearEquiv.baseChange_one R A L)
+
+theorem baseChange_trans (e : L ≃ₗ⁅R⁆ L') (e' : L' ≃ₗ⁅R⁆ L'') :
+    baseChange A (e.trans e') = (baseChange A e).trans (baseChange A e') :=
+  toLinearEquiv_injective (LinearEquiv.baseChange_trans R A L L' e.toLinearEquiv e'.toLinearEquiv)
+
+end LieEquiv
 
 section LiftBaseChange
 

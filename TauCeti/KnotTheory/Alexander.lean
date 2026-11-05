@@ -127,7 +127,7 @@ theorem map_eval₂_alexanderMatrix {S : Type*} [CommRing S] (f : R →+* S) (x 
     (alexanderMatrix V).map (eval₂ f x) = (x : S) • V.map f - (V.map f)ᵀ := by
   ext i j
   simp only [Matrix.map_apply, alexanderMatrix_apply, map_sub, map_mul,
-    eval₂_C, eval₂_T, zpow_one, Matrix.sub_apply,
+    eval₂_C, eval₂_T, _root_.zpow_one, Matrix.sub_apply,
     Matrix.smul_apply, smul_eq_mul, Matrix.transpose_apply]
 
 /-- Reindexing both axes of a matrix reindexes its Alexander matrix. -/
@@ -554,7 +554,7 @@ theorem det_alexanderMatrix_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
         Matrix.empty_val', Matrix.cons_val_fin_one, Fin.zero_eta, Fin.mk_one,
         enlargeBlock_apply_zero, enlargeBlock_apply_one, map_zero, Matrix.zero_apply, mul_zero,
         zero_mul, add_zero, zero_add, mul_neg]
-    all_goals ring
+    ring
   have hone : (fromBlocks (1 : Matrix ι ι R[T;T⁻¹]) X 0 1).det = 1 := by
     rw [Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, Matrix.det_one, one_mul]
   have key : fromBlocks (1 : Matrix ι ι R[T;T⁻¹]) X 0 1 * alexanderMatrix (enlargeColumn V ξ)

@@ -155,8 +155,8 @@ theorem maximalIdeal_eq_span_range_of_span_eq_top [Finite ι] [Finite κ]
     (h : Submodule.span (ResidueField Q) (Set.range fun k i ↦ residue Q (D i (w k))) = ⊤) :
     maximalIdeal Q = Ideal.span (Set.range w) := by
   refine le_antisymm ?_ (Ideal.span_le.2 (Set.range_subset_iff.2 hw))
-  refine Submodule.le_of_le_smul_of_le_jacobson_bot
-    (hx ▸ Submodule.fg_span (Set.finite_range x)) (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge ?_
+  refine Submodule.le_of_le_smul_of_le_jacobson
+    (hx ▸ Submodule.fg_span (Set.finite_range x)) (IsLocalRing.ringJacobson_eq_maximalIdeal Q).ge ?_
   intro a ha
   rw [smul_eq_mul, ← sq]
   exact mem_span_range_sup_maximalIdeal_sq hx hD hw ha (h ▸ Submodule.mem_top)
@@ -250,7 +250,7 @@ theorem exists_coordinates [Algebra.FormallyEtale K (ResidueField Q)]
   refine ⟨x, b', le_antisymm ?_ (Ideal.span_le.2 (Set.range_subset_iff.2 hx𝔪)), hb'⟩
   -- Every `a ∈ 𝔪` agrees with a combination of the `xᵢ` modulo `𝔪²`, by injectivity of the
   -- conormal map; Nakayama's lemma concludes.
-  refine Submodule.le_of_le_smul_of_le_jacobson_bot hfg (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge
+  refine Submodule.le_of_le_smul_of_le_jacobson hfg (IsLocalRing.ringJacobson_eq_maximalIdeal Q).ge
     fun a ha ↦ ?_
   choose c hc using fun i ↦ residue_surjective (bκ.repr (1 ⊗ₜ D K Q a) i)
   have hmem : a - ∑ i, c i * x i ∈ RingHom.ker (algebraMap Q (ResidueField Q)) :=
@@ -396,7 +396,7 @@ theorem exists_hypersurface_presentation [Fintype σ] (b : Basis ι Q Ω[Q⁄K])
   obtain rfl : T = {s₀}ᶜ := by rw [← hs₀, compl_compl]
   have hker : Ideal.span (g '' {s₀}ᶜ) ⊔ Ideal.span {g s₀} = RingHom.ker π := by
     have : g '' {s₀}ᶜ ∪ {g s₀} = Set.range g := by
-      simpa [Set.image_union] using congrArg (g '' ·) (Set.compl_union_self {s₀})
+      rw [← Set.image_singleton, ← Set.image_union, Set.compl_union_self, Set.image_univ]
     rw [hg, ← this, Ideal.span_union]
   have hmap : Ideal.span {Ideal.Quotient.mk (Ideal.span (g '' {s₀}ᶜ)) (g s₀)} =
       (Ideal.span {g s₀}).map (Ideal.Quotient.mk _) := by

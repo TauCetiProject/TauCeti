@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
 # The split maximal torus of a Kostant elementary group
@@ -65,6 +66,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
 
 * `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector.integralDividedPower`: a divided power
   of a root vector of weight `α` raises the weight of a weight vector by a multiple of `α`.
+* `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector.map`: a morphism of Lie modules
+  preserves weight vectors and their weights.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_of_isCartanWeightVector`: a torus
   point acts on a weight vector by the value of its character.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantCoordinateCocharacter_tmul_basis`: the coordinate
@@ -190,12 +193,12 @@ theorem pow_rootVector {i : ι} {α μ : κ → ℤ} {m : V}
       have hpow : (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ (n + 1)) m =
           ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
             ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ n) m) := by
-        rw [pow_succ', Module.End.mul_apply]
+        rw [pow_succ', mul_apply_eq_comp]
       have hbrj := hbr j
       rw [LieRing.of_associative_ring_bracket] at hbrj
       have happ := congrArg (fun f : Module.End ℚ V =>
         f ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ n) m)) hbrj
-      simp only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply] at happ
+      simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply] at happ
       rw [ih j, map_smul, sub_eq_iff_eq_add, ← add_smul] at happ
       have hstep : (μ + (n + 1) • α) j = α j + (μ + n • α) j := by
         simp only [Pi.add_apply, Pi.smul_apply, succ_nsmul]
@@ -213,6 +216,15 @@ theorem integralDividedPower {i : ι} {α μ : κ → ℤ} {m : V}
       (Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) • m) := by
   rw [Associative.dividedPower_def, smul_assoc]
   exact (pow_rootVector e hα hm n).smul _
+
+/-- **A morphism of Lie modules preserves weight vectors**: it carries a joint eigenvector of the
+designated Cartan vectors to one of the same integral weight. -/
+theorem map {M N : Type*} [AddCommGroup M] [Module ℚ M] [LieRingModule L M]
+    [LieModule ℚ L M] [AddCommGroup N] [Module ℚ N] [LieRingModule L N] [LieModule ℚ L N]
+    {μ : κ → ℤ} {m : M} (hm : IsCartanWeightVector h (representation ℚ L M) μ m)
+    (f : M →ₗ⁅ℚ,L⁆ N) : IsCartanWeightVector h (representation ℚ L N) μ (f m) :=
+  (isCartanWeightVector_iff _ _).2 fun j => by
+    rw [← map_representation, (isCartanWeightVector_iff _ _).1 hm j, map_smul]
 
 end IsCartanWeightVector
 
@@ -249,16 +261,30 @@ theorem repr_kostantCartanOperator
   b.repr_apply_of_apply_basis
     (fun x => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM (hwt x) j) m y
 
-include e hM in
 /-- A weight basis separates weights: a weight vector of weight `μ` has vanishing coordinates at
-every basis vector of a different weight. -/
+every basis vector of a different weight. No Kostant-stability assumption is needed. -/
 theorem repr_eq_zero_of_isCartanWeightVector
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
     {μ : κ → ℤ} {m : M} (hm : IsCartanWeightVector h ρ μ (m : V)) {y : η} (hy : wt y ≠ μ) :
     b.repr m y = 0 := by
-  exact b.repr_eq_zero_of_weight_ne
-    (fun x j => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM (hwt x) j)
-    (fun j => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM hm j) hy
+  -- The weight basis itself restricts the Cartan operators to the lattice.
+  let f (j : κ) : Module.End ℤ M := b.constr ℤ fun x => wt x j • b x
+  have hf (j : κ) (v : M) : ((f j v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) (v : V) := by
+    have heq : M.subtype.toIntLinearMap.comp (f j) =
+        ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))).restrictScalars ℤ).comp
+          M.subtype.toIntLinearMap := by
+      apply b.ext
+      intro x
+      simp only [LinearMap.comp_apply, f, Module.Basis.constr_basis,
+        AddMonoidHom.coe_toIntLinearMap, AddSubgroup.subtype_apply, AddSubgroup.coe_zsmul,
+        LinearMap.restrictScalars_apply, (isCartanWeightVector_iff h ρ).1 (hwt x) j,
+        Int.cast_smul_eq_zsmul]
+    exact LinearMap.congr_fun heq v
+  exact b.repr_eq_zero_of_weight_ne (f := f)
+    (fun x j => b.constr_basis ℤ _ x)
+    (fun j => Subtype.ext (by rw [hf, (isCartanWeightVector_iff h ρ).1 hm j,
+      AddSubgroup.coe_zsmul, Int.cast_smul_eq_zsmul])) hy
 
 /-! ## Root operators on a stable subgroup -/
 
@@ -281,6 +307,103 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
     ((kostantRootOperator e h ρ M hM i v : M) : V) =
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
+
+/-- The integral root operators compute the ambient action on a product. -/
+theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
+    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l) v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) (v : V)) := by
+  rw [mul_apply_eq_comp, coe_kostantRootOperator_apply, coe_kostantRootOperator_apply]
+
+/-- The integral root operators compute the ambient action on a triple product. -/
+theorem coe_kostantRootOperator_mul_mul_apply (k l n : ι) (v : M) :
+    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
+        kostantRootOperator e h ρ M hM n) v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
+        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))
+          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) (v : V))) := by
+  rw [mul_apply_eq_comp, coe_kostantRootOperator_mul_apply, coe_kostantRootOperator_apply]
+
+/-- A vanishing product of ambient root vectors makes the product of integral root operators
+vanish. -/
+theorem kostantRootOperator_mul_eq_zero {k l : ι}
+    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) = 0) :
+    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l = 0 := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_mul_apply, ← mul_apply_eq_comp, hkl]
+  simp
+
+/-- A triple-product identity of ambient root vectors transfers to the integral root
+operators. -/
+theorem kostantRootOperator_mul_mul_eq {k l n p : ι}
+    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e p))) :
+    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
+        kostantRootOperator e h ρ M hM n = kostantRootOperator e h ρ M hM p := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_mul_mul_apply, coe_kostantRootOperator_apply,
+    ← mul_apply_eq_comp, ← mul_apply_eq_comp, hkl]
+
+/-- The bracket of integral root operators acts by the bracket of the ambient operators. -/
+theorem coe_kostantRootOperator_lie_apply (k l : ι) (v : M) :
+    ((⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆ v : M) : V) =
+      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆ (v : V) := by
+  simp only [Ring.lie_def, LinearMap.sub_apply, AddSubgroup.coe_sub,
+    mul_apply_eq_comp, coe_kostantRootOperator_apply]
+
+/-- A nested bracket of integral root operators acts by the ambient nested bracket. -/
+theorem coe_kostantRootOperator_lie_lie_apply (k l n : ι) (v : M) :
+    ((⁅⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆,
+        kostantRootOperator e h ρ M hM n⁆ v : M) : V) =
+      ⁅⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆,
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆ (v : V) := by
+  simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, AddSubgroup.coe_sub,
+    coe_kostantRootOperator_apply, map_sub]
+
+/-- A vanishing ambient bracket transfers to the integral root operators. -/
+theorem kostantRootOperator_lie_eq_zero {k l : ι}
+    (hkl : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆ = 0) :
+    ⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆ = 0 := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  simp only [coe_kostantRootOperator_lie_apply, hkl, LinearMap.zero_apply,
+    ZeroMemClass.coe_zero]
+
+/-- A vanishing right-nested ambient bracket transfers to the integral root operators. -/
+theorem kostantRootOperator_lie_lie_eq_zero {k l n : ι}
+    (hkln : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+      ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆⁆ = 0) :
+    ⁅kostantRootOperator e h ρ M hM k,
+      ⁅kostantRootOperator e h ρ M hM l, kostantRootOperator e h ρ M hM n⁆⁆ = 0 := by
+  rw [← lie_skew, neg_eq_zero]
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_lie_lie_apply, ← lie_skew, hkln, neg_zero]
+  simp
+
+/-- A nested ambient bracket equal to a root operator transfers to the integral operators. -/
+theorem kostantRootOperator_lie_lie_eq {k l n p : ι}
+    (hkln : ⁅⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)),
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))⁆,
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n))⁆ =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e p))) :
+    ⁅⁅kostantRootOperator e h ρ M hM k, kostantRootOperator e h ρ M hM l⁆,
+        kostantRootOperator e h ρ M hM n⁆ = kostantRootOperator e h ρ M hM p := by
+  refine LinearMap.ext fun v => Subtype.ext ?_
+  rw [coe_kostantRootOperator_lie_lie_apply, hkln, coe_kostantRootOperator_apply]
+
+/-- The public unfolding equation of the integral root operator: it is the first restricted
+divided power of `ρ(eᵢ)`, the linear coefficient of the divided-power exponential. -/
+theorem kostantRootOperator_def :
+    kostantRootOperator e h ρ M hM i =
+      integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 1
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv) := by
+  rw [kostantRootOperator]
 
 include e hM in
 /-- The integral root operator raises weights by the root: it is the first divided power of a
@@ -570,7 +693,6 @@ variable [Fintype κ]
 variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
-include e hM in
 /-- A torus point acts on a weight vector by the value of the corresponding character. -/
 theorem kostantTorusPoints_tmul_of_isCartanWeightVector
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
@@ -581,7 +703,7 @@ theorem kostantTorusPoints_tmul_of_isCartanWeightVector
     basisWeightTorus_apply_of_repr_eq_zero (b.baseChange A) wt s (μ := μ) (m := a ⊗ₜ[ℤ] m)
       (fun x hx => by
         rw [Module.Basis.baseChange_repr_tmul,
-          repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt hm hx]
+          repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt hm hx]
         simp [Algebra.smul_def]),
     smul_tmul', smul_eq_mul]
 
@@ -603,7 +725,7 @@ theorem kostantTorusPoints_mul_kostantRootSubgroupPoints
     kostantTorusPoints M b wt A s * kostantRootSubgroupPoints e h ρ M hM i hnil f =
       kostantRootSubgroupPoints e h ρ M hM i hnil g * kostantTorusPoints M b wt A s := by
   refine Units.ext (Module.Basis.ext (b.baseChange A) fun x => ?_)
-  simp only [Units.val_mul, Module.End.mul_apply, Module.Basis.baseChange_apply,
+  simp only [Units.val_mul, mul_apply_eq_comp, Module.Basis.baseChange_apply,
     kostantRootSubgroupPoints_tmul, kostantTorusPoints_tmul_basis, map_sum]
   refine Finset.sum_congr rfl fun n _ => ?_
   have hw : IsCartanWeightVector h ρ (wt x + n • α)
@@ -612,7 +734,7 @@ theorem kostantTorusPoints_mul_kostantRootSubgroupPoints
           (b x) : M) : V) := by
     rw [coe_integralDividedPower_apply]
     exact IsCartanWeightVector.integralDividedPower e hα (hwt x) n
-  rw [kostantTorusPoints_tmul_of_isCartanWeightVector e h ρ M hM b wt hwt hw, hg]
+  rw [kostantTorusPoints_tmul_of_isCartanWeightVector h ρ M b wt hwt hw, hg]
   have hchar : (torusCharacter s (wt x + n • α) : A) =
       (torusCharacter s (wt x) : A) * (torusCharacter s α : A) ^ n := by
     rw [torusCharacter_add, torusCharacter_nsmul]
@@ -637,7 +759,7 @@ private theorem kostantTorusPoints_baseChange_kostantRootOperator_tmul_basis
       ((torusCharacter s α : A) * ((torusCharacter s (wt x) : A) * a)) ⊗ₜ[ℤ]
         kostantRootOperator e h ρ M hM i (b x) := by
   rw [LinearMap.baseChange_tmul,
-    kostantTorusPoints_tmul_of_isCartanWeightVector e h ρ M hM b wt hwt
+    kostantTorusPoints_tmul_of_isCartanWeightVector h ρ M b wt hwt
       (isCartanWeightVector_coe_kostantRootOperator e h ρ M hM i hα (hwt x)) s a,
     torusCharacter_add, Units.val_mul, mul_assoc,
     mul_left_comm (torusCharacter s (wt x) : A)]
@@ -657,9 +779,9 @@ theorem kostantTorusPoints_mul_baseChange_kostantRootOperator
         ((kostantRootOperator e h ρ M hM i).baseChange A *
           (kostantTorusPoints M b wt A s).val) := by
   refine (b.baseChange A).ext fun x => ?_
-  rw [Module.End.mul_apply, Module.Basis.baseChange_apply,
+  rw [mul_apply_eq_comp, Module.Basis.baseChange_apply,
     kostantTorusPoints_baseChange_kostantRootOperator_tmul_basis e h ρ M hM b wt i hwt hα]
-  simp only [LinearMap.smul_apply, Module.End.mul_apply, kostantTorusPoints_tmul_basis,
+  simp only [LinearMap.smul_apply, mul_apply_eq_comp, kostantTorusPoints_tmul_basis,
     LinearMap.baseChange_tmul, smul_tmul', smul_eq_mul]
 
 include e hM in

@@ -56,35 +56,23 @@ theorem MonoidAlgebra.isLocalization_away_mapDomainRingHom (f : M →* N)
     letI := (mapDomainRingHom R f).toAlgebra
     IsLocalization.Away (single x (1 : R)) (MonoidAlgebra R N) := by
   let := (mapDomainRingHom R f).toAlgebra
-  have halg : ∀ a : MonoidAlgebra R M,
-      algebraMap (MonoidAlgebra R M) (MonoidAlgebra R N) a = mapDomain f a := fun a ↦ by
+  have halg (a : MonoidAlgebra R M) :
+      algebraMap (MonoidAlgebra R M) (MonoidAlgebra R N) a = mapDomain f a := by
     rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply]
-  refine IsLocalization.Away.mk _ ?_ ?_ ?_
-  · rw [halg, mapDomain_single]
-    exact hx.map (of R N)
-  · intro s
-    induction s using MonoidAlgebra.induction_on with
-    | of y =>
-      obtain ⟨n, z, hz⟩ := hsurj y
-      refine ⟨n, single z 1, ?_⟩
-      simp [halg, hz]
+  refine IsLocalization.Away.mk _ ?_ (fun s ↦ ?_) fun a b hab ↦ ?_
+  · simpa [halg] using hx.map (of R N)
+  · induction s using MonoidAlgebra.induction_linear with
+    | zero => exact ⟨0, 0, by simp⟩
     | add s t hs ht =>
       obtain ⟨n, a, ha⟩ := hs
       obtain ⟨k, b, hb⟩ := ht
       refine ⟨n + k, a * single x 1 ^ k + b * single x 1 ^ n, ?_⟩
-      simp only [map_add, map_mul, map_pow]
-      rw [← ha, ← hb]
+      simp only [map_add, map_mul, map_pow, ← ha, ← hb]
       ring
-    | smul r s hs =>
-      obtain ⟨n, a, ha⟩ := hs
-      refine ⟨n, algebraMap R (MonoidAlgebra R M) r * a, ?_⟩
-      have ha' : s * mapDomain f (single x 1) ^ n = mapDomain f a := by
-        simpa only [halg] using ha
-      simp only [Algebra.smul_def, halg]
-      rw [mul_assoc, ha', mapDomain_mul]
-      congr 1
-      exact ((mapDomainAlgHom R R f).commutes r).symm
-  · intro a b hab
+    | single y r =>
+      obtain ⟨n, z, hz⟩ := hsurj y
+      exact ⟨n, single z r, by simp [halg, hz]⟩
+  · rw [halg, halg] at hab
     exact ⟨0, by rw [mapDomain_injective hf hab]⟩
 
 end TauCeti
