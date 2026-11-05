@@ -15,9 +15,6 @@ of transition masses over the intervening time gaps. Observation need not begin 
 and repeated times are allowed: the corresponding factor is the identity kernel.
 The formulas also transfer to any process with the specified path law.
 
-The multistep event identity expresses the transition law after an arbitrary deterministic
-time gap on an event of the history, without a countability assumption on the state space.
-
 ## References
 
 * J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §1.1.
@@ -31,28 +28,6 @@ namespace MeasureTheory.Measure
 
 variable {S : Type*} [MeasurableSpace S]
     (ν : Measure S) [IsFiniteMeasure ν] (κ : Kernel S S) [IsMarkovKernel κ]
-
-/-- On an event of the history through time `n`, the state at time `n + k` has the
-`k`-step transition law from the current state. -/
-theorem markovChainLaw_inter_preimage_eval_add (n k : ℕ) {A : Set (ℕ → S)}
-    (hA : MeasurableSet[Filtration.piLE n] A) {B : Set S} (hB : MeasurableSet B) :
-    markovChainLaw ν κ (A ∩ (fun ω => ω (n + k)) ⁻¹' B) =
-      ∫⁻ ω in A, (κ ^ k) (ω n) B ∂markovChainLaw ν κ := by
-  rw [Filtration.piLE_eq_comap_prefix, MeasurableSpace.measurableSet_comap] at hA
-  obtain ⟨C, hC, rfl⟩ := hA
-  have hmap := congrArg (fun μ : Measure (ℕ → S) => μ.map (fun ω => ω k))
-    (markovChainLaw_restrict_map_shift_iterate ν κ n hC)
-  rw [map_map (measurable_pi_apply k) (measurable_shift_iterate n),
-    markovChainLaw_map_eval] at hmap
-  have heval : (fun ω : ℕ → S => ω k) ∘ (shift S)^[n] = fun ω => ω (n + k) := by
-    funext ω
-    simp [Nat.add_comm]
-  rw [heval] at hmap
-  have h := congrArg (fun μ : Measure S => μ B) hmap
-  rw [map_apply (measurable_pi_apply _) hB, restrict_apply (hB.preimage (measurable_pi_apply _)),
-    Measure.bind_apply hB (Kernel.aemeasurable _), lintegral_map (Kernel.measurable_coe _ hB)
-      (measurable_pi_apply n)] at h
-  simpa only [Set.inter_comm] using h
 
 variable [MeasurableSingletonClass S]
 
