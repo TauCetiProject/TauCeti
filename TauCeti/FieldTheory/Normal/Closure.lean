@@ -30,12 +30,14 @@ proved by working with the embedding images. For the same reason every homomorph
 ambient fields maps one normal closure into the other; in particular automorphisms of the ambient
 field restrict to the normal closure even when the ambient field is not normal.
 
-Inside an algebraically closed field `Ω`, `normalClosure F K Ω` is a normal closure of any
-algebraic extension `K / F`, hence normal over `F`, Galois when `K / F` is separable, and monotone
-in `K`. Moreover, the normal closure of `F(S)` for a set `S` of separable elements whose minimal
-polynomials split in the ambient field is Galois; in particular finitely many algebraic numbers lie
-in a finite Galois subfield of `ℂ / ℚ`, which is how statements about algebraic numbers are reduced
-to statements inside a finite Galois number field.
+Whenever an algebraic extension `K / F` has every minimal polynomial splitting in `E` (for instance
+when `E` is algebraically closed), `normalClosure F K E` is normal over `F`
+(`normal_normalClosure_of_splits`), Galois when `K / F` is separable
+(`isGalois_normalClosure_of_splits`), and monotone in `K` (`normalClosure_mono_of_splits`).
+Moreover, the normal closure of `F(S)` for a set `S` of separable elements whose minimal polynomials
+split in the ambient field is Galois; in particular finitely many algebraic numbers lie in a finite
+Galois subfield of `ℂ / ℚ`, which is how statements about algebraic numbers are reduced to
+statements inside a finite Galois number field.
 
 ## References
 
@@ -68,6 +70,7 @@ variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 field extension `E / F` (generalizing `IntermediateField.normalClosure_le_iff_of_normal` by
 dropping `[Normal F E]`), `normalClosure F K E` is contained in a normal intermediate field `M` if
 and only if `K ≤ M`. -/
+@[simp]
 theorem normalClosure_le_iff_le_of_normal {K M : IntermediateField F E} [Normal F M] :
     normalClosure F K E ≤ M ↔ K ≤ M := by
   refine ⟨(le_normalClosure K).trans, fun h ↦ normalClosure_le_iff.2 ?_⟩
@@ -120,6 +123,33 @@ theorem isSplittingField_normalClosure_adjoin_simple {x : E} (hx : IsIntegral F 
   rw [normalClosure_adjoin_simple_eq_adjoin_rootSet hx hsplit]
   exact adjoin_rootSet_isSplittingField hsplit
 
+/-- When every minimal polynomial of an algebraic extension `K / F` splits in `E`,
+`normalClosure F K E` is normal over `F`. -/
+theorem normal_normalClosure_of_splits {K : Type*} [Field K] [Algebra F K]
+    [Algebra.IsAlgebraic F K] (splits : ∀ x : K, ((minpoly F x).map (algebraMap F E)).Splits) :
+    Normal F (normalClosure F K E) :=
+  have := Algebra.IsAlgebraic.isNormalClosure_normalClosure (L := E) splits
+  IsNormalClosure.normal (K := K)
+
+/-- When every minimal polynomial of a separable extension `K / F` splits in `E`,
+`normalClosure F K E` is Galois over `F`. -/
+theorem isGalois_normalClosure_of_splits {K : Type*} [Field K] [Algebra F K]
+    [Algebra.IsSeparable F K] (splits : ∀ x : K, ((minpoly F x).map (algebraMap F E)).Splits) :
+    IsGalois F (normalClosure F K E) := by
+  have : Algebra.IsAlgebraic F K := Algebra.IsSeparable.isAlgebraic F K
+  have : Normal F (normalClosure F K E) := normal_normalClosure_of_splits splits
+  exact ⟨⟩
+
+/-- **Monotonicity of `normalClosure` under splitting.** If `K₁ ≤ K₂` are intermediate fields of
+`E / F` with `K₂ / F` algebraic and every minimal polynomial of `K₂ / F` splitting in `E`, then
+`normalClosure F K₁ E ≤ normalClosure F K₂ E`. -/
+theorem normalClosure_mono_of_splits {K₁ K₂ : IntermediateField F E}
+    [Algebra.IsAlgebraic F K₂]
+    (splits : ∀ x : K₂, ((minpoly F x).map (algebraMap F E)).Splits) (h : K₁ ≤ K₂) :
+    normalClosure F K₁ E ≤ normalClosure F K₂ E := by
+  have : Normal F (normalClosure F K₂ E) := normal_normalClosure_of_splits splits
+  exact normalClosure_le_iff_le_of_normal.mpr (h.trans (le_normalClosure K₂))
+
 /-- The normal closure of `F(S)` in `E` is Galois over `F` when every element of `S` is
 separable over `F` with minimal polynomial splitting in `E`. The ambient field `E` need not be
 normal over `F`. -/
@@ -129,14 +159,9 @@ theorem isGalois_normalClosure_adjoin {S : Set E}
   have hint (s) (hs : s ∈ S) : IsIntegral F s := (h s hs).1.isIntegral
   have : Algebra.IsSeparable F (adjoin F S) :=
     (isSeparable_adjoin_iff_isSeparable F E).2 fun s hs ↦ (h s hs).1
-  -- Every minimal polynomial over `F(S)` splits in `E`, so the normal closure is normal.
-  have hsplit (x : adjoin F S) : ((minpoly F x).map (algebraMap F E)).Splits := by
+  exact isGalois_normalClosure_of_splits fun x ↦ by
     rw [minpoly_eq]
     exact splits_of_mem_adjoin F E (fun s hs ↦ ⟨hint s hs, (h s hs).2⟩) x.2
-  have := (Algebra.IsSeparable.isAlgebraic F (adjoin F S)).isNormalClosure_normalClosure
-    (L := E) hsplit
-  have : Normal F (normalClosure F (adjoin F S) E) := IsNormalClosure.normal (K := adjoin F S)
-  exact ⟨⟩
 
 section Normal
 
@@ -198,39 +223,6 @@ theorem exists_isGalois_superset_of_isAlgClosed [PerfectField F] {S : Set E}
   exists_isGalois_superset hS fun s hs ↦
     ⟨PerfectField.separable_of_irreducible (minpoly.irreducible (h s hs).isIntegral),
       IsAlgClosed.splits _⟩
-
-/-- Inside an algebraically closed field `E`, `normalClosure F K E` is a normal closure of any
-algebraic extension `K / F`. -/
-theorem isNormalClosure_normalClosure_of_isAlgClosed (K : Type*) [Field K] [Algebra F K]
-    [Algebra.IsAlgebraic F K] :
-    IsNormalClosure F K (normalClosure F K E) :=
-  Algebra.IsAlgebraic.isNormalClosure_normalClosure fun _ ↦ IsAlgClosed.splits _
-
-/-- Inside an algebraically closed field `E`, the normal closure of any algebraic extension
-`K / F` is normal over `F`. -/
-theorem normal_normalClosure_of_isAlgClosed (K : Type*) [Field K] [Algebra F K]
-    [Algebra.IsAlgebraic F K] :
-    Normal F (normalClosure F K E) :=
-  have := isNormalClosure_normalClosure_of_isAlgClosed (F := F) (E := E) K
-  IsNormalClosure.normal (K := K)
-
-/-- Inside an algebraically closed field `E`, the normal closure of any separable extension
-`K / F` is Galois over `F`. -/
-theorem isGalois_normalClosure_of_isAlgClosed (K : Type*) [Field K] [Algebra F K]
-    [Algebra.IsSeparable F K] :
-    IsGalois F (normalClosure F K E) := by
-  have : Algebra.IsAlgebraic F K := Algebra.IsSeparable.isAlgebraic F K
-  have : Normal F (normalClosure F K E) := normal_normalClosure_of_isAlgClosed K
-  exact ⟨⟩
-
-/-- **Monotonicity of `normalClosure` inside an algebraically closed field.** If `K₁ ≤ K₂` are
-intermediate fields of `E / F` with `K₂ / F` algebraic, then
-`normalClosure F K₁ E ≤ normalClosure F K₂ E`. -/
-theorem normalClosure_mono_of_isAlgClosed {K₁ K₂ : IntermediateField F E}
-    [Algebra.IsAlgebraic F K₂] (h : K₁ ≤ K₂) :
-    normalClosure F K₁ E ≤ normalClosure F K₂ E := by
-  have : Normal F (normalClosure F K₂ E) := normal_normalClosure_of_isAlgClosed K₂
-  exact normalClosure_le_iff_le_of_normal.mpr (h.trans (le_normalClosure K₂))
 
 end AlgClosed
 

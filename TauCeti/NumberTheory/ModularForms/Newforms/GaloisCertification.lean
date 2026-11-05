@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Certificate.Solvable
-public import TauCeti.NumberTheory.ModularForms.LevelOne.DiscriminantNewform
 public import TauCeti.NumberTheory.ModularForms.Newforms.NumberField
 public import TauCeti.NumberTheory.NumberField.NormalClosure
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Tactic.ComputeDegree
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
@@ -21,7 +19,7 @@ For a newform `f` of level `N` and weight `k ≥ 2`, the coefficient field `Coef
 number field embedded in `ℂ` (`TauCeti.numberField_CoefficientField`). Because `ℂ / ℚ` is
 algebraically closed rather than algebraic, Mathlib's `[Normal ℚ Ω]`-based normal-closure API does
 not apply directly to `IntermediateField.normalClosure ℚ (CoefficientField f) ℂ`. Combining the
-`[IsAlgClosed Ω]` normal-closure API of `TauCeti.FieldTheory.Normal.Closure` and
+splitting-based normal-closure API of `TauCeti.FieldTheory.Normal.Closure` and
 `TauCeti.FieldTheory.GaloisGroups.NormalClosure` with the general certificate-transfer theorems of
 `TauCeti.FieldTheory.GaloisGroups.Certificate.Solvable` yields a certification pipeline for the
 Galois closure of `CoefficientField f` over `ℚ`:
@@ -44,16 +42,14 @@ Galois closure of `CoefficientField f` over `ℚ`:
    * When `[CoefficientField f : ℚ] ≤ P.natDegree` and `P` is irreducible over `ℚ`, a verified
      `SolvabilityCertificate` decides solvability of `Gal(CoefficientFieldGaloisClosure f/ℚ)` in
      both directions (`isSolvable_CoefficientFieldGaloisClosure_iff_of_check_eq_true`), and a
-     verified `{d}` + `{1, …, 1, 2}` Frobenius-cycle certificate (`primeLinearQuadratic d p q`)
-     proves non-solvability
-     (`not_isSolvable_CoefficientFieldGaloisClosure_of_primeLinearQuadratic`),
-     single-coefficient generation (`CoefficientField_eq_adjoin_of_primeLinearQuadratic`), and
+     verified `primeSymmetric d p q t` Frobenius-cycle certificate (including
+     `primeLinearQuadratic d p q`) proves single-coefficient generation
+     (`CoefficientField_eq_adjoin_of_primeSymmetric`) and
      `|Gal(CoefficientFieldGaloisClosure f/ℚ)| = d!`
-     (`natCard_gal_CoefficientFieldGaloisClosure_of_primeLinearQuadratic`).
-4. **The Ramanujan discriminant newform.** For `discriminantNewform : Newform 1 12` (defined in
-   `TauCeti.NumberTheory.ModularForms.LevelOne.DiscriminantNewform`),
-   `CoefficientFieldGaloisClosure discriminantNewform = ⊥`, and solvability is certified end-to-end
-   via `τ(2) = -24` and `X + 24`.
+     (`natCard_gal_CoefficientFieldGaloisClosure_of_primeSymmetric`).
+
+For the concrete level-one instantiation on the Ramanujan discriminant newform `Δ`, see
+`TauCeti.NumberTheory.ModularForms.LevelOne.DiscriminantNewform`.
 
 ## Main definitions and results
 
@@ -66,13 +62,9 @@ Galois closure of `CoefficientField f` over `ℚ`:
   `CoefficientField f`.
 * `TauCeti.not_isSolvable_CoefficientFieldGaloisClosure_of_check_eq_true`,
   `TauCeti.isSolvable_CoefficientFieldGaloisClosure_iff_of_check_eq_true`,
-  `TauCeti.not_isSolvable_CoefficientFieldGaloisClosure_of_primeLinearQuadratic`,
-  `TauCeti.CoefficientField_eq_adjoin_of_primeLinearQuadratic`,
-  `TauCeti.natCard_gal_CoefficientFieldGaloisClosure_of_primeLinearQuadratic`: certificate-driven
+  `TauCeti.CoefficientField_eq_adjoin_of_primeSymmetric`,
+  `TauCeti.natCard_gal_CoefficientFieldGaloisClosure_of_primeSymmetric`: certificate-driven
   Galois-group and solvability theorems for newforms.
-* `TauCeti.CoefficientFieldGaloisClosure_discriminantNewform`,
-  `TauCeti.isSolvable_CoefficientFieldGaloisClosure_discriminantNewform`: concrete end-to-end
-  instantiation on `Δ`.
 
 ## References
 
@@ -129,11 +121,6 @@ theorem CoefficientFieldGaloisClosure_le_iff_of_normal (f : Newform N k)
     CoefficientFieldGaloisClosure f ≤ M ↔ CoefficientField f ≤ M :=
   normalClosure_le_iff_le_of_normal
 
-/-- In weight at least two, `CoefficientField f` is finite-dimensional over `ℚ`. -/
-theorem finiteDimensional_CoefficientField (f : Newform N k) (hk : 2 ≤ k) :
-    FiniteDimensional ℚ (CoefficientField f) :=
-  (numberField_CoefficientField f hk).to_finiteDimensional
-
 /-- In weight at least two, `CoefficientFieldGaloisClosure f` is finite-dimensional over `ℚ`. -/
 theorem finiteDimensional_CoefficientFieldGaloisClosure (f : Newform N k) (hk : 2 ≤ k) :
     FiniteDimensional ℚ (CoefficientFieldGaloisClosure f) := by
@@ -153,19 +140,20 @@ theorem numberField_CoefficientFieldGaloisClosure (f : Newform N k) (hk : 2 ≤ 
 theorem isNormalClosure_CoefficientFieldGaloisClosure (f : Newform N k) (hk : 2 ≤ k) :
     IsNormalClosure ℚ (CoefficientField f) (CoefficientFieldGaloisClosure f) := by
   have := finiteDimensional_CoefficientField f hk
-  exact isNormalClosure_normalClosure_of_isAlgClosed (CoefficientField f)
+  exact Algebra.IsAlgebraic.isNormalClosure_normalClosure
+    fun (_ : CoefficientField f) ↦ IsAlgClosed.splits _
 
 /-- In weight at least two, `CoefficientFieldGaloisClosure f` is normal over `ℚ`. -/
 theorem normal_CoefficientFieldGaloisClosure (f : Newform N k) (hk : 2 ≤ k) :
     Normal ℚ (CoefficientFieldGaloisClosure f) := by
   have := finiteDimensional_CoefficientField f hk
-  exact normal_normalClosure_of_isAlgClosed (CoefficientField f)
+  exact normal_normalClosure_of_splits fun (_ : CoefficientField f) ↦ IsAlgClosed.splits _
 
 /-- **In weight at least two, `CoefficientFieldGaloisClosure f` is Galois over `ℚ`.** -/
 theorem isGalois_CoefficientFieldGaloisClosure (f : Newform N k) (hk : 2 ≤ k) :
     IsGalois ℚ (CoefficientFieldGaloisClosure f) := by
   have := finiteDimensional_CoefficientField f hk
-  exact isGalois_normalClosure_of_isAlgClosed (CoefficientField f)
+  exact isGalois_normalClosure_of_splits fun (_ : CoefficientField f) ↦ IsAlgClosed.splits _
 
 /-- Bundled `TauCeti.NumberField.NormalClosureData` exhibiting `CoefficientFieldGaloisClosure f` as
 the normal closure of `CoefficientField f` over `ℚ` for `k ≥ 2`, connecting newform coefficient
@@ -229,91 +217,38 @@ theorem isSolvable_CoefficientFieldGaloisClosure_iff_of_check_eq_true (f : Newfo
   exact SolvabilityCertificate.isSolvable_gal_normalClosure_iff_of_check_eq_true
     (coeff_mem_CoefficientField f n) hP hirr hroot hdeg hcheck
 
-/-- **Prime-degree `{d}` + `{1, …, 1, 2}` Frobenius refutation of solvability for a newform.**
-If `aₙ(f)` is annihilated by a monic polynomial `P : ℤ[X]` on which
-`SolvabilityCertificate.primeLinearQuadratic d p q` checks, then
-`Gal(CoefficientFieldGaloisClosure f/ℚ)` is not solvable (without any degree bound on
-`CoefficientField f`). -/
-theorem not_isSolvable_CoefficientFieldGaloisClosure_of_primeLinearQuadratic (f : Newform N k)
-    (hk : 2 ≤ k) (n : ℕ+) {P : ℤ[X]} (hP : P.Monic)
-    (hroot : aeval ((qExpansion 1 f.toCuspForm).coeff n) P = 0)
-    {d p q : ℕ}
-    (hcheck : (SolvabilityCertificate.primeLinearQuadratic d p q).check P = true) :
-    ¬ Group.IsSolvable Gal(CoefficientFieldGaloisClosure f/ℚ) := by
-  have := finiteDimensional_CoefficientField f hk
-  exact SolvabilityCertificate.not_isSolvable_gal_normalClosure_of_primeLinearQuadratic
-    (coeff_mem_CoefficientField f n) hP hroot hcheck
-
-/-- **Single-coefficient generation from a `primeLinearQuadratic` certificate.** If `aₙ(f)` is
-annihilated by a monic polynomial `P : ℤ[X]` on which `primeLinearQuadratic d p q` checks and
+/-- **Single-coefficient generation from a `primeSymmetric` certificate.** If `aₙ(f)` is
+annihilated by a monic polynomial `P : ℤ[X]` on which `primeSymmetric d p q t` checks and
 `[CoefficientField f : ℚ] ≤ d`, then `CoefficientField f = ℚ⟮aₙ(f)⟯`. -/
-theorem CoefficientField_eq_adjoin_of_primeLinearQuadratic (f : Newform N k)
+theorem CoefficientField_eq_adjoin_of_primeSymmetric (f : Newform N k)
     (hk : 2 ≤ k) (n : ℕ+) {P : ℤ[X]} (hP : P.Monic)
     (hroot : aeval ((qExpansion 1 f.toCuspForm).coeff n) P = 0)
-    {d p q : ℕ}
-    (hcheck : (SolvabilityCertificate.primeLinearQuadratic d p q).check P = true)
+    {d p q : ℕ} {t : Multiset ℕ}
+    (hcheck : (SolvabilityCertificate.primeSymmetric d p q t).check P = true)
     (hdeg : haveI := finiteDimensional_CoefficientField f hk
       Module.finrank ℚ (CoefficientField f) ≤ d) :
     CoefficientField f = ℚ⟮(qExpansion 1 f.toCuspForm).coeff n⟯ := by
   let _ := finiteDimensional_CoefficientField f hk
-  exact (SolvabilityCertificate.adjoin_simple_eq_of_primeLinearQuadratic
+  exact (SolvabilityCertificate.adjoin_simple_eq_of_primeSymmetric
     (coeff_mem_CoefficientField f n) hP hroot hcheck hdeg).symm
 
-/-- **Order `d!` of `Gal(CoefficientFieldGaloisClosure f/ℚ)` from a `primeLinearQuadratic`
+/-- **Order `d!` of `Gal(CoefficientFieldGaloisClosure f/ℚ)` from a `primeSymmetric`
 certificate.** Let `f` be a newform of weight `k ≥ 2` and `aₙ(f)` a positive-index Fourier
 coefficient annihilated by a monic polynomial `P : ℤ[X]`. If
-`(SolvabilityCertificate.primeLinearQuadratic d p q).check P = true` and
+`(SolvabilityCertificate.primeSymmetric d p q t).check P = true` and
 `[CoefficientField f : ℚ] ≤ d`, then `|Gal(CoefficientFieldGaloisClosure f/ℚ)| = d!`. -/
-theorem natCard_gal_CoefficientFieldGaloisClosure_of_primeLinearQuadratic (f : Newform N k)
+theorem natCard_gal_CoefficientFieldGaloisClosure_of_primeSymmetric (f : Newform N k)
     (hk : 2 ≤ k) (n : ℕ+) {P : ℤ[X]} (hP : P.Monic)
     (hroot : aeval ((qExpansion 1 f.toCuspForm).coeff n) P = 0)
-    {d p q : ℕ}
-    (hcheck : (SolvabilityCertificate.primeLinearQuadratic d p q).check P = true)
+    {d p q : ℕ} {t : Multiset ℕ}
+    (hcheck : (SolvabilityCertificate.primeSymmetric d p q t).check P = true)
     (hdeg : haveI := finiteDimensional_CoefficientField f hk
       Module.finrank ℚ (CoefficientField f) ≤ d) :
     Nat.card Gal(CoefficientFieldGaloisClosure f/ℚ) = d.factorial := by
   let _ := finiteDimensional_CoefficientField f hk
-  exact SolvabilityCertificate.natCard_gal_normalClosure_of_primeLinearQuadratic
+  exact SolvabilityCertificate.natCard_gal_normalClosure_of_primeSymmetric
     (coeff_mem_CoefficientField f n) hP hroot hcheck hdeg
 
 end NewformGaloisClosure
-
-/-! ### Concrete instantiation: the Ramanujan discriminant newform `Δ ∈ S₁₂(Γ₁(1))ⁿᵉʷ` -/
-
-/-- The Galois closure of `CoefficientField discriminantNewform` in `ℂ` is `⊥` (`ℚ`). -/
-@[simp]
-theorem CoefficientFieldGaloisClosure_discriminantNewform :
-    CoefficientFieldGaloisClosure discriminantNewform = ⊥ := by
-  have : Normal ℚ (⊥ : IntermediateField ℚ ℂ) :=
-    Normal.of_algEquiv (IntermediateField.botEquiv ℚ ℂ).symm
-  apply eq_bot_iff.mpr
-  rw [CoefficientFieldGaloisClosure_le_iff_of_normal, CoefficientField_discriminantNewform]
-
-/-- End-to-end solvability certification of
-`Gal(CoefficientFieldGaloisClosure discriminantNewform/ℚ)` via
-`isSolvable_CoefficientFieldGaloisClosure_iff_of_check_eq_true` at `n = 2` (`τ(2) = -24`,
-annihilated by `X + 24`). -/
-theorem isSolvable_CoefficientFieldGaloisClosure_discriminantNewform :
-    Group.IsSolvable Gal(CoefficientFieldGaloisClosure discriminantNewform/ℚ) := by
-  have hP : (X + 24 : ℤ[X]).Monic := by
-    rw [← C_ofNat 24]
-    exact monic_X_add_C 24
-  have hirr : Irreducible ((X + 24 : ℤ[X]).map (Int.castRingHom ℚ)) := by
-    rw [← C_ofNat 24, Polynomial.map_add, Polynomial.map_X, Polynomial.map_C]
-    exact irreducible_of_degree_eq_one (degree_X_add_C _)
-  have hroot : aeval ((qExpansion 1 discriminantNewform.toCuspForm).coeff (2 : ℕ+))
-      (X + 24 : ℤ[X]) = 0 := by
-    have h2 : ((2 : ℕ+) : ℕ) = 2 := rfl
-    rw [h2, coe_discriminantNewform, map_add, aeval_X, map_ofNat,
-      TauCeti.ModularForm.discriminant_qExpansion_coeff_two]
-    norm_num
-  have hdeg : (letI := finiteDimensional_CoefficientField discriminantNewform (by decide)
-      Module.finrank ℚ (CoefficientField discriminantNewform)) ≤ (X + 24 : ℤ[X]).natDegree := by
-    have hd1 : (X + 24 : ℤ[X]).natDegree = 1 := by compute_degree!
-    rw [CoefficientField_discriminantNewform, IntermediateField.finrank_bot, hd1]
-  exact (isSolvable_CoefficientFieldGaloisClosure_iff_of_check_eq_true
-    discriminantNewform (by decide) 2 hP hirr hroot hdeg
-    SolvabilityCertificate.check_smallDegree_X_add_twenty_four).mpr
-    SolvabilityCertificate.isSolvable_smallDegree
 
 end TauCeti

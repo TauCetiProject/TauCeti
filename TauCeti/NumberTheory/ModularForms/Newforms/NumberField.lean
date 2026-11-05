@@ -37,8 +37,9 @@ carry the weight-`k` coefficient system `Sym^{k−2}` and so exist only in weigh
 * `HeckeRing.GL2.Eigenform.isIntegral_qExpansion_coeff`: the Fourier coefficients of a normalised
   full eigenform of weight at least two are algebraic integers.
 * `HeckeRing.GL2.Newform.isIntegral_qExpansion_coeff`: the newform specialisation.
-* `TauCeti.numberField_CoefficientField`: the coefficient field of a newform of weight at least
-  two is a number field.
+* `TauCeti.numberField_CoefficientField`, `TauCeti.finiteDimensional_CoefficientField`: the
+  coefficient field of a newform of weight at least two is a number field (in particular,
+  finite-dimensional over `ℚ`).
 
 ## Provenance
 
@@ -184,5 +185,10 @@ theorem numberField_CoefficientField (f : Newform N k) (hk : 2 ≤ k) :
   have := FiniteDimensional.of_injective (IntermediateField.inclusion hle).toLinearMap
     (IntermediateField.inclusion_injective hle)
   exact { }
+
+/-- In weight at least two, `CoefficientField f` is finite-dimensional over `ℚ`. -/
+theorem finiteDimensional_CoefficientField (f : Newform N k) (hk : 2 ≤ k) :
+    FiniteDimensional ℚ (CoefficientField f) :=
+  (numberField_CoefficientField f hk).to_finiteDimensional
 
 end TauCeti
