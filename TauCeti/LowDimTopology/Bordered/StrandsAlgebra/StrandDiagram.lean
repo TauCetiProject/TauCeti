@@ -225,6 +225,27 @@ theorem mem_inversions {φ : StrandDiagram α} {p : α × α} :
     rw [Option.mem_def] at ha hb
     exact ⟨⟨a, ha⟩, ⟨b, hb⟩, hab, by simpa [ha, hb] using h⟩
 
+/-- The strands of a crossing start at starting points of the diagram. -/
+theorem fst_mem_source_of_mem_inversions {φ : StrandDiagram α} {p : α × α}
+    (h : p ∈ φ.inversions) : p.1 ∈ φ.source := by
+  obtain ⟨-, a, ha, -⟩ := mem_inversions.1 h
+  exact mem_source.2 ⟨a, ha⟩
+
+/-- The strands of a crossing start at starting points of the diagram. -/
+theorem snd_mem_source_of_mem_inversions {φ : StrandDiagram α} {p : α × α}
+    (h : p ∈ φ.inversions) : p.2 ∈ φ.source := by
+  obtain ⟨-, -, -, b, hb, -⟩ := mem_inversions.1 h
+  exact mem_source.2 ⟨b, hb⟩
+
+/-- The strands of `φ` starting at `x` and `y`, with end points `a` and `b`, cross exactly when
+`x < y` and `b < a`. -/
+theorem mem_inversions_iff_of_mem {φ : StrandDiagram α} {x y a b : α} (ha : a ∈ φ x)
+    (hb : b ∈ φ y) :
+    (x, y) ∈ φ.inversions ↔ x < y ∧ b < a := by
+  rw [mem_inversions]
+  refine ⟨fun ⟨hxy, a', ha', b', hb', h⟩ ↦ ⟨hxy, ?_⟩, fun ⟨hxy, h⟩ ↦ ⟨hxy, a, ha, b, hb, h⟩⟩
+  rwa [Option.mem_unique ha' ha, Option.mem_unique hb' hb] at h
+
 /-- The number of crossings of a strand diagram, written `inv(φ)` by Lipshitz, Ozsváth and
 Thurston. -/
 def inversionCount (φ : StrandDiagram α) : ℕ :=
