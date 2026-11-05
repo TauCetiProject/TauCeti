@@ -49,26 +49,25 @@ include k in
 No algebraicity assumption on either factor is needed. -/
 theorem adjoin_range_right_eq_top_of_isFractionRing_tensorProduct :
     IntermediateField.adjoin F (Set.range (algebraMap K Q)) = ⊤ := by
-  let E := IntermediateField.adjoin F (Set.range (algebraMap K Q))
-  have hmem : (⊤ : Subring (F ⊗[k] K)) ≤
-      E.toSubring.comap (algebraMap (F ⊗[k] K) Q) := by
-    rw [← Algebra.TensorProduct.closure_range_union_range_eq_top k F K]
-    apply Subring.closure_le.mpr
-    rintro _ (⟨f, rfl⟩ | ⟨c, rfl⟩)
-    -- Unpack comap membership and identify each tensor inclusion with its algebra map;
-    -- the scalar-tower rewrite needs this form of the goal in both branches.
-    · change algebraMap (F ⊗[k] K) Q (algebraMap F (F ⊗[k] K) f) ∈ E
-      rw [← IsScalarTower.algebraMap_apply]
-      exact E.algebraMap_mem f
-    · change algebraMap (F ⊗[k] K) Q (algebraMap K (F ⊗[k] K) c) ∈ E
-      rw [← IsScalarTower.algebraMap_apply]
-      exact IntermediateField.subset_adjoin F _ ⟨c, rfl⟩
+  have hleft : (algebraMap (F ⊗[k] K) Q) ∘
+      (Algebra.TensorProduct.includeLeft : F →ₐ[k] F ⊗[k] K) = algebraMap F Q := by
+    funext f
+    exact (IsScalarTower.algebraMap_apply F (F ⊗[k] K) Q f).symm
+  have hright : (algebraMap (F ⊗[k] K) Q) ∘
+      (Algebra.TensorProduct.includeRight : K →ₐ[k] F ⊗[k] K) = algebraMap K Q := by
+    funext c
+    exact (IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q c).symm
+  have hs : (algebraMap (F ⊗[k] K) Q).range =
+      Subring.closure (Set.range (algebraMap F Q) ∪ Set.range (algebraMap K Q)) := by
+    rw [RingHom.range_eq_map,
+      ← Algebra.TensorProduct.closure_range_union_range_eq_top k F K,
+      RingHom.map_closure, Set.image_union, ← Set.range_comp, ← Set.range_comp,
+      hleft, hright]
+  have h := IsFractionRing.ringHom_fieldRange_eq_of_comp_eq_of_range_eq
+    (f := RingHom.id Q) (g := algebraMap (F ⊗[k] K) Q) rfl hs
   apply IntermediateField.toSubfield_injective
-  apply top_unique
-  rw [← IsFractionRing.closure_range_algebraMap (F ⊗[k] K) Q]
-  apply Subfield.closure_le.mpr
-  rintro _ ⟨z, rfl⟩
-  exact hmem (Subring.mem_top z)
+  rw [IntermediateField.adjoin_toSubfield, ← h]
+  exact RingHom.fieldRange_eq_top_iff.mpr Function.surjective_id
 
 end Generation
 

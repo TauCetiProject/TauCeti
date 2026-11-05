@@ -46,36 +46,30 @@ variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
   [IsScalarTower K (F ⊗[k] K) Q] [IsScalarTower k F Q] [IsScalarTower k K Q]
   [IsFractionRing (F ⊗[k] K) Q]
 
-include k in
-omit [Algebra k Q] [IsScalarTower k (F ⊗[k] K) Q]
-  [IsScalarTower k F Q] [IsScalarTower k K Q] in
-/-- A fraction field of `F ⊗[k] K` is the compositum of the images of `F` and `K`,
-even when `K/k` is transcendental. -/
-theorem constantCompositum_eq_top_of_isFractionRing_tensorProduct :
-    constantCompositum F K Q = ⊤ := by
-  rw [constantCompositum_def]
-  exact adjoin_range_right_eq_top_of_isFractionRing_tensorProduct (k := k)
-
 /-- A fraction field of a domain tensor product is a one-variable function field
 over the enlarged constants. -/
 theorem IsFunctionField.of_isFractionRing_tensorProduct (hF : IsFunctionField k F) :
     IsFunctionField K Q :=
   hF.of_constantCompositum_eq_top_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
-    (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k))
+    (by
+      rw [constantCompositum_def]
+      exact adjoin_range_right_eq_top_of_isFractionRing_tensorProduct (k := k))
 
 /-- Tensor-fraction-field extension of constants preserves the degree over a parameter.
 Neither the constants nor the relative extension need be separable. -/
-theorem finrank_adjoin_eq_of_isFractionRing_tensorProduct (x : F)
+theorem finrank_over_adjoin_simple_eq_of_isFractionRing_tensorProduct (x : F)
     [FiniteDimensional k⟮x⟯ F] :
     Module.finrank K⟮algebraMap F Q x⟯ Q = Module.finrank k⟮x⟯ F :=
   finrank_over_adjoin_simple_eq_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
-    (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) x
+    (by
+      rw [constantCompositum_def]
+      exact adjoin_range_right_eq_top_of_isFractionRing_tensorProduct (k := k)) x
 
-/-- The canonical constant extension of a geometrically reduced function field with
-exact constants is the fraction field of its tensor product. The enlarged constant
-field may be transcendental over the original one. -/
+/-- If `F/k` is a geometrically reduced one-variable function field with exact constants,
+then the fraction field of `F ⊗[k] K` is a one-variable function field over `K`.
+The enlarged constant field may be transcendental over the original one. -/
 theorem IsFunctionField.fractionRing_tensorProduct (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsGeometricallyReduced k F] :
     letI := isDomain_tensorProduct_of_isGeometricallyReduced hex K
