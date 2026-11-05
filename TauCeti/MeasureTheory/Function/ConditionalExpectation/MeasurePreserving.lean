@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
-public import TauCeti.MeasureTheory.Measure.MeasurePreserving
+public import TauCeti.Dynamics.Ergodic.MeasurePreserving
 
 /-!
 # Conditional expectations under measure-preserving maps
