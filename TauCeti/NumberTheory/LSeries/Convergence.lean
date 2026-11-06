@@ -64,6 +64,9 @@ The statements and their proofs are modelled on Mathlib's treatment of the absci
 convergence in `Mathlib/NumberTheory/LSeries/Convergence.lean`; the reduction of a coefficient
 sequence to one vanishing at `0` is the device used by `LSeriesSummable_of_sum_norm_bigO` in
 `Mathlib/NumberTheory/LSeries/SumCoeff.lean`.
+The Abel-summation proof of `TauCeti.LSeriesConverges_of_sum_isBigO` adapts the proof of
+`LSeries_eq_mul_integral` in `Mathlib/NumberTheory/LSeries/SumCoeff.lean`, extended to arbitrary
+real `r`.
 -/
 
 public section
@@ -125,7 +128,7 @@ private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ}
         (norm_ofReal_cpow_eventually_eq_atTop _).isBigO.natCast_atTop) hO
       (by linarith : -s.re + r ≤ -(s.re - r))).trans_tendsto
       ((tendsto_rpow_neg_atTop (by linarith)).comp tendsto_natCast_atTop_atTop)
-  -- The integrand of Abel summation has an integrable majorant.
+  -- The partial sums along ⌊t⌋₊ are O(t ^ r), giving a bound for the Abel-summation integrand.
   have hsumO : (fun t : ℝ ↦ ∑ k ∈ Icc 0 ⌊t⌋₊, f k) =O[atTop] fun t : ℝ ↦ t ^ r := by
     have hfloor : Asymptotics.IsEquivalent atTop (fun t : ℝ ↦ (⌊t⌋₊ : ℝ))
         (fun t ↦ max t 0) :=
