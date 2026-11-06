@@ -39,6 +39,8 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
+* `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
+  of `tensorTensorTensorComm` exchanges the factors of its value.
 
 ## References
 
@@ -274,3 +276,23 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 end Casimir
 
 end LinearMap
+
+namespace TensorProduct
+
+variable {R M N P Q : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N] [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+
+/-- Exchanging the factors of both arguments of `tensorTensorTensorComm` exchanges the factors of
+its value: `(n ⊗ m) ⊗ (q ⊗ p) ↦ (n ⊗ q) ⊗ (m ⊗ p)` is the exchange of
+`(m ⊗ n) ⊗ (p ⊗ q) ↦ (m ⊗ p) ⊗ (n ⊗ q)`. -/
+theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) :
+    tensorTensorTensorComm R N M Q P (TensorProduct.comm R M N x ⊗ₜ TensorProduct.comm R P Q y) =
+      TensorProduct.comm R _ _ (tensorTensorTensorComm R M N P Q (x ⊗ₜ y)) := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' h h' => simp only [map_add, add_tmul, h, h']
+  | tmul m n =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' h h' => simp only [map_add, tmul_add, h, h']
+    | tmul p q => simp
+
+end TensorProduct
