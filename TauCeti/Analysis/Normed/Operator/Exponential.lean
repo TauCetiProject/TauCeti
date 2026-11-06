@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
@@ -23,6 +27,8 @@ space. The norm bounds for exponentials in a general normed algebra live in
   scalar multiples of a bounded operator compose additively.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.spectrum_exp`: the spectral mapping theorem for the exponential of an
+  operator on a finite-dimensional complex normed space, `σ(exp B) = exp (σ(B))`.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
   `exp (t • B) x - x = ∫₀ᵗ exp (u • B) (B x) du` for the orbits of a real bounded operator.
 -/
@@ -66,6 +72,43 @@ theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] 
   exact hop.unique hscalar
 
 end Operator
+
+section SpectrumExp
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
+
+/-- **The spectral mapping theorem for the exponential**, in finite dimensions: the spectrum of
+`exp B` is the image of the spectrum of `B` under the exponential. The inclusion
+`exp (σ(B)) ⊆ σ(exp B)` holds in every complex Banach algebra (`spectrum.exp_mem_exp`). -/
+theorem _root_.ContinuousLinearMap.spectrum_exp (B : V →L[ℂ] V) :
+    spectrum ℂ (exp B) = exp '' spectrum ℂ B := by
+  have : CompleteSpace V := FiniteDimensional.complete ℂ V
+  refine Set.Subset.antisymm (fun μ hμ ↦ ?_) ?_
+  -- The eigenspace of `exp B` for `μ` is preserved by `B`, which commutes with `exp B`. An
+  -- eigenvector of `B` in it, with eigenvalue `c`, shows `μ = exp c`.
+  · rw [ContinuousLinearMap.spectrum_eq, ← Module.End.hasEigenvalue_iff_mem_spectrum] at hμ
+    set E := Module.End.eigenspace ((exp B : V →L[ℂ] V) : Module.End ℂ V) μ
+    have hmaps : ∀ v ∈ E, (B : Module.End ℂ V) v ∈ E := by
+      intro v hv
+      rw [Module.End.mem_eigenspace_iff] at hv ⊢
+      simp only [ContinuousLinearMap.coe_coe] at hv ⊢
+      rw [← mul_apply_eq_comp, ← (Commute.refl B).exp_right.eq, mul_apply_eq_comp, hv, map_smul]
+    have : Nontrivial E := Submodule.nontrivial_iff_ne_bot.2 hμ
+    obtain ⟨c, hc⟩ := Module.End.exists_eigenvalue ((B : Module.End ℂ V).restrict hmaps)
+    obtain ⟨w, hw⟩ := hc.exists_hasEigenvector
+    have hBw : B (w : V) = c • (w : V) := by
+      simpa [LinearMap.restrict_apply, Subtype.ext_iff] using hw.apply_eq_smul
+    have hexpw : exp B (w : V) = μ • (w : V) := by
+      simpa using Module.End.mem_eigenspace_iff.1 w.2
+    have hw0 : (w : V) ≠ 0 := by simpa using hw.2
+    refine ⟨c, ?_, smul_left_injective ℂ hw0
+      ((ContinuousLinearMap.exp_apply_of_apply_eq_smul B hBw).symm.trans hexpw)⟩
+    rw [ContinuousLinearMap.spectrum_eq, ← Module.End.hasEigenvalue_iff_mem_spectrum]
+    exact Module.End.hasEigenvalue_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.2 hBw, hw0⟩
+  · rintro _ ⟨z, hz, rfl⟩
+    exact spectrum.exp_mem_exp B hz
+
+end SpectrumExp
 
 section Real
 

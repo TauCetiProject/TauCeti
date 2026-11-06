@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -56,7 +57,9 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
   complex seminormed space structure, complete when `X` is, and continuous conjugation
   `TauCeti.Complexification.conjCLE`.
-* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
+* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`, so it is
+  finite-dimensional over `ℂ` when `X` is finite-dimensional
+  (`TauCeti.Complexification.instFiniteDimensional`).
 * `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
@@ -352,6 +355,14 @@ instance instNormedAddCommGroup {X : Type*} [NormedAddCommGroup X] [NormedSpace 
     ext
     · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_re_le (z - w)))
     · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_im_le (z - w)))
+
+/-- The complexification of a finite-dimensional real normed space is finite-dimensional over `ℂ`:
+it is real-linearly isomorphic to `X × X`. -/
+instance instFiniteDimensional {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [FiniteDimensional ℝ X] : FiniteDimensional ℂ (Complexification X) :=
+  have : FiniteDimensional ℝ (Complexification X) :=
+    (equivProd X).symm.toLinearEquiv.finiteDimensional
+  .of_restrictScalars_finite ℝ ℂ _
 
 variable (ι : Type*) [Fintype ι]
 

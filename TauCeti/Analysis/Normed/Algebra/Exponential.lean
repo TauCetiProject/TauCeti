@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Algebra.Exponential
+public import Mathlib.Analysis.Normed.Algebra.GelfandRadius
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.Topology.Order.Compact
 
 /-!
 # The normed-algebra exponential
@@ -40,6 +44,8 @@ Baker--Campbell--Hausdorff expansion.
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
 * `TauCeti.exp_smul_one`: the exponential of a scalar multiple of the unit.
+* `TauCeti.exists_norm_exp_smul_le_of_gelfandRadius_exp_lt_one`: if `exp a` has Gelfand radius
+  less than one, then `‖exp (t • a)‖ ≤ K * Real.exp (-α * t)` for all `t ≥ 0`, with `K, α > 0`.
 -/
 
 public section
@@ -158,6 +164,45 @@ theorem exp_smul_one (c : 𝕜) : exp (c • (1 : 𝔸)) = exp c • 1 := by
   rw [← Algebra.algebraMap_eq_smul_one, ← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm]
 
 end RCLike
+
+/-- **Exponential decay from the Gelfand radius.** In a real Banach algebra, if the Gelfand radius
+`lim ‖exp a ^ n‖ ^ (1 / n)` of `exp a` is less than one, then `exp (t • a)` decays exponentially:
+`‖exp (t • a)‖ ≤ K * Real.exp (-α * t)` for all `t ≥ 0`, for some `K > 0` and `α > 0`. -/
+theorem exists_norm_exp_smul_le_of_gelfandRadius_exp_lt_one [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+    {a : 𝔸} (ha : gelfandRadius (exp a) < 1) :
+    ∃ K α : ℝ, 0 < K ∧ 0 < α ∧ ∀ t : ℝ, 0 ≤ t → ‖exp (t • a)‖ ≤ K * Real.exp (-α * t) := by
+  let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ ℝ 𝔸
+  -- At integer times `‖exp a ^ n‖ ≤ C r ^ n` for any `r` above the Gelfand radius; a general time
+  -- `t` differs from `⌊t⌋` by a time in `[0, 1]`, over which `‖exp (s • a)‖` is bounded.
+  set r := (gelfandRadius (exp a) + 1) / 2
+  have hr0 : 0 < r := by have := gelfandRadius_nonneg (exp a); positivity
+  have hr1 : r < 1 := by simp only [r]; linarith
+  obtain ⟨C, hC0, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt (exp a)
+    (show gelfandRadius (exp a) < r by simp only [r]; linarith)
+  obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    ((exp_continuous.comp (continuous_id.smul continuous_const)).continuousOn :
+      ContinuousOn (fun s : ℝ ↦ exp (s • a)) _)
+  refine ⟨max M 1 * C / r, -Real.log r, by positivity, by simpa using Real.log_neg hr0 hr1,
+    fun t ht ↦ ?_⟩
+  set n := ⌊t⌋₊
+  have hsplit : exp (t • a) = exp ((t - n) • a) * exp a ^ n := by
+    rw [← exp_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, ← exp_add_of_commute
+      (((Commute.refl a).smul_left _).smul_right _), ← add_smul, sub_add_cancel]
+  have hfrac : ‖exp ((t - n) • a)‖ ≤ max M 1 :=
+    (hM _ ⟨sub_nonneg.2 (Nat.floor_le ht),
+      sub_le_iff_le_add'.2 (Nat.lt_floor_add_one t).le⟩).trans (le_max_left _ _)
+  have hpow : r ^ n ≤ r ^ (t - 1) := by
+    rw [← Real.rpow_natCast]
+    exact Real.rpow_le_rpow_of_exponent_ge hr0 hr1.le (by linarith [Nat.lt_floor_add_one t])
+  have hexp : r ^ (t - 1) = Real.exp (-(-Real.log r) * t) / r := by
+    rw [Real.rpow_sub hr0, Real.rpow_one, Real.rpow_def_of_pos hr0, neg_neg, mul_comm]
+  calc ‖exp (t • a)‖ ≤ ‖exp ((t - n) • a)‖ * ‖exp a ^ n‖ := hsplit ▸ norm_mul_le _ _
+    _ ≤ max M 1 * (C * r ^ (t - 1)) := by
+        gcongr
+        exact (hC n).trans (by gcongr)
+    _ = max M 1 * C / r * Real.exp (-(-Real.log r) * t) := by
+        rw [hexp]
+        field_simp
 
 /-- If the unit has norm at most one, then the norm of the exponential of a real scalar multiple
 of the unit is at most the corresponding scalar exponential. -/
