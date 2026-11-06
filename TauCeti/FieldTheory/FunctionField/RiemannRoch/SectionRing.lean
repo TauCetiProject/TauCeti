@@ -434,22 +434,9 @@ theorem sectionRingAwayEquiv_mk (r : ℕ) (g : sectionRing D)
 
 /-! ### Sections without a common base point cover `Proj` -/
 
-/-- Multiplying by a further power of `a ∈ L(m D)` keeps `x aʳ` in the Riemann–Roch space of
-the corresponding multiple of `D`. -/
-private theorem mul_pow_mem_riemannRochSpace {D : Divisor k F} {x a : F} {m r R : ℕ}
-    (ha : a ∈ riemannRochSpace (m • D)) (hx : x * a ^ r ∈ riemannRochSpace ((m * r) • D))
-    (hle : r ≤ R) : x * a ^ R ∈ riemannRochSpace ((m * R) • D) := by
-  have hpow : a ^ (R - r) ∈ riemannRochSpace (((R - r) • m) • D) :=
-    SetLike.pow_mem_graded (A := fun n : ℕ ↦ riemannRochSpace (n • D)) _ ha
-  have hmul := SetLike.mul_mem_graded (A := fun n : ℕ ↦ riemannRochSpace (n • D)) hx hpow
-  rw [mul_assoc, ← pow_add, Nat.add_sub_cancel' hle] at hmul
-  convert hmul using 3
-  rw [smul_eq_mul, ← mul_comm m, ← mul_add, Nat.add_sub_cancel' hle]
-
 /-- If the sections `sᵢ ∈ L(D)` have no common base point, then for every nonzero `a` the functions
 `sᵢᵐ / a` generate the unit ideal of the ring of functions regular at the places `P` where
-`ord_P a = -m D(P)`: by Stichtenoth's Theorem 1.1.19 a proper ideal would lie in the maximal ideal
-of such a place, but there some `sᵢ` has `ord_P sᵢ = -D(P)` and `sᵢᵐ / a` is a unit. -/
+`ord_P a = -m D(P)`. -/
 private theorem span_range_div_pow_eq_top (hF : IsFunctionField k F) {D : Divisor k F}
     {ι : Type*} {s : ι → F}
     (hbase : ∀ P : Place k F, ∃ i, P.valuation (s i) = WithZero.exp (D.coeff P)) {m : ℕ} {a : F}
@@ -458,6 +445,8 @@ private theorem span_range_div_pow_eq_top (hF : IsFunctionField k F) {D : Diviso
       (holomorphyRing {P : Place k F | P.valuation a = WithZero.exp (m * D.coeff P)}).toSubring) :
     Ideal.span (Set.range fun i ↦ (⟨_, hgen i⟩ : (holomorphyRing
       {P : Place k F | P.valuation a = WithZero.exp (m * D.coeff P)}).toSubring)) = ⊤ := by
+  -- By Stichtenoth's Theorem 1.1.19 a proper ideal would lie in the maximal ideal of such a
+  -- place, but there some `sᵢ` has `ord_P sᵢ = -D(P)` and `sᵢᵐ / a` is a unit.
   set O := holomorphyRing {P : Place k F | P.valuation a = WithZero.exp (m * D.coeff P)}
   set I : Ideal O.toSubring := Ideal.span (Set.range fun i ↦ (⟨_, hgen i⟩ : O.toSubring))
   by_contra hI
