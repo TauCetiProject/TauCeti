@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.DG.Algebra.KoszulTwist
 public import TauCeti.Algebra.Module.GradedModule.Opposite
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -140,6 +141,23 @@ theorem envelopeDifferential_mul_of_sign (hd : IsNonUnitalDGAlgebra 𝒜 d) (n m
   simp only [envelopeDifferential, LinearMap.add_apply, LinearMap.smul_apply, add_mul,
     smul_mul_assoc]
   abel
+
+/-- The Leibniz rule against a homogeneous enveloping element of total degree `m`.
+The differential on the left factor has generator degree `n + m`. -/
+theorem envelopeDifferential_mul_of_mem (hd : IsNonUnitalDGAlgebra 𝒜 d) (n : ℤ)
+    {m : ℤ} {v : A ⊗[R] Aᵐᵒᵖ}
+    (hv : v ∈ ((InternalGrading.ofDecomposition 𝒜).tensorProduct
+      (InternalGrading.ofDecomposition 𝒜).opposite).piece m) (u : A ⊗[R] Aᵐᵒᵖ) :
+    envelopeDifferential 𝒜 d n (u * v) =
+      envelopeDifferential 𝒜 d (n + m) u * v +
+        TensorProduct.map σ LinearMap.id u * envelopeDifferential 𝒜 d n v := by
+  apply envelopeDifferential_mul_of_sign hd n m (u := u)
+  have hop : op[σ] = (InternalGrading.ofDecomposition 𝒜).opposite.koszulTwist 1 := by
+    ext x
+    simp
+  rw [hop, ← InternalGrading.koszulTwist_tensorProduct]
+  simpa only [one_mul, negOnePowCast_eq_intCast] using
+    InternalGrading.koszulTwist_apply_of_mem _ hv (q := 1)
 
 /-- **The enveloping differential squares to zero.** -/
 @[simp]
