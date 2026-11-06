@@ -75,6 +75,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   `s`, with its value `AlgHom.sectionBaseChange_sum_tmul` on sums of pure tensors, its
   naturality `AlgHom.sectionBaseChange_rTensor` in `T`, and its transitivity
   `AlgHom.sectionBaseChange_sectionBaseChange` along `A → A' → T`.
+* `AlgHom.semilinearTwist y σ φ hφ`: the twist `(σ⁻¹ ⊗ T) ∘ y ∘ φ` of an algebra map
+  `y : D →ₐ[C] C ⊗[A] T` by a ring homomorphism `φ` semilinear over an automorphism `σ` of `C`.
 -/
 
 public section
@@ -393,5 +395,30 @@ theorem sectionBaseChange_sectionBaseChange {B : Type*} [CommSemiring B] [Algebr
       ac_rfl
     | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
   | add x y hx hy => simp only [map_add, hx, hy]
+
+section SemilinearTwist
+
+variable {C D T : Type*} [CommSemiring C] [Algebra A C] [Semiring D] [Semiring T] [Algebra A T]
+  [Algebra C D]
+
+/-- The **semilinear twist** of an algebra map `y : D →ₐ[C] C ⊗[A] T`, where `C` is a commutative
+`A`-algebra, by a ring homomorphism `φ : E →+* D` semilinear over an `A`-algebra automorphism
+`σ` of `C`, in the sense that `φ (c • e) = σ c • φ e`: the composite `(σ⁻¹ ⊗ T) ∘ y ∘ φ`. Neither
+`y ∘ φ` nor `σ⁻¹ ⊗ T` is `C`-linear, but their composite is. -/
+noncomputable def semilinearTwist {E : Type*} [Semiring E] [Algebra C E] (y : D →ₐ[C] C ⊗[A] T)
+    (σ : C ≃ₐ[A] C) (φ : E →+* D) (hφ : ∀ c, φ (algebraMap C E c) = algebraMap C D (σ c)) :
+    E →ₐ[C] C ⊗[A] T where
+  toRingHom := (Algebra.TensorProduct.rTensor T (σ.symm : C →ₐ[A] C)).toRingHom.comp
+    ((y : D →+* C ⊗[A] T).comp φ)
+  commutes' c := by simp [hφ]
+
+@[simp]
+theorem semilinearTwist_apply {E : Type*} [Semiring E] [Algebra C E] (y : D →ₐ[C] C ⊗[A] T)
+    (σ : C ≃ₐ[A] C) (φ : E →+* D) (hφ : ∀ c, φ (algebraMap C E c) = algebraMap C D (σ c))
+    (e : E) :
+    y.semilinearTwist σ φ hφ e = Algebra.TensorProduct.rTensor T (σ.symm : C →ₐ[A] C) (y (φ e)) :=
+  (rfl)
+
+end SemilinearTwist
 
 end AlgHom

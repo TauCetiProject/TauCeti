@@ -15,7 +15,8 @@ Let `B` be a finite projective `A`-algebra and `C`, `D` finitely presented `B`-a
 `A`-algebra automorphism `σ` of `B` and a ring homomorphism `φ : C →+* D` that is semilinear
 over `σ`, in the sense that `φ (b • c) = σ b • φ c`. The induced `A`-algebra homomorphism
 `WeilRestriction.semilinearMap σ φ hφ : WeilRestriction A B C →ₐ[A] WeilRestriction A B D` acts
-on points by twisting: it sends a point `y : D →ₐ[B] B ⊗[A] T` to `(σ⁻¹ ⊗ id) ∘ y ∘ φ`
+on points by twisting: it sends a point `y : D →ₐ[B] B ⊗[A] T` to its semilinear twist
+`AlgHom.semilinearTwist`, that is, to `(σ⁻¹ ⊗ id) ∘ y ∘ φ`
 (`WeilRestriction.homEquiv_comp_semilinearMap_apply`). For `σ = id` this is the usual
 functoriality `WeilRestriction.map`.
 
@@ -68,20 +69,6 @@ variable {A B C D E : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing D]
 
 section Semilinear
 
--- The twist `(σ⁻¹ ⊗ id) ∘ y ∘ φ` of a point `y` of `D` by a ring homomorphism `φ : C →+* D`
--- semilinear over `σ`; it is again `B`-linear.
-private def twist (σ : B ≃ₐ[A] B) (φ : C →+* D)
-    (hφ : ∀ b, φ (algebraMap B C b) = algebraMap B D (σ b)) (y : D →ₐ[B] B ⊗[A] T) :
-    C →ₐ[B] B ⊗[A] T where
-  toRingHom := (Algebra.TensorProduct.rTensor T (σ.symm : B →ₐ[A] B)).toRingHom.comp
-    ((y : D →+* B ⊗[A] T).comp φ)
-  commutes' b := by simp [hφ]
-
-private theorem twist_apply (σ : B ≃ₐ[A] B) (φ : C →+* D)
-    (hφ : ∀ b, φ (algebraMap B C b) = algebraMap B D (σ b)) (y : D →ₐ[B] B ⊗[A] T) (c : C) :
-    twist σ φ hφ y c = Algebra.TensorProduct.rTensor T (σ.symm : B →ₐ[A] B) (y (φ c)) :=
-  (rfl)
-
 variable [Module.Finite A B] [Module.Projective A B]
   [FinitePresentation B C] [FinitePresentation B D] [FinitePresentation B E]
 
@@ -93,7 +80,7 @@ sends `y : D →ₐ[B] B ⊗[A] T` to `(σ⁻¹ ⊗ id) ∘ y ∘ φ`, see
 def semilinearMap (σ : B ≃ₐ[A] B) (φ : C →+* D)
     (hφ : ∀ b, φ (algebraMap B C b) = algebraMap B D (σ b)) :
     WeilRestriction A B C →ₐ[A] WeilRestriction A B D :=
-  (homEquiv A B C _).symm (twist σ φ hφ (universalPoint A B D))
+  (homEquiv A B C _).symm ((universalPoint A B D).semilinearTwist σ φ hφ)
 
 /-- `WeilRestriction.semilinearMap σ φ hφ` classifies the twist `(σ⁻¹ ⊗ id) ∘ u ∘ φ` of the
 universal point `u` of `D`. -/
@@ -101,7 +88,7 @@ theorem homEquiv_semilinearMap_apply (σ : B ≃ₐ[A] B) (φ : C →+* D)
     (hφ : ∀ b, φ (algebraMap B C b) = algebraMap B D (σ b)) (c : C) :
     homEquiv A B C _ (semilinearMap σ φ hφ) c =
       Algebra.TensorProduct.rTensor _ (σ.symm : B →ₐ[A] B) (universalPoint A B D (φ c)) := by
-  rw [semilinearMap, Equiv.apply_symm_apply, twist_apply]
+  rw [semilinearMap, Equiv.apply_symm_apply, AlgHom.semilinearTwist_apply]
 
 /-- The **effect of `WeilRestriction.semilinearMap` on points**: precomposing a point `g` of the
 Weil restriction of `D` with `semilinearMap σ φ hφ` twists the point `y` of `D` it classifies to
