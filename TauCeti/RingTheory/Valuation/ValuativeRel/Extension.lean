@@ -107,6 +107,7 @@ theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
 /-- The integer-ring structure map reflects divisibility: an integer of `K` divides another in the
 integers of `L` exactly when it does in the integers of `K`, since both say that its value is
 at least the other's. -/
+@[simp]
 theorem algebraMap_integerRing_dvd_iff {x y : 𝒪ᵥ[K]} :
     algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x ∣ algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] y ↔ x ∣ y := by
   rw [(Valuation.integer.integers _).dvd_iff_le, (Valuation.integer.integers _).dvd_iff_le,
