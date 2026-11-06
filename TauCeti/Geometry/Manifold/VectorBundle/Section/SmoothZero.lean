@@ -167,4 +167,47 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     range_subtypeL_comp_eq_ker_sectionLinearization (hb z) (he z) (hmf z) z.2 K
   exact (hasMFDerivAt_coe_sectionZero hf hF hS hN hb he z).mfderiv.symm ▸ hrange
 
+/-- A globally smooth section with regular Fredholm zeros of index zero has finitely many
+zeros on a compact source. Its actual zero manifold is discrete, rather than merely having
+an assumed isolated-zero property. -/
+theorem finite_sectionZero_of_contMDiff [CompactSpace M]
+    (hm : m ≠ 0)
+    (hs : ContMDiff 𝓘(𝕜, X) (I.prod 𝓘(𝕜, F)) m
+      (fun y ↦ (⟨b y, s y⟩ : TotalSpace F E)))
+    (hFred : ∀ x, s x = 0 →
+      ContinuousLinearMap.IsFredholm (sectionLinearization (F := F) 𝓘(𝕜, X) b s x))
+    (hsurj : ∀ x, s x = 0 →
+      Function.Surjective (sectionLinearization (F := F) 𝓘(𝕜, X) b s x))
+    (hindex : ∀ x, s x = 0 →
+      LinearMap.index (sectionLinearization (F := F) 𝓘(𝕜, X) b s x).toLinearMap = 0) :
+    {x | s x = 0}.Finite := by
+  have hclosed : IsClosed {x | s x = 0} := by
+    rw [← isOpen_compl_iff, isOpen_iff_mem_nhds]
+    intro x hx
+    let e := trivializationAt F E (b x)
+    have he : b x ∈ e.baseSet := mem_baseSet_trivializationAt F E (b x)
+    have hc := contMDiffAt_totalSpace.mp (hs x)
+    have hne : (e ⟨b x, s x⟩).2 ≠ 0 := by
+      intro hzero
+      apply hx
+      apply (e.continuousLinearEquivAt 𝕜 (b x) he).injective
+      rw [map_zero]
+      simpa only [e.apply_eq_prod_continuousLinearEquivAt 𝕜 (b x) he] using hzero
+    have hv : ∀ᶠ y in 𝓝 x, (e ⟨b y, s y⟩).2 ≠ 0 :=
+      hc.2.continuousAt.preimage_mem_nhds (isOpen_compl_singleton.mem_nhds hne)
+    have hb : ∀ᶠ y in 𝓝 x, b y ∈ e.baseSet :=
+      hc.1.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds he)
+    filter_upwards [hv, hb] with y hy hby
+    intro hzero
+    apply hy
+    rw [hzero]
+    exact congrArg Prod.snd (e.zeroSection 𝕜 hby)
+  obtain ⟨cs, -, -, -⟩ := exists_isManifold_sectionZero_of_contMDiff hm
+    (fun x _ ↦ hs x) hFred hsurj hindex
+  let := cs
+  let : DiscreteTopology ↥{x | s x = 0} := ChartedSpace.discreteTopology (Fin 0 → 𝕜) _
+  let : CompactSpace ↥{x | s x = 0} := isCompact_iff_compactSpace.mp hclosed.isCompact
+  let : Finite ↥{x | s x = 0} := finite_of_compact_of_discrete
+  exact Set.toFinite _
+
 end TauCeti
