@@ -10,7 +10,7 @@ public import Mathlib.Topology.Category.TopCat.Opens
 import TauCeti.CategoryTheory.Sites.IsSheafFor
 
 /-!
-# Transitivity of the sheaf condition along a cover of an open set
+# Transitivity and transport of the sheaf condition for covers of opens
 
 Let `W` be an open set, `Y i ≤ W` opens for which a presheaf of types `F` satisfies the sheaf
 condition, and `S` a sieve on `W` whose members each lie in some `Y i`. If `F` is a sheaf for the
@@ -25,6 +25,14 @@ sections over `Y i` and `Y j` are compatible as soon as they agree on `Y i ⊓ Y
 hypotheses concern only the opens `Y i` and `Y i ⊓ Y j`. This makes the statement usable when the
 sheaf condition is known only on a basis of opens closed under finite intersections, such as the
 rational subsets of an adic spectrum, where a cover is refined by covering each of its members.
+
+The sheaf condition can also be transported between presheaves on different spaces. Let `φ` be a
+monotone map of opens preserving binary meets, and suppose that sections of `F` over the opens in
+a family `S` closed under binary meets correspond bijectively, compatibly with restriction, to
+sections of `G` over their images under `φ`. Then `F` satisfies the sheaf condition for a family
+of opens in `S` as soon as `G` does for the images. This reduces the sheaf condition over an open
+such as the rational subset `R(T/s)` of an adic spectrum to the corresponding condition on another
+space, along a meet-preserving map of opens.
 
 ## Main results
 
@@ -88,10 +96,11 @@ theorem isSheafFor_trans {W : Opens X} {ι : Type*} (Y : ι → Opens X) (hY : �
 
 /-- **The sheaf condition for a cover transports along compatible bijections of sections.** Let
 `φ` be a monotone map of opens preserving binary meets, `F` a presheaf of types on `X` and `G` one
-on `Y`, and `U i ≤ W` a family of opens of `X` that lie, together with their pairwise meets and `W`,
-in a family `S`. If sections of `F` over each `V ∈ S` below `W` correspond bijectively to sections
-of `G` over `φ V`, compatibly with restriction, and `G` satisfies the sheaf condition for the
-family `φ (U i) ≤ φ W`, then `F` satisfies the sheaf condition for the family `U i ≤ W`. -/
+on `Y`, `S` a family of opens of `X` closed under binary meets and containing `W` and every `U i`,
+and `U i ≤ W` a family of opens of `X`. If sections of `F` over each `V ∈ S` below `W` correspond
+bijectively to sections of `G` over `φ V`, compatibly with restriction, and `G` satisfies the
+sheaf condition for the family `φ (U i) ≤ φ W`, then `F` satisfies the sheaf condition for the
+family `U i ≤ W`. -/
 theorem isSheafFor_ofArrows_of_equiv {Y : Type*} [_root_.TopologicalSpace Y]
     {G : (Opens Y)ᵒᵖ ⥤ Type w} (φ : Opens X → Opens Y) (hφ : Monotone φ)
     (hφinf : ∀ V V', φ (V ⊓ V') = φ V ⊓ φ V') {S : Set (Opens X)}
