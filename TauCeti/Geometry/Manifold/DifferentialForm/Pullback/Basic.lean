@@ -306,6 +306,12 @@ theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [mpullback_apply, mpullback_apply, h]
 
+/-- A pullback vanishes at every point where the form vanishes at the image point. -/
+theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M}
+    (h : ω (f x) = 0) : mpullback I I' f ω x = 0 := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
     (hf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
