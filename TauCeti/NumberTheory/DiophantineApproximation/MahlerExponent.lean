@@ -90,6 +90,28 @@ end TauCeti
 
 open TauCeti
 
+/-- If every conjugate `σ γ` of `γ` has absolute value `s ^ d * ‖P(σ g)‖`, where `1 ≤ s` and `P` has
+degree `d ≤ n`, and `max 1 ‖σ g‖ ≤ R` for every conjugate, then the house of `γ` is at most
+`s ^ n * ((n + 1) * R ^ n) * H(P)`. -/
+private theorem house_le_of_norm_embedding_eq {F : Type*} [Field F] [NumberField F] {g γ : F}
+    {R : ℝ} (hR : ∀ σ : F →+* ℂ, max 1 ‖σ g‖ ≤ R) {s : ℤ} (hs1 : (1 : ℝ) ≤ s) {n : ℕ}
+    {P : ℤ[X]} (hP : P.natDegree ≤ n)
+    (hγ : ∀ σ : F →+* ℂ, ‖σ γ‖ = (s : ℝ) ^ P.natDegree * ‖aeval (σ g) P‖) :
+    house γ ≤ (s : ℝ) ^ n * ((n + 1) * R ^ n) * P.supNorm := by
+  have hH := P.supNorm_nonneg
+  obtain ⟨σ, -, hσ⟩ :=
+    Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : F →+* ℂ ↦ ‖φ γ‖₊
+  rw [house_eq_sup', hσ, coe_nnnorm, hγ]
+  calc (s : ℝ) ^ P.natDegree * ‖aeval (σ g) P‖
+      ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
+        gcongr
+        rw [aeval_def, algebraMap_int_eq, ← eval_map, ← P.supNorm_map (Int.castRingHom ℂ)]
+        exact norm_eval_le_add_one_mul_supNorm_mul (natDegree_map_le.trans hP) _
+    _ ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * R ^ n) := by
+        gcongr
+        exact hR σ
+    _ = (s : ℝ) ^ n * ((n + 1) * R ^ n) * P.supNorm := by ring
+
 /-- **Liouville's inequality for the value of an integer polynomial.** Let `ξ ∈ ℂ` be algebraic
 of degree `D` over `ℚ` and let `n ∈ ℕ`. There is `c > 0` such that every `P ∈ ℤ[X]` of degree at
 most `n` with `P(ξ) ≠ 0` satisfies `c ≤ |P(ξ)| H(P) ^ (D - 1)`, where `H(P)` is the coefficient
@@ -133,19 +155,8 @@ theorem IsAlgebraic.exists_pos_le_norm_aeval_mul_supNorm_pow {ξ : ℂ} (hξ : I
     simp
   have hsd : (s : ℝ) ^ d ≤ (s : ℝ) ^ n := pow_le_pow_right₀ hs1 hP
   -- Every conjugate of `γ`, and hence its house, is at most `B H(P)`.
-  have hhouse : house (γ : F) ≤ B * P.supNorm := by
-    obtain ⟨σ, -, hσ⟩ :=
-      Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : F →+* ℂ ↦ ‖φ γ‖₊
-    rw [house_eq_sup', hσ, coe_nnnorm, hγ]
-    calc (s : ℝ) ^ d * ‖aeval (σ g) P‖
-        ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
-          gcongr
-          rw [aeval_def, algebraMap_int_eq, ← eval_map, ← P.supNorm_map (Int.castRingHom ℂ)]
-          exact norm_eval_le_add_one_mul_supNorm_mul (natDegree_map_le.trans hP) _
-      _ ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * R ^ n) := by
-          gcongr
-          exact hR σ
-      _ = B * P.supNorm := by ring
+  have hhouse : house (γ : F) ≤ B * P.supNorm :=
+    house_le_of_norm_embedding_eq hR hs1 hP hγ
   -- Since `γ` is a nonzero algebraic integer, its conjugate `σ₀ γ = s ^ d P(ξ)` is bounded below
   -- in terms of the bound `B H(P)` on its other conjugates.
   have key : 1 ≤ ‖σ₀ γ‖ * house (γ : F) ^ (D - 1) := by
