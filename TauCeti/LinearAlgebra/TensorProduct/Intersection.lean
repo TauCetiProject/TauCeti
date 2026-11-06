@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Tensor products of submodules as intersections
@@ -63,7 +64,7 @@ theorem range_map_subtype_subtype (P : Submodule R M) (Q : Submodule R N)
   -- The image of `y` dies in `(M ⧸ P) ⊗ N`, hence by injectivity already in `(M ⧸ P) ⊗ Q`, so
   -- `y` comes from `P ⊗ Q` by right exactness.
   have hzero : Q.subtype.lTensor (M ⧸ P) (P.mkQ.rTensor Q y) = 0 := by
-    rw [← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply]
+    rw [LinearMap.lTensor_rTensor_comm]
     exact (rTensor_exact N (exact_subtype_mkQ P) P.mkQ_surjective _).mpr hy
   obtain ⟨z, rfl⟩ := (rTensor_exact Q (exact_subtype_mkQ P) P.mkQ_surjective y).mp
     ((map_eq_zero_iff _ hPQ).mp hzero)
