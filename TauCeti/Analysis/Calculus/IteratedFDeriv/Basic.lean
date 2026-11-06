@@ -14,8 +14,9 @@ The `i`-th iterated derivative of the `m`-th iterated derivative of a function h
 as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFDeriv_fderiv`, the
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The file also supplies the two-variable currying isometry used to identify
-continuous multilinear second derivatives with curried bilinear maps, and expresses the second
-iterated derivative through it (`TauCeti.iteratedFDeriv_two_eq_comp_fderiv_fderiv`).
+continuous multilinear second derivatives with curried bilinear maps, expresses the second
+iterated derivative through it (`TauCeti.iteratedFDeriv_two_eq_comp_fderiv_fderiv`), and gives the
+corresponding exact comparison for differences of second derivatives.
 -/
 
 public section
@@ -51,6 +52,24 @@ end CurryFin2
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Currying the second iterated derivative gives the Fréchet derivative of the first
+Fréchet derivative, including at points where these derivatives are junk-valued. -/
+theorem continuousMultilinearCurryFin2_iteratedFDeriv_two (f : E → F) (x : E) :
+    continuousMultilinearCurryFin2 𝕜 E F (iteratedFDeriv 𝕜 2 f x) =
+      fderiv 𝕜 (fderiv 𝕜 f) x := by
+  ext v w
+  simp only [continuousMultilinearCurryFin2_apply, iteratedFDeriv_two_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+
+/-- Differences of curried second derivatives and multilinear second derivatives have
+exactly the same norm, without differentiability assumptions. -/
+theorem norm_fderiv_fderiv_sub (f : E → F) (x y : E) :
+    ‖fderiv 𝕜 (fderiv 𝕜 f) x - fderiv 𝕜 (fderiv 𝕜 f) y‖ =
+      ‖iteratedFDeriv 𝕜 2 f x - iteratedFDeriv 𝕜 2 f y‖ := by
+  rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two f x,
+    ← continuousMultilinearCurryFin2_iteratedFDeriv_two f y, ← LinearIsometryEquiv.map_sub,
+    LinearIsometryEquiv.norm_map]
 
 /-- The second iterated derivative of `f` is its second Fréchet derivative, uncurried by the
 currying isometry. No differentiability of `f` is needed. -/
