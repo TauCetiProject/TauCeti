@@ -25,8 +25,8 @@ the desired vertices. Every state has a self-loop under these same hypotheses, s
 aperiodic. These properties do not require connectedness of the graph. The zero probability
 boundary is retained in the construction, but no irreducibility is asserted there.
 
-This file constructs the chain and establishes its communication and period properties; it
-does not assert a stationary distribution or convergence to equilibrium.
+This file constructs the chain and establishes its communication and period properties.
+The equilibrium law and convergence are developed in `HardCore.Equilibrium`.
 
 ## References
 
@@ -93,6 +93,11 @@ def erase (I : State G) (v : V) : State G :=
 
 @[simp] theorem erase_val (I : State G) (v : V) : (erase G I v).val = I.val.erase v := (rfl)
 
+/-- Deleting an absent vertex leaves the state unchanged. -/
+@[simp] theorem erase_of_notMem (I : State G) {v : V} (hv : v ∉ I.val) :
+    erase G I v = I := by
+  exact Subtype.ext (Finset.erase_eq_of_notMem hv)
+
 variable [DecidableRel G.Adj]
 
 /-- Remove the selected vertex, then insert it if this is allowed by independence. -/
@@ -109,6 +114,15 @@ theorem occupy_val_of_indep (I : State G) (v : V)
 theorem occupy_of_not_indep (I : State G) (v : V)
     (h : ¬G.IsIndepSet (↑(insert v I.val) : Set V)) :
     occupy G I v = erase G I v := by rw [occupy, dite_eq_right h]
+
+/-- The two single-site outcomes agree away from the selected vertex. -/
+@[simp] theorem erase_occupy (I : State G) (v : V) :
+    erase G (occupy G I v) v = erase G I v := by
+  unfold occupy
+  split
+  · apply Subtype.ext
+    simp [erase_val]
+  · simp
 
 /-- Resampling a vertex already present can retain the state. -/
 @[simp] theorem occupy_of_mem (I : State G) {v : V} (hv : v ∈ I.val) : occupy G I v = I := by
