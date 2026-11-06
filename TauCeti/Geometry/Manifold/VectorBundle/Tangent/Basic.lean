@@ -150,6 +150,19 @@ theorem extChartAt_symm_mem_trivializationAt_baseSet [IsManifold I 1 M] {x : M} 
   rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
   exact (extChartAt I x).map_target hz
 
+/-- The canonical tangent trivialization of an intrinsic chart source covers that whole source. -/
+theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
+    (trivializationAt E (TangentSpace I :
+      (⟨(chartAt H x).source, (chartAt H x).open_source⟩ : TopologicalSpace.Opens M) → Type _)
+        (⟨x, mem_chart_source H x⟩ :
+          (⟨(chartAt H x).source, (chartAt H x).open_source⟩ : TopologicalSpace.Opens M))).baseSet =
+      Set.univ := by
+  ext y
+  simp only [TangentBundle.trivializationAt_baseSet, TopologicalSpace.Opens.chartAt_eq,
+    OpenPartialHomeomorph.subtypeRestr_source, Set.mem_preimage, Set.mem_univ, iff_true]
+  exact y.property
+
+
 end TangentBundle
 
 namespace TauCeti.Manifold
