@@ -46,8 +46,7 @@ open Equiv Finset
 
 namespace Matrix
 
-variable {R S : Type*} [CommRing R] [Nontrivial R]
-  [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+variable {R S : Type*} [CommRing R] [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- **Hadamard's bound, `ℓ¹` column form.** The absolute value of a determinant is at most the
@@ -55,6 +54,9 @@ product of the `ℓ¹` norms of the columns. -/
 theorem abv_det_le_prod_sum_abv' (A : Matrix n n R) (abv : AbsoluteValue R S) :
     abv A.det ≤ ∏ j, ∑ i, abv (A i j) := by
   classical
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim A.det 0, map_zero]
+    exact prod_nonneg fun _ _ => sum_nonneg fun _ _ => abv.nonneg _
   calc
     abv A.det ≤ ∑ σ : Perm n, abv (Perm.sign σ • ∏ i, A (σ i) i) := by
       rw [det_apply]
@@ -87,6 +89,9 @@ column `j` of `A` is bounded entrywise in `abv` by `b j`, then `abv A.det ≤ �
 theorem abv_det_le_prod_of_le' (A : Matrix n n R) {abv : AbsoluteValue R S}
     (habv : IsNonarchimedean abv) {b : n → S} (hA : ∀ i j, abv (A i j) ≤ b j) :
     abv A.det ≤ ∏ j, b j := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim A.det 0, map_zero]
+    exact prod_nonneg fun j _ => (abv.nonneg _).trans (hA j j)
   rw [det_apply]
   obtain ⟨σ, -, hσ⟩ := habv.finset_image_add_of_nonempty _ (univ_nonempty (α := Perm n))
   refine hσ.trans ?_
