@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.EdgeIntersection
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
+import TauCeti.Analysis.Calculus.DSlope.Continuous
 import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
@@ -53,33 +55,6 @@ open Bornology Complex Filter Metric Set Topology UpperHalfPlane
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
-
-/-- Closed form of the third divided difference at `0`: if `q` has derivative `M` at `0`, its second
-divided difference is differentiable at `0`, and `(q w - q 0 - M * w) / w ^ 2` tends to `C` as `w`
-tends to `0`, then the third divided difference of `q` at `w ≠ 0` is
-`(q w - q 0 - M * w - C * w ^ 2) / w ^ 3`. The limit identifies the value `C` of the second
-divided difference at `0`. -/
-private theorem dslope_dslope_dslope_zero_apply {q : ℂ → ℂ} {r : ℝ} {M C : ℂ} (hr : 0 < r)
-    (hD₂ : DifferentiableOn ℂ (dslope (dslope q 0) 0) (ball 0 r)) (hq' : HasDerivAt q M 0)
-    (hlim : Tendsto (fun w => (q w - q 0 - M * w) / w ^ 2) (𝓝[≠] 0) (𝓝 C)) {w : ℂ} (hw : w ≠ 0) :
-    dslope (dslope (dslope q 0) 0) 0 w = (q w - q 0 - M * w - C * w ^ 2) / w ^ 3 := by
-  have hball : ball (0 : ℂ) r ∈ 𝓝 0 := ball_mem_nhds 0 hr
-  have hD₁w (w : ℂ) (hw : w ≠ 0) : dslope q 0 w = (q w - q 0) / w := by
-    rw [dslope_of_ne _ hw, slope_def_field, sub_zero]
-  have hD₂w (w : ℂ) (hw : w ≠ 0) : dslope (dslope q 0) 0 w = (dslope q 0 w - M) / w := by
-    rw [dslope_of_ne _ hw, slope_def_field, dslope_same, hq'.deriv, sub_zero]
-  have hD₂0 : dslope (dslope q 0) 0 0 = C := by
-    have hcont : Tendsto (dslope (dslope q 0) 0) (𝓝[≠] 0)
-        (𝓝 (dslope (dslope q 0) 0 0)) :=
-      ((hD₂ 0 (mem_ball_self hr)).differentiableAt hball).continuousAt.tendsto.mono_left
-        nhdsWithin_le_nhds
-    refine tendsto_nhds_unique hcont (hlim.congr' ?_)
-    filter_upwards [self_mem_nhdsWithin] with w hw
-    have hw0 : w ≠ 0 := hw
-    rw [hD₂w w hw0, hD₁w w hw0]
-    field_simp
-  rw [dslope_of_ne _ hw, slope_def_field, hD₂0, sub_zero, hD₂w w hw, hD₁w w hw]
-  field_simp
 
 /-- The remainder of the Schwarz--Christoffel primitive in the reciprocal coordinate. In
 `w = -1 / z` the primitive minus the quadratic, linear and logarithmic comparison terms has
@@ -144,7 +119,8 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
   -- The third divided difference at `w ≠ 0` has the closed form `(q w - 1 - M w - C w²) / w³`.
   have hD₃w (w : ℂ) (hw : w ≠ 0) : dslope (dslope (dslope q 0) 0) 0 w =
       (q w - 1 - M * w - C * w ^ 2) / w ^ 3 := by
-    simpa only [hq0] using dslope_dslope_dslope_zero_apply hr hD₂ hq'
+    simpa only [hq0] using dslope_dslope_dslope_zero_apply
+      ((hD₂ 0 (mem_ball_self hr)).differentiableAt hball).continuousAt hq'
       (hlim.congr fun w => by rw [hq0]; ring) hw
   -- Match the remainder of the primitive with a primitive of `-dslope³ q` on the half-disc.
   have hint (w : ℂ) (hw : w ∈ upperHalfPlaneSet) :
@@ -530,21 +506,14 @@ private theorem im_quadratic_log (M C : ℝ) (z : ℂ) :
   simp [sq, Complex.mul_im, log_im]
   ring
 
-/-- Jordan's inequality in the form `θ ≤ π / 2 * sin θ` for `θ ∈ [0, π / 2]`, with the sine given
-as a value `s`. -/
-private theorem le_pi_div_two_mul_of_sin_eq {θ s : ℝ} (h0 : 0 ≤ θ) (h1 : θ ≤ Real.pi / 2)
-    (hsin : Real.sin θ = s) : θ ≤ Real.pi / 2 * s := by
-  have h := Real.mul_le_sin h0 h1
-  rw [hsin, div_mul_eq_mul_div, div_le_iff₀ Real.pi_pos] at h
-  nlinarith
-
 /-- Near the positive real axis the imaginary part of the comparison function stays above the
 band: the linear term `(re z - M) * im z` is positive and `C * arg z` is within `η` of `0`. -/
-private theorem quadratic_log_im_not_lt_of_re_nonneg {M C η : ℝ} {z : ℂ} (hC : C < 0)
+private theorem neg_le_im_quadratic_log_of_re_nonneg {M C η : ℝ} {z : ℂ} (hC : C < 0)
     (hz : 0 < z.im) (hx : 0 ≤ z.re) (hnorm : ‖z‖ ≤ |z.re| + z.im)
     (h2 : -(Real.pi * C) + |M| + 1 ≤ ‖z‖) (hy : z.im < -(Real.pi * C))
     (hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η) :
-    -η ≤ (z.re - M) * z.im + C * arg z := by
+    -η ≤ (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im := by
+  rw [im_quadratic_log]
   have hJ := le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr hz.le)
     (arg_le_pi_div_two_iff.mpr (Or.inl hx)) (sin_arg z)
   have hsx : 0 < z.re - M := by
@@ -554,11 +523,12 @@ private theorem quadratic_log_im_not_lt_of_re_nonneg {M C η : ℝ} {z : ℂ} (h
 
 /-- Near the negative real axis the imaginary part of the comparison function stays below the
 band: the linear term is negative and `C * arg z` is within `η` of `π * C`. -/
-private theorem quadratic_log_im_not_gt_of_re_neg {M C η : ℝ} {z : ℂ} (hC : C < 0)
+private theorem im_quadratic_log_le_of_re_neg {M C η : ℝ} {z : ℂ} (hC : C < 0)
     (hz : 0 < z.im) (hx : z.re < 0) (hnorm : ‖z‖ ≤ |z.re| + z.im)
     (h2 : -(Real.pi * C) + |M| + 1 ≤ ‖z‖) (hy : z.im < -(Real.pi * C))
     (hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η) :
-    (z.re - M) * z.im + C * arg z ≤ Real.pi * C + η := by
+    (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im ≤ Real.pi * C + η := by
+  rw [im_quadratic_log]
   have hhalf : Real.pi / 2 ≤ arg z := by
     by_contra! h
     rcases arg_lt_pi_div_two_iff.mp h with h | h | h
@@ -584,8 +554,10 @@ theorem exists_forall_im_quadratic_log_notMem_Ioo {M C η : ℝ} (hC : C < 0) (h
   refine ⟨max 1 (max (-(Real.pi * C) + |M| + 1) (Real.pi ^ 2 * C ^ 2 / η + 1)),
     fun z hz hzR hre => ?_⟩
   rw [re_quadratic_log] at hre
-  rw [im_quadratic_log]
-  rintro ⟨hlo, hhi⟩
+  intro hband
+  have hlo := hband.1
+  have hhi := hband.2
+  rw [im_quadratic_log] at hlo hhi
   have h1 : 1 ≤ ‖z‖ := (le_max_left _ _).trans hzR
   have h2 : -(Real.pi * C) + |M| + 1 ≤ ‖z‖ :=
     ((le_max_left _ _).trans (le_max_right _ _)).trans hzR
@@ -620,7 +592,7 @@ theorem exists_forall_im_quadratic_log_notMem_Ioo {M C η : ℝ} (hC : C < 0) (h
       rwa [mul_add, mul_div_cancel₀ _ hη.ne', mul_one] at this
     nlinarith [mul_pos (neg_pos.mpr hC) hpi]
   rcases le_or_gt 0 z.re with hx | hx
-  · exact (quadratic_log_im_not_lt_of_re_nonneg hC hz hx hnorm h2 hy hratio).not_gt hhi
-  · exact (quadratic_log_im_not_gt_of_re_neg hC hz hx hnorm h2 hy hratio).not_gt hlo
+  · exact (neg_le_im_quadratic_log_of_re_nonneg hC hz hx hnorm h2 hy hratio).not_gt hband.2
+  · exact (im_quadratic_log_le_of_re_neg hC hz hx hnorm h2 hy hratio).not_gt hband.1
 
 end TauCeti
