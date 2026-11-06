@@ -53,8 +53,9 @@ imaginary parts of the entries. Its topological and semialgebraic properties are
 
 * `TauCeti.rankOneHermitianProjector_mem_hermitianProjectorLocus`: the Hermitian projector of a
   vector with `x* x ≠ 0` lies in the locus.
-* `TauCeti.two_mul_sub_one_of_mem_hermitianProjectorLocus`: in dimension two, `2 P - 1` is a
-  traceless Hermitian involution for `P` in the locus.
+* `TauCeti.two_mul_sub_one_of_mem_hermitianProjectorLocus` and
+  `TauCeti.trace_two_mul_sub_one_of_mem_hermitianProjectorLocus`: for `P` in the locus, `2 P - 1`
+  is a Hermitian involution of trace `2 - n`, traceless in dimension two.
 * `TauCeti.rankOneHermitianProjector_col_eq_self`: a matrix in the locus is the Hermitian
   projector of each of its columns with nonzero diagonal entry.
 * `TauCeti.rankOneHermitianProjector_unitary_mulVec` and
@@ -198,20 +199,26 @@ theorem rankOneHermitianProjector_mem_hermitianProjectorLocus {x : ι → K} (hx
     rankOneHermitianProjector x ∈ hermitianProjectorLocus ι K :=
   ⟨isStarProjection_rankOneHermitianProjector x, trace_rankOneHermitianProjector hx⟩
 
-/-- For a matrix `P` of the Hermitian projector locus in dimension two, `2 P - 1` is a traceless
-Hermitian matrix with square `1`. -/
+/-- For a matrix `P` of the Hermitian projector locus, `2 P - 1` is a Hermitian matrix with
+square `1`. -/
 theorem two_mul_sub_one_of_mem_hermitianProjectorLocus [DecidableEq ι] {P : Matrix ι ι K}
-    (hP : P ∈ hermitianProjectorLocus ι K) (hι : Fintype.card ι = 2) :
-    (2 * P - 1).IsHermitian ∧ (2 * P - 1).trace = 0 ∧ (2 * P - 1) * (2 * P - 1) = 1 := by
-  obtain ⟨hproj, htr⟩ := mem_hermitianProjectorLocus.mp hP
+    (hP : P ∈ hermitianProjectorLocus ι K) :
+    (2 * P - 1).IsHermitian ∧ (2 * P - 1) * (2 * P - 1) = 1 := by
+  have hproj := (mem_hermitianProjectorLocus.mp hP).1
   have hH : (2 * P - 1).IsHermitian := by
     rw [isHermitian_iff_isSelfAdjoint, two_mul]
     exact (hproj.isSelfAdjoint.add hproj.isSelfAdjoint).sub (.one _)
-  refine ⟨hH, ?_, ?_⟩
-  · rw [two_mul, trace_sub, trace_add, htr, trace_one, hι]
-    norm_num
-  · simpa only [hH.isSelfAdjoint.star_eq] using
-      Unitary.star_mul_self_of_mem hproj.two_mul_sub_one_mem_unitary
+  refine ⟨hH, ?_⟩
+  simpa only [hH.isSelfAdjoint.star_eq] using
+    Unitary.star_mul_self_of_mem hproj.two_mul_sub_one_mem_unitary
+
+/-- For a matrix `P` of the Hermitian projector locus, `2 P - 1` has trace `2 - n`, where `n` is
+the dimension. In particular it is traceless in dimension two. -/
+theorem trace_two_mul_sub_one_of_mem_hermitianProjectorLocus [DecidableEq ι] {P : Matrix ι ι K}
+    (hP : P ∈ hermitianProjectorLocus ι K) :
+    (2 * P - 1).trace = 2 - (Fintype.card ι : K) := by
+  rw [two_mul, trace_sub, trace_add, (mem_hermitianProjectorLocus.mp hP).2, trace_one,
+    one_add_one_eq_two]
 
 variable [CharZero K]
 

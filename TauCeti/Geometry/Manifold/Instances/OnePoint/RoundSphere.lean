@@ -36,7 +36,7 @@ since it sends a line to its orthogonal complement.
 The construction is invariant: a unitary matrix `U` moves the line by the Möbius transformation of
 `U` and conjugates its projector by `U`, so `sphereCoords` intertwines the Möbius action of
 `U(2)` with the rotations `TauCeti.pauliRotation U`
-(`Matrix.unitaryGroup.sphereCoords_toUnits_smul`), and the action of `SU(2)` through `PSL(2, ℂ)`
+(`Matrix.UnitaryGroup.sphereCoords_toUnits_smul`), and the action of `SU(2)` through `PSL(2, ℂ)`
 with the double cover `TauCeti.SU2.toSO3`
 (`Matrix.specialUnitaryGroup.sphereCoords_toPSL_smul`). Conversely, a Möbius transformation that
 acts on the round sphere by any linear map commutes with `v ↦ -v`, hence with the antipodal map,
@@ -64,7 +64,7 @@ homeomorphism `OnePoint.homeomorphSphere` onto the unit sphere of `EuclideanSpac
 * `OnePoint.sphereCoords_injective` and `OnePoint.continuous_sphereCoords`.
 * `OnePoint.sphereCoords_infty` and `OnePoint.sphereCoords_coe`: the explicit formula.
 * `OnePoint.sphereCoords_antipode`: the antipodal map becomes `v ↦ -v`.
-* `Matrix.unitaryGroup.sphereCoords_toUnits_smul` and
+* `Matrix.UnitaryGroup.sphereCoords_toUnits_smul` and
   `Matrix.specialUnitaryGroup.sphereCoords_toPSL_smul`: equivariance for `U(2) → SO(3)` and for
   the double cover `SU(2) → SO(3)`.
 * `Matrix.ProjectiveSpecialLinearGroup.mem_range_toPSL_iff_exists_sphereCoords_smul`: the Möbius
@@ -101,20 +101,18 @@ theorem sphereCoords_def (x : OnePoint ℂ) :
 line `x`. -/
 theorem pauli_sphereCoords (x : OnePoint ℂ) :
     pauli (sphereCoords x) = 2 * hermitianProjector (equivProjectivization ℂ x) - 1 := by
-  obtain ⟨h1, h2, -⟩ :=
-    two_mul_sub_one_of_mem_hermitianProjectorLocus
-      (hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x))
-      (Fintype.card_fin 2)
-  exact pauli_pauliCoord h1 h2
+  have hP := hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x)
+  have h2 := trace_two_mul_sub_one_of_mem_hermitianProjectorLocus hP
+  rw [Fintype.card_fin, Nat.cast_ofNat, sub_self] at h2
+  exact pauli_pauliCoord (two_mul_sub_one_of_mem_hermitianProjectorLocus hP).1 h2
 
 /-- `sphereCoords x` is a unit vector. -/
 @[simp]
 theorem dotProduct_sphereCoords_self (x : OnePoint ℂ) :
     sphereCoords x ⬝ᵥ sphereCoords x = 1 := by
-  obtain ⟨-, -, h3⟩ :=
+  obtain ⟨-, h3⟩ :=
     two_mul_sub_one_of_mem_hermitianProjectorLocus
       (hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x))
-      (Fintype.card_fin 2)
   have h := trace_pauli_mul_pauli (sphereCoords x) (sphereCoords x)
   rw [pauli_sphereCoords, h3, trace_one, Fintype.card_fin] at h
   exact_mod_cast (mul_left_cancel₀ two_ne_zero (h.symm.trans (mul_one 2).symm) :)
@@ -240,7 +238,7 @@ end OnePoint
 
 open OnePoint
 
-namespace Matrix.unitaryGroup
+namespace Matrix.UnitaryGroup
 
 /-- **Equivariance for `U(2) → SO(3)`.** The Möbius transformation of a unitary matrix `U` acts on
 the round sphere by the rotation `pauliRotation U`. -/
@@ -252,7 +250,7 @@ theorem sphereCoords_toUnits_smul (U : unitaryGroup (Fin 2) ℂ) (x : OnePoint �
   have hU := mem_unitaryGroup_iff.mp U.2
   simp only [two_mul, mul_add, add_mul, mul_sub, sub_mul, mul_one, hU, mul_assoc]
 
-end Matrix.unitaryGroup
+end Matrix.UnitaryGroup
 
 namespace Matrix.specialUnitaryGroup
 
@@ -261,7 +259,7 @@ Riemann sphere through `PSL(2, ℂ)` and on the round sphere by the rotation `SU
 `sphereCoords` intertwines the two actions. -/
 theorem sphereCoords_toPSL_smul (g : specialUnitaryGroup (Fin 2) ℂ) (x : OnePoint ℂ) :
     sphereCoords (toPSL g • x) = SU2.toSO3 g *ᵥ sphereCoords x := by
-  rw [SU2.coe_toSO3, ← unitaryGroup.sphereCoords_toUnits_smul, toPSL_apply, pslMk_smul]
+  rw [SU2.coe_toSO3, ← UnitaryGroup.sphereCoords_toUnits_smul, toPSL_apply, pslMk_smul]
   congr 2
   ext i j
   simp
@@ -270,9 +268,9 @@ end Matrix.specialUnitaryGroup
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
-/-- **`PSU(2)` is the group of rotations of the round sphere.** A Möbius transformation `g` lies in
-`PSU(2)` exactly when it acts on the round sphere by some linear map of `ℝ³`, which is then the
-rotation `SU2.toSO3` of a lift of `g` to `SU(2)`. -/
+/-- **`PSU(2)` is the group of Möbius transformations acting linearly on the round sphere.** A
+Möbius transformation `g` lies in `PSU(2)` exactly when it acts on the round sphere by some linear
+map of `ℝ³`. -/
 theorem mem_range_toPSL_iff_exists_sphereCoords_smul (g : PSL(2, ℂ)) :
     g ∈ (specialUnitaryGroup.toPSL : specialUnitaryGroup (Fin 2) ℂ →* _).range ↔
       ∃ R : Matrix (Fin 3) (Fin 3) ℝ, ∀ x, sphereCoords (g • x) = R *ᵥ sphereCoords x := by
