@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
+import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
@@ -31,6 +32,12 @@ each period rectangle vanishes, and hence so does its integral over the whole st
 (`TauCeti.setLIntegral_univ_prod_eq_zero_of_periodic`). For the energy density of a Floer cylinder
 this says that a finite-energy cylinder invariant under a nontrivial translation has zero
 energy.
+
+If the integral of `f` over a half-strip `(c, ∞) × T` is finite, then its integrals over the windows
+`(a + s, b + s) × T` tend to zero as `s → ∞` (`TauCeti.tendsto_setLIntegral_Ioo_add_prod_atTop`),
+and likewise towards `-∞` (`TauCeti.tendsto_setLIntegral_Ioo_add_prod_atBot`). For a Floer
+solution of finite energy on a cylindrical end, the energy over windows moving out along the end
+tends to zero.
 -/
 
 public section
@@ -129,5 +136,56 @@ theorem setLIntegral_univ_prod_eq_zero_of_periodic {β : Type*} [MeasurableSpace
   rw [hunion]
   refine (lintegral_iUnion_le _ _).trans (le_of_eq ?_)
   simp [setLIntegral_Ioc_prod_eq_zero_of_periodic hT hμ hf hfin]
+
+/-- The integrals of `f` over `A r × T` tend to zero as `r → ∞`, for an antitone family of
+measurable sets `A r` with empty intersection, if one of them is finite. -/
+private theorem tendsto_setLIntegral_prod_atTop_of_antitone {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {A : ℝ → Set ℝ}
+    (hA : ∀ r, MeasurableSet (A r)) (hanti : Antitone A) (hempty : ⋂ r, A r = ∅) {c : ℝ}
+    (hf : ∫⁻ z in A c ×ˢ T, f z ∂μ ≠ ∞) :
+    Tendsto (fun r ↦ ∫⁻ z in A r ×ˢ T, f z ∂μ) atTop (𝓝 0) := by
+  -- For `r ≥ c` the integral over `A r × T` is the measure of `A r × β` for `f` times the
+  -- restriction of `μ` to `A c × T`, a finite measure.
+  set ν := (μ.restrict (A c ×ˢ T)).withDensity f
+  have hν (r : ℝ) (hr : c ≤ r) : ∫⁻ z in A r ×ˢ T, f z ∂μ = ν (A r ×ˢ univ) := by
+    rw [withDensity_apply _ ((hA r).prod MeasurableSet.univ),
+      Measure.restrict_restrict ((hA r).prod MeasurableSet.univ), prod_inter_prod,
+      inter_eq_left.2 (hanti hr), univ_inter]
+  have hlim := tendsto_measure_iInter_atTop (μ := ν) (s := fun r ↦ A r ×ˢ univ)
+    (fun r ↦ ((hA r).prod MeasurableSet.univ).nullMeasurableSet)
+    (fun r r' hr ↦ prod_mono (hanti hr) subset_rfl) ⟨c, by rwa [← hν c le_rfl]⟩
+  have hI : ⋂ r, A r ×ˢ (univ : Set β) = ∅ := eq_empty_of_forall_notMem fun z hz ↦ by
+    simpa [hempty] using mem_iInter.2 fun r ↦ (mem_iInter.1 hz r).1
+  rw [hI, measure_empty] at hlim
+  exact hlim.congr' ((eventually_ge_atTop c).mono fun r hr ↦ (hν r hr).symm)
+
+/-- **Tails of a half-strip towards `∞`.** If `f` has finite integral over the half-strip
+`(c, ∞) × T`, then its integrals over the windows `(a + s, b + s) × T` tend to zero as `s → ∞`. -/
+theorem tendsto_setLIntegral_Ioo_add_prod_atTop {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {c : ℝ}
+    (hf : ∫⁻ z in Ioi c ×ˢ T, f z ∂μ ≠ ∞) (a b : ℝ) :
+    Tendsto (fun s ↦ ∫⁻ z in Ioo (a + s) (b + s) ×ˢ T, f z ∂μ) atTop (𝓝 0) := by
+  have h := (tendsto_setLIntegral_prod_atTop_of_antitone (fun r ↦ measurableSet_Ioi)
+    (fun _ _ hr ↦ Ioi_subset_Ioi hr)
+    (eq_empty_of_forall_notMem fun x hx ↦ by simpa using mem_iInter.1 hx x) hf).comp
+    (tendsto_atTop_add_const_left atTop a tendsto_id)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le)
+    fun s ↦ lintegral_mono_set (prod_mono Ioo_subset_Ioi_self subset_rfl)
+
+/-- **Tails of a half-strip towards `-∞`.** If `f` has finite integral over the half-strip
+`(-∞, c) × T`, then its integrals over the windows `(a + s, b + s) × T` tend to zero as
+`s → -∞`. -/
+theorem tendsto_setLIntegral_Ioo_add_prod_atBot {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {c : ℝ}
+    (hf : ∫⁻ z in Iio c ×ˢ T, f z ∂μ ≠ ∞) (a b : ℝ) :
+    Tendsto (fun s ↦ ∫⁻ z in Ioo (a + s) (b + s) ×ˢ T, f z ∂μ) atBot (𝓝 0) := by
+  have h := (tendsto_setLIntegral_prod_atTop_of_antitone (A := fun r ↦ Iio (-r))
+    (fun r ↦ measurableSet_Iio) (fun _ _ hr ↦ Iio_subset_Iio (neg_le_neg hr))
+    (eq_empty_of_forall_notMem fun x hx ↦ by simpa using mem_iInter.1 hx (-x))
+    (c := -c) (by rwa [neg_neg])).comp
+    (tendsto_neg_atBot_atTop.comp (tendsto_atBot_add_const_left atBot b tendsto_id))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le)
+    fun s ↦ lintegral_mono_set (prod_mono ?_ subset_rfl)
+  simpa using Ioo_subset_Iio_self
 
 end TauCeti

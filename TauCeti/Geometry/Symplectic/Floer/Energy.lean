@@ -65,6 +65,8 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 * `SymplecticForm.floerEnergyDensity_nonneg`: the energy density of a solution is nonnegative.
 * `SymplecticForm.floerEnergyDensity_eq_zero_iff`: under tameness, the energy density of a
   solution vanishes exactly where the perturbed derivative does.
+* `SymplecticForm.floerEnergyDensity_eq_zero_of_setLIntegral_eq_zero`: a `C¹` solution with zero
+  energy over an open set has zero energy density there.
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
@@ -503,6 +505,27 @@ theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ ×
     fun z _ ↦ ?_
   simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
+
+/-- **Solutions with zero energy have zero energy density.** Let `u` and the perturbation data be
+`C¹` over an open set `U` of the domain, and let `u` solve the Floer equation `(du - X_K)^{0,1} = 0`
+on `U` for almost complex structures `J z` tamed by `ω`. If the energy of `u` over `U` vanishes,
+then its energy density vanishes at every point of `U`. -/
+theorem floerEnergyDensity_eq_zero_of_setLIntegral_eq_zero (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) (hJ : ∀ z ∈ U, ω.Tames (J z))
+    (hfloer : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) = 0) :
+    ∀ z ∈ U, ω.floerEnergyDensity Ks Kt u z = 0 := by
+  have hc : ContinuousOn (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) U :=
+    ENNReal.continuous_ofReal.comp_continuousOn (ω.continuousOn_floerEnergyDensity hU hu hKs hKt)
+  -- A continuous function with zero integral over an open set vanishes there.
+  have hae := (lintegral_eq_zero_iff' (hc.aemeasurable hU.measurableSet)).1 hE
+  intro z hz
+  exact le_antisymm (ENNReal.ofReal_eq_zero.1
+    (Measure.eqOn_open_of_ae_eq hae hU hc continuous_zero.continuousOn hz))
+    (ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz))
 
 /-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
 along a map continuous on `U` is continuous on `U`. -/

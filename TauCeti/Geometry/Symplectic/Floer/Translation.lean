@@ -170,34 +170,6 @@ private theorem eq_of_forall_floerEnergyDensity_eq_zero (ω : SymplecticForm V)
   exact is_const_of_deriv_eq_zero (fun r ↦ (hline r).differentiableAt)
     (fun r ↦ (hline r).deriv) s 0
 
-/-- A map that is `C¹` on a neighbourhood of the closed strip `ℝ × [0, 1]` and solves the Floer
-equation for `K = H_t dt` and tamed almost complex structures there has zero energy density at
-every point of the open strip `ℝ × (0, 1)` if its energy over the open strip vanishes. -/
-private theorem floerEnergyDensity_eq_zero_of_lintegral_eq_zero (ω : SymplecticForm V)
-    {J : ℝ × ℝ → AlmostComplexStructure V} (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U)
-    (hu : ContDiffOn ℝ 1 u U) (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U)
-    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
-    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Ioo 0 1,
-      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0) :
-    ∀ z ∈ (univ : Set ℝ) ×ˢ Ioo 0 1,
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z = 0 := by
-  have hopen : IsOpen ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) := isOpen_univ.prod isOpen_Ioo
-  have hc : ContinuousOn (fun z ↦ ENNReal.ofReal
-      (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) ((univ : Set ℝ) ×ˢ Ioo 0 1) :=
-    ENNReal.continuous_ofReal.comp_continuousOn
-      ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
-        (contDiff_uncurry_cylindrical hH).contDiffOn).mono (strip_Ioo_subset_Icc.trans hRU))
-  -- A continuous function with zero integral over an open set vanishes there.
-  have hae := (lintegral_eq_zero_iff' (hc.aemeasurable hopen.measurableSet)).1 hE
-  intro z hz
-  have h := Measure.eqOn_open_of_ae_eq hae hopen hc continuous_zero.continuousOn hz
-  have hz' := strip_Ioo_subset_Icc hz
-  exact le_antisymm (ENNReal.ofReal_eq_zero.1 h)
-    (ω.floerEnergyDensity_nonneg (hJ z hz') (hfloer z hz'))
-
 /-- **Zero energy characterizes stationary Floer cylinders.** Let `H` be a `C¹` time-dependent
 Hamiltonian and let `u` be `C¹` on an open neighbourhood `U` of the strip `ℝ × [0, 1]`, solving
 the Floer equation for the cylindrical perturbation `K = H_t dt` there, for almost complex
@@ -214,7 +186,10 @@ theorem lintegral_floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V)
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0 ↔
       ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s, t) = u (0, t) := by
   refine ⟨fun hE ↦ eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
-    (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer
+    (ω.floerEnergyDensity_eq_zero_of_setLIntegral_eq_zero (isOpen_univ.prod isOpen_Ioo)
+      (hu.mono (strip_Ioo_subset_Icc.trans hRU)) contDiffOn_const
+      (contDiff_uncurry_cylindrical hH).contDiffOn (fun z hz ↦ hJ z (strip_Ioo_subset_Icc hz))
+      (fun z hz ↦ hfloer z (strip_Ioo_subset_Icc hz))
       (le_antisymm (hE ▸ lintegral_mono_set strip_Ioo_subset_Icc) zero_le)), fun hst ↦ ?_⟩
   -- Near a point of the open strip `u` agrees with the stationary map `(s, t) ↦ u(0, t)`.
   have h0 : EqOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) 0
@@ -279,7 +254,10 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (ω : SymplecticForm V)
     (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
   exact (ω.lintegral_floerEnergyDensity_eq_zero_iff hH hU hu hRU hJ hfloer).2
     (eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
-      (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer hE))
+      (ω.floerEnergyDensity_eq_zero_of_setLIntegral_eq_zero (isOpen_univ.prod isOpen_Ioo)
+        (hu.mono (strip_Ioo_subset_Icc.trans hRU)) contDiffOn_const
+        (contDiff_uncurry_cylindrical hH).contDiffOn (fun z hz ↦ hJ z (strip_Ioo_subset_Icc hz))
+        (fun z hz ↦ hfloer z (strip_Ioo_subset_Icc hz)) hE))
 
 /-- **Translations act freely on nonstationary finite-energy Floer cylinders.** Under the
 hypotheses of `TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`, if `u` has finite
