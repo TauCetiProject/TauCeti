@@ -107,6 +107,15 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
 
+/-- On a positive-dimensional space, a constant potential on an open convex set,
+extended by `⊤` outside it, has zero Monge–Ampère measure. -/
+theorem mongeAmpereMeasure_ite_const [Nontrivial E] {U : Set E}
+    [DecidablePred (· ∈ U)] (hU : IsOpen U) (hUc : Convex ℝ U) (c : ℝ) :
+    mongeAmpereMeasure μ (fun y => if y ∈ U then (c : EReal) else ⊤) = 0 := by
+  have hdim : finrank ℝ E ≠ 0 := (finrank_pos (R := ℝ) (M := E)).ne'
+  simpa only [zero_div, zero_mul, zero_add, zero_pow hdim, ENNReal.ofReal_zero, zero_smul]
+    using mongeAmpereMeasure_ite_mul_norm_sq_add μ hU hUc (a := 0) le_rfl c
+
 /-- **Subtracting a plane on a section.** Let `u` be convex on an open set `Ω`, and let
 `S = {y ∈ Ω | u y < u x + ℓ (y - x) + h}`. The Monge–Ampère measure of `u + L + c`, extended by
 `⊤` off `S`, is the restriction to `S` of the Monge–Ampère measure of `u` extended by `⊤` off
