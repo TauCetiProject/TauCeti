@@ -145,16 +145,20 @@ theorem contDiffAt_adaptedNormalExtension {γ : V → W} {J : W → W →L[𝕜]
   exact contDiffAt_normalExtension hγn
     ((hJ.comp x hγn).clm_comp (hγ.fderiv_right le_rfl))
 
-/-- If `γ` is `C^(n+1)` on an open `U` and maps it into an open `Ω` on which `J` is `C^n`,
-the adapted extension is `C^n` on `U ×ˢ univ`. -/
+/-- If `γ` is `C^(n+1)` on an open `U` and maps it into any set `Ω` on which `J` is `C^n`,
+the adapted extension is `C^n` on `U ×ˢ univ`. No openness of `Ω` is required. -/
 theorem contDiffOn_adaptedNormalExtension {γ : V → W} {J : W → W →L[𝕜] W} {n : ℕ∞ω}
-    {U : Set V} {Ω : Set W} (hU : IsOpen U) (hΩ : IsOpen Ω)
+    {U : Set V} {Ω : Set W} (hU : IsOpen U)
     (hγ : ContDiffOn 𝕜 (n + 1) γ U) (hJ : ContDiffOn 𝕜 n J Ω)
     (hγΩ : Set.MapsTo γ U Ω) :
     ContDiffOn 𝕜 n (adaptedNormalExtension γ J) (U ×ˢ Set.univ) := by
-  intro p hp
-  exact (contDiffAt_adaptedNormalExtension (hγ.contDiffAt (hU.mem_nhds hp.1))
-    (hJ.contDiffAt (hΩ.mem_nhds (hγΩ hp.1)))).contDiffWithinAt
+  have hγn := hγ.of_le (le_self_add : n ≤ n + 1)
+  have hA := (hJ.comp hγn hγΩ).clm_comp (hγ.fderiv_of_isOpen hU le_rfl)
+  have hfst : Set.MapsTo (Prod.fst : V × V → V) (U ×ˢ Set.univ) U := fun _ hp ↦ hp.1
+  exact ((hγn.comp contDiffOn_fst hfst).add
+    ((hA.comp contDiffOn_fst hfst).clm_apply contDiffOn_snd)).congr
+      (fun p _ ↦ by simp only [adaptedNormalExtension_apply, Function.comp_apply,
+        ContinuousLinearMap.comp_apply])
 
 /-- The adapted first jet requires only a `C^1` parametrization and a continuous structure
 at the base point. In particular it does not consume a derivative of `J`. -/
