@@ -14,7 +14,8 @@ For two real points `c₁`, `c₂` of the complex plane, the difference of the t
 `|z - c|² - |C - c|²` is affine in the real part of `z` and vanishes when `z.re = C.re`
 (`Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`): the radical axis of two circles centred on
 the real line is the vertical line through their intersection points. This file also records the
-real points of such a circle and on which side of a second circle its points lie.
+real points of such a circle and on which side of a second circle its points lie. It also bounds
+the norm along upward vertical rays leaving a point of the closed upper half-plane.
 
 ## Main results
 
@@ -31,6 +32,9 @@ real points of such a circle and on which side of a second circle its points lie
   points that lie on or outside a second circle, lie on or outside the second circle.
 * `Complex.norm_one_add_sq_div_sq_of_norm_eq`: on the circle `‖z‖ = R`, `‖1 + z² / R²‖` is
   `2 |re z| / R`.
+* `Complex.norm_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`, `‖z‖ ≤ ‖z + s * I‖`.
+* `Complex.half_norm_add_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`,
+  `(‖z‖ + s) / 2 ≤ ‖z + s * I‖`.
 -/
 
 public section

@@ -82,8 +82,10 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
-* `Real.mul_rpow_mul_le_mul_rpow_add_one`: `C * T ^ S * x ≤ C * R' ^ (S + 1)` for
-  `R' ≤ T`, `x ≤ T` and `S + 1 ≤ 0`.
+* `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
+  `S + 1 ≤ 0`.
+* `Real.exists_le_mul_rpow_add_one_lt`: for `0 < ε` and `S + 1 < 0`, arbitrarily large `R'` satisfy
+  `M * R' ^ (S + 1) < ε`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -197,16 +199,21 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
   rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
     rpow_inv_rpow hI hq.ne']
 
-/-- A horizontal segment of length `x ≤ T` at height `T ≥ R'` contributes at most
-`C * T ^ S * x ≤ C * R' ^ (S + 1)` when `S + 1 ≤ 0`. -/
-theorem mul_rpow_mul_le_mul_rpow_add_one {C T S R' x : ℝ} (hC : 0 ≤ C) (hR' : 0 < R')
-    (hTR' : R' ≤ T) (hS1 : S + 1 ≤ 0) (hx : x ≤ T) :
-    C * T ^ S * x ≤ C * R' ^ (S + 1) :=
+/-- For `0 < R' ≤ T`, `x ≤ T` and `S + 1 ≤ 0`, one has `T ^ S * x ≤ R' ^ (S + 1)`. -/
+theorem rpow_mul_le_rpow_add_one {T S R' x : ℝ} (hR' : 0 < R') (hTR' : R' ≤ T) (hS1 : S + 1 ≤ 0)
+    (hx : x ≤ T) : T ^ S * x ≤ R' ^ (S + 1) :=
   have hT : 0 < T := hR'.trans_le hTR'
-  calc C * T ^ S * x ≤ C * T ^ S * T := mul_le_mul_of_nonneg_left hx (by positivity)
-    _ = C * T ^ (S + 1) := by rw [mul_assoc, ← Real.rpow_add_one hT.ne' S]
-    _ ≤ C * R' ^ (S + 1) :=
-        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hR' hTR' hS1) hC
+  calc T ^ S * x ≤ T ^ S * T := mul_le_mul_of_nonneg_left hx (by positivity)
+    _ = T ^ (S + 1) := (Real.rpow_add_one hT.ne' S).symm
+    _ ≤ R' ^ (S + 1) := Real.rpow_le_rpow_of_nonpos hR' hTR' hS1
+
+/-- For `0 < ε` and `S + 1 < 0`, arbitrarily large `R'` satisfy `M * R' ^ (S + 1) < ε`. -/
+theorem exists_le_mul_rpow_add_one_lt {M ε S : ℝ} (R : ℝ) (hε : 0 < ε) (hS1 : S + 1 < 0) :
+    ∃ R', R ≤ R' ∧ M * R' ^ (S + 1) < ε := by
+  have h := (tendsto_rpow_neg_atTop (neg_pos.2 hS1)).const_mul M
+  rw [mul_zero] at h
+  simp only [neg_neg] at h
+  exact ((Filter.eventually_ge_atTop R).and (h.eventually_lt_const hε)).exists
 
 end Real
 

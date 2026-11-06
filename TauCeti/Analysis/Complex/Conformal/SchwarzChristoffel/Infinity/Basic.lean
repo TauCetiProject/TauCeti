@@ -182,8 +182,12 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
   have hstart : z + ((0 : ℝ) : ℂ) * Complex.I = z := by simp
   have hmain := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ hβ0 hmem hB hBi
   rw [hend, hstart] at hmain
-  refine hmain.trans ((TauCeti.intervalIntegral_const_mul_add_rpow_le hz0 hβ0 hS1 hK.le).trans ?_)
-  exact le_of_eq (by rw [hKdef]; ring)
+  have hint := mul_le_mul_of_nonneg_left
+    (TauCeti.integral_add_rpow_le_of_lt_neg_one hz0 hβ0 (by linarith : S < -1)) hK.le
+  rw [← intervalIntegral.integral_const_mul] at hint
+  refine hmain.trans (hint.trans (le_of_eq ?_))
+  rw [hKdef]
+  ring
 
 /-- Crossing the upper half-plane along a horizontal segment at height `T` moves the
 Schwarz--Christoffel primitive by at most `C * T ^ (∑ i, e i)` times the length of the segment:
@@ -247,34 +251,26 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive_atInfinity (a e : ι 
   set D : ℝ := C * 2 ^ (-S) / (-(S + 1)) with hDdef
   have hD : 0 < D := div_pos (by positivity) (by linarith)
   set M : ℝ := 2 * D + C with hMdef
-  have hM : 0 < M := by rw [hMdef]; linarith
   refine CompleteSpace.complete (f := map (schwarzChristoffelPrimitive a e z₀)
     (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet)) ?_
   rw [Metric.cauchy_iff]
   refine ⟨map_neBot, fun ε hε => ?_⟩
-  have hdec : ∀ᶠ x in atTop, M * x ^ (S + 1) < ε := by
-    simpa using Filter.Tendsto.eventually_lt_const (by simpa using hε)
-      ((tendsto_rpow_neg_atTop (neg_pos.2 hS1)).const_mul M)
-  obtain ⟨R', hR'R, hR'ε⟩ := ((eventually_ge_atTop R).and hdec).exists
+  obtain ⟨R', hR'R, hR'ε⟩ := Real.exists_le_mul_rpow_add_one_lt (M := M) R hε hS1
   have hR'pos : 0 < R' := hR.trans_le hR'R
   refine ⟨schwarzChristoffelPrimitive a e z₀ '' ({z : ℂ | R' ≤ ‖z‖} ∩ upperHalfPlaneSet), ?_, ?_⟩
   · refine mem_map.mpr (mem_of_superset ?_ (subset_preimage_image _ _))
     exact inter_mem (mem_inf_of_left (eventually_cobounded_le_norm R'))
       (mem_inf_of_right (mem_principal_self _))
-  rintro - ⟨z, hz, rfl⟩ - ⟨w, hw, rfl⟩
+  rintro - ⟨z, ⟨hzR', hzU⟩, rfl⟩ - ⟨w, ⟨hwR', hwU⟩, rfl⟩
   set T : ℝ := ‖z‖ + ‖w‖ with hTdef
-  have hzR' : R' ≤ ‖z‖ := hz.1
-  have hwR' : R' ≤ ‖w‖ := hw.1
-  have hT0 : 0 < T := by rw [hTdef]; linarith
-  have hTR' : R' ≤ T := by rw [hTdef]; linarith
-  have hzT : z.im ≤ T :=
-    ((le_abs_self _).trans (abs_im_le_norm z)).trans (by rw [hTdef]; linarith)
-  have hwT : w.im ≤ T :=
-    ((le_abs_self _).trans (abs_im_le_norm w)).trans (by rw [hTdef]; linarith)
+  have hTR' : R' ≤ T := hzR'.trans (le_add_of_nonneg_right (norm_nonneg w))
+  have hT0 : 0 < T := hR'pos.trans_le hTR'
+  have hzT : z.im ≤ T := (Complex.im_le_norm z).trans (by linarith [norm_nonneg w])
+  have hwT : w.im ≤ T := (Complex.im_le_norm w).trans (by linarith [norm_nonneg z])
   -- the three legs of the path
-  have hleg1 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hz.2
+  have hleg1 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hzU
     (hR'R.trans hzR') hzT
-  have hleg3 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hw.2
+  have hleg3 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hwU
     (hR'R.trans hwR') hwT
   have hleg2 := norm_schwarzChristoffelPrimitive_sub_le_horizontal a e z₀ hC hbd hS hT0
     (hR'R.trans hTR') z.re w.re
@@ -285,7 +281,8 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive_atInfinity (a e : ι 
   have hb3 := hleg3.trans (mul_le_mul_of_nonneg_left (hdecay _ hwR') hD.le)
   have hlen : |w.re - z.re| ≤ T :=
     (abs_sub _ _).trans (by rw [hTdef]; linarith [abs_re_le_norm z, abs_re_le_norm w])
-  have hb2 := hleg2.trans (Real.mul_rpow_mul_le_mul_rpow_add_one hC.le hR'pos hTR' hS1.le hlen)
+  have hb2 := hleg2.trans ((mul_assoc _ _ _).le.trans (mul_le_mul_of_nonneg_left
+    (Real.rpow_mul_le_rpow_add_one hR'pos hTR' hS1.le hlen) hC.le))
   calc dist (schwarzChristoffelPrimitive a e z₀ z) (schwarzChristoffelPrimitive a e z₀ w)
       ≤ D * R' ^ (S + 1) + C * R' ^ (S + 1) + D * R' ^ (S + 1) :=
         (dist_triangle4 _ (schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I))
