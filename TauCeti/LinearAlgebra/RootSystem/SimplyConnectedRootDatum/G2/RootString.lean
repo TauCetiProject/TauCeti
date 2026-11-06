@@ -45,6 +45,10 @@ root-subgroup straightening formula with four correction factors at
   with `α` short and `β` long is short.
 * `TauCeti.DynkinType.g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root`: a root
   `3α + 2β` with `α` short and `β` long is long.
+* `TauCeti.DynkinType.g2_smul_short_add_smul_long_notMem_range_root_and_ne_zero`: the seven
+  sums outside the short–long positive-root configuration are neither roots nor zero.
+* `TauCeti.DynkinType.g2_chainBotCoeff_of_short_add_long_eq_root`: the four bottom
+  root-string coefficients in the short–long configuration are `0`, `1`, `2` and `2`.
 
 ## References
 
@@ -166,5 +170,69 @@ theorem g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root (i j k :
   rw [g2Length_apply] at hi hj ⊢
   revert i j k
   decide +kernel
+
+/-- The seven sums that give vanishing brackets in the short–long `G₂` configuration
+are neither roots nor zero. -/
+theorem g2_smul_short_add_smul_long_notMem_range_root_and_ne_zero (i j : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hadd : g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j ∈
+      Set.range g2SimplyConnectedRootDatum.root) (a b : ℕ)
+    (hab : (a, b) ∈ ({(4, 1), (4, 2), (1, 2), (5, 2), (4, 3), (5, 3), (6, 3)} :
+      Finset (ℕ × ℕ))) :
+    a • g2SimplyConnectedRootDatum.root i + b • g2SimplyConnectedRootDatum.root j ∉
+        Set.range g2SimplyConnectedRootDatum.root ∧
+      a • g2SimplyConnectedRootDatum.root i + b • g2SimplyConnectedRootDatum.root j ≠ 0 := by
+  have hpair : g2SimplyConnectedRootDatum.pairing j i = -3 := by
+    obtain ⟨k, hk⟩ := hadd
+    simp only [g2SimplyConnectedRootDatum_root, g2SimplyConnectedRootDatum_pairing,
+      g2Root_apply, g2Coroot_apply] at hk ⊢
+    rw [g2Length_apply] at hi hj
+    revert i j k
+    decide +kernel
+  clear hadd
+  simp only [Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq] at hab
+  rcases hab with h | h | h | h | h | h | h <;> rcases h with ⟨rfl, rfl⟩ <;>
+    simp only [Set.mem_range, not_exists, g2SimplyConnectedRootDatum_root,
+      g2Root_apply] <;>
+    simp only [g2SimplyConnectedRootDatum_pairing, g2Root_apply, g2Coroot_apply] at hpair <;>
+    rw [g2Length_apply] at hi hj <;> revert i j <;> decide +kernel
+
+/-- The bottom root-string coefficients for `α, β`, `α, α+β`, `α, 2α+β` and
+`2α+β, α+β` are respectively `0`, `1`, `2` and `2`, when `α` is short, `β` is long
+and their sum is a root. -/
+theorem g2_chainBotCoeff_of_short_add_long_eq_root (i j k l o : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hk : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j)
+    (hl : g2SimplyConnectedRootDatum.root l =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root k)
+    (ho : g2SimplyConnectedRootDatum.root o =
+      g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root k) :
+    g2SimplyConnectedRootDatum.chainBotCoeff i j = 0 ∧
+      g2SimplyConnectedRootDatum.chainBotCoeff i k = 1 ∧
+      g2SimplyConnectedRootDatum.chainBotCoeff i l = 2 ∧
+      g2SimplyConnectedRootDatum.chainBotCoeff l k = 2 := by
+  let P := g2SimplyConnectedRootDatum
+  have hroot : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk⟩
+  have hlin := P.linearIndependent_of_add_mem_range_root' hroot
+  have hbot : P.chainBotCoeff i j = 0 :=
+    P.chainBotCoeff_eq_zero_iff.mpr
+      (.inr (g2_root_sub_notMem_range_of_short_add_long_eq_root i j k hi hj
+        (hk.trans (add_comm _ _))))
+  have hbotk : P.chainBotCoeff i k = 1 := by
+    rw [P.chainBotCoeff_of_add hlin (hk.trans (add_comm _ _)), hbot]
+  have hlin' := P.linearIndependent_of_add_mem_range_root' ⟨l, hl⟩
+  have hbotl : P.chainBotCoeff i l = 2 := by
+    rw [P.chainBotCoeff_of_add hlin' (hl.trans (add_comm _ _)), hbotk]
+  have hklen := g2Length_eq_one_of_long_add_short_eq_root j i k hj hi
+    (hk.trans (add_comm _ _))
+  have hllen := g2Length_eq_one_of_two_smul_short_add_long_eq_root i j l hi hj
+    (by rw [hl, hk]; module)
+  have holen := g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root i j o hi hj
+    (by rw [ho, hl, hk]; module)
+  have hbotlk : P.chainBotCoeff l k = 2 :=
+    g2_chainBotCoeff_eq_two_of_short_add_short_eq_long l k o hllen hklen holen
+      (ho.trans (add_comm _ _))
+  exact ⟨hbot, hbotk, hbotl, hbotlk⟩
 
 end TauCeti.DynkinType

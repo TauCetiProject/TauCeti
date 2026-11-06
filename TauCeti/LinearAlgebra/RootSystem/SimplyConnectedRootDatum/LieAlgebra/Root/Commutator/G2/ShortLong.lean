@@ -45,73 +45,30 @@ open TauCeti.UniversalEnvelopingAlgebra
 
 noncomputable section
 
-private theorem short_long_exclusions (i j : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3)
-    (hadd : g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i ∈
-      Set.range g2SimplyConnectedRootDatum.root) (a b : ℕ)
-    (hab : (a, b) ∈ ({(4, 1), (4, 2), (1, 2), (5, 2), (4, 3), (5, 3), (6, 3)} :
-      Finset (ℕ × ℕ))) :
-    a • g2SimplyConnectedRootDatum.root i + b • g2SimplyConnectedRootDatum.root j ∉
-        Set.range g2SimplyConnectedRootDatum.root ∧
-      a • g2SimplyConnectedRootDatum.root i + b • g2SimplyConnectedRootDatum.root j ≠ 0 := by
-  have hpair : g2SimplyConnectedRootDatum.pairing j i = -3 := by
-    obtain ⟨k, hk⟩ := hadd
-    simp only [g2SimplyConnectedRootDatum_root, g2SimplyConnectedRootDatum_pairing,
-      g2Root_apply, g2Coroot_apply] at hk ⊢
-    rw [g2Length_apply] at hi hj
-    revert i j k
-    decide +kernel
-  clear hadd
-  simp only [Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq] at hab
-  rcases hab with h | h | h | h | h | h | h <;> rcases h with ⟨rfl, rfl⟩ <;>
-    simp only [Set.mem_range, not_exists, g2SimplyConnectedRootDatum_root,
-      g2Root_apply] <;>
-    simp only [g2SimplyConnectedRootDatum_pairing, g2Root_apply, g2Coroot_apply] at hpair <;>
-    rw [g2Length_apply] at hi hj <;> revert i j <;> decide +kernel
-
-private theorem short_long_chainBotCoeff (i j k l o : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3)
-    (hk : g2SimplyConnectedRootDatum.root k =
-      g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i)
-    (hl : g2SimplyConnectedRootDatum.root l =
-      g2SimplyConnectedRootDatum.root k + g2SimplyConnectedRootDatum.root i)
-    (ho : g2SimplyConnectedRootDatum.root o =
-      g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root k) :
-    (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i j = 0 ∧
-      (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i k = 1 ∧
-      (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i l = 2 ∧
-      (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff l k = 2 := by
-  let P := g2SimplyConnectedRootDatum
-  have hroot : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk.trans (add_comm _ _)⟩
-  have hlin := P.linearIndependent_of_add_mem_range_root' hroot
-  have hbot : P.chainBotCoeff i j = 0 :=
-    P.chainBotCoeff_eq_zero_iff.mpr
-      (.inr (g2_root_sub_notMem_range_of_short_add_long_eq_root i j k hi hj hk))
-  have hbotk : P.chainBotCoeff i k = 1 := by
-    rw [P.chainBotCoeff_of_add hlin hk, hbot]
-  have hlin' := P.linearIndependent_of_add_mem_range_root' ⟨l, hl.trans (add_comm _ _)⟩
-  have hbotl : P.chainBotCoeff i l = 2 := by
-    rw [P.chainBotCoeff_of_add hlin' hl, hbotk]
-  have hklen := g2Length_eq_one_of_long_add_short_eq_root j i k hj hi hk
-  have hllen := g2Length_eq_one_of_two_smul_short_add_long_eq_root i j l hi hj
-    (by rw [hl, hk]; module)
-  have holen := g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root i j o hi hj
-    (by rw [ho, hl, hk]; module)
-  have hbotlk : P.chainBotCoeff l k = 2 :=
-    g2_chainBotCoeff_eq_two_of_short_add_short_eq_long l k o hllen hklen holen
-      (ho.trans (add_comm _ _))
+private theorem g2_root_eq_add {p q r : Fin G2.numRoots}
+    (h : g2SimplyConnectedRootDatum.root r =
+      g2SimplyConnectedRootDatum.root p + g2SimplyConnectedRootDatum.root q) :
+    (G2.simplyConnectedRootDatum valid_G2).root r =
+      (G2.simplyConnectedRootDatum valid_G2).root p +
+        (G2.simplyConnectedRootDatum valid_G2).root q := by
   rw [simplyConnectedRootDatum_G2]
-  exact ⟨hbot, hbotk, hbotl, hbotlk⟩
+  exact h
+
+private theorem g2_chainBotCoeff_eq (p q : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff p q =
+      g2SimplyConnectedRootDatum.chainBotCoeff p q := by
+  rw [simplyConnectedRootDatum_G2]
+  rfl
 
 section Configuration
 
 variable (i j k l m o : Fin G2.numRoots) (hi : g2Length i = 1) (hj : g2Length j = 3)
 variable (hk : g2SimplyConnectedRootDatum.root k =
-  g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i)
+  g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j)
 variable (hl : g2SimplyConnectedRootDatum.root l =
-  g2SimplyConnectedRootDatum.root k + g2SimplyConnectedRootDatum.root i)
+  g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root k)
 variable (hm : g2SimplyConnectedRootDatum.root m =
-  g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root i)
+  g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root l)
 variable (ho : g2SimplyConnectedRootDatum.root o =
   g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root k)
 
@@ -120,15 +77,14 @@ private theorem short_long_constants :
     2 ∣ G2.structureConstant valid_G2 i k ∧
       3 ∣ G2.structureConstant valid_G2 i l ∧
       3 ∣ G2.structureConstant valid_G2 l k := by
-  obtain ⟨_, hik, hil, hlk⟩ := short_long_chainBotCoeff i j k l o hi hj hk hl ho
+  obtain ⟨_, hik, hil, hlk⟩ := g2_chainBotCoeff_of_short_add_long_eq_root i j k l o hi hj hk hl ho
   have dvd {p q r : Fin G2.numRoots}
       (h : g2SimplyConnectedRootDatum.root r =
         g2SimplyConnectedRootDatum.root p + g2SimplyConnectedRootDatum.root q) :=
     chainBotCoeff_add_one_dvd_structureConstant (t := G2) (ht := valid_G2)
-      (α := p) (β := q) (by rw [simplyConnectedRootDatum_G2]; exact ⟨r, h⟩)
-  simpa only [hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat] using
-    And.intro (dvd (hl.trans (add_comm _ _)))
-      (And.intro (dvd (hm.trans (add_comm _ _))) (dvd ho))
+      (α := p) (β := q) ⟨r, g2_root_eq_add h⟩
+  simpa only [g2_chainBotCoeff_eq, hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat] using
+    And.intro (dvd hl) (And.intro (dvd hm) (dvd ho))
 
 include hi hj hk hl hm ho in
 /-- The four integer coefficients in the short–long `G₂` straightening formula are units
@@ -139,17 +95,19 @@ theorem g2_short_long_coefficients_isUnit :
     let a := d * (G2.structureConstant valid_G2 i l / 3)
     let b := d * c * (G2.structureConstant valid_G2 l k / 3)
     IsUnit c ∧ IsUnit d ∧ IsUnit a ∧ IsUnit b := by
-  obtain ⟨hij, hik, hil, hlk⟩ := short_long_chainBotCoeff i j k l o hi hj hk hl ho
+  obtain ⟨hij, hik, hil, hlk⟩ :=
+    g2_chainBotCoeff_of_short_add_long_eq_root i j k l o hi hj hk hl ho
   have values {p q r : Fin G2.numRoots}
       (h : g2SimplyConnectedRootDatum.root r =
         g2SimplyConnectedRootDatum.root p + g2SimplyConnectedRootDatum.root q) :=
     structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := valid_G2)
-      (α := p) (β := q) (by rw [simplyConnectedRootDatum_G2]; exact ⟨r, h⟩)
-  have hc := values (hk.trans (add_comm _ _))
-  have hd := values (hl.trans (add_comm _ _))
-  have ha := values (hm.trans (add_comm _ _))
+      (α := p) (β := q) ⟨r, g2_root_eq_add h⟩
+  have hc := values hk
+  have hd := values hl
+  have ha := values hm
   have hb := values ho
-  simp only [hij, hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat] at hc hd ha hb
+  simp only [g2_chainBotCoeff_eq, hij, hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat]
+    at hc hd ha hb
   rcases hc with hc | hc <;> rcases hd with hd | hd <;>
     rcases ha with ha | ha <;> rcases hb with hb | hb <;> norm_num [hc, hd, ha, hb]
 
@@ -171,12 +129,12 @@ private theorem short_long_scaled_brackets :
       ⁅G2.chevalleySystem valid_G2 p, G2.chevalleySystem valid_G2 q⁆ =
         G2.structureConstant valid_G2 p q • G2.chevalleySystem valid_G2 r :=
     lie_chevalleySystem_eq_structureConstant_zsmul
-      (t := G2) (ht := valid_G2) (by rw [simplyConnectedRootDatum_G2]; exact h)
-  refine ⟨bracket (hk.trans (add_comm _ _)), ?_, ?_, ?_⟩
-  · rw [bracket (hl.trans (add_comm _ _)), smul_smul]
+      (t := G2) (ht := valid_G2) (g2_root_eq_add h)
+  refine ⟨bracket hk, ?_, ?_, ?_⟩
+  · rw [bracket hl, smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h2]
-  · rw [bracket (hm.trans (add_comm _ _)), smul_smul]
+  · rw [bracket hm, smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h3]
   · rw [bracket ho, smul_smul]
@@ -195,12 +153,12 @@ private theorem short_long_zero_brackets :
       (heq : g2SimplyConnectedRootDatum.root p + g2SimplyConnectedRootDatum.root q =
         a • g2SimplyConnectedRootDatum.root i + b • g2SimplyConnectedRootDatum.root j) :
       ⁅G2.chevalleySystem valid_G2 p, G2.chevalleySystem valid_G2 q⁆ = 0 := by
-    obtain ⟨hnot, hne⟩ := short_long_exclusions i j hi hj ⟨k, hk⟩ a b hab
-    apply lie_chevalleySystem_eq_zero (t := G2) (ht := valid_G2)
-    · rw [simplyConnectedRootDatum_G2]
-      exact heq.symm ▸ hnot
-    · rw [simplyConnectedRootDatum_G2]
-      exact heq.symm ▸ hne
+    obtain ⟨hnot, hne⟩ :=
+      g2_smul_short_add_smul_long_notMem_range_root_and_ne_zero i j hi hj ⟨k, hk⟩ a b hab
+    apply lie_chevalleySystem_eq_zero (t := G2) (ht := valid_G2) <;>
+      rw [simplyConnectedRootDatum_G2]
+    · exact heq.symm ▸ hnot
+    · exact heq.symm ▸ hne
   exact ⟨zeroBracket i m 4 1 (by decide) (by rw [hm, hl, hk]; module),
     zeroBracket i o 4 2 (by decide) (by rw [ho, hl, hk]; module),
     zeroBracket j k 1 2 (by decide) (by rw [hk]; module),
@@ -228,11 +186,11 @@ All four coefficients are integral, including in value characteristics two and t
 theorem chevalleyRootSubgroup_mul_of_g2_short_long
     (i j k l m o : Fin G2.numRoots) (hi : g2Length i = 1) (hj : g2Length j = 3)
     (hk : g2SimplyConnectedRootDatum.root k =
-      g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i)
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j)
     (hl : g2SimplyConnectedRootDatum.root l =
-      g2SimplyConnectedRootDatum.root k + g2SimplyConnectedRootDatum.root i)
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root k)
     (hm : g2SimplyConnectedRootDatum.root m =
-      g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root i)
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root l)
     (ho : g2SimplyConnectedRootDatum.root o =
       g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root k)
     (A : CommAlgCat ℤ) (u v : A) :
