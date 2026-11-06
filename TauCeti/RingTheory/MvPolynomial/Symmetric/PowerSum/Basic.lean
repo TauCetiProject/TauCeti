@@ -192,9 +192,8 @@ private theorem sum_ite_prod_X_eq_natCard_smul (r : ι → ℕ) (F : (ι × σ �
       rw [filter_filter]
       exact congrArg card (filter_congr fun a _ => by simp [Prod.ext_iff, and_comm])
   have hX : ∏ a, (X (h a).2 : MvPolynomial σ R) = ∏ s, X s ^ #{a | (h a).2 = s} := by
-    rw [← prod_fiberwise univ fun a => (h a).2]
-    exact prod_congr rfl fun s _ => by
-      rw [prod_congr rfl fun a ha => by rw [(mem_filter.1 ha).2], prod_const]
+    rw [← prod_fiberwise' univ (fun a => (h a).2) fun s => (X s : MvPolynomial σ R)]
+    simp only [prod_const]
   simp only [← hfst, ← hsnd, ← hX, hcard]
   split_ifs with hC
   · simp only [hC, implies_true, and_true]
