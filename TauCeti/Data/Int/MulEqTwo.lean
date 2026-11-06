@@ -11,13 +11,14 @@ import Mathlib.Tactic.IntervalCases
 /-!
 # Integer factorisations of `2`
 
-A nonnegative integer whose product with another integer is `2` is `1` or `2`, and the cofactor is
-the other one.
+A nonnegative (resp. nonpositive) integer whose product with another integer is `2` is `1` or `2`
+(resp. `-1` or `-2`), and the cofactor is the other one.
 
 ## Main results
 
 * `Int.eq_one_and_eq_two_or_of_mul_eq_two`: the two ordered factorisations of `2` by a nonnegative
   first factor.
+* `Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two`: the same for a nonpositive first factor.
 -/
 
 public section
@@ -31,5 +32,12 @@ lemma eq_one_and_eq_two_or_of_mul_eq_two {a b : ℤ} (ha : 0 ≤ a) (hab : a * b
   have hdvd : a ∣ 2 := ⟨b, hab.symm⟩
   have hle : a ≤ 2 := Int.le_of_dvd (by norm_num) hdvd
   interval_cases a <;> omega
+
+/-- **Two nonpositive integers whose product is `2` are `-1` and `-2`**, in one order or the other:
+the two entries of a double edge, whose orientation this splits into its two cases. -/
+lemma eq_neg_one_and_eq_neg_two_or_of_mul_eq_two {x y : ℤ} (hx : x ≤ 0) (hxy : x * y = 2) :
+    (x = -1 ∧ y = -2) ∨ (x = -2 ∧ y = -1) := by
+  have := eq_one_and_eq_two_or_of_mul_eq_two (neg_nonneg.2 hx) (by rwa [neg_mul_neg])
+  omega
 
 end Int
