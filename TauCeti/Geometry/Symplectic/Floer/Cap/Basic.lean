@@ -157,6 +157,7 @@ theorem map₂_mk (p₁ : P₁) (p₂ : P₂) :
   (rfl)
 
 /-- The descended map is equivariant under the period group in the first input. -/
+@[simp]
 theorem map₂_vadd_left (γ : PeriodGroup ω c) (C₁ : CapClass ω c P₁) (C₂ : CapClass ω c P₂) :
     map₂ f hf₁ hf₂ (γ +ᵥ C₁) C₂ = γ +ᵥ map₂ f hf₁ hf₂ C₁ C₂ := by
   induction γ using QuotientAddGroup.induction_on with | H g =>
@@ -166,6 +167,7 @@ theorem map₂_vadd_left (γ : PeriodGroup ω c) (C₁ : CapClass ω c P₁) (C�
       AddAction.orbitRel.Quotient.mk_vadd_mk]
 
 /-- The descended map is equivariant under the period group in the second input. -/
+@[simp]
 theorem map₂_vadd_right (γ : PeriodGroup ω c) (C₁ : CapClass ω c P₁) (C₂ : CapClass ω c P₂) :
     map₂ f hf₁ hf₂ C₁ (γ +ᵥ C₂) = γ +ᵥ map₂ f hf₁ hf₂ C₁ C₂ := by
   induction γ using QuotientAddGroup.induction_on with | H g =>

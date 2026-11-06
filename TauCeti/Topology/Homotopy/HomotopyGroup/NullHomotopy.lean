@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.Topology.Homotopy.Product
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.Path
 public import TauCeti.Topology.PathSpace.Prepend
@@ -95,12 +96,12 @@ theorem vadd_def (a : Additive (π_ 2 X x)) (D : γ.NullHomotopyClass) :
 
 instance instAddAction : AddAction (Additive (π_ 2 X x)) γ.NullHomotopyClass where
   zero_vadd D := by
-    rw [vadd_def, toMul_zero, _root_.map_one]
-    exact Path.Homotopic.Quotient.refl_trans D
+    rw [vadd_def, toMul_zero, _root_.map_one, FundamentalGroup.toPath_one,
+      Path.Homotopic.Quotient.refl_trans]
   add_vadd a b D := by
     -- `π_2` is commutative, while the loop of `a + b` runs the loop of `b` first.
-    rw [add_comm a b, vadd_def, vadd_def, vadd_def, toMul_add, _root_.map_mul]
-    exact Path.Homotopic.Quotient.trans_assoc _ _ D
+    rw [add_comm a b, vadd_def, vadd_def, vadd_def, toMul_add, _root_.map_mul,
+      FundamentalGroup.toPath_mul, Path.Homotopic.Quotient.trans_assoc]
 
 /-- The difference of two null-homotopies `D` and `D'` of `γ`: the element of `π_2(X, x)` given by
 the loop `D` followed by the reverse of `D'`. -/
@@ -118,12 +119,12 @@ instance instAddTorsor [Nonempty γ.NullHomotopyClass] :
     AddTorsor (Additive (π_ 2 X x)) γ.NullHomotopyClass where
   vsub_vadd' D D' := by
     rw [vsub_def, vadd_def, toMul_ofMul, MulEquiv.apply_symm_apply,
-      Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.symm_trans]
-    exact Path.Homotopic.Quotient.trans_refl D
+      FundamentalGroup.toPath_fromPath, Path.Homotopic.Quotient.trans_assoc,
+      Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.trans_refl]
   vadd_vsub' a D := by
     rw [vsub_def, vadd_def, Path.Homotopic.Quotient.trans_assoc,
-      Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.trans_refl]
-    exact congrArg Additive.ofMul (MulEquiv.symm_apply_apply _ _)
+      Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.trans_refl,
+      FundamentalGroup.fromPath_toPath, MulEquiv.symm_apply_apply, ofMul_toMul]
 
 /-! ### Gluing null-homotopies along a pair of pants -/
 
@@ -148,6 +149,7 @@ theorem glue_def (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀) (D₁ :
   (rfl)
 
 /-- Gluing a sphere to the first input of a pair of pants glues it to the output. -/
+@[simp]
 theorem glue_vadd_left (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
     (a : Additive (π_ 2 X x)) (D₁ : γ₁.NullHomotopyClass) (D₂ : γ₂.NullHomotopyClass) :
     glue u (a +ᵥ D₁) D₂ = a +ᵥ glue u D₁ D₂ := by
@@ -159,6 +161,7 @@ theorem glue_vadd_left (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
   exact Path.Homotopic.Quotient.trans_assoc _ _ u
 
 /-- Gluing a sphere to the second input of a pair of pants glues it to the output. -/
+@[simp]
 theorem glue_vadd_right (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
     (a : Additive (π_ 2 X x)) (D₁ : γ₁.NullHomotopyClass) (D₂ : γ₂.NullHomotopyClass) :
     glue u D₁ (a +ᵥ D₂) = a +ᵥ glue u D₁ D₂ := by

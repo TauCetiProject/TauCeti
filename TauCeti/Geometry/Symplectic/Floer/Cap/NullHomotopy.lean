@@ -95,6 +95,7 @@ theorem glue_mk (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀) (D₁ : 
   CapClass.map₂_mk _ _ _ D₁ D₂
 
 /-- Recapping the first input of a pair of pants recaps the glued output by the same class. -/
+@[simp]
 theorem glue_vadd_left (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
     (g : PeriodGroup (ω.comp (hurewiczIntHom X x 1)) (c.comp (hurewiczIntHom X x 1)))
     (C₁ : LoopCapClass ω c γ₁) (C₂ : LoopCapClass ω c γ₂) :
@@ -102,6 +103,7 @@ theorem glue_vadd_left (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
   CapClass.map₂_vadd_left _ _ _ g C₁ C₂
 
 /-- Recapping the second input of a pair of pants recaps the glued output by the same class. -/
+@[simp]
 theorem glue_vadd_right (u : Path.Homotopic.Quotient (γ₁.trans γ₂) γ₀)
     (g : PeriodGroup (ω.comp (hurewiczIntHom X x 1)) (c.comp (hurewiczIntHom X x 1)))
     (C₁ : LoopCapClass ω c γ₁) (C₂ : LoopCapClass ω c γ₂) :
