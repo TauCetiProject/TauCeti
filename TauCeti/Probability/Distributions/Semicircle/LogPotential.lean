@@ -103,6 +103,9 @@ theorem integrable_log_abs_sub_semicircleReal (x : ℝ) :
 /-- The Stieltjes transform of the standard semicircle law. -/
 private def m (z : ℂ) : ℂ := resolventTransform (semicircleReal 0 1) z
 
+private def primitive (z : ℂ) : ℂ :=
+  -(z * m z) / 2 - Complex.log (-(m z)) - 1 / 2
+
 section UpperHalfPlane
 
 variable {z : ℂ}
@@ -187,6 +190,118 @@ private theorem m_quad (hz : 0 < z.im) : m z * m z + z * m z + 1 = 0 := by
 
 private theorem m_im_pos (hz : 0 < z.im) : 0 < (m z).im :=
   im_resolventTransform_pos (μ := semicircleReal 0 1) (IsProbabilityMeasure.ne_zero _) hz
+
+private theorem integral_log_norm_sub (hz : 0 < z.im) :
+    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1) =
+      (∫ y : ℝ, Complex.log (z - y) ∂semicircleReal 0 1).re := by
+  calc
+    ∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1 =
+        ∫ y : ℝ, (Complex.log (z - y)).re ∂semicircleReal 0 1 := by
+          apply integral_congr_ae
+          filter_upwards with y
+          rw [Complex.log_re]
+    _ = (∫ y : ℝ, Complex.log (z - y) ∂semicircleReal 0 1).re :=
+      integral_re (integrable_log_sub hz)
+
+private theorem hasDerivAt_logPotential_eq_neg_m (hz : 0 < z.im) :
+    HasDerivAt
+      (fun w : ℂ ↦ ∫ y : ℝ, Complex.log (w - y) ∂semicircleReal 0 1)
+      (-m z) z := by
+  convert hasDerivAt_logPotential hz using 1
+  rw [m, MeasureTheory.resolventTransform_apply]
+  rw [← integral_neg]
+  apply integral_congr_ae
+  filter_upwards with y
+  simp only [resolvent, Ring.inverse_eq_inv]
+  have hyz : (algebraMap ℝ ℂ) y - z ≠ 0 := by
+    intro h
+    have him := congrArg Complex.im h
+    simp at him
+    linarith
+  have hzy : z - (y : ℂ) ≠ 0 := by
+    intro h
+    apply hyz
+    rw [sub_eq_zero] at h ⊢
+    exact h.symm
+  field_simp [hyz, hzy]
+  rw [RCLike.algebraMap_eq_ofReal]
+  exact neg_sub _ _
+
+private theorem mem_slitPlane_neg_m (hz : 0 < z.im) : -(m z) ∈ Complex.slitPlane := by
+  rw [Complex.mem_slitPlane_iff]
+  right
+  have hm := (m_im_pos hz).ne'
+  simpa using neg_ne_zero.mpr hm
+
+private theorem m_ne_zero (hz : 0 < z.im) : m z ≠ 0 := by
+  intro hm
+  have h := m_quad hz
+  rw [hm] at h
+  norm_num at h
+
+private theorem hasDerivAt_primitive (hz : 0 < z.im) :
+    HasDerivAt primitive (-m z) z := by
+  obtain ⟨d, hdm⟩ := hasDerivAt_m hz
+  have hq : HasDerivAt (fun w : ℂ ↦ m w * m w + w * m w + 1)
+      (d * m z + m z * d + m z + z * d) z := by
+    convert ((hdm.mul hdm).add ((hasDerivAt_id z).mul hdm)).add
+      (hasDerivAt_const z 1) using 1
+    · funext w
+      simp only [Pi.add_apply, Pi.mul_apply, id_eq]
+    · simp only [id_eq]
+      ring
+  have hq0 : d * m z + m z * d + m z + z * d = 0 := by
+    have hEq : (fun w : ℂ ↦ m w * m w + w * m w + 1) =ᶠ[𝓝 z] fun _ ↦ 0 := by
+      filter_upwards [Metric.ball_mem_nhds z (by positivity : 0 < z.im / 2)] with w hw
+      simpa using m_quad (by
+        have h := im_gt_of_mem_ball hw
+        linarith)
+    have hzero := (hasDerivAt_const z 0).congr_of_eventuallyEq hEq
+    have := hzero.deriv
+    rw [hq.deriv] at this
+    exact this
+  have hm0 := m_ne_zero hz
+  have hlog := HasDerivAt.clog (hdm.neg) (mem_slitPlane_neg_m hz)
+  have hprod := (hasDerivAt_id z).mul hdm
+  have hprim :
+      HasDerivAt (fun w : ℂ ↦ -(w * m w) / 2 - Complex.log (-(m w)) - 1 / 2)
+        (-(m z + z * d) / 2 - (-d) / (-(m z))) z := by
+    convert (((hprod.const_mul (-1 / 2)).sub hlog).sub
+      (hasDerivAt_const z (1 / 2))) using 1
+    · funext w
+      simp only [Pi.sub_apply, Pi.mul_apply, id_eq]
+      simp only [Pi.neg_apply, div_eq_mul_inv]
+      ring
+    · simp only [id]
+      field_simp [hm0]
+      simp only [Pi.neg_apply]
+      ring_nf
+  have hval : -(m z + z * d) / 2 - (-d) / (-(m z)) = -m z := by
+    have hq1 := m_quad hz
+    field_simp [hm0]
+    linear_combination m z * hq0 - 2 * d * hq1
+  convert hprim using 1
+  · rfl
+  · exact hval.symm
+
+private theorem logPotential_sub_primitive_is_const {z w : ℂ}
+    (hz : 0 < z.im) (hw : 0 < w.im) :
+    (∫ y : ℝ, Complex.log (z - y) ∂semicircleReal 0 1) - primitive z =
+      (∫ y : ℝ, Complex.log (w - y) ∂semicircleReal 0 1) - primitive w := by
+  let D : ℂ → ℂ :=
+    fun u ↦ (∫ y : ℝ, Complex.log (u - y) ∂semicircleReal 0 1) - primitive u
+  have hD (u : ℂ) (hu : 0 < u.im) : HasDerivAt D 0 u := by
+    convert (hasDerivAt_logPotential_eq_neg_m hu).sub (hasDerivAt_primitive hu) using 1; simp
+  have hopen : IsOpen {u : ℂ | 0 < u.im} := isOpen_lt continuous_const Complex.continuous_im
+  have hconv : IsPreconnected {u : ℂ | 0 < u.im} :=
+    (convex_halfSpace_im_gt 0).isPreconnected
+  have hdiff : DifferentiableOn ℂ D {u : ℂ | 0 < u.im} :=
+    fun u hu ↦ (hD u hu).differentiableAt.differentiableWithinAt
+  have hderiv : {u : ℂ | 0 < u.im}.EqOn (deriv D) 0 := by
+    intro u hu
+    exact (hD u hu).deriv
+  have h := hopen.is_const_of_deriv_eq_zero hconv hdiff hderiv hz hw
+  exact h
 
 end UpperHalfPlane
 
