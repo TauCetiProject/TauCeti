@@ -78,6 +78,8 @@ variable {σ R S : Type*} [NormedRing R] [IsUltrametricDist R] [NormedRing S] [I
 noncomputable def restrictedMap :
     IsRestricted.subring (R := R) c →+* IsRestricted.subring (R := S) c :=
   ((MvPowerSeries.map φ).comp (IsRestricted.subring (R := R) c).subtype).codRestrict _
+    -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, which is the series
+    -- that `isRestricted_map` shows to be restricted.
     fun f ↦ isRestricted_map c φ hφ f.2
 
 /-- `restrictedMap` acts as `MvPowerSeries.map` on the underlying series. -/
