@@ -34,6 +34,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 ## Main results
 
+* `TauCeti.Floer.isCompact_preimage_truncation`, `TauCeti.Floer.preimage_truncation_subset`: the
+  truncations of `S` are compact subsets of `S`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
@@ -80,6 +82,17 @@ theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- The truncations of `S`, in real coordinates, are compact. -/
+theorem isCompact_preimage_truncation (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
+
+/-- The truncations of `S`, in real coordinates, lie in `S`. -/
+theorem preimage_truncation_subset (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦
+    mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
 
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
 jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/

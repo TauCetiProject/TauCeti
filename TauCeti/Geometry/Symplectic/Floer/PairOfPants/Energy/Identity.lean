@@ -109,10 +109,6 @@ private theorem truncation_eq_zero_of_notMem {T : ℝ} {z : ℝ × ℝ}
     refine Finset.prod_eq_zero (Finset.mem_univ q) ?_
     rw [smoothTransition.one_of_one_le (by linarith), sub_self]
 
-private theorem isCompact_preimage_truncation (R : ℝ) :
-    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' ThricePuncturedSphere.truncation R) :=
-  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
-
 /-- The cutoff vanishes near the punctures `0` and `1`. -/
 private theorem truncation_eventuallyEq_zero (T : ℝ) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1) :

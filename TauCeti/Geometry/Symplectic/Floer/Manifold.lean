@@ -59,6 +59,8 @@ form they recover the vector-space definitions.
 ## Main results
 
 * `SmoothTwoForm.hamiltonianCurvature_cylindrical`: the curvature of `K = H_t dt` vanishes.
+* `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature of `K = β(s) H_t dt` is
+  `β'(s) H_t`.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
@@ -81,7 +83,7 @@ form they recover the vector-space definitions.
 public noncomputable section
 
 open Function
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti.SmoothTwoForm
 
@@ -118,6 +120,26 @@ theorem hamiltonianCurvature_cylindrical (ω : SmoothTwoForm I M) (H : ℝ → M
     (x : M) : ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
   rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
   exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
+
+/-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
+theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ → ℝ} {H : ℝ → M → ℝ}
+    {z : ℝ × ℝ} {x : M} (hβ : DifferentiableAt ℝ β z.1)
+    (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
+      deriv β z.1 * H z.2 x := by
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact (fderiv_mul_apply_mk_zero (h := fun t ↦ H t x) hβ hH 1).trans
+    (by rw [fderiv_apply_one_eq_deriv])
+
+/-- The curvature at a point only depends on the germ of the perturbation data there. -/
+theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[𝓝 z] Ks') (ht : Kt =ᶠ[𝓝 z] Kt') :
+    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
+  ext x
+  have hs' : (fun w ↦ Ks w x) =ᶠ[𝓝 z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
+  have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
+    hs.eq_of_nhds, ht.eq_of_nhds]
 
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
@@ -186,6 +208,15 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
       SmoothBundleForm.eval₂ ω (u z) (ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal)
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
+
+/-- Without perturbation, the energy density is the symplectic area density `ω(∂_s u, ∂_t u)`. -/
+@[simp]
+theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
+      SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, hamiltonianVectorField_const]
 
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
@@ -503,5 +534,15 @@ theorem floerEnergyDensity_constSmooth (ω : SymplecticForm V)
   rw [SmoothTwoForm.floerEnergyDensity_def, floerEnergyDensity_def,
     fromTangentSpace_constSmooth_apply, fromTangentSpace_perturbedMFDeriv_constSmooth_apply,
     fromTangentSpace_perturbedMFDeriv_constSmooth_apply]
+
+/-- The intrinsic symplectic area density for a constant form agrees with the vector-space area
+density `ω(∂_s u, ∂_t u)`. -/
+theorem eval₂_constSmooth_mfderiv_stdComplexLine (ω : SymplecticForm V) (u : ℝ × ℝ → V)
+    (z : ℝ × ℝ) :
+    SmoothBundleForm.eval₂ ω.constSmooth (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineImag) =
+      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
+  rw [← SmoothTwoForm.floerEnergyDensity_zero, floerEnergyDensity_constSmooth,
+    floerEnergyDensity_zero]
 
 end TauCeti.SymplecticForm

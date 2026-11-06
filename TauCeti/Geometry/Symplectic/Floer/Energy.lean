@@ -141,20 +141,9 @@ theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → 
     (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
       deriv β z.1 * H z.2 x := by
-  rw [hamiltonianCurvature_zero_left]
-  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    hβ.hasFDerivAt.comp z hasFDerivAt_fst
-  have hH' : HasFDerivAt (fun w : ℝ × ℝ ↦ H w.2 x)
-      ((fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-    hH.hasFDerivAt.comp z hasFDerivAt_snd
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 * H w.2 x)
-      (β z.1 • (fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ) +
-        H z.2 x • (fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    HasFDerivAt.mul hβ' hH'
-  rw [h.fderiv]
-  simp [stdComplexLineReal]
-  ring
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact (fderiv_mul_apply_mk_zero (h := fun t ↦ H t x) hβ hH 1).trans
+    (by rw [fderiv_apply_one_eq_deriv])
 
 omit [FiniteDimensional ℝ V] in
 /-- The cylindrical perturbation `K = H_t dt` of a `Cⁿ` time-dependent Hamiltonian is `Cⁿ`. -/
