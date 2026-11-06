@@ -246,9 +246,10 @@ instance instSmoothCoordinateHopfAlgebra : Algebra.Smooth R (coordinateHopfAlgeb
     Algebra.FinitePresentation.quotient (definingHopfIdeal_toIdeal_fg R n)
   exact ⟨inferInstance, inferInstance⟩
 
-/-- The upper-triangular coordinate Hopf algebra of `SLₙ` is smooth over a field. -/
-theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra (k : Type u) [Field k] :
-    smoothCommHopfAlgProperty k (coordinateHopfAlgebra k n) := by
+/-- The upper-triangular coordinate Hopf algebra of `SLₙ` is smooth over every commutative
+ring. -/
+theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra :
+    smoothCommHopfAlgProperty R (coordinateHopfAlgebra R n) := by
   rw [smoothCommHopfAlgProperty_iff]
   infer_instance
 
