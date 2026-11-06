@@ -382,12 +382,6 @@ section MetricSpace
 
 variable {X : Type*} [MetricSpace X] {m : ℝ} {φ : X → EReal} {x : X}
 
-/-- The extended distance from the source along a geodesic segment. -/
-private theorem IsGeodesicSegment.edist_source_apply {γ : ℝ → X} {y : X}
-    (hγ : IsGeodesicSegment γ x y) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    edist x (γ t) = ENNReal.ofReal (t * dist x y) := by
-  rw [edist_dist, hγ.dist_source_apply ht]
-
 /-- If `φ y = ⊥` at the end of a geodesic segment from `x`, the slope at `x` is infinite. -/
 private theorem top_le_descendingSlope_of_eq_bot {γ : ℝ → X} {y : X}
     (hγ : IsGeodesicSegment γ x y) (hconv : ConvexAlong m φ γ) (hd : 0 < dist x y)
@@ -482,9 +476,10 @@ of the global slope at `x₀` exceeds `M`, then the slope exceeds `M` near `x₀
 private theorem eventually_lt_descendingSlope_of_finite (hφ : GeodesicallyConvex m φ)
     (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) {x₀ y : X} {M : ℝ≥0∞} (hx₀ : φ x₀ ≠ ⊤)
     (hxb : φ x₀ ≠ ⊥) (hy : φ y ≠ ⊤) (hyb : φ y ≠ ⊥) (hd : 0 < dist x₀ y)
-    (hev : ∀ᶠ x in 𝓝[{x | φ x ≠ ⊤}] x₀, φ x ≠ ⊤ ∧ x ≠ y)
     (hyM : M < (φ x₀ - φ y + ((m / 2 * dist x₀ y ^ 2 : ℝ) : EReal)).toENNReal / edist x₀ y) :
     ∀ᶠ x in 𝓝[{x | φ x ≠ ⊤}] x₀, M < descendingSlope φ x := by
+  have hev : ∀ᶠ x in 𝓝[{x | φ x ≠ ⊤}] x₀, φ x ≠ ⊤ ∧ x ≠ y :=
+    eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (eventually_ne_nhds (dist_pos.1 hd)))
   set r := (φ x₀).toReal
   have hr : φ x₀ = r := (EReal.coe_toReal hx₀ hxb).symm
   set s := (φ y).toReal
@@ -554,17 +549,17 @@ theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : Geodesic
     rintro h
     simp [h] at hne
   have hd : 0 < dist x₀ y := dist_pos.2 hyx.symm
-  have hev : ∀ᶠ x in 𝓝[{x | φ x ≠ ⊤}] x₀, φ x ≠ ⊤ ∧ x ≠ y :=
-    eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (eventually_ne_nhds hyx.symm))
   rcases eq_or_ne (φ y) ⊥ with hyb | hyb
   · -- If `φ y = ⊥`, the term at `y` is infinite at every point near `x₀` where `φ ≠ ⊥`.
+    have hev : ∀ᶠ x in 𝓝[{x | φ x ≠ ⊤}] x₀, φ x ≠ ⊤ ∧ x ≠ y :=
+      eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (eventually_ne_nhds hyx.symm))
     have hM : M < ⊤ := hyM.trans_le le_top
     filter_upwards [hev, hlsc x₀ hx₀ ⊥ (bot_lt_iff_ne_bot.2 hxb)]
       with x ⟨hx, _⟩ hxb'
     refine hM.trans_le <| le_trans ?_ (hφ.le_descendingSlope hx y)
     rw [hyb, EReal.sub_bot hxb'.ne', EReal.top_add_coe, EReal.toENNReal_top,
       ENNReal.top_div_of_ne_top (edist_ne_top x y)]
-  exact eventually_lt_descendingSlope_of_finite hφ hlsc hx₀ hxb hy hyb hd hev hyM
+  exact eventually_lt_descendingSlope_of_finite hφ hlsc hx₀ hxb hy hyb hd hyM
 
 /-- **The relaxed slope of a lower semicontinuous geodesically convex energy is its descending
 slope** at every point of its effective domain `{x | φ x ≠ ⊤}`. -/
