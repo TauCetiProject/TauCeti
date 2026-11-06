@@ -122,6 +122,236 @@ private theorem truncation_eq_union {R r ρ : ℝ} (hr : r = Real.exp (-(2 * π 
     · exact ⟨⟨h₁, by linarith [not_lt.1 h]⟩, h₃⟩
     · exact ⟨⟨by linarith, h₂⟩, by linarith⟩
 
+/-- The norm of `circleMap c a θ - c` is the radius `a`. -/
+private theorem norm_circleMap_sub_center (c : ℂ) {a : ℝ} (ha : 0 ≤ a) (θ : ℝ) :
+    ‖circleMap c a θ - c‖ = a := by
+  rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg ha]
+
+/-- A point within distance `1` of `1` is not `0`. -/
+private theorem ne_zero_of_norm_sub_one_lt {z : ℂ} (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
+  rintro rfl
+  norm_num at hz
+
+/-- A point of an annulus about `0` with positive inner radius is not `0`. -/
+private theorem ne_zero_of_mem_annulus {r ρ : ℝ} (hr : 0 < r) {z : ℂ}
+    (hz : z ∈ {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ}) : z ≠ 0 := by
+  rintro rfl
+  have := hz.1
+  simp only [sub_self, norm_zero] at this
+  linarith
+
+/-- A point of an annulus about `1` with positive inner radius and outer radius `3/4` is neither
+`0` nor `1`. -/
+private theorem ne_zero_ne_one_of_mem_annulus {r : ℝ} (hr : 0 < r) {z : ℂ}
+    (hz : z ∈ {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}) : z ≠ 0 ∧ z ≠ 1 := by
+  refine ⟨ne_zero_of_norm_sub_one_lt (by linarith [hz.2]), fun h ↦ ?_⟩
+  subst h
+  have := hz.1
+  simp only [sub_self, norm_zero] at this
+  linarith
+
+/-- The triangle inequality for the distances of `z` to `0` and `1`. -/
+private theorem norm_sub_one_bounds (z : ℂ) : ‖z‖ - 1 ≤ ‖z - 1‖ ∧ 1 - ‖z‖ ≤ ‖z - 1‖ := by
+  have t₁ := norm_sub_norm_le z 1
+  have t₂ := norm_sub_norm_le 1 z
+  rw [norm_one] at t₁ t₂
+  rw [norm_sub_rev] at t₂
+  exact ⟨t₁, t₂⟩
+
+/-- A closed annulus is compact. -/
+private theorem isCompact_annulus (c : ℂ) (a b : ℝ) :
+    IsCompact {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} :=
+  (isCompact_closedBall c b).of_isClosed_subset
+    ((isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
+      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const))
+    fun z hz ↦ by rw [mem_closedBall, dist_eq_norm]; exact hz.2
+
+/-- The sphere of radius `3/4` about `1` is almost nowhere. -/
+private theorem ae_notMem_sphere : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ sphere (1 : ℂ) (3 / 4) :=
+  measure_eq_zero_iff_ae_notMem.1 (Measure.addHaar_sphere (μ := volume) (1 : ℂ) (3 / 4))
+
+/-- The area density of a map which is `C²` near a compact set is integrable on it. -/
+theorem integrableOn_fderiv_apply_of_contDiffAt (ω : SymplecticForm V) {v : ℂ → V} {K : Set ℂ}
+    (hK : IsCompact K) (hv : ∀ z ∈ K, ContDiffAt ℝ 2 v z) :
+    IntegrableOn (fun z ↦ ω (fderiv ℝ v z 1) (fderiv ℝ v z I)) K := by
+  have hcont : ContinuousOn (fderiv ℝ v) K := fun z hz ↦
+    ((hv z hz).fderiv_right (m := 1) (by norm_num)).continuousAt.continuousWithinAt
+  exact (ω.continuousOn_apply_comp (hcont.clm_apply continuousOn_const)
+    (hcont.clm_apply continuousOn_const)).integrableOn_compact hK
+
+omit [FiniteDimensional ℝ V] in
+/-- A map which is `C²` on `ℂ ∖ {0, 1}` can be cut off near `1`: there is a map `uc` which equals
+`u` away from `1`, vanishes near `1`, and is `C²` on `ℂ ∖ {0}`. -/
+private theorem exists_cutoff {u : ℂ → V} (hu : ∀ w : ℂ, w ≠ 0 → w ≠ 1 → ContDiffAt ℝ 2 u w) :
+    ∃ uc : ℂ → V, (∀ {w : ℂ}, 1 / 2 ≤ ‖w - 1‖ → uc w = u w) ∧
+      (∀ {w : ℂ}, ‖w - 1‖ ≤ 1 / 4 → uc w = 0) ∧
+      (∀ {w : ℂ}, ‖w - 1‖ < 1 / 4 → uc =ᶠ[𝓝 w] fun _ ↦ 0) ∧
+      (∀ {w : ℂ}, 1 / 2 < ‖w - 1‖ → uc =ᶠ[𝓝 w] u) ∧ ∀ {w : ℂ}, w ≠ 0 → ContDiffAt ℝ 2 uc w := by
+  let χ : ContDiffBump (1 : ℂ) := ⟨1 / 4, 1 / 2, by norm_num, by norm_num⟩
+  let uc : ℂ → V := fun w ↦ (1 - χ w) • u w
+  have huc_eq {w : ℂ} (hw : 1 / 2 ≤ ‖w - 1‖) : uc w = u w := by
+    simp [uc, χ.zero_of_le_dist (by rw [dist_eq_norm]; exact hw)]
+  have huc_zero {w : ℂ} (hw : ‖w - 1‖ ≤ 1 / 4) : uc w = 0 := by
+    simp [uc, χ.one_of_mem_closedBall (by rw [mem_closedBall, dist_eq_norm]; exact hw)]
+  refine ⟨uc, huc_eq, huc_zero, fun {w} hw ↦ ?_, fun {w} hw ↦ ?_, fun {w} h₀ ↦ ?_⟩
+  · filter_upwards [(isOpen_lt (continuous_id.sub continuous_const).norm
+      continuous_const).mem_nhds hw] with z hz using huc_zero hz.le
+  · filter_upwards [(isOpen_lt continuous_const
+      (continuous_id.sub continuous_const).norm).mem_nhds hw] with z hz using huc_eq hz.le
+  · by_cases h₁ : w = 1
+    · subst h₁
+      refine (contDiffAt_const (c := (0 : V))).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_lt (continuous_id.sub continuous_const).norm
+        continuous_const).mem_nhds (show ‖(1 : ℂ) - 1‖ < 1 / 4 by norm_num)] with z hz using
+        huc_zero hz.le
+    · exact (contDiffAt_const.sub χ.contDiffAt).smul (hu w h₀ h₁)
+
+/-- The integral of the area density over the annulus about `0` of the cut-off map, outside the
+disc about `1`, plus its integral over that disc, is the difference of the two circle areas. -/
+private theorem integral_cutoff_sdiff (ω : SymplecticForm V) {u uc : ℂ → V} {r ρ : ℝ}
+    (hr₀ : 0 < r) (hr : r ≤ 1 / 10) (hρ : 10 ≤ ρ)
+    (huc : ∀ {w : ℂ}, w ≠ 0 → ContDiffAt ℝ 2 uc w)
+    (huc_eq : ∀ {w : ℂ}, 1 / 2 ≤ ‖w - 1‖ → uc w = u w)
+    (huc_near_eq : ∀ {w : ℂ}, 1 / 2 < ‖w - 1‖ → uc =ᶠ[𝓝 w] u) :
+    (∫ z in {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ} \ ball 1 (3 / 4),
+        ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) +
+      ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
+    ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
+  set A₀ : Set ℂ := {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ}
+  have hA : IsCompact (A₀ \ ball 1 (3 / 4)) := (isCompact_annulus 0 r ρ).diff isOpen_ball
+  have hballA₀ : ball (1 : ℂ) (3 / 4) ⊆ A₀ := fun z hz ↦ by
+    rw [mem_ball, dist_eq_norm] at hz
+    have := norm_sub_one_bounds z
+    refine ⟨?_, ?_⟩ <;> simp only [sub_zero] <;> linarith
+  have hI₀ : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
+      ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
+    rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ huc (ne_zero_of_mem_annulus hr₀ hz)]
+    congr 1 <;> refine circleArea_congr ω fun θ ↦ huc_eq ?_
+    · have := (norm_sub_one_bounds (circleMap 0 ρ θ)).1
+      rw [norm_circleMap_zero, abs_of_nonneg (by linarith)] at this
+      linarith
+    · have := (norm_sub_one_bounds (circleMap 0 r θ)).2
+      rw [norm_circleMap_zero, abs_of_nonneg hr₀.le] at this
+      linarith
+  have hAu : ∫ z in A₀ \ ball 1 (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
+      ∫ z in A₀ \ ball 1 (3 / 4), ω (fderiv ℝ u z 1) (fderiv ℝ u z I) :=
+    setIntegral_congr_fun hA.measurableSet fun z hz ↦ by
+      rw [(huc_near_eq (by
+        have := hz.2
+        rw [mem_ball, dist_eq_norm, not_lt] at this
+        linarith)).fderiv_eq]
+  have hAsplit : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
+      (∫ z in A₀ \ ball 1 (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I)) +
+        ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) := by
+    conv_lhs => rw [← sdiff_union_of_subset hballA₀]
+    exact setIntegral_union disjoint_sdiff_left measurableSet_ball
+      (integrableOn_fderiv_apply_of_contDiffAt ω hA fun z hz ↦
+        huc (ne_zero_of_mem_annulus hr₀ hz.1))
+      ((integrableOn_fderiv_apply_of_contDiffAt ω (isCompact_closedBall 1 (3 / 4))
+        fun z hz ↦ huc (ne_zero_of_norm_sub_one_lt
+          (by rw [mem_closedBall, dist_eq_norm] at hz; linarith))).mono_set
+        ball_subset_closedBall)
+  rw [← hAu, ← hI₀, hAsplit]
+
+/-- The disc about `1` of the cut-off map, which vanishes near `1`: its area integral is the circle
+area of `u` on the boundary circle. -/
+private theorem integral_ball_cutoff (ω : SymplecticForm V) {u uc : ℂ → V}
+    (huc : ∀ {w : ℂ}, w ≠ 0 → ContDiffAt ℝ 2 uc w)
+    (huc_eq : ∀ {w : ℂ}, 1 / 2 ≤ ‖w - 1‖ → uc w = u w)
+    (huc_zero : ∀ {w : ℂ}, ‖w - 1‖ ≤ 1 / 4 → uc w = 0)
+    (huc_near_zero : ∀ {w : ℂ}, ‖w - 1‖ < 1 / 4 → uc =ᶠ[𝓝 w] fun _ ↦ 0) :
+    ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
+      ω.circleArea u 1 (3 / 4) := by
+  have hC : ∫ z in {z : ℂ | 1 / 8 ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4},
+      ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) = ω.circleArea u 1 (3 / 4) := by
+    rw [integral_annulus ω 1 (by norm_num) (by norm_num)
+      fun z hz ↦ huc (ne_zero_of_norm_sub_one_lt (by linarith [hz.2])),
+      circleArea_eq_zero ω (c := 1) (r := 1 / 8) fun θ ↦
+        huc_zero (by rw [norm_circleMap_sub_center 1 (by norm_num)]; norm_num),
+      sub_zero]
+    exact circleArea_congr ω fun θ ↦
+      huc_eq (by rw [norm_circleMap_sub_center 1 (by norm_num)]; norm_num)
+  rw [← hC, ← setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
+    measurableSet_closedBall.nullMeasurableSet ball_subset_closedBall ?_]
+  · refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_closedBall
+      (fun z hz ↦ ?_) fun z hz ↦ ?_
+    · rw [mem_closedBall, dist_eq_norm]
+      exact hz.2
+    · have hz' : ‖z - 1‖ < 1 / 8 := by
+        by_contra h
+        exact hz.2 ⟨not_lt.1 h, by simpa [dist_eq_norm] using hz.1⟩
+      rw [(huc_near_zero (by linarith)).fderiv_eq]
+      simp
+  · filter_upwards [ae_notMem_sphere] with z hz hz'
+    exact absurd (mem_sphere.2 (le_antisymm hz'.1 (not_lt.1 hz'.2))) hz
+
+/-- Stokes' formula on the annulus about `1`, for a map which is `C²` on `ℂ ∖ {0, 1}`. -/
+private theorem integral_annulus_one (ω : SymplecticForm V) {u : ℂ → V} {r : ℝ} (hr₀ : 0 < r)
+    (hr : r ≤ 1 / 10) (hu : ∀ w : ℂ, w ≠ 0 → w ≠ 1 → ContDiffAt ℝ 2 u w) :
+    ∫ z in {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
+      ω.circleArea u 1 (3 / 4) - ω.circleArea u 1 r :=
+  integral_annulus ω 1 hr₀ (by linarith) fun _ hz ↦
+    hu _ (ne_zero_ne_one_of_mem_annulus hr₀ hz).1 (ne_zero_ne_one_of_mem_annulus hr₀ hz).2
+
+/-- The area integral over the truncation is the integral over the part of the annulus about `0`
+outside the disc about `1` plus the integral over the annulus about `1`. -/
+private theorem integral_truncation_eq (ω : SymplecticForm V) {u : ℂ → V} {R r ρ : ℝ}
+    (hr_def : r = Real.exp (-(2 * π * R)) / 2) (hρ_def : ρ = 2 * Real.exp (2 * π * R))
+    (hr₀ : 0 < r) (hr : r ≤ 1 / 10) (hρ : 10 ≤ ρ)
+    (hu : ∀ w : ℂ, w ≠ 0 → w ≠ 1 → ContDiffAt ℝ 2 u w) :
+    ∫ w in truncation R, ω (fderiv ℝ u w 1) (fderiv ℝ u w I) =
+      (∫ z in {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ} \ ball 1 (3 / 4),
+          ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) +
+        ∫ z in {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) := by
+  set A : Set ℂ := {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ} \ ball 1 (3 / 4)
+  set B : Set ℂ := {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}
+  have hA : IsCompact A := (isCompact_annulus 0 r ρ).diff isOpen_ball
+  have hB : IsCompact B := isCompact_annulus 1 r (3 / 4)
+  have hAfar {z : ℂ} (hz : z ∈ A) : 3 / 4 ≤ ‖z - 1‖ := by
+    have := hz.2
+    rwa [mem_ball, dist_eq_norm, not_lt] at this
+  rw [truncation_eq_union hr_def hρ_def (by linarith) (by linarith),
+    setIntegral_union (Set.disjoint_left.2 fun z (hzA : z ∈ A)
+      (hzB : z ∈ B ∩ ball (1 : ℂ) (3 / 4)) ↦ hzA.2 hzB.2)
+      (hB.measurableSet.inter measurableSet_ball)
+      (integrableOn_fderiv_apply_of_contDiffAt ω hA fun z hz ↦
+        hu z (ne_zero_of_mem_annulus hr₀ hz.1) fun h ↦ by
+          subst h
+          have := hAfar hz
+          norm_num at this)
+      ((integrableOn_fderiv_apply_of_contDiffAt ω hB fun z hz ↦
+        hu z (ne_zero_ne_one_of_mem_annulus hr₀ hz).1
+          (ne_zero_ne_one_of_mem_annulus hr₀ hz).2).mono_set inter_subset_left),
+    setIntegral_eq_of_subset_of_ae_sdiff_eq_zero hB.measurableSet.nullMeasurableSet
+      inter_subset_left ?_]
+  filter_upwards [ae_notMem_sphere] with z hz hz'
+  refine absurd (mem_sphere.2 ?_) hz
+  rw [dist_eq_norm]
+  exact le_antisymm hz'.1.2 (not_lt.1 fun h ↦ hz'.2 ⟨hz'.1, by rwa [mem_ball, dist_eq_norm]⟩)
+
+omit [FiniteDimensional ℝ V] in
+/-- The boundary circles of the truncation are the circles of the end loops. -/
+private theorem sum_endSign_loopArea (ω : SymplecticForm V) (u : ℂ → V) {R r ρ : ℝ}
+    (hr_def : r = Real.exp (-(2 * π * R)) / 2) (hρ_def : ρ = 2 * Real.exp (2 * π * R)) :
+    ∑ q : Puncture, q.endSign *
+      ω.loopArea (fun t ↦ u (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * I))) =
+        ω.circleArea u 0 ρ - ω.circleArea u 0 r - ω.circleArea u 1 r := by
+  have e₀ : ‖zero.endScale‖ * Real.exp (-(2 * π * (zero.endSign * R))) = r := by
+    rw [hr_def, endScale_zero, endSign_zero, one_mul]
+    norm_num
+    ring
+  have e₁ : ‖one.endScale‖ * Real.exp (-(2 * π * (one.endSign * R))) = r := by
+    rw [hr_def, endScale_one, endSign_one, one_mul]
+    norm_num
+    ring
+  have e₂ : ‖inf.endScale‖ * Real.exp (-(2 * π * (inf.endSign * R))) = ρ := by
+    rw [hρ_def, endScale_inf, endSign_inf, show -(2 * π * (-1 * R)) = 2 * π * R by ring]
+    norm_num
+  simp only [loopArea_cylindricalEndLift]
+  rw [sum_univ, e₀, e₁, e₂, endSign_zero, endSign_one, endSign_inf, endCenter_zero, endCenter_one,
+    endCenter_inf]
+  ring
+
 /-- **Stokes' formula for symplectic area on the truncated thrice-punctured sphere.** Let `u` be
 `C²` on `S = ℂ ∖ {0, 1}`. For `R ≥ 1` the symplectic area of `u` over the truncation `S_R` is the
 signed sum of the loop areas of the restrictions of `u` to the three boundary circles `±s = R`,
@@ -151,175 +381,14 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
   have hS : IsOpen {w : ℂ | w ≠ 0 ∧ w ≠ 1} :=
     (isOpen_ne_fun continuous_id continuous_const).inter
       (isOpen_ne_fun continuous_id continuous_const)
-  have hu' {w : ℂ} (h₀ : w ≠ 0) (h₁ : w ≠ 1) : ContDiffAt ℝ 2 u w :=
+  have hu' (w : ℂ) (h₀ : w ≠ 0) (h₁ : w ≠ 1) : ContDiffAt ℝ 2 u w :=
     hu.contDiffAt (hS.mem_nhds ⟨h₀, h₁⟩)
-  -- Cut `u` off near `1`: `uc = (1 - χ) u` vanishes near `1` and equals `u` away from it.
-  let χ : ContDiffBump (1 : ℂ) := ⟨1 / 4, 1 / 2, by norm_num, by norm_num⟩
-  let uc : ℂ → V := fun w ↦ (1 - χ w) • u w
-  have huc_eq {w : ℂ} (hw : 1 / 2 ≤ ‖w - 1‖) : uc w = u w := by
-    simp [uc, χ.zero_of_le_dist (by rw [dist_eq_norm]; exact hw)]
-  have huc_zero {w : ℂ} (hw : ‖w - 1‖ ≤ 1 / 4) : uc w = 0 := by
-    simp [uc, χ.one_of_mem_closedBall (by rw [mem_closedBall, dist_eq_norm]; exact hw)]
-  have huc_near_eq {w : ℂ} (hw : 1 / 2 < ‖w - 1‖) : uc =ᶠ[𝓝 w] u := by
-    filter_upwards [(isOpen_lt continuous_const
-      (continuous_id.sub continuous_const).norm).mem_nhds hw] with z hz using huc_eq hz.le
-  have huc_near_zero {w : ℂ} (hw : ‖w - 1‖ < 1 / 4) : uc =ᶠ[𝓝 w] fun _ ↦ 0 := by
-    filter_upwards [(isOpen_lt (continuous_id.sub continuous_const).norm
-      continuous_const).mem_nhds hw] with z hz using huc_zero hz.le
-  have huc {w : ℂ} (h₀ : w ≠ 0) : ContDiffAt ℝ 2 uc w := by
-    by_cases h₁ : w = 1
-    · subst h₁
-      exact contDiffAt_const.congr_of_eventuallyEq (huc_near_zero (by norm_num))
-    · exact (contDiffAt_const.sub χ.contDiffAt).smul (hu' h₀ h₁)
-  -- Norms of points on the circles and in the annuli.
-  have hcircle (c : ℂ) {a : ℝ} (ha : 0 ≤ a) (θ : ℝ) : ‖circleMap c a θ - c‖ = a := by
-    rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg ha]
-  have htri (z : ℂ) : ‖z‖ - 1 ≤ ‖z - 1‖ ∧ 1 - ‖z‖ ≤ ‖z - 1‖ := by
-    have t₁ := norm_sub_norm_le z 1
-    have t₂ := norm_sub_norm_le 1 z
-    rw [norm_one] at t₁ t₂
-    rw [norm_sub_rev] at t₂
-    exact ⟨t₁, t₂⟩
-  have hne₀ {z : ℂ} (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
-    rintro rfl
-    norm_num at hz
-  have hann (c : ℂ) (a b : ℝ) : IsCompact {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} :=
-    (isCompact_closedBall c b).of_isClosed_subset
-      ((isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
-        (isClosed_le (continuous_id.sub continuous_const).norm continuous_const))
-      fun z hz ↦ by rw [mem_closedBall, dist_eq_norm]; exact hz.2
-  -- The area density of a map which is `C²` near a compact set is integrable on it.
-  have hint {v : ℂ → V} {K : Set ℂ} (hK : IsCompact K) (hv : ∀ z ∈ K, ContDiffAt ℝ 2 v z) :
-      IntegrableOn (fun z ↦ ω (fderiv ℝ v z 1) (fderiv ℝ v z I)) K := by
-    have hcont : ContinuousOn (fderiv ℝ v) K := fun z hz ↦
-      ((hv z hz).fderiv_right (m := 1) (by norm_num)).continuousAt.continuousWithinAt
-    exact (ω.continuousOn_apply_comp (hcont.clm_apply continuousOn_const)
-      (hcont.clm_apply continuousOn_const)).integrableOn_compact hK
-  -- The pieces of the decomposition.
-  set A₀ : Set ℂ := {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ}
-  set A : Set ℂ := A₀ \ ball 1 (3 / 4)
-  set B : Set ℂ := {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}
-  set C : Set ℂ := {z : ℂ | 1 / 8 ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}
-  have hA₀ : IsCompact A₀ := hann 0 r ρ
-  have hA : IsCompact A := hA₀.diff isOpen_ball
-  have hB : IsCompact B := hann 1 r (3 / 4)
-  have hA₀ne {z : ℂ} (hz : z ∈ A₀) : z ≠ 0 := by
-    rintro rfl
-    have := hz.1
-    simp only [sub_self, norm_zero] at this
-    linarith
-  have hAfar {z : ℂ} (hz : z ∈ A) : 3 / 4 ≤ ‖z - 1‖ := by
-    have := hz.2
-    rwa [mem_ball, dist_eq_norm, not_lt] at this
-  have hballA₀ : ball (1 : ℂ) (3 / 4) ⊆ A₀ := fun z hz ↦ by
-    rw [mem_ball, dist_eq_norm] at hz
-    have := htri z
-    refine ⟨?_, ?_⟩ <;> simp only [sub_zero] <;> linarith
-  have hsphere : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ sphere (1 : ℂ) (3 / 4) :=
-    measure_eq_zero_iff_ae_notMem.1 (Measure.addHaar_sphere (μ := volume) (1 : ℂ) (3 / 4))
-  -- The annulus about `0`, for the cut-off map.
-  have hI₀ : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
-      ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
-    rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ huc (hA₀ne hz)]
-    congr 1 <;> refine circleArea_congr ω fun θ ↦ huc_eq ?_
-    · have := (htri (circleMap 0 ρ θ)).1
-      rw [← sub_zero (circleMap 0 ρ θ), hcircle 0 (by linarith) θ] at this
-      simp only [sub_zero] at this
-      linarith
-    · have := (htri (circleMap 0 r θ)).2
-      rw [← sub_zero (circleMap 0 r θ), hcircle 0 hr₀.le θ] at this
-      simp only [sub_zero] at this
-      linarith
-  -- The disc about `1`, for the cut-off map: it vanishes near `1`.
-  have hball : ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
-      ω.circleArea u 1 (3 / 4) := by
-    have hC : ∫ z in C, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
-        ω.circleArea u 1 (3 / 4) := by
-      rw [integral_annulus ω 1 (by norm_num) (by norm_num)
-        fun z hz ↦ huc (hne₀ (by linarith [hz.2])),
-        circleArea_eq_zero ω (c := 1) (r := 1 / 8) fun θ ↦
-          huc_zero (by rw [hcircle 1 (by norm_num)]; norm_num),
-        sub_zero]
-      exact circleArea_congr ω fun θ ↦ huc_eq (by rw [hcircle 1 (by norm_num)]; norm_num)
-    rw [← hC, ← setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
-      measurableSet_closedBall.nullMeasurableSet ball_subset_closedBall ?_]
-    · refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_closedBall
-        (fun z hz ↦ ?_) fun z hz ↦ ?_
-      · rw [mem_closedBall, dist_eq_norm]
-        exact hz.2
-      · have hz' : ‖z - 1‖ < 1 / 8 := by
-          by_contra h
-          exact hz.2 ⟨not_lt.1 h, by simpa [dist_eq_norm] using hz.1⟩
-        rw [(huc_near_zero (by linarith)).fderiv_eq]
-        simp
-    · filter_upwards [hsphere] with z hz hz'
-      exact absurd (mem_sphere.2 (le_antisymm hz'.1 (not_lt.1 hz'.2))) hz
-  -- The annulus about `1`, for `u` itself.
-  have hI₁ : ∫ z in B, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
-      ω.circleArea u 1 (3 / 4) - ω.circleArea u 1 r :=
-    integral_annulus ω 1 hr₀ (by linarith) fun z hz ↦
-      hu' (hne₀ (by linarith [hz.2])) fun h ↦ by
-        subst h
-        have := hz.1
-        simp only [sub_self, norm_zero] at this
-        linarith
-  -- Outside the disc about `1` the cut-off map is `u`.
-  have hAu : ∫ z in A, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
-      ∫ z in A, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) :=
-    setIntegral_congr_fun hA.measurableSet fun z hz ↦ by
-      rw [(huc_near_eq (by linarith [hAfar hz])).fderiv_eq]
-  have hAsplit : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
-      (∫ z in A, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I)) +
-        ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) := by
-    conv_lhs => rw [← sdiff_union_of_subset hballA₀]
-    exact setIntegral_union disjoint_sdiff_left measurableSet_ball
-      (hint hA fun z hz ↦ huc (hA₀ne hz.1))
-      ((hint (isCompact_closedBall 1 (3 / 4))
-        fun z hz ↦ huc (hne₀ (by rw [mem_closedBall, dist_eq_norm] at hz; linarith))).mono_set
-        ball_subset_closedBall)
-  -- The truncation is the part of `A₀` outside the disc about `1`, and the part of `B` inside.
-  have hsplit : ∫ w in truncation R, ω (fderiv ℝ u w 1) (fderiv ℝ u w I) =
-      (∫ z in A, ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) +
-        ∫ z in B, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) := by
-    have hBu : ∀ z ∈ B, ContDiffAt ℝ 2 u z := fun z hz ↦
-      hu' (hne₀ (by linarith [hz.2])) fun h ↦ by
-        subst h
-        have := hz.1
-        simp only [sub_self, norm_zero] at this
-        linarith
-    rw [truncation_eq_union hr_def hρ_def (by linarith) (by linarith),
-      setIntegral_union (Set.disjoint_left.2 fun z (hzA : z ∈ A)
-        (hzB : z ∈ B ∩ ball (1 : ℂ) (3 / 4)) ↦ hzA.2 hzB.2)
-        (hB.measurableSet.inter measurableSet_ball)
-        (hint hA fun z hz ↦
-          hu' (hA₀ne hz.1) fun h ↦ by subst h; have := hAfar hz; norm_num at this)
-        ((hint hB hBu).mono_set inter_subset_left),
-      setIntegral_eq_of_subset_of_ae_sdiff_eq_zero hB.measurableSet.nullMeasurableSet
-        inter_subset_left ?_]
-    filter_upwards [hsphere] with z hz hz'
-    refine absurd (mem_sphere.2 ?_) hz
-    rw [dist_eq_norm]
-    exact le_antisymm hz'.1.2 (not_lt.1 fun h ↦ hz'.2 ⟨hz'.1, by rwa [mem_ball, dist_eq_norm]⟩)
-  -- The boundary circles of the truncation are the circles of the end loops.
-  have hloops : ∑ q : Puncture, q.endSign *
-      ω.loopArea (fun t ↦ u (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * I))) =
-        ω.circleArea u 0 ρ - ω.circleArea u 0 r - ω.circleArea u 1 r := by
-    have e₀ : ‖zero.endScale‖ * Real.exp (-(2 * π * (zero.endSign * R))) = r := by
-      rw [hr_def, endScale_zero, endSign_zero, one_mul]
-      norm_num
-      ring
-    have e₁ : ‖one.endScale‖ * Real.exp (-(2 * π * (one.endSign * R))) = r := by
-      rw [hr_def, endScale_one, endSign_one, one_mul]
-      norm_num
-      ring
-    have e₂ : ‖inf.endScale‖ * Real.exp (-(2 * π * (inf.endSign * R))) = ρ := by
-      rw [hρ_def, endScale_inf, endSign_inf, show -(2 * π * (-1 * R)) = 2 * π * R by ring]
-      norm_num
-    simp only [loopArea_cylindricalEndLift]
-    rw [sum_univ, e₀, e₁, e₂, endSign_zero, endSign_one, endSign_inf, endCenter_zero, endCenter_one,
-      endCenter_inf]
-    ring
-  rw [hloops, hsplit, ← hAu, hI₁]
-  linarith [hAsplit, hI₀, hball]
+  -- Cut `u` off near `1`: `uc` vanishes near `1` and equals `u` away from it.
+  obtain ⟨uc, huc_eq, huc_zero, huc_near_zero, huc_near_eq, huc⟩ := exists_cutoff hu'
+  rw [sum_endSign_loopArea ω u hr_def hρ_def,
+    integral_truncation_eq ω hr_def hρ_def hr₀ hr hρ hu',
+    integral_annulus_one ω hr₀ hr hu']
+  linarith [integral_cutoff_sdiff ω hr₀ hr hρ huc huc_eq huc_near_eq,
+    integral_ball_cutoff ω huc huc_eq huc_zero huc_near_zero]
 
 end TauCeti.SymplecticForm
