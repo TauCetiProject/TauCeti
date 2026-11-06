@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.Data.Matrix.Basis
 
 /-!
 # The entropy minimiser with prescribed marginals and the Sinkhorn–Knopp theorem
@@ -577,6 +578,7 @@ theorem pos_of_isMinOn_relEntropy {K : Matrix ι κ ℝ} {C : Set (Matrix ι κ 
     field_simp
   have hRC : (1 - t) • P + t • Q ∈ C := hC hPC hQC (by linarith) ht0.le (by ring)
   have hdiff := relEntropy_convex_comb_sub_le (K := K) hP0 hQ0 hPij.symm hQ ht0 ht1
+  rw [← hA, ← hq] at hdiff
   have hneg : t * (A + q * Real.log t) < 0 :=
     mul_neg_of_pos_of_neg ht0 (by rw [hlogt]; linarith [le_abs_self A])
   have hle : relEntropy P K ≤ relEntropy ((1 - t) • P + t • Q) K := isMinOn_iff.mp hmin _ hRC
@@ -775,15 +777,6 @@ theorem sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn (K : Matrix ι κ �
 
 /-! ### Matrices orthogonal to the zero-marginal directions on a support -/
 
-/-- A linear functional on matrices is the pairing with its values on the matrix units. -/
-theorem dual_apply_eq_sum_sum_single [DecidableEq ι] [DecidableEq κ]
-    (φ : Module.Dual ℝ (Matrix ι κ ℝ)) (M : Matrix ι κ ℝ) :
-    φ M = ∑ i, ∑ j, M i j * φ (Matrix.single i j 1) := by
-  conv_lhs => rw [matrix_eq_sum_single M]
-  simp only [map_sum]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [← smul_eq_mul, ← map_smul, smul_single, smul_eq_mul, mul_one]
-
 /-- On a set `s` of cells, a matrix `H` is the sum `f i + g j` of a function of the row and a
 function of the column when `∑ i, ∑ j, D i j * H i j = 0` for every matrix `D` that vanishes off
 `s` and has zero row and column sums. -/
@@ -816,8 +809,8 @@ private theorem exists_forall_mem_eq_add_of_forall_sum_eq_zero (H : Matrix ι κ
       with hD_def
     have hTD : ∀ fg : (ι → ℝ) × (κ → ℝ), ∑ i, ∑ j, D i j * (fg.1 i + fg.2 j) = 0 := by
       intro fg
-      rw [← hφT (T fg) (LinearMap.mem_range_self T fg),
-        dual_apply_eq_sum_sum_single]
+      rw [← hφT (T fg) (LinearMap.mem_range_self T fg), map_eq_sum_sum_smul_single]
+      simp only [smul_eq_mul]
       refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
       rw [hT, hD_def, of_apply]
       split_ifs <;> ring
@@ -827,7 +820,8 @@ private theorem exists_forall_mem_eq_add_of_forall_sum_eq_zero (H : Matrix ι κ
       · simpa [Pi.single_apply] using hTD (0, Pi.single j 1)
     have hDs : ∀ i j, (i, j) ∉ s → D i j = 0 := fun i j h => by
       rw [hD_def, of_apply, ite_eq_right_iff.2 fun h' => absurd h' h]
-    rw [dual_apply_eq_sum_sum_single]
+    rw [map_eq_sum_sum_smul_single]
+    simp only [smul_eq_mul]
     refine Eq.trans ?_ (hH D hDs hD)
     refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
     rw [hD_def, of_apply, of_apply]
