@@ -32,7 +32,10 @@ With no hypothesis on `M / K`, the fixers of an arbitrary join of intermediate f
 automorphisms fixing each of them.
 
 The correspondence is equivariant for conjugation: the fixed field of a conjugate subgroup is the
-image of the fixed field under the conjugating automorphism.
+image of the fixed field under the conjugating automorphism. Hence, for any action of the
+automorphism group on a set, the fields fixed by the stabilizers of the points of one orbit are
+translates of one another; over a Galois extension, the field fixed by a closed stabilizer has
+degree the size of the orbit.
 
 The correspondence between subgroups and their fixed fields also holds with no hypothesis on
 `M / K` at all, provided the subgroup is finite: Artin's theorem makes `M` finite Galois over the
@@ -88,6 +91,10 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   point of a Galois set agree on the field fixed by its stabilizer
 * `IntermediateField.apply_eq_self_of_forall_mem_inf`: inside a Galois extension `Ω / L`, an
   automorphism fixing `E ∩ F` fixes `F`, for `E` finite normal over a smaller base and `F ≤ L(E)`
+* `IntermediateField.fixedField_stabilizer_smul`: along an orbit, the fields fixed by the
+  stabilizers are the images of one another
+* `IntermediateField.finrank_fixedField_stabilizer`: for a Galois extension, the field fixed by a
+  closed stabilizer has degree the orbit size
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
@@ -498,6 +505,33 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
     simpa [MulAut.conj_apply] using congrArg σ (hy h hh)
 
 end Subgroup
+
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- **Fixed fields of stabilizers along an orbit.** For any action of `M ≃ₐ[K] M` on a type `X`,
+the field fixed by the stabilizer of `σ • x` is the image under `σ` of the field fixed by the
+stabilizer of `x`: the stabilizer of `σ • x` is the conjugate of that of `x`. -/
+theorem fixedField_stabilizer_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M)
+    (x : X) :
+    fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) =
+      (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).map σ.toAlgHom := by
+  rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj]
+  exact Subgroup.fixedField_map_conj _ σ
+
+/-- **The degree of the field fixed by a closed stabilizer is the orbit size.** For a Galois
+extension `M / K` and an action of `Gal(M/K)` on a type `X`, if the stabilizer of `x` is closed in
+the Krull topology then `[M ^ stabilizer x : K]` is the cardinality of the orbit of `x`; both sides
+are `0` when the orbit is infinite. -/
+theorem finrank_fixedField_stabilizer [IsGalois K M] {X : Type*} [MulAction (M ≃ₐ[K] M) X]
+    {x : X} (hx : IsClosed (MulAction.stabilizer (M ≃ₐ[K] M) x : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) =
+      Nat.card (MulAction.orbit (M ≃ₐ[K] M) x) := by
+  rw [finrank_eq_fixingSubgroup_index, InfiniteGalois.fixingSubgroup_fixedField ⟨_, hx⟩,
+    MulAction.index_stabilizer, Nat.card_coe_set_eq]
+
+end IntermediateField
 
 namespace FixedPoints
 
