@@ -208,7 +208,8 @@ private theorem ord_algebraMap_gen_sub (hs : ∀ c : k, c ^ p ≠ s) :
 
 omit [CharP k p] in
 /-- In `k(x) / k(x ^ p)`, the place of `x ^ p − s`, for `s` not a `p`-th power, is
-**unramified**: `e = 1`, although the extension is purely inseparable of degree `p`. -/
+**unramified**: `e = 1`, although the extension has degree `p` (and is purely inseparable
+when `k` has characteristic `p`). -/
 theorem ramificationIdx_adicOfIrreducible_X_pow_sub_C (hs : ∀ c : k, c ^ p ≠ s) :
     ramificationIdx k⟮t⟯ (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)) =
       1 := by
