@@ -80,6 +80,33 @@ theorem orderOf_cycleMap_of_cycleAngleSum {j : Fin n} {z : ℍ}
   rw [he]
   exact (Complex.isPrimitiveRoot_exp t ht).eq_orderOf.symm
 
+/-- If the `M`-th tile around a finite vertex returns to the vertex after angles summing to a
+number in `(0, 2π]` that is zero modulo `2π`, then the order of the cycle transformation times
+the cycle angle sum is `2π`. -/
+theorem orderOf_cycleMap_mul_cycleAngleSum_of_coe_sum_eq_zero {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) {M : ℕ} (hjM : σ.next^[M] j = j)
+    (hSM : ((∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j) : ℝ) : Real.Angle) = 0)
+    (hSM₀ : 0 < ∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j))
+    (hM : ∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j) ≤ 2 * π) :
+    (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π := by
+  have hk' : (∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j)) = 2 * π := by
+    have : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+    refine (AddCircle.coe_eq_coe_iff_of_mem_Ioc (a := 0) (p := 2 * π)
+      ⟨hSM₀, by rwa [zero_add]⟩ ⟨by positivity, by rw [zero_add]⟩).1 ?_
+    exact hSM.trans Real.Angle.coe_two_pi.symm
+  -- tile `M` returns to vertex `j`, so `M` is a whole number `t` of circuits
+  obtain ⟨t, rfl⟩ := Function.IsPeriodicPt.minimalPeriod_dvd hjM
+  have hSt : t * σ.cycleAngleSum j = 2 * π := by
+    rw [← σ.sum_range_mul_cycleLength_interiorAngle, mul_comm t, cycleLength_def]
+    exact hk'
+  have ht : (t : ℝ) ≠ 0 := by
+    rintro ht
+    rw [ht, zero_mul] at hSt
+    linarith [Real.pi_pos]
+  rw [σ.orderOf_cycleMap_of_cycleAngleSum hz (t := t)
+    (eq_div_of_mul_eq ht (by rw [mul_comm]; exact hSt))]
+  exact hSt
+
 /-- A finite vertex cycle whose angle sum is less than `2π` has a nonidentity cycle
 transformation: its derivative at the vertex is the rotation by that angle sum, which lies
 strictly between `0` and `2π`. -/
