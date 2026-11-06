@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.MeasureTheory.Function.LocallyAEConst
+import TauCeti.MeasureTheory.Function.Lp.Complete
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -191,7 +192,7 @@ for a Sobolev function on `Ω`, with the constant of the whole domain `Ω` in th
 private theorem eLpNorm_value_sub_setAverage_le_of_isCompact_closure (hp : p ≠ ∞)
     (hb : Bornology.IsBounded (Omega : Set E)) {V : Opens E} (hVconv : Convex ℝ (V : Set E))
     (hVcompact : IsCompact (closure (V : Set E))) (hVclosure : closure (V : Set E) ⊆ Omega)
-    {S' : Set E} (hSV : S' ⊆ V) (hS'fin : mu S' ≠ ∞) (hn : mu S' ≠ 0) (u : W1p mu Omega p) :
+    {S' : Set E} (hSV : S' ⊆ V) (hn : mu S' ≠ 0) (u : W1p mu Omega p) :
     eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S', W1p.value u y ∂mu) p (mu.restrict V) ≤
       ENNReal.ofReal (mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) /
         mu.real S') * ‖W1p.gradient u‖ₑ := by
@@ -209,7 +210,8 @@ private theorem eLpNorm_value_sub_setAverage_le_of_isCompact_closure (hp : p ≠
     (W1p.restrictL_mem_closure_range_ofTestFunctionₗ (U := V) hp hVcompact hVclosure u)
   rw [havg] at hbase
   have hpos : 0 < mu.real S' :=
-    ENNReal.toReal_pos hn hS'fin
+    ENNReal.toReal_pos hn ((measure_mono (hSV.trans subset_closure)).trans_lt
+      hVcompact.measure_lt_top).ne
   have hcongr : eLpNorm (fun x ↦ W1p.value v x - ⨍ y in S', W1p.value u y ∂mu) p
         (mu.restrict V) =
       eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S', W1p.value u y ∂mu) p
@@ -231,42 +233,6 @@ private theorem eLpNorm_value_sub_setAverage_le_of_isCompact_closure (hp : p ≠
           eLpNorm_mono_measure _ (Measure.restrict_mono hVsub le_rfl)
       _ = ‖W1p.gradient u‖ₑ := (Lp.enorm_def _).symm
   exact hcongr ▸ hbase.trans (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) hgradle)
-
-/-- The `Lᵖ` norm of `f - b` on `Ω` is at most the `liminf` of the `Lᵖ` norms of `f - aₙ` on an
-exhaustion `Vₙ ↑ Ω` by measurable sets, when `aₙ → b` (Fatou). -/
-private theorem eLpNorm_sub_const_restrict_le_liminf {X : Type*} [MeasurableSpace X]
-    {ν : Measure X} {q : ℝ≥0∞} {f : X → ℝ} (hf : StronglyMeasurable f) {Ω : Set X}
-    (hΩ : MeasurableSet Ω) {V : ℕ → Set X} (hV : ∀ n, MeasurableSet (V n))
-    (hVmono : Monotone V) (hVunion : ⋃ n, V n = Ω) {a : ℕ → ℝ} {b : ℝ}
-    (ha : Tendsto a atTop (𝓝 b)) :
-    eLpNorm (fun x ↦ f x - b) q (ν.restrict Ω) ≤
-      atTop.liminf fun n ↦ eLpNorm (fun x ↦ f x - a n) q (ν.restrict (V n)) := by
-  set g : ℕ → X → ℝ := fun n ↦ (V n).indicator fun x ↦ f x - a n with hgdef
-  have hgmeas : ∀ n, AEStronglyMeasurable (g n) ν := fun n ↦
-    ((hf.sub stronglyMeasurable_const).indicator (hV n)).aestronglyMeasurable
-  have hgval : ∀ n x, x ∈ V n → g n x = f x - a n := fun n x hx ↦ by
-    simp only [hgdef]
-    exact Set.indicator_of_mem hx _
-  have hgzero : ∀ n x, x ∉ V n → g n x = 0 := fun n x hx ↦ by
-    simp only [hgdef]
-    exact Set.indicator_of_notMem hx _
-  have hptw : ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (Ω.indicator (fun x ↦ f x - b) x)) := by
-    intro x
-    by_cases hx : x ∈ Ω
-    · obtain ⟨n₀, hn₀⟩ := mem_iUnion.1 (hVunion ▸ hx)
-      rw [Set.indicator_of_mem hx]
-      refine Tendsto.congr' (Filter.eventually_atTop.2 ⟨n₀, fun n hn ↦ ?_⟩)
-        (tendsto_const_nhds.sub ha)
-      exact (hgval n x (hVmono hn hn₀)).symm
-    · rw [Set.indicator_of_notMem hx]
-      exact tendsto_const_nhds.congr fun n ↦
-        (hgzero n x fun hmem ↦ hx (hVunion ▸ mem_iUnion.2 ⟨n, hmem⟩)).symm
-  rw [← eLpNorm_indicator_eq_eLpNorm_restrict hΩ.nullMeasurableSet]
-  refine (Lp.eLpNorm_lim_le_liminf_eLpNorm hgmeas (Ω.indicator fun x ↦ f x - b)
-    ((hf.sub stronglyMeasurable_const).indicator hΩ).aestronglyMeasurable
-    (ae_of_all _ hptw)).trans_eq ?_
-  simp only [hgdef, eLpNorm_indicator_eq_eLpNorm_restrict (hV _).nullMeasurableSet]
-
 
 /-! ### The inequality on the whole domain -/
 
@@ -312,8 +278,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
           (mu.restrict (V n)) ≤
         ENNReal.ofReal (K / mu.real (S ∩ V n)) * ‖W1p.gradient u‖ₑ := fun n hn ↦
     eLpNorm_value_sub_setAverage_le_of_isCompact_closure (V := ⟨V n, hVopen n⟩) hp hb
-      (hVconv n) (hVcompact n) (hVclosure n) inter_subset_right
-      (ne_top_of_le_ne_top hSfin (measure_mono inter_subset_left)) hn u
+      (hVconv n) (hVcompact n) (hVclosure n) inter_subset_right hn u
   -- Fatou along the exhaustion.
   set a : ℕ → ℝ := fun n ↦ ⨍ y in S ∩ V n, W1p.value u y ∂mu
   set b : ℝ := ⨍ y in S, W1p.value u y ∂mu

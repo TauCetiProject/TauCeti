@@ -40,6 +40,8 @@ measure `μ`:
   Cauchy modulus tending to zero converges in `Lᵖ` to a strongly measurable function.
 * `TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound` — the normed-group specialization for
   `eLpNorm (f n - g) p μ`.
+* `TauCeti.eLpNorm_sub_const_restrict_le_liminf` — Fatou along an exhaustion: the `Lᵖ` norm of
+  `f - b` on `Ω` is at most the `liminf` of the norms of `f - aₙ` on measurable sets `Vₙ ↑ Ω`.
 -/
 
 public section
@@ -154,5 +156,40 @@ theorem exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound [NormedAddCommGroup E] [
   obtain ⟨g, hg, hlim⟩ := exists_tendsto_eLpNorm_edist_of_tendsto_bound hp hf hB
     fun N n m hn hm ↦ (hnorm (hf n) (hf m)).trans_le (h_cau N n m hn hm)
   exact ⟨g, hg, (tendsto_congr fun n ↦ hnorm (hf n) hg.aestronglyMeasurable).1 hlim⟩
+
+/-- The `Lᵖ` norm of `f - b` on `Ω` is at most the `liminf` of the `Lᵖ` norms of `f - aₙ` on an
+exhaustion `Vₙ ↑ Ω` by measurable sets, when `aₙ → b` (Fatou). -/
+theorem eLpNorm_sub_const_restrict_le_liminf {X : Type*} [MeasurableSpace X]
+    {ν : Measure X} {q : ℝ≥0∞} {f : X → ℝ} (hf : StronglyMeasurable f) {Ω : Set X}
+    (hΩ : MeasurableSet Ω) {V : ℕ → Set X} (hV : ∀ n, MeasurableSet (V n))
+    (hVmono : Monotone V) (hVunion : ⋃ n, V n = Ω) {a : ℕ → ℝ} {b : ℝ}
+    (ha : Tendsto a atTop (𝓝 b)) :
+    eLpNorm (fun x ↦ f x - b) q (ν.restrict Ω) ≤
+      atTop.liminf fun n ↦ eLpNorm (fun x ↦ f x - a n) q (ν.restrict (V n)) := by
+  set g : ℕ → X → ℝ := fun n ↦ (V n).indicator fun x ↦ f x - a n with hgdef
+  have hgmeas : ∀ n, AEStronglyMeasurable (g n) ν := fun n ↦
+    ((hf.sub stronglyMeasurable_const).indicator (hV n)).aestronglyMeasurable
+  have hgval : ∀ n x, x ∈ V n → g n x = f x - a n := fun n x hx ↦ by
+    simp only [hgdef]
+    exact Set.indicator_of_mem hx _
+  have hgzero : ∀ n x, x ∉ V n → g n x = 0 := fun n x hx ↦ by
+    simp only [hgdef]
+    exact Set.indicator_of_notMem hx _
+  have hptw : ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (Ω.indicator (fun x ↦ f x - b) x)) := by
+    intro x
+    by_cases hx : x ∈ Ω
+    · obtain ⟨n₀, hn₀⟩ := Set.mem_iUnion.1 (hVunion ▸ hx)
+      rw [Set.indicator_of_mem hx]
+      refine Tendsto.congr' (Filter.eventually_atTop.2 ⟨n₀, fun n hn ↦ ?_⟩)
+        (tendsto_const_nhds.sub ha)
+      exact (hgval n x (hVmono hn hn₀)).symm
+    · rw [Set.indicator_of_notMem hx]
+      exact tendsto_const_nhds.congr fun n ↦
+        (hgzero n x fun hmem ↦ hx (hVunion ▸ Set.mem_iUnion.2 ⟨n, hmem⟩)).symm
+  rw [← eLpNorm_indicator_eq_eLpNorm_restrict hΩ.nullMeasurableSet]
+  refine (Lp.eLpNorm_lim_le_liminf_eLpNorm hgmeas (Ω.indicator fun x ↦ f x - b)
+    ((hf.sub stronglyMeasurable_const).indicator hΩ).aestronglyMeasurable
+    (ae_of_all _ hptw)).trans_eq ?_
+  simp only [hgdef, eLpNorm_indicator_eq_eLpNorm_restrict (hV _).nullMeasurableSet]
 
 end TauCeti
