@@ -149,12 +149,11 @@ private def distributeLeftHom :
     have hx : ∀ i, m i ∈ (M i).grading p := by
       simpa only [directSumObj_grading, InternalGrading.directSum_piece,
         InternalGrading.mem_directSumPiece_iff, InternalGrading.ofDecomposition_piece] using hm
-    rw [← DFinsupp.sum_single (f := m)]
-    simp only [DFinsupp.sum, map_sum, LinearMap.sum_apply, Finset.smul_sum,
-      ← Finset.sum_add_distrib]
+    rw [← DirectSum.sum_support_of m]
+    simp only [map_sum, LinearMap.sum_apply, Finset.smul_sum, ← Finset.sum_add_distrib]
     apply Finset.sum_congr rfl
     intro i _
-    rw [DirectSum.single_eq_lof R, DirectSum.lof_eq_of, ← directSumι_apply]
+    rw [← directSumι_apply]
     simp only [distributeLeftBilinear_ι M N, DGBimoduleHom.map_d,
       tensorObj_differential_tmul (hx i), map_add, map_zsmul_unit]
 
