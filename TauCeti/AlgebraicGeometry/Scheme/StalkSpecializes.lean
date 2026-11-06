@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.FunctionField
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.RingTheory.DedekindDomain.Basic
 
+import Mathlib.AlgebraicGeometry.Properties
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Localization.LocalizationLocalization
 
 /-!
@@ -34,9 +38,20 @@ off.
   localization of `𝒪_{X,y}` at the prime under its maximal ideal.
 * `TauCeti.AlgebraicGeometry.Scheme.comap_stalkSpecializes_maximalIdeal_eq_iff`: that prime is
   the maximal ideal of `𝒪_{X,y}` iff `x = y`.
+* `TauCeti.AlgebraicGeometry.Scheme.comap_germ_comap_stalkSpecializes_maximalIdeal`: on an affine
+  open containing `y`, that prime pulls back to the prime ideal of `x`.
+* `TauCeti.AlgebraicGeometry.Scheme.specializes_of_comap_stalkSpecializes_maximalIdeal_le`: the
+  primes of `𝒪_{X,y}` of two generizations of `y` are ordered as the generizations are.
+* `TauCeti.AlgebraicGeometry.Scheme.exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton`:
+  on a locally Noetherian integral scheme, every prime element of `𝒪_{X,y}` generates the prime of
+  a codimension-one generization of `y`, by Krull's principal ideal theorem.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if every
   nonzero prime of `𝒪_{X,y}` is maximal and `x ≠ y`, then `κ(x)` is a fraction field of
   `𝒪_{X,y}`.
+* `TauCeti.AlgebraicGeometry.Scheme.algebraMap_stalkSpecializes` and
+  `TauCeti.AlgebraicGeometry.Scheme.stalkSpecializes_injective`: on an irreducible scheme the
+  specialization map is compatible with the maps to the function field, and on an integral scheme
+  it is injective.
 
 ## References
 
@@ -133,6 +148,96 @@ theorem comap_stalkSpecializes_maximalIdeal_eq_iff (h : x ⤳ y) :
       ← hxy, ← hcomp, Ideal.comap_comap]
   simpa using (hU.fromSpec_primeIdealOf ⟨x, hxU⟩).symm.trans
     (hprime ▸ hU.fromSpec_primeIdealOf ⟨y, hyU⟩)
+
+/-- For a specialization `x ⤳ y` and an affine open `U` containing `y`, the prime of `𝒪_{X,y}`
+lying under the maximal ideal of `𝒪_{X,x}` pulls back along the germ map to the prime ideal of
+`Γ(X, U)` corresponding to `x`. -/
+theorem comap_germ_comap_stalkSpecializes_maximalIdeal {U : X.Opens} (hU : IsAffineOpen U)
+    (hyU : y ∈ U) (h : x ⤳ y) :
+    ((maximalIdeal (X.presheaf.stalk x)).comap (X.presheaf.stalkSpecializes h).hom).comap
+        (X.presheaf.germ U y hyU).hom =
+      (hU.primeIdealOf ⟨x, h.mem_open U.isOpen hyU⟩).asIdeal := by
+  let := X.presheaf.algebra_section_stalk ⟨x, h.mem_open U.isOpen hyU⟩
+  have := hU.isLocalization_stalk ⟨x, h.mem_open U.isOpen hyU⟩
+  rw [Ideal.comap_comap, ← CommRingCat.hom_comp, TopCat.Presheaf.germ_stalkSpecializes]
+  exact IsLocalization.AtPrime.under_maximalIdeal (X.presheaf.stalk x) _
+
+/-- For generizations `x` and `x'` of `y`, if the prime of `𝒪_{X,y}` corresponding to `x` is
+contained in the one corresponding to `x'`, then `x` is a generization of `x'`. -/
+theorem specializes_of_comap_stalkSpecializes_maximalIdeal_le {x' : X} (h : x ⤳ y)
+    (h' : x' ⤳ y)
+    (hle : (maximalIdeal (X.presheaf.stalk x)).comap (X.presheaf.stalkSpecializes h).hom ≤
+      (maximalIdeal (X.presheaf.stalk x')).comap (X.presheaf.stalkSpecializes h').hom) :
+    x ⤳ x' := by
+  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
+  have hle' := Ideal.comap_mono (f := (X.presheaf.germ U y hyU).hom) hle
+  rw [comap_germ_comap_stalkSpecializes_maximalIdeal hU hyU h,
+    comap_germ_comap_stalkSpecializes_maximalIdeal hU hyU h'] at hle'
+  have hsp := ((PrimeSpectrum.le_iff_specializes _ _).mp hle').map hU.fromSpec.continuous
+  rwa [hU.fromSpec_primeIdealOf, hU.fromSpec_primeIdealOf] at hsp
+
+/-- **Prime elements of a local ring and codimension-one generizations.** On a locally Noetherian
+integral scheme, every prime element `p` of the local ring `𝒪_{X,y}` generates the prime of
+`𝒪_{X,y}` lying under the maximal ideal of `𝒪_{X,x}` for some codimension-one generization `x`
+of `y`. The point `x` has codimension one by Krull's principal ideal theorem. -/
+theorem exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton [IsIntegral X]
+    [IsLocallyNoetherian X] {p : X.presheaf.stalk y} (hp : Prime p) :
+    ∃ x : X, Order.coheight x = 1 ∧ ∃ h : x ⤳ y,
+      (maximalIdeal (X.presheaf.stalk x)).comap (X.presheaf.stalkSpecializes h).hom =
+        Ideal.span {p} := by
+  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
+  have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
+  replace hU : IsAffineOpen U := hU
+  let := X.presheaf.algebra_section_stalk ⟨y, hyU⟩
+  have := hU.isLocalization_stalk ⟨y, hyU⟩
+  set P := hU.primeIdealOf ⟨y, hyU⟩
+  have hspan : (Ideal.span {p}).IsPrime := (Ideal.span_singleton_prime hp.ne_zero).mpr hp
+  -- The prime `q` of `Γ(X, U)` under `(p)`, contained in the prime `P` of `y`.
+  let q : Spec Γ(X, U) := ⟨(Ideal.span {p}).comap (algebraMap Γ(X, U) _), inferInstance⟩
+  have hqP : q.asIdeal ≤ P.asIdeal := by
+    rw [← IsLocalization.AtPrime.under_maximalIdeal (X.presheaf.stalk y) P.asIdeal]
+    refine Ideal.comap_mono ?_
+    rw [Ideal.span_singleton_le_iff_mem, mem_maximalIdeal]
+    exact hp.not_isUnit
+  have hxy : hU.fromSpec q ⤳ y :=
+    (((PrimeSpectrum.le_iff_specializes q P).mp hqP).map hU.fromSpec.continuous).trans
+      (specializes_of_eq (hU.fromSpec_primeIdealOf ⟨y, hyU⟩))
+  have hprime : hU.primeIdealOf ⟨_, hxy.mem_open U.isOpen hyU⟩ = q :=
+    hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf _)
+  have hdisj : Disjoint (P.asIdeal.primeCompl : Set Γ(X, U)) q.asIdeal :=
+    Set.disjoint_left.mpr fun a ha haq ↦ ha (hqP haq)
+  have hmap : q.asIdeal.map (algebraMap Γ(X, U) (X.presheaf.stalk y)) = Ideal.span {p} :=
+    IsLocalization.map_under P.asIdeal.primeCompl _ _
+  -- `fromSpec q` has codimension one, as `(p)` has height one by Krull's principal ideal theorem.
+  have hcoh : Order.coheight (hU.fromSpec q) = 1 := by
+    rw [coheight_eq_of_isOpenImmersion hU.fromSpec, ← idealHeight_eq_coheight,
+      ← IsLocalization.height_map_of_disjoint (S := X.presheaf.stalk y) P.asIdeal.primeCompl
+        q.asIdeal hdisj, hmap]
+    exact Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors
+      (mem_nonZeroDivisors_of_ne_zero hp.ne_zero) hp.not_isUnit
+  refine ⟨_, hcoh, hxy, ?_⟩
+  -- Both ideals of the localization `𝒪_{X,y}` pull back to `q` on `Γ(X, U)`.
+  rw [← IsLocalization.map_under P.asIdeal.primeCompl (X.presheaf.stalk y)
+      ((maximalIdeal _).comap (X.presheaf.stalkSpecializes hxy).hom), ← hmap]
+  congr 1
+  exact (comap_germ_comap_stalkSpecializes_maximalIdeal hU hyU hxy).trans (congrArg _ hprime)
+
+/-- On an irreducible scheme, the image in the function field of a germ at `y` is the image of its
+germ at a generization `x` of `y`. -/
+@[simp]
+theorem algebraMap_stalkSpecializes [IrreducibleSpace X] (h : x ⤳ y) (b : X.presheaf.stalk y) :
+    algebraMap (X.presheaf.stalk x) X.functionField ((X.presheaf.stalkSpecializes h).hom b) =
+      algebraMap (X.presheaf.stalk y) X.functionField b := by
+  simp [RingHom.algebraMap_toAlgebra, ← ConcreteCategory.comp_apply]
+
+/-- On an integral scheme the specialization map `𝒪_{X,y} ⟶ 𝒪_{X,x}` is injective, both local
+rings being subrings of the function field. -/
+theorem stalkSpecializes_injective [IsIntegral X] (h : x ⤳ y) :
+    Function.Injective (X.presheaf.stalkSpecializes h).hom := fun a b hab ↦
+  IsFractionRing.injective (X.presheaf.stalk y) X.functionField <| by
+    rw [← algebraMap_stalkSpecializes h, hab, algebraMap_stalkSpecializes h]
 
 /-- If `x` is a proper generization of `y` and every nonzero prime of `𝒪_{X,y}` is maximal
 (`Ring.DimensionLEOne`, which without a domain assumption is stronger than Krull dimension at

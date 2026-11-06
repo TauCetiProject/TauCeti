@@ -39,6 +39,8 @@ parity `n` has.
   to it), so does every topologically nilpotent element.
 * `IsTopologicallyNilpotent.isUnit_add_left` : when the topological nilradical lies in the
   Jacobson radical, a unit plus a topologically nilpotent element is a unit.
+* `IsTopologicallyNilpotent.prod_one_sub_sub_one` : for scalars `μ` from a multiset and a
+  topologically nilpotent `a`, `∏_μ (1 - μ a) - 1` is topologically nilpotent.
 
 ## Provenance
 
@@ -167,7 +169,7 @@ section Jacobson
 variable {R : Type*} [CommRing R] [TopologicalSpace R]
 
 /-- **Topologically nilpotent elements lie in the Jacobson radical** as soon as some open ideal
-`I` does, for instance when `R` is `I`-adically complete (`IsAdicComplete.le_jacobson_bot`): a
+`I` does, for instance when `R` is `I`-adically complete (`IsAdicComplete.le_jacobson`): a
 power of a topologically nilpotent element lies in `I`, and the Jacobson radical is radical. -/
 theorem IsTopologicallyNilpotent.mem_jacobson_bot {I : Ideal R} (hI : IsOpen (I : Set R))
     (hIJ : I ≤ (⊥ : Ideal R).jacobson) {a : R} (ha : IsTopologicallyNilpotent a) :
@@ -189,10 +191,34 @@ theorem IsTopologicallyNilpotent.isUnit_add_left [IsLinearTopology R R]
     (hR : topologicalNilradical R ≤ (⊥ : Ideal R).jacobson) {t u : R}
     (ht : IsTopologicallyNilpotent t) (hu : IsUnit u) : IsUnit (u + t) := by
   obtain ⟨u, rfl⟩ := hu
-  have h := Ideal.mem_jacobson_bot.mp
-    (hR (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr ht)) ↑u⁻¹
+  have htj : t ∈ Ring.jacobson R := by
+    simpa only [Ideal.jacobson_bot] using
+      hR (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr ht)
+  have h := Ring.mem_jacobson_iff.mp htj ↑u⁻¹
   simpa [mul_add, mul_left_comm (u : R) t, add_comm] using u.isUnit.mul h
 
 end Jacobson
+
+section MultisetProd
+
+variable {S : Type*} [CommRing S] [TopologicalSpace S] [IsLinearTopology S S] [ContinuousNeg S]
+
+/-- For a multiset `s` of scalars and a topologically nilpotent `a`, `∏_{μ ∈ s} (1 - μ a) - 1` is
+topologically nilpotent. -/
+theorem IsTopologicallyNilpotent.prod_one_sub_sub_one {K : Type*} [CommRing K] [Algebra K S]
+    {a : S} (ha : IsTopologicallyNilpotent a) (s : Multiset K) :
+    IsTopologicallyNilpotent ((s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1) := by
+  induction s using Multiset.induction_on with
+  | empty => simpa using IsTopologicallyNilpotent.zero
+  | cons μ s ih =>
+    -- Writing `(1 - μ a) P - 1 = (P - 1) - μ a P` exhibits it as the sum of `P - 1`,
+    -- topologically nilpotent by induction, and a multiple of the topologically nilpotent `μ a`.
+    rw [Multiset.map_cons, Multiset.prod_cons,
+      show (1 - algebraMap K S μ * a) * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1 =
+        ((s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1) +
+          -(algebraMap K S μ * a * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) by ring]
+    exact ih.add ((ha.mul_left _).mul_right _).neg
+
+end MultisetProd
 
 end

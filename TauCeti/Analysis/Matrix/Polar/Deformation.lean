@@ -135,8 +135,7 @@ theorem contMDiff_polarDeformation {k : ℕ∞ω} :
     ℝ).contMDiffOn
     |>.comp_contMDiff contMDiff_sqrt_mul_star (fun A ↦ posDef_sqrt_mul_star A)
   have hexp : ContDiff ℝ k (NormedSpace.exp : Matrix n n 𝕜 → Matrix n n 𝕜) :=
-    contDiff_iff_contDiffAt.2 fun X ↦
-      ((NormedSpace.exp_analytic (𝕂 := ℝ) X).contDiffAt).of_le le_top
+    NormedSpace.contDiff_exp ℝ
   apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
   have htime : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, Matrix n n 𝕜)) 𝓘(ℝ, ℝ) k
       (fun p : ℝ × GL n 𝕜 ↦ 1 - p.1) := contMDiff_const.sub contMDiff_fst

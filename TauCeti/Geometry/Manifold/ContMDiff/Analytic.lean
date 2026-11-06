@@ -37,7 +37,8 @@ The model is assumed boundaryless throughout, so that chart images of open sets 
 ## Main results
 
 * `ModelWithCorners.analyticOnNhd_extendCoordChange`,
-  `ModelWithCorners.analyticAt_extendCoordChange` and `TauCeti.analyticOnNhd_ext_coord_change`:
+  `ModelWithCorners.analyticAt_extendCoordChange`, `TauCeti.analyticOnNhd_ext_coord_change`, and
+  `OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans`:
   changes of coordinates in a `C^ω` atlas are analytic.
 * `ContMDiffAt.analyticAt_extend_comp_extend_symm`, `ContMDiffAt.analyticAt_writtenInExtChartAt`,
   `TauCeti.contMDiffAt_omega_iff_of_mem_maximalAtlas` and `TauCeti.contMDiffAt_omega_iff`: `C^ω`
@@ -86,7 +87,7 @@ between two charts of the maximal `C^ω` atlas is analytic at the coordinate of 
 chart domains. -/
 theorem analyticAt_extendCoordChange (he : e ∈ maximalAtlas I ω M)
     (he' : e' ∈ maximalAtlas I ω M) (hxe : x ∈ e.source) (hxe' : x ∈ e'.source) :
-    AnalyticAt 𝕜 (I.extendCoordChange e e') (e.extend I x) :=
+    AnalyticAt 𝕜 (I.extendCoordChange e e') (I (e x)) :=
   I.analyticOnNhd_extendCoordChange he he' _ <|
     e.extend_image_source_inter (I := I) e' ▸ mem_image_of_mem _ ⟨hxe, hxe'⟩
 
@@ -99,13 +100,28 @@ theorem TauCeti.analyticOnNhd_ext_coord_change [IsManifold I ω M] (x x' : M) :
       ((extChartAt I x').symm ≫ extChartAt I x).source :=
   I.analyticOnNhd_extendCoordChange (chart_mem_maximalAtlas x') (chart_mem_maximalAtlas x)
 
+/-- For a boundaryless model, the transition map between two maximal `C^ω`-atlas charts
+`c₁, c₂`, read in `E` and moved to `F` by homeomorphisms `Ψ₁, Ψ₂` with `Ψ₁.symm` and `Ψ₂` of class
+`C^ω`, is analytic on its open source. -/
+theorem OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans
+    {c₁ c₂ : OpenPartialHomeomorph M H} (hc₁ : c₁ ∈ maximalAtlas I ω M)
+    (hc₂ : c₂ ∈ maximalAtlas I ω M) {Ψ₁ Ψ₂ : E ≃ₜ F}
+    (hΨ₁ : ContDiff 𝕜 ω Ψ₁.symm) (hΨ₂ : ContDiff 𝕜 ω Ψ₂) :
+    AnalyticOnNhd 𝕜 ((c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂))
+      ((c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂)).source := by
+  set T := (c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂)
+  exact T.open_source.analyticOn_iff_analyticOnNhd.1 <|
+    (contDiffOn_omega_iff_analyticOn T.open_source.uniqueDiffOn).1 <|
+      (OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂).congr
+        fun _ _ ↦ rfl
+
 /-! ### `C^ω` maps in charts -/
 
 /-- A function with values in a normed space that is `C^ω` at `x` has an analytic coordinate
 expression at the coordinate of `x` in any chart at `x` of the maximal `C^ω` atlas. -/
 theorem ContMDiffAt.analyticAt_comp_extend_symm {f : M → F}
     (hf : ContMDiffAt I 𝓘(𝕜, F) ω f x) (he : e ∈ maximalAtlas I ω M) (hx : x ∈ e.source) :
-    AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (e.extend I x) :=
+    AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (I (e x)) :=
   ((TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).1 hf).analyticAt
 
 /-- A map that is `C^ω` at `x` has an analytic coordinate expression at the coordinate of `x` in

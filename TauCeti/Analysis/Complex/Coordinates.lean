@@ -13,7 +13,10 @@ public import TauCeti.LinearAlgebra.Complex.Determinant
 # Real coordinates of the complex plane
 
 The real linear coordinate interchange is an involution with determinant `-1`, recording
-the reversal of orientation.
+the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
+`u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
+(`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
+linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero.
 -/
 
 public section
@@ -49,5 +52,29 @@ theorem det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.toLinearMap.det 
 @[simp]
 theorem linearEquiv_det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.det = -1 := by
   simp [← Units.val_inj]
+
+/-- A vector `v` in polar coordinates at a point `r * u` with `u ≠ 0`, `r ≠ 0`: its components
+along the radial direction `u` and the angular direction `r * u * I`. -/
+theorem eq_re_mul_add_im_div_mul {u : ℂ} (hu : u ≠ 0) {r : ℝ} (hr : r ≠ 0) (v : ℂ) :
+    v = ((v / u).re : ℂ) * u + (((v / u).im / r : ℝ) : ℂ) * (r * u * I) := by
+  have hr' : (r : ℂ) ≠ 0 := ofReal_ne_zero.2 hr
+  conv_lhs => rw [← div_mul_cancel₀ v hu, ← re_add_im (v / u)]
+  push_cast
+  field_simp
+
+/-- The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is linearly independent. -/
+theorem linearIndependent_one_zero_I_zero_zero_one :
+    LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
+  refine Fintype.linearIndependent_iff.2 fun g hg i ↦ ?_
+  rw [Fin.sum_univ_three] at hg
+  fin_cases i
+  · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.re) hg
+  · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.im) hg
+  · simpa using congrArg Prod.snd hg
+
+/-- A point `c + t * I` of the vertical line `Re z = c` is nonzero as soon as `c` is.  Mathlib's
+`Complex.ne_zero_of_re_pos` covers only the positive-real-part case. -/
+theorem ofReal_add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
+  fun h ↦ hc (by simpa using congrArg Complex.re h)
 
 end Complex

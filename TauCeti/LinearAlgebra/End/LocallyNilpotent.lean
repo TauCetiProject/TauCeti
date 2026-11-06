@@ -34,8 +34,15 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 
 ## Main results
 
+* `IsNilpotent.exists_pow_apply_eq_zero`: a nilpotent endomorphism is locally nilpotent.
+* `Module.End.sum_range_smul_pow_apply_eq_of_le`: at a vector killed by `f ^ k`, a power series in
+  `f` may be truncated at any length beyond `k`.
+* `Module.End.neg_pow_apply_eq_zero_iff`: a power of `-f` kills a vector exactly when the same
+  power of `f` does.
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
   locally nilpotent.
+* `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
+  map lowering an exhaustive filtration starting at `⊥` is bijective.
 * `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
@@ -50,27 +57,69 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 
 public section
 
+/-- A nilpotent endomorphism is locally nilpotent: each vector is killed by some power of it. -/
+theorem IsNilpotent.exists_pow_apply_eq_zero {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {f : Module.End R M} (hf : IsNilpotent f) (x : M) : ∃ n, (f ^ n) x = 0 := by
+  obtain ⟨n, hn⟩ := hf
+  exact ⟨n, by rw [hn, LinearMap.zero_apply]⟩
+
+/-- A power series in `f` applied to a vector killed by `f ^ k` does not change when it is
+truncated at any length beyond `k`, whatever its coefficients. -/
+theorem Module.End.sum_range_smul_pow_apply_eq_of_le {R S M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [SMulZeroClass S M] (f : Module.End R M) (c : ℕ → S)
+    {x : M} {k l : ℕ} (hk : (f ^ k) x = 0) (hkl : k ≤ l) :
+    ∑ i ∈ Finset.range l, c i • (f ^ i) x = ∑ i ∈ Finset.range k, c i • (f ^ i) x := by
+  have h : ∑ i ∈ Finset.Ico k l, c i • (f ^ i) x = 0 := Finset.sum_eq_zero fun i hi ↦ by
+    rw [Module.End.pow_map_zero_of_le (Finset.mem_Ico.1 hi).1 hk, smul_zero]
+  rw [← Finset.sum_range_add_sum_Ico _ hkl, h, add_zero]
+
 variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+
+/-- A power of `-f` kills a vector exactly when the same power of `f` does, so `-f` is locally
+nilpotent exactly when `f` is. -/
+@[simp]
+theorem Module.End.neg_pow_apply_eq_zero_iff (f : Module.End R M) (n : ℕ) (x : M) :
+    ((-f) ^ n) x = 0 ↔ (f ^ n) x = 0 := by
+  rcases neg_one_pow_eq_or (Module.End R M) n with h | h <;>
+    simp [neg_pow, h]
 
 /-- If every vector is annihilated by some power of `f`, then `1 + f` is invertible. -/
 theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module.End R M)
     (hf : ∀ x, ∃ n, (f ^ n) x = 0) : IsUnit (1 + f) := by
-  have hneg : ∀ (n : ℕ) (x : M), (f ^ n) x = 0 → ((-f) ^ n) x = 0 := by
-    intro n x hx
-    rw [neg_pow, Module.End.mul_apply, hx, map_zero]
+  have hneg : ∀ (n : ℕ) (x : M), (f ^ n) x = 0 → ((-f) ^ n) x = 0 :=
+    fun n x ↦ (f.neg_pow_apply_eq_zero_iff n x).2
   rw [Module.End.isUnit_iff]
   refine ⟨(injective_iff_map_eq_zero (1 + f)).2 fun x hx ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨n, hn⟩ := hf x
     have h := LinearMap.congr_fun (geom_sum_mul_neg (-f) n) x
-    rw [sub_neg_eq_add, Module.End.mul_apply, hx, map_zero, LinearMap.sub_apply,
-      Module.End.one_apply, hneg n x hn, sub_zero] at h
+    rw [sub_neg_eq_add, _root_.mul_apply_eq_comp, hx, map_zero, LinearMap.sub_apply,
+      _root_.one_apply_eq_self, hneg n x hn, sub_zero] at h
     exact h.symm
   · obtain ⟨n, hn⟩ := hf y
     refine ⟨(∑ i ∈ Finset.range n, (-f) ^ i) y, ?_⟩
     have h := LinearMap.congr_fun (mul_neg_geom_sum (-f) n) y
-    rwa [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
+    rwa [sub_neg_eq_add, _root_.mul_apply_eq_comp, LinearMap.sub_apply, _root_.one_apply_eq_self,
       hneg n y hn, sub_zero] at h
 
+/-- If `f` is the identity up to a map lowering an exhaustive increasing filtration `p` with
+`p 0 = ⊥`, that is `f x - x ∈ p n` whenever `x ∈ p (n + 1)`, then `f` is bijective: `f - 1` is
+locally nilpotent. -/
+theorem Module.End.bijective_of_sub_mem_filtration {p : ℕ → Submodule R M} (hp0 : p 0 = ⊥)
+    (hp : ∀ x, ∃ n, x ∈ p n) {f : Module.End R M}
+    (hf : ∀ n x, x ∈ p (n + 1) → f x - x ∈ p n) : Function.Bijective f := by
+  have hnil (n : ℕ) : ∀ x ∈ p n, ((f - 1) ^ n) x = 0 := by
+    induction n with
+    | zero =>
+      intro x hx
+      rw [hp0, Submodule.mem_bot] at hx
+      rw [hx, map_zero]
+    | succ n ih =>
+      intro x hx
+      rw [pow_succ, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self]
+      exact ih _ (hf n x hx)
+  have h := (f - 1).isUnit_one_add_of_forall_exists_pow_apply_eq_zero fun x ↦
+    (hp x).imp fun n ↦ hnil n x
+  rwa [add_sub_cancel, Module.End.isUnit_iff] at h
 
 section Ring
 
@@ -90,17 +139,17 @@ theorem TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMon
     induction i with
     | zero => simpa using hx
     | succ i ih =>
-      rw [pow_succ', Module.End.mul_apply, LinearMap.neg_apply]
+      rw [pow_succ', _root_.mul_apply_eq_comp, LinearMap.neg_apply]
       simpa only [add_zero] using neg_mem (hf.map_mem ih)
   set y := (∑ i ∈ Finset.range n, (-f) ^ i) x with hy_def
   have hy : (1 + f) y = x := by
     have h := LinearMap.congr_fun (mul_neg_geom_sum (-f) n) x
-    rwa [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
-      neg_pow, Module.End.mul_apply, hn, map_zero, sub_zero] at h
+    rwa [sub_neg_eq_add, _root_.mul_apply_eq_comp, LinearMap.sub_apply, _root_.one_apply_eq_self,
+      neg_pow, _root_.mul_apply_eq_comp, hn, map_zero, sub_zero] at h
   have hinv : Ring.inverse (1 + f) x = y := by
-    rw [← hy, ← Module.End.mul_apply,
+    rw [← hy, ← _root_.mul_apply_eq_comp,
       Ring.inverse_mul_cancel _ (Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero f
-        hnil), Module.End.one_apply]
+        hnil), _root_.one_apply_eq_self]
   rw [hinv, add_zero, hy_def, LinearMap.sum_apply]
   exact Submodule.sum_mem _ fun i _ ↦ hpow i
 
@@ -145,7 +194,7 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt
         rw [← Finsupp.smul_single_one]
         exact N.smul_mem _ (ih j (hf i j hj))
       obtain ⟨k, hk⟩ := (hN _).1 hfi
-      exact (hN _).2 ⟨k + 1, by rw [pow_succ, Module.End.mul_apply, hk]⟩
+      exact (hN _).2 ⟨k + 1, by rw [pow_succ, _root_.mul_apply_eq_comp, hk]⟩
   have hx : x ∈ N := by
     induction x using Finsupp.induction_linear with
     | zero => exact N.zero_mem
@@ -206,8 +255,8 @@ theorem mem_wordKer_iff {d : ℕ} {x : M} :
       · simp at hw
       · simp only [List.concat_eq_append, List.length_append, List.length_singleton,
           Nat.add_right_cancel_iff] at hw
-        simpa [Module.End.mul_apply] using h i w hw
-    · simpa [Module.End.mul_apply] using h (w ++ [i]) (by simp [hw])
+        simpa [_root_.mul_apply_eq_comp] using h i w hw
+    · simpa [_root_.mul_apply_eq_comp] using h (w ++ [i]) (by simp [hw])
 
 /-- A vector killed by all composites of length `d` is killed by all longer composites. -/
 theorem monotone_wordKer : Monotone (wordKer f) := by

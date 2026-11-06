@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.Approximation
+public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import TauCeti.MeasureTheory.Measure.LevyConvergence
 import TauCeti.Probability.Distributions.Affine
@@ -81,6 +81,13 @@ theorem stableMeasure_of_invalid {α β : ℝ} (h : α ≤ 0 ∨ 2 < α ∨ 1 < 
     rintro ⟨hα, hβ⟩
     rcases h with h | h | h <;> linarith [hα.1, hα.2])]
 
+/-- Failure of the combined shape and skewness validity condition gives the zero measure. -/
+-- The disjunctive variant is the simp rule; this hypothesis is not in simp normal form.
+theorem stableMeasure_of_not_valid {α β : ℝ} (h : ¬(α ∈ Ioc 0 2 ∧ |β| ≤ 1))
+    (s : ℝ≥0) (m : ℝ) : stableMeasure α β s m = 0 := by
+  exact stableMeasure_of_invalid (by
+    simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using h) s m
+
 /-- Every stable law with valid shape and skewness is a probability measure, including at
 zero scale and at both full-skewness boundaries. -/
 theorem isProbabilityMeasure_stableMeasure {α β : ℝ} (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
@@ -92,8 +99,7 @@ instance (α β : ℝ) (s : ℝ≥0) (m : ℝ) : IsFiniteMeasure (stableMeasure 
   by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
   · let _ := isProbabilityMeasure_stableMeasure h.1 h.2 s m
     infer_instance
-  · rw [stableMeasure_of_invalid (by
-      simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using h)]
+  · rw [stableMeasure_of_not_valid h]
     infer_instance
 
 /-- The stable law has the prescribed `S₀` characteristic function throughout the valid

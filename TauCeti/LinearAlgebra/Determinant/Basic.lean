@@ -76,6 +76,10 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
   as many members in the first factor as the rank of the first factor.
+* `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
+  basis `b'` has determinant `b'.det b`.
+* `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
+  under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 
 ## Implementation notes
@@ -194,6 +198,23 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   rw [hσ, prod_det_sumElim] at h
   rw [h, smul_smul, Int.units_mul_self, one_smul]
 
+/-- The coordinate change from the basis `b` to the basis `b'`, which sends the coordinates `x` of
+`∑ i, x i • b i` in `b` to its coordinates in `b'`, has determinant `b'.det b`. -/
+theorem det_equivFun_symm_trans_equivFun (b b' : Basis ι R M) :
+    (LinearEquiv.det (b.equivFun.symm.trans b'.equivFun) : R) = b'.det b := by
+  -- The coordinate change is the change of basis `b' i ↦ b i`, written in the coordinates of `b'`.
+  have h : b.equivFun.symm.trans b'.equivFun =
+      (b'.equivFun.symm.trans (b'.equiv b (Equiv.refl ι))).trans b'.equivFun := by
+    ext x : 1
+    simp [map_sum, map_smul]
+  rw [h, LinearEquiv.det_conj, LinearEquiv.coe_det, det_basis]
+
+/-- Evaluating the determinant form of a basis `b'` on the image `b.map e` of a basis `b` under a
+linear equivalence `e` gives the determinant of the matrix of `e` with respect to `b` and `b'`. -/
+theorem det_map_eq_det_toMatrix (b : Basis ι R M) (b' : Basis ι R M') (e : M ≃ₗ[R] M') :
+    b'.det (b.map e) = (LinearMap.toMatrix b b' (e : M →ₗ[R] M')).det := by
+  rw [det_apply, coe_map, ← LinearEquiv.coe_toLinearMap, ← LinearMap.toMatrix_eq_basisToMatrix]
+
 end Module.Basis
 
 namespace LinearMap
@@ -219,7 +240,7 @@ conclusion, which is an equality of bilinear maps. -/
 theorem IsAlt.compl₁₂_self_eq_det_smul (b : Basis (Fin 2) R M) {ω : M →ₗ[R] M →ₗ[R] N}
     (halt : ω.IsAlt) (φ : M →ₗ[R] M) : ω.compl₁₂ φ φ = LinearMap.det φ • ω := by
   ext x y
-  simpa only [compl₁₂_apply, smul_apply, AlternatingMap.compLinearMap_apply,
+  simpa only [compl₁₂_apply, LinearMap.smul_apply, AlternatingMap.compLinearMap_apply,
     IsAlt.toAlternatingMap_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, _root_.smul_apply] using
     congr($(AlternatingMap.compLinearMap_eq_det_smul b halt.toAlternatingMap φ) ![x, y])

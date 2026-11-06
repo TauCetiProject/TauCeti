@@ -29,19 +29,11 @@ specializations of this one.
 
 ## Main results
 
-* `AddChar.zmod_pow_eq_one`: every additive character on `ZMod n` takes values in the `n`-th
-  roots of unity.
 * `MulEquiv.zmodCoordChar_injective`: the character attached to a *primitive* `m`-th root of unity
   is faithful.
 -/
 
 public section
-
-/-- An additive character on `ZMod n` takes values in the `n`-th roots of unity. -/
-theorem AddChar.zmod_pow_eq_one {n : ℕ} {M : Type*} [Monoid M]
-    (ψ : AddChar (ZMod n) M) (j : ZMod n) : ψ j ^ n = 1 := by
-  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
-    AddChar.map_zero_eq_one]
 
 namespace MulEquiv
 
@@ -59,15 +51,11 @@ theorem zmodCoordChar_apply (e : H ≃* Multiplicative (ZMod m)) (hζ : ζ ^ m =
     zmodCoordChar e hζ x = ζ ^ (Multiplicative.toAdd (e x)).val := by
   simp [zmodCoordChar, AddChar.zmodChar_apply]
 
-/-- **The character attached to a *primitive* `m`-th root of unity is faithful**: the additive
-character `AddChar.zmodChar` it is read off is then primitive, so it takes the value `1` only at
-the identity. -/
+/-- **The character attached to a *primitive* `m`-th root of unity is faithful**: it takes the
+value `1` only at the identity. -/
 theorem zmodCoordChar_injective (e : H ≃* Multiplicative (ZMod m)) (h : IsPrimitiveRoot ζ m) :
     Function.Injective (zmodCoordChar e h.pow_eq_one) := by
   refine (injective_iff_map_eq_one _).mpr fun x hx => ?_
-  rw [zmodCoordChar_apply] at hx
-  have hzero := ((AddChar.zmodChar_primitive_of_primitive_root m h).zmod_char_eq_one_iff m
-    (Multiplicative.toAdd (e x))).mp (by rwa [AddChar.zmodChar_apply])
-  exact e.map_eq_one_iff.mp (toAdd_eq_zero.mp hzero)
+  simpa [h.pow_eq_one_iff_dvd, ← ZMod.natCast_eq_zero_iff] using hx
 
 end MulEquiv

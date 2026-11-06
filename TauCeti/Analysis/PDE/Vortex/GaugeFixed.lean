@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # The gauge-fixed vortex operator at a general field
@@ -215,6 +216,87 @@ theorem gaugeFixedAdjoint_smul (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   ext i
   fin_cases i <;> simp [hd] <;> ring
 
+/-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
+and a target field value. It is independent of the vortex coefficients. -/
+def gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+    EuclideanSpace ℝ (Fin 4) :=
+  !₂[-d 1 * v 0 - d I * v 1, -d I * v 0 + d 1 * v 1,
+    -d 1 * v 2 - d I * v 3, -d 1 * v 3 + d I * v 2]
+
+/-- Coordinate formula for the principal symbol of the adjoint. -/
+theorem gaugeFixedAdjointSymbol_def (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v =
+      !₂[-d 1 * v 0 - d I * v 1, -d I * v 0 + d 1 * v 1,
+        -d 1 * v 2 - d I * v 3, -d 1 * v 3 + d I * v 2] := (rfl)
+
+/-- The first connection component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_zero (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 0 = -d 1 * v 0 - d I * v 1 := (rfl)
+
+/-- The second connection component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_one (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 1 = -d I * v 0 + d 1 * v 1 := (rfl)
+
+/-- The real section component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_two (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 2 = -d 1 * v 2 - d I * v 3 := (rfl)
+
+/-- The imaginary section component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_three (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 3 = -d 1 * v 3 + d I * v 2 := (rfl)
+
+/-- The adjoint symbol preserves squared norms up to the squared covector norm. -/
+theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    ‖gaugeFixedAdjointSymbol d v‖ ^ 2 = ‖d‖ ^ 2 * ‖v‖ ^ 2 := by
+  rw [orthonormalBasisOneI.norm_dual]
+  simp [gaugeFixedAdjointSymbol_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four,
+    Fin.sum_univ_two, coe_orthonormalBasisOneI]
+  ring
+
+/-- The adjoint symbol commutes with real scaling of the covector. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol (r • d) v = r • gaugeFixedAdjointSymbol d v := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The adjoint symbol commutes with real scaling of the field value. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d (r • v) = r • gaugeFixedAdjointSymbol d v := by
+  ext i
+  fin_cases i <;> simp <;> ring
+
+/-- The adjoint's Leibniz rule for a real weight, with its exact symbol commutator. -/
+theorem gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ} {z : ℂ}
+    (hw : DifferentiableAt ℝ w z) (hη : DifferentiableAt ℝ η z) :
+    gaugeFixedAdjoint x (fun t ↦ w t • η t) z =
+      w z • gaugeFixedAdjoint x η z + gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z) := by
+  have hηi (i : Fin 4) : DifferentiableAt ℝ (fun t ↦ η t i) z :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hη
+  have hd (i : Fin 4) (v : ℂ) :
+      fderiv ℝ (fun t ↦ w t * η t i) z v =
+        fderiv ℝ w z v * η z i + w z * fderiv ℝ (fun t ↦ η t i) z v := by
+    rw [fderiv_fun_mul hw (hηi i)]
+    simp only [add_apply, smul_apply, smul_eq_mul]
+    ring
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
+      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd] <;> ring
+
 /-- **The gauge Laplacian**: at every field, `d₀* d₀ f = -Δ f + (|α|² / 4) f`, where
 `|α|² / 4 = p² + q²`. No regularity of the field is needed. -/
 theorem gaugeAdjoint_gaugeDirection (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f : ℂ → ℝ} {z : ℂ}
@@ -322,22 +404,62 @@ theorem continuous_gaugeAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
   rw [funext (gaugeAdjoint_def x y)]
   fun_prop
 
+/-- The formal adjoint is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
+theorem contDiff_gaugeFixedAdjoint {n : WithTop ℕ∞}
+    (hx : ContDiff ℝ n x) (hy : ContDiff ℝ (n + 1) y) :
+    ContDiff ℝ n (gaugeFixedAdjoint x y) := by
+  have hxi (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hyi (i : Fin 4) : ContDiff ℝ (n + 1) (fun z ↦ y z i) := contDiff_euclidean.mp hy i
+  have hd (i : Fin 4) (v : ℂ) : ContDiff ℝ n
+      (fun z ↦ fderiv ℝ (fun w ↦ y w i) z v) :=
+    ((hyi i).fderiv_right le_rfl).clm_apply contDiff_const
+  have hv (i : Fin 4) : ContDiff ℝ n (fun z ↦ y z i) := (hyi i).of_le le_self_add
+  have h₀ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 0) := by
+    simp only [gaugeFixedAdjoint_apply_zero]; fun_prop
+  have h₁ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 1) := by
+    simp only [gaugeFixedAdjoint_apply_one]; fun_prop
+  have h₂ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 2) := by
+    simp only [gaugeFixedAdjoint_apply_two]; fun_prop
+  have h₃ : ContDiff ℝ n (fun z ↦ gaugeFixedAdjoint x y z 3) := by
+    simp only [gaugeFixedAdjoint_apply_three]; fun_prop
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
+
 /-- `L_x* y` is continuous for a continuous field and a `C¹` argument. -/
 theorem continuous_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
-    Continuous (gaugeFixedAdjoint x y) := by
-  have (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
+    Continuous (gaugeFixedAdjoint x y) :=
+  (contDiff_gaugeFixedAdjoint (n := 0) (contDiff_zero.mpr hx) (by simpa using hy)).continuous
+
+/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
+theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedAdjoint x y) := by
+  apply hy.mono'
+  intro z hz
+  by_contra hn
+  have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
+    fderiv_of_notMem_tsupport ℝ fun h ↦
+      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
+  apply hz
+  ext i
+  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
+
+/-- `L_x y` is continuous for a continuous field and a `C¹` argument. -/
+theorem continuous_gaugeFixedOperator (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
+    Continuous (gaugeFixedOperator x y) := by
+  have hd (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
     (((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :).continuous_fderiv
       one_ne_zero).clm_apply continuous_const
   have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
   have hyi (i : Fin 4) : Continuous fun z ↦ y z i := by fun_prop
-  have h₀ : Continuous fun z ↦ gaugeFixedAdjoint x y z 0 := by
-    simp only [gaugeFixedAdjoint_apply_zero]; fun_prop
-  have h₁ : Continuous fun z ↦ gaugeFixedAdjoint x y z 1 := by
-    simp only [gaugeFixedAdjoint_apply_one]; fun_prop
-  have h₂ : Continuous fun z ↦ gaugeFixedAdjoint x y z 2 := by
-    simp only [gaugeFixedAdjoint_apply_two]; fun_prop
-  have h₃ : Continuous fun z ↦ gaugeFixedAdjoint x y z 3 := by
-    simp only [gaugeFixedAdjoint_apply_three]; fun_prop
+  have h₀ : Continuous fun z ↦ gaugeFixedOperator x y z 0 := by
+    simp only [gaugeFixedOperator_apply_zero, gaugeAdjoint_def]; fun_prop
+  have h₁ : Continuous fun z ↦ gaugeFixedOperator x y z 1 := by
+    simp only [gaugeFixedOperator_apply_one, linearizedEquation_apply_zero]; fun_prop
+  have h₂ : Continuous fun z ↦ gaugeFixedOperator x y z 2 := by
+    simp only [gaugeFixedOperator_apply_two, linearizedEquation_apply_one]; fun_prop
+  have h₃ : Continuous fun z ↦ gaugeFixedOperator x y z 3 := by
+    simp only [gaugeFixedOperator_apply_three, linearizedEquation_apply_two]; fun_prop
   refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
   fin_cases i
   exacts [h₀, h₁, h₂, h₃]

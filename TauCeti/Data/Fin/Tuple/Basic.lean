@@ -30,11 +30,15 @@ A tuple of length three is determined by its three entries.
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
+* `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
+  appending.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
   positions.
+* `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
+  updates the corresponding entry of `u` or of `v`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -96,6 +100,16 @@ theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : 
   funext i
   exact lastCases (by simp) (fun j => by simp) i
 
+/-- Exchanging the entries `j` and `k` of `Fin.snoc c z` is appending `z` to `c` with the entries
+`j` and `k` exchanged. -/
+theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin n) :
+    snoc c z ∘ Equiv.swap j.castSucc k.castSucc = snoc (c ∘ Equiv.swap j k) z := by
+  funext i
+  refine lastCases ?_ (fun i ↦ ?_) i
+  · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
+  · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
+    simp
+
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
     tail (snoc a x : Fin (n + 2) → α) = snoc (tail a) x := by
@@ -117,6 +131,24 @@ theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b 
     iff_self, and_true]
   exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
     fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
+
+/-- Updating `Fin.append u v` at a position of `u` is appending the updated `u` to `v`. -/
+@[simp]
+theorem update_append_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin m) (a : α) :
+    Function.update (append u v) (castAdd n i) a = append (Function.update u i a) v :=
+  funext fun j ↦ addCases (fun j ↦ by simp [Function.update_apply])
+    (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp) j
+
+/-- Updating `Fin.append u v` at a position of `v` is appending `u` to the updated `v`. -/
+@[simp]
+theorem update_append_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin n) (a : α) :
+    Function.update (append u v) (natAdd m i) a = append u (Function.update v i a) :=
+  funext fun j ↦ addCases (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp)
+    (fun j ↦ by simp [Function.update_apply]) j
 
 section ContractNth
 

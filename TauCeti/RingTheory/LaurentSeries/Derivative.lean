@@ -40,9 +40,13 @@ operation is introduced.
 * `Derivation.laurentSeriesLieRing` and `Derivation.laurentSeriesLieAlgebra`: the commutator
   Lie structures on Laurent derivations.
 * `LaurentSeries.lie_smul_laurentSeriesDerivation`: the coefficient formula for the commutator.
+* `LaurentSeries.weightDerivation_intCastAddHom`: the weight derivation of the integer cast is
+  the Euler operator `X D`.
 * `LaurentSeries.coeff_derivative_order_sub_one`: the coefficient of `X ^ (r - 1)` in `D f` is
   `r` times the leading coefficient of `f`, where `r = f.order`.
 * `LaurentSeries.orderTop_le_orderTop_derivative_add_one`: `ord f ≤ ord (D f) + 1`.
+* `LaurentSeries.zero_le_orderTop_derivative`: `D` maps power series to power series.
+* `LaurentSeries.zero_le_orderTop_mul_derivative`: if `f` and `g` are power series, so is `f D g`.
 * `LaurentSeries.orderTop_derivative_eq_sub_one`: the order of `D f` is one less than the first
   exponent whose coefficient survives differentiation.
 * `LaurentSeries.orderTop_derivative_eq_order_sub_one_of_cast_ne_zero`: if the order `r` of
@@ -133,7 +137,7 @@ noncomputable instance laurentSeriesLieAlgebra : LieAlgebra R (Derivation R R⸨
   __ := (inferInstance : Module R (Derivation R R⸨X⸩ R⸨X⸩))
   lie_smul r δ ε := by
     ext1 f
-    simp only [laurentSeries_commutator_apply, Derivation.smul_apply,
+    simp only [laurentSeries_commutator_apply, _root_.smul_apply,
       smul_sub]
     congr 1
     -- The input action on a derivation is algebra-induced; its output action is coefficientwise.
@@ -150,7 +154,7 @@ theorem lie_smul_laurentSeriesDerivation {R : Type*} [CommRing R] (a b : R⸨X�
       (a * TauCeti.laurentSeriesDerivation R b - b * TauCeti.laurentSeriesDerivation R a) •
         TauCeti.laurentSeriesDerivation R := by
   ext1 f
-  simp only [Derivation.laurentSeries_commutator_apply, Derivation.smul_apply, smul_eq_mul,
+  simp only [Derivation.laurentSeries_commutator_apply, _root_.smul_apply, smul_eq_mul,
     Derivation.leibniz]
   ring
 
@@ -189,6 +193,17 @@ theorem orderTop_le_orderTop_derivative_add_one (f : LaurentSeries V) :
   rw [coeff_derivative] at hc
   rw [← hk, ← WithTop.coe_one, ← WithTop.coe_add]
   exact orderTop_le_of_coeff_ne_zero (right_ne_zero_of_smul hc)
+
+/-- **Differentiation preserves power series**: if `f` has no negative powers of `X`, neither has
+`f'`. -/
+theorem zero_le_orderTop_derivative {f : LaurentSeries V} (hf : 0 ≤ f.orderTop) :
+    0 ≤ (derivative R f).orderTop := by
+  refine le_orderTop_iff_forall.2 fun n hn ↦ ?_
+  have hn : n < 0 := by exact_mod_cast hn
+  rw [coeff_derivative]
+  obtain hn' | hn' := lt_or_eq_of_le (show n + 1 ≤ 0 by lia)
+  · rw [coeff_eq_zero_of_lt_orderTop (hf.trans_lt' (by exact_mod_cast hn')), smul_zero]
+  · rw [hn', zero_smul]
 
 /-- If `n` is the first exponent with `n • f.coeff n ≠ 0`, then `f'` has order `n - 1`. -/
 theorem orderTop_derivative_eq_sub_one {f : LaurentSeries V} {n : ℤ} (hn : n • f.coeff n ≠ 0)
@@ -231,10 +246,23 @@ theorem derivative_eq_zero_iff_eq_single [IsAddTorsionFree V] {f : LaurentSeries
 
 end Module
 
+/-- **Vector fields regular at the origin preserve power series**: if `f` and `g` have no
+negative powers of `X`, neither has `f g'`. -/
+theorem zero_le_orderTop_mul_derivative {R : Type*} [Ring R] {f g : R⸨X⸩} (hf : 0 ≤ f.orderTop)
+    (hg : 0 ≤ g.orderTop) : 0 ≤ (f * derivative R g).orderTop :=
+  (zero_add (0 : WithTop ℤ)).symm.le.trans
+    ((add_le_add hf (zero_le_orderTop_derivative hg)).trans orderTop_add_le_mul)
+
 /-- The Euler operator `X D` multiplies the coefficient of `Xⁿ` by `n`. -/
 theorem coeff_single_one_mul_derivative {R : Type*} [Ring R] (f : R⸨X⸩) (n : ℤ) :
     (single (1 : ℤ) (1 : R) * derivative R f).coeff n = n • f.coeff n := by
   rw [coeff_single_mul, one_mul, coeff_derivative_sub_one]
+
+/-- The weight derivation of the integer cast is the Euler operator `X D`. -/
+theorem weightDerivation_intCastAddHom {R : Type*} [CommRing R] (f : R⸨X⸩) :
+    weightDerivation (Int.castAddHom R) f = single (1 : ℤ) (1 : R) * derivative R f := by
+  ext n
+  rw [coeff_weightDerivation, coeff_single_one_mul_derivative, Int.coe_castAddHom, zsmul_eq_mul]
 
 /-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
 a field in which `r` is nonzero, then `f'` has order `r - 1`. -/

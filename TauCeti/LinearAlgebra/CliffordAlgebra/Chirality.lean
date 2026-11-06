@@ -205,9 +205,8 @@ theorem ofBaseChangeAux_chirality_mul_ι (A : Type*) [CommRing A] [Algebra ℝ A
       -(ι (Q.baseChange A) z * ofBaseChangeAux A Q (chirality Q o)) := by
   induction z using TensorProduct.inductionOn with
   | tmul a v =>
-    have h : ι (Q.baseChange A) (a ⊗ₜ v) = a • ofBaseChangeAux A Q (ι Q v) := by
-      simp [← map_smul, TensorProduct.smul_tmul']
-    simp only [h, mul_smul_comm, smul_mul_assoc, ← map_mul, chirality_mul_ι o, map_neg,
+    simp only [ι_baseChange_tmul_eq_smul_ofBaseChangeAux, mul_smul_comm, smul_mul_assoc,
+      ← map_mul, chirality_mul_ι o, map_neg,
       smul_neg]
   | add x y hx hy => rw [map_add, mul_add, add_mul, hx, hy, neg_add]
 
@@ -616,17 +615,13 @@ of the transported orientation. -/
 theorem map_chirality (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hQ' : ∀ v, Q' v = -‖v‖ ^ 2)
     (e : Q.IsometryEquiv Q') :
     map e.toIsometry (chirality Q o) = chirality Q' (o.map (Fin 4) e.toLinearEquiv) := by
-  -- For these forms `e` preserves the norm, so it carries orthonormal bases to orthonormal bases.
-  let f : V ≃ₗᵢ[ℝ] V' :=
-    { e.toLinearEquiv with
-      norm_map' v := by
-        have h := e.map_app v
-        rw [hQ, hQ', neg_inj] at h
-        exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h }
-  have hb' : ((frame o).map f).toBasis.orientation = o.map (Fin 4) e.toLinearEquiv := by
-    rw [OrthonormalBasis.toBasis_map, Basis.orientation_map, frame_orientation]
-  rw [chirality_eq o hQ (frame o) (frame_orientation o), chirality_eq _ hQ' ((frame o).map f) hb']
-  simp [map_apply_ι, f]
+  -- For these forms `e` preserves the norm.
+  have he (v : V) : ‖e v‖ = ‖v‖ := by
+    have h := e.map_app v
+    rw [hQ, hQ', neg_inj] at h
+    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h
+  rw [chirality_eq_neg_volumeElement, map_neg, map_volumeElement o e he,
+    chirality_eq_neg_volumeElement]
 
 variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W] [Module ℝ W]
   [IsScalarTower ℝ K W] [AddCommGroup W'] [Module K W'] [Module ℝ W'] [IsScalarTower ℝ K W']

@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
+import Mathlib.Data.Int.CardIntervalMod
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -53,7 +54,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   recovers `toZMod`.
 * `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
 * `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
-  `⌊n / pʲ⌋` are divisible by `p ^ j`.
+  `⌊n / pʲ⌋` are divisible by `p ^ j`; `PadicInt.card_filter_pow_dvd_natCast_sub`: for a natural
+  number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of them are.
 * `PadicInt.appr_modEq`, `PadicInt.appr_add_modEq`, `PadicInt.appr_mul_modEq`,
   `PadicInt.appr_natCast_modEq`: the truncations are compatible with each other and with the
   ring operations, modulo `p ^ n`.
@@ -90,6 +92,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   (`PadicInt.unitsToZModPow_zero_apply`).
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
   finite of cardinality `p`.
+* `PadicInt.ringHom_eq_id`, `PadicInt.RingHom.unique`: the identity is the unique ring
+  endomorphism of `ℤ_[p]`.
 -/
 
 public section
@@ -280,6 +284,19 @@ theorem div_pow_le_card_filter_dvd (a : ℤ_[p]) (n j : ℕ) :
     exact dvd_sub (a.dvd_sub_appr j) (dvd_mul_left _ _)
   · simpa [hP.ne', hp.out.ne_zero] using hst
 
+open scoped Classical Finset in
+/-- For a natural number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of the `n` consecutive
+elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are divisible by `pʲ`: the exact form of
+`PadicInt.div_pow_le_card_filter_dvd`. -/
+theorem card_filter_pow_dvd_natCast_sub (j n a : ℕ) :
+    #{i ∈ Finset.range n | (p : ℤ_[p]) ^ j ∣ (a : ℤ_[p]) - ((i : ℕ) : ℤ_[p])} =
+      n / p ^ j + if a % p ^ j < n % p ^ j then 1 else 0 := by
+  rw [← Nat.count_modEq_card n (pow_pos hp.out.pos j) a, Nat.count_eq_card_filter_range]
+  refine congrArg Finset.card (Finset.filter_congr fun i _ ↦ ?_)
+  have hcast : (a : ℤ_[p]) - i = ((a - i : ℤ) : ℤ_[p]) := by
+    rw [Int.cast_sub, Int.cast_natCast, Int.cast_natCast]
+  rw [hcast, pow_p_dvd_int_iff, Nat.modEq_iff_dvd, Nat.cast_pow]
+
 /-- A coarser truncation of `x` is a finer truncation of `x` read modulo the coarser
 modulus. -/
 theorem appr_modEq (x : ℤ_[p]) {m n : ℕ} (h : m ≤ n) : x.appr n ≡ x.appr m [MOD p ^ m] := by
@@ -415,6 +432,7 @@ theorem isAddCyclic_quotient_span {x : ℤ_[p]} (hx : x ≠ 0) :
 /-- The valuation of a natural number in `ℤ_[p]` is its `p`-adic valuation. -/
 @[simp]
 theorem valuation_natCast (n : ℕ) : (n : ℤ_[p]).valuation = padicValNat p n := by
+  rw [Nat.padicValNat_def]
   have h := valuation_coe (n : ℤ_[p])
   rw [coe_natCast, Padic.valuation_natCast] at h
   exact_mod_cast h.symm
@@ -512,6 +530,21 @@ theorem unitsMap_unitsToZModPow {m n : ℕ} (h : p ^ m ∣ p ^ n) (u : ℤ_[p]ˣ
 theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
   have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
   exact Subsingleton.elim _ _
+
+/-- Every ring endomorphism of `ℤ_[p]` is the identity: any ring homomorphism preserves natural
+numbers and divisibility by `p ^ n`, so it preserves truncations in `ZMod (p ^ n)` for all `n`. -/
+theorem ringHom_eq_id (φ : ℤ_[p] →+* ℤ_[p]) : φ = RingHom.id ℤ_[p] := by
+  refine toZModPow_eq_iff_ext.mp fun n ↦ ?_
+  ext x
+  simp only [RingHom.comp_apply, RingHom.id_apply, toZModPow_eq_iff_dvd_sub]
+  have h1 : (p : ℤ_[p]) ^ n ∣ x - x.appr n := dvd_sub_appr x n
+  have h2 : (p : ℤ_[p]) ^ n ∣ φ x - x.appr n := by simpa using map_dvd φ h1
+  simpa using dvd_sub h1 h2
+
+/-- The identity is the unique ring endomorphism of `ℤ_[p]`. -/
+noncomputable instance RingHom.unique : Unique (ℤ_[p] →+* ℤ_[p]) where
+  default := RingHom.id ℤ_[p]
+  uniq := ringHom_eq_id
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

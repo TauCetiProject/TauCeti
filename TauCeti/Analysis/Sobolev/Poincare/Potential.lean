@@ -107,7 +107,8 @@ theorem lintegral_comp_add_smul_sub_mul_ite (μ : Measure E) [μ.IsAddHaarMeasur
   calc
     _ = ∫⁻ y, ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) ∂μ := lintegral_congr hKf
     _ = ENNReal.ofReal t⁻¹ * (ENNReal.ofReal |(t ^ finrank ℝ E)⁻¹| * ∫⁻ w, f w ∂μ) := by
-      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_comp_homothety μ f x ht.ne']
+      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+        Measure.lintegral_comp_homothety μ f x ht.ne']
     _ = _ := by
       rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
         ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le)]
@@ -171,8 +172,9 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
       (lintegral_lintegral_swap hLmeas.aemeasurable).symm
     _ ≤ ∫⁻ w, ENNReal.ofReal (D ^ n / n) * (g w * ‖x - w‖ₑ ^ (1 - (n : ℝ))) ∂μ :=
       lintegral_mono fun w => by
-        simpa only [hL_def, ofReal_norm] using
-          setLIntegral_Ioc_rpow_mul_ite_le hn (g w) (norm_nonneg (x - w)) D
+        simpa only [hL_def, ofReal_norm, Real.rpow_natCast] using
+          (lintegral_mono_set Ioc_subset_Ioi_self).trans <| setLIntegral_Ioi_rpow_mul_ite_le
+            (Nat.cast_pos.2 hn) (g w) (norm_nonneg (x - w)) D
     _ = _ := lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
 
 /-- **The integrated oscillation bound.** If `u` is `C¹` on an open set `Ω` which is star-convex

@@ -40,6 +40,12 @@ have codimension at least two.
   most the Krull dimension of the space.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober T₀ space, the Krull dimension
   is the supremum of the codimensions of the points.
+* `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober T₀ space, the height
+  of a point for the specialization preorder is the Krull dimension of its closure.
+* `GeneralizingMap.coheight_apply_le_coheight`: a continuous generalizing map cannot increase
+  the codimension of a point.
+* `GeneralizingMap.topologicalKrullDim_le_of_surjective`: the target of a continuous, surjective,
+  generalizing map from a T₀ space to a quasi-sober T₀ space has dimension at most its source.
 -/
 
 public section
@@ -105,7 +111,58 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
   rw [topologicalKrullDim, krullDim_eq_of_orderIso irreducibleSetEquivPoints,
     krullDim_eq_iSup_coheight]
 
+attribute [local instance] specializationPreorder in
+/-- On a quasi-sober T₀ topological space, the height of a point for the specialization preorder
+(`x ≤ y ↔ y ⤳ x`) is the Krull dimension of its closure: the points below `x` are the points of
+`closure {x}`, and they correspond to its irreducible closed subsets. -/
+theorem height_eq_topologicalKrullDim_closure_singleton {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] [T0Space α] (x : α) :
+    (height x : WithBot ℕ∞) = topologicalKrullDim (closure ({x} : Set α)) := by
+  have : QuasiSober (closure ({x} : Set α)) :=
+    isClosed_closure.isClosedEmbedding_subtypeVal.quasiSober
+  -- The points of the closure of `x`, ordered by specialization within the closure, are the
+  -- points below `x`. The order is passed explicitly: the closure also carries the order induced
+  -- from `α`, which agrees with it only propositionally.
+  let e : @OrderIso (closure ({x} : Set α)) (Set.Iic x)
+      (specializationOrder (closure ({x} : Set α))).toLE _ :=
+    ⟨Equiv.subtypeEquivRight fun _ ↦ specializes_iff_mem_closure.symm,
+      fun {a b} ↦ IsInducing.subtypeVal.specializes_iff (x := b) (y := a)⟩
+  rw [height_eq_krullDim_Iic, topologicalKrullDim,
+    krullDim_eq_of_orderIso (RelIso.trans irreducibleSetEquivPoints e)]
+
 end TauCeti
+
+attribute [local instance] specializationPreorder in
+/-- A continuous generalizing map cannot increase the coheight of a point for the specialization
+preorders: chains of proper generalizations lift along the map. -/
+theorem GeneralizingMap.coheight_apply_le_coheight {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y}
+    (hf : GeneralizingMap f) (hcont : Continuous f) (x : X) :
+    coheight (f x) ≤ coheight x := by
+  refine coheight_le_iff'.mpr fun p hp ↦ ?_
+  induction p using RelSeries.inductionOn generalizing x with
+  | singleton y => simp
+  | cons p y hy ih =>
+    simp only [RelSeries.head_cons] at hp
+    have hlt : f x < p.head := hp ▸ hy
+    obtain ⟨x', hx', hfx'⟩ := hf hlt.le
+    have hx : x < x' := lt_of_le_not_ge hx' fun h ↦
+      hlt.not_ge (by simpa [hfx'] using hcont.specialization_monotone h)
+    grw [RelSeries.cons_length, Nat.cast_add, Nat.cast_one, ih x' hfx'.symm]
+    exact coheight_add_one_le hx
+
+attribute [local instance] specializationOrder in
+/-- The target of a continuous, surjective, generalizing map from a T₀ space to a quasi-sober T₀
+space has Krull dimension at most that of the source. -/
+theorem GeneralizingMap.topologicalKrullDim_le_of_surjective {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [T0Space X] [QuasiSober Y] [T0Space Y]
+    {f : X → Y} (hf : GeneralizingMap f) (hcont : Continuous f)
+    (hsurj : Function.Surjective f) : topologicalKrullDim Y ≤ topologicalKrullDim X := by
+  rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
+  refine iSup_le fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact (WithBot.coe_le_coe.mpr (hf.coheight_apply_le_coheight hcont x)).trans
+    (TauCeti.coheight_le_topologicalKrullDim x)
 
 namespace Topology.IsEmbedding
 

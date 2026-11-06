@@ -28,10 +28,13 @@ matrix past `J`.
   `Aᵀ * J = -(J * A)`.
 * `LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg`: the same condition as a conjugation,
   `Aᵀ = J * (-A) * J⁻¹`.
+* `LieAlgebra.Symplectic.mem_sp_iff_J_mul_transpose_mul_J_eq`: the same condition as a fixed
+  point, `J * Aᵀ * J = A`.
 * `LieAlgebra.Symplectic.mul_J_add_J_mul_transpose_eq_zero`: the additive form
   `A * J + J * Aᵀ = 0`.
-* `LieAlgebra.Symplectic.transpose_mem_sp`: the symplectic Lie algebra is stable under
-  transpose.
+* `LieAlgebra.Symplectic.transpose_mem_sp` and `LieAlgebra.Symplectic.conjTranspose_mem_sp`: the
+  symplectic Lie algebra is stable under transpose, and under conjugate transpose over a star
+  ring.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
@@ -65,6 +68,18 @@ theorem mem_sp_iff_transpose_eq_J_conj_neg (A : Matrix (l ⊕ l) (l ⊕ l) R) :
     A ∈ sp l R ↔ Aᵀ = J l R * (-A) * (J l R)⁻¹ := by
   rw [mem_sp, Matrix.eq_J_conj_iff_mul_J_eq, mul_neg]
 
+/-- **Membership in the symplectic Lie algebra, as a fixed point**: `A` lies in `sp l R` exactly
+when it is fixed by `Z ↦ J * Zᵀ * J`. -/
+theorem mem_sp_iff_J_mul_transpose_mul_J_eq (A : Matrix (l ⊕ l) (l ⊕ l) R) :
+    A ∈ sp l R ↔ J l R * Aᵀ * J l R = A := by
+  rw [mem_sp_iff_transpose_eq_J_conj_neg, J_inv]
+  simp only [mul_neg, neg_mul, neg_neg]
+  constructor
+  · intro h
+    rw [h, J_mul_mul_J_mul_J]
+  · intro h
+    rw [← J_mul_mul_J_mul_J Aᵀ, h]
+
 /-- **Membership in the symplectic Lie algebra, in additive form**: `A * J + J * Aᵀ = 0`. This is
 the shape a congruence computation `X ↦ X * J * Xᵀ` differentiates to. -/
 theorem mul_J_add_J_mul_transpose_eq_zero {A : Matrix (l ⊕ l) (l ⊕ l) R} (hA : A ∈ sp l R) :
@@ -94,6 +109,18 @@ theorem transpose_mem_sp {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) 
   rw [mem_sp, transpose_transpose, eq_neg_iff_add_eq_zero]
   exact mul_J_add_J_mul_transpose_eq_zero hX
 
+/-- **Conjugate transpose preserves the symplectic Lie algebra**, over any commutative star ring:
+the conjugate transpose of `A * J + J * Aᵀ = 0` is the same equation for `Aᴴ`, since `Jᴴ = -J`.
+Over `ℂ` this makes the complex symplectic Lie algebra a star-closed subspace of the complex
+matrices, whose skew-Hermitian elements form the Lie algebra of the compact symplectic group. -/
+theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
+    Xᴴ ∈ sp l R := by
+  have h := congrArg conjTranspose (mul_J_add_J_mul_transpose_eq_zero hX)
+  rw [conjTranspose_add, conjTranspose_mul, conjTranspose_mul, ← star_eq_conjTranspose (J l R),
+    star_J, conjTranspose_zero, conjTranspose_transpose_eq_transpose_conjTranspose] at h
+  rw [mem_sp, eq_neg_iff_add_eq_zero, ← neg_eq_zero, ← h]
+  noncomm_ring
+
 /-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
     J l R * X * (J l R)⁻¹ = -Xᵀ := by
@@ -122,7 +149,8 @@ theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
     mul_zero, zero_mul, mul_one, one_mul, mul_neg, neg_mul, add_zero, zero_add,
     fromBlocks_inj, neg_inj, neg_neg]
   simp only [← Matrix.ext_iff, transpose_apply, toBlocks₁₁, toBlocks₁₂,
-    toBlocks₂₁, toBlocks₂₂, neg_apply, Matrix.of_apply, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
+    toBlocks₂₁, toBlocks₂₂, Matrix.neg_apply, Matrix.of_apply, fromBlocks_apply₁₁,
+      fromBlocks_apply₁₂,
     fromBlocks_apply₂₁, fromBlocks_apply₂₂]
   grind
 

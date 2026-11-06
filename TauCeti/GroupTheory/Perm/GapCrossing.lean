@@ -18,11 +18,13 @@ For a permutation `σ` of `Fin L`, a point `x` with `σ x < x` crosses the gaps 
 On every set of forward-moved points closed under passing to larger images, the ranks enumerate
 an initial segment (`Equiv.Perm.image_upRank`).
 
-At each gap as many points cross forward as backward. If `σ` moves the points below `N` forward
-and the others backward, then below every threshold there are at most as many backward depths
-as forward ranks at each gap (`Equiv.Perm.card_cross_backward_le`). Charging a backward move
-across `j` gaps by `ρ₀, …, ρⱼ₋₁` and every gap crossed by a forward move by `ρ` at its rank, the
-backward charges are therefore dominated by the forward ones for a nonnegative antitone `ρ`
+The backward moves have the same total length as the forward ones
+(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`). At each gap as many points cross forward as
+backward. If `σ` moves the points below `N` forward and the others backward, then below every
+threshold there are at most as many backward depths as forward ranks at each gap
+(`Equiv.Perm.card_cross_backward_le`). Charging a backward move across `j` gaps by
+`ρ₀, …, ρⱼ₋₁` and every gap crossed by a forward move by `ρ` at its rank, the backward charges
+are therefore dominated by the forward ones for a nonnegative antitone `ρ`
 (`Equiv.Perm.prod_prod_range_le_prod_pow_upRank`). This is the combinatorial core of Coleman's
 coefficient bound, read off the Leibniz expansion of a Sylvester matrix.
 
@@ -100,6 +102,13 @@ theorem card_filter_upRank_lt {S : Finset (Fin L)} (hS : ∀ x ∈ S, (x : ℕ) 
       exact ⟨x, ⟨hx, hr⟩, rfl⟩
   rw [← card_image_of_injOn ((upRank_injOn σ).mono fun x hx ↦ hS x (mem_filter.1 hx).1), hfi,
     card_range]
+
+/-- The rank of a forward-moved point is less than the number of forward-moved points. -/
+theorem upRank_lt_card {x : Fin L} (hx : (x : ℕ) < σ x) :
+    upRank σ x < #{y : Fin L | (y : ℕ) < σ y} := by
+  rw [← mem_range, ← image_upRank σ (fun y hy ↦ (mem_filter.1 hy).2)
+    fun _ _ y hy _ ↦ by simpa using hy]
+  exact mem_image_of_mem _ (by simpa using hx)
 
 /-- The products of a sequence along the ranks of the forward-moved points are its products over
 an initial segment. -/

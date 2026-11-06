@@ -87,6 +87,16 @@ theorem _root_.MonoidHom.isIntegral_coe_apply {G : Type*} [Group G] [Finite G] (
     (g : G) : IsIntegral ℤ ((χ g : Rˣ) : R) :=
   (((Units.coeHom R).comp χ).isOfFinOrder (isOfFinOrder_of_finite g)).isIntegral
 
+/-- Multiplying by an `n`-th root of unity cannot turn an element whose `n`-th power
+is not one into one. This supplies the nonzero denominators in root averaging. -/
+theorem mul_sub_one_ne_zero_of_pow_eq_one {n : ℕ} {ζ y : R}
+    (hζ : ζ ^ n = 1) (hy : y ^ n ≠ 1) :
+    ζ * y - 1 ≠ 0 := by
+  intro h
+  apply hy
+  have hpow := congrArg (fun z : R ↦ z ^ n) (sub_eq_zero.mp h)
+  simpa [mul_pow, hζ] using hpow
+
 /-- In a commutative ring without zero divisors, a root of unity that is congruent to `1` modulo an
 ideal not containing its order is equal to `1`. -/
 theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n : ℕ}
@@ -287,5 +297,26 @@ def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
 theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
     (η : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h η : Mˣ) = (η : Mˣ) ^ (m / n) :=
   (rfl)
+
+/-- The power transition at a nonzero order is the identity. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_refl {M : Type*} [CommMonoid M] {n : ℕ} [NeZero n] :
+    rootsOfUnityPowOfDvd (M := M) (dvd_refl n) = MonoidHom.id _ := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp [Nat.div_self (NeZero.pos n)]
+
+/-- Power transitions compose along divisibility of orders. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_comp {M : Type*} [CommMonoid M] {n m l : ℕ}
+    (h₁ : n ∣ m) (h₂ : m ∣ l) :
+    (rootsOfUnityPowOfDvd (M := M) h₁).comp (rootsOfUnityPowOfDvd h₂) =
+      rootsOfUnityPowOfDvd (h₁.trans h₂) := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp only [MonoidHom.comp_apply, coe_rootsOfUnityPowOfDvd_apply]
+  rw [← pow_mul, Nat.div_mul_div h₂ h₁]
 
 end TauCeti

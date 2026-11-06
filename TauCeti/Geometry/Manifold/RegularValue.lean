@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -35,6 +36,10 @@ to manifolds, including manifolds with boundary or corners.
 
 * `TauCeti.isRegularValue_iff_notMem_image`: the regular values are the complement of the image
   of the set of non-regular points.
+* `TauCeti.IsRegularValue.restrict`: restricting the source to an open subset preserves regular
+  values when the map is differentiable along the fibre.
+* `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
+  manifold takes all its values strictly above one regular value and at most another.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
@@ -208,6 +213,34 @@ theorem IsRegularPoint.mdifferentiableAt {g : M → E'} (h : IsRegularPoint I �
   exact hg ((mdifferentiableAt_const (c := g x)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun _ ↦ Subsingleton.elim _ _))
 
+section Composition
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {g : P → M} {p : P}
+
+/-- A composite is regular at a point if both maps are differentiable and regular at the
+corresponding points. -/
+theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
+    (hg : IsRegularPoint K I g p) (hfd : MDifferentiableAt I J f (g p))
+    (hgd : MDifferentiableAt K I g p) : IsRegularPoint K J (f ∘ g) p := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd]
+  exact (isRegularPoint_iff.1 hf).comp (isRegularPoint_iff.1 hg)
+
+end Composition
+
+/-- Restricting the source to an open subset preserves regular values, provided the map is
+differentiable at each point of the fibre. -/
+theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y)
+    (hf : ∀ x, f x = y → MDifferentiableAt I J f x) (U : TopologicalSpace.Opens M) :
+    IsRegularValue I J (fun x : U ↦ f x) y := by
+  rw [isRegularValue_iff]
+  intro x hx
+  have hi := isLocalDiffeomorph_subtype_val (I := I) (n := 1) (U := U) x
+  exact (hreg.isRegularPoint hx).comp
+    (isRegularPoint_iff.2 (hi.isInvertible_mfderiv one_ne_zero).surjective)
+    (hf x hx) (hi.mdifferentiableAt one_ne_zero)
+
 section Level
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
@@ -295,5 +328,21 @@ theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensiona
   omega
 
 end Boundaryless
+
+/-- On a compact manifold, a continuous real function `f` has values `a < f ≤ b` everywhere that
+are regular values, lying outside its range, so that the band `f⁻¹[a, b]` is all of `M`. -/
+theorem exists_isRegularValue_forall_mem_Ioc {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] [CompactSpace M] {f : M → ℝ} (hf : Continuous f) :
+    ∃ a b : ℝ, a ≤ b ∧ IsCompact (f ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) f a ∧
+      IsRegularValue I 𝓘(ℝ) f b ∧ ∀ x, f x ∈ Ioc a b := by
+  obtain ⟨l, hl⟩ := (isCompact_range hf).bddBelow
+  obtain ⟨t, ht⟩ := (isCompact_range hf).bddAbove
+  have ha (x : M) : l - 1 < f x := by linarith [hl (mem_range_self x)]
+  have hb (x : M) : f x < max (t + 1) (l - 1) :=
+    lt_max_of_lt_left (by linarith [ht (mem_range_self x)])
+  exact ⟨l - 1, max (t + 1) (l - 1), le_max_right _ _, (isClosed_Icc.preimage hf).isCompact,
+    isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (ha x).ne' hx,
+    isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hb x).ne hx, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
 end TauCeti

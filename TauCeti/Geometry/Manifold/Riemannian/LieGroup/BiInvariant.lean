@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
-public import TauCeti.Algebra.Lie.InvariantForm
+public import TauCeti.Algebra.Lie.InvariantForm.Basic
 public import TauCeti.Geometry.Lie.Basic
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 
 /-!
 # The Levi-Civita connection and curvature of a bi-invariant metric

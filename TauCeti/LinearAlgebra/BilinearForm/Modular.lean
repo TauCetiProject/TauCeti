@@ -19,6 +19,7 @@ import TauCeti.LinearAlgebra.PerfectPairing.Basis
 public import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.Dual.Divisibility
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -45,6 +46,9 @@ This file proves the facts about modular forms that hold over every commutative 
 * a vector `x` with `a r ∣ B x y` for all `y`, where `B` is `a`-modular and `a` and `r` are
   non-zero-divisors, is divisible by `r`
   (`LinearMap.BilinForm.IsModular.exists_eq_smul_of_forall_dvd`);
+* the block-diagonal product of two `a`-modular forms is `a`-modular
+  (`LinearMap.BilinForm.IsModular.prod`), and so is the restriction of a product form to a
+  product of `a`-modular submodules (`LinearMap.BilinForm.IsModular.restrict_prod`);
 * the orthogonal sum of two `a`-modular submodules is `a`-modular
   (`LinearMap.BilinForm.IsModular.restrict_sup`);
 * an `a`-modular submodule splits off orthogonally when `a` divides every value of the form
@@ -98,7 +102,7 @@ theorem exists_smul_eq_of_forall_dvd (ha : a ∈ nonZeroDivisors R) (h : ∀ x y
   refine ⟨LinearMap.mk₂ R c (fun x₁ x₂ y ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_)
     (fun x y₁ y₂ ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_), ?_⟩
   · rw [← hc, mul_add, ← hc, ← hc, map_add, LinearMap.add_apply]
-  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_apply, smul_eq_mul]
+  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, LinearMap.smul_apply, smul_eq_mul]
   · rw [← hc, mul_add, ← hc, ← hc, map_add]
   · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_eq_mul]
   · ext x y
@@ -132,6 +136,11 @@ theorem isModular_one_iff : B.IsModular 1 ↔ B.IsPerfPair :=
 theorem IsModular.dvd (h : B.IsModular a) (x y : M) : a ∣ B x y := by
   obtain ⟨C, rfl, -⟩ := h
   exact ⟨C x y, by simp⟩
+
+/-- Multiplying an `a`-modular form by `r` multiplies its modularity factor by `r`. -/
+theorem IsModular.smul (h : B.IsModular a) (r : R) : (r • B).IsModular (r * a) := by
+  obtain ⟨C, rfl, hC⟩ := h
+  exact ⟨C, (smul_smul r a C).symm, hC⟩
 
 /-- Modularity only depends on `a` up to a unit. -/
 theorem IsModular.of_associated (h : B.IsModular a) {b : R} (hab : Associated a b) :
@@ -178,6 +187,22 @@ theorem isModular_congr_iff {M' : Type*} [AddCommMonoid M'] [Module R M'] (e : M
   ⟨fun h ↦ by
     simpa only [congr_congr, e.self_trans_symm, congr_refl, LinearEquiv.refl_apply] using
       h.congr e.symm, fun h ↦ h.congr e⟩
+
+/-- The block-diagonal product of two `a`-modular forms is `a`-modular. -/
+theorem IsModular.prod {M' : Type*} [AddCommMonoid M'] [Module R M'] {C : BilinForm R M'}
+    (hB : B.IsModular a) (hC : C.IsModular a) : (B.prod C).IsModular a := by
+  obtain ⟨B', rfl, hB'⟩ := hB
+  obtain ⟨C', rfl, hC'⟩ := hC
+  exact ⟨B'.prod C', LinearMap.ext₂ fun x y ↦ by simp [mul_add], inferInstance⟩
+
+/-- The restriction of a block-diagonal product form to a product of submodules is `a`-modular
+when the restrictions of the factors are. -/
+theorem IsModular.restrict_prod {M' : Type*} [AddCommMonoid M'] [Module R M']
+    {C : BilinForm R M'} {P : Submodule R M} {Q : Submodule R M'} (hB : (B.restrict P).IsModular a)
+    (hC : (C.restrict Q).IsModular a) : ((B.prod C).restrict (P.prod Q)).IsModular a := by
+  rw [← isModular_congr_iff (Submodule.prodEquiv P Q)]
+  convert hB.prod hC using 1
+  exact LinearMap.ext₂ fun x y ↦ by simp [Submodule.prodEquiv]
 
 /-- Modularity of a restriction to a submodule of a submodule is modularity of the restriction to
 its image in the ambient module. -/
@@ -239,7 +264,7 @@ theorem isModular_iff (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R) :
     refine ⟨h.dvd, (h.nondegenerate ha).1, fun f ↦ ?_⟩
     obtain ⟨C, rfl, hC⟩ := h
     obtain ⟨x, hx⟩ := hC.bijective_left.2 f
-    exact ⟨x, fun y ↦ by rw [smul_apply, smul_apply, smul_eq_mul, hx]⟩
+    exact ⟨x, fun y ↦ by rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, hx]⟩
   · rintro ⟨hdvd, hsep, hrep⟩
     obtain ⟨C, rfl⟩ := exists_smul_eq_of_forall_dvd ha hdvd
     have hbij : Function.Bijective C := by
@@ -313,7 +338,7 @@ theorem IsModular.isCompl_orthogonal (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors
   have hB' : (B'.restrict S).IsSymm := ⟨fun x y ↦ hcan _ _ (by simpa using hB.eq x y)⟩
   have horth : (a • B').orthogonal S = B'.orthogonal S := by
     ext m
-    simp only [mem_orthogonal_iff, smul_apply, smul_eq_mul]
+    simp only [mem_orthogonal_iff, LinearMap.smul_apply, smul_eq_mul]
     exact forall₂_congr fun n _ ↦ by
       rw [mul_comm, mul_right_mem_nonZeroDivisors_eq_zero_iff ha]
   rw [horth]
@@ -405,17 +430,18 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm
   [IsDomain R] [IsLocalRing R]
 
 /-- A form on a finite free module which is the orthogonal internal direct sum of finitely many
-submodules `P i`, each `π ^ e i`-modular with `e i ≤ j`, those with `e i = j` being even at their
-own scale, has a Gram matrix `G` and a symmetric matrix `H` with even diagonal such that
-`G * H = π ^ j • 1`. -/
+submodules `P i`, each `π ^ e i`-modular with `e i ≤ j`, has a Gram matrix `G` and a symmetric
+matrix `H` such that `G * H = π ^ j • 1`. When `2 ∣ π` and the summands with `e i = j` are even at
+their own scale, `H` has even diagonal. -/
 theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Finite R M]
-    (hB : B.IsSymm) (hπ : π ≠ 0) (h2 : 2 ∣ π) {o : Type} [Finite o] [DecidableEq o]
+    (hB : B.IsSymm) (hπ : π ≠ 0) {o : Type} [Finite o] [DecidableEq o]
     {P : o → Submodule R M}
     (hP : DirectSum.IsInternal P) (horth : ∀ i i', i ≠ i' → ∀ x ∈ P i, ∀ y ∈ P i', B x y = 0)
-    {e : o → ℕ} (hmod : ∀ i, (B.restrict (P i)).IsModular (π ^ e i)) {j : ℕ} (hle : ∀ i, e i ≤ j)
-    (heven : ∀ i, e i = j → ∀ w ∈ P i, 2 * π ^ j ∣ B w w) :
+    {e : o → ℕ} (hmod : ∀ i, (B.restrict (P i)).IsModular (π ^ e i)) {j : ℕ}
+    (hle : ∀ i, e i ≤ j) :
     ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R M) (H : Matrix ι ι R),
-      B.toMatrix b * H = π ^ j • 1 ∧ H.IsSymm ∧ ∀ i, 2 ∣ H i i := by
+      B.toMatrix b * H = π ^ j • 1 ∧ H.IsSymm ∧
+        (2 ∣ π → (∀ i, e i = j → ∀ w ∈ P i, 2 * π ^ j ∣ B w w) → ∀ i, 2 ∣ H i i) := by
   classical
   have : Fintype o := Fintype.ofFinite o
   have hπ' : π ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hπ
@@ -454,7 +480,7 @@ theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Fin
     rwa [Matrix.blockDiagonal'_one] at this
   · rw [Matrix.IsSymm, Matrix.blockDiagonal'_transpose]
     simp only [Matrix.transpose_smul, Matrix.transpose_nonsing_inv, (hUs _).eq]
-  · rintro ⟨i, a⟩
+  · rintro h2 heven ⟨i, a⟩
     rw [Matrix.blockDiagonal'_apply_eq, Matrix.smul_apply, smul_eq_mul]
     rcases (hle i).lt_or_eq with hij | hij
     · exact ((h2.trans (dvd_pow_self π (by omega)))).mul_right _

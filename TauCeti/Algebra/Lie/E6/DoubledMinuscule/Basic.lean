@@ -218,6 +218,24 @@ theorem summandSign_inl (a : Fin 27) : summandSign (.inl a) = 1 := (rfl)
 @[simp]
 theorem summandSign_inr (a : Fin 27) : summandSign (.inr a) = -1 := (rfl)
 
+/-- A simple reflection preserves the root-matrix sign of its minuscule summand. -/
+@[simp]
+theorem summandSign_reflection (i : Fin 6) (a : Fin 27 ⊕ Fin 27) :
+    summandSign (reflection i a) = summandSign a := by
+  cases a <;> simp
+
+/-- The root-matrix sign on either minuscule summand squares to one. -/
+@[simp]
+theorem summandSign_mul_self (a : Fin 27 ⊕ Fin 27) :
+    summandSign a * summandSign a = 1 := by
+  cases a <;> simp
+
+/-- The summand sign still squares to one after changing the coefficient ring. -/
+@[simp]
+theorem summandSign_cast_sq {A : Type*} [Ring A] (a : Fin 27 ⊕ Fin 27) :
+    (summandSign a : A) ^ 2 = 1 := by
+  rw [sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
+
 /-- The Cartan generators are diagonal with the doubled minuscule weights on the diagonal. -/
 @[simp]
 theorem cartanGeneratorMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
@@ -226,7 +244,7 @@ theorem cartanGeneratorMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
   cases a <;> cases b <;>
     simp [cartanGeneratorMatrix, Matrix.fromBlocks,
       TauCeti.E6Minuscule.cartanGeneratorMatrix_apply]
-  all_goals split_ifs <;> simp_all
+  split_ifs <;> simp_all
 
 /-- Entry formula for a simple raising matrix on the doubled minuscule basis. -/
 @[simp]
@@ -236,7 +254,7 @@ theorem raisingMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
   cases a <;> cases b <;>
     simp [raisingMatrix, reflection, summandSign, Matrix.fromBlocks,
       TauCeti.E6Minuscule.raisingMatrix_apply, TauCeti.E6Minuscule.loweringMatrix_apply]
-  all_goals split_ifs <;> simp_all
+  split_ifs <;> simp_all
 
 /-- Entry formula for a simple lowering matrix on the doubled minuscule basis. -/
 @[simp]
@@ -246,6 +264,6 @@ theorem loweringMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
   cases a <;> cases b <;>
     simp [loweringMatrix, reflection, summandSign, Matrix.fromBlocks,
       TauCeti.E6Minuscule.raisingMatrix_apply, TauCeti.E6Minuscule.loweringMatrix_apply]
-  all_goals split_ifs <;> omega
+  split_ifs <;> omega
 
 end TauCeti.E6DoubledMinuscule

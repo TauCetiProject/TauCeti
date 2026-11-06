@@ -114,8 +114,8 @@ theorem measurableSet_horodiscStrip (A : ℝ) : MeasurableSet (horodiscStrip D A
 `width / A`. -/
 theorem volume_horodiscStrip {A : ℝ} (hA : 0 < A) :
     volume (horodiscStrip D A) = ENNReal.ofReal (D.width / A) := by
-  rw [horodiscStrip_eq_inv_smul, measure_smul, volume_setOf_re_mem_Ico_and_lt_im 0 D.width hA,
-    sub_zero]
+  rw [horodiscStrip_eq_inv_smul, measure_smul, volume_setOf_re_mem_and_lt_im _ hA, Real.volume_Ico,
+    sub_zero, div_eq_mul_inv, ENNReal.ofReal_mul D.width_pos.le]
 
 /-- The horodisc strip whose height is the width has hyperbolic area `1`. -/
 @[simp]

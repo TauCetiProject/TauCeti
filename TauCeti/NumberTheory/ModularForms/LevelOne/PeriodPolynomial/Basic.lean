@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.NumberTheory.ModularForms.BinaryForms
 import TauCeti.LinearAlgebra.End.OrderTwoThree
+import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.NumberTheory.Modular.Relations
 
 /-!
@@ -52,9 +53,11 @@ use this to reduce the trace of an operator exchanging `A` and `B` on `W_w` to i
 * `TauCeti.binaryFormRep_parity_involutive`: the parity action is an involution.
 * `TauCeti.mem_periodPolynomials_binaryFormRep_parity`: for even `w`, the parity involution
   preserves `W_w`.
-* `TauCeti.evenPeriodPolynomials_sup_oddPeriodPolynomials` and
-  `TauCeti.disjoint_evenPeriodPolynomials_oddPeriodPolynomials`: `W_w = W_w^+ ⊕ W_w^-` when
-  `2` is invertible (spanning) and multiplication by `2` is injective (disjointness).
+* `TauCeti.evenPeriodPolynomials_sup_oddPeriodPolynomials`,
+  `TauCeti.disjoint_evenPeriodPolynomials_oddPeriodPolynomials`, and
+  `TauCeti.isCompl_evenPeriodPolynomials_oddPeriodPolynomials`: `W_w = W_w^+ ⊕ W_w^-` when
+  `2` is invertible (spanning and complementarity) and multiplication by `2` is injective
+  (disjointness).
 * `TauCeti.periodPolynomials_eq_bot_of_odd`: `W_w = 0` for odd `w` when multiplication by `2`
   is injective.
 * `TauCeti.mem_evenPeriodPolynomials_eisensteinPeriodPolynomial`: `X^w - Y^w ∈ W_w^+` for even
@@ -162,7 +165,7 @@ theorem mem_oddPeriodPolynomials_iff {P : homogeneousSubmodule (Fin 2) R w} :
 /-! ### The parity involution preserves the period polynomials -/
 
 /-- `εSε = -S`, in the form `ε S = -(S ε)`. -/
-private lemma parity_mul_S :
+theorem parity_mul_S :
     !![-1, 0; 0, 1] * (S : Matrix (Fin 2) (Fin 2) ℤ) = -((S : Matrix (Fin 2) (Fin 2) ℤ) *
       !![-1, 0; 0, 1]) := by
   ext i j
@@ -186,8 +189,16 @@ private lemma parity_mul_U_sq :
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
 
+/-- `εTᵐε = T⁻ᵐ`, in the form `ε Tᵐ = T⁻ᵐ ε`. -/
+theorem parity_mul_T_zpow (m : ℤ) :
+    !![-1, 0; 0, 1] * ((T ^ m : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+      ((T ^ (-m) : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) * !![-1, 0; 0, 1] := by
+  rw [coe_T_zpow, coe_T_zpow]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
 /-- The parity involution squares to the identity. -/
-private lemma parity_mul_parity :
+theorem parity_mul_parity :
     !![-1, 0; 0, 1] * !![-1, 0; 0, 1] = (1 : Matrix (Fin 2) (Fin 2) ℤ) := by
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
@@ -195,7 +206,7 @@ private lemma parity_mul_parity :
 /-- The parity action `P(X, Y) ↦ P(-X, Y)` is an involution. -/
 theorem binaryFormRep_parity_involutive :
     Function.Involutive (binaryFormRep R w (op !![-1, 0; 0, 1])) := fun P ↦ by
-  rw [← binaryFormRep_op_mul_apply, parity_mul_parity, op_one, map_one, Module.End.one_apply]
+  rw [← binaryFormRep_op_mul_apply, parity_mul_parity, op_one, map_one, one_apply_eq_self]
 
 /-- For even `w`, the parity involution `P(X, Y) ↦ P(-X, Y)` preserves the period
 polynomials. -/
@@ -258,7 +269,7 @@ private lemma binaryFormRep_S_sq_of_odd (hw : Odd w) (P : homogeneousSubmodule (
     binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ))
       (binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) P) = -P := by
   rw [← binaryFormRep_op_mul_apply, S_mul_S_eq, binaryFormRep_op_neg, hw.neg_one_pow, op_one,
-    map_one, LinearMap.smul_apply, Module.End.one_apply, neg_one_smul]
+    map_one, LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
 
 /-- For odd `w` there are no nonzero period polynomials when multiplication by `2` is injective:
 the central element `S² = -1` acts by `-1` but fixes every `P` with `P ∣ S = -P`. -/
@@ -288,6 +299,19 @@ theorem evenPeriodPolynomials_sup_oddPeriodPolynomials [Invertible (2 : R)] :
     rw [periodPolynomials_eq_bot_of_odd h2 hw] at hle
     rw [periodPolynomials_eq_bot_of_odd h2 hw]
     exact bot_unique hle
+
+/-- When `2` is invertible, `W_w` is the internal direct sum of `W_w^+` and `W_w^-`. -/
+theorem isCompl_evenPeriodPolynomials_oddPeriodPolynomials [Invertible (2 : R)] (w : ℕ) :
+    IsCompl ((evenPeriodPolynomials R w).comap (periodPolynomials R w).subtype)
+      ((oddPeriodPolynomials R w).comap (periodPolynomials R w).subtype) :=
+  Submodule.isCompl_comap_subtype
+    (disjoint_evenPeriodPolynomials_oddPeriodPolynomials
+      (isUnit_of_invertible (2 : R)).mul_right_injective)
+    (le_of_eq <| by
+      have heven : evenPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
+      have hodd : oddPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
+      rw [inf_of_le_right heven, inf_of_le_right hodd,
+        evenPeriodPolynomials_sup_oddPeriodPolynomials])
 
 /-! ### The Eisenstein polynomial -/
 
@@ -371,7 +395,7 @@ private lemma sub_binaryFormRep_T_mem_sup (hw : Even w) (P : homogeneousSubmodul
       (1 - binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)))
           (binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) P) +
         (1 - binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))) P := by
-    rw [LinearMap.sub_apply, LinearMap.sub_apply, Module.End.one_apply, Module.End.one_apply, hT]
+    rw [LinearMap.sub_apply, LinearMap.sub_apply, one_apply_eq_self, one_apply_eq_self, hT]
     abel
   rw [h]
   exact Submodule.add_mem_sup
@@ -477,7 +501,7 @@ theorem codisjoint_ker_one_add_S_ker_one_add_U_add_U_sq [CharZero K] (hw : Even 
   codisjoint_iff.2 <| eq_top_of_sub_binaryFormRep_mem hw₀ (sub_binaryFormRep_T_mem_sup hw)
     fun P ↦ Submodule.mem_sup_left <| by
       -- `P - P ∣ S = (1 - S) P`, and `1 + S` kills the range of `1 - S` as `S² = 1`
-      simpa only [LinearMap.sub_apply, Module.End.one_apply] using
+      simpa only [LinearMap.sub_apply, one_apply_eq_self] using
         End.range_one_sub_le_ker_one_add (binaryFormRep_S_sq_of_even hw)
           (LinearMap.mem_range_self _ P)
 

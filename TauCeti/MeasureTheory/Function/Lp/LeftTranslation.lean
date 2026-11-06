@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+public import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # Left translation on `Lᵖ` of a group
@@ -42,7 +43,9 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.coeFn_leftTranslation`: `L_g f` is almost everywhere `x ↦ f (g⁻¹ * x)`.
 * `MeasureTheory.Lp.leftTranslation_le_leftTranslation_iff`: left translation is an order
   automorphism of real `Lᵖ`.
-* `MeasureTheory.Lp.leftTranslation_linftyOne`: it fixes the constant class one in `L∞`.
+* `MeasureTheory.Lp.leftTranslation_one`: it fixes the constant class one in `L∞`.
+* `MeasureTheory.Lp.leftTranslation_linftyIndicator`: it takes the indicator class of `s` in
+  `L∞` to that of `g • s`.
 * `MeasureTheory.Lp.integral_leftTranslation`: left translation preserves integrals.
 * `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
@@ -113,13 +116,12 @@ theorem leftTranslation_le_leftTranslation_iff {g : G} {f f' : Lp ℝ p μ} :
 
 /-- Left translation fixes the constant class one of `L∞`. -/
 @[simp]
-theorem leftTranslation_linftyOne (g : G) :
-    leftTranslation μ ∞ ℝ g TauCeti.linftyOne = TauCeti.linftyOne := by
+theorem leftTranslation_one (g : G) : leftTranslation μ ∞ ℝ g (1 : Lp ℝ ∞ μ) = 1 := by
   refine ext ?_
-  filter_upwards [coeFn_leftTranslation (𝕜 := ℝ) g TauCeti.linftyOne, TauCeti.coeFn_linftyOne,
-    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae TauCeti.coeFn_linftyOne]
+  filter_upwards [coeFn_leftTranslation (𝕜 := ℝ) g (1 : Lp ℝ ∞ μ), coeFn_one (E := ℝ) (μ := μ),
+    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae (coeFn_one (E := ℝ) (μ := μ))]
     with x hx h1 h1'
-  rw [hx, h1, h1']
+  rw [hx, h1, h1', Pi.one_apply, Pi.one_apply]
 
 /-- Left translation preserves the integral of an `Lᵖ` class, since `μ` is left invariant. -/
 @[simp]
@@ -150,5 +152,26 @@ theorem continuous_leftTranslation_apply [TopologicalSpace G] [IsTopologicalGrou
   have : Fact (p ≠ ∞) := ⟨hp⟩
   simp_rw [leftTranslation_apply]
   exact (DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const
+
+end MeasureTheory.Lp
+
+namespace MeasureTheory.Lp
+
+open TauCeti
+open scoped Pointwise
+
+/-- Left translation by `g` of the indicator of `s` in `L∞` is the indicator of `g • s`. -/
+@[simp]
+theorem leftTranslation_linftyIndicator {G : Type*} [Group G]
+    [MeasurableSpace G] [MeasurableMul G] {ν : Measure G} [ν.IsMulLeftInvariant] (g : G)
+    {s : Set G} (hs : MeasurableSet s) :
+    Lp.leftTranslation ν ∞ ℝ g (linftyIndicator ν s hs) =
+      linftyIndicator ν (g • s) (hs.const_smul g) := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_leftTranslation (𝕜 := ℝ) g (linftyIndicator ν s hs),
+    (measurePreserving_mul_left ν g⁻¹).quasiMeasurePreserving.ae (coeFn_linftyIndicator hs),
+    coeFn_linftyIndicator (μ := ν) (hs.const_smul g)] with x h h' hg
+  rw [h, h', hg]
+  by_cases hx : g⁻¹ * x ∈ s <;> simp [hx, Set.mem_smul_set_iff_inv_smul_mem]
 
 end MeasureTheory.Lp

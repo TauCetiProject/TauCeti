@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Sign.Defs
+public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.MeasureTheory.SetAlgebra
 
 /-!
@@ -20,6 +21,10 @@ on the signs of finitely many functions of the class.
 * `TauCeti.exists_eq_setOf_sign_of_mem_generateSetAlgebra`: the sign-condition normal form.
 * `MeasureTheory.IsSetAlgebra.preimage`: the sets whose preimages under a fixed map lie in an
   algebra of sets form an algebra of sets.
+* `MeasureTheory.isSetAlgebra_measurableSet`, `MeasureTheory.isSetRing_measurableSet`: the
+  measurable sets form an algebra, hence a ring, of sets.
+* `MeasureTheory.isSetRing_nullMeasurableSet`: the null-measurable sets of a measure form a ring
+  of sets.
 -/
 
 public section
@@ -68,3 +73,26 @@ theorem preimage {α β : Type*} {𝒜 : Set (Set β)} (h𝒜 : IsSetAlgebra �
   union_mem _ _ ht ht' := h𝒜.union_mem ht ht'
 
 end MeasureTheory.IsSetAlgebra
+
+namespace MeasureTheory
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- The measurable sets form an algebra of sets. -/
+theorem isSetAlgebra_measurableSet : IsSetAlgebra {s : Set α | MeasurableSet s} where
+  empty_mem := MeasurableSet.empty
+  compl_mem _ hs := hs.compl
+  union_mem _ _ hs ht := hs.union ht
+
+/-- The measurable sets form a ring of sets. -/
+theorem isSetRing_measurableSet : IsSetRing {s : Set α | MeasurableSet s} :=
+  isSetAlgebra_measurableSet.isSetRing
+
+/-- The null-measurable sets of a measure form a ring of sets. -/
+theorem isSetRing_nullMeasurableSet {μ : Measure α} :
+    IsSetRing {s : Set α | NullMeasurableSet s μ} where
+  empty_mem := nullMeasurableSet_empty
+  union_mem _ _ hs ht := NullMeasurableSet.union hs ht
+  sdiff_mem _ _ hs ht := NullMeasurableSet.diff hs ht
+
+end MeasureTheory

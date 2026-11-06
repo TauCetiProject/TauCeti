@@ -77,7 +77,7 @@ noncomputable section
 namespace TauCeti.Yamabe
 
 open InnerProductSpace Laplacian Module
-open scoped Gradient
+open scoped ENNReal Gradient
 
 /-- The exponent `pₙ = 2 n / (n - 2)`; for `n > 2` it is the critical Sobolev exponent of `H¹` in
 dimension `n`. At `n = 2` it is `0` by the convention for division by zero. -/
@@ -92,6 +92,12 @@ theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := 
   rw [criticalExponent_def]
   exact div_pos (by linarith) (by linarith)
 
+/-- The critical exponent exceeds `2` in every dimension `n > 2`. -/
+theorem two_lt_criticalExponent {n : ℕ} (hn : 2 < n) : 2 < criticalExponent n := by
+  have h : (2 : ℝ) < n := by exact_mod_cast hn
+  rw [criticalExponent_def, lt_div_iff₀ (by linarith)]
+  linarith
+
 /-- The exponent `2 / pₙ` of the critical norm is `(n - 2) / n`; at `n = 0` and `n = 2` both sides
 vanish by the convention for division by zero. -/
 theorem two_div_criticalExponent (n : ℕ) : 2 / criticalExponent n = ((n : ℝ) - 2) / n := by
@@ -103,6 +109,21 @@ theorem two_div_criticalExponent (n : ℕ) : 2 / criticalExponent n = ((n : ℝ)
   have h₂' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast h₂)
   rw [criticalExponent_def]
   field_simp
+
+/-- The critical exponent, viewed in `ℝ≥0∞`, is Sobolev conjugate to `2`. -/
+theorem inv_ofReal_criticalExponent_add_inv_eq_inv {n : ℕ} (hn : 2 < n) :
+    (ENNReal.ofReal (criticalExponent n))⁻¹ + (n : ℝ≥0∞)⁻¹ = (2 : ℝ≥0∞)⁻¹ := by
+  have hn0 : n ≠ 0 := by omega
+  have hp0 : ENNReal.ofReal (criticalExponent n) ≠ 0 :=
+    (ENNReal.ofReal_pos.mpr (criticalExponent_pos hn)).ne'
+  apply (ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)).mp
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness)]
+  simp only [ENNReal.toReal_inv, ENNReal.toReal_ofReal (criticalExponent_pos hn).le,
+    ENNReal.toReal_natCast, ENNReal.toReal_ofNat]
+  rw [criticalExponent_def]
+  have hnr : (n : ℝ) ≠ 0 := by exact_mod_cast hn0
+  field_simp
+  ring
 
 /-- The coefficient `aₙ = 4 (n - 1) / (n - 2)`; for `n > 2` it is the coefficient of the
 nonnegative Laplacian in the conformal Laplacian `aₙ Δ⁺ + Scal` in dimension `n`. At `n = 2` it is

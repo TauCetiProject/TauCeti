@@ -27,7 +27,8 @@ families of them:
   `j` lies in the support and `-3` otherwise. There are `4096 · 24 = 98304` of them.
 
 Together the Leech lattice has `1104 + 97152 + 98304 = 196560` minimal vectors, which is its
-kissing number.
+kissing number. The first family alone spans the rational ambient space: adding two vectors
+with opposite signs at the second coordinate isolates a nonzero multiple of any coordinate vector.
 
 The classification reads the congruence model coordinatewise. A vector `a = 2b` of the even class
 has `∑ bᵢ² = 8`. If `b` reduces to the zero codeword then `b = 2w` with `∑ wᵢ² = 2`, giving the
@@ -57,6 +58,7 @@ congruence holds automatically, because Golay weights are divisible by four. The
   `TauCeti.ncard_leechOddVectors`: the three counts `1104`, `97152` and `98304`.
 * `TauCeti.ncard_vectorsOfNorm_four_leechLattice` and `TauCeti.kissingNumber_leechLattice`: the
   Leech lattice has `196560` minimal vectors.
+* `TauCeti.span_vectorsOfNorm_four_leechLattice`: the minimal vectors span the rational space.
 
 ## References
 
@@ -121,12 +123,13 @@ def leechPairVectors : Set (Fin 24 → ℤ) :=
 /-- The Leech minimal vectors of the second shape, `(±2⁸, 0¹⁶)` on an octad with an even number
 of minus signs, in congruence coordinates. -/
 def leechOctadVectors : Set (Fin 24 → ℤ) :=
-  {a | ∃ c ∈ code, hammingNorm c = 8 ∧ ∃ d : Fin 24 → ZMod 2, (∀ k, c k = 0 → d k = 0) ∧
+  {a | ∃ c ∈ TauCeti.BinaryGolay.code, hammingNorm c = 8 ∧
+    ∃ d : Fin 24 → ZMod 2, (∀ k, c k = 0 → d k = 0) ∧
     Even (hammingNorm d) ∧ leechOctadVector c d = a}
 
 /-- The Leech minimal vectors of the third shape, `(∓3, ±1²³)`, in congruence coordinates. -/
 def leechOddVectors : Set (Fin 24 → ℤ) :=
-  {a | ∃ c ∈ code, ∃ j, leechOddVector c j = a}
+  {a | ∃ c ∈ TauCeti.BinaryGolay.code, ∃ j, leechOddVector c j = a}
 
 /-- Membership in the first family. -/
 @[simp]
@@ -137,21 +140,23 @@ theorem mem_leechPairVectors {a : Fin 24 → ℤ} :
 /-- Membership in the second family. -/
 @[simp]
 theorem mem_leechOctadVectors {a : Fin 24 → ℤ} :
-    a ∈ leechOctadVectors ↔ ∃ c ∈ code, hammingNorm c = 8 ∧ ∃ d : Fin 24 → ZMod 2,
+    a ∈ leechOctadVectors ↔ ∃ c ∈ TauCeti.BinaryGolay.code,
+      hammingNorm c = 8 ∧ ∃ d : Fin 24 → ZMod 2,
       (∀ k, c k = 0 → d k = 0) ∧ Even (hammingNorm d) ∧ leechOctadVector c d = a :=
   Iff.rfl
 
 /-- Membership in the third family. -/
 @[simp]
 theorem mem_leechOddVectors {a : Fin 24 → ℤ} :
-    a ∈ leechOddVectors ↔ ∃ c ∈ code, ∃ j, leechOddVector c j = a :=
+    a ∈ leechOddVectors ↔ ∃ c ∈ BinaryGolay.code, ∃ j, leechOddVector c j = a :=
   Iff.rfl
 
 /-! ### The three shapes are minimal vectors -/
 
 /-- An even vector `2b`, with `b` reducing to a Golay codeword and `∑ 2bᵢ ≡ 0 (mod 8)`, halves
 into the Leech lattice. -/
-private theorem two_mul_mem {b : Fin 24 → ℤ} (hb : (fun i ↦ (b i : ZMod 2)) ∈ code)
+private theorem two_mul_mem {b : Fin 24 → ℤ}
+    (hb : (fun i ↦ (b i : ZMod 2)) ∈ TauCeti.BinaryGolay.code)
     (hsum : ∑ i, 2 * b i ≡ 0 [ZMOD 8]) :
     (fun i ↦ ((2 * b i : ℤ) : ℚ) / 2) ∈ leechLattice.carrier :=
   (mem_leechLattice_carrier_iff_exists _).2
@@ -159,7 +164,8 @@ private theorem two_mul_mem {b : Fin 24 → ℤ} (hb : (fun i ↦ (b i : ZMod 2)
 
 /-- An odd vector `2b + 𝟙`, with `b` reducing to a Golay codeword and `∑ (2bᵢ + 1) ≡ 4 (mod 8)`,
 halves into the Leech lattice. -/
-private theorem two_mul_add_one_mem {b : Fin 24 → ℤ} (hb : (fun i ↦ (b i : ZMod 2)) ∈ code)
+private theorem two_mul_add_one_mem {b : Fin 24 → ℤ}
+    (hb : (fun i ↦ (b i : ZMod 2)) ∈ TauCeti.BinaryGolay.code)
     (hsum : ∑ i, (2 * b i + 1) ≡ 4 [ZMOD 8]) :
     (fun i ↦ ((2 * b i + 1 : ℤ) : ℚ) / 2) ∈ leechLattice.carrier :=
   (mem_leechLattice_carrier_iff_exists _).2 ⟨1, Or.inr rfl, b, hb, by simpa using hsum, rfl⟩
@@ -195,9 +201,45 @@ theorem leechPairVector_mem {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
   rcases Int.units_eq_one_or s with rfl | rfl <;> rcases Int.units_eq_one_or t with rfl | rfl <;>
     decide
 
+private theorem pair_mem_minimalSpan {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
+    (fun k ↦ (leechPairVector i j s t k : ℚ) / 2) ∈
+      Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) := by
+  obtain ⟨hmem, hnorm⟩ := leechPairVector_mem hij s t
+  apply Submodule.subset_span
+  refine ⟨⟨_, hmem⟩, ?_, rfl⟩
+  rw [mem_vectorsOfNorm, leechLattice_norm_intCast_div_two, hnorm]
+  norm_num
+
+/-- The Leech minimal vectors span the entire rational coordinate space. This is a rational
+span assertion; it does not assert that the first family alone generates the integral lattice. -/
+theorem span_vectorsOfNorm_four_leechLattice :
+    Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) = ⊤ := by
+  let S := Submodule.span ℚ
+    (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ))
+  have hsingle (i : Fin 24) : Pi.single i (1 : ℚ) ∈ S := by
+    obtain ⟨j, hji⟩ := exists_ne i
+    have h := S.smul_mem (1 / 4 : ℚ)
+      (S.add_mem (pair_mem_minimalSpan hji.symm 1 1) (pair_mem_minimalSpan hji.symm 1 (-1)))
+    have heq : (1 / 4 : ℚ) •
+        ((fun k ↦ (leechPairVector i j 1 1 k : ℚ) / 2) +
+          (fun k ↦ (leechPairVector i j 1 (-1) k : ℚ) / 2)) = Pi.single i 1 := by
+      funext k
+      by_cases hki : k = i
+      · subst k
+        simp [leechPairVector_apply]
+      · by_cases hkj : k = j
+        · subst k
+          norm_num [leechPairVector_apply, hji]
+        · simp [leechPairVector_apply, hki, hkj]
+    exact heq ▸ h
+  apply top_unique
+  intro x _
+  rw [pi_eq_sum_univ' x]
+  exact S.sum_mem fun i _ ↦ S.smul_mem (x i) (hsingle i)
+
 /-- A vector of the second shape, on an octad `c` with signs `d` of even weight inside it,
 halves into the Leech lattice and has `∑ aᵢ² = 32`. -/
-theorem leechOctadVector_mem {c d : Fin 24 → ZMod 2} (hc : c ∈ code)
+theorem leechOctadVector_mem {c d : Fin 24 → ZMod 2} (hc : c ∈ TauCeti.BinaryGolay.code)
     (hc8 : hammingNorm c = 8) (hdc : ∀ k, c k = 0 → d k = 0) (hd : Even (hammingNorm d)) :
     (fun k ↦ (leechOctadVector c d k : ℚ) / 2) ∈ leechLattice.carrier ∧
       ∑ k, leechOctadVector c d k ^ 2 = 32 := by
@@ -234,7 +276,7 @@ theorem leechOctadVector_mem {c d : Fin 24 → ZMod 2} (hc : c ∈ code)
 
 /-- A vector of the third shape, attached to a Golay codeword `c` and a coordinate `j`, halves
 into the Leech lattice and has `∑ aᵢ² = 32`. -/
-theorem leechOddVector_mem {c : Fin 24 → ZMod 2} (hc : c ∈ code) (j : Fin 24) :
+theorem leechOddVector_mem {c : Fin 24 → ZMod 2} (hc : c ∈ TauCeti.BinaryGolay.code) (j : Fin 24) :
     (fun k ↦ (leechOddVector c j k : ℚ) / 2) ∈ leechLattice.carrier ∧
       ∑ k, leechOddVector c j k ^ 2 = 32 := by
   set b : Fin 24 → ℤ := fun k ↦ if k = j then -2 + 3 * ((c k).val : ℤ) else -((c k).val : ℤ)
@@ -333,7 +375,7 @@ private theorem two_mul_mem_leechPairVectors {b : Fin 24 → ℤ}
 /-- **The even class with nonzero reduction**: if `b` reduces to a nonzero Golay codeword, has
 `∑ bᵢ² = 8`, and `∑ 2bᵢ ≡ 0 (mod 8)`, then `2b` is a vector of the second shape. -/
 private theorem two_mul_mem_leechOctadVectors {b : Fin 24 → ℤ}
-    (hb : (fun i ↦ (b i : ZMod 2)) ∈ code) (hc : (fun i ↦ (b i : ZMod 2)) ≠ 0)
+    (hb : (fun i ↦ (b i : ZMod 2)) ∈ TauCeti.BinaryGolay.code) (hc : (fun i ↦ (b i : ZMod 2)) ≠ 0)
     (hsq : ∑ i, b i ^ 2 = 8) (hsum : ∑ i, 2 * b i ≡ 0 [ZMOD 8]) :
     (fun i ↦ 2 * b i) ∈ leechOctadVectors := by
   set c : Fin 24 → ZMod 2 := fun i ↦ (b i : ZMod 2)
@@ -382,7 +424,7 @@ private theorem two_mul_mem_leechOctadVectors {b : Fin 24 → ℤ}
 /-- **The odd class**: if `b` reduces to a Golay codeword and `∑ (2bᵢ + 1)² = 32`, then `2b + 𝟙`
 is a vector of the third shape. -/
 private theorem two_mul_add_one_mem_leechOddVectors {b : Fin 24 → ℤ}
-    (hb : (fun i ↦ (b i : ZMod 2)) ∈ code) (hsq : ∑ i, (2 * b i + 1) ^ 2 = 32) :
+    (hb : (fun i ↦ (b i : ZMod 2)) ∈ TauCeti.BinaryGolay.code) (hsq : ∑ i, (2 * b i + 1) ^ 2 = 32) :
     (fun i ↦ 2 * b i + 1) ∈ leechOddVectors := by
   -- With `tₖ = bₖ (bₖ + 1) ≥ 0`, even, `(2bₖ + 1)² = 1 + 4tₖ`, so `∑ tₖ = 2`.
   have hnonneg : ∀ k ∈ (univ : Finset (Fin 24)), 0 ≤ b k * (b k + 1) := fun k _ ↦ by
@@ -525,7 +567,8 @@ theorem ncard_leechPairVectors : leechPairVectors.ncard = 1104 := by
 
 /-- The octads, the Golay codewords of weight eight. -/
 private abbrev Octad : Type :=
-  {c : Fin 24 → ZMod 2 // c ∈ (code : Set (Fin 24 → ZMod 2)) ∧ hammingNorm c = 8}
+  {c : Fin 24 → ZMod 2 //
+    c ∈ (TauCeti.BinaryGolay.code : Set (Fin 24 → ZMod 2)) ∧ hammingNorm c = 8}
 
 /-- The sign patterns on an octad: binary words inside it of even weight. -/
 private abbrev OctadSigns (c : Octad) : Type :=
@@ -607,7 +650,7 @@ theorem ncard_leechOctadVectors : leechOctadVectors.ncard = 97152 := by
   rw [← Nat.card_eq_fintype_card, natCard_octad]
 
 /-- The parametrization of the third family by Golay codewords and a coordinate. -/
-private def oddParam : code × Fin 24 → Fin 24 → ℤ :=
+private def oddParam : TauCeti.BinaryGolay.code × Fin 24 → Fin 24 → ℤ :=
   fun p ↦ leechOddVector p.1 p.2
 
 /-- The squared coordinates of a vector of the third shape: `9` at the distinguished coordinate
@@ -747,6 +790,10 @@ theorem ncard_vectorsOfNorm_four_leechLattice :
   · intro x hx
     obtain ⟨a, ha, hxa⟩ := (mem_vectorsOfNorm_four_leechLattice_iff x).1 hx
     exact ⟨a, ha, Subtype.ext hxa.symm⟩
+
+/-- The norm-four shell of the Leech lattice is finite. -/
+instance instFiniteVectorsOfNormFourLeechLattice : Finite (leechLattice.vectorsOfNorm 4) :=
+  (isPosDef_leechLattice.finite_vectorsOfNorm 4).to_subtype
 
 /-- **The kissing number of the Leech lattice is `196560`.** -/
 @[simp]

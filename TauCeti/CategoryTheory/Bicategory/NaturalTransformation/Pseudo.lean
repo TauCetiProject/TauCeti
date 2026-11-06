@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 
@@ -29,7 +30,12 @@ comparisons `F.mapId'` and `F.mapComp'` at `1`-morphisms that are only propositi
 or composites (`StrongTrans.naturality_id'_inv`, `StrongTrans.naturality_comp'_hom`,
 `StrongTrans.naturality_comp'_inv`). Over a strict bicategory, it deduces that a strong
 transformation is compatible with the isomorphisms `F t ≫ F r ≅ F l ≫ F b` of a commutative
-square (`StrongTrans.naturality_isoMapOfCommSq`).
+square (`StrongTrans.naturality_isoMapOfCommSq`). It also records the naturality condition of a
+strong transformation at an identity `2`-cell for arbitrary `1`-morphisms
+(`Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id`), which applies by unification to goals
+whose `1`-morphisms are values of composite pseudofunctors. For a locally discrete source,
+`Pseudofunctor.naturality_naturality_of_locallyDiscrete` shows that any family of naturality
+isomorphisms satisfies naturality with respect to `2`-cells.
 -/
 
 public section
@@ -159,6 +165,7 @@ lemma naturality_id'_inv (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) 
 /-- The composition condition of a strong transformation, for a `1`-morphism `fg` equal to a
 composite `f ≫ g`, stated with the comparisons `F.mapComp' f g fg` and `G.mapComp' f g fg`. This
 generalizes `StrongTrans.naturality_comp_hom`. -/
+@[to_app]
 lemma naturality_comp'_hom (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
     (h : f ≫ g = fg) :
     (η.naturality fg).hom =
@@ -209,4 +216,27 @@ lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ :
 
 end StrongTrans
 
+/-- Naturality with respect to `2`-cells is automatic for a family of naturality
+isomorphisms between pseudofunctors out of a locally discrete bicategory. -/
+lemma naturality_naturality_of_locallyDiscrete
+    {B₀ : Type*} [Category B₀] (F G : LocallyDiscrete B₀ ⥤ᵖ C)
+    (app : ∀ a, F.obj a ⟶ G.obj a)
+    (naturality : ∀ {a b} (f : a ⟶ b), F.map f ≫ app b ≅ app a ≫ G.map f)
+    {a b : LocallyDiscrete B₀} {f g : a ⟶ b} (η : f ⟶ g) :
+    F.map₂ η ▷ app b ≫ (naturality g).hom =
+      (naturality f).hom ≫ app a ◁ G.map₂ η := by
+  obtain rfl := LocallyDiscrete.eq_of_hom η
+  rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
+  simp
+
 end CategoryTheory.Pseudofunctor
+
+namespace CategoryTheory.Bicategory
+
+/-- The naturality condition of a strong transformation at an identity `2`-cell. -/
+lemma id_whiskerRight_comp_eq_comp_whiskerLeft_id {B : Type*} [Bicategory B] {a b b' c : B}
+    (u : a ⟶ b) (v : b ⟶ c) (u' : a ⟶ b') (v' : b' ⟶ c) (θ : u ≫ v ⟶ u' ≫ v') :
+    𝟙 u ▷ v ≫ θ = θ ≫ u' ◁ 𝟙 v' := by
+  simp
+
+end CategoryTheory.Bicategory

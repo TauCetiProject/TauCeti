@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Algebra.MvPolynomial.Sum
 public import TauCeti.RingTheory.MvPolynomial.DegreePadding
+import TauCeti.RingTheory.MvPolynomial.DirectionalOrder
 
 /-!
 # Polynomial realization maps and input coefficients
@@ -26,17 +28,21 @@ Zero outputs and constant polynomials are included; the degree bound need not be
 A tuple of bounded-degree polynomials has finite coordinates:
 `MvPolynomial.boundedCoefficientEquiv` identifies it with functions on the pairs of an output and
 an exponent of degree at most `d`, by taking monomial coefficients. Its evaluation
-`MvPolynomial.boundedEvaluation` is a linear map to vector-valued functions on inputs, injective
-over an infinite integral domain, and
-`boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
+`MvPolynomial.tupleEvaluation J (restrictTotalDegree X K d)` is a linear map to vector-valued
+functions on inputs, injective over an infinite integral domain, and
+`tupleEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
 coefficient presentation. Composing with the coordinates gives
 `polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
 Raising the degree bound zero-pads these coordinates, and the padded coordinates are given by the
 same coefficient formula, so the coordinates for different bounds correspond under zero-padding.
-`boundedEvaluation_padding_polynomialCoefficientCoordinates` shows that evaluating the padded
+`tupleEvaluation_padding_polynomialCoefficientCoordinates` shows that evaluating the padded
 coordinates still recovers exactly the same realization.
 Over an infinite integral domain, two parameters realize the same function exactly when they
 give the same specialized coefficients (`polynomialRealization_eq_iff`).
+In the same way, an output's collected input polynomial is homogeneous of degree `n` exactly when
+every realized function scales that output by `c ^ n` when the input is scaled by `c`
+(`isHomogeneous_inputPolynomial_iff`); the scaling law holds over any commutative semiring
+(`polynomialRealization_smul_of_isHomogeneous`).
 
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -190,9 +196,10 @@ end InputDegree
 section Coordinates
 
 /-- Evaluating the coefficient presentation recovers the jointly polynomial realization map. -/
-theorem boundedEvaluation_comp_polynomialCoefficientMap [Fintype J]
+theorem tupleEvaluation_comp_polynomialCoefficientMap [Fintype J]
     (P : J → MvPolynomial (W ⊕ X) K) :
-    boundedEvaluation X K J (polynomialInputDegree P) ∘ polynomialCoefficientMap P =
+    tupleEvaluation J (restrictTotalDegree X K (polynomialInputDegree P)) ∘
+        polynomialCoefficientMap P =
       polynomialRealization P := by
   funext w x j
   simp [eval_map]
@@ -214,14 +221,14 @@ polynomial in the parameters. -/
 
 /-- Enlarging the uniform input-degree bound by zero-padding the coefficient coordinates
 preserves the realization at every parameter and every input. -/
-theorem boundedEvaluation_padding_polynomialCoefficientCoordinates
+theorem tupleEvaluation_padding_polynomialCoefficientCoordinates
     (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ} (h : polynomialInputDegree P ≤ d) (w : W → K) :
-    boundedEvaluation X K J d
+    tupleEvaluation J (restrictTotalDegree X K d)
         ((boundedCoefficientEquiv X K J d).symm
           (boundedCoefficientPadding h (polynomialCoefficientCoordinates P w))) =
       polynomialRealization P w := by
-  rw [boundedEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
-  exact congrFun (boundedEvaluation_comp_polynomialCoefficientMap P) w
+  rw [tupleEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
+  exact congrFun (tupleEvaluation_comp_polynomialCoefficientMap P) w
 
 /-- Raising the degree bound to any `d ≥ polynomialInputDegree P` zero-pads the finite coefficient
 coordinates, and the padded coordinates are given by the same formula: each is the evaluation at
@@ -255,5 +262,35 @@ theorem polynomialRealization_eq_iff (P : J → MvPolynomial (W ⊕ X) R) (w v :
   · simpa [eval_map] using congrArg (eval x) (h j)
 
 end Fibres
+
+section Homogeneity
+
+/-- If an output's collected input polynomial is homogeneous of degree `n`, then scaling the
+input by `c` scales that output by `c ^ n`, for every parameter. -/
+theorem polynomialRealization_smul_of_isHomogeneous {P : J → MvPolynomial (W ⊕ X) K} {j : J}
+    {n : ℕ} (h : (inputPolynomial P j).IsHomogeneous n) (w : W → K) (c : K) (x : X → K) :
+    polynomialRealization P w (c • x) j = c ^ n • polynomialRealization P w x j := by
+  rw [← eval₂_inputPolynomial, ← eval₂_inputPolynomial, Pi.smul_def, smul_eq_mul]
+  exact h.eval₂_const_mul (eval w) x c
+
+variable {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+
+/-- Over an infinite domain, an output's collected input polynomial is homogeneous of degree `n`
+exactly when, for every parameter, scaling the input by `c` scales that output by `c ^ n`. -/
+theorem isHomogeneous_inputPolynomial_iff {P : J → MvPolynomial (W ⊕ X) R} {j : J} {n : ℕ} :
+    (inputPolynomial P j).IsHomogeneous n ↔
+      ∀ (w : W → R) (c : R) (x : X → R),
+        polynomialRealization P w (c • x) j = c ^ n • polynomialRealization P w x j := by
+  refine ⟨fun h => polynomialRealization_smul_of_isHomogeneous h, fun h α hα => ?_⟩
+  by_contra hne
+  -- Every coefficient off degree `n` vanishes at every parameter, hence is zero.
+  refine hα (MvPolynomial.funext fun w => ?_)
+  have hw : (map (eval w) (inputPolynomial P j)).IsHomogeneous n :=
+    isHomogeneous_iff_forall_eval_smul.mpr fun c x => by simpa [eval_map] using h w c x
+  rw [map_zero, ← coeff_map]
+  by_contra hc
+  exact hne (hw hc)
+
+end Homogeneity
 
 end TauCeti.Neuromanifold

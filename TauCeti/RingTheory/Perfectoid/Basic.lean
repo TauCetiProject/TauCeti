@@ -37,7 +37,7 @@ surjectivity of `Φ` has to be checked (`TauCeti.Perfectoid.IsPerfectoidTateRing
 Since `R°` is `ϖ`-adically complete, surjectivity of `Φ` is equivalent to surjectivity of
 Frobenius on `R° ⧸ (p)` once some `ϖ` with `ϖ ^ p ∣ p` in `R°` is given
 (`TauCeti.tfae_forall_exists_dvd_sub_pow`). Consequently the perfectoid condition can be tested
-modulo `p`, and `Φ` is bijective for every pseudouniformiser `ϖ ∈ R°` with `ϖ ^ p ∣ p` in `R°`.
+modulo `p`.
 
 ## Main definitions
 
@@ -59,15 +59,12 @@ modulo `p`, and `Φ` is bijective for every pseudouniformiser `ϖ ∈ R°` with 
 * `TauCeti.Perfectoid.isPerfectoidTateRing_iff_frobenius_surjective_modP`: a uniform `R` is
   perfectoid exactly when some pseudouniformiser `ϖ ∈ R°` has `ϖ ^ p ∣ p` in `R°` and Frobenius on
   `R° ⧸ (p)` is surjective.
-* `TauCeti.Perfectoid.IsPerfectoidTateRing.bijective_frobeniusModPow`: in a perfectoid Tate ring,
-  `Φ` is bijective for every pseudouniformiser `ϖ ∈ R°` with `ϖ ^ p ∣ p` in `R°`.
-* `TauCeti.Perfectoid.IsPerfectoidTateRing.exists_natCast_dvd_sub_pow`,
-  `TauCeti.Perfectoid.IsPerfectoidTateRing.exists_mul_natCast_dvd_sub_pow`: in a perfectoid Tate
-  ring every element of `R°` is a `p`-th power modulo `p`, and modulo `ϖ p` for every such `ϖ`.
+* `TauCeti.Perfectoid.IsPerfectoidTateRing.exists_natCast_dvd_sub_pow`: in a perfectoid Tate
+  ring every element of `R°` is a `p`-th power modulo `p`.
 
 ## References
 
-* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1, Remarks 3.2–3.3 and Example 3.4.
+* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1 and Remarks 3.2–3.3.
 * P. Scholze, *Perfectoid spaces*, Definition 5.1 and Proposition 5.8.
 * B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, Lemma 3.9 and §3.2.
 -/
@@ -190,27 +187,6 @@ theorem IsPerfectoidTateRing.exists_natCast_dvd_sub_pow [IsPerfectoidTateRing p 
   have hiff := (tfae_forall_exists_dvd_sub_pow ϖ h).out 1 2
   exact hiff.mp hs x
 
-/-- **Roots modulo `ϖ p`**: in a perfectoid Tate ring `R`, for every pseudouniformiser `ϖ ∈ R°`
-with `ϖ ^ p ∣ p` in `R°`, every element of `R°` is a `p`-th power modulo `ϖ p`. -/
-theorem IsPerfectoidTateRing.exists_mul_natCast_dvd_sub_pow [IsPerfectoidTateRing p R]
-    {ϖ : powerBoundedSubring R} (hϖ : IsPseudoUniformizer (ϖ : R))
-    (h : ϖ ^ p ∣ (p : powerBoundedSubring R)) (x : powerBoundedSubring R) :
-    ∃ y, ϖ * p ∣ x - y ^ p := by
-  have := IsPerfectoidTateRing.isUniform p (R := R)
-  have := IsUniform.isAdicComplete_span_singleton ϖ hϖ
-  have hiff := (tfae_forall_exists_dvd_sub_pow ϖ h).out 2 3
-  exact hiff.mp IsPerfectoidTateRing.exists_natCast_dvd_sub_pow x
-
-/-- **The perfectoid condition holds for every pseudouniformiser**: in a perfectoid Tate ring `R`,
-Frobenius `R° ⧸ (ϖ) → R° ⧸ (ϖ ^ p)` is bijective for every pseudouniformiser `ϖ ∈ R°` with
-`ϖ ^ p ∣ p` in `R°`, not only for the one in the definition (Scholze, *Étale cohomology of
-diamonds*, Remark 3.2). -/
-theorem IsPerfectoidTateRing.bijective_frobeniusModPow [IsPerfectoidTateRing p R]
-    {ϖ : powerBoundedSubring R} (hϖ : IsPseudoUniformizer (ϖ : R))
-    (h : ϖ ^ p ∣ (p : powerBoundedSubring R)) : Function.Bijective (frobeniusModPow p h) :=
-  ⟨frobeniusModPow_injective (B := R) h hϖ.isUnit, (frobeniusModPow_surjective_iff h).mpr
-    fun x ↦ (IsPerfectoidTateRing.exists_natCast_dvd_sub_pow x).imp fun _ ↦ h.trans⟩
-
 /-- **Perfectoid Tate rings via Frobenius modulo `p`**: a uniform complete Hausdorff Tate ring `R`
 is perfectoid exactly when some pseudouniformiser `ϖ ∈ R°` has `ϖ ^ p ∣ p` in `R°` and Frobenius
 on `R° ⧸ p` is surjective, that is, every element of `R°` is a `p`-th power modulo `p` (Scholze,
@@ -253,9 +229,9 @@ private theorem IsPerfectoidTateRing.of_prod_left [IsPerfectoidTateRing p (R × 
         by simpa using pow_dvd_pow_of_dvd (dvd_zero (powerBoundedSubringProdEquiv R S ϖ).2) p⟩
     simpa using (dvd_iff_powerBoundedSubringProdEquiv.mp (hi _ hdvd)).1
 
-/-- **A product of perfectoid Tate rings is perfectoid**: if `ϖ_R` and `ϖ_S` witness the perfectoid
-condition for `R` and `S`, then `(ϖ_R, ϖ_S)` witnesses it for `R × S`, because `(R × S)° = R° × S°`
-and divisibility in it is componentwise (Scholze, *Étale cohomology of diamonds*, Example 3.4). -/
+/-- **A product of perfectoid Tate rings is perfectoid**, directly from the definition: if `ϖ_R` and
+`ϖ_S` witness the perfectoid condition for `R` and `S`, then `(ϖ_R, ϖ_S)` witnesses it for `R × S`,
+because `(R × S)° = R° × S°` and divisibility in it is componentwise. -/
 instance IsPerfectoidTateRing.prod [IsPerfectoidTateRing p R] [IsPerfectoidTateRing p S] :
     IsPerfectoidTateRing p (R × S) := by
   have := IsPerfectoidTateRing.isUniform p (R := R)

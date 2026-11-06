@@ -33,9 +33,13 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
 * `CuspForm.abscissaOfAbsConv_qExpansion_coeff_le`: for a cusp form, at most `(k+1)/2`
   (from Mathlib's mean-square coefficient bound and Cauchy–Schwarz). In weight one this
   gives the bound `1`, which the pointwise estimate `aₙ = O(n^{k/2})` does not give.
+  `CuspForm.LSeriesSummable_qExpansion_coeff` is the resulting absolute convergence on
+  `Re s > (k+1)/2`.
 * `ModularForm.LSeries_qExpansion_coeff_eq`, `CuspForm.LSeries_qExpansion_coeff_eq`:
   on the respective half-planes, `LSeries` of the coefficients is
   `(Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` for Mathlib's `ModularForm.L`.
+* `ModularForm.Λ_natCast_add_one`: `Λ(f, n + 1) = n! / (2π)ⁿ⁺¹ · L(f, n + 1)` at the positive
+  integers, so that there `Λ` and `L` vanish together (`ModularForm.Λ_natCast_add_one_eq_zero_iff`).
 * `CuspForm.hasEntireExtension_qExpansion_coeff`: the coefficient series of a cusp form
   of positive weight has an entire extension (the Layer-7 continuation milestone).
 * `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero positive-index coefficient makes
@@ -111,6 +115,26 @@ theorem LSeries_qExpansion_coeff_eq (hk : 0 < k) [ModularFormClass F Γ k] (f : 
     linarith
   exact LSeries_eq_of_hasSum hs0 (hasSum_L hk f hs)
 
+/-- At a positive integer `n + 1` the completed `L`-function of a modular form is
+`Λ(f, n + 1) = n! / (2π)ⁿ⁺¹ · L(f, n + 1)`: the archimedean factor `Γ_ℂ(s) / 2 = (2π)⁻ˢ Γ(s)`
+at `s = n + 1`. -/
+theorem Λ_natCast_add_one (hk : 0 < k) [ModularFormClass F Γ k] (f : F) (n : ℕ) :
+    Λ hk f (n + 1) = n.factorial / (2 * Real.pi) ^ (n + 1) * L hk f (n + 1) := by
+  have h2π : (2 * Real.pi : ℂ) ^ (n + 1) ≠ 0 :=
+    pow_ne_zero _ (by exact_mod_cast Real.two_pi_pos.ne')
+  have hn : (n.factorial : ℂ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
+  rw [L_apply_of_ne_zero hk f (by exact_mod_cast n.succ_ne_zero), Complex.Gammaℂ_def,
+    Complex.Gamma_nat_eq_factorial, Complex.cpow_neg, ← Nat.cast_succ, Complex.cpow_natCast]
+  field_simp
+
+/-- At a positive integer the completed `L`-function of a modular form vanishes exactly when its
+`L`-function does. -/
+theorem Λ_natCast_add_one_eq_zero_iff (hk : 0 < k) [ModularFormClass F Γ k] (f : F) (n : ℕ) :
+    Λ hk f (n + 1) = 0 ↔ L hk f (n + 1) = 0 := by
+  rw [Λ_natCast_add_one, mul_eq_zero, or_iff_right]
+  exact div_ne_zero (by exact_mod_cast n.factorial_ne_zero)
+    (pow_ne_zero _ (by exact_mod_cast Real.two_pi_pos.ne'))
+
 end ModularForm
 
 namespace CuspForm
@@ -138,6 +162,14 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [CuspFormClass F Γ k] (f : F) :
     refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
     rw [hf, qExpansion_zero]
     simpa only [map_zero, Pi.zero_def] using (LSeriesSummable_zero (s := (y : ℂ)))
+
+/-- The Dirichlet series of the `q`-expansion coefficients of a cusp form converges absolutely
+on the half-plane `Re s > (k+1)/2`. -/
+theorem LSeriesSummable_qExpansion_coeff [CuspFormClass F Γ k] (f : F)
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
+    LSeriesSummable (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) s :=
+  LSeriesSummable_of_abscissaOfAbsConv_lt_re
+    ((abscissaOfAbsConv_qExpansion_coeff_le f).trans_lt (mod_cast hs))
 
 /-- On the half-plane `Re s > k/2 + 1`, the Dirichlet series of the `q`-expansion
 coefficients of a cusp form is Mathlib's `ModularForm.L`, up to the width factor.

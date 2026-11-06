@@ -60,11 +60,15 @@ structure is compatible with `Ω`.
   the covering map is complex linear for the block structure and its descent.
 * `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure_mk`: the descended structure in the
   coordinates `(s, t, x)`.
+* `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure_apply_symm_one_zero`: the
+  descended structure sends `∂_s` to `T` at every point.
 * `TauCeti.SmoothMappingTorus.eval₂_suspensionForm_suspensionAlmostComplexStructure`:
   `Ω(w, J w) = a² + b² + σ(v, K v)`.
 * `TauCeti.SmoothMappingTorus.tames_suspensionAlmostComplexStructure`: vertical tameness descends.
 * `TauCeti.SmoothMappingTorus.compatible_suspensionAlmostComplexStructure`: a family of
   `σ`-compatible structures descends to an `Ω`-compatible structure.
+* `TauCeti.SmoothMappingTorus.contMDiff_suspensionAlmostComplexStructure_family`: vertical
+  families depending smoothly on a parameter descend to structures depending smoothly on it.
 
 ## References
 
@@ -154,7 +158,7 @@ variable (hs : ∀ p : (ℝ × ℝ) × M, K (p.1 + (1, 0), p.2) = K p)
   (ht : ∀ (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2),
     mfderiv I I φ.symm p.2 (K p v) = K (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v))
 
-omit [LocallyCompactSpace M] in
+omit [T2Space M] [LocallyCompactSpace M] in
 include hs ht in
 /-- Under periodicity in `s` and the seam identity in `t`, the two generating deck transformations
 of the covering map preserve the block structure. -/
@@ -258,6 +262,23 @@ theorem suspensionAlmostComplexStructure_mk (s t : ℝ) (x : M) (a b : ℝ) (v :
   rw [SmoothAlmostComplexStructure.prodFamily_apply]
   simp only [ContinuousLinearEquiv.apply_symm_apply, hJ]
 
+/-- The descended structure is of block form everywhere: it sends the direction `∂_s` of the circle
+factor to the suspension vector field `T = ∂_t`. -/
+theorem suspensionAlmostComplexStructure_apply_symm_one_zero
+    (y : UnitAddCircle × SmoothMappingTorus φ) :
+    suspensionAlmostComplexStructure φ hK hs ht y
+        ((Manifold.tangentSpaceProdEquiv y).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv y).symm ((0 : ℝ), timeVectorField φ y.2) := by
+  obtain ⟨⟨⟨s, t⟩, x⟩, rfl⟩ := suspensionCover_surjective φ y
+  have h := suspensionAlmostComplexStructure_mk φ hK hs ht s t x 1 0 0
+  have h0 : mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+      ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), (0 : TangentSpace I x))) = 0 := by
+    -- The pair `(0, 0)` is the zero of the product of the tangent spaces.
+    exact (congrArg _ (map_zero _)).trans (map_zero _)
+  simp only [h0, map_zero, neg_zero] at h
+  rw [suspensionCover_apply, timeVectorField_mk]
+  exact h
+
 /-- The quadratic form of `Ω` and the descended structure: at `([s], [t, x])`,
 `Ω(w, J w) = a² + b² + σ(v, K_((s, t), x) v)` for `w = a ∂_s + b ∂_t + v`. -/
 theorem eval₂_suspensionForm_suspensionAlmostComplexStructure (s t : ℝ) (x : M) (a b : ℝ)
@@ -294,5 +315,40 @@ theorem compatible_suspensionAlmostComplexStructure (hσn : σ.IsNondegenerate)
   rw [mpullback_suspensionCover_suspensionForm]
   exact SmoothAlmostComplexStructure.compatible_prodFamily _ K hK
     (SymplecticForm.compatible_constSmooth_iff.2 stdSymplecticForm_compatible_product) hσn hcompat
+
+/-- For vertical families `K λ` depending smoothly on a parameter `λ` in a manifold `Λ`, each
+periodic in `s` and satisfying the seam identity in `t`, the descended block structures on
+`(ℝ / ℤ) × Y_φ` depend smoothly on the parameter: `(λ, y) ↦ (J_λ)_y` is a smooth section of the
+tangent endomorphism bundle along the projection `Λ × ((ℝ / ℤ) × Y_φ) → (ℝ / ℤ) × Y_φ`. -/
+theorem contMDiff_suspensionAlmostComplexStructure_family {EΛ HΛ Λ : Type*}
+    [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ] [TopologicalSpace HΛ]
+    {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ] [ChartedSpace HΛ Λ]
+    {K : Λ → ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)}
+    (hK : ContMDiff (IΛ.prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun r : Λ × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        r.2.2 (K r.1 r.2).toLinearMap.toContinuousLinearMap))
+    (hs : ∀ (l : Λ) (p : (ℝ × ℝ) × M), K l (p.1 + (1, 0), p.2) = K l p)
+    (ht : ∀ (l : Λ) (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2),
+      mfderiv I I φ.symm p.2 (K l p v) =
+        K l (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v)) :
+    ContMDiff (IΛ.prod (𝓘(ℝ).prod (𝓘(ℝ).prod I)))
+      ((𝓘(ℝ).prod (𝓘(ℝ).prod I)).prod 𝓘(ℝ, (ℝ × (ℝ × E)) →L[ℝ] ℝ × (ℝ × E))) ∞
+      (fun r : Λ × (UnitAddCircle × SmoothMappingTorus φ) ↦
+        TotalSpace.mk' ((ℝ × (ℝ × E)) →L[ℝ] ℝ × (ℝ × E))
+          (E := fun y : UnitAddCircle × SmoothMappingTorus φ ↦
+            TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) y →L[ℝ]
+              TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) y) r.2
+          ((suspensionAlmostComplexStructure φ (hK.comp (contMDiff_const.prodMk contMDiff_id))
+            (hs r.1) (ht r.1)).toEndomorphism r.2)) :=
+  -- The descended structures are the descents of the block structures upstairs, which depend
+  -- smoothly on the parameter.
+  SmoothAlmostComplexStructure.contMDiff_descend_family (isLocalDiffeomorph_suspensionCover φ)
+    (suspensionCover_surjective φ)
+    (fun l _ _ v v' h hv ↦ SmoothAlmostComplexStructure.mfderiv_apply_eq_of_eqvGen
+      (isLocalDiffeomorph_suspensionCover φ) _
+      (exists_deck_of_deckStep φ (hK.comp (contMDiff_const.prodMk contMDiff_id)) (hs l) (ht l))
+      (eqvGen_deckStep_of_suspensionCover_eq φ h) v v' hv)
+    (SmoothAlmostComplexStructure.contMDiff_prodFamily_family _ hK)
 
 end TauCeti.SmoothMappingTorus

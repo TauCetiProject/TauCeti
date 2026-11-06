@@ -67,6 +67,8 @@ The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutativ
 
 * `TauCeti.MulSemiringAction.tensorToPi_baseChange`: `tensorToPi` commutes with base change, for
   `G` acting on `A' ⊗[R] A` through the right factor.
+* `TauCeti.MulSemiringAction.bijective_tensorToPi_baseChange_iff`: for a finite monoid and a
+  faithfully flat `R → A'`, `tensorToPi` for `A' ⊗[R] A` is bijective exactly when it is for `A`.
 * `TauCeti.MulSemiringAction.tensorToPi_surjective_iff`: `tensorToPi` is surjective exactly when
   the action is free.
 * `TauCeti.MulSemiringAction.tensorToPi_bijective`: for a free action with invariant ring `R`,
@@ -80,6 +82,8 @@ The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutativ
   `n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` for a module with semilinear action.
 * `TauCeti.MulSemiringAction.exists_sum_smul_eq_one`: for a free action on a commutative ring,
   some element has trace `∑ g, g • c = 1`.
+* `RingHom.sum_mul_sum_smul`: pairing a dual basis of `tensorToPi` with traces, after a map
+  equivariant along `π : G' → G`, sums the translates by the kernel of `π`.
 * `TauCeti.MulSemiringAction.span_range_smul_sub_eq_top_iff`: on a finite-type algebra over a
   field, freeness of `g` means that `g` fixes no point valued in an algebraically closed field.
 
@@ -152,6 +156,38 @@ theorem tensorToPi_baseChange (A' : Type*) [CommSemiring A'] [Algebra R A']
       simp [Algebra.TensorProduct.piRightHom, TensorProduct.piRightHom_tmul]
 
 end Semiring
+
+section FaithfullyFlat
+
+variable {R A G : Type*} [CommRing R] [CommRing A] [Algebra R A] [Monoid G] [Finite G]
+  [MulSemiringAction G A] [SMulCommClass G R A]
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+/-- Bijectivity of `tensorToPi` descends along a faithfully flat extension of the base: for
+`R → A'` faithfully flat, the map for `A' ⊗[R] A` is bijective exactly when the map for `A` is. -/
+theorem bijective_tensorToPi_baseChange_iff (A' : Type*) [CommRing A'] [Algebra R A']
+    [Module.FaithfullyFlat R A'] :
+    Function.Bijective (tensorToPi A' (A' ⊗[R] A) G) ↔
+      Function.Bijective (tensorToPi R A G) := by
+  classical
+  have := Fintype.ofFinite G
+  let γ : A ⊗[R] A →ₗ[R] (G → A) := ((tensorToPi R A G).restrictScalars R).toLinearMap
+  let e := TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv R A' A A
+  let π := Algebra.TensorProduct.piRight R A' A' fun _ : G ↦ A
+  -- Read through `e` and `π`, the map `tensorToPi` for `A' ⊗[R] A` is `id ⊗ γ`.
+  have hcomp : ⇑(tensorToPi A' (A' ⊗[R] A) G) ∘ ⇑e = ⇑π ∘ ⇑(γ.lTensor A') := by
+    funext z
+    rw [Function.comp_apply, Function.comp_apply, tensorToPi_baseChange]
+    induction z using TensorProduct.inductionOn with
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul a w =>
+      simp [π, γ, Algebra.TensorProduct.piRightHom, TensorProduct.piRightHom_tmul]
+  rw [← Function.Bijective.of_comp_iff _ e.bijective, hcomp,
+    Function.Bijective.of_comp_iff' π.bijective,
+    Module.FaithfullyFlat.lTensor_bijective_iff_bijective]
+  simp [γ]
+
+end FaithfullyFlat
 
 section InvariantTensor
 
@@ -429,6 +465,26 @@ theorem exists_sum_smul_eq_one [Fintype G]
   have h1 : (1 : R) ∈ I := by simp [hI]
   obtain ⟨c, hc⟩ := h1
   exact ⟨c, by simpa [t] using hc⟩
+
+/-- Let `(xᵢ, yᵢ)` be a finite family with `∑ i, xᵢ * g • yᵢ` equal to `1` at `g = 1` and `0`
+elsewhere, as for a preimage of the indicator function of `1` under `tensorToPi`. After a ring map
+`f : A → C` equivariant along `π : G' → G`, pairing the `xᵢ` with the traces of `yᵢ * c` gives the
+sum of the translates of `c` by the kernel of `π`. -/
+theorem _root_.RingHom.sum_mul_sum_smul [DecidableEq G] {G' C : Type*} [Group G'] [Fintype G']
+    [CommRing C] [MulSemiringAction G' C] (f : A →+* C) (π : G' →* G)
+    (hπ : ∀ (g : G') (a : A), g • f a = f (π g • a))
+    {S : Finset (A × A)} (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g)
+    (c : C) :
+    ∑ p ∈ S, f p.1 * ∑ g : G', g • (f p.2 * c) = ∑ g : G', if π g = 1 then g • c else 0 := by
+  calc ∑ p ∈ S, f p.1 * ∑ g : G', g • (f p.2 * c)
+      = ∑ g : G', f (∑ p ∈ S, p.1 * π g • p.2) * g • c := by
+        simp only [Finset.mul_sum, smul_mul', hπ, map_sum, map_mul, Finset.sum_mul]
+        rw [Finset.sum_comm]
+        simp only [mul_assoc]
+    _ = ∑ g : G', if π g = 1 then g • c else 0 := by
+        refine Finset.sum_congr rfl fun g _ ↦ ?_
+        rw [hS, Pi.single_apply]
+        split_ifs <;> simp
 
 end Trace
 

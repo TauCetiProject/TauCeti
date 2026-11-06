@@ -287,6 +287,14 @@ theorem neg_apply (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (-s).1 x = -s.1 x 
 theorem sub_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s - t).1 x = s.1 x - t.1 x :=
   (rfl)
 
+@[simp]
+theorem sum_apply {ι : Type*} (s : Finset ι) (t : ι → Γ(twistingSheaf 𝒜 n, U)) (x : U) :
+    (∑ i ∈ s, t i).1 x = ∑ i ∈ s, (t i).1 x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih => simp [Finset.sum_insert ha, ih]
+
 /-- Sections of the structure sheaf act on sections of `𝒪(n)` pointwise, through the inclusions
 `A_{(x)} → A_x` of the homogeneous localizations. -/
 @[simp]
@@ -400,6 +408,30 @@ def mul (m n : ℤ) :
 theorem mul_apply {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
     (mul 𝒜 U m n s t).1 x = s.1 x * t.1 x :=
   (rfl)
+
+/-! The following restatements of `LinearMap.map_add₂` and `LinearMap.map_smul₂` for `mul` let
+users with concrete graded rings, such as the charts of a relative `Proj`, rewrite products
+without the kernel unfolding the module structures of the sections over those rings. -/
+
+/-- The multiplication of sections of twisting sheaves is additive in the first factor. -/
+theorem mul_add_left {m : ℤ} (s s' : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) :
+    mul 𝒜 U m n (s + s') t = mul 𝒜 U m n s t + mul 𝒜 U m n s' t :=
+  LinearMap.map_add₂ _ s s' t
+
+/-- The multiplication of sections of twisting sheaves is additive in the second factor. -/
+theorem mul_add_right {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t t' : Γ(twistingSheaf 𝒜 n, U)) :
+    mul 𝒜 U m n s (t + t') = mul 𝒜 U m n s t + mul 𝒜 U m n s t' :=
+  map_add _ t t'
+
+/-- The multiplication of sections of twisting sheaves is linear in the first factor. -/
+theorem mul_smul_left {m : ℤ} (r : Γ(Proj 𝒜, U)) (s : Γ(twistingSheaf 𝒜 m, U))
+    (t : Γ(twistingSheaf 𝒜 n, U)) : mul 𝒜 U m n (r • s) t = r • mul 𝒜 U m n s t :=
+  LinearMap.map_smul₂ _ r s t
+
+/-- The multiplication of sections of twisting sheaves is linear in the second factor. -/
+theorem mul_smul_right {m : ℤ} (r : Γ(Proj 𝒜, U)) (s : Γ(twistingSheaf 𝒜 m, U))
+    (t : Γ(twistingSheaf 𝒜 n, U)) : mul 𝒜 U m n s (r • t) = r • mul 𝒜 U m n s t :=
+  map_smul _ r t
 
 /-- The multiplication of sections of twisting sheaves is associative, pointwise in the
 localizations. -/

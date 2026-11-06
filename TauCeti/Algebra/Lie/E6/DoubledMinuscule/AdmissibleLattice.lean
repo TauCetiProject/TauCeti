@@ -200,7 +200,7 @@ theorem rep_serreRootGenerator_sq (k : Fin 6 ⊕ Fin 6) :
       (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ k)) ^ 2 = 0 := by
   apply LinearMap.ext
   intro v
-  rw [pow_two, Module.End.mul_apply]
+  rw [pow_two, mul_apply_eq_comp]
   cases k with
   | inl i =>
       simpa only [TauCeti.serreRootGenerator_inl, rep_ι_apply,

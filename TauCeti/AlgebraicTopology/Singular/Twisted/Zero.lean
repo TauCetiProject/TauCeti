@@ -16,10 +16,16 @@ Its generators are the fibres at points, and its relations identify a coefficien
 parallel transport along a path. This describes degree-zero classes without choosing paths
 or basepoints, including for disconnected spaces.
 
+The relations come from the boundary of a path: the singular `1`-simplex of a path `γ` from `x`
+to `y`, carrying a coefficient `m` at `x`, has boundary `m` transported along `γ` at `y` minus `m`
+at `x` (`TauCeti.LocalCoefficientSystem.d_ιTwistedChainComplex_simplex₁_apply`).
+
 ## Main definitions
 
 * `TauCeti.LocalCoefficientSystem.ιTwistedHomology₀`: the class in zeroth homology of a
   coefficient in the fibre at a point, with `ιTwistedHomology₀_def` its defining equation.
+* `TauCeti.LocalCoefficientSystem.d_ιTwistedChainComplex_simplex₁_apply`: the twisted boundary
+  of the singular `1`-simplex of a path.
 * `TauCeti.LocalCoefficientSystem.isColimitTwistedHomology₀Cocone`,
   `TauCeti.LocalCoefficientSystem.twistedHomology₀IsoColimit`: zeroth homology is the colimit of the
   local system.
@@ -55,6 +61,15 @@ theorem ιTwistedHomology₀_def (x : X) :
     ιTwistedHomology₀ L x =
       ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) ≫
         (twistedChainComplex L).pOpcycles 0 ≫ (twistedChainComplex L).isoHomologyι₀.inv :=
+  (rfl)
+
+/-- The class of a coefficient `v` in the fibre at `x` is the image in zeroth homology of the
+chain `v` on the zero-simplex `TopCat.toSSetObj₀Equiv.symm x`, which is the point simplex at `x`
+used to define `ιTwistedHomology₀`. -/
+private lemma ιTwistedHomology₀_apply (x : X) (v : L.obj (FundamentalGroupoid.mk x)) :
+    (ιTwistedHomology₀ L x).hom v = (twistedChainComplex L).isoHomologyι₀.inv.hom
+      (((twistedChainComplex L).pOpcycles 0).hom
+        ((ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm x)).hom v)) :=
   (rfl)
 
 /-- A zero-simplex represents the class of its coefficient in the fibre at its vertex. -/
@@ -129,21 +144,6 @@ private def simplexStart : Path (toTopInitialVertex ⦋1⦌)
     erw [toTop_map_toTopInitialVertex_down, toTopInitialVertex_down]
     rfl)
 
-/-- The two faces of a singular edge define the same homology class after transport from
-its initial vertex. -/
-private lemma edgeTransport_ιTwistedHomology₀ (σ : (TopCat.toSSet.obj X) _⦋1⦌) :
-    L.map (edgeTransport σ 0) ≫
-        ιTwistedHomology₀ L (TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 0 σ)) =
-      L.map (edgeTransport σ 1) ≫
-        ιTwistedHomology₀ L (TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 1 σ)) := by
-  have h := congrArg (ιTwistedChainComplex L 1 σ ≫ ·)
-    ((twistedChainComplex L).d_pOpcycles 1 0)
-  simp only [← Category.assoc, ιTwistedChainComplex_d] at h
-  have h' := congrArg (· ≫ (twistedChainComplex L).isoHomologyι₀.inv) h
-  simpa [Preadditive.add_comp, Preadditive.zsmul_comp, Category.assoc,
-    ιTwistedChainComplex_pOpcycles_zero, ← sub_eq_add_neg, sub_eq_zero, edgeTransport,
-    L.map_comp, SimplicialObject.δ] using h'
-
 private lemma edgeTransport_one (σ : (TopCat.toSSet.obj X) _⦋1⦌) :
     edgeTransport σ 1 = eqToHom (by
       rw [initialVertex_eq, toSSetObj₀Equiv_δ_one]) := by
@@ -176,6 +176,86 @@ private lemma edgeTransport_zero (σ : (TopCat.toSSet.obj X) _⦋1⦌) :
   rw [Path.cast_coe, Path.cast_coe, Path.map_coe, Function.comp_apply, path₁_apply]
   rfl
 
+/-- The initial vertex of the singular `1`-simplex of a path is the start of the path. -/
+lemma initialVertex_simplex₁ {x y : X} (γ : Path x y) :
+    initialVertex (simplex₁ γ.toContinuousMap) = FundamentalGroupoid.mk x := by
+  rw [initialVertex_eq]
+  exact congrArg FundamentalGroupoid.mk ((source₁_simplex₁ γ.toContinuousMap).trans γ.source)
+
+/-- A chain supported on a singular zero-simplex with vertex `x` is supported on the point simplex
+at `x`, with the same coefficient up to the identification of the fibres. -/
+lemma ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm (σ : (TopCat.toSSet.obj X) _⦋0⦌)
+    {x : X} (h : TopCat.toSSetObj₀Equiv σ = x) (c : L.obj (initialVertex σ)) :
+    (ιTwistedChainComplex L 0 σ).hom c =
+      (ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm x)).hom
+        ((L.map (eqToHom ((initialVertex_zero σ).trans (congrArg FundamentalGroupoid.mk h)))).hom
+          c) := by
+  have key : ∀ (a b : FundamentalGroupoid X) (p : a = b) (c : L.obj a),
+      (L.map (eqToHom p)).hom c ≍ c := by
+    rintro a b rfl c
+    simp
+  exact ιTwistedChainComplex_congr L (Equiv.eq_symm_apply _ |>.2 h) (key _ _ _ c).symm
+
+/-- **The boundary of a path.** The twisted boundary of the singular `1`-simplex of a path `γ`
+from `x` to `y`, carrying a coefficient `m` in the fibre at `x`, is `m` transported along `γ` at
+the vertex `y` minus `m` at the vertex `x`. -/
+lemma d_ιTwistedChainComplex_simplex₁_apply {x y : X} (γ : Path x y)
+    (m : L.obj (FundamentalGroupoid.mk x)) :
+    ((twistedChainComplex L).d 1 0).hom ((ιTwistedChainComplex L 1 (simplex₁ γ.toContinuousMap)).hom
+        ((L.map (eqToHom (initialVertex_simplex₁ γ).symm)).hom m)) =
+      (ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm y)).hom
+          ((L.map (Path.Homotopic.Quotient.mk γ)).hom m) -
+        (ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm x)).hom m := by
+  have hs := (source₁_simplex₁ γ.toContinuousMap).trans γ.source
+  have ht := (target₁_simplex₁ γ.toContinuousMap).trans γ.target
+  have h₀ : TopCat.toSSetObj₀Equiv
+      ((TopCat.toSSet.obj X).map (δ 0).op (simplex₁ γ.toContinuousMap)) = y :=
+    (toSSetObj₀Equiv_δ_zero _).trans ht
+  have h₁ : TopCat.toSSetObj₀Equiv
+      ((TopCat.toSSet.obj X).map (δ 1).op (simplex₁ γ.toContinuousMap)) = x :=
+    (toSSetObj₀Equiv_δ_one _).trans hs
+  -- Combine the endpoint identifications into the casts of the path itself.
+  have hp : (path₁ (simplex₁ γ.toContinuousMap)).cast hs.symm ht.symm = γ := by
+    ext t
+    exact path₁_simplex₁_apply γ.toContinuousMap t
+  have he₀ : eqToHom (initialVertex_simplex₁ γ).symm ≫
+      edgeTransport (simplex₁ γ.toContinuousMap) 0 ≫
+        eqToHom (congrArg FundamentalGroupoid.mk h₀) = Path.Homotopic.Quotient.mk γ := by
+    have hpath := (FundamentalGroupoid.conj_eqToHom
+      (p := Path.Homotopic.Quotient.mk (path₁ (simplex₁ γ.toContinuousMap))) hs.symm
+        ht.symm).trans
+      ((Path.Homotopic.Quotient.mk_cast _ _ _).symm.trans
+        (congrArg Path.Homotopic.Quotient.mk hp))
+    simpa only [edgeTransport_zero, Category.assoc, eqToHom_trans_assoc, eqToHom_trans]
+      using hpath
+  have he₁ : eqToHom (initialVertex_simplex₁ γ).symm ≫
+      edgeTransport (simplex₁ γ.toContinuousMap) 1 ≫
+        eqToHom (congrArg FundamentalGroupoid.mk h₁) = 𝟙 _ := by
+    rw [edgeTransport_one]
+    simp
+  simp only [edgeTransport, SimplicialObject.δ, Category.assoc] at he₀ he₁
+  have hmap {a b c : FundamentalGroupoid X} (f : a ⟶ b) (g : b ⟶ c) (v : L.obj a) :
+      (L.map g).hom ((L.map f).hom v) = (L.map (f ≫ g)).hom v := by
+    simp
+  -- The coefficients at the two endpoints, transported to the point simplices.
+  have hc₀ : (L.map (eqToHom
+      ((initialVertex_zero _).trans (congrArg FundamentalGroupoid.mk h₀)))).hom
+      ((L.map (vertexTransport (δ 0).op (simplex₁ γ.toContinuousMap))).hom
+        ((L.map (eqToHom (initialVertex_simplex₁ γ).symm)).hom m)) =
+      (L.map (Path.Homotopic.Quotient.mk γ)).hom m := by
+    rw [← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₀)]
+    simp only [hmap, Category.assoc, he₀]
+  have hc₁ : (L.map (eqToHom
+      ((initialVertex_zero _).trans (congrArg FundamentalGroupoid.mk h₁)))).hom
+      ((L.map (vertexTransport (δ 1).op (simplex₁ γ.toContinuousMap))).hom
+        ((L.map (eqToHom (initialVertex_simplex₁ γ).symm)).hom m)) = m := by
+    rw [← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₁)]
+    simp only [hmap, Category.assoc, he₁, L.map_id, ModuleCat.id_apply]
+  rw [d_ιTwistedChainComplex_apply, Fin.sum_univ_two,
+    ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L _ h₀,
+    ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L _ h₁, hc₀, hc₁]
+  simp [sub_eq_add_neg]
+
 /-- Parallel transport along a path identifies the corresponding fibre classes in zeroth
 homology. -/
 @[reassoc (attr := simp)]
@@ -183,48 +263,17 @@ lemma map_ιTwistedHomology₀ {x y : FundamentalGroupoid X} (p : x ⟶ y) :
     L.map p ≫ ιTwistedHomology₀ L y.as = ιTwistedHomology₀ L x.as := by
   induction p using Path.Homotopic.Quotient.ind with
   | mk γ =>
-    let σ := simplex₁ γ.toContinuousMap
-    have hs : initialVertex σ = x := by
-      rw [initialVertex_eq]
-      exact congrArg FundamentalGroupoid.mk
-        ((source₁_simplex₁ γ.toContinuousMap).trans γ.source)
-    have h₀ : TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 0 σ) = y.as :=
-      (toSSetObj₀Equiv_δ_zero σ).trans ((target₁_simplex₁ γ.toContinuousMap).trans γ.target)
-    have h₁ : TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 1 σ) = x.as :=
-      (toSSetObj₀Equiv_δ_one σ).trans ((source₁_simplex₁ γ.toContinuousMap).trans γ.source)
-    -- Combine the endpoint identifications into the casts of the path itself.
-    have hp : (path₁ σ).cast
-        ((source₁_simplex₁ γ.toContinuousMap).trans γ.source).symm
-        ((target₁_simplex₁ γ.toContinuousMap).trans γ.target).symm = γ := by
-      ext t
-      exact path₁_simplex₁_apply γ.toContinuousMap t
-    have he : eqToHom hs.symm ≫ edgeTransport σ 0 ≫
-        eqToHom (congrArg FundamentalGroupoid.mk h₀) = Path.Homotopic.Quotient.mk γ := by
-      have hpath := (FundamentalGroupoid.conj_eqToHom
-        (p := Path.Homotopic.Quotient.mk (path₁ σ))
-        ((source₁_simplex₁ γ.toContinuousMap).trans γ.source).symm
-        ((target₁_simplex₁ γ.toContinuousMap).trans γ.target).symm).trans
-        ((Path.Homotopic.Quotient.mk_cast _ _ _).symm.trans
-          (congrArg Path.Homotopic.Quotient.mk hp))
-      simpa only [edgeTransport_zero, Category.assoc, eqToHom_trans_assoc, eqToHom_trans]
-        using hpath
-    have he' : eqToHom hs.symm ≫ edgeTransport σ 1 ≫
-        eqToHom (congrArg FundamentalGroupoid.mk h₁) = 𝟙 x := by
-      rw [edgeTransport_one]
-      simp
-    have h' := congrArg (L.map (eqToHom hs.symm) ≫ ·)
-      (edgeTransport_ιTwistedHomology₀ L σ)
-    have hz₀ : ιTwistedHomology₀ L
-        (TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 0 σ)) =
-        L.map (eqToHom (congrArg FundamentalGroupoid.mk h₀)) ≫ ιTwistedHomology₀ L y.as := by
-      simpa only [eqToHom_map, eqToHom_refl, Category.comp_id] using
-        eqToHom_naturality (ιTwistedHomology₀ L) h₀
-    have hz₁ : ιTwistedHomology₀ L
-        (TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 1 σ)) =
-        L.map (eqToHom (congrArg FundamentalGroupoid.mk h₁)) ≫ ιTwistedHomology₀ L x.as := by
-      simpa only [eqToHom_map, eqToHom_refl, Category.comp_id] using
-        eqToHom_naturality (ιTwistedHomology₀ L) h₁
-    simpa only [hz₀, hz₁, ← L.map_comp_assoc, he, he', L.map_id, Category.id_comp] using h'
+    refine ModuleCat.hom_ext (LinearMap.ext fun m ↦ ?_)
+    -- The boundary of the path simplex identifies the two endpoint classes.
+    have hd (c : (twistedChainComplex L).X 1) :
+        ((twistedChainComplex L).pOpcycles 0).hom (((twistedChainComplex L).d 1 0).hom c) = 0 := by
+      rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, HomologicalComplex.d_pOpcycles,
+        ModuleCat.hom_zero, LinearMap.zero_apply]
+    have h := hd ((ιTwistedChainComplex L 1 (simplex₁ γ.toContinuousMap)).hom
+      ((L.map (eqToHom (initialVertex_simplex₁ γ).symm)).hom m))
+    rw [d_ιTwistedChainComplex_simplex₁_apply, map_sub, sub_eq_zero] at h
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, ιTwistedHomology₀_apply, ιTwistedHomology₀_apply,
+      h]
 
 /-- On a path-connected space, every twisted zeroth-homology class comes from any chosen fibre. -/
 instance epi_ιTwistedHomology₀ [PathConnectedSpace X] (x : X) :

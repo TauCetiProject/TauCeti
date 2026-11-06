@@ -92,7 +92,11 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   equivariant additive map, possibly between representations over different coefficient rings,
   lifts invariant vectors when its target is projective over the target group algebra.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
-  invariants.
+  invariants, and `Representation.Equiv.apply_mem_invariants_iff`: an equivalence detects
+  invariance of a vector.
+* `Representation.Equiv.quotientToInvariants`: for a normal subgroup `S`, an equivalence of
+  representations of `G` is an equivalence of the representations of `G ⧸ S` on the
+  `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
@@ -229,10 +233,10 @@ theorem mem_invariants_iff_of_closure_eq_top {k G V : Type*} [CommRing k] [Group
   induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
   | mem g hg => exact h g hg
   | one => simp
-  | mul g g' _ _ hg hg' => rw [map_mul, Module.End.mul_apply, hg', hg]
+  | mul g g' _ _ hg hg' => rw [map_mul, mul_apply_eq_comp, hg', hg]
   | inv g _ hg =>
     conv_lhs => rw [← hg]
-    rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one, Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
 
 end Representation
 
@@ -383,6 +387,38 @@ def invariantsLinearEquiv (φ : ρ.Equiv σ) : ρ.invariants ≃ₗ[k] σ.invari
 theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
     (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
   (rfl)
+
+/-- **Equivalent representations have equivalent quotient representations on invariants.** For a
+normal subgroup `S` of `G`, an equivalence `ρ ≃ σ` restricts to the `S`-invariants and there
+intertwines the representations `ρ.quotientToInvariants S` and `σ.quotientToInvariants S` of
+`G ⧸ S`. -/
+noncomputable def quotientToInvariants (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal] :
+    (ρ.quotientToInvariants S).Equiv (σ.quotientToInvariants S) :=
+  .mk (φ.res S.subtype).invariantsLinearEquiv fun g ↦ by
+    induction g using QuotientGroup.induction_on with | H g => ?_
+    ext x
+    simpa [ofQuotient_coe_apply] using
+      IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x
+
+@[simp]
+theorem coe_quotientToInvariants_apply (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal]
+    (x : invariants (ρ.comp S.subtype)) : (φ.quotientToInvariants S x : W) = φ (x : V) := by
+  simp [quotientToInvariants]
+
+@[simp]
+theorem symm_quotientToInvariants (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal] :
+    (φ.quotientToInvariants S).symm = φ.symm.quotientToInvariants S := by
+  ext x
+  obtain ⟨y, rfl⟩ := (φ.quotientToInvariants S).surjective x
+  simp
+
+/-- An equivalence of representations maps a vector to an invariant vector exactly when the
+vector itself is invariant. -/
+theorem apply_mem_invariants_iff (φ : ρ.Equiv σ) {x : V} :
+    φ x ∈ σ.invariants ↔ x ∈ ρ.invariants :=
+  ⟨fun hx g ↦ φ.toLinearEquiv.injective <|
+      (IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x).trans (hx g),
+    fun hx ↦ (φ.invariantsLinearEquiv ⟨x, hx⟩).property⟩
 
 end Representation.Equiv
 

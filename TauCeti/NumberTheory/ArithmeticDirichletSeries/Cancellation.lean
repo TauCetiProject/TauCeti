@@ -363,10 +363,10 @@ theorem continuedLFunctionOfWeight_restrictAway {χ : UnitaryIdealWeight K}
     exact (differentiable_const 1).sub ((differentiable_const _).div
       (differentiable_id.const_cpow (.inl h𝔭))
       fun s ↦ by simp [Complex.cpow_eq_zero_iff, h𝔭])
-  exact eq_of_differentiableOn_of_eq_on_halfPlane (cancellationExponent_lt_one (K := K))
-    (differentiableOn_continuedLFunctionOfWeight (hχ.restrictAway _ S.finite_toSet))
-    ((differentiableOn_continuedLFunctionOfWeight hχ).mul hcorr.differentiableOn)
-    (fun z hz ↦ continuedLFunctionOfWeight_restrictAway_of_one_lt_re χ S hz) hs
+  exact (differentiableOn_continuedLFunctionOfWeight (hχ.restrictAway _ S.finite_toSet))
+    |>.eqOn_of_eqOn_re_gt ((differentiableOn_continuedLFunctionOfWeight hχ).mul
+      hcorr.differentiableOn)
+    (fun z (hz : 1 < z.re) ↦ continuedLFunctionOfWeight_restrictAway_of_one_lt_re χ S hz) hs
 
 /-!
 ### Conjugation and imaginary norm twists
@@ -422,9 +422,8 @@ theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : �
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} :=
     (differentiableOn_continuedLFunctionOfWeight hχ).comp
       (differentiable_id.add_const z).differentiableOn fun s hs ↦ by simpa [hz] using hs
-  exact eq_of_differentiableOn_of_eq_on_halfPlane (cancellationExponent_lt_one (K := K))
-    (differentiableOn_continuedLFunctionOfWeight hχz)
-    hshift (fun w hw ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw)
+  exact (differentiableOn_continuedLFunctionOfWeight hχz).eqOn_of_eqOn_re_gt hshift
+    (fun w (hw : 1 < w.re) ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw)
     (by rwa [one_div])
 
 /-!

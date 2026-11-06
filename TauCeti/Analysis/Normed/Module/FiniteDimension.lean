@@ -44,6 +44,8 @@ that depend continuously on the parameter in the operator norm.
 * `Module.Basis.continuous_equivFunL_symm_of_continuous`,
   `Module.Basis.continuous_equivFunL_of_continuous`: a family of bases whose vectors depend
   continuously on a parameter has continuously varying frame and coordinate maps.
+* `ContinuousLinearEquiv.piRing_apply`, `ContinuousLinearEquiv.piRing_symm_apply`: the
+  identification of maps out of a coordinate space with their values on the standard basis.
 -/
 
 public section
@@ -167,6 +169,23 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
     (continuous_equivFunL_symm_of_continuous h).continuousAt
 
 end Module.Basis
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Fintype ι] [DecidableEq ι]
+
+/-- The vector of a map out of a coordinate space lists its values on the standard basis. -/
+@[simp] theorem piRing_apply (f : (ι → 𝕜) →L[𝕜] E) (i : ι) :
+    piRing (𝕜 := 𝕜) (E := E) ι f i = f (Pi.single i 1) :=
+  LinearEquiv.piRing_apply (R := 𝕜) (S := 𝕜) f.toLinearMap i
+
+/-- The map out of a coordinate space with prescribed values on the standard basis. -/
+@[simp] theorem piRing_symm_apply (f : ι → E) (v : ι → 𝕜) :
+    (piRing (𝕜 := 𝕜) (E := E) ι).symm f v = ∑ i, v i • f i :=
+  LinearEquiv.piRing_symm_apply (R := 𝕜) (S := 𝕜) f v
+
+end ContinuousLinearEquiv
 
 namespace LinearMap
 

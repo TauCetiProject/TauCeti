@@ -89,6 +89,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
   commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
+* `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
+  intertwines the base-changed representation exactly when the map intertwines on `V`.
 * `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
   is the base change of its reduction `ρ.quotSMulTop r` modulo `r`.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
@@ -466,6 +468,19 @@ theorem _root_.Representation.Equiv.baseChange_symm_tmul (φ : ρ.Equiv σ) (A :
     rw [_root_.Representation.Equiv.baseChange_tmul,
       _root_.Representation.Equiv.apply_symm_apply]
   rw [← h, _root_.Representation.Equiv.symm_apply_apply]
+
+/-- **The `A`-linear extension of an `R`-linear map intertwines exactly when the map does**: for
+a representation `σ` on an `A`-module `U`, the extension `A ⊗[R] V → U` of `c : V → U` intertwines
+the base change of `ρ` with `σ` if and only if `c (ρ g v) = σ g (c v)` for all `g` and `v`. -/
+theorem _root_.LinearMap.isIntertwiningMap_liftBaseChange_iff {A : Type*} [CommSemiring A]
+    [Algebra R A] {U : Type*} [AddCommMonoid U] [Module R U] [Module A U] [IsScalarTower R A U]
+    (ρ : _root_.Representation R G V) (σ : _root_.Representation A G U) (c : V →ₗ[R] U) :
+    (_root_.Representation.baseChange A ρ).IsIntertwiningMap σ (c.liftBaseChange A) ↔
+      ∀ g v, c (ρ g v) = σ g (c v) := by
+  refine ⟨fun h g v ↦ by simpa using h.isIntertwining g (1 ⊗ₜ v), fun h ↦ ⟨fun g x ↦ ?_⟩⟩
+  induction x using TensorProduct.inductionOn with
+  | tmul a v => simp [h]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Transport
 

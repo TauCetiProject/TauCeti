@@ -20,6 +20,9 @@ graph groups, and labelled-graph arguments.
 The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
 unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
 
+For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
+and the darts in `S`.
+
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
 
@@ -171,6 +174,19 @@ def Preconnected : Prop := Quiver.IsStronglyConnected Γ.V
 theorem preconnected_iff : Γ.Preconnected ↔ ∀ a b, Nonempty (Γ.Path a b) :=
   Quiver.isStronglyConnected_iff Γ.V
 
+/-- A Serre graph is preconnected as soon as one vertex is joined by a path to every vertex:
+paths can be reversed. -/
+theorem preconnected_of_forall_nonempty_path (a : Γ.V) (h : ∀ b, Nonempty (Γ.Path a b)) :
+    Γ.Preconnected :=
+  (preconnected_iff Γ).2 fun b c => ⟨(h b).some.reverse.comp (h c).some⟩
+
+/-- In a Serre graph all of whose darts are loops, a path never leaves its starting vertex. -/
+theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : Γ.V}
+    (p : Γ.Path a b) : a = b := by
+  induction p with
+  | nil => rfl
+  | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
+
 /-- A Serre graph is connected when it is nonempty and path-connected. -/
 def Connected : Prop := Nonempty Γ.V ∧ Γ.Preconnected
 
@@ -293,6 +309,44 @@ instance Hom.toPrefunctor_mapReverse {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) :
     apply Subtype.ext
     simp only [Hom.toPrefunctor_map_val, Γ.reverse_val, Δ.reverse_val, f.map_rev]
 
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- The subgraph of `Γ` with all vertices of `Γ` and the darts of a reversal-closed set `S`. The
+vertex type reduces to that of `Γ`, so vertices of `Γ` are vertices of the subgraph. -/
+abbrev restrict : SerreGraph.{u, v} where
+  V := Γ.V
+  E := S
+  src e := Γ.src e.1
+  rev e := ⟨Γ.rev e.1, hS e.1 e.2⟩
+  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
+  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+
+@[simp] theorem restrict_src (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).src e = Γ.src e.1 := (rfl)
+
+@[simp] theorem restrict_rev_val (e : (Γ.restrict S hS).E) :
+    ((Γ.restrict S hS).rev e).1 = Γ.rev e.1 := (rfl)
+
+@[simp] theorem restrict_tgt (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).tgt e = Γ.tgt e.1 := (rfl)
+
+/-- The inclusion of a restriction into the ambient graph. -/
+@[expose] def restrictInclusion : (Γ.restrict S hS).Hom Γ where
+  mapV := id
+  mapE := Subtype.val
+  map_src _ := rfl
+  map_rev _ := rfl
+
+@[simp] theorem restrictInclusion_mapV (a : (Γ.restrict S hS).V) :
+    (Γ.restrictInclusion S hS).mapV a = a := (rfl)
+
+@[simp] theorem restrictInclusion_mapE (e : (Γ.restrict S hS).E) :
+    (Γ.restrictInclusion S hS).mapE e = e.1 := (rfl)
+
+end Restrict
+
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where
   V := PUnit
@@ -320,6 +374,29 @@ abbrev point : SerreGraph.{u, v} where
   rev := PEmpty.elim
   rev_rev := by intro e; exact e.elim
   rev_ne := by intro e; exact e.elim
+
+/-- A rose has a single vertex. -/
+instance (α : Type w) : Unique (rose α).V := inferInstanceAs (Unique PUnit)
+
+/-- The darts of a rose, being pairs of a petal and a direction, have decidable equality when
+the petals do. -/
+instance (α : Type w) [DecidableEq α] : DecidableEq (rose α).E :=
+  inferInstanceAs (DecidableEq (α × Bool))
+
+/-- The geometric edges of a rose are its petals. -/
+def roseGeomEdgeEquiv (α : Type w) : (rose α).GeomEdge ≃ α where
+  toFun := GeomEdge.lift (rose α) Prod.fst fun _ => rfl
+  invFun a := (rose α).toGeomEdge (a, true)
+  left_inv x := by
+    obtain ⟨⟨a, b⟩, rfl⟩ := (rose α).toGeomEdge_surjective x
+    refine ((rose α).toGeomEdge_eq_toGeomEdge_iff).2 ?_
+    cases b
+    · exact .inr rfl
+    · exact .inl rfl
+  right_inv _ := rfl
+
+@[simp] theorem roseGeomEdgeEquiv_toGeomEdge (α : Type w) (e : α × Bool) :
+    roseGeomEdgeEquiv α ((rose α).toGeomEdge e) = e.1 := (rfl)
 
 /-- Every rose is connected, including the rose without petals. -/
 theorem rose_connected (α : Type*) : (rose α).Connected := by
@@ -354,6 +431,22 @@ vertex `b` to the vertex `!b`. -/
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
 @[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
+
+/-- The vertices of the segment are the Booleans. -/
+def segmentVEquiv : segment.V ≃ Bool := Equiv.refl Bool
+
+/-- The darts of the segment, being Booleans, have decidable equality. -/
+instance : DecidableEq segment.E := inferInstanceAs (DecidableEq Bool)
+
+/-- The segment has a single geometric edge. -/
+instance : Unique segment.GeomEdge where
+  default := segment.toGeomEdge true
+  uniq x := by
+    obtain ⟨b, rfl⟩ := segment.toGeomEdge_surjective x
+    refine (segment.toGeomEdge_eq_toGeomEdge_iff).2 ?_
+    cases b
+    · exact .inr rfl
+    · exact .inl rfl
 
 end SerreGraph
 

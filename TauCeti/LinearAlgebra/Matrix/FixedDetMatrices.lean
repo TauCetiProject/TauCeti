@@ -29,6 +29,8 @@ bounded by a given constant.
 * `FixedDetMatrices.repsEquiv`: the representatives are parametrized by positive factor pairs
   `(a, d)` of `|n|` and residues `0 ≤ b < d`.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
+* `FixedDetMatrices.sum_reps_pow`: for even `w`, the sum of `dʷ` over the representatives
+  `(a b; 0 d)` is `σ_{w+1}(|n|)`.
 * `FixedDetMatrices.finite_setOf_abs_le`: there are only finitely many integral matrices of
   determinant `n` whose entries are at most `B` in absolute value.
 * `FixedDetMatrices.toGL`: for `n ≠ 0`, an integral matrix of determinant `n` as an element of
@@ -65,7 +67,7 @@ theorem exists_smul_mem_reps (hn : n ≠ 0) (A : FixedDetMatrix (Fin 2) ℤ n) :
 theorem smul_coe_apply {R : Type*} [CommRing R] {m : R} (g : SpecialLinearGroup (Fin 2) R)
     (A : FixedDetMatrix (Fin 2) R m) (i j : Fin 2) :
     (g • A).1 i j = g i 0 * A.1 0 j + g i 1 * A.1 1 j := by
-  rw [smul_coe, mul_apply, Fin.sum_univ_two]
+  rw [smul_coe, Matrix.mul_apply, Fin.sum_univ_two]
 
 private lemma unitriangular_of_smul_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2, ℤ)}
     (hA : A ∈ reps n) (hgA : g • A ∈ reps n) : g 0 0 = 1 ∧ g 1 0 = 0 ∧ g 1 1 = 1 := by
@@ -168,6 +170,26 @@ theorem ncard_reps (n : ℤ) : (reps n).ncard = ArithmeticFunction.sigma 1 n.nat
     ← Nat.sum_divisorsAntidiagonal' fun _ d ↦ d]
   simp only [Nat.card_fin]
   rw [Finset.sum_coe_sort]
+
+/-- **The divisor sum over the upper-triangular representatives**: for even `w` and `n ≠ 0`, the
+sum of `dʷ` over the representatives `(a b; 0 d)` in `reps n` is `σ_{w+1}(|n|)`, since each factor
+pair `(a, d)` of `|n|` carries `|d|` representatives. -/
+theorem sum_reps_pow {R : Type*} [CommRing R] {w : ℕ} (hn : n ≠ 0) (hw : Even w) :
+    ∑ A : reps n, ((A.1.1 1 1 : ℤ) : R) ^ w =
+      (ArithmeticFunction.sigma (w + 1) n.natAbs : R) := by
+  have hsign : (n.sign : R) ^ w = 1 := by
+    rw [← Int.cast_pow, ← hw.pow_abs, Int.abs_sign_of_ne_zero hn, one_pow, Int.cast_one]
+  rw [← (repsEquiv hn).symm.sum_comp, Fintype.sum_sigma]
+  simp only [coe_repsEquiv_symm_apply, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, Int.cast_mul,
+    Int.cast_natCast, mul_pow, hsign, one_mul, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+  rw [Finset.sum_coe_sort n.natAbs.divisorsAntidiagonal
+      (fun p ↦ ((p.2 : ℕ) : R) * ((p.2 : ℕ) : R) ^ w),
+    Nat.sum_divisorsAntidiagonal' (fun _ d ↦ ((d : ℕ) : R) * (d : R) ^ w),
+    ArithmeticFunction.sigma_apply]
+  push_cast
+  exact Finset.sum_congr rfl fun d _ ↦ by ring
 
 /-- **Finiteness of bounded matrices**: there are only finitely many integral matrices of
 determinant `n` whose entries are at most `B` in absolute value. -/

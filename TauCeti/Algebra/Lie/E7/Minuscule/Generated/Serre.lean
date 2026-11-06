@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.RootWeight
-public import TauCeti.Algebra.Lie.Matrix.IntegralCast
-public import TauCeti.Algebra.Lie.Presentation.Serre
+public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coroot
+public import TauCeti.Algebra.Lie.Presentation.Serre.IntegralCast
 
 /-!
 # Serre generators in the Lie algebra of the generated E₇ group
@@ -47,8 +47,7 @@ def generatedTangentMatrixLieHom :
     Derivation R (generatedCoordinateHopfAlgebra R)
       (Bialgebra.CounitAlgebra R (generatedCoordinateHopfAlgebra R) R) →ₗ⁅R⁆
         Matrix (Fin 56) (Fin 56) R :=
-  (GeneralLinear.tangentLieEquivMatrix (R := R) (B := R) 56).toLieHom.comp
-    (derivationCompLieHom (B := R) (generatedCoordinateMap R).hom)
+  GeneralLinear.tangentMatrixLieHom (generatedCoordinateMap R).hom
 
 /-- The tangent inclusion evaluates a derivation, precomposed with the coordinate map,
 on the generic matrix. -/
@@ -57,14 +56,13 @@ theorem generatedTangentMatrixLieHom_apply
       (Bialgebra.CounitAlgebra R (generatedCoordinateHopfAlgebra R) R)) :
     generatedTangentMatrixLieHom R d = GeneralLinear.tangentMatrix 56
       (derivationComp (B := R) (generatedCoordinateMap R).hom d) := by
-  simp only [generatedTangentMatrixLieHom, LieHom.comp_apply, LieEquiv.coe_toLieHom,
-    GeneralLinear.tangentLieEquivMatrix_apply, derivationCompLieHom_apply]
+  exact GeneralLinear.tangentMatrixLieHom_apply _ d
 
 /-- The tangent inclusion is injective because the generated coordinate map is surjective. -/
 theorem generatedTangentMatrixLieHom_injective :
     Function.Injective (generatedTangentMatrixLieHom R) :=
-  (GeneralLinear.tangentLieEquivMatrix (R := R) (B := R) 56).injective.comp
-    (derivationCompLieHom_injective_of_surjective _ (generatedCoordinateMap_surjective R))
+  GeneralLinear.tangentMatrixLieHom_injective_of_surjective _
+    (generatedCoordinateMap_surjective R)
 
 /-- A normalized root vector maps to its integral raising or lowering matrix. -/
 @[simp]
@@ -92,23 +90,19 @@ matrix of the `i`-th coordinates of the minuscule weights. -/
 theorem generatedTangentMatrixLieHom_generatedCartanVector (i : Fin 7) :
     generatedTangentMatrixLieHom R (generatedCartanVector R i) =
       (cartanMatrix i).map (Int.cast : ℤ → R) := by
-  rw [generatedCartanVector_def, LieHom.map_lie,
-    generatedTangentMatrixLieHom_generatedRootVector,
-    generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl, Sum.elim_inr]
-  simpa only [Function.comp_apply, matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom R)).lie_E_F_self i
+  exact map_lie_eq_cartanMatrix (generatedTangentMatrixLieHom R) _ _ i
+    (generatedTangentMatrixLieHom_generatedRootVector R (.inl i))
+    (generatedTangentMatrixLieHom_generatedRootVector R (.inr i))
 
 /-- The normalized simple-root vectors and their Cartan brackets satisfy all E₇ Serre
 relations over any commutative ring, including rings of characteristic two or three. -/
 theorem isSerreSystem_generatedRootVector :
     IsSerreSystem R (CartanMatrix.E 7) (generatedCartanVector R)
       (fun i ↦ generatedRootVector R (.inl i)) (fun i ↦ generatedRootVector R (.inr i)) := by
-  apply IsSerreSystem.of_injective (generatedTangentMatrixLieHom R)
+  exact isSerreSystem.of_injective_intCast (generatedTangentMatrixLieHom R)
     (generatedTangentMatrixLieHom_injective R)
-  simpa only [Function.comp_def, generatedTangentMatrixLieHom_generatedCartanVector,
-    generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl, Sum.elim_inr,
-    matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom R)).changeScalars (S := R)
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inl i))
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inr i))
 
 /-- The comparison from the E₇ Serre presentation to the Lie algebra of the generated group. -/
 def generatedSerreLift :
@@ -160,25 +154,9 @@ theorem generatedTangentMatrixLieHom_comp_generatedSerreLift :
 /-- Over the integers, the tangent composite recovers the existing minuscule representation. -/
 theorem generatedTangentMatrixLieHom_comp_generatedSerreLift_int :
     (generatedTangentMatrixLieHom ℤ).comp (generatedSerreLift ℤ) = serreRepresentation := by
-  apply serre_hom_ext
-  · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreH,
-      generatedTangentMatrixLieHom_generatedCartanVector]
-    calc
-      _ = cartanMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
-      _ = _ := (serreRepresentation_serreH i).symm
-  · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreE,
-      generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl]
-    calc
-      _ = raisingMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
-      _ = _ := (serreRepresentation_serreE i).symm
-  · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreF,
-      generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inr]
-    calc
-      _ = loweringMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
-      _ = _ := (serreRepresentation_serreF i).symm
+  rw [generatedTangentMatrixLieHom_comp_generatedSerreLift, serreLift_intCast isSerreSystem]
+  exact (eq_serreLift serreRepresentation_serreH serreRepresentation_serreE
+    serreRepresentation_serreF).symm
 
 end
 

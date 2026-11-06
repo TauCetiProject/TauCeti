@@ -12,9 +12,12 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 # Integral matrices of type-B spin generators
 
 The invariant spin lattice gives an integral matrix for each numbered simple root generator.
-Each generator squares to zero, so its root subgroup points are `1 + u X` over any commutative
-ring. Each matrix is supported on the pairs of basis vectors whose integral spin weights differ
-by the signed simple root of its generator.
+Each generator squares to zero (`rootIntMatrix_mul_self_eq_zero`), so its root subgroup points are
+`1 + u X` over any commutative ring. Each matrix is supported on the pairs of basis vectors whose
+integral spin weights differ by the signed simple root of its generator. Double-bracket Serre
+relations between the rational generators transport to these integral matrices. The bracket of
+opposite integral root matrices is the diagonal matrix of the basis spin weights' simple-coroot
+coordinates.
 
 ## References
 
@@ -32,6 +35,8 @@ open TauCeti.UniversalEnvelopingAlgebra
 namespace TauCeti.TypeBSpinCarrier
 
 universe v
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (n : ℕ)
 
@@ -57,6 +62,60 @@ theorem rootIntMatrix_eq_toMatrix (j : Fin (n + 1) ⊕ Fin (n + 1)) :
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n) j (latticeBasis n)
+
+/-- Each integral spin root matrix squares to zero, before changing the coefficient ring. -/
+@[simp]
+theorem rootIntMatrix_mul_self_eq_zero (j : Fin (n + 1) ⊕ Fin (n + 1)) :
+    rootIntMatrix n j * rootIntMatrix n j = 0 := by
+  let X := kostantRootOperator
+    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) j
+  have hXX : X * X = 0 :=
+    kostantRootOperator_mul_eq_zero _ _ _ _ _
+      (by simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n j)
+  have h := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hXX
+  simpa only [X, LinearMap.toMatrix_mul, map_zero, ← rootIntMatrix_eq_toMatrix] using h
+
+section SerreTransport
+
+variable {n : ℕ}
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+local notation "rootGen" k => TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k
+
+local notation "ratOp" k => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))
+
+private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    Module.End ℤ (lattice n).toAddSubgroup :=
+  kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) k
+
+private theorem rootOperator_lie_lie_eq_zero {i j : Fin (n + 1) ⊕ Fin (n + 1)}
+    (hij : ⁅rootGen i, ⁅rootGen i, rootGen j⁆⁆ = 0) :
+    ⁅rootOperator n i, ⁅rootOperator n i, rootOperator n j⁆⁆ = 0 := by
+  have hrat : ⁅ratOp i, ⁅ratOp i, ratOp j⁆⁆ = 0 := by
+    have hmap := congrArg ((rep n).toLieHom.comp
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hij
+    simpa only [LieHom.map_lie, map_zero, LieHom.comp_apply, AlgHom.toLieHom_apply] using hmap
+  exact kostantRootOperator_lie_lie_eq_zero _ _ _ _ _ hrat
+
+/-- A double-bracket Serre relation between numbered rational generators also holds between
+their integral root matrices. -/
+theorem rootIntMatrix_lie_lie_eq_zero {i j : Fin (n + 1) ⊕ Fin (n + 1)}
+    (hij : ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) i,
+      ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) i,
+        TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) j⁆⁆ = 0) :
+    ⁅rootIntMatrix n i, ⁅rootIntMatrix n i, rootIntMatrix n j⁆⁆ = 0 := by
+  have hop := rootOperator_lie_lie_eq_zero hij
+  -- Taking matrices transports the integral endomorphism bracket to the matrix bracket.
+  have hmap := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hop
+  simpa only [rootOperator, Ring.lie_def, map_sub, LinearMap.toMatrix_mul,
+    map_zero, ← rootIntMatrix_eq_toMatrix] using hmap
+
+end SerreTransport
 
 /-- A represented root generator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_latticeBasis_eq_sum (j : Fin (n + 1) ⊕ Fin (n + 1))
@@ -96,9 +155,8 @@ theorem rootIntMatrix_eq_zero_of_weight_ne (j : Fin (n + 1) ⊕ Fin (n + 1))
     rootIntMatrix n j a b = 0 := by
   rw [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
   exact repr_eq_zero_of_isCartanWeightVector
-    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
     (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) (latticeBasis n) (basisWeight n)
+    (latticeBasis n) (basisWeight n)
     (isCartanWeightVector_latticeBasis n)
     (isCartanWeightVector_coe_kostantRootOperator
       (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
@@ -128,5 +186,40 @@ theorem rootIntMatrix_inl_eq_zero_of_ne_basisReflection (i : Fin (n + 1))
     have hi := congrFun hw i
     rw [Pi.sub_apply, rootGeneratorWeight_inl, CartanMatrix.B_diag] at hi
     rcases hpair a with ha | ha | ha <;> omega
+
+/-- The bracket of opposite integral root matrices is the diagonal matrix whose entry at each
+basis vector is its spin weight's coordinate at simple coroot `i`. This identity remains integral
+at the short terminal node. -/
+theorem lie_rootIntMatrix_inl_inr (i : Fin (n + 1)) :
+    ⁅rootIntMatrix n (.inl i), rootIntMatrix n (.inr i)⁆ =
+      Matrix.diagonal (fun a ↦ basisWeight n a i) := by
+  let E := kostantRootOperator
+    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n)
+  let H := kostantCartanOperator
+    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) i
+  have hEF : ⁅E (.inl i), E (.inr i)⁆ = H := by
+    ext v
+    have h := congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W))
+      (isSl2Triple_rep_rootGenerator n i).lie_e_f
+    simpa only [E, H, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_eq_comp,
+      LinearMap.comp_apply,
+      AddSubgroup.coe_sub, coe_kostantRootOperator_apply, coe_kostantCartanOperator_apply]
+      using h
+  have hm := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hEF
+  simp only [Ring.lie_def, map_sub, LinearMap.toMatrix_mul, E] at hm
+  simp only [rootIntMatrix_eq_toMatrix, Ring.lie_def, hm]
+  ext a b
+  rw [LinearMap.toMatrix_apply, Matrix.diagonal_apply]
+  simp only [H, kostantCartanOperator_apply_of_isCartanWeightVector _ _ _ _ _
+    (isCartanWeightVector_latticeBasis n b) i, map_zsmul, Module.Basis.repr_self,
+    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
+  by_cases h : a = b
+  · subst b
+    simp only [↓reduceIte, mul_one]
+  · simp only [h, Ne.symm h, ↓reduceIte, mul_zero]
 
 end TauCeti.TypeBSpinCarrier

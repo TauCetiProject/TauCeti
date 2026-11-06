@@ -32,7 +32,7 @@ positive length on the left. It vanishes at every vertex exactly when these Kosz
 projective resolutions, as for every orientation of a connected graph which is not a tree
 (`TauCeti.preprojectiveKoszulLeft_injective_of_not_isAcyclic`). This file computes it when `Π` is
 finite-dimensional, which by
-`TauCeti.finiteDimensional_preprojectiveAlgebra_of_isSimplyLaced` covers every orientation of a
+`TauCeti.finiteDimensional_preprojectiveAlgebra_of_iso` covers every orientation of a
 simply-laced Dynkin diagram: **`K_v` is one-dimensional at every vertex**, spanned by a single
 element `y_v` of some graded corner `e_v Π_n e_u`. So the Koszul complex fails to be a resolution
 by exactly a one-dimensional simple module at its left end, concentrated in one degree.
@@ -349,7 +349,7 @@ theorem finrank_ker_preprojectiveKoszulLeft [FiniteDimensional k Π] (v : Q) :
   -- The kernel is the line through `y`.
   let y' : LinearMap.ker (preprojectiveKoszulLeft k v) :=
     ⟨⟨y, (mem_preprojectiveRightProjective_iff k _ y).2 hyv⟩, (hmem _).2 hyb⟩
-  refine (finrank_eq_one_iff_of_nonzero' y' fun h => hy0 (congrArg
+  refine (finrank_eq_one_iff_of_ne_zero' y' fun h => hy0 (congrArg
     (fun x : LinearMap.ker (preprojectiveKoszulLeft k v) =>
       ((x : preprojectiveRightProjective k (Symmetrify.of.obj v)) : Π)) h)).2 fun x => ?_
   obtain ⟨t, ht⟩ := hz x (by

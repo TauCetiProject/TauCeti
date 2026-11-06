@@ -15,6 +15,10 @@ is either the whole sum or zero, so it differs from `∑' i, u i` by at most `�
 (`Set.Subsingleton.enorm_sum_sub_tsum_le`). Such a uniform bound on the partial sums is what
 dominated convergence needs to pass from pointwise to `Lᵖ` convergence of a sum of functions with
 pairwise disjoint supports.
+
+For families `f` and `y` in seminormed groups with `∑ i, ‖f i‖ * ‖y i‖` summable, the extended sum
+`∑' i, ‖f i‖ₑ * ‖y i‖ₑ` is the extended real `ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖)`
+(`TauCeti.tsum_enorm_mul_enorm_eq_ofReal`).
 -/
 
 public section
@@ -32,3 +36,16 @@ theorem Set.Subsingleton.enorm_sum_sub_tsum_le {κ E : Type*} [SeminormedAddComm
     by_cases his : i ∈ s
     · simp [Finset.sum_eq_single_of_mem i his fun j _ => hi j, enorm_eq_nnnorm]
     · rw [Finset.sum_eq_zero fun j hj => hi j fun h => his (h ▸ hj), zero_sub, enorm_neg]
+
+namespace TauCeti
+
+/-- If `∑ i, ‖f i‖ * ‖y i‖` is summable, the extended sum `∑' i, ‖f i‖ₑ * ‖y i‖ₑ` is its real sum
+viewed as an extended real. -/
+theorem tsum_enorm_mul_enorm_eq_ofReal {ι G H : Type*} [SeminormedAddCommGroup G]
+    [SeminormedAddCommGroup H] {f : ι → G} {y : ι → H}
+    (hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖) :
+    ∑' i, ‖f i‖ₑ * ‖y i‖ₑ = ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
+  rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy]
+  simp [ENNReal.ofReal_mul]
+
+end TauCeti

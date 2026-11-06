@@ -7,16 +7,18 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
-# Exponential integrals on the real line
+# Exponential integrals on the real line and radial exponentials
 
-This file records integrability and evaluation of exponential integrands on a half-line or the
-whole real line: natural powers multiplied by an exponentially decaying factor, the exact rate at
+This file records integrability and evaluation of exponential integrands: on a half-line or the
+whole real line, natural powers multiplied by an exponentially decaying factor, the exact rate at
 which a bare exponential is integrable on a right half-line, and integrability of the two-sided
-exponential.
+exponential; and, on a finite-dimensional real normed space, integrability of the radial
+exponential `exp (-a ‖x‖)` for every additive Haar measure, by integrating in polar coordinates.
 
 Mathlib supplies the *sufficient* direction of the right-half-line integrability criterion,
 `integrableOn_exp_mul_Ioi`, for a negative rate.  `integrableOn_exp_mul_Ioi_iff` adds the converse,
@@ -34,6 +36,10 @@ inclusion.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
+  `exp (b * x * I)`.
+* `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
+  space when `0 < a`.
 -/
 
 public section
@@ -110,11 +116,31 @@ theorem lintegral_ofReal_exp_neg_mul_mul_lintegral (ν : Measure ℝ≥0) [SFini
           simpa using congrArg ENNReal.ofReal
             (integral_pow_mul_exp_neg_mul_Ioi 0 htx)
 
+/-- The radial exponential `exp (-(a * ‖x‖))` is integrable for every additive Haar measure on a
+finite-dimensional real normed space, when `0 < a`. -/
+theorem integrable_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {a : ℝ} (ha : 0 < a) :
+    Integrable (fun x : E ↦ Real.exp (-(a * ‖x‖))) μ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have : CompactSpace E := Finite.compactSpace
+    exact (integrable_const (1 : ℝ)).congr (.of_forall fun x ↦ by simp [Subsingleton.elim x 0])
+  · refine (integrable_fun_norm_addHaar μ (f := fun t ↦ Real.exp (-(a * t)))).mpr ?_
+    simpa only [smul_eq_mul] using integrableOn_pow_mul_exp_neg_mul_Ioi _ ha
+
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
   simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
     (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
+
+/-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
+the line. -/
+theorem integrable_exp_mul_I_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (b : ℝ) :
+    Integrable
+      (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ)) :=
+  ((integrable_exp_neg_mul_abs ha).ofReal).bdd_mul (c := 1) (by fun_prop)
+    (.of_forall fun x ↦ by simp [Complex.norm_exp])
 
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set

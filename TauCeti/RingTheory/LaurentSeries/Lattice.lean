@@ -41,6 +41,10 @@ is the analogue for a discrete coefficient module of the valuation topology of a
 field. It is a Hausdorff linear topology, and the lattices are open. Finite sums of monomials
 are dense, so continuous linear maps out of `V((t))` are determined by their values on monomials,
 and a linear map to a discrete module is continuous exactly when it vanishes on some lattice.
+The associated additive uniformity is complete for every coefficient module: Cauchy filters
+stabilize all coefficients below each exponent bound.
+Applying a linear map to every coefficient gives `LinearMap.hahnModuleMap`, a continuous map
+preserving every lattice; these maps respect identities, composition, and monomials.
 
 ## Main definitions
 
@@ -352,6 +356,22 @@ theorem latticeEquiv_symm_apply (a : ℤ) (f : TauCeti.LaurentSeries.lattice R V
 theorem lattice_antitone : Antitone (lattice R V) :=
   fun _ _ h ↦ Submodule.comap_mono (TauCeti.LaurentSeries.lattice_antitone h)
 
+/-- Convolution by a scalar series in `U_a(R)` sends `U_b(V)` into `U_(a+b)(V)`. -/
+theorem smul_mem_lattice {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    {a b : ℤ} {f : HahnSeries ℤ R} {g : HahnModule ℤ R V}
+    (hf : f ∈ TauCeti.LaurentSeries.lattice R R a) (hg : g ∈ lattice R V b) :
+    f • g ∈ lattice R V (a + b) := by
+  rw [mem_lattice_iff]
+  intro n hn
+  by_contra h
+  obtain ⟨i, hi, j, hj, hij⟩ := Set.mem_vadd.mp
+    (_root_.HahnModule.support_smul_subset_vadd_support h)
+  have ha : a ≤ i := le_of_not_gt fun hlt ↦
+    hi (TauCeti.LaurentSeries.mem_lattice_iff.mp hf i hlt)
+  have hb : b ≤ j := le_of_not_gt fun hlt ↦ hj ((mem_lattice_iff R V).mp hg j hlt)
+  simp only [vadd_eq_add] at hij
+  omega
+
 end Lattice
 
 section Quotient
@@ -423,6 +443,23 @@ namespace HahnModule
 
 open TauCeti.HahnModule
 
+/-- Multiplying by a Laurent monomial translates the lattice bound. -/
+theorem single_smul_mem_lattice_iff {R V : Type*} [Semiring R] [AddCommMonoid V]
+    [Module R V] (k a : ℤ) (f : HahnModule ℤ R V) :
+    HahnSeries.single k (1 : R) • f ∈ lattice R V (a + k) ↔ f ∈ lattice R V a := by
+  simp only [mem_lattice_iff]
+  constructor
+  · intro h n hn
+    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n)
+    rw [vadd_eq_add, one_smul] at hc
+    rw [← hc]
+    exact h (k + n) (by omega)
+  · intro h n hn
+    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n - k)
+    rw [vadd_eq_add, add_sub_cancel, one_smul] at hc
+    rw [hc]
+    exact h (n - k) (by omega)
+
 variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
 
 /-- A series agrees with its finite truncation at the exponents `[ord f, a)` modulo `U_a(V)`. -/
@@ -483,6 +520,14 @@ noncomputable instance instTopologicalSpace : TopologicalSpace (HahnModule ℤ R
 instance : IsTopologicalAddGroup (HahnModule ℤ R V) :=
   (latticeFilterBasis R V).isTopologicalAddGroup
 
+/-- The additive uniformity associated to the lattice topology. -/
+noncomputable instance instUniformSpace : UniformSpace (HahnModule ℤ R V) :=
+  IsTopologicalAddGroup.rightUniformSpace _
+
+/-- The lattice uniformity makes module-valued Laurent series a uniform additive group. -/
+instance instIsUniformAddGroup : IsUniformAddGroup (HahnModule ℤ R V) :=
+  isUniformAddGroup_of_addCommGroup
+
 /-- The lattices `U_a(V)` form a basis of neighbourhoods of zero in `HahnModule ℤ R V`. -/
 theorem hasBasis_nhds_zero_lattice :
     (𝓝 (0 : HahnModule ℤ R V)).HasBasis (fun _ : ℤ ↦ True)
@@ -496,6 +541,49 @@ theorem hasBasis_nhds_zero_lattice :
 theorem lattice_mem_nhds_zero (a : ℤ) :
     (lattice R V a : Set (HahnModule ℤ R V)) ∈ 𝓝 0 :=
   (hasBasis_nhds_zero_lattice R V).mem_of_mem trivial
+
+/-- A Cauchy filter eventually agrees with a fixed series below each exponent bound. -/
+private theorem cauchy_exists_approx {ℱ : Filter (HahnModule ℤ R V)} (hℱ : Cauchy ℱ) :
+    ∃ x : ℤ → HahnModule ℤ R V, ∀ a, ∀ᶠ y in ℱ,
+      ∀ n < a, ((of R).symm y).coeff n = ((of R).symm (x a)).coeff n := by
+  have := hℱ.1
+  have ht := hℱ.2
+  rw [uniformity_eq_comap_nhds_zero, ← tendsto_iff_comap] at ht
+  have h (a : ℤ) : ∃ x : HahnModule ℤ R V, ∀ᶠ y in ℱ,
+      ∀ n < a, ((of R).symm y).coeff n = ((of R).symm x).coeff n := by
+    obtain ⟨x, hx⟩ := (ht.eventually (lattice_mem_nhds_zero R V a)).curry.exists
+    exact ⟨x, hx.mono fun y hy ↦ by
+      simpa only [of_symm_sub, coeff_sub, sub_eq_zero] using
+        (TauCeti.HahnModule.mem_lattice_iff R V).mp hy⟩
+  exact Classical.axiomOfChoice h
+
+/-- Module-valued Laurent series are complete for the lattice uniformity, with no finiteness
+or freeness assumption on the coefficient module. -/
+instance instCompleteSpace : CompleteSpace (HahnModule ℤ R V) where
+  complete {ℱ} hℱ := by
+    classical
+    have := hℱ.1
+    obtain ⟨x, hx⟩ := cauchy_exists_approx R V hℱ
+    let c (n : ℤ) := ((of R).symm (x (n + 1))).coeff n
+    have hc (a n : ℤ) (hn : n < a) : c n = ((of R).symm (x a)).coeff n := by
+      obtain ⟨y, hy, hya⟩ := ((hx (n + 1)).and (hx a)).exists
+      exact (hy n (Int.lt_succ n)).symm.trans (hya n hn)
+    -- Below zero the limit agrees with one Laurent series, so its support is bounded below.
+    have hb : BddBelow (Function.support c) := by
+      refine ⟨min 0 ((of R).symm (x 0)).order, fun n hn ↦ le_of_not_gt fun h ↦ ?_⟩
+      exact hn ((hc 0 n (lt_of_lt_of_le h (min_le_left _ _))).trans
+        (coeff_eq_zero_of_lt_order (lt_of_lt_of_le h (min_le_right _ _))))
+    let z : HahnSeries ℤ V := HahnSeries.ofSuppBddBelow c hb
+    refine ⟨of R z, ?_⟩
+    apply (tendsto_sub_nhds_zero_iff).mp
+    apply (hasBasis_nhds_zero_lattice R V).tendsto_right_iff.mpr
+    intro a _
+    filter_upwards [hx a] with y hy
+    rw [SetLike.mem_coe, TauCeti.HahnModule.mem_lattice_iff R V]
+    intro n hn
+    simp only [of_symm_sub, Equiv.symm_apply_apply, coeff_sub, z, coeff_ofSuppBddBelow,
+      sub_eq_zero]
+    exact (hy n hn).trans (hc a n hn).symm
 
 /-- Every lattice `U_a(V)` is open in `HahnModule ℤ R V`. -/
 theorem isOpen_lattice (a : ℤ) : IsOpen (lattice R V a : Set (HahnModule ℤ R V)) :=
@@ -545,6 +633,67 @@ end TauCeti.HahnModule
 namespace LinearMap
 
 open _root_.HahnModule TauCeti.HahnModule Topology
+
+section Map
+
+variable {R V W U : Type*} [Ring R] [AddCommGroup V] [Module R V]
+  [AddCommGroup W] [Module R W] [AddCommGroup U] [Module R U]
+
+/-- Applying a linear map to each coefficient of a module-valued Laurent series, continuously
+for the lattice topologies. -/
+noncomputable def hahnModuleMap (u : V →ₗ[R] W) : HahnModule ℤ R V →L[R] HahnModule ℤ R W := by
+  let f : HahnModule ℤ R V →ₗ[R] HahnModule ℤ R W :=
+    { toFun := fun x ↦ of R (((of R).symm x).map u)
+      map_add' := fun x y ↦ by
+        apply (of R).symm.injective
+        ext n
+        simp [map_coeff]
+      map_smul' := fun c x ↦ by
+        apply (of R).symm.injective
+        ext n
+        simp [map_coeff] }
+  refine ⟨f, continuous_of_continuousAt_zero f ?_⟩
+  rw [ContinuousAt, map_zero]
+  refine ((hasBasis_nhds_zero_lattice R V).tendsto_iff
+    (hasBasis_nhds_zero_lattice R W)).mpr fun a _ ↦
+      ⟨a, trivial, fun x hx ↦ (mem_lattice_iff R W).mpr fun n hn ↦ by
+        simp [f, map_coeff, (mem_lattice_iff R V).mp hx n hn]⟩
+
+/-- The coefficientwise map agrees with `HahnSeries.map` through `HahnModule.of`. -/
+theorem hahnModuleMap_apply (u : V →ₗ[R] W) (f : HahnModule ℤ R V) :
+    u.hahnModuleMap f = of R (((of R).symm f).map u) :=
+  (rfl)
+
+/-- Coefficientwise linear maps preserve every lattice. -/
+theorem hahnModuleMap_mem_lattice (u : V →ₗ[R] W) {a : ℤ} {f : HahnModule ℤ R V}
+    (hf : f ∈ lattice R V a) : u.hahnModuleMap f ∈ lattice R W a :=
+  (mem_lattice_iff R W).mpr fun n hn ↦ by
+    simp [hahnModuleMap_apply, map_coeff, (mem_lattice_iff R V).mp hf n hn]
+
+/-- The coefficients of `hahnModuleMap u f` are the images under `u` of the coefficients of `f`. -/
+@[simp]
+theorem coeff_hahnModuleMap (u : V →ₗ[R] W) (f : HahnModule ℤ R V) (n : ℤ) :
+    ((of R).symm (u.hahnModuleMap f)).coeff n = u (((of R).symm f).coeff n) :=
+  (rfl)
+
+@[simp]
+theorem hahnModuleMap_single (u : V →ₗ[R] W) (n : ℤ) (v : V) :
+    u.hahnModuleMap (of R (HahnSeries.single n v)) = of R (HahnSeries.single n (u v)) := by
+  rw [hahnModuleMap_apply, Equiv.symm_apply_apply]
+  exact congrArg (of R) (HahnSeries.map_single u.toAddMonoidHom.toZeroHom)
+
+@[simp]
+theorem hahnModuleMap_id : (LinearMap.id : V →ₗ[R] V).hahnModuleMap = .id R _ := by
+  ext f n : 3
+  simp
+
+@[simp]
+theorem hahnModuleMap_comp (v : W →ₗ[R] U) (u : V →ₗ[R] W) :
+    (v.comp u).hahnModuleMap = v.hahnModuleMap.comp u.hahnModuleMap := by
+  ext f n : 3
+  simp
+
+end Map
 
 variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
 

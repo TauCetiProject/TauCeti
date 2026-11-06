@@ -134,7 +134,7 @@ private theorem rep_serreRootGenerator_sq_apply_matrixBasis (k : Fin 6 ⊕ Fin 6
     (fun f : Module.End ℚ ((Fin 27 ⊕ Fin 27) → ℚ) =>
       f ((matrixBasis (rootSource k) : lattice) : (Fin 27 ⊕ Fin 27) → ℚ))
     (rep_serreRootGenerator_sq k)
-  simpa only [pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-! ## Closed root-subgroup morphisms -/
 
@@ -165,6 +165,18 @@ theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
     mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
     ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at h
   exact Function.Surjective.of_comp h
+
+/-- Surjectivity of each numbered root-subgroup coordinate map persists under arbitrary
+commutative base change, in the transported quotient presentation. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective
+    (A : Type*) [CommRing A] (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap A k]
+  exact (AdditiveGroup.gaScalarTensorBialgEquiv (k := ℤ) (K := A)).surjective.comp
+    ((CommHopfAlgCat.baseChangeMap_surjective (K := A)
+      (rootSubgroupIntegralCoordinateMap k)
+      (rootSubgroupIntegralCoordinateMap_surjective k)).comp
+      (ConcreteCategory.bijective_of_isIso (baseChangeCoordinateIso A).hom).2)
 
 /-- **Every numbered root-subgroup map into the doubled type-`E₆` minuscule carrier is a closed
 immersion.** Its scheme-theoretic image is therefore a closed copy of `𝔾ₐ`, as a pinning requires

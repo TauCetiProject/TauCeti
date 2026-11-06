@@ -46,6 +46,8 @@ as for the local ring at a point of a complete intersection curve in affine `n`-
   generate `𝔪`.
 * `TauCeti.span_residue_apply_eq_top_of_le_span_sup_sq`: conversely, elements of `𝔪` that span
   `𝔪` modulo `𝔪²` have gradients spanning `κⁿ`.
+* `TauCeti.card_le_card_of_le_span_sup_sq`: elements of `𝔪` that span `𝔪` modulo `𝔪²` are at
+  least as many as the coordinates.
 * `TauCeti.linearIndependent_residue_apply_sum_elim`: completing elements with independent
   gradients by elements independent modulo them and `𝔪²` keeps the gradients independent.
 * `TauCeti.exists_coordinates`: a coordinate system exists when `Ω[Q⁄K]` has a finite basis, `𝔪`
@@ -155,8 +157,8 @@ theorem maximalIdeal_eq_span_range_of_span_eq_top [Finite ι] [Finite κ]
     (h : Submodule.span (ResidueField Q) (Set.range fun k i ↦ residue Q (D i (w k))) = ⊤) :
     maximalIdeal Q = Ideal.span (Set.range w) := by
   refine le_antisymm ?_ (Ideal.span_le.2 (Set.range_subset_iff.2 hw))
-  refine Submodule.le_of_le_smul_of_le_jacobson_bot
-    (hx ▸ Submodule.fg_span (Set.finite_range x)) (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge ?_
+  refine Submodule.le_of_le_smul_of_le_jacobson
+    (hx ▸ Submodule.fg_span (Set.finite_range x)) (IsLocalRing.ringJacobson_eq_maximalIdeal Q).ge ?_
   intro a ha
   rw [smul_eq_mul, ← sq]
   exact mem_span_range_sup_maximalIdeal_sq hx hD hw ha (h ▸ Submodule.mem_top)
@@ -180,6 +182,22 @@ theorem span_residue_apply_eq_top_of_le_span_sup_sq [Finite ι]
     simp [← huv, congr_fun (residue_apply_eq_zero_of_mem_sq (D := D) hv) i']
   rw [← hxi, hgrad]
   exact residue_apply_mem_span_range_of_mem_span hw hu
+
+/-- Elements of `𝔪` that span `𝔪` modulo `𝔪²` are at least as many as the coordinates: the dual
+derivations make the classes of the coordinates `xᵢ` linearly independent in the cotangent space
+`𝔪/𝔪²`, whose dimension is therefore at least `Fintype.card ι`. -/
+theorem card_le_card_of_le_span_sup_sq [Fintype ι] [Fintype κ]
+    (hx : ∀ i, x i ∈ maximalIdeal Q)
+    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {w : κ → Q}
+    (hw : ∀ k, w k ∈ maximalIdeal Q)
+    (h : maximalIdeal Q ≤ Ideal.span (Set.range w) ⊔ maximalIdeal Q ^ 2) :
+    Fintype.card ι ≤ Fintype.card κ := by
+  have := span_residue_apply_eq_top_of_le_span_sup_sq hx hD hw h
+  calc Fintype.card ι = finrank (ResidueField Q) (ι → ResidueField Q) :=
+        (finrank_fintype_fun_eq_card _).symm
+    _ = finrank (ResidueField Q) (Submodule.span (ResidueField Q)
+          (Set.range fun k i ↦ residue Q (D i (w k)))) := by rw [this, finrank_top]
+    _ ≤ Fintype.card κ := finrank_range_le_card _
 
 /-- Let `wₖ ∈ 𝔪` have linearly independent gradients, and let `yⱼ ∈ 𝔪` be linearly independent
 modulo `(wₖ) + 𝔪²`: a combination `∑ cⱼ yⱼ` lies in `(wₖ) + 𝔪²` only if every `cⱼ ∈ 𝔪`. Then the
@@ -250,7 +268,7 @@ theorem exists_coordinates [Algebra.FormallyEtale K (ResidueField Q)]
   refine ⟨x, b', le_antisymm ?_ (Ideal.span_le.2 (Set.range_subset_iff.2 hx𝔪)), hb'⟩
   -- Every `a ∈ 𝔪` agrees with a combination of the `xᵢ` modulo `𝔪²`, by injectivity of the
   -- conormal map; Nakayama's lemma concludes.
-  refine Submodule.le_of_le_smul_of_le_jacobson_bot hfg (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge
+  refine Submodule.le_of_le_smul_of_le_jacobson hfg (IsLocalRing.ringJacobson_eq_maximalIdeal Q).ge
     fun a ha ↦ ?_
   choose c hc using fun i ↦ residue_surjective (bκ.repr (1 ⊗ₜ D K Q a) i)
   have hmem : a - ∑ i, c i * x i ∈ RingHom.ker (algebraMap Q (ResidueField Q)) :=
@@ -396,7 +414,7 @@ theorem exists_hypersurface_presentation [Fintype σ] (b : Basis ι Q Ω[Q⁄K])
   obtain rfl : T = {s₀}ᶜ := by rw [← hs₀, compl_compl]
   have hker : Ideal.span (g '' {s₀}ᶜ) ⊔ Ideal.span {g s₀} = RingHom.ker π := by
     have : g '' {s₀}ᶜ ∪ {g s₀} = Set.range g := by
-      simpa [Set.image_union] using congrArg (g '' ·) (Set.compl_union_self {s₀})
+      rw [← Set.image_singleton, ← Set.image_union, Set.compl_union_self, Set.image_univ]
     rw [hg, ← this, Ideal.span_union]
   have hmap : Ideal.span {Ideal.Quotient.mk (Ideal.span (g '' {s₀}ᶜ)) (g s₀)} =
       (Ideal.span {g s₀}).map (Ideal.Quotient.mk _) := by

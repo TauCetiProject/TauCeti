@@ -94,12 +94,9 @@ theorem MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq {s : ℝ} (hs : finrank
         (by simpa only [innerₗ_apply_apply] using continuous_inner) hint
       zero_at_infty' := hneg ▸ tendsto_integral_exp_inner_smul_cocompact _ }
   -- Fourier inversion on `𝓢'` identifies `u` with `𝓕⁻ v`.
-  have hu' : (u : 𝓢'(E, F)) = 𝓕⁻ (v : 𝓢'(E, F)) := by
-    rw [← hv]
-    exact (FourierTransform.fourierInv_fourier_eq _).symm
-  refine ⟨g, Lp.ae_eq_of_toTemperedDistribution_apply_eq u
-    g.continuous.locallyIntegrable fun φ => ?_⟩
-  rw [hu', Lp.fourierInv_toTemperedDistribution_apply, ZeroAtInftyContinuousMap.coe_mk]
+  refine ⟨g, ?_⟩
+  rw [ZeroAtInftyContinuousMap.coe_mk]
+  exact Lp.ae_eq_fourierInv_of_fourier_eq hv
 
 end TemperedDistribution
 
@@ -146,7 +143,7 @@ private def toZeroAtInftyₗ (hk : finrank ℝ E < 2 * k) :
       simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_add (value k u) (value k v)
     filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec,
       (exists_zeroAtInftyContinuousMap_ae_eq hk v).choose_spec, hadd] with x hu hv hadd
-    rw [value_add, hadd, Pi.add_apply, hu, hv, ZeroAtInftyContinuousMap.add_apply]
+    rw [value_add, hadd, Pi.add_apply, hu, hv, _root_.add_apply]
   map_smul' c u := by
     refine eq_of_value_ae_eq (u := c • u)
       (exists_zeroAtInftyContinuousMap_ae_eq hk (c • u)).choose_spec ?_
@@ -155,7 +152,7 @@ private def toZeroAtInftyₗ (hk : finrank ℝ E < 2 * k) :
     filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec, hsmul]
       with x hu hsmul
     rw [value_smul, hsmul, Pi.smul_apply, hu, RingHom.id_apply,
-      ZeroAtInftyContinuousMap.smul_apply]
+      _root_.smul_apply]
 
 private theorem value_ae_eq_toZeroAtInftyₗ (hk : finrank ℝ E < 2 * k)
     (u : Wkp (volume : Measure E) ⊤ 2 k) : value k u =ᵐ[volume] toZeroAtInftyₗ hk u :=

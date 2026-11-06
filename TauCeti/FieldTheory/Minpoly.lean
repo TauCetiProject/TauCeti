@@ -9,9 +9,9 @@ public import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 
 /-!
-# Minimal polynomials of quadratic elements
+# Minimal polynomials of quadratic elements and units
 
-This file collects reusable facts about minimal polynomials of quadratic elements.
+This file collects reusable facts about minimal polynomials of quadratic elements and of units.
 
 ## Main results
 
@@ -19,6 +19,8 @@ This file collects reusable facts about minimal polynomials of quadratic element
   of a quadratic element of an `F`-algebra whose square is in the base field `F`.
 * `IsIntegral.exists_quadratic_relation`: a degree-two integral element of a ring algebra
   satisfies a monic quadratic relation over its commutative base ring.
+* `minpoly.coeff_zero_ne_zero_of_isUnit`: the minimal polynomial of an integral unit has nonzero
+  constant coefficient.
 -/
 
 public section
@@ -60,3 +62,18 @@ theorem IsIntegral.exists_quadratic_relation {K L : Type*} [CommRing K] [Ring L]
     have h0 := minpoly.aeval K y
     rw [hpoly] at h0
     simpa using h0
+
+/-- The minimal polynomial of an integral unit has nonzero constant coefficient. Unlike
+`minpoly.coeff_zero_ne_zero`, the algebra need not be a domain. -/
+theorem minpoly.coeff_zero_ne_zero_of_isUnit {A B : Type*} [Field A] [Ring B] [Algebra A B]
+    {x : B} (hx : IsIntegral A x) (hu : IsUnit x) : (minpoly A x).coeff 0 ≠ 0 := by
+  intro h0
+  have hm : minpoly A x ≠ 0 := minpoly.ne_zero hx
+  have hdiv : divX (minpoly A x) ≠ 0 := fun h ↦ hm (by rwa [divX_eq_zero_iff, h0, C_0] at h)
+  have hX : Polynomial.aeval x (divX (minpoly A x)) = 0 := by
+    have hmx := minpoly.aeval A x
+    have h := divX_mul_X_add (minpoly A x)
+    rw [h0, C_0, add_zero] at h
+    rw [← h, map_mul, aeval_X] at hmx
+    exact hu.mul_left_eq_zero.mp hmx
+  exact absurd (minpoly.degree_le_of_ne_zero A x hdiv hX) (not_le.mpr (degree_divX_lt hm))

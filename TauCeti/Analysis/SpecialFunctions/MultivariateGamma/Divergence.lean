@@ -192,8 +192,7 @@ private theorem exists_closedBall_subset_posDef_bounds (B : Matrix (Fin p) (Fin 
             (B * (A : Matrix (Fin p) (Fin p) ℝ)).trace ≤ τ := by
   let A₀ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
     ⟨1, Matrix.isHermitian_iff_isSelfAdjoint.1 Matrix.isHermitian_one⟩
-  obtain ⟨ε, hε, hball⟩ :=
-    Metric.isOpen_iff.1 (isOpen_setOfPred_posDefMatrix p) A₀ Matrix.PosDef.one
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (isOpen_posDefMatrix p) A₀ Matrix.PosDef.one
   set r := min (ε / 2) (δ / 3)
   have hr0 : 0 < r := lt_min (half_pos hε) (by positivity)
   set K := Metric.closedBall A₀ r
@@ -284,7 +283,7 @@ theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_mul_eq_top_of_dotProduct_mul
         rw [ENNReal.tsum_mul_right, hsum,
           ENNReal.top_mul (Metric.measure_closedBall_pos _ _ hr0).ne']
     _ ≤ _ := by
-        refine le_trans (ENNReal.tsum_le_tsum fun k => ?_)
+        refine le_trans (tsum_le_tsum fun k => ?_)
           (tsum_setLIntegral_add_smul_le (by fun_prop) hvv hrE hKP hE0)
         rw [← setLIntegral_const]
         exact setLIntegral_mono' Metric.isClosed_closedBall.measurableSet (hbound k)

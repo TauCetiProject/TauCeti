@@ -41,6 +41,8 @@ level `d` with `d • A_L = 0`; it contains `-1` exactly when `A_L` is `2`-eleme
   nondegenerate `L`.
 * `TauCeti.IntegralLattice.Isometry.congruenceSubgroup_le_discriminantKernel`: the congruence
   subgroup of level `d` lies in `Õ(L)` when `d` kills `A_L`.
+* `TauCeti.IntegralLattice.Isometry.discriminantGroupEquiv_unitsSMul_apply`: multiplication by a
+  unit `u` of `ℤ` acts on `A_L` as multiplication by `u`.
 * `TauCeti.IntegralLattice.Isometry.neg_mem_discriminantKernel_iff`: `-1 ∈ Õ(L)` exactly when
   `2 • A_L = 0`.
 * `TauCeti.IntegralLattice.IsUnimodular.discriminantKernel_eq_top`: `Õ(L) = O(L)` for unimodular
@@ -100,6 +102,17 @@ theorem discriminantGroupEquiv_neg (L : IntegralLattice V) :
     ext
     simp
 
+/-- Multiplication by a unit `u` of `ℤ` acts on the discriminant group as multiplication by `u`. -/
+@[simp]
+theorem discriminantGroupEquiv_unitsSMul_apply (u : ℤˣ) (L : IntegralLattice V)
+    (a : L.DiscriminantGroup) : (unitsSMul u L).discriminantGroupEquiv a = (u : ℤ) • a := by
+  induction a using Submodule.Quotient.induction_on with
+  | _ x =>
+    rw [discriminantGroupEquiv_mk, ← Submodule.Quotient.mk_smul]
+    congr 1
+    ext
+    simp
+
 /-! ### The discriminant kernel -/
 
 /-- The discriminant kernel `Õ(L)`: the self-isometries of `L` acting trivially on the
@@ -123,12 +136,12 @@ theorem mem_discriminantKernel_iff {g : Isometry L L} :
   rw [discriminantKernel, MonoidHom.mem_ker]
   refine ⟨fun hg x hx ↦ ?_, fun hg ↦ LinearEquiv.ext fun a ↦ ?_⟩
   · have h := LinearEquiv.congr_fun hg (Submodule.Quotient.mk ⟨x, hx⟩)
-    rw [discriminantGroupHom_apply_mk, LinearEquiv.coe_one, id_eq,
+    rw [discriminantGroupHom_apply_mk, FunLike.coe_one_eq_id, id_eq,
       L.discriminantGroup_mk_eq_iff] at h
     simpa using h
   · induction a using Submodule.Quotient.induction_on with
     | _ x =>
-      rw [discriminantGroupHom_apply_mk, LinearEquiv.coe_one, id_eq,
+      rw [discriminantGroupHom_apply_mk, FunLike.coe_one_eq_id, id_eq,
         L.discriminantGroup_mk_eq_iff]
       simpa using hg x x.property
 
@@ -152,7 +165,7 @@ theorem congruenceSubgroup_le_discriminantKernel {d : ℤ}
     have h1 : g = 1 := carrierEquivHom_injective L <| LinearEquiv.ext fun x ↦ by
       obtain ⟨y, hy⟩ := mem_congruenceSubgroup_iff.mp hg x
       rw [zero_smul, sub_eq_zero] at hy
-      rw [carrierEquivHom_apply, hy, map_one, LinearEquiv.coe_one, id_eq]
+      rw [carrierEquivHom_apply, hy, map_one, FunLike.coe_one_eq_id, id_eq]
     rw [h1]
     exact one_mem _
   rw [mem_discriminantKernel_iff]
@@ -178,9 +191,9 @@ theorem neg_mem_discriminantKernel_iff :
   rw [discriminantKernel, MonoidHom.mem_ker, discriminantGroupHom_apply, discriminantGroupEquiv_neg]
   refine ⟨fun h a ↦ ?_, fun h ↦ LinearEquiv.ext fun a ↦ ?_⟩
   · have ha := LinearEquiv.congr_fun h a
-    rw [LinearEquiv.neg_apply, LinearEquiv.coe_one, id_eq, neg_eq_iff_add_eq_zero] at ha
+    rw [LinearEquiv.neg_apply, FunLike.coe_one_eq_id, id_eq, neg_eq_iff_add_eq_zero] at ha
     rw [two_zsmul, ha]
-  · rw [LinearEquiv.neg_apply, LinearEquiv.coe_one, id_eq, neg_eq_iff_add_eq_zero, ← two_zsmul]
+  · rw [LinearEquiv.neg_apply, FunLike.coe_one_eq_id, id_eq, neg_eq_iff_add_eq_zero, ← two_zsmul]
     exact h a
 
 /-! ### Conjugation -/
@@ -197,6 +210,16 @@ theorem discriminantGroupHom_conjMulEquiv (e : Isometry L M) (g : Isometry L L) 
     Isometry.ext fun y ↦ by rw [conjMulEquiv_apply, trans_apply, trans_apply]
   rw [discriminantGroupHom_apply, discriminantGroupHom_apply, h, discriminantGroupEquiv_trans,
     discriminantGroupEquiv_trans, discriminantGroupEquiv_symm]
+
+/-- Pointwise form of `discriminantGroupHom_conjMulEquiv`: the conjugate of `g` by `e : L ≅ M`
+acts on the image under `e` of a discriminant class as `e` applied to the action of `g`. -/
+@[simp]
+theorem discriminantGroupEquiv_conjMulEquiv_apply (e : Isometry L M) (g : Isometry L L)
+    (z : L.DiscriminantGroup) :
+    (e.conjMulEquiv g).discriminantGroupEquiv (e.discriminantGroupEquiv z) =
+      e.discriminantGroupEquiv (g.discriminantGroupEquiv z) := by
+  rw [← discriminantGroupHom_apply, discriminantGroupHom_conjMulEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, discriminantGroupHom_apply]
 
 /-- Conjugation by an isometry preserves membership in the discriminant kernel. -/
 @[simp]
