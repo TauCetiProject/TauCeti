@@ -148,15 +148,17 @@ private theorem image_subset_or_image_subset {U : Set N} (hU : IsPreconnected U)
     {b : U × ℝ → M} (hb : IsBicollar (f ∘ ((↑) : U → N)) b)
     (hbf : b ⁻¹' range f = univ ×ˢ ({0} : Set ℝ)) {s : Set ℝ} (hs : IsPreconnected s)
     (hs0 : (0 : ℝ) ∉ s) (hA : IsOpen A) (hB : IsOpen B) (hAB : Disjoint A B)
-    (hcompl : (range f)ᶜ = A ∪ B) (hs₀ : s.Nonempty) [Nonempty U] :
+    (hcompl : (range f)ᶜ = A ∪ B) (hs₀ : s.Nonempty) :
     b '' (univ ×ˢ s) ⊆ A ∨ b '' (univ ×ˢ s) ⊆ B := by
   obtain ⟨t, ht⟩ := hs₀
-  have hmem : b (Classical.arbitrary U, t) ∈ A ∪ B := by
+  rcases isEmpty_or_nonempty U with hUe | ⟨⟨u⟩⟩
+  · exact .inl (by rintro _ ⟨⟨u, _⟩, -, rfl⟩; exact hUe.elim u)
+  have hmem : b (u, t) ∈ A ∪ B := by
     rw [← hcompl]
     intro hf
     rw [← mem_preimage, hbf] at hf
     exact hs0 (hf.2 ▸ ht)
-  have hq : b (Classical.arbitrary U, t) ∈ b '' (univ ×ˢ s) := ⟨_, ⟨mem_univ _, ht⟩, rfl⟩
+  have hq : b (u, t) ∈ b '' (univ ×ˢ s) := ⟨_, ⟨mem_univ _, ht⟩, rfl⟩
   rcases hmem with hA' | hB'
   · exact .inl (image_subset_of_inter_nonempty hU hb hbf hs hs0 hA hB hAB hcompl ⟨_, hq, hA'⟩)
   · exact .inr (image_subset_of_inter_nonempty hU hb hbf hs hs0 hB hA hAB.symm
@@ -187,7 +189,6 @@ theorem isLocallyBicollaredWithSides_of_range_subset_closure [LocallyConnectedSp
     (hfB : range f ⊆ closure B) : IsLocallyBicollaredWithSides f A B := by
   refine isLocallyBicollaredWithSides_iff.2 fun x => ?_
   obtain ⟨U, hU, hxU, hUc, b, hb, hbf⟩ := h.exists_isPreconnected_isBicollar hf x
-  have : Nonempty U := ⟨⟨x, hxU⟩⟩
   have hcompl' : (range f)ᶜ = B ∪ A := hcompl.trans (union_comm _ _)
   have hpos := image_subset_or_image_subset hUc hb hbf isPreconnected_Ioi
     (lt_irrefl 0) hA hB hAB hcompl nonempty_Ioi
