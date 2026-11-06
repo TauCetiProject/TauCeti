@@ -46,6 +46,10 @@ of this file.
 
 ## Main results
 
+* `TauCeti.GridDiagram.X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares` and
+  `TauCeti.GridDiagram.X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares`: if the
+  annulus squares carry no `X`-marking, the `X`-marking of column `a` lies in the rows from `t` up
+  to the turn row `s`, and that of column `b` in the rows from `s` up to `t`.
 * `TauCeti.GridDiagram.mem_crossingChangeCommutationHexagons_iff_XSet_inter_eq`: if the annulus
   squares carry no `X`-marking, a hexagon is counted exactly when its rectangle is empty and
   carries only the `X`-marking of the column the hexagon cuts away; that marking always lies in
@@ -174,7 +178,7 @@ variable {G C t}
 
 /-- If the annulus squares carry no `X`-marking, the `X`-marking of column `a` lies in the rows
 from `t` up to the turn row. -/
-private theorem X_column_mem_insert_cIco (hst : C.turnRow ≠ t)
+theorem X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares (hst : C.turnRow ≠ t)
     (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) :
     G.X a ∈ insert C.turnRow (Grid.cIco t C.turnRow) := by
   rw [Grid.mem_insert_cIco_iff_notMem_cIoo hst.symm]
@@ -183,7 +187,7 @@ private theorem X_column_mem_insert_cIco (hst : C.turnRow ≠ t)
 
 /-- If the annulus squares carry no `X`-marking, the `X`-marking of column `b` lies in the rows
 from the turn row up to `t`. -/
-private theorem X_next_mem_insert_cIco (hst : C.turnRow ≠ t)
+theorem X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares (hst : C.turnRow ≠ t)
     (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) :
     G.X b ∈ insert t (Grid.cIco C.turnRow t) := by
   rw [Grid.mem_insert_cIco_iff_notMem_cIoo hst]
@@ -206,12 +210,14 @@ theorem XSet_inter_coveredSquares_of_mem_crossingChangeCommutationHexagons
     rw [GridCommutationHexagonBetween.crossingCoveredSquares_inl] at hK
     rw [GridCommutationHexagonBetween.toGridRectangleBetween_inl,
       GridCommutationHexagonBetween.cutColumn_inl]
-    exact XSet_inter_eq_of_hexagon (X_column_mem_insert_cIco hst hX) hK
+    exact XSet_inter_eq_of_hexagon
+      (X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX) hK
   | inr P =>
     rw [GridCommutationHexagonBetween.crossingCoveredSquares_inr] at hK
     rw [GridCommutationHexagonBetween.toGridRectangleBetween_inr,
       GridCommutationHexagonBetween.cutColumn_inr]
-    exact XSet_inter_eq_of_initialHexagon (X_next_mem_insert_cIco hst hX) hK
+    exact XSet_inter_eq_of_initialHexagon
+      (X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX) hK
 
 /-- If the annulus squares carry no `X`-marking, a crossing-change hexagon cuts away the
 `X`-marking of the column it cuts away. -/
@@ -225,12 +231,12 @@ private theorem cutColumn_X_mem_crossingCutSquares
     simp only [GridCommutationHexagonBetween.crossingCutSquares, Sum.elim_inl,
       GridCommutationHexagonBetween.cutColumn_inl, Finset.mem_product, Finset.mem_singleton,
       true_and]
-    exact X_column_mem_insert_cIco hst hX
+    exact X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX
   | inr P =>
     simp only [GridCommutationHexagonBetween.crossingCutSquares, Sum.elim_inr,
       GridCommutationHexagonBetween.cutColumn_inr, Finset.mem_product, Finset.mem_singleton,
       true_and]
-    exact X_next_mem_insert_cIco hst hX
+    exact X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX
 
 /-- If the annulus squares carry no `X`-marking, the squares a crossing-change hexagon adds to its
 rectangle carry no `X`-marking. -/
@@ -248,13 +254,15 @@ private theorem disjoint_crossingAddedSquares_XSet
       Finset.mem_product, Finset.mem_singleton] at hp
     obtain ⟨rfl, hr⟩ := hp
     rw [← hXp] at hr
-    exact (Grid.mem_insert_cIco_iff_notMem_cIoo hst).mp (X_next_mem_insert_cIco hst hX) hr
+    exact (Grid.mem_insert_cIco_iff_notMem_cIoo hst).mp
+      (X_next_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX) hr
   | inr P =>
     simp only [GridCommutationHexagonBetween.crossingAddedSquares, Sum.elim_inr,
       Finset.mem_product, Finset.mem_singleton] at hp
     obtain ⟨rfl, hr⟩ := hp
     rw [← hXp] at hr
-    exact (Grid.mem_insert_cIco_iff_notMem_cIoo hst.symm).mp (X_column_mem_insert_cIco hst hX) hr
+    exact (Grid.mem_insert_cIco_iff_notMem_cIoo hst.symm).mp
+      (X_column_mem_insert_cIco_of_disjoint_crossingChangeAnnulusSquares hst hX) hr
 
 /-- If the annulus squares carry no `X`-marking, the rectangle under a crossing-change hexagon
 covers the `X`-marking of the column the hexagon cuts away. -/
