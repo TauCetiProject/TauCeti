@@ -181,6 +181,88 @@ theorem IsPrimaryEisenstein.cubic_reciprocity {π₁ π₂ : 𝓞 K} (hπ₁ : I
   set b := powerResidueSymbol (span {π₁}) 3 (Ideal.Quotient.mk _ (absNorm (span {π₂}) : 𝓞 K))
   linear_combination y * hb - b ^ 2 * hy - x * ha + a ^ 2 * hx
 
+/-- Cubic reciprocity between a prime `π` and a primary unit `γ` of `𝓞 K`: both symbols are
+trivial, since `γ = -1`. -/
+private theorem cubic_reciprocity_of_isUnit {π γ : 𝓞 K} (hγ : IsPrimaryEisenstein γ)
+    (hu : IsUnit γ) :
+    powerResidueSymbolIdeal (span {π}) 3 (Ideal.Quotient.mk _ γ) =
+      powerResidueSymbolIdeal (span {γ}) 3 (Ideal.Quotient.mk _ π) := by
+  have hζ := IsCyclotomicExtension.zeta_spec 3 ℚ K
+  -- A primary unit is `-1`, since `1` has a unique primary multiple by a unit.
+  have h1 : ¬ hζ.toInteger - 1 ∣ 1 := fun h ↦
+    hζ.zeta_sub_one_prime'.not_isUnit (isUnit_of_dvd_one h)
+  have hγ' : γ = -1 := by
+    have := (hζ.existsUnique_isPrimaryEisenstein_unit_mul h1).unique
+      (y₁ := hu.unit) (y₂ := -1) (by simpa using hγ)
+      (by simpa using (isPrimaryEisenstein_intCast_iff (K := K) (a := -1)).mpr (by decide))
+    simpa using congrArg Units.val this
+  -- Both symbols are trivial: `(-1 / π)_3 = 1` and `γ 𝓞 K` is the unit ideal.
+  rw [span_singleton_eq_top.mpr hu, powerResidueSymbolIdeal_top, hγ']
+  simp [powerResidueSymbolIdeal_neg (show Odd 3 by decide)]
+
+/-- The norm of a divisor `ρ` of a rational integer `A` divides `A ^ 2`. -/
+private theorem norm_dvd_sq_of_dvd_intCast {A : ℤ} {ρ : 𝓞 K} (h : ρ ∣ (A : 𝓞 K)) :
+    Algebra.norm ℤ ρ ∣ A ^ 2 := by
+  have h' := map_dvd (Algebra.norm ℤ) h
+  rwa [← eq_intCast (algebraMap ℤ (𝓞 K)), Algebra.norm_algebraMap,
+    finrank_ringOfIntegers_three] at h'
+
+omit [IsCyclotomicExtension {3} ℚ K] in
+/-- An element `π` of `𝓞 K` divides its own norm. -/
+private theorem dvd_natAbs_norm (π : 𝓞 K) : π ∣ ((Algebra.norm ℤ π).natAbs : 𝓞 K) := by
+  rw [← absNorm_span_singleton, ← mem_span_singleton]
+  exact absNorm_mem _
+
+/-- Splitting off a prime factor: a primary element `ρ * β * u` of `𝓞 K` dividing a rational
+integer `A` prime to `3` and to the primary prime `π`. If cubic reciprocity between `π` and the
+primary associates of `β` dividing `A` holds, it holds between `π` and `ρ * β * u`. -/
+private theorem cubic_reciprocity_mul_step {π : 𝓞 K} (hπ : IsPrimaryEisenstein π)
+    (hp : Prime π) {A : ℤ} (hA : ¬ (3 : ℤ) ∣ A) (hπA : ¬ π ∣ (A : 𝓞 K)) {ρ β : 𝓞 K}
+    {u : (𝓞 K)ˣ} (hρ : Prime ρ)
+    (ih : ∀ γ : 𝓞 K, Associated β γ → IsPrimaryEisenstein γ → γ ∣ (A : 𝓞 K) →
+      powerResidueSymbolIdeal (span {π}) 3 (Ideal.Quotient.mk _ γ) =
+        powerResidueSymbolIdeal (span {γ}) 3 (Ideal.Quotient.mk _ π))
+    (hγ : IsPrimaryEisenstein (ρ * β * u)) (hγA : ρ * β * u ∣ (A : 𝓞 K)) :
+    powerResidueSymbolIdeal (span {π}) 3 (Ideal.Quotient.mk _ (ρ * β * u)) =
+      powerResidueSymbolIdeal (span {ρ * β * u}) 3 (Ideal.Quotient.mk _ π) := by
+  -- Replace `ρ` by its primary associate `ρ'`, and write `γ = -(ρ' δ)` with `δ` primary.
+  have hρ3 : Algebra.norm ℤ ρ ≠ 3 := fun h ↦ hA <| Int.prime_three.dvd_of_dvd_pow <|
+    h ▸ norm_dvd_sq_of_dvd_intCast ((dvd_mul_right _ _).trans ((dvd_mul_right _ _).trans hγA))
+  obtain ⟨ρ', ⟨⟨w, rfl⟩, hρ'⟩, -⟩ := hρ.existsUnique_associated_isPrimaryEisenstein hρ3
+  set δ : 𝓞 K := ((-(w⁻¹ * u) : (𝓞 K)ˣ) : 𝓞 K) * β with hδ
+  have hγδ : ρ * β * u = -(ρ * w * δ) := by
+    simp only [hδ, Units.val_neg, Units.val_mul]
+    linear_combination (ρ * β * u) * (Units.mul_inv w).symm
+  rw [hγδ] at hγ hγA ⊢
+  have hδ' : IsPrimaryEisenstein δ := by
+    have h := hρ'.three_dvd_sub_one_of_mul (w := -δ) (by simpa [mul_comm] using hγ)
+    rw [isPrimaryEisenstein_iff, show δ - 2 = -(-δ - 1) - 3 by ring]
+    exact (dvd_neg.mpr h).sub dvd_rfl
+  have hρ'p : Prime (ρ * w) := Associated.prime ⟨w, rfl⟩ hρ
+  rw [neg_dvd] at hγA
+  have hδA : δ ∣ (A : 𝓞 K) := (dvd_mul_left δ _).trans hγA
+  have hρ'A : ρ * w ∣ (A : 𝓞 K) := (dvd_mul_right _ δ).trans hγA
+  -- `ρ'` and `π` have different norms, since otherwise `π ∣ N(π) = N(ρ') ∣ A ^ 2`.
+  have hN : Algebra.norm ℤ π ≠ Algebra.norm ℤ (ρ * w) := fun h ↦ hπA <|
+    hp.dvd_of_dvd_pow (n := 2) <| (dvd_natAbs_norm π).trans <| by
+      rw [← Int.cast_natCast, ← Int.cast_pow]
+      exact Int.cast_dvd_cast _ _ (Int.natAbs_dvd.mpr (h ▸ norm_dvd_sq_of_dvd_intCast hρ'A))
+  have hδ0 : δ ≠ 0 := by
+    intro h
+    rw [h, mul_zero, zero_dvd_iff, Int.cast_eq_zero] at hγA
+    exact hA (hγA ▸ dvd_zero 3)
+  -- Reciprocity for the prime `ρ'`, and the induction hypothesis for `δ`.
+  have hrec := hπ.cubic_reciprocity hρ' hp hρ'p hN
+  have hih := ih δ ⟨-(w⁻¹ * u), by rw [hδ, mul_comm]⟩ hδ' hδA
+  -- The symbol at `γ 𝓞 K = ρ' 𝓞 K * δ 𝓞 K` is the product of the symbols at the factors.
+  have hmul : powerResidueSymbolIdeal (span {-(ρ * w * δ)}) 3 (Ideal.Quotient.mk _ π) =
+      powerResidueSymbolIdeal (span {ρ * w}) 3 (Ideal.Quotient.mk _ π) *
+        powerResidueSymbolIdeal (span {δ}) 3 (Ideal.Quotient.mk _ π) := by
+    rw [span_singleton_neg, ← span_singleton_mul_span_singleton]
+    exact powerResidueSymbolIdeal_mul_right (by simpa using hρ'p.ne_zero) (by simpa using hδ0) _
+  rw [hmul, ← hrec, ← hih]
+  simp [powerResidueSymbolIdeal_neg (show Odd 3 by decide)]
+
 /-- Cubic reciprocity between a primary prime `π` and a primary divisor `γ` of a rational integer
 `A` prime to `3` and to `π`: `(γ / π)_3 = (π / γ)_3`. -/
 private theorem cubic_reciprocity_of_dvd_intCast {π : 𝓞 K} (hπ : IsPrimaryEisenstein π)
@@ -188,16 +270,7 @@ private theorem cubic_reciprocity_of_dvd_intCast {π : 𝓞 K} (hπ : IsPrimaryE
     (hγ : IsPrimaryEisenstein γ) (hγA : γ ∣ (A : 𝓞 K)) :
     powerResidueSymbolIdeal (span {π}) 3 (Ideal.Quotient.mk _ γ) =
       powerResidueSymbolIdeal (span {γ}) 3 (Ideal.Quotient.mk _ π) := by
-  have hζ := IsCyclotomicExtension.zeta_spec 3 ℚ K
   have := IsCyclotomicExtension.Rat.three_pid K
-  -- The norm of a divisor of `A` divides `N(A) = A ^ 2`, and `π` divides its own norm.
-  have hnorm {ρ : 𝓞 K} (h : ρ ∣ (A : 𝓞 K)) : Algebra.norm ℤ ρ ∣ A ^ 2 := by
-    have h' := map_dvd (Algebra.norm ℤ) h
-    rwa [← eq_intCast (algebraMap ℤ (𝓞 K)), Algebra.norm_algebraMap,
-      finrank_ringOfIntegers_three] at h'
-  have hπN : π ∣ ((Algebra.norm ℤ π).natAbs : 𝓞 K) := by
-    rw [← absNorm_span_singleton, ← mem_span_singleton]
-    exact absNorm_mem _
   -- Induct on a factorisation of an associate `β` of `γ` into primes.
   suffices ∀ β γ : 𝓞 K, Associated β γ → IsPrimaryEisenstein γ → γ ∣ (A : 𝓞 K) →
       powerResidueSymbolIdeal (span {π}) 3 (Ideal.Quotient.mk _ γ) =
@@ -209,60 +282,11 @@ private theorem cubic_reciprocity_of_dvd_intCast {π : 𝓞 K} (hπ : IsPrimaryE
     intro γ hβγ _ hγA
     rw [hβγ.eq_zero_iff.mp rfl, zero_dvd_iff, Int.cast_eq_zero] at hγA
     exact absurd (hγA ▸ dvd_zero 3) hA
-  | h₂ β hβ =>
-    -- A primary unit is `-1`, since `1` has a unique primary multiple by a unit.
-    intro γ hβγ hγ _
-    have hu : IsUnit γ := hβγ.isUnit hβ
-    have h1 : ¬ hζ.toInteger - 1 ∣ 1 := fun h ↦
-      hζ.zeta_sub_one_prime'.not_isUnit (isUnit_of_dvd_one h)
-    have hγ' : γ = -1 := by
-      have := (hζ.existsUnique_isPrimaryEisenstein_unit_mul h1).unique
-        (y₁ := hu.unit) (y₂ := -1) (by simpa using hγ)
-        (by simpa using (isPrimaryEisenstein_intCast_iff (K := K) (a := -1)).mpr (by decide))
-      simpa using congrArg Units.val this
-    -- Both symbols are trivial: `(-1 / π)_3 = 1` and `γ 𝓞 K` is the unit ideal.
-    rw [span_singleton_eq_top.mpr hu, powerResidueSymbolIdeal_top, hγ']
-    simp [powerResidueSymbolIdeal_neg (show Odd 3 by decide)]
+  | h₂ β hβ => exact fun γ hβγ hγ _ ↦ cubic_reciprocity_of_isUnit hγ (hβγ.isUnit hβ)
   | h₃ β ρ _ hρ ih =>
     intro γ hβγ hγ hγA
     obtain ⟨u, rfl⟩ := hβγ
-    -- Replace `ρ` by its primary associate `ρ'`, and write `γ = -(ρ' δ)` with `δ` primary.
-    have hρ3 : Algebra.norm ℤ ρ ≠ 3 := fun h ↦ hA <| Int.prime_three.dvd_of_dvd_pow <|
-      h ▸ hnorm ((dvd_mul_right _ _).trans ((dvd_mul_right _ _).trans hγA))
-    obtain ⟨ρ', ⟨⟨w, rfl⟩, hρ'⟩, -⟩ := hρ.existsUnique_associated_isPrimaryEisenstein hρ3
-    set δ : 𝓞 K := ((-(w⁻¹ * u) : (𝓞 K)ˣ) : 𝓞 K) * β with hδ
-    have hγδ : ρ * β * u = -(ρ * w * δ) := by
-      simp only [hδ, Units.val_neg, Units.val_mul]
-      linear_combination (ρ * β * u) * (Units.mul_inv w).symm
-    rw [hγδ] at hγ hγA ⊢
-    have hδ' : IsPrimaryEisenstein δ := by
-      have h := hρ'.three_dvd_sub_one_of_mul (w := -δ) (by simpa [mul_comm] using hγ)
-      rw [isPrimaryEisenstein_iff, show δ - 2 = -(-δ - 1) - 3 by ring]
-      exact (dvd_neg.mpr h).sub dvd_rfl
-    have hρ'p : Prime (ρ * w) := Associated.prime ⟨w, rfl⟩ hρ
-    rw [neg_dvd] at hγA
-    have hδA : δ ∣ (A : 𝓞 K) := (dvd_mul_left δ _).trans hγA
-    have hρ'A : ρ * w ∣ (A : 𝓞 K) := (dvd_mul_right _ δ).trans hγA
-    -- `ρ'` and `π` have different norms, since otherwise `π ∣ N(π) = N(ρ') ∣ A ^ 2`.
-    have hN : Algebra.norm ℤ π ≠ Algebra.norm ℤ (ρ * w) := fun h ↦ hπA <|
-      hp.dvd_of_dvd_pow (n := 2) <| hπN.trans <| by
-        rw [← Int.cast_natCast, ← Int.cast_pow]
-        exact Int.cast_dvd_cast _ _ (Int.natAbs_dvd.mpr (h ▸ hnorm hρ'A))
-    have hδ0 : δ ≠ 0 := by
-      intro h
-      rw [h, mul_zero, zero_dvd_iff, Int.cast_eq_zero] at hγA
-      exact hA (hγA ▸ dvd_zero 3)
-    -- Reciprocity for the prime `ρ'`, and the induction hypothesis for `δ`.
-    have hrec := hπ.cubic_reciprocity hρ' hp hρ'p hN
-    have hih := ih δ ⟨-(w⁻¹ * u), by rw [hδ, mul_comm]⟩ hδ' hδA
-    -- The symbol at `γ 𝓞 K = ρ' 𝓞 K * δ 𝓞 K` is the product of the symbols at the factors.
-    have hmul : powerResidueSymbolIdeal (span {-(ρ * w * δ)}) 3 (Ideal.Quotient.mk _ π) =
-        powerResidueSymbolIdeal (span {ρ * w}) 3 (Ideal.Quotient.mk _ π) *
-          powerResidueSymbolIdeal (span {δ}) 3 (Ideal.Quotient.mk _ π) := by
-      rw [span_singleton_neg, ← span_singleton_mul_span_singleton]
-      exact powerResidueSymbolIdeal_mul_right (by simpa using hρ'p.ne_zero) (by simpa using hδ0) _
-    rw [hmul, ← hrec, ← hih]
-    simp [powerResidueSymbolIdeal_neg (show Odd 3 by decide)]
+    exact cubic_reciprocity_mul_step hπ hp hA hπA hρ ih hγ hγA
 
 /-- **Cubic reciprocity between a primary prime and a rational integer.** Let `K = ℚ(ζ₃)`, so that
 `𝓞 K = ℤ[ω]`, let `π` be a primary prime of `𝓞 K` and let `A` be a rational integer prime to `3`.
