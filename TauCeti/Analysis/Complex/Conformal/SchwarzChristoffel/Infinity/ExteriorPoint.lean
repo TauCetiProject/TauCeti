@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Quadratic
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
 # Exterior points of Schwarz--Christoffel images
@@ -70,7 +71,7 @@ private theorem exists_norm_bound_schwarzChristoffelPrimitive_on_bounded_part
 
 /-- A uniform bound on the ratio `F / z ^ β` near `β⁻¹` is a relative error bound for the
 leading power `z ^ β / β`. -/
-private theorem norm_sub_div_cpow_le_of_dist_div_cpow_le {F z : ℂ} {β η : ℝ} (hβ : 0 < β)
+private theorem norm_sub_cpow_div_le_of_dist_div_cpow_le {F z : ℂ} {β η : ℝ} (hβ : 0 < β)
     (hpow : z ^ (β : ℂ) ≠ 0) (hz : dist (F / z ^ (β : ℂ)) (β : ℂ)⁻¹ ≤ η / β) :
     ‖F - z ^ (β : ℂ) / (β : ℂ)‖ ≤ η * ‖z ^ (β : ℂ) / (β : ℂ)‖ := by
   have hβnorm : ‖(β : ℂ)‖ = β := by simp [abs_of_pos hβ]
@@ -85,35 +86,6 @@ private theorem norm_sub_div_cpow_le_of_dist_div_cpow_le {F z : ℂ} {β η : �
     _ = η * ‖z ^ (β : ℂ) / (β : ℂ)‖ := by
       rw [norm_div, hβnorm]
       ring
-
-/-- In the upper half-plane with `0 < β < 2`, the leading power `z ^ β / β`, rotated by
-`exp (-(β π / 2) i)`, lies in the cone of real part at least `cos (β π / 2)` times the norm. -/
-private theorem cos_mul_norm_le_re_exp_mul_div_cpow {z : ℂ} {β : ℝ} (hβ : 0 < β) (hβ2 : β < 2)
-    (hzH : z ∈ upperHalfPlaneSet) :
-    Real.cos (β * Real.pi / 2) * ‖z ^ (β : ℂ) / (β : ℂ)‖ ≤
-      (exp ((-(β * Real.pi / 2) : ℝ) * Complex.I) * (z ^ (β : ℂ) / (β : ℂ))).re := by
-  set θ : ℝ := β * Real.pi / 2 with hθdef
-  have hθ : 0 ≤ θ ∧ θ < Real.pi := by
-    constructor <;> nlinarith [Real.pi_pos]
-  set u : ℂ := exp ((-θ : ℝ) * Complex.I)
-  set P : ℂ := z ^ (β : ℂ) / (β : ℂ)
-  have harg : |z.arg * β - θ| ≤ θ := by
-    apply abs_le.mpr
-    constructor <;> dsimp [θ] <;>
-      nlinarith [arg_nonneg_iff.mpr hzH.le, arg_le_pi z]
-  have hcos : Real.cos θ ≤ Real.cos (z.arg * β - θ) := by
-    simpa only [Real.cos_abs] using
-      Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ.2.le harg
-  have hure : u.re = Real.cos θ := by
-    simpa only [Real.cos_neg] using exp_ofReal_mul_I_re (-θ)
-  have huim : u.im = -Real.sin θ := by
-    simpa only [Real.sin_neg] using exp_ofReal_mul_I_im (-θ)
-  have hre : (u * P).re = ‖P‖ * Real.cos (z.arg * β - θ) := by
-    simp [P, mul_div_assoc, Complex.mul_re, cpow_ofReal_re, cpow_ofReal_im,
-      hure, huim, Real.cos_sub, abs_of_pos hβ]
-    ring
-  rw [hre]
-  simpa only [mul_comm] using mul_le_mul_of_nonneg_left hcos (norm_nonneg P)
 
 /-- In the power regime with opening less than `2π`, a rotation of the primitive eventually
 lies in a closed cone strictly smaller than the full plane. -/
@@ -151,8 +123,8 @@ private theorem exists_eventually_cone_schwarzChristoffelPrimitive
   let F : ℂ := schwarzChristoffelPrimitive a e z₀ z
   have hz0 : z ≠ 0 := fun h => by simp [h] at hzH
   have hpow0 : z ^ (β : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
-  have herror : ‖F - P‖ ≤ η * ‖P‖ := norm_sub_div_cpow_le_of_dist_div_cpow_le hβ hpow0 hz
-  have hcone : c * ‖P‖ ≤ (u * P).re := cos_mul_norm_le_re_exp_mul_div_cpow hβ hβhigh hzH
+  have herror : ‖F - P‖ ≤ η * ‖P‖ := norm_sub_cpow_div_le_of_dist_div_cpow_le hβ hpow0 hz
+  have hcone : c * ‖P‖ ≤ (u * P).re := cos_mul_norm_le_re_exp_mul_cpow_div hβ hβhigh hzH
   -- Widen the leading cone from cosine bound `c` to `-(1 - η)`; the same
   -- error estimate controls both the real part and the norm of the primitive.
   have hreError : |(u * (F - P)).re| ≤ η * ‖P‖ := by
