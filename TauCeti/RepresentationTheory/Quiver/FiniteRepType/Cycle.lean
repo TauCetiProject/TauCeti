@@ -254,11 +254,7 @@ private theorem indecomposable_cycleRep : Indecomposable (cycleRep k x r) := by
   have hext : ∀ f g : cycleRep k x r ⟶ cycleRep k x r, cycleApp f ⟨0⟩ 1 = cycleApp g ⟨0⟩ 1 →
       f = g := fun f g h ↦ cycleRep_hom_ext fun a ↦ by
     rw [cycleApp_eq_mulRight hx f a, cycleApp_eq_mulRight hx g a, h]
-  have hnz : ¬ Limits.IsZero (cycleRep k x r) := fun h ↦ by
-    have : Subsingleton (AdjoinRoot ((X : k[X]) ^ (r + 1))) :=
-      ModuleCat.subsingleton_of_isZero (h.obj ((⟨0⟩ : CycleVertex x) : Paths (CycleVertex x)))
-    exact false_of_nontrivial_of_subsingleton (AdjoinRoot ((X : k[X]) ^ (r + 1)))
-  refine indecomposable_of_injective_of_isLocalRing hnz (fun f ↦ cycleApp f ⟨0⟩ 1) hext ?_ ?_
+  refine indecomposable_of_injective_of_isLocalRing (fun f ↦ cycleApp f ⟨0⟩ 1) hext ?_ ?_
     fun f ↦ ?_
   · rw [cycleApp_zero, LinearMap.zero_apply]
   · rw [cycleApp_id, LinearMap.id_apply]
