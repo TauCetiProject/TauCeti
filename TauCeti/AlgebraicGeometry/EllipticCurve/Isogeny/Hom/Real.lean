@@ -81,9 +81,15 @@ theorem pointMap_surjective_of_odd_degree (f : Hom W₁.toAffine W₂.toAffine)
   intro P
   obtain ⟨Q, hQ⟩ := f.two_nsmul_mem_range_pointMapHom hf P
   refine ⟨f.dual.pointMap P - k • Q, ?_⟩
-  rw [← pointMapHom_apply, _root_.map_sub, _root_.map_nsmul, pointMapHom_apply,
-    pointMap_dual_pointMap, hQ, hk, add_nsmul, mul_nsmul, one_nsmul]
-  abel
+  calc
+    f.pointMap (f.dual.pointMap P - k • Q) =
+        f.pointMapHom (f.dual.pointMap P - k • Q) := (f.pointMapHom_apply _).symm
+    _ = f.pointMapHom (f.dual.pointMap P) - k • f.pointMapHom Q := by
+      simp only [_root_.map_sub, _root_.map_nsmul]
+    _ = f.degree • P - k • (2 • P) := by simp [hQ, pointMap_dual_pointMap]
+    _ = P := by
+      simp only [hk, add_nsmul, mul_nsmul, one_nsmul]
+      abel
 
 /-- The image of a nonzero morphism of real elliptic curves has finite index in the target's
 real point group. In particular, its cokernel is finite. -/
