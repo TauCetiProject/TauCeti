@@ -80,9 +80,8 @@ import TauCeti.Data.Set.PowersetCard
   from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
-* `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
-  over a pair of finite types, to the values of its summand at the two points where it is
-  supported, and at the four cells of a rectangle.
+* `Finset.sum_eq_four` reduces a double sum over a pair of finite types to the values of its
+  summand at the four cells of a rectangle where it is supported.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
   has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
@@ -775,21 +774,6 @@ theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearO
   have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
   exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
-/-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
-of its values at those two points. -/
-theorem sum_eq_two {α M : Type*} [Fintype α] [AddCommMonoid M] (f : α → M) (a b : α)
-    (hab : a ≠ b) (h : ∀ x, x ≠ a → x ≠ b → f x = 0) : ∑ x, f x = f a + f b := by
-  classical
-  -- The summand vanishes away from the pair `a`, `b`, so the sum over the whole type is the sum
-  -- over the two-point finset, which `Finset.sum_pair` evaluates.
-  calc (∑ x, f x) = ∑ x ∈ ({a, b} : Finset α), f x := by
-        refine (Finset.sum_subset (s₁ := ({a, b} : Finset α)) (s₂ := (Finset.univ : Finset α))
-          (fun x _ => Finset.mem_univ x) ?_).symm
-        intro x _ hx
-        have hx' : x ≠ a ∧ x ≠ b := by simpa using hx
-        exact h x hx'.1 hx'.2
-    _ = f a + f b := Finset.sum_pair hab
-
 /-- The double sum over a pair of finite types of a function that vanishes outside the four cells
 of the rectangle `i`, `i'` by `j`, `j'` is the sum of its four values there. -/
 theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M] (g : ι → κ → M)
@@ -803,12 +787,13 @@ theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M
     intro y _
     exact h0 x y (fun h => hx h.1) (fun h => hx h.1) (fun h => hx' h.1) (fun h => hx' h.1)
   calc (∑ x, ∑ y, g x y) = (∑ y, g i y) + (∑ y, g i' y) :=
-        sum_eq_two (fun x => ∑ y, g x y) i i' hi'ne (fun x hx hx' => hzero x hx hx')
+        Fintype.sum_eq_add i i' hi'ne (fun x hx => hzero x hx.1 hx.2)
     _ = (g i j + g i j') + (g i' j + g i' j') := by
-        rw [sum_eq_two (g i) j j' hj'ne (fun y hyj hyj' => h0 i y (fun h => hyj h.2)
-              (fun h => hyj' h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
-            sum_eq_two (g i') j j' hj'ne (fun y hyj hyj' => h0 i' y (fun h => hi'ne h.1.symm)
-              (fun h => hi'ne h.1.symm) (fun h => hyj h.2) (fun h => hyj' h.2))]
+        rw [Fintype.sum_eq_add j j' hj'ne (f := g i) (fun y hy => h0 i y (fun h => hy.1 h.2)
+              (fun h => hy.2 h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
+            Fintype.sum_eq_add j j' hj'ne (f := g i') (fun y hy => h0 i' y
+              (fun h => hi'ne h.1.symm) (fun h => hi'ne h.1.symm) (fun h => hy.1 h.2)
+              (fun h => hy.2 h.2))]
     _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
 
 end Finset
