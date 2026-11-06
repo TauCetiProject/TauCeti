@@ -144,6 +144,23 @@ theorem norm_normedBumpLp_le_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
   exact norm_normedBumpAverageL_le_one (F := Lp F p mu) phi mu (mu.translateLp p)
     (Measure.continuous_translateLp hp)
 
+/-- Convolution with a normalized smooth bump does not increase the `Lᵖ` seminorm,
+for `1 ≤ p < ∞`. -/
+theorem eLpNorm_normed_convolution_le [CompleteSpace F] (hp : p ≠ ∞)
+    (phi : ContDiffBump (0 : E)) {f : E → F} (hf : MemLp f p mu) :
+    eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu ≤ eLpNorm f p mu := by
+  have h := (normedBumpLp (F := F) hp phi mu).le_of_opNorm_le
+    (norm_normedBumpLp_le_one hp phi) (hf.toLp f)
+  have hn : ‖normedBumpLp hp phi mu (hf.toLp f)‖ ≤ ‖hf.toLp f‖ := by simpa using h
+  calc eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu =
+      ‖normedBumpLp hp phi mu (hf.toLp f)‖ₑ := by
+        rw [Lp.enorm_def]
+        exact eLpNorm_congr_ae (normedBumpLp_ae_eq_convolution hp phi hf).symm
+    _ ≤ ‖hf.toLp f‖ₑ := by simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hn
+    _ = eLpNorm f p mu := by
+        rw [Lp.enorm_def]
+        exact eLpNorm_congr_ae hf.coeFn_toLp
+
 /-- **Smooth approximate identity in `Lᵖ`.** Let `phi i` be normalized smooth bumps centred at
 zero. If their outer radii tend to zero, then averaging any `f ∈ Lᵖ` against these bumps converges
 to `f` in the `Lᵖ` norm.
