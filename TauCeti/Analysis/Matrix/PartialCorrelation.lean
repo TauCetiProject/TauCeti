@@ -172,6 +172,19 @@ theorem isLowerTriangular_partialCorrelationCholesky (z : strictLowerTriangle p 
     (partialCorrelationCholesky z).IsLowerTriangular :=
   fun _ _ h ↦ partialCorrelationCholesky_apply_of_lt z h
 
+/-- A Gram entry is the sum of the triangular column contributions up to its second index. -/
+theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → ℝ)
+    (i j : Fin p) :
+    partialCorrelationGram z i j =
+      ∑ k ∈ Finset.Iic j, partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  rw [partialCorrelationGram_def, Matrix.mul_apply]
+  simp only [Matrix.transpose_apply]
+  symm
+  apply Finset.sum_subset (Finset.subset_univ _)
+  intro k _ hk
+  simp only [Finset.mem_Iic, not_le] at hk
+  rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
+
 private theorem row_sq_lt_one {z : strictLowerTriangle p → ℝ}
     (hz : ∀ ij, |z ij| < 1) (i j : Fin p) : partialCorrelationRow z i j ^ 2 < 1 := by
   by_cases h : j < i
