@@ -30,13 +30,12 @@ namespace TauCeti
 /-- A Lebesgue number for a family of sets `c` such that every point of the compact set `s` has
 some `c i` as a neighbourhood: there is `δ > 0` such that the ball of radius `δ` around any point
 of `s` is contained in some `c i`. -/
-theorem lebesgue_number_lemma_of_metric_of_mem_nhds {α ι : Type*} [PseudoMetricSpace α]
+theorem lebesgue_number_lemma_of_metric_of_mem_nhds {α : Type*} {ι : Sort*} [PseudoMetricSpace α]
     {s : Set α} {c : ι → Set α} (hs : IsCompact s) (hc : ∀ x ∈ s, ∃ i, c i ∈ 𝓝 x) :
     ∃ δ > 0, ∀ x ∈ s, ∃ i, ball x δ ⊆ c i := by
   obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric hs (c := fun i ↦ interior (c i))
-    (fun _ ↦ isOpen_interior) fun x hx ↦ by
-      obtain ⟨i, hi⟩ := hc x hx
-      exact mem_iUnion.2 ⟨i, mem_interior_iff_mem_nhds.2 hi⟩
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 <| (hc x hx).imp fun _ ↦ mem_interior_iff_mem_nhds.2
   exact ⟨δ, hδ, fun x hx ↦ (h x hx).imp fun _ hi ↦ hi.trans interior_subset⟩
 
 end TauCeti
