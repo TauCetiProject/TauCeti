@@ -120,6 +120,25 @@ private theorem ker_mkQ_comp_codRestrict {V : Type*} [AddCommGroup V] [Module A 
   rw [LinearMap.ker_comp, Submodule.ker_mkQ, hmap, Submodule.comap_map_eq,
     LinearMap.ker_codRestrict, LinearMap.ker_comp]
 
+/-- **The length of the quotient by the kernel of the projected map.** For `e : V → V`, the
+quotient of `M` by `aM ⊔ (M ⊓ ker e)` has the length of `e M ⧸ a·e M`. -/
+private theorem length_quotient_sup_comap_ker {V : Type*} [AddCommGroup V] [Module A V]
+    (e : V →ₗ[A] V) (M : Submodule A V) (a : A) :
+    Module.length A (↥M ⧸ (LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
+        Submodule.comap M.subtype (LinearMap.ker e))) =
+      Module.length A (↥(M.map e) ⧸ LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)) := by
+  set g : ↥M →ₗ[A] ↥(M.map e) :=
+    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
+  set Q : Submodule A ↥(M.map e) := LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)
+  have hgsurj : Function.Surjective g := by
+    rintro ⟨_, y, hy, rfl⟩
+    exact ⟨⟨y, hy⟩, rfl⟩
+  have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
+      Submodule.comap M.subtype (LinearMap.ker e) := ker_mkQ_comp_codRestrict e M a
+  rw [← hker]
+  exact (LinearMap.quotKerEquivOfSurjective (Q.mkQ ∘ₗ g)
+    ((Submodule.mkQ_surjective Q).comp hgsurj)).length_eq
+
 end Kernel
 
 /-! ### The rank-one case over the fraction field -/
@@ -187,6 +206,28 @@ private theorem length_quotient_lsmul_le_ord_of_le_span_singleton [IsNoetherianR
   rw [length_quotient_lsmul_congr (LinearEquiv.ofInjective ι hιinj) a]
   exact length_quotient_lsmul_fractionRing_le_ord _ hJfg a ha
 
+/-- The part of `M ⧸ aM` lying over the `K`-line through `x` has length at most `ord_A a`. -/
+private theorem length_map_mkQ_comap_le_ord [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+    (a : A) (ha : a ≠ 0) (x : V) (M : Submodule A V) (hfg : M.FG) :
+    Module.length A ((Submodule.comap M.subtype ((K ∙ x).restrictScalars A)).map
+      (LinearMap.range (LinearMap.lsmul A ↥M a)).mkQ) ≤ Ring.ord A a := by
+  set N : Submodule A ↥M := Submodule.comap M.subtype ((K ∙ x).restrictScalars A) with hNdef
+  have : Module.Finite A ↥M := Module.Finite.iff_fg.mpr hfg
+  have hNfg : N.FG := IsNoetherian.noetherian N
+  rw [length_map_mkQ]
+  calc Module.length A (↥N ⧸ Submodule.comap N.subtype (LinearMap.range (LinearMap.lsmul A ↥M a)))
+      ≤ Module.length A (↥N ⧸ LinearMap.range (LinearMap.lsmul A ↥N a)) := by
+        refine length_quotient_anti ?_
+        rintro y ⟨z, rfl⟩
+        exact ⟨(z : ↥M), rfl⟩
+    _ = Module.length A (↥(N.map M.subtype) ⧸
+          LinearMap.range (LinearMap.lsmul A ↥(N.map M.subtype) a)) :=
+        length_quotient_lsmul_congr
+          (Submodule.equivMapOfInjective M.subtype (Submodule.subtype_injective M) N) a
+    _ ≤ Ring.ord A a :=
+        length_quotient_lsmul_le_ord_of_le_span_singleton a ha _
+          (by rw [hNdef]; exact Submodule.map_comap_le _ _) (hNfg.map _)
+
 /-- **The Krull–Akizuki length bound for a finitely generated submodule**, relative to any bound
 `n` on the dimension of a `K`-subspace containing it. -/
 private theorem length_quotient_lsmul_le_mul_ord_of_finrank_le [IsNoetherianRing A]
@@ -215,32 +256,22 @@ private theorem length_quotient_lsmul_le_mul_ord_of_finrank_le [IsNoetherianRing
       -- Phase 2: split `length (M ⧸ aM)` along `N = M ⊓ K ∙ x`.
       set P : Submodule A ↥M := LinearMap.range (LinearMap.lsmul A ↥M a)
       set N : Submodule A ↥M := Submodule.comap M.subtype ((K ∙ x).restrictScalars A) with hNdef
-      have : Module.Finite A ↥M := Module.Finite.iff_fg.mpr hfg
       -- Phase 3: `N` lives on the line `K ∙ x`, so the rank-one bound applies to it.
-      have hterm1 : Module.length A (N.map P.mkQ) ≤ Ring.ord A a := by
-        rw [length_map_mkQ]
-        refine (length_quotient_anti ?_).trans ((length_quotient_lsmul_congr
-          (Submodule.equivMapOfInjective M.subtype (Submodule.subtype_injective M) N) a).trans_le
-          (length_quotient_lsmul_le_ord_of_le_span_singleton a ha _
-            (by rw [hNdef]; exact Submodule.map_comap_le _ _) ((IsNoetherian.noetherian N).map _)))
-        rintro y ⟨z, rfl⟩
-        exact ⟨(z : ↥M), rfl⟩
+      have hterm1 : Module.length A (N.map P.mkQ) ≤ Ring.ord A a :=
+        length_map_mkQ_comap_le_ord a ha x M hfg
       -- Phase 4: the rest is `e M ⧸ a·e M`, one dimension lower, so the hypothesis applies.
       set M' : Submodule A V := M.map eA
       have hM'U : M' ≤ (LinearMap.ker φ ⊓ U).restrictScalars A := by
         rintro _ ⟨y, hy, rfl⟩
         exact ⟨by simp [heAdef, hφx], by simpa [heAdef] using U.sub_mem (hM hy) (U.smul_mem _ hxU)⟩
-      set Q : Submodule A ↥M' := LinearMap.range (LinearMap.lsmul A ↥M' a)
-      set g : ↥M →ₗ[A] ↥M' :=
-        LinearMap.codRestrict M' (eA ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
-      have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = P ⊔ N := by
-        rw [ker_mkQ_comp_codRestrict eA M a, hkereA]
-      rw [length_quotient_eq_length_map_add_length_quotient_sup N P, ← hker,
-        (LinearMap.quotKerEquivOfSurjective (Q.mkQ ∘ₗ g) ((Submodule.mkQ_surjective Q).comp
-          fun ⟨_, y, hy, hz⟩ => ⟨⟨y, hy⟩, Subtype.ext hz⟩)).length_eq]
-      refine (add_le_add hterm1 (ih _ hrkU' M' hM'U (hfg.map eA))).trans_eq ?_
-      push_cast
-      ring
+      have hterm2 : Module.length A (↥M ⧸ (P ⊔ N)) ≤ n * Ring.ord A a := by
+        have h := length_quotient_sup_comap_ker eA M a
+        rw [hkereA] at h
+        exact h.trans_le (ih (LinearMap.ker φ ⊓ U) hrkU' M' hM'U (hfg.map eA))
+      rw [length_quotient_eq_length_map_add_length_quotient_sup N P]
+      calc Module.length A (N.map P.mkQ) + Module.length A (↥M ⧸ (P ⊔ N))
+          ≤ Ring.ord A a + n * Ring.ord A a := add_le_add hterm1 hterm2
+        _ = (n + 1 : ℕ) * Ring.ord A a := by push_cast; ring
 
 /-- **Krull–Akizuki's length bound.** For any `A`-submodule `M` of a finite-dimensional
 `K`-vector space `V` — finitely generated or not — and any nonzero `a : A`,
