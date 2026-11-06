@@ -10,11 +10,11 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Complex.Exponential
-import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.Sobolev.Poincare.Planar
-import TauCeti.MeasureTheory.Integral.CauchySchwarz
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Coercivity of Taubes's functional for the prescribed-zero vortex problem
@@ -92,25 +92,6 @@ theorem reducedFunctional_def (P : Polynomial ℂ) (w : ℂ → ℝ) :
 
 /-! ### Pointwise estimates -/
 
-/-- The potential `exp (2t) - 1 - 2t` dominates the modular `√(1 + t²) - 1`. -/
-private theorem sqrt_one_add_sq_sub_one_le_exp (t : ℝ) :
-    √(1 + t ^ 2) - 1 ≤ Real.exp (2 * t) - 1 - 2 * t := by
-  have hsq : √(1 + t ^ 2) ≤ 1 + t ^ 2 / 2 :=
-    Real.sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (t ^ 2)]⟩
-  rcases le_total 0 t with ht | ht
-  · have := Real.quadratic_le_exp_of_nonneg (by linarith : 0 ≤ 2 * t)
-    nlinarith
-  rcases le_total (-1) t with ht1 | ht1
-  · -- For `-1 ≤ t ≤ 0`, `(1 + 2t/3)³ ≤ exp (2t)`.
-    have h := Real.one_sub_div_pow_le_exp_neg (n := 3) (t := -(2 * t)) (by push_cast; linarith)
-    rw [neg_neg] at h
-    have ht3 : 0 ≤ t ^ 2 * (t + 1) := mul_nonneg (sq_nonneg t) (by linarith)
-    nlinarith
-  · -- For `t ≤ -1`, `exp (2t) - 1 - 2t ≥ -t - (1 + t) ≥ |t| ≥ √(1 + t²) - 1`.
-    have hsq' := sqrt_one_add_norm_sq_le t
-    rw [Real.norm_eq_abs, sq_abs, abs_of_nonpos ht] at hsq'
-    nlinarith [Real.exp_pos (2 * t)]
-
 /-- The potential `exp (2t) - 1 - 2t` is nonnegative. -/
 private theorem exp_two_mul_sub_one_sub_two_mul_nonneg (t : ℝ) :
     0 ≤ Real.exp (2 * t) - 1 - 2 * t := by
@@ -164,6 +145,19 @@ private theorem integrable_potential {w : ℂ → ℝ} (hw : Continuous w)
       (by fun_prop)
   exact hc.integrable_of_hasCompactSupport (hws.mono fun z hz h0 ↦ hz (by simp [h0]))
 
+/-- The potential integral `∫ h (exp (2w) - 1 - 2w)` is nonnegative. -/
+private theorem integral_potential_nonneg (w : ℂ → ℝ) :
+    0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
+  integral_nonneg fun z ↦ mul_nonneg (by positivity) (exp_two_mul_sub_one_sub_two_mul_nonneg _)
+
+/-- The energy `∫ ‖Dw‖² / 2 + (1 / 16) ∫ h (exp (2w) - 1 - 2w)` is nonnegative. -/
+private theorem energy_nonneg (w : ℂ → ℝ) :
+    0 ≤ (∫ z, ‖fderiv ℝ w z‖ ^ 2) / 2 +
+      (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z)) / 16 := by
+  have hA : 0 ≤ ∫ z, ‖fderiv ℝ w z‖ ^ 2 := integral_nonneg fun z ↦ by positivity
+  have hE := integral_potential_nonneg (P := P) w
+  positivity
+
 /-- Outside a disc where `‖P‖ ≥ 1`, so that `h ≥ 1 / 2`, the modular `√(1 + w²) - 1` is at most
 twice the potential term `h (exp (2w) - 1 - 2w)`. -/
 private theorem setIntegral_compl_closedBall_le {R : ℝ}
@@ -188,7 +182,7 @@ private theorem setIntegral_compl_closedBall_le {R : ℝ}
         have hh : 1 / 2 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
           rw [div_le_div_iff₀ (by norm_num) (by positivity)]
           nlinarith
-        have := sqrt_one_add_sq_sub_one_le_exp (w z)
+        have := Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul (w z)
         have := exp_two_mul_sub_one_sub_two_mul_nonneg (w z)
         nlinarith
     _ ≤ ∫ z, 2 * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
@@ -220,8 +214,7 @@ private theorem exists_sq_integral_sq_le (hm : 0 < P.natDegree) :
   set M := A / 2 + E / 16
   set k := 2 + C₀ * √A
   have hA : 0 ≤ A := integral_nonneg fun z ↦ by positivity
-  have hE : 0 ≤ E := integral_nonneg fun z ↦
-    mul_nonneg (by positivity) (exp_two_mul_sub_one_sub_two_mul_nonneg _)
+  have hE : 0 ≤ E := integral_potential_nonneg w
   have hk : 0 ≤ k := by positivity
   -- The planar estimate with `s` the disc: `∫ w² ≤ 2 k (2 E) + k² S ≤ 64 k M + k² S`.
   have hW1 : ∫ z, w z ^ 2 ≤ 64 * k * M + k ^ 2 * S := by
@@ -272,11 +265,7 @@ theorem exists_le_two_mul_reducedFunctional_add (hm : 0 < P.natDegree) :
   set A := ∫ z, ‖fderiv ℝ w z‖ ^ 2
   set E := ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z)
   set M := A / 2 + E / 16
-  have hM : 0 ≤ M := by
-    have hA : 0 ≤ A := integral_nonneg fun z ↦ by positivity
-    have hE : 0 ≤ E := integral_nonneg fun z ↦
-      mul_nonneg (by positivity) (exp_two_mul_sub_one_sub_two_mul_nonneg _)
-    positivity
+  have hM : 0 ≤ M := energy_nonneg w
   have hwL : MemLp w 2 := hw.continuous.memLp_of_hasCompactSupport hws
   -- The linear term: `|∫ c w| ≤ x` with `x² ≤ K ∫ w²`, hence `x⁴ ≤ D (1 + M)³`.
   set x := ∫ z, |c z| * |w z|
@@ -306,12 +295,7 @@ theorem exists_le_reducedFunctional (hm : 0 < P.natDegree) :
     ∃ C : ℝ, ∀ w : ℂ → ℝ, ContDiff ℝ 1 w → HasCompactSupport w → C ≤ reducedFunctional P w := by
   obtain ⟨C, hC⟩ := exists_le_two_mul_reducedFunctional_add hm
   refine ⟨-C / 2, fun w hw hws ↦ ?_⟩
-  have h := hC w hw hws
-  have hA : 0 ≤ ∫ z, ‖fderiv ℝ w z‖ ^ 2 := integral_nonneg fun z ↦ by positivity
-  have hE : 0 ≤
-      ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-    integral_nonneg fun z ↦ mul_nonneg (by positivity) (exp_two_mul_sub_one_sub_two_mul_nonneg _)
-  linarith
+  linarith [hC w hw hws, energy_nonneg (P := P) w]
 
 /-- **Bounded sublevel sets.** For a complex polynomial `P` of degree at least one and every
 level `t`, the compactly supported `C¹` functions `w` with `I(w) ≤ t` have uniformly bounded
@@ -328,8 +312,7 @@ theorem exists_integral_le_of_reducedFunctional_le (hm : 0 < P.natDegree) (t : �
   set E := ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z)
   set W := ∫ z, w z ^ 2
   have hA : 0 ≤ A := integral_nonneg fun z ↦ by positivity
-  have hE : 0 ≤ E := integral_nonneg fun z ↦
-    mul_nonneg (by positivity) (exp_two_mul_sub_one_sub_two_mul_nonneg _)
+  have hE : 0 ≤ E := integral_potential_nonneg w
   have hMB : A / 2 + E / 16 ≤ B := by
     have := hC₁ w hw hws
     simp only [B]

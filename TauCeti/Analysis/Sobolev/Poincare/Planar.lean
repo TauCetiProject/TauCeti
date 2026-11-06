@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
-import TauCeti.MeasureTheory.Integral.CauchySchwarz
+import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # An `L²` bound for planar functions from the gradient and a linear-growth modular
@@ -109,10 +109,12 @@ private theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| 
   rw [abs_div, abs_of_pos hpos, div_le_one₀ hpos]
   exact Real.abs_le_sqrt (by linarith)
 
-private theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
-  have h := sqrt_one_add_norm_sq_le t
-  rw [Real.norm_eq_abs, sq_abs] at h
-  linarith
+/-- Composition with `r` preserves continuity and compact support. -/
+private theorem continuous_hasCompactSupport_modularRoot_comp {X : Type*} [TopologicalSpace X]
+    {w : X → ℝ} (hw : Continuous w) (hws : HasCompactSupport w) :
+    (Continuous fun x ↦ modularRoot (w x)) ∧ HasCompactSupport fun x ↦ modularRoot (w x) :=
+  ⟨contDiff_modularRoot.continuous.comp hw,
+    hws.comp_left (g := modularRoot) (by simp [modularRoot])⟩
 
 /-! ### Integral inequalities -/
 
@@ -157,10 +159,7 @@ private theorem integral_modularRoot_pow_three_sq_le (hE : finrank ℝ E = 2) {w
       9 / 4 * (lintegralPowLePowLIntegralFDerivConst μ 2 : ℝ) *
         (∫ x, modularRoot (w x) ^ 2 ∂μ) * ∫ x, ‖fderiv ℝ w x‖ ^ 2 ∂μ := by
   set G : ℝ := (lintegralPowLePowLIntegralFDerivConst μ 2 : ℝ)
-  have hrc : Continuous fun x ↦ modularRoot (w x) :=
-    contDiff_modularRoot.continuous.comp hw.continuous
-  have hrs : HasCompactSupport fun x ↦ modularRoot (w x) :=
-    hws.comp_left (g := modularRoot) (by simp [modularRoot])
+  obtain ⟨hrc, hrs⟩ := continuous_hasCompactSupport_modularRoot_comp hw.continuous hws
   have hdc : Continuous fun x ↦ fderiv ℝ w x := hw.continuous_fderiv one_ne_zero
   have hds : HasCompactSupport fun x ↦ fderiv ℝ w x := hws.fderiv (𝕜 := ℝ)
   have hf3 : ContDiff ℝ 1 fun x ↦ modularRoot (w x) ^ 3 :=
@@ -214,10 +213,7 @@ private theorem integral_sq_le_mul_integral_modular (hE : finrank ℝ E = 2) {w 
   set X := ∫ x, modularRoot (w x) ^ 2 ∂μ
   have hG : 0 ≤ G := NNReal.coe_nonneg _
   have hA : 0 ≤ A := integral_nonneg fun x ↦ by positivity
-  have hrc : Continuous fun x ↦ modularRoot (w x) :=
-    contDiff_modularRoot.continuous.comp hw.continuous
-  have hrs : HasCompactSupport fun x ↦ modularRoot (w x) :=
-    hws.comp_left (g := modularRoot) (by simp [modularRoot])
+  obtain ⟨hrc, hrs⟩ := continuous_hasCompactSupport_modularRoot_comp hw.continuous hws
   have hrs2 : HasCompactSupport fun x ↦ modularRoot (w x) ^ 2 :=
     hrs.comp_left (g := (· ^ 2)) (by simp)
   -- Cauchy–Schwarz: `(∫ g(w)²)² ≤ X Y ≤ ((3/2) √(G A) X)²`.
@@ -308,7 +304,7 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
     rw [← integral_add_compl hs hmod]
     have := setIntegral_mono_on hmod.integrableOn
       (hwc.abs.integrable_of_hasCompactSupport habs).integrableOn hs
-      fun x _ ↦ sqrt_one_add_sq_sub_one_le_abs (w x)
+      fun x _ ↦ Real.sqrt_one_add_sq_sub_one_le_abs (w x)
     linarith
   -- Cauchy–Schwarz over `s`: `(∫_s |w|)² ≤ μ(s) ∫ w²`.
   have hZ : (∫ x in s, |w x| ∂μ) ^ 2 ≤ μ.real s * ∫ x, w x ^ 2 ∂μ := by
