@@ -17,7 +17,10 @@ This file defines chartwise nullity for subsets of a charted manifold, without i
 measurable structure on the manifold itself.  The definition is independent of the choice of Haar
 measure on the model and has the usual subset and countable-union closure properties. On a
 manifold with a finite-dimensional model a null set has empty interior, so its complement is
-dense; this is how Sard's theorem produces regular values.
+dense; this is how Sard's theorem produces regular values. Nullity of the image of a map out of a
+Lindelöf charted space can be checked on coordinate expressions in pairs of charts
+(`TauCeti.isNullSet_image_of_forall_extChartAt`); this is how flat Sard theorems pass to
+manifolds.
 -/
 
 public section
@@ -121,5 +124,40 @@ theorem isNullSet_boundary {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ
     simpa only [extChartAt_source] using hz.2
   exact (ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range one_ne_zero
     (IsManifold.chart_mem_maximalAtlas x) hsource).mp hz.1
+
+section Image
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- **Nullity of an image is checked in coordinates.** Let `M` be a Lindelöf charted space and
+`f : M → N`. The image `f '' s` is null in `N` as soon as, for every chart of `M` at `x₀`, every
+chart of `N` at `y₀` and every Haar measure on the model of `N`, the coordinate expression of `f`
+in these charts sends the chart image of the points of `s` that both charts see to a null set. -/
+theorem isNullSet_image_of_forall_extChartAt [LindelofSpace M] {I : ModelWithCorners ℝ E H}
+    {J : ModelWithCorners ℝ E' H'} [MeasurableSpace E'] [BorelSpace E'] {f : M → N} {s : Set M}
+    (h : ∀ (x₀ : M) (y₀ : N) (μ : Measure E') [μ.IsAddHaarMeasure],
+      μ ((extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) ''
+        (extChartAt I x₀ '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source))) = 0) :
+    IsNullSet J (f '' s) := by
+  -- The part of `s` in the chart at `x₀` has null image, read in any chart of `N`.
+  have hloc (x₀ : M) : IsNullSet J (f '' (s ∩ (chartAt H x₀).source)) := by
+    rw [isNullSet_iff]
+    intro y₀ μ _
+    refine (congrArg μ ?_).trans (h x₀ y₀ μ)
+    rw [extChartAt_source, ← image_inter_preimage, image_image, image_image]
+    refine image_congr fun x hx ↦ ?_
+    have hx' : x ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hx.1.2
+    simp only [Function.comp_apply, (extChartAt I x₀).left_inv hx']
+  -- Countably many chart sources cover `M`.
+  obtain ⟨t, htc, -, hcover⟩ := isLindelof_univ.elim_nhds_subcover
+    (fun x : M ↦ (chartAt H x).source) fun x _ ↦ chart_source_mem_nhds H x
+  have hst : s = ⋃ x ∈ t, s ∩ (chartAt H x).source := by
+    rw [← inter_iUnion₂, eq_comm, inter_eq_left]
+    exact (subset_univ s).trans hcover
+  rw [hst, image_iUnion₂]
+  exact IsNullSet.biUnion htc fun x _ ↦ hloc x
+
+end Image
 
 end TauCeti
