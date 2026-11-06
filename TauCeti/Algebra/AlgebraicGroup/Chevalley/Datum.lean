@@ -131,26 +131,6 @@ attribute [instance] instAddCommGroup instModule
 
 instance : CoeSort (ChevalleyDatum t ht) Type := ⟨carrier⟩
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- A faithful datum representation carries each numbered simple-root triple to an `sl₂`
-triple of endomorphisms. -/
-theorem isSl2Triple_representation (i : Fin t.rank) :
-    IsSl2Triple
-      (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
-      (D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
-      (D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
-  have hT := ((t.lieBasis ht).sl2 i).map
-    (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (by
-      intro hz
-      apply ((t.lieBasis ht).sl2 i).h_ne_zero
-      apply D.injective_representation_ι
-      simpa using hz)
-  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using hT
-
 /-! ## The weight lattice and the coordinate weights -/
 
 /-- The **weight lattice** `Λ(D)` of a Chevalley datum: the sublattice of `Fin t.rank → ℤ` spanned
@@ -253,6 +233,27 @@ theorem isNilpotent_representation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank)
   UniversalEnvelopingAlgebra.isNilpotent_of_isCartanWeightVector (t.lieBasis ht).h
     D.representation D.isCartanWeightVector_basis D.span_range_basis_eq_top
     (t.lie_lieBasis_h_rootGenerator ht i) (t.rootGeneratorWeight_ne_zero ht i)
+
+section
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance high] Algebra.toModule
+
+/-- The images of the Cartan element and the positive and negative simple root generators
+at a node form an `sl₂` triple in the representation of a Chevalley datum. -/
+theorem isSl2Triple_representation_rootGenerator (i : Fin t.rank) :
+    IsSl2Triple
+      (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
+  exact ((t.lieBasis ht).isSl2Triple_rootGenerator i).map
+    (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+    (fun hzero => ((t.lieBasis ht).isSl2Triple_rootGenerator i).h_ne_zero
+      (D.injective_representation_ι (by simpa using hzero)))
+
+end
 
 /-! ## The group scheme -/
 
