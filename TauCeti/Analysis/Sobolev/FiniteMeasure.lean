@@ -279,25 +279,14 @@ private def W1p0.setIntegralMulₗ (f : E → ℝ)
     rw [hx, Pi.smul_apply, smul_eq_mul]
     ring
 
-/-- **An `Lʳ` function acts continuously on `W^{1,2}_0(Ω)`.** Let `n ≥ 1` be the dimension, let
-`Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)` (which
-is automatic for `n ≤ 2`). For `f ∈ Lʳ(Ω)`, the pairing `v ↦ ∫_Ω f v` is a continuous linear
-functional on `W^{1,2}_0(Ω)`. This is the right-hand side of the weak
-formulation of an elliptic equation with `Lʳ` data. -/
-theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
-    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (finrank ℝ E : ℝ) * (2 - r) < 2 * r)
-    {f : E → ℝ} (hf : MemLp f r (mu.restrict Omega)) :
-    ∃ ℓ : StrongDual ℝ (W1p0 mu Omega 2), ∀ v : W1p0 mu Omega 2,
-      ℓ v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  set n : ℝ := (finrank ℝ E : ℝ)
-  have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 finrank_pos
-  set ν := mu.restrict (Omega : Set E)
-  have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
-  have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
+/-- **The exponent for the `Lʳ` pairing on `W^{1,2}_0`.** For `n ≥ 1` and `r > 1` with
+`n (2 - r) < 2 r`, there is a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`:
+take `1/t = min (1/2) (1 - 1/r)`. -/
+private lemma exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one {n : ℝ} (hn : 1 ≤ n) {r : ℝ≥0}
+    (hr : 1 < r) (hrn : n * (2 - r) < 2 * r) :
+    ∃ t : ℝ≥0, 0 < t ∧ (2 : ℝ≥0∞) ≤ t ∧ 2⁻¹ - (t : ℝ)⁻¹ < n⁻¹ ∧
+      (r : ℝ)⁻¹ + (t : ℝ)⁻¹ ≤ 1 := by
   have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  -- The Sobolev exponent `t`, with `1/t = min (1/2) (1 - 1/r)`: then `t ≥ 2`,
-  -- `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
   set τ : ℝ := min 2⁻¹ (1 - (r : ℝ)⁻¹)
   have hrinv : (r : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ hr1
   have hτ0 : 0 < τ := lt_min (by norm_num) (by linarith)
@@ -319,21 +308,38 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
       rw [ht, le_inv_comm₀ two_pos hτ0]
       exact hτ2
     exact_mod_cast this
-  have hrt : (r : ℝ)⁻¹ + (t : ℝ)⁻¹ ≤ 1 := by rw [ht, inv_inv]; linarith
+  exact ⟨t, by exact_mod_cast ht0, h2t, by rwa [ht, inv_inv], by rw [ht, inv_inv]; linarith⟩
+
+/-- **An `Lʳ` function acts continuously on `W^{1,2}_0(Ω)`.** Let `n ≥ 1` be the dimension, let
+`Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)` (which
+is automatic for `n ≤ 2`). For `f ∈ Lʳ(Ω)`, the pairing `v ↦ ∫_Ω f v` is a continuous linear
+functional on `W^{1,2}_0(Ω)`. This is the right-hand side of the weak
+formulation of an elliptic equation with `Lʳ` data. -/
+theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
+    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (finrank ℝ E : ℝ) * (2 - r) < 2 * r)
+    {f : E → ℝ} (hf : MemLp f r (mu.restrict Omega)) :
+    ∃ ℓ : StrongDual ℝ (W1p0 mu Omega 2), ∀ v : W1p0 mu Omega 2,
+      ℓ v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  set n : ℝ := (finrank ℝ E : ℝ)
+  have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 finrank_pos
+  set ν := mu.restrict (Omega : Set E)
+  have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
+  obtain ⟨t, ht0, h2t, hτn, hrt⟩ := exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one hn hr hrn
   -- The Sobolev inequality `‖v‖_{Lᵗ} ≤ S ‖∇v‖_{L²}` on `W^{1,2}_0(Ω)`.
   obtain ⟨S, hSfin, hS⟩ : ∃ S : ℝ≥0∞, S ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
       eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν ≤ S * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
     ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
       (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega), fun v =>
       W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-        ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - τ) (by rw [ENNReal.toReal_ofNat, ht, inv_inv])
+        ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
         hτn v.2⟩
   have hmemt : ∀ v : W1p0 mu Omega 2, MemLp (W1p.value (v : W1p mu Omega 2)) t ν := fun v =>
     (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top enorm_lt_top)
   -- Hölder's inequality: `f v` is integrable and `|∫_Ω f v| ≤ ‖f‖_{Lʳ} ‖v‖_{Lᵗ} |Ω|^{...}`.
   have hq1 : (1 : ℝ≥0∞) ≤ ((r : ℝ≥0∞)⁻¹ + (t : ℝ≥0∞)⁻¹)⁻¹ := by
     have hle : ((r⁻¹ + t⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by push_cast; exact hrt
-    rw [ENNReal.one_le_inv, ← ENNReal.coe_inv (by positivity), ← ENNReal.coe_inv (by positivity),
+    rw [ENNReal.one_le_inv, ← ENNReal.coe_inv (zero_lt_one.trans hr).ne', ← ENNReal.coe_inv ht0.ne',
       ← ENNReal.coe_add]
     exact_mod_cast hle
   have hint : ∀ v : W1p0 mu Omega 2,
