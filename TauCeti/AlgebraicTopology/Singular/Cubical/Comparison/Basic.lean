@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Models
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # The comparison of cubical and simplicial singular chains
@@ -50,6 +51,8 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   to the same point.
 * `TauCeti.cubicalToSingularGen_zero` and `TauCeti.singularToCubicalGen_zero`: in degree zero the
   model generators are the point simplex and the point cube.
+* `TauCeti.singularCubicalHomologyIso_hom_singularHomology₀Section`: on homology in degree zero the
+  comparison sends the class of a point to the class of the point cube.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
   normalized cubical chains induces isomorphisms on singular homology.
 
@@ -395,6 +398,36 @@ theorem singularCubicalHomologyIso_inv (X : TopCat.{u}) (n : ℕ) :
       HomologicalComplex.homologyMap ((cubicalToSingular k).app X) n := by
   rw [← cubicalSingularHomotopyEquiv_inv]
   rfl
+
+/-- The comparison of singular with normalized cubical homology sends the class of a point `x` in
+degree zero to the class of the point cube at `x`. -/
+theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u}} (x : X) :
+    (singularCubicalHomologyIso k X 0).hom
+        ((singularHomology₀Section (ModuleCat.of k k) x).hom 1) =
+      ((normalizedCubicalChainComplex k).obj X).homologyπ 0
+        (((normalizedCubicalChainComplex k).obj X).moduleCatCyclesMk
+          ((normalizedCubicalChainComplexXEquiv X 0).symm
+            (NormalizedCubicalChain.ofCube X k (SingularCube.point x))) 0 ChainComplex.next_nat_zero
+          (by rw [HomologicalComplex.shape _ _ _ (by simp)]; rfl)) := by
+  -- The cycle given by the singular `0`-simplex at `x`, as a map from the coefficients.
+  let z := ((singularChains k).obj X).liftCycles
+    ((TopCat.toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x)) 0 (by simp)
+      (by rw [HomologicalComplex.shape _ _ _ (by simp)]; exact Limits.comp_zero)
+  have hx : (singularHomology₀Section (ModuleCat.of k k) x).hom 1 =
+      ((singularChains k).obj X).homologyπ 0 (z 1) := by
+    rw [singularHomology₀Section_def, SSet.ιHomology₀_eq]
+    rfl
+  have hi : ((singularChains k).obj X).iCycles 0 (z 1) =
+      simplexChain (TopCat.toSSetObj₀Equiv.symm x) 1 :=
+    (ModuleCat.comp_apply _ _ _).symm.trans
+      (ConcreteCategory.congr_hom (HomologicalComplex.liftCycles_i _ _ _ _ _) 1)
+  rw [hx, singularCubicalHomologyIso_hom, ← ModuleCat.comp_apply,
+    HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
+  congr 1
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, ← ModuleCat.comp_apply,
+    HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hi]
+  exact (singularToCubical_app_f_zero_simplexChain _).trans (by rw [Equiv.apply_symm_apply]; rfl)
 
 /-- The comparison isomorphism on homology is natural. -/
 @[reassoc]
