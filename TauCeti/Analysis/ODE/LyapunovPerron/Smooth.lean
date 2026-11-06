@@ -305,6 +305,27 @@ theorem contDiffAt_lyapunovPerronGraphMap
   contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn hs hu hα hN hsmall
     (hN.uniformContDiffOn_one hNs hN') hδ hξ₀
 
+/-- The derivative of a Lyapunov--Perron graph is evaluation at zero of the derivative of
+its bounded forward solution, minus the fixed stable projection. -/
+theorem fderiv_lyapunovPerronGraphMap
+    (hNs : ∀ x ∈ s, HasFDerivAt N (N' x) x) (hN' : UniformContinuousOn N' s) (hδ : 0 < δ)
+    (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
+    fderiv ℝ (lyapunovPerronGraphMap A P N hs hu hα hN hsmall) ξ₀ =
+      BoundedContinuousFunction.evalCLM ℝ 0 ∘L
+        fderiv ℝ (lyapunovPerronSolution A P N hs hu hα hN hsmall) ξ₀ - P := by
+  have hS := ((contDiffAt_lyapunovPerronSolution hs hu hα hN hsmall
+    hNs hN' hδ hξ₀).differentiableAt one_ne_zero).hasFDerivAt
+  have h := ((BoundedContinuousFunction.evalCLM ℝ 0).hasFDerivAt.comp ξ₀ hS).sub
+    P.hasFDerivAt
+  have heq : (fun ξ ↦ BoundedContinuousFunction.evalCLM ℝ 0
+      (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ) - P ξ) =
+      lyapunovPerronGraphMap A P N hs hu hα hN hsmall := by
+    funext ξ
+    simp only [BoundedContinuousFunction.evalCLM_apply,
+      lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap, add_sub_cancel_left]
+  exact (h.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun ξ ↦ (congrFun heq ξ).symm)).fderiv
+
 end ContinuousLinearMap
 
 end
