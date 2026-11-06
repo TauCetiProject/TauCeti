@@ -410,6 +410,14 @@ private lemma continuous_integrandFDeriv (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)
   simp only [integrandFDeriv_apply, Circle.smul_def]
   fun_prop
 
+private lemma integrable_integrandFDeriv (ha : ContDiff ℝ 1 a) {x : E} {C C' : ℝ}
+    (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hC' : ∀ ξ, ‖fderiv ℝ (fun y ↦ a (y, ξ)) x‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (f : 𝓢(E, V)) : Integrable (integrandFDeriv a f x) :=
+  ((f.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m + 1)).const_mul _).mono'
+    (continuous_integrandFDeriv ha f x).aestronglyMeasurable
+    (ae_of_all _ (norm_integrandFDeriv_le hC hC' f))
+
 /-- The derivative of the position integral of the quantization integrand. -/
 private lemma hasFDerivAt_integral_integrand (ha : ContDiff ℝ 1 a)
     (hC : ∀ K : Set E, IsCompact K →
@@ -466,10 +474,7 @@ theorem fderiv_quantizeSchwartzValue_apply (ha : ContDiff ℝ 1 a)
       rw [mul_right_comm]
       gcongr
       exact hC'x x rfl ξ)
-  have hint : Integrable (integrandFDeriv a (𝓕 u) x) :=
-    (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m + 1)).const_mul _).mono'
-      (continuous_integrandFDeriv ha (𝓕 u) x).aestronglyMeasurable
-      (ae_of_all _ (norm_integrandFDeriv_le (hCx x rfl) (hC'x x rfl) (𝓕 u)))
+  have hint := integrable_integrandFDeriv ha (hCx x rfl) (hC'x x rfl) (𝓕 u)
   have hint₁ := integrable_quantizeSchwartzValue_integrand hmeas (hCx x rfl) (𝓕 (∂_{h} u))
   have hint₂ := integrable_quantizeSchwartzValue_integrand
     (a := fun p : E × E ↦ fderiv ℝ (fun y ↦ a (y, p.2)) p.1 h) (x := x) hmeas' hCx' (𝓕 u)
@@ -507,7 +512,7 @@ theorem coordinateDeriv_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
       quantizeSchwartzValue a.coefficient (∂_{EuclideanSpace.single j (1 : ℝ)} u) +
         quantizeSchwartzValue (spatialDeriv j a).coefficient u := by
   funext x
-  rw [coordinateDeriv_cons, coordinateDeriv_nil, fderiv_quantizeSchwartzValue_apply
+  rw [coordinateDeriv_singleton, fderiv_quantizeSchwartzValue_apply
     a.contDiff_one_coefficient
     a.exists_bound_coefficient'
     a.exists_bound_fderiv_coefficient, Pi.add_apply]
@@ -522,28 +527,12 @@ theorem contDiff_quantizeSchwartzValue (a : Symbol n V W m) (u : 𝓢(Coordinate
     exact contDiff_zero.2 (continuous_quantizeSchwartzValue a.contDiff_coefficient.continuous
       a.exists_bound_coefficient' u)
   | succ k ih =>
-    rw [Nat.cast_succ, contDiff_succ_iff_fderiv]
-    refine ⟨differentiable_quantizeSchwartzValue a.contDiff_one_coefficient
-      a.exists_bound_coefficient'
-      a.exists_bound_fderiv_coefficient u, by simp, contDiff_clm_apply_iff.2 fun h ↦ ?_⟩
+    refine contDiff_succ_iff_coordinateDeriv (k := k) |>.2
+      ⟨differentiable_quantizeSchwartzValue a.contDiff_one_coefficient
+        a.exists_bound_coefficient' a.exists_bound_fderiv_coefficient u, fun j ↦ ?_⟩
     -- each partial derivative is again a sum of quantizations of symbols
-    have hj (j : Fin n) : ContDiff ℝ k fun x ↦
-        fderiv ℝ (quantizeSchwartzValue a.coefficient u) x (EuclideanSpace.single j 1) := by
-      have hd : (fun x ↦ fderiv ℝ (quantizeSchwartzValue a.coefficient u) x
-          (EuclideanSpace.single j 1)) =
-            coordinateDeriv [j] (quantizeSchwartzValue a.coefficient u) := by
-        funext x
-        rw [coordinateDeriv_cons, coordinateDeriv_nil]
-      rw [hd, a.coordinateDeriv_quantizeSchwartzValue j u]
-      exact (ih a _).add (ih _ u)
-    have hsum : (fun x ↦ fderiv ℝ (quantizeSchwartzValue a.coefficient u) x h) = fun x ↦
-        ∑ j, h j •
-          fderiv ℝ (quantizeSchwartzValue a.coefficient u) x (EuclideanSpace.single j 1) := by
-      funext x
-      conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
-      simp
-    rw [hsum]
-    exact ContDiff.sum fun j _ ↦ (hj j).const_smul (h j)
+    rw [a.coordinateDeriv_quantizeSchwartzValue j u]
+    exact (ih a _).add (ih _ u)
 
 end Symbol
 

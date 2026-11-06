@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
+import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -46,6 +47,8 @@ symbol calculus.
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `TauCeti.contDiff_succ_iff_coordinateDeriv`: `f` is `C^(k + 1)` exactly when it is
+  differentiable with `C^k` first-order coordinate derivatives.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
@@ -83,6 +86,17 @@ theorem coordinateDeriv_cons (j : Fin n) (js : List (Fin n)) (f : CoordinateSpac
     coordinateDeriv (j :: js) f x =
       fderiv ℝ (coordinateDeriv js f) x (EuclideanSpace.single j 1) := (rfl)
 
+/-- A first-order coordinate derivative `∂_j f` is the derivative of `f` in the direction of the
+`j`-th standard basis vector. -/
+theorem coordinateDeriv_singleton (j : Fin n) (f : CoordinateSpace n → A) (x : CoordinateSpace n) :
+    coordinateDeriv [j] f x = fderiv ℝ f x (EuclideanSpace.single j 1) := (rfl)
+
+/-- The derivative of `f` in a direction `h` is `∑ j, h_j ∂_j f`. -/
+theorem fderiv_apply_eq_sum_coordinateDeriv (f : CoordinateSpace n → A)
+    (x h : CoordinateSpace n) : fderiv ℝ f x h = ∑ j, h j • coordinateDeriv [j] f x := by
+  conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
+  simp [coordinateDeriv_singleton]
+
 /-- Differentiating along a concatenated word differentiates along the second word first. -/
 theorem coordinateDeriv_append (α β : List (Fin n)) (f : CoordinateSpace n → A) :
     coordinateDeriv (α ++ β) f = coordinateDeriv α (coordinateDeriv β f) := by
@@ -107,6 +121,18 @@ theorem _root_.ContDiff.coordinateDeriv_of_le {N m : WithTop ℕ∞} {f : Coordi
 theorem _root_.ContDiff.coordinateDeriv {f : CoordinateSpace n → A} (hf : ContDiff ℝ ∞ f)
     (α : List (Fin n)) : ContDiff ℝ ∞ (coordinateDeriv α f) :=
   hf.coordinateDeriv_of_le α (by simp)
+
+/-- A function is `C^(k + 1)` exactly when it is differentiable and each of its first-order
+coordinate derivatives `∂_j f` is `C^k`. -/
+theorem contDiff_succ_iff_coordinateDeriv {k : ℕ∞} {f : CoordinateSpace n → A} :
+    ContDiff ℝ (k + 1) f ↔
+      Differentiable ℝ f ∧ ∀ j : Fin n, ContDiff ℝ k (coordinateDeriv [j] f) := by
+  refine ⟨fun hf ↦ ⟨hf.differentiable (by simp), fun j ↦ hf.coordinateDeriv_of_le [j] le_rfl⟩,
+    fun ⟨hd, hj⟩ ↦ ?_⟩
+  rw [contDiff_succ_iff_fderiv]
+  refine ⟨hd, by simp, contDiff_clm_apply_iff.2 fun h ↦ ?_⟩
+  simp only [fderiv_apply_eq_sum_coordinateDeriv f _ h]
+  exact ContDiff.sum fun j _ ↦ (hj j).const_smul (h j)
 
 /-- A coordinate derivative of a `C^k` function along a word of length `k` is its `k`-th Fréchet
 derivative, evaluated on the standard basis vectors named by the word, in the same order. -/

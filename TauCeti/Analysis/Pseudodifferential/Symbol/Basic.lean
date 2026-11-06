@@ -384,7 +384,7 @@ its spatial derivative `∂_{x_j} a`. -/
 theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n) :
     fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) =
       (spatialDeriv j a).coefficient (x, ξ) := by
-  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+  rw [coefficient_spatialDeriv, coordinateDeriv_singleton]
 
 /-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
 the position. -/
