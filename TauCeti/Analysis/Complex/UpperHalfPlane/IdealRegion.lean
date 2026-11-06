@@ -75,6 +75,28 @@ theorem volume_setOf_re_eq (x : ℝ) : volume {z : ℍ | z.re = x} = 0 := by
   rw [h]
   exact volume_preimage_coe_null (Complex.volume_setOf_re_eq x)
 
+/-- The image of `idealRegion a b` in `ℂ` is the preimage, under the real-coordinates equivalence,
+of the set of points with `a ≤ x ≤ b` and `√(1 - x²) ≤ y`. -/
+private theorem image_idealRegion_eq_preimage {a b : ℝ}
+    (hsqrt : ∀ x ∈ Icc a b, 0 < Real.sqrt (1 - x ^ 2)) :
+    (↑) '' idealRegion a b = Complex.measurableEquivRealProd ⁻¹'
+      {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ Real.sqrt (1 - p.1 ^ 2) ≤ p.2} := by
+  ext w
+  simp only [Set.mem_image, Set.mem_preimage, Complex.measurableEquivRealProd_apply,
+    Set.mem_ofPred_eq, idealRegion]
+  constructor
+  · rintro ⟨z, ⟨hza, hzb, hz1⟩, rfl⟩
+    refine ⟨⟨hza, hzb⟩, ?_⟩
+    rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, Real.sqrt_le_left z.im_pos.le]
+    rw [Complex.normSq_apply, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at hz1
+    nlinarith [hz1]
+  · rintro ⟨⟨hwa, hwb⟩, hw⟩
+    have him : 0 < w.im := (hsqrt _ ⟨hwa, hwb⟩).trans_le hw
+    refine ⟨⟨w, him⟩, ⟨hwa, hwb, ?_⟩, rfl⟩
+    rw [Real.sqrt_le_left him.le] at hw
+    rw [Complex.normSq_apply]
+    nlinarith [hw]
+
 /-- `volume_idealRegion` for `-1 < a` and `b < 1`, where the integrand `1 / √(1 - x²)` is
 continuous on `[a, b]`; for `b < a` both sides vanish. -/
 private theorem volume_idealRegion_of_lt {a b : ℝ} (ha : -1 < a) (hb : b < 1) :
@@ -91,22 +113,8 @@ private theorem volume_idealRegion_of_lt {a b : ℝ} (ha : -1 < a) (hb : b < 1) 
   have hRm : MeasurableSet R :=
     (measurableSet_Icc.preimage measurable_fst).inter
       (measurableSet_le (by fun_prop) measurable_snd)
-  have himage : (↑) '' idealRegion a b = Complex.measurableEquivRealProd ⁻¹' R := by
-    ext w
-    simp only [Set.mem_image, Set.mem_preimage, Complex.measurableEquivRealProd_apply, hR,
-      Set.mem_ofPred_eq, idealRegion]
-    constructor
-    · rintro ⟨z, ⟨hza, hzb, hz1⟩, rfl⟩
-      refine ⟨⟨hza, hzb⟩, ?_⟩
-      rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, Real.sqrt_le_left z.im_pos.le]
-      rw [Complex.normSq_apply, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at hz1
-      nlinarith [hz1]
-    · rintro ⟨⟨hwa, hwb⟩, hw⟩
-      have him : 0 < w.im := (hsqrt _ ⟨hwa, hwb⟩).trans_le hw
-      refine ⟨⟨w, him⟩, ⟨hwa, hwb, ?_⟩, rfl⟩
-      rw [Real.sqrt_le_left him.le] at hw
-      rw [Complex.normSq_apply]
-      nlinarith [hw]
+  have himage : (↑) '' idealRegion a b = Complex.measurableEquivRealProd ⁻¹' R :=
+    image_idealRegion_eq_preimage hsqrt
   -- the integrand and its integral in `y` over `[√(1 - x²), ∞)`
   set F : ℝ × ℝ → ℝ≥0∞ := fun p ↦ (((1 / ‖p.2‖₊) ^ 2 : ℝ≥0) : ℝ≥0∞) with hF
   have hFm : Measurable F := by fun_prop
