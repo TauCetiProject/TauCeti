@@ -188,8 +188,6 @@ lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
     _ = mapGL ℚ σ₁ * natDiagGL n (a * b) * mapGL ℚ σ₂ := by
         rw [natDiagGL_mul n a b ha_pos hb_pos]
 
-variable [NeZero n]
-
 private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i)
     (hb_pos : ∀ i, 0 < b i) (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i))
     (p : DecompQuotient (SLnZ n) (SLnZ n) (((diagCoset a).rep : GL (Fin n) ℚ)) ×
@@ -452,8 +450,6 @@ private lemma out_conj_diagA_mem_H (a b : Fin n → ℕ) (ha_pos : ∀ i, 0 < a 
   rw [h_lhs_eq]
   exact (SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).inv_mem hh₂a)
     (coprime_coupling_mem_H n a b ha_pos hb_pos hcop σ' FF G_pre EE h_C_eq)) hh₂a
-
-variable [NeZero n]
 
 /-- The multiplicity of any double coset in a coprime product is at most one: two
 representative pairs with the same product coset have quotient-equal first components by

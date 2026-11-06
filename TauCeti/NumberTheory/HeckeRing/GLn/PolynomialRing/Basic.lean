@@ -114,15 +114,13 @@ lemma heckeGenExponent_monotone (k : Fin n) : Monotone (heckeGenExponent n k) :=
   simp only [heckeGenExponent_apply]
   split_ifs <;> omega
 
-variable [NeZero n]
-
 include hp in
 /-- The k-th generator of pLocalSubring: `T(1,...,1,p,...,p)` with `k+1` entries of `p`. -/
 noncomputable def heckeGen (k : Fin n) : IntegralHeckeRing n :=
   diagElem (heckeGenDiag n p k)
 
 include hp in
-omit hp [NeZero n] in
+omit hp in
 /-- Defining equation for the sealed definition `heckeGen`. -/
 lemma heckeGen_def (k : Fin n) : heckeGen n p k = diagElem (heckeGenDiag n p k) := (rfl)
 

@@ -83,6 +83,7 @@ private lemma isTriangular_one (p : ℕ) : IsTriangular p 0 (1 : IntegralHeckeRi
     by_contra hne
     exact hD (by simp [HeckeCosetModule.one_def, Ne.symm hne])
 
+omit [NeZero n] in
 /-- **Triangularity passes to a product with a diagonal coset.** If `x` is triangular with
 leading coset `T(p ^ a)` and `f` is monotone, then `x * T(p ^ f)` is triangular with leading coset
 `T(p ^ (a + f))`. -/
