@@ -56,6 +56,14 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 
+## Implementation notes
+
+Both derivatives are built from the totalized real derivative `fderiv ℝ g x`, so at a point where
+`g` is not real-differentiable both are the junk value `0`. Results that need a genuine derivative
+therefore assume differentiability; for instance, the converse "`\bar∂g = 0` implies complex
+differentiability" (`TauCeti.differentiableAt_iff_conjWirtingerDeriv_eq_zero` in
+`TauCeti.Analysis.Complex.Wirtinger.Holomorphic`) assumes `DifferentiableAt ℝ g x`.
+
 ## References
 
 * R. Hain, *Notes on the Morse theory of complex manifolds*.
@@ -77,7 +85,9 @@ variable (g : V → W) (x : V)
 
 /-- The **Wirtinger derivative** `∂g(x)` of a function into a complex normed space: the
 complex-linear part `v ↦ (Dg(x) v - I • Dg(x)(I • v)) / 2` of its real derivative. On a coordinate
-vector `e_j` it is `∂g / ∂z_j`. -/
+vector `e_j` it is `∂g / ∂z_j`. Like `fderiv ℝ g x`, from which it is built, it is the junk value
+`0` at points where `g` is not real-differentiable, so results that need a genuine derivative
+assume differentiability of `g` at `x`. -/
 noncomputable def wirtingerDeriv : V →L[ℂ] W where
   toFun v := (2 : ℂ)⁻¹ • (fderiv ℝ g x v - I • fderiv ℝ g x (I • v))
   map_add' v w := by simp only [smul_add, map_add]; module
@@ -91,7 +101,9 @@ noncomputable def wirtingerDeriv : V →L[ℂ] W where
 
 /-- The **conjugate Wirtinger derivative** `\bar∂g(x)` of a function into a complex normed space:
 the complex-antilinear part `v ↦ (Dg(x) v + I • Dg(x)(I • v)) / 2` of its real derivative. On a
-coordinate vector `e_j` it is `∂g / ∂(conj z_j)`. -/
+coordinate vector `e_j` it is `∂g / ∂(conj z_j)`. Like `fderiv ℝ g x`, from which it is built, it
+is the junk value `0` at points where `g` is not real-differentiable, so results that need a
+genuine derivative assume differentiability of `g` at `x`. -/
 noncomputable def conjWirtingerDeriv : V →L⋆[ℂ] W where
   toFun v := (2 : ℂ)⁻¹ • (fderiv ℝ g x v + I • fderiv ℝ g x (I • v))
   map_add' v w := by simp only [smul_add, map_add]; module
