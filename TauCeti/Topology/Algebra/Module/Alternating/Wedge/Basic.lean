@@ -317,7 +317,7 @@ theorem pairedWedge_smul_right [ContinuousConstSMul ℝ F₂] {k l : ℕ} (μ : 
   pairedWedge_smul_right_of_map_smul μ hμ (fun a b ↦ by simp) φ ψ
 
 /-- Degree transport in the first factor of a paired wedge: if `A`, of degree `b`, agrees with
-`c • B` after reindexing its arguments along `Fin.cast h : Fin b → Fin a`, then the wedge of `A`
+`c • B` after reindexing its arguments along `Fin.cast h : Fin a → Fin b`, then the wedge of `A`
 and `ψ` is `c •` the wedge of `B` and `ψ`, evaluated on the correspondingly transported tuple. -/
 theorem pairedWedge_apply_of_left_eq_smul_cast [ContinuousConstSMul ℝ F₁] {a b l : ℕ}
     (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (h : a = b)
