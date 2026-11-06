@@ -41,7 +41,7 @@ parts on each part of a partition, the fact that a refinement with no more parts
 partition is equal to it, the parts through a point of the finest and the coarsest partitions,
 the count of the parts by points singled out in each part (in a linear order, the first or the last
 point of each part), the part of a point in a linear order as its part before the last point of that
-part with the last point adjoined, the coarse parent
+part with the last point adjoined, the criterion for that part to be a pair, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
 the fine and coarse parts through them, the fact that a set with at most two elements has no finite
@@ -654,6 +654,27 @@ theorem part_eq_insert_part_restrict {m x : α} (hm : ∀ y ∈ P.part m, m ≤ 
     rw [(P.restrict _).part_eq_empty.2 hmt, or_iff_left (notMem_empty y)]
     refine ⟨fun hy => le_antisymm (hmax y hy) ?_, by rintro rfl; exact hxm⟩
     exact (not_lt.1 hmx).trans (hm y hy)
+
+/-- If `x > m` is the last point of the part of `m`, the part of `m` is the pair `{m, x}` exactly
+when `m` is its only point before `x`. -/
+theorem part_eq_pair_iff_inter_filter_lt_eq_singleton {m x : α}
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) (hmx : m < x) :
+    P.part m = {m, x} ↔ P.part m ∩ {y ∈ s | y < x} = {m} := by
+  have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
+  refine ⟨fun h => ?_, fun h => Subset.antisymm (fun y hy => ?_) ?_⟩
+  · rw [h]
+    ext y
+    simp only [mem_inter, mem_insert, mem_singleton, mem_filter]
+    constructor
+    · rintro ⟨rfl | rfl, -, hy⟩
+      exacts [rfl, absurd hy (lt_irrefl _)]
+    · rintro rfl
+      exact ⟨Or.inl rfl, hms, hmx⟩
+  · rcases (hmax y hy).lt_or_eq with hyx | rfl
+    · exact mem_insert.2 <| Or.inl <| mem_singleton.1 <|
+        h ▸ mem_inter.2 ⟨hy, mem_filter.2 ⟨P.part_subset m hy, hyx⟩⟩
+    · exact mem_insert.2 <| Or.inr <| mem_singleton_self _
+  · exact insert_subset (P.mem_part_self.2 hms) (singleton_subset_iff.2 hxm)
 
 end LinearOrder
 
