@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.MeasureTheory.Function.Lp.Holder
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
@@ -59,30 +61,6 @@ open MeasureTheory Filter Set TopologicalSpace Metric
 open scoped Convolution ContDiff ENNReal Topology InnerProductSpace
 
 namespace TauCeti
-
-/-- If `aₙ → a` in `L²(F₁)` and `cₙ → c` in `L²(F₂)`, then `L(aₙ, cₙ) → L(a, c)` in `L¹(W)` for a
-continuous bilinear form `L`, stated for pointwise representatives. -/
-private theorem tendsto_setLIntegral_enorm_bilin_sub {E F₁ F₂ : Type*} [MeasurableSpace E]
-    {μ : Measure E} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂]
-    [NormedSpace ℝ F₂] (L : F₁ →L[ℝ] F₂ →L[ℝ] ℝ) {W : Set E} (hW : MeasurableSet W)
-    {A : ℕ → Lp F₁ 2 μ} {A₀ : Lp F₁ 2 μ} {C : ℕ → Lp F₂ 2 μ} {C₀ : Lp F₂ 2 μ}
-    (hA : Tendsto A atTop (𝓝 A₀)) (hC : Tendsto C atTop (𝓝 C₀)) {a : ℕ → E → F₁}
-    {a₀ : E → F₁} {c : ℕ → E → F₂} {c₀ : E → F₂} (ha : ∀ n, A n =ᵐ[μ] a n)
-    (ha₀ : A₀ =ᵐ[μ.restrict W] a₀) (hc : ∀ n, C n =ᵐ[μ] c n) (hc₀ : C₀ =ᵐ[μ.restrict W] c₀) :
-    Tendsto (fun n ↦ ∫⁻ x in W, ‖L (a n x) (c n x) - L (a₀ x) (c₀ x)‖ₑ ∂μ) atTop (𝓝 0) := by
-  have hA' : Tendsto (fun n ↦ L.holderL μ 2 2 1 (A n)) atTop (𝓝 (L.holderL μ 2 2 1 A₀)) :=
-    ((L.holderL μ 2 2 1).continuous.tendsto A₀).comp hA
-  have hT : Tendsto (fun n ↦ L.holderL μ 2 2 1 (A n) (C n)) atTop
-      (𝓝 (L.holderL μ 2 2 1 A₀ C₀)) :=
-    (isBoundedBilinearMap_apply.continuous.tendsto _).comp (hA'.prodMk_nhds hC)
-  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hT
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hT (fun _ ↦ zero_le)
-    fun n ↦ ?_
-  rw [eLpNorm_one_eq_lintegral_enorm ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))]
-  refine le_of_eq_of_le (setLIntegral_congr_fun_ae hW ?_) (setLIntegral_le_lintegral _ _)
-  filter_upwards [L.coeFn_holder (r := 1) (A n) (C n), L.coeFn_holder (r := 1) A₀ C₀, ha n,
-    (ae_restrict_iff' hW).1 ha₀, hc n, (ae_restrict_iff' hW).1 hc₀] with x h₁ h₂ h₃ h₄ h₅ h₆ hx
-  simp only [ContinuousLinearMap.holderL_apply_apply, Pi.sub_apply, h₁, h₂, h₃, h₄ hx, h₅, h₆ hx]
 
 variable {E V : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -155,23 +133,9 @@ theorem HasWeakLineDerivOn.bilin_self {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : B.
   rw [hasWeakLineDerivOn_iff_forall_isCompact_closure]
   intro W hWc hWΩ
   have hWΩ' : (W : Set E) ⊆ Ω := subset_closure.trans hWΩ
-  obtain ⟨δ, hδ, hδΩ⟩ := hWc.exists_cthickening_subset_open Ω.isOpen hWΩ
-  -- Normalized bumps of radius at most `δ`, shrinking to zero.
-  let φ : ℕ → ContDiffBump (0 : E) := fun n ↦
-    { rIn := δ / (n + 2), rOut := δ / (n + 1), rIn_pos := by positivity,
-      rIn_lt_rOut := div_lt_div_of_pos_left hδ (by positivity) (by linarith) }
-  have hφ : Tendsto (fun n ↦ (φ n).rOut) atTop (𝓝 0) := by
-    have := (tendsto_one_div_add_atTop_nhds_zero_nat).const_mul δ
-    simp only [mul_zero, mul_one_div] at this
-    exact this
-  -- At points of `W`, the support of each kernel stays inside `Ω`.
-  have hsupp (n : ℕ) (x : E) (hx : x ∈ (W : Set E)) :
-      ∀ y ∈ tsupport ((φ n).normed μ), x - y ∈ Ω := by
-    intro y hy
-    rw [(φ n).tsupport_normed_eq, mem_closedBall, dist_zero_right] at hy
-    refine hδΩ (mem_cthickening_of_dist_le _ x δ _ (subset_closure hx) ?_)
-    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-    exact hy.trans (div_le_self hδ.le (by simp))
+  have hWμ : μ (W : Set E) < ⊤ := lt_of_le_of_lt (measure_mono subset_closure)
+    hWc.measure_lt_top
+  obtain ⟨φ, hφ, hsupp⟩ := ContDiffBump.exists_seq_sub_tsupport_subset (μ := μ) hWc hWΩ
   -- Each mollified quadratic form has its classical derivative as weak derivative on `W`.
   set g : ℕ → E → V := fun n ↦ (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U
   set k : ℕ → E → StrongDual ℝ V := fun n ↦
@@ -196,20 +160,13 @@ theorem HasWeakLineDerivOn.bilin_self {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : B.
     normedBumpLp_ae_eq_convolution ENNReal.ofNat_ne_top (φ n) hU'
   have hgt := tendsto_normedBumpLp (mu := μ) ENNReal.ofNat_ne_top hφ (hU.toLp U)
   have hkt := tendsto_normedBumpLp (mu := μ) ENNReal.ofNat_ne_top hφ (hU'.toLp U')
-  have hW := W.isOpen.measurableSet
-  have hWae : ∀ᵐ x ∂μ.restrict W, x ∈ (Ω : Set E) :=
-    (ae_restrict_mem hW).mono fun x hx ↦ hWΩ' hx
-  have hext : hU.toLp U =ᵐ[μ.restrict W] u := by
-    filter_upwards [ae_restrict_of_ae hU.coeFn_toLp, hWae] with x h₁ h₂
-    rw [h₁, hU_def, indicator_of_mem h₂]
-  have hext' : hU'.toLp U' =ᵐ[μ.restrict W] u' := by
-    filter_upwards [ae_restrict_of_ae hU'.coeFn_toLp, hWae] with x h₁ h₂
-    rw [h₁, hU'_def, indicator_of_mem h₂]
+  have hext := hU.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
+  have hext' := hU'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   refine hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub
     (hlim.mono_set hWΩ').locallyIntegrableOn (hlim'.mono_set hWΩ').locallyIntegrableOn hweak
-    (tendsto_setLIntegral_enorm_bilin_sub B hW hgt hgt hgLp hext hgLp hext) ?_
-  refine (tendsto_setLIntegral_enorm_bilin_sub
-    ((2 : ℝ) • ContinuousLinearMap.id ℝ (StrongDual ℝ V)) hW hkt hgt hkLp hext' hgLp hext).congr
+    (tendsto_setLIntegral_enorm_bilin_sub (r := 1) B hWμ hgt hgt hgLp hext hgLp hext) ?_
+  refine (tendsto_setLIntegral_enorm_bilin_sub (r := 1)
+    ((2 : ℝ) • ContinuousLinearMap.id ℝ (StrongDual ℝ V)) hWμ hkt hgt hkLp hext' hgLp hext).congr
     fun n ↦ ?_
   simp
 
