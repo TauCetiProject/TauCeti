@@ -44,9 +44,9 @@ is invertible. Replacing `P` by that copy gives a new decomposition `X = P ⊞ X
 remaining idempotent is carried by `X'`, where it splits by induction on the number of summands.
 
 `TauCeti.exists_isLocalRing_end_sum_comp_eq_id`, in
-`TauCeti.CategoryTheory.Preadditive.KrullSchmidt`, provides decompositions into objects with local
-endomorphism rings in Hom-finite idempotent-complete linear categories over a commutative Artinian
-ring.
+`TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Decomposition`, provides decompositions into
+objects with local endomorphism rings in Hom-finite idempotent-complete linear categories over a
+commutative Artinian ring.
 
 ## References
 
