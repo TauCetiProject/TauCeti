@@ -30,8 +30,10 @@ namespace SignType
 
 variable {K : Type*} [DivisionRing K]
 
-/-- Coefficients of the three Lagrange indicator polynomials on `{-1,0,1}`: the coefficient
-of `x ^ e` in the polynomial that is `1` at the sign `s` and `0` at the other two signs. -/
+/-- Coefficients of the three Lagrange indicator polynomials on `{-1,0,1}`: when `(2 : K) ≠ 0`,
+the coefficient of `x ^ e` in the polynomial that is `1` at the sign `s` and `0` at the other
+two signs (see `sum_lagrangeCoeff_mul_pow`). In characteristic `2`, `1 / 2 = 0`, so this
+indicator property fails. -/
 def lagrangeCoeff (s : SignType) (e : Fin 3) : K :=
   match s with
   | .zero => if e = 0 then 1 else if e = 2 then -1 else 0
