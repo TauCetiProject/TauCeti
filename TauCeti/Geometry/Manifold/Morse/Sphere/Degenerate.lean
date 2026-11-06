@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 Let `h` be the height function on the unit sphere `Sⁿ` in the direction of a unit vector `v`
 (`TauCeti.sphereHeight`). For a differentiable `φ : ℝ → ℝ` the differential of `φ ∘ h` is
 `φ'(h) dh`, so the critical points of `φ ∘ h` are the two poles `v` and `-v` together with the
-points whose height is a critical value of `φ` (`TauCeti.criticalPoints_comp_sphereHeight`). At a
+points whose height is a critical point of `φ` (`TauCeti.criticalPoints_comp_sphereHeight`). At a
 pole where `φ' = 0` the critical Hessian of `φ ∘ h` vanishes. This gives two test functions for
 statements about smooth functions with few critical points.
 
@@ -54,14 +54,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {φ : ℝ → ℝ}
 
 /-- The critical points of a function `φ ∘ h` of the height `h` are the two poles together with
-the points whose height is a critical value of `φ`. -/
+the points whose height is a critical point of `φ`, that is, a value at which `φ'` vanishes. -/
 theorem criticalPoints_comp_sphereHeight (hφ : Differentiable ℝ φ) (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (φ ∘ sphereHeight v) =
       sphereHeight v ⁻¹' {t | deriv φ t = 0} ∪ {v, -v} := by
   rw [criticalPoints_scalar_comp ((contMDiff_sphereHeight v).mdifferentiable one_ne_zero) hφ,
     criticalPoints_sphereHeight]
 
-/-- At a pole whose height is a critical value of `φ`, the critical Hessian of `φ ∘ h`
+/-- At a pole whose height is a critical point of `φ`, the critical Hessian of `φ ∘ h`
 vanishes. -/
 theorem criticalHessian_comp_sphereHeight_eq_zero {v x : sphere (0 : E) 1}
     (hφ : ContDiffAt ℝ 2 φ (sphereHeight v x)) (hx : x = v ∨ x = -v)

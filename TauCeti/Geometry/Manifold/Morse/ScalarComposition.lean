@@ -17,9 +17,9 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 For a scalar change of values `φ : ℝ → ℝ`, the differential of `φ ∘ f` is `φ'(f x)` times the
 differential of `f` (`TauCeti.mvfderiv_scalar_comp`), so the critical points of `φ ∘ f` are those
-of `f` together with the points where `f` takes a critical value of `φ`. At a critical point of
+of `f` together with the points where `f` takes a critical point of `φ`. At a critical point of
 `f` the critical Hessian of `φ ∘ f` is `φ'(f x)` times that of `f`. In particular, when
-`φ'(f x) = 0` it vanishes, so a scalar change with a critical value can turn a nondegenerate
+`φ'(f x) = 0` it vanishes, so a scalar change with a critical point can turn a nondegenerate
 critical point into a degenerate one.
 
 A smooth scalar change of values with nonvanishing derivative preserves Morse functions.
@@ -94,7 +94,7 @@ theorem mem_criticalPoints_scalar_comp_iff (hf : MDifferentiableAt I 𝓘(ℝ) f
     or_iff_right hφ']
 
 /-- The critical points of `φ ∘ f` are the critical points of `f` together with the points where
-`f` takes a critical value of `φ`. -/
+`f` takes a critical point of `φ`, that is, a value at which `φ'` vanishes. -/
 theorem criticalPoints_scalar_comp (hf : MDifferentiable I 𝓘(ℝ) f) (hφ : Differentiable ℝ φ) :
     criticalPoints I (φ ∘ f) = f ⁻¹' {t | deriv φ t = 0} ∪ criticalPoints I f :=
   Set.ext fun x ↦ mem_criticalPoints_scalar_comp_iff_or (hf x) (hφ (f x))
