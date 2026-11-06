@@ -25,6 +25,8 @@ indexed by.
   satisfying a given predicate form a closed set.
 * `TopologicalSpace.Opens.exists_le_preimage_coe_eq` : every open subset of an open set `Ω`,
   viewed as a subspace, is the trace of an open set contained in `Ω`.
+* `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
+  open set has a neighbourhood inside it which is a finite union of basis members.
 -/
 
 public section
@@ -65,5 +67,35 @@ theorem exists_le_preimage_coe_eq (Ω : Opens X) {W : Set Ω} (hW : IsOpen W) :
     Set.preimage_image_eq W Subtype.val_injective⟩
 
 end TopologicalSpace.Opens
+
+namespace TopologicalSpace.Opens.IsBasis
+
+variable {X : Type*} [TopologicalSpace X] {B : Set (Opens X)}
+
+/-- A compact subset of an open set has a neighbourhood which is a finite union of basis
+members and is contained in that open set. -/
+theorem exists_finset_sup_le_of_isCompact (hB : Opens.IsBasis B) {K : Set X}
+    (hK : IsCompact K) {U : Opens X} (hKU : K ⊆ U) :
+    ∃ s : Finset (Opens X), (∀ V ∈ s, V ∈ B) ∧ K ⊆ (s.sup id : Opens X) ∧ s.sup id ≤ U := by
+  classical
+  let C := {V : Opens X // V ∈ B ∧ V ≤ U}
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun V : C ↦ (V.1 : Set X))
+    (fun V ↦ V.1.isOpen) (fun x hx ↦ by
+      obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp hB (hKU hx)
+      exact Set.mem_iUnion.mpr ⟨⟨V, hV, hVU⟩, hxV⟩)
+  refine ⟨s.image Subtype.val, ?_, ?_, ?_⟩
+  · intro V hV
+    obtain ⟨W, _, rfl⟩ := Finset.mem_image.mp hV
+    exact W.2.1
+  · intro x hx
+    obtain ⟨V, hVs, hxV⟩ := Set.mem_iUnion₂.mp (hs hx)
+    have hle : V.1 ≤ (s.image Subtype.val).sup id :=
+      Finset.le_sup (f := id) (Finset.mem_image.mpr ⟨V, hVs, rfl⟩)
+    exact hle hxV
+  · exact Finset.sup_le fun V hV ↦ by
+      obtain ⟨W, _, rfl⟩ := Finset.mem_image.mp hV
+      exact W.2.2
+
+end TopologicalSpace.Opens.IsBasis
 
 end
