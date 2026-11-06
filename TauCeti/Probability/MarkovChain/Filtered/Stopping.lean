@@ -36,9 +36,18 @@ variable {Ω S : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace S]
   {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
   [IsFiniteMeasure μ] [IsMarkovKernel κ] {τ : Ω → WithTop ℕ}
 
+private lemma integrable_comp_stoppedValue_add (h : IsMarkovChain ℱ X κ μ)
+    (hτ : IsStoppingTime ℱ τ) (k : ℕ) {f : S → ℝ} (hf : Measurable f)
+    (hb : ∃ C : ℝ, ∀ x, ‖f x‖ ≤ C) :
+    Integrable (fun ω => f (stoppedValue (fun n => X (n + k)) τ ω)) μ := by
+  obtain ⟨C, hC⟩ := hb
+  exact ⟨(hf.comp (measurable_stoppedValue_of_countable
+    (fun n => h.adapted.measurable) hτ.measurable')).aestronglyMeasurable,
+    .of_bounded (Eventually.of_forall fun ω => hC _)⟩
+
 /-- The conditional transition law at a possibly infinite stopping time, tested against a
 bounded measurable real function. Both sides vanish on the event of nontermination. -/
-theorem condExp_stopped_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppingTime ℱ τ)
+theorem condExp_stoppedValue_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppingTime ℱ τ)
     (k : ℕ) {f : S → ℝ} (hf : Measurable f) (hb : ∃ C : ℝ, ∀ x, ‖f x‖ ≤ C) :
     μ[{ω | τ ω ≠ ⊤}.indicator (fun ω => f (stoppedValue (fun n => X (n + k)) τ ω)) |
         hτ.measurableSpace] =ᵐ[μ]
@@ -50,22 +59,20 @@ theorem condExp_stopped_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppingTim
   have hAτ : MeasurableSet[hτ.measurableSpace] A :=
     ((measurableSet_singleton ⊤).preimage hτ.measurable).compl
   have hA : MeasurableSet A := hτ.measurableSpace_le _ hAτ
-  have hi : Integrable Z μ :=
-    ⟨(hf.comp (measurable_stoppedValue_of_countable
-      (fun n => h.adapted.measurable) hτ.measurable')).aestronglyMeasurable,
-      .of_bounded (Eventually.of_forall fun ω => hC _)⟩
+  have hi : Integrable Z μ := h.integrable_comp_stoppedValue_add hτ k hf ⟨C, hC⟩
   have hiA := hi.indicator hA
   -- Localize the stopped conditional expectation on each finite stopping-time slice.
   have hslice (n : ℕ) :
       μ[A.indicator Z | hτ.measurableSpace] =ᵐ[μ.restrict {ω | τ ω = n}]
         A.indicator (fun ω => ∫ y, f y ∂(κ ^ k) (stoppedValue X τ ω)) := by
     have hn : (n : WithTop ℕ).untopA = n := by
-      simp only [WithTop.untopA, ← WithTop.coe_natCast, Nat.cast_id, WithTop.untopD_coe]
+      simp only [← WithTop.coe_natCast, Nat.cast_id,
+        WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
     have hs := hτ.measurableSet_eq n
     have hsΩ := ℱ.le n _ hs
-    have hin : Integrable (fun ω => f (X (n + k) ω)) μ :=
-      ⟨(hf.comp h.adapted.measurable).aestronglyMeasurable,
-        .of_bounded (Eventually.of_forall fun ω => hC _)⟩
+    have hin : Integrable (fun ω => f (X (n + k) ω)) μ := by
+      simpa only [stoppedValue_const] using
+        h.integrable_comp_stoppedValue_add (isStoppingTime_const ℱ n) k hf ⟨C, hC⟩
     have heq : A.indicator Z =ᵐ[μ.restrict {ω | τ ω = n}]
         fun ω => f (X (n + k) ω) := by
       filter_upwards [ae_restrict_mem hsΩ] with ω hω
@@ -92,7 +99,7 @@ theorem condExp_stopped_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppingTim
 
 /-- At an almost-surely finite stopping time the conditional transition law needs no
 indicator. No bound on the stopping time or its expectation is required. -/
-theorem condExp_stopped_add_of_ae_ne_top (h : IsMarkovChain ℱ X κ μ)
+theorem condExp_stoppedValue_add_of_ae_ne_top (h : IsMarkovChain ℱ X κ μ)
     (hτ : IsStoppingTime ℱ τ) (hfin : ∀ᵐ ω ∂μ, τ ω ≠ ⊤)
     (k : ℕ) {f : S → ℝ} (hf : Measurable f) (hb : ∃ C : ℝ, ∀ x, ‖f x‖ ≤ C) :
     μ[fun ω => f (stoppedValue (fun n => X (n + k)) τ ω) | hτ.measurableSpace] =ᵐ[μ]
@@ -100,11 +107,11 @@ theorem condExp_stopped_add_of_ae_ne_top (h : IsMarkovChain ℱ X κ μ)
   have hind (g : Ω → ℝ) : {ω | τ ω ≠ ⊤}.indicator g =ᵐ[μ] g := by
     filter_upwards [hfin] with ω hω using indicator_of_mem hω g
   exact (condExp_congr_ae (hind _)).symm.trans
-    ((h.condExp_stopped_add hτ k hf hb).trans (hind _))
+    ((h.condExp_stoppedValue_add hτ k hf hb).trans (hind _))
 
 /-- The event form of the stopped conditional transition law. The finite-time event remains
 inside the conditional expectation even when the stopping time can be infinite. -/
-theorem condExp_indicator_stopped_add (h : IsMarkovChain ℱ X κ μ)
+theorem condExp_indicator_stoppedValue_add (h : IsMarkovChain ℱ X κ μ)
     (hτ : IsStoppingTime ℱ τ) (k : ℕ) {B : Set S} (hB : MeasurableSet B) :
     μ[({ω | τ ω ≠ ⊤} ∩ stoppedValue (fun n => X (n + k)) τ ⁻¹' B).indicator
         (fun _ => (1 : ℝ)) | hτ.measurableSpace] =ᵐ[μ]
@@ -114,25 +121,20 @@ theorem condExp_indicator_stopped_add (h : IsMarkovChain ℱ X κ μ)
     ⟨1, fun x => by by_cases hx : x ∈ B <;> simp [hx]⟩
   simpa only [← Set.indicator_comp_right, Function.comp_def, Set.indicator_indicator,
     integral_indicator_const (1 : ℝ) hB, smul_eq_mul, mul_one] using
-    h.condExp_stopped_add hτ k (measurable_const.indicator hB) hb
+    h.condExp_stoppedValue_add hτ k (measurable_const.indicator hB) hb
 
 /-- Integrate the stopped transition law over any event known at the stopping time. This
 identity keeps the full stopped history, rather than conditioning only on the stopped state. -/
-theorem setIntegral_stopped_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppingTime ℱ τ)
+theorem setIntegral_stoppedValue_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppingTime ℱ τ)
     (k : ℕ) {f : S → ℝ} (hf : Measurable f) (hb : ∃ C : ℝ, ∀ x, ‖f x‖ ≤ C)
     {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A) :
     ∫ ω in A ∩ {ω | τ ω ≠ ⊤}, f (stoppedValue (fun n => X (n + k)) τ ω) ∂μ =
       ∫ ω in A ∩ {ω | τ ω ≠ ⊤}, ∫ y, f y ∂(κ ^ k) (stoppedValue X τ ω) ∂μ := by
-  obtain ⟨C, hC⟩ := hb
-  have hfin : MeasurableSet {ω | τ ω ≠ ⊤} :=
-    ((measurableSet_singleton ⊤).preimage hτ.measurable').compl
-  have hi : Integrable (fun ω => f (stoppedValue (fun n => X (n + k)) τ ω)) μ :=
-    ⟨(hf.comp (measurable_stoppedValue_of_countable
-      (fun n => h.adapted.measurable) hτ.measurable')).aestronglyMeasurable,
-      .of_bounded (Eventually.of_forall fun ω => hC _)⟩
+  have hfin : MeasurableSet {ω | τ ω ≠ ⊤} := hτ.measurableSet_eq_top.compl
+  have hi := h.integrable_comp_stoppedValue_add hτ k hf hb
   rw [← setIntegral_indicator hfin, ← setIntegral_indicator hfin]
   exact (setIntegral_condExp hτ.measurableSpace_le (hi.indicator hfin) hA).symm.trans
-    (integral_congr_ae ((h.condExp_stopped_add hτ k hf ⟨C, hC⟩).filter_mono
+    (integral_congr_ae ((h.condExp_stoppedValue_add hτ k hf hb).filter_mono
       (ae_mono Measure.restrict_le_self)))
 
 end TauCeti.Probability.IsMarkovChain
