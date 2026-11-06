@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
@@ -416,30 +418,6 @@ private theorem exists_one_lt_lt_and_mul_lt {n s : ℝ} (hsn : (n - 2) * s < n) 
   exact ⟨max s 1 + c, by linarith [le_max_right s 1], by linarith [le_max_left s 1],
     by rw [mul_add]; linarith⟩
 
-omit [DecidableEq ι] in
-/-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
-`L^p` norm times `|B(x₀, R)|^{1/p₀ - 1/p} = (Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`. -/
-private theorem eLpNorm_ball_le_mul_rpow {f : EuclideanSpace ℝ ι → ℝ} {p₀ p R : ℝ}
-    {x₀ : EuclideanSpace ℝ ι} (hR : 0 < R) (hp₀0 : 0 < p₀) (hp₀p : p₀ ≤ p)
-    (hf : AEStronglyMeasurable f (mu.restrict (Metric.ball x₀ R))) :
-    eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (Metric.ball x₀ R)) ≤
-      eLpNorm f (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) *
-        ENNReal.ofReal
-          ((R ^ (Fintype.card ι : ℝ) * mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1)) ^
-            (1 / p₀ - 1 / p)) := by
-  have he : 0 ≤ 1 / p₀ - 1 / p := sub_nonneg.2 (one_div_le_one_div_of_le hp₀0 hp₀p)
-  have hV : mu (Metric.ball (0 : EuclideanSpace ℝ ι) 1) =
-      ENNReal.ofReal (mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1)) :=
-    (ENNReal.ofReal_toReal measure_ball_lt_top.ne).symm
-  have hvol : mu.restrict (Metric.ball x₀ R) univ =
-      ENNReal.ofReal
-        (R ^ (Fintype.card ι : ℝ) * mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1)) := by
-    rw [Measure.restrict_apply_univ, Measure.addHaar_ball_of_pos mu x₀ hR, hV,
-      finrank_euclideanSpace, ← ENNReal.ofReal_mul (by positivity), ← Real.rpow_natCast]
-  have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (ENNReal.ofReal_le_ofReal hp₀p) hf
-  rwa [hvol, ENNReal.toReal_ofReal hp₀0.le, ENNReal.toReal_ofReal (hp₀0.le.trans hp₀p),
-    ENNReal.ofReal_rpow_of_nonneg (by positivity) he] at h
-
 /-- Iterating `exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset` `k ≤ M` times, along the
 exponents `pₖ` with `χ pₖ = pₖ₊₁` and the radii `R - k R/(2M)` shrinking from `R` towards `R/2`
 in steps of `R/(2M)`, bounds the `L^{pₖ}` norm of `u` on the `k`-th ball by its `L^{p₀}` norm on
@@ -577,7 +555,8 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
     field_simp
     ring
   rw [hrM, hpkM, show pk 0 = p₀ by simp [pk]] at hfinal
-  have hholder := eLpNorm_ball_le_mul_rpow (mu := mu) hR (div_pos hs (pow_pos hχ0 M)) hp₀p
+  have hholder := EuclideanSpace.eLpNorm_ball_le_mul_rpow (mu := mu) hR
+    (div_pos hs (pow_pos hχ0 M)) hp₀p
     ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure
       (Measure.restrict_mono hball le_rfl))
   calc eLpNorm (W1p.value u) (ENNReal.ofReal s) (mu.restrict (Metric.ball x₀ (R / 2)))
@@ -601,8 +580,9 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
         linarith [le_abs_self D']
 
 omit [DecidableEq ι] in
-/-- On a ball `B(x₀, t) ⊆ Ω`, where `u ≥ ε > 0`, the `L^q` norm of `u` is
-`(|B| ⨍_B u^q)^{1/q} = (tⁿ |B(0, 1)|)^{1/q} (⨍_B u^q)^{1/q}`. -/
+/-- On a ball `B(x₀, t) ⊆ Ω`, where `u ≥ ε > 0`, the real number `(‖u‖_{L^q(B)}).toReal` equals
+`(|B| ⨍_B u^q)^{1/q} = (tⁿ |B(0, 1)|)^{1/q} (⨍_B u^q)^{1/q}`. It is the norm itself when that is
+finite; an infinite norm has `toReal` equal to `0`. -/
 private theorem toReal_eLpNorm_value_ball_eq
     {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {ε t q : ℝ}
     {x₀ : EuclideanSpace ℝ ι} (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
@@ -624,57 +604,6 @@ private theorem toReal_eLpNorm_value_ball_eq
   congr 1
   refine integral_congr_ae (hpos.mono fun x hx => ?_)
   simp only [Real.norm_eq_abs, abs_of_pos hx]
-
-/-- If `f ≥ 0` and `(f + δ)^s` is integrable, with `δ ≥ 0` and `s > 0`, then so is `f^s`, and its
-average is at most that of `(f + δ)^s`. -/
-private theorem integrable_and_average_rpow_le {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {f : α → ℝ} {δ s : ℝ} (hs : 0 < s) (hδ : 0 ≤ δ)
-    (hf : AEStronglyMeasurable f μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y)
-    (hint' : Integrable (fun y => (f y + δ) ^ s) μ) :
-    Integrable (fun y => f y ^ s) μ ∧ ⨍ y, f y ^ s ∂μ ≤ ⨍ y, (f y + δ) ^ s ∂μ := by
-  have hle : ∀ᵐ y ∂μ, f y ^ s ≤ (f y + δ) ^ s :=
-    hf0.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hs.le
-  have hint : Integrable (fun y => f y ^ s) μ := by
-    refine hint'.mono' (hf.aemeasurable.pow_const s).aestronglyMeasurable ?_
-    filter_upwards [hf0, hle] with y hy hyle
-    rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
-  refine ⟨hint, ?_⟩
-  rw [average_eq, average_eq]
-  exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
-
-/-- Dominated convergence for the averages of `(f + 1/(k + 1))^p`, for `f ≥ 0` in `L²` on a finite
-measure space and `0 < p ≤ 2`: `D (⨍ (f + 1/(k + 1))^p)^{1/p} → D (⨍ f^p)^{1/p}`. -/
-private theorem tendsto_mul_average_add_rpow_rpow_inv {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} {p : ℝ} (D : ℝ) (hp : 0 < p) (hp2 : p ≤ 2)
-    (hf : MemLp f 2 μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y) :
-    Filter.Tendsto (fun k : ℕ => D * (⨍ y, (f y + 1 / ((k : ℝ) + 1)) ^ p ∂μ) ^ p⁻¹)
-      Filter.atTop (nhds (D * (⨍ y, f y ^ p ∂μ) ^ p⁻¹)) := by
-  -- For `0 < δ ≤ 1`, `(f + δ)^p ≤ (f + 1)^p`, which is integrable since `p ≤ 2`.
-  have hbound : Integrable (fun y => (f y + 1) ^ p) μ := by
-    have hmem : MemLp (fun y => f y + 1) (ENNReal.ofReal p) μ :=
-      (hf.add (memLp_const 1)).mono_exponent
-        ((ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2))
-    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
-      ENNReal.ofReal_ne_top).congr ?_
-    filter_upwards [hf0] with y hy
-    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg (by linarith)]
-  have hlim : Filter.Tendsto (fun k : ℕ => ∫ y, (f y + 1 / ((k : ℝ) + 1)) ^ p ∂μ)
-      Filter.atTop (nhds (∫ y, f y ^ p ∂μ)) := by
-    refine tendsto_integral_of_dominated_convergence _ (fun k => ?_) hbound (fun k => ?_) ?_
-    · exact ((hf.aestronglyMeasurable.aemeasurable.add_const _).pow_const p).aestronglyMeasurable
-    · filter_upwards [hf0] with y hy
-      have hk : 1 / ((k : ℝ) + 1) ≤ 1 :=
-        (div_le_one (by positivity)).2 (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])
-      rw [Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _)]
-      exact Real.rpow_le_rpow (by positivity) (by linarith) hp.le
-    · refine Filter.Eventually.of_forall fun y => ?_
-      have hδ0 := (tendsto_const_nhds (x := f y)).add
-        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-      rw [add_zero] at hδ0
-      exact (Real.continuousAt_rpow_const _ p (Or.inr hp.le)).tendsto.comp hδ0
-  simp only [average_eq, smul_eq_mul]
-  exact ((Real.continuousAt_rpow_const _ _ (Or.inr (inv_nonneg.2 hp.le))).tendsto.comp
-    (hlim.const_mul _)).const_mul D
 
 omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
 /-- For `R ≤ 0` the balls `B(x₀, R/2)` and `B(x₀, R)` are empty, so the averaged estimate holds

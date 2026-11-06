@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.InnerProductSpace.PiL2
@@ -30,6 +31,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
   the measure of a cube.
 * `EuclideanSpace.measure_preimage_ofLp_closedBall_le`: a cube has measure at most `√nⁿ` times
   that of the Euclidean ball of the same radius.
+* `EuclideanSpace.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume of the
+  ball written through that of the unit ball.
 * `EuclideanSpace.measurePreserving_consEquivL`: splitting off the first coordinate identifies the
   volume of `ℝⁿ⁺¹` with the product of the volumes of `ℝ` and `ℝⁿ`.
 -/
@@ -114,6 +117,30 @@ theorem measurePreserving_consEquivL (n : ℕ) : MeasurePreserving (consEquivL �
   convert ((PiLp.volume_preserving_toLp (Fin (n + 1))).comp hcons).comp h using 1
   ext z i
   refine Fin.cases ?_ (fun j => ?_) i <;> simp
+
+/-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
+`L^p` norm times `|B(x₀, R)|^{1/p₀ - 1/p} = (Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`. -/
+theorem eLpNorm_ball_le_mul_rpow {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+    {f : EuclideanSpace ℝ ι → ℝ} {p₀ p R : ℝ}
+    {x₀ : EuclideanSpace ℝ ι} (hR : 0 < R) (hp₀0 : 0 < p₀) (hp₀p : p₀ ≤ p)
+    (hf : AEStronglyMeasurable f (mu.restrict (Metric.ball x₀ R))) :
+    eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (Metric.ball x₀ R)) ≤
+      eLpNorm f (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) *
+        ENNReal.ofReal
+          ((R ^ (Fintype.card ι : ℝ) * mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1)) ^
+            (1 / p₀ - 1 / p)) := by
+  have he : 0 ≤ 1 / p₀ - 1 / p := sub_nonneg.2 (one_div_le_one_div_of_le hp₀0 hp₀p)
+  have hV : mu (Metric.ball (0 : EuclideanSpace ℝ ι) 1) =
+      ENNReal.ofReal (mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1)) :=
+    (ENNReal.ofReal_toReal measure_ball_lt_top.ne).symm
+  have hvol : mu.restrict (Metric.ball x₀ R) Set.univ =
+      ENNReal.ofReal
+        (R ^ (Fintype.card ι : ℝ) * mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1)) := by
+    rw [Measure.restrict_apply_univ, Measure.addHaar_ball_of_pos mu x₀ hR, hV,
+      finrank_euclideanSpace, ← ENNReal.ofReal_mul (by positivity), ← Real.rpow_natCast]
+  have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (ENNReal.ofReal_le_ofReal hp₀p) hf
+  rwa [hvol, ENNReal.toReal_ofReal hp₀0.le, ENNReal.toReal_ofReal (hp₀0.le.trans hp₀p),
+    ENNReal.ofReal_rpow_of_nonneg (by positivity) he] at h
 
 end EuclideanSpace
 
