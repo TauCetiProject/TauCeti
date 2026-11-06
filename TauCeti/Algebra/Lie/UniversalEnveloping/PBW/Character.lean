@@ -560,6 +560,7 @@ private theorem exists_adapted_basis {B : LieSubalgebra K L} {ι : Type w₁} [L
   exact ⟨_, inferInstance, _, hA, bA,
     ⟨⟨fun i ↦ toLex (Sum.inl i), fun _ _ h ↦ Sum.inl_injective (toLex.injective h)⟩,
       Sum.Lex.inl_le_inl_iff⟩, fun i ↦ by
+      -- `inl i` unfolds by definition to `toLex (Sum.inl i)`, so `change` exposes it to `simp`.
       change (bA (toLex (Sum.inl i)) : L) = v i
       simp [bA, f, bV, Basis.span_apply hv i]⟩
 
@@ -574,8 +575,9 @@ private theorem complementMonomial_mapDomain_subtypeDomain
       pbwMonomial K L v (α.toMultiset.sort (· ≤ ·)) := by
   have h := pbwMonomial_sort_toMultiset_mapDomain K L (OrderEmbedding.subtype (· ∈ s)) v
     (α.subtypeDomain (· ∈ s))
-  rw [show (α.subtypeDomain (· ∈ s)).mapDomain (OrderEmbedding.subtype (· ∈ s)) = α from
-    Finsupp.mapDomain_subtypeDomain_subtype hα] at h
+  rw [show (α.subtypeDomain (· ∈ s)).mapDomain (OrderEmbedding.subtype (· ∈ s)) = α by
+    rw [OrderEmbedding.coe_subtype]
+    exact Finsupp.mapDomain_subtypeDomain_subtype hα] at h
   rw [complementMonomial, pbwMonomial_sort_toMultiset_mapDomain K L inl, h]
   congr 1
   exact funext hbA
@@ -602,8 +604,9 @@ theorem _root_.LieAlgebra.LieCharacter.linearIndepOn_mkQ_pbwMonomial {B : LieSub
   -- Exponent vectors supported on `s` are carried to exponent vectors of the extended basis.
   let extend : (ι →₀ ℕ) → (σ →₀ ℕ) := fun α ↦ (α.subtypeDomain (· ∈ s)).mapDomain inl
   have hsub {α : ι →₀ ℕ} (hα : ↑α.support ⊆ s) :
-      (α.subtypeDomain (· ∈ s)).mapDomain (OrderEmbedding.subtype (· ∈ s)) = α :=
-    Finsupp.mapDomain_subtypeDomain_subtype hα
+      (α.subtypeDomain (· ∈ s)).mapDomain (OrderEmbedding.subtype (· ∈ s)) = α := by
+    rw [OrderEmbedding.coe_subtype]
+    exact Finsupp.mapDomain_subtypeDomain_subtype hα
   have hmon {α : ι →₀ ℕ} (hα : ↑α.support ⊆ s) :
       complementMonomial bA (extend α) = pbwMonomial K L v (α.toMultiset.sort (· ≤ ·)) :=
     complementMonomial_mapDomain_subtypeDomain bA inl hbA hα
