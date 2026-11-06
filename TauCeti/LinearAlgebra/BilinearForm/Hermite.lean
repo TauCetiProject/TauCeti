@@ -9,8 +9,9 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Data.Int.Round
+import TauCeti.LinearAlgebra.Basis.Fin
+import TauCeti.LinearAlgebra.BilinearForm.Condensation
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
-import TauCeti.LinearAlgebra.Matrix.Condensation
 
 /-!
 # Hermite's inequality for positive definite integral forms
@@ -34,15 +35,16 @@ The proof is Hermite's induction on the rank. Let `v` be a nonzero vector of lea
 value `1` on `v`. On `K` the integral form
 
 ```text
-S(y, z) = μ · B(y, z) - B(v, y) · B(v, z)
+S(y, z) = μ · B(y, z) - B(y, v) · B(v, z)
 ```
 
 is `μ` times the form induced on the projection of `K` orthogonal to `v`; it is again positive
-definite, and Chiò's condensation `Matrix.mul_det_condensation_eq_pow_mul_det` gives
-`μ · det S = μⁿ · det B` in a basis of `M` extending `v`. Writing a vector of `M` as `t v + y` and
+definite (`LinearMap.BilinForm.apply_mul_apply_lt_of_mem_ker`), and Chiò's condensation for Gram
+matrices (`LinearMap.BilinForm.mul_det_toMatrix_eq_pow_mul_det_toMatrix`) gives
+`μ · det S = μⁿ · det B` in a basis of `M` extending `v`. Writing a vector of `M` as `y + t v` and
 choosing `t` to be a nearest integer to `-B(v, y) / μ`, the minimality of `μ` gives
-`3 μ² ≤ 4 S(y, y)` for every nonzero `y ∈ K`. The inductive hypothesis applied to `S` then
-bounds `μ`.
+`3 μ² ≤ 4 S(y, y)` for every `y` outside `ℤ v`, in particular for every nonzero `y ∈ K`. The
+inductive hypothesis applied to `S` then bounds `μ`.
 
 The forms and the determinant argument stay integral; the nearest-integer step is
 `Int.exists_two_mul_abs_sub_mul_le`. The least norm exists because norms of nonzero vectors are
@@ -52,6 +54,8 @@ positive integers.
 
 * `LinearMap.BilinForm.exists_isPrimitive_forall_apply_self_le`: a positive definite integral form
   attains its minimum at a primitive vector.
+* `LinearMap.BilinForm.three_mul_sq_le_four_mul_sub_of_forall_le`: the minimality step, which
+  bounds the condensed form along a vector of least norm from below.
 * `LinearMap.BilinForm.exists_ne_zero_three_pow_mul_pow_le_four_pow_mul_det`: Hermite's
   inequality `3 ^ (n choose 2) · B(x, x) ^ n ≤ 4 ^ (n choose 2) · det B` for some nonzero `x`.
 
@@ -96,6 +100,26 @@ theorem exists_isPrimitive_forall_apply_self_le {M : Type*} [AddCommGroup M] [Mo
   have hd1 : d = 1 := by nlinarith
   rwa [hvw, hd1, one_smul]
 
+/-- **The minimality step of Hermite's inequality.** Let `v` be a vector of least norm
+`μ = B(v, v) > 0` among the nonzero vectors, for a symmetric integral form `B`. Every `y` outside
+`ℤ v` satisfies `3 μ² ≤ 4 (μ B(y, y) - B(y, v) B(v, y))`. Indeed, adding to `y` a multiple `t v`
+with `t` nearest to `-B(v, y) / μ` gives a nonzero vector with `4 B(v, y + t v)² ≤ μ²`, and
+completing the square along `v` (`LinearMap.BilinForm.mul_apply_add_smul_add_smul`) compares its
+norm, which is at least `μ`, with the condensed form. -/
+theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
+    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M} (hμ : 0 < B v v)
+    (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) :
+    3 * B v v ^ 2 ≤ 4 * (B v v * B y y - B y v * B v y) := by
+  obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ
+  have hk' : 0 ≤ B v v + 2 * |B v y - k * B v v| := by positivity
+  have hne : y + (-k) • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
+    ⟨k, (sub_eq_zero.mp (by simpa [sub_eq_add_neg] using h)).symm⟩)
+  have hv : B v (y + (-k) • v) = B v y - k * B v v := by simp [sub_eq_add_neg]
+  have h := mul_le_mul_of_nonneg_left (hmin _ hne) hμ.le
+  rw [B.mul_apply_add_smul_add_smul, hB.eq (y + _) v, hv] at h
+  rw [hB.eq y v] at h ⊢
+  nlinarith [mul_nonneg (sub_nonneg.mpr hk) hk', sq_abs (B v y - k * B v v)]
+
 /-- The arithmetic closing the inductive step of Hermite's inequality: if `3 μ² ≤ 4 s`, the
 bound `3 ^ C · sⁿ ≤ 4 ^ C · D'` holds in rank `n`, and `μ · D' = μⁿ · D`, then
 `3 ^ (C + n) · μ ^ (n + 1) ≤ 4 ^ (C + n) · D`. -/
@@ -123,96 +147,43 @@ private def HermiteBound (n : ℕ) : Prop :=
 /-- The inductive step of Hermite's inequality: the bound in rank `n` implies it in rank `n + 1`.
 A vector `v` of least norm `μ` is primitive, so it extends to a basis `v, bK` with `bK` a basis of
 the kernel `K` of a functional taking the value `1` on `v`; the bound is applied to the condensed
-form `S(y, z) = μ B(y, z) - B(v, y) B(v, z)` on `K`. -/
+form `S(y, z) = μ B(y, z) - B(y, v) B(v, z)` on `K`. -/
 private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
     HermiteBound.{u} (n + 1) := by
   intro M _ _ B hB hpos b
-  classical
   have : Module.Free ℤ M := .of_basis b
-  have : Module.Finite ℤ M := .of_basis b
-  have hsymm : ∀ x y, B x y = B y x := isSymm_def.mp hB
   -- A primitive vector `v` of least norm `μ`.
   obtain ⟨v, hprim, hmin⟩ := exists_isPrimitive_forall_apply_self_le B
     (fun x hx ↦ by simpa using hpos x hx)
-  have hv0 := hprim.ne_zero
-  set μ := B v v with hμ_def
-  have hμ : 0 < μ := hpos v hv0
-  obtain ⟨f, hf⟩ := TauCeti.isPrimitive_def.mp hprim
+  set μ := B v v
+  have hμ : 0 < μ := hpos v hprim.ne_zero
   -- Split `M = ℤ v ⊕ K` along `f` and extend `v` by a basis of `K`.
+  obtain ⟨f, hf⟩ := TauCeti.isPrimitive_def.mp hprim
   set K := LinearMap.ker f
-  obtain ⟨m, ⟨bK⟩⟩ := Submodule.nonempty_basis_of_pid (Module.finBasis ℤ M) K
-  have hli : ∀ (a : ℤ), ∀ x ∈ K, a • v + x = 0 → a = 0 := fun a x hx hax ↦ by
-    simpa [hf, LinearMap.mem_ker.mp hx] using congrArg f hax
-  have hsp : ∀ z : M, ∃ a : ℤ, z + a • v ∈ K := fun z ↦
-    ⟨-f z, by simp [K, LinearMap.mem_ker, hf]⟩
-  let c := Basis.mkFinCons v bK hli hsp
-  have hmn : n = m := by simpa using Fintype.card_congr (b.indexEquiv c)
-  subst hmn
-  rw [← toMatrixAux_eq b B]
-  simp only [toMatrixAux]
-  rw [← LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux B b c]
-  -- The condensed form `S(y, z) = μ B(y, z) - B(v, y) B(v, z)` on `K`.
-  let ℓ : K →ₗ[ℤ] ℤ := (B v).comp K.subtype
-  let S : LinearMap.BilinForm ℤ K :=
-    μ • B.compl₁₂ K.subtype K.subtype - (LinearMap.mul ℤ ℤ).compl₁₂ ℓ ℓ
-  have hS : ∀ y z : K, S y z = μ * B y z - B v y * B v z := fun y z ↦ by simp [S, ℓ]
-  have hSsymm : S.IsSymm := isSymm_def.mpr fun y z ↦ by
-    rw [hS, hS, hsymm (y : M) z]
-    ring
-  have hkey : ∀ (t : ℤ) (y : M),
-      μ * B (t • v + y) (t • v + y) = (t * μ + B v y) ^ 2 + (μ * B y y - B v y ^ 2) := by
-    intro t y
-    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-      hsymm y v]
-    ring
-  -- `S` is positive definite: `B(z, z) = μ S(y, y)` for `z = -B(v, y) v + μ y`.
-  have hSpos : ∀ y : K, y ≠ 0 → 0 < S y y := by
-    intro y hy
-    have hz : (-B v y) • v + μ • (y : M) ≠ 0 := by
-      intro h
-      have ht := hli _ _ (K.smul_mem μ y.2) h
-      rw [ht, zero_smul, zero_add] at h
-      exact hy (Subtype.ext ((smul_eq_zero.mp h).resolve_left hμ.ne'))
-    have h₁ := hkey (-B v y) (μ • (y : M))
-    have h₂ := mul_pos hμ (hpos _ hz)
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at h₁
-    have h₃ : 0 < μ ^ 2 * S y y := by
-      rw [hS]
-      nlinarith
-    exact pos_of_mul_pos_right h₃ (sq_nonneg μ)
-  -- Minimality of `μ` bounds `S` from below on nonzero vectors of `K`.
-  have hSlow : ∀ y : K, y ≠ 0 → 3 * μ ^ 2 ≤ 4 * S y y := by
-    intro y hy
-    obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ
-    have hk' : 0 ≤ μ + 2 * |B v y - k * μ| := by positivity
-    obtain ⟨t, ht⟩ : ∃ t : ℤ, 4 * (t * μ + B v y) ^ 2 ≤ μ ^ 2 :=
-      ⟨-k, by nlinarith [mul_nonneg (sub_nonneg.mpr hk) hk', sq_abs (B v y - k * μ)]⟩
-    have hne : t • v + (y : M) ≠ 0 := by
-      intro h
-      rw [hli t y y.2 h, zero_smul, zero_add] at h
-      exact hy (Subtype.ext h)
-    have h₁ := hkey t y
-    have h₂ := mul_le_mul_of_nonneg_left (hmin _ hne) hμ.le
-    rw [hS]
-    nlinarith
-  -- Chiò's condensation of the Gram matrix of `B` in `c` is the Gram matrix of `S` in `bK`.
-  have hdet : μ * (toMatrix bK S).det = μ ^ n * (toMatrix c B).det := by
-    have hc0 : toMatrix c B 0 0 = μ := by simp [c, toMatrix_apply, hμ_def]
-    rw [← hc0, ← Matrix.mul_det_condensation_eq_pow_mul_det]
-    congr 2
-    ext i j
-    simp [c, toMatrix_apply, hS, hsymm (bK i : M) v, hμ_def]
-  rw [← toMatrixAux_eq c B] at hdet
-  simp only [toMatrixAux] at hdet
-  refine ⟨v, hv0, ?_⟩
+  obtain ⟨m, ⟨bK⟩⟩ := Submodule.nonempty_basis_of_pid b K
+  obtain ⟨c, hc0, hc⟩ := bK.exists_basis_finCons_of_apply_eq_one hf
+  obtain rfl : n = m := by simpa using Fintype.card_congr (b.indexEquiv c)
+  have hbc : (toMatrix b B).det = (toMatrix c B).det := by
+    rw [← toMatrixAux_eq b B, ← toMatrixAux_eq c B]
+    exact (LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux B b c).symm
+  -- The condensed form `S(y, z) = μ B(y, z) - B(y, v) B(v, z)` on `K`, and Chiò's identity.
+  obtain ⟨S, hSsymm, hS⟩ := hB.exists_isSymm_forall_apply_eq v K.subtype
+  have hdet := mul_det_toMatrix_eq_pow_mul_det_toMatrix B c bK (S := S) fun i j ↦ by
+    simp [hc0, hc, hS]
+  rw [hc0] at hdet
+  refine ⟨v, hprim.ne_zero, hbc ▸ ?_⟩
   rcases n.eq_zero_or_pos with rfl | hn
-  · simp only [pow_zero, Matrix.det_isEmpty, mul_one, one_mul] at hdet
-    simpa using hdet.le
+  · simpa using hdet.le
   have : Nontrivial K := nontrivial_of_ne _ _ (bK.ne_zero ⟨0, hn⟩)
-  obtain ⟨y, hy, hyb⟩ := ih S hSsymm hSpos bK
-  have hchoose : (n + 1).choose 2 = n.choose 2 + n := by simp [Nat.choose_succ_succ', add_comm]
-  rw [hchoose]
-  exact three_pow_mul_pow_succ_le hμ (hSlow y hy) hyb hdet
+  obtain ⟨y, hy, hyb⟩ := ih S hSsymm (fun y hy ↦ hS y y ▸ sub_pos.mpr
+    (apply_mul_apply_lt_of_mem_ker hpos (by simp [hf]) y.2 (by simpa using hy))) bK
+  have hyv : (y : M) ∉ ℤ ∙ v := fun h ↦ by
+    obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp h
+    obtain rfl : a = 0 := by simpa [hf, LinearMap.mem_ker.mp y.2] using congrArg f ha
+    exact hy (Subtype.ext (by simp [← ha]))
+  rw [show (n + 1).choose 2 = n.choose 2 + n by simp [Nat.choose_succ_succ', add_comm]]
+  exact three_pow_mul_pow_succ_le hμ
+    (hS y y ▸ three_mul_sq_le_four_mul_sub_of_forall_le hB hμ hmin hyv) hyb hdet
 
 /-- Hermite's inequality for a basis indexed by `Fin n`, by induction on `n`. -/
 private theorem hermiteBound (n : ℕ) : HermiteBound.{u} n := by

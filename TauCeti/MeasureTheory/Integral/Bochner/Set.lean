@@ -16,16 +16,19 @@ Mathlib's `continuousOn_integral_of_compact_support` gives continuity of a param
 a set. This file records its global form: a jointly continuous integrand which vanishes unless the
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
 measure which is finite on compact sets. It also records that the indicator function of a
-bounded interval `[a, b)` is integrable against a locally finite measure, and, against a measure
-positive on nonempty open sets, that a continuous square-integrable function `h` with
-`∫ conj (h x) * h x = 0` vanishes and that a nonnegative function continuous on an open set and
-vanishing there off a compact subset has positive integral over it unless it vanishes there.
+bounded interval `[a, b)` is integrable against a locally finite measure, that the integral of
+`|f|` over a set splits along the sign of `f`, and, against a measure positive on nonempty open
+sets, that a continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes and
+that a nonnegative function continuous on an open set and vanishing there off a compact subset has
+positive integral over it unless it vanishes there.
 
 ## Main statements
 
 * `TauCeti.continuous_integral_of_compact_support`: the parametric integral of a jointly
   continuous integrand which vanishes unless `r ∈ K`, for compact `K`, is continuous.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
+* `TauCeti.setIntegral_abs_eq_sub`: the integral of `|f|` over `s` is the integral of `f` over the
+  part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `ContinuousOn.setIntegral_pos_of_nonneg_ne_zero`: a function continuous and nonnegative on an open
@@ -55,6 +58,20 @@ theorem integrable_indicator_Ico_one {α : Type*} [MeasurableSpace α] [Topologi
     {μ : Measure α} [IsLocallyFiniteMeasure μ] (a b : α) :
     Integrable ((Ico a b).indicator (1 : α → ℝ)) μ :=
   (integrableOn_const measure_Ico_lt_top.ne).integrable_indicator measurableSet_Ico
+
+/-- The integral of `|f|` over a set `s` is the integral of `f` over the part of `s` where `f` is
+nonnegative minus the integral of `f` over the part where it is negative. -/
+theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ}
+    {s : Set α} (hf : IntegrableOn f s μ) :
+    ∫ x in s, |f x| ∂μ = ∫ x in s ∩ {x | 0 ≤ f x}, f x ∂μ - ∫ x in s \ {x | 0 ≤ f x}, f x ∂μ := by
+  have hneg : {x | f x < 0} ∩ s = s \ {x | 0 ≤ f x} := by
+    ext x
+    simp [and_comm]
+  simp_rw [← Real.norm_eq_abs]
+  rw [integral_norm_eq_pos_sub_neg hf, ← setIntegral_neg_eq_setIntegral_nonpos hf.1,
+    Measure.restrict_restrict₀ (aestronglyMeasurable_const.nullMeasurableSet_le hf.1),
+    Measure.restrict_restrict₀ (hf.1.nullMeasurableSet_lt aestronglyMeasurable_const),
+    inter_comm _ s, hneg]
 
 end TauCeti
 
