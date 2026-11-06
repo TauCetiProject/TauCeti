@@ -8,7 +8,8 @@ module
 public import Mathlib.Analysis.Convex.Continuous
 public import Mathlib.Analysis.Convex.Integral
 public import Mathlib.Probability.IdentDistribIndep
-public import TauCeti.Probability.Distributions.Rademacher.Basicpublic import TauCeti.Probability.Independence.DisjointBlocks
+public import TauCeti.Probability.Distributions.Rademacher.Basic
+public import TauCeti.Probability.Independence.DisjointBlocks
 
 /-!
 # The symmetrization inequality
