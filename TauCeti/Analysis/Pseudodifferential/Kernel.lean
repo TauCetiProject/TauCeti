@@ -46,8 +46,9 @@ the diagonal.
   `u ↦ Op(a) u (x)` on Schwartz functions is `y ↦ K_a(x, y)`.
 * `TauCeti.inner_smul_quantizationKernel`: multiplying the kernel by `⟪x - y, v⟫` corresponds to
   the frequency derivative `i ∂_{ξ, v}` of the coefficient, which lowers the order of a symbol by
-  one. This is the identity `(x - y)^α K_a = K_{(-D_ξ)^α a}` behind the smoothness and decay of
-  pseudodifferential kernels off the diagonal.
+  one. This is the first-order case `⟪x - y, v⟫ K_a = K_{-D_{ξ, v} a}`; iterating it gives
+  `(x - y)^α K_a = K_{(-D_ξ)^α a}` when all the derivatives are integrable, the identity behind
+  the smoothness and decay of pseudodifferential kernels off the diagonal.
 * `TauCeti.Symbol.integrable_coefficient`, `TauCeti.Symbol.continuous_quantizationKernel` and
   `TauCeti.Symbol.quantizationKernel_frequencyDeriv`: for a symbol `a ∈ S^m_{1,0}` with `m < -n`
   the frequency slices are integrable, the kernel is continuous, and the kernel of `∂_{ξ_j} a` is
@@ -108,11 +109,8 @@ variable {a : E × E → V →L[ℂ] W} {x : E}
 /-- The kernel integrand at `(x, y)` is integrable when the frequency slice `ξ ↦ a(x, ξ)` is. -/
 theorem integrable_quantizationKernel_integrand (ha : Integrable (fun ξ ↦ a (x, ξ))) (y : E) :
     Integrable (fun ζ ↦ 𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ)) := by
-  have hs : Integrable (fun ζ : E ↦ a (x, (2 * π) • ζ)) := ha.comp_smul two_pi_pos.ne'
-  exact hs.norm.mono'
-    ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)
-      ).aestronglyMeasurable.smul hs.aestronglyMeasurable)
-    (ae_of_all _ fun ζ ↦ (Circle.norm_smul (E := V →L[ℂ] W) _ _).le)
+  simpa only [inner_neg_right, neg_neg] using
+    (Real.fourierIntegral_convergent_iff (-(x - y))).2 (ha.comp_smul two_pi_pos.ne')
 
 /-- **Uniform bound.** `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ` for every `y`. -/
 theorem norm_quantizationKernel_le (a : E × E → V →L[ℂ] W) (x y : E) :
@@ -147,17 +145,13 @@ theorem quantizationKernel_add {b : E × E → V →L[ℂ] W} (ha : Integrable (
   congr 1 with ζ
   simp only [Pi.add_apply, Circle.smul_def, smul_add]
 
-/-- **Continuity off the position.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable, then
+/-- **Continuity in the second variable.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable, then
 `y ↦ K_a(x, y)` is continuous. -/
 theorem continuous_quantizationKernel_right (ha : Integrable (fun ξ ↦ a (x, ξ))) :
     Continuous (quantizationKernel a x) := by
-  have hs : Integrable (fun ζ : E ↦ a (x, (2 * π) • ζ)) := ha.comp_smul two_pi_pos.ne'
-  refine continuous_of_dominated
-    (fun y ↦ (integrable_quantizationKernel_integrand ha y).aestronglyMeasurable) (fun y ↦ ?_)
-    hs.norm (ae_of_all _ fun ζ ↦ ?_)
-  · exact ae_of_all _ fun ζ ↦ (Circle.norm_smul (E := V →L[ℂ] W) _ _).le
-  · exact (Real.continuous_fourierChar.comp
-      (continuous_const.inner (continuous_const.sub continuous_id))).smul continuous_const
+  rw [funext (quantizationKernel_eq_fourierInv a x)]
+  exact (VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
+    continuous_inner.neg (ha.comp_smul two_pi_pos.ne')).comp (continuous_const.sub continuous_id)
 
 /-- **Joint continuity.** For a continuous coefficient whose growth bound
 `‖a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m` with `m < -n` is uniform for `x` in each compact set `K`, the kernel
@@ -216,11 +210,8 @@ theorem quantizeSchwartzValue_eq_integral_quantizationKernel [CompleteSpace V] [
         rw [inner_sub_right, real_inner_comm y ζ, sub_eq_add_neg]
       simp only [hF, hin, smul_apply, Circle.smul_def, map_smul, smul_smul, ← Circle.coe_mul,
         ← AddChar.map_add_eq_mul]
-    have hu : Integrable (fun y : E ↦ (𝐞 (-⟪y, ζ⟫) : ℂ) • u y) :=
-      u.integrable.norm.mono'
-        ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg
-          ).aestronglyMeasurable.smul u.integrable.aestronglyMeasurable)
-        (ae_of_all _ fun y ↦ by rw [norm_smul, Circle.norm_coe, one_mul])
+    have hu : Integrable (fun y : E ↦ (𝐞 (-⟪y, ζ⟫) : ℂ) • u y) := by
+      simpa only [Circle.smul_def] using (Real.fourierIntegral_convergent_iff ζ).2 u.integrable
     have hu' : Integrable (fun y : E ↦ (𝐞 ⟪ζ, x⟫ : ℂ) • (𝐞 (-⟪y, ζ⟫) : ℂ) • u y) := hu.smul _
     simp_rw [hpt]
     rw [(a (x, (2 * π) • ζ)).integral_comp_comm hu', integral_smul, map_smul, Circle.smul_def,
@@ -259,6 +250,19 @@ theorem eq_quantizationKernel_of_forall [CompleteSpace V] [CompleteSpace W] {K :
   exact congrFun ((hK.clm_apply continuous_const).ae_eq_iff_eq volume
     (hK₀.clm_apply continuous_const) |>.1 hae) y
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The character `ζ ↦ exp(2πi ⟪ζ, z⟫)` has line derivative `2πi ⟪v, z⟫ exp(2πi ⟪ζ, z⟫)` in the
+direction `v`. -/
+theorem hasLineDerivAt_fourierChar_inner (z ζ v : E) :
+    HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, z⟫ : ℂ)) (2 * π * Complex.I * ⟪v, z⟫ * 𝐞 ⟪ζ, z⟫) ζ v := by
+  have h := ((hasDerivAt_fourierChar ⟪ζ, z⟫).hasFDerivAt.comp ζ
+    ((innerSL ℝ z).hasFDerivAt.congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun ζ' ↦ real_inner_comm z ζ'))).hasLineDerivAt v
+  convert h using 1
+  · rfl
+  · simp [real_inner_comm z v]
+    ring
+
 /-- **Multiplication by the displacement.** If `ξ ↦ a(x, ξ)` has line derivative `a'(x, ξ)` in
 the direction `v` and both are integrable, then `⟪x - y, v⟫ K_a(x, y) = i K_{a'}(x, y)`. In terms
 of `D = -i ∂`, multiplying the kernel by `⟪x - y, v⟫` replaces the coefficient by
@@ -271,24 +275,12 @@ theorem inner_smul_quantizationKernel {a' : E × E → V →L[ℂ] W} {v : E}
   -- with `a(x, 2πζ)`, whose line derivative is `2π a'(x, 2πζ)`. This gives
   -- `2π K_{a'} = -c K_a`, and the claim follows by solving for `K_{a'}`.
   set z := x - y
-  set c : ℂ := ⟪v, z⟫ * (2 * π * Complex.I)
-  have hf (ζ : E) : HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, z⟫ : ℂ)) (c * 𝐞 ⟪ζ, z⟫) ζ v := by
-    have hin : HasDerivAt (fun t : ℝ ↦ ⟪ζ, z⟫ + t * ⟪v, z⟫) ⟪v, z⟫ 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).mul_const ⟪v, z⟫).const_add ⟪ζ, z⟫
-    have h := (hasDerivAt_fourierChar (⟪ζ, z⟫ + 0 * ⟪v, z⟫)).scomp (0 : ℝ) hin
-    unfold HasLineDerivAt
-    convert h using 1
-    · ext t
-      simp [inner_add_left, real_inner_smul_left]
-    · simp only [zero_mul, add_zero, c, Complex.real_smul]
-      ring
+  set c : ℂ := 2 * π * Complex.I * ⟪v, z⟫
+  -- Rescaling the frequency by `2π` multiplies the line derivative by `2π`.
   have hg (ζ : E) : HasLineDerivAt ℝ (fun ζ ↦ a (x, (2 * π) • ζ))
       ((2 * π) • a' (x, (2 * π) • ζ)) ζ v := by
-    have h := (hda ((2 * π) • ζ)).smul (2 * π)
-    unfold HasLineDerivAt at h ⊢
-    convert h using 2 with t
-    dsimp only
-    rw [smul_add, smul_comm (2 * π) t v]
+    simpa only [HasLineDerivAt, smul_add, smul_comm (2 * π) _ v] using
+      (hda ((2 * π) • ζ)).smul (2 * π)
   -- The kernel integrals written with the complex scalar action of `𝐞`.
   have hK (b : E × E → V →L[ℂ] W) :
       quantizationKernel b x y = ∫ ζ, (𝐞 ⟪ζ, z⟫ : ℂ) • b (x, (2 * π) • ζ) := by
@@ -306,7 +298,7 @@ theorem inner_smul_quantizationKernel {a' : E × E → V →L[ℂ] W} {v : E}
       exact smul_comm _ _ _))
     (hI.congr (ae_of_all _ fun ζ ↦ by
       simp only [ContinuousLinearMap.lsmul_apply, Circle.smul_def, z]))
-    (fun ζ _ ↦ hf ζ) (fun ζ _ ↦ hg ζ)
+    (fun ζ _ ↦ hasLineDerivAt_fourierChar_inner z ζ v) (fun ζ _ ↦ hg ζ)
   simp only [ContinuousLinearMap.lsmul_apply] at hparts
   have hL : ∫ ζ, (𝐞 ⟪ζ, z⟫ : ℂ) • (2 * π) • a' (x, (2 * π) • ζ) =
       (2 * π) • quantizationKernel a' x y := by
