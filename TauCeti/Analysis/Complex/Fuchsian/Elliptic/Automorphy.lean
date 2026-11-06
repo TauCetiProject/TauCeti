@@ -214,6 +214,22 @@ private theorem differentiableAt_pointOf {u : ℂ} (hu : u ∈ ψ.toEquiv.target
     (ball_subset_ball (Real.tanh_lt_one _).le (ψ.mem_ball_invFun hu))).differentiableAt.comp _
       (ψ.differentiableOn_invFun.differentiableAt (ψ.isOpen_target.mem_nhds hu))
 
+/-- The centre `z` as a point of the invariant disc. -/
+private def centre : stabilizerBall Γ z ε :=
+  ⟨z, (mem_stabilizerBall Γ z ε).2 (by rw [dist_self]; exact ψ.ε_pos)⟩
+
+private theorem coordinate_centre : ψ.coordinate ψ.centre = 0 :=
+  (ψ.coordinate_eq_zero_iff _).mpr rfl
+
+/-- The coordinate `0` of the centre lies in the image of the reparametrization. -/
+private theorem zero_mem_target : (0 : ℂ) ∈ ψ.toEquiv.target :=
+  (ψ.mem_target_iff 0).mpr ⟨ψ.centre, ψ.coordinate_centre.symm⟩
+
+/-- The point with coordinate `0` is the centre. -/
+private theorem pointOf_zero : ψ.pointOf 0 = z := by
+  have h := pointOf_coordinate ψ ψ.centre
+  rwa [coordinate_centre] at h
+
 /-- **The untwisted local section**: a function `f` on the upper half-plane multiplied by the
 weight-`k` factor `(τ - conj z) ^ k`, as a function of the coordinate `u` in `ψ`
 (`Subgroup.LinearizingCoordinate.automorphyUntwist_coordinate`). For a local section `f` of
@@ -368,10 +384,8 @@ theorem analyticOrderAt_automorphyUntwist
     analyticOrderAt (ψ.automorphyUntwist k f) 0 =
       r + analyticOrderAt (ψ.automorphyDescent k r f) 0 * Nat.card (stabilizer Γ z) := by
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  have h0 : (0 : ℂ) ∈ ψ.toEquiv.target := (ψ.mem_target_iff 0).mpr
-    ⟨⟨z, (mem_stabilizerBall Γ z ε).2 (by rw [dist_self]; exact ψ.ε_pos)⟩,
-      ((ψ.coordinate_eq_zero_iff _).mpr rfl).symm⟩
-  exact analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul ψ.isOpen_target h0 hr
+  exact analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul ψ.isOpen_target
+    ψ.zero_mem_target hr
     (ψ.differentiableOn_automorphyUntwist hfd) fun u hu ↦ ψ.automorphyUntwist_smul hΓ hk hf hu
 
 /-! ### The powers of the differential of the local quotient coordinate -/
@@ -452,8 +466,8 @@ theorem differentialFrame_smul (j : ℕ) (q : stabilizer Γ z) {g : SL(2, ℝ)}
     have h := hchain.deriv
     rw [hinv.deriv_eq] at h
     rw [h, mul_left_comm, mul_inv_cancel₀ (pow_ne_zero 2 (denom_ne_zero _ _)), mul_one]
-  rw [differentialFrame_def, differentialFrame_def, ← hW, hderiv, mul_pow, ← pow_mul,
-    show (2 * (j : ℤ)) = ((2 * j : ℕ) : ℤ) by push_cast; ring, zpow_natCast]
+  rw [differentialFrame_def, differentialFrame_def, ← hW, hderiv, mul_pow, zpow_mul, zpow_ofNat,
+    zpow_natCast]
 
 /-- **The powers of the differential of the local quotient coordinate are holomorphic** on the
 invariant disc. -/
@@ -482,9 +496,7 @@ private theorem deriv_pointOf_zero_ne_zero : deriv ψ.pointOf 0 ≠ 0 := by
     rw [← Real.tanh_zero]
     exact Real.tanh_strictMono (half_pos ψ.ε_pos)
   have h0s : (0 : ℂ) ∈ ψ.toEquiv.source := by rw [ψ.toEquiv_source]; exact mem_ball_self hr
-  have h0t : (0 : ℂ) ∈ ψ.toEquiv.target := by
-    have h := ψ.toEquiv.map_source' h0s
-    rwa [ψ.map_zero] at h
+  have h0t := ψ.zero_mem_target
   have hinv0 : ψ.toEquiv.invFun 0 = 0 := by
     have h := ψ.toEquiv.left_inv' h0s
     rwa [ψ.map_zero] at h
@@ -515,6 +527,40 @@ private theorem deriv_pointOf_zero_ne_zero : deriv ψ.pointOf 0 ≠ 0 := by
   rw [hP.deriv]
   exact mul_ne_zero (coe_sub_conj_ne_zero z z) hdinv
 
+/-- The local quotient coordinate, read on `ℂ`, at the point with coordinate `u` is `u ^ m`. -/
+private theorem quotientCoordinate_pointOf {u : ℂ} (hu : u ∈ ψ.toEquiv.target) :
+    ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex (ψ.pointOf u))) ^
+      Nat.card (stabilizer Γ z) = u ^ Nat.card (stabilizer Γ z) := by
+  obtain ⟨σ, rfl⟩ := (ψ.mem_target_iff u).mp hu
+  rw [pointOf_coordinate]
+  exact (ψ.quotientCoordinate_ofComplex σ).trans (quotientCoordinate_def ψ σ)
+
+/-- The chain rule for `w = u ^ m` in the coordinate `u`: the untwisted powers of the
+differential times `(dτ / du) ^ j` are `(τ - conj z) ^ (2 * j) * m ^ j * u ^ (j * (m - 1))`. -/
+private theorem automorphyUntwist_differentialFrame_mul (j : ℕ) {u : ℂ}
+    (hu : u ∈ ψ.toEquiv.target) :
+    ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j) u * deriv ψ.pointOf u ^ j =
+      (ψ.pointOf u - conj (z : ℂ)) ^ (2 * j) * (Nat.card (stabilizer Γ z) : ℂ) ^ j *
+        u ^ (j * (Nat.card (stabilizer Γ z) - 1)) := by
+  set m := Nat.card (stabilizer Γ z) with hm
+  set W : ℂ → ℂ := fun t ↦ ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^ m with hW
+  obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
+  have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hWP : W ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)] fun u ↦ u ^ m := by
+    filter_upwards [ψ.isOpen_target.mem_nhds hu] with v hv
+    exact ψ.quotientCoordinate_pointOf hv
+  have hWd := ψ.differentiableAt_quotientCoordinate hτ
+  rw [← pointOf_coordinate ψ τ] at hWd
+  have hchain := deriv_comp _ hWd (ψ.differentiableAt_pointOf hu)
+  rw [hWP.deriv_eq, deriv_pow_field] at hchain
+  have hU : ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j) (ψ.coordinate τ) =
+      (ψ.pointOf (ψ.coordinate τ) - conj (z : ℂ)) ^ (2 * j) *
+        deriv W (ψ.pointOf (ψ.coordinate τ)) ^ j := by
+    rw [automorphyUntwist_coordinate, differentialFrame_def, ← hW, pointOf_coordinate]
+    norm_cast
+  rw [hU, mul_assoc, ← mul_pow, ← hchain, mul_pow, ← pow_mul, mul_comm (m - 1)]
+  ring
+
 /-- **The order of the untwisted powers of the differential.** In the coordinate `u` of `ψ`, the
 function `u ↦ (τ - conj z) ^ (2 * j) * (dw / dτ) ^ j` has order `j * (m - 1)` at the centre:
 `w = u ^ m` and `u` is a local coordinate. -/
@@ -522,42 +568,12 @@ theorem analyticOrderAt_automorphyUntwist_differentialFrame (j : ℕ) :
     analyticOrderAt (ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j)) 0 =
       (j * (Nat.card (stabilizer Γ z) - 1) : ℕ) := by
   set m := Nat.card (stabilizer Γ z) with hm
-  set W : ℂ → ℂ := fun t ↦ ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^ m with hW
   have hT := ψ.isOpen_target
-  have h0 : (0 : ℂ) ∈ ψ.toEquiv.target := (ψ.mem_target_iff 0).mpr
-    ⟨⟨z, (mem_stabilizerBall Γ z ε).2 (by rw [dist_self]; exact ψ.ε_pos)⟩,
-      ((ψ.coordinate_eq_zero_iff _).mpr rfl).symm⟩
-  -- on the coordinate values, `w = u ^ m`, so `dw / dτ * dτ / du = m * u ^ (m - 1)`
-  have hkey : ∀ u ∈ ψ.toEquiv.target,
-      ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j) u * deriv ψ.pointOf u ^ j =
-        (ψ.pointOf u - conj (z : ℂ)) ^ (2 * j) * (m : ℂ) ^ j * u ^ (j * (m - 1)) := by
-    intro u hu
-    obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-    have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
-    have hWP : W ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)] fun u ↦ u ^ m := by
-      filter_upwards [hT.mem_nhds hu] with v hv
-      obtain ⟨σ, rfl⟩ := (ψ.mem_target_iff v).mp hv
-      rw [Function.comp_apply, pointOf_coordinate]
-      exact (ψ.quotientCoordinate_ofComplex σ).trans (quotientCoordinate_def ψ σ)
-    have hWd := ψ.differentiableAt_quotientCoordinate hτ
-    rw [← pointOf_coordinate ψ τ] at hWd
-    have hchain := deriv_comp _ hWd (ψ.differentiableAt_pointOf hu)
-    rw [hWP.deriv_eq, deriv_pow_field] at hchain
-    have hU : ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j) (ψ.coordinate τ) =
-        (ψ.pointOf (ψ.coordinate τ) - conj (z : ℂ)) ^ (2 * j) *
-          deriv W (ψ.pointOf (ψ.coordinate τ)) ^ j := by
-      rw [automorphyUntwist_coordinate, differentialFrame_def, ← hW, pointOf_coordinate]
-      norm_cast
-    rw [hU, mul_assoc, ← mul_pow, ← hchain, mul_pow, ← pow_mul, mul_comm (m - 1)]
-    ring
+  have h0 := ψ.zero_mem_target
   -- the factors other than the power of `u` are analytic and do not vanish at `0`
   have hPa : AnalyticAt ℂ ψ.pointOf 0 :=
     DifferentiableOn.analyticAt (fun u hu ↦ (ψ.differentiableAt_pointOf hu).differentiableWithinAt)
       (hT.mem_nhds h0)
-  have hP0 : ψ.pointOf 0 = z := by
-    have h := pointOf_coordinate ψ
-      ⟨z, (mem_stabilizerBall Γ z ε).2 (by rw [dist_self]; exact ψ.ε_pos)⟩
-    rwa [(ψ.coordinate_eq_zero_iff _).mpr rfl] at h
   have hUa : AnalyticAt ℂ (ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j)) 0 :=
     (ψ.differentiableOn_automorphyUntwist (ψ.mdifferentiableOn_differentialFrame j)).analyticAt
       (hT.mem_nhds h0)
@@ -565,7 +581,7 @@ theorem analyticOrderAt_automorphyUntwist_differentialFrame (j : ℕ) :
     fun_prop
   have hA0 :
       analyticOrderAt (fun u ↦ (ψ.pointOf u - conj (z : ℂ)) ^ (2 * j) * (m : ℂ) ^ j) 0 = 0 := by
-    rw [hA.analyticOrderAt_eq_zero, hP0]
+    rw [hA.analyticOrderAt_eq_zero, ψ.pointOf_zero]
     exact mul_ne_zero (pow_ne_zero _ (coe_sub_conj_ne_zero z z))
       (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
   have hD0 : analyticOrderAt (deriv ψ.pointOf) 0 = 0 :=
@@ -574,7 +590,8 @@ theorem analyticOrderAt_automorphyUntwist_differentialFrame (j : ℕ) :
       (fun u ↦ (ψ.pointOf u - conj (z : ℂ)) ^ (2 * j) * (m : ℂ) ^ j) *
         (· - (0 : ℂ)) ^ (j * (m - 1)) := by
     filter_upwards [hT.mem_nhds h0] with u hu
-    simpa only [Pi.mul_apply, Pi.pow_apply, sub_zero] using hkey u hu
+    simpa only [Pi.mul_apply, Pi.pow_apply, sub_zero] using
+      ψ.automorphyUntwist_differentialFrame_mul j hu
   have h := analyticOrderAt_congr heq
   rw [analyticOrderAt_mul hUa (hPa.deriv.pow j), analyticOrderAt_pow hPa.deriv, hD0,
     analyticOrderAt_mul hA (by fun_prop), hA0, analyticOrderAt_centeredMonomial] at h
