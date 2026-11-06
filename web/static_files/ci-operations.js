@@ -304,6 +304,12 @@
     var counts = data.jobs.counts;
     if (data.jobs.truncated || data.jobs.coverage === "partial" || (data.jobs.partition_errors || []).length) container.append(note("Job inventory is partial; counts describe retained observations and may be lower bounds.", "ops-warning"));
     append(container, heading("CI jobs"), badges([counts.running + " running", counts.queued_jobs + " queued jobs", counts.pending_workflows + " workflows awaiting observed jobs"]));
+    var completed = data.jobs.recent_completed;
+    function validWindow(value) { return value && Number.isSafeInteger(value.limit) && value.limit > 0 && Number.isSafeInteger(value.returned) && value.returned >= 0 && value.returned <= value.limit && typeof value.truncated === "boolean"; }
+    if (completed && validWindow(completed.builds) && validWindow(completed.other)) {
+      function describeWindow(label, value) { return label + ": " + value.returned + " shown from a window of up to " + value.limit + (value.truncated ? "; additional results omitted." : "."); }
+      container.append(note(describeWindow("Recent completed builds", completed.builds) + " " + describeWindow("Other completed jobs", completed.other), completed.builds.truncated || completed.other.truncated ? "ops-warning" : "ops-note"));
+    }
     var filters = el("div", undefined, "ops-filters"), pools = ["all"].concat(Array.from(new Set(jobs.map(function (j) { return j.pool; }))));
     append(filters, select("Pool", pools, poolFilter, function (v) { poolFilter = v; jobPage = 0; render(); }), select("State", ["all", "active", "completed", "queued", "in_progress"], statusFilter, function (v) { statusFilter = v; jobPage = 0; render(); }), select("Class", ["all", "pr_build", "staging_build", "other_build", "control", "maintenance", "other"], classFilter, function (v) { classFilter = v; jobPage = 0; render(); })); container.append(filters);
     function options(key) { return ["all"].concat(Array.from(new Set(jobs.map(function (j) { return key(j) || "unknown"; }))).sort()); }

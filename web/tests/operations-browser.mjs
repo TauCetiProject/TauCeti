@@ -45,6 +45,11 @@ await page.route('https://ci-data.taucetiproject.org/**', route=>{
  const body=fixture.objects['public'+path];
  return route.fulfill({status:body?200:404,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:body||'{}'});
 });
+const initialJobsManifest=JSON.parse(fixture.objects['public/v1/operations/manifest.json']);
+const jobsFixtureKey='public'+initialJobsManifest.domains.jobs.url;
+const jobsFixture=JSON.parse(fixture.objects[jobsFixtureKey]);
+jobsFixture.recent_completed={builds:{limit:150,returned:150,truncated:true},other:{limit:50,returned:50,truncated:true}};
+fixture.objects[jobsFixtureKey]=JSON.stringify(jobsFixture);
 await page.goto(url+'/ci/#queue?batch=1');
 await page.getByRole('heading',{name:'Batch 1 · head',exact:true}).waitFor();
 assert.equal(await page.locator('.ops-table tbody tr').count(),100);
@@ -62,6 +67,9 @@ await page.getByRole('link',{name:'Runners',exact:true}).click();
 await page.getByRole('heading',{name:'yael',exact:true}).waitFor();
 assert.equal(new URL(page.url()).pathname,'/ci/');
 assert.equal(await page.locator('.ops-job').count(),100);
+assert.ok((await page.locator('[data-ops-view]').innerText()).includes('Recent completed builds: 150 shown from a window of up to 150; additional results omitted.'));
+assert.ok((await page.locator('[data-ops-view]').innerText()).includes('Other completed jobs: 50 shown from a window of up to 50; additional results omitted.'));
+
 assert.ok((await page.locator('[data-ops-view]').innerText()).includes('Host yael · slot 1'));
 assert.ok((await page.locator('[data-ops-view]').innerText()).includes('CI ceiling 1 jobs · classes pr, staging'));
 assert.ok((await page.locator('[data-ops-view]').innerText()).includes('finished 8 · failed 1 · outcomes unconfirmed 2'));
