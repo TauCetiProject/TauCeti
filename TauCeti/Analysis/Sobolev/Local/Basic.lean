@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Local vector-valued Sobolev classes on planar domains
@@ -20,10 +21,12 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction, linearity, continuous-linear composition, decreasing the
-integrability exponent, and decreasing the derivative order. In positive order completeness
-is inherited from the native weak-derivative predicate; the definitions admit every real normed
-codomain without an additional typeclass assumption. The continuous-linear composition result
-requires a complete target, as does the native weak-derivative result it uses.
+integrability exponent, and decreasing the derivative order. On open domains, local `L¹`
+membership is identified with local integrability, supplying the native weak-derivative hypotheses.
+In positive order, completeness is inherited from the native weak-derivative predicate; the
+definitions admit every real normed codomain without an additional typeclass assumption.
+The continuous-linear composition result requires a complete target, as does the native
+weak-derivative result it uses.
 
 ## References
 
@@ -46,7 +49,7 @@ def MemLpLoc (p : ENNReal) (U : Set ℂ) (f : ℂ → F) : Prop :=
   ∀ K : Set ℂ, K ⊆ U → IsCompact K → MemLp f p (volume.restrict K)
 
 /-- Local integrability restricts to any smaller set. -/
-theorem MemLpLoc.mono (hf : MemLpLoc p U f) (hVU : V ⊆ U) : MemLpLoc p V f :=
+theorem MemLpLoc.mono_set (hf : MemLpLoc p U f) (hVU : V ⊆ U) : MemLpLoc p V f :=
   fun K hK hc => hf K (hK.trans hVU) hc
 
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
@@ -58,12 +61,6 @@ theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
 /-- The zero function belongs to every local `Lᵖ` class. -/
 @[simp]
 theorem memLpLoc_zero : MemLpLoc p U (0 : ℂ → F) := fun _ _ _ => MemLp.zero
-
-/-- Every constant function is locally `Lᵖ` for all exponents, including infinity. -/
-theorem memLpLoc_const (c : F) : MemLpLoc p U (fun _ => c) := by
-  intro K _ hK
-  have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-  exact memLp_const c
 
 /-- Local `Lᵖ` membership is closed under addition. -/
 theorem MemLpLoc.add (hf : MemLpLoc p U f) (hg : MemLpLoc p U g) :
@@ -85,12 +82,37 @@ theorem MemLpLoc.mono_exponent (hf : MemLpLoc p U f) (hqp : q ≤ p) : MemLpLoc 
   exact (hf K hK hc).mono_exponent hqp
 
 /-- A function continuous on `U` is locally `Lᵖ` there, with no global bound required. -/
-theorem _root_.ContinuousOn.memLpLoc (hf : ContinuousOn f U) : MemLpLoc p U f := by
-  intro K hK hc
-  have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hc.measure_lt_top⟩
-  obtain ⟨C, hC⟩ := hc.exists_bound_of_continuousOn (hf.mono hK)
-  exact MemLp.of_bound ((hf.mono hK).aestronglyMeasurable_of_isCompact hc hc.measurableSet) C
-    ((ae_restrict_mem hc.measurableSet).mono fun x hx => hC x hx)
+theorem _root_.ContinuousOn.memLpLoc (hf : ContinuousOn f U) : MemLpLoc p U f :=
+  fun _K hK hc => (hf.mono hK).memLp_restrict_of_subset_isCompact
+    hc hc.measurableSet subset_rfl p
+
+/-- Every constant function is locally `Lᵖ` for all exponents, including infinity. -/
+@[simp]
+theorem memLpLoc_const (c : F) : MemLpLoc p U (fun _ => c) :=
+  continuousOn_const.memLpLoc
+
+/-- A locally `Lᵖ` function on an open set is locally integrable when `1 ≤ p`.
+This supplies the local integrability hypothesis used by the weak-derivative API. -/
+theorem MemLpLoc.locallyIntegrableOn (hf : MemLpLoc p U f) (hp : 1 ≤ p) (hU : IsOpen U) :
+    LocallyIntegrableOn f U volume :=
+  (locallyIntegrableOn_iff hU.isLocallyClosed).2 fun K hK hc =>
+    memLp_one_iff_integrable.1 ((hf.mono_exponent hp) K hK hc)
+
+/-- On an open set, local `L¹` membership is exactly local integrability. -/
+theorem memLpLoc_one_iff_locallyIntegrableOn (hU : IsOpen U) :
+    MemLpLoc 1 U f ↔ LocallyIntegrableOn f U volume :=
+  ⟨fun hf => hf.locallyIntegrableOn le_rfl hU,
+    fun hf _K hK hc => memLp_one_iff_integrable.2 (hf.integrableOn_compact_subset hK hc)⟩
+
+/-- A finite sum of locally `Lᵖ` functions is locally `Lᵖ`, without a completeness assumption. -/
+theorem MemLpLoc.sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → F}
+    (hf : ∀ i ∈ s, MemLpLoc p U (f i)) : MemLpLoc p U (fun z => ∑ i ∈ s, f i z) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa only [Finset.sum_empty, Pi.zero_def] using (memLpLoc_zero (p := p) (U := U))
+  | @insert i s hi ih =>
+    simpa only [Finset.sum_insert hi, Pi.add_def] using
+      (hf i (Finset.mem_insert_self i s)).add (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
 
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
@@ -141,10 +163,10 @@ theorem MemWkpLoc.completeSpace (hf : MemWkpLoc p Ω (k + 1) f) : CompleteSpace 
 theorem MemWkpLoc.mono (hf : MemWkpLoc p Ω k f) (hΩ : Ω' ≤ Ω) :
     MemWkpLoc p Ω' k f := by
   induction k generalizing F with
-  | zero => exact hf.mono hΩ
+  | zero => exact hf.mono_set hΩ
   | succ k ih =>
     obtain ⟨hp, D, hD, hk⟩ := hf
-    exact ⟨hp.mono hΩ, D, hD.mono hΩ, ih hk⟩
+    exact ⟨hp.mono_set hΩ, D, hD.mono hΩ, ih hk⟩
 
 /-- Almost-everywhere changes of the function preserve its local Sobolev class. -/
 theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p Ω k f)
@@ -180,7 +202,7 @@ theorem MemWkpLoc.of_le (hf : MemWkpLoc p Ω k f) (hlk : l ≤ k) : MemWkpLoc p 
 
 /-- The zero function lies in every local Sobolev class with complete codomain. -/
 @[simp]
-theorem memWkpLoc_zero [CompleteSpace F] : MemWkpLoc p Ω k (0 : ℂ → F) := by
+theorem memWkpLoc_zero_fun [CompleteSpace F] : MemWkpLoc p Ω k (0 : ℂ → F) := by
   induction k generalizing F with
   | zero => exact memLpLoc_zero
   | succ k ih => exact ⟨memLpLoc_zero, 0, hasWeakFDerivOn_zero, ih⟩
@@ -228,11 +250,12 @@ theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p Ω k f)
       ih hk ((ContinuousLinearMap.compL ℝ ℂ F G) A)⟩
 
 /-- Constant functions belong to every local Sobolev class. -/
+@[simp]
 theorem memWkpLoc_const [CompleteSpace F] (c : F) : MemWkpLoc p Ω k (fun _ => c) := by
   cases k with
   | zero => exact memLpLoc_const c
   | succ k =>
-    refine ⟨memLpLoc_const c, 0, ?_, memWkpLoc_zero⟩
+    refine ⟨memLpLoc_const c, 0, ?_, memWkpLoc_zero_fun⟩
     apply hasWeakFDerivOn_iff.mpr
     exact fun v => hasWeakLineDerivOn_const (μ := volume) (Ω := Ω) (v := v) c
 
@@ -244,7 +267,7 @@ theorem MemWkpLoc.sum {ι : Type*} [CompleteSpace F] (s : Finset ι)
   induction s using Finset.induction_on with
   | empty =>
     simpa only [Finset.sum_empty, Pi.zero_def] using
-      (memWkpLoc_zero (p := p) (Ω := Ω) (k := k) (F := F))
+      (memWkpLoc_zero_fun (p := p) (Ω := Ω) (k := k) (F := F))
   | @insert i s hi ih =>
     simpa only [Finset.sum_insert hi, Pi.add_def] using
       (hf i (Finset.mem_insert_self i s)).add (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
