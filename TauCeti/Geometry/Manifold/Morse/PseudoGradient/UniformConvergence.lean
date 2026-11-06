@@ -34,8 +34,6 @@ the entrance times uniformly.
 
 ## Main results
 
-* `TauCeti.IsAdaptedPseudoGradient.exists_forall_coord_flow_eq_exp_smul`: on a small cube of the
-  chart, points of `W^s(x)` move by the linear contraction `z ↦ e^{-t} z` for all `t ≥ 0`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_forall_norm_coord_flow_le_mul_exp`: the coordinates of
   `flow t y` decay like `C e^{-t}` uniformly for `y` in a compact subset of `W^s(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_forall_sub_le_mul_exp`: the energy `f (flow t y) - f x`
@@ -71,33 +69,6 @@ namespace IsAdaptedPseudoGradient
 variable (hX : IsAdaptedPseudoGradient f X)
 include hX
 
-/-- **The linear contraction on the local stable set.** Let `X` be the linear field
-`z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`. On a small coordinate cube, a point `y` of `W^s(x)` stays
-in the chart for all positive times, and its coordinates at time `t ≥ 0` are `e^{-t}` times those
-of `y`. -/
-theorem exists_forall_coord_flow_eq_exp_smul (φ : MorseChart E f x)
-    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
-      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) :
-    ∃ ρ > 0, ∀ y ∈ hX.flow.stableSet x, y ∈ φ.toChart.source → ‖φ.coord (φ.toChart y)‖ < ρ →
-      ∀ t, 0 ≤ t → hX.flow t y ∈ φ.toChart.source ∧
-        φ.coord (φ.toChart (hX.flow t y)) = Real.exp (-t) • φ.coord (φ.toChart y) := by
-  obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
-  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  refine ⟨min ε (r / 2), by positivity, fun y hys hy hyρ t ht ↦ ?_⟩
-  set z := φ.coord (φ.toChart y)
-  have hu := (hεs y hy (hyρ.trans_le (min_le_left _ _))).1 hys
-  have hz2 : ‖z‖ < r / 2 := hyρ.trans_le (min_le_right _ _)
-  have hflow := hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hz2 hu ht
-  rw [φ.toChart_symm_coord_symm_coord hy] at hflow
-  -- The contracted coordinates are again coordinates of a point of the chart.
-  have hnorm : ‖Real.exp (-t) • z‖ ≤ ‖z‖ := by
-    rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
-    exact mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))
-  have hT := hrT _ (hnorm.trans_lt (hz2.trans (half_lt_self hr)))
-  rw [hflow]
-  exact ⟨φ.toChart.map_target hT, by rw [φ.toChart.right_inv hT, LinearEquiv.apply_symm_apply]⟩
-
 /-- **Uniform exponential decay in a Morse chart.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ`
 in the Morse chart `φ`, and `K` a compact subset of the stable set `W^s(x)`. There are `T` and `C`
 such that for every `y ∈ K` and `t ≥ T`, the point `flow t y` lies in the chart, its coordinates of
@@ -115,10 +86,8 @@ theorem exists_forall_norm_coord_flow_le_mul_exp (φ : MorseChart E f x)
   -- The open cube `V` of radius `min ρ ε` around `x`, read in the chart.
   set δ := min ρ ε
   set V := φ.toChart.source ∩ φ.toChart ⁻¹' (φ.coord ⁻¹' Metric.ball 0 δ)
-  have hcoord : Continuous φ.coord :=
-    LinearMap.continuous_of_finiteDimensional (φ.coord : E →ₗ[ℝ] Fin (Module.finrank ℝ E) → ℝ)
   have hV : IsOpen V := φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
-    (Metric.isOpen_ball.preimage hcoord)
+    (Metric.isOpen_ball.preimage φ.continuous_coord)
   have hxV : x ∈ V := ⟨φ.mem_source, by simp [φ.apply_self, δ, hρ, hε]⟩
   -- Every orbit from `K` enters `V` at an integer time, and finitely many times suffice.
   have hcover : K ⊆ ⋃ n : ℕ, hX.flow n ⁻¹' V := fun y hy ↦ by
@@ -189,14 +158,9 @@ theorem tendsto_flow_atTop_prod_principal (hf : MDifferentiable 𝓘(ℝ, E) �
     rw [Flow.fixed_of_mem_stableSet (hKs hy) t]
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
   obtain ⟨T, C, hTC⟩ := hX.exists_forall_norm_coord_flow_le_mul_exp φ hφ hf hK hKs
-  have hcont : Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
-    obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-    have h := (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp
-      (φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply))
-    rwa [ContinuousAt, comp_apply, φ.toChart_symm_coord_symm_zero] at h
   intro U hU
   rw [mem_map]
-  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 (hcont hU)
+  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 (φ.tendsto_toChart_symm_coord_symm_nhds_zero hU)
   have hsmall : Tendsto (fun t ↦ C * Real.exp (-t)) atTop (𝓝 0) := by
     simpa using Real.tendsto_exp_neg_atTop_nhds_zero.const_mul C
   have hev : ∀ᶠ t in atTop, T ≤ t ∧ C * Real.exp (-t) < δ :=
