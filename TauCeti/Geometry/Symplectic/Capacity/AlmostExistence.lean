@@ -234,7 +234,7 @@ Proposition 6.3, after Hofer–Zehnder and Struwe). Let `σ` be nondegenerate, w
 `π₁`-sensitive Hofer–Zehnder capacity `c°_HZ(M)`, and let `F` be smooth. Every nonempty regular
 level `F⁻¹(c)` such that `{F ≤ b}` is compact for some `b > c` has the contractible almost
 existence property in `M`. -/
-theorem hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top
+theorem hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top [I.Boundaryless]
     (hσ : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) ∞ F)
     (hcap : σ.contractibleHZCapacity univ ≠ (∞ : ℝ≥0∞)) {b c : ℝ} (hcb : c < b)
     (hcpt : IsCompact {x | F x ≤ b}) (hreg : IsRegularValue I 𝓘(ℝ) F c) (hne : ∃ x, F x = c) :
