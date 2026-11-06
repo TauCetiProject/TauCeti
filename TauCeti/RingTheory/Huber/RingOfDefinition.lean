@@ -520,6 +520,31 @@ private theorem idealImage_subset_image_span_pow (P : PairOfDefinition A) {B : S
       rw [← Finset.sum_attach Gk fun z ↦ (z : A) * (c z : A)]
       exact Finset.sum_congr rfl fun z _ ↦ by rw [hueq z.1 z.2, hweq z.1]
 
+/-- **The boundedness step of Wedhorn Lemma 6.2.** If `B` is bounded and `S ⊆ B` has images in
+`Iᵏ⁺¹`, then every power of the ideal `J = (S)` of `B` is eventually inside any neighbourhood of
+`0` in `B`: `Jᵐ` lies in `Iᵐ · B`, which is eventually inside a neighbourhood of `0` of `A`. -/
+private theorem exists_span_pow_subset_of_isBounded (P : PairOfDefinition A) {B : Subring A}
+    (hbdd : IsBounded (B : Set A)) {S : Set B} {k₀ : ℕ}
+    (hSk : ∀ y ∈ S, (y : A) ∈ P.idealImage (k₀ + 1)) {s : Set B} (hs : s ∈ 𝓝 (0 : B)) :
+    ∃ m : ℕ, ((Ideal.span S ^ m : Ideal B) : Set B) ⊆ s := by
+  rw [nhds_induced] at hs
+  obtain ⟨U, hU, hUs⟩ := Filter.mem_comap.mp hs
+  obtain ⟨W, hWU⟩ := NonarchimedeanRing.is_nonarchimedean U hU
+  obtain ⟨V, hV, hVB⟩ := isBounded_iff.mp hbdd (W : Set A) (W.isOpen.mem_nhds W.zero_mem)
+  obtain ⟨m, -, hm⟩ := P.hasBasis_nhds_zero.mem_iff.mp hV
+  refine ⟨m, fun x hx ↦ hUs (hWU ?_)⟩
+  rw [Submodule.span_pow] at hx
+  obtain ⟨f, hf, rfl⟩ := Submodule.mem_span_set.mp hx
+  have hcoe_sum : ((∑ i ∈ f.support, f i • i : B) : A) = ∑ i ∈ f.support, ((f i • i : B) : A) :=
+    map_sum B.subtype _ _
+  rw [Finsupp.sum, hcoe_sum]
+  refine W.toAddSubgroup.sum_mem fun i hi ↦ ?_
+  have hiI : (i : A) ∈ P.idealImage m :=
+    P.idealImage_anti (Nat.le_mul_of_pos_left m k₀.succ_pos)
+      (P.mem_idealImage_of_mem_pow hSk m i (hf (Finset.mem_coe.mpr hi)))
+  rw [smul_eq_mul, MulMemClass.coe_mul, mul_comm]
+  exact hVB (Set.mul_mem_mul (hm hiI) (f i).property)
+
 end PairOfDefinition
 
 /-- **Wedhorn Lemma 6.2, the substantial implication.** Every open bounded subring `B` of a Huber
@@ -574,23 +599,7 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq (B : Subring A)
     obtain ⟨v, hv, hveq⟩ := P.idealImage_subset_image_span_pow hk hspan hSmem n hy
     exact Subtype.val_injective hveq ▸ hv
   · -- Boundedness of `B` shrinks `Jᵐ` inside any neighbourhood of `0`.
-    rw [nhds_induced] at hs
-    obtain ⟨U, hU, hUs⟩ := Filter.mem_comap.mp hs
-    obtain ⟨W, hWU⟩ := NonarchimedeanRing.is_nonarchimedean U hU
-    obtain ⟨V, hV, hVB⟩ := isBounded_iff.mp hbdd (W : Set A) (W.isOpen.mem_nhds W.zero_mem)
-    obtain ⟨m, -, hm⟩ := P.hasBasis_nhds_zero.mem_iff.mp hV
-    refine ⟨m, fun x hx ↦ hUs (hWU ?_)⟩
-    rw [Submodule.span_pow] at hx
-    obtain ⟨f, hf, rfl⟩ := Submodule.mem_span_set.mp hx
-    have hcoe_sum : ((∑ i ∈ f.support, f i • i : B) : A) = ∑ i ∈ f.support, ((f i • i : B) : A) :=
-      map_sum B.subtype _ _
-    rw [Finsupp.sum, hcoe_sum]
-    refine W.toAddSubgroup.sum_mem fun i hi ↦ ?_
-    have hiI : (i : A) ∈ P.idealImage m :=
-      P.idealImage_anti (Nat.le_mul_of_pos_left m k₀.succ_pos)
-        (P.mem_idealImage_of_mem_pow hSk m i (hf (Finset.mem_coe.mpr hi)))
-    rw [smul_eq_mul, MulMemClass.coe_mul, mul_comm]
-    exact hVB (Set.mul_mem_mul (hm hiI) (f i).property)
+    exact P.exists_span_pow_subset_of_isBounded hbdd hSk hs
 
 omit [IsHuberRing A] in
 /-- **Wedhorn Lemma 6.2, the easy implication `(b) ⇒ (c)`.** An open subring whose subspace
