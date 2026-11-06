@@ -69,6 +69,15 @@ namespace ContinuousMap.IsNConnected
 variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {f : C(X, Y)} {n : ℕ}
   (R : Type u) [Ring R]
 
+/-- The relative homotopy groups `π_(k+1)(M_f, X)` of the mapping cylinder of an `n`-connected
+map vanish for `k < n`, in the form taken by the compression lemmas. -/
+private theorem subsingleton_relHomotopyGroup_mappingCylinder_fin (hf : f.IsNConnected n)
+    (k : ℕ) (hk : k + 1 < n + 1) (b : Set.range (MappingCylinder.incl f)) :
+    Subsingleton (RelHomotopyGroup (Fin k)
+      ⟨TopPair.ofSubset (X := TopCat.of (MappingCylinder f))
+        (Set.range (MappingCylinder.incl f)), b⟩) :=
+  hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin k) (by rw [Nat.card_fin]; lia) b
+
 /-- **The mapping cylinder of an `n`-connected map is homologically `n`-connected relative to its
 bottom face**: if `f : X → Y` is `n`-connected, then `H_m(M_f, X; R) = 0` for every `m ≤ n`, where
 `X` is identified with the bottom face of the mapping cylinder `M_f`. -/
@@ -78,8 +87,7 @@ theorem isZero_singularHomology_mappingCylinder (hf : f.IsNConnected n) {m : ℕ
   isZero_singularHomology_ofSubset_of_relHomotopyGroup (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    (fun k hk b ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin k)
-      (by rw [Nat.card_eq_fintype_card, Fintype.card_fin]; lia) b) R (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (by lia)
 
 /-- The map induced on singular homology by `f` is the map induced by the inclusion of the bottom
 face of the mapping cylinder, up to the isomorphisms induced by the homeomorphism of `X` with the
@@ -120,8 +128,7 @@ theorem isIso_singularHomologyMap (hf : f.IsNConnected n) {m : ℕ} (hm : m < n)
   have := isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    (fun k hk b ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin k)
-      (by rw [Nat.card_eq_fintype_card, Fintype.card_fin]; lia) b) R (m := m) (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (m := m) (by lia)
   rw [singularHomologyMap_eq]
   infer_instance
 
@@ -135,8 +142,7 @@ theorem epi_singularHomologyMap (hf : f.IsNConnected n) {m : ℕ} (hm : m ≤ n)
   have := epi_singularHomologyMap_subtypeVal_of_relHomotopyGroup (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    (fun k hk b ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin k)
-      (by rw [Nat.card_eq_fintype_card, Fintype.card_fin]; lia) b) R (m := m) (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (m := m) (by lia)
   rw [singularHomologyMap_eq]
   infer_instance
 

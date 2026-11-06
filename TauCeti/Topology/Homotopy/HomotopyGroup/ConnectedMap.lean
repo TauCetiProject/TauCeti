@@ -37,6 +37,9 @@ composing on either side with a weak homotopy equivalence neither creates nor de
   equivalence exactly when it is `n`-connected for every `n`.
 * `ContinuousMap.IsNConnected.of_homotopic`, `ContinuousMap.IsNConnected.comp`: invariance under
   homotopy and closure under composition.
+* `ContinuousMap.IsWeakHomotopyEquivalence.isNConnected_iff_of_comp_eq`: in a square
+  `g ∘ i = j ∘ f` with `f` and `g` weak homotopy equivalences, `i` and `j` have the same
+  connectivity.
 * `ContinuousMap.IsWeakHomotopyEquivalence.isNConnected_comp_iff`,
   `ContinuousMap.IsWeakHomotopyEquivalence.isNConnected_comp_iff'`: composing with a weak homotopy
   equivalence, on the left or on the right, does not change the connectivity.
@@ -79,23 +82,15 @@ namespace IsNConnected
 fewer than `n` cube directions. -/
 theorem map_injective (hf : f.IsNConnected n) (N : Type*) [Finite N] (hN : Nat.card N < n)
     (x : X) : Function.Injective (HomotopyGroup.map (N := N) f (rfl : f x = f x)) := by
-  -- Reindex the cube directions by `Fin k`, where `k` is the cardinality of `N`.
-  let e := HomotopyGroup.congrEquiv (X := X) (x := x) (Finite.equivFin N)
-  have h : HomotopyGroup.map f rfl ∘ e = HomotopyGroup.congrEquiv (Finite.equivFin N) ∘
-      HomotopyGroup.map (N := N) f (rfl : f x = f x) :=
-    funext (HomotopyGroup.map_congrEquiv f rfl _)
-  exact (Equiv.comp_injective _ _).1 (h ▸ (hf.injective _ hN x).comp e.injective)
+  rw [HomotopyGroup.map_eq_congrEquiv_symm_comp f rfl (Finite.equivFin N)]
+  exact (Equiv.injective _).comp ((hf.injective _ hN x).comp (Equiv.injective _))
 
 /-- An `n`-connected map induces a surjection on the homotopy group indexed by any finite type of
 at most `n` cube directions. -/
 theorem map_surjective (hf : f.IsNConnected n) (N : Type*) [Finite N] (hN : Nat.card N ≤ n)
     (x : X) : Function.Surjective (HomotopyGroup.map (N := N) f (rfl : f x = f x)) := by
-  -- Reindex the cube directions by `Fin k`, where `k` is the cardinality of `N`.
-  let e := HomotopyGroup.congrEquiv (X := X) (x := x) (Finite.equivFin N)
-  have h : HomotopyGroup.map f rfl ∘ e = HomotopyGroup.congrEquiv (Finite.equivFin N) ∘
-      HomotopyGroup.map (N := N) f (rfl : f x = f x) :=
-    funext (HomotopyGroup.map_congrEquiv f rfl _)
-  exact (Equiv.comp_surjective _ _).1 (h ▸ (hf.surjective _ hN x).comp e.surjective)
+  rw [HomotopyGroup.map_eq_congrEquiv_symm_comp f rfl (Finite.equivFin N)]
+  exact (Equiv.surjective _).comp ((hf.surjective _ hN x).comp (Equiv.surjective _))
 
 /-- An `n`-connected map is `m`-connected for every `m ≤ n`. -/
 theorem mono (hf : f.IsNConnected n) {m : ℕ} (hmn : m ≤ n) : f.IsNConnected m where
@@ -106,19 +101,12 @@ theorem mono (hf : f.IsNConnected n) {m : ℕ} (hmn : m ≤ n) : f.IsNConnected 
 /-- A map homotopic to an `n`-connected map is `n`-connected. -/
 theorem of_homotopic {f₀ f₁ : C(X, Y)} (hf : f₀.IsNConnected n) (h : f₀.Homotopic f₁) :
     f₁.IsNConnected n := by
-  -- The two induced maps differ by transport along the trace of the homotopy at `x`.
-  have hfun (k : ℕ) (x : X) : HomotopyGroup.map (N := Fin k) f₁ (rfl : f₁ x = f₁ x) =
-      TauCeti.homotopyGroupEquivOfPath ((h.some.evalAt x).cast rfl rfl) ∘
-        HomotopyGroup.map f₀ rfl := by
-    funext a
-    rw [Function.comp_apply, TauCeti.homotopyGroupEquivOfPath_apply]
-    exact (TauCeti.homotopyGroupTransport_map h.some rfl rfl a).symm
   refine ⟨fun y ↦ ?_, fun k hk x ↦ ?_, fun k hk x ↦ ?_⟩
   · obtain ⟨x, hx⟩ := hf.exists_joined y
     exact ⟨x, (Joined.symm ⟨h.some.evalAt x⟩).trans hx⟩
-  · rw [hfun]
+  · rw [HomotopyGroup.map_eq_homotopyGroupEquivOfPath_comp_of_homotopy h.some]
     exact (Equiv.injective _).comp (hf.injective k hk x)
-  · rw [hfun]
+  · rw [HomotopyGroup.map_eq_homotopyGroupEquivOfPath_comp_of_homotopy h.some]
     exact (Equiv.surjective _).comp (hf.surjective k hk x)
 
 /-- A composite of `n`-connected maps is `n`-connected. -/
@@ -143,37 +131,37 @@ theorem isNConnected (hf : f.IsWeakHomotopyEquivalence) (n : ℕ) : f.IsNConnect
   injective k _ x := (hf.bijective k x).injective
   surjective k _ x := (hf.bijective k x).surjective
 
+section Square
+
+variable {X' Y' : Type*} [TopologicalSpace X'] [TopologicalSpace Y'] {g : C(X', Y')}
+  {i : C(X, X')} {j : C(Y, Y')}
+
+/-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, `j` is
+`n`-connected exactly when `i` is. -/
+theorem isNConnected_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
+    (hg : g.IsWeakHomotopyEquivalence) (hi : g.comp i = j.comp f) :
+    j.IsNConnected n ↔ i.IsNConnected n := by
+  have h₀ := hf.forall_exists_joined_iff_of_comp_eq hg hi
+  have h₁ (k : ℕ) := hf.forall_injective_map_iff_of_comp_eq hg hi (Fin k)
+  have h₂ (k : ℕ) := hf.forall_surjective_map_iff_of_comp_eq hg hi (Fin k)
+  exact ⟨fun hj ↦ ⟨h₀.1 hj.exists_joined, fun k hk ↦ (h₁ k).1 (hj.injective k hk),
+      fun k hk ↦ (h₂ k).1 (hj.surjective k hk)⟩,
+    fun h ↦ ⟨h₀.2 h.exists_joined, fun k hk ↦ (h₁ k).2 (h.injective k hk),
+      fun k hk ↦ (h₂ k).2 (h.surjective k hk)⟩⟩
+
+end Square
+
 /-- **Composing on the left with a weak homotopy equivalence does not change connectivity.** If
 `g` is a weak homotopy equivalence, then `g ∘ f` is `n`-connected exactly when `f` is. -/
 theorem isNConnected_comp_iff (hg : g.IsWeakHomotopyEquivalence) :
-    (g.comp f).IsNConnected n ↔ f.IsNConnected n := by
-  refine ⟨fun hgf ↦ ⟨fun y ↦ ?_, fun k hk x ↦ ?_, fun k hk x ↦ ?_⟩,
-    fun hf ↦ (hg.isNConnected n).comp hf⟩
-  · obtain ⟨x, hx⟩ := hgf.exists_joined (g y)
-    exact ⟨x, hg.joined_iff.1 hx⟩
-  · exact (Function.Injective.of_comp_iff (hg.bijective k (f x)).injective _).1
-      (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.injective k hk x)
-  · exact (Function.Surjective.of_comp_iff' (hg.bijective k (f x)) _).1
-      (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.surjective k hk x)
+    (g.comp f).IsNConnected n ↔ f.IsNConnected n :=
+  IsWeakHomotopyEquivalence.id.isNConnected_iff_of_comp_eq hg rfl
 
 /-- **Composing on the right with a weak homotopy equivalence does not change connectivity.** If
-`f` is a weak homotopy equivalence, then `g ∘ f` is `n`-connected exactly when `g` is. At a point
-`y` of `Y`, the map induced by `g` is compared, by base-point change along a path from a point
-`f x` to `y`, with the map induced at `f x`. -/
+`f` is a weak homotopy equivalence, then `g ∘ f` is `n`-connected exactly when `g` is. -/
 theorem isNConnected_comp_iff' (hf : f.IsWeakHomotopyEquivalence) :
-    (g.comp f).IsNConnected n ↔ g.IsNConnected n := by
-  refine ⟨fun hgf ↦ ⟨fun z ↦ ?_, fun k hk y ↦ ?_, fun k hk y ↦ ?_⟩,
-    fun hg ↦ hg.comp (hf.isNConnected n)⟩
-  · obtain ⟨x, hx⟩ := hgf.exists_joined z
-    exact ⟨f x, hx⟩
-  · obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
-    exact (g.injective_map_iff_of_path γ).1
-      ((Function.Injective.of_comp_iff' _ (hf.bijective k x)).1
-        (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.injective k hk x))
-  · obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
-    exact (g.surjective_map_iff_of_path γ).1
-      ((Function.Surjective.of_comp_iff _ (hf.bijective k x).surjective).1
-        (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.surjective k hk x))
+    (g.comp f).IsNConnected n ↔ g.IsNConnected n :=
+  (hf.isNConnected_iff_of_comp_eq (i := g.comp f) (j := g) IsWeakHomotopyEquivalence.id rfl).symm
 
 end IsWeakHomotopyEquivalence
 
