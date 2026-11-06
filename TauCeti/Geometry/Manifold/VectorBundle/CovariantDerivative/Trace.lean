@@ -58,22 +58,6 @@ section DualFrame
 
 variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- The frame metric-dual to the chart-local frame at `α`: `Dᵢ = ∑ⱼ (G⁻¹)ᵢⱼ Fⱼ`, where `G` is the
-Gram matrix of the chart-local frame `Fᵢ`. -/
-private def chartDualFrame (α : M) (i : Fin (Module.finrank ℝ E)) :
-    Π y : M, TangentSpace I y :=
-  fun y ↦ ∑ j, chartInvGramMatrix (I := I) α y i j • chartLocalFrame (I := I) α j y
-
-/-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
-matrix. -/
-private theorem inner_chartDualFrame (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
-    (i j : Fin (Module.finrank ℝ E)) :
-    inner ℝ (chartDualFrame (I := I) α i y) (chartLocalFrame (I := I) α j y) =
-      if i = j then 1 else 0 := by
-  have h := congrFun (congrFun (chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy) i) j
-  simp only [Matrix.mul_apply, chartGramMatrix_apply, Matrix.one_apply] at h
-  simp only [chartDualFrame, sum_inner, real_inner_smul_left, h]
-
 /-- On the chart domain, the metric trace of a bilinear form is `∑ᵢ B(Fᵢ, Dᵢ)`. -/
 private theorem bilinFormTrace_eq_sum_chartDualFrame (α : M) {y : M}
     (hy : y ∈ (chartAt H α).source) (B : LinearMap.BilinForm ℝ (TangentSpace I y)) :
@@ -90,54 +74,12 @@ private theorem bilinFormTrace_eq_sum_chartDualFrame (α : M) {y : M}
   have hinv : (Matrix.gram ℝ b)⁻¹ = chartInvGramMatrix (I := I) α y :=
     Matrix.inv_eq_left_inv (hgram ▸ chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy)
   rw [TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hinv, hb]
-  simp only [chartDualFrame, map_sum, map_smul, smul_eq_mul]
-
-/-- On the chart domain, every tangent vector expands in the chart-local frame with the dual
-frame giving its coefficients, and in the dual frame with the chart-local frame giving its
-coefficients. -/
-private theorem sum_inner_chartDualFrame_smul (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
-    (w : TangentSpace I y) :
-    ∑ j, inner ℝ (chartDualFrame (I := I) α j y) w • chartLocalFrame (I := I) α j y = w ∧
-      ∑ j, inner ℝ (chartLocalFrame (I := I) α j y) w • chartDualFrame (I := I) α j y = w := by
-  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hy
-  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy'
-  have hb (i : Fin (Module.finrank ℝ E)) : b i = chartLocalFrame (I := I) α i y :=
-    (chartLocalFrame_apply_of_mem_chart_source (I := I) α hy i).symm
-  have hdual (i j : Fin (Module.finrank ℝ E)) :
-      inner ℝ (chartDualFrame (I := I) α i y) (b j) = if i = j then 1 else 0 := by
-    rw [hb]
-    exact inner_chartDualFrame α hy i j
-  constructor
-  · -- Both sides have the same coefficients in the basis `b`.
-    conv_rhs => rw [← b.sum_repr w]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← hb]
-    congr 1
-    conv_lhs => rw [← b.sum_repr w]
-    simp only [inner_sum, real_inner_smul_right, hdual, mul_ite, mul_one, mul_zero,
-      Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  · -- Both sides have the same inner products with the basis `b`.
-    refine InnerProductSpace.ext_inner_right_basis b fun k ↦ ?_
-    simp only [hb, sum_inner, real_inner_smul_left, inner_chartDualFrame α hy, mul_ite, mul_one,
-      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, real_inner_comm w]
+  simp only [chartDualFrame_apply, map_sum, map_smul, smul_eq_mul]
 
 end DualFrame
 
 variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-
-/-- The dual frame is differentiable at every point of the chart domain. -/
-private theorem mdifferentiableAt_chartDualFrame (α : M) {y : M}
-    (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet) (i : Fin (Module.finrank ℝ E)) :
-    MDiffAt (T% (chartDualFrame (I := I) α i)) y := by
-  have hU := (trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy
-  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
-  refine MDifferentiableAt.sum_section fun j _ ↦ MDifferentiableAt.smul_section ?_ ?_
-  · exact ((contMDiffOn_chartInvGramMatrix_entry (n := 1) α i j).contMDiffAt hU).mdifferentiableAt
-      one_ne_zero
-  · exact ((contMDiffOn_chartLocalFrame (n := 1) α j).contMDiffAt hU).mdifferentiableAt
-      one_ne_zero
 
 variable {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
 
@@ -164,7 +106,7 @@ theorem IsMetricCompatible.mvfderiv_bilinFormTrace
   have hF (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (F i)) x :=
     ((contMDiffOn_chartLocalFrame (n := 1) x i).contMDiffAt hU).mdifferentiableAt one_ne_zero
   have hD (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (D i)) x :=
-    mdifferentiableAt_chartDualFrame x hx i
+    (contMDiffAt_chartDualFrame (n := 1) x hx i).mdifferentiableAt one_ne_zero
   -- Near `x`, the metric trace of `b` is `∑ᵢ b(Fᵢ, Dᵢ)`.
   have htr : (fun y ↦ TauCeti.bilinFormTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) =ᶠ[𝓝 x]
       fun y ↦ ∑ i, b y (F i y) (D i y) := by
