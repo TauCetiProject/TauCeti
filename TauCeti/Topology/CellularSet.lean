@@ -9,27 +9,29 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
-import TauCeti.Analysis.Normed.Module.Ball.Radial.OrderIso
-import TauCeti.Topology.Homeomorph.Extend
+import TauCeti.Topology.Homeomorph.Shrink
 
 /-!
 # Cellular sets and their collapse
 
 A subset `X` of a space `M` is **cellular** (`TauCeti.IsCellularSet`) if it is the intersection of a
-sequence of closed cells `Q₀ ⊇ Q₁ ⊇ ⋯`, each lying in the interior of the previous one. Here a
+sequence of closed cells `Q₀ ⊇ Q₁ ⊇ ⋯`, each lying in the open cell of the previous one. Here a
 closed cell is the image of the closed unit ball of a real normed space `E` under a map which is
-continuous and injective on it, and its interior is the image of the open unit ball. A closed ball
-of `E` is cellular in `E` (`TauCeti.isCellularSet_closedBall`).
+continuous and injective on it, and the corresponding open cell is the image of the open unit ball
+under the same map. When `M` is a topological manifold modelled on a finite-dimensional `E`,
+invariance of domain shows that the open cell is the interior of the closed cell in `M`. A closed
+ball of `E` is cellular in `E` (`TauCeti.isCellularSet_closedBall`).
 
 The main theorem is that a cellular set can be collapsed to a point without changing the space:
 if `M` is a metric space which is a topological manifold modelled on a finite-dimensional `E`, and
-`X ⊆ M` is cellular, then for every open `U ⊇ X` there is a continuous surjection `g : M → M` whose
-only fibre with more than one point is `X`, and which is the identity outside `U`
-(`TauCeti.IsCellularSet.exists_collapse`). For compact `M` such a map is a quotient map onto `M`,
-so it identifies the quotient of `M` collapsing `X` to a point with `M` itself. This is the first
-step of M. Brown's proof of the generalized Schoenflies theorem, where the complementary regions of
-a bicollared sphere are recognized as cells by collapsing cellular sets.
+`X ⊆ M` is cellular, then for every open `U ⊇ X` there is a continuous surjection `g : M → M` which
+collapses `X` to a single point, whose other fibres are all singletons, and which is the identity
+outside `U` (`TauCeti.IsCellularSet.exists_collapse`). For compact `M` such a map is a quotient
+map onto `M`, so it identifies the quotient of `M` collapsing `X` to a point with `M` itself. This
+is the first step of M. Brown's proof of the generalized Schoenflies theorem, where the
+complementary regions of a bicollared sphere are recognized as cells by collapsing cellular sets.
 
 The proof shrinks the cells one after another. If `K` is a compact subset of an open set `V` of `M`
 homeomorphic to `E`, a radial squeeze of `E` (`TauCeti.exists_homeomorph_mapsTo_closedBall`), read
@@ -39,8 +41,7 @@ which makes `K` as small as we like
 each step supported inside the image of the previous cell, gives homeomorphisms `G₀, G₁, …` of `M`
 which eventually stabilize at every point outside `X` and squeeze the image of `X` into a sequence
 of compact sets with diameters tending to `0`. The collapse is their pointwise limit
-(`TauCeti.exists_collapse_iInter`); invariance of domain makes the interiors of the cells open in
-`M`.
+(`TauCeti.exists_collapse_iInter`); invariance of domain makes the open cells open in `M`.
 
 ## Main definitions
 
@@ -48,12 +49,13 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 
 ## Main results
 
-* `Topology.IsOpenEmbedding.exists_homeomorph_diam_image_lt`: a compact subset of a Euclidean open
-  piece is shrunk by a homeomorphism supported in that piece.
+* `TauCeti.isCellularSet_iff`: the witnesses of cellularity.
 * `TauCeti.exists_collapse_iInter`: the intersection of a nested sequence of compact sets with
-  Euclidean interiors is the only nondegenerate fibre of a continuous surjection.
-* `TauCeti.IsCellularSet.exists_collapse`: a cellular subset of a manifold is the only nondegenerate
-  fibre of a continuous surjection supported in any of its neighbourhoods.
+  Euclidean interiors is collapsed to one point by a continuous surjection whose other fibres are
+  singletons.
+* `TauCeti.IsCellularSet.exists_collapse`: a cellular subset of a manifold is collapsed to one point
+  by a continuous surjection, supported in any of its neighbourhoods, whose other fibres are
+  singletons.
 * `TauCeti.isCellularSet_closedBall`: closed balls are cellular.
 
 ## References
@@ -64,45 +66,10 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 
 public section
 
-open Set Metric Filter Topology Function
+open Set Metric Filter Topology Function Pointwise
 
 variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MetricSpace M]
-
-namespace Topology.IsOpenEmbedding
-
-/-- **Shrinking inside a Euclidean piece.** Let `θ : E → M` be an open embedding of a
-finite-dimensional real normed space and `C` a compact subset of its range. For every `ε > 0` there
-is a homeomorphism of `M`, fixing every point outside the range of `θ`, which maps `C` onto a set of
-diameter less than `ε`. -/
-theorem exists_homeomorph_diam_image_lt {θ : E → M} (hθ : IsOpenEmbedding θ) {C : Set M}
-    (hC : IsCompact C) (hCθ : C ⊆ range θ) {ε : ℝ} (hε : 0 < ε) :
-    ∃ ψ : M ≃ₜ M, (∀ y ∉ range θ, ψ y = y) ∧ diam (ψ '' C) < ε := by
-  -- Read in `E`, the set `C` lies in a closed ball `closedBall 0 r`.
-  obtain ⟨r, hr⟩ := ((hθ.isInducing.isCompact_preimage_iff hCθ).2 hC).isBounded.subset_closedBall 0
-  -- A small ball around `0` is mapped by `θ` into `ball (θ 0) (ε / 4)`.
-  obtain ⟨δ, hδ, hδθ⟩ := Metric.continuousAt_iff.1 hθ.continuous.continuousAt (ε / 4)
-    (by positivity)
-  -- Squeeze `closedBall 0 r` into `closedBall 0 (δ / 2)`, and transport the squeeze to `M`.
-  obtain ⟨ρ, hρfix, hρmaps⟩ := TauCeti.exists_homeomorph_mapsTo_closedBall (E := E) (r := r)
-    (half_pos hδ)
-  have hB : IsClosed (θ '' closedBall 0 (2 * r)) :=
-    ((isCompact_closedBall _ _).image hθ.continuous).isClosed
-  obtain ⟨ψ, hψθ, hψ⟩ := hθ.exists_homeomorph_extend ρ hB (image_subset_range _ _)
-    fun z hz ↦ hρfix z (not_le.1 fun h ↦ hz (mem_image_of_mem θ (mem_closedBall_zero_iff.2 h))).le
-  refine ⟨ψ, fun y hy ↦ hψ y fun h ↦ hy (image_subset_range _ _ h), ?_⟩
-  have hsub : ψ '' C ⊆ closedBall (θ 0) (ε / 4) := by
-    rintro _ ⟨y, hy, rfl⟩
-    obtain ⟨z, rfl⟩ := hCθ hy
-    rw [hψθ, mem_closedBall]
-    refine (hδθ ?_).le
-    rw [dist_zero_right]
-    exact (mem_closedBall_zero_iff.1 (hρmaps (hr hy))).trans_lt (half_lt_self hδ)
-  calc diam (ψ '' C) ≤ diam (closedBall (θ 0) (ε / 4)) := diam_mono hsub isBounded_closedBall
-    _ ≤ 2 * (ε / 4) := diam_closedBall (by positivity)
-    _ < ε := by linarith
-
-end Topology.IsOpenEmbedding
 
 namespace TauCeti
 
@@ -159,8 +126,9 @@ private theorem exists_homeomorph_seq {θ : ℕ → E → M} (hθ : ∀ i, IsOpe
 
 /-- **Collapsing a nested intersection.** Let `K₀ ⊇ K₁ ⊇ ⋯` be compact subsets of a metric space
 `M`, and `θᵢ : E → M` open embeddings of a finite-dimensional real normed space with
-`K (i + 1) ⊆ range θᵢ ⊆ Kᵢ`. Then there is a continuous surjection `g : M → M` whose only fibre
-with more than one point is `X = ⋂ i, K i`, and which fixes every point outside the range of `θ₀`.
+`K (i + 1) ⊆ range θᵢ ⊆ Kᵢ`. Then there is a continuous surjection `g : M → M` which collapses
+`X = ⋂ i, K i` to a single point, whose other fibres are all singletons, and which fixes every point
+outside the range of `θ₀`.
 -/
 theorem exists_collapse_iInter {θ : ℕ → E → M} (hθ : ∀ i, IsOpenEmbedding (θ i))
     {K : ℕ → Set M} (hK : ∀ i, IsCompact (K i)) (hKθ : ∀ i, K (i + 1) ⊆ range (θ i))
@@ -251,24 +219,36 @@ theorem exists_collapse_iInter {θ : ℕ → E → M} (hθ : ∀ i, IsOpenEmbedd
   · rw [hgG 0 x fun h ↦ hx (hKθ 0 h), hG0 x hx]
 
 /-- A subset `X` of a space `M` is **cellular** (modelled on the real normed space `E`) if it is the
-intersection of a sequence of closed cells, each contained in the interior of the previous one.
+intersection of a sequence of closed cells, each contained in the open cell of the previous one.
 Here the `i`-th closed cell is the image of the closed unit ball of `E` under a map `e i` which is
-continuous and injective on it, and its interior is the image of the open unit ball. -/
+continuous and injective on it, and the `i`-th open cell is the image of the open unit ball under
+`e i`. When `M` is a topological manifold modelled on a finite-dimensional `E`, invariance of domain
+shows that the open cell is the interior of the closed cell. -/
 def IsCellularSet (E : Type*) [NormedAddCommGroup E] {M : Type*}
     [TopologicalSpace M] (X : Set M) : Prop :=
   ∃ e : ℕ → E → M, (∀ i, ContinuousOn (e i) (closedBall 0 1)) ∧
     (∀ i, InjOn (e i) (closedBall 0 1)) ∧
     (∀ i, e (i + 1) '' closedBall 0 1 ⊆ e i '' ball 0 1) ∧ ⋂ i, e i '' closedBall 0 1 = X
 
+/-- The witnesses of cellularity: maps `e i : E → M`, continuous and injective on the closed unit
+ball, whose closed cells are each contained in the open cell of the previous one and intersect in
+`X`. -/
+theorem isCellularSet_iff (E : Type*) [NormedAddCommGroup E] {M : Type*} [TopologicalSpace M]
+    {X : Set M} :
+    IsCellularSet E X ↔ ∃ e : ℕ → E → M, (∀ i, ContinuousOn (e i) (closedBall 0 1)) ∧
+      (∀ i, InjOn (e i) (closedBall 0 1)) ∧
+      (∀ i, e (i + 1) '' closedBall 0 1 ⊆ e i '' ball 0 1) ∧ ⋂ i, e i '' closedBall 0 1 = X :=
+  Iff.rfl
+
 /-- **Collapsing a cellular set.** Let `M` be a metric space which is a topological manifold
 modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a cellular set. For every open
-`U ⊇ X` there is a continuous surjection `g : M → M` whose only fibre with more than one point is
-`X`, and which fixes every point outside `U`. -/
+`U ⊇ X` there is a continuous surjection `g : M → M` which collapses `X` to a single point, whose
+other fibres are all singletons, and which fixes every point outside `U`. -/
 theorem IsCellularSet.exists_collapse [ChartedSpace E M] {X : Set M} (hX : IsCellularSet E X)
     {U : Set M} (hU : IsOpen U) (hXU : X ⊆ U) :
     ∃ g : M → M, Continuous g ∧ Surjective g ∧ (∀ x y, g x = g y ↔ x = y ∨ x ∈ X ∧ y ∈ X) ∧
       ∀ x ∉ U, g x = x := by
-  obtain ⟨e, hec, hei, hsub, rfl⟩ := hX
+  obtain ⟨e, hec, hei, hsub, rfl⟩ := (isCellularSet_iff E).1 hX
   set Q : ℕ → Set M := fun i ↦ e i '' closedBall 0 1
   have hQc (i : ℕ) : IsCompact (Q i) := (isCompact_closedBall 0 1).image_of_continuousOn (hec i)
   have hQanti : Antitone Q :=
@@ -299,38 +279,24 @@ closed balls `closedBall x (r + 1 / (i + 1))`, each in the interior of the previ
 theorem isCellularSet_closedBall (x : E) {r : ℝ} (hr : 0 ≤ r) :
     IsCellularSet E (closedBall x r) := by
   have hpos (i : ℕ) : 0 < r + 1 / ((i : ℝ) + 1) := by positivity
-  refine ⟨fun i y ↦ x + (r + 1 / ((i : ℝ) + 1)) • y, fun i ↦ by fun_prop, fun i y _ z _ h ↦ ?_,
-    fun i ↦ ?_, ?_⟩
-  · exact smul_right_injective E (hpos i).ne' (add_left_cancel h)
-  · rintro _ ⟨y, hy, rfl⟩
-    have hlt : r + 1 / (((i + 1 : ℕ) : ℝ) + 1) < r + 1 / ((i : ℝ) + 1) := by
-      push_cast
-      gcongr
-      linarith
-    refine ⟨((r + 1 / (((i + 1 : ℕ) : ℝ) + 1)) / (r + 1 / ((i : ℝ) + 1))) • y, ?_, ?_⟩
-    · rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (div_nonneg (hpos _).le (hpos i).le)]
-      calc _ ≤ (r + 1 / (((i + 1 : ℕ) : ℝ) + 1)) / (r + 1 / ((i : ℝ) + 1)) * 1 :=
-            mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.1 hy)
-              (div_nonneg (hpos _).le (hpos i).le)
-        _ < 1 := by rw [mul_one, div_lt_one (hpos i)]; exact hlt
-    · simp only [smul_smul]
-      rw [mul_div_cancel₀ _ (hpos i).ne']
-  · ext p
-    simp only [mem_iInter, mem_image, mem_closedBall]
-    constructor
-    · intro h
-      refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
-      obtain ⟨i, hi⟩ := exists_nat_one_div_lt hε
-      obtain ⟨y, hy, rfl⟩ := h i
-      rw [dist_zero_right] at hy
-      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg (hpos i).le]
-      calc _ ≤ (r + 1 / ((i : ℝ) + 1)) * 1 := mul_le_mul_of_nonneg_left hy (hpos i).le
-        _ < r + ε := by linarith
-    · intro hp i
-      refine ⟨(r + 1 / ((i : ℝ) + 1))⁻¹ • (p - x), ?_, ?_⟩
-      · rw [dist_zero_right, norm_smul, norm_inv, Real.norm_of_nonneg (hpos i).le, ← dist_eq_norm,
-          inv_mul_le_one₀ (hpos i)]
-        exact hp.trans (le_add_of_nonneg_right (by positivity))
-      · rw [smul_smul, mul_inv_cancel₀ (hpos i).ne', one_smul, add_sub_cancel]
+  -- The `i`-th cell is the affine image `x + (r + 1 / (i + 1)) • y` of the unit ball.
+  have himg (i : ℕ) (S : Set E) :
+      (fun y ↦ x + (r + 1 / ((i : ℝ) + 1)) • y) '' S = x +ᵥ (r + 1 / ((i : ℝ) + 1)) • S := by
+    rw [← image_smul, ← image_vadd, image_image]
+    rfl
+  refine (isCellularSet_iff E).2 ⟨fun i y ↦ x + (r + 1 / ((i : ℝ) + 1)) • y, fun i ↦ by fun_prop,
+    fun i y _ z _ h ↦ smul_right_injective E (hpos i).ne' (add_left_cancel h), fun i ↦ ?_, ?_⟩
+  · rw [himg, himg, affinity_unitClosedBall (hpos _).le, affinity_unitBall (hpos i)]
+    refine closedBall_subset_ball ?_
+    push_cast
+    gcongr
+    linarith
+  · simp_rw [himg, fun i ↦ affinity_unitClosedBall (hpos i).le x]
+    ext p
+    simp only [mem_iInter, mem_closedBall]
+    refine ⟨fun h ↦ le_of_forall_pos_lt_add fun ε hε ↦ ?_,
+      fun hp i ↦ hp.trans (le_add_of_nonneg_right (by positivity))⟩
+    obtain ⟨i, hi⟩ := exists_nat_one_div_lt hε
+    exact (h i).trans_lt (by linarith)
 
 end TauCeti
