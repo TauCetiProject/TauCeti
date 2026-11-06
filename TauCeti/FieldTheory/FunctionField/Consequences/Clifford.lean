@@ -82,7 +82,7 @@ private theorem exists_minimal_riemannRochSpace (hF : IsFunctionField k F)
   obtain ⟨D, hDA, hspace, hdegree⟩ := Nat.find_spec hp
   refine ⟨D, hDA, hspace, fun P ↦ ?_⟩
   have hpoint : 0 ≤ WeilDivisor.ofPoint P :=
-    WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)
+    WeilDivisor.ofPoint_nonneg P
   have hle : riemannRochSpace (D - WeilDivisor.ofPoint P) ≤ riemannRochSpace D :=
     riemannRochSpace_mono (sub_le_self D hpoint)
   refine lt_of_le_of_ne hle fun heq ↦ ?_

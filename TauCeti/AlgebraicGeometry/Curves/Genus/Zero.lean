@@ -31,7 +31,9 @@ Let `X` be a regular proper curve over a field `k`, that is, a curve over `k` wh
 its codimension-one points are discrete valuation rings, and suppose that `k` is integrally closed
 in the function field `k(X)`. If `X` has genus zero, `dim_k H¹(X, 𝒪_X) = 0`, and carries a divisor
 of degree one, for instance the prime divisor of a `k`-rational point, then **`X` is the projective
-line**: there is an isomorphism `X ≅ ℙ¹_k` over `k`.
+line**: there is an isomorphism `X ≅ ℙ¹_k` over `k`. For a `k`-rational point the hypothesis on `k`
+is automatic: a rational point forces `k` to be integrally closed in `k(X)`
+(`AlgebraicGeometry.Scheme.isIntegrallyClosedIn_functionField_of_section`).
 
 This is the geometric form of Stichtenoth's Proposition 1.6.3. The genus of `X` is the genus of
 `k(X)` (`TauCeti.AlgebraicGeometry.SchemeWeilDivisor.genus_eq_genus_functionField`), and a divisor
@@ -70,8 +72,9 @@ integral and of genus zero, and it has a `K`-rational point, so it is `ℙ¹_K`.
   a regular proper curve of genus zero with a divisor of degree one has rational function field.
 * `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one`:
   such a curve is isomorphic to `ℙ¹_k` over `k`.
-* `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero_of_section`: in particular,
-  a regular proper curve of genus zero with a `k`-rational point is isomorphic to `ℙ¹_k`.
+* `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero_of_section`: a regular
+  proper curve of genus zero with a `k`-rational point is isomorphic to `ℙ¹_k`, with no hypothesis
+  on the constants.
 * `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_isPullback_of_genus_eq_zero`: a smooth
   proper geometrically integral curve of genus zero becomes `ℙ¹_K` over every extension `K` in which
   it has a point.
@@ -177,16 +180,17 @@ theorem exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one
   exact ⟨X.isoProjectiveLine e.symm, inferInstance⟩
 
 /-- **A curve of genus zero with a rational point is the projective line.** Let `X` be a regular
-proper curve over `k`, with `k` integrally closed in `k(X)`. If `dim_k H¹(X, 𝒪_X) = 0` and `X` has
-a `k`-rational point, then `X` is isomorphic to `ℙ¹_k` over `k`. -/
+proper curve over `k`. If `dim_k H¹(X, 𝒪_X) = 0` and `X` has a `k`-rational point, then `X` is
+isomorphic to `ℙ¹_k` over `k`. No hypothesis on the constants is needed: the rational point forces
+`k` to be integrally closed in `k(X)` (`Scheme.isIntegrallyClosedIn_functionField_of_section`). -/
 theorem exists_iso_projectiveLine_of_genus_eq_zero_of_section
-    (hk : IsIntegrallyClosedIn k X.functionField)
     (hg : finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) = 0)
     {s : Spec (.of k) ⟶ X} (hs : s ≫ (X ↘ Spec (.of k)) = 𝟙 _) :
-    ∃ e : X ≅ projectiveLine k, e.hom.IsOver (Spec (.of k)) :=
-  X.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one hk hg
-    (relativeDegree_ofPoint_of_section hs
-      (x₀ := ⟨_, IsCurveOver.coheight_section_eq_one k hs⟩) rfl)
+    ∃ e : X ≅ projectiveLine k, e.hom.IsOver (Spec (.of k)) := by
+  let x₀ : CodimensionOnePoint X := ⟨_, IsCurveOver.coheight_section_eq_one k hs⟩
+  exact X.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one
+    (X.isIntegrallyClosedIn_functionField_of_section hs (x := x₀) rfl) hg
+    (relativeDegree_ofPoint_of_section hs (x₀ := x₀) rfl)
 
 end AlgebraicGeometry.Scheme
 
@@ -229,8 +233,7 @@ theorem exists_iso_projectiveLine_of_isPullback_of_genus_eq_zero {K : Type u} [F
         Spec.map (CommRingCat.ofHom (algebraMap k K)) := by
     rw [Category.assoc, X.fromSpecResidueField_comp_over (k := k), ← Spec.map_comp,
       ← CommRingCat.ofHom_comp, AlgHom.comp_algebraMap]
-  refine Y.exists_iso_projectiveLine_of_genus_eq_zero_of_section
-    isIntegrallyClosedIn_functionField_of_geometricallyIntegral ?_
+  refine Y.exists_iso_projectiveLine_of_genus_eq_zero_of_section ?_
     (H.lift_snd _ (𝟙 _) (by rw [hp, Category.id_comp]))
   rw [finrank_cohomology_one_trivial_eq_of_isPullback_of_smooth H, hg]
 

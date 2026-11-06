@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 /-!
 # Colimits of modules
@@ -36,7 +37,10 @@ The colimit `M` of a sequence `F₀ → F₁ → F₂ → ⋯` of modules, with 
 ```
 
 whose first map sends `x ∈ Fₙ` to `x - φₙ(x) ∈ Fₙ ⊕ Fₙ₊₁` and whose second map is induced by the
-legs `Fₙ → M` of the colimit cocone.
+legs `Fₙ → M` of the colimit cocone. When the transition maps are injective, so are the legs, and
+then `M` is free as soon as `F₀` and every cokernel `Fₙ₊₁ ⧸ φₙ(Fₙ)` are free: the images of
+the legs form an exhaustive filtration of `M` by free subquotients. This is how freeness passes to
+the homology of a space exhausted by subspaces whose successive relative homology is free.
 
 ## Main declarations
 
@@ -51,6 +55,10 @@ legs `Fₙ → M` of the colimit cocone.
   (`ModuleCat.telescopeDiff_injective`).
 * `ModuleCat.telescopeShortComplex`: the telescope sequence of a cocone over `F : ℕ ⥤ ModuleCat R`,
   short exact when the cocone is a colimit (`ModuleCat.shortExact_telescopeShortComplex`).
+* `ModuleCat.injective_ι_app_of_isColimit`: the legs of a colimit of a sequence of injections are
+  injective.
+* `ModuleCat.free_of_isColimit`: a colimit of a sequence of injections with free cokernels,
+  starting at a free module, is free.
 
 ## References
 
@@ -282,5 +290,90 @@ theorem shortExact_telescopeShortComplex {c : Cocone F} (hc : IsColimit c) :
            epi_g := (epi_iff_surjective _).2 hsurj }
   exact LinearMap.mem_range.1 <| (Submodule.Quotient.mk_eq_zero _).1 <|
     (key a).symm.trans ((congrArg _ ha).trans (map_zero _))
+
+/-- **The legs of a sequential colimit of injections are injective.** If the transition maps
+`Fₙ → Fₙ₊₁` of a sequence of modules are injective, so are the legs `Fₙ → c.pt` of a colimit
+cocone. -/
+theorem injective_ι_app_of_isColimit {c : Cocone F} (hc : IsColimit c)
+    (hinj : ∀ n : ℕ, Function.Injective (F.map (homOfLE (n.le_add_right 1))).hom) (n : ℕ) :
+    Function.Injective (c.ι.app n).hom := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  -- Placed in degree `n`, `x` lies in the kernel of the telescope sequence, hence in the image
+  -- of the difference map: `x = a n - φ (a (n - 1))` and `a (m + 1) = φ (a m)` in other degrees.
+  obtain ⟨a, ha'⟩ : ∃ a : ⨁ n, F.obj n, telescopeDiff F a = lof R ℕ (fun n ↦ F.obj n) n x :=
+    (ShortComplex.moduleCat_exact_iff _).1 (shortExact_telescopeShortComplex F hc).exact
+      (lof R ℕ (fun n ↦ F.obj n) n x) (by
+        -- The second map of the telescope sequence is by definition induced by the legs.
+        change toModule R ℕ c.pt (fun n ↦ (c.ι.app n).hom) (lof R ℕ (fun n ↦ F.obj n) n x) = 0
+        rw [toModule_lof]
+        exact hx)
+  have hlt (m : ℕ) (hm : m < n) : a m = 0 := by
+    induction m with
+    | zero => simpa [lof_eq_of, of_eq_of_ne _ _ _ hm.ne] using congr($ha' 0)
+    | succ m ih =>
+      simpa [lof_eq_of, of_eq_of_ne _ _ _ hm.ne, ih (by lia)] using congr($ha' (m + 1))
+  have hn : a n = x := by
+    rcases n with _ | n
+    · simpa [lof_eq_of] using congr($ha' 0)
+    · simpa [lof_eq_of, hlt n (by lia)] using congr($ha' (n + 1))
+  have hsucc (m : ℕ) (hm : n ≤ m) :
+      a (m + 1) = F.map (homOfLE (m.le_add_right 1)) (a m) := by
+    have := congr($ha' (m + 1))
+    simp only [telescopeDiff_apply_succ, lof_eq_of, of_eq_of_ne _ _ _ (by lia : m + 1 ≠ n)] at this
+    exact sub_eq_zero.1 this
+  -- Far out the component of `a` vanishes, and by injectivity so do all the earlier ones.
+  have hzero (m : ℕ) (hm : n ≤ m) (h : a m = 0) : x = 0 := by
+    induction m, hm using Nat.le_induction with
+    | base => rwa [hn] at h
+    | succ m hm ih =>
+      exact ih (hinj m (by rw [← hsucc m hm, h, map_zero]))
+  classical
+  refine hzero (n + (a.support.sup id + 1)) (by lia) (DFinsupp.notMem_support_iff.1 fun h ↦ ?_)
+  have := Finset.le_sup (f := id) h
+  simp only [id] at this
+  lia
+
+/-- **A sequential colimit of injections with free cokernels is free.** Let `F₀ → F₁ → F₂ → ⋯` be
+a sequence of modules with `F₀` free, whose transition maps `φₙ : Fₙ → Fₙ₊₁` are injective with
+free cokernels `Fₙ₊₁ ⧸ φₙ(Fₙ)`. Then the colimit of the sequence is free: the images of the legs
+filter it, with `F₀` and the cokernels as subquotients. No finiteness is assumed. -/
+theorem free_of_isColimit {c : Cocone F} (hc : IsColimit c) (h0 : Module.Free R (F.obj 0))
+    (hinj : ∀ n : ℕ, Function.Injective (F.map (homOfLE (n.le_add_right 1))).hom)
+    (hfree : ∀ n : ℕ, Module.Free R
+      (F.obj (n + 1) ⧸ LinearMap.range (F.map (homOfLE (n.le_add_right 1))).hom)) :
+    Module.Free R c.pt := by
+  -- Filter the colimit by `0` followed by the images of the legs.
+  let N : ℕ → Submodule R c.pt
+    | 0 => ⊥
+    | n + 1 => LinearMap.range (c.ι.app n).hom
+  have hN (n : ℕ) (x : F.obj n) :
+      (c.ι.app (n + 1)).hom (F.map (homOfLE (n.le_add_right 1)) x) = (c.ι.app n).hom x := by
+    rw [← ModuleCat.comp_apply, c.w]
+  have hι (n : ℕ) := injective_ι_app_of_isColimit F hc hinj n
+  refine Module.Free.of_filtration N (monotone_nat_of_le_succ fun n ↦ ?_) rfl
+    (eq_top_iff.2 ((TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit hc).ge.trans
+      (iSup_le fun n ↦ le_iSup N (n + 1)))) fun n ↦ ?_
+  · rcases n with _ | n
+    · exact bot_le
+    · rintro _ ⟨x, rfl⟩
+      exact ⟨_, hN n x⟩
+  rcases n with _ | n
+  · -- The first subquotient is the image of the leg out of `F₀`.
+    refine .of_equiv ((LinearEquiv.ofInjective _ (hι 0)).trans
+      (Submodule.quotEquivOfEqBot _ ?_).symm)
+    exact (Submodule.comap_bot _).trans (Submodule.ker_subtype _)
+  · -- The leg `F (n + 1) ≃ N (n + 2)` carries the image of `F n` onto `N (n + 1)`.
+    have := hfree n
+    refine .of_equiv (Submodule.Quotient.equiv
+      (LinearMap.range (F.map (homOfLE (n.le_add_right 1))).hom) _
+      (LinearEquiv.ofInjective _ (hι (n + 1))) ?_)
+    ext ⟨y, hy⟩
+    simp only [Submodule.mem_map, LinearMap.mem_range, Submodule.submoduleOf, Submodule.mem_comap,
+      Submodule.subtype_apply]
+    constructor
+    · rintro ⟨_, ⟨x, rfl⟩, hx⟩
+      exact ⟨x, (hN n x).symm.trans congr(Subtype.val $hx)⟩
+    · rintro ⟨x, rfl⟩
+      exact ⟨_, ⟨x, rfl⟩, Subtype.ext (hN n x)⟩
 
 end ModuleCat
