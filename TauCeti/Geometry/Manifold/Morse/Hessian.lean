@@ -770,9 +770,7 @@ theorem criticalHessian_trivializationAt_symm_apply [IsManifold I 2 M] {x₀ : M
       rw [← Bundle.Trivialization.symmL_apply (R := ℝ) t hxt]
       exact t.continuousLinearMapAt_symmL hxt c
     rw [TangentBundle.continuousLinearMapAt_trivializationAt hx] at h
-    -- `mvfderiv` is `mfderiv` followed by `NormedSpace.fromTangentSpace`, the identity of `E`
-    -- seen as the tangent space of the model space.
-    exact h
+    rwa [mvfderiv_apply_eq_mfderiv_apply]
   rw [criticalHessian_apply_eq_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx hf
     hcrit, ← extChartAt, hcoord, hcoord]
 
