@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.Smooth.Regular
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 import TauCeti.RingTheory.RegularLocalRing.Smooth
 import TauCeti.RingTheory.Smooth.Field
@@ -85,11 +86,7 @@ theorem smooth_of_isRegularLocalRing_stalk {k : Type u} [Field k] [PerfectField 
   rw [f.mem_smoothLocus_iff_isSmoothAt (U := ⟨U, hU⟩) hxU]
   let φ := (Scheme.ΓSpecIso (.of k)).inv ≫ f.appLE ⊤ U le_top
   let := φ.hom.toAlgebra
-  have : Algebra.FiniteType k Γ(X, U) := by
-    have hsurj : Function.Surjective (Scheme.ΓSpecIso (.of k)).inv.hom :=
-      fun y ↦ ⟨_, Iso.hom_inv_id_apply _ y⟩
-    exact RingHom.finiteType_algebraMap.mp <|
-      (f.finiteType_appLE (isAffineOpen_top _) hU le_top).comp (.of_surjective _ hsurj)
+  have : Algebra.FiniteType k Γ(X, U) := f.finiteType_ΓSpecIso_inv_comp_appLE hU
   have : IsNoetherianRing Γ(X, U) := Algebra.FiniteType.isNoetherianRing k _
   have : IsRegularRing Γ(X, U) :=
     (isRegularRing_iff_isRegularLocalRing_stalk hU).mpr fun y _ ↦ inferInstance

@@ -29,8 +29,8 @@ curve need not be smooth.
 
 * `AlgebraicGeometry.Scheme.IsCurveOver.of_smooth`: an integral proper scheme smooth of relative
   dimension one over `k` is a curve over `k`.
-* `AlgebraicGeometry.Scheme.IsCurveOver.smoothOfRelativeDimension`: a regular curve over a perfect
-  field is smooth of relative dimension one.
+* `AlgebraicGeometry.Scheme.IsCurveOver.smoothOfRelativeDimension_one_of_perfectField`: a regular
+  curve over a perfect field is smooth of relative dimension one.
 -/
 
 public section
@@ -53,7 +53,8 @@ variable (k X) in
 /-- **A regular curve over a perfect field is smooth**: if the local rings of a curve `X` over a
 perfect field `k` at its codimension-one points are discrete valuation rings, then `X` is smooth
 of relative dimension one over `k`. -/
-theorem IsCurveOver.smoothOfRelativeDimension [PerfectField k] [X.IsCurveOver k]
+theorem IsCurveOver.smoothOfRelativeDimension_one_of_perfectField [PerfectField k]
+    [X.IsCurveOver k]
     [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] :
     SmoothOfRelativeDimension 1 (X ↘ Spec (.of k)) := by
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))

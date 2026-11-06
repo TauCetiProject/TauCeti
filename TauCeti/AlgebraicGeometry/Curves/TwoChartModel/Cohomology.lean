@@ -707,7 +707,7 @@ theorem smoothOfRelativeDimension_one_of_perfectField [PerfectField k]
     SmoothOfRelativeDimension 1 (twoChartModel hF hx ↘ Spec (.of k)) := by
   have := isCurveOver (hF := hF) (hx := hx) hxt
   have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-  exact Scheme.IsCurveOver.smoothOfRelativeDimension k _
+  exact Scheme.IsCurveOver.smoothOfRelativeDimension_one_of_perfectField k _
 
 /-- If `twoChartModel hF hx` is smooth over `Spec k`, it is smooth of relative dimension one. -/
 theorem smoothOfRelativeDimension_one (hxt : Transcendental k x)
