@@ -104,8 +104,8 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
   have hd₂ : Measurable fun y ↦ edist y (Q₂ y) := measurable_id.edist hQ₂
   set e₁ : X → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ edist y (Q₁ y)) p (κ x)
   set e₂ : X' → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ edist y (Q₂ y)) p (η x)
-  have he₁ : Measurable e₁ := measurable_eLpNorm_kernel hp0 hp κ hd₁
-  have he₂ : Measurable e₂ := measurable_eLpNorm_kernel hp0 hp η hd₂
+  have he₁ : Measurable e₁ := measurable_eLpNorm_kernel κ hd₁.stronglyMeasurable
+  have he₂ : Measurable e₂ := measurable_eLpNorm_kernel η hd₂.stronglyMeasurable
   -- the inclusion of `t` is an isometry, so it does not increase the distance
   have hα : α.map (↑) = (κ ∘ₘ μ).map Q₁ := Measure.map_map measurable_subtype_coe hq₁
   have hβ : β.map (↑) = (η ∘ₘ ν).map Q₂ := Measure.map_map measurable_subtype_coe hq₂
@@ -181,8 +181,8 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
           eLpNorm_comp_measurePreserving he₁.aestronglyMeasurable hπ.measurePreserving_fst
         have h₂ : eLpNorm (fun z : X × X' ↦ e₂ z.2) p π = eLpNorm e₂ p ν :=
           eLpNorm_comp_measurePreserving he₂.aestronglyMeasurable hπ.measurePreserving_snd
-        rw [h₁, h₂, eLpNorm_eLpNorm_kernel hp0 hp κ μ hd₁,
-          eLpNorm_eLpNorm_kernel hp0 hp η ν hd₂]
+        rw [h₁, h₂, eLpNorm_eLpNorm_kernel κ μ hd₁.aestronglyMeasurable,
+          eLpNorm_eLpNorm_kernel η ν hd₂.aestronglyMeasurable]
 
 variable [StandardBorelSpace Y]
 
