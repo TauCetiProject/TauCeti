@@ -148,23 +148,6 @@ private theorem affineHom_naturality {U V : X.AffineZariskiSite} (i : V ⟶ U)
     ((A.restrictGradedSectionsGradedHom_apply _ _).trans
       (A.restrictGradedSections_of ((toOpensFunctor X).map i) j a))))
 
-omit [∀ n, (A.X n).IsQuasicoherent] in
-/-- A function `r` on an affine open `U` of `X`, pulled back along `Proj 𝒜 ⟶ Spec Γ(X, U) ⟶ X`,
-takes the value `r / 1` at every point. -/
-private theorem val_appLE_apply {U : X.Opens} (hU : IsAffineOpen U) {B : Type u} [CommRing B]
-    [Algebra Γ(X, U) B] (𝒜 : ℕ → Submodule Γ(X, U) B) [GradedAlgebra 𝒜] (g : Proj 𝒜 ⟶ X)
-    (hg : g = Proj.toSpecCoeff 𝒜 ≫ hU.fromSpec) {V : (Proj 𝒜).Opens} (e : V ≤ g ⁻¹ᵁ U)
-    (r : Γ(X, U)) (x : V) :
-    ((g.appLE U V e r).1 x).val = Localization.mk (algebraMap Γ(X, U) B r) 1 := by
-  subst hg
-  rw [Scheme.Hom.comp_appLE, hU.fromSpec_app_self, Category.assoc]
-  -- `Proj.toSpecCoeff 𝒜` lands in `Spec (.of Γ(X, U))`, which is `Spec Γ(X, U)` only up to
-  -- unfolding `CommRingCat.of`, so the rewrite must see through it
-  erw [Scheme.Hom.map_appLE]
-  rw [Scheme.Hom.appLE, ← Category.assoc, ConcreteCategory.comp_apply]
-  -- restriction of functions on `Proj 𝒜` keeps their values
-  exact Proj.val_toSpecCoeff_appTop_apply 𝒜 r ⟨x.1, trivial⟩
-
 /-- The sections of `𝒪(n)` with chart image `a / 1` are linear over the functions on `U`. -/
 private theorem affineHom_smul (U : X.AffineZariskiSite) (r : Γ(X, U.toOpens))
     (a : Γ(A.X j, U.toOpens)) :
@@ -180,7 +163,7 @@ private theorem affineHom_smul (U : X.AffineZariskiSite) (r : Γ(X, U.toOpens))
         r).1 x).val =
         Localization.mk (algebraMap Γ(X, U.toOpens) (⨁ n, Γ(A.X n, U.toOpens)) r) 1 := by
     rw [Scheme.Hom.app_eq_appLE]
-    exact val_appLE_apply U.2 _ _ (A.relativeProjCover_f_relativeProjToBase U) le_rfl r x
+    exact Proj.val_appLE_apply U.2 _ _ (A.relativeProjCover_f_relativeProjToBase U) le_rfl r x
   refine Proj.twistingSheaf.ext fun x ↦ (Proj.toTwistingSheaf_apply_apply ..).trans
     (Eq.trans ?_ (Proj.twistingSheaf.smul_apply
       ((colimit.ι A.relativeProjGluingData.functor U ≫ A.relativeProjToBase).app U.toOpens r) _
