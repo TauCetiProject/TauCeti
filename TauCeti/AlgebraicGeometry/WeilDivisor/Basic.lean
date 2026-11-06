@@ -24,10 +24,25 @@ part of this file.
 
 The API here records the free-abelian-group operations: point divisors, effectivity, pushforward of
 formal sums along a map of point sets, and both the unweighted degree and the weighted degree used
-for curves over a field. It also packages the degree-zero subgroups: when principal divisors have
-degree zero, they lie in these subgroups, and the resulting quotient identifies with the abstract
-`Pic⁰` kernel. When the points form a `T1` space, a divisor vanishes on a punctured
-neighbourhood of every point, since its support is finite.
+for curves over a field. It also packages the degree-zero subgroups of `WeilDivisor X`, which are
+the codomains of the degree-corrected representatives and of the restricted pushforwards. When the
+points form a `T1` space, a divisor vanishes on a punctured neighbourhood of every point, since its
+support is finite.
+
+## Main definitions
+
+* `WeilDivisor X`: finite formal integer sums of points of `X`, with `coeff` and `ofPoint`.
+* `IsEffective`, `effectiveSubmonoid`: divisors with nonnegative coefficients.
+* `pushforward`, `pullback`: change of the point set along a map, respectively an injective map.
+* `degree`, `weightedDegree`, `degreeZeroSubgroup`, `weightedDegreeZeroSubgroup`: the degrees and
+  their kernels.
+* `pointDifference`, `weightedPointBaseDifference`: the divisors `[x] - [y]` and
+  `[x] - w x • [x₀]`. The first has degree zero; the second has weighted degree zero when
+  `w x₀ = 1`.
+* `weightedAbelJacobiDegreeZeroDivisor`: the degree-corrected representative of a divisor, valued
+  in `weightedDegreeZeroSubgroup w` (not in `WeilDivisor X`), for a base point with `w x₀ = 1`.
+* `pushforwardDegreeZero`, `pushforwardWeightedDegreeZero`: pushforward restricted to the
+  degree-zero subgroups.
 
 For a curve over `k`, the intended weighted degree has weight
 `x ↦ [κ(x) : k]`; this file only supplies the formal finite-sum operation against an arbitrary
@@ -202,8 +217,7 @@ lemma mem_effectiveSubmonoid (D : WeilDivisor X) :
   Iff.rfl
 
 /-- Push forward a formal divisor along a map of point sets by summing coefficients over
-fibres.  Geometric pushforward of Weil divisors will specialize this once the relevant point
-maps and residue-degree factors are available. -/
+fibres. -/
 @[expose] noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
   (Finsupp.lmapDomain ℤ ℤ f).toAddMonoidHom
 
