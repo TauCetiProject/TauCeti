@@ -210,7 +210,7 @@ end LocalFunctional
 
 section Point
 
-variable (k H A : Type u) [Field k] [CommRing H] [HopfAlgebra k H]
+variable (k H A : Type u) [Field k] [Ring H] [HopfAlgebra k H]
   [CommRing A] [Algebra k A]
 
 /-- For a tensor automorphism induced by an algebra-valued point `g`, the local functional is
