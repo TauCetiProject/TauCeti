@@ -97,12 +97,8 @@ def hermitianForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V →ₗ[ℝ] Line
 /-- The Hermitian part is `B(v, w) = (F(v, J w) + F(w, J v)) / 2`. -/
 theorem hermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = (⟪F, ιMulti ℝ 2 ![v, J w]⟫ + ⟪F, ιMulti ℝ 2 ![w, J v]⟫) / 2 := by
-  rw [hermitianForm, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearMap.BilinMap.toQuadraticMapLinearMap_apply, QuadraticMap.associated_toQuadraticMap,
-    Module.End.smul_def, QuadraticMap.half_moduleEnd_apply_eq_half_smul, invOf_eq_inv,
-    smul_eq_mul, inv_mul_eq_div]
-  simp only [LinearMap.compRight_apply, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_apply,
-    LinearMap.compl₂_apply, innerₗ_apply_apply, inner_twoVectorContraction_apply]
+  simp [hermitianForm, QuadraticMap.associated_toQuadraticMap, inner_twoVectorContraction_apply]
+  ring
 
 /-- The quadratic form of the Hermitian part is `B(v, v) = F(v, J v)`. -/
 @[simp]
