@@ -59,7 +59,9 @@ import TauCeti.Data.Set.PowersetCard
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
   `Finset.card_image_comp_eq_and_image_comp_subset_Ioo_iff` splits that condition for a composite
-  of maps.
+  of maps. `StrictMono.image_subset_Ioo` maps a finset inside `Ioo a b` into the interval between
+  the images of `a` and `b` under a strictly monotone map, and
+  `StrictMono.exists_image_eq_of_subset_Ioo` lifts such an interval and finset along it.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -715,6 +717,33 @@ theorem card_image_comp_eq_and_image_comp_subset_Ioo_iff {α β γ : Type*} [Par
       exact lt_irrefl _ hf.2
   · rintro ⟨⟨hcg, -⟩, hcf, hsub⟩
     exact ⟨hcf.trans hcg, hsub⟩
+
+/-- A strictly monotone map sends elements strictly between `a` and `b` to elements strictly
+between their images. -/
+theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [LocallyFiniteOrder α]
+    [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β} (he : StrictMono e)
+    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) := fun _ hx ↦ by
+  obtain ⟨s, hs, rfl⟩ := mem_image.1 hx
+  have := mem_Ioo.1 (hS hs)
+  exact mem_Ioo.2 ⟨he this.1, he this.2⟩
+
+/-- Endpoints `a ≤ b` and a finset `S ⊆ Ioo a b`, all of whose elements are values of a strictly
+monotone map `e`, are the images under `e` of endpoints `a' ≤ b'` and of a finset
+`S' ⊆ Ioo a' b'`. -/
+theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearOrder α]
+    [LocallyFiniteOrder α] [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β}
+    (he : StrictMono e) {a b : β} {S : Finset β} (hab : a ≤ b) (hS : S ⊆ Ioo a b)
+    (ha : ∃ a', e a' = a) (hb : ∃ b', e b' = b) (hSe : ∀ s ∈ S, ∃ s', e s' = s) :
+    ∃ a' b' S', e a' = a ∧ e b' = b ∧ S'.image e = S ∧ a' ≤ b' ∧ S' ⊆ Ioo a' b' := by
+  classical
+  obtain ⟨a', rfl⟩ := ha
+  obtain ⟨b', rfl⟩ := hb
+  obtain ⟨S', rfl⟩ : ∃ S', S'.image e = S := ⟨S.preimage e he.injective.injOn, by
+    rw [image_preimage]
+    exact filter_true_of_mem hSe⟩
+  refine ⟨a', b', S', rfl, rfl, rfl, he.le_iff_le.1 hab, fun s hs ↦ ?_⟩
+  have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
+  exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/
