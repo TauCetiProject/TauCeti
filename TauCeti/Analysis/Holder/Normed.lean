@@ -28,7 +28,8 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace`: bounded continuous globally `α`-Hölder functions.
 * `TauCeti.HolderSpace.instNormedAddCommGroup`: the supremum-plus-Hölder normed group structure.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
-* `TauCeti.HolderSpace.holderWith`: the Hölder bound with the canonical seminorm.
+* `TauCeti.HolderSpace.holderWith`, `TauCeti.HolderSpace.holderWith_nnnorm`: the Hölder bound
+  with the canonical seminorm, and with the Hölder-space norm.
 * `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
@@ -395,6 +396,10 @@ noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (Hold
 theorem nnHolderNorm_le (f : HolderSpace α X Y) :
     (nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) : ℝ) ≤ ‖f‖ :=
   nnHolderNorm_le_holderNorm f.toBoundedContinuousFunction
+
+/-- A bounded Hölder function is Hölder with constant its Hölder-space norm. -/
+theorem holderWith_nnnorm (f : HolderSpace α X Y) : HolderWith ‖f‖₊ α f :=
+  f.holderWith.mono f.nnHolderNorm_le
 
 /-- A constant function as an element of the bounded Hölder space. -/
 def const (c : Y) : HolderSpace α X Y :=
