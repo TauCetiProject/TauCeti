@@ -135,9 +135,9 @@ theorem taylor_comp_barMap (f : AInfinityBimoduleHom MM NN) :
   simp only [AInfinityBimodule.taylor_def, taylor_def, LinearMap.comp_assoc,
     f.barDifferential_comp_barMap]
 
-/-- The commutator `K` of a degree-zero bicomodule map `F` with the bar differentials satisfies
-the left-coaction identity up to the Koszul twist of the left cofree factor: the two
-coalgebra-differential terms of the left coderivations cancel. -/
+/-- If `F` respects the left cofree coactions and `K + F ∘ₗ MM.barDifferential =
+NN.barDifferential ∘ₗ F`, then `K` intertwines the left coactions up to the Koszul twist on the
+left cofree factor. -/
 private theorem leftCoact_comp_commutator
     {F : Comodule.Hom R (TensorWords R B)
       ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
