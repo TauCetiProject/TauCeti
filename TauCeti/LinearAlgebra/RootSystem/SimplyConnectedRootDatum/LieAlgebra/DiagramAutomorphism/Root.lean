@@ -55,47 +55,8 @@ private theorem diagramLieEquiv_weylAut_simple (hσ : σ ∈ t.diagramSymmetry)
         (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
         (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
         (t.diagramLieEquiv ht hσ z) := by
-  let f := (t.diagramLieEquiv ht hσ).toLieHom
-  have he (y : t.lieAlgebra ht) :
-      f (expAd (t.chevalleySystem ht (t.simpleIndex ht i))
-          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero y) =
-        expAd (t.chevalleySystem ht (t.simpleIndex ht (σ i)))
-          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero (f y) := by
-    have hm : f (t.chevalleySystem ht (t.simpleIndex ht i)) =
-        t.chevalleySystem ht (t.simpleIndex ht (σ i)) := by simp [f]
-    have H := f.map_expAd
-      (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-      (hm ▸ (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero) y
-    generalize_proofs at H
-    simpa only [hm] using H
-  have hf (y : t.lieAlgebra ht) :
-      f (expAd (-t.chevalleySystem ht
-            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
-              (t.simpleIndex ht i)))
-          (by simpa only [map_neg] using
-            (t.isNilpotent_ad_chevalleySystem ht _).neg.exists_pow_apply_eq_zero) y) =
-        expAd (-t.chevalleySystem ht
-            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht (σ i))
-              (t.simpleIndex ht (σ i))))
-          (by simpa only [map_neg] using
-            (t.isNilpotent_ad_chevalleySystem ht _).neg.exists_pow_apply_eq_zero) (f y) := by
-    have hm : f (-t.chevalleySystem ht
-          ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
-            (t.simpleIndex ht i))) =
-        -t.chevalleySystem ht
-          ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht (σ i))
-            (t.simpleIndex ht (σ i))) := by simp [f]
-    have hn : IsNilpotent (ad ℚ (t.lieAlgebra ht)
-        (-t.chevalleySystem ht
-          ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
-            (t.simpleIndex ht i)))) := by
-      simpa only [map_neg] using (t.isNilpotent_ad_chevalleySystem ht _).neg
-    have hfn := f.isNilpotent_ad_of_surjective (t.diagramLieEquiv ht hσ).surjective hn
-    have H := f.map_expAd hn.exists_pow_apply_eq_zero hfn.exists_pow_apply_eq_zero y
-    generalize_proofs at H
-    simpa only [hm] using H
-  simpa only [weylAut_apply, f, LieEquiv.coe_toLieHom] using
-    (he _).trans (congrArg _ ((hf _).trans (congrArg _ (he z))))
+  exact (t.diagramLieEquiv ht hσ).toLieHom.map_weylAut_of_eq
+    _ _ _ _ _ _ (by simp) (by simp) z
 
 /-- A pinned diagram automorphism carries every root vector to the root vector of the
 permuted root, up to an integral unit. -/
@@ -116,12 +77,12 @@ private theorem exists_diagramLieEquiv_chevalleySystem (hσ : σ ∈ t.diagramSy
     have hp := (t.diagramAut ht hσ).toHom.indexEquiv_reflectionPerm (t.simpleIndex ht i) β
     simp only [diagramAut_indexEquiv, diagramRootPerm_simpleIndex] at hp
     have hw := diagramLieEquiv_weylAut_simple ht hσ i (t.chevalleySystem ht β)
-    rw [weylAut_chevalleySystem, map_zsmul, hε, map_zsmul, weylAut_chevalleySystem] at hw
+    simp only [weylAut_chevalleySystem, map_zsmul, hε] at hw
     refine ⟨t.chevalleyWeylSign ht (t.simpleIndex ht i) β * ε *
       t.chevalleyWeylSign ht (t.simpleIndex ht (σ i)) (t.diagramRootPerm ht hσ β), ?_⟩
-    rw [hp, Units.val_mul, Units.val_mul, mul_smul, mul_smul]
-    rw [← hw, smul_smul]
-    simp [← Units.val_mul]
+    simp only [hp, Units.val_mul, mul_smul]
+    rw [← hw]
+    simp [smul_smul, ← Units.val_mul]
   refine (t.rationalBase ht).induction_simple_reflect α
     (p := fun β => ∃ ε : ℤˣ, t.diagramLieEquiv ht hσ (t.chevalleySystem ht β) =
       (ε : ℤ) • t.chevalleySystem ht (t.diagramRootPerm ht hσ β))
@@ -154,6 +115,11 @@ theorem diagramLieEquiv_chevalleySystem (hσ : σ ∈ t.diagramSymmetry) (α : F
     · simpa using h'
     · simpa using hε
 
+private theorem zsmul_chevalleySystem_inj (α : Fin t.numRoots) {a b : ℤ} :
+    a • t.chevalleySystem ht α = b • t.chevalleySystem ht α ↔ a = b := by
+  simp only [← Int.cast_smul_eq_zsmul ℚ,
+    smul_left_inj (t.isSl2Triple_chevalleySystem ht α).e_ne_zero, Int.cast_inj]
+
 /-- The sign is uniquely characterized by the image of its nonzero root vector. -/
 theorem eq_chevalleyDiagramSign_iff (hσ : σ ∈ t.diagramSymmetry)
     {α : Fin t.numRoots} {ε : ℤˣ} :
@@ -162,10 +128,7 @@ theorem eq_chevalleyDiagramSign_iff (hσ : σ ∈ t.diagramSymmetry)
         (ε : ℤ) • t.chevalleySystem ht (t.diagramRootPerm ht hσ α) := by
   refine ⟨fun h => h ▸ diagramLieEquiv_chevalleySystem ht hσ α, fun h => ?_⟩
   rw [diagramLieEquiv_chevalleySystem] at h
-  simp only [← Int.cast_smul_eq_zsmul ℚ] at h
-  apply Units.ext
-  exact_mod_cast (smul_left_injective ℚ
-    (t.isSl2Triple_chevalleySystem ht _).e_ne_zero h).symm
+  exact Units.ext ((zsmul_chevalleySystem_inj ht _).mp h).symm
 
 /-- The pinned diagram action has sign one on every positive simple root. -/
 @[simp]
@@ -188,9 +151,8 @@ theorem chevalleyDiagramSign_reflectionPerm_self (hσ : σ ∈ t.diagramSymmetry
   simp only [diagramAut_indexEquiv] at hp
   have H := congrArg (t.chevalleyInvolution ht)
     (diagramLieEquiv_chevalleySystem ht hσ α)
-  rw [← diagramLieEquiv_chevalleyInvolution, chevalleyInvolution_chevalleySystem,
-    map_neg, map_zsmul, chevalleyInvolution_chevalleySystem, smul_neg, neg_inj] at H
-  simpa only [hp] using H
+  simpa only [← diagramLieEquiv_chevalleyInvolution, chevalleyInvolution_chevalleySystem,
+    map_neg, map_zsmul, smul_neg, neg_inj, hp] using H
 
 /-- The identity diagram symmetry has sign one at every root. -/
 @[simp]
@@ -208,11 +170,9 @@ theorem chevalleyDiagramSign_mul (hσ : σ ∈ t.diagramSymmetry) (hτ : τ ∈ 
         t.chevalleyDiagramSign ht hσ (t.diagramRootPerm ht hτ α) := by
   symm
   apply (eq_chevalleyDiagramSign_iff ht (t.diagramSymmetry.mul_mem hσ hτ)).mpr
-  rw [diagramLieEquiv_mul ht hσ hτ, LieEquiv.trans_apply,
-    diagramLieEquiv_chevalleySystem ht hτ, map_zsmul,
-    diagramLieEquiv_chevalleySystem ht hσ]
-  rw [diagramRootPerm_mul ht hσ hτ]
-  simp [mul_smul]
+  simp only [diagramLieEquiv_mul ht hσ hτ, LieEquiv.trans_apply,
+    diagramLieEquiv_chevalleySystem, map_zsmul, diagramRootPerm_mul ht hσ hτ,
+    Units.val_mul, mul_smul, Equiv.Perm.mul_apply]
 
 /-- Compatibility of the diagram signs with the integral structure constants at a root sum.
 Thus the signs can be propagated from simple roots using the bracket equations. -/
@@ -230,13 +190,9 @@ theorem chevalleyDiagramSign_mul_structureConstant (hσ : σ ∈ t.diagramSymmet
     simpa only [root_diagramRootPerm, Pi.add_apply] using congrFun h (σ.symm j)
   have H := congrArg (t.diagramLieEquiv ht hσ)
     (lie_chevalleySystem_eq_structureConstant_zsmul h)
-  rw [LieEquiv.map_lie, diagramLieEquiv_chevalleySystem, diagramLieEquiv_chevalleySystem,
-    zsmul_lie, lie_zsmul, lie_chevalleySystem_eq_structureConstant_zsmul hp,
-    map_zsmul, diagramLieEquiv_chevalleySystem] at H
-  simp only [smul_smul, ← Int.cast_smul_eq_zsmul ℚ] at H
-  have H' := smul_left_injective ℚ (t.isSl2Triple_chevalleySystem ht _).e_ne_zero H
-  norm_cast at H'
-  simpa only [mul_assoc] using H'
+  simp only [LieEquiv.map_lie, diagramLieEquiv_chevalleySystem, zsmul_lie, lie_zsmul,
+    lie_chevalleySystem_eq_structureConstant_zsmul hp, map_zsmul, smul_smul] at H
+  simpa only [mul_assoc, mul_left_comm] using (zsmul_chevalleySystem_inj ht _).mp H
 
 end
 
