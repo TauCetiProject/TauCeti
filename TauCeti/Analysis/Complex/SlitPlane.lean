@@ -14,7 +14,8 @@ The quotient `z₂ / z₁` of two points of an open half-plane through the origi
 nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded by a normal
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
 four axis-aligned half-planes cover the common cases. A relative displacement smaller than
-the distance to a pole also gives a slit-plane quotient.
+the distance to a pole also gives a slit-plane quotient. A product of two points in the
+right half-plane lies in the slit plane as well, and positive real scaling preserves it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -37,6 +38,7 @@ is a principal logarithm.
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
+* `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
@@ -115,6 +117,20 @@ theorem div_mem_slitPlane_of_im_neg {z₁ z₂ : ℂ} (h₁ : z₁.im < 0) (h₂
   div_mem_slitPlane_of_re_conj_mul_pos (a := -Complex.I)
     (by simpa [Complex.mul_re] using neg_pos.mpr h₁)
     (by simpa [Complex.mul_re] using neg_pos.mpr h₂)
+
+/-- Multiplication by a positive real preserves membership in the slit plane. -/
+theorem ofReal_mul_mem_slitPlane {c : ℝ} (hc : 0 < c) {z : ℂ}
+    (hz : z ∈ slitPlane) : (c : ℂ) * z ∈ slitPlane := by
+  rw [mem_slitPlane_iff] at hz ⊢
+  rcases hz with h_re | h_im
+  · exact Or.inl <| by simpa using mul_pos hc h_re
+  · exact Or.inr <| by simpa using mul_ne_zero hc.ne' h_im
+
+/-- Division by a positive real preserves membership in the slit plane. -/
+theorem div_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {c : ℝ} (hc : 0 < c) :
+    z / (c : ℂ) ∈ slitPlane := by
+  rw [div_eq_mul_inv, ← ofReal_inv, mul_comm]
+  exact ofReal_mul_mem_slitPlane (inv_pos.mpr hc) hz
 
 /-- Translating a point of the slit plane by a nonnegative real number keeps it in the slit
 plane. -/
