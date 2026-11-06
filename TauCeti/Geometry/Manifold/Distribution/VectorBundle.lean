@@ -172,17 +172,10 @@ theorem mem_trivializationAtlas_fiberBundle_iff (hD : IsContMDiffDistribution I 
 tangent bundle, its local frame trivializations are linear, with continuous coordinate changes. -/
 theorem vectorBundle (hD : IsContMDiffDistribution I n k D) :
     letI := hD.fiberBundle
-    VectorBundle 𝕜 (Fin k → 𝕜) fun x ↦ D x := by
-  let := hD.fiberBundle
-  refine { trivialization_linear' := ?_, continuousOn_coordChange' := ?_ }
-  · intro e he
-    obtain ⟨V, hV, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e).mp he.out
-    exact hY.isSubbundleFrameOn.isLinear_trivialization hV
-  · intro e e' he he'
-    obtain ⟨V, hV, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e).mp he.out
-    obtain ⟨V', hV', Y', hY', rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e').mp he'.out
-    simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
-      hY.isSubbundleFrameOn.continuousOn_coordChangeL hV hY'.isSubbundleFrameOn hV'
+    VectorBundle 𝕜 (Fin k → 𝕜) fun x ↦ D x :=
+  vectorBundle_of_forall_mem_trivializationAtlas hD.fiberBundle fun e he ↦ by
+    obtain ⟨V, hV, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e).mp he
+    exact ⟨V, hV, Y, hY.isSubbundleFrameOn, rfl⟩
 
 /-- **A `C^n` distribution of rank `k` is a `C^n` vector bundle.** On a `C^(n+1)` manifold, whose
 tangent bundle is a `C^n` vector bundle, the coordinate changes between the trivializations of the
