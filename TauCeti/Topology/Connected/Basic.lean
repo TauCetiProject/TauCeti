@@ -26,8 +26,8 @@ so preconnectedness of the image is equivalent to preconnectedness of the set
 (`IsCompact.isPreconnected_image_iff_of_injOn`).
 
 In a `T₁` space, the connected component `connectedComponentIn s x` of a point isolated in `s` is
-the point itself (`connectedComponentIn_eq_singleton`): the component is covered by the open sets
-`{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
+the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
+open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
 -/
 
 public section
@@ -50,6 +50,8 @@ theorem IsPreconnected.subset_of_subset_iUnion {s : Set α} {u : ι → Set α}
   · exact Or.inl (hji ▸ hj)
   · exact Or.inr (mem_iUnion₂.2 ⟨j, hji, hj⟩)
 
+namespace TauCeti
+
 /-- In a `T₁` space, a point isolated in a set `s` is its own connected component in `s`. -/
 theorem connectedComponentIn_eq_singleton [T1Space α] {s : Set α} {x : α} (hx : x ∈ s)
     (hiso : ∀ᶠ z in 𝓝 x, z ∈ s → z = x) : connectedComponentIn s x = {x} := by
@@ -63,6 +65,8 @@ theorem connectedComponentIn_eq_singleton [T1Space α] {s : Set α} {x : α} (hx
     (fun y _ ↦ (eq_or_ne y x).elim (fun hyx ↦ Or.inl (hyx ▸ hxU)) Or.inr)
     ⟨x, mem_connectedComponentIn hx, hxU⟩ ⟨z, hz, hzx⟩
   exact hyx (hUx y hyU (connectedComponentIn_subset _ _ hy))
+
+end TauCeti
 
 /-- A function tending to a finite subset `S` of a Hausdorff space along a nontrivial filter `l`
 tends to a single point of `S`, provided every set of `l` contains a set of `l` with preconnected
