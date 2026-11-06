@@ -223,7 +223,10 @@ multiplicities of every member of the family at the inserted zero root, and at t
 not depend on the base point. -/
 private theorem rootMultiplicity_insertNth_zero_eq (D : LazardDelineation (F ∘ f) S)
     (hcoord : ∀ k, k ∉ range f → ∃ a ≠ 0, F k = MvPolynomial.C a * X (Fin.last n))
-    {p : Fin (D.count + 1)} (hne : ∀ (i : Fin D.count) (x : S), D.root i x ≠ 0) (k : ι)
+    {p : Fin (D.count + 1)} (hne : ∀ (i : Fin D.count) (x : S), D.root i x ≠ 0)
+    (hzmult : ∀ (j : κ) (x : S),
+      ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F (f j)))).lazardEval
+        (Polynomial.C ∘ x.1)).rootMultiplicity 0 = 0) (k : ι)
     (l : Fin (D.count + 1)) (x x₀ : S) :
     ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
         (Polynomial.C ∘ x.1)).rootMultiplicity
@@ -231,15 +234,6 @@ private theorem rootMultiplicity_insertNth_zero_eq (D : LazardDelineation (F ∘
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
         (Polynomial.C ∘ x₀.1)).rootMultiplicity
         (Fin.insertNth (α := fun _ ↦ ℝ) p 0 (fun i ↦ D.root i x₀) l) := by
-  -- No member of `F ∘ f` has the root `0`.
-  have hzmult (j : κ) (x : S) :
-      ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F (f j)))).lazardEval
-        (Polynomial.C ∘ x.1)).rootMultiplicity 0 = 0 := by
-    by_cases hF : F (f j) = 0
-    · simp [hF]
-    refine Polynomial.rootMultiplicity_eq_zero fun hroot ↦ ?_
-    obtain ⟨i, hi⟩ := D.exists_root_eq j x hF 0 hroot
-    exact hne i x hi
   rcases Fin.eq_self_or_eq_succAbove p l with hl | ⟨i, rfl⟩ <;> by_cases hk : k ∈ range f
   · obtain ⟨j, rfl⟩ := hk
     rw [hl, Fin.insertNth_apply_same, Fin.insertNth_apply_same]
@@ -282,7 +276,8 @@ private theorem nonempty_lazardDelineation_of_comp_of_mem_sectorSet
             lazardExponent_eq := fun k x ↦ lazardExponent_eq_of_comp D hcoord k x x₀
             multiplicity := fun k l ↦ (Q k x₀).rootMultiplicity (root l x₀)
             rootMultiplicity_root := fun k l x ↦
-              rootMultiplicity_insertNth_zero_eq D hcoord hne k l x x₀
+              rootMultiplicity_insertNth_zero_eq D hcoord hne
+                (fun j x ↦ D.rootMultiplicity_eq_zero_of_mem_sectorSet j (hp x)) k l x x₀
             exists_root_eq := fun k x hk t ht ↦ ?_
             exists_multiplicity_pos := fun l ↦ ?_ }⟩
   · rcases Fin.eq_self_or_eq_succAbove p l with rfl | ⟨i, rfl⟩
