@@ -216,6 +216,16 @@ theorem kostantToralFrobenius_add (m : ℕ) :
   rw [coe_kostantToralFrobenius_apply, MonoidHom.comp_apply, coe_kostantToralFrobenius_apply,
     coe_kostantToralFrobenius_apply, ← pow_mul, ← pow_add, Nat.add_comm k m]
 
+/-- Powers of the Frobenius endomorphism multiply its iteration index. -/
+theorem kostantToralFrobenius_mul (m : ℕ) :
+    kostantToralFrobenius e h ρ M hM hnil b wt p (k * m) A =
+      (show Monoid.End _ from kostantToralFrobenius e h ρ M hM hnil b wt p k A) ^ m := by
+  induction m with
+  | zero => rw [Nat.mul_zero, kostantToralFrobenius_zero]; rfl
+  | succ m ih =>
+    rw [Nat.mul_succ, kostantToralFrobenius_add, ih, pow_succ]
+    rfl
+
 /-- A point of a toral closure is fixed by the Frobenius endomorphism exactly when every one of
 its entries lies in the Frobenius-fixed subring. -/
 @[simp]
