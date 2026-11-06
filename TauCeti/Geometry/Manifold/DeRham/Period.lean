@@ -116,6 +116,19 @@ theorem pathClassIntegral_mk_eq_sub (hφ : IsSmoothForm I 1 φ) (hclosed : mextD
     hp.monodromy_eq_apply_one (Γ := Γ') (funext fun t ↦ by simp [Γ', hΓγ]) hΓ'0]
   simp [Γ', sub_eq_add_neg]
 
+/-- **Integration inside the domain of a primitive.** The integral of a closed `C¹` form along a
+path inside an open set `U` is the difference of the values at the endpoints of any primitive of
+the form on `U`. -/
+theorem pathClassIntegral_mk_eq_sub_of_isPrimitiveOn (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U)
+    (γ : Path x y) (hγU : ∀ t, γ t ∈ U) :
+    pathClassIntegral φ (.mk γ) = g y - g x := by
+  -- the graph of `g` along `γ` is a lift of `γ`
+  rw [pathClassIntegral_mk_eq_sub hφ hclosed
+    ((PrimitiveSpace.continuousOn_graph hgU).comp_continuous γ.continuous hγU)
+    (fun t ↦ PrimitiveSpace.proj_graph (γ t))]
+  simp
+
 /-- The monodromy of the covering space of local primitives along `γ` translates values by the
 integral of `φ` along `γ`. -/
 theorem PrimitiveSpace.value_monodromy (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0)
@@ -175,12 +188,9 @@ theorem pathClassIntegral_mextDeriv_ofFunction {g : M → F} (hg : ContMDiff I �
   have hφ : IsSmoothForm I 1 φ :=
     isSmoothForm_mextDeriv (isSmoothForm_ofFunction_iff.mpr hg) (by norm_num)
   have hgU : IsPrimitiveOn φ g univ :=
-    ⟨isOpen_univ, (hg.mdifferentiable (by norm_num)).mdifferentiableOn, fun _ _ ↦ rfl⟩
-  -- the graph of the global primitive `g` along `γ` is a lift of `γ`
-  rw [pathClassIntegral_mk_eq_sub hφ (mextDeriv_mextDeriv_ofFunction hg)
-    ((PrimitiveSpace.continuousOn_graph hgU).comp_continuous γ.continuous fun _ ↦ mem_univ _)
-    (fun t ↦ PrimitiveSpace.proj_graph (γ t))]
-  simp
+    isPrimitiveOn_univ_of_mextDeriv_eq (hg.mdifferentiable (by norm_num)) rfl
+  exact pathClassIntegral_mk_eq_sub_of_isPrimitiveOn hφ (mextDeriv_mextDeriv_ofFunction hg) hgU γ
+    fun _ ↦ mem_univ _
 
 /-- **The fundamental theorem of calculus for path classes**, for a `C²` form `ψ` of degree zero:
 the integral of `dψ` along a path class is the difference of the values of `ψ` at the
@@ -353,9 +363,7 @@ theorem pathClassIntegral_mpullback (hf : ContMDiff I I' 2 f) (hθ : IsSmoothFor
     pathClassIntegral (mpullback I I' f θ) γ = pathClassIntegral θ (γ.map ⟨f, hf.continuous⟩) := by
   induction γ with | mk γ =>
   have hfθ : IsSmoothForm I 1 (mpullback I I' f θ) := hθ.mpullback hf
-  have hfclosed : mextDeriv (mpullback I I' f θ) = 0 := by
-    rw [← mpullback_mextDeriv hf ((isSmoothBundleForm_def _ _).mpr hθ.contMDiff), hclosed,
-      mpullback_zero]
+  have hfclosed : mextDeriv (mpullback I I' f θ) = 0 := hθ.mextDeriv_mpullback_eq_zero hclosed hf
   have hp := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hθ hclosed
   -- a lift of the image path `f ∘ γ`
   obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts (γ.map hf.continuous).toContinuousMap

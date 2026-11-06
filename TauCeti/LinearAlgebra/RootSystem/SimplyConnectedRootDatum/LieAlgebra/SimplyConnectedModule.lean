@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.LinearAlgebra.DirectSum.Finite
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Basic
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.Weights.Faithful
+import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
 /-!
 # The full-weight module of the pinned rational Lie algebra
@@ -21,7 +23,7 @@ For a valid Dynkin type `t`, the **full-weight module** `V_sc(t)` of the pinned 
 built: its weights generate the whole weight lattice, so the torus of the associated group has
 the full weight lattice as character lattice.
 
-This file proves the two properties of `V_sc(t)` that make it suitable for this:
+This file proves the properties of `V_sc(t)` that make it suitable for this:
 
 * every fundamental weight `ϖᵢ` is a weight of `V_sc(t)`, carried by the highest weight vector
   `v⁺ᵢ` of the `i`-th summand, so the weights of `V_sc(t)` span the integral weight lattice over
@@ -29,7 +31,11 @@ This file proves the two properties of `V_sc(t)` that make it suitable for this:
 * the representation of the pinned Lie algebra on `V_sc(t)` is faithful. An element `x` of the
   Cartan subalgebra acting by zero has `ϖᵢ(x) = 0` for every `i`, so `x = 0`, and faithfulness on
   the Cartan subalgebra implies faithfulness
-  (`TauCeti.isFaithful_of_isFaithful_cartanSubalgebra`).
+  (`TauCeti.isFaithful_of_isFaithful_cartanSubalgebra`);
+* every root vector acts nilpotently on `V_sc(t)`, since it does so on each fundamental module,
+  a finite-dimensional highest weight module and hence triangularizable for the Cartan subalgebra.
+  So the divided-power exponentials of root vectors, from which the root subgroups of the group
+  are built, are finite sums.
 
 ## Main declarations
 
@@ -42,6 +48,10 @@ This file proves the two properties of `V_sc(t)` that make it suitable for this:
   span the integral weight lattice over `ℤ`.
 * `TauCeti.DynkinType.instIsFaithfulScModule`: the pinned Lie algebra acts faithfully on
   `V_sc(t)`.
+* `TauCeti.DynkinType.isNilpotent_toEnd_scModule_of_mem_rootSpace`: every root vector acts
+  nilpotently on `V_sc(t)`.
+* `TauCeti.DynkinType.isNilpotent_representation_scModule_rootGenerator`: the numbered raising and
+  lowering generators act nilpotently on `V_sc(t)`.
 
 ## References
 
@@ -97,6 +107,35 @@ theorem span_weight_scModule_eq_integralWeightLattice :
   have hv := t.isHighestWeightVector_lof_fundamentalModuleGenerator ht i
   exact ⟨hv.weight, LinearMap.coe_injective hv.coe_weight⟩
 
+/-- **Root vectors act nilpotently on `V_sc(t)`.** An element of the root space of a nonzero weight
+of the Cartan subalgebra acts nilpotently on each fundamental module, which is finite-dimensional
+and triangularizable for the Cartan subalgebra
+(`TauCeti.instIsTriangularizableIrreducibleQuotient`), hence on their finite direct sum. This is the
+nilpotence that the divided-power exponential `x_α(u) = Σₙ uⁿ ρ(e_α)⁽ⁿ⁾` of a root vector `e_α`
+needs in order to be a polynomial in `u`. -/
+theorem isNilpotent_toEnd_scModule_of_mem_rootSpace {x : t.lieAlgebra ht}
+    {χ : t.cartanSubalgebra ht → ℚ} (hχ : χ ≠ 0) (hx : x ∈ rootSpace (t.cartanSubalgebra ht) χ) :
+    IsNilpotent (toEnd ℚ (t.lieAlgebra ht) (t.scModule ht) x) :=
+  DirectSum.isNilpotent_toEnd_iff.mpr fun _ => isNilpotent_toEnd_of_mem_rootSpace _ _ hχ hx
+
+open _root_.TauCeti.UniversalEnvelopingAlgebra in
+/-- **The numbered raising and lowering generators act nilpotently on `V_sc(t)`**, in the shape the
+Kostant root subgroups, elementary groups and group schemes take this hypothesis: the generators
+`eᵢ` and `fᵢ` are root vectors of `±αᵢ`
+(`TauCeti.DynkinType.isNilpotent_toEnd_scModule_of_mem_rootSpace`). -/
+theorem isNilpotent_representation_scModule_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
+    IsNilpotent (representation ℚ (t.lieAlgebra ht) (t.scModule ht)
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (LieAlgebra.Basis.rootGenerator (t.lieBasis ht) i))) := by
+  have hne (j : Fin t.rank) : ⇑((t.lieBasis ht).baseSupp j) ≠ 0 := fun h =>
+    (t.lieBasis ht).linearIndependent_baseSupp.ne_zero j ((LinearMap.coe_zero_iff _).mp h)
+  rw [representation_ι]
+  rcases i with j | j
+  · exact t.isNilpotent_toEnd_scModule_of_mem_rootSpace ht (hne j)
+      (by rw [LieAlgebra.Basis.rootGenerator_inl]; exact lieBasis_e_mem_rootSpace _ j)
+  · exact t.isNilpotent_toEnd_scModule_of_mem_rootSpace ht (neg_ne_zero.mpr (hne j))
+      (by rw [LieAlgebra.Basis.rootGenerator_inr]; exact lieBasis_f_mem_rootSpace _ j)
+
 /-- **The full-weight module is faithful**: only the zero element of the pinned Lie algebra acts
 by zero on `V_sc(t)`. -/
 instance instIsFaithfulScModule : IsFaithful ℚ (t.lieAlgebra ht) (t.scModule ht) := by
@@ -114,6 +153,7 @@ instance instIsFaithfulScModule : IsFaithful ℚ (t.lieAlgebra ht) (t.scModule h
     rw [← (t.fundamentalWeight ht).sum_repr f]
     simp only [LinearMap.sum_apply, LinearMap.smul_apply, hϖ, smul_zero, Finset.sum_const_zero]
   exact isFaithful_of_isFaithful_cartanSubalgebra (H := t.cartanSubalgebra ht)
+
 
 end
 

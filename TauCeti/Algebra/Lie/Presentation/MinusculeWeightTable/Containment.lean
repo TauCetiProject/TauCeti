@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne
+public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import Mathlib.RingTheory.Localization.FractionRing

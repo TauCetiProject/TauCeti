@@ -103,14 +103,6 @@ theorem eq_and_eq_of_add_eq_of_add_eq_of_norm_le {A₄ A₆ s x y X Y : K} (hA�
 
 variable [CompleteSpace K]
 
-/-- The Tate equation `y² + xy = x³ + a₄(q) x + a₆(q)` in the coordinates of `tateCurveAt`. -/
-private theorem tate_equation {q : Kˣ} {hq : ‖(q : K)‖ < 1} {x y : K}
-    (h : (tateCurveAt q hq).toAffine.Equation x y) :
-    y ^ 2 + x * y = x ^ 3 + tateCurveA₄ (q : K) hq * x + tateCurveA₆ (q : K) hq := by
-  rw [equation_iff] at h
-  simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄, tateCurveAt_a₆] at h
-  linear_combination h
-
 /-- **A point reducing to the node is not too close to it.** If `(x, y)` solves the Tate equation,
 `‖y‖ ≤ ‖x + y‖` and `‖x + y‖ < 1`, then `‖q‖ ≤ ‖x + y‖²`. The equation reads
 `y (x + y) = x³ + a₄ x + a₆`, and `‖a₆‖ = ‖q‖`. -/
@@ -122,7 +114,7 @@ private theorem norm_le_norm_add_sq_of_equation (q : Kˣ) (hq : ‖(q : K)‖ < 
   have hx : ‖x‖ ≤ ‖x + y‖ :=
     IsUltrametricDist.norm_le_of_norm_sub_le le_rfl (by rwa [sub_add_cancel_left, norm_neg])
   have hA₆ : tateCurveA₆ (q : K) hq = y * (x + y) - x ^ 3 - tateCurveA₄ (q : K) hq * x := by
-    linear_combination -tate_equation h
+    linear_combination -(tateCurveAt_equation_iff q hq).mp h
   have hss : ‖x + y‖ ^ 3 ≤ ‖x + y‖ ^ 2 := pow_le_pow_of_le_one (norm_nonneg _) hs.le (by norm_num)
   refine (norm_tateCurveA₆ (q : K) hq).not_lt ?_
   rw [hA₆]
@@ -390,7 +382,8 @@ private theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_norm
     hu ▸ (norm_tateUniformizationX_le_max q u hqu hu1).trans
       (max_le le_rfl (div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) (by rwa [← sq, hu])))
   obtain ⟨hXe, hYe⟩ := eq_and_eq_of_add_eq_of_add_eq_of_norm_le
-    ((norm_tateCurveA₄_le (q : K) hq).trans_lt hqs') hs hx hX (tate_equation h) (tate_equation
+    ((norm_tateCurveA₄_le (q : K) hq).trans_lt hqs') hs hx hX ((tateCurveAt_equation_iff q hq).mp h)
+    ((tateCurveAt_equation_iff q hq).mp
       (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq
         (notMem_zpowers_of_norm_lt_of_norm_lt_one hqu hu1))) rfl hXY
   exact ⟨u, hqu, hu1, hXe, hYe⟩

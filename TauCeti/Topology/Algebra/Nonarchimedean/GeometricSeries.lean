@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
+public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
@@ -33,6 +34,8 @@ canonical norm.
 ## Main results
 
 * `IsTopologicallyNilpotent.summable_pow` : the geometric series `∑ aⁿ` is summable.
+* `IsTopologicallyNilpotent.summable_mul_pow` : in a linearly topologized ring, the power series
+  `∑ cₙ aⁿ` is summable for every family of coefficients `cₙ`.
 * `IsTopologicallyNilpotent.isUnit_one_sub` : the unit-hood half of Proposition 5.38.
 * `IsTopologicallyNilpotent.isUnit_one_add` : the `1 + a` form, which is the one consumers want.
 
@@ -69,6 +72,15 @@ theorem IsTopologicallyNilpotent.summable_pow {a : A} (ha : IsTopologicallyNilpo
     Summable (a ^ · : ℕ → A) := by
   rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, Nat.cofinite_eq_atTop]
   exact ha
+
+omit [T2Space A] [IsTopologicalRing A] [NonarchimedeanAddGroup A] in
+/-- For a topologically nilpotent `a`, the series `∑ cₙ aⁿ` converges for every family of
+coefficients `cₙ`, since the topology is linear. -/
+theorem IsTopologicallyNilpotent.summable_mul_pow [IsLinearTopology A A] {a : A}
+    (ha : IsTopologicallyNilpotent a) (c : ℕ → A) : Summable fun n ↦ c n * a ^ n := by
+  have := IsLinearTopology.nonarchimedeanAddGroup A (M := A)
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, Nat.cofinite_eq_atTop]
+  exact IsLinearTopology.tendsto_mul_zero_of_right c _ ha
 
 /-- **Wedhorn Proposition 5.38**: in a complete nonarchimedean ring, `1 - a` is a unit for every
 topologically nilpotent `a`. The inverse is `∑ aⁿ`, which the proof exhibits and

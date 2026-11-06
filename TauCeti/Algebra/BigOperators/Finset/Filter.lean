@@ -23,6 +23,8 @@ if they all equal one, so do the level products.
 
 * `Finset.prod_filter_or_eq_of_not`, `Finset.sum_filter_or_eq_of_not`: adjoining one point to
   the condition of a filtered product or sum.
+* `Finset.prod_subtype_eq_prod_of_mem`, `Finset.sum_subtype_eq_sum_of_mem`: reindexing a product or
+  sum over `Subtype p` to a finite superset `s` when the factors on `s` outside `p` are trivial.
 * `Finset.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one`: the level products of square roots
   of `1` are trivial when all their truncated power products are.
 -/
@@ -41,6 +43,21 @@ theorem _root_.Finset.prod_filter_or_eq_of_not {ι M : Type*} [DecidableEq ι] [
   rw [Finset.filter_or, Finset.prod_union (Finset.disjoint_filter.mpr fun i _ hi (hic : i = c) =>
     hc (hic ▸ hi)), Finset.filter_eq']
   split_ifs <;> simp
+
+/-- If `s` contains every element satisfying `p` and `f` equals `1` on `s` outside `p`, then the
+product of `f` over `Subtype p` equals its product over `s`. Unlike `Finset.prod_congr_set`, the
+ambient type `ι` need not be finite. -/
+@[to_additive /-- If `s` contains every element satisfying `p` and `f` vanishes on `s` outside `p`,
+then the sum of `f` over `Subtype p` equals its sum over `s`. Unlike `Finset.sum_congr_set`, the
+ambient type `ι` need not be finite. -/]
+theorem _root_.Finset.prod_subtype_eq_prod_of_mem {ι M : Type*} [CommMonoid M]
+    {p : ι → Prop} [Fintype (Subtype p)] (s : Finset ι)
+    (hs : ∀ x, p x → x ∈ s) (f : ι → M) (hf : ∀ x ∈ s, ¬p x → f x = 1) :
+    (∏ x : Subtype p, f x) = ∏ x ∈ s, f x := by
+  classical
+  rw [← Finset.prod_subtype (s.filter p) fun x => by
+    simp only [Finset.mem_filter]; exact ⟨And.right, fun hx => ⟨hs x hx, hx⟩⟩]
+  exact Finset.prod_filter_of_ne fun x hx hfx => by by_contra hp; exact hfx (hf x hx hp)
 
 /-- If `u i ^ 2 = 1` whenever `0 < k i`, and `∏_{i ∈ s} u i ^ (k i - j) = 1` for every `j`, then
 the product of the `u i` with `k i = m` is `1` for every `m ≥ 1`. -/
