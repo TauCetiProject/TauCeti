@@ -259,8 +259,8 @@ private theorem norm_coeff_le_of_isDistinguished_one {g : washnitzerAlgebra (Opt
 
 /-- The weighted bounds in `Y`-degrees `m ≠ s` behind radius selection. If the weights
 `w u ρ₁ ^ |u|` stay below `N` in `Y`-degrees above `s`, and `w u ρ₂ ^ |u|` below `N r` in
-`Y`-degrees below `s`, then `w (t, m) ρ ^ |t| r ^ m < N r ^ s` whenever `ρ ≤ ρ₂`, `ρ ≤ r ≤ ρ₁`
-and `1 < r`. -/
+`Y`-degrees below `s`, then `w (t, m) ρ ^ |t| r ^ m < N r ^ s` whenever `0 ≤ w`, `0 < N`,
+`0 < ρ`, `ρ ≤ ρ₂`, `ρ ≤ r ≤ ρ₁`, `1 < r` and `1 < ρ₂`. -/
 private theorem mul_pow_mul_pow_lt_of_ne {w : (Option σ →₀ ℕ) → ℝ} (hw : ∀ u, 0 ≤ w u)
     {s m : ℕ} (hm : m ≠ s) {N ρ ρ₁ ρ₂ r : ℝ} (hN : 0 < N) (hρ0 : 0 < ρ) (hr : 1 < r)
     (hρ₂ : 1 < ρ₂) (hrρ₁ : r ≤ ρ₁) (hρρ₂ : ρ ≤ ρ₂) (hρr : ρ ≤ r)
