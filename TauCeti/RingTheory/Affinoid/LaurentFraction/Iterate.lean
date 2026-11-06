@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RingTheory.Affinoid.Subdomain.Laurent
 import TauCeti.RingTheory.Affinoid.QuotientNorm
-import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.Normed
 
 /-!
 # Iterated Laurent presentations
@@ -36,68 +34,7 @@ universe u
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-section Points
-
-variable {A B : Type u} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
-  {r s r' s' : ℕ} {f : Fin r → A} {g : Fin s → A}
-  {φ : A →ₐ[K] B}
-
-namespace IsAffinoidSubdomainMap
-
-/-- The image of the Laurent domain defined by a second family is the Laurent domain defined
-by concatenating both families. This is a statement on classical points, with the first
-Laurent domain represented by `φ`. -/
-theorem image_laurentDomain (hφ : IsAffinoidSubdomainMap φ (laurentDomain K f g))
-    (hA : IsAffinoidAlgebra K A) (f' : Fin r' → A) (g' : Fin s' → A) :
-    hφ.isAffinoidAlgebra.maximalSpectrumComap φ ''
-      laurentDomain K (φ ∘ f') (φ ∘ g') =
-        laurentDomain K (Fin.append f f') (Fin.append g g') := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    have hx := hφ.range_maximalSpectrumComap_subset ⟨y, rfl⟩
-    simp only [mem_laurentDomain] at hx hy ⊢
-    simp only [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap] at hx ⊢
-    exact ⟨Fin.addCases (by simpa using hx.1) (by simpa using hy.1),
-      Fin.addCases (by simpa using hx.2) (by simpa using hy.2)⟩
-  · intro hx
-    rw [mem_laurentDomain] at hx
-    have hx₁ : x ∈ laurentDomain K f g :=
-      mem_laurentDomain.mpr ⟨fun i ↦ by simpa using hx.1 (Fin.castAdd r' i),
-        fun j ↦ by simpa using hx.2 (Fin.castAdd s' j)⟩
-    obtain ⟨y, rfl⟩ := (hφ.range_maximalSpectrumComap hA).symm ▸ hx₁
-    refine ⟨y, ?_, rfl⟩
-    simp only [mem_laurentDomain, Function.comp_apply]
-    exact ⟨fun i ↦ by
-      simpa only [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap, Fin.append_right]
-        using hx.1 (Fin.natAdd r i), fun j ↦ by
-      simpa only [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap, Fin.append_right]
-        using hx.2 (Fin.natAdd s j)⟩
-
-end IsAffinoidSubdomainMap
-
-end Points
-
 namespace LaurentFraction
-
-section Subdomain
-
-variable {A B : Type u} [CommRing A] [Algebra K A]
-  [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
-  {r s r' s' : ℕ} {f : Fin r → A} {g : Fin s → A} {φ : A →ₐ[K] B}
-
-/-- Successively imposing Laurent inequalities represents the concatenated Laurent domain,
-compatibly with the composite structure map from `A`. -/
-theorem isAffinoidSubdomainMap_iterate
-    (hφ : IsAffinoidSubdomainMap φ (laurentDomain K f g)) (hA : IsAffinoidAlgebra K A)
-    (f' : Fin r' → A) (g' : Fin s' → A) :
-    IsAffinoidSubdomainMap
-      ((IsScalarTower.toAlgHom K B (LaurentFraction (φ ∘ f') (φ ∘ g'))).comp φ)
-      (laurentDomain K (Fin.append f f') (Fin.append g g')) := by
-  rw [← hφ.image_laurentDomain hA f' g']
-  exact hφ.comp hA (isAffinoidSubdomainMap hφ.isAffinoidAlgebra)
-
-end Subdomain
 
 section Restriction
 
@@ -111,12 +48,8 @@ variable {A B : Type u}
 private theorem range_append_subset :
     Set.range ((isAffinoidAlgebra hA (Fin.append f f') (Fin.append g g')).maximalSpectrumComap
       (IsScalarTower.toAlgHom K A _)) ⊆ laurentDomain K f g := by
-  intro x hx
-  have hx := (isAffinoidSubdomainMap hA (f := Fin.append f f')
-    (g := Fin.append g g')).range_maximalSpectrumComap_subset hx
-  rw [mem_laurentDomain] at hx ⊢
-  exact ⟨fun i ↦ by simpa using hx.1 (Fin.castAdd r' i),
-    fun j ↦ by simpa using hx.2 (Fin.castAdd s' j)⟩
+  exact (isAffinoidSubdomainMap hA).range_maximalSpectrumComap_subset.trans
+    (by rw [laurentDomain_append]; exact Set.inter_subset_left)
 
 /-- Restriction from the first representing algebra to the combined Laurent presentation. It
 is the unique map extending the structure map from `A`. No norm on the first algebra is needed. -/
@@ -150,19 +83,8 @@ presentation as a topological `K`-algebra. No equality of quotient norms is asse
 noncomputable def iterateEquiv : C ≃A[K] D := by
   let hC := isAffinoidAlgebra hφ.isAffinoidAlgebra (φ ∘ f') (φ ∘ g')
   let hD := isAffinoidAlgebra hA (Fin.append f f') (Fin.append g g')
-  -- The quotient Gauss norms give the already specified quotient topologies.
-  haveI := (hA.isRestricted_subring (τ := Fin ((r + r') + (s + s')))).isNoetherianRing
-  haveI := (hφ.isAffinoidAlgebra.isRestricted_subring (τ := Fin (r' + s'))).isNoetherianRing
-  haveI := Huber.IsTateRing.of_normedAlgebra K
-    (MvPowerSeries.IsRestricted.subring (R := A) (fun _ : Fin ((r + r') + (s + s')) ↦ 1))
-  haveI := Huber.IsTateRing.of_normedAlgebra K
-    (MvPowerSeries.IsRestricted.subring (R := B) (fun _ : Fin (r' + s') ↦ 1))
-  haveI : IsClosed (laurentFractionIdeal (Fin.append f f') (Fin.append g g') : Set
-      (MvPowerSeries.IsRestricted.subring (R := A)
-        (fun _ : Fin ((r + r') + (s + s')) ↦ 1))) := Huber.isClosed_of_isNoetherian _
-  haveI : IsClosed (laurentFractionIdeal (φ ∘ f') (φ ∘ g') : Set
-      (MvPowerSeries.IsRestricted.subring (R := B) (fun _ : Fin (r' + s') ↦ 1))) :=
-    Huber.isClosed_of_isNoetherian _
+  haveI := isClosed_laurentFractionIdeal hA (Fin.append f f') (Fin.append g g')
+  haveI := isClosed_laurentFractionIdeal hφ.isAffinoidAlgebra (φ ∘ f') (φ ∘ g')
   haveI := hC.isNoetherianRing
   exact IsAffinoidAlgebra.toContinuousAlgEquiv (K := K) (A := C) (B := D) hD
     ((isAffinoidSubdomainMap_iterate hφ hA f' g').algEquiv (isAffinoidSubdomainMap hA))
