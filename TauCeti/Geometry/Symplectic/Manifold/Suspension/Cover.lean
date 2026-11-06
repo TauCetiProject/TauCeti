@@ -175,8 +175,8 @@ theorem isOrientationPreservingAt_suspensionCover [FiniteDimensional ℝ E]
       (suspensionCover φ) p := by
   have hstd := SymplecticForm.isNondegenerate_constSmooth (stdSymplecticForm (V := ℝ))
   have h2 : Module.finrank ℝ (ℝ × ℝ) = 2 := by simp
-  rw [← orientation_stdSymplecticForm_real h2, ← SymplecticForm.orientation_constSmooth,
-    ← hstd.orientation_prod hσn h2 hn]
+  rw [← SymplecticForm.orientation_stdSymplecticForm_real h2,
+    ← SymplecticForm.orientation_constSmooth, ← hstd.orientation_prod hσn h2 hn]
   exact (hstd.prod hσn).isOrientationPreservingAt_orientation _ _ _
     (isLocalDiffeomorph_suspensionCover φ).contMDiff mpullback_suspensionCover_suspensionForm p
 
