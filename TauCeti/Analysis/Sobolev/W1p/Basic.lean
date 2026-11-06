@@ -620,6 +620,12 @@ theorem W1p.locallyIntegrableOn_gradient (u : W1p mu Omega p) :
     LocallyIntegrableOn (W1p.gradient u : E → E) (Omega : Set E) mu :=
   Lp.locallyIntegrableOn (W1p.gradient u) Fact.out
 
+/-- A Sobolev function is integrable near every point of its (open) domain. -/
+theorem W1p.integrableAtFilter_value_of_mem (u : W1p mu Omega p) {x : E}
+    (hx : x ∈ (Omega : Set E)) : IntegrableAtFilter (W1p.value u) (nhds x) mu := by
+  simpa [nhdsWithin_eq_nhds.2 (Omega.isOpen.mem_nhds hx)] using
+    (W1p.hasWeakFDerivOn u).locallyIntegrableOn x hx
+
 section
 variable [BorelSpace E]
 
