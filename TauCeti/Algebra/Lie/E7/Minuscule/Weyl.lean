@@ -17,6 +17,8 @@ The pinned words `xᵢ(1) x₋ᵢ(-1) xᵢ(1)` normalize the weight torus of the
 reflection of the named simply connected E₇ root datum. They also carry the positive
 simple-root subgroup at their node to the negative one, negating its parameter.
 Products along words realize the corresponding Weyl-word action on the torus.
+Each representative lies in every subgroup containing the two unit-parameter root points at
+its node (`TauCeti.E7Minuscule.simpleWeylPoint_mem`).
 
 These equations supply normalizer representatives for transporting root subgroups and
 recognizing the carrier's root datum. They hold over arbitrary commutative value rings,
@@ -196,6 +198,15 @@ theorem weylWordPoint_mem_normalizer_weightTorusPoints (l : List (Fin 7))
     weylWordPoint l A ∈ Subgroup.normalizer (weightTorusPoints A).range :=
   Subgroup.list_prod_mem _ (List.forall_mem_map.2 fun i _ ↦
     simpleWeylPoint_mem_normalizer_weightTorusPoints i A)
+
+/-- Every subgroup containing the unit-parameter root points `xᵢ(1)` and `x₋ᵢ(1)` contains the
+simple Weyl representative at `i`. -/
+theorem simpleWeylPoint_mem {A : Type v} [CommRing A] {H : Subgroup (points A)} (i : Fin 7)
+    (hx : rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd 1) ∈ H)
+    (hy : rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1) ∈ H) :
+    simpleWeylPoint i A ∈ H := by
+  rw [simpleWeylPoint_def, ofAdd_neg, map_inv]
+  exact H.mul_mem (H.mul_mem hx (H.inv_mem hy)) hx
 
 end
 

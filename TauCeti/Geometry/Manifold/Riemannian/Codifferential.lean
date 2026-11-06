@@ -9,11 +9,13 @@ public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence
 
 /-!
 # The codifferential and the Hodge Laplacian of an oriented Riemannian manifold
@@ -67,6 +69,8 @@ star.
   smooth and compactly supported.
 * `TauCeti.SmoothForm.hodgeStar_mextDeriv`: `⋆dα = (-1) ^ (k + 1) d*⋆α`.
 * `TauCeti.SmoothForm.hodgeStar_hodgeLaplacian`: `⋆Δ = Δ⋆`.
+* `TauCeti.SmoothForm.hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami`: on functions,
+  `Δf = -div grad f`.
 * `TauCeti.SmoothForm.integralTopForm_inner_codifferential_mextDeriv`,
   `TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_codifferential`: Green's formulas for `d*d`
   and `dd*`.
@@ -340,6 +344,43 @@ theorem hodgeStar_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k
       hup (k := k + 1) (l := l) (by omega) (by omega) (by omega),
       hdown (k := k) (l := l + 1) (by omega) (by omega) (by omega)]
     exact add_comm _ _
+
+/-! ### Functions -/
+
+/-- **The Hodge Laplacian of a function is minus its Laplace–Beltrami operator**: for a smooth
+`0`-form `f`, with underlying function `x ↦ f x 0`, `Δf = d*df = -div grad f`. -/
+theorem hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami (o : Manifold.Orientation I M (Fin m))
+    (hl : 0 + l = m) (f : SmoothForm I M ℝ 0) :
+    (hodgeLaplacian o hl f : RoughForm I M ℝ 0) =
+      RoughForm.ofFunction I (-Manifold.laplaceBeltrami I fun x ↦ f.1 x 0) := by
+  set g : M → ℝ := fun x ↦ f.1 x 0
+  have hf : f.1 = RoughForm.ofFunction I g := RoughForm.eq_ofFunction _
+  rcases l with _ | l
+  · -- In dimension zero both sides vanish: the divergence is the trace of an endomorphism of the
+    -- zero space.
+    obtain rfl : m = 0 := by omega
+    have : Subsingleton E := Module.finrank_zero_iff.1 (by simpa using o.card_eq.symm)
+    funext x
+    ext v
+    have hA (A : Module.End ℝ (TangentSpace I x)) : A = 0 :=
+      LinearMap.ext fun _ ↦ Subsingleton.elim (α := E) _ _
+    rw [hodgeLaplacian_zero_zero, RoughForm.ofFunction_apply, Pi.neg_apply,
+      Manifold.laplaceBeltrami_def, Manifold.divergence_def, hA (_ : _ →L[ℝ] _).toLinearMap,
+      map_zero, neg_zero]
+    simp
+  · -- `Δf = -⋆d⋆df = -⋆d(ι_(grad f) vol) = -⋆((div grad f) vol) = -div grad f`.
+    obtain rfl : m = l + 1 := by omega
+    have hsmooth : ContMDiff I 𝓘(ℝ) ∞ g :=
+      isSmoothForm_ofFunction_iff.1 (hf ▸ f.isSmoothForm)
+    rw [hodgeLaplacian_zero_add_one o hl (by omega), codifferential_apply o _ (by omega),
+      Odd.neg_one_pow ⟨l + 1, by ring⟩]
+    simp only [SetLike.val_smul, coe_hodgeStar, mextDerivₗ_apply, hf]
+    rw [RoughForm.hodgeStar_mextDeriv_ofFunction, mextDeriv_interior_riemannianVolumeForm o
+        (Manifold.mdifferentiable_mgradient (hsmooth.of_le (by simp))),
+      RoughForm.hodgeStar_smul_riemannianVolumeForm]
+    funext x
+    ext v
+    simp [Manifold.laplaceBeltrami_def]
 
 /-! ### The `L²` pairing -/
 

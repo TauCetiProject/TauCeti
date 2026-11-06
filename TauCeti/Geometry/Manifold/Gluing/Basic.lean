@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import Mathlib.Geometry.Manifold.Immersion
 
 /-!
 # Manifolds glued from open pieces
@@ -79,6 +80,32 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {J : Type*} {U : J → Type*} [∀ j, TopologicalSpace (U j)] [∀ j, ChartedSpace H (U j)]
   {M : Type*} [TopologicalSpace M] {φ : ∀ j, U j → M}
   (hφ : ∀ j, IsOpenEmbedding (φ j)) (hcover : ∀ x, ∃ j y, φ j y = x)
+
+include hφ in
+/-- Open embeddings into a common topological space have smooth overlap transitions if their
+composites with a common map into an ambient manifold are smooth immersions. -/
+theorem exists_contMDiffAt_transition_of_isImmersion
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    [TopologicalSpace N] [ChartedSpace H' N] {g : M → N}
+    (hg : ∀ j, Manifold.IsImmersion I I' n (g ∘ φ j))
+    (j k : J) (x : U j) (y : U k) (hxy : φ j x = φ k y) :
+    ∃ T : U j → U k, ContMDiffAt I I n T x ∧ φ k ∘ T =ᶠ[𝓝 x] φ j := by
+  have : Nonempty (U k) := ⟨y⟩
+  let e := (hφ k).toOpenPartialHomeomorph (φ k)
+  let T := e.symm ∘ φ j
+  have hx : φ j x ∈ range (φ k) := ⟨y, hxy.symm⟩
+  have hT : ContinuousAt T x :=
+    (e.continuousOn_symm.continuousAt (by
+      simpa only [e, IsOpenEmbedding.toOpenPartialHomeomorph_target] using
+        (hφ k).isOpen_range.mem_nhds hx)).comp (hφ j).continuous.continuousAt
+  have hEq : φ k ∘ T =ᶠ[𝓝 x] φ j := by
+    filter_upwards [(hφ j).continuous.continuousAt.preimage_mem_nhds
+      ((hφ k).isOpen_range.mem_nhds hx)] with z hz
+    exact (hφ k).toOpenPartialHomeomorph_right_inv _ hz
+  refine ⟨T, ?_, hEq⟩
+  rw [ContMDiffAt.iff_comp_isImmersionAt ((hg k).isImmersionAt (T x))]
+  exact ⟨hT, ((hg j).contMDiff x).congr_of_eventuallyEq (hEq.fun_comp g)⟩
 
 /-- The charted-space structure on a space covered by open embeddings of charted spaces: the chart
 at a point is the inverse of the embedding of a piece containing it, followed by a chart of that
