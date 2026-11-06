@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
+public import TauCeti.Data.Finsupp.MassTransfer
 
 /-!
 # The barycentric identification for stellar subdivision
@@ -190,48 +191,6 @@ private theorem stellarSubdivisionLinearMap_lift (hσ : σ.Nonempty) (hvσ : v �
   simp only [hxv, ite_true, hvσ, ite_false, sub_zero, zero_add]
   by_cases hiv : i = v <;> by_cases his : i ∈ σ <;> simp [hiv, his, hvσ, hxv, hc]
 
-/-- Moving the mass `x a` of a least coordinate `a` on the starred face `σ` to the new vertex `v`
-gives a nonnegative vector with nonempty support, whose coordinate at `a` is zero. -/
-private theorem exists_transfer_vector (hvσ : v ∉ σ) {x : ι →₀ ℝ} (hxpos : ∀ i, 0 ≤ x i)
-    (hxsum : x.sum (fun _ r => r) = 1) (hxv : x v = 0) {a : ι} (haσ : a ∈ σ)
-    (hmin : ∀ i ∈ σ, x a ≤ x i) :
-    ∃ y : ι →₀ ℝ, y = x + x a • ((σ.card : ℝ) • Finsupp.single v 1 -
-        ∑ i ∈ σ, Finsupp.single i 1) ∧
-      (∀ i, y i = x i + x a *
-        ((if i = v then (σ.card : ℝ) else 0) - if i ∈ σ then 1 else 0)) ∧
-      (∀ i, 0 ≤ y i) ∧ y a = 0 ∧ y.support.Nonempty := by
-  have hav : a ≠ v := fun h => hvσ (h ▸ haσ)
-  let c : ι →₀ ℝ := ∑ i ∈ σ, Finsupp.single i 1
-  let y : ι →₀ ℝ := x + x a • ((σ.card : ℝ) • Finsupp.single v 1 - c)
-  have hycoord (i : ι) : y i = x i + x a *
-      ((if i = v then (σ.card : ℝ) else 0) - if i ∈ σ then 1 else 0) := by
-    simp [y, c, Finsupp.single_apply, eq_comm]
-  -- Remove equal mass on σ and transfer it to v, preserving nonnegativity.
-  have hypos : ∀ i, 0 ≤ y i := by
-    intro i
-    rw [hycoord]
-    by_cases hiv : i = v
-    · subst i
-      simp only [hxv, ite_true, hvσ, ite_false, sub_zero, zero_add]
-      exact mul_nonneg (hxpos a) (Nat.cast_nonneg _)
-    · by_cases his : i ∈ σ
-      · simp only [hiv, ite_false, his, ite_true, zero_sub, mul_neg_one]
-        linarith [hmin i his]
-      · simpa [hiv, his] using hxpos i
-  have hya : y a = 0 := by simp [hycoord, haσ, hav]
-  have hyne : y.support.Nonempty := by
-    have hsum : y.sum (fun _ r => r) = 1 := by
-      let S := Finsupp.linearCombination ℝ (fun _ : ι => (1 : ℝ))
-      have hS (z : ι →₀ ℝ) : S z = z.sum (fun _ r => r) := by
-        simp [S, Finsupp.linearCombination_apply]
-      rw [← hS]
-      have hSx : S x = 1 := (hS x).trans hxsum
-      simp [y, c, map_add, map_smul, map_sub, map_sum, hSx, S]
-    apply Finsupp.support_nonempty_iff.mpr
-    intro hz
-    simp [hz] at hsum
-  exact ⟨y, rfl, hycoord, hypos, hya, hyne⟩
-
 /-- Every point of the original polyhedron has a preimage in the stellar polyhedron
 when the starred face belongs to the original complex and the new vertex is unused. -/
 theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
@@ -252,7 +211,7 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
       σ.finite_toSet hσne
     have haσ : a ∈ σ := ha
     obtain ⟨y, hy, hycoord, hypos, hya, hyne⟩ :=
-      exists_transfer_vector hvσ hxpos hxsum hxv haσ hmin
+      Finsupp.exists_transfer_vector hvσ hxpos hxsum hxv haσ hmin
     -- The least coordinate vanishes, and every other old coordinate stays in the old face.
     have hysub : y.support.erase v ⊆ x.support := by
       intro i hi
