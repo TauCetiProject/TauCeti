@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fintype.Prod
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Inversions of a map on a finite set
@@ -43,6 +44,10 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
   `g ∘ f` on `s` add up to an even number.
 * `Finset.neg_one_pow_card_inversions_comp`: the inversion sign of `g ∘ f` on `s` is the product
   of the inversion signs of `f` on `s` and of `g` on `f(s)`.
+* `Finset.card_univ_inversions_eq_comp_succAbove`: deleting the entry at `k` of a tuple removes
+  the inversions involving `k`.
+* `Finset.neg_one_pow_card_univ_inversions_comp_succAbove`: the inversion sign of a tuple compared
+  with the inversion sign of the tuple with its entry at `k` deleted.
 -/
 
 public section
@@ -184,5 +189,59 @@ theorem neg_one_pow_card_inversions_comp {R : Type*} [Monoid R] [HasDistribNeg R
   · have h'' : Odd (#(s.inversions f) + #((s.map f).inversions g)) :=
       Nat.not_even_iff_odd.1 fun h'' ↦ Nat.not_even_iff_odd.2 h' (h.2 h'')
     rw [h'.neg_one_pow, h''.neg_one_pow]
+
+section Tuple
+
+variable {n : ℕ}
+
+/-- Deleting the entry at `k` of a tuple `b` removes the inversions `(k, j)` and `(i, k)`. -/
+theorem card_univ_inversions_eq_comp_succAbove (b : Fin (n + 1) → β) (k : Fin (n + 1)) :
+    #(univ.inversions b) = #(univ.inversions (b ∘ k.succAbove)) + #{j | k < j ∧ b j < b k} +
+      #{i | i < k ∧ b k < b i} := by
+  have hcard {m : ℕ} (f : Fin m → β) :
+      #(univ.inversions f) = ∑ i, ∑ j, if i < j ∧ f j < f i then 1 else 0 := by
+    rw [inversions_univ, card_filter, ← univ_product_univ, sum_product]
+  have h₁ : (∑ i, if i < k ∧ b k < b i then 1 else 0) =
+      ∑ i, if k.succAbove i < k ∧ b k < b (k.succAbove i) then 1 else 0 := by
+    rw [Fin.sum_univ_succAbove _ k]
+    simp
+  rw [card_filter, card_filter]
+  simp only [hcard, Fin.sum_univ_succAbove _ k, lt_self_iff_false, false_and,
+    ite_false, zero_add, Finset.sum_add_distrib, comp_apply, Fin.succAbove_lt_succAbove_iff]
+  omega
+
+/-- **Deleting an entry changes the inversion sign by a position count.** The inversion sign of a
+tuple `b`, times the sign recording the earlier entries equal to `b k`, is the sign recording the
+position `k` and the number of entries smaller than `b k`, times the inversion sign of the tuple
+with its entry at `k` deleted. -/
+theorem neg_one_pow_card_univ_inversions_comp_succAbove {R : Type*} [Monoid R] [HasDistribNeg R]
+    (b : Fin (n + 1) → β) (k : Fin (n + 1)) :
+    (-1 : R) ^ #(univ.inversions b) * (-1) ^ #{i | i < k ∧ b i = b k} =
+      (-1) ^ (#{i | b i < b k} + (k : ℕ)) * (-1) ^ #(univ.inversions (b ∘ k.succAbove)) := by
+  have hk : (k : ℕ) = #{i | i < k ∧ b i < b k} + #{i | i < k ∧ b i = b k} +
+      #{i | i < k ∧ b k < b i} := by
+    have : #{i : Fin (n + 1) | i < (k : ℕ)} = k := by
+      rw [Fin.card_filter_val_lt]
+      omega
+    rw [← this, card_filter, card_filter, card_filter, card_filter, ← sum_add_distrib,
+      ← sum_add_distrib]
+    refine sum_congr rfl fun i _ ↦ ?_
+    rcases lt_trichotomy (b i) (b k) with h | h | h
+    · simp [h, h.ne, h.not_gt]
+    · simp [h]
+    · simp [h, h.ne', h.not_gt]
+  have hL : #{i | b i < b k} = #{i | i < k ∧ b i < b k} + #{j | k < j ∧ b j < b k} := by
+    rw [card_filter, card_filter, card_filter, ← sum_add_distrib]
+    refine sum_congr rfl fun i _ ↦ ?_
+    rcases lt_trichotomy i k with h | rfl | h
+    · simp [h, h.not_gt]
+    · simp
+    · simp [h, h.not_gt]
+  have h := card_univ_inversions_eq_comp_succAbove b k
+  rw [← pow_add, ← pow_add, show #{i | b i < b k} + (k : ℕ) + #(univ.inversions (b ∘ k.succAbove)) =
+    #(univ.inversions b) + #{i | i < k ∧ b i = b k} + 2 * #{i | i < k ∧ b i < b k} by omega,
+    pow_add _ _ (2 * _), pow_mul, neg_one_sq, one_pow, mul_one]
+
+end Tuple
 
 end Finset
