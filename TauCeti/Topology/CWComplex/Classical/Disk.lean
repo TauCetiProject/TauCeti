@@ -24,19 +24,18 @@ single point of the disk.
 An arbitrary disjoint union of disks `Σ i, 𝔻 (n i)` is then a relative CW complex relative to the
 disjoint union of the boundary spheres (`TauCeti.diskSigmaRelCW`), with one `n i`-cell for each
 summand `i` (`TauCeti.diskSigmaRelCWCellEquiv`). Its base is homeomorphic to the disjoint union
-`Σ i, ∂𝔻 (n i)` of the boundary spheres themselves (`TauCeti.diskSigmaBoundaryHomeomorph`), so a
-family of attaching maps `∂𝔻 (n i) → Z` is a single map out of the base. These disk pairs are the
-cells attached in a relative CW pushout, for instance at each critical level of a Morse function.
+`Σ i, ∂𝔻 (n i)` of the boundary spheres themselves (`TauCeti.diskSigmaBoundaryHomeomorph`, in
+`TauCeti.AlgebraicTopology.Disk.BoundaryRange`, which also identifies the base of
+`TauCeti.diskBoundaryRelCW n` with `∂𝔻 n`), so a family of attaching maps `∂𝔻 (n i) → Z` is a
+single map out of the base. These disk pairs are the cells attached in a relative CW pushout, for
+instance at each critical level of a Morse function.
 
 ## Main definitions
 
 * `TauCeti.diskAttachCells n`: the boundary inclusion `∂𝔻 n ⟶ 𝔻 n` attaches one `n`-cell.
 * `TauCeti.diskBoundaryRelCW n`: the relative CW structure on `𝔻 n` relative to its boundary.
-* `TauCeti.diskBoundaryRangeHomeomorph n`: the base of `TauCeti.diskBoundaryRelCW n` is
-  homeomorphic to `∂𝔻 n`.
 * `TauCeti.diskSigmaRelCW n`: the relative CW structure on a disjoint union of disks.
 * `TauCeti.diskSigmaRelCWCellEquiv n m`: its `m`-cells are the summands of dimension `m`.
-* `TauCeti.diskSigmaBoundaryHomeomorph n`: its base is homeomorphic to `Σ i, ∂𝔻 (n i)`.
 
 ## Main results
 
@@ -146,26 +145,8 @@ theorem map_diskBoundaryRelCW (n : ℕ)
     @map _ _ _ _ (diskBoundaryRelCW n) n j x = (diskHomeomorphClosedBall n).symm x := by
   have h := (diskAttachCells n).map_cellToRelCWComplexEquiv_symm
     ((diskAttachCells n).cellToRelCWComplexEquiv j) x
-  rw [Equiv.symm_apply_apply, diskAttachCells_cell] at h
-  exact h.trans rfl
-
-/-- The base of `TauCeti.diskBoundaryRelCW n`, the image of the boundary sphere in the disk, is
-homeomorphic to the boundary sphere `∂𝔻 n` by the boundary inclusion. -/
-def diskBoundaryRangeHomeomorph (n : ℕ) :
-    range (TopCat.diskBoundaryInclusion.{u} n) ≃ₜ TopCat.diskBoundary.{u} n :=
-  (TopCat.isClosedEmbedding_diskBoundaryInclusion n).isEmbedding.toHomeomorph.symm
-
-@[simp]
-theorem coe_diskBoundaryRangeHomeomorph_symm_apply (n : ℕ) (s : TopCat.diskBoundary.{u} n) :
-    ((diskBoundaryRangeHomeomorph n).symm s : TopCat.disk.{u} n) =
-      TopCat.diskBoundaryInclusion n s :=
-  (rfl)
-
-@[simp]
-theorem diskBoundaryInclusion_diskBoundaryRangeHomeomorph_apply (n : ℕ)
-    (z : range (TopCat.diskBoundaryInclusion.{u} n)) :
-    TopCat.diskBoundaryInclusion n (diskBoundaryRangeHomeomorph n z) = z := by
-  rw [← coe_diskBoundaryRangeHomeomorph_symm_apply, Homeomorph.symm_apply_apply]
+  rw [Equiv.symm_apply_apply, diskAttachCells_cell, TopCat.id_app] at h
+  exact h
 
 end Disk
 
@@ -214,6 +195,7 @@ instance finiteDiskSigmaRelCW [Finite ι] :
 /-- The characteristic map of the cell of the summand `i` of `TauCeti.diskSigmaRelCW n` is the
 inverse of the radial identification `TauCeti.diskHomeomorphClosedBall (n i)` followed by the
 inclusion of the summand. -/
+@[simp]
 theorem map_diskSigmaRelCW (i : ι) (x : closedBall (0 : Fin (n i) → ℝ) 1) :
     @map _ _ _ _ (diskSigmaRelCW n) (n i) ((diskSigmaRelCWCellEquiv n (n i)).symm ⟨i, rfl⟩) x =
       ⟨i, (diskHomeomorphClosedBall (n i)).symm x⟩ := by
@@ -222,46 +204,10 @@ theorem map_diskSigmaRelCW (i : ι) (x : closedBall (0 : Fin (n i) → ℝ) 1) :
   have h : (diskSigmaRelCWCellEquiv n (n i)).symm ⟨i, rfl⟩ =
       (RelCWComplex.sigmaUnivCellEquiv _ (n i)).symm ⟨i, default⟩ :=
     (diskSigmaRelCWCellEquiv n (n i)).symm_apply_eq.2 <| Subtype.ext <| by
-      simp [diskSigmaRelCWCellEquiv, Equiv.sigmaPLiftEquivSubtype]
-      rfl
+      simp [diskSigmaRelCWCellEquiv, Equiv.sigmaPLiftEquivSubtype, Equiv.psigmaEquivSubtype]
   rw [h]
   exact (congrFun (RelCWComplex.coe_map_sigmaUniv (X := fun i ↦ TopCat.disk.{u} (n i)) _ (n i) i
     default) x).trans (congrArg (Sigma.mk i) (map_diskBoundaryRelCW (n i) default x))
-
-/-- The base of `TauCeti.diskSigmaRelCW n` is homeomorphic to the disjoint union
-`Σ i, ∂𝔻 (n i)` of the boundary spheres, by the boundary inclusions of the summands. A family of
-attaching maps `∂𝔻 (n i) → Z` thus becomes a single map out of the base, by composition with
-`ContinuousMap.sigma`. -/
-def diskSigmaBoundaryHomeomorph :
-    (univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) ≃ₜ
-      Σ i, TopCat.diskBoundary.{u} (n i) :=
-  (((isEmbedding_sigmaMap (f₁ := id) Function.injective_id).2 fun i ↦
-    (TopCat.isClosedEmbedding_diskBoundaryInclusion (n i)).isEmbedding).toHomeomorph.trans
-      (Homeomorph.setCongr sigma_univ_range_eq.symm)).symm
-
-@[simp]
-theorem coe_diskSigmaBoundaryHomeomorph_symm_apply (s : Σ i, TopCat.diskBoundary.{u} (n i)) :
-    ((diskSigmaBoundaryHomeomorph n).symm s : Σ i, TopCat.disk.{u} (n i)) =
-      ⟨s.1, TopCat.diskBoundaryInclusion (n s.1) s.2⟩ :=
-  (rfl)
-
-/-- `TauCeti.diskSigmaBoundaryHomeomorph n` keeps the summand index. -/
-@[simp]
-theorem fst_diskSigmaBoundaryHomeomorph_apply
-    (z : univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) :
-    (diskSigmaBoundaryHomeomorph n z).1 = (z : Σ i, TopCat.disk.{u} (n i)).1 := by
-  conv_rhs => rw [← (diskSigmaBoundaryHomeomorph n).symm_apply_apply z]
-  rw [coe_diskSigmaBoundaryHomeomorph_symm_apply]
-
-/-- Including the boundary point given by `TauCeti.diskSigmaBoundaryHomeomorph n` into its disk
-recovers the original point. -/
-@[simp]
-theorem sigmaMk_diskBoundaryInclusion_diskSigmaBoundaryHomeomorph_apply
-    (z : univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) :
-    (⟨(diskSigmaBoundaryHomeomorph n z).1,
-      TopCat.diskBoundaryInclusion _ (diskSigmaBoundaryHomeomorph n z).2⟩ :
-        Σ i, TopCat.disk.{u} (n i)) = z := by
-  rw [← coe_diskSigmaBoundaryHomeomorph_symm_apply, Homeomorph.symm_apply_apply]
 
 end Sigma
 

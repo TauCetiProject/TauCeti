@@ -190,6 +190,29 @@ theorem coe_map_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
       Sigma.mk i ∘ map n j :=
   coe_map_sigma (fun i ↦ (univ : Set (X i))) D n i j
 
+/-- Open cells of `RelCWComplex.sigmaUniv` are the summand images of the original open cells. -/
+@[simp]
+theorem openCell_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    @openCell _ _ _ _ (sigmaUniv D) n ((sigmaUnivCellEquiv D n).symm ⟨i, j⟩) =
+      Sigma.mk i '' openCell n j :=
+  openCell_sigma (fun i ↦ (univ : Set (X i))) D n i j
+
+/-- Closed cells of `RelCWComplex.sigmaUniv` are the summand images of the original closed
+cells. -/
+@[simp]
+theorem closedCell_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    @closedCell _ _ _ _ (sigmaUniv D) n ((sigmaUnivCellEquiv D n).symm ⟨i, j⟩) =
+      Sigma.mk i '' closedCell n j :=
+  closedCell_sigma (fun i ↦ (univ : Set (X i))) D n i j
+
+/-- Cell frontiers of `RelCWComplex.sigmaUniv` are the summand images of the original
+frontiers. -/
+@[simp]
+theorem cellFrontier_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    @cellFrontier _ _ _ _ (sigmaUniv D) n ((sigmaUnivCellEquiv D n).symm ⟨i, j⟩) =
+      Sigma.mk i '' cellFrontier n j :=
+  cellFrontier_sigma (fun i ↦ (univ : Set (X i))) D n i j
+
 end Univ
 
 end Topology.RelCWComplex
