@@ -146,16 +146,14 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
     rw [hsq, ← h ν inferInstance hνneg] at h'
     linarith
   intro ρ _ hρ
-  have hsym (s : Set ℝ) (hs : MeasurableSet s) : ρ.real (-s) = ρ.real s := by
-    have := map_measureReal_apply (μ := ρ) (f := fun y : ℝ ↦ -y) (by fun_prop) hs
-    rw [hρ, Set.neg_preimage] at this
-    exact this.symm
+  have : ρ.IsNegInvariant := ⟨hρ⟩
   rw [map_measureReal_apply (by fun_prop) MeasurableSet.univ, preimage_univ]
   split_ifs with hx
   · rw [map_measureReal_apply (by fun_prop) measurableSet_Iic,
       show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic (x ^ 2) = Icc (-x) x by
         ext y; simp [sq_le_sq, abs_of_nonneg hx, abs_le]]
-    have htail := hsym (Ioi x) measurableSet_Ioi
+    have htail : ρ.real (-Ioi x) = ρ.real (Ioi x) := by
+      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
     have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Iic (a := x))
     rw [Set.neg_Ioi] at htail
     rw [compl_Iic] at htot
@@ -165,7 +163,8 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
   · rw [map_measureReal_apply (by fun_prop) measurableSet_Iio,
       show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iio (x ^ 2) = Ioo x (-x) by
         ext y; simp [sq_lt_sq, abs_of_neg (not_le.1 hx), abs_lt]]
-    have htail := hsym (Ici (-x)) measurableSet_Ici
+    have htail : ρ.real (-Ici (-x)) = ρ.real (Ici (-x)) := by
+      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
     have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Ici (a := -x))
     rw [Set.neg_Ici, neg_neg] at htail
     rw [compl_Ici, ← Iic_union_Ioo_eq_Iio (by linarith : x < -x),
