@@ -22,7 +22,9 @@ the measures of that decomposition:
   `TauCeti.multHaar = dt / t` of `(0, ∞)`; it is Lebesgue measure on the positive orthant with
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
   `y ↦ c y`, `c > 0` (`map_archHaar_smul`), as well as independent positive dilations
-  (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`).
+  (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`); the coordinatewise
+  power map `y ↦ y ^ m` carries it to `m ^ (-r) dy / y`, `r` the number of infinite places
+  (`map_archHaar_pow`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
   and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite. Neukirch's canonical surface measure
@@ -123,6 +125,21 @@ theorem map_archHaar_inv : (archHaar K).map Inv.inv = archHaar K := by
     exact Pi.inv_apply y w
   rw [hinv, archHaar, pi_map_pi fun _ ↦ measurable_inv.aemeasurable]
   simp_rw [map_multHaar_inv]
+
+/-- The power map `y ↦ y ^ n`, `n ≠ 0`, of the parameters carries `dy / y` to `n ^ (-r) dy / y`,
+`r` the number of infinite places. -/
+theorem map_archHaar_pow {n : ℕ} (hn : n ≠ 0) :
+    (archHaar K).map (· ^ n) = ((n : ℝ≥0∞) ^ Fintype.card (InfinitePlace K))⁻¹ • archHaar K := by
+  have : SigmaFinite ((n : ℝ≥0∞)⁻¹ • multHaar) := by
+    rw [← ENNReal.coe_natCast, ← ENNReal.coe_inv (Nat.cast_ne_zero.mpr hn), ← ENNReal.smul_def]
+    infer_instance
+  have : SigmaFinite (multHaar.map (· ^ n)) := by
+    rwa [map_multHaar_pow hn]
+  have hpow : (· ^ n : realSpace K → realSpace K) = fun y w ↦ y w ^ n := rfl
+  rw [hpow, archHaar, pi_map_pi fun _ ↦ (continuous_pow n).aemeasurable]
+  simp_rw [map_multHaar_pow hn]
+  refine pi_eq fun s _ ↦ ?_
+  simp [Finset.prod_mul_distrib, ENNReal.inv_pow]
 
 /-! ### The Haar measure of the norm-one hypersurface -/
 

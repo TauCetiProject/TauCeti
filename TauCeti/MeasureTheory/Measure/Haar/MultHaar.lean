@@ -17,7 +17,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 `(0, ∞)` with density `t⁻¹`. It is the image of Lebesgue measure under `Real.exp`
 (`TauCeti.map_volume_exp`), so it is invariant under every dilation `t ↦ c t` with `c > 0`
 (`TauCeti.map_multHaar_mul_left`), is invariant under inversion (`TauCeti.map_multHaar_inv`),
-and gives the interval `[1, e]` mass one.
+is carried to `n⁻¹ dt / t` by the power map `t ↦ t ^ n` (`TauCeti.map_multHaar_pow`), and gives
+the interval `[1, e]` mass one.
 
 It is the Haar measure of the multiplicative group `(0, ∞)` up to a scalar, and the scalar is
 read off `[1, e]`: a measure on `ℝ` that does not charge `(-∞, 0]`, is invariant under the
@@ -102,6 +103,17 @@ theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
     simp [Real.exp_neg]
   rw [← map_volume_exp, map_map measurable_inv Real.measurable_exp, hcomp,
     ← map_map Real.measurable_exp measurable_neg, map_neg_eq_self]
+
+/-- The power map `t ↦ t ^ n`, `n ≠ 0`, carries `dt / t` to `n⁻¹ dt / t`. -/
+theorem map_multHaar_pow {n : ℕ} (hn : n ≠ 0) : multHaar.map (· ^ n) = (n : ℝ≥0∞)⁻¹ • multHaar := by
+  have hcomp : (· ^ n) ∘ Real.exp = Real.exp ∘ ((n : ℝ) * ·) := by
+    ext u
+    simp [← Real.exp_nat_mul]
+  rw [← map_volume_exp, map_map (continuous_pow n).measurable Real.measurable_exp, hcomp,
+    ← map_map Real.measurable_exp (measurable_const_mul _),
+    Real.map_volume_mul_left (Nat.cast_ne_zero.mpr hn), Measure.map_smul, abs_inv, Nat.abs_cast,
+    ENNReal.ofReal_inv_of_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)), ENNReal.ofReal_natCast]
+  exact Real.measurable_exp.aemeasurable
 
 /-- **Uniqueness of `dt / t`.** A measure on `ℝ` that does not charge `(-∞, 0]`, is invariant
 under the dilations `t ↦ c t` for `c > 0`, and is finite on `[1, e]` is its mass on `[1, e]` times

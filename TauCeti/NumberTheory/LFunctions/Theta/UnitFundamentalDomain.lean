@@ -175,6 +175,13 @@ theorem unitScale_eq_self_iff {y : realSpace K} (hy : ∀ w, y w ≠ 0) (u : (�
   rw [unitScale_apply, mul_eq_right₀ (hy w),
     pow_eq_one_iff_of_nonneg (apply_nonneg _ _) two_ne_zero]
 
+/-- A root of unity fixes every parameter: its absolute values are all `1`. -/
+theorem unitScale_of_mem_torsion {ζ : (𝓞 K)ˣ} (hζ : ζ ∈ torsion K) (y : realSpace K) :
+    unitScale ζ y = y := by
+  rw [mem_torsion] at hζ
+  ext w
+  simp [hζ w]
+
 /-! ### The norm-one hypersurface -/
 
 variable (K) in
