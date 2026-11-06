@@ -1416,8 +1416,7 @@ noncomputable def weightedMap [NonarchimedeanRing A] [NonarchimedeanRing B] {φ 
     (hφ : Continuous φ) {T : Fin k → Set A} {S : Fin k → Set B} (hT : IsWeightFamily T)
     (hS : IsWeightFamily S) (hTS : ∀ i, φ '' T i ⊆ S i) :
     weightedRestrictedSubring T hT →+* weightedRestrictedSubring S hS :=
-  ((MvPowerSeries.map φ).comp (weightedRestrictedSubring T hT).subtype).codRestrict _
-    fun f ↦ f.property.map hφ hTS
+  (MvPowerSeries.map φ).restrict _ _ fun _ hf ↦ hf.map hφ hTS
 
 /-- `weightedMap` is `MvPowerSeries.map` with its codomain cut down, so its values coerce back to
 the coefficientwise map. -/
