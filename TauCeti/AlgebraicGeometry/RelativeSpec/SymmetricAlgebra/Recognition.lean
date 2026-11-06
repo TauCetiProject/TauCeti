@@ -268,6 +268,9 @@ theorem specSymmetricAlgebraOverIso_forget_map_hom {M N : ModuleCat.{u} R}
       specSymmetricAlgebraMap e.symm.toLinearMap := by
   apply Over.OverMorphism.ext
   rw [← Over.forget_map, ← Functor.comp_map]
+  -- Across the `MorphismProperty.Over.forget` wrapper, `@IsAffineHom` has implicit scheme
+  -- binders; plain `rw` cannot typecheck it as `MorphismProperty Scheme` at implicit
+  -- transparency. `erw` unfolds it so the composite-forget lemma applies.
   erw [MorphismProperty.Over.forget_comp_forget_map]
   rw [specSymmetricAlgebraOverIso_hom_left, specSymmetricAlgebraMap_left,
     SymmetricAlgebra.mapEquiv_symm]
