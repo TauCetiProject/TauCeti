@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
-import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Symplectic.Lagrangian.TotallyReal
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 
