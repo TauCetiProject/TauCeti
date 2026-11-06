@@ -27,9 +27,10 @@ scalar restriction) applies verbatim to the relative theory.
 What is specific to the forced unitization is the augmentation `Unitization R A → R`, which
 splits scalar restriction; this records explicitly the contravariant splitting used by the
 relative theory. The cocycles, coboundaries, classes and the map to the cyclic cohomology of the
-forced unitization are the reduced ones of the forced unitization, and pullback along a
-homomorphism of nonunital algebras is reduced pullback along the induced map of forced
-unitizations.
+forced unitization are the reduced ones (`TauCeti.reducedCyclicCocycles`,
+`TauCeti.reducedCyclicCohomology.mk`, `TauCeti.reducedCyclicCohomology.toCyclic`) at
+`Unitization R A`, and pullback along a homomorphism of nonunital algebras is reduced pullback
+along the induced map of forced unitizations.
 
 ## Main definitions
 
@@ -37,13 +38,10 @@ unitizations.
 * `TauCeti.unitizationAugmentationPullback`: pullback along the augmentation, a splitting of
   scalar restriction on the forced unitization.
 * `TauCeti.relativeCyclicCochainComplex`: the relative cyclic cochain complex.
-* `TauCeti.relativeCyclicCocycles`, `TauCeti.relativeCyclicCoboundaries`: concrete cocycles and
-  coboundaries.
 * `TauCeti.relativeCyclicCohomology`: the relative cyclic cohomology of a nonunital algebra.
-* `TauCeti.relativeCyclicCohomology.mk`: the class of a relative cyclic cocycle.
 * `TauCeti.relativeCyclicCohomology.map`: pullback along a homomorphism of nonunital algebras.
-* `TauCeti.relativeCyclicCohomology.toUnitization`: the map from relative cyclic cohomology to the
-  cyclic cohomology of the forced unitization.
+* `TauCeti.relativeCyclicCohomology.toCyclic_map_unitization`: naturality of the map to the cyclic
+  cohomology of the forced unitization.
 
 ## References
 
@@ -113,23 +111,6 @@ abbrev relativeCyclicCochains (n : ℕ) :
 
 end Cochains
 
-section Cocycles
-
-variable (R : Type*) (A : Type u) (M : Type*) [CommSemiring R] [NonUnitalSemiring A]
-  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
-/-- The relative cyclic `n`-cocycles: the reduced cyclic cocycles of the forced unitization,
-relative cochains annihilated by the reduced Hochschild coboundary. -/
-abbrev relativeCyclicCocycles (n : ℕ) : Submodule R (relativeCyclicCochains R A M n) :=
-  reducedCyclicCocycles R (Unitization R A) M n
-
-/-- The relative cyclic coboundaries: the reduced cyclic coboundaries of the forced unitization,
-zero in degree zero and in positive degree the image of the reduced Hochschild coboundary. -/
-abbrev relativeCyclicCoboundaries (n : ℕ) : Submodule R (relativeCyclicCochains R A M n) :=
-  reducedCyclicCoboundaries R (Unitization R A) M n
-
-end Cocycles
-
 section Complex
 
 variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
@@ -146,12 +127,6 @@ forced unitization, the cohomology of the kernel of scalar restriction on the cy
 complex of the forced unitization. -/
 abbrev relativeCyclicCohomology (n : ℕ) : ModuleCat R :=
   reducedCyclicCohomology R (Unitization R A) M n
-
-/-- The relative cyclic cohomology class of a relative cyclic cocycle: its class in the reduced
-cyclic cohomology of the forced unitization. -/
-abbrev relativeCyclicCohomology.mk (n : ℕ) :
-    relativeCyclicCocycles R A M n →ₗ[R] relativeCyclicCohomology R A M n :=
-  reducedCyclicCohomology.mk R (Unitization R A) M n
 
 end Complex
 
@@ -176,9 +151,9 @@ def map (f : A →ₙₐ[R] B) (n : ℕ) :
 /-- The induced map sends the class of a relative cocycle to the class of its pullback along the
 induced map of forced unitizations. -/
 @[simp]
-theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : relativeCyclicCocycles R B M n) :
-    map M f n (mk R B M n φ) =
-      mk R A M n
+theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : reducedCyclicCocycles R (Unitization R B) M n) :
+    map M f n (reducedCyclicCohomology.mk R (Unitization R B) M n φ) =
+      reducedCyclicCohomology.mk R (Unitization R A) M n
         ⟨reducedCyclicCochainsMap M (Unitization.map f) n φ,
           reducedCyclicCochainsMap_mem_reducedCyclicCocycles (R := R) (M := M)
             (Unitization.map f) φ⟩ := by
@@ -205,23 +180,15 @@ variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalRing A] [Mo
 
 namespace relativeCyclicCohomology
 
-/-- The map `HCⁿ(A; M) → HCⁿ(A⁺; M)` from relative cyclic cohomology to the cyclic cohomology of
-the forced unitization `A⁺ = Unitization R A`, induced by the inclusion of relative cyclic
-cochains. -/
-abbrev toUnitization (n : ℕ) :
-    relativeCyclicCohomology R A M n ⟶ cyclicCohomology R (Unitization R A) M n :=
-  reducedCyclicCohomology.toCyclic R (Unitization R A) M n
-
-variable {R A M}
-
+variable {R A M} in
 /-- The map to the cyclic cohomology of the forced unitization is natural for homomorphisms of
 nonunital algebras. -/
-theorem toUnitization_map {B : Type u} [NonUnitalRing B] [Module R B] [IsScalarTower R B B]
+theorem toCyclic_map_unitization {B : Type u} [NonUnitalRing B] [Module R B] [IsScalarTower R B B]
     [SMulCommClass R B B] (f : A →ₙₐ[R] B) (n : ℕ) (c : relativeCyclicCohomology R B M n) :
-    toUnitization R A M n (map M f n c) =
+    reducedCyclicCohomology.toCyclic R (Unitization R A) M n (map M f n c) =
       cyclicCohomology.map M (Unitization.map f : Unitization R A →ₙₐ[R] Unitization R B) n
-        (toUnitization R B M n c) := by
-  rw [map, toUnitization, reducedCyclicCohomology.toCyclic_map]
+        (reducedCyclicCohomology.toCyclic R (Unitization R B) M n c) := by
+  rw [map, reducedCyclicCohomology.toCyclic_map]
 
 end relativeCyclicCohomology
 
