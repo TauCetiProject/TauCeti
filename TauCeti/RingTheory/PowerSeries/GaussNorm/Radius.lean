@@ -13,9 +13,11 @@ public import TauCeti.RingTheory.PowerSeries.GaussNorm
 If the coefficients below degree `N` vanish, shrinking the radius from `r` to `s`
 contracts the Gauss norm by at least `(s / r) ^ N`. Bounded weighted coefficients
 suffice; neither restrictedness nor a nonarchimedean coefficient norm is required.
-In particular, a series with constant coefficient one approaches one on a fixed
-smaller disc as its radius of control grows. This estimate is useful for the
-convergence of normalised Weierstrass polynomials.
+In particular, series with constant coefficient one approach one on a fixed
+smaller disc as their radii of control grow, provided the Gauss norms of their
+differences from one at those radii are uniformly bounded, as for normalised disc
+cofactors. This estimate is useful for the convergence of normalised Weierstrass
+polynomials.
 -/
 
 public section
