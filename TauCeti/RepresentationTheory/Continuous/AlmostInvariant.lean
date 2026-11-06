@@ -105,6 +105,7 @@ theorem exists_invariant_norm_sub_lt (ρ : ContRepresentation 𝕜 G V) {v : V} 
         (Fintype.card G : 𝕜)⁻¹ • ∑ g : G, (ρ g v - v) := by
       rw [Representation.averageMap_apply, Finset.sum_sub_distrib, smul_sub,
         ← invOf_eq_inv, Fintype.invOf_card_smul_sum_const]
+      -- Forgetting continuity via `toRepresentation` leaves each operator's action unchanged.
       rfl
     rw [havg, norm_smul]
     simp only [norm_inv, RCLike.norm_natCast]
