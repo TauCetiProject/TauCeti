@@ -179,19 +179,6 @@ theorem stellarSubdivisionInverseExtension_stellarSubdivisionLinearMap
 
 end
 
-/-- A finset of the domain of an embedding with image `t` is determined by membership: if
-`i ∈ s ↔ e i ∈ t` and every element of `t` is in the range of `e`, then `s.image e = t`. -/
-theorem image_eq_of_forall_mem_iff {α β : Type*} [DecidableEq β] (e : α ↪ β) {s : Finset α}
-    {t : Finset β} (h : ∀ i, i ∈ s ↔ e i ∈ t) (hr : ∀ i ∈ t, ∃ j, e j = i) : s.image e = t := by
-  ext i
-  rw [Finset.mem_image]
-  constructor
-  · rintro ⟨j, hj, rfl⟩
-    exact (h j).mp hj
-  · intro hi
-    obtain ⟨j, hj⟩ := hr i hi
-    exact ⟨j, (h j).mpr (hj ▸ hi), hj⟩
-
 end Finset
 
 namespace PreAbstractSimplicialComplex
@@ -241,14 +228,17 @@ private theorem stellarSubdivision_face_relabel
         face' τ ∈ Kκ.stellarSubdivision σ' v' ∧
           (face' τ).image e = τ.1 ∧
             ((face' τ).erase v').image e = τ.1.erase v := by
-  have hσimage : σ'.image e = σ := Finset.image_eq_of_forall_mem_iff e hσ_spec hσ_range
+  have hσimage : σ'.image e = σ := Finset.coe_injective <| by
+    rw [Finset.coe_image, show (σ' : Set κ) = e ⁻¹' σ from Set.ext hσ_spec]
+    exact Set.image_preimage_eq_of_subset fun i hi => hσ_range i hi
   have hvimage : ({v'} : Finset κ).image e = {v} := by
     ext i
     simp [hev]
   refine ⟨hσimage, hvimage, ?_⟩
   intro τ
-  have hτVimage : (face' τ).image e = τ.1 :=
-    Finset.image_eq_of_forall_mem_iff e (hface_spec τ) (hface_range τ)
+  have hτVimage : (face' τ).image e = τ.1 := Finset.coe_injective <| by
+    rw [Finset.coe_image, show (face' τ : Set κ) = e ⁻¹' (τ.1 : Set ι) from Set.ext (hface_spec τ)]
+    exact Set.image_preimage_eq_of_subset fun i hi => hface_range τ i hi
   have herase : ((face' τ).erase v').image e = τ.1.erase v := by
     rw [Finset.image_erase e.injective, hτVimage]
     simp [hev]
@@ -425,6 +415,9 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
     (hfaceκ_data.2.2 τ).1
   obtain ⟨g, hg, hgf⟩ := exists_isPLOn_leftInverse_stellarSubdivisionCoordinateMap
     (K := Kκ) (σ := σ') (v := v') hv'σ' (fun τ : L.faces => face' τ) hfaceκ
+  -- The `convert`s below close two gaps: (1) the preimage-along-`Subtype.val` faces in the goal
+  -- are definitionally the `σ'`/`face' τ` of `hg`/`hgf`; (2) the `Pi.single` `DecidableEq`
+  -- instance (`Subtype.instDecidableEq` vs `stellarSubdivisionDecidableEq κ`) is a subsingleton.
   refine ⟨g, ?_, ?_⟩
   · convert hg using 8
   · intro x hx
