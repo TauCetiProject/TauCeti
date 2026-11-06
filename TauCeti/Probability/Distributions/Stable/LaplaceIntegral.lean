@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Stable.CompensatedIntegral
-import TauCeti.Analysis.SpecialFunctions.Integrals.CompensatedLaplace
+import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 
 /-!
