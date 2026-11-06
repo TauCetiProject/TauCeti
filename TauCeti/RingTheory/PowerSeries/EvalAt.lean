@@ -336,11 +336,13 @@ theorem norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A]
   | succ n =>
     calc
       ‖algebraMap R A (coeff (n + 1) f) * b ^ (n + 1)‖ ≤
-          (C * ‖coeff (n + 1) f‖) * r ^ (n + 1) :=
-        (norm_mul_le _ _).trans <| mul_le_mul (hφ _)
-          ((norm_pow_le' b n.succ_pos).trans (pow_le_pow_left₀ (norm_nonneg b) hb _))
-          (norm_nonneg _) (mul_nonneg hC (norm_nonneg _))
-      _ = C * (‖coeff (n + 1) f‖ * r ^ (n + 1)) := mul_assoc _ _ _
+          ‖algebraMap R A (coeff (n + 1) f)‖ * ‖b ^ (n + 1)‖ := norm_mul_le _ _
+      _ ≤ C * ‖coeff (n + 1) f‖ * ‖b‖ ^ (n + 1) := by
+        gcongr
+        exacts [hφ _, norm_pow_le' b n.succ_pos]
+      _ ≤ C * (‖coeff (n + 1) f‖ * r ^ (n + 1)) := by
+        rw [mul_assoc]
+        gcongr
       _ ≤ C * gaussNorm norm r f := mul_le_mul_of_nonneg_left (le_gaussNorm norm r f hf _) hC
 
 omit [IsBoundedSMul R A] in
@@ -358,11 +360,8 @@ defined. This needs no convergence: the junk value `0` satisfies the bound too. 
 theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ}
     (hf : f.HasGaussNorm norm r) {b : A} (hb : ‖b‖ ≤ r) :
     ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (gaussNorm_nonneg _ _ _ norm_nonneg)
-    fun n ↦ (norm_smul_le _ _).trans <|
-      (mul_le_mul_of_nonneg_left ((norm_pow_le b n).trans
-        (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)).trans <|
-      le_gaussNorm _ _ _ hf n
+  norm_evalAt_le_gaussNorm_of_norm_algebraMap_le hf
+    (fun a ↦ by simpa [Algebra.algebraMap_eq_smul_one] using norm_smul_le a (1 : A)) hb
 
 /-- In any normed algebra, the value of a series at a point `b` with `‖b‖ ≤ q * r`, where
 `0 ≤ q < 1`, is bounded by `(‖1‖ + 1) * (1 - q)⁻¹` times the Gauss norm of the series at the radius
