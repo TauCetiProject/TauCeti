@@ -230,40 +230,37 @@ theorem smul_triangle (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hBC : B �
 /-! ### The Gauss–Bonnet formula -/
 
 /-- The closed side `B C` containing `A` is the closed disc bounded by the semicircle through
-`B` and `C`, when `B` lies on the imaginary axis with `C` to its right and `A` lies inside it. -/
-private theorem closedSide_eq_normSq_le_of_re_eq_zero {B C A : ℍ} (hBre : B.re = 0)
-    (hC : 0 < C.re) (hA : A ∈ rightHalfPlane (geodesicBetween B C)) :
+`B` and `C`, when `C` lies to the right of `B` and `A` lies inside it. -/
+private theorem closedSide_eq_normSq_le_of_re_lt {B C A : ℍ} (hBC : B.re < C.re)
+    (hA : A ∈ rightHalfPlane (geodesicBetween B C)) :
     closedSide B C A = {z : ℍ |
       Complex.normSq ((z : ℂ) - circleCenter B C) ≤
         Complex.normSq ((C : ℂ) - circleCenter B C)} := by
-  have hBC : B.re < C.re := by rw [hBre]; exact hC
   unfold closedSide
   simp only [hA, ↓reduceIte]
   ext z
   rw [mem_closure_rightHalfPlane_iff, Set.mem_ofPred_eq]
   obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hBC.ne z
-  rw [h, hBre, ← normSq_sub_circleCenter hBC.ne, mul_nonneg_iff_of_pos_left hκ]
+  rw [h, ← normSq_sub_circleCenter hBC.ne, mul_nonneg_iff_of_pos_left hκ]
   set X := Complex.normSq ((z : ℂ) - circleCenter B C)
   set Y := Complex.normSq ((C : ℂ) - circleCenter B C)
-  have e : (0 - C.re) * (X - Y) = C.re * (Y - X) := by ring
-  rw [e, mul_nonneg_iff_of_pos_left hC, sub_nonneg]
+  have e : (B.re - C.re) * (X - Y) = (C.re - B.re) * (Y - X) := by ring
+  rw [e, mul_nonneg_iff_of_pos_left (sub_pos.2 hBC), sub_nonneg]
 
 /-- The closed side `C A` containing `B` is the complement of the open disc bounded by the
-semicircle through `A` and `C`, when `A` lies on the imaginary axis with `C` to its right and
-`B` lies outside it. -/
-private theorem closedSide_eq_normSq_ge_of_re_eq_zero {C A B : ℍ} (hAre : A.re = 0)
-    (hC : 0 < C.re) (hB : B ∈ rightHalfPlane (geodesicBetween C A)) :
+semicircle through `A` and `C`, when `C` lies to the right of `A` and `B` lies outside it. -/
+private theorem closedSide_eq_normSq_ge_of_re_lt {C A B : ℍ} (hAC : A.re < C.re)
+    (hB : B ∈ rightHalfPlane (geodesicBetween C A)) :
     closedSide C A B = {z : ℍ |
       Complex.normSq ((C : ℂ) - circleCenter A C) ≤
         Complex.normSq ((z : ℂ) - circleCenter A C)} := by
-  have hAC : A.re < C.re := by rw [hAre]; exact hC
   unfold closedSide
   simp only [hB, ↓reduceIte]
   ext z
   rw [mem_closure_rightHalfPlane_iff, Set.mem_ofPred_eq]
   obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hAC.ne' z
-  rw [h, hAre, sub_zero, circleCenter_comm, mul_nonneg_iff_of_pos_left hκ,
-    mul_nonneg_iff_of_pos_left hC, sub_nonneg]
+  rw [h, circleCenter_comm, mul_nonneg_iff_of_pos_left hκ,
+    mul_nonneg_iff_of_pos_left (sub_pos.2 hAC), sub_nonneg]
 
 /-- The triangle in normal form, with `A = I`, `B = i exp d` above it and `C` to the right, as
 a system of inequalities: to the right of the imaginary axis, inside the disc bounded by the
@@ -293,14 +290,14 @@ theorem mem_triangle_normal_form_iff {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
     ext z
     rw [mem_closure_rightHalfPlane_iff, inv_one, one_smul, Set.mem_ofPred_eq]
   -- the side `B C` is a semicircle, with `I` inside its disc
-  have h2 := closedSide_eq_normSq_le_of_re_eq_zero (A := UpperHalfPlane.I) hBre hC (by
+  have h2 := closedSide_eq_normSq_le_of_re_lt (A := UpperHalfPlane.I) hBC (by
     rw [mem_rightHalfPlane_geodesicBetween_iff_of_re_lt hBC]
     simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
       Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, hBre, hBim,
       UpperHalfPlane.I_re, UpperHalfPlane.I_im]
     nlinarith)
   -- the side `C I` is a semicircle, with `B` outside its disc
-  have h3 := closedSide_eq_normSq_ge_of_re_eq_zero (B := B) UpperHalfPlane.I_re hC (by
+  have h3 := closedSide_eq_normSq_ge_of_re_lt (B := B) hIC (by
     rw [mem_rightHalfPlane_geodesicBetween_iff_of_lt_re hIC, circleCenter_comm,
       normSq_sub_circleCenter hIC.ne]
     simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
@@ -546,17 +543,6 @@ theorem interiorAngle_add_add_le_pi_of_normal_form {d : ℝ} (hd : 0 < d) {C : �
     ← normSq_sub_circleCenter hBC]
   linarith
 
-/-- A point of the upper half-plane lies to the left of the right end of the semicircle centred
-on the real axis at `c` through it. -/
-private theorem re_lt_add_sqrt_normSq_sub (C : ℍ) (c : ℝ) :
-    C.re < c + Real.sqrt (Complex.normSq ((C : ℂ) - c)) := by
-  rw [← sub_lt_iff_lt_add']
-  refine Real.lt_sqrt_of_sq_lt ?_
-  rw [Complex.normSq_apply]
-  simp only [Complex.sub_re, Complex.ofReal_re, Complex.sub_im, Complex.ofReal_im, sub_zero,
-    UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
-  nlinarith [C.im_pos]
-
 /-- In normal form, the triangle has the same area as the difference of the two ideal-vertex
 regions above the semicircles through `I`, `C` and through `i exp d`, `C`. -/
 private theorem volume_triangle_I_geodesicLine_one_eq_volume_diff {d : ℝ} (hd : 0 < d) {C : ℍ}
@@ -606,11 +592,11 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
   have h1a : c₁ - r₁ < 0 := by
     rw [sub_neg]
     exact Real.lt_sqrt_of_sq_lt (by rw [hn₁]; linarith)
-  have h1b : C.re < c₁ + r₁ := re_lt_add_sqrt_normSq_sub C c₁
+  have h1b : C.re < c₁ + r₁ := sub_lt_iff_lt_add'.mp (abs_lt.mp (abs_re_sub_lt_sqrt_normSq C c₁)).2
   have h2a : c₂ - r₂ < 0 := by
     rw [sub_neg]
     exact Real.lt_sqrt_of_sq_lt (by rw [hn₂]; nlinarith [Real.exp_pos d])
-  have h2b : C.re < c₂ + r₂ := re_lt_add_sqrt_normSq_sub C c₂
+  have h2b : C.re < c₂ + r₂ := sub_lt_iff_lt_add'.mp (abs_lt.mp (abs_re_sub_lt_sqrt_normSq C c₂)).2
   -- the areas of the two ideal-vertex regions
   have hV₁ := volume_idealRegionAbove hr₁0 h1a.le hC.le h1b.le
   have hV₂ := volume_idealRegionAbove hr₂0 h2a.le hC.le h2b.le
