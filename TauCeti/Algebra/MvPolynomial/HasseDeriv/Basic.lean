@@ -48,7 +48,8 @@ Roth's theorem.
   (`MvPolynomial.abv_coeff_hasseDeriv_le_of_isNonarchimedean`).
 * `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
   `∂^0` is the identity and every other Hasse derivative kills constants.
-* `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
+* `MvPolynomial.hasseDeriv_map`, `MvPolynomial.hasseDeriv_rename`: Hasse derivatives commute with
+  coefficient ring maps and with injective variable renamings.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
@@ -202,6 +203,20 @@ theorem hasseDeriv_map {S : Type*} [CommSemiring S] (f : R →+* S) (d : σ →�
     (P : MvPolynomial σ R) : hasseDeriv d (map f P) = map f (hasseDeriv d P) := by
   ext m
   simp [hasseDeriv_coeff, coeff_map, map_finsuppProd]
+
+/-- Hasse derivatives commute with injective variable renamings, with the derivative multi-index
+pushed forward along the renaming. -/
+theorem hasseDeriv_rename {τ : Type*} {f : σ → τ} (hf : Function.Injective f) (d : σ →₀ ℕ)
+    (P : MvPolynomial σ R) :
+    hasseDeriv (d.mapDomain f) (rename f P) = rename f (hasseDeriv d P) := by
+  classical
+  induction P using MvPolynomial.induction_on' with
+  | monomial m a =>
+    rw [rename_monomial, hasseDeriv_monomial, hasseDeriv_monomial, rename_monomial,
+      ← Finsupp.mapDomain_tsub hf, Finsupp.prod_mapDomain_index_inj hf]
+    congr 3
+    exact Finsupp.prod_congr fun i _ ↦ by rw [Finsupp.mapDomain_apply_of_injective hf]
+  | add p q hp hq => simp [hp, hq]
 
 /-- If the degree of `P` in `Xᵢ` is less than `dᵢ`, then `∂^d P = 0`. -/
 theorem hasseDeriv_eq_zero_of_degreeOf_lt {d : σ →₀ ℕ} {P : MvPolynomial σ R} {i : σ}
