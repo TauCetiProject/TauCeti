@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.Basic
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Contour.LogDerivFTC
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -92,15 +94,10 @@ private theorem integral_index_eq_log_sub_log {γ h : ℝ → ℂ} {a b : ℝ} {
 
 /-! ### The interior value -/
 
-/-- The derivative of the circle parametrisation about `0` is continuous. -/
-private theorem continuous_deriv_circleMap_zero (R : ℝ) : Continuous (deriv (circleMap 0 R)) := by
-  rw [funext (deriv_circleMap 0 R)]
-  exact (continuous_circleMap 0 R).mul continuous_const
-
 /-- **The two half-arcs of a circle carry the full index integral.** About a point `s` strictly
 inside the circle of radius `R`, the index integrals over `[0, π]` and `[π, 2π]` of the circle
 parametrisation add up to `2πi`: this is the winding number `1` of the full circle, split at `π`. -/
-theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : ‖s‖ < R) :
+private theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : ‖s‖ < R) :
     (∫ θ in (0 : ℝ)..Real.pi, (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) +
       (∫ θ in Real.pi..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ)
       = 2 * (Real.pi : ℂ) * Complex.I := by
@@ -112,7 +109,7 @@ theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : ‖s‖ < R) :
   have hintC : IntervalIntegrable
       (fun θ => (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) volume 0 (2 * Real.pi) :=
     intervalIntegrable_inv_sub_mul_deriv (continuous_circleMap 0 R).continuousOn
-      (fun t _ => havoidC t) ((continuous_deriv_circleMap_zero R).intervalIntegrable _ _)
+      (fun t _ => havoidC t) ((continuous_deriv_circleMap 0 R).intervalIntegrable _ _)
   have hsubC₁ : uIcc (0 : ℝ) Real.pi ⊆ uIcc (0 : ℝ) (2 * Real.pi) := by
     rw [uIcc_of_le hpi.le, uIcc_of_le (by linarith)]
     exact Icc_subset_Icc le_rfl (by linarith)
@@ -121,23 +118,9 @@ theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : ‖s‖ < R) :
     exact Icc_subset_Icc hpi.le le_rfl
   rw [intervalIntegral.integral_add_adjacent_intervals (hintC.mono_set hsubC₁)
     (hintC.mono_set hsubC₂)]
-  have hw := windingNumber_circleMap_eq_one_of_dist_lt (c := 0) (w := s) (R := R)
+  have h := circleIntegral.integral_sub_inv_of_mem_ball (c := 0) (w := s) (R := R)
     (by simpa using hs)
-  rw [windingNumber_eq_integral_of_avoidance (continuous_circleMap 0 R).continuousOn
-    (fun t _ => havoidC t) hintC] at hw
-  calc (∫ θ in (0 : ℝ)..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ)
-      = 2 * (Real.pi : ℂ) * Complex.I * ((2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
-          ∫ θ in (0 : ℝ)..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) := by
-        rw [← mul_assoc, mul_inv_cancel₀ Complex.two_pi_I_ne_zero, one_mul]
-    _ = 2 * (Real.pi : ℂ) * Complex.I := by rw [hw, mul_one]
-
-/-- Differences `z - s` with `z` in the closed lower half-plane lie in the slit plane when `s` lies
-strictly above the real axis. -/
-private theorem sub_mem_slitPlane_of_im_le_zero {s z : ℂ} (him : 0 < s.im) (hz : z.im ≤ 0) :
-    z - s ∈ slitPlane := by
-  refine Or.inr ?_
-  simp only [Complex.sub_im, ne_eq, sub_eq_zero]
-  exact fun h => absurd (h ▸ hz) (not_le.mpr him)
+  simpa [circleIntegral, smul_eq_mul, mul_comm] using h
 
 /-- The index integral over the lower semicircle about a point strictly above the real axis is
 `log (R - s) - log (-R - s)`. -/
@@ -152,7 +135,7 @@ private theorem integral_circleMap_index_lower_arc {s : ℂ} (hR : 0 ≤ R) (him
   rw [integral_index_eq_log_sub_log (h := circleMap 0 R) (by linarith)
     (continuous_circleMap 0 R).continuousOn
     (fun t _ => (differentiable_circleMap 0 R) t)
-    (continuous_deriv_circleMap_zero R).continuousOn
+    (continuous_deriv_circleMap 0 R).continuousOn
     (fun θ hθ => sub_mem_slitPlane_of_im_le_zero him ?_) (fun _ _ => rfl) rfl rfl, hRC, hnRC]
   rw [circleMap_zero_im]
   exact mul_nonpos_of_nonneg_of_nonpos hR (sin_nonpos_of_pi_le_of_le_two_pi hθ.1 hθ.2)
