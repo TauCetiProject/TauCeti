@@ -178,6 +178,24 @@ theorem covariantDerivative_eq_re_mul_add_im_mul (x : ℂ → EuclideanSpace ℝ
   push_cast
   ring
 
+/-- The covariant derivative `∇₁ α` in the real field coordinates: for a field differentiable at
+`z`, `∇₁ α = 2 ((∂₁ p - b₁ q) + i (∂₁ q + b₁ p))`. -/
+theorem covariantDerivative_one_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) :
+    covariantDerivative x z 1 =
+      2 * (((fderiv ℝ (fun w ↦ x w 2) z 1 - x z 0 * x z 3 : ℝ) : ℂ) +
+        ((fderiv ℝ (fun w ↦ x w 3) z 1 + x z 0 * x z 2 : ℝ) : ℂ) * I) := by
+  have hc (i : Fin 4) : HasFDerivAt (fun w ↦ (x w i : ℂ))
+      (ofRealCLM.comp (fderiv ℝ (fun w ↦ x w i) z)) z :=
+    ofRealCLM.hasFDerivAt.comp z
+      ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hx :).hasFDerivAt
+  have hs : HasFDerivAt (fun w ↦ 2 * ((x w 2 : ℂ) + (x w 3 : ℂ) * I)) _ z :=
+    ((hc 2).add ((hc 3).mul_const I)).const_mul 2
+  have he : sectionValue x = fun w ↦ 2 * ((x w 2 : ℂ) + (x w 3 : ℂ) * I) := rfl
+  rw [covariantDerivative_apply, he, hs.fderiv]
+  simp
+  linear_combination (2 * (x z 0 : ℂ) * (x z 3 : ℂ)) * I_sq
+
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
