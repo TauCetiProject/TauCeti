@@ -62,11 +62,13 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- The root-count integrals over all totally ramified degree-`n` subextensions add up to
 `n` times the volume of the Eisenstein region. This holds for any additive Haar measure,
 including in equal characteristic. -/
-theorem tsum_lintegral_rootCount_eq (hn : 0 < n)
+theorem tsum_lintegral_rootCount_eq
     (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
     ∑' L : totallyRamifiedOfDegree K n,
       ∫⁻ a in eisensteinSet K n, (L.1.rootCount a : ℝ≥0∞) ∂μ =
         n * μ (eisensteinSet K n) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
   have := (countable_totallyRamifiedOfDegree hn (K := K)).to_subtype
   rw [← lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinSet μ L.2,
     lintegral_congr_ae (ae_tsum_rootCount_eq μ)]
@@ -81,18 +83,20 @@ theorem tsum_lintegral_rootCount_eq_of_normalized (hn : 0 < n)
       ∫⁻ a in eisensteinSet K n, (L.1.rootCount a : ℝ≥0∞) ∂μ =
         n * (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n *
           (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) := by
-  rw [tsum_lintegral_rootCount_eq hn μ, measure_eisensteinSet hn μ hμ]
+  rw [tsum_lintegral_rootCount_eq μ, measure_eisensteinSet hn μ hμ]
 
 /-- The ordinary real root-count integrals form a convergent series whose sum is `n` times
 the real volume of the Eisenstein region, including when the family of extensions is infinite. -/
-theorem hasSum_integral_rootCount (hn : 0 < n)
+theorem hasSum_integral_rootCount
     (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
     HasSum (fun L : totallyRamifiedOfDegree K n ↦
       ∫ a in eisensteinSet K n, (L.1.rootCount a : ℝ) ∂μ)
       ((n : ℝ) * (μ (eisensteinSet K n)).toReal) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
   have htotal : ∑' L : totallyRamifiedOfDegree K n,
       ∫⁻ a in eisensteinSet K n, (L.1.rootCount a : ℝ≥0∞) ∂μ ≠ ∞ := by
-    rw [tsum_lintegral_rootCount_eq hn μ]
+    rw [tsum_lintegral_rootCount_eq μ]
     exact ENNReal.mul_ne_top (ENNReal.natCast_ne_top _) (measure_eisensteinSet_lt_top μ).ne
   have hreal (L : totallyRamifiedOfDegree K n) :
       ∫ a in eisensteinSet K n, (L.1.rootCount a : ℝ) ∂μ =
@@ -102,7 +106,7 @@ theorem hasSum_integral_rootCount (hn : 0 < n)
       (Filter.Eventually.of_forall fun a ↦ ENNReal.natCast_lt_top (L.1.rootCount a))
   have hs := ENNReal.hasSum_toReal htotal
   rw [← ENNReal.tsum_toReal_eq (ne_top_of_tsum_ne_top htotal),
-    tsum_lintegral_rootCount_eq hn μ, ENNReal.toReal_mul, ENNReal.toReal_natCast] at hs
+    tsum_lintegral_rootCount_eq μ, ENNReal.toReal_mul, ENNReal.toReal_natCast] at hs
   simpa only [← hreal] using hs
 
 /-- **Theorem 1 in integral form**: for any additive Haar measure `μ`, the weighted count
@@ -110,13 +114,13 @@ theorem hasSum_integral_rootCount (hn : 0 < n)
 root-count integrals add up to `∑ q ^ (-c(L)) * μ(E_n)`, where `E_n` is the Eisenstein region.
 The total of the integrals is `n * μ(E_n)`, and `μ(E_n)` is positive and finite. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_eq_iff_tsum_lintegral_rootCount_eq
-    (hn : 0 < n) (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
+    (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
     ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n ↔
       ∑' L : totallyRamifiedOfDegree K n,
         ∫⁻ a in eisensteinSet K n, (L.1.rootCount a : ℝ≥0∞) ∂μ =
         ∑' L : totallyRamifiedOfDegree K n,
           1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent * μ (eisensteinSet K n) := by
-  rw [tsum_lintegral_rootCount_eq hn μ, ENNReal.tsum_mul_right, eq_comm,
+  rw [tsum_lintegral_rootCount_eq μ, ENNReal.tsum_mul_right, eq_comm,
     ENNReal.mul_left_inj (measure_eisensteinSet_pos μ).ne' (measure_eisensteinSet_lt_top μ).ne]
 
 /-- For `L ∈ σ_K(n)` and Haar measure normalized on the integer box, `q ^ (-c(L))` times the
@@ -141,14 +145,14 @@ theorem _root_.IntermediateField.one_div_pow_wildExponent_mul_measure_eisenstein
 box, the root count of each `L ∈ σ_K(n)` integrates over the Eisenstein region to Serre's value
 `q ^ (-(d(L) + 1)) (1 - q⁻¹)`, then `∑ q ^ (-c(L)) = n`. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq
-    (hn : 0 < n) (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure]
+    (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure]
     (hμ : μ (integerBox K (Fin n)) = 1)
     (h : ∀ L ∈ totallyRamifiedOfDegree K n,
       ∫⁻ a in eisensteinSet K n, (L.rootCount a : ℝ≥0∞) ∂μ =
         1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (L.discriminantExponent + 1) *
           (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) :
     ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n :=
-  (tsum_one_div_natCard_residueField_pow_wildExponent_eq_iff_tsum_lintegral_rootCount_eq hn
+  (tsum_one_div_natCard_residueField_pow_wildExponent_eq_iff_tsum_lintegral_rootCount_eq
     μ).2 <| tsum_congr fun L ↦ by
     rw [h L L.2, L.1.one_div_pow_wildExponent_mul_measure_eisensteinSet L.2 μ hμ]
 
