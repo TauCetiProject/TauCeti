@@ -168,9 +168,8 @@ theorem relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf
   let _ : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have h := eulerCharBelow_sheaf_eq_relativeDegree_add k hX D
-  rw [Scheme.Modules.eulerCharBelow_two, Scheme.Modules.eulerCharBelow_two,
-    finrank_cohomology_zero_trivial_eq_one_of_surjective k hφ] at h
-  rw [Scheme.genus_def]
+  rw [eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k hφ,
+    Scheme.Modules.eulerCharBelow_two] at h
   have := Int.natCast_nonneg (finrank k (Scheme.Modules.Cohomology (sheaf D) 1))
   omega
 
