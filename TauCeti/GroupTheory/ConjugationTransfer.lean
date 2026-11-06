@@ -11,10 +11,11 @@ import Mathlib.Tactic.Group
 /-!
 # Transferring a conjugated power along conjugation
 
-Let `φ` be an endomorphism of a group `G` and `pow : G → G` a map commuting with conjugation,
+Let `φ` be an endomorphism of a group `G` and `pow : G → G` a map commuting with conjugation
+by `q` at `x`,
 `pow (q * x * q⁻¹) = q * pow x * q⁻¹`; the motivating example is a `p`-adic or profinite power
-on a profinite group. If `φ` carries `x` to the conjugate `c⁻¹ * pow x * c`, then it carries every
-conjugate `y = q * x * q⁻¹` to a conjugate of `pow y`, and the conjugator is computed:
+on a profinite group. If `φ` carries `x` to the conjugate `c⁻¹ * pow x * c`, then it carries
+`y = q * x * q⁻¹` to a conjugate of `pow y`, and the conjugator is computed:
 
 `φ y = d⁻¹ * pow y * d` with `d = q * c * (φ q)⁻¹`.
 
