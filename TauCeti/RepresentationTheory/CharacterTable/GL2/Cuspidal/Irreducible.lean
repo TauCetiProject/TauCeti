@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.Cuspidal.Basic
 public import TauCeti.RepresentationTheory.Simple.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.Complex
 -- Non-public: nontriviality of the canonical primitive complex additive character of `F`.
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: bundling a representation with `FDRep.of` preserves its character.
 import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
@@ -334,7 +334,7 @@ noncomputable def GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) : FDRep ℂ (GL (Fin 2) F) :=
   FDRep.of (gl2CuspidalRepresentation theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)
-    (primitiveChar_to_Complex_ne_one F) htheta)
+    (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one htheta)
 
 /-- The character of `TauCeti.GL2Cuspidal` is the cuspidal virtual character from which it was
 constructed. -/
@@ -347,7 +347,7 @@ theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ)
   rw [GL2Cuspidal, FDRep.character_of]
   exact (gl2CuspidalRepresentation_spec theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)
-    (primitiveChar_to_Complex_ne_one F) htheta).2
+    (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one htheta).2
 
 /-- The cuspidal representation has degree `q - 1`. -/
 @[simp]
@@ -369,7 +369,7 @@ theorem simple_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     rw [GL2Cuspidal, FDRep.of_ρ']
     exact (gl2CuspidalRepresentation_spec theta
       (AddChar.FiniteField.primitiveChar_to_Complex F)
-      (primitiveChar_to_Complex_ne_one F) htheta).1
+      (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one htheta).1
   exact FDRep.simple_of_isIrreducible _
 
 end TauCeti

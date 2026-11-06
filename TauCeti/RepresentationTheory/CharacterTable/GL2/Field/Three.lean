@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NormalForm
 -- Non-public: a root of `X² - X - 1` in the quadratic extension.
 import TauCeti.FieldTheory.Quadratic
 -- Non-public: the canonical additive character is nontrivial.
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: multiplicative characters take the value `1` or `-1` at `-1`.
 import TauCeti.Algebra.Ring.Hom
 
@@ -361,7 +361,7 @@ private theorem cuspidal_apply_gl2FieldThreeNormalForm (hF : Fintype.card F = 3)
         -((θ u : ℂ) ^ 5 + (θ u : ℂ) ^ 15), -1, -(θ u : ℂ) ^ 4, 0] j := by
   obtain ⟨-, h1, -, -⟩ := fieldThree_facts hF
   obtain ⟨hu1, hu2, hu3, hu4, hu5⟩ := units_facts hF hu
-  have hψ := primitiveChar_to_Complex_ne_one F
+  have hψ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
   -- the scalar `-1` of `F`, as a unit of `E`, is `u ^ 4`
   have hneg : Units.map (algebraMap F E : F →* E) (-1) = u ^ 4 := by
     rw [hu4]
