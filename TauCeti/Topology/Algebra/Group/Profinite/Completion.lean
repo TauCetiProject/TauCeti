@@ -308,10 +308,12 @@ theorem nonempty_continuousMulEquiv_of_forall_exists_surjective_iff {H : Type u}
     Nonempty (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) ≃ₜ*
       ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of H)) :=
   nonempty_continuousMulEquiv_of_forall_isFiniteContinuousQuotient_iff
-    isTopologicallyFinitelyGenerated fun Q _ _ ↦ by
-      rw [isFiniteContinuousQuotient_iff_exists_surjective,
-        isFiniteContinuousQuotient_iff_exists_surjective]
-      exact h Q
+    isTopologicallyFinitelyGenerated fun Q _ ↦ by
+      by_cases hQ : Finite Q
+      · rw [isFiniteContinuousQuotient_iff_exists_surjective,
+          isFiniteContinuousQuotient_iff_exists_surjective]
+        exact h Q
+      · exact iff_of_false (fun hq ↦ hQ hq.finite) fun hq ↦ hQ hq.finite
 
 end FiniteQuotients
 

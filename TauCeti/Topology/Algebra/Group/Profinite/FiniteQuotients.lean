@@ -78,7 +78,7 @@ the profinite group `H` occurs as a continuous finite quotient of `G`, then `H` 
 finitely generated. -/
 theorem IsTopologicallyFinitelyGenerated.of_forall_isFiniteContinuousQuotient
     (hG : IsTopologicallyFinitelyGenerated G)
-    (h : ∀ (Q : Type v) [Group Q] [Finite Q],
+    (h : ∀ (Q : Type v) [Group Q],
       IsFiniteContinuousQuotient H Q → IsFiniteContinuousQuotient G Q) :
     IsTopologicallyFinitelyGenerated H := by
   -- Each finite quotient of `H` is a finite quotient of `G`, so needs no more generators than `G`
@@ -172,12 +172,12 @@ and `H` have the same continuous finite quotients, then there are continuous sur
 and `H ↠ G`. Finite generation of `H` is derived, not assumed. -/
 theorem exists_surjective_and_exists_surjective_of_forall_isFiniteContinuousQuotient_iff
     (hG : IsTopologicallyFinitelyGenerated G)
-    (h : ∀ (Q : Type u) [Group Q] [Finite Q],
+    (h : ∀ (Q : Type u) [Group Q],
       IsFiniteContinuousQuotient G Q ↔ IsFiniteContinuousQuotient H Q) :
     (∃ φ : G →* H, Continuous φ ∧ Function.Surjective φ) ∧
       ∃ ψ : H →* G, Continuous ψ ∧ Function.Surjective ψ := by
   have hH : IsTopologicallyFinitelyGenerated H :=
-    hG.of_forall_isFiniteContinuousQuotient fun Q _ _ hQ ↦ (h Q).mpr hQ
+    hG.of_forall_isFiniteContinuousQuotient fun Q _ hQ ↦ (h Q).mpr hQ
   exact ⟨exists_continuous_surjective_of_forall_isFiniteContinuousQuotient hG
       fun N ↦ (h _).mpr N.isFiniteContinuousQuotient,
     exists_continuous_surjective_of_forall_isFiniteContinuousQuotient hH
@@ -188,7 +188,7 @@ groups `G` and `H` have the same continuous finite quotients, then `G` and `H` a
 isomorphic. No finite-generation hypothesis is placed on `H`. -/
 theorem nonempty_continuousMulEquiv_of_forall_isFiniteContinuousQuotient_iff
     (hG : IsTopologicallyFinitelyGenerated G)
-    (h : ∀ (Q : Type u) [Group Q] [Finite Q],
+    (h : ∀ (Q : Type u) [Group Q],
       IsFiniteContinuousQuotient G Q ↔ IsFiniteContinuousQuotient H Q) :
     Nonempty (G ≃ₜ* H) := by
   obtain ⟨⟨φ, hφ, hφs⟩, ⟨ψ, hψ, hψs⟩⟩ :=
