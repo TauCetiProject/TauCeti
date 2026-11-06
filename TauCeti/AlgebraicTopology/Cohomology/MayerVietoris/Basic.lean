@@ -221,6 +221,13 @@ def mayerVietorisCochainδ (n m : ℕ) (h : n + 1 = m := by lia) :
       ((X₄.chainComplex R).linearYonedaObj k M).homology m :=
   (shortExact_mayerVietorisCochainShortComplex R k M sq).δ n m (by simpa)
 
+/-- The cochain Mayer–Vietoris connecting morphism is the connecting morphism of the cochain
+Mayer–Vietoris short exact sequence. -/
+lemma mayerVietorisCochainδ_def (n m : ℕ) (h : n + 1 = m := by lia) :
+    mayerVietorisCochainδ R k M sq n m h =
+      (shortExact_mayerVietorisCochainShortComplex R k M sq).δ n m (by simpa) :=
+  (rfl)
+
 @[reassoc (attr := simp)]
 lemma mayerVietorisCochainδ_toBiprod (n m : ℕ) (h : n + 1 = m := by lia) :
     mayerVietorisCochainδ R k M sq n m h ≫ mayerVietorisCochainToBiprod R k M r b m = 0 :=
