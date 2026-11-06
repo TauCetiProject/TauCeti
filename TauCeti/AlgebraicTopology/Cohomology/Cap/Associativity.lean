@@ -107,6 +107,40 @@ lemma capChain_alexanderWhitneyDiagonal_assoc
   simp only [smul_eq_mul]
   rw [mul_assoc, mul_assoc, mul_comm (a 1) (b 1)]
 
+/-- The cycle-level form of cap--cup associativity: capping cycles successively by the cocycles
+`φ` and `ψ` is capping once by their cup product. -/
+private lemma capCycles_comp_capCycles_cupCycles
+    {p q r m n : ℕ} (hp : p + m = n) (hq : q + r = m)
+    (φ : (X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))).cycles p)
+    (ψ : (X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))).cycles q) :
+    TauCeti.ChainComplex.capCycles k
+        (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
+        ((toSSet.obj X).chainComplexPairing (ρ_ (𝟙_ (ModuleCat.{w} k))).hom)
+        p m n hp φ ≫
+      TauCeti.ChainComplex.capCycles k
+        (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
+        ((toSSet.obj X).chainComplexPairing (ρ_ (𝟙_ (ModuleCat.{w} k))).hom)
+        q r m hq ψ =
+      TauCeti.ChainComplex.capCycles k
+        (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
+        ((toSSet.obj X).chainComplexPairing (ρ_ (𝟙_ (ModuleCat.{w} k))).hom)
+        (p + q) r n (by omega)
+        (TauCeti.ChainComplex.cupCycles k
+          (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
+          (ρ_ (𝟙_ (ModuleCat.{w} k))).hom p q (p + q) rfl φ ψ) := by
+  apply (cancel_mono (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).iCycles r)).1
+  simp only [Category.assoc, TauCeti.ChainComplex.capCycles_i]
+  rw [← Category.assoc, TauCeti.ChainComplex.capCycles_i]
+  simp only [Category.assoc]
+  apply congrArg (((toSSet.obj X).chainComplex
+    (𝟙_ (ModuleCat.{w} k))).iCycles n ≫ ·)
+  simpa only [TauCeti.ChainComplex.iCycles_cupCycles] using
+    capChain_alexanderWhitneyDiagonal_assoc X k hp hq
+      (((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
+        (𝟙_ (ModuleCat.{w} k))).iCycles p).hom φ)
+      (((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
+        (𝟙_ (ModuleCat.{w} k))).iCycles q).hom ψ)
+
 /-- **Cap--cup associativity in singular homology**: for ordinary cohomology and homology with
 coefficients in a commutative ring, capping successively by `α` and `β` is capping by
 `α ⌣ β`. -/
@@ -124,84 +158,12 @@ lemma singularCap_assoc
           p q (p + q) rfl α β) := by
   obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
   obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
-  let πn : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).cycles n ⟶
-      (((singularHomologyFunctor (ModuleCat.{w} k) n).obj
-        (𝟙_ (ModuleCat.{w} k))).obj X) :=
-    ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ n
-  let πm : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).cycles m ⟶
-      (((singularHomologyFunctor (ModuleCat.{w} k) m).obj
-        (𝟙_ (ModuleCat.{w} k))).obj X) :=
-    ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ m
-  let πr : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).cycles r ⟶
-      (((singularHomologyFunctor (ModuleCat.{w} k) r).obj
-        (𝟙_ (ModuleCat.{w} k))).obj X) :=
-    ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ r
-  let _ : Epi πn := (ModuleCat.epi_iff_surjective πn).2 <| by
-    dsimp only [πn]
-    exact HomologicalComplex.moduleCat_homologyπ_surjective _ n
-  apply (cancel_epi πn).1
-  have hφ : πn ≫
-      X.singularCap k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-        (ρ_ (𝟙_ (ModuleCat.{w} k))).hom p m n hp
-        ((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-          (𝟙_ (ModuleCat.{w} k))).homologyπ p φ) =
-      TauCeti.ChainComplex.capCycles k
-          (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
-          ((toSSet.obj X).chainComplexPairing (ρ_ (𝟙_ (ModuleCat.{w} k))).hom)
-          p m n hp φ ≫ πm := by
-    dsimp only [πn]
-    exact singularCap_homologyπ X k _ _ p m n hp φ
-  have hψ : πm ≫
-      X.singularCap k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-        (ρ_ (𝟙_ (ModuleCat.{w} k))).hom q r m hq
-        ((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-          (𝟙_ (ModuleCat.{w} k))).homologyπ q ψ) =
-      TauCeti.ChainComplex.capCycles k
-          (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
-          ((toSSet.obj X).chainComplexPairing (ρ_ (𝟙_ (ModuleCat.{w} k))).hom)
-          q r m hq ψ ≫ πr := by
-    dsimp only [πm]
-    exact singularCap_homologyπ X k _ _ q r m hq ψ
-  let χ := TauCeti.ChainComplex.cupCycles k
-    (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
-    (ρ_ (𝟙_ (ModuleCat.{w} k))).hom p q (p + q) rfl φ ψ
-  have hcup :
-      X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-          (ρ_ (𝟙_ (ModuleCat.{w} k))).hom p q (p + q) rfl
-          ((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-            (𝟙_ (ModuleCat.{w} k))).homologyπ p φ)
-          ((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-            (𝟙_ (ModuleCat.{w} k))).homologyπ q ψ) =
-        (X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-          (𝟙_ (ModuleCat.{w} k))).homologyπ (p + q) χ := by
-    dsimp only [χ]
-    exact singularCup_homologyπ X k _ _ p q (p + q) rfl φ ψ
-  have hχ : πn ≫
-      X.singularCap k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-        (ρ_ (𝟙_ (ModuleCat.{w} k))).hom (p + q) r n (by omega)
-        ((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-          (𝟙_ (ModuleCat.{w} k))).homologyπ (p + q) χ) =
-      TauCeti.ChainComplex.capCycles k
-          (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
-          ((toSSet.obj X).chainComplexPairing (ρ_ (𝟙_ (ModuleCat.{w} k))).hom)
-          (p + q) r n (by omega) χ ≫ πr := by
-    dsimp only [πn]
-    exact singularCap_homologyπ X k _ _ (p + q) r n (by omega) χ
-  rw [← Category.assoc, hφ, Category.assoc, hψ, hcup, hχ]
-  rw [← Category.assoc]
-  apply congrArg (· ≫ πr)
-  apply (cancel_mono (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).iCycles r)).1
-  simp only [Category.assoc, TauCeti.ChainComplex.capCycles_i]
-  rw [← Category.assoc, TauCeti.ChainComplex.capCycles_i]
-  simp only [Category.assoc]
-  apply congrArg (((toSSet.obj X).chainComplex
-    (𝟙_ (ModuleCat.{w} k))).iCycles n ≫ ·)
-  dsimp only [χ]
-  simpa only [TauCeti.ChainComplex.iCycles_cupCycles] using
-    capChain_alexanderWhitneyDiagonal_assoc X k hp hq
-      (((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-        (𝟙_ (ModuleCat.{w} k))).iCycles p).hom φ)
-      (((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k
-        (𝟙_ (ModuleCat.{w} k))).iCycles q).hom ψ)
+  have : Epi (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ n) :=
+    (ModuleCat.epi_iff_surjective _).2 (HomologicalComplex.moduleCat_homologyπ_surjective _ n)
+  refine (cancel_epi (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ n)).1 ?_
+  erw [← Category.assoc, singularCap_homologyπ, Category.assoc, singularCap_homologyπ,
+    singularCup_homologyπ, singularCap_homologyπ, ← Category.assoc,
+    capCycles_comp_capCycles_cupCycles X k hp hq]
+  rfl
 
 end TopCat
