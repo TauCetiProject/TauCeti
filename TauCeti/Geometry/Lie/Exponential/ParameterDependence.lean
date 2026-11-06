@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.Deriv.Prod
 public import TauCeti.Geometry.Lie.Exponential.Basic
 import Mathlib.Analysis.ODE.ExistUnique
 
@@ -304,20 +305,6 @@ theorem hasStrictFDerivAt_mulInvariantCoordinateVectorField_zero_one
   exact (contDiffAt_mulInvariantCoordinateVectorField (I := I) (G := G) (v := 0) (n := 1)
     h1).hasStrictFDerivAt hderiv one_ne_zero
 
-/-- A curve in a product whose derivative on a symmetric closed interval has vanishing first
-component has constant first component on that interval. -/
-theorem fst_apply_eq_fst_apply_zero_of_hasDerivWithinAt {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {γ : ℝ → E × F} {δ : ℝ} (hδ : 0 < δ) (w : ℝ → F)
-    (h : ∀ t ∈ Set.Icc (-δ) δ, HasDerivWithinAt γ ((0 : E), w t) (Set.Icc (-δ) δ) t) {t : ℝ}
-    (ht : t ∈ Set.Icc (-δ) δ) : (γ t).1 = (γ 0).1 := by
-  have hβ : ∀ t ∈ Set.Icc (-δ) δ,
-      HasDerivWithinAt (Prod.fst ∘ γ) 0 (Set.Icc (-δ) δ) t := fun t ht => by
-    simpa using (ContinuousLinearMap.fst ℝ E F).hasFDerivAt.comp_hasDerivWithinAt t (h t ht)
-  have hconst := constant_of_derivWithin_zero (fun t ht => (hβ t ht).differentiableWithinAt)
-    (fun t ht => (hβ t (Set.Ico_subset_Icc_self ht)).derivWithin
-      ((uniqueDiffOn_Icc (by linarith)).uniqueDiffWithinAt (Set.Ico_subset_Icc_self ht)))
-  exact (hconst t ht).trans (hconst 0 ⟨by linarith, hδ.le⟩).symm
-
 /-- Near the zero tangent vector and the identity coordinate, the parameterized invariant ODE has
 a single solution family that is continuous jointly in its initial condition and time and
 uniformly Lipschitz in its initial state. The tangent-vector coordinate is frozen by the ODE; the
@@ -380,7 +367,10 @@ theorem exists_lipschitzOn_local_mulInvariantCoordinateFlow
     have hx' : x ∈ Metric.closedBall center r := by simpa only [center] using hx
     refine ⟨(hα' x hx').1, (hα' x hx').2, ?_⟩
     intro t ht
-    exact (fst_apply_eq_fst_apply_zero_of_hasDerivWithinAt hδ _ (hα' x hx').2 ht).trans
+    have hfst := fun s (hs : s ∈ Set.Icc (-δ) δ) =>
+      TauCeti.fst_apply_eq_fst_apply_left_of_hasDerivWithinAt (hα' x hx').2
+        (fun _ _ => rfl) hs
+    exact (hfst t ht).trans (hfst 0 ⟨by linarith, hδ.le⟩).symm |>.trans
       (congrArg Prod.fst (hα' x hx').1)
 
 /-- There is a coordinate solution family near the zero tangent vector and time zero which is
@@ -449,8 +439,6 @@ private theorem isMIntegralCurveOn_extChartAt_symm_of_coordinate_solution
       HasDerivAt (fun s => α (((v, extChartAt I (1 : G) (1 : G)), s)))
           ((0 : E), mulInvariantCoordinateVectorField (I := I) (G := G)
             (α (((v, extChartAt I (1 : G) (1 : G)), t)))) t ∧
-        α (((v, extChartAt I (1 : G) (1 : G)), 0)) =
-          (v, extChartAt I (1 : G) (1 : G)) ∧
         (α (((v, extChartAt I (1 : G) (1 : G)), t))).1 = v ∧
         (α (((v, extChartAt I (1 : G) (1 : G)), t))).2 ∈
           interior (extChartAt I (1 : G)).target) :
@@ -470,7 +458,7 @@ private theorem isMIntegralCurveOn_extChartAt_symm_of_coordinate_solution
     intro t ht
     apply IsMIntegralCurveAt.of_extChartAt_symm
     · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs
-      exact (hlocal s hs).2.2.2
+      exact (hlocal s hs).2.2
     · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs
       have hsnd : HasDerivAt f
           (mulInvariantCoordinateVectorField (I := I) (G := G)
@@ -483,7 +471,7 @@ private theorem isMIntegralCurveOn_extChartAt_symm_of_coordinate_solution
           (hlocal s hs).1
       have hpair : α (((v, extChartAt I (1 : G) (1 : G)), s)) = (v, f s) := by
         apply Prod.ext
-        · exact (hlocal s hs).2.2.1
+        · exact (hlocal s hs).2.1
         · rfl
       rw [hpair] at hsnd
       simpa only [mulInvariantCoordinateVectorField_apply, f] using hsnd
@@ -516,7 +504,8 @@ private theorem eqOn_mulInvariantIntegralCurve_of_coordinate_solution
   have hγOn : IsMIntegralCurveOn γ
       (mulInvariantVectorField (I := I) (G := G) (v : GroupLieAlgebra I G))
       (Set.Ioo (-δ) δ) :=
-    isMIntegralCurveOn_extChartAt_symm_of_coordinate_solution (I := I) (G := G) α v δ hlocal
+    isMIntegralCurveOn_extChartAt_symm_of_coordinate_solution (I := I) (G := G) α v δ
+      fun t ht => ⟨(hlocal t ht).1, (hlocal t ht).2.2⟩
   have hzero : (0 : ℝ) ∈ Set.Ioo (-δ) δ := ⟨by linarith, by linarith⟩
   have hγzero : γ 0 = 1 := by
     have hinit := (hlocal 0 hzero).2.1
