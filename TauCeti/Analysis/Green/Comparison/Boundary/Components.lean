@@ -33,6 +33,42 @@ local notation "E" => EuclideanSpace ℝ (Fin 1)
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
 
+/-- A function of the first coordinate has the same image on the coordinate strip
+`0 < z 0 < 1` as on the open unit interval. -/
+theorem image_comp_proj_preimage_Ioo {α : Type*} (g : ℝ → α) :
+    (fun z : E ↦ g (z 0)) '' ((EuclideanSpace.proj (0 : Fin 1)) ⁻¹' Ioo (0 : ℝ) 1) =
+      g '' Ioo (0 : ℝ) 1 := by
+  ext x
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact ⟨z 0, hz, rfl⟩
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t), ht, rfl⟩
+
+/-- A function that is injective on the open unit interval is injective, as a function of the
+first coordinate, on the coordinate strip `0 < z 0 < 1`. -/
+theorem injOn_comp_proj_preimage_Ioo {α : Type*} {g : ℝ → α} (hg : InjOn g (Ioo (0 : ℝ) 1)) :
+    InjOn (fun z : E ↦ g (z 0))
+      ((EuclideanSpace.proj (0 : Fin 1)) ⁻¹' Ioo (0 : ℝ) 1) := by
+  intro x hx y hy he
+  ext j
+  rw [Subsingleton.elim j 0]
+  exact hg hx hy he
+
+/-- The integral of a function of the first coordinate over the strip `0 < z 0 < 1` is its
+interval integral on `0..1`. -/
+theorem setIntegral_comp_proj_preimage_Ioo (g : ℝ → ℝ) :
+    ∫ z in (EuclideanSpace.proj (0 : Fin 1)) ⁻¹' Ioo (0 : ℝ) 1, g (z 0) =
+      ∫ t in (0 : ℝ)..1, g t := by
+  have hp :=
+    (TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
+    (TauCeti.measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0) g (Ioo (0 : ℝ) 1)
+  -- Read the Euclidean parameter integral as pullback along its measure-preserving projection.
+  change (∫ z in (EuclideanSpace.proj (0 : Fin 1)) ⁻¹' Ioo (0 : ℝ) 1,
+    g (EuclideanSpace.proj (0 : Fin 1) z)) = _
+  rw [hp, ← integral_Icc_eq_integral_Ioo,
+    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
+
 /-- A finite family of actual positively oriented arcs computes the canonical
 circulation integral. All component curve integrabilities are conclusions. -/
 theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
@@ -82,22 +118,12 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
       ((hf (R i z)).mdifferentiableAt one_ne_zero)
   have hD : MeasurableSet D := measurableSet_Ioo.preimage
     (EuclideanSpace.proj (𝕜 := ℝ) 0).continuous.measurable
-  have hri (i : ι) : R i '' D = (q i).extend '' Ioo (0 : ℝ) 1 := by
-    ext x
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact ⟨z 0, hz, rfl⟩
-    · rintro ⟨t, ht, rfl⟩
-      exact ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t), ht, rfl⟩
+  have hri (i : ι) : R i '' D = (q i).extend '' Ioo (0 : ℝ) 1 :=
+    image_comp_proj_preimage_Ioo _
   have himage : (⋃ i, R i '' D) = Zᶜ := by simpa only [hri] using hqimage
   have hdisj : Pairwise (fun i j ↦ Disjoint (R i '' D) (R j '' D)) := by
     simpa only [hri] using hqdisj
-  have hinj (i : ι) : InjOn (R i) D := by
-    intro x hx y hy he
-    have hp := hqinj i hx hy he
-    ext j
-    rw [Subsingleton.elim j 0]
-    exact hp
+  have hinj (i : ι) : InjOn (R i) D := injOn_comp_proj_preimage_Ioo (hqinj i)
   have hr := integralTopForm_eq_oriented_parametrizations l φ hi hD
     hZ himage hdisj hinj e hqd hqo
   have hic (i : ι) : IntervalIntegrable (circulationFun P Q (γ i).extend) volume 0 1 := by
@@ -114,15 +140,7 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
     apply Finset.sum_congr rfl
     intro i _
     rw [curveIntegral_oneForm_eq, setIntegral_congr_fun hD (heval i)]
-    have hp :=
-      (TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
-      (TauCeti.measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0)
-      (circulationFun P Q (γ i).extend) (Ioo (0 : ℝ) 1)
-    -- Read the Euclidean parameter integral as pullback along its measure-preserving projection.
-    change (∫ z in (EuclideanSpace.proj 0) ⁻¹' Ioo (0 : ℝ) 1,
-      circulationFun P Q (γ i).extend (EuclideanSpace.proj 0 z)) = _
-    rw [hp, ← integral_Icc_eq_integral_Ioo,
-      integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
+    exact setIntegral_comp_proj_preimage_Ioo _
 
 section SmoothBoundary
 
