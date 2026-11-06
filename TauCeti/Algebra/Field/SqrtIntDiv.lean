@@ -16,14 +16,14 @@ If `x` and `y` are square roots, in a field, of integers `a` and `b` that are bo
 cofactors. For `c` a prime dividing two radicands, this is the square root of the product of their
 `c`-free parts, which is prime to `c` when neither radicand is divisible by `c²`.
 
-The file also records that, in characteristic zero, such a square root is nonzero as soon as its
-radicand is.
+The file also records that, in characteristic zero, a root of a nonzero integer (in particular
+such a square root) is nonzero.
 
 ## Main results
 
 * `TauCeti.mul_div_intCast_sq_eq`: `(x * y / c) ^ 2 = (a / c) * (b / c)`.
-* `TauCeti.ne_zero_of_sq_eq_intCast`: in characteristic zero, a square root of a nonzero integer
-  is nonzero.
+* `TauCeti.ne_zero_of_pow_eq_intCast`: in characteristic zero, an `n`-th root (`n ≠ 0`) of a
+  nonzero integer is nonzero.
 -/
 
 public section
@@ -41,11 +41,9 @@ theorem mul_div_intCast_sq_eq {K : Type*} [Field K] {x y : K} {a b c : ℤ}
     Int.cast_div hb hc]
   rw [div_mul_div_comm, sq]
 
-/-- In characteristic zero, a square root of a nonzero integer is nonzero. -/
-theorem ne_zero_of_sq_eq_intCast {K : Type*} [Ring K] [CharZero K] {x : K} {c : ℤ}
-    (hx : x ^ 2 = algebraMap ℤ K c) (hc : c ≠ 0) : x ≠ 0 := by
-  rintro rfl
-  apply hc
-  simpa [eq_comm] using hx
+/-- In characteristic zero, an `n`-th root of a nonzero integer, for `n ≠ 0`, is nonzero. -/
+theorem ne_zero_of_pow_eq_intCast {K : Type*} [Ring K] [CharZero K] {x : K} {n : ℕ} {c : ℤ}
+    (hn : n ≠ 0) (hx : x ^ n = algebraMap ℤ K c) (hc : c ≠ 0) : x ≠ 0 :=
+  ne_zero_pow hn <| by rwa [hx, eq_intCast, Int.cast_ne_zero]
 
 end TauCeti
