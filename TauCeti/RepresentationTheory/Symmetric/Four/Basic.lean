@@ -95,7 +95,7 @@ representation of `S₃` is irreducible there. In characteristic `3` the invaria
 theorem isIrreducible_symmetricGroupFourTwoDimensionalRepresentation (h : (3 : k) ≠ 0) :
     (symmetricGroupFourTwoDimensionalRepresentation k).IsIrreducible :=
   (symmetricGroupFourMatchingHom.isIrreducible_comp_surjective_iff
-    surjective_symmetricGroupFourMatchingHom _).mpr
+    symmetricGroupFourMatchingHom_surjective _).mpr
     (isIrreducible_standardRepresentation_fin_three h)
 
 /-- The character of `E` at `σ` is the character of the standard representation of `S₃` at

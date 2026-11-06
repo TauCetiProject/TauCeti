@@ -36,9 +36,11 @@ The homomorphism `q` is surjective, and its kernel is the Klein four-group
 
 ## Main results
 
+* `TauCeti.cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching`: the permutations of
+  `Fin 4` of cycle type `{2, 2}` are the double transpositions of the three matchings.
 * `TauCeti.symmetricGroupFourMatching_symmetricGroupFourMatchingHom_apply`: `q σ` sends `m` to
   the matching whose double transposition is the conjugate by `σ` of that of `m`.
-* `TauCeti.surjective_symmetricGroupFourMatchingHom`: `q` is surjective.
+* `TauCeti.symmetricGroupFourMatchingHom_surjective`: `q` is surjective.
 * `TauCeti.mem_ker_symmetricGroupFourMatchingHom_iff`: the kernel of `q` consists of the
   identity and the three double transpositions.
 * `TauCeti.ker_symmetricGroupFourMatchingHom`: the kernel of `q` is the Klein four-group.
@@ -81,6 +83,35 @@ theorem symmetricGroupFourMatching_two : symmetricGroupFourMatching 2 = swap 0 2
 theorem symmetricGroupFourMatching_injective : Function.Injective symmetricGroupFourMatching := by
   unfold Function.Injective
   decide
+
+/-- The double transposition of each matching is an even permutation. -/
+theorem symmetricGroupFourMatching_mem_alternatingGroup (m : Fin 3) :
+    symmetricGroupFourMatching m ∈ alternatingGroup (Fin 4) := by
+  rw [Perm.mem_alternatingGroup]
+  revert m
+  decide
+
+/-- **A fixed-point-free involution of `Fin 4` is the double transposition of a matching.** -/
+theorem exists_eq_symmetricGroupFourMatching_of_sq_eq_one_of_forall_apply_ne {σ : Perm (Fin 4)}
+    (h2 : σ ^ 2 = 1) (hσ : ∀ x, σ x ≠ x) : ∃ m, σ = symmetricGroupFourMatching m := by
+  revert σ
+  decide
+
+/-- **The permutations of `Fin 4` of cycle type `{2, 2}` are the double transpositions of the
+three matchings.** -/
+theorem cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching {σ : Perm (Fin 4)} :
+    σ.cycleType = {2, 2} ↔ ∃ m, σ = symmetricGroupFourMatching m := by
+  refine ⟨fun hσ => ?_, ?_⟩
+  · -- `Equiv.Perm.cycleType` does not reduce, so read off from the cycle type `{2, 2}` that `σ` is
+    -- a fixed-point-free involution.
+    refine exists_eq_symmetricGroupFourMatching_of_sq_eq_one_of_forall_apply_ne ?_ fun x => ?_
+    · rw [← orderOf_dvd_iff_pow_eq_one, ← Perm.lcm_cycleType, hσ]
+      simp
+    · rw [← Perm.mem_support,
+        Finset.eq_univ_of_card σ.support (by rw [← Perm.sum_cycleType, hσ]; simp)]
+      exact Finset.mem_univ x
+  · rintro ⟨m, rfl⟩
+    fin_cases m <;> exact Perm.cycleType_swap_mul_swap_of_nodup (by decide)
 
 /-- The matching containing the pair `{0, g 0}`, read off from the partner of `0`. -/
 private def matchingIndex (g : Perm (Fin 4)) : Fin 3 :=
@@ -163,7 +194,7 @@ theorem symmetricGroupFourMatchingHom_formPerm_zero_one_two_three :
   decide
 
 /-- **Every permutation of the three matchings comes from a permutation of `Fin 4`.** -/
-theorem surjective_symmetricGroupFourMatchingHom :
+theorem symmetricGroupFourMatchingHom_surjective :
     Function.Surjective symmetricGroupFourMatchingHom := by
   unfold Function.Surjective
   decide
@@ -181,40 +212,24 @@ theorem mem_ker_symmetricGroupFourMatchingHom_iff {σ : Perm (Fin 4)} :
 theorem ker_symmetricGroupFourMatchingHom :
     symmetricGroupFourMatchingHom.ker =
       (alternatingGroup.kleinFour (Fin 4)).map (alternatingGroup (Fin 4)).subtype := by
-  have hmatching (m : Fin 3) : symmetricGroupFourMatching m ∈ alternatingGroup (Fin 4) ∧
-      (symmetricGroupFourMatching m).cycleType = {2, 2} := by
-    rw [Perm.mem_alternatingGroup]
-    fin_cases m <;> exact ⟨by decide, Perm.cycleType_swap_mul_swap_of_nodup (by decide)⟩
-  -- `Equiv.Perm.cycleType` does not reduce, so read off from the cycle type `{2, 2}` that `g` is
-  -- a fixed-point-free involution, and `decide` which one it is.
-  have hcycleType (g : Perm (Fin 4)) (hg : g.cycleType = {2, 2}) :
-      ∃ m, g = symmetricGroupFourMatching m := by
-    have hdec : ∀ g : Perm (Fin 4), g ^ 2 = 1 → (∀ x, g x ≠ x) →
-        ∃ m, g = symmetricGroupFourMatching m := by
-      decide
-    refine hdec g ?_ fun x => ?_
-    · rw [← orderOf_dvd_iff_pow_eq_one, ← Perm.lcm_cycleType, hg]
-      simp
-    · rw [← Perm.mem_support,
-        Finset.eq_univ_of_card g.support (by rw [← Perm.sum_cycleType, hg]; simp)]
-      exact Finset.mem_univ x
   ext σ
   rw [mem_ker_symmetricGroupFourMatchingHom_iff, ← SetLike.mem_coe, Subgroup.coe_map,
     alternatingGroup.coe_kleinFour_of_card_eq_four (Nat.card_eq_fintype_card.trans rfl)]
   constructor
   · rintro (rfl | ⟨m, rfl⟩)
     · exact ⟨1, Or.inl rfl, rfl⟩
-    · exact ⟨⟨_, (hmatching m).1⟩, Or.inr (hmatching m).2, rfl⟩
+    · exact ⟨⟨_, symmetricGroupFourMatching_mem_alternatingGroup m⟩,
+        Or.inr (cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching.2 ⟨m, rfl⟩), rfl⟩
   · rintro ⟨g, hg, rfl⟩
     rcases hg with hg | hg
     · exact Or.inl (by simp [Set.mem_singleton_iff.mp hg])
-    · exact Or.inr (hcycleType g hg)
+    · exact Or.inr (cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching.1 hg)
 
 /-- **`S₄` modulo the Klein four-group is `S₃`**: the isomorphism `S₄ / ker q ≃* S₃` induced by
 the action on matchings. -/
 noncomputable def symmetricGroupFourQuotientMatchingEquiv :
     Perm (Fin 4) ⧸ symmetricGroupFourMatchingHom.ker ≃* Perm (Fin 3) :=
-  QuotientGroup.quotientKerEquivOfSurjective _ surjective_symmetricGroupFourMatchingHom
+  QuotientGroup.quotientKerEquivOfSurjective _ symmetricGroupFourMatchingHom_surjective
 
 /-- The isomorphism `S₄ / ker q ≃* S₃` sends the class of `σ` to `q σ`. -/
 @[simp]
