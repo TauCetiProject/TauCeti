@@ -377,6 +377,62 @@ theorem mem_support_iff_eq_ofTriple {P : Polyad3 S}
     (S.vertexPart.part_eq_of_mem P.hc₁ h₁).symm (S.vertexPart.part_eq_of_mem P.hc₂ h₂).symm
     k₀₁.2.2.symm k₀₂.2.2.symm k₁₂.2.2.symm
 
+/-- Triples in the same polyad remain in the same polyad after the same injective
+reindexing of their roles. This includes oriented pair palettes: reversed role pairs use
+the palette's reversal operation. -/
+theorem ofTriple_comp_eq_ofTriple_comp
+    {x y : {x : Fin 3 → V // Function.Injective x}} (h : ofTriple S x = ofTriple S y)
+    (e : Fin 3 ↪ Fin 3) :
+    ofTriple S ⟨x.1 ∘ e, x.2.comp e.injective⟩ =
+      ofTriple S ⟨y.1 ∘ e, y.2.comp e.injective⟩ := by
+  have hcell (i : Fin 3) : S.vertexPart.part (x.1 i) = S.vertexPart.part (y.1 i) := by
+    fin_cases i
+    · exact congrArg c₀ h
+    · exact congrArg c₁ h
+    · exact congrArg c₂ h
+  have h₀₁ : S.pairColors.colorOfPair (x.1 0) (x.1 1) =
+      S.pairColors.colorOfPair (y.1 0) (y.1 1) := by
+    exact ((S.pairColors.color_coordPair_eq_iff (x := x) (i := 0)
+      (j := 1) (by decide)).1 (congrArg color₀₁ h)).trans
+        ((S.pairColors.color_coordPair_eq_iff (x := y) (i := 0)
+          (j := 1) (by decide)).1 rfl).symm
+  have h₀₂ : S.pairColors.colorOfPair (x.1 0) (x.1 2) =
+      S.pairColors.colorOfPair (y.1 0) (y.1 2) := by
+    exact ((S.pairColors.color_coordPair_eq_iff (x := x) (i := 0)
+      (j := 2) (by decide)).1 (congrArg color₀₂ h)).trans
+        ((S.pairColors.color_coordPair_eq_iff (x := y) (i := 0)
+          (j := 2) (by decide)).1 rfl).symm
+  have h₁₂ : S.pairColors.colorOfPair (x.1 1) (x.1 2) =
+      S.pairColors.colorOfPair (y.1 1) (y.1 2) := by
+    exact ((S.pairColors.color_coordPair_eq_iff (x := x) (i := 1)
+      (j := 2) (by decide)).1 (congrArg color₁₂ h)).trans
+        ((S.pairColors.color_coordPair_eq_iff (x := y) (i := 1)
+          (j := 2) (by decide)).1 rfl).symm
+  have hpair (i j : Fin 3) : S.pairColors.colorOfPair (x.1 i) (x.1 j) =
+      S.pairColors.colorOfPair (y.1 i) (y.1 j) := by
+    fin_cases i <;> fin_cases j
+    · simp
+    · exact h₀₁
+    · exact h₀₂
+    · rw [S.pairColors.colorOfPair_swap, S.pairColors.colorOfPair_swap (y.1 _) (y.1 _)]
+      exact congrArg (Option.map S.pairColors.rev) h₀₁
+    · simp
+    · exact h₁₂
+    · rw [S.pairColors.colorOfPair_swap, S.pairColors.colorOfPair_swap (y.1 _) (y.1 _)]
+      exact congrArg (Option.map S.pairColors.rev) h₀₂
+    · rw [S.pairColors.colorOfPair_swap, S.pairColors.colorOfPair_swap (y.1 _) (y.1 _)]
+      exact congrArg (Option.map S.pairColors.rev) h₁₂
+    · simp
+  have hcolor (i j : Fin 3) (hij : i ≠ j) :
+      S.pairColors.color (coordPair ⟨x.1 ∘ e, x.2.comp e.injective⟩ i j hij) =
+        S.pairColors.color (coordPair ⟨y.1 ∘ e, y.2.comp e.injective⟩ i j hij) := by
+    apply (S.pairColors.color_coordPair_eq_iff hij).2
+    exact (hpair (e i) (e j)).trans
+      ((S.pairColors.color_coordPair_eq_iff
+        (x := ⟨y.1 ∘ e, y.2.comp e.injective⟩) hij).1 rfl)
+  exact ext_data (hcell (e 0)) (hcell (e 1)) (hcell (e 2))
+    (hcolor 0 1 (by decide)) (hcolor 0 2 (by decide)) (hcolor 1 2 (by decide))
+
 /-- **Polyads under a refined skeleton.** If the vertex cells of `T` refine those of `S` and the
 pair colors of `S` factor through those of `T`, then two injective triples with the same polyad
 over `T` have the same polyad over `S`. -/

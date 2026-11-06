@@ -95,6 +95,19 @@ theorem isTopRegularOverPolyad_iff : H.IsTopRegularOverPolyad P δ r ↔
       |(H.relDensityOn c (unionSupport Q) : ℝ) - H.relativeDensity c P| ≤ δ :=
   Iff.rfl
 
+/-- Top regularity depends only on the colors of the underlying triples of the polyad's
+support. In particular, edits outside that support preserve its regularity parameter and rank. -/
+theorem IsTopRegularOverPolyad.congr (h : H.IsTopRegularOverPolyad P δ r)
+    {H' : Colored3Graph κ V}
+    (hcolor : ∀ x ∈ P.support,
+      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) =
+        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)) :
+    H'.IsTopRegularOverPolyad P δ r := by
+  intro c Q hQ
+  rw [← relDensityOn_congr (fun x hx ↦ hcolor x (unionSupport_subset Q hx)) c,
+    relativeDensity_def, ← relDensityOn_congr hcolor c, ← relativeDensity_def]
+  exact h c Q hQ
+
 /-- **The rank-`r` test.** A `(δ, r)`-top-regular coloring passes the test on the union of any
 family of at most `r` subpolyads, indexed by an arbitrary finite type. -/
 theorem IsTopRegularOverPolyad.abs_relDensityOn_sub_le (h : H.IsTopRegularOverPolyad P δ r)
