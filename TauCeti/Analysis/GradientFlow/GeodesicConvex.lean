@@ -70,6 +70,8 @@ curve need no such assumption.
 * `TauCeti.ConvexAlongGeodesics.geodesicallyConvex`: in a geodesic space, convexity along every
   geodesic implies geodesic convexity.
 * `TauCeti.ConvexAlong.apply_ne_top`: the effective domain is convex along a curve of convexity.
+* `TauCeti.ConvexAlong.apply_add_le_of_forall_le`: an `m`-convex energy grows at least like
+  `(m / 2) d(γ 0, γ 1)²` away from a minimum at the start of the curve.
 * `TauCeti.ConvexAlong.add`, `TauCeti.ConvexAlong.const_mul`, `TauCeti.ConvexAlong.iSup` and
   `TauCeti.ConvexAlong.of_tendsto`: convexity along a curve is stable under sums, nonnegative
   multiples, suprema and pointwise limits; `TauCeti.ConvexAlongGeodesics.add`,
@@ -198,6 +200,39 @@ theorem ConvexAlong.reverse (h : ConvexAlong m φ γ) : ConvexAlong m φ fun t �
   simp only [sub_zero, sub_self]
   rw [add_comm, dist_comm, mul_right_comm (m / 2) t]
   exact h'
+
+/-- **Quadratic growth away from a minimum along a curve of convexity.** If `φ` is `m`-convex
+along `γ` and its smallest value along `γ` on `[0, 1]` is attained at `γ 0`, then
+`φ (γ 0) + (m / 2) d(γ 0, γ 1)² ≤ φ (γ 1)`. Comparing `φ (γ 0)` with the convexity bound at time
+`t` and letting `t → 0` gives the inequality; `m` may be negative. -/
+theorem ConvexAlong.apply_add_le_of_forall_le (h : ConvexAlong m φ γ)
+    (hmin : ∀ t ∈ Icc (0 : ℝ) 1, φ (γ 0) ≤ φ (γ t)) :
+    φ (γ 0) + ((m / 2 * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) ≤ φ (γ 1) := by
+  set D := dist (γ 0) (γ 1) ^ 2
+  have h₁ := hmin 1 (right_mem_Icc.2 zero_le_one)
+  induction hb : φ (γ 1) using EReal.rec with
+  | top => exact le_top
+  | bot =>
+    rw [hb, le_bot_iff] at h₁
+    simp [h₁]
+  | coe b =>
+    induction ha : φ (γ 0) using EReal.rec with
+    | bot => simp
+    | top => simp [ha, hb] at h₁
+    | coe a =>
+      -- For `t ∈ (0, 1)`, dividing the convexity bound at time `t` by `t` gives
+      -- `a + (m / 2) (1 - t) D ≤ b`.
+      have key : ∀ t ∈ Ioo (0 : ℝ) 1, a + m / 2 * (1 - t) * D ≤ b := by
+        intro t ht
+        have h' := (hmin t (Ioo_subset_Icc_self ht)).trans (h t (Ioo_subset_Icc_self ht))
+        rw [ha, hb] at h'
+        have h'' : a ≤ (1 - t) * a + t * b - m / 2 * t * (1 - t) * D := by exact_mod_cast h'
+        exact le_of_mul_le_mul_left (by linarith) ht.1
+      have hlim : Tendsto (fun t : ℝ ↦ a + m / 2 * (1 - t) * D) (𝓝[>] 0)
+          (𝓝 (a + m / 2 * D)) := by
+        have : Continuous fun t : ℝ ↦ a + m / 2 * (1 - t) * D := by fun_prop
+        simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+      exact_mod_cast le_of_tendsto hlim (eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) key)
 
 /-- **Sum of convex energies.** If `φ` is `m`-convex and `ψ` is `m'`-convex along the same curve,
 then `φ + ψ` is `(m + m')`-convex along it. -/
