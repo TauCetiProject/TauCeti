@@ -69,6 +69,8 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
+* `SymplecticForm.integral_floerEnergyDensity_sub_add_eq_of_subset`: the difference between the
+  energy and its topological part does not see regions where the perturbation vanishes.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
   `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
@@ -613,6 +615,42 @@ theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm
   rw [div_mul_eq_mul_div, le_div_iff₀ hc, mul_comm]
   exact ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le (hJc z hz)
     (hJM z hz) (h z hz)
+
+/-- **The energy defect is local to the support of the perturbation.** The difference
+`∫ E - ∫ u^*ω + ∫ R_K(u)` between the Floer energy over a region `D` and its topological part is
+unchanged when a part of `D` is removed on which the perturbation vanishes near every point: there
+the energy density is the symplectic area density and the curvature vanishes. -/
+theorem integral_floerEnergyDensity_sub_add_eq_of_subset (ω : SymplecticForm V)
+    {T D : Set (ℝ × ℝ)} (hTD : T ⊆ D) (hDT : MeasurableSet (D \ T))
+    (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) D)
+    (harea : IntegrableOn
+      (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) D)
+    (hcurv : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) D)
+    (hK : ∀ z ∈ D \ T, ∀ᶠ z' in 𝓝 z, Ks z' = (fun _ ↦ 0) ∧ Kt z' = fun _ ↦ 0) :
+    (∫ z in D, ω.floerEnergyDensity Ks Kt u z) -
+        (∫ z in D, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
+        ∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z) =
+      (∫ z in T, ω.floerEnergyDensity Ks Kt u z) -
+        (∫ z in T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
+        ∫ z in T, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f D) :
+      ∫ z in D, f z = (∫ z in T, f z) + ∫ z in D \ T, f z := by
+    conv_lhs => rw [← union_sdiff_cancel hTD]
+    exact setIntegral_union disjoint_sdiff_right hDT (hf.mono_set hTD) (hf.mono_set sdiff_subset)
+  have hED : ∫ z in D \ T, ω.floerEnergyDensity Ks Kt u z =
+      ∫ z in D \ T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
+    refine setIntegral_congr_fun hDT fun z hz => ?_
+    obtain ⟨hs, ht⟩ := (hK z hz).self_of_nhds
+    simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+      perturbedFDeriv_apply_stdComplexLineImag, hs, ht]
+  have hRD : ∫ z in D \ T, ω.hamiltonianCurvature Ks Kt z (u z) = 0 := by
+    refine setIntegral_eq_zero_of_forall_eq_zero fun z hz => ?_
+    have h := hK z hz
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
+      (h.mono fun _ h' ↦ h'.1) (h.mono fun _ h' ↦ h'.2), hamiltonianCurvature_zero_left]
+    simp
+  rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hED, hRD]
+  ring
 
 end Integral
 
