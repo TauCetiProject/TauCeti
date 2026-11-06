@@ -18,6 +18,7 @@ import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.Data.ENat.Basic
+import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Localization.Module
 
 /-!
@@ -37,10 +38,10 @@ The regular-sequence transfer lemmas for linear maps live in
 
 * `RingTheory.Sequence.IsRegular.mem_maximalIdeal`: over a local ring, every element of an
   `M`-regular sequence lies in the maximal ideal.
-* `RingTheory.Sequence.IsRegular.length_le_supportDim`: over a Noetherian local ring, the length
-  of an `M`-regular sequence on a finite module `M` is at most the dimension of its support.
 * `IsLocalRing.depth_le_supportDim`: the depth of a finite nonzero module over a Noetherian local
-  ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)).
+  ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)), by the bound
+  `RingTheory.Sequence.IsRegular.length_le_supportDim` from
+  `TauCeti.RingTheory.KrullDimension.Regular`.
 * `IsLocalRing.maximalIdeal_ne_bot_of_depth_ne_zero`: a Noetherian local ring of positive depth
   is not a field.
 * `Ideal.depth_min_snd_trd_add_one_le_fst_of_exact`,
@@ -113,18 +114,6 @@ theorem RingTheory.Sequence.IsRegular.mem_maximalIdeal {R : Type*} [CommRing R] 
   refine reg.top_ne_smul ?_
   rw [Ideal.eq_top_of_isUnit_mem (Ideal.ofList rs) (Ideal.subset_span hr)
     (notMem_maximalIdeal.1 h), Submodule.top_smul]
-
-/-- Over a Noetherian local ring, the length of an `M`-regular sequence on a finite module `M` is at
-most the dimension of the support of `M`. -/
-theorem RingTheory.Sequence.IsRegular.length_le_supportDim {R : Type*} [CommRing R]
-    [IsLocalRing R] [IsNoetherianRing R] {M : Type*} [AddCommGroup M] [Module R M]
-    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) :
-    (rs.length : WithBot ℕ∞) ≤ Module.supportDim R M := by
-  have := reg.quot_ofList_smul_nontrivial ⊤
-  obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1
-    (Module.supportDim_ne_bot_of_nontrivial R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)))
-  rw [← Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg, ← he]
-  exact_mod_cast le_add_self
 
 namespace ModuleCat
 
