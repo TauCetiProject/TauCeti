@@ -84,6 +84,20 @@ private theorem tensorAlgebra_mul_component (X : C) (m n : ℕ) {A B : C}
       (f ⊗ₘ g) ≫ (tensorPowAddIso X m n).hom ≫ ιTotal (tensorPow X) (n + m) := by
   rw [← tensorHom_comp_tensorHom_assoc, ιTotal_tensorAlgebraMul]
 
+private theorem tensorAlgebra_mul_component_left (X : C) (m n : ℕ) {A : C}
+    (f : A ⟶ tensorPow X m) :
+    ((f ≫ ιTotal (tensorPow X) m) ⊗ₘ ιTotal (tensorPow X) n) ≫ tensorAlgebraMul X =
+      f ▷ tensorPow X n ≫ (tensorPowAddIso X m n).hom ≫
+        ιTotal (tensorPow X) (n + m) := by
+  rw [← whiskerRight_comp_tensorHom_assoc, ιTotal_tensorAlgebraMul]
+
+private theorem tensorAlgebra_mul_component_right (X : C) (m n : ℕ) {B : C}
+    (g : B ⟶ tensorPow X n) :
+    (ιTotal (tensorPow X) m ⊗ₘ (g ≫ ιTotal (tensorPow X) n)) ≫ tensorAlgebraMul X =
+      tensorPow X m ◁ g ≫ (tensorPowAddIso X m n).hom ≫
+        ιTotal (tensorPow X) (n + m) := by
+  rw [← whiskerLeft_comp_tensorHom_assoc, ιTotal_tensorAlgebraMul]
+
 private theorem tensorAlgebra_mul_assoc (X : C) :
     tensorAlgebraMul X ▷ tensorAlgebraObj X ≫ tensorAlgebraMul X =
       (α_ (tensorAlgebraObj X) (tensorAlgebraObj X) (tensorAlgebraObj X)).hom ≫
@@ -91,9 +105,7 @@ private theorem tensorAlgebra_mul_assoc (X : C) :
   refine total_tensor_tensor_hom_ext fun a b c ↦ ?_
   rw [tensorHom_comp_whiskerRight_assoc, ιTotal_tensorAlgebraMul,
     associator_naturality_assoc, tensorHom_comp_whiskerLeft_assoc, ιTotal_tensorAlgebraMul]
-  conv_lhs => rw [← Category.id_comp (ιTotal (tensorPow X) c), tensorAlgebra_mul_component]
-  conv_rhs => rw [← Category.id_comp (ιTotal (tensorPow X) a), tensorAlgebra_mul_component]
-  simp only [tensorHom_id, id_tensorHom]
+  rw [tensorAlgebra_mul_component_left, tensorAlgebra_mul_component_right]
   rw [reassoc_of% (tensorPowAddIso_assoc X a b c)]
   rw [← eqToHom_naturality (ιTotal (tensorPow X)) (Nat.add_assoc c b a)]
   simp
@@ -119,7 +131,7 @@ theorem tensorAlgebra_mul (X : C) :
 
 /-- The coproduct of the tensor powers of a morphism preserves the tensor algebra unit and
 multiplication. -/
-theorem isMonHom_total_map_tensorPowMap {X Y : C} (f : X ⟶ Y) :
+instance isMonHom_total_map_tensorPowMap {X Y : C} (f : X ⟶ Y) :
     IsMonHom ((total ℕ C).map (tensorPowMap f)) where
   one_hom := by simp
   mul_hom := by
@@ -137,18 +149,10 @@ def tensorAlgebraFunctor : C ⥤ Mon C where
   obj X := Mon.mk (tensorAlgebraObj X)
   map f := { hom := (total ℕ C).map (tensorPowMap f)
              isMonHom_hom := isMonHom_total_map_tensorPowMap f }
-  map_id X := Mon.Hom.ext (by
-    simp only [Mon.id_hom']
-    rw [← (total ℕ C).map_id]
-    congr 1
-    funext n
-    exact tensorPowMap_id X n)
-  map_comp f g := Mon.Hom.ext (by
-    simp only [Mon.comp_hom']
-    rw [← (total ℕ C).map_comp]
-    congr 1
-    funext n
-    exact tensorPowMap_comp f g n)
+  map_id X := Mon.Hom.ext (total_hom_ext fun n ↦ by
+    simp [ιTotal_total_map, tensorPowMap_id])
+  map_comp f g := Mon.Hom.ext (total_hom_ext fun n ↦ by
+    simp [ιTotal_total_map, tensorPowMap_comp])
 
 /-- The underlying object of the tensor algebra functor is the coproduct of tensor powers. -/
 @[simp]
