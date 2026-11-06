@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import TauCeti.Data.Nat.Pow
+public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
 public import TauCeti.RingTheory.Semisimple.Schur
@@ -432,50 +434,8 @@ theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplici
   exact ⟨eM.trans <| (LinearEquiv.piCongrRight fun i ↦ (hσ i).some).trans <|
     (LinearEquiv.piCongrLeft R (fun j ↦ R ⧸ b j) σ).trans eN.symm⟩
 
-/-- Grouping a product over a finite type by the fibres of a map `f`. -/
-theorem prod_pow_comp_eq_prod_pow_natCard {α β : Type*} [Fintype α] [Fintype β]
-    (f : α → β) (C F : β → ℕ) :
-    ∏ j, C (f j) ^ F (f j) = ∏ q, C q ^ (Nat.card {j // f j = q} * F q) := by
-  classical
-  rw [← Finset.prod_fiberwise' Finset.univ f fun q ↦ C q ^ F q]
-  refine Finset.prod_congr rfl fun q _ ↦ ?_
-  rw [Finset.prod_const, ← pow_mul, mul_comm, Nat.card_eq_fintype_card, Fintype.card_subtype]
-
-/-- If every `C q` exceeds `1` and
-`∏ C q ^ (B q * A q + A q * B q) = ∏ C q ^ (A q * A q + B q * B q)`, then `A = B`: the second
-exponent exceeds the first by `(A q - B q) ^ 2 + (B q - A q) ^ 2`. -/
-theorem eq_of_prod_pow_mul_add_mul_eq {ι : Type*} [Fintype ι] {C A B : ι → ℕ}
-    (hC : ∀ q, 1 < C q)
-    (h : ∏ q, C q ^ (B q * A q + A q * B q) = ∏ q, C q ^ (A q * A q + B q * B q)) (q : ι) :
-    A q = B q := by
-  have hsq (a b : ℕ) : a * a + b * b = (b * a + a * b) + ((a - b) ^ 2 + (b - a) ^ 2) := by
-    rcases le_total a b with hab | hab <;>
-    · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
-      simp only [Nat.sub_eq_zero_of_le hab, add_tsub_cancel_left]
-      ring
-  have h2 : ∏ q, C q ^ (A q * A q + B q * B q) = (∏ q, C q ^ (B q * A q + A q * B q)) *
-      ∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) := by
-    rw [← Finset.prod_mul_distrib]
-    exact Finset.prod_congr rfl fun q _ ↦ by rw [← pow_add, ← hsq]
-  rw [h2] at h
-  have hone : ∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) = 1 :=
-    (mul_eq_left₀ (Finset.prod_ne_zero_iff.mpr fun q _ ↦
-      pow_ne_zero _ (zero_lt_one.trans (hC q)).ne')).mp h.symm
-  have := Nat.dvd_one.mp (hone ▸ Finset.dvd_prod_of_mem _ (Finset.mem_univ q))
-  rw [Nat.pow_eq_one] at this
-  have := this.resolve_left (hC q).ne'
-  simp only [Nat.add_eq_zero_iff, pow_eq_zero_iff two_ne_zero, Nat.sub_eq_zero_iff_le] at this
-  omega
-
-/-- A finite simple module has more than one endomorphism. -/
-theorem one_lt_natCard_end_of_isSimpleModule (S : Type w) [AddCommGroup S] [Module R S]
-    [IsSimpleModule R S] [Finite S] : 1 < Nat.card (Module.End R S) := by
-  have : Finite (Module.End R S) := Finite.of_injective _ DFunLike.coe_injective
-  have := IsSimpleModule.nontrivial R S
-  exact Finite.one_lt_card (α := Module.End R S)
-
-/-- The Jordan-Hölder multiplicities of a simple quotient `R ⧸ c x` agree in two finite products
-of simple quotients of the ring whose numbers of maps satisfy
+/-- The Jordan-Hölder multiplicities of a simple quotient `R ⧸ Sum.elim a b x` agree in two finite
+products of simple quotients of the ring whose numbers of maps satisfy
 `#Hom(P, Q) · #Hom(Q, P) = #End(P) · #End(Q)`. -/
 private theorem jordanHolderMultiplicity_quotient_eq_of_natCard_linearMap_mul_eq
     {n m : ℕ} {a : Fin n → Ideal R} {b : Fin m → Ideal R}
@@ -490,6 +450,8 @@ private theorem jordanHolderMultiplicity_quotient_eq_of_natCard_linearMap_mul_eq
   classical
   -- Index the simple factors of the two products together, and group them by isomorphism class.
   let c : Fin n ⊕ Fin m → Ideal R := Sum.elim a b
+  -- `c (.inl i)` and `c (.inr j)` reduce to `a i` and `b j` by `Sum.elim`, so the instances for
+  -- `a` and `b` apply by definition.
   have hc : ∀ x, IsSimpleModule R (R ⧸ c x) := by
     rintro (i | j)
     exacts [inferInstanceAs (IsSimpleModule R (R ⧸ a i)),
@@ -520,26 +482,50 @@ private theorem jordanHolderMultiplicity_quotient_eq_of_natCard_linearMap_mul_eq
     rw [jordanHolderMultiplicity_pi_eq_natCard]
     simp only [B, κ, Quotient.eq]
     rfl
+  -- Grouping a product over the factors of a product by the fibres of their class.
+  have hgroup {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) (F : Quotient s → ℕ) :
+      ∏ j, C (κ (g j)) ^ F (κ (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * F q) := by
+    rw [← Fintype.prod_fiberwise' (fun j ↦ κ (g j)) fun q ↦ C q ^ F q]
+    refine Finset.prod_congr rfl fun q _ ↦ ?_
+    rw [Finset.prod_const, ← pow_mul, mul_comm, Finset.card_univ, Nat.card_eq_fintype_card]
   -- Counting maps into a product of simple factors, grouped by class.
   have hcardM {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
       Nat.card ((∀ i, R ⧸ a i) →ₗ[R] ∀ j, R ⧸ c (g j)) =
         ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * A q) := by
     have := fun j ↦ hc (g j)
-    rw [natCard_linearMap_pi_eq_prod_pow, ← prod_pow_comp_eq_prod_pow_natCard (fun j ↦ κ (g j)) C A]
+    rw [natCard_linearMap_pi_eq_prod_pow, ← hgroup g A]
     simp only [hA, hC_mk]
   have hcardN {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
       Nat.card ((∀ j, R ⧸ b j) →ₗ[R] ∀ j, R ⧸ c (g j)) =
         ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * B q) := by
     have := fun j ↦ hc (g j)
-    rw [natCard_linearMap_pi_eq_prod_pow, ← prod_pow_comp_eq_prod_pow_natCard (fun j ↦ κ (g j)) C B]
+    rw [natCard_linearMap_pi_eq_prod_pow, ← hgroup g B]
     simp only [hB, hC_mk]
-  erw [hcardM Sum.inr, hcardN Sum.inl, hcardM Sum.inl, hcardN Sum.inr] at h
-  rw [← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib] at h
+  -- `c (.inl i)` and `c (.inr j)` unfold to `a i` and `b j`, and `A q`, `B q` to the fibre counts,
+  -- so the four counts have the stated types by definition.
+  have hMN : Nat.card ((∀ i, R ⧸ a i) →ₗ[R] ∀ j, R ⧸ b j) = ∏ q, C q ^ (B q * A q) :=
+    hcardM Sum.inr
+  have hNM : Nat.card ((∀ j, R ⧸ b j) →ₗ[R] ∀ i, R ⧸ a i) = ∏ q, C q ^ (A q * B q) :=
+    hcardN Sum.inl
+  have hMM : Nat.card (Module.End R (∀ i, R ⧸ a i)) = ∏ q, C q ^ (A q * A q) := hcardM Sum.inl
+  have hNN : Nat.card (Module.End R (∀ j, R ⧸ b j)) = ∏ q, C q ^ (B q * B q) := hcardN Sum.inr
+  rw [hMN, hNM, hMM, hNN, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib] at h
   simp only [← pow_add] at h
   have hC (q : Quotient s) : 1 < C q := by
     induction q using Quotient.ind with | _ x
-    exact one_lt_natCard_end_of_isSimpleModule (R := R) (R ⧸ c x)
-  rw [hA, hB, eq_of_prod_pow_mul_add_mul_eq hC h (κ x)]
+    have := IsSimpleModule.nontrivial R (R ⧸ c x)
+    have := hfin x
+    exact Module.End.one_lt_natCard (R := R) (M := R ⧸ c x)
+  have hle (q : Quotient s) : B q * A q + A q * B q ≤ A q * A q + B q * B q := by
+    nlinarith [sq_nonneg ((A q : ℤ) - B q)]
+  have hAB := Nat.eq_of_prod_pow_eq_of_le (s := Finset.univ) (fun q _ ↦ hC q)
+    (fun q _ ↦ hle q) h (κ x) (Finset.mem_univ _)
+  have : A (κ x) = B (κ x) := by
+    rcases lt_trichotomy (A (κ x)) (B (κ x)) with hlt | heq | hgt
+    · nlinarith
+    · exact heq
+    · nlinarith
+  rw [hA, hB, this]
 
 /-- **Finite semisimple modules are determined by the numbers of maps between them**, over an
 arbitrary ring. Two finite semisimple modules `M` and `N` with

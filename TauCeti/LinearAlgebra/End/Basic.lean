@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
+public import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Basic facts about module endomorphisms
@@ -25,6 +26,8 @@ one has no nonzero fixed vectors (`TauCeti.injective_one_sub_of_pow_eq_smul_one`
 
 Rescaling an involution by a scalar `μ` with `μ * μ = 1` gives an endomorphism squaring to `1`
 (`Module.End.smul_mul_smul_self_eq_one`).
+
+A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_natCard`).
 -/
 
 public section
@@ -76,5 +79,11 @@ theorem smul_mul_smul_self_eq_one {R M : Type*} [CommSemiring R] [AddCommMonoid 
     (μ • g) * (μ • g) = 1 := by
   rw [smul_mul_smul_comm, hμ, one_smul]
   exact LinearMap.ext hg
+
+/-- A finite nontrivial module has more than one endomorphism: `0` and `1` differ. -/
+theorem one_lt_natCard {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Nontrivial M]
+    [Finite M] : 1 < Nat.card (Module.End R M) := by
+  have : Finite (Module.End R M) := Finite.of_injective _ DFunLike.coe_injective
+  exact Finite.one_lt_card
 
 end Module.End
