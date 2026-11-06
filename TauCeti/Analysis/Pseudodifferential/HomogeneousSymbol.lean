@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
@@ -43,8 +44,9 @@ The file develops:
   rule for `HomogeneousSymbol.comp`;
 * the growth bound `HomogeneousSymbol.exists_norm_coefficient_le`: on a compact set of positions,
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
-  applied to the iterated derivatives above it bounds `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖` by
-  `C ‖ξ‖ ^ (m - |β|)`;
+  applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
+  `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -704,6 +706,68 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
   · exact ((χ.contDiff.comp contDiff_snd).contDiffAt).smul (a.contDiffAt_coefficient h)
 
 end Growth
+
+/-! ### Growth of the mixed derivatives -/
+
+section MixedDeriv
+
+variable {n : ℕ}
+
+/-- The iterated frequency derivative `∂_ξ^β a`, a homogeneous symbol of degree `m - |β|`. -/
+private noncomputable def iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m) :
+    (β : List (Fin n)) → HomogeneousSymbol X (CoordinateSpace n) V W (m - β.length)
+  | [] => a.castDegree (by simp)
+  | j :: js => ((iterFrequencyDeriv a js).frequencyDeriv (EuclideanSpace.single j 1)).castDegree
+      (by simp only [List.length_cons]; push_cast; ring)
+
+/-- The iterated spatial derivative `∂_x^α a`, a homogeneous symbol of the same degree. -/
+private noncomputable def iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m) :
+    List (Fin n) → HomogeneousSymbol (CoordinateSpace n) E V W m
+  | [] => a
+  | j :: js => (iterSpatialDeriv a js).spatialDeriv (EuclideanSpace.single j 1)
+
+private theorem coefficient_iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m)
+    (β : List (Fin n)) (x : X) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (iterFrequencyDeriv a β).coefficient (x, ξ) =
+      coordinateDeriv β (fun η => a.coefficient (x, η)) ξ := by
+  induction β generalizing ξ with
+  | nil => simp [iterFrequencyDeriv]
+  | cons j js ih =>
+    -- The two sides are derivatives of functions that agree on the open set of nonzero
+    -- frequencies.
+    have h : (fun η => (iterFrequencyDeriv a js).coefficient (x, η)) =ᶠ[𝓝 ξ]
+        coordinateDeriv js (fun η => a.coefficient (x, η)) :=
+      eventually_of_mem (isOpen_ne.mem_nhds hξ) fun η hη => ih hη
+    rw [iterFrequencyDeriv, coefficient_castDegree, coefficient_frequencyDeriv _ _ hξ,
+      coordinateDeriv_cons, h.fderiv_eq]
+
+private theorem coefficient_iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m)
+    (α : List (Fin n)) (x : CoordinateSpace n) {ξ : E} (hξ : ξ ≠ 0) :
+    (iterSpatialDeriv a α).coefficient (x, ξ) =
+      coordinateDeriv α (fun y => a.coefficient (y, ξ)) x := by
+  induction α generalizing x with
+  | nil => simp [iterSpatialDeriv]
+  | cons j js ih =>
+    rw [iterSpatialDeriv, coefficient_spatialDeriv _ _ hξ, coordinateDeriv_cons, funext ih]
+
+/-- **Growth of the mixed derivatives of a homogeneous symbol.** On a compact set of positions,
+the mixed derivatives of a homogeneous symbol of degree `m` satisfy
+`‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency. -/
+theorem exists_norm_mixedDeriv_le
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ξ ≠ 0 →
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length) := by
+  obtain ⟨C, hC, hCK⟩ := (iterSpatialDeriv (iterFrequencyDeriv a β) α).exists_norm_coefficient_le hK
+  refine ⟨C, hC, fun x hx ξ hξ => ?_⟩
+  have h : (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
+      mixedDeriv α β a.coefficient x ξ := by
+    rw [coefficient_iterSpatialDeriv _ _ _ hξ, mixedDeriv_def]
+    exact congrArg (coordinateDeriv α · x)
+      (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
+  exact h ▸ hCK x hx ξ
+
+end MixedDeriv
 
 /-! ### Estimates for the higher derivatives -/
 
