@@ -21,10 +21,9 @@ of restriction along the scalar inclusion
 `R → Unitization R A`,
 
 which is the module of reduced cyclic cochains of the forced unitization, and the relative cyclic
-cochain complex is its reduced cyclic cochain complex. The reduced theory of a unital algebra is
-therefore used at `Unitization R A` rather than built again: its Hochschild coboundary,
-functoriality, inclusion into the full cyclic complex and identification as the kernel of scalar
-restriction all apply verbatim.
+cochain complex is its reduced cyclic cochain complex. Consequently the reduced API (Hochschild
+coboundary, functoriality, inclusion into the full cyclic complex, identification as the kernel of
+scalar restriction) applies verbatim to the relative theory.
 
 What is specific to the forced unitization is the augmentation `Unitization R A → R`, which
 splits scalar restriction; this records explicitly the contravariant splitting used by the
@@ -334,6 +333,8 @@ theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : relativeCyclicCocycles R B
   apply (relativeCyclicCochainComplex R A M).moduleCat_iCycles_injective n
   rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i,
     ConcreteCategory.comp_apply, relative_iCycles_toCycles, relative_iCycles_toCycles,
+    -- Insert a `hom ≫ inv` pair so that the elementwise `reducedCyclicCochainComplexMap_f_apply`,
+    -- which is stated through `reducedCyclicCochainComplexXIso`, can fire.
     ← Iso.hom_inv_id_apply (reducedCyclicCochainComplexXIso R (Unitization R A) M n)
       ((reducedCyclicCochainComplexMap M (Unitization.map f)).f n _),
     reducedCyclicCochainComplexMap_f_apply, Iso.inv_hom_id_apply]
