@@ -11,7 +11,6 @@ public import Mathlib.Topology.LocallyClosed
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
-import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Topology.Separation.Connected
 
 /-!
@@ -243,38 +242,14 @@ theorem exists_injective_isOpenEmbedding_comp (h : IsCAD n 𝒞) {E : Set (Fin n
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
     obtain ⟨d, ι, hι, hf⟩ := ih hC
     rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-    · -- A section is homeomorphic to the graph of a continuous function on `C`, hence to `C`.
-      let e : C ≃ₜ cylinder C '' sectionSet (θ C) i :=
-        (isEmbedding_graph ((hθ C hC).continuous i)).toHomeomorph.trans <|
-          (Homeomorph.setCongr (sectionSet_eq_range _ _).symm).trans <|
-            isEmbedding_cylinder.homeomorphImage _
-      refine ⟨d, Fin.succ ∘ ι, (Fin.succ_injective _).comp hι, ?_⟩
-      convert hf.comp e.symm.isOpenEmbedding using 1
-      funext y
-      obtain ⟨c, rfl⟩ := e.surjective y
-      -- `e c` is the point of the cylinder over `c` at height `θ C i c`.
-      have hc : (e c : Fin (n + 1) → ℝ) = cylinder C (c, θ C i c) := rfl
-      funext l
-      simp [hc, cylinder_apply_succ]
-    · -- A sector is an open subset of `C × ℝ`, which embeds openly into `ℝ ^ d × ℝ = ℝ ^ (d + 1)`.
-      let e := isEmbedding_cylinder (S := C).homeomorphImage (sectorSet (θ C) j)
-      let g : C × ℝ → Fin (d + 1) → ℝ :=
-        (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘
-          Prod.map (fun x : C ↦ x.1 ∘ ι) id
-      have hg : IsOpenEmbedding g :=
-        (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph.isOpenEmbedding.comp <|
-          (Homeomorph.prodComm _ _).isOpenEmbedding.comp (hf.prodMap .id)
-      refine ⟨d + 1, Fin.cons 0 (Fin.succ ∘ ι),
+    · refine ⟨d, Fin.succ ∘ ι, (Fin.succ_injective _).comp hι, ?_⟩
+      exact hf.comp (isOpenEmbedding_tail_image_cylinder_sectionSet i ((hθ C hC).continuous i))
+    · refine ⟨d + 1, Fin.cons 0 (Fin.succ ∘ ι),
         Fin.cons_injective_iff.2 ⟨fun ⟨l, hl⟩ ↦ Fin.succ_ne_zero _ hl,
           (Fin.succ_injective _).comp hι⟩, ?_⟩
-      convert hg.comp <| (isOpen_sectorSet (hθ C hC).continuous j).isOpenEmbedding_subtypeVal.comp
-        e.symm.isOpenEmbedding using 1
-      funext y
-      obtain ⟨z, rfl⟩ := e.surjective y
-      simp only [comp_apply, Homeomorph.symm_apply_apply]
-      have hz : (e z : Fin (n + 1) → ℝ) = cylinder C z := rfl
-      funext l
-      cases l using Fin.cases <;> simp [hz, g, cylinder_apply_zero, cylinder_apply_succ]
+      convert isOpenEmbedding_cons_image_cylinder_sectorSet hf (hθ C hC).continuous j using 1
+      funext y l
+      cases l using Fin.cases <;> simp [Fin.tail]
 
 /-- Every cell of a cylindrical algebraic decomposition of `ℝ ^ (n + 1)` contains the graph of a
 continuous function on its projection `Fin.tail '' E`: a section is such a graph, and a sector
