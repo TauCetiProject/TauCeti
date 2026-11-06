@@ -291,10 +291,7 @@ theorem isRelativeEffectiveCartier_comap_fst_of_isEffectiveCartier_comap_fiberι
   -- On `U`, the restriction of `I` is a relative effective Cartier divisor over `S`.
   have hU : (I.comap U.1.ι).IsRelativeEffectiveCartier (U.1.ι ≫ f) := by
     refine (isRelativeEffectiveCartier_iff _ _).mpr ⟨?_, ?_⟩
-    · rw [comap_ι_eq_ofIdealTop, hUa, Ideal.map_span, Set.image_singleton]
-      have h := Scheme.Hom.isEffectiveCartier_ofIdealTop_span_appTop (𝟙 U.1.toScheme)
-        ((TauCeti.isSMulRegular_map_iff U.1.topIso.symm.commRingCatIsoToRingEquiv a).mpr ha)
-      rwa [Scheme.Hom.id_appTop] at h
+    · exact isEffectiveCartier_comap_ι_of_eq_span_singleton U ha hUa
     · -- The closed subscheme of the restriction is an open subscheme of that of `I`.
       rw [← comapIso_hom_fst, Category.assoc, pullback.condition_assoc]
       infer_instance

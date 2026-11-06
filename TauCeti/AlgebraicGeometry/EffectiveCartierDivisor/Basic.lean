@@ -24,7 +24,9 @@ No integrality or reducedness assumption is imposed on the ambient scheme.
 
 `Scheme.IdealSheafData.IsEffectiveCartier` uses ordinary ideals of sections on affine opens.
 The equivalent `isEffectiveCartier_iff_exists_comap` formulation describes the actual
-restriction of the ideal sheaf to each affine open. It transports local equations under
+restriction of the ideal sheaf to each affine open; a nonzerodivisor equation on an affine open
+`U` makes the restriction to `U` effective Cartier
+(`isEffectiveCartier_comap_ι_of_eq_span_singleton`). It transports local equations under
 flat pullback and identifies the resulting closed subscheme with the fibre product through
 Mathlib's `Scheme.IdealSheafData.comapIso`. Pulling back to `X ×_S T'` along a composite
 `T' ⟶ T ⟶ S` gives an effective Cartier divisor exactly when pulling back in stages through
@@ -149,6 +151,18 @@ theorem isEffectiveCartier_iff_exists_comap (I : X.IdealSheafData) :
       have h' := congrArg (Ideal.map U.1.topIso.hom.hom) h
       simpa only [Ideal.map_map, ← CommRingCat.hom_comp, Iso.inv_hom_id,
         CommRingCat.hom_id, Ideal.map_id, Ideal.map_span, Set.image_singleton] using h'
+
+/-- If `I` has a nonzerodivisor equation `a` on an affine open `U`, then its restriction to the
+open subscheme `U` is an effective Cartier divisor, with global equation `U.1.topIso.inv a`. -/
+theorem isEffectiveCartier_comap_ι_of_eq_span_singleton {I : X.IdealSheafData}
+    (U : X.affineOpens) {a : Γ(X, U)} (ha : IsSMulRegular Γ(X, U) a)
+    (hUa : I.ideal U = Ideal.span {a}) : (I.comap U.1.ι).IsEffectiveCartier := by
+  -- `U.1.topIso.inv a` is the image of `a` under the ring isomorphism `Γ(X, U) ≃+* Γ(U, ⊤)`.
+  have hb : IsSMulRegular Γ(U.1.toScheme, ⊤) (U.1.topIso.inv a) :=
+    (TauCeti.isSMulRegular_map_iff U.1.topIso.symm.commRingCatIsoToRingEquiv a).mpr ha
+  rw [comap_ι_eq_ofIdealTop, hUa, Ideal.map_span, Set.image_singleton]
+  exact isEffectiveCartier_ofIdealTop_span_singleton _ fun V ↦
+    (isAffineOpen_top U.1.toScheme).isSMulRegular_map le_top hb
 
 /-- Effective Cartier equations can equivalently be given on any affine schemes openly immersed
 in `X`, not only on the affine open subschemes of `X`. -/
