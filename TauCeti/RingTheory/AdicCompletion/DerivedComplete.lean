@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.AdicCompletion.DerivedComplete.Module
+
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Homology.DerivedCategory.Linear
 public import Mathlib.Algebra.Homology.DerivedCategory.SingleTriangle

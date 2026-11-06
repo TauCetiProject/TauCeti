@@ -11,12 +11,16 @@ public import TauCeti.Probability.Moments.Mixture
 public import TauCeti.Probability.Moments.Covariance
 
 /-!
-# Means and covariances of compound Poisson laws
+# Absolute moments, means and covariances of compound Poisson laws
 
 A compound Poisson sum of rate `r` and jump law `μ` has mean `r • ∫ x, x ∂μ`.
 Its covariance is `r` times the jump's uncentered second moment: the randomness of the
 number of jumps contributes the product of the jump means in addition to the jump covariance.
 In particular, its scalar variance is `r * ∫ x, x ^ 2 ∂μ`.
+
+Every finite positive-order jump moment remains finite under Poisson compounding; at positive
+rate the converse holds because the one-jump component has positive weight. This includes orders
+below one, where the absolute-moment bound for convolution powers is linear in the count.
 
 The first and second moment hypotheses concern only the jump law. Polynomial absolute-moment
 bounds for convolution powers justify integration over the Poisson count, so these results also
@@ -43,17 +47,16 @@ variable {E : Type*} [NormedAddCommGroup E]
   [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
   {μ : Measure E} [IsProbabilityMeasure μ]
 
-/-- Compound Poisson laws preserve every finite jump moment of order `p ≥ 1`. -/
-theorem memLp_id_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+/-- Compound Poisson laws preserve every finite positive-order jump moment. -/
+theorem memLp_id_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 0 < p) (hp_top : p ≠ ∞)
     (hμ : MemLp id p μ) (r : ℝ≥0) :
     MemLp id p (compoundPoissonMeasure r μ) := by
-  have hp_real : 1 ≤ p.toReal := by
-    simpa only [ENNReal.toReal_one] using (ENNReal.toReal_le_toReal (by simp) hp_top).2 hp
+  have hp_real : 0 < p.toReal := ENNReal.toReal_pos hp.ne' hp_top
   have hmeas : AEStronglyMeasurable id (compoundPoissonMeasure r μ) := by
     rw [compoundPoissonMeasure_eq_sum]
     exact AEStronglyMeasurable.sum_measure fun n ↦
       (μ.memLp_id_convolutionPower hμ n).aestronglyMeasurable.smul_measure _
-  rw [← integrable_norm_rpow_iff hmeas (ne_of_gt (zero_lt_one.trans_le hp)) hp_top]
+  rw [← integrable_norm_rpow_iff hmeas hp.ne' hp_top]
   simp only [id_eq]
   rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
     (by simpa only [compoundPoissonMeasure_def, id_eq] using
@@ -62,19 +65,47 @@ theorem memLp_id_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top 
   refine ⟨.of_forall fun n ↦ ?_, ?_⟩
   · simpa only [id_eq] using
       (μ.memLp_id_convolutionPower hμ n).integrable_norm_rpow'
-  · apply ((integrable_natCast_rpow_poissonMeasure r (p := p.toReal)
-      ENNReal.toReal_nonneg).mul_const
+  · have hmoment : 0 ≤ ∫ x, ‖x‖ ^ p.toReal ∂μ :=
+      integral_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
+    apply (((integrable_natCast_rpow_poissonMeasure r (p := p.toReal)
+      hp_real.le).add (by simpa using
+        integrable_natCast_rpow_poissonMeasure r (p := 1) zero_le_one)).mul_const
       (∫ x, ‖x‖ ^ p.toReal ∂μ)).mono' (by fun_prop)
     filter_upwards [] with n
     rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _)]
-    exact μ.integral_norm_rpow_convolutionPower_le hp_real
-      (by rwa [ENNReal.ofReal_toReal hp_top]) n
+    by_cases hp1 : 1 ≤ p.toReal
+    · exact (μ.integral_norm_rpow_convolutionPower_le hp1
+        (by rwa [ENNReal.ofReal_toReal hp_top]) n).trans
+        (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (Nat.cast_nonneg n)) hmoment)
+    · exact (μ.integral_norm_rpow_convolutionPower_le_of_le_one hp_real (le_of_not_ge hp1)
+        (by rwa [ENNReal.ofReal_toReal hp_top]) n).trans
+        (mul_le_mul_of_nonneg_right (le_add_of_nonneg_left (by positivity)) hmoment)
+
+/-- At positive rate, a compound Poisson law has a finite positive-order moment exactly
+when its jump law does. The one-jump component gives the reverse implication. -/
+-- Use this equivalence by explicit rewriting: global simp also tries `MemLp.of_discrete`,
+-- whose instance search on an arbitrary normed group can time out in larger import environments.
+theorem memLp_id_compoundPoissonMeasure_iff {p : ℝ≥0∞} (hp : 0 < p) (hp_top : p ≠ ∞)
+    {r : ℝ≥0} (hr : r ≠ 0) :
+    MemLp id p (compoundPoissonMeasure r μ) ↔ MemLp id p μ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ memLp_id_compoundPoissonMeasure hp hp_top h r⟩
+  let c := ENNReal.ofReal (Real.exp (-(r : ℝ)) * (r : ℝ))
+  have hc : c ≠ 0 := (ENNReal.ofReal_pos.mpr
+    (mul_pos (Real.exp_pos _) (NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hr)))).ne'
+  have hle : c • μ ≤ compoundPoissonMeasure r μ := by
+    rw [compoundPoissonMeasure_eq_sum]
+    simpa only [Measure.convolutionPower_one, pow_one, Nat.factorial_one, Nat.cast_one,
+      div_one] using Measure.le_sum
+        (fun n ↦ ENNReal.ofReal (Real.exp (-(r : ℝ)) * (r : ℝ) ^ n / n.factorial) •
+          μ.convolutionPower n) 1
+  have hμ := (h.mono_measure hle).smul_measure (ENNReal.inv_ne_top.mpr hc)
+  simpa only [smul_smul, ENNReal.inv_mul_cancel hc ENNReal.ofReal_ne_top, one_smul] using hμ
 
 /-- A finite first jump moment gives a finite first compound Poisson moment. -/
 theorem integrable_id_compoundPoissonMeasure (hμ : Integrable id μ) (r : ℝ≥0) :
     Integrable id (compoundPoissonMeasure r μ) := by
   rw [← memLp_one_iff_integrable]
-  exact memLp_id_compoundPoissonMeasure le_rfl (by simp)
+  exact memLp_id_compoundPoissonMeasure zero_lt_one (by simp)
     (memLp_one_iff_integrable.2 hμ) r
 
 /-- The compound Poisson mean is the rate times the jump mean, including at rate zero. -/
@@ -112,9 +143,9 @@ variable {E : Type*} [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E]
   [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
   {μ : Measure E} [IsProbabilityMeasure μ]
 
-/-- Compound Poisson laws preserve every finite moment of order `p ≥ 1` of a linear
+/-- Compound Poisson laws preserve every finite positive-order moment of a linear
 observable. -/
-theorem memLp_continuousLinearMap_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 1 ≤ p)
+theorem memLp_continuousLinearMap_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 0 < p)
     (hp_top : p ≠ ∞) (L : E →L[ℝ] ℝ) (hL : MemLp L p μ) (r : ℝ≥0) :
     MemLp L p (compoundPoissonMeasure r μ) := by
   have hmap : MemLp id p (μ.map L) :=
@@ -131,7 +162,7 @@ theorem integrable_continuousLinearMap_compoundPoissonMeasure (L : E →L[ℝ] �
     (hL : Integrable L μ) (r : ℝ≥0) :
     Integrable L (compoundPoissonMeasure r μ) := by
   rw [← memLp_one_iff_integrable]
-  exact memLp_continuousLinearMap_compoundPoissonMeasure le_rfl (by simp) L
+  exact memLp_continuousLinearMap_compoundPoissonMeasure zero_lt_one (by simp) L
     (memLp_one_iff_integrable.2 hL) r
 
 /-- The mean of a linear observable under a compound Poisson law is the rate times its

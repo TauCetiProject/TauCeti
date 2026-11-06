@@ -90,8 +90,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Set Filter Manifold Topology
-open scoped Manifold ContDiff
+open Set Filter _root_.Manifold Topology
+open scoped _root_.Manifold ContDiff
 
 namespace SmoothEmbedding
 

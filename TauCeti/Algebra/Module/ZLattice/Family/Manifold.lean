@@ -14,7 +14,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.RegularValue
-import TauCeti.Geometry.Manifold.Submersion
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # The manifold structure of a family of tori

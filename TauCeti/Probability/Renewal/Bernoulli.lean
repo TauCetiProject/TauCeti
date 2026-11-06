@@ -55,25 +55,25 @@ theorem hasLaw_arrival_binomial (hindep : iIndepFun T P)
 
 /-- Two-point increments with a positive chance of a strictly positive increment do not explode.
 Zero increments and success probability one are both allowed. -/
-theorem ae_tendsto_arrival_atTop_of_bernoulliMeasure (hT : ∀ n, Measurable (T n))
+theorem ae_tendsto_arrival_atTop_of_bernoulliMeasure
     (hindep : iIndepFun T P) (hlaw : ∀ n, HasLaw (T n) (bernoulliMeasure a 0 q) P)
     (ha : 0 < a) (hq : 0 < (q : ℝ)) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
-  refine ae_tendsto_arrival_atTop hT hindep (fun n ↦ (hlaw n).identDistrib (hlaw 0)) ?_
+  refine ae_tendsto_arrival_atTop hindep (fun n ↦ (hlaw n).identDistrib (hlaw 0)) ?_
   rw [(hlaw 0).measure_eq (p := fun x ↦ x = 0) (measurableSet_singleton 0)]
   exact bernoulliMeasure_singleton_zero_lt_one ha.ne' hq
 
 /-- The cdf of a two-point renewal count is the upper binomial tail at `⌊t/a⌋₊`.
 This includes both endpoints of the time interval and all zero-time arrivals. -/
-theorem measure_renewalCountNat_le_of_bernoulliMeasure (hT : ∀ n, Measurable (T n))
+theorem measure_renewalCountNat_le_of_bernoulliMeasure
     (hindep : iIndepFun T P) (hlaw : ∀ n, HasLaw (T n) (bernoulliMeasure a 0 q) P)
     (ha : 0 < a) (hq : 0 < (q : ℝ)) (t : ℝ≥0) (n : ℕ) :
     P {ω | renewalCountNat T t ω ≤ n} = binomial (n + 1) q (Ioi ⌊t / a⌋₊) := by
   have := hindep.isProbabilityMeasure
   have hae : {ω | renewalCountNat T t ω ≤ n} =ᵐ[P]
       {ω | t < arrival T (n + 1) ω} := by
-    filter_upwards [ae_tendsto_arrival_atTop_of_bernoulliMeasure hT hindep hlaw ha hq]
+    filter_upwards [ae_tendsto_arrival_atTop_of_bernoulliMeasure hindep hlaw ha hq]
       with ω hω
     apply propext
     rw [← not_le, ← le_renewalCountNat_iff hω]
@@ -103,7 +103,7 @@ theorem hasLaw_renewalCountNat_negativeBinomialMeasure (hT : ∀ n, Measurable (
   rw [Measure.map_apply (measurable_renewalCountNat hT t) measurableSet_Iic,
     Measure.map_apply Measurable.of_discrete measurableSet_Iic]
   simp only [← Iic_def, preimage_ofPred_eq]
-  rw [measure_renewalCountNat_le_of_bernoulliMeasure hT hindep hlaw ha hq]
+  rw [measure_renewalCountNat_le_of_bernoulliMeasure hindep hlaw ha hq]
   by_cases hkn : k ≤ n
   · have hpre : {j : ℕ | k + j ≤ n} = Iic (n - k) := by
       ext j

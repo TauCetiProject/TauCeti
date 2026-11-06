@@ -66,8 +66,17 @@ The matrices at the trivalent node were found by a computer search; for `E₈` t
 restricted to matrices compatible with a `ℤ/3`-grading of `ℤ⁶ = ℤ² ⊕ ℤ² ⊕ ℤ²`. The relations, the
 vanishing off the edges and the traces are checked by `decide` on the integer matrices.
 
+## Main definitions
+
+* `TauCeti.affineE6Matrix`, `TauCeti.affineE7Matrix` and `TauCeti.affineE8Matrix`: the integer
+  matrices of the representations.
+
 ## Main results
 
+* `TauCeti.sum_affineE6Matrix_mul_affineE6Matrix` and its `E₇` and `E₈` counterparts: the
+  representations satisfy the signless relations.
+* `TauCeti.trace_affineE6Matrix_backtracks` and its `E₇` and `E₈` counterparts: the product of
+  backtracks at the trivalent node has trace one.
 * `TauCeti.exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule`: if `G`
   contains a copy of the affine diagram `E₆`, some element of path degree six of `Π⁺(G)` does
   not lie in `[Π⁺(G), Π⁺(G)]`.
@@ -115,7 +124,7 @@ variable {k : Type w} [CommRing k] {V : Type u} [Fintype V] {G : SimpleGraph V}
 
 /-- The integer matrix assigned to the arrow `i → j` of the doubled affine diagram `E₆` by the
 representation of this file; it is zero unless `i` and `j` are adjacent. -/
-private def affineE6Matrix (i j : Fin AffineDynkinType.E6.nodes) : Matrix (Fin 3) (Fin 3) ℤ :=
+def affineE6Matrix (i j : Fin AffineDynkinType.E6.nodes) : Matrix (Fin 3) (Fin 3) ℤ :=
   match (i : ℕ), (j : ℕ) with
   | 0, 1 => armShift 3 1
   | 1, 0 => armProj 3 2
@@ -131,6 +140,28 @@ private def affineE6Matrix (i j : Fin AffineDynkinType.E6.nodes) : Matrix (Fin 3
   | 6, 5 => armProj 3 1
   | _, _ => 0
 
+/-- The matrices of the affine `E₆` representation vanish off the edges of the diagram. -/
+@[simp]
+theorem affineE6Matrix_eq_zero_of_not_adj {i j : Fin AffineDynkinType.E6.nodes}
+    (h : ¬AffineDynkinType.E6.graph.Adj i j) : affineE6Matrix i j = 0 := by
+  revert i j
+  simp only [AffineDynkinType.graph_E6_adj]
+  decide
+
+/-- The matrices of the affine `E₆` representation satisfy the signless relations: the
+backtracks at every node sum to zero. -/
+theorem sum_affineE6Matrix_mul_affineE6Matrix (v : Fin AffineDynkinType.E6.nodes) :
+    ∑ w, affineE6Matrix w v * affineE6Matrix v w = 0 := by
+  revert v
+  decide
+
+/-- In the affine `E₆` representation, the product of the backtracks at the trivalent node `0`
+through the nodes `1`, `1` and `3`, in this order, has trace one. -/
+theorem trace_affineE6Matrix_backtracks :
+    trace ((affineE6Matrix 1 0 * affineE6Matrix 0 1) * (affineE6Matrix 1 0 * affineE6Matrix 0 1) *
+      (affineE6Matrix 3 0 * affineE6Matrix 0 3)) = 1 := by
+  decide
+
 /-- **Graphs containing an affine `E₆` have nonzero cyclic classes in degree six.** If `G`
 contains a copy of the affine diagram `E₆`, not necessarily induced, then over every nontrivial
 commutative ring some element of path degree six of the signless preprojective algebra `Π⁺(G)`
@@ -145,17 +176,18 @@ theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule [No
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   obtain ⟨f⟩ := hG
   simpa using exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
-    k f affineE6Matrix (by simp only [AffineDynkinType.graph_E6_adj]; decide) (by decide) (c := 0)
+    k f affineE6Matrix (fun _ _ ↦ affineE6Matrix_eq_zero_of_not_adj)
+    sum_affineE6Matrix_mul_affineE6Matrix (c := 0)
     [⟨1, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
       ⟨1, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
       ⟨3, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩] (by simp)
-    (by decide)
+    (by simpa [mul_assoc] using trace_affineE6Matrix_backtracks)
 
 /-! ### Affine `E₇` -/
 
 /-- The integer matrix assigned to the arrow `i → j` of the doubled affine diagram `E₇` by the
 representation of this file; it is zero unless `i` and `j` are adjacent. -/
-private def affineE7Matrix (i j : Fin AffineDynkinType.E7.nodes) : Matrix (Fin 4) (Fin 4) ℤ :=
+def affineE7Matrix (i j : Fin AffineDynkinType.E7.nodes) : Matrix (Fin 4) (Fin 4) ℤ :=
   match (i : ℕ), (j : ℕ) with
   | 0, 1 => armShift 4 2
   | 1, 0 => armProj 4 2
@@ -173,6 +205,29 @@ private def affineE7Matrix (i j : Fin AffineDynkinType.E7.nodes) : Matrix (Fin 4
   | 7, 6 => armProj 4 1
   | _, _ => 0
 
+/-- The matrices of the affine `E₇` representation vanish off the edges of the diagram. -/
+@[simp]
+theorem affineE7Matrix_eq_zero_of_not_adj {i j : Fin AffineDynkinType.E7.nodes}
+    (h : ¬AffineDynkinType.E7.graph.Adj i j) : affineE7Matrix i j = 0 := by
+  revert i j
+  simp only [AffineDynkinType.graph_E7_adj]
+  decide
+
+/-- The matrices of the affine `E₇` representation satisfy the signless relations: the
+backtracks at every node sum to zero. -/
+theorem sum_affineE7Matrix_mul_affineE7Matrix (v : Fin AffineDynkinType.E7.nodes) :
+    ∑ w, affineE7Matrix w v * affineE7Matrix v w = 0 := by
+  revert v
+  decide
+
+/-- In the affine `E₇` representation, the product of the backtracks at the trivalent node `0`
+through the nodes `2`, `2`, `2` and `5`, in this order, has trace one. -/
+theorem trace_affineE7Matrix_backtracks :
+    trace ((affineE7Matrix 2 0 * affineE7Matrix 0 2) * (affineE7Matrix 2 0 * affineE7Matrix 0 2) *
+      (affineE7Matrix 2 0 * affineE7Matrix 0 2) *
+      (affineE7Matrix 5 0 * affineE7Matrix 0 5)) = 1 := by
+  decide
+
 /-- **Graphs containing an affine `E₇` have nonzero cyclic classes in degree eight.** If `G`
 contains a copy of the affine diagram `E₇`, not necessarily induced, then over every nontrivial
 commutative ring some element of path degree eight of the signless preprojective algebra `Π⁺(G)`
@@ -187,17 +242,19 @@ theorem exists_mem_signlessPreprojectiveGrade_eight_notMem_commutatorSubmodule [
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   obtain ⟨f⟩ := hG
   simpa using exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
-    k f affineE7Matrix (by simp only [AffineDynkinType.graph_E7_adj]; decide) (by decide) (c := 0)
+    k f affineE7Matrix (fun _ _ ↦ affineE7Matrix_eq_zero_of_not_adj)
+    sum_affineE7Matrix_mul_affineE7Matrix (c := 0)
     [⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-      ⟨5, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩] (by simp) (by decide)
+      ⟨5, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩] (by simp)
+    (by simpa [mul_assoc] using trace_affineE7Matrix_backtracks)
 
 /-! ### Affine `E₈` -/
 
 /-- The integer matrix assigned to the arrow `i → j` of the doubled affine diagram `E₈` by the
 representation of this file; it is zero unless `i` and `j` are adjacent. -/
-private def affineE8Matrix (i j : Fin AffineDynkinType.E8.nodes) : Matrix (Fin 6) (Fin 6) ℤ :=
+def affineE8Matrix (i j : Fin AffineDynkinType.E8.nodes) : Matrix (Fin 6) (Fin 6) ℤ :=
   match (i : ℕ), (j : ℕ) with
   | 0, 1 => !![0, 0, 0, 0, 0, -1;
                0, 0, 0, -1, 0, 1;
@@ -247,6 +304,30 @@ private def affineE8Matrix (i j : Fin AffineDynkinType.E8.nodes) : Matrix (Fin 6
   | 8, 7 => armProj 6 1
   | _, _ => 0
 
+/-- The matrices of the affine `E₈` representation vanish off the edges of the diagram. -/
+@[simp]
+theorem affineE8Matrix_eq_zero_of_not_adj {i j : Fin AffineDynkinType.E8.nodes}
+    (h : ¬AffineDynkinType.E8.graph.Adj i j) : affineE8Matrix i j = 0 := by
+  revert i j
+  simp only [AffineDynkinType.graph_E8_adj]
+  decide
+
+/-- The matrices of the affine `E₈` representation satisfy the signless relations: the
+backtracks at every node sum to zero. -/
+theorem sum_affineE8Matrix_mul_affineE8Matrix (v : Fin AffineDynkinType.E8.nodes) :
+    ∑ w, affineE8Matrix w v * affineE8Matrix v w = 0 := by
+  revert v
+  decide
+
+/-- In the affine `E₈` representation, the product of the backtracks at the trivalent node `0`
+through the nodes `1`, `2`, `4`, `4`, `4` and `2`, in this order, has trace one. -/
+theorem trace_affineE8Matrix_backtracks :
+    trace ((affineE8Matrix 1 0 * affineE8Matrix 0 1) * (affineE8Matrix 2 0 * affineE8Matrix 0 2) *
+      (affineE8Matrix 4 0 * affineE8Matrix 0 4) * (affineE8Matrix 4 0 * affineE8Matrix 0 4) *
+      (affineE8Matrix 4 0 * affineE8Matrix 0 4) *
+      (affineE8Matrix 2 0 * affineE8Matrix 0 2)) = 1 := by
+  decide
+
 /-- **Graphs containing an affine `E₈` have nonzero cyclic classes in degree twelve.** If `G`
 contains a copy of the affine diagram `E₈`, not necessarily induced, then over every nontrivial
 commutative ring some element of path degree twelve of the signless preprojective algebra `Π⁺(G)`
@@ -261,12 +342,14 @@ theorem exists_mem_signlessPreprojectiveGrade_twelve_notMem_commutatorSubmodule 
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   obtain ⟨f⟩ := hG
   simpa using exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
-    k f affineE8Matrix (by simp only [AffineDynkinType.graph_E8_adj]; decide) (by decide) (c := 0)
+    k f affineE8Matrix (fun _ _ ↦ affineE8Matrix_eq_zero_of_not_adj)
+    sum_affineE8Matrix_mul_affineE8Matrix (c := 0)
     [⟨1, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨4, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨4, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨4, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-      ⟨2, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩] (by simp) (by decide)
+      ⟨2, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩] (by simp)
+    (by simpa [mul_assoc] using trace_affineE8Matrix_backtracks)
 
 end TauCeti
