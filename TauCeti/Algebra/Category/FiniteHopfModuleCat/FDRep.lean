@@ -24,17 +24,18 @@ Mathlib's `Rep.equivalenceModuleMonoidAlgebra`: its functor `ofFDRep k G` sends 
 `V` to the `k[G]`-module `Representation.asModule V.ρ`, and after the inclusion into all
 `k[G]`-modules it agrees with the native functor (`ofFDRepCompInclIso`). The inverse
 `toFDRep k G` reads a module as the representation `Representation.ofModule'` on the same
-carrier. Both functors are the identity on underlying vector spaces; `ofFDRepLinearEquiv` records
-this identification as a `k`-linear equivalence, and `ofFDRepCompForgetIso` packages it as a
-natural isomorphism of forgetful functors to `ModuleCat k`.
+carrier. Both functors are the identity on underlying vector spaces; `FDRep.ofFDRepLinearEquiv`
+records this identification as a `k`-linear equivalence, and `ofFDRepCompForgetIso` packages it as
+a natural isomorphism of forgetful functors to `ModuleCat k`. Declarations whose first explicit
+argument is a representation live in the `FDRep` namespace, so that they support dot notation.
 
 The monoidal structure of `FiniteHopfModuleCat k k[G]` is the tensor product over `k`, on which
 `k[G]` acts through its coproduct `single g 1 ↦ single g 1 ⊗ single g 1`; this is the diagonal
 action used by the tensor product of `FDRep k G`. Accordingly `ofFDRep k G` is a monoidal functor,
 with tensor and unit comparisons given by the identity maps of underlying vector spaces
-(`ofFDRepTensorEquiv` and `ofFDRepUnitEquiv`). The monoidal structure of the inverse is the one
-induced by the equivalence, so that `fdRepEquivalence k G` is a monoidal equivalence. This is a
-statement about the tensor product over `k`: when `G` is commutative, `ModuleCat k[G]` also has
+(`FDRep.ofFDRepTensorEquiv` and `ofFDRepUnitEquiv`). The monoidal structure of the inverse is the
+one induced by the equivalence, so that `fdRepEquivalence k G` is a monoidal equivalence. This is
+a statement about the tensor product over `k`: when `G` is commutative, `ModuleCat k[G]` also has
 a tensor product over `k[G]`, which is not the one used here.
 
 For a finite monoid, `TauCeti.fdRepEquivalence` identifies `FDRep k G` with the finitely generated
@@ -59,13 +60,15 @@ public noncomputable section
 open CategoryTheory MonoidalCategory
 open scoped MonoidAlgebra
 
-namespace TauCeti.FiniteHopfModuleCat
-
-open BialgebraModule
+open TauCeti.BialgebraModule
 
 universe u v
 
-variable (k : Type u) [Field k] (G : Type v) [Monoid G]
+variable {k : Type u} [Field k] {G : Type v} [Monoid G]
+
+namespace TauCeti.FiniteHopfModuleCat
+
+variable (k G)
 
 /-- A finite-dimensional representation of `G`, regarded as a finite-dimensional module over the
 monoid algebra `k[G]`. An equivariant map is the same map, now `k[G]`-linear. -/
@@ -85,7 +88,11 @@ on the same carrier, with `g` acting as `MonoidAlgebra.single g 1`. -/
     ext x
     exact f.hom.hom.map_smul _ x⟩
 
-variable {k G}
+end TauCeti.FiniteHopfModuleCat
+
+namespace FDRep
+
+open TauCeti.FiniteHopfModuleCat (ofFDRep toFDRep)
 
 /-- The group-algebra module attached to a representation has the same underlying vector space.
 This is the identity map. -/
@@ -111,24 +118,6 @@ theorem ofFDRepLinearEquiv_single_smul (V : FDRep k G) (g : G) (x : (ofFDRep k G
       V.ρ g (ofFDRepLinearEquiv V x) :=
   (Representation.single_smul V.ρ 1 g x).trans (one_smul k _)
 
-/-- The `k[G]`-linear map attached to an equivariant map is the same map. -/
-@[simp]
-theorem ofFDRepLinearEquiv_ofFDRep_map_apply {V W : FDRep k G} (f : V ⟶ W)
-    (x : (ofFDRep k G).obj V) :
-    ofFDRepLinearEquiv W (((ofFDRep k G).map f).hom.hom x) =
-      f.hom.hom.hom (ofFDRepLinearEquiv V x) := (rfl)
-
-/-- An element `g` acts on the representation attached to a `k[G]`-module as `single g 1`. -/
-@[simp]
-theorem toFDRep_obj_ρ_apply (M : FiniteHopfModuleCat k k[G]) (g : G) (x : M) :
-    ((toFDRep k G).obj M).ρ g x = MonoidAlgebra.single g (1 : k) • x := (rfl)
-
-/-- The equivariant map attached to a `k[G]`-linear map is the same map. -/
-@[simp]
-theorem toFDRep_map_hom_hom_hom_apply {M N : FiniteHopfModuleCat k k[G]} (f : M ⟶ N)
-    (x : (toFDRep k G).obj M) :
-    ((toFDRep k G).map f).hom.hom.hom x = f.hom.hom x := (rfl)
-
 /-- A representation is isomorphic to the representation attached to its `k[G]`-module, by the
 identity map of the underlying vector space. -/
 def fdRepUnitIso (V : FDRep k G) : V ≅ (toFDRep k G).obj ((ofFDRep k G).obj V) :=
@@ -150,25 +139,50 @@ theorem fdRepUnitIso_inv_hom_hom_hom_apply (V : FDRep k G)
     (x : (toFDRep k G).obj ((ofFDRep k G).obj V)) :
     (fdRepUnitIso V).inv.hom.hom.hom x = ofFDRepLinearEquiv V x := (rfl)
 
+end FDRep
+
+namespace TauCeti.FiniteHopfModuleCat
+
+open FDRep (ofFDRepLinearEquiv fdRepUnitIso)
+
+/-- The `k[G]`-linear map attached to an equivariant map is the same map. -/
+@[simp]
+theorem ofFDRepLinearEquiv_ofFDRep_map_apply {V W : FDRep k G} (f : V ⟶ W)
+    (x : (ofFDRep k G).obj V) :
+    ofFDRepLinearEquiv W (((ofFDRep k G).map f).hom.hom x) =
+      f.hom.hom.hom (ofFDRepLinearEquiv V x) := (rfl)
+
+/-- An element `g` acts on the representation attached to a `k[G]`-module as `single g 1`. -/
+@[simp]
+theorem toFDRep_obj_ρ_apply (M : FiniteHopfModuleCat k k[G]) (g : G) (x : M) :
+    ((toFDRep k G).obj M).ρ g x = MonoidAlgebra.single g (1 : k) • x := (rfl)
+
+/-- The equivariant map attached to a `k[G]`-linear map is the same map. -/
+@[simp]
+theorem toFDRep_map_hom_hom_hom_apply {M N : FiniteHopfModuleCat k k[G]} (f : M ⟶ N)
+    (x : (toFDRep k G).obj M) :
+    ((toFDRep k G).map f).hom.hom.hom x = f.hom.hom x := (rfl)
+
 /-- A `k[G]`-module is isomorphic to the module attached to its representation, by the identity
 map of the carrier. -/
 def fdRepCounitIso (M : FiniteHopfModuleCat k k[G]) :
     (ofFDRep k G).obj ((toFDRep k G).obj M) ≅ M :=
-  ObjectProperty.isoMk _ <| LinearEquiv.toModuleIso
-    { ofFDRepLinearEquiv ((toFDRep k G).obj M) with
-      map_smul' r x := TauCeti.Representation.asAlgebraHom_ofModule'_apply (G := G) M r x }
+  ObjectProperty.isoMk _ (Representation.ofModule'AsModuleEquiv (k := k) (G := G) M).toModuleIso
 
 /-- The counit isomorphism is the identity of the carrier. -/
 @[simp]
 theorem fdRepCounitIso_hom_hom_hom_apply (M : FiniteHopfModuleCat k k[G])
     (x : (ofFDRep k G).obj ((toFDRep k G).obj M)) :
-    (fdRepCounitIso M).hom.hom.hom x = ofFDRepLinearEquiv _ x := (rfl)
+    (fdRepCounitIso M).hom.hom.hom x = ofFDRepLinearEquiv _ x :=
+  Representation.ofModule'AsModuleEquiv_apply M x
 
 /-- The inverse counit isomorphism is the identity of the carrier. -/
 @[simp]
 theorem ofFDRepLinearEquiv_fdRepCounitIso_inv_hom_hom_apply (M : FiniteHopfModuleCat k k[G])
     (x : M) :
-    ofFDRepLinearEquiv _ ((fdRepCounitIso M).inv.hom.hom x) = x := (rfl)
+    ofFDRepLinearEquiv _ ((fdRepCounitIso M).inv.hom.hom x) = x :=
+  (Representation.ofModule'AsModuleEquiv M).symm_apply_eq.mpr
+    (Representation.ofModule'AsModuleEquiv_apply M x).symm
 
 /-- Naturality of the unit isomorphisms. -/
 theorem fdRepUnitIso_hom_naturality {V W : FDRep k G} (f : V ⟶ W) :
@@ -180,13 +194,30 @@ theorem fdRepUnitIso_hom_naturality {V W : FDRep k G} (f : V ⟶ W) :
 theorem fdRepCounitIso_hom_naturality {M N : FiniteHopfModuleCat k k[G]} (f : M ⟶ N) :
     (ofFDRep k G).map ((toFDRep k G).map f) ≫ (fdRepCounitIso N).hom =
       (fdRepCounitIso M).hom ≫ f := by
-  ext; rfl
+  ext x
+  -- Both sides are `f x` once the counit is identified with the identity map.
+  exact (fdRepCounitIso_hom_hom_hom_apply N _).trans
+    (congrArg f.hom.hom (fdRepCounitIso_hom_hom_hom_apply M x)).symm
+
+end TauCeti.FiniteHopfModuleCat
+
+namespace FDRep
+
+open TauCeti.FiniteHopfModuleCat (ofFDRep toFDRep fdRepCounitIso fdRepCounitIso_hom_hom_hom_apply)
 
 /-- The triangle identity relating the unit and counit isomorphisms. -/
 theorem ofFDRep_map_fdRepUnitIso_hom_comp_fdRepCounitIso_hom (V : FDRep k G) :
     (ofFDRep k G).map (fdRepUnitIso V).hom ≫ (fdRepCounitIso ((ofFDRep k G).obj V)).hom =
       𝟙 _ := by
-  ext; rfl
+  ext x
+  exact fdRepCounitIso_hom_hom_hom_apply ((ofFDRep k G).obj V)
+    (((ofFDRep k G).map (fdRepUnitIso V).hom).hom.hom x)
+
+end FDRep
+
+namespace TauCeti.FiniteHopfModuleCat
+
+open FDRep (ofFDRepLinearEquiv ofFDRepLinearEquiv_single_smul fdRepUnitIso)
 
 variable (k G)
 
@@ -199,7 +230,7 @@ functor is `ofFDRep k G` and the inverse is `toFDRep k G`. -/
   inverse := toFDRep k G
   unitIso := NatIso.ofComponents fdRepUnitIso fdRepUnitIso_hom_naturality
   counitIso := NatIso.ofComponents fdRepCounitIso fdRepCounitIso_hom_naturality
-  functor_unitIso_comp := ofFDRep_map_fdRepUnitIso_hom_comp_fdRepCounitIso_hom
+  functor_unitIso_comp := FDRep.ofFDRep_map_fdRepUnitIso_hom_comp_fdRepCounitIso_hom
 
 /-- The equivalence restricts Mathlib's equivalence `Rep.equivalenceModuleMonoidAlgebra` between
 all representations and all `k[G]`-modules: both send a representation `V` to
@@ -239,6 +270,51 @@ theorem ofFDRepCompForgetIso_inv_app (V : FDRep k G) :
   (rfl)
 
 variable {k G}
+
+private theorem ofFDRepUnitEquiv_aux (g : G)
+    (x : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G])) :
+    (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm
+        (trivialEquiv k k[G] (MonoidAlgebra.single g (1 : k) • x)) =
+      MonoidAlgebra.single g (1 : k) •
+        (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm (trivialEquiv k k[G] x) := by
+  rw [LinearEquiv.symm_apply_eq, ofFDRepLinearEquiv_single_smul, LinearEquiv.apply_symm_apply,
+    FDRep.tensorUnit_ρ, LinearMap.id_apply, trivialEquiv_smul,
+    (MonoidAlgebra.isGroupLikeElem_single_one g).counit_eq_one, one_mul]
+
+/-- The unit comparison of `ofFDRep k G`: the trivial module, on which `k[G]` acts through its
+counit, is the module attached to the trivial representation. On underlying vector spaces this
+is the identity of `k`. -/
+def ofFDRepUnitEquiv :
+    (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G]) ≃ₗ[k[G]]
+      (ofFDRep k G).obj (𝟙_ (FDRep k G)) :=
+  let e : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G]) ≃ₗ[k]
+      (ofFDRep k G).obj (𝟙_ (FDRep k G)) :=
+    (trivialEquiv k k[G]).trans (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm
+  { MonoidAlgebra.equivariantOfLinearOfComm e.toLinearMap (ofFDRepUnitEquiv_aux (k := k)) with
+    invFun := e.symm
+    left_inv := e.left_inv
+    right_inv := e.right_inv }
+
+/-- On underlying vector spaces, the unit comparison is the identity of `k`. -/
+theorem ofFDRepUnitEquiv_apply
+    (r : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G])) :
+    ofFDRepUnitEquiv r = (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm (trivialEquiv k k[G] r) :=
+  (rfl)
+
+/-- The unit comparison sends `r` to `r`. -/
+-- Not a `simp` lemma: `simp` rewrites the carrier `(𝟙_ (FDRep k G)).V` in the type of its
+-- left-hand side.
+theorem ofFDRepLinearEquiv_ofFDRepUnitEquiv
+    (r : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G])) :
+    ofFDRepLinearEquiv (𝟙_ (FDRep k G)) (ofFDRepUnitEquiv r) = trivialEquiv k k[G] r := by
+  simp [ofFDRepUnitEquiv_apply]
+
+end TauCeti.FiniteHopfModuleCat
+
+namespace FDRep
+
+open TauCeti (FiniteHopfModuleCat)
+open TauCeti.FiniteHopfModuleCat (ofFDRep)
 
 private theorem ofFDRepTensorEquiv_aux (V W : FDRep k G) (g : G)
     (x : ((ofFDRep k G).obj V ⊗ (ofFDRep k G).obj W : FiniteHopfModuleCat k k[G])) :
@@ -287,43 +363,11 @@ theorem ofFDRepLinearEquiv_ofFDRepTensorEquiv_tmul (V W : FDRep k G)
       ofFDRepLinearEquiv V v ⊗ₜ[k] ofFDRepLinearEquiv W w := by
   simp [ofFDRepTensorEquiv_apply]
 
-private theorem ofFDRepUnitEquiv_aux (g : G)
-    (x : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G])) :
-    (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm
-        (trivialEquiv k k[G] (MonoidAlgebra.single g (1 : k) • x)) =
-      MonoidAlgebra.single g (1 : k) •
-        (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm (trivialEquiv k k[G] x) := by
-  rw [LinearEquiv.symm_apply_eq, ofFDRepLinearEquiv_single_smul, LinearEquiv.apply_symm_apply,
-    FDRep.tensorUnit_ρ, LinearMap.id_apply, trivialEquiv_smul,
-    (MonoidAlgebra.isGroupLikeElem_single_one g).counit_eq_one, one_mul]
+end FDRep
 
-/-- The unit comparison of `ofFDRep k G`: the trivial module, on which `k[G]` acts through its
-counit, is the module attached to the trivial representation. On underlying vector spaces this
-is the identity of `k`. -/
-def ofFDRepUnitEquiv :
-    (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G]) ≃ₗ[k[G]]
-      (ofFDRep k G).obj (𝟙_ (FDRep k G)) :=
-  let e : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G]) ≃ₗ[k]
-      (ofFDRep k G).obj (𝟙_ (FDRep k G)) :=
-    (trivialEquiv k k[G]).trans (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm
-  { MonoidAlgebra.equivariantOfLinearOfComm e.toLinearMap (ofFDRepUnitEquiv_aux (k := k)) with
-    invFun := e.symm
-    left_inv := e.left_inv
-    right_inv := e.right_inv }
+namespace TauCeti.FiniteHopfModuleCat
 
-/-- On underlying vector spaces, the unit comparison is the identity of `k`. -/
-theorem ofFDRepUnitEquiv_apply
-    (r : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G])) :
-    ofFDRepUnitEquiv r = (ofFDRepLinearEquiv (𝟙_ (FDRep k G))).symm (trivialEquiv k k[G] r) :=
-  (rfl)
-
-/-- The unit comparison sends `r` to `r`. -/
--- Not a `simp` lemma: `simp` rewrites the carrier `(𝟙_ (FDRep k G)).V` in the type of its
--- left-hand side.
-theorem ofFDRepLinearEquiv_ofFDRepUnitEquiv
-    (r : (𝟙_ (FiniteHopfModuleCat k k[G]) : FiniteHopfModuleCat k k[G])) :
-    ofFDRepLinearEquiv (𝟙_ (FDRep k G)) (ofFDRepUnitEquiv r) = trivialEquiv k k[G] r := by
-  simp [ofFDRepUnitEquiv_apply]
+open FDRep (ofFDRepLinearEquiv ofFDRepTensorEquiv ofFDRepLinearEquiv_ofFDRepTensorEquiv_tmul)
 
 /-- The functor from finite-dimensional representations to finite-dimensional `k[G]`-modules is
 monoidal, with tensor comparison `ofFDRepTensorEquiv` and unit comparison `ofFDRepUnitEquiv`. -/
@@ -383,12 +427,6 @@ instance : (ofFDRep k G).Monoidal :=
           ofFDRepLinearEquiv_ofFDRepUnitEquiv, LinearEquiv.map_smul]
         exact (ModuleCat.MonoidalCategory.rightUnitor_hom_apply _ _).symm }
 
-/-- The tensor comparison of `ofFDRep k G` is `ofFDRepTensorEquiv`. -/
-@[simp]
-theorem ofFDRep_μ_hom_hom (V W : FDRep k G) :
-    (Functor.LaxMonoidal.μ (ofFDRep k G) V W).hom.hom = (ofFDRepTensorEquiv V W).toLinearMap :=
-  LinearEquiv.toFiniteHopfModuleCatIso_hom_hom _
-
 /-- The unit comparison of `ofFDRep k G` is `ofFDRepUnitEquiv`. -/
 @[simp]
 theorem ofFDRep_ε_hom_hom :
@@ -404,3 +442,16 @@ instance : (toFDRep k G).Monoidal := (fdRepEquivalence k G).inverseMonoidal
 instance : (fdRepEquivalence k G).inverse.Monoidal := inferInstanceAs (toFDRep k G).Monoidal
 
 end TauCeti.FiniteHopfModuleCat
+
+namespace FDRep
+
+open TauCeti (FiniteHopfModuleCat)
+open TauCeti.FiniteHopfModuleCat (ofFDRep)
+
+/-- The tensor comparison of `ofFDRep k G` is `ofFDRepTensorEquiv`. -/
+@[simp]
+theorem ofFDRep_μ_hom_hom (V W : FDRep k G) :
+    (Functor.LaxMonoidal.μ (ofFDRep k G) V W).hom.hom = (ofFDRepTensorEquiv V W).toLinearMap :=
+  LinearEquiv.toFiniteHopfModuleCatIso_hom_hom _
+
+end FDRep
