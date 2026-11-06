@@ -53,6 +53,8 @@ private theorem unitNorm_index_of_isUniformizer (h2 : (2 : K) ≠ 0)
     exact map_unitFiltration_zero_eq_unitSquareClasses K
   have hker : f.ker ≤ N := by
     intro u hu
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.coe_subtype] at hu
+    rw [Subgroup.mem_subgroupOf]
     apply square_le_quadraticNormSubgroup (a : K)
     exact (squareClassHom_eq_one_iff _).mp hu
   have hrange : (N.map f : Set (MultiplicativeSquareClassGroup K)) =
@@ -61,11 +63,12 @@ private theorem unitNorm_index_of_isUniformizer (h2 : (2 : K) ≠ 0)
     rw [mem_range_uniformizerNormSquareClass_iff]
     constructor
     · rintro ⟨u, hu, rfl⟩
+      rw [SetLike.mem_coe, Subgroup.mem_subgroupOf] at hu
       exact ⟨u, (mem_unitFiltration_zero _).mp u.property, hπa ▸ hu, rfl⟩
     · rintro ⟨b, hb, hbn, rfl⟩
       refine ⟨⟨b, (mem_unitFiltration_zero b).mpr hb⟩, ?_, rfl⟩
-      have hbn' : b ∈ quadraticNormSubgroup (a : K) := hπa.symm ▸ hbn
-      exact hbn'
+      rw [SetLike.mem_coe, Subgroup.mem_subgroupOf]
+      exact hπa.symm ▸ hbn
   have hcard : Nat.card (N.map f) = Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
     calc
       _ = (N.map f : Set (MultiplicativeSquareClassGroup K)).ncard :=
@@ -80,9 +83,7 @@ private theorem unitNorm_index_of_isUniformizer (h2 : (2 : K) ≠ 0)
   have hq : 0 < Nat.card 𝓀[K] := Nat.card_pos
   exact Nat.eq_of_mul_eq_mul_right (by positivity) hcount
 
-/-- For a radicand of odd normalized valuation, the quadratic norm subgroup has index two.
-The calculation counts the uniformizer norm family in the base field, without using the
-square-class group of a quadratic extension. -/
+/-- For a radicand of odd normalized valuation, the quadratic norm subgroup has index two. -/
 theorem quadraticNormSubgroup_index_eq_two_of_odd (h2 : (2 : K) ≠ 0)
     {a : Kˣ} (ha : Odd (normalizedValuation K a).toAdd) :
     (quadraticNormSubgroup (a : K)).index = 2 := by
