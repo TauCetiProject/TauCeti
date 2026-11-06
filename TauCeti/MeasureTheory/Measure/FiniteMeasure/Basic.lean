@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import Mathlib.MeasureTheory.Measure.Portmanteau
 import Mathlib.MeasureTheory.SetAlgebra
 import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 import Mathlib.Analysis.RCLike.Lemmas
@@ -162,7 +163,8 @@ theorem FiniteMeasure.tendsto_integral_of_tendstoUniformly [TopologicalSpace α]
   exact mul_lt_mul_of_pos_left hmi hε
 
 /-- **Narrow convergence of measures carried by a closed ball.** Let finite measures `μs i` on a
-proper real normed space converge narrowly to `μ`, all carried by the closed ball `closedBall 0 r`.
+proper real normed space converge narrowly to `μ`, all carried by the closed ball `closedBall 0 r`
+(then `μ` is carried by it too).
 If functions `fs i`, continuous on that ball, converge uniformly on it to a function `f` continuous
 on it, then `∫ fs i dμs i` converges to `∫ f dμ`. Nothing is assumed off the ball: there `fs i`
 and `f` may be unbounded or discontinuous. -/
@@ -171,11 +173,28 @@ theorem FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall {E 𝕜 
     [RCLike 𝕜] {l : Filter ι} {μs : ι → FiniteMeasure E} {μ : FiniteMeasure E}
     (hμ : Tendsto μs l (𝓝 μ)) {r : ℝ}
     (hμsr : ∀ᶠ i in l, (μs i : Measure E) (Metric.closedBall 0 r)ᶜ = 0)
-    (hμr : (μ : Measure E) (Metric.closedBall 0 r)ᶜ = 0) {fs : ι → E → 𝕜} {f : E → 𝕜}
+    {fs : ι → E → 𝕜} {f : E → 𝕜}
     (hfs : ∀ i, ContinuousOn (fs i) (Metric.closedBall 0 r))
     (hf : ContinuousOn f (Metric.closedBall 0 r))
     (hfsf : TendstoUniformlyOn fs f l (Metric.closedBall 0 r)) :
     Tendsto (fun i ↦ ∫ x, fs i x ∂(μs i : Measure E)) l (𝓝 (∫ x, f x ∂(μ : Measure E))) := by
+  rcases l.eq_or_neBot with rfl | hne
+  · exact tendsto_bot
+  -- The limit is carried by the ball too: its mass is the limit of the masses of the `μs i`, which
+  -- equal their masses on the closed ball, and the limsup of those is at most `μ (closedBall 0 r)`.
+  have hμr : (μ : Measure E) (Metric.closedBall 0 r)ᶜ = 0 := by
+    have hmass : Tendsto (fun i ↦ (μs i : Measure E) univ) l (𝓝 ((μ : Measure E) univ)) := by
+      simp only [← FiniteMeasure.ennreal_mass]
+      exact ENNReal.tendsto_coe.2 ((FiniteMeasure.continuous_mass.tendsto μ).comp hμ)
+    have heq : (fun i ↦ (μs i : Measure E) (Metric.closedBall 0 r)) =ᶠ[l]
+        fun i ↦ (μs i : Measure E) univ := hμsr.mono fun i hi ↦ by
+      simp only
+      rw [← measure_add_measure_compl Metric.isClosed_closedBall.measurableSet, hi, add_zero]
+    have hle := FiniteMeasure.limsup_measure_closed_le_of_tendsto hμ
+      (Metric.isClosed_closedBall (x := (0 : E)) (ε := r))
+    rw [limsup_congr heq, hmass.limsup_eq] at hle
+    rw [measure_compl Metric.isClosed_closedBall.measurableSet (measure_ne_top _ _)]
+    exact tsub_eq_zero_of_le hle
   have hae {ν : Measure E} (hν : ν (Metric.closedBall 0 r)ᶜ = 0) :
       ∀ᵐ x ∂ν, x ∈ Metric.closedBall 0 r :=
     mem_ae_iff.2 hν

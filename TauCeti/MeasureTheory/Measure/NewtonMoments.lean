@@ -210,12 +210,12 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
       tendsto_integral_of_tendsto_measureReal_univ hνR hν
         (.of_forall fun _ _ hw => norm_pow_le_of_mem_closedBall hw k)
     refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ
-      (.of_forall hμB) hρB (fun _ => (continuous_pow k).continuousOn)
+      (.of_forall hμB) (fun _ => (continuous_pow k).continuousOn)
       (continuous_pow k).continuousOn hconst) ?_
     simpa [M, μf] using ((tendsto_pi_nhds.1 hM k).add hνk)
   have hρ'mom (k : ℕ) (hk : k ≤ m) : ∫ w, w ^ k ∂(ρ' : Measure ℂ) = M₀ k := by
     refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ'
-      hτB hρ'B (fun _ => (continuous_pow k).continuousOn) (continuous_pow k).continuousOn hconst)
+      hτB (fun _ => (continuous_pow k).continuousOn) (continuous_pow k).continuousOn hconst)
       ((tendsto_pi_nhds.1 hM k).congr fun i => ?_)
     simp only [τf, τ, FiniteMeasure.toMeasure_mk, Multiset.integral_sum_map_dirac]
     rcases Nat.eq_zero_or_pos k with rfl | hk₀
@@ -228,10 +228,10 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
   -- variances of the `μ i` tend to zero and those of the `τ i` vanish.
   have hρvar : ∫ w, ‖P₀.eval w‖ ^ 2 ∂(ρ : Measure ℂ) = 0 :=
     tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ
-      (.of_forall hμB) hρB (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B)) hvar
+      (.of_forall hμB) (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B)) hvar
   have hρ'var : ∫ w, ‖P₀.eval w‖ ^ 2 ∂(ρ' : Measure ℂ) = 0 := by
     refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ'
-      hτB hρ'B (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B))
+      hτB (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B))
       (tendsto_const_nhds.congr fun i => ?_)
     simp only [τf, τ, FiniteMeasure.toMeasure_mk, Multiset.integral_sum_map_dirac]
     refine (Multiset.sum_eq_zero fun x hx => ?_).symm
@@ -254,7 +254,7 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
   -- Step 7: compare the three terms with their limits; the integrals against `ν i` vanish in the
   -- limit, as the `f i` are eventually bounded on the disc of radius `R`.
   have hT₁ : Tendsto (fun i => ∫ w, f i w ∂μ i) U (𝓝 (∫ w, g w ∂(ρ : Measure ℂ))) :=
-    FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ (.of_forall hμB) hρB
+    FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ (.of_forall hμB)
       (fun i => (hf i).continuousOn) hg.continuousOn (hfg B)
   have hT₂ : Tendsto (fun i => ∫ w, f i w ∂ν i) U (𝓝 0) := by
     obtain ⟨Cg, hCg⟩ := (isCompact_closedBall (0 : ℂ) R).exists_bound_of_continuousOn
@@ -266,7 +266,7 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
     linarith [norm_le_norm_add_norm_sub' (f i w) (g w), hCg w hw]
   have hT₃ : Tendsto (fun i => ((P i).roots.map (f i)).sum) U
       (𝓝 (∫ w, g w ∂(ρ' : Measure ℂ))) :=
-    (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ' hτB hρ'B
+    (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ' hτB
       (fun i => (hf i).continuousOn) hg.continuousOn (hfg B)).congr fun i => by
       simp [τf, τ, Multiset.integral_sum_map_dirac]
   simpa [hρρ'] using (hT₁.sub hT₂).sub hT₃
