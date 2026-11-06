@@ -47,10 +47,10 @@ derivatives falling on `ζ` produce the terms `‖∇u‖_p` that this inequalit
 * `TauCeti.Wkp.exists_lpNorm_gradient_ball_le`: the local form between concentric balls
   `B_s ⊆ B_t ⊆ Ω` for `u ∈ W^{2,p}(Ω)`, with the extra terms `(t - s)⁻¹ ‖∇u‖` and
   `(t - s)⁻² ‖u‖` on `B_t` produced by a cutoff.
-* `TauCeti.Wkp.lpNorm_gradient_ball_le_of_cutoff`: the ball interpolation for an arbitrary smooth
-  cutoff `η` that is one on `B_s` and supported in a general open `Ω`, with the cutoff's gradient
-  and Hessian bounds `c₁, c₂` as parameters; the Hessian of the product is estimated by
-  `TauCeti.Wkp.norm_iteratedGradient_one_le_of_value_ae_eq_mul`.
+* `TauCeti.Wkp.lpNorm_gradient_le_of_cutoff`: the interpolation on an open set `S` for an
+  arbitrary smooth cutoff `η` that is one on `S` and supported in a general open `Ω`, with the
+  cutoff's gradient and Hessian bounds `c₁, c₂` as parameters; the Hessian of the product is
+  estimated by `TauCeti.Wkp.norm_iteratedGradient_one_le_of_value_ae_eq_mul`.
 
 ## The argument
 
@@ -343,36 +343,36 @@ theorem Wkp.norm_iteratedGradient_lowerOrder_le (hp : p ≠ ∞) (u : Wkp mu ⊤
   Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule
     (by rw [wkp0Submodule_top_eq_top hp]; trivial) hε
 
-open Metric in
 open scoped ContDiff in
-/-- **Interpolation on a ball, in terms of a cutoff.** Let `η` be a smooth compactly supported
-function with `tsupport η ⊆ Ω`, `|η| ≤ 1`, equal to `1` on the open ball `B(x₀, s)`, `‖∇η‖ ≤ c₁`
+/-- **Interpolation on an open set, in terms of a cutoff.** Let `S` be open and `η` a smooth
+compactly supported function with `tsupport η ⊆ Ω`, `|η| ≤ 1`, equal to `1` on `S`, `‖∇η‖ ≤ c₁`
 and `‖D²η‖ ≤ c₂`. Then for `1 ≤ p < ∞`, `u ∈ W^{2,p}(Ω)` and `ε > 0`,
 
-`‖∇u‖_{Lᵖ(B_s)} ≤ ε (‖D²u‖_{Lᵖ(Ω)} + 2 c₁ ‖∇u‖_{Lᵖ(Ω)} + c₂ ‖u‖_{Lᵖ(Ω)})
+`‖∇u‖_{Lᵖ(S)} ≤ ε (‖D²u‖_{Lᵖ(Ω)} + 2 c₁ ‖∇u‖_{Lᵖ(Ω)} + c₂ ‖u‖_{Lᵖ(Ω)})
   + (n² / ε) ‖u‖_{Lᵖ(Ω)}`, `n = dim E`. -/
-theorem Wkp.lpNorm_gradient_ball_le_of_cutoff (hp_top : p ≠ ⊤) {u : Wkp mu Omega p 2}
-    {η : E → ℝ} {c₁ c₂ ε : ℝ} {x₀ : E} {s : ℝ} (hη : ContDiff ℝ ∞ η) (hcpt : HasCompactSupport η)
-    (hts : tsupport η ⊆ Omega) (habs : ∀ x, |η x| ≤ 1) (hη1 : Set.EqOn η 1 (ball x₀ s))
+theorem Wkp.lpNorm_gradient_le_of_cutoff (hp_top : p ≠ ⊤) {u : Wkp mu Omega p 2}
+    {η : E → ℝ} {c₁ c₂ ε : ℝ} {S : Set E} (hS : IsOpen S) (hη : ContDiff ℝ ∞ η)
+    (hcpt : HasCompactSupport η)
+    (hts : tsupport η ⊆ Omega) (habs : ∀ x, |η x| ≤ 1) (hη1 : Set.EqOn η 1 S)
     (hg : ∀ x, ‖gradient η x‖ ≤ c₁) (hh : ∀ x, ‖fderiv ℝ (gradient η) x‖ ≤ c₂)
     (hε : 0 < ε) :
-    lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict (ball x₀ s)) ≤
+    lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (mu.restrict S) ≤
       ε * (‖Wkp.iteratedGradient 1 u‖ +
         (2 * c₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + c₂ * ‖Wkp.value 2 u‖)) +
       finrank ℝ E ^ 2 / ε * ‖Wkp.value 2 u‖ := by
-  have hsU : ball x₀ s ⊆ Omega := fun y hy =>
+  have hsU : S ⊆ Omega := fun y hy =>
     hts (subset_tsupport η (by simp [hη1 hy]))
   obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hη hcpt hts 2 u
   have hint := Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hw0 hε
   -- On `B_s` the cutoff is one, so `∇w = ∇u` there.
   have hwg := Wkp.iteratedGradient_zero_ae_eq_of_value_ae_eq_mul (u := Wkp.lowerOrder 1 u)
     (w := Wkp.lowerOrder 1 w) hη (by simpa only [Wkp.value_succ] using hwv)
-  have hgs : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) : E → E) =ᵐ[mu.restrict (ball x₀ s)]
+  have hgs : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) : E → E) =ᵐ[mu.restrict S]
       Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 w) := by
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hsU hwg,
-      ae_restrict_mem measurableSet_ball] with x h2 hx
+      ae_restrict_mem hS.measurableSet] with x h2 hx
     have hev : η =ᶠ[nhds x] fun _ => 1 :=
-      Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) fun y hy => hη1 hy
+      Filter.eventually_of_mem (hS.mem_nhds hx) fun y hy => hη1 hy
     rw [h2, hη1 hx, hev.gradient_eq, gradient_fun_const]
     simp
   have hstep1 := lpNorm_le_norm_of_ae_eq_of_le (Measure.restrict_mono hsU le_rfl) hgs
@@ -395,7 +395,7 @@ open Metric in
   + (n² / ε) ‖u‖_{Lᵖ(B_t)}`, `n = dim E`.
 
 Here `B_t` carries the `Lᵖ(B_t)` norms and the terms with `c` come from the derivatives of a cutoff
-between the two balls; see `TauCeti.Wkp.lpNorm_gradient_ball_le_of_cutoff`. -/
+between the two balls; see `TauCeti.Wkp.lpNorm_gradient_le_of_cutoff`. -/
 theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
     ∃ c : ℝ, 0 ≤ c ∧ ∀ {Omega : Opens E} (u : Wkp mu Omega p 2) {x₀ : E} {s t : ℝ}, 0 < s →
       s < t → ball x₀ t ⊆ Omega → ∀ {ε : ℝ}, 0 < ε →
@@ -433,7 +433,7 @@ theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
     rw [hms]
     field_simp
     ring
-  have key := Wkp.lpNorm_gradient_ball_le_of_cutoff hp_top (u := v) hη hcpt hηU hηabs
+  have key := Wkp.lpNorm_gradient_le_of_cutoff hp_top (u := v) isOpen_ball hη hcpt hηU hηabs
     (hη1.mono ball_subset_closedBall) hηg hηh hε
   rw [hm1, hm2, Lp.norm_eq_lpNorm_of_ae_eq (Wkp.value_restrictL_ae hU 2 u),
     Lp.norm_eq_lpNorm_of_ae_eq hvg,
