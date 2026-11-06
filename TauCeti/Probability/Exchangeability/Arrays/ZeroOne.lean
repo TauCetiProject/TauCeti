@@ -12,6 +12,7 @@ public import TauCeti.Probability.Process.Array.Diagonal
 import Mathlib.Probability.Independence.ZeroOne
 import TauCeti.Probability.Martingale.Convergence
 import TauCeti.Data.Finset.Basic
+import TauCeti.MeasureTheory.MeasurableSpace.Sup
 
 /-!
 # Joint dissociation and the corner tail of an array
@@ -181,46 +182,6 @@ theorem JointlyDissociated.measure_eq_zero_or_one_of_tailProcess_arrayDiag
 
 /-! ## From tail triviality back to dissociation -/
 
-omit [MeasurableSpace Ω] in
-/-- A cylinder of the block over `S` is the preimage, under the array map, of a measurable
-cylinder of array space over a finite subset of `S`. -/
-private theorem exists_eq_preimage_pi_of_mem_piiUnionInter {X : ℕ × ℕ → Ω → α}
-    {S : Set (ℕ × ℕ)} {A : Set Ω}
-    (hA : A ∈ piiUnionInter
-      (fun p ↦ {s | MeasurableSet[MeasurableSpace.comap (X p) inferInstance] s}) S) :
-    ∃ (t : Finset (ℕ × ℕ)) (C : ℕ × ℕ → Set α), ↑t ⊆ S ∧ (∀ p ∈ t, MeasurableSet (C p)) ∧
-      A = (fun ω p ↦ X p ω) ⁻¹' Set.pi (↑t) C := by
-  classical
-  obtain ⟨t, ht, f, hf, rfl⟩ := hA
-  choose! C hC hCeq using fun p hp ↦ MeasurableSpace.measurableSet_comap.1 (hf p hp)
-  refine ⟨t, C, ht, hC, ?_⟩
-  ext ω
-  simp only [Set.mem_iInter, Set.mem_preimage, Set.mem_pi, Finset.mem_coe]
-  exact forall₂_congr fun p hp ↦ by rw [← hCeq p hp, Set.mem_preimage]
-
-/-- For finite index sets `tA ⊆ S ×ˢ S` and `tB ⊆ S' ×ˢ S'` with `S`, `S'` disjoint, and every
-cutoff `n`, some permutation of `ℕ` fixes every index of `tA` and moves both coordinates of every
-index of `tB` to at least `n`. -/
-private theorem exists_perm_fix_and_le {S S' : Set ℕ} (hd : Disjoint S S')
-    {tA tB : Finset (ℕ × ℕ)} (htA : ↑tA ⊆ S ×ˢ S) (htB : ↑tB ⊆ S' ×ˢ S') (n : ℕ) :
-    ∃ ρ : Equiv.Perm ℕ, (∀ p ∈ tA, (ρ p.1, ρ p.2) = p) ∧ ∀ p ∈ tB, n ≤ ρ p.1 ∧ n ≤ ρ p.2 := by
-  classical
-  have hmem : ∀ {t : Finset (ℕ × ℕ)} {T : Set ℕ}, ↑t ⊆ T ×ˢ T →
-      ∀ i ∈ t.image Prod.fst ∪ t.image Prod.snd, i ∈ T := by
-    intro t T ht i hi
-    simp only [Finset.mem_union, Finset.mem_image] at hi
-    rcases hi with ⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩
-    · exact (ht (Finset.mem_coe.2 hp)).1
-    · exact (ht (Finset.mem_coe.2 hp)).2
-  obtain ⟨ρ, hρI, hρJ⟩ := (tA.image Prod.fst ∪ tA.image Prod.snd).exists_perm_eqOn_le_apply
-    (tB.image Prod.fst ∪ tB.image Prod.snd) (Finset.disjoint_left.2 fun i hi hj ↦
-      Set.disjoint_left.mp hd (hmem htA i hi) (hmem htB i hj)) n
-  refine ⟨ρ, fun p hp ↦ ?_, fun p hp ↦ ⟨?_, ?_⟩⟩
-  · rw [hρI _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp)),
-      hρI _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))]
-  · exact hρJ _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp))
-  · exact hρJ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))
-
 /-- **The core factorization.** Under corner-tail triviality and joint exchangeability, a cylinder
 `A` of the block over `range e × range e` and a cylinder `B` of the block over
 `range e' × range e'`, for `e`, `e'` of disjoint range, have `μ (A ∩ B) = μ A * μ B`. -/
@@ -236,14 +197,14 @@ private theorem measure_inter_eq_mul_of_cylinders
       (fun p ↦ {s | MeasurableSet[MeasurableSpace.comap (X p) inferInstance] s})
       (Set.range e' ×ˢ Set.range e')) :
     μ (A ∩ B) = μ A * μ B := by
-  obtain ⟨tA, CA, htA, hCA, rfl⟩ := exists_eq_preimage_pi_of_mem_piiUnionInter hA
-  obtain ⟨tB, CB, htB, hCB, rfl⟩ := exists_eq_preimage_pi_of_mem_piiUnionInter hB
+  obtain ⟨tA, CA, htA, hCA, rfl⟩ := MeasurableSpace.exists_eq_preimage_pi_of_mem_piiUnionInter hA
+  obtain ⟨tB, CB, htB, hCB, rfl⟩ := MeasurableSpace.exists_eq_preimage_pi_of_mem_piiUnionInter hB
   have hcylA : MeasurableSet (Set.pi (↑tA) CA) :=
     MeasurableSet.pi tA.countable_toSet fun p hp ↦ hCA p (Finset.mem_coe.1 hp)
   have hcylB : MeasurableSet (Set.pi (↑tB) CB) :=
     MeasurableSet.pi tB.countable_toSet fun p hp ↦ hCB p (Finset.mem_coe.1 hp)
   -- for each `n`, a permutation fixing the indices of `A` and pushing those of `B` past `n`
-  choose ρ hρA hρB using fun n ↦ exists_perm_fix_and_le hd htA htB n
+  choose ρ hρA hρB using fun n ↦ Finset.exists_perm_prod_fix_and_le hd htA htB n
   -- the shifted copies of `B`, each readable above the cutoff `n`
   have hB'_meas : ∀ n, MeasurableSet[arrayTailFamily X n]
       ((fun ω p ↦ X (ρ n p.1, ρ n p.2) ω) ⁻¹' Set.pi (↑tB) CB) := by
