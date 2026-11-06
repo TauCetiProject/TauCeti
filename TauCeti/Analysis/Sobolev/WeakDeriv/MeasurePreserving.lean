@@ -124,41 +124,52 @@ private theorem hasWeakFDerivOn_comp_of_tendsto [OpensMeasurableSpace E] {W : Op
       _ ≤ _ := mul_le_mul_left ((setLIntegral_le_lintegral _ _).trans <|
           (hΦ.lintegral_comp' (hGm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one) _
 
-/-- **The weak chain rule.** If `u` has weak derivative `D` on the open set `V`, and `Φ` is a
-measure-preserving map, locally Lipschitz on the open set `U` and mapping `U` into `V`, then
-`u ∘ Φ` has weak derivative `x ↦ D (Φ x) ∘L fderiv ℝ Φ x` on `U`. -/
-theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u : E' → F}
-    {D : E' → E' →L[ℝ] F} {Φ : E → E'} (h : HasWeakFDerivOn ν V u D)
-    (hΦ : MeasurePreserving Φ μ ν) (hΦl : LocallyLipschitzOn U Φ)
-    (hUV : MapsTo Φ U V) :
-    HasWeakFDerivOn μ U (u ∘ Φ) fun x => (D (Φ x)).comp (fderiv ℝ Φ x) := by
-  have : CompleteSpace F := h.completeSpace
-  rw [hasWeakFDerivOn_iff_forall_isCompact_closure]
-  intro W hWc hWU
-  have hWU' : (W : Set E) ⊆ U := subset_closure.trans hWU
-  -- `Φ` is Lipschitz on the compact `closure W`, so its derivative is bounded on `W`.
-  obtain ⟨C, hC⟩ := (hΦl.mono hWU).exists_lipschitzOnWith_of_compact hWc
-  have hCW : LipschitzOnWith C Φ W := hC.mono subset_closure
-  -- The compact image `K` of `closure W` has an open thickening `O` with closure inside `V`.
-  set K := Φ '' closure (W : Set E)
-  have hK : IsCompact K := hWc.image_of_continuousOn hC.continuousOn
-  have hKV : K ⊆ V := image_subset_iff.2 fun x hx => hUV (hWU hx)
-  have hWK : ∀ x ∈ (W : Set E), Φ x ∈ K := fun x hx => mem_image_of_mem Φ (subset_closure hx)
+omit [ν.IsAddHaarMeasure] in
+/-- **The cutoff of a weakly differentiable pair.** If `u` has weak derivative `D` on the open
+set `V` and `K ⊆ V` is compact, there is an open neighbourhood `O ⊆ V` of `K`, containing the
+`δ`-balls around the points of `K`, on which `u` and `D` are integrable, so that their zero
+extensions from `O` are `L¹`, and the zero extension of `u` has compact support. -/
+private theorem HasWeakFDerivOn.exists_open_memLp_indicator {V : Opens E'} {u : E' → F}
+    {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) {K : Set E'} (hK : IsCompact K)
+    (hKV : K ⊆ V) :
+    ∃ δ > 0, ∃ O : Opens E', K ⊆ O ∧ (O : Set E') ⊆ V ∧ (∀ x ∈ K, ball x δ ⊆ O) ∧
+      MemLp u 1 (ν.restrict O) ∧ MemLp D 1 (ν.restrict O) ∧
+      MemLp ((O : Set E').indicator u) 1 ν ∧ MemLp ((O : Set E').indicator D) 1 ν ∧
+      HasCompactSupport ((O : Set E').indicator u) := by
   obtain ⟨δ, hδ, hδV⟩ := hK.exists_cthickening_subset_open V.isOpen hKV
   obtain ⟨O, hO⟩ : ∃ O : Opens E', (O : Set E') = thickening δ K := ⟨⟨_, isOpen_thickening⟩, rfl⟩
   have hOV : (O : Set E') ⊆ cthickening δ K := hO ▸ thickening_subset_cthickening δ K
-  have hKO : K ⊆ O := hO ▸ self_subset_thickening hδ K
   have hu : MemLp u 1 (ν.restrict O) := memLp_one_iff_integrable.2 <|
     (h.locallyIntegrableOn.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
   have hD : MemLp D 1 (ν.restrict O) := memLp_one_iff_integrable.2 <|
     (h.locallyIntegrableOn_deriv.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
-  have hu' : MemLp ((O : Set E').indicator u) 1 ν :=
-    (memLp_indicator_iff_restrict (f := u) O.isOpen.measurableSet.nullMeasurableSet).2 hu
-  have hD' : MemLp ((O : Set E').indicator D) 1 ν :=
-    (memLp_indicator_iff_restrict (f := D) O.isOpen.measurableSet.nullMeasurableSet).2 hD
-  have hOc : HasCompactSupport ((O : Set E').indicator u) :=
+  exact ⟨δ, hδ, O, hO ▸ self_subset_thickening hδ K, hOV.trans hδV,
+    fun x hx => hO ▸ ball_subset_thickening hx δ, hu, hD,
+    (memLp_indicator_iff_restrict (f := u) O.isOpen.measurableSet.nullMeasurableSet).2 hu,
+    (memLp_indicator_iff_restrict (f := D) O.isOpen.measurableSet.nullMeasurableSet).2 hD,
     HasCompactSupport.intro' hK.cthickening isClosed_cthickening fun y hy =>
-      indicator_of_notMem (fun hyO => hy (hOV hyO)) u
+      indicator_of_notMem (fun hyO => hy (hOV hyO)) u⟩
+
+/-- **Mollifying the pieces of the chain rule.** Let `u` have weak derivative `D` on `V`, let `Φ`
+be locally Lipschitz on `W` and Lipschitz on `W`, mapping `W` into a compact `K ⊆ V`, and let `O`
+be an open `δ`-neighbourhood of `K` inside `V` as in
+`TauCeti.HasWeakFDerivOn.exists_open_memLp_indicator`. Then mollifying the zero extensions of `u`
+and `D` from `O` by bumps of radius below `δ` gives continuous sequences `f k`, `G k` converging
+in `L¹` to them, such that `f k ∘ Φ` has weak derivative `x ↦ G k (Φ x) ∘L fderiv ℝ Φ x` on `W`. -/
+private theorem HasWeakFDerivOn.exists_mollified_comp {W : Opens E} {V : Opens E'} {u : E' → F}
+    {D : E' → E' →L[ℝ] F} {Φ : E → E'} (h : HasWeakFDerivOn ν V u D)
+    (hΦl : LocallyLipschitzOn (W : Set E) Φ) {C : NNReal} (hCW : LipschitzOnWith C Φ W)
+    {K : Set E'} (hWK : ∀ x ∈ (W : Set E), Φ x ∈ K) {δ : ℝ} (hδ : 0 < δ) {O : Opens E'}
+    (hOV : (O : Set E') ⊆ V) (hball : ∀ x ∈ K, ball x δ ⊆ O)
+    (hu : MemLp u 1 (ν.restrict O)) (hD : MemLp D 1 (ν.restrict O))
+    (hu' : MemLp ((O : Set E').indicator u) 1 ν) (hD' : MemLp ((O : Set E').indicator D) 1 ν)
+    (hOc : HasCompactSupport ((O : Set E').indicator u)) :
+    ∃ (f : ℕ → E' → F) (G : ℕ → E' → E' →L[ℝ] F), (∀ k, Continuous (f k)) ∧
+      (∀ k, Continuous (G k)) ∧
+      (∀ k, HasWeakFDerivOn μ W (f k ∘ Φ) fun x => (G k (Φ x)).comp (fderiv ℝ Φ x)) ∧
+      Tendsto (fun k => eLpNorm (f k - (O : Set E').indicator u) 1 ν) atTop (𝓝 0) ∧
+      Tendsto (fun k => eLpNorm (G k - (O : Set E').indicator D) 1 ν) atTop (𝓝 0) := by
+  have : CompleteSpace F := h.completeSpace
   -- Mollify the zero extensions from `O` by bumps whose radii stay below `δ`.
   let φ : ℕ → ContDiffBump (0 : E') := fun k =>
     ⟨δ / (k + 2) / 2, δ / (k + 2), by positivity, half_lt_self (by positivity)⟩
@@ -180,20 +191,45 @@ theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u :
   -- wherever `Φ` is differentiable, which is almost everywhere by Rademacher's theorem.
   have hfd : ∀ k, ∀ᵐ x ∂μ, x ∈ (W : Set E) →
       HasFDerivAt (f k ∘ Φ) ((G k (Φ x)).comp (fderiv ℝ Φ x)) x := fun k => by
-    filter_upwards [(hΦl.mono hWU').ae_differentiableAt_of_mem (μ := μ) W.isOpen] with x hdx hx
-    exact ((h.mono (hOV.trans hδV)).hasFDerivAt_indicator_convolution_normed hu hD le_rfl le_rfl
-      (φ k) (Φ x) ((closedBall_subset_ball (hφδ k)).trans
-        (hO ▸ ball_subset_thickening (hWK x hx) δ))).comp x (hdx hx).hasFDerivAt
-  have hweak : ∀ k, HasWeakFDerivOn μ W (f k ∘ Φ)
-      fun x => (G k (Φ x)).comp (fderiv ℝ Φ x) := fun k => by
-    obtain ⟨L, hL⟩ := hfl k
+    filter_upwards [hΦl.ae_differentiableAt_of_mem (μ := μ) W.isOpen] with x hdx hx
+    exact ((h.mono hOV).hasFDerivAt_indicator_convolution_normed hu hD le_rfl le_rfl
+      (φ k) (Φ x) ((closedBall_subset_ball (hφδ k)).trans (hball _ (hWK x hx)))).comp x
+        (hdx hx).hasFDerivAt
+  refine ⟨f, G, fun k => (hfl k).elim fun _ hL => hL.continuous, fun k =>
+    (φ k).hasCompactSupport_normed.continuous_convolution_right _
+      (hD'.locallyIntegrable le_rfl) (φ k).continuous_normed, fun k => ?_, ?_, ?_⟩
+  · obtain ⟨L, hL⟩ := hfl k
     have hl : LocallyLipschitzOn W (f k ∘ Φ) := fun _ _ =>
       ⟨_, _, self_mem_nhdsWithin, hL.comp_lipschitzOnWith hCW⟩
     exact hl.hasWeakFDerivOn (hfd k)
-  have hfc : ∀ k, Continuous (f k) := fun k => (hfl k).elim fun _ hL => hL.continuous
-  have hGc : ∀ k, Continuous (G k) := fun k =>
-    (φ k).hasCompactSupport_normed.continuous_convolution_right _
-      (hD'.locallyIntegrable le_rfl) (φ k).continuous_normed
+  · simpa only [f, convolution_flip] using
+      tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hφ hu'
+  · simpa only [G, convolution_flip] using
+      tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hφ hD'
+
+/-- **The weak chain rule.** If `u` has weak derivative `D` on the open set `V`, and `Φ` is a
+measure-preserving map, locally Lipschitz on the open set `U` and mapping `U` into `V`, then
+`u ∘ Φ` has weak derivative `x ↦ D (Φ x) ∘L fderiv ℝ Φ x` on `U`. -/
+theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u : E' → F}
+    {D : E' → E' →L[ℝ] F} {Φ : E → E'} (h : HasWeakFDerivOn ν V u D)
+    (hΦ : MeasurePreserving Φ μ ν) (hΦl : LocallyLipschitzOn U Φ)
+    (hUV : MapsTo Φ U V) :
+    HasWeakFDerivOn μ U (u ∘ Φ) fun x => (D (Φ x)).comp (fderiv ℝ Φ x) := by
+  have : CompleteSpace F := h.completeSpace
+  rw [hasWeakFDerivOn_iff_forall_isCompact_closure]
+  intro W hWc hWU
+  have hWU' : (W : Set E) ⊆ U := subset_closure.trans hWU
+  -- `Φ` is Lipschitz on the compact `closure W`, so its derivative is bounded on `W`.
+  obtain ⟨C, hC⟩ := (hΦl.mono hWU).exists_lipschitzOnWith_of_compact hWc
+  have hCW : LipschitzOnWith C Φ W := hC.mono subset_closure
+  -- The compact image `K` of `closure W` has an open thickening `O` with closure inside `V`.
+  set K := Φ '' closure (W : Set E)
+  have hK : IsCompact K := hWc.image_of_continuousOn hC.continuousOn
+  have hKV : K ⊆ V := image_subset_iff.2 fun x hx => hUV (hWU hx)
+  have hWK : ∀ x ∈ (W : Set E), Φ x ∈ K := fun x hx => mem_image_of_mem Φ (subset_closure hx)
+  obtain ⟨δ, hδ, O, hKO, hOV, hball, hu, hD, hu', hD', hOc⟩ := h.exists_open_memLp_indicator hK hKV
+  obtain ⟨f, G, hfc, hGc, hweak, hf, hG⟩ := h.exists_mollified_comp (μ := μ) (hΦl.mono hWU')
+    hCW hWK hδ hOV hball hu hD hu' hD' hOc
   -- On `W`, the zero extensions from `O` agree with `u` and `D` after composing with `Φ`.
   have hindu : (O : Set E').indicator u ∘ Φ =ᵐ[μ.restrict W] u ∘ Φ :=
     (ae_restrict_iff' W.isOpen.measurableSet).2 <| Eventually.of_forall fun x hx =>
@@ -206,11 +242,7 @@ theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u :
     (hΦ.integrable_comp_of_integrable (memLp_one_iff_integrable.1 hu')).integrableOn
     (hΦ.integrable_comp_of_integrable (memLp_one_iff_integrable.1 hD')).integrableOn
     (fun k => (hfc k).aestronglyMeasurable.sub hu'.aestronglyMeasurable)
-    (fun k => (hGc k).aestronglyMeasurable.sub hD'.aestronglyMeasurable)
-    (by simpa only [f, convolution_flip] using
-      tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hφ hu')
-    (by simpa only [G, convolution_flip] using
-      tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hφ hD')).congr_ae hindu
+    (fun k => (hGc k).aestronglyMeasurable.sub hD'.aestronglyMeasurable) hf hG).congr_ae hindu
     |>.congr_ae_deriv ?_
   filter_upwards [hindD] with x hx
   simp only [Function.comp_apply] at hx
