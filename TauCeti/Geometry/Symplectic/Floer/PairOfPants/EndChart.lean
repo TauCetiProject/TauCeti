@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 
@@ -31,6 +33,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.endChart q`: the end lift of `q` in the real coordinates `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
+* `TauCeti.Floer.endPiece q R`: the part `1 ≤ ±s ≤ R`, `t ∈ [-1/2, 1/2)` of the end `q`, which
+  together with the core where the perturbation vanishes makes up the truncation `S_R`.
 
 ## Main results
 
@@ -47,6 +51,12 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   coordinate greater than `1/2` on some end.
 * `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
   along the end chart is its component in the end coordinates.
+* `TauCeti.Floer.image_endPiece_subset_truncation`, `TauCeti.Floer.mem_image_endPiece`,
+  `TauCeti.Floer.disjoint_image_endPiece`: the end pieces are disjoint parts of the truncation
+  `S_R`, and they contain its points with signed longitudinal coordinate at least `1`.
+* `TauCeti.Floer.lintegral_image_endStrip_le`: a function whose density in end coordinates is at
+  most `β'(±s - 1) B`, for the cutoff `β` of the perturbation, has integral at most `B` over the
+  image of the strip.
 
 ## References
 
@@ -246,6 +256,129 @@ theorem pairwise_disjoint_image_endChart :
     (Complex.equivRealProdCLM.injective h).symm
   · simpa using endSign_mul_pos_of_mem_endStrip hζ
   · simpa using endSign_mul_pos_of_mem_endStrip hζ'
+
+/-- The part `1 ≤ ±s ≤ R`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates: the
+collar and the cylindrical part of the end inside the truncation `S_R`, over one period. -/
+noncomputable def endPiece (q : Puncture) (R : ℝ) : Set (ℝ × ℝ) :=
+  {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)
+
+/-- The defining formula of the end piece. -/
+theorem endPiece_def (q : Puncture) (R : ℝ) :
+    endPiece q R = {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2) :=
+  (rfl)
+
+/-- A point lies in the end piece of `q` when its signed longitudinal coordinate lies in `[1, R]`
+and its angular coordinate lies in `[-1/2, 1/2)`. -/
+@[simp]
+theorem mem_endPiece_iff {q : Puncture} {R : ℝ} {z : ℝ × ℝ} :
+    z ∈ endPiece q R ↔
+      (1 ≤ q.endSign * z.1 ∧ q.endSign * z.1 ≤ R) ∧ z.2 ∈ Ico (-1 / 2) (1 / 2) :=
+  Iff.rfl
+
+/-- The end piece lies in the strip of the end. -/
+theorem endPiece_subset_endStrip (q : Puncture) (R : ℝ) : endPiece q R ⊆ endStrip q :=
+  fun z hz => mem_endStrip_iff.2 ⟨by linarith [(mem_endPiece_iff.1 hz).1.1],
+    (mem_endPiece_iff.1 hz).2⟩
+
+/-- The end pieces lie in the truncation `S_R`. -/
+theorem image_endPiece_subset_truncation (q : Puncture) {R : ℝ} (hR : 1 ≤ R) :
+    endChart q '' endPiece q R ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
+  rintro _ ⟨z, hz, rfl⟩
+  have hz' := mem_endPiece_iff.1 hz
+  have hz₀ : 0 < q.endSign * z.1 := by linarith [hz'.1.1]
+  have hS := mem_thricePuncturedSphereReal_iff.1 (endChart_mem_thricePuncturedSphereReal hz₀)
+  refine mem_truncation.2 ⟨hS.1, hS.2, fun r => ?_⟩
+  by_cases hr : q = r
+  · subst hr
+    rw [re_endCoord_endChart]
+    exact hz'.1.2
+  · have h := endSign_mul_re_endCoord_nonpos hr (w := Complex.equivRealProdCLM.symm (endChart q z))
+      (by rwa [re_endCoord_endChart])
+    linarith
+
+/-- A point of the truncation `S_R` on the part `±s ≥ 1` of the end `q` lies in its end piece. -/
+theorem mem_image_endPiece {R : ℝ} {z : ℝ × ℝ}
+    (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R) {q : Puncture}
+    (hq : 1 ≤ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    z ∈ endChart q '' endPiece q R := by
+  obtain ⟨hz₀, hz₁, hzR⟩ := mem_truncation.1 hz
+  refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
+    mem_endPiece_iff.2 ⟨⟨by simpa using hq, by simpa using hzR q⟩,
+      by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
+  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    q.cylindricalEndLift_endCoord (ne_endCenter ⟨hz₀, hz₁⟩ q),
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The end pieces of distinct ends have disjoint images. -/
+theorem disjoint_image_endPiece {R : ℝ} {q r : Puncture} (hqr : q ≠ r) :
+    Disjoint (endChart q '' endPiece q R) (endChart r '' endPiece r R) :=
+  (pairwise_disjoint_image_endChart hqr).mono (image_mono (endPiece_subset_endStrip q R))
+    (image_mono (endPiece_subset_endStrip r R))
+
+/-- The images of the end pieces are measurable. -/
+theorem measurableSet_image_endPiece (q : Puncture) (R : ℝ) :
+    MeasurableSet (endChart q '' endPiece q R) := by
+  refine measurable_image_of_fderivWithin ?_
+    (fun w _ => (hasFDerivAt_endChart q w).hasFDerivWithinAt)
+    ((injOn_endChart q).mono (endPiece_subset_endStrip q R))
+  rw [endPiece_def]
+  exact ((measurableSet_le measurable_const (measurable_const.mul measurable_id)).inter
+    (measurableSet_le (measurable_const.mul measurable_id) measurable_const)).prod
+    measurableSet_Ico
+
+/-- The cutoff of an end has total increase one along the end. -/
+private theorem lintegral_deriv_smoothTransition_endSign (q : Puncture) :
+    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) = 1 := by
+  have h₁ : ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (s - 1)) = 1 := by
+    rw [lintegral_sub_right_eq_self (fun s ↦ ENNReal.ofReal (deriv smoothTransition s)) 1,
+      ← ofReal_integral_eq_lintegral_ofReal smoothTransition.integrable_deriv
+        (ae_of_all _ fun _ ↦ smoothTransition.monotone.deriv_nonneg),
+      smoothTransition.integral_deriv, ENNReal.ofReal_one]
+  cases q
+  · simpa using h₁
+  · simpa using h₁
+  · convert smoothTransition.lintegral_ofReal_mul_deriv (-1) one_pos using 4 with s
+    simp only [endSign_inf, one_mul]
+    ring_nf
+
+/-- **Integrals over the image of an end strip.** If the density `det dφ_q · |f ∘ φ_q|` of a
+function `f` in the coordinates of the end `q` is at most `β'(±s - 1) B`, where `β` is the cutoff
+`smoothTransition` of the pair-of-pants perturbation, then the integral of `|f|` over the image of
+the strip is at most `B`, since the cutoff has total increase one along the end. -/
+theorem lintegral_image_endStrip_le {q : Puncture} {f : ℝ × ℝ → ℝ} {B : ℝ}
+    (hf : ∀ z ∈ endStrip q, (fderiv ℝ (endChart q) z).det * |f (endChart q z)| ≤
+      deriv smoothTransition (q.endSign * z.1 - 1) * B) :
+    ∫⁻ z in endChart q '' endStrip q, ‖f z‖ₑ ≤ ENNReal.ofReal B := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have hmeas := measurableSet_endStrip q
+  have hψ : ∀ s, 0 ≤ deriv smoothTransition s := fun _ ↦ smoothTransition.monotone.deriv_nonneg
+  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hmeas
+    (fun z _ ↦ (hasFDerivAt_endChart q z).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
+    (injOn_endChart q)]
+  calc _ ≤ ∫⁻ z in endStrip q,
+        ENNReal.ofReal (deriv smoothTransition (q.endSign * z.1 - 1)) * ENNReal.ofReal B := by
+        refine setLIntegral_mono' hmeas fun z hz ↦ ?_
+        rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_mul (abs_nonneg _),
+          ← ENNReal.ofReal_mul (hψ _), abs_of_nonneg (det_fderiv_endChart_nonneg q z)]
+        exact ENNReal.ofReal_le_ofReal (hf z hz)
+    _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s},
+        ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal B := by
+        have hm : Measurable fun z : ℝ × ℝ ↦
+            ENNReal.ofReal (deriv smoothTransition (q.endSign * z.1 - 1)) * ENNReal.ofReal B :=
+          (ENNReal.continuous_ofReal.comp
+            (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
+              (by fun_prop))).measurable.mul_const _
+        have hvol : volume (Ico (-1 / 2 : ℝ) (1 / 2)) = 1 := by
+          rw [Real.volume_Ico]
+          norm_num
+        rw [Measure.volume_eq_prod, endStrip_def, setLIntegral_prod _ hm.aemeasurable]
+        simp only [setLIntegral_const, hvol, mul_one]
+    _ ≤ ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal B :=
+        setLIntegral_le_lintegral _ _
+    _ = ENNReal.ofReal B := by
+        rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
+          lintegral_deriv_smoothTransition_endSign, one_mul]
 
 end Floer
 

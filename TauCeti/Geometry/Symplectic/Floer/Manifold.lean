@@ -99,6 +99,39 @@ theorem hamiltonianCurvature_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ �
         fderiv ℝ (fun w ↦ Ks w x) z stdComplexLineImag - ω.poissonBracket (Ks z) (Kt z) x :=
   (rfl)
 
+/-- The curvature only depends on the germs of the perturbation data at the domain point. -/
+theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[nhds z] Ks')
+    (ht : Kt =ᶠ[nhds z] Kt') :
+    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
+  funext x
+  have hs' : (fun w ↦ Ks w x) =ᶠ[nhds z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
+  have ht' : (fun w ↦ Kt w x) =ᶠ[nhds z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
+    hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- Without a `ds` component, the curvature of `K = K_t dt` is `∂_s K_t`. -/
+theorem hamiltonianCurvature_zero_left (ω : SmoothTwoForm I M) (Kt : ℝ × ℝ → M → ℝ)
+    (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) Kt z x =
+      fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal := by
+  simp [hamiltonianCurvature_def]
+
+/-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
+theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ → ℝ}
+    {H : ℝ → M → ℝ} {z : ℝ × ℝ} {x : M} (hβ : DifferentiableAt ℝ β z.1)
+    (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
+      deriv β z.1 * H z.2 x := by
+  rw [hamiltonianCurvature_zero_left]
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 * H w.2 x)
+      (β z.1 • (fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ) +
+        H z.2 x • (fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
+    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).mul (hH.hasFDerivAt.comp z hasFDerivAt_snd)
+  rw [h.fderiv]
+  simp [stdComplexLineReal]
+  ring
+
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
 def perturbedMFDeriv (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
@@ -166,6 +199,14 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
       SmoothBundleForm.eval₂ ω (u z) (ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal)
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
+
+/-- For the zero perturbation the energy density is the symplectic area density `u^* ω`. -/
+@[simp]
+theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
+      SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def]
 
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
