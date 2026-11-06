@@ -195,25 +195,18 @@ private theorem length_quotient_lsmul_le_mul_ord_of_finrank_le [IsNoetherianRing
     Module.length A (↥M ⧸ LinearMap.range (LinearMap.lsmul A ↥M a)) ≤ n * Ring.ord A a := by
   induction n generalizing U M with
   | zero =>
-      have hU0 : U = ⊥ := Submodule.finrank_eq_zero.mp (Nat.le_zero.mp hU)
-      have hM0 : M = ⊥ := by
-        refine le_bot_iff.mp fun y hy => ?_
-        have hyU := hM hy
-        rw [hU0] at hyU
-        simpa using hyU
-      subst hM0
+      obtain rfl : U = ⊥ := Submodule.finrank_eq_zero.mp (Nat.le_zero.mp hU)
+      obtain rfl : M = ⊥ := le_bot_iff.mp fun y hy => by simpa using hM hy
       simp
   | succ n ih =>
       rcases eq_or_ne M ⊥ with rfl | hM0
       · simp
-      -- Phase 1: build the projection `e` killing the line `K ∙ x` through some `0 ≠ x ∈ M`.
+      -- Phase 1: build the projection `eA` killing the line `K ∙ x` through some `0 ≠ x ∈ M`.
       obtain ⟨x, hxM, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hM0
       obtain ⟨φ, hφx⟩ := Module.Projective.exists_dual_eq_one K hx0
-      set e : V →ₗ[K] V := LinearMap.id - LinearMap.smulRight φ x with hedef
-      have hkere : LinearMap.ker e = K ∙ x := Module.Dual.ker_id_sub_smulRight φ hφx
-      set eA : V →ₗ[A] V := e.restrictScalars A with heAdef
+      set eA : V →ₗ[A] V := (LinearMap.id - LinearMap.smulRight φ x).restrictScalars A with heAdef
       have hkereA : LinearMap.ker eA = (K ∙ x).restrictScalars A := by
-        rw [heAdef, LinearMap.ker_restrictScalars, hkere]
+        rw [heAdef, LinearMap.ker_restrictScalars, Module.Dual.ker_id_sub_smulRight φ hφx]
       have hxU : x ∈ U := hM hxM
       have hrkU' : Module.finrank K ↥(LinearMap.ker φ ⊓ U) ≤ n := by
         have := Module.Dual.finrank_ker_inf_add_one (f := φ) (U := U) fun h => by
@@ -223,44 +216,31 @@ private theorem length_quotient_lsmul_le_mul_ord_of_finrank_le [IsNoetherianRing
       set P : Submodule A ↥M := LinearMap.range (LinearMap.lsmul A ↥M a)
       set N : Submodule A ↥M := Submodule.comap M.subtype ((K ∙ x).restrictScalars A) with hNdef
       have : Module.Finite A ↥M := Module.Finite.iff_fg.mpr hfg
-      have hNfg : N.FG := IsNoetherian.noetherian N
       -- Phase 3: `N` lives on the line `K ∙ x`, so the rank-one bound applies to it.
       have hterm1 : Module.length A (N.map P.mkQ) ≤ Ring.ord A a := by
         rw [length_map_mkQ]
-        calc Module.length A (↥N ⧸ Submodule.comap N.subtype P)
-            ≤ Module.length A (↥N ⧸ LinearMap.range (LinearMap.lsmul A ↥N a)) := by
-              refine length_quotient_anti ?_
-              rintro y ⟨z, rfl⟩
-              exact ⟨(z : ↥M), rfl⟩
-          _ = Module.length A (↥(N.map M.subtype) ⧸
-                LinearMap.range (LinearMap.lsmul A ↥(N.map M.subtype) a)) :=
-              length_quotient_lsmul_congr
-                (Submodule.equivMapOfInjective M.subtype (Submodule.subtype_injective M) N) a
-          _ ≤ Ring.ord A a :=
-              length_quotient_lsmul_le_ord_of_le_span_singleton a ha _
-                (by rw [hNdef]; exact Submodule.map_comap_le _ _) (hNfg.map _)
+        refine (length_quotient_anti ?_).trans ((length_quotient_lsmul_congr
+          (Submodule.equivMapOfInjective M.subtype (Submodule.subtype_injective M) N) a).trans_le
+          (length_quotient_lsmul_le_ord_of_le_span_singleton a ha _
+            (by rw [hNdef]; exact Submodule.map_comap_le _ _) ((IsNoetherian.noetherian N).map _)))
+        rintro y ⟨z, rfl⟩
+        exact ⟨(z : ↥M), rfl⟩
       -- Phase 4: the rest is `e M ⧸ a·e M`, one dimension lower, so the hypothesis applies.
       set M' : Submodule A V := M.map eA
       have hM'U : M' ≤ (LinearMap.ker φ ⊓ U).restrictScalars A := by
         rintro _ ⟨y, hy, rfl⟩
-        exact ⟨by simp [heAdef, hedef, hφx], by
-          simpa [heAdef, hedef] using U.sub_mem (hM hy) (U.smul_mem _ hxU)⟩
+        exact ⟨by simp [heAdef, hφx], by simpa [heAdef] using U.sub_mem (hM hy) (U.smul_mem _ hxU)⟩
       set Q : Submodule A ↥M' := LinearMap.range (LinearMap.lsmul A ↥M' a)
       set g : ↥M →ₗ[A] ↥M' :=
         LinearMap.codRestrict M' (eA ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
-      have hgsurj : Function.Surjective g := by
-        rintro ⟨_, y, hy, rfl⟩
-        exact ⟨⟨y, hy⟩, rfl⟩
       have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = P ⊔ N := by
         rw [ker_mkQ_comp_codRestrict eA M a, hkereA]
-      have hterm2 : Module.length A (↥M ⧸ (P ⊔ N)) ≤ n * Ring.ord A a := by
-        rw [← hker, (LinearMap.quotKerEquivOfSurjective (Q.mkQ ∘ₗ g)
-          ((Submodule.mkQ_surjective Q).comp hgsurj)).length_eq]
-        exact ih (LinearMap.ker φ ⊓ U) hrkU' M' hM'U (hfg.map eA)
-      rw [length_quotient_eq_length_map_add_length_quotient_sup N P]
-      calc Module.length A (N.map P.mkQ) + Module.length A (↥M ⧸ (P ⊔ N))
-          ≤ Ring.ord A a + n * Ring.ord A a := add_le_add hterm1 hterm2
-        _ = (n + 1 : ℕ) * Ring.ord A a := by push_cast; ring
+      rw [length_quotient_eq_length_map_add_length_quotient_sup N P, ← hker,
+        (LinearMap.quotKerEquivOfSurjective (Q.mkQ ∘ₗ g) ((Submodule.mkQ_surjective Q).comp
+          fun ⟨_, y, hy, hz⟩ => ⟨⟨y, hy⟩, Subtype.ext hz⟩)).length_eq]
+      refine (add_le_add hterm1 (ih _ hrkU' M' hM'U (hfg.map eA))).trans_eq ?_
+      push_cast
+      ring
 
 /-- **Krull–Akizuki's length bound.** For any `A`-submodule `M` of a finite-dimensional
 `K`-vector space `V` — finitely generated or not — and any nonzero `a : A`,
