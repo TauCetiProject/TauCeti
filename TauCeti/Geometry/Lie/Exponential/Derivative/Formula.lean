@@ -72,6 +72,19 @@ private def centeredProduct (X Y : LeftInvariantDerivation I G) : G :=
 private def centeredLog (X Y : LeftInvariantDerivation I G) : LeftInvariantDerivation I G :=
   lieLog (I := I) (centeredProduct (I := I) X Y)
 
+@[simp] private lemma centeredProduct_zero_right (X : LeftInvariantDerivation I G) :
+    centeredProduct (I := I) (G := G) X 0 = 1 := by
+  simp only [centeredProduct, add_zero, inv_mul_cancel]
+
+@[simp] private lemma centeredLog_zero_right (X : LeftInvariantDerivation I G) :
+    centeredLog (I := I) (G := G) X 0 = 0 := by
+  simp only [centeredLog, centeredProduct_zero_right, lieLog_one]
+
+omit [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] in
+private lemma mulInvariantVectorField_apply (v : GroupLieAlgebra I G) (g : G) :
+    mulInvariantVectorField v g = mfderiv I I (g * ·) (1 : G) v := by
+  rw [mulInvariantVectorField]
+
 private def leftDexp (X : LeftInvariantDerivation I G) :
     LeftInvariantDerivation I G →L[ℝ] LeftInvariantDerivation I G :=
   fderiv ℝ (centeredLog (I := I) (G := G) X) 0
@@ -94,7 +107,7 @@ private lemma contDiffAt_centeredLog (X : LeftInvariantDerivation I G) :
     ContDiffAt ℝ ∞ (Function.uncurry (centeredLog (I := I) (G := G))) (X, 0) := by
   have hl : ContMDiffAt I 𝓘(ℝ, LeftInvariantDerivation I G) ∞ (lieLog (I := I) (G := G))
       (centeredProduct (I := I) (G := G) X 0) := by
-    simpa only [centeredProduct, add_zero, inv_mul_cancel] using
+    simpa only [centeredProduct_zero_right] using
       contMDiffAt_lieLog_one (I := I) (G := G)
   exact (hl.comp (X, 0) (contMDiff_centeredProduct (I := I) (G := G)).contMDiffAt).contDiffAt
 
@@ -128,8 +141,7 @@ private lemma eventually_exp_centeredLog (X : LeftInvariantDerivation I G) :
   have hc := (contMDiff_centeredProduct (I := I) (G := G)).continuous.comp hp
   have ht : Tendsto (centeredProduct (I := I) (G := G) X) (𝓝 0) (𝓝 1) := by
     have h := hc.tendsto (0 : LeftInvariantDerivation I G)
-    simp only [Function.comp_def, Function.uncurry_apply_pair, centeredProduct, add_zero,
-      inv_mul_cancel] at h
+    simp only [Function.comp_def, Function.uncurry_apply_pair, centeredProduct_zero_right] at h
     exact h
   exact ht.eventually (eventually_lieExp_lieLog (I := I) (G := G))
 
@@ -194,7 +206,7 @@ private lemma eventually_curveLog_add (X Y : LeftInvariantDerivation I G) (s t :
 
 @[simp] private lemma curveLog_zero (X Y : LeftInvariantDerivation I G) (s : ℝ) :
     curveLog (I := I) X Y s 0 = 0 := by
-  simp [curveLog, centeredLog, centeredProduct]
+  simp only [curveLog, zero_smul, centeredLog_zero_right]
 
 -- Differentiating the centered one-parameter subgroup law gives an additive cocycle.
 private lemma variation_add (X Y : LeftInvariantDerivation I G) (s t : ℝ) :
@@ -295,7 +307,7 @@ private lemma hasFDerivAt_chart_centeredProduct (X : LeftInvariantDerivation I G
       (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
         (I := I) (G := G)).toContinuousLinearEquiv.toContinuousLinearMap
       (centeredLog (I := I) (G := G) X 0) := by
-    simpa [centeredLog, centeredProduct] using
+    simpa only [centeredLog_zero_right] using
       hasFDerivAt_extChartAt_lieExp_zero (I := I) (G := G)
   apply (hz.comp 0 hd).congr_of_eventuallyEq
   filter_upwards [eventually_exp_centeredLog (I := I) X] with Y hY
@@ -318,7 +330,7 @@ private lemma mfderiv_centeredProduct_model (X Y : LeftInvariantDerivation I G) 
     (contDiff_const.prodMk contDiff_id).contMDiff
   have hu := ((contMDiff_centeredProduct (I := I) (G := G)).comp hp).mdifferentiableAt
     (x := 0) (by simp)
-  have hu0 : u 0 = 1 := by simp [u, centeredProduct]
+  have hu0 : u 0 = 1 := centeredProduct_zero_right X
   have hext : MDifferentiableAt I 𝓘(ℝ, E) (extChartAt I (1 : G)) (u 0) := by
     rw [hu0]
     exact mdifferentiableAt_extChartAt (mem_chart_source H (1 : G))
@@ -328,7 +340,9 @@ private lemma mfderiv_centeredProduct_model (X Y : LeftInvariantDerivation I G) 
   have hFd := DFunLike.congr_fun (hasFDerivAt_chart_centeredProduct (I := I) X).fderiv Y
   have hresult := hcoords.symm.trans hFd
   rw [hu0, mfderiv_extChartAt_self] at hresult
-  -- Evaluate the identity chart derivative and the canonical normed-space tangent identifications.
+  -- `groupLieAlgebraEquivModelVectorSpace` is `LinearEquiv.refl ℝ E`. Both normed-space
+  -- tangent fibres are the underlying vector space, and `fromTangentSpace` and its inverse
+  -- act identically on vectors. The `fderiv`/`mfderiv` conversion was made explicitly in `hc`.
   exact hresult
 
 -- Translation back from the identity gives the differential of the exponential itself.
@@ -354,10 +368,8 @@ private lemma mfderiv_lieExp_aux (X : LeftInvariantDerivation I G)
   have hshift : mfderiv 𝓘(ℝ, LeftInvariantDerivation I G) 𝓘(ℝ, LeftInvariantDerivation I G)
       (fun Z : LeftInvariantDerivation I G ↦ X + Z) 0 w = v := by
     rw [mfderiv_eq_fderiv, hadd.fderiv]
-    -- Evaluate composition first: rewrite matching does not expose the tangent-map coercions.
-    change (NormedSpace.fromTangentSpace (𝕜 := ℝ) (X + 0)).symm
-      (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : LeftInvariantDerivation I G) w) = v
-    simp only [NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_symm_apply, w, Y]
+    simp only [NormedSpace.fromTangentSpace_apply,
+      NormedSpace.fromTangentSpace_symm_apply, w, Y]
     exact NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) (0 : LeftInvariantDerivation I G) v
   have hc1 := mfderiv_comp_apply X
     (mdifferentiableAt_mul_left (I := I) (a := (lieExp (I := I) X)⁻¹)) hExp v
@@ -408,7 +420,10 @@ theorem hasMFDerivAt_lieExp (X : LeftInvariantDerivation I G) :
   intro v
   have h := mfderiv_lieExp_aux (I := I) X v
   rw [leftDexp_eq_quotient] at h
-  simp only [mulInvariantVectorField] at h ⊢
+  rw [mulInvariantVectorField_apply] at h
+  -- Continuous-linear composition evaluates to nested application. The coercions from
+  -- `toContinuousLinearMap` and `fromTangentSpace.toContinuousLinearMap` preserve the
+  -- underlying functions, so the composed operator has exactly the value in `h`.
   exact h
 
 /-- On a Lie-algebra vector `Y`, the differential of `lieExp` at `X` is the value at `lieExp X`
