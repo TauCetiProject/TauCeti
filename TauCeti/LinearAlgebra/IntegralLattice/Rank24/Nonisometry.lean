@@ -40,14 +40,10 @@ theorem representationNumber_rootLattice_two (r : RootfulNiemeierType) :
     r.rootLattice.representationNumber 2 = r.rootCount := by
   have hmin (i : Fin r.components.length) (x : (r.componentType i).rootLattice
       (r.isSimplyLaced_componentType i)) (hx : x ≠ 0) :
-      2 ≤ ((r.componentType i).rootLattice (r.isSimplyLaced_componentType i)).norm x := by
-    have := nontrivial_of_ne x 0 hx
-    have hP := (r.componentType i).isPosDef_rootLattice (r.isSimplyLaced_componentType i)
-    have hE := (r.componentType i).isEven_rootLattice (r.isSimplyLaced_componentType i)
-    rw [← IntegralLattice.integralNorm_cast _ x]
-    exact_mod_cast (show (2 : ℤ) ≤ _ from
-      (Nat.cast_le.mpr (hP.two_le_minimum hE)).trans
-        (hP.isPosSemidef.minimum_le_integralNorm hx))
+      2 ≤ ((r.componentType i).rootLattice (r.isSimplyLaced_componentType i)).norm x :=
+    IsPosDef.two_le_norm_of_ne_zero
+      ((r.componentType i).isPosDef_rootLattice (r.isSimplyLaced_componentType i))
+      ((r.componentType i).isEven_rootLattice (r.isSimplyLaced_componentType i)) hx
   rw [representationNumber_pi_of_le_norm _ (by norm_num) hmin
     (fun i ↦ ((r.componentType i).isPosDef_rootLattice
       (r.isSimplyLaced_componentType i)).finite_vectorsOfNorm 2)]
