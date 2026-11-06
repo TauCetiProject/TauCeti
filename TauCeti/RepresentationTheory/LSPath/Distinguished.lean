@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.List.ChainOfFn
 public import TauCeti.RepresentationTheory.LSPath.Basic
 public import TauCeti.RepresentationTheory.LSPath.Central.Shift
+public import TauCeti.RepresentationTheory.LSPath.ConvexHull
 
 /-!
 # Distinguished presentations of paths with velocities in a Weyl orbit
@@ -197,6 +198,16 @@ theorem hasDistinguished_iff :
 theorem IsDistinguished.hasDistinguished (hp : IsDistinguished S p) :
     HasDistinguished S (ofSegments 𝕜 (p.map Prod.snd)) :=
   ⟨p, hp, rfl⟩
+
+open scoped Pointwise in
+/-- The endpoint of a path with a duration-one distinguished presentation lies in the convex
+hull of its velocities. No assumption that this hull contains zero is needed. -/
+theorem HasDistinguished.endpoint_mem_convexHull (h : HasDistinguished S π) :
+    π.endpoint ∈ convexHull 𝕜 S := by
+  obtain ⟨p, hp, rfl⟩ := h
+  simpa only [hp.duration_eq_one, one_smul] using
+    endpoint_ofSegments_mem_smul_convexHull hp.isTimed hp.slope_mem
+      (hp.duration_eq_one ▸ zero_lt_one)
 
 open scoped Classical in
 variable (S π) in
