@@ -118,6 +118,51 @@ section Field
 
 variable {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H] (I : HopfIdeal k H)
 
+/-- The second half of `mem_span_coinvariants_of_isLinearlyReductive`: if `x ⊗ 1` is invariant in
+the cofree comodule and lies in the span of the values of the comodule morphisms `f b` out of the
+subcomodule `I`, then `x` is in the span of the coinvariants with vanishing counit. -/
+private theorem mem_span_coinvariants_of_mem_iSup_range
+    [Comodule k (H ⧸ I.toIdeal) H] [Comodule k (H ⧸ I.toIdeal) (H ⊗[k] (H ⧸ I.toIdeal))]
+    (hcoact : ∀ h : H, Comodule.coact (R := k) (C := H ⧸ I.toIdeal) (M := H) h =
+      Algebra.TensorProduct.map (AlgHom.id k H) (Ideal.Quotient.mkₐ k I.toIdeal)
+        (Coalgebra.comul (R := k) h))
+    (hlr : Coalgebra.IsLinearlyReductive.{u, v, u} k (H ⧸ I.toIdeal))
+    (W : Subcomodule k (H ⧸ I.toIdeal) H) (hW : ∀ w : H, w ∈ W ↔ w ∈ I)
+    (f : H → Comodule.Hom k (H ⧸ I.toIdeal) W (H ⊗[k] (H ⧸ I.toIdeal)))
+    (hf : ∀ (b : H) (w : W), f b w = (b ⊗ₜ[k] (1 : H ⧸ I.toIdeal)) *
+      Algebra.TensorProduct.map (AlgHom.id k H) (Ideal.Quotient.mkₐ k I.toIdeal)
+        (Coalgebra.comul (R := k) (w : H)))
+    {x : H}
+    (hfix : x ⊗ₜ[k] (1 : H ⧸ I.toIdeal) ∈
+      Comodule.fixedSubcomodule k (H ⧸ I.toIdeal) (H ⊗[k] (H ⧸ I.toIdeal)))
+    (hT : x ⊗ₜ[k] (1 : H ⧸ I.toIdeal) ∈ ⨆ b : H, LinearMap.range (f b).toLinearMap) :
+    x ∈ Ideal.span {h | h ∈ I.coinvariants ∧ Coalgebra.counit (R := k) h = 0} := by
+  set C := H ⧸ I.toIdeal
+  set P := Algebra.TensorProduct.map (AlgHom.id k H) (Ideal.Quotient.mkₐ k I.toIdeal)
+  -- Exactness of invariants makes every summand invariant.
+  obtain ⟨s, hs⟩ := Submodule.mem_iSup_iff_exists_finset.mp hT
+  obtain ⟨μ, hμ⟩ := (Submodule.mem_iSup_finset_iff_exists_sum _ _).mp hs
+  choose q hq using fun b ↦ LinearMap.mem_range.mp (μ b).property
+  obtain ⟨q', hq'fix, hq'⟩ := Comodule.Hom.exists_fixed_sum_eq_of_isLinearlyReductive hlr s f hfix
+    ⟨q, by simpa only [← Comodule.Hom.coe_toLinearMap, hq] using hμ⟩
+  -- An invariant element of `W` is a coinvariant of `I` with vanishing counit.
+  have hcoinv (b : H) (hb : b ∈ s) : (q' b : H) ∈ I.coinvariants ∧
+      Coalgebra.counit (R := k) (q' b : H) = 0 := by
+    refine ⟨?_, I.counit_eq_zero ((hW _).1 (q' b).property)⟩
+    rw [mem_coinvariants_iff, ← hcoact]
+    exact Subcomodule.coact_coe_eq_tmul_one W (Comodule.mem_fixedSubcomodule.mp (hq'fix b hb))
+  have hsum : x ⊗ₜ[k] (1 : C) = (∑ b ∈ s, b * (q' b : H)) ⊗ₜ[k] (1 : C) := by
+    rw [← hq', TensorProduct.sum_tmul]
+    refine Finset.sum_congr rfl fun b hb ↦ ?_
+    have hP : P (Coalgebra.comul (R := k) (q' b : H)) = (q' b : H) ⊗ₜ[k] (1 : C) :=
+      mem_coinvariants_iff.mp (hcoinv b hb).1
+    rw [hf, hP, Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+  have hx' : x = ∑ b ∈ s, b * (q' b : H) := by
+    simpa using congrArg (fun z ↦ TensorProduct.rid k H
+      ((Coalgebra.counit (R := k) (A := C)).lTensor H z)) hsum
+  rw [hx']
+  exact Submodule.sum_mem _ fun b hb ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span (hcoinv b hb))
+
 /-- The main step of `toIdeal_eq_span_coinvariants_counit_eq_zero_of_isLinearlyReductive`, for any
 comodule structure on `H` given by the subgroup coaction. -/
 private theorem mem_span_coinvariants_of_isLinearlyReductive
@@ -164,32 +209,10 @@ private theorem mem_span_coinvariants_of_isLinearlyReductive
         Submodule.subtype_apply, AlgEquiv.toLinearMap_apply,
         HopfAlgebra.tensorShearMulRight_tmul, AlgHom.toLinearMap_apply, map_mul, P,
         Algebra.TensorProduct.map_tmul, AlgHom.id_apply, map_one]
-  -- Exactness of invariants makes every summand invariant.
-  obtain ⟨s, hs⟩ := Submodule.mem_iSup_iff_exists_finset.mp hT
-  obtain ⟨μ, hμ⟩ := (Submodule.mem_iSup_finset_iff_exists_sum _ _).mp hs
-  choose q hq using fun b ↦ LinearMap.mem_range.mp (μ b).property
   have hfix : x ⊗ₜ[k] (1 : C) ∈ Comodule.fixedSubcomodule k C (H ⊗[k] C) := by
     rw [Comodule.mem_fixedSubcomodule, Comodule.cofree_coact_tmul, Bialgebra.comul_one,
       Algebra.TensorProduct.one_def, TensorProduct.assoc_symm_tmul]
-  obtain ⟨q', hq'fix, hq'⟩ := Comodule.Hom.exists_fixed_sum_eq_of_isLinearlyReductive hlr s f hfix
-    ⟨q, by simpa only [← Comodule.Hom.coe_toLinearMap, hq] using hμ⟩
-  -- An invariant element of `W` is a coinvariant of `I` with vanishing counit.
-  have hcoinv (b : H) (hb : b ∈ s) : (q' b : H) ∈ I.coinvariants ∧
-      Coalgebra.counit (R := k) (q' b : H) = 0 := by
-    refine ⟨?_, I.counit_eq_zero (q' b).property⟩
-    rw [mem_coinvariants_iff, ← hcoact]
-    exact Subcomodule.coact_coe_eq_tmul_one W (Comodule.mem_fixedSubcomodule.mp (hq'fix b hb))
-  have hsum : x ⊗ₜ[k] (1 : C) = (∑ b ∈ s, b * (q' b : H)) ⊗ₜ[k] (1 : C) := by
-    rw [← hq', TensorProduct.sum_tmul]
-    refine Finset.sum_congr rfl fun b hb ↦ ?_
-    have hP : P (Coalgebra.comul (R := k) (q' b : H)) = (q' b : H) ⊗ₜ[k] (1 : C) :=
-      mem_coinvariants_iff.mp (hcoinv b hb).1
-    rw [hf, hP, Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-  have hx' : x = ∑ b ∈ s, b * (q' b : H) := by
-    simpa using congrArg (fun z ↦ TensorProduct.rid k H
-      ((Coalgebra.counit (R := k) (A := C)).lTensor H z)) hsum
-  rw [hx']
-  exact Submodule.sum_mem _ fun b hb ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span (hcoinv b hb))
+  exact mem_span_coinvariants_of_mem_iSup_range I hcoact hlr W (fun w ↦ Iff.rfl) f hf hfix hT
 
 /-- **A linearly reductive closed subgroup is cut out by its invariant functions.** If the closed
 subgroup `N` cut out by the Hopf ideal `I` is linearly reductive, then `I` is generated by the
