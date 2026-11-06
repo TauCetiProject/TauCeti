@@ -51,6 +51,8 @@ injective sheaf, which is flasque, so that its Čech complexes are exact for all
 
 * `TauCeti.Topology.IsCechAcyclicOn B F`: `F` is Čech acyclic for the finite covers of members of
   `B` by members of `B`.
+* `TauCeti.Topology.injectiveImageSequence F`: the sequence `0 ⟶ F ⟶ I ⟶ G ⟶ 0` of presheaves,
+  with `I` the chosen injective sheaf containing `F` and `G` the image presheaf of `I ⟶ Q`.
 
 ## Main results
 
@@ -58,6 +60,8 @@ injective sheaf, which is flasque, so that its Čech complexes are exact for all
   for every member `Y` of `B`.
 * `TauCeti.Topology.prod_pi_mem_of_inf_mem`: a set of opens closed under binary intersections
   contains the finite intersections `Y ∩ U (a 0) ∩ ⋯ ∩ U (a n)` of its members.
+* `TauCeti.Topology.injectiveImageSequence_map_shortExact`: this sequence is exact on the sections
+  over every open.
 * `TopCat.Sheaf.exists_mem_lift_of_epi`: along an epimorphism of sheaves, sections lift locally on
   the members of a set of opens which contains a basis inside each of its members.
 
@@ -121,16 +125,18 @@ theorem _root_.TopCat.Sheaf.exists_mem_lift_of_epi
 variable (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
 
 /-- The sequence of presheaves `0 ⟶ F ⟶ I ⟶ G ⟶ 0`, where `F ⟶ I` is the chosen embedding into an
-injective sheaf and `G` is the image presheaf of `I ⟶ Q`, for `Q` its cokernel sheaf. -/
-private abbrev imageSeq : ShortComplex ((Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u}) :=
+injective sheaf and `G` is the image presheaf of `I ⟶ Q`, for `Q` its cokernel sheaf. Unlike the
+cokernel sequence of sheaves, it is exact on the sections over every open
+(`TauCeti.Topology.injectiveImageSequence_map_shortExact`). -/
+abbrev injectiveImageSequence : ShortComplex ((Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u}) :=
   ShortComplex.mk (Injective.ι F).hom (factorThruImage (cokernel.π (Injective.ι F)).hom) (by
     rw [← cancel_mono (image.ι _), Category.assoc, image.fac, zero_comp]
     exact ((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{u})).zero)
 
 /-- The sequence `0 ⟶ F ⟶ I ⟶ G ⟶ 0` is exact on every open: the kernel of `I(V) ⟶ Q(V)` is
 `F(V)`, and `G(V)` is the image of `I(V)` in `Q(V)`. -/
-private lemma imageSeq_shortExact (V : (Opens X)ᵒᵖ) :
-    ((imageSeq F).map ((evaluation _ AddCommGrpCat.{u}).obj V)).ShortExact := by
+theorem injectiveImageSequence_map_shortExact (V : (Opens X)ᵒᵖ) :
+    ((injectiveImageSequence F).map ((evaluation _ AddCommGrpCat.{u}).obj V)).ShortExact := by
   have hE := (injectiveCokernelSequence_shortExact F).exact.map_of_mono_of_preservesKernel
     (sheafToPresheaf _ AddCommGrpCat.{u} ⋙ (evaluation _ AddCommGrpCat.{u}).obj V)
     inferInstance inferInstance
@@ -158,9 +164,10 @@ private lemma quasiIso_cechAugmentation_image (hF : IsCechAcyclicOn B F) {ι : T
   have : TopCat.Presheaf.IsFlasque (TopCat.Sheaf.presheaf (Injective.under F)) :=
     isFlasque_of_injective (Injective.under F)
   exact quasiIso_cechAugmentation_X₃_of_shortExact U isTerminalTop
-    ((imageSeq F).map ((Functor.whiskeringLeft _ _ AddCommGrpCat.{u}).obj
+    ((injectiveImageSequence F).map ((Functor.whiskeringLeft _ _ AddCommGrpCat.{u}).obj
       (prod.functor.obj Y).op))
-    (imageSeq_shortExact F _) (fun _ _ ↦ imageSeq_shortExact F _) (hF U Y hY hU hYU)
+    (injectiveImageSequence_map_shortExact F _)
+    (fun _ _ ↦ injectiveImageSequence_map_shortExact F _) (hF U Y hY hU hYU)
     (TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque (Injective.under F) U Y hYU)
 
 /-- Let `π : F₂ ⟶ F₃` be a morphism of sheaves, `G` its image presheaf, and `U i` opens covering
