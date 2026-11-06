@@ -606,6 +606,55 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_tim
   rw [hexp, show t - s - (t' - s) = t - t' by ring] at this
   linarith
 
+/-- Both integrals are of size `O(c h ^ β)` when `t' ≤ t - t'`, since then `t ≤ 2 (t - t')`. -/
+private theorem norm_intervalIntegral_sub_le_of_le_sub {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1)
+    (ht' : 0 ≤ t') (htt' : t' ≤ t) (hsmall : t' ≤ t - t')
+    (h₁ : ‖∫ s in 0..t, g₁ s‖ ≤ c * (t - 0) ^ β) (h₂ : ‖∫ s in 0..t', g₂ s‖ ≤ c * (t' - 0) ^ β) :
+    ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖ ≤ 3 * c * (t - t') ^ β := by
+  have h₃ : t ^ β ≤ 2 * (t - t') ^ β :=
+    rpow_le_two_mul_rpow_of_le_two_mul (ht'.trans htt') (by linarith) hβ₀ hβ₁
+  have h₄ : t' ^ β ≤ (t - t') ^ β := rpow_le_rpow ht' hsmall hβ₀
+  rw [sub_zero] at h₁ h₂
+  calc ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖
+      ≤ ‖∫ s in 0..t, g₁ s‖ + ‖∫ s in 0..t', g₂ s‖ := norm_sub_le _ _
+    _ ≤ c * t ^ β + c * t' ^ β := add_le_add h₁ h₂
+    _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
+    _ = 3 * c * (t - t') ^ β := by ring
+
+/-- Splitting both integrals at `s₀ = 2 t' - t = t' - (t - t')`: the part below `s₀` is controlled
+by the difference of the integrands, and the two parts above `s₀` are of size `O(c h ^ β)`. -/
+private theorem norm_intervalIntegral_sub_le_of_sub_lt {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' D : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1)
+    (hs₀ : 0 ≤ 2 * t' - t) (htt' : t' ≤ t) (hg₁ : IntervalIntegrable g₁ volume 0 t)
+    (hg₂ : IntervalIntegrable g₂ volume 0 t')
+    (hfar : ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ ≤ D)
+    (h₁ : ‖∫ s in (2 * t' - t)..t, g₁ s‖ ≤ c * (t - (2 * t' - t)) ^ β)
+    (h₂ : ‖∫ s in (2 * t' - t)..t', g₂ s‖ ≤ c * (t' - (2 * t' - t)) ^ β) :
+    ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖ ≤ D + 3 * c * (t - t') ^ β := by
+  have hmem {τ : ℝ} (hτ : 2 * t' - t ≤ τ) : 2 * t' - t ∈ [[0, τ]] := by
+    rw [uIcc_of_le (hs₀.trans hτ)]
+    exact ⟨hs₀, hτ⟩
+  have hsplit {τ : ℝ} {g : ℝ → V} (hg : IntervalIntegrable g volume 0 τ) (hτ : 2 * t' - t ≤ τ) :
+      ∫ s in 0..τ, g s = (∫ s in 0..2 * t' - t, g s) + ∫ s in (2 * t' - t)..τ, g s :=
+    (intervalIntegral.integral_add_adjacent_intervals
+      (hg.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem hτ)))
+      (hg.mono_set (uIcc_subset_uIcc (hmem hτ) right_mem_uIcc))).symm
+  have hg₁' := hg₁.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem (by linarith)))
+  have hg₂' := hg₂.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem (by linarith)))
+  rw [hsplit hg₁ (by linarith), hsplit hg₂ (by linarith),
+    show ∀ a b c d : V, a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
+    ← intervalIntegral.integral_sub hg₁' hg₂']
+  have h₃ : (t - (2 * t' - t)) ^ β ≤ 2 * (t - t') ^ β :=
+    rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
+  rw [show t' - (2 * t' - t) = t - t' by ring] at h₂
+  calc ‖(∫ s in 0..2 * t' - t, (g₁ s - g₂ s)) + (∫ s in (2 * t' - t)..t, g₁ s) -
+        ∫ s in (2 * t' - t)..t', g₂ s‖
+      ≤ ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ + ‖∫ s in (2 * t' - t)..t, g₁ s‖ +
+          ‖∫ s in (2 * t' - t)..t', g₂ s‖ := norm_sub_le_of_le (norm_add_le _ _) le_rfl
+    _ ≤ D + c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr; exact h₁.trans (by gcongr)
+    _ = D + 3 * c * (t - t') ^ β := by ring
+
 /-- The temporal increment of the Hessian of the Duhamel potential between times `t' ≤ t` is
 `O(H (t - t')^(α/2))`, for `0 < α < 2`. -/
 private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α : ℝ≥0}
@@ -621,14 +670,12 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
     exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le (E := E) (F := F) hα₀
   obtain ⟨K, hK₀, hK⟩ :=
     exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le (E := E) (F := F) (α := α)
-  have hα₀' : (0 : ℝ) < α := hα₀
   have hα₂' : (α : ℝ) < 2 := hα₂
-  have h2α : (0 : ℝ) < 2 - α := by linarith
+  have h2α : (0 : ℝ) < 2 - α := sub_pos.2 hα₂'
   refine ⟨3 * C₁ + 2 / (2 - α) * K, by positivity,
     fun {f M t t' H} hf hfM hH ht' htt' x => ?_⟩
   rcases htt'.eq_or_lt with rfl | htt'
-  · rw [sub_self, norm_zero]
-    positivity
+  · rw [sub_self, norm_zero]; positivity
   have ht : 0 < t := ht'.trans_lt htt'
   set h := t - t' with hh_def
   have hh : 0 < h := sub_pos.2 htt'
@@ -648,66 +695,30 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
   have hnear {τ a : ℝ} (ha : 0 ≤ a) (haτ : a ≤ τ) (hτt : τ ≤ t) :
       ‖∫ s in a..τ, Φ τ s‖ ≤ C₁ * H * (τ - a) ^ ((α : ℝ) / 2) :=
     hC₁ hf (hfM' hτt) (hH' hτt) a ha haτ x
-  -- Times up to `2h` contribute at most twice `h^(α/2)`, since `α/2 ≤ 1`.
-  have hpow {r : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h) :
-      r ^ ((α : ℝ) / 2) ≤ 2 * h ^ ((α : ℝ) / 2) :=
-    rpow_le_two_mul_rpow_of_le_two_mul hr hrh (by positivity) (by linarith)
-  have hfinal : 3 * C₁ * H * h ^ ((α : ℝ) / 2) + 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) =
-      (3 * C₁ + 2 / (2 - α) * K) * H * h ^ ((α : ℝ) / 2) := by ring
   rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
   rcases le_or_gt t' h with hsmall | hbig
   · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
-    calc ‖(∫ s in 0..t, Φ t s) - ∫ s in 0..t', Φ t' s‖
-        ≤ ‖∫ s in 0..t, Φ t s‖ + ‖∫ s in 0..t', Φ t' s‖ := norm_sub_le _ _
-      _ ≤ C₁ * H * (t - 0) ^ ((α : ℝ) / 2) + C₁ * H * (t' - 0) ^ ((α : ℝ) / 2) :=
-          add_le_add (hnear le_rfl ht.le le_rfl) (hnear le_rfl ht' htt'.le)
-      _ ≤ C₁ * H * (2 * h ^ ((α : ℝ) / 2)) + C₁ * H * h ^ ((α : ℝ) / 2) := by
-          gcongr
-          · exact hpow (by linarith) (by linarith)
-          · linarith
-      _ ≤ (3 * C₁ + 2 / (2 - α) * K) * H * h ^ ((α : ℝ) / 2) := by
-          rw [← hfinal]
-          have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
-          linarith
-  -- Otherwise split both integrals at `s₀ = t' - h`.
-  set s₀ := t' - h with hs₀_def
-  have hs₀ : 0 < s₀ := by linarith
+    have hb := norm_intervalIntegral_sub_le_of_le_sub (c := C₁ * H) (β := (α : ℝ) / 2)
+      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht' htt'.le hsmall
+      (hnear le_rfl ht.le le_rfl) (hnear le_rfl ht' htt'.le)
+    have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
+    linarith
+  -- Otherwise split both integrals at `s₀ = 2 t' - t = t' - h`.
+  have hs₀ : 0 ≤ 2 * t' - t := by linarith
   have hint {τ : ℝ} (hτ : 0 < τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 τ :=
     intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf (hfM' hτt)
       (hH' hτt) hα₀ hτ le_rfl x
-  have hmem {τ : ℝ} (hτ : s₀ ≤ τ) : s₀ ∈ [[0, τ]] := by
-    rw [uIcc_of_le (hs₀.le.trans hτ)]
-    exact ⟨hs₀.le, hτ⟩
-  have hint₀ {τ : ℝ} (hτ : s₀ ≤ τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 s₀ :=
-    (hint (hs₀.trans_le hτ) hτt).mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem hτ))
-  have hsplit {τ : ℝ} (hτ : s₀ ≤ τ) (hτt : τ ≤ t) :
-      ∫ s in 0..τ, Φ τ s = (∫ s in 0..s₀, Φ τ s) + ∫ s in s₀..τ, Φ τ s :=
-    (intervalIntegral.integral_add_adjacent_intervals (hint₀ hτ hτt)
-      ((hint (hs₀.trans_le hτ) hτt).mono_set (uIcc_subset_uIcc (hmem hτ) right_mem_uIcc))).symm
   -- Away from the diagonal, the time Lipschitz bound integrates to `O(H h^(α/2))`.
-  have hfar : ‖∫ s in 0..s₀, (Φ t s - Φ t' s)‖ ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
-    simpa only [mul_assoc] using norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
-      (by positivity) hh hbig hα₂' (hK hf hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
-  rw [hsplit (by linarith) le_rfl, hsplit (by linarith) htt'.le,
-    show ∀ a b c d : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F,
-      a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
-    ← intervalIntegral.integral_sub (hint₀ (by linarith) le_rfl) (hint₀ (by linarith) htt'.le)]
-  calc ‖(∫ s in 0..s₀, (Φ t s - Φ t' s)) + (∫ s in s₀..t, Φ t s) - ∫ s in s₀..t', Φ t' s‖
-      ≤ ‖∫ s in 0..s₀, (Φ t s - Φ t' s)‖ + ‖∫ s in s₀..t, Φ t s‖ +
-          ‖∫ s in s₀..t', Φ t' s‖ := norm_sub_le_of_le (norm_add_le _ _) le_rfl
-    _ ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) + C₁ * H * (t - s₀) ^ ((α : ℝ) / 2) +
-          C₁ * H * (t' - s₀) ^ ((α : ℝ) / 2) := by
-        gcongr
-        · exact hnear hs₀.le (by linarith) le_rfl
-        · exact hnear hs₀.le (by linarith) htt'.le
-    _ ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) + C₁ * H * (2 * h ^ ((α : ℝ) / 2)) +
-          C₁ * H * h ^ ((α : ℝ) / 2) := by
-        rw [show t - s₀ = 2 * h by ring, show t' - s₀ = h by ring]
-        gcongr
-        exact hpow (by linarith) le_rfl
-    _ = _ := by
-        rw [← hfinal]
-        ring
+  have hfar : ‖∫ s in 0..2 * t' - t, (Φ t s - Φ t' s)‖ ≤
+      2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
+    simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
+      norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
+        (by positivity) hh hbig hα₂' (hK hf hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
+  have hb := norm_intervalIntegral_sub_le_of_sub_lt (c := C₁ * H) (β := (α : ℝ) / 2)
+    (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) hs₀ htt'.le (hint ht le_rfl)
+    (hint (by linarith) htt'.le) hfar (hnear hs₀ (by linarith) le_rfl)
+    (hnear hs₀ (by linarith) htt'.le)
+  linarith
 
 /-- **The temporal Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 2`
 there is a constant `C`, depending only on `α` and the dimension, such that at every point `x`
