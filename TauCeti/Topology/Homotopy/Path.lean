@@ -53,7 +53,9 @@ compare paths inside a closed half-plane.
 
 `Path.trans_apply_of_le` and `Path.trans_apply_of_ge` express a value of a concatenation as a
 value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
-values of the path on an interval containing its endpoints. They are used by the gluing
+values of the path on an interval containing its endpoints. `Path.cast_subpath_eq_codRestrict`
+identifies a subpath of a path in a subset, cast to the endpoints of a corestricted subpath, with
+that corestriction. They are used by the gluing
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
 
 The path-homotopy quotient API also records that reversing twice is the identity and that the
@@ -123,6 +125,28 @@ theorem subpath_apply_mem {x y : X} {γ : Path x y} {V : Set X} {lo hi : I}
   obtain ⟨s, hs, hst⟩ : γ.subpath a b t ∈ γ '' uIcc a b :=
     range_subpath γ a b ▸ mem_range_self t
   exact hst ▸ hγ s (uIcc_subset_Icc ha hb hs)
+
+/-- Casting the subpath `r → s` of a path `p` in `S` that parametrises `γ` on `[lo, hi]` agrees with
+the corestriction to `S` of the corresponding subpath of `γ`. -/
+theorem cast_subpath_eq_codRestrict {x y : X} {S : Set X} (γ : Path x y) {lo hi : I}
+    {u v : S} (p : Path u v) (hp : ∀ t, (p t : X) = γ (Icc.convexComb lo hi t)) (r s : I)
+    (hrU : γ (Icc.convexComb lo hi r) ∈ S) (hsU : γ (Icc.convexComb lo hi s) ∈ S)
+    (hrs : ∀ t, γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t ∈ S) :
+    (p.subpath r s).cast (Subtype.ext (hp r).symm : (⟨_, hrU⟩ : S) = p r)
+        (Subtype.ext (hp s).symm : (⟨_, hsU⟩ : S) = p s) =
+      (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict hrs := by
+  apply Path.ext
+  funext t
+  apply Subtype.ext
+  simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, Path.coe_mk_mk,
+    Function.comp_apply]
+  rw [hp]
+  have hcomb : Icc.convexComb (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
+      Icc.convexComb lo hi (Icc.convexComb r s t) := by
+    ext
+    simp only [Icc.coe_convexComb]
+    ring
+  exact congrArg γ hcomb.symm
 
 /-- If the extended path stays inside `U` throughout `[t₀, t₁]`, then the truncated subpath has
 range in `U`. -/
