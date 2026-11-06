@@ -55,6 +55,8 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   `TopPair.singularCohomologyπ_ofSubset_univ`: the map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes.
 * `TopPair.isIso_singularCohomologyπ_of_isEmpty`: for an empty subspace, `Hⁿ(X, ∅) ⟶ Hⁿ(X)` is an
   isomorphism.
+* `TauCeti.isZero_singularCohomology_of_isEmpty`: the singular cohomology of the empty space
+  vanishes.
 
 ## References
 
@@ -417,7 +419,7 @@ lemma singularCohomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m :
 
 /-- For subsets `S' ⊆ S` of `X`, the map `Hⁿ(X, S) ⟶ Hⁿ(X)` factors through `Hⁿ(X, S') ⟶ Hⁿ(X)`,
 via the map induced by the identity of `X` as a map of pairs `(X, S') ⟶ (X, S)`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ {X : TopCat.{w}}
     {S S' : Set X} (h : Set.MapsTo (𝟙 X) S' S) (n : ℕ) :
     TopPair.singularCohomologyMap (ofSubsetMap (𝟙 X) h) n ≫
@@ -432,6 +434,7 @@ lemma singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ {X : TopCat
 
 /-- The map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes: it is killed by the restriction `Hⁿ(X) ⟶ Hⁿ(X)` along
 the inclusion of the subspace `X`, which is a split monomorphism. -/
+@[simp]
 lemma singularCohomologyπ_ofSubset_univ (X : TopCat.{w}) (n : ℕ) :
     (ofSubset (Set.univ : Set X)).singularCohomologyπ R k M n = 0 := by
   let P := ofSubset (Set.univ : Set X)
@@ -446,3 +449,21 @@ lemma singularCohomologyπ_ofSubset_univ (X : TopCat.{w}) (n : ℕ) :
 end LongExactSequence
 
 end TopPair
+
+namespace TauCeti
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  (R : C) (k : Type*) [Ring k] [Linear k C] (M : C)
+
+/-- **The singular cohomology of the empty space vanishes** in every degree, for arbitrary
+coefficients: there are no singular simplices, so the singular cochain complex is zero. -/
+theorem isZero_singularCohomology_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
+    IsZero (X.singularCohomology R k M n) := by
+  have : (TopCat.toSSet.obj X).HasDimensionLT 0 :=
+    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
+    ((TauCeti.ChainComplex.linearYonedaFunctor k M).map_isZero
+      ((TopCat.toSSet.obj X).isZero_chainComplex R).op)
+
+end TauCeti

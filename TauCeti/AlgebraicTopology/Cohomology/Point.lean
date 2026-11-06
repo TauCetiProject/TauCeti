@@ -49,8 +49,6 @@ input to the cup-length lower bound for the Lusternik–Schnirelmann category.
   `TauCeti.isZero_singularCohomology_of_contractibleSpace`.
 * `TopPair.epi_singularCohomologyπ_of_nullhomotopic`: if the inclusion `A ⟶ X` is nullhomotopic,
   every positive-degree class of `X` comes from `Hⁿ(X, A)`.
-* `TauCeti.isZero_singularCohomology_of_isEmpty`: the singular cohomology of the empty space
-  vanishes.
 
 The cochain contraction follows the unmerged Tau Ceti pull request
 https://github.com/TauCetiProject/TauCeti/pull/20882.
@@ -271,16 +269,5 @@ theorem isZero_singularCohomology_of_contractibleSpace (X : TopCat.{w}) [Contrac
     {n : ℕ} (hn : n ≠ 0) : IsZero (X.singularCohomology R k M n) := by
   rw [IsZero.iff_id_eq_zero, ← TopCat.singularCohomologyMap_id]
   exact TopCat.singularCohomologyMap_eq_zero_of_nullhomotopic (f := 𝟙 X) (id_nullhomotopic X) hn
-
-/-- **The singular cohomology of the empty space vanishes** in every degree, for arbitrary
-coefficients: there are no singular simplices, so the singular cochain complex is zero. -/
-theorem isZero_singularCohomology_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
-    IsZero (X.singularCohomology R k M n) := by
-  have : (TopCat.toSSet.obj X).HasDimensionLT 0 :=
-    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
-      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
-  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
-    ((TauCeti.ChainComplex.linearYonedaFunctor k M).map_isZero
-      ((TopCat.toSSet.obj X).isZero_chainComplex R).op)
 
 end TauCeti
