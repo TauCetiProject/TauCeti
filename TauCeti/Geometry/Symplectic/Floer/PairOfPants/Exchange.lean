@@ -123,10 +123,9 @@ theorem negativePlanePerturbation_neg {H : ℝ → M → ℝ} (hH : Periodic H 1
     have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
     simp [negativePlanePerturbation_def, h, smoothTransition.zero_of_nonpos]
   · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
+    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
     have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
-      rw [hk]
-      simp only [Complex.add_im, Complex.mul_im, Complex.I_re, Complex.I_im]
-      norm_num
+      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
       ring
     have hp : H ((inf.endCoord w).im + (k + 1)) = H (inf.endCoord w).im := by
       simpa using hH.int_mul (k + 1) (inf.endCoord w).im
@@ -216,6 +215,18 @@ theorem perturbationPullback_pairOfPantsPerturbation_exchangeHamiltonians
 
 /-! ### The ends of the family -/
 
+/-- The real part of the exponent of the end lifts. -/
+private theorem re_neg_two_pi_mul (z : ℂ) : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
+  rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
+    Complex.re_ofReal_mul]
+
+/-- Every `c ∈ [0, 1]` lies within distance `1` of `1`. -/
+private theorem norm_ofReal_sub_one_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) :
+    ‖(c : ℂ) - 1‖ ≤ 1 := by
+  rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+    Real.norm_of_nonpos (by linarith)]
+  linarith
+
 /-- On the part `s > 0` of an input end `q`, the end lift stays within distance `1` of `0` or
 `1`, hence within distance `2` of every `c ∈ [0, 1]`. -/
 private theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
@@ -225,18 +236,15 @@ private theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {
     rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, norm_endScale hq,
       Complex.norm_exp]
     have : Real.exp (-(2 * (π : ℂ)) * z).re ≤ 1 := by
-      rw [Real.exp_le_one_iff]
-      simp only [neg_mul, Complex.neg_re, Complex.mul_re]
-      norm_num
-      positivity
+      rw [Real.exp_le_one_iff, re_neg_two_pi_mul]
+      nlinarith [Real.pi_pos]
     linarith
   have hc : ‖q.endCenter - (c : ℂ)‖ ≤ 1 := by
     rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
     · rw [zero_sub, norm_neg, Complex.norm_real, Real.norm_of_nonneg hc₀]
       exact hc₁
-    · rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
-        Real.norm_of_nonneg (by linarith)]
-      linarith
+    · rw [norm_sub_rev]
+      exact norm_ofReal_sub_one_le hc₀ hc₁
   calc ‖q.cylindricalEndLift z - c‖
       = ‖(q.cylindricalEndLift z - q.endCenter) + (q.endCenter - c)‖ := by ring_nf
     _ ≤ 1 + 1 := (norm_add_le _ _).trans (add_le_add hφ hc)
@@ -266,6 +274,19 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
     smoothTransition.zero_of_nonpos (by rw [endSign_eq_one hq]; linarith [hre hq])
   simp only [pairOfPantsPerturbation_def, Puncture.sum_univ, update_self, Pi.zero_apply, mul_zero,
     zero_smul, add_zero, hcut (q := zero) (by decide), hcut (q := one) (by decide), zero_mul]
+
+/-- The input part of the pair-of-pants datum vanishes at distance at least `3/2` from a point
+`c ∈ [0, 1]`. -/
+private theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {w : ℂ} (hw : 3 / 2 ≤ ‖w - c‖) (x : M) :
+    pairOfPantsPerturbation (update H inf 0) w x = 0 := by
+  refine pairOfPantsPerturbation_update_inf_eq_zero ?_ ?_ x
+  · have := norm_sub_le w (c : ℂ)
+    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at this
+    linarith
+  · have := norm_sub_le (w - 1) ((c : ℂ) - 1)
+    rw [sub_sub_sub_cancel_right] at this
+    linarith [norm_ofReal_sub_one_le hc₀ hc₁]
 
 /-- **The family on an input end.** For `0 ≤ c ≤ 1`, on the part `s > 0` of an input end `q`, the
 pullback of every member of the family along the end lift `φ_q` is the continuation datum
@@ -306,28 +327,14 @@ theorem exchangePerturbation_add_cylindricalEndLift_inf_of_neg (hH : Periodic (H
   have hφ : 2 ≤ ‖inf.cylindricalEndLift z‖ := by
     rw [cylindricalEndLift_inf, norm_mul, Complex.norm_ofNat, Complex.norm_exp]
     have : 1 ≤ Real.exp (-(2 * (π : ℂ)) * z).re := by
-      rw [Real.one_le_exp_iff]
-      simp only [neg_mul, Complex.neg_re, Complex.mul_re]
-      norm_num
+      rw [Real.one_le_exp_iff, re_neg_two_pi_mul]
       nlinarith [Real.pi_pos]
     linarith
-  have hc : ‖(c : ℂ)‖ ≤ 1 := by rwa [Complex.norm_real, Real.norm_of_nonneg hc₀]
-  have hc' : ‖(c : ℂ) - 1‖ ≤ 1 := by
-    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_of_nonpos
-      (by linarith)]
+  have hw : 3 / 2 ≤ ‖(c : ℂ) + inf.cylindricalEndLift z - c‖ := by
+    rw [add_sub_cancel_left]
     linarith
-  have h₀ : 1 / 2 ≤ ‖(c : ℂ) + inf.cylindricalEndLift z‖ := by
-    have := norm_sub_norm_le (inf.cylindricalEndLift z) (-(c : ℂ))
-    rw [sub_neg_eq_add, norm_neg, add_comm] at this
-    linarith
-  have h₁ : 1 / 2 ≤ ‖(c : ℂ) + inf.cylindricalEndLift z - 1‖ := by
-    have := norm_sub_norm_le (inf.cylindricalEndLift z) (-((c : ℂ) - 1))
-    rw [sub_neg_eq_add, norm_neg] at this
-    have e : inf.cylindricalEndLift z + ((c : ℂ) - 1) = (c : ℂ) + inf.cylindricalEndLift z - 1 := by
-      ring
-    rw [e] at this
-    linarith
-  rw [exchangePerturbation_def, pairOfPantsPerturbation_update_inf_eq_zero h₀ h₁, zero_add,
+  rw [exchangePerturbation_def,
+    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hw, zero_add,
     add_sub_cancel_left, negativePlanePerturbation_cylindricalEndLift_of_neg hH hz]
 
 /-- **The family is `H_∞(t) dt` far out on the output end.** For `0 ≤ c ≤ 1`, on the part
@@ -430,20 +437,9 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
     have h3 : 3 < ‖e z - c‖ := hexp.trans_le (not_lt.1 hz)
     filter_upwards [(isOpen_lt continuous_const hcont).mem_nhds h3] with z' hz'
     funext x
-    have hc : ‖(c : ℂ)‖ ≤ 1 := by rwa [Complex.norm_real, Real.norm_of_nonneg hc₀]
-    have hc' : ‖(c : ℂ) - 1‖ ≤ 1 := by
-      rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_of_nonpos
-        (by linarith)]
-      linarith
-    have h₀ : 1 / 2 ≤ ‖e z'‖ := by
-      have := norm_sub_le (e z') (c : ℂ)
-      linarith
-    have h₁ : 1 / 2 ≤ ‖e z' - 1‖ := by
-      have := norm_add_le (e z' - 1) (-((c : ℂ) - 1))
-      rw [norm_neg, show e z' - 1 + -((c : ℂ) - 1) = e z' - c by ring] at this
-      linarith
-    simp only [Kp, exchangePerturbation_def, pairOfPantsPerturbation_update_inf_eq_zero h₀ h₁,
-      zero_add, he]
+    have hw : 3 / 2 ≤ ‖e z' - c‖ := by linarith
+    simp only [Kp, exchangePerturbation_def,
+      pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hw, zero_add, he]
   -- Hence the curvature is that of one of the two parts at every point.
   have hRin {z : ℝ × ℝ} (hz : z ∈ A) :
       ω.hamiltonianCurvature (fun z x ↦ exchangePerturbation H c (e z) x 1)
