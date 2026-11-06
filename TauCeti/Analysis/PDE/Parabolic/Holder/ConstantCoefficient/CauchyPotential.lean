@@ -58,8 +58,10 @@ private theorem transportedCauchyL_apply (hT : 0 < T)
 private theorem spatialTrace_transportedCauchyL (hT : 0 < T)
     (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι) (g) :
     (transportedCauchyL (α := α) hT e g).spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ = g := by
+  simp only [transportedCauchyL, ContinuousLinearMap.comp_apply, spatialTrace_compSpatialL,
+    spatialTrace_heatCauchyPotentialL_left]
   ext x
-  simp [transportedCauchyL_apply]
+  simp
 
 private theorem operator_transportedCauchyL [DecidableEq ι] (hT : 0 < T) (hα : α ≤ 1)
     (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι) (A : Matrix ι ι ℝ)
@@ -79,7 +81,7 @@ private theorem operator_transportedCauchyL [DecidableEq ι] (hT : 0 < T) (hα :
       heatCauchyPotentialL_apply, time_slabMk, space_slabMk,
       ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
   have h := he (transportedCauchyL hT e g)
-  rw [hinv, euclideanParabolicOperatorL_heatCauchyPotentialL hα hT] at h
+  rw [hinv, euclideanParabolicOperatorL_heatCauchyPotentialL hα hT le_rfl] at h
   ext p
   obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
   have hp := congrArg (fun f ↦ f (slabMk (e.symm x) t)) h

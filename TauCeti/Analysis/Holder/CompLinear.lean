@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 /-!
 # Linear changes of coordinates in bounded Hölder spaces
@@ -57,35 +58,36 @@ private theorem holderWith_iteratedFDeriv_comp (e : E →L[ℝ] E')
   · rfl
 
 /-- Precomposition of a bounded `C^{k,α}` function by a continuous linear map. -/
-def compLinear (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) : CkHolderSpace k α E F :=
+private def compLinear (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) : CkHolderSpace k α E F :=
   ofContDiff (f ∘ e) (f.contDiff.comp e.contDiff)
     (fun i hi ↦ ⟨‖f.iteratedFDeriv ⟨i, by omega⟩‖ * ‖e‖ ^ i, fun x ↦ by
-      rw [e.iteratedFDeriv_comp_right f.contDiff x (by exact_mod_cast hi)]
-      refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-      simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+      refine (e.norm_iteratedFDeriv_comp_right_le f.contDiff x (by exact_mod_cast hi)).trans ?_
       gcongr
       rw [iteratedFDeriv_eq f ⟨i, by omega⟩]
       exact BoundedContinuousFunction.norm_coe_le_norm _ _⟩)
     (holderWith_iteratedFDeriv_comp e f).memHolder
 
 @[simp]
-theorem compLinear_apply (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) (x : E) :
+private theorem compLinear_apply (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) (x : E) :
     compLinear e f x = f (e x) := by
   simp [compLinear]
 
-/-- The exact pullback formula for every recorded derivative field. -/
-theorem iteratedFDeriv_compLinear (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F)
+@[simp]
+private theorem coe_compLinear (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) :
+    ⇑(compLinear e f) = f ∘ e :=
+  funext (compLinear_apply e f)
+
+private theorem iteratedFDeriv_compLinear (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F)
     (i : Fin (k + 1)) (x : E) :
     (compLinear e f).iteratedFDeriv i x =
       (f.iteratedFDeriv i (e x)).compContinuousLinearMap (fun _ ↦ e) := by
   rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq]
-  have heq : (compLinear e f : E → F) = f ∘ e := funext (compLinear_apply e f)
-  rw [heq]
+  rw [coe_compLinear]
   exact e.iteratedFDeriv_comp_right f.contDiff x (by exact_mod_cast Nat.le_of_lt_succ i.2)
 
 /-- A linear change of coordinates multiplies the norm by at most
 `max(1, ‖e‖)^k max(1, ‖e‖^α)`. -/
-theorem norm_compLinear_le (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) :
+private theorem norm_compLinear_le (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) :
     ‖compLinear e f‖ ≤ (max 1 ‖e‖) ^ k * max 1 (‖e‖ ^ (α : ℝ)) * ‖f‖ := by
   let C := (max 1 ‖e‖) ^ k * max 1 (‖e‖ ^ (α : ℝ))
   have hpow (i : Fin (k + 1)) : ‖e‖ ^ (i : ℕ) ≤ C := by
@@ -96,17 +98,17 @@ theorem norm_compLinear_le (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) :
   have hfield (i : Fin (k + 1)) :
       ‖(compLinear e f).iteratedFDeriv i‖ ≤ C * ‖f.iteratedFDeriv i‖ := by
     refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
-    rw [iteratedFDeriv_compLinear]
-    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-    simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    rw [← iteratedFDeriv_eq, coe_compLinear]
+    refine (e.norm_iteratedFDeriv_comp_right_le f.contDiff x
+      (by exact_mod_cast Nat.le_of_lt_succ i.2)).trans ?_
+    rw [iteratedFDeriv_eq f i]
     calc
       _ ≤ ‖f.iteratedFDeriv i‖ * C := mul_le_mul
         (BoundedContinuousFunction.norm_coe_le_norm _ _) (hpow i) (by positivity) (by positivity)
       _ = _ := mul_comm _ _
   have htop : (nnHolderNorm α (_root_.iteratedFDeriv ℝ k (compLinear e f)) : ℝ) ≤
       C * nnHolderNorm α (_root_.iteratedFDeriv ℝ k f) := by
-    have heq : (compLinear e f : E → F) = f ∘ e := funext (compLinear_apply e f)
-    rw [heq]
+    rw [coe_compLinear]
     have h := (holderWith_iteratedFDeriv_comp e f).nnholderNorm_le
     have hk : ‖e‖ ^ k ≤ (max 1 ‖e‖) ^ k := by gcongr; exact le_max_right _ _
     have he' : ‖e‖ ^ k * ‖e‖ ^ (α : ℝ) ≤ C :=
@@ -128,9 +130,26 @@ def compLinearL (e : E →L[ℝ] E') : CkHolderSpace k α E' F →L[ℝ] CkHolde
       map_smul' c f := ext fun x ↦ by simp [coe_smul] }
     _ (norm_compLinear_le e)
 
+private theorem compLinearL_eq_compLinear (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) :
+    compLinearL e f = compLinear e f :=
+  (rfl)
+
 @[simp]
 theorem compLinearL_apply (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) (x : E) :
-    compLinearL e f x = f (e x) := compLinear_apply e f x
+    compLinearL e f x = f (e x) := by
+  rw [compLinearL_eq_compLinear, compLinear_apply]
+
+@[simp]
+theorem coe_compLinearL (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) :
+    ⇑(compLinearL e f) = f ∘ e :=
+  funext (compLinearL_apply e f)
+
+/-- The exact pullback formula for every recorded derivative field. -/
+theorem iteratedFDeriv_compLinearL (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F)
+    (i : Fin (k + 1)) (x : E) :
+    (compLinearL e f).iteratedFDeriv i x =
+      (f.iteratedFDeriv i (e x)).compContinuousLinearMap (fun _ ↦ e) := by
+  rw [compLinearL_eq_compLinear, iteratedFDeriv_compLinear]
 
 /-- The operator norm bound for linear precomposition. -/
 theorem norm_compLinearL_le (e : E →L[ℝ] E') :
