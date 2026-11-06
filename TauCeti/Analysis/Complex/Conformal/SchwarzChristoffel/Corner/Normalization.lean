@@ -46,6 +46,79 @@ open Complex Filter Set Topology
 
 namespace TauCeti
 
+/-- The principal power `(f - w) ^ (1 / β)` of a function whose values `f z - w` lie in the closed
+sector from angle `0` to angle `βπ` (open sector inside, rays on the real axis) is continuous on
+the closed upper part, holomorphic with values in the upper half-plane on the open upper part,
+real on the real axis, injective, and inverted by the `β`-th power. -/
+private theorem power_coordinate_props
+    {f : ℂ → ℂ} {Ω : Set ℂ} {w : ℂ} {β : ℝ} (hβ : 0 < β) (hβ1 : β ≤ 1)
+    (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
+    (hinterior : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
+      Complex.arg (f z - w) ∈ Ioo 0 (β * Real.pi))
+    (hedges : ∀ z ∈ Ω, z.im = 0 →
+      Complex.arg (f z - w) = 0 ∨ Complex.arg (f z - w) = β * Real.pi)
+    (hinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (g : ℂ → ℂ) (hg : g = fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) :
+    ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) ∧ DifferentiableOn ℂ g (Ω ∩ {z : ℂ | 0 < z.im}) ∧
+      MapsTo g (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im} ∧
+      (∀ z ∈ Ω, z.im = 0 → (g z).im = 0) ∧
+      (∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, g z ^ (β : ℂ) = f z - w) ∧
+      InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
+  subst hg
+  have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ
+  have harg : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
+      0 ≤ Complex.arg (f z - w) ∧ Complex.arg (f z - w) ≤ β * Real.pi := by
+    intro z hz
+    have hzim : 0 ≤ z.im := hz.2
+    rcases hzim.eq_or_lt with haxis | hpos
+    · rcases hedges z hz.1 haxis.symm with h | h
+      · rw [h]
+        exact ⟨le_rfl, by positivity⟩
+      · rw [h]
+        exact ⟨by positivity, le_rfl⟩
+    · exact ⟨(hinterior z ⟨hz.1, hpos⟩).1.le, (hinterior z ⟨hz.1, hpos⟩).2.le⟩
+  have hsector : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, 0 ≤ (f z - w).im := fun z hz =>
+    Complex.arg_nonneg_iff.mp (harg z hz).1
+  have him_pos {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 < z.im}) : 0 < (f z - w).im := by
+    have hlt : Complex.arg (f z - w) < Real.pi :=
+      (hinterior z hz).2.trans_le (mul_le_of_le_one_left Real.pi_nonneg hβ1)
+    rw [← Complex.norm_mul_sin_arg (f z - w)]
+    exact mul_pos (norm_pos_iff.mpr fun h => by
+      have := (hinterior z hz).1
+      rw [h, Complex.arg_zero] at this
+      exact this.false) (Real.sin_pos_of_pos_of_lt_pi (hinterior z hz).1 hlt)
+  have hrecover : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
+      ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := fun z hz =>
+    cpow_inv_cpow_of_arg_mem_Ioc hβ ⟨(neg_lt_zero.mpr (mul_pos hβ Real.pi_pos)).trans_le
+      (harg z hz).1, (harg z hz).2⟩
+  refine ⟨(continuousOn_cpow_const_im_nonneg (by simpa using hβinv)).comp
+      (hcont.sub continuousOn_const) hsector, fun z hz =>
+    ((hholo z hz).sub (differentiableAt_const w).differentiableWithinAt).cpow_const
+      (Or.inr (him_pos hz).ne'), ?_, ?_, hrecover, ?_⟩
+  · intro z hz
+    have hne : f z - w ≠ 0 := ne_of_apply_ne Complex.arg (by
+      simpa using (hinterior z hz).1.ne')
+    have hangpi : Complex.arg (f z - w) * β⁻¹ < Real.pi := calc
+      _ < (β * Real.pi) * β⁻¹ := mul_lt_mul_of_pos_right (hinterior z hz).2 hβinv
+      _ = Real.pi := by field_simp
+    change 0 < ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)).im
+    rw [Complex.cpow_ofReal_im]
+    exact mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr hne) _) <|
+      Real.sin_pos_of_pos_of_lt_pi (mul_pos (hinterior z hz).1 hβinv) hangpi
+  · intro z hz hzim
+    rw [Complex.cpow_ofReal_im]
+    rcases hedges z hz hzim with h | h
+    · rw [h, zero_mul, Real.sin_zero, mul_zero]
+    · have : β * Real.pi * β⁻¹ = Real.pi := by field_simp
+      rw [h, this, Real.sin_pi, mul_zero]
+  · intro z hz y hy hzy
+    apply hinj hz hy
+    have hsub : f z - w = f y - w := by
+      rw [← hrecover z hz, ← hrecover y hy]
+      exact congrArg (· ^ (β : ℂ)) hzy
+    exact sub_left_injective hsub
+
 /-- **A convex conformal corner has a holomorphic simple-zero power coordinate.**
 
 Let `f` be continuous and injective on the closed upper part of a conjugation-symmetric open set
@@ -76,73 +149,10 @@ theorem exists_differentiableOn_injOn_eqOn_add_cpow_of_convex_corner
       EqOn f (fun z => w + h z ^ (β : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im}) := by
   let g : ℂ → ℂ := fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)
   have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ
-  have hsector : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, 0 ≤ (f z - w).im := by
-    intro z hz
-    apply Complex.arg_nonneg_iff.mp
-    have hzim : 0 ≤ z.im := hz.2
-    rcases hzim.eq_or_lt with haxis | hpos
-    · rcases hedges z hz.1 haxis.symm with harg | harg
-      · rw [harg]
-      · rw [harg]
-        positivity
-    · exact (hinterior z ⟨hz.1, hpos⟩).1.le
-  have hcontg : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-    exact (continuousOn_cpow_const_im_nonneg (by simpa using hβinv)).comp
-      (hcont.sub continuousOn_const) hsector
-  have harg_le_pi {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 < z.im}) :
-      Complex.arg (f z - w) < Real.pi :=
-    (hinterior z hz).2.trans_le (mul_le_of_le_one_left Real.pi_nonneg hβ1)
-  have him_pos {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 < z.im}) : 0 < (f z - w).im := by
-    rw [← Complex.norm_mul_sin_arg (f z - w)]
-    exact mul_pos (norm_pos_iff.mpr fun h => by
-      have := (hinterior z hz).1
-      rw [h, Complex.arg_zero] at this
-      exact this.false) (Real.sin_pos_of_pos_of_lt_pi (hinterior z hz).1 (harg_le_pi hz))
-  have hdiffg : DifferentiableOn ℂ g (Ω ∩ {z : ℂ | 0 < z.im}) := by
-    intro z hz
-    exact ((hholo z hz).sub (differentiableAt_const w).differentiableWithinAt).cpow_const
-      (Or.inr (him_pos hz).ne')
-  have hupper : MapsTo g (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im} := by
-    intro z hz
-    have hne : f z - w ≠ 0 := ne_of_apply_ne Complex.arg (by
-      simpa using (hinterior z hz).1.ne')
-    have hang0 : 0 < Complex.arg (f z - w) * β⁻¹ :=
-      mul_pos (hinterior z hz).1 hβinv
-    have hangpi : Complex.arg (f z - w) * β⁻¹ < Real.pi := calc
-      _ < (β * Real.pi) * β⁻¹ := mul_lt_mul_of_pos_right (hinterior z hz).2 hβinv
-      _ = Real.pi := by field_simp
-    -- Expose the local abbreviation so the power's imaginary-part formula can rewrite the goal.
-    change 0 < (g z).im
-    dsimp only [g]
-    rw [Complex.cpow_ofReal_im]
-    exact mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr hne) _) <|
-      Real.sin_pos_of_pos_of_lt_pi hang0 hangpi
-  have hreal : ∀ z ∈ Ω, z.im = 0 → (g z).im = 0 := by
-    intro z hz hzim
-    rcases hedges z hz hzim with harg | harg
-    · dsimp only [g]
-      rw [Complex.cpow_ofReal_im, harg, zero_mul, Real.sin_zero, mul_zero]
-    · dsimp only [g]
-      rw [Complex.cpow_ofReal_im, harg]
-      have : β * Real.pi * β⁻¹ = Real.pi := by field_simp
-      rw [this, Real.sin_pi, mul_zero]
+  obtain ⟨hcontg, hdiffg, hupper, hreal, hrecover', hinjg⟩ :=
+    power_coordinate_props hβ hβ1 hcont hholo hinterior hedges hinj g rfl
   have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
-      g z ^ (β : ℂ) = f z - w := by
-    refine cpow_inv_cpow_of_arg_mem_Ioc hβ ⟨?_, ?_⟩
-    · exact (neg_lt_zero.mpr (mul_pos hβ Real.pi_pos)).trans_le <|
-        Complex.arg_nonneg_iff.mpr (hsector z hz)
-    · have hzim : 0 ≤ z.im := hz.2
-      rcases hzim.eq_or_lt with haxis | hpos
-      · rcases hedges z hz.1 haxis.symm with harg | harg
-        · rw [harg]
-          positivity
-        · exact harg.le
-      · exact (hinterior z ⟨hz.1, hpos⟩).2.le
-  have hinjg : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-    intro z hz y hy hzy
-    apply hinj hz hy
-    have hsub : f z - w = f y - w := by rw [← hrecover hz, ← hrecover hy, hzy]
-    exact sub_left_injective hsub
+      g z ^ (β : ℂ) = f z - w := hrecover' z hz
   let h := schwarzReflection g
   have hhdiff : DifferentiableOn ℂ h Ω :=
     differentiableOn_schwarzReflection_of_symmetric hΩopen hΩconj hcontg hdiffg hreal
