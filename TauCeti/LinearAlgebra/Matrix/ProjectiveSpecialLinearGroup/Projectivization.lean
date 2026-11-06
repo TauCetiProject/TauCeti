@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # `PSL(n, K)` as a subset of the projective space of matrices
@@ -46,26 +47,30 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
 
-/-- A matrix of determinant one over a nontrivial ring is nonzero. -/
-theorem SpecialLinearGroup.coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R]
-    (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
-  A.det_ne_zero (by rw [h, det_zero])
-
 namespace ProjectiveSpecialLinearGroup
 
 omit [Nonempty n] in
-/-- Two matrices of `SL(n, R)` which are proportional define the same element of `PSL(n, R)`: the
-factor of proportionality is an `n`-th root of unity, and the corresponding scalar matrix is
-central. -/
+/-- `A⁻¹ * B` is the scalar matrix `r` exactly when `B = r • A`. -/
+private theorem scalar_eq_coe_inv_mul_iff {R : Type*} [CommRing R] {A B : SpecialLinearGroup n R}
+    {r : R} : scalar n r = ((A⁻¹ * B : SpecialLinearGroup n R) : Matrix n n R) ↔
+      (B : Matrix n n R) = r • (A : Matrix n n R) := by
+  rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv, scalar_apply, ← smul_one_eq_diagonal]
+  constructor
+  · intro h
+    rw [← mul_one (A : Matrix n n R), ← Matrix.mul_smul, h, ← Matrix.mul_assoc,
+      mul_adjugate, A.det_coe, one_smul, Matrix.one_mul]
+  · intro h
+    rw [h, Matrix.mul_smul, adjugate_mul, A.det_coe, one_smul]
+
+omit [Nonempty n] in
+/-- Two matrices of `SL(n, R)` which are proportional define the same element of `PSL(n, R)`. -/
 theorem coe_eq_coe_of_coe_eq_smul {R : Type*} [CommRing R] {A B : SpecialLinearGroup n R} {c : R}
     (h : (B : Matrix n n R) = c • (A : Matrix n n R)) :
     (A : ProjectiveSpecialLinearGroup n R) = B := by
   have hc : c ^ Fintype.card n = 1 := by
     simpa [A.det_coe, B.det_coe] using (congrArg det h).symm
   rw [QuotientGroup.eq, SpecialLinearGroup.mem_center_iff]
-  refine ⟨c, hc, ?_⟩
-  rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv, h, Matrix.mul_smul, adjugate_mul,
-    A.det_coe, one_smul, smul_one_eq_diagonal, scalar_apply]
+  exact ⟨c, hc, scalar_eq_coe_inv_mul_iff.2 h⟩
 
 section Field
 
@@ -82,10 +87,7 @@ def toProjectivization : ProjectiveSpecialLinearGroup n K → ℙ K (Matrix n n 
       have hr0 : r ≠ 0 := by
         rintro rfl
         exact (A⁻¹ * B).coe_ne_zero (by rw [← hr, map_zero])
-      have hB : (B : Matrix n n K) = r • (A : Matrix n n K) := by
-        rw [← mul_inv_cancel_left A B, SpecialLinearGroup.coe_mul, ← hr, scalar_apply,
-          ← smul_one_eq_diagonal, Matrix.mul_smul, mul_one]
-      rw [hB, smul_smul, inv_mul_cancel₀ hr0, one_smul]
+      rw [scalar_eq_coe_inv_mul_iff.1 hr, smul_smul, inv_mul_cancel₀ hr0, one_smul]
 
 @[simp]
 theorem toProjectivization_mk (A : SpecialLinearGroup n K) :
