@@ -21,8 +21,9 @@ map `Q ⟶ F₃` becomes an isomorphism after sheafification. As `Q` vanishes on
 map `Q ⟶ F₃` induces isomorphisms on cover-colimit Čech cohomology
 (`TauCeti.Topology.isIso_cechCohomology_map_of_isIso_sheafification`). Transporting the presheaf
 connecting map along these isomorphisms gives the connecting map
-`CategoryTheory.ShortComplex.ShortExact.cechCohomologyδ` and a long exact sequence
-`⋯ ⟶ Ȟⁿ(X, F₂) ⟶ Ȟⁿ(X, F₃) ⟶ Ȟⁿ⁺¹(X, F₁) ⟶ Ȟⁿ⁺¹(X, F₂) ⟶ ⋯`, starting with a monomorphism
+`CategoryTheory.ShortComplex.ShortExact.cechCohomologyδ` and, writing `Hⁿ(X, F)` for the
+cover-colimit Čech cohomology, a long exact sequence
+`⋯ ⟶ Hⁿ(X, F₂) ⟶ Hⁿ(X, F₃) ⟶ Hⁿ⁺¹(X, F₁) ⟶ Hⁿ⁺¹(X, F₂) ⟶ ⋯`, starting with a monomorphism
 in degree `0`.
 
 The connecting map is characterized by its compatibility with the connecting maps of short exact
@@ -32,14 +33,14 @@ in morphisms of short exact sequences of sheaves.
 
 When `F₂` is flasque its higher Čech cohomology vanishes
 (`TauCeti.Topology.isZero_cechCohomology_succ_of_isFlasque`), so the connecting map
-`Ȟⁿ(X, F₃) ⟶ Ȟⁿ⁺¹(X, F₁)` is an isomorphism for `n ≥ 1` and an epimorphism for `n = 0`. Applied
+`Hⁿ(X, F₃) ⟶ Hⁿ⁺¹(X, F₁)` is an isomorphism for `n ≥ 1` and an epimorphism for `n = 0`. Applied
 to the embedding of a sheaf in its flasque Godement sheaf, this is the dimension shift used to
 compare Čech cohomology with derived-functor cohomology on compact Hausdorff spaces.
 
 ## Main definitions
 
 * `CategoryTheory.ShortComplex.ShortExact.cechCohomologyδ`: the connecting map
-  `Ȟⁿ(X, F₃) ⟶ Ȟⁿ⁺¹(X, F₁)`.
+  `Hⁿ(X, F₃) ⟶ Hⁿ⁺¹(X, F₁)`.
 
 ## Main results
 
@@ -103,7 +104,7 @@ private lemma presheafCokernelSequence_map_shortExact (hS : S.ShortExact)
     ((presheafCokernelSequence S).map (cechComplexFunctor U.opens)).ShortExact :=
   (presheafCokernelSequence_shortExact hS).map_of_exact _
 
-/-- The long exact sequence starts with a monomorphism `Ȟ⁰(X, F₁) ⟶ Ȟ⁰(X, F₂)`. This holds on
+/-- The long exact sequence starts with a monomorphism `H⁰(X, F₁) ⟶ H⁰(X, F₂)`. This holds on
 every topological space `X`. -/
 theorem mono_cechCohomology_map_zero (hS : S.ShortExact) :
     Mono ((cechCohomology X (ModuleCat.{u} R) 0).map S.f.hom) :=
@@ -126,7 +127,7 @@ private lemma isIso_cechCohomology_map_cokernelToX₃ (hS : S.ShortExact) (n : �
 
 /-- **The connecting map of Čech cohomology** for a short exact sequence
 `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of sheaves of modules on a compact normal space: the map
-`Ȟⁿ(X, F₃) ⟶ Ȟⁿ⁺¹(X, F₁)`. It is characterized by
+`Hⁿ(X, F₃) ⟶ Hⁿ⁺¹(X, F₁)`. It is characterized by
 `CategoryTheory.ShortComplex.ShortExact.cechCohomologyδ_naturality_of_presheaf`. -/
 def cechCohomologyδ (hS : S.ShortExact) (n : ℕ) :
     (cechCohomology X (ModuleCat.{u} R) n).obj S.X₃.obj ⟶
@@ -212,7 +213,7 @@ theorem cechCohomologyδ_naturality (hS : S.ShortExact)
     cechCohomology_map_cokernelToX₃_comp_δ_assoc, ← Functor.map_comp_assoc]
   exact h
 
-/-- The map `Ȟⁿ(X, F₂) ⟶ Ȟⁿ(X, F₃)` followed by the connecting map is zero. -/
+/-- The map `Hⁿ(X, F₂) ⟶ Hⁿ(X, F₃)` followed by the connecting map is zero. -/
 @[reassoc (attr := simp)]
 theorem cechCohomology_comp_δ (hS : S.ShortExact) (n : ℕ) :
     (cechCohomology X (ModuleCat.{u} R) n).map S.g.hom ≫ hS.cechCohomologyδ n = 0 := by
@@ -221,7 +222,7 @@ theorem cechCohomology_comp_δ (hS : S.ShortExact) (n : ℕ) :
   exact TauCeti.CategoryTheory.cechCohomology_comp_δ (S := presheafCokernelSequence S)
     PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) (presheafCokernelSequence_map_shortExact hS) n
 
-/-- The connecting map followed by the map `Ȟⁿ⁺¹(X, F₁) ⟶ Ȟⁿ⁺¹(X, F₂)` is zero. -/
+/-- The connecting map followed by the map `Hⁿ⁺¹(X, F₁) ⟶ Hⁿ⁺¹(X, F₂)` is zero. -/
 @[reassoc (attr := simp)]
 theorem cechCohomologyδ_comp (hS : S.ShortExact) (n : ℕ) :
     hS.cechCohomologyδ n ≫ (cechCohomology X (ModuleCat.{u} R) (n + 1)).map S.f.hom = 0 := by
@@ -230,7 +231,7 @@ theorem cechCohomologyδ_comp (hS : S.ShortExact) (n : ℕ) :
     PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h)
     (presheafCokernelSequence_map_shortExact hS) n).trans comp_zero
 
-/-- Exactness of `Ȟⁿ(X, F₁) ⟶ Ȟⁿ(X, F₂) ⟶ Ȟⁿ(X, F₃)`. -/
+/-- Exactness of `Hⁿ(X, F₁) ⟶ Hⁿ(X, F₂) ⟶ Hⁿ(X, F₃)`. -/
 theorem cechCohomology_exact₂ (hS : S.ShortExact) (n : ℕ) :
     (S.map (sheafToPresheaf _ _ ⋙ cechCohomology X (ModuleCat.{u} R) n)).Exact := by
   have := isIso_cechCohomology_map_cokernelToX₃ hS n
@@ -242,7 +243,7 @@ theorem cechCohomology_exact₂ (hS : S.ShortExact) (n : ℕ) :
   · simp
   · simp [← Functor.map_comp]
 
-/-- Exactness of `Ȟⁿ(X, F₂) ⟶ Ȟⁿ(X, F₃) ⟶ Ȟⁿ⁺¹(X, F₁)`. -/
+/-- Exactness of `Hⁿ(X, F₂) ⟶ Hⁿ(X, F₃) ⟶ Hⁿ⁺¹(X, F₁)`. -/
 theorem cechCohomology_exact₃ (hS : S.ShortExact) (n : ℕ) :
     (ShortComplex.mk _ _ (hS.cechCohomology_comp_δ n)).Exact := by
   have := isIso_cechCohomology_map_cokernelToX₃ hS n
@@ -254,7 +255,7 @@ theorem cechCohomology_exact₃ (hS : S.ShortExact) (n : ℕ) :
   · simp [← Functor.map_comp]
   · simp [cechCohomology_map_cokernelToX₃_comp_δ]
 
-/-- Exactness of `Ȟⁿ(X, F₃) ⟶ Ȟⁿ⁺¹(X, F₁) ⟶ Ȟⁿ⁺¹(X, F₂)`. -/
+/-- Exactness of `Hⁿ(X, F₃) ⟶ Hⁿ⁺¹(X, F₁) ⟶ Hⁿ⁺¹(X, F₂)`. -/
 theorem cechCohomology_exact₁ (hS : S.ShortExact) (n : ℕ) :
     (ShortComplex.mk _ _ (hS.cechCohomologyδ_comp n)).Exact := by
   have := isIso_cechCohomology_map_cokernelToX₃ hS n
@@ -268,7 +269,7 @@ theorem cechCohomology_exact₁ (hS : S.ShortExact) (n : ℕ) :
   · simp
 
 /-- **Dimension shifting.** If the middle term of `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is flasque, the
-connecting map `Ȟⁿ⁺¹(X, F₃) ⟶ Ȟⁿ⁺²(X, F₁)` is an isomorphism. -/
+connecting map `Hⁿ⁺¹(X, F₃) ⟶ Hⁿ⁺²(X, F₁)` is an isomorphism. -/
 theorem isIso_cechCohomologyδ_succ_of_isFlasque (hS : S.ShortExact)
     [TopCat.Presheaf.IsFlasque S.X₂.obj] (n : ℕ) :
     IsIso (hS.cechCohomologyδ (n + 1)) := by
@@ -283,8 +284,8 @@ theorem isIso_cechCohomologyδ_succ_of_isFlasque (hS : S.ShortExact)
   exact isIso_of_mono_of_epi _
 
 /-- **Dimension shifting in degree zero.** If the middle term of `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is
-flasque, the connecting map `Ȟ⁰(X, F₃) ⟶ Ȟ¹(X, F₁)` is an epimorphism; its kernel is the image of
-`Ȟ⁰(X, F₂)` (`CategoryTheory.ShortComplex.ShortExact.cechCohomology_exact₃`). -/
+flasque, the connecting map `H⁰(X, F₃) ⟶ H¹(X, F₁)` is an epimorphism; its kernel is the image of
+`H⁰(X, F₂)` (`CategoryTheory.ShortComplex.ShortExact.cechCohomology_exact₃`). -/
 theorem epi_cechCohomologyδ_zero_of_isFlasque (hS : S.ShortExact)
     [TopCat.Presheaf.IsFlasque S.X₂.obj] :
     Epi (hS.cechCohomologyδ 0) :=
