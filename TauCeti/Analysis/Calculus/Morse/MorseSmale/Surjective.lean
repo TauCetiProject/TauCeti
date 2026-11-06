@@ -73,6 +73,82 @@ private noncomputable def contribution (f : E → ℝ) (hf : LipschitzWith K (�
     fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x)
       (∇ g (negativeGradientFlow f hf σ x))
 
+/-- The cutoff-perturbation integral identity: if `y` is orthogonal to the contributions of all
+admissible perturbations and `m σ = (Dφ_{-σ}(φ_σ x))* y` annihilates the gradient directions, then
+`∫₀ᵀ (θ ⟪w, m⟫ + ⟪w, φ_σ x⟫ Dθ(m)) ψ(f(φ_σ x)) dσ = 0` for every cutoff `θ` supported away from the
+critical points. -/
+private theorem integral_cutoff_comp_eq_zero (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (x : E) {T : ℝ} (y : E) {z : E} (θ : ContDiffBump z)
+    (hθ : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0)
+    (hyk : ∀ g : {g : E → ℝ // IsAdmissiblePerturbation f g},
+      ⟪contribution f hf x T g.1, y⟫ = 0) {m : ℝ → E}
+    (hm : ∀ σ, m σ = ContinuousLinearMap.adjoint
+      (fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x)) y)
+    (hmgrad : ∀ σ, fderiv ℝ f (negativeGradientFlow f hf σ x) (m σ) = 0) (w : E) {c : ℝ}
+    (ψ : ContDiffBump c) :
+    ∫ σ in (0 : ℝ)..T, (θ (negativeGradientFlow f hf σ x) * ⟪w, m σ⟫ +
+        ⟪w, negativeGradientFlow f hf σ x⟫ *
+          fderiv ℝ θ (negativeGradientFlow f hf σ x) (m σ)) *
+      ψ (f (negativeGradientFlow f hf σ x)) = 0 := by
+  set φ := negativeGradientFlow f hf
+  set N : ℝ → E →L[ℝ] E := fun σ ↦ fderiv ℝ (φ (-σ)) (φ σ x)
+  have hγ : Continuous fun σ ↦ φ σ x :=
+    (contDiff_negativeGradientFlow f hf hfs).continuous.comp
+      (continuous_id.prodMk continuous_const)
+  have hN : Continuous N := continuous_fderiv_negativeGradientFlow_neg f hf hfs x
+  set g : E → ℝ := fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)
+  have hg : IsAdmissiblePerturbation f g := isAdmissiblePerturbation_bump_mul hfs θ hθ ψ w
+  have hk := hyk ⟨g, hg⟩
+  have hint : IntervalIntegrable (fun σ ↦ N σ (∇ g (φ σ x))) MeasureTheory.volume 0 T :=
+    (hN.clm_apply (((hg.contDiff.gradient_right (m := 1) (by norm_num)).continuous).comp
+      hγ)).intervalIntegrable 0 T
+  have hcomm : ∫ σ in (0 : ℝ)..T, ⟪y, N σ (∇ g (φ σ x))⟫ =
+      ⟪y, ∫ σ in (0 : ℝ)..T, N σ (∇ g (φ σ x))⟫ := by
+    simpa using ContinuousLinearMap.intervalIntegral_comp_comm (innerSL ℝ y) hint
+  have hk' : ⟪y, ∫ σ in (0 : ℝ)..T, N σ (∇ g (φ σ x))⟫ = 0 := by
+    rw [real_inner_comm]
+    exact hk
+  refine Eq.trans (intervalIntegral.integral_congr (μ := MeasureTheory.volume)
+    (g := fun σ ↦ ⟪y, N σ (∇ g (φ σ x))⟫) fun σ _ ↦ ?_) (hcomm.trans hk')
+  dsimp only
+  symm
+  rw [real_inner_comm _ y, ← ContinuousLinearMap.adjoint_inner_right, inner_gradient_left,
+    show ContinuousLinearMap.adjoint (N σ) y = m σ from (hm σ).symm,
+    θ.fderiv_mul_comp_mul_inner_apply ψ w
+      ((hfs.differentiable (by norm_num)) _) (hmgrad σ)]
+
+/-- The covectors `⟪y, Dφ_{-σ}(φ_σ x) ·⟫` of a vector `y` orthogonal to `∇ f x` annihilate the
+gradient direction: `Df(φ_σ x) ((Dφ_{-σ}(φ_σ x))* y) = 0`. -/
+private theorem fderiv_adjoint_fderiv_negativeGradientFlow_neg_apply (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) {x y : E} (hyx : ⟪∇ f x, y⟫ = 0) (σ : ℝ) :
+    fderiv ℝ f (negativeGradientFlow f hf σ x) (ContinuousLinearMap.adjoint
+      (fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x)) y) = 0 := by
+  have hNg : fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x)
+      (∇ f (negativeGradientFlow f hf σ x)) = ∇ f x := by
+    have := fderiv_negativeGradientFlow_apply_gradient f hf hfs (-σ) (negativeGradientFlow f hf σ x)
+    rwa [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at this
+  rw [← inner_gradient_left, ContinuousLinearMap.adjoint_inner_right, hNg, hyx]
+
+/-- A continuous vector curve `m` with `∫₀ᵀ (θ(γ) ⟪w, m⟫ + ⟪w, γ⟫ Dθ(γ)(m)) ψ(f(γ)) dσ = 0` for all
+`w` and all bumps `ψ` around `f(γ σ₀)` vanishes at `σ₀`, when `f ∘ γ` is strictly decreasing and the
+cutoff `θ` is `1` with vanishing derivative at `γ σ₀`. -/
+private theorem eq_zero_of_integral_cutoff_comp (hfc : Continuous f) {γ m : ℝ → E} {T σ₀ : ℝ}
+    (θ : ContDiffBump (γ σ₀)) (hγ : Continuous γ) (hm : Continuous m) (hσ₀ : σ₀ ∈ Ioo 0 T)
+    (hθz : θ (γ σ₀) = 1) (hθ'z : fderiv ℝ θ (γ σ₀) = 0)
+    (hanti : StrictAntiOn (fun σ ↦ f (γ σ)) (Icc 0 T))
+    (hkey : ∀ (w : E) (ψ : ContDiffBump (f (γ σ₀))),
+      ∫ σ in (0 : ℝ)..T, (θ (γ σ) * ⟪w, m σ⟫ + ⟪w, γ σ⟫ * fderiv ℝ θ (γ σ) (m σ)) *
+        ψ (f (γ σ)) = 0) :
+    m σ₀ = 0 := by
+  have h0 := eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
+    (g := fun σ ↦ θ (γ σ) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, γ σ⟫ * fderiv ℝ θ (γ σ) (m σ))
+    ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
+      ((continuous_const.inner hγ).mul
+        ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply
+          hm))).continuousOn
+    (hfc.comp hγ).continuousOn hanti hσ₀ (hkey (m σ₀))
+  simpa [hθz, hθ'z] using h0
+
 /-- **The contributions of admissible perturbations and the gradient span `E`.** -/
 private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T : ℝ} (hT : 0 < T) :
@@ -100,11 +176,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   have hm : Continuous m :=
     ((ContinuousLinearMap.adjoint (𝕜 := ℝ)).continuous.comp hN).clm_apply continuous_const
   -- They annihilate the flow direction.
-  have hmgrad : ∀ σ, fderiv ℝ f (φ σ x) (m σ) = 0 := fun σ ↦ by
-    have hNg : N σ (∇ f (φ σ x)) = ∇ f x := by
-      have := fderiv_negativeGradientFlow_apply_gradient f hf hfs (-σ) (φ σ x)
-      rwa [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at this
-    rw [← inner_gradient_left, ContinuousLinearMap.adjoint_inner_right, hNg, hyx]
+  have hmgrad := fderiv_adjoint_fderiv_negativeGradientFlow_neg_apply hfs hf hyx
   -- A bump around a point of the orbit, inside a region without critical points.
   set σ₀ := T / 2 with hσdef
   have hσ₀ : σ₀ ∈ Ioo 0 T := ⟨by rw [hσdef]; positivity, by rw [hσdef]; linarith⟩
@@ -122,46 +194,13 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
     rw [θ.eventuallyEq_one.fderiv_eq]
     exact fderiv_const_apply _
   -- The test perturbations `θ (ψ ∘ f) ⟪w, ·⟫`.
-  have hkey : ∀ w : E, ∀ ψ : ContDiffBump (f z),
-      ∫ σ in (0 : ℝ)..T, (θ (φ σ x) * ⟪w, m σ⟫ + ⟪w, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ)) *
-        ψ (f (φ σ x)) = 0 := by
-    intro w ψ
-    set g : E → ℝ := fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)
-    have hg : IsAdmissiblePerturbation f g := isAdmissiblePerturbation_bump_mul hfs θ hθcrit ψ w
-    have hk := hyk ⟨g, hg⟩
-    have hint : IntervalIntegrable (fun σ ↦ N σ (∇ g (φ σ x))) MeasureTheory.volume 0 T :=
-      (hN.clm_apply (((hg.contDiff.gradient_right (m := 1) (by norm_num)).continuous).comp
-        hγ)).intervalIntegrable 0 T
-    have hcomm : ∫ σ in (0 : ℝ)..T, ⟪y, N σ (∇ g (φ σ x))⟫ =
-        ⟪y, ∫ σ in (0 : ℝ)..T, N σ (∇ g (φ σ x))⟫ := by
-      simpa using ContinuousLinearMap.intervalIntegral_comp_comm (innerSL ℝ y) hint
-    have hk' : ⟪y, ∫ σ in (0 : ℝ)..T, N σ (∇ g (φ σ x))⟫ = 0 := by
-      rw [real_inner_comm]
-      exact hk
-    refine Eq.trans (intervalIntegral.integral_congr (μ := MeasureTheory.volume)
-      (g := fun σ ↦ ⟪y, N σ (∇ g (φ σ x))⟫) fun σ _ ↦ ?_) (hcomm.trans hk')
-    dsimp only
-    symm
-    rw [real_inner_comm _ y, ← ContinuousLinearMap.adjoint_inner_right, inner_gradient_left,
-      θ.fderiv_mul_comp_mul_inner_apply ψ w
-        ((hfs.differentiable (by norm_num)) _) (hmgrad σ)]
-  -- Hence `⟪w, m σ₀⟫ = 0` for every `w`.
-  have hm0 : m σ₀ = 0 := by
-    have hF : Continuous fun σ ↦ f (φ σ x) := hfs.continuous.comp hγ
-    have h0 := eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
-      (g := fun σ ↦ θ (φ σ x) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ))
-      ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
-        ((continuous_const.inner hγ).mul
-          ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply
-            hm))).continuousOn
-      hF.continuousOn ((IsIntegralCurve.strictAnti_comp_neg_gradient
+  -- Hence `m σ₀ = 0`.
+  have hm0 : m σ₀ = 0 := eq_zero_of_integral_cutoff_comp hfs.continuous θ hγ hm hσ₀ hθz hθ'z
+    ((IsIntegralCurve.strictAnti_comp_neg_gradient
         ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
         (fun _ ↦ (hfs.differentiable (by norm_num)) _)
         (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)).strictAntiOn _)
-      hσ₀ (hkey (m σ₀))
-    have hθz' : θ (φ σ₀ x) = 1 := hθz
-    have hθ'z' : fderiv ℝ θ (φ σ₀ x) = 0 := hθ'z
-    simpa [hθz', hθ'z'] using h0
+    fun w ψ ↦ integral_cutoff_comp_eq_zero hfs hf x y θ hθcrit hyk (m := m) (fun _ ↦ rfl) hmgrad w ψ
   -- And so `y = 0`.
   apply hy0
   have hNM : ∀ v, N σ₀ (fderiv ℝ (φ σ₀) x v) = v :=
