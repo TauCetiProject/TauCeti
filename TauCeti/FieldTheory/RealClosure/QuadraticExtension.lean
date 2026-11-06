@@ -23,10 +23,13 @@ when `R(√-1) = AdjoinRoot (X ^ 2 + 1)` is algebraically closed.
 
 For the forward direction, a quadratic extension embeds into the algebraically closed
 `QuadraticAlgebra R (-1) 0` of the same dimension, so all its elements are squares. For the
-converse, first `-1` is not a square in `R`: writing `K ≅ QuadraticAlgebra R a b`, every element
-of `K` being a square makes the discriminant a square (or, in characteristic two, gives a zero
-divisor), contradicting that `K` is a field. Hence an algebraically closed extension `K` of
-degree two identifies `K` with `R(√-1)`. Writing a
+converse, first `-1` is not a square in `R`: writing `K ≅ QuadraticAlgebra R a b`, suppose `-1`
+is a square. If `2 ≠ 0`, every element of `K` being a square (in particular `-b + 2ω`) makes the
+discriminant a square, so the algebra is not a field. In characteristic two with `b ≠ 0`,
+algebraic closure gives a root in `K` of the Artin–Schreier polynomial `X ^ 2 + b X - (a / b) ω`,
+which yields a zero divisor; with `b = 0`, the generator `ω` is not a square. Each case
+contradicts that `K` is a field. Hence an algebraically closed extension `K` of degree two
+identifies `K` with `R(√-1)`. Writing a
 square root of `x + y √-1` in coordinates shows that every element or its negative is a
 square, and that a sum of two squares is a square. Every irreducible polynomial over `R`
 has degree dividing two, so a polynomial of odd degree has a root.
