@@ -97,6 +97,47 @@ theorem _root_.HasFDerivAt.firstJetPullback {g : E' → F →L[𝕜] G} {g' : E'
   simpa only [firstJetPullback_apply, Function.comp_apply, add_comm] using
     hg.clm_apply (hs.comp x hh)
 
+/-- The transformation of an actual first jet under a varying fibre map and a base map,
+for derivatives within sets. -/
+theorem _root_.HasFDerivWithinAt.firstJetPullback {g : E' → F →L[𝕜] G}
+    {g' : E' →L[𝕜] F →L[𝕜] G} {h : E' → E} {h' : E' →L[𝕜] E} {s : E → F} {s' : E →L[𝕜] F}
+    {t : Set E'} {u : Set E} {x : E'}
+    (hg : HasFDerivWithinAt g g' t x) (hh : HasFDerivWithinAt h h' t x)
+    (hs : HasFDerivWithinAt s s' u (h x)) (hu : Set.MapsTo h t u) :
+    HasFDerivWithinAt (fun y ↦ g y (s (h y)))
+      ((g x).firstJetPullback g' h' (s (h x), s')).2 t x := by
+  simpa only [firstJetPullback_apply, Function.comp_apply, add_comm] using
+    hg.clm_apply (hs.comp x hh hu)
+
+/-- The first-jet transformation depends smoothly on its three coefficients. -/
+theorem contDiff_firstJetPullback {n : ℕ∞ω} :
+    ContDiff 𝕜 n (fun p : (F →L[𝕜] G) × (E' →L[𝕜] F →L[𝕜] G) × (E' →L[𝕜] E) ↦
+      p.1.firstJetPullback p.2.1 p.2.2) := by
+  have h₁ : ContDiff 𝕜 n
+      (fun p : (F →L[𝕜] G) × (E' →L[𝕜] F →L[𝕜] G) × (E' →L[𝕜] E) ↦
+        p.1.comp (fst 𝕜 F (E →L[𝕜] F))) :=
+    contDiff_fst.clm_comp contDiff_const
+  have h₂ : ContDiff 𝕜 n
+      (fun p : (F →L[𝕜] G) × (E' →L[𝕜] F →L[𝕜] G) × (E' →L[𝕜] E) ↦
+        p.2.1.flip.comp (fst 𝕜 F (E →L[𝕜] F))) :=
+    have hflip : ContDiff 𝕜 n (fun b : E' →L[𝕜] F →L[𝕜] G ↦ b.flip) := by
+      -- The coercion of the bundled flip unfolds to `ContinuousLinearMap.flip`.
+      have h := ContinuousLinearEquiv.contDiff (𝕜 := 𝕜) (n := n)
+        (E := E' →L[𝕜] F →L[𝕜] G) (F := F →L[𝕜] E' →L[𝕜] G)
+        (flipₗᵢ 𝕜 E' F G).toContinuousLinearEquiv
+      exact h
+    (hflip.comp contDiff_snd.fst).clm_comp contDiff_const
+  have h₃ : ContDiff 𝕜 n
+      (fun p : (F →L[𝕜] G) × (E' →L[𝕜] F →L[𝕜] G) × (E' →L[𝕜] E) ↦
+        (compL 𝕜 E' F G p.1).comp (((compL 𝕜 E' E F).flip p.2.2).comp
+          (snd 𝕜 F (E →L[𝕜] F)))) :=
+    ((compL 𝕜 E' F G).contDiff.comp contDiff_fst).clm_comp
+      (((compL 𝕜 E' E F).flip.contDiff.comp contDiff_snd.snd).clm_comp contDiff_const)
+  have hprod := ContinuousLinearEquiv.contDiff (𝕜 := 𝕜) (n := n)
+    (E := (F × (E →L[𝕜] F) →L[𝕜] G) × (F × (E →L[𝕜] F) →L[𝕜] E' →L[𝕜] G))
+    (F := F × (E →L[𝕜] F) →L[𝕜] G × (E' →L[𝕜] G)) (prodₗᵢ 𝕜).toContinuousLinearEquiv
+  exact hprod.comp (h₁.prodMk (h₂.add h₃))
+
 /-- Smooth families of coefficients and jets give smooth transformed first jets. -/
 theorem _root_.ContDiffOn.firstJetPullback {n : ℕ∞ω} {u : Set X}
     {a : X → F →L[𝕜] G} {b : X → E' →L[𝕜] F →L[𝕜] G} {c : X → E' →L[𝕜] E}

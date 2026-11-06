@@ -42,6 +42,11 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
+* `ContMDiffAt.contDiffWithinAt_comp_extChartAt_symm`: with corners allowed, the coordinate
+  expression of a map into a normed space that is `C^n` at a point is `C^n` within the range of the
+  model in every preferred chart whose source contains the point, and
+  `ContMDiffAt.fderivWithin_comp_extChartAt_symm`: in a fixed chart, the derivative of that
+  expression is `C^m` as a function on the manifold when `m + 1 ≤ n`.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
@@ -218,6 +223,38 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · exact DFunLike.congr_fun h (L w)
 
 end TauCeti
+
+section FixedChart
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M → F}
+
+omit [IsManifold I 1 M] in
+/-- A function on `M` that is `C^n` at `x` has a `C^n` expression, within the range of the
+model, in any chart whose source contains `x`. -/
+theorem ContMDiffAt.contDiffWithinAt_comp_extChartAt_symm {n : WithTop ℕ∞} [IsManifold I n M]
+    {j x : M} (hf : ContMDiffAt I 𝓘(𝕜, F) n f x)
+    (hx : x ∈ (chartAt H j).source) :
+    ContDiffWithinAt 𝕜 n (f ∘ (extChartAt I j).symm) (range I) (extChartAt I j x) := by
+  have h := ((contMDiffAt_iff_of_mem_source (I' := 𝓘(𝕜, F)) (y := f x) hx
+    (mem_chart_source F (f x))).1 hf).2
+  simpa [extChartAt_model_space_eq_id] using h
+
+omit [IsManifold I 1 M] in
+/-- The derivative of the expression of a `C^n` function in a fixed chart is `C^m` as a function
+of the point of `M`, when `m + 1 ≤ n`. -/
+theorem ContMDiffAt.fderivWithin_comp_extChartAt_symm {n m : WithTop ℕ∞} [IsManifold I n M]
+    {j x : M} (hf : ContMDiffAt I 𝓘(𝕜, F) n f x)
+    (hx : x ∈ (chartAt H j).source) (hmn : m + 1 ≤ n) :
+    ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F) m
+      (fun y ↦ fderivWithin 𝕜 (f ∘ (extChartAt I j).symm) (range I) (extChartAt I j y)) x := by
+  have : IsManifold I m M := .of_le (le_self_add.trans hmn)
+  have h := (hf.contDiffWithinAt_comp_extChartAt_symm hx).fderivWithin_right I.uniqueDiffOn hmn
+    (mem_range_self _)
+  rw [← contMDiffWithinAt_univ]
+  exact h.comp_contMDiffWithinAt (contMDiffAt_extChartAt' hx).contMDiffWithinAt
+    fun y _ ↦ mem_range_self _
+
+end FixedChart
 
 /-! ### Maps into a normed space on a boundaryless manifold -/
 
