@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
@@ -35,8 +36,9 @@ one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points ar
 ## See also
 
 The symmetric-algebra Hopf structure is supplied by
-`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, on top of Mathlib's symmetric-algebra
-bialgebra and convolution monoid APIs.
+`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, and the evaluation of convolution on
+generators by `TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Basic`, on top of Mathlib's
+symmetric-algebra bialgebra and convolution monoid APIs.
 
 ## References
 

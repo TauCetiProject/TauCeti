@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RingTheory.Bialgebra.SymmetricAlgebra
 public import Mathlib.RingTheory.HopfAlgebra.Basic
 
@@ -22,8 +21,6 @@ antipode is the algebra map sending each `ι x` to `-ι x`.
 * `SymmetricAlgebra.instHopfAlgebra`: the Hopf algebra structure on `SymmetricAlgebra R M` over
   a commutative ring `R`.
 * `SymmetricAlgebra.antipode_ι`: the Hopf antipode sends each generator to its negative.
-* `SymmetricAlgebra.convMul_apply_ι`: convolution of algebra maps evaluates on generators by
-  adding their values.
 
 ## References
 
@@ -68,13 +65,5 @@ theorem antipode_ι (x : M) : antipode R (ι R M x) = -ι R M x :=
   antipodeHom_ι R M x
 
 end Hopf
-
-/-- The convolution product of two points of a symmetric algebra is, on each generator, the sum
-of their values: `(F * G)(ι x) = F(ι x) + G(ι x)`. -/
-@[simp]
-theorem convMul_apply_ι {R M A : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    [CommSemiring A] [Algebra R A] (F G : WithConv (SymmetricAlgebra R M →ₐ[R] A)) (x : M) :
-    (F * G).ofConv (ι R M x) = F.ofConv (ι R M x) + G.ofConv (ι R M x) := by
-  simpa [Algebra.TensorProduct.lift_tmul] using AlgHom.convMul_apply F G (ι R M x)
 
 end SymmetricAlgebra
