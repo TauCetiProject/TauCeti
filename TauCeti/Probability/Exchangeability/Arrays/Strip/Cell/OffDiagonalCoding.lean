@@ -210,11 +210,11 @@ theorem JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagon
 
 /-- A visible off-diagonal pair is conditionally independent of the entries outside it, in
 particular of the entries off the pair itself, given the crossing strips and the diagonal.
-Here the pair `i < j` is read as the set `{(i, j), (j, i)}` of its two entries, and `S` is an
-infinite set of hidden vertices of a jointly exchangeable array. -/
+Here the pair of distinct vertices `i ≠ j` is read as the set `{(i, j), (j, i)}` of its two
+entries, and `S` is an infinite set of hidden vertices of a jointly exchangeable array. -/
 private theorem condIndepFun_pair_compl_of_visible
     (hρ : JointlyExchangeable ρ fun p x => x p) {S : Set ℕ} (hS : S.Infinite) {i j : ℕ}
-    (hi : i ∉ S) (hj : j ∉ S) (hij : i < j) :
+    (hi : i ∉ S) (hj : j ∉ S) (hij : i ≠ j) :
     CondIndepFun (MeasurableSpace.comap
       ((((Set.univ ×ˢ S) ∪ (S ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} : Set (ℕ × ℕ))).domRestrict
         (π := fun _ => α)) inferInstance)
@@ -253,10 +253,10 @@ private theorem condIndepFun_pair_compl_of_visible
     rcases hqC with rfl | rfl <;> rcases hq with (hq | hq) | hq
     · exact hj hq.2
     · exact hi hq.1
-    · exact hij.ne hq
+    · exact hij hq
     · exact hi hq.2
     · exact hj hq.1
-    · exact hij.ne' hq
+    · exact hij.symm hq
   exact condIndepFun_domRestrict_of_subset (Set.measurable_restrict C) hlocal hRH hHD
 
 /-- **Distinct visible off-diagonal pairs are conditionally independent given the crossing strips
@@ -295,7 +295,7 @@ theorem JointlyExchangeable.iCondIndepFun_offDiagonalPairs
   have hbase : CondIndep m' (MeasurableSpace.comap C.domRestrict inferInstance)
       (MeasurableSpace.comap Cᶜ.domRestrict inferInstance) hm' ρ :=
     (condIndepFun_iff_condIndep m' hm' C.domRestrict Cᶜ.domRestrict ρ).1
-      (condIndepFun_pair_compl_of_visible hρ hS hi hj hij)
+      (condIndepFun_pair_compl_of_visible hρ hS hi hj hij.ne)
   have hleft : m ⟨(i, j), hp⟩ ≤ MeasurableSpace.comap C.domRestrict inferInstance :=
     TauCeti.MeasureTheory.comap_pair_le_comap_domRestrict C (Set.mem_insert _ _) (by simp [C])
   -- Every other increasing representative, and its swap, avoids both entries of the pair.
@@ -489,24 +489,22 @@ private theorem map_prod_orientedPairCoding_eq
   by_cases hq : offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1 ∈ O <;>
     simp [hq, offDiagonalPairSquareContextOfStripsAndDiagonal_swap e i j]
 
-/-- The common oriented coding generates every finite family of visible off-diagonal pairs: given
-a realization `g₀` of the common conditional kernel, the coding `g` oriented along `O` feeds each
-pair's square context and its own independent uniform variable to `g` and reproduces the joint law
-of the crossing strips, the diagonal and the whole family of pairs. -/
-private theorem map_prod_orientedCoding_family_eq
+/-- A coding function that codes each visible off-diagonal pair correctly generates every finite
+family of such pairs: if feeding the pair's own square context and a uniform variable to `g`
+reproduces the joint law of the crossing strips, the diagonal and that pair, then feeding each
+pair of a finite family its square context and its own independent uniform variable reproduces
+the joint law of the crossing strips, the diagonal and the whole family of pairs. -/
+private theorem map_prod_codedFamily_eq
     (hρ : JointlyExchangeable ρ fun p x => x p) {e : ℕ → ℕ} (he : (Set.range e).Infinite)
-    {O : Set (((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
-      (α × α))} [DecidablePred (· ∈ O)] (hO : MeasurableSet O)
-    {g₀ : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
-      (α × α) → I → α × α} (hg₀ : Measurable (Function.uncurry g₀))
-    (hgmap' : ∀ {i j : ℕ}, i ≠ j → i ∉ Set.range e → j ∉ Set.range e → ∀ z,
-      (volume : Measure I).map (g₀ z) =
-        condDistrib (fun x : ℕ × ℕ → α => (x (i, j), x (j, i)))
-          (offDiagonalPairSquareContext e i j) ρ z)
     (g : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
       (α × α) → I → α × α)
-    (hgdef : g = fun c u => if c ∈ O then g₀ c u else (g₀ (Prod.map Prod.swap Prod.swap c) u).swap)
-    (hg : Measurable (Function.uncurry g)) :
+    (hg : Measurable (Function.uncurry g))
+    (hpair : ∀ {i j : ℕ}, i ≠ j → i ∉ Set.range e → j ∉ Set.range e →
+      (((ρ.map ((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪
+          {p : ℕ × ℕ | p.1 = p.2} : Set (ℕ × ℕ)).domRestrict).prod (volume : Measure I)).map
+        fun q => (q.1, g (offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1) q.2)) =
+      ρ.map fun x => (((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪
+        {p : ℕ × ℕ | p.1 = p.2} : Set (ℕ × ℕ)).domRestrict x, (x (i, j), x (j, i)))) :
     let H : Set (ℕ × ℕ) :=
       (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2}
     let V₂ : Set (ℕ × ℕ) := {p | p.1 ∉ Set.range e ∧ p.2 ∉ Set.range e ∧ p.1 < p.2}
@@ -533,10 +531,7 @@ private theorem map_prod_orientedCoding_family_eq
     (fun p => hg.comp
       ((measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e p.1.1.1 p.1.1.2).comp
         measurable_fst |>.prodMk measurable_snd))
-    fun p => by
-      rw [hgdef]
-      exact map_prod_orientedPairCoding_eq hρ he p.1.2.2.2.ne p.1.2.1 p.1.2.2.1 hg₀
-        (hgmap' p.1.2.2.2.ne p.1.2.1 p.1.2.2.1) (hgmap' p.1.2.2.2.ne' p.1.2.2.1 p.1.2.1) hO
+    fun p => hpair p.1.2.2.2.ne p.1.2.1 p.1.2.2.1
   have hcoded : Measurable fun p : (H → α) × (F → I) =>
       (p.1, fun r : F =>
         g (offDiagonalPairSquareContextOfStripsAndDiagonal e r.1.1.1 r.1.1.2 p.1) (p.2 r)) :=
@@ -638,7 +633,9 @@ theorem JointlyExchangeable.exists_common_offDiagonalPairs_coding
     by_cases h : c ∈ O
     · simp only [g, ite_eq_left h, ite_eq_right (hc.1 h), hcc]
     · simp only [g, ite_eq_right h, ite_eq_left (not_not.1 (mt hc.2 h)), Prod.swap_swap]
-  exact ⟨g, hg, hswap, map_prod_orientedCoding_family_eq hρ he hO hg₀ hgmap' g rfl hg⟩
+  refine ⟨g, hg, hswap, map_prod_codedFamily_eq hρ he g hg fun hij hi hj => ?_⟩
+  exact map_prod_orientedPairCoding_eq hρ he hij hi hj hg₀ (hgmap' hij hi hj)
+    (hgmap' hij.symm hj hi) hO
 
 /-- **One common coding generates all visible off-diagonal pairs of a jointly exchangeable array.**
 Let `e` enumerate infinitely many hidden vertices. There is a single measurable `g` such that
