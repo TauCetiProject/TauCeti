@@ -188,7 +188,7 @@ theorem pathClassIntegral_mextDeriv_ofFunction {g : M → F} (hg : ContMDiff I �
   have hφ : IsSmoothForm I 1 φ :=
     isSmoothForm_mextDeriv (isSmoothForm_ofFunction_iff.mpr hg) (by norm_num)
   have hgU : IsPrimitiveOn φ g univ :=
-    ⟨isOpen_univ, (hg.mdifferentiable (by norm_num)).mdifferentiableOn, fun _ _ ↦ rfl⟩
+    isPrimitiveOn_univ_of_mextDeriv_eq (hg.mdifferentiable (by norm_num)) rfl
   exact pathClassIntegral_mk_eq_sub_of_isPrimitiveOn hφ (mextDeriv_mextDeriv_ofFunction hg) hgU γ
     fun _ ↦ mem_univ _
 
@@ -363,9 +363,7 @@ theorem pathClassIntegral_mpullback (hf : ContMDiff I I' 2 f) (hθ : IsSmoothFor
     pathClassIntegral (mpullback I I' f θ) γ = pathClassIntegral θ (γ.map ⟨f, hf.continuous⟩) := by
   induction γ with | mk γ =>
   have hfθ : IsSmoothForm I 1 (mpullback I I' f θ) := hθ.mpullback hf
-  have hfclosed : mextDeriv (mpullback I I' f θ) = 0 := by
-    rw [← mpullback_mextDeriv hf ((isSmoothBundleForm_def _ _).mpr hθ.contMDiff), hclosed,
-      mpullback_zero]
+  have hfclosed : mextDeriv (mpullback I I' f θ) = 0 := hθ.mextDeriv_mpullback_eq_zero hclosed hf
   have hp := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hθ hclosed
   -- a lift of the image path `f ∘ γ`
   obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts (γ.map hf.continuous).toContinuousMap
