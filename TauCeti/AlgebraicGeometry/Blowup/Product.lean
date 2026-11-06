@@ -10,7 +10,6 @@ import TauCeti.Algebra.Regular.SMul
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
-import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 
 /-!
 # A common blowup for two centres
