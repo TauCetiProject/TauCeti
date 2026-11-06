@@ -80,18 +80,6 @@ private lemma levelMap_inclusion_eq (n : ℕ) :
   | zero => rw [TauCeti.AlgebraicGeometry.levelMap_zero, inclusion_id]
   | succ n ih => rw [TauCeti.AlgebraicGeometry.levelMap_succ, ih, inclusion_comp]
 
-/-- Each inclusion `V(I ^ (n + 1)) ⟶ V(I ^ (n + 2))` is a first-order thickening: its ideal sheaf is
-the inverse image of `I ^ (n + 1)`, whose square lies in `I ^ (n + 2)`. -/
-private lemma isFirstOrderThickening_inclusion_pow (n : ℕ) :
-    IsFirstOrderThickening
-      (inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1)) :
-        (I ^ (n + 1)).subscheme ⟶ (I ^ (n + 1 + 1)).subscheme) where
-  ker_mul_self := by
-    rw [ker_inclusion, ← comap_mul, ← pow_add]
-    refine le_bot_iff.mp ((comap_mono _ (pow_le_pow_of_le_one bot_le le_top
-      (by omega : n + 1 + 1 ≤ n + 1 + (n + 1)))).trans_eq ?_)
-    simpa using (I ^ (n + 1 + 1)).subschemeι.comap_ker_self
-
 /-- The **formal completion** `X/V(I)` of a scheme `X` along the closed subscheme `V(I)` cut out by
 an ideal sheaf `I`: the adic thickening system of the infinitesimal neighbourhoods `V(I ^ (n + 1))`
 with the inclusions `V(I ^ (n + 1)) ⟶ V(I ^ (n + 2))` as transitions.
@@ -105,7 +93,9 @@ noncomputable def formalCompletion : AdicThickeningSystem.{u} where
   X n := (I ^ (n + 1)).subscheme
   ι n := inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1))
   isThickening n := by
-    have := isFirstOrderThickening_inclusion_pow X I n
+    have := IsFirstOrderThickening.inclusion_pow_succ
+      (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1) :
+        I ^ (n + 2) ≤ I ^ (n + 1))
     infer_instance
   adic n := by
     rw [levelMap_inclusion_eq, ker_inclusion, ker_inclusion, pow_one, ← comap_pow]
@@ -208,10 +198,6 @@ instance isEmpty_X_top (n : ℕ) : IsEmpty ((X.formalCompletion ⊤).X n) := by
   infer_instance
 
 variable {X I} {Y Z : Scheme.{u}} {J : Y.IdealSheafData} {K : Z.IdealSheafData}
-
-private lemma pow_le_map_pow {f : X ⟶ Y} (hf : J.comap f ≤ I) (n : ℕ) :
-    J ^ n ≤ (I ^ n).map f :=
-  le_map_iff_comap_le.mpr ((comap_pow J f n).trans_le (pow_le_pow_left₀ bot_le hf n))
 
 /-- A morphism `f : X ⟶ Y` with `J.comap f ≤ I`, i.e. mapping `V(I)` into `V(J)`
 scheme-theoretically, restricts to morphisms `V(I ^ (n + 1)) ⟶ V(J ^ (n + 1))` and hence induces a
