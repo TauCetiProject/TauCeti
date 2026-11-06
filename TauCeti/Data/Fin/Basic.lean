@@ -427,6 +427,17 @@ theorem finRotate_symm_succ {m : ℕ} (k : Fin m) :
 theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = last m :=
   (finRotate _).symm_apply_eq.mpr finRotate_last.symm
 
+/-- An index of `Fin (n + 1)` is `i.succ`, `i.castSucc`, or `i.succ.succAbove k` for some
+`k ≠ i`: the values of `i.succ.succAbove`, together with the two indices around the skipped
+`i.succ`. -/
+theorem eq_succ_or_eq_castSucc_or_eq_succAbove {n : ℕ} (i : Fin n) (j : Fin (n + 1)) :
+    j = i.succ ∨ j = i.castSucc ∨ ∃ k, k ≠ i ∧ j = i.succ.succAbove k := by
+  obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+  · exact .inl rfl
+  by_cases hk : k = i
+  · exact .inr (.inl (hk ▸ Fin.succAbove_succ_self k))
+  · exact .inr (.inr ⟨k, hk, rfl⟩)
+
 /-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
 theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y : α) :
     (fun k : Fin n ↦ if Even (k : ℕ) then x else y) ∘ (finRotate n).symm =
