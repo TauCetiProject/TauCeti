@@ -177,6 +177,7 @@ theorem iteratedDeriv_higherReflectionLower {k i : ℕ} {f : ℝ → F}
     iteratedDeriv i (higherReflectionLower k f) t =
       ∑ j : Fin k, (higherReflectionCoeff k j * higherReflectionNode j ^ i) •
         iteratedDeriv i f (higherReflectionNode j * t) := by
+  -- The lower branch is a linear combination; expose its pointwise finite-sum function.
   change iteratedDeriv i (fun t ↦ ∑ j : Fin k,
     higherReflectionCoeff k j • f (higherReflectionNode j * t)) t = _
   rw [iteratedDeriv_fun_sum]

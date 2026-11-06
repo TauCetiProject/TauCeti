@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Trace.ReflectionCoefficients
+public import TauCeti.Analysis.Sobolev.Trace.Reflection.Coefficients
+public import TauCeti.Analysis.Calculus.ContDiff.GlueHalfLine
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
-import Mathlib.Topology.Piecewise
 
 /-!
 # Matching the normal derivatives of a higher-order reflection
@@ -89,65 +89,6 @@ theorem higherReflection_one (f : ℝ → F) (t : ℝ) :
   · simp [ht, abs_of_nonneg ht]
   · simp [higherReflection, ht, abs_of_neg (lt_of_not_ge ht)]
 
-/-- Equal values and derivatives at zero allow gluing the one-sided derivatives. -/
-private lemma hasDerivAt_if_nonneg {f g f' g' : ℝ → F}
-    (hf : ∀ t, HasDerivAt f (f' t) t) (hg : ∀ t, HasDerivAt g (g' t) t)
-    (h₀ : f 0 = g 0) (h₁ : f' 0 = g' 0) (t : ℝ) :
-    HasDerivAt (fun t ↦ if 0 ≤ t then f t else g t)
-      (if 0 ≤ t then f' t else g' t) t := by
-  rcases lt_trichotomy t 0 with ht | rfl | ht
-  · simp only [ite_eq_right ht.not_ge]
-    exact (hg t).congr_of_eventuallyEq (by
-      filter_upwards [eventually_lt_nhds ht] with x hx
-      exact ite_eq_right hx.not_ge)
-  · simp only [le_refl, ite_true]
-    have hpos : HasDerivWithinAt (fun t ↦ if 0 ≤ t then f t else g t) (f' 0) (Ici 0) 0 :=
-      (hf 0).hasDerivWithinAt.congr (fun _ hx ↦ ite_eq_left hx) (ite_eq_left le_rfl)
-    have hneg : HasDerivWithinAt (fun t ↦ if 0 ≤ t then f t else g t) (f' 0) (Iic 0) 0 := by
-      rw [h₁]
-      apply (hg 0).hasDerivWithinAt.congr
-      · intro x hx
-        by_cases hx' : 0 ≤ x
-        · have : x = 0 := le_antisymm hx hx'
-          subst x
-          simpa using h₀
-        · exact ite_eq_right hx'
-      · simpa using h₀
-    simpa only [Ici_union_Iic, hasDerivWithinAt_univ] using hpos.union hneg
-  · simp only [ite_eq_left ht.le]
-    exact (hf t).congr_of_eventuallyEq (by
-      filter_upwards [eventually_gt_nhds ht] with x hx
-      exact ite_eq_left hx.le)
-
-/-- Gluing `Cⁿ` functions with matching jets through order `n`. -/
-private lemma contDiff_if_nonneg {n : ℕ} {f g : ℝ → F}
-    (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)
-    (h : ∀ i ≤ n, iteratedDeriv i f 0 = iteratedDeriv i g 0) :
-    ContDiff ℝ n (fun t ↦ if 0 ≤ t then f t else g t) := by
-  induction n generalizing f g with
-  | zero =>
-    apply contDiff_zero.mpr
-    apply hf.continuous.if _ hg.continuous
-    intro t ht
-    have ht : t = 0 := by simpa only [show {x : ℝ | 0 ≤ x} = Ici 0 from rfl,
-      frontier_Ici, mem_singleton_iff] using ht
-    subst t
-    exact h 0 le_rfl
-  | succ n ih =>
-    have hderiv := hasDerivAt_if_nonneg
-      (fun t ↦ (hf.differentiable (by simp) t).hasDerivAt)
-      (fun t ↦ (hg.differentiable (by simp) t).hasDerivAt)
-      (h 0 (by omega)) (by simpa only [iteratedDeriv_one] using h 1 (by omega))
-    rw [show ((n + 1 : ℕ) : WithTop ℕ∞) = (n : WithTop ℕ∞) + 1 by simp,
-      contDiff_succ_iff_deriv]
-    refine ⟨fun t ↦ (hderiv t).differentiableAt, by simp, ?_⟩
-    have heq : deriv (fun t ↦ if 0 ≤ t then f t else g t) =
-        fun t ↦ if 0 ≤ t then deriv f t else deriv g t := funext fun t ↦ (hderiv t).deriv
-    rw [heq]
-    apply ih hf.deriv' hg.deriv'
-    intro i hi
-    simpa only [← iteratedDeriv_succ'] using h (i + 1) (by omega)
-
 /-- The reflected normal slice is `Cⁿ` across zero when `n < k`. -/
 theorem _root_.ContDiff.higherReflection {k n : ℕ} (hn : n < k) {f : ℝ → F}
     (hf : ContDiff ℝ n f) : ContDiff ℝ n (higherReflection k f) := by
@@ -215,11 +156,17 @@ private lemma eLpNorm_comp_higherReflectionNode {k : ℕ} (j : Fin k) (f : ℝ �
     eLpNorm (fun t ↦ f (higherReflectionNode j * t)) p volume =
       ENNReal.ofReal |(higherReflectionNode j)⁻¹| ^ (1 / p).toReal * eLpNorm f p volume := by
   have hn : higherReflectionNode j ≠ 0 := (higherReflectionNode_neg j).ne
-  change eLpNorm (fun t : ℝ ↦ f (higherReflectionNode j • t)) p volume = _
-  rw [← Function.comp_def, ← (measurableEmbedding_const_smul₀ hn).eLpNorm_map_measure,
-    Measure.map_addHaar_smul volume hn,
-    eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
-  simp [Module.finrank_self, abs_inv]
+  let e : ℝ ≃L[ℝ] ℝ :=
+    (LinearEquiv.smulOfUnit (M := ℝ)
+      (Units.mk0 (higherReflectionNode j) hn)).toContinuousLinearEquiv
+  have he_apply (t : ℝ) : e t = higherReflectionNode j * t := rfl
+  -- The scalar-unit equivalence has scalar multiplication as its underlying linear map.
+  have he : (e : ℝ →ₗ[ℝ] ℝ) = higherReflectionNode j • LinearMap.id := rfl
+  have he_det : LinearMap.det (e : ℝ →ₗ[ℝ] ℝ) = higherReflectionNode j := by
+    rw [he, LinearMap.det_smul, LinearMap.det_id]
+    simp only [Module.finrank_self, pow_one, mul_one]
+  simpa only [Function.comp_def, he_apply, he_det] using
+    Measure.eLpNorm_comp_continuousLinearEquiv volume f e p
 
 /-- The lower-branch `Lᵖ` estimate before cutting off the negative half-line. -/
 private lemma eLpNorm_higherReflectionLower_le (k : ℕ) {p : ℝ≥0∞} (hp : 1 ≤ p) (f : ℝ → F) :
@@ -238,6 +185,7 @@ private lemma eLpNorm_higherReflectionLower_le (k : ℕ) {p : ℝ≥0∞} (hp : 
       rw [Finset.sum_mul]
       apply Finset.sum_congr rfl
       intro j _
+      -- Pi scalar multiplication evaluates pointwise; expose that function to use the norm API.
       change eLpNorm (higherReflectionCoeff k j • fun t ↦ f (higherReflectionNode j * t))
         p volume = _
       rw [eLpNorm_const_smul, eLpNorm_comp_higherReflectionNode, mul_assoc]
@@ -248,6 +196,7 @@ private lemma higherReflection_indicator_eq_add (k : ℕ) (f : ℝ → F) :
       (Ici (0 : ℝ)).indicator f + (Iio (0 : ℝ)).indicator
         (higherReflectionLower k ((Ici (0 : ℝ)).indicator f)) := by
   let g := (Ici (0 : ℝ)).indicator f
+  -- The local name g abbreviates the indicator input on both sides.
   change higherReflection k g = g + (Iio (0 : ℝ)).indicator (higherReflectionLower k g)
   ext t
   by_cases ht : 0 ≤ t
@@ -267,6 +216,7 @@ theorem eLpNorm_higherReflection_le (k : ℕ) {p : ℝ≥0∞} (hp : 1 ≤ p) (f
   have hg : EqOn f g (Ici 0) := fun _ ht ↦ (indicator_of_mem ht f).symm
   rw [higherReflection_congr (k := k) hg]
   rw [higherReflection_indicator_eq_add]
+  -- Replace the indicator expression by its local name g under the pointwise sum.
   change eLpNorm (g + (Iio (0 : ℝ)).indicator (higherReflectionLower k g)) p volume ≤ _
   have h₁ := eLpNorm_add_le (μ := (volume : Measure ℝ)) (p := p)
     (f := g) (g := (Iio (0 : ℝ)).indicator (higherReflectionLower k g)) hp
@@ -284,7 +234,7 @@ theorem eLpNorm_higherReflection_le (k : ℕ) {p : ℝ≥0∞} (hp : 1 ≤ p) (f
     _ = _ := by rw [eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_Ici.nullMeasurableSet]
 
 /-- Reflection preserves strong measurability from the original half-line. -/
-theorem aestronglyMeasurable_higherReflection {k : ℕ} {f : ℝ → F}
+theorem _root_.MeasureTheory.AEStronglyMeasurable.higherReflection {k : ℕ} {f : ℝ → F}
     (hf : AEStronglyMeasurable f (volume.restrict (Ici 0))) :
     AEStronglyMeasurable (higherReflection k f) volume := by
   let g := (Ici (0 : ℝ)).indicator f
