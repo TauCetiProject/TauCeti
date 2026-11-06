@@ -86,7 +86,7 @@ def sobolevGaugeGroup (s : ℝ) [hs : Fact (1 < s)] : Subgroup (ℂ → Circle) 
       exact zero_mem (realSobolevFunctions ℂ s 2)
   mul_mem' := by
     rintro u v ⟨hu, hu₁, hu₂⟩ ⟨hv, hv₁, hv₂⟩
-    have hs' := finrank_lt_two_mul hs.out
+    have hs' := finrank_real_complex_lt_two_mul hs.out
     -- With `u = (1 + a) + i b` and `v = (1 + c) + i d`, the real and imaginary parts of `u v`
     -- are `1 + (a + c + a c - b d)` and `b + d + a d + b c`.
     refine ⟨hu.mul hv, ?_, ?_⟩
@@ -142,14 +142,15 @@ theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {u : ℂ → Circle}
 /-- The Sobolev framed gauge groups decrease as the order increases. -/
 theorem sobolevGaugeGroup_mono {s' : ℝ} [Fact (1 < s')] (h : s' ≤ s) :
     sobolevGaugeGroup s ≤ sobolevGaugeGroup s' :=
-  fun _ ⟨hu, h₁, h₂⟩ ↦ ⟨hu, realSobolevFunctions_mono h h₁, realSobolevFunctions_mono h h₂⟩
+  have mono := realSobolevFunctions_mono (E := ℂ) ENNReal.one_lt_two ENNReal.ofNat_ne_top h
+  fun _ ⟨hu, h₁, h₂⟩ ↦ ⟨hu, mono h₁, mono h₂⟩
 
 /-- **Elements of `G_s` tend to one at infinity**, by the Sobolev embedding of `H^s` into the
 continuous functions vanishing at infinity. -/
 theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {u : ℂ → Circle}
     (hu : u ∈ sobolevGaugeGroup s) : Tendsto u (cocompact ℂ) (𝓝 1) := by
   obtain ⟨hc, h₁, h₂⟩ := hu
-  have hs := finrank_lt_two_mul (Fact.out : 1 < s)
+  have hs := finrank_real_complex_lt_two_mul (Fact.out : 1 < s)
   have hre := tendsto_cocompact_of_mem_realSobolevFunctions hs h₁
     ((continuous_re.comp hc).sub continuous_const)
   have him := tendsto_cocompact_of_mem_realSobolevFunctions hs h₂ (continuous_im.comp hc)

@@ -200,13 +200,6 @@ theorem mem_realSobolevFunctions_of_hasCompactSupport {g : E → ℝ} (hg : Cont
   filter_upwards [Complex.ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with x h₁ h₂
   simp [h₁, h₂]
 
-/-- The real `L²` Sobolev functions decrease as the order increases. -/
-theorem realSobolevFunctions_mono {s s' : ℝ} (h : s' ≤ s) :
-    realSobolevFunctions E s 2 ≤ realSobolevFunctions E s' 2 :=
-  fun _ hg ↦
-    let ⟨u, hu, hug⟩ := mem_realSobolevFunctions.1 hg
-    mem_realSobolevFunctions.2 ⟨u, (mem_realSobolevSubmodule.1 hu).mono h, hug⟩
-
 end normed
 
 section inner
@@ -278,6 +271,14 @@ theorem MemSobolev.mono_of_one_lt (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ}
   · exact le_abs_self C
   · exact le_add_of_nonneg_right (by positivity)
   · linarith
+
+/-- For `1 < p < ∞`, the real Sobolev functions decrease as the order increases. -/
+theorem realSobolevFunctions_mono (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ} (h : s' ≤ s) :
+    realSobolevFunctions E s p ≤ realSobolevFunctions E s' p :=
+  fun _ hg ↦
+    let ⟨u, hu, hug⟩ := mem_realSobolevFunctions.1 hg
+    mem_realSobolevFunctions.2
+      ⟨u, (mem_realSobolevSubmodule.1 hu).mono_of_one_lt hp hp_top h, hug⟩
 
 /-- For `1 < p < ∞`, the directional derivative maps `H^{s,p}` to `H^{s-1,p}`. For `p = 2` this is
 `MemSobolev.lineDerivOp`. -/

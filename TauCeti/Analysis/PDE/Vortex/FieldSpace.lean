@@ -171,7 +171,7 @@ theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
 
 /-- The Sobolev field spaces decrease as the order increases. -/
 theorem sobolevFields_mono {s s' : ℝ} (h : s' ≤ s) : sobolevFields s ≤ sobolevFields s' :=
-  fun _ hy i ↦ realSobolevFunctions_mono h (hy i)
+  fun _ hy i ↦ realSobolevFunctions_mono ENNReal.one_lt_two ENNReal.ofNat_ne_top h (hy i)
 
 /-- A smooth compactly supported field lies in every Sobolev space. -/
 theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -181,7 +181,8 @@ theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (
 
 /-- The order condition `s > 1` is `dim ℂ < 2 s`, the hypothesis of the Sobolev algebra and
 embedding theorems on the plane. -/
-theorem finrank_lt_two_mul {s : ℝ} (hs : 1 < s) : (finrank ℝ ℂ : ℝ) < 2 * s := by
+theorem finrank_real_complex_lt_two_mul {s : ℝ} (hs : 1 < s) :
+    (finrank ℝ ℂ : ℝ) < 2 * s := by
   rw [Complex.finrank_real_complex]
   push_cast
   linarith
@@ -194,7 +195,7 @@ theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
     Tendsto y (cocompact ℂ) (𝓝 0) := by
   have h : Tendsto (fun z ↦ WithLp.ofLp (y z)) (cocompact ℂ) (𝓝 0) :=
     tendsto_pi_nhds.2 fun i ↦ tendsto_cocompact_of_mem_realSobolevFunctions
-      (finrank_lt_two_mul hs) (hy i)
+      (finrank_real_complex_lt_two_mul hs) (hy i)
       ((PiLp.continuous_apply 2 _ i).comp hcont)
   simpa [Function.comp_def] using ((PiLp.continuous_toLp 2 _).tendsto 0).comp h
 
