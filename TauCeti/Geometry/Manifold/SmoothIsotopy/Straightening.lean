@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
-public import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 public import TauCeti.Analysis.Calculus.Splice
 public import TauCeti.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Module.HahnBanach
@@ -134,6 +133,17 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
     _ ≤ ‖h' - ContinuousLinearMap.toSpanSingleton ℝ v‖ * ‖(1 : ℝ)‖ :=
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ (3 + 4 * B) * ε := by rw [norm_one, mul_one]; exact hh'v
+
+/-- A `C¹` curve on `(-r, r)` has velocity within `ε` of its velocity `v` at `0` near `0`. -/
+private theorem exists_norm_deriv_sub_lt {f : ℝ → E} {r ε : ℝ} {v : E}
+    (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hr : 0 < r) (hf0 : deriv f 0 = v) (hε : 0 < ε) :
+    ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
+  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
+  have := (hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt
+    (hI.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩)
+  obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε
+  exact ⟨ρ, hρ, fun t ht => by
+    simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
 
 /-- **A small interval where two curves with the same velocity at `0` are close.** If `k` and `l`
 are `C¹` on `(-r, r)`, agree at `0` and have the same velocity there, then on some `[-ρ, ρ]` with

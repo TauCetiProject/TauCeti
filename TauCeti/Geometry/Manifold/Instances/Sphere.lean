@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Immersion.Basic
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
