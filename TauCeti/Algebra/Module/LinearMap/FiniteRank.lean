@@ -195,10 +195,11 @@ theorem HasFiniteRange.injective_one_add_iff_surjective {F : V →ₗ[K] V} (hF 
 
 /-- For a linear equivalence `e` and a linear map `w` with finitely generated range, `e + w` is
 injective if and only if it is surjective. -/
-theorem HasFiniteRange.injective_equiv_add_iff_surjective {e : V ≃ₗ[K] V} {w : V →ₗ[K] V}
+theorem HasFiniteRange.injective_equiv_add_iff_surjective {W : Type*} [AddCommGroup W] [Module K W]
+    {e : V ≃ₗ[K] W} {w : V →ₗ[K] W}
     (hw : w.HasFiniteRange) :
-    Function.Injective ((e : V →ₗ[K] V) + w) ↔ Function.Surjective ((e : V →ₗ[K] V) + w) := by
-  have h : (e : V →ₗ[K] V) + w = (e : V →ₗ[K] V) ∘ₗ (1 + (e.symm : V →ₗ[K] V) ∘ₗ w) := by
+    Function.Injective ((e : V →ₗ[K] W) + w) ↔ Function.Surjective ((e : V →ₗ[K] W) + w) := by
+  have h : (e : V →ₗ[K] W) + w = (e : V →ₗ[K] W) ∘ₗ (1 + (e.symm : W →ₗ[K] V) ∘ₗ w) := by
     ext; simp
   rw [h, coe_comp]
   refine (e.toEquiv.comp_injective _).trans (Iff.trans ?_ (e.toEquiv.comp_surjective _).symm)
