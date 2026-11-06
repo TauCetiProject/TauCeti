@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Polar
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.RadialLength
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The escape estimate for normal neighbourhoods
@@ -77,41 +78,16 @@ theorem IsNormalDomain.pathELength_escape
     obtain ⟨t, ht, htU⟩ := hex
     refine ⟨t, ht, fun hmem => htU (hVouter hmem)⟩
   obtain ⟨t₀, ht₀, ht₀V⟩ := hexV
-  -- The first time the path leaves `V` is the least point of this compact set.
-  set A : Set ℝ := Icc 0 1 ∩ γ ⁻¹' Vᶜ
-  have hA_closed : IsClosed A :=
-    hγ.continuousOn.preimage_isClosed_of_isClosed isClosed_Icc hVopen.isClosed_compl
-  have hA_ne : A.Nonempty := ⟨t₀, ht₀, ht₀V⟩
-  have hAcompact : IsCompact A :=
-    isCompact_Icc.of_isClosed_subset hA_closed (fun t ht => ht.1)
-  obtain ⟨T, hT⟩ := hAcompact.exists_isLeast hA_ne
-  have hTA : T ∈ A := hT.1
-  have hT01 : T ∈ Icc 0 1 := hTA.1
-  have hTpos : 0 < T := by
-    rcases eq_or_lt_of_le hTA.1.1 with h | h
-    · subst T
-      exact (hTA.2 h0).elim
-    · exact h
-  have hbefore : ∀ t, 0 ≤ t → t < T → γ t ∈ V := by
-    intro t ht0 htT
-    by_contra hnot
-    have hmem : t ∈ A :=
-      ⟨⟨ht0, htT.le.trans hT01.2⟩, hnot⟩
-    exact (not_le.mpr htT) (hT.2 hmem)
-  have hne : (𝓝[Ioo (0 : ℝ) T] T).NeBot :=
-    right_nhdsWithin_Ioo_neBot hTpos
-  have htend : Tendsto γ (𝓝[Ioo (0 : ℝ) T] T) (𝓝 (γ T)) :=
-    ((hγ.continuousOn T hT01).mono
-      (Ioo_subset_Icc_self.trans (Icc_subset_Icc le_rfl hT01.2))).tendsto
+  -- The first time the path leaves `V`.
+  obtain ⟨T, hT01, hTpos, hTV, hTcl, hbefore⟩ :=
+    exists_first_exit hVopen hγ.continuousOn h0 ⟨t₀, ht₀, ht₀V⟩
   -- Continuity from the left puts the first exit in the closed exponential image.
-  have hγT_K : γ T ∈ K :=
-    hKclosed.mem_of_tendsto htend
-      (eventually_nhdsWithin_of_forall fun t ht => hVK (hbefore t ht.1.le ht.2))
+  have hγT_K : γ T ∈ K := hKclosed.closure_subset_iff.2 hVK hTcl
   simp only [K] at hγT_K
   rw [← Metric.ball_union_sphere, image_union] at hγT_K
   have hγT_sphere : γ T ∈ riemannianExp I M p '' Metric.sphere 0 r := by
     rcases hγT_K with hball | hsphere
-    · exact (hTA.2 hball).elim
+    · exact (hTV hball).elim
     · exact hsphere
   obtain ⟨z, hz, hzγ⟩ := hγT_sphere
   have hznorm : ‖z‖ = r := mem_sphere_zero_iff_norm.mp hz
@@ -122,7 +98,7 @@ theorem IsNormalDomain.pathELength_escape
   have hγprefix : MapsTo γ (Icc 0 T) (riemannianExp I M p '' U) := by
     intro t ht
     rcases lt_or_eq_of_le ht.2 with hlt | heq
-    · exact hVouter (hbefore t ht.1 hlt)
+    · exact hVouter (hbefore t ⟨ht.1, hlt⟩)
     · simpa [heq] using hγT_U
   -- Apply the polar comparison to the prefix ending at the first exit.
   have hbound := h.ofReal_norm_riemannianLog_le_pathELength
