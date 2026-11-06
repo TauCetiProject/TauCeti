@@ -156,21 +156,6 @@ theorem centeredPairOfPantsPerturbation_zero (H : Puncture → ℝ → M → ℝ
   rw [pairOfPantsPerturbation_add, pairOfPantsPerturbation_single_inf,
     centeredPairOfPantsPerturbation_def, sub_zero, Pi.add_apply, Pi.add_apply]
 
-/-- The end Hamiltonians with the output Hamiltonian replaced by zero, one end at a time. -/
-private theorem update_inf_zero_eq (q : Puncture) :
-    update H inf 0 q = if q = inf then 0 else H q := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simp
-  · simp [hq]
-
-/-- The end Hamiltonians with the output Hamiltonian replaced by zero inherit any property shared
-by the end Hamiltonians and `0`. -/
-private theorem forall_update_inf_zero {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (h : ∀ q, P (H q))
-    (q : Puncture) : P (update H inf 0 q) := by
-  rw [update_inf_zero_eq]
-  split_ifs
-  exacts [h₀, h q]
-
 /-- The input part of the perturbation vanishes off the disc of radius `3/2`, which contains the
 parts `s > 0` of both input ends. -/
 private theorem pairOfPantsPerturbation_update_inf_zero_eq_zero {w : ℂ} (hw : 3 / 2 ≤ ‖w‖)
@@ -316,9 +301,9 @@ theorem contMDiffAt_centeredPairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Pe
     ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × ℂ × M => centeredPairOfPantsPerturbation p.1 H p.2.1 p.2.2) (c, (w : ℂ), x) := by
   have hin := contMDiffAt_pairOfPantsPerturbation (H := update H inf 0) (n := n)
-    (forall_update_inf_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_update_inf_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
-      contMDiff_const hHs) w x
+    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+    ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
+      ⟨contMDiff_const, fun q _ => hHs q⟩) w x
   have hout := (contMDiff_negativePlanePerturbation (hH inf) (hHs inf)).contMDiffAt
     (x := ((w : ℂ) - c, x))
   have h₁ : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
@@ -530,8 +515,9 @@ theorem lintegral_enorm_hamiltonianCurvature_centeredPairOfPantsPerturbation_le
   have hBin : ∫⁻ z, ‖Rin z (u z)‖ₑ ≤ ENNReal.ofReal (B zero) + ENNReal.ofReal (B one) := by
     have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
       (H := update H inf 0) (B := update B inf 0)
-      (forall_update_inf_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-      (forall_update_inf_zero (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
+      ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+      ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
+        ⟨contDiff_const, fun q _ => hHs q⟩)
       (fun q t x => by
         rcases eq_or_ne q inf with rfl | hq
         · simp
