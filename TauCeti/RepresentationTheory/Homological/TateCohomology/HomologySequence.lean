@@ -183,10 +183,10 @@ theorem δ_comp_δ_eq_neg (D : ShortComplex (ShortComplex (Rep k G)))
   exact HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg D' hh₁ hh₂ hh₃ hh₁' hh₂' hh₃'
     n (n + 1) (n + 1 + 1) rfl rfl
 
-/-- **Five lemma for connecting maps.** For a morphism `Φ : A ⟶ B` of short exact sequences of
-representations whose connecting maps in degree `n` are isomorphisms and which induces an
-isomorphism on the third terms in degree `n`, the induced map on the first terms is an isomorphism
-in degree `n + 1`. -/
+/-- **Isomorphisms transported along connecting maps.** For a morphism `Φ : A ⟶ B` of short exact
+sequences of representations whose connecting maps in degree `n` are isomorphisms and which
+induces an isomorphism on the third terms in degree `n`, the induced map on the first terms is an
+isomorphism in degree `n + 1`. -/
 theorem isIso_map_τ₁_of_isIso_δ {A B : ShortComplex (Rep k G)} (hA : A.ShortExact)
     (hB : B.ShortExact) (Φ : A ⟶ B) (n : ℤ) [IsIso (_root_.TateCohomology.δ hA n)]
     [IsIso (_root_.TateCohomology.δ hB n)] [IsIso ((tateCohomologyFunctor n).map Φ.τ₃)] :
