@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.GroupTheory.Sylow.Basic
 public import TauCeti.GroupTheory.Subgroup.Simple
 
@@ -25,21 +24,6 @@ needed. Normal-generation proofs can, for example, come from checked straight-li
 
 The underlying group-theoretic inputs are Mathlib's Sylow containment and conjugacy theorems,
 and `IsMulTorsion.isSimpleGroup_of_isConj_of_normalClosure_eq_top`.
-
-A faithful quasiprimitive action can replace all but one prime of such a certificate. Every
-nontrivial normal subgroup is then transitive, so its order is divisible by the degree. If a
-prime `p` divides the degree but `p ^ 2` does not divide the group order, the Sylow
-`p`-subgroups have order `p` and are conjugate, so the normal subgroup contains every element of
-order `p`. One element of order `p` that normally generates the group then certifies simplicity.
-This applies, for instance, to the Mathieu groups `M₁₁` and `M₂₃` acting on `11` and `23` points.
-
-## Main results
-
-* `TauCeti.isSimpleGroup_of_card_eq_of_normalClosure_eq_top_of_isConj`: simplicity from
-  Sylow-local coverage of the elements of prime order and their normal generation.
-* `TauCeti.isSimpleGroup_of_isQuasiPreprimitive_of_normalClosure_eq_top`: simplicity of a group
-  with a faithful quasiprimitive action from one normally generating element of prime order `p`,
-  where `p` divides the degree and `p ^ 2` does not divide the group order.
 -/
 
 public section
@@ -100,37 +84,5 @@ theorem isSimpleGroup_of_card_eq_of_normalClosure_eq_top_of_isConj [Finite G] [N
   have hdvd := orderOf_dvd_natCard g
   exact ((P (orderOf g)).forall_orderOf_eq_exists_isConj_iff_of_card_eq
     (hcard _ hg hdvd) s).mpr (hcover _ hg hdvd) g rfl
-
-open MulAction in
-/-- **Simplicity from a quasiprimitive action and one normal generator.** Let a finite group act
-faithfully and quasiprimitively, for instance primitively, on `X`. Let `p` be a prime dividing the
-degree `Nat.card X` with `p ^ 2` not dividing the group order. If some element of order `p`
-generates the group as a normal subgroup, the group is simple. -/
-theorem isSimpleGroup_of_isQuasiPreprimitive_of_normalClosure_eq_top [Finite G] {X : Type*}
-    [MulAction G X] [FaithfulSMul G X] [IsQuasiPreprimitive G X] (hp : p.Prime)
-    (hpX : p ∣ Nat.card X) (hsq : ¬ p ^ 2 ∣ Nat.card G) {r : G} (hr : orderOf r = p)
-    (hgen : Subgroup.normalClosure {r} = ⊤) : IsSimpleGroup G := by
-  have : Fact p.Prime := ⟨hp⟩
-  have : Nontrivial G := ⟨⟨r, 1, fun h ↦ hp.one_lt.ne' (by rw [← hr, h, orderOf_one])⟩⟩
-  refine ⟨fun N hN ↦ or_iff_not_imp_left.mpr fun hbot ↦ ?_⟩
-  -- A nontrivial normal subgroup moves some point, since the action is faithful.
-  have hfix : fixedPoints N X ≠ Set.univ := fun h ↦ hbot <|
-    (Subgroup.eq_bot_iff_forall N).mpr fun n hn ↦ eq_of_smul_eq_smul (α := X) fun x ↦ by
-      simpa using (h ▸ Set.mem_univ x : x ∈ fixedPoints N X) ⟨n, hn⟩
-  have := IsQuasiPreprimitive.isPretransitive_of_normal hfix
-  obtain ⟨x, -⟩ := Set.nonempty_compl.mpr hfix
-  -- Being transitive, it has order divisible by the degree, hence an element of order `p`.
-  obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' (G := N) p <|
-    hpX.trans (index_stabilizer_of_transitive N x ▸ (stabilizer N x).index_dvd_card)
-  obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd hsq hr
-    (h := (g : G)) (by rw [Subgroup.orderOf_coe, hg])
-  -- Its conjugate `y * g * y⁻¹` lies in `N` and generates the same subgroup as `r`.
-  have hmem : y * g * y⁻¹ ∈ N := hN.conj_mem _ g.2 y
-  have hzpow : Subgroup.zpowers (y * g * y⁻¹) = Subgroup.zpowers r :=
-    Subgroup.eq_of_le_of_card_ge (Subgroup.zpowers_le.mpr hy) <| by
-      rw [Nat.card_zpowers, Nat.card_zpowers, hr, ← (SemiconjBy.conj_mk y _).orderOf_eq,
-        Subgroup.orderOf_coe, hg]
-  have hrN : r ∈ N := Subgroup.zpowers_le.mpr hmem (hzpow ▸ Subgroup.mem_zpowers r)
-  exact top_le_iff.mp (hgen ▸ Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr hrN))
 
 end TauCeti

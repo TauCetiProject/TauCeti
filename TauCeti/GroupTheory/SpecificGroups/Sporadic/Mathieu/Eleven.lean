@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.GroupTheory.Perm.Cycle.Concrete
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Sift
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
-public import TauCeti.GroupTheory.Sylow.Simple
+public import TauCeti.GroupTheory.GroupAction.Simple.Basic
 
 /-!
 # The permutation model of `M₁₁`: its order, simplicity, and the surjection from its presented group
@@ -53,11 +53,10 @@ copies of the generators given by tables of images. The same argument shows that
 base: only the identity of the model fixes these four points.
 
 Lastly it proves that the model is simple. The powers of the element `a * b` of order `11` move
-`0` to every point, so the model is transitive of prime degree `11`, hence primitive. As `11 ^ 2`
-does not divide `7920`, a nontrivial normal subgroup, being transitive, contains a Sylow
-`11`-subgroup and so a conjugate of a power of `a * b` generating `⟨a * b⟩`
-(`TauCeti.isSimpleGroup_of_isQuasiPreprimitive_of_normalClosure_eq_top`). It remains to check that
-`a * b` generates the model as a normal subgroup: `a` is the product of two explicit conjugates of
+`0` to every point, so the model is transitive of prime degree `11`. As `11 ^ 2` does not divide
+`7920`, a normal generator of order `11` certifies simplicity
+(`TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_prime_card`). It remains to check that `a * b`
+generates the model as a normal subgroup: `a` is the product of two explicit conjugates of
 `(a * b)⁻¹`, and `b = a⁻¹ * (a * b)`.
 
 ## Main declarations
@@ -71,7 +70,7 @@ does not divide `7920`, a nontrivial normal subgroup, being transitive, contains
 * `TauCeti.Sporadic.exists_surjective_M11`: the presented group maps onto the model.
 * `TauCeti.Sporadic.card_M11`: the model has `7920` elements.
 * `TauCeti.Sporadic.M11.stabilizerChain_four_eq_bot`: the points `0, 1, 2, 3` form a base.
-* `TauCeti.Sporadic.M11.isPreprimitive`: the model acts primitively on the `11` points.
+* `TauCeti.Sporadic.M11.isPretransitive`: the model acts transitively on the `11` points.
 * `TauCeti.Sporadic.M11.normalClosure_mul_eq_top`: `a * b` generates the model as a normal
   subgroup.
 * `TauCeti.Sporadic.isSimpleGroup_M11`: the model is simple.
@@ -430,10 +429,6 @@ instance isPretransitive : MulAction.IsPretransitive M11 (Fin 11) := by
   refine ⟨⟨(a * b) ^ (k : ℕ), pow_mem (mul_mem a_mem b_mem) _⟩, ?_⟩
   rwa [Subgroup.mk_smul, Equiv.Perm.smul_def, ← aTable_eq, ← bTable_eq]
 
-/-- The model acts primitively on the eleven points, as a transitive group of prime degree. -/
-instance isPreprimitive : MulAction.IsPreprimitive M11 (Fin 11) :=
-  .of_prime_card (by rw [Nat.card_eq_fintype_card, Fintype.card_fin]; exact Nat.prime_eleven)
-
 /-- The ATLAS generator `a` is a product of two conjugates of `(a * b)⁻¹`. -/
 private theorem a_eq_mul_conj :
     a = b⁻¹ * a * b⁻¹ * a * b * a * (a * b)⁻¹ * (b⁻¹ * a * b⁻¹ * a * b * a)⁻¹ *
@@ -472,8 +467,11 @@ end M11
 
 /-- **The permutation model of `M₁₁` is simple.** -/
 instance isSimpleGroup_M11 : IsSimpleGroup M11 :=
-  TauCeti.isSimpleGroup_of_isQuasiPreprimitive_of_normalClosure_eq_top (X := Fin 11)
-    Nat.prime_eleven (by simp) (by rw [card_M11]; norm_num)
-    (by rw [Subgroup.orderOf_mk, M11.orderOf_a_mul_b]) M11.normalClosure_mul_eq_top
+  TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_prime_card (X := Fin 11)
+    (by simpa using Nat.prime_eleven) (by rw [card_M11]; norm_num) _
+    (by
+      rw [Nat.card_eq_fintype_card, Fintype.card_fin]
+      exact orderOf_dvd_iff_pow_eq_one.mp (by simp [Subgroup.orderOf_mk, M11.orderOf_a_mul_b]))
+    M11.normalClosure_mul_eq_top
 
 end TauCeti.Sporadic
