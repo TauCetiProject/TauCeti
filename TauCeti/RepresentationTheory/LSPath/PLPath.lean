@@ -479,6 +479,11 @@ theorem ofSegments_cons (v : V) (l : List V) :
     ofSegments 𝕜 (v :: l) = straight 𝕜 v * ofSegments 𝕜 l := by
   rw [straight, ← ofSegments_append, List.singleton_append]
 
+/-- A stationary first segment does not change the presented path. -/
+@[simp]
+theorem ofSegments_zero_cons (l : List V) : ofSegments 𝕜 ((0 : V) :: l) = ofSegments 𝕜 l :=
+  PLPath.ext (by rw [segments_ofSegments, segments_ofSegments, normalize_cons, consMerge_zero])
+
 /-- Every path is the concatenation of the straight paths along its segments. -/
 theorem prod_map_straight (l : List V) : (l.map (straight 𝕜)).prod = ofSegments 𝕜 l := by
   induction l with
