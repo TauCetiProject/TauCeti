@@ -58,6 +58,80 @@ namespace AlgebraicGeometry
 
 universe u
 
+/-- The étale neighbourhood `Spec R ⟶ U ⊆ S` of an affine open `U` sends a point `u` over the
+prime `s` of `Γ(S, U)` to `s`, and induces an isomorphism of residue fields at `u` when
+`κ(s) ≅ κ(u)` (`hres`). -/
+private theorem spec_comp_fromSpec_apply_and_isIso_residueFieldMap {S : Scheme.{u}} {U : S.Opens}
+    (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R] [Algebra Γ(S, U) R]
+    (u : Spec ↧R) [u.asIdeal.IsPrime] [u.asIdeal.LiesOver (hU.primeIdealOf ⟨s, hs⟩).asIdeal]
+    (hres : Function.Bijective (Ideal.ResidueField.mapₐ (hU.primeIdealOf ⟨s, hs⟩).asIdeal
+      u.asIdeal (Algebra.ofId _ _) (u.asIdeal.over_def _))) :
+    (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec) u = s ∧
+      IsIso ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec).residueFieldMap
+        u) := by
+  refine ⟨?_, ?_⟩
+  · rw [Scheme.Hom.comp_apply]
+    refine Eq.trans ?_ (hU.fromSpec_primeIdealOf ⟨s, hs⟩)
+    congr 1
+    exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal
+      (Spec.map_apply (CommRingCat.ofHom (algebraMap Γ(S, U) R)) u)).trans
+      (Ideal.over_def u.asIdeal _).symm
+  · -- the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
+    have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
+      (u.asIdeal.over_def _)).mpr hres
+    rw [Scheme.residueFieldMap_comp]
+    have h₁ : IsIso (hU.fromSpec.residueFieldMap
+      ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R))) u)) := inferInstance
+    exact IsIso.comp_isIso' h₁ this
+
+/-- Residue field isomorphism at the point `g v` of the pullback along the étale neighbourhood
+`Spec R ⟶ S`, where `g` is an open immersion from `Spec (R ⊗ Γ(X, V))` lying over the affine chart
+`hV.fromSpec` through the inclusion `Γ(X, V) ⟶ R ⊗ Γ(X, V)`, once the inclusion is an isomorphism
+on residue fields at `v`. -/
+private theorem isIso_residueFieldMap_fst_of_isIso_residueFieldMap_includeRight {X S : Scheme.{u}}
+    (f : X ⟶ S) {U : S.Opens} {V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
+    (R : Type u) [CommRing R] [Algebra Γ(S, U) R] [Algebra Γ(S, U) Γ(X, V)]
+    (g : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)) ⟶
+      pullback f (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec))
+    [IsOpenImmersion g]
+    (hgfst : g ≫ pullback.fst _ _ = Spec.map
+      (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) ≫ hV.fromSpec)
+    (v : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)))
+    (h₂ : IsIso ((Spec.map
+      (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom)).residueFieldMap v)) :
+    IsIso ((pullback.fst f _).residueFieldMap (g v)) := by
+  have h₃ : IsIso ((g ≫ pullback.fst _ _).residueFieldMap v) := by
+    rw [Scheme.Hom.residueFieldMap_congr hgfst, Scheme.residueFieldMap_comp]
+    have h₁ : IsIso (hV.fromSpec.residueFieldMap
+      ((Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom)) v)) :=
+      inferInstance
+    exact IsIso.comp_isIso' inferInstance (IsIso.comp_isIso' h₁ h₂)
+  rw [Scheme.residueFieldMap_comp] at h₃
+  exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ (g.residueFieldMap v) inferInstance h₃
+
+/-- Uniqueness of the point `g v` of `g(D(e))` over `u`: a point `g z` of `g(D(e))` over `u` has
+`z` over the prime `u` with `e ∉ z`, so `z = v` if `v` is the only such prime. -/
+private theorem eq_of_pullback_snd_eq_of_forall_liesOver_eq {X S : Scheme.{u}} (f : X ⟶ S)
+    {U : S.Opens} {V : X.Opens} (hU : IsAffineOpen U) (R : Type u) [CommRing R]
+    [Algebra Γ(S, U) R] [Algebra Γ(S, U) Γ(X, V)]
+    (g : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)) ⟶
+      pullback f (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec))
+    [IsOpenImmersion g] (hgsnd : g ≫ pullback.snd _ _ =
+      Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))))
+    (e : R ⊗[Γ(S, U)] Γ(X, V)) (u : Spec ↧R) (v : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)))
+    (huniq : ∀ P'' : Ideal (R ⊗[Γ(S, U)] Γ(X, V)), P''.IsPrime → P''.LiesOver u.asIdeal →
+      e ∉ P'' → P'' = v.asIdeal)
+    (hv : g v ∈ g ''ᵁ PrimeSpectrum.basicOpen e) (w : g ''ᵁ PrimeSpectrum.basicOpen e)
+    (hw : pullback.snd f _ w.1 = u) : w = ⟨g v, hv⟩ := by
+  obtain ⟨z, hz, hzw⟩ := w.2
+  have hzu : Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) z = u := by
+    rw [← hgsnd, Scheme.Hom.comp_apply]
+    exact hzw.symm ▸ hw
+  have : z.asIdeal.LiesOver u.asIdeal :=
+    ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
+  obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
+  exact Subtype.ext hzw.symm
+
 /-- **Elementary étale localization of a quasi-finite point** (Stacks, Lemma 37.41.1 (02LK)).
 Let `f : X ⟶ S` be locally of finite type and quasi-finite at `x` (so `x` is isolated in its
 fibre). Then there are an étale `φ : U ⟶ S` and `u : U` with `φ u = f x` and `κ(f x) ≅ κ(u)`, and
@@ -106,20 +180,10 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
   -- as primes, so that rewriting with morphisms of schemes applied to them is type correct.
   obtain ⟨u, rfl⟩ : ∃ u : Spec ↧R, u.asIdeal = P := ⟨⟨P, ‹_›⟩, rfl⟩
   obtain ⟨v, rfl⟩ : ∃ v : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)), v.asIdeal = P' := ⟨⟨P', ‹_›⟩, rfl⟩
-  have hu : (Spec.map φ ≫ hU.fromSpec) u = f x := by
-    rw [Scheme.Hom.comp_apply]
-    refine Eq.trans ?_ (hU.fromSpec_primeIdealOf ⟨f x, hxU⟩)
-    congr 1
-    exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φ u)).trans
-      (Ideal.over_def u.asIdeal _).symm
+  obtain ⟨hu, hκu⟩ := spec_comp_fromSpec_apply_and_isIso_residueFieldMap hU hxU R u hres
   refine ⟨Spec ↧R, Spec.map φ ≫ hU.fromSpec, u, inferInstance, hu, ?_, W₁,
     ⟨g v, v, heP', rfl⟩, ‹_›, ?_, ?_, ?_, ?_⟩
-  · -- `κ(f x) ≅ κ(u)`: the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
-    have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
-      (u.asIdeal.over_def _)).mpr hres
-    rw [Scheme.residueFieldMap_comp]
-    have h₁ : IsIso (hU.fromSpec.residueFieldMap ((Spec.map φ) u)) := inferInstance
-    exact IsIso.comp_isIso' h₁ this
+  · exact hκu
   · rw [← Scheme.Hom.comp_apply, hgfst, Scheme.Hom.comp_apply]
     refine Eq.trans ?_ (hV.fromSpec_primeIdealOf ⟨x, hxV⟩)
     congr 1
@@ -135,24 +199,9 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
     -- Elaborating the equivalence before applying it to `hb` avoids an expensive unification.
     have h₂' := RingHom.isIso_SpecMap_residueFieldMap_iff
       Algebra.TensorProduct.includeRight.toRingHom v _ hP'.symm
-    have h₂ := h₂'.mpr hb
-    have h₃ : IsIso ((g ≫ pullback.fst _ _).residueFieldMap v) := by
-      rw [Scheme.Hom.residueFieldMap_congr hgfst, Scheme.residueFieldMap_comp]
-      have h₁ : IsIso (hV.fromSpec.residueFieldMap
-        ((Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom)) v)) :=
-        inferInstance
-      exact IsIso.comp_isIso' inferInstance (IsIso.comp_isIso' h₁ h₂)
-    rw [Scheme.residueFieldMap_comp] at h₃
-    exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ (g.residueFieldMap v) inferInstance h₃
+    exact isIso_residueFieldMap_fst_of_isIso_residueFieldMap_includeRight f hU hV R g hgfst v
+      (h₂'.mpr hb)
   · -- Uniqueness: a point `g z` of `W₁` over `u` has `z` over `P` with `e ∉ z`, so `z = P'`.
-    intro w hw
-    obtain ⟨z, hz, hzw⟩ := w.2
-    have hzu : Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) z = u := by
-      rw [← hgsnd, Scheme.Hom.comp_apply]
-      exact hzw.symm ▸ hw
-    have : z.asIdeal.LiesOver u.asIdeal :=
-      ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
-    obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
-    exact Subtype.ext hzw.symm
+    exact eq_of_pullback_snd_eq_of_forall_liesOver_eq f hU R g hgsnd e u v huniq ⟨v, heP', rfl⟩
 
 end AlgebraicGeometry
