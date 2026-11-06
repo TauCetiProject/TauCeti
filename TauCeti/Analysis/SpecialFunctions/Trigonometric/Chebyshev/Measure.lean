@@ -18,8 +18,7 @@ import Mathlib.Topology.Algebra.Polynomial
 
 This file records the finite-measure bookkeeping for Mathlib's Chebyshev
 orthogonality measure `Polynomial.Chebyshev.measureT`, together with the
-single normalization constant used by the roadmap's Chebyshev Hilbert-basis
-target.
+single normalization constant of the Chebyshev Hilbert basis.
 
 The main facts are that `measureT` has total mass `π`, hence is finite and
 nonzero, that it is Lebesgue measure on `(-1, 1]` weighted by the Chebyshev

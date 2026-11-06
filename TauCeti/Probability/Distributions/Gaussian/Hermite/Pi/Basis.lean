@@ -25,8 +25,7 @@ basis `TauCeti.hermiteFunctionPiBasis` of `L²(volume^ι)`. As in one dimension
 (`TauCeti.coeFn_weightL2Isometry_gaussianHermiteHilbertBasis`), the two are *not* interchanged by
 the weight-to-function isometry alone: because `ψₙ` is built on the rescaled argument `x√2`, the
 image of `Ψ_a` under `TauCeti.weightL2Isometry` for the joint Gaussian density is the **dilated**
-product `∏ᵢ 2^{-1/4} ψ_{aᵢ}(xᵢ/√2)`. The dilation and the `2^{-1/4}` appear once per coordinate,
-which is exactly the statement the roadmap asks for.
+product `∏ᵢ 2^{-1/4} ψ_{aᵢ}(xᵢ/√2)`. The dilation and the `2^{-1/4}` appear once per coordinate.
 
 ## Main statements
 

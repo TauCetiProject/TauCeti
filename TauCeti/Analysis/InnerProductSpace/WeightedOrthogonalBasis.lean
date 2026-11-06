@@ -23,13 +23,12 @@ the normalized functions `fₙ/√cₙ`, viewed as elements of the weighted `L²
 `L²(w·μ)` (with `w·μ := μ.withDensity (ENNReal.ofReal ∘ w)`), form an orthonormal family; if in
 addition their span has trivial orthogonal complement, they form a `HilbertBasis`.
 
-This is the family-agnostic assembly step of Part B2 of the `OrthogonalL2Bases` roadmap: the
-orthogonality relation and the completeness hypothesis enter as arguments, so the bridge is
-grounded by construction and reusable across families. The canonical application is a family of
-orthogonal polynomials `f n := (p n).eval` (Hermite, Chebyshev, ...), but any orthogonal system of
-real-valued functions (e.g. trigonometric) fits the same bridge. The scalars are generic over
-`[RCLike 𝕜]`: the real function values are cast through `algebraMap ℝ 𝕜`, so a single construction
-serves both the real and complex `L²` spaces.
+The construction is family-agnostic: the orthogonality relation and the completeness hypothesis
+enter as arguments, so the same bridge serves every family that supplies them. The canonical
+application is a family of orthogonal polynomials `f n := (p n).eval` (Hermite, Chebyshev, ...),
+but any orthogonal system of real-valued functions (e.g. trigonometric) fits the same bridge. The
+scalars are generic over `[RCLike 𝕜]`: the real function values are cast through `algebraMap ℝ 𝕜`,
+so a single construction serves both the real and complex `L²` spaces.
 
 Two normalizations come out of one construction. The bare normalized functions are natively an
 orthonormal basis of the **weighted measure** `L²(w·μ)` (`hilbertBasisOfWeightedMeasure`); pushing

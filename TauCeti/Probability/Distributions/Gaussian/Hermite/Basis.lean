@@ -11,17 +11,18 @@ public import TauCeti.Analysis.SpecialFunctions.Hermite.Orthogonality
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 public import TauCeti.Probability.Distributions.Gaussian.Basic
 public import TauCeti.RingTheory.Polynomial.Hermite.Real
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The Hermite polynomials as a Hilbert basis of `L²(γ)`
 
-Roadmap milestone **A3′**: the measure-side one-dimensional Gaussian Hermite basis. Where
+This is the measure-side one-dimensional Gaussian Hermite basis. Where
 `TauCeti.hermiteHilbertBasis` puts the Gaussian envelope inside the *function* (`ψₙ` in `L²(ℝ)`),
 this puts it in the *measure*: `Hₙ/√(n!)` is an orthonormal basis of `L²(γ)` for the standard
 Gaussian `γ = gaussianReal 0 1`.
 
 That is the form multivariate Gaussian `L²` and chaos expansions consume, and it is the input
-`piHilbertBasis` needs for the multidimensional basis of Part D.
+`piHilbertBasis` needs for the multidimensional basis.
 
 ## Main statements
 
@@ -30,7 +31,7 @@ That is the form multivariate Gaussian `L²` and chaos expansions consume, and i
 * `TauCeti.integrable_exp_mul_abs_gaussianPDFReal` — the standard Gaussian density has every
   exponential moment finite, the hypothesis
   `TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot` needs.
-* `TauCeti.gaussianHermiteHilbertBasis` — milestone A3′ itself.
+* `TauCeti.gaussianHermiteHilbertBasis` — the basis itself.
 * `TauCeti.coeFn_gaussianHermiteHilbertBasis` — the anti-vacuity pin: the basis vectors really are
   `Hₙ/√(n!)`, not merely *some* orthonormal basis.
 * `TauCeti.sqrt_gaussianPDFReal_mul_hermiteℝ_div_sqrt_factorial` — the `√w`-envelope of a basis
@@ -44,13 +45,15 @@ That is the form multivariate Gaussian `L²` and chaos expansions consume, and i
 
 public section
 
+open MeasureTheory
+
 namespace TauCeti
 
-open MeasureTheory Polynomial TauCeti.Probability Real ProbabilityTheory
+open Polynomial TauCeti.Probability Real ProbabilityTheory
 
 /-- **Orthogonality against the standard Gaussian density.**
 `∫ Hₘ Hₙ dγ = δₘₙ · n!`. This is the density-side reading of the Gaussian-measure orthogonality
-milestone `TauCeti.integral_hermite_mul_hermite_gaussianReal`: `∫ · ∂γ` unfolds to `∫ pdf • ·`, so
+relation `TauCeti.integral_hermite_mul_hermite_gaussianReal`: `∫ · ∂γ` unfolds to `∫ pdf • ·`, so
 the two differ only by the order of the factors. -/
 theorem integral_hermite_mul_hermite_mul_gaussianPDFReal (m n : ℕ) :
     (∫ x : ℝ, aeval x (hermite m) * aeval x (hermite n) * gaussianPDFReal 0 1 x)
@@ -129,7 +132,7 @@ private theorem coe_cast_hilbertBasis {μ ν : Measure ℝ} (h : μ = ν)
   rw [cast_eq]
   exact hb
 
-/-- **Roadmap A3′: the Hermite polynomials are a Hilbert basis of `L²(γ)`.** Orthonormality comes
+/-- **The Hermite polynomials are a Hilbert basis of `L²(γ)`.** Orthonormality comes
 from the orthogonality relation against the Gaussian density and completeness from moment
 determinacy (`TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot`), applied to the exact-degree
 family `Hₙ`.
@@ -229,9 +232,9 @@ theorem sqrt_gaussianPDFReal_smul_gaussianHermiteHilbertBasis (n : ℕ) :
   -- `w > 0` makes `volume` absolutely continuous with respect to `γ = w·volume`, so the
   -- `γ`-a.e. representative of the basis vector is also a `volume`-a.e. one.
   have hac : (volume : Measure ℝ) ≪ (gaussianReal 0 1 : Measure ℝ) := by
-    rw [gaussianReal_of_var_ne_zero 0 one_ne_zero]
-    exact withDensity_absolutelyContinuous' (by fun_prop)
-      (Filter.Eventually.of_forall fun x => (gaussianPDF_pos 0 one_ne_zero x).ne')
+    rw [gaussianReal_of_var_ne_zero 0 one_ne_zero, gaussianPDF_def]
+    exact absolutelyContinuous_withDensity_ofReal (by fun_prop)
+      (.of_forall fun x => gaussianPDFReal_pos 0 1 x one_ne_zero)
   filter_upwards [(coeFn_gaussianHermiteHilbertBasis 𝕜 n).filter_mono hac.ae_le] with x hx
   rw [hx, ← eval_hermiteℝ, Algebra.smul_def, Algebra.smul_def, ← map_mul, ← map_mul,
     sqrt_gaussianPDFReal_mul_hermiteℝ_div_sqrt_factorial n x]
