@@ -105,6 +105,7 @@ abbrev WeylGroup :=
   T.subgroupN ⧸ T.intersection
 
 /-- Every simple reflection has square one. -/
+@[simp]
 theorem simple_mul_simple_self {s : T.WeylGroup} (hs : s ∈ T.simple) : s * s = 1 := by
   obtain ⟨r, rfl, hr⟩ := T.exists_simpleRep_mul_self_mem s hs
   rwa [← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff]
@@ -130,7 +131,8 @@ theorem simple_mul_simple_cancel_right (w : T.WeylGroup) {s : T.WeylGroup} (hs :
 theorem simple_ne_one {s : T.WeylGroup} (hs : s ∈ T.simple) : s ≠ 1 := by
   rintro rfl
   obtain ⟨r, hr, b, hb⟩ := T.exists_conj_not_mem 1 hs
-  have hrB : (r : G) ∈ T.subgroupB := (QuotientGroup.eq_one_iff r).mp hr
+  have hrB : (r : G) ∈ T.subgroupB :=
+    (T.mem_intersection r).mp ((QuotientGroup.eq_one_iff r).mp hr)
   exact hb (mul_mem (mul_mem hrB b.2) (inv_mem hrB))
 
 end TitsSystem
