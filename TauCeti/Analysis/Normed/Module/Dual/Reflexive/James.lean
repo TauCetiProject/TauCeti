@@ -50,6 +50,49 @@ section Seminormed
 
 variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+/-- One step of the construction of a triangular array: given a bidual vector `φ` and a norm one
+functional `Φ` on the bidual which kills the canonical image of `E` and takes the value `δ` at `φ`,
+any finite history `p` of vectors and functionals extends by a vector `q.1` of norm less than
+`‖φ‖ + 1` and a functional `q.2` of norm at most one, with `φ q.2 = δ / 2 = q.2 q.1`, `q.2`
+vanishing on the earlier vectors and `q.1` reproducing `φ` on the earlier functionals. -/
+private theorem exists_interpolation_step (φ : StrongDual 𝕜 (StrongDual 𝕜 E))
+    {Φ : StrongDual 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 E))} {δ : ℝ}
+    (hΦR : ∀ x : E, Φ (inclusionInDoubleDual 𝕜 E x) = 0)
+    (hΦH : ∀ {n : ℕ} (tests : Option (Fin n) → StrongDual 𝕜 (StrongDual 𝕜 E)),
+      ∃ g : StrongDual 𝕜 E, ‖g‖ < 2 ∧ ∀ i, tests i g = Φ (tests i))
+    (hΦφ : Φ φ = (δ : 𝕜)) {n : ℕ} (p : Fin n → E × StrongDual 𝕜 E) :
+    ∃ q : E × StrongDual 𝕜 E,
+      ‖q.1‖ < ‖φ‖ + 1 ∧ ‖q.2‖ ≤ 1 ∧ φ q.2 = ((δ / 2 : ℝ) : 𝕜) ∧
+      q.2 q.1 = ((δ / 2 : ℝ) : 𝕜) ∧
+      (∀ i, q.2 (p i).1 = 0) ∧ (∀ i, (p i).2 q.1 = φ (p i).2) := by
+  classical
+  let J := inclusionInDoubleDual 𝕜 E
+  let tests : Option (Fin n) → StrongDual 𝕜 (StrongDual 𝕜 E) :=
+    fun i ↦ i.elim φ (fun j ↦ J (p j).1)
+  obtain ⟨g, hgn, htests⟩ := hΦH tests
+  let f : StrongDual 𝕜 E := (2 : 𝕜)⁻¹ • g
+  have hfn : ‖f‖ ≤ 1 := by
+    simp only [f, norm_smul, norm_inv, RCLike.norm_ofNat]
+    linarith
+  have hfg : φ f = ((δ / 2 : ℝ) : 𝕜) := by
+    have ht := htests none
+    simp only [tests, Option.elim_none] at ht
+    simp only [f, map_smul, smul_eq_mul, ht, hΦφ]
+    push_cast
+    ring
+  have hfx (i : Fin n) : f (p i).1 = 0 := by
+    have ht := htests (some i)
+    simp only [tests, Option.elim_some] at ht
+    have hz : Φ (J (p i).1) = 0 := hΦR _
+    rw [hz] at ht
+    simpa [f, dual_def, J] using congrArg (fun z : 𝕜 ↦ (2 : 𝕜)⁻¹ * z) ht
+  let fs : Option (Fin n) → StrongDual 𝕜 E := fun i ↦ i.elim f (fun j ↦ (p j).2)
+  obtain ⟨x, hx, hfs⟩ := φ.exists_norm_lt_and_forall_apply_eq fs (by norm_num : (0 : ℝ) < 1)
+  refine ⟨(x, f), hx, hfn, hfg, ?_, hfx, ?_⟩
+  · simpa only [fs, Option.elim_none, hfg] using hfs none
+  · intro i
+    exact hfs (some i)
+
 /-- A nonreflexive Banach space admits an exact triangular array of evaluations,
 with vectors and functionals in their closed unit balls and a fixed positive entry. -/
 theorem exists_seq_dual_triangular_of_not_surjective_inclusionInDoubleDual [CompleteSpace E]
@@ -79,33 +122,11 @@ theorem exists_seq_dual_triangular_of_not_surjective_inclusionInDoubleDual [Comp
       ∃ q : E × StrongDual 𝕜 E,
         ‖q.1‖ < C ∧ ‖q.2‖ ≤ 1 ∧ φ q.2 = (d : 𝕜) ∧
         q.2 q.1 = (d : 𝕜) ∧
-        (∀ i, q.2 (p i).1 = 0) ∧ (∀ i, (p i).2 q.1 = φ (p i).2) := by
-    let tests : Option (Fin n) → StrongDual 𝕜 (StrongDual 𝕜 E) :=
-      fun i ↦ i.elim φ (fun j ↦ J (p j).1)
-    obtain ⟨g, hg, htests⟩ := Φ.exists_norm_lt_and_forall_apply_eq tests (by norm_num : (0 : ℝ) < 1)
-    let f : StrongDual 𝕜 E := (2 : 𝕜)⁻¹ • g
-    have hfn : ‖f‖ ≤ 1 := by
-      have hgn : ‖g‖ < 2 := hg.trans_le (by linarith)
-      simp only [f, norm_smul, norm_inv, RCLike.norm_ofNat]
-      linarith
-    have hfg : φ f = (d : 𝕜) := by
-      have ht := htests none
-      simp only [tests, Option.elim_none] at ht
-      simp only [f, map_smul, smul_eq_mul, ht, hΦφ, d]
-      push_cast
-      ring
-    have hfx (i : Fin n) : f (p i).1 = 0 := by
-      have ht := htests (some i)
-      simp only [tests, Option.elim_some] at ht
-      have hz : Φ (J (p i).1) = 0 := hΦR _ ⟨(p i).1, rfl⟩
-      rw [hz] at ht
-      simpa [f, dual_def, J] using congrArg (fun z : 𝕜 ↦ (2 : 𝕜)⁻¹ * z) ht
-    let fs : Option (Fin n) → StrongDual 𝕜 E := fun i ↦ i.elim f (fun j ↦ (p j).2)
-    obtain ⟨x, hx, hfs⟩ := φ.exists_norm_lt_and_forall_apply_eq fs (by norm_num : (0 : ℝ) < 1)
-    refine ⟨(x, f), hx, hfn, hfg, ?_, hfx, ?_⟩
-    · simpa only [fs, Option.elim_none, hfg] using hfs none
-    · intro i
-      exact hfs (some i)
+        (∀ i, q.2 (p i).1 = 0) ∧ (∀ i, (p i).2 q.1 = φ (p i).2) :=
+    exists_interpolation_step φ (fun x ↦ hΦR _ ⟨x, rfl⟩)
+      (fun tests ↦ by
+        obtain ⟨g, hg, h⟩ := Φ.exists_norm_lt_and_forall_apply_eq tests one_pos
+        exact ⟨g, hg.trans_le (by linarith), h⟩) hΦφ p
   -- Iterate the finite interpolation step, then rescale the vectors into the unit ball.
   choose next hnext using step
   let p : ℕ → E × StrongDual 𝕜 E :=
