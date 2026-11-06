@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.UnitInterval
 
 /-!
 # Almost complex structures along the cutoff and neck-stretching family
@@ -107,7 +108,7 @@ def cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) (J : ℝ × ℝ → X �
   h₀.cayleyEquiv.symm
     ⟨(projIcc (-1) 1 (by norm_num) (ρ R) : ℝ) •
         J₀.cayley (J (neckCollapse c (L R) z.1, z.2) x),
-      h₀.smul_cayley_mem_cayleyBall (hJ _ _) (abs_le.2 (projIcc _ _ _ _).2)⟩
+      h₀.smul_cayley_mem_cayleyBall (hJ _ _) (abs_projIcc_le _ _)⟩
 
 /-- Every member of the family is tamed by `ω`. -/
 theorem tames_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) (R : ℝ) (z : ℝ × ℝ) (x : X) :
@@ -139,7 +140,7 @@ theorem compatible_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀)
   refine (h₀.cayley_mem_compatibleCayleyBall_iff (tames_cutoffNeckAlmostComplex h₀ R z x)).mp ?_
   rw [cayley_cutoffNeckAlmostComplex]
   exact h₀.smul_cayley_mem_compatibleCayleyBall (hJc _ _)
-    (abs_le.2 (projIcc _ _ _ _).2)
+    (abs_projIcc_le _ _)
 
 /-- Where the cutoff vanishes, the family is the domain-independent structure `J₀`. -/
 theorem cutoffNeckAlmostComplex_of_cutoff_eq_zero (h₀ : ω.Compatible J₀) (h : ρ R = 0) :
@@ -178,7 +179,7 @@ theorem toContinuousLinearMap_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀
         (LinearMap.toContinuousLinearMap J₀.toLinearMap)
         (LinearMap.toContinuousLinearMap (J (neckCollapse c (L R) z.1, z.2) x).toLinearMap) :=
   h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (hJ _ _)
-    (abs_le.2 (projIcc _ _ _ _).2) (LinearMap.coe_toContinuousLinearMap _)
+    (abs_projIcc_le _ _) (LinearMap.coe_toContinuousLinearMap _)
     (LinearMap.coe_toContinuousLinearMap _)
 
 /-- For the chosen cutoff and neck length, the family starts at the domain-independent structure

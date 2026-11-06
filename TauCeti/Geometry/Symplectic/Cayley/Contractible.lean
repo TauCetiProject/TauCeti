@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import Mathlib.Topology.Homotopy.Contractible
+import TauCeti.Topology.UnitInterval
 
 /-!
 # The tame and compatible complex structures form contractible spaces
@@ -67,11 +68,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 namespace SymplecticForm
 
 variable {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
-
-/-- A point of the unit interval has absolute value at most one, so it is a valid Cayley scaling
-factor. -/
-private theorem abs_coe_le_one (t : I) : |(t : ℝ)| ≤ 1 :=
-  (abs_of_nonneg t.2.1).trans_le t.2.2
 
 /-- The underlying map of `Compatible.cayleyContraction`: the tame structure whose Cayley
 coordinate at `J₀` is `1 - t` times that of `J`. -/

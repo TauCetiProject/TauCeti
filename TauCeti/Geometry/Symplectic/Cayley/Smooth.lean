@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cayley.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Analysis.Normed.Operator.Banach
@@ -249,7 +249,7 @@ def Compatible.cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁
   (h₀.compatibleCayleyEquiv.symm
     ⟨smoothTransition t • J₀.cayley J₁,
       h₀.smul_cayley_mem_compatibleCayleyBall h₁
-        ((abs_of_nonneg (smoothTransition.nonneg t)).trans_le (smoothTransition.le_one t))⟩).val
+        (smoothTransition.abs_le_one t)⟩).val
 
 /-- The path is the inverse compatible Cayley chart at the cutoff-scaled endpoint coordinate. -/
 theorem Compatible.cayleyPath_eq_compatibleCayleyEquiv_symm
@@ -258,8 +258,7 @@ theorem Compatible.cayleyPath_eq_compatibleCayleyEquiv_symm
       (h₀.compatibleCayleyEquiv.symm
         ⟨smoothTransition t • J₀.cayley J₁,
           h₀.smul_cayley_mem_compatibleCayleyBall h₁
-            ((abs_of_nonneg (smoothTransition.nonneg t)).trans_le
-              (smoothTransition.le_one t))⟩).val := by
+            (smoothTransition.abs_le_one t)⟩).val := by
   rfl
 
 /-- The cutoff-scaled Cayley coordinate of `J₁`, as a continuous endomorphism, lies in the
@@ -270,7 +269,7 @@ theorem Compatible.smoothTransition_smul_cayley_mem_compatibleCayleyBall
       ω.compatibleCayleyBall J₀ := by
   simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap] using
     h₀.smul_cayley_mem_compatibleCayleyBall h₁
-      ((abs_of_nonneg (smoothTransition.nonneg t)).trans_le (smoothTransition.le_one t))
+      (smoothTransition.abs_le_one t)
 
 /-- The interpolated structure is compatible at every parameter, not only at its endpoints. -/
 theorem Compatible.compatible_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
@@ -377,7 +376,7 @@ theorem Compatible.toContinuousLinearMap_cayleyPath (h₀ : ω.Compatible J₀)
     LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap =
       cayleyPathFormula (smoothTransition t) A B := by
   rw [← h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley h₁.tames
-    ((abs_of_nonneg (smoothTransition.nonneg t)).trans_le (smoothTransition.le_one t)) hA hB,
+    (smoothTransition.abs_le_one t) hA hB,
     h₀.cayleyPath_eq_compatibleCayleyEquiv_symm,
     Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
     Compatible.cayleyEquiv_symm_apply_toLinearMap]
