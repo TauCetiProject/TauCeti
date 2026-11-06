@@ -82,6 +82,13 @@ theorem finiteMultiDualValue_mono {φ ψ : ∀ i, X i → ℝ} (h : ∀ i x, φ 
   refine Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun x _ ↦ ?_
   exact mul_le_mul_of_nonneg_left (h i x) ENNReal.toReal_nonneg
 
+/-- The finite multi-marginal dual value is continuous in the potentials. -/
+theorem continuous_finiteMultiDualValue (μ : ∀ i, PMF (X i)) :
+    Continuous fun φ : ∀ i, X i → ℝ ↦ finiteMultiDualValue μ φ := by
+  simp only [finiteMultiDualValue_def]
+  exact continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun x _ ↦
+    continuous_const.mul ((continuous_apply x).comp (continuous_apply i))
+
 end DualValue
 
 section DualFeasible
@@ -379,30 +386,13 @@ private theorem exists_normalized_of_feasible {c : (∀ i, X i) → ℝ} {M : �
     exact (hψfeas z).trans ((le_abs_self _).trans (hM z))
   · exact (hψ_nonbase i hi x).trans hM0
 
-omit [Nonempty ι] in
-/-- If every term is at most `M ≥ 0`, the sum over all indices but one is at most `card ι * M`. -/
-private theorem sum_erase_le_card_mul {f : ι → ℝ} {M : ℝ} (hM0 : 0 ≤ M) (hf : ∀ j, f j ≤ M)
-    (i : ι) : ∑ j ∈ Finset.univ.erase i, f j ≤ (Fintype.card ι : ℝ) * M := calc
-  ∑ j ∈ Finset.univ.erase i, f j ≤ ∑ _ ∈ Finset.univ.erase i, M :=
-    Finset.sum_le_sum fun j _ ↦ hf j
-  _ ≤ ∑ _j : ι, M := by
-    gcongr
-    exact Finset.erase_subset _ _
-  _ = (Fintype.card ι : ℝ) * M := by simp
-
-omit [Nonempty ι] in
-/-- A `p`-weighted partial sum of a function bounded above by `M ≥ 0` is at most `M`. -/
-private theorem sum_toReal_mul_le {Y : Type*} [Finite Y] (p : PMF Y) (s : Finset Y)
-    {ψ : Y → ℝ} {M : ℝ} (hM0 : 0 ≤ M) (hψ : ∀ y, ψ y ≤ M) :
-    ∑ y ∈ s, (p y).toReal * ψ y ≤ M := by
-  have := Fintype.ofFinite Y
-  calc
-    ∑ y ∈ s, (p y).toReal * ψ y ≤ ∑ y ∈ s, (p y).toReal * M :=
-      Finset.sum_le_sum fun y _ ↦ mul_le_mul_of_nonneg_left (hψ y) ENNReal.toReal_nonneg
-    _ ≤ ∑ y, (p y).toReal * M :=
-      Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ s) fun y _ _ ↦
-        mul_nonneg ENNReal.toReal_nonneg hM0
-    _ = M := by rw [← Finset.sum_mul, PMF.sum_toReal_eq_one, one_mul]
+omit [∀ i, Fintype (X i)] in
+/-- A bound `B` dominating `(card ι + 2) * M` for `M ≥ 0` also dominates `M`. -/
+private theorem le_of_card_add_two_mul_le {M B : ℝ} (hM0 : 0 ≤ M)
+    (hD : (Fintype.card ι + 2 : ℝ) * M ≤ B) : M ≤ B := by
+  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
+    Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
+  nlinarith
 
 omit [Nonempty ι] in
 /-- Each marginal contributes at most `M` to the dual value, so, when the dual value is at least
@@ -410,8 +400,11 @@ omit [Nonempty ι] in
 private theorem neg_le_sum_toReal_mul {M : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i, X i → ℝ}
     (hψ_le : ∀ i x, ψ i x ≤ M) (hval : -M ≤ finiteMultiDualValue μ ψ) (i : ι) :
     -((Fintype.card ι : ℝ) * M + M) ≤ ∑ x, ((μ i) x).toReal * ψ i x := by
-  have hrest := sum_erase_le_card_mul hM0
-    (fun j ↦ sum_toReal_mul_le (μ j) Finset.univ hM0 (hψ_le j)) i
+  have hrest : ∑ j ∈ Finset.univ.erase i, ∑ x, ((μ j) x).toReal * ψ j x ≤
+      (Fintype.card ι : ℝ) * M :=
+    (Finset.sum_le_card_nsmul _ _ M fun j _ ↦
+      PMF.sum_toReal_mul_le (μ j) Finset.univ hM0 (hψ_le j)).trans
+      (by rw [nsmul_eq_mul]; gcongr; exact_mod_cast Finset.card_erase_le.trans_eq Finset.card_univ)
   have hsplit := Finset.add_sum_erase Finset.univ
     (fun j ↦ ∑ x, ((μ j) x).toReal * ψ j x) (Finset.mem_univ i)
   beta_reduce at hsplit
@@ -427,7 +420,7 @@ private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i
     (hx : ((μ i) x).toReal ≠ 0) (hquot : (Fintype.card ι + 2 : ℝ) * M / ((μ i) x).toReal ≤ B) :
     -B ≤ ψ i x := by
   have hw : 0 < ((μ i) x).toReal := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hx)
-  have hothers := sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 (hψ_le i)
+  have hothers := PMF.sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 (hψ_le i)
   have hsplit := Finset.add_sum_erase Finset.univ
     (fun y ↦ ((μ i) y).toReal * ψ i y) (Finset.mem_univ x)
   beta_reduce at hsplit
@@ -436,9 +429,9 @@ private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i
   nlinarith
 
 omit [Nonempty ι] [∀ i, Fintype (X i)] in
-/-- Dual feasibility survives replacing a feasible family `ψ`, bounded above by `M`, by one that
-agrees with it at the points of positive weight and equals `-B` at those of zero weight, once
-`B` is at least `(card ι + 1) * M`. -/
+/-- Dual feasibility survives replacing a feasible family `ψ` by a family `χ` bounded above by `M`
+that agrees with `ψ` at the points of positive weight and equals `-B` at those of zero weight,
+once `(card ι + 1) * M ≤ B`. -/
 private theorem finiteMultiDualFeasible_of_replace {c : (∀ i, X i) → ℝ} {M B : ℝ}
     (hM : ∀ z, |c z| ≤ M) (hM0 : 0 ≤ M) (hB : ((Fintype.card ι : ℝ) + 1) * M ≤ B)
     {ψ χ : ∀ i, X i → ℝ} (hψfeas : FiniteMultiDualFeasible c ψ) (hχ_le : ∀ i x, χ i x ≤ M)
@@ -447,7 +440,11 @@ private theorem finiteMultiDualFeasible_of_replace {c : (∀ i, X i) → ℝ} {M
   intro z
   by_cases hz : ∃ i, ((μ i) (z i)).toReal = 0
   · obtain ⟨i, hi⟩ := hz
-    have hrest := sum_erase_le_card_mul hM0 (fun j ↦ hχ_le j (z j)) i
+    have hrest : ∑ j ∈ Finset.univ.erase i, χ j (z j) ≤ (Fintype.card ι : ℝ) * M :=
+      (Finset.sum_le_card_nsmul _ _ M fun j _ ↦ hχ_le j (z j)).trans
+        (by
+          rw [nsmul_eq_mul]; gcongr
+          exact_mod_cast Finset.card_erase_le.trans_eq Finset.card_univ)
     have hsplit := Finset.add_sum_erase Finset.univ (fun j ↦ χ j (z j)) (Finset.mem_univ i)
     beta_reduce at hsplit
     rw [hzero i (z i) hi] at hsplit
@@ -470,10 +467,7 @@ private theorem exists_bounded_of_normalized {c : (∀ i, X i) → ℝ} {M B : �
       finiteMultiDualValue μ χ = finiteMultiDualValue μ ψ ∧ ∀ i x, |χ i x| ≤ B := by
   have hX : ∀ i, Nonempty (X i) := fun i ↦ ⟨(μ i).support_nonempty.some⟩
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM fun i ↦ Classical.choice (hX i))
-  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
-    Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
-  have hcard1 : (0 : ℝ) ≤ ((Fintype.card ι : ℝ) + 1) * M := mul_nonneg (by linarith) hM0
-  have hMB : M ≤ B := by nlinarith
+  have hMB : M ≤ B := le_of_card_add_two_mul_le hM0 hD
   have _ : 0 ≤ B := hM0.trans hMB
   have hE := neg_le_sum_toReal_mul (μ := μ) hM0 hψ_le hval
   let χ : ∀ i, X i → ℝ := fun i x ↦
@@ -524,14 +518,6 @@ private theorem exists_box_radius [∀ i, Finite (X i)] (μ : ∀ i, PMF (X i)) 
     exact (le_max_right _ _).trans hbq
 
 omit [Nonempty ι] in
-/-- The dual value is continuous in the potentials. -/
-private theorem continuous_finiteMultiDualValue (μ : ∀ i, PMF (X i)) :
-    Continuous fun φ : ∀ i, X i → ℝ ↦ finiteMultiDualValue μ φ := by
-  simp only [finiteMultiDualValue_def]
-  exact continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun x _ ↦
-    continuous_const.mul ((continuous_apply x).comp (continuous_apply i))
-
-omit [Nonempty ι] in
 /-- The dual-feasible families of value at least `-M` in the box of radius `B` form a compact
 set. -/
 private theorem isCompact_dualFeasible_box (c : (∀ i, X i) → ℝ) (μ : ∀ i, PMF (X i))
@@ -555,8 +541,8 @@ private theorem isCompact_dualFeasible_box (c : (∀ i, X i) → ℝ) (μ : ∀ 
   intro φ hφ i _ x _
   exact abs_le.1 (hφ.2.2 i x)
 
-/-- The constant family of total value `-M` is a dual-feasible element of the box of radius
-`B`, once `B ≥ M`. -/
+/-- There is a dual-feasible family with dual value `-M` lying in the box of radius `B`, once
+`M ≤ B` (for example `-M` at one index and `0` at the others). -/
 private theorem exists_dualFeasible_value_eq_neg {c : (∀ i, X i) → ℝ} {M B : ℝ}
     (hM : ∀ z, |c z| ≤ M) (hM0 : 0 ≤ M) (hMB : M ≤ B) :
     ∃ base : ∀ i, X i → ℝ, FiniteMultiDualFeasible c base ∧
@@ -593,13 +579,13 @@ theorem exists_forall_finiteMultiDualValue_le (c : (∀ i, X i) → ℝ)
   have hM : ∀ z, |c z| ≤ M := hz₀
   have hM0 : 0 ≤ M := abs_nonneg _
   obtain ⟨B, hD, hquot⟩ := exists_box_radius μ M
-  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
-    Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
-  have hcard1 : (0 : ℝ) ≤ ((Fintype.card ι : ℝ) + 1) * M := mul_nonneg (by linarith) hM0
-  have hMB : M ≤ B := by nlinarith
+  have hMB : M ≤ B := le_of_card_add_two_mul_le hM0 hD
   obtain ⟨base, hbasefeas, hbasevalue, hbasebox⟩ :=
     exists_dualFeasible_value_eq_neg (μ := μ) hM hM0 hMB
-  obtain ⟨φmax, hφmax, hmax⟩ := (isCompact_dualFeasible_box c μ M B).exists_isMaxOn
+  set K : Set (∀ i, X i → ℝ) := {φ | FiniteMultiDualFeasible c φ ∧
+    -M ≤ finiteMultiDualValue μ φ ∧ ∀ i x, |φ i x| ≤ B} with hK
+  have hKcompact : IsCompact K := isCompact_dualFeasible_box c μ M B
+  obtain ⟨φmax, hφmax, hmax⟩ := hKcompact.exists_isMaxOn
     ⟨base, hbasefeas, hbasevalue.ge, hbasebox⟩
     (continuous_finiteMultiDualValue μ).continuousOn
   refine ⟨φmax, hφmax.1, fun φ hφ ↦ ?_⟩
@@ -611,8 +597,7 @@ theorem exists_forall_finiteMultiDualValue_le (c : (∀ i, X i) → ℝ)
     obtain ⟨χ, hχfeas, hχvalue, hχbox⟩ :=
       exists_bounded_of_normalized (μ := μ) hM hD hquot hψfeas hψ_le hvalψ
     have hχvalue' : finiteMultiDualValue μ χ = finiteMultiDualValue μ φ := hχvalue.trans hψvalue
-    have hχmem : χ ∈ {φ : ∀ i, X i → ℝ | FiniteMultiDualFeasible c φ ∧
-        -M ≤ finiteMultiDualValue μ φ ∧ ∀ i x, |φ i x| ≤ B} := ⟨hχfeas, hχvalue' ▸ hval, hχbox⟩
+    have hχmem : χ ∈ K := ⟨hχfeas, hχvalue' ▸ hval, hχbox⟩
     rw [← hχvalue']
     exact isMaxOn_iff.1 hmax χ hχmem
 
