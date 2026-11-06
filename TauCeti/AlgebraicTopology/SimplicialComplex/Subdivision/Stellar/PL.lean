@@ -309,15 +309,7 @@ private theorem affineIndependent_image_stellarSubdivisionCoordinateMap [Finite 
       rfl
     rw [heqfun]
     exact (affineIndependent_stellarSubdivision (K := K) hvσ hτ).map' eF.toAffineMap eF.injective
-  have hset : stellarSubdivisionCoordinateMap σ v '' ((Pi.single · (1 : ℝ)) '' (τ : Set ι)) =
-      Set.range (fun i : τ => stellarSubdivisionCoordinateMap σ v (Pi.single (i : ι) 1)) := by
-    ext y
-    constructor
-    · rintro ⟨z, ⟨i, hi, rfl⟩, rfl⟩
-      exact ⟨⟨i, hi⟩, rfl⟩
-    · rintro ⟨i, rfl⟩
-      exact ⟨Pi.single (i : ι) 1, ⟨i, i.2, rfl⟩, rfl⟩
-  rw [hset]
+  rw [Set.image_image, Set.image_eq_range]
   exact hm.range
 
 /-- The inverse of the stellar coordinate map is piecewise linear on the image of any finite
@@ -334,15 +326,8 @@ private theorem exists_isPLOn_leftInverse_stellarSubdivisionCoordinateMap [Finit
   let S := stellarSubdivisionCoordinateMap σ v
   let U : Set (ι → ℝ) := ⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))
   have hSinj : InjOn S U := injOn_stellarSubdivisionCoordinateMap hvσ f hf
-  let g : (ι → ℝ) → (ι → ℝ) := fun y =>
-    if hy : y ∈ S '' U then Classical.choose ((Set.mem_image S U _).mp hy) else 0
-  have hgf : ∀ x ∈ U, g (S x) = x := by
-    intro x hx
-    have hy : S x ∈ S '' U := ⟨x, hx, rfl⟩
-    dsimp [g]
-    rw [dite_eq_left hy]
-    apply hSinj (Classical.choose_spec ((Set.mem_image S U _).mp hy)).1 hx
-    exact (Classical.choose_spec ((Set.mem_image S U _).mp hy)).2
+  let g := Function.invFunOn S U
+  have hgf : ∀ x ∈ U, g (S x) = x := hSinj.leftInvOn_invFunOn
   exact ⟨g, (TauCeti.isPiecewiseAffineOn_inverse_of_finite_simplex_cover (f := S) (g := g)
     (fun t => (Pi.single · (1 : ℝ)) '' (f t : Set ι)) (A := fun _ => S.toContinuousAffineMap)
     (fun _ _ _ => rfl)
