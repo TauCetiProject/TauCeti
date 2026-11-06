@@ -58,7 +58,7 @@ bookkeeping.  The monotonicity and product corollaries below are likewise the mu
 analogues of `Module.length_le_of_injective`, `Module.length_le_of_surjective` and
 `Module.length_prod`.  What is new is that the transports are shown to preserve each factor's
 isomorphism class and not merely the number of factors: the identification of the subquotients is
-`TauCeti.mapSubquotientEquivOfInjective` and `TauCeti.comapSubquotientEquivOfSurjective` of
+`LinearMap.mapSubquotientEquivOfInjective` and `LinearMap.comapSubquotientEquivOfSurjective` of
 `TauCeti/Algebra/Module/Submodule/Quotient.lean`, and the resulting factor-by-factor comparison is
 `TauCeti.isCompositionFactorAt_mapCompositionSeriesOfInjective_iff` and its surjective counterpart
 in `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean`;

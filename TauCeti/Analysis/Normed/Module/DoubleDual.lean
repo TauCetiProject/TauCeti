@@ -36,6 +36,15 @@ theorem isInducing_inclusionInDoubleDualWeak :
   -- Both topologies are induced by evaluation against the continuous dual.
   eq_induced := Eq.symm induced_compose
 
+/-- An element of the bidual lies in the canonical image of `E` iff it does when viewed in the
+weak-star bidual. -/
+theorem toWeakDual_mem_range_inclusionInDoubleDualWeak_iff
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
+    StrongDual.toWeakDual Φ ∈ range (inclusionInDoubleDualWeak 𝕜 E) ↔
+      Φ ∈ range (inclusionInDoubleDual 𝕜 E) := by
+  simp only [mem_range, inclusionInDoubleDualWeak_apply, EmbeddingLike.apply_eq_iff_eq,
+    (toWeakSpace 𝕜 E).symm.surjective.exists]
+
 variable [ProperSpace 𝕜]
 
 /-- A norm-bounded set in a seminormed space has weakly compact closure if the weak-star

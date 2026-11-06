@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 
@@ -27,6 +28,7 @@ Baker--Campbell--Hausdorff expansion.
 
 ## Main results
 
+* `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
 * `NormedSpace.expSeries_partialSum_three`: the third partial sum of the exponential series is
   `1 + x + 2⁻¹ • x ^ 2`.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
@@ -43,7 +45,7 @@ Baker--Campbell--Hausdorff expansion.
 public section
 
 open Asymptotics Filter Topology
-open scoped Nat
+open scoped Nat ContDiff
 
 noncomputable section
 
@@ -66,6 +68,10 @@ end Algebra
 
 variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace A]
+
+/-- The exponential on a complete normed algebra is smooth of every order, including analytic. -/
+theorem contDiff_exp {k : ℕ∞ω} : ContDiff 𝕂 k (exp : A → A) :=
+  contDiff_iff_contDiffAt.mpr fun x ↦ (exp_analytic (𝕂 := 𝕂) x).contDiffAt.of_le le_top
 
 /-- **The quadratic Taylor estimate for the exponential.**  In a complete normed algebra,
 `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` as `x → 0`. -/

@@ -12,15 +12,15 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
-# Hyperbolic tangent identities and regularity, and bounds on `sinh`
+# Hyperbolic tangent identities, regularity and calculus, and bounds on `sinh`
 
 Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh` and `Real.tanh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
-itself, nor its continuity or smoothness. This file supplies these, together with the identity
-`√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the square of `Real.sinh (r / 2)` in terms of the exponentials
-`exp (± r / 2)`, and the Gaussian bound
+itself, nor its continuity, smoothness, derivative or limits at `±∞`. This file supplies these,
+together with the identity `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the square of `Real.sinh (r / 2)`
+in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of Mathlib's
 `Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l)) / l`.
 
@@ -33,6 +33,10 @@ itself, nor its continuity or smoothness. This file supplies these, together wit
 * `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
   `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
 * `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
+* `Real.hasDerivAt_tanh`, `Real.deriv_tanh` and `Real.one_sub_tanh_sq` — the derivative of
+  `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
+* `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
+* `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
 * `Real.one_add_tanh`, `Real.one_sub_tanh`, `Real.one_add_tanh_le` and `Real.one_sub_tanh_le` —
   `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
@@ -140,6 +144,57 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
 theorem _root_.Real.contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
   simp_rw [funext Real.tanh_eq_sinh_div_cosh]
   exact Real.contDiff_sinh.div Real.contDiff_cosh fun x ↦ (Real.cosh_pos x).ne'
+
+/-- `1 - tanh x ^ 2 = 1 / cosh x ^ 2`: the derivative of `Real.tanh` written through `Real.tanh`.
+-/
+theorem _root_.Real.one_sub_tanh_sq (x : ℝ) : 1 - Real.tanh x ^ 2 = 1 / Real.cosh x ^ 2 := by
+  have h := Real.cosh_sq_sub_sinh_sq x
+  have hc := (Real.cosh_pos x).ne'
+  rw [Real.tanh_eq_sinh_div_cosh]
+  field_simp
+  linarith
+
+/-- The derivative of the hyperbolic tangent is `1 / cosh x ^ 2`. -/
+theorem _root_.Real.hasDerivAt_tanh (x : ℝ) : HasDerivAt Real.tanh (1 / Real.cosh x ^ 2) x := by
+  have h : HasDerivAt (fun y ↦ Real.sinh y / Real.cosh y) _ x :=
+    (Real.hasDerivAt_sinh x).div (Real.hasDerivAt_cosh x) (Real.cosh_pos x).ne'
+  rw [← funext Real.tanh_eq_sinh_div_cosh] at h
+  convert h using 1
+  rw [← sq, ← sq, Real.cosh_sq_sub_sinh_sq]
+
+/-- The derivative of the hyperbolic tangent is `1 / cosh x ^ 2`. -/
+@[simp]
+theorem _root_.Real.deriv_tanh (x : ℝ) : deriv Real.tanh x = 1 / Real.cosh x ^ 2 :=
+  (Real.hasDerivAt_tanh x).deriv
+
+/-- The derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`, so `(cosh x)⁻¹` solves
+`v' = -tanh(x) v`. -/
+theorem _root_.Real.hasDerivAt_inv_cosh (x : ℝ) :
+    HasDerivAt (fun y ↦ (Real.cosh y)⁻¹) (-Real.tanh x * (Real.cosh x)⁻¹) x := by
+  have hc := (Real.cosh_pos x).ne'
+  convert (Real.hasDerivAt_cosh x).inv hc using 1
+  rw [Real.tanh_eq_sinh_div_cosh]
+  field_simp
+
+/-- The hyperbolic tangent tends to `1` at `+∞`. -/
+theorem _root_.Real.tendsto_tanh_atTop : Filter.Tendsto Real.tanh Filter.atTop (nhds 1) := by
+  -- Divide numerator and denominator of `tanh x = (exp x - exp (-x)) / (exp x + exp (-x))` by
+  -- `exp x`; then `exp (-x) ^ 2` tends to zero.
+  have h (x : ℝ) : Real.tanh x = (1 - Real.exp (-x) ^ 2) / (1 + Real.exp (-x) ^ 2) := by
+    have hx := (Real.exp_pos x).ne'
+    rw [Real.tanh_eq, Real.exp_neg]
+    field_simp
+  have hsq := Real.tendsto_exp_neg_atTop_nhds_zero.pow 2
+  have hlim := ((tendsto_const_nhds (x := (1 : ℝ))).sub hsq).div
+    ((tendsto_const_nhds (x := (1 : ℝ))).add hsq) (by norm_num)
+  rw [funext h]
+  convert hlim using 2
+  norm_num
+
+/-- The hyperbolic tangent tends to `-1` at `-∞`. -/
+theorem _root_.Real.tendsto_tanh_atBot : Filter.Tendsto Real.tanh Filter.atBot (nhds (-1)) := by
+  simpa [Function.comp_def, Real.tanh_neg] using
+    (Real.tendsto_tanh_atTop.comp Filter.tendsto_neg_atBot_atTop).neg
 
 /-- `1 + tanh x = exp x / cosh x`, since `cosh x + sinh x = exp x`. -/
 theorem _root_.Real.one_add_tanh (x : ℝ) : 1 + Real.tanh x = Real.exp x / Real.cosh x := by
