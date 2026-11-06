@@ -35,10 +35,84 @@ open Set AbstractSimplicialComplex
 
 attribute [local instance] Classical.decEq
 
+/-- A homotopy from the identity that fixes a subset `S` at all times and ends in `S` gives a
+strong deformation retraction onto `S`: the retraction is the corestriction of the time-one
+map. -/
+theorem exists_strong_deformation_retraction_of_homotopy {X : Type*} [TopologicalSpace X]
+    {S : Set X} {F : unitInterval × X → X} (hFc : Continuous F) (hzero : ∀ x, F (0, x) = x)
+    (hone : ∀ x, F (1, x) ∈ S) (hfix : ∀ t, ∀ x ∈ S, F (t, x) = x) :
+    ∃ r : C(X, S), (∀ x : S, r x = x) ∧ Nonempty
+      ((ContinuousMap.id X).HomotopyRel ((ContinuousMap.subtypeVal S).comp r) S) := by
+  let r : C(X, S) := ⟨fun x => ⟨F (1, x), hone x⟩,
+    (hFc.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
+  refine ⟨r, fun x => Subtype.ext (hfix 1 x.1 x.2), ⟨?_⟩⟩
+  exact
+    { toFun := F
+      continuous_toFun := hFc
+      map_zero_left := hzero
+      map_one_left := fun _ => rfl
+      prop' := hfix }
+
 namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} {K L : PreAbstractSimplicialComplex ι}
   {A : AbstractSimplicialComplex ι} {σ τ : Finset ι}
+
+/-- A face of a free pair that contains the lower face lies inside the upper face. -/
+theorem IsFreePair.subset_upper_of_lower_subset (h : IsFreePair K σ τ) {ω : Finset ι}
+    (hω : ω ∈ K) (hσω : σ ⊆ ω) : ω ⊆ τ := by
+  rcases h.eq_lower_or_eq_upper hω hσω with rfl | rfl
+  · exact h.lower_ssubset_upper.subset
+  · exact Finset.Subset.rfl
+
+/-- A face of the complex that is not contained in the upper face of a free pair survives the
+deletion of the pair. -/
+theorem IsFreePair.mem_deletion_of_not_subset_upper (h : IsFreePair K σ τ) {ω : Finset ι}
+    (hω : ω ∈ K) (hωτ : ¬ ω ⊆ τ) : ω ∈ deletion K σ :=
+  mem_deletion.mpr ⟨hω, fun hσω => hωτ (h.subset_upper_of_lower_subset hω hσω)⟩
+
+/-- The extension by the identity of a deformation of the upper simplex of a free pair is
+continuous. Here `Hτ` deforms the upper simplex, `iτ` includes it, `toτ` reads a point supported
+in it as a point of the simplex, and `F` agrees with the deformation on the upper simplex and is
+the identity on the retained polyhedron. -/
+private theorem continuous_extend_deformation (hK : K ≤ A.toPreAbstractSimplicialComplex)
+    (h : IsFreePair K σ τ)
+    {iτ : StandardSimplex τ → {x : Realization A // x.1.support ∈ K}} (hiτ : Continuous iτ)
+    {Hτ : unitInterval × StandardSimplex τ → StandardSimplex τ} (hHτ : Continuous Hτ)
+    {toτ : ∀ x : {x : Realization A // x.1.support ∈ K}, x.1.1.support ⊆ τ →
+      StandardSimplex τ}
+    (htoτ : ∀ x hx, (toτ x hx).1 = x.1.1)
+    {F : unitInterval × {x : Realization A // x.1.support ∈ K} →
+      {x : Realization A // x.1.support ∈ K}}
+    (hFτ : ∀ t x (hx : x.1.1.support ⊆ τ), F (t, x) = iτ (Hτ (t, toτ x hx)))
+    (hfix : ∀ t x, x.1.1.support ∈ deletion K σ → F (t, x) = x) : Continuous F := by
+  apply continuous_prod_subtype_iff_faceInclusion hK |>.mpr
+  intro ω hω
+  let iω (x : StandardSimplex ω) : {x : Realization A // x.1.support ∈ K} :=
+    ⟨faceInclusion A ⟨ω, hK hω⟩ x, support_faceInclusion_mem hK hω x⟩
+  by_cases hσω : σ ⊆ ω
+  · have hωτ : ω ⊆ τ := h.subset_upper_of_lower_subset hω hσω
+    let j : StandardSimplex ω → StandardSimplex τ :=
+      Set.inclusion (convexHull_mono
+        (Finset.coe_subset.mpr (Finset.image_mono _ hωτ)))
+    have hj : Continuous j := by
+      apply continuous_induced_rng.mpr
+      exact continuous_induced_dom
+    apply (hiτ.comp (hHτ.comp (continuous_id.prodMap hj))).congr
+    intro p
+    have hp : (iω p.2).1.1.support ⊆ τ := by
+      simpa only [iω, faceInclusion_val] using
+        (StandardSimplex.support_subset p.2).trans hωτ
+    have he : j p.2 = toτ (iω p.2) hp :=
+      Subtype.ext ((htoτ _ hp).trans (faceInclusion_val A ⟨ω, hK hω⟩ p.2)).symm
+    rw [hFτ p.1 (iω p.2) hp]
+    simp only [Function.comp_apply, Prod.map, id_eq, he]
+  · apply ((continuous_faceInclusion A ⟨ω, hK hω⟩).subtype_mk
+      (support_faceInclusion_mem hK hω) |>.comp continuous_snd).congr
+    intro p
+    apply (hfix p.1 (iω p.2) ?_).symm
+    exact support_faceInclusion_mem (deletion_le.trans hK)
+      (mem_deletion.mpr ⟨hω, hσω⟩) p.2
 
 /-- The polyhedron of a free-pair deletion is a strong deformation retract of the original
 polyhedron, inside any containing weak realization. The homotopy fixes the entire retained
@@ -84,38 +158,8 @@ theorem IsFreePair.exists_strong_deformation_retraction (h : IsFreePair K σ τ)
     · simp only [F, dite_eq_right hxt]
   -- Each simplex is either contained in the upper face or entirely retained.
   -- In the latter case the extension is the identity; in the former it factors through Hτ.
-  have hFc : Continuous F := by
-    apply continuous_prod_subtype_iff_faceInclusion hK |>.mpr
-    intro ω hω
-    let iω (x : StandardSimplex ω) : X :=
-      ⟨faceInclusion A ⟨ω, hK hω⟩ x, support_faceInclusion_mem hK hω x⟩
-    by_cases hσω : σ ⊆ ω
-    · have hωτ : ω ⊆ τ := by
-        rcases h.eq_lower_or_eq_upper hω hσω with rfl | rfl
-        · exact h.lower_ssubset_upper.subset
-        · exact Finset.Subset.rfl
-      let j : StandardSimplex ω → StandardSimplex τ :=
-        Set.inclusion (convexHull_mono
-          (Finset.coe_subset.mpr (Finset.image_mono _ hωτ)))
-      have hj : Continuous j := by
-        apply continuous_induced_rng.mpr
-        exact continuous_induced_dom
-      apply (iτ.continuous.comp
-        (Hτ.continuous.comp (continuous_id.prodMap hj))).congr
-      intro p
-      have hp : (iω p.2).1.1.support ⊆ τ := by
-        simpa only [iω, faceInclusion_val] using
-          (StandardSimplex.support_subset p.2).trans hωτ
-      have he : j p.2 = toτ (iω p.2) hp :=
-        Subtype.ext (faceInclusion_val A ⟨ω, hK hω⟩ p.2).symm
-      rw [hFτ p.1 (iω p.2) hp]
-      simp only [Function.comp_apply, Prod.map, id_eq, he]
-    · apply ((continuous_faceInclusion A ⟨ω, hK hω⟩).subtype_mk
-        (support_faceInclusion_mem hK hω) |>.comp continuous_snd).congr
-      intro p
-      apply (hfix p.1 (iω p.2) ?_).symm
-      exact support_faceInclusion_mem (deletion_le.trans hK)
-        (mem_deletion.mpr ⟨hω, hσω⟩) p.2
+  have hFc : Continuous F :=
+    continuous_extend_deformation hK h iτ.continuous Hτ.continuous (fun _ _ => rfl) hFτ hfix
   have hzero (x : X) : F (0, x) = x := by
     by_cases hx : x.1.1.support ⊆ τ
     · rw [hFτ 0 x hx, Hτ.apply_zero, ContinuousMap.id_apply]
@@ -127,23 +171,9 @@ theorem IsFreePair.exists_strong_deformation_retraction (h : IsFreePair K σ τ)
       simpa only [S, iτ, ContinuousMap.coe_mk, ContinuousMap.comp_apply,
         ContinuousMap.subtypeVal_apply, mem_ofPred_eq, faceInclusion_val] using
           (hT (rτ (toτ x hx))).mp (rτ (toτ x hx)).2
-    · have hσx : ¬ σ ⊆ x.1.1.support := by
-        intro hσx
-        rcases h.eq_lower_or_eq_upper x.2 hσx with he | he
-        · exact hx (he ▸ h.lower_ssubset_upper.subset)
-        · exact hx (he ▸ Finset.Subset.rfl)
-      simpa only [F, dite_eq_right hx, S, mem_ofPred_eq] using
-        (mem_deletion.mpr ⟨x.2, hσx⟩)
-  -- The time-one map lands in the retained polyhedron, so corestrict it to the retraction.
-  let r : C(X, S) := ⟨fun x => ⟨F (1, x), hone x⟩,
-    (hFc.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
-  refine ⟨r, fun x => Subtype.ext (hfix 1 x.1 x.2), ⟨?_⟩⟩
-  exact
-    { toFun := F
-      continuous_toFun := hFc
-      map_zero_left := hzero
-      map_one_left := fun _ => rfl
-      prop' := hfix }
+    · simpa only [F, dite_eq_right hx, S, mem_ofPred_eq] using
+        h.mem_deletion_of_not_subset_upper x.2 hx
+  exact exists_strong_deformation_retraction_of_homotopy hFc hzero hone hfix
 
 /-- Every elementary simplicial collapse gives a strong deformation retraction onto the
 target polyhedron. The subsets carry the topology inherited from any ambient weak realization;
