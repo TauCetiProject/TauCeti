@@ -52,13 +52,13 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
   {μ : Measure ℂ} {Ω : Opens ℂ} {u : ℂ → F}
 
 /-- A distributional solution of `\bar∂u=0` is weakly harmonic, with arbitrary complex Banach
-coefficients. This is obtained by differentiating test functions, not the rough source. -/
+coefficients. -/
 theorem HasWeakConjWirtingerDerivOn.weaklyHarmonicOn
     (h : HasWeakConjWirtingerDerivOn μ Ω u 0) : WeaklyHarmonicOn μ Ω u := by
   rw [weaklyHarmonicOn_iff]
   refine ⟨h.locallyIntegrableOn, fun φ ↦ ?_⟩
-  have hs := h.integral_identity (∂_{(1 : ℂ)} φ)
-  have ht := h.integral_identity (∂_{I} φ)
+  have hs := h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul (∂_{(1 : ℂ)} φ)
+  have ht := h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul (∂_{I} φ)
   simp only [← TestFunction.lineDerivOp_apply, Pi.zero_apply, smul_zero, integral_zero] at hs ht
   rw [TestFunction.lineDerivOp_comm φ I 1] at hs
   have hΔ (z : ℂ) : Δ (φ : ℂ → ℝ) z =
@@ -87,8 +87,8 @@ private theorem exists_differentiableOn_ae_eq_scalar {u : ℂ → ℂ} [μ.IsAdd
   let v : ℂ → ℂ := fun z ↦ (a z : ℂ) + (b z : ℂ) * I
   have hae : u =ᵐ[μ.restrict Ω] v := by
     filter_upwards [hua, hub] with z hz₁ hz₂
-    change (u z).re = a z at hz₁
-    change (u z).im = b z at hz₂
+    rw [Complex.reCLM_apply] at hz₁
+    rw [Complex.imCLM_apply] at hz₂
     calc
       u z = ((u z).re : ℂ) + ((u z).im : ℂ) * I := (Complex.re_add_im _).symm
       _ = v z := by rw [hz₁, hz₂]

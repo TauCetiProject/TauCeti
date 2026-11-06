@@ -26,7 +26,7 @@ is the distributional equation; for a general measure it is the corresponding ad
 
 The relation is local, complex-linear, invariant under almost-everywhere replacement and
 compatible with continuous complex-linear maps. Its value is unique almost everywhere.
-`hasWeakConjWirtingerDerivOn_of_partials` and
+`hasWeakConjWirtingerDerivOn_of_hasWeakLineDerivOn` and
 `HasWeakFDerivOn.hasWeakConjWirtingerDerivOn` compare it with the native real weak derivatives.
 `hasWeakConjWirtingerDerivOn_of_contDiffOn` compares it with the classical normalized operator;
 for real `C¹` maps, its vanishing is equivalent to holomorphy.
@@ -77,19 +77,24 @@ theorem HasWeakConjWirtingerDerivOn.locallyIntegrableOn
 theorem HasWeakConjWirtingerDerivOn.locallyIntegrableOn_deriv
     (h : HasWeakConjWirtingerDerivOn μ Ω u g) : LocallyIntegrableOn g Ω μ := h.2.2.1
 
+namespace HasWeakConjWirtingerDerivOn
+
 /-- Integration by parts for the normalized conjugate Wirtinger derivative. -/
-theorem HasWeakConjWirtingerDerivOn.integral_identity
+theorem integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul
     (h : HasWeakConjWirtingerDerivOn μ Ω u g) (φ : 𝓓(Ω, ℝ)) :
     (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • u z ∂μ) +
         I • (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z I • u z ∂μ) =
       -(2 : ℂ) • ∫ z, (φ : ℂ → ℝ) z • g z ∂μ := h.2.2.2 φ
+
+end HasWeakConjWirtingerDerivOn
 
 /-- Weak conjugate Wirtinger differentiation restricts to smaller open sets. -/
 theorem HasWeakConjWirtingerDerivOn.mono {Ω' : Opens ℂ}
     (h : HasWeakConjWirtingerDerivOn μ Ω u g) (hΩ : Ω' ≤ Ω) :
     HasWeakConjWirtingerDerivOn μ Ω' u g :=
   ⟨h.completeSpace, h.locallyIntegrableOn.mono_set hΩ,
-    h.locallyIntegrableOn_deriv.mono_set hΩ, fun φ ↦ h.integral_identity
+    h.locallyIntegrableOn_deriv.mono_set hΩ, fun φ ↦
+      h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul
       ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
 
 /-- The zero function has weak conjugate Wirtinger derivative zero. -/
@@ -104,7 +109,7 @@ theorem HasWeakConjWirtingerDerivOn.neg (h : HasWeakConjWirtingerDerivOn μ Ω u
   refine ⟨h.completeSpace, h.locallyIntegrableOn.neg, h.locallyIntegrableOn_deriv.neg, ?_⟩
   intro φ
   simpa only [Pi.neg_apply, smul_neg, integral_neg, ← neg_add, neg_smul] using
-    congrArg Neg.neg (h.integral_identity φ)
+    congrArg Neg.neg (h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ)
 
 /-- Weak conjugate Wirtinger differentiation commutes with addition. -/
 theorem HasWeakConjWirtingerDerivOn.add {v k : ℂ → F}
@@ -125,7 +130,9 @@ theorem HasWeakConjWirtingerDerivOn.add {v k : ℂ → F}
           I • (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z I • u z ∂μ)) +
         ((∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • v z ∂μ) +
           I • (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z I • v z ∂μ)) := by abel
-    _ = _ := by rw [h.integral_identity φ, hv.integral_identity φ]
+    _ = _ := by
+      rw [h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ,
+        hv.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ]
 
 /-- Weak conjugate Wirtinger differentiation commutes with subtraction. -/
 theorem HasWeakConjWirtingerDerivOn.sub {v k : ℂ → F}
@@ -151,7 +158,8 @@ theorem HasWeakConjWirtingerDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G]
         L (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z ∂μ) := by
     simpa only [TestFunction.lineDerivOp_apply] using
       hi u h.locallyIntegrableOn (LineDeriv.lineDerivOp v φ)
-  rw [hi' 1, hi' I, ← map_smul, ← map_add, h.integral_identity φ,
+  rw [hi' 1, hi' I, ← map_smul, ← map_add,
+    h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ,
     map_smul, hi g h.locallyIntegrableOn_deriv φ]
 
 /-- Weak conjugate Wirtinger differentiation is complex-linear. -/
@@ -177,7 +185,7 @@ theorem HasWeakConjWirtingerDerivOn.congr_ae {v : ℂ → F}
     · rw [lineDeriv_of_notMem_tsupport (fun h' ↦ hzΩ (φ.tsupport_subset h')) a]
       simp
   rw [he 1, he I]
-  exact h.integral_identity φ
+  exact h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ
 
 /-- Almost-everywhere replacement preserves the weak conjugate Wirtinger derivative. -/
 theorem HasWeakConjWirtingerDerivOn.congr_ae_deriv {k : ℂ → F}
@@ -185,7 +193,7 @@ theorem HasWeakConjWirtingerDerivOn.congr_ae_deriv {k : ℂ → F}
     HasWeakConjWirtingerDerivOn μ Ω u k := by
   refine ⟨h.completeSpace, h.locallyIntegrableOn, h.locallyIntegrableOn_deriv.congr hgk, ?_⟩
   intro φ
-  rw [h.integral_identity φ]
+  rw [h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ]
   congr 1
   apply integral_congr_ae
   filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hgk] with z hz
@@ -203,7 +211,8 @@ theorem HasWeakConjWirtingerDerivOn.ae_eq {k : ℂ → F}
       tsupport φ ⊆ (Ω : Set ℂ) → ∫ z, φ z • (g - k) z ∂μ = 0 := by
     intro φ hφ hφc hφs
     let ψ : 𝓓(Ω, ℝ) := ⟨φ, hφ, hφc, hφs⟩
-    have he := (h.integral_identity ψ).symm.trans (hk.integral_identity ψ)
+    have he := (h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul ψ).symm.trans
+      (hk.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul ψ)
     have he' : (∫ z, φ z • g z ∂μ) = ∫ z, φ z • k z ∂μ := by
       have hc : -(2 : ℂ) ≠ 0 := by norm_num
       simpa [ψ, inv_smul_smul₀ hc] using congrArg (fun x : F ↦ (-(2 : ℂ))⁻¹ • x) he
@@ -220,7 +229,7 @@ theorem HasWeakConjWirtingerDerivOn.ae_eq {k : ℂ → F}
   simpa [sub_eq_zero] using hz hzΩ
 
 /-- The two weak real partial derivatives combine to the normalized weak `\bar∂` derivative. -/
-theorem hasWeakConjWirtingerDerivOn_of_partials {us ut : ℂ → F}
+theorem hasWeakConjWirtingerDerivOn_of_hasWeakLineDerivOn {us ut : ℂ → F}
     (hs : HasWeakLineDerivOn μ Ω u us 1) (ht : HasWeakLineDerivOn μ Ω u ut I) :
     HasWeakConjWirtingerDerivOn μ Ω u
       (fun z ↦ (2 : ℂ)⁻¹ • (us z + I • ut z)) := by
@@ -244,7 +253,8 @@ theorem HasWeakFDerivOn.hasWeakConjWirtingerDerivOn {D : ℂ → ℂ →L[ℝ] F
     (h : HasWeakFDerivOn μ Ω u D) :
     HasWeakConjWirtingerDerivOn μ Ω u
       (fun z ↦ (2 : ℂ)⁻¹ • (D z 1 + I • D z I)) :=
-  hasWeakConjWirtingerDerivOn_of_partials (h.hasWeakLineDerivOn 1) (h.hasWeakLineDerivOn I)
+  hasWeakConjWirtingerDerivOn_of_hasWeakLineDerivOn
+    (h.hasWeakLineDerivOn 1) (h.hasWeakLineDerivOn I)
 
 /-- The classical conjugate Wirtinger derivative of a `C¹` function is its weak derivative. -/
 theorem hasWeakConjWirtingerDerivOn_of_contDiffOn [CompleteSpace F] [μ.IsAddHaarMeasure]
