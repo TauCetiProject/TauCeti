@@ -90,9 +90,14 @@ theorem exists_isDivisorSectionAt (hf : MeromorphicAt f x)
         nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
         with y hy hys
       simpa only [Function.comp_apply, (chartAt ℂ x).left_inv hys] using hy
-    have hc : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (g ∘ chartAt ℂ x) x :=
-      (contMDiffAt_modelSpace_omega_iff_analyticAt.2 hg).comp x
-        (contMDiffAt_of_mem_maximalAtlas (chart_mem_maximalAtlas x) (mem_chart_source ℂ x))
+    have hc : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (g ∘ chartAt ℂ x) x := by
+      apply (contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas
+        (chart_mem_maximalAtlas x) (mem_chart_source ℂ x)).2
+      apply hg.congr
+      filter_upwards [(chartAt ℂ x).open_target.mem_nhds
+        ((chartAt ℂ x).map_source (mem_chart_source ℂ x))] with z hz
+      change g z = g (chartAt ℂ x ((chartAt ℂ x).symm z))
+      rw [(chartAt ℂ x).right_inv hz]
     refine ⟨g ∘ chartAt ℂ x, ?_, heq'⟩
     exact
     { meromorphicAt := hf.congr heq'

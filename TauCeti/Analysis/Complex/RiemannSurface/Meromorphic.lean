@@ -181,14 +181,8 @@ theorem MeromorphicAt.eventually_contMDiffAt [CompleteSpace E] (hf : Meromorphic
   filter_upwards [(tendsto_chartAt_nhdsNE x).eventually hm,
     nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
     with y hy hys
-  have hc : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (chartAt ℂ x) y :=
-    contMDiffAt_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hys
-  have ha : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, E) ω
-      ((f ∘ (chartAt ℂ x).symm) ∘ chartAt ℂ x) y :=
-    (contMDiffAt_modelSpace_omega_iff_analyticAt.2 hy).comp y hc
-  apply ha.congr_of_eventuallyEq
-  filter_upwards [(chartAt ℂ x).open_source.mem_nhds hys] with z hz
-  simp only [Function.comp_apply, (chartAt ℂ x).left_inv hz]
+  exact (contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas
+    (chart_mem_maximalAtlas x) hys).2 (by simpa using hy)
 
 /-- A function holomorphic near `x` is meromorphic at `x`. -/
 theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]

@@ -14,6 +14,7 @@ import Mathlib.Topology.Sheaves.LocallySurjective
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.AlgebraicGeometry.WeilDivisor.Order
 
 /-!
 # Point twists of divisor sheaves
@@ -63,14 +64,6 @@ variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
 
 
 
-omit [TopologicalSpace X] [ChartedSpace ℂ X] in
-private theorem le_pointTwist (D : WeilDivisor X) (x : X) :
-    D ≤ D + WeilDivisor.ofPoint x :=
-  le_add_of_nonneg_right (WeilDivisor.isEffective_ofPoint x).zero_le
-
-
-
-
 namespace divisorSections
 
 variable {D : WeilDivisor X} {U : Opens X} {x : X}
@@ -115,7 +108,7 @@ theorem pointTwistCoefficient_restrict {V : Opens X} (h : V ≤ U) (hx : x ∈ V
 private theorem pointTwistCoefficient_mapOfLE (D : WeilDivisor X) (U : Opens X) (x : U)
     (f : (divisorSheaf D).obj.obj (op U)) :
     pointTwistCoefficient D U x (divisorSheafSectionsEquiv _ U
-      ((divisorSheafMapOfLE (le_pointTwist D x.1)).hom.app (op U) f)) = 0 := by
+      ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x.1)).hom.app (op U) f)) = 0 := by
   apply (pointTwistCoefficient_eq_zero_iff _ x.2).2
   rw [toChartGerm_mapOfLE]
   exact toChartGerm_mem_orderGE _ x
@@ -182,42 +175,41 @@ sheaf at the twist point. -/
 def pointTwistMap (D : WeilDivisor X) (x : X) [∀ U : Opens X, Decidable (x ∈ U)] :
     divisorSheaf (D + WeilDivisor.ofPoint x) ⟶
       skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift.{u} ℂ)) :=
-  ⟨StalkSkyscraperPresheafAdjunctionAuxs.toSkyscraperPresheaf
-    (X := TopCat.of X) (C := ModuleCat.{u} ℂ)
-    (𝓕 := (divisorSheaf (D + WeilDivisor.ofPoint x)).obj)
-    (c := ModuleCat.of ℂ (ULift.{u} ℂ)) x (pointTwistCoefficientStalk D x)⟩
+  (stalkSkyscraperSheafAdjunction (X := TopCat.of X) (C := ModuleCat.{u} ℂ) x).homEquiv
+    _ _ (pointTwistCoefficientStalk D x)
 
 private theorem pointTwistMap_app_of_mem (D : WeilDivisor X) (x : X)
     [∀ U : Opens X, Decidable (x ∈ U)] {U : Opens X} (hx : x ∈ U) :
     (pointTwistMap D x).hom.app (op U) ≫ eqToHom (ite_eq_left hx) =
       sectionPointTwistCoefficient D x U hx := by
-  have hh : (pointTwistMap D x).hom.app (op U) =
-      TopCat.Presheaf.germ (divisorSheaf (D + WeilDivisor.ofPoint x)).obj U x hx ≫
-        pointTwistCoefficientStalk D x ≫ eqToHom (ite_eq_left hx).symm := by
-    exact dite_eq_left hx
-  rw [hh]
+  erw [pointTwistMap, Adjunction.homEquiv_unit]
+  change (((stalkSkyscraperSheafAdjunction
+    (X := TopCat.of X) (C := ModuleCat.{u} ℂ) x).unit.app
+      (divisorSheaf (D + WeilDivisor.ofPoint x))).hom.app (op U) ≫
+    (SkyscraperPresheafFunctor.map' (X := TopCat.of X) x
+      (pointTwistCoefficientStalk D x)).app (op U)) ≫
+      eqToHom (ite_eq_left hx) = _
+  erw [TauCeti.Topology.stalkSkyscraperSheafAdjunction_unit_app_hom_app
+    (C := ModuleCat.{u} ℂ) (X := TopCat.of X) x (divisorSheaf _) hx,
+    SkyscraperPresheafFunctor.map'_app, dite_eq_left hx]
+  erw [← germ_pointTwistCoefficientStalk D x hx]
   let G := TopCat.Presheaf.germ (divisorSheaf (D + WeilDivisor.ofPoint x)).obj U x hx
   let C := pointTwistCoefficientStalk D x
-  have hc : (eqToHom (ite_eq_left hx).symm : ModuleCat.of ℂ (ULift.{u} ℂ) ⟶
-      (skyscraperPresheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift.{u} ℂ))).obj (op U)) ≫
-      eqToHom (ite_eq_left hx) =
-      𝟙 (ModuleCat.of ℂ (ULift.{u} ℂ)) :=
-    (eqToHom_trans _ _).trans (eqToHom_refl _ _)
-  calc
-    (G ≫ C ≫ eqToHom (ite_eq_left hx).symm) ≫ eqToHom (ite_eq_left hx) =
-        G ≫ (C ≫ eqToHom (ite_eq_left hx).symm) ≫ eqToHom (ite_eq_left hx) :=
-      Category.assoc _ _ _
-    _ = G ≫ C ≫ (eqToHom (ite_eq_left hx).symm ≫ eqToHom (ite_eq_left hx)) :=
-      congrArg (G ≫ ·) (Category.assoc _ _ _)
-    _ = G ≫ C ≫ 𝟙 _ := congrArg (fun t ↦ G ≫ C ≫ t) hc
-    _ = G ≫ C := congrArg (G ≫ ·) (Category.comp_id C)
-    _ = sectionPointTwistCoefficient D x U hx := germ_pointTwistCoefficientStalk D x hx
+  let p : (skyscraperPresheaf (X := TopCat.of X) x
+      (TopCat.Presheaf.stalk (divisorSheaf (D + WeilDivisor.ofPoint x)).obj x)).obj (op U) =
+      TopCat.Presheaf.stalk (divisorSheaf (D + WeilDivisor.ofPoint x)).obj x := ite_eq_left hx
+  let q : (skyscraperPresheaf (X := TopCat.of X) x
+      (ModuleCat.of ℂ (ULift.{u} ℂ))).obj (op U) = ModuleCat.of ℂ (ULift.{u} ℂ) := ite_eq_left hx
+  change ((G ≫ eqToHom p.symm) ≫ (eqToHom p ≫ C ≫ eqToHom q.symm)) ≫ eqToHom q = G ≫ C
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+    Category.id_comp, Category.comp_id]
+
 
 
 /-- The divisor inclusion followed by the new-coefficient morphism is zero. -/
 private theorem divisorSheafMapOfLE_comp_pointTwistMap (D : WeilDivisor X) (x : X)
     [∀ U : Opens X, Decidable (x ∈ U)] :
-    divisorSheafMapOfLE (le_pointTwist D x) ≫ pointTwistMap D x = 0 := by
+    divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x) ≫ pointTwistMap D x = 0 := by
   apply CategoryTheory.Sheaf.hom_ext
   apply NatTrans.ext
   funext U
@@ -226,28 +218,28 @@ private theorem divisorSheafMapOfLE_comp_pointTwistMap (D : WeilDivisor X) (x : 
         ModuleCat.of ℂ (ULift.{u} ℂ) := eqToHom (ite_eq_left hx)
     have : IsIso e := Iso.isIso_hom (eqToIso (ite_eq_left hx))
     apply (cancel_mono e).1
-    have h0 : (divisorSheafMapOfLE (le_pointTwist D x)).hom.app U ≫
+    have h0 : (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U ≫
         sectionPointTwistCoefficient D x (unop U) hx = 0 := by
       apply ModuleCat.hom_ext
       apply LinearMap.ext
       intro f
       change ULift.up (divisorSections.pointTwistCoefficient D (unop U) ⟨x, hx⟩
         (divisorSheafSectionsEquiv _ (unop U)
-          ((divisorSheafMapOfLE (le_pointTwist D x)).hom.app U f))) = 0
+          ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U f))) = 0
       rw [divisorSections.pointTwistCoefficient_mapOfLE]
       rfl
     have hz : (0 : divisorSheaf D ⟶ skyscraperSheaf (X := TopCat.of X) x
         (ModuleCat.of ℂ (ULift.{u} ℂ))).hom.app U = 0 := rfl
     calc
-      (divisorSheafMapOfLE (le_pointTwist D x) ≫ pointTwistMap D x).hom.app U ≫ e =
-          ((divisorSheafMapOfLE (le_pointTwist D x)).hom.app U ≫
+      (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x) ≫ pointTwistMap D x).hom.app U ≫ e =
+          ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U ≫
             (pointTwistMap D x).hom.app U) ≫ e :=
         congrArg (· ≫ e) (TopCat.Sheaf.comp_app (ModuleCat.{u} ℂ) (TopCat.of X) _ _ U)
-      _ = (divisorSheafMapOfLE (le_pointTwist D x)).hom.app U ≫
+      _ = (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U ≫
           ((pointTwistMap D x).hom.app U ≫ e) := Category.assoc _ _ _
-      _ = (divisorSheafMapOfLE (le_pointTwist D x)).hom.app U ≫
+      _ = (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U ≫
           sectionPointTwistCoefficient D x (unop U) hx :=
-        congrArg ((divisorSheafMapOfLE (le_pointTwist D x)).hom.app U ≫ ·)
+        congrArg ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U ≫ ·)
           (pointTwistMap_app_of_mem D x hx)
       _ = 0 := h0
       _ = (0 : divisorSheaf D ⟶ skyscraperSheaf (X := TopCat.of X) x
@@ -268,7 +260,7 @@ private theorem exists_local_divisorLift (D : WeilDivisor X) (x : X) (U : Opens 
       (Subtype.val.extend (divisorSheafSectionsEquiv _ U f).1 0) y.1) :
     ∃ (V : Opens X) (_hyV : y.1 ∈ V) (hVU : V ≤ U)
       (t : (divisorSheaf D).obj.obj (op V)),
-      (divisorSheafMapOfLE (le_pointTwist D x)).hom.app (op V) t =
+      (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app (op V) t =
         (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.map (homOfLE hVU).op f := by
   have := ChartedSpace.t1Space ℂ X
   let A := D + WeilDivisor.ofPoint x
@@ -279,7 +271,7 @@ private theorem exists_local_divisorLift (D : WeilDivisor X) (x : X) (U : Opens 
   have hk : {z | A z ≤ 0}.indicator g =ᶠ[𝓝[≠] y.1] g := by
     filter_upwards [A.eventually_eq_zero_nhdsNE y.1] with z hz
     exact Set.indicator_of_mem (s := {z | A z ≤ 0}) hz.le g
-  have hEq := hf.eventuallyEq_of_nhdsNE (hg.indicator (le_pointTwist D x))
+  have hEq := hf.eventuallyEq_of_nhdsNE (hg.indicator (WeilDivisor.le_add_ofPoint D x))
     (hFg.trans hk.symm)
   obtain ⟨v, hv, hvo, hyv⟩ := eventually_nhds_iff.1
     ((hg.eventually.and (U.isOpen.mem_nhds y.2)).and hEq)
@@ -308,7 +300,7 @@ private theorem exists_local_divisorLift (D : WeilDivisor X) (x : X) (U : Opens 
 @[expose] def pointTwistSequence (D : WeilDivisor X) (x : X) [∀ U : Opens X, Decidable (x ∈ U)] :
     ShortComplex (TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X)) :=
   ShortComplex.mk (divisorSheafMapOfLE (D := D) (E := D + WeilDivisor.ofPoint x)
-    (by exact le_pointTwist D x)) (pointTwistMap D x)
+    (by exact WeilDivisor.le_add_ofPoint D x)) (pointTwistMap D x)
     (by exact divisorSheafMapOfLE_comp_pointTwistMap D x)
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
@@ -362,7 +354,7 @@ theorem pointTwistSequence_exact (D : WeilDivisor X) (x : X)
   rw [ShortComplex.moduleCat_exact_iff]
   change ∀ s, (TopCat.Presheaf.stalkFunctor _ y).map (pointTwistMap D x).hom s = 0 →
     ∃ t, (TopCat.Presheaf.stalkFunctor _ y).map
-      (divisorSheafMapOfLE (le_pointTwist D x)).hom t = s
+      (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom t = s
   intro s hs
   obtain ⟨U, hyU, f, rfl⟩ := TopCat.Presheaf.exists_germ_eq
     (divisorSheaf (D + WeilDivisor.ofPoint x)).obj s
@@ -452,37 +444,6 @@ theorem pointTwistCoefficientStalk_surjective (D : WeilDivisor X) (x : X) :
     rw [LinearEquiv.apply_symm_apply, hc])
 
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
-private theorem stalk_pointTwistMap_comp (D : WeilDivisor X) (x : X)
-    [∀ U : Opens X, Decidable (x ∈ U)] :
-    (TopCat.Presheaf.stalkFunctor _ x).map (pointTwistMap D x).hom ≫
-        (skyscraperPresheafStalkOfSpecializes (X := TopCat.of X) x
-          (ModuleCat.of ℂ (ULift.{u} ℂ)) (specializes_refl x)).hom =
-      pointTwistCoefficientStalk D x := by
-  apply TopCat.Presheaf.stalk_hom_ext
-  intro U hx
-  let G := (skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift.{u} ℂ))).obj
-  let e := skyscraperPresheafStalkOfSpecializes (X := TopCat.of X) x
-    (ModuleCat.of ℂ (ULift.{u} ℂ)) (specializes_refl x)
-  let F := (divisorSheaf (D + WeilDivisor.ofPoint x)).obj
-  calc
-    TopCat.Presheaf.germ F U x hx ≫
-        ((TopCat.Presheaf.stalkFunctor _ x).map (pointTwistMap D x).hom ≫ e.hom) =
-        (TopCat.Presheaf.germ F U x hx ≫
-          (TopCat.Presheaf.stalkFunctor _ x).map (pointTwistMap D x).hom) ≫ e.hom :=
-      (Category.assoc _ _ _).symm
-    _ = ((pointTwistMap D x).hom.app (op U) ≫ TopCat.Presheaf.germ G U x hx) ≫ e.hom :=
-      congrArg (· ≫ e.hom) (TopCat.Presheaf.stalkFunctor_map_germ U x hx (pointTwistMap D x).hom)
-    _ = (pointTwistMap D x).hom.app (op U) ≫ (TopCat.Presheaf.germ G U x hx ≫ e.hom) :=
-      Category.assoc _ _ _
-    _ = (pointTwistMap D x).hom.app (op U) ≫ eqToHom (ite_eq_left hx) :=
-      congrArg ((pointTwistMap D x).hom.app (op U) ≫ ·)
-        (germ_skyscraperPresheafStalkOfSpecializes_hom x _ (specializes_refl x) U hx)
-    _ = sectionPointTwistCoefficient D x U hx := pointTwistMap_app_of_mem D x hx
-    _ = TopCat.Presheaf.germ F U x hx ≫ pointTwistCoefficientStalk D x :=
-      (germ_pointTwistCoefficientStalk D x hx).symm
-
-
 /-- The coefficient morphism is surjective on every stalk, with the only nonzero target stalk
 at the twist point. -/
 theorem pointTwistMap_stalk_surjective (D : WeilDivisor X) (x y : X)
@@ -496,7 +457,12 @@ theorem pointTwistMap_stalk_surjective (D : WeilDivisor X) (x y : X)
     intro z
     obtain ⟨t, ht⟩ := pointTwistCoefficientStalk_surjective D x (e.hom z)
     refine ⟨t, (ModuleCat.mono_iff_injective e.hom).1 inferInstance ?_⟩
-    have he := ConcreteCategory.congr_hom (stalk_pointTwistMap_comp D x) t
+    have hstalk : (TopCat.Presheaf.stalkFunctor _ x).map (pointTwistMap D x).hom ≫
+        e.hom = pointTwistCoefficientStalk D x := by
+      exact ((stalkSkyscraperSheafAdjunction
+        (X := TopCat.of X) (C := ModuleCat.{u} ℂ) x).homEquiv _ _).symm_apply_apply
+          (pointTwistCoefficientStalk D x)
+    have he := ConcreteCategory.congr_hom hstalk t
     exact (ModuleCat.comp_apply _ _ _).symm.trans (he.trans ht)
   · have hn : ¬x ⤳ y := fun h ↦ hy (specializes_iff_eq.1 h).symm
     have hT := skyscraperPresheafStalkOfNotSpecializesIsTerminal (X := TopCat.of X) x
@@ -521,7 +487,7 @@ instance pointTwistMap_epi (D : WeilDivisor X) (x : X)
 theorem pointTwistSequence_shortExact (D : WeilDivisor X) (x : X)
     [∀ U : Opens X, Decidable (x ∈ U)] : (pointTwistSequence D x).ShortExact := by
   have : Mono (pointTwistSequence D x).f := inferInstanceAs
-    (Mono (divisorSheafMapOfLE (le_pointTwist D x)))
+    (Mono (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)))
   have : Epi (pointTwistSequence D x).g := inferInstanceAs (Epi (pointTwistMap D x))
   exact { exact := pointTwistSequence_exact D x }
 
