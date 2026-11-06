@@ -66,16 +66,19 @@ theorem W1p.exists_mixed_valueEmbedding {p : ℝ≥0}
   have hpq : (q : ℝ) < p := by exact_mod_cast hqp
   have hp0 : (0 : ℝ) < p := hq0.trans hpq
   have hdiff : 0 < (p : ℝ) - q := sub_pos.2 hpq
-  let s : ℝ≥0 := ⟨(p : ℝ) * q / ((p : ℝ) - q), by positivity⟩
+  let s := Real.toNNReal ((p : ℝ) * q / ((p : ℝ) - q))
+  have hs : (s : ℝ) = (p : ℝ) * q / ((p : ℝ) - q) :=
+    Real.coe_toNNReal _ (by positivity)
   have hs0 : (0 : ℝ) < s := by
-    change 0 < (p : ℝ) * q / ((p : ℝ) - q)
+    rw [hs]
     exact div_pos (mul_pos hp0 hq0) hdiff
-  have hqs : q ≤ s := by
-    change (q : ℝ) ≤ (p : ℝ) * q / ((p : ℝ) - q)
+  have hqs_real : (q : ℝ) ≤ (s : ℝ) := by
+    rw [hs]
     rw [le_div_iff₀ (sub_pos.2 hpq)]
     nlinarith
+  have hqs : q ≤ s := by exact_mod_cast hqs_real
   have he : (p : ℝ)⁻¹ + (s : ℝ)⁻¹ = (q : ℝ)⁻¹ := by
-    change (p : ℝ)⁻¹ + ((p : ℝ) * q / ((p : ℝ) - q))⁻¹ = (q : ℝ)⁻¹
+    rw [hs]
     field_simp [hp0.ne', hq0.ne', hdiff.ne']
     ring
   have hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹ := by
@@ -97,9 +100,38 @@ variable {F H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
 
+omit [FiniteDimensional ℝ E] [Nontrivial E] in
+/-- Shared norm and representative formulas for the native Hölder operator composed with
+an interior Sobolev value embedding. -/
+private theorem W1p.holderComp_spec {r : ℝ≥0∞} [Fact (1 ≤ r)]
+    [ENNReal.HolderTriple (p : ℝ≥0∞) r (q : ℝ≥0∞)] {V : Set E}
+    (S : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] Lp ℝ r (μ.restrict V))
+    (hS : ∀ g, S g =ᵐ[μ.restrict V] W1p.value g) (B : F →L[ℝ] ℝ →L[ℝ] H) :
+    let T := (B.holderL (μ.restrict V) p r q).bilinearComp
+      (ContinuousLinearMap.id ℝ _) S
+    (∀ f g, T f g =ᵐ[μ.restrict V] fun x ↦ B (f x) (W1p.value g x)) ∧
+      (∀ f g, ‖T f g‖ₑ ≤ ‖S‖ₑ * ‖B‖ₑ * ‖f‖ₑ * ‖g‖ₑ) := by
+  dsimp only
+  constructor
+  · intro f g
+    rw [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearMap.holderL_apply_apply]
+    filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) f (S g), hS g] with x hx hg
+    rw [hx, hg]
+  · intro f g
+    rw [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply]
+    calc
+      _ ≤ ‖B.holderL (μ.restrict V) p r q‖ₑ * ‖f‖ₑ * ‖S g‖ₑ :=
+        ContinuousLinearMap.le_opENorm₂ _ _ _
+      _ ≤ ‖B‖ₑ * ‖f‖ₑ * (‖S‖ₑ * ‖g‖ₑ) := by
+        gcongr
+        · exact enorm_le_iff_norm_le.mpr (B.norm_holderL_le)
+        · exact S.le_opENorm g
+      _ = _ := by ac_rfl
+
 /-- The zeroth-order interior mixed product as a bounded bilinear operator. The Sobolev input
 is scalar; the other factor and the output are arbitrary real normed spaces. -/
-theorem W1p.exists_mixedBilinL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
+private theorem W1p.exists_mixedBilinL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω)
     (B : F →L[ℝ] ℝ →L[ℝ] H) :
     ∃ T : Lp F (p : ℝ≥0∞) (μ.restrict V) →L[ℝ]
@@ -108,17 +140,8 @@ theorem W1p.exists_mixedBilinL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤
   obtain ⟨r, hr, hhr, S, hS⟩ := W1p.exists_mixed_valueEmbedding (μ := μ) hp hqp hVc hVΩ
   let : Fact (1 ≤ r) := ⟨hr⟩
   let : ENNReal.HolderTriple (p : ℝ≥0∞) r (q : ℝ≥0∞) := hhr
-  let L := (B.holderₗ (μ.restrict V) p r q).compl₂ S.toLinearMap
-  let T := LinearMap.mkContinuous₂ L (‖B‖ * ‖S‖) (fun f g ↦ by
-    change ‖B.holder (q : ℝ≥0∞) f (S g)‖ ≤ _
-    calc
-      _ ≤ ‖B‖ * ‖f‖ * ‖S g‖ := B.norm_holder_apply_apply_le (r := (q : ℝ≥0∞)) _ _
-      _ ≤ ‖B‖ * ‖f‖ * (‖S‖ * ‖g‖) := by gcongr; exact S.le_opNorm g
-      _ = _ := by ring)
-  refine ⟨T, fun f g ↦ ?_⟩
-  filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) f (S g), hS g] with x hx hg
-  change B.holder (q : ℝ≥0∞) f (S g) x = _
-  rw [hx, hg]
+  exact ⟨(B.holderL (μ.restrict V) p r q).bilinearComp (ContinuousLinearMap.id ℝ _) S,
+    (W1p.holderComp_spec (p := p) S hS B).1⟩
 
 /-- Choose the bounded bilinear mixed product supplied by the interior Sobolev estimate. -/
 def W1p.mixedBilinL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
@@ -148,22 +171,11 @@ theorem W1p.exists_eLpNorm_mixed_le (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : 
   let : Fact (1 ≤ r) := ⟨hr⟩
   let : ENNReal.HolderTriple (p : ℝ≥0∞) r (q : ℝ≥0∞) := hhr
   refine ⟨‖S‖₊, fun B f g ↦ ?_⟩
-  have ha : B.holder (q : ℝ≥0∞) f (S g) =ᵐ[μ.restrict V]
-      fun x ↦ B (f x) (W1p.value g x) := by
-    filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) f (S g), hS g] with x hx hg
-    rw [hx, hg]
-  rw [← eLpNorm_congr_ae ha, ← Lp.enorm_def]
-  have hb : ‖B.holder (q : ℝ≥0∞) f (S g)‖ ≤ ‖S‖ * ‖B‖ * ‖f‖ * ‖g‖ := by
-    calc
-      _ ≤ ‖B‖ * ‖f‖ * ‖S g‖ := B.norm_holder_apply_apply_le (r := (q : ℝ≥0∞)) _ _
-      _ ≤ ‖B‖ * ‖f‖ * (‖S‖ * ‖g‖) := by gcongr; exact S.le_opNorm g
-      _ = _ := by ring
-  have he := ENNReal.ofReal_le_ofReal hb
-  simpa only [ENNReal.ofReal_mul (by positivity : 0 ≤ ‖S‖ * ‖B‖ * ‖f‖),
-    ENNReal.ofReal_mul (by positivity : 0 ≤ ‖S‖ * ‖B‖),
-    ENNReal.ofReal_mul (norm_nonneg S), ofReal_norm B, ofReal_norm, enorm_eq_nnnorm] using he
+  have hT := W1p.holderComp_spec (p := p) S hS B
+  rw [← eLpNorm_congr_ae (hT.1 f g), ← Lp.enorm_def]
+  simpa only [enorm_eq_nnnorm] using hT.2 f g
 
-/-- The actual mixed product lies in `L^q` on the smaller coordinate domain. -/
+/-- The actual mixed product lies in `L^q(V)` for every `V` with compact closure in `Ω`. -/
 theorem W1p.memLp_mixed (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω)
     (B : F →L[ℝ] ℝ →L[ℝ] H) {f : E → F} (hf : MemLp f p (μ.restrict V))

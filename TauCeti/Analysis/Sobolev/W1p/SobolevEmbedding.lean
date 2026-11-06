@@ -34,8 +34,9 @@ As `V` has finite measure, Hölder's inequality also gives the bound in `L^q(V)`
 `q ≤ p⋆`. No boundedness or regularity of `Ω` itself is assumed.
 
 For arbitrary finite source exponents, the interior inclusion into finite `L^s` is also bounded
-whenever `p ≤ s` and `1/p - 1/s < 1/n`. This includes `p = n` and `p > n`. The proof localizes
-into a bounded zero-boundary domain and uses the finite-measure Sobolev inequality. For `p > n`,
+whenever the source exponent `q` satisfies `q ≤ s` and `1/q - 1/s < 1/n`.
+This includes `q = n` and `q > n`. The proof localizes
+into a bounded zero-boundary domain and uses the finite-measure Sobolev inequality. For `q > n`,
 the native Morrey embedding also gives a bounded interior inclusion into `L^∞`.
 
 ## Main declarations
@@ -52,7 +53,7 @@ the native Morrey embedding also gives a bounded interior inclusion into `L^∞`
   `‖u‖_{L^q(V)} ≤ C ‖u‖_{W^{1,p}(Ω)}` and integrability for `q ≤ p⋆`.
 
 * `TauCeti.W1p.exists_sobolevEmbeddingL_of_subcritical_gain`: the bounded interior inclusion
-  for arbitrary finite source exponents with `1/p - 1/s < 1/n`.
+  for finite source exponent `q` and target exponent `s` with `q ≤ s` and `1/q - 1/s < 1/n`.
 * `TauCeti.W1p.exists_lpInftyEmbeddingL_of_isCompact_closure`: the supercritical interior
   inclusion into `L^∞`.
 
@@ -344,6 +345,9 @@ private theorem W1p.exists_valueLpCLM_of_bound {r : ℝ≥0∞} [Fact (1 ≤ r)]
         apply ae_restrict_of_ae_restrict_of_subset hVΩ
         exact W1p.value_smul_ae c u }
   refine ⟨L.mkContinuous C (fun u ↦ ?_), fun u ↦ (hm u).coeFn_toLp⟩
+  -- This bound is for the anonymous linear map L before mkContinuous is constructed.
+  -- Its function projection is the chosen toLp representative; exposing that projection
+  -- lets the public norm_toLp law apply without unfolding the representative itself.
   change ‖(hm u).toLp (W1p.value u)‖ ≤ _
   rw [Lp.norm_toLp]
   simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] using
@@ -382,9 +386,9 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
       ae_restrict_of_ae_restrict_of_subset hVU (ae_restrict_mem U.isOpen.measurableSet)
     filter_upwards [hmor, ae_restrict_of_ae_restrict_of_subset (subset_univ V) hz,
       hT u, hmem] with x hm he ht hx
-    change (W1p.morreyEmbedding hq (Z u)) x = _
+    simp only [H, ContinuousLinearMap.comp_apply]
     rw [← hm]
-    change W1p.value (W1p0.extendByZeroL le_top (T u)).1 x = _
+    simp only [Z, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
     rw [he, indicator_of_mem hx, ht]
   apply W1p.exists_valueLpCLM_of_bound (subset_closure.trans hVΩ)
   refine ⟨‖H‖₊, fun u ↦ ?_⟩
