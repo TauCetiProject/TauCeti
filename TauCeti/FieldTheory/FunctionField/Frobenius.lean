@@ -71,7 +71,10 @@ theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionFi
   let _ : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
   obtain ⟨y, hy⟩ := hF.exists_transcendental
   have hA : k⟮y⟯.toSubfield.map (frobenius F p) = k⟮y ^ p⟯.toSubfield := by
-    -- both inclusions are `adjoin_simple_le_iff` for subfields containing the scalars
+    -- Both inclusions use `adjoin_simple_le_iff` for subfields containing the scalars.
+    -- Passing between subfield and intermediate-field membership is definitional.
+    -- Comap membership is definitionally membership of the Frobenius image, and
+    -- `frobenius F p y = y ^ p` holds by `rfl`, also giving the map witness below.
     have hk (c : k) : algebraMap k F c ∈ k⟮y⟯.toSubfield.map (frobenius F p) := by
       obtain ⟨d, rfl⟩ := surjective_frobenius k p c
       exact ⟨algebraMap k F d, k⟮y⟯.algebraMap_mem d, (RingHom.map_frobenius _ _ _).symm⟩
