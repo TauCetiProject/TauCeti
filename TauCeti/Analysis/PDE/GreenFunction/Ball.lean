@@ -57,6 +57,10 @@ dimension two that kernel vanishes identically, so the planar case is instead
   the unit sphere.
 * `TauCeti.ballGreenKernel_pos`: positivity inside the ball outside dimension two.
 * `TauCeti.ballPoissonKernel`: the Poisson kernel of the unit ball.
+* `TauCeti.ballPoissonKernel_le_mul_ballPoissonKernel_zero`,
+  `TauCeti.mul_ballPoissonKernel_zero_le_ballPoissonKernel`: on the unit sphere, the comparison of
+  the Poisson kernel with pole `x` with the kernel with pole at the centre, the kernel bounds behind
+  Harnack's inequality.
 * `TauCeti.contDiffOn_ballPoissonKernel`: joint smoothness of the Poisson kernel off the diagonal.
 * `TauCeti.harmonicAt_ballPoissonKernel_left`, `TauCeti.harmonicOnNhd_ballPoissonKernel_left`:
   for a boundary point `y`, the Poisson kernel is harmonic in its pole away from `y`.
@@ -388,6 +392,57 @@ theorem ballPoissonKernel_pos_on_sphere (x : EuclideanSpace ℝ (Fin n)) (hx : �
   have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
   rw [h] at hx
   linarith
+
+/-- On the unit sphere, the Poisson kernel with pole `x` is at most
+`(1 + ‖x‖) / (1 - ‖x‖) ^ (n - 1)` times the Poisson kernel with pole at the centre, which is the
+constant `1 / (n ωₙ)`.  This is the upper half of the kernel comparison behind Harnack's
+inequality with the sharp constant. -/
+theorem ballPoissonKernel_le_mul_ballPoissonKernel_zero {x y : EuclideanSpace ℝ (Fin n)}
+    (hx : ‖x‖ < 1) (hy : ‖y‖ = 1) :
+    ballPoissonKernel n x y ≤ (1 + ‖x‖) / (1 - ‖x‖) ^ (n - 1) * ballPoissonKernel n 0 y := by
+  have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_zero_euclideanSpace hy0).ne'
+  have hN := mul_pos (Nat.cast_pos.mpr k.succ_pos) (volume_real_unitBall_pos (k + 1))
+  have ha : 0 < 1 - ‖x‖ := by linarith
+  -- The distance from the pole to the boundary point is at least `1 - ‖x‖`.
+  have hm : 1 - ‖x‖ ≤ ‖x - y‖ := by
+    simpa [hy, norm_sub_rev] using norm_sub_norm_le y x
+  rw [ballPoissonKernel_def, ballPoissonKernel_def, Nat.add_sub_cancel]
+  generalize ((k + 1 : ℕ) : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) = N
+    at hN ⊢
+  simp only [norm_zero, zero_sub, norm_neg, hy, one_pow, mul_one]
+  calc (1 - ‖x‖ ^ 2) / (N * ‖x - y‖ ^ (k + 1))
+      ≤ (1 - ‖x‖ ^ 2) / (N * (1 - ‖x‖) ^ (k + 1)) := by
+        gcongr
+        nlinarith [norm_nonneg x]
+    _ = (1 + ‖x‖) / (1 - ‖x‖) ^ k * ((1 - 0 ^ 2) / N) := by
+        field_simp
+        ring
+
+/-- On the unit sphere, the Poisson kernel with pole `x` is at least
+`(1 - ‖x‖) / (1 + ‖x‖) ^ (n - 1)` times the Poisson kernel with pole at the centre.  This is the
+lower half of the kernel comparison behind Harnack's inequality with the sharp constant. -/
+theorem mul_ballPoissonKernel_zero_le_ballPoissonKernel {x y : EuclideanSpace ℝ (Fin n)}
+    (hx : ‖x‖ < 1) (hy : ‖y‖ = 1) :
+    (1 - ‖x‖) / (1 + ‖x‖) ^ (n - 1) * ballPoissonKernel n 0 y ≤ ballPoissonKernel n x y := by
+  have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_zero_euclideanSpace hy0).ne'
+  have hN := mul_pos (Nat.cast_pos.mpr k.succ_pos) (volume_real_unitBall_pos (k + 1))
+  have hm : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h ↦ by simp [h, hy] at hx)
+  -- The distance from the pole to the boundary point is at most `1 + ‖x‖`.
+  have hm' : ‖x - y‖ ≤ 1 + ‖x‖ := by
+    simpa [hy, add_comm] using norm_sub_le x y
+  rw [ballPoissonKernel_def, ballPoissonKernel_def, Nat.add_sub_cancel]
+  generalize ((k + 1 : ℕ) : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) = N
+    at hN ⊢
+  simp only [norm_zero, zero_sub, norm_neg, hy, one_pow, mul_one]
+  calc (1 - ‖x‖) / (1 + ‖x‖) ^ k * ((1 - 0 ^ 2) / N)
+      = (1 - ‖x‖ ^ 2) / (N * (1 + ‖x‖) ^ (k + 1)) := by
+        field_simp
+        ring
+    _ ≤ (1 - ‖x‖ ^ 2) / (N * ‖x - y‖ ^ (k + 1)) := by
+        gcongr
+        nlinarith [norm_nonneg x]
 
 /-- The Poisson kernel of the unit ball is smooth, jointly in the pole and the boundary variable,
 away from the diagonal. -/
