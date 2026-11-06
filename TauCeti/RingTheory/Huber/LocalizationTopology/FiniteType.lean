@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 import TauCeti.RingTheory.Huber.WeightedEval.Finite
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Pair
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
@@ -43,7 +44,8 @@ Composing a finite-type morphism with rational localisation preserves topologica
 presentation retains the original coefficient plus ring up to integrality and lifts every rational
 fraction. This makes its final evaluation a quotient mapping of pairs.
 
-Base change along a rational localisation also preserves topological finite type: if
+Base change along a rational localisation also preserves topological finite type, both for ring
+homomorphisms (`isTopologicallyFiniteType_completionLocMap`) and for morphisms of Huber pairs: if
 `f : (A, A⁺) → (B, B⁺)` is topologically of finite type, then so is the base change
 `(A⟨T/s⟩, A_U⁺) → (B⟨T'/f(s)⟩, B_V⁺)` of
 `TauCeti.Huber.PairOfDefinition.completionLocPairMap`
@@ -661,7 +663,43 @@ namespace TauCeti.Huber.PairOfDefinition
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-  (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus)
+
+/-- **Base change along a rational localisation preserves topological finite type** for Huber
+rings: if `f : A →+* B` is topologically of finite type and `T' ∪ {s'}` generates an open ideal of
+`B`, then the induced map `A⟨T/s⟩ → B⟨T'/f(s)⟩` (`completionLocMap`) is topologically of finite
+type. -/
+theorem isTopologicallyFiniteType_completionLocMap
+    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+    (P' : PairOfDefinition B) {f : A →+* B} (hf : Huber.IsTopologicallyFiniteType f)
+    (T' : Finset B) (s' : B) (S' : Type*) [CommRing S'] [Algebra B S']
+    [IsLocalization.Away s' S'] (hden' : HasDenominatorPower P' T' s' S')
+    (hs : f s = s') (hT : ∀ t ∈ T, f t ∈ T')
+    (hspan : IsOpen (Ideal.span (insert s' (T' : Set B)) : Set B)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    letI := isHuberRing_completion_locTopology P' T' s' S' hden'
+    Huber.IsTopologicallyFiniteType
+      (completionLocMap P T s S hden P' f hf.continuous.continuousAt T' s' S' hden' hs hT) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  have _ := isHuberRing_completion_locTopology P' T' s' S' hden'
+  have h := (P'.isTopologicallyFiniteType_toCompletionLoc T' s' S' hden' hspan).comp hf
+  rw [← completionLocMap_comp_toCompletionLoc P T s S hden P' f hf.continuous.continuousAt
+    T' s' S' hden' hs hT] at h
+  exact h.of_comp (continuous_toCompletionLoc P T s S hden) (continuous_completionLocMap ..)
+
+variable (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus)
   (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
   (hden : HasDenominatorPower P T s S)
   (P' : PairOfDefinition B) (U' : Pair B) (hP' : P'.ringOfDefinition ≤ U'.plus)
