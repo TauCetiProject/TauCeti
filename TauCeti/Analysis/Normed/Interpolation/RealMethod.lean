@@ -37,13 +37,14 @@ Here `K` is Peetre's `K`-functional `CompatibleCouple.kFunctional` and `dt / t` 
 * `KMethodSpace.ofInter`: for `0 < θ < 1`, the continuous inclusion of the intersection, with
   `‖x‖_{θ,q} ≤ c_{θ,q} ‖x‖`, where `c_{θ,q} = ‖t ^ (-θ) min 1 t‖_{L^q(dt / t)}` is
   `CompatibleCouple.kMethodConst θ q`.
-* `KMethodSpace.map`: a linear map `T` of sum spaces restricting to bounded maps `X₀ → Y₀` and
-  `X₁ → Y₁` induces a continuous linear map of the real interpolation spaces. For any endpoint
-  bounds `M₀`, `M₁` it multiplies the norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ`
-  (`KMethodSpace.norm_map_le`, and `KMethodSpace.opNorm_map_le` over a nontrivially normed
-  field). It respects identities and composition (`KMethodSpace.map_id`,
-  `KMethodSpace.map_comp`). Thus the real method is an exact interpolation functor of
-  exponent `θ`.
+* `KMethodSpace.map`: over a nontrivially normed field, a linear map `T` of sum spaces
+  restricting to continuous linear maps `X₀ →L[𝕜] Y₀` and `X₁ →L[𝕜] Y₁` induces a continuous
+  linear map of the real interpolation spaces. For any endpoint bounds `M₀`, `M₁` it multiplies
+  the norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ` (`KMethodSpace.norm_map_le`,
+  `KMethodSpace.opNorm_map_le`; the underlying estimate `CompatibleCouple.kMethodENorm_map_le`
+  holds over any normed field). It respects identities and composition
+  (`KMethodSpace.map_id`, `KMethodSpace.map_comp`). Thus the real method is an exact
+  interpolation functor of exponent `θ`.
 * `CompatibleCouple.kMethodConst_eq`: `c_{θ,q} = (θ (1 - θ) q) ^ (-1 / q)` for `0 < θ < 1` and
   finite `q ≠ 0`; by `CompatibleCouple.kMethodENorm_refl`, for the couple `(X, X)` the norm is
   `‖u‖_{θ,q} = c_{θ,q} ‖u‖`. For instance `c_{1/2,2} = 2 ^ (1 / 2)`.
@@ -535,96 +536,11 @@ theorem kMethodENorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X�
           (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u) hmp,
           Real.enorm_of_nonneg (by positivity), kMethodENorm]
 
-namespace KMethodSpace
-
-section
-
-variable [T1Space V] [T1Space W] [Fact (1 ≤ q)] (T : C.SumSpace →ₗ[𝕜] D.SumSpace)
-  {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁} (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
-  (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) (hb₀ : ∃ M₀, ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖)
-  (hb₁ : ∃ M₁, ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖)
-include hT₀ hT₁ hb₀ hb₁
-
-omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
-private theorem map_toSumₗ_mem (u : C.KMethodSpace θ q) : T (toSumₗ u) ∈ D.kMethod θ q := by
-  obtain ⟨M₀, hM₀, h₀⟩ := exists_pos_bound_of_bound _ hb₀.choose_spec
-  obtain ⟨M₁, hM₁, h₁⟩ := exists_pos_bound_of_bound _ hb₁.choose_spec
-  exact (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ _).trans_lt
-    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (kMethodENorm_toSumₗ_lt_top u))
-
-private theorem norm_mk_map_toSumₗ_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
-    (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.KMethodSpace θ q) :
-    ‖mk (T (toSumₗ u)) (map_toSumₗ_mem T hT₀ hT₁ hb₀ hb₁ u)‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
-  rw [norm_mk, norm_def, ← ENNReal.toReal_ofReal (by positivity : 0 ≤ M₀ ^ (1 - θ) * M₁ ^ θ),
-    ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (kMethodENorm_toSumₗ_lt_top u).ne) (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ _)
-
-/-- The continuous linear map `(X₀, X₁)_{θ,q} → (Y₀, Y₁)_{θ,q}` induced by a linear map `T` of
-sum spaces that restricts to bounded maps `T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁`. If
-`‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` for positive `M₀`, `M₁`, it multiplies the norm by at most
-`M₀ ^ (1 - θ) * M₁ ^ θ` (`KMethodSpace.norm_map_le`). -/
-def map : C.KMethodSpace θ q →L[𝕜] D.KMethodSpace θ q :=
-  have h₀ := exists_pos_bound_of_bound _ hb₀.choose_spec
-  have h₁ := exists_pos_bound_of_bound _ hb₁.choose_spec
-  LinearMap.mkContinuous
-    { toFun u := mk (T (toSumₗ u)) (map_toSumₗ_mem T hT₀ hT₁ hb₀ hb₁ u)
-      map_add' u v := by ext; simp
-      map_smul' c u := by ext; simp }
-    (h₀.choose ^ (1 - θ) * h₁.choose ^ θ)
-    (norm_mk_map_toSumₗ_le T hT₀ hT₁ hb₀ hb₁ h₀.choose_spec.1 h₁.choose_spec.1 h₀.choose_spec.2
-      h₁.choose_spec.2)
-
-@[simp]
-theorem toSumₗ_map (u : C.KMethodSpace θ q) :
-    toSumₗ (map T hT₀ hT₁ hb₀ hb₁ u) = T (toSumₗ u) :=
-  (rfl)
-
-/-- **Exactness of the real method.** If `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` for positive
-`M₀`, `M₁`, the induced map multiplies the norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ`. -/
-theorem norm_map_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖)
-    (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.KMethodSpace θ q) :
-    ‖map T hT₀ hT₁ hb₀ hb₁ u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ :=
-  norm_mk_map_toSumₗ_le T hT₀ hT₁ hb₀ hb₁ hM₀ hM₁ h₀ h₁ u
-
-end
-
-variable [T1Space V] [Fact (1 ≤ q)] in
-/-- The identity of the couple induces the identity of the real interpolation space. -/
-theorem map_id (hb₀ : ∃ M₀, ∀ x : X₀, ‖id x‖ ≤ M₀ * ‖x‖) (hb₁ : ∃ M₁, ∀ x : X₁, ‖id x‖ ≤ M₁ * ‖x‖) :
-    map (θ := θ) (q := q) (LinearMap.id : C.SumSpace →ₗ[𝕜] C.SumSpace) (T₀ := id) (T₁ := id)
-      (fun _ => rfl) (fun _ => rfl) hb₀ hb₁ = ContinuousLinearMap.id 𝕜 _ := by
-  ext u
-  rfl
-
-variable {Z₀ Z₁ U : Type*} [NormedAddCommGroup Z₀] [NormedSpace 𝕜 Z₀] [NormedAddCommGroup Z₁]
-  [NormedSpace 𝕜 Z₁] [AddCommGroup U] [Module 𝕜 U] [TopologicalSpace U] [ContinuousAdd U]
-  {E : CompatibleCouple 𝕜 Z₀ Z₁ U} [T1Space V] [T1Space W] [T1Space U] [Fact (1 ≤ q)] in
-/-- The map induced by a composite of morphisms of couples is the composite of the induced
-maps. -/
-theorem map_comp (S : D.SumSpace →ₗ[𝕜] E.SumSpace) (T : C.SumSpace →ₗ[𝕜] D.SumSpace)
-    {S₀ : Y₀ → Z₀} {S₁ : Y₁ → Z₁} {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
-    (hS₀ : ∀ y, S (D.fstToSum y) = E.fstToSum (S₀ y))
-    (hS₁ : ∀ y, S (D.sndToSum y) = E.sndToSum (S₁ y))
-    (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
-    (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x))
-    (hSb₀ : ∃ M₀, ∀ y, ‖S₀ y‖ ≤ M₀ * ‖y‖) (hSb₁ : ∃ M₁, ∀ y, ‖S₁ y‖ ≤ M₁ * ‖y‖)
-    (hTb₀ : ∃ M₀, ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (hTb₁ : ∃ M₁, ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖)
-    (hSTb₀ : ∃ M₀, ∀ x, ‖(S₀ ∘ T₀) x‖ ≤ M₀ * ‖x‖)
-    (hSTb₁ : ∃ M₁, ∀ x, ‖(S₁ ∘ T₁) x‖ ≤ M₁ * ‖x‖) :
-    map (θ := θ) (q := q) (S ∘ₗ T) (T₀ := S₀ ∘ T₀) (T₁ := S₁ ∘ T₁)
-        (fun x => by simp [hT₀, hS₀]) (fun x => by simp [hT₁, hS₁]) hSTb₀ hSTb₁ =
-      (map S hS₀ hS₁ hSb₀ hSb₁).comp (map T hT₀ hT₁ hTb₀ hTb₁) := by
-  ext u
-  rfl
-
-end KMethodSpace
-
 end Map
 
 end CompatibleCouple
 
-/-! ### Operator norms -/
+/-! ### Operator norms and functoriality -/
 
 namespace CompatibleCouple.KMethodSpace
 
@@ -646,17 +562,87 @@ theorem opNorm_ofInter_le (hθ : θ ∈ Ioo 0 1) :
     ‖ofInter (C := C) θ q hθ‖ ≤ (kMethodConst θ q).toReal :=
   LinearMap.mkContinuous_norm_le _ ENNReal.toReal_nonneg _
 
+/-! ### The induced maps -/
+
+section Map
+
+variable (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ →L[𝕜] Y₀} {T₁ : X₁ →L[𝕜] Y₁}
+  (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
+  (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x))
+include hT₀ hT₁
+
+omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
+private theorem map_toSumₗ_mem (u : C.KMethodSpace θ q) : T (toSumₗ u) ∈ D.kMethod θ q := by
+  obtain ⟨M₀, hM₀, h₀⟩ := T₀.bound
+  obtain ⟨M₁, hM₁, h₁⟩ := T₁.bound
+  exact (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ _).trans_lt
+    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (kMethodENorm_toSumₗ_lt_top u))
+
+private theorem norm_mk_map_toSumₗ_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
+    (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.KMethodSpace θ q) :
+    ‖mk (T (toSumₗ u)) (map_toSumₗ_mem T hT₀ hT₁ u)‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
+  rw [norm_mk, norm_def, ← ENNReal.toReal_ofReal (by positivity : 0 ≤ M₀ ^ (1 - θ) * M₁ ^ θ),
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (kMethodENorm_toSumₗ_lt_top u).ne) (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ _)
+
+/-- The continuous linear map `(X₀, X₁)_{θ,q} → (Y₀, Y₁)_{θ,q}` induced by a linear map `T` of
+sum spaces that restricts to continuous linear maps `T₀ : X₀ →L[𝕜] Y₀` and
+`T₁ : X₁ →L[𝕜] Y₁`. If `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` for positive `M₀`, `M₁`, it
+multiplies the norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ` (`KMethodSpace.norm_map_le`). -/
+def map : C.KMethodSpace θ q →L[𝕜] D.KMethodSpace θ q :=
+  LinearMap.mkContinuous
+    { toFun u := mk (T (toSumₗ u)) (map_toSumₗ_mem T hT₀ hT₁ u)
+      map_add' u v := by ext; simp
+      map_smul' c u := by ext; simp }
+    (T₀.bound.choose ^ (1 - θ) * T₁.bound.choose ^ θ)
+    (norm_mk_map_toSumₗ_le T hT₀ hT₁ T₀.bound.choose_spec.1 T₁.bound.choose_spec.1
+      T₀.bound.choose_spec.2 T₁.bound.choose_spec.2)
+
+@[simp]
+theorem toSumₗ_map (u : C.KMethodSpace θ q) : toSumₗ (map T hT₀ hT₁ u) = T (toSumₗ u) :=
+  (rfl)
+
+/-- **Exactness of the real method.** If `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` for positive
+`M₀`, `M₁`, the induced map multiplies the norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ`. -/
+theorem norm_map_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖)
+    (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.KMethodSpace θ q) :
+    ‖map T hT₀ hT₁ u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ :=
+  norm_mk_map_toSumₗ_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ u
+
 /-- **Exactness of the real method.** If `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` for positive
 `M₀`, `M₁`, the induced map has norm at most `M₀ ^ (1 - θ) * M₁ ^ θ`. -/
-theorem opNorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
+theorem opNorm_map_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖)
+    (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) :
+    ‖(map T hT₀ hT₁ : C.KMethodSpace θ q →L[𝕜] D.KMethodSpace θ q)‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ :=
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁)
+
+end Map
+
+/-- The identity of the couple induces the identity of the real interpolation space. -/
+theorem map_id :
+    map (θ := θ) (q := q) (LinearMap.id : C.SumSpace →ₗ[𝕜] C.SumSpace)
+      (T₀ := ContinuousLinearMap.id 𝕜 X₀) (T₁ := ContinuousLinearMap.id 𝕜 X₁)
+      (fun _ => rfl) (fun _ => rfl) = ContinuousLinearMap.id 𝕜 _ := by
+  ext u
+  rfl
+
+variable {Z₀ Z₁ U : Type*} [NormedAddCommGroup Z₀] [NormedSpace 𝕜 Z₀] [NormedAddCommGroup Z₁]
+  [NormedSpace 𝕜 Z₁] [AddCommGroup U] [Module 𝕜 U] [TopologicalSpace U] [ContinuousAdd U]
+  [T1Space U] {E : CompatibleCouple 𝕜 Z₀ Z₁ U} in
+/-- The map induced by a composite of morphisms of couples is the composite of the induced
+maps. -/
+theorem map_comp (S : D.SumSpace →ₗ[𝕜] E.SumSpace) (T : C.SumSpace →ₗ[𝕜] D.SumSpace)
+    {S₀ : Y₀ →L[𝕜] Z₀} {S₁ : Y₁ →L[𝕜] Z₁} {T₀ : X₀ →L[𝕜] Y₀} {T₁ : X₁ →L[𝕜] Y₁}
+    (hS₀ : ∀ y, S (D.fstToSum y) = E.fstToSum (S₀ y))
+    (hS₁ : ∀ y, S (D.sndToSum y) = E.sndToSum (S₁ y))
     (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
-    (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) (hb₀ : ∃ M₀, ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖)
-    (hb₁ : ∃ M₁, ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
-    (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) :
-    ‖(map T hT₀ hT₁ hb₀ hb₁ : C.KMethodSpace θ q →L[𝕜] D.KMethodSpace θ q)‖ ≤
-      M₀ ^ (1 - θ) * M₁ ^ θ :=
-  ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-    (norm_map_le T hT₀ hT₁ hb₀ hb₁ hM₀ hM₁ h₀ h₁)
+    (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) :
+    map (θ := θ) (q := q) (S ∘ₗ T) (T₀ := S₀.comp T₀) (T₁ := S₁.comp T₁)
+        (fun x => by simp [hT₀, hS₀]) (fun x => by simp [hT₁, hS₁]) =
+      (map S hS₀ hS₁).comp (map T hT₀ hT₁) := by
+  ext u
+  rfl
 
 end CompatibleCouple.KMethodSpace
 
