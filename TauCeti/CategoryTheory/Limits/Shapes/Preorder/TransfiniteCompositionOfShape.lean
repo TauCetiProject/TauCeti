@@ -71,12 +71,7 @@ lemma toStage_comp_map {j k : J} (φ : j ⟶ k) : h.toStage j ≫ h.F.map φ = h
 /-- The map from the source of `f` to the bottom stage is the inverse of `h.isoBot`. -/
 @[simp]
 lemma toStage_bot : h.toStage ⊥ = h.isoBot.inv := by
-  rw [toStage, show (homOfLE bot_le : (⊥ : J) ⟶ ⊥) = 𝟙 ⊥ from rfl, CategoryTheory.Functor.map_id,
-    Category.comp_id]
-
-/-- The map to the bottom stage followed by `h.isoBot` is the identity of the source of `f`. -/
-lemma toStage_bot_comp_isoBot_hom : h.toStage ⊥ ≫ h.isoBot.hom = 𝟙 X := by
-  simp
+  simp [toStage, homOfLE_refl]
 
 /-- The map from the source of `f` to a stage, followed by the map to the colimit, is `f`. -/
 @[reassoc (attr := simp)]
@@ -199,13 +194,15 @@ lemma pushout_F_obj (j : J) :
   rfl
 
 /-- The maps between the stages of `h.pushout g` are the maps `h.pushoutStageMap g φ`. -/
+@[simp]
 lemma pushout_F_map {j k : J} (φ : j ⟶ k) :
     (h.pushout g).F.map φ = h.pushoutStageMap g φ :=
-  rfl
+  (rfl)
 
 /-- The maps from the stages of `h.pushout g` to `pushout f g` are `h.pushoutStageIncl g j`. -/
+@[simp]
 lemma pushout_incl_app (j : J) :
     (h.pushout g).incl.app j = h.pushoutStageIncl g j :=
-  rfl
+  (rfl)
 
 end CategoryTheory.TransfiniteCompositionOfShape

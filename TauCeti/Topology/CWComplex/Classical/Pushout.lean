@@ -126,15 +126,14 @@ corresponding cell of `C`, followed by the map `C → Z ∪_a C`. -/
 theorem relativeCWPushout_map_apply (n : ℕ)
     (i : letI := relativeCWPushout C a
       cell (univ : Set (relCWAdjunctionSpace C a)) n)
-    (x : closedBall (0 : Fin n → ℝ) 1) (hx : map n (relativeCWPushoutCellEquiv C a n i) x ∈ C) :
+    (x : closedBall (0 : Fin n → ℝ) 1) :
     letI := relativeCWPushout C a
     map n i x = pushout.inl (relCWBaseInclusion C) (TopCat.ofHom a)
-      ⟨map n (relativeCWPushoutCellEquiv C a n i) x, hx⟩ := by
-  refine ((relCWAdjunctionSpaceRelativeCWComplex C a).toRelCWComplex_map_apply n i x).trans ?_
-  refine (congrArg (fun φ : TopCat.disk.{u} n ⟶ relCWAdjunctionSpace C a ↦
-    φ ((diskHomeomorphClosedBall n).symm x))
-    ((toRelativeCWComplex C).pushout_cells_ι (TopCat.ofHom a) n (not_isMax n)
-      (relativeCWPushoutCellEquiv C a n i))).trans ?_
+      ⟨map n (relativeCWPushoutCellEquiv C a n i) x,
+        mem_of_subset_of_mem (closedCell_subset_complex n _) (mem_image_of_mem _ x.2)⟩ := by
+  rw [TopCat.RelativeCWComplex.toRelCWComplex_map_apply]
+  refine (ConcreteCategory.congr_hom ((toRelativeCWComplex C).pushout_cells_ι (TopCat.ofHom a) n
+    (not_isMax n) (relativeCWPushoutCellEquiv C a n i)) _).trans ?_
   rw [ConcreteCategory.comp_apply]
   congr 1
   apply Subtype.ext

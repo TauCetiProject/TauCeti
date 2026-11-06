@@ -35,7 +35,8 @@ attaching the cells of `c` paste with it.
 
 * `HomotopicalAlgebra.RelativeCellComplex.pushout_cells_ι`: the inclusion of a cell of the cobase
   change is the inclusion of the corresponding cell of the original complex, followed by
-  `pushout.inl f g`.
+  `pushout.inl f g`; `HomotopicalAlgebra.RelativeCellComplex.pushout_cells_ι'` states this for
+  an arbitrary cell, through `HomotopicalAlgebra.RelativeCellComplex.pushoutCellsEquiv`.
 
 ## References
 
@@ -71,7 +72,9 @@ cells of `c` by definition. -/
       isPushout := (c.attachCells j hj).isPushout.paste_horiz
         (c.isPushout_pushoutStageMap g _).flip }
 
-/-- The cells of the cobase change `c.pushout g` are the cells of `c`. -/
+/-- The cells of the cobase change `c.pushout g` are the cells of `c`. Exposed so that a cell and
+its image are attached at the same step by definition, as the statement of `pushout_cells_ι'`
+needs. -/
 @[expose] def pushoutCellsEquiv : (c.pushout g).Cells ≃ c.Cells where
   toFun γ := ⟨γ.j, γ.hj, γ.k⟩
   invFun γ := ⟨γ.j, γ.hj, γ.k⟩
@@ -99,10 +102,23 @@ lemma pushout_attachCells_cell (j : J) (hj : ¬IsMax j) (k : (c.attachCells j hj
 corresponding cell of `c`, followed by `pushout.inl f g`. -/
 @[simp, reassoc]
 lemma pushout_cells_ι (j : J) (hj : ¬IsMax j) (k : (c.attachCells j hj).ι) :
-    Cells.ι (c := c.pushout g) ⟨j, hj, k⟩ = Cells.ι (c := c) ⟨j, hj, k⟩ ≫ Limits.pushout.inl f g :=
-  (congrArg (· ≫ c.pushoutStageIncl g (Order.succ j)) (c.pushout_attachCells_cell g j hj k)).trans
-    ((Category.assoc _ _ _).trans
-      ((congrArg ((c.attachCells j hj).cell k ≫ ·) (c.inl_pushoutStageIncl g _)).trans
-        (Category.assoc _ _ _).symm))
+    Cells.ι (c := c.pushout g) ⟨j, hj, k⟩ =
+      Cells.ι (c := c) ⟨j, hj, k⟩ ≫ Limits.pushout.inl f g := by
+  -- The inclusion of a cell of `c.pushout g` is its attaching map followed by
+  -- `c.pushoutStageIncl g`, by definition.
+  refine (c.pushout_attachCells_cell g j hj k =≫ c.pushoutStageIncl g (Order.succ j)).trans ?_
+  -- Restate the goal with the stages of `c.pushout g` read as pushouts, so that `simp` applies.
+  change ((c.attachCells j hj).cell k ≫ Limits.pushout.inl (c.toStage (Order.succ j)) g) ≫
+      c.pushoutStageIncl g (Order.succ j) =
+    ((c.attachCells j hj).cell k ≫ c.incl.app (Order.succ j)) ≫ Limits.pushout.inl f g
+  simp
+
+/-- The inclusion of any cell `γ` of the cobase change `c.pushout g` is the inclusion of the cell
+`c.pushoutCellsEquiv g γ` of `c`, followed by `pushout.inl f g`. -/
+@[reassoc]
+lemma pushout_cells_ι' (γ : (c.pushout g).Cells) :
+    γ.ι = (c.pushoutCellsEquiv g γ).ι ≫ Limits.pushout.inl f g := by
+  obtain ⟨j, hj, k⟩ := γ
+  exact c.pushout_cells_ι g j hj k
 
 end HomotopicalAlgebra.RelativeCellComplex
