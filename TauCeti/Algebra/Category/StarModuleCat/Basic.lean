@@ -60,10 +60,28 @@ structure Hom (V W : StarModuleCat R) where
 
 attribute [simp] Hom.map_star'
 
+instance {V W : StarModuleCat R} : FunLike (Hom V W) V W where
+  coe f := f.hom
+  coe_injective _ _ h := Hom.ext (DFunLike.coe_injective h)
+
 instance : Category (StarModuleCat.{u} R) where
   Hom := Hom
   id V := ⟨LinearMap.id, fun _ => rfl⟩
   comp f g := ⟨g.hom.comp f.hom, fun v => by simp⟩
+
+instance : ConcreteCategory (StarModuleCat.{u} R) Hom where
+  hom f := f
+  ofHom f := f
+
+/-- Bundle a linear map that commutes with star as a morphism. -/
+abbrev ofHom {V W : StarModuleCat R} (f : V →ₗ[R] W)
+    (hf : ∀ v, f (star v) = star (f v)) : V ⟶ W := ⟨f, hf⟩
+
+@[simp] theorem hom_ofHom {V W : StarModuleCat R} (f : V →ₗ[R] W)
+    (hf : ∀ v, f (star v) = star (f v)) : (ofHom f hf).hom = f := rfl
+
+@[simp] theorem ofHom_hom {V W : StarModuleCat R} (f : V ⟶ W) :
+    ofHom f.hom f.map_star' = f := rfl
 
 /-- Morphisms are determined by their underlying linear maps. -/
 @[ext] theorem hom_ext {V W : StarModuleCat R} {f g : V ⟶ W}
@@ -74,10 +92,33 @@ instance : Category (StarModuleCat.{u} R) where
 @[simp] theorem comp_hom {V W X : StarModuleCat R} (f : V ⟶ W) (g : W ⟶ X) :
     (f ≫ g).hom = g.hom.comp f.hom := rfl
 
+/-- A star-preserving linear equivalence gives an isomorphism of star modules. -/
+def isoMk {V W : StarModuleCat R} (e : V ≃ₗ[R] W)
+    (he : ∀ v, e (star v) = star (e v)) : V ≅ W where
+  hom := ofHom e.toLinearMap he
+  inv := ofHom e.symm.toLinearMap (fun w => by
+    apply e.injective
+    rw [he]
+    simp)
+  hom_inv_id := hom_ext (LinearMap.ext e.symm_apply_apply)
+  inv_hom_id := hom_ext (LinearMap.ext e.apply_symm_apply)
+
+@[simp] theorem isoMk_hom_hom {V W : StarModuleCat R} (e : V ≃ₗ[R] W)
+    (he : ∀ v, e (star v) = star (e v)) : (isoMk e he).hom.hom = e.toLinearMap := by rfl
+
+@[simp] theorem isoMk_inv_hom {V W : StarModuleCat R} (e : V ≃ₗ[R] W)
+    (he : ∀ v, e (star v) = star (e v)) : (isoMk e he).inv.hom = e.symm.toLinearMap := by rfl
+
 /-- The forgetful functor discarding the involution. -/
-def forget : StarModuleCat.{u} R ⥤ ModuleCat.{u} R where
+@[expose] def forget : StarModuleCat.{u} R ⥤ ModuleCat.{u} R where
   obj V := V.toModuleCat
   map f := ModuleCat.ofHom f.hom
+
+@[simp] theorem forget_obj (V : StarModuleCat.{u} R) :
+    (forget (R := R)).obj V = V.toModuleCat := rfl
+
+@[simp] theorem forget_map {V W : StarModuleCat.{u} R} (f : V ⟶ W) :
+    ((forget (R := R)).map f).hom = f.hom := rfl
 
 instance : (forget (R := R)).Faithful where
   map_injective h := hom_ext (congrArg ModuleCat.Hom.hom h)
