@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.Support
 public import TauCeti.Analysis.Pseudodifferential.Quantization
-public import TauCeti.Analysis.Pseudodifferential.Symbol
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 
 /-!
@@ -72,21 +72,6 @@ section Pointwise
 
 variable {a b : E × E → V →L[ℂ] W} {x : E}
 
-omit [CompleteSpace V] in
-/-- A continuous function `g` such that `ζ ↦ g ζ v` integrates to zero against every
-Schwartz function supported in the line `ℂ v`, for every `v`, vanishes. -/
-private theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[ℂ] W} (hg : Continuous g)
-    (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) = 0) (ζ : E) : g ζ = 0 := by
-  ext v
-  -- Test against `f = φ • v` with `φ` real, smooth and compactly supported.
-  have hgv : Continuous fun ζ ↦ g ζ v := hg.clm_apply continuous_const
-  have hae : ∀ᵐ η, g η v = 0 := by
-    refine ae_eq_zero_of_integral_contDiff_smul_eq_zero hgv.locallyIntegrable fun φ hφ hφc ↦ ?_
-    have hf : HasCompactSupport fun η ↦ φ η • v := hφc.smul_right
-    simpa [ContinuousLinearMap.map_smul_of_tower] using
-      h (hf.toSchwartzMap (hφ.smul contDiff_const))
-  exact congrFun ((hgv.ae_eq_iff_eq volume continuous_zero).1 hae) ζ
-
 /-- **The quantization determines the coefficient.** At a position `x`, let `ξ ↦ a(x, ξ)` and
 `ξ ↦ b(x, ξ)` be continuous with polynomial growth. If `Op(a) u (x) = Op(b) u (x)` for every
 compactly supported Schwartz function `u`, then `a(x, ξ) = b(x, ξ)` for every frequency `ξ`. -/
@@ -138,18 +123,18 @@ section Support
 
 variable {a : E × E → V →L[ℂ] W}
 
-/-- **Output support.** Let every frequency slice `ξ ↦ a(x, ξ)` be continuous with polynomial
-growth. For a closed set `K` of positions, `Op(a) u` is supported in `K` for every compactly
-supported Schwartz function `u` if and only if `a(x, ξ) = 0` for every `x ∉ K` and every
-frequency `ξ`. -/
-theorem tsupport_quantizeSchwartzValue_subset_iff (ha : ∀ x, Continuous fun ξ ↦ a (x, ξ))
-    (hC : ∀ x, ∃ C m : ℝ, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    {K : Set E} (hK : IsClosed K) :
+/-- **Output support.** Let `K` be a closed set of positions, and let every frequency slice
+`ξ ↦ a(x, ξ)` with `x ∉ K` be continuous with polynomial growth. Then `Op(a) u` is supported in
+`K` for every compactly supported Schwartz function `u` if and only if `a(x, ξ) = 0` for every
+`x ∉ K` and every frequency `ξ`. -/
+theorem tsupport_quantizeSchwartzValue_subset_iff {K : Set E} (hK : IsClosed K)
+    (ha : ∀ x ∉ K, Continuous fun ξ ↦ a (x, ξ))
+    (hC : ∀ x ∉ K, ∃ C m : ℝ, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
     (∀ u : 𝓢(E, V), HasCompactSupport u → tsupport (quantizeSchwartzValue a u) ⊆ K) ↔
       ∀ x ∉ K, ∀ ξ, a (x, ξ) = 0 := by
   refine ⟨fun h x hx ↦ ?_, fun h u _ ↦ closure_minimal ?_ hK⟩
-  · obtain ⟨C, m, hCx⟩ := hC x
-    exact eq_zero_of_forall_quantizeSchwartzValue_eq_zero (ha x) hCx fun u hu ↦
+  · obtain ⟨C, m, hCx⟩ := hC x hx
+    exact eq_zero_of_forall_quantizeSchwartzValue_eq_zero (ha x hx) hCx fun u hu ↦
       image_eq_zero_of_notMem_tsupport fun hxu ↦ hx (h u hu hxu)
   · refine Function.support_subset_iff'.2 fun x hx ↦ ?_
     rw [quantizeSchwartzValue_congr_left (b := 0) (h x hx), quantizeSchwartzValue_zero_left]
@@ -162,8 +147,8 @@ theorem exists_not_tsupport_quantizeSchwartzValue_id_subset [Nontrivial V] {K : 
       ¬tsupport (quantizeSchwartzValue (fun _ ↦ ContinuousLinearMap.id ℂ V) u) ⊆ K := by
   by_contra! h
   obtain ⟨x, hx⟩ := (Set.ne_univ_iff_exists_notMem K).1 hKne
-  have hid := (tsupport_quantizeSchwartzValue_subset_iff (fun _ ↦ continuous_const)
-    (fun _ ↦ ⟨1, 0, fun _ ↦ by simp⟩) hK).1 h x hx 0
+  have hid := (tsupport_quantizeSchwartzValue_subset_iff hK (fun _ _ ↦ continuous_const)
+    (fun _ _ ↦ ⟨1, 0, fun _ ↦ by simp⟩)).1 h x hx 0
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   exact hv (by simpa using congr($hid v))
 
@@ -172,11 +157,6 @@ end Support
 namespace Symbol
 
 variable {n : ℕ} {m m' : ℝ}
-
-omit [CompleteSpace V] [CompleteSpace W] in
-private theorem continuous_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace n) :
-    Continuous fun ξ ↦ a.coefficient (x, ξ) :=
-  a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
 
 /-- **A symbol is determined by its quantization.** If two symbols, possibly of different
 orders, have the same quantization on compactly supported Schwartz functions, their coefficients
@@ -207,9 +187,10 @@ theorem hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subse
       ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport u →
         tsupport (quantizeSchwartzValue a.coefficient u) ⊆ K := by
   have hiff {K : Set (CoordinateSpace n)} (hK : IsCompact K) :=
-    tsupport_quantizeSchwartzValue_subset_iff (V := V) a.continuous_coefficient_slice
-      (fun x ↦ (a.exists_norm_coefficient_le {x} isCompact_singleton).imp fun _ hC ↦
-        ⟨m, hC x rfl⟩) hK.isClosed
+    tsupport_quantizeSchwartzValue_subset_iff (V := V) hK.isClosed
+      (fun x _ ↦ a.continuous_coefficient_slice x)
+      (fun x _ ↦ (a.exists_norm_coefficient_le {x} isCompact_singleton).imp fun _ hC ↦
+        ⟨m, hC x rfl⟩)
   rw [hasCompactSpatialSupport_iff]
   exact exists_congr fun K ↦ and_congr_right fun hK ↦ (hiff hK).symm
 
