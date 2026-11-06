@@ -31,6 +31,8 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 * `Set.setIntegralLp_apply`: the pointwise formula for this map.
 * `MeasureTheory.Lp.integralPositiveLinearMap`: integration against a finite measure as a
   positive linear functional on real `Lᵖ`.
+* `TauCeti.totallyBounded_restrict_of_forall_eqOn`: restricting a totally bounded family of `Lᵖ`
+  classes to a measurable set on which they agree with given functions.
 -/
 
 public section
@@ -179,3 +181,32 @@ theorem integralPositiveLinearMap_apply (φ : Lp ℝ p μ) :
   (Set.setIntegralLp_apply (𝕜 := ℝ) Set.univ (measure_lt_top μ _) φ).trans setIntegral_univ
 
 end MeasureTheory.Lp
+
+namespace TauCeti
+
+open Filter MeasureTheory Set
+open scoped ENNReal
+
+variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
+  {mu : Measure α} {p : ℝ≥0∞}
+
+/-- Restricting a totally bounded family of `Lᵖ(μ)` classes `g u` to a measurable set `K` on which
+`g u = u` gives a totally bounded family of `Lᵖ(μ|_K)` classes `u`. -/
+theorem totallyBounded_restrict_of_forall_eqOn [NormedSpace ℝ F] [Fact (1 ≤ p)] {K : Set α}
+    (hK : MeasurableSet K) {S : Set (α → F)} {g : (α → F) → α → F}
+    (hg : ∀ u ∈ S, MemLp (g u) p mu) (hgK : ∀ u ∈ S, ∀ x ∈ K, g u x = u x)
+    (hT : TotallyBounded {f : Lp F p mu | ∃ u ∈ S, f =ᵐ[mu] g u}) :
+    TotallyBounded {f : Lp F p (mu.restrict K) | ∃ u ∈ S, f =ᵐ[mu.restrict K] u} := by
+  have hle : mu.restrict K ≤ (1 : ℝ≥0∞) • mu := by simpa using Measure.restrict_le_self
+  let res : Lp F p mu →L[ℝ] Lp F p (mu.restrict K) :=
+    Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top hle
+  refine (hT.image res.uniformContinuous).subset ?_
+  rintro f ⟨u, hu, hfu⟩
+  refine ⟨(hg u hu).toLp _, ⟨u, hu, MemLp.coeFn_toLp _⟩, ?_⟩
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul (μ := mu.restrict K) ENNReal.one_ne_top hle
+      ((hg u hu).toLp _), ae_restrict_of_ae (MemLp.coeFn_toLp (hg u hu)),
+    ae_restrict_mem hK, hfu] with x h₁ h₂ hx h₃
+  rw [h₁, h₂, h₃, hgK u hu x hx]
+
+end TauCeti

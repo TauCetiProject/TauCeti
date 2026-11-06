@@ -42,10 +42,6 @@ finite-dimensional inner-product space, the operator agrees with Mathlib's
 flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
 Chapter 3.
 
-The defect in the trace Cauchy–Schwarz inequality `(Δ f)² ≤ n |Hess f|²` is `n` times the
-squared norm of the trace-free part of the Hessian, so equality forces the Hessian to be a
-multiple of the metric.
-
 -/
 
 noncomputable section
@@ -258,6 +254,20 @@ theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [Topologi
     (f : M → ℝ) (x : M) :
     laplaceBeltrami I f x = divergence I (mgradient I f) x := by
   rw [laplaceBeltrami]
+
+/-- For a Laplace–Beltrami eigenfunction, the derivative of its Laplacian along its
+gradient is minus the eigenvalue times the squared gradient norm. -/
+theorem mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {lam : ℝ} (heig : ∀ x, laplaceBeltrami I f x = -lam * f x) (x : M) :
+    mvfderiv I (laplaceBeltrami I f) x (mgradient I f x) =
+      -lam * ‖mgradient I f x‖ ^ 2 := by
+  have heq : laplaceBeltrami I f = -lam • f := funext heig
+  rw [heq, mvfderiv_const_smul_field, smul_apply, smul_eq_mul,
+    ← inner_mgradient, real_inner_self_eq_norm_sq]
 
 /-- On a `C^m` manifold with a `C^k` Riemannian metric, the Laplace--Beltrami operator of a
 `C^(n + 2)` function is `C^n` when `n + 2 ≤ m` and `n + 1 ≤ k`; like the flat Laplacian, it
@@ -639,81 +649,6 @@ theorem laplaceBeltrami_sq_le_finrank_mul_sum_hessian_sq
   refine hcs.trans (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _))
   exact Finset.sum_le_sum fun i _ ↦ Finset.single_le_sum
     (f := fun j ↦ hessian I f x (b i) (b j) ^ 2) (fun j _ ↦ sq_nonneg _) (Finset.mem_univ i)
-
-/-- The defect in `TauCeti.Manifold.laplaceBeltrami_sq_le_finrank_mul_sum_hessian_sq` is `n`
-times the squared norm of the trace-free part `Hess f - (Δ f / n) g` of the Hessian, in any
-orthonormal basis, where `n` is the dimension. This includes dimension zero. -/
-theorem finrank_mul_sum_hessian_sq_sub_laplaceBeltrami_sq
-    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 2 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-    (f : M → ℝ) (x : M) {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
-    (Module.finrank ℝ E : ℝ) * ∑ i, ∑ j, hessian I f x (b i) (b j) ^ 2 -
-        laplaceBeltrami I f x ^ 2 =
-      (Module.finrank ℝ E : ℝ) * ∑ i, ∑ j, (hessian I f x (b i) (b j) -
-        laplaceBeltrami I f x / Module.finrank ℝ E * inner ℝ (b i) (b j)) ^ 2 := by
-  classical
-  have hcard : (Fintype.card ι : ℝ) = Module.finrank ℝ E := by
-    rw [← Module.finrank_eq_card_basis b.toBasis, finrank_tangentSpace]
-  set n : ℝ := (Module.finrank ℝ E : ℝ)
-  set c := laplaceBeltrami I f x / n
-  -- Expand the square; the cross terms pick out the diagonal, whose sum is `Δ f`.
-  have hexp (i j : ι) : (hessian I f x (b i) (b j) - c * inner ℝ (b i) (b j)) ^ 2 =
-      hessian I f x (b i) (b j) ^ 2 - 2 * c * (if i = j then hessian I f x (b i) (b j) else 0) +
-        c ^ 2 * (if i = j then 1 else 0) := by
-    rw [b.inner_eq_ite]
-    split_ifs <;> ring
-  simp only [hexp, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-    Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, Finset.sum_const, Finset.card_univ,
-    nsmul_eq_mul, mul_one, hcard, ← laplaceBeltrami_eq_sum_hessian I f x b]
-  rcases eq_or_ne n 0 with hn | hn
-  · -- In dimension zero the basis is empty, so the Laplacian vanishes.
-    have hempty : IsEmpty ι := Fintype.card_eq_zero_iff.1 (by exact_mod_cast hcard.trans hn)
-    simp [hn, laplaceBeltrami_eq_sum_hessian I f x b]
-  · simp only [c]
-    field_simp
-    ring
-
-/-- **The equality case of the trace Cauchy–Schwarz inequality for the Hessian.** If
-`n |Hess f|² ≤ (Δ f)²` at `x`, computed in some orthonormal basis, then the Hessian at `x` is
-pure trace: `Hess f(v, w) = (Δ f / n) ⟪v, w⟫` for all tangent vectors `v` and `w`. -/
-theorem hessian_eq_laplaceBeltrami_div_finrank_mul_inner_of_finrank_mul_sum_hessian_sq_le
-    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 2 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} {x : M} {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ (TangentSpace I x))
-    (h : (Module.finrank ℝ E : ℝ) * ∑ i, ∑ j, hessian I f x (b i) (b j) ^ 2 ≤
-      laplaceBeltrami I f x ^ 2) (v w : TangentSpace I x) :
-    hessian I f x v w = laplaceBeltrami I f x / Module.finrank ℝ E * inner ℝ v w := by
-  rcases (Nat.cast_nonneg (α := ℝ) (Module.finrank ℝ E)).eq_or_lt with hn | hn
-  · -- In dimension zero every tangent vector vanishes.
-    have : Subsingleton (TangentSpace I x) :=
-      Module.finrank_zero_iff.1 ((finrank_tangentSpace x).trans (by exact_mod_cast hn.symm))
-    simp [Subsingleton.elim w 0]
-  set c := laplaceBeltrami I f x / Module.finrank ℝ E
-  -- The trace-free part has vanishing squared norm, so it vanishes on the basis.
-  have hsum : ∑ i, ∑ j, (hessian I f x (b i) (b j) - c * inner ℝ (b i) (b j)) ^ 2 = 0 := by
-    have hid := finrank_mul_sum_hessian_sq_sub_laplaceBeltrami_sq f x b
-    have hnn : 0 ≤ ∑ i, ∑ j, (hessian I f x (b i) (b j) - c * inner ℝ (b i) (b j)) ^ 2 :=
-      Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
-    nlinarith
-  have hbasis (i j : ι) : hessian I f x (b i) (b j) = c * inner ℝ (b i) (b j) := by
-    have hi := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦
-      Finset.sum_nonneg fun _ _ ↦ sq_nonneg _).1 hsum i (Finset.mem_univ i)
-    have hij := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _).1 hi j
-      (Finset.mem_univ j)
-    exact sub_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hij)
-  -- Both sides are bilinear in `(v, w)` and agree on the basis.
-  have hext : (innerₗ (TangentSpace I x)).comp
-        (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x).toLinearMap =
-      c • innerₗ (TangentSpace I x) :=
-    LinearMap.ext_basis b.toBasis b.toBasis fun i j ↦ by
-      simpa [hessian_def] using hbasis i j
-  simpa [hessian_def] using LinearMap.congr_fun₂ hext v w
 
 /-- If the Hessian of `f` at `x` is `c` times the metric, then `Δ f x = n c`, where `n` is the
 dimension. -/

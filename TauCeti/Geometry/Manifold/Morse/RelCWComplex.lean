@@ -304,8 +304,8 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation (hf : IsMorse I f) (hδ
       ∃ r : C({x | f x ≤ c + ε}, C), (∀ x, r (ContinuousMap.inclusion hC x) = x) ∧
         Nonempty (((ContinuousMap.inclusion hC).comp r).HomotopyRel (ContinuousMap.id _)
           {x | (x : M) ∈ C}) := by
-  obtain ⟨ε, hε, hεδ, ψ, hψ, hψp, r, hr, ⟨G⟩⟩ :=
-    hf.exists_sublevel_union_cells_deformation hδ hcompact
+  obtain ⟨ε, hε, hεδ, ψ, hψ, hψp, h⟩ := hf.exists_sublevel_union_cells_deformation hδ hcompact
+  obtain ⟨r, hr, ⟨G⟩⟩ := h ε hε le_rfl
   have hk : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}),
       manifoldMorseIndex I f p ≤ Module.finrank ℝ E := fun _ ↦ manifoldMorseIndex_le_finrank
   have hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target := fun p ↦
