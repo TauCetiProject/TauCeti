@@ -41,6 +41,8 @@ its range, extended to the whole line by clamping.
   a closed interval contained in `Ioo a b`.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
   order-connected sets.
+* `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
+  different values at `a` and `b`.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
@@ -196,5 +198,36 @@ theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOr
     exact this.mono_left nhdsWithin_le_nhds
   · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
     exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
+
+/-- A continuous function on `[a, b]` that is injective on `[a, b)` takes different values at the
+two endpoints. -/
+theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
+    [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
+    [LinearOrder δ] [TopologicalSpace δ] [OrderClosedTopology δ] [DenselyOrdered δ] {f : α → δ}
+    {a b : α} (hf : ContinuousOn f (Icc a b)) (hab : a < b) (hinj : InjOn f (Ico a b)) :
+    f a ≠ f b := by
+  have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
+  intro hab'
+  obtain ⟨m, hm⟩ := exists_between hab
+  have hfm : f m ≠ f a := fun h ↦ hm.1.ne' (hinj ⟨hm.1.le, hm.2⟩ ha h)
+  -- A value strictly between `f a` and `f m` would be attained on both `[a, m]` and `[m, b]`.
+  obtain ⟨v, hv, hva, hvm⟩ : ∃ v ∈ uIcc (f a) (f m), v ≠ f a ∧ v ≠ f m := by
+    rcases lt_or_gt_of_ne hfm with h | h
+    · obtain ⟨v, hv⟩ := exists_between h
+      exact ⟨v, mem_uIcc.2 (Or.inr ⟨hv.1.le, hv.2.le⟩), hv.2.ne, hv.1.ne'⟩
+    · obtain ⟨v, hv⟩ := exists_between h
+      exact ⟨v, mem_uIcc.2 (Or.inl ⟨hv.1.le, hv.2.le⟩), hv.1.ne', hv.2.ne⟩
+  obtain ⟨s, hs, hsv⟩ := intermediate_value_uIcc
+    (hf.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
+  obtain ⟨t, ht, htv⟩ := intermediate_value_uIcc
+    (hf.mono (by rw [uIcc_of_le hm.2.le]; exact Icc_subset_Icc hm.1.le le_rfl))
+    (show v ∈ uIcc (f m) (f b) by rwa [← hab', uIcc_comm])
+  rw [uIcc_of_le hm.1.le] at hs
+  rw [uIcc_of_le hm.2.le] at ht
+  have htb : t ≠ b := by rintro rfl; exact hva (htv.symm.trans hab'.symm)
+  have hst : s = t := hinj ⟨hs.1, hs.2.trans_lt hm.2⟩ ⟨hm.1.le.trans ht.1, ht.2.lt_of_ne htb⟩
+    (hsv.trans htv.symm)
+  have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
+  exact hvm (hsv.symm.trans (congrArg f hsm))
 
 end TauCeti
