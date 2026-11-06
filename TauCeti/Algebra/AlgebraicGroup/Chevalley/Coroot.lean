@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
-import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # Simple coroots of a Chevalley datum
@@ -49,13 +48,13 @@ noncomputable section
 of the actual character lattice. -/
 def simpleCorootParameter (i : Fin t.rank) (A : Type v) [CommRing A] :
     Aˣ →* (Fin t.rank → Aˣ) :=
-  MonoidHom.pi fun j => zpowGroupHom ((D.weightLatticeBasis j : Fin t.rank → ℤ) i)
+  GeneralLinear.weightDiagonalUnits fun j => (D.weightLatticeBasis j : Fin t.rank → ℤ) i
 
 @[simp]
 theorem simpleCorootParameter_apply (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) (j : Fin t.rank) :
     D.simpleCorootParameter i A s j = s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i :=
-  (rfl)
+  GeneralLinear.weightDiagonalUnits_apply _ s j
 
 /-- Evaluation of any character on a simple coroot is its pairing with that coroot. The
 character is written in the chosen basis of the actual weight lattice. -/
@@ -79,13 +78,8 @@ theorem torusCharacter_simpleCorootParameter_coordinateWeight (i : Fin t.rank)
     (A : Type v) [CommRing A] (s : Aˣ) (j : Fin D.dim) :
     torusCharacter (D.simpleCorootParameter i A s) (D.coordinateWeight j) =
       s ^ D.weight j i := by
-  have hcoord := congrArg (fun ν : Fin t.rank → ℤ => ν i) (D.sum_coordinateWeight_smul j)
-  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul] at hcoord
-  rw [torusCharacter_def]
-  simp only [simpleCorootParameter_apply, ← zpow_mul]
-  rw [Finset.prod_zpow_eq_zpow_sum]
-  congr 1
-  simpa only [mul_comm] using hcoord
+  rw [coordinateWeight_def]
+  exact D.torusCharacter_simpleCorootParameter i A s ⟨D.weight j, D.weight_mem_weightLattice j⟩
 
 /-- The simple coroot as a homomorphism into the points of the datum, obtained by evaluating
 its actual torus at `simpleCorootParameter`. -/
@@ -95,7 +89,7 @@ def simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] : Aˣ →* D.p
     (D.points A) (fun _ => D.kostantTorusMatrix_mem_points A _)
 
 /-- The simple coroot is a point of the datum's torus with the specified lattice coordinates. -/
-theorem coe_simpleCorootPoints_eq_torus (i : Fin t.rank) (A : Type v) [CommRing A]
+theorem coe_simpleCorootPoints_eq_kostantTorusMatrix (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) :
     (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       kostantTorusMatrix D.lattice D.basis D.coordinateWeight (D.simpleCorootParameter i A s) := by
@@ -106,7 +100,7 @@ theorem coe_simpleCorootPoints_eq_torus (i : Fin t.rank) (A : Type v) [CommRing 
 theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : Aˣ) :
     (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       diagGL (fun j => s ^ D.weight j i) := by
-  rw [coe_simpleCorootPoints_eq_torus, kostantTorusMatrix_apply]
+  rw [coe_simpleCorootPoints_eq_kostantTorusMatrix, kostantTorusMatrix_apply]
   simp
 
 /-- Simple coroot values commute with every scalar extension of the value ring. -/
@@ -121,18 +115,6 @@ theorem map_simpleCorootPoints {A : Type v} {B : Type*} [CommRing A] [CommRing B
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
-
-private theorem isSl2Triple_representation (i : Fin t.rank) :
-    IsSl2Triple
-      (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
-      (D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
-      (D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
-  exact ((t.lieBasis ht).isSl2Triple_rootGenerator i).map
-    (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
-    (fun hzero => ((t.lieBasis ht).isSl2Triple_rootGenerator i).h_ne_zero
-      (D.injective_representation_ι (by simpa using hzero)))
 
 /-- The simple coroot value is the rank-one word `n_i(s) n_i(1)⁻¹`. Here `x` denotes the
 existing numbered root-subgroup matrix, with its additive parameter read in `Multiplicative A`.
@@ -156,7 +138,7 @@ theorem coe_simpleCorootPoints_eq_root_word (i : Fin t.rank) (A : Type v) [CommR
   have h := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
     D.representation_mem_lattice D.basis D.weight D.isCartanWeightVector_basis
-    (D.isSl2Triple_representation i)
+    (D.isSl2Triple_representation_rootGenerator i)
     (D.isNilpotent_representation_rootGenerator (.inl i))
     (D.isNilpotent_representation_rootGenerator (.inr i))
     (t.lie_lieBasis_h_rootGenerator ht (.inl i)) hneg (CommAlgCat.of ℤ A) s
