@@ -136,29 +136,14 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ (3 + 4 * B) * ε := by rw [norm_one, mul_one]; exact hh'v
 
-/-- **The spliced curves are uniformly regular.** If `k` and `l` are `C¹` near `0`, agree at `0`
-and have the same nonzero velocity `v` there, then on a fixed interval `[-ρ, ρ]` the velocity of
-every spliced curve, at every scale `δ` and weight `s ∈ [0, 1]`, has positive pairing with a fixed
-functional `ℓ` normalizing `v`. The key estimate is that `l - k` vanishes to first order at `0`, so
-the derivative `δ⁻¹ χ' (δ⁻¹ t)` of the cutoff, which is supported where `|t| ≤ 2δ`, only meets
-`l t - k t = o(t)`. -/
-private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
+/-- **A small interval where two curves with the same velocity at `0` are close.** If `k` and `l`
+are `C¹` on `(-r, r)`, agree at `0` and have the same velocity there, then on some `[-ρ, ρ]` with
+`ρ < r` both velocities are within `ε` of that velocity, and `‖l t - k t‖ ≤ 2 * ε * |t|`. -/
+private theorem exists_Icc_norm_deriv_sub_lt_and_norm_sub_le {k l : ℝ → E} {r ε : ℝ} (hr : 0 < r)
     (hk : ContDiffOn ℝ 1 k (Ioo (-r) r)) (hl : ContDiffOn ℝ 1 l (Ioo (-r) r))
-    (h0 : k 0 = l 0) (hd : deriv k 0 = deriv l 0) (hv : deriv k 0 ≠ 0) :
-    ∃ ℓ : StrongDual ℝ E, ∃ ρ, 0 < ρ ∧ ρ < r ∧ ∀ δ, 0 < δ → ∀ s ∈ Icc (0 : ℝ) 1,
-      ∀ t ∈ Icc (-ρ) ρ, DifferentiableAt ℝ (splice k l δ s) t ∧
-        0 < ℓ (deriv (splice k l δ s) t) := by
-  set v := deriv k 0
-  obtain ⟨ℓ, hℓ, hℓv⟩ := exists_dual_vector ℝ v (norm_ne_zero_iff.2 hv)
-  replace hℓv : ℓ v = ‖v‖ := by simpa using hℓv
-  obtain ⟨B, hB⟩ := exists_abs_deriv_spliceCutoff_le
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
-  set ε := ‖v‖ / (4 * B + 4) with hε
-  have hε0 : 0 < ε := div_pos hv0 (by positivity)
-  have hεv : (3 + 4 * B) * ε < ‖v‖ := by
-    rw [hε, mul_div_assoc', div_lt_iff₀ (by positivity)]
-    nlinarith
+    (h0 : k 0 = l 0) (hd : deriv k 0 = deriv l 0) (hε0 : 0 < ε) :
+    ∃ ρ, 0 < ρ ∧ ρ < r ∧ ∀ t ∈ Icc (-ρ) ρ, t ∈ Ioo (-r) r ∧
+      ‖deriv k t - deriv k 0‖ < ε ∧ ‖deriv l t - deriv k 0‖ < ε ∧ ‖l t - k t‖ ≤ 2 * ε * |t| := by
   have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
   obtain ⟨ρ₁, hρ₁, hk₁⟩ := exists_norm_deriv_sub_lt hk hr rfl hε0
   obtain ⟨ρ₂, hρ₂, hl₁⟩ := exists_norm_deriv_sub_lt hl hr hd.symm hε0
@@ -176,24 +161,51 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
     (hk.contDiffAt (hI.mem_nhds ht)).differentiableAt one_ne_zero
   have hdl (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ l t :=
     (hl.contDiffAt (hI.mem_nhds ht)).differentiableAt one_ne_zero
-  -- Mean value estimate: `l - k` vanishes to first order at `0`.
-  have hlk (t : ℝ) (ht : t ∈ Icc (-ρ) ρ) : ‖l t - k t‖ ≤ 2 * ε * |t| := by
-    have h := (convex_Icc (-ρ) ρ).norm_sub_le_of_norm_hasFDerivWithin_sub_le
-      (A := ContinuousLinearMap.toSpanSingleton ℝ v)
-      (fun x hx => (hdk x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
-      (fun x hx => (hdl x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
-      (fun x hx => by
-        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hk₁ x (hlt x hx).1).le)
-      (fun x hx => by
-        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hl₁ x (hlt x hx).2.1).le)
-      ht ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ h0
-    simpa [Real.norm_eq_abs] using h
+  refine ⟨ρ, hρ0, hρr, fun t ht => ⟨(hlt t ht).2.2, hk₁ t (hlt t ht).1, hl₁ t (hlt t ht).2.1, ?_⟩⟩
+  -- Mean value estimate: `‖l t - k t‖ ≤ 2 * ε * |t|`.
+  have h := (convex_Icc (-ρ) ρ).norm_sub_le_of_norm_hasFDerivWithin_sub_le
+    (A := ContinuousLinearMap.toSpanSingleton ℝ (deriv k 0))
+    (fun x hx => (hdk x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
+    (fun x hx => (hdl x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
+    (fun x hx => by
+      simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hk₁ x (hlt x hx).1).le)
+    (fun x hx => by
+      simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hl₁ x (hlt x hx).2.1).le)
+    ht ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ h0
+  simpa [Real.norm_eq_abs] using h
+
+/-- **The spliced curves are uniformly regular.** If `k` and `l` are `C¹` near `0`, agree at `0`
+and have the same nonzero velocity `v` there, then on a fixed interval `[-ρ, ρ]` the velocity of
+every spliced curve, at every scale `δ` and weight `s ∈ [0, 1]`, has positive pairing with a fixed
+functional `ℓ` normalizing `v`. The key estimate is the bound `‖l t - k t‖ ≤ 2 ε |t|`, so the
+derivative `δ⁻¹ χ' (δ⁻¹ t)` of the cutoff, which is supported where `|t| ≤ 2δ`, only meets a
+difference of size `O(ε |t|)`. -/
+private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
+    (hk : ContDiffOn ℝ 1 k (Ioo (-r) r)) (hl : ContDiffOn ℝ 1 l (Ioo (-r) r))
+    (h0 : k 0 = l 0) (hd : deriv k 0 = deriv l 0) (hv : deriv k 0 ≠ 0) :
+    ∃ ℓ : StrongDual ℝ E, ∃ ρ, 0 < ρ ∧ ρ < r ∧ ∀ δ, 0 < δ → ∀ s ∈ Icc (0 : ℝ) 1,
+      ∀ t ∈ Icc (-ρ) ρ, DifferentiableAt ℝ (splice k l δ s) t ∧
+        0 < ℓ (deriv (splice k l δ s) t) := by
+  set v := deriv k 0
+  obtain ⟨ℓ, hℓ, hℓv⟩ := exists_dual_vector ℝ v (norm_ne_zero_iff.2 hv)
+  replace hℓv : ℓ v = ‖v‖ := by simpa using hℓv
+  obtain ⟨B, hB⟩ := exists_abs_deriv_spliceCutoff_le
+  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
+  have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
+  set ε := ‖v‖ / (4 * B + 4) with hε
+  have hε0 : 0 < ε := div_pos hv0 (by positivity)
+  have hεv : (3 + 4 * B) * ε < ‖v‖ := by
+    rw [hε, mul_div_assoc', div_lt_iff₀ (by positivity)]
+    nlinarith
+  obtain ⟨ρ, hρ0, hρr, hρ⟩ := exists_Icc_norm_deriv_sub_lt_and_norm_sub_le hr hk hl h0 hd hε0
+  have hdk (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ k t :=
+    (hk.contDiffAt (isOpen_Ioo.mem_nhds ht)).differentiableAt one_ne_zero
+  have hdl (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ l t :=
+    (hl.contDiffAt (isOpen_Ioo.mem_nhds ht)).differentiableAt one_ne_zero
   refine ⟨ℓ, ρ, hρ0, hρr, fun δ hδ s hs t ht => ?_⟩
-  obtain ⟨htk, htl, htI⟩ := hlt t ht
-  have hk' := (hdk t htI).hasDerivAt
-  have hl' := (hdl t htI).hasDerivAt
-  obtain ⟨hD, hDv⟩ :=
-    norm_deriv_splice_sub_le hδ hs hB hk' hl' (hk₁ t htk).le (hl₁ t htl).le (hlk t ht)
+  obtain ⟨htI, hk₁, hl₁, hlk⟩ := hρ t ht
+  obtain ⟨hD, hDv⟩ := norm_deriv_splice_sub_le hδ hs hB (hdk t htI).hasDerivAt
+    (hdl t htI).hasDerivAt hk₁.le hl₁.le hlk
   refine ⟨hD, ?_⟩
   set D := deriv (splice k l δ s) t
   -- `ℓ D ≥ ‖v‖ - ‖D - v‖ > 0`.
