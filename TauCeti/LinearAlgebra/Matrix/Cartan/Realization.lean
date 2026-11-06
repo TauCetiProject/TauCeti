@@ -239,6 +239,16 @@ theorem two_mul_card_sub_rank_le_finrank :
   have := R.two_mul_card_le_rank_add_finrank
   omega
 
+/-- Minimality is equivalent to attaining the dimension bound in addition form. -/
+@[simp]
+theorem isMinimal_iff : R.IsMinimal ↔ finrank K H + A.rank = 2 * Fintype.card I := by
+  have := A.rank_le_card_width
+  constructor
+  · rintro ⟨_, h⟩
+    omega
+  · intro h
+    exact ⟨inferInstance, by omega⟩
+
 end FiniteDimensional
 
 section Transport
@@ -307,6 +317,17 @@ theorem map_trans {H'' : Type*} [AddCommGroup H''] [Module K H'']
     (e : H ≃ₗ[K] H') (f : H' ≃ₗ[K] H'') : (R.map e).map f = R.map (e.trans f) := by
   ext <;> simp
 
+/-- Minimality is invariant under linear equivalence of the ambient spaces. -/
+@[simp]
+theorem isMinimal_map (e : H ≃ₗ[K] H') : (R.map e).IsMinimal ↔ R.IsMinimal := by
+  constructor
+  · rintro ⟨hfin, hdim⟩
+    let := hfin
+    exact ⟨e.symm.finiteDimensional, by rw [e.finrank_eq]; exact hdim⟩
+  · rintro ⟨hfin, hdim⟩
+    let := hfin
+    exact ⟨e.finiteDimensional, by rw [← e.finrank_eq]; exact hdim⟩
+
 end Transport
 
 section Construction
@@ -367,10 +388,12 @@ space. In particular this constructs minimal rational realizations of singular C
 theorem nonempty_cartanRealization {I K : Type*} [Fintype I] [Field K] (A : Matrix I I K) :
     Nonempty (TauCeti.CartanRealization A (Fin (2 * Fintype.card I - A.rank) → K)) := by
   obtain ⟨Z, hZ⟩ := Submodule.exists_isCompl (LinearMap.range A.transpose.mulVecLin)
-  have hdim : finrank K ((I → K) × Z) = 2 * Fintype.card I - A.rank :=
-    (TauCeti.CartanRealization.isMinimal_ofSupplement A Z hZ).2
+  have hdim := (TauCeti.CartanRealization.isMinimal_iff _).mp
+    (TauCeti.CartanRealization.isMinimal_ofSupplement A Z hZ)
   let e : ((I → K) × Z) ≃ₗ[K] (Fin (2 * Fintype.card I - A.rank) → K) :=
-    LinearEquiv.ofFinrankEq _ _ (by simpa using hdim)
+    LinearEquiv.ofFinrankEq _ _ (by
+      simp only [Module.finrank_fintype_fun_eq_card, Fintype.card_fin]
+      omega)
   exact ⟨(TauCeti.CartanRealization.ofSupplement A Z hZ.sup_eq_top).map e⟩
 
 end Matrix
