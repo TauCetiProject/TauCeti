@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
-public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Restriction
 
 /-!
 # The actual torus and the full-weight parametrization of a Chevalley datum
@@ -47,6 +47,18 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 def weightLatticeEmbedding : Module.End ℤ (Fin t.rank → ℤ) :=
   D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap
 
+/-- Including the coordinates of a lattice element recovers its ambient weight. -/
+@[simp]
+theorem weightLatticeEmbedding_repr (μ : D.weightLattice) :
+    D.weightLatticeEmbedding (D.weightLatticeBasis.repr μ) = (μ : Fin t.rank → ℤ) := by
+  simp [weightLatticeEmbedding]
+
+/-- The coordinate lattice inclusion has image exactly the weight lattice. -/
+theorem range_weightLatticeEmbedding :
+    LinearMap.range D.weightLatticeEmbedding = D.weightLattice := by
+  rw [weightLatticeEmbedding, LinearMap.range_comp,
+    LinearEquiv.range, Submodule.map_top, Submodule.range_subtype]
+
 /-- The coordinate lattice inclusion sends a standard basis vector to the corresponding chosen
 basis vector of `Λ(D)`, read in the full weight lattice. -/
 @[simp]
@@ -59,7 +71,9 @@ theorem weightLatticeEmbedding_single (i : Fin t.rank) :
 @[simp]
 theorem weightLatticeEmbedding_coordinateWeight (j : Fin D.dim) :
     D.weightLatticeEmbedding (D.coordinateWeight j) = D.weight j := by
-  simpa [weightLatticeEmbedding, Module.Basis.equivFun_symm_apply] using
+  rw [← D.weightLatticeBasis.equivFun.apply_symm_apply (D.coordinateWeight j),
+    Module.Basis.equivFun_apply, weightLatticeEmbedding_repr]
+  simpa only [Module.Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul] using
     D.sum_coordinateWeight_smul j
 
 /-- The coordinate lattice inclusion is injective, even when the weight lattice is proper. -/
@@ -87,7 +101,7 @@ theorem torusCharacter_fullWeightTorusRestriction (s : Fin t.rank → Aˣ)
     torusCharacter (D.fullWeightTorusRestriction A s) (D.weightLatticeBasis.equivFun μ) =
       torusCharacter s (μ : Fin t.rank → ℤ) := by
   rw [fullWeightTorusRestriction, torusCharacter_torusPointMap]
-  simp [weightLatticeEmbedding]
+  simp only [Module.Basis.equivFun_apply, weightLatticeEmbedding_repr]
 
 /-- The kernel of full-weight restriction is the group of characters that are trivial on `Λ(D)`;
 these are exactly the characters that factor through `P / Λ(D)`. -/
@@ -109,11 +123,9 @@ theorem kostantTorusMatrix_weight (s : Fin t.rank → Aˣ) :
     kostantTorusMatrix D.lattice D.basis D.weight s =
       kostantTorusMatrix D.lattice D.basis D.coordinateWeight
         (D.fullWeightTorusRestriction A s) := by
-  simp only [kostantTorusMatrix_apply]
-  congr 1
-  funext j
-  rw [fullWeightTorusRestriction, torusCharacter_torusPointMap,
-    weightLatticeEmbedding_coordinateWeight]
+  simpa only [fullWeightTorusRestriction, weightLatticeEmbedding_coordinateWeight] using
+    (kostantTorusMatrix_torusPointMap D.lattice D.basis D.coordinateWeight
+      D.weightLatticeEmbedding s).symm
 
 /-- A point of the actual torus is reached by the full-weight parametrization if and only if its
 parameter extends to the full weight lattice. This criterion does not assume divisible units. -/
@@ -121,14 +133,9 @@ theorem kostantTorusMatrix_mem_fullWeight_range_iff (s : Fin t.rank → Aˣ) :
     kostantTorusMatrix D.lattice D.basis D.coordinateWeight s ∈
         (kostantTorusMatrix D.lattice D.basis D.weight (A := A)).range ↔
       s ∈ (D.fullWeightTorusRestriction A).range := by
-  constructor
-  · rintro ⟨u, hu⟩
-    refine ⟨u, torusCharacterHom_injective D.span_range_coordinateWeight_eq_top ?_⟩
-    rw [D.kostantTorusMatrix_weight A u] at hu
-    simp only [kostantTorusMatrix_apply] at hu
-    simpa only [funext_iff, torusCharacterHom_apply] using diagGL_injective hu
-  · rintro ⟨u, rfl⟩
-    exact ⟨u, D.kostantTorusMatrix_weight A u⟩
+  simpa only [fullWeightTorusRestriction, weightLatticeEmbedding_coordinateWeight] using
+    kostantTorusMatrix_mem_range_iff D.lattice D.basis D.coordinateWeight
+      D.span_range_coordinateWeight_eq_top D.weightLatticeEmbedding s
 
 /-- Divisible units let every character of `Λ(D)` extend to `P`, so full-weight restriction is
 surjective. In particular this applies to algebraically closed fields. -/
@@ -141,13 +148,9 @@ actual torus of a Chevalley datum. No equality over general rings is asserted. -
 theorem range_kostantTorusMatrix_weight_eq [RootableBy Aˣ ℕ] :
     (kostantTorusMatrix D.lattice D.basis D.weight (A := A)).range =
       (kostantTorusMatrix D.lattice D.basis D.coordinateWeight (A := A)).range := by
-  ext g
-  constructor
-  · rintro ⟨u, rfl⟩
-    exact ⟨D.fullWeightTorusRestriction A u, (D.kostantTorusMatrix_weight A u).symm⟩
-  · rintro ⟨s, rfl⟩
-    exact (D.kostantTorusMatrix_mem_fullWeight_range_iff A s).2
-      (D.fullWeightTorusRestriction_surjective A s)
+  simpa only [weightLatticeEmbedding_coordinateWeight] using
+    range_kostantTorusMatrix_eq_of_injective D.lattice D.basis D.coordinateWeight
+      (A := A) D.weightLatticeEmbedding_injective
 
 end
 
