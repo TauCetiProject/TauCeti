@@ -193,9 +193,9 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
 /-- **The local conditions of the Schwarz--Christoffel formula at an end.**  Let `g = (f - q)⁻¹`
 be the inverted coordinate of the map `f = q + g⁻¹` of the upper half-plane, with a real zero `x`,
 and suppose that `f` maps the points of the upper half-plane near `x` into one of the three kinds
-of far end `E` (the far part of a sector of opening `-e' - 1`, of a half-strip, or of the exterior
-of a half-strip), which lies in the image of `f`.  Then `f` satisfies the local condition for a
-vertex at infinity with turning exponent `e'`, as required by
+of far end `E` (the far part of a sector of opening `(-e' - 1) * π`, of a half-strip, or of the
+exterior of a half-strip), which lies in the image of `f`.  Then `f` satisfies the local condition
+for a vertex at infinity with turning exponent `e'`, as required by
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`. -/
 private theorem exists_ball_end_of_inverted_coordinate {g f : ℂ → ℂ} {q : ℂ}
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
