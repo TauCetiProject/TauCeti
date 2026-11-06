@@ -203,8 +203,7 @@ theorem Tames.contMDiffAt_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplex
     rwa [map_sub, map_one, map_mul] at this
   rw [hC]
   exact ((contDiffAt_const.add (contDiffAt_const.mul contDiffAt_id)).neg.mul
-    ((contDiffAt_ringInverse ℝ hu.unit).comp (j p)
-      (contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)))).comp_contMDiffAt
+    ((contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)).ringInverse hu)).comp_contMDiffAt
     (f := j) hJs
 
 /-- The inverse Cayley chart relative to an `ω`-compatible `J₀` sends a family in the tame Cayley
@@ -218,8 +217,7 @@ theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
   simp_rw [h₀.cayleyEquiv_symm_apply_toContinuousLinearMap]
   have hu := isUnit_one_sub_of_toLinearMap_mem_cayleyBall (hC p)
   exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
-    ((contDiffAt_ringInverse ℝ hu.unit).comp (C p)
-      (contDiffAt_const.sub contDiffAt_id))).comp_contMDiffAt hCs
+    ((contDiffAt_const.sub contDiffAt_id).ringInverse hu)).comp_contMDiffAt hCs
 
 /-- The forward Cayley chart relative to an `ω`-tame `J₀` sends a `C^n` family of `ω`-tame
 structures on a manifold to a `C^n` family of Cayley coordinates. -/

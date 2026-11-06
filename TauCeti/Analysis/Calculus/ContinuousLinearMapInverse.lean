@@ -13,12 +13,14 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 /-!
 # Inverting and differentiating continuous linear maps
 
-This file collects two kinds of facts about inverting continuous linear maps. The first is a
+This file collects three kinds of facts about inverting continuous linear maps. The first is a
 perturbation criterion: a map differing from a continuous linear equivalence `L` by less than
 `‖L⁻¹‖⁻¹` in operator norm is again invertible, by a Neumann series. The second packages the
 derivative of a differentiable inverse family of continuous linear maps at an invertible base
 point, including its action on a varying vector; that is the analytic input for differentiating a
-vector-field pullback along a parametric family.
+vector-field pullback along a parametric family. The third is the smoothness of the ring inverse of
+a `C^n` family of units, together with the velocity `Z * C - C * Z` of a family that intertwines a
+curve through `1` with the constant `C`.
 
 ## Main results
 
@@ -38,8 +40,8 @@ vector-field pullback along a parametric family.
   vector curve.
 * `ContDiffAt.ringInverse` and `ContDiff.ringInverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
-* `deriv_eq_mul_sub_mul_of_mul_eq_mul`: the velocity of a family `K` with `K t * P t = P t * C`
-  and `P` of velocity `Z` through `1`.
+* `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
+  and `P` of velocity `Z` through `1` has velocity `Z * C - C * Z` at that point.
 
 -/
 
@@ -215,11 +217,12 @@ theorem ContDiff.ringInverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x
   contDiff_iff_contDiffAt.2 fun x => hf.contDiffAt.ringInverse (hfu x)
 
 omit [HasSummableGeomSeries R] in
-/-- If `K t * P t = P t * C` for all `t`, `P t₀ = 1`, `K t₀ = C`, `P` has derivative `Z` at `t₀`
-and `K` is differentiable at `t₀`, then `K` has derivative `Z * C - C * Z` at `t₀`. -/
-theorem deriv_eq_mul_sub_mul_of_mul_eq_mul {P K : 𝕜 → R} {Z C : R} {t₀ : 𝕜}
+/-- If `K t * P t = P t * C` for all `t`, `P t₀ = 1`, `P` has derivative `Z` at `t₀` and `K` is
+differentiable at `t₀`, then `K` has derivative `Z * C - C * Z` at `t₀`. -/
+theorem DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul {P K : 𝕜 → R} {Z C : R} {t₀ : 𝕜}
     (hK : DifferentiableAt 𝕜 K t₀) (hP : HasDerivAt P Z t₀) (hKP : ∀ t, K t * P t = P t * C)
-    (hP0 : P t₀ = 1) (hK0 : K t₀ = C) : deriv K t₀ = Z * C - C * Z := by
+    (hP0 : P t₀ = 1) : deriv K t₀ = Z * C - C * Z := by
+  have hK0 : K t₀ = C := by simpa [hP0] using hKP t₀
   have hL : HasDerivAt (fun t => K t * P t) (deriv K t₀ * P t₀ + K t₀ * Z) t₀ :=
     hK.hasDerivAt.mul hP
   have heq := hL.unique ((hP.mul (hasDerivAt_const t₀ C)).congr_of_eventuallyEq

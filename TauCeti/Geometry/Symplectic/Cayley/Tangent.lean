@@ -373,7 +373,7 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
   have hK : HasDerivAt K (deriv K 0) 0 := ((hKs.differentiable (by simp)) 0).hasDerivAt
   have hP' : HasDerivAt P Z 0 := ((hφd.smul_const Z).const_add 1).congr_deriv (one_smul ℝ Z)
   have hK' : deriv K 0 = Y := by
-    rw [deriv_eq_mul_sub_mul_of_mul_eq_mul hK.differentiableAt hP' hKP hP0 hK0]
+    rw [hK.differentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul hP' hKP hP0]
     exact neg_half_smul_mul_mul_sub_mul_eq hJJ hYJ
   rwa [hK'] at hK
 
