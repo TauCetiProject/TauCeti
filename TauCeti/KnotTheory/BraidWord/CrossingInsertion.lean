@@ -331,13 +331,6 @@ private theorem crossinglessComponentCount_closure_cons :
   · rintro h
     exact ⟨h, fun hp' ↦ hp (hp' ▸ h), fun hq' ↦ hq (hq' ▸ h)⟩
 
-private theorem finRotate_symm_succ {m : ℕ} (k : Fin m) :
-    (finRotate (m + 1)).symm k.succ = k.castSucc :=
-  (finRotate _).symm_apply_eq.mpr (Fin.finRotate_castSucc k).symm
-
-private theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = Fin.last m :=
-  (finRotate _).symm_apply_eq.mpr finRotate_last.symm
-
 /-- Both the closure of `(i, ε) :: v` and the renamed insertion list the half-edges of each
 crossing in slot order. -/
 private theorem halfEdge_insertLetter :
@@ -351,10 +344,10 @@ private theorem halfEdge_insertLetter :
     Equiv.equivCongr_apply_apply, crossingBlockEquiv_symm,
     crossingBlockEquiv_apply_crossingSlotEquiv, Equiv.Perm.coe_one, id_eq]
   rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨k, rfl⟩
-  · rw [finRotate_symm_zero, crossingSlotEquiv_succ_last,
+  · rw [Fin.finRotate_symm_zero, crossingSlotEquiv_succ_last,
       OrientedPDCode.toPDCode_insertCrossing, PDCode.insertCrossing_crossing_last,
       crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inr]
-  · rw [finRotate_symm_succ, crossingSlotEquiv_succ_castSucc,
+  · rw [Fin.finRotate_symm_succ, crossingSlotEquiv_succ_castSucc,
       OrientedPDCode.toPDCode_insertCrossing, PDCode.insertCrossing_crossing_castSucc,
       PDCode.crossing_apply, toPDCode_swapClosingArcs, PDCode.reconnect_halfEdge,
       halfEdge_closure, Equiv.Perm.coe_one, id_eq,
@@ -377,11 +370,11 @@ private theorem orientation_insertLetter :
   simp only [List.length_cons, OrientedPDCode.relabel_orientation, crossingBlockEquiv_symm,
     crossingBlockEquiv_apply_crossingSlotEquiv]
   rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨k, rfl⟩
-  · rw [finRotate_symm_zero, crossingSlotEquiv_succ_last,
+  · rw [Fin.finRotate_symm_zero, crossingSlotEquiv_succ_last,
       OrientedPDCode.orientation_insertCrossing_inr, orientation_swapClosingArcs,
       orientation_swapClosingArcs, ho₁, ho₂]
     fin_cases s <;> rfl
-  · rw [finRotate_symm_succ, crossingSlotEquiv_succ_castSucc,
+  · rw [Fin.finRotate_symm_succ, crossingSlotEquiv_succ_castSucc,
       OrientedPDCode.orientation_insertCrossing_inl, orientation_swapClosingArcs,
       orientation_closure]
 
@@ -429,10 +422,10 @@ theorem closure_cons_eq_relabel_insertCrossing :
       rw [overPair_closure, OrientedPDCode.relabel_toPDCode, PDCode.relabel_overPair,
         OrientedPDCode.toPDCode_insertCrossing]
       rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨k, rfl⟩
-      · rw [finRotate_symm_zero, PDCode.insertCrossing_overPair_last]
+      · rw [Fin.finRotate_symm_zero, PDCode.insertCrossing_overPair_last]
         exact decide_eq_decide.mpr (by simp)
-      · rw [finRotate_symm_succ, PDCode.insertCrossing_overPair_castSucc, toPDCode_swapClosingArcs,
-          PDCode.reconnect_overPair, overPair_closure]
+      · rw [Fin.finRotate_symm_succ, PDCode.insertCrossing_overPair_castSucc,
+          toPDCode_swapClosingArcs, PDCode.reconnect_overPair, overPair_closure]
         simp
   · exact orientation_insertLetter v i ε hp hq
   · -- The crossing-free circles are those of the closure of `v`.
