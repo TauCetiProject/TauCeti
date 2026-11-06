@@ -104,7 +104,7 @@ theorem exists_transpose_mul_mul_eq_of_sub_eq (π : R) [IsAdicComplete (Ideal.sp
   -- Consecutive iterates are congruent modulo `π ^ (m + 1)`, so the iterates converge to `U`.
   obtain ⟨U, hU⟩ : ∃ U : Matrix n n R, ∀ m i i', π ^ m ∣ U i i' - (s m).1 i i' := by
     obtain ⟨L, hL⟩ := TauCeti.exists_forall_pow_dvd_sub π (fun m (p : n × n) ↦ (s m).1 p.1 p.2)
-      fun m p ↦ ⟨((s m).1 * (H * (s m).2)) p.1 p.2, by
+      fun m p ↦ (pow_dvd_pow π m.le_succ).trans ⟨((s m).1 * (H * (s m).2)) p.1 p.2, by
         simp only [hs, Matrix.mul_add, Matrix.mul_one, Matrix.mul_smul, Matrix.add_apply,
           Matrix.smul_apply,
           smul_eq_mul, add_sub_cancel_left]⟩
