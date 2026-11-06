@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
+public import TauCeti.RingTheory.Ideal.Quotient.PowTransition
 
 import TauCeti.RingTheory.AdicCompletion.Finite
 
@@ -77,11 +78,6 @@ variable {A : Type u} [CommRing A] (I : Ideal A)
 section Reduction
 
 variable (M : Type v) [AddCommGroup M] [Module A M]
-
-/-- The `I`-adic filtration `n ↦ I^{n+1} M` of `M` is decreasing. -/
-theorem _root_.Ideal.antitone_pow_succ_smul_top :
-    Antitone fun n : ℕ ↦ (I ^ (n + 1) • ⊤ : Submodule A M) :=
-  fun _ _ h ↦ Submodule.pow_smul_top_le I M (Nat.add_le_add_right h 1)
 
 /-- The *reduction* of an `A`-module `M` along an ideal `I`: the tower
 `M ⧸ I M ← M ⧸ I² M ← M ⧸ I³ M ← ⋯` with the quotient maps as transitions, the tower of quotients
