@@ -200,6 +200,8 @@ theorem continuous_of_forall_continuous_restrict [IsManifold I n M] [LocallyComp
   refine continuous_iff_continuousAt.mpr fun p₀ ↦ ?_
   refine tendsto_manifoldWeakWhitney_iff.mpr fun x y m hm K hK V hV h₀ ↦ ?_
   rw [chartJetSet_self_target x y m hm] at h₀ ⊢
+  -- The chart-test rewrite leaves membership in a set-builder with a MapsTo predicate.
+  -- Expose those two definitions under Eventually to apply compactness pointwise.
   change ∀ᶠ p in 𝓝 p₀, ∀ w ∈ K, chartIteratedFDeriv (g p) x m hm w ∈ V
   refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
   obtain ⟨i, hi⟩ := hU ((extChartAt I x).symm w)

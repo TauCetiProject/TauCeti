@@ -39,29 +39,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e] [MemTrivializationAtlas e']
   {U : Opens M} (hU : (U : Set M) ⊆ e.baseSet) (hU' : (U : Set M) ⊆ e'.baseSet)
 
-/-- The actual frame-change operator as a smooth map on any common open frame domain. -/
-def frameTransitionMap : C^n⟮I, U; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
-  ⟨fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F), fun x ↦
-    (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.2) (hU' x.2)).comp x
-      contMDiff_subtype_val.contMDiffAt⟩
-
-omit [IsManifold I n M] in
-/-- Evaluation of the smooth frame-change operator is the native bundle coordinate change. -/
-@[simp]
-theorem frameTransitionMap_apply (x : U) :
-    frameTransitionMap (I := I) (n := n) e e' hU hU' x =
-      (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
-  rfl
-
-omit [IsManifold I n M] in
-/-- Coefficients in a second frame are obtained by the smooth transition multiplier. -/
-theorem frameCoordinates_eq_clmApply (s : Cₛ^n⟮I; F, V⟯) :
-    e'.frameCoordinates hU' s = ContMDiffMap.clmApplyLinearMap
-      (frameTransitionMap (I := I) (n := n) e e' hU hU') (e.frameCoordinates hU s) := by
-  ext x
-  simp only [ContMDiffMap.clmApplyLinearMap_apply, frameTransitionMap_apply]
-  exact (e.frameCoordinates_coordChange hU e' hU' s x).symm
-
 /-- A fixed smooth change of frame preserves continuity of section coefficient families.
 The fibres may be infinite dimensional and the transition matrix need not be globally bounded. -/
 theorem continuous_frameCoordinates_of_change {P : Type*} [TopologicalSpace P]
@@ -105,6 +82,8 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
   let j : C^n⟮I, W i; I, U i⟯ :=
     ⟨fun x ↦ ⟨((x : U') : M), x.2⟩,
       (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp (by
+        -- The target-subtype criterion leaves composition through two inclusions. Normalize
+        -- their nested subtype coercions, which are bundled by different open carriers.
         change ContMDiff I I n (fun x : W i ↦ ((x : U') : M))
         exact (contMDiff_subtype_val (U := U')).comp
           (contMDiff_subtype_val (U := W i)))⟩
@@ -202,6 +181,8 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   let j : C^n⟮I, UW i; I, U i⟯ :=
     ⟨fun x ↦ ⟨((x : W) : M), x.2⟩,
       (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp (by
+        -- Normalize the composite of the two open inclusions after the target-subtype
+        -- criterion; rewriting cannot identify their distinct bundled membership proofs.
         change ContMDiff I I n (fun x : UW i ↦ ((x : W) : M))
         exact (contMDiff_subtype_val (U := W)).comp
           (contMDiff_subtype_val (U := UW i)))⟩

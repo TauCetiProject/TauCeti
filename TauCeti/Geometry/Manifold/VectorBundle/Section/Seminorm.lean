@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
+public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Compact chart seminorms for bundle sections
@@ -84,6 +86,17 @@ theorem frameCoordinates_coordChange (e' : Trivialization F (π F V))
     e.coordChangeL 𝕜 e' x (frameCoordinates e hU s x) = frameCoordinates e' hU' s x := by
   simp only [frameCoordinates_apply, e.coordChangeL_apply e' ⟨hU x.2, hU' x.2⟩,
     e.symm_apply_apply_mk (hU x.2)]
+
+/-- Coefficients in a second frame are obtained by the smooth transition multiplier. -/
+theorem frameCoordinates_eq_clmApply (e' : Trivialization F (π F V))
+    [MemTrivializationAtlas e'] (hU' : (U : Set M) ⊆ e'.baseSet)
+    (s : Cₛ^n⟮I; F, V⟯) :
+    e'.frameCoordinates hU' s = ContMDiffMap.clmApplyLinearMap
+      (frameTransitionMap (I := I) (n := n) e e' hU hU') (e.frameCoordinates hU s) := by
+  ext x
+  simp only [ContMDiffMap.clmApplyLinearMap_apply, frameTransitionMap_apply]
+  exact (e.frameCoordinates_coordChange hU e' hU' s x).symm
+
 
 variable [IsManifold I n M]
 
