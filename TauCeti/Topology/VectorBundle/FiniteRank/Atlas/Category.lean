@@ -147,6 +147,16 @@ universe u v
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
   {X : Type u} [TopologicalSpace X] {A D : FiniteRankAtlas 𝕜 X}
 
+/-- A bundle isomorphism followed by its inverse fixes each fibre vector. -/
+@[simp] theorem hom_inv_id_fiberMap_apply (e : A ≅ D) (x : X) (v : A.Fiber x) :
+    e.inv.fiberMap x (e.hom.fiberMap x v) = v := by
+  exact congrArg (fun f : A ⟶ A => f.fiberMap x v) e.hom_inv_id
+
+/-- The inverse of a bundle isomorphism followed by the isomorphism fixes each fibre vector. -/
+@[simp] theorem inv_hom_id_fiberMap_apply (e : A ≅ D) (x : X) (v : D.Fiber x) :
+    e.hom.fiberMap x (e.inv.fiberMap x v) = v := by
+  exact congrArg (fun f : D ⟶ D => f.fiberMap x v) e.inv_hom_id
+
 /-- Isomorphic atlases have the same locally constant rank, even on noncompact
 or disconnected bases. -/
 theorem finiteRankAtlas_rank_eq (e : A ≅ D) : A.rank = D.rank := by
