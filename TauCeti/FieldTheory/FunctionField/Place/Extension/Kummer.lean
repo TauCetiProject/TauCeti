@@ -323,27 +323,24 @@ theorem exists_monic_map_residue_eq (P : Place k F) {γ : P.ResidueField[X]} (h�
 variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
 
-/-- **Kummer's theorem** (Stichtenoth, Theorem 3.3.7), for one irreducible factor.  Let `P` be a
-place of `F / k`, let `y : F'` be a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the
-minimal polynomial of `y`, and let `g ∈ 𝒪_P[X]` be monic with irreducible reduction dividing the
-reduction of `φ`.  Then some place `P'` of `F' / k'` lies over `P`, has `g (y)` in its maximal
-ideal, and has relative degree at least the degree of the reduction of `g`.
-
-The theorem bounds the splitting of `P` without determining it: nothing here says that every
-place over `P` arises this way, and the ramification indices are not computed. -/
-theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F) (P : Place k F)
-    (y : F') {φ g : P.integers[X]}
-    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) (hg : g.Monic)
+omit [Algebra k F'] [IsScalarTower k F F'] in
+omit [Algebra k F'] [IsScalarTower k F F'] in
+/-- Let `φ` be a lift of the minimal polynomial of `y`, and let `g` be a polynomial whose reduction
+is irreducible and divides the reduction of `φ`.  Then the evaluations at `y` of the polynomials
+whose reduction is divisible by the reduction of `g` lie in a proper ideal of `𝒪_P[y]`. -/
+theorem exists_ideal_ne_top_of_irreducible_map_residue (P : Place k F) (y : F')
+    {φ g : P.integers[X]} (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
     (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
     (hdvd : g.map (IsLocalRing.residue P.integers) ∣ φ.map (IsLocalRing.residue P.integers)) :
-    ∃ P' : Place k' F', P'.restrict k F = P ∧ P'.valuation (P.integersEval y g) < 1 ∧
-      (g.map (IsLocalRing.residue P.integers)).natDegree ≤ relativeDegree k F P' := by
+    ∃ J : Ideal (P.integersEval (F' := F') y).range, J ≠ ⊤ ∧
+      ∀ q : P.integers[X], g.map (IsLocalRing.residue P.integers) ∣
+        q.map (IsLocalRing.residue P.integers) →
+        (P.integersEval (F' := F') y).rangeRestrict q ∈ J := by
   classical
   have hφ : φ.Monic := monic_of_map_eq_minpoly (F' := F') hmin
   set res := IsLocalRing.residue P.integers
   set γ := g.map res
   set ev := P.integersEval (F' := F') y with hevdef
-  -- The reduction map to the field `F_P[X] / (γ)`; its kernel `K` contains `φ` and `g`.
   have hspan : Ideal.span {γ} ≠ ⊤ := fun h ↦ hirr.not_isUnit (Ideal.span_singleton_eq_top.mp h)
   have : Nontrivial (P.ResidueField[X] ⧸ Ideal.span {γ}) :=
     Ideal.Quotient.nontrivial_iff.mpr hspan
@@ -367,20 +364,43 @@ theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F)
     rw [hJdef, Ideal.comap_map_of_surjective _ ev.rangeRestrict_surjective,
       ← RingHom.ker_eq_comap_bot, ev.ker_rangeRestrict, sup_eq_left.mpr hkerle] at hcomap
     exact hKtop hcomap
+  exact ⟨J, hJtop, fun q hq ↦ Ideal.mem_map_of_mem _ ((hmemK q).mpr hq)⟩
+
+/-- **Kummer's theorem** (Stichtenoth, Theorem 3.3.7), for one irreducible factor.  Let `P` be a
+place of `F / k`, let `y : F'` be a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the
+minimal polynomial of `y`, and let `g ∈ 𝒪_P[X]` be monic with irreducible reduction dividing the
+reduction of `φ`.  Then some place `P'` of `F' / k'` lies over `P`, has `g (y)` in its maximal
+ideal, and has relative degree at least the degree of the reduction of `g`.
+
+The theorem bounds the splitting of `P` without determining it: nothing here says that every
+place over `P` arises this way, and the ramification indices are not computed. -/
+theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F) (P : Place k F)
+    (y : F') {φ g : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) (hg : g.Monic)
+    (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
+    (hdvd : g.map (IsLocalRing.residue P.integers) ∣ φ.map (IsLocalRing.residue P.integers)) :
+    ∃ P' : Place k' F', P'.restrict k F = P ∧ P'.valuation (P.integersEval y g) < 1 ∧
+      (g.map (IsLocalRing.residue P.integers)).natDegree ≤ relativeDegree k F P' := by
+  classical
+  have hφ : φ.Monic := monic_of_map_eq_minpoly (F' := F') hmin
+  set res := IsLocalRing.residue P.integers
+  set γ := g.map res
+  set ev := P.integersEval (F' := F') y with hevdef
+  obtain ⟨J, hJtop, hmemJ⟩ := exists_ideal_ne_top_of_irreducible_map_residue P y hmin hirr hdvd
   -- A uniformizer of `P` gives a nonzero element of that ideal.
   obtain ⟨t, ht⟩ := P.exists_isUniformizer
   rw [P.isUniformizer_iff_ord_eq_one] at ht
   have ht0 : t ≠ 0 := by rintro rfl; simp at ht
   have htmem : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
   have htcoe : ((⟨t, htmem⟩ : P.integers) : F) = t := (rfl)
-  have htK : C (⟨t, htmem⟩ : P.integers) ∈ K := by
-    rw [hmemK, Polynomial.map_C, (P.residue_eq_zero_iff_ord_pos (by rw [htcoe]; exact ht0)).mpr
+  have htK : ev.rangeRestrict (C (⟨t, htmem⟩ : P.integers)) ∈ J := by
+    refine hmemJ _ ?_
+    rw [Polynomial.map_C, (P.residue_eq_zero_iff_ord_pos (by rw [htcoe]; exact ht0)).mpr
       (by rw [htcoe]; omega), map_zero]
     exact dvd_zero _
   have hJbot : J ≠ ⊥ := fun h ↦ by
-    have hmem : ev.rangeRestrict (C (⟨t, htmem⟩ : P.integers)) ∈ J := Ideal.mem_map_of_mem _ htK
-    rw [h, Ideal.mem_bot] at hmem
-    have : ev (C (⟨t, htmem⟩ : P.integers)) = 0 := congrArg Subtype.val hmem
+    rw [h, Ideal.mem_bot] at htK
+    have : ev (C (⟨t, htmem⟩ : P.integers)) = 0 := congrArg Subtype.val htK
     rw [hevdef, integersEval_C] at this
     exact ht0 ((algebraMap F F').injective (by rwa [map_zero]))
   -- Stichtenoth's existence theorem dominates it by a place of `F'`.
@@ -394,8 +414,7 @@ theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F)
     rw [hP'def, integers_constantsEquiv]
     exact hQint ⟨algebraMap F F' f, C (⟨f, hf⟩ : P.integers), by rw [hevdef, integersEval_C]⟩
   have hvg : P'.valuation (P.integersEval y g) < 1 := by
-    have hgK : g ∈ K := (hmemK g).mpr dvd_rfl
-    simpa [hP'def, hevdef] using hQval _ (Ideal.mem_map_of_mem ev.rangeRestrict hgK)
+    simpa [hP'def, hevdef] using hQval _ (hmemJ g dvd_rfl)
   -- `y` is integral over `𝒪_P`, hence lies in the valuation ring of `P'`.
   exact ⟨P', hrestrict, hvg, natDegree_map_residue_le_relativeDegree hrestrict
     (mem_integers_of_map_eq_minpoly hrestrict hmin) hg hirr hvg⟩
