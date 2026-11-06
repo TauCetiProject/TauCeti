@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import TauCeti.RingTheory.LocalRing.Coordinates
-public import TauCeti.RingTheory.Node.Cotangent
+public import TauCeti.RingTheory.Node.Cotangent.Basic
 public import TauCeti.RingTheory.Node.Hessian
 import TauCeti.RingTheory.Smooth.Jacobian
 import Mathlib.RingTheory.Etale.Kaehler

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.CodeAutomorphism
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.IdentifiedRows
 
 /-!
@@ -41,6 +42,10 @@ sign `TauCeti.a2TwelfthSign j` times the component of `x` at table position
 `TauCeti.a2TwelfthDestinationToSource j`, with explicit inverse formula and compatibility with the
 root sublattices.
 
+Conjugating `TauCeti.a2TwelfthGolayAutIsometry` along `a2TwelfthLatticeIsometry` transports every
+monomial automorphism of the ternary Golay code to a self-isometry
+`a2TwelfthLatticeGolayAutIsometry` of the table lattice.
+
 ## Main declarations
 
 * `TauCeti.RootfulNiemeierType.a2TwelfthGlueModuleIsometry_mem_a2TwelfthGlueSubgroup_iff`,
@@ -60,6 +65,10 @@ root sublattices.
   `a2TwelfthLatticeTernaryGolayIsometry_def`, `a2TwelfthLatticeTernaryGolayIsometry_apply`,
   `a2TwelfthLatticeTernaryGolayIsometry_symm_apply`, and
   `map_rootLattice_carrier_a2TwelfthLatticeTernaryGolayIsometry`.
+* `TauCeti.RootfulNiemeierType.a2TwelfthLatticeGolayAutIsometry`: the self-isometry of
+  `a2Twelfth.lattice` induced by a monomial automorphism of the ternary Golay code, with
+  `a2TwelfthLatticeIsometry_a2TwelfthLatticeGolayAutIsometry_apply` and
+  `a2TwelfthLatticeGolayAutIsometry_apply`.
 
 ## References
 
@@ -290,6 +299,55 @@ theorem map_rootLattice_carrier_a2TwelfthLatticeTernaryGolayIsometry :
     Isometry.ambientEquiv_eq_of_forall_apply_eq
       a2TwelfthTernaryGolayIsometry_eq_a2TwelfthRootIsometry,
     a2TwelfthRootIsometry.map_carrier_ambientEquiv]
+
+/-! ### Ternary Golay code automorphisms act on the table lattice -/
+
+/-- **Every monomial automorphism of the ternary Golay code induces a self-isometry of the table
+lattice `a2Twelfth.lattice`**, obtained by conjugating `TauCeti.a2TwelfthGolayAutIsometry` along
+`a2TwelfthLatticeIsometry`. -/
+noncomputable def a2TwelfthLatticeGolayAutIsometry (v : Fin 12 → ℤˣ) (e : Equiv.Perm (Fin 12))
+    (he : signedEquiv (R := ZMod 3) v e ∈ monomialAut TernaryGolay.code) :
+    IntegralLattice.Isometry a2Twelfth.lattice a2Twelfth.lattice :=
+  a2TwelfthLatticeIsometry.symm.conjMulEquiv (a2TwelfthGolayAutIsometry v e he)
+
+/-- `a2TwelfthLatticeIsometry` intertwines `a2TwelfthLatticeGolayAutIsometry` with
+`TauCeti.a2TwelfthGolayAutIsometry`. -/
+-- Not `@[simp]`: `simp` rewrites `(A 2).rank` inside the `DFunLike.coe` motive by `rank_A`.
+theorem a2TwelfthLatticeIsometry_a2TwelfthLatticeGolayAutIsometry_apply
+    (v : Fin 12 → ℤˣ) (e : Equiv.Perm (Fin 12))
+    (he : signedEquiv (R := ZMod 3) v e ∈ monomialAut TernaryGolay.code)
+    (x : ∀ i, Fin (a2Twelfth.componentType i).rank → ℚ) :
+    a2TwelfthLatticeIsometry (a2TwelfthLatticeGolayAutIsometry v e he x) =
+      a2TwelfthGolayAutIsometry v e he (a2TwelfthLatticeIsometry x) := by
+  rw [a2TwelfthLatticeGolayAutIsometry, Isometry.conjMulEquiv_apply, Isometry.symm_symm,
+    Isometry.apply_symm_apply]
+
+/-- The self-isometry of the table lattice induced by a ternary Golay code automorphism
+`signedEquiv v e` moves the component in table position `p a` to table position `p (e a)`,
+multiplied by the sign `s (e a) * v a * s a`, for `p = TauCeti.a2TwelfthDestinationToSource` and
+`s = TauCeti.a2TwelfthSign`.  At table position `i`, read as `j : Fin 12`, this is stated with
+`a = e.symm (p.symm j)`. -/
+-- Not `@[simp]`: `simp` rewrites `a2Twelfth.componentType i` inside the argument `k` by
+-- `componentType_a2Twelfth`.
+theorem a2TwelfthLatticeGolayAutIsometry_apply (v : Fin 12 → ℤˣ) (e : Equiv.Perm (Fin 12))
+    (he : signedEquiv (R := ZMod 3) v e ∈ monomialAut TernaryGolay.code)
+    (x : ∀ m, Fin (a2Twelfth.componentType m).rank → ℚ)
+    (i : Fin a2Twelfth.components.length) (k : Fin (a2Twelfth.componentType i).rank) :
+    a2TwelfthLatticeGolayAutIsometry v e he x i k =
+      ((a2TwelfthSign (a2TwelfthDestinationToSource.symm (Fin.cast length_components_a2Twelfth i)) *
+          v (e.symm (a2TwelfthDestinationToSource.symm (Fin.cast length_components_a2Twelfth i))) *
+            a2TwelfthSign (e.symm (a2TwelfthDestinationToSource.symm
+              (Fin.cast length_components_a2Twelfth i))) : ℤˣ) : ℤ) •
+        x (Fin.cast length_components_a2Twelfth.symm (a2TwelfthDestinationToSource
+            (e.symm (a2TwelfthDestinationToSource.symm (Fin.cast length_components_a2Twelfth i)))))
+          (Fin.cast ((congrArg rank (componentType_a2Twelfth i)).trans
+            (congrArg rank (componentType_a2Twelfth _)).symm) k) := by
+  rw [a2TwelfthLatticeGolayAutIsometry, Isometry.conjMulEquiv_apply, Isometry.symm_symm,
+    a2TwelfthLatticeIsometry_symm_apply]
+  have h := congrFun (a2TwelfthGolayAutIsometry_apply v e he (a2TwelfthLatticeIsometry x)
+    (Fin.cast length_components_a2Twelfth i))
+    (Fin.cast (congrArg rank (componentType_a2Twelfth i)) k)
+  rw [h, Pi.smul_apply, a2TwelfthLatticeIsometry_apply, Units.smul_def, Fin.cast_cast]
 
 end RootfulNiemeierType
 

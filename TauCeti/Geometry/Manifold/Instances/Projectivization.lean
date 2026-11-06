@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
+public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Topology.Algebra.Projectivization
 
 /-!
@@ -29,10 +31,14 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 * `Projectivization.contDiffOn_affineChart_symm_trans`: the transition maps are `C^r` for
   every `r`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
-* `Projectivization.affineOpenPartialHomeomorph_mem_maximalAtlas`: each standard affine chart
-  belongs to the maximal atlas.
+* `Projectivization.instIsManifoldReal`: over a normed `ℝ`-algebra, such as `ℂ`, it is also a real
+  `C^r` manifold with the same charts.
+* `Projectivization.affineOpenPartialHomeomorph_mem_maximalAtlas`: the affine charts lie in the
+  maximal atlas of either manifold structure.
 * `Projectivization.contMDiffOn_affineChart` and `Projectivization.contMDiff_affineChart_symm`:
   the affine charts and their inverses are `C^r` maps.
+* `Projectivization.contMDiff_of_contDiffOn_mk`: a function on projective space given by a `C^r`
+  function of the nonzero homogeneous coordinates is `C^r`.
 
 ## References
 
@@ -87,22 +93,47 @@ instance instIsManifold (r : ℕ∞ω) :
   rintro _ _ ⟨i, rfl⟩ ⟨j, rfl⟩
   simpa using contDiffOn_affineChart_symm_trans i j r
 
+/-- Projective space over a normed `ℝ`-algebra `𝕜` is, with the same affine charts, a real `C^r`
+manifold for every `r`. Over `ℂ` this is the underlying real smooth structure of `ℂℙⁿ`, modelled
+on `𝓘(ℝ, Fin n → ℂ)`. -/
+instance instIsManifoldReal [NormedAlgebra ℝ 𝕜] (r : ℕ∞ω) :
+    IsManifold 𝓘(ℝ, Fin n → 𝕜) r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
+  (instIsManifold r).restrictScalars ℝ
+
+section Model
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' (Fin n → 𝕜)]
+
+/-- Each standard affine chart lies in the maximal atlas of any `C^r` manifold structure on
+projective space built on its atlas, such as `𝓘(𝕜, Fin n → 𝕜)` or, over a normed `ℝ`-algebra,
+`𝓘(ℝ, Fin n → 𝕜)`. -/
+theorem affineOpenPartialHomeomorph_mem_maximalAtlas
+    {I : ModelWithCorners 𝕜' (Fin n → 𝕜) (Fin n → 𝕜)} {r : ℕ∞ω}
+    [IsManifold I r (ℙ 𝕜 (Fin (n + 1) → 𝕜))] (i : Fin (n + 1)) :
+    affineOpenPartialHomeomorph i ∈ IsManifold.maximalAtlas I r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
+  IsManifold.subset_maximalAtlas (affineOpenPartialHomeomorph_mem_atlas i)
+
+/-- For a trivial model `𝓘(𝕜', Fin n → 𝕜)`, the extended standard affine chart of `i` is the
+affine chart itself. -/
+theorem affineOpenPartialHomeomorph_extend_apply (i : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    (affineOpenPartialHomeomorph i).extend 𝓘(𝕜', Fin n → 𝕜) x = affineChart i x := by
+  rw [OpenPartialHomeomorph.extend_coe, Function.comp_apply, modelWithCornersSelf_coe, id_eq,
+    coe_affineOpenPartialHomeomorph]
+
+/-- For a trivial model `𝓘(𝕜', Fin n → 𝕜)`, the extended standard affine chart of `i` sends the
+coordinate point `[eᵢ]` to `0`. -/
+theorem affineOpenPartialHomeomorph_extend_mk_single (i : Fin (n + 1)) :
+    (affineOpenPartialHomeomorph i).extend 𝓘(𝕜', Fin n → 𝕜) (mk 𝕜 (Pi.single i 1) (by simp)) =
+      0 := by
+  rw [affineOpenPartialHomeomorph_extend_apply, affineChart_mk_single]
+
+end Model
+
 /-- Each standard affine chart of projective space is a `C^r` map on its domain. -/
 theorem contMDiffOn_affineChart (i : Fin (n + 1)) (r : ℕ∞ω) :
     ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) r (affineChart i) (affineOpen (K := 𝕜) i) := by
   simpa using contMDiffOn_of_mem_maximalAtlas
     (IsManifold.subset_maximalAtlas (n := r) (affineOpenPartialHomeomorph_mem_atlas (𝕜 := 𝕜) i))
-
-/-- Each standard affine chart of projective space belongs to its `C^r` maximal atlas. -/
-theorem affineOpenPartialHomeomorph_mem_maximalAtlas (i : Fin (n + 1)) (r : ℕ∞ω) :
-    affineOpenPartialHomeomorph (K := 𝕜) i ∈
-      IsManifold.maximalAtlas 𝓘(𝕜, Fin n → 𝕜) r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
-  IsManifold.subset_maximalAtlas (affineOpenPartialHomeomorph_mem_atlas i)
-
-/-- For the self-model of `Fin n → 𝕜`, the extended standard affine chart is the affine chart. -/
-theorem affineOpenPartialHomeomorph_extend (i : Fin (n + 1)) :
-    (affineOpenPartialHomeomorph (K := 𝕜) i).extend 𝓘(𝕜, Fin n → 𝕜) = affineChart i := by
-  simp [OpenPartialHomeomorph.extend]
 
 /-- The inverse `z ↦ [Fin.insertNth i 1 z]` of each standard affine chart of projective space is
 a `C^r` map. -/
@@ -111,5 +142,23 @@ theorem contMDiff_affineChart_symm (i : Fin (n + 1)) (r : ℕ∞ω) :
   rw [← contMDiffOn_univ]
   simpa using contMDiffOn_symm_of_mem_maximalAtlas
     (IsManifold.subset_maximalAtlas (n := r) (affineOpenPartialHomeomorph_mem_atlas (𝕜 := 𝕜) i))
+
+/-- A function on projective space with values in a normed space, given in homogeneous coordinates
+by a function `F` which is `C^r` on the nonzero vectors, is `C^r`; for `r = ω` it is analytic.
+On the affine open at `i` it is `z ↦ F (Fin.insertNth i 1 z)` read in the chart at `i`. -/
+theorem contMDiff_of_contDiffOn_mk {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : ℙ 𝕜 (Fin (n + 1) → 𝕜) → E} {F : (Fin (n + 1) → 𝕜) → E} {r : ℕ∞ω}
+    (hF : ContDiffOn 𝕜 r F {v | v ≠ 0}) (hf : ∀ v (hv : v ≠ 0), f (mk 𝕜 v hv) = F v) :
+    ContMDiff 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) r f := by
+  intro x
+  obtain ⟨i, hi⟩ := exists_mem_affineOpen x
+  have hG : ContDiff 𝕜 r fun z : Fin n → 𝕜 ↦ F (Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z) :=
+    hF.comp_contDiff ((contDiff_const (c := (1 : 𝕜))).finInsertNth (F := fun _ ↦ 𝕜) i
+      contDiff_id) fun z ↦ Fin.insertNth_one_ne_zero i z
+  refine ((hG.contMDiff.comp_contMDiffOn (contMDiffOn_affineChart i r)).congr fun y hy ↦ ?_)
+    |>.contMDiffAt ((isOpen_affineOpen i).mem_nhds hi)
+  obtain ⟨z, rfl⟩ : ∃ z, (affineChart i).symm z = y :=
+    ⟨_, (affineChart i).left_inv (by simpa using hy)⟩
+  rw [Function.comp_apply, (affineChart i).right_inv (by simp), affineChart_symm_apply, hf]
 
 end Projectivization
