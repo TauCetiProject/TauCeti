@@ -35,7 +35,6 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 
 * `MvPowerSeries.IsRestricted.map`: a bounded ring homomorphism preserves restrictedness, at
   arbitrary polyradii.
-* `TauCeti.MvPowerSeries.restrictedMap_injective`: an injective `φ` induces an injective map.
 * `TauCeti.MvPowerSeries.restrictedMap_id` and `TauCeti.MvPowerSeries.restrictedMap_comp`:
   `restrictedMap` is functorial.
 * `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
@@ -129,14 +128,6 @@ theorem restrictedMap_eq_zero_iff (f : IsRestricted.subring (R := R) c) :
     apply Subtype.ext
     ext t
     simpa only [coeff_restrictedMap, ZeroMemClass.coe_zero, map_zero] using h t
-
-/-- An injective coefficient map induces an injective map of restricted series, as for Mathlib's
-`MvPowerSeries.Restricted.map_injective` on the type `MvPowerSeries.Restricted`. -/
-theorem restrictedMap_injective (hinj : Function.Injective φ) :
-    Function.Injective (restrictedMap (c := c) φ hφ) := fun f g h ↦
-  Subtype.ext <| MvPowerSeries.ext fun t ↦ hinj <| by
-    simpa only [coeff_restrictedMap] using
-      congrArg (fun x : IsRestricted.subring (R := S) c ↦ coeff t (x : MvPowerSeries σ S)) h
 
 /-- The identity induces the identity on restricted series. -/
 @[simp]
