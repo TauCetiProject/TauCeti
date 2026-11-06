@@ -34,7 +34,9 @@ it generates the same group scheme together with the root subgroups.
   `TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_linearMap`: the group schemes and
   their points agree.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToToral_linearMap`: the weight torus of
-  `f ∘ wt` is the split-torus morphism dual to `f` followed by the weight torus of `wt`.
+  `f ∘ wt` is the split-torus morphism dual to `f` followed by the weight torus of `wt`;
+  `TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToToral_linearMap_of_eq` allows any weight
+  family equal to `f ∘ wt`.
 
 ## References
 
@@ -114,5 +116,16 @@ theorem kostantWeightTorusToToral_linearMap (hf : Function.Injective f) :
   rw [Category.assoc, eqToHom_comp_kostantToralGroupSchemeι_linearMap e h ρ M hM hnil b wt hf,
     kostantWeightTorusToToral_comp_ι, Category.assoc, kostantWeightTorusToToral_comp_ι,
     GeneralLinear.weightTorus_linearMap]
+
+/-- A variant of `kostantWeightTorusToToral_linearMap` for any weight family `wt'` equal to the
+pushed-forward weights and any identification of the two toral closures. -/
+theorem kostantWeightTorusToToral_linearMap_of_eq (hf : Function.Injective f)
+    {wt' : Fin n → κ → ℤ} (hw : (fun j => f (wt j)) = wt')
+    (hG : kostantToralGroupScheme e h ρ M hM hnil b wt' =
+      kostantToralGroupScheme e h ρ M hM hnil b wt) :
+    kostantWeightTorusToToral e h ρ M hM hnil b wt' ≫ eqToHom hG =
+      SplitTorus.ofLinearMap ℤ f ≫ kostantWeightTorusToToral e h ρ M hM hnil b wt := by
+  subst hw
+  exact kostantWeightTorusToToral_linearMap e h ρ M hM hnil b wt hf
 
 end TauCeti.UniversalEnvelopingAlgebra

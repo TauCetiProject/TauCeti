@@ -368,26 +368,10 @@ theorem kostantWeightTorusToToral_weight_comp_eqToHom :
       eqToHom D.groupScheme_eq_kostantToralGroupScheme_weight.symm =
     SplitTorus.ofLinearMap ℤ
         (Fintype.linearCombination ℤ fun i => (D.weightLatticeBasis i : Fin t.rank → ℤ)) ≫
-      D.torus := by
-  -- Generalize the weights so that they can be replaced by the image of the coordinate weights.
-  have key : ∀ (w : Fin D.dim → Fin t.rank → ℤ)
-      (_ : (fun j => Fintype.linearCombination ℤ
-        (fun i => (D.weightLatticeBasis i : Fin t.rank → ℤ)) (D.coordinateWeight j)) = w)
-      (hG : D.groupScheme =
-        UniversalEnvelopingAlgebra.kostantToralGroupScheme (t.lieBasis ht).rootGenerator
-          (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator D.basis w),
-      UniversalEnvelopingAlgebra.kostantWeightTorusToToral (t.lieBasis ht).rootGenerator
-          (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator D.basis w ≫ eqToHom hG.symm =
-        SplitTorus.ofLinearMap ℤ
-            (Fintype.linearCombination ℤ fun i => (D.weightLatticeBasis i : Fin t.rank → ℤ)) ≫
-          D.torus := by
-    rintro w rfl hG
-    exact UniversalEnvelopingAlgebra.kostantWeightTorusToToral_linearMap _ _ _ _ _ _ _ _
-      D.injective_fintypeLinearCombination_weightLatticeBasis
-  exact key _ (funext D.fintypeLinearCombination_coordinateWeight)
-    D.groupScheme_eq_kostantToralGroupScheme_weight
+      D.torus :=
+  UniversalEnvelopingAlgebra.kostantWeightTorusToToral_linearMap_of_eq _ _ _ _ _ _ _ _
+    D.injective_fintypeLinearCombination_weightLatticeBasis
+    (funext D.fintypeLinearCombination_coordinateWeight) _
 
 end ChevalleyDatum
 
