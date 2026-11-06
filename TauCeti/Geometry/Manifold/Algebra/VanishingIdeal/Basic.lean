@@ -120,10 +120,10 @@ private theorem mvfderivSmoothVanishingIdeal_mul (x : M) (f g : smoothVanishingI
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
-/-- A smooth function vanishing on a neighbourhood of `x` lies in the square of the vanishing ideal
-at `x`. -/
-theorem mem_smoothVanishingIdeal_sq_of_eventuallyEq_zero {x : M} {f : C^∞⟮I, M; ℝ⟯}
-    (hf : (f : M → ℝ) =ᶠ[𝓝 x] 0) : f ∈ smoothVanishingIdeal I x ^ 2 := by
+/-- A smooth function vanishing on a neighbourhood of `x` lies in every power of the vanishing
+ideal at `x`. -/
+theorem mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero {x : M} {f : C^∞⟮I, M; ℝ⟯}
+    (hf : (f : M → ℝ) =ᶠ[𝓝 x] 0) (n : ℕ) : f ∈ smoothVanishingIdeal I x ^ n := by
   obtain ⟨b, -, hb⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hf).mem_iff.mp hf
   let χ : C^∞⟮I, M; ℝ⟯ := ⟨b, b.contMDiff⟩
   have hχ : ⇑χ = b := ContMDiffMap.coeFn_mk _ _
@@ -132,8 +132,13 @@ theorem mem_smoothVanishingIdeal_sq_of_eventuallyEq_zero {x : M} {f : C^∞⟮I,
     by_cases hy : b y = 0
     · simp [hχ, hy]
     · simp [show f y = 0 from hb hy]
-  rw [hfac, sq]
-  refine Ideal.mul_mem_mul ?_ (mem_smoothVanishingIdeal_iff.mpr hf.eq_of_nhds)
+  -- Iterating `f = (1 - χ) f` gives `f = (1 - χ) ^ n f`, and `1 - χ` vanishes at `x`.
+  have hpow : f = (1 - χ) ^ n * f := by
+    induction n with
+    | zero => rw [pow_zero, one_mul]
+    | succ n ih => rw [pow_succ, mul_assoc, ← hfac, ← ih]
+  rw [hpow]
+  refine Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow ?_ n)
   simp [hχ]
 
 /-- **Hadamard's lemma for the vanishing ideal.** At an interior point `x`, a smooth function whose
@@ -175,7 +180,7 @@ theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteri
     · simp [c]
   -- The remainder `f - p` vanishes near `x`.
   have hfp : f - p ∈ smoothVanishingIdeal I x ^ 2 := by
-    refine mem_smoothVanishingIdeal_sq_of_eventuallyEq_zero ?_
+    refine mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero ?_ 2
     filter_upwards [hg] with y hy
     have hpy : p y = ∑ i, a i (F y) * (b.coord i (F y) - b.coord i (F x)) := by
       simp [p, hc]
