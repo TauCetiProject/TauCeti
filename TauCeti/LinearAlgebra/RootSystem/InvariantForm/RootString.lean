@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Invariant forms along root strings
@@ -362,18 +364,6 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     rcases h with ⟨h, h'⟩ <;> omega
 
-omit [Finite I] [P.IsCrystallographic] in
-/-- If a root is the sum of two roots, then each summand is neither that root nor its negative. -/
-theorem root_ne_and_root_ne_neg_of_root_eq_add {i j k : I}
-    (hk : P.root k = P.root i + P.root j) :
-    P.root i ≠ P.root k ∧ P.root i ≠ -P.root k := by
-  have hlin := P.linearIndependent_of_add_mem_range_root'
-    (show P.root i + P.root j ∈ range P.root from ⟨k, hk⟩)
-  refine ⟨fun h ↦ P.ne_zero j (by simpa [hk] using h), fun h ↦ ?_⟩
-  have hrel : (2 : R) • P.root i + (1 : R) • P.root j = 0 := by
-    rw [one_smul, two_smul, add_assoc, ← hk, h, neg_add_cancel]
-  exact one_ne_zero (hlin.eq_zero_of_pair hrel).2
-
 /-- The possible root-string coefficients of two roots whose sum is a root: either the top
 coefficient is one more than the bottom one, or one of four explicit exceptional configurations
 occurs. -/
@@ -395,13 +385,7 @@ theorem chainCoeff_cases_of_root_add_mem {i j : I}
   have hlen' := P.chainBotCoeff_add_chainTopCoeff_le_three (i := j) (j := i)
   have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
   have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
-  have hne : i ≠ j := by
-    intro h
-    subst j
-    exact one_ne_zero (hij.eq_zero_of_pair' (s := 1) (t := 1) rfl).1
-  have hne' : P.root i ≠ -P.root j := by
-    intro h
-    exact one_ne_zero (hij.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
+  obtain ⟨hne, hne'⟩ := (IsReduced.linearIndependent_iff (P := P)).mp hij
   have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' i j
     (fun h ↦ hne (P.root.injective h)) hne'
   simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpair
@@ -455,18 +439,6 @@ theorem InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
   apply mul_left_cancel₀ htwo
   linear_combination hi - hj
 
-omit [Finite I] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
-/-- The squared length of a sum of two roots in an invariant form. -/
-theorem InvariantForm.form_root_add_root_self (B : P.InvariantForm) (i j : I) :
-    B.form (P.root i + P.root j) (P.root i + P.root j) =
-      B.form (P.root i) (P.root i) + P.pairing j i * B.form (P.root i) (P.root i) +
-        B.form (P.root j) (P.root j) := by
-  have hsym : B.form (P.root j) (P.root i) = B.form (P.root i) (P.root j) := by
-    simpa only [RingHom.id_apply] using B.symm.eq (P.root j) (P.root i)
-  have hcross := B.two_mul_apply_root_root j i
-  simp only [map_add, LinearMap.add_apply]
-  linear_combination hcross - hsym
-
 /-- Along a root string, the squared lengths of two consecutive roots have the ratio of the
 corresponding raising coefficients. If `γ = α + β`, then
 
@@ -501,7 +473,7 @@ theorem InvariantForm.chainTopCoeff_mul_apply_root_self_eq
     rfl
   have hlength := B.pairing_mul_eq_pairing_mul_swap i j
   rw [hpqR, hpqR', ← hbot] at hlength
-  rw [hk, B.form_root_add_root_self, hpqR]
+  rw [hk, B.form_root_add_root_self i j, hpqR]
   -- Step 3: Case analysis on the root-pairing possibilities from the rank-2 classification.
   rcases P.chainCoeff_cases_of_root_add_mem hadd with h | ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩ |
       ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩
