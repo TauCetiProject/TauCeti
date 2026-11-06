@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Ungraded `A∞` right modules over a differential algebra
@@ -102,10 +104,20 @@ noncomputable def ungradedStasheffComp (n : ℕ) (a : Fin n → A) (m : M) : M :
   ∑ k : Fin (n + 1), act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
     (act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m)
 
+theorem ungradedStasheffComp_def (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffComp act n a m =
+      ∑ k : Fin (n + 1), act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+        (act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) :=
+  (rfl)
+
 /-- The **differential terms** of the `A∞` relation of length `n`:
 `∑_l m_{n+1}(m, a₁, …, d aₗ, …, aₙ)`. -/
 noncomputable def ungradedStasheffDiff (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) : M :=
   ∑ l : Fin n, act n (Function.update a l (d (a l))) m
+
+theorem ungradedStasheffDiff_def (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiff act d n a m = ∑ l : Fin n, act n (Function.update a l (d (a l))) m :=
+  (rfl)
 
 /-- The **product terms** of the `A∞` relation of length `n`:
 `∑_l m_n(m, a₁, …, aₗ aₗ₊₁, …, aₙ)`, over the `n - 1` adjacent pairs. -/
@@ -164,6 +176,10 @@ It is a finite sum when the operations `m_{n+1}(·, β, …, β)` vanish for lar
 noncomputable def twistedDifferential (β : A) : M →ₗ[R] M :=
   ∑ᶠ n, Mm.act n fun _ => β
 
+theorem twistedDifferential_def (β : A) :
+    Mm.twistedDifferential β = ∑ᶠ n, Mm.act n fun _ => β :=
+  (rfl)
+
 /-- When `m_{n+1}(·, β, …, β)` vanishes for `n ≥ K`, the twisted differential is the sum of the
 first `K` operations. -/
 theorem twistedDifferential_eq_sum {β : A} {K : ℕ}
@@ -172,16 +188,6 @@ theorem twistedDifferential_eq_sum {β : A} {K : ℕ}
   refine finsum_eq_sum_of_support_subset _ fun n hn => ?_
   rw [Function.mem_support] at hn
   simpa using not_le.mp (mt (h n) hn)
-
-/-- Contracting an adjacent pair in a constant tuple gives an update of the constant tuple. -/
-private theorem contractNth_const {n : ℕ} (l : Fin n) (β : A) :
-    Fin.contractNth l.castSucc (· * ·) (fun _ : Fin (n + 1) => β) =
-      Function.update (fun _ => β) l (β * β) := by
-  funext k
-  rcases lt_trichotomy (k : ℕ) l with h | h | h
-  · rw [Fin.contractNth_apply_of_lt _ _ _ _ h, Function.update_of_ne (Fin.ne_of_lt h)]
-  · rw [Fin.contractNth_apply_of_eq _ _ _ _ h, Fin.ext h, Function.update_self]
-  · rw [Fin.contractNth_apply_of_gt _ _ _ _ h, Function.update_of_ne (Fin.ne_of_gt h)]
 
 /-- The `A∞` relations of length at most `N` along a constant tuple `β` with `d β = β * β`, over a
 ring of characteristic two, summed: the differential terms of length `n` cancel the product terms
@@ -203,7 +209,7 @@ private theorem sum_sum_act_act_const [CharP R 2] {β : A} (hβ : d β = β * β
   have hdiff (n : ℕ) : ungradedStasheffDiff Mm.act d n (fun _ => β) m = T n := by
     simp only [ungradedStasheffDiff, hβ, hT]
   have hmul (n : ℕ) : ungradedStasheffMul Mm.act (n + 1) (fun _ => β) m = T n := by
-    simp only [ungradedStasheffMul_succ, contractNth_const, hT]
+    simp only [ungradedStasheffMul_succ, Fin.contractNth_castSucc_const, hT]
   simp only [hcomp, hdiff, hmul, ungradedStasheffMul_zero, add_zero] at h
   refine (add_eq_zero_iff_eq_of_charTwo R).mp ?_
   calc _ = ∑ n ∈ range (N + 1), ∑ k ∈ range (n + 1),
@@ -273,38 +279,6 @@ theorem matrixAct_apply (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z
     Function.comp_apply, LinearMap.lcomp_apply, LinearMap.llcomp_apply, LinearMap.coe_single,
     LinearMap.coe_proj, Function.eval, Matrix.entryLinearMap_apply, Pi.single_apply, eq_comm]
 
-/-- Concatenating paths: pairs of paths of lengths `i` and `j` meeting at an endpoint are the
-paths of length `i + j`. -/
-private theorem sum_sum_ite_eq {N : Type*} [AddCommMonoid N] {i j n : ℕ} (h : i + j = n)
-    (g : (Fin (i + 1) → X) → (Fin (j + 1) → X) → N) :
-    ∑ x : Fin (i + 1) → X, ∑ y : Fin (j + 1) → X,
-        (if x (Fin.last i) = y 0 then g x y else 0) =
-      ∑ w : Fin (n + 1) → X,
-        g (fun t => w ⟨t, by have := t.isLt; omega⟩)
-          (fun t => w ⟨i + t, by have := t.isLt; omega⟩) := by
-  rw [← sum_product', ← sum_filter]
-  symm
-  refine sum_nbij' (fun w => ((fun t => w ⟨t, by have := t.isLt; omega⟩),
-      fun t => w ⟨i + t, by have := t.isLt; omega⟩))
-    (fun p t => if ht : (t : ℕ) ≤ i then p.1 ⟨t, by omega⟩
-      else p.2 ⟨t - i, by have := t.isLt; omega⟩)
-    (fun w _ => by simp [Fin.last]) (fun _ _ => mem_univ _) (fun w _ => ?_) (fun p hp => ?_)
-    (fun _ _ => rfl)
-  · funext t
-    split_ifs with ht
-    · rfl
-    · dsimp only
-      exact congrArg w (Fin.ext (by simp only; omega))
-  · simp only [mem_filter, mem_product, mem_univ, true_and] at hp
-    refine Prod.ext (funext fun t => ?_) (funext fun t => ?_)
-    · simp [show (t : ℕ) ≤ i by have := t.isLt; omega]
-    · by_cases ht : (t : ℕ) = 0
-      · have h0 : t = 0 := Fin.ext ht
-        subst h0
-        simpa [Fin.last] using hp
-      · simp only [show ¬ (i + t ≤ i) by omega, dite_false]
-        exact congrArg p.2 (Fin.ext (by simp))
-
 /-- **Composing operations of the matrix module.** The `z`-component of
 `m_{j+1}(m_{i+1}(φ, F₁, …, Fᵢ), G₁, …, Gⱼ)` is the sum over the paths `w₀ → ⋯ → wᵢ₊ⱼ = z` of
 `m_{j+1}(m_{i+1}(φ w₀, F₁ w₀ w₁, …), G₁ wᵢ wᵢ₊₁, …)`. -/
@@ -327,25 +301,13 @@ theorem matrixAct_matrixAct_apply {i j n : ℕ} (h : i + j = n) (G : Fin j → M
     · simp only [matrixAct_apply, map_sum]
       exact sum_congr rfl fun x _ => by split_ifs <;> simp
     · simp
-  rw [matrixAct_apply, sum_congr rfl fun y _ => hy y, sum_comm, sum_sum_ite_eq X h]
+  rw [matrixAct_apply, sum_congr rfl fun y _ => hy y, sum_comm,
+    Fin.sum_sum_ite_apply_last_eq_apply_zero h]
   refine sum_congr rfl fun w _ => ?_
   have hlast : w ⟨i + (Fin.last j : ℕ), by simp; omega⟩ = w (Fin.last n) :=
     congrArg w (Fin.ext (by simp [h]))
   have hzero : w ⟨((0 : Fin (i + 1)) : ℕ), by simp⟩ = w 0 := congrArg w (Fin.ext (by simp))
-  dsimp only
-  simp only [hlast, hzero]
-  rfl
-
-omit [Ring A] [Fintype X] [DecidableEq X] in
-/-- Updating one matrix of a tuple updates one entry along every path. -/
-private theorem update_apply_apply {n : ℕ} (F : Fin n → Matrix X X A) (x : Fin (n + 1) → X)
-    (l : Fin n) (G : Matrix X X A) :
-    (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
-      Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) := by
-  funext t
-  by_cases ht : t = l
-  · subst ht; simp
-  · simp [Function.update_of_ne ht]
+  simp only [hlast, hzero, Fin.val_castSucc, Fin.val_succ, Nat.add_assoc]
 
 /-- The composite terms of the matrix module are sums over paths. -/
 private theorem stasheffComp_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
@@ -367,46 +329,16 @@ private theorem stasheffDiff_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (�
       ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
         ungradedStasheffDiff Mm.act d n (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))
       else 0 := by
-  simp only [ungradedStasheffDiff, Finset.sum_apply, matrixAct_apply, update_apply_apply,
+  -- Updating one matrix of a tuple updates one entry along every path.
+  have hupd (x : Fin (n + 1) → X) (l : Fin n) (G : Matrix X X A) :
+      (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
+        Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
+    funext (Function.apply_update (fun t (G : Matrix X X A) => G (x t.castSucc) (x t.succ)) F l G)
+  simp only [ungradedStasheffDiff, Finset.sum_apply, matrixAct_apply, hupd,
     LinearMap.mapMatrix_apply, Matrix.map_apply]
   rw [sum_comm]
   refine sum_congr rfl fun x _ => ?_
   split_ifs <;> simp
-
-omit [Fintype X] [DecidableEq X] in
-/-- Inserting the vertex `v` after the `l`-th vertex of a path `x`. -/
-private theorem insertNth_apply_eq_ite {n : ℕ} (l : Fin n) (v : X) (x : Fin (n + 1) → X)
-    (t : Fin (n + 2)) :
-    Fin.insertNth (α := fun _ => X) l.succ.castSucc v x t =
-      if h : (t : ℕ) < l + 1 then x ⟨t, by omega⟩
-      else if (t : ℕ) = l + 1 then v else x ⟨t - 1, by omega⟩ := by
-  rcases lt_trichotomy t l.succ.castSucc with h | h | h
-  · rw [Fin.insertNth_apply_below h]
-    have h' : (t : ℕ) < l + 1 := by simpa [Fin.lt_def] using h
-    simp [h']
-    rfl
-  · subst h
-    simp
-  · rw [Fin.insertNth_apply_above h]
-    have h' : l + 1 < (t : ℕ) := by simpa [Fin.lt_def] using h
-    simp [show ¬ (t : ℕ) < l + 1 by omega, show (t : ℕ) ≠ l + 1 by omega]
-    rfl
-
-omit [Fintype X] [DecidableEq X] in
-/-- Inserting a vertex keeps the starting point of a path. -/
-private theorem insertNth_apply_zero {n : ℕ} (l : Fin n) (v : X) (x : Fin (n + 1) → X) :
-    Fin.insertNth (α := fun _ => X) l.succ.castSucc v x 0 = x 0 := by
-  rw [insertNth_apply_eq_ite]
-  simp
-
-omit [Fintype X] [DecidableEq X] in
-/-- Inserting a vertex keeps the end point of a path. -/
-private theorem insertNth_apply_last {n : ℕ} (l : Fin n) (v : X) (x : Fin (n + 1) → X) :
-    Fin.insertNth (α := fun _ => X) l.succ.castSucc v x (Fin.last (n + 1)) = x (Fin.last n) := by
-  rw [insertNth_apply_eq_ite]
-  simp only [Fin.val_last, show ¬ n + 1 < (l : ℕ) + 1 by omega,
-    show n + 1 ≠ (l : ℕ) + 1 by omega, dite_false, ite_false, Nat.add_sub_cancel]
-  rfl
 
 omit [DecidableEq X] in
 /-- Along the path obtained by inserting `v` after `xₗ`, contracting the `l`-th pair of entries
@@ -423,23 +355,25 @@ private theorem contractNth_insertNth {n : ℕ} (l : Fin n) (F : Fin (n + 1) →
   rcases lt_trichotomy (k : ℕ) l with h | h | h
   · rw [Fin.contractNth_apply_of_lt _ _ _ _ h, Function.update_of_ne (Fin.ne_of_lt h),
       Fin.contractNth_apply_of_lt _ _ _ _ h]
-    simp only [insertNth_apply_eq_ite, Fin.val_castSucc, Fin.val_succ,
-      show (k : ℕ) < l + 1 by omega, show (k : ℕ) + 1 < l + 1 by omega, dite_true]
-    rfl
+    have h₁ : k.castSucc.castSucc < l.succ.castSucc := Fin.lt_def.mpr (by simp; omega)
+    have h₂ : k.succ.castSucc < l.succ.castSucc := Fin.lt_def.mpr (by simp; omega)
+    rw [← Fin.succAbove_of_castSucc_lt _ _ h₁, Fin.succ_castSucc k,
+      ← Fin.succAbove_of_castSucc_lt _ _ h₂, Fin.insertNth_apply_succAbove,
+      Fin.insertNth_apply_succAbove]
   · have hk : k = l := Fin.ext h
     subst hk
     rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self]
-    simp only [insertNth_apply_eq_ite, Fin.val_castSucc, Fin.val_succ, Nat.lt_irrefl, dite_false,
-      ite_true, show (k : ℕ) < k + 1 by omega, show ¬ ((k : ℕ) + 1 + 1 < k + 1) by omega,
-      show (k : ℕ) + 1 + 1 ≠ k + 1 by omega, dite_true]
-    rfl
+    have h₁ : k.castSucc.castSucc < k.succ.castSucc := Fin.lt_def.mpr (by simp)
+    rw [← Fin.succAbove_of_castSucc_lt _ _ h₁, Fin.succ_castSucc k,
+      ← Fin.succAbove_of_le_castSucc k.succ.castSucc k.succ le_rfl, Fin.insertNth_apply_same,
+      Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
   · rw [Fin.contractNth_apply_of_gt _ _ _ _ h, Function.update_of_ne (Fin.ne_of_gt h),
       Fin.contractNth_apply_of_gt _ _ _ _ h]
-    simp only [insertNth_apply_eq_ite, Fin.val_castSucc, Fin.val_succ,
-      show ¬ ((k : ℕ) + 1 < l + 1) by omega, show ¬ ((k : ℕ) + 1 + 1 < l + 1) by omega,
-      show (k : ℕ) + 1 ≠ l + 1 by omega, show (k : ℕ) + 1 + 1 ≠ l + 1 by omega, dite_false,
-      ite_false]
-    rfl
+    have h₁ : l.succ.castSucc ≤ k.castSucc.castSucc := Fin.le_def.mpr (by simp; omega)
+    have h₂ : l.succ.castSucc ≤ k.succ.castSucc := Fin.le_def.mpr (by simp; omega)
+    rw [← Fin.succ_castSucc k, ← Fin.succAbove_of_le_castSucc _ _ h₁,
+      ← Fin.succAbove_of_le_castSucc _ _ h₂, Fin.insertNth_apply_succAbove,
+      Fin.insertNth_apply_succAbove]
 
 /-- The product terms of the matrix module are sums over paths. -/
 private theorem stasheffMul_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
@@ -466,8 +400,10 @@ private theorem stasheffMul_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ
       fun _ => rfl)
     rw [Fintype.sum_prod_type, sum_comm]
     refine sum_congr rfl fun x _ => ?_
-    simp only [Fin.insertNthEquiv_apply, contractNth_insertNth, insertNth_apply_zero,
-      insertNth_apply_last]
+    have hp₀ : l.succ.castSucc ≠ 0 := by simp [Fin.ext_iff]
+    have hpl : l.succ.castSucc ≠ Fin.last (n + 1) := (Fin.castSucc_lt_last _).ne
+    simp only [Fin.insertNthEquiv_apply, contractNth_insertNth,
+      Fin.insertNth_apply_zero_of_ne_zero hp₀, Fin.insertNth_apply_last_of_ne_last hpl]
     split_ifs
     · have hx : (fun k => Fin.contractNth l.castSucc (· * ·) F k (x k.castSucc) (x k.succ)) =
           Function.update (fun k => Fin.contractNth l.castSucc (· * ·) F k (x k.castSucc)
@@ -505,23 +441,15 @@ end UngradedAInfinityRightModule
 
 namespace IsUngradedDGRightModule
 
-variable [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
-
-/-- The right action of `A` on `M`, as an `R`-linear map to the `R`-linear endomorphisms. -/
-private noncomputable def rightAct : A →ₗ[R] M →ₗ[R] M where
-  toFun a :=
-    { toFun := fun m => op a • m
-      map_add' := smul_add _
-      map_smul' := fun r m => (smul_comm r (op a) m).symm }
-  map_add' a b := by ext m; simp [add_smul]
-  map_smul' r a := by ext m; simp [op_smul, smul_assoc]
+variable [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
 
 /-- The operations of a differential right module: `m₁ = dM`, `m₂` is the right action and
 `m_{n+1} = 0` for `n ≥ 2`. -/
 private noncomputable def dgAct (dM : M →ₗ[R] M) :
     (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M)
   | 0 => MultilinearMap.constOfIsEmpty R _ dM
-  | 1 => MultilinearMap.ofSubsingleton R A (M →ₗ[R] M) 0 rightAct
+  | 1 => MultilinearMap.ofSubsingleton R A (M →ₗ[R] M) 0
+    ((Algebra.lsmul R R M).toLinearMap ∘ₗ (opLinearEquiv R).toLinearMap)
   | _ + 2 => 0
 
 private theorem dgAct_apply_of_eq_zero (dM : M →ₗ[R] M) {n : ℕ} (hn : n = 0) (a : Fin n → A)
@@ -567,13 +495,14 @@ noncomputable def toUngradedAInfinityRightModule [CharP R 2]
             abel
         _ = 0 := by rw [h2, h2, add_zero]
     | 2 =>
+      have hmul : Fin.contractNth 0 (· * ·) a 0 = a 0 * a 1 := by
+        rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.castSucc_zero, Fin.succ_zero_eq_one]
       simp only [ungradedStasheffComp, ungradedStasheffDiff, Fin.sum_univ_succ,
         Fin.sum_univ_zero, ungradedStasheffMul_succ, dgAct_apply_of_eq_zero,
-        dgAct_apply_of_eq_one, Fin.val_zero, Fin.val_succ, Nat.sub_zero, Fin.contractNth,
-        Fin.isValue, dgAct_apply_of_two_le dM (le_refl 2), map_zero, add_zero, zero_add,
-        Fin.castSucc_zero, lt_irrefl, ite_false, ite_true,
-        Fin.zero_eta, Fin.mk_one]
-      rw [Fin.succ_zero_eq_one, op_mul, mul_smul, h2]
+        dgAct_apply_of_eq_one, Fin.val_zero, Fin.val_succ, Nat.sub_zero, Fin.isValue,
+        dgAct_apply_of_two_le dM (le_refl 2), map_zero, add_zero, zero_add, Fin.zero_eta, hmul,
+        Fin.castSucc_zero, Fin.mk_one]
+      rw [op_mul, mul_smul, h2]
     | n + 3 =>
       have hcomp : ungradedStasheffComp (dgAct dM) (n + 3) a m = 0 := sum_eq_zero fun k _ => by
         rcases le_or_gt 2 (k : ℕ) with hk | hk

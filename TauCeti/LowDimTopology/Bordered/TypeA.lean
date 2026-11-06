@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
 public import TauCeti.LowDimTopology.Bordered.TypeD
+import TauCeti.Data.Fin.StrictMono
 
 /-!
 # The box tensor product of a type `A` module with a type `D` structure
@@ -25,7 +26,9 @@ generators `X` of `N` with coefficient matrix `δ`, `δ^k x` is the sum over the
 `x = x₀ → x₁ → ⋯ → x_k` of `δ x₀ x₁ ⊗ ⋯ ⊗ δ xₖ₋₁ xₖ ⊗ xₖ`, so the box tensor differential is the
 twist (`TauCeti.UngradedAInfinityRightModule.twistedDifferential`) of the module of row vectors
 over the matrix algebra (`TauCeti.UngradedAInfinityRightModule.matrix`) by the Maurer–Cartan
-element `δ` (`TauCeti.TypeDStructure.typeABoxDifferential`).
+element `δ` (`TauCeti.TypeDStructure.typeABoxDifferential`). This differential is defined on all
+row vectors `X → M`; its restriction to the submodule `TauCeti.TypeDStructure.boxTensor` of
+`M ⊗ N` over the idempotents, which needs strict unitality of `M`, is not established here.
 
 The sum over `k` is infinite in general, and the box tensor product is only defined under a
 boundedness hypothesis. Two are treated here, over a ring of characteristic two; under either one
@@ -54,6 +57,8 @@ the differential is the box tensor differential `∂ φ = dM φ + φ ⬝ δ` of
 * `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxDifferential_of_lt`: the differential
   squares to zero when the module, respectively the type `D` structure, is bounded.
+* `TauCeti.TypeDStructure.typeABoxDifferential_apply_eq_sum`: the differential as a finite sum
+  over paths of generators.
 * `TauCeti.TypeDStructure.typeABoxDifferential_toUngradedAInfinityRightModule`: for a differential
   module it is the box tensor differential `TauCeti.TypeDStructure.boxDifferential`.
 
@@ -77,7 +82,7 @@ variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [M
   {d : A →ₗ[R] A} {S : Type*} {ι : S → A} {X : Type*} [Fintype X] [DecidableEq X]
 
 /-- The **box tensor differential** of an `A∞` right module `M` with a type `D` structure `N`, on
-row vectors `φ : X → M`: `∂ (m ⊗ x) = ∑_k (m_{k+1} ⊗ 1) (m ⊗ δ^k (x))`. It is the twist of the
+all row vectors `φ : X → M`: `∂ (m ⊗ x) = ∑_k (m_{k+1} ⊗ 1) (m ⊗ δ^k (x))`. It is the twist of the
 matrix module of `M` by the coefficient matrix of `N`. The sum is finite when `M` or `N` is
 bounded; otherwise this is `0` by the convention of
 `TauCeti.UngradedAInfinityRightModule.twistedDifferential`. -/
@@ -90,17 +95,24 @@ theorem typeABoxDifferential_def (N : TypeDStructure d ι X)
     N.typeABoxDifferential Mm = (Mm.matrix X).twistedDifferential N.coeff :=
   (rfl)
 
-omit [DecidableEq X] in
-/-- The structure equation of a type `D` structure says that its coefficient matrix is a
-Maurer–Cartan element of the matrix algebra with the entrywise differential. -/
-theorem mapMatrix_coeff_add_coeff_mul_coeff (N : TypeDStructure d ι X) :
-    (d.mapMatrix : Matrix X X A →ₗ[R] Matrix X X A) N.coeff + N.coeff * N.coeff = 0 := by
-  rw [LinearMap.mapMatrix_apply]
-  exact N.map_coeff_add_coeff_mul_coeff
+/-- **The box tensor differential as a sum over paths.** When the operations
+`m_{n+1}(·, δ, …, δ)` of the matrix module vanish for `n ≥ K`, the `z`-component of `∂ φ` is the
+sum, over the paths `x₀ → ⋯ → xₙ = z` of length `n < K`, of
+`m_{n+1}(φ x₀, δ x₀ x₁, …, δ xₙ₋₁ xₙ)`. -/
+theorem typeABoxDifferential_apply_eq_sum (N : TypeDStructure d ι X)
+    (Mm : UngradedAInfinityRightModule d M) {K : ℕ}
+    (hK : ∀ n, K ≤ n → (Mm.matrixAct X n fun _ => N.coeff) = 0) (φ : X → M) (z : X) :
+    N.typeABoxDifferential Mm φ z = ∑ n ∈ range K, ∑ x : Fin (n + 1) → X,
+      if x (Fin.last n) = z then Mm.act n (fun l => N.coeff (x l.castSucc) (x l.succ)) (φ (x 0))
+      else 0 := by
+  rw [typeABoxDifferential_def, UngradedAInfinityRightModule.twistedDifferential_eq_sum _
+    (by simpa only [UngradedAInfinityRightModule.matrix_act] using hK)]
+  simp only [LinearMap.sum_apply, Finset.sum_apply, UngradedAInfinityRightModule.matrix_act,
+    UngradedAInfinityRightModule.matrixAct_apply]
 
 /-- **The box tensor differential of a bounded module squares to zero.** If the operations
-`m_{k+1}` of `M` vanish for `k ≥ K`, then `∂ ∘ ∂ = 0` on `M ⊠ N`, over a ring of characteristic
-two. -/
+`m_{k+1}` of `M` vanish for `k ≥ K`, then `∂ ∘ ∂ = 0` on the row vectors `X → M`, over a ring of
+characteristic two. -/
 theorem typeABoxDifferential_typeABoxDifferential_of_act_eq_zero [CharP R 2]
     (N : TypeDStructure d ι X) (Mm : UngradedAInfinityRightModule d M) {K : ℕ}
     (hK : ∀ n, K ≤ n → Mm.act n = 0) (φ : X → M) :
@@ -111,26 +123,10 @@ theorem typeABoxDifferential_typeABoxDifferential_of_act_eq_zero [CharP R 2]
   refine LinearMap.ext fun ψ => funext fun z => ?_
   simp [Mm.matrixAct_apply, hK n hn]
 
-omit [Fintype X] [DecidableEq X] in
-/-- Along a path whose height increases at every step, the height of the end point is at least
-the length of the path. -/
-private theorem le_height_last {n : ℕ} (h : X → ℕ) (x : Fin (n + 1) → X)
-    (hx : ∀ l : Fin n, h (x l.castSucc) < h (x l.succ)) : n ≤ h (x (Fin.last n)) := by
-  have key : ∀ k (hk : k ≤ n), k ≤ h (x ⟨k, by omega⟩) := by
-    intro k
-    induction k with
-    | zero => exact fun _ => Nat.zero_le _
-    | succ k ih =>
-      intro hk
-      have := hx ⟨k, by omega⟩
-      have := ih (by omega)
-      simp only [Fin.castSucc_mk, Fin.succ_mk] at *
-      omega
-  exact key n le_rfl
-
 /-- **The box tensor differential with a bounded type `D` structure squares to zero.** If a
 height `h` on the generators strictly increases along every nonzero coefficient of `N`, then
-`∂ ∘ ∂ = 0` on `M ⊠ N`, over a ring of characteristic two, whatever the operations of `M`. -/
+`∂ ∘ ∂ = 0` on the row vectors `X → M`, over a ring of characteristic two, whatever the operations
+of `M`. -/
 theorem typeABoxDifferential_typeABoxDifferential_of_lt [CharP R 2] (N : TypeDStructure d ι X)
     (Mm : UngradedAInfinityRightModule d M) (h : X → ℕ)
     (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (φ : X → M) :
@@ -150,7 +146,9 @@ theorem typeABoxDifferential_typeABoxDifferential_of_lt [CharP R 2] (N : TypeDSt
   obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
     by_contra hne
     push Not at hne
-    have := le_height_last h x fun l => hF l _ _ (hne l)
+    have hx : StrictMono (h ∘ x) := Fin.strictMono_iff_lt_succ.mpr fun l => hF l _ _ (hne l)
+    have := hx.add_sub_le_nat (Fin.zero_le (Fin.last n))
+    simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
     have := le_sup (f := h) (mem_univ (x (Fin.last n)))
     omega
   rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply, ite_self]
@@ -171,7 +169,7 @@ theorem typeABoxDifferential_toUngradedAInfinityRightModule [CharP R 2] [Module 
       IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_one]
     rw [← (Equiv.funUnique (Fin 1) X).symm.sum_comp, ← (piFinTwoEquiv fun _ => X).symm.sum_comp,
       Fintype.sum_prod_type]
-    simp [Fin.last, continuationMap_apply (R := R) (M := M) N.coeff]
+    simp [continuationMap_apply (R := R) (M := M) N.coeff]
   · intro n hn
     obtain ⟨n, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
     refine LinearMap.ext fun ψ => funext fun z => ?_
