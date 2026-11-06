@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
-public import TauCeti.Probability.Finance.LogSpot
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -92,16 +91,49 @@ theorem contDiffOn_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ h
       (contDiffOn_log.mono (fun _ hx => ne_of_gt hx)))
 
 /-- The spot derivative, expressed through the bounded spatial gradient in log spot. -/
-theorem hasDerivAt_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+theorem hasDerivAt_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     {s : ℝ} (hs : 0 < s) (t : Icc a b) :
     HasDerivAt (fun x => weightedLogSpotPrice u x t)
-      (u (slabMk (log s) t) + (1 + s) *
-        (spatialFDerivL u (slabMk (log s) t) 1 / s)) s := by
+      (u (slabMk (log s) t) + (1 + s) / s *
+        spatialFDerivL u (slabMk (log s) t) 1) s := by
   have h := (u.hasSpatialFDerivAt t (log s)).hasDerivAt.comp s (hasDerivAt_log hs.ne')
   convert ((hasDerivAt_id s).const_add 1).mul h using 1
   · ext x
     simp [weightedLogSpotPrice_of_mem]
-  · simp [div_eq_mul_inv]
+  · simp [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm]
+
+/-- The ordinary spot derivative in terms of the value and spatial gradient fields. -/
+theorem deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    {s : ℝ} (hs : 0 < s) (t : Icc a b) :
+    deriv (fun x => weightedLogSpotPrice u x t) s =
+      u (slabMk (log s) t) + (1 + s) / s * spatialFDerivL u (slabMk (log s) t) 1 :=
+  (hasDerivAt_weightedLogSpotPrice_spot u hs t).deriv
+
+/-- The second spot derivative in terms of the spatial gradient and Hessian fields. -/
+theorem deriv_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    {s : ℝ} (hs : 0 < s) (t : Icc a b) :
+    deriv (deriv fun x => weightedLogSpotPrice u x t) s =
+      ((s - 1) * spatialFDerivL u (slabMk (log s) t) 1 +
+        (1 + s) * spatialSecondFDerivL u (slabMk (log s) t) 1 1) / s ^ 2 := by
+  have hv := (u.hasSpatialFDerivAt t (log s)).hasDerivAt.comp s (hasDerivAt_log hs.ne')
+  have hd : HasDerivAt (fun x => spatialFDerivL u (slabMk (log x) t) 1)
+      (spatialSecondFDerivL u (slabMk (log s) t) 1 1 / s) s := by
+    convert ((u.hasSpatialSecondFDerivAt t (log s)).hasDerivAt.clm_apply
+      (hasDerivAt_const (log s) (1 : ℝ))).comp s (hasDerivAt_log hs.ne') using 1
+    · rfl
+    · simp [div_eq_mul_inv]
+  have heq : (deriv fun x => weightedLogSpotPrice u x t) =ᶠ[𝓝 s]
+      fun x => u (slabMk (log x) t) + (1 + x) / x *
+        spatialFDerivL u (slabMk (log x) t) 1 := by
+    filter_upwards [Ioi_mem_nhds hs] with x hx
+    exact deriv_weightedLogSpotPrice_spot u hx t
+  rw [heq.deriv_eq]
+  convert (hv.add ((((hasDerivAt_id s).const_add 1).div
+    (hasDerivAt_id s) hs.ne').mul hd)).deriv using 1
+  · rfl
+  · simp only [Pi.div_apply, id_eq]
+    field_simp
+    ring
 
 /-- The dollar delta has linear growth with an explicit bound from the value and gradient
 norms. This bound is suitable for moment-based integrability criteria. -/
@@ -109,9 +141,9 @@ theorem abs_mul_deriv_weightedLogSpotPrice_le (u : ParabolicC2HolderSpace α ℝ
     {s : ℝ} (hs : 0 < s) (t : Icc a b) :
     |s * deriv (fun x => weightedLogSpotPrice u x t) s| ≤
       (‖valueL u‖ + ‖spatialFDerivL u‖) * (1 + s) := by
-  rw [(hasDerivAt_weightedLogSpotPrice u hs t).deriv]
-  have heq : s * (u (slabMk (log s) t) + (1 + s) *
-      (spatialFDerivL u (slabMk (log s) t) 1 / s)) =
+  rw [deriv_weightedLogSpotPrice_spot u hs t]
+  have heq : s * (u (slabMk (log s) t) + (1 + s) / s *
+      spatialFDerivL u (slabMk (log s) t) 1) =
       s * u (slabMk (log s) t) + (1 + s) * spatialFDerivL u (slabMk (log s) t) 1 := by
     field_simp
   rw [heq]
@@ -128,13 +160,22 @@ theorem abs_mul_deriv_weightedLogSpotPrice_le (u : ParabolicC2HolderSpace α ℝ
     _ ≤ _ := by nlinarith [norm_nonneg (valueL u)]
 
 /-- The time derivative within the closed slab, including its one-sided endpoint values. -/
-theorem hasDerivWithinAt_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+theorem hasDerivWithinAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     (s : ℝ) (t : Icc a b) :
     HasDerivWithinAt (weightedLogSpotPrice u s)
       ((1 + s) * timeDerivL u (slabMk (log s) t)) (Icc a b) t := by
   convert (u.hasTimeDerivWithinAt (log s) t).const_mul (1 + s) using 1
   ext v
   simp only [weightedLogSpotPrice_def]
+
+/-- The within-slab time derivative equals the recorded time derivative field, also at endpoints. -/
+@[simp]
+theorem derivWithin_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    (s : ℝ) (t : Icc a b) :
+    derivWithin (weightedLogSpotPrice u s) (Icc a b) t =
+      (1 + s) * timeDerivL u (slabMk (log s) t) :=
+  (hasDerivWithinAt_weightedLogSpotPrice_time u s t).derivWithin
+    (uniqueDiffOn_Icc hab t t.2)
 
 /-- Terminal data in weighted log-spot coordinates become the specified payoff. -/
 theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab)
@@ -145,33 +186,21 @@ theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab
   exact mul_div_cancel₀ _ (by positivity)
 
 /-- The financial pricing operator is the bounded weighted log-spot operator multiplied by
-`1+s`. The identity uses ordinary time derivatives of the canonical extension, even at
-the time endpoints, and allows arbitrary rate and volatility values. -/
+`1+s`. Time differentiation is within the closed slab, so the identity uses the recorded
+derivative fields even at endpoints. Rate and volatility values are arbitrary. -/
 theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
-    {s t : ℝ} (hs : 0 < s) (ht : t ∈ Icc a b) (σ r : ℝ) :
-    deriv (weightedLogSpotPrice u s) t +
+    {s : ℝ} (hs : 0 < s) (t : Icc a b) (σ r : ℝ) :
+    derivWithin (weightedLogSpotPrice u s) (Icc a b) t +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => weightedLogSpotPrice u x t) s +
         r * (s * deriv (fun x => weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
-      (1 + s) * (deriv (timeExtension hab.le u (log s)) t +
-        σ ^ 2 / 2 * deriv (deriv fun y => timeExtension hab.le u y t) (log s) +
+      (1 + s) * (timeDerivL u (slabMk (log s) t) +
+        σ ^ 2 / 2 * spatialSecondFDerivL u (slabMk (log s) t) 1 1 +
         (r + σ ^ 2 / 2 * ((s - 1) / (s + 1))) *
-          deriv (fun y => timeExtension hab.le u y t) (log s) -
-        r / (1 + s) * timeExtension hab.le u (log s) t) := by
-  have hc := contDiffOn_weightedLogSpotPrice u ⟨t, ht⟩
-  have hca : ContDiffAt ℝ 2 (fun x => weightedLogSpotPrice u x t) s :=
-    hc.contDiffAt (Ioi_mem_nhds hs)
-  have hd : ∀ᶠ x in 𝓝 s, DifferentiableAt ℝ (fun x => weightedLogSpotPrice u x t) x :=
-    (hca.eventually (by simp)).mono fun x hx => hx.differentiableAt (by norm_num)
-  have hd' : DifferentiableAt ℝ (deriv fun x => weightedLogSpotPrice u x t) s :=
-    (hca.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have h := pde_comp_exp_div_one_add_exp (y := log s) σ r
-    (by simpa only [exp_log hs] using hd) (by simpa only [exp_log hs] using hd')
-  have hu : (fun v => weightedLogSpotPrice u s v / (1 + s)) =
-      timeExtension hab.le u (log s) := by
-    ext v
-    rw [weightedLogSpotPrice_def, mul_div_cancel_left₀ _ (by positivity)]
-  simp only [weightedLogSpotPrice_exp_div, exp_log hs, hu] at h
-  rw [congrFun hu t] at h
-  simpa only [mul_comm] using ((eq_div_iff (by positivity : 1 + s ≠ 0)).mp h).symm
+          spatialFDerivL u (slabMk (log s) t) 1 -
+        r / (1 + s) * u (slabMk (log s) t)) := by
+  rw [derivWithin_weightedLogSpotPrice_time, deriv_deriv_weightedLogSpotPrice_spot u hs,
+    deriv_weightedLogSpotPrice_spot u hs, weightedLogSpotPrice_of_mem]
+  field_simp
+  ring
 
 end TauCeti.Finance
