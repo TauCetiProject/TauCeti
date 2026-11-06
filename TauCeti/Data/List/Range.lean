@@ -15,7 +15,9 @@ Lists of the form `[f (b - 1), …, f 0]`, that is `(List.range b).reverse.map f
 coefficient sequences from the top index down. This file peels off the top entry and collapses a
 run of vanishing entries at the top into a block of zeros. It also counts the occurrences of a
 value in the list `[f s, …, f (s + n - 1)]`, splits the prefixes of a concatenation
-`f 0 ++ ⋯ ++ f (n - 1)` of lists, and splits `[f 0, …, f (k + n)]` at its entry `f k`.
+`f 0 ++ ⋯ ++ f (n - 1)` of lists, and splits `[f 0, …, f (k + n)]` at its entry `f k`. Finally it
+reindexes a list `[g 0, …, g (s - 1)]` cut into three pieces, with a function applied to the
+middle piece and an entry inserted after it, as a single list `[g' 0, …, g' s]`.
 
 ## Main results
 
@@ -26,6 +28,8 @@ value in the list `[f s, …, f (s + n - 1)]`, splits the prefixes of a concaten
   `j ∈ [s, s + n)` with `f j = c`.
 * `List.exists_eq_flatMap_range_append`: a prefix of `f 0 ++ ⋯ ++ f (n - 1)` is
   `f 0 ++ ⋯ ++ f (x - 1)` followed by a prefix of `f x`.
+* `List.take_append_map_append_cons_drop_map_range`: cutting `[g 0, …, g (s - 1)]` at `k₀` and
+  `k₁`, mapping the middle piece and inserting an entry after it gives `[g' 0, …, g' s]`.
 -/
 
 public section
@@ -77,5 +81,35 @@ theorem _root_.List.map_range_add_one_add {α : Type*} (f : ℕ → α) (k n : �
       (List.range k).map f ++ f k :: (List.range n).map fun m ↦ f (k + 1 + m) := by
   rw [List.range_add, List.range_succ, List.map_append, List.map_append, List.map_map]
   simp [Function.comp_def]
+
+/-- Cut `[g 0, …, g (s - 1)]` into `[g 0, …, g (k₀ - 1)]`, `[g k₀, …, g (k₁ - 2)]` and
+`[g k₁, …, g (s - 1)]`, replace the entry `g (k₁ - 1)` between the last two pieces by `a`, apply
+`r` to the middle piece `[g k₀, …, g (k₁ - 2), a]` and insert `b` after it. The result is
+`[g' 0, …, g' s]` for any `g'` listing these entries in order. -/
+theorem _root_.List.take_append_map_append_cons_drop_map_range {α : Type*} {g g' : ℕ → α}
+    (r : α → α) (a b : α) {s k₀ k₁ : ℕ} (hk₀₁ : k₀ < k₁) (hk₁ : k₁ ≤ s)
+    (h₁ : ∀ n < k₀, g' n = g n) (h₂ : ∀ n, k₀ ≤ n → n + 1 < k₁ → g' n = r (g n))
+    (h₃ : g' (k₁ - 1) = r a) (h₄ : g' k₁ = b) (h₅ : ∀ n, k₁ < n → n ≤ s → g' n = g (n - 1)) :
+    ((List.range s).map g).take k₀ ++
+        ((((List.range s).map g).take (k₁ - 1)).drop k₀ ++ [a]).map r ++
+        b :: ((List.range s).map g).drop k₁ =
+      (List.range (s + 1)).map g' := by
+  refine List.ext_getElem (by simp; omega) fun n h h' ↦ ?_
+  simp only [List.getElem_append, List.getElem_cons, List.getElem_map, List.getElem_take,
+    List.getElem_drop, List.getElem_range, List.length_append, List.length_map, List.length_take,
+    List.length_drop, List.length_range, List.length_cons, List.length_nil,
+    min_eq_left (by omega : k₀ ≤ s), min_eq_left (by omega : k₁ - 1 ≤ s)]
+  split_ifs
+  · exact (h₁ n (by omega)).symm
+  · rw [h₂ n (by omega) (by omega)]
+    congr 2
+    omega
+  · rw [show n = k₁ - 1 by omega, h₃]
+  · exfalso
+    omega
+  · rw [show n = k₁ by omega, h₄]
+  · rw [h₅ n (by omega) (by simp at h'; omega)]
+    congr 1
+    omega
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Integrality
+import TauCeti.Data.List.Range
 import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectedChain
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 import TauCeti.RepresentationTheory.LSPath.Concatenation
@@ -58,37 +59,6 @@ variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
   [AddCommGroup V] [Module 𝕜 V]
 
 /-! ### Lowering an LS path -/
-
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- The segment list of Littelmann's lowering, as produced by
-`TauCeti.PLPath.lower_ofSegments_eq_of_strictly_rising`, is again indexed by a range. -/
-private theorem lowered_eq_map_range {g g' : ℕ → V} (r : V → V) {s k₀ k₁ : ℕ} (θ : 𝕜)
-    (hk₀₁ : k₀ < k₁) (hk₁ : k₁ ≤ s) (h₁ : ∀ n < k₀, g' n = g n)
-    (h₂ : ∀ n, k₀ ≤ n → n + 1 < k₁ → g' n = r (g n))
-    (h₃ : g' (k₁ - 1) = r (θ • g (k₁ - 1))) (h₄ : g' k₁ = (1 - θ) • g (k₁ - 1))
-    (h₅ : ∀ n, k₁ < n → g' n = g (n - 1)) (hL : k₁ - 1 < ((List.range s).map g).length) :
-    ((List.range s).map g).take k₀ ++
-        ((((List.range s).map g).take (k₁ - 1)).drop k₀ ++
-          [θ • ((List.range s).map g)[k₁ - 1]]).map r ++
-        (1 - θ) • ((List.range s).map g)[k₁ - 1] :: ((List.range s).map g).drop k₁ =
-      (List.range (s + 1)).map g' := by
-  refine List.ext_getElem (by simp; omega) fun n h h' ↦ ?_
-  simp only [List.getElem_append, List.getElem_cons, List.getElem_map, List.getElem_take,
-    List.getElem_drop, List.getElem_range, List.length_append, List.length_map, List.length_take,
-    List.length_drop, List.length_range, List.length_cons, List.length_nil,
-    min_eq_left (by omega : k₀ ≤ s), min_eq_left (by omega : k₁ - 1 ≤ s)]
-  split_ifs
-  · exact (h₁ n (by omega)).symm
-  · rw [h₂ n (by omega) (by omega)]
-    congr 2
-    omega
-  · rw [show n = k₁ - 1 by omega, h₃]
-  · exfalso
-    omega
-  · rw [show n = k₁ by omega, h₄]
-  · rw [h₅ n (by omega)]
-    congr 1
-    omega
 
 variable [P.flip.IsReduced]
 
@@ -272,92 +242,6 @@ private theorem exists_toPLPath_eq_lower (π : LSPath P b lam) (hlam : lam ∈ d
         have := hmono (n - 1) (by omega)
         rwa [Nat.sub_add_cancel (by omega : 1 ≤ n)] at this
 
-omit [P.flip.IsReduced] in
-/-- **The lowering of an LS path, computed on its presentation.** With the hypotheses of
-`TauCeti.LSPath.lower_chain`, if the height `H k₁` is at least `H k₀ + 1` from `k₁` on and `t₁`
-is the time at which the segment `k₁ - 1` reaches the height `H k₀ + 1`, then Littelmann's lowering
-operator sends the realization of `π` to the path presented by the lowered break data. -/
-private theorem lower_toPLPath_eq (π : LSPath P b lam) (f : M →+ V) (i : b.support)
-    {F : Module.Dual 𝕜 V} (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (H : ℕ → ℚ)
-    (hH : ∀ j, H j = ∑ k ∈ Finset.range j,
-      (π.natTime (k + 1) - π.natTime k) * (P.coroot' i (π.natDir k • lam) : ℚ))
-    {k₀ k₁ : ℕ} (hk₀₁ : k₀ < k₁) (hk₁ : k₁ ≤ π.length + 1)
-    (hleast : ∀ j ≤ π.length + 1, H k₀ ≤ H j)
-    (hrise : ∀ j, k₀ ≤ j → j < k₁ → H j < H (j + 1) ∧ H j < H k₀ + 1)
-    (habove : ∀ j, k₁ ≤ j → j ≤ π.length + 1 → H k₀ + 1 ≤ H j) {θ t₁ : ℚ}
-    (hθ : θ * (H k₁ - H (k₁ - 1)) = H k₀ + 1 - H (k₁ - 1))
-    (ht₁ : t₁ = π.natTime (k₁ - 1) + θ * (π.natTime k₁ - π.natTime (k₁ - 1))) :
-    PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) = some (PLPath.ofSegments 𝕜
-      ((List.range (π.length + 1 + 1)).map fun n ↦
-        ((lowerTime π k₁ t₁ (n + 1) - lowerTime π k₁ t₁ n : ℚ) : 𝕜) •
-          f (lowerDir π i k₀ k₁ n • lam))) := by
-  set s := π.length + 1
-  set L := (List.range s).map fun k ↦
-    ((π.natTime (k + 1) - π.natTime k : ℚ) : 𝕜) • f (π.natDir k • lam) with hL
-  set j₁ := k₁ - 1 with hj₁
-  have hk₁' : j₁ + 1 = k₁ := by omega
-  have hHk₁ : H k₁ = H j₁ +
-      (π.natTime k₁ - π.natTime j₁) * (P.coroot' i (π.natDir j₁ • lam) : ℚ) := by
-    rw [hH, hH, ← hk₁', Finset.sum_range_succ]
-  have hrj := hrise j₁ (by omega) (by omega)
-  rw [hk₁'] at hrj
-  -- The vertex heights of `L` are the heights `H`, with minimum `H k₀`.
-  have hFL (j : ℕ) : F (L.take j).sum = (H (min j s) : 𝕜) := by
-    rw [hH]
-    exact apply_sum_take_map_range f F (P.coroot' i) hF s _ _ j
-  have hFLj (j : ℕ) (hj : j ≤ s) : F (L.take j).sum = (H j : 𝕜) := by rw [hFL, min_eq_left hj]
-  have hmin : PLPath.listMinHeight F L = (H k₀ : 𝕜) := by
-    refine le_antisymm ?_ ?_
-    · have := PLPath.listMinHeight_le_apply_sum_take (f := F) L k₀
-      rwa [hFLj k₀ (by omega)] at this
-    · obtain ⟨m, hm⟩ := PLPath.exists_listMinHeight_eq (f := F) L
-      rw [hm, hFL]
-      exact_mod_cast hleast _ (Nat.min_le_right _ _)
-  have hgetL : L[k₁ - 1]'(by simp [hL]; omega) =
-      ((π.natTime k₁ - π.natTime j₁ : ℚ) : 𝕜) • f (π.natDir j₁ • lam) := by
-    simp only [hL, List.getElem_map, List.getElem_range, Nat.sub_add_cancel (by omega : 1 ≤ k₁)]
-    rw [hj₁]
-  -- Littelmann's lowering of `L` reflects the rising piece from `k₀` to the cut in `k₁ - 1`.
-  rw [π.toPLPath_eq_ofSegments_natDir f, PLPath.lower_ofSegments_eq_of_strictly_rising
-    (θ := (θ : 𝕜)) hk₀₁ (by simp; omega)
-    (by rw [hmin, hFLj k₀ (by omega)])
-    (fun j h₀ h₁ ↦ by
-      rw [hFLj j (by omega), hFLj (j + 1) (by omega)]
-      exact_mod_cast (hrise j h₀ h₁).1)
-    (by
-      rw [hFLj _ (by omega), hgetL, map_smul, hF, hmin, smul_eq_mul]
-      have : H j₁ + θ * ((π.natTime k₁ - π.natTime j₁) *
-          (P.coroot' i (π.natDir j₁ • lam) : ℚ)) = H k₀ + 1 := by
-        linear_combination hθ - θ * hHk₁
-      exact_mod_cast this)
-    (by
-      rw [hFLj _ (by omega), hmin]
-      exact_mod_cast hrj.2.le)
-    (fun j hj ↦ by
-      rw [hFL, hmin]
-      exact_mod_cast habove _ (le_min hj hk₁) (Nat.min_le_right _ _))]
-  -- The lowered presentation is the presentation of the lowered break data.
-  congr 2
-  refine (lowered_eq_map_range (Module.preReflection (f (P.root i)) F) (θ : 𝕜) hk₀₁ hk₁
-    (fun n hn ↦ ?_) (fun n h₀ h₁ ↦ ?_) ?_ ?_ (fun n hn ↦ ?_) (by simp; omega))
-  · rw [lowerTime_of_lt (by omega), lowerTime_of_lt (by omega), lowerDir_of_lt hn]
-  · rw [lowerTime_of_lt (by omega), lowerTime_of_lt (by omega),
-      lowerDir_of_le_of_lt h₀ (by omega), simple_mul_smul_eq_reflection,
-      P.map_reflection_eq_preReflection i hF, LinearMap.map_smul]
-  · rw [hk₁', lowerTime_self, lowerTime_of_lt (by omega),
-      lowerDir_of_le_of_lt (by omega) (by omega), simple_mul_smul_eq_reflection,
-      P.map_reflection_eq_preReflection i hF, LinearMap.map_smul, LinearMap.map_smul, smul_smul]
-    congr 1
-    push_cast [ht₁]
-    ring
-  · rw [lowerTime_of_lt' (by omega), Nat.add_sub_cancel, lowerTime_self,
-      lowerDir_of_le hk₀₁ le_rfl, hk₁', smul_smul]
-    congr 1
-    push_cast [ht₁]
-    ring
-  · rw [lowerTime_of_lt' (by omega), Nat.add_sub_cancel, lowerTime_of_lt' hn,
-      lowerDir_of_le hk₀₁ hn.le, Nat.sub_add_cancel (by omega : 1 ≤ n)]
-
 /-- **Littelmann's lowering operator preserves LS paths.** Let `π` be an LS path of dominant shape
 `λ`, realized in `V` by `f`, and let `F` be a form on `V` inducing the simple coroot pairing
 `⟨-, αᵢ^∨⟩`. If the lowering operator `f_{αᵢ}` along the realized simple root `f αᵢ` is defined
@@ -371,47 +255,24 @@ theorem exists_toPLPath_eq_of_lower_eq_some (π : LSPath P b lam)
   set s := π.length + 1
   set H : ℕ → ℚ := fun j ↦ ∑ k ∈ Finset.range j,
     (π.natTime (k + 1) - π.natTime k) * (P.coroot' i (π.natDir k • lam) : ℚ) with hH
-  -- The final height exceeds the minimal height by at least one.
-  have hgap : ∃ j ≤ s, H j + 1 ≤ H s := by
-    set L := (List.range s).map fun k ↦
-      ((π.natTime (k + 1) - π.natTime k : ℚ) : 𝕜) • f (π.natDir k • lam) with hL
-    have hFL (j : ℕ) : F (L.take j).sum = (H (min j s) : 𝕜) :=
-      apply_sum_take_map_range f F (P.coroot' i) hF s _ _ j
-    obtain ⟨m, hm⟩ := PLPath.exists_listMinHeight_eq (f := F) L
-    have h1 : ¬F (π.toPLPath 𝕜 f).endpoint - (π.toPLPath 𝕜 f).minHeight F < 1 := fun h ↦ by
-      rw [PLPath.lower_eq_none_iff.mpr h] at hq
-      cases hq
-    have hπ : π.toPLPath 𝕜 f = PLPath.ofSegments 𝕜 L := π.toPLPath_eq_ofSegments_natDir f
-    rw [hπ, PLPath.endpoint_ofSegments, PLPath.minHeight_ofSegments, hm, hFL,
-      ← List.take_length (l := L), hFL, show L.length = s by simp [hL], min_self] at h1
-    have h2 : ((H (min m s) + 1 : ℚ) : 𝕜) ≤ (H s : 𝕜) := by
-      push_cast
-      linarith [not_lt.mp h1]
-    exact ⟨min m s, Nat.min_le_right _ _, by exact_mod_cast h2⟩
+  have h1 : 1 ≤ F (π.toPLPath 𝕜 f).endpoint - (π.toPLPath 𝕜 f).minHeight F := not_lt.mp fun h ↦ by
+    rw [PLPath.lower_eq_none_iff.mpr h] at hq
+    cases hq
   -- The rising piece: the last vertex `k₀` of minimal height, an integer, and the first vertex
-  -- `k₁` after it of height at least `H k₀ + 1`.
-  have hs₁ : ∃ z : ℤ, π.natTime s = z := ⟨1, by rw [π.natTime_last, Int.cast_one]⟩
-  obtain ⟨k₀, k₁, hk₀₁, hk₁, hleast, hrise, habove⟩ := exists_strictly_rising_of_isAChain hlam
-    π.natTime_zero π.natDir_chain π.natTime_strictMono hs₁ i hgap
+  -- `k₁` after it of height at least `H k₀ + 1`, reached after the fraction `θ` of the segment
+  -- `j₁ = k₁ - 1`, of duration `d`, at the time `t₁`.
+  obtain ⟨k₀, k₁, θ, hk₀₁, hk₁, hθ₀, hθ₁, hleast, hrise, habove, hθmul, hlow⟩ :=
+    exists_lower_toPLPath_eq π hlam f i F hF (f (P.root i)) H (fun _ ↦ rfl) h1
   obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam π.natTime_zero
-    π.natDir_chain π.natTime_strictMono hs₁ i
+    π.natDir_chain π.natTime_strictMono ⟨1, by rw [π.natTime_last, Int.cast_one]⟩ i
   have hleast' (j : ℕ) (hj : j ≤ s) : H k₀ ≤ H j := hleast.2 ⟨j, hj, rfl⟩
-  -- The segment `j₁ = k₁ - 1`, of duration `d`, reaches the height `H k₀ + 1` after the
-  -- fraction `θ` of it, at the time `t₁`.
   set j₁ := k₁ - 1
   have hk₁' : j₁ + 1 = k₁ := by omega
   have hHk₁ : H k₁ = H j₁ +
       (π.natTime k₁ - π.natTime j₁) * (P.coroot' i (π.natDir j₁ • lam) : ℚ) := by
     rw [← hk₁']
     simp only [hH, Finset.sum_range_succ]
-  have hrj := hrise j₁ (by omega) (by omega)
-  rw [hk₁'] at hrj
-  have hab := habove k₁ le_rfl hk₁
-  set θ : ℚ := (H k₀ + 1 - H j₁) / (H k₁ - H j₁)
-  have hθmul : θ * (H k₁ - H j₁) = H k₀ + 1 - H j₁ := div_mul_cancel₀ _ (by linarith)
-  have hθ₀ : 0 < θ := div_pos (by linarith) (by linarith)
-  have hθ₁ : θ ≤ 1 := (div_le_one (by linarith)).mpr (by linarith)
-  set d := π.natTime k₁ - π.natTime j₁
+  set d := π.natTime k₁ - π.natTime j₁ with hd
   have hd₀ : 0 < d := by
     have := π.natTime_strictMono j₁ (by omega)
     rw [hk₁'] at this
@@ -420,7 +281,25 @@ theorem exists_toPLPath_eq_of_lower_eq_some (π : LSPath P b lam)
   obtain ⟨π', hπ'⟩ := exists_toPLPath_eq_lower (𝕜 := 𝕜) (V := V) π hlam i H (fun _ ↦ rfl) hk₀₁
     hk₁ ⟨z, hleast.unique hz⟩ hleast' hrise (t₁ := t₁) (by rw [← hθmul, hHk₁]; ring)
     (by nlinarith) (by nlinarith)
-  refine ⟨π', (hπ' f).trans (Option.some.inj ?_)⟩
-  rw [← hq, lower_toPLPath_eq π f i hF H (fun _ ↦ rfl) hk₀₁ hk₁ hleast' hrise habove hθmul ht₁]
+  refine ⟨π', (hπ' f).trans ?_⟩
+  -- The lowered presentation is the presentation of the lowered break data.
+  rw [← Option.some.inj (hlow.symm.trans hq), π.map_snd_timed f]
+  congr 1
+  refine (List.take_append_map_append_cons_drop_map_range
+    (Module.preReflection (f (P.root i)) F) _ _ hk₀₁ hk₁ (fun n hn ↦ ?_) (fun n h₀ h₁ ↦ ?_) ?_ ?_
+    (fun n hn _ ↦ ?_)).symm
+  · rw [lowerTime_of_lt (by omega), lowerTime_of_lt (by omega), lowerDir_of_lt hn]
+  · rw [lowerTime_of_lt (by omega), lowerTime_of_lt (by omega),
+      lowerDir_of_le_of_lt h₀ (by omega), simple_mul_smul_eq_reflection,
+      P.map_reflection_eq_preReflection i hF, LinearMap.map_smul]
+  · rw [hk₁', lowerTime_self, lowerTime_of_lt (by omega),
+      lowerDir_of_le_of_lt (by omega) (by omega), simple_mul_smul_eq_reflection,
+      P.map_reflection_eq_preReflection i hF, LinearMap.map_smul, ht₁, add_sub_cancel_left]
+  · rw [lowerTime_of_lt' (by omega), Nat.add_sub_cancel, lowerTime_self,
+      lowerDir_of_le hk₀₁ le_rfl, ht₁, hd]
+    congr 2
+    ring
+  · rw [lowerTime_of_lt' (by omega), Nat.add_sub_cancel, lowerTime_of_lt' hn,
+      lowerDir_of_le hk₀₁ hn.le, Nat.sub_add_cancel (by omega : 1 ≤ n)]
 
 end TauCeti.LSPath
