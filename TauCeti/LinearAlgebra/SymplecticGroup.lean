@@ -47,6 +47,9 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
+* `Matrix.transpose_mul_J_mul_transpose` and `Matrix.mul_J_mul_transpose_apply_self`: the
+  congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix is alternating, that is
+  antisymmetric with zero diagonal, in every characteristic.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
   matrix whose `J`-conjugate is its inverse transpose is symplectic.
@@ -167,6 +170,18 @@ theorem J_mul_mul_J_mul_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
   calc J l R * (J l R * M * J l R) * J l R = (J l R * J l R) * M * (J l R * J l R) := by
         noncomm_ring
     _ = M := by simp [J_squared]
+
+/-- The congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix `C` is antisymmetric. -/
+theorem transpose_mul_J_mul_transpose {m : Type*} (C : Matrix m (l ⊕ l) R) :
+    (C * J l R * Cᵀ)ᵀ = -(C * J l R * Cᵀ) := by
+  simp [transpose_mul, Matrix.mul_assoc]
+
+/-- The congruence transform `C * J * Cᵀ` of `J` has zero diagonal, in every characteristic: its
+entries are the values of the standard alternating form on pairs of rows of `C`. -/
+@[simp]
+theorem mul_J_mul_transpose_apply_self {m : Type*} (C : Matrix m (l ⊕ l) R) (i : m) :
+    (C * J l R * Cᵀ) i i = 0 := by
+  simp [J, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, mul_comm]
 
 end Matrix
 

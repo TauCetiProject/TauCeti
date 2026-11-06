@@ -84,6 +84,14 @@ noncomputable def f4ShortRootQuotientLift (a : Fin 26) :
       f4ModularChevalleyBasis (f4LongRootBasisCoordinate a) := by
   rfl
 
+/-- The canonical lift of a root coordinate of the quotient is the root vector of its preimage
+under the special root permutation. -/
+theorem f4ShortRootQuotientLift_symm_inl (i : F4ShortRootIndex) :
+    f4ShortRootQuotientLift (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
+      f4ModularRootVector (f4SpecialIsogenyIndexEquiv i) := by
+  rw [f4ShortRootQuotientLift_eq_basis, f4LongRootBasisCoordinate_symm_inl,
+    f4ModularChevalleyBasis_inl_eq_rootVector, f4PinnedRootIndex_f4KillingRootLabel]
+
 theorem f4ShortRootSubspace_mkQ_quotientLift (a : Fin 26) :
     f4ShortRootSubspace.mkQ (f4ShortRootQuotientLift a) =
       f4ShortRootQuotientBasis a := by
