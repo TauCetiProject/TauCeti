@@ -9,7 +9,6 @@ public import TauCeti.Probability.Distributions.LKJ.Normalizer
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Correlation
 public import TauCeti.Probability.Density
 import Mathlib.Algebra.Order.Star.Real
-import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The LKJ correlation-matrix family
@@ -114,6 +113,7 @@ theorem lkjPDFReal_nonneg (hη : 0 < η)
 
 /-- At positive shape the real-valued LKJ density is positive exactly on the positive-definite
 cone. -/
+@[simp]
 theorem lkjPDFReal_pos_iff (hη : 0 < η)
     {R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} :
     0 < lkjPDFReal p η R ↔ (R : Matrix (Fin p) (Fin p) ℝ).PosDef := by
@@ -153,6 +153,7 @@ theorem lkjPDF_of_not_posDef (p : ℕ) (η : ℝ)
   simp [lkjPDF_def, hR]
 
 /-- At positive shape the LKJ density is positive exactly on the positive-definite cone. -/
+@[simp]
 theorem lkjPDF_pos_iff (hη : 0 < η)
     {R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} :
     0 < lkjPDF p η R ↔ (R : Matrix (Fin p) (Fin p) ℝ).PosDef := by
@@ -166,6 +167,7 @@ theorem lkjPDF_ne_top (p : ℕ) (η : ℝ)
   ENNReal.ofReal_ne_top
 
 /-- At positive shape the `ℝ≥0∞`-valued density recovers the real-valued one. -/
+@[simp]
 theorem toReal_lkjPDF (hη : 0 < η)
     (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     (lkjPDF p η R).toReal = lkjPDFReal p η R :=
