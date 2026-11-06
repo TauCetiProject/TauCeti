@@ -18,6 +18,8 @@ import TauCeti.LinearAlgebra.Dual.Lemmas
 -- Private: `Module.Basis.map_exteriorAlgebra` proves the naturality of the basis.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+-- Private: `QuadraticMap.toBilin` writes `-Q` as a triangular bilinear form.
+import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
 # Freeness and dimension of a Clifford algebra
@@ -115,6 +117,35 @@ namespace CliffordAlgebra
 
 open TauCeti
 
+section General
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  (Q : QuadraticForm R M)
+
+/-- The Clifford algebra of a free module is a free module, over every commutative ring: for a
+well-ordered basis `b`, `-Q` is the quadratic form of the triangular bilinear form
+`(-Q).toBilin b`, so `changeFormEquiv` identifies it linearly with the exterior algebra, with no
+division by `2`. -/
+instance instFree [Module.Free R M] : Module.Free R (CliffordAlgebra Q) := by
+  classical
+  let _ : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
+  have h : ((-Q).toBilin (Module.Free.chooseBasis R M)).toQuadraticMap = 0 - Q := by
+    rw [QuadraticMap.toQuadraticMap_toBilin, zero_sub]
+  exact Module.Free.of_equiv (changeFormEquiv h).symm
+
+/-- The Clifford algebra of a finite module is a finite module, over every commutative ring: it is
+a quotient of the Clifford algebra of a finite free module, which is finite by the same
+`changeFormEquiv` argument as `CliffordAlgebra.instFree`. -/
+instance instFinite [Module.Finite R M] : Module.Finite R (CliffordAlgebra Q) := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
+  have h : ((-(Q.comp f)).toBilin (Pi.basisFun R (Fin n))).toQuadraticMap = 0 - Q.comp f := by
+    rw [QuadraticMap.toQuadraticMap_toBilin, zero_sub]
+  have := Module.Finite.equiv (changeFormEquiv h).symm
+  exact Module.Finite.of_surjective (map (Q₁ := Q.comp f) ⟨f, fun _ ↦ rfl⟩).toLinearMap
+    (map_surjective _ hf)
+
+end General
+
 section CommRing
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
@@ -175,17 +206,6 @@ theorem map_basis {M' : Type*} [AddCommGroup M'] [Module R M'] {Q' : QuadraticFo
   apply (equivExterior Q').injective
   rw [equivExterior_map, equivExterior_basis, equivExterior_basis]
   exact b.map_exteriorAlgebra s e.toLinearEquiv
-
-/-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
-invertible. -/
-instance instFree [Module.Free R M] : Module.Free R (CliffordAlgebra Q) :=
-  Module.Free.of_equiv (equivExterior Q).symm
-
-/-- The Clifford algebra of a finite module is a finite module, over a ring in which `2` is
-invertible. -/
-instance instFinite [Module.Finite R M] :
-    Module.Finite R (CliffordAlgebra Q) :=
-  Module.Finite.equiv (equivExterior Q).symm
 
 /-- A Clifford algebra has the rank of the exterior algebra of the same module. The right-hand side
 does not mention `Q`: deforming the quadratic form deforms the multiplication and leaves the
