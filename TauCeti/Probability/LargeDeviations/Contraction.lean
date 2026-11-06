@@ -32,12 +32,11 @@ namespace TauCeti.Probability
 variable {ι X Y : Type*}
 
 /-- The contracted rate function: the least cost of a preimage. -/
-@[expose]
 noncomputable def contractedRate (f : X → Y) (I : X → ℝ≥0∞) (y : Y) : ℝ≥0∞ :=
   ⨅ x ∈ f ⁻¹' {y}, I x
 
 theorem contractedRate_apply (f : X → Y) (I : X → ℝ≥0∞) (y : Y) :
-    contractedRate f I y = ⨅ x ∈ f ⁻¹' {y}, I x := rfl
+    contractedRate f I y = ⨅ x ∈ f ⁻¹' {y}, I x := (rfl)
 
 theorem le_contractedRate_iff {a : ℝ≥0∞} {f : X → Y} {I : X → ℝ≥0∞} {y : Y} :
     a ≤ contractedRate f I y ↔ ∀ x, f x = y → a ≤ I x := by
