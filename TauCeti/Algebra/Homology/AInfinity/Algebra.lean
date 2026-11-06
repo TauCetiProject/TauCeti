@@ -625,17 +625,11 @@ theorem m_one_m_two (𝒜 : AInfinityAlgebra R A) (x y : A) :
       𝒜.stasheff_arity_two z y p hz
   simpa using LinearMap.congr_fun h x
 
-/-- The arity-three Stasheff identity for arbitrary inputs, with the Koszul signs of the first two
-inputs carried by the degree-one twist.  It expresses the associator of the binary operation as a
-unary boundary, modulo the three terms in which the ternary operation meets a unary boundary. -/
-theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
-    𝒜.m 1 ![𝒜.m 3 ![x, y, z]] =
-      𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] - 𝒜.m 2 ![𝒜.m 2 ![x, y], z]
-        - 𝒜.m 3 ![𝒜.m 1 ![x], y, z]
-        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.m 1 ![y], z]
-        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 𝒜.m 1 ![z]] := by
-  -- Package the six terms as trilinear maps in the three inputs, so that the identity can be
-  -- checked on homogeneous inputs, where it is `stasheff_arity_three`.
+/-- The associator of the binary operation as a trilinear map: the difference of the left- and
+right-associated products. -/
+private theorem exists_multilinear_assoc_sub (𝒜 : AInfinityAlgebra R A) :
+    ∃ F : MultilinearMap R (fun _ : Fin 3 ↦ A) A, ∀ a b c : A,
+      F ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] - 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
   let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
     (𝒜.mul.compMultilinearMap (𝒜.m 2)).uncurryRight
   let Qc : A →ₗ[R] MultilinearMap R (fun _ : Fin 2 ↦ A) A :=
@@ -656,6 +650,15 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
   have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
     dsimp [Q, Qc]
     simp only [mul_apply]
+  exact ⟨L - Q, fun a b c ↦ by rw [sub_apply, L_apply, Q_apply]⟩
+
+/-- The ternary operation against the unary boundary, as a trilinear map: the boundary of the
+ternary operation plus the three terms in which a unary boundary meets it. -/
+private theorem exists_multilinear_boundary_terms (𝒜 : AInfinityAlgebra R A) :
+    ∃ G : MultilinearMap R (fun _ : Fin 3 ↦ A) A, ∀ a b c : A,
+      G ![a, b, c] = 𝒜.m 1 ![𝒜.m 3 ![a, b, c]] + 𝒜.m 3 ![𝒜.m 1 ![a], b, c] +
+        𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.m 1 ![b], c] +
+        𝒜.m 3 ![𝒜.grading.koszulTwist 1 a, 𝒜.grading.koszulTwist 1 b, 𝒜.m 1 ![c]] := by
   let D : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
     𝒜.differential.compMultilinearMap (𝒜.m 3)
   let T₀ : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
@@ -685,34 +688,42 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
     congr 1
     funext i
     fin_cases i <;> rfl
-  have m_three_smul_first (r : R) (a b c : A) :
-      𝒜.m 3 ![r • a, b, c] = r • 𝒜.m 3 ![a, b, c] := by
-    convert (𝒜.m 3).map_update_smul ![a, b, c] 0 r a using 2 <;>
-      congr 1 <;> funext i <;> fin_cases i <;> rfl
-  have m_three_smul_second (r : R) (a b c : A) :
-      𝒜.m 3 ![a, r • b, c] = r • 𝒜.m 3 ![a, b, c] := by
-    convert (𝒜.m 3).map_update_smul ![a, b, c] 1 r b using 2 <;>
-      congr 1 <;> funext i <;> fin_cases i <;> rfl
+  exact ⟨D + T₀ + T₁ + T₂, fun a b c ↦ by
+    simp only [add_apply, D_apply, T₀_apply, T₁_apply, T₂_apply, differential_apply]⟩
+
+/-- The arity-three Stasheff identity for arbitrary inputs, with the Koszul signs of the first two
+inputs carried by the degree-one twist.  It expresses the associator of the binary operation as a
+unary boundary, modulo the three terms in which the ternary operation meets a unary boundary. -/
+theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
+    𝒜.m 1 ![𝒜.m 3 ![x, y, z]] =
+      𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] - 𝒜.m 2 ![𝒜.m 2 ![x, y], z]
+        - 𝒜.m 3 ![𝒜.m 1 ![x], y, z]
+        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.m 1 ![y], z]
+        - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 𝒜.m 1 ![z]] := by
+  obtain ⟨F, hF⟩ := 𝒜.exists_multilinear_assoc_sub
+  obtain ⟨G, hG⟩ := 𝒜.exists_multilinear_boundary_terms
+  have smul_first (f : MultilinearMap R (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
+      f ![r • a, b, c] = r • f ![a, b, c] := f.cons_smul ![b, c] r a
+  have smul_second (f : MultilinearMap R (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
+      f ![a, r • b, c] = r • f ![a, b, c] := (f.curryLeft a).cons_smul ![c] r b
   -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
-  let E : MultilinearMap R (fun _ : Fin 3 ↦ A) A := D + L - Q + T₀ + T₁ + T₂
-  have hE : E = 0 := by
+  have hE : G + F = 0 := by
     apply InternalGrading.multilinearMap_ext (fun _ ↦ 𝒜.grading)
     intro d a ha
     have avec : a = ![a 0, a 1, a 2] := by
       funext i
       fin_cases i <;> rfl
     rw [avec]
-    simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
-      T₂_apply, zero_apply, differential_apply,
+    simp only [add_apply, hF, hG, zero_apply,
       𝒜.grading.koszulTwist_apply_of_mem (ha 0),
       𝒜.grading.koszulTwist_apply_of_mem (ha 1),
-      m_three_smul_first, m_three_smul_second, smul_smul, one_mul]
+      smul_first, smul_second, smul_smul, one_mul]
     rw [← negOnePowCast_eq_intCast (R := R) (d 0),
       ← negOnePowCast_eq_intCast (R := R) (d 1), ← negOnePowCast_add]
-    exact 𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1)
+    refine Eq.trans ?_ (𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1))
+    abel
   have h := MultilinearMap.congr_fun hE ![x, y, z]
-  simp only [E, add_apply, sub_apply, D_apply, L_apply, Q_apply, T₀_apply, T₁_apply,
-    T₂_apply, zero_apply, differential_apply] at h
+  simp only [add_apply, hF, hG, zero_apply] at h
   rw [← sub_eq_zero, ← h]
   abel
 
