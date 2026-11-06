@@ -239,21 +239,15 @@ theorem mem_colSubgroup_iff (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (t : Y
   rw [mem_colSubgroup]
   refine ⟨fun hσ => ?_, ?_⟩
   · -- away from the first column the fibers of the column index are singletons
-    have hfix : ∀ k, colIndex t k ≠ 0 → σ k = k := by
-      intro k hk
-      have hk' : colIndex t (σ k) ≠ 0 := by rw [hσ k]; exact hk
-      have hrow : rowIndex t k = 0 := by
-        have hne : k ≠ secondRowLabel h1 t := fun h => hk (by rw [h, hcolb])
-        have hle := rowIndex_le_one h2 t k
-        have hone : rowIndex t k ≠ 1 := fun h => hne ((rowIndex_eq_one_iff h1 t).mp h)
-        omega
-      have hrow' : rowIndex t (σ k) = 0 := by
-        have hne : σ k ≠ secondRowLabel h1 t := fun h => hk' (by rw [h, hcolb])
-        have hle := rowIndex_le_one h2 t (σ k)
-        have hone : rowIndex t (σ k) ≠ 1 := fun h => hne ((rowIndex_eq_one_iff h1 t).mp h)
-        omega
-      exact rowIndex_colIndex_injective t
-        (by simp only [Prod.mk.injEq]; exact ⟨by rw [hrow, hrow'], hσ k⟩)
+    have hrow (j) (hj : colIndex t j ≠ 0) : rowIndex t j = 0 := by
+      have hne : j ≠ secondRowLabel h1 t := fun h => hj (by rw [h, hcolb])
+      have := rowIndex_le_one h2 t j
+      have : rowIndex t j ≠ 1 := fun h => hne ((rowIndex_eq_one_iff h1 t).mp h)
+      omega
+    have hfix : ∀ k, colIndex t k ≠ 0 → σ k = k := fun k hk =>
+      rowIndex_colIndex_injective t (by
+        simp only [Prod.mk.injEq]
+        exact ⟨by rw [hrow k hk, hrow (σ k) (by rw [hσ k]; exact hk)], hσ k⟩)
     -- on the first column it permutes the two labels there
     have hmem : ∀ k, colIndex t k = 0 →
         σ k = firstColumnLabel h1 t ∨ σ k = secondRowLabel h1 t := fun k hk =>
