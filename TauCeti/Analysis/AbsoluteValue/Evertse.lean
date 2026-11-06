@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
-import Mathlib.Data.Fintype.Lattice
 import TauCeti.Algebra.Order.AbsoluteValue.Basic
 import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.Logic.Function.Triangular
