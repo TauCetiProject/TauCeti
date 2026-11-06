@@ -85,8 +85,6 @@ Cartier divisors are stable under base change.
 * `isRelativeEffectiveCartier_comap_fst_iff_forall_isEffectiveCartier_comap_fiberι`
   and `isRelativeEffectiveCartier_comap_fst_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed`:
   the fibre criterion over residue fields and over geometric points for such base changes.
-* `Scheme.IdealSheafData.isEffectiveCartier_comap_fst_comp_iff`: base change along `h ≫ g` agrees
-  with base change along `g` followed by base change along `h`.
 * `Scheme.IdealSheafData.IsEffectiveCartier.comap_fst_of_comap_fiberι`: effective Cartier
   residue-field fibres give effective Cartier fibres over every field-valued point.
 * `Scheme.IdealSheafData.IsEffectiveCartier.comap_fiberι_of_comap_fst`: conversely, an effective
@@ -108,26 +106,7 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {S T T' X : Scheme.{u}}
-
-/-- **Base change in stages.** For `g : T ⟶ S` and `h : T' ⟶ T`, the pullback of an ideal sheaf
-`I` on `X` to `X ×_S T'` along `h ≫ g` is an effective Cartier divisor exactly when the pullback of
-`I.comap (pullback.fst f g)` from `X ×_S T` to `(X ×_S T) ×_T T'` is. The two are identified by
-the associativity isomorphism `pullbackLeftPullbackSndIso` of iterated pullbacks. -/
-theorem isEffectiveCartier_comap_fst_comp_iff {I : X.IdealSheafData} {f : X ⟶ S} (g : T ⟶ S)
-    (h : T' ⟶ T) :
-    (I.comap (pullback.fst f (h ≫ g))).IsEffectiveCartier ↔
-      ((I.comap (pullback.fst f g)).comap
-        (pullback.fst (pullback.snd f g) h)).IsEffectiveCartier := by
-  rw [← pullbackLeftPullbackSndIso_inv_fst f g h, comap_comp, comap_comp]
-  constructor
-  · intro hI
-    have := hI.comap (pullbackLeftPullbackSndIso f g h).hom
-    rwa [← comap_comp, Iso.hom_inv_id, comap_id] at this
-  · intro hI
-    -- The instance is passed explicitly: elaborating `hI.comap _` does not find it.
-    have hi : Flat (pullbackLeftPullbackSndIso f g h).inv := inferInstance
-    exact @IsEffectiveCartier.comap _ _ _ hI _ hi
+variable {S T X : Scheme.{u}}
 
 /-- **Fibres over fields.** If the fibre of an ideal sheaf `I` on `X` over the residue field of
 the image of the closed point of `Spec K` is an effective Cartier divisor, then so is the fibre of
@@ -316,12 +295,11 @@ theorem isRelativeEffectiveCartier_comap_fst_of_isEffectiveCartier_comap_fiberι
       exact h _)
   -- On `U`, the restriction of `I` is a relative effective Cartier divisor over `S`.
   have hU : (I.comap U.1.ι).IsRelativeEffectiveCartier (U.1.ι ≫ f) := by
-    refine (isRelativeEffectiveCartier_iff _ _).mpr
-      ⟨(isEffectiveCartier_iff_exists_isOpenImmersion _).mpr fun y ↦
-        ⟨U.1, inferInstance, 𝟙 _, inferInstance, ⟨y, rfl⟩, U.1.topIso.inv a,
-          (TauCeti.isSMulRegular_map_iff U.1.topIso.symm.commRingCatIsoToRingEquiv a).mpr ha, ?_⟩,
-        ?_⟩
-    · rw [comap_id, comap_ι_eq_ofIdealTop, hUa, Ideal.map_span, Set.image_singleton]
+    refine (isRelativeEffectiveCartier_iff _ _).mpr ⟨?_, ?_⟩
+    · rw [comap_ι_eq_ofIdealTop, hUa, Ideal.map_span, Set.image_singleton]
+      have h := Scheme.Hom.isEffectiveCartier_ofIdealTop_span_appTop (𝟙 U.1.toScheme)
+        ((TauCeti.isSMulRegular_map_iff U.1.topIso.symm.commRingCatIsoToRingEquiv a).mpr ha)
+      rwa [Scheme.Hom.id_appTop] at h
     · -- The closed subscheme of the restriction is an open subscheme of that of `I`.
       rw [← comapIso_hom_fst, Category.assoc, pullback.condition_assoc]
       infer_instance
