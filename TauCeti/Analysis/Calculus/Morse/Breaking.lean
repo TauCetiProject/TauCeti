@@ -421,7 +421,6 @@ relevant stable and unstable manifolds converge to nondegenerate critical points
 such manifolds meet transversally. If the Morse indices of `p` and `q` differ by one, then their
 connecting set, cut at any value strictly between `f q` and `f p`, is closed. -/
 theorem isClosed_unstableSet_inter_stableSet_inter_level
-    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hind : morseIndex f p = morseIndex f q + 1) {c : ℝ} (hc : f q < c ∧ c < f p)
     (hconvS : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
@@ -502,7 +501,7 @@ theorem finite_unstableSet_inter_stableSet_inter_level
   -- The slice is a closed subset of a compact set, and Morse--Smale transversality together with
   -- the index difference makes it discrete.
   apply (hC.of_isClosed_subset
-    (hp.isClosed_unstableSet_inter_stableSet_inter_level hq hfs hf hind hc hconvS hconvU htr)
+    (isClosed_unstableSet_inter_stableSet_inter_level hfs hf hind hc hconvS hconvU htr)
     hsub).finite
   exact hp.isDiscrete_unstableSet_inter_stableSet_level hq hfs hf hind
     (fun y hy ↦ htr.transverse_at hp hq hy.1)
