@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
 # Weight-parabolic subgroup schemes of the general linear group
@@ -162,6 +163,17 @@ theorem weightParabolicDefiningHopfIdeal_toIdeal (w : Fin N → α) :
     (weightParabolicDefiningHopfIdeal R w).toIdeal =
       Ideal.span (weightParabolicRelationSet R w) := by
   rw [weightParabolicDefiningHopfIdeal, HopfIdeal.ofSpan_toIdeal]
+
+/-- Containment of the strict weight comparisons gives containment of the defining Hopf ideals. -/
+theorem weightParabolicDefiningHopfIdeal_mono {w w' : Fin N → ℤ}
+    (h : ∀ i j, w' i < w' j → w i < w j) :
+    weightParabolicDefiningHopfIdeal R w' ≤ weightParabolicDefiningHopfIdeal R w := by
+  rw [← HopfIdeal.toIdeal_le_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal,
+    weightParabolicDefiningHopfIdeal_toIdeal]
+  apply Ideal.span_mono
+  intro x hx
+  obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R _ x).mp hx
+  exact X_mem_weightParabolicRelationSet R w (h i j hij)
 
 /-- A morphism out of the coordinate algebra of `GL_N` kills the weight-parabolic defining Hopf
 ideal as soon as it kills every forbidden matrix coordinate. -/
@@ -322,5 +334,13 @@ theorem mem_weightParabolicPoints_iff {A : Type v} [CommRing A] [Algebra R A]
     mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular]
   simp only [MulEquiv.apply_symm_apply, Matrix.BlockTriangular, Function.comp_apply,
     OrderDual.toDual_lt_toDual]
+
+/-- Inclusion of defining ideals reverses the inclusion of matrix point subgroups. -/
+theorem weightParabolicPoints_le_of_weightParabolicDefiningHopfIdeal_le (w' : Fin N → ℤ)
+    (h : weightParabolicDefiningHopfIdeal R w' ≤ weightParabolicDefiningHopfIdeal R w)
+    {A : Type v} [CommRing A] [Algebra R A] :
+    weightParabolicPoints R w A ≤ weightParabolicPoints R w' A := by
+  rw [weightParabolicPoints, weightParabolicPoints]
+  exact Subgroup.map_mono (CommHopfAlgCat.quotientPointsSubgroup_le_of_le _ h _)
 
 end TauCeti.GeneralLinear
