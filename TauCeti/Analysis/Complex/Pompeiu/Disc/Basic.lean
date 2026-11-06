@@ -14,8 +14,19 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 /-!
 # The Cauchy integral of a disc indicator
 
-The integral uses the existing reciprocal kernel with normalization `π⁻¹`. Polar Fubini discards
-only the null radius passing through the pole, after establishing integrability in two dimensions.
+For the indicator of the disc of radius `r ≥ 0` centered at `c`, the actual normalized Cauchy
+integral `π⁻¹ ∫ (w - z)⁻¹` equals `conj (w - c)` on the closed disc and `r² / (w - c)` outside.
+The two formulas agree on the boundary circle, and total division handles the center and radius
+zero. The normalized mass `π⁻¹ ∫ 1_disc = r²` is exactly the coefficient of the reciprocal tail.
+
+These formulas supply explicit examples for the one-derivative regularity and sharp global
+integrability assertions in `Disc.Regularity` and `Disc.Lp`.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix B.2, for the Cauchy–Beurling framework used
+  here and in the regularity and endpoint calculations of `Disc.Regularity` and `Disc.Lp`.
 -/
 
 public noncomputable section
@@ -30,6 +41,8 @@ Total division includes a pole at the center and a zero radius. -/
 theorem integral_sub_inv_ball_zero {r : ℝ} (hr : 0 ≤ r) (w : ℂ) :
     (∫ z in ball (0 : ℂ) r, (w - z)⁻¹) =
       (π : ℂ) * (min r ‖w‖ : ℝ)^2 / w := by
+  -- Apply polar Fubini only after establishing two-dimensional integrability, then discard
+  -- the null radius through the pole; the angular integral at that radius need not exist.
   let g : ℂ → ℂ := (ball (0 : ℂ) r).indicator (fun z => (w - z)⁻¹)
   have hint : IntegrableOn (fun z : ℂ => (w - z)⁻¹) (ball 0 r) :=
     ((Complex.locallyIntegrable_sub_inv w).integrableOn_isCompact
@@ -55,7 +68,7 @@ theorem integral_sub_inv_ball_zero {r : ℝ} (hr : 0 ≤ r) (w : ℂ) :
     simp_rw [hpoint]
     by_cases hρr : ρ < r
     · simp only [hρr, ite_true]
-      rw [Complex.integral_neg_pi_pi_circleMap_sub_inv hρ0 hne.symm]
+      rw [integral_neg_pi_pi_circleMap_sub_inv hρ0 hne.symm]
       by_cases hρw : ρ < ‖w‖
       · simp [hρw, m, lt_min_iff, hρr]
       · simp [hρw, m, lt_min_iff, hρr]

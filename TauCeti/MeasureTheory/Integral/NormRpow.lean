@@ -300,7 +300,7 @@ theorem setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top (e : ℂ) {s : ℝ}
 
 end Complex
 
-namespace Complex
+namespace TauCeti
 
 open MeasureTheory Metric Set
 open scoped ENNReal
@@ -330,4 +330,4 @@ theorem memLp_div_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) {R : ℝ} (h
     (TauCeti.integrableOn_norm_rpow_compl_closedBall_iff (E := ℂ) (mu := volume)
       (s := -((m : ℝ)*p.toReal)) hR)
 
-end Complex
+end TauCeti

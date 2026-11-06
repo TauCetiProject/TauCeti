@@ -17,6 +17,12 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 For a nonzero disc the actual normalized Cauchy integral belongs to finite positive `Lp`
 exactly when `p>2`; its actual holomorphic Wirtinger derivative belongs exactly when `p>1`.
 The borderline divergence comes from the exact reciprocal and reciprocal square tails.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix B.2. The explicit disc calculation gives
+  the sharp endpoint examples for this Cauchy–Beurling framework.
 -/
 
 public noncomputable section
@@ -65,7 +71,7 @@ theorem memLp_pi_inv_mul_integral_sub_inv_ball_iff {r : ℝ} (hr : 0 < r) (c : �
     rw [hvalue, ite_eq_right (by
       simpa only [mem_compl_iff, mem_closedBall, dist_zero_right] using hw)]
   rw [memLp_congr_ae hfun]
-  simpa using Complex.memLp_div_pow_compl_closedBall_iff
+  simpa using memLp_div_pow_compl_closedBall_iff
     (pow_ne_zero 2 (Complex.ofReal_ne_zero.mpr hr.ne')) hr 1 hp0 hp_top
 
 /-- The actual holomorphic Wirtinger derivative has the sharp finite positive integrability
@@ -88,7 +94,7 @@ theorem memLp_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_iff {r : ℝ} (hr 
   rw [heq] at htrans
   refine htrans.trans ?_
   rw [memLp_indicator_iff_restrict measurableSet_closedBall.compl.nullMeasurableSet]
-  rw [Complex.memLp_div_pow_compl_closedBall_iff
+  rw [memLp_div_pow_compl_closedBall_iff
     (neg_ne_zero.mpr (pow_ne_zero 2 (Complex.ofReal_ne_zero.mpr hr.ne'))) hr 2 hp0 hp_top]
   norm_num
 

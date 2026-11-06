@@ -18,6 +18,12 @@ import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 The actual integral is conjugation inside the disc and a reciprocal outside it. Its two classical
 Wirtinger derivatives are computed off the boundary circle.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix B.2. This module derives the classical and
+  weak regularity of the explicit disc Cauchy integral in that Cauchy–Beurling framework.
 -/
 
 public noncomputable section
@@ -28,10 +34,11 @@ open scoped Real Topology ComplexConjugate
 namespace TauCeti
 
 /-- The actual disc Cauchy integral agrees locally with conjugation in the interior. -/
-theorem pi_inv_mul_integral_sub_inv_ball_eventuallyEq_conj {r : ℝ} (hr : 0 ≤ r)
+theorem pi_inv_mul_integral_sub_inv_ball_eventuallyEq_conj {r : ℝ}
     {c w : ℂ} (hw : ‖w - c‖ < r) :
     (fun v => (π : ℂ)⁻¹ * ∫ z in ball c r, (v - z)⁻¹) =ᶠ[𝓝 w]
       (fun v => conj (v - c)) := by
+  have hr : 0 ≤ r := (norm_nonneg (w - c)).trans hw.le
   filter_upwards [(isOpen_lt (continuous_id.sub continuous_const).norm
     continuous_const).mem_nhds hw]
     with v hv
@@ -50,13 +57,13 @@ theorem pi_inv_mul_integral_sub_inv_ball_eventuallyEq_div {r : ℝ} (hr : 0 ≤ 
   rw [pi_inv_mul_integral_sub_inv_ball hr, ite_eq_right (not_le.mpr hvnorm)]
 
 /-- The real derivative of the actual disc Cauchy integral in the interior. -/
-theorem hasFDerivAt_pi_inv_mul_integral_sub_inv_ball_of_lt {r : ℝ} (hr : 0 ≤ r)
+theorem hasFDerivAt_pi_inv_mul_integral_sub_inv_ball_of_lt {r : ℝ}
     {c w : ℂ} (hw : ‖w - c‖ < r) :
     HasFDerivAt (fun v => (π : ℂ)⁻¹ * ∫ z in ball c r, (v - z)⁻¹)
       (Complex.conjCLE : ℂ →L[ℝ] ℂ) w := by
   have h := Complex.conjCLE.hasFDerivAt.comp w ((hasFDerivAt_id w).sub_const c)
   simpa using h.congr_of_eventuallyEq
-    (pi_inv_mul_integral_sub_inv_ball_eventuallyEq_conj hr hw)
+    (pi_inv_mul_integral_sub_inv_ball_eventuallyEq_conj hw)
 
 /-- The complex derivative of the actual disc Cauchy integral in the exterior. -/
 theorem hasDerivAt_pi_inv_mul_integral_sub_inv_ball_of_gt {r : ℝ} (hr : 0 ≤ r)
@@ -70,22 +77,25 @@ theorem hasDerivAt_pi_inv_mul_integral_sub_inv_ball_of_gt {r : ℝ} (hr : 0 ≤ 
     (pi_inv_mul_integral_sub_inv_ball_eventuallyEq_div hr hw)
 
 /-- The conjugate Wirtinger derivative recovers the disc indicator away from its boundary. -/
-theorem conjWirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt {r : ℝ} (hr : 0 ≤ r)
+@[simp]
+theorem conjWirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt {r : ℝ}
     {c w : ℂ} (hw : ‖w - c‖ < r) :
     conjWirtingerDeriv (fun v => (π : ℂ)⁻¹ * ∫ z in ball c r, (v - z)⁻¹) w 1 = 1 := by
   rw [conjWirtingerDeriv_apply,
-    (hasFDerivAt_pi_inv_mul_integral_sub_inv_ball_of_lt hr hw).fderiv]
+    (hasFDerivAt_pi_inv_mul_integral_sub_inv_ball_of_lt hw).fderiv]
   norm_num
 
 /-- The holomorphic Wirtinger derivative is zero inside the disc. -/
-theorem wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt {r : ℝ} (hr : 0 ≤ r)
+@[simp]
+theorem wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt {r : ℝ}
     {c w : ℂ} (hw : ‖w - c‖ < r) :
     wirtingerDeriv (fun v => (π : ℂ)⁻¹ * ∫ z in ball c r, (v - z)⁻¹) w 1 = 0 := by
   rw [wirtingerDeriv_apply,
-    (hasFDerivAt_pi_inv_mul_integral_sub_inv_ball_of_lt hr hw).fderiv]
+    (hasFDerivAt_pi_inv_mul_integral_sub_inv_ball_of_lt hw).fderiv]
   simp
 
 /-- The exterior holomorphic derivative has the tail `-r²/(w - c)²`. -/
+@[simp]
 theorem wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_gt {r : ℝ} (hr : 0 ≤ r)
     {c w : ℂ} (hw : r < ‖w - c‖) :
     wirtingerDeriv (fun v => (π : ℂ)⁻¹ * ∫ z in ball c r, (v - z)⁻¹) w 1 =
@@ -94,6 +104,7 @@ theorem wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_gt {r : ℝ} (hr : 0 
   rw [h.differentiableAt.wirtingerDeriv_eq_fderiv, fderiv_apply_one_eq_deriv, h.deriv]
 
 /-- The conjugate Wirtinger derivative vanishes outside the disc. -/
+@[simp]
 theorem conjWirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_gt {r : ℝ} (hr : 0 ≤ r)
     {c w : ℂ} (hw : r < ‖w - c‖) :
     conjWirtingerDeriv (fun v => (π : ℂ)⁻¹ * ∫ z in ball c r, (v - z)⁻¹) w 1 = 0 := by
@@ -188,7 +199,7 @@ theorem ae_conjWirtingerDeriv_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0
   filter_upwards [measure_eq_zero_iff_ae_notMem.mp (Measure.addHaar_sphere volume c r)] with w hw
   have hne : ‖w - c‖ ≠ r := by simpa only [mem_sphere_iff_norm] using hw
   by_cases hin : ‖w - c‖ < r
-  · rw [conjWirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt hr hin,
+  · rw [conjWirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt hin,
       indicator_of_mem (mem_ball_iff_norm.mpr hin)]
   · have hout : r < ‖w - c‖ := lt_of_le_of_ne (not_lt.mp hin) hne.symm
     rw [conjWirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_gt hr hout,
@@ -204,7 +215,7 @@ theorem ae_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0 ≤
   filter_upwards [measure_eq_zero_iff_ae_notMem.mp (Measure.addHaar_sphere volume c r)] with w hw
   have hne : ‖w - c‖ ≠ r := by simpa only [mem_sphere_iff_norm] using hw
   by_cases hin : ‖w - c‖ < r
-  · rw [wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt hr hin,
+  · rw [wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt hin,
       indicator_of_notMem (not_not.mpr (mem_closedBall_iff_norm.mpr hin.le))]
   · have hout : r < ‖w - c‖ := lt_of_le_of_ne (not_lt.mp hin) hne.symm
     rw [wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_gt hr hout,
@@ -236,7 +247,7 @@ theorem not_contDiffAt_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0 < r)
     have hz : Filter.Tendsto (fun z => wirtingerDeriv T z 1) (𝓝[ball c r] w) (𝓝 0) := by
       apply tendsto_const_nhds.congr'
       filter_upwards [self_mem_nhdsWithin] with z hz
-      exact (wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt hr.le
+      exact (wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_of_lt
         (mem_ball_iff_norm.mp hz)).symm
     exact tendsto_nhds_unique (hc.mono_left nhdsWithin_le_nhds) hz
   have hne : w - c ≠ 0 := norm_pos_iff.mp (hw ▸ hr)

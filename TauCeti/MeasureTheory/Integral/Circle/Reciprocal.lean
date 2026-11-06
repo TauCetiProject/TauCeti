@@ -22,7 +22,7 @@ public section
 open Complex MeasureTheory Metric Set
 open scoped Real
 
-namespace Complex
+namespace TauCeti
 
 /-- The flat angular average of the Cauchy kernel on a circle, away from the exceptional
 radius meeting its pole. The value at a zero pole is included. -/
@@ -102,4 +102,4 @@ theorem integral_neg_pi_pi_circleMap_sub_inv {w : ℂ} {r : ℝ} (hr : 0 < r)
   rw [heq, zero_add] at hp
   exact hp.trans (integral_circleMap_sub_inv hr hne)
 
-end Complex
+end TauCeti
