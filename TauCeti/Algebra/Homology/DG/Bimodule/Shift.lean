@@ -6,7 +6,7 @@ Authors: Wentao Li, The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Bimodule.Category
-public import TauCeti.Algebra.Module.GradedModule.Shift
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Shift
 public import TauCeti.Algebra.Module.GradedModule.KoszulTwist.Algebra
 public import TauCeti.Algebra.Ring.NegOnePow
 
@@ -49,6 +49,7 @@ Koszul automorphism of parameter `n`, and the original right action. -/
 @[expose, implicit_reducible]
 noncomputable def shift (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : ℤ) :
     DGBimoduleCat.{uR, uA, uB, uM} hA hB := by
+  let S := (CurvedDGRightModuleCat.of M.isDGRightModule.isCurvedDGRightModule_zero).shift n
   let G := (InternalGrading.ofDecomposition M.grading).shift n
   let σ := InternalGrading.koszulTwistAlgEquiv 𝒜 n
   let act : A → M → M := (· • ·)
@@ -90,27 +91,10 @@ noncomputable def shift (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : ℤ) :
       vadd_eq_add] at hx ⊢
     exact hgrade ha hx⟩
   letI : SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece G.piece :=
-    ⟨fun p q b x hb hx ↦ by
-      simp only [G, InternalGrading.shift_piece, InternalGrading.ofDecomposition_piece,
-        vadd_eq_add] at hx ⊢
-      simpa only [vadd_eq_add, add_assoc] using
-        (SetLike.GradedSMul.smul_mem (B := M.grading) hb hx)⟩
-  -- Verify the right module first, then reuse its differential laws for the left module.
-  have hR : IsDGRightModule hB G.piece (negOnePowCast R n • M.differential) := by
-    refine ⟨?_, ?_, ?_⟩
-    · apply LinearMap.isHomogeneous_shift_piece_iff.mpr
-      simpa only [InternalGrading.ofDecomposition_piece] using
-        M.isDGRightModule.isHomogeneous.smul (negOnePowCast R n)
-    · intro x
-      simp only [LinearMap.smul_apply, map_smul, negOnePowCast_smul_negOnePowCast_smul,
-        M.isDGRightModule.sq_zero]
-    · intro q x hx b
-      simp only [G, InternalGrading.shift_piece, InternalGrading.ofDecomposition_piece] at hx
-      simp only [LinearMap.smul_apply, M.isDGRightModule.leibniz hx b, smul_add]
-      simp only [← negOnePow_smul_eq_negOnePowCast_smul]
-      rw [smul_comm n.negOnePow (op b)]
-      congr 1
-      rw [← mul_smul, Int.negOnePow_add, mul_left_comm, Int.units_mul_self, mul_one]
+    S.gradedSMul
+  -- Reuse the curved right-module shift at zero curvature.
+  have hR : IsDGRightModule hB G.piece (negOnePowCast R n • M.differential) :=
+    isCurvedDGRightModule_zero_iff.mp S.isCurvedDGRightModule
   exact
     { carrier := M
       grading := G.piece
@@ -125,6 +109,16 @@ noncomputable def shift (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : ℤ) :
 not left `A`-linear in general: the left action is twisted. -/
 noncomputable def shiftEquiv (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : ℤ) :
     M.shift n ≃ₗ[R] M := LinearEquiv.refl R M
+
+/-- The underlying-module identification is the identity on elements. -/
+-- Keep this an explicit rewrite: simp uses the structural shiftEquiv lemmas instead.
+theorem shiftEquiv_apply (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : ℤ)
+    (x : M.shift n) : shiftEquiv M n x = (x : M) := (rfl)
+
+/-- The inverse underlying-module identification is the identity on elements. -/
+@[simp]
+theorem shiftEquiv_symm_apply (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : ℤ)
+    (x : M) : (shiftEquiv M n).symm x = (x : M.shift n) := (rfl)
 
 /-- The shifted grading reindexes the original pieces. -/
 @[simp]
@@ -157,9 +151,10 @@ theorem shift_smul_left_of_mem (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : �
     {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) (x : M.shift n) :
     (a • x : M.shift n) = (n * p).negOnePow • @SMul.smul A M M.moduleLeft.toSMul a x := by
   rw [shift_smul_left, InternalGrading.koszulTwistAlgEquiv_apply_of_mem 𝒜 n ha]
-  have h (y : M) : ((n * p).negOnePow • a) • y = (n * p).negOnePow • (a • y) :=
-    smul_assoc _ _ _
-  exact h x
+  have h (y : M) :
+      @SMul.smul A M M.moduleLeft.toSMul ((n * p).negOnePow • a) y =
+        (n * p).negOnePow • @SMul.smul A M M.moduleLeft.toSMul a y := smul_assoc _ _ _
+  exact h (x : M)
 
 /-- Reading a shifted differential in the original module introduces the shift sign. -/
 @[simp]
@@ -205,13 +200,14 @@ noncomputable def shiftFunctor (n : ℤ) :
       exact DGBimoduleHom.map_smul_left f _ x⟩
   map_id M := by
     ext x
-    -- Read through the subtype of right-module morphisms to the original underlying map.
+    -- The category identity is opaque, so rfl cannot finish after ext. Identify the
+    -- stored underlying map before rewriting with the category's evaluation lemma.
     change (𝟙 M) (x : M) = (𝟙 (M.shift n)) x
     simp only [id_apply]
   map_comp f g := by
     ext x
     rw [comp_apply]
-    -- The shifted map stores the same underlying right-linear map.
+    -- Similarly, expose the stored map to use the opaque category composition API.
     change (f ≫ g) x = g (f x)
     exact comp_apply f g x
 
@@ -236,37 +232,46 @@ instance (n : ℤ) : (shiftFunctor.{uR, uA, uB, uM} (hA := hA) (hB := hB) n).Add
 instance (n : ℤ) : (shiftFunctor.{uR, uA, uB, uM} (hA := hA) (hB := hB) n).Linear R where
   map_smul := by intros; ext x; rfl
 
+-- Package the common comparison construction once; inverse compatibility follows by
+-- injectivity, so callers only check the grading, differential and left action forwards.
+private noncomputable def isoOfLinearEquiv
+    (M N : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (e : M ≃ₗ[Bᵐᵒᵖ] N)
+    (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
+    (hd : ∀ x, N.differential (e x) = e (M.differential x))
+    (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) : M ≅ N where
+  hom := ⟨{ toLinearMap := e.toLinearMap
+            map_mem' := fun hx ↦ (hg _ _).mpr hx
+            map_d' := hd }, by
+    rw [mem_dgBimoduleHomSubmodule]
+    exact hl⟩
+  inv := ⟨{ toLinearMap := e.symm.toLinearMap
+            map_mem' := fun hx ↦ (hg _ (e.symm _)).mp (by simpa using hx)
+            map_d' := fun x ↦ by
+              apply e.injective
+              simpa using (hd (e.symm x)).symm }, by
+    rw [mem_dgBimoduleHomSubmodule]
+    intro a x
+    -- The stored right-linear map hides e.symm from the equivalence cancellation lemmas;
+    -- expose its evaluation before applying injectivity.
+    change e.symm (a • x) = a • e.symm x
+    apply e.injective
+    simp only [LinearEquiv.apply_symm_apply, hl]⟩
+  hom_inv_id := by ext x; rw [comp_apply, id_apply]; exact e.symm_apply_apply x
+  inv_hom_id := by ext x; rw [comp_apply, id_apply]; exact e.apply_symm_apply x
+
 /-- The identity comparison from the zero shift to the original DG bimodule. -/
 noncomputable def shiftZeroIso (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
-    M.shift 0 ≅ M where
-  hom := ⟨
-    { toLinearMap := LinearMap.id
-      map_mem' := by intro p x hx; simpa only [shift_grading, add_zero,
-        LinearMap.id_apply] using hx
-      map_d' := by intro x; simp only [LinearMap.id_apply, shift_differential_apply,
-        Int.negOnePow_zero, one_smul] }, by
-    rw [mem_dgBimoduleHomSubmodule]
-    intro a x
-    -- The identity right-linear map reads the restricted action on the same carrier.
-    change (a • x : M.shift 0) = @SMul.smul A M M.moduleLeft.toSMul a x
-    rw [shift_smul_left, InternalGrading.koszulTwistAlgEquiv_zero]
-    rfl⟩
-  inv := ⟨
-    { toLinearMap := LinearMap.id
-      map_mem' := by intro p x hx; simpa only [shift_grading, add_zero,
-        LinearMap.id_apply] using hx
-      map_d' := by intro x; simp only [LinearMap.id_apply, shift_differential_apply,
-        Int.negOnePow_zero, one_smul] }, by
-    rw [mem_dgBimoduleHomSubmodule]
-    intro a x
-    -- As above, only the left action differs on the two identity-map carriers.
-    change @SMul.smul A M M.moduleLeft.toSMul a x =
-      @SMul.smul A (M.shift 0) (M.shift 0).moduleLeft.toSMul a x
-    have h := (shift_smul_left M 0 a x).symm
-    rw [InternalGrading.koszulTwistAlgEquiv_zero] at h
-    exact h⟩
-  hom_inv_id := by ext x; rw [comp_apply, id_apply]; rfl
-  inv_hom_id := by ext x; rw [comp_apply, id_apply]; rfl
+    M.shift 0 ≅ M :=
+  isoOfLinearEquiv (M.shift 0) M (LinearEquiv.refl Bᵐᵒᵖ M)
+    (by intro p x; rw [shift_grading, add_zero]; rfl)
+    (by intro x; rw [shift_differential_apply, Int.negOnePow_zero, one_smul]; rfl)
+    (by
+      intro a x
+      -- The equivalence's domain and codomain have distinct left instances. Rewriting
+      -- under its coercion cannot infer the original action; specify it before rewriting.
+      change (a • x : M.shift 0) = @SMul.smul A M M.moduleLeft.toSMul a x
+      rw [shift_smul_left, InternalGrading.koszulTwistAlgEquiv_zero]
+      rfl)
 
 /-- The zero-shift comparison is the identity on underlying elements. -/
 @[simp]
@@ -280,53 +285,34 @@ theorem shiftZeroIso_inv_apply
     (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (x : M) :
     (shiftZeroIso M).inv x = (x : M.shift 0) := (rfl)
 
-/-- Successive cohomological shifts add, including the signs in the left action. -/
+/-- A shift by a sum identifies with successive cohomological shifts, including left signs. -/
 noncomputable def shiftAddIso (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (m n : ℤ) :
-    (M.shift m).shift n ≅ M.shift (m + n) where
-  hom := ⟨
-    { toLinearMap := LinearMap.id
-      map_mem' := by
-        intro p x hx
-        simpa only [LinearMap.id_apply, shift_grading, add_assoc, add_comm n m] using hx
-      map_d' := by
-        intro x
-        simp [shift_differential_apply, ← mul_smul, Int.negOnePow_add, mul_comm] }, by
-    rw [mem_dgBimoduleHomSubmodule]
-    intro a x
-    -- Read the two restrictions of the left action as their composite automorphism.
-    change @SMul.smul A M M.moduleLeft.toSMul
-        (InternalGrading.koszulTwistAlgEquiv 𝒜 m
-          (InternalGrading.koszulTwistAlgEquiv 𝒜 n a)) x =
-      @SMul.smul A M M.moduleLeft.toSMul (InternalGrading.koszulTwistAlgEquiv 𝒜 (m + n) a) x
-    rw [← AlgEquiv.trans_apply, InternalGrading.koszulTwistAlgEquiv_trans]⟩
-  inv := ⟨
-    { toLinearMap := LinearMap.id
-      map_mem' := by
-        intro p x hx
-        simpa only [LinearMap.id_apply, shift_grading, add_assoc, add_comm n m] using hx
-      map_d' := by
-        intro x
-        simp [shift_differential_apply, ← mul_smul, Int.negOnePow_add, mul_comm] }, by
-    rw [mem_dgBimoduleHomSubmodule]
-    intro a x
-    -- The inverse identity map reads the same composite restriction in the reverse direction.
-    change @SMul.smul A M M.moduleLeft.toSMul
-        (InternalGrading.koszulTwistAlgEquiv 𝒜 (m + n) a) x =
-      @SMul.smul A M M.moduleLeft.toSMul (InternalGrading.koszulTwistAlgEquiv 𝒜 m
-        (InternalGrading.koszulTwistAlgEquiv 𝒜 n a)) x
-    rw [← AlgEquiv.trans_apply, InternalGrading.koszulTwistAlgEquiv_trans]⟩
-  hom_inv_id := by ext x; rw [comp_apply, id_apply]; rfl
-  inv_hom_id := by ext x; rw [comp_apply, id_apply]; rfl
+    M.shift (m + n) ≅ (M.shift m).shift n :=
+  isoOfLinearEquiv (M.shift (m + n)) ((M.shift m).shift n) (LinearEquiv.refl Bᵐᵒᵖ M)
+    (by intro p x; simp only [shift_grading, add_assoc, add_comm n m]; rfl)
+    (by intro x
+        simp only [shift_differential_apply, ← mul_smul, Int.negOnePow_add, mul_comm]
+        rfl)
+    (by
+      intro a x
+      -- After the outer restriction is rewritten, the inner action is an implicit
+      -- instance, not a scalar subterm. Specify both restrictions in the original action.
+      change @SMul.smul A M M.moduleLeft.toSMul
+          (InternalGrading.koszulTwistAlgEquiv 𝒜 (m + n) a) x =
+        @SMul.smul A M M.moduleLeft.toSMul
+          (InternalGrading.koszulTwistAlgEquiv 𝒜 m
+            (InternalGrading.koszulTwistAlgEquiv 𝒜 n a)) x
+      rw [← AlgEquiv.trans_apply, InternalGrading.koszulTwistAlgEquiv_trans])
 
 /-- The addition comparison leaves underlying elements unchanged. -/
 @[simp]
 theorem shiftAddIso_hom_apply (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (m n : ℤ)
-    (x : (M.shift m).shift n) : (shiftAddIso M m n).hom x = (x : M.shift (m + n)) := (rfl)
+    (x : M.shift (m + n)) : (shiftAddIso M m n).hom x = (x : (M.shift m).shift n) := (rfl)
 
 /-- The inverse addition comparison leaves underlying elements unchanged. -/
 @[simp]
 theorem shiftAddIso_inv_apply (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (m n : ℤ)
-    (x : M.shift (m + n)) : (shiftAddIso M m n).inv x = (x : (M.shift m).shift n) := (rfl)
+    (x : (M.shift m).shift n) : (shiftAddIso M m n).inv x = (x : M.shift (m + n)) := (rfl)
 
 /-- The zero-shift comparisons are natural in the DG bimodule. -/
 noncomputable def shiftFunctorZeroIso :
@@ -339,8 +325,8 @@ noncomputable def shiftFunctorZeroIso :
 
 /-- The addition comparisons are natural in the DG bimodule. -/
 noncomputable def shiftFunctorAddIso (m n : ℤ) :
-    shiftFunctor.{uR, uA, uB, uM} (hA := hA) (hB := hB) m ⋙ shiftFunctor n ≅
-      shiftFunctor (m + n) :=
+    shiftFunctor.{uR, uA, uB, uM} (hA := hA) (hB := hB) (m + n) ≅
+      shiftFunctor m ⋙ shiftFunctor n :=
   NatIso.ofComponents (fun M ↦ shiftAddIso M m n) (by
     intro M N f
     ext x
