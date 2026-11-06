@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational.Analytic
 public import TauCeti.RepresentationTheory.SU2.Exhaustion
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Holomorphic extensions of the symmetric-power models
@@ -77,7 +78,7 @@ def symPowerHolomorphicExtension :
 theorem symPowerHolomorphicExtension_apply (g : GL (Fin 2) ℂ) (v : V) :
     (symPowerHolomorphicExtension d g : V →L[ℂ] V) v =
       weightEquiv d (symPowerRep ℂ 2 d g ((weightEquiv d).symm v)) := by
-  simp [symPowerHolomorphicExtension, Module.End.toContinuousLinearMap]
+  simp [symPowerHolomorphicExtension, Module.End.toContinuousLinearMap_apply]
 
 /-- Restricting the extension to `SU(2)` returns the original model action. -/
 @[simp]

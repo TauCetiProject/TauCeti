@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
 public import TauCeti.Analysis.Matrix.Normed
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Analytic.Polynomial
 -- Supplies the scalar-field ContMDiffMul instance for the coefficient product.
 import Mathlib.Geometry.Manifold.Algebra.Structures
@@ -92,7 +93,8 @@ theorem contMDiff_toContinuousLinearMap (h : IsRationalRep σ) :
     simpa only [Function.comp_def, ContinuousLinearEquiv.symm_apply_apply] using
       b.equivFunL.symm.contDiff.contMDiff.comp hc
   intro g
-  exact TauCeti.contMDiffAt_clm_apply.mpr fun v ↦ (hv v).contMDiffAt
+  exact TauCeti.contMDiffAt_clm_apply.mpr fun v ↦ by
+    simpa only [Module.End.toContinuousLinearMap_apply] using (hv v).contMDiffAt
 
 /-- A rational representation gives a holomorphic homomorphism into the invertible continuous
 linear operators. Its carrier's finite dimensionality and completeness follow from rationality. -/

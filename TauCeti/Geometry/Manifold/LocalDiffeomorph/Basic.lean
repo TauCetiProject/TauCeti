@@ -37,10 +37,15 @@ be cancelled on either side of a composite local diffeomorphism. Conversely, an 
 homeomorphism to the model space which is a local diffeomorphism on its source is a chart of the
 maximal atlas.
 
+The extended-chart constructor lets maximal-atlas coordinates, including Frobenius flat charts,
+serve as partial diffeomorphisms in constructions of local submanifolds.
+
 ## Main results
 
 * `TauCeti.coe_diffeomorphOfBijective`: the associated global diffeomorphism
   has the original forward map.
+* `OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas`: extend any maximal-atlas chart
+  for a boundaryless model to a partial diffeomorphism onto the model vector space.
 * `TauCeti.extChartPartialDiffeomorph`: an extended chart restricted to the interior of its target,
   as a partial diffeomorphism onto an open subset of the model space.
 * `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph`: an open partial homeomorphism between
@@ -83,6 +88,69 @@ noncomputable section
 open Set
 open scoped Manifold Topology
 
+namespace OpenPartialHomeomorph
+
+open Manifold
+open scoped ContDiff
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+  (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas I n M)
+
+/-- A maximal-atlas chart for a boundaryless model, followed by the model, as a partial
+diffeomorphism to the model vector space. -/
+def toPartialDiffeomorphOfMemMaximalAtlas : PartialDiffeomorph I 𝓘(𝕜, E) M E n where
+  toPartialEquiv := e.extend I
+  open_source := e.isOpen_extend_source
+  open_target := e.isOpen_extend_target
+  contMDiffOn_toFun := by
+    simpa only [OpenPartialHomeomorph.extend_source] using e.contMDiffOn_extend he
+  contMDiffOn_invFun := by
+    -- The field uses the inverse function, while the chart API uses the inverse partial map.
+    change ContMDiffOn 𝓘(𝕜, E) I n (e.extend I).symm (e.extend I).target
+    simpa only [OpenPartialHomeomorph.extend_target'] using contMDiffOn_extend_symm he
+
+/-- Extending a maximal-atlas chart preserves its source. -/
+@[simp]
+theorem toPartialDiffeomorphOfMemMaximalAtlas_source :
+    (e.toPartialDiffeomorphOfMemMaximalAtlas he).source = e.source := by
+  -- Compute through the underlying extended chart; the constructor stays opaque to callers.
+  change (e.extend I).source = _
+  exact e.extend_source (I := I)
+
+/-- The target of the extended chart is read through the inverse model. -/
+@[simp]
+theorem toPartialDiffeomorphOfMemMaximalAtlas_target :
+    (e.toPartialDiffeomorphOfMemMaximalAtlas he).target = I.symm ⁻¹' e.target := by
+  -- The constructor is opaque; expose its target projection for the chart target equation.
+  change (e.extend I).target = _
+  rw [OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
+
+/-- The extended chart is the chart followed by the model. -/
+theorem coe_toPartialDiffeomorphOfMemMaximalAtlas :
+    ⇑(e.toPartialDiffeomorphOfMemMaximalAtlas he).toPartialEquiv = I ∘ e := by
+  -- The constructor is opaque; expose its function projection for the chart evaluation rule.
+  change ⇑(e.extend I) = _
+  exact e.extend_coe (I := I)
+
+/-- The extended maximal-atlas chart evaluates as the model applied to the original chart. -/
+@[simp]
+theorem toPartialDiffeomorphOfMemMaximalAtlas_apply (x : M) :
+    e.toPartialDiffeomorphOfMemMaximalAtlas he x = I (e x) := by
+  exact congrFun (e.extend_coe (I := I)) x
+
+/-- The inverse extended chart is the inverse model followed by the inverse chart. -/
+@[simp]
+theorem toPartialDiffeomorphOfMemMaximalAtlas_symm_apply (v : E) :
+    (e.toPartialDiffeomorphOfMemMaximalAtlas he).toPartialEquiv.symm v = e.symm (I.symm v) := by
+  -- The constructor is opaque; expose its inverse field for the inverse evaluation rule.
+  change (e.extend I).symm v = _
+  exact congrFun (e.extend_coe_symm (I := I)) v
+
+end OpenPartialHomeomorph
+
 namespace TauCeti
 
 section General
@@ -102,6 +170,21 @@ theorem coe_diffeomorphOfBijective
     {f : M → N} {hf : _root_.IsLocalDiffeomorph I J n f} {hf' : Function.Bijective f} :
     ⇑(hf.diffeomorphOfBijective hf') = f := by
   rfl
+
+/-- Precomposing a differentiable map with a local diffeomorphism does not change the
+image of its differential. -/
+theorem _root_.IsLocalDiffeomorphAt.range_mfderiv_comp
+    {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
+    {E' H' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕂 E']
+    [TopologicalSpace H'] {K : ModelWithCorners 𝕂 E' H'}
+    [TopologicalSpace P] [ChartedSpace H' P]
+    {φ : M → N} {g : N → P} {x : M}
+    (hφ : IsLocalDiffeomorphAt I J n φ x) (hn : n ≠ 0)
+    (hg : MDifferentiableAt J K g (φ x)) :
+    (mfderiv I K (g ∘ φ) x).range = (mfderiv J K g (φ x)).range := by
+  rw [mfderiv_comp x hg (hφ.mdifferentiableAt hn), ContinuousLinearMap.toLinearMap_comp]
+  exact LinearMap.range_comp_of_range_eq_top _
+    (LinearMap.range_eq_top.2 (hφ.isInvertible_mfderiv hn).surjective)
 
 section Charts
 
