@@ -96,13 +96,7 @@ theorem laurentQuantumBinomial_one_right (n : ℕ) :
           rw [ih]
           simp only [sub_mul, mul_sub, ← T_add]
           ring_nf
-  have hne : (T 1 - T (-1) : ℤ[T;T⁻¹]) ≠ 0 := by
-    intro h
-    have hc := congrArg (fun p : ℤ[T;T⁻¹] => p.coeff 1) h
-    simp only [LaurentPolynomial.T, AddMonoidAlgebra.coeff_sub,
-      AddMonoidAlgebra.coeff_single, AddMonoidAlgebra.coeff_zero] at hc
-    norm_num at hc
-  apply mul_left_cancel₀ hne
+  apply mul_left_cancel₀ (T_sub_T_ne_zero (by decide : (1 : ℤ) ≠ -1))
   rw [key, T_sub_T_neg_mul_laurentQuantumInteger]
 
 /-- Specialization at an arbitrary field unit agrees with the field-valued Pascal
@@ -185,8 +179,7 @@ theorem laurentEval_one_signedLaurentQuantumBinomial {R : Type*} [Ring R] (m : �
       map_neg, map_one, laurentEval_one_laurentQuantumBinomial, Ring.choose_neg]
     have he : (n : ℤ) + 1 + r - 1 = (n + r : ℕ) := by omega
     rw [he, Ring.choose_natCast, Units.smul_def, Int.coe_negOnePow_natCast, zsmul_eq_mul]
-    push_cast
-    rfl
+    simp only [Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, Int.cast_natCast]
 
 -- Small normalization witnesses: these are symmetric, not the polynomial `1 + v²`.
 example : laurentQuantumBinomial 2 1 = T 1 + T (-1) := by
