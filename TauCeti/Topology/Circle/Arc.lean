@@ -51,6 +51,8 @@ open arc.
   pair of angles.
 * `TauCeti.mem_circleExp_image_Icc_neg_iff` — the closed arc `Circle.exp '' Set.Icc (-a) a` is
   where the argument is at most `a` in absolute value.
+* `Circle.closure_path_image_Ioo` — the closure of the open arc traced by Mathlib's
+  `Circle.path x y` on `(0, 1)` is the closed arc, its whole range.
 -/
 
 public section
@@ -148,5 +150,16 @@ theorem mem_circleExp_image_Icc_neg_iff {a : ℝ} {z : Circle} :
   · rw [Circle.arg_exp (by linarith [ht.1]) (by linarith [ht.2])]
     exact abs_le.2 ht
   · exact (Complex.abs_arg_le_pi _).trans haπ
+
+/-- **The closure of an open arc is the closed arc.** The set traced by the path
+`Circle.path x y` on the open interval `(0, 1)` has the whole range of the path as its closure. -/
+theorem _root_.Circle.closure_path_image_Ioo (x y : Circle) :
+    closure (x.path y '' Ioo 0 1) = range (x.path y) := by
+  refine (closure_minimal (image_subset_range _ _)
+    (isCompact_range (x.path y).continuous).isClosed).antisymm ?_
+  have h : closure (Ioo 0 1 : Set unitInterval) = univ := by
+    rw [closure_Ioo zero_ne_one, unitInterval.univ_eq_Icc]
+  rw [← image_univ, ← h]
+  exact image_closure_subset_closure_image (x.path y).continuous
 
 end TauCeti
