@@ -151,6 +151,22 @@ theorem map_hazewinkelLogCoeff (φ : K →+* L) (n : ℕ) :
       refine congrArg _ (sum_congr rfl fun i hi ↦ ?_)
       rw [map_mul, map_pow, ih i (by grind), Function.comp_apply]
 
+/-- Applying the `i`-th iterate of a coefficient Frobenius lift to a logarithm
+coefficient replaces each generator by its `pⁱ`-th power. -/
+theorem pow_apply_hazewinkelLogCoeff (σ : K →+* K) (hσ : ∀ j, σ (v j) = v j ^ p)
+    (i n : ℕ) :
+    (σ ^ i) (hazewinkelLogCoeff p v n) =
+      hazewinkelLogCoeff p (fun j ↦ v j ^ p ^ i) n := by
+  rw [map_hazewinkelLogCoeff]
+  congr 1
+  funext j
+  simp only [Function.comp_apply]
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    rw [pow_succ', RingHom.mul_def, RingHom.comp_apply, ih, map_pow, hσ,
+      ← pow_mul, ← pow_succ']
+
 /-- **Hazewinkel's recursion**: `p mₙ₊₁(v) = ∑_{i ≤ n} vᵢ₊₁ m_(n - i)(v^(p^(i + 1)))`, where
 `v^(pʲ)` is the family `(v₁^(pʲ), v₂^(pʲ), …)`. This splits off the first step of the chains
 `0 = s₀ < ⋯ < s_k = n + 1` indexing the terms of `mₙ₊₁`, while
@@ -282,6 +298,10 @@ variable (p) in
 logarithm `TauCeti.hazewinkelLog` (`∑ₙ mₙ(v) X^(pⁿ)` for `p > 1`). -/
 noncomputable def hazewinkelFormalGroup : FormalGroup K :=
   (hazewinkelLog p v)⁻¹ • FormalGroup.𝔾ₐ
+
+/-- Hazewinkel's formal group is the additive law transported by the inverse logarithm. -/
+theorem hazewinkelFormalGroup_def :
+    hazewinkelFormalGroup p v = (hazewinkelLog p v)⁻¹ • FormalGroup.𝔾ₐ := (rfl)
 
 instance : (hazewinkelFormalGroup p v).IsComm :=
   FormalGroup.instIsCommSMul _ _
