@@ -71,9 +71,10 @@ theorem AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero (m : ℕ) (y
         (AlgebraicK1.map (algebraMap ℂ (Unitization ℂ A)) y)).toAdd
       (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) = 0 := by
   obtain ⟨n, u, rfl⟩ := AlgebraicK1.exists_mk y
-  obtain ⟨φ, rfl⟩ := relativeCyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
+  obtain ⟨φ, rfl⟩ := reducedCyclicCohomology.mk_surjective ℂ (Unitization ℂ A) M (2 * m + 1) c
   rw [AlgebraicK1.map_mk, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
-    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
+    relativeCyclicCohomology.toUnitization, reducedCyclicCohomology.toCyclic_mk,
+    oddPairing_matrixExtension_mk]
   simp only [Units.coe_map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
     RingHom.mapMatrix_apply]
   -- Both entries `u⁻¹ - 1` and `u - 1` of the pairing are scalar matrices.
@@ -122,7 +123,8 @@ theorem oddPairing_mk_mk (m n : ℕ) (u : GL (Fin n) (Unitization ℂ A))
             MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ Unitization ℂ A) M)
           fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   rw [oddPairing_apply, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
-    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
+    relativeCyclicCohomology.toUnitization, reducedCyclicCohomology.toCyclic_mk,
+    oddPairing_matrixExtension_mk]
 
 /-- **The pairing of an arbitrary class of `A⁺` sees only its relative part**: a class `x` of `A⁺`
 pairs with a relative cyclic class as its relative part `x · s(ε(x))⁻¹` does. -/
