@@ -1045,8 +1045,8 @@ theorem _root_.List.IsTableauRows.exists_forall_le_getLast?_getD_eq_some {Q : Li
 
 /-- Reverse insertion from a corner of `P`, and removal of the last letter of the same row of a
 tableau `Q` of the same shape, give two tableaux of the same shape. -/
-theorem length_getD_reverseRowInsert_fst {β : Type*} [LinearOrder β] {P : List (List β)}
-    {Q : List (List α)} (hP : P.IsTableauRows) (hQ : Q.IsTableauRows)
+theorem length_getD_reverseRowInsert_fst {α β : Type*} [Preorder α] [LinearOrder β]
+    {P : List (List β)} {Q : List (List α)} (hP : P.IsTableauRows) (hQ : Q.IsTableauRows)
     (hshape : ∀ i, (P.getD i []).length = (Q.getD i []).length) {k : ℕ}
     (hk : (Q.getD (k + 1) []).length < (Q.getD k []).length) (i : ℕ) :
     ((reverseRowInsert k P).1.getD i []).length = ((dropLastOfRow k Q).getD i []).length := by

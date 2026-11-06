@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.List.MinMax
 public import Mathlib.Order.Prod.Lex.Basic
 public import TauCeti.Combinatorics.Young.Schensted.Bumping
 public import TauCeti.Data.List.Sort
@@ -162,7 +161,7 @@ private theorem le_of_mem_flatten_snd {ws : List (α × β)} {w : α × β}
 /-- The earlier pairs of a two-line array form a two-line array. -/
 private theorem sortedLE_of_append_singleton {ws : List (α × β)} {w : α × β}
     (h : ((ws ++ [w]).map toLex).SortedLE) : (ws.map toLex).SortedLE :=
-  (sortedLE_append_singleton.mp (by rwa [map_append] at h)).1
+  SortedLE.of_append_left (l₂ := [toLex w]) (by simpa only [map_append, map_singleton] using h)
 
 /-- The entries of the recording tableau of a two-line array are at most the last top letter. -/
 private theorem le_of_mem_flatten_snd_append {ws : List (α × β)} {w : α × β}
