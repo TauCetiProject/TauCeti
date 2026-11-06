@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.Basic
 
 /-!
 # The parabolic maximum principle on a bounded cylinder with variable coefficients
@@ -49,17 +50,20 @@ point `(t₀, x₀)` of the open cylinder where it exceeds the bound `m ≥ 0`: 
 `c u ≤ 0`; `x₀` is a spatial local maximum, so the gradient vanishes and
 `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ 0` (`TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos_of_isLocalMax`); and `t₀` is a
 maximum from the left, so `∂ₜu ≥ ε`, contradicting `P u ≤ 0`. Letting `ε → 0` gives the bound
-for `t < T`, and continuity carries it to the top. The perturbation `εt` does not depend on the
-space variable, which is why neither a lower ellipticity constant nor a bound on `b` is needed.
+for `t < T`, and continuity carries it to the top; this part of the argument is shared with the
+heat operator as `TauCeti.le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary`. The
+perturbation `εt` does not depend on the space variable, which is why neither a lower ellipticity
+constant nor a bound on `b` is needed.
 The general bound follows by applying this to `exp (-γ t) u - (M + t F)`, which satisfies
 `P w ≤ 0` for the zeroth-order coefficient `c - γ ≤ 0`
-(`TauCeti.PDE.deriv_le_of_eq_exp_neg_mul_mul_sub`).
+(`TauCeti.PDE.deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_of_eq_exp_neg_mul_mul_sub`).
 
 ## Main declarations
 
 All declarations are in the `TauCeti.PDE` namespace.
 
-* `deriv_le_of_eq_exp_neg_mul_mul_sub`: the exponential change of variables, pointwise.
+* `deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_of_eq_exp_neg_mul_mul_sub`: the exponential
+  change of variables, pointwise.
 * `le_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_parabolicBoundary`: the **weak
   maximum principle** for `P` when `c ≤ 0`.
 * `le_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_le_parabolicBoundary`: the weak maximum
@@ -95,8 +99,8 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 `w = exp (-γ t) u - (M + t F)` satisfies `P w ≤ 0` at `(t, x)` for the zeroth-order coefficient
 `c - γ`, provided `0 ≤ γ t`, `0 ≤ M + t F` and `0 ≤ F`. Here `A` and `v` are the values of the
 principal and drift coefficients at `(t, x)`. -/
-theorem deriv_le_of_eq_exp_neg_mul_mul_sub {A : Matrix ι ι ℝ}
-    {u w : ℝ → EuclideanSpace ℝ ι → ℝ} {c γ M F t : ℝ} {x v : EuclideanSpace ℝ ι}
+theorem deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_of_eq_exp_neg_mul_mul_sub
+    {A : Matrix ι ι ℝ} {u w : ℝ → EuclideanSpace ℝ ι → ℝ} {c γ M F t : ℝ} {x v : EuclideanSpace ℝ ι}
     (hw : ∀ s y, w s y = Real.exp (-(γ * s)) * u s y - (M + s * F))
     (hc : c ≤ γ) (hγt : 0 ≤ γ * t) (hMF : 0 ≤ M + t * F) (hF : 0 ≤ F)
     (hcd : ContDiffAt ℝ 2 (u t) x) (hdiff : DifferentiableAt ℝ (fun s ↦ u s x) t)
@@ -129,65 +133,6 @@ variable {K : Set (EuclideanSpace ℝ ι)} {T : ℝ} {a : ℝ → EuclideanSpace
   {b : ℝ → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : ℝ → EuclideanSpace ℝ ι → ℝ}
   {u v : ℝ → EuclideanSpace ℝ ι → ℝ}
 
-/-- The perturbed bound behind the weak maximum principle: if `P u ≤ 0` on the open cylinder,
-`u ≤ m` on the parabolic boundary, and `c u ≤ 0` wherever `u > m`, then for every `ε > 0` and
-every `τ < T` the strict subsolution `u - εt` is bounded by `m` on `[0, τ] × K`. -/
-private theorem sub_mul_le_of_deriv_le_of_mul_nonpos (hK : IsCompact K)
-    (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι,
-      0 ≤ (a t x).toQuadraticForm' ξ) {m ε τ : ℝ}
-    (hcu : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → m < u t x → c t x * u t x ≤ 0)
-    (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ K))
-    (hcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 (u t) x)
-    (hdiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
-      DifferentiableAt ℝ (fun s ↦ u s x) t)
-    (hsub : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → deriv (fun s ↦ u s x) t ≤
-      ∑ i, ∑ j, a t x i j * fderiv ℝ (fderiv ℝ (u t)) x (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1) + fderiv ℝ (u t) x (b t x) + c t x * u t x)
-    (hinit : ∀ ⦃x⦄, x ∈ K → u 0 x ≤ m)
-    (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ m)
-    (hε : 0 < ε) (hτ : τ < T) :
-    ∀ ⦃t⦄, t ∈ Icc 0 τ → ∀ ⦃x⦄, x ∈ K → u t x - ε * t ≤ m := by
-  intro t ht x hx
-  set w : ℝ × EuclideanSpace ℝ ι → ℝ := fun p ↦ Function.uncurry u p - ε * p.1
-  have hsub' : Icc 0 τ ×ˢ K ⊆ Icc 0 T ×ˢ K := prod_mono (Icc_subset_Icc_right hτ.le) le_rfl
-  have hwcont : ContinuousOn w (Icc 0 τ ×ˢ K) :=
-    (hcont.mono hsub').sub (continuousOn_const.mul continuousOn_fst)
-  obtain ⟨⟨t₀, x₀⟩, hmem, hmax⟩ :=
-    (isCompact_Icc.prod hK).exists_isMaxOn ⟨(t, x), ht, hx⟩ hwcont
-  have ht₀ : t₀ ∈ Icc 0 τ := hmem.1
-  have hx₀ : x₀ ∈ K := hmem.2
-  have hmax' : ∀ ⦃s⦄, s ∈ Icc 0 τ → ∀ ⦃y⦄, y ∈ K → u s y - ε * s ≤ u t₀ x₀ - ε * t₀ :=
-    fun s hs y hy ↦ isMaxOn_iff.mp hmax (s, y) ⟨hs, hy⟩
-  refine (hmax' ht hx).trans ?_
-  -- The maximizer lies on the parabolic boundary, where `u ≤ m`.
-  rcases ht₀.1.eq_or_lt with h0 | hpos
-  · rw [← h0, mul_zero, sub_zero]
-    exact hinit hx₀
-  by_cases hfr : x₀ ∈ frontier K
-  · have := hlat ⟨ht₀.1, ht₀.2.trans hτ.le⟩ hfr
-    nlinarith
-  -- Otherwise `(t₀, x₀)` is a point of the open cylinder, where the maximum cannot exceed `m`.
-  by_contra hlt
-  have ht₀T : t₀ ∈ Ioo 0 T := ⟨hpos, ht₀.2.trans_lt hτ⟩
-  have hint : x₀ ∈ interior K := by
-    rw [← self_sdiff_frontier]
-    exact ⟨hx₀, hfr⟩
-  -- In space, `x₀` is a local maximum of `u t₀`, so the principal and drift parts are `≤ 0`.
-  have hloc : IsLocalMax (u t₀) x₀ :=
-    Filter.eventually_of_mem (isOpen_interior.mem_nhds hint) fun y hy ↦ by
-      linarith [hmax' ht₀ (interior_subset hy)]
-  have hprin := sum_mul_fderiv_fderiv_nonpos_of_isLocalMax (ha ht₀T hint) (hcd ht₀T hint) hloc
-  have hgrad : fderiv ℝ (u t₀) x₀ (b t₀ x₀) = 0 := by
-    rw [hloc.fderiv_eq_zero, _root_.zero_apply]
-  -- The zeroth-order term is `≤ 0`, since `u t₀ x₀ > m + ε t₀ ≥ m`.
-  have hcu₀ := hcu ht₀T hint (by nlinarith)
-  -- In time, `t₀` maximizes `s ↦ u s x₀ - ε s` from the left, so `∂ₜu ≥ ε > 0`.
-  have hg : HasDerivAt (fun s ↦ u s x₀ - ε * s) (deriv (fun s ↦ u s x₀) t₀ - ε) t₀ := by
-    simpa using (hdiff ht₀T hint).hasDerivAt.fun_sub ((hasDerivAt_id t₀).const_mul ε)
-  have hleft : IsLocalMaxOn (fun s ↦ u s x₀ - ε * s) (Iic t₀) t₀ :=
-    Filter.mem_of_superset (Icc_mem_nhdsLE hpos) fun s hs ↦ hmax' ⟨hs.1, hs.2.trans ht₀.2⟩ hx₀
-  linarith [hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt, hsub ht₀T hint]
-
 /-- The weak maximum principle for `P` under the pointwise sign condition `c u ≤ 0` wherever
 `u > m`, from which both public forms follow. -/
 private theorem le_of_deriv_le_of_mul_nonpos (hK : IsCompact K)
@@ -203,23 +148,16 @@ private theorem le_of_deriv_le_of_mul_nonpos (hK : IsCompact K)
         (EuclideanSpace.single j 1) + fderiv ℝ (u t) x (b t x) + c t x * u t x)
     (hinit : ∀ ⦃x⦄, x ∈ K → u 0 x ≤ m)
     (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ m) :
-    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → u t x ≤ m := by
-  intro t ht x hx
-  -- Below the top, let `ε → 0` in the perturbed bound `u - εt ≤ m`.
-  have hlt : ∀ s ∈ Ico 0 T, u s x ≤ m := fun s hs ↦
-    le_of_forall_pos_mul_le (C := s) fun ε hε ↦ by
-      have := sub_mul_le_of_deriv_le_of_mul_nonpos hK ha hcu hcont hcd hdiff hsub hinit hlat
-        hε hs.2 ⟨hs.1, le_rfl⟩ hx
-      linarith
-  rcases ht.2.lt_or_eq with htT | rfl
-  · exact hlt t ⟨ht.1, htT⟩
-  rcases ht.1.eq_or_lt with h0 | hpos
-  · exact h0 ▸ hinit hx
-  -- At the top `t = T > 0`, pass to the limit from below by continuity.
-  have hcw : ContinuousWithinAt (fun s ↦ u s x) (Ico 0 t) t :=
-    ((hcont.comp (continuousOn_id.prodMk continuousOn_const) fun s hs ↦ ⟨hs, hx⟩) t ht).mono
-      Ico_subset_Icc_self
-  exact hcw.closure_le (by rw [closure_Ico hpos.ne]; exact ht) continuousWithinAt_const hlt
+    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → u t x ≤ m :=
+  -- At a spatial local maximum above `m` the principal part is `≤ 0`, the gradient vanishes and
+  -- `c u ≤ 0`, so `∂ₜu ≤ 0`.
+  le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary hK hcont hdiff
+    (fun t ht x hx hloc hlt ↦ by
+      have hgrad : fderiv ℝ (u t) x (b t x) = 0 := by
+        rw [hloc.fderiv_eq_zero, _root_.zero_apply]
+      linarith [hsub ht hx, sum_mul_fderiv_fderiv_nonpos_of_isLocalMax (ha ht hx) (hcd ht hx) hloc,
+        hcu ht hx hlt])
+    hinit hlat
 
 /-- **The weak maximum principle for parabolic equations in non-divergence form.**
 
@@ -309,8 +247,9 @@ theorem le_exp_mul_mul_add_mul_of_le_parabolicBoundary
     (fun t ht x hx ↦ by
       simp only [hw]
       fun_prop (disch := exact hdiff ht hx))
-    (fun t ht x hx ↦ deriv_le_of_eq_exp_neg_mul_mul_sub hw (hc ht hx) (mul_nonneg hγ ht.1.le)
-      (add_nonneg hM (mul_nonneg ht.1.le hF)) hF (hcd ht hx) (hdiff ht hx) (hsub ht hx))
+    (fun t ht x hx ↦ deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_of_eq_exp_neg_mul_mul_sub hw
+      (hc ht hx) (mul_nonneg hγ ht.1.le) (add_nonneg hM (mul_nonneg ht.1.le hF)) hF (hcd ht hx)
+      (hdiff ht hx) (hsub ht hx))
     (fun x hx ↦ by simpa [hw] using hinit hx)
     (fun t ht x hx ↦ by
       have h1 : Real.exp (-(γ * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [ht.1])

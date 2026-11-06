@@ -260,22 +260,12 @@ private theorem nonpos_of_deriv_le_of_nonpos
     (hinit : ∀ x, u 0 x ≤ 0) :
     ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ x, u t x ≤ 0 := by
   intro t ht x
+  refine le_of_continuousOn_of_forall_mem_Ico_le hcont (mem_univ x) (hinit x) (fun s hs ↦ ?_) ht
   -- Below the top, let `ε → 0` in the perturbed bound.
-  have hlt : ∀ s ∈ Ico 0 T, u s x ≤ 0 := fun s hs ↦
-    le_of_forall_pos_mul_le (C := Real.exp ((2 * |Lam| + 3 * |β| + 1) * s) * (1 + ‖x‖ ^ 2))
-      fun ε hε ↦ by
-      rw [zero_add]
-      exact le_mul_exp_mul_of_deriv_le_of_nonpos ha htr hb hc hcont hbdd hcd hdiff hsub hinit
-        hε hs x
-  rcases ht.2.lt_or_eq with htT | rfl
-  · exact hlt t ⟨ht.1, htT⟩
-  rcases ht.1.eq_or_lt with h0 | hpos
-  · exact h0 ▸ hinit x
-  -- At the top `t = T > 0`, pass to the limit from below by continuity.
-  have hcw : ContinuousWithinAt (fun s ↦ u s x) (Ico 0 t) t :=
-    ((hcont.comp (continuousOn_id.prodMk continuousOn_const) fun s hs ↦ ⟨hs, mem_univ x⟩) t
-      ht).mono Ico_subset_Icc_self
-  exact hcw.closure_le (by rw [closure_Ico hpos.ne]; exact ht) continuousWithinAt_const hlt
+  refine le_of_forall_pos_mul_le (C := Real.exp ((2 * |Lam| + 3 * |β| + 1) * s) * (1 + ‖x‖ ^ 2))
+    fun ε hε ↦ ?_
+  rw [zero_add]
+  exact le_mul_exp_mul_of_deriv_le_of_nonpos ha htr hb hc hcont hbdd hcd hdiff hsub hinit hε hs x
 
 /-- **The a priori bound for parabolic equations on the whole space.** Let
 `P u = ∂ₜu - ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` where, for `0 < t < T`, the matrix `a(t, x)` has
@@ -326,8 +316,9 @@ theorem le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_
     (fun t ht x ↦ by
       simp only [hw]
       fun_prop (disch := exact hdiff ht x))
-    (fun t ht x ↦ deriv_le_of_eq_exp_neg_mul_mul_sub hw (hc ht x) (mul_nonneg hγ ht.1.le)
-      (add_nonneg hM (mul_nonneg ht.1.le hF)) hF (hcd ht x) (hdiff ht x) (hsub ht x))
+    (fun t ht x ↦ deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_of_eq_exp_neg_mul_mul_sub hw
+      (hc ht x) (mul_nonneg hγ ht.1.le) (add_nonneg hM (mul_nonneg ht.1.le hF)) hF (hcd ht x)
+      (hdiff ht x) (hsub ht x))
     (fun x ↦ by simpa [hw] using hinit x)
   intro t ht x
   have h := hwle ht x
