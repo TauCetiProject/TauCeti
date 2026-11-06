@@ -56,7 +56,7 @@ variable {Z : Set ℕ} {f : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
 `s`, and converge pointwise to `g`, then `g` is computable in the jump `Z'`. -/
 theorem Converges.computableIn_jump (h : Converges f g) (hf : ComputableIn₂ {Z.oracle} f) :
     ComputableIn {Z.jump.oracle} g := by
-  obtain ⟨F, hF, hFdom⟩ := recursiveIn_instabilitySet hf
+  obtain ⟨F, hF, hFdom⟩ := exists_recursiveIn_dom_iff_mem_instabilitySet hf
   have hU : TuringReducible (instabilitySet f).oracle Z.jump.oracle := by
     have hdom : {n | (F n).Dom} = instabilitySet f := Set.ext hFdom
     rw [← hdom]

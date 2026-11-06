@@ -20,7 +20,8 @@ This is the common search underlying the Limit Lemma and the c.e.-degree criteri
 
 ## Main results
 
-* `TauCeti.Approximation.recursiveIn_instabilitySet`: instability is a relative c.e. domain.
+* `TauCeti.Approximation.exists_recursiveIn_dom_iff_mem_instabilitySet`: instability is a relative
+  c.e. domain.
 * `TauCeti.Approximation.rePred_mem_instabilitySet`: instability of a computable approximation
   is c.e.
 * `TauCeti.Approximation.Converges.computableIn_of_instabilitySet`: stable-stage search computes
@@ -71,7 +72,7 @@ theorem IsModulus.mem_instabilitySet_iff (hm : IsModulus f g m) (x s : ℕ) :
 
 /-- The stages `s` of a sequence `f` after which the value at `x` changes, coded as
 `Nat.pair x s`, form the domain of a function recursive in `O` when `f` is computable in `O`. -/
-theorem recursiveIn_instabilitySet (hf : ComputableIn₂ O f) :
+theorem exists_recursiveIn_dom_iff_mem_instabilitySet (hf : ComputableIn₂ O f) :
     ∃ F : ℕ →. ℕ, Nat.RecursiveIn O F ∧
       ∀ n, (F n).Dom ↔ n ∈ instabilitySet f := by
   -- `f` as a function on codes of pairs `Nat.pair s x`
@@ -102,7 +103,7 @@ theorem recursiveIn_instabilitySet (hf : ComputableIn₂ O f) :
 
 /-- The instability set of a uniformly computable approximation is c.e. -/
 theorem rePred_mem_instabilitySet (hf : Computable₂ f) : REPred (· ∈ instabilitySet f) := by
-  obtain ⟨F, hF, hdom⟩ := recursiveIn_instabilitySet (O := ∅) hf.computableIn
+  obtain ⟨F, hF, hdom⟩ := exists_recursiveIn_dom_iff_mem_instabilitySet (O := ∅) hf.computableIn
   exact ((recursiveIn_empty_iff.1 (RecursiveIn.iff_nat.2 hF)).dom_re).of_eq hdom
 
 /-- An oracle computing the stages and deciding instability computes the limit. -/
