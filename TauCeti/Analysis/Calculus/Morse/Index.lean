@@ -45,6 +45,7 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * `TauCeti.hessianQuadraticForm`: the quadratic form defined by the Hessian at a point.
 * `TauCeti.morseIndex`: the negative index of inertia of the Hessian quadratic form.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
+* `TauCeti.morseIndex_add_const`: invariance under adding a constant.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
   `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
   `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
@@ -122,6 +123,14 @@ theorem hessianQuadraticForm_neg (f : E → ℝ) (x : E) :
   simp only [hessianQuadraticForm_apply, neg_apply]
   rw [hfd, fderiv_neg]
   rfl
+
+/-- Adding a constant to a function does not change its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_add_const (c : ℝ) :
+    hessianQuadraticForm (fun y ↦ f y + c) x = hessianQuadraticForm f x := by
+  have hfd : fderiv ℝ (fun y ↦ f y + c) = fderiv ℝ f := funext fun _ ↦ fderiv_add_const c
+  ext v
+  simp only [hessianQuadraticForm_apply, hfd]
 
 /-- Scaling a function by a real constant scales its Hessian quadratic form. -/
 @[simp]
@@ -264,6 +273,11 @@ theorem morseIndex_def : morseIndex f x = sigNeg (hessianQuadraticForm f x) := b
 theorem morseIndex_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     morseIndex f x = morseIndex g x := by
   rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_congr_of_eventuallyEq hfg]
+
+/-- Adding a constant to a function does not change its Morse index. -/
+@[simp]
+theorem morseIndex_add_const (c : ℝ) : morseIndex (fun y ↦ f y + c) x = morseIndex f x := by
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_add_const]
 
 /-- The Morse index is invariant under a `C²` change of coordinates with invertible derivative.
 Criticality is needed because it removes the first-order term from the second-order chain rule. -/

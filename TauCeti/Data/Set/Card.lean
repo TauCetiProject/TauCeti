@@ -31,6 +31,10 @@ are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
 indices as on `ι` (`Set.ncard_setOf_sumElim`).
 
+For an injective map `f` from a finite type into a linear order, the number of indices whose value
+lies below `f a` determines `a` (`Set.injective_ncard_setOf_lt`): it is the rank of `f a` among
+the values of `f`.
+
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
 
@@ -133,6 +137,20 @@ theorem ncard_preimage_div (S : Set ℕ) (n : ℕ) : ((· / n) ⁻¹' S).ncard =
     simpa [Nat.mul_add_div hn, Nat.div_eq_of_lt hp, Nat.div_eq_of_lt hq] using
       congrArg (· / n) hpq
   exact Prod.ext h₁ (Fin.ext (by simpa [h₁] using hpq))
+
+/-- For an injective map `f` from a finite type into a linear order, the number of indices whose
+value lies below `f a` determines `a`. -/
+theorem injective_ncard_setOf_lt {ι α : Type*} [Finite ι] [LinearOrder α] {f : ι → α}
+    (hf : Function.Injective f) : Function.Injective fun a ↦ {i | f i < f a}.ncard := by
+  -- The set of values below the larger of `f a`, `f b` strictly contains the other set.
+  have key (a b : ι) (hab : f a < f b) : {i | f i < f a}.ncard < {i | f i < f b}.ncard :=
+    ncard_lt_ncard ⟨fun i hi ↦ lt_trans hi hab, fun hsub ↦ lt_irrefl (f a) (hsub hab)⟩
+      (toFinite _)
+  intro a b h
+  by_contra hne
+  rcases lt_or_gt_of_ne (hf.ne hne) with hlt | hlt
+  · exact (key a b hlt).ne h
+  · exact (key b a hlt).ne h.symm
 
 /-- A property of the doubled index set `ι ⊕ ι`, read off the same function on both copies of `ι`,
 holds on twice as many indices as on `ι`. Both sides are `0` when the set on `ι` is infinite. -/

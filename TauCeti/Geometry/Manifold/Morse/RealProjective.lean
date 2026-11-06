@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Analysis.Calculus.Morse.Pi
+import TauCeti.Data.Set.Card
 import TauCeti.Geometry.Manifold.Morse.Hessian
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
@@ -56,7 +57,8 @@ it has one critical point of each index `0, …, n`.
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Section 6, where the analogous function `∑ cⱼ |zⱼ|²` on complex projective space is treated.
+  Section 4 (Examples), where the analogous function `∑ cⱼ |zⱼ|²` on complex projective space is
+  treated.
 -/
 
 public section
@@ -121,17 +123,6 @@ theorem contMDiff_projectiveRayleighQuotient (r : ℕ∞ω) :
   rw [comp_apply, ← projectiveRayleighQuotient_affineChart_symm,
     (affineChart i).left_inv (by simpa using hy)]
 
-/-- The derivative of a sum of weighted squares of the coordinates. -/
-private theorem hasFDerivAt_sum_mul_sq (a : Fin n → ℝ) (z : Fin n → ℝ) :
-    HasFDerivAt (fun z : Fin n → ℝ ↦ ∑ k, a k * z k ^ 2)
-      (∑ k, (2 * a k * z k) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n ↦ ℝ) k) z := by
-  refine HasFDerivAt.fun_sum fun k _ ↦ ?_
-  refine (((hasDerivAt_pow 2 (z k)).const_mul (a k)).comp_hasFDerivAt z
-    (hasFDerivAt_apply (𝕜 := ℝ) k z)).congr_fderiv ?_
-  ext u
-  simp only [smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul]
-  ring
-
 /-- **Critical points in an affine chart.** The differential of the coordinate expression of the
 weighted Rayleigh quotient in the affine chart at `i` vanishes at `z` exactly when every
 coordinate `zₖ` is zero or carries the weight equal to the value at `z`. -/
@@ -148,17 +139,17 @@ private theorem fderiv_affineChart_symm_eq_zero_iff (i : Fin (n + 1)) (z : Fin n
     have := (contMDiff_projectiveRayleighQuotient w 1).comp
       (contMDiff_affineChart_symm (𝕜 := ℝ) i 1)
     exact hgdef ▸ (this.contDiff.differentiable one_ne_zero) z
-  have hs : HasFDerivAt s
-      (∑ k, (2 * 1 * z k) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n ↦ ℝ) k) z := by
-    simpa [hsdef] using (hasFDerivAt_sum_mul_sq (fun _ ↦ 1) z).const_add 1
-  have hN := (hasFDerivAt_sum_mul_sq (fun k ↦ w (i.succAbove k)) z).const_add (w i)
+  have hs := hsdef ▸ (hasFDerivAt_sum_comp_eval (φ := fun _ t ↦ t ^ 2)
+    fun k ↦ hasDerivAt_pow 2 (z k)).const_add 1
+  have hN := (hasFDerivAt_sum_comp_eval (φ := fun k t ↦ w (i.succAbove k) * t ^ 2)
+    fun k ↦ (hasDerivAt_pow 2 (z k)).const_mul _).const_add (w i)
   -- Differentiating `g * s = N` determines the derivative of `g`.
   have hprod := hgd.hasFDerivAt.mul hs
   rw [show g * s = fun y ↦ w i + ∑ k, w (i.succAbove k) * y k ^ 2 from funext hgs] at hprod
   have heq := hN.unique hprod
   -- Evaluating both derivatives on the basis vector `eₖ`.
-  have hcoord (k : Fin n) : 2 * w (i.succAbove k) * z k =
-      g z * (2 * 1 * z k) + s z * fderiv ℝ g z (Pi.single k 1) := by
+  have hcoord (k : Fin n) : w (i.succAbove k) * (2 * z k) =
+      g z * (2 * z k) + s z * fderiv ℝ g z (Pi.single k 1) := by
     simpa [Pi.single_apply] using congrArg (fun L ↦ L (Pi.single k (1 : ℝ))) heq
   have hg : g z = projectiveRayleighQuotient w ((affineChart i).symm z) := by
     rw [hgdef, comp_apply]
@@ -272,25 +263,15 @@ private theorem isInvertible_fderiv_ballCoord_zero :
 private theorem contDiffAt_sq_mul (c t : ℝ) : ContDiffAt ℝ 2 (fun s : ℝ ↦ c * s ^ 2) t := by
   fun_prop
 
-private theorem deriv_sq_mul (c : ℝ) : deriv (fun s : ℝ ↦ c * s ^ 2) = fun s ↦ 2 * c * s := by
-  funext s
-  rw [((hasDerivAt_pow 2 s).const_mul c).deriv]
-  ring
-
-private theorem deriv_sq_mul_zero (c : ℝ) : deriv (fun s : ℝ ↦ c * s ^ 2) 0 = 0 := by
-  simp only [deriv_sq_mul, mul_zero]
-
-private theorem deriv_deriv_sq_mul_zero (c : ℝ) :
-    deriv (deriv fun s : ℝ ↦ c * s ^ 2) 0 = 2 * c := by
-  rw [deriv_sq_mul, ((hasDerivAt_id' (0 : ℝ)).const_mul (2 * c)).deriv, mul_one]
-
-/-- **The weighted Rayleigh quotient in the affine chart at `i`, in ball coordinates.** -/
+/-- **The weighted Rayleigh quotient in the affine chart at `i`, in ball coordinates**: the
+diagonal quadratic form `∑ₖ (w (i.succAbove k) - w i) * yₖ²` composed with `ballCoord`, plus the
+constant `w i`. -/
 private theorem projectiveRayleighQuotient_comp_affineChart_symm_eq (i : Fin (n + 1)) :
-    projectiveRayleighQuotient w ∘ (affineChart i).symm =
-      fun z ↦ (∑ k, (w (i.succAbove k) - w i) * ballCoord z k ^ 2) + w i := by
+    projectiveRayleighQuotient w ∘ (affineChart i).symm = fun z ↦
+      ((fun y : Fin n → ℝ ↦ ∑ k, (w (i.succAbove k) - w i) * y k ^ 2) ∘ ballCoord) z + w i := by
   funext z
   have hs := one_add_sum_sq_pos z
-  rw [comp_apply, projectiveRayleighQuotient_affineChart_symm, div_eq_iff hs.ne']
+  rw [comp_apply, comp_apply, projectiveRayleighQuotient_affineChart_symm, div_eq_iff hs.ne']
   simp only [ballCoord, Pi.smul_apply, smul_eq_mul, mul_pow, inv_pow,
     Real.sq_sqrt hs.le]
   have hsum : ∑ k, (w (i.succAbove k) - w i) * ((1 + ∑ l, z l ^ 2)⁻¹ * z k ^ 2) =
@@ -312,17 +293,12 @@ theorem isManifoldNondegenerateCriticalPoint_projectiveRayleighQuotient_mk_singl
       (affineOpenPartialHomeomorph_mem_maximalAtlas i 2) (by simp),
     affineOpenPartialHomeomorph_extend, affineChart_mk_single,
     projectiveRayleighQuotient_comp_affineChart_symm_eq,
-    isNondegenerateCriticalPoint_add_const_iff]
-  rw [show (fun z ↦ ∑ k, (w (i.succAbove k) - w i) * ballCoord z k ^ 2) =
-      (fun y : Fin n → ℝ ↦ ∑ k, (w (i.succAbove k) - w i) * y k ^ 2) ∘ ballCoord from rfl,
+    isNondegenerateCriticalPoint_add_const_iff,
     isNondegenerateCriticalPoint_comp_iff (by fun_prop) (contDiff_ballCoord.contDiffAt)
       isInvertible_fderiv_ballCoord_zero, ballCoord_zero,
     isNondegenerateCriticalPoint_sum_comp_eval_iff
       (φ := fun k s ↦ (w (i.succAbove k) - w i) * s ^ 2) fun k ↦ contDiffAt_sq_mul _ _]
-  simp only [Pi.zero_apply, deriv_sq_mul_zero, deriv_deriv_sq_mul_zero, true_and, ne_eq,
-    mul_eq_zero, OfNat.ofNat_ne_zero, false_or, sub_eq_zero, Fin.forall_iff_succAbove i,
-    not_true_eq_false, IsEmpty.forall_iff, true_and, Fin.succAbove_ne, not_false_eq_true,
-    forall_const]
+  simp [sub_eq_zero, Fin.forall_iff_succAbove i, Fin.succAbove_ne]
 
 /-- **The Morse index at a coordinate point.** The Morse index of the weighted Rayleigh quotient at
 the coordinate point `[eᵢ]` is the number of weights below `w i`. -/
@@ -342,22 +318,14 @@ theorem manifoldMorseIndex_projectiveRayleighQuotient_mk_single (i : Fin (n + 1)
     fun_prop
   have hHcrit : fderiv ℝ H 0 = 0 :=
     (fderiv_sum_comp_eval_eq_zero_iff (φ := fun k s ↦ (w (i.succAbove k) - w i) * s ^ 2)
-      fun k ↦ (contDiffAt_sq_mul _ _).differentiableAt (by norm_num)).2 fun k ↦
-        deriv_sq_mul_zero _
-  -- Adding the constant `w i` does not change the Hessian.
-  have hconst : hessianQuadraticForm (fun _ : Fin n → ℝ ↦ w i) 0 = 0 := by
-    ext v
-    simp [hessianQuadraticForm_apply]
-  rw [projectiveRayleighQuotient_comp_affineChart_symm_eq, morseIndex_def,
-    show (fun z ↦ (∑ k, (w (i.succAbove k) - w i) * ballCoord z k ^ 2) + w i) =
-      H ∘ ballCoord + fun _ ↦ w i from rfl,
-    hessianQuadraticForm_add (hHd.comp 0 contDiff_ballCoord.contDiffAt) contDiffAt_const, hconst,
-    add_zero, ← morseIndex_def,
+      fun k ↦ (contDiffAt_sq_mul _ _).differentiableAt (by norm_num)).2 fun k ↦ by simp
+  rw [projectiveRayleighQuotient_comp_affineChart_symm_eq, ← hH, morseIndex_add_const,
     morseIndex_comp hHd contDiff_ballCoord.contDiffAt
       (by rw [ballCoord_zero]; exact hHcrit) isInvertible_fderiv_ballCoord_zero, ballCoord_zero,
     hH, morseIndex_sum_comp_eval (φ := fun k s ↦ (w (i.succAbove k) - w i) * s ^ 2)
       fun k ↦ contDiffAt_sq_mul _ _]
-  simp only [Pi.zero_apply, deriv_deriv_sq_mul_zero]
+  have hderiv (c : ℝ) : deriv (deriv fun s : ℝ ↦ c * s ^ 2) 0 = 2 * c := by simp [mul_comm]
+  simp only [Pi.zero_apply, hderiv]
   -- The negative weights are those of the coordinates `i.succAbove k` with weight below `w i`.
   have himage : {j | w j < w i} = i.succAbove '' {k | 2 * (w (i.succAbove k) - w i) < 0} := by
     ext j
@@ -424,19 +392,6 @@ theorem totalCriticalCount_projectiveRayleighQuotient (hw : Injective w) :
     ENat.card_eq_coe_fintype_card, Fintype.card_fin]
   norm_cast
 
-/-- For distinct weights, the number of weights below `w i` determines `i`. -/
-private theorem ncard_setOf_lt_injective (hw : Injective w) :
-    Injective fun i ↦ {j | w j < w i}.ncard := by
-  intro i i' h
-  by_contra hne
-  -- The set of weights below the larger of `w i`, `w i'` strictly contains the other set.
-  have key (a b : Fin (n + 1)) (hab : w a < w b) : {j | w j < w a}.ncard < {j | w j < w b}.ncard :=
-    ncard_lt_ncard ⟨fun j hj ↦ lt_trans hj hab, fun hsub ↦ lt_irrefl (w a) (hsub hab)⟩
-      (toFinite _)
-  rcases lt_or_gt_of_ne (hw.ne hne) with hlt | hlt
-  · exact (key i i' hlt).ne h
-  · exact (key i' i hlt).ne h.symm
-
 /-- **One critical point of each index.** For distinct weights the weighted Rayleigh quotient on
 `ℝℙⁿ` has exactly one critical point of each index `j ≤ n`, and none of larger index. -/
 theorem criticalCount_projectiveRayleighQuotient (hw : Injective w) (j : ℕ) :
@@ -450,7 +405,7 @@ theorem criticalCount_projectiveRayleighQuotient (hw : Injective w) (j : ℕ) :
   let R : Fin (n + 1) → Fin (n + 1) := fun i ↦ ⟨r i, hrlt i⟩
   have hR : Bijective R :=
     Finite.injective_iff_bijective.1 fun i i' h ↦
-      ncard_setOf_lt_injective hw (congrArg Fin.val h)
+      injective_ncard_setOf_lt hw (congrArg Fin.val h)
   have hset : {x ∈ criticalPoints 𝓘(ℝ, Fin n → ℝ) (projectiveRayleighQuotient w) |
       manifoldMorseIndex 𝓘(ℝ, Fin n → ℝ) (projectiveRayleighQuotient w) x = j} =
       (fun i ↦ mk ℝ (Pi.single i (1 : ℝ)) (Pi.single_ne_zero_iff.2 one_ne_zero)) ''
