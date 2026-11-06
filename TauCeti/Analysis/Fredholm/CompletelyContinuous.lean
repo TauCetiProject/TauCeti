@@ -89,8 +89,9 @@ theorem IsCompletelyContinuous.injective_one_sub_iff_surjective (hu : u.IsComple
     Function.Injective (1 - u : E →L[K] E) ↔ Function.Surjective (1 - u : E →L[K] E) := by
   obtain ⟨e, w, hw, he⟩ := TauCeti.exists_equiv_add_hasFiniteRange hu
   have hcoe : ⇑(1 - u : E →L[K] E) = ⇑((e.toLinearEquiv : E →ₗ[K] E) + w) := by
-    rw [← he, FunLike.coe_add, LinearMap.coe_add, ContinuousLinearEquiv.coe_coe,
-      LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, coe_coe]
+    rw [← he]
+    ext x
+    simp
   rw [hcoe]
   exact hw.injective_equiv_add_iff_surjective
 

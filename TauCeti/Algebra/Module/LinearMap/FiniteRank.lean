@@ -164,7 +164,8 @@ theorem HasFiniteRange.injective_one_add_iff_surjective {F : V →ₗ[K] V} (hF 
   have : Module.Finite K (range F) := Module.Finite.iff_fg.mpr hF
   have hmaps : ∀ r ∈ range F, (1 + F) r ∈ range F := fun r hr ↦
     (range F).add_mem hr (mem_range_self F r)
-  have hgv (a : range F) : ((1 + F).restrict hmaps a : V) = a + F a := rfl
+  have hgv (a : range F) : ((1 + F).restrict hmaps a : V) = a + F a := by
+    rw [coe_restrict_apply, LinearMap.add_apply, one_apply_eq_self]
   constructor
   · intro hinj y
     obtain ⟨⟨r, hr⟩, hgr⟩ := (LinearMap.injective_iff_surjective (f := (1 + F).restrict hmaps)).mp
