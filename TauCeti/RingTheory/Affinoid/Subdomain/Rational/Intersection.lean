@@ -71,6 +71,16 @@ variable {A : Type u} [NormedCommRing A] [NormedAlgebra K A]
   [IsUltrametricDist A] [CompleteSpace A]
   {m n : ℕ} {g g' : A} {f : Fin m → A} {f' : Fin n → A}
 
+omit [CompleteSpace A] in
+/-- The second denominator is a unit in the product-denominator intersection presentation. -/
+theorem isUnit_inter_secondDenominator
+    (hf : Ideal.span (insert g (Set.range f)) = ⊤)
+    (hf' : Ideal.span (insert g' (Set.range f')) = ⊤) :
+    IsUnit (algebraMap A (RationalFraction (g * g') (rationalInterNumerator g f g' f')) g') := by
+  apply isUnit_of_mul_isUnit_right (x := algebraMap A _ g)
+  rw [← map_mul]
+  exact isUnit_algebraMap (span_insert_rationalInterNumerator_eq_top hf hf')
+
 section Restriction
 
 variable {B : Type u} [CommRing B] [Algebra K B]
@@ -132,33 +142,49 @@ theorem interAlgEquiv_symm_interRestrict (b : B) :
       algebraMap B _ b := by
   rw [← interAlgEquiv_algebraMap, AlgEquiv.symm_apply_apply]
 
+include hA hB hf hf' in
+/-- The product denominator is a unit in the iterated fraction presentation. -/
+theorem isUnit_iterated_interDenominator :
+    IsUnit (algebraMap B (RationalFraction (φ g') (φ ∘ f')) (φ (g * g'))) := by
+  have hu := (isUnit_algebraMap (span_insert_rationalInterNumerator_eq_top hf hf')).map
+    (interAlgEquiv hA hB hf hf').symm
+  rwa [← interRestrict_apply hA hB hf hf', interAlgEquiv_symm_interRestrict] at hu
+
 /-- On the ratios in the second rational fraction, the comparison is division by the
-image of the second denominator in the intersection algebra. -/
+image of the second denominator in the intersection algebra. The inverse is taken in the
+unit group so simplification need not test whether a coefficient map reflects units. -/
 @[simp]
 theorem interAlgEquiv_ratio (i : Fin n) :
     interAlgEquiv hA hB hf hf' (ratio (φ g') (φ ∘ f') i) =
-      algebraMap A _ (f' i) *
-        Ring.inverse (algebraMap A
-          (RationalFraction (g * g') (rationalInterNumerator g f g' f')) g') := by
+      algebraMap A _ (f' i) * ↑((isUnit_inter_secondDenominator hf hf').unit⁻¹) := by
   have hfB : Ideal.span (insert (φ g') (Set.range (φ ∘ f'))) = ⊤ := by
     rw [Set.range_comp, ← Set.image_insert_eq, ← Ideal.map_span, hf', Ideal.map_top]
   rw [ratio_eq_algebraMap_mul_inverse hfB, map_mul,
     (isUnit_algebraMap hfB).map_ringInverse]
-  simp
+  simp only [interAlgEquiv_algebraMap, interRestrict_apply, Function.comp_apply]
+  have hu : IsUnit (algebraMap A
+      (RationalFraction (g * g') (rationalInterNumerator g f g' f')) g') :=
+    isUnit_inter_secondDenominator hf hf'
+  exact congrArg (algebraMap A _ (f' i) * ·) (Ring.inverse_of_isUnit hu)
 
 /-- The inverse sends each product numerator divided by `g g'` to the same expression
-in the iterated fraction algebra. This includes the redundant denominator numerator. -/
+in the iterated fraction algebra. This includes the redundant denominator numerator.
+As in the forward formula, use the inverse of the known unit rather than `Ring.inverse`. -/
 @[simp]
 theorem interAlgEquiv_symm_ratio (i : Fin ((m + 1) * (n + 1))) :
     (interAlgEquiv hA hB hf hf').symm (ratio (g * g') (rationalInterNumerator g f g' f') i) =
       algebraMap B _ (φ (rationalInterNumerator g f g' f' i)) *
-        Ring.inverse (algebraMap B (RationalFraction (φ g') (φ ∘ f')) (φ (g * g'))) := by
+        ↑((isUnit_iterated_interDenominator hA hB hf hf').unit⁻¹) := by
   have ha (a : A) : (interAlgEquiv hA hB hf hf').symm (algebraMap A _ a) =
       algebraMap B _ (φ a) := by
     rw [← interRestrict_apply hA hB hf hf', interAlgEquiv_symm_interRestrict]
   rw [ratio_eq_algebraMap_mul_inverse (span_insert_rationalInterNumerator_eq_top hf hf'),
     map_mul, (isUnit_algebraMap (span_insert_rationalInterNumerator_eq_top hf hf')).map_ringInverse,
     ha, ha]
+  have hu : IsUnit (algebraMap B (RationalFraction (φ g') (φ ∘ f')) (φ (g * g'))) :=
+    isUnit_iterated_interDenominator hA hB hf hf'
+  exact congrArg (algebraMap B _ (φ (rationalInterNumerator g f g' f' i)) * ·)
+    (Ring.inverse_of_isUnit hu)
 
 /-- The intersection comparison is a topological algebra isomorphism. The quotient norms
 are used only to apply automatic continuity; no isometry of presentation norms is claimed. -/
