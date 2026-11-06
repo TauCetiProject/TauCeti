@@ -961,7 +961,7 @@ private theorem exists_reverseRowInsert_of_isTableauRows {k : ℕ} {rows : List 
         rw [← hlast, sortedLE_append] at hs'
         exact fun z hz => hs'.2.2 z hz _ mem_cons_self
       refine ⟨row.length - 1, by omega, by simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?],
-        h.dropLastOfRow hk, ?_⟩
+        by rw [reverseRowInsert_zero_cons, ← dropLastOfRow_zero_cons]; exact h.dropLastOfRow hk, ?_⟩
       by_cases hd : row.dropLast = []
       · -- a one-cell first row at a corner is the whole tableau
         obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) hd
