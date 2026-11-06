@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.RingHoms
-public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.Rational
+import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.RepresentationTheory.Basic
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
@@ -48,8 +48,6 @@ integral equivalence because both modules are projective.
 * R. G. Swan, *Induced representations and projective modules*, Ann. of Math. 71 (1960).
 -/
 
-public section
-
 open scoped TensorProduct Pointwise MonoidAlgebra
 namespace TauCeti
 
@@ -59,21 +57,48 @@ attribute [local instance] padicReductionModule
 
 section Helpers
 
-/-- The `k[G]`-linear maps `M → S` are counted by the invariants of the conjugation
-representation on `Hom_k(M, S)`. -/
-private theorem natCard_linearMap_eq_natCard_invariants_linHom {k : Type*} [CommRing k] {G : Type*}
-    [Group G] (M S : Type*) [AddCommGroup M] [Module k M] [Module k[G] M]
-    [IsScalarTower k k[G] M] [AddCommGroup S] [Module k S] [Module k[G] S]
-    [IsScalarTower k k[G] S] :
-    Nat.card (M →ₗ[k[G]] S) = Nat.card (Representation.linHom
-      (Representation.ofModule' (k := k) (G := G) M)
-      (Representation.ofModule' (k := k) (G := G) S)).invariants :=
-  let ρ := Representation.ofModule' (k := k) (G := G) M
-  let σ := Representation.ofModule' (k := k) (G := G) S
-  (Nat.card_congr (((Representation.invariantsEquivIntertwiningMap ρ σ).trans
-    (Representation.IntertwiningMap.equivLinearMapAsModule ρ σ)).toAddEquiv.trans
-      ((TauCeti.Representation.ofModule'AsModuleEquiv (k := k) (G := G) M).arrowCongrAddEquiv
-        (TauCeti.Representation.ofModule'AsModuleEquiv (k := k) (G := G) S))).toEquiv).symm
+/-- The image of a monomial of the group algebra of a subgroup `C` in the group algebra of `G`. -/
+private theorem mapDomainAlgHom_single_subtype (R : Type*) [CommSemiring R] {G : Type*} [Group G]
+    (C : Subgroup G) (c : C) :
+    MonoidAlgebra.mapDomainAlgHom R R C.subtype (MonoidAlgebra.single c 1) =
+      MonoidAlgebra.single (c : G) 1 := by
+  rw [MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
+  rfl
+
+/-- Restricting a finitely generated projective `ℤ_p[G]`-module `X` to the group algebra of a
+subgroup `C` gives a finitely generated projective `ℤ_p[C]`-module on which `ℤ_p` and `ℤ_p[G]`
+act compatibly, for any `ℤ_p[C]`-module structures on `ℤ_p[G]` and `X` acting through
+`mapDomainRingHom`. -/
+private theorem restrictSubgroup_facts (p : ℕ) [Fact p.Prime] {G : Type*} [Group G] [Finite G]
+    (C : Subgroup G) [inst : Module (MonoidAlgebra ℤ_[p] C) (MonoidAlgebra ℤ_[p] G)]
+    (hA : ∀ (r : MonoidAlgebra ℤ_[p] C) (s : MonoidAlgebra ℤ_[p] G),
+      r • s = MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype r * s)
+    (X : Type*) [AddCommGroup X] [Module ℤ_[p] X] [Module (MonoidAlgebra ℤ_[p] G) X]
+    [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X] [Module.Finite (MonoidAlgebra ℤ_[p] G) X]
+    [Module.Projective (MonoidAlgebra ℤ_[p] G) X] [Module (MonoidAlgebra ℤ_[p] C) X]
+    (hX : ∀ (r : MonoidAlgebra ℤ_[p] C) (x : X),
+      r • x = MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype r • x) :
+    IsScalarTower (MonoidAlgebra ℤ_[p] C) (MonoidAlgebra ℤ_[p] G) (MonoidAlgebra ℤ_[p] G) ∧
+      IsScalarTower (MonoidAlgebra ℤ_[p] C) (MonoidAlgebra ℤ_[p] G) X ∧
+      IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] C) X ∧ Module.Finite (MonoidAlgebra ℤ_[p] C) X ∧
+      Module.Projective (MonoidAlgebra ℤ_[p] C) X := by
+  classical
+  let A := MonoidAlgebra ℤ_[p] G
+  let AC := MonoidAlgebra ℤ_[p] C
+  let φA : AC →ₐ[ℤ_[p]] A := MonoidAlgebra.mapDomainAlgHom ℤ_[p] ℤ_[p] C.subtype
+  obtain rfl : inst = (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule :=
+    Module.ext' _ _ hA
+  let _ : Module AC A := (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule
+  have hAA : IsScalarTower AC A A := ⟨fun r s t ↦ mul_assoc (φA r) s t⟩
+  let b := TauCeti.MonoidAlgebra.basisCosets ℤ_[p] C.subtype C.subtype_injective
+  have : Module.Free AC A := .of_basis b
+  have : Module.Finite AC A := .of_basis b
+  have hAX : IsScalarTower AC A X := ⟨fun r s x ↦ by
+    rw [hX r (s • x)]
+    exact mul_smul (φA r) s x⟩
+  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans A X, .trans (S := A)⟩
+  rw [hX (a • r) x, hX r x]
+  exact (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)
 
 /-- Projective `𝔽_p[G]`-representations that are the reductions of `ℤ_p[G]`-lattices with the same
 characters have equally many invariants: both counts are `p` to the rank of the invariants of the
@@ -119,22 +144,6 @@ private theorem natCard_invariants_eq_of_trace_eq (p : ℕ) [Fact p.Prime] {G : 
     LinearMap.trace_baseChange]
   exact congrArg _ (htr g)
 
-/-- An equivariant isomorphism `ρ ≅ ρ'` along `f : H →* G` induces an isomorphism of the
-conjugation representations `Hom_k(ρ, σ) ≅ Hom_k(ρ', σ)` restricted along `f`. -/
-private theorem nonempty_equiv_linHom_comp_of_equivariant {k : Type*} [CommRing k] {G H : Type*}
-    [Group G] [Group H] {V V' W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup V']
-    [Module k V'] [AddCommGroup W] [Module k W] (ρ : Representation k G V)
-    (ρ' : Representation k G V') (σ : Representation k G W) (f : H →* G) (e : V ≃ₗ[k] V')
-    (he : ∀ (h : H) (x : V), e (ρ (f h) x) = ρ' (f h) (e x)) :
-    Nonempty (_root_.Representation.Equiv ((Representation.linHom ρ σ).comp f)
-      ((Representation.linHom ρ' σ).comp f)) := by
-  refine ⟨.mk (LinearEquiv.congrLeft W k e) fun h ↦ ?_⟩
-  ext φ x
-  simp only [MonoidHom.coe_comp, Function.comp_apply, Representation.linHom_apply,
-    LinearMap.comp_apply]
-  refine congrArg (σ (f h)) (congrArg φ (e.injective ?_))
-  simpa [map_inv] using he h⁻¹ (e.symm x)
-
 /-- **Swan's theorem for a subgroup of order prime to `p`, modulo `p`.** If the rationalizations of
 two finitely generated projective `ℤ_p[G]`-modules `M` and `N` are isomorphic, then on a subgroup
 `C` of order prime to `p` the reductions `M / pM` and `N / pN` are isomorphic as
@@ -167,32 +176,21 @@ private theorem exists_linearEquiv_commute_reduction_of_not_dvd (p : ℕ) [Fact 
         Representation.ofModule' (k := ZMod p) (G := G) _ c (e x) := by
   classical
   let A := MonoidAlgebra ℤ_[p] G
-  let AC := MonoidAlgebra ℤ_[p] C
   let kC := MonoidAlgebra (ZMod p) C
-  let φA : AC →ₐ[ℤ_[p]] A := MonoidAlgebra.mapDomainAlgHom ℤ_[p] ℤ_[p] C.subtype
   let φk : kC →ₐ[ZMod p] MonoidAlgebra (ZMod p) G :=
     MonoidAlgebra.mapDomainAlgHom (ZMod p) (ZMod p) C.subtype
-  let _ : Module AC A := (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule
-  have : IsScalarTower AC A A := ⟨fun r s t ↦ mul_assoc (φA r) s t⟩
-  let b := TauCeti.MonoidAlgebra.basisCosets ℤ_[p] C.subtype C.subtype_injective
-  have : Module.Free AC A := .of_basis b
-  have : Module.Finite AC A := .of_basis b
   -- Restrict scalars of `M` and `N` to `ℤ_p[C]`.
-  let _ : Module AC M := .compHom M (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
-  let _ : Module AC N := .compHom N (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
-  have : IsScalarTower AC A M := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-  have : IsScalarTower AC A N := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-  have : IsScalarTower ℤ_[p] AC M :=
-    ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-  have : IsScalarTower ℤ_[p] AC N :=
-    ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-  have : Module.Finite AC M := .trans A M
-  have : Module.Finite AC N := .trans A N
-  have : Module.Projective AC M := .trans (S := A)
-  have : Module.Projective AC N := .trans (S := A)
+  let _ : Module (MonoidAlgebra ℤ_[p] C) A :=
+    (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule
+  let _ : Module (MonoidAlgebra ℤ_[p] C) M :=
+    .compHom M (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
+  let _ : Module (MonoidAlgebra ℤ_[p] C) N :=
+    .compHom N (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
+  obtain ⟨_, _, _, _, _⟩ := restrictSubgroup_facts p C (fun _ _ ↦ rfl) M fun _ _ ↦ rfl
+  obtain ⟨_, _, _, _, _⟩ := restrictSubgroup_facts p C (fun _ _ ↦ rfl) N fun _ _ ↦ rfl
   -- Swan's theorem for `C` identifies `M` and `N` over `ℤ_p[C]`, hence their reductions.
   obtain ⟨eMN⟩ := nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd p hC M N
-    (h.map fun e ↦ e.restrictScalars AC)
+    (h.map fun e ↦ e.restrictScalars (MonoidAlgebra ℤ_[p] C))
   let _ : Module kC (M ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A M)) :=
     .compHom _ (MonoidAlgebra.mapDomainRingHom (ZMod p) C.subtype)
   let _ : Module kC (N ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A N)) :=
@@ -207,9 +205,7 @@ private theorem exists_linearEquiv_commute_reduction_of_not_dvd (p : ℕ) [Fact 
       ((padicReductionCongr p C eMN).trans
         (padicReductionRestrictLinearEquiv p C C.subtype N (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)))
   refine ⟨e.restrictScalars (ZMod p), fun c hc x ↦ ?_⟩
-  have hφk : φk (MonoidAlgebra.single ⟨c, hc⟩ 1) = MonoidAlgebra.single c 1 := by
-    rw [MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
-    rfl
+  have hφk := mapDomainAlgHom_single_subtype (ZMod p) C ⟨c, hc⟩
   rw [TauCeti.Representation.ofModule'_apply, TauCeti.Representation.ofModule'_apply, ← hφk]
   -- `k[C]` acts on the reductions through `φk`.
   exact e.map_smul (MonoidAlgebra.single ⟨c, hc⟩ 1) x
@@ -245,25 +241,14 @@ private theorem trace_ofModule'_eq_of_equiv_comp (C : Subgroup G) {g : G} (hg : 
   let A := MonoidAlgebra ℤ_[p] G
   let AC := MonoidAlgebra ℤ_[p] C
   let kC := MonoidAlgebra (ZMod p) C
+  -- Restrict scalars of `X₁` and `X₂` to `ℤ_p[C]`.
   let φA : AC →ₐ[ℤ_[p]] A := MonoidAlgebra.mapDomainAlgHom ℤ_[p] ℤ_[p] C.subtype
   let _ : Module AC A := (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype).toModule
   have : IsScalarTower AC A A := ⟨fun r s t ↦ mul_assoc (φA r) s t⟩
-  let b := TauCeti.MonoidAlgebra.basisCosets ℤ_[p] C.subtype C.subtype_injective
-  have : Module.Free AC A := .of_basis b
-  have : Module.Finite AC A := .of_basis b
-  -- Restrict scalars of `X₁` and `X₂` to `ℤ_p[C]`.
   let _ : Module AC X₁ := .compHom X₁ (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
   let _ : Module AC X₂ := .compHom X₂ (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
-  have : IsScalarTower AC A X₁ := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-  have : IsScalarTower AC A X₂ := ⟨fun r s x ↦ mul_smul (φA r) s x⟩
-  have : IsScalarTower ℤ_[p] AC X₁ :=
-    ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-  have : IsScalarTower ℤ_[p] AC X₂ :=
-    ⟨fun a r x ↦ (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)⟩
-  have : Module.Finite AC X₁ := .trans A X₁
-  have : Module.Finite AC X₂ := .trans A X₂
-  have : Module.Projective AC X₁ := .trans (S := A)
-  have : Module.Projective AC X₂ := .trans (S := A)
+  obtain ⟨_, _, _, _, _⟩ := restrictSubgroup_facts p C (fun _ _ ↦ rfl) X₁ fun _ _ ↦ rfl
+  obtain ⟨_, _, _, _, _⟩ := restrictSubgroup_facts p C (fun _ _ ↦ rfl) X₂ fun _ _ ↦ rfl
   -- Transport `e` through the lifts to an isomorphism of the reductions over `C`.
   let Q₁ := X₁ ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A X₁)
   let Q₂ := X₂ ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A X₂)
@@ -282,8 +267,7 @@ private theorem trace_ofModule'_eq_of_equiv_comp (C : Subgroup G) {g : G} (hg : 
   obtain ⟨eX⟩ := nonempty_linearEquiv_of_projective_of_reduction p C X₁ X₂
     ⟨eRedC.restrictScalars AC⟩
   -- The `ℤ_p[C]`-linear isomorphism `eX` conjugates the action of `g ∈ C`.
-  have hφA : φA (MonoidAlgebra.single ⟨g, hg⟩ 1) = MonoidAlgebra.single g 1 :=
-    (MonoidAlgebra.mapDomain_single (f := C.subtype)).trans rfl
+  have hφA := mapDomainAlgHom_single_subtype ℤ_[p] C ⟨g, hg⟩
   have hconj : (eX.restrictScalars ℤ_[p]).conj (Representation.ofModule' X₁ g) =
       Representation.ofModule' X₂ g := LinearMap.ext fun x ↦ by
     rw [LinearEquiv.conj_apply_apply, TauCeti.Representation.ofModule'_apply,
@@ -293,10 +277,12 @@ private theorem trace_ofModule'_eq_of_equiv_comp (C : Subgroup G) {g : G} (hg : 
     exact (eX.map_smul _ _).trans (congrArg _ (eX.apply_symm_apply x))
   rw [← hconj, LinearMap.trace_conj']
 
-/-- **Equal characters from isomorphic restrictions to cyclic subgroups.** In the situation above,
-suppose `η₁` and `η₂` become isomorphic on the cyclic subgroup generated by every `p`-regular
-element. Then `X₁` and `X₂` have the same character: it vanishes at `p`-singular elements for
-projective modules, and at `p`-regular elements it is computed on the cyclic subgroup. -/
+/-- **Equal characters from isomorphic restrictions to cyclic subgroups.** Let `X₁` and `X₂` be
+finitely generated projective `ℤ_p[G]`-modules whose reductions modulo `p` are identified with
+`𝔽_p`-representations `η₁` and `η₂`. Suppose `η₁` and `η₂` become isomorphic on the cyclic
+subgroup generated by every `p`-regular element. Then `X₁` and `X₂` have the same character: it
+vanishes at `p`-singular elements for projective modules, and at `p`-regular elements it is
+computed on the cyclic subgroup. -/
 private theorem trace_ofModule'_eq_of_forall_equiv_comp_zpowers
     (hη : ∀ g : G, ¬p ∣ orderOf g → Nonempty (_root_.Representation.Equiv
       (η₁.comp (Subgroup.zpowers g).subtype) (η₂.comp (Subgroup.zpowers g).subtype)))
@@ -314,7 +300,7 @@ private theorem trace_ofModule'_eq_of_forall_equiv_comp_zpowers
 
 end Lift
 
-/-- **Counting maps to a simple module.** The reductions modulo `p` of two finitely generated
+/-- **Counting maps to a finite module.** The reductions modulo `p` of two finitely generated
 projective `ℤ_p[G]`-modules with isomorphic rationalizations have the same number of `𝔽_p[G]`-maps
 to every finite `𝔽_p[G]`-module `S`. Projective lifts turn these counts into invariant ranks of
 conjugation representations, which the characters of the lifts determine. -/
@@ -359,8 +345,8 @@ private theorem natCard_linearMap_reduction_eq_of_tensorRat (p : ℕ) [Fact p.Pr
   let _ : Module.Finite kG ρN.asModule := Module.Finite.equiv eN.symm
   let _ : Module.Projective kG ρM.asModule := Module.Projective.of_equiv' eM.symm
   let _ : Module.Projective kG ρN.asModule := Module.Projective.of_equiv' eN.symm
-  rw [natCard_linearMap_eq_natCard_invariants_linHom (k := ZMod p) M₀ S,
-    natCard_linearMap_eq_natCard_invariants_linHom (k := ZMod p) N₀ S]
+  rw [Representation.natCard_linearMap_eq_natCard_invariants_linHom (k := ZMod p) M₀ S,
+    Representation.natCard_linearMap_eq_natCard_invariants_linHom (k := ZMod p) N₀ S]
   -- Lift the conjugation representations to projective `ℤ_p[G]`-modules `XM` and `XN`.
   obtain ⟨_, XM, hXMf, hXMp, fM, hfM⟩ :=
     exists_projective_reduction_bijective_of_projective p G (Representation.linHom ρM σ).asModule
@@ -378,9 +364,11 @@ private theorem natCard_linearMap_reduction_eq_of_tensorRat (p : ℕ) [Fact p.Pr
     (trace_ofModule'_eq_of_forall_equiv_comp_zpowers p _ _ XM XN fM hfM fN hfN fun g hg ↦ ?_)
   obtain ⟨e, he⟩ := exists_linearEquiv_commute_reduction_of_not_dvd p (Subgroup.zpowers g)
     (by simpa only [Nat.card_zpowers] using hg) M N h
-  exact nonempty_equiv_linHom_comp_of_equivariant ρM ρN σ _ e fun c x ↦ he c c.2 x
+  exact Representation.nonempty_equiv_linHom_comp_of_equivariant ρM ρN σ _ e fun c x ↦ he c c.2 x
 
 end Helpers
+
+public section
 
 /-- **Swan's theorem for `ℤ_p[G]`** (NSW (5.6.10)(ii)). Two finitely generated projective
 `ℤ_p[G]`-modules with isomorphic rationalizations are isomorphic. -/
@@ -421,5 +409,7 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
   have := padicReduction_compatibleSMul_padicInt p G (padicReduction_smul p G M)
     (padicReduction_smul p G N)
   exact nonempty_linearEquiv_of_projective_of_reduction p G M N ⟨ered.restrictScalars A⟩
+
+end
 
 end TauCeti

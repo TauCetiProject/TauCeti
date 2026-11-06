@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.RepresentationTheory.Invariants
 import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.RepresentationTheory.AsModule
@@ -49,6 +50,11 @@ lifting to characteristic zero.
 * `Representation.instProjectiveAsModuleLinHom`: `Hom_k(V, W)` is a projective `k[G]`-module.
 * `Representation.instFiniteAsModuleLinHom`: `Hom_k(V, W)` is a finitely generated
   `k[G]`-module when `V` is finite projective and `W` is finite over `k`.
+* `Representation.natCard_linearMap_eq_natCard_invariants_linHom`: the `k[G]`-linear maps `M → S`
+  are counted by the invariants of the conjugation representation on `Hom_k(M, S)`.
+* `Representation.nonempty_equiv_linHom_comp_of_equivariant`: an equivariant isomorphism
+  `ρ ≅ ρ'` along a group homomorphism `f : H →* G` induces an isomorphism of the restricted
+  conjugation representations `Hom_k(ρ, σ) ≅ Hom_k(ρ', σ)`.
 
 ## References
 
@@ -178,5 +184,41 @@ instance instProjectiveAsModuleLinHom [Module.Finite k[G] ρ.asModule]
   have : Module.Projective k[G] (Fin n → (linHom (leftRegular k G) σ).asModule) :=
     .of_equiv' DFinsupp.linearEquivFunOnFintype
   exact .of_split i s h
+
+section Invariants
+
+/-- The `k[G]`-linear maps `M → S` are counted by the invariants of the conjugation
+representation on `Hom_k(M, S)`. -/
+theorem natCard_linearMap_eq_natCard_invariants_linHom {k : Type*} [CommRing k] {G : Type*}
+    [Group G] (M S : Type*) [AddCommGroup M] [Module k M] [Module k[G] M]
+    [IsScalarTower k k[G] M] [AddCommGroup S] [Module k S] [Module k[G] S]
+    [IsScalarTower k k[G] S] :
+    Nat.card (M →ₗ[k[G]] S) = Nat.card (Representation.invariants (linHom
+      (Representation.ofModule' (k := k) (G := G) M)
+      (Representation.ofModule' (k := k) (G := G) S))) :=
+  let ρ := Representation.ofModule' (k := k) (G := G) M
+  let σ := Representation.ofModule' (k := k) (G := G) S
+  (Nat.card_congr (((Representation.invariantsEquivIntertwiningMap ρ σ).trans
+    (Representation.IntertwiningMap.equivLinearMapAsModule ρ σ)).toAddEquiv.trans
+      ((TauCeti.Representation.ofModule'AsModuleEquiv (k := k) (G := G) M).arrowCongrAddEquiv
+        (TauCeti.Representation.ofModule'AsModuleEquiv (k := k) (G := G) S))).toEquiv).symm
+
+/-- An equivariant isomorphism `ρ ≅ ρ'` along `f : H →* G` induces an isomorphism of the
+conjugation representations `Hom_k(ρ, σ) ≅ Hom_k(ρ', σ)` restricted along `f`. -/
+theorem nonempty_equiv_linHom_comp_of_equivariant {k : Type*} [CommRing k] {G H : Type*}
+    [Group G] [Group H] {V V' W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup V']
+    [Module k V'] [AddCommGroup W] [Module k W] (ρ : Representation k G V)
+    (ρ' : Representation k G V') (σ : Representation k G W) (f : H →* G) (e : V ≃ₗ[k] V')
+    (he : ∀ (h : H) (x : V), e (ρ (f h) x) = ρ' (f h) (e x)) :
+    Nonempty (Representation.Equiv ((Representation.linHom ρ σ).comp f)
+      ((Representation.linHom ρ' σ).comp f)) := by
+  refine ⟨.mk (LinearEquiv.congrLeft W k e) fun h ↦ ?_⟩
+  ext φ x
+  simp only [MonoidHom.coe_comp, Function.comp_apply, Representation.linHom_apply,
+    LinearMap.comp_apply]
+  refine congrArg (σ (f h)) (congrArg φ (e.injective ?_))
+  simpa [map_inv] using he h⁻¹ (e.symm x)
+
+end Invariants
 
 end Representation
