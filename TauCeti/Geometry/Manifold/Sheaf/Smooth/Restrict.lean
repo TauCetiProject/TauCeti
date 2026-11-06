@@ -125,6 +125,7 @@ def restrictIso (U : Opens (TopCat.of M)) :
     (fun V ↦ (sectionsRingEquiv IM I R V.unop).toRingCatIso) (fun _ ↦ rfl)
 
 /-- The restriction isomorphism evaluates a section at the corresponding point of `M`. -/
+@[simp]
 theorem restrictIso_hom_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     (f : C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, R⟯) (x : V) :
     DFunLike.coe (F := C^∞⟮IM, V; I, R⟯) ((restrictIso IM I R U).hom.hom.app (op V) f) x =
@@ -133,6 +134,7 @@ theorem restrictIso_hom_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
 
 /-- The inverse of the restriction isomorphism evaluates a section at the corresponding point
 of `V`. -/
+@[simp]
 theorem restrictIso_inv_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     (g : C^∞⟮IM, V; I, R⟯) (x : V) :
     DFunLike.coe (F := C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, R⟯)
@@ -147,6 +149,7 @@ def overIso (U : Opens (TopCat.of M)) :
 
 /-- Over each open subset of `U`, the comparison for the over site is the restriction
 isomorphism. -/
+@[simp]
 theorem overIso_hom_app (U : Opens (TopCat.of M)) (V : Opens U) :
     (overIso IM I R U).hom.hom.app (op V) = (restrictIso IM I R U).hom.hom.app (op V) :=
   (rfl)
@@ -162,7 +165,7 @@ def stalkIso (U : Opens (TopCat.of M)) (x : U) :
 
 /-- The stalk comparison sends the germ of a smooth function on an open subset `V` of `U` to the
 germ of the corresponding smooth function on the image of `V` in `M`. -/
-@[reassoc, elementwise]
+@[simp, reassoc (attr := simp), elementwise (attr := simp)]
 theorem germ_stalkIso_hom (U : Opens (TopCat.of M)) (V : Opens U) (x : U) (hx : x ∈ V) :
     (smoothSheafRing IM I U R).presheaf.germ V x hx ≫ (stalkIso IM I R U x).hom =
       (restrictIso IM I R U).inv.hom.app (op V) ≫
