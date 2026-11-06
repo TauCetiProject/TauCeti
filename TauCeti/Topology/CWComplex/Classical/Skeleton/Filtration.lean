@@ -46,13 +46,41 @@ negative stages are empty (`TauCeti.skeletalFiltration_eq_empty`). -/
 def skeletalFiltration (q : ℤ) : Set Y :=
   p ⁻¹' (skeletonLT C (q + 1).toNat : Set B)
 
+/-- The defining equality of the skeletal filtration at an arbitrary integer stage. -/
+lemma skeletalFiltration_def (q : ℤ) :
+    skeletalFiltration C p q = p ⁻¹' (skeletonLT C (q + 1).toNat : Set B) :=
+  (rfl)
+
+/-- Membership in the skeletal filtration at an arbitrary integer stage. -/
+@[simp]
+lemma mem_skeletalFiltration_iff {q : ℤ} {y : Y} :
+    y ∈ skeletalFiltration C p q ↔ p y ∈ skeletonLT C (q + 1).toNat :=
+  (Iff.rfl)
+
 /-- The stage `n ≥ 0` of the skeletal filtration is the preimage of the `n`-skeleton. -/
 @[simp]
 lemma skeletalFiltration_natCast (n : ℕ) :
     skeletalFiltration C p n = p ⁻¹' (skeleton C n : Set B) := by
   simp [skeletalFiltration, skeleton]
 
+/-- The stage `0` of the skeletal filtration is the preimage of the `0`-skeleton. -/
+@[simp]
+lemma skeletalFiltration_zero : skeletalFiltration C p 0 = p ⁻¹' (skeleton C 0 : Set B) := by
+  simpa using skeletalFiltration_natCast C p 0
+
+/-- The stage `1` of the skeletal filtration is the preimage of the `1`-skeleton. -/
+@[simp]
+lemma skeletalFiltration_one : skeletalFiltration C p 1 = p ⁻¹' (skeleton C 1 : Set B) := by
+  simpa using skeletalFiltration_natCast C p 1
+
+/-- A numeral stage of the skeletal filtration is the preimage of the corresponding skeleton. -/
+@[simp]
+lemma skeletalFiltration_ofNat (n : ℕ) [n.AtLeastTwo] :
+    skeletalFiltration C p ofNat(n) = p ⁻¹' (skeleton C ofNat(n) : Set B) :=
+  skeletalFiltration_natCast C p n
+
 /-- The negative stages of the skeletal filtration are the preimage of the base. -/
+@[simp]
 lemma skeletalFiltration_of_neg {q : ℤ} (hq : q < 0) : skeletalFiltration C p q = p ⁻¹' D := by
   rw [skeletalFiltration, Int.toNat_of_nonpos (by lia), Nat.cast_zero, skeletonLT_zero_eq_base]
 
