@@ -412,15 +412,15 @@ private theorem irreducible_map_dehomogenize_two (hG : G.IsHomogeneous d)
   rw [aeval_dehomogenize, insertNth_two, h, aeval_C] at hxy
   exact hc.ne_zero ((map_eq_zero_iff _ (algebraMap k F).injective).mp hxy.symm)
 
-/-- The sheared and normalized affine equation `g' = G(X₀ + c X₁, X₁, X₂) / G(c, 1, 0)` of a smooth
-projective plane curve with a point `(x : y : 1)` is irreducible of total degree `d` with the
-coefficient of `Y^d` equal to `1`, and is smooth in both affine charts. -/
+/-- For `G(c, 1, 0) ≠ 0`, the sheared and normalized affine equation
+`g' = G(X₀ + c X₁, X₁, 1) / G(c, 1, 0)` of a smooth projective plane curve with a point
+`(x : y : 1)` is irreducible of total degree `d` with the coefficient of `Y^d` equal to `1`, and is
+smooth in both affine charts. -/
 private theorem exists_sheared_dehomogenize (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
     {x y : F} (h : aeval ![x, y, 1] G = 0) {c : k} (hc : eval ![c, 1, 0] G ≠ 0) :
-    ∃ g' : MvPolynomial (Fin 2) k,
-      g' = dehomogenize 2 (C (eval ![c, 1, 0] G)⁻¹ * linearSubst (shear c) G) ∧
-      Irreducible g' ∧ g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 ∧ g'.totalDegree = d ∧
+    let g' := dehomogenize 2 (C (eval ![c, 1, 0] G)⁻¹ * linearSubst (shear c) G)
+    Irreducible g' ∧ g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 ∧ g'.totalDegree = d ∧
       Ideal.span {g', pderiv 0 g', pderiv 1 g'} = ⊤ ∧
       Ideal.span {g'.inftyChart g'.totalDegree, pderiv 0 (g'.inftyChart g'.totalDegree),
         pderiv 1 (g'.inftyChart g'.totalDegree)} = ⊤ := by
@@ -465,29 +465,7 @@ private theorem exists_sheared_dehomogenize (hG : G.IsHomogeneous d)
   have hsmI := span_inftyChart_pderiv_eq_top hG' hsm'
   rw [← hg'_def] at hsmA hsmI
   rw [← hdeg'] at hsmI
-  exact ⟨g', hg'_def, hirr', hlead, hdeg', hsmA, hsmI⟩
-
-/-- If a root `(u, y)` of a monic (in `Y`) plane equation `g'` has `u = x - c y`, and `x` is
-transcendental over `k`, then `u` is transcendental over `k`: otherwise `y`, a root of the monic
-`g'(u, Y)`, would be algebraic over `k(u)`, hence over `k`, and so would `x = u + c y`. -/
-theorem transcendental_sub_mul_of_aeval_eq_zero {x y : F} (hx : Transcendental k x) (c : k)
-    {g' : MvPolynomial (Fin 2) k} (hlead : g'.coeff (Finsupp.single 1 g'.totalDegree) = 1)
-    (hroot : aeval ![x - algebraMap k F c * y, y] g' = 0) :
-    Transcendental k (x - algebraMap k F c * y) := by
-  set u := x - algebraMap k F c * y with hu_def
-  have hxu : u + algebraMap k F c * y = x := by rw [hu_def]; ring
-  intro hua
-  have := IntermediateField.isAlgebraic_adjoin_simple hua.isIntegral
-  have hdegL : (g'.map (algebraMap k k⟮u⟯)).totalDegree ≤ g'.totalDegree :=
-    Finset.sup_mono (support_map_subset _ _)
-  have hmonL := Polynomial.Bivariate.monic_equivMvPolynomial_symm hdegL
-    (by rw [coeff_map, hlead, map_one])
-  have hyL : IsAlgebraic k⟮u⟯ y :=
-    Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero
-      (a := IntermediateField.AdjoinSimple.gen k u) (hmonL.map _).ne_zero
-      (by rw [IntermediateField.AdjoinSimple.algebraMap_gen, aeval_map_algebraMap]; exact hroot)
-  exact hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul
-    (hyL.restrictScalars_of_isIntegral k)))
+  exact ⟨hirr', hlead, hdeg', hsmA, hsmI⟩
 
 /-- **The projected equation of a smooth projective plane curve**: under the hypotheses of
 `TauCeti.genus_eq_of_isHomogeneous_of_lt_card`, some `c ∈ k` with `G(c, 1, 0) ≠ 0` makes
@@ -530,10 +508,10 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
     simpa using RingHom.mem_ker.mp (hle (Submodule.mem_top (x := 1)))
   obtain ⟨c, hc, hcab⟩ := exists_eval_ne_zero_and_mul_add_ne_zero hG
     (aeval_X_one_zero_ne_zero (K := K) hG hsm h) hcard hab
-  obtain ⟨g', hg'_def, hirr', hlead, hdeg', hsmA, hsmI⟩ :=
-    exists_sheared_dehomogenize hG hsm h hc
+  obtain ⟨hirr', hlead, hdeg', hsmA, hsmI⟩ := exists_sheared_dehomogenize hG hsm h hc
   set μ := (eval ![c, 1, 0] G)⁻¹ with hμ
   have hμ0 : μ ≠ 0 := inv_ne_zero hc
+  set g' := dehomogenize 2 (C μ * linearSubst (shear c) G) with hg'_def
   -- The projection from `(c : 1 : 0)` is `u = x - c y`.
   set u := x - algebraMap k F c * y with hu_def
   have hxu : u + algebraMap k F c * y = x := by rw [hu_def]; ring
@@ -550,8 +528,11 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
     rw [aeval_linearSubst_shear, aeval_linearSubst_shear, aeval_linearSubst_shear]
     simp [shear, hxu, ha_def, hb_def]
   have hroot : aeval ![u, y] g' = 0 := by rw [heval, hxu, h, mul_zero]
-  exact ⟨c, g', hc, transcendental_sub_mul_of_aeval_eq_zero hx c hlead hroot, hirr', hlead, hdeg',
-    hsmA, hsmI, hroot,
+  -- If `u` were algebraic, so would be `y` (a root of the monic `g'(u, Y)`) and `x = u + c y`.
+  have hu : Transcendental k u := fun hua ↦
+    hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul
+      (Polynomial.Bivariate.isAlgebraic_of_isAlgebraic_of_aeval_eq_zero hlead hroot hua)))
+  exact ⟨c, g', hc, hu, hirr', hlead, hdeg', hsmA, hsmI, hroot,
     hpd ▸ mul_ne_zero ((map_ne_zero _).mpr hμ0) hcab⟩
 
 /-- **A separating projection of a smooth projective plane curve**: let `G ∈ k[X₀, X₁, X₂]` be
