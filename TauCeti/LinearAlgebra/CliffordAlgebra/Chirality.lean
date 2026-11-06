@@ -340,6 +340,41 @@ private theorem basis_frame_mul_ι_of_notMem (s : powersetCard (Fin 4) 2) {i : F
     powersetCard.mem_iff.1 s.2]
   simp
 
+/-- `e_t` commutes with `e_s` when `s` and `t` are disjoint, since each generator of `e_t` is
+absent from `s`. -/
+private theorem basis_frame_mul_comm_of_disjoint {s t : powersetCard (Fin 4) 2}
+    (hdisj : Disjoint s.val t.val) :
+    basis Q (frame o).toBasis t * basis Q (frame o).toBasis s =
+      basis Q (frame o).toBasis s * basis Q (frame o).toBasis t := by
+  obtain ⟨k, l, hmem, ht⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
+  rw [OrthonormalBasis.coe_toBasis] at ht
+  have hk : k ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem k).2 (Or.inl rfl))
+  have hl : l ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem l).2 (Or.inr rfl))
+  rw [ht, mul_assoc, ← basis_frame_mul_ι_of_notMem o hQ s hl, ← mul_assoc,
+    ← basis_frame_mul_ι_of_notMem o hQ s hk, mul_assoc]
+
+/-- `e_s` anticommutes with `e_t` when `t` shares exactly one index with `s`. -/
+private theorem basis_frame_mul_anticomm_of_one_shared {s t : powersetCard (Fin 4) 2}
+    (hts : ¬ t.val ⊆ s.val) (hdisj : ¬ Disjoint s.val t.val) :
+    basis Q (frame o).toBasis s * basis Q (frame o).toBasis t =
+      -(basis Q (frame o).toBasis t * basis Q (frame o).toBasis s) := by
+  obtain ⟨k, l, hmem, ht⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
+  rw [OrthonormalBasis.coe_toBasis] at ht
+  -- `t` shares exactly one index `i` with `s`; let `j` be the other one. Then `e_s` anticommutes
+  -- with `c(e_i)` and commutes with `c(e_j)`, so it anticommutes with `e_t`.
+  obtain ⟨j, hjt, hjs⟩ := Finset.not_subset.1 hts
+  obtain ⟨i, his, hit⟩ := Finset.not_disjoint_iff.1 hdisj
+  have hi : SemiconjBy (basis Q (frame o).toBasis s) (ι Q (frame o i)) (-ι Q (frame o i)) := by
+    rw [SemiconjBy, basis_frame_mul_ι_of_mem o hQ s his, neg_mul]
+  have hj : SemiconjBy (basis Q (frame o).toBasis s) (ι Q (frame o j)) (ι Q (frame o j)) :=
+    basis_frame_mul_ι_of_notMem o hQ s hjs
+  rw [ht]
+  rcases (hmem i).1 hit with rfl | rfl <;> rcases (hmem j).1 hjt with rfl | rfl
+  · exact absurd his hjs
+  · rw [(hi.mul_right hj).eq, neg_mul, neg_mul]
+  · rw [(hj.mul_right hi).eq, mul_neg, neg_mul]
+  · exact absurd his hjs
+
 /-- The anticommutator formula on the orthonormal basis `e_s` of `⋀² V` induced by the frame. -/
 private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V)
     (s t : powersetCard (Fin 4) 2) :
@@ -357,57 +392,39 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
     ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, (frame o).inner_toBasis_exteriorPower,
     (frame o).inner_toBasis_exteriorPower, bivectorExterior_exteriorPower_basis,
     bivectorExterior_exteriorPower_basis]
-  -- Write `e_t = c(e_k) c(e_l)`, where `t = {k, l}`.
-  obtain ⟨k, l, hmem, ht⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
-  rw [OrthonormalBasis.coe_toBasis] at ht
-  set A := basis Q (frame o).toBasis s
   by_cases hts : t.val ⊆ s.val
   · -- `t ⊆ s`, so `t = s` and `e_s² = -1`.
     have hts : t = s := Subtype.ext <| Finset.eq_of_subset_of_card_le hts
       (by rw [powersetCard.mem_iff.1 s.2, powersetCard.mem_iff.1 t.2])
     subst hts
+    obtain ⟨k, l, hmem, -⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
     have hk : k ∈ t.val := (hmem k).2 (Or.inl rfl)
     have hne : powersetCard.compl hcard t ≠ t := fun h ↦ by
       have hk' : k ∈ powersetCard.compl hcard t := by rw [h]; exact hk
       exact powersetCard.mem_compl.1 hk' hk
-    have hAA : A * A = -1 := by
+    have hAA : basis Q (frame o).toBasis t * basis Q (frame o).toBasis t = -1 := by
       rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 t.2]
       norm_num
     rw [ite_eq_left rfl, ite_eq_right hne, hAA, Algebra.algebraMap_eq_smul_one]
     module
   by_cases hdisj : Disjoint s.val t.val
   · -- `t` is disjoint from `s`, so `t = sᶜ`, and `e_s` commutes with `e_t`.
+    obtain ⟨k, l, hmem, -⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
     have hk : k ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem k).2 (Or.inl rfl))
-    have hl : l ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem l).2 (Or.inr rfl))
     have hst : s ≠ t := fun h ↦ hk (h ▸ (hmem k).2 (Or.inl rfl))
     have hct : t = powersetCard.compl hcard s :=
       (powersetCard.disjoint_iff_eq_compl hcard).1 hdisj.symm
-    have h : basis Q (frame o).toBasis t * A = A * basis Q (frame o).toBasis t := by
-      rw [ht, mul_assoc, ← basis_frame_mul_ι_of_notMem o hQ s hl, ← mul_assoc,
-        ← basis_frame_mul_ι_of_notMem o hQ s hk, mul_assoc]
-    rw [ite_eq_right hst, ite_eq_left hct.symm, h, hct, basis_mul_basis_compl o hQ hcard s,
-      Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
+    rw [ite_eq_right hst, ite_eq_left hct.symm, basis_frame_mul_comm_of_disjoint o hQ hdisj, hct,
+      basis_mul_basis_compl o hQ hcard s, Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
     simp only [mul_zero, map_zero, zero_sub, mul_one, smul_neg]
     module
-  -- `t` shares exactly one index `i` with `s`; let `j` be the other one. Then `e_s` anticommutes
-  -- with `c(e_i)` and commutes with `c(e_j)`, so it anticommutes with `e_t`.
+  -- `t` shares exactly one index with `s`, so `e_s` anticommutes with `e_t`.
   obtain ⟨j, hjt, hjs⟩ := Finset.not_subset.1 hts
   obtain ⟨i, his, hit⟩ := Finset.not_disjoint_iff.1 hdisj
   have hst : s ≠ t := fun h ↦ hjs (h ▸ hjt)
   have hct : powersetCard.compl hcard s ≠ t := fun h ↦
     powersetCard.mem_compl.1 (h ▸ hit : i ∈ powersetCard.compl hcard s) his
-  have hi : SemiconjBy A (ι Q (frame o i)) (-ι Q (frame o i)) := by
-    rw [SemiconjBy, basis_frame_mul_ι_of_mem o hQ s his, neg_mul]
-  have hj : SemiconjBy A (ι Q (frame o j)) (ι Q (frame o j)) :=
-    basis_frame_mul_ι_of_notMem o hQ s hjs
-  have h : A * basis Q (frame o).toBasis t = -(basis Q (frame o).toBasis t * A) := by
-    rw [ht]
-    rcases (hmem i).1 hit with rfl | rfl <;> rcases (hmem j).1 hjt with rfl | rfl
-    · exact absurd his hjs
-    · rw [(hi.mul_right hj).eq, neg_mul, neg_mul]
-    · rw [(hj.mul_right hi).eq, mul_neg, neg_mul]
-    · exact absurd his hjs
-  rw [ite_eq_right hst, ite_eq_right hct, h]
+  rw [ite_eq_right hst, ite_eq_right hct, basis_frame_mul_anticomm_of_one_shared o hQ hts hdisj]
   simp
 
 /-- **The anticommutator of two two-forms** in the Clifford algebra of an oriented four-space:

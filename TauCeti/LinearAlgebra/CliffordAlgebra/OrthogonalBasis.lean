@@ -48,8 +48,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
-* `CliffordAlgebra.exists_basis_eq_ι_mul`: for an orthogonal basis, the basis vector indexed by a
-  two-element set `{k, l}` is `ι Q (b k) * ι Q (b l)`.
+* `CliffordAlgebra.exists_basis_eq_ι_mul`: for an orthogonal basis, a two-element index set `s` can
+  be written `{k, l}` so that the basis vector indexed by `s` is `ι Q (b k) * ι Q (b l)`.
 * `CliffordAlgebra.involute_basis` and `CliffordAlgebra.basis_repr_involute`: for an orthogonal
   basis, the grade involution acts on `e_s` and on the coordinate at `s` by `(-1) ^ |s|`.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
