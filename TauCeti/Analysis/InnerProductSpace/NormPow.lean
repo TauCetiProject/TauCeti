@@ -75,35 +75,6 @@ open scoped RealInnerProductSpace ContDiff Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
--- Scaling the actual punctured jets gives an operator-norm identity.
-private theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → ℝ} {p : ℝ} {j : ℕ}
-    (hf : ContDiffOn ℝ j f {0}ᶜ)
-    (hhom : ∀ t : ℝ, 0 < t → ∀ x, f (t • x) = t ^ p • f x)
-    {t : ℝ} (ht : 0 < t) {x : E} (hx : x ≠ 0) :
-    ‖iteratedFDeriv ℝ j f (t • x)‖ = t ^ (p - j) * ‖iteratedFDeriv ℝ j f x‖ := by
-  let S : E →L[ℝ] E := t • ContinuousLinearMap.id ℝ E
-  have hS : S ⁻¹' ({0}ᶜ : Set E) = {0}ᶜ := by
-    ext y
-    simp [S, ht.ne']
-  have htx : S x ∈ ({0}ᶜ : Set E) := smul_ne_zero ht.ne' hx
-  have hcomp : f ∘ S = t ^ p • f := funext (hhom t ht)
-  have hkey := S.iteratedFDerivWithin_comp_right hf isOpen_compl_singleton.uniqueDiffOn
-    (by rw [hS]; exact isOpen_compl_singleton.uniqueDiffOn) htx le_rfl
-  rw [hS, iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton hx,
-    iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton htx, hcomp,
-    iteratedFDeriv_const_smul_apply (hf.contDiffAt (isOpen_compl_singleton.mem_nhds hx))] at hkey
-  have heq : (t ^ j) • iteratedFDeriv ℝ j f (t • x) = t ^ p • iteratedFDeriv ℝ j f x := by
-    ext v
-    have h := congrArg (fun A ↦ A v) hkey
-    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, S,
-      ContinuousMultilinearMap.map_smul_univ] using h.symm
-  have hn := congrArg norm heq
-  simp only [norm_smul, Real.norm_of_nonneg (pow_nonneg ht.le _),
-    Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)] at hn
-  rw [Real.rpow_sub ht, Real.rpow_natCast]
-  field_simp
-  nlinarith [hn]
-
 -- Hyperplane reflection identifies equal-radius jets without compactness of the sphere.
 private theorem norm_iteratedFDeriv_eq_of_norm_eq
     (p : ℝ) (j : ℕ) {x y : E} (hxy : ‖x‖ = ‖y‖) :
