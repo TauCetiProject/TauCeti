@@ -156,6 +156,22 @@ theorem coe_symm_blockQuotient_σinf (i : Fin m) :
       t.σinf '' (e.symm i : Set (Fin n)) := by
   simp [orbit.coe_smul, ← Set.image_smul, Subgroup.smul_def, Perm.smul_def]
 
+/-- A quotient by two translates in which neither `t.σ0` nor `t.σ1` maps `B` to itself is, for
+any numbering of the translates, the triple with components `(0 1)`, `(0 1)`, `1`: the double
+cover of the sphere branched over `0` and `1` only. -/
+theorem blockQuotient_eq_ofTwo_swap (e : orbit t.monodromyGroup B ≃ Fin 2)
+    (h0 : t.σ0 '' B ≠ B) (h1 : t.σ1 '' B ≠ B) :
+    t.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
+  have hperm : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
+  have hB : B ∈ orbit t.monodromyGroup B := mem_orbit_self _
+  refine ext_of_two (hperm _ fun h ↦ h0 ?_) (hperm _ fun h ↦ h1 ?_)
+  · have h' := t.coe_symm_blockQuotient_σ0 B e (e ⟨B, hB⟩)
+    rw [h, Perm.one_apply, symm_apply_apply] at h'
+    exact h'.symm
+  · have h' := t.coe_symm_blockQuotient_σ1 B e (e ⟨B, hB⟩)
+    rw [h, Perm.one_apply, symm_apply_apply] at h'
+    exact h'.symm
+
 /-- The monodromy group of the quotient is the image of the monodromy group of `t` acting on
 the translates of `B`. -/
 theorem monodromyGroup_blockQuotient :
