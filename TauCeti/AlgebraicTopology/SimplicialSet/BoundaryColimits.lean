@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
+public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
 
 /-!
 # The boundary of a standard simplex as a colimit
@@ -28,6 +29,8 @@ This is the analogue for boundaries of Mathlib's description of horns in
 * `SSet.boundary.IsCompatible.of_hom`: the faces of a map `∂Δ[n + 1] ⟶ X` are compatible.
 * `SSet.boundary.eq_ι_comp_iff`: a map `∂Δ[n + 1] ⟶ X` is the restriction of a simplex `σ`
   exactly when its faces are the faces of `σ`.
+* `SSet.boundary.tensor_hom_ext`: a map `∂Δ[n + 1] ⊗ Z ⟶ X` is determined by its restrictions
+  to the products `Δ[n] ⊗ Z` of the faces with `Z`.
 -/
 
 public section
@@ -161,6 +164,19 @@ lemma eq_ι_comp_iff (σ₀ : (∂Δ[n + 1] : SSet) ⟶ X) (σ : Δ[n + 1] ⟶ X
   · rintro rfl j
     rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp]
   · rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp, h]
+
+open MonoidalCategory MonoidalClosed in
+/-- A map `∂Δ[n + 1] ⊗ Z ⟶ X` is determined by its restrictions to the products `Δ[n] ⊗ Z` of
+the faces of the boundary with `Z`: the product with `Z` preserves the colimit expressing
+`∂Δ[n + 1]` as the gluing of its faces. -/
+lemma tensor_hom_ext {Z : SSet.{u}} {f g : (∂Δ[n + 1] : SSet) ⊗ Z ⟶ X}
+    (h : ∀ j : Fin (n + 2), ι j ▷ Z ≫ f = ι j ▷ Z ≫ g) : f = g := by
+  -- Curry along the boundary factor and use that maps out of `∂Δ[n + 1]` are determined by
+  -- their faces.
+  rw [← cancel_epi (β_ Z (∂Δ[n + 1] : SSet)).hom]
+  refine curry_injective (hom_ext fun j ↦ ?_)
+  rw [← curry_natural_left, ← curry_natural_left, BraidedCategory.braiding_naturality_right_assoc,
+    BraidedCategory.braiding_naturality_right_assoc, h j]
 
 end boundary
 

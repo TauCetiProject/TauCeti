@@ -33,7 +33,9 @@ it is a Kan complex. For `p = 𝟙 B` there is exactly one functor over `f`, and
 ## Main definitions
 
 * `SSet.ihomObjEquiv`: the `n`-simplices of `K ⟶[SSet] X` are the maps `K ⊗ Δ[n] ⟶ X`.
-* `SSet.ihomObj₀Equiv`: the vertices of `K ⟶[SSet] X` are the maps `K ⟶ X`.
+* `SSet.ihomObj₀Equiv`: the vertices of `K ⟶[SSet] X` are the maps `K ⟶ X`; the vertex which a
+  curried map `curry g` assigns to a vertex `z` is the restriction of `g` to `K ⊗ {z}`
+  (`SSet.ihomObj₀Equiv_curry_app`).
 * `SSet.ihomOver p f`: the simplicial set `Fun_B(K, E)` of functors over `f`.
 * `SSet.coherentSections p`: the simplicial set of sections of `p`.
 
@@ -125,6 +127,16 @@ lemma ihomObj₀Equiv_ihom_map_app (g : X ⟶ Y) (x : ((ihom K).obj X) _⦋0⦌)
     ihomObj₀Equiv K Y (((ihom K).map g).app _ x) = ihomObj₀Equiv K X x ≫ g := by
   rw [← cancel_epi (fst K Δ[0]), fst_comp_ihomObj₀Equiv, fst_comp_ihomObj₀Equiv_assoc,
     ihomObjEquiv_ihom_map_app]
+
+/-- The vertex of `K ⟶[SSet] X` which the curried form of `g : K ⊗ Z ⟶ X` assigns to a vertex `z`
+of `Z` is the restriction of `g` to `K ⊗ {z}`. -/
+@[simp]
+lemma ihomObj₀Equiv_curry_app (g : K ⊗ Z ⟶ X) (z : Z _⦋0⦌) :
+    ihomObj₀Equiv K X ((curry g).app _ z) = lift (𝟙 K) (const z) ≫ g := by
+  rw [← cancel_epi (fst K Δ[0]), fst_comp_ihomObj₀Equiv, ihomObjEquiv_apply,
+    ← yonedaEquiv_symm_comp, uncurry_natural_left, uncurry_curry, ← Category.assoc]
+  congr 1
+  ext : 1 <;> simp [yonedaEquiv_symm_zero]
 
 /-- The constant map at the vertex given by `g : K ⟶ X` is the curried form of the projection to
 `K` followed by `g`. -/
