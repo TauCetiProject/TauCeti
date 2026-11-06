@@ -345,6 +345,29 @@ theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) (h₁ : ω.Tam
   simp [hA, hB]
 
 /-- In operator-norm coordinates, the tame structure whose Cayley coordinate at `J₀` is `b` times
+that of a tame `J₁`, for `|b| ≤ 1`, is `J₀ (1 + b C)(1 - b C)⁻¹`, where `C` is the Cayley
+coordinate of `J₁`. -/
+theorem Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley_of_abs_le
+    (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁) {b : ℝ} (hb : |b| ≤ 1)
+    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
+    LinearMap.toContinuousLinearMap
+        (h₀.cayleyEquiv.symm
+          ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_cayleyBall_of_abs_le h₁ hb⟩).val.toLinearMap =
+      cayleyPathFormula b A B := by
+  set C : V →L[ℝ] V := b • LinearMap.toContinuousLinearMap (J₀.cayley J₁) with hCdef
+  have hC : C.toLinearMap ∈ ω.cayleyBall J₀ := by
+    simpa only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+      using h₀.smul_cayley_mem_cayleyBall_of_abs_le h₁ hb
+  have hsymm : h₀.cayleyEquiv.symm
+      ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_cayleyBall_of_abs_le h₁ hb⟩ =
+      h₀.cayleyEquiv.symm ⟨C.toLinearMap, hC⟩ := by
+    simp only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+  have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
+    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
+  rw [hsymm, h₀.cayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula_def, hCdef,
+    h₀.tames.toContinuousLinearMap_cayley h₁ hA hB, hA']
+
+/-- In operator-norm coordinates, the tame structure whose Cayley coordinate at `J₀` is `b` times
 that of a tame `J₁`, for `0 ≤ b ≤ 1`, is `J₀ (1 + b C)(1 - b C)⁻¹`, where `C` is the Cayley
 coordinate of `J₁`. -/
 theorem Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h₀ : ω.Compatible J₀)
@@ -353,18 +376,9 @@ theorem Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h₀ : ω
     LinearMap.toContinuousLinearMap
         (h₀.cayleyEquiv.symm
           ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_cayleyBall h₁ hb⟩).val.toLinearMap =
-      cayleyPathFormula b A B := by
-  set C : V →L[ℝ] V := b • LinearMap.toContinuousLinearMap (J₀.cayley J₁) with hCdef
-  have hC : C.toLinearMap ∈ ω.cayleyBall J₀ := by
-    simpa only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-      using h₀.smul_cayley_mem_cayleyBall h₁ hb
-  have hsymm : h₀.cayleyEquiv.symm ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_cayleyBall h₁ hb⟩ =
-      h₀.cayleyEquiv.symm ⟨C.toLinearMap, hC⟩ := by
-    simp only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-  have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
-    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
-  rw [hsymm, h₀.cayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula_def, hCdef,
-    h₀.tames.toContinuousLinearMap_cayley h₁ hA hB, hA']
+      cayleyPathFormula b A B :=
+  h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley_of_abs_le h₁
+    (abs_le.2 ⟨by linarith [hb.1], hb.2⟩) hA hB
 
 /-- In operator-norm coordinates, the compatible Cayley path from `J₀` to `J₁` at time `t` is
 `J₀ (1 + β C)(1 - β C)⁻¹`, where `C` is the Cayley coordinate of `J₁` and
@@ -380,16 +394,24 @@ theorem Compatible.toContinuousLinearMap_cayleyPath (h₀ : ω.Compatible J₀)
     Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
     Compatible.cayleyEquiv_symm_apply_toLinearMap]
 
-/-- For `0 ≤ b ≤ 1` and a tame `J₁`, the denominator `1 - b C` of the Cayley path expression is
+/-- For `|b| ≤ 1` and a tame `J₁`, the denominator `1 - b C` of the Cayley path expression is
 invertible, where `C` is the Cayley coordinate of `J₁`. -/
-theorem Compatible.isUnit_one_sub_smul_cayleyFormula (h₀ : ω.Compatible J₀)
-    (h₁ : ω.Tames J₁) {b : ℝ} (hb : b ∈ Icc 0 1) (hA : A.toLinearMap = J₀.toLinearMap)
+theorem Compatible.isUnit_one_sub_smul_cayleyFormula_of_abs_le (h₀ : ω.Compatible J₀)
+    (h₁ : ω.Tames J₁) {b : ℝ} (hb : |b| ≤ 1) (hA : A.toLinearMap = J₀.toLinearMap)
     (hB : B.toLinearMap = J₁.toLinearMap) :
     IsUnit (1 - b • cayleyFormula A B) := by
   rw [← h₀.tames.toContinuousLinearMap_cayley h₁ hA hB]
   refine isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀) ?_
   simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-    using h₀.smul_cayley_mem_cayleyBall h₁ hb
+    using h₀.smul_cayley_mem_cayleyBall_of_abs_le h₁ hb
+
+/-- For `0 ≤ b ≤ 1` and a tame `J₁`, the denominator `1 - b C` of the Cayley path expression is
+invertible, where `C` is the Cayley coordinate of `J₁`. -/
+theorem Compatible.isUnit_one_sub_smul_cayleyFormula (h₀ : ω.Compatible J₀)
+    (h₁ : ω.Tames J₁) {b : ℝ} (hb : b ∈ Icc 0 1) (hA : A.toLinearMap = J₀.toLinearMap)
+    (hB : B.toLinearMap = J₁.toLinearMap) :
+    IsUnit (1 - b • cayleyFormula A B) :=
+  h₀.isUnit_one_sub_smul_cayleyFormula_of_abs_le h₁ (abs_le.2 ⟨by linarith [hb.1], hb.2⟩) hA hB
 
 end Coordinates
 
