@@ -221,15 +221,9 @@ theorem coeff_nsmulSeries_mem_of_ne_prime_pow {m : ℕ} (hm : 2 ≤ m) (hpm : �
   set c : ℤ := ((p : ℤ) ^ ((n : ℕ) + 1) - p) / d
   -- `p` is prime to `d_m`, which is `1` or a prime other than `p`, and `d_m c = p (p^n - 1)`.
   have hpd : ¬ (p : ℤ) ∣ d := by
-    rw [Int.natCast_dvd_natCast]
-    by_cases hpow : IsPrimePow ((n : ℕ) + 1)
-    · rw [lazardGcd_eq_minFac_of_isPrimePow hpow]
-      obtain ⟨q, k, hq, hk, hqk⟩ := (isPrimePow_nat_iff _).1 hpow
-      rw [← hqk, hq.pow_minFac hk.ne']
-      intro hdvd
-      exact hpm k (by rw [← hqk, (Nat.prime_dvd_prime_iff_eq hp hq).1 hdvd])
-    · rw [lazardGcd_eq_one_of_not_isPrimePow (by omega) hpow, Nat.dvd_one]
-      exact hp.one_lt.ne'
+    rw [Int.natCast_dvd_natCast, prime_dvd_lazardGcd_iff hp (by omega)]
+    rintro ⟨j, hj⟩
+    exact hpm j hj
   have hdc : d * c = p * ((p : ℤ) ^ (n : ℕ) - 1) := by
     rw [Int.mul_ediv_cancel'
       ⟨_, by simpa using (lazardGcd_mul_cotangentBasis_repr_coeffNSMul p n n).symm⟩]
