@@ -7,18 +7,18 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
-import Mathlib.Tactic.IntervalCases
+import TauCeti.Data.ZMod.Five
 
 /-!
 # The Legendre symbol `(5 | p)`
 
 Since `5 ≡ 1 (mod 4)`, quadratic reciprocity gives `(5 | p) = (p | 5)` for every odd prime `p`,
 and the nonzero squares modulo `5` are `1` and `4`. Hence `5` is a nonzero square modulo an odd
-prime `p` exactly when `p ≡ ±1 (mod 5)`; at `p = 5` the symbol is `0`.
+prime `p` exactly when `p ≡ ±1 (mod 5)`; at `p = 5` the symbol is `0`. The squares modulo `5`
+are characterized by `ZMod.isSquare_natCast_iff_mod_five` in `TauCeti.Data.ZMod.Five`.
 
 ## Main results
 
-* `TauCeti.ZMod.isSquare_natCast_iff_mod_five`: the squares in `ZMod 5` are `0`, `1` and `4`.
 * `TauCeti.legendreSym_five_eq_one_iff`: for an odd prime `p`, `legendreSym p 5 = 1` if and
   only if `p % 5 = 1 ∨ p % 5 = 4`.
 -/
@@ -26,14 +26,6 @@ prime `p` exactly when `p ≡ ±1 (mod 5)`; at `p = 5` the symbol is `0`.
 public section
 
 namespace TauCeti
-
-/-- The squares in `ZMod 5` are `0`, `1` and `4`: a natural number `r` is a square modulo `5`
-exactly when `r % 5` is `0`, `1` or `4`. -/
-theorem ZMod.isSquare_natCast_iff_mod_five (r : ℕ) :
-    IsSquare (r : ZMod 5) ↔ r % 5 = 0 ∨ r % 5 = 1 ∨ r % 5 = 4 := by
-  rw [← ZMod.natCast_mod]
-  have := Nat.mod_lt r (by norm_num : 0 < 5)
-  interval_cases r % 5 <;> decide
 
 /-- **`5` is a nonzero square modulo an odd prime `p` exactly when `p ≡ ±1 (mod 5)`**, by
 quadratic reciprocity; at `p = 5` the Legendre symbol is `0`. -/
