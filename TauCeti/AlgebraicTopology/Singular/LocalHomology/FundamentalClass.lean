@@ -402,18 +402,25 @@ theorem exists_eq_zsmul_fundamentalClass
   obtain ⟨d, rfl⟩ := (o.fundamentalClassEquiv hn).surjective γ
   exact ⟨d, fundamentalClassEquiv_apply o hn d⟩
 
-/-- **The rational fundamental class generates top homology freely.** For a compact connected
-oriented manifold, rational extension of its integral fundamental-class equivalence gives
-`ℚ ≃ₗ[ℚ] Hₙ(M; ℚ)`. No finite CW model is required. -/
-def rationalFundamentalClassEquiv : ℚ ≃ₗ[ℚ]
-    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℚ) n).obj
-      (ModuleCat.of ℚ ℚ)).obj (TopCat.of M)) := by
-  let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
+/-- Flatness is used only for this fixed rational coefficient extension. -/
+private instance rationalExtendScalars_preservesFiniteLimits :
+    Limits.PreservesFiniteLimits
+      (ModuleCat.extendScalars (Int.castRingHom ℚ) : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ) := by
   have hflat : (Int.castRingHom ℚ).Flat := by
+    -- RingHom.Flat uses the algebra induced by Int.castRingHom, whereas localization
+    -- flatness uses the canonical integer action. These actions are definitionally equal;
+    -- change aligns the instance arguments, which rewriting the proposition alone cannot do.
     change Module.Flat ℤ ℚ
     exact IsLocalization.flat ℚ (nonZeroDivisors ℤ)
-  have : Limits.PreservesFiniteLimits F :=
-    ModuleCat.preservesFiniteLimits_extendScalars_of_flat hflat
+  exact ModuleCat.preservesFiniteLimits_extendScalars_of_flat hflat
+
+/-- The orientation-independent native comparison between rational extension of integral
+homology and rational homology. This is private to the normalized fundamental-class construction. -/
+private def rationalHomologyExtendScalarsIso :
+    (ModuleCat.extendScalars (Int.castRingHom ℚ)).obj
+      ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n) ≅
+        (TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℚ ℚ) n := by
+  let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
   have : F.Additive := Functor.additive_of_preserves_binary_products F
   let R := ModuleCat.of ℤ (ULift.{0} ℤ)
   let X := TopCat.toSSet.obj (TopCat.of M)
@@ -428,8 +435,49 @@ def rationalFundamentalClassEquiv : ℚ ≃ₗ[ℚ]
   let eC : X.homology (F.obj R) n ≅ X.homology (ModuleCat.of ℚ ℚ) n :=
     HomologicalComplex.homologyMapIso
       (((SSet.chainComplexFunctor.{0} (ModuleCat.{0} ℚ)).flip.obj X).mapIso eR) n
-  let eZ : ModuleCat.of ℤ ℤ ≅ C.homology n := (o.fundamentalClassEquiv hn).toModuleIso
-  exact (eUnit.symm ≪≫ F.mapIso eZ ≪≫ eH ≪≫ eC).toLinearEquiv
+  exact eH ≪≫ eC
+
+/-- **The rational fundamental class generates top homology freely.** For a compact connected
+oriented manifold, rational extension of its integral fundamental-class equivalence gives
+`ℚ ≃ₗ[ℚ] Hₙ(M; ℚ)`. No finite CW model is required. -/
+def rationalFundamentalClassEquiv : ℚ ≃ₗ[ℚ]
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℚ) n).obj
+      (ModuleCat.of ℚ ℚ)).obj (TopCat.of M)) := by
+  let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
+  let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
+    (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
+  exact (eUnit.symm ≪≫ F.mapIso (o.fundamentalClassEquiv hn).toModuleIso ≪≫
+    rationalHomologyExtendScalarsIso (M := M) (n := n)).toLinearEquiv
+
+/-- Reversing orientation negates every value of the normalized rational equivalence. -/
+theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
+    (-o).rationalFundamentalClassEquiv hn c = -o.rationalFundamentalClassEquiv hn c := by
+  let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
+  have : F.Additive := Functor.additive_of_preserves_binary_products F
+  let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
+    (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
+  let eH := rationalHomologyExtendScalarsIso (M := M) (n := n)
+  -- Keep the induced integer action visible in these typed comparison maps. The original
+  -- composition uses a definitionally equal canonical action in its tensor unit isomorphism.
+  change eH.hom ((F.map ((-o).fundamentalClassEquiv hn).toModuleIso.hom)
+    (eUnit.symm.hom c)) =
+      -eH.hom ((F.map (o.fundamentalClassEquiv hn).toModuleIso.hom)
+        (eUnit.symm.hom c))
+  have hz : ((-o).fundamentalClassEquiv hn).toModuleIso.hom =
+      -(o.fundamentalClassEquiv hn).toModuleIso.hom := by
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro z
+    simp only [LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom, ModuleCat.hom_neg,
+      LinearMap.neg_apply, LinearEquiv.coe_coe, fundamentalClassEquiv_apply,
+      fundamentalClass_neg]
+    exact zsmul_neg (o.fundamentalClass hn) z
+  rw [hz, F.map_neg]
+  -- Expose evaluation of the negative module morphism as linear-map negation. This avoids
+  -- asking elaboration to unfold the coefficient comparison while inferring the argument.
+  change eH.hom (-((F.map (o.fundamentalClassEquiv hn).toModuleIso.hom)
+    (eUnit.symm.hom c))) = _
+  exact eH.hom.hom.map_neg _
 
 /-- The rational fundamental class, normalized by rational extension of the integral fundamental
 class. It is the image of `1` under `rationalFundamentalClassEquiv`. -/
@@ -437,6 +485,18 @@ def rationalFundamentalClass :
     (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℚ) n).obj
       (ModuleCat.of ℚ ℚ)).obj (TopCat.of M)) :=
   o.rationalFundamentalClassEquiv hn 1
+
+/-- The rational fundamental class is the normalized equivalence evaluated at one. -/
+theorem rationalFundamentalClass_def :
+    o.rationalFundamentalClass hn = o.rationalFundamentalClassEquiv hn 1 := by
+  simp only [rationalFundamentalClass]
+
+/-- Reversing orientation negates the rational fundamental class. -/
+@[simp]
+theorem rationalFundamentalClass_neg :
+    (-o).rationalFundamentalClass hn = -o.rationalFundamentalClass hn := by
+  rw [rationalFundamentalClass_def, rationalFundamentalClassEquiv_neg_apply,
+    rationalFundamentalClass_def]
 
 /-- The rational fundamental-class equivalence sends `c` to `c` times the rational fundamental
 class. -/
