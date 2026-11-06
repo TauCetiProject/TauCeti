@@ -8,7 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Scalar
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import TauCeti.MeasureTheory.Integral.Cosh
+import TauCeti.Analysis.ODE.TrajectoryOperator.Tanh
 
 /-!
 # Kernel and cokernel cancellation on a neck
@@ -42,15 +43,15 @@ least `exp (2R) / 2`.
 
 ## Main declarations
 
-* `Real.memLp_inv_cosh`: the hyperbolic secant is square integrable.
 * `TauCeti.WeakDerivStep.map_prevL_ker_trajectoryOperator_tanh`,
   `TauCeti.WeakDerivStep.range_trajectoryOperator_tanh`,
   `TauCeti.WeakDerivStep.index_trajectoryOperator_tanh`: `d/ds + tanh s` has kernel spanned by
   `sech`, is onto, and has index `1`.
-* `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_tanh`,
-  `TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_neg_tanh`,
-  `TauCeti.WeakDerivStep.index_trajectoryOperator_neg_tanh`: `d/ds - tanh s` is injective, its
-  cokernel is spanned by `sech`, and its index is `-1`.
+* `TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_neg_tanh`,
+  `TauCeti.WeakDerivStep.finrank_coker_trajectoryOperator_neg_tanh`: the cokernel of
+  `d/ds - tanh s` is the line through `sech`. Its injectivity and index `-1` are the case `E = ℝ`
+  of `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_tanh_smul_id` and
+  `TauCeti.WeakDerivStep.index_trajectoryOperator_neg_tanh_smul_id`.
 * `TauCeti.neckCoefficient`, `TauCeti.neckSolution`: the glued coefficient `a_R` and its
   fundamental solution `F_R`, with `TauCeti.hasDerivAt_neckSolution` and the asymptotics
   `TauCeti.tendsto_neckSolution_div_exp_atTop`, `TauCeti.tendsto_neckSolution_div_exp_atBot`.
@@ -76,22 +77,6 @@ noncomputable section
 
 open MeasureTheory TopologicalSpace Set Filter
 open scoped ENNReal Topology
-
-/-! ### The hyperbolic secant -/
-
-/-- The hyperbolic secant `(cosh x)⁻¹` is square integrable on the line: its square is at most
-`(1 + x ^ 2)⁻¹`, because `cosh x ^ 2 = 1 + sinh x ^ 2` and `|x| ≤ |sinh x|`. -/
-theorem Real.memLp_inv_cosh : MemLp (fun x ↦ (Real.cosh x)⁻¹) 2 volume := by
-  have hc : Continuous fun x ↦ (Real.cosh x)⁻¹ :=
-    Real.continuous_cosh.inv₀ fun x ↦ (Real.cosh_pos x).ne'
-  refine (memLp_two_iff_integrable_sq hc.aestronglyMeasurable).2 <|
-    integrable_inv_one_add_sq.mono' (hc.pow 2).aestronglyMeasurable (ae_of_all _ fun x ↦ ?_)
-  have hx : |x| ≤ |Real.sinh x| := by
-    rw [Real.abs_sinh]
-    exact Real.self_le_sinh_iff.2 (abs_nonneg x)
-  have hsq : x ^ 2 ≤ Real.sinh x ^ 2 := sq_le_sq.2 hx
-  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), inv_pow, Real.cosh_sq']
-  exact inv_anti₀ (by positivity) (by linarith)
 
 namespace TauCeti
 
@@ -136,7 +121,7 @@ particular at both ends. -/
 private theorem tendsto_deriv_tanh {l : Filter ℝ} (hl : Tendsto (fun x ↦ (Real.cosh x)⁻¹) l (𝓝 0)) :
     Tendsto (deriv Real.tanh) l (𝓝 0) := by
   have h : deriv Real.tanh = fun x ↦ (Real.cosh x)⁻¹ ^ 2 :=
-    funext fun x ↦ by rw [(Real.hasDerivAt_tanh x).deriv, inv_pow]
+    funext fun x ↦ by rw [Real.deriv_tanh, one_div, inv_pow]
   simpa [h] using hl.pow 2
 
 /-! ### The neck coefficient and its fundamental solution -/
@@ -373,9 +358,9 @@ namespace TauCeti.WeakDerivStep
 
 /-- The `L²` class of the hyperbolic secant is nonzero. -/
 private theorem sechLp_ne_zero :
-    (Real.memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp (fun s ↦ (Real.cosh s)⁻¹) ≠ 0 := by
+    (memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp (fun s ↦ (Real.cosh s)⁻¹) ≠ 0 := by
   intro h
-  have h0 := (MemLp.coeFn_toLp (Real.memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ))).symm.trans
+  have h0 := (MemLp.coeFn_toLp (memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ))).symm.trans
     ((Lp.ext_iff.1 h).trans (Lp.coeFn_zero ℝ 2 _))
   obtain ⟨s, hs⟩ := h0.exists
   exact (inv_pos.2 (Real.cosh_pos s)).ne' hs
@@ -389,7 +374,7 @@ theorem finrank_ker_trajectoryOperator_tanh
     Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker = 1 := by
   simpa using finrank_ker_trajectoryOperator_smul_id Real.continuous_tanh
     (φ := fun s ↦ (Real.cosh s)⁻¹) (fun s ↦ by simpa using hasDerivAt_inv_cosh_add 0 s) (by simp)
-    Real.memLp_inv_cosh AL hAL
+    memLp_inv_cosh AL hAL
 
 /-- **The kernel of `d/ds + tanh s` is spanned by the hyperbolic secant.** Its values in
 `L²(ℝ, ℝ)` are the multiples of `sech s = (cosh s)⁻¹`. -/
@@ -399,16 +384,16 @@ theorem map_prevL_ker_trajectoryOperator_tanh
     (trajectoryOperator (p := 2) AL).ker.map
         (prevL (ContinuousLinearMap.id ℝ (Lp ℝ 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
           : _ →ₗ[ℝ] _) =
-      ℝ ∙ (Real.memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp
+      ℝ ∙ (memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp
         fun s ↦ (Real.cosh s)⁻¹ := by
-  set v := (Real.memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp fun s ↦ (Real.cosh s)⁻¹
+  set v := (memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp fun s ↦ (Real.cosh s)⁻¹
   have hinj : Function.Injective
       (prevL (ContinuousLinearMap.id ℝ (Lp ℝ 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :=
     fun u w h ↦ ext (by simpa using h)
   -- The secant is the value of an element of the kernel.
   obtain ⟨u, hu, huv⟩ := exists_trajectoryOperator_eq_zero_of_hasDerivAt hAL
     (v := fun s ↦ (Real.cosh s)⁻¹) (fun s ↦ by simpa using hasDerivAt_inv_cosh_add 0 s)
-    Real.memLp_inv_cosh
+    memLp_inv_cosh
   have hmem : v ∈ (trajectoryOperator (p := 2) AL).ker.map
       (prevL (ContinuousLinearMap.id ℝ (Lp ℝ 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
         : _ →ₗ[ℝ] _) :=
@@ -446,23 +431,13 @@ theorem index_trajectoryOperator_tanh
       (LinearMap.range_eq_top.1 (range_trajectoryOperator_tanh AL hAL)),
     finrank_ker_trajectoryOperator_tanh AL hAL, Nat.cast_one]
 
-/-- **`d/ds - tanh s` is injective.** The solutions of `v' = tanh s · v` are the multiples of
-`cosh s`, which is not square integrable. -/
-theorem ker_trajectoryOperator_neg_tanh
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
-    (trajectoryOperator (p := 2) AL).ker = ⊥ :=
-  ker_trajectoryOperator_smul_id_eq_bot Real.continuous_tanh.neg (φ := Real.cosh)
-    (fun s ↦ by simpa using hasDerivAt_cosh_eq_tanh_mul s) (fun s ↦ (Real.cosh_pos s).ne')
-    not_memLp_cosh AL hAL
-
 /-- **The cokernel of `d/ds - tanh s` is spanned by the hyperbolic secant.** The orthogonal
 complement of its range in `L²(ℝ, ℝ)` is the line through `sech s = (cosh s)⁻¹`. -/
 theorem orthogonal_range_trajectoryOperator_neg_tanh
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
     (trajectoryOperator (p := 2) AL).rangeᗮ =
-      ℝ ∙ (Real.memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp
+      ℝ ∙ (memLp_inv_cosh.restrict ((⊤ : Opens ℝ) : Set ℝ)).toLp
         fun s ↦ (Real.cosh s)⁻¹ := by
   rw [orthogonal_range_trajectoryOperator_eq_map_ker (ae_isSymmetric_of_ae_eq_smul_id hAL)]
   exact map_prevL_ker_trajectoryOperator_tanh (-AL) (by simpa using neg_ae_eq_smul_id hAL)
@@ -481,15 +456,6 @@ theorem finrank_coker_trajectoryOperator_neg_tanh
   have := hclosed.completeSpace_coe
   rw [(trajectoryOperator (p := 2) AL).range.quotientEquivOrthogonal.toLinearEquiv.finrank_eq,
     orthogonal_range_trajectoryOperator_neg_tanh AL hAL, finrank_span_singleton sechLp_ne_zero]
-
-/-- **`d/ds - tanh s` has index `-1`.** -/
-theorem index_trajectoryOperator_neg_tanh
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
-    (trajectoryOperator (p := 2) AL).index = -1 := by
-  rw [ContinuousLinearMap.index_of_injective _
-      (LinearMap.ker_eq_bot.1 (ker_trajectoryOperator_neg_tanh AL hAL)),
-    finrank_coker_trajectoryOperator_neg_tanh AL hAL, Nat.cast_one]
 
 variable (R : ℝ)
 
@@ -531,7 +497,7 @@ theorem exists_norm_trajectoryOperator_neck_le
   set v : ℝ → ℝ := fun s ↦ (Real.cosh (s + R))⁻¹ with hv_def
   have hv (s : ℝ) : HasDerivAt v (-(Real.tanh (s + R) * v s)) s := hasDerivAt_inv_cosh_add R s
   have hv2 : MemLp v 2 volume :=
-    Real.memLp_inv_cosh.comp_measurePreserving (measurePreserving_add_right volume R)
+    memLp_inv_cosh.comp_measurePreserving (measurePreserving_add_right volume R)
   have hvc : ContDiff ℝ 1 v :=
     (Real.contDiff_cosh.comp (contDiff_id.add contDiff_const)).inv fun s ↦ (Real.cosh_pos _).ne'
   -- `v` lies in the kernel of the translated piece `d/ds + tanh (s + R)`.
@@ -562,7 +528,7 @@ theorem exists_norm_trajectoryOperator_neck_le
     rw [heq, norm_neg, Real.norm_eq_abs, abs_of_nonneg hnn, ← mul_pow]
     exact pow_le_pow_left₀ hnn (one_add_tanh_mul_inv_cosh_le R s) 2
   have hsech : Integrable (fun s ↦ (Real.cosh s)⁻¹ ^ 2) volume :=
-    (memLp_two_iff_integrable_sq Real.memLp_inv_cosh.aestronglyMeasurable).1 Real.memLp_inv_cosh
+    (memLp_two_iff_integrable_sq memLp_inv_cosh.aestronglyMeasurable).1 memLp_inv_cosh
   have hint : ‖trajectoryOperator (p := 2) AL u‖ ^ 2 ≤
       (2 * Real.exp (-(2 * R))) ^ 2 * ‖prev _ u‖ ^ 2 := by
     rw [norm_trajectoryOperator_sq_eq_integral hvc hu AL hAL, norm_prev_sq_eq_integral hu]
