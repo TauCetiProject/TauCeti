@@ -93,20 +93,6 @@ theorem ofReal_kantorovichDualValue_le_transportCost_of_null_compl {φ : X → �
 variable [TopologicalSpace X] [PolishSpace X] [BorelSpace X] [TopologicalSpace Y] [PolishSpace Y]
   [BorelSpace Y] [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {π : Measure (X × Y)}
 
-omit [IsProbabilityMeasure μ] in
-/-- The `r`-transform of a real potential restricted to a measurable set is null measurable. -/
-private theorem nullMeasurable_cTransform_ite {r : X × Y → ℝ} (hr : Measurable r) {φ : X → ℝ}
-    (hφ : Measurable φ) {A : Set X} [DecidablePred (· ∈ A)] (hA : MeasurableSet A) :
-    NullMeasurable (cTransform r fun x ↦ if x ∈ A then (φ x : EReal) else ⊥) ν := by
-  refine nullMeasurable_cTransform ν ?_
-  have heq : (fun z : X × Y ↦ (r z : EReal) - if z.1 ∈ A then (φ z.1 : EReal) else ⊥) =
-      fun z ↦ if z.1 ∈ A then ((r z - φ z.1 : ℝ) : EReal) else ⊤ := by
-    funext z
-    by_cases hz : z.1 ∈ A <;> simp [hz, EReal.coe_sub]
-  rw [heq]
-  exact Measurable.ite (hA.preimage measurable_fst)
-    (measurable_coe_real_ereal.comp (hr.sub (hφ.comp measurable_fst))) measurable_const
-
 omit [IsProbabilityMeasure ν] in
 /-- **A Borel potential for a cyclically monotone set.** If a coupling `π` is concentrated on a
 Borel `r`-cyclically monotone set `S`, there are a potential `φ₀` with `S` inside its
@@ -147,8 +133,6 @@ private theorem IsCoupling.exists_borel_potential_of_isCyclicallyMonotone (hπ :
   have hμA : μ Aᶜ = 0 := by
     rw [hA, compl_compl, measure_toMeasurable]
     exact ae_iff.1 (hφ₀meas.ae_eq_mk.and hgbot)
-  have haeA : ∀ᵐ x ∂μ, x ∈ A := measure_eq_zero_iff_ae_notMem.1 hμA |>.mono fun _ h ↦ by
-    simpa using h
   set φ : X → ℝ := fun x ↦ (g x).toReal with hφ
   have hφA : ∀ x ∈ A, φ₀ x = (φ x : EReal) := by
     intro x hx
@@ -184,7 +168,7 @@ theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π
   -- The second potential is the `c`-transform of `φ` restricted to `A`.
   set g' : X → EReal := fun x ↦ if x ∈ A then (φ x : EReal) else ⊥ with hg'
   set ψ₀ := cTransform r g' with hψ₀
-  have hψ₀meas : NullMeasurable ψ₀ ν := nullMeasurable_cTransform_ite hr hg hAmeas
+  have hψ₀meas : NullMeasurable ψ₀ ν := nullMeasurable_cTransform_ite ν hr hg hAmeas
   have hψ₀le y : ψ₀ y ≤ ((r (x₁, y) - φ x₁ : ℝ) : EReal) := by
     simpa [hg', hx₁, EReal.coe_sub] using cTransform_le r g' x₁ y
   have hcontact : ∀ z ∈ S, z.1 ∈ A → ψ₀ z.2 = ((r z - φ z.1 : ℝ) : EReal) := by
