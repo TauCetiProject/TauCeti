@@ -309,14 +309,6 @@ private theorem false_of_ord_term_lt {φ : F[X]} {y : F'} (hy : aeval y φ = 0) 
 
 variable (k F) [Algebra.IsIntegral F F']
 
-/-- The order at `P'` of the term `c y ^ i` of a polynomial evaluated at `y`, for `c ≠ 0 ≠ y`:
-`e(P' ∣ P) · ord_P c + i · ord_{P'} y`. -/
-private theorem ord_algebraMap_mul_pow {y : F'} (hy0 : y ≠ 0) {c : F} (hc : c ≠ 0) (i : ℕ) :
-    P'.ord (algebraMap F F' c * y ^ i) =
-      ramificationIdx F P' * (P'.restrict k F).ord c + i * P'.ord y := by
-  rw [P'.ord_mul (by simpa using hc) (pow_ne_zero i hy0), P'.ord_pow,
-    ord_algebraMap_restrict k F P']
-
 /-- For a polynomial Eisenstein at the place below `P'`, a lower-order term `c_i y ^ i` with
 `c_i ≠ 0` has order at least `e(P' ∣ P) + i · ord_{P'} y`. -/
 private theorem ramificationIdx_add_mul_ord_le_ord_term {φ : F[X]}
@@ -328,7 +320,7 @@ private theorem ramificationIdx_add_mul_ord_le_ord_term {φ : F[X]}
   have hge : (ramificationIdx F P' : ℤ) ≤
       ramificationIdx F P' * (P'.restrict k F).ord (φ.coeff i) :=
     le_mul_of_one_le_right (by exact_mod_cast (ramificationIdx_pos F P').le) hpos
-  rw [ord_algebraMap_mul_pow k F hy0 hci]
+  rw [ord_algebraMap_mul_pow k F P' hy0 hci]
   linarith
 
 /-- **The order of a root of an Eisenstein polynomial** (Stichtenoth, Proposition 3.1.15): if
@@ -356,9 +348,9 @@ theorem natDegree_mul_ord_eq_ramificationIdx {φ : F[X]}
   have hcn0 : φ.coeff n ≠ 0 := hcoeff_n ▸ Polynomial.leadingCoeff_ne_zero.mpr
     (fun h => by simp [h, hndef] at hdeg)
   have hordTn : P'.ord (algebraMap F F' (φ.coeff n) * y ^ n) = n * m := by
-    rw [ord_algebraMap_mul_pow k F hy0 hcn0, hcoeff_n, hφ.ord_leadingCoeff, mul_zero, zero_add]
+    rw [ord_algebraMap_mul_pow k F P' hy0 hcn0, hcoeff_n, hφ.ord_leadingCoeff, mul_zero, zero_add]
   have hordT0 : P'.ord (algebraMap F F' (φ.coeff 0) * y ^ 0) = e := by
-    rw [ord_algebraMap_mul_pow k F hy0 hc0, hord0, mul_one, Nat.cast_zero, zero_mul, add_zero]
+    rw [ord_algebraMap_mul_pow k F P' hy0 hc0, hord0, mul_one, Nat.cast_zero, zero_mul, add_zero]
   have hlow := fun i (hi : i < n) ↦ ramificationIdx_add_mul_ord_le_ord_term k F hφ hy0 hi
   -- Step 1: the root has positive order, else the leading term dominates.
   have hm1 : 1 ≤ m := by
