@@ -133,6 +133,33 @@ private theorem image_smul_eq_image_smul_of_inter_nonempty
     rw [mul_smul, mul_smul, hhu, inv_smul_smul]
   simp [hgg', mul_smul, ← Set.image_smul, Set.image_image, hmap]
 
+/-- The quotient covering map has the same image on a set and on each of its translates. -/
+theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap q G) (g : G)
+    (s : Set E) : q '' (g • s) = q '' s := by
+  rw [← Set.image_smul, Set.image_image]
+  simp_rw [hq.map_smul]
+
+/-- **Openness in a quotient covering map is detected on a single translate.** A subset `W` of the
+image of `U` is open as soon as the part of its preimage lying in `U` is open, because the whole
+preimage is covered by the translates of that part. -/
+theorem _root_.IsQuotientCoveringMap.isOpen_of_isOpen_preimage_inter
+    (hq : IsQuotientCoveringMap q G) {U : Set E} {W : Set X} (hWU : W ⊆ q '' U)
+    (h : IsOpen (q ⁻¹' W ∩ U)) : IsOpen W := by
+  have : ContinuousConstSMul G E := hq.toContinuousConstSMul
+  rw [← hq.toIsQuotientMap.isOpen_preimage]
+  have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ U) := by
+    refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
+    · obtain ⟨u, hu, hqu⟩ := hWU hw
+      obtain ⟨m, hm⟩ := hq.apply_eq_iff_mem_orbit.mp hqu.symm
+      refine Set.mem_iUnion.mpr ⟨m, Set.mem_smul_set.mpr ⟨u, ⟨?_, hu⟩, hm⟩⟩
+      rw [Set.mem_preimage, hqu]
+      exact hw
+    · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
+      rw [Set.mem_preimage, hq.map_smul]
+      exact hw'
+  rw [hcover]
+  exact isOpen_iUnion fun k => h.smul k
+
 /-- Openness inside the base set `q '' U` is detected on any single sheet `qH '' (g • U)`: a subset
 `W` of `q '' U` is open exactly when its preimage under `r`, cut down to that sheet, is open. -/
 private theorem _root_.IsQuotientCoveringMap.isOpen_iff_isOpen_preimage_inter_image_smul
@@ -151,22 +178,8 @@ private theorem _root_.IsQuotientCoveringMap.isOpen_iff_isOpen_preimage_inter_im
       simp only [Set.mem_inter_iff, Set.mem_preimage, hrqH]
       exact and_congr_left fun hw => and_iff_left ⟨w, hw, rfl⟩
     exact hinter ▸ hpull.inter (hUo.smul g)
-  rw [← hq.toIsQuotientMap.isOpen_preimage]
-  have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ g • U) := by
-    refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
-    · obtain ⟨u, hu, hqu⟩ := hWV hw
-      obtain ⟨m, hm⟩ := hq.apply_eq_iff_mem_orbit.mp hqu.symm
-      refine Set.mem_iUnion.mpr ⟨m * g⁻¹, Set.mem_smul_set.mpr ⟨g • u, ⟨?_, ?_⟩, ?_⟩⟩
-      · rw [Set.mem_preimage, hq.map_smul, hqu]
-        exact hw
-      · exact Set.smul_mem_smul_set hu
-      · rw [mul_smul, inv_smul_smul]
-        exact hm
-    · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
-      rw [Set.mem_preimage, hq.map_smul]
-      exact hw'
-  rw [hcover]
-  exact isOpen_iUnion fun k => hSopen.smul k
+  refine hq.isOpen_of_isOpen_preimage_inter (U := g • U) ?_ hSopen
+  rwa [hq.image_smul_set]
 
 /-- The evenly covered neighbourhood of `q e` cut out by a set `U` around `e` whose `G`-translates
 are pairwise disjoint. Its sheets are the images in `Y` of the translates `g • U`. -/
@@ -245,12 +258,6 @@ theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCov
     (x : X) : Finite ↥(q ⁻¹' {x}) := by
   obtain ⟨e, rfl⟩ := hq.surjective x
   exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
-
-/-- The quotient covering map has the same image on a set and on each of its translates. -/
-theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap q G) (g : G)
-    (s : Set E) : q '' (g • s) = q '' s := by
-  rw [← Set.image_smul, Set.image_image]
-  simp_rw [hq.map_smul]
 
 /-- **A quotient covering map stays one when the acting group is replaced by an isomorphic one
 acting compatibly.** If `e : G ≃* G'` and each `e g` acts on `E` as `g` does, then the orbits and
