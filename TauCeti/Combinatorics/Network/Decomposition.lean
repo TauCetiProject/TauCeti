@@ -518,11 +518,6 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
   | _ n ih =>
   intro f hf hH hn
   subst hn
-  -- Peeling off a walk of positive arrows weighted by its bottleneck leaves a nonnegative
-  -- assignment with values in `H` and fewer positive arrows, which is decomposed by induction.
-  have peel {s t : V} (p : ArrowWalk Q s t) (hnd : p.arrows.Nodup) (hne : p.arrows ≠ [])
-      (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :=
-    exists_pathCycleDecomposition_sub_walkAssignment H hf hH ih p hnd hne hpos
   by_cases hz : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 0
   · -- The zero assignment has the empty decomposition.
     have hf0 : f = 0 :=
@@ -537,7 +532,8 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
     obtain ⟨v, hv⟩ := hcyc
     obtain ⟨c, hc, hpos⟩ := exists_isCycle_iff_transGen.2 hv
     have hne : c.arrows ≠ [] := hc.arrows_ne_nil
-    obtain ⟨q, hq, hqH, -, D, hP, hC, hlen⟩ := peel c hc.nodup_arrows hne hpos
+    obtain ⟨q, hq, hqH, -, D, hP, hC, hlen⟩ :=
+      exists_pathCycleDecomposition_sub_walkAssignment H hf hH ih c hc.nodup_arrows hne hpos
     refine ⟨D.consCycle ⟨v, c, q⟩ hc hq (sub_add_cancel _ _).symm, hP,
       List.forall_mem_cons.2 ⟨hqH, hC⟩, ?_⟩
     simp only [PathCycleDecomposition.consCycle, List.length_cons]
@@ -548,7 +544,8 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
     have hfacyc : f.IsAcyclic := (Assignment.isAcyclic_iff_forall_not_transGen f).2 hcyc
     obtain ⟨s, t, p, hp, hst, hpos, hin, hout⟩ := exists_isPath_of_isAcyclic hf hfacyc e he
     have hne : p.arrows ≠ [] := p.arrows_ne_nil hst
-    obtain ⟨q, hq, hqH, hg, D, hP, hC, hlen⟩ := peel p hp.nodup_arrows hne hpos
+    obtain ⟨q, hq, hqH, hg, D, hP, hC, hlen⟩ :=
+      exists_pathCycleDecomposition_sub_walkAssignment H hf hH ih p hp.nodup_arrows hne hpos
     obtain ⟨hs, ht, hneg, hpos'⟩ := excessAt_sign_of_sub_walkAssignment hst hq hg hin hout
     refine ⟨D.consPath ⟨s, t, p, q⟩ hp hq hs ht hneg hpos' (sub_add_cancel _ _).symm,
       List.forall_mem_cons.2 ⟨hqH, hP⟩, hC, ?_⟩
