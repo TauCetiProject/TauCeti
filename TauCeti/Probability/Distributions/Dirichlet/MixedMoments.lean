@@ -119,6 +119,7 @@ theorem lintegral_prod_rpow_dirichletMeasure {a q : ι → ℝ}
   rw [lintegral_const_mul _ (measurable_dirichletChartPDF _ i₀),
     lintegral_dirichletChartPDF_eq_one hq i₀, mul_one]
 
+omit [Nonempty ι] in
 private theorem ae_nonneg_prod_rpow_dirichletMeasure {a q : ι → ℝ}
     (ha : ∀ i, 0 < a i) :
     0 ≤ᵐ[dirichletMeasure a] fun x ↦ ∏ i, x i ^ q i := by

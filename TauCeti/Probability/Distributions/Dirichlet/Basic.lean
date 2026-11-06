@@ -183,8 +183,11 @@ theorem isProbabilityMeasure_dirichletMeasure_iff {a : ι → ℝ} :
 
 /-- Every coordinate is almost everywhere strictly positive under a Dirichlet law with positive
 concentration parameters. -/
-theorem ae_pos_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+theorem ae_pos_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     ∀ᵐ x ∂dirichletMeasure a, ∀ i, 0 < x i := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.2 hι) h.1, ae_zero]
+    exact Filter.eventually_bot
   rw [dirichletMeasure_of_pos ha]
   rw [ae_map_iff measurable_dirichletNormalize.aemeasurable]
   · filter_upwards [ae_pos_pi_gammaMeasure a (fun _ ↦ 1),
@@ -196,10 +199,13 @@ theorem ae_pos_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < 
 
 /-- A Dirichlet measure with positive concentration parameters is concentrated on the standard
 simplex, represented in Euclidean coordinates. -/
-theorem ae_mem_stdSimplex_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+theorem ae_mem_stdSimplex_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     ∀ᵐ x ∂dirichletMeasure a,
       (EuclideanSpace.equiv ι ℝ) x ∈
         Set.range (fun p : StdSimplex ℝ ι ↦ (p.weights : ι → ℝ)) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.2 hι) h.1, ae_zero]
+    exact Filter.eventually_bot
   rw [dirichletMeasure_of_pos ha]
   rw [ae_map_iff measurable_dirichletNormalize.aemeasurable]
   · filter_upwards [ae_pos_pi_gammaMeasure a (fun _ ↦ 1),
@@ -211,7 +217,7 @@ theorem ae_mem_stdSimplex_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : 
 
 /-- Under a Dirichlet law with positive concentration parameters the coordinates almost surely
 total one: this is the coordinate form of the standard-simplex support. -/
-theorem ae_sum_eq_one_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+theorem ae_sum_eq_one_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     ∀ᵐ x ∂dirichletMeasure a, ∑ i, x i = 1 := by
   filter_upwards [ae_mem_stdSimplex_dirichletMeasure ha] with x ⟨p, hp⟩
   have hxp : ∀ i, x i = p.weights i := fun i ↦ (congrFun hp i).symm
