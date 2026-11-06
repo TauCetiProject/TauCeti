@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Edge
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The Schwarz--Christoffel vertex at infinity
@@ -123,47 +126,6 @@ theorem exists_norm_schwarzChristoffelIntegrand_le_of_le_norm (a e : ι → ℝ)
 
 /-! ### Displacement along segments of the half-plane -/
 
-/-- A point of the upper half-plane is no closer to the origin than the foot of any vertical ray
-leaving it upward. -/
-private theorem norm_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ} (hs : 0 ≤ s) :
-    ‖z‖ ≤ ‖z + (s : ℂ) * Complex.I‖ := by
-  have hsq : ‖z‖ ^ 2 ≤ ‖z + (s : ℂ) * Complex.I‖ ^ 2 := by
-    simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.add_re,
-      Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im]
-    nlinarith
-  have h := Real.sqrt_le_sqrt hsq
-  rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)] at h
-
-/-- The points of a vertical ray leaving a point `z` of the upper half-plane upward, at height `s`
-above `z`, are at distance at least `(‖z‖ + s) / 2` from the origin. -/
-private theorem half_norm_add_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 < z.im) {s : ℝ}
-    (hs : 0 ≤ s) : (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * Complex.I‖ := by
-  have h1 := norm_le_norm_add_ofReal_mul_I hz.le hs
-  have h2 : s ≤ ‖z + (s : ℂ) * Complex.I‖ := by
-    refine le_trans ?_ (le_trans (le_abs_self _) (abs_im_le_norm (z + (s : ℂ) * Complex.I)))
-    simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im]
-    linarith
-  linarith
-
-/-- The dominating integral of the vertical estimate: for `S + 1 < 0` the integral of
-`K * (r + s) ^ S` over `[0, β]` is at most `K * r ^ (S + 1) / (-(S + 1))`. -/
-private theorem intervalIntegral_const_mul_add_rpow_le {r β S K : ℝ} (hr : 0 < r) (hβ : 0 ≤ β)
-    (hS : S + 1 < 0) (hK : 0 ≤ K) :
-    ∫ s in (0 : ℝ)..β, K * (r + s) ^ S ≤ K * (r ^ (S + 1) / (-(S + 1))) := by
-  have hnotmem : (0 : ℝ) ∉ Set.uIcc (r + 0) (r + β) := by
-    rw [Set.uIcc_of_le (by linarith)]
-    exact fun hmem => absurd hmem.1 (not_le.mpr (by linarith))
-  rw [intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r,
-    integral_rpow (Or.inr ⟨by linarith, hnotmem⟩)]
-  refine mul_le_mul_of_nonneg_left ?_ hK
-  have hp : 0 ≤ (r + β) ^ (S + 1) := Real.rpow_nonneg (by linarith) _
-  have hdiv : (r + β) ^ (S + 1) / (S + 1) ≤ 0 := div_nonpos_iff.mpr (Or.inl ⟨hp, hS.le⟩)
-  rw [sub_div, div_neg, add_zero]
-  linarith
-
 /-- Running up the vertical ray from a far-away point `z` of the upper half-plane to the height
 `T` moves the Schwarz--Christoffel primitive by `O (‖z‖ ^ (∑ i, e i + 1))`, uniformly in `T`.  The
 ray stays at distance at least `(‖z‖ + s) / 2` from the origin, so the integrand is dominated
@@ -195,9 +157,9 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
     have hpos : (0 : ℝ) < (‖z‖ + s) / 2 := by linarith [hs.1]
     have h1 : ‖schwarzChristoffelIntegrand a e (z + (s : ℂ) * Complex.I)‖
         ≤ C * ‖z + (s : ℂ) * Complex.I‖ ^ S :=
-      hbd _ (hzR.trans (norm_le_norm_add_ofReal_mul_I hzim.le hs.1))
+      hbd _ (hzR.trans (Complex.norm_le_norm_add_ofReal_mul_I hzim.le hs.1))
     have h2 : ‖z + (s : ℂ) * Complex.I‖ ^ S ≤ ((‖z‖ + s) / 2) ^ S :=
-      Real.rpow_le_rpow_of_nonpos hpos (half_norm_add_le_norm_add_ofReal_mul_I hzim hs.1)
+      Real.rpow_le_rpow_of_nonpos hpos (Complex.half_norm_add_le_norm_add_ofReal_mul_I hzim.le hs.1)
         (by linarith)
     have h3 : ((‖z‖ + s) / 2) ^ S = 2 ^ (-S) * (‖z‖ + s) ^ S := by
       rw [Real.div_rpow (by linarith [hs.1]) (by norm_num), Real.rpow_neg (by norm_num)]
@@ -220,7 +182,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
   have hstart : z + ((0 : ℝ) : ℂ) * Complex.I = z := by simp
   have hmain := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ hβ0 hmem hB hBi
   rw [hend, hstart] at hmain
-  refine hmain.trans ((intervalIntegral_const_mul_add_rpow_le hz0 hβ0 hS1 hK.le).trans ?_)
+  refine hmain.trans ((TauCeti.intervalIntegral_const_mul_add_rpow_le hz0 hβ0 hS1 hK.le).trans ?_)
   exact le_of_eq (by rw [hKdef]; ring)
 
 /-- Crossing the upper half-plane along a horizontal segment at height `T` moves the
@@ -272,32 +234,6 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_horizontal (a e : ι →
 
 /-! ### The limit at infinity -/
 
-/-- Past a given radius `R` there is a radius `R'` at which the decay `M * R' ^ (S + 1)` for
-`S + 1 < 0` drops below any prescribed positive `ε`. -/
-private theorem exists_le_mul_rpow_add_one_lt {R M ε S : ℝ} (hR : 0 < R) (hM : 0 < M)
-    (hε : 0 < ε) (hS1 : S + 1 < 0) : ∃ R', 0 < R' ∧ R ≤ R' ∧ M * R' ^ (S + 1) < ε := by
-  set τ : ℝ := (ε / (2 * M)) ^ (S + 1)⁻¹ with hτdef
-  have hτ : 0 < τ := Real.rpow_pos_of_pos (by positivity) _
-  refine ⟨max R τ, lt_of_lt_of_le hR (le_max_left _ _), le_max_left _ _, ?_⟩
-  have h1 : (max R τ) ^ (S + 1) ≤ τ ^ (S + 1) :=
-    Real.rpow_le_rpow_of_nonpos hτ (le_max_right _ _) hS1.le
-  have h2 : τ ^ (S + 1) = ε / (2 * M) := by
-    rw [hτdef, Real.rpow_inv_rpow (by positivity) hS1.ne]
-  calc M * (max R τ) ^ (S + 1) ≤ M * (ε / (2 * M)) := by
-        rw [← h2]; exact mul_le_mul_of_nonneg_left h1 hM.le
-    _ = ε / 2 := by field_simp
-    _ < ε := half_lt_self hε
-
-/-- The horizontal leg of the path is `O (R' ^ (S + 1))`: a segment of length `x ≤ T` at height
-`T ≥ R'` contributes at most `C * T ^ S * x ≤ C * R' ^ (S + 1)` when `S + 1 < 0`. -/
-private theorem mul_rpow_mul_le_mul_rpow_add_one {C T S R' x : ℝ} (hC : 0 ≤ C) (hR' : 0 < R')
-    (hT : 0 < T) (hTR' : R' ≤ T) (hS1 : S + 1 < 0) (hx : x ≤ T) :
-    C * T ^ S * x ≤ C * R' ^ (S + 1) :=
-  calc C * T ^ S * x ≤ C * T ^ S * T := mul_le_mul_of_nonneg_left hx (by positivity)
-    _ = C * T ^ (S + 1) := by rw [mul_assoc, ← Real.rpow_add_one hT.ne' S]
-    _ ≤ C * R' ^ (S + 1) :=
-        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hR' hTR' hS1.le) hC
-
 /-- **The Schwarz--Christoffel primitive converges at infinity** when the total turning exponent
 is less than `-1`.  The estimate runs from `z` up a vertical ray, across at the height
 `‖z‖ + ‖w‖`, and down to `w`. -/
@@ -309,16 +245,18 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive_atInfinity (a e : ι 
   set S : ℝ := ∑ i, e i
   have hS1 : S + 1 < 0 := by linarith
   set D : ℝ := C * 2 ^ (-S) / (-(S + 1)) with hDdef
-  have hD : 0 < D := by
-    rw [hDdef]
-    exact div_pos (by positivity) (by linarith)
+  have hD : 0 < D := div_pos (by positivity) (by linarith)
   set M : ℝ := 2 * D + C with hMdef
   have hM : 0 < M := by rw [hMdef]; linarith
   refine CompleteSpace.complete (f := map (schwarzChristoffelPrimitive a e z₀)
     (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet)) ?_
   rw [Metric.cauchy_iff]
   refine ⟨map_neBot, fun ε hε => ?_⟩
-  obtain ⟨R', hR'pos, hR'R, hR'ε⟩ := exists_le_mul_rpow_add_one_lt hR hM hε hS1
+  have hdec : ∀ᶠ x in atTop, M * x ^ (S + 1) < ε := by
+    simpa using Filter.Tendsto.eventually_lt_const (by simpa using hε)
+      ((tendsto_rpow_neg_atTop (neg_pos.2 hS1)).const_mul M)
+  obtain ⟨R', hR'R, hR'ε⟩ := ((eventually_ge_atTop R).and hdec).exists
+  have hR'pos : 0 < R' := hR.trans_le hR'R
   refine ⟨schwarzChristoffelPrimitive a e z₀ '' ({z : ℂ | R' ≤ ‖z‖} ∩ upperHalfPlaneSet), ?_, ?_⟩
   · refine mem_map.mpr (mem_of_superset ?_ (subset_preimage_image _ _))
     exact inter_mem (mem_inf_of_left (eventually_cobounded_le_norm R'))
@@ -347,7 +285,7 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive_atInfinity (a e : ι 
   have hb3 := hleg3.trans (mul_le_mul_of_nonneg_left (hdecay _ hwR') hD.le)
   have hlen : |w.re - z.re| ≤ T :=
     (abs_sub _ _).trans (by rw [hTdef]; linarith [abs_re_le_norm z, abs_re_le_norm w])
-  have hb2 := hleg2.trans (mul_rpow_mul_le_mul_rpow_add_one hC.le hR'pos hT0 hTR' hS1 hlen)
+  have hb2 := hleg2.trans (Real.mul_rpow_mul_le_mul_rpow_add_one hC.le hR'pos hTR' hS1.le hlen)
   calc dist (schwarzChristoffelPrimitive a e z₀ z) (schwarzChristoffelPrimitive a e z₀ w)
       ≤ D * R' ^ (S + 1) + C * R' ^ (S + 1) + D * R' ^ (S + 1) :=
         (dist_triangle4 _ (schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I))

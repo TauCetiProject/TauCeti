@@ -82,6 +82,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
+* `Real.mul_rpow_mul_le_mul_rpow_add_one`: `C * T ^ S * x ≤ C * R' ^ (S + 1)` for
+  `R' ≤ T`, `x ≤ T` and `S + 1 ≤ 0`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -194,6 +196,17 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
     (hq : 0 < q) : a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I := by
   rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
     rpow_inv_rpow hI hq.ne']
+
+/-- A horizontal segment of length `x ≤ T` at height `T ≥ R'` contributes at most
+`C * T ^ S * x ≤ C * R' ^ (S + 1)` when `S + 1 ≤ 0`. -/
+theorem mul_rpow_mul_le_mul_rpow_add_one {C T S R' x : ℝ} (hC : 0 ≤ C) (hR' : 0 < R')
+    (hTR' : R' ≤ T) (hS1 : S + 1 ≤ 0) (hx : x ≤ T) :
+    C * T ^ S * x ≤ C * R' ^ (S + 1) :=
+  have hT : 0 < T := hR'.trans_le hTR'
+  calc C * T ^ S * x ≤ C * T ^ S * T := mul_le_mul_of_nonneg_left hx (by positivity)
+    _ = C * T ^ (S + 1) := by rw [mul_assoc, ← Real.rpow_add_one hT.ne' S]
+    _ ≤ C * R' ^ (S + 1) :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hR' hTR' hS1) hC
 
 end Real
 

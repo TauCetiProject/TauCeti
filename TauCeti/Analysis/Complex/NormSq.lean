@@ -142,4 +142,28 @@ theorem norm_one_add_sq_div_sq_of_norm_eq {z : ℂ} {R : ℝ} (hz : ‖z‖ = R)
     abs_two, abs_of_pos hR]
   field_simp
 
+/-- For `z` in the closed upper half-plane, every point `z + s * I` (`s ≥ 0`) of the vertical ray
+going upward from `z` is at least as far from the origin as `z`. -/
+theorem norm_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ} (hs : 0 ≤ s) :
+    ‖z‖ ≤ ‖z + (s : ℂ) * Complex.I‖ := by
+  have hsq : ‖z‖ ^ 2 ≤ ‖z + (s : ℂ) * Complex.I‖ ^ 2 := by
+    simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.add_re,
+      Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.I_re, Complex.I_im]
+    nlinarith
+  have h := Real.sqrt_le_sqrt hsq
+  rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)] at h
+
+/-- The points of a vertical ray leaving a point `z` of the closed upper half-plane upward, at
+height `s` above `z`, are at distance at least `(‖z‖ + s) / 2` from the origin. -/
+theorem half_norm_add_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ}
+    (hs : 0 ≤ s) : (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * Complex.I‖ := by
+  have h1 := norm_le_norm_add_ofReal_mul_I hz hs
+  have h2 : s ≤ ‖z + (s : ℂ) * Complex.I‖ := by
+    refine le_trans ?_ (le_trans (le_abs_self _) (abs_im_le_norm (z + (s : ℂ) * Complex.I)))
+    simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.I_re, Complex.I_im]
+    linarith
+  linarith
+
 end Complex
