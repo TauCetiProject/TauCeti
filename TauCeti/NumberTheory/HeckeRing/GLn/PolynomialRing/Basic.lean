@@ -64,7 +64,7 @@ does not reduce across the module boundary, so the `NonAssocSemiring` it carries
 *definitionally* the ambient one and `MvPolynomial.eval₂Hom` will not typecheck against it.
 Writing the same structure here makes its body transparent where it is needed and nowhere else,
 which is why the upstream definitions stay sealed rather than `@[expose]`d. -/
-noncomputable local instance commSemiringIntegralHeckeRingLocal [NeZero n] :
+noncomputable local instance commSemiringIntegralHeckeRingLocal :
     CommSemiring (IntegralHeckeRing n) :=
   { (HeckeCosetModule.instSemiringHeckeRing ℤ : Semiring (IntegralHeckeRing n)) with
     mul_comm := HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
@@ -137,7 +137,7 @@ end TGen
 
 section PolynomialRing
 
-variable [NeZero n] (p : ℕ) (hp : p.Prime)
+variable (p : ℕ) (hp : p.Prime)
 
 /-- Evaluation homomorphism: `Xₖ ↦ heckeGen k`.
     Maps `ℤ[X₁,...,Xₙ]` into the Hecke algebra. -/

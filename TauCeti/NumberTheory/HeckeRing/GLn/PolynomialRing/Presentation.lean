@@ -61,8 +61,6 @@ namespace HeckeRing.GLn
 
 variable {n : ℕ}
 
-variable [NeZero n]
-
 attribute [local instance] commSemiringIntegralHeckeRingLocal
 
 /-- `x` is triangular with leading coset `T(p ^ a)`: that coset occurs with coefficient `1`, and
@@ -71,7 +69,6 @@ private def IsTriangular (p : ℕ) (a : Fin n → ℕ) (x : IntegralHeckeRing n)
   x (diagCoset (primePowDiag n p a)) = 1 ∧
     ∀ D, x D ≠ 0 → ∃ g, Monotone g ∧ D = diagCoset (primePowDiag n p g) ∧ Dominates a g
 
-omit [NeZero n] in
 private lemma isTriangular_one (p : ℕ) : IsTriangular p 0 (1 : IntegralHeckeRing n) := by
   classical
   have h0 : diagCoset (primePowDiag n p 0) = 1 := by
@@ -83,7 +80,6 @@ private lemma isTriangular_one (p : ℕ) : IsTriangular p 0 (1 : IntegralHeckeRi
     by_contra hne
     exact hD (by simp [HeckeCosetModule.one_def, Ne.symm hne])
 
-omit [NeZero n] in
 /-- **Triangularity passes to a product with a diagonal coset.** If `x` is triangular with
 leading coset `T(p ^ a)` and `f` is monotone, then `x * T(p ^ f)` is triangular with leading coset
 `T(p ^ (a + f))`. -/
