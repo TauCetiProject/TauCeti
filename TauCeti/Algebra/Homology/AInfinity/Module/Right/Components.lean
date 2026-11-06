@@ -527,6 +527,36 @@ theorem stasheffSum_def (AA : AInfinityAlgebra R A)
             evalNat (m (p + 1 + (n - p - s) + 1) x)
               (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j))) := (rfl)
 
+/-- The unsuspended module Stasheff expression of arity `n + 1` only reads the first `n` supplied
+degrees and algebra inputs. -/
+theorem stasheffSum_congr (AA : AInfinityAlgebra R A)
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M)
+    (x : M) (e : ℤ) (d : ℕ → ℤ) (a : ℕ → A) (n : ℕ) {d' : ℕ → ℤ} {a' : ℕ → A}
+    (hd : ∀ i < n, d i = d' i) (ha : ∀ i < n, a i = a' i) :
+    stasheffSum AA m x e d a n = stasheffSum AA m x e d' a' n := by
+  rw [stasheffSum_def, stasheffSum_def]
+  refine congrArg₂ (· + ·) (Finset.sum_congr rfl fun k hk ↦ ?_)
+    (Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦ ?_)
+  · have hk := Finset.mem_range.1 hk
+    rw [_root_.MultilinearMap.evalNat_congr (m (k + 1) x) (fun i hi ↦ ha i (by omega)),
+      _root_.MultilinearMap.evalNat_congr (m (n - k + 1) (evalNat (m (k + 1) x) a'))
+        (x := fun j ↦ a (k + j)) (y := fun j ↦ a' (k + j)) fun j hj ↦ ha (k + j) (by omega)]
+  · have hp := Finset.mem_range.1 hp
+    have hs := Finset.mem_Icc.1 hs
+    have hsum : ∑ i ∈ Finset.range p, d i = ∑ i ∈ Finset.range p, d' i :=
+      Finset.sum_congr rfl fun i hi ↦ hd i (by have := Finset.mem_range.1 hi; omega)
+    have hinner : evalNat (AA.m s) (fun j ↦ a (p + j)) = evalNat (AA.m s) (fun j ↦ a' (p + j)) :=
+      _root_.MultilinearMap.evalNat_congr _ fun j hj ↦ ha (p + j) (by omega)
+    rw [hsum, hinner]
+    congr 1
+    refine _root_.MultilinearMap.evalNat_congr _ fun i hi ↦ ?_
+    rcases lt_trichotomy i p with hip | rfl | hip
+    · rw [replaceBlock_of_lt _ _ _ _ hip, replaceBlock_of_lt _ _ _ _ hip]
+      exact ha i (by omega)
+    · simp
+    · rw [replaceBlock_of_gt _ _ _ _ hip, replaceBlock_of_gt _ _ _ _ hip]
+      exact ha (i + s - 1) (by omega)
+
 /-- The suspended module Stasheff expression of a Taylor map `F` evaluating a family `m` on
 Koszul-twisted inputs is, on homogeneous inputs, the unsuspended module Stasheff expression of `m`
 multiplied by the Koszul sign of suspending all the inputs. -/
