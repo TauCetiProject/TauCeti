@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.LocalCoordinates
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Basic
+public import TauCeti.Topology.MetricSpace.Lebesgue
 
 /-!
 # Tubular neighbourhoods in a Euclidean space
@@ -62,19 +63,18 @@ section Local
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The compression `R u` to the normal space `W₀` at `u₀` of the orthogonal projection onto the
-normal space at `u` is continuous at `u₀`, equals the identity there, and so is invertible near
-`u₀`, where `g` is also `C²` with injective derivative. -/
+/-- The compression `R u` to the normal space `W₀ = (fderiv ℝ g u₀).rangeᗮ` at `u₀` of the
+orthogonal projection onto the normal space at `u` is continuous at `u₀`, equals the identity there,
+and so is invertible near `u₀`, where `g` is also `C²` with injective derivative. -/
 private theorem continuousAt_and_eq_one_and_eventually_isUnit_compression {g : E → V} {u₀ : E}
-    (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀))
-    {W₀ : Submodule ℝ V} {Q : E → V →L[ℝ] V} {R : E → W₀ →L[ℝ] W₀}
-    (hW₀ : W₀ = (fderiv ℝ g u₀).rangeᗮ)
-    (hQ : Q = fun u => (fderiv ℝ g u).rangeᗮ.starProjection)
-    (hR : R = fun u => W₀.orthogonalProjectionOnto ∘L Q u ∘L W₀.subtypeL)
-    :
-    ContinuousAt R u₀ ∧ R u₀ = 1 ∧
-      ∀ᶠ u in 𝓝 u₀, ContDiffAt ℝ 2 g u ∧ Injective (fderiv ℝ g u) ∧ IsUnit (R u) := by
-  subst hR hQ hW₀
+    (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀)) :
+    ContinuousAt (fun u => (fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
+      (fderiv ℝ g u).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL) u₀ ∧
+    (fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
+      (fderiv ℝ g u₀).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL = 1 ∧
+    ∀ᶠ u in 𝓝 u₀, ContDiffAt ℝ 2 g u ∧ Injective (fderiv ℝ g u) ∧
+      IsUnit ((fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
+        (fderiv ℝ g u).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL) := by
   let A : E → E →L[ℝ] V := fderiv ℝ g
   set W₀ := (A u₀).rangeᗮ
   let Q : E → V →L[ℝ] V := fun u => (A u).rangeᗮ.starProjection
@@ -97,14 +97,13 @@ private theorem continuousAt_and_eq_one_and_eventually_isUnit_compression {g : E
     exact (hg.eventually (by simp)).and (h2.and h3)
   exact ⟨hRc, hR₀, hev⟩
 
-/-- The normal map with fibres parametrized by the normal space `W₀` at `u₀` is a local
+/-- The normal map with fibres parametrized by the normal space at `u₀` is a local
 homeomorphism `h` near `(u₀, 0)`. -/
 private theorem exists_openPartialHomeomorph_normalParametrization {g : E → V} {u₀ : E}
-    (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀)) {W₀ : Submodule ℝ V}
-    (hW₀ : W₀ = (fderiv ℝ g u₀).rangeᗮ) :
-    ∃ h : OpenPartialHomeomorph (E × W₀) V, (u₀, (0 : W₀)) ∈ h.source ∧
+    (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀)) :
+    ∃ h : OpenPartialHomeomorph (E × (fderiv ℝ g u₀).rangeᗮ) V,
+      (u₀, (0 : (fderiv ℝ g u₀).rangeᗮ)) ∈ h.source ∧
       ∀ q, h q = g q.1 + (fderiv ℝ g q.1).rangeᗮ.starProjection q.2 := by
-  subst hW₀
   let O := interior {u | ContDiffAt ℝ 2 g u}
   have hu₀ : u₀ ∈ O := mem_interior_iff_mem_nhds.mpr (hg.eventually (by norm_num))
   have hgO : ContDiffOn ℝ (1 + 1) g O := by
@@ -116,29 +115,27 @@ private theorem exists_openPartialHomeomorph_normalParametrization {g : E → V}
   exact ⟨Φ.toOpenPartialHomeomorph, hsrc, fun q =>
     (congrFun hΦ q).trans (normalParametrization_apply g u₀ q)⟩
 
-/-- Near `u₀`, the normal map with fibres parametrized by `W₀` is a local homeomorphism `h`, and
-`ρ` inverts `(u, w) ↦ (u, Q u w)` on the normal vectors of length less than `δ` at points of a
-neighbourhood `s` of `u₀`, with values in the source of `h`. -/
+/-- Near `u₀`, the normal map with fibres parametrized by the normal space at `u₀` is a local
+homeomorphism `h`, and `ρ` inverts `(u, w) ↦ (u, Q u w)`, where `Q u` is the orthogonal
+projection onto the normal space at `u`, on the normal vectors of length less than `δ` at points
+of a neighbourhood `s` of `u₀`, with values in the source of `h`. -/
 private theorem exists_openPartialHomeomorph_normal_of_isUnit_compression {g : E → V} {u₀ : E}
-    (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀))
-    {W₀ : Submodule ℝ V} {Q : E → V →L[ℝ] V} {R : E → W₀ →L[ℝ] W₀}
-    (hW₀ : W₀ = (fderiv ℝ g u₀).rangeᗮ)
-    (hQ : Q = fun u => (fderiv ℝ g u).rangeᗮ.starProjection)
-    (hR : R = fun u => W₀.orthogonalProjectionOnto ∘L Q u ∘L W₀.subtypeL)
-    (hRc : ContinuousAt R u₀) (hR₀ : R u₀ = 1)
-    (hev : ∀ᶠ u in 𝓝 u₀, ContDiffAt ℝ 2 g u ∧ Injective (fderiv ℝ g u) ∧ IsUnit (R u)) :
-    ∃ (h : OpenPartialHomeomorph (E × W₀) V) (ρ : E × V → E × W₀) (s : Set E) (δ : ℝ),
-      s ∈ 𝓝 u₀ ∧ 0 < δ ∧ IsOpen s ∧ (∀ u ∈ s, ContinuousAt Q u) ∧ (∀ p, (ρ p).1 = p.1) ∧
-      (∀ q, h q = g q.1 + Q q.1 q.2) ∧
+    (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀)) :
+    ∃ (h : OpenPartialHomeomorph (E × (fderiv ℝ g u₀).rangeᗮ) V)
+      (ρ : E × V → E × (fderiv ℝ g u₀).rangeᗮ) (s : Set E) (δ : ℝ),
+      s ∈ 𝓝 u₀ ∧ 0 < δ ∧ IsOpen s ∧
+      (∀ u ∈ s, ContinuousAt (fun u => (fderiv ℝ g u).rangeᗮ.starProjection) u) ∧
+      (∀ p, (ρ p).1 = p.1) ∧
+      (∀ q, h q = g q.1 + (fderiv ℝ g q.1).rangeᗮ.starProjection q.2) ∧
       ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
-        ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2 ∧ h (ρ p) = g p.1 + p.2 := by
-  subst hR hQ hW₀
+        ρ p ∈ h.source ∧ (fderiv ℝ g p.1).rangeᗮ.starProjection (ρ p).2 = p.2 ∧
+          h (ρ p) = g p.1 + p.2 := by
   let A : E → E →L[ℝ] V := fderiv ℝ g
   set W₀ := (A u₀).rangeᗮ
   let Q : E → V →L[ℝ] V := fun u => (A u).rangeᗮ.starProjection
   let R : E → W₀ →L[ℝ] W₀ := fun u => W₀.orthogonalProjectionOnto ∘L Q u ∘L W₀.subtypeL
+  obtain ⟨hRc, hR₀, hev⟩ := continuousAt_and_eq_one_and_eventually_isUnit_compression hg hinj
   obtain ⟨h, hsrc, hΨh⟩ := exists_openPartialHomeomorph_normalParametrization hg hinj
-    (W₀ := W₀) rfl
   -- `ρ` inverts `(u, w) ↦ (u, Q u w)` on normal vectors, and is continuous at `(u₀, 0)`.
   let ρ : E × V → E × W₀ := fun p => (p.1, Ring.inverse (R p.1) (W₀.orthogonalProjectionOnto p.2))
   have hρc : ContinuousAt ρ (u₀, 0) := by
@@ -230,10 +227,8 @@ private theorem isOpen_image_normal_of_forall_mem_source {g : E → V} {W₀ : S
     · rintro ⟨p, ⟨hpO, hu, hv, hvδ⟩, rfl⟩
       obtain ⟨hρp, hQp, hΨp⟩ := hkey p hu hv hvδ
       refine ⟨ρ p, ⟨⟨hρp, by rw [hρ₁]; exact hu, mem_univ _⟩, ?_⟩, hΨp⟩
-      have hθρ : θ (ρ p) = p := Prod.ext (hρ₁ p) (by
-        change Q (ρ p).1 _ = _
-        rw [hρ₁]
-        exact hQp)
+      have hθρ : θ (ρ p) = p :=
+        Prod.ext (hρ₁ p) ((congrArg (fun u => Q u (ρ p).2) (hρ₁ p)).trans hQp)
       rw [mem_preimage, hθρ]
       exact ⟨hpO, mem_univ _, mem_ball_zero_iff.mpr hvδ⟩
     · rintro ⟨⟨u, w⟩, ⟨⟨-, hu, -⟩, hθO, -, hθδ⟩, rfl⟩
@@ -256,17 +251,13 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
         {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ} ∧
       ∀ O : Set (E × V), IsOpen O → IsOpen ((fun p : E × V => g p.1 + p.2) ''
         (O ∩ {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ})) := by
-  let A : E → E →L[ℝ] V := fderiv ℝ g
-  set W₀ := (A u₀).rangeᗮ
-  let Q : E → V →L[ℝ] V := fun u => (A u).rangeᗮ.starProjection
-  let R : E → W₀ →L[ℝ] W₀ := fun u => W₀.orthogonalProjectionOnto ∘L Q u ∘L W₀.subtypeL
-  obtain ⟨hRc, hR₀, hev⟩ := continuousAt_and_eq_one_and_eventually_isUnit_compression hg hinj
-    (W₀ := W₀) (Q := Q) (R := R) rfl rfl rfl
   obtain ⟨h, ρ, s, δ, hs, hδ, hs_open, hQc, hρ₁, hΨh, hkey⟩ :=
-    exists_openPartialHomeomorph_normal_of_isUnit_compression hg hinj (W₀ := W₀) (Q := Q) (R := R)
-      rfl rfl rfl hRc hR₀ hev
-  exact ⟨s, hs, δ, hδ, injOn_normal_of_forall_mem_source hρ₁ hkey,
-    isOpen_image_normal_of_forall_mem_source rfl hs_open hQc hρ₁ hΨh hkey⟩
+    exists_openPartialHomeomorph_normal_of_isUnit_compression hg hinj
+  exact ⟨s, hs, δ, hδ,
+    injOn_normal_of_forall_mem_source (Q := fun u => (fderiv ℝ g u).rangeᗮ.starProjection) hρ₁
+      hkey,
+    isOpen_image_normal_of_forall_mem_source (Q := fun u => (fderiv ℝ g u).rangeᗮ.starProjection)
+      rfl hs_open hQc hρ₁ hΨh hkey⟩
 end Local
 
 section Manifold
@@ -433,38 +424,6 @@ theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
         exact hv
       · simp [g]
 
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- For an injective continuous map `f` from a compact space into a normed group, and a finite
-family of open sets covering the domain, there is `m > 0` such that any two points whose images
-are at distance less than `m` lie in a common member of the family. -/
-theorem exists_pos_forall_norm_sub_lt_exists_mem {X : Type*} [TopologicalSpace X] [CompactSpace X]
-    {f : X → V} (hf : Continuous f) (hinj : Injective f) {W : X → Set X}
-    (hWo : ∀ x, IsOpen (W x)) {t : Finset X} (ht : univ ⊆ ⋃ x ∈ t, W x) :
-    ∃ m > 0, ∀ y z : X, ‖f y - f z‖ < m → ∃ x ∈ t, y ∈ W x ∧ z ∈ W x := by
-  set O := ⋃ x ∈ t, W x ×ˢ W x
-  have hOo : IsOpen O := isOpen_biUnion fun x _ => (hWo x).prod (hWo x)
-  have hdiag : ∀ y, (y, y) ∈ O := fun y => by
-    obtain ⟨x, hx, hy⟩ := mem_iUnion₂.mp (ht (mem_univ y))
-    exact mem_iUnion₂.mpr ⟨x, hx, hy, hy⟩
-  obtain ⟨m, hm, hmO⟩ : ∃ m > 0, ∀ y z : X, ‖f y - f z‖ < m → (y, z) ∈ O := by
-    rcases Oᶜ.eq_empty_or_nonempty with hE | hne
-    · exact ⟨1, one_pos, fun y z _ => by
-        simpa using (compl_empty_iff.mp hE).symm ▸ mem_univ (y, z)⟩
-    · have hcont : Continuous fun q : X × X => ‖f q.1 - f q.2‖ := by
-        fun_prop
-      obtain ⟨q, hq, hmin⟩ := hOo.isClosed_compl.isCompact.exists_isMinOn hne hcont.continuousOn
-      refine ⟨‖f q.1 - f q.2‖, ?_, fun y z hyz => ?_⟩
-      · rw [gt_iff_lt, norm_pos_iff, sub_ne_zero]
-        intro h
-        apply hq
-        rw [← Prod.mk.eta (p := q), hinj h]
-        exact hdiag q.2
-      · by_contra h
-        exact (not_le.mpr hyz) (hmin h)
-  refine ⟨m, hm, fun y z hyz => ?_⟩
-  obtain ⟨x, hx, hyx, hzx⟩ := mem_iUnion₂.mp (hmO y z hyz)
-  exact ⟨x, hx, hyx, hzx⟩
-
 /-- **Tubular neighbourhood theorem** for a compact `C²` embedded submanifold of a Euclidean
 space: for some `ε > 0`, the map `(x, v) ↦ f x + v` is an open embedding of the normal vectors of
 length less than `ε` into `V`. -/
@@ -482,7 +441,8 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
     · exact ⟨t.inf' hne δ, (Finset.lt_inf'_iff hne).mpr fun x _ => hδ x,
         fun x hx => Finset.inf'_le δ hx⟩
   -- Points whose images are close lie in a common chart neighbourhood.
-  obtain ⟨m, hm, hmW⟩ := exists_pos_forall_norm_sub_lt_exists_mem hf.continuous hinj hWo ht
+  obtain ⟨m, hm, hmW⟩ := exists_pos_forall_dist_lt_exists_mem (W := fun x : t => W x)
+    hf.continuous hinj (fun x => hWo x) (by simpa [iUnion_subtype] using ht)
   refine ⟨min ε₁ (m / 2), lt_min hε₁ (half_pos hm), ?_⟩
   set ε := min ε₁ (m / 2)
   have hloc : ∀ p ∈ normalTube I f ε, ∀ x ∈ t, p.1 ∈ W x →
@@ -499,7 +459,7 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
         _ < m / 2 + m / 2 := add_lt_add (hp'.2.trans_le (min_le_right _ _))
             (hp.2.trans_le (min_le_right _ _))
         _ = m := add_halves m
-    obtain ⟨x, hx, h1, h2⟩ := hmW _ _ hlt
+    obtain ⟨⟨x, hx⟩, h1, h2⟩ := hmW _ _ (by rw [dist_eq_norm]; exact hlt)
     exact hinjOn x (hloc p hp x hx h1) (hloc p' hp' x hx h2) heq
   refine .of_continuous_injective_isOpenMap ?_ (fun p p' h => Subtype.ext (hinjT p.2 p'.2 h)) ?_
   · have hfc := hf.continuous
