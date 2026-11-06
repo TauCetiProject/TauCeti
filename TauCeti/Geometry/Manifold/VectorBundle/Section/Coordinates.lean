@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import TauCeti.Topology.VectorBundle.Hom
+public import TauCeti.Topology.VectorBundle.Section
 
 /-!
 # Reconstructing sections in a vector-bundle frame
@@ -30,26 +29,6 @@ variable {𝕜 M F : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V]
   (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)) [e.IsLinear 𝕜]
-
-/-- Reconstruct a section from its model coordinates in a chosen frame. -/
-def sectionFromCoordinates (A : M → F) (x : M) : V x := e.symmL 𝕜 x (A x)
-
-/-- Evaluate the reconstructed section through the native inverse frame map. -/
-@[simp]
-theorem sectionFromCoordinates_apply (A : M → F) (x : M) :
-    sectionFromCoordinates (𝕜 := 𝕜) e A x = e.symmL 𝕜 x (A x) := by rfl
-
-/-- Reading the reconstructed section in the same frame recovers the model field. -/
-theorem continuousLinearMapAt_sectionFromCoordinates (A : M → F) {x : M}
-    (hx : x ∈ e.baseSet) :
-    e.continuousLinearMapAt 𝕜 x (sectionFromCoordinates (𝕜 := 𝕜) e A x) = A x := by
-  rw [sectionFromCoordinates_apply, e.continuousLinearMapAt_symmL hx]
-
-/-- Reconstructing the coordinates of a section recovers it on the frame domain. -/
-theorem sectionFromCoordinates_continuousLinearMapAt (s : ∀ x, V x) {x : M}
-    (hx : x ∈ e.baseSet) :
-    sectionFromCoordinates (𝕜 := 𝕜) e (fun y ↦ e.continuousLinearMapAt 𝕜 y (s y)) x = s x := by
-  rw [sectionFromCoordinates_apply, e.symmL_continuousLinearMapAt hx]
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
   [ChartedSpace H M] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}

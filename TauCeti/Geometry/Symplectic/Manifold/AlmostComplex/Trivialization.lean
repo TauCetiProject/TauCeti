@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Coordinates
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Finite almost complex structures in a tangent trivialization
