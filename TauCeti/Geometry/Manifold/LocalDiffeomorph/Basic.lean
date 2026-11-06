@@ -61,6 +61,9 @@ maximal atlas.
   maximal-atlas chart is a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
   along a local diffeomorphism to a maximal-atlas chart.
+* `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: between boundaryless
+  manifolds, the pulled back chart can be chosen so that coordinate expressions of `g ∘ f` agree
+  with those of `g`.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
@@ -282,6 +285,29 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq {N' : T
     ⟨hxΦ, by simpa [← hfΦ hxΦ] using hfx⟩, ?_⟩
   filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
   simp [hfΦ hy]
+
+/-- Between boundaryless manifolds, a chart `c` of the maximal `C^n` atlas of `N'` at `f x` pulls
+back along a `C^n` local diffeomorphism `f` at `x` to a chart `e` of the maximal `C^n` atlas of `M`
+at `x` with the same extended coordinates at `x`, in which the coordinate expression of every
+`g ∘ f` is the coordinate expression of `g` in `c`. -/
+theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq {N' Y : Type*}
+    [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] [I.Boundaryless] {f : M → N'}
+    {x : M} (hf : IsLocalDiffeomorphAt I I n f x) {c : OpenPartialHomeomorph N' H}
+    (hc : c ∈ IsManifold.maximalAtlas I n N') (hfx : f x ∈ c.source) :
+    ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧ e.extend I x = c.extend I (f x) ∧
+      ∀ g : N' → Y, (g ∘ f) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)] g ∘ (c.extend I).symm := by
+  obtain ⟨e, he, hx, heq⟩ := hf.exists_mem_maximalAtlas_eventuallyEq hc hfx
+  -- On a neighbourhood of `x`, the extended chart `e` is the extended chart `c` after `f`.
+  have hext : ∀ᶠ y in 𝓝 x, y ∈ e.source ∧ f y ∈ c.source ∧ e.extend I y = c.extend I (f y) := by
+    filter_upwards [heq, e.open_source.mem_nhds hx,
+      hf.contMDiffAt.continuousAt.preimage_mem_nhds (c.open_source.mem_nhds hfx)]
+      with y hy hye hyc
+    exact ⟨hye, hyc, by simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, hy]⟩
+  refine ⟨e, he, hx, hext.self_of_nhds.2.2, fun g ↦ ?_⟩
+  rw [← e.map_extend_nhds_of_boundaryless hx, Filter.EventuallyEq, Filter.eventually_map]
+  filter_upwards [hext] with y ⟨hye, hyc, hy⟩
+  simp only [Function.comp_apply, e.extend_left_inv hye]
+  rw [hy, c.extend_left_inv hyc]
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/
