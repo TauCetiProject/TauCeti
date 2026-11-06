@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.RingTheory.Length
-import Mathlib.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Quotient.Pi
 
 /-!
@@ -87,9 +87,8 @@ section Scalar
 
 variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
 
-/-- Multiplication by a non-zero-divisor `a` on `Aⁿ` has cokernel `(A ⧸ aA)ⁿ`, of length
-`n * ord_A a`. -/
-theorem length_quotient_lsmul_pi (ι : Type*) [Fintype ι] {a : A} (ha : a ∈ nonZeroDivisors A) :
+/-- Multiplication by `a` on `Aⁿ` has cokernel `(A ⧸ aA)ⁿ`, of length `n * ord_A a`. -/
+theorem length_quotient_lsmul_pi (ι : Type*) [Fintype ι] (a : A) :
     Module.length A ((ι → A) ⧸ LinearMap.range (LinearMap.lsmul A (ι → A) a)) =
       Fintype.card ι * Ring.ord A a := by
   classical
@@ -98,42 +97,16 @@ theorem length_quotient_lsmul_pi (ι : Type*) [Fintype ι] {a : A} (ha : a ∈ n
     ext x
     simp only [LinearMap.mem_range, LinearMap.lsmul_apply, Submodule.mem_pi, Set.mem_univ,
       forall_const]
-    refine ⟨fun ⟨y, hy⟩ i ↦ ⟨y i, by rw [← hy]; rfl⟩, fun h ↦ ?_⟩
+    refine ⟨fun ⟨y, hy⟩ i ↦ ⟨y i, by rw [← hy, Pi.smul_apply]⟩, fun h ↦ ?_⟩
     choose y hy using h
     exact ⟨y, funext hy⟩
-  have hA : Module.length A (A ⧸ LinearMap.range (LinearMap.lsmul A A a)) = Ring.ord A a := by
-    rw [← length_quotient_lsmul_congr (Submodule.topEquiv (R := A) (M := A)),
-      length_quotient_lsmul_ideal_eq_ord ⊤ .of_subsingleton a ha]
-  rw [hpi, (Submodule.quotientPi _).length_eq, Module.length_pi_of_fintype, hA,
+  have hA : LinearMap.range (LinearMap.lsmul A A a) = Ideal.span {a} := by
+    ext x
+    simp [Ideal.mem_span_singleton', mul_comm]
+  rw [hpi, (Submodule.quotientPi _).length_eq, Module.length_pi_of_fintype, hA, ← Ring.ord,
     Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
 variable [IsDomain A]
-
-/-- A finitely generated module `M` over a domain contains a free submodule `F` of
-the rank of `M` with `M ⧸ F` torsion: some nonzero `c` multiplies `M` into `F`. This is Mathlib's
-`exists_linearIndepOn_smul_mem_span`, reindexed by `Fin (finrank M)`. -/
-theorem exists_linearIndependent_smul_mem_span [Module.Finite A M] :
-    ∃ (n : ℕ) (v : Fin n → M) (c : A), LinearIndependent A v ∧ c ≠ 0 ∧
-      (∀ m : M, c • m ∈ Submodule.span A (Set.range v)) ∧ Module.finrank A M = n := by
-  classical
-  obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := A) (M := M)
-  obtain ⟨s, hs, c, hc, hcM⟩ := exists_linearIndepOn_smul_mem_span hv
-  rw [Set.image_eq_range] at hcM
-  set F := Submodule.span A (Set.range fun i : s ↦ v i)
-  -- `F` is free on `s`, of the rank of `M`, since `M ⧸ F` is torsion.
-  have hrank : Module.finrank A M = Fintype.card s := by
-    have htors : Module.rank A (M ⧸ F) = 0 := by
-      rw [rank_eq_zero_iff]
-      rintro ⟨m⟩
-      exact ⟨_, hc, (Submodule.Quotient.mk_eq_zero F).2 (hcM m)⟩
-    have h := rank_quotient_add_rank_of_isDomain F
-    rw [htors, zero_add] at h
-    rw [← Module.finrank_eq_card_basis (Module.Basis.span hs), Module.finrank, Module.finrank, h]
-  let e := (Fintype.equivFin s).symm
-  refine ⟨Fintype.card s, fun i ↦ v (e i), c, hs.comp e e.injective, hc, fun m ↦ ?_, hrank⟩
-  rw [show Set.range (fun i ↦ v (e i)) = Set.range fun i : s ↦ v i from
-    e.surjective.range_comp fun i : s ↦ v i]
-  exact hcM m
 
 variable [Module.IsTorsionFree A M]
 
@@ -148,19 +121,15 @@ theorem length_quotient_lsmul_eq_finrank_mul_ord [IsNoetherianRing A] [Ring.Krul
   -- cokernel length under multiplication by `a` as `M`.
   obtain ⟨n, v, c, hv, hc, hcM, hrank⟩ := exists_linearIndependent_smul_mem_span (A := A) (M := M)
   set F := Submodule.span A (Set.range v)
-  have hfin : IsFiniteLength A (M ⧸ F) := by
-    refine isFiniteLength_of_nonZeroDivisor_mem_annihilator (x := c) ?_
-      (mem_nonZeroDivisors_of_ne_zero hc)
-    rw [Module.mem_annihilator]
-    rintro ⟨m⟩
-    exact (Submodule.Quotient.mk_eq_zero F).2 (hcM m)
+  have hfin : IsFiniteLength A (M ⧸ F) :=
+    isFiniteLength_of_nonZeroDivisor_mem_annihilator hcM (mem_nonZeroDivisors_of_ne_zero hc)
   have hinj : Function.Injective (LinearMap.lsmul A M a) := smul_right_injective M ha
   have hF : ∀ x ∈ F, LinearMap.lsmul A M a x ∈ F := fun x hx ↦ F.smul_mem a hx
   have hres : (LinearMap.lsmul A M a).restrict hF = LinearMap.lsmul A F a := by
     ext; simp
   rw [← length_quotient_range_restrict hinj hF hfin, hres,
     length_quotient_lsmul_congr (Module.Basis.span hv).equivFun,
-    length_quotient_lsmul_pi (Fin n) (mem_nonZeroDivisors_of_ne_zero ha), hrank, Fintype.card_fin]
+    length_quotient_lsmul_pi (Fin n) a, hrank, Fintype.card_fin]
 
 end Scalar
 
