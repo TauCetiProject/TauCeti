@@ -12,6 +12,9 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 /-!
 # Squares and finite products
 
+A unit square factor does not change whether an element is a square
+(`IsUnit.isSquare_sq_mul_iff`).
+
 If all but the last entries of two finite families agree modulo squares, agreement of their
 products modulo squares determines the last entry. This is useful when prescribing the last
 coefficient of a diagonal quadratic form from its determinant.
@@ -34,3 +37,11 @@ theorem isSquare_div_last_of_isSquare_div_prod
   simp only [mul_div_mul_comm, mul_div_cancel_left]
 
 end TauCeti
+
+/-- Multiplying by the square of a unit does not change whether an element is a square. -/
+@[simp]
+theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : IsUnit u) :
+    IsSquare (u ^ 2 * x) ↔ IsSquare x := by
+  refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩
+  have := (IsSquare.sq (↑hu.unit⁻¹ : M)).mul h
+  rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this

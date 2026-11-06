@@ -120,6 +120,23 @@ private theorem inner_alongCurve_variationField_radialVariation
   rw [zero_smul, add_zero, real_inner_comm v w, ← two_mul] at hderiv_eq
   exact mul_left_cancel₀ two_ne_zero hderiv_eq
 
+/-- For the radial variation `F`, at every `t ∈ geodesicInterval I M p v`, the inner product
+of the variation field with the central geodesic's velocity has derivative `⟪v, w⟫`. -/
+private theorem hasDerivAt_inner_variationField_radialVariation
+    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    HasDerivAt (fun r ↦ inner ℝ (variationField I F r) (curveVelocity I (F 0) r))
+      (inner ℝ v w) t := by
+  -- Apply the product rule, the vanishing acceleration of the central geodesic, and the
+  -- metric-compatibility identity above.
+  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
+  let _ : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
+  have htExp : t • v ∈ expDomain I M p := mem_geodesicInterval_iff_smul_mem_expDomain.mp ht
+  have hprod := hasDerivAt_inner_variationField_curveVelocity
+    ((contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)).of_le (by simp))
+  rwa [acceleration_radialVariation_eq_zero hF (u := 0) (by simpa using ht), inner_zero_right,
+    add_zero, inner_alongCurve_variationField_radialVariation hF ht] at hprod
+
 end RadialVariation
 
 /-- **The Gauss lemma.** The differential of the Riemannian exponential map preserves the inner
@@ -131,88 +148,33 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v)
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w) =
       inner ℝ v w := by
-  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  let _ : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
   let F : ℝ → ℝ → M := fun u t ↦ riemannianExp I M p (t • (v + u • w))
-  let P : (u t : ℝ) → TangentSpace I (F u t) := fun u ↦ curveVelocity I (F u)
-  let Q : (t u : ℝ) → TangentSpace I (F u t) :=
-    fun t u ↦ curveVelocity I (fun q ↦ F q t) u
-  let cov := leviCivitaConnection I M
   have hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w)) := fun _ _ ↦ rfl
   have hIcc : Icc (0 : ℝ) 1 ⊆ geodesicInterval I M p v :=
     ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.mp hv)
-  -- The product rule for the variation field against the radial velocity, the vanishing
-  -- acceleration of the central geodesic and the metric-compatibility identity above compute the
-  -- derivative of `⟪∂ᵤ F, ∂ₜ F⟩` along the central radial geodesic.
-  have hmain : ∀ t ∈ Icc (0 : ℝ) 1,
-      HasDerivAt (fun r ↦ inner ℝ (Q r 0) (P 0 r)) (inner ℝ v w) t := by
-    intro t ht
-    have htJ : t ∈ geodesicInterval I M p v := hIcc ht
-    have htExp : t • v ∈ expDomain I M p :=
-      mem_geodesicInterval_iff_smul_mem_expDomain.mp htJ
-    have hsurface : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) :=
-      contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)
-    have haccel : acceleration cov (F 0) t = 0 :=
-      acceleration_radialVariation_eq_zero hF (u := 0) (by simpa using htJ)
-    have hDtV_inner : inner ℝ (alongCurve cov (F 0) (variationField I F) t) (P 0 t) =
-        inner ℝ v w :=
-      inner_alongCurve_variationField_radialVariation hF htJ
-    have hprod := hasDerivAt_inner_variationField_curveVelocity (hsurface.of_le (by simp))
-    rw [haccel, inner_zero_right, add_zero, hDtV_inner, variationField_def] at hprod
-    simpa only [P, Q] using hprod
-  have hzero : inner ℝ (Q 0 0) (P 0 0) = 0 := by
-    have hQzero : Q 0 0 = 0 := by
-      have hfun : (fun q : ℝ ↦ F q 0) = fun _ ↦ p := funext (radialVariation_apply_zero hF)
-      have hbase : F 0 0 = p := radialVariation_apply_zero hF 0
-      dsimp only [Q]
-      rw [hbase]
-      rw [hfun, curveVelocity_const]
-    rw [hQzero, inner_zero_left]
-  -- The preceding derivative identity makes `⟪∂ᵤ F, ∂ₜ F⟩ - t ⟨v,w⟩` constant on
-  -- `[0,1]`; its value at zero is zero.
-  have hconst : ∀ t ∈ Icc (0 : ℝ) 1,
-      inner ℝ (Q t 0) (P 0 t) - t * inner ℝ v w = 0 := by
-    let g : ℝ → ℝ := fun t ↦ inner ℝ (Q t 0) (P 0 t) - t * inner ℝ v w
-    have hg : ∀ t ∈ Icc (0 : ℝ) 1, HasDerivAt g 0 t := by
-      intro t ht
-      have hlin : HasDerivAt (fun s : ℝ ↦ s * inner ℝ v w) (inner ℝ v w) t :=
-        hasDerivAt_mul_const (inner ℝ v w)
-      have hsub := (hmain t ht).sub hlin
-      -- `HasDerivAt.sub` concludes for the pointwise difference `f - g` of two functions into
-      -- `ℝ`, carrying the module instance `RCLike.toInnerProductSpaceReal.toModule`, whereas `g`
-      -- is the explicit lambda below with `Semiring.toModule`.  The two instances are equal but
-      -- not syntactically so; this `change` presents the conclusion in the goal's form before its
-      -- derivative is simplified.
-      change HasDerivAt
-        (fun r ↦ inner ℝ (Q r 0) (P 0 r) - r * inner ℝ v w)
-        (inner ℝ v w - inner ℝ v w) t at hsub
-      simpa only [g, sub_self] using hsub
-    have hcont : ContinuousOn g (Icc (0 : ℝ) 1) := fun t ht ↦
-      (hg t ht).continuousAt.continuousWithinAt
-    have hderiv : ∀ t ∈ Ico (0 : ℝ) 1, HasDerivWithinAt g 0 (Ici t) t :=
-      fun t ht ↦ (hg t (Ico_subset_Icc_self ht)).hasDerivWithinAt
-    intro t ht
-    have hgt := constant_of_has_deriv_right_zero hcont hderiv t ht
-    have hg0 : g 0 = 0 := by simp only [g, hzero, zero_mul, sub_zero]
-    rwa [hg0] at hgt
-  -- Evaluate the constant identity at one and identify both velocities with differentials of
-  -- the exponential map.
-  have hone := hconst 1 (by simp)
-  have hPone : P 0 1 =
+  have hmain (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :=
+    hasDerivAt_inner_variationField_radialVariation hF (hIcc ht)
+  -- `⟪∂ᵤ F, ∂ₜ F⟫` and `t ⟪v, w⟫` have the same derivative on `[0, 1]` and agree at `0`, where
+  -- the transverse field vanishes; so they agree at `1`.
+  have hone := eq_of_has_deriv_right_eq (f' := fun _ ↦ inner ℝ v w)
+    (g := fun r : ℝ ↦ r * inner ℝ v w)
+    (fun t ht ↦ (hmain t (Ico_subset_Icc_self ht)).hasDerivWithinAt)
+    (fun t _ ↦ (hasDerivAt_mul_const _).hasDerivWithinAt)
+    (fun t ht ↦ (hmain t ht).continuousAt.continuousWithinAt)
+    (continuous_id.mul continuous_const).continuousOn
+    (by rw [variationField_eq_zero (.of_forall fun s ↦ (radialVariation_apply_zero hF s).trans
+      (radialVariation_apply_zero hF 0).symm), inner_zero_left, zero_mul]) 1 (by simp)
+  -- Identify both velocities at `t = 1` with differentials of the exponential map.
+  have hPone : curveVelocity I (F 0) 1 =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
-    have hfun : F 0 = fun t : ℝ ↦ riemannianExp I M p (t • v) := radialVariation_zero hF
     have h := curveVelocity_riemannianExp_smul (I := I) (M := M) (v := v) (t := 1)
       (by simpa using hv)
     rw [one_smul] at h
-    dsimp only [P]
-    rw [hfun]
+    rw [radialVariation_zero hF]
     exact h
-  have hQone : Q 1 0 =
-      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w := by
-    have h := variationField_radialVariation hF (mem_expDomain_iff.mp hv)
-    rw [one_smul, one_smul, variationField_apply] at h
-    exact h
-  rw [one_mul, sub_eq_zero, hPone, hQone] at hone
+  have hQone := variationField_radialVariation hF (mem_expDomain_iff.mp hv)
+  rw [one_smul, one_smul] at hQone
+  rw [one_mul, hPone, hQone] at hone
   have hbaseeq : F 0 1 = riemannianExp I M p v := by
     simp only [F, zero_smul, add_zero, one_smul]
   rw [hbaseeq] at hone
