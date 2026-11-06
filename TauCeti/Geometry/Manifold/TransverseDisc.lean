@@ -63,7 +63,7 @@ variable {𝕜 E G M : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 
 If `T` has dimension `dim G + 1`, `T` and the kernel of a surjection `π` span the space, `T` and
 the kernel of a linear form `dg` span the space, and some `v ∈ T` with `dg v ≠ 0` lies in the
 kernel of `π`, then `π` is injective on `T ⊓ ker dg`, which has the dimension of `G`. -/
-theorem injOn_inf_ker_and_finrank_inf_ker_eq [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 G]
+theorem injOn_inf_ker_and_finrank_inf_ker_eq [FiniteDimensional 𝕜 E]
     {T : Submodule 𝕜 E} {π : E →ₗ[𝕜] G} {dg : E →ₗ[𝕜] 𝕜} {v : E}
     (hπs : Function.Surjective π) (hTπ : T ⊔ LinearMap.ker π = ⊤) (htrK : T ⊔ LinearMap.ker dg = ⊤)
     (hdim : Module.finrank 𝕜 T = Module.finrank 𝕜 G + 1) (hvs : v ∈ T) (hvπ : π v = 0)
