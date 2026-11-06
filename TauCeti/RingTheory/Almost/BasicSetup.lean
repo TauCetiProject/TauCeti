@@ -453,12 +453,12 @@ theorem IsAlmostIso.lTensor_bijective {f : M →ₗ[V] N} (hf : S.IsAlmostIso f)
   · exact (lTensor_exact S.tilde f.exact_map_mkQ_range (Submodule.mkQ_surjective _) y).mp
       (Subsingleton.elim _ _)
 
-/-- **A linear map is an almost isomorphism iff it becomes bijective after tensoring with `m~`.**
-For the converse, `m~ ⊗[V] −` preserves injective maps, since `m~` is flat, and surjective maps,
-and it kills only almost zero modules. -/
+/-- **A linear map is an almost isomorphism iff it becomes bijective after tensoring with `m~`.** -/
 theorem isAlmostIso_iff_lTensor_bijective {f : M →ₗ[V] N} :
     S.IsAlmostIso f ↔ Function.Bijective (f.lTensor S.tilde) := by
   refine ⟨IsAlmostIso.lTensor_bijective, fun hf ↦ ?_⟩
+  -- `m~ ⊗[V] −` preserves injective maps (as `m~` is flat) and surjective maps, and it kills
+  -- only almost zero modules.
   rw [isAlmostIso_iff, S.isAlmostZero_iff_subsingleton_tilde_tensor,
     S.isAlmostZero_iff_subsingleton_tilde_tensor]
   refine ⟨⟨fun x y ↦ ?_⟩, ⟨fun x y ↦ ?_⟩⟩

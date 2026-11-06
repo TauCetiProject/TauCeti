@@ -13,8 +13,8 @@ import TauCeti.RingTheory.Almost.Monoidal
 These examples test the localized symmetric monoidal structure on `TauCeti.Almost.Module S`:
 
 * the inclusion `m ⊆ V` stays an almost isomorphism after tensoring with any module; for `m ≠ V`,
-  tensoring it with `V ⧸ m` gives the zero map `m ⊗ V ⧸ m → V ⧸ m`, which is not an isomorphism
-  of `V`-modules but becomes one after almostification;
+  tensoring it with `V ⧸ m` gives the zero map `V ⧸ m ⊗ m → V ⧸ m ⊗ V ≅ V ⧸ m`, which is not an
+  isomorphism of `V`-modules but becomes one after almostification;
 * the tensor unit is `V^a`, isomorphic to `m^a`, and `M^a ⊗ N^a ≅ (M ⊗[V] N)^a`;
 * `(V ⧸ m)^a ⊗ X` is zero for every almost module `X`, while `ℤ^a ⊗ ℤ^a` is not zero for the
   classical setup `(ℤ, ℤ)`;
