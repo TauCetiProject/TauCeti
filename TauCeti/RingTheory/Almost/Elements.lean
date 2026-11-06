@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Almost.Hom
+public import Mathlib.CategoryTheory.Adjunction.Triple
+import Mathlib.CategoryTheory.Adjunction.Additive
 import Mathlib.CategoryTheory.Preadditive.LeftExact
 
 /-!
@@ -41,6 +43,7 @@ elements is transported to the Hom-functor `Hom(V^a, −)` through the bijection
 * `TauCeti.Almost.Module.adjShriek`: the adjunction `shriek S ⊣ toAlmost S`.
 * `TauCeti.Almost.Module.toAlmostCompElementsIso`: `(N^a)_* ≅ Hom_V(m~, N)`, naturally in `N`.
 * `TauCeti.Almost.Module.toAlmostCompShriekIso`: `(N^a)_! ≅ m~ ⊗[V] N`, naturally in `N`.
+* `TauCeti.Almost.Module.adjTriple`: the adjoint triple `shriek S ⊣ toAlmost S ⊣ elements S`.
 * `TauCeti.Almost.Module.shriekToElements`: the natural map `M_! → M_*`.
 
 ## Main results
@@ -117,13 +120,10 @@ private noncomputable def adjFirm : toAlmost S ⊣ elementsFirm S :=
 /-- The adjunction `adjFirm` on Hom-modules is `V`-linear. -/
 private noncomputable def adjFirmHomLinearEquiv (N : ModuleCat.{u} V) (M : Module S) :
     ((toAlmost S).obj N ⟶ M) ≃ₗ[V] (N ⟶ (elementsFirm S).obj M) where
-  __ := (adjFirm S).homEquiv N M
-  map_add' f g := by
-    simp only [Equiv.toFun_as_coe, Adjunction.homEquiv_unit, Functor.map_add,
-      Preadditive.comp_add]
+  __ := (adjFirm S).homAddEquiv N M
   map_smul' r f := by
-    simp only [Equiv.toFun_as_coe, Adjunction.homEquiv_unit, Functor.map_smul, Linear.comp_smul,
-      RingHom.id_apply]
+    change (adjFirm S).homEquiv N M (r • f) = r • (adjFirm S).homEquiv N M f
+    simp only [Adjunction.homEquiv_unit, Functor.map_smul, Linear.comp_smul]
 
 /-- The bijection `Hom(V^a, M) ≅ Hom_V(V, Hom_V(m~, M_!)) ≅ Hom_V(m~, M_!)`. -/
 private noncomputable def elementsFirmLinearEquiv (M : Module S) :
@@ -308,34 +308,43 @@ theorem isAlmostIso_adjShriek_counit_app (N : ModuleCat.{u} V) :
 
 /-! ### The comparison `M_! → M_*` -/
 
-/-- The natural map `M_! → M_*` (Gabber–Ramero, (2.2.9)): the map corresponding under
-`adjElements` to the inverse of the unit isomorphism `M ≅ (M_!)^a`. -/
-noncomputable def shriekToElements : shriek S ⟶ elements S where
-  app M := (adjElements S).homEquiv _ _ (inv ((adjShriek S).unit.app M))
-  naturality M M' f := by
-    rw [← Adjunction.homEquiv_naturality_left, ← Adjunction.homEquiv_naturality_right]
-    congr 1
-    rw [IsIso.comp_inv_eq, Category.assoc, IsIso.eq_inv_comp]
-    exact ((adjShriek S).unit.naturality f).symm
+/-- The adjoint triple `(−)_! ⊣ (−)^a ⊣ (−)_*`. -/
+noncomputable def adjTriple : Adjunction.Triple (shriek S) (toAlmost S) (elements S) :=
+  ⟨adjShriek S, adjElements S⟩
+
+/-- The natural map `M_! → M_*` (Gabber–Ramero, (2.2.9)): Mathlib's comparison
+`Adjunction.Triple.leftToRight` for the adjoint triple `adjTriple`, whose outer functors are fully
+faithful. It corresponds under `adjElements` to the inverse of the unit isomorphism
+`M ≅ (M_!)^a` (`shriekToElements_app`). -/
+noncomputable abbrev shriekToElements : shriek S ⟶ elements S :=
+  (adjTriple S).leftToRight
+
+/-- The component `M_! → M_*` is the image under `adjElements` of the inverse of the unit
+isomorphism `M ≅ (M_!)^a` of `adjShriek`. -/
+theorem shriekToElements_app (M : Module S) :
+    (shriekToElements S).app M = (adjElements S).homEquiv _ _ (inv ((adjShriek S).unit.app M)) := by
+  rw [Adjunction.Triple.leftToRight_app, Adjunction.homEquiv_unit, Functor.map_inv]
+  rfl
 
 /-- The map `M_! → M_*` sends `x` to `(V → M_!, 1 ↦ x)^a` followed by `(M_!)^a ≅ M`. -/
 theorem shriekToElements_app_apply (M : Module S) (x : (shriek S).obj M) :
     ((shriekToElements S).app M).hom x =
       (toAlmost S).map (ModuleCat.ofHom (LinearMap.toSpanSingleton V _ x)) ≫
-        inv ((adjShriek S).unit.app M) :=
-  adjElements_homEquiv_apply S _ _ _ x
+        inv ((adjShriek S).unit.app M) := by
+  rw [shriekToElements_app]
+  exact adjElements_homEquiv_apply S _ _ _ x
 
 /-- The map `M_! → M_*` is an almost isomorphism (Gabber–Ramero, (2.2.9)). -/
 theorem isAlmostIso_shriekToElements_app (M : Module S) :
     S.IsAlmostIso ((shriekToElements S).app M).hom := by
-  rw [← isIso_toAlmost_map_iff]
+  rw [← isIso_toAlmost_map_iff, shriekToElements_app]
   have h := ((adjElements S).homEquiv _ _).symm_apply_apply (inv ((adjShriek S).unit.app M))
   rw [Adjunction.homEquiv_counit] at h
-  have : IsIso ((toAlmost S).map ((shriekToElements S).app M) ≫
-      (adjElements S).counit.app M) := by
-    -- `shriekToElements` is defined componentwise as this image under the adjunction.
-    exact h ▸ inferInstance
-  exact IsIso.of_isIso_comp_right _ ((adjElements S).counit.app M)
+  have : IsIso ((toAlmost S).map ((adjElements S).homEquiv _ _ (inv ((adjShriek S).unit.app M))) ≫
+      (adjElements S).counit.app ((𝟭 (Module S)).obj M)) := by
+    rw [h]
+    infer_instance
+  exact IsIso.of_isIso_comp_right _ ((adjElements S).counit.app ((𝟭 (Module S)).obj M))
 
 end Module
 
