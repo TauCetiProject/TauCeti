@@ -26,9 +26,9 @@ of a Hookean spring. Finite spring systems, such as particles at the vertices of
 polyhedron joined along its edges, are sums of such pair forces, and their normal modes come from
 linearizing these laws at a rest configuration.
 
-At `w = 0` the formula divides by `0`, and the force is then `0` by Lean's convention; this
-degenerate configuration, with the two particles at the same point, never arises near a rest
-configuration of positive rest length.
+When the spring has zero length, `‖w‖ = 0`, the formula divides by `0`, and the force is then `0`
+by Lean's convention; this degenerate configuration never arises near a rest configuration of
+positive rest length.
 
 ## Main definitions
 
@@ -38,8 +38,10 @@ configuration of positive rest length.
 ## Main results
 
 * `TauCeti.springPotential_eq_zero_iff`, `TauCeti.springForce_eq_zero_iff`: for `κ ≠ 0`, both
-  vanish exactly at the rest length (the force also at `w = 0`).
-* `TauCeti.norm_springForce`: Hooke's law, `‖F‖ = |κ| |‖w‖ - ℓ₀|` away from `w = 0`.
+  vanish exactly at the rest length (the force also at zero length, `‖w‖ = 0`).
+* `TauCeti.springForce_neg`, `TauCeti.springPotential_neg`: the second end feels the opposite
+  force, and the energy does not depend on the orientation of the spring.
+* `TauCeti.norm_springForce`: Hooke's law, `‖F‖ = |κ| |‖w‖ - ℓ₀|` away from zero length.
 -/
 
 public section
@@ -68,6 +70,12 @@ theorem springPotential_eq_zero_iff {κ : ℝ} (hκ : κ ≠ 0) (ℓ₀ : ℝ) (
     springPotential κ ℓ₀ w = 0 ↔ ‖w‖ = ℓ₀ := by
   simp [springPotential_def, hκ, sub_eq_zero]
 
+/-- Reversing the spring, that is, exchanging its two ends, does not change its energy. -/
+@[simp]
+theorem springPotential_neg (κ ℓ₀ : ℝ) (w : E) :
+    springPotential κ ℓ₀ (-w) = springPotential κ ℓ₀ w := by
+  simp [springPotential_def]
+
 variable [NormedSpace ℝ E]
 
 /-- The **force of a spring** of stiffness `κ` and rest length `ℓ₀` on its first end, when the
@@ -80,19 +88,24 @@ theorem springForce_def (κ ℓ₀ : ℝ) (w : E) :
     springForce κ ℓ₀ w = (κ * (‖w‖ - ℓ₀) / ‖w‖) • w :=
   (rfl)
 
-/-- A spring of nonzero stiffness exerts no force exactly at its rest length, or when its two ends
-coincide (where the direction `w / ‖w‖` is undefined and the force is `0` by convention). -/
+/-- **The second end feels the opposite force**: reversing the relative vector negates the
+force. -/
+@[simp]
+theorem springForce_neg (κ ℓ₀ : ℝ) (w : E) : springForce κ ℓ₀ (-w) = -springForce κ ℓ₀ w := by
+  simp [springForce_def]
+
+/-- A spring of nonzero stiffness exerts no force exactly at its rest length, or when it has zero
+length (where the direction `w / ‖w‖` is undefined and the force is `0` by convention). -/
 theorem springForce_eq_zero_iff {κ : ℝ} (hκ : κ ≠ 0) (ℓ₀ : ℝ) (w : E) :
     springForce κ ℓ₀ w = 0 ↔ ‖w‖ = ℓ₀ ∨ ‖w‖ = 0 := by
-  rw [springForce_def, smul_eq_zero, div_eq_zero_iff, mul_eq_zero, sub_eq_zero]
-  have hw : w = 0 → ‖w‖ = 0 := fun h ↦ by rw [h, norm_zero]
-  tauto
+  simp only [springForce_def, smul_eq_zero, div_eq_zero_iff, mul_eq_zero, hκ, false_or,
+    sub_eq_zero]
+  exact or_iff_left_of_imp fun h ↦ .inr (by rw [h, norm_zero])
 
-/-- **Hooke's law.** Away from `w = 0`, the force of a spring has magnitude `|κ|` times the
-deviation `|‖w‖ - ℓ₀|` of its length from the rest length. -/
+/-- **Hooke's law.** Away from zero length, `‖w‖ ≠ 0`, the force of a spring has magnitude `|κ|`
+times the deviation `|‖w‖ - ℓ₀|` of its length from the rest length. -/
 theorem norm_springForce (κ ℓ₀ : ℝ) {w : E} (hw : ‖w‖ ≠ 0) :
     ‖springForce κ ℓ₀ w‖ = |κ| * |‖w‖ - ℓ₀| := by
-  rw [springForce_def, norm_smul, Real.norm_eq_abs, abs_div, abs_mul, abs_norm,
-    div_mul_cancel₀ _ hw]
+  simp [springForce_def, norm_smul, hw]
 
 end TauCeti

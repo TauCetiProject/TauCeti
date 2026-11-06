@@ -41,8 +41,8 @@ but its first coordinate is positive for `ε ≠ 0`. Hence the affine paths
 exact force is not.
 
 The zero eigenvalue on the transverse mode is instead the tangent of a curve of rest
-configurations: the rotations `p₁(ε) = (½ - ½ cos 2ε, ½ sin 2ε)`,
-`p₂(ε) = (½ + ½ cos 2ε, -½ sin 2ε)` of the rest configuration about its midpoint keep the
+configurations: the clockwise rotations by `2ε`, `p₁(ε) = (½ - ½ cos 2ε, ½ sin 2ε)` and
+`p₂(ε) = (½ + ½ cos 2ε, -½ sin 2ε)`, of the rest configuration about its midpoint keep the
 particles at distance `1`, so they store no energy, and their velocity at `ε = 0` is
 `(0, 1, 0, -1)` (`TauCeti.hasDerivAt_rotatedRestFirst_zero`,
 `TauCeti.hasDerivAt_rotatedRestSecond_zero`). These are configuration curves, not solutions of the
@@ -91,6 +91,10 @@ the rest direction is felt. Along the transverse mode `(0, 1, 0, -1)` this first
 of the exact force is `TauCeti.hasDerivAt_springForce_transverse_zero`. -/
 def twoParticleForceMatrix : Matrix (Fin 4) (Fin 4) ℝ :=
   !![-1, 0, 1, 0; 0, 0, 0, 0; 1, 0, -1, 0; 0, 0, 0, 0]
+
+theorem twoParticleForceMatrix_def :
+    twoParticleForceMatrix = !![-1, 0, 1, 0; 0, 0, 0, 0; 1, 0, -1, 0; 0, 0, 0, 0] :=
+  (rfl)
 
 /-- The stretching mode `(1, 0, -1, 0)` is an eigenvector of `H` of eigenvalue `-2`. -/
 theorem twoParticleForceMatrix_mulVec_stretch :
@@ -152,6 +156,9 @@ theorem one_lt_transverseLength {ε : ℝ} (hε : ε ≠ 0) : 1 < transverseLeng
 theorem transverseLength_pos (ε : ℝ) : 0 < transverseLength ε :=
   zero_lt_one.trans_le (one_le_transverseLength ε)
 
+theorem inv_transverseLength_lt_one {ε : ℝ} (hε : ε ≠ 0) : (transverseLength ε)⁻¹ < 1 :=
+  inv_lt_one_of_one_lt₀ (one_lt_transverseLength hε)
+
 theorem hasDerivAt_transverseLength (ε : ℝ) :
     HasDerivAt transverseLength (4 * ε / transverseLength ε) ε := by
   have h : HasDerivAt (fun x : ℝ ↦ 1 + 4 * x ^ 2) (8 * ε) ε := by
@@ -163,17 +170,23 @@ theorem hasDerivAt_transverseLength (ε : ℝ) :
   field_simp [(transverseLength_pos ε).ne']
   ring
 
+/-- The factor `1 - 1/ℓ(ε)` of the exact force has derivative `0` at `ε = 0`. -/
+theorem hasDerivAt_one_sub_inv_transverseLength_zero :
+    HasDerivAt (fun ε ↦ 1 - (transverseLength ε)⁻¹) 0 0 := by
+  simpa using ((hasDerivAt_transverseLength 0).inv (transverseLength_pos 0).ne').const_sub 1
+
 /-- The relative vector of the transverse displacement is `(1, -2ε)`. -/
 private theorem transverse_relative (ε : ℝ) :
     !₂[1, 0] + !₂[0, -ε] - !₂[0, ε] = (!₂[1, -2 * ε] : EuclideanSpace ℝ (Fin 2)) := by
   ext i
-  fin_cases i <;> simp; ring
+  fin_cases i <;> simp [two_mul, sub_eq_add_neg]
 
 private theorem norm_transverse_relative (ε : ℝ) :
     ‖(!₂[1, -2 * ε] : EuclideanSpace ℝ (Fin 2))‖ = transverseLength ε := by
   rw [EuclideanSpace.norm_eq, transverseLength_def]
   congr 1
-  simp [Fin.sum_univ_two]
+  simp only [norm_eq_abs, sq_abs, Fin.sum_univ_two, cons_val_zero, one_pow, cons_val_one,
+    cons_val_fin_one]
   ring
 
 /-- The exact potential of the transverse displacement `u₁ = (0, ε)`, `u₂ = (0, -ε)` is
@@ -197,9 +210,8 @@ the stretched spring pulls it towards the second particle. -/
 theorem springForce_transverse_apply_zero_pos {κ ε : ℝ} (hκ : 0 < κ) (hε : ε ≠ 0) :
     0 < springForce κ 1 (!₂[1, 0] + !₂[0, -ε] - !₂[0, ε] : EuclideanSpace ℝ (Fin 2)) 0 := by
   rw [springForce_transverse]
-  have := inv_lt_one_of_one_lt₀ (one_lt_transverseLength hε)
   simp only [PiLp.smul_apply, smul_eq_mul, Matrix.cons_val_zero, mul_one]
-  exact mul_pos hκ (sub_pos.mpr this)
+  exact mul_pos hκ (sub_pos.mpr (inv_transverseLength_lt_one hε))
 
 /-- **To first order the transverse displacement feels no force**: the exact force on the first
 particle along `u₁ = (0, ε)`, `u₂ = (0, -ε)` has derivative `0` at `ε = 0`, in accordance with
@@ -209,8 +221,7 @@ theorem hasDerivAt_springForce_transverse_zero (κ : ℝ) :
       springForce κ 1 (!₂[1, 0] + !₂[0, -ε] - !₂[0, ε] : EuclideanSpace ℝ (Fin 2))) 0 0 := by
   simp_rw [springForce_transverse]
   have hc : HasDerivAt (fun ε ↦ κ * (1 - (transverseLength ε)⁻¹)) 0 0 := by
-    simpa using (((hasDerivAt_transverseLength 0).inv
-      (transverseLength_pos 0).ne').const_sub 1).const_mul κ
+    simpa using hasDerivAt_one_sub_inv_transverseLength_zero.const_mul κ
   have hv : HasDerivAt (fun ε : ℝ ↦ (!₂[1, -2 * ε] : EuclideanSpace ℝ (Fin 2))) !₂[0, -2] 0 := by
     have h := ((hasDerivAt_id' (0 : ℝ)).smul_const (!₂[0, -2] : EuclideanSpace ℝ (Fin 2))).const_add
       (!₂[1, 0] : EuclideanSpace ℝ (Fin 2))
@@ -263,7 +274,7 @@ theorem deriv_deriv_transverseEnergy_zero (κ : ℝ) :
     deriv (deriv (transverseEnergy κ)) 0 = 0 := by
   rw [deriv_transverseEnergy]
   have h := ((hasDerivAt_id' (0 : ℝ)).const_mul (4 * κ)).fun_mul
-    (((hasDerivAt_transverseLength 0).inv (transverseLength_pos 0).ne').const_sub 1)
+    hasDerivAt_one_sub_inv_transverseLength_zero
   simpa using h.deriv
 
 /-- Away from `ε = 0`, `E(ε) / ε⁴ = 8κ / (ℓ(ε) + 1)²`. -/
@@ -316,18 +327,21 @@ theorem mass_smul_deriv_deriv_ne_springForce_transverse {κ a t : ℝ} (hκ : κ
     fin_cases i <;> simp [mul_comm]
   have hvel : deriv (fun s : ℝ ↦ (!₂[0, a * s] : EuclideanSpace ℝ (Fin 2))) = fun _ ↦ !₂[0, a] :=
     funext fun s ↦ by rw [hpath]; exact ((hasDerivAt_id' s).smul_const _).deriv.trans (one_smul _ _)
-  rw [hvel, deriv_const, smul_zero, ne_comm, springForce_transverse, Ne, smul_eq_zero, not_or]
-  refine ⟨mul_ne_zero hκ (sub_ne_zero.mpr ?_), fun h ↦ by simpa using congr($h 0)⟩
-  exact (inv_lt_one_of_one_lt₀ (one_lt_transverseLength (mul_ne_zero ha ht))).ne'
+  rw [hvel, deriv_const, smul_zero, springForce_transverse]
+  intro h
+  have h0 := congr($h 0)
+  simp only [PiLp.zero_apply, PiLp.smul_apply, smul_eq_mul, Matrix.cons_val_zero, mul_one] at h0
+  exact mul_ne_zero hκ (sub_ne_zero.mpr
+    (inv_transverseLength_lt_one (mul_ne_zero ha ht)).ne') h0.symm
 
 /-! ### The rotated rest configurations -/
 
-/-- The first particle of the rest configuration rotated by the angle `2ε` about its midpoint
+/-- The first particle of the rest configuration rotated clockwise by `2ε` about its midpoint
 `(½, 0)`: `p₁(ε) = (½ - ½ cos 2ε, ½ sin 2ε)`. -/
 noncomputable def rotatedRestFirst (ε : ℝ) : EuclideanSpace ℝ (Fin 2) :=
   !₂[1 / 2 - cos (2 * ε) / 2, sin (2 * ε) / 2]
 
-/-- The second particle of the rest configuration rotated by the angle `2ε` about its midpoint
+/-- The second particle of the rest configuration rotated clockwise by `2ε` about its midpoint
 `(½, 0)`: `p₂(ε) = (½ + ½ cos 2ε, -½ sin 2ε)`. -/
 noncomputable def rotatedRestSecond (ε : ℝ) : EuclideanSpace ℝ (Fin 2) :=
   !₂[1 / 2 + cos (2 * ε) / 2, -(sin (2 * ε) / 2)]
@@ -340,10 +354,12 @@ theorem rotatedRestSecond_def (ε : ℝ) :
     rotatedRestSecond ε = !₂[1 / 2 + cos (2 * ε) / 2, -(sin (2 * ε) / 2)] :=
   (rfl)
 
+@[simp]
 theorem rotatedRestFirst_zero : rotatedRestFirst 0 = !₂[0, 0] := by
   ext i
   fin_cases i <;> norm_num [rotatedRestFirst_def]
 
+@[simp]
 theorem rotatedRestSecond_zero : rotatedRestSecond 0 = !₂[1, 0] := by
   ext i
   fin_cases i <;> norm_num [rotatedRestSecond_def]
@@ -352,7 +368,8 @@ theorem rotatedRestSecond_zero : rotatedRestSecond 0 = !₂[1, 0] := by
 theorem norm_rotatedRestSecond_sub_rotatedRestFirst (ε : ℝ) :
     ‖rotatedRestSecond ε - rotatedRestFirst ε‖ = 1 := by
   rw [EuclideanSpace.norm_eq, sqrt_eq_one]
-  simp [rotatedRestFirst_def, rotatedRestSecond_def, Fin.sum_univ_two]
+  simp only [rotatedRestSecond_def, rotatedRestFirst_def, PiLp.sub_apply, norm_eq_abs, sq_abs,
+    Fin.sum_univ_two, cons_val_zero, cons_val_one, cons_val_fin_one]
   nlinarith [sin_sq_add_cos_sq (2 * ε)]
 
 /-- The rotated rest configurations store no energy. Their displacements from the rest
@@ -373,8 +390,7 @@ theorem hasDerivAt_rotatedRestFirst (ε : ℝ) :
     ext i
     fin_cases i <;> simp [rotatedRestFirst_def]
   · ext i
-    fin_cases i <;> simp
-    ring
+    fin_cases i <;> simp [neg_div]
 
 theorem hasDerivAt_rotatedRestSecond (ε : ℝ) :
     HasDerivAt rotatedRestSecond !₂[-sin (2 * ε), -cos (2 * ε)] ε := by
@@ -387,8 +403,7 @@ theorem hasDerivAt_rotatedRestSecond (ε : ℝ) :
     ext i
     fin_cases i <;> simp [rotatedRestSecond_def]
   · ext i
-    fin_cases i <;> simp
-    ring
+    fin_cases i <;> simp [neg_div]
 
 /-- At `ε = 0` the first rotated particle moves with velocity `(0, 1)`, the velocity of the first
 particle along the transverse mode `(0, 1, 0, -1)`. -/
