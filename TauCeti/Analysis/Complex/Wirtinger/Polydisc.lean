@@ -23,10 +23,11 @@ a polydisc, is `bar∂`-exact near every compact product `∏ K_i` with `K_i ⊆
 smooth `u` satisfies `∂u/∂(conj z_j) = f_j` for every `j` there.
 
 The proof eliminates one conjugate variable at a time, as in Hörmander and Griffiths–Harris. The
-elimination step `TauCeti.exists_contDiffOn_conjWirtingerDeriv_eq_of_pi` solves
+elimination step
+`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi` solves
 `∂v/∂(conj z_k) = g` in one coordinate `z_k`. If `g` is holomorphic in a set `T` of other
 coordinates, the solution `v` can be chosen holomorphic in those coordinates as well; it is
-smooth in the remaining ones. This is the one-variable solver
+`Cⁿ`, like `g`. This is the one-variable solver
 `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_holomorphic_param`
 with the coordinates outside `{k} ∪ T` as smooth parameters and those in `T` as holomorphic
 parameters. The step applies to coefficients in any complex Banach space, so it also performs the
@@ -34,10 +35,11 @@ elimination for forms of higher degree, whose coefficient families are vector va
 
 ## Main results
 
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_eq_of_pi`: the elimination step, solving
-  `∂v/∂(conj z_k) = g` and keeping holomorphy in the coordinates where `g` is holomorphic.
-* `TauCeti.exists_conjWirtingerDeriv_eq_of_pi`: a smooth `bar∂`-closed `(0,1)`-form on a product
-  of open subsets of `ℂ` is `bar∂`-exact near every compact product inside it.
+* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi`: the
+  elimination step, solving `∂v/∂(conj z_k) = g` and keeping holomorphy in the coordinates where
+  `g` is holomorphic.
+* `TauCeti.exists_conjWirtingerDeriv_eventually_eq_of_pi`: a smooth `bar∂`-closed `(0,1)`-form
+  on a product of open subsets of `ℂ` is `bar∂`-exact near every compact product inside it.
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_eq_of_polydisc`: the same on polydiscs. A smooth
   `bar∂`-closed `(0,1)`-form on a polydisc of polyradius `r` is `bar∂`-exact on the concentric
   polydisc of every smaller polyradius.
@@ -177,6 +179,42 @@ private theorem differentiableAt_glue (hk : k ∉ T) {g : (ι → ℂ) → F}
   rw [← conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line hg,
     conjWirtingerDeriv_piecewise_eq_zero hgT, zero_apply]
 
+/-- A map holomorphic in the holomorphic parameter is holomorphic in each coordinate of `T`. -/
+private theorem conjWirtingerDeriv_comp_split_single_of_mem (hk : k ∉ T)
+    {u : (ι → ℂ) × (ι → ℂ) → ℂ → F} {z : ι → ℂ}
+    (hu : DifferentiableAt ℝ (fun y : ((ι → ℂ) × (ι → ℂ)) × ℂ ↦ u y.1 y.2) (split k T z, z k))
+    (hq : DifferentiableAt ℂ (fun q ↦ u ((split k T z).1, q) (z k)) (split k T z).2) {j : ι}
+    (hj : j ∈ T) :
+    conjWirtingerDeriv (fun z ↦ u (split k T z) (z k)) z (Pi.single j 1) = 0 := by
+  have hjk : j ≠ k := fun h ↦ hk (h ▸ hj)
+  rw [conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line
+    (hu.fun_comp' z ((contDiff_split k T).differentiable (by simp) z))]
+  simp only [split_add_smul_single_of_mem hk hj, Pi.add_apply, Pi.smul_apply,
+    Pi.single_eq_of_ne hjk.symm, smul_zero, add_zero]
+  have hline : DifferentiableAt ℂ (fun t : ℂ ↦ (split k T z).2 + t • Pi.single j 1) 0 := by
+    fun_prop
+  have hq' : DifferentiableAt ℂ (fun q ↦ u ((split k T z).1, q) (z k))
+      ((split k T z).2 + (0 : ℂ) • Pi.single j 1) := by
+    simpa using hq
+  have hcomp : DifferentiableAt ℂ
+      (fun t : ℂ ↦ u ((split k T z).1, (split k T z).2 + t • Pi.single j 1) (z k)) 0 :=
+    hq'.fun_comp' (0 : ℂ) hline
+  simp [hcomp.conjWirtingerDeriv_eq_zero]
+
+/-- Along the `k`-th coordinate, the conjugate Wirtinger derivative is the one-variable conjugate
+Wirtinger derivative in the last argument. -/
+private theorem conjWirtingerDeriv_comp_split_single_self (hk : k ∉ T)
+    {u : (ι → ℂ) × (ι → ℂ) → ℂ → F} {z : ι → ℂ}
+    (hu : DifferentiableAt ℝ (fun y : ((ι → ℂ) × (ι → ℂ)) × ℂ ↦ u y.1 y.2) (split k T z, z k)) :
+    conjWirtingerDeriv (fun z ↦ u (split k T z) (z k)) z (Pi.single k 1) =
+      conjWirtingerDeriv (u (split k T z)) (z k) 1 := by
+  have hd : DifferentiableAt ℝ (u (split k T z)) (z k) :=
+    hu.fun_comp' (z k) (differentiableAt_const _ |>.prodMk differentiableAt_id)
+  rw [conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line
+    (hu.fun_comp' z ((contDiff_split k T).differentiable (by simp) z))]
+  simp only [split_add_smul_single_self hk, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same]
+  rw [← conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line hd]
+
 end Blocks
 
 /-! ### Elimination of one conjugate variable -/
@@ -187,9 +225,10 @@ variable [Fintype ι] [CompleteSpace F]
 open subsets of `ℂ`, and holomorphic there in each coordinate of a set `T` not containing `k`.
 For every compact `L ⊆ U_k` there is a `Cⁿ` map `v` on `∏ U_i`, holomorphic there in each
 coordinate of `T`, with `∂v/∂(conj z_k) = g` wherever `z_k` lies near `L`. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_eq_of_pi {n : ℕ∞} (hn : 1 ≤ n) {U : ι → Set ℂ}
-    (hU : ∀ i, IsOpen (U i)) {k : ι} {T : Finset ι} (hk : k ∉ T) {L : Set ℂ} (hL : IsCompact L)
-    (hLU : L ⊆ U k) {g : (ι → ℂ) → F} (hg : ContDiffOn ℝ n g (univ.pi U))
+theorem exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi {n : ℕ∞}
+    (hn : 1 ≤ n) {U : ι → Set ℂ} (hU : ∀ i, IsOpen (U i)) {k : ι} {T : Finset ι} (hk : k ∉ T)
+    {L : Set ℂ} (hL : IsCompact L) (hLU : L ⊆ U k) {g : (ι → ℂ) → F}
+    (hg : ContDiffOn ℝ n g (univ.pi U))
     (hgT : ∀ z ∈ univ.pi U, ∀ j ∈ T, conjWirtingerDeriv g z (Pi.single j 1) = 0) :
     ∃ v : (ι → ℂ) → F, ContDiffOn ℝ n v (univ.pi U) ∧
       (∀ z ∈ univ.pi U, ∀ j ∈ T, conjWirtingerDeriv v z (Pi.single j 1) = 0) ∧
@@ -235,41 +274,43 @@ theorem exists_contDiffOn_conjWirtingerDeriv_eq_of_pi {n : ℕ∞} (hn : 1 ≤ n
   have hud {x : (ι → ℂ) × (ι → ℂ)} (hx : x ∈ s) (w : ℂ) :
       DifferentiableAt ℝ (fun y : ((ι → ℂ) × (ι → ℂ)) × ℂ ↦ u y.1 y.2) (x, w) :=
     (hu.contDiffAt (hsu.mem_nhds ⟨hx, mem_univ w⟩)).differentiableAt hn'
-  have hvd {z : ι → ℂ} (hz : z ∈ univ.pi U) :
-      DifferentiableAt ℝ (fun z ↦ u (split k T z) (z k)) z :=
-    (hud (hsplit hz) (z k)).fun_comp' z ((contDiff_split k T).differentiable (by simp) z)
   -- The solution in the `k`-th coordinate, with the other coordinates as parameters.
   refine ⟨fun z ↦ u (split k T z) (z k), ?_, ?_, ?_⟩
   · exact hu.comp ((contDiff_split k T).of_le le_top).contDiffOn
       fun z hz ↦ ⟨hsplit hz, mem_univ _⟩
-  · intro z hz j hj
-    have hjk : j ≠ k := fun h ↦ hk (h ▸ hj)
-    rw [conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line (hvd hz)]
-    simp only [split_add_smul_single_of_mem hk hj, Pi.add_apply, Pi.smul_apply,
-      Pi.single_eq_of_ne hjk.symm, smul_zero, add_zero]
-    have hline : DifferentiableAt ℂ (fun t : ℂ ↦ (split k T z).2 + t • Pi.single j 1) 0 := by
-      fun_prop
-    have hq : DifferentiableAt ℂ (fun q ↦ u ((split k T z).1, q) (z k))
-        ((split k T z).2 + (0 : ℂ) • Pi.single j 1) := by
-      simpa using hhol (split k T z) (hsplit hz) (z k)
-    have hcomp : DifferentiableAt ℂ
-        (fun t : ℂ ↦ u ((split k T z).1, (split k T z).2 + t • Pi.single j 1) (z k)) 0 :=
-      hq.fun_comp' (0 : ℂ) hline
-    simp [hcomp.conjWirtingerDeriv_eq_zero]
+  · exact fun z hz j hj ↦ conjWirtingerDeriv_comp_split_single_of_mem hk (hud (hsplit hz) (z k))
+      (hhol _ (hsplit hz) _) hj
   · filter_upwards [hsol] with w hw z hz hzw
     subst hzw
-    have hd : DifferentiableAt ℝ (u (split k T z)) (z k) :=
-      (hud (hsplit hz) (z k)).fun_comp' (z k)
-        (differentiableAt_const _ |>.prodMk differentiableAt_id)
-    rw [conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line (hvd hz)]
-    simp only [split_add_smul_single_self hk, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same]
-    rw [← conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line hd, hw _ (hsplit hz), glue_split]
+    rw [conjWirtingerDeriv_comp_split_single_self hk (hud (hsplit hz) (z k)), hw _ (hsplit hz),
+      glue_split]
 
 /-! ### The `bar∂`-Poincaré lemma for `(0,1)`-forms -/
 
-/-- The induction behind `TauCeti.exists_conjWirtingerDeriv_eq_of_pi`, on the finite set `S` of
-coordinates whose coefficients may be nonzero. -/
-private theorem exists_conjWirtingerDeriv_eq_of_pi_of_eq_zero (S : Finset ι) :
+omit [CompleteSpace F] in
+/-- Subtracting the `bar∂` of a `C²` map keeps a `(0,1)`-form `bar∂`-closed at a point. -/
+private theorem conjWirtingerDeriv_sub_conjWirtingerDeriv_comm {f : ι → (ι → ℂ) → F}
+    {v : (ι → ℂ) → F} {z : ι → ℂ} (hf : ∀ j, DifferentiableAt ℝ (f j) z)
+    (hv : ContDiffAt ℝ 2 v z)
+    (hclosed : ∀ i j,
+      conjWirtingerDeriv (f j) z (Pi.single i 1) = conjWirtingerDeriv (f i) z (Pi.single j 1))
+    (i j : ι) :
+    conjWirtingerDeriv (f j - fun y ↦ conjWirtingerDeriv v y (Pi.single j 1)) z
+        (Pi.single i 1) =
+      conjWirtingerDeriv (f i - fun y ↦ conjWirtingerDeriv v y (Pi.single i 1)) z
+        (Pi.single j 1) := by
+  have hD : DifferentiableAt ℝ (fderiv ℝ v) z :=
+    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hdv (a : ι → ℂ) : DifferentiableAt ℝ (fun y ↦ conjWirtingerDeriv v y a) z :=
+    (((hD.clm_apply (differentiableAt_const a)).add
+      ((hD.clm_apply (differentiableAt_const (I • a))).const_smul I)).const_smul
+        (2 : ℂ)⁻¹).congr_of_eventuallyEq (.of_forall fun y ↦ conjWirtingerDeriv_apply v y a)
+  rw [conjWirtingerDeriv_sub (hf j) (hdv _), conjWirtingerDeriv_sub (hf i) (hdv _), sub_apply,
+    sub_apply, hclosed i j, conjWirtingerDeriv_conjWirtingerDeriv_comm hv]
+
+/-- The induction behind `TauCeti.exists_conjWirtingerDeriv_eventually_eq_of_pi`, on the finite
+set `S` of coordinates whose coefficients may be nonzero. -/
+private theorem exists_conjWirtingerDeriv_eventually_eq_of_pi_of_eq_zero (S : Finset ι) :
     ∀ {U : ι → Set ℂ}, (∀ i, IsOpen (U i)) → ∀ {f : ι → (ι → ℂ) → F},
       (∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi U)) →
       (∀ z ∈ univ.pi U, ∀ i j,
@@ -296,8 +337,9 @@ private theorem exists_conjWirtingerDeriv_eq_of_pi_of_eq_zero (S : Finset ι) :
       pi_mono fun i _ ↦ subset_closure.trans (hWU i)
     -- Eliminate `d(conj z_k)`, keeping holomorphy in the coordinates outside `insert k S`.
     have hT : k ∉ (insert k S)ᶜ := by simp
-    obtain ⟨v, hv, hvT, hvk⟩ := exists_contDiffOn_conjWirtingerDeriv_eq_of_pi le_top hU hT
-      (hWc k) (hWU k) (hf k) fun z hz j hj ↦ by
+    obtain ⟨v, hv, hvT, hvk⟩ :=
+      exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi le_top hU hT
+        (hWc k) (hWU k) (hf k) fun z hz j hj ↦ by
         have h : f j =ᶠ[𝓝 z] fun _ ↦ 0 :=
           eventually_of_mem (hpi.mem_nhds hz) (hS j (Finset.mem_compl.1 hj))
         simp [hclosed z hz j k, h.conjWirtingerDeriv_eq]
@@ -317,14 +359,9 @@ private theorem exists_conjWirtingerDeriv_eq_of_pi_of_eq_zero (S : Finset ι) :
           conjWirtingerDeriv (f' i) z (Pi.single j 1) := by
       intro z hz i j
       have hzU := hWsub hz
-      have hfd (j : ι) : DifferentiableAt ℝ (f j) z :=
-        ((hf j).contDiffAt (hpi.mem_nhds hzU)).differentiableAt (by simp)
-      have hdvd (j : ι) :
-          DifferentiableAt ℝ (fun z ↦ conjWirtingerDeriv v z (Pi.single j 1)) z :=
-        ((hdv j).contDiffAt (hpi.mem_nhds hzU)).differentiableAt (by simp)
-      rw [hf', conjWirtingerDeriv_sub (hfd j) (hdvd j), conjWirtingerDeriv_sub (hfd i) (hdvd i),
-        sub_apply, sub_apply, hclosed z hzU i j,
-        conjWirtingerDeriv_conjWirtingerDeriv_comm ((hv2 hzU).of_le (by simp))]
+      exact conjWirtingerDeriv_sub_conjWirtingerDeriv_comm
+        (fun j ↦ ((hf j).contDiffAt (hpi.mem_nhds hzU)).differentiableAt (by simp))
+        ((hv2 hzU).of_le (by simp)) (hclosed z hzU) i j
     have hS' : ∀ j ∉ S, ∀ z ∈ univ.pi W, f' j z = 0 := by
       intro j hj z hz
       by_cases hjk : j = k
@@ -345,14 +382,14 @@ with coefficients in a complex Banach space, which is `bar∂`-closed:
 `∂f_j/∂(conj z_i) = ∂f_i/∂(conj z_j)`. Then near every compact product `∏ K_i` with
 `K_i ⊆ U_i` it is `bar∂`-exact: some `u`, smooth there, satisfies `∂u/∂(conj z_j) = f_j` for
 every `j`. -/
-theorem exists_conjWirtingerDeriv_eq_of_pi {U : ι → Set ℂ} (hU : ∀ i, IsOpen (U i))
+theorem exists_conjWirtingerDeriv_eventually_eq_of_pi {U : ι → Set ℂ} (hU : ∀ i, IsOpen (U i))
     {f : ι → (ι → ℂ) → F} (hf : ∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi U))
     (hclosed : ∀ z ∈ univ.pi U, ∀ i j,
       conjWirtingerDeriv (f j) z (Pi.single i 1) = conjWirtingerDeriv (f i) z (Pi.single j 1))
     {K : ι → Set ℂ} (hK : ∀ i, IsCompact (K i)) (hKU : ∀ i, K i ⊆ U i) :
     ∃ u : (ι → ℂ) → F, ∀ᶠ z in 𝓝ˢ (univ.pi K),
       ContDiffAt ℝ ∞ u z ∧ ∀ j, conjWirtingerDeriv u z (Pi.single j 1) = f j z :=
-  exists_conjWirtingerDeriv_eq_of_pi_of_eq_zero Finset.univ hU hf hclosed
+  exists_conjWirtingerDeriv_eventually_eq_of_pi_of_eq_zero Finset.univ hU hf hclosed
     (fun j hj ↦ absurd (Finset.mem_univ j) hj) hK hKU
 
 /-- **The `bar∂`-Poincaré lemma for `(0,1)`-forms on polydiscs.** A smooth `bar∂`-closed
@@ -367,7 +404,8 @@ theorem exists_contDiffOn_conjWirtingerDeriv_eq_of_polydisc {c : ι → ℂ} {r 
     ∃ u : (ι → ℂ) → F, ContDiffOn ℝ ∞ u (univ.pi fun i ↦ Metric.ball (c i) (r' i)) ∧
       ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r' i), ∀ j,
         conjWirtingerDeriv u z (Pi.single j 1) = f j z := by
-  obtain ⟨u, hu⟩ := exists_conjWirtingerDeriv_eq_of_pi (fun i ↦ Metric.isOpen_ball) hf hclosed
+  obtain ⟨u, hu⟩ :=
+    exists_conjWirtingerDeriv_eventually_eq_of_pi (fun i ↦ Metric.isOpen_ball) hf hclosed
     (fun i ↦ isCompact_closedBall (c i) (r' i)) fun i ↦ Metric.closedBall_subset_ball (hr i)
   have hsub : (univ.pi fun i ↦ Metric.ball (c i) (r' i)) ⊆
       univ.pi fun i ↦ Metric.closedBall (c i) (r' i) :=
