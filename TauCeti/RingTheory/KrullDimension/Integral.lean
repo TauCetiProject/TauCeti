@@ -118,11 +118,8 @@ theorem _root_.Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed [Algeb
   have hdisj := Ideal.disjoint_primeCompl_of_liesOver Q p
   have : Algebra.IsIntegral (Localization.AtPrime p) B :=
     ⟨isIntegral_localization (M := p.primeCompl) (S := S)⟩
-  have : IsLocalizedModule (Algebra.algebraMapSubmonoid S p.primeCompl) (Algebra.linearMap S B) :=
-    isLocalizedModule_iff_isLocalization.mpr inferInstance
-  have := IsLocalizedModule.restrictScalars p.primeCompl (Algebra.linearMap S B)
   have : Module.IsTorsionFree (Localization.AtPrime p) B :=
-    IsLocalizedModule.isTorsionFree ((Algebra.linearMap S B).restrictScalars R) p.primeCompl
+    IsLocalizedModule.isTorsionFree (IsScalarTower.toAlgHom R S B).toLinearMap p.primeCompl
   let P := Q.map (algebraMap S B)
   have : P.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ B Q ‹_› hdisj
   have hPQ : P.under S = Q := IsLocalization.under_map_of_isPrime_disjoint _ B ‹_› hdisj
