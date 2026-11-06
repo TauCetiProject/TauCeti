@@ -14,7 +14,7 @@ import TauCeti.Analysis.Polynomial.EvalRpow
 import TauCeti.Analysis.Polynomial.Integral
 import TauCeti.Analysis.Polynomial.OneSidedApproximation
 import TauCeti.Analysis.PSeries
-import TauCeti.Analysis.SpecialFunctions.ExpBounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
