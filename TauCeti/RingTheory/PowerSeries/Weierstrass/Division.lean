@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
 public import TauCeti.RingTheory.PowerSeries.MulDistinguished
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.Algebra.Polynomial.Div
@@ -148,15 +149,8 @@ theorem IsDistinguished.gaussNorm_le_gaussNorm_mul_add (hf : IsDistinguished c s
     (gaussNorm_mul_le hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm :
       (q * f).gaussNorm norm c ≤ _).trans
       (hf.le_gaussNorm_mul_add hc hmul hq hr)
-  have hbneg : (-(q * f)).HasGaussNorm norm c := by
-    simpa only [PowerSeries.HasGaussNorm, map_neg, norm_neg] using hbqf
-  have hbound := PowerSeries.gaussNorm_add_le_max norm c (q * f + r) (-(q * f)) hc.le
-    norm_nonneg IsUltrametricDist.isNonarchimedean_norm hbsum hbneg
-  have hcancel : q * f + r + -(q * f) = r := by abel
-  have hneg : (-(q * f)).gaussNorm norm c = (q * f).gaussNorm norm c :=
-    MvPowerSeries.gaussNorm_neg norm (fun _ : Unit ↦ c) norm_neg _
-  rw [hcancel, hneg] at hbound
-  exact hbound.trans (max_le le_rfl hqf)
+  have hsub := gaussNorm_sub_le_of_le hc.le hbsum hbqf le_rfl hqf
+  rwa [add_sub_cancel_left] at hsub
 
 /-- **The Weierstrass division estimate** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). If `f` is
 distinguished of degree `s` at the radius `c`, right multiplication by its coefficient in degree
@@ -261,61 +255,6 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_add_eq_mul_add (hg : IsMulDistinguis
   exact hg.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
     hg.norm_mul_coeff hq hq' hr hr' h
 
-/-- The Gauss norm of a product of restricted series is bounded by a bound on the first factor
-times the Gauss norm of the second. -/
-private theorem gaussNorm_mul_le_of_le (hc : 0 < c) {a b : PowerSeries R} (ha : a.IsRestricted c)
-    (hb : b.IsRestricted c) {C : ℝ} (h : a.gaussNorm norm c ≤ C) :
-    (a * b).gaussNorm norm c ≤ C * b.gaussNorm norm c := by
-  refine le_trans (gaussNorm_mul_le hc.le (hasGaussNorm_of_isRestricted ha)
-    (hasGaussNorm_of_isRestricted hb)) ?_
-  exact mul_le_mul_of_nonneg_right h (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
-
-/-- The Gauss norm of a difference of restricted series is bounded when both Gauss norms are. -/
-private theorem gaussNorm_sub_le_of_le (hc : 0 < c) {a b : PowerSeries R} (ha : a.IsRestricted c)
-    (hb : b.IsRestricted c) {C : ℝ} (ha' : a.gaussNorm norm c ≤ C) (hb' : b.gaussNorm norm c ≤ C) :
-    (a - b).gaussNorm norm c ≤ C := by
-  rw [sub_eq_add_neg]
-  refine le_trans (PowerSeries.gaussNorm_add_le_max norm c a (-b) hc.le norm_nonneg
-    IsUltrametricDist.isNonarchimedean_norm (hasGaussNorm_of_isRestricted ha)
-    (hasGaussNorm_of_isRestricted hb.neg)) (max_le ha' ?_)
-  exact (MvPowerSeries.gaussNorm_neg norm (fun _ ↦ c) (fun x ↦ norm_neg x) b).trans_le hb'
-
-omit [IsUltrametricDist R] in
-/-- Some truncation of a restricted series `f` has Gauss norm at most `‖f‖` and leaves a tail of
-Gauss norm at most `θ * ‖f‖`. -/
-private theorem exists_gaussNorm_trunc_sub_le (hf : f.IsRestricted c) {θ : ℝ} (hθ : 0 < θ)
-    (hfpos : 0 < f.gaussNorm norm c) :
-    ∃ N, ((f.trunc N : Polynomial R) : PowerSeries R).gaussNorm norm c ≤ f.gaussNorm norm c ∧
-      (f - ((f.trunc N : Polynomial R) : PowerSeries R)).gaussNorm norm c
-        ≤ θ * f.gaussNorm norm c := by
-  obtain ⟨N, hN⟩ : ∃ N, ∀ m, N ≤ m → ‖f.coeff m‖ * c ^ m ≤ θ * f.gaussNorm norm c := by
-    obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp
-      (((PowerSeries.isRestricted_iff' c f).mp hf).eventually
-        (gt_mem_nhds (mul_pos hθ hfpos)))
-    exact ⟨N, fun m hm ↦ (hN m hm).le⟩
-  have hfcoeff (m : ℕ) : ((f.trunc N : Polynomial R) : PowerSeries R).coeff m =
-      if m < N then f.coeff m else 0 := by
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  have hFn : ((f.trunc N : Polynomial R) : PowerSeries R).gaussNorm norm c
-      ≤ f.gaussNorm norm c := by
-    rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [hfcoeff m]
-    split_ifs
-    · exact PowerSeries.le_gaussNorm norm c f (hasGaussNorm_of_isRestricted hf) m
-    · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
-  have hsmall : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).gaussNorm norm c
-      ≤ θ * f.gaussNorm norm c := by
-    rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [map_sub, hfcoeff m]
-    split_ifs with hm
-    · simp only [sub_self, norm_zero, zero_mul]
-      exact mul_nonneg hθ.le hfpos.le
-    · rw [sub_zero]
-      exact hN m (by omega)
-  exact ⟨N, hFn, hsmall⟩
-
 omit [IsUltrametricDist R] in
 /-- Division of a polynomial `P` by the polynomial part `g⁻` of a multiplicatively distinguished
 series `g` of degree `s`: `g⁻` has degree `s` and a unit leading coefficient, so after scaling by
@@ -404,8 +343,9 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
         - (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)) * (Qp : PowerSeries R) := by
     rw [hdivPS]; ring
   rw [hdefect]
-  refine gaussNorm_sub_le_of_le hc hsmallr (htailr.mul hQr) hsmall ?_
-  refine (gaussNorm_mul_le_of_le hc htailr hQr hθg).trans ?_
+  refine gaussNorm_sub_le_of_le hc.le (hasGaussNorm_of_isRestricted hsmallr)
+    (hasGaussNorm_of_isRestricted (htailr.mul hQr)) hsmall ?_
+  refine (gaussNorm_mul_le_of_le hc.le htailr hQr hθg).trans ?_
   rw [mul_assoc]
   exact mul_le_mul_of_nonneg_left ((le_max_left _ _).trans hmax) hθ.le
 
