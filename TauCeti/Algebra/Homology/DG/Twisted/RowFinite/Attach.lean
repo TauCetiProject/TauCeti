@@ -258,7 +258,7 @@ theorem attachProjection_ν_inr (q : Q) :
 theorem linearCombination_attachProjection_apply (v : P ⊕ Q →₀ A) (q : Q) :
     linearCombination A (m.attachProjection ha hca hA).ν v q = v (Sum.inr q) := by
   classical
-  rw [linearCombination_apply, sum_apply, Finsupp.sum, Finset.sum_eq_single (Sum.inr q)]
+  rw [linearCombination_apply, Finsupp.sum_apply, Finsupp.sum, Finset.sum_eq_single (Sum.inr q)]
   · simp
   · rintro (x | q') _ hne
     · simp
