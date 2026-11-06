@@ -155,24 +155,10 @@ theorem exists_isBoundaryLift (hp : serreFibrations p) [Finite N] (e : p.fiber b
   exact ⟨G, ⟨fun y => congrFun hG y, fun t => hGf ⟨(0, t), zero_mem_cylinderExtensionDomain t⟩,
     fun s t ht => hGf ⟨(s, t), mem_cylinderExtensionDomain_iff.2 (Or.inr ht)⟩⟩⟩
 
-/-- On the bottom face and over the boundary of `I^(Option N)`, either the homotopy parameter is
-`0` or `1`, or the point lies over the boundary of the cube. -/
-private theorem cases_of_mem_cylinderExtensionDomain_boundary
-    {x : I × I^(Option N)} (hx : x ∈ cylinderExtensionDomain (Cube.boundary (Option N))) :
-    (x.2 none = 0 ∨ x.2 none = 1) ∨
-      (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (x.1, fun i => x.2 (some i)) ∈
-        Cube.boundary (Option N) := by
-  rcases mem_cylinderExtensionDomain_iff.1 hx with hx | hx
-  · exact .inr (piOptionEquivProdHomeomorph_symm_mem_boundary
-      (Cube.mem_prodBoundary_iff.2 (.inl (.inl hx))))
-  · rcases Cube.boundary_option_iff.1 hx with hx | hx
-    · exact .inl hx
-    · exact .inr (piOptionEquivProdHomeomorph_symm_mem_boundary
-        (Cube.mem_prodBoundary_iff.2 (.inr hx)))
-
 /-- Two boundary lifts have homotopic end loops as soon as a lift `L` over the homotopy joins
-them: `L` stays over `b` along the end of the cube and restricts to `G` on the first half of the
-homotopy parameter and to `G'` on the second. -/
+them: `L` stays over `b` along the end of the cube, and on that end face `L` agrees with
+`G (1, ·)` at `u = 0`, with `G' (1, ·)` at `u = 1`, and with the value of the corresponding half
+(`G` for `u ≤ 1/2`, `G'` above) over `∂I^N`. -/
 private theorem homotopic_endLoop_of_lift {γ γ' : Ω^ (Option N) B b} {G G' : C(I × I^N, E)}
     (hG : IsBoundaryLift p e γ G) (hG' : IsBoundaryLift p e γ' G')
     (L : C(I × I^(Option N), E))
