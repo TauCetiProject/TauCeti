@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.TangentCone.Real
+public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Complex.ReImTopology
 
 /-!
 # Tangent cones of linear subspaces and of curves
@@ -22,6 +25,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `Submodule.tangentConeAt_eq`: the tangent cone of a closed subspace at one of its points is the
   subspace itself.
 * `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
+* `TauCeti.uniqueDiffOn_setOf_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of unique
+  differentiability.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
@@ -84,6 +89,11 @@ theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
   have ha : a < a + 1 := lt_add_one a
   exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds ha)
     fun x hx ↦ hx.le
+
+/-- A closed half-plane `{z : ℂ | a ≤ z.im}` has unique derivatives, including on its boundary. -/
+theorem TauCeti.uniqueDiffOn_setOf_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
+  uniqueDiffOn_convex (convex_halfSpace_im_ge a)
+    ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
 
 /-- The differential of a map carries the positive tangent cone of a set into the positive tangent
 cone of its image. This is the positive-cone form of `HasFDerivWithinAt.mapsTo_tangent_cone`. -/
