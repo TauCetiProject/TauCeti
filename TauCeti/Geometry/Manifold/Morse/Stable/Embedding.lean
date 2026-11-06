@@ -99,8 +99,8 @@ open. -/
 theorem isOpen_smallCube (ε δ : ℝ) :
     IsOpen (φ.toChart.source ∩ φ.toChart ⁻¹' {w : E | ‖φ.coord w‖ < ε ∧ ‖w‖ < δ}) :=
   φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
-    ((isOpen_lt (continuous_norm.comp (φ.coordL.continuous.congr φ.coordL_apply))
-      continuous_const).inter (isOpen_lt continuous_norm continuous_const))
+    ((isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const).inter
+      (isOpen_lt continuous_norm continuous_const))
 
 end MorseChart
 

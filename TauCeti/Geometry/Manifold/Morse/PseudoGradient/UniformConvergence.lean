@@ -176,7 +176,7 @@ compact subset of the unstable set `W^u(x)`. There are `T` and `C` such that for
 `t ≤ T`, the point `flow t y` lies in the chart, its coordinates of positive weight vanish, and its
 coordinates have size at most `C e^{t}`. -/
 theorem exists_forall_norm_coord_flow_le_mul_exp_of_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (φ : MorseChart E f x)
+    (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {K : Set M} (hK : IsCompact K) (hKu : K ⊆ hX.flow.unstableSet x) :
@@ -184,7 +184,8 @@ theorem exists_forall_norm_coord_flow_le_mul_exp_of_unstableSet (hf : IsMorse �
       (∀ i, 0 < φ.weight i → φ.coord (φ.toChart (hX.flow t y)) i = 0) ∧
       ‖φ.coord (φ.toChart (hX.flow t y))‖ ≤ C * Real.exp t := by
   -- Backward in time, `X` is the reversed field `-X` of the Morse function `-f`.
-  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
   obtain ⟨T, C, hTC⟩ := (hX.neg hf).exists_forall_norm_coord_flow_le_mul_exp (φ.neg hnd)
     (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp)) hK
     (hX.unstableSet_eq_stableSet_neg hf x ▸ hKu)
@@ -197,13 +198,13 @@ theorem exists_forall_norm_coord_flow_le_mul_exp_of_unstableSet (hf : IsMorse �
 `X` the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ` at the critical point `x`, and `K` a
 compact subset of the unstable set `W^u(x)`. There are `T` and `C` such that
 `f x - f (flow t y) ≤ C e^{2t}` for every `y ∈ K` and `t ≤ T`. -/
-theorem exists_forall_sub_le_mul_exp_of_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (φ : MorseChart E f x)
+theorem exists_forall_sub_le_mul_exp_of_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {K : Set M} (hK : IsCompact K) (hKu : K ⊆ hX.flow.unstableSet x) :
     ∃ T C : ℝ, ∀ y ∈ K, ∀ t, t ≤ T → f x - f (hX.flow t y) ≤ C * Real.exp (2 * t) := by
-  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
   obtain ⟨T, C, hTC⟩ := (hX.neg hf).exists_forall_sub_le_mul_exp (φ.neg hnd)
     (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp)) hK
     (hX.unstableSet_eq_stableSet_neg hf x ▸ hKu)
