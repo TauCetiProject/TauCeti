@@ -190,11 +190,14 @@ injures `k` only finitely often. Neither a bound on the number of injuries nor s
 Sacks splitting. -/
 theorem finite_injurySet_of_bounded_higher_priority
     {A : Bool → ℕ → Finset ℕ} {r : ℕ → List ℕ} {D : ℕ → Finset ℕ} {k s₀ R : ℕ}
-    (hA : Monotone (A k.bodd))
     (hstep : ∀ s, step (r s) (A false s, A true s) (D s) =
       (A false (s + 1), A true (s + 1)))
     (hbound : ∀ s ≥ s₀, ∀ j < k, (r s)[j]?.getD 0 ≤ R) :
     (injurySet (A k.bodd) (fun j t => some ((r t)[j]?.getD 0)) k).Finite := by
+  have hA : Monotone (A k.bodd) := monotone_nat_of_le_succ fun s => by
+    cases k.bodd
+    · exact (subset_step_fst ..).trans_eq (congrArg Prod.fst (hstep s))
+    · exact (subset_step_snd ..).trans_eq (congrArg Prod.snd (hstep s))
   obtain ⟨t, ht⟩ := finite_prefix_stabilizes hA (R + 1)
   apply (finite_injurySet_iff_eventually_eq_empty hA).2
   refine ⟨max s₀ t, fun s hs => Finset.eq_empty_of_forall_notMem fun x hx => ?_⟩
