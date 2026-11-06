@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import TauCeti.Analysis.Analytic.Order
 
 /-!
@@ -29,6 +30,9 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
   then the first `n` iterated divided differences of `f` at `a` vanish at `a`.
 * `AnalyticOnNhd.exists_eq_prod_pow_smul`: an analytic function with zeros of orders at least
   `k x` at the points `x ∈ s` is `∏ x ∈ s, (z - x) ^ k x` times an analytic function.
+* `TauCeti.iteratedDeriv_pow_sub_smul_self`: the `n`-th derivative of `(z - a) ^ n • h z` at
+  `a` is `n! • h a`, which recovers the first possibly nonzero derivative of `f` at a zero from
+  the quotient.
 
 ## References
 
@@ -76,6 +80,23 @@ theorem iterate_dslope_apply_eq_zero_of_lt {n k : ℕ} (hn : (n : ℕ∞) ≤ an
     have hn₁ : (n : ℕ∞) = ((n - 1 : ℕ) : ℕ∞) + 1 := by norm_cast; lia
     rw [← hfa.analyticOrderAt_dslope_add_one ha, hn₁] at hn
     exact (ENat.add_le_add_iff_right ENat.one_ne_top).mp hn
+
+/-- The `n`-th derivative of `z ↦ (z - a) ^ n • h z` at `a` is `n! • h a`: in Leibniz's rule
+every other term differentiates `(z - a) ^ n` fewer than `n` times and so vanishes at `a`. -/
+theorem iteratedDeriv_pow_sub_smul_self {h : 𝕜 → E} {n : ℕ} (hh : ContDiffAt 𝕜 n h a) :
+    iteratedDeriv n (fun z ↦ (z - a) ^ n • h z) a = n.factorial • h a := by
+  have hp (i : ℕ) : iteratedDeriv i (fun z : 𝕜 ↦ (z - a) ^ n) a =
+      if i = n then (n.factorial : 𝕜) else 0 := by
+    rw [iteratedDeriv_comp_sub_const i (· ^ n) a]
+    dsimp only
+    rw [sub_self, iteratedDeriv_fun_pow_zero]
+    split_ifs <;> simp
+  have hL := iteratedDerivWithin_smul (Set.mem_univ a) uniqueDiffOn_univ
+    (f := fun z : 𝕜 ↦ (z - a) ^ n) (by fun_prop) hh.contDiffWithinAt
+  simp only [iteratedDerivWithin_univ] at hL
+  rw [show (fun z ↦ (z - a) ^ n • h z) = (fun z : 𝕜 ↦ (z - a) ^ n) • h from rfl, hL,
+    Finset.sum_eq_single_of_mem n (Finset.self_mem_range_succ n) fun i _ hi ↦ by simp [hp, hi]]
+  simp [hp, Nat.cast_smul_eq_nsmul]
 
 end TauCeti
 
