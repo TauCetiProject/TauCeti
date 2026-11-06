@@ -18,7 +18,9 @@ holomorphic extension of the map. Equality, evaluation and composition are chara
 through the injective comparison with function germs. The two pullbacks agree when both apply.
 Pullback along a map with a local analytic inverse, such as a chart, is bijective
 (`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
-(`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`).
+(`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
+(`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a manifold with a stalk
+of its model.
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -159,6 +161,29 @@ theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), Cont
     rw [toFilterGerm_stalkPullback, ht _ le_rfl, hu, Germ.coe_compTendsto, Germ.coe_eq]
     filter_upwards [hgf] with x hx
     simp [hx]
+
+variable [I.Boundaryless] [IsManifold I ω X] {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- Pullback along the extended chart at `x`, followed by a continuous linear equivalence `e` of
+the model onto a complex normed space `V`, is bijective on holomorphic stalks. The equivalence
+lets the model stalk live in `Type` even when the model space `E` does not. -/
+theorem stalkPullback_comp_extChartAt_bijective (x : X) (e : E ≃L[ℂ] V) :
+    Function.Bijective (stalkPullback (J := 𝓘(ℂ, V)) (f := e ∘ extChartAt I x) (a := x)
+      (((chartAt H x).open_source.eventually_mem (mem_chart_source H x)).mono fun _ hy ↦
+        e.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hy))) := by
+  have hmem : ∀ᶠ z in 𝓝 (e (extChartAt I x x)), e.symm z ∈ (extChartAt I x).target := by
+    have h := e.symm.continuous.tendsto (e (extChartAt I x x))
+    rw [e.symm_apply_apply] at h
+    exact h.eventually (extChartAt_target_mem_nhds x)
+  refine stalkPullback_bijective _ (g := (extChartAt I x).symm ∘ e.symm) ?_ ?_ ?_
+  · filter_upwards [hmem] with z hz
+    exact ((contMDiffOn_extChartAt_symm (n := ω) x).contMDiffAt
+      (extChartAt_target_mem_nhds' hz)).comp z e.symm.contDiff.contMDiff.contMDiffAt
+  · filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
+    simpa using (extChartAt I x).left_inv hy
+  · filter_upwards [hmem] with z hz
+    simp only [Function.comp_apply, (extChartAt I x).right_inv hz,
+      ContinuousLinearEquiv.apply_symm_apply]
 
 end TauCeti.holomorphicStructureSheaf
 

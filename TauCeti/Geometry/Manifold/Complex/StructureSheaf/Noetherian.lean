@@ -171,30 +171,8 @@ instance stalkIsNoetherianRing (x : X) :
       (_ : FiniteDimensional ℂ E'), Nonempty (E ≃L[ℂ] E') :=
     ⟨Fin (finrank ℂ E) → ℂ, inferInstance, inferInstance, inferInstance,
       ⟨ContinuousLinearEquiv.ofFinrankEq (by simp)⟩⟩
-  let φ : X → E' := e ∘ extChartAt I x
-  have hφ : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℂ, E') ω φ y := by
-    filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
-    rw [extChartAt_source] at hy
-    exact e.contDiff.contMDiff.contMDiffAt.comp y
-      ((contMDiffOn_extChartAt (n := ω)).contMDiffAt ((chartAt H x).open_source.mem_nhds hy))
-  have hφ_mem : ∀ᶠ z in 𝓝 (φ x), e.symm z ∈ (extChartAt I x).target := by
-    have h := e.symm.continuous.tendsto (φ x)
-    simp only [φ, Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply] at h
-    exact h.eventually (extChartAt_target_mem_nhds x)
-  have hψ : ∀ᶠ z in 𝓝 (φ x),
-      ContMDiffAt 𝓘(ℂ, E') I ω ((extChartAt I x).symm ∘ e.symm) z := by
-    filter_upwards [hφ_mem] with z hz
-    exact ((contMDiffOn_extChartAt_symm (n := ω) x).contMDiffAt
-      (extChartAt_target_mem_nhds' hz)).comp z e.symm.contDiff.contMDiff.contMDiffAt
-  have hψφ : ∀ᶠ y in 𝓝 x, ((extChartAt I x).symm ∘ e.symm) (φ y) = y := by
-    filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
-    simpa [φ] using (extChartAt I x).left_inv hy
-  have hφψ : ∀ᶠ z in 𝓝 (φ x), φ (((extChartAt I x).symm ∘ e.symm) z) = z := by
-    filter_upwards [hφ_mem] with z hz
-    simp only [φ, Function.comp_apply, (extChartAt I x).right_inv hz,
-      ContinuousLinearEquiv.apply_symm_apply]
-  have := isNoetherianRing_stalk_of_finrank_eq _ E' rfl (φ x)
-  exact isNoetherianRing_of_surjective _ _ _ (stalkPullback_bijective hφ hψ hψφ hφψ).2
+  have := isNoetherianRing_stalk_of_finrank_eq _ E' rfl ((e ∘ extChartAt I x) x)
+  exact isNoetherianRing_of_surjective _ _ _ (stalkPullback_comp_extChartAt_bijective x e).2
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a Noetherian ring, via its comparison with holomorphic germs. -/
