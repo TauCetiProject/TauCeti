@@ -27,8 +27,8 @@ For the field of moduli `M` of the class of `X`, the automorphisms of `k` fixing
 stabilizer of the class as soon as `k` is finite over `ℚ`, and `k` is Galois over `M` as over the
 fixed field of any group of automorphisms. So a rigid pair over a finite extension of `ℚ` is defined
 over its field of moduli (`TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_fieldOfModuli`).
-Since every field of definition contains the field of moduli, the field of moduli is then the
-smallest field of definition
+Since every field of definition `K ⊆ k` with `k / K` Galois contains the field of moduli, the field
+of moduli is then the smallest field of definition among the subfields over which `k` is Galois
 (`TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_iff_fieldOfModuli_le`). Over an infinite
 algebraic extension of `ℚ`, such as `AlgebraicClosure ℚ`, the descent here applies to a model of
 the pair over a finite Galois extension of the field of moduli, once the isomorphisms `f_σ` are
@@ -139,9 +139,10 @@ algebraic Belyi pair with no nontrivial automorphisms is defined over its field 
 theorem isDefinedOver_fieldOfModuli : (mk X).IsDefinedOver (mk X).fieldOfModuli :=
   isDefinedOver_of_fixingSubgroup_le (fixingSubgroup_fieldOfModuli _).le
 
-/-- **The field of moduli of a rigid pair is its smallest field of definition.** Over a finite
-extension `k` of `ℚ`, an algebraic Belyi pair with no nontrivial automorphisms is defined over a
-subfield `K` of `k` over which `k` is Galois exactly when `K` contains its field of moduli. -/
+/-- **The field of moduli of a rigid pair is its smallest field of definition over which `k` is
+Galois.** Over a finite extension `k` of `ℚ`, an algebraic Belyi pair with no nontrivial
+automorphisms is defined over a subfield `K` of `k` over which `k` is Galois exactly when `K`
+contains its field of moduli. -/
 theorem isDefinedOver_iff_fieldOfModuli_le {K : IntermediateField ℚ k} [IsGalois K k] :
     (mk X).IsDefinedOver K ↔ (mk X).fieldOfModuli ≤ K :=
   ⟨IsDefinedOver.fieldOfModuli_le, fun hK ↦ isDefinedOver_of_fixingSubgroup_le <|
