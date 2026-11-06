@@ -10,6 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.MeasureTheory.Covering.Besicovitch
 
 /-!
@@ -291,17 +292,6 @@ theorem integrableOn_outerNormal {S : Set Ω} (hS : variationMeasure μ Ω (s.in
       |>.aestronglyMeasurable.congr (ae_outerNormal_eq.mono fun _ h => h.symm)
   · filter_upwards [ae_restrict_of_ae ae_mem_reducedBoundary] with y hy
     exact (norm_outerNormal hy).le
-
-/-- For unit vectors `a` and `ν` and `η > 0`, `‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫`: use
-`‖a - ν‖² = 2 (1 - ⟪a, ν⟫)` and `‖a - ν‖ ≤ η + ‖a - ν‖² / η`. -/
-theorem norm_sub_le_add_div_sub_inner {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    {a ν : F} {η : ℝ} (ha : ‖a‖ = 1) (hν : ‖ν‖ = 1) (hη : 0 < η) :
-    ‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫ := by
-  have h := norm_sub_sq_real a ν
-  rw [ha, hν, real_inner_comm] at h
-  rw [show η + 2 / η - 2 / η * ⟪ν, a⟫ = (η * η + ‖a - ν‖ ^ 2) / η by
-    field_simp; linarith, le_div_iff₀ hη]
-  nlinarith [sq_nonneg (‖a - ν‖ - η), norm_nonneg (a - ν)]
 
 /-- At a point `x` of the reduced boundary, for every `η > 0` and every small `r`, the perimeter
 measure of `closedBall x r` is finite and
