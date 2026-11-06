@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
-import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Dynamics.Flow.LevelCrossing
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
@@ -139,19 +139,11 @@ theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
     (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (hbc : f b < c)
     (hca : c < f a) :
-    ∃! t : ℝ, f (hX.flow t y) = c := by
-  have hfc : Continuous f := hf.continuous
-  have hγ : Continuous fun t ↦ f (hX.flow t y) :=
-    hfc.comp (hX.contMDiff_flow_uncurry.continuous.comp (continuous_id.prodMk continuous_const))
-  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
-  have hbot : Tendsto (fun t ↦ f (hX.flow t y)) atBot (𝓝 (f a)) :=
-    (hfc.tendsto a).comp (Flow.mem_unstableSet.1 hy.1)
-  have htop : Tendsto (fun t ↦ f (hX.flow t y)) atTop (𝓝 (f b)) :=
-    (hfc.tendsto b).comp (Flow.mem_stableSet.1 hy.2)
-  obtain ⟨t, ht⟩ := mem_range_of_exists_le_of_exists_ge hγ
-    ((htop.eventually (eventually_lt_nhds hbc)).exists.imp fun _ h ↦ h.le)
-    ((hbot.eventually (eventually_gt_nhds hca)).exists.imp fun _ h ↦ h.le)
-  exact ⟨t, ht, fun s hs ↦ hanti.injective (hs.trans ht.symm)⟩
+    ∃! t : ℝ, f (hX.flow t y) = c :=
+  Flow.existsUnique_apply_flow_eq_of_mem_unstableSet_inter_stableSet
+    (hf.continuous.comp (hX.flow.continuous continuous_id continuous_const))
+    hf.continuous.continuousAt hf.continuous.continuousAt
+    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy) hy ⟨hbc, hca⟩
 
 /-- **Level-crossing times depend continuously on the point.** Let `y` lie on a trajectory from a
 critical point `a` to a different critical point `b`, and let `w` tend to `y`. If the orbit of each
