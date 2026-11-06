@@ -343,6 +343,18 @@ theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n)
     mixedDeriv α [] (fun p => f p.1) x ξ = coordinateDeriv α f x := by
   simp only [mixedDeriv_def, coordinateDeriv_nil]
 
+/-- A position-independent function has no position derivatives. -/
+theorem mixedDeriv_comp_snd (f : CoordinateSpace n → A) {α : List (Fin n)} (hα : α ≠ [])
+    (β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => f p.2) x ξ = 0 := by
+  simp only [mixedDeriv_def, coordinateDeriv_const _ hα, Pi.zero_apply]
+
+/-- The frequency derivatives of a position-independent function are those of its profile. -/
+theorem mixedDeriv_nil_comp_snd (f : CoordinateSpace n → A) (β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv [] β (fun p => f p.2) x ξ = coordinateDeriv β f ξ := by
+  simp only [mixedDeriv_def, coordinateDeriv_nil]
+
 section Linear
 
 variable {a b : CoordinateSpace n × CoordinateSpace n → A}
@@ -404,6 +416,37 @@ theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     have hy' : (fun η => a (y, η)) = 0 := funext hy
     rw [hy', coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
   rw [mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
+
+/-- Mixed derivatives at `(x, ξ)` only depend on the germ of the function at `(x, ξ)`. -/
+theorem _root_.Filter.EventuallyEq.mixedDeriv {x ξ : CoordinateSpace n} (h : a =ᶠ[nhds (x, ξ)] b)
+    (α β : List (Fin n)) : mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  rw [Filter.EventuallyEq, Filter.Eventually, nhds_prod_eq] at h
+  obtain ⟨U, hU, V, hV, hUV⟩ := Filter.mem_prod_iff.1 h
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
+    filter_upwards [hU] with y hy
+    have hyξ : (fun η => a (y, η)) =ᶠ[nhds ξ] fun η => b (y, η) := by
+      filter_upwards [hV] with η hη using hUV ⟨hy, hη⟩
+    exact (hyξ.coordinateDeriv β).eq_of_nhds
+  rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
+
+/-- Mixed derivatives of a finite sum of smooth functions are the sum of the mixed derivatives. -/
+theorem mixedDeriv_sum {ι : Type*} {s : Finset ι}
+    {f : ι → CoordinateSpace n × CoordinateSpace n → A} (hf : ∀ i ∈ s, ContDiff ℝ ∞ (f i))
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => ∑ i ∈ s, f i p) x ξ = ∑ i ∈ s, mixedDeriv α β (f i) x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact mixedDeriv_zero α β x ξ
+  | insert i s hi ih =>
+    have hsum : (fun p => ∑ j ∈ insert i s, f j p) = f i + fun p => ∑ j ∈ s, f j p := by
+      funext p
+      simp [Finset.sum_insert hi]
+    have hs : ∀ j ∈ s, ContDiff ℝ ∞ (f j) := fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    rw [hsum, mixedDeriv_add (hf i (Finset.mem_insert_self i s)) (ContDiff.sum hs), ih hs,
+      Finset.sum_insert hi]
 
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 

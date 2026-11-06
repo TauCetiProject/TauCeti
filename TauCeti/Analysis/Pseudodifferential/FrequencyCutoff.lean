@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -27,7 +29,10 @@ the symbol calculus needs:
   derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
   annulus `1 ≤ ‖ξ‖ ≤ 2`;
 * on a proper space every iterated derivative of a cutoff is bounded, and the difference of two
-  cutoffs, as well as `1 - χ`, has compact support.
+  cutoffs, as well as `1 - χ`, has compact support;
+* the rescaled cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, which cut off at the radius `t`, satisfy the
+  order-zero symbol estimates uniformly in `t`: their `k`-th derivatives are bounded by
+  `C (1 + ‖ξ‖²)^(-k/2)` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_smul_le`).
 
 ## References
 
@@ -171,6 +176,42 @@ theorem exists_bound_iteratedFDeriv [ProperSpace E] (k : ℕ) :
   refine (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
     (HasCompactSupport.intro (isCompact_closedBall 0 2) fun ξ hξ ↦ ?_)
   exact χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by simpa using hξ : 2 < ‖ξ‖).le
+
+/-- The rescaled cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, for `t ≥ 1`, satisfy the order-zero symbol estimates
+uniformly in the radius `t`: on a proper space, the `k`-th derivative is bounded by
+`C (1 + ‖ξ‖²)^(-k/2)` with `C` independent of `t`. -/
+theorem exists_norm_iteratedFDeriv_comp_smul_le [ProperSpace E] (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ ξ : E,
+      ‖iteratedFDeriv ℝ k (fun η ↦ χ (t⁻¹ • η)) ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+  obtain ⟨C₀, hC₀⟩ := χ.exists_bound_iteratedFDeriv k
+  refine ⟨max C₀ 0 * 5 ^ ((k : ℝ) / 2), by positivity, fun t ht ξ ↦ ?_⟩
+  have ht0 : 0 < t := by linarith
+  rw [congrFun (iteratedFDeriv_comp_const_smul t⁻¹ χ.contDiff) ξ, norm_smul, norm_pow,
+    Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
+  rcases eq_or_ne k 0 with rfl | hk
+  · simpa using (hC₀ _).trans (le_max_left C₀ 0)
+  rcases le_or_gt ‖ξ‖ (2 * t) with hξ | hξ
+  · -- Where the derivative can be nonzero, `1 + ‖ξ‖² ≤ 5 t²`.
+    have h5 : 1 + ‖ξ‖ ^ 2 ≤ 5 * t ^ 2 := by nlinarith [norm_nonneg ξ]
+    have ht' : t⁻¹ ^ k = 5 ^ ((k : ℝ) / 2) * (5 * t ^ 2) ^ (-(k : ℝ) / 2) := by
+      rw [Real.mul_rpow (by norm_num) (by positivity), ← mul_assoc, ← Real.rpow_add (by norm_num),
+        show (k : ℝ) / 2 + -(k : ℝ) / 2 = 0 by ring, Real.rpow_zero, one_mul, neg_div,
+        Real.rpow_neg (by positivity), ← Real.rpow_natCast t 2, ← Real.rpow_mul ht0.le,
+        show ((2 : ℕ) : ℝ) * ((k : ℝ) / 2) = k by push_cast; ring, Real.rpow_natCast, inv_pow]
+    calc t⁻¹ ^ k * ‖iteratedFDeriv ℝ k χ (t⁻¹ • ξ)‖ ≤ t⁻¹ ^ k * max C₀ 0 := by
+          gcongr
+          exact (hC₀ _).trans (le_max_left C₀ 0)
+      _ = max C₀ 0 * 5 ^ ((k : ℝ) / 2) * (5 * t ^ 2) ^ (-(k : ℝ) / 2) := by rw [ht']; ring
+      _ ≤ max C₀ 0 * 5 ^ ((k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+          exact Real.rpow_le_rpow_of_nonpos (by positivity) h5
+            (div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 k.cast_nonneg) zero_le_two)
+  · -- Beyond the radius `2t` the rescaled cutoff is constant.
+    have h2 : 2 ≤ ‖t⁻¹ • ξ‖ := by
+      rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht0.le), le_inv_mul_iff₀ ht0]
+      linarith
+    rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hk h2, norm_zero, mul_zero]
+    positivity
 
 /-- If `f` is a smooth bump function centred at `0` with `1 ≤ f.rIn` and `f.rOut ≤ 2`, then
 `1 - f` is a frequency cutoff. -/
