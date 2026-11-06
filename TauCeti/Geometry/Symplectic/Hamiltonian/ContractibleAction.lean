@@ -14,7 +14,8 @@ Loops in a manifold `M` are `1`-periodic maps `γ : ℝ → M`. A **cylinder** f
 loop `γ₁` (`TauCeti.IsLoopCylinder`) is a `C²` map `w : ℝ × ℝ → M`, `1`-periodic in its second
 coordinate `t`, with `w (0, ·) = γ₀` and `w (1, ·) = γ₁`. Cylinders compose
 (`TauCeti.IsLoopCylinder.trans`, by `TauCeti.rectangleTrans`) and reverse
-(`TauCeti.IsLoopCylinder.symm`). A **cap** of `γ` (`TauCeti.IsCap`) is a cylinder from `γ` to a
+(`TauCeti.IsLoopCylinder.symm`), and their images under `C²` maps are cylinders
+(`TauCeti.IsLoopCylinder.comp`). A **cap** of `γ` (`TauCeti.IsCap`) is a cylinder from `γ` to a
 constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. A cylinder between two
 constant loops is a **sphere**.
 
@@ -27,7 +28,8 @@ is the **cap area** `TauCeti.capArea φ γ`, and gluing a cylinder to a cap show
 of two loops joined by a cylinder `w` differ by `∫ w^* φ`
 (`TauCeti.IsWeaklyExact.capArea_eq_rectangleIntegral_add`). Exact forms are weakly exact
 (`TauCeti.isWeaklyExact_mextDeriv`), by Green's formula, and the cap area of `γ` for `dα` is
-`-∫_γ α` (`TauCeti.capArea_mextDeriv`).
+`-∫_γ α` (`TauCeti.capArea_mextDeriv`). Weak exactness is natural: its pullback along a `C²` map
+is weakly exact (`TauCeti.IsWeaklyExact.mpullback`).
 
 For a weakly exact two-form `ω` and a time-dependent Hamiltonian `H : ℝ → M → ℝ`, the **action**
 of a loop `γ` admitting a cap `u` is
@@ -38,8 +40,10 @@ of a loop `γ` admitting a cap `u` is
 depend on the cap (`TauCeti.IsWeaklyExact.contractibleLoopAction_eq`), and along a cylinder `w`
 from `γ₀` to `γ₁` it changes by the area of `w` and the Hamiltonian terms
 (`TauCeti.IsWeaklyExact.contractibleLoopAction_sub`); this is how the energy of a Floer cylinder
-is identified with the action difference of its ends. For an exact form `ω = dλ` it is
-`A_H(γ) = -∫_γ λ - ∫₀¹ H(t, γ(t)) dt` (`TauCeti.contractibleLoopAction_mextDeriv`). These signs
+is identified with the action difference of its ends. A constant loop at `x` has cap area `0` and
+action `-∫₀¹ H(t, x) dt` (`TauCeti.IsWeaklyExact.contractibleLoopAction_const`). For an exact
+form `ω = dλ` it is `A_H(γ) = -∫_γ λ - ∫₀¹ H(t, γ(t)) dt`
+(`TauCeti.contractibleLoopAction_mextDeriv`). These signs
 are chosen so that, with the convention `ι_{X_H} ω = dH` for Hamiltonian vector fields, the first
 variation of the action is `dA_H(γ) ξ = ∫₀¹ ω(γ' - X_H(γ), ξ) dt`, whose zeros for a
 nondegenerate `ω` are the `1`-periodic orbits of `X_H`. This formula is
@@ -71,6 +75,7 @@ action exactly when it has a `C²` cap.
   cylinder differ by the area of the cylinder.
 * `TauCeti.isWeaklyExact_mextDeriv`, `TauCeti.capArea_mextDeriv`: exact forms are weakly exact,
   and the cap area for `dα` is minus the line integral of `α`.
+* `TauCeti.IsWeaklyExact.mpullback`: the pullback of a weakly exact form is weakly exact.
 * `TauCeti.IsWeaklyExact.contractibleLoopAction_sub`: the action difference along a cylinder.
 
 ## References
@@ -123,6 +128,14 @@ theorem isCap_iff {u : ℝ × ℝ → M} {γ : ℝ → M} :
     IsCap I u γ ↔ ∃ x, IsLoopCylinder I u γ fun _ ↦ x :=
   Iff.rfl
 
+/-- The constant map at `x` is a cylinder from the constant loop at `x` to itself. -/
+theorem isLoopCylinder_const (x : M) :
+    IsLoopCylinder I (fun _ ↦ x) (fun _ ↦ x) (fun _ ↦ x) where
+  contMDiff := contMDiff_const
+  apply_add_one _ := rfl
+  apply_zero _ := rfl
+  apply_one _ := rfl
+
 namespace IsLoopCylinder
 
 variable {w w₁ w₂ : ℝ × ℝ → M} {γ₀ γ₁ γ₂ : ℝ → M}
@@ -150,6 +163,17 @@ theorem symm (hw : IsLoopCylinder I w γ₀ γ₁) :
   apply_zero t := by simp [hw.apply_one]
   apply_one t := by simp [hw.apply_zero]
 
+/-- The image of a cylinder from `γ₀` to `γ₁` under a `C²` map `f` is a cylinder from `f ∘ γ₀` to
+`f ∘ γ₁`. -/
+theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+    (hw : IsLoopCylinder I w γ₀ γ₁) {f : M → M'} (hf : ContMDiff I I' 2 f) :
+    IsLoopCylinder I' (f ∘ w) (f ∘ γ₀) (f ∘ γ₁) where
+  contMDiff := hf.comp hw.contMDiff
+  apply_add_one z := congrArg f (hw.apply_add_one z)
+  apply_zero t := congrArg f (hw.apply_zero t)
+  apply_one t := congrArg f (hw.apply_one t)
+
 end IsLoopCylinder
 
 /-! ### Weakly exact forms and the cap area -/
@@ -165,6 +189,17 @@ theorem isWeaklyExact_iff {φ : RoughForm I M F 2} :
     IsWeaklyExact φ ↔ ∀ ⦃w : ℝ × ℝ → M⦄ ⦃x y : M⦄,
       IsLoopCylinder I w (fun _ ↦ x) (fun _ ↦ y) → rectangleIntegral φ w (0, 0) (1, 1) = 0 :=
   Iff.rfl
+
+/-- **Weak exactness is natural**: the pullback of a weakly exact form along a `C²` map is weakly
+exact, since the image of a sphere is a sphere. -/
+theorem IsWeaklyExact.mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {φ : RoughForm I' M' F 2} (hφ : IsWeaklyExact φ) {f : M → M'}
+    (hf : ContMDiff I I' 2 f) : IsWeaklyExact (TauCeti.mpullback I I' f φ) := by
+  intro w x y hw
+  rw [rectangleIntegral_mpullback φ (fun z _ ↦ hf.mdifferentiable two_ne_zero (w z))
+    (fun z _ ↦ hw.contMDiff.mdifferentiable two_ne_zero z)]
+  exact hφ (hw.comp hf)
 
 open Classical in
 /-- The **cap area** of a loop `γ` for a two-form `φ`: the integral of `φ` over a cap of `γ`,
@@ -219,6 +254,14 @@ theorem IsWeaklyExact.capArea_eq_rectangleIntegral_add (hφ : IsSmoothForm I 0 �
   rw [hw.capArea_eq hφ (hwc.trans hv').isCap, hw.capArea_eq hφ hv'.isCap,
     rectangleIntegral_rectangleTrans hφ (hwc.contMDiff.of_le one_le_two)
       (hv'.contMDiff.of_le one_le_two) fun t ↦ (hwc.apply_one t).trans (hv'.apply_zero t).symm]
+
+/-- For a continuous weakly exact form, a constant loop has cap area `0`: the constant map is a
+cap of it. -/
+@[simp]
+theorem IsWeaklyExact.capArea_const (hφ : IsSmoothForm I 0 φ) (hw : IsWeaklyExact φ) (x : M) :
+    capArea φ (fun _ ↦ x) = 0 := by
+  rw [hw.capArea_eq hφ (isLoopCylinder_const x).isCap]
+  exact rectangleIntegral_comp_fst φ (fun _ ↦ x) _ _
 
 end Continuous
 
@@ -292,6 +335,14 @@ theorem IsWeaklyExact.contractibleLoopAction_sub (hω : IsSmoothForm I 0 ω) (hw
   rw [contractibleLoopAction_def, contractibleLoopAction_def,
     hw.capArea_eq_rectangleIntegral_add hω hwc hv]
   ring
+
+/-- For a continuous weakly exact form, the action of the constant loop at `x` is
+`-∫₀¹ H(t, x) dt`. -/
+@[simp]
+theorem IsWeaklyExact.contractibleLoopAction_const (hω : IsSmoothForm I 0 ω)
+    (hw : IsWeaklyExact ω) (H : ℝ → M → ℝ) (x : M) :
+    contractibleLoopAction ω H (fun _ ↦ x) = -∫ t in 0..1, H t x := by
+  rw [contractibleLoopAction_def, hw.capArea_const hω, zero_sub]
 
 end Continuous
 

@@ -36,13 +36,13 @@ variable {ι κ α β : Type*} (e : ι ↪ κ) (d : α ↪ β)
 injections preserves and reflects PL regularity on the relabeled domain. -/
 theorem isPLOn_extendByZero_iff :
     IsPLOn (fun y : κ → ℝ => Function.extend d (f (y ∘ e)) 0)
-      ((Function.ExtendByZero.continuousLinearMap ℝ e) '' s) ↔ IsPLOn f s := by
+      ((Function.ExtendByZero.continuousLinearMap ℝ ℝ e) '' s) ↔ IsPLOn f s := by
   simpa only [ContinuousLinearMap.coe_toContinuousAffineMap, Function.comp_def,
     Function.ExtendByZero.continuousLinearMap_apply, Function.ExtendByZero.restriction_apply]
     using isPLOn_affine_transport_iff (f := f) (s := s)
-    (Function.ExtendByZero.continuousLinearMap ℝ e).toContinuousAffineMap
+    (Function.ExtendByZero.continuousLinearMap ℝ ℝ e).toContinuousAffineMap
     (Function.ExtendByZero.restriction ℝ e).toContinuousAffineMap
-    (Function.ExtendByZero.continuousLinearMap ℝ d).toContinuousAffineMap
+    (Function.ExtendByZero.continuousLinearMap ℝ ℝ d).toContinuousAffineMap
     (Function.ExtendByZero.restriction ℝ d).toContinuousAffineMap
     (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ e e.injective x)
     (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ d d.injective (f x))

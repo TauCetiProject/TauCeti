@@ -53,13 +53,17 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.Nonempty.exists_subset_Ioi_insert_eq` writes a nonempty finset of a linear order as its
   minimum inserted into a finset above it, and `Finset.min'_insert_of_subset_Ioi` recovers that
   minimum.
+* `Finset.filter_min'_lt_eq_erase` identifies the elements above the minimum with the erasure of
+  the minimum.
 * `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
   a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
   `Finset.card_image_comp_eq_and_image_comp_subset_Ioo_iff` splits that condition for a composite
-  of maps.
+  of maps. `StrictMono.image_subset_Ioo` maps a finset inside `Ioo a b` into the interval between
+  the images of `a` and `b` under a strictly monotone map, and
+  `StrictMono.exists_image_eq_of_subset_Ioo` lifts such an interval and finset along it.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -426,6 +430,29 @@ theorem exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : �
     simp only [g, hjI, ite_false] at this
     rw [this]; omega
 
+/-- For finite index sets `tA ⊆ S ×ˢ S` and `tB ⊆ S' ×ˢ S'` with `S`, `S'` disjoint, and every
+cutoff `n`, some permutation of `ℕ` fixes every index of `tA` and moves both coordinates of every
+index of `tB` to at least `n`. -/
+theorem exists_perm_prod_fix_and_le {S S' : Set ℕ} (hd : Disjoint S S')
+    {tA tB : Finset (ℕ × ℕ)} (htA : ↑tA ⊆ S ×ˢ S) (htB : ↑tB ⊆ S' ×ˢ S') (n : ℕ) :
+    ∃ ρ : Equiv.Perm ℕ, (∀ p ∈ tA, (ρ p.1, ρ p.2) = p) ∧ ∀ p ∈ tB, n ≤ ρ p.1 ∧ n ≤ ρ p.2 := by
+  classical
+  have hmem : ∀ {t : Finset (ℕ × ℕ)} {T : Set ℕ}, ↑t ⊆ T ×ˢ T →
+      ∀ i ∈ t.image Prod.fst ∪ t.image Prod.snd, i ∈ T := by
+    intro t T ht i hi
+    simp only [Finset.mem_union, Finset.mem_image] at hi
+    rcases hi with ⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩
+    · exact (ht (Finset.mem_coe.2 hp)).1
+    · exact (ht (Finset.mem_coe.2 hp)).2
+  obtain ⟨ρ, hρI, hρJ⟩ := (tA.image Prod.fst ∪ tA.image Prod.snd).exists_perm_eqOn_le_apply
+    (tB.image Prod.fst ∪ tB.image Prod.snd) (Finset.disjoint_left.2 fun i hi hj ↦
+      Set.disjoint_left.mp hd (hmem htA i hi) (hmem htB i hj)) n
+  refine ⟨ρ, fun p hp ↦ ?_, fun p hp ↦ ⟨?_, ?_⟩⟩
+  · rw [hρI _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp)),
+      hρI _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))]
+  · exact hρJ _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp))
+  · exact hρJ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))
+
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
 be summed first over `c` and then over the interval of possible `b`. -/
@@ -634,6 +661,11 @@ theorem min'_insert_of_subset_Ioi {α : Type*} [LinearOrder α] [LocallyFiniteOr
     · exact le_rfl
     · exact (mem_Ioi.1 (hs hy)).le)
 
+/-- Removing the minimum of a nonempty finset leaves the elements strictly above it. -/
+theorem filter_min'_lt_eq_erase {α : Type*} [LinearOrder α] {s : Finset α} (hs : s.Nonempty) :
+    {x ∈ s | s.min' hs < x} = s.erase (s.min' hs) :=
+  (filter_congr fun y hy ↦ ⟨LT.lt.ne', (s.min'_le y hy).lt_of_ne'⟩).trans (filter_ne' s _)
+
 /-- A nonempty finset of a linear order is an element `a` inserted into a finset above `a`. -/
 theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
     [LocallyFiniteOrderTop α] {s : Finset α} (hs : s.Nonempty) :
@@ -715,6 +747,33 @@ theorem card_image_comp_eq_and_image_comp_subset_Ioo_iff {α β γ : Type*} [Par
       exact lt_irrefl _ hf.2
   · rintro ⟨⟨hcg, -⟩, hcf, hsub⟩
     exact ⟨hcf.trans hcg, hsub⟩
+
+/-- A strictly monotone map sends elements strictly between `a` and `b` to elements strictly
+between their images. -/
+theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [LocallyFiniteOrder α]
+    [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β} (he : StrictMono e)
+    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) := fun _ hx ↦ by
+  obtain ⟨s, hs, rfl⟩ := mem_image.1 hx
+  have := mem_Ioo.1 (hS hs)
+  exact mem_Ioo.2 ⟨he this.1, he this.2⟩
+
+/-- Endpoints `a ≤ b` and a finset `S ⊆ Ioo a b`, all of whose elements are values of a strictly
+monotone map `e`, are the images under `e` of endpoints `a' ≤ b'` and of a finset
+`S' ⊆ Ioo a' b'`. -/
+theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearOrder α]
+    [LocallyFiniteOrder α] [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β}
+    (he : StrictMono e) {a b : β} {S : Finset β} (hab : a ≤ b) (hS : S ⊆ Ioo a b)
+    (ha : ∃ a', e a' = a) (hb : ∃ b', e b' = b) (hSe : ∀ s ∈ S, ∃ s', e s' = s) :
+    ∃ a' b' S', e a' = a ∧ e b' = b ∧ S'.image e = S ∧ a' ≤ b' ∧ S' ⊆ Ioo a' b' := by
+  classical
+  obtain ⟨a', rfl⟩ := ha
+  obtain ⟨b', rfl⟩ := hb
+  obtain ⟨S', rfl⟩ : ∃ S', S'.image e = S := ⟨S.preimage e he.injective.injOn, by
+    rw [image_preimage]
+    exact filter_true_of_mem hSe⟩
+  refine ⟨a', b', S', rfl, rfl, rfl, he.le_iff_le.1 hab, fun s hs ↦ ?_⟩
+  have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
+  exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/
