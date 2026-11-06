@@ -56,8 +56,7 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
     Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree := by
   have : Module.Finite K L := finite_of_valuativeExtension K L
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
-  have hassoc : Associated (minpoly 𝒪[K] ξ) f :=
-    associated_minpoly_of_eisenstein_isRoot ξ f hf hroot
+  have hassoc : Associated (minpoly 𝒪[K] ξ) f := hf.associated_minpoly hf.isUnit_leadingCoeff hroot
   have hnatDegree : (minpoly 𝒪[K] ξ).natDegree = f.natDegree :=
     Polynomial.natDegree_eq_of_degree_eq (Polynomial.degree_eq_degree_of_associated hassoc)
   have hdeg : 0 < f.natDegree := hnatDegree ▸ minpoly.natDegree_pos hint
