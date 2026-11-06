@@ -565,7 +565,7 @@ theorem hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner [Compl
   ext v
   have hI {g : ℝ → StrongDual ℝ V} (hg : LocallyIntegrableOn g (Ioo a b)) :
       Integrable (fun t => ψ t * g t v) μ := by
-    simpa using ((integrable_smul_of_locallyIntegrableOn hg φ).restrict
+    simpa using ((φ.integrable_smul hg).restrict
       (s := Ioo a b)).apply_continuousLinearMap v
   have hI' : Integrable (fun t => deriv ψ t * ⟪ι (u t), ι v⟫_ℝ) μ := by
     simpa [ContinuousLinearMap.gelfandDual_apply, lineDeriv_one] using
@@ -574,7 +574,7 @@ theorem hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner [Compl
   rw [ContinuousLinearMap.integral_apply
       ((integrable_lineDeriv_smul_of_locallyIntegrableOn hG φ 1).restrict) v,
     neg_apply, ContinuousLinearMap.integral_apply
-      ((integrable_smul_of_locallyIntegrableOn hg φ).restrict) v]
+      ((φ.integrable_smul hg).restrict) v]
   -- Test the variational formulation against `ψ v`.
   have h := hvar (fun t => ψ t • v) (hψ.smul contDiff_const) (by simp [hψ0 b (by simp)])
   have hd : ∀ t, deriv (fun s => ψ s • v) t = deriv ψ t • v := fun t =>

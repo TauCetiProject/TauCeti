@@ -113,7 +113,7 @@ theorem _root_.LocallyLipschitzOn.hasWeakLineDerivOn [CompleteSpace F]
   have key := integral_mul_eq_neg_integral_lineDeriv_mul hℓ
     (h.mono fun x hx hxΩ => (ℓ.hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hx hxΩ) :)) φ
   rw [map_neg, ← ℓ.integral_comp_comm (integrable_lineDeriv_smul_of_locallyIntegrableOn hui φ v),
-    ← ℓ.integral_comp_comm (integrable_smul_of_locallyIntegrableOn hu'i φ)]
+    ← ℓ.integral_comp_comm (φ.integrable_smul hu'i)]
   simp only [map_smul, smul_eq_mul]
   have hc : ∫ x, (φ : E → ℝ) x * ℓ (u' x) ∂μ = ∫ x, ℓ (u' x) * (φ : E → ℝ) x ∂μ := by
     simp_rw [mul_comm]
