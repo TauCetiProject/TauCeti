@@ -264,6 +264,76 @@ variable {V : Type u} [AddCommGroup V] {F : ℝ≥0 × V → ℂ}
 
 namespace IsSemigroupGroupPD
 
+/-- The Hermitian symmetry of the alternating time difference of a BCR-positive-definite
+function. -/
+private theorem star_timeDifference_apply (hF : IsSemigroupGroupPD F) (h : ℝ≥0)
+    (p q : ℝ≥0 × V) :
+    star (TauCeti.timeDifference h F (p.1 + q.1, p.2 - q.2)) =
+      TauCeti.timeDifference h F (q.1 + p.1, q.2 - p.2) := by
+  rw [timeDifference_apply, timeDifference_apply, star_sub]
+  -- Express scalar star as complex conjugation so the BCR symmetry lemma applies.
+  change conj (F (p.1 + q.1, p.2 - q.2)) -
+      conj (F (p.1 + q.1 + h, p.2 - q.2)) = _
+  rw [hF.conj_symm p q]
+  rw [add_right_comm p.1 q.1 h]
+  have hs := hF.conj_symm (p.1 + h, p.2) q
+  rw [hs]
+  simp only [add_comm, add_left_comm]
+
+/-- A Gram family `w` whose Gram matrix is read off a bounded function `q` has `q h ≤ q 0`: the
+values `q (n • h)` are log-convex, nonnegative and bounded, hence antitone. -/
+theorem le_of_inner_eq_bddAbove {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+    (w : ℝ≥0 → H) (q : ℝ≥0 → ℝ) (h : ℝ≥0) (hq : ∀ s, q s = ‖w (s / 2)‖ ^ 2)
+    (hinner : ∀ a b, ⟪w a, w b⟫_ℂ = (q (a + b) : ℂ)) (hbdd : BddAbove (range q)) :
+    q h ≤ q 0 := by
+  have hq_nonneg (s : ℝ≥0) : 0 ≤ q s := by rw [hq]; positivity
+  let u (n : ℕ) : ℝ := q (n • h)
+  have hu_log (n : ℕ) : u (n + 1) ^ 2 ≤ u n * u (n + 2) := by
+    let a := (n • h) / 2
+    let b := ((n + 2) • h) / 2
+    let m := (n + 1) • h
+    have hmid : (n • h) / 2 + ((n + 2) • h) / 2 = (n + 1) • h := by
+      ext
+      simp only [NNReal.coe_add, NNReal.coe_div, NNReal.coe_ofNat, NNReal.coe_nsmul]
+      ring
+    have hcross : ⟪w a, w b⟫_ℂ = (q m : ℂ) := by
+      rw [hinner]
+      exact congrArg (fun s => (q s : ℂ)) (by simpa only [a, b, m] using hmid)
+    have hnorm := norm_inner_le_norm (𝕜 := ℂ) (w a) (w b)
+    have hsquare : ‖⟪w a, w b⟫_ℂ‖ ^ 2 ≤ (‖w a‖ * ‖w b‖) ^ 2 :=
+      (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 hnorm
+    rw [hcross, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hq_nonneg m), mul_pow,
+      ← hq, ← hq] at hsquare
+    simpa [u, a, b, m] using hsquare
+  have hu_bdd : BddAbove (range u) := by
+    obtain ⟨B, hB⟩ := hbdd
+    exact ⟨B, by rintro _ ⟨n, rfl⟩; exact hB ⟨_, rfl⟩⟩
+  have hanti : Antitone u :=
+    antitone_of_nonneg_logConvex_bddAbove (fun n => hq_nonneg _) hu_log hu_bdd
+  simpa [u] using hanti (Nat.zero_le 1)
+
+/-- The real part of a Gram-type quadratic form built from a function bounded by `C` is bounded
+independently of the shift `s`. -/
+private theorem re_sum_sum_le {ι : Type*} [Fintype ι] (F : ℝ≥0 × V → ℂ) (p : ι → ℝ≥0 × V)
+    (c : ι → ℂ) {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) (s : ℝ≥0) :
+    RCLike.re (∑ i, ∑ j, star (c i) *
+      F ((p i).1 + (p j).1 + s, (p i).2 - (p j).2) * c j) ≤ ∑ i, ∑ j, ‖c i‖ * C * ‖c j‖ := by
+  calc
+    _ ≤ ‖∑ i, ∑ j, star (c i) * F ((p i).1 + (p j).1 + s, (p i).2 - (p j).2) * c j‖ :=
+      RCLike.re_le_norm _
+    _ ≤ ∑ i, ‖∑ j, star (c i) * F ((p i).1 + (p j).1 + s,
+        (p i).2 - (p j).2) * c j‖ := norm_sum_le _ _
+    _ ≤ ∑ i, ∑ j, ‖star (c i) * F ((p i).1 + (p j).1 + s,
+        (p i).2 - (p j).2) * c j‖ := Finset.sum_le_sum fun i _ => norm_sum_le _ _
+    _ ≤ _ := by
+      apply Finset.sum_le_sum
+      intro i _
+      apply Finset.sum_le_sum
+      intro j _
+      simp only [norm_mul, norm_star]
+      gcongr
+      exact hC _
+
 /-- A bounded BCR-positive-definite function remains positive definite after subtracting a forward
 time translate. In other words, for every `h : ℝ≥0`, the first alternating time difference
 `(t, v) ↦ F (t, v) - F (t + h, v)` is semigroup-group positive definite. -/
@@ -272,16 +342,7 @@ theorem timeDifference (hF : IsSemigroupGroupPD F)
     IsSemigroupGroupPD (TauCeti.timeDifference h F) := by
   rw [isSemigroupGroupPD_iff_posSemidef]
   refine posSemidef_iff_finite_sum.{0, u, u}.mpr ?_
-  refine ⟨fun p q => ?_, ?_⟩
-  · rw [timeDifference_apply, timeDifference_apply, star_sub]
-    -- Express scalar star as complex conjugation so the BCR symmetry lemma applies.
-    change conj (F (p.1 + q.1, p.2 - q.2)) -
-        conj (F (p.1 + q.1 + h, p.2 - q.2)) = _
-    rw [hF.conj_symm p q]
-    rw [add_right_comm p.1 q.1 h]
-    have hs := hF.conj_symm (p.1 + h, p.2) q
-    rw [hs]
-    simp only [add_comm, add_left_comm]
+  refine ⟨star_timeDifference_apply hF h, ?_⟩
   intro ι _ p c
   classical
   let K : (ℝ≥0 × V) → (ℝ≥0 × V) → ℂ :=
@@ -305,63 +366,16 @@ theorem timeDifference (hF : IsSemigroupGroupPD F)
     ring
   have hq_inner (s : ℝ≥0) : q s = ‖w (s / 2)‖ ^ 2 := by
     rw [← inner_self_eq_norm_sq (𝕜 := ℂ) (w (s / 2)), hinner, add_halves]
-  have hq_nonneg (s : ℝ≥0) : 0 ≤ q s := by rw [hq_inner]; positivity
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hbounded
-  let B : ℝ := ∑ i, ∑ j, ‖c i‖ * C * ‖c j‖
-  have hq_le (s : ℝ≥0) : q s ≤ B := by
-    calc
-      q s ≤ ‖z s‖ := RCLike.re_le_norm _
-      _ ≤ ∑ i, ‖∑ j, star (c i) * F ((p i).1 + (p j).1 + s,
-          (p i).2 - (p j).2) * c j‖ := by
-            simpa only [z] using norm_sum_le (Finset.univ : Finset ι) fun i =>
-              ∑ j, star (c i) * F ((p i).1 + (p j).1 + s, (p i).2 - (p j).2) * c j
-      _ ≤ ∑ i, ∑ j, ‖star (c i) * F ((p i).1 + (p j).1 + s,
-          (p i).2 - (p j).2) * c j‖ := by
-            apply Finset.sum_le_sum
-            intro (i : ι) _
-            exact norm_sum_le (Finset.univ : Finset ι) fun j =>
-              star (c i) * F ((p i).1 + (p j).1 + s, (p i).2 - (p j).2) * c j
-      _ ≤ B := by
-        apply Finset.sum_le_sum
-        intro i _
-        apply Finset.sum_le_sum
-        intro j _
-        simp only [norm_mul, norm_star]
-        gcongr
-        exact hC _ ⟨_, rfl⟩
-  let u (n : ℕ) : ℝ := q (n • h)
-  have hu_nonneg (n : ℕ) : 0 ≤ u n := hq_nonneg _
-  have hu_bdd : BddAbove (range u) := ⟨B, by rintro _ ⟨n, rfl⟩; exact hq_le _⟩
-  have hu_log (n : ℕ) : u (n + 1) ^ 2 ≤ u n * u (n + 2) := by
-    let a := (n • h) / 2
-    let b := ((n + 2) • h) / 2
-    let m := (n + 1) • h
-    have hmid : (n • h) / 2 + ((n + 2) • h) / 2 = (n + 1) • h := by
-      ext
-      simp only [NNReal.coe_add, NNReal.coe_div, NNReal.coe_ofNat, NNReal.coe_nsmul]
-      ring
-    have hcross : ⟪w a, w b⟫_ℂ = (q m : ℂ) := by
-      calc
-        ⟪w a, w b⟫_ℂ = z m := by
-          rw [hinner]
-          exact congrArg z (by simpa only [a, b, m] using hmid)
-        _ = ⟪w (m / 2), w (m / 2)⟫_ℂ := by rw [hinner, add_halves]
-        _ = (‖w (m / 2)‖ : ℂ) ^ 2 := inner_self_eq_norm_sq_to_K _
-        _ = (q m : ℂ) := by rw [hq_inner]; norm_cast
-    have hnorm := norm_inner_le_norm (𝕜 := ℂ) (w a) (w b)
-    have hsquare : ‖⟪w a, w b⟫_ℂ‖ ^ 2 ≤ (‖w a‖ * ‖w b‖) ^ 2 :=
-      (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 hnorm
-    rw [hcross, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hq_nonneg m), mul_pow,
-      ← hq_inner, ← hq_inner] at hsquare
-    simpa [u, a, b, m] using hsquare
-  have hanti : Antitone u := antitone_of_nonneg_logConvex_bddAbove hu_nonneg hu_log hu_bdd
-  have hdiff : 0 ≤ q 0 - q h := by
-    simpa [u] using sub_nonneg.mpr (hanti (Nat.zero_le 1))
   have hz_eq (s : ℝ≥0) : z s = (q s : ℂ) := by
     calc
       z s = ⟪w (s / 2), w (s / 2)⟫_ℂ := by rw [hinner, add_halves]
       _ = (‖w (s / 2)‖ : ℂ) ^ 2 := inner_self_eq_norm_sq_to_K _
       _ = (q s : ℂ) := by rw [hq_inner]; norm_cast
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hbounded
+  have hdiff : 0 ≤ q 0 - q h :=
+    sub_nonneg.mpr <| le_of_inner_eq_bddAbove w q h hq_inner
+      (fun a b => by rw [hinner, hz_eq])
+      ⟨_, by rintro _ ⟨s, rfl⟩; exact re_sum_sum_le F p c (fun x => hC _ ⟨x, rfl⟩) s⟩
   have hnonneg : (0 : ℂ) ≤ (q 0 : ℂ) - (q h : ℂ) := by
     rw [Complex.nonneg_iff]
     exact ⟨by simpa using hdiff, by simp⟩
@@ -369,11 +383,9 @@ theorem timeDifference (hF : IsSemigroupGroupPD F)
   refine hnonneg.trans_eq ?_
   simp only [z]
   rw [← Finset.sum_sub_distrib]
-  apply Finset.sum_congr rfl
-  intro i _
+  refine Finset.sum_congr rfl fun i _ => ?_
   rw [← Finset.sum_sub_distrib]
-  apply Finset.sum_congr rfl
-  intro j _
+  refine Finset.sum_congr rfl fun j _ => ?_
   simp only [add_zero, timeDifference_apply]
   ring_nf
 
