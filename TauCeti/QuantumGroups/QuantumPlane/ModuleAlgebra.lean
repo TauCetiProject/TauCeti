@@ -104,6 +104,14 @@ private theorem fOp_basis (j k : ℕ) :
     fOp q (basis q (j, k)) = quantumInteger q k • basis q (j + 1, k - 1) :=
   (basis q).constr_basis ℂ _ (j, k)
 
+/-- Moving one degree from `y` to `x` multiplies the `K`-weight `q^(k - j)` by `q²`. -/
+private theorem zpow_succ_sub (hq : q ≠ 0) (j k : ℕ) :
+    q ^ (((k + 1 : ℕ) : ℤ) - j) = q ^ 2 * q ^ ((k : ℤ) - (j + 1 : ℕ)) := by
+  rw [← zpow_natCast q 2, ← zpow_add₀ hq]
+  congr 1
+  push_cast
+  ring
+
 private theorem eOp_fOp_basis (j k : ℕ) :
     eOp q (fOp q (basis q (j, k))) =
       (quantumInteger q k * quantumInteger q (j + 1)) • basis q (j, k) := by
@@ -124,6 +132,19 @@ private theorem bilin_eq {Φ Ψ : QuantumPlane q →ₗ[ℂ] QuantumPlane q →�
     Φ a b = Ψ a b := by
   rw [LinearMap.ext_basis (basis q) (basis q) h]
 
+/-- Multiples of basis monomials agree when their coefficients and their indices agree; this
+leaves the index arithmetic to `omega`. -/
+private theorem smul_basis_congr {c c' : ℂ} {i j i' j' : ℕ} (hc : c = c') (hi : i = i')
+    (hj : j = j') : c • basis q (i, j) = c' • basis q (i', j') := by
+  rw [hc, hi, hj]
+
+/-- A multiple of a basis monomial is the sum of two others with the same indices when its
+coefficient is the sum of theirs; this leaves the index arithmetic to `omega`. -/
+private theorem smul_basis_eq_add {c c₁ c₂ : ℂ} {i j i₁ j₁ i₂ j₂ : ℕ} (hi₁ : i₁ = i)
+    (hj₁ : j₁ = j) (hi₂ : i₂ = i) (hj₂ : j₂ = j) (hc : c = c₁ + c₂) :
+    c • basis q (i, j) = c₁ • basis q (i₁, j₁) + c₂ • basis q (i₂, j₂) := by
+  rw [hi₁, hj₁, hi₂, hj₂, hc, add_smul]
+
 /-- The generator operators satisfy the defining relations of `UqSl2 q`. -/
 private def tuple (q : ℂ) [Fact (q ≠ 0)] : GeneratorTuple q (Module.End ℂ (QuantumPlane q)) where
   e := eOp q
@@ -135,16 +156,13 @@ private def tuple (q : ℂ) [Fact (q ≠ 0)] : GeneratorTuple q (Module.End ℂ 
   kInv_mul_k := (basis q).ext fun ⟨j, k⟩ => by
     simp [kOp_basis, kInvOp_basis, smul_smul, ← zpow_add₀ (Fact.out : q ≠ 0)]
   k_mul_e := (basis q).ext fun ⟨j, k⟩ => by
-    have hq : q ≠ 0 := Fact.out
     simp only [mul_apply_eq_comp, LinearMap.smul_apply, eOp_basis, kOp_basis, map_smul,
       smul_smul]
     congr 1
     rcases j with _ | j
     · simp
-    simp only [add_tsub_cancel_right]
-    push_cast
-    simp only [zpow_add₀ hq, zpow_sub₀ hq, zpow_natCast, zpow_one]
-    field_simp
+    rw [add_tsub_cancel_right, zpow_succ_sub Fact.out]
+    ring
   k_mul_f := (basis q).ext fun ⟨j, k⟩ => by
     have hq : q ≠ 0 := Fact.out
     simp only [mul_apply_eq_comp, LinearMap.smul_apply, fOp_basis, kOp_basis, map_smul,
@@ -152,9 +170,7 @@ private def tuple (q : ℂ) [Fact (q ≠ 0)] : GeneratorTuple q (Module.End ℂ 
     congr 1
     rcases k with _ | k
     · simp
-    simp only [add_tsub_cancel_right]
-    push_cast
-    simp only [zpow_add₀ hq, zpow_sub₀ hq, zpow_natCast, zpow_one]
+    rw [add_tsub_cancel_right, zpow_succ_sub hq, inv_pow]
     field_simp
   e_mul_f_sub_f_mul_e := (basis q).ext fun ⟨j, k⟩ => by
     simp only [LinearMap.sub_apply, LinearMap.smul_apply, mul_apply_eq_comp, eOp_fOp_basis,
@@ -232,18 +248,12 @@ private theorem e_smul_basis_mul_basis (i j m n : ℕ) :
     simp only [basis_mul_basis, smul_comm (e q), e_smul_basis, k_smul_basis, smul_mul_assoc,
       mul_smul_comm, smul_smul, Nat.cast_zero, quantumInteger_zero, zero_smul, zero_add, add_zero,
       zero_mul, mul_zero, smul_zero]
-  · rw [Nat.add_sub_cancel, show j + (n + 1) = j + n + 1 by omega]
-    congr 1
-    simp
+  · refine smul_basis_congr ?_ (by omega) (by omega)
+    rw [sub_zero, zpow_natCast, add_tsub_cancel_right]
     ring
-  · rw [show j + 1 + n = j + n + 1 by omega]
-    congr 1
+  · refine smul_basis_congr ?_ (by omega) (by omega)
     ring
-  · rw [show i + 1 + (m + 1) - 1 = i + m + 1 by omega,
-      show i + 1 - 1 + (m + 1) = i + m + 1 by omega,
-      show i + 1 + (m + 1 - 1) = i + m + 1 by omega, show j + 1 + n = j + n + 1 by omega,
-      show j + (n + 1) = j + n + 1 by omega, ← add_smul]
-    congr 1
+  · refine smul_basis_eq_add (by omega) (by omega) (by omega) (by omega) ?_
     -- The scalar identity is
     -- `[(m + 1) + (i + 1)]_q = q^(m + 1) [i + 1]_q + q^(-(i + 1)) [m + 1]_q`.
     push_cast
@@ -261,15 +271,11 @@ private theorem f_smul_basis_mul_basis (i j m n : ℕ) :
     simp only [basis_mul_basis, smul_comm (f q), f_smul_basis, kInv_smul_basis, smul_mul_assoc,
       mul_smul_comm, smul_smul, Nat.cast_zero, quantumInteger_zero, zero_smul, zero_add, add_zero,
       zero_mul, mul_zero, smul_zero]
-  · rw [show i + (m + 1) = i + m + 1 by omega, mul_comm]
-  · rw [show i + 1 + m = i + m + 1 by omega, Nat.add_sub_cancel, sub_zero, zpow_natCast]
-    congr 1
+  · exact smul_basis_congr (mul_comm _ _) (by omega) (by omega)
+  · refine smul_basis_congr ?_ (by omega) (by omega)
+    rw [sub_zero, zpow_natCast, add_tsub_cancel_right]
     ring
-  · rw [show j + 1 + (n + 1) - 1 = j + n + 1 by omega,
-      show j + 1 - 1 + (n + 1) = j + n + 1 by omega,
-      show j + 1 + (n + 1 - 1) = j + n + 1 by omega, show i + 1 + m = i + m + 1 by omega,
-      show i + (m + 1) = i + m + 1 by omega, ← add_smul]
-    congr 1
+  · refine smul_basis_eq_add (by omega) (by omega) (by omega) (by omega) ?_
     -- The scalar identity is
     -- `[(j + 1) + (n + 1)]_q = q^(j + 1) [n + 1]_q + q^(-(n + 1)) [j + 1]_q`.
     push_cast
@@ -278,26 +284,26 @@ private theorem f_smul_basis_mul_basis (i j m n : ℕ) :
     field_simp
     ring
 
-private theorem k_smul_basis_mul_basis (i j m n : ℕ) :
-    k q • (basis q (i, j) * basis q (m, n)) = (k q • basis q (i, j)) * (k q • basis q (m, n)) := by
-  have hq : q ≠ 0 := Fact.out
-  simp only [basis_mul_basis, smul_comm (k q), k_smul_basis, smul_mul_assoc, mul_smul_comm,
-    smul_smul]
+/-- An element acting on each monomial `y^i x^j` by the character `c^(j - i)` is multiplicative
+on monomials, since the weights `j - i` add under `basis_mul_basis`. -/
+private theorem smul_basis_mul_basis_of_weight {u : UqSl2 q} {c : ℂ} (hc : c ≠ 0)
+    (hu : ∀ i j : ℕ, u • basis q (i, j) = c ^ ((j : ℤ) - i) • basis q (i, j)) (i j m n : ℕ) :
+    u • (basis q (i, j) * basis q (m, n)) = (u • basis q (i, j)) * (u • basis q (m, n)) := by
+  simp only [basis_mul_basis, smul_comm u, hu, smul_mul_assoc, mul_smul_comm, smul_smul]
   congr 1
   push_cast
-  simp only [zpow_add₀ hq, zpow_sub₀ hq, zpow_natCast]
+  simp only [zpow_add₀ hc, zpow_sub₀ hc, zpow_natCast]
   ring
+
+private theorem k_smul_basis_mul_basis (i j m n : ℕ) :
+    k q • (basis q (i, j) * basis q (m, n)) = (k q • basis q (i, j)) * (k q • basis q (m, n)) :=
+  smul_basis_mul_basis_of_weight Fact.out k_smul_basis i j m n
 
 private theorem kInv_smul_basis_mul_basis (i j m n : ℕ) :
     kInv q • (basis q (i, j) * basis q (m, n)) =
-      (kInv q • basis q (i, j)) * (kInv q • basis q (m, n)) := by
-  have hq : q ≠ 0 := Fact.out
-  simp only [basis_mul_basis, smul_comm (kInv q), kInv_smul_basis, smul_mul_assoc, mul_smul_comm,
-    smul_smul]
-  congr 1
-  push_cast
-  simp only [zpow_add₀ hq, zpow_sub₀ hq, zpow_natCast]
-  ring
+      (kInv q • basis q (i, j)) * (kInv q • basis q (m, n)) :=
+  smul_basis_mul_basis_of_weight (inv_ne_zero Fact.out)
+    (fun i j => by rw [kInv_smul_basis, inv_zpow', neg_sub]) i j m n
 
 /-- The twisted Leibniz rule `E (a b) = E(a) b + K(a) E(b)`, from `ΔE = E ⊗ 1 + K ⊗ E`. -/
 theorem e_smul_mul (a b : QuantumPlane q) :

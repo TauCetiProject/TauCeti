@@ -96,8 +96,10 @@ theorem x_pow_mul_y_pow (k a : ℕ) : x q ^ k * y q ^ a = q ^ (k * a) • (y q ^
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ, mul_assoc, hx, mul_smul_comm, ← mul_assoc, ih, smul_mul_assoc, smul_smul,
-      mul_assoc, ← pow_succ, ← pow_add, add_one_mul, add_comm (k * a)]
+    rw [pow_succ, mul_assoc, hx, mul_smul_comm, ← mul_assoc, ih]
+    simp only [smul_mul_assoc, smul_smul, mul_assoc, ← pow_succ, ← pow_add]
+    congr 1
+    ring
 
 /-- The monomials `y^j x^k`, indexed by `(j, k)`, form a basis of the quantum plane. -/
 def basis : Module.Basis (ℕ × ℕ) R (QuantumPlane q) :=
@@ -113,8 +115,9 @@ theorem basis_apply (j k : ℕ) : basis q (j, k) = y q ^ j * x q ^ k := by
 @[simp]
 theorem basis_mul_basis (j k a b : ℕ) :
     basis q (j, k) * basis q (a, b) = q ^ (k * a) • basis q (j + a, k + b) := by
-  rw [basis_apply, basis_apply, basis_apply, mul_assoc, ← mul_assoc (x q ^ k), x_pow_mul_y_pow,
-    smul_mul_assoc, mul_smul_comm, mul_assoc, ← mul_assoc, ← pow_add, ← pow_add]
+  simp only [basis_apply, pow_add, mul_assoc]
+  rw [← mul_assoc (x q ^ k), x_pow_mul_y_pow]
+  simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
 
 /-- The constant monomial is the unit. -/
 theorem basis_zero_zero : basis q (0, 0) = 1 := by
