@@ -32,6 +32,8 @@ on which the rotations lift.
 * `TauCeti.rootsOfUnityBall.instChartedSpace`, `TauCeti.rootsOfUnityBall.instIsManifold`: the disc
   is a `C^n` manifold modelled on `ℂ` for every `n`; for `n = ω` it is a complex manifold.
 * `TauCeti.rootsOfUnityBall.contMDiff_val`: the inclusion of the disc into `ℂ` is holomorphic.
+* `TauCeti.rootsOfUnityBall.coe_chartAt_symm`: the inverse of a chart of the disc is the identity
+  of `ℂ` on its target.
 * `TauCeti.rootsOfUnityBall.instContMDiffConstSMul`: the rotations act on the disc by `C^n` maps,
   that is, by biholomorphisms.
 -/
@@ -76,6 +78,13 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(ℂ) n (rootsOfUnity m
 /-- The inclusion of the disc of radius `r` into `ℂ` is `C^n`; it is holomorphic. -/
 theorem contMDiff_val : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
   contMDiff_subtype_val (U := opens m r)
+
+/-- The charts of the disc are restrictions of the identity chart of `ℂ`: the inverse of a chart
+sends each point of its target to that point of the disc. -/
+theorem coe_chartAt_symm (u : rootsOfUnityBall m r) {w : ℂ} (hw : w ∈ (chartAt ℂ u).target) :
+    ((chartAt ℂ u).symm w : ℂ) = w :=
+  -- The chart of `ℂ` at `u` is the identity (`chartAt_self_eq`).
+  (chartAt ℂ (u : ℂ)).subtypeRestr_symm_apply (U := opens m r) ⟨u⟩ hw
 
 end rootsOfUnityBall
 

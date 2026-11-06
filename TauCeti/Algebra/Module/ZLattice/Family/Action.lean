@@ -32,6 +32,8 @@ quotient atlas (`TauCeti.torusFamilyAffineQuotientChartedSpace`), for which it i
 diffeomorphism (`TauCeti.isLocalDiffeomorph_torusFamilyAffineQuotient_mk`). Freeness on the
 family is weaker than freeness on the base: a base stabilizer can act on its fibre by a
 translation without fixed points. Over `ℂ` with holomorphic data, `X / Γ` is a complex manifold.
+The inverse of each of its charts is the inverse of a chart of `X` followed by the orbit map
+(`TauCeti.exists_symm_eq_mk_of_mem_atlas_torusFamilyAffineQuotient`).
 
 The regularity statements use any normed scalar field `𝕜`; the real structure of `E` is used
 only for the full-lattice hypotheses. Smoothness is checked before taking the period quotient,
@@ -178,6 +180,43 @@ noncomputable def torusFamilyAffineQuotientChartedSpace (hcont : ∀ l, Continuo
     hcont hRc hbc
   haveI := hfree
   MulAction.instChartedSpaceQuotient (H := ModelProd H E)
+
+/-- The inverse of a chart of the quotient atlas on `X / Γ` is the inverse of a chart of the
+family `X` followed by the orbit map `X → X / Γ`. -/
+theorem exists_symm_eq_mk_of_mem_atlas_torusFamilyAffineQuotient
+    (hcont : ∀ l, Continuous fun y ↦ P y l)
+    (hRc : ∀ g : Γ, Continuous fun p : Y × E ↦ R g p.1 p.2)
+    (hbc : letI := periodAddAction P; ∀ g, Continuous (b g))
+    (hfree : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
+    {e : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      OpenPartialHomeomorph (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
+        (ModelProd H E)}
+    (he : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
+        hbone hbmul hcont hRc hbc hfree
+      e ∈ atlas (ModelProd H E)
+        (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E)))) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := H) P hcont hinj
+    ∃ x : AddAction.orbitRel.Quotient Λ (Y × E), ∀ w ∈ e.target,
+      w ∈ (chartAt (ModelProd H E) x).target ∧
+        e.symm w = Quotient.mk _ ((chartAt (ModelProd H E) x).symm w) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyChartedSpace (H := H) P hcont hinj
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  have := continuousConstVAdd_periodAddAction P hcont
+  have := t2Space_torusFamily P hcont hinj
+  have := (AddAction.isOpenQuotientMap_quotientMk (Γ := Λ) (T := Y × E)).locallyCompactSpace
+  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+    hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    hcont hRc hbc
+  have := hfree
+  exact exists_symm_eq_quotientMk_of_mem_atlas_quotient he
 
 variable (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun p : Y × E ↦ R g p.1 p.2)
   (hbc : letI := periodAddAction P
