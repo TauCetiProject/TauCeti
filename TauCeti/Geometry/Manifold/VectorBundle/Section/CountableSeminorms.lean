@@ -123,7 +123,7 @@ theorem metrizableSpace_frameExhaustion [Countable ι] [∀ i, Countable (κ i)]
 /-- On sigma-compact frame domains, select actual countable covering chart centres and
 compact exhaustions whose native frame seminorms generate the specified frame topology.
 The empty-domain case uses an empty subtype, without choosing a point. -/
-theorem exists_countable_frameExhaustion [I.Boundaryless]
+theorem exists_countable_frameExhaustion
     [LocallyCompactSpace E] [SecondCountableTopology E]
     [∀ i, SigmaCompactSpace (U i)] :
     ∃ s : ∀ i, Set (U i), (∀ i, (s i).Countable) ∧
@@ -139,15 +139,18 @@ theorem exists_countable_frameExhaustion [I.Boundaryless]
     have hx : x ∈ ⋃ y ∈ s i, (extChartAt I y).source := by rw [hcover]; trivial
     obtain ⟨y, hy, hx⟩ := mem_iUnion₂.mp hx
     exact ⟨⟨y, hy⟩, hx⟩
-  let _ (i : ι) (j : s i) : LocallyCompactSpace (extChartAt I (j : U i)).target :=
-    (isOpen_extChartAt_target (j : U i)).locallyCompactSpace
+  let _ (i : ι) (j : s i) : LocallyCompactSpace (extChartAt I (j : U i)).target := by
+    rw [extChartAt_target]
+    exact ((chartAt H (j : U i)).open_target.preimage I.continuous_symm).isLocallyClosed.inter
+      I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
   let A (i : ι) (j : s i) := CompactExhaustion.choice (extChartAt I (j : U i)).target
   exact ⟨s, hs, hc, A, withSeminorms_frameExhaustion (n := n) e U hU
     (fun i (j : s i) ↦ (j : U i)) A hc⟩
 
 /-- Countable covering frames on sigma-compact domains give metrizability of the same native
-frame topology on a boundaryless manifold with locally compact, second-countable model. -/
-theorem metrizableSpace_frameTopology_of_sigmaCompactDomains [Countable ι] [I.Boundaryless]
+frame topology on a manifold with locally compact, second-countable model, including
+manifolds with boundary and corners. -/
+theorem metrizableSpace_frameTopology_of_sigmaCompactDomains [Countable ι]
     [LocallyCompactSpace E] [SecondCountableTopology E]
     [∀ i, SigmaCompactSpace (U i)] (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU

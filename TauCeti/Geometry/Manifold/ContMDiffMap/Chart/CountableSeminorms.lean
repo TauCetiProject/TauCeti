@@ -147,10 +147,9 @@ theorem withSeminorms_chartExhaustion
   let _ := hp.isTopologicalAddGroup
   refine hp.congr ?_ (Seminorm.IsBounded.of_real ?_)
   · intro j
-    have hcont : Continuous (chartExhaustionSeminormFamily (F := F) c A j) := by
-      rw [show chartExhaustionSeminormFamily (F := F) c A j =
-        chartCkSeminorm (c j.1) ⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩
-          j.2.2.1 j.2.2.2 from chartExhaustionSeminormFamily_apply c A _ _ _ _]
+    rcases j with ⟨i, l, k, hk⟩
+    have hcont : Continuous (chartExhaustionSeminormFamily (F := F) c A (i, l, ⟨k, hk⟩)) := by
+      rw [chartExhaustionSeminormFamily_apply]
       exact Seminorm.continuous_of_forall fun r hr ↦
         ball_chartCkSeminorm_mem_nhds _ _ _ _ _ hr
     obtain ⟨s, C, -, hbound⟩ := Seminorm.bound_of_continuous hp _ hcont
@@ -192,11 +191,11 @@ theorem metrizableSpace_chartExhaustion [Countable ι]
   exact UniformSpace.metrizableSpace
 
 
-/-- On a sigma-compact boundaryless manifold with locally compact, second-countable model,
+/-- On a sigma-compact manifold with locally compact, second-countable model,
 the existing vector-valued weak Whitney topology is metrizable. Arbitrary normed targets are
 allowed; no finite-dimensionality of the coefficient space or completeness is required. -/
 theorem metrizableSpace_manifoldWeakWhitney_of_sigmaCompact
-    [I.Boundaryless] [LocallyCompactSpace E] [SecondCountableTopology E]
+    [LocallyCompactSpace E] [SecondCountableTopology E]
     [SigmaCompactSpace M] :
     TopologicalSpace.MetrizableSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯ := by
   obtain ⟨s, hs, hcover⟩ := countable_cover_nhds_of_sigmaCompact
@@ -207,8 +206,10 @@ theorem metrizableSpace_manifoldWeakWhitney_of_sigmaCompact
     have hx : x ∈ ⋃ y ∈ s, (extChartAt I y).source := by rw [hcover]; trivial
     obtain ⟨y, hy, hx⟩ := mem_iUnion₂.mp hx
     exact ⟨⟨y, hy⟩, hx⟩
-  let _ (i : s) : LocallyCompactSpace (extChartAt I (i : M)).target :=
-    (isOpen_extChartAt_target (i : M)).locallyCompactSpace
+  let _ (i : s) : LocallyCompactSpace (extChartAt I (i : M)).target := by
+    rw [extChartAt_target]
+    exact ((chartAt H (i : M)).open_target.preimage I.continuous_symm).isLocallyClosed.inter
+      I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
   exact metrizableSpace_chartExhaustion (F := F) (n := n) (fun i : s ↦ (i : M)) hc
     (fun i ↦ CompactExhaustion.choice (extChartAt I (i : M)).target)
 
