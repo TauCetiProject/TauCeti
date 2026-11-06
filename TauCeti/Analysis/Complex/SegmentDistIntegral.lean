@@ -86,6 +86,63 @@ theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : ℂ) :
     _ ≤ ‖A + s • B‖ := key s
     _ = dist (w + s • B) p := by rw [dist_eq_norm, hseg]
 
+end Complex
+
+namespace intervalIntegral
+
+/-- A nonnegative function bounded on `[a, b]` (away from `a`) by `K * (s - a) ^ u` with
+`-1 < u` is interval integrable on `[a, b]`, and its integral is at most
+`K * ((b - a) ^ (u + 1) / (u + 1))`. -/
+theorem intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right {f : ℝ → ℝ} {a b K u : ℝ}
+    (hu : -1 < u) (hab : a ≤ b) (hf0 : ∀ s, 0 ≤ f s) (hmeas : AEStronglyMeasurable f volume)
+    (hbound : ∀ s ∈ Icc a b, s ≠ a → f s ≤ K * (s - a) ^ u) :
+    IntervalIntegrable f volume a b ∧
+      ∫ s in a..b, f s ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
+  have hu1 : (0 : ℝ) < u + 1 := by linarith
+  have hint : IntervalIntegrable (fun s : ℝ => K * (s - a) ^ u) volume a b := by
+    have h := (intervalIntegrable_rpow' (a := 0) (b := b - a) hu).comp_sub_right a
+    simpa using h.const_mul K
+  have hi : IntervalIntegrable f volume a b := by
+    refine hint.mono_fun' hmeas.restrict ?_
+    filter_upwards [Measure.ae_ne (volume.restrict (uIoc a b)) a,
+      self_mem_ae_restrict measurableSet_uIoc] with s hsne hsmem
+    rw [uIoc_of_le hab] at hsmem
+    rw [Real.norm_of_nonneg (hf0 s)]
+    exact hbound s (Ioc_subset_Icc_self hsmem) hsne
+  refine ⟨hi, (integral_mono_ae_restrict hab hi hint ?_).trans_eq ?_⟩
+  · filter_upwards [Measure.ae_ne (volume.restrict (Icc a b)) a,
+      self_mem_ae_restrict (measurableSet_Icc (a := a) (b := b))] with s hsne hsmem
+    exact hbound s hsmem hsne
+  · rw [integral_const_mul, integral_comp_sub_right (fun x : ℝ => x ^ u) a, sub_self,
+      integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
+    ring
+
+/-- The mirror image of
+`intervalIntegral.intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right`: the singularity
+is at the right endpoint `b`. -/
+theorem intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_left {f : ℝ → ℝ} {a b K u : ℝ}
+    (hu : -1 < u) (hab : a ≤ b) (hf0 : ∀ s, 0 ≤ f s) (hmeas : AEStronglyMeasurable f volume)
+    (hbound : ∀ s ∈ Icc a b, s ≠ b → f s ≤ K * (b - s) ^ u) :
+    IntervalIntegrable f volume a b ∧
+      ∫ s in a..b, f s ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
+  obtain ⟨hi, hle⟩ :=
+    intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right (f := fun s => f (a + b - s))
+      (K := K) hu hab (fun s => hf0 _)
+      (hmeas.comp_quasiMeasurePreserving
+        (quasiMeasurePreserving_sub_left_of_right_invariant volume (a + b)))
+      (fun s hs hsa => by
+        have := hbound (a + b - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
+          (fun h => hsa (by linarith))
+        rwa [show b - (a + b - s) = s - a by ring] at this)
+  refine ⟨?_, ?_⟩
+  · simpa using (hi.comp_sub_left (a + b)).symm
+  · rwa [integral_comp_sub_left f (a + b), show a + b - b = a by ring,
+      show a + b - a = b by ring] at hle
+
+end intervalIntegral
+
+namespace Complex
+
 /-- The arclength integral of a nonpositive power of the distance to `p` along the segment from
 `w` to `z`: the parameter integral over `[0, 1]` is multiplied by the length `‖z - w‖` of the
 segment.  For `-1 < u ≤ 0`, the bound `2 / (u + 1) * ‖z - w‖ ^ (u + 1)` is uniform in the
@@ -101,8 +158,8 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
   have hmeas : AEStronglyMeasurable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume := by
     have hcontd : Continuous fun s : ℝ => dist (w + s • (z - w)) p := by fun_prop
     exact (hcontd.measurable.pow measurable_const).aestronglyMeasurable
+  have hnn : ∀ s : ℝ, 0 ≤ dist (w + s • (z - w)) p ^ u := fun s => Real.rpow_nonneg dist_nonneg _
   -- the segment meets `p` at the single parameter `c` at worst, so that parameter is discarded
-  have hne_ae : ∀ t : Set ℝ, ∀ᵐ s ∂(volume.restrict t), s ≠ c := fun t ↦ Measure.ae_ne _ c
   have hbnd : ∀ s ∈ Icc (0 : ℝ) 1, s ≠ c →
       dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * |s - c| ^ u := by
     intro s hs hsne
@@ -111,64 +168,17 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
     calc dist (w + s • (z - w)) p ^ u ≤ (‖z - w‖ * |s - c|) ^ u :=
           Real.rpow_le_rpow_of_nonpos hpos (hclamp s hs) hu0
       _ = ‖z - w‖ ^ u * |s - c| ^ u := Real.mul_rpow (norm_nonneg _) (abs_nonneg _)
-  have hint2 : IntervalIntegrable
-      (fun s : ℝ => ‖z - w‖ ^ u * (s - c) ^ u) volume c 1 := by
-    have h := (intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := 1 - c) hu).comp_sub_right c
-    simpa using h.const_mul (‖z - w‖ ^ u)
-  have hint1 : IntervalIntegrable
-      (fun s : ℝ => ‖z - w‖ ^ u * (c - s) ^ u) volume 0 c := by
-    have h := (intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := c) hu).comp_sub_left c
-    simpa using (h.const_mul (‖z - w‖ ^ u)).symm
-  have hi2 : IntervalIntegrable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume c 1 := by
-    refine hint2.mono_fun' hmeas.restrict ?_
-    filter_upwards [hne_ae (uIoc c 1), self_mem_ae_restrict measurableSet_uIoc] with s hsne hsmem
-    rw [uIoc_of_le hc.2] at hsmem
-    have hs01 : s ∈ Icc (0 : ℝ) 1 := ⟨hc.1.trans hsmem.1.le, hsmem.2⟩
-    have hb := hbnd s hs01 hsne
-    rw [abs_of_pos (sub_pos.mpr hsmem.1)] at hb
-    calc ‖dist (w + s • (z - w)) p ^ u‖ = dist (w + s • (z - w)) p ^ u :=
-          Real.norm_of_nonneg (Real.rpow_nonneg dist_nonneg _)
-      _ ≤ _ := hb
-  have hi1 : IntervalIntegrable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume 0 c := by
-    refine hint1.mono_fun' hmeas.restrict ?_
-    filter_upwards [hne_ae (uIoc (0 : ℝ) c), self_mem_ae_restrict measurableSet_uIoc]
-      with s hsne hsmem
-    rw [uIoc_of_le hc.1] at hsmem
-    have hsc : s < c := lt_of_le_of_ne hsmem.2 hsne
-    have hs01 : s ∈ Icc (0 : ℝ) 1 := ⟨hsmem.1.le, hsmem.2.trans hc.2⟩
-    have hb := hbnd s hs01 hsne
-    rw [abs_of_neg (sub_neg.mpr hsc), neg_sub] at hb
-    calc ‖dist (w + s • (z - w)) p ^ u‖ = dist (w + s • (z - w)) p ^ u :=
-          Real.norm_of_nonneg (Real.rpow_nonneg dist_nonneg _)
-      _ ≤ _ := hb
   -- the piece to the right of the foot of the perpendicular
-  have hb2 : (∫ s in c..(1 : ℝ), dist (w + s • (z - w)) p ^ u)
-      ≤ ‖z - w‖ ^ u * ((1 - c) ^ (u + 1) / (u + 1)) := by
-    have hmono := intervalIntegral.integral_mono_ae_restrict hc.2 hi2 hint2 ?_
-    · refine hmono.trans_eq ?_
-      rw [intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_comp_sub_right (fun x : ℝ => x ^ u) c, sub_self,
-        integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
-      ring
-    · filter_upwards [hne_ae (Icc c 1), self_mem_ae_restrict (measurableSet_Icc (a := c) (b := 1))]
-        with s hsne hsmem
-      have hcs : c < s := lt_of_le_of_ne hsmem.1 (Ne.symm hsne)
-      have hb := hbnd s ⟨hc.1.trans hsmem.1, hsmem.2⟩ hsne
-      rwa [abs_of_pos (sub_pos.mpr hcs)] at hb
+  obtain ⟨hi2, hb2⟩ := intervalIntegral.intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right
+    (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu hc.2 hnn hmeas fun s hs hsne => by
+      have hb := hbnd s ⟨hc.1.trans hs.1, hs.2⟩ hsne
+      rwa [abs_of_pos (sub_pos.mpr (lt_of_le_of_ne hs.1 hsne.symm))] at hb
   -- the piece to the left of the foot of the perpendicular
-  have hb1 : (∫ s in (0 : ℝ)..c, dist (w + s • (z - w)) p ^ u)
-      ≤ ‖z - w‖ ^ u * (c ^ (u + 1) / (u + 1)) := by
-    have hmono := intervalIntegral.integral_mono_ae_restrict hc.1 hi1 hint1 ?_
-    · refine hmono.trans_eq ?_
-      rw [intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ u) c, sub_self, sub_zero,
-        integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
-      ring
-    · filter_upwards [hne_ae (Icc 0 c), self_mem_ae_restrict (measurableSet_Icc (a := 0) (b := c))]
-        with s hsne hsmem
-      have hsc : s < c := lt_of_le_of_ne hsmem.2 hsne
-      have hb := hbnd s ⟨hsmem.1, hsmem.2.trans hc.2⟩ hsne
-      rwa [abs_of_neg (sub_neg.mpr hsc), neg_sub] at hb
+  obtain ⟨hi1, hb1⟩ := intervalIntegral.intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_left
+    (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu hc.1 hnn hmeas fun s hs hsne => by
+      have hb := hbnd s ⟨hs.1, hs.2.trans hc.2⟩ hsne
+      rwa [abs_of_neg (sub_neg.mpr (lt_of_le_of_ne hs.2 hsne)), neg_sub] at hb
+  rw [sub_zero] at hb1
   have hsplit : (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u)
       = (∫ s in (0 : ℝ)..c, dist (w + s • (z - w)) p ^ u)
         + ∫ s in c..(1 : ℝ), dist (w + s • (z - w)) p ^ u :=
