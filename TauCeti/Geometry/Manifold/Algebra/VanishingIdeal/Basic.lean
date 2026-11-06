@@ -29,6 +29,8 @@ the scalar foundation of the algebraic description of jets and differential oper
 ## Main results
 
 * `TauCeti.smoothVanishingIdeal`: the ideal of smooth real functions vanishing at a point.
+* `TauCeti.mem_smoothVanishingIdeal_pow_of_iteratedFDeriv_eq_zero`: at an interior point, a smooth
+  function whose chart derivatives of order less than `n` vanish at `x` lies in `I_x ^ n`.
 * `TauCeti.mem_smoothVanishingIdeal_sq_iff_of_isInteriorPoint`: at an interior point of a
   finite-dimensional Hausdorff manifold, `f ∈ I_x²` if and only if `f x = 0` and `df_x = 0`.
 * `TauCeti.mem_smoothVanishingIdeal_sq_iff`: the same at every point of a boundaryless manifold.
@@ -37,10 +39,11 @@ the scalar foundation of the algebraic description of jets and differential oper
 
 ## Implementation notes
 
-The square is computed by Hadamard's lemma in a chart. Up to a function vanishing near `x`, a
-function with vanishing value and differential at `x` is a finite sum of products of localized
-coordinate functions and their Hadamard coefficients, all vanishing at `x`. A function vanishing
-near `x` is itself the product of a function vanishing at `x` with one minus a bump function.
+Powers of `I_x` are reached by the higher-order Hadamard lemma in a chart. Up to a function
+vanishing near `x`, a function whose chart derivatives of order less than `n` vanish at `x` is a
+finite sum of products of `n` localized coordinate functions vanishing at `x`, with smooth
+coefficients. A function vanishing near `x` is itself the product of a function vanishing at `x`
+with a power of one minus a bump function. The square is the case `n = 2`.
 
 ## References
 
@@ -137,14 +140,50 @@ theorem mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero {x : M} {f : C^∞⟮I
   refine Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow ?_ n)
   simp [hχ]
 
+/-- **Higher-order Hadamard lemma for the vanishing ideal.** At an interior point `x`, a smooth
+function whose chart expression has vanishing derivatives of every order less than `n` at the image
+of `x` lies in `I_x ^ n`. -/
+theorem mem_smoothVanishingIdeal_pow_of_iteratedFDeriv_eq_zero {x : M} (hx : I.IsInteriorPoint x)
+    {n : ℕ} {f : C^∞⟮I, M; ℝ⟯}
+    (hf : ∀ k < n, iteratedFDeriv ℝ k (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0) :
+    f ∈ smoothVanishingIdeal I x ^ n := by
+  -- Near `x`, write `f` as a smooth function `g` of a globally smooth localized chart `F`.
+  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
+  obtain ⟨g, hg, hgk⟩ := exists_comp_eventuallyEq_iteratedFDeriv_eq hx hF f
+  -- The higher-order Hadamard lemma factors `g` through products of `n` relative coordinates;
+  -- pulling back by `F` gives a sum of products of `n` functions vanishing at `x`.
+  let b := Module.finBasis ℝ E
+  obtain ⟨a, -, ha⟩ := ContMDiffMap.exists_hadamard_coords_of_iteratedFDeriv_eq_zero g
+    (fun k hk ↦ (hgk k).symm.trans (hf k hk)) b
+  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
+    ⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
+      ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub contMDiff_const⟩
+  have hc (i) (y : M) : c i y = b.coord i (F y) - b.coord i (F x) := rfl
+  let p : C^∞⟮I, M; ℝ⟯ := ∑ r, (a r).comp F * ∏ k, c (r k)
+  have hp : p ∈ smoothVanishingIdeal I x ^ n := by
+    refine Ideal.sum_mem _ fun r _ ↦ Ideal.mul_mem_left _ _ ?_
+    have hprod := Ideal.prod_mem_prod (s := Finset.univ) (I := fun _ ↦ smoothVanishingIdeal I x)
+      (x := fun k ↦ c (r k)) fun k _ ↦ by simp [hc]
+    simpa using hprod
+  -- The remainder `f - p` vanishes near `x`.
+  have hfp : f - p ∈ smoothVanishingIdeal I x ^ n := by
+    refine mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero ?_ n
+    filter_upwards [hg] with y hy
+    have hpy : p y = ∑ r, a r (F y) * ∏ k, (b.coord (r k) (F y) - b.coord (r k) (F x)) := by
+      simp [p, hc]
+    rw [Pi.zero_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hpy, ← ha (F y), hy,
+      Function.comp_apply, sub_self]
+  simpa using add_mem hfp hp
+
 /-- **Hadamard's lemma for the vanishing ideal.** At an interior point `x`, a smooth function whose
 value and differential vanish at `x` lies in the square of the vanishing ideal at `x`. -/
 theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteriorPoint x)
     {f : C^∞⟮I, M; ℝ⟯} (hf₀ : f x = 0) (hf₁ : mvfderiv I f x = 0) :
     f ∈ smoothVanishingIdeal I x ^ 2 := by
-  -- Near `x`, write `f` as a smooth function `g` of a globally smooth localized chart `F`.
+  -- Near `x`, write `f` as a smooth function `g` of a globally smooth localized chart `F`, whose
+  -- derivatives at `F x` are those of the chart expression of `f`.
   obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
+  obtain ⟨g, hg, hgk⟩ := exists_comp_eventuallyEq_iteratedFDeriv_eq hx hF f
   have hgF : g (F x) = 0 := hg.eq_of_nhds.symm.trans hf₀
   -- The differential of `g` at `F x` is that of `f` at `x`, since `F` has the chart's differential.
   have hdg (v : TangentSpace I x) : fderiv ℝ g (F x) v = 0 := by
@@ -159,30 +198,14 @@ theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteri
       (F.contMDiff.mdifferentiable (by simp)).mdifferentiableAt v
     rw [← hg.mvfderiv_eq, hf₁, hFv, zero_apply] at h
     exact h.symm
-  -- Hadamard's lemma factors `g` through the coordinates of a basis, with coefficients vanishing
-  -- at `F x`; pulling back by `F` gives a sum of products of functions vanishing at `x`.
-  let b := Module.finBasis ℝ E
-  obtain ⟨a, hax, ha⟩ := ContMDiffMap.exists_hadamard_coords g (F x) b
-  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
-      ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub contMDiff_const⟩
-  have hc (i) (y : M) : c i y = b.coord i (F y) - b.coord i (F x) := rfl
-  let p : C^∞⟮I, M; ℝ⟯ := ∑ i, (a i).comp F * c i
-  have hp : p ∈ smoothVanishingIdeal I x ^ 2 := by
-    refine Ideal.sum_mem _ fun i _ ↦ ?_
-    rw [sq]
-    refine Ideal.mul_mem_mul ?_ ?_ <;> rw [mem_smoothVanishingIdeal_iff]
-    · simpa [hax] using hdg (b i)
-    · simp [c]
-  -- The remainder `f - p` vanishes near `x`.
-  have hfp : f - p ∈ smoothVanishingIdeal I x ^ 2 := by
-    refine mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero ?_ 2
-    filter_upwards [hg] with y hy
-    have hpy : p y = ∑ i, a i (F y) * (b.coord i (F y) - b.coord i (F x)) := by
-      simp [p, hc]
-    rw [Pi.zero_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hpy, ← ha (F y), hy,
-      Function.comp_apply, hgF, sub_zero, sub_self]
-  simpa using add_mem hfp hp
+  -- So the chart derivatives of `f` of orders `0` and `1` vanish at the image of `x`.
+  refine mem_smoothVanishingIdeal_pow_of_iteratedFDeriv_eq_zero hx fun k hk ↦ ?_
+  rw [hgk]
+  ext m
+  obtain _ | _ | k := k
+  · simp [hgF]
+  · simpa [iteratedFDeriv_one_apply] using hdg (m 0)
+  · omega
 
 /-- At an interior point `x` of a finite-dimensional Hausdorff real manifold, a smooth function is
 a finite sum of products of smooth functions vanishing at `x` if and only if its value and its

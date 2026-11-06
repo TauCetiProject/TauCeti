@@ -8,9 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
-import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 
 /-!
 # Powers of the vanishing ideal of a point and finite jets
@@ -24,12 +22,10 @@ they have the same derivatives of order at most `m` at `x`, that is, the same `m
 `m`-jets of functions at `x`, defined as these classes of functions, are the elements of the
 quotient `C^∞(M) / I_x ^ (m + 1)`.
 
-For `n = 2` this is `TauCeti.mem_smoothVanishingIdeal_sq_iff_of_isInteriorPoint`. As there, the
-nontrivial inclusion is a factorization in a chart, now by the higher-order Hadamard lemma
-`ContMDiffMap.exists_hadamard_coords_of_iteratedFDeriv_eq_zero`: up to a function vanishing near
-`x`, a function whose derivatives of order less than `n` vanish at `x` is a sum of products of `n`
-localized coordinate functions with smooth coefficients. The reverse inclusion is the Leibniz rule
-(`TauCeti.iteratedFDeriv_mul_eq_zero_of_lt`).
+For `n = 2` this is `TauCeti.mem_smoothVanishingIdeal_sq_iff_of_isInteriorPoint`. The nontrivial
+inclusion is the higher-order Hadamard lemma for the vanishing ideal,
+`TauCeti.mem_smoothVanishingIdeal_pow_of_iteratedFDeriv_eq_zero`. The reverse inclusion is the
+Leibniz rule (`TauCeti.iteratedFDeriv_mul_eq_zero_of_lt`).
 
 Combined with `TauCeti.apply_mem_smul_top_of_mem_pow_smul_top`, this shows that a differential
 operator of order at most `m` on `C^∞(M)`, in Grothendieck's algebraic sense
@@ -65,49 +61,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- Near the image of an interior point `x`, the chart expression of a function which agrees near
-`x` with `g ∘ F`, for a smooth localized chart `F`, is `g`. -/
-private theorem comp_extChartAt_symm_eventuallyEq {x : M} (hx : I.IsInteriorPoint x)
-    {F : M → E} (hF : F =ᶠ[𝓝 x] extChartAt I x) {f : M → ℝ} {g : E → ℝ}
-    (hg : f =ᶠ[𝓝 x] g ∘ F) :
-    f ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)] g := by
-  have htarget : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) :=
-    Filter.mem_of_superset (isOpen_interior.mem_nhds
-      ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx)) interior_subset
-  have hsymm : ∀ᶠ z in 𝓝 (extChartAt I x x),
-      (extChartAt I x).symm z ∈ {y | f y = g (F y) ∧ F y = extChartAt I x y} :=
-    (continuousAt_extChartAt_symm x).preimage_mem_nhds (by
-      rw [extChartAt_to_inv]
-      exact hg.and hF)
-  filter_upwards [hsymm, htarget] with z ⟨hfz, hFz⟩ hz
-  rw [Function.comp_apply, hfz, hFz, PartialEquiv.right_inv _ hz]
-
-/-- At an interior point `x`, every smooth function has a global smooth representative in the
-extended chart at `x`: a smooth `g` on the model space whose derivatives at the image of `x` are
-those of the chart expression of `f`, and which recovers `f` near `x` through a smooth localized
-chart `F`. -/
-private theorem exists_comp_eventuallyEq_iteratedFDeriv_eq {x : M} (hx : I.IsInteriorPoint x)
-    {F : C^∞⟮I, M; modelWithCornersSelf ℝ E, E⟯} (hF : (F : M → E) =ᶠ[𝓝 x] extChartAt I x)
-    (f : C^∞⟮I, M; ℝ⟯) :
-    ∃ g : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯, (f : M → ℝ) =ᶠ[𝓝 x] g ∘ F ∧
-      ∀ k, iteratedFDeriv ℝ k (f ∘ (extChartAt I x).symm) (extChartAt I x x) =
-        iteratedFDeriv ℝ k g (F x) := by
-  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
-  refine ⟨g, hg, fun k ↦ ?_⟩
-  rw [hF.eq_of_nhds]
-  exact ((comp_extChartAt_symm_eventuallyEq hx hF hg).iteratedFDeriv ℝ k).eq_of_nhds
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- Two representatives of the same function through a localized chart `F` at an interior point
-`x` agree near `F x`. -/
-private theorem eventuallyEq_of_comp_eventuallyEq {x : M} (hx : I.IsInteriorPoint x)
-    {F : M → E} (hF : F =ᶠ[𝓝 x] extChartAt I x) {f : M → ℝ} {g₁ g₂ : E → ℝ}
-    (h₁ : f =ᶠ[𝓝 x] g₁ ∘ F) (h₂ : f =ᶠ[𝓝 x] g₂ ∘ F) : g₁ =ᶠ[𝓝 (F x)] g₂ := by
-  rw [hF.eq_of_nhds]
-  exact (comp_extChartAt_symm_eventuallyEq hx hF h₁).symm.trans
-    (comp_extChartAt_symm_eventuallyEq hx hF h₂)
 
 variable [T2Space M]
 
@@ -156,41 +109,6 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_pow {x : M}
         (ga.contMDiff.contDiff.contDiffAt.of_le (by simp))
         (gb.contMDiff.contDiff.contDiffAt.of_le (by simp)),
         iha ga hga k hk, ihb gb hgb k hk, add_zero]
-
-/-- **Higher-order Hadamard lemma for the vanishing ideal.** At an interior point `x`, a smooth
-function whose chart expression has vanishing derivatives of every order less than `n` at the image
-of `x` lies in `I_x ^ n`. -/
-theorem mem_smoothVanishingIdeal_pow_of_iteratedFDeriv_eq_zero {x : M} (hx : I.IsInteriorPoint x)
-    {n : ℕ} {f : C^∞⟮I, M; ℝ⟯}
-    (hf : ∀ k < n, iteratedFDeriv ℝ k (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0) :
-    f ∈ smoothVanishingIdeal I x ^ n := by
-  -- Near `x`, write `f` as a smooth function `g` of a globally smooth localized chart `F`.
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  obtain ⟨g, hg, hgk⟩ := exists_comp_eventuallyEq_iteratedFDeriv_eq hx hF f
-  -- The higher-order Hadamard lemma factors `g` through products of `n` relative coordinates;
-  -- pulling back by `F` gives a sum of products of `n` functions vanishing at `x`.
-  let b := Module.finBasis ℝ E
-  obtain ⟨a, -, ha⟩ := ContMDiffMap.exists_hadamard_coords_of_iteratedFDeriv_eq_zero g
-    (fun k hk ↦ (hgk k).symm.trans (hf k hk)) b
-  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
-      ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub contMDiff_const⟩
-  have hc (i) (y : M) : c i y = b.coord i (F y) - b.coord i (F x) := rfl
-  let p : C^∞⟮I, M; ℝ⟯ := ∑ r, (a r).comp F * ∏ k, c (r k)
-  have hp : p ∈ smoothVanishingIdeal I x ^ n := by
-    refine Ideal.sum_mem _ fun r _ ↦ Ideal.mul_mem_left _ _ ?_
-    have hprod := Ideal.prod_mem_prod (s := Finset.univ) (I := fun _ ↦ smoothVanishingIdeal I x)
-      (x := fun k ↦ c (r k)) fun k _ ↦ by simp [hc]
-    simpa using hprod
-  -- The remainder `f - p` vanishes near `x`.
-  have hfp : f - p ∈ smoothVanishingIdeal I x ^ n := by
-    refine mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero ?_ n
-    filter_upwards [hg] with y hy
-    have hpy : p y = ∑ r, a r (F y) * ∏ k, (b.coord (r k) (F y) - b.coord (r k) (F x)) := by
-      simp [p, hc]
-    rw [Pi.zero_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hpy, ← ha (F y), hy,
-      Function.comp_apply, sub_self]
-  simpa using add_mem hfp hp
 
 /-- **Powers of the vanishing ideal.** At an interior point `x` of a finite-dimensional Hausdorff
 real manifold, a smooth function is a finite sum of products of `n` smooth functions vanishing at
