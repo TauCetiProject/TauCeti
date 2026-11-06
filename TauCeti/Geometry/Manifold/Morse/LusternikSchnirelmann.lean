@@ -255,6 +255,6 @@ ring `R` in the universe of `M`. The critical points may be degenerate; if there
 many, their count is `⊤`. -/
 theorem lsCupLength_add_one_le_totalCriticalCount [CompactSpace M] [Nonempty M] (R : Type _)
     [CommRing R] (hf : ContMDiff I 𝓘(ℝ) ∞ f) : lsCupLength M R + 1 ≤ totalCriticalCount I f :=
-  lsCupLength_add_one_le_lsCategoryCount.trans (lsCategoryCount_univ_le_totalCriticalCount hf)
+  lsCupLength_add_one_le_lsCategoryCount_univ.trans (lsCategoryCount_univ_le_totalCriticalCount hf)
 
 end TauCeti

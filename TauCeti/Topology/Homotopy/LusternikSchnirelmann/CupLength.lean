@@ -22,11 +22,11 @@ diagonal of the chain coefficients and the multiplication of the cochain values.
 
 The main result is the classical lower bound for the Lusternik–Schnirelmann category: on a nonempty
 space, `lsCupLength X R + 1 ≤ lsCategoryCount X univ`, equivalently
-`lsCupLength X R ≤ normalizedLSCategory X`. If `U₁, …, Uₙ` are open sets whose inclusions into `X`
-are nullhomotopic, a class `aᵢ` of positive degree restricts to zero on `Uᵢ`, because the
-positive-degree cohomology of a point vanishes, so the long exact sequence of the pair lifts it to
-`H*(X, Uᵢ)`. The relative cup product of open sets lifts `a₁ ⌣ ⋯ ⌣ aₙ` to `H*(X, U₁ ∪ ⋯ ∪ Uₙ)`,
-which vanishes when the `Uᵢ` cover `X`.
+`lsCupLength X R ≤ normalizedLSCategory X`, which also holds on the empty space. If `U₁, …, Uₙ`
+are open sets whose inclusions into `X` are nullhomotopic, a class `aᵢ` of positive degree
+restricts to zero on `Uᵢ`, because the positive-degree cohomology of a point vanishes, so the long
+exact sequence of the pair lifts it to `H*(X, Uᵢ)`. The relative cup product of open sets lifts
+`a₁ ⌣ ⋯ ⌣ aₙ` to `H*(X, U₁ ∪ ⋯ ∪ Uₙ)`, which vanishes when the `Uᵢ` cover `X`.
 
 ## Main definitions
 
@@ -43,7 +43,7 @@ which vanishes when the `Uᵢ` cover `X`.
 * `TauCeti.IsPositiveDegreeCupProduct.exists_singularCohomologyπ_eq`: a product of `n` classes of
   positive degree comes from the cohomology of `X` relative to the union of any `n` open sets with
   nullhomotopic inclusions.
-* `TauCeti.lsCupLength_add_one_le_lsCategoryCount` and
+* `TauCeti.lsCupLength_add_one_le_lsCategoryCount_univ` and
   `TauCeti.lsCupLength_le_normalizedLSCategory`: the cup-length lower bound for the
   Lusternik–Schnirelmann category.
 * `TauCeti.lsCupLength_le_of_injective` and `ContinuousMap.HomotopyEquiv.lsCupLength_eq`:
@@ -218,71 +218,16 @@ theorem _root_.ContinuousMap.HomotopyEquiv.lsCupLength_eq {Y : Type u} [Topologi
   exact le_antisymm (lsCupLength_le_of_injective e.invFun fun d _ ↦ key e.symm d)
     (lsCupLength_le_of_injective e.toFun fun d _ ↦ key e d)
 
+/-- The empty space has cup length zero. -/
+@[simp]
+theorem lsCupLength_of_isEmpty [IsEmpty X] : lsCupLength X R = 0 :=
+  lsCupLength_eq_zero_iff.mpr fun p _ _ ↦ @Subsingleton.elim _ (ModuleCat.subsingleton_of_isZero
+    (isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R))
+      (TopCat.of X) p)) _ _
+
 /-! ### The lower bound for the Lusternik–Schnirelmann category -/
 
 section LowerBound
-
-/-- A positive-degree class restricts to zero on an open set whose inclusion is nullhomotopic, so
-it comes from the cohomology of `X` relative to that set. -/
-private theorem exists_singularCohomologyπ_eq_of_nullhomotopic {U : Set X}
-    (hU : (ContinuousMap.subtypeVal U).Nullhomotopic) {p : ℕ} (hp : p ≠ 0)
-    (a : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p) :
-    ∃ z, (TopPair.ofSubset (X := TopCat.of X) U).singularCohomologyπ (𝟙_ (ModuleCat.{u} R)) R
-      (𝟙_ (ModuleCat.{u} R)) p z = a := by
-  have hexact := (TopPair.ofSubset (X := TopCat.of X) U).singularCohomology_exact_space
-    (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p
-  rw [ShortComplex.moduleCat_exact_iff] at hexact
-  refine hexact a ?_
-  exact ConcreteCategory.congr_hom
-    (TopCat.singularCohomologyMap_eq_zero_of_nullhomotopic
-      (f := (TopPair.ofSubset (X := TopCat.of X) U).map) hU hp) a
-
-/-- A class which comes from the cohomology of `X` relative to `S` also comes from the cohomology
-of `X` relative to any smaller `S' ⊆ S`. -/
-private theorem exists_singularCohomologyπ_eq_of_subset {S S' : Set X} (hS : S' ⊆ S) {d : ℕ}
-    {x : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) d}
-    (hx : ∃ z, (TopPair.ofSubset (X := TopCat.of X) S).singularCohomologyπ (𝟙_ (ModuleCat.{u} R))
-      R (𝟙_ (ModuleCat.{u} R)) d z = x) :
-    ∃ z, (TopPair.ofSubset (X := TopCat.of X) S').singularCohomologyπ (𝟙_ (ModuleCat.{u} R)) R
-      (𝟙_ (ModuleCat.{u} R)) d z = x := by
-  obtain ⟨z, rfl⟩ := hx
-  have hS' : MapsTo (𝟙 (TopCat.of X)) S' S := fun _ hx ↦ hS hx
-  refine ⟨TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) hS') d z, ?_⟩
-  have := ConcreteCategory.congr_hom (TopPair.singularCohomologyπ_naturality
-    (R := 𝟙_ (ModuleCat.{u} R)) (k := R) (M := 𝟙_ (ModuleCat.{u} R))
-    (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) hS') d) z
-  have hid : TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{u} R)) (k := R)
-      (M := 𝟙_ (ModuleCat.{u} R))
-        (TopPair.Hom.fst (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) hS')) d = 𝟙 _ := by
-    rw [TopPair.ofSubsetMap_fst]
-    exact TopCat.singularCohomologyMap_id _ d
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hid] at this
-  exact this.symm
-
-/-- A class which comes from the cohomology of `X` relative to the whole space vanishes. -/
-private theorem eq_zero_of_exists_singularCohomologyπ_eq_univ {d : ℕ}
-    {x : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) d}
-    (hx : ∃ z, (TopPair.ofSubset (X := TopCat.of X) univ).singularCohomologyπ
-      (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) d z = x) : x = 0 := by
-  obtain ⟨z, rfl⟩ := hx
-  -- The inclusion `univ → X` has a left inverse `r`, so it is injective on cohomology, and it
-  -- kills every relative class.
-  let P := TopPair.ofSubset (X := TopCat.of X) univ
-  let r : P.fst ⟶ P.snd := TopCat.ofHom ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
-  have hr : r ≫ P.map = 𝟙 P.fst := rfl
-  have h0 := ConcreteCategory.congr_hom
-    (P.singularCohomologyπ_comp_singularCohomologyMap (𝟙_ (ModuleCat.{u} R)) R
-      (𝟙_ (ModuleCat.{u} R)) d) z
-  have hid := ConcreteCategory.congr_hom (TopCat.singularCohomologyMap_comp
-    (R := 𝟙_ (ModuleCat.{u} R)) (k := R) (M := 𝟙_ (ModuleCat.{u} R)) r P.map d)
-    (P.singularCohomologyπ _ R _ d z)
-  rw [hr, TopCat.singularCohomologyMap_id] at hid
-  simp only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply, ModuleCat.hom_zero,
-    LinearMap.zero_apply] at hid h0
-  refine hid.trans ?_
-  rw [h0, map_zero]
-  -- The ambient space `P.fst` of the pair is `TopCat.of X` by definition, so the two zeros agree.
-  rfl
 
 /-- **Products of positive-degree classes vanish on categorical opens.** A product of `n` classes
 of positive degree comes from the cohomology of `X` relative to the union `U₁ ∪ ⋯ ∪ Uₙ` of any `n`
@@ -293,24 +238,42 @@ theorem IsPositiveDegreeCupProduct.exists_singularCohomologyπ_eq {n d : ℕ}
     (hU : ∀ i, (ContinuousMap.subtypeVal (U i : Set X)).Nullhomotopic) :
     ∃ z, (TopPair.ofSubset (X := TopCat.of X) (⋃ i, (U i : Set X))).singularCohomologyπ
       (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) d z = x := by
+  -- A class of positive degree comes from the cohomology relative to an open set with
+  -- nullhomotopic inclusion, and a class relative to `S` restricts to one relative to `S' ⊆ S`.
+  have lift {A : Set X} (hA : (ContinuousMap.subtypeVal A).Nullhomotopic) {p : ℕ} (hp : p ≠ 0)
+      (a : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p) :
+      ∃ z, (TopPair.ofSubset (X := TopCat.of X) A).singularCohomologyπ
+        (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p z = a :=
+    (ModuleCat.epi_iff_surjective _).mp
+      (TopPair.epi_singularCohomologyπ_of_nullhomotopic (R := 𝟙_ (ModuleCat.{u} R)) (k := R)
+        (M := 𝟙_ (ModuleCat.{u} R)) (TopPair.ofSubset (X := TopCat.of X) A) hA hp) a
+  have restrict {S S' : Set (TopCat.of X)} (hS : S' ⊆ S) {e : ℕ}
+      (z : (TopPair.ofSubset S).singularCohomology (𝟙_ (ModuleCat.{u} R)) R
+        (𝟙_ (ModuleCat.{u} R)) e) :
+      ∃ z', (TopPair.ofSubset S').singularCohomologyπ (𝟙_ (ModuleCat.{u} R)) R
+        (𝟙_ (ModuleCat.{u} R)) e z' =
+          (TopPair.ofSubset S).singularCohomologyπ (𝟙_ (ModuleCat.{u} R)) R
+            (𝟙_ (ModuleCat.{u} R)) e z :=
+    ⟨_, ConcreteCategory.congr_hom
+      (TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ
+        (fun _ hx ↦ hS hx) e) z⟩
   induction hx with
   | single hp a =>
-    exact exists_singularCohomologyπ_eq_of_subset
-      (iUnion_subset fun i ↦ by rw [Fin.fin_one_eq_zero i])
-      (exists_singularCohomologyπ_eq_of_nullhomotopic (hU 0) hp a)
+    obtain ⟨z, rfl⟩ := lift (hU 0) hp a
+    exact restrict (iUnion_subset fun i ↦ by rw [Fin.fin_one_eq_zero i]) z
   | @cup n p q d hp h a y hy ih =>
     -- Lift `a` relative to `U 0` and `y` relative to the union of the other open sets, and take
     -- their relative cup product.
-    obtain ⟨za, rfl⟩ := exists_singularCohomologyπ_eq_of_nullhomotopic (hU 0) hp a
+    obtain ⟨za, rfl⟩ := lift (hU 0) hp a
     obtain ⟨zy, rfl⟩ := ih (fun i ↦ U (Fin.succ i)) fun i ↦ hU (Fin.succ i)
     let V : Set (TopCat.of X) := ⋃ i, (U (Fin.succ i) : Set X)
     have hU0 : IsOpen ((↑) ⁻¹' (U 0 : Set X) : Set ↥((U 0 : Set X) ∪ V)) :=
       (U 0).isOpen.preimage continuous_subtype_val
     have hV : IsOpen ((↑) ⁻¹' V : Set ↥((U 0 : Set X) ∪ V)) :=
       (isOpen_iUnion fun i ↦ (U (Fin.succ i)).isOpen).preimage continuous_subtype_val
-    refine exists_singularCohomologyπ_eq_of_subset (S := (U 0 : Set X) ∪ V)
-      (iUnion_subset fun i ↦ ?_) ⟨_, TopCat.singularCohomologyπ_singularRelativeCup
-        (X := TopCat.of X) R (λ_ _).inv (λ_ _).hom (U 0 : Set X) V hU0 hV p q d h za zy⟩
+    rw [← TopCat.singularCohomologyπ_singularRelativeCup (X := TopCat.of X) R (λ_ _).inv
+      (λ_ _).hom (U 0 : Set X) V hU0 hV p q d h za zy]
+    refine restrict (iUnion_subset fun i ↦ ?_) _
     induction i using Fin.cases with
     | zero => exact subset_union_left
     | succ i =>
@@ -319,7 +282,7 @@ theorem IsPositiveDegreeCupProduct.exists_singularCohomologyπ_eq {n d : ℕ}
 /-- **The cup-length lower bound for the Lusternik–Schnirelmann category**: on a nonempty space
 `X`, a cover by `r` open sets with nullhomotopic inclusions forces every product of `r` classes of
 positive degree to vanish, so `lsCupLength X R + 1 ≤ lsCategoryCount X univ`. -/
-theorem lsCupLength_add_one_le_lsCategoryCount [Nonempty X] :
+theorem lsCupLength_add_one_le_lsCategoryCount_univ [Nonempty X] :
     lsCupLength X R + 1 ≤ lsCategoryCount X univ := by
   cases hcat : lsCategoryCount X univ with
   | top => exact le_top
@@ -335,36 +298,30 @@ theorem lsCupLength_add_one_le_lsCategoryCount [Nonempty X] :
     by_contra! hlt
     have hkn : k + 1 ≤ n := by exact_mod_cast Order.add_one_le_of_lt hlt
     let c' := c.pad hkn
-    exact hx0 (eq_zero_of_exists_singularCohomologyπ_eq_univ <|
-      exists_singularCohomologyπ_eq_of_subset (fun x _ ↦ c'.subset_iUnion (mem_univ x))
-        (hx.exists_singularCohomologyπ_eq c'.opens c'.nullhomotopic))
+    -- The product lifts relative to the union of the cover, which is the whole space, and the map
+    -- from the cohomology relative to the whole space vanishes.
+    have hcover : ⋃ i, (c'.opens i : Set X) = univ :=
+      eq_univ_of_forall fun x ↦ c'.subset_iUnion (mem_univ x)
+    have hlift := hx.exists_singularCohomologyπ_eq c'.opens c'.nullhomotopic
+    rw [hcover] at hlift
+    obtain ⟨z, rfl⟩ := hlift
+    exact hx0 (ConcreteCategory.congr_hom (TopPair.singularCohomologyπ_ofSubset_univ _ _) z)
 
-/-- **The cup-length lower bound for the normalized Lusternik–Schnirelmann category**: on a
-nonempty space, `lsCupLength X R ≤ normalizedLSCategory X`. -/
-theorem lsCupLength_le_normalizedLSCategory [Nonempty X] :
-    lsCupLength X R ≤ normalizedLSCategory X := by
-  rw [normalizedLSCategory_def]
-  exact ENat.le_sub_of_add_le_right ENat.one_ne_top lsCupLength_add_one_le_lsCategoryCount
+/-- **The cup-length lower bound for the normalized Lusternik–Schnirelmann category**:
+`lsCupLength X R ≤ normalizedLSCategory X`. -/
+theorem lsCupLength_le_normalizedLSCategory : lsCupLength X R ≤ normalizedLSCategory X := by
+  cases isEmpty_or_nonempty X with
+  | inl _ => simp
+  | inr _ =>
+    rw [normalizedLSCategory_def]
+    exact ENat.le_sub_of_add_le_right ENat.one_ne_top lsCupLength_add_one_le_lsCategoryCount_univ
 
 end LowerBound
 
 /-- A contractible space has cup length zero. -/
+@[simp]
 theorem lsCupLength_of_contractibleSpace [ContractibleSpace X] : lsCupLength X R = 0 := by
   have := lsCupLength_le_normalizedLSCategory (X := X) (R := R)
   rwa [normalizedLSCategory_of_contractibleSpace, nonpos_iff_eq_zero] at this
-
-/-- The empty space has cup length zero. -/
-theorem lsCupLength_of_isEmpty [IsEmpty X] : lsCupLength X R = 0 := by
-  refine lsCupLength_eq_zero_iff.mpr fun p _ a ↦ ?_
-  -- The empty space has no singular simplices, so its singular cochain complex is zero.
-  have : (TopCat.toSSet.obj (TopCat.of X)).HasDimensionLT 0 :=
-    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
-      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
-  have hC : IsZero ((TopCat.of X).singularCochainComplex (𝟙_ (ModuleCat.{u} R)) R
-      (𝟙_ (ModuleCat.{u} R))) :=
-    (TauCeti.ChainComplex.linearYonedaFunctor R (𝟙_ (ModuleCat.{u} R))).map_isZero
-      ((TopCat.toSSet.obj (TopCat.of X)).isZero_chainComplex _).op
-  exact @Subsingleton.elim _ (ModuleCat.subsingleton_of_isZero
-    ((HomologicalComplex.homologyFunctor _ _ p).map_isZero hC)) _ _
 
 end TauCeti
