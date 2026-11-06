@@ -29,8 +29,8 @@ trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` o
 of the first followed by the coordinate change from the first to the second
 (`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Coordinate changes compose
 over common points of the base sets, and the coordinate change from a trivialization to itself is
-the identity (`Bundle.Trivialization.coordChangeL_trans_coordChangeL`,
-`Bundle.Trivialization.coordChangeL_self`).
+the identity, as continuous linear maps (`Bundle.Trivialization.coordChangeL_comp_coordChangeL`,
+`Bundle.Trivialization.coe_coordChangeL_self`).
 
 exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). We also record
 the product trivialization's fibrewise inverse (`Bundle.Trivialization.prod_symm_apply'`), the
@@ -119,22 +119,25 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
 omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- **Coordinate changes compose**: over a point of the base sets of three linear trivializations
 `e`, `e'` and `e''`, the coordinate change from `e` to `e'` followed by the one from `e'` to `e''`
-is the coordinate change from `e` to `e''`. -/
-theorem coordChangeL_trans_coordChangeL (e'' : Trivialization F (π F E)) [e''.IsLinear 𝕜]
+is the coordinate change from `e` to `e''`, as continuous linear maps. -/
+theorem coordChangeL_comp_coordChangeL (e'' : Trivialization F (π F E)) [e''.IsLinear 𝕜]
     (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) (hb'' : b ∈ e''.baseSet) :
-    (e.coordChangeL 𝕜 e' b).trans (e'.coordChangeL 𝕜 e'' b) = e.coordChangeL 𝕜 e'' b := by
+    (e'.coordChangeL 𝕜 e'' b : F →L[𝕜] F).comp (e.coordChangeL 𝕜 e' b : F →L[𝕜] F) =
+      (e.coordChangeL 𝕜 e'' b : F →L[𝕜] F) := by
   ext v
-  rw [ContinuousLinearEquiv.trans_apply, coordChangeL_apply _ _ ⟨hb, hb'⟩,
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe, coordChangeL_apply _ _ ⟨hb, hb'⟩,
     coordChangeL_apply _ _ ⟨hb', hb''⟩, coordChangeL_apply _ _ ⟨hb, hb''⟩,
     symm_apply_apply_mk _ hb']
 
 omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- Over a point of its base set, the coordinate change from a linear trivialization to itself is
-the identity. -/
-theorem coordChangeL_self (hb : b ∈ e.baseSet) :
-    e.coordChangeL 𝕜 e b = ContinuousLinearEquiv.refl 𝕜 F := by
+the identity, as a continuous linear map. -/
+theorem coe_coordChangeL_self (hb : b ∈ e.baseSet) :
+    (e.coordChangeL 𝕜 e b : F →L[𝕜] F) = ContinuousLinearMap.id 𝕜 F := by
   ext v
-  rw [coordChangeL_apply _ _ ⟨hb, hb⟩, apply_mk_symm _ hb, ContinuousLinearEquiv.refl_apply]
+  rw [ContinuousLinearEquiv.coe_coe, coordChangeL_apply _ _ ⟨hb, hb⟩, apply_mk_symm _ hb,
+    ContinuousLinearMap.id_apply]
 
 end Bundle.Trivialization
 

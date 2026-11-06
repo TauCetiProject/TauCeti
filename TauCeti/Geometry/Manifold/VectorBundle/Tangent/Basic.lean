@@ -67,6 +67,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.tangentCoordChange_comp_tangentCoordChange` and
   `TauCeti.Manifold.tangentCoordChange_self_eq_id`: tangent coordinate changes compose, and the
   change from a chart to itself is the identity, as continuous linear maps.
+* `HasFDerivWithinAt.comp_tangentCoordChange`: changing the chart of a coordinate expression
+  composes its derivative within the range of the model with the tangent coordinate change.
 * `TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange`: reading a tangent vector through the
   preferred trivializations of two charts is the tangent coordinate change between them.
 * `TauCeti.Manifold.tangentCoordChange_toMatrix`: in a finite basis, this coordinate change is the
@@ -571,6 +573,28 @@ theorem tangentCoordChange_self_eq_id {x z : M} (h : z ∈ (extChartAt I x).sour
     tangentCoordChange I x x z = ContinuousLinearMap.id 𝕜 E := by
   ext v
   exact tangentCoordChange_self h
+
+/-- **Changing the chart of a coordinate expression**: if the expression of `f` in the extended
+chart at `j` has derivative `f'` within the range of the model at `x`, then its expression in the
+extended chart at `k` has derivative `f'` composed with the tangent coordinate change from `k` to
+`j` at `x`. -/
+theorem _root_.HasFDerivWithinAt.comp_tangentCoordChange {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : M → F} {f' : E →L[𝕜] F} {j k x : M}
+    (hf : HasFDerivWithinAt (f ∘ (extChartAt I j).symm) f' (range I) (extChartAt I j x))
+    (hxj : x ∈ (extChartAt I j).source) (hxk : x ∈ (extChartAt I k).source) :
+    HasFDerivWithinAt (f ∘ (extChartAt I k).symm) (f'.comp (tangentCoordChange I k j x))
+      (range I) (extChartAt I k x) := by
+  have hinv : (extChartAt I k).symm (extChartAt I k x) = x := (extChartAt I k).left_inv hxk
+  rw [← hinv] at hf
+  refine (hf.comp (extChartAt I k x) (hasFDerivWithinAt_tangentCoordChange ⟨hxk, hxj⟩)
+    fun y _ ↦ ?_).congr_of_eventuallyEq ?_ ?_
+  · simp only [Function.comp_apply, extChartAt_coe]
+    exact mem_range_self _
+  · filter_upwards [mem_nhdsWithin_of_mem_nhds (t := range I)
+      (extChartAt_preimage_mem_nhds' hxk (extChartAt_source_mem_nhds' hxj))] with y hy
+    simp only [Function.comp_apply]
+    rw [(extChartAt I j).left_inv hy]
+  · simp only [Function.comp_apply, hinv, (extChartAt I j).left_inv hxj]
 
 /-- The reading map of the preferred trivialization centred at `x₀` sends the tangent vector at
 `y` whose `x`-coordinates are `u` to its `x₀`-coordinates. -/

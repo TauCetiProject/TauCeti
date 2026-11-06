@@ -97,18 +97,6 @@ theorem _root_.HasFDerivAt.firstJetPullback {g : E' → F →L[𝕜] G} {g' : E'
   simpa only [firstJetPullback_apply, Function.comp_apply, add_comm] using
     hg.clm_apply (hs.comp x hh)
 
-/-- The transformation of an actual first jet under a varying fibre map and a base map,
-for derivatives within sets. -/
-theorem _root_.HasFDerivWithinAt.firstJetPullback {g : E' → F →L[𝕜] G}
-    {g' : E' →L[𝕜] F →L[𝕜] G} {h : E' → E} {h' : E' →L[𝕜] E} {s : E → F} {s' : E →L[𝕜] F}
-    {t : Set E'} {u : Set E} {x : E'}
-    (hg : HasFDerivWithinAt g g' t x) (hh : HasFDerivWithinAt h h' t x)
-    (hs : HasFDerivWithinAt s s' u (h x)) (hu : Set.MapsTo h t u) :
-    HasFDerivWithinAt (fun y ↦ g y (s (h y)))
-      ((g x).firstJetPullback g' h' (s (h x), s')).2 t x := by
-  simpa only [firstJetPullback_apply, Function.comp_apply, add_comm] using
-    hg.clm_apply (hs.comp x hh hu)
-
 /-- The first-jet transformation depends smoothly on its three coefficients. -/
 theorem contDiff_firstJetPullback {n : ℕ∞ω} :
     ContDiff 𝕜 n (fun p : (F →L[𝕜] G) × (E' →L[𝕜] F →L[𝕜] G) × (E' →L[𝕜] E) ↦
@@ -121,11 +109,8 @@ theorem contDiff_firstJetPullback {n : ℕ∞ω} :
       (fun p : (F →L[𝕜] G) × (E' →L[𝕜] F →L[𝕜] G) × (E' →L[𝕜] E) ↦
         p.2.1.flip.comp (fst 𝕜 F (E →L[𝕜] F))) :=
     have hflip : ContDiff 𝕜 n (fun b : E' →L[𝕜] F →L[𝕜] G ↦ b.flip) := by
-      -- The coercion of the bundled flip unfolds to `ContinuousLinearMap.flip`.
-      have h := ContinuousLinearEquiv.contDiff (𝕜 := 𝕜) (n := n)
-        (E := E' →L[𝕜] F →L[𝕜] G) (F := F →L[𝕜] E' →L[𝕜] G)
-        (flipₗᵢ 𝕜 E' F G).toContinuousLinearEquiv
-      exact h
+      simpa only [coe_flipₗᵢ] using LinearIsometryEquiv.contDiff (𝕜 := 𝕜) (n := n)
+        (E := E' →L[𝕜] F →L[𝕜] G) (F := F →L[𝕜] E' →L[𝕜] G) (flipₗᵢ 𝕜 E' F G)
     (hflip.comp contDiff_snd.fst).clm_comp contDiff_const
   have h₃ : ContDiff 𝕜 n
       (fun p : (F →L[𝕜] G) × (E' →L[𝕜] F →L[𝕜] G) × (E' →L[𝕜] E) ↦
