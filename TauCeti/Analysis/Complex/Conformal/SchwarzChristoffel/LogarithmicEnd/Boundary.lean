@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Ray
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Basic
 
 /-!
 # The two boundary levels of a logarithmic Schwarz--Christoffel end
@@ -123,6 +124,7 @@ theorem exists_boundary_levels_schwarzChristoffel_of_sum_eq_neg_one
       simpa [Function.comp_def] using (continuous_re.tendsto _).comp
         ((((hH _ (mem_ball_self hR)).continuousAt.comp continuous_ofReal.continuousAt).sub_const
           (H p)).div_const C |>.mono_left nhdsWithin_le_nhds)
+    -- restate the goal in terms of the local abbreviation `N` (a `let`, so definitionally equal)
     change Tendsto (fun x => (N x).re) _ atBot
     refine (hlog.atBot_add hremre).congr' ?_
     filter_upwards [self_mem_nhdsWithin,
