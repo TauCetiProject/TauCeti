@@ -36,6 +36,8 @@ action on isotropic points is transitive with central kernel.
 
 * `TauCeti.FiniteField.natCard_pow_add_self_eq`: `#{b | b ^ q + b = c} = q` whenever
   `c ^ q = c`.
+* `TauCeti.FiniteField.exists_pow_add_self_eq`: every `c` with `c ^ q = c` is of the form
+  `b ^ q + b`.
 * `TauCeti.FiniteField.exists_add_neg_one_pow_mul_pow_eq`: for `ε = (-1) ^ k`, every `c` with
   `c ^ q = ε c` is of the form `b + ε b ^ q`.
 * `TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero`: for `ε = (-1) ^ k`, some
@@ -113,7 +115,7 @@ theorem natCard_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : 
   exact (AddMonoidHom.card_fiber_eq_of_mem_range T hcmem ⟨0, map_zero T⟩).trans hkerq
 
 /-- In a field with `q²` elements, every `c` with `c ^ q = c` is of the form `b ^ q + b`. -/
-private theorem exists_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
+theorem exists_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : ∃ b : K, b ^ p ^ n + b = c := by
   have : Finite {b : K // b ^ p ^ n + b = c} := Subtype.finite
   have hpos : 0 < Nat.card {b : K // b ^ p ^ n + b = c} := by
