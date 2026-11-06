@@ -17,13 +17,15 @@ useful before projection closure is available: semialgebraicity of a graph alone
 us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
-piecewise-gluing laws and shows that polynomial maps are semialgebraic.  It also proves the
-operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
-eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
-assembling a function from its coordinates (`TauCeti.IsSemialgebraicOn.pi`),
-precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise
-negation (`TauCeti.IsSemialgebraicOn.neg`), and bijective changes of the input or output
-coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
+piecewise-gluing laws and shows that polynomial maps, and more generally functions whose graphs
+are cut out by polynomial equations (`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are
+semialgebraic.  It also proves the operations whose graphs are inverse images of the given
+graphs, so that no coordinate has to be eliminated: pairing two functions on the same domain
+(`TauCeti.IsSemialgebraicOn.sumElim`), assembling a function from its coordinates
+(`TauCeti.IsSemialgebraicOn.pi`), precomposition with a polynomial map
+(`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise negation (`TauCeti.IsSemialgebraicOn.neg`),
+and bijective changes of the input or output coordinates
+(`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
 `TauCeti.isSemialgebraicOn_comp_equiv_iff`).  It deliberately does not assert closure under
 arbitrary composition, whose graph generally requires eliminating the intermediate coordinates;
 images, inverse images, composition, and pointwise sums, products, and differences are derived
@@ -163,6 +165,22 @@ theorem IsSemialgebraicOn.glue {f g h : (σ → R) → (τ → R)} {s t : Set (�
   exact hhst.graph.union hhst'.graph
 
 section PolynomialMap
+
+/-- A function is semialgebraic on a semialgebraic domain `s` when its graph over `s` is cut out
+by finitely many polynomial equations in the input and output coordinates: for `x ∈ s`,
+`g x = y` exactly when every `P k` vanishes at `Sum.elim x y`. -/
+theorem isSemialgebraicOn_of_forall_eq_iff {ι : Type*} [Finite ι] {g : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hs : IsSemialgebraic s) (P : ι → MvPolynomial (σ ⊕ τ) R)
+    (hP : ∀ x ∈ s, ∀ y, g x = y ↔ ∀ k, eval (Sum.elim x y) (P k) = 0) :
+    IsSemialgebraicOn g s := by
+  refine ⟨hs, ?_⟩
+  convert (hs.preimage_comp Sum.inl).inter
+    (IsSemialgebraic.iInter fun k ↦ isSemialgebraic_eval_eq_zero (P k)) using 1
+  ext z
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [mem_inter_iff, mem_iInter, mem_preimage, mem_ofPred_eq]
+  refine and_congr_right fun hz ↦ ?_
+  rw [hP _ hz, Sum.elim_comp_inl_inr]
 
 /-- A map whose output coordinates are polynomials in the input coordinates is semialgebraic on
 every semialgebraic domain. -/
