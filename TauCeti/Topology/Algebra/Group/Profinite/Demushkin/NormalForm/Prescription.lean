@@ -58,6 +58,12 @@ vanishes, so the standard orientation has the prescription property.
 
 ## Main results
 
+* `TauCeti.IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite`,
+  `TauCeti.IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite_one`: for a Kronecker delta, only
+  the commutator factor of a normal-form word containing the generator contributes.
+* `TauCeti.HasPrescriptionProperty.apply_presentedProPGen_eq_one_of_partner`: the partner step, a
+  character with the prescription property is trivial at a generator whose partner in a
+  commutator factor of the relators is covered by a vanishing hypothesis.
 * `TauCeti.IsCrossedHom.map_demushkinWordNeTwo`,
   `TauCeti.IsCrossedHom.map_demushkinWordTwoOdd`, `TauCeti.IsCrossedHom.map_demushkinWordTwoEven`,
   `TauCeti.IsCrossedHom.map_demushkinWordTwoRankTwo`,
@@ -122,6 +128,42 @@ section Words
 variable {H : Type*} [Group H] {R : Type*} [CommRing R] {F' : Type*} [FunLike F' H Rˣ]
   [MonoidHomClass F' H Rˣ] {χ : F'} {F : H → R} (hF : IsCrossedHom χ F)
 include hF
+
+/-- For `n` even and a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `2 ≤ j < n`, only
+the factor containing `x_j` contributes to the sum of its values on the commutators
+`(x₃, x₄), …, (x_{n-1}, x_n)` (the `0`-based pairs `(x (2i+2), x (2i+3))` for `i < n / 2 - 1`): the
+sum is the value on the factor `(x (2 ((j-2)/2) + 2), x (2 ((j-2)/2) + 3))`. -/
+theorem IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite {n j : ℕ} (hn : Even n) (hj₂ : 2 ≤ j)
+    (hj : j < n) {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
+    ∑ i ∈ range (n / 2 - 1), F (labuteComm (x (2 * i + 2)) (x (2 * i + 3))) =
+      F (labuteComm (x (2 * ((j - 2) / 2) + 2)) (x (2 * ((j - 2) / 2) + 3))) := by
+  obtain ⟨k, rfl⟩ := hn
+  exact Finset.sum_eq_single _
+    (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
+      (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
+    fun h0 ↦ absurd (mem_range.2 (by omega)) h0
+
+/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `1 ≤ j < n`, only the factor
+containing `x_j` contributes to the sum of its values on the commutators
+`(x₂, x₃), …` (the `0`-based pairs `(x (2i+1), x (2i+2))` for `i < n / 2`): the sum is the value on
+the factor `(x (2 ((j-1)/2) + 1), x (2 ((j-1)/2) + 2))`. -/
+theorem IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite_one {n j : ℕ} (hj₁ : 1 ≤ j)
+    (hj : j < n) {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
+    ∑ i ∈ range (n / 2), F (labuteComm (x (2 * i + 1)) (x (2 * i + 2))) =
+      F (labuteComm (x (2 * ((j - 1) / 2) + 1)) (x (2 * ((j - 1) / 2) + 2))) :=
+  Finset.sum_eq_single _
+    (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
+      (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
+    fun h0 ↦ absurd (mem_range.2 (by omega)) h0
+
+/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `j < 2`, the sum of its values
+on the commutators `(x₃, x₄), …, (x_{n-1}, x_n)` (the `0`-based pairs `(x (2i+2), x (2i+3))` for
+`i < n / 2 - 1`) is `0`. -/
+theorem IsCrossedHom.sum_map_labuteComm_eq_zero_of_forall_eq_ite (n : ℕ) {j : ℕ} (hj : j < 2)
+    {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
+    ∑ i ∈ range (n / 2 - 1), F (labuteComm (x (2 * i + 2)) (x (2 * i + 3))) = 0 :=
+  Finset.sum_eq_zero fun i _ ↦ hF.map_labuteComm_eq_zero_of_eq_zero
+    (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)])
 
 /-- The value of a crossed homomorphism on the `q ≠ 2` normal-form word
 `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
@@ -241,6 +283,53 @@ theorem IsCrossedHom.map_demushkinWordTwoRankTwo (a : ℕ) (x : ℕ → H) :
     Units.val_pow_eq_pow_val]
 
 end Words
+
+/-! ### The partner step -/
+
+namespace HasPrescriptionProperty
+
+section Partner
+
+variable {p : ℕ} [Fact p.Prime] {n : ℕ} {rels : Set (freeProP p (Fin n))}
+  {χ : presentedProP p (Fin n) rels →ₜ* ℤ_[p]ˣ}
+
+/-- **The partner step.** If every crossed homomorphism with `F (x_i) = δ_{ij}` (for `t ≤ j < n`)
+killing the relators vanishes on the commutator factor `(x_a, x_{a+1})`, `a ≡ s mod 2`, containing
+`x_j`, then a character with the prescription property is trivial at every `x_i`, `s ≤ i`, whose
+partner in its factor lies in that range. -/
+theorem apply_presentedProPGen_eq_one_of_partner
+    (hχ : HasPrescriptionProperty χ) (hrels : rels ⊆ proPFrattini p (freeProP p (Fin n)))
+    {s t : ℕ} (hval : ∀ j, t ≤ j → j < n → ∀ F : freeProP p (Fin n) → ℤ_[p], Continuous F →
+      IsCrossedHom (χ.comp (presentedProP.mk p rels)) F →
+      (∀ i, F (freeProPGen p n i) = if i = j then 1 else 0) → (∀ r ∈ rels, F r = 0) →
+      F (labuteComm (freeProPGen p n (2 * ((j - s) / 2) + s))
+        (freeProPGen p n (2 * ((j - s) / 2) + s + 1))) = 0)
+    {i : ℕ} (hsi : s ≤ i) (heven : Even (i - s) → t ≤ i + 1 ∧ i + 1 < n)
+    (hodd : Odd (i - s) → t + 1 ≤ i ∧ i < n) :
+    χ (presentedProPGen p n rels i) = 1 := by
+  rw [← presentedProP.comp_mk_freeProPGen]
+  rcases Nat.even_or_odd (i - s) with he | ho
+  · obtain ⟨ht, hi⟩ := heven he
+    obtain ⟨m, hm⟩ := he
+    obtain ⟨F, hFc, hF, hFv, hFr⟩ :=
+      hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels hi
+    have hc := hval (i + 1) ht hi F hFc hF hFv hFr
+    rw [(by omega : 2 * ((i + 1 - s) / 2) + s = i)] at hc
+    exact hF.eq_one_of_map_labuteComm_eq_zero_right (by rw [hFv, ite_eq_right (by omega)])
+      (by rw [hFv, ite_eq_left rfl]) hc
+  · obtain ⟨ht, hi⟩ := hodd ho
+    obtain ⟨m, hm⟩ := ho
+    obtain ⟨F, hFc, hF, hFv, hFr⟩ :=
+      hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels
+        (by omega : i - 1 < n)
+    have hc := hval (i - 1) (by omega) (by omega) F hFc hF hFv hFr
+    rw [(by omega : 2 * ((i - 1 - s) / 2) + s = i - 1), (by omega : i - 1 + 1 = i)] at hc
+    exact hF.eq_one_of_map_labuteComm_eq_zero_left (by rw [hFv, ite_eq_left rfl])
+      (by rw [hFv, ite_eq_right (by omega)]) hc
+
+end Partner
+
+end HasPrescriptionProperty
 
 /-! ### Crossed homomorphisms on the even dyadic word with a `2`-adic exponent -/
 
