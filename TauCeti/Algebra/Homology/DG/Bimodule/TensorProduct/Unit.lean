@@ -268,6 +268,13 @@ theorem tensorLeftUnitorLinearEquiv_tmul (x : tensorUnit.{v} hA) (m : M) :
   refine (congrArg (lid R A M) (congr_tmul _ _ _ _ x m)).trans ?_
   rw [lid_tmul, LinearEquiv.refl_apply, tensorUnitEquiv_symm_apply]
 
+/-- The inverse of the left unitor equivalence inserts the algebra unit. -/
+@[simp]
+theorem tensorLeftUnitorLinearEquiv_symm_apply (m : M) :
+    (tensorLeftUnitorLinearEquiv.{v} hA hB M).symm m = tmul R A (tensorUnitEquiv.{v} hA 1) m := by
+  rw [tensorLeftUnitorLinearEquiv, LinearEquiv.symm_trans_apply, lid_symm_apply, congr_symm_tmul,
+    LinearEquiv.refl_symm, LinearEquiv.refl_apply, LinearEquiv.symm_symm]
+
 private theorem tensorLeftUnitorLinearEquiv_smul_right (b : Bᵐᵒᵖ)
     (z : tensorObj (tensorUnit.{v} hA) M) :
     tensorLeftUnitorLinearEquiv.{v} hA hB M (b • z) =
@@ -344,25 +351,14 @@ theorem tensorLeftUnitorHom_tmul (x : tensorUnit.{v} hA) (m : M) :
 
 /-- Insert `1` in the regular left tensor factor. -/
 def tensorLeftUnitorInv : M ⟶ tensorObj (tensorUnit.{v} hA) M := by
-  let f := (tensorUnitEquiv.{v} hA).symm
-  let g := LinearEquiv.refl R M
-  have hf : ∀ (a : A) x, f (op a • x) = op a • f x := by
-    intro a x
-    simp only [f, tensorUnitEquiv_symm_apply, tensorUnit_op_smul_down,
-      MulOpposite.smul_eq_mul_unop, unop_op]
-  have hg : ∀ (a : A) m, g (a • m) = a • g m := fun _ _ ↦ rfl
-  let c := BalancedTensorProduct.congr f g hf hg
-  let e := c.trans (lid R A M)
-  have he_apply (m : M) : e.symm m = tmul R A (tensorUnitEquiv.{v} hA 1) m := by
-    dsimp only [e, c, LinearEquiv.symm_trans_apply]
-    rw [lid_symm_apply, congr_symm_tmul, LinearEquiv.refl_symm,
-      LinearEquiv.refl_apply, LinearEquiv.symm_symm, tensorUnitEquiv_apply]
   let T : M →ₗ[Bᵐᵒᵖ] tensorObj (tensorUnit.{v} hA) M :=
-    { toFun := e.symm
-      map_add' := map_add e.symm
+    { toFun := (tensorLeftUnitorLinearEquiv.{v} hA hB M).symm
+      map_add' := map_add _
       map_smul' := fun b m ↦ by
-        rw [he_apply, he_apply, RingHom.id_apply, smul_tmul_right] }
-  have hT (m) : T m = tmul R A (tensorUnitEquiv.{v} hA 1) m := he_apply m
+        rw [tensorLeftUnitorLinearEquiv_symm_apply, tensorLeftUnitorLinearEquiv_symm_apply,
+          RingHom.id_apply, smul_tmul_right] }
+  have hT (m) : T m = tmul R A (tensorUnitEquiv.{v} hA 1) m :=
+    tensorLeftUnitorLinearEquiv_symm_apply hA hB M m
   refine ⟨⟨T, ?_, ?_⟩, ?_⟩
   · intro p m hm
     rw [hT]
@@ -389,12 +385,8 @@ def tensorLeftUnitorInv : M ⟶ tensorObj (tensorUnit.{v} hA) M := by
 @[simp]
 theorem tensorLeftUnitorInv_apply (m : M) :
     tensorLeftUnitorInv.{v} hA hB M m =
-      tmul R A (tensorUnitEquiv.{v} hA 1) m := by
-  rw [← DGBimoduleHom.coe_val]
-  dsimp only [tensorLeftUnitorInv, DGRightModuleHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [LinearEquiv.symm_trans_apply, lid_symm_apply]
-  refine (congr_symm_tmul _ _ _ _ (1 : A) m).trans ?_
-  rw [LinearEquiv.symm_symm, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+      tmul R A (tensorUnitEquiv.{v} hA 1) m :=
+  tensorLeftUnitorLinearEquiv_symm_apply hA hB M m
 
 /-- The regular DG bimodule is a left unit for tensor composition. -/
 def tensorLeftUnitor : tensorObj (tensorUnit.{v} hA) M ≅ M where
@@ -487,6 +479,13 @@ theorem tensorRightUnitorLinearEquiv_tmul (m : M) (x : tensorUnit.{v} hB) :
   refine (congrArg (rid R B M) (congr_tmul _ _ _ _ m x)).trans ?_
   rw [rid_tmul, LinearEquiv.refl_apply, tensorUnitEquiv_symm_apply]
 
+/-- The inverse of the right unitor equivalence inserts the algebra unit. -/
+@[simp]
+theorem tensorRightUnitorLinearEquiv_symm_apply (m : M) :
+    (tensorRightUnitorLinearEquiv.{v} hA hB M).symm m = tmul R B m (tensorUnitEquiv.{v} hB 1) := by
+  rw [tensorRightUnitorLinearEquiv, LinearEquiv.symm_trans_apply, rid_symm_apply, congr_symm_tmul,
+    LinearEquiv.refl_symm, LinearEquiv.refl_apply, LinearEquiv.symm_symm]
+
 private theorem tensorRightUnitorLinearEquiv_smul_right (b : Bᵐᵒᵖ)
     (z : tensorObj M (tensorUnit.{v} hB)) :
     tensorRightUnitorLinearEquiv.{v} hA hB M (b • z) =
@@ -566,23 +565,12 @@ theorem tensorRightUnitorHom_tmul (m : M) (x : tensorUnit.{v} hB) :
 
 /-- Insert `1` in the regular right tensor factor. -/
 def tensorRightUnitorInv : M ⟶ tensorObj M (tensorUnit.{v} hB) := by
-  let f := LinearEquiv.refl R M
-  let g := (tensorUnitEquiv.{v} hB).symm
-  have hf : ∀ (b : B) m, f (op b • m) = op b • f m := fun _ _ ↦ rfl
-  have hg : ∀ (b : B) x, g (b • x) = b • g x := by
-    intro b x
-    simp only [g, tensorUnitEquiv_symm_apply, tensorUnit_smul_down, smul_eq_mul]
-  let c := BalancedTensorProduct.congr f g hf hg
-  let e := c.trans (rid R B M)
-  have he_apply (m : M) : e.symm m = tmul R B m (tensorUnitEquiv.{v} hB 1) := by
-    dsimp only [e, c, LinearEquiv.symm_trans_apply]
-    rw [rid_symm_apply, congr_symm_tmul, LinearEquiv.refl_symm,
-      LinearEquiv.refl_apply, LinearEquiv.symm_symm]
   let T : M →ₗ[Bᵐᵒᵖ] tensorObj M (tensorUnit.{v} hB) :=
-    { toFun := e.symm
-      map_add' := map_add e.symm
+    { toFun := (tensorRightUnitorLinearEquiv.{v} hA hB M).symm
+      map_add' := map_add _
       map_smul' := fun b m ↦ by
-        rw [he_apply, he_apply, RingHom.id_apply, smul_tmul_right]
+        rw [tensorRightUnitorLinearEquiv_symm_apply, tensorRightUnitorLinearEquiv_symm_apply,
+          RingHom.id_apply, smul_tmul_right]
         have h := balance R B (unop b) m (tensorUnitEquiv.{v} hB 1)
         have heq : unop b • tensorUnitEquiv.{v} hB 1 =
             b • tensorUnitEquiv.{v} hB 1 := by
@@ -592,7 +580,8 @@ def tensorRightUnitorInv : M ⟶ tensorObj M (tensorUnit.{v} hB) := by
           simp only [mul_one, one_mul, unop_op]
         rw [heq] at h
         exact h }
-  have hT (m) : T m = tmul R B m (tensorUnitEquiv.{v} hB 1) := he_apply m
+  have hT (m) : T m = tmul R B m (tensorUnitEquiv.{v} hB 1) :=
+    tensorRightUnitorLinearEquiv_symm_apply hA hB M m
   refine ⟨⟨T, ?_, ?_⟩, ?_⟩
   · intro p m hm
     rw [hT]
@@ -616,12 +605,8 @@ def tensorRightUnitorInv : M ⟶ tensorObj M (tensorUnit.{v} hB) := by
 @[simp]
 theorem tensorRightUnitorInv_apply (m : M) :
     tensorRightUnitorInv.{v} hA hB M m =
-      tmul R B m (tensorUnitEquiv.{v} hB 1) := by
-  rw [← DGBimoduleHom.coe_val]
-  dsimp only [tensorRightUnitorInv, DGRightModuleHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [LinearEquiv.symm_trans_apply, rid_symm_apply]
-  refine (congr_symm_tmul _ _ _ _ m (1 : B)).trans ?_
-  rw [LinearEquiv.symm_symm, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+      tmul R B m (tensorUnitEquiv.{v} hB 1) :=
+  tensorRightUnitorLinearEquiv_symm_apply hA hB M m
 
 /-- The regular DG bimodule is a right unit for tensor composition. -/
 def tensorRightUnitor : tensorObj M (tensorUnit.{v} hB) ≅ M where
