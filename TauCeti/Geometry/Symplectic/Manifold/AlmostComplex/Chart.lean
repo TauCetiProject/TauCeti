@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Trivialization
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Finite almost complex structures in charts and reconstruction
@@ -119,11 +120,8 @@ theorem inChart_extChartAt_eq_conj {y : M} (hy : y ∈ (chartAt H x).source)
   have hchange {a b : M} (ha : y ∈ (chartAt H a).source) (hb : y ∈ (chartAt H b).source) :
       ((trivializationAt E (TangentSpace I) a).coordChangeL ℝ
         (trivializationAt E (TangentSpace I) b) y).toContinuousLinearMap =
-          tangentCoordChange I a b y := by
-    ext v
-    -- Native tangent fibres are the core fibres, and tangentCoordChange is its transition map.
-    convert (tangentBundleCore I M).localTriv_coordChange_eq
-      (i := achart H a) (j := achart H b) ⟨ha, hb⟩ v using 1; rfl
+          tangentCoordChange I a b y :=
+    (tangentBundleCore I M).trivializationAt_coordChangeL ⟨ha, hb⟩
   unfold inChart
   rw [(extChartAt I x).left_inv (by simpa only [extChartAt_source] using hy),
     (extChartAt I x').left_inv (by simpa only [extChartAt_source] using hy')]
@@ -148,7 +146,7 @@ def chartEquiv (x : M) :
           (⟨(chartAt H x).source, (chartAt H x).open_source⟩ : TopologicalSpace.Opens M)))
     (TangentBundle.trivializationAt_chartSource_baseSet (I := I) x)
     ((chartAt H x).toDiffeomorphSourceTarget
-      (IsManifold.chart_mem_maximalAtlas (I := I) (n := ∞) x))
+      (IsManifold.chart_mem_maximalAtlas (I := I) (n := (n : ℕ∞ω)) x))
 
 /-- Reconstruct on the intrinsic chart source directly from a normed-space field on the
 extended target. Its finite regularity and square identity are required only on that target. -/
@@ -197,7 +195,7 @@ theorem chartEquiv_apply
             (⟨(chartAt H x).source, (chartAt H x).open_source⟩ : TopologicalSpace.Opens M)))
         Jc y := by
   let h := (chartAt H x).toDiffeomorphSourceTarget
-    (IsManifold.chart_mem_maximalAtlas (I := I) (n := ∞) x)
+    (IsManifold.chart_mem_maximalAtlas (I := I) (n := (n : ℕ∞ω)) x)
   have hy : h y = ⟨chartAt H x y, (chartAt H x).map_source y.property⟩ :=
     Subtype.ext ((chartAt H x).toDiffeomorphSourceTarget_apply_coe _ y)
   unfold chartEquiv
@@ -221,7 +219,7 @@ theorem chartEquiv_symm_apply
                 (⟨(chartAt H x).source, (chartAt H x).open_source⟩ : TopologicalSpace.Opens M)))
             y v)) := by
   let h := (chartAt H x).toDiffeomorphSourceTarget
-    (IsManifold.chart_mem_maximalAtlas (I := I) (n := ∞) x)
+    (IsManifold.chart_mem_maximalAtlas (I := I) (n := (n : ℕ∞ω)) x)
   have hy : h y = ⟨chartAt H x y, (chartAt H x).map_source y.property⟩ :=
     Subtype.ext ((chartAt H x).toDiffeomorphSourceTarget_apply_coe _ y)
   unfold chartEquiv
@@ -237,7 +235,11 @@ theorem chartEquiv_ofLE
   funext z
   unfold chartEquiv
   rw [almostComplexEquiv_apply, almostComplexEquiv_apply]
-  exact congrFun (almostComplexCoordinates_ofLE _ Jc h) _
+  simp only [almostComplexCoordinates_ofLE]
+  congr 1
+  apply Subtype.ext
+  rw [OpenPartialHomeomorph.toDiffeomorphSourceTarget_symm_apply_coe,
+    OpenPartialHomeomorph.toDiffeomorphSourceTarget_symm_apply_coe]
 
 /-- Negating a structure negates its chart-coordinate field. -/
 theorem chartEquiv_neg

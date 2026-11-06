@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Coordinates
 
 /-!
 # Finite almost complex structures in a tangent trivialization
@@ -75,37 +76,21 @@ theorem almostComplexCoordinates_neg (J : ContMDiffAlmostComplexStructure I n M)
   ext v
   simp [almostComplexCoordinates_apply]
 
-private def fromCoordinates (A : M → E →L[ℝ] E) (x : M) :
-    TangentSpace I x →L[ℝ] TangentSpace I x :=
-  (e.symmL ℝ x).comp ((A x).comp (e.continuousLinearMapAt ℝ x))
-
-private theorem contMDiff_fromCoordinates (he : e.baseSet = univ) (A : M → E →L[ℝ] E)
-    (hA : ContMDiff I 𝓘(ℝ, E →L[ℝ] E) n A) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E) x (fromCoordinates e A x)) := by
-  intro x
-  have hx : x ∈ e.baseSet := he.symm ▸ mem_univ x
-  apply ((e.continuousLinearMap (RingHom.id ℝ) e).contMDiffAt_section_iff
-    (by simpa only [Trivialization.baseSet_continuousLinearMap, mem_inter_iff] using
-      And.intro hx hx)).2
-  refine (hA x).congr_of_eventuallyEq ?_
-  filter_upwards [e.open_baseSet.mem_nhds hx] with y hy
-  ext v
-  simp only [fromCoordinates, Trivialization.continuousLinearMap_apply,
-    ContinuousLinearMap.comp_apply]
-  rw [e.continuousLinearMapAt_symmL hy, e.continuousLinearMapAt_symmL hy]
-
 /-- Construct a native almost complex structure from a finite-regularity coordinate field in a
 tangent trivialization covering the whole base. -/
 def almostComplexStructure (he : e.baseSet = univ) (A : M → E →L[ℝ] E)
     (hA : ContMDiff I 𝓘(ℝ, E →L[ℝ] E) n A) (hAA : ∀ x v, A x (A x v) = -v) :
     ContMDiffAlmostComplexStructure I n M where
-  toEndomorphism := ⟨fromCoordinates e A, contMDiff_fromCoordinates e he A hA⟩
+  toEndomorphism :=
+    ⟨(e.continuousLinearMap (RingHom.id ℝ) e).sectionFromCoordinates (𝕜 := ℝ) A,
+      (e.continuousLinearMap (RingHom.id ℝ) e).contMDiff_sectionFromCoordinates
+        (by simp [he]) A hA⟩
   square_neg x := by
     have hx : x ∈ e.baseSet := he.symm ▸ mem_univ x
     ext v
-    simp only [ContMDiffSection.coeFn_mk, fromCoordinates, ContinuousLinearMap.comp_apply,
-      neg_apply, ContinuousLinearMap.id_apply]
+    simp only [ContMDiffSection.coeFn_mk, sectionFromCoordinates_apply,
+      Trivialization.continuousLinearMap_symmL e e ⟨hx, hx⟩,
+      ContinuousLinearMap.comp_apply, neg_apply, ContinuousLinearMap.id_apply]
     rw [e.continuousLinearMapAt_symmL hx, hAA, map_neg,
       e.symmL_continuousLinearMapAt hx]
 
@@ -115,8 +100,9 @@ theorem almostComplexStructure_apply (he : e.baseSet = univ) (A : M → E →L[�
     (x : M) (v : TangentSpace I x) :
     almostComplexStructure e he A hA hAA x v =
       e.symmL ℝ x (A x (e.continuousLinearMapAt ℝ x v)) := by
-  unfold almostComplexStructure fromCoordinates
-  rfl
+  have hx : x ∈ e.baseSet := he.symm ▸ mem_univ x
+  simp only [almostComplexStructure, ContMDiffSection.coeFn_mk, sectionFromCoordinates_apply,
+    Trivialization.continuousLinearMap_symmL e e ⟨hx, hx⟩, ContinuousLinearMap.comp_apply]
 
 /-- Reading a reconstructed structure recovers the entire coordinate field. -/
 @[simp]
@@ -178,18 +164,18 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- In a globally covering tangent frame and any smooth base coordinates, native structures
+/-- In a globally covering tangent frame and any Cⁿ base coordinates, native structures
 correspond exactly to finite-regularity endomorphism fields squaring to minus the identity. -/
-def almostComplexEquiv (he : e.baseSet = univ) (h : M ≃ₘ⟮I, I'⟯ N) :
+def almostComplexEquiv (he : e.baseSet = univ) (h : M ≃ₘ^n⟮I, I'⟯ N) :
     ContMDiffAlmostComplexStructure I n M ≃
       {A : ContMDiffMap I' 𝓘(ℝ, E →L[ℝ] E) N (E →L[ℝ] E) n //
         ∀ x v, A x (A x v) = -v} where
   toFun J := ⟨⟨fun y ↦ almostComplexCoordinates e J (h.symm y),
       ((contMDiffOn_univ.1 (he ▸ contMDiffOn_almostComplexCoordinates e J))).comp
-        (h.symm.contMDiff.of_le (by simp))⟩,
+        h.symm.contMDiff⟩,
     fun y v ↦ almostComplexCoordinates_apply_apply e J (he.symm ▸ mem_univ (h.symm y)) v⟩
   invFun A := almostComplexStructure e he (fun x ↦ A.val (h x))
-    (A.val.contMDiff.comp (h.contMDiff.of_le (by simp))) (fun x v ↦ A.property (h x) v)
+    (A.val.contMDiff.comp h.contMDiff) (fun x v ↦ A.property (h x) v)
   left_inv J := by
     ext x v
     rw [almostComplexStructure_apply]
@@ -205,26 +191,26 @@ def almostComplexEquiv (he : e.baseSet = univ) (h : M ≃ₘ⟮I, I'⟯ N) :
     funext y
     have hcoord := congrFun
       (almostComplexCoordinates_almostComplexStructure e he (fun x ↦ A.val (h x))
-        (A.val.contMDiff.comp (h.contMDiff.of_le (by simp))) (fun x v ↦ A.property (h x) v))
+        (A.val.contMDiff.comp h.contMDiff) (fun x v ↦ A.property (h x) v))
       (h.symm y)
     exact hcoord.trans (congrArg A.val (h.apply_symm_apply y))
 
 /-- The coordinate equivalence reads the field at the inverse base coordinate. -/
-theorem almostComplexEquiv_apply (he : e.baseSet = univ) (h : M ≃ₘ⟮I, I'⟯ N)
+theorem almostComplexEquiv_apply (he : e.baseSet = univ) (h : M ≃ₘ^n⟮I, I'⟯ N)
     (J : ContMDiffAlmostComplexStructure I n M) (y : N) :
     (almostComplexEquiv e he h J).val y = almostComplexCoordinates e J (h.symm y) := by
   unfold almostComplexEquiv
   rfl
 
 /-- The inverse equivalence conjugates through the tangent frame at the forward base coordinate. -/
-theorem almostComplexEquiv_symm_apply (he : e.baseSet = univ) (h : M ≃ₘ⟮I, I'⟯ N)
+theorem almostComplexEquiv_symm_apply (he : e.baseSet = univ) (h : M ≃ₘ^n⟮I, I'⟯ N)
     (A : {A : ContMDiffMap I' 𝓘(ℝ, E →L[ℝ] E) N (E →L[ℝ] E) n //
       ∀ x v, A x (A x v) = -v}) (x : M) (v : TangentSpace I x) :
     (almostComplexEquiv e he h).symm A x v =
       e.symmL ℝ x (A.val (h x) (e.continuousLinearMapAt ℝ x v)) := by
   unfold almostComplexEquiv
   exact almostComplexStructure_apply e he (fun x ↦ A.val (h x))
-    (A.val.contMDiff.comp (h.contMDiff.of_le (by simp))) (fun x v ↦ A.property (h x) v) x v
+    (A.val.contMDiff.comp h.contMDiff) (fun x v ↦ A.property (h x) v) x v
 
 end BaseCoordinates
 
