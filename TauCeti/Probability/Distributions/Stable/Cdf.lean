@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.Distributions.Stable.Smooth
+public import TauCeti.Probability.Distributions.Stable.Support
 import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.Dirac
 
@@ -18,10 +19,8 @@ density `stablePDFReal`. Consequently its cumulative distribution function is th
 that density over a left half-line, and its derivative is the density at every real point. Since
 the stable density is smooth, so is the cumulative distribution function.
 
-The zero-scale law is a point mass at its location.
-
-These results provide the analytic cdf interface used to obtain strict increase and quantiles
-once positivity on the interior of the stable law's support is known.
+For strict interior skewness, positivity of the density makes the cdf strictly increasing on the
+whole real line. The zero-scale law is a point mass at its location.
 
 ## Main results
 
@@ -29,6 +28,8 @@ once positivity on the interior of the stable law's support is known.
   stable density;
 * `TauCeti.Probability.hasDerivAt_cdf_stableMeasure` identifies its derivative pointwise;
 * `TauCeti.Probability.contDiff_cdf_stableMeasure` proves that the cdf is smooth;
+* `TauCeti.Probability.strictMono_cdf_stableMeasure_of_abs_lt_one` proves strict increase for
+  strict interior skewness;
 * `TauCeti.Probability.cdf_stableMeasure_zero_scale` gives the atomic boundary formula.
 
 ## References
@@ -89,6 +90,16 @@ theorem contDiff_cdf_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs
 theorem continuous_cdf_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) :
     Continuous (cdf (stableMeasure α β s m)) :=
   (contDiff_cdf_stableMeasure hα hβ hs).continuous
+
+/-- The cdf of a positive-scale stable law with strict interior skewness is strictly increasing
+on the whole real line. -/
+theorem strictMono_cdf_stableMeasure_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ : |β| < 1)
+    (hs : 0 < s) (m : ℝ) : StrictMono (cdf (stableMeasure α β s m)) := by
+  let _ := isProbabilityMeasure_stableMeasure hα hβ.le s m
+  exact strictMono_cdf_of_eq_withDensity
+    (stableMeasure_eq_withDensity_ofReal α β hs m)
+    (measurable_stablePDFReal α β s m).aemeasurable
+    (stablePDFReal_pos_of_abs_lt_one hα hβ hs m)
 
 /-- At zero scale, a valid stable law has the cdf of the point mass at its location. -/
 theorem cdf_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (m x : ℝ) :
