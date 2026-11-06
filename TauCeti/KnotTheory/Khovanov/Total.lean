@@ -101,28 +101,25 @@ theorem quantumComplexDirectSumXIso_hom_ι_basis (i j : ℤ) (e : D.EnhancedStat
       (PreservesCoproduct.iso (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i)
         (D.khovanovComplex hD R)).hom =
       Sigma.ι (fun j ↦ (D.khovanovComplex hD R j).X i) j := by
-    apply (cancel_mono (PreservesCoproduct.iso
-      (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i) (D.khovanovComplex hD R)).inv).mp
-    simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id]
-    rw [PreservesCoproduct.inv_hom]
-    simpa only [eval_obj, eval_map] using
-      (ι_comp_sigmaComparison (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i)
-        (D.khovanovComplex hD R) j).symm
+    simpa only [← PreservesCoproduct.inv_hom, IsIso.Iso.inv_inv, eval_obj, eval_map] using
+      map_ι_comp_inv_sigmaComparison
+        (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i) (D.khovanovComplex hD R) j
   simp only [quantumComplexDirectSumXIso, Iso.trans_hom, ModuleCat.hom_comp,
     LinearMap.comp_apply, LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom]
   have hιx := congrArg (fun f ↦ f.hom (D.khovanovEnhancedBasis hD R j i e)) hι
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hιx
   rw [hιx, ModuleCat.ι_coprodIsoDirectSum_hom_apply]
-  dsimp only [DFinsupp.basis, LinearEquiv.trans_apply]
-  simp only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, DirectSum.lof]
-  -- `erw` identifies the concrete direct-sum carrier with the module coproduct carrier.
-  erw [DFinsupp.lsingle_apply, DFinsupp.mapRange.linearEquiv_apply,
-    DFinsupp.mapRange_single, Module.Basis.repr_self]
-  have hs : sigmaFinsuppLequivDFinsupp R (Finsupp.single ⟨j, e⟩ (1 : R)) =
-      DFinsupp.single j (Finsupp.single e 1) :=
-    sigmaFinsuppEquivDFinsupp_single ⟨j, e⟩ 1
-  rw [← hs, LinearEquiv.symm_apply_apply, Finsupp.lcongr_single]
-  rfl
+  -- Specify the unbundled direct-sum carrier: the categorical coproduct uses its bundled
+  -- module instances, which prevent the DFinsupp simp lemmas from matching directly.
+  change (Finsupp.lcongr (D.totalEnhancedStateAtEquiv i) (LinearEquiv.refl R R))
+    ((DFinsupp.basis fun j ↦ D.khovanovEnhancedBasis hD R j i).repr
+      (DFinsupp.single j (D.khovanovEnhancedBasis hD R j i e))) = _
+  have hb : (DFinsupp.basis fun j ↦ D.khovanovEnhancedBasis hD R j i) ⟨j, e⟩ =
+      DFinsupp.single j (D.khovanovEnhancedBasis hD R j i e) := by
+    simp [DFinsupp.basis, Module.Basis.coe_ofRepr,
+      DFinsupp.mapRange.linearEquiv_apply, -khovanovEnhancedBasis_apply]
+  rw [← hb, Module.Basis.repr_self]
+  simp
 
 /-- Reconstructing a coefficient basis vector includes the corresponding homogeneous
 circle-tensor basis vector in the quantum total. -/
@@ -135,9 +132,9 @@ theorem quantumComplexDirectSumXIso_inv_single (i j : ℤ) (e : D.EnhancedStateA
   rw [← D.quantumComplexDirectSumXIso_hom_ι_basis hD R i j e]
   exact ModuleCat.inv_hom_apply _ _
 
-/-- The ordinary enhanced-state complex. Its differential is the signed tensor differential
-in the coordinates of all enhanced states of each cochain degree. The body is exposed so the
-term carriers elaborate as coefficient vectors in importing modules. -/
+/-- The ordinary enhanced-state complex, with terms `TotalEnhancedStateAt i →₀ R` and
+differential conjugate to the signed tensor differential. -/
+-- Expose the body so term carriers elaborate as coefficient vectors in importing modules.
 @[expose] def khovanovTotalEnhancedComplex : CochainComplex (ModuleCat.{u} R) ℤ where
   X i := ModuleCat.of R (D.TotalEnhancedStateAt i →₀ R)
   d i k := (D.quantumComplexDirectSumXIso hD R i).inv ≫
@@ -161,7 +158,7 @@ theorem khovanovTotalEnhancedComplex_d_apply (i k : ℤ) (x : D.TotalEnhancedSta
         (((D.khovanovTotalComplex hD R).d i k).hom
           ((D.quantumComplexDirectSumXIso hD R i).inv.hom x)) := (rfl)
 
-/-- Every ordinary coefficient term is finite free, including the zero and empty-link terms. -/
+/-- Every ordinary coefficient term is free, including the zero and empty-link terms. -/
 instance (i : ℤ) : Module.Free R ((D.khovanovTotalEnhancedComplex hD R).X i) :=
   inferInstanceAs (Module.Free R (D.TotalEnhancedStateAt i →₀ R))
 
@@ -189,15 +186,43 @@ theorem quantumComplexDirectSumIso_inv_f (i : ℤ) :
     (D.quantumComplexDirectSumIso hD R).inv.f i =
       (D.quantumComplexDirectSumXIso hD R i).hom := (rfl)
 
-/-- On coefficient basis vectors the cochain comparison is the homogeneous state inclusion. -/
-@[simp↓]
-theorem quantumComplexDirectSumIso_hom_f_single (i j : ℤ) (e : D.EnhancedStateAt i j) :
-    ((D.quantumComplexDirectSumIso hD R).hom.f i).hom
-      (Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1) =
-        ((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
-          (D.khovanovEnhancedBasis hD R j i e) := by
-  rw [quantumComplexDirectSumIso_hom_f]
-  exact D.quantumComplexDirectSumXIso_inv_single hD R i j e
+/-- Include one quantum component in the ordinary enhanced-state complex by forgetting its
+quantum constraint. -/
+def khovanovTotalEnhancedComplexι (j : ℤ) :
+    D.khovanovEnhancedComplex hD R j ⟶ D.khovanovTotalEnhancedComplex hD R :=
+  (D.khovanovEnhancedComplexIso hD R j).inv ≫ Sigma.ι (D.khovanovComplex hD R) j ≫
+    (D.quantumComplexDirectSumIso hD R).inv
+
+/-- On terms, the homogeneous inclusion is the finite-support map forgetting quantum degree. -/
+@[simp]
+theorem khovanovTotalEnhancedComplexι_f (i j : ℤ) :
+    (D.khovanovTotalEnhancedComplexι hD R j).f i =
+      ModuleCat.ofHom (Finsupp.lmapDomain R R
+        (fun e : D.EnhancedStateAt i j ↦ D.totalEnhancedStateAtEquiv i ⟨j, e⟩)) := by
+  apply ModuleCat.hom_ext
+  apply (Finsupp.basisSingleOne : Module.Basis (D.EnhancedStateAt i j) R _).ext
+  intro e
+  simp only [khovanovTotalEnhancedComplexι, comp_f, khovanovEnhancedComplexIso_inv_f,
+    quantumComplexDirectSumIso_inv_f, Finsupp.coe_basisSingleOne]
+  -- Identify the bundled complex terms with their coefficient carriers before applying
+  -- the basis lemmas; simplification alone does not unfold these module instances.
+  change (D.quantumComplexDirectSumXIso hD R i).hom.hom
+    (((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
+      ((D.khovanovEnhancedBasis hD R j i).repr.symm (Finsupp.single e 1))) =
+    Finsupp.lmapDomain R R
+      (fun e : D.EnhancedStateAt i j ↦ D.totalEnhancedStateAtEquiv i ⟨j, e⟩)
+      (Finsupp.single e 1)
+  simpa only [Module.Basis.repr_symm_single_one, Finsupp.lmapDomain_apply,
+    Finsupp.mapDomain_single] using D.quantumComplexDirectSumXIso_hom_ι_basis hD R i j e
+
+/-- The total comparison intertwines each native quantum inclusion with the corresponding
+inclusion of enhanced-state complexes. -/
+@[reassoc (attr := simp)]
+theorem quantumComplexDirectSumIso_ι (j : ℤ) :
+    Sigma.ι (D.khovanovComplex hD R) j ≫ (D.quantumComplexDirectSumIso hD R).inv =
+      (D.khovanovEnhancedComplexIso hD R j).hom ≫
+        D.khovanovTotalEnhancedComplexι hD R j := by
+  simp [khovanovTotalEnhancedComplexι]
 
 /-- Taking ordinary coordinates of an included homogeneous basis vector gives its single
 coefficient vector. Apply this before expanding the homogeneous circle basis. -/
@@ -207,8 +232,31 @@ theorem quantumComplexDirectSumIso_inv_f_ι_basis (i j : ℤ) (e : D.EnhancedSta
       (((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
         (D.khovanovEnhancedBasis hD R j i e)) =
       Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1 := by
-  rw [quantumComplexDirectSumIso_inv_f]
-  exact D.quantumComplexDirectSumXIso_hom_ι_basis hD R i j e
+  have h := congrArg (fun f ↦ (f.f i).hom (D.khovanovEnhancedBasis hD R j i e))
+    (D.quantumComplexDirectSumIso_ι hD R j)
+  simp only [comp_f, khovanovEnhancedComplexIso_hom_f,
+    khovanovTotalEnhancedComplexι_f] at h
+  -- Identify the bundled coefficient terms to let the basis representation simplify.
+  change ((D.quantumComplexDirectSumIso hD R).inv.f i).hom
+    (((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
+      (D.khovanovEnhancedBasis hD R j i e)) =
+    Finsupp.lmapDomain R R
+      (fun e : D.EnhancedStateAt i j ↦ D.totalEnhancedStateAtEquiv i ⟨j, e⟩)
+      ((D.khovanovEnhancedBasis hD R j i).repr
+        (D.khovanovEnhancedBasis hD R j i e)) at h
+  simpa only [Module.Basis.repr_self,
+    Finsupp.lmapDomain_apply, Finsupp.mapDomain_single] using h
+
+/-- On coefficient basis vectors the cochain comparison is the homogeneous state inclusion. -/
+@[simp↓]
+theorem quantumComplexDirectSumIso_hom_f_single (i j : ℤ) (e : D.EnhancedStateAt i j) :
+    ((D.quantumComplexDirectSumIso hD R).hom.f i).hom
+      (Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1) =
+        ((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
+          (D.khovanovEnhancedBasis hD R j i e) := by
+  rw [← D.quantumComplexDirectSumIso_inv_f_ι_basis hD R i j e,
+    quantumComplexDirectSumIso_inv_f, quantumComplexDirectSumIso_hom_f]
+  exact ModuleCat.inv_hom_apply _ _
 
 /-- The differential on a homogeneous ordinary basis vector is the original quantum-component
 differential, included in the quantum total and then expressed in ordinary coordinates. -/
