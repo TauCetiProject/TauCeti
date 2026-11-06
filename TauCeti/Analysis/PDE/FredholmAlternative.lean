@@ -13,8 +13,9 @@ public import TauCeti.Analysis.Sobolev.RellichKondrachov
 /-!
 # The Fredholm alternative for the Dirichlet problem
 
-Let `B` be the bounded coercive energy form of a divergence-form operator on `H¹₀(Ω)`.  Shifting
-its mass coefficient by a constant `-κ` changes the weak equation to
+Let `B` be the bounded energy form of a divergence-form operator on `H¹₀(Ω)`, and first suppose
+that `B` is coercive.  Shifting its mass coefficient by a constant `-κ` changes the weak
+equation to
 
 `B(u, v) - κ ⟪u, v⟫_{L²} = ⟪f, v⟫_{L²}`.
 
@@ -24,7 +25,12 @@ classical dichotomy: either the homogeneous shifted problem has a nonzero soluti
 `L²` forcing has a unique weak solution.  The homogeneous solution space is always finite
 dimensional.
 
-More generally, let the energy form satisfy **Gårding's inequality**
+This is the compact-resolvent step of the Fredholm theory.  The unshifted coercive form `B` can
+itself contain bounded measurable principal, drift, and mass coefficients; only the additional
+perturbation is the scalar mass shift.  This is the standard reduction of a Gårding form to a
+coercive form by adding a sufficiently large constant.
+
+More generally, drop coercivity and let the energy form satisfy **Gårding's inequality**
 `C₀‖w‖²_{H¹} ≤ B(w, w) + β‖w‖²_{L²}` on `H¹₀(Ω)`, with `C₀ > 0` and no sign condition on `β`.
 Then for every `ℓ ∈ H⁻¹(Ω)` the weak problem `B(u, ·) = ℓ` is solvable exactly when `ℓ`
 vanishes on the **weak adjoint kernel** `{w ∈ H¹₀(Ω) | ∀ v, B(v, w) = 0}`, the space of weak
@@ -34,11 +40,6 @@ differs from the kernel `{u | ∀ v, B(u, v) = 0}`, but the two have the same fi
 So if the homogeneous problem has only the trivial solution, every problem `B(u, ·) = ℓ` has
 exactly one solution, although `B` need not be coercive. Every uniformly elliptic operator with
 bounded measurable coefficients satisfies Gårding's inequality on a bounded domain.
-
-This is the compact-resolvent step of Lane D.18 of `TauCetiRoadmap/PDE/README.md`.  The unshifted
-form `B` can itself contain bounded measurable principal, drift, and mass coefficients; only the
-additional perturbation is the scalar mass shift.  This is the standard reduction of a Gårding
-form to a coercive form by adding a sufficiently large constant.
 
 ## Main declarations
 
@@ -64,9 +65,8 @@ form to a coercive form by adding a sufficiently large constant.
 
 ## References
 
-Lane D, item 18 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial Differential Equations*,
-Section 6.2.3; D. Gilbarg and N. Trudinger, *Elliptic Partial Differential Equations of Second
-Order*, Chapter 8, Theorems 8.3 and 8.6.
+L. C. Evans, *Partial Differential Equations*, Section 6.2.3; D. Gilbarg and N. Trudinger,
+*Elliptic Partial Differential Equations of Second Order*, Chapter 8, Theorems 8.3 and 8.6.
 -/
 
 public section
