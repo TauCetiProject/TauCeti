@@ -43,6 +43,8 @@ open scoped ContDiff
 
 /-- The gauge-fixing row is unchanged under gauge transformation of the background and
 linear gauge transformation of the variation. No differentiability is needed. -/
+-- Cancel the gauge before expanding with gaugeAdjoint_def.
+@[simp high]
 theorem gaugeAdjoint_gaugeTransform (u : ℂ → Circle)
     (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     gaugeAdjoint (gaugeTransform u x) (gaugeLinearAction u y) z = gaugeAdjoint x y z := by

@@ -262,7 +262,7 @@ theorem fderiv_coe_eq_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
 
 /-- The derivative of the real part of a circle-valued gauge is its imaginary coordinate
 multiplied by the negative logarithmic derivative, without choosing a phase. -/
-theorem fderiv_re_coe_eq_gaugeForm {u : ℂ → Circle} {z : ℂ}
+theorem fderiv_re_coe_eq_neg_im_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
     (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) (v : ℂ) :
     fderiv ℝ (fun w ↦ (u w : ℂ).re) z v = -(u z : ℂ).im * gaugeForm u z v := by
   calc
@@ -276,7 +276,7 @@ theorem fderiv_re_coe_eq_gaugeForm {u : ℂ → Circle} {z : ℂ}
 
 /-- The derivative of the imaginary part of a circle-valued gauge is its real coordinate
 multiplied by the logarithmic derivative, without choosing a phase. -/
-theorem fderiv_im_coe_eq_gaugeForm {u : ℂ → Circle} {z : ℂ}
+theorem fderiv_im_coe_eq_re_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
     (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) (v : ℂ) :
     fderiv ℝ (fun w ↦ (u w : ℂ).im) z v = (u z : ℂ).re * gaugeForm u z v := by
   calc
@@ -308,7 +308,7 @@ theorem fderiv_gaugeLinearAction_apply_two {u : ℂ → Circle} {z : ℂ}
   rw [fderiv_fun_sub (hr.fun_mul hp) (hi.fun_mul hq), fderiv_fun_mul hr hp,
     fderiv_fun_mul hi hq]
   simp only [sub_apply, add_apply, smul_apply, smul_eq_mul,
-    fderiv_re_coe_eq_gaugeForm hu, fderiv_im_coe_eq_gaugeForm hu]
+    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu]
   ring
 
 /-- Leibniz rule for the imaginary section coordinate of the linear gauge action. Only the
@@ -331,7 +331,7 @@ theorem fderiv_gaugeLinearAction_apply_three {u : ℂ → Circle} {z : ℂ}
   rw [fderiv_fun_add (hi.fun_mul hp) (hr.fun_mul hq), fderiv_fun_mul hi hp,
     fderiv_fun_mul hr hq]
   simp only [add_apply, smul_apply, smul_eq_mul,
-    fderiv_re_coe_eq_gaugeForm hu, fderiv_im_coe_eq_gaugeForm hu]
+    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu]
   ring
 
 /-- The smooth framed gauge action is free. The connection coordinates suffice; no
@@ -462,8 +462,8 @@ theorem equation_gaugeTransform {u : ℂ → Circle}
   have hn := Circle.re_sq_add_im_sq (u z)
   ext i
   fin_cases i <;> simp [gaugeTransform, fderiv_fun_sub, fderiv_fun_add,
-    fderiv_fun_mul, hx, hr, hi, hg, fderiv_re_coe_eq_gaugeForm hu',
-    fderiv_im_coe_eq_gaugeForm hu', -gaugeForm_apply]
+    fderiv_fun_mul, hx, hr, hi, hg, fderiv_re_coe_eq_neg_im_mul_gaugeForm hu',
+    fderiv_im_coe_eq_re_mul_gaugeForm hu', -gaugeForm_apply]
   · linear_combination (x z 2 ^ 2 + x z 3 ^ 2) / 2 * hn -
       fderiv_gaugeForm_symm hu 1 I
   · ring
