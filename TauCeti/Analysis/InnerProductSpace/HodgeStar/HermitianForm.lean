@@ -210,26 +210,12 @@ theorem exists_inner_ιMulti_apply_eq_neg (hη : o.hodgeStar hkl η = -η) :
 /-! ### The Hermitian form of a general two-form -/
 
 include h₀ h₂ he in
-/-- The self-dual part of `v ∧ J v` is `‖v‖² ω / 2`: `v ∧ J v + ⋆(v ∧ J v) = ‖v‖² ω`. -/
-theorem ιMulti_apply_add_hodgeStar (v : V) :
-    ιMulti ℝ 2 ![v, J v] + o.hodgeStar hkl (ιMulti ℝ 2 ![v, J v]) =
-      (‖v‖ ^ 2) • J.kahlerForm := by
-  have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he v v
-  have hswap : ιMulti ℝ 2 ![J v, v] = -ιMulti ℝ 2 ![v, J v] := by
-    refine ext_inner_ιMulti_two fun u w ↦ ?_
-    rw [inner_neg_left, inner_ιMulti_two, inner_ιMulti_two]
-    ring
-  rw [hswap, sub_neg_eq_add, ← two_smul ℝ, map_smul, ← smul_add, real_inner_self_eq_norm_sq,
-    mul_smul] at h
-  exact smul_right_injective _ two_ne_zero h
-
-include h₀ h₂ he in
 /-- **The Hermitian form splits along `Λ⁺ ⊕ Λ⁻`**: for the complex orientation,
 `B(v, v) = c ‖v‖² + ⟪F⁻, v ∧ J v⟫` with `c = ⟪F, ω⟫ / 2` and `F⁻ = (F - ⋆F) / 2`. -/
 theorem hermitianForm_apply_self_eq (F : ⋀[ℝ]^2 V) (v : V) :
     J.hermitianForm F v v = ⟪F, J.kahlerForm⟫ / 2 * ‖v‖ ^ 2 +
       ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J v]⟫ := by
-  have h := congrArg (⟪F, ·⟫) (ιMulti_apply_add_hodgeStar hkl h₀ h₂ he v)
+  have h := congrArg (⟪F, ·⟫) (ιMulti_apply_add_hodgeStar h₀ h₂ hkl he v)
   have hsymm := o.isSymmetric_hodgeStar_of_even even_two hkl F (ιMulti ℝ 2 ![v, J v])
   simp only [LinearEquiv.coe_coe] at hsymm
   simp only [inner_add_right, real_inner_smul_right] at h
@@ -246,13 +232,6 @@ theorem hermitianForm_eq_zero_of_hodgeStar_eq_self (hη : o.hodgeStar hkl η = �
   rw [hermitianForm_apply_self_eq hkl h₀ h₂ he, hη, hηω, sub_self, smul_zero, inner_zero_left]
   simp
 
-/-- The anti-self-dual part `F⁻ = (F - ⋆F) / 2` is anti-self-dual. -/
-private theorem hodgeStar_antiSelfDualPart (F : ⋀[ℝ]^2 V) :
-    o.hodgeStar hkl ((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) =
-      -((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) := by
-  rw [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even even_two hkl]
-  module
-
 include h₀ h₂ he in
 /-- **Lower bound for the Hermitian form**: for the complex orientation,
 `B(v, v) ≥ (c - ‖F⁻‖ / √2) ‖v‖²` with `c = ⟪F, ω⟫ / 2` and `F⁻ = (F - ⋆F) / 2`. -/
@@ -260,7 +239,7 @@ theorem le_hermitianForm_apply_self (F : ⋀[ℝ]^2 V) (v : V) :
     (⟪F, J.kahlerForm⟫ / 2 - ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2) * ‖v‖ ^ 2 ≤
       J.hermitianForm F v v := by
   have h := abs_inner_ιMulti_apply_le hkl (inner_apply_apply_of_orthonormalBasis h₀ h₂)
-    (Or.inr (hodgeStar_antiSelfDualPart (o := o) hkl F)) v
+    (Or.inr (o.hodgeStar_smul_sub_hodgeStar_of_even even_two hkl 2⁻¹ F)) v
   rw [hermitianForm_apply_self_eq hkl h₀ h₂ he]
   linarith [neg_abs_le ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J v]⟫]
 
@@ -271,7 +250,7 @@ theorem hermitianForm_apply_self_le (F : ⋀[ℝ]^2 V) (v : V) :
     J.hermitianForm F v v ≤
       (⟪F, J.kahlerForm⟫ / 2 + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2) * ‖v‖ ^ 2 := by
   have h := abs_inner_ιMulti_apply_le hkl (inner_apply_apply_of_orthonormalBasis h₀ h₂)
-    (Or.inr (hodgeStar_antiSelfDualPart (o := o) hkl F)) v
+    (Or.inr (o.hodgeStar_smul_sub_hodgeStar_of_even even_two hkl 2⁻¹ F)) v
   rw [hermitianForm_apply_self_eq hkl h₀ h₂ he]
   linarith [le_abs_self ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J v]⟫]
 
@@ -284,7 +263,7 @@ theorem isLeast_hermitianForm_apply_self (F : ⋀[ℝ]^2 V) :
       (⟪F, J.kahlerForm⟫ / 2 - ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2) := by
   refine ⟨?_, ?_⟩
   · obtain ⟨v, hv, hq⟩ := exists_inner_ιMulti_apply_eq_neg hkl h₀ h₂ he
-      (hodgeStar_antiSelfDualPart (o := o) hkl F)
+      (o.hodgeStar_smul_sub_hodgeStar_of_even even_two hkl 2⁻¹ F)
     refine ⟨v, mem_sphere_zero_iff_norm.2 hv, ?_⟩
     simp only
     rw [hermitianForm_apply_self_eq hkl h₀ h₂ he, hv, hq]
@@ -302,7 +281,7 @@ theorem isGreatest_hermitianForm_apply_self (F : ⋀[ℝ]^2 V) :
   refine ⟨?_, ?_⟩
   · have hneg : o.hodgeStar hkl (-((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F))) =
         -(-((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F))) := by
-      rw [map_neg, hodgeStar_antiSelfDualPart (o := o) hkl F]
+      rw [map_neg, o.hodgeStar_smul_sub_hodgeStar_of_even even_two hkl 2⁻¹ F]
     obtain ⟨v, hv, hq⟩ := exists_inner_ιMulti_apply_eq_neg hkl h₀ h₂ he hneg
     rw [inner_neg_left, norm_neg, neg_inj] at hq
     refine ⟨v, mem_sphere_zero_iff_norm.2 hv, ?_⟩

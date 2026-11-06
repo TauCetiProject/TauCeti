@@ -67,6 +67,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   two-forms are `J`-invariant, `D_J η = 0` and `⟪η, J u ∧ J w⟫ = ⟪η, u ∧ w⟫`; equivalently their
   contractions commute with `J` (`twoVectorContraction_apply_apply_of_hodgeStar_eq_neg`).
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
+  In particular the self-dual part of `v ∧ J v` is `‖v‖² ω / 2` (`ιMulti_apply_add_hodgeStar`).
 
 The supporting norm-preservation and four-frame construction lemmas live in
 `TauCeti.Geometry.Symplectic.Complex.InnerProductSpace` and
@@ -365,6 +366,20 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
     repr_apply h₀ h₂]
   ring
+
+include he h₀ h₂ in
+/-- The self-dual part of `v ∧ J v` is `‖v‖² ω / 2`: `v ∧ J v + ⋆(v ∧ J v) = ‖v‖² ω`. -/
+theorem ιMulti_apply_add_hodgeStar (v : V) :
+    ιMulti ℝ 2 ![v, J v] + o.hodgeStar hkl (ιMulti ℝ 2 ![v, J v]) =
+      (‖v‖ ^ 2) • J.kahlerForm := by
+  have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he v v
+  have hswap : ιMulti ℝ 2 ![J v, v] = -ιMulti ℝ 2 ![v, J v] := by
+    refine ext_inner_ιMulti_two fun u w ↦ ?_
+    rw [inner_neg_left, inner_ιMulti_two, inner_ιMulti_two]
+    ring
+  rw [hswap, sub_neg_eq_add, ← two_smul ℝ, map_smul, ← smul_add, real_inner_self_eq_norm_sq,
+    mul_smul] at h
+  exact smul_right_injective _ two_ne_zero h
 
 end Frame
 
