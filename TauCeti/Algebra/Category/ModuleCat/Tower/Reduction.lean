@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
-public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
 
 import TauCeti.RingTheory.AdicCompletion.Finite
