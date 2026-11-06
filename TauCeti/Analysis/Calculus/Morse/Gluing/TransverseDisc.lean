@@ -151,6 +151,26 @@ theorem exists_splitQuadraticFlow_splitExitTime_eq_graph {y₀ : Eᵤ}
     rw [splitQuadraticFlow_splitExitTime hε hz₀]
     exact hz
 
+omit [CompleteSpace F] in
+/-- The points `z` near `0` of a disc `ψ` through `(x₀, 0)` have a nonzero first component, and the
+rescaled second component `(‖(ψ z).fst‖ / ε) • (ψ z).snd` has norm at most `r₀ * ε`. -/
+private theorem eventually_splitEntryPoint_fst_ne_and_small {x₀ : Eₛ} {r₀ : ℝ}
+    (hψ : HasStrictFDerivAt ψ ψ' 0) (hψ₀ : ψ 0 = WithLp.toLp 2 (x₀, 0)) (hx₀ : ‖x₀‖ = ε)
+    (hε : 0 < ε) (hr₀ : 0 < r₀) :
+    (∀ᶠ z in 𝓝 (0 : F), (ψ z).fst ≠ 0) ∧
+      ∀ᶠ z in 𝓝 (0 : F), ‖(‖(ψ z).fst‖ / ε) • (ψ z).snd‖ ≤ r₀ * ε := by
+  refine ⟨?_, ?_⟩
+  · exact ((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).eventually_ne
+      (by simpa [hψ₀, ← norm_pos_iff, hx₀] using hε)
+  · have hcont : ContinuousAt (fun z ↦ (‖(ψ z).fst‖ / ε) • (ψ z).snd) 0 :=
+      ((((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).norm.div_const
+        ε).smul ((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt))
+    have h := hcont.tendsto
+    simp only [hψ₀] at h
+    simp at h
+    simpa [dist_zero_right] using
+      h.eventually (closedBall_mem_nhds 0 (by positivity : 0 < r₀ * ε))
+
 /-- **Gluing through transverse discs.** Let `ψ` be a disc through the broken entrance point
 `(x₀, 0)` transverse to the stable set, and `χ` a disc through the broken exit point `(0, y₀)`
 transverse to the unstable set, as in `TauCeti.exists_splitQuadraticFlow_splitEntryTime_eq_graph`
@@ -233,18 +253,7 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
       apply WithLp.ofLp_injective <;> ext <;> simp [hfst, hexit]
   · -- The entry points of orbits through `ψ z` approach `(x₀, 0)`, hence eventually lie in the
     -- part of the entrance graph used by the gluing pairs.
-    have hfst : ∀ᶠ z in 𝓝 (0 : F), (ψ z).fst ≠ 0 :=
-      ((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).eventually_ne
-        (by simpa [hψ₀, ← norm_pos_iff, hx₀] using hε)
-    have hcont : ContinuousAt (fun z ↦ (‖(ψ z).fst‖ / ε) • (ψ z).snd) 0 :=
-      ((((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).norm.div_const
-        ε).smul ((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt))
-    have hsmall : ∀ᶠ z in 𝓝 (0 : F), ‖(‖(ψ z).fst‖ / ε) • (ψ z).snd‖ ≤ r₀ * ε := by
-      have h := hcont.tendsto
-      simp only [hψ₀] at h
-      simp at h
-      simpa [dist_zero_right] using
-        h.eventually (closedBall_mem_nhds 0 (by positivity : 0 < r₀ * ε))
+    obtain ⟨hfst, hsmall⟩ := eventually_splitEntryPoint_fst_ne_and_small hψ hψ₀ hx₀ hε hr₀
     refine ((hgexh.and (hfst.and hsmall)).prod_nhds hkexh).mono ?_
     rintro ⟨z, z'⟩ ⟨⟨hzg, hz₀, hzs⟩, hz'k⟩ hne hpass
     have hflow := splitQuadraticFlow_splitEntryTime hε hz₀
