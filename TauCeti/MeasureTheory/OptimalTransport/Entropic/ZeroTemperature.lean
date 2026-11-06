@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.MeasurableSpace.Metric
 public import TauCeti.MeasureTheory.OptimalTransport.Compactness
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+public import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # The zero-temperature limit of entropic optimal transport
@@ -324,41 +325,6 @@ theorem tendsto_entropicTransportCost_transportCost_of_continuous [CompactSpace 
       (𝓝 (transportCost (fun z ↦ c z) μ ν)) :=
   tendsto_entropicTransportCost_transportCost_of_uniformContinuous isCompact_univ.totallyBounded
     isCompact_univ.totallyBounded (CompactSpace.uniformContinuous_of_continuous hc) μ ν
-
-omit [MeasurableSpace X] [OpensMeasurableSpace X] [MeasurableSpace Y] [OpensMeasurableSpace Y] in
-/-- The cost truncated at `M` on a rectangle `K ×ˢ L` and equal to `M` off it varies by at most `η`
-between points with the same labels. Here the labels `p` and `q` determine membership in `K` and
-`L`, points of `K` (resp. `L`) with the same label are `ρ`-close, and the cost varies by less than
-`η` between `ρ`-close points of the rectangle. -/
-private theorem truncated_cost_le_add_of_label_eq {ι κ : Type*} {K : Set X} {L : Set Y}
-    {p : X → ι} {q : Y → κ} {c : X × Y → ℝ≥0} {c' : X × Y → ℝ≥0∞} {M : ℝ≥0∞} {ρ : ℝ} {η : ℝ≥0}
-    [∀ z, Decidable (z ∈ K ×ˢ L)]
-    (hc' : ∀ z, c' z = if z ∈ K ×ˢ L then min (c z : ℝ≥0∞) M else M)
-    (hxK : ∀ x x', p x = p x' → (x ∈ K ↔ x' ∈ K)) (hyL : ∀ y y', q y = q y' → (y ∈ L ↔ y' ∈ L))
-    (hpρ : ∀ x ∈ K, ∀ x' ∈ K, p x = p x' → dist x x' < ρ)
-    (hqρ : ∀ y ∈ L, ∀ y' ∈ L, q y = q y' → dist y y' < ρ)
-    (hcρ : ∀ z ∈ K ×ˢ L, ∀ z' ∈ K ×ˢ L, dist z z' < ρ → dist (c z) (c z') < η) :
-    ∀ x x' y y', p x = p x' → q y = q y' → c' (x, y) ≤ c' (x', y') + η := by
-  intro x x' y y' hpx hqy
-  replace hxK := hxK x x' hpx
-  replace hyL := hyL y y' hqy
-  by_cases hxy : x ∈ K ∧ y ∈ L
-  · have hx' := hxK.1 hxy.1
-    have hy' := hyL.1 hxy.2
-    have hd : dist (x, y) (x', y') < ρ := by
-      rw [Prod.dist_eq]
-      exact max_lt (hpρ x hxy.1 x' hx' hpx) (hqρ y hxy.2 y' hy' hqy)
-    have hcd := hcρ (x, y) ⟨hxy.1, hxy.2⟩ (x', y') ⟨hx', hy'⟩ hd
-    rw [NNReal.dist_eq] at hcd
-    have h1 : (c (x, y) : ℝ≥0∞) ≤ c (x', y') + η := by
-      rw [← ENNReal.coe_add, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, NNReal.coe_add]
-      linarith [(abs_lt.1 hcd).2]
-    rw [hc', hc', ite_eq_left (mk_mem_prod hxy.1 hxy.2), ite_eq_left (mk_mem_prod hx' hy'),
-      ← min_add_add_right]
-    exact min_le_min h1 le_self_add
-  · have hxy' : ¬(x' ∈ K ∧ y' ∈ L) := by rwa [← hxK, ← hyL]
-    rw [hc', hc', ite_eq_right (by simpa using hxy), ite_eq_right (by simpa using hxy')]
-    exact le_self_add
 
 /-- The block approximation for a continuous cost truncated at a finite level `M`, with the
 partition taken fine only on a compact rectangle `K ×ˢ L`: the mass of the coupling off the
