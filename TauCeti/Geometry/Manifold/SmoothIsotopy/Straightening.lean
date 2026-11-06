@@ -134,6 +134,17 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ (3 + 4 * B) * ε := by rw [norm_one, mul_one]; exact hh'v
 
+/-- A `C¹` curve on `(-r, r)` has velocity within `ε` of its velocity `v` at `0` near `0`. -/
+private theorem exists_norm_deriv_sub_lt {f : ℝ → E} {r ε : ℝ} {v : E}
+    (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hr : 0 < r) (hf0 : deriv f 0 = v) (hε : 0 < ε) :
+    ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
+  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
+  have := (hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt
+    (hI.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩)
+  obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε
+  exact ⟨ρ, hρ, fun t ht => by
+    simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
+
 /-- **The spliced curves are uniformly regular.** If `k` and `l` are `C¹` near `0`, agree at `0`
 and have the same nonzero velocity `v` there, then on a fixed interval `[-ρ, ρ]` the velocity of
 every spliced curve, at every scale `δ` and weight `s ∈ [0, 1]`, has positive pairing with a fixed
@@ -158,16 +169,8 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
     rw [hε, mul_div_assoc', div_lt_iff₀ (by positivity)]
     nlinarith
   have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
-  have h0I : (0 : ℝ) ∈ Ioo (-r) r := ⟨neg_lt_zero.2 hr, hr⟩
-  -- The velocities of `k` and `l` stay within `ε` of `v` on a small interval about `0`.
-  have hcont (f : ℝ → E) (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hf0 : deriv f 0 = v) :
-      ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
-    have := ((hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt (hI.mem_nhds h0I))
-    obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε0
-    exact ⟨ρ, hρ, fun t ht => by
-      simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
-  obtain ⟨ρ₁, hρ₁, hk₁⟩ := hcont k hk rfl
-  obtain ⟨ρ₂, hρ₂, hl₁⟩ := hcont l hl hd.symm
+  obtain ⟨ρ₁, hρ₁, hk₁⟩ := exists_norm_deriv_sub_lt hk hr rfl hε0
+  obtain ⟨ρ₂, hρ₂, hl₁⟩ := exists_norm_deriv_sub_lt hl hr hd.symm hε0
   set ρ := min (min ρ₁ ρ₂) r / 2 with hρ
   have hρ0 : 0 < ρ := by positivity
   have hρr : ρ < r := by
@@ -289,18 +292,16 @@ private theorem contMDiff_spliceMap {G : ℝ → ℝ → E}
         (not_le.1 (mt mem_circleExp_image_Icc_neg_iff.2 hq')).le
     exact (K.contMDiff.comp contMDiff_snd).contMDiffAt.congr_of_eventuallyEq hev
 
-/-- **The spliced map is a smooth embedding**, provided the curve `g` is regular and injective on
-`(-ρ, ρ)`, and its stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
-private theorem isSmoothEmbedding_spliceMap [T2Space M]
-    (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
-    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The spliced map is injective, provided the curve `g` is injective on `(-ρ, ρ)` and its stretch
+over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
+private theorem injective_spliceMap
+    (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
     (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
     (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) (hinj : InjOn g (Ioo (-ρ) ρ))
-    (hderiv : ∀ t, |t| < ρ → deriv g t ≠ 0)
     (hfar : ∀ t, |t| < a → φ.symm (g t) ∉ K '' (Circle.centeredArc ρ)ᶜ)
-    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi)
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
-    IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g) := by
+    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi) :
+    Injective (spliceMap K φ ρ g) := by
   have hρπ := hρr.trans hrπ
   -- Two points of the arc `|arg z| < ρ` with the same image are equal.
   have hinner {z w : Circle} (hz : |arg z| < ρ) (hw : |arg w| < ρ)
@@ -319,15 +320,29 @@ private theorem isSmoothEmbedding_spliceMap [T2Space M]
       exact not_lt.2 hw ((Circle.mem_centeredArc hρπ).1 h)
     · rw [spliceMap_of_le_abs hgK hKφ hρr (not_lt.1 hza)] at hzw
       exact K.isEmbedding.injective hzw
-  have hinj' : Injective (spliceMap K φ ρ g) := by
-    intro z w hzw
-    by_cases hz : |arg z| < ρ <;> by_cases hw : |arg w| < ρ
-    · exact hinner hz hw hzw
-    · exact hmixed hz (not_lt.1 hw) hzw
-    · exact (hmixed hw (not_lt.1 hz) hzw.symm).symm
-    · rw [spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hz)),
-        spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hw))] at hzw
-      exact K.isEmbedding.injective hzw
+  intro z w hzw
+  by_cases hz : |arg z| < ρ <;> by_cases hw : |arg w| < ρ
+  · exact hinner hz hw hzw
+  · exact hmixed hz (not_lt.1 hw) hzw
+  · exact (hmixed hw (not_lt.1 hz) hzw.symm).symm
+  · rw [spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hz)),
+      spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hw))] at hzw
+    exact K.isEmbedding.injective hzw
+
+/-- **The spliced map is a smooth embedding**, provided the curve `g` is regular and injective on
+`(-ρ, ρ)`, and its stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
+private theorem isSmoothEmbedding_spliceMap [T2Space M]
+    (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
+    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+    (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
+    (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) (hinj : InjOn g (Ioo (-ρ) ρ))
+    (hderiv : ∀ t, |t| < ρ → deriv g t ≠ 0)
+    (hfar : ∀ t, |t| < a → φ.symm (g t) ∉ K '' (Circle.centeredArc ρ)ᶜ)
+    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi)
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
+    IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g) := by
+  have hinj' := injective_spliceMap hgφ hgK hKφ hinj hfar haρ hρr hrπ
+  have hρπ := hρr.trans hrπ
   refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun z => ?_,
     (hsmooth.continuous.isClosedEmbedding hinj').isEmbedding⟩
   by_cases hz : |arg z| < ρ
@@ -366,6 +381,32 @@ private theorem isSmoothEmbedding_spliceMap [T2Space M]
       exact spliceMap_of_le_abs hgK hKφ hρr (not_le.1 (mt mem_circleExp_image_Icc_neg_iff.2 hw)).le
     exact (K.isImmersion.isImmersionAt z).congr_of_eventuallyEq hev.symm
 
+/-- **The spliced map is a smooth embedding**, provided the curve `g` is regular and its velocity
+has positive pairing with a functional `ℓ` on `[-ρ, ρ]` (so `g` is injective there), and its
+stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
+private theorem isSmoothEmbedding_spliceMap_of_pos_deriv [T2Space M] (ℓ : StrongDual ℝ E)
+    (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
+    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+    (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
+    (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source)
+    (hpos : ∀ t ∈ Icc (-ρ) ρ, DifferentiableAt ℝ g t ∧ 0 < ℓ (deriv g t))
+    (hfar : ∀ t, |t| < a → φ.symm (g t) ∉ K '' (Circle.centeredArc ρ)ᶜ)
+    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi)
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
+    IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g) := by
+  have hmono : StrictMonoOn (ℓ ∘ g) (Icc (-ρ) ρ) := by
+    refine strictMonoOn_of_deriv_pos (convex_Icc _ _) (fun t ht => ?_) fun t ht => ?_
+    · exact (ℓ.continuous.continuousAt.comp (hpos t ht).1.continuousAt).continuousWithinAt
+    · have ht' := interior_subset ht
+      rw [(ℓ.hasFDerivAt.comp_hasDerivAt t (hpos t ht').1.hasDerivAt).deriv]
+      exact (hpos t ht').2
+  refine isSmoothEmbedding_spliceMap hsmooth hgC hgφ hgK hKφ (fun t ht t' ht' htt' => ?_)
+    (fun t ht h0 => ?_) hfar haρ hρr hrπ hφ
+  · exact hmono.injOn (Ioo_subset_Icc_self ht) (Ioo_subset_Icc_self ht') (congrArg ℓ htt')
+  · have := (hpos t (abs_le.1 ht.le)).2
+    rw [h0, map_zero] at this
+    exact lt_irrefl _ this
+
 end Motion
 
 /-! ### Straightening -/
@@ -381,6 +422,111 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 variable [T2Space M]
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [T2Space M] in
+/-- For continuous maps `K` and `L` of the circle which agree at `1`, with `K 1` in the domain of
+a chart `φ`, some arc `|arg z| < r` inside any neighbourhood `U` of `1` is mapped by both into
+the domain of `φ`. -/
+private theorem exists_centeredArc_subset_and_mem_source {K L : Circle → M} (hK : Continuous K)
+    (hL : Continuous L) (h₀ : K 1 = L 1) {φ : OpenPartialHomeomorph M E} (hpφ : K 1 ∈ φ.source)
+    {U : Set Circle} (hU : U ∈ 𝓝 1) :
+    ∃ r, 0 < r ∧ r ≤ Real.pi ∧ Circle.centeredArc r ⊆ U ∧
+      (∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) ∧
+      (∀ t, |t| < r → L (Circle.exp t) ∈ φ.source) := by
+  have hpre {f : Circle → M} (hf : Continuous f) (hf1 : f 1 ∈ φ.source) :
+      (fun t => f (Circle.exp t)) ⁻¹' φ.source ∈ 𝓝 0 :=
+    (hf.comp Circle.exp.continuous).continuousAt.preimage_mem_nhds
+      (φ.open_source.mem_nhds (by rwa [comp_apply, Circle.exp_zero]))
+  have hU' : Circle.exp ⁻¹' U ∈ 𝓝 0 :=
+    Circle.exp.continuous.continuousAt.preimage_mem_nhds (by rwa [Circle.exp_zero])
+  obtain ⟨r', hr', hball⟩ := Metric.mem_nhds_iff.1
+    (inter_mem hU' (inter_mem (hpre hK hpφ) (hpre hL (h₀ ▸ hpφ))))
+  have hmem {t : ℝ} (ht : |t| < min r' Real.pi) : t ∈ Metric.ball 0 r' := by
+    simpa [Real.dist_eq] using ht.trans_le (min_le_left _ _)
+  refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_,
+    fun t ht => (hball (hmem ht)).2.1, fun t ht => (hball (hmem ht)).2.2⟩
+  rintro _ ⟨t, ht, rfl⟩
+  exact (hball (hmem ht)).1
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- A smooth map of the circle, read in a chart along `Circle.exp` on an arc, is smooth. -/
+private theorem contDiffOn_chartAt_comp_circleExp {f : Circle → M} {r : ℝ} (p : M)
+    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ f)
+    (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ (chartAt E p).source) :
+    ContDiffOn ℝ ∞ (fun t => chartAt E p (f (Circle.exp t))) (Ioo (-r) r) :=
+  contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_chart (x := p)).comp
+    (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- If a smooth embedding `K` of the circle and a smooth map `L` agree to first order at `1`, then
+read in a chart at `K 1` along `Circle.exp` they have the same velocity at `0`, which is nonzero. -/
+private theorem deriv_chartAt_comp_circleExp_eq_and_ne_zero
+    (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) {L : Circle → M}
+    (hL : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ L) (h₀ : K 1 = L 1)
+    (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 = mfderiv (𝓡 1) 𝓘(ℝ, E) L 1) :
+    deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 =
+        deriv (fun t => chartAt E (K 1) (L (Circle.exp t))) 0 ∧
+      deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 ≠ 0 := by
+  have hφ : chartAt E (K 1) ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas _
+  have hpφ : K 1 ∈ (chartAt E (K 1)).source := mem_chart_source E _
+  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
+    (K.contMDiff.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero])
+  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
+    (hL.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero, ← h₀])
+  rw [Circle.exp_zero] at hvK hvL
+  rw [← h₁, ← h₀] at hvL
+  refine ⟨by simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm), fun h0 => ?_⟩
+  have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E (K 1)) (K 1)
+      (mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0 1)) = 0 := by
+    have h := (congrArg (fun T => T 1) hvK).symm
+    simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
+    exact h.trans h0
+  have hφi := (((chartAt E (K 1)).isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hpφ).isDiffImmersionAt
+    (by simp)).mfderiv_injective
+  have hKi := (K.isImmersion.isImmersionAt 1).mfderiv_injective (by simp)
+  exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp 0
+    ((hKi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
+      (map_zero _).symm))
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- For scales `δ` small enough, the spliced curves stay on the arc `|t| < 2 δ` inside the chart
+`φ` and over the point `K 1`, whose chart image is the common value of `k` and `l` at `0`, away
+from the image under `K` of the rest of the circle. -/
+private theorem exists_scale_splice_mem_target (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M)
+    {φ : OpenPartialHomeomorph M E} (hpφ : K 1 ∈ φ.source) {k l : ℝ → E} {r ρ : ℝ} (hr : 0 < r)
+    (hρ0 : 0 < ρ) (hρr : ρ < r) (hrπ : r ≤ Real.pi) (hkC : ContinuousOn k (Ioo (-r) r))
+    (hlC : ContinuousOn l (Ioo (-r) r)) (hk0 : k 0 = φ (K 1)) (hl0 : l 0 = φ (K 1)) :
+    ∃ δ, 0 < δ ∧ 2 * δ < ρ ∧ ∀ s ∈ Icc (0 : ℝ) 1, ∀ t, |t| < 2 * δ →
+      splice k l δ s t ∈ φ.target ∧ φ.symm (splice k l δ s t) ∉ K '' (Circle.centeredArc ρ)ᶜ := by
+  have hpC : K 1 ∉ K '' (Circle.centeredArc ρ)ᶜ := by
+    rintro ⟨z, hz, hKz⟩
+    obtain rfl : z = 1 := K.isEmbedding.injective hKz
+    exact hz ((Circle.mem_centeredArc (hρr.le.trans hrπ)).2 (by simpa using hρ0))
+  have hV : IsOpen (K '' (Circle.centeredArc ρ)ᶜ)ᶜ :=
+    (((Circle.isOpen_centeredArc ρ).isClosed_compl.isCompact).image
+      K.contMDiff.continuous).isClosed.isOpen_compl
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (φ.isOpen_inter_preimage_symm hV) (φ (K 1))
+    ⟨φ.map_source hpφ, by simpa [φ.left_inv hpφ] using hpC⟩
+  have hI0 : Ioo (-r) r ∈ 𝓝 (0 : ℝ) := isOpen_Ioo.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩
+  obtain ⟨δk, hδk, hk⟩ := Metric.continuousAt_iff.1 (hkC.continuousAt hI0) ε hε
+  obtain ⟨δl, hδl, hl⟩ := Metric.continuousAt_iff.1 (hlC.continuousAt hI0) ε hε
+  set δ := min (ρ / 4) (min δk δl / 2)
+  have hδ : 0 < δ := by positivity
+  have hδρ : 2 * δ < ρ := by linarith [min_le_left (ρ / 4) (min δk δl / 2)]
+  have hinball (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) (t : ℝ) (ht : |t| < 2 * δ) :
+      splice k l δ s t ∈ Metric.ball (φ (K 1)) ε := by
+    have ht' : |t| < min δk δl := by
+      linarith [min_le_right (ρ / 4) (min δk δl / 2)]
+    have htk : dist t 0 < δk := by
+      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_left _ _)
+    have htl : dist t 0 < δl := by
+      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_right _ _)
+    exact splice_mem (convex_ball _ _) δ hs (Metric.mem_ball.2 (by rw [← hk0]; exact hk htk))
+      (Metric.mem_ball.2 (by rw [← hl0]; exact hl htl))
+  refine ⟨δ, hδ, hδρ, fun s hs t ht => ?_⟩
+  exact hball (hinball s hs t ht)
+
 /-- Straightening at the base point `1` of the circle; the general statement is
 `TauCeti.SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq`. -/
 private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
@@ -393,121 +539,43 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
       ⇑K' =ᶠ[𝓝 1] L ∧ ∀ t z, z ∉ U → F (t, z) = K z := by
   set p := K 1 with hp
   set φ := chartAt E p
-  have hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M := IsManifold.chart_mem_maximalAtlas p
+  have hφ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, E)) (n := ∞) p
   have hpφ : p ∈ φ.source := mem_chart_source E p
   -- Step 1: an arc `|arg z| < r` inside `U`, along which `K` and `L` stay in the chart `φ`.
-  obtain ⟨r, hr, hrπ, hrU, hKφ, hLφ⟩ : ∃ r, 0 < r ∧ r ≤ Real.pi ∧ Circle.centeredArc r ⊆ U ∧
-      (∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) ∧
-      (∀ t, |t| < r → L (Circle.exp t) ∈ φ.source) := by
-    have hpre {f : Circle → M} (hf : Continuous f) (hf1 : f 1 ∈ φ.source) :
-        (fun t => f (Circle.exp t)) ⁻¹' φ.source ∈ 𝓝 0 :=
-      (hf.comp Circle.exp.continuous).continuousAt.preimage_mem_nhds
-        (φ.open_source.mem_nhds (by rwa [comp_apply, Circle.exp_zero]))
-    have hU' : Circle.exp ⁻¹' U ∈ 𝓝 0 :=
-      Circle.exp.continuous.continuousAt.preimage_mem_nhds (by rwa [Circle.exp_zero])
-    obtain ⟨r', hr', hball⟩ := Metric.mem_nhds_iff.1
-      (inter_mem hU' (inter_mem (hpre K.contMDiff.continuous hpφ) (hpre hL.continuous (h₀ ▸ hpφ))))
-    have hmem {t : ℝ} (ht : |t| < min r' Real.pi) : t ∈ Metric.ball 0 r' := by
-      simpa [Real.dist_eq] using ht.trans_le (min_le_left _ _)
-    refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_,
-      fun t ht => (hball (hmem ht)).2.1, fun t ht => (hball (hmem ht)).2.2⟩
-    rintro _ ⟨t, ht, rfl⟩
-    exact (hball (hmem ht)).1
+  obtain ⟨r, hr, hrπ, hrU, hKφ, hLφ⟩ := exists_centeredArc_subset_and_mem_source
+    K.contMDiff.continuous hL.continuous h₀ hpφ hU
   -- Step 2: `K` and `L` read in the chart along the circle have the same nonzero velocity at `0`.
   set k : ℝ → E := fun t => φ (K (Circle.exp t))
   set l : ℝ → E := fun t => φ (L (Circle.exp t))
-  have hC {f : Circle → M} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ f)
-      (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ φ.source) :
-      ContDiffOn ℝ ∞ (fun t => φ (f (Circle.exp t))) (Ioo (-r) r) :=
-    contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_chart (x := p)).comp
-      (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
-  have hkC := hC K.contMDiff hKφ
-  have hlC := hC hL hLφ
+  have hkC := contDiffOn_chartAt_comp_circleExp p K.contMDiff hKφ
+  have hlC := contDiffOn_chartAt_comp_circleExp p hL hLφ
   have hk0 : k 0 = φ p := by simp only [k, Circle.exp_zero, hp]
   have hl0 : l 0 = φ p := by simp only [l, Circle.exp_zero, ← h₀]
-  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (K.contMDiff.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero])
-  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (hL.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero, ← h₀])
-  rw [Circle.exp_zero] at hvK hvL
-  rw [← h₁, ← h₀] at hvL
-  have hd : deriv k 0 = deriv l 0 := by
-    simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm)
-  have hv : deriv k 0 ≠ 0 := by
-    intro h0
-    have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ p
-        (mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0 1)) = 0 := by
-      have h := (congrArg (fun T => T 1) hvK).symm
-      simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
-      exact h.trans h0
-    have hφi := ((φ.isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hpφ).isDiffImmersionAt
-      (by simp)).mfderiv_injective
-    have hKi := (K.isImmersion.isImmersionAt 1).mfderiv_injective (by simp)
-    exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp 0
-      ((hKi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
-        (map_zero _).symm))
+  obtain ⟨hd, hv⟩ := deriv_chartAt_comp_circleExp_eq_and_ne_zero K hL h₀ h₁
   -- Step 3: the spliced curves are regular on a fixed interval `[-ρ, ρ]`.
   obtain ⟨ℓ, ρ, hρ0, hρr, hpos⟩ := exists_pos_deriv_splice hr (hkC.of_le (by simp))
     (hlC.of_le (by simp)) (hk0.trans hl0.symm) hd hv
   -- Step 4: a ball in the chart about `φ p` whose points avoid `K` off the arc `|arg z| < ρ`, and
   -- a scale `δ` below which both curves stay in that ball.
-  have hpC : p ∉ K '' (Circle.centeredArc ρ)ᶜ := by
-    rintro ⟨z, hz, hKz⟩
-    obtain rfl : z = 1 := K.isEmbedding.injective hKz
-    exact hz ((Circle.mem_centeredArc (hρr.le.trans hrπ)).2 (by simpa using hρ0))
-  have hV : IsOpen (K '' (Circle.centeredArc ρ)ᶜ)ᶜ :=
-    (((Circle.isOpen_centeredArc ρ).isClosed_compl.isCompact).image
-      K.contMDiff.continuous).isClosed.isOpen_compl
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (φ.isOpen_inter_preimage_symm hV) (φ p)
-    ⟨φ.map_source hpφ, by simpa [φ.left_inv hpφ] using hpC⟩
-  have hI0 : Ioo (-r) r ∈ 𝓝 (0 : ℝ) := isOpen_Ioo.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩
-  obtain ⟨δk, hδk, hk⟩ := Metric.continuousAt_iff.1 (hkC.continuousOn.continuousAt hI0) ε hε
-  obtain ⟨δl, hδl, hl⟩ := Metric.continuousAt_iff.1 (hlC.continuousOn.continuousAt hI0) ε hε
-  set δ := min (ρ / 4) (min δk δl / 2)
-  have hδ : 0 < δ := by positivity
-  have hδρ : 2 * δ < ρ := by linarith [min_le_left (ρ / 4) (min δk δl / 2)]
-  have hinball (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) (t : ℝ) (ht : |t| < 2 * δ) :
-      splice k l δ s t ∈ Metric.ball (φ p) ε := by
-    have ht' : |t| < min δk δl := by
-      linarith [min_le_right (ρ / 4) (min δk δl / 2)]
-    have htk : dist t 0 < δk := by
-      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_left _ _)
-    have htl : dist t 0 < δl := by
-      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_right _ _)
-    exact splice_mem (convex_ball _ _) δ hs (Metric.mem_ball.2 (by rw [← hk0]; exact hk htk))
-      (Metric.mem_ball.2 (by rw [← hl0]; exact hl htl))
+  obtain ⟨δ, hδ, hδρ, hδb⟩ := exists_scale_splice_mem_target K hpφ hr hρ0 hρr hrπ
+    hkC.continuousOn hlC.continuousOn hk0 hl0
   -- Step 5: the spliced curves satisfy the hypotheses of the splicing lemmas.
   have hGK (s : ℝ) (t : ℝ) (ht : 2 * δ ≤ |t|) : splice k l δ s t = φ (K (Circle.exp t)) :=
     splice_of_le_abs hδ s ht
   have hGφ (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) (t : ℝ) (ht : |t| < ρ) :
       splice k l δ s t ∈ φ.target := by
     by_cases h2 : |t| < 2 * δ
-    · exact (hball (hinball s hs t h2)).1
-    · rw [hGK s t (not_lt.1 h2)]
-      exact φ.map_source (hKφ t (ht.trans hρr))
+    · exact (hδb s hs t h2).1
+    · exact (hGK s t (not_lt.1 h2)).symm ▸ φ.map_source (hKφ t (ht.trans hρr))
   have hjoint := contMDiff_spliceMap (K := K) (G := splice k l δ) (contDiffOn_splice hkC hlC δ)
     hGφ (fun s _ t ht _ => hGK s t ht) hKφ hδρ hρr.le hrπ hφ
   have hemb (s : unitInterval) : IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞
-      (spliceMap K φ ρ (splice k l δ s)) := by
-    have hgC : ContDiffOn ℝ ∞ (splice k l δ s) (Ioo (-r) r) :=
-      (contDiffOn_splice hkC hlC δ).comp (contDiffOn_const.prodMk contDiffOn_id)
-        fun t ht => ⟨mem_univ _, ht⟩
-    have hmono : StrictMonoOn (ℓ ∘ splice k l δ s) (Icc (-ρ) ρ) := by
-      refine strictMonoOn_of_deriv_pos (convex_Icc _ _) (fun t ht => ?_) fun t ht => ?_
-      · exact (ℓ.continuous.continuousAt.comp
-          (hpos δ hδ s s.2 t ht).1.continuousAt).continuousWithinAt
-      · have ht' := interior_subset ht
-        rw [(ℓ.hasFDerivAt.comp_hasDerivAt t (hpos δ hδ s s.2 t ht').1.hasDerivAt).deriv]
-        exact (hpos δ hδ s s.2 t ht').2
-    refine isSmoothEmbedding_spliceMap (r := r) (a := 2 * δ)
-      (hjoint.comp (contMDiff_const.prodMk contMDiff_id)) hgC (hGφ s s.2) (fun t ht _ => hGK s t ht)
-      hKφ (fun t ht t' ht' htt' => ?_) (fun t ht h0 => ?_)
-      (fun t ht => (hball (hinball s s.2 t ht)).2) hδρ hρr.le hrπ hφ
-    · exact hmono.injOn (Ioo_subset_Icc_self ht) (Ioo_subset_Icc_self ht')
-        (congrArg ℓ htt')
-    · have := (hpos δ hδ s s.2 t (abs_le.1 ht.le)).2
-      rw [h0, map_zero] at this
-      exact lt_irrefl _ this
+      (spliceMap K φ ρ (splice k l δ s)) :=
+    isSmoothEmbedding_spliceMap_of_pos_deriv (r := r) (a := 2 * δ) ℓ
+      (hjoint.comp (contMDiff_const.prodMk contMDiff_id))
+      ((contDiffOn_splice hkC hlC δ).comp (contDiffOn_const.prodMk contDiffOn_id)
+        fun t ht => ⟨mem_univ _, ht⟩) (hGφ s s.2) (fun t ht _ => hGK s t ht) hKφ
+      (hpos δ hδ s s.2) (fun t ht => (hδb s s.2 t ht).2) hδρ hρr.le hrπ hφ
   let K' := SmoothEmbedding.ofIsSmoothEmbedding _ (hemb 1)
   refine ⟨K', ⟨⟨_, hjoint⟩, fun z => ?_, fun z => ?_, hemb⟩, ?_, fun t z hz => ?_⟩
   · -- At time `0` the motion is `K`.
@@ -519,10 +587,9 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
     filter_upwards [(Circle.isOpen_centeredArc δ).mem_nhds
       ((Circle.mem_centeredArc (by linarith)).2 (by simpa using hδ))] with z hz
     have hz' := (Circle.mem_centeredArc (by linarith)).1 hz
-    have hzr : |arg z| < r := by linarith
     simp only [K', SmoothEmbedding.ofIsSmoothEmbedding_apply, Icc.coe_one]
     rw [spliceMap_of_abs_lt (by linarith), splice_one_of_abs_le hδ hz'.le,
-      φ.left_inv (hLφ _ hzr), Circle.exp_arg]
+      φ.left_inv (hLφ _ (by linarith)), Circle.exp_arg]
   · -- Off `U` the motion is stationary.
     have hzr : r ≤ |arg z| := not_lt.1 fun h => hz (hrU ((Circle.mem_centeredArc hrπ).2 h))
     exact spliceMap_of_le_abs (fun t' ht' _ => hGK t t' ht') hKφ hρr.le (by linarith)
