@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -41,7 +41,7 @@ perturbation parameter.
 The bound for an anti-self-dual form uses only that it is orthogonal to `ω`, and needs only an
 orthogonal `J`. The other statements take a positively oriented orthonormal basis `e` with
 `J e₀ = e₁` and `J e₂ = e₃` as a witness that the orientation is the complex one, as in
-`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler`. That the bound for anti-self-dual forms
+`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic`. That the bound for anti-self-dual forms
 is attained is an explicit computation in the coordinates of such a frame.
 
 ## Main results
