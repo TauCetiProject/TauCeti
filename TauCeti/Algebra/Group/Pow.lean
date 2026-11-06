@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Group.Basic
 import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Ring.Nat
+import Mathlib.Tactic.Ring
 
 /-!
 # Powers in monoids and groups
@@ -20,6 +22,9 @@ import Mathlib.Algebra.Group.Nat.Defs
   `a ^ i * b ^ j` multiply by adding their exponent vectors.
 * `TauCeti.eq_mul_zpow_sub_iff_mul_zpow_eq`: in a group, `a = b * h ^ (n - m)` if and only if
   `a * h ^ m = b * h ^ n`.
+* `TauCeti.add_eq_mod_add_carry`: for `n = m d`, the carry of `m p + m q` modulo `n` is the carry of
+  `p + q` modulo `d`.
+* `TauCeti.pow_mul_mul_pow_mul_eq`: the same carry read in the powers of an `n`-th root of `a`.
 -/
 
 public section
@@ -54,5 +59,38 @@ theorem mul_zpow_mul_mul_zpow {G : Type*} [CommGroup G] (a b : G) (i j k i' j' k
 theorem eq_mul_zpow_sub_iff_mul_zpow_eq {G : Type*} [Group G] {a b h : G} {m n : ℤ} :
     a = b * h ^ (n - m) ↔ a * h ^ m = b * h ^ n := by
   rw [zpow_sub, ← mul_assoc, eq_mul_inv_iff_mul_eq]
+
+/-- **Carries under scaling.** For `n = m d` with `m > 0` and `p, q < d`, the carry of
+`m p + m q` modulo `n` is the carry of `p + q` modulo `d`. -/
+theorem add_eq_mod_add_carry {m d n p q : ℕ} (hmd : m * d = n) (hm : 0 < m)
+    (hp : p < d) (hq : q < d) :
+    m * p + m * q = (m * p + m * q) % n + n * if d ≤ p + q then 1 else 0 := by
+  have hlt : m * p + m * q < 2 * n := calc
+    m * p + m * q = m * (p + q) := (mul_add _ _ _).symm
+    _ < m * (2 * d) := Nat.mul_lt_mul_of_pos_left (by omega) hm
+    _ = 2 * n := by rw [← hmd]; ring
+  have hle (h : d ≤ p + q) : n ≤ m * p + m * q := calc
+    n = m * d := hmd.symm
+    _ ≤ m * (p + q) := Nat.mul_le_mul_left m h
+    _ = m * p + m * q := mul_add _ _ _
+  have hlt' (h : p + q < d) : m * p + m * q < n := calc
+    m * p + m * q = m * (p + q) := (mul_add _ _ _).symm
+    _ < m * d := Nat.mul_lt_mul_of_pos_left h hm
+    _ = n := hmd
+  generalize m * p + m * q = X at *
+  split_ifs with h
+  · rw [Nat.mod_eq_sub_mod (hle h), Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [Nat.mod_eq_of_lt (hlt' (not_le.1 h))]
+    omega
+
+/-- **Carries under scaling, in a monoid.** If `α ^ n = a` and `n = m d`, then for `p, q < d` the
+product `α ^ (m p) * α ^ (m q)` is `α ^ ((m p + m q) % n)` times `a` when `p + q` carries
+modulo `d`. -/
+theorem pow_mul_mul_pow_mul_eq {α a : M} {n : ℕ} (hα : α ^ n = a) {m d p q : ℕ}
+    (hmd : m * d = n) (hm0 : 0 < m) (hp : p < d) (hq : q < d) :
+    α ^ (m * p) * α ^ (m * q) = α ^ ((m * p + m * q) % n) * if d ≤ p + q then a else 1 := by
+  rw [← pow_add, add_eq_mod_add_carry hmd hm0 hp hq, pow_add, pow_mul, hα]
+  split_ifs <;> simp
 
 end TauCeti
