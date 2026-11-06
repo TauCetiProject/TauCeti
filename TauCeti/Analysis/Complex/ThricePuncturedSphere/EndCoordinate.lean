@@ -483,6 +483,26 @@ theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} (hR : 0 ≤ R) :
     linarith
   · linarith
 
+/-- The truncation `S_R` lies in the closed annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)`. -/
+theorem truncation_subset_closedBall_diff_ball (R : ℝ) :
+    truncation R ⊆ Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+      Metric.ball 0 (Real.exp (-(2 * π * R)) / 2) :=
+  fun w hw => by
+    rw [truncation_eq] at hw
+    exact ⟨hw.2, fun h => (not_le.2 (mem_ball_zero_iff.1 h)) hw.1.1⟩
+
+/-- The points of the closed annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` outside the truncation
+`S_R` lie in the open disc of radius `exp (-2πR) / 2` about `1`. -/
+theorem closedBall_diff_ball_sdiff_truncation_subset_ball (R : ℝ) :
+    (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+        Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) \ truncation R ⊆
+      Metric.ball 1 (Real.exp (-(2 * π * R)) / 2) := by
+  rintro w ⟨⟨hwB, hwb⟩, hwT⟩
+  rw [Metric.mem_ball, dist_eq_norm]
+  by_contra! h
+  rw [truncation_eq] at hwT
+  exact hwT ⟨⟨not_lt.1 fun h' => hwb (mem_ball_zero_iff.2 h'), h⟩, hwB⟩
+
 /-- The truncation of the thrice-punctured sphere is compact. -/
 theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
   rw [truncation_eq]
