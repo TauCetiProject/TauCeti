@@ -66,10 +66,7 @@ def homeomorph : TotalSpace G P ≃ₜ B × G :=
 
 private theorem homeomorph_symm_apply_eq (x : B × G) :
     τ.homeomorph.symm x = τ.toOpenPartialHomeomorph.symm x := by
-  rw [homeomorph, Homeomorph.symm_trans_apply,
-    Trivialization.homeomorphTrivial_symm_apply,
-    Trivial.homeomorphProd_symm_apply_proj, Trivial.homeomorphProd_symm_apply_snd,
-    Prod.mk.eta, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm]
+  simp [homeomorph]
 
 private theorem nonempty_fibres (τ : GlobalTrivialization G P) : ∀ b, Nonempty (P b) := by
   intro b
@@ -139,6 +136,7 @@ theorem continuous_invFun :
   simpa only [← homeomorph_symm_apply] using τ.homeomorph.symm.continuous
 
 /-- Global coordinates intertwine the right action with right multiplication. -/
+@[simp]
 theorem equivAt_op_smul (b : B) (p : P b) (g : G) :
     τ.equivAt b (op g • p) = τ.equivAt b p * g :=
   τ.toTrivialization.snd_apply_smul (τ.mem_baseSet b) p g
@@ -265,7 +263,7 @@ def gauge (a : C(B, G)) : GlobalTrivialization G P :=
       ((a.continuous.comp τ.continuous_toFun.fst).mul τ.continuous_toFun.snd))
     (τ.continuous_invFun.comp
       (continuous_fst.prodMk ((a.continuous.comp continuous_fst).inv.mul continuous_snd)))
-    (fun b p g ↦ by simp [τ.equivAt_op_smul, mul_assoc])
+    (fun b p g ↦ by simp [mul_assoc])
 
 /-- A gauge multiplies the group coordinate on the left. -/
 @[simp]
@@ -300,20 +298,23 @@ theorem gauge_gauge (a c : C(B, G)) : (τ.gauge a).gauge c = τ.gauge (c * a) :=
 
 /-- The transition gauge from `τ` to `υ`, evaluated on the section of `τ`. -/
 def transition : C(B, G) :=
-  ⟨fun b ↦ τ.toTrivialization.coordChange υ.toTrivialization b 1, by
-    simpa only [Function.comp_def, id_eq, homeomorph_symm_apply_eq, homeomorph_apply,
-      equivAt_apply, TotalSpace.eta, Trivialization.coordChange] using
-      continuous_snd.comp (υ.homeomorph.continuous.comp
-        (τ.homeomorph.symm.continuous.comp
-          (continuous_id.prodMk (continuous_const (y := (1 : G))))))⟩
+  ⟨fun b ↦ υ.equivAt b (τ.sectionValue b),
+    (υ.continuous_toFun.comp τ.continuous_sectionValue).snd⟩
 
 omit [IsTopologicalGroup G] in
 /-- Evaluate the target coordinate on the section of the reference. -/
 @[simp]
-theorem transition_apply (b : B) : τ.transition υ b = υ.equivAt b (τ.sectionValue b) := by
-  have h := τ.homeomorph_symm_apply (b, 1)
-  rw [homeomorph_symm_apply_eq] at h
-  exact congrArg (fun p ↦ (υ.toTrivialization p).2) h
+theorem transition_apply (b : B) : τ.transition υ b = υ.equivAt b (τ.sectionValue b) :=
+  (rfl)
+
+omit [IsTopologicalGroup G] in
+/-- The transition gauge is the native coordinate change evaluated at the identity. -/
+theorem transition_eq_coordChange (b : B) :
+    τ.transition υ b = τ.toTrivialization.coordChange υ.toTrivialization b 1 := by
+  have h := τ.toTrivialization.mk_coordChange υ.toTrivialization
+    (τ.mem_baseSet b) (υ.mem_baseSet b) 1
+  rw [← homeomorph_symm_apply_eq, homeomorph_symm_apply] at h
+  simpa only [transition_apply, equivAt_apply, sectionValue] using (congrArg Prod.snd h).symm
 
 /-- A trivialization is recovered from a reference by its transition gauge. -/
 @[simp]
@@ -349,6 +350,7 @@ theorem gaugeEquiv_symm_apply : τ.gaugeEquiv.symm υ = τ.transition υ :=
 theorem transition_mul_transition (ρ : GlobalTrivialization G P) :
     υ.transition ρ * τ.transition υ = τ.transition ρ := by
   ext b
+  simp only [ContinuousMap.mul_apply, transition_eq_coordChange]
   exact (υ.toTrivialization.coordChange_eq_mul ρ.toTrivialization
     (υ.mem_baseSet b) (ρ.mem_baseSet b) _).symm.trans
     (τ.toTrivialization.coordChange_coordChange υ.toTrivialization ρ.toTrivialization
@@ -365,7 +367,7 @@ theorem transition_self : τ.transition τ = 1 := by
 theorem inv_transition : (τ.transition υ)⁻¹ = υ.transition τ := by
   rw [inv_eq_iff_mul_eq_one, transition_mul_transition, transition_self]
 
-/-- Continuous gauges act freely and transitively on global trivializations. -/
+/-- Continuous gauges act on global trivializations by left coordinate change. -/
 instance : MulAction C(B, G) (GlobalTrivialization G P) where
   smul a τ := τ.gauge a
   one_smul τ := τ.gauge_one
@@ -416,6 +418,7 @@ theorem transition_pullback :
     (τ.pullback f).transition (υ.pullback f) = (τ.transition υ).comp f := by
   let := τ.nonempty_fibres
   ext b
+  simp only [ContinuousMap.comp_apply, transition_eq_coordChange]
   exact τ.toTrivialization.coordChange_pullback υ.toTrivialization f (τ.mem_baseSet (f b)) 1
 
 variable [IsTopologicalGroup G]
