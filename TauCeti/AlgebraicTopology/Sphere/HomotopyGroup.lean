@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ReducedHomology
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
@@ -26,7 +27,13 @@ the homology of spheres, `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homoto
 the double Moore loop space of `S³` has first integral homology `ℤ`
 (`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`), and for `m ≥ 4` the double Moore loop
 space of `Sᵐ` has integral homology `ℤ` in degree `m - 2`
-(`TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`).
+(`TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`). In degree zero, `π₂(S²) ≅ ℤ` is
+nontrivial (`TauCeti.nontrivial_homotopyGroup_two_sphere`), so the double Moore loop space of `S²`
+has one path component for each integer, and its reduced zeroth homology is the coproduct of copies
+of the coefficients indexed by the nonzero integers
+(`TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`); with integer coefficients it contains
+an infinite cyclic subgroup
+(`TauCeti.MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere`).
 
 The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12. The sphere
 `Sⁿ` has a CW structure with one `0`-cell and one `n`-cell (`TauCeti.sphereCWComplex`), so its
@@ -46,6 +53,7 @@ basis, so its sign depends on the orientation of that basis.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
+* `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H̃₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`.
 
 ## References
 
@@ -59,7 +67,7 @@ public section
 
 noncomputable section
 
-open Metric Set Module CategoryTheory Topology.RelCWComplex
+open Metric Set Module CategoryTheory Limits Topology.RelCWComplex
 open scoped unitInterval Topology Topology.Homotopy
 
 namespace TauCeti
@@ -180,6 +188,51 @@ theorem MooreLoopSpace.doubleHomologySphereAddEquiv_apply
     doubleHomologySphereAddEquiv b x a =
       homotopyGroupSphereAddEquiv (n := n + 2) b x ((doubleHomologyAddEquiv x n hX).symm a) :=
   (rfl)
+
+/-- **`π₂(S²)` is nontrivial**, being isomorphic to `ℤ` by
+`TauCeti.homotopyGroupSphereAddEquiv`. -/
+theorem nontrivial_homotopyGroup_two_sphere (b : OrthonormalBasis (Fin 3) ℝ E)
+    (x : sphere (0 : E) 1) : Nontrivial (π_ 2 (sphere (0 : E) 1) x) :=
+  (Additive.ofMul.trans (homotopyGroupSphereAddEquiv (n := 0) b x).toEquiv).nontrivial
+
+/-- The path components of the double Moore loop space of `S²` are the integers, through
+`π₂(S²) ≅ ℤ`. -/
+private def MooreLoopSpace.zerothHomotopyDoubleSphereEquiv (b : OrthonormalBasis (Fin 3) ℝ E)
+    (x : sphere (0 : E) 1) :
+    ZerothHomotopy (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1) ≃ ℤ :=
+  (zerothHomotopyDoubleEquiv x).trans
+    (Additive.ofMul.trans (homotopyGroupSphereAddEquiv (n := 0) b x).toEquiv)
+
+private theorem MooreLoopSpace.zerothHomotopyDoubleSphereEquiv_mk_one
+    (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1) :
+    zerothHomotopyDoubleSphereEquiv b x (.mk 1) = 0 := by
+  simp [zerothHomotopyDoubleSphereEquiv]
+
+/-- **Reduced zeroth homology of the double loop space of `S²`.** For the unit sphere `S²` of a
+real inner product space with an orthonormal basis `b` indexed by `Fin 3`, the reduced zeroth
+homology `H̃₀(ΩᴹΩᴹS²; R)` is the coproduct of copies of `R` indexed by the nonzero integers: the
+path components of `ΩᴹΩᴹS²` are the elements of `π₂(S²) ≅ ℤ`
+(`TauCeti.homotopyGroupSphereAddEquiv`). -/
+def MooreLoopSpace.doubleReducedHomology₀SphereIso {C : Type*} [Category C]
+    [HasCoproducts.{0} C] [Preadditive C] [CategoryWithHomology C] [HasKernels C] (R : C)
+    (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1) :
+    (reducedSingularHomologyFunctor R 0).obj
+        (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) ≅
+      ∐ fun _ : {k : ℤ // k ≠ 0} ↦ R :=
+  reducedSingularHomology₀IsoOfEquiv R
+    (Y := TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) 1
+    (zerothHomotopyDoubleSphereEquiv b x) (zerothHomotopyDoubleSphereEquiv_mk_one b x)
+
+/-- **The reduced zeroth homology of `ΩᴹΩᴹS²` contains `ℤ`.** For the unit sphere `S²` of a real
+inner product space of dimension three, the kernel of the augmentation
+`H₀(ΩᴹΩᴹS²; ℤ) → H₀(pt; ℤ)` contains an infinite cyclic subgroup. -/
+theorem MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere
+    (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1) :
+    ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
+        (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)),
+      Function.Injective f :=
+  have := nontrivial_homotopyGroup_two_sphere b x
+  exists_injective_doubleReducedHomology₀ x
 
 end Hurewicz
 
