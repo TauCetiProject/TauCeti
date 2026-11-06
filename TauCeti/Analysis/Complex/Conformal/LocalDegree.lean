@@ -106,7 +106,7 @@ theorem localDegree {f : ℂ → ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     have he : (f z - f z₀) - (f z - w) = w - f z₀ := by ring
     rw [he]
     exact lt_of_lt_of_le hw (hδle z hz)
-  refine (rouche hr hA0 hAw hs).symm.trans
+  refine (rouche hA0 hAw hs).symm.trans
     (count_eq_single hA0 (mem_ball_self hr) (fun z hz hzn => ?_))
   exact sub_ne_zero.mpr (hisol z (ball_subset_closedBall hz) hzn)
 
