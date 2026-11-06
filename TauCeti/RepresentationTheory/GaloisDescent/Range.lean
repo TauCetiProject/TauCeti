@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RingTheory.TensorProduct.Basic
-import Mathlib.RingTheory.Trace.Basic
+import TauCeti.FieldTheory.Galois.Trace
 
 /-!
 # Recognizing the invariant vectors by scalar extension
@@ -53,10 +53,8 @@ theorem range_eq_invariants_of_liftBaseChange_surjective
   have hnorm (b : L) {v : V} (hv : v ∈ ρ.invariants) :
       ρ.norm (b • v) = Algebra.trace k L b • v := by
     simp only [Representation.norm, LinearMap.sum_apply, hsemi, (ρ.mem_invariants v).mp hv]
-    rw [← Finset.sum_smul, ← IsScalarTower.algebraMap_smul L (Algebra.trace k L b),
-      trace_eq_sum_automorphisms]
-    congr 1
-    exact Fintype.sum_equiv (IsGaloisGroup.mulEquivAlgEquiv G k L).toEquiv _ _ fun _ ↦ rfl
+    rw [← Finset.sum_smul, ← IsGaloisGroup.algebraMap_trace_eq_sum G k,
+      IsScalarTower.algebraMap_smul]
   have hfw (w : W) : f w ∈ ρ.invariants := (ρ.mem_invariants _).mpr (hinv · w)
   refine le_antisymm (by rintro _ ⟨w, rfl⟩; exact hfw w) fun v hv ↦ ?_
   obtain ⟨a, ha⟩ := Algebra.trace_surjective k L 1
