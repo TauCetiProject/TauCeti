@@ -104,22 +104,32 @@ theorem isDFinite_def {f : K⟦X⟧} :
       ∑ i, p i • (d⁄dX)^[i] f = 0 :=
   Iff.rfl
 
-/-- Any nontrivial `k[X]`-linear relation among the first derivatives of `f` yields a
-differential equation with nonzero leading coefficient. -/
-private theorem isDFinite_of_sum_eq_zero {f : K⟦X⟧} {N : ℕ} {c : Fin (N + 1) → k[X]}
-    (hc : c ≠ 0) (h : ∑ i, c i • (d⁄dX)^[i] f = 0) : IsDFinite k f := by
+/-- If a property of families `Fin (N + 1) → M` survives dropping a vanishing last entry, then a
+nonzero family with the property can be shortened to one with nonzero last entry. -/
+private theorem exists_last_ne_zero_of_ne_zero {M : Type*} [Zero M]
+    {P : ∀ N : ℕ, (Fin (N + 1) → M) → Prop}
+    (hP : ∀ N c, c (Fin.last (N + 1)) = 0 → P (N + 1) c → P N fun i ↦ c i.castSucc)
+    {N : ℕ} {c : Fin (N + 1) → M} (hc : c ≠ 0) (h : P N c) :
+    ∃ (N : ℕ) (c : Fin (N + 1) → M), c (Fin.last N) ≠ 0 ∧ P N c := by
   induction N with
   | zero =>
     refine ⟨0, c, fun h0 ↦ hc (funext fun i ↦ ?_), h⟩
     rwa [Fin.fin_one_eq_zero i]
   | succ N ih =>
     by_cases hlast : c (Fin.last (N + 1)) = 0
-    · refine ih (c := fun i ↦ c i.castSucc) (fun h0 ↦ hc (funext fun i ↦ ?_)) ?_
-      · induction i using Fin.lastCases with
-        | last => exact hlast
-        | cast j => exact congrFun h0 j
-      · simpa [Fin.sum_univ_castSucc, hlast] using h
+    · refine ih (c := fun i ↦ c i.castSucc) (fun h0 ↦ hc (funext fun i ↦ ?_)) (hP N c hlast h)
+      induction i using Fin.lastCases with
+      | last => exact hlast
+      | cast j => exact congrFun h0 j
     · exact ⟨N + 1, c, hlast, h⟩
+
+/-- Any nontrivial `k[X]`-linear relation among the first derivatives of `f` yields a
+differential equation with nonzero leading coefficient. -/
+private theorem isDFinite_of_sum_eq_zero {f : K⟦X⟧} {N : ℕ} {c : Fin (N + 1) → k[X]}
+    (hc : c ≠ 0) (h : ∑ i, c i • (d⁄dX)^[i] f = 0) : IsDFinite k f :=
+  exists_last_ne_zero_of_ne_zero (P := fun N (c : Fin (N + 1) → k[X]) ↦
+    ∑ i, c i • (d⁄dX)^[i] f = 0)
+    (fun _ _ hlast h ↦ by simpa [Fin.sum_univ_castSucc, hlast] using h) hc h
 
 /-- A power series is D-finite over `k` exactly when its derivatives are linearly dependent over
 `k[X]`. -/
@@ -483,8 +493,7 @@ private theorem isDFinite_of_recurrence {r : ℕ} {q : Fin (r + 1) → k[X]}
           (G t - (Polynomial.C (c t) * Polynomial.X ^ e) • (d⁄dX)^[e] f) := by
       rw [Finset.sum_smul, ← Finset.sum_sub_distrib]
       refine Finset.sum_congr rfl fun t _ ↦ ?_
-      rw [smul_sub, smul_smul, pow_add]
-      ring_nf
+      rw [smul_sub, smul_smul, pow_add, mul_left_comm]
     rw [hsum]
     exact Submodule.sum_mem _ fun t _ ↦ Submodule.smul_mem _ _ (hGmem t)
   · exact iterate_derivative_sum_X_pow_smul_eq_zero h hG
@@ -502,10 +511,8 @@ private theorem coeff_add_smul_iterate_derivative (f : K⟦X⟧) {p : k[X]} {d :
   rw [mul_smul (Polynomial.C _), polynomial_C_smul, polynomial_X_pow_smul, coeff_smul,
     coeff_X_pow_mul']
   simp only [show (j : ℕ) ≤ N + d by omega, ↓reduceIte]
-  rw [coeff_iterate_derivative, show N + d - j + i = N + (d - j + i) by omega,
-    show N + d - j + 1 = N + (d - j) + 1 by omega, ← Nat.add_descFactorial_eq_ascFactorial,
-    show N + (d - j) + i = N + (d - j + i) by omega, mul_smul,
-    Algebra.smul_def (A := K) ((N + (d - j + i)).descFactorial i : k), map_natCast]
+  rw [coeff_iterate_derivative_eq_descFactorial, show N + d - j + i = N + (d - j + i) by omega,
+    mul_smul, Algebra.smul_def (A := K) ((N + (d - j + i)).descFactorial i : k), map_natCast]
 
 /-- In a differential equation `∑ i ≤ n, pᵢ • f⁽ⁱ⁾ = 0` whose coefficients have degree at most `d`,
 the term `pᵢⱼ Xʲ f⁽ⁱ⁾` contributes to the coefficient recurrence at the shift `d - j + i`. -/
@@ -570,9 +577,7 @@ private theorem sum_eval_recurrencePoly_smul {n d : ℕ} {p : Fin (n + 1) → k[
         rw [recurrencePoly, Polynomial.eval_finsetSum, Finset.sum_smul]
         refine Finset.sum_congr rfl fun x hx ↦ ?_
         rw [(Finset.mem_filter.mp hx).2, Polynomial.eval_mul, Polynomial.eval_C,
-          Polynomial.taylor_eval, ← descPochhammer_eval_eq_descFactorial]
-        push_cast
-        rfl
+          Polynomial.taylor_eval, ← descPochhammer_eval_eq_descFactorial, Nat.cast_add]
     _ = ∑ x : Fin (n + 1) × Fin (d + 1), ((p x.1).coeff x.2 *
           ((N + recurrenceShift n d x : ℕ).descFactorial x.1 : k)) •
             coeff (N + recurrenceShift n d x) f :=
@@ -594,24 +599,6 @@ private theorem exists_recurrence_of_isDFinite (hf : IsDFinite k f) :
   refine ⟨_, recurrencePoly p _, recurrencePoly_ne_zero hp (hle _), fun N ↦ ?_⟩
   rw [sum_eval_recurrencePoly_smul hle, h, map_zero]
 
-/-- A nontrivial polynomial recurrence can be shortened to one with nonzero leading coefficient. -/
-private theorem exists_recurrence_last_ne_zero {r : ℕ} {q : Fin (r + 1) → k[X]} (hq : q ≠ 0)
-    (h : ∀ n : ℕ, ∑ i, (q i).eval (n : k) • coeff (n + i) f = 0) :
-    ∃ (r : ℕ) (q : Fin (r + 1) → k[X]), q (Fin.last r) ≠ 0 ∧
-      ∀ n : ℕ, ∑ i, (q i).eval (n : k) • coeff (n + i) f = 0 := by
-  induction r with
-  | zero =>
-    refine ⟨0, q, fun h0 ↦ hq (funext fun i ↦ ?_), h⟩
-    rwa [Fin.fin_one_eq_zero i]
-  | succ r ih =>
-    by_cases hlast : q (Fin.last (r + 1)) = 0
-    · refine ih (q := fun i ↦ q i.castSucc) (fun h0 ↦ hq (funext fun i ↦ ?_)) fun n ↦ ?_
-      · induction i using Fin.lastCases with
-        | last => exact hlast
-        | cast j => exact congrFun h0 j
-      · simpa [Fin.sum_univ_castSucc, hlast] using h n
-    · exact ⟨r + 1, q, hlast, h⟩
-
 /-- **D-finite series are P-recursive.** A power series `f = ∑ aₙ Xⁿ` is D-finite over `k` exactly
 when its coefficients satisfy a linear recurrence `∑ i ≤ r, qᵢ(n) aₙ₊ᵢ = 0` for every `n`, with
 polynomial coefficients `qᵢ ∈ k[X]` and nonzero leading coefficient `q_r`. -/
@@ -620,7 +607,10 @@ theorem isDFinite_iff_pRecursive :
       ∀ n : ℕ, ∑ i, (q i).eval (n : k) • coeff (n + i) f = 0 := by
   refine ⟨fun hf ↦ ?_, fun ⟨_, _, hq, h⟩ ↦ isDFinite_of_recurrence hq h⟩
   obtain ⟨r, q, hq, h⟩ := exists_recurrence_of_isDFinite hf
-  exact exists_recurrence_last_ne_zero hq h
+  -- A nontrivial recurrence can be shortened to one with nonzero leading coefficient.
+  exact exists_last_ne_zero_of_ne_zero (P := fun r (q : Fin (r + 1) → k[X]) ↦
+    ∀ n : ℕ, ∑ i, (q i).eval (n : k) • coeff (n + i) f = 0)
+    (fun _ _ hlast h n ↦ by simpa [Fin.sum_univ_castSucc, hlast] using h n) hq h
 
 end Recurrence
 
@@ -630,7 +620,10 @@ satisfy the recurrence `aₙ₊₁ - a aₙ = 0`. -/
 @[simp]
 theorem isDFinite_mk_pow (a : k) : IsDFinite k (mk fun n ↦ algebraMap k K a ^ n) :=
   isDFinite_iff_pRecursive.mpr ⟨1, ![Polynomial.C (-a), 1], by simp, fun n ↦ by
-    simp [Fin.sum_univ_two, pow_succ, Algebra.smul_def]
+    simp only [Nat.reduceAdd, map_neg, coeff_mk, Algebra.smul_def, Fin.sum_univ_two, Fin.isValue,
+      Matrix.cons_val_zero, Polynomial.eval_neg, Polynomial.eval_C, Fin.coe_ofNat_eq_mod,
+      Nat.zero_mod, add_zero, neg_mul, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+      Polynomial.eval_one, map_one, Nat.mod_succ, pow_succ, one_mul]
     ring⟩
 
 end PowerSeries

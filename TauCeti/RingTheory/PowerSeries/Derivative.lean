@@ -48,6 +48,8 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
   polynomials.
+* `PowerSeries.coeff_iterate_derivative_eq_descFactorial`: the `M`-th coefficient of `f⁽ⁱ⁾` is
+  `(M + i) (M + i - 1) ⋯ (M + 1)` times the `(M + i)`-th coefficient of `f`.
 * `PowerSeries.coeff_X_pow_mul_iterate_derivative`: `Xⁱ f⁽ⁱ⁾` has `M`-th coefficient
   `M (M - 1) ⋯ (M - i + 1)` times that of `f`.
 * `PowerSeries.derivative_algebraMap_polynomial`, `PowerSeries.derivative_polynomial_smul`: the
@@ -95,14 +97,19 @@ theorem iterate_derivative_coe (p : Polynomial R) (m : ℕ) :
   | succ m ih => rw [Function.iterate_succ_apply', ih, derivative_coe,
       Function.iterate_succ_apply']
 
+/-- The `M`-th coefficient of the `i`-th derivative is the falling factorial
+`(M + i) (M + i - 1) ⋯ (M + 1)` times the `(M + i)`-th coefficient. -/
+theorem coeff_iterate_derivative_eq_descFactorial (f : R⟦X⟧) (i M : ℕ) :
+    coeff M ((d⁄dX)^[i] f) = (M + i).descFactorial i * coeff (M + i) f := by
+  rw [coeff_iterate_derivative, Nat.add_descFactorial_eq_ascFactorial]
+
 /-- Multiplying the `i`-th derivative by `Xⁱ` multiplies the `M`-th coefficient by the falling
 factorial `M (M - 1) ⋯ (M - i + 1)`. -/
 theorem coeff_X_pow_mul_iterate_derivative (f : R⟦X⟧) (i M : ℕ) :
     coeff M (X ^ i * (d⁄dX)^[i] f) = M.descFactorial i * coeff M f := by
   rw [coeff_X_pow_mul']
   split_ifs with h
-  · rw [coeff_iterate_derivative, Nat.sub_add_cancel h, ← Nat.add_descFactorial_eq_ascFactorial,
-      Nat.sub_add_cancel h]
+  · rw [coeff_iterate_derivative_eq_descFactorial, Nat.sub_add_cancel h]
   · rw [Nat.descFactorial_eq_zero_iff_lt.mpr (not_le.mp h), Nat.cast_zero, zero_mul]
 
 /-- The shifted coefficient identity when `n + 1` can be cancelled. -/
