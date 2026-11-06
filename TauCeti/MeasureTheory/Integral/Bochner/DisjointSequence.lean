@@ -75,6 +75,101 @@ theorem tendsto_setIntegral_iUnion_ge_of_pairwise_disjoint {g : α → E} (hg : 
   have hlim := tendsto_setIntegral_of_antitone (μ := μ) (f := g)
     (fun M ↦ .iUnion fun m ↦ .iUnion fun _ ↦ hBm m) hanti ⟨0, hg.integrableOn⟩
   rwa [hinter, Measure.restrict_empty, integral_zero_measure] at hlim
+/-- If `H`, `S` and `T` are disjoint, with `S` and `T` measurable, then the integral of `f` over `S`
+is bounded by its integrals over `H ∪ (S ∪ T)`, `H` and `T`. -/
+theorem norm_setIntegral_le_add_of_disjoint {f : α → E} (hf : Integrable f μ) {H S T : Set α}
+    (hS : MeasurableSet S) (hT : MeasurableSet T) (hHST : Disjoint H (S ∪ T))
+    (hST : Disjoint S T) :
+    ‖∫ x in S, f x ∂μ‖ ≤
+      ‖∫ x in H ∪ (S ∪ T), f x ∂μ‖ + ‖∫ x in H, f x ∂μ‖ + ‖∫ x in T, f x ∂μ‖ := by
+  rw [setIntegral_union hHST (hS.union hT) hf.integrableOn hf.integrableOn,
+    setIntegral_union hST hT hf.integrableOn hf.integrableOn]
+  set a := ∫ x in H, f x ∂μ
+  set b := ∫ x in S, f x ∂μ
+  set c := ∫ x in T, f x ∂μ
+  calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
+    _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
+    _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
+
+/-- For a strictly monotone `σ` and pairwise disjoint sets `B`, the union `⋃ j, B (σ j)` splits
+into the earlier sets, the `k`-th set and the later sets, and these three pieces are disjoint. -/
+private theorem iUnion_comp_eq_union_of_pairwise_disjoint {B : ℕ → Set α}
+    (hB : Pairwise (Disjoint on B)) {σ : ℕ → ℕ} (hσ : StrictMono σ) (k : ℕ) :
+    ⋃ j, B (σ j) = (⋃ i ∈ Finset.range k, B (σ i)) ∪ (B (σ k) ∪ ⋃ i, ⋃ (_ : k < i), B (σ i)) ∧
+    Disjoint (⋃ i ∈ Finset.range k, B (σ i)) (B (σ k) ∪ ⋃ i, ⋃ (_ : k < i), B (σ i)) ∧
+    Disjoint (B (σ k)) (⋃ i, ⋃ (_ : k < i), B (σ i)) := by
+  have hdisj (i i' : ℕ) (hii' : i ≠ i') : Disjoint (B (σ i)) (B (σ i')) :=
+    hB (hσ.injective.ne hii')
+  refine ⟨?_, ?_, ?_⟩
+  · ext x
+    simp only [mem_union, mem_iUnion, Finset.mem_range, exists_prop]
+    constructor
+    · rintro ⟨i, hi⟩
+      rcases lt_trichotomy i k with hik | rfl | hik
+      · exact Or.inl ⟨i, hik, hi⟩
+      · exact Or.inr (Or.inl hi)
+      · exact Or.inr (Or.inr ⟨i, hik, hi⟩)
+    · rintro (⟨i, -, hi⟩ | hi | ⟨i, -, hi⟩)
+      exacts [⟨i, hi⟩, ⟨k, hi⟩, ⟨i, hi⟩]
+  · simp only [disjoint_union_right, disjoint_iUnion_left, disjoint_iUnion_right,
+      Finset.mem_range]
+    exact ⟨fun i hi ↦ hdisj i k hi.ne, fun i hi i' hi' ↦ hdisj i' i (by omega)⟩
+  · simp only [disjoint_iUnion_right]
+    exact fun i hi ↦ hdisj k i hi.ne
+
+/-- The step of the gliding hump argument: if the integrals of `h n` over each fixed measurable set
+tend to zero and `‖∫ x in B n, h n x ∂μ‖ ≥ ε` for infinitely many `n`, then for any `N` and `K`
+there is an `n ≥ K` with a large integral over `B n` and small integrals over all unions of the
+first `N` sets. -/
+private theorem exists_large_integral_small_unions {h : ℕ → α → E}
+    (hlim : ∀ s, MeasurableSet s → Tendsto (fun n ↦ ∫ x in s, h n x ∂μ) atTop (𝓝 0))
+    {B : ℕ → Set α} (hBm : ∀ n, MeasurableSet (B n)) {ε : ℝ} (hε : 0 < ε)
+    (hfreq : ∃ᶠ n in atTop, ε ≤ ‖∫ x in B n, h n x ∂μ‖) (N K : ℕ) :
+    ∃ n, K ≤ n ∧ ε ≤ ‖∫ x in B n, h n x ∂μ‖ ∧
+      ∀ F ⊆ Finset.range N, ‖∫ x in ⋃ m ∈ F, B m, h n x ∂μ‖ < ε / 3 := by
+  have hev : ∀ᶠ n in atTop, ∀ F ∈ (Finset.range N).powerset,
+      ‖∫ x in ⋃ m ∈ F, B m, h n x ∂μ‖ < ε / 3 := by
+    rw [eventually_all_finset]
+    intro F _
+    have hF := (hlim _ (Finset.measurableSet_biUnion F fun m _ ↦ hBm m)).norm
+    rw [norm_zero] at hF
+    exact hF.eventually (gt_mem_nhds (by positivity))
+  obtain ⟨n, hn, hev, hK⟩ := (hfreq.and_eventually (hev.and (eventually_ge_atTop K))).exists
+  exact ⟨n, hK, hn, fun F hF ↦ hev F (Finset.mem_powerset.2 hF)⟩
+
+/-- The estimate of the gliding hump argument: if `f` has a large integral over `B (σ k)`, small
+integrals over unions of the sets `B m` with `m < N`, and small integral of `‖f‖` over the later
+sets, then its integral over `⋃ j, B (σ j)` is not small. -/
+private theorem lt_norm_setIntegral_iUnion_comp {f : α → E} (hf : Integrable f μ) {B : ℕ → Set α}
+    (hBm : ∀ n, MeasurableSet (B n)) (hB : Pairwise (Disjoint on B)) {σ : ℕ → ℕ}
+    (hσ : StrictMono σ) {ε : ℝ} {k N L : ℕ}
+    (hhead : ∀ F ⊆ Finset.range N, ‖∫ x in ⋃ m ∈ F, B m, f x ∂μ‖ < ε / 3)
+    (hN : ∀ i < k, σ i < N) (hbig : ε ≤ ‖∫ x in B (σ k), f x ∂μ‖)
+    (htail : ∫ x in ⋃ m ≥ L, B m, ‖f x‖ ∂μ < ε / 3) (hL : ∀ i, k < i → L ≤ σ i) :
+    ε / 3 < ‖∫ x in ⋃ j, B (σ j), f x ∂μ‖ := by
+  obtain ⟨hDeq, hd₁, hd₂⟩ := iUnion_comp_eq_union_of_pairwise_disjoint hB hσ k
+  have hT'm : MeasurableSet (⋃ i, ⋃ (_ : k < i), B (σ i)) :=
+    .iUnion fun i ↦ .iUnion fun _ ↦ hBm _
+  have hHb : ‖∫ x in ⋃ i ∈ Finset.range k, B (σ i), f x ∂μ‖ < ε / 3 := by
+    have hsub : (Finset.range k).image σ ⊆ Finset.range N := fun m hm ↦ by
+      obtain ⟨i, hi, rfl⟩ := Finset.mem_image.1 hm
+      exact Finset.mem_range.2 (hN i (Finset.mem_range.1 hi))
+    have hhead' := hhead _ hsub
+    rwa [Finset.set_biUnion_finset_image] at hhead'
+  have hT'b : ‖∫ x in ⋃ i, ⋃ (_ : k < i), B (σ i), f x ∂μ‖ < ε / 3 := by
+    have hsub : (⋃ i, ⋃ (_ : k < i), B (σ i)) ⊆ ⋃ m ≥ L, B m := by
+      simp only [iUnion_subset_iff]
+      intro i hi
+      exact subset_iUnion₂_of_subset (σ i) (hL i hi) subset_rfl
+    calc ‖∫ x in ⋃ i, ⋃ (_ : k < i), B (σ i), f x ∂μ‖
+        ≤ ∫ x in ⋃ i, ⋃ (_ : k < i), B (σ i), ‖f x‖ ∂μ := norm_integral_le_integral_norm _
+      _ ≤ ∫ x in ⋃ m ≥ L, B m, ‖f x‖ ∂μ :=
+        setIntegral_mono_set hf.norm.integrableOn (Eventually.of_forall fun _ ↦ norm_nonneg _)
+          (Eventually.of_forall hsub)
+      _ < ε / 3 := htail
+  have hsplit := norm_setIntegral_le_add_of_disjoint hf (hBm (σ k)) hT'm hd₁ hd₂
+  rw [← hDeq] at hsplit
+  linarith
 
 /-- If the integrals of `h n` over every fixed measurable set tend to zero, then so do the
 integrals of `h n` over the `n`-th set of a pairwise disjoint sequence of measurable sets. -/
@@ -88,24 +183,12 @@ theorem tendsto_setIntegral_of_pairwise_disjoint {h : ℕ → α → E} (hh : �
   obtain ⟨ε, hε, hfreq⟩ := hne
   simp only [dist_zero_right] at hfreq
   -- Each `‖h n‖` has small integral over a late enough tail `⋃ m ≥ M, B m`.
-  set T : ℕ → Set α := fun M ↦ ⋃ m ≥ M, B m
-  have htail (n : ℕ) : ∃ M, ∫ x in T M, ‖h n x‖ ∂μ < ε / 3 :=
+  have htail (n : ℕ) : ∃ M, ∫ x in ⋃ m ≥ M, B m, ‖h n x‖ ∂μ < ε / 3 :=
     ((tendsto_setIntegral_iUnion_ge_of_pairwise_disjoint (hh n).norm hBm hB).eventually
       (gt_mem_nhds (by positivity))).exists
   choose M hM using htail
   -- The next index: a large integral on its own set, small integrals on unions of earlier sets.
-  have key (N K : ℕ) : ∃ n, K ≤ n ∧ ε ≤ ‖∫ x in B n, h n x ∂μ‖ ∧
-      ∀ F ⊆ Finset.range N, ‖∫ x in ⋃ m ∈ F, B m, h n x ∂μ‖ < ε / 3 := by
-    have hev : ∀ᶠ n in atTop, ∀ F ∈ (Finset.range N).powerset,
-        ‖∫ x in ⋃ m ∈ F, B m, h n x ∂μ‖ < ε / 3 := by
-      rw [eventually_all_finset]
-      intro F _
-      have hF := (hlim _ (Finset.measurableSet_biUnion F fun m _ ↦ hBm m)).norm
-      rw [norm_zero] at hF
-      exact hF.eventually (gt_mem_nhds (by positivity))
-    obtain ⟨n, hn, hev, hK⟩ := (hfreq.and_eventually (hev.and (eventually_ge_atTop K))).exists
-    exact ⟨n, hK, hn, fun F hF ↦ hev F (Finset.mem_powerset.2 hF)⟩
-  choose g hg_ge hg_big hg_head using key
+  choose g hg_ge hg_big hg_head using exists_large_integral_small_unions hlim hBm hε hfreq
   let σ : ℕ → ℕ := fun j ↦ Nat.rec (g 0 0) (fun _ k ↦ g (k + 1) (max (k + 1) (M k))) j
   have hσ_succ (j : ℕ) : σ (j + 1) = g (σ j + 1) (max (σ j + 1) (M (σ j))) := rfl
   have hσ : StrictMono σ := strictMono_nat_of_lt_succ fun j ↦ by
@@ -114,73 +197,18 @@ theorem tendsto_setIntegral_of_pairwise_disjoint {h : ℕ → α → E} (hh : �
   have hσM (j : ℕ) : M (σ j) ≤ σ (j + 1) := by
     rw [hσ_succ]
     exact (le_max_right _ _).trans (hg_ge _ _)
-  set D := ⋃ j, B (σ j)
-  have hDm : MeasurableSet D := .iUnion fun j ↦ hBm _
-  -- Along the chosen indices, the integrals over `D` stay away from zero.
-  have hbound (j : ℕ) : ε / 3 < ‖∫ x in D, h (σ (j + 1)) x ∂μ‖ := by
-    set k := j + 1
-    set n := σ k
-    set H := ⋃ i ∈ Finset.range k, B (σ i)
-    set T' := ⋃ i, ⋃ (_ : k < i), B (σ i)
-    have hHm : MeasurableSet H := Finset.measurableSet_biUnion _ fun i _ ↦ hBm _
-    have hT'm : MeasurableSet T' := .iUnion fun i ↦ .iUnion fun _ ↦ hBm _
-    have hDeq : D = H ∪ (B n ∪ T') := by
-      ext x
-      simp only [D, H, T', n, mem_union, mem_iUnion, Finset.mem_range, exists_prop]
-      constructor
-      · rintro ⟨i, hi⟩
-        rcases lt_trichotomy i k with hik | rfl | hik
-        · exact Or.inl ⟨i, hik, hi⟩
-        · exact Or.inr (Or.inl hi)
-        · exact Or.inr (Or.inr ⟨i, hik, hi⟩)
-      · rintro (⟨i, -, hi⟩ | hi | ⟨i, -, hi⟩)
-        exacts [⟨i, hi⟩, ⟨k, hi⟩, ⟨i, hi⟩]
-    have hdisj (i i' : ℕ) (hii' : i ≠ i') : Disjoint (B (σ i)) (B (σ i')) :=
-      hB (hσ.injective.ne hii')
-    have hdisj₁ : Disjoint H (B n ∪ T') := by
-      simp only [H, T', disjoint_union_right, disjoint_iUnion_left, disjoint_iUnion_right,
-        Finset.mem_range]
-      exact ⟨fun i hi ↦ hdisj i k hi.ne, fun i hi i' hi' ↦ hdisj i' i (by omega)⟩
-    have hdisj₂ : Disjoint (B n) T' := by
-      simp only [T', disjoint_iUnion_right]
-      exact fun i hi ↦ hdisj k i hi.ne
-    have hsplit : ∫ x in D, h n x ∂μ =
-        ∫ x in H, h n x ∂μ + (∫ x in B n, h n x ∂μ + ∫ x in T', h n x ∂μ) := by
-      rw [hDeq, setIntegral_union hdisj₁ ((hBm n).union hT'm) (hh n).integrableOn
-        (hh n).integrableOn, setIntegral_union hdisj₂ hT'm (hh n).integrableOn (hh n).integrableOn]
-    have hHb : ‖∫ x in H, h n x ∂μ‖ < ε / 3 := by
-      have hsub : (Finset.range k).image σ ⊆ Finset.range (σ j + 1) := by
-        intro m hm
-        simp only [Finset.mem_image, Finset.mem_range] at hm ⊢
-        obtain ⟨i, hi, rfl⟩ := hm
-        exact Nat.lt_succ_of_le (hσ.monotone (by omega))
-      have hhead := hg_head _ (max (σ j + 1) (M (σ j))) _ hsub
-      rwa [Finset.set_biUnion_finset_image, ← hσ_succ] at hhead
-    have hT'b : ‖∫ x in T', h n x ∂μ‖ < ε / 3 := by
-      have hsub : T' ⊆ T (M n) := by
-        simp only [T', T, iUnion_subset_iff]
-        intro i hi
-        exact subset_iUnion₂_of_subset (σ i)
-          ((hσM k).trans (hσ.monotone (show k + 1 ≤ i by omega))) subset_rfl
-      calc ‖∫ x in T', h n x ∂μ‖ ≤ ∫ x in T', ‖h n x‖ ∂μ := norm_integral_le_integral_norm _
-        _ ≤ ∫ x in T (M n), ‖h n x‖ ∂μ :=
-          setIntegral_mono_set (hh n).norm.integrableOn
-            (Eventually.of_forall fun _ ↦ norm_nonneg _) (Eventually.of_forall hsub)
-        _ < ε / 3 := hM n
-    have hBb : ε ≤ ‖∫ x in B n, h n x ∂μ‖ := by
-      simp only [n, k, hσ_succ]
+  -- Along the chosen indices, the integrals over `⋃ j, B (σ j)` stay away from zero.
+  have hbound (j : ℕ) : ε / 3 < ‖∫ x in ⋃ i, B (σ i), h (σ (j + 1)) x ∂μ‖ := by
+    refine lt_norm_setIntegral_iUnion_comp (hh _) hBm hB hσ (k := j + 1) (N := σ j + 1)
+      (L := M (σ (j + 1))) ?_ (fun i hi ↦ Nat.lt_succ_of_le (hσ.monotone (by omega))) ?_ (hM _)
+      fun i hi ↦ (hσM (j + 1)).trans (hσ.monotone hi)
+    · rw [hσ_succ]
+      exact hg_head _ _
+    · rw [hσ_succ]
       exact hg_big _ _
-    rw [hsplit]
-    set a := ∫ x in H, h n x ∂μ
-    set b := ∫ x in B n, h n x ∂μ
-    set c := ∫ x in T', h n x ∂μ
-    have htri : ‖b‖ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ :=
-      calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
-        _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
-        _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
-    linarith
-  -- But the integrals over the fixed set `D` tend to zero.
-  have hlimD := ((hlim D hDm).comp (hσ.tendsto_atTop.comp (tendsto_add_atTop_nat 1))).norm
+  -- But the integrals over the fixed set `⋃ j, B (σ j)` tend to zero.
+  have hDm : MeasurableSet (⋃ j, B (σ j)) := .iUnion fun j ↦ hBm _
+  have hlimD := ((hlim _ hDm).comp (hσ.tendsto_atTop.comp (tendsto_add_atTop_nat 1))).norm
   rw [norm_zero] at hlimD
   obtain ⟨j, hj⟩ := (hlimD.eventually (gt_mem_nhds (by positivity : 0 < ε / 3))).exists
   exact (hbound j).not_gt hj
