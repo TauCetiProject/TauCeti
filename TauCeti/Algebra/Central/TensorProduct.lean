@@ -107,7 +107,8 @@ theorem tensorProduct [CommSemiring K] [Semiring A] [Semiring B] [Algebra K A] [
     obtain ⟨b, rfl⟩ := Algebra.TensorProduct.forall_commute_tmul_one_iff.mp fun a => hx _
     obtain ⟨k, rfl⟩ := (mem_center_iff K).mp <| Subalgebra.mem_center_iff.mpr fun c =>
       Algebra.TensorProduct.includeRight_injective (A := A) inj <| by simpa using hx (1 ⊗ₜ c)
-    exact ⟨k, by simp [Algebra.algebraMap_eq_smul_one, Algebra.TensorProduct.one_def]⟩
+    exact Algebra.mem_bot.mpr
+      ⟨k, by simp [Algebra.algebraMap_eq_smul_one, Algebra.TensorProduct.one_def]⟩
 
 /-- **The tensor product of two central algebras over a field `K` is central.** Mathlib has the two
 converses (`Algebra.IsCentral.left_of_tensor_of_field` and
@@ -119,7 +120,7 @@ instance tensorProduct_of_field [Field K] [Ring A] [Ring B] [Algebra K A] [Algeb
   · have : Subsingleton (A ⊗[K] B) :=
       subsingleton_of_zero_eq_one <| by
         rw [Algebra.TensorProduct.one_def, Subsingleton.elim (1 : A) 0, TensorProduct.zero_tmul]
-    exact ⟨fun _ _ => ⟨0, Subsingleton.elim _ _⟩⟩
+    exact ⟨fun _ _ => Algebra.mem_bot.mpr ⟨0, Subsingleton.elim _ _⟩⟩
   · exact tensorProduct K A B (FaithfulSMul.algebraMap_injective K A)
 
 end Algebra.IsCentral
