@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
-public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Analysis.Complex.ReImTopology
 public import TauCeti.Geometry.Manifold.Boundary.Basic
-import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 
 /-!
 # The closed upper half-plane as a model with corners
