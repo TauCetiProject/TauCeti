@@ -36,17 +36,48 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
+variable {Ω : Type*} {T : ℕ → Ω → ℝ≥0}
+
+/-- The infinite sequence of unused increments strictly after the increment straddling `t`.
+Its zeroth coordinate is the increment following the straddling one. -/
+def renewalUnusedTail (T : ℕ → Ω → ℝ≥0) (t : ℝ≥0) (ω : Ω) (k : ℕ) : ℝ≥0 :=
+  T (renewalCountNat T t ω + 1 + k) ω
+
+@[simp]
+lemma renewalUnusedTail_apply (t : ℝ≥0) (ω : Ω) (k : ℕ) :
+    renewalUnusedTail T t ω k = T (renewalCountNat T t ω + 1 + k) ω := (rfl)
+
+variable [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- The unused increment sequence at a fixed observation time is measurable. -/
+@[fun_prop]
+lemma measurable_renewalUnusedTail (hT : ∀ n, Measurable (T n)) (t : ℝ≥0) :
+    Measurable (renewalUnusedTail T t) :=
+  Measurable.of_eval fun k ↦ (Measurable.of_eval hT).eval_index
+    (((measurable_renewalCountNat hT t).add_const 1).add_const k)
+
+private theorem measure_eq_sum_restrict_renewalCountNat (hT : ∀ n, Measurable (T n))
+    (t : ℝ≥0) :
+    P = Measure.sum (fun n : ℕ ↦ P.restrict {ω | renewalCountNat T t ω = n}) := by
+  have hu : (⋃ n : ℕ, {ω | renewalCountNat T t ω = n}) = univ := by ext ω; simp
+  calc
+    P = P.restrict univ := Measure.restrict_univ.symm
+    _ = _ := by
+      rw [← hu]
+      apply Measure.restrict_iUnion
+      · intro i j hij
+        exact disjoint_left.2 fun ω hi hj ↦ hij (hi.symm.trans hj)
+      · exact fun n ↦ (measurable_renewalCountNat hT t) (measurableSet_singleton n)
 
 /-- On a count slice, the entire tail after the straddling increment has its original
 product law even after restriction by any event in the increment prefix through that
 increment. The identity also applies to null prefix events. -/
-theorem map_renewalUnusedTail_restrict_count (hT : ∀ n, Measurable (T n))
+theorem map_renewalUnusedTail_restrict_renewalCountNat (hT : ∀ n, Measurable (T n))
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) (n : ℕ) {A : Set Ω}
     (hA : MeasurableSet[blockSigma T (Iio (n + 1))] A) :
     (P.restrict (A ∩ {ω | renewalCountNat T t ω = n})).map
-        (fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω) =
+        (renewalUnusedTail T t) =
       P (A ∩ {ω | renewalCountNat T t ω = n}) •
         Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0)) := by
   have := hindep.isProbabilityMeasure
@@ -62,9 +93,10 @@ theorem map_renewalUnusedTail_restrict_count (hT : ∀ n, Measurable (T n))
     simp only [E, mem_inter_iff, mem_ofPred_eq, renewalCountNat_eq_iff hω]
   have htail : Measurable[blockSigma T (Ici (n + 1))]
       (fun ω k ↦ T (n + 1 + k) ω) := by
-    exact @Measurable.of_eval Ω ℕ (fun _ ↦ ℝ≥0) (blockSigma T (Ici (n + 1)))
-      _ _ (fun k ↦ measurable_blockSigma_of_mem (Z := T) (S := Ici (n + 1))
-        (i := n + 1 + k) (Nat.le_add_right _ _))
+    let : MeasurableSpace Ω := blockSigma T (Ici (n + 1))
+    exact Measurable.of_eval fun k ↦
+      measurable_blockSigma_of_mem (Z := T) (S := Ici (n + 1))
+        (i := n + 1 + k) (Nat.le_add_right _ _)
   have hI := indep_blockSigma_of_disjoint hindep hT (Iio_disjoint_Ici (a := n + 1) le_rfl)
   have hlaw : P.map (fun ω k ↦ T (n + 1 + k) ω) =
       Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0)) := by
@@ -74,14 +106,15 @@ theorem map_renewalUnusedTail_restrict_count (hT : ∀ n, Measurable (T n))
     funext k
     exact (hid (n + 1 + k)).map_eq
   have hmap : (P.restrict (A ∩ {ω | renewalCountNat T t ω = n})).map
-      (fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω) =
+      (renewalUnusedTail T t) =
       (P.restrict E).map (fun ω k ↦ T (n + 1 + k) ω) := by
     rw [← Measure.restrict_congr_set heq]
     apply Measure.map_congr
     filter_upwards [ae_restrict_mem ((blockSigma_le _ (fun i _ ↦ hT i)) _ hA |>.inter
       ((measurable_renewalCountNat hT t) (measurableSet_singleton n)))] with ω hω
     simp only [mem_inter_iff, mem_ofPred_eq] at hω
-    simp only [hω.2]
+    funext k
+    simp only [renewalUnusedTail_apply, hω.2]
   rw [hmap, measure_congr heq]
   ext B hB
   rw [Measure.map_apply (by fun_prop) hB,
@@ -95,33 +128,21 @@ original i.i.d. product law. Neither strict positivity nor a finite mean is requ
 theorem hasLaw_renewalUnusedTail (hT : ∀ n, Measurable (T n))
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) :
-    HasLaw (fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω)
+    HasLaw (renewalUnusedTail T t)
       (Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0))) P := by
   have := hindep.isProbabilityMeasure
-  have hU : Measurable (fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω) :=
-    Measurable.of_eval fun k ↦ (Measurable.of_eval hT).eval_index
-      (((measurable_renewalCountNat hT t).add_const 1).add_const k)
+  have hU := measurable_renewalUnusedTail hT t
   refine ⟨hU.aemeasurable, ?_⟩
-  have hpartition : P = Measure.sum (fun n : ℕ ↦
-      P.restrict {ω | renewalCountNat T t ω = n}) := by
-    have hu : (⋃ n : ℕ, {ω | renewalCountNat T t ω = n}) = univ := by ext ω; simp
-    calc
-      P = P.restrict univ := Measure.restrict_univ.symm
-      _ = _ := by
-        rw [← hu]
-        apply Measure.restrict_iUnion
-        · intro i j hij
-          exact disjoint_left.2 fun ω hi hj ↦ hij (hi.symm.trans hj)
-        · exact fun n ↦ (measurable_renewalCountNat hT t) (measurableSet_singleton n)
+  have hpartition := measure_eq_sum_restrict_renewalCountNat (P := P) hT t
   calc
-    P.map (fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω) =
+    P.map (renewalUnusedTail T t) =
         Measure.sum (fun n : ℕ ↦ P {ω | renewalCountNat T t ω = n} •
           Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0))) := by
       conv_lhs => rw [hpartition]
       rw [Measure.map_sum hU.aemeasurable]
       congr 1
       funext n
-      simpa using map_renewalUnusedTail_restrict_count hT hindep hid hzero t n
+      simpa using map_renewalUnusedTail_restrict_renewalCountNat hT hindep hid hzero t n
         (A := univ) MeasurableSet.univ
     _ = Measure.infinitePi (fun _ : ℕ ↦ P.map (T 0)) := by
       have hmass := congrArg (fun μ : Measure Ω ↦ μ univ) hpartition
@@ -136,7 +157,7 @@ private theorem measure_renewalUnusedTail_inter_slice (hT : ∀ n, Measurable (T
     (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) (n : ℕ)
     {B : Set (ℕ → ℝ≥0)} {C : Set (ℕ × ℝ≥0)} (hB : MeasurableSet B)
     (hC : MeasurableSet C) :
-    P (((fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω) ⁻¹' B ∩
+    P (((renewalUnusedTail T t) ⁻¹' B ∩
         (fun ω ↦ (renewalCountNat T t ω, renewalExcess T t ω)) ⁻¹' C) ∩
         {ω | renewalCountNat T t ω = n}) =
       P ((fun ω ↦ (renewalCountNat T t ω, renewalExcess T t ω)) ⁻¹' C ∩
@@ -152,40 +173,33 @@ private theorem measure_renewalUnusedTail_inter_slice (hT : ∀ n, Measurable (T
     ext ω
     by_cases hn : renewalCountNat T t ω = n <;> simp [A, renewalExcess_def, hn]
   have h := congrArg (fun μ : Measure (ℕ → ℝ≥0) ↦ μ B)
-    (map_renewalUnusedTail_restrict_count hT hindep hid hzero t n hA)
-  have hU : Measurable (fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω) :=
-    Measurable.of_eval fun k ↦ (Measurable.of_eval hT).eval_index
-      (((measurable_renewalCountNat hT t).add_const 1).add_const k)
+    (map_renewalUnusedTail_restrict_renewalCountNat hT hindep hid hzero t n hA)
+  have hU := measurable_renewalUnusedTail hT t
   rw [Measure.map_apply hU hB, Measure.restrict_apply (hU hB),
     smul_apply, smul_eq_mul] at h
   simpa only [inter_assoc, heq] using h
 
 /-- The increments strictly after the straddling increment are independent of both the
 observed count and the excess. This statement does not assert memorylessness of the excess. -/
-theorem indepFun_renewalUnusedTail_count_excess (hT : ∀ n, Measurable (T n))
+theorem indepFun_renewalUnusedTail_renewalCountNat_renewalExcess (hT : ∀ n, Measurable (T n))
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) :
-    IndepFun (fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω)
+    IndepFun (renewalUnusedTail T t)
       (fun ω ↦ (renewalCountNat T t ω, renewalExcess T t ω)) P := by
   have := hindep.isProbabilityMeasure
-  let U := fun ω k ↦ T (renewalCountNat T t ω + 1 + k) ω
+  let U := renewalUnusedTail T t
   let Y := fun ω ↦ (renewalCountNat T t ω, renewalExcess T t ω)
   have hY : Measurable Y :=
     (measurable_renewalCountNat hT t).prodMk (measurable_renewalExcess hT t)
-  have hN (n : ℕ) : MeasurableSet {ω | renewalCountNat T t ω = n} :=
-    (measurable_renewalCountNat hT t) (measurableSet_singleton n)
   have hsplit (D : Set Ω) (hD : MeasurableSet D) :
       P D = ∑' n : ℕ, P (D ∩ {ω | renewalCountNat T t ω = n}) := by
-    have heq : D = ⋃ n : ℕ, D ∩ {ω | renewalCountNat T t ω = n} := by ext ω; simp
-    conv_lhs => rw [heq]
-    exact measure_iUnion (fun i j hij ↦ disjoint_left.2 fun ω hi hj ↦
-      hij (hi.2.symm.trans hj.2)) (fun n ↦ hD.inter (hN n))
+    have h := congrArg (fun μ : Measure Ω ↦ μ D)
+      (measure_eq_sum_restrict_renewalCountNat (P := P) hT t)
+    simpa only [Measure.sum_apply _ hD, Measure.restrict_apply hD] using h
   have hUlaw := hasLaw_renewalUnusedTail hT hindep hid hzero t
   rw [indepFun_iff_measure_inter_preimage_eq_mul]
   intro B C hB hC
-  have hUB : MeasurableSet (U ⁻¹' B) :=
-    (Measurable.of_eval fun k ↦ (Measurable.of_eval hT).eval_index
-      (((measurable_renewalCountNat hT t).add_const 1).add_const k)) hB
+  have hUB : MeasurableSet (U ⁻¹' B) := measurable_renewalUnusedTail hT t hB
   rw [hsplit _ (hUB.inter (hY hC))]
   simp_rw [U, Y, measure_renewalUnusedTail_inter_slice hT hindep hid hzero t _ hB hC]
   rw [ENNReal.tsum_mul_right, ← hsplit _ (hY hC), mul_comm]
