@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Diffeomorphism.Group
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -45,6 +46,11 @@ precomposing with an automorphism of negative determinant exchanges preservation
 (`isOrientationPreservingAt_comp_of_det_neg`, `isOrientationReversingAt_comp_of_det_neg`).
 More generally, a map with negative derivative determinant reverses orientations at that point
 (`isOrientationReversingAt_of_det_fderiv_neg`).
+
+If the derivative carries a tangent basis `b` onto a basis `b'`, then, whether `b` is positively
+or negatively oriented, preservation (reversal) means that `b` and `b'` have equal (opposite)
+orientation signs (`isOrientationPreservingAt_iff_of_basis`,
+`isOrientationReversingAt_iff_of_basis`).
 -/
 
 public section
@@ -136,6 +142,28 @@ theorem isOrientationReversingAt_iff_of_coe_eq [IsManifold I 1 M] [IsManifold I'
   · intro h
     exact ⟨e, he, h⟩
 
+/-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
+the tangent space at `f x`, then `f` preserves orientations at `x` exactly when `b` and `b'` are
+both positively or both negatively oriented. -/
+theorem isOrientationPreservingAt_iff_of_basis [IsManifold I 1 M] [IsManifold I' 1 M']
+    [DecidableEq ι] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {f : M → M'} {x : M} (b : Module.Basis ι ℝ (TangentSpace I x))
+    (b' : Module.Basis ι ℝ (TangentSpace I' (f x)))
+    (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
+    IsOrientationPreservingAt o o' f x ↔
+      (b.orientation = o.orientationAt x ↔ b'.orientation = o'.orientationAt (f x)) := by
+  obtain ⟨e, he, hbe⟩ := exists_coe_eq_mfderiv_of_basis b b' hbb'
+  have hmap : _root_.Orientation.map ι e.toLinearEquiv b.orientation = b'.orientation := by
+    rw [← Module.Basis.orientation_map, hbe]
+  rw [isOrientationPreservingAt_iff_of_coe_eq o o' f x e he]
+  rcases (o.orientationAt x).eq_or_eq_neg b.orientation (o.finrank_tangentSpace_eq x).symm with
+    h | h
+  · rw [h, hmap, iff_true_left rfl]
+  · rw [h, _root_.Orientation.map_neg, hmap,
+      neg_eq_iff_eq_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) ι),
+      iff_false_left (Module.Ray.ne_neg_self _),
+      ← _root_.Orientation.ne_iff_eq_neg _ _ (o'.finrank_tangentSpace_eq (f x)).symm, Ne]
+
 /-- Given a continuous linear equivalence representing the derivative, every map is either
 orientation-preserving or orientation-reversing at the point. -/
 theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
@@ -223,6 +251,19 @@ theorem IsOrientationReversingAt.isInvertible_mfderiv [IsManifold I 1 M]
     (f : M → M') (x : M) :
     IsOrientationReversingAt o (-o') f x ↔ IsOrientationPreservingAt o o' f x := by
   rw [← isOrientationPreservingAt_neg_right, neg_neg]
+
+/-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
+the tangent space at `f x`, then `f` reverses orientations at `x` exactly when `b'` is negatively
+oriented if `b` is positively oriented, and positively oriented if `b` is negatively oriented. -/
+theorem isOrientationReversingAt_iff_of_basis [IsManifold I 1 M] [IsManifold I' 1 M']
+    [DecidableEq ι] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {f : M → M'} {x : M} (b : Module.Basis ι ℝ (TangentSpace I x))
+    (b' : Module.Basis ι ℝ (TangentSpace I' (f x)))
+    (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
+    IsOrientationReversingAt o o' f x ↔
+      (b.orientation = o.orientationAt x ↔ b'.orientation = -o'.orientationAt (f x)) := by
+  rw [← isOrientationPreservingAt_neg_right, isOrientationPreservingAt_iff_of_basis b b' hbb',
+    orientationAt_neg]
 
 /-- A map cannot preserve and reverse the same pair of orientations at one point. -/
 theorem not_isOrientationPreservingAt_and_isOrientationReversingAt

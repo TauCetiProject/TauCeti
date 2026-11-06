@@ -41,6 +41,9 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
   rational prime `q ∈ P` when `n (q - 1) ∣ N P - 1`.
 * `Ideal.map_powerResidueSymbol`: Galois equivariance, `σ ((α / P)_n) = (σ α / σ P)_n` for a ring
   isomorphism `σ : 𝓞 K ≃+* 𝓞 L`.
+* `Ideal.powerResidueSymbol_ringHomComp_eq_pow`: read in an extension `L` with a prime `𝔓` over
+  `P`, the symbol is the power `ω ^ ((N P - 1) / n)` of any multiplicative character `ω` lifting
+  the map of residue fields, such as the Teichmüller character.
 
 ## References
 
@@ -234,5 +237,34 @@ example (σ : 𝓞 K ≃+* 𝓞 K) (hP : (absNorm P).Coprime n) {ζ : 𝓞 K} (h
   refine ⟨by rw [powerResidueSymbol_mk_of_pow_eq_one hP hζ, map_pow, hσ, ← pow_mul], ?_⟩
   rw [hσ, powerResidueSymbol_mk_of_pow_eq_one (by rwa [absNorm_map_of_ringEquiv]) hζk,
     absNorm_map_of_ringEquiv, ← pow_mul]
+
+section Extension
+
+variable {L : Type*} [Field L] [NumberField L] [Algebra K L]
+
+/-- **The power residue symbol through a multiplicative lift at a prime above.** Let `𝔓` be a
+maximal ideal of `𝓞 L` over `P`, and let `ω` be a multiplicative
+character of `𝓞 K ⧸ P` with values in `𝓞 L` lifting the residue map `𝓞 K ⧸ P → 𝓞 L ⧸ 𝔓`, such
+as the Teichmüller character (`Ideal.exists_mulChar_mk_eq`). If `N P` is prime to `n`, then the
+`n`-th power residue symbol at `P`, read in `𝓞 L`, is `ω ^ ((N P - 1) / n)`. -/
+theorem powerResidueSymbol_ringHomComp_eq_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (𝔓 : Ideal (𝓞 L)) [𝔓.IsMaximal] [𝔓.LiesOver P] (hP : (absNorm P).Coprime n)
+    {ω : MulChar (𝓞 K ⧸ P) (𝓞 L)}
+    (hω : ∀ x, Ideal.Quotient.mk 𝔓 (ω x) = algebraMap (𝓞 K ⧸ P) (𝓞 L ⧸ 𝔓) x) :
+    (powerResidueSymbol P n).ringHomComp (algebraMap (𝓞 K) (𝓞 L)) = ω ^ ((absNorm P - 1) / n) := by
+  let _ := Ideal.Quotient.field P
+  refine MulChar.ext fun u ↦ ?_
+  have hk : (absNorm P - 1) / n * n = absNorm P - 1 := Nat.div_mul_cancel (dvd_absNorm_sub_one hP)
+  -- Both sides are `n`-th roots of unity of `𝓞 L` congruent to `u ^ ((N P - 1) / n)` modulo `𝔓`.
+  have h𝔓 : (absNorm 𝔓).Coprime n := absNorm_pow_inertiaDeg P 𝔓 ▸ hP.pow_left _
+  refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' h𝔓 ?_ ?_ ?_
+  · rw [MulChar.ringHomComp_apply, ← map_pow, powerResidueSymbol_pow_eq_one hP u.ne_zero, map_one]
+  · rw [MulChar.pow_apply_coe, ← pow_mul, hk, ← map_pow, ← Units.val_pow_eq_pow_val,
+      pow_absNorm_sub_one_eq_one, Units.val_one, MulChar.map_one]
+  · rw [MulChar.ringHomComp_apply, MulChar.pow_apply_coe, map_pow, hω,
+      ← Quotient.algebraMap_mk_of_liesOver (P := 𝔓) (p := P), mk_powerResidueSymbol hP u.ne_zero,
+      map_pow]
+
+end Extension
 
 end Ideal

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
-import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Dynamics.Flow.LevelCrossing
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
@@ -42,6 +42,9 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
   (the case `c = (f a + f b) / 2`): a trajectory from `a` to `b` crosses the middle level exactly
   once.
+* `TauCeti.IsAdaptedPseudoGradient.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
+  the time at which an orbit crosses the level of a point `y` of such a trajectory depends
+  continuously on the orbit near `y`.
 * `TauCeti.IsAdaptedPseudoGradient.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top`:
   every level of `f` is transverse to `W^u(a) ∩ W^s(b)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_level_chart`: under
@@ -139,19 +142,11 @@ theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
     (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (hbc : f b < c)
     (hca : c < f a) :
-    ∃! t : ℝ, f (hX.flow t y) = c := by
-  have hfc : Continuous f := hf.continuous
-  have hγ : Continuous fun t ↦ f (hX.flow t y) :=
-    hfc.comp (hX.contMDiff_flow_uncurry.continuous.comp (continuous_id.prodMk continuous_const))
-  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
-  have hbot : Tendsto (fun t ↦ f (hX.flow t y)) atBot (𝓝 (f a)) :=
-    (hfc.tendsto a).comp (Flow.mem_unstableSet.1 hy.1)
-  have htop : Tendsto (fun t ↦ f (hX.flow t y)) atTop (𝓝 (f b)) :=
-    (hfc.tendsto b).comp (Flow.mem_stableSet.1 hy.2)
-  obtain ⟨t, ht⟩ := mem_range_of_exists_le_of_exists_ge hγ
-    ((htop.eventually (eventually_lt_nhds hbc)).exists.imp fun _ h ↦ h.le)
-    ((hbot.eventually (eventually_gt_nhds hca)).exists.imp fun _ h ↦ h.le)
-  exact ⟨t, ht, fun s hs ↦ hanti.injective (hs.trans ht.symm)⟩
+    ∃! t : ℝ, f (hX.flow t y) = c :=
+  Flow.existsUnique_apply_flow_eq_of_mem_unstableSet_inter_stableSet
+    (hf.continuous.comp (hX.flow.continuous continuous_id continuous_const))
+    hf.continuous.continuousAt hf.continuous.continuousAt
+    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy) hy ⟨hbc, hca⟩
 
 /-- **A trajectory crosses the middle level exactly once.** Along a trajectory from a critical
 point `a` to a different critical point `b`, the function `f` takes the value `(f a + f b) / 2`
@@ -163,6 +158,29 @@ theorem existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet
   have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hy
   exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy
     (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
+
+/-- **Level-crossing times depend continuously on the point.** Let `y` lie on a trajectory from a
+critical point `a` to a different critical point `b`, and let `w` tend to `y`. If the orbit of each
+`w i` meets the level of `y` at the time `σ i`, then `σ i` tends to `0`, the time at which the orbit
+of `y` meets that level. -/
+theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} {l : Filter ι}
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {w : ι → M} (hw : Tendsto w l (𝓝 y))
+    {σ : ι → ℝ} (hσ : ∀ i, f (hX.flow (σ i) (w i)) = f y) : Tendsto σ l (𝓝 0) := by
+  have hfw : ∀ t, Tendsto (fun i ↦ f (hX.flow t (w i))) l (𝓝 (f (hX.flow t y))) := fun t ↦
+    ((hf.continuous.comp (hX.contMDiff_flow_apply t).continuous).tendsto y).comp hw
+  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
+  -- For `t ≠ 0`, the orbit of `w i` is eventually on the same side of the level at time `t` as
+  -- the orbit of `y`; since `f` decreases along orbits, it crosses the level between `0` and `t`.
+  refine tendsto_order.2 ⟨fun t ht ↦ ?_, fun t ht ↦ ?_⟩
+  · have hlt : f y < f (hX.flow t y) := by simpa using hanti ht
+    filter_upwards [(hfw t).eventually (lt_mem_nhds hlt)] with i hi
+    by_contra! hle
+    exact (hX.antitone_flow hf (w i) hle).not_gt ((hσ i).trans_lt hi)
+  · have hlt : f (hX.flow t y) < f y := by simpa using hanti ht
+    filter_upwards [(hfw t).eventually (gt_mem_nhds hlt)] with i hi
+    by_contra! hle
+    exact (hX.antitone_flow hf (w i) hle).not_gt (hi.trans_eq (hσ i).symm)
 
 /-- **Levels are transverse to connecting trajectories.** At a point `y` of `W^u(a) ∩ W^s(b)` with
 `a ≠ b`, the tangent space of `W^u(a) ∩ W^s(b)` and the kernel of `df_y`, the tangent space of the

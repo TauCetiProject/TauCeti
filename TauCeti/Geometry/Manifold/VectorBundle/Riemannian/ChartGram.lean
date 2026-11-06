@@ -13,6 +13,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
@@ -54,6 +56,11 @@ API replace them.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
 * `Riemannian.Tensor.chartInvGramMatrix`: the inverse Gram matrix.
 * `Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry`: smoothness of inverse entries.
+* `Riemannian.Tensor.chartDualFrame`: the metric-dual chart frame, identified with the dual
+  basis on the chart domain by `Riemannian.Tensor.dualBasis_basisAt_eq_chartDualFrame`.
+* `Riemannian.Tensor.inner_chartDualFrame` and
+  `Riemannian.Tensor.sum_inner_chartDualFrame_smul`: duality and vector expansion in the frames.
+* `Riemannian.Tensor.contMDiffAt_chartDualFrame`: regularity of the metric-dual frame.
 * `Riemannian.Tensor.mvfderiv_chartGramMatrix_apply`,
   `Riemannian.Tensor.mvfderiv_det_chartGramMatrix`: the derivatives of the Gram matrix and of its
   determinant for a metric-compatible connection, `dG = Pᵀ G + G P` and
@@ -305,6 +312,32 @@ unfolds `Riemannian.Tensor.chartInvGramMatrix` outside the module where it is de
 theorem chartInvGramMatrix_def (α x : M) :
     chartInvGramMatrix (I := I) α x = (chartGramMatrix (I := I) α x)⁻¹ := (rfl)
 
+/-- The frame metric-dual to the chart-local frame at `α`: `Dᵢ = ∑ⱼ (G⁻¹)ᵢⱼ Fⱼ`, where `G` is the
+Gram matrix of the chart-local frame `Fᵢ`. -/
+def chartDualFrame (α : M) (i : Fin (Module.finrank ℝ E)) :
+    (y : M) → TangentSpace I y :=
+  fun y ↦ ∑ j, chartInvGramMatrix (I := I) α y i j • chartLocalFrame (I := I) α j y
+
+/-- A metric-dual chart vector is the inverse-Gram linear combination of chart-frame vectors. -/
+theorem chartDualFrame_apply (α : M) (i : Fin (Module.finrank ℝ E)) (y : M) :
+    chartDualFrame (I := I) α i y =
+      ∑ j, chartInvGramMatrix (I := I) α y i j • chartLocalFrame (I := I) α j y := (rfl)
+
+/-- On the tangent-trivialization base set, the metric dual basis is the metric-dual chart frame. -/
+theorem dualBasis_basisAt_eq_chartDualFrame (α : M) {y : M}
+    (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (i : Fin (Module.finrank ℝ E)) :
+    LinearMap.BilinForm.dualBasis (innerₗ (TangentSpace I y)) TauCeti.nondegenerate_inner
+      ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy) i =
+      chartDualFrame (I := I) α i y := by
+  have hgram : Matrix.gram ℝ
+      ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy) =
+      chartGramMatrix (I := I) α y := by
+    simpa using gram_basisAt_finBasis_reindex (I := I) (Equiv.refl _) α hy
+  rw [Module.Basis.dualBasis_innerₗ_eq_sum, hgram, ← chartInvGramMatrix_def,
+    chartDualFrame_apply]
+  simp only [chartLocalFrame_eq_symmL, TauCeti.Manifold.basisAt_apply]
+
 /-- On the chart source, the inverse Gram matrix is a left inverse. -/
 @[simp]
 theorem chartInvGramMatrix_mul_chartGramMatrix (α : M) {x : M}
@@ -328,6 +361,46 @@ theorem chartGramMatrix_mul_chartInvGramMatrix (α : M) {x : M}
     isUnit_iff_ne_zero.mpr (ne_of_gt (chartGramMatrix_det_pos (I := I) α hx'))
   unfold chartInvGramMatrix
   exact Matrix.mul_nonsing_inv _ hdet_unit
+
+/-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
+matrix. -/
+theorem inner_chartDualFrame (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    (i j : Fin (Module.finrank ℝ E)) :
+    inner ℝ (chartDualFrame (I := I) α i y) (chartLocalFrame (I := I) α j y) =
+      if i = j then 1 else 0 := by
+  have h := congrFun (congrFun (chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy) i) j
+  simp only [Matrix.mul_apply, chartGramMatrix_apply, Matrix.one_apply] at h
+  simp only [chartDualFrame_apply, sum_inner, real_inner_smul_left, h]
+
+/-- On the chart domain, every tangent vector expands in the chart-local frame with the dual
+frame giving its coefficients, and in the dual frame with the chart-local frame giving its
+coefficients. -/
+theorem sum_inner_chartDualFrame_smul (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    (w : TangentSpace I y) :
+    ∑ j, inner ℝ (chartDualFrame (I := I) α j y) w • chartLocalFrame (I := I) α j y = w ∧
+      ∑ j, inner ℝ (chartLocalFrame (I := I) α j y) w • chartDualFrame (I := I) α j y = w := by
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hy
+  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy'
+  have hb (i : Fin (Module.finrank ℝ E)) : b i = chartLocalFrame (I := I) α i y :=
+    (chartLocalFrame_apply_of_mem_chart_source (I := I) α hy i).symm
+  have hdual (i j : Fin (Module.finrank ℝ E)) :
+      inner ℝ (chartDualFrame (I := I) α i y) (b j) = if i = j then 1 else 0 := by
+    rw [hb]
+    exact inner_chartDualFrame α hy i j
+  constructor
+  · -- Both sides have the same coefficients in the basis `b`.
+    conv_rhs => rw [← b.sum_repr w]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← hb]
+    congr 1
+    conv_lhs => rw [← b.sum_repr w]
+    simp only [inner_sum, real_inner_smul_right, hdual, mul_ite, mul_one, mul_zero,
+      Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  · -- Both sides have the same inner products with the basis `b`.
+    refine InnerProductSpace.ext_inner_right_basis b fun k ↦ ?_
+    simp only [hb, sum_inner, real_inner_smul_left, inner_chartDualFrame α hy, mul_ite, mul_one,
+      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, real_inner_comm w]
 
 section Smooth
 
@@ -354,6 +427,18 @@ theorem contMDiffOn_chartInvGramMatrix_entry
   · intro x hx
     exact ne_of_gt (chartGramMatrix_det_pos (I := I) α hx)
   · exact contMDiffOn_adjugate_chartGramMatrix_entry (I := I) α i j
+
+/-- Each metric-dual chart vector is `C^n` at every point of the tangent-trivialization base set. -/
+theorem contMDiffAt_chartDualFrame (α : M) {y : M}
+    (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (i : Fin (Module.finrank ℝ E)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
+      (fun z ↦ TotalSpace.mk' E z (chartDualFrame (I := I) α i z)) y := by
+  have hU := (trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy
+  simp only [chartDualFrame_apply]
+  exact ContMDiffAt.sum_section fun j _ ↦
+    ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := n) α i j).contMDiffAt hU).smul_section
+      ((contMDiffOn_chartLocalFrame (I := I) (n := n) α j).contMDiffAt hU)
 
 end Smooth
 
