@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Analysis.ODE.InitialCondition
+import TauCeti.Analysis.ODE.LocalFlow
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 
 /-!
