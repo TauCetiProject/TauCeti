@@ -99,6 +99,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.map_subtype_invariants_subrepresentation`: the invariants of the restriction to
+  a `G`-stable submodule `W` are `ρ.invariants ⊓ W`.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
   invariant.
 * `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may

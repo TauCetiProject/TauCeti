@@ -47,7 +47,8 @@ constructions behind `TauCeti.quotientHomEquivInvariants` (`Rep.indResHomEquiv` 
 * `Subgroup.AlmostConjugate.finrank_invariants_inf_eq`: the same holds for the invariants lying
   in any `G`-stable subspace.
 * `Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq`: for an operator commuting with
-  the action, its eigenspaces have invariant subspaces of the same dimension.
+  the action, the spaces of `H`-fixed and `K`-fixed vectors in each eigenspace have the same
+  dimension.
 
 ## References
 
@@ -102,8 +103,8 @@ theorem finrank_invariants_inf_eq (h : H.AlmostConjugate K) (ρ : Representation
   exact h.finrank_invariants_eq (ρ.subrepresentation W hW)
 
 /-- **Equal multiplicities for almost-conjugate subgroups.** If a linear operator `T` commutes with
-the action of `G` and `H`, `K` are almost conjugate, then each eigenspace of `T` contains
-`H`-invariant and `K`-invariant subspaces of the same dimension. -/
+the action of `G` and `H`, `K` are almost conjugate, then the `H`-fixed vectors and the `K`-fixed
+vectors in each eigenspace of `T` form subspaces of the same dimension. -/
 theorem finrank_invariants_inf_eigenspace_eq (h : H.AlmostConjugate K) (ρ : Representation k G V)
     {T : End k V} (hT : ∀ g, Commute T (ρ g)) (μ : k) :
     finrank k ↥(Representation.invariants (ρ.comp H.subtype) ⊓ T.eigenspace μ) =
