@@ -68,8 +68,9 @@ rearrangement, which gives the case `p = ∞`.
 * `TauCeti.lintegral_rpow_schwarzRearrangement`, `TauCeti.eLpNorm_schwarzRearrangement`,
   `TauCeti.memLp_schwarzRearrangement_iff`: equality of integrals of powers and of `Lᵖ`
   seminorms, and preservation of every `Lᵖ` class.
-* `MeasureTheory.Integrable.toReal_schwarzRearrangement`: integrability of the real-valued
-  rearrangement of the positive part of an integrable real function.
+* `MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top`,
+  `MeasureTheory.Integrable.toReal_schwarzRearrangement`: almost-everywhere finiteness and
+  integrability of the real-valued rearrangement of the positive part of an integrable function.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
@@ -331,15 +332,30 @@ theorem lintegral_schwarzRearrangement (hf : AEMeasurable f μ) :
 
 variable {μ}
 
+/-- The extended integral of the Schwarz rearrangement of the positive part of an integrable
+real function is finite. -/
+theorem _root_.MeasureTheory.Integrable.lintegral_schwarzRearrangement_ofReal_ne_top
+    {u : E → ℝ} (hu : Integrable u μ) :
+    (∫⁻ x, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ∂μ) ≠ ∞ := by
+  rw [lintegral_schwarzRearrangement μ hu.aemeasurable.ennreal_ofReal]
+  exact hu.lintegral_lt_top.ne
+
+/-- The Schwarz rearrangement of the positive part of an integrable real function is finite
+almost everywhere. -/
+theorem _root_.MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top
+    {u : E → ℝ} (hu : Integrable u μ) :
+    ∀ᵐ x ∂μ, schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x ≠ ∞ :=
+  (ae_lt_top (measurable_schwarzRearrangement μ _)
+    hu.lintegral_schwarzRearrangement_ofReal_ne_top).mono fun _ hx ↦ hx.ne
+
 /-- The real-valued Schwarz rearrangement of the positive part of an integrable function is
 integrable. The extended rearrangement is finite almost everywhere, so taking `toReal` changes
 only its values on a null set. -/
 theorem _root_.MeasureTheory.Integrable.toReal_schwarzRearrangement {u : E → ℝ}
     (hu : Integrable u μ) :
     Integrable (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal) μ := by
-  apply integrable_toReal_of_lintegral_ne_top (measurable_schwarzRearrangement μ _).aemeasurable
-  rw [lintegral_schwarzRearrangement μ hu.aemeasurable.ennreal_ofReal]
-  exact ((lintegral_ofReal_le_lintegral_enorm u).trans_lt hu.2).ne
+  exact integrable_toReal_of_lintegral_ne_top (measurable_schwarzRearrangement μ _).aemeasurable
+    hu.lintegral_schwarzRearrangement_ofReal_ne_top
 
 variable (μ)
 

@@ -18,10 +18,11 @@ import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 /-!
 # Schwarz rearrangement decreases total variation
 
-The BV Pólya–Szegő inequality states that the symmetric decreasing rearrangement of a
-nonnegative integrable function has no greater distributional total variation. The
-comparison includes infinite variation and does not require bounded support or regularity.
-In particular, Schwarz rearrangement preserves whole-space BV membership.
+The BV Pólya–Szegő inequality states that the symmetric decreasing rearrangement of the
+positive part of an integrable real-valued function has no greater distributional total
+variation. The comparison includes infinite variation and does not require bounded support
+or regularity. In particular, Schwarz rearrangement of the positive part or absolute value
+preserves whole-space BV membership.
 
 The rearrangement is the canonical extended-nonnegative `TauCeti.schwarzRearrangement`,
 applied to `ENNReal.ofReal ∘ u`, and then made real-valued with `ENNReal.toReal`. Integrability
@@ -60,14 +61,12 @@ theorem _root_.MeasureTheory.NullMeasurableSet.perimeter_setOf_lt_schwarzRearran
   rcases eq_or_ne (volume {x | t < f x}) ∞ with hinf | hfin
   · have hset : {x | t < schwarzRearrangement volume f x} = univ := by
       rw [setOf_lt_schwarzRearrangement, hinf]
-      exact eq_univ_of_forall fun x ↦ measure_ball_lt_top
+      exact volume.setOf_measure_ball_norm_lt_top
     simp only [hset, perimeter_univ, zero_le]
   obtain ⟨r, hr0, hr⟩ := (volume : Measure E).exists_nonneg_addHaar_ball_eq hfin
   have hset : {x | t < schwarzRearrangement volume f x} = ball 0 r := by
     rw [setOf_lt_schwarzRearrangement, ← hr]
-    ext x
-    rw [mem_ofPred_eq, volume.addHaar_ball_lt_addHaar_ball_iff 0 (norm_nonneg x),
-      mem_ball_zero_iff]
+    exact volume.setOf_addHaar_ball_norm_lt_addHaar_ball r
   rw [hset]
   rcases eq_or_lt_of_le hr0 with hrzero | hrpos
   · simp [← hrzero]
@@ -80,22 +79,19 @@ theorem _root_.MeasureTheory.NullMeasurableSet.perimeter_setOf_lt_schwarzRearran
 
 variable {u : E → ℝ}
 
-/-- **The BV Pólya–Szegő inequality.** The real-valued Schwarz rearrangement of a nonnegative
-integrable function has total variation at most that of the original function. Both sides
-are extended nonnegative numbers, so the assertion also permits infinite variation. -/
-theorem totalVariationOn_toReal_schwarzRearrangement_le (hu : Integrable u volume)
-    (hu0 : 0 ≤ᵐ[volume] u) :
+/-- **The BV Pólya–Szegő inequality.** The real-valued Schwarz rearrangement of the positive
+part of an integrable function has total variation at most that of the original function.
+Both sides are extended nonnegative numbers, so the assertion also permits infinite
+variation. For nonnegative functions this is their usual Schwarz rearrangement. -/
+theorem totalVariationOn_toReal_schwarzRearrangement_le (hu : Integrable u volume) :
     totalVariationOn volume ⊤
         (fun x ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (u y)) x).toReal) ≤
       totalVariationOn volume ⊤ u := by
   let f : E → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (u x)
   let v : E → ℝ := fun x ↦ (schwarzRearrangement volume f x).toReal
   have hf : AEMeasurable f volume := hu.aemeasurable.ennreal_ofReal
-  have hfinite : ∫⁻ x, schwarzRearrangement volume f x ≠ ∞ := by
-    rw [lintegral_schwarzRearrangement volume hf]
-    exact ((lintegral_ofReal_le_lintegral_enorm u).trans_lt hu.2).ne
   have hae : ∀ᵐ x ∂volume, schwarzRearrangement volume f x ≠ ∞ :=
-    (ae_lt_top (measurable_schwarzRearrangement volume f) hfinite).mono fun _ h ↦ h.ne
+    hu.ae_schwarzRearrangement_ofReal_ne_top
   have hv : Integrable v volume := hu.toReal_schwarzRearrangement
   rw [totalVariationOn_eq_lintegral_perimeter (hv.locallyIntegrable.locallyIntegrableOn ⊤),
     totalVariationOn_eq_lintegral_perimeter (hu.locallyIntegrable.locallyIntegrableOn ⊤)]
@@ -104,9 +100,8 @@ theorem totalVariationOn_toReal_schwarzRearrangement_le (hu : Integrable u volum
   rcases lt_or_gt_of_ne ht with htneg | htpos
   · have hvlevel : {x | t < v x} = univ :=
       eq_univ_of_forall fun x ↦ htneg.trans_le ENNReal.toReal_nonneg
-    have hulevel : {x | t < u x} =ᵐ[volume] (univ : Set E) :=
-      hu0.mono fun x hx ↦ by simp [htneg.trans_le hx]
-    rw [hvlevel, perimeter_congr_ae (ae_restrict_of_ae hulevel), perimeter_univ]
+    rw [hvlevel, perimeter_univ]
+    exact zero_le
   · have hlevel : {x | t < v x} =ᵐ[volume]
         {x | ENNReal.ofReal t < schwarzRearrangement volume f x} := by
       filter_upwards [hae] with x hx
@@ -124,27 +119,25 @@ theorem totalVariationOn_toReal_schwarzRearrangement_norm_le (hu : Integrable u 
     totalVariationOn volume ⊤
         (fun x ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) x).toReal) ≤
       totalVariationOn volume ⊤ u := by
-  refine (totalVariationOn_toReal_schwarzRearrangement_le hu.norm
-    (.of_forall fun x ↦ norm_nonneg (u x))).trans ?_
+  refine (totalVariationOn_toReal_schwarzRearrangement_le hu.norm).trans ?_
   simpa only [Function.comp_def, ENNReal.coe_one, one_mul] using
     totalVariationOn_comp_lipschitz_le (hu.locallyIntegrable.locallyIntegrableOn ⊤)
       (lipschitzWith_one_norm : LipschitzWith 1 (norm : ℝ → ℝ))
 
-/-- Schwarz rearrangement preserves whole-space BV for nonnegative functions. -/
-theorem MemBV.toReal_schwarzRearrangement (hu : MemBV volume ⊤ u)
-    (hu0 : 0 ≤ᵐ[volume] u) :
+/-- Schwarz rearrangement of the positive part preserves whole-space BV. -/
+theorem MemBV.toReal_schwarzRearrangement (hu : MemBV volume ⊤ u) :
     MemBV volume ⊤
       (fun x ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (u y)) x).toReal) := by
   have hint : Integrable u volume := by simpa using hu.integrableOn
   exact memBV_iff.mpr ⟨by simpa using hint.toReal_schwarzRearrangement,
-    (totalVariationOn_toReal_schwarzRearrangement_le hint hu0).trans_lt hu.totalVariationOn_lt_top⟩
+    (totalVariationOn_toReal_schwarzRearrangement_le hint).trans_lt hu.totalVariationOn_lt_top⟩
 
 /-- Rearranging the absolute value of a whole-space BV function preserves BV membership. -/
 theorem MemBV.toReal_schwarzRearrangement_norm (hu : MemBV volume ⊤ u) :
     MemBV volume ⊤
       (fun x ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) x).toReal) := by
-  have hint : Integrable u volume := by simpa using hu.integrableOn
-  exact memBV_iff.mpr ⟨by simpa using hint.norm.toReal_schwarzRearrangement,
-    (totalVariationOn_toReal_schwarzRearrangement_norm_le hint).trans_lt hu.totalVariationOn_lt_top⟩
+  simpa only [Function.comp_def] using
+    (hu.comp_lipschitz (lipschitzWith_one_norm : LipschitzWith 1 (norm : ℝ → ℝ))
+      norm_zero).toReal_schwarzRearrangement
 
 end TauCeti

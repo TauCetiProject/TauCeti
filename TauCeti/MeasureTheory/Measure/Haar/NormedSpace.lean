@@ -56,6 +56,10 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   measure as by radius.
 * `MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq`: every finite nonnegative value is the
   measure of a centered ball in a nontrivial space.
+* `MeasureTheory.Measure.setOf_addHaar_ball_norm_lt_addHaar_ball`: the points whose centered
+  norm-radius ball has measure below that of the radius-`r` ball form exactly the radius-`r` ball.
+* `MeasureTheory.Measure.setOf_measure_ball_norm_lt_top`: every centered norm-radius ball has
+  finite measure for a measure finite on compact sets in a proper space.
 * `MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt`: in a nontrivial space, the set where
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
@@ -225,6 +229,26 @@ theorem _root_.MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq
     ENNReal.ofReal_toReal (ENNReal.div_ne_top hm hω0),
     ENNReal.div_mul_cancel hω0 measure_ball_lt_top.ne]
 
+/-- In a nontrivial finite-dimensional real normed space, the points whose centered norm-radius
+ball has measure strictly below that of the centered radius-`r` ball form exactly that ball.
+No sign condition on `r` is needed. -/
+theorem _root_.MeasureTheory.Measure.setOf_addHaar_ball_norm_lt_addHaar_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (r : ℝ) :
+    {x : E | mu (ball (0 : E) ‖x‖) < mu (ball 0 r)} = ball 0 r := by
+  ext x
+  rw [Set.mem_ofPred_eq, mu.addHaar_ball_lt_addHaar_ball_iff 0 (norm_nonneg x),
+    mem_ball_zero_iff]
+
+/-- Every centered norm-radius ball has finite measure when the space is proper and the measure
+is finite on compact sets; no Haar or vector-space hypothesis is needed. -/
+theorem _root_.MeasureTheory.Measure.setOf_measure_ball_norm_lt_top
+    {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E] [MeasurableSpace E]
+    (mu : Measure E) [IsFiniteMeasureOnCompacts mu] :
+    {x : E | mu (ball (0 : E) ‖x‖) < ⊤} = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ measure_ball_lt_top
+
 /-- In a nontrivial finite-dimensional space, `{x | μ (ball 0 ‖x‖) < m}` is the centered open ball
 of `μ`-measure `m` when `m` is finite, and the whole space when `m = ∞`; in both cases its
 measure is `m`. -/
@@ -234,16 +258,10 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt
     (m : ENNReal) :
     mu {x | mu (ball (0 : E) ‖x‖) < m} = m := by
   rcases eq_or_ne m ⊤ with rfl | hm
-  · have huniv : {x : E | mu (ball (0 : E) ‖x‖) < ⊤} = Set.univ :=
-      Set.eq_univ_of_forall fun _ ↦ measure_ball_lt_top
-    rw [huniv, measure_univ_of_isAddLeftInvariant]
+  · rw [mu.setOf_measure_ball_norm_lt_top, measure_univ_of_isAddLeftInvariant]
   -- For finite `m`, pick the radius `r` of the centered ball of measure `m`.
-  obtain ⟨r, hr0, hr⟩ := mu.exists_nonneg_addHaar_ball_eq hm
-  have hset : {x : E | mu (ball (0 : E) ‖x‖) < m} = ball 0 r := by
-    ext x
-    rw [← hr, Set.mem_ofPred_eq, mu.addHaar_ball_lt_addHaar_ball_iff 0 (norm_nonneg x),
-      mem_ball_zero_iff]
-  rw [hset, hr]
+  obtain ⟨r, _, hr⟩ := mu.exists_nonneg_addHaar_ball_eq hm
+  rw [← hr, mu.setOf_addHaar_ball_norm_lt_addHaar_ball]
 
 /-- A closed ball of radius `R ≤ c r` has at most `cⁿ` times the real measure of a closed ball of
 radius `r > 0`, whatever their centres, where `n` is the dimension. -/
