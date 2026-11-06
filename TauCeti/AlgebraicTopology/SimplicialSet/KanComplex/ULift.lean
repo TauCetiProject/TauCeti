@@ -180,6 +180,10 @@ def uliftMulEquiv (n : ℕ) (x : (uliftFunctor.{v}.obj X) _⦋0⦌) :
 lemma uliftMulEquiv_apply (a : π (n + 1) (uliftFunctor.{v}.obj X) x) :
     uliftMulEquiv n x a = uliftEquiv n x a := (rfl)
 
+@[simp]
+lemma uliftMulEquiv_symm_apply (a : π (n + 1) X x.down) :
+    (uliftMulEquiv.{u, v} n x).symm a = (uliftEquiv n x).symm a := (rfl)
+
 end KanComplex.π
 
 end SSet

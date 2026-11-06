@@ -251,6 +251,13 @@ lemma equivOfIso_apply {Y : SSet.{u}} {y : Y _⦋0⦌} (e : X ≅ Y)
     (hy : e.hom.app _ x = y) (a : π n X x) :
     equivOfIso e hy a = map e.hom hy a := (rfl)
 
+omit [KanComplex X] in
+@[simp]
+lemma equivOfIso_symm_apply {Y : SSet.{u}} {y : Y _⦋0⦌} (e : X ≅ Y)
+    (hy : e.hom.app _ x = y) (a : π n Y y) :
+    (equivOfIso e hy).symm a =
+      map e.inv (by rw [← hy]; exact congr($(e.hom_inv_id).app _ x)) a := (rfl)
+
 /-- Isomorphisms of Kan complexes induce group isomorphisms on positive homotopy groups. -/
 def mulEquivOfIso {Y : SSet.{u}} [KanComplex Y] {y : Y _⦋0⦌}
     (e : X ≅ Y) (hy : e.hom.app _ x = y) :
@@ -262,6 +269,12 @@ def mulEquivOfIso {Y : SSet.{u}} [KanComplex Y] {y : Y _⦋0⦌}
 lemma mulEquivOfIso_apply {Y : SSet.{u}} [KanComplex Y] {y : Y _⦋0⦌}
     (e : X ≅ Y) (hy : e.hom.app _ x = y) (a : π (n + 1) X x) :
     mulEquivOfIso e hy a = map e.hom hy a := (rfl)
+
+@[simp]
+lemma mulEquivOfIso_symm_apply {Y : SSet.{u}} [KanComplex Y] {y : Y _⦋0⦌}
+    (e : X ≅ Y) (hy : e.hom.app _ x = y) (a : π (n + 1) Y y) :
+    (mulEquivOfIso e hy).symm a =
+      map e.inv (by rw [← hy]; exact congr($(e.hom_inv_id).app _ x)) a := (rfl)
 
 end π
 
