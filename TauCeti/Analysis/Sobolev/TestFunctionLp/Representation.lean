@@ -37,7 +37,7 @@ open scoped ContDiff Distributions ENNReal
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
-  [μ.IsOpenPosMeasure] {Ω : Opens E} [IsLocallyFiniteMeasure (μ.restrict Ω)]
+  {Ω : Opens E} [IsLocallyFiniteMeasure (μ.restrict Ω)]
   [SigmaFinite (μ.restrict Ω)] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
   [p.HolderConjugate q]
 

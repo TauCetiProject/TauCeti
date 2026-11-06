@@ -15,6 +15,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Dilation
 public import TauCeti.MeasureTheory.Measure.Haar.Restrict
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -141,7 +142,7 @@ end Injectivity
 
 section Representation
 
-variable [mu.IsOpenPosMeasure] [IsLocallyFiniteMeasure (mu.restrict Omega)]
+variable [IsLocallyFiniteMeasure (mu.restrict Omega)]
 
 omit [IsLocallyFiniteMeasure (mu.restrict Omega)] in
 /-- A distributional directional test bound extends to a continuous functional on `Lᵠ`
@@ -161,25 +162,34 @@ theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥
   have hℓ (phi : 𝓓(Omega, ℝ)) :
       ℓ phi = ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu := by
     simp [ℓ, TestFunction.integralAgainstBilinCLM_eq_integral hu]
-  let e := LinearEquiv.ofInjective (testFunctionLpₗ mu Omega q) (testFunctionLp_injective q)
-  have heval (phi : 𝓓(Omega, ℝ)) :
-      (e phi : Lp ℝ q (mu.restrict Omega)) = testFunctionLp q phi := by
-    exact (LinearEquiv.ofInjective_apply (testFunctionLpₗ mu Omega q) phi).trans
-      (testFunctionLpₗ_apply q phi)
-  let f₀ : LinearMap.range (testFunctionLpₗ mu Omega q) →ₗ[ℝ] ℝ :=
-    ℓ.toLinearMap ∘ₗ e.symm.toLinearMap
+  let T := testFunctionLpₗ mu Omega q
+  have hnorm (phi : 𝓓(Omega, ℝ)) :
+      ‖T phi‖ = (eLpNorm (phi : E → ℝ) q mu).toReal := by
+    rw [testFunctionLpₗ_apply, ← toReal_enorm]
+    exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm q phi)
+  have hker : LinearMap.ker T.rangeRestrict ≤ LinearMap.ker ℓ.toLinearMap := by
+    rw [LinearMap.ker_rangeRestrict]
+    intro phi hphi
+    have h := hbound phi
+    rw [← hnorm, LinearMap.mem_ker.mp hphi, norm_zero, mul_zero] at h
+    rw [LinearMap.mem_ker]
+    exact (hℓ phi).trans (abs_nonpos_iff.mp h)
+  let f₀ : LinearMap.range T →ₗ[ℝ] ℝ :=
+    T.rangeRestrict.liftOfSurjective T.surjective_rangeRestrict ⟨ℓ.toLinearMap, hker⟩
+  have hf₀_apply (phi : 𝓓(Omega, ℝ)) : f₀ (T.rangeRestrict phi) = ℓ phi :=
+    LinearMap.equivOfSurjective_apply T.surjective_rangeRestrict hker
+  have hcoe (phi : 𝓓(Omega, ℝ)) :
+      (T.rangeRestrict phi : Lp ℝ q (mu.restrict Omega)) = testFunctionLp q phi :=
+    testFunctionLpₗ_apply q phi
   have hf₀ : ∀ s, ‖f₀ s‖ ≤ C * ‖s‖ := by
     intro s
-    obtain ⟨phi, rfl⟩ := e.surjective s
-    have hnorm : ‖e phi‖ = (eLpNorm (phi : E → ℝ) q mu).toReal := by
-      rw [← Submodule.norm_coe, heval, ← toReal_enorm]
-      exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm q phi)
-    simpa [f₀, hℓ, hnorm] using hbound phi
+    obtain ⟨phi, rfl⟩ := T.surjective_rangeRestrict s
+    rw [hf₀_apply, Real.norm_eq_abs, hℓ, ← Submodule.norm_coe, hcoe]
+    simpa only [testFunctionLpₗ_apply] using (hnorm phi ▸ hbound phi)
   obtain ⟨Λ, hΛ, hΛnorm⟩ := exists_extension_norm_eq _ (f₀.mkContinuous C hf₀)
   refine ⟨Λ, hΛnorm.trans_le (LinearMap.mkContinuous_norm_le _ hC hf₀), fun phi ↦ ?_⟩
-  have h := hΛ (e phi)
-  rw [heval] at h
-  simpa [f₀, hℓ] using h
+  have h := hΛ (T.rangeRestrict phi)
+  simpa only [hcoe, LinearMap.mkContinuous_apply, hf₀_apply, hℓ] using h
 
 /-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
 integrable on `Omega`. If for some `C ≥ 0` every test function `phi` on `Omega` satisfies
