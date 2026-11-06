@@ -38,10 +38,9 @@ variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measur
 for conjugate exponents strictly between one and infinity. -/
 theorem toDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
     Function.Surjective (toDual 𝕜 μ p q) := by
-  let T := toDual 𝕜 μ p q
-  let S := T.toLinearMap.range
+  let S := (toDual 𝕜 μ p q).toLinearMap.range
   have hS : IsClosed (S : Set (StrongDual 𝕜 (Lp 𝕜 q μ))) :=
-    T.isometry.isClosedEmbedding.isClosed_range
+    (toDual 𝕜 μ p q).isometry.isClosedEmbedding.isClosed_range
   intro Λ
   suffices Λ ∈ S.topologicalClosure by
     rw [hS.submodule_topologicalClosure_eq] at this
@@ -53,10 +52,9 @@ theorem toDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
     apply (toDual 𝕜 μ q p).injective
     apply ContinuousLinearMap.ext
     intro g
-    have hzero := hΨ (T g) (LinearMap.mem_range_self T.toLinearMap g)
-    rw [NormedSpace.dual_def] at hzero
-    change (toDual 𝕜 μ p q g) f = 0 at hzero
-    rw [toDual_apply] at hzero
+    have hzero := hΨ (toDual 𝕜 μ p q g)
+      (LinearMap.mem_range_self (toDual 𝕜 μ p q).toLinearMap g)
+    rw [NormedSpace.dual_def, toDual_apply] at hzero
     rw [map_zero, zero_apply, toDual_apply]
     simpa only [mul_comm] using hzero
   simp [hf]
@@ -67,9 +65,23 @@ noncomputable def dualEquiv (hq : 1 < q) (hq_top : q ≠ ∞) :
     Lp 𝕜 p μ ≃ₗᵢ[𝕜] StrongDual 𝕜 (Lp 𝕜 q μ) :=
   LinearIsometryEquiv.ofSurjective (toDual 𝕜 μ p q) (toDual_surjective hq hq_top)
 
-@[simp]
+/-- Evaluation of the integral representation equivalence. -/
 theorem dualEquiv_apply (hq : 1 < q) (hq_top : q ≠ ∞) (g : Lp 𝕜 p μ) (f : Lp 𝕜 q μ) :
     dualEquiv 𝕜 μ p q hq hq_top g f = ∫ x, g x * f x ∂μ :=
   toDual_apply g f
+
+@[simp]
+theorem coe_dualEquiv (hq : 1 < q) (hq_top : q ≠ ∞) :
+    ⇑(dualEquiv 𝕜 μ p q hq hq_top) = toDual 𝕜 μ p q := by
+  funext g
+  ext f
+  exact (dualEquiv_apply hq hq_top g f).trans (toDual_apply g f).symm
+
+/-- The representing density of a functional integrates to its value on every `Lᵠ` function. -/
+@[simp]
+theorem integral_dualEquiv_symm_mul (hq : 1 < q) (hq_top : q ≠ ∞)
+    (Λ : StrongDual 𝕜 (Lp 𝕜 q μ)) (f : Lp 𝕜 q μ) :
+    ∫ x, (dualEquiv 𝕜 μ p q hq hq_top).symm Λ x * f x ∂μ = Λ f := by
+  rw [← dualEquiv_apply hq hq_top, LinearIsometryEquiv.apply_symm_apply]
 
 end MeasureTheory.Lp
