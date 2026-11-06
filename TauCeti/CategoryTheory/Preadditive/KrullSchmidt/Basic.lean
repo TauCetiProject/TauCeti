@@ -28,8 +28,8 @@ to a finite biproduct of objects with local endomorphism rings.
 
 * `TauCeti.isIdempotentComplete_of_isKrullSchmidt`: a Krull-Schmidt category is idempotent
   complete.
-* `TauCeti.indecomposable_iff_isLocalRing_end`: in a Krull-Schmidt category, an object is
-  indecomposable exactly when its endomorphism ring is local.
+* `TauCeti.IsKrullSchmidt.indecomposable_iff_isLocalRing_end`: in a Krull-Schmidt category, an
+  object is indecomposable exactly when its endomorphism ring is local.
 * `TauCeti.IsKrullSchmidt.of_equivalence`: the Krull-Schmidt property is invariant under
   equivalence of categories.
 
@@ -247,7 +247,7 @@ attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 /-- **In a Krull-Schmidt category, an object is indecomposable exactly when its endomorphism ring
 is local.** The converse direction holds in any preadditive category with binary biproducts
 (`TauCeti.indecomposable_of_isLocalRing_end`). -/
-theorem indecomposable_iff_isLocalRing_end [IsKrullSchmidt C] (X : C) :
+theorem IsKrullSchmidt.indecomposable_iff_isLocalRing_end [IsKrullSchmidt C] (X : C) :
     Indecomposable X ↔ IsLocalRing (End X) := by
   refine ⟨fun hX ↦ ?_, fun _ ↦ indecomposable_of_isLocalRing_end⟩
   obtain ⟨n, P, hP, ⟨φ⟩⟩ := IsKrullSchmidt.exists_iso_biproduct X
