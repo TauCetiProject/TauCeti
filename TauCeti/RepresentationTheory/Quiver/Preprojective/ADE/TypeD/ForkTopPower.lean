@@ -82,11 +82,11 @@ private theorem forkBacktrack_false :
   cases l
   · rw [forkBacktrack_false]
     exact forkTurn_mul_self k (G := DG)
-      (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn) (by omega)
+      (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1) (by omega)
       (by rw [DynkinType.rank_D]; omega)
   · rw [forkBacktrack_true]
     exact forkTurn_mul_self k (G := DG)
-      (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn) (by omega)
+      (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1) (by omega)
       (by rw [DynkinType.rank_D]; omega)
 
 /-- The sum of the leaf backtracks has zero `(n - 2)`-nd power. -/
@@ -95,7 +95,7 @@ private theorem forkBacktrack_false :
       signlessPreprojectiveDForkBacktrack (n := n) k false) ^ (c + 1) = 0 := by
   rw [forkBacktrack_true, forkBacktrack_false]
   exact forkTurn_add_pow_eq_zero k (G := DG) (by rw [DynkinType.rank_D]; omega)
-    (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn)
+    (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1)
 
 /-- The arrow from the fork into the long arm kills the `(n - 3)`-rd power of
     the sum of the two leaf backtracks. -/
@@ -106,7 +106,7 @@ private theorem signlessArrow_mul_DForkBacktrack_add_pow_eq_zero (hn : 3 ≤ n) 
   rw [forkBacktrack_true, forkBacktrack_false]
   simpa only [forkUp, Nat.sub_zero] using
     forkUp_mul_forkTurn_add_pow_eq_zero k (G := DG) (by rw [DynkinType.rank_D]; omega)
-      (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn) hc
+      (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1) hc
 
 /-- The longest fork word is `x (x + y)^(n - 3)`, in later-factor-first order. -/
 theorem signlessPreprojectiveDForkTopWord_eq (hn : 3 ≤ n) :
@@ -238,7 +238,7 @@ private theorem leafArrow_mul_topWord (hn : 3 ≤ n) (l : Bool) :
   have hleaf : signlessArrow k DG c (if l then c + 1 else c + 2) *
       (if l then x else y) = 0 := by
     have h := signlessArrow_mul_signlessArrow_leaf k (G := DG)
-      (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn)
+      (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1)
       (l := if l then c + 1 else c + 2) (by split_ifs <;> omega)
       (by rw [DynkinType.rank_D]; split_ifs <;> omega)
     cases l <;> simp only [Bool.false_eq_true, ite_false, ite_true,
