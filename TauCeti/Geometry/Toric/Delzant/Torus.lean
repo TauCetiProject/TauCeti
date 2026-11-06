@@ -53,6 +53,16 @@ the vector subgroup `𝔫` itself. Without surjectivity of `β` the kernel of `�
 disconnected: the normal `2` in `ℤ` gives the map `θ ↦ 2θ` of circles, whose kernel has two
 points.
 
+For an integral lattice, the kernel of `π` meets the coordinate subtorus spanned by the
+constraints active at a smooth vertex only in `0`
+(`TauCeti.Toric.IsSmoothVertex.eq_zero_of_mem_ker_facetTorusHom`): those normals form a basis of
+`N`, so a real combination of them lies in `p i(N)` only if its coefficients lie in `pℤ`. Since
+the constraints active at any point of a Delzant polytope are active at some vertex, the same
+holds for the coordinate subtorus of every face
+(`TauCeti.Toric.IsDelzant.eq_zero_of_mem_ker_facetTorusHom`). This is why `N_Δ` acts freely on
+the level set of the Delzant construction, where the stabilizers of the torus `(ℝ / 2πℤ)^ι` are
+exactly these coordinate subtori.
+
 ## Main definitions
 
 * `TauCeti.Toric.facetTorusHom i u p`: the homomorphism `(ℝ / pℤ)^ι → V / p i(N)`,
@@ -68,6 +78,9 @@ points.
   `TauCeti.Toric.IsDelzant.isConnected_ker_facetTorusHom`: the kernel of `π` is connected.
 * `TauCeti.Toric.surjective_facetTorusHom`, `TauCeti.Toric.IsDelzant.surjective_facetTorusHom`:
   `π` is surjective.
+* `TauCeti.Toric.IsSmoothVertex.eq_zero_of_mem_ker_facetTorusHom`,
+  `TauCeti.Toric.IsDelzant.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the
+  coordinate subtorus of a vertex, and of every face of a Delzant polytope, trivially.
 
 ## References
 
@@ -199,6 +212,50 @@ section Delzant
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {i : N →+ V} {u : ι → N} {c : ι → ℝ}
 
+omit [FiniteDimensional ℝ V] in
+/-- **The kernel torus meets the coordinate subtorus of a smooth vertex trivially.** For an
+integral lattice and a smooth vertex `v`, an element of the kernel of
+`(ℝ / pℤ)^ι → V / p i(N)` whose coordinates vanish off the constraints active at `v` is zero: the
+normals active at `v` form a basis of `N`, so a combination of them with real coefficients lies
+in `p i(N)` only if every coefficient lies in `pℤ`. -/
+theorem IsSmoothVertex.eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i)
+    {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v) {p : ℝ} {θ : ι → AddCircle p}
+    (hθ : θ ∈ (facetTorusHom i u p).ker)
+    (hA : ∀ j ∉ activeSet (facetPairing i u) c v, θ j = 0) : θ = 0 := by
+  classical
+  set A := activeSet (facetPairing i u) c v
+  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 hv
+  -- Lift `θ` to real coordinates vanishing off `A`.
+  choose s hs using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
+  set t : ι → ℝ := fun j ↦ if j ∈ A then s j else 0
+  have hθt : θ = fun j ↦ (t j : AddCircle p) := funext fun j ↦ by
+    by_cases hj : j ∈ A
+    · simp [t, hj, ← hs j]
+    · simp [t, hj, hA j hj]
+  rw [hθt, AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff] at hθ
+  obtain ⟨n, hn⟩ := hθ
+  -- In the basis `b` of `N`, the relation `∑ⱼ tⱼ i(uⱼ) = p i(n)` compares coefficients.
+  have hsum : ∑ j, t j • i (u j) = ∑ a : A, t a • i (u a) := by
+    rw [← Fintype.sum_subtype_add_sum_subtype (· ∈ A), add_eq_left]
+    exact Finset.sum_eq_zero fun j _ ↦ by simp [t, j.2]
+  have hin : (p • i) n = ∑ a : A, (p * b.repr n a) • i (u a) := by
+    conv_lhs => rw [AddMonoidHom.smul_apply, ← b.sum_repr n, map_sum, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    rw [map_zsmul, hb, ← Int.cast_smul_eq_zsmul ℝ, smul_smul]
+  have hrel : ∑ a : A, (t a - p * b.repr n a) • i (b a) = 0 := by
+    simp only [hb, sub_smul, Finset.sum_sub_distrib, ← hsum, ← hin]
+    rw [hn, Fintype.linearCombination_apply, sub_self]
+  have hcoef := Fintype.linearIndependent_iff.1 (hi.linearIndependent_basis b) _ hrel
+  rw [hθt]
+  funext j
+  by_cases hj : j ∈ A
+  · rw [Pi.zero_apply, AddCircle.coe_eq_zero_iff]
+    refine ⟨b.repr n ⟨j, hj⟩, ?_⟩
+    have hj' := hcoef ⟨j, hj⟩
+    simp only [t, hj, ite_true, sub_eq_zero] at hj' ⊢
+    rw [zsmul_eq_mul, hj', mul_comm]
+  · simp [t, hj]
+
 namespace IsDelzant
 
 variable (hΔ : IsDelzant i u c)
@@ -232,6 +289,17 @@ theorem finrank_ker_linearCombination_real_add_finrank (hi : IsIntegralLattice i
       Module.finrank ℝ V = Fintype.card ι :=
   Toric.finrank_ker_linearCombination_real_add_finrank hi.span_range_eq_top
     hΔ.surjective_linearCombination
+
+/-- **The kernel torus meets the coordinate subtorus of every face trivially.** For a Delzant
+polytope in an integral lattice and a point `x` of the polytope, an element of the kernel of
+`(ℝ / pℤ)^ι → V / p i(N)` whose coordinates vanish off the constraints active at `x` is zero. -/
+theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {x : StrongDual ℝ V}
+    (hx : x ∈ facetPolyhedron i u c) {p : ℝ} {θ : ι → AddCircle p}
+    (hθ : θ ∈ (facetTorusHom i u p).ker)
+    (hA : ∀ j ∉ activeSet (facetPairing i u) c x, θ j = 0) : θ = 0 := by
+  obtain ⟨v, hv, hxv⟩ := hΔ.exists_mem_extremePoints_activeSet_subset hx
+  exact (hΔ.isSmoothVertex v hv).eq_zero_of_mem_ker_facetTorusHom hi hθ
+    fun j hj ↦ hA j fun hjx ↦ hj (hxv hjx)
 
 end IsDelzant
 

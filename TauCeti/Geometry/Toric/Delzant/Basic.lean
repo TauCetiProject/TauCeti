@@ -56,6 +56,8 @@ freedom of shifting a moment map by a constant.
 
 * `TauCeti.Toric.IsDelzant.isCompact`: a Delzant polytope is compact.
 * `TauCeti.Toric.IsDelzant.extremePoints_nonempty`: a Delzant polytope has a vertex.
+* `TauCeti.Toric.IsDelzant.exists_mem_extremePoints_activeSet_subset`: the constraints active at a
+  point of a Delzant polytope are active at some vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_linearIndepOn`: a smooth vertex is a point whose active
   normals are linearly independent and generate the lattice.
 * `TauCeti.Toric.IsSmoothVertex.ncard_activeSet`: exactly `rank N` facets meet at a smooth vertex.
@@ -188,17 +190,34 @@ theorem isCompact : IsCompact (facetPolyhedron i u c) :=
 theorem extremePoints_nonempty : ((facetPolyhedron i u c).extremePoints ℝ).Nonempty :=
   hΔ.isCompact.extremePoints_nonempty hΔ.nonempty
 
+/-- Every face of a Delzant polytope contains a vertex: the constraints active at a point of the
+polytope are all active at some vertex. -/
+theorem exists_mem_extremePoints_activeSet_subset {x : StrongDual ℝ V}
+    (hx : x ∈ facetPolyhedron i u c) :
+    ∃ v ∈ (facetPolyhedron i u c).extremePoints ℝ,
+      activeSet (facetPairing i u) c x ⊆ activeSet (facetPairing i u) c v := by
+  set F := {y | y ∈ facetPolyhedron i u c ∧
+    activeSet (facetPairing i u) c x ⊆ activeSet (facetPairing i u) c y}
+  have hF : IsExtreme ℝ (facetPolyhedron i u c) F :=
+    isExtreme_polyhedron_setOf_activeSet_subset x
+  -- The face `F` is cut out of the polytope by the equations of the constraints active at `x`.
+  have hFeq : F = facetPolyhedron i u c ∩
+      ⋂ j ∈ activeSet (facetPairing i u) c x, {y | y (i (u j)) = c j} := by
+    ext y
+    simp [F, subset_def]
+  have hcpt : IsCompact F := by
+    rw [hFeq]
+    exact hΔ.isCompact.inter_right (isClosed_biInter fun j _ ↦
+      isClosed_eq (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous continuous_const)
+  obtain ⟨v, hv⟩ := hcpt.extremePoints_nonempty ⟨x, hx, subset_rfl⟩
+  exact ⟨v, hF.extremePoints_subset_extremePoints hv, (extremePoints_subset hv).2⟩
+
 /-- Every facet of a Delzant polytope contains a vertex. -/
 theorem exists_mem_extremePoints_mem_activeSet (j : ι) :
     ∃ x ∈ (facetPolyhedron i u c).extremePoints ℝ, j ∈ activeSet (facetPairing i u) c x := by
-  have hF := isExtreme_polyhedron_inter_setOf_eq (f := facetPairing i u) (c := c) j
-  have hcpt : IsCompact (facetPolyhedron i u c ∩ {x | facetPairing i u j x = c j}) :=
-    hΔ.isCompact.inter_right (isClosed_eq (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
-      continuous_const)
   obtain ⟨x, hx, hxj⟩ := hΔ.irredundant j
-  have hxj' : j ∈ activeSet (facetPairing i u) c x := hxj ▸ mem_singleton j
-  obtain ⟨y, hy⟩ := hcpt.extremePoints_nonempty ⟨x, hx, mem_activeSet.1 hxj'⟩
-  exact ⟨y, hF.extremePoints_subset_extremePoints hy, mem_activeSet.2 (extremePoints_subset hy).2⟩
+  obtain ⟨v, hv, hxv⟩ := hΔ.exists_mem_extremePoints_activeSet_subset hx
+  exact ⟨v, hv, hxv (hxj ▸ mem_singleton j)⟩
 
 /-- The facet normals of a Delzant polytope are primitive lattice vectors. -/
 theorem isPrimitive (j : ι) : IsPrimitive (u j) := by

@@ -34,8 +34,10 @@ a vector annihilated by the active functionals. In finite dimension this says th
 functionals span the dual space.
 
 For each `j`, the points of `P` where the constraint `j` is active form an extreme subset of `P`
-(`TauCeti.isExtreme_polyhedron_inter_setOf_eq`), its `j`-th face. The extreme points of a face
-are therefore vertices of `P` at which `j` is active.
+(`TauCeti.isExtreme_polyhedron_inter_setOf_eq`), its `j`-th face. More generally, the points of
+`P` at which every constraint active at a given `x` is active form an extreme subset
+(`TauCeti.isExtreme_polyhedron_setOf_activeSet_subset`). The extreme points of a face are
+therefore vertices of `P` at which the constraints defining the face are active.
 
 ## Main definitions
 
@@ -47,6 +49,8 @@ are therefore vertices of `P` at which `j` is active.
 * `TauCeti.convex_polyhedron`: a polyhedron is convex.
 * `TauCeti.isExtreme_polyhedron_inter_setOf_eq`: the face where one constraint is active is an
   extreme subset.
+* `TauCeti.isExtreme_polyhedron_setOf_activeSet_subset`: the face where the constraints active at
+  a given point are active is an extreme subset.
 * `TauCeti.mem_extremePoints_polyhedron_iff`: the vertices are the points of the polyhedron at
   which the active functionals have no common nonzero zero.
 
@@ -115,6 +119,13 @@ theorem isExtreme_polyhedron_inter_setOf_eq (j : ι) :
     IsExtreme 𝕜 (polyhedron f c) (polyhedron f c ∩ {x | f j x = c j}) := by
   refine ⟨inter_subset_left, fun x₁ hx₁ x₂ hx₂ x hx hseg ↦ ?_⟩
   exact ⟨hx₁, (mem_activeSet_of_mem_openSegment hx₁ hx₂ hseg hx.2).1⟩
+
+/-- The points of a polyhedron at which every constraint active at `x` is active form an extreme
+subset of the polyhedron: the face cut out by the constraints active at `x`. -/
+theorem isExtreme_polyhedron_setOf_activeSet_subset (x : E) :
+    IsExtreme 𝕜 (polyhedron f c) {y | y ∈ polyhedron f c ∧ activeSet f c x ⊆ activeSet f c y} :=
+  ⟨fun _ hy ↦ hy.1, fun _ hy₁ _ hy₂ _ hy hseg ↦
+    ⟨hy₁, fun _ hj ↦ (mem_activeSet_of_mem_openSegment hy₁ hy₂ hseg (hy.2 hj)).1⟩⟩
 
 /-- **Vertices of a polyhedron.** A point `x` of a polyhedron cut out by finitely many
 half-spaces is an extreme point exactly when the only vector annihilated by all the functionals
