@@ -174,8 +174,8 @@ private theorem exists_affineBasis_projAlong {i : Fin n} {c : P} (hΔ : poly.IsD
     (hT : AffineIndependent ℝ ![projAlong ℝ p₀ d (poly i),
       projAlong ℝ p₀ d (poly (finRotate n i)), projAlong ℝ p₀ d c])
     (hd : d ≠ 0) (b : Basis (Fin 3) ℝ V) :
-    ∃ β : AffineBasis (Fin 3) ℝ (V ⧸ ℝ ∙ d), ⇑β = ![projAlong ℝ p₀ d (poly i),
-        projAlong ℝ p₀ d (poly (finRotate n i)), projAlong ℝ p₀ d c] ∧
+    ∃ β : AffineBasis (Fin 3) ℝ (V ⧸ ℝ ∙ d), projAlong ℝ p₀ d (poly i) = β 0 ∧
+      projAlong ℝ p₀ d (poly (finRotate n i)) = β 1 ∧ projAlong ℝ p₀ d c = β 2 ∧
       InjOn (projAlong ℝ p₀ d) hΔ.triangle.closedInterior ∧
       ∀ y, y ∈ projAlong ℝ p₀ d '' hΔ.triangle.closedInterior ↔ ∀ k, 0 ≤ β.coord k y := by
   set π := projAlong ℝ p₀ d
@@ -199,7 +199,7 @@ private theorem exists_affineBasis_projAlong {i : Fin n} {c : P} (hΔ : poly.IsD
     have hc (k) : β.coord k (π (Finset.univ.affineCombination ℝ hΔ.triangle.points w)) = w k := by
       rw [hπcomb w hw, β.coord_apply_combination_of_mem (Finset.mem_univ k) hw]
     exact ⟨by simp only [hc], fun k ↦ by rw [hc]; exact (hwI k).1⟩
-  refine ⟨β, rfl, fun p₁ hp₁ p₂ hp₂ h ↦ by rw [← (hDrep hp₁).1, ← (hDrep hp₂).1, h],
+  refine ⟨β, rfl, rfl, rfl, fun p₁ hp₁ p₂ hp₂ h ↦ by rw [← (hDrep hp₁).1, ← (hDrep hp₂).1, h],
     fun y ↦ ⟨?_, fun hy ↦ ?_⟩⟩
   · rintro ⟨p, hp, rfl⟩
     exact (hDrep hp).2
@@ -282,11 +282,12 @@ private theorem exists_triangle_exit_edgePath (hs : poly.IsSimple ℝ)
         z = poly i ∨ z = poly (finRotate n i))
     (hji : j ≠ i) (ha : poly i ∉ poly.edgeSet ℝ j)
     (ha' : poly (finRotate n i) ∉ poly.edgeSet ℝ j) {β : AffineBasis (Fin 3) ℝ (V ⧸ ℝ ∙ d)}
-    (hβ : ⇑β = ![projAlong ℝ p₀ d (poly i), projAlong ℝ p₀ d (poly (finRotate n i)),
-      projAlong ℝ p₀ d c])
+    (hβ0 : projAlong ℝ p₀ d (poly i) = β 0)
+    (hβ1 : projAlong ℝ p₀ d (poly (finRotate n i)) = β 1) (hβ2 : projAlong ℝ p₀ d c = β 2)
     (hmemT : ∀ y, y ∈ projAlong ℝ p₀ d '' hΔ.triangle.closedInterior ↔ ∀ k, 0 ≤ β.coord k y)
     {f : Fin 3 → ℝ →ᵃ[ℝ] ℝ}
-    (hf : ∀ k s, f k s = β.coord k (projAlong ℝ p₀ d (poly.edgePath ℝ j s))) {r s₀ : ℝ}
+    (hf : ∀ k s, f k s = β.coord k (projAlong ℝ p₀ d (poly.edgePath ℝ j s)))
+    (hsum : ∀ s, f 0 s + f 1 s + f 2 s = 1) {r s₀ : ℝ}
     (hr : r ∈ Ioo (0 : ℝ) 1) (hs₀ : s₀ ∈ Ioo (0 : ℝ) 1)
     (hπx : projAlong ℝ p₀ d (lineMap (poly i) (poly (finRotate n i)) r) =
       projAlong ℝ p₀ d (poly.edgePath ℝ j s₀)) :
@@ -299,12 +300,6 @@ private theorem exists_triangle_exit_edgePath (hs : poly.IsSimple ℝ)
   obtain ⟨hout₀, hout₁⟩ := projAlong_notMem_image_closedInterior hs hΔ hprism ha ha'
   have hv {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) := projAlong_edgePath_ne hπ hπ' hΔ hji ha ha' hs
   set π := projAlong ℝ p₀ d
-  have hsum (s : ℝ) : f 0 s + f 1 s + f 2 s = 1 := by
-    have h := β.sum_coord_apply_eq_one (π (poly.edgePath ℝ j s))
-    rwa [Fin.sum_univ_three, ← hf, ← hf, ← hf] at h
-  have hβ0 : π (poly i) = β 0 := by simp [hβ]
-  have hβ1 : π (poly (finRotate n i)) = β 1 := by simp [hβ]
-  have hβ2 : π c = β 2 := by simp [hβ]
   -- The coordinates of the crossing with edge `i`, on the side from `β 0` to `β 1`.
   have hcl (k : Fin 3) :
       f k s₀ = lineMap (if k = 0 then (1 : ℝ) else 0) (if k = 1 then 1 else 0) r := by
@@ -337,15 +332,12 @@ edges project onto the sides from `β 0` to `β 2` and from `β 2` to `β 1` of 
 triangle, so on them coordinate `1` or coordinate `0` vanishes, and the others are nonnegative. -/
 private theorem coord_projAlong_of_mem_union {i : Fin n} {c : P}
     {β : AffineBasis (Fin 3) ℝ (V ⧸ ℝ ∙ d)}
-    (hβ : ⇑β = ![projAlong ℝ p₀ d (poly i), projAlong ℝ p₀ d (poly (finRotate n i)),
-      projAlong ℝ p₀ d c]) {z : P}
+    (hβ0 : projAlong ℝ p₀ d (poly i) = β 0)
+    (hβ1 : projAlong ℝ p₀ d (poly (finRotate n i)) = β 1) (hβ2 : projAlong ℝ p₀ d c = β 2) {z : P}
     (hz : z ∈ affineSegment ℝ (poly i) c ∪ affineSegment ℝ c (poly (finRotate n i))) :
     (β.coord 1 (projAlong ℝ p₀ d z) = 0 ∧ 0 ≤ β.coord 0 (projAlong ℝ p₀ d z) ∨
       β.coord 0 (projAlong ℝ p₀ d z) = 0 ∧ 0 ≤ β.coord 1 (projAlong ℝ p₀ d z)) ∧
       0 ≤ β.coord 2 (projAlong ℝ p₀ d z) := by
-  have hβ0 : projAlong ℝ p₀ d (poly i) = β 0 := by simp [hβ]
-  have hβ1 : projAlong ℝ p₀ d (poly (finRotate n i)) = β 1 := by simp [hβ]
-  have hβ2 : projAlong ℝ p₀ d c = β 2 := by simp [hβ]
   rcases hz with ⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩
   · rw [(projAlong ℝ p₀ d).apply_lineMap, hβ0, hβ2, β.coord_lineMap, β.coord_lineMap,
       β.coord_lineMap]
@@ -370,8 +362,8 @@ private theorem exists_exit (hs : poly.IsSimple ℝ)
         z = poly i ∨ z = poly (finRotate n i))
     (hji : j ≠ i) (ha : poly i ∉ poly.edgeSet ℝ j)
     (ha' : poly (finRotate n i) ∉ poly.edgeSet ℝ j) {β : AffineBasis (Fin 3) ℝ (V ⧸ ℝ ∙ d)}
-    (hβ : ⇑β = ![projAlong ℝ p₀ d (poly i), projAlong ℝ p₀ d (poly (finRotate n i)),
-      projAlong ℝ p₀ d c])
+    (hβ0 : projAlong ℝ p₀ d (poly i) = β 0)
+    (hβ1 : projAlong ℝ p₀ d (poly (finRotate n i)) = β 1) (hβ2 : projAlong ℝ p₀ d c = β 2)
     (hmemT : ∀ y, y ∈ projAlong ℝ p₀ d '' hΔ.triangle.closedInterior ↔ ∀ k, 0 ≤ β.coord k y)
     {r s₀ : ℝ} (hr : r ∈ Ioo (0 : ℝ) 1) (hs₀ : s₀ ∈ Ioo (0 : ℝ) 1)
     (hπx : projAlong ℝ p₀ d (lineMap (poly i) (poly (finRotate n i)) r) =
@@ -392,17 +384,16 @@ private theorem exists_exit (hs : poly.IsSimple ℝ)
   set π := projAlong ℝ p₀ d
   set f : Fin 3 → ℝ →ᵃ[ℝ] ℝ := fun k ↦ (β.coord k).comp (π.comp (poly.edgePath ℝ j))
   have hf (k : Fin 3) (s : ℝ) : f k s = β.coord k (π (poly.edgePath ℝ j s)) := rfl
+  have hsum (s : ℝ) : f 0 s + f 1 s + f 2 s = 1 := by
+    have h := β.sum_coord_apply_eq_one (π (poly.edgePath ℝ j s))
+    rwa [Fin.sum_univ_three, ← hf, ← hf, ← hf] at h
   obtain ⟨s₁, hs₁, hs₁₀, hpos₂, hside, huniq, hin⟩ :=
-    exists_triangle_exit_edgePath hs hπ hπ' hΔ hprism hji ha ha' hβ hmemT hf hr hs₀ hπx
-  have hsum : f 0 s₁ + f 1 s₁ + f 2 s₁ = 1 := by
-    have h := β.sum_coord_apply_eq_one (π (poly.edgePath ℝ j s₁))
-    rwa [Fin.sum_univ_three] at h
-  have hβ0 : π (poly i) = β 0 := by simp [hβ]
-  have hβ1 : π (poly (finRotate n i)) = β 1 := by simp [hβ]
-  have hβ2 : π c = β 2 := by simp [hβ]
+    exists_triangle_exit_edgePath hs hπ hπ' hΔ hprism hji ha ha' hβ0 hβ1 hβ2 hmemT hf hsum hr hs₀
+      hπx
+  have hsum := hsum s₁
   refine ⟨s₁, hs₁, hs₁₀, fun s hsu ↦ (hmemT _).2 fun k ↦ ?_, fun z hz s hs h ↦ ?_, ?_, ?_, ?_⟩
   · fin_cases k <;> simp only [← hf] <;> simp [hin s hsu]
-  · have hc := coord_projAlong_of_mem_union hβ hz
+  · have hc := coord_projAlong_of_mem_union hβ0 hβ1 hβ2 hz
     exact huniq s hs (by simpa only [hf, ← h] using hc.2) (by simpa only [hf, ← h] using hc.1)
   · -- Coordinate `2` is positive at `y'` and vanishes on edge `i`.
     rintro ⟨z, ⟨t, -, rfl⟩, hz⟩
@@ -412,7 +403,7 @@ private theorem exists_exit (hs : poly.IsSimple ℝ)
     exact hpos₂.ne h
   · -- The coordinates of `x` are `1 - r`, `r` and `0`.
     rintro ⟨z, hz, h⟩
-    have hc := (coord_projAlong_of_mem_union hβ hz).1
+    have hc := (coord_projAlong_of_mem_union hβ0 hβ1 hβ2 hz).1
     rw [h, π.apply_lineMap, hβ0, hβ1, β.coord_lineMap, β.coord_lineMap] at hc
     simp only [Fin.isValue, Fin.reduceEq, ↓reduceIte, lineMap_apply_ring'] at hc
     rcases hc with ⟨h1, -⟩ | ⟨h0, -⟩
@@ -679,9 +670,9 @@ private theorem exists_slide (hs : poly.IsSimple ℝ)
       ∀ z ∈ affineSegment ℝ (poly i) c ∪ affineSegment ℝ c (poly (finRotate n i)),
         ∀ w ∈ (poly.insertVertex i c).boundary ℝ, w ≠ z →
           projAlong ℝ p₀ d w = projAlong ℝ p₀ d z → z = y ∧ w = poly.edgePath ℝ j s₁ := by
-  obtain ⟨β, hβ, hinjD, hmemT⟩ := exists_affineBasis_projAlong hΔ hT hd b
+  obtain ⟨β, hβ0, hβ1, hβ2, hinjD, hmemT⟩ := exists_affineBasis_projAlong hΔ hT hd b
   obtain ⟨s₁, hs₁, hs₁₀, hin, huniq, hy'i, hxN, hside⟩ :=
-    exists_exit hs hπ hπ' hΔ hprism hji ha ha' hβ hmemT hr hs₀ hπx
+    exists_exit hs hπ hπ' hΔ hprism hji ha ha' hβ0 hβ1 hβ2 hmemT hr hs₀ hπx
   obtain ⟨L, hL, hLyx⟩ := exists_linearMap_det b (s₁ := s₁) hπx
   obtain ⟨y, τy, hyD, hyN, hπy, hτy, hbpy, hdiry⟩ := hside.elim
     (fun ⟨ρ, hρ, h⟩ ↦ exists_lift_left hΔ hr hρ h hLyx)
@@ -884,7 +875,8 @@ crossing time `j + s₀` of `x'` to the time `j + s₁` of `y'` passes no other 
 increasing on the crossing times. Every crossing time `t` other than `i + r` is moved to a time
 off edge `i`, on the same edge and on the same side of edge `i`, at which `poly` is at the image
 under `g` of its point at time `t`. -/
-private theorem exists_strictMonoOn_update (hs : poly.IsSimple ℝ) {i j : Fin n} (hji : j ≠ i)
+private theorem exists_strictMonoOn_update
+    (hbpinj : InjOn poly.boundaryParam (poly.crossingTimes p₀ d)) {i j : Fin n} (hji : j ≠ i)
     {r s₀ s₁ : ℝ} (hr : r ∈ Ioo (0 : ℝ) 1) (hs₀ : s₀ ∈ Ioo (0 : ℝ) 1) (hs₁ : s₁ ∈ Ioo (0 : ℝ) 1)
     {g : P → P} (hgx' : g (poly.edgePath ℝ j s₀) = poly.edgePath ℝ j s₁)
     (hgo : ∀ z, z ≠ lineMap (poly i) (poly (finRotate n i)) r → z ≠ poly.edgePath ℝ j s₀ →
@@ -922,13 +914,11 @@ private theorem exists_strictMonoOn_update (hs : poly.IsSimple ℝ) {i j : Fin n
       exact .inr ⟨by linarith [hs₁.1], by linarith [hs₀.1]⟩
   rw [update_of_ne htx', id_eq]
   have hti : edgeIndexAt n t ≠ i := fun h ↦ htx (hCTi t ht h)
-  have hbpinj {t' : ℝ} (ht' : t' ∈ poly.crossingTimes p₀ d)
-      (h : poly.boundaryParam t = poly.boundaryParam t') : t = t' :=
-    hs.injOn_boundaryParam (crossingTimes_subset_Ico ht) (crossingTimes_subset_Ico ht') h
   have hbpτx := boundaryParam_natCast_add poly i (Ioo_subset_Icc_self hr)
   have hbpτx' := boundaryParam_natCast_add poly j (Ioo_subset_Icc_self hs₀)
-  refine ⟨crossingTimes_subset_Ico ht, hti, (hgo _ (fun h ↦ htx (hbpinj hτx (h.trans hbpτx.symm)))
-    fun h ↦ htx' (hbpinj hτx' (h.trans hbpτx'.symm))).symm, rfl, ?_⟩
+  refine ⟨crossingTimes_subset_Ico ht, hti,
+    (hgo _ (fun h ↦ htx (hbpinj ht hτx (h.trans hbpτx.symm)))
+      fun h ↦ htx' (hbpinj ht hτx' (h.trans hbpτx'.symm))).symm, rfl, ?_⟩
   -- A crossing time off edge `i` lies before `i` or after `i + 1`.
   have hside : t < (i : ℕ) ∨ ((i : ℕ) : ℝ) + 1 ≤ t := by
     by_contra! h
@@ -943,7 +933,8 @@ time `φ`, sending the time `i + r` of `x` to the time `τy` of `y`, and otherwi
 `j + s₀` of `x'` to the time `j + s₁` of `y'` and reparametrizing for the inserted vertex, is
 increasing on the crossing times, maps them onto those of `q`, matches the two boundary
 parametrizations through `g`, and keeps the edge directions at every crossing time but `i + r`. -/
-private theorem exists_strictMonoOn_crossingTimes (hs : poly.IsSimple ℝ) {i j : Fin n} {c : P}
+private theorem exists_strictMonoOn_crossingTimes
+    (hbpinj : InjOn poly.boundaryParam (poly.crossingTimes p₀ d)) {i j : Fin n} {c : P}
     (hs' : (poly.insertVertex i c).IsSimple ℝ) (hji : j ≠ i) {r s₀ s₁ τy : ℝ}
     (hr : r ∈ Ioo (0 : ℝ) 1) (hs₀ : s₀ ∈ Ioo (0 : ℝ) 1) (hs₁ : s₁ ∈ Ioo (0 : ℝ) 1)
     (hτy : τy ∈ Ioo ((i : ℕ) : ℝ) ((i : ℕ) + 2)) {g : P → P} {y : P}
@@ -971,7 +962,7 @@ private theorem exists_strictMonoOn_crossingTimes (hs : poly.IsSimple ℝ) {i j 
           poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t) := by
   classical
   obtain ⟨θ, hθmono, hθ⟩ :=
-    exists_strictMonoOn_update hs hji hr hs₀ hs₁ hgx' hgo hτx hτx' hCTi hgap
+    exists_strictMonoOn_update hbpinj hji hr hs₀ hs₁ hgx' hgo hτx hτx' hCTi hgap
   obtain ⟨ψ, hψ, hψt, hψle, hψge⟩ := exists_strictMono_boundaryParam_insertVertex poly i c
   set φ : ℝ → ℝ := update (ψ ∘ θ) ((i : ℕ) + r) τy
   have hφx : φ ((i : ℕ) + r) = τy := update_self ..
@@ -979,8 +970,7 @@ private theorem exists_strictMonoOn_crossingTimes (hs : poly.IsSimple ℝ) {i j 
   have hbp (t : ℝ) (ht : t ∈ poly.crossingTimes p₀ d) :
       (poly.insertVertex i c).boundaryParam (φ t) = g (poly.boundaryParam t) := by
     by_cases htx : t = (i : ℕ) + r
-    · rw [htx, hφx, hbpy, boundaryParam_natCast_add _ _ (Ioo_subset_Icc_self hr), ← hgx]
-      rfl
+    · rw [htx, hφx, hbpy, boundaryParam_natCast_add _ _ (Ioo_subset_Icc_self hr), edgePath, hgx]
     · obtain ⟨h₁, h₂, h₃, -⟩ := hθ t ht htx
       rw [hφo htx, (hψt _ h₁ h₂).2.1, h₃]
   have hφmem (t : ℝ) (ht : t ∈ poly.crossingTimes p₀ d) : φ t ∈ Ico (0 : ℝ) (n + 1 : ℕ) := by
@@ -1064,7 +1054,8 @@ private theorem exists_pos_smul_eq_vsub (hd : d ≠ 0) {i j : Fin n} {c : P}
 time `φ` keeps the signs of the crossings. At the moved crossing, the edge of `q` at `φ (i + r)`
 gives `L = det (·, w, d)` the sign of `a' - a`, and edge `j` keeps its direction `w`; at every other
 crossing both edges keep their directions. -/
-private theorem sign_det_eq_of_slide (hs : poly.IsSimple ℝ)
+private theorem sign_det_eq_of_slide
+    (hbpinj : InjOn poly.boundaryParam (poly.crossingTimes p₀ d))
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (b : Basis (Fin 3) ℝ V) {i j : Fin n}
     {c : P} (hji : j ≠ i) {r s₀ τy : ℝ} (hr : r ∈ Ioo (0 : ℝ) 1) (hs₀ : s₀ ∈ Ioo (0 : ℝ) 1)
     (hxx' : lineMap (poly i) (poly (finRotate n i)) r ≠ poly.edgePath ℝ j s₀)
@@ -1094,15 +1085,14 @@ private theorem sign_det_eq_of_slide (hs : poly.IsSimple ℝ)
   have hbpτx := boundaryParam_natCast_add poly i (Ioo_subset_Icc_self hr)
   have hbpτx' := boundaryParam_natCast_add poly j (Ioo_subset_Icc_self hs₀)
   have hpx : poly.doublePointPartner ℝ (projAlong ℝ p₀ d) (poly.edgePath ℝ i r) =
-      poly.edgePath ℝ j s₀ := (hπ.eq_doublePointPartner
-    (subset_iUnion (poly.edgeSet ℝ) i ⟨r, Ioo_subset_Icc_self hr, rfl⟩)
-    (subset_iUnion (poly.edgeSet ℝ) j ⟨s₀, Ioo_subset_Icc_self hs₀, rfl⟩) hxx'.symm hπx.symm).symm
+      poly.edgePath ℝ j s₀ := by
+    rw [edgePath]
+    exact (hπ.eq_doublePointPartner
+      (subset_iUnion (poly.edgeSet ℝ) i ⟨r, Ioo_subset_Icc_self hr, rfl⟩)
+      (subset_iUnion (poly.edgeSet ℝ) j ⟨s₀, Ioo_subset_Icc_self hs₀, rfl⟩) hxx'.symm hπx.symm).symm
   have hpx' : poly.doublePointPartner ℝ (projAlong ℝ p₀ d) (poly.edgePath ℝ j s₀) =
       poly.edgePath ℝ i r := by
     rw [← hpx, hπ.involutive_doublePointPartner]
-  have hbpinj {t t' : ℝ} (ht : t ∈ poly.crossingTimes p₀ d) (ht' : t' ∈ poly.crossingTimes p₀ d)
-      (h : poly.boundaryParam t = poly.boundaryParam t') : t = t' :=
-    hs.injOn_boundaryParam (crossingTimes_subset_Ico ht) (crossingTimes_subset_Ico ht') h
   have hidx := edgeIndexAt_natCast_add i ⟨hr.1.le, hr.2⟩
   have hidx' := edgeIndexAt_natCast_add j ⟨hs₀.1.le, hs₀.2⟩
   have hτxx' : ((i : ℕ) : ℝ) + r ≠ (j : ℕ) + s₀ := fun h ↦ hji (by rw [← hidx', ← h, hidx])
@@ -1182,9 +1172,11 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
   obtain ⟨hginj, hfib⟩ := injOn_doublePoints_and_apply_eq hgx hgx' hgo hgoff hyy' hπy
     (fun h ↦ hyb (doublePoints_subset_boundary h)) (fun h ↦ hs₁₀ (hDPj s₁ right_mem_uIcc h)) hpair
   -- Stage 4: the change of time `φ`, matching the crossing times.
+  have hbpinj : InjOn poly.boundaryParam (poly.crossingTimes p₀ d) :=
+    hs.injOn_boundaryParam.mono crossingTimes_subset_Ico
   obtain ⟨⟨hτx, hτx'⟩, hCTi, hgap⟩ :=
     natCast_add_mem_crossingTimes hs hr hs₀ hs₁ hxDP hx'DP hDPi hDPj
-  obtain ⟨φ, hφ, hct, hbp, hφx, hdir⟩ := exists_strictMonoOn_crossingTimes hs hs' hji hr hs₀ hs₁
+  obtain ⟨φ, hφ, hct, hbp, hφx, hdir⟩ := exists_strictMonoOn_crossingTimes hbpinj hs' hji hr hs₀ hs₁
     hτy hgx hgx' hgo hbpy hτx hτx' hCTi hgap
     (mapsTo_doublePoints_insertVertex hgx hgx' hgo hDPi hpair hyq hy'q)
     fun z hz ↦ exists_mem_doublePoints_eq hπ hgx hgx' hgo hxDP hx'DP hxx' hπx hxq hN hz
@@ -1192,6 +1184,6 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
   exact gaussCode_eq_of_strictMonoOn b hs hπ b hs' hπ' hφ hct hbp hginj hfib
     (exists_pos_smul_eq_vsub hd hΔ hji ha ha' hgx hgx' hgoff (hΔ.edgeSet_subset_closedInterior hx)
       hyD hx' ⟨s₁, Ioo_subset_Icc_self hs₁, rfl⟩ hyy' hπy hpair)
-    (sign_det_eq_of_slide hs hπ b hji hr hs₀ hxx' hπx hτx hτx' hL hφx hdir hdiry)
+    (sign_det_eq_of_slide hbpinj hπ b hji hr hs₀ hxx' hπx hτx hτx' hL hφx hdir hdiry)
 
 end Polygon
