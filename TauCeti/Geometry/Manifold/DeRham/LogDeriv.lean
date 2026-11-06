@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.HomologyPeriod
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
--- Private: the endpoint-ratio identity of winding numbers is used only inside proofs.
+-- Private: the endpoint-ratio identity of winding numbers and the injectivity of integer
+-- multiples of `2πi` are used only inside proofs.
+import TauCeti.Analysis.Complex.WindingNormalization
 import TauCeti.Analysis.Contour.Winding.EndpointRatio
 
 /-!
@@ -40,8 +42,9 @@ in `2πiℤ` are exactly the logarithmic derivatives of circle-valued functions.
 
 The endpoint-ratio identity extends to continuous paths, integrated through the covering space of
 local primitives: `exp (∫_γ dlog u) = u y / u x` for every path class `γ` from `x` to `y`
-(`TauCeti.exp_pathClassIntegral_mlogDeriv`). Along a lift of `γ` the primitive is locally a
-branch of `log u` (`TauCeti.IsPrimitiveOn.eventually_mul_exp_neg_eq`). Consequently the periods
+(`TauCeti.exp_pathClassIntegral_mlogDeriv`). Along a lift of `γ` the primitive differs locally
+from a branch of `log u` by an additive constant
+(`TauCeti.IsPrimitiveOn.eventually_mul_exp_neg_eq`). Consequently the periods
 of `dlog u` on the first singular homology group `H₁(M; ℤ)` lie in `2πiℤ`
 (`TauCeti.exists_homologyPeriodHom_mlogDeriv_eq_int_mul`): along each singular `1`-simplex the
 integral differs from the change of `log u` by a multiple of `2πi`, and these changes cancel on
@@ -250,12 +253,13 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- **The periods of `dlog u` on `H₁(M; ℤ)` lie in `2πiℤ`.** For a nowhere-vanishing `C²`
 function `u`, the integral of `dlog u` over every singular `1`-cycle is an integer multiple of
-`2πi`. Along a singular `1`-simplex the integral differs from the change of `log u` by such a
-multiple, and the changes of `log u` cancel on cycles. -/
+`2πi`. -/
 theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
     (hu : ContMDiff I 𝓘(ℝ, ℂ) 2 u) (hu₀ : ∀ x, u x ≠ 0)
     (c : ((singularChains ℤ).obj (.of M)).homology 1) :
     ∃ n : ℤ, homologyPeriodHom (mlogDeriv I u) c = n * (2 * π * Complex.I) := by
+  -- Along a singular `1`-simplex the integral differs from the change of `log u` by such a
+  -- multiple, and the changes of `log u` cancel on cycles.
   have hs (s : (_root_.TopCat.toSSet.obj (.of M)) _⦋1⦌) : ∃ n : ℤ,
       pathClassIntegral (mlogDeriv I u) (.mk (path₁ s)) =
         log (u (target₁ s)) - log (u (source₁ s)) + n * (2 * π * Complex.I) := by
@@ -293,10 +297,6 @@ private theorem homologyPeriodHom_mlogDeriv_eq_circlePeriod (u : C^∞⟮I, M; �
   (exists_homologyPeriodHom_mlogDeriv_eq_int_mul ((contMDiff_coe_circle u).of_le (by simp))
     (fun x ↦ Circle.coe_ne_zero (u x)) c).choose_spec
 
-private theorem intCast_mul_two_pi_I_injective :
-    Function.Injective fun n : ℤ ↦ (n : ℂ) * (2 * π * Complex.I) := fun _ _ h ↦
-  Int.cast_injective (mul_right_cancel₀ two_pi_I_ne_zero h)
-
 variable (I M) in
 /-- The **periods of smooth circle-valued maps**: for a smooth map `u : M → U(1)`, the integral of
 `dlog u` over a singular `1`-cycle is `2πi` times an integer, and these integers form a
@@ -308,21 +308,21 @@ def circlePeriodHom :
     where
   toFun u := .ofAdd
     { toFun := circlePeriod u
-      map_zero' := intCast_mul_two_pi_I_injective <| by
+      map_zero' := Complex.intCast_mul_two_pi_I_injective <| by
         simp only [← homologyPeriodHom_mlogDeriv_eq_circlePeriod, map_zero, Int.cast_zero,
           zero_mul]
-      map_add' c c' := intCast_mul_two_pi_I_injective <| by
+      map_add' c c' := Complex.intCast_mul_two_pi_I_injective <| by
         simp only [Int.cast_add, add_mul, ← homologyPeriodHom_mlogDeriv_eq_circlePeriod,
           map_add] }
   map_one' := by
     refine congrArg Multiplicative.ofAdd (AddMonoidHom.ext fun c ↦ ?_)
-    refine intCast_mul_two_pi_I_injective ?_
+    refine Complex.intCast_mul_two_pi_I_injective ?_
     simp only [AddMonoidHom.coe_mk, ZeroHom.coe_mk, AddMonoidHom.zero_apply, Int.cast_zero,
       zero_mul, ← homologyPeriodHom_mlogDeriv_eq_circlePeriod, ContMDiffMap.coe_one, Pi.one_apply,
       Circle.coe_one, mlogDeriv_const, homologyPeriodHom_zero]
   map_mul' u v := by
     refine congrArg Multiplicative.ofAdd (AddMonoidHom.ext fun c ↦ ?_)
-    refine intCast_mul_two_pi_I_injective ?_
+    refine Complex.intCast_mul_two_pi_I_injective ?_
     have hs (w : C^∞⟮I, M; 𝓡 1, Circle⟯) := isSmoothForm_mlogDeriv (n := 1)
       ((contMDiff_coe_circle w).of_le (by simp)) fun x ↦ Circle.coe_ne_zero (w x)
     have hc (w : C^∞⟮I, M; 𝓡 1, Circle⟯) := mextDeriv_mlogDeriv
@@ -404,7 +404,7 @@ theorem circlePeriodHom_eq_one_iff {u : C^∞⟮I, M; 𝓡 1, Circle⟯} :
     refine ⟨fun h ↦ AddMonoidHom.ext fun c ↦ ?_, fun h ↦ AddMonoidHom.ext fun c ↦ ?_⟩
     · rw [homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, h]
       simp
-    · refine intCast_mul_two_pi_I_injective ?_
+    · refine Complex.intCast_mul_two_pi_I_injective ?_
       simpa [h] using (homologyPeriodHom_mlogDeriv_eq_circlePeriodHom u c).symm
   rw [hper]
   refine ⟨exists_eq_circleExp_of_homologyPeriodHom_eq_zero, fun ⟨f, hf, huf⟩ ↦ ?_⟩
@@ -488,7 +488,7 @@ theorem mem_range_circlePeriodHom_iff
     rw [homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu]
   · obtain ⟨u, hu⟩ := exists_mlogDeriv_coe_eq hφ hclosed hre fun c ↦ ⟨_, hper c⟩
     refine ⟨u, Multiplicative.toAdd.injective ?_⟩
-    refine AddMonoidHom.ext fun c ↦ intCast_mul_two_pi_I_injective ?_
+    refine AddMonoidHom.ext fun c ↦ Complex.intCast_mul_two_pi_I_injective ?_
     simp only [← homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu, hper]
 
 end TauCeti

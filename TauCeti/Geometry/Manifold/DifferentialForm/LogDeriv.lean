@@ -23,7 +23,8 @@ The logarithmic derivative of a complex function `u` on a manifold is the comple
 of a branch of `log u`, so it is closed (`TauCeti.mextDeriv_mlogDeriv`) and as regular as `du`
 (`TauCeti.isSmoothForm_mlogDeriv`). The logarithmic derivative turns products into sums
 (`TauCeti.mlogDeriv_mul`) and is the differential of the exponent on exponentials
-(`TauCeti.mlogDeriv_exp`). A primitive of `dlog u` is locally a branch of `log u`
+(`TauCeti.mlogDeriv_exp`). A primitive `g` of `dlog u` differs locally from a branch of `log u` by
+an additive constant: `u exp (-g)` is locally constant
 (`TauCeti.IsPrimitiveOn.eventually_mul_exp_neg_eq`). A function of modulus one, a `U(1)` gauge
 transformation, has an imaginary logarithmic derivative (`TauCeti.re_mlogDeriv_apply_eq_zero`).
 Conversely, a differentiable function with imaginary logarithmic derivative has locally constant
@@ -46,8 +47,8 @@ in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
 * `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is closed for a nowhere-vanishing `C²` function `u`.
 * `TauCeti.mlogDeriv_eq_zero_iff`: where `u` does not vanish, `dlog u` vanishes exactly when `du`
   does; `TauCeti.mlogDeriv_const`: constants have vanishing logarithmic derivative.
-* `TauCeti.IsPrimitiveOn.eventually_mul_exp_neg_eq`: primitives of `dlog u` are branches of
-  `log u`.
+* `TauCeti.IsPrimitiveOn.eventually_mul_exp_neg_eq`: for a primitive `g` of `dlog u`, the
+  function `u exp (-g)` is locally constant.
 * `TauCeti.re_mlogDeriv_apply_eq_zero`: functions of modulus one have imaginary logarithmic
   derivatives.
 * `TauCeti.isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero`,
@@ -208,9 +209,9 @@ end Regularity
 
 /-! ### Primitives of logarithmic derivatives -/
 
-/-- **Primitives of `dlog u` are branches of `log u`.** Near each point `x` of an open set `U`
-on which `g` is a primitive of `dlog u`, for a differentiable `u` vanishing nowhere on `U`,
-`u exp (-g)` is constant. -/
+/-- **Primitives of `dlog u` are branches of `log u` up to additive constants.** Near each
+point `x` of an open set `U` on which `g` is a primitive of `dlog u`, for a differentiable `u`
+vanishing nowhere on `U`, `u exp (-g)` is constant. -/
 theorem IsPrimitiveOn.eventually_mul_exp_neg_eq [IsManifold I 1 M] {u g : M → ℂ} {U : Set M}
     (hg : IsPrimitiveOn (mlogDeriv I u) g U) (hu : MDifferentiableOn I 𝓘(ℝ, ℂ) u U)
     (hu₀ : ∀ y ∈ U, u y ≠ 0) {x : M} (hx : x ∈ U) :
@@ -269,12 +270,13 @@ theorem re_mlogDeriv_apply_eq_zero {u : M → ℂ} {x : M} (hu : MDifferentiable
   rw [hre.mvfderiv_eq, h0, Complex.reCLM.fderiv, Complex.reCLM_apply] at h
   simpa using h.symm
 
-/-- **A function with imaginary logarithmic derivative has locally constant modulus.** The
-differential `2 Re (du * conj u)` of `‖u‖²` is `2 ‖u‖² Re (dlog u)`, which vanishes; this also
-holds at the zeros of `u`. -/
+/-- **A function with imaginary logarithmic derivative has locally constant modulus**, for a
+differentiable `u`, including near its zeros. -/
 theorem isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero [IsManifold I 1 M] {u : M → ℂ}
     (hu : MDifferentiable I 𝓘(ℝ, ℂ) u) (hre : ∀ x v, (mlogDeriv I u x v).re = 0) :
     IsLocallyConstant fun x ↦ ‖u x‖ := by
+  -- The differential `2 Re (du * conj u)` of `‖u‖²` is `2 ‖u‖² Re (dlog u)`, which vanishes;
+  -- this also holds at the zeros of `u`.
   have hsq := (contDiff_norm_sq ℝ (E := ℂ) (n := 1)).differentiable one_ne_zero
   have hd (x : M) : mfderiv I 𝓘(ℝ, ℝ) (fun y ↦ ‖u y‖ ^ 2) x = 0 := by
     rw [← mvfderiv_eq_zero_iff]
