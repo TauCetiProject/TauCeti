@@ -15,6 +15,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
@@ -81,6 +82,10 @@ polynomial in the Morse inequalities.
   counts in the connected components, when there are finitely many.
 * `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
   additivity of the total count over finite open partitions and over connected components.
+* `TauCeti.sum_range_neg_one_pow_mul_criticalCount_eq_finsum`,
+  `TauCeti.totalCriticalCount_modEq_sum_range_neg_one_pow_mul_criticalCount` and
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_criticalCount_neg`: the alternating critical count
+  `∑ᵢ (-1)ⁱ cᵢ` as a sum over critical points, its parity, and its behaviour under `f ↦ -f`.
 
 ## References
 
@@ -592,6 +597,41 @@ theorem sum_criticalCount_eq_totalCriticalCount :
     ← Fin.sum_univ_eq_sum_range]
   rfl
 
+/-- Critical counts vanish above the dimension, so an alternating critical count may be summed over
+any range containing `0, …, dim M`. -/
+theorem sum_range_neg_one_pow_mul_criticalCount_of_le {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
+      ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
+  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun i _ hi ↦ ?_).symm
+  simp [criticalCount_eq_zero_of_finrank_lt (by simpa using hi : Module.finrank ℝ E < i)]
+
+/-- **The alternating critical count as a sum over critical points.** If `f` has finitely many
+critical points, and `cᵢ` is the number of them of index `i`, then `∑ᵢ (-1)ⁱ cᵢ` is the sum of
+`(-1) ^ ind x` over the critical points `x` of `f`. -/
+theorem sum_range_neg_one_pow_mul_criticalCount_eq_finsum (h : (criticalPoints I f).Finite) :
+    ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
+      ∑ᶠ x ∈ criticalPoints I f, (-1 : ℤ) ^ manifoldMorseIndex I f x := by
+  rw [finsum_mem_eq_finite_toFinset_sum _ h, ← Finset.sum_fiberwise_of_maps_to'
+    (t := Finset.range (Module.finrank ℝ E + 1))
+    fun x _ ↦ Finset.mem_range.2 (Nat.lt_succ_of_le manifoldMorseIndex_le_finrank)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hcard : (criticalCount I f i).toNat = {x ∈ h.toFinset | manifoldMorseIndex I f x = i}.card :=
+    by simp [criticalCount_def, ← ncard_def, ← ncard_coe_finset]
+  simp [hcard, mul_comm]
+
+/-- **Parity of the critical count.** If `f` has finitely many critical points, their number is
+congruent modulo `2` to the alternating critical count `∑ᵢ (-1)ⁱ cᵢ`. -/
+theorem totalCriticalCount_modEq_sum_range_neg_one_pow_mul_criticalCount
+    (h : (criticalPoints I f).Finite) :
+    ((totalCriticalCount I f).toNat : ℤ) ≡
+      ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat
+        [ZMOD 2] := by
+  have hcard : ((totalCriticalCount I f).toNat : ℤ) = ∑ x ∈ h.toFinset, 1 := by
+    simp [totalCriticalCount_def, ← ncard_def, ncard_eq_toFinset_card _ h]
+  rw [sum_range_neg_one_pow_mul_criticalCount_eq_finsum h, finsum_mem_eq_finite_toFinset_sum _ h,
+    hcard, Int.modEq_iff_dvd, ← Finset.sum_sub_distrib]
+  exact Finset.dvd_sum fun x _ ↦ ((odd_neg_one.pow).sub_odd odd_one).two_dvd
+
 variable [I.Boundaryless]
 
 /-- **Duality of critical counts.** Replacing a Morse function by its negation exchanges the
@@ -604,6 +644,18 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
   have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
+
+/-- **Duality of the alternating critical count.** Replacing a Morse function `f` on a manifold of
+dimension `m` by `-f` exchanges the numbers of critical points of index `i` and `m - i`, so it
+multiplies the alternating critical count `∑ᵢ (-1)ⁱ cᵢ` by `(-1) ^ m`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_criticalCount_neg (hf : IsMorse I f) :
+    ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I (-f) i).toNat =
+      (-1) ^ Module.finrank ℝ E * ∑ i ∈ Finset.range (Module.finrank ℝ E + 1),
+        (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
+  rw [← Finset.sum_range_reflect, ← sum_range_neg_one_pow_sub_mul]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Nat.add_sub_cancel, hf.criticalCount_neg (Nat.sub_le _ _),
+    Nat.sub_sub_self (Finset.mem_range_succ_iff.1 hi)]
 
 end FiniteDimensional
 
