@@ -13,7 +13,7 @@ import Mathlib.Data.Fintype.Lattice
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
-import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
 /-!
 # Leray's theorem: Čech cohomology of a Leray cover computes sheaf cohomology
@@ -50,6 +50,8 @@ any module structure on both sides that is induced by an action of a ring on `F`
   in `F`;
 * `TauCeti.Topology.homologyCechComplexIsoH_zero`: in degree `0` it is the identification of both
   groups with the global sections.
+* `TauCeti.Topology.δ_comp_homologyCechComplexIsoH_one_hom`: in degree `1` the comparison
+  intertwines the connecting maps of the Čech and sheaf injective cokernel sequences.
 
 ## References
 
@@ -305,6 +307,20 @@ lemma homologyCechComplexIsoH_zero [Finite ι]
     (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U))) :
     homologyCechComplexIsoH U hU F hF 0 = homologyZeroCechIso U hU F := by
   rw [homologyCechComplexIsoH, cechIsoAux]
+
+/-- In degree one, the all-degree Leray comparison intertwines the connecting maps of
+the Čech and sheaf injective cokernel sequences. The short exactness witness may be any one. -/
+@[reassoc]
+lemma δ_comp_homologyCechComplexIsoH_one_hom [Finite ι]
+    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
+    (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U)))
+    (hS : (((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{u})).map
+      (cechComplexFunctor U)).ShortExact) :
+    hS.δ 0 1 rfl ≫ (homologyCechComplexIsoH U hU F hF 1).hom =
+      (homologyZeroCechIso U hU (cokernel (Injective.ι F))).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact F) 0 1 rfl) :=
+  δ_comp_cechIsoOne_hom U hU F (isLerayProd_of_finset hF)
 
 /-- **Naturality of Leray's theorem.** The comparison `Hⁿ(U, F) ≅ Hⁿ(X, F)` commutes with the maps
 induced by a morphism `F ⟶ G` of sheaves which both satisfy the hypotheses of Leray's theorem. -/
