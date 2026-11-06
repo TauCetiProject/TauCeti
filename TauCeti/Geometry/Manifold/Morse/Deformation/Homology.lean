@@ -43,6 +43,7 @@ of `{f < a}` from `({f ≤ b}, {f ≤ a'})` leaves `(f⁻¹[a, b], f⁻¹[a, a']
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
   Theorem 3.1.
+* J. Milnor, *Lectures on the h-cobordism theorem*, Princeton University Press, 1965, §3.
 -/
 
 public section
@@ -160,10 +161,11 @@ private theorem isIso_singularHomologyMap_excision_collar {a' : ℝ} (hf : Conti
       · exact hx.le
       · exact (x.2 : f x.1 ≤ b).trans hx
 
-/-- **The relative homology of a band over a regular level.** If `a ≤ b`, the band `f⁻¹[a, b]` is
-compact and `a` is a regular value of the smooth function `f`, then the inclusion of pairs
-`(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})` induces isomorphisms on relative singular homology in
-every degree. The band may contain critical points, and `b` need not be a regular value. -/
+/-- **The relative homology of a band over a regular level** (Milnor, *Lectures on the h-cobordism
+theorem*, §3). If `a ≤ b`, the band `f⁻¹[a, b]` is compact and `a` is a regular value of the
+smooth function `f`, then the inclusion of pairs `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})`
+induces isomorphisms on relative singular homology in every degree. The band may contain critical
+points, and `b` need not be a regular value. -/
 theorem isIso_singularHomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) (R : A) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (bandPairInclusion f hab) R n) := by
