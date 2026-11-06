@@ -29,10 +29,6 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 * `FundamentalGroup.map_comp`: induced maps preserve composition.
 * `FundamentalGroup.fromPath_mk_out`: every element of the fundamental group is the class of a
   chosen representative loop.
-* `FundamentalGroup.toPath_one`, `FundamentalGroup.toPath_mul`: the loop classes of the identity
-  and of a product.
-* `FundamentalGroup.toPath_fromPath`, `FundamentalGroup.fromPath_toPath`: `toPath` and `fromPath`
-  are inverse to each other.
 * `FundamentalGroup.mapOfEq_comp`: the induced map of a composite is the composite of the
   induced maps.
 * `FundamentalGroup.mapOfEq_rfl`: along the reflexivity proof, `mapOfEq` is `map`.
@@ -98,24 +94,6 @@ theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topo
 theorem fromPath_mk_out {X : Type*} [TopologicalSpace X] {x : X} (g : FundamentalGroup X x) :
     fromPath (Path.Homotopic.Quotient.mk (Quotient.out (toPath g))) = g :=
   congrArg End.of (Quotient.out_eq _)
-
-/-- The identity of the fundamental group is the class of the constant loop. -/
-theorem toPath_one (x : X) : toPath (1 : FundamentalGroup X x) = Path.Homotopic.Quotient.refl x :=
-  rfl
-
-/-- The class of a product `p * q` in the fundamental group runs the loop of `q` first. -/
-theorem toPath_mul (p q : FundamentalGroup X x) : toPath (p * q) = (toPath q).trans (toPath p) :=
-  rfl
-
-/-- Turning a loop class into an element of the fundamental group and back is the identity. -/
-@[simp]
-theorem toPath_fromPath (p : Path.Homotopic.Quotient x x) : toPath (fromPath p) = p :=
-  rfl
-
-/-- Turning an element of the fundamental group into a loop class and back is the identity. -/
-@[simp]
-theorem fromPath_toPath (p : FundamentalGroup X x) : fromPath (toPath p) = p :=
-  rfl
 
 /-- The maps induced on fundamental groups by two continuous maps compose to the map induced by
 their composite: `mapOfEq g hg (mapOfEq f hf p) = mapOfEq (g.comp f) _ p`. -/

@@ -32,10 +32,6 @@ group, as `TauCeti.Floer.SphericalPeriodGroup ω c`, and describes it in terms o
   (`SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport`), and on a path-connected space
   every element of `Γ` is the class of a sphere at any given base point
   (`SphericalPeriodGroup.ofHomotopyGroup_surjective`).
-* On a path-connected space, the period group of `π₂(X, x)` itself, with the area and Chern
-  number of Hurewicz classes, is isomorphic to `Γ`
-  (`SphericalPeriodGroup.homotopyGroupEquiv`). Raw caps of a loop through `x` form a torsor under
-  `π₂(X, x)`, so this identifies the group acting on their cap classes with `Γ`.
 * `Γ` is trivial exactly when `ω` and `c` vanish on the Hurewicz classes of all spheres
   (`SphericalPeriodGroup.subsingleton_iff`), that is, for symplectically aspherical targets with
   vanishing first Chern class on spheres.
@@ -123,35 +119,6 @@ theorem ofHomotopyGroup_surjective [PathConnectedSpace X] (x : X) :
   | H s =>
     obtain ⟨a, ha⟩ := (mem_sphericalClasses_iff x).1 s.2
     exact ⟨a, congrArg _ (Subtype.ext ha)⟩
-
-variable (ω c) in
-/-- The period group of `π_2(X, x)` itself, with the area and first Chern number of Hurewicz
-classes, maps to the period group of spherical classes by sending a sphere to its class. The map
-is injective, and on a path-connected space it is an isomorphism. This identifies the period
-group of the torsor of raw caps of a loop through `x`, on which `π_2(X, x)` acts by gluing
-spheres, with `SphericalPeriodGroup ω c`. -/
-def homotopyGroupEquiv [PathConnectedSpace X] (x : X) :
-    PeriodGroup (ω.comp (hurewiczIntHom X x 1)) (c.comp (hurewiczIntHom X x 1)) ≃+
-      SphericalPeriodGroup ω c :=
-  let f := (hurewiczIntHom X x 1).codRestrict _ (hurewiczIntHom_mem_sphericalClasses x)
-  have hω : (ω.comp (sphericalClasses X 1).subtype).comp f = ω.comp (hurewiczIntHom X x 1) :=
-    AddMonoidHom.ext fun _ => rfl
-  have hc : (c.comp (sphericalClasses X 1).subtype).comp f = c.comp (hurewiczIntHom X x 1) :=
-    AddMonoidHom.ext fun _ => rfl
-  AddEquiv.ofBijective (PeriodGroup.map f hω hc)
-    ⟨PeriodGroup.map_injective f hω hc, PeriodGroup.map_surjective f hω hc fun s => by
-      obtain ⟨a, ha⟩ := (mem_sphericalClasses_iff x).1 s.2
-      exact ⟨a, Subtype.ext ha⟩⟩
-
-/-- The isomorphism `homotopyGroupEquiv` sends the class of a sphere `a` to its class in the
-spherical period group. -/
-@[simp]
-theorem homotopyGroupEquiv_mk [PathConnectedSpace X] (x : X)
-    (a : Additive (HomotopyGroup (Fin 2) X x)) :
-    homotopyGroupEquiv ω c x
-        (a : PeriodGroup (ω.comp (hurewiczIntHom X x 1)) (c.comp (hurewiczIntHom X x 1))) =
-      ofHomotopyGroup ω c x a :=
-  PeriodGroup.map_mk _ _ _ a
 
 /-- **The period group is trivial exactly when `ω` and `c` vanish on all spheres**, as they do for
 a symplectically aspherical manifold whose first Chern class vanishes on spheres. -/

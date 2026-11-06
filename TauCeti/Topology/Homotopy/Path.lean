@@ -60,8 +60,8 @@ The path-homotopy quotient API also records that reversing twice is the identity
 reverse of the constant class is constant, and that mapping a composite class and casting its
 endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_trans_cast`).
 `Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
-`Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of
-null-homotopies in `Topology/Homotopy/HomotopyGroup/NullHomotopy.lean`.
+`Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
+pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
 -/
 
 public section

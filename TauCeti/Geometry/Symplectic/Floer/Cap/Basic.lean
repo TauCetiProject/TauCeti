@@ -44,8 +44,6 @@ is `productClass glue D₁ D₂ D₀ = D₀ -ᵥ glue D₁ D₂ ∈ Γ`. Recappi
 * `TauCeti.Floer.CapClass ω c P`: cap classes, the quotient of the raw caps `P` by recapping
   with classes of zero area and zero first Chern number. It is a torsor under `PeriodGroup ω c`.
 * `TauCeti.Floer.CapClass.lift`: the descent of a function on raw caps obeying a recapping law.
-* `TauCeti.Floer.CapClass.map₂`: the descent of a map of raw caps equivariant in each input, such
-  as gluing caps of the inputs of a pair of pants.
 * `TauCeti.Floer.productClass`: the class `D₀ -ᵥ glue D₁ D₂` of a product coefficient.
 
 ## Main results
@@ -60,8 +58,6 @@ is `productClass glue D₁ D₂ D₀ = D₀ -ᵥ glue D₁ D₂ ∈ Γ`. Recappi
 * `TauCeti.Floer.productClass_vadd_fst`, `TauCeti.Floer.productClass_vadd_snd`,
   `TauCeti.Floer.productClass_vadd_out`: the recapping laws for the product class.
 * `TauCeti.Floer.productClass_eq_add_sub`: the change of reference caps for the product class.
-* `TauCeti.Floer.productClass_map₂_mk`: for gluing descended from raw caps, the product class is
-  the class of the difference between the output cap and the glued cap.
 * `TauCeti.Floer.add_sub_add_map_productClass_eq`: the cap independence of
   `f₁ + f₂ − f₀ + φ(A)` for functions `fᵢ` obeying the recapping law for `φ`; with `φ` the area
   this is the cap independence of the topological energy.
@@ -130,53 +126,6 @@ theorem lift_vadd (γ : PeriodGroup ω c) (D : CapClass ω c P) :
   induction γ using QuotientAddGroup.induction_on with | H g =>
   induction D using Quotient.inductionOn' with
   | h p => rw [AddAction.orbitRel.Quotient.mk_vadd_mk, lift_mk, lift_mk, hf]
-
-section Map₂
-
-variable {P₁ P₂ P₀ : Type*} [AddTorsor S P₁] [AddTorsor S P₂] [AddTorsor S P₀]
-  (f : P₁ → P₂ → P₀) (hf₁ : ∀ (g : S) p₁ p₂, f (g +ᵥ p₁) p₂ = g +ᵥ f p₁ p₂)
-  (hf₂ : ∀ (g : S) p₁ p₂, f p₁ (g +ᵥ p₂) = g +ᵥ f p₁ p₂)
-
-/-- A map of raw caps that is equivariant under recapping in each input descends to cap classes.
-The main example glues caps of the two inputs of a pair of pants to a cap of its output. -/
-def map₂ (f : P₁ → P₂ → P₀) (hf₁ : ∀ (g : S) p₁ p₂, f (g +ᵥ p₁) p₂ = g +ᵥ f p₁ p₂)
-    (hf₂ : ∀ (g : S) p₁ p₂, f p₁ (g +ᵥ p₂) = g +ᵥ f p₁ p₂) :
-    CapClass ω c P₁ → CapClass ω c P₂ → CapClass ω c P₀ :=
-  Quotient.map₂ f fun p₁ q₁ h₁ p₂ q₂ h₂ => by
-    have h₁' := (AddAction.orbitRel.Quotient.orbitRel_iff_vsub_mem _).1 h₁
-    have h₂' := (AddAction.orbitRel.Quotient.orbitRel_iff_vsub_mem _).1 h₂
-    refine (AddAction.orbitRel.Quotient.orbitRel_iff_vsub_mem _).2 ?_
-    rw [← vsub_vadd p₁ q₁, ← vsub_vadd p₂ q₂, hf₁, hf₂, vadd_vadd, vadd_vsub]
-    exact add_mem h₁' h₂'
-
-/-- The descended map takes the class of `f p₁ p₂` on the classes of `p₁` and `p₂`. -/
-@[simp]
-theorem map₂_mk (p₁ : P₁) (p₂ : P₂) :
-    map₂ f hf₁ hf₂ (Quotient.mk'' p₁ : CapClass ω c P₁) (Quotient.mk'' p₂) =
-      Quotient.mk'' (f p₁ p₂) :=
-  (rfl)
-
-/-- The descended map is equivariant under the period group in the first input. -/
-@[simp]
-theorem map₂_vadd_left (γ : PeriodGroup ω c) (C₁ : CapClass ω c P₁) (C₂ : CapClass ω c P₂) :
-    map₂ f hf₁ hf₂ (γ +ᵥ C₁) C₂ = γ +ᵥ map₂ f hf₁ hf₂ C₁ C₂ := by
-  induction γ using QuotientAddGroup.induction_on with | H g =>
-  induction C₁ using Quotient.inductionOn' with | h p₁ =>
-  induction C₂ using Quotient.inductionOn' with
-  | h p₂ => rw [AddAction.orbitRel.Quotient.mk_vadd_mk, map₂_mk, map₂_mk, hf₁,
-      AddAction.orbitRel.Quotient.mk_vadd_mk]
-
-/-- The descended map is equivariant under the period group in the second input. -/
-@[simp]
-theorem map₂_vadd_right (γ : PeriodGroup ω c) (C₁ : CapClass ω c P₁) (C₂ : CapClass ω c P₂) :
-    map₂ f hf₁ hf₂ C₁ (γ +ᵥ C₂) = γ +ᵥ map₂ f hf₁ hf₂ C₁ C₂ := by
-  induction γ using QuotientAddGroup.induction_on with | H g =>
-  induction C₁ using Quotient.inductionOn' with | h p₁ =>
-  induction C₂ using Quotient.inductionOn' with
-  | h p₂ => rw [AddAction.orbitRel.Quotient.mk_vadd_mk, map₂_mk, map₂_mk, hf₂,
-      AddAction.orbitRel.Quotient.mk_vadd_mk]
-
-end Map₂
 
 end CapClass
 
@@ -248,19 +197,6 @@ theorem productClass_def (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
 theorem productClass_eq_zero_iff {D₁ : C₁} {D₂ : C₂} {D₀ : C₀} :
     productClass glue D₁ D₂ D₀ = 0 ↔ D₀ = glue D₁ D₂ := by
   rw [productClass_def, vsub_eq_zero_iff_eq]
-
-/-- For gluing descended from raw caps (`CapClass.map₂`), the product class of the classes of raw
-caps `p₁`, `p₂`, `p₀` is the class of the spherical class `p₀ -ᵥ f p₁ p₂` by which the output cap
-`p₀` differs from the glued cap. -/
-@[simp]
-theorem productClass_map₂_mk {P₁ P₂ P₀ : Type*} [AddTorsor S P₁] [AddTorsor S P₂]
-    [AddTorsor S P₀] (f : P₁ → P₂ → P₀)
-    (hf₁ : ∀ (g : S) p₁ p₂, f (g +ᵥ p₁) p₂ = g +ᵥ f p₁ p₂)
-    (hf₂ : ∀ (g : S) p₁ p₂, f p₁ (g +ᵥ p₂) = g +ᵥ f p₁ p₂) (p₁ : P₁) (p₂ : P₂) (p₀ : P₀) :
-    productClass (CapClass.map₂ f hf₁ hf₂) (Quotient.mk'' p₁ : CapClass ω c P₁)
-      (Quotient.mk'' p₂ : CapClass ω c P₂) (Quotient.mk'' p₀ : CapClass ω c P₀) =
-      ((p₀ -ᵥ f p₁ p₂ : S) : PeriodGroup ω c) :=
-  AddAction.orbitRel.Quotient.mk_vsub_mk _ _ _
 
 /-- Recapping the output by `γ` adds `γ` to the product class. -/
 @[simp]
