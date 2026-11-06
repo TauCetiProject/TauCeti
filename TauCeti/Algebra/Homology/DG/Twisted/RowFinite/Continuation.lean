@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Coefficients
-public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.GeneratorMap
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.Algebra.Ring.NegOnePow
@@ -17,10 +16,7 @@ import TauCeti.Algebra.Ring.NegOnePow
 A continuation cocycle between row-finite twisting cocycles specifies a finite row for each
 source generator. Its equation says that the differential of this row is the image of the
 source differential row. The DG Leibniz rule extends this generator equation to a chain map
-on the entire free left module: a continuation cocycle is a family of generator images in the
-target free module (`RowFiniteContinuationCocycle.toGeneratorMap`), and the chain-map identity is
-`RowFiniteTwistingCocycle.GeneratorMap.linearCombination_differential`. No finiteness assumption
-on either generator set is needed.
+on the entire free left module. No finiteness assumption on either generator set is needed.
 
 Composition substitutes finite rows into finite rows, so it again has finite rows. Tensoring
 with a DG right module gives continuation maps on finite-support coefficient vectors. These
@@ -90,19 +86,7 @@ theorem continuation_iff (ν : P → Q →₀ A)
       Finsupp.mapRange.linearMap d (ν x) =
         Finsupp.linearCombination A ν (mP.m x) +
           (ν x).sum (fun y a ↦ (indP x - indQ y - 1).negOnePow • (a • mQ.m y)) := by
-  classical
-  have hd : (∑ y ∈ (ν x).support, Finsupp.single y (d (ν x y))) =
-      Finsupp.mapRange.linearMap d (ν x) := by
-    conv_rhs => rw [← Finsupp.sum_single (ν x), Finsupp.sum]
-    rw [map_sum]
-    simp
-  have hD : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (ν x) =
-      Finsupp.mapRange.linearMap d (ν x) +
-        (ν x).sum (fun y a ↦ (indQ y - indP x).negOnePow • (a • mQ.m y)) := by
-    conv_lhs => rw [← Finsupp.sum_single (ν x), Finsupp.sum, map_sum]
-    simp_rw [rowFiniteTwistedDifferential_single mQ.m _ (hν x _)]
-    rw [Finset.sum_add_distrib, hd, Finsupp.sum]
-  rw [hD]
+  rw [rowFiniteTwistedDifferential_apply_of_mem mQ.m (hν x)]
   simp only [Int.negOnePow_sub_sub_one, Units.neg_smul, Finsupp.sum, Finset.sum_neg_distrib]
   constructor
   · intro heq
@@ -114,27 +98,13 @@ theorem continuation_iff (ν : P → Q →₀ A)
 
 variable (ν : RowFiniteContinuationCocycle mP mQ)
 
-/-- A continuation cocycle is a family of generator images in the free module of the target
-cocycle, the continuation equation being the generator equation. -/
-def toGeneratorMap :
-    mP.GeneratorMap (rowFiniteTotalGrading 𝒜 indQ)
-      (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m) where
-  image := ν.ν
-  mem_graded x := by
-    rw [mem_rowFiniteTotalGrading_iff]
-    intro y
-    simpa only [neg_add_eq_sub] using ν.mem_graded x y
-  differential_image := ν.continuation
-
-@[simp]
-theorem toGeneratorMap_image : ν.toGeneratorMap.image = ν.ν :=
-  (rfl)
-
 /-- Substitution of finite continuation rows preserves total degree. -/
 theorem linearCombination_mem_totalGrading {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 indP n) :
     Finsupp.linearCombination A ν.ν f ∈ rowFiniteTotalGrading 𝒜 indQ n :=
-  ν.toGeneratorMap.linearCombination_mem hf
+  linearCombination_mem_of_mem_rowFiniteTotalGrading
+    (fun x ↦ (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
+      simpa only [neg_add_eq_sub] using ν.mem_graded x y) hf
 
 /-- The generator equation extends to the entire free left module by the DG Leibniz rule. -/
 theorem linearCombination_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ A) :
@@ -142,8 +112,9 @@ theorem linearCombination_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ A
         (Finsupp.linearCombination A ν.ν f) =
       Finsupp.linearCombination A ν.ν
         (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m f) :=
-  ν.toGeneratorMap.linearCombination_differential
-    (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) f
+  (linearCombination_rowFiniteTwistedDifferential
+    (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) mP.m
+    (fun x ↦ (ν.continuation x).symm) f).symm
 
 /-- The identity continuation cocycle has one unit entry in each row. -/
 def refl (m : RowFiniteTwistingCocycle 𝒜 d P indP) (hA : IsDGAlgebra 𝒜 d) :

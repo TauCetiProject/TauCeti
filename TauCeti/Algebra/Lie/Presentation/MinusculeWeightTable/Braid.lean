@@ -19,6 +19,8 @@ integrally and retained over every commutative coefficient ring.
 
 * `TauCeti.MinusculeWeightTable.simpleWeylMatrix`
 * `TauCeti.MinusculeWeightTable.simpleWeylMatrix_mulVec_single`
+* `TauCeti.MinusculeWeightTable.simpleWeylMatrix_pow_two`: the square is the diagonal sign matrix,
+  `1` at weights with `λᵢ = 0` and `-1` elsewhere.
 * `TauCeti.MinusculeWeightTable.commute_simpleWeylMatrix_of_cartanMatrix_eq_zero`
 * `TauCeti.MinusculeWeightTable.simpleWeylMatrix_braid_of_cartanMatrix_eq_neg_one`
 
@@ -146,6 +148,20 @@ private theorem simpleWeylMatrix_braid_int (i j : B)
   simp only [← Matrix.mulVec_mulVec, T.simpleWeylMatrix_mulVec_single,
     Matrix.mulVec_smul, smul_smul, ← mul_assoc]
   rw [(Prod.mk.inj hc).1, (Prod.mk.inj hc).2]
+
+/-- **Squaring a pinned Weyl matrix gives the diagonal sign matrix**, with entry `1` at the
+weights fixed by the reflection and `-1` on each reflection orbit. -/
+@[simp]
+theorem simpleWeylMatrix_pow_two (i : B) (R : Type*) [CommRing R] :
+    T.simpleWeylMatrix i R ^ 2 =
+      Matrix.diagonal (fun a ↦ if T.weight a i = 0 then (1 : R) else -1) := by
+  refine Matrix.ext_of_mulVec_single fun b ↦ ?_
+  rw [Matrix.diagonal_mulVec_single, mul_one, pow_two, ← Matrix.mulVec_mulVec,
+    T.simpleWeylMatrix_mulVec_single, Matrix.mulVec_smul, T.simpleWeylMatrix_mulVec_single,
+    smul_smul, T.reflection_apply_apply, T.weight_reflection_self]
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb <;>
+  · ext x
+    by_cases hx : x = b <;> simp [hb, hx]
 
 /-- Pinned Weyl matrices at orthogonal nodes commute over every commutative ring. -/
 theorem commute_simpleWeylMatrix_of_cartanMatrix_eq_zero (R : Type*) [CommRing R]

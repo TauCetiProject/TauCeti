@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.CompactExhaustion
 import TauCeti.Geometry.Manifold.Exhaustion
+import TauCeti.Topology.Maps.Proper.Basic
 import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
@@ -43,8 +44,8 @@ finite, no convergence of infinitely many perturbations or Baire category argume
   `C^k` neighbourhood with a global `C⁰` tolerance.
 * `TauCeti.dense_setOf_isMorse_manifoldStrongWhitney`: **Morse functions are dense** in the strong
   Whitney topology.
-* `ContMDiffMap.exists_isMorse_isProperMap_mem_ball`: a proper function is approximated by proper
-  Morse functions within `C⁰` distance `1`.
+* `ContMDiffMap.exists_isMorse_isProperMap_mem_ball`: relative proper Morse approximation within
+  `C⁰` distance `1`.
 * `TauCeti.exists_isMorse_isProperMap_bddBelow`: every such manifold carries a proper Morse
   function which is bounded below.
 
@@ -98,6 +99,8 @@ private theorem exists_isMorseOn_tsupport_sub_inter_compl (f φ : C^∞⟮I, M; 
     (hC.union hW.isClosed_compl) ((hV.inter hO).union isOpen_interior) hsub hφV' h𝒰
   refine ⟨ψ, hψ𝒰, hψ, hψs.trans ?_⟩
   rw [compl_union, compl_compl, inter_comm]
+
+section SigmaCompact
 
 variable [SigmaCompactSpace M]
 
@@ -273,25 +276,32 @@ theorem dense_setOf_isMorse_manifoldStrongWhitney :
     (fun _ ↦ one_pos) isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hgm, hg⟩
 
-/-- **Proper Morse approximation.** A proper smooth function `f` is approximated, in every strong
-`C^k` neighbourhood, by proper Morse functions within distance `1` of `f`. In particular a lower
-bound for `f` gives one for the approximation. -/
+end SigmaCompact
+
+/-- **Proper Morse approximation.** A proper smooth function `f`, already Morse on an open
+neighbourhood `V` of a closed set `C`, is approximated in every strong `C^k` neighbourhood by
+proper Morse functions within distance `1` of `f` and agreeing with `f` near `C`. In particular a
+lower bound for `f` gives one for the approximation. -/
 theorem _root_.ContMDiffMap.exists_isMorse_isProperMap_mem_ball (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
-    (c : ContMDiffMap.StrongCkControl I M ∞) (hf : IsProperMap f) :
-    ∃ g ∈ c.ball f, IsMorse I g ∧ IsProperMap g ∧ ∀ x, |g x - f x| < 1 := by
-  obtain ⟨g, hg, hgm, hgf, -⟩ := f.exists_isMorse_mem_ball_sub_compl c continuous_const
-    (fun _ ↦ one_pos) isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
-  refine ⟨g, hg, hgm, hf.of_dist_le g.contMDiff.continuous (C := 1) fun x ↦ ?_, hgf⟩
+    (c : ContMDiffMap.StrongCkControl I M ∞) (hf : IsProperMap f)
+    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V) (hfV : IsMorseOn I f V) :
+    ∃ g ∈ c.ball f, IsMorse I g ∧ IsProperMap g ∧ (∀ x, |g x - f x| < 1) ∧
+      tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
+  have : SigmaCompactSpace M := hf.sigmaCompactSpace
+  obtain ⟨g, hg, hgm, hgf, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c continuous_const
+    (fun _ ↦ one_pos) hC hV hCV hfV
+  refine ⟨g, hg, hgm, hf.of_dist_le g.contMDiff.continuous (C := 1) fun x ↦ ?_, hgf, hgs⟩
   rw [Real.dist_eq, abs_sub_comm]
   exact (hgf x).le
 
 /-- **Existence of proper Morse functions.** A boundaryless finite-dimensional Hausdorff
 sigma-compact manifold carries a proper Morse function which is bounded below. -/
-theorem exists_isMorse_isProperMap_bddBelow :
+theorem exists_isMorse_isProperMap_bddBelow [SigmaCompactSpace M] :
     ∃ g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, IsMorse I g ∧ IsProperMap g ∧ BddBelow (range g) := by
   obtain ⟨f, hf, hf₀⟩ := exists_contMDiffMap_isProperMap_nonneg (M := M) I
-  obtain ⟨g, -, hgm, hgp, hgf⟩ :=
+  obtain ⟨g, -, hgm, hgp, hgf, -⟩ :=
     f.exists_isMorse_isProperMap_mem_ball ContMDiffMap.StrongCkControl.empty hf
+      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
   refine ⟨g, hgm, hgp, ⟨-1, ?_⟩⟩
   rintro _ ⟨x, rfl⟩
   linarith [(abs_lt.mp (hgf x)).1, hf₀ x]
