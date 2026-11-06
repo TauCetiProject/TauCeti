@@ -142,6 +142,10 @@ theorem W1p.exists_harmonicOnNhd_ae_eq_gradient {p : ENNReal} [Fact (1 ≤ p)]
   filter_upwards [hgrad] with x hx
   apply e.injective
   rw [e.apply_symm_apply]
+  have hRiesz : e (W1p.gradient w x) = innerSL ℝ (W1p.gradient w x) := by
+    ext v
+    simp only [e, InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+  rw [hRiesz]
   exact hx
 
 /-- **Harmonic replacement.** Let `Ω ⊆ ℝ^{n+1}` be an open set contained in a ball, and let
