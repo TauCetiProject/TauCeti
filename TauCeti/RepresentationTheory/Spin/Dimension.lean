@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
--- Private: `CliffordAlgebra.finrank_evenOdd_zero` is used only inside proofs; it is not named by
+-- Private: `CliffordAlgebra.finrank_evenOdd` is used only inside proofs; it is not named by
 -- an exported statement.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 
@@ -25,7 +25,7 @@ the classical argument — multiply by an anisotropic vector, which is odd and i
 nothing to multiply by. The odd invertible operator is instead multiplication corrected by a
 contraction, Mathlib's `CliffordAlgebra.changeFormAux`, turned into an automorphism of the grading
 in `TauCeti/LinearAlgebra/CliffordAlgebra/ParitySwap.lean`; here the count it yields,
-`CliffordAlgebra.finrank_evenOdd_zero`, is only consumed. So each half is exactly half of `S`, of
+`CliffordAlgebra.finrank_evenOdd`, is only consumed. So each half is exactly half of `S`, of
 dimension `2 ^ (dim W - 1)` — the dimension of a half-spin representation.
 
 The hypothesis `W ≠ ⊥` is real: for `W = 0` the spinor module is the ground field, sitting entirely
@@ -74,7 +74,7 @@ theorem finrank_spinPlus (hW : P.W ≠ ⊥) :
     finrank K (spinPlus Q P) = 2 ^ (finrank K P.W - 1) := by
   have : Nontrivial P.W := Submodule.nontrivial_iff_ne_bot.2 hW
   rw [spinPlus_def]
-  exact finrank_evenOdd_zero 0
+  exact finrank_evenOdd 0 0
 
 /-- **The odd half-spin summand has dimension `2 ^ (dim W - 1)`**, the same as the even one:
 `TauCeti.finrank_spinPlus` for the other parity. -/
@@ -82,6 +82,6 @@ theorem finrank_spinMinus (hW : P.W ≠ ⊥) :
     finrank K (spinMinus Q P) = 2 ^ (finrank K P.W - 1) := by
   have : Nontrivial P.W := Submodule.nontrivial_iff_ne_bot.2 hW
   rw [spinMinus_def]
-  exact finrank_evenOdd_zero 1
+  exact finrank_evenOdd 0 1
 
 end TauCeti
