@@ -25,7 +25,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 
 ## Main declarations
 
-* `Projectivization.instChartedSpace`: the atlas of standard affine charts.
+* `Projectivization.instChartedSpace`: the atlas of standard affine charts, with
+  `Projectivization.chartAt_affineChart_symm_zero` the preferred chart at a coordinate line.
 * `Projectivization.contDiffOn_affineChart_symm_trans`: the transition maps are `C^r` for
   every `r`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
@@ -67,6 +68,22 @@ theorem mem_atlas_iff (e : OpenPartialHomeomorph (ℙ 𝕜 (Fin (n + 1) → 𝕜
 theorem affineOpenPartialHomeomorph_mem_atlas (i : Fin (n + 1)) :
     affineOpenPartialHomeomorph i ∈ atlas (Fin n → 𝕜) (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
   mem_range_self i
+
+/-- The preferred chart at any point of projective space is one of the standard affine charts. -/
+theorem exists_chartAt_eq (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    ∃ i, chartAt (Fin n → 𝕜) x = affineOpenPartialHomeomorph i := by
+  obtain ⟨i, hi⟩ := (mem_atlas_iff _).1 (chart_mem_atlas (Fin n → 𝕜) x)
+  exact ⟨i, hi.symm⟩
+
+/-- The preferred chart at the coordinate line `[e i] = (affineChart i).symm 0` is the standard
+affine chart at `i`, the only one whose domain contains it. -/
+theorem chartAt_affineChart_symm_zero (i : Fin (n + 1)) :
+    chartAt (Fin n → 𝕜) ((affineChart (K := 𝕜) i).symm 0) = affineOpenPartialHomeomorph i := by
+  obtain ⟨j, hj⟩ := exists_chartAt_eq ((affineChart (K := 𝕜) i).symm 0)
+  have hmem := mem_chart_source (Fin n → 𝕜) ((affineChart (K := 𝕜) i).symm 0)
+  rw [hj] at hmem ⊢
+  simp only [affineOpenPartialHomeomorph_toPartialEquiv, affineChart_source] at hmem
+  rw [affineChart_symm_zero_mem_affineOpen_iff.1 hmem]
 
 /-- The transition maps between the standard affine charts of projective space are `C^r` for
 every `r`, including the analytic order `ω`. -/

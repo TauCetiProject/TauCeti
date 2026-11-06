@@ -35,6 +35,8 @@ of complex projective space are built.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
   its inverse in homogeneous coordinates.
+* `Projectivization.affineChart_symm_zero`: the centre of the chart at `i` is the coordinate line
+  `[e i]`, and `Projectivization.injective_affineChart_symm_zero`: these centres are distinct.
 * `Projectivization.affineChart_symm_trans_source` and
   `Projectivization.affineChart_symm_trans_apply`: the domain and formula of the transition maps.
 * `Projectivization.affineChart_apply_affineChart_symm`: a map of projective spaces given in
@@ -141,6 +143,32 @@ theorem affineChart_symm_apply (i : Fin (n + 1)) (z : Fin n → K) :
     (affineChart i).symm z = mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)
       (Fin.insertNth_one_ne_zero i z) :=
   (rfl)
+
+/-- The centre `(affineChart i).symm 0` of the standard affine chart at `i` is the coordinate line
+`[e i]`. -/
+theorem affineChart_symm_zero (i : Fin (n + 1)) :
+    (affineChart (K := K) i).symm 0 = mk K (Pi.single i 1) (by simp) := by
+  rw [affineChart_symm_apply]
+  congr 1
+  ext k
+  rcases Fin.eq_self_or_eq_succAbove i k with rfl | ⟨l, rfl⟩
+  · simp
+  · simp [Fin.succAbove_ne]
+
+/-- The centre of the standard affine chart at `j` lies in the affine open of `i` only for
+`i = j`. -/
+theorem affineChart_symm_zero_mem_affineOpen_iff {i j : Fin (n + 1)} :
+    (affineChart (K := K) j).symm 0 ∈ affineOpen i ↔ i = j := by
+  rw [affineChart_symm_zero, mk_mem_affineOpen_iff]
+  simp [Pi.single_apply]
+
+/-- The centres of the standard affine charts are distinct points. -/
+theorem injective_affineChart_symm_zero :
+    Function.Injective fun i : Fin (n + 1) ↦ (affineChart (K := K) i).symm 0 := by
+  intro i j hij
+  have h : (affineChart (K := K) i).symm 0 ∈ affineOpen i := by simp
+  simp only at hij
+  rwa [hij, affineChart_symm_zero_mem_affineOpen_iff] at h
 
 /-- The domain of the transition map from the standard affine chart of `i` to that of `j`
 consists of the points whose homogeneous coordinates `Fin.insertNth i 1 z` have nonzero `j`-th
