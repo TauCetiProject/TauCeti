@@ -380,8 +380,10 @@ private lemma dotProduct_intersection_mulVec_of_support_four {i j k l : T.Compon
     T.intersection_comm k j, T.intersection_comm l j, T.intersection_comm l k]
   ring
 
-/-- The last column of the adjugate of the principal `4 × 4` submatrix with entries `a..`: the
-form at it is its last entry times the determinant. -/
+/-- For the ten entries `aa, …, cd` on and above the diagonal of a symmetric `4 × 4` integer
+matrix, some integer vector has last entry equal to the leading `3 × 3` minor, and the quadratic
+form of the matrix at it equals that entry times the `4 × 4` determinant, written out below. The
+last column of the adjugate is such a vector. -/
 private lemma exists_adjugate_column_four (aa bb cc dd ab ac ad bc bd cd : ℤ) :
     ∃ xi xj xk xl : ℤ, xl = aa * bb * cc - aa * bc ^ 2 - bb * ac ^ 2 - cc * ab ^ 2 +
         2 * ab * ac * bc ∧
@@ -447,20 +449,20 @@ theorem intersection_det_four_pos (hcard : 4 < Fintype.card T.Component)
     (T.intersection i i) (T.intersection j j) (T.intersection k k) (T.intersection l l)
     (T.intersection i j) (T.intersection i k) (T.intersection i l) (T.intersection j k)
     (T.intersection j l) (T.intersection k l)
+  rw [← hxl'] at hxl
   let x : T.Component → ℤ := fun n ↦
     if n = i then xi else if n = j then xj else if n = k then xk else if n = l then xl else 0
-  have hneg := T.dotProduct_intersection_mulVec_neg (x := x)
-    (fun hx ↦ (hxl'.symm ▸ hxl).ne (by simpa [x, hil.symm, hjl.symm, hkl.symm] using congrFun hx l))
-    (i := m) (by simp [x, hmi, hmj, hmk, hml])
-  rw [T.dotProduct_intersection_mulVec_of_support_four hij hik hil hjk hjl hkl x
-    (fun n hni hnj hnk hnl ↦ by simp [x, hni, hnj, hnk, hnl])] at hneg
   have hxi : x i = xi := by simp [x]
   have hxj : x j = xj := by simp [x, hij.symm]
   have hxk : x k = xk := by simp [x, hik.symm, hjk.symm]
   have hxl'' : x l = xl := by simp [x, hil.symm, hjl.symm, hkl.symm]
-  rw [hxi, hxj, hxk, hxl''] at hneg
-  rw [hform] at hneg
-  exact pos_of_mul_neg_right hneg (hxl' ▸ hxl.le)
+  have hneg := T.dotProduct_intersection_mulVec_neg (x := x)
+    (fun hx ↦ hxl.ne (hxl''.symm.trans (congrFun hx l)))
+    (i := m) (by simp [x, hmi, hmj, hmk, hml])
+  rw [T.dotProduct_intersection_mulVec_of_support_four hij hik hil hjk hjl hkl x
+    (fun n hni hnj hnk hnl ↦ by simp [x, hni, hnj, hnk, hnl])] at hneg
+  rw [hxi, hxj, hxk, hxl'', hform] at hneg
+  exact pos_of_mul_neg_right hneg hxl.le
 
 /-! ### Five components -/
 
