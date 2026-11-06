@@ -225,27 +225,6 @@ theorem CurvatureDimensionInfinity.mono (h : M.CurvatureDimensionInfinity K) (hK
     (h.exists_isGeodesicSegment_convexAlong h₀ h₁).imp fun _ hγ ↦
       ⟨hγ.1, hγ.2.mono hK⟩⟩
 
-/-- Two measures within `W₂`-distance `r` of Dirac masses at `x₀` and `x₁` are within
-`W₂`-distance `d(x₀, x₁) + 2 r` of each other. -/
-theorem wassersteinEDist_le_ofReal_dist_add_two_mul_of_wassersteinEDist_dirac_le
-    {x₀ x₁ : X} {μ₀ μ₁ : Measure X} {r : ℝ} (hr : 0 ≤ r)
-    (h₀ : wassersteinEDist 2 (Measure.dirac x₀) μ₀ ≤ ENNReal.ofReal r)
-    (h₁ : wassersteinEDist 2 (Measure.dirac x₁) μ₁ ≤ ENNReal.ofReal r) :
-    wassersteinEDist 2 μ₀ μ₁ ≤ ENNReal.ofReal (dist x₀ x₁ + 2 * r) := by
-  calc wassersteinEDist 2 μ₀ μ₁
-      ≤ wassersteinEDist 2 μ₀ (Measure.dirac x₀) +
-        (wassersteinEDist 2 (Measure.dirac x₀) (Measure.dirac x₁) +
-          wassersteinEDist 2 (Measure.dirac x₁) μ₁) :=
-        (wassersteinEDist_triangle measurable_edist one_le_two _ _ _).trans
-          (add_le_add le_rfl (wassersteinEDist_triangle measurable_edist one_le_two _ _ _))
-    _ ≤ ENNReal.ofReal r + (ENNReal.ofReal (dist x₀ x₁) + ENNReal.ofReal r) := by
-        rw [wassersteinEDist_comm measurable_edist, wassersteinEDist_dirac_dirac two_ne_zero,
-          edist_dist]
-        gcongr
-    _ = ENNReal.ofReal (dist x₀ x₁ + 2 * r) := by
-        rw [← ENNReal.ofReal_add dist_nonneg hr, ← ENNReal.ofReal_add hr (by positivity)]
-        ring_nf
-
 /-- **Approximate midpoints under `CD(K, ∞)`.** If `M` satisfies `CD(K, ∞)`, any two points
 `x₀`, `x₁` have approximate midpoints: for every `ε > 0` some `z` has
 `d(x₀, z)² + d(z, x₁)² ≤ d(x₀, x₁)² / 2 + ε`. The left side is at least `d(x₀, x₁)² / 2` for every
@@ -276,7 +255,8 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   -- `W₂(μ₀, μ₁) ≤ d + 2 r`, so the midpoint is within `d / 2 + 2 r` of both `δ_{x₀}` and `δ_{x₁}`.
   have hW : dist μ₀ μ₁ ≤ d + 2 * r := by
     rw [← edist_le_ofReal (by positivity), WassersteinSpace.edist_def]
-    exact wassersteinEDist_le_ofReal_dist_add_two_mul_of_wassersteinEDist_dirac_le hr.le hW₀ hW₁
+    exact wassersteinEDist_le_ofReal_dist_add_two_mul_of_wassersteinEDist_dirac_le one_le_two hr.le
+      hW₀ hW₁
   have hmid (x : X) (μ : WassersteinSpace 2 X)
       (hx : wassersteinEDist 2 (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
         ENNReal.ofReal r) (hμ : dist μ (γ (1 / 2)) = 1 / 2 * dist μ₀ μ₁) :
