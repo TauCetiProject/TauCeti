@@ -393,9 +393,11 @@ private theorem const_add_mul_model_neg_inv_mem_of_isClosed {c b : ℂ} {S : Set
   · filter_upwards [self_mem_nhdsWithin] with z hz
     exact hUp z hz.1 hz.2
 
-/-- Near `s = 0`, the model values `c + b * model (-s⁻¹)` are values of `f` on the part of the
-upper half-plane outside the disc of radius `R` exactly when `s` lies above the real axis, and
-they are never values of `f` on the closed disc of radius `R`. -/
+/-- Near `s = 0`, on the punctured ball `‖-s⁻¹‖ ≥ 8`, and for `s` in the closed upper half-disc the
+model values `c + b * model (-s⁻¹)` are values of `f` on the part of the upper half-plane outside
+the disc of radius `R` exactly when `0 < s.im`: they are in the image for `0 < s.im` and not in
+it for `s.im = 0`, `s ≠ 0`. They are never values of `f` on the closed far part within the
+closed disc of radius `R`. -/
 private theorem exists_ball_model_values {R ρ : ℝ} {c b : ℂ} (hb : b ≠ 0)
     (hfc : ContinuousOn f ({z : ℂ | 0 ≤ z.im} ∩ {z | R ≤ ‖z‖}))
     (hU : ∀ z : ℂ, ρ < ‖z - c‖ → (z ∈ f '' (upperHalfPlaneSet ∩ {z | R < ‖z‖}) ↔
@@ -435,8 +437,10 @@ private theorem exists_ball_model_values {R ρ : ℝ} {c b : ℂ} (hb : b ≠ 0)
     exact lt_irrefl _ ((hbd.trans (le_max_right _ _)).trans_lt (hfar' s hs hs0))
 
 /-- The comparison map `s ↦ -(f⁻¹ (c + b * model (-s⁻¹)))⁻¹`, filled in by `0` at `0`, is
-continuous on the closed upper half-plane when `f⁻¹` is continuous on the closed image of `A`
-and diverges at infinity. -/
+continuous on the closed upper half-disc `ball 0 r ∩ {0 ≤ im}`, where `A` is closed, `f` is
+continuous on `A`, `f⁻¹ = invFunOn f A` is continuous on `f '' A`, and the model values for
+`s ≠ 0` lie in `f '' A` with nonzero preimage. Continuity at `0` uses that `f⁻¹` diverges at
+infinity, which follows from `A` closed and `f` continuous. -/
 private theorem continuousOn_update_neg_inv_invFunOn {A : Set ℂ} {c b : ℂ} {r : ℝ}
     (hb : b ≠ 0) (hA : IsClosed A) (hfc : ContinuousOn f A)
     (hφc : ContinuousOn (invFunOn f A) (f '' A))
@@ -557,8 +561,8 @@ private theorem exists_comparison_of_halfStripExterior {R ρ : ℝ} {c b : ℂ} 
   have hφA : ∀ y ∈ f '' A, φ y ∈ A ∧ f (φ y) = y := fun y hy => ⟨invFunOn_mem hy, invFunOn_eq hy⟩
   have hφU : ∀ y ∈ f '' T, φ y ∈ T ∧ φ y = invFunOn f T y := by
     rintro y ⟨z, hz, rfl⟩
-    rw [show φ (f z) = z from hfi.leftInvOn_invFunOn (hH0 hz),
-      (hfi.mono hH0).leftInvOn_invFunOn hz]
+    have hφf : φ (f z) = z := by simpa only [φ] using hfi.leftInvOn_invFunOn (hH0 hz)
+    rw [hφf, (hfi.mono hH0).leftInvOn_invFunOn hz]
     exact ⟨hz, rfl⟩
   -- The far model values `c + b * model (-s⁻¹)` are values of `f` on `A`, but not inside the disc.
   obtain ⟨r, hr, hfar, hUp, hUr, hout⟩ := exists_ball_model_values hb hfc hU
@@ -637,9 +641,10 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior {ρ : 
     (differentiableOn_const_add_mul_model c b) (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb) hgq hg0 hcont hholo hreal hupper hinj
 
-/-- The coordinate change `ζ ↦ x - ζ⁻¹` carries the far part of the closed upper half-plane onto
+/-- The coordinate change `ζ ↦ x - ζ⁻¹` carries the far part of the closed upper half-plane into
 the closed upper half-disc about `x` with `x` removed, and the open far parts onto the open
-upper half-disc. -/
+upper half-disc. It is continuous and injective on the closed far part, holomorphic on the open
+far part, and sends infinity to `x` within the closed upper half-plane. -/
 private theorem sub_inv_coordinate_change {x r : ℝ} (hr : 0 < r) :
     MapsTo (fun ζ : ℂ => (x : ℂ) - ζ⁻¹) ({z : ℂ | 0 ≤ z.im} ∩ {z | r⁻¹ ≤ ‖z‖})
       ((closedBall (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) \ {(x : ℂ)}) ∧
