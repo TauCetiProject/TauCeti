@@ -186,6 +186,35 @@ private theorem pos_mul_iff_of_pos_mul {a b X : ℝ} (h : 0 < a * b) : 0 < a * X
   · rw [← neg_mul_neg a X, ← neg_mul_neg b X, mul_pos_iff_of_pos_left (neg_pos.2 ha),
       mul_pos_iff_of_pos_left (neg_pos.2 hb)]
 
+/-- A point `z ≠ I` with nonzero real part on the rotated imaginary axis `rotation θ • iℝ₊` has
+`sin θ cos θ` of the sign opposite to that of `z.re`. -/
+private theorem sin_mul_cos_mul_re_neg {θ : ℝ} {z : ℍ} (hne : UpperHalfPlane.I ≠ z)
+    (hz : z.re ≠ 0) (hd : z = rotation θ •
+      UpperHalfPlane.mk ⟨0, Real.exp (dist UpperHalfPlane.I z)⟩ (Real.exp_pos _)) :
+    Real.sin θ * Real.cos θ * z.re < 0 := by
+  have hs : 0 < dist UpperHalfPlane.I z := dist_pos.2 hne
+  have hre := re_rotation_smul_mk θ (Real.exp (dist UpperHalfPlane.I z)) (Real.exp_pos _)
+  rw [← hd] at hre
+  have hy : 1 < Real.exp (dist UpperHalfPlane.I z) ^ 2 := by
+    have := Real.one_lt_exp_iff.2 hs
+    nlinarith
+  have hN : 0 < Complex.normSq ((Real.cos θ : ℂ) -
+      Complex.I * Real.exp (dist UpperHalfPlane.I z) * Real.sin θ) := by
+    refine Complex.normSq_pos.2 fun h ↦ ?_
+    have h1 := congrArg Complex.re h
+    have h2 := congrArg Complex.im h
+    simp only [Complex.sub_re, Complex.sub_im, Complex.mul_re, Complex.mul_im, Complex.I_re,
+      Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, Complex.zero_re, Complex.zero_im] at h1 h2
+    ring_nf at h1 h2
+    nlinarith [Real.sin_sq_add_cos_sq θ, Real.exp_pos (dist UpperHalfPlane.I z), h1, h2]
+  have hα0 : Real.sin θ * Real.cos θ ≠ 0 := by
+    intro h0
+    rw [h0, zero_mul, zero_div] at hre
+    exact hz hre
+  rw [hre, mul_div_assoc', div_neg_iff]
+  right
+  exact ⟨by nlinarith [sq_pos_of_ne_zero hα0], hN⟩
+
 /-- The semicircle case: the geodesic from `P` to `Q` is `toPoint P` followed by a rotation
 by an angle `θ`, whose sign is opposite to that of `Q.re - P.re`, and the centre of the
 semicircle through `P` and `Q` is `P.re - cos 2θ / sin 2θ · P.im`. -/
@@ -216,35 +245,12 @@ theorem exists_rotation_of_re_ne {P Q : ℍ} (hPQ : P.re ≠ Q.re) :
     exact h0.resolve_right (normSq_sin_mul_add_cos_pos θ Q').ne'
   -- the sign of `α` is opposite to the sign of `Q.re - P.re`
   have hE2 : 0 < α * (P.re - Q.re) := by
-    have hs : 0 < dist UpperHalfPlane.I Q' := dist_pos.2 hne
-    have hre := re_rotation_smul_mk θ (Real.exp (dist UpperHalfPlane.I Q')) (Real.exp_pos _)
-    rw [← hd, hQ're, ← hα] at hre
-    have hy : 1 < Real.exp (dist UpperHalfPlane.I Q') ^ 2 := by
-      have := Real.one_lt_exp_iff.2 hs
-      nlinarith
-    have hN : 0 < Complex.normSq ((Real.cos θ : ℂ) -
-        Complex.I * Real.exp (dist UpperHalfPlane.I Q') * Real.sin θ) := by
-      refine Complex.normSq_pos.2 fun h ↦ ?_
-      have h1 := congrArg Complex.re h
-      have h2 := congrArg Complex.im h
-      simp only [Complex.sub_re, Complex.sub_im, Complex.mul_re, Complex.mul_im, Complex.I_re,
-        Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, Complex.zero_re,
-        Complex.zero_im] at h1 h2
-      ring_nf at h1 h2
-      nlinarith [Real.sin_sq_add_cos_sq θ, Real.exp_pos (dist UpperHalfPlane.I Q'), h1, h2]
-    have hα0 : α ≠ 0 := by
-      intro h0
-      rw [h0, zero_mul, zero_div, div_eq_zero_iff] at hre
-      rcases hre with hre | hre
-      · exact hPQ (by linarith)
-      · exact P.im_pos.ne' hre
-    have hprod : α * ((Q.re - P.re) / P.im) < 0 := by
-      rw [hre, mul_div_assoc', div_neg_iff]
-      right
-      exact ⟨by nlinarith [sq_pos_of_ne_zero hα0], hN⟩
-    have : α * (Q.re - P.re) < 0 := by
-      rw [mul_div_assoc'] at hprod
-      exact (div_neg_iff.1 hprod).resolve_left (fun h ↦ (P.im_pos.not_gt h.2)) |>.1
+    have hz : Q'.re ≠ 0 := by
+      rw [hQ're]
+      exact div_ne_zero (sub_ne_zero.2 (Ne.symm hPQ)) P.im_pos.ne'
+    have h := sin_mul_cos_mul_re_neg hne hz hd
+    rw [hQ're, ← mul_div_assoc, div_neg_iff] at h
+    have := (h.resolve_left fun h ↦ P.im_pos.not_gt h.2).1
     linarith
   have hα0 : α ≠ 0 := fun h ↦ by simp [h] at hE2
   -- identify the centre
