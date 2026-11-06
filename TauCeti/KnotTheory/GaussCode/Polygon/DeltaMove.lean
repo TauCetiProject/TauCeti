@@ -121,6 +121,18 @@ of edge `j`. -/
 
 omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: if edges `i` and
+`j` of a simple polygon meet in a regular projection along `d` at the pairs `(x, x')` and `(z, w)`,
+then `z = x` and `w = x'`. -/
+private theorem eq_of_mem_edgeSet_of_projAlong_eq (hs : poly.IsSimple ℝ)
+    (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {i j : Fin n} (hji : j ≠ i)
+    {x x' z w : P} (hx : x ∈ poly.edgeSet ℝ i) (hx' : x' ∈ poly.edgeSet ℝ j)
+    (hπx : projAlong ℝ p₀ d x = projAlong ℝ p₀ d x') (hz : z ∈ poly.edgeSet ℝ i)
+    (hw : w ∈ poly.edgeSet ℝ j) (hπz : projAlong ℝ p₀ d z = projAlong ℝ p₀ d w) :
+    z = x ∧ w = x' :=
+  Prod.mk.inj (hπ.subsingleton_setOf_mem_edgeSet hs hji.symm ⟨hz, hw, hπz⟩ ⟨hx, hx', hπx⟩)
+
+omit [NeZero n] in
+/-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: if edges `i` and
 `j` of a simple polygon cross at `x` over `x'` in a regular projection along `d`, then `d ≠ 0`, the
 two edges are distinct, the endpoints of edge `i` do not lie on edge `j`, `x` and `x'` are double
 points lying inside the two edges, and they are the only points of the polygon over `π x`. -/
@@ -139,8 +151,7 @@ private theorem exists_mem_Ioo_of_crossing (hs : poly.IsSimple ℝ)
     exact hxx' (hπ.injOn_edgeSet j hx hx' hπx)
   -- Edges `i` and `j` cross only at `x` over `x'`, so they have no common point.
   have hsub {z : P} (hzi : z ∈ poly.edgeSet ℝ i) (hzj : z ∈ poly.edgeSet ℝ j) : False := by
-    have h := Prod.mk.inj (hπ.subsingleton_setOf_mem_edgeSet hs hji.symm
-      (show (z, z) ∈ _ from ⟨hzi, hzj, rfl⟩) (show (x, x') ∈ _ from ⟨hx, hx', hπx⟩))
+    have h := eq_of_mem_edgeSet_of_projAlong_eq hs hπ hji hx hx' hπx hzi hzj rfl
     exact hxx' (h.1.symm.trans h.2)
   have hxb : x ∈ poly.boundary ℝ := subset_iUnion (poly.edgeSet ℝ) i hx
   have hx'b : x' ∈ poly.boundary ℝ := subset_iUnion (poly.edgeSet ℝ) j hx'
@@ -548,8 +559,7 @@ private theorem eq_of_mem_edgeSet_of_mem_doublePoints (hs : poly.IsSimple ℝ)
     exact (hne (hπ.injOn_edgeSet i hk hz hπeq)).elim
   by_cases hkj : k = j
   · rw [hkj] at hk
-    exact (Prod.mk.inj (hπ.subsingleton_setOf_mem_edgeSet hs hji.symm
-      (show (z, w) ∈ _ from ⟨hz, hk, hπeq.symm⟩) (show (x, x') ∈ _ from ⟨hx, hx', hπx⟩))).1
+    exact (eq_of_mem_edgeSet_of_projAlong_eq hs hπ hji hx hx' hπx hz hk hπeq.symm).1
   rcases hprism k hki hkj w hk (hπeq ▸ ⟨z, hΔ.edgeSet_subset_closedInterior hz, rfl⟩) with
     rfl | rfl <;>
     exact (hne (hπ.eq_vertex_of_apply_eq _ (subset_iUnion (poly.edgeSet ℝ) i hz)
@@ -577,10 +587,8 @@ private theorem eq_of_mem_uIcc_of_mem_doublePoints (hs : poly.IsSimple ℝ)
   obtain ⟨k, hk⟩ := mem_iUnion.1 hw
   by_cases hki : k = i
   · rw [hki] at hk
-    have h := (Prod.mk.inj (hπ.subsingleton_setOf_mem_edgeSet hs hji.symm
-      (show (w, poly.edgePath ℝ j s) ∈ _ from ⟨hk, ⟨s, hsI, rfl⟩, hπeq⟩)
-      (show (lineMap (poly i) (poly (finRotate n i)) r, poly.edgePath ℝ j s₀) ∈ _ from
-        ⟨⟨r, Ioo_subset_Icc_self hr, rfl⟩, ⟨s₀, Ioo_subset_Icc_self hs₀, rfl⟩, hπx⟩))).2
+    have h := (eq_of_mem_edgeSet_of_projAlong_eq hs hπ hji ⟨r, Ioo_subset_Icc_self hr, rfl⟩
+      ⟨s₀, Ioo_subset_Icc_self hs₀, rfl⟩ hπx hk ⟨s, hsI, rfl⟩ hπeq).2
     exact lineMap_injective ℝ (hs.hasNondegenerateEdges j) h
   by_cases hkj : k = j
   · rw [hkj] at hk
