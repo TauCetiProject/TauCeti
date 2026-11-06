@@ -171,14 +171,11 @@ theorem Spec.residueField_hom_ext {R : CommRingCat.{u}} {p : Spec R} {K : CommRi
 theorem Spec.map_algebraMap_residueField_closedPoint {R : Type u} [CommRing R]
     (p : PrimeSpectrum R) :
     Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))
-      (IsLocalRing.closedPoint p.asIdeal.ResidueField) = p := by
-  -- The closed point of `Spec κ(p)` is the zero ideal, whose inverse image in `R` is `p`.
+      (IsLocalRing.closedPoint p.asIdeal.ResidueField) = p :=
+  -- `p` is the only point of `Spec R` in the image of `Spec κ(p)`.
   -- `Spec.map_apply` is applied as a term: `rw` cannot find it, since the closed point is typed
   -- as a point of `PrimeSpectrum κ(p)` rather than of `Spec (.of κ(p))`.
-  refine (Spec.map_apply _ _).trans (PrimeSpectrum.ext ?_)
-  simp only [PrimeSpectrum.comap_asIdeal, CommRingCat.hom_ofHom, IsLocalRing.closedPoint,
-    IsLocalRing.maximalIdeal_eq_bot, ← RingHom.ker_eq_comap_bot,
-    Ideal.ker_algebraMap_residueField]
+  (Spec.map_apply _ _).trans ((PrimeSpectrum.residueField_comap p).subset ⟨_, rfl⟩)
 
 /-- On a quasi-affine scheme, a ring map out of the residue field `κ(x)` is determined by its
 values on global functions evaluated at `x`. -/
