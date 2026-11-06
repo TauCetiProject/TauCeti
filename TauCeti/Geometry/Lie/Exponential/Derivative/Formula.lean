@@ -337,12 +337,12 @@ private lemma mfderiv_centeredProduct_model (X Y : LeftInvariantDerivation I G) 
   have hc := (hext.hasMFDerivAt.comp 0 hu.hasMFDerivAt).mfderiv
   rw [mfderiv_eq_fderiv] at hc
   have hcoords := DFunLike.congr_fun hc w
+  simp only [w, NormedSpace.fromTangentSpace_symm_apply] at hcoords
   have hFd := DFunLike.congr_fun (hasFDerivAt_chart_centeredProduct (I := I) X).fderiv Y
   have hresult := hcoords.symm.trans hFd
   rw [hu0, mfderiv_extChartAt_self] at hresult
-  -- `groupLieAlgebraEquivModelVectorSpace` is `LinearEquiv.refl ℝ E`. Both normed-space
-  -- tangent fibres are the underlying vector space, and `fromTangentSpace` and its inverse
-  -- act identically on vectors. The `fderiv`/`mfderiv` conversion was made explicitly in `hc`.
+  simp only [ContinuousLinearMap.comp_apply] at hresult
+  simp only [groupLieAlgebraEquivModelVectorSpace]
   exact hresult
 
 -- Translation back from the identity gives the differential of the exponential itself.
@@ -370,7 +370,8 @@ private lemma mfderiv_lieExp_aux (X : LeftInvariantDerivation I G)
     rw [mfderiv_eq_fderiv, hadd.fderiv]
     simp only [NormedSpace.fromTangentSpace_apply,
       NormedSpace.fromTangentSpace_symm_apply, w, Y]
-    exact NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) (0 : LeftInvariantDerivation I G) v
+    -- The normed-space tangent identification preserves the underlying vector.
+    rfl
   have hc1 := mfderiv_comp_apply X
     (mdifferentiableAt_mul_left (I := I) (a := (lieExp (I := I) X)⁻¹)) hExp v
   have hc2 := mfderiv_comp_apply_of_eq 0 hf haddDiff (by simp) w
@@ -421,9 +422,16 @@ theorem hasMFDerivAt_lieExp (X : LeftInvariantDerivation I G) :
   have h := mfderiv_lieExp_aux (I := I) X v
   rw [leftDexp_eq_quotient] at h
   rw [mulInvariantVectorField_apply] at h
-  -- Continuous-linear composition evaluates to nested application. The coercions from
-  -- `toContinuousLinearMap` and `fromTangentSpace.toContinuousLinearMap` preserve the
-  -- underlying functions, so the composed operator has exactly the value in `h`.
+  -- The translation derivative has codomain at `lieExp X * 1`, whereas the goal is at
+  -- `lieExp X`. Both fibres are the model space, but their coercions retain different
+  -- universe parameters, so `comp_apply` does not match until the applied maps are exposed.
+  change mfderiv 𝓘(ℝ, LeftInvariantDerivation I G) I (lieExp (I := I) (G := G)) X v =
+    mfderiv I I (lieExp (I := I) X * ·) (1 : G)
+      (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint
+          (oneSubExpNegDivSelf ℝ (LinearMap.toContinuousLinearMap
+            (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X))
+              (NormedSpace.fromTangentSpace (𝕜 := ℝ) X v)))
   exact h
 
 /-- On a Lie-algebra vector `Y`, the differential of `lieExp` at `X` is the value at `lieExp X`
@@ -448,9 +456,19 @@ theorem mfderiv_lieExp_apply (X Y : LeftInvariantDerivation I G) :
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   dsimp only
-  have h := mfderiv_lieExp_aux (I := I) X
+  have h := DFunLike.congr_fun (hasMFDerivAt_lieExp (I := I) X).mfderiv
     ((NormedSpace.fromTangentSpace (𝕜 := ℝ) X).symm Y)
-  rw [leftDexp_eq_quotient] at h
+  -- As above, evaluate the composed maps before simplifying the tangent identification.
+  change mfderiv 𝓘(ℝ, LeftInvariantDerivation I G) I (lieExp (I := I) (G := G)) X
+      ((NormedSpace.fromTangentSpace (𝕜 := ℝ) X).symm Y) =
+    mulInvariantVectorField
+      (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint
+          (oneSubExpNegDivSelf ℝ (LinearMap.toContinuousLinearMap
+            (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X))
+              (NormedSpace.fromTangentSpace (𝕜 := ℝ) X
+                ((NormedSpace.fromTangentSpace (𝕜 := ℝ) X).symm Y))))
+      (lieExp (I := I) X) at h
   simpa only [ContinuousLinearEquiv.apply_symm_apply] using h
 
 end TauCeti.Lie
