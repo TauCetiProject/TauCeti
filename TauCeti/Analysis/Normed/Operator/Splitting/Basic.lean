@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
+import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # The kernel of an operator paired with a complementary coordinate
@@ -25,6 +26,10 @@ a continuous linear parametrization whose parameter space does not depend on the
 `A` is taken, which is what lets a moving kernel — a tangent space along a level set — be compared
 with a fixed model space.
 
+The pair `A.prod q` is invertible exactly when `q.prod A` is
+(`ContinuousLinearMap.isInvertible_prod_comm`). Read with the roles exchanged, `q.kerSection A` is
+therefore the right inverse of `A` taking values in the kernel of `q`.
+
 Invertibility of the pair is recorded through `ContinuousLinearMap.IsInvertible`, so that the
 section is a plain definition and the hypothesis appears only in the lemmas about it; the
 underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
@@ -35,6 +40,8 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
 * `ContinuousLinearMap.eq_kerSection`: it is the only map with that defining property.
 * `ContinuousLinearMap.range_kerSection`: its range is exactly `ker A`.
 * `ContinuousLinearMap.kerEquivOfProd`: the resulting isomorphism `G ≃L[R] ↥A.ker`.
+* `ContinuousLinearMap.isInvertible_prod_comm`: invertibility of a pair does not depend on the order
+  of its components.
 -/
 
 public section
@@ -46,6 +53,12 @@ variable {R M F G : Type*} [Semiring R]
   [AddCommMonoid F] [TopologicalSpace F] [Module R F]
   [AddCommMonoid G] [TopologicalSpace G] [Module R G]
   {A : M →L[R] F} {q : M →L[R] G}
+
+/-- Invertibility of a pair does not depend on the order of its two components. -/
+theorem isInvertible_prod_comm : (A.prod q).IsInvertible ↔ (q.prod A).IsInvertible := by
+  have : q.prod A = (ContinuousLinearEquiv.prodComm R F G : F × G →L[R] G × F) ∘L A.prod q := by
+    ext <;> simp
+  rw [this, isInvertible_equiv_comp]
 
 /-- The section of `q` with values in the kernel of `A`: it sends `v : G` to the unique `x : M`
 with `A x = 0` and `q x = v`.

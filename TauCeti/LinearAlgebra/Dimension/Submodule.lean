@@ -21,6 +21,8 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
 subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
+codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
@@ -101,6 +103,23 @@ theorem le_finrank_span_iff_exists_linearIndependent {s : Set E} [Module.Finite 
     exact ⟨f ∘ Fin.castLE h, hf.comp _ (Fin.castLE_injective h), fun i ↦ hfs _⟩
   · have := finrank_mono (span_mono (R := 𝕜) (Set.range_subset_iff.2 hvs))
     rwa [finrank_span_eq_card hv, Fintype.card_fin] at this
+
+/-- A finite-dimensional subspace `S` which spans the whole space together with `V`, and whose
+dimension is at most the codimension of `V`, is a complement of `V`. Indeed `S` maps onto
+`E ⧸ V`, so the two dimensions agree and the map is injective. -/
+theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDimensional 𝕜 S]
+    (h : Codisjoint V S) (hrank : finrank 𝕜 S ≤ finrank 𝕜 (E ⧸ V)) : IsCompl V S := by
+  let φ : S →ₗ[𝕜] E ⧸ V := V.mkQ ∘ₗ S.subtype
+  have hφ : Function.Surjective φ := by
+    rw [← LinearMap.range_eq_top, LinearMap.range_comp, range_subtype, map_mkQ_eq_top]
+    exact h.eq_top
+  have : FiniteDimensional 𝕜 (E ⧸ V) := Module.Finite.of_surjective φ hφ
+  have hinj : Function.Injective φ :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (hrank.antisymm (LinearMap.finrank_le_finrank_of_surjective hφ))).mpr hφ
+  refine ⟨disjoint_def.mpr fun x hxV hxS ↦ ?_, h⟩
+  have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
+  simpa using congrArg Subtype.val (hinj this)
 
 end DivisionRing
 
