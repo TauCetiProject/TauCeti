@@ -136,7 +136,7 @@ theorem card_filter_monicFactorsMod_le {θ : 𝓞 K} (d : ℕ) :
     obtain ⟨hirr, hmon, -⟩ := (Polynomial.mem_normalizedFactors_iff h₀).mp hmem
     -- `monicIrreduciblesOfDegree` lives in another module, so its body is not exposed here:
     -- go through the membership lemma rather than the anonymous constructor.
-    exact (mem_monicIrreduciblesOfDegree_iff (ZMod p)).mpr ⟨hmon, hirr, hdeg⟩
+    exact mem_monicIrreduciblesOfDegree_iff.mpr ⟨hmon, hirr, hdeg⟩
   rw [← Set.ncard_coe_finset]
   exact Set.ncard_le_ncard hsub (finite_monicIrreduciblesOfDegree (ZMod p) d)
 

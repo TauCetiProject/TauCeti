@@ -12,7 +12,6 @@ public import TauCeti.Analysis.PDE.Vortex.Reference
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Distribution.Sobolev
@@ -48,10 +47,9 @@ Off the disc where the cutoff is active, the reference field is the field recons
 holomorphic factor `z ^ m` and the harmonic amplitude `-m log |z|`
 (`referenceField_eventuallyEq_amplitudeField`). It therefore solves the vortex equation there, so
 its vortex defect is a smooth compactly supported field
-(`hasCompactSupport_equation_referenceField`). Its connection coefficients are homogeneous of
-degree `-1` and its section coefficients of degree `0` there, so every coordinate has bounded
-derivatives of each finite order on the whole plane
-(`exists_norm_iteratedFDeriv_referenceField_apply_le`). These are the properties of the reference
+(`hasCompactSupport_equation_referenceField`). Every coordinate has bounded derivatives of each
+order on the whole plane (`exists_norm_iteratedFDeriv_referenceField_apply_le`), since the reference
+section and connection do. These are the properties of the reference
 that make multiplication by its coefficients, and its own defect, compatible with the Sobolev
 scale.
 
@@ -76,7 +74,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter MeasureTheory Module TemperedDistribution
-open scoped ContDiff Topology SchwartzMap NNReal
+open scoped ContDiff Topology SchwartzMap
 
 /-! ### The reference field -/
 
@@ -250,50 +248,31 @@ theorem hasCompactSupport_equation_referenceField (f : ContDiffBump (0 : ℝ)) (
   refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (√f.rOut)) fun z hz ↦ ?_
   exact equation_referenceField_eq_zero f m (rOut_lt_norm_sq_of_sqrt_lt f (by simpa using hz))
 
-/-- **The reference field has bounded derivatives.** For every finite order `N`, each coordinate
-of the reference field has iterated derivatives of orders at most `N` bounded on the whole plane.
-Off a disc its connection coefficients are homogeneous of degree `-1` and its section coefficients
-of degree `0`, so their derivatives are bounded there; on the disc the field is smooth. -/
+/-- **The reference field has bounded derivatives.** Each iterated derivative of each coordinate
+of the reference field is bounded on the whole plane. The coordinates are real parts and imaginary
+parts of the reference section and of coefficients of the reference connection, whose derivatives
+are bounded. -/
 theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 : ℝ)) (m : ℕ)
-    (i : Fin 4) (N : ℕ) :
-    ∃ M : ℝ≥0, ∀ k ≤ N, ∀ z, ‖iteratedFDeriv ℝ k (fun z ↦ referenceField f m z i) z‖ ≤ M := by
-  have hF : ContDiff ℝ N (fun z ↦ referenceField f m z i) :=
-    ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp
-      (contDiff_referenceField f m)).of_le (mod_cast le_top)
-  -- Outside the disc of radius `√rOut`, the coordinate agrees near each point with any map `g`
-  -- that agrees with it wherever the cutoff is inactive.
-  have hev (g : ℂ → ℝ) (hg : ∀ w, f.rOut ≤ ‖w‖ ^ 2 → referenceField f m w i = g w) (z : ℂ)
-      (hz : √f.rOut < ‖z‖) : (fun z ↦ referenceField f m z i) =ᶠ[𝓝 z] g := by
-    filter_upwards [eventually_rOut_lt_norm_sq f (rOut_lt_norm_sq_of_sqrt_lt f hz)] with w hw
-    exact hg w (le_of_lt hw)
-  -- Off the disc the connection coefficients are `ℓ z / |z|²`, homogeneous of degree `-1`.
-  have hconn (ℓ : ℂ →L[ℝ] ℝ)
-      (hg : ∀ w, f.rOut ≤ ‖w‖ ^ 2 → referenceField f m w i = ℓ w / ‖w‖ ^ 2) :
-      ∃ M : ℝ≥0, ∀ k ≤ N, ∀ z, ‖iteratedFDeriv ℝ k (fun z ↦ referenceField f m z i) z‖ ≤ M := by
-    refine exists_norm_iteratedFDeriv_le_of_eventuallyEq (m := fun z ↦ ℓ z / ‖z‖ ^ 2) (d := -1)
-      (by norm_num) hF
-      (ℓ.contDiff.contDiffOn.div (contDiff_norm_sq ℝ).contDiffOn
-        fun _ hz ↦ pow_ne_zero 2 (norm_ne_zero_iff.2 hz)) (fun t ht z hz ↦ ?_) (hev _ hg)
-    have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.2 hz
-    rw [map_smul, norm_smul, Real.norm_of_nonneg ht.le, Real.rpow_neg_one, smul_eq_mul, smul_eq_mul]
-    field_simp
-  -- Off the disc the section coefficients are `ℓ ((z / |z|) ^ m)`, homogeneous of degree `0`.
-  have hsec (ℓ : ℂ →L[ℝ] ℝ)
-      (hg : ∀ w, f.rOut ≤ ‖w‖ ^ 2 → referenceField f m w i = ℓ ((w / (‖w‖ : ℂ)) ^ m)) :
-      ∃ M : ℝ≥0, ∀ k ≤ N, ∀ z, ‖iteratedFDeriv ℝ k (fun z ↦ referenceField f m z i) z‖ ≤ M := by
-    refine exists_norm_iteratedFDeriv_le_of_eventuallyEq (d := 0) le_rfl hF (fun z hz ↦ ?_)
-      (fun t ht z _ ↦ ?_) (hev _ hg)
-    · exact (ℓ.contDiff.contDiffAt.comp z ((contDiffAt_div_ofReal_norm hz).pow m)).contDiffWithinAt
-    · rw [Real.rpow_zero, one_smul, norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
-        mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
+    (i : Fin 4) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ referenceField f m z i) z‖ ≤ C := by
+  -- A real-linear functional of a smooth map with bounded derivatives has bounded derivatives.
+  have hcomp {g : ℂ → ℂ} (hg : ContDiff ℝ ∞ g) (ℓ : ℂ →L[ℝ] ℝ)
+      (hb : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) :
+      ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ ℓ (g z)) z‖ ≤ C := by
+    obtain ⟨C, hC⟩ := hb
+    refine ⟨‖ℓ‖ * C, fun z ↦ (ℓ.norm_iteratedFDeriv_comp_left hg.contDiffAt
+      (by exact_mod_cast le_top)).trans ?_⟩
+    gcongr
+    exact hC z
+  have hconn (v : ℂ) : ContDiff ℝ ∞ (fun z ↦ referenceConnection f m z v) :=
+    (ContinuousLinearMap.apply ℝ ℂ v).contDiff.comp (contDiff_referenceConnection f m)
   fin_cases i
-  · exact hconn ((m : ℝ) • imCLM) fun w hw ↦ by simp [referenceField_eq_of_rOut_le f m hw]
-  · exact hconn (-(m : ℝ) • reCLM) fun w hw ↦ by
-      simp [referenceField_eq_of_rOut_le f m hw, neg_div]
-  · exact hsec ((1 / 2 : ℝ) • reCLM) fun w hw ↦ by
-      simp [referenceField_eq_of_rOut_le f m hw, div_eq_inv_mul]
-  · exact hsec ((1 / 2 : ℝ) • imCLM) fun w hw ↦ by
-      simp [referenceField_eq_of_rOut_le f m hw, div_eq_inv_mul]
+  · exact hcomp (hconn 1) imCLM (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n 1)
+  · exact hcomp (hconn I) imCLM (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n I)
+  · simpa [referenceField_apply, div_eq_inv_mul] using hcomp (contDiff_referenceSection f m)
+      ((1 / 2 : ℝ) • reCLM) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
+  · simpa [referenceField_apply, div_eq_inv_mul] using hcomp (contDiff_referenceSection f m)
+      ((1 / 2 : ℝ) • imCLM) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
 
 /-! ### Sobolev fields -/
 
@@ -463,14 +442,8 @@ tends to one at infinity. -/
 theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
     (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
     (hcont : Continuous x) :
-    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-  have h := (tendsto_sectionValue_mul_inv_pow hs hx hcont).norm.pow 2
-  rw [norm_one, one_pow] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
-  rw [norm_mul, norm_inv, norm_pow, norm_div]
-  simp only [norm_real, norm_norm, div_self (norm_ne_zero_iff.2 hz.1), one_pow, inv_one, mul_one]
-  exact sq_norm_sectionValue x z
+    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
+  tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow (tendsto_sectionValue_mul_inv_pow hs hx hcont)
 
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
 differentiable connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/

@@ -164,14 +164,11 @@ theorem rankOnePoints_diag2nUnit (u : Kˣ) :
   apply Subtype.ext
   apply Units.ext
   rw [coe_rankOnePoints, weightTable.coe_sl2BlockSL,
-    Matrix.SpecialLinearGroup.diag2nUnit_coe, weightTable.sl2BlockMatrix_diagonal,
+    Matrix.SpecialLinearGroup.diag2nUnit_coe, weightTable.sl2BlockMatrix_diagonal_unit,
     coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
   congr 1
   funext a
-  rw [torusCharacter_mulSingle]
-  rcases weightTable.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
-  all_goals simp only [weightTable_weight] at h
-  all_goals simp [weightTable_weight, h]
+  simp [torusCharacter_mulSingle, weightTable_weight]
 
 /-- The integral rank-one map commutes with homomorphisms of value rings. -/
 @[simp↓]
