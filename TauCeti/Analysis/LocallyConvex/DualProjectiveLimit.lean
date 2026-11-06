@@ -164,7 +164,9 @@ theorem withSeminorms :
   refine iInf_congr fun j ↦ ?_
   rw [Filter.comap_comap, Submodule.coe_zero, Pi.zero_apply, ← comap_norm_nhds_zero,
     Filter.comap_comap]
-  rfl
+  exact congrArg (Filter.comap · _) (funext fun f ↦ by
+    simp only [Function.comp_apply, Function.eval, Seminorm.comp_apply, coe_normSeminorm,
+      ContinuousLinearMap.coe_coe, coord_apply])
 
 /-- Every continuous seminorm on the projective limit is bounded by a multiple of a single
 coordinate norm `f ↦ ‖f j‖`. -/
@@ -184,8 +186,7 @@ theorem exists_bound_of_continuous (q : Seminorm 𝕜 (dualProjectiveLimit T)) (
     simpa only [D, NNReal.coe_sum, NNReal.coe_prod, coe_nnnorm] using
       Finset.single_le_sum (f := fun i ↦ ∏ k ∈ Finset.Ico i N, ‖T k‖)
         (fun i _ ↦ by positivity) hi
-  rw [smul_apply, NNReal.smul_def, smul_eq_mul, NNReal.coe_mul, mul_assoc]
-  exact mul_le_mul_of_nonneg_left hsup C.coe_nonneg
+  simpa [NNReal.smul_def, mul_assoc] using mul_le_mul_of_nonneg_left hsup C.coe_nonneg
 
 variable (T) in
 /-- Evaluation at a vector of `B j` as a continuous functional on the projective limit,
@@ -215,14 +216,11 @@ theorem exists_norm_le_forall_apply_eq {j : ℕ} (hT : (T j).IsWeaklyCompact)
     ∃ x : B (j + 1), ‖x‖ ≤ ‖T j‖ * C ∧
       ∀ f, φ f = (f : ∀ n, StrongDual 𝕜 (B n)) (j + 1) x := by
   -- `φ` vanishes on the kernel of the `j`-th coordinate, so it descends to its range.
-  obtain ⟨π, hπ⟩ : ∃ π : dualProjectiveLimit T →ₗ[𝕜] StrongDual 𝕜 (B j),
-      ∀ f, π f = (f : ∀ n, StrongDual 𝕜 (B n)) j :=
-    ⟨(coord T j).toLinearMap, fun f ↦ by simp⟩
+  set π : dualProjectiveLimit T →ₗ[𝕜] StrongDual 𝕜 (B j) := (coord T j).toLinearMap
   have hdesc {f f' : dualProjectiveLimit T} (h : π f = π f') : φ f = φ f' := by
-    have hφf := hφ (f - f')
-    rw [← hπ, map_sub π f f', h, sub_self, norm_zero, mul_zero, norm_le_zero_iff,
-      map_sub φ f f'] at hφf
-    exact sub_eq_zero.1 hφf
+    have hj : (f : ∀ n, StrongDual 𝕜 (B n)) j = (f' : ∀ n, StrongDual 𝕜 (B n)) j := h
+    have h0 : φ (f - f') = 0 := by simpa [hj] using hφ (f - f')
+    rwa [← sub_eq_zero, ← map_sub]
   obtain ⟨ψ, hψ⟩ : ∃ ψ : LinearMap.range π →ₗ[𝕜] 𝕜,
       ∀ f, ψ ⟨π f, LinearMap.mem_range_self π f⟩ = φ f := by
     choose g hg using fun h : LinearMap.range π ↦ LinearMap.mem_range.1 h.2
@@ -236,16 +234,14 @@ theorem exists_norm_le_forall_apply_eq {j : ℕ} (hT : (T j).IsWeaklyCompact)
   obtain ⟨x, hx, hrep⟩ := hT.exists_norm_le_forall_apply_eq (LinearMap.range π) ψ C
     (by
       rintro ⟨_, f, rfl⟩
-      have hφf := hφ f
-      rw [← hψ f, ← hπ f] at hφf
-      exact hφf)
+      rw [hψ f]
+      exact hφ f)
   refine ⟨x, hx, fun f ↦ ?_⟩
-  have hmem : ((f : ∀ n, StrongDual 𝕜 (B n)) (j + 1)).comp (T j) ∈ LinearMap.range π := by
-    rw [apply_succ_comp, ← hπ]
-    exact LinearMap.mem_range_self π f
-  have hf : (⟨_, hmem⟩ : LinearMap.range π) = ⟨π f, LinearMap.mem_range_self π f⟩ :=
-    Subtype.ext ((apply_succ_comp f j).trans (hπ f).symm)
-  rw [hrep _ hmem, hf, hψ]
+  have hmem : ((f : ∀ n, StrongDual 𝕜 (B n)) (j + 1)).comp (T j) ∈ LinearMap.range π :=
+    LinearMap.mem_range.2 ⟨f, (apply_succ_comp f j).symm⟩
+  calc φ f = ψ ⟨π f, LinearMap.mem_range_self π f⟩ := (hψ f).symm
+    _ = ψ ⟨_, hmem⟩ := congrArg ψ (Subtype.ext (apply_succ_comp f j).symm)
+    _ = _ := (hrep _ hmem).symm
 
 /-- **Uniform representation of bounded families.** If the bonding maps are weakly compact, in
 particular if they are compact, then a pointwise bounded family of continuous linear functionals
@@ -257,9 +253,9 @@ theorem exists_forall_exists_norm_le_eval_eq (hT : ∀ n, (T n).IsWeaklyCompact)
     ∃ j, ∃ R : ℝ, ∀ i, ∃ x : B j, ‖x‖ ≤ R ∧ eval T j x = φ i := by
   -- The projective limit is a Fréchet space, hence barrelled, so the supremum of the
   -- seminorms `f ↦ ‖φ i f‖` is a continuous seminorm.
-  obtain ⟨q, hq⟩ : ∃ q : ι → Seminorm 𝕜 (dualProjectiveLimit T), ∀ i f, q i f = ‖φ i f‖ :=
-    ⟨fun i ↦ (normSeminorm 𝕜 𝕜).comp (E := dualProjectiveLimit T) (φ i).toLinearMap,
-      fun _ _ ↦ by simp⟩
+  set q : ι → Seminorm 𝕜 (dualProjectiveLimit T) :=
+    fun i ↦ (normSeminorm 𝕜 𝕜).comp (E := dualProjectiveLimit T) (φ i).toLinearMap
+  have hq (i : ι) (f : dualProjectiveLimit T) : q i f = ‖φ i f‖ := by simp [q]
   have hbdd : BddAbove (Set.range q) := Seminorm.bddAbove_range_iff.2 fun f ↦ by
     simpa only [hq] using hφ f
   have hp : Continuous ⇑(⨆ i, q i : Seminorm 𝕜 (dualProjectiveLimit T)) := by
