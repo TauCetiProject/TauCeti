@@ -69,22 +69,16 @@ open Matrix
 
 variable {R : Type*} {ι : Type*} [CommRing R] (π : R) [Fintype ι] [DecidableEq ι]
 
-section Complete
-
-variable [IsAdicComplete (Ideal.span {π}) R]
-
-/-- **Newton's method over a `π`-adically complete ring.** Let `A : (ι → R) → (ι → R)`, let `M` be
-a matrix with unit determinant, and let `u₀` satisfy `A u₀ ≡ 0 mod π`. If `M` linearises `A`
-uniformly on the residue class of `u₀`, in the sense that `A u' ≡ A u + M (u' - u) mod π^(k+1)`
-whenever `u, u'` lie in that class and `u' ≡ u mod π^k` with `k ≥ 1`, then `A` has exactly one zero
-in the residue class of `u₀`. -/
-theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (ι → R))
+/-- The Newton iterates for `A` starting at `u₀` stay in the residue class of `u₀`, `A` vanishes on
+the `k`-th iterate modulo `π ^ (k + 1)`, and consecutive iterates are congruent modulo
+`π ^ (k + 1)`. -/
+private theorem exists_newton_iterates (A : (ι → R) → (ι → R))
     {M : Matrix ι ι R} (hM : IsUnit M.det) (u₀ : ι → R) (h₀ : ∀ i, π ∣ A u₀ i)
     (hA : ∀ u u' : ι → R, (∀ i, π ∣ u i - u₀ i) → (∀ i, π ∣ u' i - u₀ i) →
       ∀ k : ℕ, 1 ≤ k → (∀ i, π ^ k ∣ u' i - u i) →
         ∀ i, π ^ (k + 1) ∣ A u' i - A u i - (M *ᵥ (u' - u)) i) :
-    ∃! u : ι → R, (∀ i, π ∣ u i - u₀ i) ∧ A u = 0 := by
-  -- The Newton step and its defining property.
+    ∃ u : ℕ → ι → R, (∀ k, (∀ i, π ∣ u k i - u₀ i) ∧ ∀ i, π ^ (k + 1) ∣ A (u k) i) ∧
+      ∀ k i, π ^ (k + 1) ∣ u (k + 1) i - u k i := by
   set T : (ι → R) → (ι → R) := fun u ↦ u - M⁻¹ *ᵥ A u with hTdef
   have hT : ∀ u, M *ᵥ (T u - u) = -A u := fun u ↦ by
     rw [hTdef]
@@ -114,8 +108,23 @@ theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (�
       have h1 := hA (u k) (u (k + 1)) ih.1 hclass (k + 1) (by omega) (hstep k ih.2) i
       rw [hu_succ, hT, Pi.neg_apply, sub_neg_eq_add, sub_add_cancel] at h1
       rwa [hu_succ]
-  -- Consecutive iterates are congruent modulo `π ^ (k + 1)`, so the sequence is Cauchy.
-  have hconsec : ∀ k i, π ^ (k + 1) ∣ u (k + 1) i - u k i := fun k ↦ hstep k (key k).2
+  exact ⟨u, key, fun k ↦ hstep k (key k).2⟩
+
+section Complete
+
+variable [IsAdicComplete (Ideal.span {π}) R]
+
+omit [DecidableEq ι] in
+/-- A sequence of Newton iterates (see `exists_newton_iterates`) converges to a zero of `A` in the
+residue class of `u₀`. -/
+private theorem exists_eq_zero_of_newton_iterates (A : (ι → R) → (ι → R))
+    {M : Matrix ι ι R} (u₀ : ι → R)
+    (hA : ∀ u u' : ι → R, (∀ i, π ∣ u i - u₀ i) → (∀ i, π ∣ u' i - u₀ i) →
+      ∀ k : ℕ, 1 ≤ k → (∀ i, π ^ k ∣ u' i - u i) →
+        ∀ i, π ^ (k + 1) ∣ A u' i - A u i - (M *ᵥ (u' - u)) i)
+    (u : ℕ → ι → R) (key : ∀ k, (∀ i, π ∣ u k i - u₀ i) ∧ ∀ i, π ^ (k + 1) ∣ A (u k) i)
+    (hconsec : ∀ k i, π ^ (k + 1) ∣ u (k + 1) i - u k i) :
+    ∃ L : ι → R, (∀ i, π ∣ L i - u₀ i) ∧ A L = 0 := by
   have hcauchy : ∀ {m n : ℕ}, m ≤ n →
       u m ≡ u n [SMOD ((Ideal.span {π}) ^ m • ⊤ : Submodule R (ι → R))] := by
     intro m n hmn
@@ -146,7 +155,16 @@ theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (�
     have h3 := dvd_mulVec_apply (v := L - u k) (fun j ↦ by simpa using hL' k j) M i
     have h4 := (pow_dvd_pow π (Nat.le_succ k)).trans h1
     simpa only [sub_add_cancel] using dvd_add (dvd_add h4 h3) h2
-  refine ⟨L, ⟨hLclass, hAL⟩, fun v ⟨hv, hAv⟩ ↦ ?_⟩
+  exact ⟨L, hLclass, hAL⟩
+
+/-- Two zeros of `A` in the residue class of `u₀` coincide. -/
+private theorem eq_of_eq_zero_of_isUnit_det (A : (ι → R) → (ι → R))
+    {M : Matrix ι ι R} (hM : IsUnit M.det) (u₀ : ι → R)
+    (hA : ∀ u u' : ι → R, (∀ i, π ∣ u i - u₀ i) → (∀ i, π ∣ u' i - u₀ i) →
+      ∀ k : ℕ, 1 ≤ k → (∀ i, π ^ k ∣ u' i - u i) →
+        ∀ i, π ^ (k + 1) ∣ A u' i - A u i - (M *ᵥ (u' - u)) i)
+    {L v : ι → R} (hLclass : ∀ i, π ∣ L i - u₀ i) (hAL : A L = 0)
+    (hv : ∀ i, π ∣ v i - u₀ i) (hAv : A v = 0) : v = L := by
   -- Uniqueness: two zeros in the residue class agree modulo every power of `π`.
   have hdiff : ∀ k i, π ^ k ∣ v i - L i := by
     intro k
@@ -166,6 +184,22 @@ theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (�
     Submodule.mem_smul_pointwise_iff_exists]
   obtain ⟨c, hc⟩ := hdiff k i
   exact ⟨c, Submodule.mem_top, by rw [smul_eq_mul, hc]⟩
+
+/-- **Newton's method over a `π`-adically complete ring.** Let `A : (ι → R) → (ι → R)`, let `M` be
+a matrix with unit determinant, and let `u₀` satisfy `A u₀ ≡ 0 mod π`. If `M` linearises `A`
+uniformly on the residue class of `u₀`, in the sense that `A u' ≡ A u + M (u' - u) mod π^(k+1)`
+whenever `u, u'` lie in that class and `u' ≡ u mod π^k` with `k ≥ 1`, then `A` has exactly one zero
+in the residue class of `u₀`. -/
+theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (ι → R))
+    {M : Matrix ι ι R} (hM : IsUnit M.det) (u₀ : ι → R) (h₀ : ∀ i, π ∣ A u₀ i)
+    (hA : ∀ u u' : ι → R, (∀ i, π ∣ u i - u₀ i) → (∀ i, π ∣ u' i - u₀ i) →
+      ∀ k : ℕ, 1 ≤ k → (∀ i, π ^ k ∣ u' i - u i) →
+        ∀ i, π ^ (k + 1) ∣ A u' i - A u i - (M *ᵥ (u' - u)) i) :
+    ∃! u : ι → R, (∀ i, π ∣ u i - u₀ i) ∧ A u = 0 := by
+  obtain ⟨u, key, hconsec⟩ := exists_newton_iterates π A hM u₀ h₀ hA
+  obtain ⟨L, hLclass, hAL⟩ := exists_eq_zero_of_newton_iterates π A u₀ hA u key hconsec
+  exact ⟨L, ⟨hLclass, hAL⟩, fun v ⟨hv, hAv⟩ ↦
+    eq_of_eq_zero_of_isUnit_det π A hM u₀ hA hLclass hAL hv hAv⟩
 
 end Complete
 
