@@ -23,7 +23,8 @@ Whiskering preserves identities and composites up to the invertible modification
 `Pseudofunctor.whiskerLeftId` and `Pseudofunctor.whiskerLeftComp`, whose components are
 identities. The file also records `Pseudofunctor.StrongTrans.isoApp`, the component
 `η.app a ≅ θ.app a` of an invertible modification `η ≅ θ`, analogous to `Iso.app` for natural
-isomorphisms.
+isomorphisms. Conversely, `StrongTrans.isIso_of_isIso_app` proves that a modification is
+invertible whenever all its components are invertible.
 
 The last section restates the unit and composition conditions of a strong transformation for the
 comparisons `F.mapId'` and `F.mapComp'` at `1`-morphisms that are only propositionally identities
@@ -96,6 +97,14 @@ lemma StrongTrans.isoApp_hom {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ
 lemma StrongTrans.isoApp_inv {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ) (a : B) :
     (isoApp e a).inv = e.inv.as.app a :=
   (rfl)
+
+/-- A modification of strong transformations is invertible if all its components are. -/
+lemma StrongTrans.isIso_of_isIso_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (Θ : η ⟶ θ)
+    [∀ a, IsIso (Θ.as.app a)] : IsIso Θ := by
+  let e : η ≅ θ := isoMk (fun a => asIso (Θ.as.app a)) (fun f => Θ.as.naturality f)
+  have he : e.hom = Θ := homCategory.ext (fun a => by simp [e])
+  rw [← he]
+  infer_instance
 
 variable (P : B ⥤ᵖ B')
 
