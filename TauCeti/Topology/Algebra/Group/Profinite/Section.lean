@@ -266,13 +266,12 @@ theorem exists_continuous_section_of_le [CompactSpace G] [TotallyDisconnectedSpa
 /-- **The right-coset form of the continuous section.** For a closed subgroup `H` of a profinite
 group `G`, every `g : G` factors as `g = w g * r g` with `w g ∈ H`, where `r g` is a representative
 of the *right* coset `H * g` depending only on that coset and `w` is the resulting `H`-valued
-cocycle; both are continuous.  The factorization is normalized: `w 1 = 1`, inherited from the
-normalization of `TauCeti.exists_continuous_section`.
+cocycle; both are continuous.  The factorization is normalized: `w 1 = 1`.
 
 Mathlib's quotient `G ⧸ H` is the space of *left* cosets, so `TauCeti.exists_continuous_section`
 produces a continuous choice of representatives of `g H`. Inverting exchanges the two sides:
 `r g = (s ⟦g⁻¹⟧)⁻¹` lies in `H * g` and depends only on `H * g`. This is the shape the coinduced
-module of Layer 7 consumes, since its defining equivariance `f (h * g) = h • f g` is along right
+module consumes, since its defining equivariance `f (h * g) = h • f g` is along right
 cosets. -/
 theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisconnectedSpace G]
     (H : Subgroup G) (hH : IsClosed (H : Set G)) :
@@ -280,9 +279,7 @@ theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisco
       (∀ g : G, (w g : G) * r g = g) ∧
       (∀ (h : H) (g : G), w ((h : G) * g) = h * w g) ∧
       (∀ (h : H) (g : G), r ((h : G) * g) = r g) ∧ w 1 = 1 := by
-  obtain ⟨s, hs_cont, hs_sec, hs_one⟩ := exists_continuous_section H hH
-  obtain ⟨w, r, hw, hr, hwr, hwh, hrh, hw1⟩ :=
-    H.exists_continuous_rightCosetFactorization_of_section s hs_cont hs_sec
-  exact ⟨w, r, hw, hr, hwr, hwh, hrh, Subtype.ext (hw1.trans hs_one)⟩
+  obtain ⟨s, hs_cont, hs_sec, -⟩ := exists_continuous_section H hH
+  exact H.exists_continuous_rightCosetFactorization_of_section s hs_cont hs_sec
 
 end TauCeti
