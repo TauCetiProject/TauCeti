@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
@@ -66,28 +65,6 @@ public section
 
 open Filter Metric Set
 open scoped NNReal Topology
-
-/-- If `fderiv ℝ g` is `κ`-approximated by `L` on a set containing the closed ball of radius `ρ`
-about `x`, and `g` has a critical point `y` in that ball, then `g` changes by at most
-`(‖L‖ + κ) * (2 * ρ) * ρ` between `x` and `y`. -/
-theorem ApproximatesLinearOn.abs_sub_le_of_fderiv_eq_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {g : E → ℝ} {L : E →L[ℝ] E →L[ℝ] ℝ} {s : Set E} {κ : ℝ≥0}
-    (happrox : ApproximatesLinearOn (fderiv ℝ g) L s κ) (hg : ∀ w ∈ s, DifferentiableAt ℝ g w)
-    {x y : E} {ρ : ℝ} (hsub : closedBall x ρ ⊆ s) (hy : y ∈ closedBall x ρ)
-    (hy0 : fderiv ℝ g y = 0) : |g y - g x| ≤ (‖L‖ + κ) * (2 * ρ) * ρ := by
-  have hρ : 0 ≤ ρ := dist_nonneg.trans (mem_closedBall.1 hy)
-  have hbound : ∀ w ∈ closedBall x ρ, ‖fderiv ℝ g w‖ ≤ (‖L‖ + κ) * (2 * ρ) := fun w hw ↦ by
-    have hlip := happrox.lipschitzWith.dist_le_mul ⟨w, hsub hw⟩ ⟨y, hsub hy⟩
-    simp only [domRestrict_apply, hy0, dist_zero_right, Subtype.dist_eq] at hlip
-    calc ‖fderiv ℝ g w‖ ≤ (‖L‖ + κ) * dist w y := hlip
-      _ ≤ (‖L‖ + κ) * (2 * ρ) := by
-        gcongr
-        linarith [dist_triangle_right w y x, mem_closedBall.1 hw, mem_closedBall.1 hy]
-  have hval := (convex_closedBall x ρ).norm_image_sub_le_of_norm_fderiv_le
-    (fun w hw ↦ (hg w (hsub hw))) hbound (mem_closedBall_self hρ) hy
-  rw [Real.norm_eq_abs, ← dist_eq_norm] at hval
-  calc |g y - g x| ≤ (‖L‖ + κ) * (2 * ρ) * dist y x := hval
-    _ ≤ (‖L‖ + κ) * (2 * ρ) * ρ := by gcongr; exact mem_closedBall.1 hy
 
 namespace TauCeti.IsNondegenerateCriticalPoint
 
@@ -183,8 +160,8 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
       _ ≤ K * n := by gcongr
   · -- Value: near `y` the differential of `g` is bounded by `(‖L‖ + κ)` times the distance to `y`.
     calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * (2 * (2 * C * n)) * (2 * C * n) :=
-        happrox.abs_sub_le_of_fderiv_eq_zero (fun w hw ↦ (hg w hw).differentiableAt (by norm_num))
-          hsub hyε hy0
+        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero
+          (fun w hw ↦ (hg w (hsub hw)).differentiableAt (by norm_num)) hsub hyε hy0
       _ = (8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
       _ ≤ K * n ^ 2 := by gcongr; linarith
 
