@@ -16,7 +16,8 @@ family is controlled and converges pointwise away from one exceptional point. Wh
 measure zero, the pointwise hypotheses supply the almost-everywhere hypotheses of the dominated
 convergence theorem. It also records the convergence of integrals against cutoffs
 which equal one on a closed ball and are supported in shrinking larger balls, and against cutoffs
-which equal one on balls exhausting a normed space.
+which equal one on balls exhausting a normed space, as well as convergence after removing a
+shrinking neighbourhood of zero from an integrable function vanishing at zero.
 
 ## Main declarations
 
@@ -27,6 +28,8 @@ which equal one on balls exhausting a normed space.
   `h → 0⁺`.
 * `TauCeti.tendsto_integral_smul_of_eq_one_ball`: integrals against `[0, 1]`-valued cutoffs equal
   to one on `ball 0 (R i)` with `R i → ∞` tend to the integral over the whole space.
+* `TauCeti.tendsto_integral_abs_gt`: removing a shrinking neighbourhood of zero recovers the
+  integral of an integrable function vanishing at zero.
 -/
 
 public section
@@ -62,6 +65,26 @@ theorem tendsto_integral_mul_of_dominated_away {ι : Type*} {l : Filter ι}
     exact hi x hx
   · filter_upwards [hae] with x hx
     exact (hlim x hx).mul_const _
+
+/-- Removing a shrinking neighbourhood of zero recovers the integral of an integrable
+function vanishing at zero. The measure may charge zero, and the cutoff parameter approaches
+zero from either side. -/
+theorem tendsto_integral_abs_gt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {f : ℝ → E} (hf : Integrable f μ) (hf₀ : f 0 = 0) :
+    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, f x ∂μ) (𝓝 0)
+      (𝓝 (∫ x, f x ∂μ)) := by
+  have hs (ε : ℝ) : MeasurableSet {x : ℝ | ε < |x|} := by measurability
+  simp_rw [← integral_indicator (hs _)]
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖f x‖)
+    (.of_forall fun ε ↦ hf.aestronglyMeasurable.indicator (hs ε))
+    (.of_forall fun ε ↦ ae_of_all _ fun x ↦ norm_indicator_le_norm_self _ _) hf.norm ?_
+  apply ae_of_all
+  intro x
+  by_cases hx : x = 0
+  · simp [hx, hf₀, indicator_apply]
+  · apply tendsto_const_nhds.congr'
+    filter_upwards [eventually_lt_nhds (abs_pos.mpr hx)] with ε hε
+    simp only [indicator_apply, mem_ofPred_eq, ite_eq_left hε]
 
 /-- **Dominated convergence for shrinking cutoffs.** Let `f : α → E` be measurable, and let the
 cutoffs `ψ h : E → ℝ`, for `h > 0`, be measurable with absolute value at most one, equal to one
