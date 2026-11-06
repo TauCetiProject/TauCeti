@@ -80,13 +80,26 @@ The body is exposed so that `(harishChandraRes k P π hπ).obj N` unfolds to the
 noncomputable def harishChandraRes : Rep.{max w u v} k G ⥤ Rep.{max w u v} k L :=
   resFunctor P.subtype ⋙ kerInvariantsFunctor k π hπ
 
+@[simp]
 theorem harishChandraInd_obj (M : Rep.{max w u v} k L) :
     (harishChandraInd k P π).obj M = ind P.subtype (res π M) :=
-  rfl
+  (rfl)
 
+@[simp]
+theorem harishChandraInd_map {M M' : Rep.{max w u v} k L} (f : M ⟶ M') :
+    (harishChandraInd k P π).map f = indMap P.subtype ((resFunctor π).map f) :=
+  (rfl)
+
+@[simp]
 theorem harishChandraRes_obj (N : Rep.{max w u v} k G) :
     (harishChandraRes k P π hπ).obj N = kerInvariants π hπ (res P.subtype N) :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem coe_harishChandraRes_map_hom_apply {N N' : Rep.{max w u v} k G} (f : N ⟶ N')
+    (v : Representation.invariants ((res P.subtype N).ρ.comp π.ker.subtype)) :
+    Subtype.val (((harishChandraRes k P π hπ).map f).hom v) = f.hom v :=
+  (rfl)
 
 /-- **Harish-Chandra induction is left adjoint to Harish-Chandra restriction**, for every subgroup
 `P` and every commutative coefficient ring. -/
@@ -106,6 +119,40 @@ theorem coe_harishChandraIndResAdjunction_homEquiv_apply_hom_apply {M : Rep.{max
   exact (congrArg (fun e => Subtype.val ((e f).hom m)) h).trans
     (coe_resKerInvariantsAdjunction_homEquiv_apply_hom_apply π hπ _ m)
 
+/-- A morphism `M ⟶ N^{ker π}` corresponds under `Rep.harishChandraIndResAdjunction` to the
+morphism `R^G_{L⊂P}(M) ⟶ N` induced from the corresponding morphism out of the inflation of `M`. -/
+@[simp]
+theorem harishChandraIndResAdjunction_homEquiv_symm_apply {M : Rep.{max w u v} k L}
+    {N : Rep.{max w u v} k G} (f : M ⟶ (harishChandraRes k P π hπ).obj N) :
+    ((harishChandraIndResAdjunction k P π hπ).homEquiv M N).symm f =
+      (indResHomEquiv P.subtype (res π M) N).symm
+        ((resKerInvariantsHomEquiv π hπ M (res P.subtype N)).symm f) := by
+  have h := congrFun (congrFun (Adjunction.comp_homEquiv (resKerInvariantsAdjunction k π hπ)
+    (indResAdjunction k P.subtype)) M) N
+  refine (congrArg (fun e => e.symm f) h).trans ?_
+  simp only [resKerInvariantsAdjunction_homEquiv, indResAdjunction,
+    Adjunction.mkOfHomEquiv_homEquiv]
+  rfl
+
+/-- The unit of `Rep.harishChandraIndResAdjunction` sends `m : M` to `1 ⊗ m`, which is fixed by
+`ker π`. It is not a `simp` lemma, since `simp` rewrites the functor objects in the type of its
+left-hand side. -/
+theorem coe_harishChandraIndResAdjunction_unit_app_hom_apply (M : Rep.{max w u v} k L) (m : M) :
+    Subtype.val (((harishChandraIndResAdjunction k P π hπ).unit.app M).hom m) =
+      Representation.IndV.mk P.subtype (res π M).ρ 1 m := by
+  rw [← Adjunction.homEquiv_id]
+  exact coe_harishChandraIndResAdjunction_homEquiv_apply_hom_apply k P π hπ _ m
+
+/-- The counit of `Rep.harishChandraIndResAdjunction` is the induction of the counit of
+`Rep.resKerInvariantsAdjunction`, followed by the counit of `Rep.indResAdjunction`. -/
+@[simp]
+theorem harishChandraIndResAdjunction_counit_app (N : Rep.{max w u v} k G) :
+    (harishChandraIndResAdjunction k P π hπ).counit.app N =
+      (indFunctor k P.subtype).map
+          ((resKerInvariantsAdjunction k π hπ).counit.app (res P.subtype N)) ≫
+        (indResAdjunction.{w} k P.subtype).counit.app N :=
+  Adjunction.comp_counit_app _ _ N
+
 section Finite
 
 variable [P.FiniteIndex] [DecidableRel (QuotientGroup.rightRel P)] [Fintype π.ker]
@@ -116,6 +163,60 @@ index in `G` and the kernel of `π` is finite of order invertible in `k`. -/
 noncomputable def harishChandraResIndAdjunction :
     harishChandraRes.{w} k P π hπ ⊣ harishChandraInd k P π :=
   (resIndAdjunction k P).comp (kerInvariantsResAdjunction k π hπ)
+
+/-- A morphism `N^{ker π} ⟶ M` corresponds under `Rep.harishChandraResIndAdjunction` to the
+morphism `N ⟶ R^G_{L⊂P}(M)` corresponding under `Rep.resIndAdjunction` to its precomposition with
+the averaging projection `Rep.kerAverage`. -/
+@[simp]
+theorem harishChandraResIndAdjunction_homEquiv_apply {N : Rep.{max w u v} k G}
+    {M : Rep.{max w u v} k L} (f : (harishChandraRes k P π hπ).obj N ⟶ M) :
+    (harishChandraResIndAdjunction k P π hπ).homEquiv N M f =
+      (resIndAdjunction.{w} k P).homEquiv N (res π M)
+        (kerAverage π hπ (res P.subtype N) ≫ (resFunctor π).map f) := by
+  have h := congrFun (congrFun (Adjunction.comp_homEquiv (resIndAdjunction k P)
+    (kerInvariantsResAdjunction k π hπ)) N) M
+  refine (congrArg (fun e => e f) h).trans ?_
+  rw [kerInvariantsResAdjunction_homEquiv]
+  exact congrArg ((resIndAdjunction.{w} k P).homEquiv N (res π M))
+    (kerInvariantsResHomEquiv_apply π hπ f)
+
+/-- A morphism `N ⟶ R^G_{L⊂P}(M)` corresponds under `Rep.harishChandraResIndAdjunction` to the
+restriction to `N^{ker π}` of the morphism corresponding to it under `Rep.resIndAdjunction`. -/
+@[simp]
+theorem harishChandraResIndAdjunction_homEquiv_symm_apply {N : Rep.{max w u v} k G}
+    {M : Rep.{max w u v} k L} (f : N ⟶ (harishChandraInd k P π).obj M) :
+    ((harishChandraResIndAdjunction k P π hπ).homEquiv N M).symm f =
+      (kerInvariantsResHomEquiv π hπ (res P.subtype N) M).symm
+        (((resIndAdjunction.{w} k P).homEquiv N (res π M)).symm f) := by
+  have h := congrFun (congrFun (Adjunction.comp_homEquiv (resIndAdjunction k P)
+    (kerInvariantsResAdjunction k π hπ)) N) M
+  refine (congrArg (fun e => e.symm f) h).trans ?_
+  rw [kerInvariantsResAdjunction_homEquiv]
+  rfl
+
+/-- The unit of `Rep.harishChandraResIndAdjunction` is the unit of `Rep.resIndAdjunction`, followed
+by the induction of the averaging projection `Rep.kerAverage`. -/
+@[simp]
+theorem harishChandraResIndAdjunction_unit_app (N : Rep.{max w u v} k G) :
+    (harishChandraResIndAdjunction k P π hπ).unit.app N =
+      (resIndAdjunction.{w} k P).unit.app N ≫
+        (indFunctor k P.subtype).map (kerAverage π hπ (res P.subtype N)) := by
+  rw [harishChandraResIndAdjunction, Adjunction.comp_unit_app, kerInvariantsResAdjunction_unit_app]
+  rfl
+
+/-- The counit of `Rep.harishChandraResIndAdjunction` is the counit of `Rep.resIndAdjunction`,
+restricted to the `ker π`-invariants. It is not a `simp` lemma, since `simp` rewrites the functor
+objects in the type of its left-hand side. -/
+theorem harishChandraResIndAdjunction_counit_app_hom_apply (M : Rep.{max w u v} k L)
+    (v : Representation.invariants
+      ((res P.subtype (ind P.subtype (res π M))).ρ.comp π.ker.subtype)) :
+    ((harishChandraResIndAdjunction k P π hπ).counit.app M).hom v =
+      ((resIndAdjunction.{w} k P).counit.app (res π M)).hom (v : ind P.subtype (res π M)) := by
+  have h := Adjunction.comp_counit_app (resIndAdjunction.{w} k P)
+    (kerInvariantsResAdjunction k π hπ) M
+  exact (congrArg (fun φ => φ.hom v) h).trans
+    ((kerInvariantsResAdjunction_counit_app_hom_apply π hπ M _).trans
+      (coe_kerInvariantsFunctor_map_hom_apply π hπ _ v))
 
 end Finite
 

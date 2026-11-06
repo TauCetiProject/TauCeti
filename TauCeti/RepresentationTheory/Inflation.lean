@@ -106,11 +106,7 @@ noncomputable def resKerInvariantsHomEquiv (M : Rep.{w} k Q) (A : Rep.{w} k G) :
       simpa [π.mem_ker.1 u.2] using (hom_comm_apply f (u : G) m).symm, fun q => by
     obtain ⟨g, rfl⟩ := hπ q
     ext m
-    simp only [res_obj_ρ, LinearMap.coe_comp, Function.comp_apply, MulEquiv.toMonoidHom_eq_coe,
-      MonoidHom.coe_comp, MonoidHom.coe_ofClass,
-      TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply,
-      Representation.ofQuotient_coe_apply, Representation.subrepresentation_apply,
-      LinearMap.coe_restrict_apply]
+    refine Eq.trans ?_ (coe_kerInvariants_ρ_apply π hπ A g _).symm
     exact hom_comm_apply f g m⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
@@ -155,6 +151,20 @@ theorem coe_resKerInvariantsAdjunction_homEquiv_apply_hom_apply {M : Rep.{w} k Q
     Subtype.val (((resKerInvariantsAdjunction k π hπ).homEquiv M A f).hom m) = f.hom m :=
   (rfl)
 
+/-- The unit of `Rep.resKerInvariantsAdjunction` views `m : M` as a `ker π`-invariant vector of the
+inflation of `M`. It is not a `simp` lemma, since `simp` rewrites the functor objects in the type
+of its left-hand side. -/
+theorem coe_resKerInvariantsAdjunction_unit_app_hom_apply (M : Rep.{w} k Q) (m : M) :
+    Subtype.val (((resKerInvariantsAdjunction k π hπ).unit.app M).hom m) = m :=
+  (rfl)
+
+/-- The counit of `Rep.resKerInvariantsAdjunction` is the inclusion `A^{ker π} → A`. It is not a
+`simp` lemma, since `simp` rewrites the functor objects in the type of its left-hand side. -/
+theorem resKerInvariantsAdjunction_counit_app_hom_apply (A : Rep.{w} k G)
+    (v : Representation.invariants (A.ρ.comp π.ker.subtype)) :
+    ((resKerInvariantsAdjunction k π hπ).counit.app A).hom v = (v : A) :=
+  (rfl)
+
 /-! ### Inflation is right adjoint to kernel invariants -/
 
 section Finite
@@ -167,11 +177,9 @@ noncomputable def kerAverage (A : Rep.{w} k G) : A ⟶ res π (kerInvariants π 
   Rep.ofHom ⟨(Representation.averageMap (A.ρ.comp π.ker.subtype)).codRestrict _
       (Representation.averageMap_invariant (A.ρ.comp π.ker.subtype)), fun g => by
     ext a
-    simp only [LinearMap.comp_codRestrict, LinearMap.codRestrict_apply, LinearMap.coe_comp,
-      Function.comp_apply, MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_comp,
-      MonoidHom.coe_ofClass, TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply,
-      Representation.ofQuotient_coe_apply, Representation.subrepresentation_apply,
-      LinearMap.coe_restrict_apply, Representation.averageMap_apply, map_smul, map_sum]
+    refine Eq.trans ?_ (coe_kerInvariants_ρ_apply π hπ A g _).symm
+    change Representation.averageMap _ (A.ρ g a) = A.ρ g (Representation.averageMap _ a)
+    rw [Representation.averageMap_apply, Representation.averageMap_apply, map_smul, map_sum]
     congr 1
     refine Fintype.sum_equiv (MulAut.conjNormal (H := π.ker) g⁻¹).toEquiv _ _ fun u => ?_
     simp [← mul_apply_eq_comp, ← map_mul, mul_assoc]⟩
@@ -238,6 +246,27 @@ noncomputable def kerInvariantsResAdjunction :
 theorem kerInvariantsResAdjunction_homEquiv (A : Rep.{w} k G) (M : Rep.{w} k Q) :
     (kerInvariantsResAdjunction k π hπ).homEquiv A M =
       (kerInvariantsResHomEquiv π hπ A M).toEquiv :=
+  (rfl)
+
+/-- The elementwise form of the inverse of `Rep.kerInvariantsResAdjunction_homEquiv`. It is not a
+`simp` lemma, since `simp` rewrites its left-hand side by that lemma. -/
+theorem kerInvariantsResAdjunction_homEquiv_symm_apply_hom_apply {A : Rep.{w} k G}
+    {M : Rep.{w} k Q} (f : A ⟶ res π M) (v : Representation.invariants (A.ρ.comp π.ker.subtype)) :
+    (((kerInvariantsResAdjunction k π hπ).homEquiv A M).symm f).hom v = f.hom v :=
+  (rfl)
+
+/-- The unit of `Rep.kerInvariantsResAdjunction` is the averaging projection `Rep.kerAverage`. -/
+@[simp]
+theorem kerInvariantsResAdjunction_unit_app (A : Rep.{w} k G) :
+    (kerInvariantsResAdjunction k π hπ).unit.app A = kerAverage π hπ A :=
+  (rfl)
+
+/-- The counit of `Rep.kerInvariantsResAdjunction` is the inclusion of the `ker π`-invariants of
+an inflated representation `M`, which are all of `M`. It is not a `simp` lemma, since `simp`
+rewrites the functor objects in the type of its left-hand side. -/
+theorem kerInvariantsResAdjunction_counit_app_hom_apply (M : Rep.{w} k Q)
+    (v : Representation.invariants ((res π M).ρ.comp π.ker.subtype)) :
+    ((kerInvariantsResAdjunction k π hπ).counit.app M).hom v = (v : M) :=
   (rfl)
 
 end Finite
