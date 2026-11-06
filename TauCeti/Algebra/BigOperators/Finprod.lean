@@ -34,6 +34,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
+* `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
+  `g` over `t`.
 * `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
   with product `1` preserves a product, without any finiteness assumption on the other factor.
 * `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
@@ -121,6 +123,29 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ᶠ b, ∏ a ∈ hf.toFinset with g a = b, f a := finprod_congr hb
     _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
+
+/-- Regroup a product over a preimage `g ⁻¹' t` by the fibers of `g` over the points of `t`, when
+only finitely many factors over `t` differ from `1`. -/
+@[to_additive /-- Regroup a sum over a preimage `g ⁻¹' t` by the fibers of `g` over the points of
+`t`, when only finitely many terms over `t` are nonzero. -/]
+theorem finprod_mem_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (t : Set β) (f : α → M)
+    (hf : (g ⁻¹' t ∩ mulSupport f).Finite) :
+    ∏ᶠ b ∈ t, ∏ᶠ a ∈ g ⁻¹' {b}, f a = ∏ᶠ a ∈ g ⁻¹' t, f a := by
+  classical
+  rw [finprod_mem_def (s := g ⁻¹' t), ← finprod_fiberwise g _ (by rwa [mulSupport_mulIndicator]),
+    finprod_mem_def]
+  refine finprod_congr fun b ↦ ?_
+  rw [finprod_subtype_eq_finprod_cond]
+  by_cases hb : b ∈ t
+  · rw [mulIndicator_of_mem hb]
+    refine finprod_congr fun a ↦ finprod_congr fun ha ↦ (mulIndicator_of_mem ?_ f).symm
+    simp_all
+  · rw [mulIndicator_of_notMem hb, eq_comm]
+    refine finprod_eq_one_of_forall_eq_one fun a ↦ ?_
+    rw [finprod_eq_if]
+    split_ifs with ha
+    · exact mulIndicator_of_notMem (by simp_all) f
+    · rfl
 
 /-- Multiplying a family by a finitely supported family whose product is `1` does not change its
 product. The other family need not have finite multiplicative support: if it does not, neither
