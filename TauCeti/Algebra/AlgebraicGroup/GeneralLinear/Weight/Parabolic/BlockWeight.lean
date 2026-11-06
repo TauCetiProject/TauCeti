@@ -142,15 +142,11 @@ theorem weightParabolicDefiningHopfIdeal_standardWeight_antitone :
     Antitone fun J : Finset (Fin n) ↦
       weightParabolicDefiningHopfIdeal R (standardWeight J) := by
   intro J K hJK
-  rw [← HopfIdeal.toIdeal_le_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal,
-    weightParabolicDefiningHopfIdeal_toIdeal]
-  apply Ideal.span_mono
-  intro x hx
-  obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R _ x).mp hx
+  apply weightParabolicDefiningHopfIdeal_mono
+  intro i j hij
   obtain ⟨a, hja, hai, haK⟩ := (standardWeight_lt_iff K i j).mp hij
-  exact (mem_weightParabolicRelationSet_iff R _ _).mpr
-    ⟨i, j, (standardWeight_lt_iff J i j).mpr
-      ⟨a, hja, hai, fun haJ ↦ haK (hJK haJ)⟩, rfl⟩
+  exact (standardWeight_lt_iff J i j).mpr
+    ⟨a, hja, hai, fun haJ ↦ haK (hJK haJ)⟩
 
 /-- The empty label defines the upper-triangular subgroup, despite the different additive
 normalization of its weights. -/
@@ -158,16 +154,12 @@ normalization of its weights. -/
 theorem weightParabolicDefiningHopfIdeal_standardWeight_empty :
     weightParabolicDefiningHopfIdeal R (standardWeight (∅ : Finset (Fin n))) =
       UpperTriangular.definingHopfIdeal R (n + 1) := by
-  have hrel : weightParabolicRelationSet R (standardWeight (∅ : Finset (Fin n))) =
-      weightParabolicRelationSet R (UpperTriangular.weights (n + 1)) := by
-    ext x
-    simp only [mem_weightParabolicRelationSet_iff, standardWeight_empty,
-      UpperTriangular.weights_lt_weights_iff]
-    simp only [neg_lt_neg_iff, Nat.cast_lt, Fin.lt_def]
-  apply le_antisymm <;> rw [← HopfIdeal.toIdeal_le_toIdeal]
+  rw [UpperTriangular.definingHopfIdeal]
+  apply le_antisymm <;> apply weightParabolicDefiningHopfIdeal_mono
   all_goals
-    simp only [UpperTriangular.definingHopfIdeal, weightParabolicDefiningHopfIdeal_toIdeal, hrel,
-      le_refl]
+    intro i j hij
+    simpa only [standardWeight_empty, UpperTriangular.weights_lt_weights_iff,
+      neg_lt_neg_iff, Nat.cast_lt, Fin.lt_def] using hij
 
 /-- The full label imposes no equations, so it defines the whole general linear group. -/
 @[simp]
@@ -190,7 +182,7 @@ theorem weightParabolicDefiningHopfIdeal_standardWeight_le_iff [Nontrivial R]
       weightParabolicDefiningHopfIdeal R (standardWeight J) ↔ J ⊆ K := by
   refine ⟨fun h i hi ↦ ?_, fun h ↦
     weightParabolicDefiningHopfIdeal_standardWeight_antitone R h⟩
-  have hpoints := weightParabolicPoints_le_of_definingHopfIdeal_le R
+  have hpoints := weightParabolicPoints_le_of_weightParabolicDefiningHopfIdeal_le R
     (standardWeight J) (standardWeight K) h (A := R)
   have hswap := hpoints ((permutationGL_swap_mem_weightParabolicPoints_iff R
     (standardWeight J) i.castSucc i.succ).mpr
