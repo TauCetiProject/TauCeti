@@ -175,6 +175,12 @@ private lemma alt_single_of_not_injective {b : Fin (n + 1) → ι} (hb : ¬Funct
     alt n (Finsupp.single b 1) = 0 := by
   simp [alt, hb]
 
+/-- Alternation fixes a strictly increasing tuple. -/
+private lemma alt_single_of_strictMono {b : Fin (n + 1) → ι} (hb : StrictMono b) :
+    alt n (Finsupp.single b 1) = Finsupp.single b 1 := by
+  simp [alt_single_of_injective hb.injective, Tuple.sort_eq_refl_iff_monotone.2 hb.monotone,
+    inversions_eq_empty_of_monotone hb.monotone]
+
 /-- The terms of the boundary of an injective tuple, after alternation, are the terms of the
 boundary of its increasing rearrangement. -/
 private lemma alt_bdry_single_of_injective {b : Fin (n + 2) → ι} (hb : Function.Injective b) :
@@ -266,10 +272,7 @@ private lemma alt_zero (x : Chain ι 0) : alt 0 x = x := by
   | add x y hx hy => rw [map_add, hx, hy]
   | single b k =>
     have hb : StrictMono b := fun i j h ↦ absurd (Fin.ext (by omega)) h.ne
-    rw [← mul_one k, ← smul_eq_mul, ← Finsupp.smul_single, map_zsmul,
-      alt_single_of_injective hb.injective, Tuple.sort_eq_refl_iff_monotone.2 hb.monotone,
-      Equiv.coe_refl, Function.comp_id,
-      inversions_eq_empty_of_monotone hb.monotone, card_empty, pow_zero, one_smul]
+    rw [← mul_one k, ← smul_eq_mul, ← Finsupp.smul_single, map_zsmul, alt_single_of_strictMono hb]
 
 /-! ### The cone and the homotopy -/
 
@@ -394,14 +397,9 @@ omit [LinearOrder ι] in
 private lemma cone_mem_supported {v : ι} {s : Set ι} (hv : v ∈ s) {x : Chain ι n}
     (hx : x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}) :
     cone v n x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s} :=
-  (Submodule.span_le (p := (Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}).comap (cone v n))).2
-    (by
-      rintro _ ⟨a, ha, rfl⟩
-      rw [SetLike.mem_coe, Submodule.mem_comap, cone_single]
-      refine Finsupp.single_mem_supported ℤ 1 ?_
-      rw [Set.mem_ofPred_eq, Fin.range_cons]
-      exact Set.insert_subset hv ha)
-    (Finsupp.supported_eq_span_single ℤ _ ▸ hx)
+  Finsupp.supported_comap_lmapDomain ℤ ℤ _ _ <| Finsupp.supported_mono (fun a ha ↦ by
+    simpa only [Set.mem_preimage, Set.mem_ofPred_eq, Fin.range_cons] using Set.insert_subset hv ha)
+    hx
 
 private lemma rangeRespecting_homotopy : ∀ n, RangeRespecting (homotopy (ι := ι) n)
   | 0 => fun _ ↦ by simp [homotopy]
@@ -636,11 +634,8 @@ private lemma fromStrictMonoCechX_comp_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n 
   rw [Category.assoc, show toStrictMonoCechX U P n ≫ _ =
       Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.1 from
       toStrictMonoCechComplex_app_f_π U P n a,
-    dualMap_π, alt_single_of_injective a.2.injective,
-    Tuple.sort_eq_refl_iff_monotone.2 a.2.monotone, Equiv.coe_refl, Function.comp_id,
-    inversions_eq_empty_of_monotone a.2.monotone, card_empty, pow_zero, one_smul,
-    evalChain_single U P subset_rfl, one_smul, Subsingleton.elim (tupleRestrict U _) (𝟙 _), op_id,
-    P.map_id, Category.comp_id]
+    dualMap_π, alt_single_of_strictMono a.2, evalChain_single U P subset_rfl, one_smul,
+    Subsingleton.elim (tupleRestrict U _) (𝟙 _), op_id, P.map_id, Category.comp_id]
 
 /-- The alternating extension `Čₒ(U, P) ⟶ Č(U, P)` of ordered Čech cochains, natural in the
 presheaf `P`, for a family of objects of a thin category indexed by a linearly ordered type. Its
