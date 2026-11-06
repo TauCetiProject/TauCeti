@@ -199,6 +199,77 @@ theorem ae_mem_subdifferential_fenchelConjugate_map_swap {u : E → EReal}
   simpa only [flip_innerₗ, Prod.fst_swap, Prod.snd_swap] using
     mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) hz
 
+omit [MeasurableSpace E] [OpensMeasurableSpace (E × E)] in
+/-- The Fenchel–Young inequality `⟪x, y⟫ ≤ u x + v y` for the real representatives of `u` and of
+its conjugate `v`, at points where both are finite. -/
+private theorem inner_le_toReal_add_toReal {u v : E → EReal}
+    (hv_def : fenchelConjugate (innerₗ E) u = v) (hbot : ∀ x, u x ≠ ⊥) (hvbot : ∀ y, v y ≠ ⊥)
+    {x y : E} (hx : u x ≠ ⊤) (hy : v y ≠ ⊤) : ⟪x, y⟫ ≤ (u x).toReal + (v y).toReal := by
+  have h := le_add_fenchelConjugate (innerₗ E) (hbot x) (hv_def ▸ hvbot y)
+  rwa [hv_def, ← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hy (hvbot y), ← EReal.coe_add,
+    EReal.coe_le_coe_iff, innerₗ_apply_apply] at h
+
+omit [MeasurableSpace E] [OpensMeasurableSpace (E × E)] in
+/-- On the subdifferential graph of `u`, the potential `u` and its conjugate `v` are finite and
+Fenchel–Young holds with equality for their real representatives. -/
+private theorem toReal_add_toReal_eq_inner_of_mem_subdifferential {u v : E → EReal}
+    (hv_def : fenchelConjugate (innerₗ E) u = v) (hbot : ∀ x, u x ≠ ⊥) (hvbot : ∀ y, v y ≠ ⊥)
+    {x y : E} (hxy : y ∈ subdifferential (innerₗ E) u x) :
+    u x ≠ ⊤ ∧ v y ≠ ⊤ ∧ (u x).toReal + (v y).toReal = ⟪x, y⟫ := by
+  have hx := ne_top_of_mem_subdifferential (innerₗ E) hxy
+  have hy : v y ≠ ⊤ := hv_def ▸ ne_top_of_mem_subdifferential _
+    (mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) hxy)
+  have h := (mem_subdifferential_iff_add_fenchelConjugate_eq (innerₗ E)).1 hxy
+  rw [hv_def, ← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hy (hvbot y), ← EReal.coe_add,
+    EReal.coe_eq_coe_iff, innerₗ_apply_apply] at h
+  exact ⟨hx, hy, h⟩
+
+/-- For a coupling `π` of finite measures with finite second moments concentrated on the
+subdifferential graph of `u`, the real representatives of `u` and of its conjugate `v` are
+integrable for the marginals: on the support of `π` each is squeezed between an affine function and
+the correlation minus an affine function. -/
+private theorem IsCoupling.integrable_toReal_of_ae_mem_subdifferential [IsFiniteMeasure μ]
+    (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν)
+    {u v : E → EReal} (hu : Measurable u) (hv : Measurable v)
+    (hv_def : fenchelConjugate (innerₗ E) u = v) (hbot : ∀ x, u x ≠ ⊥) (hvbot : ∀ y, v y ≠ ⊥)
+    (h : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) {x₀ y₀ : E}
+    (h₀ : y₀ ∈ subdifferential (innerₗ E) u x₀) :
+    Integrable (fun x => (u x).toReal) μ ∧ Integrable (fun y => (v y).toReal) ν := by
+  have := hπ.isFiniteMeasure
+  have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
+  have hFY {x y : E} (hx : u x ≠ ⊤) (hy : v y ≠ ⊤) : ⟪x, y⟫ ≤ (u x).toReal + (v y).toReal :=
+    inner_le_toReal_add_toReal hv_def hbot hvbot hx hy
+  obtain ⟨hx₀, hy₀, -⟩ := toReal_add_toReal_eq_inner_of_mem_subdifferential hv_def hbot hvbot h₀
+  have hgraph := h.mono fun z hz =>
+    toReal_add_toReal_eq_inner_of_mem_subdifferential hv_def hbot hvbot hz
+  have hμ1 : Integrable (fun z : E × E => z.1) π :=
+    hπ.integrable_comp_fst (hμ.integrable one_le_two)
+  have hν1 : Integrable (fun z : E × E => z.2) π :=
+    hπ.integrable_comp_snd (hν.integrable one_le_two)
+  refine ⟨?_, ?_⟩
+  · refine (hπ.measurePreserving_fst.integrable_comp hu.ereal_toReal.aestronglyMeasurable).1 <|
+      integrable_of_le_of_le (f := fun z => (u z.1).toReal)
+        (hu.ereal_toReal.comp measurable_fst).aestronglyMeasurable
+        (g₁ := fun z : E × E => ⟪z.1, y₀⟫ - (v y₀).toReal)
+        (g₂ := fun z : E × E => ⟪z.1, z.2⟫ - (⟪x₀, z.2⟫ - (u x₀).toReal)) ?_ ?_
+        ((hμ1.inner_const y₀).sub (integrable_const _))
+        ((hπ.integrable_inner hμ hν).sub ((hν1.const_inner x₀).sub (integrable_const _)))
+    · filter_upwards [hgraph] with z hz
+      linarith [hFY hz.1 hy₀]
+    · filter_upwards [hgraph] with z hz
+      linarith [hFY hx₀ hz.2.1, hz.2.2]
+  · refine (hπ.measurePreserving_snd.integrable_comp hv.ereal_toReal.aestronglyMeasurable).1 <|
+      integrable_of_le_of_le (f := fun z => (v z.2).toReal)
+        (hv.ereal_toReal.comp measurable_snd).aestronglyMeasurable
+        (g₁ := fun z : E × E => ⟪x₀, z.2⟫ - (u x₀).toReal)
+        (g₂ := fun z : E × E => ⟪z.1, z.2⟫ - (⟪z.1, y₀⟫ - (v y₀).toReal)) ?_ ?_
+        ((hν1.const_inner x₀).sub (integrable_const _))
+        ((hπ.integrable_inner hμ hν).sub ((hμ1.inner_const y₀).sub (integrable_const _)))
+    · filter_upwards [hgraph] with z hz
+      linarith [hFY hx₀ hz.2.1]
+    · filter_upwards [hgraph] with z hz
+      linarith [hFY hz.1 hy₀, hz.2.2]
+
 /-- A plan concentrated on the subdifferential graph of a function `u`, such that `u` and its
 Legendre–Fenchel conjugate are measurable, has the largest correlation among the couplings of its
 marginals, provided these have finite second moments. -/
@@ -220,53 +291,12 @@ private theorem IsCoupling.integral_inner_le_of_ae_mem_subdifferential [IsFinite
   have hbot (x : E) : u x ≠ ⊥ := apply_ne_bot_of_mem_subdifferential (innerₗ E) h₀ x
   have hvbot (y : E) : v y ≠ ⊥ :=
     hv_def ▸ fenchelConjugate_ne_bot (innerₗ E) (ne_top_of_mem_subdifferential (innerₗ E) h₀) y
-  -- The Fenchel–Young inequality `⟪x, y⟫ ≤ u x + v y`, for the real representatives where `u` and
-  -- `v` are finite, with equality on the subdifferential graph of `u`.
-  have hFY {x y : E} (hx : u x ≠ ⊤) (hy : v y ≠ ⊤) : ⟪x, y⟫ ≤ (u x).toReal + (v y).toReal := by
-    have h := le_add_fenchelConjugate (innerₗ E) (hbot x) (hv_def ▸ hvbot y)
-    rwa [hv_def, ← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hy (hvbot y), ← EReal.coe_add,
-      EReal.coe_le_coe_iff, innerₗ_apply_apply] at h
-  have hEq {x y : E} (hxy : y ∈ subdifferential (innerₗ E) u x) :
-      u x ≠ ⊤ ∧ v y ≠ ⊤ ∧ (u x).toReal + (v y).toReal = ⟪x, y⟫ := by
-    have hx := ne_top_of_mem_subdifferential (innerₗ E) hxy
-    have hy : v y ≠ ⊤ := hv_def ▸ ne_top_of_mem_subdifferential _
-      (mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) hxy)
-    have h := (mem_subdifferential_iff_add_fenchelConjugate_eq (innerₗ E)).1 hxy
-    rw [hv_def, ← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hy (hvbot y), ← EReal.coe_add,
-      EReal.coe_eq_coe_iff, innerₗ_apply_apply] at h
-    exact ⟨hx, hy, h⟩
-  obtain ⟨hx₀, hy₀, -⟩ := hEq h₀
-  have hgraph := h.mono fun z hz => hEq hz
-  -- The real representatives are integrable: on the support of `π` each is squeezed between
-  -- an affine function and the correlation minus an affine function.
-  have hμ1 : Integrable (fun z : E × E => z.1) π :=
-    hπ.integrable_comp_fst (hμ.integrable one_le_two)
-  have hν1 : Integrable (fun z : E × E => z.2) π :=
-    hπ.integrable_comp_snd (hν.integrable one_le_two)
-  have hφ : Integrable (fun x => (u x).toReal) μ := by
-    refine (hπ.measurePreserving_fst.integrable_comp hu.ereal_toReal.aestronglyMeasurable).1 <|
-      integrable_of_le_of_le (f := fun z => (u z.1).toReal)
-        (hu.ereal_toReal.comp measurable_fst).aestronglyMeasurable
-        (g₁ := fun z : E × E => ⟪z.1, y₀⟫ - (v y₀).toReal)
-        (g₂ := fun z : E × E => ⟪z.1, z.2⟫ - (⟪x₀, z.2⟫ - (u x₀).toReal)) ?_ ?_
-        ((hμ1.inner_const y₀).sub (integrable_const _))
-        ((hπ.integrable_inner hμ hν).sub ((hν1.const_inner x₀).sub (integrable_const _)))
-    · filter_upwards [hgraph] with z hz
-      linarith [hFY hz.1 hy₀]
-    · filter_upwards [hgraph] with z hz
-      linarith [hFY hx₀ hz.2.1, hz.2.2]
-  have hψ : Integrable (fun y => (v y).toReal) ν := by
-    refine (hπ.measurePreserving_snd.integrable_comp hv.ereal_toReal.aestronglyMeasurable).1 <|
-      integrable_of_le_of_le (f := fun z => (v z.2).toReal)
-        (hv.ereal_toReal.comp measurable_snd).aestronglyMeasurable
-        (g₁ := fun z : E × E => ⟪x₀, z.2⟫ - (u x₀).toReal)
-        (g₂ := fun z : E × E => ⟪z.1, z.2⟫ - (⟪z.1, y₀⟫ - (v y₀).toReal)) ?_ ?_
-        ((hν1.const_inner x₀).sub (integrable_const _))
-        ((hπ.integrable_inner hμ hν).sub ((hμ1.inner_const y₀).sub (integrable_const _)))
-    · filter_upwards [hgraph] with z hz
-      linarith [hFY hx₀ hz.2.1]
-    · filter_upwards [hgraph] with z hz
-      linarith [hFY hz.1 hy₀, hz.2.2]
+  have hFY {x y : E} (hx : u x ≠ ⊤) (hy : v y ≠ ⊤) : ⟪x, y⟫ ≤ (u x).toReal + (v y).toReal :=
+    inner_le_toReal_add_toReal hv_def hbot hvbot hx hy
+  have hgraph := h.mono fun z hz =>
+    toReal_add_toReal_eq_inner_of_mem_subdifferential hv_def hbot hvbot hz
+  obtain ⟨hφ, hψ⟩ :=
+    hπ.integrable_toReal_of_ae_mem_subdifferential hμ hν hu hv hv_def hbot hvbot h h₀
   -- Both potentials are finite almost everywhere for the marginals, hence along `σ`.
   have hμfin : ∀ᵐ x ∂μ, u x ≠ ⊤ := by
     rw [← hπ.measurePreserving_fst.map_eq, ae_map_iff (p := fun x => u x ≠ ⊤)
