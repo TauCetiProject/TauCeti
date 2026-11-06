@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 public import TauCeti.Geometry.Symplectic.Lagrangian.Graph
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
@@ -28,8 +27,8 @@ transformation wherever its projections `a` and `b` are diffeomorphisms.
   `M` and `N` of the same dimension, invertibility of the differentials of `a` suffices: along an
   isotropic relation, the differential of `b` is then invertible as well
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isInvertible_mfderiv_of_isIsotropic`), and so `b` is a
-  local diffeomorphism wherever `a` is, at interior points
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.IsIsotropicMap.isLocalDiffeomorphAt_of_finrank_eq`).
+  local diffeomorphism wherever `a` is, at interior points near which `b` is smooth
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.isLocalDiffeomorphAt_of_isIsotropic`).
 * When `a` and `b` are diffeomorphisms, the relation is the graph of `φ = b ∘ a⁻¹`, and it is
   Lagrangian exactly when `φ^* τ = σ`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_prodMk_diffeomorph_iff`).
@@ -162,6 +161,25 @@ theorem isInvertible_mfderiv_of_isIsotropic [FiniteDimensional ℝ E] [FiniteDim
     ea.toLinearEquiv.finrank_eq.trans hEF
   exact ⟨(LinearMap.linearEquivOfInjective _ hinj hdim).toContinuousLinearEquiv, rfl⟩
 
+/-- **Isotropic relations project to local diffeomorphisms together.** In equal finite
+dimensions, if the tangent image of `y ↦ (a y, b y)` at an interior point `x` is isotropic for the
+twisted product (for instance Lagrangian), `a` is a local diffeomorphism at `x` and `b` is smooth
+on an open neighbourhood of `x`, then `b` is a local diffeomorphism at `x` too. -/
+theorem isLocalDiffeomorphAt_of_isIsotropic [IsManifold K ∞ L] [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] (hEF : finrank ℝ E = finrank ℝ F)
+    (h : ((hσ.twistedProd hτ).symplecticFormAt (a x, b x)).IsIsotropic
+      (LinearMap.range (mfderiv K (I.prod J) (fun y ↦ (a y, b y)) x).toLinearMap))
+    (ha : IsLocalDiffeomorphAt K I ∞ a x) {s : Set L} (hb : ContMDiffOn K J ∞ b s)
+    (hs : IsOpen s) (hxs : x ∈ s) (hx : K.IsInteriorPoint x) :
+    IsLocalDiffeomorphAt K J ∞ b x := by
+  obtain ⟨ea, hea⟩ := ha.isInvertible_mfderiv (by simp)
+  have : FiniteDimensional ℝ EL := ea.symm.toLinearEquiv.finiteDimensional
+  have : CompleteSpace EL := FiniteDimensional.complete ℝ EL
+  obtain ⟨eb, heb⟩ := isInvertible_mfderiv_of_isIsotropic hσ hτ hEF
+    (ha.mdifferentiableAt (by simp))
+    ((hb.contMDiffAt (hs.mem_nhds hxs)).mdifferentiableAt (by simp)) h ⟨ea, hea⟩
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hb hs hxs hx (by simp) heb
+
 end Pointwise
 
 /-! ### Global criteria -/
@@ -205,24 +223,6 @@ theorem isLagrangianMap_prodMk_iff_of_finrank_eq [FiniteDimensional ℝ E] [Fini
   refine (isLagrangianMap_prodMk_iff hσ hτ ha hb ha' fun x ↦ ?_).mpr h
   exact isInvertible_mfderiv_of_isIsotropic hσ hτ hEF (ha.mdifferentiableAt (by simp))
     (hb.mdifferentiableAt (by simp)) (isIsotropicMap_iff_forall.mp hiso x) (ha' x)
-
-/-- **Isotropic relations project to local diffeomorphisms together.** In equal finite
-dimensions, if an isotropic (for instance Lagrangian) relation `x ↦ (a x, b x)` with `b` smooth has
-`a` a local diffeomorphism at an interior point `x`, then `b` is a local diffeomorphism at `x`
-too. -/
-theorem IsIsotropicMap.isLocalDiffeomorphAt_of_finrank_eq [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ F] (hEF : finrank ℝ E = finrank ℝ F)
-    (h : (hσ.twistedProd hτ).IsIsotropicMap K (fun x ↦ (a x, b x))) {x : L}
-    (ha : IsLocalDiffeomorphAt K I ∞ a x) (hb : ContMDiff K J ∞ b) (hx : K.IsInteriorPoint x) :
-    IsLocalDiffeomorphAt K J ∞ b x := by
-  obtain ⟨ea, hea⟩ := ha.isInvertible_mfderiv (by simp)
-  have : FiniteDimensional ℝ EL := ea.symm.toLinearEquiv.finiteDimensional
-  have : CompleteSpace EL := FiniteDimensional.complete ℝ EL
-  obtain ⟨eb, heb⟩ := isInvertible_mfderiv_of_isIsotropic hσ hτ hEF
-    (ha.mdifferentiableAt (by simp)) (hb.mdifferentiableAt (by simp))
-    (isIsotropicMap_iff_forall.mp h x) ⟨ea, hea⟩
-  exact isLocalDiffeomorphAt_of_mfderiv_eq hb.contMDiffOn isOpen_univ (Set.mem_univ x) hx
-    (by simp) heb
 
 end Global
 
