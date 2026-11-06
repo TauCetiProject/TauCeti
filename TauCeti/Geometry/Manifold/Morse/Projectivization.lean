@@ -197,8 +197,8 @@ private theorem weightedInner_eq_smul_of_forall {a : ℝ} {ν : Fin n → ℝ} {
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rcases hz j with h0 | h0 <;> simp [h0]
 
-/-- **Euler's relation for the chart model.** If every nonzero coordinate `z j` carries the weight
-`ν j = a`, the model takes the value `a` at `z`. -/
+/-- **The value of the chart model at an eigenvector.** If every nonzero coordinate `z j` carries
+the weight `ν j = a`, the model takes the value `a` at `z`. -/
 theorem model_eq_of_forall {a : ℝ} {ν : Fin n → ℝ} {z : Fin n → 𝕜}
     (hz : ∀ j, z j = 0 ∨ ν j = a) : model 𝕜 a ν z = a := by
   have hnorm : weightedNormSq ν z = a * weightedNormSq 1 z := by
@@ -457,7 +457,7 @@ theorem mk_mem_criticalPoints_projectiveMomentFunction_iff {w : Fin (n + 1) → 
   simp only [hk, false_or, comp_apply]
   constructor
   · intro h
-    -- By Euler's relation the value at `[v]` is the weight `w k`.
+    -- Every nonzero coordinate carries the weight `w k`, so the value at `[v]` is `w k`.
     have hm := model_eq_of_forall (𝕜 := 𝕜) (ν := w ∘ k.succAbove) h
     simp only [hval, hm, true_and]
     exact (fun j ↦ (h j).imp_left (hz j).1)
@@ -572,28 +572,8 @@ of larger index. -/
 theorem criticalCount_projectiveMomentFunction_real {w : Fin (n + 1) → ℝ} (hw : Injective w)
     (j : ℕ) :
     criticalCount 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ w) j = if j ≤ n then 1 else 0 := by
-  simp only [criticalCount_projectiveMomentFunction hw, Module.finrank_self, one_mul]
-  have hrlt (k : Fin (n + 1)) : {i | w i < w k}.ncard < n + 1 := by
-    calc {i | w i < w k}.ncard < (univ : Set (Fin (n + 1))).ncard :=
-          ncard_lt_ncard ⟨subset_univ _, fun h ↦ lt_irrefl (w k) (h (mem_univ k))⟩ (toFinite _)
-      _ = n + 1 := by simp
-  -- The index map is a bijection from the coordinates onto `{0, …, n}`.
-  have hR : Bijective fun k ↦ (⟨{i | w i < w k}.ncard, hrlt k⟩ : Fin (n + 1)) :=
-    Finite.injective_iff_bijective.1 fun k k' h ↦
-      injective_ncard_setOf_lt hw (congrArg Fin.val h)
-  split_ifs with hj
-  · obtain ⟨k, hk⟩ := hR.2 ⟨j, Nat.lt_succ_of_le hj⟩
-    have : {k' | {i | w i < w k'}.ncard = j} = {k} := by
-      ext k'
-      simp only [mem_ofPred_eq, mem_singleton_iff]
-      refine ⟨fun h ↦ hR.1 (Fin.ext (h.trans (congrArg Fin.val hk).symm)), fun h ↦ ?_⟩
-      rw [h]
-      exact congrArg Fin.val hk
-    rw [this, encard_singleton]
-  · simp only [encard_eq_zero, eq_empty_iff_forall_notMem, mem_ofPred_eq]
-    intro k hk
-    have := hrlt k
-    omega
+  simp only [criticalCount_projectiveMomentFunction hw, Module.finrank_self, one_mul,
+    encard_setOf_ncard_setOf_lt_eq hw, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.lt_succ_iff]
 
 /-! ### The standard weights -/
 
