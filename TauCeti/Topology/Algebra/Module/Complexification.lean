@@ -360,6 +360,17 @@ theorem liftBaseChangeComplex_tmul (f : W →L[ℝ] V) (c : ℂ) (w : W) :
   simp only [liftBaseChangeComplex, coe_mk', LinearMap.liftBaseChange_tmul,
     ContinuousLinearMap.coe_coe]
 
+/-- A continuous complex-linear extension is determined by its values on the real source. -/
+theorem liftBaseChangeComplex_unique (f : W →L[ℝ] V) (g : ℂ ⊗[ℝ] W →L[ℂ] V)
+    (hg : ∀ w, g (1 ⊗ₜ[ℝ] w) = f w) : g = f.liftBaseChangeComplex := by
+  have h : g.toLinearMap = f.liftBaseChangeComplex.toLinearMap := by
+    ext w
+    simpa only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+      LinearMap.restrictScalars_apply, coe_coe,
+      liftBaseChangeComplex_tmul, one_smul] using hg w
+  ext u
+  exact congrArg (fun l ↦ l u) h
+
 /-- The real/imaginary formula for the actual continuous complex-linear extension. -/
 theorem liftBaseChangeComplex_apply (f : W →L[ℝ] V) (u : ℂ ⊗[ℝ] W) :
     f.liftBaseChangeComplex u = f (realPart W u) + Complex.I • f (imaginaryPart W u) := by

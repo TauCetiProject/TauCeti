@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import TauCeti.Topology.VectorBundle.RestrictScalars
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
@@ -49,32 +48,6 @@ variable {XB HB B F G : Type*} [NormedAddCommGroup XB] [NormedSpace ℝ XB]
   [TopologicalSpace (TotalSpace G V)] [FiberBundle G V]
   [∀ x, IsTopologicalAddGroup (V x)]
   {n : ℕ∞ω}
-
-section SmoothExtension
-
-variable [NormedSpace ℝ G] [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G] [VectorBundle ℂ G V]
-  [∀ x, ContinuousConstSMul ℂ (V x)]
-
-local instance : VectorBundle ℝ G V := VectorBundle.restrictScalars ℝ ℂ G V
-
-/-- Complex-linear extension of a smooth real bundle map is smooth on the actual
-complexification total space. It is the canonical native base-change lift in each fiber. -/
-theorem contMDiff_liftBaseChangeComplex_totalSpace (i : ∀ x, W x →L[ℝ] V x)
-    (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V))) :
-    ContMDiff (IB.prod 𝓘(ℝ, Complexification F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] W x) ↦
-        (⟨p.proj, (i p.proj).liftBaseChangeComplex p.2⟩ : TotalSpace G V)) := by
-  obtain ⟨hre, him⟩ := (contMDiff_complexification_totalSpace_iff (IB := IB) (F := F)
-    (E := W)).mp (contMDiff_id (I := IB.prod 𝓘(ℝ, Complexification F)) (n := n))
-  have hreal := hi.comp hre
-  have himag := hi.comp him
-  have hI := (contMDiff_const (I := IB.prod 𝓘(ℝ, Complexification F))
-    (c := Complex.I)).smul_totalSpace himag
-  simpa only [ContinuousLinearMap.liftBaseChangeComplex_apply, Function.comp_def, id_eq] using
-    ContMDiff.add_sectionAlong hreal hI
-
-end SmoothExtension
 
 section Equivalence
 
@@ -141,11 +114,9 @@ theorem maximalRealFormComplexificationEquiv_apply (i : ∀ x, W x →L[ℝ] V x
     (x : B) (u : ℂ ⊗[ℝ] W x) :
     maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x u =
       (i x).liftBaseChangeComplex u := by
-  have h : (maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x).toLinearMap =
-      (i x).liftBaseChangeComplex.toLinearMap := by
-    ext w
-    simp
-  exact congrArg (fun f ↦ f u) h
+  exact DFunLike.congr_fun ((i x).liftBaseChangeComplex_unique
+    (maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x).toContinuousLinearMap
+    (fun w ↦ by simp)) u
 
 end Equivalence
 
@@ -289,12 +260,19 @@ theorem maximalRealFormConjugationDiffeomorph_unique
     ← (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_unique
       (hinj p.proj) (hmax p.proj) (K p.proj) (hfix p.proj)]
 
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  [FiniteDimensional ℝ F'] {W' : B → Type*}
+  [∀ x, AddCommGroup (W' x)] [∀ x, Module ℝ (W' x)] [∀ x, TopologicalSpace (W' x)]
+  [TopologicalSpace (TotalSpace F' W')] [FiberBundle F' W'] [VectorBundle ℝ F' W']
+  [∀ x, TopologicalSpace (ℂ ⊗[ℝ] W' x)] [∀ x, IsComplexificationTopology (W' x)]
+  [∀ x, IsTopologicalAddGroup (W' x)] [∀ x, ContinuousSMul ℝ (W' x)]
+
 /-- Changing the smooth parametrization of the same real ranges does not change the actual
 smooth conjugation. The algebraic range comparison also allows distinct source carriers. -/
 theorem maximalRealFormConjugationDiffeomorph_congr_range
-    (j : ∀ x, W x →L[ℝ] V x)
-    (hj : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, j p.proj p.2⟩ : TotalSpace G V)))
+    (j : ∀ x, W' x →L[ℝ] V x)
+    (hj : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F' W' ↦ (⟨p.proj, j p.proj p.2⟩ : TotalSpace G V)))
     (hjinj : ∀ x, Injective (j x))
     (hjmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (j x).toLinearMap.range)
@@ -309,18 +287,40 @@ theorem maximalRealFormConjugationDiffeomorph_congr_range
     (hrange p.proj)]
 
 
-/-- A complex-linear bundle map preserving the real inclusion intertwines the actual smooth
-conjugation. The algebraic naturality theorem also covers different ambient bundles. -/
+variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedSpace ℂ G']
+  [IsScalarTower ℝ ℂ G'] {V' : B → Type*}
+  [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)] [∀ x, Module ℂ (V' x)]
+  [∀ x, IsScalarTower ℝ ℂ (V' x)] [∀ x, TopologicalSpace (V' x)]
+  [TopologicalSpace (TotalSpace G' V')] [FiberBundle G' V'] [VectorBundle ℂ G' V']
+  [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousConstSMul ℂ (V' x)]
+  [∀ x, ContinuousSMul ℝ (V' x)]
+
+local instance : VectorBundle ℝ G' V' := VectorBundle.restrictScalars ℝ ℂ G' V'
+
+/-- A complex-linear map carrying one real inclusion to another intertwines the actual smooth
+conjugations, even for different source and ambient bundles. -/
 theorem maximalRealFormConjugationDiffeomorph_natural
-    (A : ∀ x, V x →ₗ[ℂ] V x) (b : ∀ x, W x →ₗ[ℝ] W x)
-    (hreal : ∀ x w, A x (i x w) = i x (b x w)) (p : TotalSpace G V) :
-    maximalRealFormConjugationDiffeomorph i hi hinj hmax ⟨p.proj, A p.proj p.2⟩ =
-      ⟨p.proj, A p.proj ((i p.proj).toLinearMap.conjugationOfMaximalTotallyReal
+    (j : ∀ x, W' x →L[ℝ] V' x)
+    (hj : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, G')) n
+      (fun p : TotalSpace F' W' ↦ (⟨p.proj, j p.proj p.2⟩ : TotalSpace G' V')))
+    (hjinj : ∀ x, Injective (j x))
+    (hjmax : ∀ x, IsMaximalTotallyReal
+      ((LinearMap.lsmul ℂ (V' x) Complex.I).restrictScalars ℝ) (j x).toLinearMap.range)
+    (A : ∀ x, V x →ₗ[ℂ] V' x) (b : ∀ x, W x →ₗ[ℝ] W' x)
+    (hreal : ∀ x w, A x (i x w) = j x (b x w)) (p : TotalSpace G V) :
+    maximalRealFormConjugationDiffeomorph j hj hjinj hjmax ⟨p.proj, A p.proj p.2⟩ =
+      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.2⟩ : TotalSpace G' V'))
+        (maximalRealFormConjugationDiffeomorph i hi hinj hmax p) := by
+  calc
+    _ = ⟨p.proj, A p.proj ((i p.proj).toLinearMap.conjugationOfMaximalTotallyReal
         (hinj p.proj) (hmax p.proj) p.2)⟩ := by
-  rw [maximalRealFormConjugationDiffeomorph_apply,
-    (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_natural
-      (hinj p.proj) (hmax p.proj) (i p.proj).toLinearMap (hinj p.proj) (hmax p.proj)
-      (A p.proj) (b p.proj) (hreal p.proj)]
+      rw [maximalRealFormConjugationDiffeomorph_apply,
+        (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_natural
+          (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
+          (A p.proj) (b p.proj) (hreal p.proj)]
+    _ = _ := (congrArg
+      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.2⟩ : TotalSpace G' V'))
+      (maximalRealFormConjugationDiffeomorph_apply i hi hinj hmax p)).symm
 
 end SmoothEquivalence
 
