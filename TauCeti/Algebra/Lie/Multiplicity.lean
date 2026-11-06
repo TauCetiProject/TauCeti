@@ -228,18 +228,8 @@ theorem isotypicMultiplicity_prod (N : Type w₃) [AddCommGroup N] [Module K N] 
     (hN : FiniteDimensional K (S →ₗ⁅K,L⁆ N)) :
     isotypicMultiplicity K L (M × N) S =
       isotypicMultiplicity K L M S + isotypicMultiplicity K L N S := by
-  let e : (S →ₗ⁅K,L⁆ M × N) ≃ₗ[K] (S →ₗ⁅K,L⁆ M) × (S →ₗ⁅K,L⁆ N) :=
-    { toFun f := ((TauCeti.LieModuleHom.fst K L M N).comp f,
-        (TauCeti.LieModuleHom.snd K L M N).comp f)
-      map_add' _ _ := Prod.ext (LieModuleHom.ext fun _ ↦ by simp) (LieModuleHom.ext fun _ ↦ by simp)
-      map_smul' _ _ :=
-        Prod.ext (LieModuleHom.ext fun _ ↦ by simp) (LieModuleHom.ext fun _ ↦ by simp)
-      invFun g := TauCeti.LieModuleHom.prod g.1 g.2
-      left_inv f := LieModuleHom.ext fun _ ↦ by simp
-      right_inv g :=
-        Prod.ext (LieModuleHom.ext fun _ ↦ by simp) (LieModuleHom.ext fun _ ↦ by simp) }
-  rw [isotypicMultiplicity_def, e.finrank_eq, Module.finrank_prod, isotypicMultiplicity_def,
-    isotypicMultiplicity_def]
+  rw [isotypicMultiplicity_def, ← (TauCeti.LieModuleHom.prodEquiv K L M N S).finrank_eq,
+    Module.finrank_prod, isotypicMultiplicity_def, isotypicMultiplicity_def]
 
 /-- **An irreducible module occurs in itself with multiplicity one.** -/
 @[simp]

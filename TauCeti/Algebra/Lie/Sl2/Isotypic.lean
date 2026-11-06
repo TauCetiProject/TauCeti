@@ -118,12 +118,12 @@ theorem formalCharacter_one_tensor_one_prod_zero :
       formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) *
         formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) :=
     formalCharacter_tensor
-  rw [formalCharacter_prod, htensor, formalCharacter_eq_sum, formalCharacter_eq_sum]
+  rw [formalCharacter_prod, htensor, formalCharacter_eq_sum, formalCharacter_eq_sum,
+    show (3 : ℤ) = 1 + 1 + 1 by norm_num, AddMonoidAlgebra.single_add,
+    AddMonoidAlgebra.single_add]
   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_mul, mul_add, add_zero,
     AddMonoidAlgebra.single_mul_single, ← slTwoWeight_add, mul_one]
-  norm_num
-  rw [show (3 : ℤ) = 1 + 1 + 1 by norm_num, AddMonoidAlgebra.single_add,
-    AddMonoidAlgebra.single_add]
+  norm_num only [Fin.val_zero, Fin.val_succ]
   abel
 
 /-- **The character of `(V(1) ⊗ V(1)) × V(0)` is `ch V(2) + 2 ch V(0)`**, the Clebsch-Gordan
@@ -132,10 +132,11 @@ theorem formalCharacter_one_tensor_one_prod_zero_eq_add :
     formalCharacter K (slTwoDiagonalCartan K) ((Sl2Std K 1 ⊗[K] Sl2Std K 1) × Sl2Std K 0) =
       formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 2) +
         2 • formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 0) := by
-  rw [formalCharacter_one_tensor_one_prod_zero, formalCharacter_eq_sum, formalCharacter_eq_sum]
+  rw [formalCharacter_one_tensor_one_prod_zero, formalCharacter_eq_sum, formalCharacter_eq_sum,
+    show (3 : ℤ) = 1 + 1 + 1 by norm_num, AddMonoidAlgebra.single_add,
+    AddMonoidAlgebra.single_add]
   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero]
-  norm_num
-  rw [show (3 : ℤ) = 1 + 2 by norm_num, AddMonoidAlgebra.single_add]
+  norm_num only [Fin.val_zero, Fin.val_succ]
   abel
 
 /-- **The multiplicities of `(V(1) ⊗ V(1)) × V(0)` read off its character.** Multiplying the
