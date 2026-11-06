@@ -59,27 +59,14 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 
-/-- **A uniformly elliptic field, Lipschitz up to part of the boundary, agrees near a compact set
-with a Lipschitz field on the whole space.** Let `a` be uniformly elliptic on a set `S` with
-constants `λ, Λ`, with `x ↦ a(x)` Lipschitz on `S` in the operator norm of its bilinear forms. Let
-`U` be open, let `T` be a set with `T ∩ U ⊆ S`, and let `C ⊆ U` be compact. Then there is a bounded
-field `a'` on the whole space, Lipschitz there and uniformly elliptic on `T` with the same
-constants, that agrees with `a` on `S ∩ W` for an open `W` with `C ⊆ W ⊆ U`.
-
-Here `C` need not lie in `S`: typically `S = Ω ∩ U` for a domain `Ω` and a half-space `T` with
-`Ω ∩ U = T ∩ U`, and `C` meets the flat part of `∂Ω`. One may take
-`a' = χ ā + (1 - χ) λ I`, where `ā` extends `a` from `S` entrywise by McShane's extension
-(`LipschitzOnWith.extend_real`) and `χ` is a smooth cutoff equal to one near `C` and supported
-in `U`. -/
-theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {lam Lam : ℝ}
-    {K : ℝ≥0} {S T C : Set (EuclideanSpace ℝ ι)} {U : Opens (EuclideanSpace ℝ ι)}
-    (ha : UniformlyEllipticOn S a lam Lam)
-    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) S)
-    (hTU : T ∩ U ⊆ S) (hC : IsCompact C) (hCU : C ⊆ U) :
-    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ, ∃ K' : ℝ≥0, ∃ M : ℝ,
-      ∃ W : Opens (EuclideanSpace ℝ ι), C ⊆ W ∧ W ≤ U ∧ UniformlyEllipticOn T a' lam Lam ∧
-        LipschitzWith K' (fun x => matrixBilinearForm (a' x)) ∧
-          (∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M) ∧ EqOn a' a (S ∩ W) := by
+/-- **A field that is Lipschitz on a set extends to a Lipschitz field on the whole space.** If
+`x ↦ a x` is Lipschitz on `S` in the operator norm of its bilinear forms, then `a` agrees on `S`
+with a field on the whole space with the same property. Extend the entries by McShane's extension
+(`LipschitzOnWith.extend_real`). -/
+theorem exists_lipschitzWith_matrixBilinearForm_eqOn {K : ℝ≥0}
+    {S : Set (EuclideanSpace ℝ ι)} (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) S) :
+    ∃ (abar : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (K' : ℝ≥0), EqOn abar a S ∧
+      LipschitzWith K' (fun x => matrixBilinearForm (abar x)) := by
   classical
   -- Extend the entries of `a` from `S` to Lipschitz functions on the whole space.
   have hent : ∀ i j, LipschitzOnWith (K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
@@ -87,13 +74,13 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {la
     simpa [matrixBilinearForm_apply] using lipschitzOnWith_matrixBilinearForm_apply_apply hK
       (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
   choose g hgL hgS using fun i j => (hent i j).extend_real
-  set abar : EuclideanSpace ℝ ι → Matrix ι ι ℝ := fun x => Matrix.of fun i j => g i j x
-  have habar : EqOn abar a S := fun x hx => by
+  have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx => by
     ext i j
     exact (hgS i j hx).symm
   -- The bilinear forms of `ā` are Lipschitz, with the sum of the entrywise constants.
   have hLbar : LipschitzWith (∑ i : ι, ∑ j : ι, K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
-      ‖EuclideanSpace.single j (1 : ℝ)‖₊) (fun x => matrixBilinearForm (abar x)) := by
+      ‖EuclideanSpace.single j (1 : ℝ)‖₊)
+      (fun x => matrixBilinearForm (Matrix.of fun i j => g i j x)) := by
     refine LipschitzWith.of_dist_le_mul fun y z => ?_
     rw [dist_eq_norm, ← matrixBilinearForm_sub]
     refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
@@ -104,8 +91,20 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {la
     refine Finset.sum_le_sum fun j _ => ?_
     rw [Matrix.sub_apply, ← Real.dist_eq]
     exact (hgL i j).dist_le_mul y z
-  obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
-  have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
+  exact ⟨_, _, habar, hLbar⟩
+
+/-- **Blending a Lipschitz field with a constant one by a smooth cutoff is bounded and Lipschitz.**
+If `x ↦ matrixBilinearForm (abar x)` is Lipschitz and `χ` is a `C¹` compactly supported weight with
+values in `[0, 1]`, then the bilinear forms of `χ abar + (1 - χ) λ I` are Lipschitz and bounded. -/
+theorem exists_lipschitzWith_bound_smul_add_one_sub_smul [DecidableEq ι] {L : ℝ≥0}
+    {abar : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (hLbar : LipschitzWith L (fun x => matrixBilinearForm (abar x)))
+    {χ : EuclideanSpace ℝ ι → ℝ} (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ)
+    (hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1) (lam : ℝ) :
+    ∃ (K' : ℝ≥0) (M : ℝ),
+      LipschitzWith K'
+          (fun x => matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • (1 : Matrix ι ι ℝ)))) ∧
+        ∀ x, ‖matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • (1 : Matrix ι ι ℝ)))‖ ≤ M := by
   have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
   obtain ⟨C0, hC0⟩ : ∃ C0, matrixBilinearForm (lam • (1 : Matrix ι ι ℝ)) = C0 := ⟨_, rfl⟩
   -- On the compact set `tsupport χ`, `F = B(ā) - C0` is Lipschitz and bounded.
@@ -130,7 +129,47 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {la
   obtain ⟨K', hK'⟩ : ∃ K', LipschitzWith K' fun x =>
       matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • (1 : Matrix ι ι ℝ))) :=
     ⟨_, by rw [hBform]; exact (LipschitzWith.const C0).add (holderWith_one.1 hχF)⟩
-  refine ⟨fun x => χ x • abar x + (1 - χ x) • (lam • 1), K', ‖C0‖ + B.toNNReal,
+  refine ⟨K', ‖C0‖ + B.toNNReal, hK', fun x => ?_⟩
+  rw [show matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • 1)) = C0 + χ x • F x from
+    congrFun hBform x]
+  have hχFx : ‖χ x • F x‖ ≤ B.toNNReal := by
+    refine (ContinuousLinearMap.opNorm_smul_le (χ x) (F x)).trans ?_
+    by_cases hx : x ∈ tsupport χ
+    · rw [Real.norm_eq_abs, abs_of_nonneg (hχI x).1]
+      exact (mul_le_of_le_one_left (norm_nonneg (F x)) (hχI x).2).trans (hFb x hx)
+    · rw [hχ0 x hx, norm_zero, zero_mul]
+      exact NNReal.coe_nonneg _
+  linarith [norm_add_le C0 (χ x • F x)]
+
+/-- **A uniformly elliptic field, Lipschitz up to part of the boundary, agrees near a compact set
+with a Lipschitz field on the whole space.** Let `a` be uniformly elliptic on a set `S` with
+constants `λ, Λ`, with `x ↦ a(x)` Lipschitz on `S` in the operator norm of its bilinear forms. Let
+`U` be open, let `T` be a set with `T ∩ U ⊆ S`, and let `C ⊆ U` be compact. Then there is a bounded
+field `a'` on the whole space, Lipschitz there and uniformly elliptic on `T` with the same
+constants, that agrees with `a` on `S ∩ W` for an open `W` with `C ⊆ W ⊆ U`.
+
+Here `C` need not lie in `S`: typically `S = Ω ∩ U` for a domain `Ω` and a half-space `T` with
+`Ω ∩ U = T ∩ U`, and `C` meets the flat part of `∂Ω`. One may take
+`a' = χ ā + (1 - χ) λ I`, where `ā` extends `a` from `S` entrywise by McShane's extension
+(`LipschitzOnWith.extend_real`) and `χ` is a smooth cutoff equal to one near `C` and supported
+in `U`. -/
+theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {lam Lam : ℝ}
+    {K : ℝ≥0} {S T C : Set (EuclideanSpace ℝ ι)} {U : Opens (EuclideanSpace ℝ ι)}
+    (ha : UniformlyEllipticOn S a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) S)
+    (hTU : T ∩ U ⊆ S) (hC : IsCompact C) (hCU : C ⊆ U) :
+    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ, ∃ K' : ℝ≥0, ∃ M : ℝ,
+      ∃ W : Opens (EuclideanSpace ℝ ι), C ⊆ W ∧ W ≤ U ∧ UniformlyEllipticOn T a' lam Lam ∧
+        LipschitzWith K' (fun x => matrixBilinearForm (a' x)) ∧
+          (∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M) ∧ EqOn a' a (S ∩ W) := by
+  classical
+  obtain ⟨abar, _, habar, hLbar⟩ := exists_lipschitzWith_matrixBilinearForm_eqOn hK
+  obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
+  have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
+  have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
+  obtain ⟨K', M, hK', hM⟩ := exists_lipschitzWith_bound_smul_add_one_sub_smul hLbar
+    (hχ.of_le (by simp)) hχc hχI lam
+  refine ⟨fun x => χ x • abar x + (1 - χ x) • (lam • 1), K', M,
     ⟨interior (χ ⁻¹' {1}), isOpen_interior⟩, hχ1, fun x hx => ?_, ?_, hK', fun x => ?_,
     fun x hx => ?_⟩
   · have hχx : χ x = 1 := interior_subset hx
@@ -146,16 +185,7 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {la
         · rfl)
     refine (hT.mono_set (subset_univ T)).congr fun x hx => ?_
     simp [hx]
-  · rw [show matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • 1)) = C0 + χ x • F x from
-      congrFun hBform x]
-    have hχFx : ‖χ x • F x‖ ≤ B.toNNReal := by
-      refine (ContinuousLinearMap.opNorm_smul_le (χ x) (F x)).trans ?_
-      by_cases hx : x ∈ tsupport χ
-      · rw [Real.norm_eq_abs, abs_of_nonneg (hχI x).1]
-        exact (mul_le_of_le_one_left (norm_nonneg (F x)) (hχI x).2).trans (hFb x hx)
-      · rw [hχ0 x hx, norm_zero, zero_mul]
-        exact NNReal.coe_nonneg _
-    linarith [norm_add_le C0 (χ x • F x)]
+  · exact hM x
   · have hχx : χ x = 1 := interior_subset hx.2
     simp [hχx, habar hx.1]
 
