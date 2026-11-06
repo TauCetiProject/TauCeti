@@ -10,7 +10,7 @@ public import TauCeti.Probability.Exchangeability.FullyExchangeable
 public import TauCeti.Probability.Process.Array
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 -- Non-public: two finite-valued functions with equal second and mixed moments are a.e. equal.
-import TauCeti.MeasureTheory.Function.AEEqOfLIntegralMul
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Mul
 -- Non-public: evaluating a random probability measure at a fixed measurable set is measurable.
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
 -- Non-public: equality of process laws is reduced to their finite-dimensional laws.
@@ -395,9 +395,9 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
   simp only [Fin.prod_univ_succ, Fin.prod_univ_zero, mul_one, Matrix.cons_val_zero,
     Matrix.cons_val_succ] at hT1 hT2 hT3
   rw [Set.union_pi]
-  exact ae_eq_of_lintegral_mul_eq (hm _ (hCm.inter hDm)) ((hm _ hCm).mul (hm _ hDm))
-    (fun _ => measure_ne_top _ _) (fun _ => ENNReal.mul_ne_top (measure_ne_top _ _)
-      (measure_ne_top _ _)) (measure_ne_top μ _) hT1 hT2 (by simpa only [mul_assoc] using hT3)
+  exact ae_eq_of_lintegral_mul_eq (hm _ (hCm.inter hDm)).aemeasurable
+    ((hm _ hCm).mul (hm _ hDm)).aemeasurable (measure_ne_top μ _) hT1 hT2
+    (by simpa only [mul_assoc] using hT3)
 
 /-- **The directing measure of a row exchangeable array factors over the rows.** For a finite set
 `F` of rows and measurable target sets `B`, the mass that the mixing representative of the columns

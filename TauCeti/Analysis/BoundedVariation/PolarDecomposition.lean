@@ -16,7 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
-import TauCeti.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
 import TauCeti.MeasureTheory.Measure.Decomposition.CommonDensity
 
 /-!
