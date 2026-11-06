@@ -54,6 +54,8 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas` and
   `TauCeti.manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas`: nondegeneracy and the Morse index
   in an arbitrary chart.
+* `TauCeti.eventually_manifoldMorseIndex_le`: the Morse index is lower semicontinuous on the
+  critical set, read off from `TauCeti.eventually_morseIndex_le` in the preferred chart.
 * `TauCeti.isMorseOn_iff_of_mem_maximalAtlas`: being Morse on a subset of a chart source, read in
   that chart.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff` and
@@ -773,6 +775,27 @@ theorem criticalHessian_trivializationAt_symm_apply [IsManifold I 2 M] {x₀ : M
     rwa [mvfderiv_apply_eq_mfderiv_apply]
   rw [criticalHessian_apply_eq_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx hf
     hcrit, ← extChartAt, hcoord, hcoord]
+
+/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless
+finite-dimensional manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
+the Morse index is at least the Morse index at `x`. The point `x` need not be critical, nor
+nondegenerate. -/
+theorem eventually_manifoldMorseIndex_le [FiniteDimensional ℝ E] [IsManifold I 2 M]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → manifoldMorseIndex I f x ≤ manifoldMorseIndex I f y := by
+  -- Both indices are read in the preferred chart at `x`: at `x` by definition, and at nearby
+  -- critical points because there the Morse index may be computed in any chart.
+  set e := chartAt H x
+  have he : e ∈ IsManifold.maximalAtlas I 2 M := IsManifold.chart_mem_maximalAtlas x
+  have hx : x ∈ e.source := mem_chart_source H x
+  have hg := (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).1 hf
+  have hcont : ContinuousAt (e.extend I) x := e.continuousAt_extend hx
+  filter_upwards [hcont.eventually (eventually_morseIndex_le hg),
+    hcont.eventually (hg.eventually (by simp)), e.open_source.mem_nhds hx]
+    with y hidx hreg hy hcrit
+  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hy
+    ((contMDiffAt_iff_contDiffAt_comp_extend_symm he hy).2 hreg) (mem_criticalPoints.1 hcrit)]
+  simpa only [manifoldMorseIndex_def, extChartAt] using hidx
 
 end Boundaryless
 
