@@ -36,6 +36,11 @@ at already fixed points successively determine all other points, except for one 
 involution. That involution is odd, whereas every element of `HS` is even. This parity step is
 essential: the invariant relation alone admits that additional symmetry.
 
+Multiplying the five basic orbit lengths gives `card_HS`: the model has order
+`100 * 77 * 60 * 32 * 3 = 44352000`. Through the surjection `exists_surjective_HS`, the group
+presented by the transcribed Higman--Sims presentation has at least that many elements whenever
+it is finite.
+
 ## References
 
 * R. A. Wilson, R. A. Parker, J. N. Bray et al., *ATLAS of Finite Group Representations*,
@@ -1102,4 +1107,22 @@ theorem card_stabilizerChain_four : Nat.card (HS.stabilizerChain pointSequence 4
   simpa only [Nat.reduceAdd, h4, ncard_orbit_stabilizerChain_four,
     stabilizerChain_five_eq_bot, Subgroup.card_bot, mul_one] using h.symm
 
-end TauCeti.Sporadic.HS
+end HS
+
+/-- **The order of the Higman--Sims model.** The ATLAS permutation model `HS` has
+`44352000 = 100 * 77 * 60 * 32 * 3` elements: along the base `0, 1, 2, 3, 4` its basic orbits have
+lengths `100`, `77`, `60`, `32` and `3`. -/
+theorem card_HS : Nat.card HS = 44352000 := by
+  rw [HS.card_eq_462000_mul_card_stabilizerChain, HS.card_stabilizerChain_three_eq,
+    HS.card_stabilizerChain_four]
+
+/-- The group presented by the transcribed Higman--Sims presentation, when finite, has at least
+`44352000` elements, since it maps onto the model `HS`. Finiteness is a hypothesis: with the junk
+value `Nat.card = 0` for infinite types, a surjection alone gives no lower bound. -/
+theorem le_natCard_group_HS (h : 0 < Nat.card SporadicName.HS.Group) :
+    44352000 ≤ Nat.card SporadicName.HS.Group := by
+  have := Nat.finite_of_card_ne_zero h.ne'
+  obtain ⟨f, hf⟩ := exists_surjective_HS
+  exact card_HS ▸ Nat.card_le_card_of_surjective f hf
+
+end TauCeti.Sporadic
