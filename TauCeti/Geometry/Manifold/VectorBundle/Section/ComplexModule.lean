@@ -103,7 +103,7 @@ variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB] {HB : Type*} 
 
 /-- The real part of `(u + i v) • σ` is `u • Re σ - v • Im σ`. -/
 @[simp]
-theorem realPartLinearMap_smul (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
+theorem realPartLinearMap_smul_function_of_normedAlgebra (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
     (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
     realPartLinearMap IB F n E (f • σ) =
       f.re • realPartLinearMap IB F n E σ - f.im • imaginaryPartLinearMap IB F n E σ :=
@@ -111,7 +111,7 @@ theorem realPartLinearMap_smul (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
 
 /-- The imaginary part of `(u + i v) • σ` is `u • Im σ + v • Re σ`. -/
 @[simp]
-theorem imaginaryPartLinearMap_smul (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
+theorem imaginaryPartLinearMap_smul_function_of_normedAlgebra (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
     (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
     imaginaryPartLinearMap IB F n E (f • σ) =
       f.re • imaginaryPartLinearMap IB F n E σ + f.im • realPartLinearMap IB F n E σ :=
@@ -133,24 +133,25 @@ theorem imaginaryPartLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯)
 
 /-- The real inclusion `s ↦ 1 ⊗ s` commutes with the real function action. -/
 @[simp]
-theorem oneTmulLinearMap_smul (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
+theorem oneTmulLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
     oneTmulLinearMap IB F n E (f • s) = f • oneTmulLinearMap IB F n E s :=
   ext fun x ↦ by simp [TensorProduct.tmul_smul]
 
 /-- The imaginary inclusion `s ↦ i ⊗ s` commutes with the real function action. -/
 @[simp]
-theorem ITmulLinearMap_smul (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
+theorem ITmulLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
     ITmulLinearMap IB F n E (f • s) = f • ITmulLinearMap IB F n E s :=
   ext fun x ↦ by simp [TensorProduct.tmul_smul]
 
 /-- The identification of `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` carries the real
 function action on the second tensor factor to the real function action on sections of
 `ℂ ⊗[ℝ] E`. -/
-theorem complexificationEquiv_tmul_smul (z : ℂ) (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
+theorem complexificationEquiv_tmul_smul_function (z : ℂ) (f : C^n⟮IB, B; ℝ⟯)
+    (s : Cₛ^n⟮IB; F, E⟯) :
     complexificationEquiv IB F n E (z ⊗ₜ[ℝ] (f • s)) =
       f • complexificationEquiv IB F n E (z ⊗ₜ[ℝ] s) := by
-  rw [complexificationEquiv_tmul_eq_smul, complexificationEquiv_tmul_eq_smul, oneTmulLinearMap_smul,
-    ← ofReal_smul, ← ofReal_smul, smul_comm]
+  rw [complexificationEquiv_tmul_eq_smul, complexificationEquiv_tmul_eq_smul,
+    oneTmulLinearMap_smul_function, ← ofReal_smul, ← ofReal_smul, smul_comm]
 
 end Complexification
 
