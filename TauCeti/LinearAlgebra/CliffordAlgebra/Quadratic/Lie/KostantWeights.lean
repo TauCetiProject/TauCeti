@@ -90,14 +90,11 @@ private theorem exists_rootInvolution_eq_bivector {χ : Weight K H L} (hχ : χ.
   refine ⟨v, v.2, ∑ i, s i • y i, sum_mem fun i _ ↦ Submodule.smul_mem _ _
     (genWeightSpaceProjection_apply_mem _ _), ?_, ?_⟩
   · have hpair (i) : killingForm K L (v : L) (s i • y i) =
-        killingForm K L (killingDualBasis bs i) (genWeightSpaceProjection K H L χ (bs i)) := by
-      have hmove : killingForm K L (v : L) (s i • y i) = killingForm K L (s i • (v : L)) (y i) := by
-        simp only [map_smul, LinearMap.smul_apply]
-      rw [hmove, hs' i, killingForm_genWeightSpaceProjection H χ,
-        genWeightSpaceProjection_apply_apply, ← killingForm_genWeightSpaceProjection H χ,
-        LieModule.traceForm_comm]
-    rw [map_sum, Finset.sum_congr rfl fun i _ ↦ hpair i,
-      LinearMap.BilinForm.sum_apply_dualBasis_eq_trace, trace_genWeightSpaceProjection_eq_one H hχ]
+        killingForm K L (genWeightSpaceProjection K H L χ (bs i)) (y i) := by
+      rw [← hs' i]
+      simp only [map_smul, LinearMap.smul_apply]
+    rw [map_sum, Finset.sum_congr rfl fun i _ ↦ hpair i]
+    exact sum_killingForm_genWeightSpaceProjection_eq_one H bs hχ
   · simp only [rootInvolution, ← hs', ← bivectorBilinear_apply, map_sum, map_smul,
       LinearMap.smul_apply, bs, y]
 
