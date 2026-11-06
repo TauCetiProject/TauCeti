@@ -380,7 +380,7 @@ theorem fderiv_timeDependentFlow_eq_dysonSeriesLeft (s t : ℝ) (x : E) :
   have hf (r : ℝ) := (hasDerivAt_fderiv_timeDependentFlow hv hvs s (s + r) x).comp_const_add s r
   have h := eq_dysonSeriesLeft_mul (hM.comp (continuous_const.add continuous_id)) hf (t - s)
   have hself : timeDependentFlow v hv s s = id := funext (timeDependentFlow_self v hv s)
-  rwa [add_sub_cancel, add_zero, hself, fderiv_id, ← ContinuousLinearMap.one_def, mul_one] at h
+  simpa [hself, Function.comp_def, ContinuousLinearMap.mul_def] using h
 
 end TimeDependent
 

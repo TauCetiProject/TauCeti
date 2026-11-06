@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -229,23 +230,14 @@ theorem eq_timeDependentHamiltonianFlow (omega : SymplecticForm V) (H : ℝ → 
     y t = omega.timeDependentHamiltonianFlow H hX s t (y s) :=
   eq_timeDependentFlow _ hX hy s t
 
-/-- The time-dependent Hamiltonian vector field of a jointly `C²` Hamiltonian is jointly `C¹`. -/
-private theorem contDiff_hamiltonianVectorField_uncurry (omega : SymplecticForm V)
-    {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (Function.uncurry H)) :
-    ContDiff ℝ 1 fun p : ℝ × V ↦ omega.hamiltonianVectorField (H p.1) p.2 := by
-  have hS : ContDiff ℝ 1 (omega.timeDependentHamiltonianSuspension H) :=
-    omega.contDiff_timeDependentHamiltonianSuspension 0 hH
-  convert hS.snd using 1
-  funext ⟨r, y⟩
-  simp
-
 /-- Each evolution map of a jointly `C²` time-dependent Hamiltonian is differentiable. -/
 theorem differentiable_timeDependentHamiltonianFlow (omega : SymplecticForm V)
     {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (Function.uncurry H)) (s t : ℝ) :
     Differentiable ℝ (omega.timeDependentHamiltonianFlow H hX s t) := by
   rw [omega.timeDependentHamiltonianFlow_eq H hX]
-  exact differentiable_timeDependentFlow _ (omega.contDiff_hamiltonianVectorField_uncurry hH) s t
+  exact differentiable_timeDependentFlow _
+    (omega.contDiff_hamiltonianVectorField_uncurry (n := 1) hH) s t
 
 /-- **The linearized evolution along an orbit.** Let `x` be an orbit of a jointly `C²`
 time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz,
@@ -264,7 +256,7 @@ theorem fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft (omega : Symplect
   have horbit (r : ℝ) := (omega.eq_timeDependentHamiltonianFlow H hX hx s r).symm
   rw [timeDependentHamiltonianFlow_eq] at horbit ⊢
   rw [fderiv_timeDependentFlow_eq_dysonSeriesLeft _
-    (omega.contDiff_hamiltonianVectorField_uncurry hH)]
+    (omega.contDiff_hamiltonianVectorField_uncurry (n := 1) hH)]
   simp only [horbit]
 
 /-- A Lipschitz autonomous Hamiltonian vector field has a Lipschitz time suspension. -/

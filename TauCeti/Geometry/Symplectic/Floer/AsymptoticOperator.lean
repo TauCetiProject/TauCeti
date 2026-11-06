@@ -41,9 +41,10 @@ symmetric for the `L²` pairing `∫₀¹ g_t(·, ·) dt` on one-periodic loops
 The kernel of `A` consists of the solutions of the linearized Hamiltonian equation
 `ζ' = S_t ζ` (`Floer.asymptoticOperator_eq_zero_iff`). Every such solution is `ζ(t) = Ψ(t) ζ(0)`
 for the propagator `Ψ = TauCeti.dysonSeriesLeft S` of that equation, so `A` has a nonzero
-one-periodic kernel element exactly when `Ψ(1)` fixes a nonzero vector
-(`Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff`), that is, when `det (1 - Ψ(1)) = 0`
-(`Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero`).
+one-periodic kernel element exactly when `Ψ(1)` fixes a nonzero vector, that is, when
+`det (1 - Ψ(1)) = 0`
+(`Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self`
+and `Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero`).
 
 For an actual orbit, with `S_t = dX_{H_t}(x(t))`, the variational equation of the Hamiltonian
 evolution `φ` identifies the propagator with its derivative along the orbit,
@@ -51,7 +52,8 @@ evolution `φ` identifies the propagator with its derivative along the orbit,
 So `Ψ(1)` is the derivative of the time-one map at `x(0)`, and for a one-periodic orbit of a
 one-periodic Hamiltonian the asymptotic operator has no nonzero one-periodic kernel element
 exactly when the orbit is nondegenerate, that is, when `x(0)` is a nondegenerate fixed point of
-the time-one map (`SymplecticForm.isNondegenerateFixedPt_iff_forall_asymptoticOperator_eq_zero`).
+the time-one map
+(`SymplecticForm.isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero`).
 This holds for every family `J_t`, compatible or not.
 
 On the cylinder, the same cancellation gives the integrated form of `D* D = -∂s² + A²` over
@@ -215,8 +217,8 @@ end Kernel
 family `S`, the asymptotic operator has a nonzero differentiable one-periodic kernel element
 exactly when the return map `Ψ(1)` of the linearized Hamiltonian equation `ζ' = S_t ζ` fixes a
 nonzero vector. -/
-theorem exists_ne_zero_asymptoticOperator_eq_zero_iff [CompleteSpace V] (hSc : Continuous S)
-    (hSp : Periodic S 1) :
+theorem exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self
+    [CompleteSpace V] (hSc : Continuous S) (hSp : Periodic S 1) :
     (∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
       ∀ t, asymptoticOperator J S ζ t = 0) ↔
       ∃ v ≠ 0, dysonSeriesLeft S 1 v = v := by
@@ -242,8 +244,8 @@ theorem exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero [FiniteDimensi
     (∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
       ∀ t, asymptoticOperator J S ζ t = 0) ↔
       LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) = 0 := by
-  rw [exists_ne_zero_asymptoticOperator_eq_zero_iff hSc hSp, LinearMap.det_eq_zero_iff_ker_ne_bot,
-    Submodule.ne_bot_iff]
+  rw [exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self
+      hSc hSp, LinearMap.det_eq_zero_iff_ker_ne_bot, Submodule.ne_bot_iff]
   simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_apply, one_apply_eq_self,
     sub_eq_zero]
   exact ⟨fun ⟨v, h0, hv⟩ ↦ ⟨v, hv.symm, h0⟩, fun ⟨v, hv, h0⟩ ↦ ⟨v, h0, hv.symm⟩⟩
@@ -608,8 +610,9 @@ suspended vector field is globally Lipschitz, and let `J_t` be any family of alm
 structures. Then `x(0)` is a nondegenerate fixed point of the time-one map of `H` exactly when the
 asymptotic operator `A ζ = J_t (ζ' - S_t ζ)` along `x`, with `S_t = dX_{H_t}(x(t))`, has no
 nonzero differentiable one-periodic kernel element. -/
-theorem isNondegenerateFixedPt_iff_forall_asymptoticOperator_eq_zero (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+theorem isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
     (J : ℝ → AlmostComplexStructure V) :
@@ -630,7 +633,9 @@ theorem isNondegenerateFixedPt_iff_forall_asymptoticOperator_eq_zero (ω : Sympl
     ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX hH hx 0 1]
   simp only [zero_add, sub_zero, hfix, hD.mdifferentiableAt, true_and]
   -- Both sides say that there is no nonzero periodic solution of `ζ' = S_t ζ`.
-  have hker := Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff (J := J) hSc hSp
+  have hker :=
+    Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self
+      (J := J) hSc hSp
   constructor
   · intro h ζ hζ hζp hA
     by_contra hne
