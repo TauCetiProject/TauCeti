@@ -55,6 +55,9 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `hermitianForm_apply_self`: `B(v, v) = F(v, J v)`.
 * `hermitianForm_kahlerForm`: the Hermitian part of `ω` is the inner product.
+* `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
+  for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
+  `B(v, w) = η(v, J w)`.
 * `hermitianForm_apply_of_hodgeStar_eq_self`: `B = (⟪ω, η⟫ / 2) g` for self-dual `η`.
 * `twoVectorContraction_apply_apply_of_hodgeStar_eq_neg`: the contraction by an anti-self-dual
   two-vector commutes with `J`.
@@ -84,42 +87,37 @@ namespace TauCeti.AlmostComplexStructure
 
 /-- The **Hermitian part** of the two-form `F(u, w) = ⟪F, u ∧ w⟫` represented by `F ∈ ⋀² V`, with
 respect to an almost complex structure `J`: the symmetric bilinear form
-`B(v, w) = (F(v, J w) + F(w, J v)) / 2` (`hermitianForm_apply`), linear in `F`. Its quadratic form
-is `B(v, v) = F(v, J v)`. -/
-def hermitianForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V →ₗ[ℝ] LinearMap.BilinForm ℝ V where
-  toFun F := (2⁻¹ : ℝ) • ((innerₗ V).compl₁₂ (twoVectorContraction F) J.toLinearMap +
-    ((innerₗ V).compl₁₂ (twoVectorContraction F) J.toLinearMap).flip)
-  map_add' F G := by
-    ext v w
-    simp only [twoVectorContraction_add, LinearMap.smul_apply, LinearMap.add_apply,
-      LinearMap.flip_apply, LinearMap.compl₁₂_apply, LinearMap.add_apply, innerₗ_apply_apply,
-      inner_add_left]
-    ring
-  map_smul' c F := by
-    ext v w
-    simp only [twoVectorContraction_smul, LinearMap.smul_apply, LinearMap.add_apply,
-      LinearMap.flip_apply, LinearMap.compl₁₂_apply, innerₗ_apply_apply, real_inner_smul_left,
-      RingHom.id_apply, smul_eq_mul]
-    ring
+`B(v, w) = (F(v, J w) + F(w, J v)) / 2` (`hermitianForm_apply`), linear in `F`. It is the
+symmetric bilinear form `QuadraticMap.associated` to the quadratic form `B(v, v) = F(v, J v)`. -/
+def hermitianForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V →ₗ[ℝ] LinearMap.BilinForm ℝ V :=
+  QuadraticMap.associated ∘ₗ LinearMap.BilinMap.toQuadraticMapLinearMap ℝ ℝ V ∘ₗ
+    LinearMap.compRight ℝ ((innerₗ V).compl₂ J.toLinearMap) ∘ₗ
+      ⟨⟨twoVectorContraction, twoVectorContraction_add⟩, twoVectorContraction_smul⟩
 
 /-- The Hermitian part is `B(v, w) = (F(v, J w) + F(w, J v)) / 2`. -/
 theorem hermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = (⟪F, ιMulti ℝ 2 ![v, J w]⟫ + ⟪F, ιMulti ℝ 2 ![w, J v]⟫) / 2 := by
-  simp only [hermitianForm, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.smul_apply,
-    LinearMap.add_apply, LinearMap.flip_apply, LinearMap.compl₁₂_apply, innerₗ_apply_apply,
-    inner_twoVectorContraction_apply, smul_eq_mul]
-  ring
+  rw [hermitianForm, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearMap.BilinMap.toQuadraticMapLinearMap_apply, QuadraticMap.associated_toQuadraticMap,
+    Module.End.smul_def, QuadraticMap.half_moduleEnd_apply_eq_half_smul, invOf_eq_inv,
+    smul_eq_mul, inv_mul_eq_div]
+  simp only [LinearMap.compRight_apply, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_apply,
+    LinearMap.compl₂_apply, innerₗ_apply_apply, inner_twoVectorContraction_apply]
 
 /-- The quadratic form of the Hermitian part is `B(v, v) = F(v, J v)`. -/
 @[simp]
 theorem hermitianForm_apply_self (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v : V) :
     J.hermitianForm F v v = ⟪F, ιMulti ℝ 2 ![v, J v]⟫ := by
-  rw [hermitianForm_apply, add_self_div_two]
+  rw [hermitianForm, LinearMap.comp_apply, QuadraticMap.associated_eq_self_apply]
+  simp only [LinearMap.comp_apply, LinearMap.BilinMap.toQuadraticMapLinearMap_apply,
+    LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compRight_apply, LinearMap.coe_mk,
+    AddHom.coe_mk, LinearMap.compl₂_apply, innerₗ_apply_apply, inner_twoVectorContraction_apply]
 
+omit [FiniteDimensional ℝ V] in
 /-- The Hermitian part of a two-form is symmetric. -/
 theorem isSymm_hermitianForm (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) :
     (J.hermitianForm F).IsSymm :=
-  ⟨fun v w ↦ by rw [hermitianForm_apply, hermitianForm_apply, add_comm]⟩
+  ⟨QuadraticMap.associated_isSymm ℝ _⟩
 
 /-- **The Hermitian part of the Kähler form is the metric**: for an orthogonal `J`,
 `ω(v, J w) = ⟪v, w⟫`. -/
@@ -128,6 +126,33 @@ theorem hermitianForm_kahlerForm {J : AlmostComplexStructure V}
   ext v w
   rw [hermitianForm_apply, inner_kahlerForm_ιMulti hJ, inner_kahlerForm_ιMulti hJ, hJ, hJ,
     innerₗ_apply_apply, real_inner_comm w v, add_self_div_two]
+
+/-- **The contraction by a `J`-invariant two-vector commutes with `J`**: for an orthogonal `J` and
+`D_J η = 0`, `(J u) ⌟ η = J (u ⌟ η)`. -/
+theorem twoVectorContraction_apply_apply_of_lieMap_eq_zero {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {η : ⋀[ℝ]^2 V}
+    (hη : exteriorPower.lieMap 2 J.toLinearMap η = 0) (u : V) :
+    twoVectorContraction η (J u) = J (twoVectorContraction η u) := by
+  have h := congrArg (⟪·, ιMulti ℝ 2 ![u, ·]⟫) hη
+  refine ext_inner_right ℝ fun w ↦ ?_
+  have hw := congrFun h w
+  simp only [inner_zero_left, inner_lieMap_left (inner_apply_left hJ),
+    exteriorPower.lieMap_two_apply_ιMulti, inner_add_right, neg_add] at hw
+  rw [inner_twoVectorContraction_apply, inner_apply_left hJ, inner_twoVectorContraction_apply]
+  linarith
+
+/-- The Hermitian part of a `J`-invariant two-form: for an orthogonal `J` and `D_J η = 0`, the two
+terms of `B` agree, `B(v, w) = η(v, J w)`. -/
+theorem hermitianForm_apply_of_lieMap_eq_zero {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {η : ⋀[ℝ]^2 V}
+    (hη : exteriorPower.lieMap 2 J.toLinearMap η = 0) (v w : V) :
+    J.hermitianForm η v w = ⟪η, ιMulti ℝ 2 ![v, J w]⟫ := by
+  have h : ⟪η, ιMulti ℝ 2 ![w, J v]⟫ = ⟪η, ιMulti ℝ 2 ![v, J w]⟫ := by
+    rw [← inner_twoVectorContraction_apply, ← inner_twoVectorContraction_apply,
+      inner_twoVectorContraction_apply_left,
+      twoVectorContraction_apply_apply_of_lieMap_eq_zero hJ hη, real_inner_comm _ w,
+      inner_apply_left hJ, neg_neg]
+  rw [hermitianForm_apply, h, add_self_div_two]
 
 /-! ### Dimension four -/
 
@@ -167,34 +192,16 @@ theorem hermitianForm_eq_zero_of_hodgeStar_eq_self_of_inner_eq_zero {η : ⋀[�
 `(J u) ⌟ η = J (u ⌟ η)`. This is the `J`-invariance of anti-self-dual forms. -/
 theorem twoVectorContraction_apply_apply_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V}
     (hη : o.hodgeStar hkl η = -η) (u : V) :
-    twoVectorContraction η (J u) = J (twoVectorContraction η u) := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have h := congrArg (⟪·, ιMulti ℝ 2 ![u, ·]⟫) (lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hη)
-  refine ext_inner_right ℝ fun w ↦ ?_
-  have hw := congrFun h w
-  simp only [inner_zero_left, inner_lieMap_left (inner_apply_left hJ),
-    exteriorPower.lieMap_two_apply_ιMulti, inner_add_right, neg_add] at hw
-  rw [inner_twoVectorContraction_apply, inner_apply_left hJ, inner_twoVectorContraction_apply]
-  linarith
+    twoVectorContraction η (J u) = J (twoVectorContraction η u) :=
+  twoVectorContraction_apply_apply_of_lieMap_eq_zero (inner_apply_apply_of_orthonormalBasis h₀ h₂)
+    (lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hη) u
 
 /-- The Hermitian part of an anti-self-dual two-form: for `⋆η = -η`, the two terms of `B` agree,
 `B(v, w) = η(v, J w)`. -/
 theorem hermitianForm_apply_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η)
-    (v w : V) : J.hermitianForm η v w = ⟪η, ιMulti ℝ 2 ![v, J w]⟫ := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have h : ⟪η, ιMulti ℝ 2 ![w, J v]⟫ = ⟪η, ιMulti ℝ 2 ![v, J w]⟫ := by
-    rw [← inner_twoVectorContraction_apply, ← inner_twoVectorContraction_apply,
-      inner_twoVectorContraction_apply_left,
-      twoVectorContraction_apply_apply_of_hodgeStar_eq_neg h₀ h₂ hkl he hη, real_inner_comm _ w,
-      inner_apply_left hJ, neg_neg]
-  rw [hermitianForm_apply, h, add_self_div_two]
-
-omit h₀ h₂ he in
-/-- The part `F⁻ = (F - ⋆F) / 2` of a two-form is anti-self-dual. -/
-private theorem hodgeStar_smul_sub_hodgeStar (F : ⋀[ℝ]^2 V) :
-    o.hodgeStar hkl ((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) =
-      -((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) := by
-  rw [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even even_two hkl, ← smul_neg, neg_sub]
+    (v w : V) : J.hermitianForm η v w = ⟪η, ιMulti ℝ 2 ![v, J w]⟫ :=
+  hermitianForm_apply_of_lieMap_eq_zero (inner_apply_apply_of_orthonormalBasis h₀ h₂)
+    (lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hη) v w
 
 /-- **The Hermitian part splits into a multiple of the metric and an anti-self-dual part**:
 `B(v, w) = c ⟪v, w⟫ + F⁻(v, J w)` with `c = ⟪ω, F⟫ / 2` and `F⁻ = (F - ⋆F) / 2`. The
@@ -202,10 +209,6 @@ anti-`J`-invariant self-dual part of `F` does not contribute. -/
 theorem hermitianForm_apply_eq (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = ⟪J.kahlerForm, F⟫ / 2 * ⟪v, w⟫ +
       ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J w]⟫ := by
-  have hstar := o.hodgeStar_hodgeStar_of_even even_two hkl F
-  have hplus : o.hodgeStar hkl ((2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)) =
-      (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) := by
-    rw [map_smul, map_add, hstar, add_comm]
   -- `⟪ω, ⋆F⟫ = ⟪⋆ω, F⟫ = ⟪ω, F⟫`, so the self-dual part of `F` has the same `ω`-component.
   have hω : ⟪J.kahlerForm, o.hodgeStar hkl F⟫ = ⟪J.kahlerForm, F⟫ := by
     have h := o.isSymmetric_hodgeStar_of_even even_two hkl J.kahlerForm F
@@ -215,8 +218,10 @@ theorem hermitianForm_apply_eq (F : ⋀[ℝ]^2 V) (v w : V) :
     module
   conv_lhs => rw [hF]
   rw [map_add, LinearMap.add_apply, LinearMap.add_apply,
-    hermitianForm_apply_of_hodgeStar_eq_self h₀ h₂ hkl he hplus,
-    hermitianForm_apply_of_hodgeStar_eq_neg h₀ h₂ hkl he (hodgeStar_smul_sub_hodgeStar hkl F),
+    hermitianForm_apply_of_hodgeStar_eq_self h₀ h₂ hkl he
+      (o.hodgeStar_smul_add_hodgeStar even_two hkl F),
+    hermitianForm_apply_of_hodgeStar_eq_neg h₀ h₂ hkl he
+      (o.hodgeStar_smul_sub_hodgeStar even_two hkl F),
     real_inner_smul_right, inner_add_right, hω]
   ring
 
@@ -288,7 +293,7 @@ theorem abs_hermitianForm_apply_self_sub_le (F : ⋀[ℝ]^2 V) (v : V) :
     |J.hermitianForm F v v - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2| ≤
       ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2 * ‖v‖ ^ 2 := by
   rw [hermitianForm_apply_eq h₀ h₂ hkl he, real_inner_self_eq_norm_sq, add_sub_cancel_left]
-  exact abs_inner_ιMulti_apply_le h₀ h₂ hkl (hodgeStar_smul_sub_hodgeStar hkl F) v
+  exact abs_inner_ιMulti_apply_le h₀ h₂ hkl (o.hodgeStar_smul_sub_hodgeStar even_two hkl F) v
 
 /-- **The smallest eigenvalue of the Hermitian part**: on the unit sphere, the minimum of
 `B(v, v)` is `c - ‖F⁻‖ / √2`, where `c = ⟪ω, F⟫ / 2` and `F⁻ = (F - ⋆F) / 2`. -/
@@ -297,7 +302,7 @@ theorem isLeast_hermitianForm_apply_self (F : ⋀[ℝ]^2 V) :
       (⟪J.kahlerForm, F⟫ / 2 - ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2) := by
   refine ⟨?_, ?_⟩
   · obtain ⟨v, hv, hv'⟩ := exists_norm_eq_one_inner_ιMulti_apply_eq_neg h₀ h₂ hkl he
-      (hodgeStar_smul_sub_hodgeStar hkl F)
+      (o.hodgeStar_smul_sub_hodgeStar even_two hkl F)
     refine ⟨v, mem_sphere_zero_iff_norm.2 hv, ?_⟩
     dsimp only
     rw [hermitianForm_apply_eq h₀ h₂ hkl he, real_inner_self_eq_norm_sq, hv, hv']
@@ -315,7 +320,7 @@ theorem isGreatest_hermitianForm_apply_self (F : ⋀[ℝ]^2 V) :
   refine ⟨?_, ?_⟩
   · have hneg : o.hodgeStar hkl (-((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F))) =
         -(-((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F))) := by
-      rw [map_neg, hodgeStar_smul_sub_hodgeStar hkl F]
+      rw [map_neg, o.hodgeStar_smul_sub_hodgeStar even_two hkl F]
     obtain ⟨v, hv, hv'⟩ := exists_norm_eq_one_inner_ιMulti_apply_eq_neg h₀ h₂ hkl he hneg
     rw [inner_neg_left, norm_neg, neg_inj] at hv'
     refine ⟨v, mem_sphere_zero_iff_norm.2 hv, ?_⟩
