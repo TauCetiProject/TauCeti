@@ -15,10 +15,9 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 The Frobenius and numbered lattice symmetries act on the entire group of points of a Kostant
 toral closure. This file computes their character maps on its represented weight torus:
 Frobenius pulls a character back to its `p ^ k` multiple, and a symmetry with torus permutation
-`σ` pulls it back by precomposition with `σ`. Thus the latter action is inverse to the action
-on the fundamental weights induced by moving the numbered simple roots by `σ`.
+`τ` pulls it back by precomposition with `τ`.
 
-These statements use the existing `kostantToralWeightTorusPoints`, `kostantToralFrobenius`
+These statements use `kostantToralWeightTorusPoints`, `kostantToralFrobenius`
 and `kostantNumberedSymmetryPoints`. They do not require generation by root subgroups or a
 monomial action on the weight basis. The torus parametrization need not be faithful.
 
