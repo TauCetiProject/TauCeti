@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.TotallyReal
+public import TauCeti.Geometry.Manifold.Complex.TotallyReal.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 public import Mathlib.Geometry.Manifold.Instances.Sphere
@@ -65,19 +65,6 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
   rw [LinearMap.finrank_range_of_inj hinj]
   simp [Module.finrank_pi_fintype, Nat.mul_comm]
 
-private theorem isLagrangian_complex_line {L : Submodule ℝ ℂ}
-    (hL : finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L := by
-  have hne : L ≠ ⊥ := by
-    intro h
-    have hz : finrank ℝ L = 0 := Submodule.finrank_eq_zero.2 h
-    omega
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-  have hs := eq_span_singleton_of_mem_of_finrank_eq_one hL hv hv0
-  have hi : stdComplexSymplecticForm.IsIsotropic L := by
-    rw [hs, SymplecticForm.isIsotropic_span_iff]
-    simpa only [Set.mem_singleton_iff, forall_eq] using stdComplexSymplecticForm.isAlt v
-  exact hi.isLagrangian_of_finrank (by simp [hL])
-
 attribute [local instance] finrank_real_complex_fact'
 
 private theorem isTotallyRealEmbedding_sphere (n : ℕ∞ω) :
@@ -101,7 +88,7 @@ private theorem isTotallyRealEmbedding_sphere (n : ℕ∞ω) :
       rw [LinearMap.finrank_range_of_inj hi, finrank_tangentSpace]
       simp
     rw [AlmostComplexStructure.constSmooth_almostComplexStructureAt]
-    exact (isLagrangian_complex_line hd).isMaximalTotallyReal_of_tames
+    exact (isLagrangian_stdComplexSymplecticForm_of_finrank_eq_one hd).isMaximalTotallyReal_of_tames
       stdComplexSymplecticForm_tames
   have he : IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) ω
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
@@ -115,6 +102,9 @@ theorem isTotallyRealEmbedding_circle (n : ℕ∞ω) :
     IsTotallyRealEmbedding (𝓡 1) 𝓘(ℝ, ℂ) n
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
       (fun z : Circle ↦ (z : ℂ)) := by
+  -- Mathlib defines `Circle` and its charted-space instance using the unit sphere.
+  -- The subtype, inclusion, topology and charts agree definitionally with those above,
+  -- so their manifold derivatives agree as well.
   exact isTotallyRealEmbedding_sphere n
 
 /-- A real line in complex dimension two fails the required half-dimensionality. -/

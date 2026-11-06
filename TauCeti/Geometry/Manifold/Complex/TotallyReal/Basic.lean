@@ -171,12 +171,14 @@ theorem isTotallyRealEmbedding_congr {B : ∀ y : M, AlmostComplexStructure (Tan
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- Negating the almost complex field preserves and reflects maximal total reality. -/
+@[simp]
 theorem isMaximalTotallyRealMap_neg_iff :
     IsMaximalTotallyRealMap I' I (fun y ↦ -A y) f ↔ IsMaximalTotallyRealMap I' I A f := by
   simp only [isMaximalTotallyRealMap_iff, AlmostComplexStructure.neg_toLinearMap,
     isMaximalTotallyReal_iff, Submodule.map_neg]
 
 /-- Totally real embeddings are independent of the sign of the almost complex field. -/
+@[simp]
 theorem isTotallyRealEmbedding_neg_iff :
     IsTotallyRealEmbedding I' I n (fun y ↦ -A y) f ↔ IsTotallyRealEmbedding I' I n A f := by
   constructor <;> intro h
@@ -231,40 +233,41 @@ section Lagrangian
 variable [IsManifold I ∞ M] {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate}
 
 omit [FiniteDimensional ℝ F] in
-/-- A Lagrangian tangent image is maximal totally real for every pointwise tame structure.
+/-- A Lagrangian tangent image is maximal totally real for every pointwise structure
+tame along the image.
 Neither the field of almost complex structures nor its dependence on the base point needs
 to be smooth. -/
 theorem SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isMaximalTotallyRealMap_of_tames
     (h : hσ.IsLagrangianMap I' f)
-    (htame : ∀ y, (hσ.symplecticFormAt y).Tames (A y)) :
+    (htame : ∀ x, (hσ.symplecticFormAt (f x)).Tames (A (f x))) :
     IsMaximalTotallyRealMap I' I A f := by
   rw [isMaximalTotallyRealMap_iff]
   intro x
   have hx := (SmoothTwoForm.IsNondegenerate.isLagrangianMap_iff_forall).1 h x
-  exact hx.isMaximalTotallyReal_of_tames (htame (f x))
+  exact hx.isMaximalTotallyReal_of_tames (htame x)
 
 /-- A half-dimensional `C^n` embedding with Lagrangian tangent images is totally real for
-any pointwise tame field. This comparison allows arbitrary finite embedding regularity. -/
+any pointwise field tame along the image. This allows arbitrary finite embedding regularity. -/
 theorem SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isTotallyRealEmbedding
     (h : hσ.IsLagrangianMap I' f) (hf : Manifold.IsSmoothEmbedding I' I n f)
     (hdim : 2 * finrank ℝ F = finrank ℝ E)
-    (htame : ∀ y, (hσ.symplecticFormAt y).Tames (A y)) :
+    (htame : ∀ x, (hσ.symplecticFormAt (f x)).Tames (A (f x))) :
     IsTotallyRealEmbedding I' I n A f :=
   ⟨hf, hdim, h.isMaximalTotallyRealMap_of_tames htame⟩
 
-/-- A half-dimensional Lagrangian embedding is totally real for every pointwise tame
-almost complex structure. The explicit dimension hypothesis also handles empty sources. -/
+/-- A half-dimensional Lagrangian embedding is totally real for every pointwise almost complex
+structure tame along the image. The explicit dimension hypothesis also handles empty sources. -/
 theorem SmoothTwoForm.IsNondegenerate.IsLagrangianEmbedding.isTotallyRealEmbedding_of_finrank
     (h : hσ.IsLagrangianEmbedding I' f) (hdim : 2 * finrank ℝ F = finrank ℝ E)
-    (htame : ∀ y, (hσ.symplecticFormAt y).Tames (A y)) :
+    (htame : ∀ x, (hσ.symplecticFormAt (f x)).Tames (A (f x))) :
     IsTotallyRealEmbedding I' I ∞ A f :=
   h.isLagrangianMap.isTotallyRealEmbedding h.isSmoothEmbedding hdim htame
 
-/-- On a nonempty source, a Lagrangian embedding is totally real for every pointwise tame
-almost complex field, without a separate dimension hypothesis. -/
+/-- On a nonempty source, a Lagrangian embedding is totally real for every pointwise almost complex
+field tame along the image, without a separate dimension hypothesis. -/
 theorem SmoothTwoForm.IsNondegenerate.IsLagrangianEmbedding.isTotallyRealEmbedding_of_tames
     [Nonempty N] (h : hσ.IsLagrangianEmbedding I' f)
-    (htame : ∀ y, (hσ.symplecticFormAt y).Tames (A y)) :
+    (htame : ∀ x, (hσ.symplecticFormAt (f x)).Tames (A (f x))) :
     IsTotallyRealEmbedding I' I ∞ A f :=
   h.isTotallyRealEmbedding_of_finrank
     (h.isLagrangianMap.two_mul_finrank
@@ -275,7 +278,7 @@ theorem SmoothTwoForm.IsNondegenerate.IsLagrangianEmbedding.isTotallyRealEmbeddi
     [Nonempty N] (h : hσ.IsLagrangianEmbedding I' f) {J : SmoothAlmostComplexStructure I M}
     (htame : σ.Tames J) :
     IsTotallyRealEmbedding I' I ∞ J.almostComplexStructureAt f :=
-  h.isTotallyRealEmbedding_of_tames (hσ.tames_iff.1 htame)
+  h.isTotallyRealEmbedding_of_tames (fun x ↦ hσ.tames_iff.1 htame (f x))
 
 end Lagrangian
 
