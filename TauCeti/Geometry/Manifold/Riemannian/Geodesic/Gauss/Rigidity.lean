@@ -135,22 +135,20 @@ private theorem continuousOn_norm_curveVelocityWithin_riemannianExp_comp
   (contMDiffOn_riemannianExp_comp h hw hdom).continuousOn_norm_curveVelocityWithin
     (uniqueMDiffOn_iff_uniqueDiffOn.2 (uniqueDiffOn_Icc hcd))
 
-/-- **The logarithm of a minimizer moves radially.** For a `C¹` path `w` in a normal domain whose
-norm grows exactly by the arc length of `exp_p ∘ w`, the derivative of `w` at an interior time
-where `w` does not vanish is a nonnegative multiple of `w` itself. -/
-private theorem hasDerivAt_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
+/-- **The radial identity for a minimizer.** For a `C¹` path `w` in a normal domain whose norm grows
+exactly by the arc length of `exp_p ∘ w`, at an interior time the inner product of `w` with its
+derivative is `‖w‖` times the speed of `exp_p ∘ w`. -/
+private theorem inner_deriv_eq_norm_mul_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
     {w : ℝ → TangentSpace I p} {c d : ℝ} (hw : ContDiffOn ℝ 1 w (Icc c d))
     (hdom : MapsTo w (Icc c d) U)
     (hr : ∀ t ∈ Icc c d, ‖w t‖ = ‖w c‖ + ∫ u in c..t,
       ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖)
-    {t : ℝ} (ht : t ∈ Ioo c d) (hwt : w t ≠ 0) :
-    HasDerivAt w ((‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) t‖ / ‖w t‖) • w t)
-      t := by
+    {t : ℝ} (ht : t ∈ Ioo c d) :
+    inner ℝ (w t) (deriv w t) =
+      ‖w t‖ * ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) t‖ := by
   set σ : ℝ → ℝ := fun u ↦ ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖
-    with hσ_def
   have htIcc : t ∈ Icc c d := Ioo_subset_Icc_self ht
   have hN : Icc c d ∈ 𝓝 t := Icc_mem_nhds ht.1 ht.2
-  have hdomt : w t ∈ expDomain I M p := h.subset_expDomain (hdom htIcc)
   have hσ : ContinuousOn σ (Icc c d) :=
     continuousOn_norm_curveVelocityWithin_riemannianExp_comp h (ht.1.trans ht.2) hw hdom
   -- the derivative of `w` at `t`
@@ -174,9 +172,29 @@ private theorem hasDerivAt_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
     · rw [← hr t htIcc]
       push_cast
       ring
-  have hkey : inner ℝ (w t) (deriv w t) = ‖w t‖ * σ t := by
-    have := hQ.unique hQ'
-    linarith
+  have := hQ.unique hQ'
+  linarith
+
+/-- **The logarithm of a minimizer moves radially.** For a `C¹` path `w` in a normal domain whose
+norm grows exactly by the arc length of `exp_p ∘ w`, the derivative of `w` at an interior time
+where `w` does not vanish is a nonnegative multiple of `w` itself. -/
+private theorem hasDerivAt_of_norm_eq_add_integral (h : IsNormalDomain I M p U)
+    {w : ℝ → TangentSpace I p} {c d : ℝ} (hw : ContDiffOn ℝ 1 w (Icc c d))
+    (hdom : MapsTo w (Icc c d) U)
+    (hr : ∀ t ∈ Icc c d, ‖w t‖ = ‖w c‖ + ∫ u in c..t,
+      ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖)
+    {t : ℝ} (ht : t ∈ Ioo c d) (hwt : w t ≠ 0) :
+    HasDerivAt w ((‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) t‖ / ‖w t‖) • w t)
+      t := by
+  set σ : ℝ → ℝ := fun u ↦ ‖curveVelocityWithin I (riemannianExp I M p ∘ w) (Icc c d) u‖
+    with hσ_def
+  have htIcc : t ∈ Icc c d := Ioo_subset_Icc_self ht
+  have hN : Icc c d ∈ 𝓝 t := Icc_mem_nhds ht.1 ht.2
+  have hdomt : w t ∈ expDomain I M p := h.subset_expDomain (hdom htIcc)
+  have hwt' : HasDerivAt w (deriv w t) t :=
+    (((hw t htIcc).contDiffAt hN).differentiableAt one_ne_zero).hasDerivAt
+  have hkey : inner ℝ (w t) (deriv w t) = ‖w t‖ * σ t :=
+    inner_deriv_eq_norm_mul_of_norm_eq_add_integral h hw hdom hr ht
   -- the speed of `exp_p ∘ w` at `t` is the differential of `exp_p` applied to `w'`
   have hspeed : σ t =
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t) (deriv w t)‖ := by
