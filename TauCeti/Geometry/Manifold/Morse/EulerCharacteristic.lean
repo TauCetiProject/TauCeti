@@ -5,49 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
+public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Algebra.Field.ULift
-import Mathlib.Data.ENat.BigOperators
-import TauCeti.AlgebraicTopology.Singular.Sphere
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
-# The Euler characteristic and the parity of critical counts
+# Euler characteristics from Morse functions
 
-Let `M` be a compact boundaryless manifold of dimension `m`, and write `cᵢ(f)` for the number of
-critical points of index `i` of a Morse function `f` on `M`. Euler's equality
-(`TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_eq`) identifies the
-alternating sum `c₀(f) - c₁(f) + ⋯ ± cₘ(f)` with the Euler characteristic
-`χ(M; k) = b₀ - b₁ + ⋯ ± bₘ` of `M`, where `bᵢ` is the dimension of `Hᵢ(M; k)` over a field `k`.
-This file draws the numerical consequences.
+Let `M` be a compact boundaryless manifold of dimension `m` and `V` a finite-dimensional module
+over a division ring `k`. Write `χ(M; V) = ∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; V)` for any `n ≥ m`. Euler's
+equality (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_eq`) computes
+`χ(M; V)` as `dim V` times the signed count `∑ᵢ (-1)ⁱ cᵢ(f)` of the critical points of any Morse
+function `f`. This file draws the classical consequences of that identity.
 
-* The alternating sum of the critical counts is the same for every Morse function on `M`.
-* The number of critical points of a Morse function has the parity of `χ(M; k)`, since `cᵢ` and
-  `(-1)ⁱ cᵢ` have the same parity.
-* If `m` is odd, then `χ(M; k) = 0`. Replacing `f` by `-f` exchanges `cᵢ` and `cₘ₋ᵢ`
-  (`TauCeti.IsMorse.criticalCount_neg`), which multiplies the alternating sum by `(-1)ᵐ = -1`;
-  as both alternating sums are `χ(M; k)`, it vanishes. Every compact manifold carries a Morse
-  function (`TauCeti.exists_isMorse`), so the statement involves no Morse function. In
-  particular a Morse function on a closed odd-dimensional manifold has an even number of critical
-  points.
-* A Morse function on the sphere `Sⁿ` has an even number of critical points, since
-  `χ(Sⁿ; k) = 1 + (-1)ⁿ`.
+The signed count is the sum of `(-1)^λ` over the critical points, `λ` being the Morse index
+(`TauCeti.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum`). Since the indices of `f` and
+`-f` at a critical point add up to `m`, the signed counts of `f` and `-f` differ by the factor
+`(-1)ᵐ` (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg`). Applying Euler's
+equality to both `f` and `-f`, for a Morse function which exists on every compact manifold
+(`TauCeti.exists_isMorse`), gives `χ(M; V) = -χ(M; V)` when `m` is odd:
 
-## Main results
+* a compact boundaryless manifold of odd dimension has Euler characteristic `0`
+  (`TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_eq_zero_of_odd`).
 
-* `TauCeti.IsMorse.sum_range_neg_one_pow_mul_criticalCount_eq`: the alternating count of critical
-  points does not depend on the Morse function.
-* `TauCeti.IsMorse.totalCriticalCount_modEq_sum_range_neg_one_pow_mul_finrank_singularHomology`:
-  the number of critical points is congruent to the Euler characteristic modulo `2`.
-* `TauCeti.IsMorse.sum_range_neg_one_pow_mul_criticalCount_eq_zero` and
-  `TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_eq_zero`: in odd dimension the
-  alternating count of critical points and the Euler characteristic vanish.
-* `TauCeti.IsMorse.even_totalCriticalCount_of_odd_finrank`: in odd dimension a Morse function has
-  an even number of critical points.
-* `TauCeti.IsMorse.even_totalCriticalCount_sphere`: a Morse function on a sphere has an even
-  number of critical points.
+Comparing Euler's equality for two Morse functions shows that the signed count is the same for
+every Morse function on `M` (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq`);
+in odd dimension it vanishes
+(`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_zero`).
+
+Since `(-1)^λ ≡ 1` modulo `2`, the signed count has the parity of the number of critical points:
+
+* `χ(M; V) ≡ dim V · #Crit(f)` modulo `2` for every Morse function `f`
+  (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq`), so any two Morse
+  functions on `M` have numbers of critical points of the same parity
+  (`TauCeti.IsMorse.toNat_totalCriticalCount_modEq`). In odd dimension the number of critical
+  points of a Morse function is even
+  (`TauCeti.IsMorse.even_toNat_totalCriticalCount_of_odd_finrank`).
+
+On the sphere `Sⁿ` the height function has a minimum and a maximum and no other critical point.
+Hence every Morse function on `Sⁿ` has an even number of critical points
+(`TauCeti.IsMorse.even_toNat_totalCriticalCount_sphere`).
+
+The counts are the natural-number values `(criticalCount I f i).toNat`, which are the actual
+numbers of critical points whenever the critical set is finite, in particular for a Morse function
+on a compact manifold.
 
 ## References
 
@@ -59,158 +62,126 @@ public section
 
 noncomputable section
 
-open Module Set
+open Metric Module Set
 open scoped ContDiff Manifold
 
 universe u
 
 namespace TauCeti
 
-section General
-
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  {f g : M → ℝ}
+  {f : M → ℝ}
 
-/-- The alternating count of critical points may be summed up to any degree `n ≥ dim M`. -/
-private theorem sum_range_neg_one_pow_mul_criticalCount_eq_of_le (f : M → ℝ) {n : ℕ}
-    (hn : finrank ℝ E ≤ n) :
-    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
-      ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
-  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun i _ hi ↦ ?_).symm
-  rw [criticalCount_eq_zero_of_finrank_lt (by simp at hi; omega)]
-  simp
+/-! ### Compact manifolds -/
 
-variable [I.Boundaryless]
+section Compact
 
-/-- Replacing a Morse function `f` by `-f` multiplies the alternating count of critical points by
-`(-1) ^ dim M`, as it exchanges the numbers of critical points of index `i` and `dim M - i`. -/
-private theorem IsMorse.sum_range_neg_one_pow_mul_criticalCount_neg (hf : IsMorse I f) :
-    ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I (-f) i).toNat =
-      (-1 : ℤ) ^ finrank ℝ E *
-        ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
-  rw [← sum_range_neg_one_pow_sub_mul, ← Finset.sum_range_reflect]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have hi : i ≤ finrank ℝ E := Finset.mem_range_succ_iff.1 hi
-  rw [add_tsub_cancel_right, hf.criticalCount_neg (Nat.sub_le _ _), Nat.sub_sub_self hi]
+variable [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
+  {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V]
 
-variable [IsManifold I ∞ M] [CompactSpace M]
-
-/-- The number of critical points of a Morse function on a compact manifold is congruent modulo `2`
-to the alternating count `c₀ - c₁ + ⋯ ± cₙ`, for every `n ≥ dim M`. -/
-private theorem IsMorse.totalCriticalCount_modEq_sum_range_neg_one_pow_mul_criticalCount
-    (hf : IsMorse I f) {n : ℕ} (hn : finrank ℝ E ≤ n) :
-    ((totalCriticalCount I f).toNat : ℤ) ≡
-      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat [ZMOD 2] := by
-  have hsum : (totalCriticalCount I f).toNat =
-      ∑ i ∈ Finset.range (finrank ℝ E + 1), (criticalCount I f i).toNat := by
-    rw [← sum_criticalCount_eq_totalCriticalCount,
-      ENat.toNat_sum fun i _ ↦ hf.criticalCount_ne_top i]
-  rw [sum_range_neg_one_pow_mul_criticalCount_eq_of_le f hn, hsum, Nat.cast_sum]
-  refine (Int.ModEq.sum fun i _ ↦ ?_).symm
-  simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow i).mul_right
-    ((criticalCount I f i).toNat : ℤ)
-
-variable [T2Space M]
-
-section Coefficients
-
-variable (k : Type u) [DivisionRing k]
-
-/-- The alternating count of critical points of a Morse function on a compact manifold is the
-Euler characteristic of `M` with coefficients in a division ring `k`. -/
-private theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_self_eq
-    (hf : IsMorse I f) {n : ℕ} (hn : finrank ℝ E ≤ n) :
-    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
-        finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj
-          (ModuleCat.of k k)).obj (TopCat.of M)) =
-      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
-  simpa using hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq (ModuleCat.of k k) hn
-
-/-- **The alternating count of critical points is independent of the Morse function.** For Morse
-functions `f` and `g` on a compact boundaryless manifold `M`, the alternating sums
-`c₀ - c₁ + ⋯ ± cₙ` of their numbers of critical points of each index agree for every
-`n ≥ dim M`: both are the Euler characteristic of `M`. -/
-theorem IsMorse.sum_range_neg_one_pow_mul_criticalCount_eq (hf : IsMorse I f) (hg : IsMorse I g)
-    {n : ℕ} (hn : finrank ℝ E ≤ n) :
-    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
-      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I g i).toNat := by
-  rw [← hf.sum_range_neg_one_pow_mul_finrank_singularHomology_self_eq (ULift.{u} ℚ) hn,
-    hg.sum_range_neg_one_pow_mul_finrank_singularHomology_self_eq (ULift.{u} ℚ) hn]
-
-/-- **The number of critical points has the parity of the Euler characteristic.** For a Morse
-function `f` on a compact boundaryless manifold `M`, a division ring `k` and every `n ≥ dim M`,
-the number of critical points of `f` is congruent modulo `2` to
-`∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; k)`. -/
-theorem IsMorse.totalCriticalCount_modEq_sum_range_neg_one_pow_mul_finrank_singularHomology
-    (hf : IsMorse I f) {n : ℕ} (hn : finrank ℝ E ≤ n) :
-    ((totalCriticalCount I f).toNat : ℤ) ≡
-      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
-        finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj
-          (ModuleCat.of k k)).obj (TopCat.of M)) [ZMOD 2] := by
-  rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_self_eq k hn]
-  exact hf.totalCriticalCount_modEq_sum_range_neg_one_pow_mul_criticalCount hn
-
-/-- **In odd dimension the alternating count of critical points vanishes.** For a Morse function
-`f` on a compact boundaryless manifold of odd dimension, `c₀ - c₁ + ⋯ ± cₙ = 0` for every
-`n ≥ dim M`, where `cᵢ` is the number of critical points of index `i`. -/
-theorem IsMorse.sum_range_neg_one_pow_mul_criticalCount_eq_zero (hf : IsMorse I f)
-    (hodd : Odd (finrank ℝ E)) {n : ℕ} (hn : finrank ℝ E ≤ n) :
-    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat = 0 := by
-  have h := hf.sum_range_neg_one_pow_mul_criticalCount_eq hf.neg hn
-  rw [sum_range_neg_one_pow_mul_criticalCount_eq_of_le f hn,
-    sum_range_neg_one_pow_mul_criticalCount_eq_of_le (-f) hn,
-    hf.sum_range_neg_one_pow_mul_criticalCount_neg, hodd.neg_one_pow] at h
-  rw [sum_range_neg_one_pow_mul_criticalCount_eq_of_le f hn]
-  linarith
-
-variable (I) {k} in
+variable (I) in
 include I in
-/-- **A closed odd-dimensional manifold has Euler characteristic zero.** For a compact boundaryless
-manifold `M` of odd dimension and a finite-dimensional module `V` over a division ring,
-`∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; V) = 0` for every `n ≥ dim M`. -/
-theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq_zero (V : ModuleCat.{u} k)
-    [Module.Finite k V] (hodd : Odd (finrank ℝ E)) {n : ℕ} (hn : finrank ℝ E ≤ n) :
+/-- **The Euler characteristic of an odd-dimensional manifold vanishes.** For a compact
+boundaryless manifold `M` of odd dimension, `∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; V) = 0` for every `n ≥ dim M`
+and every finite-dimensional module `V` over a division ring. -/
+theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq_zero_of_odd
+    (hodd : Odd (finrank ℝ E)) {n : ℕ} (hn : finrank ℝ E ≤ n) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
         finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj
           (TopCat.of M)) = 0 := by
   obtain ⟨f, hf⟩ := exists_isMorse (I := I) (M := M)
-  rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn,
-    hf.sum_range_neg_one_pow_mul_criticalCount_eq_zero hodd hn, mul_zero]
+  have h := hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn
+  have h' := hf.neg.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn
+  rw [hf.sum_range_neg_one_pow_mul_toNat_criticalCount_neg hn, hodd.neg_one_pow] at h'
+  linarith
 
-end Coefficients
+/-- **Parity of the number of critical points.** For a Morse function `f` on a compact boundaryless
+manifold `M`, the Euler characteristic `∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; V)`, for any `n ≥ dim M`, is congruent
+modulo `2` to `dim V` times the number of critical points of `f`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (hf : IsMorse I f)
+    {n : ℕ} (hn : finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
+        finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj
+          (TopCat.of M)) ≡
+      finrank k V * (totalCriticalCount I f).toNat [ZMOD 2] := by
+  have hfin := hf.finite_criticalPoints
+  rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn,
+    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hfin.toFinset hfin.coe_toFinset hn,
+    totalCriticalCount_def, hfin.encard_eq_coe_toFinset_card, ENat.toNat_natCast,
+    Finset.card_eq_sum_ones]
+  push_cast
+  refine (Int.ModEq.sum fun x _ ↦ ?_).mul_left _
+  simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x))
+
+/-- Any two Morse functions on a compact boundaryless manifold have numbers of critical points of
+the same parity. -/
+theorem IsMorse.toNat_totalCriticalCount_modEq {g : M → ℝ} (hf : IsMorse I f) (hg : IsMorse I g) :
+    (totalCriticalCount I f).toNat ≡ (totalCriticalCount I g).toNat [MOD 2] := by
+  -- Compare both counts with the Euler characteristic with coefficients in a field.
+  let K := ULift.{u} ℚ
+  have h₁ := hf.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (ModuleCat.of K K) le_rfl
+  have h₂ := hg.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (ModuleCat.of K K) le_rfl
+  have hK : finrank K (ModuleCat.of K K) = 1 := finrank_self K
+  rw [hK, Nat.cast_one, one_mul] at h₁ h₂
+  exact Int.natCast_modEq_iff.1 (h₁.symm.trans h₂)
+
+/-- **The signed count of critical points is independent of the Morse function.** For Morse
+functions `f` and `g` on a compact boundaryless manifold `M`, the signed counts `∑ᵢ₌₀ⁿ (-1)ⁱ cᵢ` of
+their critical points agree for every `n ≥ dim M`: both are the Euler characteristic of `M`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq {g : M → ℝ} (hf : IsMorse I f)
+    (hg : IsMorse I g) {n : ℕ} (hn : finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
+      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I g i).toNat := by
+  -- Compare both signed counts with the Euler characteristic with coefficients in a field.
+  let K := ULift.{u} ℚ
+  have h₁ := hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq (ModuleCat.of K K) hn
+  have h₂ := hg.sum_range_neg_one_pow_mul_finrank_singularHomology_eq (ModuleCat.of K K) hn
+  have hK : finrank K (ModuleCat.of K K) = 1 := finrank_self K
+  rw [hK, Nat.cast_one, one_mul] at h₁ h₂
+  exact h₁.symm.trans h₂
+
+/-- **In odd dimension the signed count of critical points vanishes.** For a Morse function `f` on
+a compact boundaryless manifold of odd dimension, `∑ᵢ₌₀ⁿ (-1)ⁱ cᵢ = 0` for every `n ≥ dim M`,
+where `cᵢ` is the number of critical points of index `i`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_zero (hf : IsMorse I f)
+    (hodd : Odd (finrank ℝ E)) {n : ℕ} (hn : finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat = 0 := by
+  have h := hf.neg.sum_range_neg_one_pow_mul_toNat_criticalCount_eq hf hn
+  rw [hf.sum_range_neg_one_pow_mul_toNat_criticalCount_neg hn, hodd.neg_one_pow] at h
+  linarith
 
 /-- **In odd dimension a Morse function has an even number of critical points.** -/
-theorem IsMorse.even_totalCriticalCount_of_odd_finrank (hf : IsMorse I f)
+theorem IsMorse.even_toNat_totalCriticalCount_of_odd_finrank (hf : IsMorse I f)
     (hodd : Odd (finrank ℝ E)) : Even (totalCriticalCount I f).toNat := by
-  have h := hf.totalCriticalCount_modEq_sum_range_neg_one_pow_mul_criticalCount le_rfl
-  rw [hf.sum_range_neg_one_pow_mul_criticalCount_eq_zero hodd le_rfl] at h
-  exact (Int.even_natCast _).1 (Int.even_iff.2 h)
+  let K := ULift.{u} ℚ
+  have h := hf.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (ModuleCat.of K K) le_rfl
+  have hK : finrank K (ModuleCat.of K K) = 1 := finrank_self K
+  rw [sum_range_neg_one_pow_mul_finrank_singularHomology_eq_zero_of_odd I _ hodd le_rfl, hK,
+    Nat.cast_one, one_mul] at h
+  exact (Int.even_natCast _).1 (Int.even_iff.2 h.symm)
 
-end General
+end Compact
+
+/-! ### Spheres -/
 
 section Sphere
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (finrank ℝ E = n + 1)] {f : Metric.sphere (0 : E) 1 → ℝ}
+  [Fact (finrank ℝ E = n + 1)]
 
-/-- **A Morse function on a sphere has an even number of critical points.** The Euler
-characteristic of `Sⁿ` is `1 + (-1)ⁿ`, which is even. -/
-theorem IsMorse.even_totalCriticalCount_sphere (hf : IsMorse (𝓡 n) f) :
-    Even (totalCriticalCount (𝓡 n) f).toNat := by
+/-- **Morse functions on a sphere have an even number of critical points.** -/
+theorem IsMorse.even_toNat_totalCriticalCount_sphere {f : sphere (0 : E) 1 → ℝ}
+    (hf : IsMorse (𝓡 n) f) : Even (totalCriticalCount (𝓡 n) f).toNat := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  have h := hf.totalCriticalCount_modEq_sum_range_neg_one_pow_mul_finrank_singularHomology
-    (ULift.{u} ℚ) (n := n) (by simp)
-  have hχ : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
-      finrank (ULift.{u} ℚ) (((AlgebraicTopology.singularHomologyFunctor
-        (ModuleCat.{u} (ULift.{u} ℚ)) i).obj (ModuleCat.of (ULift.{u} ℚ) (ULift.{u} ℚ))).obj
-          (TopCat.of (Metric.sphere (0 : E) 1))) = (-1) ^ n + 1 := by
-    simp [ModuleCat.finrank_singularHomology_sphere_of_finrank_eq _
-      (Fact.out : finrank ℝ E = n + 1), mul_add, Finset.sum_add_distrib]
-  rw [hχ] at h
-  have h1 : (-1 : ℤ) ^ n + 1 ≡ 0 [ZMOD 2] :=
-    (((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow n).add_right 1).trans (by simp)
-  exact (Int.even_natCast _).1 (Int.even_iff.2 (h.trans h1))
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
+  obtain ⟨v⟩ := NormedSpace.sphere_nonempty_rclike ℝ (E := E) zero_le_one
+  have h₂ : totalCriticalCount (𝓡 n) (sphereHeight v) = 2 := by
+    rw [totalCriticalCount_def, criticalPoints_sphereHeight,
+      encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
+  have h := hf.toNat_totalCriticalCount_modEq (isMorse_sphereHeight v)
+  rw [h₂] at h
+  exact Nat.even_iff.2 h
 
 end Sphere
 

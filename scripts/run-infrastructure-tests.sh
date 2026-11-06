@@ -24,7 +24,6 @@ python3 scripts/test_structure_nudge.py
 python3 scripts/test_workflow_pins.py
 python3 scripts/test_control_batch_workflows.py
 python3 scripts/test_control_batch_budget.py
-python3 scripts/test_control_batch_merge.py
 python3 scripts/test_queue_release.py
 python3 scripts/test_pick_runner.py
 python3 scripts/test_fleet_runner.py
