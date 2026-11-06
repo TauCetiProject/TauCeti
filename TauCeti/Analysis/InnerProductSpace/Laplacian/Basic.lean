@@ -11,6 +11,8 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -81,6 +83,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
   directional derivatives along an orthonormal basis.
+* `ContDiffAt.laplacian_fderiv_apply`: for a `C³` function the Laplacian commutes with
+  directional derivatives, `Δ (y ↦ Df(y) v) = D(Δ f)(·) v`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
@@ -177,6 +181,39 @@ theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [iteratedFDeriv_two_apply, fderiv_clm_apply hf (differentiableAt_const _)]
   simp
+
+open Filter Topology in
+/-- **The Laplacian commutes with directional derivatives.** If `f` is `C³` at `x`, then the
+Laplacian of the directional derivative `y ↦ Df(y) v` at `x` is the derivative of `Δ f` at `x`
+along `v`. -/
+theorem _root_.ContDiffAt.laplacian_fderiv_apply {f : E → F} {x : E} (hf : ContDiffAt ℝ 3 f x)
+    (v : E) : Δ (fun y ↦ fderiv ℝ f y v) x = fderiv ℝ (Δ f) x v := by
+  set b := stdOrthonormalBasis ℝ E
+  -- Directional derivatives of `f` are `C²` at `x`, and their derivatives are `C¹` there.
+  have hdir : ∀ u, ContDiffAt ℝ 2 (fun z ↦ fderiv ℝ f z u) x := fun u ↦
+    (hf.fderiv_right (m := 2) (by norm_num)).clm_apply contDiffAt_const
+  have hdir' : ∀ u w, DifferentiableAt ℝ (fun y ↦ fderiv ℝ (fun z ↦ fderiv ℝ f z u) y w) x :=
+    fun u w ↦ (((hdir u).fderiv_right (m := 1) (by norm_num)).clm_apply
+      contDiffAt_const).differentiableAt (by norm_num)
+  -- Near `x`, the order of two directional derivatives of `f` can be exchanged.
+  have hswap : ∀ u w, (fun y ↦ fderiv ℝ (fun z ↦ fderiv ℝ f z u) y w) =ᶠ[𝓝 x]
+      fun y ↦ fderiv ℝ (fun z ↦ fderiv ℝ f z w) y u := fun u w ↦ by
+    filter_upwards [hf.eventually (by simp)] with y hy
+    have hd := (hy.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num)
+    rw [fderiv_clm_apply_const_apply hd, fderiv_clm_apply_const_apply hd]
+    exact hy.isSymmSndFDerivAt (by norm_num) w u
+  -- Near `x`, the Laplacian of `f` is the sum of its second directional derivatives.
+  have hΔ : Δ f =ᶠ[𝓝 x] fun y ↦ ∑ i, fderiv ℝ (fun z ↦ fderiv ℝ f z (b i)) y (b i) := by
+    filter_upwards [hf.eventually (by simp)] with y hy
+    exact laplacian_eq_sum_fderiv_fderiv_apply b
+      ((hy.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num))
+  rw [laplacian_eq_sum_fderiv_fderiv_apply b (((hdir v).fderiv_right (m := 1)
+      (by norm_num)).differentiableAt (by norm_num)), hΔ.fderiv_eq,
+    fderiv_fun_sum fun i _ ↦ hdir' (b i) (b i), sum_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hd := ((hdir (b i)).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [(hswap v (b i)).fderiv_eq, fderiv_clm_apply_const_apply hd, fderiv_clm_apply_const_apply hd]
+  exact (hdir (b i)).isSymmSndFDerivAt (by norm_num) (b i) v
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 /-- Scalar dilation as a continuous linear equivalence. -/

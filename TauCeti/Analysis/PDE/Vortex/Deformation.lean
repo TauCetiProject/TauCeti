@@ -18,7 +18,10 @@ Fields take values in `EuclideanSpace ℝ (Fin 4)` and equation defects in
 `EuclideanSpace ℝ (Fin 3)`, with these Euclidean coefficient norms.
 `equation x` has three real components: the defect in
 `*iF_a = (1 - |α|²) / 8` and the real and imaginary parts of `∂bar_a α`.
-The convention is `∂bar_a α = (∇₁α + i ∇₂α) / 2`, with `∇ = d + a`.
+The convention is `∂bar_a α = (∇₁α + i ∇₂α) / 2`, with `∇ = d + a`. In terms of the complex rows
+`E₁, E₂` of `equation x`, `∇₂α - i ∇₁α = 2 (E₂ - i E₁)`
+(`covariantDerivative_I_sub_I_mul_covariantDerivative_one`), so at a solution `d_a α` is complex
+linear.
 `phaseGauge` realizes the action of `exp (i f)`; its composition law holds for
 differentiable phases, and its first variation requires no phase regularity.
 Covariance of the equation requires `C²` phases. Where the section does not vanish,
@@ -191,6 +194,72 @@ theorem curvature_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)
   have h := congrArg (· 0) hsol
   simp only [equation_apply_zero, PiLp.zero_apply] at h
   linarith
+
+/-- The squared modulus of the covariant derivative in the real field coordinates:
+`|∇_v α|² = 4 ((∂_v p - b(v) q)² + (∂_v q + b(v) p)²)`. -/
+theorem sq_norm_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (v : ℂ) :
+    ‖covariantDerivative x z v‖ ^ 2 =
+      4 * ((fderiv ℝ (fun w ↦ x w 2) z v - (x z 0 * v.re + x z 1 * v.im) * x z 3) ^ 2 +
+        (fderiv ℝ (fun w ↦ x w 3) z v + (x z 0 * v.re + x z 1 * v.im) * x z 2) ^ 2) := by
+  have hcastp := (ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt).fderiv
+  have hcastq := (ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt).fderiv
+  simp only [Function.comp_def, ofRealCLM_apply] at hcastp hcastq
+  simp (disch := fun_prop) only [covariantDerivative_apply, funext (sectionValue_apply x),
+    fderiv_const_mul, fderiv_fun_add, fderiv_mul_const, hcastp, hcastq, smul_apply, add_apply,
+    ContinuousLinearMap.comp_apply, ofRealCLM_apply, smul_eq_mul, Complex.sq_norm,
+    Complex.normSq_apply]
+  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  ring
+
+/-- The covariant derivative of a field with continuous connection and `C¹` section is
+continuous. -/
+theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hb₁ : Continuous fun w ↦ x w 0) (hb₂ : Continuous fun w ↦ x w 1)
+    (hp : ContDiff ℝ 1 fun w ↦ x w 2) (hq : ContDiff ℝ 1 fun w ↦ x w 3) (v : ℂ) :
+    Continuous fun z ↦ covariantDerivative x z v := by
+  have hsec : ContDiff ℝ 1 (sectionValue x) := by
+    rw [funext (sectionValue_apply x)]
+    exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
+      ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
+  have hb : Continuous fun z ↦ ((x z 0 * v.re + x z 1 * v.im : ℝ) : ℂ) :=
+    continuous_ofReal.comp ((hb₁.mul continuous_const).add (hb₂.mul continuous_const))
+  exact (((hsec.continuous_fderiv one_ne_zero).clm_apply continuous_const).add
+    ((continuous_const.mul hb).mul hsec.continuous)).congr
+      fun z ↦ (covariantDerivative_apply x z v).symm
+
+/-- The complex-equation rows measure the failure of complex linearity of `d_a α`:
+`∇₂α - i ∇₁α = 2 (E₂ - i E₁)`, where `E₁ = equation x z 1` and `E₂ = equation x z 2`. Thus
+`∂bar_a α = 0` at `z` exactly when `∇₂α = i ∇₁α` there. -/
+theorem covariantDerivative_I_sub_I_mul_covariantDerivative_one
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    covariantDerivative x z I - I * covariantDerivative x z 1 =
+      2 * ((equation x z 2 : ℂ) - I * (equation x z 1 : ℂ)) := by
+  have hcastp := (ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt).fderiv
+  have hcastq := (ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt).fderiv
+  simp only [Function.comp_def, ofRealCLM_apply] at hcastp hcastq
+  simp (disch := fun_prop) only [covariantDerivative_apply, funext (sectionValue_apply x),
+    equation_apply_one, equation_apply_two, fderiv_const_mul, fderiv_fun_add, fderiv_mul_const,
+    hcastp, hcastq, smul_apply, add_apply, ContinuousLinearMap.comp_apply, ofRealCLM_apply,
+    smul_eq_mul, I_re, I_im, one_re, one_im]
+  push_cast
+  linear_combination (-2 * I * (x z 0 : ℂ) * (x z 3 : ℂ) - 2 * ((x z 0 : ℂ) * (x z 2 : ℂ) -
+    (x z 1 : ℂ) * (x z 3 : ℂ) + (fderiv ℝ (fun w ↦ x w 3) z 1 : ℂ))) * I_sq
+
+/-- Where `∂bar_a α = 0`, the covariant derivative is complex linear in the tangent vector:
+`∇_v α = v ∇₁α`. -/
+theorem covariantDerivative_eq_mul_covariantDerivative_one {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (h₁ : equation x z 1 = 0)
+    (h₂ : equation x z 2 = 0) (v : ℂ) :
+    covariantDerivative x z v = v * covariantDerivative x z 1 := by
+  have hI := covariantDerivative_I_sub_I_mul_covariantDerivative_one hp hq
+  rw [h₁, h₂, ofReal_zero, mul_zero, sub_zero, mul_zero, sub_eq_zero] at hI
+  rw [covariantDerivative_eq_re_mul_add_im_mul, hI]
+  conv_rhs => rw [← re_add_im v]
+  ring
 
 /-- The curvature component of the linearized equation. -/
 @[simp]

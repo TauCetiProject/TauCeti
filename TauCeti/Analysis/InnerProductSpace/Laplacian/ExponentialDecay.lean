@@ -26,13 +26,20 @@ comparison principle for `-Δ + c²` on the compact annuli `R ≤ ‖x‖ ≤ R'
 (`TauCeti.le_of_mul_le_laplacian_le_of_le_frontier`) and the limit at infinity, which controls the
 outer sphere as `R' → ∞`, then give the bound.
 
+The same comparison works for a variable potential `V ≥ c²`: subsolutions of `-Δ + V` decay at
+the rate `c`. Since no sign condition is then needed, a solution of `Δ u = V u` tending to zero at
+infinity has `|u x| ≤ M exp (-c (‖x‖ - R))`.
+
 This is the decay mechanism of massive fields: for instance, outside a large disc the logarithmic
-modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`.
+modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`, and
+the derivatives of `log |α|²` solve `Δ u = (|α|² / 4) u`.
 
 ## Main declarations
 
-* `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: a subsolution of `-Δ + c²` on the exterior of a ball
-  which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
+* `TauCeti.le_mul_exp_of_mul_le_laplacian`: a subsolution of `-Δ + V`, `V ≥ c²`, on the exterior of
+  a ball which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
+* `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
+* `TauCeti.abs_le_mul_exp_of_laplacian_eq_mul`: the two-sided bound for solutions of `Δ u = V u`.
 
 ## References
 
@@ -81,13 +88,17 @@ private theorem laplacian_exp_barrier_le {A c ε : ℝ} (hA : 0 ≤ A) (hc : 0 �
   rw [hneg, mul_add]
   linarith
 
-/-- **Exponential decay of subsolutions of `-Δ + c²`.** Let `u` be continuous on the exterior
-`‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `c² u ≤ Δ u` there for some `c ≥ 0`
-and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
-`u x ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`. -/
-theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
+/-- **Exponential decay of subsolutions of `-Δ + V` with `V ≥ c²`.** Let `u` be continuous on
+the exterior `‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `V u ≤ Δ u` there for
+a potential `V ≥ c²`, `c ≥ 0`, and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with
+`M ≥ 0`, then `u x ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`.
+
+No sign condition on `u` is needed, so this applies to both `u` and `-u` when `Δ u = V u`
+(`abs_le_mul_exp_of_laplacian_eq_mul`). -/
+theorem le_mul_exp_of_mul_le_laplacian {u V : E → ℝ} {R c M : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
     (hM : 0 ≤ M) (hcont : ContinuousOn u {x | R ≤ ‖x‖})
-    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hsub : ∀ x, R < ‖x‖ → c ^ 2 * u x ≤ Δ u x)
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hV : ∀ x, R < ‖x‖ → c ^ 2 ≤ V x)
+    (hsub : ∀ x, R < ‖x‖ → V x * u x ≤ Δ u x)
     (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
     (hx : R ≤ ‖x‖) :
     u x ≤ M * Real.exp (-(c * (‖x‖ - R))) := by
@@ -120,13 +131,15 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
       exact .inr (by simpa using hy₂)
   have hyne : ∀ ⦃y : E⦄, y ∈ interior K → y ≠ 0 := fun y hy ↦
     norm_pos_iff.mp (hR.trans (hint hy))
-  refine le_of_mul_le_laplacian_le_of_le_frontier (c := fun _ ↦ c ^ 2)
+  -- The barrier is a supersolution of `-Δ + c²`, hence of `-Δ + V`, being nonnegative.
+  refine le_of_mul_le_laplacian_le_of_le_frontier (c := V)
     (g := fun y ↦ A * Real.exp (-(c * ‖y‖)) + ε) hK (hcont.mono hKsub) (by fun_prop)
     (fun y hy ↦ hcd y (hint hy))
     (fun y hy ↦ (((contDiffAt_norm ℝ (hyne hy)).const_smul c).neg.exp.const_smul A).add
       contDiffAt_const)
-    (fun _ _ ↦ sq_nonneg c) (fun y hy ↦ hsub y (hint hy))
-    (fun y hy ↦ laplacian_exp_barrier_le hAnn hc hε.le (hyne hy)) (fun y hy ↦ ?_)
+    (fun y hy ↦ (sq_nonneg c).trans (hV y (hint hy))) (fun y hy ↦ hsub y (hint hy))
+    (fun y hy ↦ (laplacian_exp_barrier_le hAnn hc hε.le (hyne hy)).trans
+      (mul_le_mul_of_nonneg_right (hV y (hint hy)) (by positivity))) (fun y hy ↦ ?_)
     ⟨mem_closedBall_zero_iff.mpr (le_max_right _ _), by simpa using hx⟩
   rcases hfront hy with hy' | hy'
   · have hR₁y : R₁ ≤ ‖y‖ := hy' ▸ le_max_left _ _
@@ -136,5 +149,37 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
   · have h₁ := hbdry y hy'
     rw [← hbar, hy', sub_self, mul_zero, neg_zero, Real.exp_zero, mul_one]
     linarith
+
+/-- **Exponential decay of subsolutions of `-Δ + c²`.** Let `u` be continuous on the exterior
+`‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `c² u ≤ Δ u` there for some `c ≥ 0`
+and `u → 0` at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
+`u x ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`. -/
+theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
+    (hM : 0 ≤ M) (hcont : ContinuousOn u {x | R ≤ ‖x‖})
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hsub : ∀ x, R < ‖x‖ → c ^ 2 * u x ≤ Δ u x)
+    (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    u x ≤ M * Real.exp (-(c * (‖x‖ - R))) :=
+  le_mul_exp_of_mul_le_laplacian (V := fun _ ↦ c ^ 2) hR hc hM hcont hcd (fun _ _ ↦ le_rfl) hsub
+    hbdry hlim hx
+
+/-- **Exponential decay of solutions of `Δ u = V u` with `V ≥ c²`.** Let `u` be continuous on the
+exterior `‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with `Δ u = V u` there for a
+potential `V ≥ c²`, `c ≥ 0`, and `u → 0` at infinity. If `|u| ≤ M` on the sphere `‖x‖ = R`, then
+`|u x| ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`. -/
+theorem abs_le_mul_exp_of_laplacian_eq_mul {u V : E → ℝ} {R c M : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
+    (hM : 0 ≤ M) (hcont : ContinuousOn u {x | R ≤ ‖x‖})
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hV : ∀ x, R < ‖x‖ → c ^ 2 ≤ V x)
+    (hsol : ∀ x, R < ‖x‖ → Δ u x = V x * u x)
+    (hbdry : ∀ x, ‖x‖ = R → |u x| ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    |u x| ≤ M * Real.exp (-(c * (‖x‖ - R))) := by
+  refine abs_le.mpr ⟨neg_le.mp ?_, ?_⟩
+  · refine le_mul_exp_of_mul_le_laplacian (u := -u) hR hc hM hcont.neg (fun y hy ↦ (hcd y hy).neg)
+      hV (fun y hy ↦ ?_) (fun y hy ↦ (neg_le_abs _).trans (hbdry y hy))
+      (by simpa [Pi.neg_def] using hlim.neg) hx
+    rw [congrFun laplacian_neg y, Pi.neg_apply, Pi.neg_apply, hsol y hy, mul_neg]
+  · exact le_mul_exp_of_mul_le_laplacian hR hc hM hcont hcd hV (fun y hy ↦ (hsol y hy).ge)
+      (fun y hy ↦ (le_abs_self _).trans (hbdry y hy)) hlim hx
 
 end TauCeti

@@ -53,7 +53,7 @@ namespace TauCeti.Vortex
 open Complex Filter Topology InnerProductSpace Laplacian
 
 /-- The derivative of `|α|² = 4 (p² + q²)` along `v`. -/
-private theorem fderiv_normSq_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+theorem fderiv_normSq_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (v : ℂ) :
     fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z v =
