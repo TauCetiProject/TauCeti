@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.WellQuasiOrder
-public import TauCeti.Analysis.Convex.Stiemke
+public import TauCeti.Algebra.Group.AddSubgroup.PositiveWeights
 public import TauCeti.LowDimTopology.Heegaard.Domain
 
 /-!
@@ -66,7 +67,15 @@ for which every periodic domain has signed area `∑ r, A r * P r` equal to zero
 theorem weaklyAdmissible_iff_exists_pos_forall_sum_mul_eq_zero [Fintype Region] :
     H.WeaklyAdmissible ↔
       ∃ A : Region → ℝ, (∀ r, 0 < A r) ∧ ∀ P ∈ H.periodicDomains, ∑ r, A r * P r = 0 := by
-  rw [weaklyAdmissible_iff, exists_pos_forall_sum_mul_intCast_eq_zero_iff]
+  rw [weaklyAdmissible_iff]
+  refine ⟨fun h => ?_, fun ⟨A, hA, hAP⟩ P hP hP₀ => ?_⟩
+  · -- Integer weights from the lattice form of Stiemke's theorem are real weights.
+    obtain ⟨c, hc, hcP⟩ := H.periodicDomains.exists_pos_dotProduct_eq_zero_iff.2 h
+    refine ⟨fun r => c r, fun r => Int.cast_pos.2 (hc r), fun P hP => ?_⟩
+    simpa [dotProduct] using congrArg (Int.cast : ℤ → ℝ) (hcP P hP)
+  · have hP₀' : (0 : Region → ℝ) ≤ fun r => (P r : ℝ) := fun r => Int.cast_nonneg (hP₀ r)
+    have := (dotProduct_eq_zero_iff_of_pos hA hP₀').1 (hAP P hP)
+    exact funext fun r => by simpa using congrFun this r
 
 /-- If an area form `A` vanishes on the periodic domains, then all domains connecting `x` to `y`
 with the same basepoint multiplicities have the same area. -/
