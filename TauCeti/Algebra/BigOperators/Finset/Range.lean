@@ -43,6 +43,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   at a vanishing power `eᵏ = 0` is the truncation of their Cauchy product.
 * `sum_sum_range_eq_of_eq_zero_right`: enlarging both ranges of a double sum that vanishes outside
   a rectangle.
+* `sum_range_ite_pair_of_eq_add_one`, `sum_range_ite_pair_of_eq`,
+  `sum_range_ite_pair_of_lt`: evaluate an alternating-pair sum at either partner or below all pairs.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
   specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
@@ -426,6 +428,40 @@ theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : �
       simp only [mem_range, not_lt] at hp
       exact sum_eq_zero fun d _ ↦ hg p d (Or.inl hp)
   rw [← outer, ← sum_congr rfl fun p _ ↦ inner p]
+
+/-- A sum of alternating pairs, evaluated at an index `j = 2a + s + 1` of the first kind: only the
+`a`-th term contributes, and it equals `f (2a + s)`. -/
+theorem sum_range_ite_pair_of_eq_add_one {M : Type*} [AddCommGroup M] (f : ℕ → M)
+    {s a m j : ℕ} (hj : j = 2 * a + s + 1) (ha : a < m) :
+    ∑ b ∈ Finset.range m,
+      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
+        if j = 2 * b + s then f (2 * b + s + 1) else 0) =
+      f (2 * a + s) := by
+  subst hj
+  rw [Finset.sum_eq_single a (fun b _ hb ↦ by
+      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
+    (fun h ↦ absurd (Finset.mem_range.2 ha) h), ite_eq_left rfl, ite_eq_right (by omega), sub_zero]
+
+/-- A sum of alternating pairs, evaluated at an index `j = 2a + s` of the second kind: only the
+`a`-th term contributes, and it equals `-f (2a + s + 1)`. -/
+theorem sum_range_ite_pair_of_eq {M : Type*} [AddCommGroup M] (f : ℕ → M)
+    {s a m j : ℕ} (hj : j = 2 * a + s) (ha : a < m) :
+    ∑ b ∈ Finset.range m,
+      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
+        if j = 2 * b + s then f (2 * b + s + 1) else 0) =
+      -f (2 * a + s + 1) := by
+  subst hj
+  rw [Finset.sum_eq_single a (fun b _ hb ↦ by
+      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
+    (fun h ↦ absurd (Finset.mem_range.2 ha) h), ite_eq_left rfl, ite_eq_right (by omega), zero_sub]
+
+/-- A sum of alternating pairs vanishes at an index `j < s`, below all the pairs. -/
+theorem sum_range_ite_pair_of_lt {M : Type*} [AddCommGroup M] (f : ℕ → M) {s m j : ℕ}
+    (hj : j < s) :
+    ∑ b ∈ Finset.range m,
+      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
+        if j = 2 * b + s then f (2 * b + s + 1) else 0) = 0 :=
+  Finset.sum_eq_zero fun b _ ↦ by rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
 
 /-- A sum over `Finset.range t` whose terms vanish outside two distinct positions is the sum of
 the terms at those positions. -/

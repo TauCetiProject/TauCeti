@@ -275,7 +275,7 @@ theorem logLogisticMeasure_eq_withDensity (a b : ℝ) :
     logLogisticMeasure a b = volume.withDensity (logLogisticPDF a b) := by
   by_cases h : 0 < a ∧ 0 < b
   · have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logLogisticPDF a b)
-      MeasurableSet.univ Real.measurable_exp (fun y _ => (Real.hasDerivAt_exp y).hasDerivWithinAt)
+      MeasurableSet.univ (fun y _ => (Real.hasDerivAt_exp y).hasDerivWithinAt)
       Real.exp_injective.injOn
     simp only [Measure.restrict_univ, ofReal_abs_exp_mul_logLogisticPDF h.1 h.2, image_univ,
       Real.range_exp] at hmap
