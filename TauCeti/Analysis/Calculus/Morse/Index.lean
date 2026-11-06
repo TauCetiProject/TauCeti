@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 
 /-!
 # The Morse index
@@ -44,9 +45,9 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 
 * `TauCeti.hessianQuadraticForm`: the quadratic form defined by the Hessian at a point.
 * `TauCeti.morseIndex`: the negative index of inertia of the Hessian quadratic form.
-* `TauCeti.morseIndex_const_add` and `TauCeti.morseIndex_add_const`: invariance under adding a
-  constant.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
+* `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
+  lower semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
   `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
   `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
@@ -91,6 +92,11 @@ theorem hessianQuadraticForm_apply (f : E → ℝ) (x v : E) :
     hessianQuadraticForm f x v = fderiv ℝ (fderiv ℝ f) x v v := by
   simp only [hessianQuadraticForm, LinearMap.BilinMap.toQuadraticMap_apply,
     ContinuousLinearMap.toBilinForm_apply]
+
+/-- The Hessian quadratic form is the quadratic form of the second derivative. -/
+theorem hessianQuadraticForm_def (f : E → ℝ) (x : E) :
+    hessianQuadraticForm f x = (fderiv ℝ (fderiv ℝ f) x).toBilinForm.toQuadraticMap :=
+  (rfl)
 
 /-- For a twice continuously differentiable function, the bilinear form associated to its
 Hessian quadratic form is its second derivative. -/
@@ -267,30 +273,6 @@ theorem morseIndex_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     morseIndex f x = morseIndex g x := by
   rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_congr_of_eventuallyEq hfg]
 
-/-- Adding a constant on the left does not change the Hessian quadratic form. -/
-@[simp]
-theorem hessianQuadraticForm_const_add (c : ℝ) :
-    hessianQuadraticForm (fun y ↦ c + f y) x = hessianQuadraticForm f x := by
-  ext v
-  rw [hessianQuadraticForm_apply, hessianQuadraticForm_apply,
-    show fderiv ℝ (fun y ↦ c + f y) = fderiv ℝ f from funext fun _ ↦ fderiv_const_add c]
-
-/-- Adding a constant on the right does not change the Hessian quadratic form. -/
-@[simp]
-theorem hessianQuadraticForm_add_const (c : ℝ) :
-    hessianQuadraticForm (fun y ↦ f y + c) x = hessianQuadraticForm f x := by
-  simpa only [add_comm c] using hessianQuadraticForm_const_add (f := f) (x := x) c
-
-/-- Adding a constant on the left does not change the Morse index. -/
-@[simp]
-theorem morseIndex_const_add (c : ℝ) : morseIndex (fun y ↦ c + f y) x = morseIndex f x := by
-  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_const_add]
-
-/-- Adding a constant on the right does not change the Morse index. -/
-@[simp]
-theorem morseIndex_add_const (c : ℝ) : morseIndex (fun y ↦ f y + c) x = morseIndex f x := by
-  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_add_const]
-
 /-- The Morse index is invariant under a `C²` change of coordinates with invertible derivative.
 Criticality is needed because it removes the first-order term from the second-order chain rule. -/
 theorem morseIndex_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
@@ -302,6 +284,17 @@ theorem morseIndex_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
   exact (QuadraticMap.Equivalent.sigNeg_eq
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv
       (hessianQuadraticForm f (φ b)) e.toLinearEquiv⟩).symm
+
+/-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
+at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
+need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
+under perturbation, but negative directions are never lost. -/
+theorem eventually_morseIndex_le [FiniteDimensional ℝ E] (hf : ContDiffAt ℝ 2 f x) :
+    ∀ᶠ y in 𝓝 x, morseIndex f x ≤ morseIndex f y := by
+  have hc : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
+    (hf.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
+  simpa only [morseIndex_def, hessianQuadraticForm_def] using
+    ContinuousLinearMap.eventually_sigNeg_toBilinForm_le_of_continuousAt hc
 
 /-- At a nondegenerate critical point, the Hessian quadratic form is nondegenerate. -/
 theorem IsNondegenerateCriticalPoint.hessianQuadraticForm_nondegenerate
