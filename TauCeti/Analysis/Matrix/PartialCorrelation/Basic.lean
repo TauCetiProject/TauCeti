@@ -50,6 +50,37 @@ abbrev strictLowerTriangle (p : ℕ) := {ij : Fin p × Fin p // ij.2 < ij.1}
 
 variable {p : ℕ}
 
+/-- The strict-lower positions in column `j` correspond to the row indices strictly above `j`. -/
+def strictLowerTriangleColumnEquiv (j : Fin p) :
+    {ij : strictLowerTriangle p // ij.1.2 = j} ≃ Set.Ioi j where
+  toFun ij := ⟨ij.1.1.1, by simpa [ij.2] using ij.1.2⟩
+  invFun i := ⟨⟨(i.1, j), i.2⟩, rfl⟩
+  left_inv ij := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact Prod.ext rfl ij.2.symm
+  right_inv i := by
+    apply Subtype.ext
+    rfl
+
+/-- The column equivalence sends a strict-lower position to its row index. -/
+@[simp]
+theorem strictLowerTriangleColumnEquiv_apply_coe (j : Fin p)
+    (ij : {ij : strictLowerTriangle p // ij.1.2 = j}) :
+    (strictLowerTriangleColumnEquiv j ij : Fin p) = ij.1.1.1 := by
+  rfl
+
+/-- The inverse column equivalence pairs a row index with the fixed column. -/
+@[simp]
+theorem strictLowerTriangleColumnEquiv_symm_apply_coe (j : Fin p) (i : Set.Ioi j) :
+    ((strictLowerTriangleColumnEquiv j).symm i).1 = ⟨(i.1, j), i.2⟩ := by
+  rfl
+
+/-- Column `j` of the strict lower triangle of a `p × p` matrix has `p - 1 - j` entries. -/
+theorem card_strictLowerTriangle_column (j : Fin p) :
+    Fintype.card {ij : strictLowerTriangle p // ij.1.2 = j} = p - 1 - j.val := by
+  rw [Fintype.card_congr (strictLowerTriangleColumnEquiv j), Fintype.card_Ioi, Fin.card_Ioi]
+
 private def partialCorrelationRow (z : strictLowerTriangle p → ℝ) (i j : Fin p) : ℝ :=
   if h : j < i then z ⟨(i, j), h⟩ else 0
 

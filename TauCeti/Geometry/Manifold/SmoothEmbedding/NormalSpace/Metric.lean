@@ -28,7 +28,7 @@ regularity theorem `SmoothEmbedding.contMDiff_normalRepresentative`.
 public noncomputable section
 
 open Bundle Manifold Set
-open scoped ContDiff InnerProductSpace Manifold Topology
+open scoped Bundle ContDiff InnerProductSpace Manifold Topology
 
 namespace TauCeti.SmoothEmbedding
 
@@ -171,5 +171,27 @@ theorem toRiemannianMetric_normalContMDiffRiemannianMetric
     (f.normalContMDiffRiemannianMetric hn hm hdim).toRiemannianMetric =
       f.normalRiemannianMetric hn :=
   (rfl)
+
+/-- The fibrewise normal metric varies `C^m` in the intrinsic normal bundle atlas. -/
+theorem isContMDiffRiemannianBundle_normalRiemannianMetric
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
+    haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+    letI := f.normalSpaceFiberBundle hn hdim
+    letI := f.normalSpaceVectorBundle hn hdim
+    let ν : M → Type _ := fun x => f.NormalSpace x hn
+    letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
+    letI : ∀ x, NormedAddCommGroup (ν x) := fun _ => inferInstance
+    letI : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
+    IsContMDiffRiemannianBundle I m P ν := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  let ν : M → Type _ := fun x => f.NormalSpace x hn
+  let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
+  let : ∀ x, NormedAddCommGroup (ν x) := fun _ => inferInstance
+  let : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
+  rw [← f.toRiemannianMetric_normalContMDiffRiemannianMetric hn hm hdim]
+  exact Bundle.instIsContMDiffRiemannianBundle (f.normalContMDiffRiemannianMetric hn hm hdim)
 
 end TauCeti.SmoothEmbedding

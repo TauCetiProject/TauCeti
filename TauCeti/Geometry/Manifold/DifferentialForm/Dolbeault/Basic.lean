@@ -117,6 +117,14 @@ theorem delBar_apply (φ : SmoothForm I M F k) :
       J.typeProjection pq.1 (pq.2 + 1) (mextDerivₗ I k (J.typeProjection pq.1 pq.2 φ)) :=
   (rfl)
 
+/-- The Dolbeault differential commutes with transport across an equality of total degrees. -/
+theorem delBar_cast {l : ℕ} (h : k = l) (φ : SmoothForm I M F k) :
+    J.delBar (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n)
+        (congrArg (· + 1) h) (J.delBar φ) := by
+  subst l
+  rfl
+
 end SmoothAlmostComplexStructure
 
 namespace SmoothForm
