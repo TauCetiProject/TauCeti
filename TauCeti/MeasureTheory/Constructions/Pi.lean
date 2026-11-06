@@ -234,6 +234,14 @@ theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFi
     (measurePreserving_piEquivPiSubtypeProd μ (· = i₀))
 
 omit [Fintype ι] in
+/-- The measurable equivalence `MeasurableEquiv.piFinsetUnion` has the same underlying function as
+`Equiv.piFinsetUnion`; both glue a pair of assignments on disjoint finsets into one on their
+union. -/
+theorem _root_.MeasurableEquiv.coe_piFinsetUnion {s t : Finset ι}
+    (h : Disjoint s t) :
+    ⇑(MeasurableEquiv.piFinsetUnion α h) = Equiv.piFinsetUnion α h := rfl
+
+omit [Fintype ι] in
 /-- Recombining the glued pair `(u, v)` on the coordinates `{a, b}` with the remaining coordinates
 of `w` is the double update of `w`. -/
 private theorem piEquivPiSubtypeProd_symm_piFinsetUnion_apply {a b : ι} (hab : a ≠ b)
@@ -246,8 +254,10 @@ private theorem piEquivPiSubtypeProd_symm_piFinsetUnion_apply {a b : ι} (hab : 
       update (update w a u) b v := by
   rw [update_eq_updateFinset, update_eq_updateFinset,
     updateFinset_updateFinset (Finset.disjoint_singleton.2 hab)]
-  simp only [MeasurableEquiv.piUnique_symm_apply]
-  rfl
+  simp only [MeasurableEquiv.piUnique_symm_apply, MeasurableEquiv.coe_piFinsetUnion]
+  ext i
+  simp only [MeasurableEquiv.piEquivPiSubtypeProd, MeasurableEquiv.symm_mk, MeasurableEquiv.coe_mk,
+    Equiv.piEquivPiSubtypeProd_symm_apply, Equiv.piEquivPiSubtypeProd_apply, updateFinset_def]
 
 /-- Overwriting the two distinct coordinates `a` and `b` of a product-distributed assignment by an
 independent pair leaves the product law unchanged. -/
