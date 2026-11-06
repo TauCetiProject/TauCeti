@@ -17,7 +17,10 @@ import TauCeti.Analysis.Fourier.FourierCoeffOn
 A smooth compactly supported function is a Schwartz function, so its Fourier transform is again a
 Schwartz function and therefore decays faster than every negative power of `‖v‖`. This file records
 that decay in the elementary form `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C`, which is the shape a Fourier transform
-is used in when it weights a comparison test.
+is used in when it weights a comparison test. Without smoothness or compact support, integrating by
+parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` for a `C^N` function
+whose derivatives up to order `N` are integrable. The file also records the angular-frequency form
+`∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)` of the Fourier transform.
 
 The periodic analogue concerns Fourier coefficients on `AddCircle T`. Integrating by parts over a
 period, with no boundary term by periodicity, multiplies the `n`-th Fourier coefficient by
@@ -31,6 +34,10 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.exists_norm_pow_mul_norm_fourier_le`: for every exponent `k`, the Fourier transform of a
   smooth compactly supported function on a finite-dimensional real inner product space satisfies
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
+* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
+  derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
+  frequency is the Fourier transform `𝓕 f ((2π)⁻¹ ξ)`.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
 * `TauCeti.periodic_cexp_two_pi_mul_I_mul_div`: the Fourier monomial `z ↦ e^{2πinz/T}` on `ℂ` is
@@ -91,6 +98,18 @@ theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : Con
     rw [hw, mul_zero, zero_pow hN, zero_mul]
     exact integral_nonneg fun _ ↦ norm_nonneg _
   · exact le_of_mul_le_mul_right (heq ▸ hle) (lt_of_le_of_ne (by positivity) (Ne.symm h))
+
+open Real in
+open scoped RealInnerProductSpace in
+/-- The Fourier transform in angular frequency: `∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)`. -/
+theorem integral_exp_smul_eq_fourier (f : V → E) (ξ : V) :
+    ∫ v, Complex.exp (-(⟪v, ξ⟫ * Complex.I)) • f v = 𝓕 f ((2 * π)⁻¹ • ξ) := by
+  rw [Real.fourier_eq']
+  congr 1 with v
+  rw [inner_smul_right]
+  congr 2
+  push_cast
+  field_simp
 
 section Circle
 

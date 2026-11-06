@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import TauCeti.Analysis.Pseudodifferential.Quantization
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Fourier.Decay
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Oscillatory integrals with the phase `-⟪y, ξ⟫`
@@ -39,13 +39,15 @@ regularizations.
 
 ## Main results
 
+* `TauCeti.norm_integral_exp_smul_le`: integration by parts in the position bounds the position
+  integral by `2 ^ (N + 1) C ⟨ξ⟩ ^ (m - N)`.
 * `TauCeti.integrable_integral_exp_smul`: the position integral is integrable in the frequency.
 * `TauCeti.norm_oscillatoryIntegral_le`: the bound
   `‖∫∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ‖ ≤ 2 ^ (N + 1) C ∫ ⟨ξ⟩ ^ (m - N) dξ`.
 * `TauCeti.tendsto_integral_cutoff_smul_oscillatoryIntegral`: the regularized double integrals
   `∫∫ χ(εξ) exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ` tend to the oscillatory integral as `ε → 0`, for every
   cutoff `χ`.
-* `TauCeti.quantizeSchwartzValue_eq_oscillatoryIntegral` and
+* `TauCeti.quantizeSchwartzValue_eq_smul_oscillatoryIntegral` and
   `TauCeti.tendsto_integral_cutoff_smul_quantizeSchwartzValue`: the Kohn–Nirenberg quantization
   of a coefficient with polynomial growth is the regularized limit of its double integral.
 
@@ -91,6 +93,13 @@ private lemma norm_exp_neg_inner_mul_I (y ξ : E) : ‖Complex.exp (-(⟪y, ξ�
   rw [Complex.norm_exp]
   simp
 
+/-- Multiplying an integrable function by the phase `exp(-i ⟪y, ξ⟫)` keeps it integrable. -/
+private lemma integrable_exp_neg_inner_smul {f : E → W} (hf : Integrable f) (ξ : E) :
+    Integrable fun y ↦ Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • f y :=
+  hf.norm.mono' ((by fun_prop : Continuous fun y : E ↦
+    Complex.exp (-(⟪y, ξ⟫ * Complex.I))).aestronglyMeasurable.smul hf.aestronglyMeasurable)
+    (ae_of_all _ fun y ↦ by rw [norm_smul, norm_exp_neg_inner_mul_I, one_mul])
+
 /-- The oscillatory integral is additive on amplitudes whose position slices are integrable and
 whose position integrals are integrable in the frequency. -/
 theorem oscillatoryIntegral_add {b b' : E × E → W} (hb : ∀ ξ, Integrable fun y ↦ b (y, ξ))
@@ -98,39 +107,11 @@ theorem oscillatoryIntegral_add {b b' : E × E → W} (hb : ∀ ξ, Integrable f
     (hF : Integrable fun ξ ↦ ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ))
     (hF' : Integrable fun ξ ↦ ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b' (y, ξ)) :
     oscillatoryIntegral (b + b') = oscillatoryIntegral b + oscillatoryIntegral b' := by
-  have hslice : ∀ (f : E → W), Integrable f → ∀ ξ : E,
-      Integrable fun y ↦ Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • f y := fun f hf ξ ↦
-    hf.norm.mono' ((by fun_prop : Continuous fun y : E ↦
-      Complex.exp (-(⟪y, ξ⟫ * Complex.I))).aestronglyMeasurable.smul hf.aestronglyMeasurable)
-      (ae_of_all _ fun y ↦ by rw [norm_smul, norm_exp_neg_inner_mul_I, one_mul])
   simp only [oscillatoryIntegral_def, Pi.add_apply, smul_add]
   rw [← integral_add hF hF']
   congr 1 with ξ
-  exact integral_add (hslice _ (hb ξ) ξ) (hslice _ (hb' ξ) ξ)
-
-/-- The position integral in angular frequency is the Fourier transform at `(2π)⁻¹ ξ`. -/
-private lemma integral_exp_smul_eq_fourier (f : E → W) (ξ : E) :
-    ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • f y = 𝓕 f ((2 * π)⁻¹ • ξ) := by
-  rw [Real.fourier_eq']
-  congr 1 with y
-  rw [inner_smul_right]
-  congr 2
-  push_cast
-  field_simp
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Japanese bracket `⟨ξ⟩ ^ N = (1 + ‖ξ‖²) ^ (N / 2)` is at most `2 ^ N (1 + ‖ξ‖ ^ N)`. -/
-private lemma one_add_norm_sq_rpow_le (ξ : E) (N : ℕ) :
-    (1 + ‖ξ‖ ^ 2) ^ ((N : ℝ) / 2) ≤ 2 ^ N * (1 + ‖ξ‖ ^ N) :=
-  calc (1 + ‖ξ‖ ^ 2) ^ ((N : ℝ) / 2) = √(1 + ‖ξ‖ ^ 2) ^ N := by
-        rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (by positivity)]
-        ring_nf
-    _ ≤ (1 + ‖ξ‖) ^ N := by gcongr; exact sqrt_one_add_norm_sq_le ξ
-    _ ≤ 2 ^ (N - 1) * (1 ^ N + ‖ξ‖ ^ N) := add_pow_le zero_le_one (norm_nonneg ξ) N
-    _ ≤ 2 ^ N * (1 + ‖ξ‖ ^ N) := by
-        rw [one_pow]
-        gcongr
-        exacts [one_le_two, N.sub_le 1]
+  exact integral_add (integrable_exp_neg_inner_smul (hb ξ) ξ)
+    (integrable_exp_neg_inner_smul (hb' ξ) ξ)
 
 section Amplitude
 
@@ -139,7 +120,7 @@ variable {b : E × E → W} {m C : ℝ} {N : ℕ}
 /-- **Integration by parts in the position.** The position integral of an amplitude whose `C^N`
 position slices satisfy `∫ ‖b(y, ξ)‖ dy ≤ C ⟨ξ⟩ ^ m` and `∫ ‖D_y^N b(y, ξ)‖ dy ≤ C ⟨ξ⟩ ^ m` is
 bounded by `2 ^ (N + 1) C ⟨ξ⟩ ^ (m - N)`. -/
-private lemma norm_integral_exp_smul_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y, ξ))
+theorem norm_integral_exp_smul_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y, ξ))
     (hint : ∀ ξ, ∀ k ≤ N, Integrable (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (h₀ : ∀ ξ, ∫ y, ‖b (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hN : ∀ ξ, ∫ y, ‖iteratedFDeriv ℝ N (fun y ↦ b (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -164,10 +145,18 @@ private lemma norm_integral_exp_smul_le (hdiff : ∀ ξ, ContDiff ℝ N fun y �
   refine le_of_mul_le_mul_right ?_ hpow
   rw [mul_assoc (2 ^ (N + 1) * C), hsplit]
   calc ‖F‖ * w ^ ((N : ℝ) / 2) ≤ ‖F‖ * (2 ^ N * (1 + ‖ξ‖ ^ N)) :=
-        mul_le_mul_of_nonneg_left (one_add_norm_sq_rpow_le ξ N) (norm_nonneg _)
+        mul_le_mul_of_nonneg_left (one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow ξ N)
+          (norm_nonneg _)
     _ = 2 ^ N * (‖F‖ + ‖ξ‖ ^ N * ‖F‖) := by ring
     _ ≤ 2 ^ N * (C * w ^ (m / 2) + C * w ^ (m / 2)) := by gcongr
     _ = 2 ^ (N + 1) * C * w ^ (m / 2) := by ring
+
+/-- The frequency weight `⟨ξ⟩ ^ (m - N)` is integrable when `N > m + dim E`. -/
+private lemma integrable_one_add_norm_sq_rpow_sub (hNm : m + finrank ℝ E < N) :
+    Integrable fun ξ : E ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
+  have hr : (finrank ℝ E : ℝ) < N - m := by linarith
+  simpa only [show -((N : ℝ) - m) / 2 = (m - N) / 2 by ring] using
+    integrable_rpow_neg_one_add_norm_sq (E := E) (μ := volume) hr
 
 /-- The integrand of the position integral is a.e. strongly measurable on the product. -/
 private lemma aestronglyMeasurable_exp_smul (hb : AEStronglyMeasurable b) :
@@ -186,11 +175,9 @@ theorem integrable_integral_exp_smul (hb : AEStronglyMeasurable b)
     (hN : ∀ ξ, ∫ y, ‖iteratedFDeriv ℝ N (fun y ↦ b (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hNm : m + finrank ℝ E < N) :
     Integrable fun ξ ↦ ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ) := by
-  have hr : (finrank ℝ E : ℝ) < N - m := by linarith
-  refine ((integrable_rpow_neg_one_add_norm_sq hr).const_mul (2 ^ (N + 1) * C)).mono'
-    (aestronglyMeasurable_exp_smul hb).prod_swap.integral_prod_right' (ae_of_all _ fun ξ ↦ ?_)
-  rw [show -((N : ℝ) - m) / 2 = (m - N) / 2 by ring]
-  exact norm_integral_exp_smul_le hdiff hint h₀ hN ξ
+  exact ((integrable_one_add_norm_sq_rpow_sub hNm).const_mul (2 ^ (N + 1) * C)).mono'
+    (aestronglyMeasurable_exp_smul hb).prod_swap.integral_prod_right'
+    (ae_of_all _ (norm_integral_exp_smul_le hdiff hint h₀ hN))
 
 /-- **Bound on the oscillatory integral.** Under the hypotheses of
 `integrable_integral_exp_smul`,
@@ -201,12 +188,8 @@ theorem norm_oscillatoryIntegral_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b 
     (hN : ∀ ξ, ∫ y, ‖iteratedFDeriv ℝ N (fun y ↦ b (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hNm : m + finrank ℝ E < N) :
     ‖oscillatoryIntegral b‖ ≤ 2 ^ (N + 1) * C * ∫ ξ : E, (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
-  have hr : (finrank ℝ E : ℝ) < N - m := by linarith
-  have hint' : Integrable fun ξ : E ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
-    simpa only [show -((N : ℝ) - m) / 2 = (m - N) / 2 by ring] using
-      integrable_rpow_neg_one_add_norm_sq (E := E) (μ := volume) hr
   rw [oscillatoryIntegral_def, ← integral_const_mul]
-  exact norm_integral_le_of_norm_le (hint'.const_mul _)
+  exact norm_integral_le_of_norm_le ((integrable_one_add_norm_sq_rpow_sub hNm).const_mul _)
     (ae_of_all _ (norm_integral_exp_smul_le hdiff hint h₀ hN))
 
 variable {χ : E → ℂ}
@@ -229,12 +212,7 @@ private lemma integrable_cutoff_smul (hb : AEStronglyMeasurable b)
     rw [norm_smul, norm_smul, norm_exp_neg_inner_mul_I, one_mul]
   rw [Measure.volume_eq_prod, integrable_prod_iff' hmeas]
   refine ⟨ae_of_all _ fun ξ ↦ ?_, ?_⟩
-  · have hslice : AEStronglyMeasurable fun y : E ↦
-        χ (ε • ξ) • Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ) :=
-      ((by fun_prop : Continuous fun y : E ↦ Complex.exp (-(⟪y, ξ⟫ * Complex.I))
-        ).aestronglyMeasurable.smul (hint₀ ξ).aestronglyMeasurable).const_smul _
-    exact ((hint₀ ξ).norm.const_mul ‖χ (ε • ξ)‖).mono' hslice
-      (ae_of_all _ fun y ↦ (hnorm y ξ).le)
+  · exact (integrable_exp_neg_inner_smul (hint₀ ξ) ξ).smul (χ (ε • ξ))
   · have hbound : Integrable fun ξ : E ↦ ‖χ (ε • ξ)‖ * (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
       Continuous.integrable_of_hasCompactSupport (hχε.norm.mul (continuous_const.mul
         ((continuous_const.add (continuous_norm.pow 2)).rpow_const
@@ -293,30 +271,11 @@ section Quantization
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
-/-- The derivatives of `L ∘ u`, for a Schwartz function `u` and a continuous linear map `L`, are
-integrable. -/
-private lemma integrable_iteratedFDeriv_comp (L : V →L[ℝ] W) (u : 𝓢(E, V)) (k : ℕ) :
-    Integrable (iteratedFDeriv ℝ k (⇑L ∘ ⇑u)) := by
-  have hu : Integrable fun y ↦ ‖iteratedFDeriv ℝ k u y‖ := by
-    simpa only [pow_zero, one_mul] using u.integrable_pow_mul_iteratedFDeriv volume 0 k
-  exact (hu.const_mul ‖L‖).mono'
-    ((L.contDiff.comp (u.smooth ⊤)).continuous_iteratedFDeriv
-      (mod_cast le_top)).aestronglyMeasurable
-    (ae_of_all _ fun y ↦ L.norm_iteratedFDeriv_comp_left (u.smooth ⊤).contDiffAt (mod_cast le_top))
-
-private lemma integral_norm_iteratedFDeriv_comp_le (L : V →L[ℝ] W) (u : 𝓢(E, V)) (k : ℕ) :
-    ∫ y, ‖iteratedFDeriv ℝ k (⇑L ∘ ⇑u) y‖ ≤ ‖L‖ * ∫ y, ‖iteratedFDeriv ℝ k u y‖ := by
-  have hu : Integrable fun y ↦ ‖iteratedFDeriv ℝ k u y‖ := by
-    simpa only [pow_zero, one_mul] using u.integrable_pow_mul_iteratedFDeriv volume 0 k
-  rw [← integral_const_mul]
-  exact integral_mono_of_nonneg (ae_of_all _ fun _ ↦ norm_nonneg _) (hu.const_mul ‖L‖)
-    (ae_of_all _ fun y ↦ L.norm_iteratedFDeriv_comp_left (u.smooth ⊤).contDiffAt (mod_cast le_top))
-
 /-- The left Kohn–Nirenberg quantization of a coefficient `a` on a Schwartz function `u` at `x` is
 `(2π)⁻ⁿ` times the oscillatory integral of the amplitude
 `b(y, ξ) = exp(i ⟪x, ξ⟫) a(x, ξ) u(y)`, with `n = finrank ℝ E`. -/
-theorem quantizeSchwartzValue_eq_oscillatoryIntegral [CompleteSpace V] (a : E × E → V →L[ℂ] W)
-    (u : 𝓢(E, V)) (x : E) :
+theorem quantizeSchwartzValue_eq_smul_oscillatoryIntegral [CompleteSpace V]
+    (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
     quantizeSchwartzValue a u x = ((2 * π) ^ finrank ℝ E)⁻¹ •
       oscillatoryIntegral fun p : E × E ↦ Complex.exp (⟪x, p.2⟫ * Complex.I) • a (x, p.2) (u p.1)
     := by
@@ -326,12 +285,8 @@ theorem quantizeSchwartzValue_eq_oscillatoryIntegral [CompleteSpace V] (a : E ×
       integral_of_not_completeSpace hW, smul_zero]
   rw [quantizeSchwartzValue_eq_smul_integral, oscillatoryIntegral_def]
   congr 2 with ξ
-  have hu : Integrable fun y ↦ Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • u y :=
-    u.integrable.norm.mono' ((by fun_prop : Continuous fun y : E ↦
-      Complex.exp (-(⟪y, ξ⟫ * Complex.I))).aestronglyMeasurable.smul
-        u.continuous.aestronglyMeasurable)
-      (ae_of_all _ fun y ↦ by rw [norm_smul, norm_exp_neg_inner_mul_I, one_mul])
-  rw [← (a (x, ξ)).integral_comp_comm hu, ← integral_smul]
+  rw [← (a (x, ξ)).integral_comp_comm (integrable_exp_neg_inner_smul u.integrable ξ),
+    ← integral_smul]
   congr 1 with y
   rw [map_smul, smul_comm]
 
@@ -365,7 +320,7 @@ theorem tendsto_integral_cutoff_smul_quantizeSchwartzValue [CompleteSpace V]
     le_add_of_nonneg_left (integral_nonneg fun _ ↦ norm_nonneg _)
   have hbound : ∀ ξ, ∀ k, ∫ y, ‖iteratedFDeriv ℝ k u y‖ ≤ K →
       ∫ y, ‖iteratedFDeriv ℝ k (fun y ↦ L ξ (u y)) y‖ ≤ C * K * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
-    fun ξ k hk ↦ (integral_norm_iteratedFDeriv_comp_le (L ξ) u k).trans <| by
+    fun ξ k hk ↦ (u.integral_norm_iteratedFDeriv_clm_comp_le (L ξ) k).trans <| by
       rw [mul_right_comm]
       exact mul_le_mul (hL ξ) hk (integral_nonneg fun _ ↦ norm_nonneg _) (by positivity)
   have hmeas' : AEStronglyMeasurable fun p : E × E ↦ L p.2 (u p.1) :=
@@ -375,11 +330,11 @@ theorem tendsto_integral_cutoff_smul_quantizeSchwartzValue [CompleteSpace V]
   have key := tendsto_integral_cutoff_smul_oscillatoryIntegral (b := fun p ↦ L p.2 (u p.1))
     (N := N) hmeas'
     (fun ξ ↦ ((L ξ).contDiff.comp (u.smooth ⊤)).of_le (mod_cast le_top))
-    (fun ξ k _ ↦ integrable_iteratedFDeriv_comp (L ξ) u k)
+    (fun ξ k _ ↦ u.integrable_iteratedFDeriv_clm_comp (L ξ) k)
     (fun ξ ↦ by simpa only [norm_iteratedFDeriv_zero] using hbound ξ 0 (by simpa using hK₀))
     (fun ξ ↦ hbound ξ N hKN)
     (by simp only [N]; push_cast; linarith [Nat.lt_floor_add_one m]) hχ hχs hχ0
-  rw [quantizeSchwartzValue_eq_oscillatoryIntegral]
+  rw [quantizeSchwartzValue_eq_smul_oscillatoryIntegral]
   refine (key.const_smul ((2 * π) ^ finrank ℝ E)⁻¹).congr fun ε ↦ ?_
   congr 2 with p
   rw [ContinuousLinearMap.coe_restrictScalars', smul_apply,
