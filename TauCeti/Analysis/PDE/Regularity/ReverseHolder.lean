@@ -421,8 +421,8 @@ private theorem exists_one_lt_lt_and_mul_lt {n s : ℝ} (hsn : (n - 2) * s < n) 
 /-- Iterating `exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset` `k ≤ M` times, along the
 exponents `pₖ` with `χ pₖ = pₖ₊₁` and the radii `R - k R/(2M)` shrinking from `R` towards `R/2`
 in steps of `R/(2M)`, bounds the `L^{pₖ}` norm of `u` on the `k`-th ball by its `L^{p₀}` norm on
-`B(x₀, R)`. Each step multiplies the bound by `(Bⱼ R^{-nδ})^{2/pⱼ}`, which makes the power of `R`
-telescope. -/
+`B(x₀, R)`. Step `j` multiplies the bound by `(C (1 + pⱼ Λ / ((1 - pⱼ) λ)) · 2M)^{2/pⱼ}` times a
+power of `R`, and these powers telescope to `R^{n/pₖ - n/p₀}`, where `n` is the dimension. -/
 private theorem exists_eLpNorm_iterate_le [Nonempty ι] {χ : ℝ} (hχ : 1 < χ)
     (hχn : ((Fintype.card ι : ℝ) - 2) * χ < Fintype.card ι) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {M : ℕ} {pk : ℕ → ℝ}, 0 < M → (∀ k, 0 < pk k) → (∀ k < M, pk k < 1) →
@@ -761,9 +761,13 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv [Nonempt
     exact ⟨hint, (Real.rpow_le_rpow
       (average_nonneg_of_ae (hu0h.mono fun y hy => Real.rpow_nonneg hy _))
       hmono (inv_nonneg.2 hs.le)).trans hH⟩
+  have hmemp : MemLp (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) :=
+    hmemR.mono_exponent ((ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2))
+  have hlim := tendsto_average_add_one_div_rpow (μ := mu.restrict (Metric.ball x₀ R)) hp hmemp
+    hu0R
   exact ⟨(hδ 0).1, ge_of_tendsto'
-    (tendsto_mul_average_add_rpow_rpow_inv (μ := mu.restrict (Metric.ball x₀ R)) D hp hp2 hmemR
-      hu0R) fun k => (hδ k).2⟩
+    (((Real.continuousAt_rpow_const _ _ (Or.inr (inv_nonneg.2 hp.le))).tendsto.comp hlim).const_mul
+      D) fun k => (hδ k).2⟩
 
 end Iteration
 
