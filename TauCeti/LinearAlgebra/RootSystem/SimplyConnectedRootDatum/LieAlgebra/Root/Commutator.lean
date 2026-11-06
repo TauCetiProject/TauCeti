@@ -91,9 +91,10 @@ theorem commutatorElement_chevalleyRootSubgroup_of_isSimplyLaced (hs : t.IsSimpl
   rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
     chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
     chevalleyRootSubgroup_eq_kostantRootSubgroupParam]
-  exact commutatorElement_kostantRootSubgroupParam_of_lie_eq _ _ ρ M _ _ _ _
-    (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hαγ hβγ A
-    (Multiplicative.ofAdd u) (Multiplicative.ofAdd v)
+  simpa only [toAdd_ofAdd] using
+    commutatorElement_kostantRootSubgroupParam_of_lie_eq _ _ ρ M _ _ _ _
+      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hαγ hβγ A
+      (Multiplicative.ofAdd u) (Multiplicative.ofAdd v)
 
 end
 

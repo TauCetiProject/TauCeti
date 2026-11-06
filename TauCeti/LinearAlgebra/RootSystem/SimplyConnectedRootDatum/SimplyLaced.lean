@@ -43,6 +43,7 @@ The symmetric pairing also controls root strings: a root sum `γ = α + β` has 
 * `TauCeti.DynkinType.pairing_simplyConnectedRootDatum_symm`: the Cartan pairing is symmetric.
 * `TauCeti.DynkinType.pairing_eq_neg_one_of_root_eq_add`: roots whose sum is a root have
   Cartan pairing `-1`.
+* `TauCeti.DynkinType.pairing_eq_one_of_root_eq_add`: a summand pairs to `1` with the root sum.
 * `TauCeti.DynkinType.root_add_notMem_of_root_eq_add` and
   `TauCeti.DynkinType.root_add_ne_zero_of_root_eq_add`: a root sum `γ = α + β` cannot be
   extended to a root or zero at `α + γ`.
@@ -155,6 +156,18 @@ theorem pairing_eq_neg_one_of_root_eq_add {α β γ : Fin t.numRoots}
     t.pairing_simplyConnectedRootDatum_symm ht hs β γ] at hself
   omega
 
+/-- In a simply-laced type, a summand has Cartan pairing `1` with the root sum `γ = α + β`. -/
+theorem pairing_eq_one_of_root_eq_add {α β γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
+    (t.simplyConnectedRootDatum ht).pairing α γ = 1 := by
+  have h₁ := pairing_eq_neg_one_of_root_eq_add hs hγ
+  have h₂ := RootPairing.pairing_eq_add_of_root_eq_add (l := α) hγ
+  rw [t.pairing_simplyConnectedRootDatum_symm ht hs γ α,
+    t.pairing_simplyConnectedRootDatum_symm ht hs β α] at h₂
+  simp only [RootPairing.pairing_same] at h₂
+  omega
+
 /-- In a simply-laced type, a root sum `γ = α + β` cannot be extended to `α + γ`. -/
 theorem root_add_notMem_of_root_eq_add {α β γ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
@@ -162,12 +175,8 @@ theorem root_add_notMem_of_root_eq_add {α β γ : Fin t.numRoots}
     (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ ∉
       Set.range (t.simplyConnectedRootDatum ht).root := by
   rintro ⟨δ, hδ⟩
-  have h₁ := pairing_eq_neg_one_of_root_eq_add hs hγ
+  have h₁ := pairing_eq_one_of_root_eq_add hs hγ
   have h₂ := pairing_eq_neg_one_of_root_eq_add hs hδ
-  have h₃ := RootPairing.pairing_eq_add_of_root_eq_add (l := α) hγ
-  rw [t.pairing_simplyConnectedRootDatum_symm ht hs γ α,
-    t.pairing_simplyConnectedRootDatum_symm ht hs β α] at h₃
-  simp only [RootPairing.pairing_same] at h₃
   omega
 
 /-- In a simply-laced type, a root sum `γ = α + β` is not opposite to `α`. -/
@@ -176,15 +185,13 @@ theorem root_add_ne_zero_of_root_eq_add {α β γ : Fin t.numRoots}
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
     (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ ≠ 0 := by
   intro hzero
-  have h₁ := pairing_eq_neg_one_of_root_eq_add hs hγ
-  have h₂ := RootPairing.pairing_eq_add_of_root_eq_add (l := α) hγ
+  have h₂ := pairing_eq_one_of_root_eq_add hs hγ
   have h₃ := congrArg
     (fun x => (t.simplyConnectedRootDatum ht).toLinearMap x
       ((t.simplyConnectedRootDatum ht).coroot α)) hzero
   simp only [map_add, map_zero, LinearMap.add_apply, LinearMap.zero_apply,
     RootPairing.root_coroot_eq_pairing, RootPairing.pairing_same] at h₃
-  simp only [RootPairing.pairing_same] at h₂
-  rw [t.pairing_simplyConnectedRootDatum_symm ht hs β α] at h₂
+  rw [t.pairing_simplyConnectedRootDatum_symm ht hs γ α] at h₃
   omega
 
 end TauCeti.DynkinType
