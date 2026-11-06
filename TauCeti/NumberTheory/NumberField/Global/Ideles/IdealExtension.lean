@@ -31,16 +31,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
-/-- Taking the finite component commutes with extension of ideles. -/
-@[simp]
-theorem toFiniteIdele_ideleExtension (x : IdeleGroup (𝓞 K) K) :
-    IdeleGroup.toFiniteIdele (𝓞 L) L (ideleExtension K L x) =
-      Units.map (finiteAdeleExtension (𝓞 K) K (𝓞 L) L).toMonoidHom
-        (IdeleGroup.toFiniteIdele (𝓞 K) K x) := by
-  apply Units.ext
-  ext w
-  simp [IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord]
-
 /-- **Extension of idele classes induces extension of ideal classes.** The quotient on either
 side is the trivial-modulus ray-class quotient, identified with the ordinary class group. -/
 @[simp]

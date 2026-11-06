@@ -63,15 +63,9 @@ theorem toFractionalIdeal_unitsMap_finiteAdeleExtension (x : (FiniteAdeleRing R 
         FractionalIdeal.count L w (J : FractionalIdeal B⁰ L) := by
     rw [count_coe_toFractionalIdeal, adicOrd_unitsMap_finiteAdeleExtension]
     simp only [J, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      FractionalIdeal.count_extendedHom, count_coe_toFractionalIdeal]
-  calc
-    toFractionalIdeal y = ∏ᶠ w : HeightOneSpectrum B,
-        w.unitOfPrime L ^ FractionalIdeal.count L w (toFractionalIdeal y : FractionalIdeal B⁰ L) :=
-      FractionalIdeal.finprod_unitOfPrime_zpow_count _
-    _ = ∏ᶠ w : HeightOneSpectrum B,
-        w.unitOfPrime L ^ FractionalIdeal.count L w (J : FractionalIdeal B⁰ L) :=
-      finprod_congr fun w ↦ congrArg (fun n : ℤ ↦ w.unitOfPrime L ^ n) (h w)
-    _ = J := (FractionalIdeal.finprod_unitOfPrime_zpow_count J).symm
+      FractionalIdeal.extendedHom'_apply, FractionalIdeal.count_extended,
+      count_coe_toFractionalIdeal]
+  exact FractionalIdeal.units_ext_count h
 
 /-- Extension of finite ideles induces the usual extension map on ideal classes.
 The simplifier uses `toClassGroup_apply`; this is the folded class-group comparison. -/
