@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
+public import TauCeti.Combinatorics.Graph.Connectivity.Component
 
 import TauCeti.Data.Fin.Basic
 
@@ -20,7 +20,8 @@ two-edge closed ear.
 
 The prefix interface exposes the graph after every initial segment, the ear added at every step,
 and a decomposition of each prefix.  It is intended as the common data layer for ear
-characterizations of edge connectivity and for constructing strong orientations.
+characterizations of edge connectivity and for constructing strong orientations.  The basic
+adjoining-ear API also records preservation of connectedness and the cycles created by new edges.
 
 The definitions follow the ear-decomposition conventions of R. Diestel, *Graph Theory*,
 Chapter 3, adapted to multigraphs by retaining edge identities.
@@ -103,6 +104,12 @@ theorem toWalk_closed {s : α} (hHG : H ≤ G) (walk : G.Walk s s) (isCycle : wa
     (Ear.closed hHG walk isCycle base_mem internal_new edges_new).toWalk = ⟨s, s, walk⟩ := by
   rw [toWalk]
 
+/-- The starting vertex of an ear belongs to its base graph. -/
+theorem toWalk_fst_mem (e : G.Ear H) : e.toWalk.1 ∈ V(H) := by
+  cases e with
+  | «open» _ _ _ start_mem => exact start_mem
+  | «closed» _ _ _ base_mem => exact base_mem
+
 /-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
 @[ext]
 theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWalk) :
@@ -118,6 +125,26 @@ theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWa
 /-- The graph traced by an ear. -/
 def toGraph (e : G.Ear H) : Graph α β :=
   G.walkGraph e.toWalk.2.2
+
+/-- The graph traced by an ear is connected. -/
+theorem connected_toGraph (e : G.Ear H) : e.toGraph.Connected :=
+  e.toWalk.2.2.connected_walkGraph
+
+@[simp]
+theorem toGraph_open {s t : α} (hHG : H ≤ G) (walk : G.Walk s t) (isPath : walk.IsPath)
+    (start_mem : s ∈ V(H)) (end_mem : t ∈ V(H)) (endpoints_ne : s ≠ t)
+    (internal_new : ∀ x ∈ walk.support, x ≠ s → x ≠ t → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.open hHG walk isPath start_mem end_mem endpoints_ne internal_new edges_new).toGraph =
+      G.walkGraph walk := by
+  rw [toGraph, toWalk_open]
+
+@[simp]
+theorem toGraph_closed {s : α} (hHG : H ≤ G) (walk : G.Walk s s) (isCycle : walk.IsCycle)
+    (base_mem : s ∈ V(H)) (internal_new : ∀ x ∈ walk.support, x ≠ s → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.closed hHG walk isCycle base_mem internal_new edges_new).toGraph = G.walkGraph walk := by
+  rw [toGraph, toWalk_closed]
 
 @[simp]
 theorem vertexSet_toGraph (e : G.Ear H) :
@@ -175,6 +202,31 @@ theorem base_le_add (e : G.Ear H) : H ≤ e.add :=
 theorem toGraph_le_add (e : G.Ear H) : e.toGraph ≤ e.add :=
   e.compatible.right_le_union
 
+/-- Every edge traversed by an ear belongs to the graph obtained by adjoining the ear. -/
+theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
+    (hf : f ∈ e.toWalk.2.2.edges) : f ∈ E(e.add) := by
+  rw [edgeSet_add, edgeSet_toGraph]
+  exact Or.inr hf
+
+/-- The interiors of an open ear and an oppositely directed path in its base are disjoint. -/
+theorem open_support_tail_disjoint {s t : α} (hHG : H ≤ G) {p : G.Walk s t}
+    (hp : p.IsPath) (ht : t ∈ V(H))
+    (hinter : ∀ z ∈ p.support, z ≠ s → z ≠ t → z ∉ V(H))
+    {q : H.Walk t s} (hq : q.IsPath) :
+    p.support.tail.Disjoint (q.mapLe hHG).support.tail := by
+  rw [List.disjoint_left]
+  intro z hzp hzq
+  have hzq' : z ∈ q.support.tail := by
+    simpa only [Walk.support_mapLe_eq_support] using hzq
+  have hpNodup := hp.support_nodup
+  rw [← p.cons_tail_support] at hpNodup
+  have hqNodup := hq.support_nodup
+  rw [← q.cons_tail_support] at hqNodup
+  have hzs : z ≠ s := fun hzs ↦ (List.nodup_cons.mp hpNodup).1 (hzs ▸ hzp)
+  have hzt : z ≠ t := fun hzt ↦ (List.nodup_cons.mp hqNodup).1 (hzt ▸ hzq')
+  exact hinter z (List.mem_of_mem_tail hzp) hzs hzt
+    (q.support_subset_vertexSet ht z (List.mem_of_mem_tail hzq'))
+
 /-- Adjoining an ear still gives a subgraph of the ambient graph. -/
 theorem add_le (e : G.Ear H) : e.add ≤ G :=
   IsSubgraph.union_le e.base_le e.toGraph_le
@@ -185,6 +237,77 @@ theorem edge_notMem_base (e : G.Ear H) {f : β} (hf : f ∈ e.toWalk.2.2.edges) 
   cases e with
   | «open» _ _ _ _ _ _ _ edges_new => exact edges_new f hf
   | «closed» _ _ _ _ _ edges_new => exact edges_new f hf
+
+/-- The edges of an ear are disjoint from those of a walk in its base graph. -/
+theorem edges_disjoint_of_le_base (e : G.Ear H) {x y : α} (q : H.Walk x y) :
+    e.toWalk.2.2.edges.Disjoint (q.mapLe e.base_le).edges := by
+  rw [List.disjoint_left]
+  intro f hfe hfq
+  exact e.edge_notMem_base hfe
+    (q.edges_subset_edgeSet (by simpa only [Walk.edges_mapLe_eq_edges] using hfq))
+
+/-- Adjoining an ear to a connected graph preserves connectedness. -/
+theorem connected_add (ear : G.Ear H) (hH : H.Connected) : ear.add.Connected := by
+  rw [connected_iff_forall_reachable]
+  refine ⟨⟨ear.toWalk.1, by
+    simp only [vertexSet_add, Set.mem_union]
+    exact Or.inl ear.toWalk_fst_mem⟩, fun x y hx hy ↦ ?_⟩
+  have toBase : ∀ {z}, z ∈ V(ear.add) → ear.add.Reachable z ear.toWalk.1 := by
+    intro z hz
+    simp only [vertexSet_add, Set.mem_union] at hz
+    rcases hz with hz | hz
+    · exact (hH.reachable hz ear.toWalk_fst_mem).mono ear.base_le_add
+    · apply Reachable.mono ear.toGraph_le_add
+      exact ear.connected_toGraph.reachable hz (by
+        simpa only [Ear.vertexSet_toGraph, Set.mem_ofPred_eq] using
+          ear.toWalk.2.2.start_mem_support)
+  exact (toBase hx).trans (toBase hy).symm
+
+/-- Every edge in the graph traced by an ear lies on a cycle after adjoining the ear to a
+connected base graph. -/
+theorem exists_isCycle_add_of_mem_edgeSet_toGraph (ear : G.Ear H) (hH : H.Connected) {e : β}
+    (he : e ∈ E(ear.toGraph)) :
+    ∃ x, ∃ p : ear.add.Walk x x, p.IsCycle ∧ e ∈ p.edges := by
+  cases ear with
+  | @«open» hHG s t p hp hs ht hst hinter hedges =>
+      rw [Ear.toGraph_open] at he
+      obtain ⟨q, hq⟩ := (hH.reachable ht hs).exists_isPath
+      let qG := q.mapLe hHG
+      have hqG : qG.IsPath := (Walk.isPath_mapLe hHG q).mpr hq
+      have hv : p.support.tail.Disjoint qG.support.tail :=
+        open_support_tail_disjoint hHG hp ht hinter hq
+      have hedisj : p.edges.Disjoint qG.edges := by
+        have h := edges_disjoint_of_le_base
+          (Ear.open hHG p hp hs ht hst hinter hedges) q
+        rw [Ear.toWalk_open] at h
+        exact h
+      have hcycle : (p.append qG).IsCycle := hp.isCycle_append hqG hv hedisj
+        (Or.inl (Nat.pos_of_ne_zero fun h ↦ hst (p.eq_of_length_eq_zero h)))
+      let c := (p.append qG).transfer
+        (Ear.open hHG p hp hs ht hst hinter hedges).add_le fun f hf ↦ by
+          rw [Walk.edges_append] at hf
+          rcases List.mem_append.mp hf with hfp | hfq
+          · exact edges_toWalk_subset_edgeSet_add
+              (Ear.open hHG p hp hs ht hst hinter hedges)
+              (by rw [Ear.toWalk_open]; exact hfp)
+          · rw [edgeSet_add]
+            exact Or.inl (q.edges_subset_edgeSet (by
+              simpa only [qG, Walk.edges_mapLe_eq_edges] using hfq))
+      have hc : c.IsCycle := (Walk.isCycle_transfer
+        (Ear.open hHG p hp hs ht hst hinter hedges).add_le (p.append qG) _).mpr hcycle
+      have heP : e ∈ p.edges := (p.mem_edgeSet_walkGraph e).mp he
+      exact ⟨s, c, hc, by
+        simp only [c, Walk.edges_transfer, Walk.edges_append, List.mem_append]
+        exact Or.inl heP⟩
+  | @«closed» hHG s p hp hs hinter hedges =>
+      rw [Ear.toGraph_closed] at he
+      let c := p.transfer (Ear.closed hHG p hp hs hinter hedges).add_le fun _ hf ↦
+        edges_toWalk_subset_edgeSet_add (Ear.closed hHG p hp hs hinter hedges)
+          (by rw [Ear.toWalk_closed]; exact hf)
+      have hc : c.IsCycle := (Walk.isCycle_transfer
+        (Ear.closed hHG p hp hs hinter hedges).add_le p _).mpr hp
+      exact ⟨s, c, hc, by
+        simpa only [c, Walk.edges_transfer] using (p.mem_edgeSet_walkGraph e).mp he⟩
 
 /-- An open ear has distinct endpoints. -/
 theorem endpoints_ne (e : G.Ear H) (he : e.kind = .open) : e.toWalk.1 ≠ e.toWalk.2.1 := by

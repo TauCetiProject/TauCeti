@@ -99,9 +99,9 @@ theorem gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq {g e : W} {s : ℕ}
 
 end NormedCommRing
 
-section Field
+section RingLift
 
-variable [NormedField K] [IsUltrametricDist K]
+variable [NormedCommRing K] [IsUltrametricDist K] [Nontrivial K]
 
 /-- Transport a preparation at unequal radii to the overconvergent algebras. -/
 private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
@@ -145,6 +145,12 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
   rw [map_mul, hE, hΩ,
     map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
   exact heq
+
+end RingLift
+
+section Field
+
+variable [NormedField K] [IsUltrametricDist K]
 
 /-- An overconvergent series distinguished of degree `s` at unit radius in the separated
 variable, with unit coefficient in degree `s`, is an overconvergent unit times a monic

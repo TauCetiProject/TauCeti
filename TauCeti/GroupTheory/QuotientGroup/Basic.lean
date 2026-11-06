@@ -65,6 +65,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `QuotientGroup.mk_list_prod`: the class of a list product is the product of the classes.
 * `QuotientGroup.inv_mul_mul_list_prod_map_mul_mem`: central corrections can be absorbed into the
   two tail products of a word, modulo a normal subgroup.
+* `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
+  lies in the normal subgroup.
 -/
 
 public section
@@ -277,6 +279,13 @@ theorem _root_.QuotientGroup.inv_mul_mul_list_prod_map_mul_mem {ι : Type*} (K :
   calc P₁ * W * P₂ * (U₁ * U₂) = P₁ * (W * P₂ * U₁) * U₂ := by simp only [mul_assoc]
     _ = P₁ * (U₁ * (W * P₂)) * U₂ := by rw [e₁]
     _ = P₁ * U₁ * W * (P₂ * U₂) := by simp only [mul_assoc]
+
+/-- The class of `s` in `G ⧸ N` is its own inverse when `s ^ 2 ∈ N`. -/
+theorem _root_.QuotientGroup.mk_inv_eq_self_of_sq_mem {N : Subgroup G} [N.Normal] {s : G}
+    (hs : s ^ 2 ∈ N) : (s : G ⧸ N)⁻¹ = s :=
+  inv_eq_of_mul_eq_one_right <| by
+    rw [← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff, ← sq]
+    exact hs
 
 section Finite
 
