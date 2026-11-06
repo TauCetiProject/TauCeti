@@ -62,6 +62,8 @@ The comparison sends it to `(f a)ⁿ`, which freely generates `Γ(D₊(f a), �
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.12(c).
 * [The Stacks Project, Lemma 27.11.1](https://stacks.math.columbia.edu/tag/01MX).
+* [The Stacks Project, Tag 01N1](https://stacks.math.columbia.edu/tag/01N1), for the chart
+  computation of the pullback of `𝒪(n)`.
 -/
 
 public section
