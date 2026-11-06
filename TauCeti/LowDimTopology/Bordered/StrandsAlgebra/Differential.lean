@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Ungraded
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Resolution
 import Mathlib.Algebra.CharP.Two
-import Mathlib.Tactic.Order
+import TauCeti.Order.MinMax
 
 /-!
 # The differential of the strands algebra
@@ -194,22 +194,6 @@ private theorem mem_chains_swap {p q : α × α}
   have he := resolve_resolve_comm hp hq' h₁ h₂ h₃ h₄
   exact ⟨mem_chains_iff.2 ⟨hq', hp', he ▸ hc⟩, he.symm⟩
 
-omit [Fintype α] in
-/-- The comparison of end points behind the pairing of chains sharing a strand. Three strands start
-at `s`, `u`, `w` and end at `S`, `U`, `W`. If resolving `{s, u}` and then `{s, w}` is a chain, then
-exactly one of resolving `{s, w}` and then `{u, w}`, or `{u, w}` and then `{s, u}`, is one too. -/
-private theorem xor_of_lt_iff {β : Type*} [LinearOrder β] {s u w : α} {S U W : β}
-    (hsu : s ≠ u) (hsw : s ≠ w) (huw : u ≠ w) (hSU : S ≠ U) (hSW : S ≠ W) (hUW : U ≠ W)
-    (h₁ : s < u ↔ U < S) (h₂ : s < w ↔ W < U) :
-    Xor ((s < w ↔ W < S) ∧ (u < w ↔ S < U)) ((u < w ↔ W < U) ∧ (s < u ↔ W < S)) := by
-  rcases lt_or_gt_of_ne hsu with h₃ | h₃ <;> rcases lt_or_gt_of_ne hsw with h₄ | h₄ <;>
-    rcases lt_or_gt_of_ne huw with h₅ | h₅ <;> rcases lt_or_gt_of_ne hSU with h₆ | h₆ <;>
-    rcases lt_or_gt_of_ne hSW with h₇ | h₇ <;> rcases lt_or_gt_of_ne hUW with h₈ | h₈ <;>
-    simp only [xor_def, h₃, h₄, h₅, h₆, h₇, h₈, h₃.not_gt, h₄.not_gt, h₅.not_gt, h₆.not_gt,
-      h₇.not_gt, h₈.not_gt, iff_true, iff_false, not_true_eq_false, not_false_eq_true, and_true,
-      and_false, or_false, false_or] at h₁ h₂ ⊢ <;>
-    order
-
 /-- **The three-cycle pairing of chains.** For strands starting at distinct `s`, `u`, `w`, if
 resolving `{s, u}` and then `{s, w}` is a chain, then exactly one of resolving `{s, w}` and then
 `{u, w}`, or `{u, w}` and then `{s, u}`, is a chain, and each of these has the same end result. -/
@@ -309,40 +293,6 @@ private theorem third_min_max {s u w : α} (hsu : s ≠ u) (hsw : s ≠ w) (huw 
     third (min s u, max s u) (min s w, max s w) = (min u w, max u w) := by
   rcases lt_or_gt_of_ne hsu with h₁ | h₁ <;> rcases lt_or_gt_of_ne hsw with h₂ | h₂ <;>
     simp [third, h₁.le, h₂.le, hsu, hsw, huw, hsu.symm, hsw.symm, huw.symm]
-
-omit [Fintype α] in
-/-- Two sorted pairs sharing the point `z` are not disjoint. -/
-private theorem not_disjoint_min_max (x y z : α) :
-    ¬((min y z, max y z).1 ≠ (min x z, max x z).1 ∧
-      (min y z, max y z).1 ≠ (min x z, max x z).2 ∧
-      (min y z, max y z).2 ≠ (min x z, max x z).1 ∧
-      (min y z, max y z).2 ≠ (min x z, max x z).2) := by
-  rcases le_total x z with h₁ | h₁ <;> rcases le_total y z with h₂ | h₂ <;>
-    simp [h₁, h₂]
-
-omit [Fintype α] in
-/-- Two distinct increasing pairs that are not disjoint share exactly one point. -/
-private theorem exists_min_max_of_not_disjoint {p q : α × α} (hp : p.1 < p.2) (hq : q.1 < q.2)
-    (hpq : p ≠ q) (h : ¬(q.1 ≠ p.1 ∧ q.1 ≠ p.2 ∧ q.2 ≠ p.1 ∧ q.2 ≠ p.2)) :
-    ∃ s u w : α, s ≠ u ∧ s ≠ w ∧ u ≠ w ∧ p = (min s u, max s u) ∧ q = (min s w, max s w) := by
-  obtain ⟨p₁, p₂⟩ := p
-  obtain ⟨q₁, q₂⟩ := q
-  dsimp only at hp hq h
-  have hp' : (p₁, p₂) = (min p₁ p₂, max p₁ p₂) := by rw [min_eq_left hp.le, max_eq_right hp.le]
-  have hq' : (q₁, q₂) = (min q₁ q₂, max q₁ q₂) := by rw [min_eq_left hq.le, max_eq_right hq.le]
-  by_cases h₁ : q₁ = p₁
-  · subst h₁
-    refine ⟨q₁, p₂, q₂, hp.ne, hq.ne, fun h ↦ hpq (by rw [h]), hp', hq'⟩
-  by_cases h₂ : q₁ = p₂
-  · subst h₂
-    refine ⟨q₁, p₁, q₂, hp.ne', hq.ne, (hp.trans hq).ne, by rwa [min_comm, max_comm], hq'⟩
-  by_cases h₃ : q₂ = p₁
-  · subst h₃
-    refine ⟨q₂, p₂, q₁, hp.ne, hq.ne', (hq.trans hp).ne', hp', by rwa [min_comm, max_comm]⟩
-  have h₄ : q₂ = p₂ := by tauto
-  subst h₄
-  refine ⟨q₂, p₁, q₁, hp.ne', hq.ne', fun h ↦ hpq (by rw [h]), by rwa [min_comm, max_comm],
-    by rwa [min_comm, max_comm]⟩
 
 /-- The chain paired with a chain `(p, q)` in `d (d φ)`: `(q, p)` when `p` and `q` are disjoint,
 and otherwise whichever of `(q, r)` and `(r, p)` is a chain, `r` being the third pair of the three
