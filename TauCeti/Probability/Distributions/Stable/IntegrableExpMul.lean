@@ -57,6 +57,19 @@ namespace TauCeti.Probability
 
 variable {α β ε t : ℝ}
 
+/-- For positive scale, exponential integrability at `t` is equivalent to exponential
+integrability at `s * t` for the scale-one, location-zero stable law. -/
+theorem mem_integrableExpSet_id_stableMeasure_iff_one_zero {s : ℝ≥0} {m : ℝ}
+    (hs : 0 < s) :
+    t ∈ integrableExpSet id (stableMeasure α β s m) ↔
+      (s : ℝ) * t ∈ integrableExpSet id (stableMeasure α β 1 0) := by
+  have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + s * x) =
+      stableMeasure α β s m := by
+    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
+      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
+        (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
+  rw [← hmap, integrableExpSet_id_map_affine, mem_preimage]
+
 /-- The standardized totally skewed stable law has finite exponential moments on the
 half-line `β * t ≤ 0`, by lower semicontinuity along its compensated approximations. -/
 private theorem integrable_exp_mul_stableMeasure_one_zero (hα : α ∈ Ioo 0 2) (hβ : |β| = 1)
@@ -95,14 +108,9 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
   rcases eq_zero_or_pos s with rfl | hs
   · rw [stableMeasure_zero_scale hα hβ.le]
     exact integrable_dirac' (by fun_prop) (by simp)
-  -- A positive scale and a location are an affine image of the standardized law.
-  have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + s * x) = stableMeasure α β s m := by
-    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
-      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
-        (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
   suffices h : t ∈ integrableExpSet id (stableMeasure α β s m) by
     simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using h
-  rw [← hmap, integrableExpSet_id_map_affine, mem_preimage]
+  rw [mem_integrableExpSet_id_stableMeasure_iff_one_zero hs]
   have hts : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
   simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using

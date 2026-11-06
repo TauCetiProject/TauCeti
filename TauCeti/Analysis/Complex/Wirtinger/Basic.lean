@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
@@ -49,12 +51,22 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.norm_wirtingerDeriv_smul_sub_smul_le`,
   `TauCeti.norm_conjWirtingerDeriv_smul_sub_smul_le`: for a real factor `χ`,
   `‖∂(χ u)(x) v - χ ∂u(x) v‖ ≤ ‖Dχ(x)‖ ‖v‖ ‖u(x)‖`, and likewise for `\bar∂`.
+* `ContDiffAt.conjWirtingerDeriv_apply`: the conjugate Wirtinger derivative of a `C^(m+1)` map is
+  `C^m`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
+
+## Implementation notes
+
+Both derivatives are built from the totalized real derivative `fderiv ℝ g x`, so at a point where
+`g` is not real-differentiable both are the junk value `0`. Results that need a genuine derivative
+therefore assume differentiability; for instance, the converse "`\bar∂g = 0` implies complex
+differentiability" (`TauCeti.differentiableAt_iff_conjWirtingerDeriv_eq_zero` in
+`TauCeti.Analysis.Complex.Wirtinger.Holomorphic`) assumes `DifferentiableAt ℝ g x`.
 
 ## References
 
@@ -77,7 +89,9 @@ variable (g : V → W) (x : V)
 
 /-- The **Wirtinger derivative** `∂g(x)` of a function into a complex normed space: the
 complex-linear part `v ↦ (Dg(x) v - I • Dg(x)(I • v)) / 2` of its real derivative. On a coordinate
-vector `e_j` it is `∂g / ∂z_j`. -/
+vector `e_j` it is `∂g / ∂z_j`. Like `fderiv ℝ g x`, from which it is built, it is the junk value
+`0` at points where `g` is not real-differentiable, so results that need a genuine derivative
+assume differentiability of `g` at `x`. -/
 noncomputable def wirtingerDeriv : V →L[ℂ] W where
   toFun v := (2 : ℂ)⁻¹ • (fderiv ℝ g x v - I • fderiv ℝ g x (I • v))
   map_add' v w := by simp only [smul_add, map_add]; module
@@ -91,7 +105,9 @@ noncomputable def wirtingerDeriv : V →L[ℂ] W where
 
 /-- The **conjugate Wirtinger derivative** `\bar∂g(x)` of a function into a complex normed space:
 the complex-antilinear part `v ↦ (Dg(x) v + I • Dg(x)(I • v)) / 2` of its real derivative. On a
-coordinate vector `e_j` it is `∂g / ∂(conj z_j)`. -/
+coordinate vector `e_j` it is `∂g / ∂(conj z_j)`. Like `fderiv ℝ g x`, from which it is built, it
+is the junk value `0` at points where `g` is not real-differentiable, so results that need a
+genuine derivative assume differentiability of `g` at `x`. -/
 noncomputable def conjWirtingerDeriv : V →L⋆[ℂ] W where
   toFun v := (2 : ℂ)⁻¹ • (fderiv ℝ g x v + I • fderiv ℝ g x (I • v))
   map_add' v w := by simp only [smul_add, map_add]; module
@@ -201,6 +217,15 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
   ext v
   simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
   module
+
+/-- The conjugate Wirtinger derivative of a `C^(m+1)` map, evaluated on a fixed vector, is `C^m`. -/
+theorem _root_.ContDiffAt.conjWirtingerDeriv_apply {g : V → W} {x : V} {m n : WithTop ℕ∞}
+    (hg : ContDiffAt ℝ n g x) (hmn : m + 1 ≤ n) (v : V) :
+    ContDiffAt ℝ m (fun z ↦ conjWirtingerDeriv g z v) x := by
+  have h (w : V) : ContDiffAt ℝ m (fun z ↦ fderiv ℝ g z w) x :=
+    (hg.fderiv_right hmn).clm_apply contDiffAt_const
+  simp only [TauCeti.conjWirtingerDeriv_apply]
+  exact ((h v).add ((h (I • v)).const_smul I)).const_smul _
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
 Cauchy–Riemann equation `\bar∂g = 0`. -/

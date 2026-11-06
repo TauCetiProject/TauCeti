@@ -73,7 +73,7 @@ result to each continuous coordinate functional and reconstruct by a finite sum.
 * `TauCeti.WeaklyHarmonicOn.mono`, `TauCeti.WeaklyHarmonicOn.congr_ae`,
   `TauCeti.WeaklyHarmonicOn.add`, …: weak harmonicity is local, depends only on the a.e. class of
   the function on `Ω`, and is closed under the linear operations.
-* `TauCeti.WeaklyHarmonicOn.clm_comp`: continuous linear images are weakly harmonic.
+* `TauCeti.WeaklyHarmonicOn.clm_comp`: continuous linear maps preserve weak harmonicity.
 * `TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`,
   `TauCeti.HasWeakFDerivOn.weaklyHarmonicOn`: weak derivatives of weakly harmonic functions
   are weakly harmonic.
@@ -173,7 +173,7 @@ globally integrable one. -/
 private theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
     Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
   simpa only [TestFunction.laplacianCLM_apply] using
-    integrable_smul_of_locallyIntegrableOn hw (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ)
+    TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) hw
 
 /-- The full weak Fréchet derivative of a weakly harmonic function is weakly harmonic.
 Each evaluation is a weak directional derivative, and evaluation commutes with integration. -/
@@ -186,17 +186,6 @@ theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
   rw [ContinuousLinearMap.integral_apply (integrable_laplacian_smul
     h.locallyIntegrableOn_deriv φ) v]
   exact (h.hasWeakLineDerivOn v).weaklyHarmonicOn hw |>.integral_laplacian_smul_eq_zero φ
-
-/-- A continuous linear image of a weakly harmonic function is weakly harmonic. -/
-theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [CompleteSpace G] (h : WeaklyHarmonicOn μ Ω w) (L : F →L[ℝ] G) :
-    WeaklyHarmonicOn μ Ω (fun x => L (w x)) := by
-  refine ⟨L.locallyIntegrableOn_comp h.locallyIntegrableOn, fun φ => ?_⟩
-  calc ∫ x, Δ (φ : E → ℝ) x • L (w x) ∂μ
-      = L (∫ x, Δ (φ : E → ℝ) x • w x ∂μ) := by
-          rw [← L.integral_comp_comm (integrable_laplacian_smul h.locallyIntegrableOn φ)]
-          simp only [map_smul]
-    _ = 0 := by rw [h.integral_laplacian_smul_eq_zero φ, map_zero]
 
 /-- Replacing `w` by a function agreeing with it almost everywhere on `Ω` preserves weak
 harmonicity: only the restriction of `w` to `Ω` is seen. -/
@@ -225,6 +214,14 @@ theorem WeaklyHarmonicOn.add {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ �
 theorem WeaklyHarmonicOn.sub {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ Ω w₁)
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
   simpa [sub_eq_add_neg] using h₁.add h₂.neg
+
+/-- A continuous linear map of complete real normed spaces preserves weak harmonicity. -/
+theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] (h : WeaklyHarmonicOn μ Ω w) (L : F →L[ℝ] G) :
+    WeaklyHarmonicOn μ Ω (fun x ↦ L (w x)) := by
+  refine ⟨L.locallyIntegrableOn_comp h.locallyIntegrableOn, fun φ ↦ ?_⟩
+  simpa only [map_smul, h.integral_laplacian_smul_eq_zero φ, map_zero] using
+    L.integral_comp_comm (integrable_laplacian_smul h.locallyIntegrableOn φ)
 
 end OpensMeasurable
 

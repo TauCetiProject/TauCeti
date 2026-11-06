@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.Supported
+public import Mathlib.RingTheory.Finiteness.Defs
 
 /-!
 # Filtering finitely supported functions supported on a set
@@ -15,6 +16,9 @@ Keeping the values of a finitely supported function `f` at the points satisfying
 every point of `s` satisfying `p` lies in `t`. This file packages this operation as a linear map
 between the submodules `Finsupp.supported M R s` and `Finsupp.supported M R t`; Mathlib's
 `Finsupp.restrictDom` is the case of the predicate `(· ∈ t)` on the whole space.
+
+A finitely generated submodule of `ℕ →₀ M` consists of functions supported on an initial segment
+`{i | i < n}`, since its finitely many generators have finite supports.
 
 ## Main definitions
 
@@ -26,6 +30,8 @@ between the submodules `Finsupp.supported M R s` and `Finsupp.supported M R t`; 
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
   `Finsupp.supported M R s ≤ Finsupp.supported M R s'` given by enlarging the support.
+* `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
+  supported on some initial segment.
 -/
 
 public section
@@ -75,3 +81,18 @@ theorem inclusion_comp_filterSupported {s t t' : Set α} (p : α → Prop) [Deci
   LinearMap.ext fun _ ↦ Subtype.ext (by simp)
 
 end TauCeti.Finsupp
+
+namespace Submodule.FG
+
+variable {M R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- A finitely generated submodule of `ℕ →₀ M` consists of functions vanishing from some
+coordinate on. -/
+theorem exists_le_supported_Iio {V : Submodule R (ℕ →₀ M)} (hV : V.FG) :
+    ∃ n, V ≤ Finsupp.supported M R (Set.Iio n) := by
+  obtain ⟨S, hS, rfl⟩ := Submodule.fg_def.1 hV
+  obtain ⟨b, hb⟩ := (hS.biUnion fun x _ ↦ x.support.finite_toSet).bddAbove
+  exact ⟨b + 1, (Finsupp.span_le_supported_biUnion_support R S).trans
+    (Finsupp.supported_mono fun i hi ↦ Nat.lt_succ_of_le (hb hi))⟩
+
+end Submodule.FG
