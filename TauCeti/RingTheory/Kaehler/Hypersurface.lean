@@ -103,12 +103,8 @@ theorem span_one_tmul_D_eq_top_of_formallyUnramified (s : Set P)
     (hs : ∀ g ∈ s, algebraMap P L g = 0) :
     Submodule.span L ((fun g ↦ (1 : L) ⊗ₜ[P] D K P g) '' s) = ⊤ := by
   set T := P ⧸ Ideal.span s
-  let : Algebra T L := (Ideal.Quotient.lift _ (algebraMap P L) fun g hg ↦ by
-    induction hg using Submodule.span_induction with
-    | mem g hg => exact hs g hg
-    | zero => simp
-    | add g h _ _ hg hh => simp [hg, hh]
-    | smul r g _ hg => simp [hg]).toAlgebra
+  let : Algebra T L := (Ideal.Quotient.lift _ (algebraMap P L) fun _ hg ↦
+    RingHom.mem_ker.1 <| Ideal.span_le.2 (fun g hg ↦ RingHom.mem_ker.2 (hs g hg)) hg).toAlgebra
   have : IsScalarTower P T L := .of_algebraMap_eq fun _ ↦ rfl
   -- Since `Ω[T⁄K] = 0`, the elements `1 ⊗ dg` span `T ⊗[P] Ω[P⁄K]`, by the conormal sequence.
   have hT : Submodule.span T ((fun g ↦ (1 : T) ⊗ₜ[P] D K P g) '' s) = ⊤ := by
