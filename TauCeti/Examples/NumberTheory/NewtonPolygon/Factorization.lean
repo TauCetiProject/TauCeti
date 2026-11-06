@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NewtonPolygon.Factorization
 public import TauCeti.NumberTheory.Padics.LogGauge
 import TauCeti.NumberTheory.NewtonPolygon.Irreducible
+import Mathlib.Algebra.Polynomial.UnitTrinomial
 
 /-!
 # Explicit Newton slope factorisations over `ℚ_[p]`
@@ -41,24 +42,31 @@ section DistinctSlopes
 
 variable {p : ℕ} [Fact p.Prime]
 
+/-- The polynomial `1 + p X + p ^ 3 X ^ 2` is the trinomial with exponents `0, 1, 2` and
+coefficients `1, p, p ^ 3`. -/
+private theorem one_add_p_X_add_p_cube_X_sq_eq_trinomial :
+    (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]) =
+      trinomial 0 1 2 1 (p : ℚ_[p]) ((p : ℚ_[p]) ^ 3) := by
+  simp [trinomial]
+
 /-- The constant coefficient of `1 + p X + p ^ 3 X ^ 2` is `1`. -/
 private theorem coeff_zero_one_add_p_X_add_p_cube_X_sq :
     (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).coeff 0 = 1 := by
-  simp only [coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-  norm_num
+  rw [one_add_p_X_add_p_cube_X_sq_eq_trinomial]
+  exact trinomial_trailing_coeff' (by decide) (by decide)
 
 /-- The linear coefficient of `1 + p X + p ^ 3 X ^ 2` is `p`. -/
 private theorem coeff_one_one_add_p_X_add_p_cube_X_sq :
     (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).coeff 1 = (p : ℚ_[p]) := by
-  simp only [coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-  norm_num
+  rw [one_add_p_X_add_p_cube_X_sq_eq_trinomial]
+  exact trinomial_middle_coeff (by decide) (by decide)
 
 /-- The quadratic coefficient of `1 + p X + p ^ 3 X ^ 2` is `p ^ 3`. -/
 private theorem coeff_two_one_add_p_X_add_p_cube_X_sq :
     (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).coeff 2 =
       (p : ℚ_[p]) ^ 3 := by
-  simp only [coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-  norm_num
+  rw [one_add_p_X_add_p_cube_X_sq_eq_trinomial]
+  exact trinomial_leading_coeff' (by decide) (by decide)
 
 /-- The coefficients of `1 + p X + p ^ 3 X ^ 2` vanish above degree `2`. -/
 private theorem coeff_eq_zero_one_add_p_X_add_p_cube_X_sq {n : ℕ} (hn : 2 < n) :
