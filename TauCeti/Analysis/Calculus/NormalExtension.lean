@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Asymptotics.Prod
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Normal extensions for adapted coordinates
@@ -36,7 +36,6 @@ coordinates adapted to a totally real submanifold.
 
 public noncomputable section
 
-open Filter Asymptotics
 open scoped Topology ContDiff
 
 namespace TauCeti
@@ -79,30 +78,12 @@ No derivative of that frame is required. -/
 theorem hasFDerivAt_normalExtension_zero {γ : V → W} {A : V → E →L[𝕜] W} {x : V}
     {D : V →L[𝕜] W} (hγ : HasFDerivAt γ D x) (hA : ContinuousAt A x) :
     HasFDerivAt (normalExtension γ A) (D.coprod (A x)) (x, 0) := by
-  have hγr : (fun h : V × E ↦ γ (x + h.1) - γ x - D h.1) =o[𝓝 0] fun h ↦ h :=
-    ((hasFDerivAt_iff_isLittleO_nhds_zero.1 hγ).comp_tendsto
-      (continuous_fst.tendsto 0)).trans_isBigO isBigO_fst_prod'
-  have hAc : ContinuousAt (fun h : V × E ↦ A (x + h.1)) 0 := by
-    apply ContinuousAt.comp
-    · simpa only [Prod.fst_zero, add_zero] using hA
-    · fun_prop
-  have hAr : (fun h : V × E ↦ A (x + h.1) - A x) =o[𝓝 0] fun _ ↦ (1 : ℝ) := by
-    simpa only [Prod.fst_zero, add_zero] using (hAc.isLittleO (F := ℝ))
-  have hnr : (fun h : V × E ↦ (A (x + h.1) - A x) h.2) =o[𝓝 0] fun h ↦ h := by
-    have hr := hAr.norm_left.mul_isBigO
-      (isBigO_snd_prod' (f' := fun h : V × E ↦ h) (l := 𝓝 0)).norm_norm
-    have hb := (isBoundedBilinearMap_apply :
-      IsBoundedBilinearMap 𝕜 (fun p : (E →L[𝕜] W) × E ↦ p.1 p.2)).isBigO_comp
-        (g := fun h : V × E ↦ A (x + h.1) - A x) (h := fun h ↦ h.2) (l := 𝓝 0)
-    apply IsLittleO.of_norm_right
-    simpa only [one_mul] using hb.trans_isLittleO hr
-  rw [hasFDerivAt_iff_isLittleO_nhds_zero]
-  convert hγr.add hnr using 1
-  ext h
-  simp only [normalExtension, Prod.fst_add, Prod.snd_add,
-    add_zero, zero_add, map_zero, ContinuousLinearMap.coprod_apply,
-    sub_apply]
-  abel
+  have hAc : ContinuousWithinAt (fun p : V × E ↦ A p.1) Set.univ (x, 0) :=
+    (hA.comp continuousAt_fst).continuousWithinAt
+  have hnormal := (HasFDerivWithinAt.clm_apply_of_eq_zero hAc
+    (hasFDerivAt_snd.hasFDerivWithinAt) rfl).hasFDerivAt_of_univ
+  exact ((hγ.comp (x, 0) hasFDerivAt_fst).add hnormal).congr_fderiv
+    (ContinuousLinearMap.ext fun p ↦ by simp [ContinuousLinearMap.coprod_apply])
 
 /-- The derivative of a normal extension along the zero section is its doubled frame. -/
 theorem fderiv_normalExtension_zero {γ : V → W} {A : V → E →L[𝕜] W} {x : V}
