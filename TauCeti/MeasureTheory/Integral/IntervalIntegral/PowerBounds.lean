@@ -145,12 +145,11 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
 theorem norm_intervalIntegral_sub_le_of_le_sub {V : Type*} [NormedAddCommGroup V]
     [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1)
     (ht' : 0 ≤ t') (htt' : t' ≤ t) (hsmall : t' ≤ t - t')
-    (h₁ : ‖∫ s in 0..t, g₁ s‖ ≤ c * (t - 0) ^ β) (h₂ : ‖∫ s in 0..t', g₂ s‖ ≤ c * (t' - 0) ^ β) :
+    (h₁ : ‖∫ s in 0..t, g₁ s‖ ≤ c * t ^ β) (h₂ : ‖∫ s in 0..t', g₂ s‖ ≤ c * t' ^ β) :
     ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖ ≤ 3 * c * (t - t') ^ β := by
   have h₃ : t ^ β ≤ 2 * (t - t') ^ β :=
     rpow_le_two_mul_rpow_of_le_two_mul (ht'.trans htt') (by linarith) hβ₀ hβ₁
   have h₄ : t' ^ β ≤ (t - t') ^ β := rpow_le_rpow ht' hsmall hβ₀
-  rw [sub_zero] at h₁ h₂
   calc ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖
       ≤ ‖∫ s in 0..t, g₁ s‖ + ‖∫ s in 0..t', g₂ s‖ := norm_sub_le _ _
     _ ≤ c * t ^ β + c * t' ^ β := add_le_add h₁ h₂
@@ -165,8 +164,8 @@ theorem norm_intervalIntegral_sub_le_of_sub_lt {V : Type*} [NormedAddCommGroup V
     (hs₀ : 0 ≤ 2 * t' - t) (htt' : t' ≤ t) (hg₁ : IntervalIntegrable g₁ volume 0 t)
     (hg₂ : IntervalIntegrable g₂ volume 0 t')
     (hfar : ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ ≤ D)
-    (h₁ : ‖∫ s in (2 * t' - t)..t, g₁ s‖ ≤ c * (t - (2 * t' - t)) ^ β)
-    (h₂ : ‖∫ s in (2 * t' - t)..t', g₂ s‖ ≤ c * (t' - (2 * t' - t)) ^ β) :
+    (h₁ : ‖∫ s in (2 * t' - t)..t, g₁ s‖ ≤ c * (2 * (t - t')) ^ β)
+    (h₂ : ‖∫ s in (2 * t' - t)..t', g₂ s‖ ≤ c * (t - t') ^ β) :
     ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖ ≤ D + 3 * c * (t - t') ^ β := by
   have hmem {τ : ℝ} (hτ : 2 * t' - t ≤ τ) : 2 * t' - t ∈ [[0, τ]] := by
     rw [uIcc_of_le (hs₀.trans hτ)]
@@ -181,9 +180,8 @@ theorem norm_intervalIntegral_sub_le_of_sub_lt {V : Type*} [NormedAddCommGroup V
   rw [hsplit hg₁ (by linarith), hsplit hg₂ (by linarith),
     show ∀ a b c d : V, a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
     ← intervalIntegral.integral_sub hg₁' hg₂']
-  have h₃ : (t - (2 * t' - t)) ^ β ≤ 2 * (t - t') ^ β :=
+  have h₃ : (2 * (t - t')) ^ β ≤ 2 * (t - t') ^ β :=
     rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
-  rw [show t' - (2 * t' - t) = t - t' by ring] at h₂
   calc ‖(∫ s in 0..2 * t' - t, (g₁ s - g₂ s)) + (∫ s in (2 * t' - t)..t, g₁ s) -
         ∫ s in (2 * t' - t)..t', g₂ s‖
       ≤ ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ + ‖∫ s in (2 * t' - t)..t, g₁ s‖ +
