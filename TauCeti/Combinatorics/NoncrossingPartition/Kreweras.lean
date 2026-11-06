@@ -72,6 +72,8 @@ of two free families in terms of the cumulants and moments of the two families.
   of the bars complementary to `π`.
 * `TauCeti.NoncrossingPartition.kreweras_kreweras` — on `NC(n)`, `K(K(π))` is the inverse rotation
   `(rotate n).symm π`.
+* `TauCeti.NoncrossingPartition.prod_parts_kreweras_kreweras` — products over the parts of
+  `K(K(π))` of a function of the part sizes equal those over the parts of `π`.
 * `TauCeti.NoncrossingPartition.kreweras_rotate` — the complement commutes with the rotation.
 * `TauCeti.NoncrossingPartition.kreweras_bijective`,
   `TauCeti.NoncrossingPartition.kreweras_le_kreweras_iff` — on `NC(n)` the complement is a
@@ -554,6 +556,15 @@ theorem kreweras_kreweras (π : NoncrossingPartition (univ : Finset (Fin n))) :
   have h₂ := card_parts_add_card_parts_kreweras (kreweras π) hne
   rw [parts_rotate_symm, card_image_of_injective _ (map_injective _)]
   omega
+
+/-- Products over the parts of `K(K(π))` of a function of the part sizes are the products over the
+parts of `π`: `K(K(π))` is a rotation of `π`. -/
+theorem prod_parts_kreweras_kreweras {M : Type*} [CommMonoid M]
+    (π : NoncrossingPartition (univ : Finset (Fin n))) (h : ℕ → M) :
+    ∏ B ∈ (kreweras (kreweras π)).1.parts, h #B = ∏ B ∈ π.1.parts, h #B := by
+  rw [kreweras_kreweras, parts_rotate_symm,
+    prod_image fun B _ C _ hBC => Finset.map_injective _ hBC]
+  simp_rw [card_map]
 
 /-- The Kreweras complement commutes with the rotation of `NC(n)`. -/
 theorem kreweras_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) :
