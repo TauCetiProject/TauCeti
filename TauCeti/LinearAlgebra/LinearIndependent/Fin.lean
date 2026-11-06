@@ -27,10 +27,9 @@ theorem Submodule.span_range_fin_append [Semiring R] [AddCommMonoid V] [Module R
     (x : Fin p → V) (y : Fin q → V) :
     span R (range (Fin.append x y)) = span R (range x) ⊔ span R (range y) := by
   rw [← EquivLike.range_comp (Fin.append x y) finSumFinEquiv]
-  have heq : Fin.append x y ∘ finSumFinEquiv = Sum.elim x y := by
-    ext i
-    rcases i with i | i <;> simp
-  rw [heq, Sum.elim_range, span_union]
+  -- Unfold the equivalence's forward map to use Mathlib's sum-elimination identity.
+  simp only [finSumFinEquiv, Equiv.coe_fn_mk, Fin.append_comp_sumElim,
+    Sum.elim_range, span_union]
 
 namespace TauCeti
 
@@ -42,10 +41,34 @@ theorem linearIndependent_fin_append [Ring R] [AddCommGroup V] [Module R V]
       LinearIndependent R x ∧ LinearIndependent R y ∧
         Disjoint (span R (range x)) (span R (range y)) := by
   rw [← linearIndependent_equiv finSumFinEquiv]
-  have heq : Fin.append x y ∘ finSumFinEquiv = Sum.elim x y := by
-    ext i
-    rcases i with i | i <;> simp
-  rw [heq, linearIndependent_sum]
-  rfl
+  -- Unfold the equivalence's forward map to use Mathlib's sum-elimination identity.
+  simp only [finSumFinEquiv, Equiv.coe_fn_mk, Fin.append_comp_sumElim,
+    linearIndependent_sum, Sum.elim_comp_inl, Sum.elim_comp_inr]
 
 end TauCeti
+
+namespace LinearIndependent
+
+open TauCeti
+
+/-- Removing the last block of an independent three-block concatenation
+preserves independence. -/
+theorem fin_append_left_append [Ring R] [AddCommGroup V] [Module R V] {r : ℕ}
+    {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
+    (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
+    LinearIndependent R (Fin.append x y) := by
+  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
+  exact linearIndependent_fin_append.mpr ⟨hx, (linearIndependent_fin_append.mp hyz).1,
+    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_left)⟩
+
+/-- Removing the middle block of an independent three-block concatenation
+preserves independence. -/
+theorem fin_append_right_append [Ring R] [AddCommGroup V] [Module R V] {r : ℕ}
+    {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
+    (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
+    LinearIndependent R (Fin.append x z) := by
+  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
+  exact linearIndependent_fin_append.mpr ⟨hx, (linearIndependent_fin_append.mp hyz).2.1,
+    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_right)⟩
+
+end LinearIndependent

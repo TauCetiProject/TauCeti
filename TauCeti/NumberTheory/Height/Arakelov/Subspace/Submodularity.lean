@@ -28,6 +28,8 @@ the global inequalities on the native Plücker heights.
 
 ## References
 
+* T. Struppeck and J. D. Vaaler, *Inequalities for heights of algebraic subspaces
+  and the Thue–Siegel principle* (1990).
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative
   Subspace Theorem*, Ann. of Math. 177 (2013), §6.1, (6.12).
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), §2.8.
@@ -84,12 +86,9 @@ theorem arakelovMulHeight_plucker_overlap_le {p q r : ℕ}
         arakelovMulHeight (plucker (Fin.append x z)) := by
   classical
   let _ := Fintype.ofFinite ι
-  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
-  obtain ⟨hy, hz, -⟩ := linearIndependent_fin_append.mp hyz
-  have hxy := linearIndependent_fin_append.mpr ⟨hx, hy,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_left)⟩
-  have hxz := linearIndependent_fin_append.mpr ⟨hx, hz,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_right)⟩
+  have hx := (linearIndependent_fin_append.mp h).1
+  have hxy := h.fin_append_left_append
+  have hxz := h.fin_append_right_append
   have h0 := (plucker_ne_zero_iff _).mpr hx
   have h1 := (plucker_ne_zero_iff _).mpr h
   have h2 := (plucker_ne_zero_iff _).mpr hxy
@@ -138,19 +137,16 @@ theorem relativeSubspaceArakelovHeight_inf_mul_sup_le (U W : Submodule K (ι →
       relativeSubspaceArakelovHeight U * relativeSubspaceArakelovHeight W := by
   obtain ⟨p, q, r, x, y, z, h, hI, hU, hW, hS⟩ :=
     U.exists_linearIndependent_span_inf_sup W
-  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
-  obtain ⟨hy, hz, -⟩ := linearIndependent_fin_append.mp hyz
-  have hxy := linearIndependent_fin_append.mpr ⟨hx, hy,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_left)⟩
-  have hxz := linearIndependent_fin_append.mpr ⟨hx, hz,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_right)⟩
+  have hx := (linearIndependent_fin_append.mp h).1
+  have hxy := h.fin_append_left_append
+  have hxz := h.fin_append_right_append
   rw [← hI, ← hS, ← hU, ← hW, relativeSubspaceArakelovHeight_span_range hx,
     relativeSubspaceArakelovHeight_span_range h, relativeSubspaceArakelovHeight_span_range hxy,
     relativeSubspaceArakelovHeight_span_range hxz]
   exact arakelovMulHeight_plucker_overlap_le h
 
-/-- **Submodularity of absolute Euclidean subspace heights.** No disjointness,
-complementarity or positive-dimension hypothesis is required. -/
+/-- **Struppeck–Vaaler submodularity of absolute Euclidean subspace heights.**
+No disjointness, complementarity or positive-dimension hypothesis is required. -/
 theorem subspaceHeight_inf_mul_sup_le (U W : Submodule K (ι → K)) :
     subspaceHeight (U ⊓ W) * subspaceHeight (U ⊔ W) ≤ subspaceHeight U * subspaceHeight W := by
   apply (pow_le_pow_iff_left₀
