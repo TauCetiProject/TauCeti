@@ -77,6 +77,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {u : E →
 def upperContactSet (u : E → ℝ) (Ω : Set E) : Set E :=
   {y | y ∈ Ω ∧ ∃ p : E, ∀ x ∈ Ω, u x ≤ u y + ⟪p, x - y⟫}
 
+@[simp]
 theorem mem_upperContactSet :
     y ∈ upperContactSet u Ω ↔ y ∈ Ω ∧ ∃ p : E, ∀ x ∈ Ω, u x ≤ u y + ⟪p, x - y⟫ :=
   Iff.rfl
