@@ -9,6 +9,8 @@ public import TauCeti.RepresentationTheory.Pseudoreflection
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Molien
 import TauCeti.LinearAlgebra.Charpoly.FixedSubmodule
 import TauCeti.LinearAlgebra.End.FiniteOrder
+import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RingTheory.PowerSeries.CoeffProd
 import TauCeti.RingTheory.PowerSeries.Evaluation
 import TauCeti.RingTheory.PowerSeries.Order
@@ -33,6 +35,10 @@ faithful, then
 
 For a finite real reflection group the pseudoreflections are the reflections, so these are the
 identities `∏ dᵢ = |W|` and `∑ dᵢ = r + |Ref(W)|`.
+
+Taking `M = V*` with the contragredient representation gives the formulas for the degrees of the
+polynomial functions on a representation `V`: the contragredient representation is faithful
+exactly when `ρ` is, and it has the same pseudoreflections, so `N` may be counted on `V` itself.
 
 The proof compares the expansions at `t = 1` of both sides of Molien's formula
 `Hilb(Sym(M)^G, t) = #G⁻¹ ∑_g det(1 - t g)⁻¹`. Write `n = dim M`. For `g ∈ G` with fixed space of
@@ -62,6 +68,12 @@ denominators in `K[t]` and then mapped to `K⟦u⟧` by the substitution `t = 1 
   invariant subalgebra has Hilbert series `∏ᵢ (1 - t ^ dᵢ)⁻¹`, `∏ dᵢ = #G`.
 * `Representation.sum_eq_finrank_add_card_of_mk_finrank_mul_prod_eq_one`: for such an action,
   `∑ dᵢ = dim M + N`, with `N` the number of pseudoreflections.
+* `Representation.prod_eq_card_of_bijective_aeval_symmetricAlgebraInvariants`,
+  `Representation.sum_eq_finrank_add_card_of_bijective_aeval_symmetricAlgebraInvariants`: the same
+  for a system of basic invariants, homogeneous invariants on which `Sym(M)^G` is a polynomial
+  algebra.
+* `Representation.sum_eq_finrank_add_card_of_bijective_aeval_symmetricAlgebraInvariants_dual`: the
+  sum formula for the polynomial functions `Sym(M*)^G`, with the pseudoreflections counted on `M`.
 
 ## References
 
@@ -363,5 +375,52 @@ theorem sum_eq_finrank_add_card_of_mk_finrank_mul_prod_eq_one (hρ : Function.In
   refine sum_congr rfl fun i _ ↦ ?_
   have := (molien_expansion ρ h).1 i
   omega
+
+variable {f : ι → ρ.symmetricAlgebraInvariants}
+
+/-- **The product of the degrees of basic invariants is the order of the group.** Let a finite
+group act faithfully and linearly on a finite-dimensional vector space `M` over a field of
+characteristic zero. If the invariant subalgebra `Sym(M)^G` is a polynomial algebra on invariants
+`f i` homogeneous of degrees `d i`, then `∏ d i = #G`. -/
+theorem prod_eq_card_of_bijective_aeval_symmetricAlgebraInvariants (hρ : Function.Injective ρ)
+    (hf : ∀ i, (f i : SymmetricAlgebra K M) ∈
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule K M (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∏ i, d i = Fintype.card G :=
+  ρ.prod_eq_card_of_mk_finrank_mul_prod_eq_one hρ <|
+    ρ.mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_mul_prod_one_sub_X_pow K hf
+      hbij
+
+/-- **The sum of the degrees of basic invariants counts the pseudoreflections.** Let a finite group
+act faithfully and linearly on a finite-dimensional vector space `M` over a field of characteristic
+zero. If the invariant subalgebra `Sym(M)^G` is a polynomial algebra on invariants `f i`
+homogeneous of degrees `d i`, then `∑ d i = dim M + N`, where `N` is the number of
+pseudoreflections, the elements whose fixed space is a hyperplane. -/
+theorem sum_eq_finrank_add_card_of_bijective_aeval_symmetricAlgebraInvariants
+    (hρ : Function.Injective ρ)
+    (hf : ∀ i, (f i : SymmetricAlgebra K M) ∈
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule K M (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∑ i, d i = finrank K M + #{g | finrank K (M ⧸ (ρ g).fixedSubmodule) = 1} :=
+  ρ.sum_eq_finrank_add_card_of_mk_finrank_mul_prod_eq_one hρ <|
+    ρ.mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_mul_prod_one_sub_X_pow K hf
+      hbij
+
+/-- **The sum of the degrees of basic polynomial functions counts the pseudoreflections.** Let a
+finite group act faithfully and linearly on a finite-dimensional vector space `M` over a field of
+characteristic zero. If the polynomial functions invariant under the contragredient action,
+`Sym(M*)^G`, form a polynomial algebra on invariants `f i` homogeneous of degrees `d i`, then
+`∑ d i = dim M + N`, where `N` is the number of pseudoreflections of `G` on `M`. This is
+`Representation.sum_eq_finrank_add_card_of_bijective_aeval_symmetricAlgebraInvariants` for
+`ρ.dual`, which has the same pseudoreflections as `ρ`. -/
+theorem sum_eq_finrank_add_card_of_bijective_aeval_symmetricAlgebraInvariants_dual
+    (hρ : Function.Injective ρ) {f : ι → ρ.dual.symmetricAlgebraInvariants}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Dual K M)) ∈
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule K (Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∑ i, d i = finrank K M + #{g | finrank K (M ⧸ (ρ g).fixedSubmodule) = 1} := by
+  rw [ρ.dual.sum_eq_finrank_add_card_of_bijective_aeval_symmetricAlgebraInvariants
+    (ρ.dual_injective_iff.mpr hρ) hf hbij, Subspace.dual_finrank_eq]
+  simp_rw [finrank_quotient_fixedSubmodule_dual]
 
 end Representation

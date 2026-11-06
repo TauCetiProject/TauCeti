@@ -50,10 +50,7 @@ theorem Algebra.trace_quotient_map_mk (I : Ideal R) (x : S) :
   -- change of multiplication by `x`; the trace commutes with base change.
   rw [← Algebra.trace_eq_of_algEquiv (Algebra.TensorProduct.quotIdealMapEquivQuotTensor S I),
     Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk, Algebra.trace_apply, Algebra.trace_apply,
-    ← Ideal.Quotient.algebraMap_eq, ← LinearMap.trace_baseChange]
-  congr 1
-  ext y
-  simp
+    ← Ideal.Quotient.algebraMap_eq, ← LinearMap.trace_baseChange, Algebra.baseChange_lmul]
 
 /-- The trace of an element of `IS` lies in `I`. -/
 theorem Algebra.trace_mem_of_mem_map {I : Ideal R} {x : S} (hx : x ∈ I.map (algebraMap R S)) :

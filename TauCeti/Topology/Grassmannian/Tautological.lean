@@ -148,6 +148,20 @@ of the orthogonal projection onto `V`, that is, `V` itself as a subspace of
 abbrev Tautological : finiteGrassmannian 𝕜 r N → Type _ :=
   fun V ↦ V.toEuclidean.starProjection.range
 
+/-- The tautological fibre identified with the original coordinate subspace. -/
+noncomputable def tautologicalEquiv (V : finiteGrassmannian 𝕜 r N) :
+    Tautological 𝕜 r N V ≃ₗ[𝕜] V.1 :=
+  (LinearEquiv.ofEq _ _ (Submodule.range_starProjection V.toEuclidean)).trans
+    ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).ofSubmodule' V.1)
+
+@[simp] theorem tautologicalEquiv_apply (V : finiteGrassmannian 𝕜 r N)
+    (v : Tautological 𝕜 r N V) : (tautologicalEquiv 𝕜 r N V v : Fin N → 𝕜) =
+      WithLp.ofLp v.1 := (rfl)
+
+@[simp] theorem tautologicalEquiv_symm_apply (V : finiteGrassmannian 𝕜 r N) (v : V.1) :
+    ((tautologicalEquiv 𝕜 r N V).symm v : EuclideanSpace 𝕜 (Fin N)) =
+      WithLp.toLp 2 v.1 := (rfl)
+
 /-- The orthogonal complement `γ⊥` of the tautological bundle over the finite Grassmannian: its
 fibre over `V` is the range of `1 - p`, for `p` the orthogonal projection onto `V`, that is, the
 orthogonal complement of `V` in `EuclideanSpace 𝕜 (Fin N)`
