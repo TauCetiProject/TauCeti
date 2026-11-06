@@ -50,6 +50,9 @@ This is the manifold counterpart of `TauCeti.periodicSolutionEquivFixedPoints` i
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
+* `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
+  for a complete suspension, the flow over one more period is the return map followed by the flow,
+  so points at times `t + T` and `t` match exactly across the inverse return map.
 * `TauCeti.finite_periodicSolutions`: on a compact boundaryless finite-dimensional manifold, a
   field whose periodic solutions are all nondegenerate has finitely many of them.
 
@@ -216,6 +219,39 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
     ((periodicSolutionsEquivFixedPoints hX hT hT0 s).symm x).1 t =
       timeDependentFlowOf X s t x :=
   (rfl)
+
+section Complete
+
+variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
+include hc
+
+/-- **Flowing over one more period.** If `X` is `T`-periodic and its suspension is complete, the
+flow from `s` to `t + T` is the return map `timeDependentFlowOf X s (s + T)` followed by the flow
+from `s` to `t`. -/
+theorem timeDependentFlowOf_add_period (hT : Periodic X T) (s t : ℝ) (x : M) :
+    timeDependentFlowOf X s (t + T) x =
+      timeDependentFlowOf X s t (timeDependentFlowOf X s (s + T) x) := by
+  have h : ((s, t), timeDependentFlowOf X s (s + T) x) ∈ timeDependentFlowDomain X := by
+    rw [timeDependentFlowDomain_eq_univ hc]
+    exact mem_univ _
+  rw [← (timeDependentFlowOf_add_period_of_mem hX hT h).2, timeDependentFlowOf_trans hc hX]
+
+/-- **Matching across a period.** If `X` is `T`-periodic and its suspension is complete, the flow
+from `s` takes `y` at time `t + T` and `x` at time `t` to the same point exactly when `y` is the
+preimage of `x` under the return map, `y = timeDependentFlowOf X (s + T) s x`. -/
+theorem timeDependentFlowOf_add_period_eq_iff (hT : Periodic X T) (s t : ℝ) (x y : M) :
+    timeDependentFlowOf X s (t + T) y = timeDependentFlowOf X s t x ↔
+      y = timeDependentFlowOf X (s + T) s x := by
+  have hinv (a b : ℝ) : LeftInverse (timeDependentFlowOf X b a) (timeDependentFlowOf X a b) :=
+    fun z ↦ by rw [timeDependentFlowOf_trans hc hX, timeDependentFlowOf_self hX]
+  rw [timeDependentFlowOf_add_period hX hc hT, (hinv s t).injective.eq_iff]
+  constructor
+  · rintro rfl
+    exact (hinv s (s + T) y).symm
+  · rintro rfl
+    exact (hinv (s + T) s x)
+
+end Complete
 
 end Flow
 

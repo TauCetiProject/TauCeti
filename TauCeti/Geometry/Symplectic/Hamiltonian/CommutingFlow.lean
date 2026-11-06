@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.NoncommPiCoprod
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
+public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
@@ -22,7 +23,9 @@ If `σ` is closed, the flow `ψ` of a complete `C²` vector field `X` with close
 `ι_X σ` preserves it, `ψₜ^* σ = σ`, because Cartan's formula gives `L_X σ = d(ι_X σ) = 0`
 (`TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero`). In particular
 Hamiltonian flows are symplectic, since `d(ι_{X_f} σ) = d(df) = 0`
-(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`).
+(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`). The same holds for the
+time-dependent flow of a family of Hamiltonian vector fields
+(`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_of_isHamiltonianVectorField`).
 
 For a nondegenerate `σ`, a smooth map `φ` that pulls `σ` back to itself and preserves a function
 `g` carries Hamiltonian vector fields of `g` to themselves, hence
@@ -152,6 +155,25 @@ theorem IsHamiltonianVectorField.mpullback_globalFlow (hX : σ.IsHamiltonianVect
     TauCeti.mpullback I I (globalFlow X (hv.of_le one_le_two) hc t) σ.1 = σ.1 :=
   TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero hc hv hσ
     (by rw [isHamiltonianVectorField_iff_interior_eq.1 hX, mextDeriv_mextDeriv_ofFunction hf]) t
+
+omit [BoundarylessManifold I M] in
+/-- **Time-dependent Hamiltonian flows are symplectic.** For a closed two-form `σ` and a jointly
+`C²` time-dependent vector field `X` with complete suspension, such that each `X t` is a
+Hamiltonian vector field of a `C²` function `H t`, the time-dependent flow satisfies
+`φ_{s,t}^* σ = σ` for all times `s` and `t`, since every `ι_{X t} σ = d(H t)` is closed. No
+nondegeneracy is needed. -/
+theorem mpullback_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M → ℝ}
+    {X : ℝ → (x : M) → TangentSpace I x} (hX : ∀ t, σ.IsHamiltonianVectorField (H t) (X t))
+    (hσ : σ.IsClosed) (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField (timeDependentSuspensionField X))
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) (s t : ℝ) :
+    TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.1 = σ.1 :=
+  TauCeti.mpullback_timeDependentFlowOf_of_mextDeriv_interior_eq_zero hc hv σ.mdifferentiable
+    ((SmoothForm.isClosed_def σ).1 hσ)
+    (fun u ↦ by
+      rw [isHamiltonianVectorField_iff_interior_eq.1 (hX u), mextDeriv_mextDeriv_ofFunction (hH u)])
+    s t
 
 /-! ### Poisson-commuting Hamiltonian flows commute -/
 

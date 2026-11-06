@@ -33,6 +33,8 @@ reflected when both source and target are transported.
   complex-linear from `J` to `J.transport e`.
 * `TauCeti.IsComplexLinearMap.arrowCongr`: complex-linearity transports along a pair of linear
   equivalences applied to the source and target.
+* `TauCeti.isComplexLinearMap_transport_symm_iff`: complex-linearity of `e ∘ F` is
+  complex-linearity of `F` for the structure carried back along `e`.
 
 The conjugation `LinearEquiv.conj` and `LinearEquiv.arrowCongr` are reused from Mathlib; the
 almost complex structure layer is `TauCeti.AlmostComplexStructure`.
@@ -135,6 +137,15 @@ lemma isComplexLinearMap_arrowCongr_iff {J : AlmostComplexStructure V₁}
   rw [isComplexLinearMap_iff_isComplexLinear, isComplexLinearMap_iff_isComplexLinear,
     AlmostComplexStructure.transport_toLinearMap, AlmostComplexStructure.transport_toLinearMap,
     isComplexLinear_arrowCongr_iff]
+
+/-- A map `F` is complex-linear for the structure `J'.transport e.symm`, carried back along a
+linear equivalence `e`, exactly when `e ∘ F` is complex-linear for `J'`. -/
+lemma isComplexLinearMap_transport_symm_iff {J : AlmostComplexStructure V₁}
+    {J' : AlmostComplexStructure W₂} {F : V₁ →ₗ[ℝ] W₁} (e : W₁ ≃ₗ[ℝ] W₂) :
+    IsComplexLinearMap J (J'.transport e.symm) F ↔
+      IsComplexLinearMap J J' (e.toLinearMap ∘ₗ F) := by
+  simp only [isComplexLinearMap_iff_apply, AlmostComplexStructure.transport_apply,
+    LinearEquiv.symm_symm, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.eq_symm_apply]
 
 /-- Complex-linearity transports along a pair of linear equivalences: if `F` intertwines `J`
 and `J'`, then conjugating `F` by `eV` on the source and `eW` on the target intertwines the
