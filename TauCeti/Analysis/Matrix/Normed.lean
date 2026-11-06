@@ -19,7 +19,7 @@ Mathlib's `ContinuousStar` instance for matrices is stated for the entrywise top
 the same topology but not the same instance, so continuity of the conjugate transpose has to be
 restated for the topology selected here.
 
-## Main definitions
+## Main declarations
 
 * `Matrix.linftyOpTopologicalSpace`: the topology induced by the `L∞` operator norm.
 * `Matrix.linftyOpContinuousStar`: conjugate transposition is continuous for that topology.
@@ -32,8 +32,8 @@ namespace Matrix
 /-- The topology underlying the `L∞` operator norm on finite matrices. -/
 protected noncomputable abbrev linftyOpTopologicalSpace
     (m n : Type*) [Fintype m] [Fintype n]
-    (α : Type*) [NormedAddCommGroup α] : TopologicalSpace (Matrix m n α) :=
-  (Matrix.linftyOpNormedAddCommGroup (m := m) (n := n) (α := α)).toPseudoMetricSpace
+    (α : Type*) [SeminormedAddCommGroup α] : TopologicalSpace (Matrix m n α) :=
+  (Matrix.linftyOpSeminormedAddCommGroup (m := m) (n := n) (α := α)).toPseudoMetricSpace
     |>.toUniformSpace |>.toTopologicalSpace
 
 section
@@ -41,10 +41,10 @@ section
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 /-- Conjugate transposition is continuous for the topology of the `L∞` operator norm. -/
-protected abbrev linftyOpContinuousStar (n : Type*) [Fintype n]
-    (α : Type*) [NormedAddCommGroup α] [Star α] [ContinuousStar α] :
-    ContinuousStar (Matrix n n α) where
-  continuous_star := Continuous.matrix_conjTranspose continuous_id
+protected theorem linftyOpContinuousStar (n : Type*) [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] [Star α] [ContinuousStar α] :
+    ContinuousStar (Matrix n n α) :=
+  ⟨continuous_id.matrix_conjTranspose⟩
 
 end
 
