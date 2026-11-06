@@ -73,6 +73,8 @@ the invariant disc is `Subgroup.stabilizerBallQuotientChart_trans_apply`.
   the stabilizer on it, and its holomorphy on the invariant disc.
 * `Subgroup.LinearizingCoordinate.toEquiv`, `…_isOpen_target`, `…_mem_target_iff`: the open image
   of the reparametrization, the set of coordinate values.
+* `Subgroup.LinearizingCoordinate.deriv_invFun_ne_zero`: the inverse reparametrization has
+  nonvanishing derivative.
 * `Subgroup.LinearizingCoordinate.transEquiv`, `…_transEquiv_coordinate`,
   `…_transEquiv_transEquiv` and `Subgroup.LinearizingCoordinate.differentiableOn_transEquiv`: the
   biholomorphic change of local linearizing coordinate between two local linearizing coordinates.
@@ -280,6 +282,21 @@ theorem LinearizingCoordinate.isOpen_target (ψ : Γ.LinearizingCoordinate z ε)
   rw [← ψ.toEquiv.image_source_eq_target, ψ.toEquiv_source]
   exact TauCeti.isOpen_image_of_differentiableOn_of_injOn Metric.isOpen_ball ψ.differentiableOn
     ψ.toFun_injOn_ball
+
+/-- **The inverse reparametrization of a local linearizing coordinate has nonvanishing derivative**
+on the image of the reparametrization: composed with the reparametrization, which is holomorphic,
+it is the identity near every point of the open `target`. -/
+theorem LinearizingCoordinate.deriv_invFun_ne_zero (ψ : Γ.LinearizingCoordinate z ε)
+    {u : ℂ} (hu : u ∈ ψ.toEquiv.target) : deriv ψ.toEquiv.invFun u ≠ 0 := by
+  have hd : DifferentiableAt ℂ ψ.toEquiv.invFun u :=
+    ψ.differentiableOn_invFun.differentiableAt (ψ.isOpen_target.mem_nhds hu)
+  have hfd : DifferentiableAt ℂ ψ.toEquiv.toFun (ψ.toEquiv.invFun u) :=
+    ψ.differentiableOn.differentiableAt (Metric.isOpen_ball.mem_nhds (ψ.mem_ball_invFun hu))
+  have hid : ψ.toEquiv.toFun ∘ ψ.toEquiv.invFun =ᶠ[𝓝 u] id :=
+    Filter.mem_of_superset (ψ.isOpen_target.mem_nhds hu) fun v hv ↦ ψ.toEquiv.right_inv' hv
+  have h := (hfd.hasDerivAt.comp u hd.hasDerivAt).deriv
+  rw [hid.deriv_eq, deriv_id] at h
+  exact right_ne_zero_of_mul (h ▸ one_ne_zero)
 
 /-- **The coordinate of a local linearizing coordinate is holomorphic on the invariant disc**:
 on the ambient upper half-plane, the invariant disc being the ball `Metric.ball z ε`

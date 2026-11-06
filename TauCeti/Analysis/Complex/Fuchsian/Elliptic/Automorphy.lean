@@ -500,32 +500,14 @@ private theorem deriv_pointOf_zero_ne_zero : deriv ψ.pointOf 0 ≠ 0 := by
   have hinv0 : ψ.toEquiv.invFun 0 = 0 := by
     have h := ψ.toEquiv.left_inv' h0s
     rwa [ψ.map_zero] at h
-  -- the inverse reparametrization has nonzero derivative at `0`
   have hd : DifferentiableAt ℂ ψ.toEquiv.invFun 0 :=
     ψ.differentiableOn_invFun.differentiableAt (ψ.isOpen_target.mem_nhds h0t)
-  have hdinv : deriv ψ.toEquiv.invFun 0 ≠ 0 := by
-    have hfd : DifferentiableAt ℂ ψ.toEquiv.toFun (ψ.toEquiv.invFun 0) := by
-      rw [hinv0]
-      exact ψ.differentiableOn.differentiableAt (isOpen_ball.mem_nhds (mem_ball_self hr))
-    have hid : ψ.toEquiv.toFun ∘ ψ.toEquiv.invFun =ᶠ[nhds 0] id :=
-      Filter.mem_of_superset (ψ.isOpen_target.mem_nhds h0t) fun u hu ↦ ψ.toEquiv.right_inv' hu
-    have h := (hfd.hasDerivAt.comp 0 hd.hasDerivAt).deriv
-    rw [hid.deriv_eq, deriv_id] at h
-    exact right_ne_zero_of_mul (h ▸ one_ne_zero)
-  -- the inverse of the disc coordinate has derivative `z - conj z` at `0`
-  have hM : HasDerivAt (fun w : ℂ ↦ ((z : ℂ) - conj (z : ℂ) * w) / (1 - w))
-      ((z : ℂ) - conj (z : ℂ)) 0 := by
-    have h := (((hasDerivAt_id (0 : ℂ)).const_mul (conj (z : ℂ))).const_sub (z : ℂ)).div
-      ((hasDerivAt_id (0 : ℂ)).const_sub 1) (by simp)
-    convert h using 1
-    · rfl
-    · simp only [id, mul_one, sub_zero, mul_zero, one_pow, div_one]
-      ring
-  have hP : HasDerivAt ψ.pointOf (((z : ℂ) - conj (z : ℂ)) * deriv ψ.toEquiv.invFun 0) 0 := by
-    rw [← hinv0] at hM
-    exact hM.comp 0 hd.hasDerivAt
+  have hM := hasDerivAt_discCoordinateHomeomorph_symm z (zero_ne_one (α := ℂ))
+  rw [sub_zero, one_pow, div_one, ← hinv0] at hM
+  have hP : HasDerivAt ψ.pointOf (((z : ℂ) - conj (z : ℂ)) * deriv ψ.toEquiv.invFun 0) 0 :=
+    hM.comp 0 hd.hasDerivAt
   rw [hP.deriv]
-  exact mul_ne_zero (coe_sub_conj_ne_zero z z) hdinv
+  exact mul_ne_zero (coe_sub_conj_ne_zero z z) (ψ.deriv_invFun_ne_zero h0t)
 
 /-- The local quotient coordinate, read on `ℂ`, at the point with coordinate `u` is `u ^ m`. -/
 private theorem quotientCoordinate_pointOf {u : ℂ} (hu : u ∈ ψ.toEquiv.target) :
