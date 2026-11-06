@@ -113,10 +113,10 @@ theorem homEquiv_comp_semilinearMap_apply (σ : B ≃ₐ[A] B) (φ : C →+* D)
       Algebra.TensorProduct.rTensor T (σ.symm : B →ₐ[A] B) (homEquiv A B D T g (φ c)) := by
   rw [homEquiv_comp, AlgHom.comp_apply, homEquiv_semilinearMap_apply, homEquiv_apply,
     AlgHom.comp_apply]
-  -- `B ⊗[A] g` and `σ⁻¹ ⊗ T` act on different tensor factors, so they commute.
-  induction universalPoint A B D (φ c) using TensorProduct.inductionOn with
-  | tmul b w => simp
-  | add z w hz hw => simp only [map_add, hz, hw]
+  -- `B ⊗[A] g` and `σ⁻¹ ⊗ T` act on different tensor factors, so both composites are `σ⁻¹ ⊗ g`.
+  exact (DFunLike.congr_fun (Algebra.TensorProduct.map_comp (AlgHom.id A B) (σ.symm : B →ₐ[A] B)
+    g (AlgHom.id A _)) _).symm.trans (DFunLike.congr_fun
+      (Algebra.TensorProduct.map_comp (σ.symm : B →ₐ[A] B) (AlgHom.id A B) (AlgHom.id A T) g) _)
 
 /-- For `σ = id`, the semilinear functoriality of the Weil restriction is the usual functoriality
 `WeilRestriction.map` in `B`-algebra homomorphisms. -/
@@ -155,9 +155,9 @@ theorem semilinearMap_comp (σ₁ σ₂ : B ≃ₐ[A] B) (φ : C →+* D) (ψ : 
   ext c
   rw [homEquiv_comp_semilinearMap_apply, homEquiv_semilinearMap_apply,
     homEquiv_semilinearMap_apply, RingHom.comp_apply]
-  induction universalPoint A B E (ψ (φ c)) using TensorProduct.inductionOn with
-  | tmul b w => simp
-  | add z w hz hw => simp only [map_add, hz, hw]
+  -- `(σ₂ ∘ σ₁)⁻¹ ⊗ T` factors as `(σ₁⁻¹ ⊗ T) ∘ (σ₂⁻¹ ⊗ T)`.
+  exact DFunLike.congr_fun (Algebra.TensorProduct.map_comp (σ₁.symm : B →ₐ[A] B)
+    (σ₂.symm : B →ₐ[A] B) (AlgHom.id A _) (AlgHom.id A _)) _
 
 /-- The **semilinear functoriality of the Weil restriction on isomorphisms**: a ring isomorphism
 `φ : C ≃+* D` that is semilinear over an `A`-algebra automorphism `σ` of `B` induces an
