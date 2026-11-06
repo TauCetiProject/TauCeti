@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
@@ -106,34 +107,19 @@ private theorem cpow_one_div_two_eq_of_sq {w z : ℂ} (h : w ^ 2 = z) (hw : 0 < 
   rw [← h, one_div]
   exact sq_cpow_two_inv hw
 
-/-- The principal square root `u ^ (1 / 2)` of `u` in the open right half-plane squares to `u`, has
-positive real part, and has nonnegative imaginary part when `u` does. -/
-private theorem cpow_inv_two_sq_re_im {u : ℂ} (hre : 0 < u.re) (him : 0 ≤ u.im) :
-    (u ^ (2⁻¹ : ℂ)) ^ 2 = u ∧ 0 < (u ^ (2⁻¹ : ℂ)).re ∧ 0 ≤ (u ^ (2⁻¹ : ℂ)).im := by
-  refine ⟨cpow_ofNat_inv_pow u 2, ?_, ?_⟩
-  · rw [cpow_inv_two_re]
-    exact Real.sqrt_pos.2 (by positivity)
-  · rw [cpow_inv_two_im_eq_sqrt him]
-    exact Real.sqrt_nonneg _
-
-/-- For `u = Y + iN/2` with `s² = u` and `s` in the closed first quadrant, the square root
-arising from the first functional equation at `τ = i / u` is `(1 + i)√(NY) / s`. -/
+/-- If `N² (τ - 2/N) = -2NY / u`, `s² = u`, `u ≠ 0`, `s ≠ 0`, `0 < re s` and `0 ≤ im s`, then the
+principal square root of `-i · N² (τ - 2/N)` is `(1 + i)√(NY) / s`. -/
 private theorem cpow_one_div_two_neg_I_mul_sq_mul_sub {N : ℕ} {Y : ℝ} {u s τ : ℂ}
-    (hNpos : (0 : ℝ) < N) (hY : 0 < Y) (hs2 : s ^ 2 = u) (hsre : 0 < s.re) (hsim : 0 ≤ s.im)
+    (hNpos : (0 : ℝ) < N) (hY : 0 < Y) (hu0 : u ≠ 0) (hs0 : s ≠ 0) (hs2 : s ^ 2 = u)
+    (hsre : 0 < s.re) (hsim : 0 ≤ s.im)
     (hT : (N : ℂ) ^ 2 * (τ - 2 / N) = -(2 * N * Y) / u) :
     (-I * ((N : ℂ) ^ 2 * (τ - 2 / N))) ^ (1 / 2 : ℂ) = (1 + I) * √(N * Y) * s⁻¹ := by
-  have hnormSq : 0 < normSq s := normSq_pos.2 fun h ↦ by simp [h] at hsre
+  have hnormSq : 0 < normSq s := normSq_pos.2 hs0
   refine cpow_one_div_two_eq_of_sq ?_ ?_
   · rw [mul_pow, mul_pow, inv_pow, hs2, ← ofReal_pow, Real.sq_sqrt (by positivity), hT]
-    have hu0 : u ≠ 0 := by
-      rintro rfl
-      simp at hs2
-      simp [hs2] at hsre
     field_simp
-    ring_nf
-    rw [I_sq]
     push_cast
-    ring
+    linear_combination ((N : ℂ) * Y) * I_sq
   · rw [mul_comm (1 + I), mul_assoc, re_ofReal_mul]
     refine mul_pos (Real.sqrt_pos.2 (by positivity)) ?_
     have : ((1 + I) * s⁻¹).re = (s.re + s.im) / normSq s := by
@@ -142,20 +128,21 @@ private theorem cpow_one_div_two_neg_I_mul_sq_mul_sub {N : ℕ} {Y : ℝ} {u s �
     rw [this]
     positivity
 
-/-- For `s² = u` with `s` in the right half-plane, the square root arising from the second
-functional equation at `τ = i / u` is `s⁻¹`. -/
-private theorem cpow_one_div_two_neg_I_mul_div {u s τ : ℂ} (hu0 : u ≠ 0) (hs2 : s ^ 2 = u)
-    (hsre : 0 < s.re) (hτ : τ = I / u) : (-I * τ) ^ (1 / 2 : ℂ) = s⁻¹ := by
+/-- For `s² = u` with `u ≠ 0`, `s ≠ 0` and `s` in the right half-plane, the square root arising
+from the second functional equation at `τ = i / u` is `s⁻¹`. -/
+private theorem cpow_one_div_two_neg_I_mul_eq_inv {u s τ : ℂ} (hu0 : u ≠ 0) (hs0 : s ≠ 0)
+    (hs2 : s ^ 2 = u) (hsre : 0 < s.re) (hτ : τ = I / u) :
+    (-I * τ) ^ (1 / 2 : ℂ) = s⁻¹ := by
   refine cpow_one_div_two_eq_of_sq ?_ ?_
   · rw [inv_pow, hs2, hτ]
     field_simp
-    rw [I_sq, neg_neg]
+    simp [I_sq]
   · rw [inv_re]
-    exact div_pos hsre (normSq_pos.2 fun h ↦ by simp [h] at hsre)
+    exact div_pos hsre (normSq_pos.2 hs0)
 
 /-- The second expansion of `θ(τ)` at `τ = i / (Y + iN/2)`: the functional equation, with the
 square root `s⁻¹` identified, gives `θ(τ) = s · θ(iY - N/2)`. -/
-private theorem jacobiTheta_div_eq_mul {N : ℕ} {Y : ℝ} {u s τ : ℂ}
+private theorem jacobiTheta_eq_mul_jacobiTheta_I_mul_sub {N : ℕ} {Y : ℝ} {u s τ : ℂ}
     (hu : u = Y + I * (N / 2)) (hτ : τ = I / u)
     (hsqrtτ : (-I * τ) ^ (1 / 2 : ℂ) = s⁻¹) :
     jacobiTheta τ = s * jacobiTheta (I * Y - N / 2) := by
@@ -164,9 +151,7 @@ private theorem jacobiTheta_div_eq_mul {N : ℕ} {Y : ℝ} {u s τ : ℂ}
   have : -1 / τ = I * Y - N / 2 := by
     rw [hτ, hu]
     field_simp
-    ring_nf
-    rw [I_sq]
-    ring
+    linear_combination (-2 * (Y : ℂ)) * I_sq
   simp [this]
 
 /-- The functional equation `jacobiTheta_I_mul` at `4Y`: `θ(4iY) = θ(i/(4Y)) / (2√Y)`. -/
@@ -198,9 +183,11 @@ private theorem sum_mul_jacobiTheta₂_eq (N : ℕ) [NeZero N] {Y : ℝ} (hY : 0
   have hure : u.re = Y := by simp [hu]
   have huim : u.im = N / 2 := by simp [hu]
   have hu0 : u ≠ 0 := fun h ↦ hY.ne' (by rw [← hure, h, zero_re])
-  obtain ⟨hs2, hsre, hsim⟩ := cpow_inv_two_sq_re_im (u := u) (by rw [hure]; exact hY)
-    (by rw [huim]; positivity)
-  set s : ℂ := u ^ (2⁻¹ : ℂ) with hs
+  have huslit : u ∈ slitPlane := Or.inl (by rw [hure]; exact hY)
+  set s : ℂ := Complex.sqrt u with hs
+  have hs2 : s ^ 2 = u := Complex.sq_sqrt u
+  have hsre : 0 < s.re := (Complex.sqrt_re_pos_iff u).2 huslit
+  have hsim : 0 ≤ s.im := Complex.sqrt_im_nonneg (by rw [huim]; positivity)
   have hs0 : s ≠ 0 := fun h ↦ by simp [h] at hsre
   -- The point `τ = i / u` has `-1 / τ = iY - N/2`, and `τ - 2/N` scaled by `N²` is `-2NY / u`.
   set τ : ℂ := I / u with hτ
@@ -222,10 +209,11 @@ private theorem sum_mul_jacobiTheta₂_eq (N : ℕ) [NeZero N] {Y : ℝ} (hY : 0
     ring
   -- The first expansion.
   have hA := jacobiTheta_two_div_add N hδim
-  rw [add_sub_cancel, hTinv, cpow_one_div_two_neg_I_mul_sq_mul_sub hNpos hY hs2 hsre hsim hT] at hA
+  rw [add_sub_cancel, hTinv,
+    cpow_one_div_two_neg_I_mul_sq_mul_sub hNpos hY hu0 hs0 hs2 hsre hsim hT] at hA
   -- The second expansion.
-  have hF := jacobiTheta_div_eq_mul hu hτ
-    (cpow_one_div_two_neg_I_mul_div hu0 hs2 hsre hτ)
+  have hF := jacobiTheta_eq_mul_jacobiTheta_I_mul_sub hu hτ
+    (cpow_one_div_two_neg_I_mul_eq_inv hu0 hs0 hs2 hsre hτ)
   have hB := jacobiTheta_sub_natCast_div_two N (τ := I * Y) (by simpa using hY)
   rw [show (4 : ℂ) * (I * Y) = I * (4 * Y) by ring, jacobiTheta_I_mul_four_mul hY,
     jacobiTheta_I_mul hY] at hB
