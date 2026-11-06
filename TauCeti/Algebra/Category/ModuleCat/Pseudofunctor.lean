@@ -54,12 +54,15 @@ subcategory of coefficient algebras, such as the local Artinian `k`-algebras wit
 
 ## Implementation notes
 
-Only `CommAlgCat.moduleCatBaseChange`, `CommAlgCat.moduleCatBaseChangeTmul` and the
-pseudofunctor are exposed, so that their objects compute to `S ⊗[R] N`, `s ⊗ n` and
-`ModuleCat (R ⊗[k] Λ)`. The comparisons are characterized by their component lemmas on the
-elements `moduleCatBaseChangeTmul Λ f s n`, from which the coherence laws are proved. Stating
-these lemmas on elements typed in the base-change object, rather than on raw tensors in
-`S ⊗[R] N`, lets them rewrite morphisms of `ModuleCat` applied to those elements.
+Only `CommAlgCat.moduleCatBaseChange` and the pseudofunctor are exposed, so that their objects
+compute to `S ⊗[R] N` and `ModuleCat (R ⊗[k] Λ)`. The elements
+`moduleCatBaseChangeTmul Λ f s n` are used through their lemmas: additivity in each argument,
+`moduleCatBaseChangeTmul_smul` for scalars of `R`, the eliminator
+`moduleCatBaseChange_obj_inductionOn`, and the unfolding `moduleCatBaseChangeTmul_def`. The
+comparisons are characterized by their component lemmas on these elements, from which the
+coherence laws are proved. Stating these lemmas on elements typed in the base-change object,
+rather than on raw tensors in `S ⊗[R] N`, lets them rewrite morphisms of `ModuleCat` applied to
+those elements.
 
 ## References
 
@@ -113,7 +116,7 @@ lemma moduleCatBaseChange_map_hom (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k] 
 /-- The tensor `s ⊗ n` as an element of the base change `(moduleCatBaseChange Λ f).obj N`. Its
 type is the carrier of the base-change object rather than `S ⊗[R] N`, so that the evaluation
 lemmas of the base-change functor and of its comparisons rewrite morphisms applied to it. -/
-@[expose] noncomputable def moduleCatBaseChangeTmul (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)}
+noncomputable def moduleCatBaseChangeTmul (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)}
     (s : S) (n : N) : (moduleCatBaseChange Λ f).obj N :=
   letI := f.hom.toRingHom.toAlgebra
   s ⊗ₜ[R] n
@@ -121,7 +124,54 @@ lemmas of the base-change functor and of its comparisons rewrite morphisms appli
 lemma moduleCatBaseChangeTmul_def (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)} (s : S) (n : N) :
     letI := f.hom.toRingHom.toAlgebra
     moduleCatBaseChangeTmul Λ f s n = s ⊗ₜ[R] n :=
-  rfl
+  (rfl)
+
+@[simp]
+lemma moduleCatBaseChangeTmul_add_left (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)} (s s' : S)
+    (n : N) :
+    moduleCatBaseChangeTmul Λ f (s + s') n =
+      moduleCatBaseChangeTmul Λ f s n + moduleCatBaseChangeTmul Λ f s' n := by
+  let _ := f.hom.toRingHom.toAlgebra
+  exact TensorProduct.add_tmul s s' n
+
+@[simp]
+lemma moduleCatBaseChangeTmul_add_right (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)} (s : S)
+    (n n' : N) :
+    moduleCatBaseChangeTmul Λ f s (n + n') =
+      moduleCatBaseChangeTmul Λ f s n + moduleCatBaseChangeTmul Λ f s n' := by
+  let _ := f.hom.toRingHom.toAlgebra
+  exact TensorProduct.tmul_add s n n'
+
+@[simp]
+lemma moduleCatBaseChangeTmul_zero_left (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)} (n : N) :
+    moduleCatBaseChangeTmul Λ f 0 n = 0 := by
+  let _ := f.hom.toRingHom.toAlgebra
+  exact TensorProduct.zero_tmul S n
+
+@[simp]
+lemma moduleCatBaseChangeTmul_zero_right (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)} (s : S) :
+    moduleCatBaseChangeTmul Λ f s (0 : N) = 0 := by
+  let _ := f.hom.toRingHom.toAlgebra
+  exact TensorProduct.tmul_zero N s
+
+/-- A scalar of `R` moves across the tensor through `f`: `(f r * s) ⊗ n = s ⊗ (r • n)`. -/
+lemma moduleCatBaseChangeTmul_smul (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)} (r : R) (s : S)
+    (n : N) :
+    moduleCatBaseChangeTmul Λ f (f.hom r * s) n = moduleCatBaseChangeTmul Λ f s (r • n) := by
+  let _ := f.hom.toRingHom.toAlgebra
+  -- For the algebra structure `f.hom.toRingHom.toAlgebra`, `r • s` is `f r * s`.
+  exact TensorProduct.smul_tmul r s n
+
+/-- Induction on elements of a base change: a property of the elements of
+`(moduleCatBaseChange Λ f).obj N` holds if it holds for the tensors
+`moduleCatBaseChangeTmul Λ f s n` and is closed under addition. -/
+@[elab_as_elim]
+lemma moduleCatBaseChange_obj_inductionOn (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)}
+    {motive : (moduleCatBaseChange Λ f).obj N → Prop} (x : (moduleCatBaseChange Λ f).obj N)
+    (tmul : ∀ (s : S) (n : N), motive (moduleCatBaseChangeTmul Λ f s n))
+    (add : ∀ x y, motive x → motive y → motive (x + y)) : motive x := by
+  let _ := f.hom.toRingHom.toAlgebra
+  exact TensorProduct.inductionOn x tmul add
 
 /-- The action of `S ⊗[k] Λ` on the base change: `(s ⊗ l) • (s' ⊗ n) = (s * s') ⊗ ((1 ⊗ l) • n)`. -/
 @[simp]
@@ -168,12 +218,14 @@ lemma moduleCatBaseChange_map_smul (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k]
     (moduleCatBaseChange Λ f).map (r • φ) = f.hom r • (moduleCatBaseChange Λ f).map φ := by
   let _ := f.hom.toRingHom.toAlgebra
   have _ := IsScalarTower.of_algHom f.hom
-  refine moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_
-  -- The `S`-action on a module over `S ⊗[k] Λ` is the action of `algebraMap S (S ⊗[k] Λ)`.
-  change CoefficientBaseChange.map k Λ S (r • φ).hom (1 ⊗ₜ n) =
-    algebraMap S (S ⊗[k] Λ) (f.hom r) • CoefficientBaseChange.map k Λ S φ.hom (1 ⊗ₜ n)
-  rw [CoefficientBaseChange.map_tmul, CoefficientBaseChange.map_tmul, ModuleCat.hom_smul]
-  exact CoefficientBaseChange.one_tmul_smul r (φ.hom n)
+  refine ModuleCat.hom_ext ?_
+  rw [ModuleCat.hom_smul, moduleCatBaseChange_map_hom, moduleCatBaseChange_map_hom,
+    ModuleCat.hom_smul, CoefficientBaseChange.map_smul]
+  -- `CoefficientBaseChange.map_smul` scales by `algebraMap R S r = f r` through the `S`-module
+  -- structure of `S ⊗[R] N'`, while the `S`-linear structure of `ModuleCat (S ⊗[k] Λ)` scales
+  -- through `algebraMap S (S ⊗[k] Λ)`; the two actions agree by `algebraMap_smul`.
+  exact LinearMap.ext fun x ↦
+    (algebraMap_smul (S ⊗[k] Λ) (f.hom r) (CoefficientBaseChange.map k Λ S φ.hom x)).symm
 
 end Functor
 
@@ -188,8 +240,13 @@ noncomputable def moduleCatBaseChangeId : moduleCatBaseChange Λ (𝟙 R) ≅ �
   -- along `𝟙 R` is `R ⊗[R] N` with its standard module structures.
   NatIso.ofComponents (fun N ↦ (CoefficientBaseChange.lid k Λ R N).toModuleIso) fun φ ↦
     moduleCatBaseChange_hom_ext Λ (𝟙 R) fun n ↦ by
-      -- Restate the naturality square as the underlying linear maps applied to `1 ⊗ n`, as in
-      -- `moduleCatBaseChangeComp`; both sides are `1 • φ n`.
+      -- Both sides are `1 • φ n`. The components `(lid _).toModuleIso` are morphisms between
+      -- `ModuleCat.of _ (R ⊗[R] _)` and `_`, whereas the naturality square types them out of
+      -- `(moduleCatBaseChange Λ (𝟙 R)).obj _`, which is `ModuleCat.of _ (R ⊗[R] _)` only after
+      -- unfolding `moduleCatBaseChange`. Rewriting with `LinearEquiv.toModuleIso_hom` therefore
+      -- produces a goal that is not type-correct at implicit transparency, as in
+      -- `moduleCatBaseChangeComp`. Restate the square as the underlying linear maps
+      -- (`moduleCatBaseChange_map_hom`) applied to `1 ⊗ n`.
       change CoefficientBaseChange.lid k Λ R _ (CoefficientBaseChange.map k Λ R φ.hom (1 ⊗ₜ n)) =
         φ.hom (CoefficientBaseChange.lid k Λ R _ (1 ⊗ₜ n))
       rw [CoefficientBaseChange.map_tmul, CoefficientBaseChange.lid_tmul,
@@ -248,6 +305,15 @@ noncomputable def moduleCatBaseChangeComp (f : R ⟶ S) (g : S ⟶ T) (fg : R �
         CoefficientBaseChange.cancelBaseChange_symm_tmul (k := k) (Λ := Λ) T
           (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj P)) t p
       rw [CoefficientBaseChange.map_tmul, e, e, CoefficientBaseChange.map_tmul]
+      -- Both sides are `1 ⊗ x` with `x` in `(moduleCatBaseChange Λ f).obj N'`, wrapped in
+      -- `LinearEquiv.refl`: `x = 1 ⊗ φ n` on the left, and the image of `1 ⊗ n` under
+      -- `(moduleCatBaseChange Λ f).map φ` on the right. The raw tensors `1 ⊗ₜ[R] _` are
+      -- `moduleCatBaseChangeTmul Λ f 1 _` by definition (`moduleCatBaseChangeTmul_def`) and
+      -- `LinearEquiv.refl` is the identity, so the inner equation is
+      -- `moduleCatBaseChange_map_hom_tmul`, used up to these two unfoldings. They are not
+      -- available to `rw` or `simp` (`LinearEquiv.refl_apply`): `LinearEquiv.refl` is typed on
+      -- the carrier of the base-change object and its argument on `S ⊗[R] _`, so the goal is
+      -- not type-correct at implicit transparency.
       exact congrArg (TensorProduct.tmul S (1 : T))
         (moduleCatBaseChange_map_hom_tmul Λ f φ 1 n).symm
 
