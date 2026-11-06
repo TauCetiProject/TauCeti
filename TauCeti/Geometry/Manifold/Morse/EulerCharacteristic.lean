@@ -51,8 +51,10 @@ Hence every Morse function on `Sⁿ` has an even number of critical points
 
 When `M` has finite CW type, the signed count is the cellular Euler characteristic
 `TauCeti.eulerChar M`
-(`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar`), which therefore
-vanishes in odd dimension (`TauCeti.eulerChar_eq_zero_of_odd_finrank`). On `Sⁿ` the
+(`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar`), so the number of
+critical points has the parity of `eulerChar M`
+(`TauCeti.IsMorse.toNat_totalCriticalCount_modEq_eulerChar`), and `eulerChar M` vanishes in odd
+dimension (`TauCeti.eulerChar_eq_zero_of_odd_finrank`). On `Sⁿ` the
 signed count of every Morse function is `1 + (-1) ^ n`
 (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_sphere`).
 
@@ -194,6 +196,15 @@ theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar [Fini
   rw [criticalCount_eq_zero_of_finrank_lt (not_le.1 hlt), ENat.toNat_zero, zero_mul,
     Nat.le_zero] at h
   simp [h] at hi
+
+/-- **Parity of the number of critical points.** Every Morse function on a compact boundaryless
+manifold `M` of finite CW type has a number of critical points congruent to the Euler
+characteristic of `M` modulo `2`. -/
+theorem IsMorse.toNat_totalCriticalCount_modEq_eulerChar [FiniteCWType M] (hf : IsMorse I f) :
+    (totalCriticalCount I f).toNat ≡ eulerChar M [ZMOD 2] := by
+  rw [← hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar]
+  exact toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount
+    hf.finite_criticalPoints le_rfl
 
 variable (I M) in
 include I in

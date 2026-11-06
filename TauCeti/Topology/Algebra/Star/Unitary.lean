@@ -28,6 +28,7 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 
 ## Main results
 
+* `Unitary.continuous_toUnits`: the unitary-to-units homomorphism is continuous.
 * `TauCeti.mem_unitary_units_iff`: a unit is unitary exactly when its underlying element is.
 * `TauCeti.isClosed_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is closed.
 * `TauCeti.isCompact_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is compact when
@@ -35,6 +36,20 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 -/
 
 public section
+
+namespace Unitary
+
+/-- The homomorphism from unitary elements to units is continuous. -/
+@[fun_prop]
+theorem continuous_toUnits {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace M]
+    [ContinuousStar M] : Continuous (toUnits : unitary M → Mˣ) := by
+  refine Units.continuous_iff.mpr ⟨?_, ?_⟩
+  · simpa only [Function.comp_def, val_toUnits_apply] using
+      (continuous_subtype_val : Continuous fun u : unitary M ↦ (u : M))
+  · refine continuous_subtype_val.star.congr fun u ↦ ?_
+    simp only [← map_inv, val_toUnits_apply, ← star_eq_inv, coe_star, Pi.star_apply]
+
+end Unitary
 
 namespace TauCeti
 
@@ -71,7 +86,6 @@ theorem isCompact_unitarySubgroup_units {M : Type*} [Monoid M] [StarMul M] [Topo
     rintro ⟨U, rfl⟩
     exact mem_unitary_units_iff.mpr U.property
   rw [hrange]
-  exact isCompact_range <| Units.continuous_iff.mpr
-    ⟨continuous_subtype_val, continuous_subtype_val.star⟩
+  exact isCompact_range Unitary.continuous_toUnits
 
 end TauCeti

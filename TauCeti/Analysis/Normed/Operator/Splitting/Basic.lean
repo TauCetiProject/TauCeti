@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
+public import Mathlib.Topology.Algebra.Module.Complement
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Topology.Algebra.Module.Equiv.Prod
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # The kernel of an operator paired with a complementary coordinate
@@ -25,6 +29,17 @@ a continuous linear parametrization whose parameter space does not depend on the
 `A` is taken, which is what lets a moving kernel — a tangent space along a level set — be compared
 with a fixed model space.
 
+The pair `A.prod q` is invertible exactly when `q.prod A` is
+(`ContinuousLinearMap.isInvertible_prod_comm`). Read with the roles exchanged, `q.kerSection A` is
+therefore the right inverse of `A` taking values in the kernel of `q`.
+
+For a subspace `V` of the target, `q.kerSection (T.coprod V.subtypeL)` is in particular the right
+inverse of the stabilized operator `T + inclusion_V` normalized by `q = 0`. Its `V`-component is
+the projection onto `V` along the range of `T` as soon as the two are complementary, which a
+dimension count detects (`ContinuousLinearMap.isTopCompl_of_isInvertible_prod_coprod`). Where the
+dimension of the cokernel jumps, `V` still makes the stabilized operator surjective but is no
+longer complementary to the range.
+
 Invertibility of the pair is recorded through `ContinuousLinearMap.IsInvertible`, so that the
 section is a plain definition and the hypothesis appears only in the lemmas about it; the
 underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
@@ -35,6 +50,12 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
 * `ContinuousLinearMap.eq_kerSection`: it is the only map with that defining property.
 * `ContinuousLinearMap.range_kerSection`: its range is exactly `ker A`.
 * `ContinuousLinearMap.kerEquivOfProd`: the resulting isomorphism `G ≃L[R] ↥A.ker`.
+* `ContinuousLinearMap.isInvertible_prod_comm`: invertibility of a pair does not depend on the order
+  of its components.
+* `ContinuousLinearMap.isTopCompl_of_isInvertible_prod_coprod`: a stabilizer whose dimension is
+  at most the codimension of the range is a topological complement of the range.
+* `ContinuousLinearMap.projectionOntoL_eq_snd_comp_kerSection_coprod`: the projection onto such a
+  stabilizer along the range, as a component of the normalized right inverse.
 * `ContinuousLinearMap.prod_comp_injective`: projections fixing the range and the kernel of an
   operator `T` give an injective pair `(p ∘ T, q)`.
 -/
@@ -48,6 +69,12 @@ variable {R M F G : Type*} [Semiring R]
   [AddCommMonoid F] [TopologicalSpace F] [Module R F]
   [AddCommMonoid G] [TopologicalSpace G] [Module R G]
   {A : M →L[R] F} {q : M →L[R] G}
+
+/-- Invertibility of a pair does not depend on the order of its two components. -/
+theorem isInvertible_prod_comm : (A.prod q).IsInvertible ↔ (q.prod A).IsInvertible := by
+  have : q.prod A = (ContinuousLinearEquiv.prodComm R F G : F × G →L[R] G × F) ∘L A.prod q := by
+    ext <;> simp
+  rw [this, isInvertible_equiv_comp]
 
 /-- The section of `q` with values in the kernel of `A`: it sends `v : G` to the unique `x : M`
 with `A x = 0` and `q x = v`.
@@ -161,6 +188,83 @@ theorem prod_comp_injective {T : M →L[R] F} {p : F →L[R] T.range} {q : M →
   simpa using congrArg Subtype.val h
 
 end Projections
+
+
+section CokernelProjection
+
+/-! ### The cokernel projection of a stabilized operator
+
+Let `V` be a subspace of the target with `T.coprod V.subtypeL` surjective, and let `q` be a
+coordinate on `M × V` whose pairing with that operator is invertible. Then
+`q.kerSection (T.coprod V.subtypeL)` is the right inverse of the stabilized operator normalized by
+`q = 0`. Its `V`-component projects onto `V` along the range of `T` as soon as the two subspaces
+are complementary, which a dimension count detects. -/
+
+variable {R M F G : Type*} [Ring R]
+  [AddCommGroup M] [TopologicalSpace M] [Module R M]
+  [AddCommGroup F] [TopologicalSpace F] [Module R F] [ContinuousAdd F]
+  [AddCommGroup G] [TopologicalSpace G] [Module R G]
+  {T : M →L[R] F} {V : Submodule R F} {q : (M × V) →L[R] G}
+
+/-- The right inverse of a stabilized operator, normalized by `q`, splits each target vector into
+a value of `T` and a vector of the stabilizer. -/
+@[simp]
+theorem apply_fst_kerSection_coprod_add_snd (hinv : ((T.coprod V.subtypeL).prod q).IsInvertible)
+    (y : F) :
+    T (q.kerSection (T.coprod V.subtypeL) y).1 + (q.kerSection (T.coprod V.subtypeL) y).2 = y := by
+  simpa using apply_kerSection_right (isInvertible_prod_comm.mp hinv) y
+
+/-- When the stabilizer `V` is a complement of the range of `T`, the `V`-component of the right
+inverse normalized by `q` is the projection onto `V` along the range. -/
+@[simp]
+theorem snd_kerSection_coprod_apply (hinv : ((T.coprod V.subtypeL).prod q).IsInvertible)
+    (hV : IsCompl V T.range) (y : F) :
+    (q.kerSection (T.coprod V.subtypeL) y).2 = V.projectionOnto T.range hV y := by
+  have hmem : T (q.kerSection (T.coprod V.subtypeL) y).1 ∈ T.range := ⟨_, rfl⟩
+  conv_rhs => rw [← apply_fst_kerSection_coprod_add_snd hinv y]
+  rw [map_add, Submodule.projectionOnto_apply_of_mem_right hV hmem,
+    Submodule.projectionOnto_apply_left, zero_add]
+
+/-- The continuous projection onto an exact stabilizer `V` along the range of `T` is the
+`V`-component of the right inverse of `T + inclusion_V` normalized by `q`. Through this formula
+the projection inherits the regularity of an operator family; see
+`ContinuousLinearMap.continuousAt_snd_comp_kerSection_coprod` and
+`ContinuousLinearMap.contDiffAt_snd_comp_kerSection_coprod`. -/
+theorem projectionOntoL_eq_snd_comp_kerSection_coprod
+    (hinv : ((T.coprod V.subtypeL).prod q).IsInvertible) (hV : V.IsTopCompl T.range) :
+    V.projectionOntoL T.range hV = snd R M V ∘L q.kerSection (T.coprod V.subtypeL) := by
+  ext y
+  simp [snd_kerSection_coprod_apply hinv hV.isCompl]
+
+end CokernelProjection
+
+section CokernelComplement
+
+variable {K M F G : Type*} [DivisionRing K]
+  [AddCommGroup M] [TopologicalSpace M] [Module K M]
+  [AddCommGroup F] [TopologicalSpace F] [Module K F] [ContinuousAdd F]
+  [AddCommGroup G] [TopologicalSpace G] [Module K G]
+  {T : M →L[K] F} {V : Submodule K F} {q : (M × V) →L[K] G}
+
+/-- **A stabilizer of the right dimension is an exact cokernel complement.** If the stabilized
+operator `T + inclusion_V` paired with `q` is invertible and `V` has dimension at most the
+codimension of the range of `T`, then `V` is a topological complement of the range. The
+stabilized operator is surjective, so this dimension bound holds exactly when the cokernel of `T`
+has the dimension of `V`. -/
+theorem isTopCompl_of_isInvertible_prod_coprod [FiniteDimensional K V]
+    (hinv : ((T.coprod V.subtypeL).prod q).IsInvertible)
+    (hrank : Module.finrank K V ≤ Module.finrank K (F ⧸ T.range)) : V.IsTopCompl T.range := by
+  have hcodisj : Codisjoint T.range V := by
+    refine codisjoint_iff.mpr (eq_top_iff.mpr fun y _ ↦ ?_)
+    rw [← apply_fst_kerSection_coprod_add_snd hinv y]
+    exact Submodule.add_mem_sup (LinearMap.mem_range_self _ _) (Submodule.coe_mem _)
+  have hV : IsCompl V T.range :=
+    (Submodule.isCompl_of_codisjoint_of_finrank_le hcodisj hrank).symm
+  refine (Submodule.IsCompl.isTopCompl_iff_projectionOnto hV).mpr <|
+    (snd K M V ∘L q.kerSection (T.coprod V.subtypeL)).continuous.congr fun y ↦ ?_
+  simp [snd_kerSection_coprod_apply hinv hV]
+
+end CokernelComplement
 
 end ContinuousLinearMap
 

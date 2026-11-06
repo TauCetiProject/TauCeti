@@ -15,8 +15,8 @@ import Mathlib.GroupTheory.Perm.Cycle.Type
 /-!
 # Examples: relational Craig interpolation and PC separation
 
-Downstream regression and worked examples exercising the public relational interpolation and
-projective-class separation interface:
+Downstream regression and worked examples exercising the public relational interpolation core and
+the projective-class separation interface:
 
 * **Degenerate interpolants**: when `φ` is unsatisfiable (`φ ⊨ ⊥`), `⊥` interpolates `φ ⊨ ψ` with
   empty relation support; when `ψ` is valid (`⊤ ⊨ ψ`), `⊤` interpolates `φ ⊨ ψ` with empty relation
@@ -29,7 +29,7 @@ projective-class separation interface:
   projective class along `LHom.sumInl : Language.empty →ᴸ Language.empty.sum Language.graph`
   (finiteness together with the graph of a fixed-point-free involution), as do finite sets of odd
   cardinality (finiteness together with the graph of an involution with a unique fixed point).
-  Their disjointness on countable nonempty carriers yields, via `pcSeparation_relational`, a
+  Their disjointness on countable nonempty carriers yields, via `pcSeparation`, a
   pure-equality sentence of `Language.empty` separating even from odd nonempty finite sets in every
   universe, and the countable disjunction `evenCardSentence` asserting "exactly `2n` elements for
   some `n`" gives an explicit such sentence.
@@ -381,7 +381,7 @@ end ParityOfFiniteSetsExample
 
 open ParityOfFiniteSetsExample
 
--- By `pcSeparation_relational`, disjointness on countable nonempty sets in `Type` produces a
+-- By `pcSeparation`, disjointness on countable nonempty sets in `Type` produces a
 -- single pure-equality sentence separating even from odd nonempty finite sets in every universe.
 example :
     ∃ θ : Language.empty.Sentenceω,
@@ -390,7 +390,7 @@ example :
       (∀ (M : Type w) [Language.empty.Structure M] [Nonempty M],
         Finite M → Odd (Nat.card M) → ¬ SentenceInf.Realize θ M) := by
   obtain ⟨θ, h₁, h₂⟩ :=
-    pcSeparation_relational.{0, 0, 0, 0, 0, 0, 0, w} evenFiniteSentence oddFiniteSentence
+    pcSeparation.{0, 0, 0, 0, 0, 0, 0, w} evenFiniteSentence oddFiniteSentence
       (fun M _ _ _ heven hodd =>
         (Nat.not_even_iff_odd.2 (pcMem_oddFiniteSentence_iff.1 hodd).2)
           (pcMem_evenFiniteSentence_iff.1 heven).2)
