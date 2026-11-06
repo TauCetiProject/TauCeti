@@ -44,7 +44,9 @@ adjunction. Uniqueness holds because `Sym F` is generated in degree one
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraAdjunction`: the adjunction
   `gradedSymmetricAlgebra X ⊣ degreeOne`, whose unit is the identification `F ≅ Sym¹ F`
   (`gradedSymmetricAlgebraAdjunction_unit`) and whose counit `Sym A₁ ⟶ A` extends the identity
-  of `A₁` (`gradedSymmetricAlgebraAdjunction_counit_app`).
+  of `A₁` (`gradedSymmetricAlgebraAdjunction_counit_app`);
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.epi_gradedSymmetricAlgebraLift_one`: the
+  extension `Sym F ⟶ A` of an epimorphism `F ⟶ A₁` is an epimorphism in degree one.
 
 ## References
 
@@ -392,6 +394,27 @@ theorem gradedSymmetricAlgebraAdjunction_counit_app (A : GradedQuasicoherentAlge
       gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A)) := by
   rw [← gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply, Adjunction.homEquiv_counit,
     CategoryTheory.Functor.map_id, Category.id_comp]
+
+namespace GradedQuasicoherentAlgebra
+
+variable (A : GradedQuasicoherentAlgebra X)
+
+/-- The morphism `Sym F ⟶ A` extending an epimorphism `φ : F ⟶ A₁` is an epimorphism in degree
+one: its degree-one component is `φ`, through `F ≅ Sym¹ F`. -/
+theorem epi_gradedSymmetricAlgebraLift_one {F : QuasicoherentSheaf X} (φ : F ⟶ degreeOne.obj A)
+    [hφ : Epi φ.hom] :
+    Epi ((gradedSymmetricAlgebraLift φ).hom.hom.hom 1) := by
+  have h := congrArg (·.hom) (gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift φ)
+  simp only [ObjectProperty.FullSubcategory.comp_hom, degree_map_hom] at h
+  -- The transports are morphisms of `SheafOfModules X.ringCatSheaf`, whose category instance is
+  -- identified with that of `X.Modules` only by unfolding, so typeclass search does not find
+  -- their instances; they are supplied by hand, as in `epi_one_gradedSymmetricAlgebra`.
+  have he {P Q : X.Modules} (p : P = Q) : IsIso (eqToHom p) := (eqToIso p).isIso_hom
+  exact (@epi_comp_iff_of_isIso _ _ _ _ _ _ _ (he _)).mp
+    ((@epi_comp_iff_of_epi _ _ _ _ _ _ (@IsIso.epi_of_iso _ _ _ _ _ (he _)) _).mp
+      (@epi_of_epi_fac _ _ _ _ _ _ _ _ hφ h))
+
+end GradedQuasicoherentAlgebra
 
 end
 
