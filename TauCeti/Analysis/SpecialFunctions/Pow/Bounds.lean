@@ -58,6 +58,10 @@ For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditiv
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
 weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
 
+The Japanese bracket power `(1 + ‖ξ‖ ^ 2) ^ (r / 2)` is comparable to `‖ξ‖ ^ r` for `1 ≤ ‖ξ‖`, and
+bounded below by `(1 + R ^ 2) ^ (-|r| / 2)` on the ball `‖ξ‖ ≤ R`. These comparisons turn
+homogeneous estimates at large frequencies, and bounds on compact sets, into symbol estimates.
+
 For `1 < q`, the power mean inequality `u ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)` for
 `0 ≤ u ≤ s + t` improves by a uniform factor `1 - κ` once `u` is also bounded away from `2 * s`,
 say `u ≤ (2 - δ) * s` with `0 ≤ t ≤ s`. Strict convexity of `t ↦ t ^ q` gives the improvement
@@ -86,6 +90,10 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
+* `TauCeti.norm_rpow_le_one_add_norm_sq_rpow`: `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`
+  for `1 ≤ ‖ξ‖`.
+* `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
+  `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`.
 -/
 
 public section
@@ -348,5 +356,43 @@ theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
     1 + ‖x + y‖ ≤ (1 + ‖x‖) * (1 + ‖y‖) := by
   nlinarith [norm_add_le x y, norm_nonneg x, norm_nonneg y,
     mul_nonneg (norm_nonneg x) (norm_nonneg y)]
+
+/-- Away from the origin, a power `‖ξ‖ ^ r` is bounded by a multiple of the Japanese bracket
+power: for `1 ≤ ‖ξ‖`, `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
+theorem norm_rpow_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E] {ξ : E}
+    (hξ : 1 ≤ ‖ξ‖) (r : ℝ) :
+    ‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  have hs : 0 < ‖ξ‖ := one_pos.trans_le hξ
+  have hsq : ‖ξ‖ ^ r = (‖ξ‖ ^ 2) ^ (r / 2) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hs.le]
+    ring_nf
+  rw [hsq]
+  rcases le_or_gt 0 r with hr | hr
+  · calc (‖ξ‖ ^ 2) ^ (r / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+          Real.rpow_le_rpow (by positivity) (by linarith) (by linarith)
+      _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+          le_mul_of_one_le_left (by positivity) (Real.one_le_rpow (by norm_num) (by positivity))
+  · have h2 : (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≥ (2 * ‖ξ‖ ^ 2) ^ (r / 2) :=
+      Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by linarith)
+    rw [Real.mul_rpow (by norm_num) (by positivity)] at h2
+    have h2r : (2 : ℝ) ^ (|r| / 2) * 2 ^ (r / 2) = 1 := by
+      rw [abs_of_neg hr, ← Real.rpow_add (by norm_num), neg_div, neg_add_cancel,
+        Real.rpow_zero]
+    calc (‖ξ‖ ^ 2) ^ (r / 2) = 2 ^ (|r| / 2) * (2 ^ (r / 2) * (‖ξ‖ ^ 2) ^ (r / 2)) := by
+          rw [← mul_assoc, h2r, one_mul]
+      _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+          mul_le_mul_of_nonneg_left h2 (by positivity)
+
+/-- On a ball, the Japanese bracket power is bounded below: for `‖ξ‖ ≤ R`,
+`(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
+theorem one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E]
+    {ξ : E} {R : ℝ} (hξ : ‖ξ‖ ≤ R) (r : ℝ) :
+    (1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  have hR : 1 + ‖ξ‖ ^ 2 ≤ 1 + R ^ 2 := by nlinarith [norm_nonneg ξ]
+  rcases le_or_gt 0 r with hr | hr
+  · exact (Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith) (by linarith [abs_nonneg r])).trans
+      (Real.one_le_rpow (by nlinarith [norm_nonneg ξ]) (by linarith))
+  · rw [abs_of_neg hr, neg_neg]
+    exact Real.rpow_le_rpow_of_nonpos (by positivity) hR (by linarith)
 
 end TauCeti

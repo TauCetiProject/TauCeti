@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Rigid
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Functor
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Functor.Basic
 
 /-!
 # The Drinfeld centre of a pivotal category is pivotal

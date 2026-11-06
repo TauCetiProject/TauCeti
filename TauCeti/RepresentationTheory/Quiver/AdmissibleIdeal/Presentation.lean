@@ -231,7 +231,7 @@ theorem exists_quiver_admissibleIdeal_morita (k A : Type u) [Field k] [IsAlgClos
     ∃ (Q : Type) (_ : Quiver.{0} Q) (_ : Finite Q) (_ : ∀ i j : Q, Finite (i ⟶ j))
       (I : Ideal (pathAlgebra k Q)) (_ : I.IsTwoSided),
       IsAdmissibleIdeal I ∧ IsMoritaEquivalent k A (pathAlgebra k Q ⧸ I) := by
-  have := isSemiperfectRing_of_finiteDimensional k A
+  have := IsSemiperfectRing.of_finite k A
   obtain ⟨e, he, hfull, hB⟩ := IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner A
   obtain ⟨Q, hQ, hfin, harr, F, hF, hI⟩ :=
     hB.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker (k := k)

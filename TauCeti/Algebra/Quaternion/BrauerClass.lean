@@ -58,7 +58,8 @@ translates into the solvability of the norm equation `b = x² - ay²` and into t
   **bilinearity of the quaternion symbol**.
 * `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`: the symbol as a pairing of square classes,
   which is symmetric and bilinear (`quaternionClassOnSquareClasses_comm`,
-  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`).
+  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`) with
+  `2`-torsion values (`quaternionClassOnSquareClasses_sq`).
 * `TauCeti.BrauerGroup.quaternionClass_congr`: isometric binary forms `⟨a,b⟩ ≅ ⟨c,d⟩`
   have equal symbols `[(a,b)] = [(c,d)]`.
 
@@ -371,6 +372,13 @@ theorem quaternionClassOnSquareClasses_zero_left (y : SquareClassGroup K) :
 theorem quaternionClassOnSquareClasses_zero_right (x : SquareClassGroup K) :
     quaternionClassOnSquareClasses x 0 = 1 := by
   rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_zero_left]
+
+/-- The square-class pairing takes `2`-torsion values. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_sq (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x y ^ 2 = 1 := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
+    quaternionClassOnSquareClasses_squareClass, quaternionClass_sq]
 
 /-! ### Invariance under isometry of binary forms -/
 

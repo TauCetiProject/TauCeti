@@ -48,6 +48,8 @@ variable vanishes everywhere is constant along every horizontal line.
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
+* `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
+  derivative along the first factor.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
@@ -110,6 +112,21 @@ restricted to the second factor. -/
 theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
     fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
   (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
+
+/-- A function of the second variable alone has zero derivative along the first factor. No
+differentiability is needed: otherwise the derivative is zero. -/
+theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
+    fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
+  by_cases hf : DifferentiableAt 𝕜 f z.2
+  · have h : HasFDerivAt (fun w : E × F ↦ f w.2)
+        ((fderiv 𝕜 f z.2).comp (ContinuousLinearMap.snd 𝕜 E F)) z :=
+      hf.hasFDerivAt.comp z hasFDerivAt_snd
+    simp [h.fderiv]
+  · have hf' : ¬DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) z := by
+      intro h
+      have h' : DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) (z.1, z.2) := h
+      exact hf (h'.comp z.2 (hasFDerivAt_prodMk_right (𝕜 := 𝕜) z.1 z.2).differentiableAt)
+    simp [fderiv_zero_of_not_differentiableAt hf']
 
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
 `f` in the first variable plus its derivative in the second variable applied to the derivative
