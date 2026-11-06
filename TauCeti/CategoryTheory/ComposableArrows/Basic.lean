@@ -99,7 +99,8 @@ theorem totalArrow_precomp_zero_succ (F : ComposableArrows C n) {X : C} (f : X �
     (F.precomp f).totalArrow 0 j.succ (Fin.zero_le _) =
       ⟨X, F.obj j, f ≫ F.map (homOfLE (Fin.zero_le j))⟩ := by
   obtain ⟨_ | j, hj⟩ := j
-  · -- The first arrow is `f` itself, followed by the identity of the old first vertex.
+  · -- The first arrow is `f` itself, followed by the identity of the old first vertex: `0` and
+    -- `⟨0, hj⟩` are the same element of `Fin (n + 1)`, so `homOfLE` is its identity arrow.
     exact congrArg (fun g ↦ (⟨X, F.obj ⟨0, hj⟩, g⟩ : Quiver.Total C))
       ((Category.comp_id f).symm.trans (by rw [← F.map_id]; rfl))
   · rfl
@@ -153,12 +154,14 @@ theorem ext_succ_of_totalArrow {F G : ComposableArrows C (n + 1)} (h : F.δ₀ =
 
 /-- Applying a functor to a string with a prepended arrow prepends the image of that arrow to the
 image of the string. -/
+@[simp]
 theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_precomp {D : Type*} [Category D]
     (Φ : C ⥤ D) (F : ComposableArrows C n) {X : C} (f : X ⟶ F.left) :
     (Φ.mapComposableArrows (n + 1)).obj (F.precomp f) =
       ((Φ.mapComposableArrows n).obj F).precomp (Φ.map f) := by
   refine ext_succ_of_totalArrow rfl ?_
   rw [totalArrow_mapComposableArrows_obj, totalArrow_def, totalArrow_def]
+  -- By definition of `precomp`, both first arrows are `Φ.map f`.
   rfl
 
 end CategoryTheory.ComposableArrows

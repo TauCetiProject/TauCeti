@@ -96,10 +96,9 @@ theorem finsum_costar_eq_finsum_mem_preimage_left_singleton [IsGroupoid C] {M : 
     [AddCommMonoid M] (g : C → M) (x : C) :
     ∑ᶠ b : Quiver.Costar x, g b.1 = ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, g a.right := by
   rw [finsum_mem_preimage_left_singleton]
-  let e (y : C) : (x ⟶ y) ≃ (y ⟶ x) :=
-    { toFun f := inv f, invFun f := inv f, left_inv f := IsIso.inv_inv (f := f)
-      right_inv f := IsIso.inv_inv (f := f) }
-  exact (finsum_comp_equiv (Equiv.sigmaCongrRight e) (f := fun b : Quiver.Costar x ↦ g b.1)).symm
+  let := Groupoid.ofIsGroupoid (C := C)
+  exact (finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ Groupoid.invEquiv)
+    (f := fun b : Quiver.Costar x ↦ g b.1)).symm
 
 /-- The composite of total arrows `a` and `b` of a category with the target of `a` equal to the
 source of `b`: the first arrow is followed by the second. -/

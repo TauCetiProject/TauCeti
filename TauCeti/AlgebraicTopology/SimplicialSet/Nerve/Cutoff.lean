@@ -8,10 +8,13 @@ module
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.BigOperators
+public import TauCeti.Algebra.Homology.CochainComplex.OfDegreeZero
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.CategoryTheory.Category.QuiverTotal
+import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # The cutoff contraction of the cochains of a groupoid nerve
@@ -40,7 +43,8 @@ So the identity of the cochain complex is homotopic to the cochain map that is `
 and zero in positive degrees (`TauCeti.nerveCochainComplex.cutoffHomotopy`). In particular every
 positive-degree cocycle `φ` is the coboundary of `h φ`, the positive-degree cohomology vanishes,
 the values of `P` are constant along arrows, and every degree-`0` cocycle, that is every function
-constant along arrows, is fixed by `P`.
+constant along arrows, is fixed by `P`. The homotopy and the primitives are assembled from the two
+identities by `CochainComplex.homotopyOfDCompEq` and `CochainComplex.d_hom_apply_of_d_comp_eq`.
 No sign is needed: prepending an arrow commutes with the faces deleting later vertices, and the
 face deleting the second vertex composes the prepended arrow with the first arrow of the string
 (`CategoryTheory.nerve.δ_succ_precomp`), which reindexes the sum since `C` is a groupoid. Every
@@ -126,23 +130,6 @@ def cutoffAverage (φ : ComposableArrows C 0 → M) (σ : ComposableArrows C 0) 
 
 variable {c}
 
-/-- Under the cutoff normalization at `x`, sums weighted by `c` over the arrows with target `x`
-are finite sums over one finite set of such arrows, on which `c` sums to one. If the sum of the
-values of `c` has infinitely many nonzero terms, the ring is trivial and so is `M`. -/
-private theorem exists_finset_finsum_smul_eq_sum {x : C}
-    (hc : ∑ᶠ b : Quiver.Costar x, c b.1 = 1) :
-    ∃ s : Finset (Quiver.Costar x), ∑ b ∈ s, c b.1 = 1 ∧
-      ∀ g : Quiver.Costar x → M, ∑ᶠ b, c b.1 • g b = ∑ b ∈ s, c b.1 • g b := by
-  by_cases hfin : (Function.support fun b : Quiver.Costar x ↦ c b.1).Finite
-  · refine ⟨hfin.toFinset, ?_, fun g ↦ finsum_eq_sum_of_support_subset _ ?_⟩
-    · rwa [← finsum_eq_sum_of_support_subset _ (by simp)]
-    · exact (Function.support_smul_subset_left _ _).trans (by simp)
-  · -- A sum with infinitely many nonzero terms is zero, so `1 = 0` in `k`.
-    have : Subsingleton k := subsingleton_of_zero_eq_one <| by
-      rw [← hc, finsum_of_infinite_support hfin]
-    have : Subsingleton M := Module.subsingleton k M
-    exact ⟨∅, Subsingleton.elim _ _, fun _ ↦ Subsingleton.elim _ _⟩
-
 variable (hc : ∀ x : C, ∑ᶠ b : Quiver.Costar x, c b.1 = 1)
 include hc
 
@@ -150,33 +137,33 @@ include hc
 theorem cutoffPrepend_add (n : ℕ) (φ ψ : ComposableArrows C (n + 1) → M) :
     cutoffPrepend c n (φ + ψ) = cutoffPrepend c n φ + cutoffPrepend c n ψ := by
   funext σ
-  obtain ⟨s, -, hs⟩ := exists_finset_finsum_smul_eq_sum (M := M) (hc σ.left)
-  simp only [cutoffPrepend, Pi.add_apply, hs]
-  simp only [smul_add, Finset.sum_add_distrib]
+  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
+  simp only [cutoffPrepend, Pi.add_apply, smul_add]
+  exact finsum_add_distrib (hfin.fun_smul_left _) (hfin.fun_smul_left _)
 
 /-- Prepending arrows weighted by a cutoff commutes with scalar multiplication. -/
 theorem cutoffPrepend_smul (n : ℕ) (a : k) (φ : ComposableArrows C (n + 1) → M) :
     cutoffPrepend c n (a • φ) = a • cutoffPrepend c n φ := by
   funext σ
-  obtain ⟨s, -, hs⟩ := exists_finset_finsum_smul_eq_sum (M := M) (hc σ.left)
-  simp only [cutoffPrepend, Pi.smul_apply, hs]
-  simp only [Finset.smul_sum, smul_comm a]
+  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
+  simp only [cutoffPrepend, Pi.smul_apply, smul_comm _ a]
+  exact (smul_finsum' a (hfin.fun_smul_left _)).symm
 
 /-- The cutoff average is additive. -/
 theorem cutoffAverage_add (φ ψ : ComposableArrows C 0 → M) :
     cutoffAverage c (φ + ψ) = cutoffAverage c φ + cutoffAverage c ψ := by
   funext σ
-  obtain ⟨s, -, hs⟩ := exists_finset_finsum_smul_eq_sum (M := M) (hc σ.left)
-  simp only [cutoffAverage, Pi.add_apply, hs]
-  simp only [smul_add, Finset.sum_add_distrib]
+  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
+  simp only [cutoffAverage, Pi.add_apply, smul_add]
+  exact finsum_add_distrib (hfin.fun_smul_left _) (hfin.fun_smul_left _)
 
 /-- The cutoff average commutes with scalar multiplication. -/
 theorem cutoffAverage_smul (a : k) (φ : ComposableArrows C 0 → M) :
     cutoffAverage c (a • φ) = a • cutoffAverage c φ := by
   funext σ
-  obtain ⟨s, -, hs⟩ := exists_finset_finsum_smul_eq_sum (M := M) (hc σ.left)
-  simp only [cutoffAverage, Pi.smul_apply, hs]
-  simp only [Finset.smul_sum, smul_comm a]
+  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
+  simp only [cutoffAverage, Pi.smul_apply, smul_comm _ a]
+  exact (smul_finsum' a (hfin.fun_smul_left _)).symm
 
 variable (M) in
 /-- The operator `TauCeti.nerveCochainComplex.cutoffPrepend` from cochains of degree `n + 1` to
@@ -192,9 +179,9 @@ def cutoffPrependHom (n : ℕ) :
 `TauCeti.nerveCochainComplex.cutoffPrepend`. -/
 @[simp]
 theorem valuesEquiv_cutoffPrependHom (n : ℕ) (φ : (nerveCochainComplex C k M).X (n + 1)) :
-    valuesEquiv n (cutoffPrependHom M hc n φ) = cutoffPrepend c n (valuesEquiv (n + 1) φ) := by
-  change valuesEquiv n ((valuesEquiv n).symm (cutoffPrepend c n (valuesEquiv (n + 1) φ))) = _
-  rw [LinearEquiv.apply_symm_apply]
+    valuesEquiv n (cutoffPrependHom M hc n φ) = cutoffPrepend c n (valuesEquiv (n + 1) φ) :=
+  -- By definition, `cutoffPrependHom` conjugates `cutoffPrepend` by the value coordinates.
+  (valuesEquiv n).apply_symm_apply _
 
 variable (M) in
 /-- The cutoff average `TauCeti.nerveCochainComplex.cutoffAverage` on cochains of degree `0`. -/
@@ -208,26 +195,26 @@ def cutoffAverageHom : (nerveCochainComplex C k M).X 0 ⟶ (nerveCochainComplex 
 `TauCeti.nerveCochainComplex.cutoffAverage`. -/
 @[simp]
 theorem valuesEquiv_cutoffAverageHom (φ : (nerveCochainComplex C k M).X 0) :
-    valuesEquiv 0 (cutoffAverageHom M hc φ) = cutoffAverage c (valuesEquiv 0 φ) := by
-  change valuesEquiv 0 ((valuesEquiv 0).symm (cutoffAverage c (valuesEquiv 0 φ))) = _
-  rw [LinearEquiv.apply_symm_apply]
+    valuesEquiv 0 (cutoffAverageHom M hc φ) = cutoffAverage c (valuesEquiv 0 φ) :=
+  -- By definition, `cutoffAverageHom` conjugates `cutoffAverage` by the value coordinates.
+  (valuesEquiv 0).apply_symm_apply _
 
 /-- **Contraction in degree `0`.** Prepending to the coboundary of a function on objects
 subtracts it from its cutoff average. -/
 theorem cutoffPrepend_d_zero (φ : (nerveCochainComplex C k M).X 0) (σ : ComposableArrows C 0) :
     cutoffPrepend c 0 (valuesEquiv 1 ((nerveCochainComplex C k M).d 0 1 φ)) σ =
       valuesEquiv 0 φ σ - cutoffAverage c (valuesEquiv 0 φ) σ := by
-  obtain ⟨s, hs₁, hs⟩ := exists_finset_finsum_smul_eq_sum (M := M) (hc σ.left)
-  have h₀ (b : Quiver.Costar σ.left) : (nerve C).δ 0 (σ.precomp b.2) = σ := rfl
+  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
   have h₁ (b : Quiver.Costar σ.left) :
       (nerve C).δ (Fin.succ 0) (σ.precomp b.2) = ComposableArrows.mk₀ b.1 :=
     ComposableArrows.ext₀ rfl
   unfold cutoffPrepend cutoffAverage
-  rw [hs, hs]
+  rw [finsum_smul_eq_sum hfin, finsum_smul_eq_sum hfin]
   simp only [valuesEquiv_d, Fin.sum_univ_succ, Fin.sum_univ_zero, Fin.val_zero, Fin.val_succ,
-    pow_zero, zero_add, pow_one, one_smul, neg_smul, add_zero, h₀, h₁, smul_add, smul_neg,
-    Finset.sum_add_distrib, Finset.sum_neg_distrib]
-  rw [← Finset.sum_smul, hs₁, one_smul, sub_eq_add_neg]
+    pow_zero, zero_add, pow_one, one_smul, neg_smul, add_zero, nerve.δ₀_eq,
+    ComposableArrows.precomp_δ₀, h₁, smul_add, smul_neg, Finset.sum_add_distrib,
+    Finset.sum_neg_distrib]
+  rw [← Finset.sum_smul, ← finsum_eq_sum _ hfin, hc, one_smul, sub_eq_add_neg]
 
 variable [IsGroupoid C]
 
@@ -239,31 +226,35 @@ theorem cutoffPrepend_d_add_d_cutoffPrepend (n : ℕ) (φ : (nerveCochainComplex
         σ +
       valuesEquiv (n + 1) ((nerveCochainComplex C k M).d n (n + 1) (cutoffPrependHom M hc n φ)) σ =
       valuesEquiv (n + 1) φ σ := by
-  obtain ⟨s, hs₁, hs⟩ := exists_finset_finsum_smul_eq_sum (M := M) (hc σ.left)
+  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
   -- Reindex the sums over the arrows into the first vertex of each face by the arrows into the
   -- first vertex of `σ`, and identify the strings with the faces of the prepended strings.
   have hface (j : Fin (n + 2)) :
       cutoffPrepend c n (valuesEquiv (n + 1) φ) ((nerve C).δ j σ) =
-        ∑ b ∈ s, c b.1 • valuesEquiv (n + 1) φ ((nerve C).δ j.succ (σ.precomp b.2)) := by
+        ∑ b ∈ hfin.toFinset,
+          c b.1 • valuesEquiv (n + 1) φ ((nerve C).δ j.succ (σ.precomp b.2)) := by
     unfold cutoffPrepend
-    rw [← hs]
+    rw [← finsum_smul_eq_sum hfin]
     -- Postcomposing with the arrow from `x₀` to the first vertex of the face identifies the
     -- arrows into `x₀` with the arrows into that vertex.
     let e : σ.left ≅ σ.obj (j.succAbove 0) := asIso (σ.map (homOfLE (Fin.zero_le _)))
     refine (finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ e.homToEquiv)).symm.trans
       (finsum_congr fun b ↦ ?_)
     rw [nerve.δ_succ_precomp]
+    -- `e.homToEquiv b.2` is `b.2 ≫ e.hom` and `e.hom` is `σ.map _` by definition of `asIso`;
+    -- the arrow's type depends on `b.1`, so `simp` cannot rewrite inside `Equiv.sigmaCongrRight`.
     rfl
-  have h₀ (b : Quiver.Costar σ.left) : (nerve C).δ 0 (σ.precomp b.2) = σ := rfl
   rw [valuesEquiv_d]
   simp only [valuesEquiv_cutoffPrependHom, hface]
   unfold cutoffPrepend
-  rw [hs]
+  rw [finsum_smul_eq_sum hfin]
   -- Split off the face deleting the prepended vertex; the other faces cancel the second sum.
-  simp only [valuesEquiv_d, Fin.sum_univ_succ (n := n + 2), h₀, Fin.val_zero, pow_zero,
+  simp only [valuesEquiv_d, Fin.sum_univ_succ (n := n + 2), nerve.δ₀_eq,
+    ComposableArrows.precomp_δ₀, Fin.val_zero, pow_zero,
     one_smul, Fin.val_succ, pow_succ, mul_neg_one, neg_smul, Finset.sum_neg_distrib, smul_add,
     smul_neg, Finset.smul_sum, Finset.sum_add_distrib, smul_comm (c _) ((-1 : ℤ) ^ _)]
-  rw [Finset.sum_comm (s := s), ← Finset.sum_smul, hs₁, one_smul]
+  rw [Finset.sum_comm (s := hfin.toFinset), ← Finset.sum_smul, ← finsum_eq_sum _ hfin, hc,
+    one_smul]
   abel
 
 /-- **Contraction in positive degrees**, as an identity of maps of cochains. -/
@@ -273,6 +264,8 @@ theorem d_comp_cutoffPrependHom_add (n : ℕ) :
   ext φ : 2
   apply (valuesEquiv (n + 1)).injective
   funext σ
+  -- `simp` does not normalize these composites in `ModuleCat` (it leaves `(f ≫ g).hom` unfolded
+  -- against `ConcreteCategory.hom`), so the structure lemmas are applied by hand.
   rw [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.hom_comp, ModuleCat.hom_comp,
     LinearMap.comp_apply, LinearMap.comp_apply, ModuleCat.hom_id, LinearMap.id_apply, map_add,
     Pi.add_apply, valuesEquiv_cutoffPrependHom]
@@ -293,89 +286,48 @@ theorem d_comp_cutoffPrependHom_zero :
 /-- The cutoff average of a function on objects is constant along arrows: its coboundary
 vanishes. -/
 theorem cutoffAverageHom_comp_d :
-    cutoffAverageHom M hc ≫ (nerveCochainComplex C k M).d 0 1 = 0 := by
-  have hP : cutoffAverageHom M hc =
-      𝟙 _ - (nerveCochainComplex C k M).d 0 1 ≫ cutoffPrependHom M hc 0 := by
-    rw [d_comp_cutoffPrependHom_zero, sub_sub_cancel]
-  have hd : cutoffPrependHom M hc 0 ≫ (nerveCochainComplex C k M).d 0 1 =
-      𝟙 _ - (nerveCochainComplex C k M).d 1 2 ≫ cutoffPrependHom M hc 1 := by
-    rw [← d_comp_cutoffPrependHom_add hc 0, add_sub_cancel_left]
-  rw [hP, Preadditive.sub_comp, Category.id_comp, Category.assoc, hd, Preadditive.comp_sub,
-    Category.comp_id, ← Category.assoc, HomologicalComplex.d_comp_d, Limits.zero_comp, sub_zero,
-    sub_self]
+    cutoffAverageHom M hc ≫ (nerveCochainComplex C k M).d 0 1 = 0 :=
+  CochainComplex.comp_d_zero_eq_zero_of_d_comp_eq (d_comp_cutoffPrependHom_add hc)
+    (d_comp_cutoffPrependHom_zero hc)
 
 /-- The cutoff average, placed in degree `0`, as an endomorphism of the cochain complex: it is
 `TauCeti.nerveCochainComplex.cutoffAverageHom` on cochains of degree `0` and zero in positive
 degrees. -/
-def cutoffCochainMap : nerveCochainComplex C k M ⟶ nerveCochainComplex C k M where
-  f
-    | 0 => cutoffAverageHom M hc
-    | _ + 1 => 0
-  comm' i j hij := by
-    obtain rfl : i + 1 = j := hij
-    rcases i with _ | i
-    · exact (cutoffAverageHom_comp_d hc).trans Limits.comp_zero.symm
-    · exact Limits.zero_comp.trans Limits.comp_zero.symm
+def cutoffCochainMap : nerveCochainComplex C k M ⟶ nerveCochainComplex C k M :=
+  (nerveCochainComplex C k M).ofDegreeZero (cutoffAverageHom M hc) (cutoffAverageHom_comp_d hc)
 
 /-- In degree `0`, `TauCeti.nerveCochainComplex.cutoffCochainMap` is the cutoff average. -/
 @[simp]
 theorem cutoffCochainMap_f_zero : (cutoffCochainMap (M := M) hc).f 0 = cutoffAverageHom M hc :=
-  (rfl)
+  CochainComplex.ofDegreeZero_f_zero _
 
 /-- In positive degrees, `TauCeti.nerveCochainComplex.cutoffCochainMap` is zero. -/
 @[simp]
 theorem cutoffCochainMap_f_succ (n : ℕ) : (cutoffCochainMap (M := M) hc).f (n + 1) = 0 :=
-  (rfl)
-
-/-- The components `TauCeti.nerveCochainComplex.cutoffPrependHom` of the cutoff homotopy, from
-degree `j + 1` to degree `j`. -/
-private def cutoffHomotopyHom (i j : ℕ) (hji : (ComplexShape.up ℕ).Rel j i) :
-    (nerveCochainComplex C k M).X i ⟶ (nerveCochainComplex C k M).X j :=
-  ((nerveCochainComplex C k M).XIsoOfEq hji.symm).hom ≫ cutoffPrependHom M hc j
-
-private theorem sub_cutoffCochainMap_eq_nullHomotopicMap' :
-    𝟙 _ - cutoffCochainMap (M := M) hc = Homotopy.nullHomotopicMap' (cutoffHomotopyHom hc) := by
-  ext n : 1
-  rcases n with _ | n
-  · -- Degree `0` has no incoming differential, so only `d ≫ h` contributes.
-    rw [Homotopy.nullHomotopicMap'_f_of_not_rel_right (show (ComplexShape.up ℕ).Rel 0 1 from rfl)
-      (fun l ↦ by simp)]
-    simp only [cutoffHomotopyHom, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
-      Category.id_comp, HomologicalComplex.sub_f_apply, HomologicalComplex.id_f,
-      cutoffCochainMap_f_zero]
-    exact (d_comp_cutoffPrependHom_zero hc).symm
-  · rw [Homotopy.nullHomotopicMap'_f (show (ComplexShape.up ℕ).Rel n (n + 1) from rfl)
-      (show (ComplexShape.up ℕ).Rel (n + 1) (n + 1 + 1) from rfl)]
-    simp only [cutoffHomotopyHom, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
-      Category.id_comp, HomologicalComplex.sub_f_apply, HomologicalComplex.id_f,
-      cutoffCochainMap_f_succ, sub_zero]
-    exact (d_comp_cutoffPrependHom_add hc n).symm
+  CochainComplex.ofDegreeZero_f_succ _ n
 
 /-- **The cutoff contraction.** The identity of the cochain complex of the nerve is homotopic to
 the cutoff average placed in degree `0`, through the homotopy whose component from degree `n + 1`
 to degree `n` prepends an arrow weighted by `c`
 (`TauCeti.nerveCochainComplex.cutoffHomotopy_hom_succ`). -/
 def cutoffHomotopy : Homotopy (𝟙 (nerveCochainComplex C k M)) (cutoffCochainMap hc) :=
-  Homotopy.equivSubZero.symm <|
-    (Homotopy.ofEq (sub_cutoffCochainMap_eq_nullHomotopicMap' hc)).trans (Homotopy.nullHomotopy' _)
+  CochainComplex.homotopyOfDCompEq (d_comp_cutoffPrependHom_add hc)
+    (d_comp_cutoffPrependHom_zero hc)
 
 /-- The component of `TauCeti.nerveCochainComplex.cutoffHomotopy` from degree `n + 1` to degree
 `n` is `TauCeti.nerveCochainComplex.cutoffPrependHom`. -/
 @[simp]
 theorem cutoffHomotopy_hom_succ (n : ℕ) :
-    (cutoffHomotopy (M := M) hc).hom (n + 1) n = cutoffPrependHom M hc n := by
-  simp [cutoffHomotopy, Homotopy.equivSubZero, Homotopy.trans_hom, Homotopy.ofEq_hom,
-    Homotopy.nullHomotopy'_hom, cutoffHomotopyHom]
+    (cutoffHomotopy (M := M) hc).hom (n + 1) n = cutoffPrependHom M hc n :=
+  CochainComplex.homotopyOfDCompEq_hom_succ (d_comp_cutoffPrependHom_add hc)
+    (d_comp_cutoffPrependHom_zero hc) n
 
 /-- **The explicit primitive of a positive-degree cocycle**: prepending an arrow weighted by `c`
 to a cocycle of degree `n + 1` gives a cochain whose coboundary is the cocycle. -/
 theorem d_cutoffPrependHom_of_d_eq_zero {n : ℕ} {φ : (nerveCochainComplex C k M).X (n + 1)}
     (hφ : (nerveCochainComplex C k M).d (n + 1) (n + 2) φ = 0) :
-    (nerveCochainComplex C k M).d n (n + 1) (cutoffPrependHom M hc n φ) = φ := by
-  have h := congr($(d_comp_cutoffPrependHom_add hc n).hom φ)
-  rwa [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.hom_comp, ModuleCat.hom_comp,
-    LinearMap.comp_apply, LinearMap.comp_apply, hφ, map_zero, zero_add, ModuleCat.hom_id,
-    LinearMap.id_apply] at h
+    (nerveCochainComplex C k M).d n (n + 1) (cutoffPrependHom M hc n φ) = φ :=
+  CochainComplex.d_hom_apply_of_d_comp_eq (d_comp_cutoffPrependHom_add hc n) hφ
 
 /-- The cochain complex of the nerve is exact in positive degrees. -/
 theorem exactAt_succ (n : ℕ) : (nerveCochainComplex C k M).ExactAt (n + 1) := by
@@ -434,6 +386,7 @@ theorem cutoffPrepend_comp_mapComposableArrows (n : ℕ) (φ : ComposableArrows 
     (g := fun b : Quiver.Costar (Φ.obj σ.left) ↦
       c b.1 • φ (((Φ.mapComposableArrows n).obj σ).precomp b.2)) _ (hΦ σ.left))
   simp only [Function.comp_apply, Functor.mapComposableArrows_obj_precomp]
+  -- `Φ.toPrefunctor.costar` sends `⟨y, b⟩` to `⟨Φ.obj y, Φ.map b⟩` by definition.
   rfl
 
 /-- **Restriction law.** Pulling back cochains along a functor bijective on the arrows with a
