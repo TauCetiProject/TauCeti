@@ -31,7 +31,9 @@ group, as `TauCeti.Floer.SphericalPeriodGroup ω c`, and describes it in terms o
   depend on the base point along paths
   (`SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport`), and on a path-connected space
   every element of `Γ` is the class of a sphere at any given base point
-  (`SphericalPeriodGroup.ofHomotopyGroup_surjective`).
+  (`SphericalPeriodGroup.ofHomotopyGroup_surjective`), so that `Γ` is the quotient of `π₂(X, x)`
+  by the spheres of zero area and zero Chern number
+  (`SphericalPeriodGroup.homotopyGroupQuotientEquiv`).
 * `Γ` is trivial exactly when `ω` and `c` vanish on the Hurewicz classes of all spheres
   (`SphericalPeriodGroup.subsingleton_iff`), that is, for symplectically aspherical targets with
   vanishing first Chern class on spheres.
@@ -119,6 +121,20 @@ theorem ofHomotopyGroup_surjective [PathConnectedSpace X] (x : X) :
   | H s =>
     obtain ⟨a, ha⟩ := (mem_sphericalClasses_iff x).1 s.2
     exact ⟨a, congrArg _ (Subtype.ext ha)⟩
+
+variable (ω c) in
+/-- **On a path-connected space the period group is a quotient of `π₂(X, x)`**: the quotient by
+the spheres whose Hurewicz classes have zero area and zero first Chern number. -/
+noncomputable def homotopyGroupQuotientEquiv [PathConnectedSpace X] (x : X) :
+    Additive (HomotopyGroup (Fin 2) X x) ⧸ (ofHomotopyGroup ω c x).ker ≃+
+      SphericalPeriodGroup ω c :=
+  QuotientAddGroup.quotientKerEquivOfSurjective _ (ofHomotopyGroup_surjective x)
+
+@[simp]
+theorem homotopyGroupQuotientEquiv_mk [PathConnectedSpace X] (x : X)
+    (a : Additive (HomotopyGroup (Fin 2) X x)) :
+    homotopyGroupQuotientEquiv ω c x a = ofHomotopyGroup ω c x a :=
+  (rfl)
 
 /-- **The period group is trivial exactly when `ω` and `c` vanish on all spheres**, as they do for
 a symplectically aspherical manifold whose first Chern class vanishes on spheres. -/
