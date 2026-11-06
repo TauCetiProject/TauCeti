@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -27,19 +29,20 @@ where `g` is the transition function of `V` and `h` the transition function of t
 We glue these coordinate pieces with Mathlib's `VectorBundleCore` (`TauCeti.firstJetCore`); the
 transition functions satisfy the cocycle law because of the chain rule, and they are smooth
 because the transition functions of `V` and of the charts are. This makes
-`TauCeti.FirstJet I F V` a smooth vector bundle over `M`, with model fibre `F × (E →L[𝕜] F)`.
+`TauCeti.FirstJet I F V` a vector bundle over `M`, with model fibre `F × (E →L[𝕜] F)`; it is a
+`C^n` vector bundle when `V` and `M` are `C^(n+1)` (`TauCeti.FirstJet.contMDiffVectorBundle`).
 
 The value of a jet gives a smooth bundle map `J¹V → V` (`TauCeti.FirstJet.value`,
-`TauCeti.FirstJet.contMDiff_value`), and a smooth section `s` of `V` has a smooth jet extension
-`j¹s` (`TauCeti.firstJetExtension`, `TauCeti.contMDiff_firstJetExtension`) whose value is `s`.
-In every preferred chart and trivialization, the coordinates of `j¹s` are the value and the
-derivative of the local expression of `s` (`TauCeti.trivializationAt_firstJetExtension`). On
-each fibre, the jets of value zero are exactly the linear maps `T_x M →L[𝕜] V_x`
+`TauCeti.FirstJet.contMDiff_value`), and a `C^n` section `s` of `V` has a `C^m` jet extension
+`j¹s` for `m + 1 ≤ n` (`TauCeti.firstJetExtension`, `TauCeti.contMDiff_firstJetExtension`) whose
+value is `s`. In every preferred chart and trivialization, the coordinates of `j¹s` are the value
+and the derivative of the local expression of `s` (`TauCeti.trivializationAt_firstJetExtension`).
+On each fibre, the jets of value zero are exactly the linear maps `T_x M →L[𝕜] V_x`
 (`TauCeti.FirstJet.ofHom`): this is the fibre of the exact sequence
 `0 → Hom(TM, V) → J¹V → V → 0`, whose kernel is `T*M ⊗ V` in finite rank.
 
-The bundle is built for smooth (`C^∞`) bundles over manifolds with corners; derivatives in
-charts are taken within the range of the model. The gluing follows Mathlib's
+The bundle is built for `C^1` bundles over `C^1` manifolds with corners; derivatives in charts are
+taken within the range of the model. The gluing follows Mathlib's
 `tangentBundleCore`, whose chart-transition derivatives `tangentCoordChange` supply the
 base-derivative coefficient of the transition functions here.
 
@@ -101,7 +104,7 @@ theorem coordChangeDeriv_def (i j x : M) :
   rw [coordChangeDeriv]
 
 /-- The transition derivative from a preferred trivialization to itself vanishes. -/
-private theorem coordChangeDeriv_self {i x : M} (hi : x ∈ (trivializationAt F V i).baseSet)
+theorem coordChangeDeriv_self {i x : M} (hi : x ∈ (trivializationAt F V i).baseSet)
     (hc : x ∈ (chartAt H i).source) :
     coordChangeDeriv I F V i i x = 0 := by
   have hnhds : (extChartAt I i).symm ⁻¹' ((trivializationAt F V i).baseSet) ∈
@@ -119,23 +122,29 @@ private theorem coordChangeDeriv_self {i x : M} (hi : x ∈ (trivializationAt F 
     exact coordChangeL_self hi
   rw [coordChangeDeriv, h₁.fderivWithin_eq h₂, fderivWithin_fun_const, Pi.zero_apply]
 
-variable [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
+variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
 
-/-- The transition function of `V`, written in any chart around `x`, has a derivative within
-the range of the model. -/
-private theorem hasFDerivWithinAt_coordChangeL {i j c x : M}
-    (hi : x ∈ (trivializationAt F V i).baseSet) (hj : x ∈ (trivializationAt F V j).baseSet)
-    (hc : x ∈ (chartAt H c).source) :
-    HasFDerivWithinAt ((fun b ↦ ((trivializationAt F V i).coordChangeL 𝕜
-        (trivializationAt F V j) b : F →L[𝕜] F)) ∘ (extChartAt I c).symm)
-      (fderivWithin 𝕜 ((fun b ↦ ((trivializationAt F V i).coordChangeL 𝕜
-        (trivializationAt F V j) b : F →L[𝕜] F)) ∘ (extChartAt I c).symm) (range I)
-          (extChartAt I c x)) (range I) (extChartAt I c x) :=
-  (((contMDiffAt_coordChangeL (IB := I) (n := ∞) hi hj).contDiffWithinAt_comp_extChartAt_symm
-    hc).differentiableWithinAt (by simp)).hasFDerivWithinAt
+omit [ContMDiffVectorBundle 1 F V I] in
+/-- The transition functions of the first-jet bundle are `C^m` on chart overlaps when `V` and `M`
+are `C^n` with `m + 1 ≤ n`. -/
+private theorem contMDiffAt_firstJetPullback {n m : WithTop ℕ∞} [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] {i j x : M}
+    (hi : x ∈ (trivializationAt F V i).baseSet ∩ (chartAt H i).source)
+    (hj : x ∈ (trivializationAt F V j).baseSet ∩ (chartAt H j).source) (hmn : m + 1 ≤ n) :
+    ContMDiffAt I 𝓘(𝕜, (F × (E →L[𝕜] F)) →L[𝕜] F × (E →L[𝕜] F)) m
+      (fun z ↦ ((trivializationAt F V i).coordChangeL 𝕜 (trivializationAt F V j) z :
+        F →L[𝕜] F).firstJetPullback (coordChangeDeriv I F V i j z)
+          (tangentCoordChange I j i z)) x := by
+  have hg := contMDiffAt_coordChangeL (IB := I) (n := n) hi.1 hj.1
+  have hD : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F →L[𝕜] F) m (coordChangeDeriv I F V i j) x :=
+    hg.fderivWithin_comp_extChartAt_symm hj.2 hmn
+  have hT : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E) m (tangentCoordChange I j i) x :=
+    (contMDiffAt_extChartAt' (n := n) hi.2).fderivWithin_comp_extChartAt_symm hj.2 hmn
+  exact contDiff_firstJetPullback.comp_contMDiffAt
+    ((hg.of_le (le_self_add.trans hmn)).prodMk_space (hD.prodMk_space hT))
 
 /-- The transition derivatives satisfy the product rule along a composite of transitions. -/
-private theorem coordChangeDeriv_comp {i j k x : M}
+theorem coordChangeDeriv_comp {i j k x : M}
     (hi : x ∈ (trivializationAt F V i).baseSet) (hj : x ∈ (trivializationAt F V j).baseSet)
     (hk : x ∈ (trivializationAt F V k).baseSet) (hcj : x ∈ (chartAt H j).source)
     (hck : x ∈ (chartAt H k).source) :
@@ -158,7 +167,8 @@ private theorem coordChangeDeriv_comp {i j k x : M}
   have hnhds := mem_nhdsWithin_of_mem_nhds (t := range I) (extChartAt_preimage_mem_nhds' hxk hU)
   -- The `j`-to-`k` transition written in the `k`-chart.
   have h₁ : HasFDerivWithinAt (g j k ∘ (extChartAt I k).symm) (coordChangeDeriv I F V j k x)
-      (range I) (extChartAt I k x) := hasFDerivWithinAt_coordChangeL hj hk hck
+      (range I) (extChartAt I k x) :=
+    (trivializationAt F V j).hasFDerivWithinAt_coordChangeL_comp_extChartAt_symm _ hj hk hck
   -- The `i`-to-`j` transition written in the `k`-chart, through the `j`-chart.
   have h₂ : HasFDerivWithinAt (g i j ∘ (extChartAt I k).symm)
       ((coordChangeDeriv I F V i j x).comp (tangentCoordChange I k j x))
@@ -167,7 +177,7 @@ private theorem coordChangeDeriv_comp {i j k x : M}
     have hg : HasFDerivWithinAt (g i j ∘ (extChartAt I j).symm) (coordChangeDeriv I F V i j x)
         (range I) ((extChartAt I j ∘ (extChartAt I k).symm) (extChartAt I k x)) := by
       rw [Function.comp_apply, hinv]
-      exact hasFDerivWithinAt_coordChangeL hi hj hcj
+      exact (trivializationAt F V i).hasFDerivWithinAt_coordChangeL_comp_extChartAt_symm _ hi hj hcj
     refine (hg.comp (extChartAt I k x) hT fun y _ ↦ ?_).congr_of_eventuallyEq ?_ ?_
     · simp only [Function.comp_apply, extChartAt_coe]
       exact mem_range_self _
@@ -184,43 +194,13 @@ private theorem coordChangeDeriv_comp {i j k x : M}
   · simp only [Function.comp_apply, hinv]
     exact (coordChangeL_comp hi hj hk).symm
 
-/-- The tangent coordinate changes compose. -/
-private theorem tangentCoordChange_comp' {i j k x : M} (hi : x ∈ (chartAt H i).source)
-    (hj : x ∈ (chartAt H j).source) (hk : x ∈ (chartAt H k).source) :
-    (tangentCoordChange I j i x).comp (tangentCoordChange I k j x) =
-      tangentCoordChange I k i x := by
-  ext v
-  exact tangentCoordChange_comp (I := I) (w := k) (x := j) (y := i)
-    ⟨⟨by rwa [extChartAt_source], by rwa [extChartAt_source]⟩, by rwa [extChartAt_source]⟩
-
-/-- The tangent coordinate change from a chart to itself is the identity. -/
-private theorem tangentCoordChange_self' {i x : M} (hi : x ∈ (chartAt H i).source) :
-    tangentCoordChange I i i x = ContinuousLinearMap.id 𝕜 E := by
-  ext v
-  exact tangentCoordChange_self (I := I) (by rwa [extChartAt_source])
-
-/-- The transition functions of the first-jet bundle are smooth on chart overlaps. -/
-private theorem contMDiffAt_firstJetPullback {i j x : M}
-    (hi : x ∈ (trivializationAt F V i).baseSet ∩ (chartAt H i).source)
-    (hj : x ∈ (trivializationAt F V j).baseSet ∩ (chartAt H j).source) :
-    ContMDiffAt I 𝓘(𝕜, (F × (E →L[𝕜] F)) →L[𝕜] F × (E →L[𝕜] F)) ∞
-      (fun z ↦ ((trivializationAt F V i).coordChangeL 𝕜 (trivializationAt F V j) z :
-        F →L[𝕜] F).firstJetPullback (coordChangeDeriv I F V i j z)
-          (tangentCoordChange I j i z)) x := by
-  have hg := contMDiffAt_coordChangeL (IB := I) (n := ∞) hi.1 hj.1
-  have hD : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F →L[𝕜] F) ∞ (coordChangeDeriv I F V i j) x :=
-    hg.fderivWithin_comp_extChartAt_symm hj.2 (by simp)
-  have hT : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E) ∞ (tangentCoordChange I j i) x :=
-    (contMDiffAt_extChartAt' (n := ∞) hi.2).fderivWithin_comp_extChartAt_symm hj.2 (by simp)
-  exact contDiff_firstJetPullback.comp_contMDiffAt (hg.prodMk_space (hD.prodMk_space hT))
-
 end Transition
 
 end FirstJet
 
 open FirstJet
 
-variable [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
+variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
 
 variable (I F V) in
 /-- The vector bundle core of the first-jet bundle of `V`. It is indexed by the points of `M`:
@@ -237,19 +217,28 @@ derivatives `FirstJet.coordChangeDeriv`, and the derivatives of the chart transi
   coordChange i j x := ((trivializationAt F V i).coordChangeL 𝕜 (trivializationAt F V j) x :
     F →L[𝕜] F).firstJetPullback (coordChangeDeriv I F V i j x) (tangentCoordChange I j i x)
   coordChange_self i x hx v := by
-    rw [coordChangeL_self hx.1, coordChangeDeriv_self hx.1 hx.2, tangentCoordChange_self' hx.2,
-      firstJetPullback_id, ContinuousLinearMap.id_apply]
+    have hxi : x ∈ (extChartAt I i).source := by rw [extChartAt_source]; exact hx.2
+    rw [coordChangeL_self hx.1, coordChangeDeriv_self hx.1 hx.2,
+      Manifold.tangentCoordChange_self_eq_id hxi, firstJetPullback_id, ContinuousLinearMap.id_apply]
   continuousOn_coordChange i j := by
     intro x hx
-    exact (contMDiffAt_firstJetPullback (I := I) hx.1 hx.2).continuousAt.continuousWithinAt
+    exact (contMDiffAt_firstJetPullback (I := I) (n := 1) (m := 0) hx.1 hx.2
+      (by simp)).continuousAt.continuousWithinAt
   coordChange_comp i j k x hx v := by
     obtain ⟨⟨hi, hj⟩, hk⟩ := hx
+    have hx : x ∈ (extChartAt I k).source ∩ (extChartAt I j).source ∩ (extChartAt I i).source := by
+      simp only [extChartAt_source]
+      exact ⟨⟨hk.2, hj.2⟩, hi.2⟩
     rw [← ContinuousLinearMap.comp_apply, firstJetPullback_comp, coordChangeL_comp hi.1 hj.1 hk.1,
-      tangentCoordChange_comp' hi.2 hj.2 hk.2, coordChangeDeriv_comp hi.1 hj.1 hk.1 hj.2 hk.2]
+      Manifold.tangentCoordChange_comp_tangentCoordChange hx,
+      coordChangeDeriv_comp hi.1 hj.1 hk.1 hj.2 hk.2]
 
-instance : (firstJetCore I F V).IsContMDiff I ∞ where
+/-- If `V` is a `C^(n+1)` vector bundle over a `C^(n+1)` manifold, the transition functions of
+its first-jet bundle are `C^n`. -/
+theorem firstJetCore.isContMDiff {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
+    [ContMDiffVectorBundle (n + 1) F V I] : (firstJetCore I F V).IsContMDiff I n where
   contMDiffOn_coordChange _ _ := fun _ hx ↦
-    (FirstJet.contMDiffAt_firstJetPullback (I := I) hx.1 hx.2).contMDiffWithinAt
+    (FirstJet.contMDiffAt_firstJetPullback (I := I) hx.1 hx.2 le_rfl).contMDiffWithinAt
 
 variable (I F V) in
 /-- The first-jet bundle `J¹V` of a smooth vector bundle `V`. Its fibre at `x` consists of the
@@ -282,13 +271,25 @@ instance : FiberBundle (F × (E →L[𝕜] F)) (FirstJet I F V) :=
 instance : VectorBundle 𝕜 (F × (E →L[𝕜] F)) (FirstJet I F V) :=
   inferInstanceAs (VectorBundle 𝕜 (F × (E →L[𝕜] F)) (firstJetCore I F V).Fiber)
 
-instance : ContMDiffVectorBundle ∞ (F × (E →L[𝕜] F)) (FirstJet I F V) I :=
-  inferInstanceAs (ContMDiffVectorBundle ∞ (F × (E →L[𝕜] F)) (firstJetCore I F V).Fiber I)
+/-- If `V` is a `C^(n+1)` vector bundle over a `C^(n+1)` manifold, its first-jet bundle is a `C^n`
+vector bundle. -/
+theorem FirstJet.contMDiffVectorBundle {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
+    [ContMDiffVectorBundle (n + 1) F V I] :
+    ContMDiffVectorBundle n (F × (E →L[𝕜] F)) (FirstJet I F V) I :=
+  have : (firstJetCore I F V).IsContMDiff I n := firstJetCore.isContMDiff
+  inferInstanceAs (ContMDiffVectorBundle n (F × (E →L[𝕜] F)) (firstJetCore I F V).Fiber I)
+
+instance [h : IsManifold I ∞ M] [h' : ContMDiffVectorBundle ∞ F V I] :
+    ContMDiffVectorBundle ∞ (F × (E →L[𝕜] F)) (FirstJet I F V) I :=
+  have : IsManifold I (∞ + 1) M := h
+  have : ContMDiffVectorBundle (∞ + 1) F V I := h'
+  FirstJet.contMDiffVectorBundle
 
 namespace FirstJet
 
 /-- The preferred trivialization of the first-jet bundle at `x₀` is defined over the base set of
 the preferred trivialization of `V` at `x₀` inside the source of the preferred chart at `x₀`. -/
+@[simp, mfld_simps]
 theorem trivializationAt_baseSet (x₀ : M) :
     (trivializationAt (F × (E →L[𝕜] F)) (FirstJet I F V) x₀).baseSet =
       (trivializationAt F V x₀).baseSet ∩ (chartAt H x₀).source :=
@@ -315,9 +316,15 @@ theorem trivializationAt_apply {x₀ x : M}
       (x, ((trivializationAt F V x).coordChangeL 𝕜 (trivializationAt F V x₀) x :
         F →L[𝕜] F).firstJetPullback (coordChangeDeriv I F V x x₀ x)
           (tangentCoordChange I x₀ x x) (coords I F V x w)) := by
-  have h := (firstJetCore I F V).coordChange_comp x x x₀ x
-    ⟨⟨(firstJetCore I F V).mem_baseSet_at x, (firstJetCore I F V).mem_baseSet_at x⟩, hx⟩ w
-  exact Prod.ext rfl h.symm
+  rw [coords_apply]
+  -- `FirstJet I F V` is `(firstJetCore I F V).Fiber`, so its preferred trivialization at a point
+  -- is the core's local trivialization there (`VectorBundleCore.trivializationAt`).
+  change (firstJetCore I F V).localTrivAt x₀ ⟨x, w⟩ =
+    (x, (firstJetCore I F V).coordChange x x₀ x (((firstJetCore I F V).localTrivAt x ⟨x, w⟩).2))
+  rw [← VectorBundleCore.localTrivAt_def, ← VectorBundleCore.localTrivAt_def,
+    VectorBundleCore.localTriv_apply, VectorBundleCore.localTriv_apply]
+  exact Prod.ext rfl ((firstJetCore I F V).coordChange_comp x x x₀ x
+    ⟨⟨(firstJetCore I F V).mem_baseSet_at x, (firstJetCore I F V).mem_baseSet_at x⟩, hx⟩ w).symm
 
 variable (I F V) in
 /-- The value of a first jet: the point of `V` whose coordinate is the value coordinate of the
@@ -331,13 +338,13 @@ theorem value_apply (x : M) (w : FirstJet I F V x) :
     value I F V x w = (trivializationAt F V x).symm x (coords I F V x w).1 := by
   simp [value, Trivialization.symmL_apply _ (mem_baseSet_trivializationAt F V x)]
 
-/-- The value map `J¹V → V` is a smooth map of total spaces. -/
-theorem contMDiff_value :
-    ContMDiff (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) (I.prod 𝓘(𝕜, F)) ∞
+/-- The value map `J¹V → V` is a `C^n` map of total spaces, for every `n`. -/
+theorem contMDiff_value {n : WithTop ℕ∞} :
+    ContMDiff (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) (I.prod 𝓘(𝕜, F)) n
       (fun p : TotalSpace (F × (E →L[𝕜] F)) (FirstJet I F V) ↦
         (⟨p.1, value I F V p.1 p.2⟩ : TotalSpace F V)) := by
   intro p₀
-  have hid : ContMDiffAt (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) ∞
+  have hid : ContMDiffAt (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) n
       (id : TotalSpace (F × (E →L[𝕜] F)) (FirstJet I F V) → _) p₀ := contMDiffAt_id
   rw [Bundle.contMDiffAt_totalSpace] at hid ⊢
   refine ⟨hid.1, (contDiff_fst.comp_contMDiffAt hid.2).congr_of_eventuallyEq ?_⟩
@@ -346,7 +353,8 @@ theorem contMDiff_value :
   filter_upwards [(FiberBundle.continuous_proj (F × (E →L[𝕜] F)) (FirstJet I F V)).continuousAt
     hU] with p hp
   obtain ⟨x, w⟩ := p
-  have hx : x ∈ (trivializationAt F V p₀.proj).baseSet ∩ (chartAt H p₀.proj).source := hp
+  have hx : x ∈ (trivializationAt F V p₀.proj).baseSet ∩ (chartAt H p₀.proj).source :=
+    trivializationAt_baseSet (I := I) (F := F) (V := V) p₀.proj ▸ hp
   simp only [Function.comp_apply, id_eq, trivializationAt_apply hx, firstJetPullback_apply,
     value_apply, ContinuousLinearEquiv.coe_coe]
   rw [Trivialization.coordChangeL_apply (trivializationAt F V x) (trivializationAt F V p₀.proj)
@@ -466,8 +474,8 @@ theorem value_firstJetExtension (s : ∀ x, V x) (x : M) :
     Trivialization.symm_apply_apply_mk _ (mem_baseSet_trivializationAt F V x)]
 
 /-- In the preferred chart and trivialization at `x₀`, the jet extension of a differentiable
-section at a nearby point `x` has coordinates the value and the derivative of the local expression
-of the section at `x₀`. -/
+section at a nearby point `x` has coordinates the value at `x` and the derivative at `x` of the
+local expression of the section in the preferred chart and trivialization at `x₀`. -/
 theorem trivializationAt_firstJetExtension {s : ∀ x, V x} {x₀ x : M}
     (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun z ↦ TotalSpace.mk' F z (s z)) x)
     (hx : x ∈ (trivializationAt F V x₀).baseSet ∩ (chartAt H x₀).source) :
@@ -504,7 +512,7 @@ theorem trivializationAt_firstJetExtension {s : ∀ x, V x} {x₀ x : M}
   have hnhds := mem_nhdsWithin_of_mem_nhds (t := range I) (extChartAt_preimage_mem_nhds' hx₀ hU)
   have hg : HasFDerivWithinAt ((fun b ↦ (e.coordChangeL 𝕜 e₀ b : F →L[𝕜] F)) ∘
       (extChartAt I x₀).symm) (coordChangeDeriv I F V x x₀ x) (range I) (extChartAt I x₀ x) :=
-    FirstJet.hasFDerivWithinAt_coordChangeL hex hx.1 hx.2
+    e.hasFDerivWithinAt_coordChangeL_comp_extChartAt_symm e₀ hex hx.1 hx.2
   have hT := hasFDerivWithinAt_tangentCoordChange (I := I) (x := x₀) (y := x) (z := x)
     ⟨hx₀, hxx⟩
   have hjet := hg.firstJetPullback hT hsx fun y _ ↦ by
@@ -524,22 +532,24 @@ theorem trivializationAt_firstJetExtension {s : ∀ x, V x} {x₀ x : M}
   · simp only [Function.comp_apply, hinv, (extChartAt I x).left_inv hxx]
     exact htrans x ⟨hex, hx.1⟩
 
-/-- The jet extension of a smooth section is a smooth section of the first-jet bundle. -/
-theorem contMDiff_firstJetExtension {s : ∀ x, V x}
-    (hs : ContMDiff I (I.prod 𝓘(𝕜, F)) ∞ (fun x ↦ TotalSpace.mk' F x (s x))) :
-    ContMDiff I (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) ∞
+/-- The jet extension of a `C^n` section is a `C^m` section of the first-jet bundle when
+`m + 1 ≤ n`; in particular (`m = n = ∞`) that of a smooth section is smooth. -/
+theorem contMDiff_firstJetExtension {n m : WithTop ℕ∞} [IsManifold I n M] {s : ∀ x, V x}
+    (hs : ContMDiff I (I.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s x))) (hmn : m + 1 ≤ n) :
+    ContMDiff I (I.prod 𝓘(𝕜, F × (E →L[𝕜] F))) m
       (fun x ↦ TotalSpace.mk' (F × (E →L[𝕜] F)) x (firstJetExtension I F s x)) := by
   intro x₀
   rw [Bundle.contMDiffAt_section]
-  have hloc : ContMDiffAt I 𝓘(𝕜, F) ∞ (fun z ↦ (trivializationAt F V x₀ ⟨z, s z⟩).2) x₀ :=
+  have hloc : ContMDiffAt I 𝓘(𝕜, F) n (fun z ↦ (trivializationAt F V x₀ ⟨z, s z⟩).2) x₀ :=
     (Bundle.contMDiffAt_section x₀).1 (hs x₀)
   have hU : (trivializationAt F V x₀).baseSet ∩ (chartAt H x₀).source ∈ 𝓝 x₀ :=
     ((trivializationAt F V x₀).open_baseSet.inter (chartAt H x₀).open_source).mem_nhds
       ⟨mem_baseSet_trivializationAt F V x₀, mem_chart_source H x₀⟩
-  refine (hloc.prodMk_space (hloc.fderivWithin_comp_extChartAt_symm (mem_chart_source H x₀)
-    (by simp))).congr_of_eventuallyEq ?_
+  have hn : n ≠ 0 := ne_bot_of_le_ne_bot (by simp) hmn
+  refine ((hloc.of_le (le_self_add.trans hmn)).prodMk_space
+    (hloc.fderivWithin_comp_extChartAt_symm (mem_chart_source H x₀) hmn)).congr_of_eventuallyEq ?_
   filter_upwards [hU] with x hx
-  rw [trivializationAt_firstJetExtension (ContMDiffAt.mdifferentiableAt (hs x) (by simp)) hx]
+  rw [trivializationAt_firstJetExtension ((hs x).mdifferentiableAt hn) hx]
 
 /-- For the trivial bundle over a normed space, the coordinates of the jet extension of `s` at
 `x` are the value `s x` and the Fréchet derivative `fderiv 𝕜 s x`. -/

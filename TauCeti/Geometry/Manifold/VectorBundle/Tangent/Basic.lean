@@ -64,6 +64,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
   space.
 * `TauCeti.Manifold.tangentCoordChange_tangent_apply`: the coordinate-change formula on the
   tangent bundle of the tangent bundle.
+* `TauCeti.Manifold.tangentCoordChange_comp_tangentCoordChange` and
+  `TauCeti.Manifold.tangentCoordChange_self_eq_id`: tangent coordinate changes compose, and the
+  change from a chart to itself is the identity, as continuous linear maps.
 * `TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange`: reading a tangent vector through the
   preferred trivializations of two charts is the tangent coordinate change between them.
 * `TauCeti.Manifold.tangentCoordChange_toMatrix`: in a finite basis, this coordinate change is the
@@ -552,6 +555,22 @@ theorem tangentCoordChange_tangent_apply [IsManifold I 2 M] {x x₀ : M}
 section TangentReading
 
 variable [IsManifold I 1 M]
+
+/-- Tangent coordinate changes compose, as continuous linear maps: this is Mathlib's pointwise
+`tangentCoordChange_comp`. -/
+theorem tangentCoordChange_comp_tangentCoordChange {w x y z : M}
+    (h : z ∈ (extChartAt I w).source ∩ (extChartAt I x).source ∩ (extChartAt I y).source) :
+    (tangentCoordChange I x y z).comp (tangentCoordChange I w x z) =
+      tangentCoordChange I w y z := by
+  ext v
+  exact tangentCoordChange_comp h
+
+/-- The tangent coordinate change from a chart to itself is the identity, as a continuous linear
+map: this is Mathlib's pointwise `tangentCoordChange_self`. -/
+theorem tangentCoordChange_self_eq_id {x z : M} (h : z ∈ (extChartAt I x).source) :
+    tangentCoordChange I x x z = ContinuousLinearMap.id 𝕜 E := by
+  ext v
+  exact tangentCoordChange_self h
 
 /-- The reading map of the preferred trivialization centred at `x₀` sends the tangent vector at
 `y` whose `x`-coordinates are `u` to its `x₀`-coordinates. -/

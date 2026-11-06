@@ -34,6 +34,9 @@ target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism
 * `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
   `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
+* `Bundle.Trivialization.hasFDerivWithinAt_coordChangeL_comp_extChartAt_symm`: the coordinate
+  change between two atlas trivializations of a `C^1` vector bundle, written in a chart, has a
+  derivative within the range of the model.
 -/
 
 public noncomputable section
@@ -136,5 +139,29 @@ theorem isLocalDiffeomorphAt_symm {q : B × F} (hq : q ∈ e.target) :
     IsLocalDiffeomorphAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n e.toOpenPartialHomeomorph.symm q :=
   TauCeti.isLocalDiffeomorphAt_of_eqOn (Φ := (e.toPartialDiffeomorph IB n).symm) hq
     fun _ _ ↦ rfl
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+variable {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] [IsManifold IB 1 B] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle 1 F E IB]
+  (e e' : Trivialization F (π F E)) [MemTrivializationAtlas e] [MemTrivializationAtlas e']
+
+/-- The coordinate change between two atlas trivializations of a `C^1` vector bundle, written in
+any chart whose source contains `b`, has a derivative within the range of the model at `b`. -/
+theorem hasFDerivWithinAt_coordChangeL_comp_extChartAt_symm {b c : B} (hb : b ∈ e.baseSet)
+    (hb' : b ∈ e'.baseSet) (hc : b ∈ (chartAt HB c).source) :
+    HasFDerivWithinAt ((fun z ↦ (e.coordChangeL 𝕜 e' z : F →L[𝕜] F)) ∘ (extChartAt IB c).symm)
+      (fderivWithin 𝕜 ((fun z ↦ (e.coordChangeL 𝕜 e' z : F →L[𝕜] F)) ∘ (extChartAt IB c).symm)
+        (Set.range IB) (extChartAt IB c b)) (Set.range IB) (extChartAt IB c b) :=
+  (((contMDiffAt_iff_source_of_mem_source hc).1
+    (contMDiffAt_coordChangeL (IB := IB) (n := 1) hb hb')).contDiffWithinAt.differentiableWithinAt
+      one_ne_zero).hasFDerivWithinAt
 
 end Bundle.Trivialization
