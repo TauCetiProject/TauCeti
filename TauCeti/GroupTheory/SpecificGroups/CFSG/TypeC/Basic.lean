@@ -176,6 +176,20 @@ theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
       SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure :=
   (rfl)
 
+/-- The weight torus of the standard symplectic carrier, parametrized by the index's
+Bourbaki-numbered fundamental-weight coordinates. The rank identification changes no node. -/
+def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
+  (SpStd.weightTorusPoints d.carrierRank d.1.Closure).comp
+    (MonoidHom.pi fun i : Fin (d.carrierRank + 1) =>
+      Pi.evalMonoidHom (fun _ : Fin d.1.rank => d.1.Closureˣ)
+        (Fin.cast d.carrierRank_add_one i))
+
+/-- The indexed torus is the carrier's weight torus with the same coordinate values. -/
+theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
+    d.weightTorus s = SpStd.weightTorusPoints d.carrierRank d.1.Closure
+      (fun i => s (Fin.cast d.carrierRank_add_one i)) :=
+  (rfl)
+
 /-- **The simple-root subgroups sit at the simple roots of the type-`C` root datum.** The character
 by which the carrier's split torus rescales the parameter of `simpleRootSubgroup i`, read in the
 same node correspondence, is the `i`-th simple root of
