@@ -13,8 +13,8 @@ public import Mathlib.Topology.MetricSpace.Thickening
 /-!
 # Stability of maximal totally real subspaces
 
-A totally real frame `A` and its image under `J` form the invertible doubled frame
-`(x, y) ↦ A x + J (A y)`. Openness of invertible operators therefore makes maximal total
+If `range A` is maximal totally real and both `A` and `J ∘ A` are injective, the doubled
+frame `(x, y) ↦ A x + J (A y)` is invertible. Openness of invertible operators makes maximal total
 reality stable under simultaneous operator-norm perturbations of `A` and `J`. Compact
 families admit a single positive perturbation radius.
 
@@ -72,8 +72,9 @@ theorem exists_pos_isMaximalTotallyReal_range_of_isCompact
   have hi : (D (B, K)).IsInvertible := he (Metric.mem_thickening_iff.mpr ⟨p, hp, hd⟩)
   exact isMaximalTotallyReal_range_of_bijective_coprod hi.bijective
 
-/-- Along a continuous family of totally real frames on a compact parameter set, one radius
-works at every parameter. No continuity of the perturbed family is required. -/
+/-- Along a continuous family of injective frames `A x` with maximal totally real image and
+injective `J x ∘ A x` on a compact parameter set, one radius works at every parameter.
+No continuity of the perturbed family is required. -/
 theorem exists_pos_isMaximalTotallyReal_range_of_continuousOn
     {X : Type*} [TopologicalSpace X] {s : Set X} (hs : IsCompact s)
     {A : X → F →L[𝕜] E} {J : X → E →L[𝕜] E}
