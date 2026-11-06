@@ -109,7 +109,7 @@ private theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : ‖s‖ < R) :
   have hintC : IntervalIntegrable
       (fun θ => (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) volume 0 (2 * Real.pi) :=
     intervalIntegrable_inv_sub_mul_deriv (continuous_circleMap 0 R).continuousOn
-      (fun t _ => havoidC t) ((continuous_deriv_circleMap 0 R).intervalIntegrable _ _)
+      (fun t _ => havoidC t) ((Complex.continuous_deriv_circleMap 0 R).intervalIntegrable _ _)
   have hsubC₁ : uIcc (0 : ℝ) Real.pi ⊆ uIcc (0 : ℝ) (2 * Real.pi) := by
     rw [uIcc_of_le hpi.le, uIcc_of_le (by linarith)]
     exact Icc_subset_Icc le_rfl (by linarith)
@@ -135,7 +135,7 @@ private theorem integral_circleMap_index_lower_arc {s : ℂ} (hR : 0 ≤ R) (him
   rw [integral_index_eq_log_sub_log (h := circleMap 0 R) (by linarith)
     (continuous_circleMap 0 R).continuousOn
     (fun t _ => (differentiable_circleMap 0 R) t)
-    (continuous_deriv_circleMap 0 R).continuousOn
+    (Complex.continuous_deriv_circleMap 0 R).continuousOn
     (fun θ hθ => sub_mem_slitPlane_of_im_le_zero him ?_) (fun _ _ => rfl) rfl rfl, hRC, hnRC]
   rw [circleMap_zero_im]
   exact mul_nonpos_of_nonneg_of_nonpos hR (sin_nonpos_of_pi_le_of_le_two_pi hθ.1 hθ.2)

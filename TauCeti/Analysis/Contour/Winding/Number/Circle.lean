@@ -5,6 +5,7 @@ Authors: Claude, Chris Birkbeck
 -/
 module
 
+public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import TauCeti.Analysis.Contour.Curve.Reparam
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
@@ -42,7 +43,6 @@ across the whole disc, so its circle integral vanishes.
   winding number is `(2πi)⁻¹` times the ordinary Cauchy-kernel circle integral.
 * `TauCeti.Contour.windingNumber_circleMap_eq_one_of_dist_lt` — `n_w(circle) = 1` for any `w` inside
   the disc.
-* `TauCeti.Contour.continuous_deriv_circleMap` — the derivative of `circleMap c R` is continuous.
 * `TauCeti.Contour.indexIntegral_arc_interval` and `TauCeti.Contour.indexIntegral_arc` — the
   normalized index integral of a circular arc about its centre, `(b − a) / 2π` and `α / 2π`, with
   the specialization `windingNumber_circle` (the full circle, `1`). The two values the valence
@@ -77,11 +77,6 @@ noncomputable section
 open Complex Metric
 
 namespace TauCeti.Contour
-
-/-- The derivative of the circle parametrisation `circleMap c R` is continuous. -/
-theorem continuous_deriv_circleMap (c : ℂ) (R : ℝ) : Continuous (deriv (circleMap c R)) := by
-  rw [funext (deriv_circleMap c R)]
-  fun_prop
 
 /-- **The circular-arc index integral** (Hungerbühler–Wasem (2.4)), on an arbitrary angular
 interval. For the circular arc `γ θ = z₀ + r·e^{iθ}` about its centre `z₀`, traversed over `[a, b]`,
@@ -167,9 +162,8 @@ theorem windingNumber_circleMap_eq_circleIntegral {c w : ℂ} {R : ℝ}
       = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∮ z in C(c, R), (z - w)⁻¹ := by
   have hcont : ContinuousOn (circleMap c R) (Set.uIcc 0 (2 * Real.pi)) :=
     (continuous_circleMap c R).continuousOn
-  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) := by
-    simp only [deriv_circleMap]
-    exact (continuous_circleMap 0 R).mul continuous_const
+  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) :=
+    Complex.continuous_deriv_circleMap c R
   have hint : IntervalIntegrable
       (fun t => (circleMap c R t - w)⁻¹ * deriv (circleMap c R) t) MeasureTheory.volume
       0 (2 * Real.pi) :=
@@ -215,11 +209,8 @@ theorem cauchyPVExistsAt_circleMap_comp_affine {c : ℂ} {R : ℝ} (m s a b : �
   have hcont : ContinuousOn (circleMap c R ∘ fun t : ℝ => m * t + s) (Set.uIcc a b) :=
     ((continuous_circleMap c R).comp (by fun_prop)).continuousOn
   have hderiv_circle : ContinuousOn (deriv (circleMap c R))
-      ((fun t : ℝ => m * t + s) '' Set.uIcc a b) := by
-    have h : deriv (circleMap c R) = fun θ => circleMap 0 R θ * Complex.I :=
-      funext (deriv_circleMap c R)
-    rw [h]
-    exact ((continuous_circleMap 0 R).mul continuous_const).continuousOn
+      ((fun t : ℝ => m * t + s) '' Set.uIcc a b) :=
+    (Complex.continuous_deriv_circleMap c R).continuousOn
   have hderiv : ContinuousOn (deriv (circleMap c R ∘ fun t : ℝ => m * t + s)) (Set.uIcc a b) :=
     continuousOn_deriv_comp_reparam (φ' := fun _ => m)
       (fun t _ => by
@@ -239,9 +230,8 @@ theorem windingNumber_circleMap_center {c : ℂ} {R : ℝ} (hR : R ≠ 0) (a b :
     windingNumber (circleMap c R) a b c = ((b - a : ℝ) : ℂ) / (2 * (Real.pi : ℂ)) := by
   have hcont : ContinuousOn (circleMap c R) (Set.uIcc a b) :=
     (continuous_circleMap c R).continuousOn
-  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) := by
-    simp only [deriv_circleMap]
-    exact (continuous_circleMap 0 R).mul continuous_const
+  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) :=
+    Complex.continuous_deriv_circleMap c R
   have havoid : ∀ θ, circleMap c R θ ≠ c := fun _ => circleMap_ne_center hR
   have hint : IntervalIntegrable
       (fun t => (circleMap c R t - c)⁻¹ * deriv (circleMap c R) t) MeasureTheory.volume a b :=

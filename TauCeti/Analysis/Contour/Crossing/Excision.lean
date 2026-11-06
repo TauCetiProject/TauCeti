@@ -160,7 +160,7 @@ theorem windingNumber_circleCap (hr : r ≠ 0) (hlu : l ≠ u) (θ θ' : ℝ) :
   have hdiff : ∀ x : ℝ, DifferentiableAt ℝ (circleMap s r) x := differentiable_circleMap s r
   have hderiv : ∀ S : Set ℝ, ContinuousOn (deriv (circleMap s r)) S := by
     intro S
-    exact (continuous_deriv_circleMap s r).continuousOn
+    exact (Complex.continuous_deriv_circleMap s r).continuousOn
   have hleft : (θ' - θ) / (u - l) * l + (θ - (θ' - θ) / (u - l) * l) = θ := by ring
   have hright : (θ' - θ) / (u - l) * u + (θ - (θ' - θ) / (u - l) * l) = θ' := by
     field_simp
