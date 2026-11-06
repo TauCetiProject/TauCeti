@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.Nilpotent.RootString.G2.ShortPair
 
 This is the shared scaled-operator transport for the Kostant and pinned Chevalley short-pair
 relations. It requires divided-power stability only for the five vectors involved, not stability
-under a specified Kostant form. The proof is factored from the Kostant root-subgroup relation.
+under a specified Kostant form.
 
 ## References
 

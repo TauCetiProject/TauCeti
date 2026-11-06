@@ -23,10 +23,6 @@ relation the three parameters are `2cuv`, `3du²v` and `3auv²` after the initia
 in the element commutator they are `2cuv`, `3du²v` and `-3auv²`. Moving the initial `x_β(v)`
 past `x_γ(2cuv)` accounts for this last sign.
 
-The exponential argument shares `baseChangeExp_mul_baseChangeExp_of_g2_short_pair_lie`
-with `kostantRootSubgroupPoints_mul_of_g2_short_pair`; its scaled-operator transport was
-factored from that Kostant-lattice proof.
-
 ## Main results
 
 * `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_short_pair`: the product relation.
