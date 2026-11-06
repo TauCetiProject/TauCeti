@@ -475,6 +475,27 @@ private def PathCycleDecomposition.consPath {g : Assignment Q K} (D : PathCycleD
     conv_rhs => rw [← D.sum_paths_add_sum_cycles]
     abel
 
+/-- Peeling off a walk of positive arrows weighted by its bottleneck leaves a nonnegative
+assignment with values in `H` and fewer positive arrows, which is decomposed by the induction
+hypothesis `ih`. -/
+private theorem exists_pathCycleDecomposition_sub_walkAssignment (H : AddSubgroup K) (hf : 0 ≤ f)
+    (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H)
+    (ih : ∀ m < #{a : Σ x y, Q x y | 0 < f a.2.2}, ∀ g : Assignment Q K, 0 ≤ g →
+      (∀ ⦃x y : V⦄ (e : Q x y), g e ∈ H) → #{a : Σ x y, Q x y | 0 < g a.2.2} = m →
+      ∃ D : PathCycleDecomposition g, (∀ p ∈ D.paths, p.weight ∈ H) ∧
+        (∀ c ∈ D.cycles, c.weight ∈ H) ∧
+        D.paths.length + D.cycles.length ≤ #{a : Σ x y, Q x y | 0 < g a.2.2})
+    {s t : V} (p : ArrowWalk Q s t) (hnd : p.arrows.Nodup) (hne : p.arrows ≠ [])
+    (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
+    ∃ q : K, 0 < q ∧ q ∈ H ∧ 0 ≤ f - walkAssignment p q ∧
+      ∃ D : PathCycleDecomposition (f - walkAssignment p q),
+        (∀ p ∈ D.paths, p.weight ∈ H) ∧ (∀ c ∈ D.cycles, c.weight ∈ H) ∧
+        D.paths.length + D.cycles.length + 1 ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
+  obtain ⟨hq, hqH, hg, hgH, hcard⟩ :=
+    sub_walkAssignment_bottleneck_spec H hf hH hnd hne hpos
+  obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg hgH rfl
+  exact ⟨_, hq, hqH, hg, D, hP, hC, by omega⟩
+
 /-- **Path–cycle decomposition.** Every nonnegative arrow assignment `f` on a finite arrow family
 is a sum of positively weighted directed paths, each from a vertex of negative excess to a vertex
 of positive excess, and positively weighted directed cycles. The number of components is at most
@@ -500,15 +521,8 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
   -- Peeling off a walk of positive arrows weighted by its bottleneck leaves a nonnegative
   -- assignment with values in `H` and fewer positive arrows, which is decomposed by induction.
   have peel {s t : V} (p : ArrowWalk Q s t) (hnd : p.arrows.Nodup) (hne : p.arrows ≠ [])
-      (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
-      ∃ q : K, 0 < q ∧ q ∈ H ∧ 0 ≤ f - walkAssignment p q ∧
-        ∃ D : PathCycleDecomposition (f - walkAssignment p q),
-          (∀ p ∈ D.paths, p.weight ∈ H) ∧ (∀ c ∈ D.cycles, c.weight ∈ H) ∧
-          D.paths.length + D.cycles.length + 1 ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
-    obtain ⟨hq, hqH, hg, hgH, hcard⟩ :=
-      sub_walkAssignment_bottleneck_spec H hf hH hnd hne hpos
-    obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg hgH rfl
-    exact ⟨_, hq, hqH, hg, D, hP, hC, by omega⟩
+      (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :=
+    exists_pathCycleDecomposition_sub_walkAssignment H hf hH ih p hnd hne hpos
   by_cases hz : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 0
   · -- The zero assignment has the empty decomposition.
     have hf0 : f = 0 :=
