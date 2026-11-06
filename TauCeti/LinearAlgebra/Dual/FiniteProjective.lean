@@ -41,34 +41,29 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Module.Finit
 -- `Module.dual_projective` and `Module.dual_finite` for commutative scalars.
 
 /-- The dual of a finite free left module is free over the opposite semiring. -/
-noncomputable instance oppositeDual_free [Module.Free R M] :
-    Module.Free Rᵐᵒᵖ (Module.Dual R M) := by
-  let b := Module.Free.chooseBasis R M
-  let e := (b.constr Rᵐᵒᵖ (M' := R)).symm.trans
-    (LinearEquiv.piCongrRight fun _ => MulOpposite.opLinearEquiv Rᵐᵒᵖ)
-  exact Module.Free.of_equiv e.symm
+instance oppositeDual_free [Module.Free R M] :
+    Module.Free Rᵐᵒᵖ (Module.Dual R M) :=
+  .of_equiv (((Module.Free.chooseBasis R M).constr Rᵐᵒᵖ (M' := R)).symm ≪≫ₗ
+    .piCongrRight fun _ => MulOpposite.opLinearEquiv Rᵐᵒᵖ).symm
 
 /-- The dual of a finite projective left module is projective over the opposite semiring. -/
 instance oppositeDual_projective [Module.Projective R M] :
     Module.Projective Rᵐᵒᵖ (Module.Dual R M) := by
   obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  apply Module.Projective.of_split (f.lcomp Rᵐᵒᵖ R) (g.lcomp Rᵐᵒᵖ R)
+  refine .of_split (f.lcomp Rᵐᵒᵖ R) (g.lcomp Rᵐᵒᵖ R) ?_
   ext φ x
-  simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.lcomp_apply] using
-    congrArg φ (LinearMap.congr_fun hfg x)
+  simp [← LinearMap.comp_apply f g, hfg]
 
 /-- The dual of a finite projective left module is finitely generated over the opposite semiring. -/
 instance oppositeDual_finite [Module.Projective R M] :
     Module.Finite Rᵐᵒᵖ (Module.Dual R M) := by
   obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  let e := ((Pi.basisFun R (Fin n)).constr Rᵐᵒᵖ (M' := R)).symm.trans
-    (LinearEquiv.piCongrRight fun _ => MulOpposite.opLinearEquiv Rᵐᵒᵖ)
-  have : Module.Finite Rᵐᵒᵖ (Module.Dual R (Fin n → R)) := Module.Finite.equiv e.symm
-  apply Module.Finite.of_surjective (g.lcomp Rᵐᵒᵖ R)
-  intro φ
-  refine ⟨f.lcomp Rᵐᵒᵖ R φ, ?_⟩
-  ext x
-  simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.lcomp_apply] using
-    congrArg φ (LinearMap.congr_fun hfg x)
+  have : Module.Finite Rᵐᵒᵖ (Module.Dual R (Fin n → R)) :=
+    .equiv (((Pi.basisFun R (Fin n)).constr Rᵐᵒᵖ (M' := R)).symm ≪≫ₗ
+      .piCongrRight fun _ => MulOpposite.opLinearEquiv Rᵐᵒᵖ).symm
+  refine .of_surjective _
+    (LinearMap.surjective_of_comp_eq_id (f.lcomp Rᵐᵒᵖ R) (g.lcomp Rᵐᵒᵖ R) ?_)
+  ext φ x
+  simp [← LinearMap.comp_apply f g, hfg]
 
 end TauCeti
