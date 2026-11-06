@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.Diffeomorph
 
 /-!
@@ -15,7 +16,8 @@ Let `V` be a vector bundle over `B` and `b : X → B` a map. A family `s x ∈ V
 of `V` along `b`, and its total-space map is `x ↦ ⟨b x, s x⟩`. Fibrewise sums of `C^n` sections
 along the same map are `C^n` (`ContMDiff.add_sectionAlong`); for `b = id` this is Mathlib's
 `ContMDiff.add_section`. The general form applies to maps defined on the total space itself, which
-are sections along the projection.
+are sections along the projection. Differences of differentiable sections along a common base
+map are differentiable as well (`MDifferentiableWithinAt.sub_sectionAlong`).
 
 Consequently a `C^n` section `s` of `V` translates the fibres by a `C^n` diffeomorphism
 `p ↦ p + s (π p)` of the total space, with inverse the translation by `-s`
@@ -83,6 +85,41 @@ theorem ContMDiff.add_sectionAlong
   fun x ↦ (hs x).add_sectionAlong (ht x)
 
 end AddCommMonoid
+
+section AddCommGroup
+
+variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+  {b : X → B} {s t : ∀ x, V (b x)} {u : Set X} {x₀ : X}
+
+/-- The difference of differentiable sections along the same base map is differentiable. -/
+theorem MDifferentiableWithinAt.sub_sectionAlong
+    (hs : MDifferentiableWithinAt IX (IB.prod 𝓘(𝕜, F))
+      (fun x ↦ TotalSpace.mk' F (b x) (s x)) u x₀)
+    (ht : MDifferentiableWithinAt IX (IB.prod 𝓘(𝕜, F))
+      (fun x ↦ TotalSpace.mk' F (b x) (t x)) u x₀) :
+    MDifferentiableWithinAt IX (IB.prod 𝓘(𝕜, F))
+      (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
+  rw [mdifferentiableWithinAt_totalSpace] at hs ht ⊢
+  let e := trivializationAt F V (b x₀)
+  have he : ∀ᶠ x in 𝓝[u] x₀, b x ∈ e.baseSet :=
+    hs.1.continuousWithinAt.preimage_mem_nhdsWithin
+      (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' (b x₀)))
+  refine ⟨hs.1, (hs.2.sub ht.2).congr_of_eventuallyEq ?_ ?_⟩
+  · filter_upwards [he] with x hx
+    exact (e.linear 𝕜 hx).map_sub (s x) (t x)
+  · exact (e.linear 𝕜 (FiberBundle.mem_baseSet_trivializationAt' (b x₀))).map_sub (s x₀) (t x₀)
+
+/-- The difference of differentiable sections along the same base map is differentiable. -/
+theorem MDifferentiableAt.sub_sectionAlong
+    (hs : MDifferentiableAt IX (IB.prod 𝓘(𝕜, F))
+      (fun x ↦ TotalSpace.mk' F (b x) (s x)) x₀)
+    (ht : MDifferentiableAt IX (IB.prod 𝓘(𝕜, F))
+      (fun x ↦ TotalSpace.mk' F (b x) (t x)) x₀) :
+    MDifferentiableAt IX (IB.prod 𝓘(𝕜, F))
+      (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) x₀ :=
+  MDifferentiableWithinAt.sub_sectionAlong hs ht
+
+end AddCommGroup
 
 namespace TauCeti
 
