@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Expand
+public import Mathlib.FieldTheory.Finite.Polynomial
 public import Mathlib.RingTheory.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Flat.Rank
@@ -77,6 +78,15 @@ Stacks'; the passage to several variables at once is not, and is not claimed as 
 -/
 
 public section
+
+/-- Expansion of an integer polynomial by a prime lifts Frobenius modulo that prime. -/
+theorem MvPolynomial.natCast_dvd_expand_sub_pow {σ : Type*} (p : ℕ) [Fact p.Prime]
+    (f : MvPolynomial σ ℤ) : (p : MvPolynomial σ ℤ) ∣ expand p f - f ^ p := by
+  rw [← MvPolynomial.C_eq_natCast,
+    MvPolynomial.C_dvd_iff_map_hom_eq_zero (Int.castRingHom (ZMod p)) _
+      (fun a ↦ by simp only [Int.coe_castRingHom, ZMod.intCast_zmod_eq_zero_iff_dvd])]
+  simp only [map_sub, map_expand, map_pow, ← MvPolynomial.frobenius_zmod, frobenius_def,
+    sub_self]
 
 namespace TauCeti
 
