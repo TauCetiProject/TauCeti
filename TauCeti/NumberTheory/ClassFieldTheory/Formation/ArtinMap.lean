@@ -383,6 +383,9 @@ theorem character_artinMap (a : F.level L.ground)
       (by omega) (by omega) (by omega) (by omega) sigma
       ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)) (L.characterConnectingClass chi)
     rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul] at key
+    -- The goal mixes `Rep.trivial ℤ L.Gal ℤ` with `𝟙_ (Rep ℤ L.Gal)`, which are definitionally
+    -- equal (Mathlib's `tensorUnit := Rep.trivial k G k`) but not syntactically: `erw` matches
+    -- `key` up to this unfolding, and the final `rfl` closes the goal by the same identification.
     erw [key]
     rw [← TateCohomology.cup_map_left]
     rfl

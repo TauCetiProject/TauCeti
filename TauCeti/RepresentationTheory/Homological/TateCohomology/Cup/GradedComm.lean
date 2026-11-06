@@ -206,7 +206,6 @@ theorem cup_right_comm (M N P : Rep k G) {p q s r₁ r₁' r : ℤ} (h₁ : p + 
   rw [cup_assoc M N P h₁ rfl h x y z, ← cup_map_right, cup_gradedComm, Units.smul_def,
     map_zsmul, map_zsmul, ← Units.smul_def]
   rw [← hA, ← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
-    (tateCohomologyFunctor r).map_id]
-  rfl
+    (tateCohomologyFunctor r).map_id, ModuleCat.id_apply]
 
 end TauCeti.TateCohomology
