@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.OrthogonalLimits
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Abelian
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Basic
 public import TauCeti.Algebra.Homology.Curved.Module.Right.SecondKind
 public import TauCeti.CategoryTheory.Triangulated.Orthogonal
 

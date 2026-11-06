@@ -6,7 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Shift
-public import TauCeti.Algebra.Category.GradedModuleCat.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 
 /-!
 # Forgetting the differential of curved right modules
@@ -33,7 +33,7 @@ open CategoryTheory
 
 namespace TauCeti.CurvedDGRightModuleCat
 
-universe uR uA uM u
+universe uR uA uM uN u
 
 section Objects
 
@@ -58,13 +58,26 @@ theorem toGradedModuleCat_piece (M : CurvedDGRightModuleCat.{uR, uA, uM} h) (p :
 
 /-- A right-linear map is homogeneous of degree `p` for the underlying graded modules exactly when
 it is a cochain of degree `p` between the curved modules. -/
-theorem isHomogeneous_toGradedModuleCat_iff {M N : CurvedDGRightModuleCat.{uR, uA, uM} h} {p : ℤ}
-    (f : M →ₗ[Aᵐᵒᵖ] N) :
+theorem isHomogeneous_toGradedModuleCat_iff
+    {M : CurvedDGRightModuleCat.{uR, uA, uM} h}
+    {N : CurvedDGRightModuleCat.{uR, uA, uN} h} {p : ℤ} (f : M →ₗ[Aᵐᵒᵖ] N) :
     LinearMap.IsHomogeneous f (toGradedModuleCat M).grading.piece
         (toGradedModuleCat N).grading.piece p ↔
       f ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) p := by
   simp only [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def, toGradedModuleCat_piece,
     LinearMap.restrictScalars_apply]
+
+/-- A degree-`p` cochain is a degree-zero map into the grading shift by `-p`. -/
+theorem mem_dgRightModuleCochains_iff_isHomogeneous_shiftObj
+    {M : CurvedDGRightModuleCat.{uR, uA, uM} h}
+    {N : CurvedDGRightModuleCat.{uR, uA, uN} h} {p : ℤ} (a : M →ₗ[Aᵐᵒᵖ] N) :
+    a ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) p ↔
+      LinearMap.IsHomogeneous a (toGradedModuleCat M).grading.piece
+        ((toGradedModuleCat N).shiftObj (-p)).grading.piece 0 := by
+  rw [← isHomogeneous_toGradedModuleCat_iff]
+  simpa only [zero_sub, neg_neg] using
+    (_root_.LinearMap.isHomogeneous_shiftObj_iff
+      (M := toGradedModuleCat M) (N := toGradedModuleCat N) a (-p) 0).symm
 
 end Objects
 
