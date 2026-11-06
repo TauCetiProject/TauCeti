@@ -15,10 +15,12 @@ This file collects facts about leading monomials of multivariate polynomials for
 `m` on `σ →₀ ℕ`: comparisons of degrees with their `WithBot` forms, the degree of a monomial
 multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
 under a change of coefficients, leading data of the weighted homogeneous component containing
-the leading monomial, leading data of renamed polynomials, elimination orders and the
-lexicographic ones among them, agreement of leading exponents under two monomial orders,
-normalization to leading coefficient one over a field, leading data of substitutions of monic
-families, and algebraic independence from leading monomials.
+the leading monomial, the top weighted part of a binomial lifted by terms of lower weight, leading
+data of renamed polynomials, elimination orders and the lexicographic ones among them, agreement
+of leading exponents under two monomial orders, normalization to leading coefficient one over a
+field, leading exponents of substitutions of nonzero families, leading data of substitutions of
+monic families, cancellation of substituted monic binomials, and algebraic independence from
+leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -61,6 +63,11 @@ the images of the generators of the Lazard ring in a polynomial ring.
   coefficients, leading terms and S-polynomials.
 * `MonomialOrder.leadingTerm_weightedHomogeneousComponent_weight_degree`: the weighted
   homogeneous component of `f` containing its leading monomial has the leading term of `f`.
+* `MonomialOrder.weightedHomogeneousComponent_monomial_sub_monomial_sub`,
+  `MonomialOrder.linearCombination_le_of_mem_support_monomial_sub_monomial_sub`: for weights
+  `A w = ∑ i, w i • a i`, if `A u = A v` and all exponents `w` of `Q` satisfy `A w ≺ A u`, then the
+  part of `Y^u - Y^v - Q` of weight `A u` is `Y^u - Y^v`, and all its exponents `w` satisfy
+  `A w ≼ A u`.
 * `MonomialOrder.degree_rename`, `MonomialOrder.leadingCoeff_rename` and
   `MonomialOrder.leadingTerm_rename`: renaming the variables along a relabeling which carries one
   monomial order to another commutes with leading monomials, coefficients and terms; such a
@@ -168,6 +175,17 @@ theorem withBotDegree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hf : f ≠ 
   have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
   rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
   exact this rfl
+
+/-- If `q` has degree at most that of `f` and the same coefficient of `X^(deg f)`, then
+`f - q` has strictly smaller leading exponent when the difference is nonzero. -/
+theorem degree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hfq : f - q ≠ 0)
+    (hq : m.degree q ≼[m] m.degree f) (hqf : q.coeff (m.degree f) = m.leadingCoeff f) :
+    m.degree (f - q) ≺[m] m.degree f := by
+  refine lt_of_le_of_ne (m.degree_sub_le.trans (max_le le_rfl hq)) ?_
+  intro heq
+  have hmem := m.degree_mem_support hfq
+  rw [m.toSyn.injective heq, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at hmem
+  exact hmem rfl
 
 /-- A monomial multiple `c X^a * b` has degree at most `a + deg b`. -/
 theorem toSyn_degree_monomial_mul_le [CommSemiring R] (a : σ →₀ ℕ) (c : R)
@@ -317,6 +335,43 @@ theorem isWeightedHomogeneous_weightedHomogeneousComponent_weight_degree (f : Mv
   exact weightedHomogeneousComponent_isWeightedHomogeneous _ _
 
 end WeightedHomogeneous
+
+section Relation
+
+variable {m} {ι : Type*} [CommRing R] {a : ι → σ →₀ ℕ} {u v : ι →₀ ℕ} {Q : MvPolynomial ι R}
+
+/-- Let `A w = ∑ i, w i • a i`. If `A u = A v` and every exponent `w` of `Q` satisfies
+`A w ≺ A u`, then the part of the lifted relation `Y^u - Y^v - Q` of weight `A u` is the binomial
+`Y^u - Y^v`. -/
+theorem weightedHomogeneousComponent_monomial_sub_monomial_sub
+    (huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v)
+    (hQ : ∀ w ∈ Q.support, Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a u) :
+    weightedHomogeneousComponent a (Finsupp.linearCombination ℕ a u)
+        (monomial u (1 : R) - monomial v 1 - Q) =
+      monomial u 1 - monomial v 1 := by
+  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = Finsupp.linearCombination ℕ a w := by
+    rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
+  rw [map_sub, weightedHomogeneousComponent_eq_zero' _ _ fun w hw ↦ (hA w).trans_ne
+      fun h ↦ (hQ w hw).ne (congrArg m.toSyn h), sub_zero,
+    weightedHomogeneousComponent_eq_self ((isWeightedHomogeneous_monomial _ _ _ (hA u)).sub
+      (isWeightedHomogeneous_monomial _ _ _ ((hA v).trans huv.symm)))]
+
+/-- Let `A w = ∑ i, w i • a i`. If `A u = A v` and every exponent `w` of `Q` satisfies
+`A w ≺ A u`, then every exponent `w` of the lifted relation `Y^u - Y^v - Q` satisfies `A w ≼ A u`:
+its part of weight `A u` is its top part. -/
+theorem linearCombination_le_of_mem_support_monomial_sub_monomial_sub
+    (huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v)
+    (hQ : ∀ w ∈ Q.support, Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a u)
+    {w : ι →₀ ℕ} (hw : w ∈ (monomial u (1 : R) - monomial v 1 - Q).support) :
+    Finsupp.linearCombination ℕ a w ≼[m] Finsupp.linearCombination ℕ a u := by
+  classical
+  rcases Finset.mem_union.1 (support_sub _ _ _ hw) with hw | hw
+  · rcases Finset.mem_union.1 (support_sub _ _ _ hw) with hw | hw
+    · rw [Finset.mem_singleton.1 (support_monomial_subset hw)]
+    · rw [Finset.mem_singleton.1 (support_monomial_subset hw), huv]
+  · exact (hQ w hw).le
+
+end Relation
 
 section Rename
 
@@ -473,6 +528,16 @@ theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
 
 end MonicNormalize
 
+/-- Substituting nonzero polynomials into a coefficient-one monomial adds their leading
+exponents, with the multiplicities prescribed by the monomial. -/
+theorem degree_aeval_monomial_one_of_ne_zero [CommSemiring R] [NoZeroDivisors R]
+    {ι : Type*} {b : ι → MvPolynomial σ R} (hb : ∀ i, b i ≠ 0) (u : ι →₀ ℕ) :
+    m.degree (aeval b (monomial u (1 : R))) = Finsupp.linearCombination ℕ (m.degree ∘ b) u := by
+  classical
+  simp only [aeval_monomial, map_one, one_mul, Finsupp.prod]
+  rw [m.degree_prod fun i _ ↦ pow_ne_zero _ (hb i)]
+  simp [m.degree_pow, Finsupp.linearCombination_apply, Finsupp.sum]
+
 section Substitution
 
 variable {ι : Type*} [CommSemiring R] {m} {c : ι → MvPolynomial σ R}
@@ -533,7 +598,33 @@ theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomi
 
 end Substitution
 
-variable [CommRing R] [NoZeroDivisors R]
+variable [CommRing R]
+
+/-- The substituted value of a coefficient-one binomial relation of a monic family vanishes
+or has leading exponent strictly below the common exponent of its two terms. -/
+theorem aeval_monomial_sub_monomial_eq_zero_or_degree_lt
+    {ι : Type*} {b : ι → MvPolynomial σ R} [Nontrivial R]
+    (hb : ∀ i, m.Monic (b i)) (u v : ι →₀ ℕ)
+    (huv : Finsupp.linearCombination ℕ (m.degree ∘ b) u =
+      Finsupp.linearCombination ℕ (m.degree ∘ b) v) :
+    aeval b (monomial u (1 : R) - monomial v 1) = 0 ∨
+      m.degree (aeval b (monomial u (1 : R) - monomial v 1)) ≺[m]
+        Finsupp.linearCombination ℕ (m.degree ∘ b) u := by
+  have hu := monic_aeval_monomial_one hb u
+  have hv := monic_aeval_monomial_one hb v
+  have hdeg : m.degree (aeval b (monomial u (1 : R))) =
+      m.degree (aeval b (monomial v (1 : R))) := by
+    simpa only [degree_aeval_monomial_one hb, Function.comp_def] using huv
+  rcases eq_or_ne (aeval b (monomial u (1 : R) - monomial v 1)) 0 with hz | hn
+  · exact Or.inl hz
+  · right
+    simpa only [← map_sub, degree_aeval_monomial_one hb, Function.comp_def] using
+      m.degree_sub_lt (by simpa only [map_sub] using hn)
+        (le_of_eq (congrArg m.toSyn hdeg.symm)) (by
+          simpa only [leadingCoeff, ← hdeg] using
+            hv.leadingCoeff_eq_one.trans hu.leadingCoeff_eq_one.symm)
+
+variable [NoZeroDivisors R]
 
 /-- **Algebraic independence from leading monomials.** Over a ring without zero divisors, a family
 `yᵢ` of polynomials in the variables `Xᵢ` whose leading monomial for a monomial order is `Xᵢ` is

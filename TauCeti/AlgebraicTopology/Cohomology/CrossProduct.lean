@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kronecker
-public import TauCeti.AlgebraicTopology.Cohomology.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
+public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 
 /-!
 # Cross products in singular cohomology

@@ -98,6 +98,12 @@ theorem normAtPlace_archGaussianDilation_sq (y : realSpace K) (hy : ∀ w, 0 < y
   rw [archGaussianDilation_apply, map_mul,
     normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt (hy w).le]
 
+/-- The Gaussian at the parameter `y` is the Gaussian at the constant parameter `1` after the
+square-root dilation by `y`. -/
+theorem archGaussian_one_archGaussianDilation (y : realSpace K) (hy : ∀ w, 0 < y w)
+    (x : mixedSpace K) : archGaussian 1 (archGaussianDilation y hy x) = archGaussian y x := by
+  simp only [archGaussian_apply, normAtPlace_archGaussianDilation_sq, Pi.one_apply, one_mul]
+
 /-- At the constant parameter `1`, the Gaussian uses the Euclidean mixed-space pairing. -/
 theorem archGaussian_one (x : mixedSpace K) :
     archGaussian (1 : realSpace K) x = ↑(Real.exp (-Real.pi * mixedInner K x x)) := by

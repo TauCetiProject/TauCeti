@@ -16,7 +16,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 `TauCeti.multHaar` is the measure `dt / t` on `ℝ`, concentrated on `(0, ∞)`: Lebesgue measure on
 `(0, ∞)` with density `t⁻¹`. It is the image of Lebesgue measure under `Real.exp`
 (`TauCeti.map_volume_exp`), so it is invariant under every dilation `t ↦ c t` with `c > 0`
-(`TauCeti.map_multHaar_mul_left`) and gives the interval `[1, e]` mass one.
+(`TauCeti.map_multHaar_mul_left`), is invariant under inversion (`TauCeti.map_multHaar_inv`),
+and gives the interval `[1, e]` mass one.
 
 It is the Haar measure of the multiplicative group `(0, ∞)` up to a scalar, and the scalar is
 read off `[1, e]`: a measure on `ℝ` that does not charge `(-∞, 0]`, is invariant under the
@@ -93,6 +94,14 @@ theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = m
     simp [Real.exp_add, Real.exp_log hc]
   rw [← map_volume_exp, map_map (measurable_const_mul c) Real.measurable_exp, hcomp,
     ← map_map Real.measurable_exp (measurable_const_add _), map_add_left_eq_self]
+
+/-- `dt / t` is invariant under inversion on `(0, ∞)`. -/
+theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
+  have hcomp : Inv.inv ∘ Real.exp = Real.exp ∘ Neg.neg := by
+    ext u
+    simp [Real.exp_neg]
+  rw [← map_volume_exp, map_map measurable_inv Real.measurable_exp, hcomp,
+    ← map_map Real.measurable_exp measurable_neg, map_neg_eq_self]
 
 /-- **Uniqueness of `dt / t`.** A measure on `ℝ` that does not charge `(-∞, 0]`, is invariant
 under the dilations `t ↦ c t` for `c > 0`, and is finite on `[1, e]` is its mass on `[1, e]` times
