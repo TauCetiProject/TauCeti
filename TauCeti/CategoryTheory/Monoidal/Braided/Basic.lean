@@ -106,4 +106,14 @@ theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom (X : C
     associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc, braiding_naturality_right,
     comp_whiskerRight_assoc, associator_naturality_left_assoc]
 
+/-- **Unitors through the braiding with the unit.** The two ways of mapping
+`(𝟙_ C ⊗ X) ⊗ 𝟙_ C` to `X` agree: whiskering the left unitor and applying the right unitor, or
+reassociating, braiding `X` past the unit, reassociating back, and applying the unitors. -/
+theorem whiskerRight_leftUnitor_comp_rightUnitor_eq (X : C) :
+    (λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom =
+      (α_ (𝟙_ C) X (𝟙_ C)).hom ≫ 𝟙_ C ◁ (β_ X (𝟙_ C)).hom ≫
+        (α_ (𝟙_ C) (𝟙_ C) X).inv ≫ (λ_ (𝟙_ C)).hom ▷ X ≫ (λ_ X).hom := by
+  rw [braiding_tensorUnit_right]
+  monoidal
+
 end TauCeti

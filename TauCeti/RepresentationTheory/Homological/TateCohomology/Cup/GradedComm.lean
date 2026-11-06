@@ -5,6 +5,7 @@ Authors: Codex, Claude
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Associativity
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 
 /-!
@@ -32,6 +33,8 @@ sequences split `k`-linearly (`TauCeti.TateCohomology.δ_cup_of_leftInverse`). T
 * `TauCeti.TateCohomology.cupH0_eq_flip_cup0H`: graded commutativity in bidegree `(p, 0)`.
 * `TauCeti.TateCohomology.cup0H_eq_flip_cupH0`: graded commutativity in bidegree `(0, q)`.
 * `TauCeti.TateCohomology.cup_gradedComm`: graded commutativity in all integer bidegrees.
+* `TauCeti.TateCohomology.cup_cup_comm_degree_two`: two degree-two classes can be exchanged in
+  an iterated cup product, using associativity and graded commutativity.
 
 ## References
 
@@ -186,5 +189,40 @@ theorem cup_gradedComm (M N : Rep k G) {p q r : ℤ} (h : p + q = r) (x : tateCo
     | succ m ih =>
       exact cup_gradedComm_of_add_one M N (Int.negSucc_lt_zero _) h x
         (ih (dimensionShiftDown N) (by omega)) y
+
+/-- **Exchanging two degree-two classes in an iterated cup product.** For a class `σ` of degree
+`-2` and classes `u`, `w` of degree `2` (the second with trivial coefficients), the iterated cup
+product `(σ ∪ u) ∪ w` is `(σ ∪ w) ∪ u`, up to the associators, braiding and unitors identifying
+the coefficient modules. The Koszul sign `(-1) ^ (2 * 2)` is trivial. -/
+theorem cup_cup_comm_degree_two (X : Rep k G) (σ : tateCohomology (𝟙_ (Rep k G)) (-2))
+    (u : tateCohomology X 2) (w : tateCohomology (𝟙_ (Rep k G)) 2) :
+    (tateCohomologyFunctor 2).map (λ_ X).hom
+      ((tateCohomologyFunctor 2).map ((λ_ (𝟙_ (Rep k G))).hom ▷ X)
+        ((tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X).inv
+          ((tateCohomologyFunctor 2).map (𝟙_ (Rep k G) ◁ (β_ X (𝟙_ (Rep k G))).hom)
+            ((tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) X (𝟙_ (Rep k G))).hom
+              (cup (𝟙_ (Rep k G) ⊗ X) (𝟙_ (Rep k G)) 0 2 2 (by omega)
+                (cup (𝟙_ (Rep k G)) X (-2) 2 0 (by omega) σ u) w))))) =
+      (tateCohomologyFunctor 2).map (λ_ X).hom
+        (cup (𝟙_ (Rep k G)) X 0 2 2 (by omega)
+          ((tateCohomologyFunctor 0).map (λ_ (𝟙_ (Rep k G))).hom
+            (cup (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) (-2) 2 0 (by omega) σ w)) u) := by
+  -- Reassociate so that graded commutativity can exchange the degree-two factors.
+  have hAssoc₁ := cup_assoc (𝟙_ (Rep k G)) X (𝟙_ (Rep k G))
+    (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
+    (by omega) (by omega) (by omega) σ u w
+  rw [hAssoc₁, ← cup_map_right, cup_gradedComm]
+  rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul]
+  -- Reassociate back; the intervening associator and its inverse then cancel.
+  have hAssoc₂ := cup_assoc (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X
+    (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
+    (by omega) (by omega) (by omega) σ w u
+  have hcancel (z : tateCohomology ((𝟙_ (Rep k G) ⊗ 𝟙_ (Rep k G)) ⊗ X) 2) :
+      (tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X).inv
+        ((tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X).hom z) = z := by
+    rw [← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
+      (tateCohomologyFunctor 2).map_id]
+    rfl
+  rw [← hAssoc₂, hcancel, ← cup_map_left]
 
 end TauCeti.TateCohomology
