@@ -204,8 +204,7 @@ theorem plumbedAlmostComplex_update_inf_eq (h₀ : ω.Compatible J₀) (hq : q �
   · -- Elsewhere the point corresponds to a point of the pole disc of the plane.
     have hw' : ‖(w - q.endCenter) / q.plumbingFactor L‖ ≤ 2 * Real.exp (2 * π * 1) :=
       (norm_sub_endCenter_div_plumbingFactor_le_iff hq L 1).2 hw
-    have hre := neg_re_endCoord_inf_le zero_le_one hw'
-    rw [re_endCoord_inf_sub_endCenter_div q L hc] at hre
+    have hre := le_re_endCoord_of_norm_sub_endCenter_le hq hc hw
     rw [plumbedAlmostComplex_def, ite_eq_left (by linarith), pairOfPantsAlmostComplex_update_inf,
       negativePlaneAlmostComplex_eq_of_norm_le h₀ (by simpa using hw')]
 
@@ -281,7 +280,7 @@ theorem contMDiffAt_plumbedAlmostComplex_update_inf (h₀ : ω.Compatible J₀) 
         (plumbedAlmostComplex h₀ h₀ (update (fun _ _ _ => J₀) inf (Jb q)) Jb hJa hJb q p.1 p.2.1
           p.2.2).toLinearMap)
       (L, (w, x)) := by
-  set ρ : ℝ → ℝ := fun l => Real.exp (-(2 * π * (l - 1))) / 2 with hρ
+  set ρ : ℝ → ℝ := fun l => Real.exp (-(2 * π * (l - 1))) / 2
   rcases lt_or_ge ‖w - q.endCenter‖ (ρ L) with hlt | hge
   · -- Near a point of the open capped disc, for nearby neck lengths, the structure is `J₀`.
     refine (contMDiffAt_const (c := J₀.toLinearMap.toContinuousLinearMap)).congr_of_eventuallyEq ?_
@@ -296,12 +295,8 @@ theorem contMDiffAt_plumbedAlmostComplex_update_inf (h₀ : ω.Compatible J₀) 
     have hc : w ≠ q.endCenter := fun h => by
       rw [h, sub_self, norm_zero] at hge
       exact (by positivity : 0 < ρ L).not_ge hge
-    have h₁ : w ≠ q.plumbingMap L 1 := by
-      rintro rfl
-      rw [plumbingMap_apply, add_sub_cancel_left, mul_one, norm_plumbingFactor, norm_endScale hq,
-        hρ] at hge
-      have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
-      linarith [Real.exp_pos (-(2 * π * L))]
+    have h₁ : w ≠ q.plumbingMap L 1 := fun h =>
+      (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq L).not_ge hge
     have h := periodic_and_contMDiff_update_inf (J₀ := J₀) (hJbp q) (hJbs q)
     exact contMDiffAt_plumbedAlmostComplex h₀ h₀ hq (fun r => (h r).1) hJbp (fun r => (h r).2) hJbs
       (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x

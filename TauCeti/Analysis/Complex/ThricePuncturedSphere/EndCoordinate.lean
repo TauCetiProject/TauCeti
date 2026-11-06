@@ -208,6 +208,17 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
   · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
     linarith
 
+/-- On the punctured disc `0 < ‖w - c_q‖ ≤ exp (-2πr) / 2` about the center of a positive end `q`,
+the longitudinal coordinate of that end is at least `r`: the disc is bounded by the circle `s = r`
+of the end. -/
+theorem le_re_endCoord_of_norm_sub_endCenter_le {q : Puncture} (hq : q ≠ inf) {r : ℝ} {w : ℂ}
+    (hw : w ≠ q.endCenter) (h : ‖w - q.endCenter‖ ≤ Real.exp (-(2 * π * r)) / 2) :
+    r ≤ (q.endCoord w).re := by
+  have hd : 0 < ‖w - q.endCenter‖ := norm_pos_iff.2 (sub_ne_zero.2 hw)
+  rw [re_endCoord, norm_div, norm_endScale hq, le_div_iff₀ (by positivity), le_neg,
+    Real.log_le_iff_le_exp (by positivity), div_le_iff₀ (by norm_num), mul_comm r]
+  linarith
+
 /-- A point with nonzero longitudinal coordinate is not the center of the end. -/
 theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
     (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by

@@ -212,8 +212,7 @@ theorem plumbedPerturbation_single_inf_eq_zero (hq : q ≠ inf) (hL : 2 < L) {w 
   · -- Elsewhere the point corresponds to a point of the pole disc of the plane.
     have hw' : ‖(w - q.endCenter) / q.plumbingFactor L‖ ≤ 2 * Real.exp (2 * π * 1) :=
       (norm_sub_endCenter_div_plumbingFactor_le_iff hq L 1).2 hw
-    have hre := neg_re_endCoord_inf_le zero_le_one hw'
-    rw [re_endCoord_inf_sub_endCenter_div q L hc] at hre
+    have hre := le_re_endCoord_of_norm_sub_endCenter_le hq hc hw
     rw [plumbedPerturbation_def, ite_eq_left (by linarith), pairOfPantsPerturbation_single_inf,
       negativePlanePerturbation_eq_zero_of_norm_le (by simpa using hw'),
       ContinuousLinearMap.zero_comp]
@@ -229,7 +228,7 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
     (hw : w = q.endCenter ∨ w ≠ 0 ∧ w ≠ 1) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × M => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L p.1 p.2) (w, x) := by
-  set ρ := Real.exp (-(2 * π * (L - 1))) / 2 with hρdef
+  set ρ := Real.exp (-(2 * π * (L - 1))) / 2
   rcases lt_or_ge ‖w - q.endCenter‖ ρ with hlt | hge
   · -- On the open capped disc the datum vanishes.
     refine (contMDiffAt_const (c := (0 : ℂ →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
@@ -242,12 +241,8 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
     have hc : w ≠ q.endCenter := fun h => by
       rw [h, sub_self, norm_zero] at hge
       linarith
-    have h₁ : w ≠ q.plumbingMap L 1 := by
-      rintro rfl
-      rw [plumbingMap_apply, add_sub_cancel_left, mul_one, norm_plumbingFactor, norm_endScale hq,
-        hρdef] at hge
-      have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
-      linarith [Real.exp_pos (-(2 * π * L))]
+    have h₁ : w ≠ q.plumbingMap L 1 := fun h =>
+      (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq L).not_ge hge
     exact contMDiffAt_plumbedPerturbation hq
       (forall_single_inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
       (forall_single_inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
