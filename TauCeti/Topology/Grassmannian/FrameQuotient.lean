@@ -42,10 +42,10 @@ and the orbit map of the standard frame is a homeomorphism `U(N) ≃ₜ V_N(𝕜
 (`TauCeti.finiteOrthonormalFrame.unitaryHomeomorph`). The determinant classifies the orbits of
 the special unitary group: two frames `A • f` and `A' • f` lie in the same `SU(N)`-orbit exactly
 when `det A = det A'` (`TauCeti.finiteOrthonormalFrame.exists_specialUnitary_unitaryMap_eq_iff`).
-Over `ℝ`, where `SU(N) = SO(N)` and `det A = ±1`, this means that for `N ≥ 1` the group `SO(N)`
-is not transitive on full frames: they form two `SO(N)`-orbits, and the frames are
-`O(N) = SO(N) ⊔ r SO(N)` for any `r` of determinant `-1`. For `N = 2` these are the ordered
-orthonormal two-frames of the plane.
+Over `ℝ`, where `SU(N) = SO(N)` and `det A = ±1`, combining this with the existence, for
+`N ≥ 1`, of an orthogonal matrix `ρ` of determinant `-1` such as `diag(1, …, 1, -1)` shows that
+the full frames form two `SO(N)`-orbits, `O(N) = SO(N) ⊔ ρ SO(N)`. For `N = 2` these are the
+ordered orthonormal two-frames of the plane.
 
 The action `TauCeti.finiteOrthonormalFrame.unitaryMulAction` and the standard frame
 `TauCeti.finiteOrthonormalFrame.standard` are defined with the orthonormal frames in
@@ -72,7 +72,7 @@ The homeomorphisms are the topological orbit-stabilizer theorem
   stabilizers are the block-diagonal subgroups.
 * `TauCeti.finiteOrthonormalFrame.unitaryMap_left_injective`: the action on full frames is free.
 * `TauCeti.finiteOrthonormalFrame.exists_specialUnitary_unitaryMap_eq_iff`: the determinant
-  classifies the `SU(N)`-orbits of full frames (over `ℝ`, two `SO(N)`-orbits for `N ≥ 1`).
+  classifies the `SU(N)`-orbits of full frames.
 
 ## References
 
@@ -300,16 +300,27 @@ theorem unitaryHomeomorph_apply (A : unitaryGroup (Fin N) 𝕜) :
     unitaryHomeomorph 𝕜 N A = unitaryMap A (standard 𝕜 le_rfl) :=
   (rfl)
 
+/-- The unitary matrix of a full frame is the matrix whose columns are the vectors of the
+frame. -/
+@[simp]
+theorem coe_unitaryHomeomorph_symm_apply (f : finiteOrthonormalFrame 𝕜 N N) (i j : Fin N) :
+    ((unitaryHomeomorph 𝕜 N).symm f : Matrix (Fin N) (Fin N) 𝕜) i j = f.1 j i := by
+  obtain ⟨A, rfl⟩ := (unitaryHomeomorph 𝕜 N).surjective f
+  rw [Homeomorph.symm_apply_apply]
+  simp
+
 /-- **The determinant classifies the `SU(N)`-orbits of orthonormal `N`-frames of `𝕜^N`**: the
 frames `A • f` and `A' • f` lie in the same `SU(N)`-orbit exactly when the unitary matrices `A`
 and `A'` have the same determinant. Over `ℝ`, where `SU(N) = SO(N)` and the determinant is `±1`,
-for `N ≥ 1` there are two `SO(N)`-orbits, and with `unitaryHomeomorph` this is the decomposition
-`O(N) = SO(N) ⊔ r SO(N)` of the frames, for any `r` of determinant `-1`; for `N = 2` it describes
-the ordered orthonormal two-frames of the plane. -/
+this theorem together with an orthogonal matrix `ρ` of determinant `-1`, which exists for
+`N ≥ 1`, gives two `SO(N)`-orbits; with `unitaryHomeomorph` this is the decomposition
+`O(N) = SO(N) ⊔ ρ SO(N)` of the frames, and for `N = 2` it describes the ordered orthonormal
+two-frames of the plane. -/
 theorem exists_specialUnitary_unitaryMap_eq_iff (f : finiteOrthonormalFrame 𝕜 N N)
     (A A' : unitaryGroup (Fin N) 𝕜) :
     (∃ S : specialUnitaryGroup (Fin N) 𝕜,
-        unitaryMap ⟨S.1, S.2.1⟩ (unitaryMap A f) = unitaryMap A' f) ↔
+        unitaryMap (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup S) (unitaryMap A f) =
+          unitaryMap A' f) ↔
       (A : Matrix (Fin N) (Fin N) 𝕜).det = (A' : Matrix (Fin N) (Fin N) 𝕜).det := by
   constructor
   · rintro ⟨S, hS⟩

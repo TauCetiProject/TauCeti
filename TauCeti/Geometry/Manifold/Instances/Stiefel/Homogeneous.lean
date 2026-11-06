@@ -15,11 +15,12 @@ public import TauCeti.Topology.Grassmannian.Orthonormal
 # The Stiefel manifold as a homogeneous space
 
 Linear isometries of a real inner product space `E` act on its orthonormal `k`-frames
-`TauCeti.stiefel E k`, vector by vector (`TauCeti.stiefel.instMulAction`). Projecting a frame to
-one of its vectors, a point of the unit sphere, is equivariant (`TauCeti.stiefelProj_smul`),
-and when `E` is finite-dimensional the action is transitive
-(`TauCeti.stiefel.instIsPretransitive`): two orthonormal frames have the same Gram matrix, so a
-linear isometry moves one to the other (`TauCeti.exists_linearIsometryEquiv_of_inner_eq`).
+`TauCeti.stiefel E k`, vector by vector and continuously (`TauCeti.stiefel.instMulAction`,
+`TauCeti.stiefel.instContinuousConstSMul`). Projecting a frame to one of its vectors, a point of
+the unit sphere, is equivariant (`TauCeti.stiefelProj_smul`), and when `E` is finite-dimensional
+the action is transitive (`TauCeti.stiefel.instIsPretransitive`): two orthonormal frames have
+the same Gram matrix, so a linear isometry moves one to the other
+(`TauCeti.exists_linearIsometryEquiv_of_inner_eq`).
 
 On Euclidean space `ℝᴺ` the Stiefel manifold, which carries the smooth structure, has the same
 points as the orthonormal frames `TauCeti.finiteOrthonormalFrame ℝ r N` of the Grassmannian
@@ -37,7 +38,8 @@ for `n ≥ 3`.
 
 ## Main declarations
 
-* `TauCeti.stiefel.instMulAction`: linear isometries act on orthonormal frames.
+* `TauCeti.stiefel.instMulAction`, `TauCeti.stiefel.instContinuousConstSMul`: linear isometries
+  act continuously on orthonormal frames.
 * `TauCeti.stiefelProj_smul`: the projections to the sphere are equivariant.
 * `TauCeti.stiefel.instIsPretransitive`: the action is transitive in finite dimension.
 * `TauCeti.stiefel.finiteOrthonormalFrameHomeomorph`: the Stiefel manifold of `ℝᴺ` is homeomorphic
@@ -77,6 +79,11 @@ theorem stiefel.coe_smul (e : E ≃ₗᵢ[ℝ] E) (v : stiefel E k) :
     ((e • v : stiefel E k) : Fin k → E) = e ∘ v.1 :=
   (rfl)
 
+/-- Each linear isometry acts continuously on orthonormal frames. -/
+instance stiefel.instContinuousConstSMul : ContinuousConstSMul (E ≃ₗᵢ[ℝ] E) (stiefel E k) where
+  continuous_const_smul e := continuous_induced_rng.2 <| continuous_pi fun i ↦
+    e.continuous.comp ((continuous_apply i).comp continuous_subtype_val)
+
 /-- Projecting a frame to one of its vectors, a point of the unit sphere, is equivariant for the
 actions of linear isometries on frames and on the sphere. -/
 @[simp]
@@ -106,15 +113,9 @@ variable (r N : ℕ)
 /-- **The Stiefel manifold of `ℝᴺ` is the space of orthonormal frames** of the Grassmannian
 theory: a frame of `EuclideanSpace ℝ (Fin N)` is read in the coordinates of `Fin N → ℝ`. -/
 def stiefel.finiteOrthonormalFrameHomeomorph :
-    stiefel (EuclideanSpace ℝ (Fin N)) r ≃ₜ finiteOrthonormalFrame ℝ r N where
-  toFun v := ⟨fun i ↦ (v.1 i).ofLp, by simpa using mem_stiefel_iff.1 v.2⟩
-  invFun f := ⟨fun i ↦ WithLp.toLp 2 (f.1 i), mem_stiefel_iff.2 f.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 <| continuous_pi fun i ↦
-    (PiLp.continuous_ofLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
-  continuous_invFun := continuous_induced_rng.2 <| continuous_pi fun i ↦
-    (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
+    stiefel (EuclideanSpace ℝ (Fin N)) r ≃ₜ finiteOrthonormalFrame ℝ r N :=
+  (Homeomorph.piCongrRight fun _ ↦ PiLp.homeomorph 2 fun _ : Fin N ↦ ℝ).subtype
+    fun _ ↦ mem_stiefel_iff
 
 variable {r N}
 
