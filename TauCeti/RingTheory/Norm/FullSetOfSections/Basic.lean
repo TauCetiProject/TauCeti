@@ -48,6 +48,9 @@ full set of sections of a finite locally free subgroup scheme.
 
 * `TauCeti.isFullSetOfSections_comp_algEquiv_iff`: being a full set of sections is invariant under
   isomorphisms of `B`.
+* `TauCeti.isFullSetOfSections_sectionBaseChange_iff_of_isPushout` and
+  `TauCeti.isFullSetOfSections_iff_of_isPushout`: full sets of sections and base change along a
+  pushout square.
 * `TauCeti.IsFullSetOfSections.of_localizationSpan`: being a full set of sections is Zariski-local
   on `Spec A`: it can be checked after localizing at a family of elements generating the unit
   ideal. `TauCeti.IsFullSetOfSections.of_localization_maximal` permits checking at all maximal
@@ -151,6 +154,14 @@ theorem isFullSetOfSections_comp_algEquiv_iff {B' : Type*} [CommRing B'] [Algebr
     (e : B ≃ₐ[A] B') {s : ι → B' →ₐ[A] A} :
     (IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) ↔ IsFullSetOfSections s :=
   ⟨.of_comp_algEquiv e, fun h ↦ .of_comp_algEquiv e.symm (by simpa [AlgHom.comp_assoc] using h)⟩
+
+/-- The base change of a family of sections along the identity `A → A` is a full set of sections
+if and only if the family itself is. -/
+theorem isFullSetOfSections_sectionBaseChange_self_iff :
+    (IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A) ↔ IsFullSetOfSections s := by
+  rw [← isFullSetOfSections_comp_algEquiv_iff (Algebra.TensorProduct.lid A B).symm]
+  refine Iff.of_eq (congrArg _ (funext fun i ↦ AlgHom.ext fun b ↦ ?_))
+  simp
 
 section Free
 
@@ -395,6 +406,40 @@ theorem isFullSetOfSections_baseChange_iff {T : Type w} [CommRing T] [Algebra A 
   ⟨.of_baseChange hT, fun h ↦ h.baseChange T⟩
 
 end FiniteFlat
+
+section IsPushout
+
+/-- Base change of sections along a pushout square: if `B'` is the base change of `B` along
+`A → A'` and the sections `s'` of `B'` over `A'` extend the sections `s` of `B`, then the base
+changes of `s` and of `s'` to any `A'`-algebra `T` are full sets of sections together. -/
+theorem isFullSetOfSections_sectionBaseChange_iff_of_isPushout {A' B' : Type*}
+    [CommRing A'] [CommRing B'] [Algebra A A'] [Algebra A B'] [Algebra A' B'] [Algebra B B']
+    [IsScalarTower A A' B'] [IsScalarTower A B B'] [Algebra.IsPushout A A' B B']
+    {s' : ι → B' →ₐ[A'] A'}
+    (hs : ∀ i b, s' i (algebraMap B B' b) = algebraMap A A' (s i b)) (T : Type w) [CommRing T]
+    [Algebra A' T] [Algebra A T] [IsScalarTower A A' T] :
+    (IsFullSetOfSections fun i ↦ (s' i).sectionBaseChange T) ↔
+      IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T := by
+  let e : T ⊗[A] B ≃ₐ[T] T ⊗[A'] B' :=
+    (Algebra.TensorProduct.cancelBaseChange A A' T T B).symm.trans
+      (Algebra.TensorProduct.congr AlgEquiv.refl (Algebra.IsPushout.equiv A A' B B'))
+  rw [← isFullSetOfSections_comp_algEquiv_iff e]
+  refine Iff.of_eq (congrArg _ (funext fun i ↦ ?_))
+  refine Algebra.TensorProduct.ext' fun t b ↦ ?_
+  simp [e, Algebra.IsPushout.equiv_tmul, hs, ← IsScalarTower.algebraMap_apply]
+
+/-- **Full sets of sections along a pushout square.** If `B'` is the base change of `B` along
+`A → A'` and the sections `s'` of `B'` over `A'` extend the sections `s` of `B`, then `s'` is a
+full set of sections exactly when the base change of `s` to `A'` is. -/
+theorem isFullSetOfSections_iff_of_isPushout {A' B' : Type*} [CommRing A'] [CommRing B']
+    [Algebra A A'] [Algebra A B'] [Algebra A' B'] [Algebra B B'] [IsScalarTower A A' B']
+    [IsScalarTower A B B'] [Algebra.IsPushout A A' B B'] {s' : ι → B' →ₐ[A'] A'}
+    (hs : ∀ i b, s' i (algebraMap B B' b) = algebraMap A A' (s i b)) :
+    IsFullSetOfSections s' ↔ IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A' :=
+  isFullSetOfSections_sectionBaseChange_self_iff.symm.trans
+    (isFullSetOfSections_sectionBaseChange_iff_of_isPushout hs A')
+
+end IsPushout
 
 section Free
 

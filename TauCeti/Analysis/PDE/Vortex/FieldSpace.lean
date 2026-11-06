@@ -9,9 +9,8 @@ public import Mathlib.Analysis.Distribution.Sobolev
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
 public import TauCeti.Analysis.PDE.Vortex.Reference
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
+public import TauCeti.Analysis.Distribution.Sobolev
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -32,7 +31,7 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
 * `sobolevFields s` is the real space of pointwise representatives of `L² ∩ H^s` fields (all of
   `H^s` when `s ≥ 0`): each coordinate is a real `L²` function whose complexified tempered
   distribution lies in Mathlib's Bessel-potential space `H^s`
-  (`TemperedDistribution.realSobolevSubmodule`). This is the componentwise complexification on
+  (`TemperedDistribution.realSobolevFunctions`). This is the componentwise complexification on
   which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts.
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
@@ -147,45 +146,39 @@ theorem hasCompactSupport_referenceField_zero_sub_vacuumField (f : ContDiffBump 
 /-! ### Sobolev fields -/
 
 /-- The real space of pointwise representatives of `(L² ∩ H^s)(ℂ; ℝ⁴)` fields, which is the
-Sobolev space `H^s(ℂ; ℝ⁴)` when `s ≥ 0`: each coordinate is the value of a real `L²` function
-whose complexified tempered distribution lies in the Bessel-potential space `H^s`. -/
+Sobolev space `H^s(ℂ; ℝ⁴)` when `s ≥ 0`: each coordinate lies in `realSobolevFunctions ℂ s 2`, that
+is, it agrees almost everywhere with a real `L²` function whose complexified tempered distribution
+lies in the Bessel-potential space `H^s`. -/
 def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
   carrier := {y | ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2}
   add_mem' {y₁ y₂} h₁ h₂ i := by
-    simp only [Pi.add_apply, PiLp.add_apply]
-    exact add_mem (h₁ i) (h₂ i)
+    convert add_mem (h₁ i) (h₂ i) using 1
+    ext z
+    simp
   zero_mem' i := by
-    simp only [Pi.zero_apply, PiLp.zero_apply]
-    exact zero_mem (realSobolevFunctions ℂ s 2)
+    convert zero_mem (realSobolevFunctions ℂ s 2) using 1
+    ext z
+    simp
   smul_mem' c y h i := by
-    simp only [Pi.smul_apply, PiLp.smul_apply]
-    exact Submodule.smul_mem _ c (h i)
+    convert Submodule.smul_mem _ c (h i) using 1
+    ext z
+    simp
 
 /-- Membership in `sobolevFields s` (`L² ∩ H^s`), coordinate by coordinate. -/
 theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
-    y ∈ sobolevFields s ↔ ∀ i, ∃ u : Lp ℝ 2 (volume : Measure ℂ),
-      u =ᵐ[volume] (fun z ↦ y z i) ∧
-        MemSobolev s 2 (Lp.toTemperedDistribution (ofRealCLM.compLp u)) :=
-  forall_congr' fun _ ↦ by
-    simp only [mem_realSobolevFunctions, mem_realSobolevSubmodule, and_comm]
+    y ∈ sobolevFields s ↔ ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
+  Iff.rfl
 
 /-- The Sobolev field spaces decrease as the order increases. -/
 theorem sobolevFields_mono {s s' : ℝ} (h : s' ≤ s) : sobolevFields s ≤ sobolevFields s' :=
-  fun _ hy i ↦ realSobolevFunctions_mono ENNReal.one_lt_two ENNReal.ofNat_ne_top h (hy i)
+  fun _ hy ↦ mem_sobolevFields.2 fun i ↦
+    realSobolevFunctions_mono (by norm_num) (by norm_num) h (mem_sobolevFields.1 hy i)
 
 /-- A smooth compactly supported field lies in every Sobolev space. -/
 theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : ContDiff ℝ ∞ y) (hc : HasCompactSupport y) (s : ℝ) : y ∈ sobolevFields s :=
-  fun i ↦ mem_realSobolevFunctions_of_hasCompactSupport (contDiff_euclidean.1 hy i)
-    (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl) s 2
-
-/-- The order condition `s > 1` is `dim ℂ < 2 s`, the hypothesis of the Sobolev algebra and
-embedding theorems on the plane. -/
-theorem finrank_real_complex_lt_two_mul {s : ℝ} (hs : 1 < s) :
-    (finrank ℝ ℂ : ℝ) < 2 * s := by
-  rw [Complex.finrank_real_complex]
-  push_cast
-  linarith
+  mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions_of_hasCompactSupport
+    (contDiff_euclidean.1 hy i) (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl) s
 
 /-- **Decay of continuous Sobolev fields.** For `s > 1`, a continuous field in `sobolevFields s`
 tends to zero at infinity: by Sobolev embedding each coordinate agrees almost everywhere with a
@@ -193,10 +186,10 @@ continuous function vanishing at infinity, hence everywhere. -/
 theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y) :
     Tendsto y (cocompact ℂ) (𝓝 0) := by
+  have hs' := finrank_real_complex_lt_two_mul hs
   have h : Tendsto (fun z ↦ WithLp.ofLp (y z)) (cocompact ℂ) (𝓝 0) :=
-    tendsto_pi_nhds.2 fun i ↦ tendsto_cocompact_of_mem_realSobolevFunctions
-      (finrank_real_complex_lt_two_mul hs) (hy i)
-      ((PiLp.continuous_apply 2 _ i).comp hcont)
+    tendsto_pi_nhds.2 fun i ↦ tendsto_cocompact_of_mem_realSobolevFunctions hs'
+      (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hcont)
   simpa [Function.comp_def] using ((PiLp.continuous_toLp 2 _).tendsto 0).comp h
 
 /-! ### The affine field space -/
@@ -288,14 +281,8 @@ tends to one at infinity. -/
 theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
     (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
     (hcont : Continuous x) :
-    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-  have h := (tendsto_sectionValue_mul_inv_pow hs hx hcont).norm.pow 2
-  rw [norm_one, one_pow] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
-  rw [norm_mul, norm_inv, norm_pow, norm_div]
-  simp only [norm_real, norm_norm, div_self (norm_ne_zero_iff.2 hz.1), one_pow, inv_one, mul_one]
-  exact sq_norm_sectionValue x z
+    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
+  tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow (tendsto_sectionValue_mul_inv_pow hs hx hcont)
 
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
 differentiable connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/

@@ -158,16 +158,17 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul {s : ℝ} (hs : finrank ℝ E 
   rw [mem_realSobolevSubmodule, heq]
   exact hu.mul hs hv
 
-/-- **Products of real Sobolev functions, `s > n / 2`.** The pointwise representatives of real
-`H^s` functions, `s > dim E / 2`, are closed under pointwise multiplication. -/
-theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {g₁ g₂ : E → ℝ}
-    (h₁ : g₁ ∈ realSobolevFunctions E s 2) (h₂ : g₂ ∈ realSobolevFunctions E s 2) :
-    g₁ * g₂ ∈ realSobolevFunctions E s 2 := by
-  obtain ⟨u₁, hu₁, he₁⟩ := mem_realSobolevFunctions.1 h₁
-  obtain ⟨u₂, hu₂, he₂⟩ := mem_realSobolevFunctions.1 h₂
-  obtain ⟨w, hw, hwe⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul hs hu₁ hu₂
-  refine mem_realSobolevFunctions.2 ⟨w, hw, ?_⟩
-  filter_upwards [hwe, he₁, he₂] with x hx h₁ h₂
-  rw [hx, h₁, h₂, Pi.mul_apply]
+/-- **Products of real `H^s` functions, `s > n / 2`, pointwise.** The real functions in `H^s`,
+`s > dim E / 2`, are closed under pointwise multiplication. -/
+theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f g : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s 2) (hg : g ∈ realSobolevFunctions E s 2) :
+    f * g ∈ realSobolevFunctions E s 2 := by
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨v, hvg, hv⟩ := mem_realSobolevFunctions.1 hg
+  obtain ⟨w, hw, hwuv⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul hs
+    (mem_realSobolevSubmodule.2 hu) (mem_realSobolevSubmodule.2 hv)
+  refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hw) ?_
+  filter_upwards [hwuv, huf, hvg] with x h h₁ h₂
+  rw [h, h₁, h₂, Pi.mul_apply]
 
 end TemperedDistribution

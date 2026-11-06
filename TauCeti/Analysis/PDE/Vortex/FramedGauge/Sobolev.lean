@@ -7,61 +7,60 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-import TauCeti.Analysis.PDE.Vortex.FieldSpace
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
-# The Sobolev framed gauge group of plane vortex fields
+# The Sobolev framed gauge group of plane vortices
 
-For `s > 1` the Sobolev framed gauge group is
+For a real order `s > 1` the Sobolev framed gauge group `G_s` (`sobolevGaugeGroup`) consists of
+the continuous circle-valued maps `u` on the plane with `u - 1 ∈ H^s(ℂ; ℂ)`: the real functions
+`Re u - 1` and `Im u` lie in the Bessel-potential space `H^s`
+(`TemperedDistribution.realSobolevFunctions`). Writing `u = 1 + h`, this is the group
+`{1 + h : h ∈ H^s, |1 + h| = 1}`, with `u` the continuous representative. The gauge group of
+the field space `A_m^k` of framed degree-`m` vortices (`TauCeti.Vortex.framedFieldSpace`) is
+`G_(k+1)`.
 
-  `G_s = {u = 1 + h : h ∈ H^s(ℂ; ℂ), |u| = 1}`,
+Since `H^s(ℂ)` is an algebra for `s > 1`, the products `(1 + h)(1 + g) = 1 + (h + g + h g)` stay
+in the group, and the inverse is the complex conjugate `1 + conj h`. The Sobolev embedding gives
+the end condition `u → 1` at infinity, so the smooth elements of `G_s` are smooth framed gauges
+(`TauCeti.Vortex.framedGaugeGroup`); they form the subgroup `G_s ⊓ framedGaugeGroup`. Conversely,
+smooth gauges with `u - 1` compactly supported, such as `exp (i f)` for a smooth compactly
+supported phase `f`, lie in every `G_s`. A smooth framed gauge need not lie in `G_s`: a phase
+with a `1 / |z|` tail is not square integrable on the plane.
 
-the Banach gauge group paired with the affine Sobolev space `A_m^(s-1)` of framed plane vortex
-fields (`TauCeti.Vortex.framedFieldSpace`). As for those fields, `h` is taken in real
-coordinates: both real functions `Re u - 1` and `Im u` lie in `H^s`
-(`TemperedDistribution.realSobolevFunctions`), so the pair `(Re u - 1, Im u)` lies in
-`H^s(ℂ; ℝ²)`, identified with `H^s(ℂ; ℂ)` through `h = (Re u - 1) + i Im u`. For
-`s > 1 = dim ℂ / 2` an `H^s` function has a continuous representative, and the elements of `G_s`
-are taken to be continuous circle-valued maps.
+For a `C¹` gauge `u ∈ G_(s+1)`, the real one-form `Im (u⁻¹ du)` (`TauCeti.Vortex.gaugeForm`)
+has coefficients in `H^s`. Its product with `i` is the connection increment `u⁻¹ du` of the
+action `(a, α) ↦ (a - u⁻¹ du, u α)`, so the `C¹` elements of `G_(s+1)` preserve the connection
+part of `A_m^s`.
 
-The group laws come from the algebra property of `H^s` above half the dimension
-(`TemperedDistribution.mul_mem_realSobolevFunctions`): writing `u = 1 + h` and `v = 1 + k`,
-`uv = 1 + (h + k + hk)`, and `u⁻¹ = conj u = 1 + conj h`. So `sobolevGaugeGroup s` is a subgroup
-of the circle-valued maps on the plane.
+No topology or Banach Lie group charts on `G_s` are constructed here, and the action on the
+section part of `A_m^s`, which needs multiplication of `H^s` by the bounded reference section,
+is not treated.
 
-By the Sobolev embedding into `C₀`, every element tends to one at infinity
-(`TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`), so the smooth elements of `G_s` are
-smooth framed gauges (`TauCeti.Vortex.mem_framedGaugeGroup_of_mem_sobolevGaugeGroup`). Conversely,
-smooth gauges equal to one off a compact set, such as `exp (i f)` for a compactly supported smooth
-phase `f`, lie in every `G_s`. A smooth framed gauge in `TauCeti.Vortex.framedGaugeGroup` need
-not lie in `G_s`: it only tends to one, possibly too slowly for `u - 1` to be square integrable.
+## Main definitions
 
-This file constructs the group and its algebraic and asymptotic properties. The Banach charts of
-`G_s`, which need a quantitative product estimate in `H^s`, and its action on the affine field
-space `A_m^(s-1)` are not constructed here.
+* `TauCeti.Vortex.sobolevGaugeGroup hs`: the group `G_s`, `s > 1`, as a subgroup of `ℂ → Circle`.
 
-## Main declarations
+## Main results
 
-* `TauCeti.Vortex.sobolevGaugeGroup`: the Sobolev framed gauge group `G_s`, `s > 1`.
 * `TauCeti.Vortex.exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup`: for `u ∈ G_s`, the complex
   function `u - 1` lies in `H^s(ℂ; ℂ)`.
-* `TauCeti.Vortex.sobolevGaugeGroup_mono`: `G_s ≤ G_s'` for `s' ≤ s`.
 * `TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`: elements of `G_s` tend to one at
   infinity.
-* `TauCeti.Vortex.mem_framedGaugeGroup_of_mem_sobolevGaugeGroup`: smooth elements of `G_s` are
-  smooth framed gauges.
+* `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
+  `G_s ⊓ framedGaugeGroup`.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_of_hasCompactSupport`,
-  `TauCeti.Vortex.exp_mem_sobolevGaugeGroup`: smooth gauges equal to one off a compact set lie in
-  every `G_s`.
+  `TauCeti.Vortex.exp_mem_sobolevGaugeGroup`: compactly supported smooth gauges lie in `G_s`.
+* `TauCeti.Vortex.gaugeForm_apply_mem_realSobolevFunctions`: for a `C¹` gauge in `G_(s+1)`,
+  `Im (u⁻¹ du)` has coefficients in `H^s`.
 
 ## References
 
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
   Chapter III.
-* M. E. Taylor, *Partial Differential Equations III: Nonlinear Equations*, 2nd ed., Applied
-  Mathematical Sciences 117, Springer, 2011, Chapter 13, §3 (the algebra `H^s`, `s > n / 2`).
+* C. H. Taubes, *Arbitrary N-vortex solutions to the first order Ginzburg–Landau equations*,
+  Comm. Math. Phys. 72 (1980), 277–292.
 -/
 
 public section
@@ -70,62 +69,64 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex ComplexConjugate Filter MeasureTheory Module TemperedDistribution
-open scoped Topology ContDiff SchwartzMap
+open Complex ComplexConjugate Filter Module TemperedDistribution
+open scoped ContDiff Topology
 
-/-- The **Sobolev framed gauge group** `G_s = {u = 1 + h : h ∈ H^s(ℂ; ℂ), |u| = 1}`, for `s > 1`.
-Its elements are the continuous circle-valued maps `u` on the plane such that the real
-functions `Re u - 1` and `Im u` lie in `H^s`. -/
-def sobolevGaugeGroup (s : ℝ) [hs : Fact (1 < s)] : Subgroup (ℂ → Circle) where
-  carrier := {u | Continuous (fun z ↦ (u z : ℂ)) ∧
-    (fun z ↦ (u z : ℂ).re - 1) ∈ realSobolevFunctions ℂ s 2 ∧
+/-- **The Sobolev framed gauge group `G_s`**, `s > 1`: the continuous circle-valued maps `u` on
+the plane with `u - 1 ∈ H^s(ℂ; ℂ)`, that is, with `Re u - 1` and `Im u` in `H^s`. -/
+def sobolevGaugeGroup {s : ℝ} (hs : 1 < s) : Subgroup (ℂ → Circle) where
+  carrier := {u | Continuous u ∧ (fun z ↦ (u z : ℂ).re - 1) ∈ realSobolevFunctions ℂ s 2 ∧
     (fun z ↦ (u z : ℂ).im) ∈ realSobolevFunctions ℂ s 2}
   one_mem' := by
     refine ⟨continuous_const, ?_, ?_⟩ <;>
-    · simp only [Pi.one_apply, Circle.coe_one, one_re, one_im, sub_self]
-      exact zero_mem (realSobolevFunctions ℂ s 2)
+    · convert zero_mem (realSobolevFunctions ℂ s 2) using 1
+      ext z
+      simp
   mul_mem' := by
     rintro u v ⟨hu, hu₁, hu₂⟩ ⟨hv, hv₁, hv₂⟩
-    have hs' := finrank_real_complex_lt_two_mul hs.out
-    -- With `u = (1 + a) + i b` and `v = (1 + c) + i d`, the real and imaginary parts of `u v`
-    -- are `1 + (a + c + a c - b d)` and `b + d + a d + b c`.
+    have hmul {f g : ℂ → ℝ} (hf : f ∈ realSobolevFunctions ℂ s 2)
+        (hg : g ∈ realSobolevFunctions ℂ s 2) : f * g ∈ realSobolevFunctions ℂ s 2 :=
+      mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) hf hg
+    -- With `u = (1 + a) + i b` and `v = (1 + c) + i d`, the product is
+    -- `(1 + (a c + a + c - b d)) + i (a d + d + b c + b)`.
     refine ⟨hu.mul hv, ?_, ?_⟩
-    · convert add_mem (add_mem hu₁ hv₁) (sub_mem (mul_mem_realSobolevFunctions hs' hu₁ hv₁)
-        (mul_mem_realSobolevFunctions hs' hu₂ hv₂)) using 1
+    · convert add_mem (add_mem (add_mem (hmul hu₁ hv₁) hu₁) hv₁) (neg_mem (hmul hu₂ hv₂))
+        using 1
       ext z
-      simp only [Pi.mul_apply, Circle.coe_mul, mul_re, Pi.add_apply, Pi.sub_apply]
+      simp only [Pi.mul_apply, Circle.coe_mul, mul_re, Pi.add_apply, Pi.neg_apply]
       ring
-    · convert add_mem (add_mem hu₂ hv₂) (add_mem (mul_mem_realSobolevFunctions hs' hu₁ hv₂)
-        (mul_mem_realSobolevFunctions hs' hu₂ hv₁)) using 1
+    · convert add_mem (add_mem (add_mem (hmul hu₁ hv₂) hv₂) (hmul hu₂ hv₁)) hu₂ using 1
       ext z
       simp only [Pi.mul_apply, Circle.coe_mul, mul_im, Pi.add_apply]
       ring
   inv_mem' := by
     rintro u ⟨hu, hu₁, hu₂⟩
-    -- The inverse of a circle-valued map is its complex conjugate.
-    simp only [Set.mem_ofPred_eq, Pi.inv_apply, Circle.coe_inv_eq_conj, conj_re, conj_im]
-    exact ⟨continuous_conj.comp hu, hu₁, neg_mem hu₂⟩
+    refine ⟨hu.inv, ?_, ?_⟩
+    · simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, conj_re] using hu₁
+    · convert neg_mem hu₂ using 1
+      ext z
+      simp
 
-variable {s : ℝ} [Fact (1 < s)]
-
-/-- Membership in `G_s`: continuity and `H^s` regularity of `Re u - 1` and `Im u`. -/
+/-- Membership in `G_s`: continuity, and `Re u - 1`, `Im u` in `H^s`. -/
 @[simp]
-theorem mem_sobolevGaugeGroup (u : ℂ → Circle) :
-    u ∈ sobolevGaugeGroup s ↔ Continuous (fun z ↦ (u z : ℂ)) ∧
+theorem mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) (u : ℂ → Circle) :
+    u ∈ sobolevGaugeGroup hs ↔ Continuous u ∧
       (fun z ↦ (u z : ℂ).re - 1) ∈ realSobolevFunctions ℂ s 2 ∧
       (fun z ↦ (u z : ℂ).im) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
 
+open MeasureTheory in
+open scoped SchwartzMap in
 /-- **Elements of `G_s` are `1 + h` with `h ∈ H^s(ℂ; ℂ)`.** For `u ∈ G_s`, the complex function
 `u - 1` agrees almost everywhere with an `L²` function in Mathlib's Bessel-potential space
 `H^s(ℂ; ℂ)`. -/
-theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {u : ℂ → Circle}
-    (hu : u ∈ sobolevGaugeGroup s) :
+theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) :
     ∃ h : Lp ℂ 2 (volume : Measure ℂ), h =ᵐ[volume] (fun z ↦ (u z : ℂ) - 1) ∧
       MemSobolev s 2 (h : 𝓢'(ℂ, ℂ)) := by
-  obtain ⟨-, h₁, h₂⟩ := hu
-  obtain ⟨a, ha, hae⟩ := mem_realSobolevFunctions.1 h₁
-  obtain ⟨b, hb, hbe⟩ := mem_realSobolevFunctions.1 h₂
+  obtain ⟨-, h₁, h₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  obtain ⟨a, hae, ha⟩ := mem_realSobolevFunctions.1 h₁
+  obtain ⟨b, hbe, hb⟩ := mem_realSobolevFunctions.1 h₂
   refine ⟨ofRealCLM.compLp a + I • ofRealCLM.compLp b, ?_, ?_⟩
   · filter_upwards [Lp.coeFn_add (ofRealCLM.compLp a) (I • ofRealCLM.compLp b),
       Lp.coeFn_smul I (ofRealCLM.compLp b), ofRealCLM.coeFn_compLp (p := 2) (μ := volume) a,
@@ -137,61 +138,123 @@ theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {u : ℂ → Circle}
     rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
       Lp.toTemperedDistributionCLM_apply] at e
     rw [e]
-    exact (mem_realSobolevSubmodule.1 ha).add ((mem_realSobolevSubmodule.1 hb).smul I)
+    exact ha.add (hb.smul I)
 
-/-- The Sobolev framed gauge groups decrease as the order increases. -/
-theorem sobolevGaugeGroup_mono {s' : ℝ} [Fact (1 < s')] (h : s' ≤ s) :
-    sobolevGaugeGroup s ≤ sobolevGaugeGroup s' :=
-  have mono := realSobolevFunctions_mono (E := ℂ) ENNReal.one_lt_two ENNReal.ofNat_ne_top h
-  fun _ ⟨hu, h₁, h₂⟩ ↦ ⟨hu, mono h₁, mono h₂⟩
+/-- The Sobolev gauge groups decrease as the order increases: `G_s ≤ G_s'` for `1 < s' ≤ s`. -/
+theorem sobolevGaugeGroup_mono {s s' : ℝ} (hs' : 1 < s') (h : s' ≤ s) :
+    sobolevGaugeGroup (hs'.trans_le h) ≤ sobolevGaugeGroup hs' := by
+  intro u hu
+  obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup _ u).1 hu
+  have hmono := realSobolevFunctions_mono (E := ℂ) (p := 2) (by norm_num) (by norm_num) h
+  exact (mem_sobolevGaugeGroup _ u).2 ⟨hu, hmono hu₁, hmono hu₂⟩
 
-/-- **Elements of `G_s` tend to one at infinity**, by the Sobolev embedding of `H^s` into the
-continuous functions vanishing at infinity. -/
-theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {u : ℂ → Circle}
-    (hu : u ∈ sobolevGaugeGroup s) : Tendsto u (cocompact ℂ) (𝓝 1) := by
-  obtain ⟨hc, h₁, h₂⟩ := hu
-  have hs := finrank_real_complex_lt_two_mul (Fact.out : 1 < s)
-  have hre := tendsto_cocompact_of_mem_realSobolevFunctions hs h₁
-    ((continuous_re.comp hc).sub continuous_const)
-  have him := tendsto_cocompact_of_mem_realSobolevFunctions hs h₂ (continuous_im.comp hc)
-  -- Reassemble `u = 1 + (Re u - 1) + i Im u` and use that `Circle` carries the subspace topology.
-  have hC : Tendsto (fun z ↦ (u z : ℂ)) (cocompact ℂ) (𝓝 1) := by
-    have := ((tendsto_const_nhds (x := (1 : ℂ))).add (continuous_ofReal.tendsto 0 |>.comp hre)).add
-      ((continuous_ofReal.tendsto 0 |>.comp him).mul_const I)
-    simp only [ofReal_zero, add_zero, zero_mul] at this
-    refine this.congr fun z ↦ ?_
-    simp only [Function.comp_apply, ofReal_sub, ofReal_one]
-    conv_rhs => rw [← re_add_im (u z : ℂ)]
+/-- **Elements of `G_s` tend to one at infinity**, by the Sobolev embedding of `H^s`, `s > 1`, into
+the continuous functions vanishing at infinity. -/
+theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) : Tendsto u (cocompact ℂ) (𝓝 1) := by
+  obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  have hs' := finrank_real_complex_lt_two_mul hs
+  have hre := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₁
+    ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const)
+  have him := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₂
+    (continuous_im.comp (continuous_subtype_val.comp hu))
+  have h := (((continuous_ofReal.tendsto 0).comp hre).add
+    (((continuous_ofReal.tendsto 0).comp him).mul_const I)).const_add (1 : ℂ)
+  have hfun : (fun z ↦ (u z : ℂ)) =
+      fun z ↦ 1 + ((((u z : ℂ).re - 1 : ℝ) : ℂ) + ((u z : ℂ).im : ℂ) * I) := by
+    ext1 z
+    nth_rewrite 1 [← re_add_im (u z : ℂ)]
+    push_cast
     ring
-  exact Topology.IsInducing.subtypeVal.tendsto_nhds_iff.2 hC
+  have hc : Tendsto (fun z ↦ (u z : ℂ)) (cocompact ℂ) (𝓝 1) := by
+    rw [hfun]
+    simpa using h
+  exact tendsto_subtype_rng.2 (by simpa using hc)
 
 /-- **Smooth elements of `G_s` are smooth framed gauges.** -/
-theorem mem_framedGaugeGroup_of_mem_sobolevGaugeGroup {u : ℂ → Circle}
-    (hu : u ∈ sobolevGaugeGroup s) (hsmooth : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ))) :
+theorem mem_framedGaugeGroup_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) (hsmooth : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ))) :
     u ∈ framedGaugeGroup :=
   (mem_framedGaugeGroup u).2 ⟨hsmooth, tendsto_cocompact_of_mem_sobolevGaugeGroup hu⟩
 
-/-- **Compactly supported gauges.** A smooth circle-valued map equal to one off a compact set lies
-in every Sobolev framed gauge group. -/
-theorem mem_sobolevGaugeGroup_of_hasCompactSupport {u : ℂ → Circle}
-    (hsmooth : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)))
-    (hc : HasCompactSupport (fun z ↦ (u z : ℂ) - 1)) : u ∈ sobolevGaugeGroup s := by
-  have hre : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ).re - 1) :=
-    (reCLM.contDiff.comp hsmooth).sub contDiff_const
-  have him : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ).im) := imCLM.contDiff.comp hsmooth
-  refine ⟨hsmooth.continuous, mem_realSobolevFunctions_of_hasCompactSupport hre ?_ s 2,
-    mem_realSobolevFunctions_of_hasCompactSupport him ?_ s 2⟩
-  · simpa only [Function.comp_def, sub_re, one_re] using hc.comp_left (g := re) zero_re
-  · simpa only [Function.comp_def, sub_im, one_im, sub_zero] using hc.comp_left (g := im) zero_im
+/-- **The smooth subgroup of `G_s`** is its intersection with the smooth framed gauge group: it
+consists of the elements of `G_s` that are smooth. -/
+theorem mem_sobolevGaugeGroup_inf_framedGaugeGroup {s : ℝ} (hs : 1 < s) (u : ℂ → Circle) :
+    u ∈ sobolevGaugeGroup hs ⊓ framedGaugeGroup ↔
+      u ∈ sobolevGaugeGroup hs ∧ ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) :=
+  ⟨fun h ↦ ⟨Subgroup.mem_inf.1 h |>.1, ((mem_framedGaugeGroup u).1 (Subgroup.mem_inf.1 h).2).1⟩,
+    fun h ↦ Subgroup.mem_inf.2 ⟨h.1, mem_framedGaugeGroup_of_mem_sobolevGaugeGroup h.1 h.2⟩⟩
 
-/-- A smooth compactly supported phase `f` gives the gauge `exp (i f)` in every Sobolev framed
-gauge group. -/
-theorem exp_mem_sobolevGaugeGroup {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f) (hc : HasCompactSupport f) :
-    (fun z ↦ Circle.exp (f z)) ∈ sobolevGaugeGroup s := by
-  refine mem_sobolevGaugeGroup_of_hasCompactSupport ?_ ?_
-  · simpa only [Circle.coe_exp, Function.comp_def, ofRealCLM_apply] using
-      ((ofRealCLM.contDiff.comp hf).mul (contDiff_const (c := I))).cexp
-  · refine hc.mono fun z hz h0 ↦ hz ?_
-    simp [h0]
+/-- **Compactly supported smooth gauges lie in `G_s`**: if `u` is smooth and `u - 1` has compact
+support, then `u` lies in every `G_s`. -/
+theorem mem_sobolevGaugeGroup_of_hasCompactSupport {s : ℝ} (hs : 1 < s) {u : ℂ → Circle}
+    (hsmooth : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)))
+    (hc : HasCompactSupport (fun z ↦ (u z : ℂ) - 1)) : u ∈ sobolevGaugeGroup hs := by
+  have hd : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ) - 1) := hsmooth.sub contDiff_const
+  refine (mem_sobolevGaugeGroup hs u).2 ⟨continuous_induced_rng.2 hsmooth.continuous, ?_, ?_⟩
+  · convert mem_realSobolevFunctions_of_hasCompactSupport (reCLM.contDiff.comp hd)
+      (hc.comp_left (g := re) zero_re) s using 1
+    ext z
+    simp
+  · convert mem_realSobolevFunctions_of_hasCompactSupport (imCLM.contDiff.comp hd)
+      (hc.comp_left (g := im) zero_im) s using 1
+    ext z
+    simp
+
+/-- A smooth compactly supported phase `f` gives the gauge `exp (i f)` in every `G_s`. -/
+theorem exp_mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f)
+    (hc : HasCompactSupport f) : (fun w ↦ Circle.exp (f w)) ∈ sobolevGaugeGroup hs := by
+  refine mem_sobolevGaugeGroup_of_hasCompactSupport hs ?_ ?_
+  · exact ((mem_framedGaugeGroup _).1 (exp_mem_framedGaugeGroup hf hc.is_zero_at_infty)).1
+  · simpa only [Function.comp_def, Circle.coe_exp] using
+      hc.comp_left (g := fun t : ℝ ↦ Complex.exp (t * I) - 1) (by simp)
+
+/-- **The connection increment of a Sobolev gauge.** For `s > 1` and a `C¹` gauge `u ∈ G_(s+1)`,
+the real one-form `Im (u⁻¹ du)` has coefficients in `H^s`: in each direction `v`,
+`Im (u⁻¹ du) (v) = Re u · ∂_v Im u - Im u · ∂_v Re u`, a combination of products of `H^s`
+functions. Hence the action `a ↦ a - u⁻¹ du` preserves connections whose coefficients differ from
+a reference by `H^s` functions. -/
+theorem gaugeForm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s) {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup (hs.trans (lt_add_one s)))
+    (hC1 : ContDiff ℝ 1 (fun z ↦ (u z : ℂ))) (v : ℂ) :
+    (fun z ↦ gaugeForm u z v) ∈ realSobolevFunctions ℂ s 2 := by
+  obtain ⟨-, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup _ u).1 hu
+  have hmono := realSobolevFunctions_mono (E := ℂ) (p := 2) (by norm_num) (by norm_num)
+    (lt_add_one s).le
+  have hmul {f g : ℂ → ℝ} (hf : f ∈ realSobolevFunctions ℂ s 2)
+      (hg : g ∈ realSobolevFunctions ℂ s 2) : f * g ∈ realSobolevFunctions ℂ s 2 :=
+    mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) hf hg
+  -- The directional derivatives of `Re u - 1` and `Im u` are those of `Re u` and `Im u`.
+  have hre : ContDiff ℝ 1 (fun z ↦ (u z : ℂ).re - 1) :=
+    (reCLM.contDiff.comp hC1).sub contDiff_const
+  have him : ContDiff ℝ 1 (fun z ↦ (u z : ℂ).im) := imCLM.contDiff.comp hC1
+  have hd (z : ℂ) := (hC1.differentiable one_ne_zero z).hasFDerivAt
+  have hDre : (fun z ↦ fderiv ℝ (fun z ↦ (u z : ℂ).re - 1) z v) =
+      fun z ↦ (fderiv ℝ (fun z ↦ (u z : ℂ)) z v).re := by
+    ext z
+    have h : HasFDerivAt (fun z ↦ (u z : ℂ).re - 1)
+        (reCLM.comp (fderiv ℝ (fun z ↦ (u z : ℂ)) z)) z :=
+      (reCLM.hasFDerivAt.comp z (hd z)).sub_const 1
+    simp [h.fderiv]
+  have hDim : (fun z ↦ fderiv ℝ (fun z ↦ (u z : ℂ).im) z v) =
+      fun z ↦ (fderiv ℝ (fun z ↦ (u z : ℂ)) z v).im := by
+    ext z
+    have h : HasFDerivAt (fun z ↦ (u z : ℂ).im)
+        (imCLM.comp (fderiv ℝ (fun z ↦ (u z : ℂ)) z)) z :=
+      imCLM.hasFDerivAt.comp z (hd z)
+    simp [h.fderiv]
+  have hDre_mem := fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num)
+    (by linarith) hre hu₁ v
+  have hDim_mem := fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num)
+    (by linarith) him hu₂ v
+  rw [hDre] at hDre_mem
+  rw [hDim] at hDim_mem
+  -- `Im (conj u · du(v)) = (Re u - 1) ∂_v Im u + ∂_v Im u - Im u ∂_v Re u`.
+  convert add_mem (add_mem (hmul (hmono hu₁) hDim_mem) hDim_mem)
+    (neg_mem (hmul (hmono hu₂) hDre_mem)) using 1
+  ext z
+  simp only [gaugeForm_apply, mul_im, conj_re, conj_im, Pi.add_apply, Pi.neg_apply,
+    Pi.mul_apply]
+  ring
 
 end TauCeti.Vortex
