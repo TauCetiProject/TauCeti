@@ -28,8 +28,8 @@ identification, bases of `K.X i` and `L.X i` give the basis `HomologicalComplex.
 `(K ⊞ L).X i`, made of their images under the two biproduct inclusions; this is how a direct sum
 of based complexes is based.
 
-On elements, the biproduct inclusions, projections, `biprod.lift` and `biprod.desc` act
-componentwise (`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`),
+On elements, `biprod.lift` and `biprod.desc` act componentwise
+(`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`),
 which is how elements of the middle term of a Mayer–Vietoris sequence are handled.
 
 ## References

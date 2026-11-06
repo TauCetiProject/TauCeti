@@ -212,7 +212,7 @@ def mayerVietorisCochainδ (n m : ℕ) (h : n + 1 = m := by lia) :
 
 /-- The relative cochain Mayer–Vietoris connecting morphism is the connecting morphism of the
 relative cochain Mayer–Vietoris short exact sequence. -/
-lemma mayerVietorisCochainδ_eq (n m : ℕ) (h : n + 1 = m := by lia) :
+lemma mayerVietorisCochainδ_def (n m : ℕ) (h : n + 1 = m := by lia) :
     mayerVietorisCochainδ R k M sqL sqR n m h =
       (shortExact_mayerVietorisCochainShortComplex R k M sqL sqR).δ n m (by simpa) :=
   (rfl)

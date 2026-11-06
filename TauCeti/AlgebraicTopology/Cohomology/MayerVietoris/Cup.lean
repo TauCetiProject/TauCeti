@@ -259,7 +259,7 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     have := ConcreteCategory.congr_hom
       (singularCohomologyMayerVietorisδ_comp_homologyMap R k M hU hV hUV p (p + 1) rfl) a
     rw [ConcreteCategory.comp_apply, ← hζ, moduleCat_homologyMap_homologyπ,
-      SSet.mayerVietorisCochainδ_eq R k M
+      SSet.mayerVietorisCochainδ_def R k M
       (isPushout_toSSet_inter_smallSingularSubcomplex U V) p (p + 1) rfl] at this
     exact this.symm
   obtain ⟨x₂, α, hd, hg, rfl⟩ := hS.moduleCat_exists_d_eq_of_δ_eq p (p + 1) rfl a _ hδ
@@ -273,7 +273,7 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     (M := L) (smallSingularPairToUnion hAU hBV)) (p + q + 1))).1 inferInstance
   rw [← ConcreteCategory.comp_apply, singularCohomologyPairMayerVietorisδ_comp_homologyMap T k L
       hAU hBV hU' hV' hA hB (p + q) (p + q + 1) rfl,
-    SSetPair.mayerVietorisCochainδ_eq T k L (isPushout_toSmallSingularPair_left hAU hBV)
+    SSetPair.mayerVietorisCochainδ_def T k L (isPushout_toSmallSingularPair_left hAU hBV)
       (isPushout_toSmallSingularPair_right hAU hBV) (p + q) (p + q + 1) rfl,
     ← hζ, TopPair.singularCohomologyMap, moduleCat_homologyMap_homologyπ,
     TopCat.singularCohomologyMap, moduleCat_homologyMap_homologyπ]
