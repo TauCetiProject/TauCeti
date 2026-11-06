@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.SpecialIsogeny
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IsogenyMultiplicative
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Frobenius
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PreservesTensors
+import TauCeti.Logic.Function.Iterate
 
 /-!
 # The special isogeny of the short-root type-G2 carrier
@@ -700,5 +701,29 @@ theorem specialIsogeny_specialIsogeny (g : points A) :
 theorem specialIsogeny_comp_specialIsogeny :
     (specialIsogeny A).comp (specialIsogeny A) = frobenius 1 A :=
   MonoidHom.ext fun g => specialIsogeny_specialIsogeny g
+
+/-- The `(2m+1)`-st power of the special isogeny is `3 ^ m`-Frobenius after the special
+isogeny. -/
+theorem specialIsogeny_pow_odd (m : ℕ) :
+    HPow.hPow (α := Monoid.End (points A)) (specialIsogeny A) (2 * m + 1) =
+      (frobenius m A).comp (specialIsogeny A) := by
+  apply MonoidHom.ext
+  intro g
+  have hsq : (specialIsogeny A : points A → points A) ∘ specialIsogeny A =
+      frobenius 1 A := funext (specialIsogeny_specialIsogeny (A := A))
+  calc
+    _ = (specialIsogeny A)^[2 * m + 1] g :=
+      congrFun (Monoid.End.coe_pow (M := points A) (specialIsogeny A) _) g
+    _ = (frobenius 1 A)^[m] (specialIsogeny A g) := by
+      rw [Function.iterate_add_apply, Function.iterate_one,
+        Function.iterate_mul, Function.iterate_two, hsq]
+    _ = (HPow.hPow (α := Monoid.End (points A)) (frobenius 1 A) m)
+        (specialIsogeny A g) :=
+      (congrFun (Monoid.End.coe_pow (M := points A) (frobenius 1 A) m) _).symm
+    _ = _ := by
+      have hpow := congrArg (fun f : Monoid.End (points A) => f (specialIsogeny A g))
+        (frobenius_pow 1 m A)
+      rw [Nat.one_mul] at hpow
+      exact hpow
 
 end TauCeti.G2ShortRoot.PrimeField

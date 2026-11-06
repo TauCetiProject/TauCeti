@@ -51,6 +51,8 @@ that any group below is finite, perfect, or simple.
 * `TauCeti.ReeG2LieIndex.AmbientGroup`: the algebraic-closure-valued points of the carrier.
 * `TauCeti.ReeG2LieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a
   Bourbaki-numbered node.
+* `TauCeti.ReeG2LieIndex.weightTorus`: its weight torus in the index's fundamental-weight
+  coordinates.
 * `TauCeti.ReeG2LieIndex.frobenius` and `TauCeti.ReeG2LieIndex.primeFrobenius`: the `q`-power and
   `3`-power Frobenius endomorphisms of the ambient group.
 
@@ -148,6 +150,37 @@ theorem weightTorusPoints_conj_simpleRootSubgroup (i : Fin d.1.rank)
   rw [simpleRootSubgroup_def]
   exact G2ShortRoot.PrimeField.weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex
     DynkinType.valid_G2 _ _ s u
+
+/-- The represented weight torus in the validated index's fundamental-weight coordinates. -/
+def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
+  (G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure).comp
+    (MonoidHom.pi fun i : Fin 2 =>
+      Pi.evalMonoidHom (fun _ : Fin d.1.rank => d.1.Closureˣ) ((finCongr d.rank_eq_two).symm i))
+
+/-- The index torus is the carrier torus after the canonical rank-two reindexing.
+
+This is not a simp lemma: character-map equations retain the index torus as their normal form. -/
+theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
+    d.weightTorus s = G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure
+      (fun i => s ((finCongr d.rank_eq_two).symm i)) :=
+  (rfl)
+
+/-- On an explicit Ree parameter the index torus is the carrier torus, with no coordinate
+permutation. -/
+@[simp]
+theorem weightTorus_of (m : ℕ) (hvalid : (LieTypeIndex.reeG2 m).Valid) :
+    (of m hvalid).weightTorus =
+      @G2ShortRoot.PrimeField.weightTorusPoints (of m hvalid).1.Closure _
+        (of m hvalid).algebraZModThree := by
+  rw [weightTorus]
+  have hreindex : (MonoidHom.pi fun i : Fin 2 =>
+      Pi.evalMonoidHom (fun _ : Fin (of m hvalid).1.rank => (of m hvalid).1.Closureˣ)
+        ((finCongr (of m hvalid).rank_eq_two).symm i)) =
+      MonoidHom.id (Fin 2 → (of m hvalid).1.Closureˣ) := by
+    ext s i
+    rfl
+  rw [hreindex]
+  exact MonoidHom.comp_id _
 
 /-! ## The Frobenius endomorphisms -/
 
