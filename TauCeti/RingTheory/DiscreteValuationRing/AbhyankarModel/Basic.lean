@@ -157,20 +157,30 @@ theorem abhyankarModel_free [Nontrivial B] (ϖ u : B) {e d : ℕ} (he : 1 ≤ e)
   exact ⟨.trans (S := standardTameCover B u e), by
     rw [← Module.finrank_mul_finrank B (standardTameCover B u e), h₁, h₂]⟩
 
+section KummerMap
+
+variable {A : Type*} [CommRing A] [Algebra A B] {π : A} {ϖ u : B} {e d : ℕ}
+
+/-- The map from the Kummer base to the Abhyankar model, sending the Kummer root to `x`. -/
+noncomputable def abhyankarModelKummerHom
+    (hπ : algebraMap A B π = u * ϖ ^ e) :
+    standardTameCover A π (e * d) →ₐ[A] abhyankarModel ϖ u e d :=
+  AdjoinRoot.liftAlgHom _ (Algebra.ofId A _) (abhyankarModelRoot ϖ u e d) (by
+    simp only [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, Algebra.toRingHom_ofId,
+      abhyankarModelRoot_pow_mul]
+    rw [IsScalarTower.algebraMap_apply A B _, hπ, sub_self])
+
+/-- The Kummer root maps to the root `x` of the Abhyankar model. -/
+@[simp]
+theorem abhyankarModelKummerHom_root (hπ : algebraMap A B π = u * ϖ ^ e) :
+    abhyankarModelKummerHom hπ (AdjoinRoot.root _) = abhyankarModelRoot ϖ u e d :=
+  AdjoinRoot.liftAlgHom_root ..
+
+end KummerMap
+
 section Away
 
 variable (ϖ u : B) (e d : ℕ)
-
-/-- The root extraction `B[x]/(x ^ (e d) − u ϖ ^ e)` maps to the Abhyankar model by `x ↦ x`. -/
-private noncomputable def toAbhyankarModel :
-    standardTameCover B (u * ϖ ^ e) (e * d) →ₐ[B] abhyankarModel ϖ u e d :=
-  AdjoinRoot.liftAlgHom _ (Algebra.ofId B _) (abhyankarModelRoot ϖ u e d) (by
-    simp [abhyankarModelRoot_pow_mul])
-
-private theorem toAbhyankarModel_root :
-    toAbhyankarModel ϖ u e d (AdjoinRoot.root (X ^ (e * d) - C (u * ϖ ^ e))) =
-      abhyankarModelRoot ϖ u e d :=
-  AdjoinRoot.liftAlgHom_root _ _ _ _
 
 variable (Cϖ Dϖ : Type*) [CommRing Cϖ] [CommRing Dϖ]
   [Algebra (standardTameCover B (u * ϖ ^ e) (e * d)) Cϖ]
@@ -245,7 +255,9 @@ private theorem fromAbhyankarModel_of (b : standardTameCover B u e) :
 
 omit [IsLocalization.Away (algebraMap B (standardTameCover B (u * ϖ ^ e) (e * d)) ϖ) Cϖ] in
 private theorem isUnit_toAbhyankarModel_away :
-    IsUnit (((IsScalarTower.toAlgHom B _ Dϖ).comp (toAbhyankarModel ϖ u e d))
+    IsUnit (((IsScalarTower.toAlgHom B _ Dϖ).comp
+      (abhyankarModelKummerHom (A := B) (π := u * ϖ ^ e)
+        (ϖ := ϖ) (u := u) (e := e) (d := d) (by simp)))
       (algebraMap B (standardTameCover B (u * ϖ ^ e) (e * d)) ϖ)) := by
   rw [AlgHom.commutes]; exact isUnit_algebraMap_away_right ϖ u e d Dϖ
 
@@ -263,7 +275,9 @@ noncomputable def abhyankarModelAwayAlgEquiv : Cϖ ≃ₐ[B] Dϖ :=
   let F := IsLocalization.Away.liftAlgHom (S := Cϖ) _ hF₀
   let G := IsLocalization.Away.liftAlgHom (S := Dϖ) _ hG₀
   have hF (z : standardTameCover B (u * ϖ ^ e) (e * d)) :
-      F (algebraMap _ Cϖ z) = algebraMap _ Dϖ (toAbhyankarModel ϖ u e d z) :=
+      F (algebraMap _ Cϖ z) = algebraMap _ Dϖ
+        (abhyankarModelKummerHom (A := B) (π := u * ϖ ^ e)
+          (ϖ := ϖ) (u := u) (e := e) (d := d) (by simp) z) :=
     IsLocalization.Away.lift_eq _ hF₀ z
   have hG (z : abhyankarModel ϖ u e d) :
       G (algebraMap _ Dϖ z) = fromAbhyankarModel ϖ u e d Cϖ z :=
@@ -281,7 +295,7 @@ noncomputable def abhyankarModelAwayAlgEquiv : Cϖ ≃ₐ[B] Dϖ :=
           fromAbhyankarModel_of, fromAbhyankarModelBase_root]
         -- `F` fixes `x` and inverts `ϖ`, and `x ^ d = ϖ y` in the Abhyankar model.
         have hx : F (awayRoot ϖ u e d Cϖ) = algebraMap _ Dϖ (abhyankarModelRoot ϖ u e d) := by
-          rw [hF, toAbhyankarModel_root]
+          rw [hF, abhyankarModelKummerHom_root]
         have hw : F ↑(isUnit_algebraMap_away_left ϖ u e d Cϖ).unit⁻¹ * algebraMap B Dϖ ϖ = 1 := by
           rw [← F.commutes, ← map_mul, IsUnit.val_inv_mul, map_one]
         have hy : algebraMap _ Dϖ (abhyankarModelRoot ϖ u e d) ^ d =
@@ -295,12 +309,12 @@ noncomputable def abhyankarModelAwayAlgEquiv : Cϖ ≃ₐ[B] Dϖ :=
         linear_combination algebraMap (abhyankarModel ϖ u e d) Dϖ
           (AdjoinRoot.of _ (AdjoinRoot.root (X ^ e - C u))) * hw
       · simp only [AlgHom.comp_apply, AlgHom.id_apply, hD, hG, fromAbhyankarModel_root, hF,
-          toAbhyankarModel_root])
+          abhyankarModelKummerHom_root])
     (by
       apply IsLocalization.algHom_ext
         (.powers (algebraMap B (standardTameCover B (u * ϖ ^ e) (e * d)) ϖ))
       ext
-      simp only [AlgHom.comp_apply, AlgHom.id_apply, hC, hF, toAbhyankarModel_root, hG,
+      simp only [AlgHom.comp_apply, AlgHom.id_apply, hC, hF, abhyankarModelKummerHom_root, hG,
         fromAbhyankarModel_root])
 
 /-- The isomorphism `abhyankarModelAwayAlgEquiv` sends the root `x` of the root extraction to the
@@ -311,7 +325,8 @@ theorem abhyankarModelAwayAlgEquiv_root :
         (algebraMap _ Cϖ (AdjoinRoot.root (X ^ (e * d) - C (u * ϖ ^ e)))) =
       algebraMap _ Dϖ (abhyankarModelRoot ϖ u e d) :=
   (IsLocalization.Away.lift_eq _ (isUnit_toAbhyankarModel_away ϖ u e d Dϖ) _).trans
-    (congrArg _ (toAbhyankarModel_root ϖ u e d))
+    (congrArg _ (abhyankarModelKummerHom_root
+      (A := B) (π := u * ϖ ^ e) (ϖ := ϖ) (u := u) (e := e) (d := d) (by simp)))
 
 /-- The inverse of `abhyankarModelAwayAlgEquiv` sends the element `y` of the Abhyankar model to
 `x ^ d / ϖ`. This is not `@[simp]`: simp rewrites the `algebraMap` inside the relator
