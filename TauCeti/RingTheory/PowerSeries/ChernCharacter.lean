@@ -15,7 +15,7 @@ The Chern character of a complex vector bundle `E` of rank `n` with Chern roots 
 `ch(E) = ∑ᵢ exp(xᵢ)`. Its degree-`2k` component `(x₁ᵏ + ⋯ + xₙᵏ) / k!` is a symmetric function of
 the roots, hence a polynomial `chₖ(c₁, …, cₙ)` in the Chern classes, which are the elementary
 symmetric functions of the roots. Following Milnor and Stasheff (§16), `chₖ = sₖ / k!`, where
-`sₖ` is the integral Newton polynomial `TauCeti.newtonPolynomial`. This file defines these
+`sₖ` is the integral Newton polynomial `TauCeti.newtonMvPolynomial`. This file defines these
 universal rational polynomials and proves, for formal roots in any commutative `ℚ`-algebra, the
 identities the Chern character inherits from the exponential: `ch₀` is the rank, the generating
 function is the sum of the exponentials of the roots, and the root forms of
@@ -30,7 +30,7 @@ identities for the Chern character of vector bundles.
 
 ## Main results
 
-* `TauCeti.chernCharacterPolynomial_eq_C_mul_newtonPolynomial`,
+* `TauCeti.chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial`,
   `TauCeti.C_factorial_mul_chernCharacterPolynomial`: `chₖ` is the rational Newton polynomial
   divided by `k!`, and `k! chₖ` is the integral Newton polynomial.
 * `TauCeti.aeval_multiset_esymm_chernCharacterPolynomial`: for a multiset `s` of `n` roots,
@@ -69,40 +69,40 @@ variable (n k : ℕ)
 complex vector bundle of rank `n`, it gives the degree-`2k` component of the Chern character.
 The variable `j : Fin n` stands for `c_{j+1}`. -/
 noncomputable def chernCharacterPolynomial : MvPolynomial (Fin n) ℚ :=
-  C (k ! : ℚ)⁻¹ * map (Int.castRingHom ℚ) (newtonPolynomial ℤ n k)
+  C (k ! : ℚ)⁻¹ * map (Int.castRingHom ℚ) (newtonMvPolynomial ℤ n k)
 
 /-- The definition of `TauCeti.chernCharacterPolynomial`: `chₖ = sₖ / k!` with `sₖ` the integral
 Newton polynomial. -/
 theorem chernCharacterPolynomial_def :
     chernCharacterPolynomial n k =
-      C (k ! : ℚ)⁻¹ * map (Int.castRingHom ℚ) (newtonPolynomial ℤ n k) :=
+      C (k ! : ℚ)⁻¹ * map (Int.castRingHom ℚ) (newtonMvPolynomial ℤ n k) :=
   (rfl)
 
 /-- The Chern character polynomial `chₖ` is the rational Newton polynomial divided by `k!`. -/
-theorem chernCharacterPolynomial_eq_C_mul_newtonPolynomial :
-    chernCharacterPolynomial n k = C (k ! : ℚ)⁻¹ * newtonPolynomial ℚ n k := by
-  rw [chernCharacterPolynomial_def, map_newtonPolynomial]
+theorem chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial :
+    chernCharacterPolynomial n k = C (k ! : ℚ)⁻¹ * newtonMvPolynomial ℚ n k := by
+  rw [chernCharacterPolynomial_def, map_newtonMvPolynomial]
 
 /-- **Integrality of the Chern character**: `k! chₖ` is the integral Newton polynomial `sₖ`. -/
 theorem C_factorial_mul_chernCharacterPolynomial :
     C (k ! : ℚ) * chernCharacterPolynomial n k =
-      map (Int.castRingHom ℚ) (newtonPolynomial ℤ n k) := by
+      map (Int.castRingHom ℚ) (newtonMvPolynomial ℤ n k) := by
   rw [chernCharacterPolynomial_def, ← mul_assoc, ← C_mul,
     mul_inv_cancel₀ (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero k)), C_1, one_mul]
 
 /-- **The degree-zero Chern character is the rank**: `ch₀ = n`. -/
 @[simp]
 theorem chernCharacterPolynomial_zero_right : chernCharacterPolynomial n 0 = n := by
-  simp [chernCharacterPolynomial_eq_C_mul_newtonPolynomial]
+  simp [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial]
 
 /-- **The linear Chern character**: `ch₁ = c₁`. -/
 theorem chernCharacterPolynomial_one_right : chernCharacterPolynomial (n + 1) 1 = X 0 := by
-  simp [chernCharacterPolynomial_eq_C_mul_newtonPolynomial, newtonPolynomial_one_right]
+  simp [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, newtonMvPolynomial_one_right]
 
 /-- **The quadratic Chern character**: in at least two variables, `ch₂ = (c₁² - 2c₂) / 2`. -/
 theorem chernCharacterPolynomial_two_right :
     chernCharacterPolynomial (n + 2) 2 = C (1 / 2 : ℚ) * (X 0 ^ 2 - 2 * X 1) := by
-  rw [chernCharacterPolynomial_eq_C_mul_newtonPolynomial, newtonPolynomial_two_right]
+  rw [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, newtonMvPolynomial_two_right]
   norm_num [Nat.factorial]
 
 /-- **The cubic Chern character**: in at least three variables,
@@ -110,7 +110,7 @@ theorem chernCharacterPolynomial_two_right :
 theorem chernCharacterPolynomial_three_right :
     chernCharacterPolynomial (n + 3) 3 =
       C (1 / 6 : ℚ) * (X 0 ^ 3 - 3 * X 0 * X 1 + 3 * X 2) := by
-  rw [chernCharacterPolynomial_eq_C_mul_newtonPolynomial, newtonPolynomial_three_right]
+  rw [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, newtonMvPolynomial_three_right]
   norm_num [Nat.factorial]
 
 variable {n k}
@@ -124,8 +124,8 @@ commutative `ℚ`-algebra, `chₖ(e₁(s), …, eₙ(s)) = (∑_{x ∈ s} xᵏ) 
 theorem aeval_multiset_esymm_chernCharacterPolynomial (s : Multiset S) (hs : s.card = n) :
     aeval (fun j : Fin n => s.esymm (j + 1)) (chernCharacterPolynomial n k) =
       algebraMap ℚ S (k ! : ℚ)⁻¹ * (s.map (· ^ k)).sum := by
-  rw [chernCharacterPolynomial_eq_C_mul_newtonPolynomial, map_mul, aeval_C,
-    aeval_multiset_esymm_newtonPolynomial s hs]
+  rw [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, map_mul, aeval_C,
+    aeval_multiset_esymm_newtonMvPolynomial s hs]
 
 /-- **Additivity of the Chern character**: on the union of a family `s` of `n` roots and a family
 `t` of `m` roots, the Chern character polynomial is the sum of its values on `s` and on `t`. This
@@ -146,7 +146,7 @@ character polynomial for `n + 1` variables gives the one for `n` variables. -/
 theorem aeval_snoc_zero_chernCharacterPolynomial (hk : k ≠ 0) (c : Fin n → S) :
     aeval (Fin.snoc c 0) (chernCharacterPolynomial (n + 1) k) =
       aeval c (chernCharacterPolynomial n k) := by
-  simp [chernCharacterPolynomial_eq_C_mul_newtonPolynomial, hk]
+  simp [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, hk]
 
 end CommSemiring
 
@@ -215,8 +215,8 @@ passing to the dual bundle does, multiplies `chₖ` by `(-1)ᵏ`. -/
 theorem aeval_neg_one_pow_mul_chernCharacterPolynomial (c : Fin n → S) :
     aeval (fun j : Fin n => (-1) ^ (j.val + 1) * c j) (chernCharacterPolynomial n k) =
       (-1) ^ k * aeval c (chernCharacterPolynomial n k) := by
-  rw [chernCharacterPolynomial_eq_C_mul_newtonPolynomial, map_mul, map_mul, aeval_C, aeval_C,
-    aeval_neg_one_pow_mul_newtonPolynomial, mul_left_comm]
+  rw [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, map_mul, map_mul, aeval_C, aeval_C,
+    aeval_neg_one_pow_mul_newtonMvPolynomial, mul_left_comm]
 
 end CommRing
 
