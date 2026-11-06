@@ -68,12 +68,21 @@ private lemma one_add_sq_div_mul_div_add_eq (t : ℝ) {y : ℝ} (hy : y ≠ 0) (
   field_simp
   ring
 
+/-- The reflected Nevanlinna kernel is a constant minus a multiple of the Stieltjes kernel:
+`(t y - 1) / (t + y) = t - (1 + t ^ 2) (t + y)⁻¹`. -/
+private lemma reflected_nevanlinnaKernel_eq (t : ℝ) {y : ℝ} (hty : t + y ≠ 0) :
+    (t * y - 1) / (t + y) = t - (1 + t ^ 2) * (t + y)⁻¹ := by
+  field_simp
+  ring
+
 /-- The reflected Nevanlinna kernel is integrable against a finite measure on `ℝ≥0`, since it
 differs from the Stieltjes kernel `(t + y)⁻¹` by an affine change. -/
 private lemma integrable_reflected_nevanlinnaKernel (ν : Measure ℝ≥0) [IsFiniteMeasure ν] {t : ℝ}
     (ht : 0 < t) : Integrable (fun y : ℝ≥0 => (t * y - 1) / (t + y)) ν :=
   ((integrable_const t).sub ((integrable_inv_add (integrable_stieltjesWeight ν) ht).const_mul
-    (1 + t ^ 2))).congr (.of_forall fun y => by simp only [Pi.sub_apply]; field_simp; ring)
+    (1 + t ^ 2))).congr (.of_forall fun y => by
+      simp only [Pi.sub_apply]
+      exact (reflected_nevanlinnaKernel_eq t (by positivity)).symm)
 
 /-- The reflected Nevanlinna integral splits into a constant and a multiple of the Stieltjes
 transform: `(t y - 1) / (t + y) = t - (1 + t ^ 2) (t + y)⁻¹`. -/
@@ -81,7 +90,8 @@ private lemma integral_reflected_nevanlinnaKernel (ν : Measure ℝ≥0) [IsFini
     (ht : 0 < t) : ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν =
       ν.real univ * t - (1 + t ^ 2) * ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν := by
   rw [integral_congr_ae (g := fun y : ℝ≥0 => t - (1 + t ^ 2) * (t + (y : ℝ))⁻¹)
-    (.of_forall fun y => by field_simp; ring), integral_sub (integrable_const t)
+    (.of_forall fun y => reflected_nevanlinnaKernel_eq t (by positivity)),
+    integral_sub (integrable_const t)
     ((integrable_inv_add (integrable_stieltjesWeight ν) ht).const_mul _), integral_const_mul,
     integral_const, smul_eq_mul]
 
@@ -113,12 +123,13 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
   have hmeas : AEMeasurable (fun y : ℝ≥0 => (y : ℝ≥0∞)⁻¹) ν := by fun_prop
   have hlint := lintegral_inv_le_of_forall_integral_inv_add_le (integrable_stieltjesWeight ν) hbound
   have hlinttop := (hlint.trans_lt ENNReal.ofReal_lt_top).ne
-  have hane : ∀ᵐ y ∂ν, y ≠ 0 := (ae_lt_top' hmeas hlinttop).mono fun y hy => by
+  have hfin := ae_lt_top' hmeas hlinttop
+  have hane : ∀ᵐ y ∂ν, y ≠ 0 := hfin.mono fun y hy => by
     simpa [pos_iff_ne_zero] using hy
   have hyint : Integrable (fun y : ℝ≥0 => ((y : ℝ))⁻¹) ν := by
     simpa [ENNReal.toReal_inv] using integrable_toReal_of_lintegral_ne_top hmeas hlinttop
   have hIc : ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν ≤ c := by
-    simpa [ENNReal.toReal_inv] using (integral_toReal hmeas (ae_lt_top' hmeas hlinttop)).trans_le
+    simpa [ENNReal.toReal_inv] using (integral_toReal hmeas hfin).trans_le
       (ENNReal.toReal_le_of_le_ofReal hc hlint)
   -- The weighted measure carrying the complete-Bernstein representation.
   set d : ℝ≥0 → ℝ≥0 := fun y => (1 + y ^ 2) / y
@@ -131,10 +142,16 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
     rw [hμdef, integrable_withDensity_iff_integrable_smul (by fun_prop)]
     refine (hyint.add (integrable_const (1 : ℝ))).mono' (by fun_prop) ?_
     filter_upwards [hane] with y hy
+    have hy' : (y : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hy
+    have hy1 : 1 + (y : ℝ) ≠ 0 := by positivity
+    -- `y⁻¹ + 1` exceeds the density times the weight by `2 / (1 + y)`.
+    have hsub : (y : ℝ)⁻¹ + 1 - (1 + (y : ℝ) ^ 2) / (y : ℝ) * (1 + (y : ℝ))⁻¹ =
+        2 / (1 + (y : ℝ)) := by
+      field_simp
+      ring
     rw [NNReal.smul_def, smul_eq_mul, stieltjesWeight_apply, hdcoe, Real.norm_eq_abs,
-      abs_of_nonneg (by positivity), Pi.add_apply, ← sub_nonneg]
-    field_simp
-    nlinarith [y.coe_nonneg]
+      abs_of_nonneg (by positivity), Pi.add_apply, ← sub_nonneg, hsub]
+    positivity
   -- The reflected Nevanlinna integral in terms of the weighted measure.
   refine ⟨stieltjesBernsteinTransform μ (c - ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν).toNNReal b.toNNReal,
     isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0 hμw, fun t ht => ?_⟩
