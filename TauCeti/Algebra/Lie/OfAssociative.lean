@@ -121,22 +121,23 @@ the image of `leftRegularRep q`. -/
 theorem leftRegularRep_comp_mulRight (q : L →ₗ⁅R⁆ A) (x : L) (b : A) :
     (leftRegularRep q x).comp (LinearMap.mulRight R b) =
       (LinearMap.mulRight R b).comp (leftRegularRep q x) := by
-  rw [leftRegularRep_eq_mulLeft, ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp]
-  exact LinearMap.commute_mulLeft_right (R := R) (q x) b
+  ext
+  simp [mul_assoc]
 
 /-- **Left ideals are invariant** under the left-regular representation: the action is by left
 multiplication, which is exactly what a left ideal absorbs. -/
-theorem leftRegularRep_mem_of_mem (q : L →ₗ⁅R⁆ A) (I : Submodule A A) (x : L) {a : A}
+theorem leftRegularRep_mem_of_mem (q : L →ₗ⁅R⁆ A) (I : Ideal A) (x : L) {a : A}
     (ha : a ∈ I) : leftRegularRep q x a ∈ I := by
-  rw [leftRegularRep_apply, ← smul_eq_mul]
-  exact I.smul_mem _ ha
+  rw [leftRegularRep_apply]
+  exact I.mul_mem_left (q x) ha
 
 /-- **The inner derivation action is the left-regular action minus right multiplication.** The two
 `L`-module structures on `A` that `q` produces are therefore genuinely different; only the
 left-regular one is built here. -/
 theorem ad_apply_eq_leftRegularRep_sub_mulRight (q : L →ₗ⁅R⁆ A) (x : L) :
     LieAlgebra.ad R A (q x) = leftRegularRep q x - LinearMap.mulRight R (q x) := by
-  rw [leftRegularRep_eq_mulLeft, LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply]
+  ext
+  simp [Ring.lie_def]
 
 end LieHom
 
