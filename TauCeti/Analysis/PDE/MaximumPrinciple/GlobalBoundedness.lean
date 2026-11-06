@@ -323,6 +323,28 @@ private theorem ae_value_le_add_of_toReal_eLpNorm_posPartAbove_le (hOmega : mu O
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 hnull] with x hx
     exact not_lt.1 hx
 
+/-- The exponent facts behind Stampacchia's method: if `s (1 - 1/r) > 2` then `s > 0`,
+`2/s < 1 - 1/r`, `1/r + 1/s ≤ 1` and `β = s (1 - 1/r - 1/s) = s (1 - 1/r) - 1 > 1`. -/
+private theorem exponent_facts {r s : ℝ≥0} (hrs : 2 < (s : ℝ) * (1 - (r : ℝ)⁻¹)) :
+    0 < (s : ℝ) ∧ 2 / (s : ℝ) < 1 - (r : ℝ)⁻¹ ∧ (r : ℝ)⁻¹ + (s : ℝ)⁻¹ ≤ 1 ∧
+      (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) = (s : ℝ) * (1 - (r : ℝ)⁻¹) - 1 ∧
+      1 < (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) := by
+  have hs0 : (0 : ℝ) < s := by
+    rcases (NNReal.coe_nonneg s).eq_or_lt with hs | hs
+    · rw [← hs, zero_mul] at hrs
+      norm_num at hrs
+    · exact hs
+  have h2s : 2 / (s : ℝ) < 1 - (r : ℝ)⁻¹ := by
+    rw [div_lt_iff₀ hs0]
+    linarith
+  have hβ_eq : (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) = (s : ℝ) * (1 - (r : ℝ)⁻¹) - 1 := by
+    field_simp
+  refine ⟨hs0, h2s, ?_, hβ_eq, by linarith⟩
+  have : (s : ℝ)⁻¹ ≤ 2 / s := by
+    rw [div_eq_mul_inv]
+    linarith [inv_pos.2 hs0]
+  linarith
+
 /-- **Stampacchia's global bound.** Let `Ω` have finite measure, let `a` be measurable and
 uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `c` be bounded, measurable and
 nonnegative. Suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality `‖v‖_{Lˢ} ≤ S ‖∇v‖_{L²}`,
@@ -357,25 +379,10 @@ theorem UniformlyEllipticOn.ae_value_le_add_of_forall_eLpNorm_le
       k + 2 ^ (((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)) * S ^ 2 *
         (eLpNorm f r (mu.restrict Omega)).toReal / lam *
           mu.real Omega ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ)) := by
-  -- The exponents: `s > 2`, `1/r + 1/s < 1`, and `s (1 - 1/r - 1/s) > 1`.
-  have hs0 : (0 : ℝ) < s := by
-    rcases (NNReal.coe_nonneg s).eq_or_lt with hs | hs
-    · rw [← hs, zero_mul] at hrs
-      norm_num at hrs
-    · exact hs
+  obtain ⟨hs0, -, hrs', hβ_eq, hβ⟩ := exponent_facts hrs
   have hs : 0 < s := by exact_mod_cast hs0
-  have hrs' : (r : ℝ)⁻¹ + (s : ℝ)⁻¹ ≤ 1 := by
-    have h2s : 2 / (s : ℝ) < 1 - (r : ℝ)⁻¹ := by
-      rw [div_lt_iff₀ hs0]
-      linarith
-    have : (s : ℝ)⁻¹ ≤ 2 / s := by
-      rw [div_eq_mul_inv]
-      linarith [inv_pos.2 hs0]
-    linarith
-  have hβ_eq : (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) = s * (1 - (r : ℝ)⁻¹) - 1 := by
-    field_simp
   have hbound := ae_value_le_add_of_toReal_eLpNorm_posPartAbove_le hOmega hs
-    (div_nonneg (by positivity) h.pos.le) (by rw [hβ_eq]; linarith) hk
+    (div_nonneg (by positivity) h.pos.le) hβ hk
     (fun l hkl => ((hS _ (W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl
       hboundary)).trans_lt (by finiteness)).ne)
     (fun l hkl => toReal_eLpNorm_posPartAbove_le h ha hc hc_bound hc_nonneg hOmega hr hs hrs' hS
@@ -428,6 +435,50 @@ private theorem exists_forall_eLpNorm_value_le_ofReal_mul_measureReal_rpow [None
   rw [← ENNReal.ofReal_toReal hOmega, ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg
     (by linarith), ← ENNReal.ofReal_mul hK.le, ← measureReal_def]
 
+/-- The Sobolev exponent `s = (1/2 - δ)⁻¹` used in the global bound: for `r > 1` with `n < 2 r`
+there are `δ` with `1/(2r) < δ < min (1/n) (1/2)`, and then `s = (1/2 - δ)⁻¹` satisfies
+`s (1 - 1/r) > 2` and `2/s = 1 - 2δ`. -/
+private theorem exists_sobolev_exponent {n : ℕ} {r : ℝ≥0} (hn0 : (0 : ℝ) < n) (hr : 1 < r)
+    (hrn : (n : ℝ) < 2 * r) :
+    ∃ δ : ℝ, 0 < δ ∧ δ < (n : ℝ)⁻¹ ∧ δ < 2⁻¹ ∧
+      2 < ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) * (1 - (r : ℝ)⁻¹) ∧
+      2 / ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) = 1 - 2 * δ := by
+  have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
+  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
+  have hlow : ((2 : ℝ) * r)⁻¹ < min (n : ℝ)⁻¹ 2⁻¹ :=
+    lt_min ((inv_lt_inv₀ (by positivity) hn0).2 hrn)
+      ((inv_lt_inv₀ (by positivity) two_pos).2 (by linarith))
+  obtain ⟨δ, hδ0, hδmin⟩ := exists_between hlow
+  obtain ⟨hδn, hδ2⟩ := lt_min_iff.1 hδmin
+  have hδpos : 0 < δ := (inv_pos.2 (by positivity)).trans hδ0
+  have hs : ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) = (2⁻¹ - δ)⁻¹ :=
+    Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
+  refine ⟨δ, hδpos, hδn, hδ2, ?_, ?_⟩
+  · rw [hs, ← div_eq_inv_mul, lt_div_iff₀ (by linarith)]
+    have : (r : ℝ)⁻¹ < 2 * δ := by
+      rw [mul_inv] at hδ0
+      linarith
+    linarith
+  · rw [hs]
+    field_simp
+
+/-- The exponent bookkeeping in the global bound: `(K m^(1/n - δ))² m^(1 - 1/r - 2/s) =
+K² m^(2/n - 1/r)` when `2/s = 1 - 2δ`. -/
+private theorem sq_mul_rpow_eq {n : ℕ} {r s K m δ : ℝ} (hm : 0 ≤ m) (hn0 : (0 : ℝ) < n)
+    (hr0 : 0 < r) (hrn : (n : ℝ) < 2 * r) (h2s : 2 / s = 1 - 2 * δ) :
+    (K * m ^ ((n : ℝ)⁻¹ - δ)) ^ 2 * m ^ (1 - r⁻¹ - 2 / s) = K ^ 2 * m ^ (2 / (n : ℝ) - r⁻¹) := by
+  have hsum : 2 * ((n : ℝ)⁻¹ - δ) + (1 - r⁻¹ - 2 / s) = 2 / n - r⁻¹ := by
+    rw [h2s]
+    ring
+  have hne : 2 / (n : ℝ) - r⁻¹ ≠ 0 := by
+    have : r⁻¹ < 2 / n := by
+      rw [inv_lt_comm₀ hr0 (by positivity), inv_div, div_lt_iff₀ (two_pos (α := ℝ))]
+      linarith
+    linarith
+  rw [mul_pow, ← Real.rpow_natCast (m ^ _), ← Real.rpow_mul hm, mul_assoc,
+    ← Real.rpow_add' hm (by rwa [Nat.cast_ofNat, mul_comm, hsum]), Nat.cast_ofNat,
+    mul_comm (((n : ℝ)⁻¹ - δ)), hsum]
+
 /-- **Stampacchia's global bound, in every dimension.** Let `n ≥ 1` be the dimension and let
 `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the normalization of the
 additive Haar measure `mu`, with the following property. Let `Ω` have finite measure, let `a` be
@@ -468,27 +519,10 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast Fintype.card_pos
   have hn0 : (0 : ℝ) < n := by linarith
   have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  -- The Sobolev exponent `s = (1/2 - δ)⁻¹`, with `1/(2r) < δ < min (1/n) (1/2)`.
-  have hlow : ((2 : ℝ) * r)⁻¹ < min (n : ℝ)⁻¹ 2⁻¹ :=
-    lt_min ((inv_lt_inv₀ (by positivity) hn0).2 hrn)
-      ((inv_lt_inv₀ (by positivity) two_pos).2 (by linarith))
-  obtain ⟨δ, hδ0, hδmin⟩ := exists_between hlow
-  obtain ⟨hδn, hδ2⟩ := lt_min_iff.1 hδmin
-  have hδpos : 0 < δ := (inv_pos.2 (by positivity)).trans hδ0
+  obtain ⟨δ, hδpos, hδn, hδ2, hrs, h2s⟩ := exists_sobolev_exponent hn0 hr hrn
   obtain ⟨K, hK, hsob⟩ :=
     exists_forall_eLpNorm_value_le_ofReal_mul_measureReal_rpow (mu := mu) hδpos hδn hδ2
   set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
-  have hs : (s : ℝ) = (2⁻¹ - δ)⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
-  have hrs : 2 < (s : ℝ) * (1 - (r : ℝ)⁻¹) := by
-    rw [hs, ← div_eq_inv_mul, lt_div_iff₀ (by linarith)]
-    have : (r : ℝ)⁻¹ < 2 * δ := by
-      rw [mul_inv] at hδ0
-      linarith
-    linarith
-  have h2s : 2 / (s : ℝ) = 1 - 2 * δ := by
-    rw [hs]
-    field_simp
   set E : ℝ := ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)
   refine ⟨2 ^ E * K ^ 2, by positivity, fun {Omega a c lam Lam gamma f u k} hk hOmega h ha hc
     hc_bound hc_nonneg hf hu hboundary => ?_⟩
@@ -505,18 +539,8 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   refine hx.trans_eq ?_
   -- `S² |Ω| ^ (1 - 1/r - 2/s) = K² |Ω| ^ (2/n - 1/r)`.
   have hpow : (S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ)) =
-      K ^ 2 * m ^ (2 / (n : ℝ) - (r : ℝ)⁻¹) := by
-    have hsum : 2 * ((n : ℝ)⁻¹ - δ) + (1 - (r : ℝ)⁻¹ - 2 / s) = 2 / n - (r : ℝ)⁻¹ := by
-      rw [h2s]
-      ring
-    have hne : 2 / (n : ℝ) - (r : ℝ)⁻¹ ≠ 0 := by
-      have : (r : ℝ)⁻¹ < 2 / n := by
-        rw [inv_lt_comm₀ hr0 (by positivity), inv_div, div_lt_iff₀ (two_pos (α := ℝ))]
-        linarith
-      linarith
-    rw [hSval, mul_pow, ← Real.rpow_natCast (m ^ _), ← Real.rpow_mul hm, mul_assoc,
-      ← Real.rpow_add' hm (by rwa [Nat.cast_ofNat, mul_comm, hsum]), Nat.cast_ofNat,
-      mul_comm (((n : ℝ)⁻¹ - δ)), hsum]
+      K ^ 2 * m ^ (2 / (n : ℝ) - (r : ℝ)⁻¹) :=
+    sq_mul_rpow_eq hm hn0 hr0 hrn h2s
   calc k + 2 ^ E * (S : ℝ) ^ 2 * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
         m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))
       = k + 2 ^ E * ((S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))) *
