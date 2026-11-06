@@ -32,9 +32,11 @@ protected theorem IsCoveringMap.id : IsCoveringMap (@id X) := fun _ ↦
       fun _ ↦ rfl⟩
 
 /-- A homeomorphism is a covering map, with the whole base as an evenly covered neighbourhood. -/
-theorem IsHomeomorph.isCoveringMap {f : X → Y} (hf : IsHomeomorph f) : IsCoveringMap f :=
-  IsCoveringMap.id.homeomorph_comp (hf.homeomorph f)
+theorem IsHomeomorph.isCoveringMap {f : X → Y} (hf : IsHomeomorph f) : IsCoveringMap f := by
+  convert IsCoveringMap.id.homeomorph_comp (hf.homeomorph f) using 1
+  ext
+  simp
 
 /-- A bundled homeomorphism is a covering map; see `IsHomeomorph.isCoveringMap`. -/
-theorem Homeomorph.isCoveringMap (e : X ≃ₜ Y) : IsCoveringMap e :=
-  IsCoveringMap.id.homeomorph_comp e
+theorem Homeomorph.isCoveringMap (e : X ≃ₜ Y) : IsCoveringMap e := by
+  simpa only [Function.comp_id] using IsCoveringMap.id.homeomorph_comp e
