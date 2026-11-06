@@ -13,7 +13,8 @@ import Mathlib.LinearAlgebra.Determinant
 # Leading weight-block minors detect the weight action
 
 Let an automorphism of an integral lattice carry weight vectors of weight `μ` to weight
-vectors of weight `φ μ`, where `φ` is injective. In a weight basis its matrix permutes the
+vectors of weight `φ μ`, where `φ` is injective on the occurring weights. In a weight basis
+its matrix permutes the
 weight spaces, but need not permute the individual basis vectors. Over any nontrivial
 commutative ring, all its leading weight-block minors are units exactly when it fixes every
 occurring weight. If the weights span the character lattice, this forces `φ = 1`.
@@ -26,7 +27,7 @@ of the weight order with `φ` is assumed, and reduction may have arbitrary chara
 
 The coordinate-support argument uses
 `TauCeti.UniversalEnvelopingAlgebra.repr_eq_zero_of_isCartanWeightVector`; the determinant
-argument uses `Matrix.eqOn_range_of_det_toSquareBlockProp_le_ne_zero`.
+argument uses `Matrix.isUnit_det_toSquareBlockProp_le_iff_eqOn_range`.
 
 ## References
 
@@ -58,10 +59,11 @@ theorem toMatrix_map_eq_zero_of_weight_ne (θ : M →ₗ[ℤ] M) (φ : (κ → �
     repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt (hθ j) hij, map_zero]
 
 /-- All leading weight-block minors of a lattice automorphism are units exactly when its
-injective weight action fixes every weight. This holds over every nontrivial commutative ring,
-including rings in which some nonzero entries of the integral matrix vanish. -/
+weight action, assumed injective on the occurring weights, fixes every occurring weight `wt j`.
+This holds over every nontrivial commutative ring, including rings in which some nonzero entries
+of the integral matrix vanish. -/
 theorem isUnit_leading_weight_minors_iff (θ : M ≃ₗ[ℤ] M) (φ : (κ → ℤ) → (κ → ℤ))
-    (hφ : Function.Injective φ)
+    (hφ : Set.InjOn φ (Set.range wt))
     (hθ : ∀ j, IsCartanWeightVector h ρ (φ (wt j)) (θ (b j) : V))
     (r : Set.range wt ≃ β) :
     (∀ a, IsUnit ((((LinearMap.toMatrix b b θ).map (Int.castRingHom A)).toSquareBlockProp
@@ -73,27 +75,15 @@ theorem isUnit_leading_weight_minors_iff (θ : M ≃ₗ[ℤ] M) (φ : (κ → �
     exact (θ.isUnit_det b b).map (Int.castRingHom A)
   have hs (i j : η) (hij : wt i ≠ φ (wt j)) : N i j = 0 :=
     toMatrix_map_eq_zero_of_weight_ne h ρ M b wt hwt θ φ hθ i j hij
-  constructor
-  · intro hminor j
-    exact Matrix.eqOn_range_of_det_toSquareBlockProp_le_ne_zero N wt φ hφ.injOn r hs
-      (fun a => (hminor a).ne_zero) (Set.mem_range_self j)
-  · intro hfix a
-    have hd := N.twoBlockTriangular_det
-      (fun i => r ⟨wt i, Set.mem_range_self i⟩ ≤ a) (by
-        intro i hi j hj
-        apply hs i j
-        rw [hfix j]
-        intro hij
-        exact hi ((congrArg (fun w : Set.range wt => r w ≤ a) (Subtype.ext hij)).mpr hj))
-    rw [hd] at hN
-    exact isUnit_of_mul_isUnit_left hN
+  simpa only [Set.eqOn_range, Function.comp_def, id_eq, funext_iff] using
+    Matrix.isUnit_det_toSquareBlockProp_le_iff_eqOn_range N hN wt φ hφ r hs
 
 /-- If the weights span the character lattice, the leading weight-block minors detect the
 identity weight endomorphism. In particular this rules out a nontrivial faithful Weyl action
 in the matrix open set defined by these minors. -/
 theorem isUnit_leading_weight_minors_iff_eq_one
     (hspan : Submodule.span ℤ (Set.range wt) = ⊤)
-    (θ : M ≃ₗ[ℤ] M) (φ : Module.End ℤ (κ → ℤ)) (hφ : Function.Injective φ)
+    (θ : M ≃ₗ[ℤ] M) (φ : Module.End ℤ (κ → ℤ)) (hφ : Set.InjOn φ (Set.range wt))
     (hθ : ∀ j, IsCartanWeightVector h ρ (φ (wt j)) (θ (b j) : V))
     (r : Set.range wt ≃ β) :
     (∀ a, IsUnit ((((LinearMap.toMatrix b b θ).map (Int.castRingHom A)).toSquareBlockProp

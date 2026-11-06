@@ -93,8 +93,9 @@ theorem isUnit_det_toSquareBlockProp_le_iff_eq_one [Nontrivial R]
   rw [hdet] at hM
   exact isUnit_of_mul_isUnit_left hM
 
-/-- A map injective on the occurring weights and supported by a matrix fixes every occurring
-weight if all leading weight-block minors are nonzero. The equivalence `r` supplies an ordering
+/-- A map injective on the occurring weights fixes every occurring weight if all leading
+weight-block minors are nonzero and `M i j = 0` whenever `wt i ≠ f (wt j)`. Thus `M` carries
+the weight-`μ` block into the weight-`f μ` block. The equivalence `r` supplies an ordering
 of the distinct weights, not of the individual basis vectors. -/
 theorem eqOn_range_of_det_toSquareBlockProp_le_ne_zero {W : Type*}
     (M : Matrix n n R) (wt : n → W) (f : W → W)
@@ -114,17 +115,40 @@ theorem eqOn_range_of_det_toSquareBlockProp_le_ne_zero {W : Type*}
     Subtype.ext (hf x.property y.property (congrArg Subtype.val hxy))
   let σ : Equiv.Perm α := r.symm.trans
     ((Equiv.ofBijective g ⟨hg, Finite.surjective_of_injective hg⟩).trans r)
+  have hσ_apply (w : Set.range wt) : σ (r w) = r (g w) := by
+    simp only [σ, Equiv.trans_apply, Equiv.symm_apply_apply]
+    rfl
   have hσ : σ = 1 := eq_one_of_det_toSquareBlockProp_le_ne_zero M
     (fun i => r ⟨wt i, Set.mem_range_self i⟩)
     (r.surjective.comp Set.rangeFactorization_surjective) σ (fun i j hij => by
       apply hsupport i j
       intro hw
       apply hij
-      simpa [σ, Equiv.ofBijective] using congrArg r
-        (show (⟨wt i, Set.mem_range_self i⟩ : Set.range wt) = g ⟨wt j, Set.mem_range_self j⟩
-          from Subtype.ext hw)) hminor
+      rw [hσ_apply]
+      exact congrArg r (Subtype.ext hw)) hminor
   intro w hw
-  have heq := congrArg (fun e : Equiv.Perm α => r.symm (e (r ⟨w, hw⟩))) hσ
-  exact congrArg Subtype.val (by simpa [σ, Equiv.ofBijective] using heq)
+  have heq : r (g ⟨w, hw⟩) = r ⟨w, hw⟩ := by
+    rw [← hσ_apply, hσ]
+    rfl
+  exact congrArg Subtype.val (r.injective heq)
+
+/-- For an invertible matrix with `M i j = 0` whenever `wt i ≠ f (wt j)`, where `f` is
+injective on the occurring weights, all leading weight-block minors are units exactly when
+`f` fixes every occurring weight. The equivalence `r` orders the distinct weights. -/
+theorem isUnit_det_toSquareBlockProp_le_iff_eqOn_range [Nontrivial R] {W : Type*}
+    (M : Matrix n n R) (hM : IsUnit M.det) (wt : n → W) (f : W → W)
+    (hf : Set.InjOn f (Set.range wt)) (r : Set.range wt ≃ α)
+    (hsupport : ∀ i j, wt i ≠ f (wt j) → M i j = 0) :
+    (∀ a, IsUnit (M.toSquareBlockProp fun i => r ⟨wt i, Set.mem_range_self i⟩ ≤ a).det) ↔
+      Set.EqOn f id (Set.range wt) := by
+  refine ⟨fun h => eqOn_range_of_det_toSquareBlockProp_le_ne_zero M wt f hf r hsupport
+    (fun a => (h a).ne_zero), ?_⟩
+  intro hfix
+  exact (isUnit_det_toSquareBlockProp_le_iff_eq_one M hM
+    (fun i => r ⟨wt i, Set.mem_range_self i⟩)
+    (r.surjective.comp Set.rangeFactorization_surjective) 1 (fun i j hij => by
+      apply hsupport i j
+      rw [hfix (Set.mem_range_self j)]
+      exact fun h => hij (congrArg r (Subtype.ext h)))).mpr rfl
 
 end Matrix
