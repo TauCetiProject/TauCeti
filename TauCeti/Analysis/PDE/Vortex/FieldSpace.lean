@@ -187,15 +187,10 @@ theorem sobolevFields_mono {s s' : ℝ} (h : s' ≤ s) : sobolevFields s ≤ sob
 theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : ContDiff ℝ ∞ y) (hc : HasCompactSupport y) (s : ℝ) : y ∈ sobolevFields s := by
   refine mem_sobolevFields.2 fun i ↦ ?_
-  have hyi : ContDiff ℝ ∞ (fun z ↦ y z i) := contDiff_euclidean.1 hy i
-  have hci : HasCompactSupport (fun z ↦ y z i) :=
-    hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl
-  have hm : MemLp (fun z ↦ y z i) 2 volume := hyi.continuous.memLp_of_hasCompactSupport hci
-  refine ⟨hm.toLp _, hm.coeFn_toLp, ?_⟩
-  refine memSobolev_of_ae_eq_of_hasCompactSupport (u := fun z ↦ (y z i : ℂ))
-    (ofRealCLM.contDiff.comp hyi) (hci.comp_left ofReal_zero) ?_
-  filter_upwards [ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with z h₁ h₂
-  simp [h₁, h₂]
+  obtain ⟨u, hu, hae⟩ := exists_mem_realSobolevSubmodule_ae_eq_of_hasCompactSupport
+    (contDiff_euclidean.1 hy i) (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl)
+    s 2
+  exact ⟨u, hae, mem_realSobolevSubmodule.1 hu⟩
 
 /-- **Decay of continuous Sobolev fields.** For `s > 1`, a continuous field in `sobolevFields s`
 tends to zero at infinity: by Sobolev embedding each coordinate agrees almost everywhere with a
@@ -203,22 +198,14 @@ continuous function vanishing at infinity, hence everywhere. -/
 theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y) :
     Tendsto y (cocompact ℂ) (𝓝 0) := by
-  have hcomp : ∀ i, Tendsto (fun z ↦ y z i) (cocompact ℂ) (𝓝 0) := by
-    intro i
+  have hs' : (finrank ℝ ℂ : ℝ) < 2 * s := by
+    rw [Complex.finrank_real_complex]
+    push_cast
+    linarith
+  have hcomp : ∀ i, Tendsto (fun z ↦ y z i) (cocompact ℂ) (𝓝 0) := fun i ↦ by
     obtain ⟨u, hu, hS⟩ := mem_sobolevFields.1 hy i
-    have hs' : (finrank ℝ ℂ : ℝ) < 2 * s := by
-      rw [Complex.finrank_real_complex]
-      push_cast
-      linarith
-    obtain ⟨g, hg⟩ := MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq hs' hS
-    have hyi : Continuous fun z ↦ (y z i : ℂ) :=
-      continuous_ofReal.comp ((PiLp.continuous_apply 2 _ i).comp hcont)
-    have hae : (fun z ↦ (y z i : ℂ)) =ᵐ[volume] g := by
-      filter_upwards [ofRealCLM.coeFn_compLp u, hu, hg] with z h₁ h₂ h₃
-      rw [← h₃, h₁, h₂, ofRealCLM_apply]
-    have heq := (hyi.ae_eq_iff_eq volume g.continuous).1 hae
-    have hg0 : Tendsto (fun z ↦ (y z i : ℂ)) (cocompact ℂ) (𝓝 0) := heq ▸ g.zero_at_infty'
-    simpa [Function.comp_def] using (continuous_re.tendsto 0).comp hg0
+    exact tendsto_cocompact_of_ae_eq_of_mem_realSobolevSubmodule hs'
+      ((PiLp.continuous_apply 2 _ i).comp hcont) (mem_realSobolevSubmodule.2 hS) hu
   have h : Tendsto (fun z ↦ WithLp.ofLp (y z)) (cocompact ℂ) (𝓝 0) :=
     tendsto_pi_nhds.2 hcomp
   simpa [Function.comp_def] using ((PiLp.continuous_toLp 2 _).tendsto 0).comp h

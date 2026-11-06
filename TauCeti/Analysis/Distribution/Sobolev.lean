@@ -42,6 +42,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
   lies in `H^{s,p}`, as a real submodule of `Lᵖ`.
+* `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_of_hasCompactSupport`: smooth
+  compactly supported real functions have representatives in every `realSobolevSubmodule`.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -161,6 +163,19 @@ theorem mem_realSobolevSubmodule {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
     u ∈ realSobolevSubmodule E s p ↔
       MemSobolev s p (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) :=
   Iff.rfl
+
+/-- A smooth compactly supported real function agrees almost everywhere with an element of every
+`realSobolevSubmodule E s p`. -/
+theorem exists_mem_realSobolevSubmodule_ae_eq_of_hasCompactSupport {f : E → ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hc : HasCompactSupport f) (s : ℝ) (p : ENNReal) [Fact (1 ≤ p)] :
+    ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] f := by
+  have hm : MemLp f p volume := hf.continuous.memLp_of_hasCompactSupport hc
+  refine ⟨hm.toLp _, ?_, hm.coeFn_toLp⟩
+  refine mem_realSobolevSubmodule.2 <| memSobolev_of_ae_eq_of_hasCompactSupport
+    (u := fun x ↦ (f x : ℂ)) (Complex.ofRealCLM.contDiff.comp hf)
+    (hc.comp_left Complex.ofReal_zero) ?_
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with x h₁ h₂
+  simp [h₁, h₂]
 
 end normed
 

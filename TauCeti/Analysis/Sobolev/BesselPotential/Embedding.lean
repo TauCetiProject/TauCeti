@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
@@ -48,6 +49,8 @@ spaces.
 
 * `TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`: an `L²` function in
   `H^s`, `2s > n`, agrees almost everywhere with a continuous function vanishing at infinity.
+* `TemperedDistribution.tendsto_cocompact_of_ae_eq_of_mem_realSobolevSubmodule`: a continuous
+  real function represented in `realSobolevSubmodule E s 2`, `2s > n`, tends to zero at infinity.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
 * `TauCeti.Wkp.value_ae_eq_toZeroAtInfty`, `TauCeti.Wkp.toZeroAtInfty_eq_iff`: the embedding sends
   a Sobolev function to its unique continuous representative.
@@ -97,6 +100,24 @@ theorem MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq {s : ℝ} (hs : finrank
   refine ⟨g, ?_⟩
   rw [ZeroAtInftyContinuousMap.coe_mk]
   exact Lp.ae_eq_fourierInv_of_fourier_eq hv
+
+/-- **Decay of continuous real Sobolev functions.** For `s > dim E / 2`, a continuous real
+function that agrees almost everywhere with an element of `realSobolevSubmodule E s 2` tends to
+zero at infinity: by the Sobolev embedding it agrees almost everywhere with a continuous function
+vanishing at infinity, hence everywhere. -/
+theorem tendsto_cocompact_of_ae_eq_of_mem_realSobolevSubmodule {s : ℝ}
+    (hs : finrank ℝ E < 2 * s) {f : E → ℝ} (hf : Continuous f)
+    {g : Lp ℝ 2 (volume : Measure E)} (hg : g ∈ realSobolevSubmodule E s 2)
+    (hgf : g =ᵐ[volume] f) : Tendsto f (cocompact E) (𝓝 0) := by
+  obtain ⟨c, hc⟩ := MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq hs
+    (mem_realSobolevSubmodule.1 hg)
+  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] c := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) g, hgf, hc]
+      with x h₁ h₂ h₃
+    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
+  have heq := ((Complex.continuous_ofReal.comp hf).ae_eq_iff_eq volume c.continuous).1 hae
+  have h0 : Tendsto (Complex.ofReal ∘ f) (cocompact E) (𝓝 0) := heq ▸ c.zero_at_infty'
+  simpa [Function.comp_def] using (Complex.continuous_re.tendsto 0).comp h0
 
 end TemperedDistribution
 
