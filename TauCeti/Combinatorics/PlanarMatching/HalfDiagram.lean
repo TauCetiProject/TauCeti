@@ -119,7 +119,7 @@ namespace HalfDiagram
 variable {n k : ℕ}
 
 /-- A half-diagram has no more defects than points. -/
-theorem le (D : HalfDiagram n k) : k ≤ n := by
+theorem defects_le (D : HalfDiagram n k) : k ≤ n := by
   rw [← D.property.2]
   exact (Finset.card_filter_le _ _).trans_eq (Fintype.card_fin n)
 
@@ -570,7 +570,7 @@ theorem HalfDiagram.even_sub {n k : ℕ} (D : HalfDiagram n k) : Even (n - k) :=
   have hnot : ¬ Odd (n + k) := fun h => hpos.ne' (halfCount_eq_zero_of_odd h)
   rw [Nat.not_odd_iff_even, Nat.even_iff] at hnot
   rw [Nat.even_iff]
-  have := D.le
+  have := D.defects_le
   omega
 
 /-- There is a half-diagram on `n` points with `k` defects whenever `k ≤ n` and `n - k` is

@@ -130,7 +130,7 @@ theorem castAdd_bottomHalf_apply (D : TLDiagram n m) (i : Fin n)
 
 /-- There are no more through strands than bottom points. -/
 theorem through_le_bottom (D : TLDiagram n m) : D.through ≤ n :=
-  D.bottomHalf.le
+  D.bottomHalf.defects_le
 
 /-- Counting through endpoints in the full cyclic boundary instead of just its bottom row. -/
 private theorem through_eq_card_boundary (D : TLDiagram n m) :
@@ -161,7 +161,7 @@ theorem through_verticalReflect (D : TLDiagram n m) :
     simp [e, Fin.rev, Nat.sub_sub, Nat.add_comm]
   have hp : ((verticalReflect n m D).matching.1.val (e i) : ℕ) =
       n + m - 1 - i := by
-    rw [verticalReflect_partner_val]
+    rw [coe_verticalReflect_matching_val_apply]
     have h : (⟨n + m - 1 - (e i : ℕ), by omega⟩ : Fin (n + m)) =
         D.matching.1.val i := by
       apply Fin.ext
@@ -203,7 +203,7 @@ theorem topHalf_apply (D : TLDiagram n m) (j : Fin m) :
           omega⟩ else j := by
   rw [topHalf_val, bottomHalf_apply]
   apply Fin.ext
-  have hv := D.verticalReflect_partner_val (j.castAdd n)
+  have hv := D.coe_verticalReflect_matching_val_apply (j.castAdd n)
   simp only [Fin.val_castAdd] at hv
   have := (D.matching.1.val ⟨n + m - 1 - j, by omega⟩).isLt
   split_ifs <;> simp_all only <;> omega
@@ -214,14 +214,14 @@ The index `j` is left-to-right, hence its cyclic label is `n + m - 1 - j`. -/
 theorem topHalf_apply_eq_self_iff (D : TLDiagram n m) (j : Fin m) :
     D.topHalf.val j = j ↔
       (D.matching.1.val ⟨n + m - 1 - j, by omega⟩ : ℕ) < n := by
-  rw [topHalf_val, bottomHalf_apply_eq_self_iff, verticalReflect_partner_val]
+  rw [topHalf_val, bottomHalf_apply_eq_self_iff, coe_verticalReflect_matching_val_apply]
   simp only [Fin.val_castAdd]
   have := (D.matching.1.val ⟨n + m - 1 - j, by omega⟩).isLt
   omega
 
 /-- There are no more through strands than top points. -/
 theorem through_le_top (D : TLDiagram n m) : D.through ≤ m :=
-  D.topHalf.le
+  D.topHalf.defects_le
 
 /-- The bottom points not lying on through strands come in pairs. -/
 theorem even_bottom_sub_through (D : TLDiagram n m) : Even (n - D.through) :=
@@ -302,7 +302,7 @@ example :
     apply Equiv.ext
     intro i
     apply (bottomHalf_apply_eq_self_iff _ _).mpr
-    rw [verticalReflect_partner_val]
+    rw [coe_verticalReflect_matching_val_apply]
     simp only [PlanarMatching.nested_val]
     revert i
     decide

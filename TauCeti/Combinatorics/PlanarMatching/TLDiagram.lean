@@ -224,7 +224,7 @@ theorem matching_verticalReflect (x : TLDiagram n m) :
       PlanarMatching.cast (Nat.add_comm n m) (PlanarMatching.reflect (n + m) x.matching) := (rfl)
 
 /-- Vertical reflection sends a partner to its reflected boundary label. -/
-theorem verticalReflect_partner_val (D : TLDiagram n m) (i : Fin (m + n)) :
+theorem coe_verticalReflect_matching_val_apply (D : TLDiagram n m) (i : Fin (m + n)) :
     ((verticalReflect n m D).matching.1.val i : ℕ) =
       n + m - 1 - (D.matching.1.val ⟨n + m - 1 - i, by omega⟩ : ℕ) := by
   simp [matching_verticalReflect, PlanarMatching.coe_cast_apply,
