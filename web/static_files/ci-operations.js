@@ -62,9 +62,30 @@
     }
     return result;
   }
+  function poolSummary(container) {
+    container.append(heading("Observed runner pools"));
+    if (!data.jobs) { container.append(empty("Job observations unavailable; pool activity is unknown.")); return; }
+    var groups = new Map();
+    jobs.forEach(function (j) {
+      if (!j.active) return;
+      var label = j.pool === "github" ? "GitHub · " + platform(j) : j.pool;
+      var group = groups.get(label) || {running:0,queued:0,buildRunning:0,buildQueued:0,oldest:null};
+      var running = j.status === "in_progress" && j.assigned, build = ["pr_build","staging_build","other_build"].includes(j.job_class);
+      if (running) { group.running++; if (build) group.buildRunning++; }
+      else { group.queued++; if (build) group.buildQueued++; if (Number.isFinite(Date.parse(j.created_at)) && (!group.oldest || Date.parse(j.created_at)<Date.parse(group.oldest))) group.oldest=j.created_at; }
+      groups.set(label,group);
+    });
+    if (!groups.size) { container.append(empty("No active jobs in the retained observations. Source coverage is shown with the job table.")); return; }
+    var scroll=el("div",undefined,"ops-scroll"), table=el("table",undefined,"ops-table ops-pools"), body=el("tbody");
+    append(table,append(el("thead"),append(el("tr"),el("th","Pool"),el("th","Running / queued"),el("th","Build-only running / queued"),el("th","Oldest queued job age"))));
+    Array.from(groups.entries()).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function(entry){var g=entry[1];body.append(append(el("tr"),el("td",entry[0]),el("td",g.running+" / "+g.queued),el("td",g.buildRunning+" / "+g.buildQueued),el("td",g.oldest?age(g.oldest):"none observed")));});
+    table.append(body);scroll.append(table);container.append(scroll);
+    container.append(note("Queued jobs are counted once; workflows without observed jobs are separate. Build-only counts sandboxed verification jobs. Counts describe retained observations"+(data.jobs.truncated || data.jobs.coverage === "partial" ? " and may be lower bounds." : ".")));
+  }
   function queueSummary(container) {
     var queue = data.queue; container.append(sourceNote("queue"));
     if (!queue) return;
+    if (queue.canonical_sha && (queue.scope.repositories || []).length) container.append(link("Canonical tip " + queue.canonical_sha.slice(0,12), "https://github.com/" + queue.scope.repositories[0] + "/commit/" + queue.canonical_sha));
     var head = (queue.batches || []).find(function (b) { return b.state === "head"; });
     if (!head) container.append(empty("No head in the last observed queue snapshot."));
     else {
@@ -135,6 +156,8 @@
       if (i.progress && i.progress.coverage === "observed") {
         var p = i.progress;
         row.append(note("Worker phase " + p.state + " · observed " + age(p.observed_at) + " · " + p.providers.join(", ") + " / " + p.models.join(", ") + " · recorded cost subtotal $" + p.cost.recorded_usd.toFixed(2) + " (" + p.cost.recorded_attempts + " known attempts; " + p.cost.unknown_attempts + " missing estimates)"));
+        var tokenLabels = {input_tokens:"input", cached_input_tokens:"cached input", output_tokens:"output", reasoning_output_tokens:"reasoning output", total_tokens:"total"};
+        row.append(note("Recorded tokens · " + (p.usage ? Object.keys(tokenLabels).map(function (key) { var u=p.usage[key]; return tokenLabels[key] + ": " + (u && u.recorded_attempts ? u.recorded_tokens + " recorded (" + u.recorded_attempts + " known attempts; " + u.unknown_attempts + " missing)" : "unknown"); }).join(" · ") : "unavailable") + ". Live or unretained attempts may be absent."));
       }
       if (i.detail) {
         var a = i.detail;
@@ -180,6 +203,14 @@
   }
   function runnerView() {
     view.append(sourceNote("hosts"));
+    poolSummary(view);
+    var contexts = (data.hosts && data.hosts.hosts || []).filter(function (h) { return h.capacity_context && h.capacity_context.coverage === "observed" && h.capacity_context.observed_at; }).sort(function (a,b) { return Date.parse(b.capacity_context.observed_at)-Date.parse(a.capacity_context.observed_at); });
+    view.append(heading("Shared capacity cache"));
+    if (contexts.length) {
+      var context = contexts[0].capacity_context, counts = context.running_jobs;
+      view.append(note("All organisation workflow jobs · observed " + age(context.observed_at) + " · " + freshness(context.observed_at,300) + (context.observer_error ? " · cache observer error; last known counts" : "")));
+      view.append(note("Running · GitHub " + (counts.github ?? "unknown") + " · Namespace " + (counts.namespace ?? "unknown") + " · self-hosted " + (counts["self-hosted"] ?? "unknown") + ". These cache totals have a different scope from the installation-visible job table and do not establish free slots."));
+    } else view.append(note("Shared capacity cache unavailable. No observation establishes spare cloud capacity."));
     if (data.hosts) (data.hosts.pools || []).filter(function (p) { return !p.machine_id; }).forEach(function (p) {
       append(view, heading(p.label), note(p.id === "namespace" ? "Installation-visible jobs only. Requested profiles do not establish account-wide workloads, billed usage or physical utilization." : "Physical resource metrics unavailable. Job lifecycle is observed through GitHub."));
     });
@@ -207,7 +238,7 @@
     if (data.jobs.truncated || data.jobs.coverage === "partial" || (data.jobs.partition_errors || []).length) container.append(note("Job inventory is partial; counts describe retained observations and may be lower bounds.", "ops-warning"));
     append(container, heading("CI jobs"), badges([counts.running + " running", counts.queued_jobs + " queued jobs", counts.pending_workflows + " workflows awaiting observed jobs"]));
     var filters = el("div", undefined, "ops-filters"), pools = ["all"].concat(Array.from(new Set(jobs.map(function (j) { return j.pool; }))));
-    append(filters, select("Pool", pools, poolFilter, function (v) { poolFilter = v; jobPage = 0; render(); }), select("State", ["all", "active", "completed", "queued", "in_progress"], statusFilter, function (v) { statusFilter = v; jobPage = 0; render(); }), select("Class", ["all", "pr_build", "staging_build", "other_build", "other"], classFilter, function (v) { classFilter = v; jobPage = 0; render(); })); container.append(filters);
+    append(filters, select("Pool", pools, poolFilter, function (v) { poolFilter = v; jobPage = 0; render(); }), select("State", ["all", "active", "completed", "queued", "in_progress"], statusFilter, function (v) { statusFilter = v; jobPage = 0; render(); }), select("Class", ["all", "pr_build", "staging_build", "other_build", "control", "maintenance", "other"], classFilter, function (v) { classFilter = v; jobPage = 0; render(); })); container.append(filters);
     function options(key) { return ["all"].concat(Array.from(new Set(jobs.map(function (j) { return key(j) || "unknown"; }))).sort()); }
     append(filters,
       select("Repository", options(function (j) { return j.repository; }), repoFilter, function (v) { repoFilter = v; jobPage = 0; render(); }),
@@ -319,7 +350,7 @@
     health.textContent = "Operations publisher " + state + (manifest ? " · published " + age(manifest.generated_at) : "") + (disconnected ? " · fetch failed; last successful observations retained" : "") + ".";
     health.className = "ops-status" + (disconnected || state !== "observed" ? " ops-warning" : "");
     if (errorText) view.append(note(errorText, "ops-warning"));
-    if (active === "now") { queueSummary(view); jobsView(view); }
+    if (active === "now") { queueSummary(view); poolSummary(view); jobsView(view); }
     else if (active === "queue") queueView(); else if (active === "runners") runnerView(); else historyView();
     if (editingState) {
       var restored = root.querySelector('input[type="search"]');

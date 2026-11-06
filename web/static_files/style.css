@@ -544,3 +544,6 @@ a.pb-chip:hover { text-decoration: none; border-color: var(--teal); }
 @media (max-width: 600px) { .ci-operations { padding: .6rem; } .ops-table th, .ops-table td { padding: .3rem; } }
 
 .ops-history-chart { display: block; width: 100%; color: #68d5d1; border-bottom: 1px solid #9aaab6; }
+
+.ops-scroll { max-width: 100%; min-width: 0; overflow: auto; }
+.ops-pools { min-width: 36rem; }
