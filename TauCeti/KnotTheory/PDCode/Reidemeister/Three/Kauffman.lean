@@ -32,7 +32,7 @@ namespace TauCeti.PDCode
 open Equiv Equiv.Perm TauCeti.TemperleyLieb ReidemeisterThree
 
 variable {n : ℕ} (D : PDCode n) (c : Fin 3 ↪ Fin n)
-  (h : D.HasReidemeisterThreeTriangle c)
+  (h : D.HasReidemeisterThreeTriangleArcs c)
 
 /-! ### The eight local smoothings -/
 
@@ -180,7 +180,7 @@ include h in
 private theorem pairingTraversal_internal (u : Fin n → Bool) (k : Fin 5)
     (p : Fin 3 × Fin 4) (hp : localInternal p) :
     pairingTraversal D c u k (triangleEmbedding D c p) = triangleEmbedding D c p := by
-  rw [pairingTraversal, Perm.mul_apply, Perm.mul_apply, outsideEdges_internal D c h.arcs p hp,
+  rw [pairingTraversal, Perm.mul_apply, Perm.mul_apply, outsideEdges_internal D c h p hp,
     exteriorSlots_local, localLift_apply, localPairing_internal k p hp]
 
 include h in
@@ -525,14 +525,14 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
   simp only [overPair_outside D c]
   ring
 
-include h in
 /-- The third Reidemeister move preserves the Kauffman bracket, for every surrounding
 PD-code and all six acyclic strand height orders. -/
-@[simp] theorem kauffmanBracket_reidemeisterThree {R : Type*} [CommRing R] (a : Rˣ) :
+@[simp] theorem kauffmanBracket_reidemeisterThree (ht : D.HasReidemeisterThreeTriangle c)
+    {R : Type*} [CommRing R] (a : Rˣ) :
     (D.reidemeisterThree c).kauffmanBracket a = D.kauffmanBracket a := by
   classical
-  have hs0 := kauffmanBracket_split D c h a false
-  have hs1 := kauffmanBracket_split D c h a true
+  have hs0 := kauffmanBracket_split D c ht.arcs a false
+  have hs1 := kauffmanBracket_split D c ht.arcs a true
   simp only [Bool.false_eq_true, ↓reduceIte] at hs0 hs1
   rw [hs0, hs1]
   apply Finset.sum_congr rfl
@@ -549,7 +549,7 @@ PD-code and all six acyclic strand height orders. -/
     funext j
     fin_cases j <;> rfl
   have hl := localSumFin3 a (D.overPair (c 0)) (D.overPair (c 1)) (D.overPair (c 2))
-    ((hasReidemeisterThreeTriangle_iff D c).mp h).2.2.2
+    ((hasReidemeisterThreeTriangle_iff D c).mp ht).2.2.2
     (jonesDelta a ^ pairingExponent D c r 0) (jonesDelta a ^ pairingExponent D c r 1)
     (jonesDelta a ^ pairingExponent D c r 2) (jonesDelta a ^ pairingExponent D c r 3)
     (jonesDelta a ^ pairingExponent D c r 4)
