@@ -120,6 +120,21 @@ theorem contMDiff_timeDependentSuspensionField [IsManifold I 1 M] {n : ℕ∞ω}
   exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
     ((hclock.comp contMDiff_fst).prodMk hX)
 
+/-- The velocity `q ↦ dΓ_q (1, 0)` of a `C^n` map out of `ℝ × M` is a `C^m` section along it
+when `m + 1 ≤ n`. -/
+theorem contMDiff_mfderiv_apply_one_zero {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {n m : ℕ∞} [IsManifold I n M] [IsManifold J ∞ N]
+    {Γ : ℝ × M → ℝ × N} (hΓ : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) n Γ)
+    (hmn : m + 1 ≤ n) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod J).prod 𝓘(ℝ, ℝ × E')) m fun q =>
+      Bundle.TotalSpace.mk' (ℝ × E') (Γ q)
+        (mfderiv (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) Γ q ((1 : ℝ), (0 : E))) := by
+  have : IsManifold I 1 M := .of_le (n := n) (by exact_mod_cast le_add_self.trans hmn)
+  exact (hΓ.contMDiff_tangentMap (by exact_mod_cast hmn)).comp
+    (contMDiff_timeDependentSuspensionField (X := fun _ _ => 0)
+      ((Bundle.contMDiff_zeroSection ℝ (TangentSpace I : M → Type _)).comp contMDiff_snd))
+
 /-! ### The maximal time-dependent flow -/
 
 /-- The **domain of the maximal time-dependent flow** of `X`: the triples `((s, t), x)` such that

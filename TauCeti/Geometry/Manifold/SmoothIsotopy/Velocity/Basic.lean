@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Topology.Compactness.LocallyCompact
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.Instances.Icc
 
@@ -56,39 +58,6 @@ variable {E E' H H' M N : Type*}
   [I.Boundaryless] [J.Boundaryless] [IsManifold J ∞ N]
   [T2Space N] [SigmaCompactSpace N]
 
-/-- A continuous injection out of a locally compact Hausdorff space is a topological embedding on
-some precompact open neighbourhood of any compact set: it is a closed embedding on the compact
-closure. -/
-private theorem exists_opens_isEmbedding_restrict {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [LocallyCompactSpace X] [T2Space X] [T2Space Y] {f : X → Y}
-    (hf : Continuous f) (hinj : Injective f) {K : Set X} (hK : IsCompact K) :
-    ∃ W : TopologicalSpace.Opens X, K ⊆ W ∧ IsEmbedding fun q : W => f q := by
-  obtain ⟨W, hW, hKW, -, hcW⟩ :=
-    exists_open_between_and_isCompact_closure hK isOpen_univ (subset_univ _)
-  have : CompactSpace (closure W) := isCompact_iff_compactSpace.mp hcW
-  have h : IsEmbedding fun q : closure W => f q :=
-    ((hf.comp continuous_subtype_val).isClosedEmbedding
-      (hinj.comp Subtype.val_injective)).isEmbedding
-  exact ⟨⟨W, hW⟩, hKW, h.comp (IsEmbedding.inclusion (subset_closure : W ⊆ closure W))⟩
-
-omit [FiniteDimensional ℝ E'] [I.Boundaryless] [J.Boundaryless] [T2Space N] [SigmaCompactSpace N] in
-/-- The velocity `q ↦ dΓ_q (1, 0)` of a `C^n` map out of `ℝ × M` is a `C^m` section along it
-when `1 ≤ m` and `m + 1 ≤ n`. -/
-private theorem contMDiff_mfderiv_apply_one_zero {n m : ℕ∞} [IsManifold I n M]
-    {Γ : ℝ × M → ℝ × N} (hΓ : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) n Γ) (hm : 1 ≤ m)
-    (hmn : m + 1 ≤ n) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod J).prod 𝓘(ℝ, ℝ × E')) m fun q =>
-      TotalSpace.mk' (ℝ × E') (Γ q)
-        (mfderiv (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) Γ q ((1 : ℝ), (0 : E))) := by
-  have : IsManifold I 1 M := .of_le (n := n) (by exact_mod_cast hm.trans (le_self_add.trans hmn))
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent m
-      (fun s : ℝ => (⟨s, (1 : ℝ)⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  exact (hΓ.contMDiff_tangentMap (by exact_mod_cast hmn)).comp
-    ((contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
-      ((hclock.comp contMDiff_fst).prodMk
-        ((Bundle.contMDiff_zeroSection ℝ (TangentSpace I : M → Type _)).comp contMDiff_snd)))
-
 /-- The velocity of a motion by smooth embeddings extends from the track of a compact subset
 over a compact time interval to a compactly supported smooth section of the
 tangent bundle of `ℝ × N`. Its spatial part at a point `(t, G (t, x))` of that part of the track is
@@ -121,14 +90,14 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
     obtain rfl : t = s := congrArg Prod.fst h
     exact Prod.ext rfl ((hslice t).isEmbedding.injective (congrArg Prod.snd h))
   obtain ⟨W, hAW, hΓW⟩ :=
-    exists_opens_isEmbedding_restrict hΓ.continuous hΓinj (isCompact_Icc.prod hA)
+    hΓ.continuous.exists_opens_isEmbedding_restrict hΓinj (isCompact_Icc.prod hA)
   have hΓimm : ∀ q, IsImmersionAt (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) m Γ q := fun q =>
     (hG.of_le hmn').isImmersionAt_fst_prod hm'
       (((hslice q.1).isImmersion.isImmersionAt q.2).isDiffImmersionAt hn0)
   -- The velocity of the track: the image of the unit time vector under its differential.
   let v : (q : ℝ × M) → TangentSpace (𝓘(ℝ, ℝ).prod J) (Γ q) := fun q =>
     mfderiv (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) Γ q ((1 : ℝ), (0 : E))
-  have hv := contMDiff_mfderiv_apply_one_zero hΓ hm hmn
+  have hv := contMDiff_mfderiv_apply_one_zero hΓ hmn
   -- Extend the velocity from the compact part of the track over `[c, d]`.
   have hK : IsCompact (Γ '' (Icc c d ×ˢ A)) := (isCompact_Icc.prod hA).image hΓ.continuous
   have himage : (fun q : W => Γ q) '' (Subtype.val ⁻¹' (Icc c d ×ˢ A)) =
