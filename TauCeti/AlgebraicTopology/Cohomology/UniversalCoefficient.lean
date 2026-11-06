@@ -68,6 +68,8 @@ is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
   gives exactness at the last place and the sequence splits.
 * `TopCat.singularUniversalCoefficientEquiv`: the resulting decomposition
   `Hⁿ⁺¹(X; R, M) ≃ₗ[k] Ext¹(Hₙ(X; R), M) × Hom(Hₙ₊₁(X; R), M)`.
+* `TopCat.isZero_singularCohomology_succ_of_projective_of_isZero`: `Hⁿ⁺¹(X; R, M)` vanishes when
+  `Hₙ(X; R)` is projective and `Hₙ₊₁(X; R)` vanishes.
 * `TopCat.singularExtToCohomology_naturality`: naturality of the first map in `X`; the naturality
   of the Kronecker map is `TopCat.singularKronecker_naturality`.
 
@@ -234,6 +236,20 @@ lemma singularUniversalCoefficientEquiv_apply_snd (n : ℕ)
   (LinearMap.congr_fun
     ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
       (X.singularExtToCohomology_injective R M n) _).property.right x).symm
+
+/-- **Cohomology vanishes above projective homology followed by zero**: over a hereditary
+commutative ring, if `Hₙ(X; R)` is projective and `Hₙ₊₁(X; R)` vanishes, then `Hⁿ⁺¹(X; R, M)`
+vanishes for every module `M`, since both terms of the universal coefficient sequence vanish. -/
+theorem isZero_singularCohomology_succ_of_projective_of_isZero (n : ℕ)
+    [Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    (h : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X)) :
+    IsZero (X.singularCohomology R k M (n + 1)) := by
+  have : Subsingleton (Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1) :=
+    ⟨fun a b ↦ a.eq_zero_of_projective.trans b.eq_zero_of_projective.symm⟩
+  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X ⟶ M) :=
+    ⟨h.eq_of_src⟩
+  have := (X.singularUniversalCoefficientEquiv R M n).subsingleton
+  exact ModuleCat.isZero_of_subsingleton _
 
 variable {X} in
 /-- **Naturality of the universal coefficient sequence** in the space: for a continuous map
