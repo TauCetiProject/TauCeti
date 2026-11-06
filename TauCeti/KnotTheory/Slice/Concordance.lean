@@ -20,10 +20,12 @@ public import TauCeti.KnotTheory.Slice.Basic
 import Mathlib.Analysis.Normed.Group.CocompactMap
 import Mathlib.Geometry.Manifold.ImmersionDiff
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Geometry.Manifold.Instances.ClosedBall.Collar
+import TauCeti.Geometry.Manifold.Instances.ClosedBall.Immersion
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
-# Topological sliceness is a topological concordance invariant
+# Sliceness and concordance
 
 A knot is slice when it bounds a disc in the four-ball, and two knots are concordant when they
 cobound an annulus in `S³ × [0, 1]`. Gluing a slice disc of one knot to a concordance annulus gives
@@ -77,10 +79,19 @@ linear isometry `ι`. Away from the origin, precomposing it with exponential pol
 the plane, a local diffeomorphism, gives the track followed by exponential polar coordinates of
 `E`, another local diffeomorphism (`TauCeti.isLocalDiffeomorph_polar`); so it is smooth with
 injective differential there. It preserves the norm outside the unit disc, so it is proper, hence
-a closed embedding. Near the unit circle and beyond it is the cone `s • K u` over `K`. That its
-restriction to the closed unit disc is a smooth embedding of manifolds with boundary, which would
-make `K` smoothly slice, needs smooth charts of the closed ball at the boundary sphere and is not
-proved here.
+a closed embedding. Near the unit circle and beyond it is the cone `s • K u` over `K`. Its
+restriction to the closed unit disc is a smooth slice disc of `K`, so **a knot smoothly concordant
+to a great circle is smoothly slice** (`TauCeti.SmoothEmbedding.Concordant.isSmoothlySlice`). It is
+an immersion of manifolds with boundary for a different reason at the two kinds of points:
+
+* at a point of the open disc, which it maps into the open ball, because the cap is an immersion
+  of the ambient spaces there (`TauCeti.isImmersionAt_closedBall_of_norm_lt_one`);
+* at a point of the boundary circle, because in the radial collars of the disc and of the ball it
+  is the product of `K` with the identity of the half-line
+  (`TauCeti.isImmersionAt_of_comp_ballCollar_eventuallyEq_prodMap`).
+
+As in the topological case, the converse, that a smoothly slice knot is smoothly concordant to the
+unknot, is not proved here.
 
 ## Main results
 
@@ -95,6 +106,10 @@ proved here.
 * `TauCeti.SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap`: the cap of a smooth
   concordance from a great circle to `K` is a smooth embedding of the plane, equal to `ι` near the
   origin and to the cone over `K` near the unit circle and beyond.
+* `TauCeti.SmoothEmbedding.Concordant.isSmoothlySlice`: a knot smoothly concordant to a great
+  circle is smoothly slice.
+* `TauCeti.isSmoothlySlice_of_concordant_unknot`: a knot in `S³` smoothly concordant to the unknot
+  is smoothly slice.
 
 ## References
 
@@ -933,6 +948,54 @@ theorem SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap
     fun z hz => capMap_eq_of_norm_le hΦ hz, ⟨Real.exp (-ε), ?_, fun u s hs =>
       capMap_smul_of_exp_neg_le hεF u hs⟩, norm_capMap_le_one_iff hΦ, norm_capMap_eq_one_iff hΦ⟩
   simpa using hε
+
+/-- **A knot smoothly concordant to a great circle is smoothly slice.** If a knot `K` in the unit
+sphere `Sⁿ` of `E` is smoothly concordant to the great circle `ι S¹`, then `K` bounds a smooth slice
+disc in the closed unit ball `Dⁿ⁺¹`: the restriction of the cap of the concordance
+(`TauCeti.SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap`) to the closed unit disc. -/
+theorem SmoothEmbedding.Concordant.isSmoothlySlice
+    (h : SmoothEmbedding.Concordant (SmoothCircleEmbedding.greatCircle (n := n) ι) K) :
+    IsSmoothlySlice K := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  obtain ⟨F⟩ := SmoothEmbedding.concordant_iff_nonempty.1 h
+  obtain ⟨c, hc, -, ⟨r, hr, hcone⟩, hball, hsphere⟩ := F.exists_isSmoothEmbedding_cap
+  let Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1 :=
+    Set.codRestrict (c ∘ Subtype.val) _ fun z ↦
+      mem_closedBall_zero_iff.2 ((hball z).2 (mem_closedBall_zero_iff.1 z.2))
+  have hΦ (z : closedBall (0 : ℂ) 1) : (Φ z : E) = c z := rfl
+  refine IsSmoothSliceDisc.isSmoothlySlice (Φ := Φ) ⟨⟨isImmersion_iff_forall_isImmersionAt.2
+    fun x ↦ ?_, (hc.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict _ _⟩, ?_, fun z ↦ ?_⟩
+  · rcases (mem_closedBall_zero_iff.1 x.2).lt_or_eq with hx | hx
+    · -- In the open disc `Φ` is the restriction of the embedding `c` between open balls.
+      exact isImmersionAt_closedBall_of_norm_lt_one (by simp) hΦ
+        (isImmersion_iff_forall_isImmersionAt.1 hc.isImmersion x) hx
+        (((hball x).2 hx.le).lt_of_ne fun h1 ↦ hx.ne ((hsphere x).1 h1))
+    · -- Near the boundary circle `Φ` is the cone over `K`, read in the radial collars.
+      let u : Circle := ⟨x, mem_sphere_zero_iff_norm.2 hx⟩
+      have hxu : ballCollarC (u, 0) = x := Subtype.ext <| by
+        simp [coe_ballCollarC, polarC_apply, u]
+      rw [← hxu]
+      refine isImmersionAt_of_comp_ballCollar_eventuallyEq_prodMap
+        (isImmersion_iff_forall_isImmersionAt.1 K.isImmersion u) ?_
+      have hW : IsOpen {q : Circle × EuclideanHalfSpace 1 | r < Real.exp (-q.2.1 0)} :=
+        isOpen_lt continuous_const (by fun_prop)
+      filter_upwards [hW.mem_nhds (by simpa using hr)] with ⟨w, s⟩ hs
+      refine Subtype.ext ?_
+      have hw : (ballCollarC (w, s) : ℂ) = Real.exp (-s.1 0) • (w : ℂ) := by
+        rw [coe_ballCollarC, polarC_apply, sub_sub_cancel_left]
+      simp only [Function.comp_apply, coe_ballCollar]
+      exact (hΦ _).trans ((congrArg c hw).trans (hcone w _ hs.le))
+  · ext z
+    simp [boundary_closedBall, hΦ, hsphere]
+  · rw [hΦ, Set.coe_inclusion sphere_subset_closedBall]
+    simpa using hcone z 1 hr.le
+
+/-- **A knot in `S³` smoothly concordant to the unknot is smoothly slice.** -/
+theorem isSmoothlySlice_of_concordant_unknot
+    {K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)}
+    (h : SmoothEmbedding.Concordant unknot K) : IsSmoothlySlice K := by
+  rw [unknot_eq_greatCircle] at h
+  exact h.isSmoothlySlice
 
 end Smooth
 
