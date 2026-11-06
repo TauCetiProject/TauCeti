@@ -293,10 +293,10 @@ private theorem summable_tateThetaCoefficients_residueClass [CompleteSpace K] (q
     rw [hk] at hstep
     simp only [norm_mul, norm_tateThetaCoefficients_factor] at hstep
     have hk' : -(((k + 1 : ℕ) : ℤ) + 1) = -((k : ℤ) + 2) := by push_cast; ring
+    have hk2 : ((k + 2 : ℕ) : ℤ) = (k : ℤ) + 2 := by omega
     rw [hk']
     simp only [norm_mul]
-    rw [hstep, zpow_neg, show (k : ℤ) + 2 = ((k + 2 : ℕ) : ℤ) by push_cast; ring,
-      zpow_natCast, pow_add]
+    rw [hstep, zpow_neg, ← hk2, zpow_natCast, pow_add]
     field_simp
 
 /-- **Quasi-periodic coefficient sequences are entire.** Over a complete normed field, for
