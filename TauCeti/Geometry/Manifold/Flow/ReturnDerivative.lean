@@ -62,6 +62,8 @@ return branch need not be the first return to the section.
   source section, the derivative of the reverse transition is a left inverse.
 * `TauCeti.mfderiv_flowTransition_apply_mfderiv_flowTransition`: transitions conjugate the
   derivatives of return germs.
+* `TauCeti.returnDerivative_comp_mfderiv_flowTransition`: the same conjugacy of the linearized
+  return maps, as an identity of linear maps.
 * `TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`,
   `TauCeti.finrank_genEigenspace_returnDerivative_eq`: the nonzero generalized eigenspaces of
   linearized return maps at two points of a periodic orbit are isomorphic.
@@ -128,7 +130,11 @@ theorem mvfderiv_mfderiv_flowTransition_eq_zero (hT : (T, p) ∈ flowDomain v) (
     ((hasMFDerivAt_const (g (flowOf v T p)) p).congr_of_eventuallyEq_abuse hconst.symm).mfderiv
   rw [← mvfderiv_comp_apply_of_eq p (hg.mdifferentiableAt one_ne_zero) hh
     (flowTransition_self ..)]
-  simp [mvfderiv, h0]
+  -- `mvfderiv` is `mfderiv` followed by the identification of the tangent space of `ℝ` with `ℝ`.
+  -- Mathlib has no congruence lemma for `mvfderiv` under eventual equality, and rewriting with
+  -- the one for `mfderiv` leaves a cast between tangent spaces at different points, so the
+  -- vanishing of `mfderiv` is transported by unfolding `mvfderiv`.
+  simp only [mvfderiv, h0, ContinuousLinearMap.comp_zero, zero_apply]
 
 /-- **The derivative of the time-zero transition.** For a section `{g = g p}` through `p`
 transverse to `v`, the derivative at `p` of the transition at time `0` to this section is the
@@ -146,6 +152,9 @@ theorem mfderiv_flowTransition_zero_apply (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
   have hπ : ∀ u : TangentSpace I p, @Eq E (mfderiv I I (flowTransition v g 0 p) p u)
       (u + (show ℝ from mfderiv I 𝓘(ℝ) (flowHittingTime v g 0 p) p u) • v p) := fun u ↦ by
     rw [flowTransition_def, hD]
+    -- The evaluation of `id + dτ.smulRight (v p)` at `u` is closed definitionally: `dτ` takes
+    -- values in the tangent space of `ℝ` at `τ p` rather than in `ℝ`, so the goal does not
+    -- typecheck at the transparency `rw` and `simp` use for `add_apply` and `smulRight_apply`.
     rfl
   have hker := mvfderiv_mfderiv_flowTransition_eq_zero hv h0 hp0 hg hgv w
   rw [hπ, map_add, map_smul, smul_eq_mul] at hker
@@ -282,9 +291,11 @@ theorem mfderiv_flowTransition_apply_mfderiv_flowTransition (w : TangentSpace I 
   rw [← mfderiv_comp_apply_of_eq p hh hP' hPp, hD]
   exact mfderiv_comp_apply_of_eq p hQ' hh hhp w
 
-/-- The derivative of the transition between the sections, read as a linear map into `T_qM`,
-intertwines the linearized return maps at `p` and at `q`. -/
-private theorem returnDerivative_comp_mfderiv_flowTransition :
+/-- **The linearized return maps along an orbit are conjugate.** If the flow carries `p` to `q`
+at time `T` and `p` returns to itself at time `T₀`, the derivative `dh` of the transition between
+transverse sections through `p` and through `q`, read as a linear map into `T_qM`, intertwines the
+linearized return maps at time `T₀`: `dP_q ∘ dh = dh ∘ dP_p`. -/
+theorem returnDerivative_comp_mfderiv_flowTransition :
     -- The derivative lands in the tangent space at `flowTransition v g' T p p`, which is `q` only
     -- propositionally; it is read as a map into the tangent space at `q`, which is the same `E`.
     returnDerivative v g' T₀ q ∘ₗ (show TangentSpace I p →L[ℝ] TangentSpace I q from
