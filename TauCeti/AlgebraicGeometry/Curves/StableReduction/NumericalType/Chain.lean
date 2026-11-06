@@ -302,7 +302,7 @@ positions are given as explicit indices, so that windows wrapping around the clo
 cycle can use it too. -/
 private lemma IsSelfIntersectionMinusTwoChain.window_eq_weight {t : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
-    (h7 : 7 ≤ t) :
+    (h5 : 5 ≤ t) :
     ∀ a b d e f : ℕ, a < t → b < t → d < t → e < t → f < t →
         a ≠ d → a ≠ e → a ≠ f → b ≠ e → b ≠ f → d ≠ f →
         0 < T.intersection (c a) (c b) → 0 < T.intersection (c b) (c d) →
@@ -321,16 +321,16 @@ private lemma IsSelfIntersectionMinusTwoChain.window_eq_weight {t : ℕ} {c : �
 /-- Every edge strictly inside a long chain equals the weight of both of its endpoints. -/
 private lemma IsSelfIntersectionMinusTwoChain.interior_edge_eq_weight {t : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
-    (h7 : 7 ≤ t) (j : ℕ) (h1 : 1 ≤ j) (h2 : j + 2 < t) :
+    (h5 : 5 ≤ t) (j : ℕ) (h1 : 1 ≤ j) (h2 : j + 2 < t) :
     T.intersection (c j) (c (j + 1)) = (T.weight (c j) : ℤ) ∧
       T.intersection (c j) (c (j + 1)) = (T.weight (c (j + 1)) : ℤ) := by
   rcases eq_or_lt_of_le h1 with rfl | hj2
-  · have key := hc.window_eq_weight hcard h7 0 1 2 3 4 (by omega) (by omega) (by omega)
+  · have key := hc.window_eq_weight hcard h5 0 1 2 3 4 (by omega) (by omega) (by omega)
       (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     exact ⟨key.1, key.2.1⟩
-  · have key := hc.window_eq_weight hcard h7 (j - 2) (j - 1) j (j + 1) (j + 2)
+  · have key := hc.window_eq_weight hcard h5 (j - 2) (j - 1) j (j + 1) (j + 2)
       (by omega) (by omega) (by omega)
       (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
       (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
@@ -341,7 +341,7 @@ private lemma IsSelfIntersectionMinusTwoChain.interior_edge_eq_weight {t : ℕ} 
 the second component. -/
 private lemma IsSelfIntersectionMinusTwoChain.weight_eq_of_interior {t : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
-    (h7 : 7 ≤ t) {W : ℤ} (hW : (T.weight (c 1) : ℤ) = W) :
+    (h5 : 5 ≤ t) {W : ℤ} (hW : (T.weight (c 1) : ℤ) = W) :
     ∀ i, 1 ≤ i → i + 1 < t → (T.weight (c i) : ℤ) = W := by
   subst hW
   intro i
@@ -351,31 +351,31 @@ private lemma IsSelfIntersectionMinusTwoChain.weight_eq_of_interior {t : ℕ} {c
     intro _ hn
     rcases Nat.eq_zero_or_pos n with rfl | hn0
     · rfl
-    · have key := hc.interior_edge_eq_weight hcard h7 n hn0 (by omega)
+    · have key := hc.interior_edge_eq_weight hcard h5 n hn0 (by omega)
       rw [← ih hn0 (by omega), ← key.1, key.2]
 
 /-- If the two ends of a long chain meet, all weights and all edges are equal to the common
 weight `W` of the interior, including the closing edge. -/
 private lemma IsSelfIntersectionMinusTwoChain.cycle_data {t : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
-    (h7 : 7 ≤ t) {W : ℤ} (hW : (T.weight (c 1) : ℤ) = W)
+    (h5 : 5 ≤ t) {W : ℤ} (hW : (T.weight (c 1) : ℤ) = W)
     (hpos' : 0 < T.intersection (c (t - 1)) (c 0)) :
     (∀ i, i < t → (T.weight (c i) : ℤ) = W) ∧
       (∀ i j, j = i + 1 → j < t → T.intersection (c i) (c j) = W) ∧
       T.intersection (c (t - 1)) (c 0) = W := by
   -- The two windows wrapping around the closing edge pin down the remaining data.
-  have hwrap₁ := hc.window_eq_weight hcard h7 (t - 3) (t - 2) (t - 1) 0 1 (by omega)
+  have hwrap₁ := hc.window_eq_weight hcard h5 (t - 3) (t - 2) (t - 1) 0 1 (by omega)
     (by omega) (by omega) (by omega)
     (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     hpos' (hc.intersection_pos (by omega) (by omega))
-  have hwrap₂ := hc.window_eq_weight hcard h7 (t - 2) (t - 1) 0 1 2 (by omega)
+  have hwrap₂ := hc.window_eq_weight hcard h5 (t - 2) (t - 1) 0 1 2 (by omega)
     (by omega) (by omega) (by omega)
     (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
     (hc.intersection_pos (by omega) (by omega)) hpos'
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
   have hwtm2 : (T.weight (c (t - 2)) : ℤ) = W :=
-    hc.weight_eq_of_interior hcard h7 hW (t - 2) (by omega) (by omega)
+    hc.weight_eq_of_interior hcard h5 hW (t - 2) (by omega) (by omega)
   have hwtm1 : (T.weight (c (t - 1)) : ℤ) = W := by rw [← hwrap₁.2.1, hwrap₁.1, hwtm2]
   have hwt0 : (T.weight (c 0) : ℤ) = W := by rw [← hwrap₂.2.2.1, hwrap₂.2.2.2, hW]
   have hwtall : ∀ i, i < t → (T.weight (c i) : ℤ) = W := by
@@ -386,7 +386,7 @@ private lemma IsSelfIntersectionMinusTwoChain.cycle_data {t : ℕ} {c : ℕ → 
     · have hi_last : i = t - 1 := by omega
       rw [hi_last]
       exact hwtm1
-    · exact hc.weight_eq_of_interior hcard h7 hW i hi0 (by omega)
+    · exact hc.weight_eq_of_interior hcard h5 hW i hi0 (by omega)
   have hclose : T.intersection (c (t - 1)) (c 0) = W := by rw [hwrap₁.2.2.1, hwtm1]
   have hedge : ∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = W := by
     intro i hi
@@ -396,7 +396,7 @@ private lemma IsSelfIntersectionMinusTwoChain.cycle_data {t : ℕ} {c : ℕ → 
     · have hi_penultimate : i = t - 2 := by omega
       have hsucc_penultimate : t - 2 + 1 = t - 1 := by omega
       rw [hi_penultimate, hsucc_penultimate, hwrap₁.1, hwtm2]
-    · rw [(hc.interior_edge_eq_weight hcard h7 i hi0 (by omega)).1, hwtall i (by omega)]
+    · rw [(hc.interior_edge_eq_weight hcard h5 i hi0 (by omega)).1, hwtall i (by omega)]
   have hedgeW : ∀ i j, j = i + 1 → j < t → T.intersection (c i) (c j) = W := by
     intro i j hij hj
     subst hij
@@ -408,7 +408,7 @@ diagram: the all-ones vector makes every row of the intersection form vanish, wh
 definiteness on a proper subset of the components forbids. -/
 private lemma IsSelfIntersectionMinusTwoChain.false_of_cycle {t : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
-    (h7 : 7 ≤ t) {W : ℤ}
+    (h3 : 3 ≤ t) {W : ℤ}
     (hsub : ∀ p q, p + 1 < q → q < t → (p ≠ 0 ∨ q ≠ t - 1) → T.intersection (c p) (c q) = 0)
     (hwtall : ∀ i, i < t → (T.weight (c i) : ℤ) = W)
     (hedgeW : ∀ i j, j = i + 1 → j < t → T.intersection (c i) (c j) = W)
@@ -469,8 +469,8 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
       (T.offDiagonal_nonneg _ _ (hc.ne (by omega) (by omega) (by omega))).lt_of_ne (Ne.symm hne)
     have hpos' : 0 < T.intersection (c (t - 1)) (c 0) := by
       rwa [T.intersection_comm]
-    obtain ⟨hwtall, hedgeW, hclose⟩ := hc.cycle_data hcard h7 rfl hpos'
-    exact hc.false_of_cycle hcard h7 hsub hwtall hedgeW hclose
+    obtain ⟨hwtall, hedgeW, hclose⟩ := hc.cycle_data hcard (by omega) rfl hpos'
+    exact hc.false_of_cycle hcard (by omega) hsub hwtall hedgeW hclose
 
 /-- Two components of a chain of components of self-intersection `-2w` which are not consecutive
 in the chain do not meet, as soon as the numerical type has more components than the chain has
@@ -825,7 +825,7 @@ private lemma IsSelfIntersectionMinusTwoChain.intersection_eq_of_interior_weight
 /-- At an exceptional end of a chain the intersection form has a kernel entry `α ∈ {1, 2}`. -/
 private lemma IsSelfIntersectionMinusTwoChain.exists_end_factor
     {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
-    (hcard : t < Fintype.card T.Component) (h6 : 5 < t) {W : ℤ} :
+    (hcard : t < Fintype.card T.Component) (h2 : 2 ≤ t) {W : ℤ} :
     ∀ u v : ℕ, u < t → v < t → (T.weight (c v) : ℤ) = W →
       0 < T.intersection (c u) (c v) →
       ((T.weight (c u) : ℤ) = 2 * W ∨ 2 * (T.weight (c u) : ℤ) = W) →
@@ -842,7 +842,7 @@ private lemma IsSelfIntersectionMinusTwoChain.exists_end_factor
 exceptional ends. -/
 private lemma IsSelfIntersectionMinusTwoChain.sum_intersection_mul_nonneg_of_end_factors
     {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
-    (hcard : t < Fintype.card T.Component) (h6 : 5 < t) {W α γ : ℤ} {y : ℕ → ℤ}
+    (hcard : t < Fintype.card T.Component) (h4 : 4 ≤ t) {W α γ : ℤ} {y : ℕ → ℤ}
     (hy₀ : y 0 = α) (hyₗ : y (t - 1) = γ) (hy₂ : ∀ j, 0 < j → j < t - 1 → y j = 2)
     (hint : ∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = W)
     (hmidedge : ∀ i j, 0 < i → j = i + 1 → i + 2 < t → T.intersection (c i) (c j) = W)
@@ -892,7 +892,7 @@ private lemma IsSelfIntersectionMinusTwoChain.sum_intersection_mul_nonneg_of_end
 kernel of the intersection form, which negative definiteness on a proper subset forbids. -/
 private lemma IsSelfIntersectionMinusTwoChain.false_of_end_factors
     {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
-    (hcard : t < Fintype.card T.Component) (h6 : 5 < t) {W α γ : ℤ} (hα : 0 < α) (hγ : 0 < γ)
+    (hcard : t < Fintype.card T.Component) (h4 : 4 ≤ t) {W α γ : ℤ} (hα : 0 < α) (hγ : 0 < γ)
     (hint : ∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = W)
     (hα₁ : 2 * T.intersection (c 0) (c 1) = 2 * (T.weight (c 0) : ℤ) * α)
     (hα₂ : T.intersection (c 0) (c 1) * α = 2 * W)
@@ -911,7 +911,7 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_end_factors
     simp [hydef, e₁, e₂]
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hc.injOn hcard
     (y := y) ?_ ⟨0, by omega, by rw [hy₀]; exact hα⟩
-    (hc.sum_intersection_mul_nonneg_of_end_factors hcard h6 hy₀ hyₗ hy₂ hint hmidedge hα₁ hα₂
+    (hc.sum_intersection_mul_nonneg_of_end_factors hcard h4 hy₀ hyₗ hy₂ hint hmidedge hα₁ hα₂
       hγ₁ hγ₂)
   intro i hi
   rcases Nat.eq_zero_or_pos i with rfl | h1
@@ -965,12 +965,13 @@ private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : �
       hW0.resolve_left fun h ↦ hcon (Or.inl h)
     have hcaseₗ : (T.weight (c (t - 1)) : ℤ) = 2 * W ∨ 2 * (T.weight (c (t - 1)) : ℤ) = W :=
       hend.resolve_left fun h ↦ hcon (Or.inr h)
-    obtain ⟨α, hα, hα₁, hα₂⟩ := hc.exists_end_factor hcard h6 0 1 (by omega) (by omega)
+    obtain ⟨α, hα, hα₁, hα₂⟩ := hc.exists_end_factor hcard (by omega) 0 1 (by omega) (by omega)
       (hint 1 (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega)) hcase₀
-    obtain ⟨γ, hγ, hγ₁, hγ₂⟩ := hc.exists_end_factor hcard h6 (t - 1) (t - 2) (by omega) (by omega)
+    obtain ⟨γ, hγ, hγ₁, hγ₂⟩ := hc.exists_end_factor hcard (by omega) (t - 1) (t - 2) (by omega)
+      (by omega)
       (hint (t - 2) (by omega) (by omega))
       (by rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega)) hcaseₗ
-    exact hc.false_of_end_factors hcard h6 hα hγ hint hα₁ hα₂ hγ₁ hγ₂
+    exact hc.false_of_end_factors hcard (by omega) hα hγ hint hα₁ hα₂ hγ₁ hγ₂
 
 /-- The weights along a chain of components of self-intersection `-2w` in a numerical type with
 more components than the chain has length are constant except possibly at one end, where the
