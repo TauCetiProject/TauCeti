@@ -188,6 +188,25 @@ private theorem cutDist_comap_le_of_factorsThrough {κ : Type*} [Fintype κ] [Me
           cutDist_comm]
     _ ≤ _ := cutDist_ofMatrix_le_two_mul_sum_abs b hb
 
+/-- **Weak law of large numbers for a bounded statistic.** For a measurable `f : Ω → ℝ` with values
+in `[0, 1]`, the average of `f` over `n` independent samples deviates from its mean by at least
+`δ` with probability at most `1 / (4 n δ²)`: the variance of `f` is at most `1 / 4`. -/
+private theorem measureReal_pi_deviation_le {f : Ω → ℝ} (hfm : Measurable f)
+    (hf01 : ∀ x, f x ∈ Set.Icc (0 : ℝ) 1) {δ : ℝ} (hδ : 0 < δ) :
+    (Measure.pi fun _ : Fin n => μ).real
+        {y | δ ≤ |(∑ i, f (y i)) / Fintype.card (Fin n) - ∫ x, f x ∂μ|} ≤
+      1 / 4 / (n * δ ^ 2) := by
+  have hvar : Var[f; μ] ≤ 1 / 4 := by
+    have := variance_le_sq_of_bounded (ae_of_all μ hf01) hfm.aemeasurable
+    norm_num at this
+    exact this
+  refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
+  refine (meas_ge_le_variance_div_card_mul_sq_pi
+    (memLp_of_bounded (ae_of_all μ hf01) hfm.aestronglyMeasurable 2) hδ).trans
+    (ENNReal.ofReal_le_ofReal ?_)
+  rw [Fintype.card_fin]
+  gcongr
+
 /-- **The block frequencies of a sample concentrate.** For a graphon that factors through a
 measurable map `g` into a finite discrete space with `c` points, the sampled weighted graph is at
 cut distance at least `η` from it with probability at most `c³ / (n η²)`: each of the `c` block
@@ -234,25 +253,14 @@ private theorem measureReal_le_cutDist_comap_le_of_factorsThrough {κ : Type*} [
         rw [hfreq, hmean]
         exact hnot k
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hlt
-    have hcη : c * (η / (2 * c)) = η / 2 := by field_simp
     have := cutDist_comap_le_of_factorsThrough U hg hfac y
     simp only [Set.mem_ofPred_eq] at hy
-    linarith
+    linarith [show c * (η / (2 * c)) = η / 2 by field_simp]
   -- Each deviation is controlled by the weak law of large numbers.
   have hdev : ∀ k, (Measure.pi fun _ : Fin n => μ).real {y | η / (2 * c) ≤
-      |(∑ i, f k (y i)) / Fintype.card (Fin n) - ∫ x, f k x ∂μ|} ≤ c ^ 2 / (n * η ^ 2) := by
-    intro k
-    have hvar : Var[f k; μ] ≤ 1 / 4 := by
-      have := variance_le_sq_of_bounded (ae_of_all μ (hf01 k)) (hfm k).aemeasurable
-      norm_num at this
-      exact this
-    refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
-    refine (meas_ge_le_variance_div_card_mul_sq_pi
-      (memLp_of_bounded (ae_of_all μ (hf01 k)) (hfm k).aestronglyMeasurable 2)
-      (by positivity)).trans (ENNReal.ofReal_le_ofReal ?_)
-    rw [Fintype.card_fin]
-    calc Var[f k; μ] / (n * (η / (2 * c)) ^ 2) ≤ 1 / 4 / (n * (η / (2 * c)) ^ 2) := by gcongr
-      _ = c ^ 2 / (n * η ^ 2) := by field_simp; ring
+      |(∑ i, f k (y i)) / Fintype.card (Fin n) - ∫ x, f k x ∂μ|} ≤ c ^ 2 / (n * η ^ 2) :=
+    fun k => (measureReal_pi_deviation_le (hfm k) (hf01 k) (by positivity)).trans_eq
+      (by field_simp; ring)
   calc (Measure.pi fun _ : Fin n => μ).real _
       ≤ (Measure.pi fun _ : Fin n => μ).real (⋃ k, {y | η / (2 * c) ≤
           |(∑ i, f k (y i)) / Fintype.card (Fin n) - ∫ x, f k x ∂μ|}) := measureReal_mono hsub
@@ -260,9 +268,7 @@ private theorem measureReal_le_cutDist_comap_le_of_factorsThrough {κ : Type*} [
           |(∑ i, f k (y i)) / Fintype.card (Fin n) - ∫ x, f k x ∂μ|} :=
         measureReal_iUnion_fintype_le _
     _ ≤ ∑ _k : κ, c ^ 2 / (n * η ^ 2) := Finset.sum_le_sum fun k _ => hdev k
-    _ = c ^ 3 / (n * η ^ 2) := by
-        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-        ring
+    _ = c ^ 3 / (n * η ^ 2) := by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]; ring
 
 /-- **Point sampling against a step approximation.** If `U` factors through a measurable map into a
 finite discrete space with `c` points and is within `L < ε / 3` of `W` in `L¹`, the sampled
