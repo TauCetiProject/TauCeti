@@ -89,19 +89,7 @@ theorem specSymmetricAlgebraHomEquiv_eq_appTop (S : CommAlgCat.{u} R)
         (p.left.appTop
           ((Scheme.ΓSpecIso (CommRingCat.of (SymmetricAlgebra R M))).inv
             (SymmetricAlgebra.ι R M m))) := by
-  obtain ⟨g, rfl⟩ := (specSymmetricAlgebraHomEquiv M S).symm.surjective p
-  have hp : ((specSymmetricAlgebraHomEquiv M S).symm g).left =
-      Spec.map (CommRingCat.ofHom (SymmetricAlgebra.lift g).toRingHom) := by
-    rw [specSymmetricAlgebraHomEquiv_symm_apply]
-    exact algSpec_map_left_ofAlgHom R (SymmetricAlgebra.lift g)
-  rw [Equiv.apply_symm_apply, hp]
-  have h := ConcreteCategory.congr_hom
-    (Scheme.ΓSpecIso_inv_naturality (R := CommRingCat.of (SymmetricAlgebra R M))
-      (S := CommRingCat.of S) (CommRingCat.ofHom (SymmetricAlgebra.lift g).toRingHom))
-    (SymmetricAlgebra.ι R M m)
-  have h' := congrArg (Scheme.ΓSpecIso (CommRingCat.of S)).hom h
-  simp only [CategoryTheory.comp_apply, CommRingCat.hom_ofHom, Iso.inv_hom_id_apply] at h'
-  exact (SymmetricAlgebra.lift_ι_apply g m).symm.trans h'
+  rw [specSymmetricAlgebraHomEquiv_apply, algSpecHomEquivAlgHom_eq_appTop]
 
 /-- Changing the test algebra postcomposes the linear functional with its algebra map. -/
 @[simp]
