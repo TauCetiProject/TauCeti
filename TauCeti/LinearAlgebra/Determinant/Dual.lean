@@ -31,8 +31,8 @@ evaluation isomorphism of the line `det (ker f)` with its double dual, and the s
 tensor product. No bases or complements are chosen. Its value on exterior products is
 `LinearMap.smul_detLineDualMapEquiv_tmul`. The underlying dimension count is that the kernel and
 cokernel of `f^*` have the dimensions of the cokernel and kernel of `f`
-(`LinearMap.finrank_ker_dualMap`, `LinearMap.finrank_quotient_range_dualMap`), so `f^*` has
-index minus that of `f`.
+(`LinearMap.finrank_ker_dualMap_eq_finrank_quotient_range`,
+`LinearMap.finrank_quotient_range_dualMap`), so `f^*` has index minus that of `f`.
 
 This is the dual comparison of determinant lines through which orientations of the determinant
 line of an operator are transported to the determinant line of its adjoint.
@@ -122,7 +122,8 @@ theorem cokerDualMapEquiv_mk_apply (θ : Dual K M) (u : ker f) :
   (rfl)
 
 /-- The kernel of `f^*` has the dimension of the cokernel of `f`. -/
-theorem finrank_ker_dualMap : finrank K (ker f.dualMap) = finrank K (N ⧸ range f) :=
+theorem finrank_ker_dualMap_eq_finrank_quotient_range :
+    finrank K (ker f.dualMap) = finrank K (N ⧸ range f) :=
   f.kerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
 
 /-- The cokernel of `f^*` has the dimension of the kernel of `f`. -/
@@ -185,7 +186,9 @@ private theorem detLineKerDualMapEquiv_ιMulti [FiniteDimensional K (N ⧸ range
     (n : Fin (finrank K (N ⧸ range f)) → N) :
     f.detLineKerDualMapEquiv (exteriorPower.ιMulti K _ φ)
         (exteriorPower.ιMulti K _ ((range f).mkQ ∘ n)) =
-      (Matrix.of fun i j ↦ (φ (Fin.cast f.finrank_ker_dualMap.symm j) : Dual K N) (n i)).det := by
+      (Matrix.of fun i j ↦
+        (φ (Fin.cast f.finrank_ker_dualMap_eq_finrank_quotient_range.symm j) : Dual K N)
+          (n i)).det := by
   simp only [detLineKerDualMapEquiv, LinearEquiv.trans_apply, LinearEquiv.detLineCongr_ιMulti,
     detLineDualEquiv_ιMulti_ιMulti, Function.comp_apply, Submodule.mkQ_apply,
     kerDualMapEquiv_apply_mk, Fin.cast_cast]
@@ -217,7 +220,9 @@ theorem smul_detLineDualMapEquiv_tmul [FiniteDimensional K (ker f)]
     (u : Fin (finrank K (ker f)) → ker f) (ψ : Dual K (TauCeti.detLine K (N ⧸ range f)))
     (hψ : ∀ n : Fin (finrank K (N ⧸ range f)) → N,
       ψ (exteriorPower.ιMulti K _ ((range f).mkQ ∘ n)) =
-        (Matrix.of fun i j ↦ (φ (Fin.cast f.finrank_ker_dualMap.symm j) : Dual K N) (n i)).det) :
+        (Matrix.of fun i j ↦
+          (φ (Fin.cast f.finrank_ker_dualMap_eq_finrank_quotient_range.symm j) : Dual K N)
+            (n i)).det) :
     (Matrix.of fun i j ↦ θ (Fin.cast f.finrank_quotient_range_dualMap.symm j) (u i)).det •
         f.detLineDualMapEquiv (exteriorPower.ιMulti K _ φ ⊗ₜ β) =
       β (exteriorPower.ιMulti K _ ((range f.dualMap).mkQ ∘ θ)) •
