@@ -133,6 +133,40 @@ private theorem image_smul_eq_image_smul_of_inter_nonempty
     rw [mul_smul, mul_smul, hhu, inv_smul_smul]
   simp [hgg', mul_smul, ← Set.image_smul, Set.image_image, hmap]
 
+/-- Openness inside the base set `q '' U` is detected on any single sheet `qH '' (g • U)`: a subset
+`W` of `q '' U` is open exactly when its preimage under `r`, cut down to that sheet, is open. -/
+private theorem isOpen_iff_isOpen_preimage_inter_image_smul (hq : IsQuotientCoveringMap q G)
+    (hqH : IsQuotientCoveringMap qH H) (hr : r ∘ qH = q) (hrc : Continuous r) {U : Set E}
+    (hUo : IsOpen U) (g : G) {W : Set X} (hWV : W ⊆ q '' U) :
+    IsOpen W ↔ IsOpen (r ⁻¹' W ∩ qH '' (g • U)) := by
+  have hrqH : ∀ y : E, r (qH y) = q y := congrFun hr
+  have hcsG : ContinuousConstSMul G E := hq.toContinuousConstSMul
+  have hsheet_open : IsOpen (qH '' (g • U)) := hqH.isOpenQuotientMap.isOpenMap _ (hUo.smul g)
+  refine ⟨fun hW => (hW.preimage hrc).inter hsheet_open, fun hW => ?_⟩
+  have hSopen : IsOpen (q ⁻¹' W ∩ g • U) := by
+    have hpull : IsOpen (qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U))) := hW.preimage hqH.continuous
+    have hinter : qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U)) ∩ g • U = q ⁻¹' W ∩ g • U := by
+      ext w
+      simp only [Set.mem_inter_iff, Set.mem_preimage, hrqH]
+      exact and_congr_left fun hw => and_iff_left ⟨w, hw, rfl⟩
+    exact hinter ▸ hpull.inter (hUo.smul g)
+  rw [← hq.toIsQuotientMap.isOpen_preimage]
+  have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ g • U) := by
+    refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
+    · obtain ⟨u, hu, hqu⟩ := hWV hw
+      obtain ⟨m, hm⟩ := hq.apply_eq_iff_mem_orbit.mp hqu.symm
+      refine Set.mem_iUnion.mpr ⟨m * g⁻¹, Set.mem_smul_set.mpr ⟨g • u, ⟨?_, ?_⟩, ?_⟩⟩
+      · rw [Set.mem_preimage, hq.map_smul, hqu]
+        exact hw
+      · exact Set.smul_mem_smul_set hu
+      · rw [mul_smul, inv_smul_smul]
+        exact hm
+    · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
+      rw [Set.mem_preimage, hq.map_smul]
+      exact hw'
+  rw [hcover]
+  exact isOpen_iUnion fun k => hSopen.smul k
+
 /-- The evenly covered neighbourhood of `q e` cut out by a set `U` around `e` whose `G`-translates
 are pairwise disjoint. Its sheets are the images in `Y` of the translates `g • U`. -/
 private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G)
@@ -140,12 +174,9 @@ private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G
     (hdisj : ∀ g : G, (g • U ∩ U).Nonempty → g = 1) {e : E} (heU : e ∈ U) :
     IsEvenlyCovered r (q e) (r ⁻¹' {q e}) := by
   have hrqH : ∀ y : E, r (qH y) = q y := congrFun hr
-  have hcsG : ContinuousConstSMul G E := hq.toContinuousConstSMul
   have hrc : Continuous r := by
     rw [hqH.toIsQuotientMap.continuous_iff, hr]
     exact hq.continuous
-  have hsheet_open : ∀ g : G, IsOpen (qH '' (g • U)) := fun g =>
-    hqH.isOpenQuotientMap.isOpenMap _ (hUo.smul g)
   have hVo : IsOpen (q '' U) := hq.isOpenQuotientMap.isOpenMap _ hUo
   let : TopologicalSpace {S : Set Y // ∃ g : G, S = qH '' (g • U)} := ⊥
   have : DiscreteTopology {S : Set Y // ∃ g : G, S = qH '' (g • U)} := ⟨rfl⟩
@@ -159,30 +190,7 @@ private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G
         ?_ ?_ ?_ ?_ ?_) ⟨e, heU, rfl⟩)
   · -- Openness inside the base set is detected on any single sheet.
     rintro ⟨S, g, rfl⟩ W hWV
-    refine ⟨fun hW => (hW.preimage hrc).inter (hsheet_open g), fun hW => ?_⟩
-    have hSopen : IsOpen (q ⁻¹' W ∩ g • U) := by
-      have hpull : IsOpen (qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U))) := hW.preimage hqH.continuous
-      have hinter : qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U)) ∩ g • U = q ⁻¹' W ∩ g • U := by
-        ext w
-        simp only [Set.mem_inter_iff, Set.mem_preimage, hrqH]
-        exact and_congr_left fun hw => and_iff_left ⟨w, hw, rfl⟩
-      exact hinter ▸ hpull.inter (hUo.smul g)
-    rw [← hq.toIsQuotientMap.isOpen_preimage]
-    have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ g • U) := by
-      refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
-      · obtain ⟨u, hu, hqu⟩ := hWV hw
-        obtain ⟨m, hm⟩ := hq.apply_eq_iff_mem_orbit.mp hqu.symm
-        refine Set.mem_iUnion.mpr ⟨m * g⁻¹, Set.mem_smul_set.mpr ⟨g • u, ⟨?_, ?_⟩, ?_⟩⟩
-        · rw [Set.mem_preimage, hq.map_smul, hqu]
-          exact hw
-        · exact Set.smul_mem_smul_set hu
-        · rw [mul_smul, inv_smul_smul]
-          exact hm
-      · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
-        rw [Set.mem_preimage, hq.map_smul]
-        exact hw'
-    rw [hcover]
-    exact isOpen_iUnion fun k => hSopen.smul k
+    exact isOpen_iff_isOpen_preimage_inter_image_smul hq hqH hr hrc hUo g hWV
   · -- The map is injective on each sheet.
     rintro ⟨S, g, rfl⟩ z hz z' hz' hzz'
     obtain ⟨w, hw, rfl⟩ := hz
