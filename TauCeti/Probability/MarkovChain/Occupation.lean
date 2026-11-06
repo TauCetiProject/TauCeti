@@ -206,7 +206,7 @@ theorem ae_tendsto_visitCount_div_markovChainLaw_dirac (y : α) :
         (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ := by
       rw [meanReturnTime_def]
       refine lintegral_congr fun x => ?_
-      cases hittingAfter (fun n x => x n) {y} 1 x <;> simp
+      cases hittingAfter (fun n x => x n) {y} 1 x <;> rfl
     rw [hm]
     exact κ.ae_tendsto_visitCount_div_of_return_eq_one (isRecurrent_iff.mp hy)
   -- A transient state has infinite mean return time and is visited only finitely often.
