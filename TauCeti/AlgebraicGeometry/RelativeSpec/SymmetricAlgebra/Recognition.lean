@@ -267,10 +267,8 @@ theorem specSymmetricAlgebraOverIso_forget_map_hom {M N : ModuleCat.{u} R}
     (MorphismProperty.Over.forget _ _ (Spec R)).map (specSymmetricAlgebraOverIso e).hom =
       specSymmetricAlgebraMap e.symm.toLinearMap := by
   apply Over.OverMorphism.ext
-  -- Forgetting the affine-morphism property is definitionally the same underlying scheme
-  -- map; its comma-category presentation otherwise hides the left-map rewrite lemmas.
-  change (specSymmetricAlgebraOverIso e).hom.left =
-    (specSymmetricAlgebraMap e.symm.toLinearMap).left
+  rw [← Over.forget_map, ← Functor.comp_map]
+  erw [MorphismProperty.Over.forget_comp_forget_map]
   rw [specSymmetricAlgebraOverIso_hom_left, specSymmetricAlgebraMap_left,
     SymmetricAlgebra.mapEquiv_symm]
   congr 2
