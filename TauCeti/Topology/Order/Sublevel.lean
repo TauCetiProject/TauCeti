@@ -38,7 +38,8 @@ homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_ap
 of the deformation of sublevels across a band without critical points, where the motion is the
 flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
-topology across the band.
+topology across the band. All sublevels together form the functor `TauCeti.sublevelFunctor f` from
+the levels to spaces, with the cocone `TauCeti.sublevelCocone f` of their inclusions into `X`.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -57,6 +58,8 @@ band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_pr
 public section
 
 open Set
+
+universe u
 
 namespace TauCeti
 
@@ -165,6 +168,28 @@ of `X`. -/
 abbrev sublevelPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
     {a b : β} (hab : a ≤ b) : TopPair :=
   TopPair.ofInclusion (X := TopCat.of X) (sublevel_mono f hab)
+
+section Functor
+
+open CategoryTheory Limits
+
+variable {X : Type u} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+
+/-- The sublevels `{f ≤ b}` of `f` as a functor from the levels to topological spaces. The map
+for `a ≤ b` is the embedding of the sublevel pair `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`. -/
+@[expose, simps]
+def sublevelFunctor : β ⥤ TopCat.{u} where
+  obj b := TopCat.of {x | f x ≤ b}
+  map h := (sublevelPair f (leOfHom h)).map
+
+/-- The cocone over `TauCeti.sublevelFunctor f` with apex `X`, whose legs are the inclusions of
+the sublevels into `X`. -/
+@[expose, simps]
+def sublevelCocone : Cocone (sublevelFunctor f) where
+  pt := TopCat.of X
+  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+
+end Functor
 
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if

@@ -138,14 +138,10 @@ theorem IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le (hf : Is
     [Module.Free k V] :
     Module.Free k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
       (TopCat.of {x | f x ≤ b})) := by
-  have hcont : Continuous f := hf.contMDiff.continuous
-  -- Below the minimum of `f` on the compact sublevel, the sublevel `{f ≤ a}` is empty.
-  obtain ⟨a, hab, ha⟩ := exists_le_forall_lt_of_isCompact_sublevel hcompact hcont.continuousOn
-  have : IsEmpty (sublevelPair f hab).snd := ⟨fun x ↦ (ha x.1).not_ge x.2⟩
-  have := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab
-    (hcompact.of_isClosed_subset (isClosed_Icc.preimage hcont) fun x hx ↦ hx.2)
-    (isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp)
-    hb (fun p hp ↦ hd p hp.1 hp.2.2) V
+  obtain ⟨a, hab, _, hband, ha⟩ :=
+    exists_isEmpty_sublevelPair_of_isCompact_sublevel (I := I) hf.contMDiff.continuous hcompact
+  have := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hband ha hb
+    (fun p hp ↦ hd p hp.1 hp.2.2) V
   -- Relative homology modulo the empty sublevel is the homology of `{f ≤ b}`.
   exact .of_equiv (asIso ((sublevelPair f hab).singularHomologyπ V d)).toLinearEquiv.symm
 
@@ -179,37 +175,26 @@ theorem IsMorse.free_singularHomology_of_manifoldMorseIndex_le (hf : IsMorse I f
     Module.Free k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
       (TopCat.of M)) := by
   have hcont : Continuous f := hf.contMDiff.continuous
-  obtain ⟨a, K, hmono, -, hreg, hK, -, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
-  have hKa (j : ℕ) : K j = {x | f x ≤ a j} := hK j
-  -- The regular sublevels `{f ≤ a j}` and their inclusions into `M` form a cocone of embeddings,
-  -- and every compact subset of `M` lies in one of them, so `H_d(M)` is the colimit of their
-  -- homology.
-  let F : ℕ ⥤ TopCat.{u} :=
-    { obj j := TopCat.of {x | f x ≤ a j}
-      map h := TopCat.ofHom (ContinuousMap.inclusion (sublevel_mono f (hmono.monotone h.le))) }
-  let c : Cocone F :=
-    { pt := TopCat.of M
-      ι := { app j := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ } }
-  have hc : IsColimit (((AlgebraicTopology.singularHomologyFunctor _ d).obj V).mapCocone c) :=
-    isColimitMapCoconeSingularHomology V d c (fun _ ↦ IsEmbedding.subtypeVal) fun L hL ↦ by
-      obtain ⟨j, hj⟩ := K.exists_superset_of_isCompact hL
-      exact ⟨j, fun x hx ↦ ⟨⟨x, by simpa [hKa j] using hj hx⟩, rfl⟩⟩
+  -- `H_d(M)` is the colimit of the homology of the regular sublevels `{f ≤ a j}`.
+  obtain ⟨a, ha, hreg, hcompact, hc⟩ :=
+    hf.exists_regular_sublevel_isColimit_singularHomology hp hbdd
   -- Each step `({f ≤ a (j + 1)}, {f ≤ a j})` is a compact band between regular values.
   have hband (j : ℕ) : IsCompact (f ⁻¹' Icc (a j) (a (j + 1))) :=
-    (K.isCompact (j + 1)).of_isClosed_subset (isClosed_Icc.preimage hcont)
-      fun x hx ↦ by simpa [hKa] using hx.2
-  have hstep (j : ℕ) := hmono.monotone (Nat.le_succ j)
+    (hcompact (j + 1)).of_isClosed_subset (isClosed_Icc.preimage hcont) fun x hx ↦ hx.2
+  have hstep (j : ℕ) := ha (Nat.le_succ j)
   have hfree (j : ℕ) := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j)
     (hband j) (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V
   have hzero (j : ℕ) := hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j)
     (hband j) (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V (lt_add_one d)
-  have : Module.Free k ((F ⋙ (AlgebraicTopology.singularHomologyFunctor _ d).obj V).obj 0) :=
-    hf.free_singularHomology_sublevel_of_manifoldMorseIndex_le (by simpa [hKa] using K.isCompact 0)
-      (hreg 0) (fun x hx _ ↦ hd x hx) V
+  have : Module.Free k (((ha.functor ⋙ sublevelFunctor f) ⋙
+      (AlgebraicTopology.singularHomologyFunctor _ d).obj V).obj 0) :=
+    hf.free_singularHomology_sublevel_of_manifoldMorseIndex_le (hcompact 0) (hreg 0)
+      (fun x hx _ ↦ hd x hx) V
   -- In the long exact sequence of the pair `({f ≤ a (j + 1)}, {f ≤ a j})`, the map
-  -- `H_d({f ≤ a j}) ⟶ H_d({f ≤ a (j + 1)})` is injective, since `H_{d+1}` of the pair vanishes,
-  -- and is followed by the map into the free module `H_d({f ≤ a (j + 1)}, {f ≤ a j})`.
-  exact ModuleCat.free_of_isColimit_of_exact hc
+  -- `H_d({f ≤ a j}) ⟶ H_d({f ≤ a (j + 1)})`, induced by the embedding
+  -- `(sublevelFunctor f).map _ = (sublevelPair f _).map`, is injective since `H_{d+1}` of the pair
+  -- vanishes, and is followed by the map into the free module `H_d({f ≤ a (j + 1)}, {f ≤ a j})`.
+  exact ModuleCat.free_of_isColimit_of_exact (hc V d).some
     (fun j ↦ (ModuleCat.mono_iff_injective _).1
       ((sublevelPair f (hstep j)).mono_homologyMap_map_of_isZero V (hzero j)))
     (fun j ↦ ((sublevelPair f (hstep j)).singularHomologyπ V d).hom) fun j ↦
