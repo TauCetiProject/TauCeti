@@ -275,8 +275,10 @@ exactly when `q^(2r) = 1`. -/
 theorem quantumInteger_eq_zero_iff {q : K} (hq : q - q⁻¹ ≠ 0) (r : ℤ) :
     quantumInteger q r = 0 ↔ q ^ (2 * r) = 1 := by
   have hq0 := ne_zero_of_sub_inv_ne_zero hq
-  rw [quantumInteger_def, div_eq_zero_iff, or_iff_left hq, sub_eq_zero, two_mul,
-    zpow_add₀ hq0, zpow_neg, mul_eq_one_iff_eq_inv₀ (zpow_ne_zero r hq0)]
+  have := zpow_ne_zero r hq0
+  rw [quantumInteger_def, div_eq_zero_iff, or_iff_left hq, sub_eq_zero, two_mul, zpow_add₀ hq0,
+    zpow_neg]
+  constructor <;> intro h <;> field_simp at h ⊢ <;> linear_combination h
 
 end TauCeti
 

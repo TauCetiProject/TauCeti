@@ -75,16 +75,15 @@ theorem quantumInteger_eq_zero_iff_dvd {q : K} (hq : q ≠ 0) {ℓ : ℕ}
     quantumInteger q r = 0 ↔ (ℓ : ℤ) ∣ r := by
   have hu : IsPrimitiveRoot (Units.mk0 (q ^ 2) (pow_ne_zero 2 hq)) ℓ :=
     IsPrimitiveRoot.coe_units_iff.mp h
-  rw [← hu.zpow_eq_one_iff_dvd, ← Units.val_eq_one, Units.val_zpow_eq_zpow_val, Units.val_mk0,
-    ← zpow_natCast, ← zpow_mul, Nat.cast_ofNat]
+  rw [← hu.zpow_eq_one_iff_dvd]
+  simp only [← Units.val_eq_one, Units.val_zpow_eq_zpow_val, Units.val_mk0]
   by_cases hd : q - q⁻¹ = 0
   · -- Here `q² = 1`, so both sides hold.
     have hsq : q ^ 2 = 1 := by
       field_simp at hd
       linear_combination hd
-    simp only [quantumInteger_def, hd, div_zero, true_iff]
-    rw [zpow_mul, zpow_ofNat, hsq, one_zpow]
-  · exact quantumInteger_eq_zero_iff hd r
+    simp [quantumInteger_def, hd, hsq]
+  · simpa [zpow_mul] using quantumInteger_eq_zero_iff hd r
 
 /-! ### Quantum factorials in a field -/
 
@@ -154,8 +153,8 @@ theorem forall_quantumFactorial_ne_zero_iff {q : K} :
     ⟨ne_zero_of_sub_inv_ne_zero hd, fun n hn hpow => h n ?_⟩
   -- The factor `[n]_q` of `[n]_q!` vanishes, because `q^(2n) = (q^n)^2 = 1`.
   refine quantumFactorial_eq_zero_iff.mpr ⟨n - 1, by omega, ?_⟩
-  rw [Nat.cast_sub (by omega), Nat.cast_one, sub_add_cancel, quantumInteger_eq_zero_iff hd,
-    mul_comm, zpow_mul, zpow_natCast, hpow, one_zpow]
+  rw [Nat.cast_pred (by omega), sub_add_cancel, quantumInteger_eq_zero_iff hd]
+  simp [mul_comm, zpow_mul, hpow]
 
 /-- **Quantum factorials at a root of unity**: if `q²` is a primitive `ℓ`-th root of unity with
 `ℓ > 0`, then `[n]_q! ≠ 0` exactly when `n < ℓ`. -/
