@@ -164,14 +164,15 @@ private theorem specialIsogenyCoordinateMap_apply_apply (x : S) :
 
 /-- The exceptional coordinate morphism is finite. -/
 theorem finite_specialIsogenyCoordinateMap : specialIsogenyCoordinateMap.hom.toAlgHom.Finite :=
-  specialIsogenyCoordinateMap.hom.toAlgHom.finite_of_comp_self_eq_pow (by decide)
+  specialIsogenyCoordinateMap.hom.toAlgHom.finite_of_comp_eq_pow (by decide)
     specialIsogenyCoordinateMap_apply_apply
 
 /-- The exceptional morphism is finite and faithfully flat, hence an isogeny. -/
 theorem isIsogeny_specialIsogenyCoordinateMap :
     CommHopfAlgCat.IsIsogeny specialIsogenyCoordinateMap := by
-  have hinv := RingHom.comap_involutive_of_comp_self_eq_pow
-    specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom (by decide : 0 < 2)
+  have hinv := RingHom.leftInverse_comap_of_comp_eq_pow
+    specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom
+      (g := specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom) (by decide : 0 < 2)
       specialIsogenyCoordinateMap_apply_apply
   exact (CommHopfAlgCat.isIsogeny_iff_finite_and_dominant specialIsogenyCoordinateMap).mpr
     ⟨finite_specialIsogenyCoordinateMap, hinv.surjective.denseRange⟩
