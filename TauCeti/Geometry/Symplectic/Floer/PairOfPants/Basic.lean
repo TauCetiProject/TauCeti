@@ -141,6 +141,24 @@ theorem pairOfPantsPerturbation_single_zero_eq_zero_of_le_norm {G : ℝ → M �
   rw [pairOfPantsPerturbation_single, endSign_zero, one_mul,
     smoothTransition.zero_of_nonpos (by linarith), zero_mul, zero_smul]
 
+/-- Families indexed by the ends that are `G` at one end `q` and zero at the others inherit any
+property shared by `G` and `0`. -/
+theorem forall_single (q : Puncture) {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) {G : ℝ → M → ℝ}
+    (hG : P G) : ∀ r, P ((Pi.single q G : Puncture → ℝ → M → ℝ) r) := by
+  intro r
+  rcases eq_or_ne r q with rfl | hr
+  · simpa using hG
+  · simpa [Pi.single_eq_of_ne hr] using h₀
+
+/-- A bound `|G| ≤ B` gives the bounds `Pi.single q B` for the family that is `G` at the end `q`
+and zero at the others. -/
+theorem abs_single_le (q : Puncture) {G : ℝ → M → ℝ} {B : ℝ} (hB : ∀ t x, |G t x| ≤ B) :
+    ∀ r t x, |(Pi.single q G : Puncture → ℝ → M → ℝ) r t x| ≤ (Pi.single q B : Puncture → ℝ) r := by
+  intro r t x
+  rcases eq_or_ne r q with rfl | hr
+  · simpa using hB t x
+  · simp [Pi.single_eq_of_ne hr]
+
 /-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
 `1`, where every signed longitudinal coordinate is at most `0`. -/
 theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :

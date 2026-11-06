@@ -76,7 +76,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_injective)
 
 namespace TauCeti.Floer
 
@@ -131,18 +131,6 @@ open Floer MeasureTheory
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture} {L : ℝ}
-
-private theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
-  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
-    funext (plumbingMap_apply q L)
-  exact contDiff_realChart (by rw [hψ]; fun_prop)
-
-private theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
-    Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
-  rw [realChart_apply, realChart_apply] at h
-  exact Complex.equivRealProdCLM.symm.injective
-    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
 
 /-- At points other than the four punctures, the plumbed perturbation of `C¹` Hamiltonians is
 differentiable jointly in the domain and target points. -/
@@ -291,23 +279,14 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
       fun h ↦ hw.2.1 (q.plumbingMap_injective L h)⟩
     rw [endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L hw.1]
     linarith [hw.2.2]
-  have hdom {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
-      (fun z ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) y v)
-      (realChart (q.plumbingMap L) w) :=
-    ((hdiff hw y).comp (f := fun z ↦ (Complex.equivRealProdCLM.symm z, y))
-      (realChart (q.plumbingMap L) w) (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
-        (differentiableAt_const y))).clm_apply (differentiableAt_const v)
-  have htgt {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
-      (fun y ↦ plumbedPerturbation Ha Hb q L
-        (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w)) y v) y :=
-    ((hdiff hw y).comp
-      (f := fun y ↦ (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w), y))
-      y ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
-      (differentiableAt_const v)
-  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_realChart_plumbingMap q L).injOn
-    (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
-    (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
-    (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]
+  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
+    (realChart_injective (q.plumbingMap_injective L)).injOn
+    (fun w _ ↦ (contDiff_realChart
+      (by rw [show q.plumbingMap L = _ from funext (plumbingMap_apply q L)]; fun_prop)).contDiffAt)
+    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) 1)
+    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I)
+    (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) 1)
+    (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) Complex.I)]
   calc _ = ∫⁻ w in S, ‖ω.hamiltonianCurvature
           (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
