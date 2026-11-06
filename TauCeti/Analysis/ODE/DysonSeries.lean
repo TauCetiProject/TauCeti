@@ -50,8 +50,12 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.dysonSeriesLeft`: the Dyson series in the opposite algebra, solving
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`).
+  Its values are invertible, with inverse the Dyson series of `-p`
+  (`TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`, `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`).
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
+* `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: the variation of constants formula for the
+  inhomogeneous equation `w' t = M t (w t) + g t`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
 
 ## References
@@ -303,6 +307,35 @@ theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
   simpa using eq_dysonSeriesLeft_mul hp (f := fun t => dysonSeriesLeft p (t + d))
     (fun t => by simpa [hper t] using (hasDerivAt_dysonSeriesLeft hp (t + d)).comp_add_const t d) t
 
+/-- The Dyson series of `-p` is a left inverse of the left Dyson series of `p`:
+`Φ t * Γ t = 1`, where `Φ' t = -Φ t * p t` and `Γ' t = p t * Γ t`. -/
+theorem dysonSeries_neg_mul_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
+    dysonSeries (-p) t * dysonSeriesLeft p t = 1 := by
+  have hd (s : ℝ) :
+      HasDerivAt (fun s => dysonSeries (-p) s * dysonSeriesLeft p s) 0 s :=
+    ((hasDerivAt_dysonSeries hp.neg s).mul (hasDerivAt_dysonSeriesLeft hp s)).congr_deriv
+      (by simp [mul_assoc])
+  have hconst := is_const_of_deriv_eq_zero (fun s => (hd s).differentiableAt)
+    fun s => (hd s).deriv
+  exact (hconst t 0).trans (by simp)
+
+/-- The Dyson series of `-p` is a right inverse of the left Dyson series of `p`:
+`Γ t * Φ t = 1`. -/
+theorem dysonSeriesLeft_mul_dysonSeries_neg (hp : Continuous p) (t : ℝ) :
+    dysonSeriesLeft p t * dysonSeries (-p) t = 1 := by
+  -- `Γ t * Φ t` solves `Y' = p Y - Y p`, as does the constant `1`.
+  let L : ℝ → B →L[ℝ] B := fun s =>
+    ContinuousLinearMap.mul ℝ B (p s) - (ContinuousLinearMap.mul ℝ B).flip (p s)
+  have hL : Continuous L :=
+    ((ContinuousLinearMap.mul ℝ B).continuous.comp hp).sub
+      ((ContinuousLinearMap.mul ℝ B).flip.continuous.comp hp)
+  refine congrFun (hL.eq_of_hasDerivAt_clm_apply
+    (v := fun s => dysonSeriesLeft p s * dysonSeries (-p) s) (w := fun _ => 1)
+    (fun s => ?_) (fun s => ?_) (t₀ := 0) (by simp)) t
+  · exact ((hasDerivAt_dysonSeriesLeft hp s).mul (hasDerivAt_dysonSeries hp.neg s)).congr_deriv
+      (by simp [L, mul_assoc, sub_eq_add_neg])
+  · exact (hasDerivAt_const s (1 : B)).congr_deriv (by simp [L])
+
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
     ContDiff ℝ (n + 1) (dysonSeriesLeft p) := by
@@ -336,6 +369,34 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     (t : ℝ) :
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
+
+/-- **Variation of constants.** For a continuous forcing `g`, the function
+`t ↦ Γ t (x + ∫₀ᵗ Φ s (g s))`, with `Γ = dysonSeriesLeft M` and `Φ = dysonSeries (-M)`,
+solves the inhomogeneous equation `w' t = M t (w t) + g t`. -/
+theorem hasDerivAt_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {g : ℝ → X} (hg : Continuous g) (x : X) (t : ℝ) :
+    HasDerivAt (fun t => dysonSeriesLeft M t (x + ∫ s in 0..t, dysonSeries (-M) s (g s)))
+      (M t (dysonSeriesLeft M t (x + ∫ s in 0..t, dysonSeries (-M) s (g s))) + g t)
+      t := by
+  have hI := (((continuous_dysonSeries hM.neg).clm_apply hg).integral_hasStrictDerivAt 0 t
+    |>.hasDerivAt).const_add x
+  refine ((hasDerivAt_dysonSeriesLeft hM t).clm_apply hI).congr_deriv ?_
+  rw [← mul_apply_eq_comp, dysonSeriesLeft_mul_dysonSeries_neg hM t, one_apply_eq_self,
+    mul_apply_eq_comp]
+
+/-- **Variation of constants.** Every solution of `w' t = M t (w t) + g t`, for a continuous
+path `M` of bounded operators and a continuous forcing `g`, is
+`w t = Γ t (w 0 + ∫₀ᵗ Φ s (g s))`, with `Γ = dysonSeriesLeft M` and `Φ = dysonSeries (-M)`. -/
+theorem eq_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {g : ℝ → X} (hg : Continuous g) {w : ℝ → X} (hw : ∀ t, HasDerivAt w (M t (w t) + g t) t)
+    (t : ℝ) :
+    w t = dysonSeriesLeft M t (w 0 + ∫ s in 0..t, dysonSeries (-M) s (g s)) := by
+  -- The difference of two solutions solves the homogeneous equation and vanishes at `0`.
+  have h := eq_dysonSeriesLeft_apply hM (w := fun t => w t - dysonSeriesLeft M t
+    (w 0 + ∫ s in 0..t, dysonSeries (-M) s (g s)))
+    (fun t => ((hw t).sub (hasDerivAt_dysonSeriesLeft_apply_add_integral hM hg (w 0) t))
+      |>.congr_deriv (by rw [map_sub]; abel)) t
+  simpa [sub_eq_zero] using h
 
 end Left
 
