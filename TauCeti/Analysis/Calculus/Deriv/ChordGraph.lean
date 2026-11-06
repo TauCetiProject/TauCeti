@@ -484,6 +484,25 @@ theorem exists_strictMonoOn_dual_comp (hγ : ContDiff ℝ 1 γ) (hderiv : ∀ t,
   exact ⟨δ, hδ, fun s hs ↦
     (h s hs (s + δ) ⟨lt_add_of_pos_right s hδ, le_rfl⟩).imp fun _ hφ ↦ hφ.2.2.1⟩
 
+/-- **Lipschitz bound for a jointly `C¹` family on a box.** If `Γ t s` is `C¹` in `(t, s)`, there is
+a constant `B` such that `‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂|` for all `t₁, t₂` in
+`[t₀, t₁']` and all `s₁, s₂` in `[a, b]`. -/
+theorem exists_norm_sub_le_mul_max_uncurry {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1 (uncurry Γ))
+    (t₀ t₀' a b : ℝ) :
+    ∃ B : NNReal, ∀ ⦃x₁ y₁ x₂ y₂ : ℝ⦄, x₁ ∈ Icc t₀ t₀' → y₁ ∈ Icc a b → x₂ ∈ Icc t₀ t₀' →
+      y₂ ∈ Icc a b → ‖Γ x₁ y₁ - Γ x₂ y₂‖ ≤ B * max |x₁ - x₂| |y₁ - y₂| := by
+  have hQc : IsCompact (Icc t₀ t₀' ×ˢ Icc a b) := isCompact_Icc.prod isCompact_Icc
+  have hQv : Convex ℝ (Icc t₀ t₀' ×ˢ Icc a b) := (convex_Icc _ _).prod (convex_Icc _ _)
+  have hdiff : Differentiable ℝ (uncurry Γ) := hΓ.differentiable one_ne_zero
+  obtain ⟨B, hB⟩ := hQc.exists_bound_of_continuousOn
+    (hΓ.continuous_fderiv one_ne_zero).continuousOn
+  refine ⟨B.toNNReal, fun x₁ y₁ x₂ y₂ hx₁ hy₁ hx₂ hy₂ ↦ ?_⟩
+  have h₁ : (x₁, y₁) ∈ Icc t₀ t₀' ×ˢ Icc a b := ⟨hx₁, hy₁⟩
+  have h₂ : (x₂, y₂) ∈ Icc t₀ t₀' ×ˢ Icc a b := ⟨hx₂, hy₂⟩
+  have := hQv.norm_image_sub_le_of_norm_fderiv_le (fun x _ ↦ hdiff x)
+    (fun p hp ↦ (hB p hp).trans (Real.le_coe_toNNReal B)) h₂ h₁
+  simpa [Prod.norm_def, Real.norm_eq_abs] using this
+
 /-- **Uniform windows along a `C¹` family of curves.** Let `Γ t` be a family of curves, jointly
 `C¹` in the time `t` and the curve parameter, such that each `Γ t` with `t ∈ [t₀, t₁]` has nowhere
 vanishing derivative. Then there are a window width `δ > 0` and a speed `lam > 0` such that, for
