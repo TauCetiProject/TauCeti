@@ -93,4 +93,37 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
 
+/-- Linear isometries on either side preserve differences of iterated derivative fields,
+without any differentiability assumption on the function. -/
+theorem _root_.LinearIsometryEquiv.norm_iteratedFDeriv_sub_comp
+    {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    (e : E' ≃ₗᵢ[𝕜] E) (t : F ≃ₗᵢ[𝕜] F') (f : E → F) (j : ℕ) (x y : E') :
+    ‖iteratedFDeriv 𝕜 j (t ∘ f ∘ e) x - iteratedFDeriv 𝕜 j (t ∘ f ∘ e) y‖ =
+      ‖iteratedFDeriv 𝕜 j f (e x) - iteratedFDeriv 𝕜 j f (e y)‖ := by
+  have hr (z : E') : iteratedFDeriv 𝕜 j (f ∘ e) z =
+      (iteratedFDeriv 𝕜 j f (e z)).compContinuousLinearMap fun _ => (e : E' →L[𝕜] E) := by
+    simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ, LinearIsometryEquiv.coe_coe] using
+      e.toContinuousLinearEquiv.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ
+        (Set.mem_univ z) j
+  have htjet (z : E') : iteratedFDeriv 𝕜 j (t ∘ f ∘ e) z =
+      (t : F →L[𝕜] F').compContinuousMultilinearMap (iteratedFDeriv 𝕜 j (f ∘ e) z) := by
+    simpa only [LinearIsometryEquiv.coe_coe, Function.comp_assoc] using
+      t.toContinuousLinearEquiv.iteratedFDeriv_comp_left (f := f ∘ e) (x := z) (i := j)
+  rw [htjet, htjet]
+  have ht : (t : F →L[𝕜] F').compContinuousMultilinearMap
+      (iteratedFDeriv 𝕜 j (f ∘ e) x) -
+      (t : F →L[𝕜] F').compContinuousMultilinearMap (iteratedFDeriv 𝕜 j (f ∘ e) y) =
+      (t : F →L[𝕜] F').compContinuousMultilinearMap
+        (iteratedFDeriv 𝕜 j (f ∘ e) x - iteratedFDeriv 𝕜 j (f ∘ e) y) := by ext; simp
+  rw [ht, ← t.toContinuousLinearMap_toLinearIsometry,
+    t.toLinearIsometry.norm_compContinuousMultilinearMap, hr, hr]
+  have he : (iteratedFDeriv 𝕜 j f (e x)).compContinuousLinearMap (fun _ => (e : E' →L[𝕜] E)) -
+      (iteratedFDeriv 𝕜 j f (e y)).compContinuousLinearMap (fun _ => (e : E' →L[𝕜] E)) =
+      (iteratedFDeriv 𝕜 j f (e x) - iteratedFDeriv 𝕜 j f (e y)).compContinuousLinearMap
+        (fun _ => (e : E' →L[𝕜] E)) := by ext; simp
+  rw [he, ContinuousMultilinearMap.norm_compContinuous_linearIsometryEquiv]
+
+
 end TauCeti
