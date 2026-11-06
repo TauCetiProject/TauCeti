@@ -107,7 +107,7 @@ private theorem abs_im_mul_conj_le_norm_sub_mul_add_mul_norm_sub_smul (u z v : �
 /-- **A quadratic error cannot swallow the linear term.** If `z` lies within `K * a ^ 2` of the
 real multiple `a • v`, and `a` is small enough that `|a| * (2 * K) ≤ ‖v‖`, then `z` still inherits
 half of the length `|a| * ‖v‖` of that multiple. -/
-private theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [NormedAddCommGroup E]
+private theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {z v : E} {a K : ℝ} (hR : ‖z - a • v‖ ≤ K * a ^ 2)
     (ha : |a| * (2 * K) ≤ ‖v‖) :
     |a| * ‖v‖ ≤ 2 * ‖z‖ := by
