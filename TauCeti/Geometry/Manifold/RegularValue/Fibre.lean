@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue
 import Mathlib.Topology.DiscreteSubset
+import Mathlib.Topology.Maps.Proper.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 
 /-!
@@ -28,6 +29,8 @@ theorem.
 * `TauCeti.IsRegularValue.isDiscrete_preimage`: the fibre over a regular value is discrete.
 * `TauCeti.IsRegularValue.finite_preimage`: on a compact manifold, the fibre over a regular value
   is finite.
+* `TauCeti.IsRegularValue.finite_preimage_of_isProperMap`: the same finiteness holds for proper
+  maps, without requiring the source to be compact.
 
 ## References
 
@@ -71,5 +74,13 @@ theorem IsRegularValue.finite_preimage [CompactSpace M] [T1Space N]
     (hy : IsRegularValue I J f y) : (f ⁻¹' {y}).Finite :=
   (isClosed_singleton.preimage hf.continuous).isCompact.finite
     (hy.isDiscrete_preimage hdim hf hn)
+
+/-- The fibre over a regular value of a proper `C^n` map, `n ≠ 0`, between finite-dimensional
+manifolds of the same dimension is finite. The source may be noncompact and both manifolds may
+have boundary or corners. -/
+theorem IsRegularValue.finite_preimage_of_isProperMap
+    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (hf : ContMDiff I J n f) (hn : n ≠ 0)
+    (hy : IsRegularValue I J f y) (hp : IsProperMap f) : (f ⁻¹' {y}).Finite :=
+  (hp.isCompact_preimage isCompact_singleton).finite (hy.isDiscrete_preimage hdim hf hn)
 
 end TauCeti
