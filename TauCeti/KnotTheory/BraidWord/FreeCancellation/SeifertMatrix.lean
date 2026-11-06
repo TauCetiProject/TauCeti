@@ -582,8 +582,10 @@ private theorem exists_insert_congr_of_not_straddle
       · simpa using hcol
       · simpa using seifertMatrix_insert_mid_self u v i ε hG1
 
-/-- The row and the column of the new loop `β` in the matrix of `exists_insert_congr_of_straddle`:
-they meet the two pieces `α` and `δ` of `γ` next to it with opposite signs and nothing else. -/
+/-- The row and the column of the new loop `β` in the matrix of `exists_insert_congr_of_straddle`,
+after the change of basis `T` that replaces `α` by `α + δ + β`: each is zero except at the piece `δ`
+of `γ`. The row of `β` has the entry `-ε` at `δ` if `ε = 1` and `0` otherwise; the column of `β` has
+the entry `-ε` at `δ` if `ε = -1` and `0` otherwise. -/
 private theorem insert_straddle_row_col_inr_one {γ : (u ++ v).seifertLoops}
     (G : (u ++ v).seifertLoops ⊕ Fin 2 ≃ (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops)
     (T : Matrix ((u ++ v).seifertLoops ⊕ Fin 2) ((u ++ v).seifertLoops ⊕ Fin 2) ℤ)
