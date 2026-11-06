@@ -170,6 +170,70 @@ section Cyclic
 variable [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hn : IsUnit (n : K))
   {L : Type} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
 
+omit [FiniteDimensional K L] [IsGalois K L] in
+/-- A unit `β` of `Kˢ` with `β ^ n = b` and underlying element `ι s`, where `s ^ n = b`. -/
+private lemma exists_unit_pow_eq_map (ι : L →ₐ[K] SeparableClosure K) (b : Kˣ) {s : L}
+    (hs : s ^ n = algebraMap K L b) :
+    ∃ β : (SeparableClosure K)ˣ, (β : SeparableClosure K) = ι s ∧
+      β ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom b := by
+  have hs0 : ι s ≠ 0 := (map_ne_zero_iff _ ι.injective).2 <| by
+    rintro rfl
+    rw [zero_pow (NeZero.ne n), eq_comm, map_eq_zero] at hs
+    exact b.ne_zero hs
+  exact ⟨Units.mk0 (ι s) hs0, rfl, Units.ext <| by simp [← map_pow, hs]⟩
+
+/-- If `g` generates the Galois group of `L / K` then every element of the absolute Galois group
+restricts to `g ^ p` for some `p` below the degree. -/
+private lemma exists_restrictNormalHom_eq_pow {g : L ≃ₐ[K] L}
+    (hg : ∀ σ, σ ∈ Subgroup.zpowers g) (hord : orderOf g = finrank K L)
+    (ι : L →ₐ[K] SeparableClosure K) (σ : AbsoluteGaloisGroup K) :
+    ∃ p < finrank K L, ι.restrictNormalHom σ = g ^ p := by
+  classical
+  obtain ⟨p, hp, hpσ⟩ := Finset.mem_image.1
+    (mem_zpowers_iff_mem_range_orderOf.1 (hg (ι.restrictNormalHom σ)))
+  exact ⟨p, hord ▸ Finset.mem_range.1 hp, hpσ.symm⟩
+
+omit [NeZero n] in
+/-- **Carries under scaling, in `Kˢ`.** If `α ^ n = a` and `n = m d`, then for `p, q < d` the
+product `α ^ (m p) * α ^ (m q)` is `α ^ ((m p + m q) % n)` times `a` when `p + q` carries
+modulo `d`. -/
+private lemma pow_mul_mul_pow_mul_eq {α : (SeparableClosure K)ˣ} {a : Kˣ}
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    {m d p q : ℕ} (hmd : m * d = n) (hm0 : 0 < m) (hp : p < d) (hq : q < d) :
+    (α : SeparableClosure K) ^ (m * p) * α ^ (m * q) =
+      α ^ ((m * p + m * q) % n) * if d ≤ p + q then algebraMap K _ a else 1 := by
+  have hαn : (α : SeparableClosure K) ^ n = algebraMap K _ a := by
+    simpa using congrArg Units.val hα
+  rw [← pow_add, add_eq_mod_add_carry hmd hm0 hp hq, pow_add, pow_mul, hαn]
+  split_ifs <;> simp
+
+omit [FiniteDimensional K L] [IsGalois K L] in
+/-- A Galois element moves an `n`-th root `α` of `a` by the root of unity
+`ζ ^ kummerLog hζ (kummerCocycle hα σ)`. -/
+private lemma galois_apply_eq_pow_mul {α : (SeparableClosure K)ˣ} {a : Kˣ}
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (σ : AbsoluteGaloisGroup K) :
+    (σ : SeparableClosure K →* SeparableClosure K) (α : SeparableClosure K) =
+      algebraMap K (SeparableClosure K) ζ ^ kummerLog hζ (kummerCocycle hα σ) * α := by
+  have hσα := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hα σ)
+  rw [toMul_kummerCocycle, Units.val_mul, AlgEquiv.smul_units_def, Units.coe_map,
+    Units.val_inv_eq_inv_val, mul_inv_eq_iff_eq_mul₀ α.ne_zero] at hσα
+  exact hσα
+
+omit [FiniteDimensional K L] [IsGalois K L] in
+/-- The value of a cocycle with carry values, read in `Kˢ` through the embedding of units. -/
+private lemma toMul_embeddedUnitsEquivInvariants_eq {g : L ≃ₐ[K] L} {a : Kˣ}
+    (ι : L →ₐ[K] SeparableClosure K)
+    (z : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))
+    {p q : ℕ} (hzpq : Additive.toMul (z (g ^ p, g ^ q)) =
+      if finrank K L ≤ p + q then Units.map (algebraMap K L : K →* L) a else 1) :
+    ((Additive.toMul (embeddedUnitsEquivInvariants K L ι
+      (Rep.toAdditive (z (g ^ p, g ^ q))) : UnitsCoeff K) : (SeparableClosure K)ˣ) :
+        SeparableClosure K) = if finrank K L ≤ p + q then algebraMap K _ a else 1 := by
+  rw [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants]
+  refine (congrArg (fun u : Lˣ ↦ ι (u : L)) hzpq).trans ?_
+  split_ifs <;> simp
+
 /-- **The cup product of two Kummer classes is a cyclic class.** Let `ζ ∈ K` be a primitive
 `n`-th root of unity, `L/K` a Galois extension of degree `d ∣ n` whose Galois group is generated
 by `g`, and `s ∈ L` with `sⁿ = b` and `g s = ζ ^ (n / d) • s`. Then the image in `Br K` of the
@@ -192,13 +256,7 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
     rw [orderOf_eq_card_of_forall_mem_zpowers hg, IsGalois.card_aut_eq_finrank]
   -- choose `n`-th roots `α` of `a` and `β = ι s` of `b` in `Kˢ`
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
-  have hs0 : ι s ≠ 0 := (map_ne_zero_iff _ ι.injective).2 <| by
-    rintro rfl
-    rw [zero_pow (NeZero.ne n), eq_comm, map_eq_zero] at hs
-    exact b.ne_zero hs
-  set β : (SeparableClosure K)ˣ := Units.mk0 (ι s) hs0
-  have hβ : β ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom b := Units.ext <| by
-    simp [β, ← map_pow, hs]
+  obtain ⟨β, hβs, hβ⟩ := exists_unit_pow_eq_map ι b hs
   -- represent both sides by explicit cocycles `W` and `relBrCocycle K L ι z` on `G_K`; it
   -- remains to show that `W + relBrCocycle K L ι z` is the coboundary of `σ ↦ α ^ χ(σ)`
   obtain ⟨W, hW, hWv⟩ := exists_h2MuToBr_cup_kummerClass (kummerCupPairing ζ hζ) hn hα hβ
@@ -213,16 +271,11 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
       kummerLog hζ x • (Additive.ofMul α : UnitsCoeff K))).comp hβc.1, fun σ τ ↦ ?_⟩
   -- the restrictions of `σ` and `τ` to `L` are `g ^ p` and `g ^ q` with `p, q < d`, so that
   -- `χ(σ) = m p`, `χ(τ) = m q` and `χ(σ τ) = (m p + m q) % n`
-  have hexp (σ : AbsoluteGaloisGroup K) : ∃ p < d, ι.restrictNormalHom σ = g ^ p := by
-    classical
-    obtain ⟨p, hp, hpσ⟩ := Finset.mem_image.1
-      (mem_zpowers_iff_mem_range_orderOf.1 (hg (ι.restrictNormalHom σ)))
-    exact ⟨p, hord ▸ Finset.mem_range.1 hp, hpσ.symm⟩
-  obtain ⟨p, hp, hpσ⟩ := hexp σ
-  obtain ⟨q, hq, hqτ⟩ := hexp τ
-  have hχσ := kummerLog_kummerCocycle_eq hζ hgs ι rfl hβ hpσ
+  obtain ⟨p, hp, hpσ⟩ := exists_restrictNormalHom_eq_pow hg hord ι σ
+  obtain ⟨q, hq, hqτ⟩ := exists_restrictNormalHom_eq_pow hg hord ι τ
+  have hχσ := kummerLog_kummerCocycle_eq hζ hgs ι hβs hβ hpσ
     (hmd ▸ Nat.mul_lt_mul_of_pos_left hp hm0)
-  have hχτ := kummerLog_kummerCocycle_eq hζ hgs ι rfl hβ hqτ
+  have hχτ := kummerLog_kummerCocycle_eq hζ hgs ι hβs hβ hqτ
     (hmd ▸ Nat.mul_lt_mul_of_pos_left hq hm0)
   have hχστ : kummerLog hζ (kummerCocycle hβ (σ * τ)) = (m * p + m * q) % n := by
     rw [← hχσ, ← hχτ, ← kummerLog_add, hβc.2 σ τ, smul_kummerCoeff_eq_self hζ, add_comm]
@@ -231,24 +284,12 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
   rw [hpσ, hqτ] at hR
   have hzpq := hzv p q (hord ▸ hp) (hord ▸ hq)
   rw [hord] at hzpq
-  have hRv : ((Additive.toMul (embeddedUnitsEquivInvariants K L ι
-      (Rep.toAdditive (z (g ^ p, g ^ q))) : UnitsCoeff K) : (SeparableClosure K)ˣ) :
-        SeparableClosure K) = if d ≤ p + q then algebraMap K _ a else 1 := by
-    rw [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants]
-    refine (congrArg (fun u : Lˣ ↦ ι (u : L)) hzpq).trans ?_
-    split_ifs <;> simp
-  have hσα := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hα σ)
-  rw [toMul_kummerCocycle, Units.val_mul, AlgEquiv.smul_units_def, Units.coe_map,
-    Units.val_inv_eq_inv_val, mul_inv_eq_iff_eq_mul₀ α.ne_zero] at hσα
+  have hRv := toMul_embeddedUnitsEquivInvariants_eq ι z hzpq
+  have hσα := galois_apply_eq_pow_mul hζ hα σ
   have hτβ := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hβ τ)
   rw [hχτ] at hτβ
   -- `α ^ (m p) α ^ (m q) = α ^ χ(σ τ) a ^ c`, with `c` the carry of `p + q` modulo `d`
-  have key : (α : SeparableClosure K) ^ (m * p) * α ^ (m * q) =
-      α ^ ((m * p + m * q) % n) * if d ≤ p + q then algebraMap K _ a else 1 := by
-    have hαn : (α : SeparableClosure K) ^ n = algebraMap K _ a := by
-      simpa using congrArg Units.val hα
-    rw [← pow_add, add_eq_mod_add_carry hmd hm0 hp hq, pow_add, pow_mul, hαn]
-    split_ifs <;> simp
+  have key := pow_mul_mul_pow_mul_eq hα hmd hm0 hp hq
   simp only [Pi.add_apply]
   rw [hWv, hR, kummerCoeffPairing_kummerCupPairing hζ, smul_kummerCoeff_eq_self hζ]
   beta_reduce
