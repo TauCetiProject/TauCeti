@@ -272,7 +272,7 @@ theorem measurable_divMatrixGradient (ha : Continuous fun x => matrixBilinearFor
   Finset.measurable_sum _ fun _ _ => measurable_lineDeriv
     ((ha.clm_apply continuous_const).clm_apply (ContDiff.continuous_gradient hψ))
 
-/-- The test function `φ ⟨a ∇ψ, v⟩`, for a test function `φ` on `H` and a smooth cutoff `ψ` with
+/-- The test function `φ ⟨v, a ∇ψ⟩`, for a test function `φ` on `H` and a smooth cutoff `ψ` with
 `tsupport ψ ∩ H ⊆ Ω`, is Lipschitz with compact support in `Ω`. -/
 private theorem exists_lipschitzWith_mul_matrixBilinearForm_gradient
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
