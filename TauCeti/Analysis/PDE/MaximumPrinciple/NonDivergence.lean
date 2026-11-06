@@ -75,8 +75,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`: the operator applied to
   the Gaussian `exp (-α ‖x - y‖²)`, from its first and second derivatives
-  `TauCeti.PDE.hasFDerivAt_exp_neg_mul_norm_sub_sq` and
-  `TauCeti.PDE.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`; this is the barrier of Hopf's lemma.
+  `TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq` and
+  `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`; this is the barrier of Hopf's lemma.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -269,37 +269,6 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
-
-/-- The derivative of the Gaussian `x ↦ exp (-α ‖x - y‖²)`. -/
-theorem hasFDerivAt_exp_neg_mul_norm_sub_sq {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (α : ℝ) (y x : E) :
-    HasFDerivAt (fun z : E ↦ Real.exp (-α * ‖z - y‖ ^ 2))
-      ((Real.exp (-α * ‖x - y‖ ^ 2) * (-2 * α)) • innerSL ℝ (x - y)) x := by
-  have h := ((((hasFDerivAt_id x).sub_const y).norm_sq).const_mul (-α)).exp
-  refine h.congr_fderiv ?_
-  ext v
-  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul, id]
-  push_cast
-  ring
-
-/-- The second derivative of the Gaussian `x ↦ exp (-α ‖x - y‖²)`. -/
-theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (α : ℝ) (y x v w : E) :
-    fderiv ℝ (fderiv ℝ fun z : E ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x v w =
-      Real.exp (-α * ‖x - y‖ ^ 2) * (4 * α ^ 2 * ⟪x - y, v⟫ * ⟪x - y, w⟫ - 2 * α * ⟪v, w⟫) := by
-  rw [funext fun z ↦ (hasFDerivAt_exp_neg_mul_norm_sub_sq α y z).fderiv]
-  have hs := (hasFDerivAt_exp_neg_mul_norm_sub_sq α y x).mul_const (-2 * α)
-  have hL : HasFDerivAt (fun z : E ↦ innerSL ℝ (z - y))
-      ((innerSL ℝ).comp (ContinuousLinearMap.id ℝ _)) x :=
-    (innerSL ℝ).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const y)
-  have h2 : HasFDerivAt (fun z : E ↦
-      (Real.exp (-α * ‖z - y‖ ^ 2) * (-2 * α)) • innerSL ℝ (z - y)) _ x := hs.smul hL
-  rw [h2.fderiv]
-  simp only [_root_.add_apply, _root_.smul_apply,
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply, innerSL_apply_apply, smul_eq_mul]
-  ring
 
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `x ↦ exp (-α ‖x - y‖²)` is
 `exp (-α ‖x - y‖²) (4 α² (x - y)ᵀ A (x - y) - 2 α tr A - 2 α ⟪x - y, v⟫)`. -/

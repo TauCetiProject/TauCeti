@@ -8,13 +8,14 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Order.LocalExtr
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Balls touching a set from inside
 
-Two facts about balls touching a set from inside, used by the classical proofs of the strong
-maximum principle through Hopf's boundary-point lemma.
+Facts about balls touching a set from inside, used by the classical proofs of Hopf's
+boundary-point lemma and of the strong maximum principle.
 
 Near a local maximum `x` of a function `u : E → ℝ` that is continuous near `x` but not constant
 near `x`, some closed ball lies in any prescribed neighbourhood of `x`, has `u` strictly below
@@ -29,12 +30,20 @@ In a real inner product space, the closed ball of radius `R / 2` that is interna
 of tangency (`TauCeti.mem_ball_of_mem_closedBall_half_of_ne`). So a function continuous on
 `ball y R` and at `y + R • e` is continuous on that closed ball.
 
+The barrier argument of Hopf's lemma runs on the closed annulus `closedBall y R \ ball y r`
+between the touching ball and a smaller concentric ball. Its frontier lies on the two spheres
+(`TauCeti.frontier_closedBall_sdiff_ball_subset`), and in a real normed space its interior is the
+open annulus (`TauCeti.interior_closedBall_sdiff_ball`).
+
 ## Main declarations
 
 * `TauCeti.eventually_eq_of_isLocalMax_of_forall_not_lt_ball`: a function continuous near a local
   maximum, which admits no touching ball as above, is constant near the maximum.
 * `TauCeti.mem_ball_of_mem_closedBall_half_of_ne`: the internally tangent closed ball of half the
   radius meets the sphere only at the point of tangency.
+* `TauCeti.frontier_closedBall_sdiff_ball_subset`: the frontier of a closed annulus lies on its
+  two boundary spheres.
+* `TauCeti.interior_closedBall_sdiff_ball`: the interior of a closed annulus is the open annulus.
 
 ## References
 
@@ -47,6 +56,35 @@ public section
 namespace TauCeti
 
 open Filter Metric Set Topology
+
+section PseudoMetric
+
+variable {X : Type*} [PseudoMetricSpace X]
+
+/-- The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary
+spheres. -/
+theorem frontier_closedBall_sdiff_ball_subset (y : X) (r R : ℝ) :
+    frontier (closedBall y R \ ball y r) ⊆ sphere y R ∪ sphere y r := by
+  rw [sdiff_eq]
+  refine (frontier_inter_subset _ _).trans (union_subset_union ?_ ?_)
+  · exact inter_subset_left.trans frontier_closedBall_subset_sphere
+  · rw [frontier_compl]
+    exact inter_subset_right.trans frontier_ball_subset_sphere
+
+end PseudoMetric
+
+section Seminormed
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- In a real normed space, the interior of the closed annulus `closedBall y R \ ball y r` with
+nonzero radii is the open annulus `ball y R \ closedBall y r`. -/
+theorem interior_closedBall_sdiff_ball (y : E) {r R : ℝ} (hr : r ≠ 0) (hR : R ≠ 0) :
+    interior (closedBall y R \ ball y r) = ball y R \ closedBall y r := by
+  rw [sdiff_eq, interior_inter, interior_compl, closure_ball y hr, interior_closedBall y hR,
+    sdiff_eq]
+
+end Seminormed
 
 section Normed
 

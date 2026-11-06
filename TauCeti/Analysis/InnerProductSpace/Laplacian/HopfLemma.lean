@@ -9,11 +9,11 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.TouchingBall
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Normed.Module.RCLike.Real
-import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
 # Hopf's boundary-point lemma
@@ -275,8 +275,7 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
   -- The closed annulus on which the barrier is controlled.
   set K : Set E := closedBall y R \ ball y (R / 2) with hKdef
   have hKsub : K ⊆ closedBall y R := sdiff_subset
-  have hKcompact : IsCompact K := Metric.isCompact_iff_isClosed_bounded.mpr
-    ⟨isClosed_closedBall.sdiff isOpen_ball, isBounded_closedBall.subset hKsub⟩
+  have hKcompact : IsCompact K := (isCompact_closedBall y R).diff isOpen_ball
   have hKnorm : ∀ w ∈ K, R / 2 ≤ ‖w - y‖ ∧ ‖w - y‖ ≤ R := by
     intro w hw
     simp only [hKdef, Set.mem_sdiff, mem_ball, mem_closedBall, dist_eq_norm] at hw
@@ -286,17 +285,8 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
     have h1 := (hKnorm w hw).1
     rw [h, sub_self, norm_zero] at h1
     linarith
-  have hKball : ∀ w ∈ interior K, w ∈ ball y R := by
-    intro w hw
-    have h1 : w ∈ interior (closedBall y R) := interior_mono hKsub hw
-    rwa [interior_closedBall y hR.ne'] at h1
-  -- `K` has the open annulus as interior, so a frontier point is either on the outer sphere or
-  -- on the inner sphere.
-  have hannulus_int : ball y R \ closedBall y (R / 2) ⊆ interior K :=
-    interior_maximal (fun w hw ↦ by
-      rw [hKdef, Set.mem_sdiff]
-      exact ⟨ball_subset_closedBall hw.1, fun h ↦ hw.2 (ball_subset_closedBall h)⟩)
-      (isOpen_ball.inter isClosed_closedBall.isOpen_compl)
+  have hKball : ∀ w ∈ interior K, w ∈ ball y R := fun w hw ↦
+    ((interior_closedBall_sdiff_ball y hhalfpos.ne' hR.ne').subset hw).1
   -- The perturbation coefficient: small enough that the barrier dominates the margin.
   set ε : ℝ := δ / (2 * (R / 2) ^ p) with hεdef
   have hεpos : 0 < ε := by
@@ -347,24 +337,14 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
     nlinarith [hsub w hwball]
   have hvbdry : ∀ ⦃w⦄, w ∈ frontier K → v w ≤ u x₀ := by
     intro w hwfr
-    have hwK : w ∈ K := hKcompact.isClosed.frontier_subset hwfr
-    have hnrm := hKnorm w hwK
-    rcases eq_or_lt_of_le hnrm.2 with houter | hinner
+    -- A frontier point of the annulus is either on the outer sphere or on the inner sphere.
+    rcases frontier_closedBall_sdiff_ball_subset y (R / 2) R hwfr with houter | hinner
     · simp only [hvdef]
-      rw [hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr houter), mul_zero,
-        add_zero]
-      exact hle w (mem_sphere_iff_norm.mpr houter)
-    · have hinner' : ‖w - y‖ = R / 2 := by
-        by_contra hne'
-        have hlt : R / 2 < ‖w - y‖ := lt_of_le_of_ne hnrm.1 (Ne.symm hne')
-        refine (mem_frontier_iff_notMem_interior hwK).mp hwfr (hannulus_int ⟨?_, ?_⟩)
-        · rw [mem_ball, dist_eq_norm]
-          exact hinner
-        · rw [mem_closedBall, dist_eq_norm]
-          exact not_le.mpr hlt
-      have h1 : u w ≤ u x₀ - δ := hsphere_le w (mem_sphere_iff_norm.mpr hinner')
+      rw [hopfBarrier_eq_zero_of_mem_sphere houter, mul_zero, add_zero]
+      exact hle w houter
+    · have h1 : u w ≤ u x₀ - δ := hsphere_le w hinner
       have h2 : hopfBarrier y R p w ≤ (R / 2) ^ p := by
-        rw [hopfBarrier, hinner']
+        rw [hopfBarrier, mem_sphere_iff_norm.mp hinner]
         have := (Real.rpow_pos_of_pos hR p).le
         linarith
       have h3 : ε * hopfBarrier y R p w ≤ ε * (R / 2) ^ p :=

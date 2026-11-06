@@ -213,13 +213,8 @@ private theorem exists_pos_mul_le_sub_of_lt_ball_of_le_sphere
     intro w hw
     simp only [hKdef, Set.mem_sdiff, mem_ball, mem_closedBall, dist_eq_norm, not_lt] at hw
     exact ⟨hw.2, hw.1⟩
-  have hKball : ∀ w ∈ interior K, w ∈ ball y R := by
-    intro w hw
-    have h1 : w ∈ interior (closedBall y R) := interior_mono hKsub hw
-    rwa [interior_closedBall y hR.ne'] at h1
-  have hannulus : ball y R \ closedBall y (R / 2) ⊆ interior K :=
-    interior_maximal (sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall)
-      (isOpen_ball.sdiff isClosed_closedBall)
+  have hKball : ∀ w ∈ interior K, w ∈ ball y R := fun w hw ↦
+    ((interior_closedBall_sdiff_ball y hhalf.ne' hR.ne').subset hw).1
   -- The perturbation `v = u + δ w` by the Hopf barrier `w`.
   set w : EuclideanSpace ℝ ι → ℝ :=
     fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2) - Real.exp (-α * R ^ 2) with hwdef
@@ -248,21 +243,14 @@ private theorem exists_pos_mul_le_sub_of_lt_ball_of_le_sphere
       simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
       nlinarith [hsub x hxb, mul_le_mul_of_nonneg_left hbar hδ.le]
     · intro x hx
-      have hxK : x ∈ K := hKcompact.isClosed.frontier_subset hx
-      have hn := hKnorm x hxK
       simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      rcases hn.2.eq_or_lt with houter | hinner
+      rcases frontier_closedBall_sdiff_ball_subset y (R / 2) R hx with houter | hinner
       · -- On the outer sphere the barrier vanishes.
-        have hw0 : w x = 0 := by simp only [hwdef, houter, sub_self]
+        have hw0 : w x = 0 := by simp only [hwdef, mem_sphere_iff_norm.mp houter, sub_self]
         rw [hw0, mul_zero, add_zero]
-        exact hle x (mem_sphere_iff_norm.mpr houter)
+        exact hle x houter
       · -- On the inner sphere the margin `δ` absorbs the barrier.
-        have hinner' : ‖x - y‖ = R / 2 := by
-          refine (hn.1.eq_or_lt.resolve_right fun hlt' ↦ ?_).symm
-          exact (mem_frontier_iff_notMem_interior hxK).mp hx
-            (hannulus ⟨by rwa [mem_ball, dist_eq_norm],
-              by rw [mem_closedBall, dist_eq_norm]; exact not_le.mpr hlt'⟩)
-        have hux : u x ≤ u z := hzmax (by rw [mem_closedBall, dist_eq_norm, hinner'])
+        have hux : u x ≤ u z := hzmax (sphere_subset_closedBall hinner)
         nlinarith [mul_le_mul_of_nonneg_left (hwle x) hδ.le]
   -- Along the inward ray the barrier grows linearly.
   refine ⟨δ * (Real.exp (-α * R ^ 2) * α * R), by positivity, fun t ht ↦ ?_⟩
