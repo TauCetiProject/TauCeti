@@ -99,9 +99,11 @@ variable {P : Place k F}
 
 /-! ### The order of a two-parameter polynomial combination at a single place
 
-The two lemmas of this section are the local computations of Stichtenoth's Proposition 1.3.3:
-the value of `P` on `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` when `P` is the place the family
-belongs to, and when it is one of the others. -/
+The two main local computations of Stichtenoth's Proposition 1.3.3 are
+`valuation_sum_eq_exp_neg` and `valuation_sum_le`: the value of `P` on
+`∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` when `P` is the place the family belongs to, and when it is
+one of the others. The remaining lemmas are auxiliary bounds on a single block
+`∑ j, c_j(x) · u_j`. -/
 
 /-- A crude bound: if `x` and `t` are integral at `P` and every `u j` has value at most `γ`,
 then so does any polynomial combination `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a`. -/
@@ -169,6 +171,7 @@ private theorem valuation_sum_aeval_mul_eq_one {x : F} (hx : 0 < P.ord x) {N : �
   have hYcoe : (Y : F) = ∑ j : Fin N, aeval x (c j) * u j := by
     rw [hY]
     push_cast
+    -- The coercion `𝒪_P → F` of `aeval ⟨x, _⟩ p` is `aeval x p` by unfolding the subring structure.
     rfl
   have hres0 : IsLocalRing.residue P.integers (⟨x, hxmem⟩ : P.integers) = 0 :=
     (P.residue_eq_zero_iff_ord_pos hx0).mpr hx
@@ -249,31 +252,6 @@ private theorem valuation_sum_eq_exp_neg {x t : F} (hx : 0 < P.ord x) (ht : P.or
 
 /-! ### Proposition 1.3.3 -/
 
-/-- Clearing denominators in a nontrivial relation over `k[x]`: if `x ≠ 0` and the elements `v i`
-of `F` satisfy a relation `∑ i, g i • v i = 0` with coefficients in `k[x]`, not all zero, then they
-satisfy `∑ i, q_i(x) · v i = 0` for polynomials `q i` over `k`, one of which has nonzero constant
-term. -/
-private theorem exists_polynomial_relation_of_adjoin {x : F} (hx0 : x ≠ 0) {ι : Type*} [Fintype ι]
-    (v : ι → F) (g : ι → Algebra.adjoin k ({x} : Set F)) (hsum : ∑ i, g i • v i = 0) {i₁ : ι}
-    (hg0 : g i₁ ≠ 0) :
-    ∃ q : ι → k[X], ∑ i, aeval x (q i) * v i = 0 ∧ ∃ i₂, (q i₂).coeff 0 ≠ 0 := by
-  have hrange : ∀ y : F, y ∈ Algebra.adjoin k ({x} : Set F) → ∃ p : k[X], aeval x p = y := by
-    intro y hy
-    rwa [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hy
-  choose p hp using fun i ↦ hrange ((g i : Algebra.adjoin k ({x} : Set F)) : F) (g i).2
-  have hpne : p i₁ ≠ 0 := by
-    intro h
-    exact hg0 (Subtype.ext (by simpa [h] using (hp i₁).symm))
-  obtain ⟨m, q, hfactor, i₂, -, hq₂⟩ :=
-    TauCeti.Polynomial.exists_common_X_pow_factor Set.univ p ⟨i₁, Set.mem_univ _, hpne⟩
-  refine ⟨q, ?_, i₂, hq₂⟩
-  refine mul_left_cancel₀ (pow_ne_zero m hx0) ?_
-  rw [Finset.mul_sum, mul_zero, ← hsum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Algebra.smul_def, Subalgebra.algebraMap_apply, ← hp i,
-    hfactor i (Set.mem_univ i), map_mul, map_pow, aeval_X]
-  ring
-
 /-- If `x` has positive order at `Q`, `t` has order zero and every `u j` is nonzero of the same
 order as `x`, then any polynomial combination `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` has value at
 most that of `x`. -/
@@ -287,23 +265,6 @@ private theorem valuation_sum_le_exp_neg_ord {Q : Place k F} {x t : F} (hx : 0 <
   · exact Q.mem_integers_iff.mp (Q.mem_integers_iff_ord_nonneg.mpr (by rw [ht]))
   · intro j
     rw [Q.valuation_eq_exp_neg_ord (hu0 j), hu j]
-
-/-- A vanishing sum of elements of `F` with one term of value `exp (-A)` at `Q` and all the others
-of value at most `exp (-c)`, for `A < c`, is impossible. -/
-private theorem false_of_valuation_sum_eq_zero {Q : Place k F} {ι : Type*} [Fintype ι]
-    {b : ι → F} (hsum : ∑ i, b i = 0) {i₀ : ι} {A c : ℤ}
-    (hkey : Q.valuation (b i₀) = WithZero.exp (-A))
-    (hother : ∀ i, i ≠ i₀ → Q.valuation (b i) ≤ WithZero.exp (-c)) (hAc : A < c) : False := by
-  classical
-  have hsplit : b i₀ = -∑ i ∈ Finset.univ.erase i₀, b i := by
-    rw [eq_neg_iff_add_eq_zero, add_comm, Finset.sum_erase_add _ _ (Finset.mem_univ i₀)]
-    exact hsum
-  rw [hsplit, Valuation.map_neg] at hkey
-  have hle : WithZero.exp (-A) ≤ WithZero.exp (-c) := by
-    rw [← hkey]
-    exact Valuation.map_sum_le _ fun i hi ↦ hother i (Finset.ne_of_mem_erase hi)
-  have := WithZero.exp_le_exp.mp hle
-  omega
 
 /-- **The products `u P j * t P ^ a` are linearly independent over `k⟮x⟯`.** Given
 uniformizers `t P` at each place of `S` that are units at the other places of `S`, and lifts
@@ -348,7 +309,9 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
     Fintype.linearIndependent_iff]
   intro g hsum i₁
   by_contra hg0
-  obtain ⟨q, hsumF, ⟨P₀, a₂, j₂⟩, hq₂⟩ := exists_polynomial_relation_of_adjoin hx0 _ g hsum hg0
+  obtain ⟨q, hsumF, ⟨P₀, a₂, j₂⟩, -, hq₂⟩ :=
+    TauCeti.Polynomial.exists_polynomial_relation_of_sum_smul_eq_zero hx0 Finset.univ _ g hsum
+      (Finset.mem_univ i₁) hg0
   rw [← Finset.univ_sigma_univ, Finset.sum_sigma] at hsumF
   simp only [Fintype.sum_prod_type] at hsumF
   -- The least exponent at `P₀` carrying a nonzero constant term.
@@ -359,13 +322,24 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
     have _ := A.isLt
     have h2 := hS (P₀ : Place k F) P₀.2
     omega
-  refine false_of_valuation_sum_eq_zero (Q := (P₀ : Place k F)) hsumF
-    (valuation_sum_eq_exp_neg (hS (P₀ : Place k F) P₀.2) (ht1 P₀) (humem P₀) (hlib P₀) _
-      ⟨j₀, hAex⟩ (fun a ha j ↦ by_contra fun h ↦ hAmin a ⟨j, h⟩ ha) hAlt) ?_ hAlt
-  intro P hP
-  have hne : (P₀ : Place k F) ≠ (P : Place k F) := fun h ↦ hP (Subtype.ext h.symm)
-  exact valuation_sum_le_exp_neg_ord (hS _ P₀.2) (ht0 P _ P₀.2 hne) (hune P)
-    (fun j ↦ huord P j _ P₀.2 hne) _
+  have hkey := valuation_sum_eq_exp_neg (hS (P₀ : Place k F) P₀.2) (ht1 P₀) (humem P₀) (hlib P₀) _
+    ⟨j₀, hAex⟩ (fun a ha j ↦ by_contra fun h ↦ hAmin a ⟨j, h⟩ ha) hAlt
+  have hother : ∀ P ∈ Finset.univ \ {P₀},
+      (P₀ : Place k F).valuation (∑ a : Fin ((P : Place k F).ord x).toNat,
+        ∑ j : Fin (Module.finrank k (P : Place k F).ResidueField),
+          aeval x (q ⟨P, a, j⟩) * (u P j * t P ^ (a : ℕ))) <
+      (P₀ : Place k F).valuation (∑ a : Fin ((P₀ : Place k F).ord x).toNat,
+        ∑ j : Fin (Module.finrank k (P₀ : Place k F).ResidueField),
+          aeval x (q ⟨P₀, a, j⟩) * (u P₀ j * t P₀ ^ (a : ℕ))) := by
+    intro P hP
+    have hne : (P₀ : Place k F) ≠ (P : Place k F) := fun h ↦
+      (Finset.notMem_singleton.1 (Finset.mem_sdiff.1 hP).2) (Subtype.ext h.symm)
+    rw [hkey]
+    exact (valuation_sum_le_exp_neg_ord (hS _ P₀.2) (ht0 P _ P₀.2 hne) (hune P)
+      (fun j ↦ huord P j _ P₀.2 hne) _).trans_lt (WithZero.exp_lt_exp.mpr (by omega))
+  have hsum0 := (P₀ : Place k F).valuation.map_sum_eq_of_lt (Finset.mem_univ P₀) hother
+  rw [hsumF, map_zero, hkey] at hsum0
+  exact WithZero.exp_ne_zero hsum0.symm
 
 /-- The natural-number form of Stichtenoth, Proposition 1.3.3, which is what the linear
 independence of Stichtenoth's family says on the nose. -/
