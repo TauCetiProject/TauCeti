@@ -391,6 +391,42 @@ theorem stickelbergerPhi_modEq_neg_one_pow [Fact m.Prime] {A : Ideal (𝓞 K)}
 
 section SecondPrime
 
+/-- The `q`-th power of the inverse power residue symbol of `P`, pushed along ring homomorphisms
+`f` and `π` into the coefficients, is itself when `m` divides `q - 1`. -/
+private theorem ringHomComp_inv_powerResidueSymbol_pow_eq_self (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (hP : (absNorm P).Coprime m) {R S : Type*} [CommRing R] [CommRing S] (f : 𝓞 K →+* R)
+    (π : R →+* S) {q : ℕ} (hmq : m ∣ q - 1) (hq : 0 < q) :
+    ((powerResidueSymbol P m)⁻¹.ringHomComp f).ringHomComp π ^ q =
+      ((powerResidueSymbol P m)⁻¹.ringHomComp f).ringHomComp π := by
+  have h0 : powerResidueSymbol P m ^ m = 1 := by
+    simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P m)
+  refine MulChar.pow_eq_self_of_pow_eq_one ?_ hmq hq
+  rw [MulChar.ringHomComp_pow, MulChar.ringHomComp_pow, inv_pow, h0, inv_one,
+    MulChar.ringHomComp_one, MulChar.ringHomComp_one]
+
+/-- The image of the Gauss sum of the inverse power residue symbol of a maximal ideal `P`, in the
+residue field of a prime `I` of a domain `R` containing `𝓞 K` and the values of a primitive
+additive character of `𝓞 K ⧸ P`, is nonzero when `I` lies over a maximal ideal `P'` whose norm is
+prime to that of `P`. -/
+private theorem quotientMk_gaussSum_ne_zero (P P' : Ideal (𝓞 K)) [P.IsMaximal] [P'.IsMaximal]
+    [Fintype (𝓞 K ⧸ P)]
+    (hP : (absNorm P).Coprime m) (hPP' : (absNorm P).Coprime (absNorm P')) (hm : 2 ≤ m)
+    {R : Type*} [CommRing R] [IsDomain R] {f : 𝓞 K →+* R} (hf : Function.Injective f)
+    {ψ : AddChar (𝓞 K ⧸ P) R} (hψ : ψ.IsPrimitive) (I : Ideal R) [I.IsPrime]
+    (hI : I.comap f = P') :
+    Quotient.mk I (gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f) ψ) ≠ 0 := by
+  let _ := Ideal.Quotient.field P
+  have hχ : (powerResidueSymbol P m)⁻¹.ringHomComp f ≠ 1 := by
+    rw [MulChar.ringHomComp_ne_one_iff hf, Ne, inv_eq_one, ← orderOf_eq_one_iff,
+      orderOf_powerResidueSymbol hP]
+    lia
+  intro h
+  have h' := congrArg (Quotient.mk I) (gaussSum_mul_gaussSum_eq_card hχ hψ)
+  rw [map_mul, h, zero_mul, ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard, eq_comm,
+    Quotient.eq_zero_iff_mem] at h'
+  rw [← map_natCast f, ← mem_comap, hI] at h'
+  exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' hPP' h'
+
 /-- The case of a maximal ideal `P` in `powerResidueSymbol_stickelbergerPhi`, read through a domain
 `R` containing `𝓞 K` and the values of a primitive additive character of `𝓞 K ⧸ P`, and through a
 prime `I` of `R` over `P'`. -/
@@ -414,8 +450,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
       MulChar.map_one, MulChar.one_apply hq.isUnit]
   -- The residue field `F'` of `P'` embeds in the domain `S = R ⧸ I` through `ρ`, so `S` has the
   -- characteristic `p` of `F'`, and `N P' = q = p ^ n`.
-  have hle : P' ≤ I.comap f := hI.ge
-  let ρ := quotientMap I f hle
+  let ρ := quotientMap I f hI.ge
   have hρ : Function.Injective ρ := quotientMap_injective' hI.le
   set p := ringChar (𝓞 K ⧸ P')
   have hp : p.Prime := CharP.char_is_prime (𝓞 K ⧸ P') p
@@ -435,25 +470,11 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
       MonoidHom.coe_compAddChar, Function.comp_apply, RingHom.toMonoidHom_eq_coe,
       MonoidHom.coe_ofClass]
   -- `gbar ≠ 0`, because `g g(χ⁻¹, ψ⁻¹) = N P` and `N P` is prime to `p`.
-  have hχ : χ ≠ 1 := by
-    rw [MulChar.ringHomComp_ne_one_iff hf, Ne, inv_eq_one, ← orderOf_eq_one_iff,
-      orderOf_powerResidueSymbol hP]
-    lia
-  have hg₀ : π g ≠ 0 := by
-    intro h
-    have h' := congrArg π (gaussSum_mul_gaussSum_eq_card hχ hψ)
-    rw [map_mul, h, zero_mul, ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard,
-      ← map_natCast f, eq_comm, Quotient.eq_zero_iff_mem, ← mem_comap, hI] at h'
-    exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' hPP' h'
+  have hg₀ : π g ≠ 0 := quotientMk_gaussSum_ne_zero P P' hP hPP' hm hf hψ I hI
   -- The Frobenius: `gbar ^ q = (q / P)_m gbar`, so `gbar ^ (q - 1) = (q / P)_m` in `S`.
   have hχq : χ.ringHomComp π ^ p ^ (n : ℕ) = χ.ringHomComp π := by
-    have h0 : powerResidueSymbol P m ^ m = 1 := by
-      simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P m)
-    have h1 : χ.ringHomComp π ^ m = 1 := by
-      rw [MulChar.ringHomComp_pow, MulChar.ringHomComp_pow, inv_pow, h0, inv_one,
-        MulChar.ringHomComp_one, MulChar.ringHomComp_one]
-    obtain ⟨k, hk⟩ := hmq
-    rw [← hqn, ← Nat.sub_add_cancel hq₀, hk, pow_succ, pow_mul, h1, one_pow, one_mul]
+    rw [← hqn]
+    exact ringHomComp_inv_powerResidueSymbol_pow_eq_self P hP f π hmq hq₀
   have hval : (χ.ringHomComp π)⁻¹ ((p : 𝓞 K ⧸ P) ^ (n : ℕ)) =
       π (f (powerResidueSymbol P m (Quotient.mk P (absNorm P' : 𝓞 K)))) := by
     rw [MulChar.ringHomComp_inv, MulChar.ringHomComp_inv, inv_inv, MulChar.ringHomComp_apply,
