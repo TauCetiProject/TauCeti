@@ -9,7 +9,6 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
 public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Cosh
 
