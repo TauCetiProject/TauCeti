@@ -210,8 +210,9 @@ theorem moreauYosida_ne_bot_of_lt (hττ₀ : τ < τ₀) (hx : edist x x₀ ≠
 /-- **Propagation of coercivity**, real form. If `φ_{τ₀}(x₀) = m` is a real number, `τ < τ₀`,
 and `x` lies within the real distance `D` of `x₀`, then `m - D² / (2 (τ₀ - τ)) ≤ φ_τ(x)`. -/
 theorem coe_sub_div_le_moreauYosida {m D : ℝ} (hττ₀ : τ < τ₀) (hm : moreauYosida φ τ₀ x₀ = m)
-    (hD : 0 ≤ D) (hx : edist x x₀ ≠ ⊤) (hxD : edist x x₀ ≤ ENNReal.ofReal D) :
+    (hD : 0 ≤ D) (hxD : edist x x₀ ≤ ENNReal.ofReal D) :
     ((m - D ^ 2 / (2 * (τ₀ - τ)) : ℝ) : EReal) ≤ moreauYosida φ τ x := by
+  have hx : edist x x₀ ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hxD
   have hQ : edist x x₀ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ)) ≠ ⊤ :=
     ENNReal.div_ne_top (ENNReal.pow_ne_top hx)
       (by simp [(tsub_pos_of_lt (ENNReal.coe_lt_coe.2 hττ₀)).ne'])
