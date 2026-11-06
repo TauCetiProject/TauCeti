@@ -368,6 +368,13 @@ theorem ker_mobiusAutHom :
   rw [MonoidHom.mem_ker, mobiusAutHom, MonoidHom.coe_mk, OneHom.coe_mk, mobiusAut_eq_one_iff,
     Subgroup.inv_mem_iff]
 
+/-- A polynomial coprime to `q` that divides `C k * q` for a nonzero `k` is constant. -/
+private lemma natDegree_eq_zero_of_dvd_C_mul {p q : Polynomial K} (hpq : IsCoprime p q) {k : K}
+    (hdvd : p ∣ Polynomial.C k * q) (hk : k ≠ 0) : p.natDegree = 0 := by
+  have := Polynomial.natDegree_le_of_dvd (hpq.dvd_of_dvd_mul_right hdvd)
+    (Polynomial.C_ne_zero.mpr hk)
+  rwa [Polynomial.natDegree_C, nonpos_iff_eq_zero] at this
+
 /-- **Every generator of `k(X)` over `k` is a linear fractional transformation**: its numerator and
 denominator have degree at most one, and the determinant of their coefficients is nonzero. -/
 theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
@@ -397,18 +404,14 @@ theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
     · have hane : a ≠ 0 := by
         rw [ha, ← h1]
         exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at h1
-      have hdvd : f.num ∣ Polynomial.C a :=
-        (isCoprime_num_denom f).dvd_of_dvd_mul_right ⟨Polynomial.C c, by rw [← hkey, mul_comm]⟩
-      have := Polynomial.natDegree_le_of_dvd hdvd (Polynomial.C_ne_zero.mpr hane)
-      rw [Polynomial.natDegree_C] at this
+      have := natDegree_eq_zero_of_dvd_C_mul (isCoprime_num_denom f)
+        ⟨Polynomial.C c, by rw [← hkey, mul_comm]⟩ hane
       omega
     · have hcne : c ≠ 0 := by
         rw [hc, ← h1]
         exact Polynomial.leadingCoeff_ne_zero.mpr f.denom_ne_zero
-      have hdvd : f.denom ∣ Polynomial.C c :=
-        (isCoprime_num_denom f).symm.dvd_of_dvd_mul_right ⟨Polynomial.C a, by rw [hkey, mul_comm]⟩
-      have := Polynomial.natDegree_le_of_dvd hdvd (Polynomial.C_ne_zero.mpr hcne)
-      rw [Polynomial.natDegree_C] at this
+      have := natDegree_eq_zero_of_dvd_C_mul (isCoprime_num_denom f).symm
+        ⟨Polynomial.C a, by rw [hkey, mul_comm]⟩ hcne
       omega
   refine ⟨a, b, c, d, hdet, ?_⟩
   rw [mobiusOf_def, ← num_div_denom f]
