@@ -115,7 +115,7 @@ private theorem exists_isCoupling_eLpNorm_top_le_iSup (μ ν : Measure X) [IsPro
     tendsto_atTop_mono (fun n ↦ le_self_add) tendsto_natCast_atTop_atTop
   have hlim : Tendsto (fun n : ℕ ↦ eLpNorm d (q n) π.toMeasure) atTop
       (𝓝 (eLpNorm d ∞ π.toMeasure)) :=
-    (tendsto_eLpNorm_atTop measurable_edist.aestronglyMeasurable).comp hq
+    tendsto_eLpNorm_atTop.comp hq
   exact le_of_tendsto' hlim fun n ↦ (hiff n π).1 (hπ n).2
 
 /-- **`W_∞` is the supremum of the finite-exponent Wasserstein distances.** On a Polish metric

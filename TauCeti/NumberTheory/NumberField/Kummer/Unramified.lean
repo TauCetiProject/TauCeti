@@ -86,7 +86,7 @@ theorem ramifiedSupport_kummerField_subset
   have hur := isUnramifiedIn_kummerField_of_valuation_eq_one
     (E := E) (n := n) (Δ := Δ) (fun hn ↦ hvS (hS v hn))
     (fun a ha ↦ (Set.mem_unit_iff _ K).mp (hΔ ha) v hvS)
-  rw [mem_ramifiedSupport, dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot] at hv
+  rw [mem_ramifiedSupport, dvd_relDiscr_iff_exists_not_isUnramifiedAt] at hv
   obtain ⟨P, hP⟩ := hv
   exact hP (hur P P.2.1 P.2.2)
 

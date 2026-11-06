@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -40,6 +41,10 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
 * `exteriorPower.inner_lieMap_left`: the derivation action `D_A` of a skew-adjoint `A` on
   `⋀ⁿ E` is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
+* `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
+* `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
+  `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
+  basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
 * `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`.
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
@@ -193,6 +198,76 @@ theorem sum_norm_sq_ιMulti_two (b : OrthonormalBasis ι ℝ E) (u : E) :
   simp only [hw, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
     nsmul_eq_mul, b.sum_sq_inner_right]
   ring
+
+/-- The basis of `⋀ⁿ E` induced by an orthonormal basis `b` of `E` is orthonormal. -/
+theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι ℝ E) (n : ℕ)
+    (u v : Set.powersetCard ι n) :
+    ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
+  rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
+    OrthonormalBasis.inner_eq_ite]
+
+/-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
+
+section FinFour
+
+open exteriorPower
+
+/-- A wedge of two vectors in the basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` induced by an orthonormal
+basis `b` indexed by `Fin 4`. -/
+theorem ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (u w : E) :
+    ιMulti ℝ 2 ![u, w] =
+      (b.repr u 0 * b.repr w 1 - b.repr u 1 * b.repr w 0) • ιMulti ℝ 2 ![b 0, b 1] +
+      (b.repr u 0 * b.repr w 2 - b.repr u 2 * b.repr w 0) • ιMulti ℝ 2 ![b 0, b 2] +
+      (b.repr u 0 * b.repr w 3 - b.repr u 3 * b.repr w 0) • ιMulti ℝ 2 ![b 0, b 3] +
+      (b.repr u 1 * b.repr w 2 - b.repr u 2 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 2] +
+      (b.repr u 1 * b.repr w 3 - b.repr u 3 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 3] +
+      (b.repr u 2 * b.repr w 3 - b.repr u 3 * b.repr w 2) • ιMulti ℝ 2 ![b 2, b 3] := by
+  refine ext_inner_ιMulti_two fun a c ↦ ?_
+  simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
+  simp only [b.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four]
+  ring
+
+/-- The pairing of a two-vector with a wedge of two vectors, in the coordinates of an orthonormal
+basis `b` indexed by `Fin 4`. -/
+theorem inner_ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (x : ⋀[ℝ]^2 E) (u w : E) :
+    ⟪x, ιMulti ℝ 2 ![u, w]⟫ =
+      (b.repr u 0 * b.repr w 1 - b.repr u 1 * b.repr w 0) * ⟪x, ιMulti ℝ 2 ![b 0, b 1]⟫ +
+        (b.repr u 0 * b.repr w 2 - b.repr u 2 * b.repr w 0) * ⟪x, ιMulti ℝ 2 ![b 0, b 2]⟫ +
+        (b.repr u 0 * b.repr w 3 - b.repr u 3 * b.repr w 0) * ⟪x, ιMulti ℝ 2 ![b 0, b 3]⟫ +
+        (b.repr u 1 * b.repr w 2 - b.repr u 2 * b.repr w 1) * ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ +
+        (b.repr u 1 * b.repr w 3 - b.repr u 3 * b.repr w 1) * ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ +
+        (b.repr u 2 * b.repr w 3 - b.repr u 3 * b.repr w 2) * ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ := by
+  conv_lhs => rw [b.ιMulti_two_eq_sum u w]
+  simp only [inner_add_right, real_inner_smul_right]
+
+/-- The squared norm of a two-vector is the sum of the squares of its coordinates in the
+basis `bᵢ ∧ bⱼ`, `i < j`, induced by an orthonormal basis `b` indexed by `Fin 4`. -/
+theorem norm_sq_eq_sum_sq_inner_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E)
+    (x : ⋀[ℝ]^2 E) :
+    ‖x‖ ^ 2 = ⟪x, ιMulti ℝ 2 ![b 0, b 1]⟫ ^ 2 +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 2]⟫ ^ 2 +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 3]⟫ ^ 2 +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ ^ 2 +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ ^ 2 +
+      ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ ^ 2 := by
+  -- Expand the second factor of `⟪x, x⟫` in the basis `bᵢ ∧ bⱼ`.
+  have hx : x = ⟪x, ιMulti ℝ 2 ![b 0, b 1]⟫ • ιMulti ℝ 2 ![b 0, b 1] +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 2]⟫ • ιMulti ℝ 2 ![b 0, b 2] +
+      ⟪x, ιMulti ℝ 2 ![b 0, b 3]⟫ • ιMulti ℝ 2 ![b 0, b 3] +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ • ιMulti ℝ 2 ![b 1, b 2] +
+      ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ • ιMulti ℝ 2 ![b 1, b 3] +
+      ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ • ιMulti ℝ 2 ![b 2, b 3] := by
+    refine ext_inner_ιMulti_two fun u w ↦ ?_
+    rw [b.inner_ιMulti_two_eq_sum x u w]
+    simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two,
+      ← b.repr_apply_apply]
+    ring
+  have h := congrArg (fun y ↦ ⟪x, y⟫) hx
+  simp only [inner_add_right, real_inner_smul_right] at h
+  rw [← real_inner_self_eq_norm_sq, h]
+  ring
+
+end FinFour
 
 end OrthonormalBasis
 

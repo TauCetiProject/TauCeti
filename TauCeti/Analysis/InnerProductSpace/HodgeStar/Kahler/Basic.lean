@@ -59,6 +59,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
   contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
   two-vector (`kahlerForm_eq_of_inner_eq`).
+* `repr_apply`: the coordinates of `J v` in a unitary frame.
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
@@ -199,7 +200,7 @@ omit [FiniteDimensional ℝ V] in
 include h₀ h₂ in
 /-- The coordinates of `J v` in a unitary frame: `J` rotates each of the planes `⟨e₀, e₁⟩` and
 `⟨e₂, e₃⟩` by a right angle. -/
-private theorem repr_apply (v : V) (i : Fin 4) :
+theorem repr_apply (v : V) (i : Fin 4) :
     e.repr (J v) i = ![-e.repr v 1, e.repr v 0, -e.repr v 3, e.repr v 2] i := by
   have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
   have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
