@@ -375,6 +375,48 @@ theorem Walk.reachable_start_induce_coe {K : G.Subgraph} {s : Set K.verts}
       ⟨x, hrs x hx⟩ :=
   r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support hx
 
+/-- Deleting a nonempty set `s` of at most one vertex from the subgraph traced by a cycle leaves the
+remaining vertices pairwise reachable. -/
+private theorem Walk.IsCycle.reachable_induce_coe_compl_of_encard_le_one {c : G.Walk u u}
+    (hc : c.IsCycle) {s : Set c.toSubgraph.verts} {x₀ : c.toSubgraph.verts} (hx₀ : x₀ ∈ s)
+    (hs1 : s.encard ≤ 1) (p q' : ↑(sᶜ : Set c.toSubgraph.verts)) :
+    (c.toSubgraph.coe.induce sᶜ).Reachable p q' := by
+  classical
+  have hx₀_supp : x₀.1 ∈ c.support := c.mem_verts_toSubgraph.mp x₀.2
+  let c' := c.rotate x₀.1 hx₀_supp
+  have hc' : c'.IsCycle := hc.rotate hx₀_supp
+  have hc'sub : c'.toSubgraph = c.toSubgraph := c.toSubgraph_rotate hx₀_supp
+  cases hcons : c' with
+  | nil => exact (hc'.not_nil (hcons ▸ Walk.Nil.nil)).elim
+  | @cons _ y _ hxy q =>
+    have hq : q.IsPath := ((Walk.cons_isCycle_iff q hxy).mp (hcons ▸ hc')).1
+    cases hqr : q.reverse with
+    | nil => exact (hxy.ne rfl).elim
+    | @cons _ z _ hxz r =>
+      have hxr : x₀.1 ∉ r.support := by
+        have hp_cons : (Walk.cons hxz r).IsPath := hqr ▸ hq.reverse
+        exact ((Walk.cons_isPath_iff hxz r).mp hp_cons).2
+      have hr_sub : r.toSubgraph ≤ c.toSubgraph := by
+        have h1 : r.toSubgraph ≤ (Walk.cons hxz r).toSubgraph := le_sup_right
+        rw [← hqr, Walk.toSubgraph_reverse] at h1
+        have h2 : q.toSubgraph ≤ (Walk.cons hxy q).toSubgraph := le_sup_right
+        rw [← hcons, hc'sub] at h2
+        exact h1.trans h2
+      have hrs : ∀ x : c.toSubgraph.verts, x.1 ∈ r.support → x ∉ s := fun x hxr' hxs ↦
+        hxr (Set.encard_le_one_iff.mp hs1 x x₀ hxs hx₀ ▸ hxr')
+      have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.1.1 ∈ r.support := by
+        intro p
+        have hpx : p.1.1 ≠ x₀.1 := fun heq ↦ p.2 (Subtype.ext heq ▸ hx₀)
+        have hpc' : p.1.1 ∈ c'.support :=
+          c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.1.2)
+        rw [hcons, Walk.support_cons, List.mem_cons] at hpc'
+        have hpq : p.1.1 ∈ q.reverse.support := by
+          rw [Walk.support_reverse, List.mem_reverse]
+          exact hpc'.resolve_left hpx
+        rw [hqr, Walk.support_cons, List.mem_cons] at hpq
+        exact hpq.resolve_left hpx
+      exact r.reachable_induce_coe_of_mem_support hr_sub hrs (hmem_r p) (hmem_r q')
+
 /-- The subgraph traced by any cycle in a simple graph is `2`-vertex-connected, with no finiteness
 assumption. -/
 theorem Walk.IsCycle.isVertexConnected_two_toSubgraph {c : G.Walk u u} (hc : c.IsCycle) :
@@ -402,43 +444,7 @@ theorem Walk.IsCycle.isVertexConnected_two_toSubgraph {c : G.Walk u u} (hc : c.I
     · intro p q
       exact c.reachable_induce_coe_of_mem_support le_rfl (fun _ _ h ↦ h)
         (c.mem_verts_toSubgraph.mp p.1.2) (c.mem_verts_toSubgraph.mp q.1.2)
-    · classical
-      have hs1 : s.encard ≤ 1 := Order.le_of_lt_add_one hs
-      have hx₀_supp : x₀.1 ∈ c.support := c.mem_verts_toSubgraph.mp x₀.2
-      let c' := c.rotate x₀.1 hx₀_supp
-      have hc' : c'.IsCycle := hc.rotate hx₀_supp
-      have hc'sub : c'.toSubgraph = c.toSubgraph := c.toSubgraph_rotate hx₀_supp
-      cases hcons : c' with
-      | nil => exact (hc'.not_nil (hcons ▸ Walk.Nil.nil)).elim
-      | @cons _ y _ hxy q =>
-        have hq : q.IsPath := ((Walk.cons_isCycle_iff q hxy).mp (hcons ▸ hc')).1
-        cases hqr : q.reverse with
-        | nil => exact (hxy.ne rfl).elim
-        | @cons _ z _ hxz r =>
-          have hxr : x₀.1 ∉ r.support := by
-            have hp_cons : (Walk.cons hxz r).IsPath := hqr ▸ hq.reverse
-            exact ((Walk.cons_isPath_iff hxz r).mp hp_cons).2
-          have hr_sub : r.toSubgraph ≤ c.toSubgraph := by
-            have h1 : r.toSubgraph ≤ (Walk.cons hxz r).toSubgraph := le_sup_right
-            rw [← hqr, Walk.toSubgraph_reverse] at h1
-            have h2 : q.toSubgraph ≤ (Walk.cons hxy q).toSubgraph := le_sup_right
-            rw [← hcons, hc'sub] at h2
-            exact h1.trans h2
-          have hrs : ∀ x : c.toSubgraph.verts, x.1 ∈ r.support → x ∉ s := fun x hxr' hxs ↦
-            hxr (Set.encard_le_one_iff.mp hs1 x x₀ hxs hx₀ ▸ hxr')
-          have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.1.1 ∈ r.support := by
-            intro p
-            have hpx : p.1.1 ≠ x₀.1 := fun heq ↦ p.2 (Subtype.ext heq ▸ hx₀)
-            have hpc' : p.1.1 ∈ c'.support :=
-              c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.1.2)
-            rw [hcons, Walk.support_cons, List.mem_cons] at hpc'
-            have hpq : p.1.1 ∈ q.reverse.support := by
-              rw [Walk.support_reverse, List.mem_reverse]
-              exact hpc'.resolve_left hpx
-            rw [hqr, Walk.support_cons, List.mem_cons] at hpq
-            exact hpq.resolve_left hpx
-          intro p q'
-          exact r.reachable_induce_coe_of_mem_support hr_sub hrs (hmem_r p) (hmem_r q')
+    · exact hc.reachable_induce_coe_compl_of_encard_le_one hx₀ (Order.le_of_lt_add_one hs)
 
 /-! ### The numerical invariant -/
 
