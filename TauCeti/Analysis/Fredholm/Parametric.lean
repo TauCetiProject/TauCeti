@@ -111,6 +111,11 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
   projection has the same index as `D₁`.
 * `ContinuousLinearMap.isFredholm_parameterProj`: when `E` and `Λ` are Banach spaces, if `D₁` is
   Fredholm then the projection is Fredholm.
+* `ContinuousLinearMap.exact_kerCoprodCoprodHom_addedParameterProj` and
+  `ContinuousLinearMap.exact_addedParameterProj_fst`: adjoining further parameter directions
+  `D₃ : Λ' →L[𝕜] F` gives the exact sequence
+  `0 → ker (D₁.coprod D₂) → ker (D₁.coprod (D₂.coprod D₃)) → Λ × Λ' → Λ → 0` when
+  `D₁.coprod D₂` is surjective.
 
 ## References
 
@@ -434,6 +439,93 @@ theorem index_parameterProj (hD : Function.Surjective (D₁.coprod D₂)) :
 
 end Topological
 
+/-! ### Enlarging the parameter space
+
+Adjoining further parameter directions `D₃ : Λ' →L[𝕜] F` to `D₂` gives the total linearization
+`D₁.coprod (D₂.coprod D₃)`. Its kernel contains that of `D₁.coprod D₂` through
+`(x, l) ↦ (x, (l, 0))`, with quotient the added directions; when `D₁.coprod D₂` is surjective this
+is the exact sequence
+`0 → ker (D₁.coprod D₂) → ker (D₁.coprod (D₂.coprod D₃)) → Λ × Λ' → Λ → 0`, whose last two maps
+are `(x, (l, l')) ↦ (0, l')` and the first projection. -/
+
+section Enlarge
+
+variable {𝕜 : Type*} [Ring 𝕜]
+variable {E Λ Λ' F : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ]
+variable [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ']
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F) (D₃ : Λ' →L[𝕜] F)
+
+/-- Adjoining the parameter directions `D₃` embeds the kernel of `D₁.coprod D₂` into the kernel
+of `D₁.coprod (D₂.coprod D₃)` by `(x, l) ↦ (x, (l, 0))`. -/
+def kerCoprodCoprodHom : (D₁.coprod D₂).ker →ₗ[𝕜] (D₁.coprod (D₂.coprod D₃)).ker :=
+  (LinearMap.prodMap LinearMap.id (LinearMap.inl 𝕜 Λ Λ')).restrict fun v hv => by
+    simpa [LinearMap.mem_ker] using hv
+
+/-- The embedding sends `(x, l)` to `(x, (l, 0))`. -/
+@[simp]
+theorem kerCoprodCoprodHom_apply (v : (D₁.coprod D₂).ker) :
+    (kerCoprodCoprodHom D₁ D₂ D₃ v : E × Λ × Λ') = ((v : E × Λ).1, ((v : E × Λ).2, 0)) :=
+  (rfl)
+
+/-- The embedding `(x, l) ↦ (x, (l, 0))` is injective. -/
+theorem kerCoprodCoprodHom_injective : Function.Injective (kerCoprodCoprodHom D₁ D₂ D₃) := by
+  intro v w hvw
+  have := congrArg (fun u : (D₁.coprod (D₂.coprod D₃)).ker ↦ (u : E × Λ × Λ')) hvw
+  simp only [kerCoprodCoprodHom_apply, Prod.mk.injEq] at this
+  exact Subtype.ext (Prod.ext this.1 this.2.1)
+
+/-- The component of a vector of the enlarged kernel in the added directions, as a vector of the
+enlarged stabilizer: `(x, (l, l')) ↦ (0, l')`. -/
+def addedParameterProj : (D₁.coprod (D₂.coprod D₃)).ker →ₗ[𝕜] Λ × Λ' :=
+  (LinearMap.inr 𝕜 Λ Λ' ∘ₗ LinearMap.snd 𝕜 Λ Λ' ∘ₗ LinearMap.snd 𝕜 E (Λ × Λ')).domRestrict _
+
+/-- The projection sends `(x, (l, l'))` to `(0, l')`. -/
+@[simp]
+theorem addedParameterProj_apply (v : (D₁.coprod (D₂.coprod D₃)).ker) :
+    addedParameterProj D₁ D₂ D₃ v = (0, (v : E × Λ × Λ').2.2) :=
+  (rfl)
+
+/-- Exactness of `ker (D₁.coprod D₂) → ker (D₁.coprod (D₂.coprod D₃)) → Λ × Λ'` at the middle
+term: a vector of the enlarged kernel comes from the smaller one exactly when its component in
+the added directions vanishes. -/
+theorem exact_kerCoprodCoprodHom_addedParameterProj :
+    Function.Exact (kerCoprodCoprodHom D₁ D₂ D₃) (addedParameterProj D₁ D₂ D₃) := by
+  rintro ⟨⟨x, l, l'⟩, hv⟩
+  simp only [addedParameterProj_apply, Prod.mk_eq_zero, true_and, Set.mem_range]
+  constructor
+  · rintro rfl
+    exact ⟨⟨(x, l), by simpa [LinearMap.mem_ker] using hv⟩, rfl⟩
+  · rintro ⟨w, hw⟩
+    simpa using (congrArg (fun u : (D₁.coprod (D₂.coprod D₃)).ker ↦ (u : E × Λ × Λ').2.2)
+      hw).symm
+
+/-- Exactness of `ker (D₁.coprod (D₂.coprod D₃)) → Λ × Λ' → Λ` at the middle term, for a
+surjective stabilization `D₁.coprod D₂`: every added direction `l'` is the added component of a
+vector of the enlarged kernel. -/
+theorem exact_addedParameterProj_fst (h : Function.Surjective (D₁.coprod D₂)) :
+    Function.Exact (addedParameterProj D₁ D₂ D₃) (LinearMap.fst 𝕜 Λ Λ') := by
+  rintro ⟨l, l'⟩
+  simp only [LinearMap.fst_apply, Set.mem_range]
+  constructor
+  · rintro rfl
+    obtain ⟨⟨x, m⟩, hxm⟩ := h (-D₃ l')
+    refine ⟨⟨(x, (m, l')), ?_⟩, rfl⟩
+    simp only [coprod_apply] at hxm
+    simp [LinearMap.mem_ker, ← add_assoc, hxm]
+  · rintro ⟨v, hv⟩
+    simpa using (congrArg Prod.fst hv).symm
+
+/-- Adjoining parameter directions to a surjective total linearization keeps it surjective. -/
+theorem surjective_coprod_coprod (h : Function.Surjective (D₁.coprod D₂)) :
+    Function.Surjective (D₁.coprod (D₂.coprod D₃)) := fun y ↦ by
+  obtain ⟨⟨x, l⟩, hy⟩ := h y
+  exact ⟨(x, (l, 0)), by simpa using hy⟩
+
+end Enlarge
+
 section Dimension
 
 variable {𝕜 : Type*} [DivisionRing 𝕜]
@@ -499,7 +591,61 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
   rw [index_eq_finrank_sub, index_eq_finrank_sub]
   omega
 
+/-- The kernel of the total linearization is `ker D₁` extended by the range of the parameter
+projection. -/
+theorem finrank_ker_coprod [FiniteDimensional 𝕜 D₁.ker] [FiniteDimensional 𝕜 Λ] :
+    finrank 𝕜 (D₁.coprod D₂).ker =
+      finrank 𝕜 D₁.ker + finrank 𝕜 (parameterProj D₁ D₂).range := by
+  have := finiteDimensional_ker_coprod D₁ D₂
+  have := (parameterProj D₁ D₂).toLinearMap.finrank_range_add_finrank_ker
+  rw [finrank_ker_parameterProj] at this
+  omega
+
+/-- For a surjective total linearization, the parameter space splits dimensionally into the
+range of the parameter projection and the cokernel of `D₁`. -/
+theorem finrank_eq_finrank_range_parameterProj_add_finrank_quotient [FiniteDimensional 𝕜 Λ]
+    (hD : Function.Surjective (D₁.coprod D₂)) :
+    finrank 𝕜 Λ = finrank 𝕜 (parameterProj D₁ D₂).range + finrank 𝕜 (F ⧸ D₁.range) := by
+  have := (parameterToCoker D₁ D₂).finrank_range_add_finrank_ker
+  rw [LinearMap.range_eq_top.2 ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 hD),
+    finrank_top, ker_parameterToCoker] at this
+  omega
+
 end Dimension
+
+section EnlargeDimension
+
+variable {𝕜 : Type*} [DivisionRing 𝕜]
+variable {E Λ Λ' F : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ]
+variable [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ']
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F) (D₃ : Λ' →L[𝕜] F)
+
+/-- For a surjective total linearization `D₁.coprod D₂`, the added parameter directions are all
+reached: the range of `ContinuousLinearMap.addedParameterProj` has the dimension of `Λ'`. -/
+theorem finrank_range_addedParameterProj [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 Λ']
+    (h : Function.Surjective (D₁.coprod D₂)) :
+    finrank 𝕜 (LinearMap.range (addedParameterProj D₁ D₂ D₃)) = finrank 𝕜 Λ' := by
+  have := (LinearMap.fst 𝕜 Λ Λ').finrank_range_add_finrank_ker
+  rw [LinearMap.range_eq_top.2 LinearMap.fst_surjective, finrank_top,
+    (exact_addedParameterProj_fst D₁ D₂ D₃ h).linearMap_ker_eq, Module.finrank_prod] at this
+  omega
+
+/-- Adjoining parameter directions enlarges the kernel of the total linearization by the range of
+`ContinuousLinearMap.addedParameterProj`. -/
+theorem finrank_ker_coprod_coprod [FiniteDimensional 𝕜 D₁.ker] [FiniteDimensional 𝕜 Λ]
+    [FiniteDimensional 𝕜 Λ'] :
+    finrank 𝕜 (D₁.coprod (D₂.coprod D₃)).ker = finrank 𝕜 (D₁.coprod D₂).ker +
+      finrank 𝕜 (LinearMap.range (addedParameterProj D₁ D₂ D₃)) := by
+  have := finiteDimensional_ker_coprod D₁ (D₂.coprod D₃)
+  have := (addedParameterProj D₁ D₂ D₃).finrank_range_add_finrank_ker
+  rw [(exact_kerCoprodCoprodHom_addedParameterProj D₁ D₂ D₃).linearMap_ker_eq,
+    LinearMap.finrank_range_of_inj (kerCoprodCoprodHom_injective D₁ D₂ D₃)] at this
+  omega
+
+end EnlargeDimension
 
 section Banach
 

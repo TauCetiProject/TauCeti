@@ -39,6 +39,7 @@ A tuple of length three is determined by its three entries.
   positions.
 * `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
   updates the corresponding entry of `u` or of `v`.
+* `Fin.comp_append`: composing `Fin.append u v` with a function composes each of `u` and `v`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -149,6 +150,11 @@ theorem update_append_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i 
       rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
       simp)
     (fun j ↦ by simp [Function.update_apply]) j
+
+/-- Composing a function with `Fin.append u v` composes it with each of `u` and `v`. -/
+theorem comp_append {β : Sort*} {n : ℕ} (f : α → β) (u : Fin m → α) (v : Fin n → α) :
+    f ∘ append u v = append (f ∘ u) (f ∘ v) :=
+  funext fun j ↦ addCases (fun j ↦ by simp) (fun j ↦ by simp) j
 
 section ContractNth
 
