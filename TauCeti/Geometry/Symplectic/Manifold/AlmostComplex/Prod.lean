@@ -136,7 +136,6 @@ theorem contMDiff_prodFamily_family {EΛ HΛ Λ : Type*} [NormedAddCommGroup EΛ
   contMDiff_prodFamilyEndomorphism_family J hK
 
 /-- A block structure acts separately on the two components of a product tangent vector. -/
-@[simp]
 theorem prodFamily_apply (p : P × M) (v : TangentSpace (I.prod I') p) :
     prodFamily J K hK p v = (Manifold.tangentSpaceProdEquiv p).symm
       (J p.1 (Manifold.tangentSpaceProdEquiv p v).1,
@@ -145,6 +144,7 @@ theorem prodFamily_apply (p : P × M) (v : TangentSpace (I.prod I') p) :
   rfl
 
 /-- The endomorphism of the block structure is the continuous linear block map. -/
+@[simp]
 theorem prodFamily_toEndomorphism_apply (p : P × M) :
     (prodFamily J K hK).toEndomorphism p =
       (J.toEndomorphism p.1).prodMap (K p).toLinearMap.toContinuousLinearMap := (rfl)
