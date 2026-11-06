@@ -199,8 +199,7 @@ theorem isPreAdic.isSheafy_of_directed {ι : Type*} [Nonempty ι] (hX : isPreAdi
     {U : ι → Opens X} (hU : Directed (· ≤ ·) U) (hcov : iSup U = ⊤)
     (h : ∀ i, isSheafy (X.restrict (U i).isOpenEmbedding)) : isSheafy X := by
   refine hX.isSheafy_of_forall_exists_le fun V hV ↦ ?_
-  have := (spectralSpace_of_isAffinoid ((mem_propOpens_iff _).mp hV)).toCompactSpace
-  obtain ⟨i, hi⟩ := (isCompact_iff_compactSpace.mpr this).elim_directed_cover
+  obtain ⟨i, hi⟩ := (isCompact_of_mem_affinoidOpens hV).elim_directed_cover
     (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen)
     (by rw [← Opens.coe_iSup, hcov]; exact Set.subset_univ _)
     fun i j ↦ hU i j

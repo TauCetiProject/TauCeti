@@ -23,9 +23,9 @@ algebras of `Q₁` and `Q₂`, given by algebra maps `ρ₁` and `ρ₂`.
 
 When `n` is even and `Q₁ v = -‖v‖²`, the normalized complex volume element `Γ_V`
 (`CliffordAlgebra.complexVolume`) is an involution anticommuting with every vector of `V`, so it
-grades `E`. The graded tensor product of
-`TauCeti/LinearAlgebra/CliffordAlgebra/Prod/Basic.lean` then makes `E ⊗ F` a module over the
-complexified Clifford algebra of `V ⊕ W`
+grades `E`. The graded tensor product from
+`TauCeti/LinearAlgebra/CliffordAlgebra/Prod/Basic.lean` then
+makes `E ⊗ F` a module over the complexified Clifford algebra of `V ⊕ W`
 (`CliffordAlgebra.complexProdTensor`), on which
 
   `c(v, 0) = c_V(v) ⊗ 1`,  `c(0, w) = Γ_V ⊗ c_W(w)`.
