@@ -42,6 +42,9 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
   the time at which an orbit crosses the level of a point `y` of such a trajectory depends
   continuously on the orbit near `y`.
+* `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
+  (the case `c = (f a + f b) / 2`): a trajectory from `a` to `b` crosses the middle level exactly
+  once.
 * `TauCeti.IsAdaptedPseudoGradient.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top`:
   every level of `f` is transverse to `W^u(a) ∩ W^s(b)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_level_chart`: under
@@ -175,6 +178,17 @@ theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} 
     filter_upwards [(hfw t).eventually (gt_mem_nhds hlt)] with i hi
     by_contra! hle
     exact (hX.antitone_flow hf (w i) hle).not_gt (hi.trans_eq (hσ i).symm)
+
+/-- **A trajectory crosses the middle level exactly once.** Along a trajectory from a critical
+point `a` to a different critical point `b`, the function `f` takes the value `(f a + f b) / 2`
+at exactly one time. -/
+theorem existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    ∃! t : ℝ, f (hX.flow t y) = (f a + f b) / 2 := by
+  have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hy
+  exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy
+    (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
 
 /-- **Levels are transverse to connecting trajectories.** At a point `y` of `W^u(a) ∩ W^s(b)` with
 `a ≠ b`, the tangent space of `W^u(a) ∩ W^s(b)` and the kernel of `df_y`, the tangent space of the

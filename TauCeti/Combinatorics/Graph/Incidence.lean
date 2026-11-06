@@ -321,6 +321,13 @@ theorem card_internalEdges_singleton (x : G.vertexSet) :
       rw [inter_eq_left.mpr <|
         (G.loopSet_subset_incidenceSet x.1).trans (G.incidenceSet_subset_edgeSet x.1)]
 
+/-- Summing over `S` the values of the edges incident with each vertex counts every actual edge
+once for each vertex of `S` incident with it. -/
+theorem sum_sum_incidentEdges_eq_sum_sum_filter_inc {M : Type*} [AddCommMonoid M]
+    [∀ e x, Decidable (G.Inc e x)] (S : Finset G.vertexSet) (f : G.edgeSet → M) :
+    ∑ x ∈ S, ∑ e ∈ G.incidentEdges {x}, f e = ∑ e, ∑ x ∈ S with G.Inc e.1 x.1, f e :=
+  Finset.sum_comm' fun x e ↦ by simp [and_comm]
+
 end
 
 end FiniteEdges
@@ -336,6 +343,14 @@ instance : (Graph.ofSimpleGraph H).Loopless where
     rw [Graph.IsLoopAt, Graph.ofSimpleGraph_isLink] at he
     rcases he with ⟨rfl, he⟩
     exact H.irrefl ((SimpleGraph.mem_edgeSet H).mp he)
+
+/-- An edge of `Graph.ofSimpleGraph H` is incident to a vertex exactly when it is an edge of `H`
+containing that vertex. -/
+@[simp]
+theorem inc_ofSimpleGraph {e : Sym2 α} {x : α} :
+    (Graph.ofSimpleGraph H).Inc e x ↔ e ∈ H.edgeSet ∧ x ∈ e := by
+  simp only [Graph.Inc, Graph.ofSimpleGraph_isLink, Sym2.mem_iff_exists]
+  tauto
 
 /-- The multigraph incidence set of `Graph.ofSimpleGraph H` is the usual simple-graph incidence
 set. -/

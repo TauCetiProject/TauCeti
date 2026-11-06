@@ -46,6 +46,8 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
   the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
   `Γ(X, V)`.
+* `AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq`: a quasi-compact open inside an
+  affine open `U` is a finite union of basic opens of `U` contained in it.
 * `AlgebraicGeometry.Scheme.inf_mem_range_basicOpen` and
   `AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup`: the basic opens of `U` are
   closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
@@ -53,6 +55,8 @@ This file records general-purpose facts about open subsets of schemes.
   `V i`.
 * `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
   intersections of affine opens are affine.
+* `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
+  if its preimage in every chart of an open cover contains a dense subset.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -229,6 +233,20 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top 
   rw [Scheme.basicOpen_res]
   exact ⟨hx, hxf⟩
 
+/-- A quasi-compact open `W` contained in an affine open `U` is the union of finitely many basic
+opens of `U` contained in `W`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq (hU : IsAffineOpen U)
+    {W : X.Opens} (hW : IsCompact (W : Set X)) (hWU : W ≤ U) :
+    ∃ s : Finset {f : Γ(X, U) // X.basicOpen f ≤ W}, s.sup (fun i ↦ X.basicOpen i.1) = W := by
+  obtain ⟨s, hs⟩ := hW.elim_finite_subcover
+    (fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ (X.basicOpen i.1 : Set X))
+    (fun i ↦ (X.basicOpen i.1).isOpen) fun x hx ↦ by
+      obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hWU hx)
+      exact Set.mem_iUnion.mpr ⟨⟨f, hf⟩, hxf⟩
+  refine ⟨s, le_antisymm (Finset.sup_le fun i _ ↦ i.2) fun x hx ↦ ?_⟩
+  obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (hs hx)
+  exact (Finset.le_sup (f := fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ X.basicOpen i.1) hi) hxi
+
 /-- The basic opens `X.basicOpen f` of sections `f` over an open `U` are closed under binary
 intersections. -/
 theorem _root_.AlgebraicGeometry.Scheme.inf_mem_range_basicOpen :
@@ -315,6 +333,16 @@ public instance instNonemptyTop {X : Scheme.{u}} [Nonempty X] :
     Nonempty ((⊤ : X.Opens) : Type u) :=
   let ⟨x⟩ := ‹Nonempty X›
   ⟨⟨x, trivial⟩⟩
+
+/-- Let `𝒰` be an open cover of `X`. A subset `U` of `X` is dense if its preimage in every chart
+of `𝒰` contains a dense subset. -/
+public theorem _root_.AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset
+    {X : Scheme.{u}} {U : Set X} (𝒰 : X.OpenCover) {s : ∀ i, Set (𝒰.X i)}
+    (hs : ∀ i, Dense (s i)) (hsU : ∀ i, s i ⊆ 𝒰.f i ⁻¹' U) : Dense U := by
+  refine dense_iff_inter_open.mpr fun V hV ⟨x, hxV⟩ ↦ ?_
+  obtain ⟨i, y, rfl⟩ := 𝒰.exists_eq x
+  obtain ⟨z, hzV, hzs⟩ := (hs i).inter_open_nonempty _ (hV.preimage (𝒰.f i).continuous) ⟨y, hxV⟩
+  exact ⟨_, hzV, hsU i hzs⟩
 
 end Scheme
 

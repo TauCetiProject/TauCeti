@@ -36,8 +36,9 @@ is a principal logarithm.
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
+* `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
-* `TauCeti.ofReal_mem_slitPlane_union_zero`
+* `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
@@ -88,6 +89,14 @@ theorem div_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂
     z₂ / z₁ ∈ slitPlane :=
   div_mem_slitPlane_of_re_conj_mul_pos (a := 1) (by simpa) (by simpa)
 
+/-- The product of two points in the open right half-plane lies in the slit plane. -/
+theorem mul_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂ : 0 < z₂.re) :
+    z₁ * z₂ ∈ slitPlane := by
+  have hi : 0 < (z₂⁻¹).re := by
+    rw [inv_re]
+    exact div_pos h₂ (normSq_pos.mpr (by rintro rfl; simp at h₂))
+  simpa using div_mem_slitPlane_of_re_pos hi h₁
+
 /-- Two points in the left half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_neg {z₁ z₂ : ℂ} (h₁ : z₁.re < 0) (h₂ : z₂.re < 0) :
     z₂ / z₁ ∈ slitPlane :=
@@ -130,6 +139,16 @@ theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) : (x : ℂ) ∈
   rcases hx.eq_or_lt with h | h
   · exact Or.inr (by simp [← h])
   · exact Or.inl (ofReal_mem_slitPlane.mpr h)
+
+open scoped ComplexOrder in
+/-- A complex number lies in `slitPlane ∪ {0}` iff it does not lie on the open negative real
+half-axis: `0 ≤ z.re ∨ z.im ≠ 0`. This is the domain hypothesis of
+`Complex.continuousAt_cpow_const_of_re_pos`. -/
+theorem mem_slitPlane_union_zero_iff {z : ℂ} :
+    z ∈ slitPlane ∪ {0} ↔ 0 ≤ z.re ∨ z.im ≠ 0 := by
+  rw [← Complex.not_lt_zero_iff, Set.mem_union, Complex.mem_slitPlane_iff_not_le_zero,
+    Set.mem_singleton_iff, lt_iff_le_and_ne]
+  tauto
 
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/

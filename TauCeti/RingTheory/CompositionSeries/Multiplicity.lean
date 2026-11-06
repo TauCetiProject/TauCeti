@@ -264,8 +264,8 @@ theorem isCompositionFactorAt_mapCompositionSeriesOfInjective_iff (f : M →ₗ[
       IsCompositionFactorAt s (i.cast (mapCompositionSeriesOfInjective_length f hf s)) S := by
   rw [isCompositionFactorAt_iff, isCompositionFactorAt_iff,
     mapCompositionSeriesOfInjective_apply, mapCompositionSeriesOfInjective_apply]
-  exact ⟨fun ⟨g⟩ => ⟨(mapSubquotientEquivOfInjective f hf _ _).symm.trans g⟩,
-    fun ⟨g⟩ => ⟨(mapSubquotientEquivOfInjective f hf _ _).trans g⟩⟩
+  exact ⟨fun ⟨g⟩ => ⟨(f.mapSubquotientEquivOfInjective hf _ _).symm.trans g⟩,
+    fun ⟨g⟩ => ⟨(f.mapSubquotientEquivOfInjective hf _ _).trans g⟩⟩
 
 /-- Transporting a composition series along a surjective linear map does not change which module
 sits at an index; the index is transported along
@@ -279,8 +279,8 @@ theorem isCompositionFactorAt_comapCompositionSeriesOfSurjective_iff (f : M →�
       IsCompositionFactorAt s (i.cast (comapCompositionSeriesOfSurjective_length f hf s)) S := by
   rw [isCompositionFactorAt_iff, isCompositionFactorAt_iff,
     comapCompositionSeriesOfSurjective_apply, comapCompositionSeriesOfSurjective_apply]
-  exact ⟨fun ⟨g⟩ => ⟨(comapSubquotientEquivOfSurjective f hf _ _).symm.trans g⟩,
-    fun ⟨g⟩ => ⟨(comapSubquotientEquivOfSurjective f hf _ _).trans g⟩⟩
+  exact ⟨fun ⟨g⟩ => ⟨(f.comapSubquotientEquivOfSurjective hf _ _).symm.trans g⟩,
+    fun ⟨g⟩ => ⟨(f.comapSubquotientEquivOfSurjective hf _ _).trans g⟩⟩
 
 /-- **An injective map preserves multiplicities**: the image of a composition series counts every
 module the same number of times as the series itself. -/

@@ -11,7 +11,9 @@ import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Analysis.Calculus.Hadamard
+import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
 /-!
@@ -30,6 +32,7 @@ a canonical linear map from the ordinary tangent space to the algebraic point de
 * `pointDerivationEquivTangentSpace`: the resulting canonical linear equivalence.
 * `PointDerivation.congr_of_eventuallyEq`: on a finite-dimensional Hausdorff real manifold, a point
   derivation depends only on the germ of a smooth function at its basepoint.
+* `Derivation.apply_congr_of_eventuallyEq`: derivations of smooth functions are local operators.
 * `tangentToPointDerivation_mfderiv`: this association commutes with differentials.
 
 ## References
@@ -102,21 +105,6 @@ theorem tangentToPointDerivation_apply (x : M) (v : TangentSpace I x)
     (f : C^∞⟮I, M; 𝕜⟯) : tangentToPointDerivation x v f = mvfderiv I f x v :=
   rfl
 
-/-- **A globally smooth map with the germ of the extended chart.** There is a `C^∞` map `M → E`
-that agrees with `extChartAt I x` on a neighbourhood of `x`. -/
-private theorem exists_contMDiffMap_eventuallyEq_extChartAt
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] (x : M) :
-    ∃ F : C^∞⟮I, M; modelWithCornersSelf ℝ E, E⟯,
-      Filter.EventuallyEq (nhds x) (F : M → E) (extChartAt I x) := by
-  -- Multiplying the chart by a bump function at `x` leaves its germ there and makes the product
-  -- smooth everywhere.
-  let b : SmoothBumpFunction I x := Classical.choice inferInstance
-  refine ⟨⟨fun y ↦ b y • extChartAt I x y, b.contMDiff_smul contMDiffOn_extChartAt⟩, ?_⟩
-  filter_upwards [b.eventuallyEq_one] with y hy
-  simp [hy]
-
 /-- On a finite-dimensional Hausdorff real manifold, smooth scalar-valued functions distinguish
 tangent vectors. -/
 theorem tangentToPointDerivation_injective
@@ -141,58 +129,6 @@ theorem tangentToPointDerivation_injective
   change φ v = φ w
   rw [hd] at hfv
   exact hfv
-
-/-- **Hadamard's lemma in coordinates.** Subtracting its value at `x` writes a smooth real
-function as a combination of the coordinate functions of any finitely-indexed basis, each taken
-relative to its own value at `x`, with smooth coefficients. At the base point those coefficients
-are the directional derivatives along the basis. -/
-private theorem exists_contMDiffMap_hadamard_coords {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {ι : Type*} [Fintype ι]
-    (f : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯) (x : E) (b : Module.Basis ι ℝ E) :
-    ∃ a : ι → C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
-      (∀ i, a i x = fderiv ℝ f x (b i)) ∧
-        ∀ y, f y - f x = ∑ i, a i y * (b.coord i y - b.coord i x) := by
-  refine ⟨fun i ↦ ⟨fun y ↦ hadamardFactor f x y (b i), ?_⟩, fun i ↦ ?_, ?_⟩
-  · have hfac : ContDiff ℝ ∞ (hadamardFactor f x) :=
-      f.contMDiff.contDiff.contDiff_hadamardFactor f x
-    -- Applying a smooth continuous-linear-map-valued function to the constant vector `b i`
-    -- is the available API for smoothness of each scalar Hadamard factor.
-    exact (hfac.clm_apply (show ContDiff ℝ ∞ (fun _ : E ↦ b i) from contDiff_const)).contMDiff
-  · simp
-  · intro y
-    calc
-      f y - f x = hadamardFactor f x y (y - x) :=
-        (f.contMDiff.contDiff.of_le (by norm_num)).sub_eq_hadamardFactor_apply f x y
-      _ = ∑ i, hadamardFactor f x y (b i) * (b.coord i y - b.coord i x) := by
-        rw [← b.sum_repr (y - x), map_sum]
-        apply Finset.sum_congr rfl
-        intro i _
-        rw [map_smul]
-        simp [mul_comm]
-
-/-- **Hadamard's identity in the algebra of smooth functions.** A pointwise factorization of
-`g - g x` through the functions `c i`, with coefficients `a i`, is an identity between the bundled
-smooth maps themselves, the constants appearing as the images of `algebraMap`.
-
-This is the pointwise-to-bundled transport: the hypothesis speaks of values, the conclusion of
-elements of `C^∞⟮…⟯`, and the two are related by evaluation being a ring homomorphism. -/
-private theorem sub_algebraMap_eq_sum_mul_sub_algebraMap {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {ι : Type*} [Fintype ι] (x : E)
-    (g : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯)
-    (a c : ι → C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯)
-    (h : ∀ y, g y - g x = ∑ i, a i y * (c i y - c i x)) :
-    g - algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ (g x) =
-      ∑ i, a i * (c i - algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ (c i x)) := by
-  ext y
-  calc
-    (g - algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ (g x)) y = g y - g x := rfl
-    _ = ∑ i, a i y * (c i y - c i x) := h y
-    _ = _ := by
-      -- Evaluation of bundled smooth maps is a ring homomorphism, but the pointwise coercion on
-      -- the left does not expose that homomorphism to `rw` automatically.
-      change _ = ContMDiffMap.evalRingHom y _
-      rw [map_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ rfl
 
 /-- The constant smooth map `algebraMap ℝ C^∞⟮…⟯ s` takes the value `s` at every point.
 
@@ -263,8 +199,8 @@ private theorem tangentToPointDerivation_surjective_model
   rw [mvfderiv, mfderiv_eq_fderiv]
   -- Hadamard's lemma factors `f - f(x)` through the coordinate functions, with smooth factors,
   -- so this identity lives in the algebra on which the derivation acts.
-  obtain ⟨a, hax, ha⟩ := exists_contMDiffMap_hadamard_coords f' x b
-  have hfactor := sub_algebraMap_eq_sum_mul_sub_algebraMap x f' a c ha
+  obtain ⟨a, hax, ha⟩ := ContMDiffMap.exists_hadamard_coords f' x b
+  have hfactor := TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap x f' a c ha
   -- `D`'s domain is a type synonym for `C^∞⟮…⟯`, so the sum below lives *syntactically* in the
   -- unpointed type and `rw` cannot use `map_sum` as stated; this restatement supplies the
   -- matching form, and holds by definitional unfolding alone.
@@ -329,6 +265,16 @@ theorem congr_of_eventuallyEq
 
 end PointDerivation
 
+/-- **Locality of derivations.** On a finite-dimensional Hausdorff real manifold, a derivation of
+`C^∞(M, ℝ)` evaluated at `x` depends only on the germ of the function at `x`. -/
+theorem Derivation.apply_congr_of_eventuallyEq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+    (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) {f g : C^∞⟮I, M; ℝ⟯} {x : M}
+    (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) : δ f x = δ g x :=
+  (Derivation.evalAt x δ).congr_of_eventuallyEq f g hfg
+
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
@@ -348,51 +294,6 @@ theorem tangentToPointDerivation_mfderiv (f : C^∞⟮I, M; I', M'⟯) (x : M)
     (g.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
     (f.contMDiff.mdifferentiable (by simp)).mdifferentiableAt v).symm
 
-/-- **A smooth function factors through the chart near an interior point.** If `F` has the germ of
-the extended chart at an interior point `x`, then every `f : C^∞⟮I, M; ℝ⟯` agrees near `x` with
-`g' ∘ F` for some `C^∞` function `g'` on the model space. -/
-private theorem exists_contMDiffMap_comp_eventuallyEq
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-    {x : M} (hx : I.IsInteriorPoint x) (F : C^∞⟮I, M; modelWithCornersSelf ℝ E, E⟯)
-    (hF : Filter.EventuallyEq (nhds x) (F : M → E) (extChartAt I x))
-    (f : C^∞⟮I, M; ℝ⟯) :
-    ∃ g' : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
-      Filter.EventuallyEq (nhds x) (f : M → ℝ) (g' ∘ F) := by
-  -- Cut the chart expression of `f` off inside the interior of the chart target.
-  have hFx : F x = extChartAt I x x := hF.eq_of_nhds
-  have htarget : interior (extChartAt I x).target ∈ nhds (F x) := by
-    rw [hFx]
-    exact isOpen_interior.mem_nhds
-      ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx)
-  obtain ⟨β, hβ, -⟩ :=
-    (SmoothBumpFunction.nhds_basis_support
-      (I := modelWithCornersSelf ℝ E) htarget).mem_iff.mp htarget
-  let g : E → ℝ := fun y ↦ β y * f ((extChartAt I x).symm y)
-  have hg : ContDiff ℝ ∞ g := by
-    apply ContMDiff.contDiff
-    refine contMDiff_of_tsupport fun y hy ↦ ?_
-    have hytarget : y ∈ interior (extChartAt I x).target :=
-      hβ (tsupport_mul_subset_left hy)
-    have hsymmWithin :=
-      contMDiffWithinAt_extChartAt_symm_target (n := ∞) x (interior_subset hytarget)
-    have hsymm := hsymmWithin.contMDiffAt
-      (Filter.mem_of_superset (isOpen_interior.mem_nhds hytarget) interior_subset)
-    exact β.contMDiffAt.mul (f.contMDiff.contMDiffAt.comp y hsymm)
-  refine ⟨⟨g, hg.contMDiff⟩, ?_⟩
-  have hβF : Filter.EventuallyEq (nhds x) (β ∘ F) (fun _ ↦ 1) :=
-    β.eventuallyEq_one.comp_tendsto F.contMDiff.continuous.continuousAt
-  have hsource : ∀ᶠ y in nhds x, y ∈ (extChartAt I x).source :=
-    (isOpen_extChartAt_source x).mem_nhds (mem_extChartAt_source x)
-  filter_upwards [hF, hβF, hsource] with y hFy hβy hy
-  -- Unfold composition and the bundled chart-local function; no theorem rewrites through both
-  -- bundled-map coercions at once.
-  change f y = β (F y) * f ((extChartAt I x).symm (F y))
-  -- Likewise expose the constant function in the eventual equality supplied by the bump.
-  change β (F y) = 1 at hβy
-  rw [hβy, one_mul, hFy, (extChartAt I x).left_inv hy]
-
 /-- Every point derivation at an interior point of a finite-dimensional Hausdorff real manifold is
 directional differentiation along a tangent vector. -/
 theorem tangentToPointDerivation_surjective
@@ -404,7 +305,7 @@ theorem tangentToPointDerivation_surjective
   intro D
   -- A bump-localized extended chart is globally smooth and agrees with the chart germ at `x`.
   -- Push `D` through it and apply the model-space theorem to obtain the candidate vector `v`.
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
+  obtain ⟨F, hF⟩ := TauCeti.exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
   obtain ⟨w, hw⟩ := tangentToPointDerivation_surjective_model (F x) (fdifferential F x D)
   let v : TangentSpace I x := w
   have hv : mfderiv I (modelWithCornersSelf ℝ E) F x v = w := by
@@ -416,7 +317,7 @@ theorem tangentToPointDerivation_surjective
   ext f
   -- To compare the two derivations on an arbitrary global `f`, replace it near `x` by a smooth
   -- function of the chart.
-  obtain ⟨g', hlocal⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
+  obtain ⟨g', hlocal⟩ := TauCeti.exists_contMDiffMap_comp_eventuallyEq hx F hF f
   -- Germ invariance replaces `f` by `g' ∘ F` on both sides. Naturality of the tangent comparison
   -- then reduces the result exactly to the model-space equality `hw`.
   rw [(tangentToPointDerivation x v).congr_of_eventuallyEq f (g'.comp F) hlocal,

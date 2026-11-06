@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Sheaves.Skyscraper
 
 /-!
-# Skyscraper sheaves: split restriction maps and the stalk adjunction unit
+# Skyscraper sheaves: restriction maps and the stalk adjunction unit
 
 Let `A` be an object of a category with a terminal object `⊤_ C`, and suppose that the unique
 morphism `A ⟶ ⊤_ C` is a split epimorphism, that is, that there is some morphism `⊤_ C ⟶ A`. This
@@ -18,7 +18,9 @@ presheaf with value `A` is a split epimorphism
 contains the point, and a morphism to a terminal object otherwise. Mathlib's
 `isFlasque_skyscraperSheaf_of_epi_from` proves the weaker statement that these maps are
 epimorphisms; split epimorphisms are moreover preserved by products of any size, which is what
-makes products of skyscraper sheaves, such as Godement sheaves, flasque.
+makes products of skyscraper sheaves, such as Godement sheaves, flasque. A restriction map
+from `U` to `V ≤ U` is moreover an isomorphism when `V` contains the point whenever `U` does
+(`TauCeti.Topology.isIso_skyscraperPresheaf_map`).
 
 The unit of Mathlib's adjunction `stalkSkyscraperSheafAdjunction x` between the stalk at `x` and
 the skyscraper sheaf at `x` sends a section over an open containing `x` to its germ at `x`
@@ -53,6 +55,18 @@ instance isSplitEpi_skyscraperPresheaf_map {X : TopCat} (p₀ : X)
       · exact section_ (terminalIsTerminal.from A) ≫ eqToHom (ite_eq_left hU).symm
       · exact eqToHom (ite_eq_right hU).symm
     exact ⟨⟨terminal.from _ ≫ s, ((ite_eq_right hV).symm.ndrec terminalIsTerminal).hom_ext _ _⟩⟩
+
+/-- A restriction map of a skyscraper presheaf is an isomorphism as soon as the smaller open
+contains the point whenever the larger one does: it is then an identity, or a morphism between
+terminal objects. -/
+theorem isIso_skyscraperPresheaf_map {X : TopCat} (p₀ : X) [∀ U : Opens X, Decidable (p₀ ∈ U)]
+    {C : Type*} [Category* C] [HasTerminal C] (A : C) {U V : (Opens X)ᵒᵖ} (i : U ⟶ V)
+    (h : p₀ ∈ unop U → p₀ ∈ unop V) : IsIso ((skyscraperPresheaf p₀ A).map i) := by
+  by_cases hV : p₀ ∈ unop V
+  · rw [skyscraperPresheaf_map, dite_eq_left hV]
+    exact Iso.isIso_hom (eqToIso (by simp [hV, leOfHom i.unop hV]))
+  · exact isIso_of_isTerminal ((ite_eq_right (mt h hV)).symm.ndrec terminalIsTerminal)
+      ((ite_eq_right hV).symm.ndrec terminalIsTerminal) _
 
 /-- The unit of the adjunction between the stalk at `x` and the skyscraper sheaf at `x` sends a
 section over an open `U` containing `x` to its germ at `x`. -/
