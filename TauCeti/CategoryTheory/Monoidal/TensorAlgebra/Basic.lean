@@ -169,6 +169,15 @@ theorem ιTotal_tensorAlgebraFunctor_map_hom {X Y : C} (f : X ⟶ Y) (n : ℕ) :
   rw [tensorAlgebraFunctor_map_hom]
   exact ιTotal_total_map (tensorPowMap f) n
 
+/-- Monoid morphisms out of the tensor algebra agree if they agree on every tensor-length
+summand. For underlying morphisms in `C`, use `GradedObject.total_hom_ext`. -/
+@[ext]
+theorem tensorAlgebra_hom_ext {X : C} {A : Mon C}
+    {f g : Mon.mk (tensorAlgebraObj X) ⟶ A}
+    (h : ∀ n, ιTotal (tensorPow X) n ≫ f.hom = ιTotal (tensorPow X) n ≫ g.hom) :
+    f = g :=
+  Mon.Hom.ext (total_hom_ext h)
+
 /-- A unit-preserving multiplicative family on tensor powers descends to a morphism of monoid
 objects out of the coproduct tensor algebra. This is coproduct descent; constructing the family
 from a map on generators is separate. -/
@@ -176,19 +185,16 @@ def tensorAlgebraDesc (X : C) (A : Mon C) (φ : ∀ n, tensorPow X n ⟶ A.X)
     (h0 : φ 0 = MonObj.one)
     (hmul : ∀ m n, (tensorPowAddIso X m n).hom ≫ φ (n + m) =
       (φ m ⊗ₘ φ n) ≫ MonObj.mul) : Mon.mk (tensorAlgebraObj X) ⟶ A where
-  hom := Sigma.desc φ
+  hom := descTotal φ
   isMonHom_hom := {
     one_hom := by
-      rw [tensorAlgebra_one]
-      -- The source of `Sigma.desc` is the coproduct defining the total object.
-      erw [Sigma.ι_comp_desc]
+      rw [tensorAlgebra_one, ιTotal_descTotal]
       exact h0
     mul_hom := by
       rw [tensorAlgebra_mul]
       refine total_tensor_hom_ext fun m n ↦ ?_
-      -- Descent is typed on the coproduct, while multiplication is typed on its total object.
-      erw [ιTotal_tensorAlgebraMul_assoc, tensorHom_comp_tensorHom_assoc]
-      erw [Sigma.ι_comp_desc, Sigma.ι_comp_desc, Sigma.ι_comp_desc]
+      rw [ιTotal_tensorAlgebraMul_assoc, tensorHom_comp_tensorHom_assoc,
+        ιTotal_descTotal, ιTotal_descTotal, ιTotal_descTotal]
       exact hmul m n }
 
 /-- The descended monoid morphism restricts to the prescribed map on every tensor-length
@@ -199,7 +205,7 @@ theorem ιTotal_tensorAlgebraDesc_hom (X : C) (A : Mon C)
     (hmul : ∀ m n, (tensorPowAddIso X m n).hom ≫ φ (n + m) =
       (φ m ⊗ₘ φ n) ≫ MonObj.mul) (n : ℕ) :
     ιTotal (tensorPow X) n ≫ (tensorAlgebraDesc X A φ h0 hmul).hom = φ n :=
-  Sigma.ι_comp_desc φ n
+  ιTotal_descTotal φ n
 
 /-- A morphism out of the coproduct tensor algebra is the descent of its restrictions to all
 tensor-length summands. -/
@@ -209,7 +215,8 @@ theorem tensorAlgebraDesc_unique (X : C) (A : Mon C)
       (φ m ⊗ₘ φ n) ≫ MonObj.mul) (f : Mon.mk (tensorAlgebraObj X) ⟶ A)
     (hf : ∀ n, ιTotal (tensorPow X) n ≫ f.hom = φ n) :
     f = tensorAlgebraDesc X A φ h0 hmul := by
-  apply Mon.Hom.ext
-  exact Sigma.hom_ext _ _ fun n ↦ (hf n).trans (ιTotal_tensorAlgebraDesc_hom X A φ h0 hmul n).symm
+  apply tensorAlgebra_hom_ext
+  intro n
+  rw [hf n, ιTotal_tensorAlgebraDesc_hom]
 
 end TauCeti
