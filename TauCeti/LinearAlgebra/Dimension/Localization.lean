@@ -35,6 +35,10 @@ after multiplying by a non-zero-divisor of `R`, provided `M` is finitely generat
 `N` is torsion-free. So a rational embedding of lattices restricts, after scaling, to an integral
 embedding.
 
+A finitely generated module over a domain contains a free submodule of full rank with torsion
+quotient: Mathlib's `exists_linearIndepOn_smul_mem_span` provides the free family, and the rank
+of the quotient vanishes, so the family has `finrank` many members.
+
 ## Main results
 
 * `TauCeti.IsLocalization.finrank_tensorProduct`: `finrank R (M ⊗[R] A) = finrank R M` for a
@@ -48,6 +52,8 @@ embedding.
   rationalizations by a non-zero-divisor is the rationalization of an `A`-linear map.
 * `TauCeti.IsFractionRing.exists_injective_linearMap_of_injective`: an injective `A`-linear map of
   rationalizations of torsion-free modules gives an injective `A`-linear map of the modules.
+* `TauCeti.exists_linearIndependent_smul_mem_span`: a finitely generated module over a domain has
+  a free submodule on `Fin (finrank A M)` with torsion quotient.
 -/
 
 public section
@@ -162,3 +168,36 @@ theorem exists_injective_linearMap_of_injective [Module.Finite A M] [Module.IsTo
   simp only [key, hmm']
 
 end TauCeti.IsFractionRing
+
+namespace TauCeti
+
+variable {A M : Type*} [CommRing A] [IsDomain A] [AddCommGroup M] [Module A M]
+
+/-- A finitely generated module `M` over a domain contains a free submodule `F` of
+the rank of `M` with `M ⧸ F` torsion: some nonzero `c` multiplies `M` into `F`. This refines
+Mathlib's `exists_linearIndepOn_smul_mem_span` by indexing the free family by `Fin n` and
+identifying `n` with `Module.finrank A M`. -/
+theorem exists_linearIndependent_smul_mem_span [Module.Finite A M] :
+    ∃ (n : ℕ) (v : Fin n → M) (c : A), LinearIndependent A v ∧ c ≠ 0 ∧
+      (∀ m : M, c • m ∈ Submodule.span A (Set.range v)) ∧ Module.finrank A M = n := by
+  classical
+  obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := A) (M := M)
+  obtain ⟨s, hs, c, hc0, hcM⟩ := exists_linearIndepOn_smul_mem_span hv
+  rw [Set.image_eq_range] at hcM
+  set F := Submodule.span A (Set.range fun i : s ↦ v i)
+  -- `F` is free on `s`, of the rank of `M`, since `M ⧸ F` is torsion.
+  have hrank : Module.finrank A M = Fintype.card s := by
+    have htors : Module.rank A (M ⧸ F) = 0 := by
+      rw [rank_eq_zero_iff]
+      rintro ⟨m⟩
+      exact ⟨_, hc0, (Submodule.Quotient.mk_eq_zero F).2 (hcM m)⟩
+    have h := rank_quotient_add_rank_of_isDomain F
+    rw [htors, zero_add] at h
+    exact Module.finrank_eq_of_rank_eq (h.symm.trans (rank_eq_card_basis (Module.Basis.span hs)))
+  let e := (Fintype.equivFin s).symm
+  refine ⟨Fintype.card s, fun i ↦ v (e i), c, hs.comp e e.injective, hc0, fun m ↦ ?_, hrank⟩
+  rw [show Set.range (fun i ↦ v (e i)) = Set.range fun i : s ↦ v i from
+    e.surjective.range_comp fun i : s ↦ v i]
+  exact hcM m
+
+end TauCeti

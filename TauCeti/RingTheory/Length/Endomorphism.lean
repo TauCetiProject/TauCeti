@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.RingTheory.Length
-import Mathlib.LinearAlgebra.Dimension.Localization
-import Mathlib.LinearAlgebra.Quotient.Pi
+import TauCeti.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Length
 
 /-!
 # The cokernel length of an injective endomorphism
@@ -32,7 +32,8 @@ For the scalar endomorphisms of a finitely generated torsion-free module `M` ove
 domain of dimension at most one, `length (M ⧸ aM) = rank M * ord_A a`
 (`TauCeti.length_quotient_lsmul_eq_finrank_mul_ord`). The proof replaces
 `M` by a free submodule of full rank with torsion quotient
-(`TauCeti.exists_linearIndependent_smul_mem_span`), on which the cokernel is `(A ⧸ aA)^rank`.
+(`TauCeti.exists_linearIndependent_smul_mem_span` in
+`TauCeti.LinearAlgebra.Dimension.Localization`), on which the cokernel is `(A ⧸ aA)^rank`.
 
 ## References
 
@@ -78,46 +79,12 @@ theorem length_quotient_lsmul_pi (ι : Type*) [Fintype ι] (a : A) :
     Module.length A ((ι → A) ⧸ LinearMap.range (LinearMap.lsmul A (ι → A) a)) =
       Fintype.card ι * Ring.ord A a := by
   classical
-  have hpi : LinearMap.range (LinearMap.lsmul A (ι → A) a) =
-      Submodule.pi Set.univ fun _ ↦ LinearMap.range (LinearMap.lsmul A A a) := by
-    ext x
-    simp [funext_iff, Classical.skolem, eq_comm]
-  have hA : Module.length A (A ⧸ LinearMap.range (LinearMap.lsmul A A a)) = Ring.ord A a := by
-    rw [range_lsmul_eq_smul_top, ← Submodule.ideal_span_singleton_smul, smul_eq_mul,
-      Ideal.mul_top, Ring.ord]
-  rw [hpi, (Submodule.quotientPi _).length_eq, Module.length_pi_of_fintype, hA,
-    Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  have h : LinearMap.lsmul A (ι → A) a = (Matrix.diagonal fun _ ↦ a).mulVecLin := by
+    ext; simp [Matrix.mulVec_diagonal]
+  rw [h, Matrix.length_quotient_range_diagonal_mulVecLin, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul]
 
-variable [IsDomain A]
-
-/-- A finitely generated module `M` over a domain contains a free submodule `F` of
-the rank of `M` with `M ⧸ F` torsion: some nonzero `c` multiplies `M` into `F`. This refines
-Mathlib's `exists_linearIndepOn_smul_mem_span` by indexing the free family by `Fin n` and
-identifying `n` with `Module.finrank A M`. -/
-theorem exists_linearIndependent_smul_mem_span [Module.Finite A M] :
-    ∃ (n : ℕ) (v : Fin n → M) (c : A), LinearIndependent A v ∧ c ≠ 0 ∧
-      (∀ m : M, c • m ∈ Submodule.span A (Set.range v)) ∧ Module.finrank A M = n := by
-  classical
-  obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := A) (M := M)
-  obtain ⟨s, hs, c, hc0, hcM⟩ := exists_linearIndepOn_smul_mem_span hv
-  rw [Set.image_eq_range] at hcM
-  set F := Submodule.span A (Set.range fun i : s ↦ v i)
-  -- `F` is free on `s`, of the rank of `M`, since `M ⧸ F` is torsion.
-  have hrank : Module.finrank A M = Fintype.card s := by
-    have htors : Module.rank A (M ⧸ F) = 0 := by
-      rw [rank_eq_zero_iff]
-      rintro ⟨m⟩
-      exact ⟨_, hc0, (Submodule.Quotient.mk_eq_zero F).2 (hcM m)⟩
-    have h := rank_quotient_add_rank_of_isDomain F
-    rw [htors, zero_add] at h
-    rw [← Module.finrank_eq_card_basis (Module.Basis.span hs), Module.finrank, Module.finrank, h]
-  let e := (Fintype.equivFin s).symm
-  refine ⟨Fintype.card s, fun i ↦ v (e i), c, hs.comp e e.injective, hc0, fun m ↦ ?_, hrank⟩
-  rw [show Set.range (fun i ↦ v (e i)) = Set.range fun i : s ↦ v i from
-    e.surjective.range_comp fun i : s ↦ v i]
-  exact hcM m
-
-variable [Module.IsTorsionFree A M]
+variable [IsDomain A] [Module.IsTorsionFree A M]
 
 /-- **Cokernel length of a scalar.** Over a Noetherian domain `A` of dimension at most one,
 multiplication by a nonzero `a` on a finitely generated torsion-free module `M` has cokernel of
