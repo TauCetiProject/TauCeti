@@ -15,8 +15,9 @@ public import Mathlib.Algebra.Group.Subgroup.Basic
 Equivariant characters into a commutative group form a subgroup of ordinary monoid
 homomorphisms under pointwise multiplication. This supplies the domain of character
 transgression, whose kernel describes which characters extend to a group extension.
-The subgroup needs only a scalar action on the source; identifying it with the bundled
-equivariant homomorphisms `M →*[G] A` needs that action to be distributive.
+The subgroup needs only a `MulOneClass` source with scalar multiplication. Identifying it
+with the bundled equivariant homomorphisms `M →*[G] A` needs a monoid source with a
+distributive action.
 
 We use a subgroup because Mathlib's `One` on equivariant endomorphisms is the
 identity map, rather than the constant character required by pointwise multiplication.

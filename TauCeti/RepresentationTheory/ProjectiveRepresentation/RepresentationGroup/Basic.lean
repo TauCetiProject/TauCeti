@@ -110,6 +110,9 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
     simp [hd, h]
   let : NeZero (Monoid.exponent M : k) := ⟨hexpcast⟩
   let : MulDistribMulAction G M := trivialMulDistribMulAction G M
+  -- Use the same action for characters and transgression: otherwise bare scalar-action
+  -- inference on the function type M can select the pointwise Pi instance.
+  let : SMul G M := (inferInstance : MulDistribMulAction G M).toMulAction.toSMul
   let α : FactorSet G M :=
     { toFun p i := γ i p
       isMulCocycle₂' g h j := by
@@ -125,7 +128,8 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
     { (rootsOfUnity (n i) k).subtype.comp (Pi.evalMonoidHom _ i) with
       map_smul' _ _ := rfl }
   have hev (i : ι) (a : M) : ev i a = (a i : kˣ) := rfl
-  let χ (i : ι) := Additive.ofMul ((equivariantCharacterEquiv G M kˣ).symm (ev i))
+  let χ (i : ι) : Additive (equivariantCharacterSubgroup G M kˣ) :=
+    Additive.ofMul ((equivariantCharacterEquiv G M kˣ).symm (ev i))
   have hχ (i : ι) : α.characterTransgression (χ i) = x i := by
     rw [FactorSet.characterTransgression_apply]
     have heq : α.map (equivariantCharacterEquiv G M kˣ (χ i).toMul) = β i := by
