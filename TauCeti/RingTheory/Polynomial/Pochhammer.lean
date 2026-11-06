@@ -322,8 +322,7 @@ theorem fwdDiff_iter_descPochhammer_eval {R : Type*} [Ring R] (j k : ℕ) :
     cases j with
     | zero => simp [Function.iterate_fixed]
     | succ i =>
-      rw [fwdDiff_descPochhammer_succ_eval]
-      change Δ_[1]^[k] (((i + 1 : ℕ) : R) • fun x ↦ (descPochhammer R i).eval x) = _
+      simp_rw [fwdDiff_descPochhammer_succ_eval, ← smul_eq_mul, ← Pi.smul_def]
       rw [fwdDiff_iter_const_smul, ih, Nat.succ_descFactorial_succ, Nat.add_sub_add_right]
       funext x
       simp [mul_assoc]
