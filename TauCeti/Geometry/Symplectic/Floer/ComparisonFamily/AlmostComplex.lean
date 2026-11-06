@@ -35,8 +35,9 @@ applied to the structure with the same neck inserted. It has the following prope
 * At `ρ(R) = 0` it is the domain-independent structure `J₀`. At `ρ(R) = 1` it is `J` with a neck of
   length `L(R)` inserted, which is `J` itself where `L(R) = 0`.
 * Along the neck `c ≤ s ≤ c + L(R)` it does not depend on `s`.
-* It is smooth jointly in `R`, the domain point and the external point near every `R` with
-  `|ρ| ≤ 1` nearby, provided `J` is smooth and independent of `s` near the line `s = c`.
+* Let `ρ` and `L ≥ 0` be smooth, and let `J` be smooth and independent of `s` near the line
+  `s = c`. Then the family is smooth jointly in `R`, the domain point and the external point near
+  every `R` with `|ρ| ≤ 1` nearby.
 * If the values of `J` lie in a compact set of tame structures, then one pair of constants
   `a > 0` and `M` gives `a ‖v‖² ≤ ω(v, J_R(z, x) v)` and `‖J_R(z, x) v‖ ≤ M ‖v‖` for every member
   of the family, whatever the cutoff and however long the neck. Consequently the Floer energy
@@ -44,8 +45,9 @@ applied to the structure with the same neck inserted. It has the following prope
 
 For the chosen cutoff `TauCeti.Floer.comparisonCutoff` and neck length
 `TauCeti.Floer.comparisonNeckLength`, the family is `J₀` at `R = 0` and `J` on the collar
-`2/3 ≤ R ≤ 3/2`, and it has a neck of length `R - 1` for `R ≥ 2`. It is smooth for `R > -1`, in
-particular across the endpoint `R = 0`.
+`2/3 ≤ R ≤ 3/2`, and it has a neck of length `R - 1` for `R ≥ 2`. If `J` is smooth and
+independent of `s` near the line `s = c`, the family is smooth near every `R > -1`, in particular
+across the endpoint `R = 0`.
 
 As in `TauCeti.Geometry.Symplectic.Floer.ComparisonFamily`, the domain is a coordinate rectangle
 with one neck and the structures act on a fixed symplectic vector space. The family on a sphere
@@ -105,7 +107,7 @@ def cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) (J : ℝ × ℝ → X �
   h₀.cayleyEquiv.symm
     ⟨(projIcc (-1) 1 (by norm_num) (ρ R) : ℝ) •
         J₀.cayley (J (neckCollapse c (L R) z.1, z.2) x),
-      h₀.smul_cayley_mem_cayleyBall_of_abs_le (hJ _ _) (abs_le.2 (projIcc _ _ _ _).2)⟩
+      h₀.smul_cayley_mem_cayleyBall (hJ _ _) (abs_le.2 (projIcc _ _ _ _).2)⟩
 
 /-- Every member of the family is tamed by `ω`. -/
 theorem tames_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) (R : ℝ) (z : ℝ × ℝ) (x : X) :
@@ -136,7 +138,7 @@ theorem compatible_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀)
     ω.Compatible (cutoffNeckAlmostComplex h₀ J hJ ρ L c R z x) := by
   refine (h₀.cayley_mem_compatibleCayleyBall_iff (tames_cutoffNeckAlmostComplex h₀ R z x)).mp ?_
   rw [cayley_cutoffNeckAlmostComplex]
-  exact h₀.smul_cayley_mem_compatibleCayleyBall_of_abs_le (hJc _ _)
+  exact h₀.smul_cayley_mem_compatibleCayleyBall (hJc _ _)
     (abs_le.2 (projIcc _ _ _ _).2)
 
 /-- Where the cutoff vanishes, the family is the domain-independent structure `J₀`. -/
@@ -164,7 +166,7 @@ theorem cutoffNeckAlmostComplex_apply_eq_of_mem_Icc (h₀ : ω.Compatible J₀) 
   refine h₀.eq_of_cayley_eq (tames_cutoffNeckAlmostComplex h₀ R _ x)
     (tames_cutoffNeckAlmostComplex h₀ R _ x) ?_
   simp only [cayley_cutoffNeckAlmostComplex, neckCollapse_of_mem_Icc hs,
-    neckCollapse_of_mem_Icc (show c ∈ Icc c (c + L R) from ⟨le_rfl, by linarith⟩)]
+    neckCollapse_of_le hL le_rfl]
 
 /-- In operator-norm coordinates, a member of the family is the Cayley path expression
 `J₀ (1 + b C)(1 - b C)⁻¹`, where `b` is the clamped cutoff and `C` is the Cayley coordinate of the
@@ -175,7 +177,7 @@ theorem toContinuousLinearMap_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀
       cayleyPathFormula (projIcc (-1) 1 (by norm_num) (ρ R) : ℝ)
         (LinearMap.toContinuousLinearMap J₀.toLinearMap)
         (LinearMap.toContinuousLinearMap (J (neckCollapse c (L R) z.1, z.2) x).toLinearMap) :=
-  h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley_of_abs_le (hJ _ _)
+  h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (hJ _ _)
     (abs_le.2 (projIcc _ _ _ _).2) (LinearMap.coe_toContinuousLinearMap _)
     (LinearMap.coe_toContinuousLinearMap _)
 
@@ -235,7 +237,7 @@ theorem contDiffAt_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) {n : With
   have hA : A.toLinearMap = J₀.toLinearMap := LinearMap.coe_toContinuousLinearMap _
   have hcf := contDiffAt_cayleyPathFormula (n := n)
     (h₀.tames.isUnit_one_sub_mul_of_toLinearMap (hJ _ _) hA hB)
-    (h₀.isUnit_one_sub_smul_cayleyFormula_of_abs_le (hJ _ _) hρR.self_of_nhds hA hB)
+    (h₀.isUnit_one_sub_smul_cayleyFormula (hJ _ _) hρR.self_of_nhds hA hB)
   have hin : ContDiff ℝ n fun q : ℝ × (ℝ × ℝ) × E ↦
       (ρ q.1, A, neckStretch c (L q.1) G q.2.1 q.2.2) :=
     (hρ.comp contDiff_fst).prodMk (contDiff_const.prodMk hN)
@@ -247,8 +249,9 @@ theorem contDiffAt_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) {n : With
   rw [toContinuousLinearMap_cutoffNeckAlmostComplex, projIcc_of_mem _ (abs_le.1 hq)]
   simp only [comp_apply, neckStretch_apply, G, A]
 
-/-- For the chosen cutoff and neck length, the family is smooth near every `R > -1`, in
-particular across the endpoint `R = 0` of the comparison family. -/
+/-- For the chosen cutoff and neck length, and `J` smooth and independent of `s` near the line
+`s = c`, the family is smooth near every `R > -1`, in particular across the endpoint `R = 0` of
+the comparison family. -/
 theorem contDiffAt_cutoffNeckAlmostComplex_comparison (h₀ : ω.Compatible J₀) {n : ℕ∞}
     (hR : -1 < R) (hJc : ∀ᶠ s in 𝓝 c, ∀ t, J (s, t) = J (c, t))
     (hJd : ContDiff ℝ n fun p : (ℝ × ℝ) × E ↦
@@ -265,7 +268,7 @@ end Smooth
 
 section Uniform
 
-variable {X : Type*} {J : ℝ × ℝ → X → AlmostComplexStructure V} {hJ : ∀ z x, ω.Tames (J z x)}
+variable {X : Type*} {J : ℝ × ℝ → X → AlmostComplexStructure V}
 
 /-- **Uniform tameness over the family.** If the values of `J` lie in a compact set of `ω`-tame
 structures, then there are constants `a > 0` and `M` with `a ‖v‖² ≤ ω(v, J_R(z, x) v)` and
@@ -275,59 +278,36 @@ theorem exists_pos_forall_mul_norm_sq_le_cutoffNeckAlmostComplex (h₀ : ω.Comp
     {𝒦 : Set (AlmostComplexStructure V)} (h𝒦 : IsCompact 𝒦) (h𝒦t : ∀ J' ∈ 𝒦, ω.Tames J')
     (hJ𝒦 : ∀ z x, J z x ∈ 𝒦) :
     ∃ a > 0, ∃ M, ∀ (ρ L : ℝ → ℝ) (c R : ℝ) (z : ℝ × ℝ) (x : X) (v : V),
-      a * ‖v‖ ^ 2 ≤ ω v (cutoffNeckAlmostComplex h₀ J hJ ρ L c R z x v) ∧
-        ‖cutoffNeckAlmostComplex h₀ J hJ ρ L c R z x v‖ ≤ M * ‖v‖ := by
+      a * ‖v‖ ^ 2 ≤
+          ω v (cutoffNeckAlmostComplex h₀ J (fun z x ↦ h𝒦t _ (hJ𝒦 z x)) ρ L c R z x v) ∧
+        ‖cutoffNeckAlmostComplex h₀ J (fun z x ↦ h𝒦t _ (hJ𝒦 z x)) ρ L c R z x v‖ ≤
+          M * ‖v‖ := by
   set A := LinearMap.toContinuousLinearMap J₀.toLinearMap
   set e : AlmostComplexStructure V → V →L[ℝ] V := fun J' ↦
     LinearMap.toContinuousLinearMap J'.toLinearMap
   have hA : A.toLinearMap = J₀.toLinearMap := LinearMap.coe_toContinuousLinearMap _
-  have he (J' : AlmostComplexStructure V) : (e J').toLinearMap = J'.toLinearMap :=
-    LinearMap.coe_toContinuousLinearMap _
-  -- All members have operators `Φ (b, e J')` with `|b| ≤ 1` and `J' ∈ 𝒦`, a compact set.
-  set S : Set (ℝ × (V →L[ℝ] V)) := Icc (-1) 1 ×ˢ (e '' 𝒦)
-  have hS : IsCompact S :=
-    isCompact_Icc.prod
-      (h𝒦.image AlmostComplexStructure.isEmbedding_toContinuousLinearMap.continuous)
-  set Φ : ℝ × (V →L[ℝ] V) → V →L[ℝ] V := fun p ↦ cayleyPathFormula p.1 A p.2
-  have hΦ : ∀ p ∈ S, ∃ J', ω.Tames J' ∧ Φ p = e J' := by
-    rintro ⟨b, B⟩ ⟨hb, J', hJ', rfl⟩
-    have hb' : |b| ≤ 1 := abs_le.2 hb
-    exact ⟨_, (h₀.cayleyEquiv.symm _).2,
-      (h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley_of_abs_le (h𝒦t J' hJ') hb' hA
-        (he J')).symm⟩
-  have hΦc : ContinuousOn Φ S := by
-    rintro ⟨b, B⟩ ⟨hb, J', hJ', rfl⟩
-    have hcf := contDiffAt_cayleyPathFormula (n := 0)
-      (h₀.tames.isUnit_one_sub_mul_of_toLinearMap (h𝒦t J' hJ') hA (he J'))
-      (h₀.isUnit_one_sub_smul_cayleyFormula_of_abs_le (h𝒦t J' hJ') (abs_le.2 hb) hA (he J'))
-    exact (hcf.continuousAt.comp (f := fun p : ℝ × (V →L[ℝ] V) ↦ (p.1, A, p.2))
-      (by fun_prop)).continuousWithinAt
-  have hT : IsCompact (Φ '' S) := hS.image_of_continuousOn hΦc
-  -- The bilinear forms `ω(·, B ·)`, continuous in `B`, are positive on `Φ '' S`.
-  set Ω : V →L[ℝ] V →L[ℝ] ℝ := ω.toBilinForm.toContinuousBilinearMap
-  set β : (V →L[ℝ] V) → V →L[ℝ] V →L[ℝ] ℝ := fun B ↦
-    ((ContinuousLinearMap.compL ℝ V V ℝ).flip B).comp Ω
-  have hβ (B : V →L[ℝ] V) (v w : V) : β B v w = ω v (B w) := rfl
-  have hβc : Continuous β :=
-    (ContinuousLinearMap.compL ℝ V V ℝ).flip.continuous.clm_comp continuous_const
-  obtain ⟨a, ha, hle⟩ := hT.exists_pos_forall_mul_norm_sq_le hβc.continuousOn (by
-    rintro _ ⟨p, hp, rfl⟩ v hv
-    obtain ⟨J', hJ', hJ'e⟩ := hΦ p hp
-    rw [hβ, hJ'e]
-    exact hJ' v hv)
+  -- The operators of all members lie in the compact set `T` of Cayley path expressions.
+  set T := (fun p : ℝ × (V →L[ℝ] V) ↦ cayleyPathFormula p.1 A p.2) '' (Icc (-1) 1 ×ˢ (e '' 𝒦))
+  have hT : IsCompact T := h₀.isCompact_image_cayleyPathFormula hA h𝒦 h𝒦t
+  -- Each element of `T` is the operator of a tame structure, so `ω` is uniformly positive on `T`.
+  obtain ⟨a, ha, hle⟩ := hT.exists_pos_forall_mul_norm_sq_le_compRight
+    ω.toBilinForm.toContinuousBilinearMap (by
+      rintro _ ⟨⟨b, _⟩, ⟨hb, J', hJ', rfl⟩, rfl⟩ v hv
+      dsimp only
+      rw [← h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h𝒦t J' hJ') (abs_le.2 hb) hA
+        (LinearMap.coe_toContinuousLinearMap _)]
+      exact (h₀.cayleyEquiv.symm _).2 v hv)
   obtain ⟨M, hM⟩ := hT.isBounded.exists_norm_le
   refine ⟨a, ha, M, fun ρ L c R z x v ↦ ?_⟩
-  set F := cutoffNeckAlmostComplex h₀ J hJ ρ L c R z x
-  have hmem : e F ∈ Φ '' S :=
+  set F := cutoffNeckAlmostComplex h₀ J (fun z x ↦ h𝒦t _ (hJ𝒦 z x)) ρ L c R z x
+  have hmem : e F ∈ T :=
     ⟨((projIcc (-1) 1 (by norm_num) (ρ R) : ℝ), e (J (neckCollapse c (L R) z.1, z.2) x)),
       ⟨(projIcc (-1) 1 (by norm_num) (ρ R)).2, mem_image_of_mem e (hJ𝒦 _ _)⟩,
       (toContinuousLinearMap_cutoffNeckAlmostComplex h₀ R z x).symm⟩
   have hFv : e F v = F v := by simp [e]
-  refine ⟨?_, ?_⟩
-  · have h := hle _ hmem v
-    rwa [hβ, hFv] at h
-  · rw [← hFv]
-    exact (e F).le_opNorm v |>.trans (mul_le_mul_of_nonneg_right (hM _ hmem) (norm_nonneg v))
+  refine ⟨hle _ hmem v, ?_⟩
+  rw [← hFv]
+  exact (e F).le_opNorm v |>.trans (mul_le_mul_of_nonneg_right (hM _ hmem) (norm_nonneg v))
 
 /-- **Uniform energy coercivity over the family.** If the values of `J` lie in a compact set of
 `ω`-tame structures, there are constants `a > 0` and `C` such that, for every member of the
@@ -337,18 +317,17 @@ derivative: `a (‖∂_s u - X_{K_s}‖² + ‖∂_t u - X_{K_t}‖²) ≤ C ω(
 The constants do not depend on the cutoff, the neck length or the neck position. -/
 theorem exists_pos_forall_mul_norm_sq_le_floerEnergyDensity_cutoffNeckAlmostComplex
     (h₀ : ω.Compatible J₀) {J : ℝ × ℝ → V → AlmostComplexStructure V}
-    {hJ : ∀ z x, ω.Tames (J z x)} {𝒦 : Set (AlmostComplexStructure V)} (h𝒦 : IsCompact 𝒦)
-    (h𝒦t : ∀ J' ∈ 𝒦, ω.Tames J') (hJ𝒦 : ∀ z x, J z x ∈ 𝒦) :
+    {𝒦 : Set (AlmostComplexStructure V)} (h𝒦 : IsCompact 𝒦) (h𝒦t : ∀ J' ∈ 𝒦, ω.Tames J')
+    (hJ𝒦 : ∀ z x, J z x ∈ 𝒦) :
     ∃ a > 0, ∃ C, ∀ (ρ L : ℝ → ℝ) (c R : ℝ) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
       (z : ℝ × ℝ),
       IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-          (cutoffNeckAlmostComplex h₀ J hJ ρ L c R z (u z))
+          (cutoffNeckAlmostComplex h₀ J (fun z x ↦ h𝒦t _ (hJ𝒦 z x)) ρ L c R z (u z))
           (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) →
         a * (‖ω.perturbedFDeriv Ks Kt u z stdComplexLineReal‖ ^ 2 +
             ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖ ^ 2) ≤
           C * ω.floerEnergyDensity Ks Kt u z := by
-  obtain ⟨a, ha, M, h⟩ := exists_pos_forall_mul_norm_sq_le_cutoffNeckAlmostComplex
-    (hJ := hJ) h₀ h𝒦 h𝒦t hJ𝒦
+  obtain ⟨a, ha, M, h⟩ := exists_pos_forall_mul_norm_sq_le_cutoffNeckAlmostComplex h₀ h𝒦 h𝒦t hJ𝒦
   exact ⟨a, ha, 1 + M ^ 2, fun ρ L c R Ks Kt u z hu ↦
     ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity ha.le
       (fun v ↦ (h ρ L c R z (u z) v).1) (fun v ↦ (h ρ L c R z (u z) v).2) hu⟩
