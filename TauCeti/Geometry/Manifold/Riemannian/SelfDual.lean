@@ -88,6 +88,10 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 * `TauCeti.SmoothForm.eq_zero_of_selfDualPart_eq_zero`,
   `TauCeti.SmoothForm.eq_zero_of_antiSelfDualPart_eq_zero`: a compactly supported exact form with
   vanishing self-dual, or anti-self-dual, part is zero.
+* `TauCeti.SmoothForm.selfDualPart_wedge_zero_right`,
+  `TauCeti.SmoothForm.alternatingFormEquiv_symm_selfDualPart`,
+  `TauCeti.SmoothForm.hodgeStar_alternatingFormEquiv_symm_of_mem_selfDualForms`: right
+  `C^∞(M)`-linearity and fibrewise `k`-vector characterization of smooth self-dual forms.
 
 ## References
 
@@ -543,6 +547,12 @@ smooth forms with `⋆α = α`. -/
 def selfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
   Module.End.eigenspace (hodgeStar o rfl) 1
 
+instance instAddCommGroupSelfDualForms : AddCommGroup (selfDualForms o) :=
+  Submodule.addCommGroup _
+
+instance instModuleSelfDualForms : Module ℝ (selfDualForms o) :=
+  Submodule.module _
+
 /-- The **anti-self-dual** smooth middle-degree forms `Ω⁻`: the `-1` eigenspace of the Hodge star,
 the smooth forms with `⋆α = -α`. -/
 def antiSelfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
@@ -614,6 +624,52 @@ theorem ker_antiSelfDualPart :
   ext α
   rw [LinearMap.mem_ker, ← coe_mem_selfDualForms_iff, ← RoughForm.ker_antiSelfDualPart,
     LinearMap.mem_ker, ← coe_antiSelfDualPart, ZeroMemClass.coe_eq_zero]
+
+/-- The self-dual projection commutes with right multiplication by a smooth zero-form. -/
+theorem selfDualPart_wedge_zero_right (φ : SmoothForm I M ℝ k) (f : SmoothForm I M ℝ 0) :
+    selfDualPart o (wedge φ f) = wedge (selfDualPart o φ) f := by
+  apply Subtype.ext
+  funext x
+  ext v
+  simp only [coe_selfDualPart, RoughForm.selfDualPart_apply, wedge_apply_zero_right,
+    Pi.smul_apply, Pi.add_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.add_apply, smul_eq_mul]
+  have hh := congrArg (fun ψ : SmoothForm I M ℝ k ↦ ψ.1 x v)
+    (hodgeStar_wedge_zero_right o rfl φ f)
+  simp only [coe_hodgeStar, wedge_apply_zero_right] at hh
+  rw [hh]
+  ring
+
+/-- Under `alternatingFormEquiv`, `SmoothForm.selfDualPart` acts fibrewise as `(1 / 2) (y + ⋆y)` on
+`⋀ᵏ T_x M`. -/
+theorem alternatingFormEquiv_symm_selfDualPart (η : SmoothForm I M ℝ k) (x : M) :
+    (letI := o.fact_finrank_tangentSpace x
+     (alternatingFormEquiv (TangentSpace I x) k).symm ((selfDualPart o η).1 x)) =
+      (letI := o.fact_finrank_tangentSpace x
+       (2⁻¹ : ℝ) • ((alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x) +
+         (o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
+           ((alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x)))) := by
+  let _ := o.fact_finrank_tangentSpace x
+  apply (alternatingFormEquiv (TangentSpace I x) k).injective
+  rw [LinearEquiv.apply_symm_apply, map_smul, map_add,
+    ← (o.orientationAt x).formHodgeStar_alternatingFormEquiv, LinearEquiv.apply_symm_apply,
+    coe_selfDualPart, RoughForm.selfDualPart_apply, Pi.smul_apply, Pi.add_apply,
+    RoughForm.hodgeStar_apply]
+
+/-- Every smooth self-dual `k`-form `η ∈ selfDualForms o` corresponds at `x` to a self-dual
+`k`-vector under `alternatingFormEquiv`. -/
+theorem hodgeStar_alternatingFormEquiv_symm_of_mem_selfDualForms
+    {η : SmoothForm I M ℝ k} (hη : η ∈ selfDualForms o) (x : M) :
+    (letI := o.fact_finrank_tangentSpace x
+     (o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
+       ((alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x))) =
+      (letI := o.fact_finrank_tangentSpace x
+       (alternatingFormEquiv (TangentSpace I x) k).symm (η.1 x)) := by
+  let _ := o.fact_finrank_tangentSpace x
+  apply (alternatingFormEquiv (TangentSpace I x) k).injective
+  rw [← (o.orientationAt x).formHodgeStar_alternatingFormEquiv, LinearEquiv.apply_symm_apply]
+  simpa only [coe_hodgeStar, RoughForm.hodgeStar_apply] using
+    congrArg (fun ψ : SmoothForm I M ℝ k ↦ ψ.1 x) (mem_selfDualForms.1 hη)
 
 /-- The self-dual part of a compactly supported smooth form is compactly supported. -/
 theorem selfDualPart_mem_compactlySupportedForms {α : SmoothForm I M ℝ k}

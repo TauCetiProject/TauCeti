@@ -38,6 +38,7 @@ metric this expresses the star through the inverse metric and the volume of the 
 ## Main results
 
 * `Orientation.wedge_formHodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
+* `Orientation.formHodgeStar_wedge_formHodgeStar_apply_zero`: `⋆(α ∧ ⋆β) 0 = ⟨α, β⟩`.
 * `Orientation.formHodgeStar_formHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 * `Orientation.alternatingFormInner_formHodgeStar`: the star preserves the inner product of forms.
 * `Orientation.alternatingFormInner_formHodgeStar_left`: in an even middle degree the star is an
@@ -122,6 +123,25 @@ theorem wedge_formHodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V)
     alternatingFormEquiv_apply, alternatingFormInner_alternatingFormEquiv,
     ← o.wedgePairing_hodgeStar hkl, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ z rfl]
   exact o.inner_ιMulti_eq_volumeEquiv_mul_volumeForm hkl _ z rfl v
+
+/-- **Recovering the inner product of `k`-forms via the Hodge star**: `⋆(α ∧ ⋆β)` evaluated at `0`
+equals `⟨α, β⟩`. -/
+theorem formHodgeStar_wedge_formHodgeStar_apply_zero {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (hm0 : (k + l) + 0 = finrank ℝ V) (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
+    o.formHodgeStar hm0 (α.wedge (o.formHodgeStar hkl β)) 0 = alternatingFormInner V k α β := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
+  obtain ⟨b, rfl⟩ := (alternatingFormEquiv V k).surjective β
+  set z : ⋀[ℝ]^(finrank ℝ V) V := ⟨_, by
+    rw [← hkl]; exact (exteriorPower.wedge ℝ V k l a (o.hodgeStar hkl b)).2⟩
+  have hz : ((exteriorPower.wedge ℝ V k l a (o.hodgeStar hkl b) : ExteriorAlgebra ℝ V) *
+      ((ιMulti ℝ 0 (![] : Fin 0 → V)) : ExteriorAlgebra ℝ V)) = (z : ExteriorAlgebra ℝ V) := by
+    simp [z, ExteriorAlgebra.ιMulti_zero_apply]
+  have h0 : (0 : Fin 0 → V) = ![] := Subsingleton.elim _ _
+  rw [o.formHodgeStar_alternatingFormEquiv, ← alternatingFormEquiv_wedge,
+    o.formHodgeStar_apply, LinearEquiv.symm_apply_apply,
+    alternatingFormInner_alternatingFormEquiv, ← o.wedgePairing_hodgeStar hkl, h0,
+    wedgePairing_apply_eq_of_coe_mul_eq _ hm0 _ _ z hz,
+    wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ z rfl]
 
 /-- The Hodge star preserves the inner product of forms. -/
 @[simp]
