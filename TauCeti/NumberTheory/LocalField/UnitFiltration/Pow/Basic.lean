@@ -89,9 +89,7 @@ private theorem valuation_one_add_pow_sub_sub_le {p : ℕ} (hp : p.Prime) (hpK :
   set e := natCastValuation K p hpK
   have hγ1 : γ < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hγ0 : 0 < γ := Valuation.integer.v_irreducible_pos hπ
-  have hi0 : i ≠ 0 := by
-    rintro rfl
-    simp at hi
+  have hi0 : i ≠ 0 := by rintro rfl; simp at hi
   have hvp : valuation K (p : K) = γ ^ e := valuation_natCast_eq_pow hπ p hpK
   have hxγ : valuation K x ≤ γ :=
     hx.trans (pow_le_of_le_one hγ0.le hγ1.le hi0)
@@ -126,8 +124,7 @@ private theorem valuation_one_add_pow_sub_sub_le {p : ℕ} (hp : p.Prime) (hpK :
             _ = valuation K x * γ := one_mul _
       _ = γ ^ e * valuation K x * γ := by ac_rfl
   · -- The top term `x ^ p`: here the threshold `v_K(p) < (p - 1) * i` is used.
-    have hk' : k = m := by omega
-    subst hk'
+    obtain rfl : k = m := by omega
     calc valuation K x ^ (k + 2) * valuation K ((k + 2).choose (k + 2) : K)
         = valuation K x * valuation K x ^ (k + 1) := by
           rw [Nat.choose_self, Nat.cast_one, map_one, mul_one, pow_succ']
