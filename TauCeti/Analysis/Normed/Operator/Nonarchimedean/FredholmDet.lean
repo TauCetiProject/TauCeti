@@ -128,8 +128,20 @@ in operator norm to `w₀`, and all of them have entries bounded by a common nul
 theorem tendsto_fredholmDet_of_tendsto {α : Type*} {l : Filter α}
     {w : α → C₀(I, R) →L[R] C₀(I, R)} {w₀ : C₀(I, R) →L[R] C₀(I, R)} {r : I → ℝ}
     (hr : Tendsto r cofinite (𝓝 0)) (hw : ∀ a i j, ‖(w a).matrixCoeff i j‖ ≤ r i)
-    (hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i) (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0)) :
+    (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0)) :
     Tendsto (fun a ↦ (w a).fredholmDet) l (𝓝 w₀.fredholmDet) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · simp
+  -- the entries of the limit are bounded by `r` as well
+  have hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i := fun i j ↦ by
+    have hlim : Tendsto (fun a ↦ r i + ‖w a - w₀‖) l (𝓝 (r i)) := by
+      simpa using (tendsto_const_nhds (x := r i)).add h
+    refine ge_of_tendsto' hlim fun a ↦ ?_
+    calc ‖w₀.matrixCoeff i j‖
+        = ‖(w a).matrixCoeff i j - (w a - w₀).matrixCoeff i j‖ := by
+          rw [matrixCoeff_sub, Matrix.sub_apply, sub_sub_cancel]
+      _ ≤ r i + ‖w a - w₀‖ := (norm_sub_le _ _).trans
+          (add_le_add (hw a i j) ((w a - w₀).norm_matrixCoeff_le i j))
   have hG :=
     TauCeti.tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm_of_le
       hr hw hw₀ h one_pos
@@ -212,7 +224,7 @@ theorem IsRowCompact.fredholmDet_add_sub_mul {u v : C₀(I, R) →L[R] C₀(I, R
   have htend {x : C₀(I, R) →L[R] C₀(I, R)} (hx : x.IsRowCompact) :
       Tendsto (fun S ↦ ((P S).comp x).fredholmDet) atTop (𝓝 x.fredholmDet) :=
     tendsto_fredholmDet_of_tendsto hx.tendsto_rowNorm (fun S i j ↦ (hP S x i j).trans
-      (x.norm_matrixCoeff_le_rowNorm i j)) x.norm_matrixCoeff_le_rowNorm (htrunc hx)
+      (x.norm_matrixCoeff_le_rowNorm i j)) (htrunc hx)
   -- The truncations of `u + v - u v` share the null row majorant `r`, by the ultrametric
   -- inequality and `‖(u x)ᵢⱼ‖ ≤ rᵢ(u) ‖v‖` whenever the entries of `x` are bounded by `‖v‖`.
   let r : I → ℝ := fun i ↦ max (max (u.rowNorm i) (v.rowNorm i)) (u.rowNorm i * ‖v‖)
@@ -220,7 +232,6 @@ theorem IsRowCompact.fredholmDet_add_sub_mul {u v : C₀(I, R) →L[R] C₀(I, R
     simpa [r] using (hu.tendsto_rowNorm.max hv.tendsto_rowNorm).max
       (hu.tendsto_rowNorm.mul_const ‖v‖)
   have hdet := tendsto_fredholmDet_of_tendsto hr (fun (S : Finset I) i j ↦ ?_)
-    (norm_matrixCoeff_add_sub_mul_le u v v v.norm_matrixCoeff_le)
     (by
       -- The scoped operator ring is named explicitly: its continuity instances are not found on
       -- `C₀(I, R) →L[R] C₀(I, R)` without it.
