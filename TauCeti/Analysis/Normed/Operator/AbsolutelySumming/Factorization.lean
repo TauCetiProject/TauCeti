@@ -83,8 +83,12 @@ theorem norm_evalLp_apply (hp : p ≠ ∞) (x : E) :
   rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_evalLp ν x),
     hmem.eLpNorm_eq_integral_rpow_norm hp0 hp, ENNReal.toReal_ofReal (by positivity), one_div]
 
+end evalLp
+
 /-- For a probability measure `ν`, the canonical operator `jₚ` is a contraction. -/
-theorem norm_evalLp_le [IsProbabilityMeasure ν] : ‖(evalLp p ν : E →L[𝕜] Lp 𝕜 p ν)‖ ≤ 1 := by
+theorem norm_evalLp_le
+    (ν : Measure (toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1)) [IsProbabilityMeasure ν] :
+    ‖(evalLp p ν : E →L[𝕜] Lp 𝕜 p ν)‖ ≤ 1 := by
   refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
   calc
     _ ≤ (1 : ℝ) * 1 := by
@@ -93,8 +97,6 @@ theorem norm_evalLp_le [IsProbabilityMeasure ν] : ‖(evalLp p ν : E →L[𝕜
         simpa [h1] using ContinuousMap.toLp_norm_le (E := 𝕜) (p := p) (𝕜 := 𝕜) ν
       · exact norm_evalClosedBall_le zero_le_one
     _ = 1 := one_mul 1
-
-end evalLp
 
 end WeakDual
 

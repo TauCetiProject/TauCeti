@@ -169,6 +169,20 @@ theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjecti
   exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, hinj, hsurj⟩
 
+/-- Being a universal homeomorphism is local on the target. -/
+instance isUniversalHomeomorphism_isZariskiLocalAtTarget :
+    IsZariskiLocalAtTarget @IsUniversalHomeomorphism.{u} := by
+  have : @IsUniversalHomeomorphism.{u} = (@UniversallyClosed.{u} ⊓ @UniversallyInjective.{u} ⊓
+      @Surjective.{u} : MorphismProperty Scheme.{u}) := by
+    ext X Y f
+    exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).trans
+      and_assoc.symm
+  rw [this]
+  -- Instance search does not find the infimum instance unaided, so the precoverage is given.
+  have := MorphismProperty.IsLocalAtTarget.inf (K := Scheme.zariskiPrecoverage)
+    @UniversallyClosed.{u} @UniversallyInjective.{u}
+  exact MorphismProperty.IsLocalAtTarget.inf (K := Scheme.zariskiPrecoverage) _ _
+
 /-- `Spec.map φ` is a universal homeomorphism iff `φ` is integral, precomposition by `φ` is
 injective on maps from `S` into every field, and `PrimeSpectrum.comap φ.hom` is surjective. -/
 theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :
@@ -219,18 +233,6 @@ instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :
     IsUniversalHomeomorphism f :=
   (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩
-
-/-- **Being a universal homeomorphism is local on the target**, since being universally closed,
-universally injective and surjective are. -/
-instance isUniversalHomeomorphism_isZariskiLocalAtTarget :
-    IsZariskiLocalAtTarget @IsUniversalHomeomorphism.{u} :=
-  .mk' (fun f U hf ↦ MorphismProperty.of_isPullback (isPullback_morphismRestrict f U).flip hf)
-    fun f _ U hU H ↦ by
-      simp only [isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective]
-        at H ⊢
-      exact ⟨IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (H i).1,
-        IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (H i).2.1,
-        IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (H i).2.2⟩
 
 /-- The homeomorphism of underlying spaces induced by a universal homeomorphism of schemes. -/
 noncomputable def IsUniversalHomeomorphism.homeomorph
