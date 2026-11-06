@@ -272,8 +272,7 @@ instance (priority := low) instModuleContMDiffMapOfNormedAlgebra [ContMDiffRing 
 
 /-- Ground-field scalars, acting on `𝕜'`-valued functions, and these functions form a tower on
 sections. -/
-instance instIsScalarTowerContMDiffMapOfNormedAlgebra [ContMDiffRing 𝓘(𝕜, 𝕜') n 𝕜']
-    [∀ x, IsScalarTower 𝕜 𝕜' (V x)] :
+instance instIsScalarTowerContMDiffMapOfNormedAlgebra [∀ x, IsScalarTower 𝕜 𝕜' (V x)] :
     IsScalarTower 𝕜 C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯ Cₛ^n⟮I; F, V⟯ where
   smul_assoc c f s := by ext x; simp
 
