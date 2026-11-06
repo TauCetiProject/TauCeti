@@ -190,7 +190,7 @@ theorem fderiv_adaptedNormalExtension_intertwines {γ : V → W} {J : W → W �
   abel
 
 /-- For a linear parametrization, the extension evaluates without a derivative operator. -/
-theorem adaptedNormalExtension_continuousLinearMap (L : V →L[𝕜] W)
+theorem _root_.ContinuousLinearMap.adaptedNormalExtension_apply (L : V →L[𝕜] W)
     (J : W → W →L[𝕜] W) (p : V × V) :
     adaptedNormalExtension L J p = L p.1 + J (L p.1) (L p.2) := by
   simp [adaptedNormalExtension, normalExtension, ContinuousLinearMap.fderiv]
@@ -201,7 +201,7 @@ theorem adaptedNormalExtension_inl :
     adaptedNormalExtension (ContinuousLinearMap.inl 𝕜 V V)
       (fun _ ↦ (-ContinuousLinearMap.snd 𝕜 V V).prod (ContinuousLinearMap.fst 𝕜 V V)) = id := by
   funext p
-  rw [adaptedNormalExtension_continuousLinearMap]
+  rw [ContinuousLinearMap.adaptedNormalExtension_apply]
   ext <;> simp
 
 /-- The extension depends on the structure only along the parametrized submanifold. -/
