@@ -68,6 +68,8 @@ def addHorizontal (φ : StrandDiagram α) (U : Finset α) : StrandDiagram α whe
         have key : φ.toPEquiv.symm j = some i ↔ φ i = some j := PEquiv.eq_some_iff _
         split_ifs <;> grind [Option.bind_eq_some_iff] }
   le_of_mem' i j h := by
+    -- `addHorizontal_apply` is not available yet: unfold the coercion of the `PEquiv` built above
+    -- to its `toFun` field, and `j ∈ o` to `o = some j`.
     change (if i ∈ U then some i else _) = some j at h
     split_ifs at h with hi
     · exact (Option.some.inj h).le
@@ -132,6 +134,8 @@ section Finite
 
 variable [Fintype α]
 
+/-- When `U` avoids the source and target of `φ`, the source of `φ.addHorizontal U` is that of `φ`
+together with `U`. -/
 theorem source_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjoint φ.source U)
     (ht : Disjoint φ.target U) : (φ.addHorizontal U).source = φ.source ∪ U := by
   ext i
@@ -145,6 +149,8 @@ theorem source_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjo
         disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩), hij⟩⟩
     · exact ⟨i, Or.inl ⟨hi, rfl⟩⟩
 
+/-- When `U` avoids the source and target of `φ`, the target of `φ.addHorizontal U` is that of `φ`
+together with `U`. -/
 theorem target_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjoint φ.source U)
     (ht : Disjoint φ.target U) : (φ.addHorizontal U).target = φ.target ∪ U := by
   ext j

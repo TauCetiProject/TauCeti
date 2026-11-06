@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.NonUnitalSubalgebra
 public import Mathlib.Algebra.Algebra.Operations
+public import TauCeti.Data.Finset.Image
+public import TauCeti.Data.Set.Function
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
 
@@ -26,8 +28,7 @@ This file constructs that subspace for an arbitrary linear order `α` and an arb
 closed under multiplication. In fact the product of two basis elements is again a basis element or
 zero (`TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`). The idempotents
 `I(s)`, sums of the identity diagrams over the ways of choosing one point of each pair in `s`, are
-orthogonal idempotents of `A(Z)`, and their sum is a unit for `A(Z)`, which therefore has a
-different unit from the ambient strands algebra.
+orthogonal idempotents of `A(Z)`, and their sum over all sets of pairs is a unit for `A(Z)`.
 
 The proof of closure takes two basis elements `a(ρ, h)` and `a(σ, k)`. A horizontal strand of the
 first factor over a pair in `M(σ⁻)` must sit where a strand of `σ` starts, and a horizontal strand
@@ -90,26 +91,18 @@ structure IsMatchedGenerator (ρ : StrandDiagram α) (h : Finset β) : Prop wher
 def horizontalCompletion (ρ : StrandDiagram α) (h : Finset β) : StrandsAlgebra R α :=
   ∑ U with U.image M = h ∧ #U = #h, of (ρ.addHorizontal U)
 
-omit [LinearOrder α] [Fintype α] in
-/-- The sets `U` summed over in `horizontalCompletion M ρ h` are those mapped injectively onto
-`h`. -/
-private theorem image_eq_and_card_eq_iff {U : Finset α} {h : Finset β} :
-    U.image M = h ∧ #U = #h ↔ U.image M = h ∧ Set.InjOn M U := by
-  refine and_congr_right fun hU ↦ ?_
-  rw [← card_image_iff, hU, eq_comm]
-
 variable {M}
 
-omit [LinearOrder α] [Fintype α] in
-/-- A set of points over `h` avoids every set whose pairs avoid `h`. -/
-private theorem disjoint_of_image {U V : Finset α} {h : Finset β} (hU : U.image M ⊆ h)
-    (hV : Disjoint (V.image M) h) : Disjoint V U :=
-  (disjoint_of_subset_right hU hV).of_image_finset
+/-- With no pairs to add horizontal strands along, `a(ρ, ∅)` is the diagram `ρ` itself. -/
+@[simp]
+theorem horizontalCompletion_empty (ρ : StrandDiagram α) :
+    (horizontalCompletion M ρ ∅ : StrandsAlgebra R α) = of ρ := by
+  simp [horizontalCompletion, image_eq_empty, filter_eq']
 
-omit [LinearOrder α] [Fintype α] in
-private theorem image_filter_subset (s : Finset α) (h : Finset β) :
-    {i ∈ s | M i ∈ h}.image M ⊆ h :=
-  image_subset_iff.2 fun _ hx ↦ (mem_filter.1 hx).2
+/-- `a(ρ, h)` is zero unless `h` consists of pairs of `M`. -/
+private theorem horizontalCompletion_eq_zero_of_not_subset (ρ : StrandDiagram α) {h : Finset β}
+    (hh : ¬h ⊆ univ.image M) : (horizontalCompletion M ρ h : StrandsAlgebra R α) = 0 :=
+  sum_eq_zero fun U hU ↦ absurd ((mem_filter.1 hU).2.1 ▸ image_subset_image (subset_univ U)) hh
 
 namespace IsMatchedGenerator
 
@@ -118,12 +111,12 @@ variable {ρ : StrandDiagram α} {h : Finset β}
 /-- Horizontal strands over the pairs of `h` avoid the starting points of `ρ`. -/
 theorem disjoint_source_of_image_subset (hρ : IsMatchedGenerator M ρ h) {U : Finset α}
     (hU : U.image M ⊆ h) : Disjoint ρ.source U :=
-  disjoint_of_image hU hρ.disjoint_source
+  (disjoint_of_subset_right hU hρ.disjoint_source).of_image_finset
 
 /-- Horizontal strands over the pairs of `h` avoid the end points of `ρ`. -/
 theorem disjoint_target_of_image_subset (hρ : IsMatchedGenerator M ρ h) {U : Finset α}
     (hU : U.image M ⊆ h) : Disjoint ρ.target U :=
-  disjoint_of_image hU hρ.disjoint_target
+  (disjoint_of_subset_right hU hρ.disjoint_target).of_image_finset
 
 end IsMatchedGenerator
 
@@ -188,15 +181,15 @@ private theorem composable_and_trans_of_image_subset_inter (hρ : IsMatchedGener
   set Vf := {i ∈ ρ.target | M i ∈ k}
   have hWh : W.image M ⊆ h := hW.trans inter_subset_left
   have hWk : W.image M ⊆ k := hW.trans inter_subset_right
-  have hUf : Uf.image M ⊆ h := image_filter_subset _ _
-  have hVf : Vf.image M ⊆ k := image_filter_subset _ _
+  have hUf : Uf.image M ⊆ h := image_filter_mem_subset _ _ _
+  have hVf : Vf.image M ⊆ k := image_filter_mem_subset _ _ _
   -- The forced horizontal strands lie over pairs used by the other factor.
   have hUfS : Uf.image M ⊆ σ.source.image M := image_subset_image (filter_subset _ _)
   have hVfT : Vf.image M ⊆ ρ.target.image M := image_subset_image (filter_subset _ _)
   have hUfW : Disjoint Uf W :=
-    disjoint_of_image hWk (disjoint_of_subset_left hUfS hσ.disjoint_source)
+    (disjoint_of_subset_right hWk (disjoint_of_subset_left hUfS hσ.disjoint_source)).of_image_finset
   have hVfW : Disjoint Vf W :=
-    disjoint_of_image hWh (disjoint_of_subset_left hVfT hρ.disjoint_target)
+    (disjoint_of_subset_right hWh (disjoint_of_subset_left hVfT hρ.disjoint_target)).of_image_finset
   have hρs := hρ.disjoint_source_of_image_subset hUf
   have hρt := hρ.disjoint_target_of_image_subset hUf
   have hσs := hσ.disjoint_source_of_image_subset hVf
@@ -232,7 +225,7 @@ private theorem image_union_eq_and_injOn {A B : Finset α} {h k : Finset β} (hA
     simp only [image_union, mem_union]
     constructor
     · rintro (hm | hm)
-      · exact image_filter_subset _ _ hm
+      · exact image_filter_mem_subset _ _ _ hm
       · exact (mem_inter.1 (hW ▸ hm)).1
     · intro hm
       have : m ∈ A.image M ∪ k := hC ▸ mem_union_right _ hm
@@ -241,25 +234,9 @@ private theorem image_union_eq_and_injOn {A B : Finset α} {h k : Finset β} (hA
         exact Or.inl (mem_image_of_mem M (mem_filter.2 ⟨hx, hm⟩))
       · exact Or.inr (hW ▸ mem_inter.2 ⟨hm, hmk⟩)
   · rw [coe_union]
-    refine (Set.injOn_union ?_).2 ⟨hA.mono (coe_subset.2 (filter_subset _ _)), hWi, ?_⟩
-    · rw [disjoint_coe]
-      exact disjoint_of_image hWk (disjoint_of_subset_left
-        (image_subset_image (filter_subset _ _)) hAk)
-    · intro x hx y hy hxy
-      have hxA : M x ∈ A.image M := mem_image_of_mem M (mem_filter.1 hx).1
-      have hyk : M y ∈ k := hWk (mem_image_of_mem M hy)
-      exact disjoint_left.1 hAk hxA (hxy ▸ hyk)
-
-omit [Fintype α] in
-/-- A choice `W` of points over pairs of `k` is recovered from its union with a set `A` of points
-whose pairs avoid `k`. -/
-private theorem filter_union_eq {A W : Finset α} {k : Finset β} (hA : Disjoint (A.image M) k)
-    (hW : W.image M ⊆ k) : {x ∈ A ∪ W | M x ∈ k} = W := by
-  ext x
-  simp only [mem_filter, mem_union]
-  have hxA : x ∈ A → M x ∉ k := fun hx ↦ disjoint_left.1 hA (mem_image_of_mem M hx)
-  have hxW : x ∈ W → M x ∈ k := fun hx ↦ hW (mem_image_of_mem M hx)
-  grind
+    refine (hA.mono (coe_subset.2 (filter_subset _ _))).union_of_disjoint_image hWi ?_
+    simpa only [coe_image] using disjoint_coe.2 (disjoint_of_subset_left
+      (image_subset_image (filter_subset _ _)) (disjoint_of_subset_right hWk hAk))
 
 /-- **The product of two basis elements of the algebra of a matching.** Let `U₀` be the starting
 points of `σ` over the pairs of `h` and `V₀` the end points of `ρ` over the pairs of `k`. The
@@ -284,7 +261,8 @@ theorem horizontalCompletion_mul_horizontalCompletion (hρ : IsMatchedGenerator 
   set Sec : Finset β → Finset (Finset α) := fun h ↦ {U | U.image M = h ∧ #U = #h}
   have hSec {U : Finset α} {h : Finset β} : U ∈ Sec h ↔ U.image M = h ∧ Set.InjOn M U := by
     simp only [Sec, mem_filter, mem_univ, true_and]
-    exact image_eq_and_card_eq_iff M
+    refine and_congr_right fun hU ↦ ?_
+    rw [← card_image_iff, hU, eq_comm]
   set f : Finset α × Finset α → StrandsAlgebra R α :=
     fun p ↦ of (ρ.addHorizontal p.1) * of (σ.addHorizontal p.2)
   have hLHS : (horizontalCompletion M ρ h * horizontalCompletion M σ k : StrandsAlgebra R α) =
@@ -308,10 +286,15 @@ theorem horizontalCompletion_mul_horizontalCompletion (hρ : IsMatchedGenerator 
       composable_and_trans_of_image_subset_inter hρ hσ (hSec.1 hW).1.le
     have hUfk : Disjoint (Uf.image M) k :=
       disjoint_of_subset_left (image_subset_image (filter_subset _ _)) hσ.disjoint_source
+    -- A choice `W` over `h ∩ k` is recovered from `Uf ∪ W`, as the points over `k`.
+    have hrec {W : Finset α} (hW : W ∈ Sec (h ∩ k)) : {x ∈ Uf ∪ W | M x ∈ k} = W := by
+      rw [filter_union, filter_false_of_mem fun x hx ↦
+          disjoint_left.1 hUfk (mem_image_of_mem M hx),
+        filter_true_of_mem fun x hx ↦
+          (hSec.1 hW).1.le.trans inter_subset_right (mem_image_of_mem M hx), empty_union]
     have hg : Set.InjOn g (Sec (h ∩ k)) := fun W hW W' hW' hWW' ↦ by
       have hfst : Uf ∪ W = Uf ∪ W' := congrArg Prod.fst hWW'
-      rw [← filter_union_eq hUfk ((hSec.1 hW).1.le.trans inter_subset_right),
-        ← filter_union_eq hUfk ((hSec.1 hW').1.le.trans inter_subset_right), hfst]
+      rw [← hrec hW, ← hrec hW', hfst]
     rw [horizontalCompletion]
     refine ((sum_subset ?_ ?_).symm.trans (sum_image hg)).trans (sum_congr rfl ?_)
     · intro p hp
@@ -347,8 +330,8 @@ theorem IsMatchedGenerator.trans (hρ : IsMatchedGenerator M ρ h) (hσ : IsMatc
       (σ.addHorizontal {i ∈ ρ.target | M i ∈ k})) (h ∩ k) := by
   set Uf := {i ∈ σ.source | M i ∈ h}
   set Vf := {i ∈ ρ.target | M i ∈ k}
-  have hUf : Uf.image M ⊆ h := image_filter_subset _ _
-  have hVf : Vf.image M ⊆ k := image_filter_subset _ _
+  have hUf : Uf.image M ⊆ h := image_filter_mem_subset _ _ _
+  have hVf : Vf.image M ⊆ k := image_filter_mem_subset _ _ _
   have hUfS : Uf.image M ⊆ σ.source.image M := image_subset_image (filter_subset _ _)
   have hVfT : Vf.image M ⊆ ρ.target.image M := image_subset_image (filter_subset _ _)
   have hsource : ((ρ.addHorizontal Uf).trans (σ.addHorizontal Vf)).source = ρ.source ∪ Uf := by
@@ -361,7 +344,8 @@ theorem IsMatchedGenerator.trans (hρ : IsMatchedGenerator M ρ h) (hσ : IsMatc
         (hσ.disjoint_target_of_image_subset hVf)]
   -- Pairs over `h` avoid the end points of `ρ`, so no point carries forced strands of both kinds.
   have hUfVf : Disjoint Uf Vf :=
-    (disjoint_of_image hUf (disjoint_of_subset_left hVfT hρ.disjoint_target)).symm
+    (disjoint_of_subset_right hUf
+      (disjoint_of_subset_left hVfT hρ.disjoint_target)).of_image_finset.symm
   refine ⟨fun i hi ↦ ?_, ?_, ?_, ?_, ?_⟩
   · obtain ⟨j, hij, hji⟩ := StrandDiagram.mem_trans.1 hi
     obtain rfl : j = i := le_antisymm ((σ.addHorizontal Vf).le_of_mem hji)
@@ -369,17 +353,13 @@ theorem IsMatchedGenerator.trans (hρ : IsMatchedGenerator M ρ h) (hσ : IsMatc
     exact disjoint_left.1 hUfVf ((StrandDiagram.mem_addHorizontal_self hρ.notMem_self).1 hij)
       ((StrandDiagram.mem_addHorizontal_self hσ.notMem_self).1 hji)
   · rw [hsource, coe_union]
-    refine (Set.injOn_union (disjoint_coe.2 (hρ.disjoint_source_of_image_subset hUf))).2
-      ⟨hρ.injOn_source, hσ.injOn_source.mono (coe_subset.2 (filter_subset _ _)), ?_⟩
-    intro x hx y hy hxy
-    exact disjoint_left.1 hρ.disjoint_source (mem_image_of_mem M hx)
-      (hxy ▸ hUf (mem_image_of_mem M hy))
+    refine hρ.injOn_source.union_of_disjoint_image
+      (hσ.injOn_source.mono (coe_subset.2 (filter_subset _ _))) ?_
+    simpa only [coe_image] using disjoint_coe.2 (disjoint_of_subset_right hUf hρ.disjoint_source)
   · rw [htarget, coe_union]
-    refine (Set.injOn_union (disjoint_coe.2 (hσ.disjoint_target_of_image_subset hVf))).2
-      ⟨hσ.injOn_target, hρ.injOn_target.mono (coe_subset.2 (filter_subset _ _)), ?_⟩
-    intro x hx y hy hxy
-    exact disjoint_left.1 hσ.disjoint_target (mem_image_of_mem M hx)
-      (hxy ▸ hVf (mem_image_of_mem M hy))
+    refine hσ.injOn_target.union_of_disjoint_image
+      (hρ.injOn_target.mono (coe_subset.2 (filter_subset _ _))) ?_
+    simpa only [coe_image] using disjoint_coe.2 (disjoint_of_subset_right hVf hσ.disjoint_target)
   · rw [hsource, image_union]
     exact disjoint_union_left.2 ⟨disjoint_of_subset_right inter_subset_left hρ.disjoint_source,
       disjoint_of_subset_left hUfS (disjoint_of_subset_right inter_subset_right
@@ -526,13 +506,10 @@ theorem isIdempotentElem_matchedIdem (s : Finset β) :
     IsIdempotentElem (matchedIdem M s : StrandsAlgebra R α) := by
   simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
 
-variable [Fintype β]
-
 /-- The unit of the algebra of a matching: the sum of the idempotents `I(s)` over all sets `s` of
-pairs. It differs from the unit of the ambient strands algebra, which also contains the identity
-diagrams on sets meeting some pair twice. -/
+pairs, the subsets of the image of `M`. -/
 def matchedOne : StrandsAlgebra R α :=
-  ∑ s, matchedIdem M s
+  ∑ s ∈ (univ.image M).powerset, matchedIdem M s
 
 theorem matchedOne_mem_matchedAlgebra : (matchedOne M : StrandsAlgebra R α) ∈ matchedAlgebra R M :=
   sum_mem fun s _ ↦ matchedIdem_mem_matchedAlgebra M s
@@ -542,7 +519,13 @@ variable {M} in
 theorem matchedOne_mul {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
     matchedOne M * x = x := by
   induction hx using matchedAlgebra_induction with
-  | generator ρ h hρ => simp [matchedOne, sum_mul, matchedIdem_mul_horizontalCompletion _ hρ]
+  | generator ρ h hρ =>
+    simp only [matchedOne, sum_mul, matchedIdem_mul_horizontalCompletion _ hρ, sum_ite_eq',
+      mem_powerset]
+    split_ifs with hS
+    · rfl
+    · exact (horizontalCompletion_eq_zero_of_not_subset ρ fun hh ↦
+        hS (union_subset (image_subset_image (subset_univ _)) hh)).symm
   | zero => exact mul_zero _
   | add x y _ _ hx hy => rw [mul_add, hx, hy]
   | smul r x _ hx => rw [mul_smul_comm, hx]
@@ -552,7 +535,13 @@ variable {M} in
 theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
     x * matchedOne M = x := by
   induction hx using matchedAlgebra_induction with
-  | generator ρ h hρ => simp [matchedOne, mul_sum, horizontalCompletion_mul_matchedIdem hρ]
+  | generator ρ h hρ =>
+    simp only [matchedOne, mul_sum, horizontalCompletion_mul_matchedIdem hρ, sum_ite_eq,
+      mem_powerset]
+    split_ifs with hS
+    · rfl
+    · exact (horizontalCompletion_eq_zero_of_not_subset ρ fun hh ↦
+        hS (union_subset (image_subset_image (subset_univ _)) hh)).symm
   | zero => exact zero_mul _
   | add x y _ _ hx hy => rw [add_mul, hx, hy]
   | smul r x _ hx => rw [smul_mul_assoc, hx]
