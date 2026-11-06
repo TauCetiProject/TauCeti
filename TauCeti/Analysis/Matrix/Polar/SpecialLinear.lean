@@ -80,13 +80,9 @@ polar decomposition `g = P * U`, which has determinant one. -/
 def polarRetraction : C(SpecialLinearGroup n 𝕜, specialUnitaryGroup n 𝕜) where
   toFun g := ⟨(toGL g).polarUnitary, mem_specialUnitaryGroup_iff.mpr
     ⟨((toGL g).polarUnitary).2, det_polarUnitary_of_det_eq_one _ (coe_GL_coe_matrix g ▸ g.2)⟩⟩
-  continuous_toFun := by
-    have h := (GeneralLinearGroup.polarHomotopy n 𝕜).continuous.comp
-      (continuous_const.prodMk continuous_toGL :
-        Continuous fun g : SpecialLinearGroup n 𝕜 ↦ ((1 : I), toGL g))
-    simp only [Function.comp_def, polarHomotopy_apply, Set.Icc.coe_one,
-      polarDeformation_one] at h
-    exact (Units.continuous_val.comp h).subtype_mk _
+  continuous_toFun :=
+    ((contMDiff_coe_polarUnitary (n := n) (𝕜 := 𝕜) (k := 0)).continuous.comp
+      continuous_toGL).subtype_mk _
 
 /-- The polar retraction of `g` is the polar unitary factor of `g`. -/
 @[simp]

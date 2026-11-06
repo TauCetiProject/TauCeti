@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.Polar.SpecialLinear
 public import TauCeti.RepresentationTheory.SU2.Adjoint
+public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # `PSU(2) ≅ SO(3)`, and `PSL(2, ℂ)` is homotopy equivalent to `SO(3)`
@@ -60,12 +61,9 @@ double cover `SU(2) → SO(3)`. -/
 def psuEquivSO3 : (toPSL : SU2 →* ProjectiveSpecialLinearGroup (Fin 2) ℂ).range ≃ₜ*
     specialOrthogonalGroup (Fin 3) ℝ :=
   quotientKerToPSLContinuousMulEquiv.symm.trans <|
-    ({ QuotientGroup.quotientMulEquivOfEq ker_toPSL_eq_ker_toSO3 with
-        continuous_toFun := QuotientGroup.isOpenQuotientMap_mk.continuous_comp_iff.mp
-          QuotientGroup.continuous_mk
-        continuous_invFun := QuotientGroup.isOpenQuotientMap_mk.continuous_comp_iff.mp
-          QuotientGroup.continuous_mk } :
-      SU2 ⧸ (toPSL : SU2 →* ProjectiveSpecialLinearGroup (Fin 2) ℂ).ker ≃ₜ* SU2 ⧸ toSO3.ker).trans
+    ((ContinuousMulEquiv.refl SU2).quotientCongr _ _ (by
+        rw [ker_toPSL_eq_ker_toSO3]
+        exact Subgroup.map_id _)).trans
     quotientKerToSO3
 
 /-- The isomorphism `PSU(2) ≃ₜ* SO(3)` sends the class of `g ∈ SU(2)` to the rotation
@@ -76,8 +74,8 @@ theorem psuEquivSO3_rangeRestrict (g : SU2) :
   have h : quotientKerToPSLContinuousMulEquiv (g : SU2 ⧸ _) = toPSL.rangeRestrict g :=
     Subtype.ext (coe_quotientKerToPSLContinuousMulEquiv_mk g)
   rw [psuEquivSO3, ContinuousMulEquiv.trans_apply, ← h, ContinuousMulEquiv.symm_apply_apply,
-    ContinuousMulEquiv.trans_apply]
-  exact quotientKerToSO3_mk g
+    ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.quotientCongr_mk,
+    ContinuousMulEquiv.refl_apply, quotientKerToSO3_mk]
 
 end SU2
 
