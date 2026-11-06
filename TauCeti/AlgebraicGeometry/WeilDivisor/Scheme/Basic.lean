@@ -199,7 +199,7 @@ def equivFiniteCodimensionOneCycles :
           toAlgebraicCycle_apply _ ⟨x, hx⟩
         _ = C.1 x := ofFiniteCodimensionOneCycle_apply C ⟨x, hx⟩
     · rw [toAlgebraicCycle_apply_of_coheight_ne_one _ _ hx]
-      exact (Function.notMem_support.mp fun h ↦ hx (C.property.2 h)).symm
+      exact (Function.notMem_support.mp fun h ↦ hx (C.property.2.coheight_eq_one h)).symm
   map_add' D E := by
     apply Subtype.ext
     exact (toAlgebraicCycle : SchemeWeilDivisor X →+ AlgebraicCycle X ℤ).map_add D E
