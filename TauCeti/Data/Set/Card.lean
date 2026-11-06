@@ -31,6 +31,10 @@ are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
 indices as on `ι` (`Set.ncard_setOf_sumElim`).
 
+Distinct values `w i` in a linear order, on a finite index type, are ranked by the number of
+values below them: each `m < Nat.card ι` is the rank of exactly one index
+(`Set.existsUnique_ncard_setOf_lt_eq`).
+
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
 
@@ -141,5 +145,32 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   rw [two_mul, ← ncard_sumEquiv_symm_apply]
   congr 1
   ext (i | i) <;> simp
+
+/-- For distinct values `w` in a linear order on a finite index type, the number of values below
+`w j` determines `j`. -/
+theorem injective_ncard_setOf_lt {ι α : Type*} [Finite ι] [LinearOrder α] {w : ι → α}
+    (hw : Function.Injective w) : Function.Injective fun j ↦ {k | w k < w j}.ncard := by
+  intro i j hij
+  by_contra hne
+  -- The smaller of two distinct values has strictly fewer values below it.
+  have hlt {a b : ι} (hab : w a < w b) : {k | w k < w a}.ncard < {k | w k < w b}.ncard :=
+    ncard_lt_ncard ⟨fun k hk ↦ lt_trans hk hab, fun h ↦ lt_irrefl (w a) (h hab)⟩ (toFinite _)
+  rcases lt_or_gt_of_ne (hw.ne hne) with h | h
+  · exact (hlt h).ne hij
+  · exact (hlt h).ne' hij
+
+/-- **Ranking distinct values.** For distinct values `w` in a linear order on a finite index type,
+every `m < Nat.card ι` is the number of values below exactly one value `w i`. -/
+theorem existsUnique_ncard_setOf_lt_eq {ι α : Type*} [Finite ι] [LinearOrder α] {w : ι → α}
+    (hw : Function.Injective w) {m : ℕ} (hm : m < Nat.card ι) :
+    ∃! i, {k | w k < w i}.ncard = m := by
+  have hlt (i : ι) : {k | w k < w i}.ncard < Nat.card ι :=
+    ncard_lt_card fun h ↦ lt_irrefl (w i) (h.symm ▸ mem_univ i :)
+  have hbij : Function.Bijective fun i ↦ (⟨{k | w k < w i}.ncard, hlt i⟩ : Fin (Nat.card ι)) :=
+    Function.Injective.bijective_of_nat_card_le
+      (fun a b hab ↦ injective_ncard_setOf_lt hw (congrArg Fin.val hab)) (by simp)
+  obtain ⟨i, hi⟩ := hbij.2 ⟨m, hm⟩
+  exact ⟨i, congrArg Fin.val hi, fun a ha ↦ injective_ncard_setOf_lt hw (ha.trans
+    (congrArg Fin.val hi).symm)⟩
 
 end Set

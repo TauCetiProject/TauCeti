@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Data.Set.Card
 
 /-!
 # Moment functions on real and complex projective space
@@ -264,13 +265,6 @@ open Projectivization
 
 variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
 
-/-- The preferred extended chart at the centre of the `j`-th standard affine chart sends it to the
-origin. -/
-private theorem extChartAt_affineChart_symm_zero (j : Fin (n + 1)) :
-    extChartAt 𝓘(ℝ, Fin n → 𝕜) ((affineChart (K := 𝕜) j).symm 0) ((affineChart j).symm 0) = 0 := by
-  rw [extChartAt_coe, chartAt_affineChart_symm_zero, modelWithCornersSelf_coe, id_comp,
-    coe_affineOpenPartialHomeomorph, (affineChart j).right_inv (by simp)]
-
 /-- The **moment function** `[v] ↦ (∑ k, w k * ‖v k‖ ^ 2) / ∑ k, ‖v k‖ ^ 2` on the projective space
 `ℙ 𝕜 (Fin (n + 1) → 𝕜)`, for weights `w : Fin (n + 1) → ℝ`. -/
 noncomputable def projectiveMomentFunction (w : Fin (n + 1) → ℝ) : ℙ 𝕜 (Fin (n + 1) → 𝕜) → ℝ :=
@@ -397,18 +391,8 @@ theorem manifoldMorseIndex_projectiveMomentFunction (w : Fin (n + 1) → ℝ) (j
       ((affineChart j).symm 0) = finrank ℝ 𝕜 * {k | w k < w j}.ncard := by
   rw [manifoldMorseIndex_def,
     projectiveMomentFunction_comp_extChartAt_symm w (chartAt_affineChart_symm_zero (𝕜 := 𝕜) j),
-    extChartAt_affineChart_symm_zero]
-  -- Adding a constant does not change the Hessian.
-  have h : fderiv ℝ (fun z : Fin n → 𝕜 ↦ w j + affineMomentFunction
-      (fun k ↦ w (j.succAbove k) - w j) z) =
-        fderiv ℝ (affineMomentFunction fun k ↦ w (j.succAbove k) - w j) :=
-    funext fun _ ↦ fderiv_const_add _
-  have hH : hessianQuadraticForm (fun z : Fin n → 𝕜 ↦ w j + affineMomentFunction
-      (fun k ↦ w (j.succAbove k) - w j) z) 0 =
-        hessianQuadraticForm (affineMomentFunction fun k ↦ w (j.succAbove k) - w j) 0 := by
-    ext v
-    rw [hessianQuadraticForm_apply, hessianQuadraticForm_apply, h]
-  rw [morseIndex_def, hH, ← morseIndex_def, morseIndex_affineMomentFunction_zero]
+    extChartAt_affineChart_symm_zero, morseIndex_const_add (f := affineMomentFunction _),
+    morseIndex_affineMomentFunction_zero]
   -- The weights below `w j` are the images under `j.succAbove` of the negative chart weights.
   congr 1
   rw [← (Fin.succAbove_right_injective (p := j)).injOn.ncard_image]
@@ -431,37 +415,6 @@ theorem manifoldMorseIndex_projectiveMomentFunction_natCast (j : Fin (n + 1)) :
     ext k
     simp only [mem_ofPred_eq, Nat.cast_lt, Finset.coe_Iio, mem_Iio, Fin.lt_def]
   rw [h, ncard_coe_finset, Fin.card_Iio]
-
-/-- Fewer than `n + 1` weights lie below a given weight. -/
-private theorem ncard_setOf_lt_lt (w : Fin (n + 1) → ℝ) (j : Fin (n + 1)) :
-    {k | w k < w j}.ncard < n + 1 := by
-  have hne : {k | w k < w j} ≠ univ := fun h ↦ lt_irrefl (w j) (h.symm ▸ mem_univ j :)
-  have h := ncard_lt_ncard (ssubset_univ_iff.2 hne) (finite_univ (α := Fin (n + 1)))
-  rwa [ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fin] at h
-
-/-- For distinct weights, the number of weights below `w j` determines `j`: it ranks the weights
-in increasing order. -/
-private theorem injective_ncard_setOf_lt {w : Fin (n + 1) → ℝ} (hw : Injective w) :
-    Injective fun j ↦ {k | w k < w j}.ncard := by
-  intro i j hij
-  by_contra hne
-  -- The smaller of two distinct weights has strictly fewer weights below it.
-  have hlt {a b : Fin (n + 1)} (hab : w a < w b) :
-      {k | w k < w a}.ncard < {k | w k < w b}.ncard :=
-    ncard_lt_ncard ⟨fun k hk ↦ lt_trans hk hab, fun h ↦ lt_irrefl (w a) (h hab)⟩ (toFinite _)
-  rcases lt_or_gt_of_ne (hw.ne hne) with h | h
-  · exact (hlt h).ne hij
-  · exact (hlt h).ne' hij
-
-/-- For distinct weights, every `j ≤ n` is the number of weights below exactly one weight. -/
-private theorem existsUnique_ncard_setOf_lt_eq {w : Fin (n + 1) → ℝ} (hw : Injective w)
-    {j : ℕ} (hj : j ≤ n) : ∃! i, {k | w k < w i}.ncard = j := by
-  have hbij : Bijective fun i ↦ (⟨{k | w k < w i}.ncard, ncard_setOf_lt_lt w i⟩ : Fin (n + 1)) :=
-    Finite.injective_iff_bijective.1 fun a b hab ↦
-      injective_ncard_setOf_lt hw (congrArg Fin.val hab)
-  obtain ⟨i, hi⟩ := hbij.2 ⟨j, Nat.lt_succ_of_le hj⟩
-  exact ⟨i, congrArg Fin.val hi, fun a ha ↦ injective_ncard_setOf_lt hw (ha.trans
-    (congrArg Fin.val hi).symm)⟩
 
 /-- **Critical counts of a moment function.** For distinct weights, the number of critical points
 of index `m` is the number of `j` such that `finrank ℝ 𝕜` times the number of weights below `w j`
@@ -489,12 +442,13 @@ theorem totalCriticalCount_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (h
     Fintype.card_fin]
   norm_cast
 
-/-- **A moment function is perfect.** For distinct weights and every `j ≤ n`, the moment function
-has exactly one critical point of index `finrank ℝ 𝕜 * j`. -/
+/-- **Critical counts of a moment function by index.** For distinct weights and every `j ≤ n`, the
+moment function has exactly one critical point of index `finrank ℝ 𝕜 * j`. -/
 theorem criticalCount_projectiveMomentFunction_mul {w : Fin (n + 1) → ℝ} (hw : Injective w)
     {j : ℕ} (hj : j ≤ n) :
     criticalCount 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction (𝕜 := 𝕜) w) (finrank ℝ 𝕜 * j) = 1 := by
-  obtain ⟨i, hi, hu⟩ := existsUnique_ncard_setOf_lt_eq hw hj
+  obtain ⟨i, hi, hu⟩ :=
+    existsUnique_ncard_setOf_lt_eq hw (m := j) (by simpa using Nat.lt_succ_of_le hj)
   rw [criticalCount_projectiveMomentFunction hw, encard_eq_one]
   refine ⟨i, ext fun k ↦ ?_⟩
   simp only [mem_ofPred_eq, mem_singleton_iff, mul_right_inj' finrank_pos.ne']
@@ -506,7 +460,8 @@ theorem criticalCount_projectiveMomentFunction_eq_zero {w : Fin (n + 1) → ℝ}
     {m : ℕ} (hm : ∀ j ≤ n, finrank ℝ 𝕜 * j ≠ m) :
     criticalCount 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction (𝕜 := 𝕜) w) m = 0 := by
   rw [criticalCount_projectiveMomentFunction hw, encard_eq_zero, eq_empty_iff_forall_notMem]
-  exact fun i hi ↦ hm _ (Nat.lt_succ_iff.1 (ncard_setOf_lt_lt w i)) hi
+  refine fun i hi ↦ hm _ (Nat.lt_succ_iff.1 ?_) hi
+  simpa using ncard_lt_card (s := {k | w k < w i}) fun h ↦ lt_irrefl (w i) (h.symm ▸ mem_univ i :)
 
 end Projective
 

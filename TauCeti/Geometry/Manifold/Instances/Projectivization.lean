@@ -26,7 +26,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 ## Main declarations
 
 * `Projectivization.instChartedSpace`: the atlas of standard affine charts, with
-  `Projectivization.chartAt_affineChart_symm_zero` the preferred chart at a coordinate line.
+  `Projectivization.chartAt_affineChart_symm_zero` the preferred chart at a coordinate line and
+  `Projectivization.extChartAt_affineChart_symm_zero` sending that line to the origin.
 * `Projectivization.contDiffOn_affineChart_symm_trans`: the transition maps are `C^r` for
   every `r`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
@@ -84,6 +85,14 @@ theorem chartAt_affineChart_symm_zero (i : Fin (n + 1)) :
   rw [hj] at hmem ⊢
   simp only [affineOpenPartialHomeomorph_toPartialEquiv, affineChart_source] at hmem
   rw [affineChart_symm_zero_mem_affineOpen_iff.1 hmem]
+
+/-- The preferred extended chart at the coordinate line `[e i] = (affineChart i).symm 0` sends it
+to the origin, for the trivial model over any scalar field `𝕜'` of `Fin n → 𝕜`. -/
+theorem extChartAt_affineChart_symm_zero {𝕜' : Type*} [NontriviallyNormedField 𝕜']
+    [NormedSpace 𝕜' (Fin n → 𝕜)] (i : Fin (n + 1)) :
+    extChartAt 𝓘(𝕜', Fin n → 𝕜) ((affineChart (K := 𝕜) i).symm 0) ((affineChart i).symm 0) = 0 := by
+  rw [extChartAt_coe, chartAt_affineChart_symm_zero, modelWithCornersSelf_coe, Function.id_comp,
+    coe_affineOpenPartialHomeomorph, (affineChart i).right_inv (by simp)]
 
 /-- The transition maps between the standard affine charts of projective space are `C^r` for
 every `r`, including the analytic order `ω`. -/

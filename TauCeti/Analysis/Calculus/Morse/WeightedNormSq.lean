@@ -81,8 +81,7 @@ private theorem sum_mul_norm_sq_comp_sigmaCoords (c : ι → ℝ) :
       fun y ↦ ∑ p, (fun t : ℝ ↦ c p.1 * t ^ 2) (y p) := by
   funext y
   have hk (k : ι) : ‖sigmaCoords y k‖ ^ 2 = ∑ m, y ⟨k, m⟩ ^ 2 := by
-    simp [sigmaCoords, EuclideanSpace.norm_sq_eq]
-    rfl
+    simp [sigmaCoords, EuclideanSpace.norm_sq_eq, Sigma.curry]
   simp [hk, Finset.mul_sum, Fintype.sum_sigma]
 
 /-- **The Morse index of a weighted sum of squared norms.** On `ι → F`, for a finite-dimensional

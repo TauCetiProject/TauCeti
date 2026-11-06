@@ -44,6 +44,8 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 
 * `TauCeti.hessianQuadraticForm`: the quadratic form defined by the Hessian at a point.
 * `TauCeti.morseIndex`: the negative index of inertia of the Hessian quadratic form.
+* `TauCeti.morseIndex_const_add` and `TauCeti.morseIndex_add_const`: invariance under adding a
+  constant.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
   `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
@@ -264,6 +266,30 @@ theorem morseIndex_def : morseIndex f x = sigNeg (hessianQuadraticForm f x) := b
 theorem morseIndex_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     morseIndex f x = morseIndex g x := by
   rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_congr_of_eventuallyEq hfg]
+
+/-- Adding a constant on the left does not change the Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_const_add (c : ℝ) :
+    hessianQuadraticForm (fun y ↦ c + f y) x = hessianQuadraticForm f x := by
+  ext v
+  rw [hessianQuadraticForm_apply, hessianQuadraticForm_apply,
+    show fderiv ℝ (fun y ↦ c + f y) = fderiv ℝ f from funext fun _ ↦ fderiv_const_add c]
+
+/-- Adding a constant on the right does not change the Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_add_const (c : ℝ) :
+    hessianQuadraticForm (fun y ↦ f y + c) x = hessianQuadraticForm f x := by
+  simpa only [add_comm c] using hessianQuadraticForm_const_add (f := f) (x := x) c
+
+/-- Adding a constant on the left does not change the Morse index. -/
+@[simp]
+theorem morseIndex_const_add (c : ℝ) : morseIndex (fun y ↦ c + f y) x = morseIndex f x := by
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_const_add]
+
+/-- Adding a constant on the right does not change the Morse index. -/
+@[simp]
+theorem morseIndex_add_const (c : ℝ) : morseIndex (fun y ↦ f y + c) x = morseIndex f x := by
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_add_const]
 
 /-- The Morse index is invariant under a `C²` change of coordinates with invertible derivative.
 Criticality is needed because it removes the first-order term from the second-order chain rule. -/
