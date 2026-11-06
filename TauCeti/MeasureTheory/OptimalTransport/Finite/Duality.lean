@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
 import TauCeti.Analysis.Convex.AffineOn
+import TauCeti.Order.ConditionallyCompleteLattice.FiniteInf
 
 /-!
 # Kantorovich duality on finite spaces
@@ -297,22 +298,6 @@ supremum is unchanged by restricting to potentials normalised at a base point.  
 `c`-transforms turn an arbitrary feasible pair into a normalised one with at least the same
 value, and normalised pairs are confined to a box. -/
 
-omit [Fintype ι] [Fintype κ] in
-/-- The infimal `c`-transform of a potential that vanishes at a base point and is bounded above by
-`2 * M` is bounded in absolute value by `3 * M`, when the cost is bounded by `M`. -/
-private theorem abs_iInf_sub_le_three_mul [Finite ι] [Nonempty ι] {M : ℝ} (hM : ∀ q, |c q| ≤ M)
-    {φ₂ : ι → ℝ} (i₀ : ι) (hφ₂i₀ : φ₂ i₀ = 0) (hφ₂ub : ∀ i, φ₂ i ≤ 2 * M) (j : κ) :
-    |⨅ i, (c (i, j) - φ₂ i)| ≤ 3 * M := by
-  have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM (i₀, j))
-  refine abs_le.2 ⟨?_, ?_⟩
-  · obtain ⟨i₁, hi₁⟩ := exists_eq_ciInf_of_finite (f := fun i ↦ c (i, j) - φ₂ i)
-    have := neg_le_of_abs_le (hM (i₁, j))
-    have := hφ₂ub i₁
-    rw [← hi₁]; linarith
-  · have := ciInf_le (Finite.bddBelow_range fun i ↦ c (i, j) - φ₂ i) i₀
-    rw [hφ₂i₀, sub_zero] at this
-    linarith [(le_abs_self _).trans (hM (i₀, j))]
-
 /-- Two infimal transforms and a shift turn a dual-feasible pair into one that is confined to a
 box depending only on a bound for the cost, without decreasing the dual value. -/
 private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
@@ -368,7 +353,10 @@ private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
   refine ⟨φ₂, ψ₃, fun i j ↦ by linarith [hψ₃le i j], fun i ↦ ?_, fun j ↦ ?_, ?_⟩
   · exact abs_le.2 ⟨hφ₂lb i, hφ₂ub i⟩
   · rw [hψ₃ j]
-    exact abs_iInf_sub_le_three_mul hM i₀ hφ₂i₀ hφ₂ub j
+    refine abs_iInf_le_of_forall_neg_le (fun i ↦ ?_) (i₀ := i₀) ?_
+    · linarith [hlb (i, j), hφ₂ub i]
+    · rw [hφ₂i₀, sub_zero]
+      linarith [hub (i₀, j), hM0]
   · refine finiteDualValue_le_of_le_add_const (φ₁ i₀) (fun i ↦ ?_) (fun j ↦ ?_)
     · linarith [hmonoφ i, hφ₂ i]
     · linarith [hmonoψ j, hψ₂ j, hmonoψ₃ j]
