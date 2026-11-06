@@ -40,7 +40,8 @@ that every interval `[s, s + δ]`, `δ > 0`, contains a level carrying a closed 
 contractible in `M` of period at most `K`
 (`IsNondegenerate.ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE`).
 The bound `K` does not depend on `δ`, which is what allows passing to the limit `δ → 0` to obtain a
-closed characteristic on the level `F⁻¹(s)` itself; that limit is not treated here.
+closed characteristic on the level `F⁻¹(s)` itself; that limit is taken in
+`TauCeti.Geometry.Symplectic.Capacity.AlmostExistence`.
 
 ## Main results
 
