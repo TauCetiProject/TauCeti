@@ -27,6 +27,7 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing real function on a compact interval has a continuous inverse on
 its range, extended to the whole line by clamping.
+A path that starts in an open set and leaves it has a first exit time.
 
 ## Main results
 
@@ -47,6 +48,8 @@ its range, extended to the whole line by clamping.
   endpoint value and its limit.
 * `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing real function on
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
+* `TauCeti.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
+  it has a first exit time.
 -/
 
 public section
@@ -185,6 +188,29 @@ theorem exists_continuous_projIcc_inverse {f : ℝ → ℝ} {a b c d : ℝ} (hab
   · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
       Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
     simp only [this, Homeomorph.symm_apply_apply]
+
+/-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`
+and leaves it has a first exit time `T > a`: the path stays in `V` on `[a, T)`, and `γ T` lies in
+the closure of `V` but not in `V`. -/
+theorem exists_first_exit {X : Type*} [TopologicalSpace X] {V : Set X} (hV : IsOpen V)
+    {γ : ℝ → X} {a b : ℝ} (hγ : ContinuousOn γ (Icc a b)) (ha : γ a ∈ V)
+    (hex : ∃ t ∈ Icc a b, γ t ∉ V) :
+    ∃ T ∈ Icc a b, a < T ∧ γ T ∉ V ∧ γ T ∈ closure V ∧ ∀ t ∈ Ico a T, γ t ∈ V := by
+  obtain ⟨t₀, ht₀, ht₀V⟩ := hex
+  have hA_closed : IsClosed (Icc a b ∩ γ ⁻¹' Vᶜ) :=
+    hγ.preimage_isClosed_of_isClosed isClosed_Icc hV.isClosed_compl
+  obtain ⟨T, hTA, hT⟩ := (isCompact_Icc.of_isClosed_subset hA_closed fun t ht ↦ ht.1).exists_isLeast
+    ⟨t₀, ht₀, ht₀V⟩
+  have hbefore : ∀ t ∈ Ico a T, γ t ∈ V := by
+    intro t ht
+    by_contra hnot
+    exact (not_le.mpr ht.2) (hT ⟨⟨ht.1, ht.2.le.trans hTA.1.2⟩, hnot⟩)
+  have hTpos : a < T := lt_of_le_of_ne hTA.1.1 fun h ↦ hTA.2 (h ▸ ha)
+  have := right_nhdsWithin_Ioo_neBot hTpos
+  have htend : Tendsto γ (𝓝[Ioo a T] T) (𝓝 (γ T)) :=
+    ((hγ T hTA.1).mono (Ioo_subset_Icc_self.trans (Icc_subset_Icc le_rfl hTA.1.2))).tendsto
+  exact ⟨T, hTA.1, hTpos, hTA.2, mem_closure_of_tendsto htend
+    (eventually_nhdsWithin_of_forall fun t ht ↦ hbefore t ⟨ht.1.le, ht.2⟩), hbefore⟩
 
 /-- The curve `δ ↦ b - δ` tends to `b` within `[a, b]` as `δ → 0⁺`. -/
 theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOrder G]
