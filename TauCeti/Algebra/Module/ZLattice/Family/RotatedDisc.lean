@@ -394,21 +394,12 @@ theorem image_source_inter_preimage_torusFamilyAffineQuotientLift_rootsOfUnityBa
       (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
       (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) ⁻¹' {0}) =
       e.target ∩ {w | w.1 = 0} := by
+  rw [e.image_source_inter_eq']
   ext w
-  constructor
-  · rintro ⟨x, ⟨hx, hx0⟩, rfl⟩
-    rw [Set.mem_preimage, Set.mem_singleton_iff,
-      torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow P hcont hinj R ρ hequiv b hb hone hmul
-        hbone hbmul hRc hbc hfree he hx,
-      pow_eq_zero_iff (NeZero.ne m)] at hx0
-    exact ⟨e.map_source hx, hx0⟩
-  · rintro ⟨hw, hw0⟩
-    rw [Set.mem_ofPred_eq] at hw0
-    refine ⟨e.symm w, ⟨e.map_target hw, ?_⟩, e.right_inv hw⟩
-    rw [Set.mem_preimage, Set.mem_singleton_iff,
-      torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb hone
-        hmul hbone hbmul hRc hbc hfree he hw, hw0,
-      zero_pow (NeZero.ne m)]
+  refine and_congr_right fun hw ↦ ?_
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq]
+  rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb hone
+      hmul hbone hbmul hRc hbc hfree he hw, pow_eq_zero_iff (NeZero.ne m)]
 
 /-- **The central fibre has multiplicity `m`.** Let `x` be a point of the central fibre of the
 cyclic quotient `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` induced by

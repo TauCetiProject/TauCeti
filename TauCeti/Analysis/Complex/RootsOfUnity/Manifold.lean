@@ -82,9 +82,14 @@ theorem contMDiff_val : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBal
 /-- The charts of the disc are restrictions of the identity chart of `ℂ`: the inverse of a chart
 sends each point of its target to that point of the disc. -/
 theorem coe_chartAt_symm (u : rootsOfUnityBall m r) {w : ℂ} (hw : w ∈ (chartAt ℂ u).target) :
-    ((chartAt ℂ u).symm w : ℂ) = w :=
-  -- The chart of `ℂ` at `u` is the identity (`chartAt_self_eq`).
-  (chartAt ℂ (u : ℂ)).subtypeRestr_symm_apply (U := opens m r) ⟨u⟩ hw
+    ((chartAt ℂ u).symm w : ℂ) = w := by
+  -- The charts of the disc are by definition those of `opens m r`, which
+  -- `TopologicalSpace.Opens.chartAt_eq` identifies with restrictions of the charts of `ℂ`; the
+  -- chart of `ℂ` at `u` is the identity (`chartAt_self_eq`).
+  have h : chartAt ℂ u = (chartAt ℂ (u : ℂ)).subtypeRestr (s := opens m r) ⟨u⟩ :=
+    TopologicalSpace.Opens.chartAt_eq (x := (u : opens m r))
+  rw [h] at hw ⊢
+  exact (chartAt ℂ (u : ℂ)).subtypeRestr_symm_apply ⟨u⟩ hw
 
 end rootsOfUnityBall
 
