@@ -263,7 +263,7 @@ private theorem sub_pos_of_mem_quadraticHandle (hz : z ∈ quadraticHandle ε μ
 
 omit hμa hμε in
 /-- The squared norm of the first component of the rescaling is `‖u‖² / (‖v‖² + ε)`. -/
-private theorem norm_fst_quadraticHandleMap_sq (z : Eᵤ × Eₛ) :
+theorem norm_fst_quadraticHandleMap_sq (z : Eᵤ × Eₛ) :
     ‖(quadraticHandleMap ε μ z).1‖ ^ 2 = ‖z.1‖ ^ 2 / (‖z.2‖ ^ 2 + ε) := by
   rw [quadraticHandleMap_apply, norm_smul, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _),
     mul_pow, inv_pow, Real.sq_sqrt (by positivity), div_eq_inv_mul]
@@ -271,7 +271,7 @@ private theorem norm_fst_quadraticHandleMap_sq (z : Eᵤ × Eₛ) :
 omit hε in
 /-- The squared norm of the second component of the rescaling is
 `‖v‖² / (‖u‖² + μ(‖u‖² + 2‖v‖²) - ε)`. -/
-private theorem norm_snd_quadraticHandleMap_sq (hz : z ∈ quadraticHandle ε μ) :
+theorem norm_snd_quadraticHandleMap_sq (hz : z ∈ quadraticHandle ε μ) :
     ‖(quadraticHandleMap ε μ z).2‖ ^ 2 =
       ‖z.2‖ ^ 2 / (‖z.1‖ ^ 2 + μ (‖z.1‖ ^ 2 + 2 * ‖z.2‖ ^ 2) - ε) := by
   rw [quadraticHandleMap_apply, norm_smul, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _),
