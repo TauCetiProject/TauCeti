@@ -87,6 +87,38 @@ namespace ContinuousCohomology
 
 open TauCeti.ContCohomology
 
+section InnerPair
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+  [DistribMulAction G N] [ContinuousSMul G N] (g : G) (n : ℕ)
+
+/-- **The inner compatible pair on a discrete `G`-module**: the pair `(x ↦ g⁻¹ x g, m ↦ g • m)`
+consisting of conjugation on `G` and the action of `g` on `N` induces the identity on `Hⁿ(G, N)`.
+This packages `TauCeti.ContinuousCohomology.map_eq_id_of_inner` for this pair, for use when the
+pair must be inserted into a composite of compatible-pair maps. -/
+theorem exists_map_eq_id_conj_smul :
+    ∃ (c : G →ₜ* G) (B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G N) ⟶
+        ofDiscreteModule ℤ G N),
+      (∀ x : G, c x = g⁻¹ * x * g) ∧ (∀ m : N, B.hom m = g • m) ∧
+        _root_.ContinuousCohomology.map c B n = 𝟙 _ := by
+  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
+  have hc (x : G) : c x = g⁻¹ * x * g := by simp [c]
+  let B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G N) ⟶ ofDiscreteModule ℤ G N :=
+    ofDiscreteModulePair (c : G →* G) (DistribSMul.toAddMonoidHom N g).toIntLinearMap
+      fun x m => by
+        have hx : (c : G →* G) x = g⁻¹ * x * g := hc x
+        simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply, hx,
+          smul_smul]
+        congr 1
+        group
+  have hBm (m : N) : B.hom m = g • m := ofDiscreteModulePair_hom_apply _ _ _ m
+  exact ⟨c, B, hc, hBm, map_eq_id_of_inner g c hc B hBm
+    (ofDiscreteModule_isSmoothDiscrete ℤ G N) n⟩
+
+end InnerPair
+
+
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
   (U V : Subgroup G) (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
@@ -94,34 +126,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (g : G) (κ : V →ₜ* U) (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g)
   (f : TopRep.res (κ : V →* U) (ofDiscreteModule ℤ U M) ⟶ ofDiscreteModule ℤ V M)
   (hf : ∀ m : M, f.hom m = g • m)
-
-omit [TotallyDisconnectedSpace G] [TopologicalSpace M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
-/-- **The inner compatible pair on `Coind_U^G M`**: the pair `(x ↦ g⁻¹ x g, Φ ↦ g • Φ)` consisting
-of conjugation on `G` and the action of `g` on the coinduced module induces the identity on
-`Hⁿ(G, Coind_U^G M)`. -/
-theorem exists_inner_pair (n : ℕ) :
-    ∃ (c : G →ₜ* G) (B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G (DiscreteCoind G U M)) ⟶
-        ofDiscreteModule ℤ G (DiscreteCoind G U M)),
-      (∀ x : G, c x = g⁻¹ * x * g) ∧
-        (∀ Φ : DiscreteCoind G U M, B.hom Φ = (g • Φ : DiscreteCoind G U M)) ∧
-        _root_.ContinuousCohomology.map c B n = 𝟙 _ := by
-  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
-  have hc (x : G) : c x = g⁻¹ * x * g := by simp [c]
-  have hcM (x : G) : (c : G →* G) x = g⁻¹ * x * g := hc x
-  let B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G (DiscreteCoind G U M)) ⟶
-      ofDiscreteModule ℤ G (DiscreteCoind G U M) := ofDiscreteModulePair (c : G →* G)
-    (DistribSMul.toAddMonoidHom (DiscreteCoind G U M) g).toIntLinearMap
-    fun x F => by
-      simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply,
-        hcM, smul_smul]
-      congr 1
-      group
-  have hBΦ (Φ : DiscreteCoind G U M) : B.hom Φ = (g • Φ : DiscreteCoind G U M) :=
-    ofDiscreteModulePair_hom_apply (c : G →* G) _ _ Φ
-  exact ⟨c, B, hc, hBΦ, map_eq_id_of_inner g c hc B
-    (fun (Φ : DiscreteCoind G U M) => (hBΦ Φ).trans (ofDiscreteModule_ρ_apply_apply g Φ).symm)
-    (ofDiscreteModule_isSmoothDiscrete ℤ G (DiscreteCoind G U M)) n⟩
 
 omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 include hκ hf in
@@ -138,7 +142,7 @@ theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidH
           fun h F => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h F) n ≫
         shapiroMap V M n := by
   let X := ofDiscreteModule ℤ G (DiscreteCoind G U M)
-  obtain ⟨c, B, hc, hBΦ, hB⟩ := exists_inner_pair U M g n
+  obtain ⟨c, B, hc, hBΦ, hB⟩ := exists_map_eq_id_conj_smul (DiscreteCoind G U M) g n
   -- Both sides are the compatible pair of `v ↦ g⁻¹ v g` and `Φ ↦ g • Φ 1`; on the left this needs
   -- the inner pair, which induces the identity.
   let F : DiscreteCoind G U M →ₗ[ℤ] M :=
@@ -177,14 +181,15 @@ theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidH
     let BV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map B
     let ΨV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map Ψ
     refine (TopRep.comp_apply BV (ΨV ≫ evV) Φ).trans ((TopRep.comp_apply ΨV evV _).trans ?_)
-    refine (congrArg evV.hom ((congrArg ΨV.hom (hBΦ Φ)).trans
-      (ofDiscreteModuleMap_hom_apply (G := G) _
-        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)))).trans ?_
+    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU (g • Φ) :=
+      ofDiscreteModuleMap_hom_apply (G := G) _
+        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)
+    refine (congrArg evV.hom ((congrArg ΨV.hom (hBΦ Φ)).trans h₂)).trans ?_
     refine (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype V : V →* G)
       (DiscreteCoind.eval G V M).toIntLinearMap
-      (fun v Φ => eval_subgroupSubtype_smul G V M v Φ) _).trans ?_
-    simp [hFΦ]
-    rfl
+      (fun v Φ => eval_subgroupSubtype_smul G V M v Φ) _).trans
+      ((DiscreteCoind.eval_apply (A := M) _).trans ?_)
+    rw [hFΦ, DiscreteCoind.conj_apply, DiscreteCoind.coe_smul, mul_one, inv_mul_cancel]
   · intro Φ
     refine (TopRep.comp_apply _ _ _).trans ((hf _).trans ?_)
     exact (congrArg (fun m : M => g • m) ((ofDiscreteModulePair_hom_apply _ _ _ Φ).trans
