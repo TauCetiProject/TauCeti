@@ -74,8 +74,9 @@ theorem formallyEtale_iff_baseChange_and_localized
   exact (LocalizedModule.isBaseChange (.powers g) (Algebra.H1Cotangent R A)).equiv.symm.subsingleton
 
 /-- Finite étaleness is detected on the formal-glueing pieces. This applies in particular
-to a completion and the principal opens complementary to its defining ideal, but does not
-require completeness, Noetherianity, or faithful flatness of the base change. -/
+to the `I`-adic completion of a Noetherian ring and the principal opens complementary to `I`.
+In general, any flat `R → S` inducing `R/I ≃ S/IS` suffices: neither ring needs to be
+Noetherian, and completeness and faithful flatness are not required. -/
 theorem finite_etale_iff_baseChange_and_localized
     (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
       (algebraMap R S) Ideal.le_comap_map)) :
