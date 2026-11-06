@@ -124,6 +124,76 @@ open scoped Topology ENNReal Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {f : E → EReal}
 
+section SlopeSets
+
+variable {Ω : Set E} {u : E → ℝ} {x₀ : E}
+
+/-- The set of slopes `p` with `a + ⟪x - x₀, p⟫ ≤ 0` for all `x` in a set `s` is convex. -/
+theorem convex_setOf_forall_add_inner_le (s : Set E) (a : ℝ) (x₀ : E) :
+    Convex ℝ {p : E | ∀ x ∈ s, a + inner ℝ (x - x₀) p ≤ 0} := by
+  intro p hp q hq a' b ha hb hab x hx
+  have h₁ := mul_le_mul_of_nonneg_left (hp x hx) ha
+  have h₂ := mul_le_mul_of_nonneg_left (hq x hx) hb
+  rw [inner_add_right, real_inner_smul_right, real_inner_smul_right]
+  have e : a = a' * a + b * a := by rw [← add_mul, hab, one_mul]
+  linarith
+
+/-- For a bounded set `Ω` with `u x₀ < 0` at `x₀ ∈ Ω`, every slope of norm below
+`-u x₀ / diam Ω` makes the affine function through `(x₀, u x₀)` nonpositive on the frontier. -/
+theorem ball_subset_setOf_forall_frontier_add_inner_le (hΩ : Bornology.IsBounded Ω)
+    (hx₀ : x₀ ∈ Ω) (hD : 0 < diam Ω) :
+    ball (0 : E) (-u x₀ / diam Ω) ⊆
+      {p : E | ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ 0} := by
+  intro p hp x hx
+  rw [mem_ball_zero_iff] at hp
+  have hxD : ‖x - x₀‖ ≤ diam Ω := by
+    rw [← dist_eq_norm]
+    calc dist x x₀ ≤ diam (closure Ω) :=
+          dist_le_diam_of_mem hΩ.closure (frontier_subset_closure hx) (subset_closure hx₀)
+      _ = diam Ω := diam_closure Ω
+  have := (real_inner_le_norm (x - x₀) p).trans
+    (mul_le_mul hxD hp.le (norm_nonneg p) hD.le)
+  rw [mul_div_cancel₀ _ hD.ne'] at this
+  linarith
+
+/-- If `Ω` is open and convex with `x₀ ∈ Ω` and `u x₀ < 0`, and the complement of `Ω` is
+nonempty, there is a slope `q` of norm `-u x₀ / dist(x₀, Ωᶜ)` with `u x₀ + ⟪x - x₀, q⟫ ≤ 0` on the
+frontier, normal to a hyperplane supporting `Ω` at a nearest point of the complement. -/
+theorem exists_mem_setOf_forall_frontier_add_inner_le_dist_eq [FiniteDimensional ℝ E]
+    (hΩo : IsOpen Ω) (hconv : Convex ℝ Ω) (hx₀ : x₀ ∈ Ω) (hh : 0 < -u x₀) (hΩc : Ωᶜ.Nonempty)
+    (hd : 0 < infDist x₀ Ωᶜ) :
+    ∃ q ∈ {p : E | ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ 0},
+      dist q 0 = -u x₀ / infDist x₀ Ωᶜ := by
+  set h := -u x₀
+  set d := infDist x₀ Ωᶜ
+  obtain ⟨z, hz, hzd⟩ := hΩo.isClosed_compl.exists_infDist_eq_dist hΩc x₀
+  obtain ⟨g, hg⟩ := geometric_hahn_banach_open_point hconv hΩo hz
+  set w := (InnerProductSpace.toDual ℝ E).symm g
+  have hw : ∀ a, inner ℝ w a = g a := fun a => InnerProductSpace.toDual_symm_apply
+  have hw0 : w ≠ 0 := fun h' => by simpa [← hw, h'] using hg x₀ hx₀
+  have hw0' : 0 < ‖w‖ := norm_pos_iff.2 hw0
+  refine ⟨(h / (d * ‖w‖)) • w, fun x hx => ?_, ?_⟩
+  · have hgx : g x ≤ g z :=
+      closure_minimal (fun a ha => (hg a ha).le) (isClosed_le g.continuous continuous_const)
+        (frontier_subset_closure hx)
+    have hdz : d = ‖z - x₀‖ := by
+      rw [dist_comm, dist_eq_norm] at hzd
+      exact hzd
+    have hgz : g (z - x₀) ≤ ‖w‖ * d := by
+      rw [← hw, hdz]
+      exact real_inner_le_norm w (z - x₀)
+    rw [map_sub] at hgz
+    have key : h / (d * ‖w‖) * (g x - g x₀) ≤ h :=
+      calc h / (d * ‖w‖) * (g x - g x₀) ≤ h / (d * ‖w‖) * (‖w‖ * d) :=
+            mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+        _ = h := by field_simp
+    rw [real_inner_smul_right, real_inner_comm, hw, map_sub]
+    linarith
+  · rw [dist_zero_right, norm_smul, Real.norm_of_nonneg (by positivity)]
+    field_simp
+
+end SlopeSets
+
 section Overlap
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
@@ -579,10 +649,9 @@ theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen
   have hh : 0 < h := by linarith
   set d := infDist x₀ Ωᶜ
   set D := diam Ω
-  -- The complement of `Ω` is nonempty, and `x₀` is at positive distance `d` from it, attained at
-  -- some `z ∉ Ω`; the ball of radius `d` about `x₀` lies in `Ω`, so `D ≥ 2 * d > 0`.
+  -- The complement of `Ω` is nonempty, and `x₀` is at positive distance `d` from it; the ball of
+  -- radius `d` about `x₀` lies in `Ω`, so `D ≥ 2 * d > 0`.
   have hΩc : Ωᶜ.Nonempty := nonempty_compl.2 fun h' => NormedSpace.unbounded_univ ℝ E (h' ▸ hΩ)
-  obtain ⟨z, hz, hzd⟩ := hΩo.isClosed_compl.exists_infDist_eq_dist hΩc x₀
   have hd : 0 < d := (hΩo.isClosed_compl.notMem_iff_infDist_pos hΩc).1 fun h' => h' hx₀
   have hD : 0 < D := by
     have hsub : ball x₀ d ⊆ Ω := by simpa using ball_infDist_subset_compl (x := x₀) (s := Ωᶜ)
@@ -591,52 +660,10 @@ theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen
     linarith
   -- The admissible slopes.
   set P := {p : E | ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ 0}
-  have hPconv : Convex ℝ P := by
-    intro p hp q hq a b ha hb hab x hx
-    have h₁ := mul_le_mul_of_nonneg_left (hp x hx) ha
-    have h₂ := mul_le_mul_of_nonneg_left (hq x hx) hb
-    rw [inner_add_right, real_inner_smul_right, real_inner_smul_right]
-    nlinarith
-  have hball : ball 0 (h / D) ⊆ P := by
-    intro p hp x hx
-    rw [mem_ball_zero_iff] at hp
-    have hxD : ‖x - x₀‖ ≤ D := by
-      rw [← dist_eq_norm]
-      calc dist x x₀ ≤ diam (closure Ω) :=
-            dist_le_diam_of_mem hΩ.closure (frontier_subset_closure hx) (subset_closure hx₀)
-        _ = D := diam_closure Ω
-    have := (real_inner_le_norm (x - x₀) p).trans
-      (mul_le_mul hxD hp.le (norm_nonneg p) hD.le)
-    rw [mul_div_cancel₀ h hD.ne'] at this
-    linarith
-  -- A supporting half-space of `Ω` through `z` gives a slope of norm `h / d`.
-  obtain ⟨g, hg⟩ := geometric_hahn_banach_open_point hu.1 hΩo hz
-  set w := (InnerProductSpace.toDual ℝ E).symm g
-  have hw : ∀ a, inner ℝ w a = g a := fun a => InnerProductSpace.toDual_symm_apply
-  have hw0 : w ≠ 0 := fun h' => by simpa [← hw, h'] using hg x₀ hx₀
-  have hw0' : 0 < ‖w‖ := norm_pos_iff.2 hw0
-  have hq : (h / (d * ‖w‖)) • w ∈ P := by
-    intro x hx
-    have hgx : g x ≤ g z :=
-      closure_minimal (fun a ha => (hg a ha).le) (isClosed_le g.continuous continuous_const)
-        (frontier_subset_closure hx)
-    have hdz : d = ‖z - x₀‖ := by
-      rw [dist_comm, dist_eq_norm] at hzd
-      exact hzd
-    have hgz : g (z - x₀) ≤ ‖w‖ * d := by
-      rw [← hw, hdz]
-      exact real_inner_le_norm w (z - x₀)
-    rw [map_sub] at hgz
-    have key : h / (d * ‖w‖) * (g x - g x₀) ≤ h :=
-      calc h / (d * ‖w‖) * (g x - g x₀) ≤ h / (d * ‖w‖) * (‖w‖ * d) :=
-            mul_le_mul_of_nonneg_left (by linarith) (by positivity)
-        _ = h := by field_simp
-    rw [real_inner_smul_right, real_inner_comm, hw, map_sub]
-    have hdef : h = -u x₀ := rfl
-    linarith
-  have hqn : dist ((h / (d * ‖w‖)) • w) 0 = h / d := by
-    rw [dist_zero_right, norm_smul, Real.norm_of_nonneg (by positivity)]
-    field_simp
+  have hPconv : Convex ℝ P := convex_setOf_forall_add_inner_le _ _ _
+  have hball : ball 0 (h / D) ⊆ P := ball_subset_setOf_forall_frontier_add_inner_le hΩ hx₀ hD
+  obtain ⟨q, hq, hqn⟩ := exists_mem_setOf_forall_frontier_add_inner_le_dist_eq hΩo hu.1 hx₀ hh
+    hΩc hd
   -- Every admissible slope is a subgradient of `u` relative to `Ω` at a point of `Ω`.
   have hPS : P ⊆ ⋃ x ∈ Ω ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'} := by
     intro p hp
